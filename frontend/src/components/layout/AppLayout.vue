@@ -16,6 +16,10 @@
           <el-icon><HomeFilled /></el-icon>
           <span>首页</span>
         </el-menu-item>
+        <el-menu-item index="/courses">
+          <el-icon><Reading /></el-icon>
+          <span>课程列表</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -57,7 +61,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { HomeFilled } from '@element-plus/icons-vue'
+import { HomeFilled, Reading } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
