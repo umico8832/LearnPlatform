@@ -4,12 +4,6 @@ import { isAuthenticated } from '@/utils/auth'
 
 const routes: RouteRecordRaw[] = [
   {
-    path: '/login',
-    name: 'Login',
-    component: () => import('@/views/auth/LoginView.vue'),
-    meta: { requiresAuth: false, title: '登录' },
-  },
-  {
     path: '/register',
     name: 'Register',
     component: () => import('@/views/auth/RegisterView.vue'),
@@ -43,6 +37,30 @@ const routes: RouteRecordRaw[] = [
         name: 'QuestionList',
         component: () => import('@/views/course/QuestionListView.vue'),
         meta: { title: '题库' },
+      },
+      {
+        path: 'practice',
+        name: 'Practice',
+        component: () => import('@/views/practice/PracticeView.vue'),
+        meta: { title: '刷题练习' },
+      },
+      {
+        path: 'practice/session',
+        name: 'PracticeSession',
+        component: () => import('@/views/practice/PracticeSessionView.vue'),
+        meta: { title: '答题中' },
+      },
+      {
+        path: 'practice/records',
+        name: 'PracticeRecords',
+        component: () => import('@/views/practice/PracticeRecordView.vue'),
+        meta: { title: '刷题记录' },
+      },
+      {
+        path: 'wrong-questions',
+        name: 'WrongQuestions',
+        component: () => import('@/views/practice/WrongQuestionView.vue'),
+        meta: { title: '错题本' },
       },
       // 管理端路由
       {

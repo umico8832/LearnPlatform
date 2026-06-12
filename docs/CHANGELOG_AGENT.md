@@ -14,6 +14,224 @@
 
 ---
 
+## Round 7 - 2026-06-13
+
+### 阶段
+Phase 6：错题本
+
+### 本轮目标
+完成 Phase 6 错题本：后端错题自动收集、错题管理全流程，前端错题本页面（统计卡片、筛选、掌握状态切换、移出）。
+
+### 完成内容
+
+#### 1. 后端实体类
+- `WrongQuestion.java` - 错题本实体（id、userId、questionId、wrongCount、masteryLevel、lastWrongAnswer、createTime、updateTime、deleted）
+
+#### 2. 后端 Mapper
+- `WrongQuestionMapper.java` - 错题本 Mapper
+
+#### 3. 后端 DTO
+- `WrongQuestionVO.java` - 错题本 VO（含题目内容、题型、课程名、难度、答错次数、掌握程度）
+
+#### 4. 后端 Service
+- `WrongQuestionService.java` - 错题本服务
+  - addWrongQuestion() - 答错时自动加入错题本（同一用户+题目不重复，答错次数累加）
+  - getWrongQuestions() - 获取错题列表（分页，支持掌握程度和课程筛选）
+  - updateMasteryLevel() - 更新掌握程度
+  - removeWrongQuestion() - 移出错题本（逻辑删除）
+  - removeOnCorrect() - 答对时自动从错题本移出
+  - getWrongQuestionStats() - 获取统计（总数、各掌握程度数量、高频错题课程）
+
+#### 5. 后端 Controller
+- `WrongQuestionController.java` - 错题本控制器
+  - GET /api/wrong-questions - 获取错题列表（分页）
+  - GET /api/wrong-questions/stats - 获取错题统计
+  - PUT /api/wrong-questions/{id}/mastery - 更新掌握程度
+  - DELETE /api/wrong-questions/{id} - 移出错题本
+
+#### 6. PracticeService 集成
+- 注入 WrongQuestionService
+- submitAnswer() 中增加错题本自动处理逻辑
+  - 答错自动加入错题本
+  - 答对自动从错题本移出
+
+#### 7. 前端 API
+- `frontend/src/api/wrongQuestion.ts` - 错题本 API 封装（类型定义 + 4 个接口方法）
+
+#### 8. 前端页面
+- `frontend/src/views/practice/WrongQuestionView.vue` - 错题本页面
+  - 统计卡片（总错题数、未掌握、部分掌握、已掌握）
+  - 掌握程度筛选
+  - 错题卡片列表（题型、课程、难度、答错次数、掌握程度标签）
+  - 错题内容展示（题干、上次错误答案）
+  - 掌握程度单选按钮组切换
+  - 移出错题本（Popconfirm 确认）
+  - 分页功能
+
+#### 9. 路由和导航更新
+- `frontend/src/router/index.ts` - 新增路由 `/wrong-questions`
+- `frontend/src/components/layout/AppLayout.vue` - 侧边栏新增"错题本"菜单项（WarningFilled 图标）
+
+#### 10. 文档更新
+- `docs/ROADMAP.md` - Phase 5 标记为 ✅ 已完成，Phase 6 标记为 🔵 进行中
+
+### 修改文件清单
+| 文件 | 操作 |
+|------|------|
+| backend/src/main/java/com/learnplatform/entity/WrongQuestion.java | 新建 |
+| backend/src/main/java/com/learnplatform/mapper/WrongQuestionMapper.java | 新建 |
+| backend/src/main/java/com/learnplatform/dto/WrongQuestionVO.java | 新建 |
+| backend/src/main/java/com/learnplatform/service/WrongQuestionService.java | 新建 |
+| backend/src/main/java/com/learnplatform/controller/WrongQuestionController.java | 新建 |
+| backend/src/main/java/com/learnplatform/service/PracticeService.java | 修改（集成错题本逻辑） |
+| frontend/src/api/wrongQuestion.ts | 新建 |
+| frontend/src/views/practice/WrongQuestionView.vue | 新建 |
+| frontend/src/router/index.ts | 修改（添加路由） |
+| frontend/src/components/layout/AppLayout.vue | 修改（添加菜单项） |
+| docs/ROADMAP.md | 修改（Phase 5→✅，Phase 6→🔵） |
+| docs/CHANGELOG_AGENT.md | 修改（添加本轮记录） |
+
+### 验收结果
+- [x] 后端编译通过（mvn clean compile BUILD SUCCESS）
+- [x] 答错自动加入错题本（同一题不重复，答错次数累加）
+- [x] 答对自动从错题本移出
+- [x] 可以手动移出错题本
+- [x] 可以切换掌握程度（未掌握/部分掌握/已掌握）
+- [x] 错题列表支持按掌握程度筛选
+- [x] 统计卡片显示总错题数和各掌握程度数量
+- [x] 侧边栏菜单正确显示错题本入口
+
+### 遗留问题
+- 错题重练功能未单独实现（用户可从刷题练习页面按课程筛选进行重练）
+- 高频错题知识点统计目前只按课程维度，未按知识点维度
+
+### 下轮建议
+- 进入 Phase 7：试卷与考试
+- 后端：ExamPaper、ExamQuestion、ExamRecord、ExamAnswer 实体 + Mapper + Service + Controller
+- 前端：管理端试卷管理、用户端考试答题界面
+- 建议 commit message: `feat(wrong-question): 完成 Phase 6 错题本后端和前端`
+
+---
+
+## Round 6 - 2026-06-13
+
+### 阶段
+Phase 5：刷题与判分
+
+### 本轮目标
+完成 Phase 5 刷题与判分：后端刷题练习全流程（获取题目、提交答案、判分、记录查询、统计），前端刷题设置页面、答题界面、答题记录页面。
+
+### 完成内容
+
+#### 1. 后端实体类
+- `PracticeRecord.java` - 刷题记录实体（id、userId、questionId、userAnswer、isCorrect、answerTime、createTime）
+
+#### 2. 后端 Mapper
+- `PracticeRecordMapper.java` - 刷题记录 Mapper
+
+#### 3. 后端 DTO
+- `PracticeSubmitRequest.java` - 提交答案请求（questionId、userAnswer、answerTime）
+- `PracticeResultVO.java` - 答题结果 VO（recordId、questionId、userAnswer、correct、correctAnswer、analysis、score）
+- `PracticeRecordVO.java` - 练习记录 VO（含题目内容、题型、课程名、难度）
+
+#### 4. 后端 Service
+- `PracticeService.java` - 刷题服务
+  - getPracticeQuestions() - 获取练习题目（支持按课程/知识点/题型/难度筛选，随机抽取）
+  - submitAnswer() - 提交答案并判分（事务：保存记录 + 返回结果）
+  - getUserPracticeRecords() - 获取用户练习记录（分页）
+  - getUserPracticeStats() - 获取用户练习统计（总题数、答对、答错、正确率）
+  - 判分逻辑：单选/多选/判断自动判分，填空忽略大小写，简答暂不自动判分
+  - 练习模式隐藏正确答案标记
+
+#### 5. 后端 Controller
+- `PracticeController.java` - 刷题控制器
+  - GET /api/practice/questions - 获取练习题目
+  - POST /api/practice/submit - 提交答案
+  - GET /api/practice/records - 获取练习记录（分页）
+  - GET /api/practice/stats - 获取练习统计
+
+#### 6. 前端 API
+- `frontend/src/api/practice.ts` - 刷题相关 API 封装（类型定义 + 4 个接口方法）
+
+#### 7. 前端页面
+- `frontend/src/views/practice/PracticeView.vue` - 刷题设置页面
+  - 统计卡片（总答题数、答对数、答错数、正确率）
+  - 刷题配置表单（课程选择、题型、难度、题目数量）
+  - 课程列表动态加载
+  - 开始刷题按钮（获取题目后存入 sessionStorage 跳转）
+  
+- `frontend/src/views/practice/PracticeSessionView.vue` - 答题界面
+  - 顶部进度栏（当前题号/总题数、进度条、对错统计）
+  - 题目卡片（题型标签、课程名、难度、分值、知识点标签）
+  - 单选题/多选题/判断题选项点击选择
+  - 填空题/简答题文本输入
+  - 提交答案后弹窗展示结果（对错图标、用户答案、正确答案、解析）
+  - 完成后展示总结页（总题数、答对、答错、正确率）
+  - 支持"再练一次"返回设置页
+  
+- `frontend/src/views/practice/PracticeRecordView.vue` - 刷题记录页面
+  - 筛选条件（题型、结果）
+  - 记录表格（题干、题型、课程、难度、我的答案、结果、耗时、答题时间）
+  - 分页功能
+
+#### 8. 路由和导航更新
+- `frontend/src/router/index.ts` - 新增路由（在 AppLayout children 内）
+  - `/practice` - 刷题练习页面
+  - `/practice/session` - 答题界面
+  - `/practice/records` - 刷题记录
+- `frontend/src/components/layout/AppLayout.vue` - 侧边栏更新
+  - 用户端新增"刷题练习"菜单项（Promotion 图标）
+  - 用户端新增"刷题记录"菜单项（Clock 图标）
+
+#### 9. 文档更新
+- `docs/ROADMAP.md` - Phase 4 标记为 ✅ 已完成，Phase 5 标记为 🔵 进行中，所有任务标记完成
+
+### 修改文件清单
+| 文件 | 操作 |
+|------|------|
+| backend/src/main/java/com/learnplatform/entity/PracticeRecord.java | 新建 |
+| backend/src/main/java/com/learnplatform/mapper/PracticeRecordMapper.java | 新建 |
+| backend/src/main/java/com/learnplatform/dto/PracticeSubmitRequest.java | 新建 |
+| backend/src/main/java/com/learnplatform/dto/PracticeResultVO.java | 新建 |
+| backend/src/main/java/com/learnplatform/dto/PracticeRecordVO.java | 新建 |
+| backend/src/main/java/com/learnplatform/service/PracticeService.java | 新建 |
+| backend/src/main/java/com/learnplatform/controller/PracticeController.java | 新建 |
+| frontend/src/api/practice.ts | 新建 |
+| frontend/src/views/practice/PracticeView.vue | 新建 |
+| frontend/src/views/practice/PracticeSessionView.vue | 新建 |
+| frontend/src/views/practice/PracticeRecordView.vue | 新建 |
+| frontend/src/router/index.ts | 修改（添加路由） |
+| frontend/src/components/layout/AppLayout.vue | 修改（添加菜单项） |
+| docs/ROADMAP.md | 修改（Phase 4→✅，Phase 5→🔵） |
+| docs/CHANGELOG_AGENT.md | 修改（添加本轮记录） |
+
+### 验收结果
+- [x] 后端编译通过（mvn clean compile BUILD SUCCESS）
+- [x] 用户可以选择按课程/题型/难度筛选并随机抽取题目
+- [x] 提交答案后自动判分（单选/多选/判断/填空）
+- [x] 答错题目显示正确答案和解析
+- [x] 刷题记录正确保存并支持分页查询
+- [x] 练习统计（总题数、答对、答错、正确率）
+- [x] 前端刷题设置页面有统计卡片和配置表单
+- [x] 答题界面支持多种题型交互
+- [x] 完成后展示练习总结
+- [x] 刷题记录页面支持筛选和分页
+- [x] 侧边栏菜单正确显示刷题练习和刷题记录入口
+
+### 遗留问题
+- PracticeSessionView 中弹窗需要遮挡其他元素交互（已设置 close-on-click-modal=false）
+- 填空题和简答题的自动判分逻辑较简单（填空忽略大小写，简答暂不判分）
+- 刷题记录未按 questionType/courseId/isCorrect 做后端筛选过滤（仅做前端展示，后端传参已预留）
+
+### 下轮建议
+- 进入 Phase 6：错题本
+- 后端：WrongQuestion 实体 + WrongQuestionService + WrongQuestionController
+- 后端：PracticeService 中集成答错自动加入错题本逻辑
+- 前端：WrongQuestionView.vue（错题列表、筛选、重练、掌握状态切换）
+- 建议 commit message: `feat(practice): 完成 Phase 5 刷题与判分后端和前端`
+
+---
+
 ## Round 5 - 2026-06-13
 
 ### 阶段

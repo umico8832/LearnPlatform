@@ -24,6 +24,18 @@
           <el-icon><EditPen /></el-icon>
           <span>题库</span>
         </el-menu-item>
+        <el-menu-item index="/practice">
+          <el-icon><Promotion /></el-icon>
+          <span>刷题练习</span>
+        </el-menu-item>
+        <el-menu-item index="/practice/records">
+          <el-icon><Clock /></el-icon>
+          <span>刷题记录</span>
+        </el-menu-item>
+        <el-menu-item index="/wrong-questions">
+          <el-icon><WarningFilled /></el-icon>
+          <span>错题本</span>
+        </el-menu-item>
 
         <template v-if="isAdmin">
           <el-sub-menu index="admin">
@@ -86,7 +98,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { HomeFilled, Reading, Setting, Collection, Notebook, EditPen } from '@element-plus/icons-vue'
+import { HomeFilled, Reading, Setting, Collection, Notebook, EditPen, Promotion, Clock, WarningFilled } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
