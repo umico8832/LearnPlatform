@@ -1,5 +1,3 @@
-# docs/HANDOFF.md
-
 # AI 题库与错题复习系统 - Agent 交接文档
 
 本文档用于跨对话、跨 Agent、跨开发阶段交接项目状态。
@@ -9,143 +7,73 @@
 
 ## 1. 项目基本信息
 
-项目名称：
-
-AI 题库与错题复习系统
-
-项目定位：
-
-用于学习、刷题、错题复习和 AI 辅助学习的中大型 Web 项目。
-目标是做成真实可运行、可演示、可写进简历的完整前后端分离项目。
-
-开发环境：
-
-* WSL2 + Ubuntu
-* 项目目录位于 Linux 文件系统内，例如 `~/LearnPlatform`
-* 后续所有命令以 WSL2 Ubuntu 为准
-
-技术栈：
-
-前端：
-
-* Vue 3
-* TypeScript
-* Vite
-* Element Plus
-* Pinia
-* Vue Router
-* Axios
-* ECharts
-
-后端：
-
-* Java 17+
-* Spring Boot 3
-* MyBatis-Plus
-* MySQL 8
-* JWT
-* Knife4j / Swagger
-* Validation
-* 全局异常处理
-* 统一响应结构
-
-部署：
-
-* Docker
-* Docker Compose
-
-AI 接入：
-
-* 通过环境变量配置 API Base URL、API Key、模型名称
-* 禁止写死真实密钥
+项目名称：AI 题库与错题复习系统
+项目定位：用于学习、刷题、错题复习和 AI 辅助学习的中大型 Web 项目
+开发环境：WSL2 + Ubuntu
+技术栈：Vue 3 + TypeScript + Vite + Element Plus + Pinia | Spring Boot 3 + MyBatis-Plus + MySQL 8 + JWT + Knife4j | Docker Compose
 
 ---
 
 ## 2. 当前项目阶段
 
-当前阶段：
-
-请根据 `docs/ROADMAP.md` 和 `docs/CHANGELOG_AGENT.md` 更新此处。
+当前阶段：Phase 1 — 项目骨架（代码已完成，待验证运行）
 
 阶段状态：
-
-* [ ] Phase 0：项目规划
-* [ ] Phase 1：项目骨架
-* [ ] Phase 2：用户与鉴权
-* [ ] Phase 3：课程与知识点
-* [ ] Phase 4：题库系统
-* [ ] Phase 5：刷题与判分
-* [ ] Phase 6：错题本
-* [ ] Phase 7：试卷与模拟考试
-* [ ] Phase 8：AI 功能
-* [ ] Phase 9：统计与可视化
-* [ ] Phase 10：项目质量提升
-* [ ] Phase 11：部署与简历材料
+- [x] Phase 0：项目规划 ✅
+- [ ] Phase 1：项目骨架（代码已创建，需安装开发环境后验证）
+- [ ] Phase 2：用户与鉴权
+- [ ] Phase 3 ~ Phase 11：待开始
 
 ---
 
 ## 3. 已完成内容
 
-请按实际代码和文档更新。
-
-示例格式：
-
 ### 已完成模块
+- 项目文档体系（PRD、ARCHITECTURE、DB_DESIGN、API_DESIGN、ROADMAP、RESUME、CHANGELOG_AGENT）
+- .gitignore、.env.example、README.md、AGENTS.md
 
-* 项目文档体系：
+### 已完成后端代码
+- pom.xml（Spring Boot 3.2.5 + MyBatis-Plus + JWT + Knife4j + Security）
+- LearnPlatformApplication.java 启动类
+- application.yml 主配置（数据库、JWT、AI、Knife4j 环境变量注入）
+- R.java 统一响应体 + ResultCode 枚举
+- BusinessException + GlobalExceptionHandler 全局异常处理
+- MyBatisPlusConfig（分页插件 + 自动填充）
+- CorsConfig、Knife4jConfig、SecurityConfig（Phase 1 暂时放行）
+- PublicController（健康检查 GET /api/public/health）
+- schema.sql（13 张表 + 初始测试数据）
+- Dockerfile
 
-  * `docs/PRD.md`
-  * `docs/ARCHITECTURE.md`
-  * `docs/DB_DESIGN.md`
-  * `docs/API_DESIGN.md`
-  * `docs/ROADMAP.md`
-  * `docs/RESUME.md`
-  * `docs/CHANGELOG_AGENT.md`
+### 已完成前端代码
+- package.json（Vue 3 + Element Plus + Pinia + Axios + ECharts）
+- vite.config.ts（代理 /api → localhost:8080、Element Plus 自动导入、路径别名）
+- main.ts + App.vue + global.css
+- types/api.ts、types/user.ts
+- utils/auth.ts（Token 管理）、utils/request.ts（Axios 封装）
+- router/index.ts（路由守卫）
+- stores/user.ts（Pinia 用户 Store）
+- components/layout/AppLayout.vue（侧边栏 + 顶部导航布局）
+- views/home/HomeView.vue（调用健康检查接口）
+- views/auth/LoginView.vue、RegisterView.vue
+- views/NotFoundView.vue
+- Dockerfile + nginx.conf
 
-### 已完成配置
-
-* `.gitignore`
-* `.env.example`
-* `README.md`
-* `AGENTS.md`
-
-### 已完成前端功能
-
-* 暂无 / 请更新
-
-### 已完成后端功能
-
-* 暂无 / 请更新
-
-### 已完成联调功能
-
-* 暂无 / 请更新
+### 已完成部署配置
+- docker-compose.yml（MySQL + Backend + Frontend 三服务）
 
 ---
 
 ## 4. 未完成内容
 
-请按实际进度更新。
-
-示例：
-
-* 后端 Spring Boot 3 项目骨架
-* 前端 Vue 3 项目骨架
-* 用户注册登录
-* JWT 鉴权
-* 课程管理
-* 知识点管理
-* 题库管理
-* 刷题系统
-* 错题本
-* AI 解析
-* Docker Compose 完整部署
+- 开发环境安装（JDK 21、Maven、Node.js 18）— 需要 sudo 权限
+- `npm install` 安装前端依赖
+- `mvn spring-boot:run` 或 `docker-compose up` 验证项目可运行
+- Phase 2：用户与鉴权（JWT 实现）
+- Phase 3 ~ Phase 11
 
 ---
 
 ## 5. 当前目录结构
-
-请根据实际项目结构更新。
 
 ```text
 LearnPlatform/
@@ -153,6 +81,7 @@ LearnPlatform/
 ├── README.md
 ├── .gitignore
 ├── .env.example
+├── docker-compose.yml
 ├── docs/
 │   ├── PRD.md
 │   ├── ARCHITECTURE.md
@@ -162,31 +91,44 @@ LearnPlatform/
 │   ├── CHANGELOG_AGENT.md
 │   ├── HANDOFF.md
 │   └── RESUME.md
+├── backend/
+│   ├── pom.xml
+│   ├── Dockerfile
+│   └── src/main/
+│       ├── java/com/learnplatform/
+│       │   ├── LearnPlatformApplication.java
+│       │   ├── config/（CorsConfig、Knife4jConfig、MyBatisPlusConfig、SecurityConfig）
+│       │   ├── common/result/（R.java、ResultCode.java）
+│       │   ├── common/exception/（BusinessException、GlobalExceptionHandler）
+│       │   └── controller/（PublicController）
+│       └── resources/
+│           ├── application.yml
+│           └── db/schema.sql
 ├── frontend/
-└── backend/
+│   ├── package.json
+│   ├── tsconfig.json、tsconfig.node.json
+│   ├── vite.config.ts
+│   ├── index.html
+│   ├── env.d.ts
+│   ├── Dockerfile
+│   ├── nginx.conf
+│   └── src/
+│       ├── main.ts、App.vue
+│       ├── assets/styles/global.css
+│       ├── components/layout/AppLayout.vue
+│       ├── router/index.ts
+│       ├── stores/user.ts
+│       ├── types/（api.ts、user.ts）
+│       ├── utils/（auth.ts、request.ts）
+│       └── views/（home/HomeView、auth/LoginView、auth/RegisterView、NotFoundView）
+└── skills/
 ```
 
 ---
 
-## 6. 重要文件说明
-
-* `AGENTS.md`：长期稳定项目规则，不记录阶段进度。
-* `README.md`：项目介绍、运行方式、技术栈、演示说明。
-* `docs/ROADMAP.md`：阶段计划和当前阶段。
-* `docs/CHANGELOG_AGENT.md`：每轮 Agent 开发记录。
-* `docs/HANDOFF.md`：跨对话交接文档。
-* `docs/DB_DESIGN.md`：数据库设计。
-* `docs/API_DESIGN.md`：接口设计。
-* `docs/RESUME.md`：简历描述和面试材料。
-
----
-
-## 7. 运行方式
-
-请根据实际项目更新。
+## 6. 运行方式
 
 ### 前端
-
 ```bash
 cd frontend
 npm install
@@ -194,20 +136,12 @@ npm run dev
 ```
 
 ### 后端
-
 ```bash
 cd backend
-./mvnw spring-boot:run
-```
-
-如果没有 `mvnw`：
-
-```bash
 mvn spring-boot:run
 ```
 
-### Docker
-
+### Docker（一键启动）
 ```bash
 docker compose up -d
 docker compose ps
@@ -215,77 +149,40 @@ docker compose ps
 
 ---
 
-## 8. 当前遗留问题
+## 7. 当前遗留问题
 
-请每轮交接时更新。
-
-示例：
-
-* 前端项目骨架尚未创建；
-* 后端项目骨架尚未创建；
-* 数据库表结构尚未落地为 SQL；
-* AI 接口尚未实现；
-* Docker Compose 尚未完整配置。
+- 开发环境（JDK 21、Maven、Node.js 18）需要用户自行安装（sudo 权限）
+- SecurityConfig 暂时放行所有请求，Phase 2 需接入 JWT 鉴权
+- schema.sql 中的 BCrypt 密码哈希值需要在 Phase 2 验证是否正确
+- 前端 TS 报错全部是因为依赖未安装（npm install 后自动解决）
 
 ---
 
-## 9. 下一步建议任务
+## 8. 下一步建议任务
 
-请根据当前阶段更新。
-
-推荐格式：
-
-### 下一步任务
-
-任务名称：
-
-创建前后端项目骨架
+任务名称：安装开发环境并验证项目可运行
 
 任务目标：
-
-* 创建后端 Spring Boot 3 项目；
-* 创建前端 Vue 3 + TypeScript + Vite 项目；
-* 配置基础目录结构；
-* 保证前后端可以在 WSL2 Ubuntu 中启动。
-
-涉及文件：
-
-* `backend/`
-* `frontend/`
-* `README.md`
-* `docs/ROADMAP.md`
-* `docs/CHANGELOG_AGENT.md`
+- 安装 JDK 21、Maven、Node.js 18
+- 运行 npm install 安装前端依赖
+- 运行 docker compose up 或分别启动前后端，验证项目可运行
+- 验证健康检查接口和前端页面
 
 验收标准：
-
-* 前端可以 `npm run dev` 启动；
-* 后端可以启动；
-* 文档记录更新；
-* 不引入真实密钥。
+- 后端启动成功，GET /api/public/health 返回正常
+- 前端启动成功，http://localhost:5173 可访问
+- 前端能通过 Vite 代理请求后端接口
 
 ---
 
-## 10. 新对话续接提示词
+## 9. 新对话续接提示词
 
-新对话接手时，可以复制以下提示词：
-
-```text
+```
 你现在接手一个长期开发中的全栈 Web 项目。
 
-项目名称：
-AI 题库与错题复习系统
-
-项目定位：
-这是一个用于学习、考试复习、AI 辅助刷题和简历展示的中大型 Web 项目。目标是做成真实可运行、可演示、可写进简历的完整项目，而不是玩具 Demo。
-
-开发环境：
-WSL2 + Ubuntu。后续所有开发、命令执行、路径、脚本都以 WSL2 Ubuntu 为准。不要使用 PowerShell 或 Windows 路径。
-
-技术栈：
-前端：Vue 3 + TypeScript + Vite + Element Plus + Pinia + Vue Router + Axios + ECharts
-后端：Spring Boot 3 + Java 17 + MyBatis-Plus + MySQL + JWT + Knife4j / Swagger
-部署：Docker Compose
-AI：通过环境变量配置 API Base URL、API Key、模型名称，不能写死真实密钥。
+项目名称：AI 题库与错题复习系统
+开发环境：WSL2 + Ubuntu
+技术栈：Vue 3 + TypeScript + Vite + Element Plus + Pinia | Spring Boot 3 + MyBatis-Plus + MySQL 8 + JWT + Knife4j | Docker Compose
 
 请先阅读以下文件：
 1. AGENTS.md
@@ -293,50 +190,27 @@ AI：通过环境变量配置 API Base URL、API Key、模型名称，不能写�
 3. docs/ROADMAP.md
 4. docs/CHANGELOG_AGENT.md
 5. docs/HANDOFF.md
-6. docs/PRD.md
-7. docs/ARCHITECTURE.md
-8. docs/DB_DESIGN.md
-9. docs/API_DESIGN.md
-10. docs/RESUME.md
 
 工作方式：
 1. 先根据 docs/HANDOFF.md 理解当前项目状态；
 2. 再根据 docs/ROADMAP.md 判断当前阶段；
 3. 再根据代码实际情况验证文档是否过时；
-4. 不要盲目相信旧总结，必须检查代码；
-5. 自动选择下一步最高优先级任务；
-6. 继续开发、测试、修复、更新文档；
-7. 除非遇到重大方向问题，否则不要频繁问我；
-8. 每轮结束都要更新 docs/CHANGELOG_AGENT.md 和必要文档；
-9. 上下文接近 65 万 token 时准备交接，约 70 万 token 时必须生成新的 docs/HANDOFF.md 和新对话续接提示词。
+4. 自动选择下一步最高优先级任务；
+5. 继续开发、测试、修复、更新文档；
+6. 除非遇到重大方向问题，否则不要频繁问我；
+7. 每轮结束都要更新 docs/CHANGELOG_AGENT.md 和必要文档。
 
-请先执行：
-1. 阅读项目状态；
-2. 总结当前完成情况；
-3. 判断下一步任务；
-4. 然后直接开始推进下一阶段开发。
+当前阶段：Phase 1 项目骨架代码已创建，需要安装开发环境并验证运行，然后进入 Phase 2。
 ```
 
 ---
 
-## 11. Git 状态建议
+## 10. 交接注意事项
 
-每完成一个阶段建议提交一次。
-
-当前建议 commit message：
-
-```text
-docs(project): 完善 Agent 长期协作规则与交接文档
-```
-
----
-
-## 12. 交接注意事项
-
-* 不要依赖旧对话记忆；
-* 不要把 `AGENTS.md` 当进度表；
-* 不要清空 `docs/CHANGELOG_AGENT.md`；
-* 不要覆盖真实 `.env`；
-* 不要提交真实 API Key；
-* 先检查代码，再相信文档；
-* 发现文档与代码不一致时，应以代码为准，并修正文档。
+- 不要依赖旧对话记忆
+- 不要把 AGENTS.md 当进度表
+- 不要清空 docs/CHANGELOG_AGENT.md
+- 不要覆盖真实 .env
+- 不要提交真实 API Key
+- 先检查代码，再相信文档
+- 发现文档与代码不一致时，以代码为准，并修正文档

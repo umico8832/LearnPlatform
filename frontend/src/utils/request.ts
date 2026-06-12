@@ -1,0 +1,89 @@
+import axios from 'axios'
+import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
+import { ElMessage } from 'element-plus'
+import { getToken, removeToken } from './auth'
+import router from '@/router'
+import type { ApiResponse } from '@/types/api'
+
+/**
+ * 创建 Axios 实例
+ */
+const service: AxiosInstance = axios.create({
+  baseURL: '/api',
+  timeout: 15000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+/**
+ * 请求拦截器：自动注入 Token
+ */
+service.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const token = getToken()
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
+/**
+ * 响应拦截器：统一处理错误
+ */
+service.interceptors.response.use(
+  (response: AxiosResponse<ApiResponse>) => {
+    const res = response.data
+
+    // code === 0 表示成功
+    if (res.code === 0) {
+      return response
+    }
+
+    // 1002: 未登录 / Token 无效
+    if (res.code === 1002) {
+      removeToken()
+      router.push('/login')
+      ElMessage.error('登录已过期，请重新登录')
+      return Promise.reject(new Error(res.message))
+    }
+
+    // 其他业务错误
+    ElMessage.error(res.message || '请求失败')
+    return Promise.reject(new Error(res.message))
+  },
+  (error) => {
+    if (error.response) {
+      const { status } = error.response
+      switch (status) {
+        case 401:
+          removeToken()
+          router.push('/login')
+          ElMessage.error('登录已过期，请重新登录')
+          break
+        case 403:
+          ElMessage.error('没有权限访问')
+          break
+        case 404:
+          ElMessage.error('请求的资源不存在')
+          break
+        case 500:
+          ElMessage.error('服务器内部错误')
+          break
+        default:
+          ElMessage.error(`请求失败: ${status}`)
+      }
+    } else if (error.message.includes('timeout')) {
+      ElMessage.error('请求超时，请稍后重试')
+    } else {
+      ElMessage.error('网络异常，请检查网络连接')
+    }
+    return Promise.reject(error)
+  }
+)
+
+export default service

@@ -5,7 +5,7 @@
 | 阶段 | 名称 | 状态 | 预计工作量 | 说明 |
 |:----:|------|:----:|-----------|------|
 | 0 | 项目规划 | ✅ 已完成 | 0.5天 | 文档产出 |
-| 1 | 项目骨架 | ⬜ 待开始 | 1天 | 前后端骨架 + Docker |
+| 1 | 项目骨架 | 🔵 进行中 | 1天 | 前后端骨架 + Docker |
 | 2 | 用户与鉴权 | ⬜ 待开始 | 1.5天 | 注册登录 + JWT |
 | 3 | 课程与知识点 | ⬜ 待开始 | 1天 | CRUD + 前端页面 |
 | 4 | 题库系统 | ⬜ 待开始 | 2天 | 题目 CRUD + 前端 |
@@ -45,36 +45,36 @@
 创建可运行的前后端项目骨架，配置基础架构。
 
 ### 后端任务
-- [ ] 创建 Spring Boot 3 项目（Maven）
-- [ ] 配置 pom.xml 依赖（MyBatis-Plus、Spring Security、JWT、Knife4j、Validation、Lombok）
-- [ ] 配置 application.yml（数据库、JWT、AI、Knife4j）
-- [ ] 创建项目目录结构（config、common、entity、mapper、service、controller、dto、security、enums）
-- [ ] 实现统一响应体 R<T>
-- [ ] 实现响应码枚举 ResultCode
-- [ ] 实现业务异常 BusinessException
-- [ ] 实现全局异常处理器 GlobalExceptionHandler
-- [ ] 配置 MyBatis-Plus（分页插件、自动填充、逻辑删除）
-- [ ] 配置 Knife4j 接口文档
-- [ ] 配置 CORS 跨域
-- [ ] 创建 health check 接口
-- [ ] 创建 Dockerfile
+- [x] 创建 Spring Boot 3 项目（Maven）
+- [x] 配置 pom.xml 依赖（MyBatis-Plus、Spring Security、JWT、Knife4j、Validation、Lombok）
+- [x] 配置 application.yml（数据库、JWT、AI、Knife4j）
+- [x] 创建项目目录结构（config、common、entity、mapper、service、controller、dto、security、enums）
+- [x] 实现统一响应体 R<T>
+- [x] 实现响应码枚举 ResultCode
+- [x] 实现业务异常 BusinessException
+- [x] 实现全局异常处理器 GlobalExceptionHandler
+- [x] 配置 MyBatis-Plus（分页插件、自动填充、逻辑删除）
+- [x] 配置 Knife4j 接口文档
+- [x] 配置 CORS 跨域
+- [x] 创建 health check 接口
+- [x] 创建 Dockerfile
 
 ### 前端任务
-- [ ] 使用 Vite 创建 Vue 3 + TypeScript 项目
-- [ ] 安装依赖（Element Plus、Pinia、Vue Router、Axios、ECharts）
-- [ ] 配置 Vite（代理、别名）
-- [ ] 创建目录结构（api、assets、components、router、stores、types、utils、views）
-- [ ] 配置 Axios 实例（基础 URL、拦截器、Token 注入）
-- [ ] 配置 Vue Router（路由守卫骨架）
-- [ ] 配置 Pinia Store 骨架
-- [ ] 创建基础布局组件（Header、Sidebar）
-- [ ] 创建 404 页面
-- [ ] 创建 Dockerfile 和 nginx.conf
+- [x] 使用 Vite 创建 Vue 3 + TypeScript 项目
+- [x] 安装依赖（Element Plus、Pinia、Vue Router、Axios、ECharts）
+- [x] 配置 Vite（代理、别名）
+- [x] 创建目录结构（api、assets、components、router、stores、types、utils、views）
+- [x] 配置 Axios 实例（基础 URL、拦截器、Token 注入）
+- [x] 配置 Vue Router（路由守卫骨架）
+- [x] 配置 Pinia Store 骨架
+- [x] 创建基础布局组件（Header、Sidebar）
+- [x] 创建 404 页面
+- [x] 创建 Dockerfile 和 nginx.conf
 
 ### 部署任务
-- [ ] 创建 docker-compose.yml（MySQL + Backend + Frontend）
-- [ ] 创建 .env.example
-- [ ] 创建 MySQL 初始化 SQL（schema.sql）
+- [x] 创建 docker-compose.yml（MySQL + Backend + Frontend）
+- [x] 创建 .env.example
+- [x] 创建 MySQL 初始化 SQL（schema.sql）
 - [ ] 更新 README.md（启动说明）
 
 ### 验收标准

@@ -1,0 +1,56 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: learn-platform-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_DATABASE: learn_platform
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_general_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./backend/src/main/resources/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - learn-platform
+
+  backend:
+    build: ./backend
+    container_name: learn-platform-backend
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/learn_platform?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      JWT_SECRET: ${JWT_SECRET:-change_me_please_in_production_environment}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_ENABLED: ${AI_ENABLED:-false}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - learn-platform
+
+  frontend:
+    build: ./frontend
+    container_name: learn-platform-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - learn-platform
+
+volumes:
+  mysql-data:
+
+networks:
+  learn-platform:
+    driver: bridge

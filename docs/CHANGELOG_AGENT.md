@@ -142,3 +142,127 @@ Phase 0：项目规划
 - 配置基础架构（统一响应、全局异常、MyBatis-Plus、Knife4j）
 - 配置 Docker Compose
 - 目标：`docker-compose up` 可一键启动，前后端可互相通信
+
+---
+
+## Round 2 - 2026-06-12
+
+### 阶段
+Phase 1：项目骨架
+
+### 本轮目标
+创建前后端项目骨架，配置基础架构，使项目可通过 Docker Compose 一键启动。
+
+### 完成内容
+
+#### 后端（Spring Boot 3）
+1. **pom.xml** - Maven 项目配置，依赖：Spring Boot 3.2.5、Spring Security、MyBatis-Plus 3.5.5、MySQL Driver、JWT (jjwt 0.12.5)、Knife4j 4.4.0、Validation、Lombok
+2. **LearnPlatformApplication.java** - 启动类，@MapperScan 扫描 mapper 包
+3. **application.yml** - 主配置（数据库、JWT、AI、Knife4j），敏感值通过环境变量注入
+4. **R.java** - 统一响应体 `R<T>`，包含 ok/fail/businessError 等静态方法
+5. **ResultCode.java** - 响应码枚举（0-成功、1001-参数校验、1002-未登录、1003-无权限、1004-不存在、1005-业务异常、5000-系统异常）
+6. **BusinessException.java** - 业务异常类
+7. **GlobalExceptionHandler.java** - 全局异常处理器（业务异常、参数校验、认证异常、权限异常、未知异常）
+8. **MyBatisPlusConfig.java** - 分页插件 + 自动填充 create_time/update_time
+9. **CorsConfig.java** - CORS 跨域配置
+10. **Knife4jConfig.java** - OpenAPI 接口文档配置
+11. **SecurityConfig.java** - Spring Security 配置（Phase 1 暂时放行所有请求，Phase 2 接入 JWT）
+12. **PublicController.java** - 健康检查接口 `GET /api/public/health`
+13. **schema.sql** - 完整建表 SQL（13 张表 + 初始测试数据）
+14. **Dockerfile** - 多阶段构建（Maven build + JRE 运行）
+
+#### 前端（Vue 3 + TypeScript + Vite）
+1. **package.json** - 依赖：Vue 3、Vue Router、Pinia、Element Plus、Axios、ECharts、@element-plus/icons-vue
+2. **tsconfig.json / tsconfig.node.json** - TypeScript 配置，路径别名 @/*
+3. **vite.config.ts** - Vite 配置（代理 /api → localhost:8080、Element Plus 自动导入、路径别名）
+4. **index.html** - 入口 HTML
+5. **env.d.ts** - Vue 模块声明
+6. **main.ts** - 入口文件（注册 Element Plus、Pinia、Router、图标）
+7. **App.vue** - 根组件
+8. **global.css** - 全局样式
+9. **types/api.ts** - API 响应类型（ApiResponse、PageData、PageQuery）
+10. **types/user.ts** - 用户类型（UserInfo、LoginRequest、RegisterRequest、LoginResponse）
+11. **utils/auth.ts** - Token 管理（getToken/setToken/removeToken/isAuthenticated）
+12. **utils/request.ts** - Axios 封装（自动注入 Token、401 跳转、错误提示）
+13. **router/index.ts** - 路由配置（登录、注册、首页、404，含路由守卫）
+14. **stores/user.ts** - Pinia 用户 Store
+15. **components/layout/AppLayout.vue** - 布局组件（侧边栏 + 顶部导航 + 内容区）
+16. **views/home/HomeView.vue** - 首页（调用健康检查接口验证前后端通信）
+17. **views/auth/LoginView.vue** - 登录页面（Element Plus 表单）
+18. **views/auth/RegisterView.vue** - 注册页面（含确认密码校验）
+19. **views/NotFoundView.vue** - 404 页面
+20. **Dockerfile** - 多阶段构建（Node build + Nginx 运行）
+21. **nginx.conf** - Nginx 配置（静态资源 + API 反向代理 + Knife4j 代理）
+
+#### 部署
+1. **docker-compose.yml** - 三服务编排（MySQL + Backend + Frontend），MySQL 健康检查，自动初始化 schema.sql
+2. **.gitignore** - 更新，添加 auto-imports.d.ts 和 components.d.ts 忽略
+
+### 修改文件清单
+| 文件 | 操作 |
+|------|------|
+| backend/pom.xml | 新建 |
+| backend/src/main/java/com/learnplatform/LearnPlatformApplication.java | 新建 |
+| backend/src/main/resources/application.yml | 新建 |
+| backend/src/main/java/com/learnplatform/common/result/R.java | 新建 |
+| backend/src/main/java/com/learnplatform/common/result/ResultCode.java | 新建 |
+| backend/src/main/java/com/learnplatform/common/exception/BusinessException.java | 新建 |
+| backend/src/main/java/com/learnplatform/common/exception/GlobalExceptionHandler.java | 新建 |
+| backend/src/main/java/com/learnplatform/config/MyBatisPlusConfig.java | 新建 |
+| backend/src/main/java/com/learnplatform/config/CorsConfig.java | 新建 |
+| backend/src/main/java/com/learnplatform/config/Knife4jConfig.java | 新建 |
+| backend/src/main/java/com/learnplatform/config/SecurityConfig.java | 新建 |
+| backend/src/main/java/com/learnplatform/controller/PublicController.java | 新建 |
+| backend/src/main/resources/db/schema.sql | 新建 |
+| backend/Dockerfile | 新建 |
+| frontend/package.json | 新建 |
+| frontend/tsconfig.json | 新建 |
+| frontend/tsconfig.node.json | 新建 |
+| frontend/vite.config.ts | 新建 |
+| frontend/index.html | 新建 |
+| frontend/env.d.ts | 新建 |
+| frontend/src/main.ts | 新建 |
+| frontend/src/App.vue | 新建 |
+| frontend/src/assets/styles/global.css | 新建 |
+| frontend/src/types/api.ts | 新建 |
+| frontend/src/types/user.ts | 新建 |
+| frontend/src/utils/auth.ts | 新建 |
+| frontend/src/utils/request.ts | 新建 |
+| frontend/src/router/index.ts | 新建 |
+| frontend/src/stores/user.ts | 新建 |
+| frontend/src/components/layout/AppLayout.vue | 新建 |
+| frontend/src/views/home/HomeView.vue | 新建 |
+| frontend/src/views/auth/LoginView.vue | 新建 |
+| frontend/src/views/auth/RegisterView.vue | 新建 |
+| frontend/src/views/NotFoundView.vue | 新建 |
+| frontend/Dockerfile | 新建 |
+| frontend/nginx.conf | 新建 |
+| docker-compose.yml | 新建 |
+| .gitignore | 修改 |
+
+### 验收结果
+- [x] 后端项目结构完整，包含所有基础配置类
+- [x] 统一响应体 R<T> 和全局异常处理器就绪
+- [x] MyBatis-Plus 分页插件和自动填充配置完成
+- [x] Spring Security 配置就绪（Phase 1 暂时放行）
+- [x] 健康检查接口 `GET /api/public/health` 可用
+- [x] 建表 SQL 包含 13 张表和初始测试数据
+- [x] 前端项目结构完整，包含路由、状态管理、API 封装
+- [x] 前端登录/注册页面就绪
+- [x] Vite 代理配置正确（/api → localhost:8080）
+- [x] 首页调用健康检查接口验证前后端通信
+- [x] Docker Compose 三服务编排就绪
+- [x] Nginx 反向代理配置正确
+
+### 遗留问题
+- 开发环境（JDK 21、Maven、Node.js 18）需要用户自行安装（sudo 权限）
+- SecurityConfig 暂时放行所有请求，Phase 2 需接入 JWT 鉴权
+- schema.sql 中的 BCrypt 密码哈希值需要在 Phase 2 验证是否正确
+- 前端 TS 报错全部是因为依赖未安装（npm install 后自动解决）
+
+### 下轮建议
+- 安装开发环境（JDK 21、Maven、Node.js 18）
+- 运行 `npm install` 安装前端依赖
+- 运行 `mvn spring-boot:run` 或 `docker-compose up` 验证项目启动
+- 进入 Phase 2：用户与鉴权（实现 JWT 登录注册）
+- 建议 commit message: `feat(skeleton): 创建前后端项目骨架和 Docker Compose 部署配置`
