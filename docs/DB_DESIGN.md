@@ -1,0 +1,621 @@
+# AI 题库与错题复习系统 - 数据库设计文档
+
+## 一、数据库概述
+
+- **数据库类型**：MySQL 8.0+
+- **字符集**：utf8mb4
+- **排序规则**：utf8mb4_general_ci
+- **命名规范**：表名和字段名使用 snake_case
+- **通用字段**：所有表包含 `create_time`、`update_time`、`deleted` 字段
+- **逻辑删除**：使用 MyBatis-Plus 的 `@TableLogic` 实现逻辑删除
+
+---
+
+## 二、ER 关系图（文字版）
+
+```
+User (1) ──── (N) PracticeRecord
+User (1) ──── (N) WrongQuestion
+User (1) ──── (N) ExamRecord
+
+Course (1) ──── (N) KnowledgePoint
+Course (1) ──── (N) Question
+
+KnowledgePoint (1) ──── (N) KnowledgePoint (自引用父子关系)
+KnowledgePoint (N) ──── (N) Question (通过 question_knowledge_point 中间表)
+
+Question (1) ──── (N) QuestionOption
+Question (1) ──── (N) PracticeRecord
+Question (1) ──── (N) WrongQuestion
+Question (N) ──── (N) ExamPaper (通过 exam_question 关联)
+
+ExamPaper (1) ──── (N) ExamQuestion
+ExamPaper (1) ──── (N) ExamRecord
+
+ExamRecord (1) ──── (N) ExamAnswer
+```
+
+---
+
+## 三、表结构详细设计
+
+### 3.1 用户表 (user)
+
+| 字段名 | 类型 | 必填 | 默认值 | 说明 |
+|--------|------|:----:|--------|------|
+| id | BIGINT | 是 | 自增主键 | 用户ID |
+| username | VARCHAR(50) | 是 | | 用户名，唯一 |
+| password | VARCHAR(255) | 是 | | 密码（BCrypt 加密） |
+| nickname | VARCHAR(50) | 否 | | 昵称 |
+| avatar | VARCHAR(500) | 否 | | 头像 URL |
+| role | VARCHAR(20) | 是 | 'USER' | 角色：USER / ADMIN |
+| status | TINYINT | 是 | 1 | 状态：0-禁用 1-启用 |
+| create_time | DATETIME | 是 | CURRENT_TIMESTAMP | 创建时间 |
+| update_time | DATETIME | 是 | CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
+| deleted | TINYINT | 是 | 0 | 逻辑删除：0-未删除 1-已删除 |
+
+**索引**：
+- UNIQUE INDEX `uk_username` ON `username`
+
+**建表 SQL**：
+```sql
+CREATE TABLE `user` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '用户ID',
+  `username` VARCHAR(50) NOT NULL COMMENT '用户名',
+  `password` VARCHAR(255) NOT NULL COMMENT '密码（BCrypt加密）',
+  `nickname` VARCHAR(50) DEFAULT NULL COMMENT '昵称',
+  `avatar` VARCHAR(500) DEFAULT NULL COMMENT '头像URL',
+  `role` VARCHAR(20) NOT NULL DEFAULT 'USER' COMMENT '角色：USER-普通用户 ADMIN-管理员',
+  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态：0-禁用 1-启用',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除 1-已删除',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='用户表';
+```
+
+---
+
+### 3.2 课程表 (course)
+
+| 字段名 | 类型 | 必填 | 默认值 | 说明 |
+|--------|------|:----:|--------|------|
+| id | BIGINT | 是 | 自增主键 | 课程ID |
+| name | VARCHAR(100) | 是 | | 课程名称 |
+| description | TEXT | 否 | | 课程描述 |
+| cover_image | VARCHAR(500) | 否 | | 封面图 URL |
+| sort_order | INT | 是 | 0 | 排序序号 |
+| status | TINYINT | 是 | 1 | 状态：0-禁用 1-启用 |
+| create_time | DATETIME | 是 | CURRENT_TIMESTAMP | 创建时间 |
+| update_time | DATETIME | 是 | CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
+| deleted | TINYINT | 是 | 0 | 逻辑删除 |
+
+**建表 SQL**：
+```sql
+CREATE TABLE `course` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '课程ID',
+  `name` VARCHAR(100) NOT NULL COMMENT '课程名称',
+  `description` TEXT DEFAULT NULL COMMENT '课程描述',
+  `cover_image` VARCHAR(500) DEFAULT NULL COMMENT '封面图URL',
+  `sort_order` INT NOT NULL DEFAULT 0 COMMENT '排序序号',
+  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态：0-禁用 1-启用',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除 1-已删除',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='课程表';
+```
+
+---
+
+### 3.3 知识点表 (knowledge_point)
+
+| 字段名 | 类型 | 必填 | 默认值 | 说明 |
+|--------|------|:----:|--------|------|
+| id | BIGINT | 是 | 自增主键 | 知识点ID |
+| name | VARCHAR(100) | 是 | | 知识点名称 |
+| description | TEXT | 否 | | 知识点描述 |
+| course_id | BIGINT | 是 | | 所属课程ID |
+| parent_id | BIGINT | 否 | 0 | 父知识点ID，0表示顶级 |
+| sort_order | INT | 是 | 0 | 排序序号 |
+| create_time | DATETIME | 是 | CURRENT_TIMESTAMP | 创建时间 |
+| update_time | DATETIME | 是 | CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
+| deleted | TINYINT | 是 | 0 | 逻辑删除 |
+
+**索引**：
+- INDEX `idx_course_id` ON `course_id`
+- INDEX `idx_parent_id` ON `parent_id`
+
+**建表 SQL**：
+```sql
+CREATE TABLE `knowledge_point` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '知识点ID',
+  `name` VARCHAR(100) NOT NULL COMMENT '知识点名称',
+  `description` TEXT DEFAULT NULL COMMENT '知识点描述',
+  `course_id` BIGINT NOT NULL COMMENT '所属课程ID',
+  `parent_id` BIGINT NOT NULL DEFAULT 0 COMMENT '父知识点ID，0表示顶级',
+  `sort_order` INT NOT NULL DEFAULT 0 COMMENT '排序序号',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除 1-已删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_course_id` (`course_id`),
+  KEY `idx_parent_id` (`parent_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='知识点表';
+```
+
+---
+
+### 3.4 题目表 (question)
+
+| 字段名 | 类型 | 必填 | 默认值 | 说明 |
+|--------|------|:----:|--------|------|
+| id | BIGINT | 是 | 自增主键 | 题目ID |
+| content | TEXT | 是 | | 题干内容（支持 Markdown） |
+| question_type | VARCHAR(20) | 是 | | 题型：SINGLE_CHOICE / MULTIPLE_CHOICE / TRUE_FALSE / FILL_BLANK / SHORT_ANSWER |
+| course_id | BIGINT | 是 | | 所属课程ID |
+| difficulty | TINYINT | 是 | 3 | 难度等级：1-5 |
+| analysis | TEXT | 否 | | 题目解析 |
+| tags | VARCHAR(500) | 否 | | 标签，逗号分隔 |
+| score | INT | 是 | 1 | 分值（默认1分） |
+| status | TINYINT | 是 | 1 | 状态：0-禁用 1-启用 |
+| create_by | BIGINT | 否 | | 创建者ID |
+| create_time | DATETIME | 是 | CURRENT_TIMESTAMP | 创建时间 |
+| update_time | DATETIME | 是 | CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
+| deleted | TINYINT | 是 | 0 | 逻辑删除 |
+
+**索引**：
+- INDEX `idx_course_id` ON `course_id`
+- INDEX `idx_question_type` ON `question_type`
+- INDEX `idx_difficulty` ON `difficulty`
+- INDEX `idx_status` ON `status`
+
+**建表 SQL**：
+```sql
+CREATE TABLE `question` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '题目ID',
+  `content` TEXT NOT NULL COMMENT '题干内容（支持Markdown）',
+  `question_type` VARCHAR(20) NOT NULL COMMENT '题型：SINGLE_CHOICE-单选 MULTIPLE_CHOICE-多选 TRUE_FALSE-判断 FILL_BLANK-填空 SHORT_ANSWER-简答',
+  `course_id` BIGINT NOT NULL COMMENT '所属课程ID',
+  `difficulty` TINYINT NOT NULL DEFAULT 3 COMMENT '难度等级：1-5',
+  `analysis` TEXT DEFAULT NULL COMMENT '题目解析',
+  `tags` VARCHAR(500) DEFAULT NULL COMMENT '标签，逗号分隔',
+  `score` INT NOT NULL DEFAULT 1 COMMENT '分值',
+  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态：0-禁用 1-启用',
+  `create_by` BIGINT DEFAULT NULL COMMENT '创建者ID',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除 1-已删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_course_id` (`course_id`),
+  KEY `idx_question_type` (`question_type`),
+  KEY `idx_difficulty` (`difficulty`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='题目表';
+```
+
+---
+
+### 3.5 题目选项表 (question_option)
+
+| 字段名 | 类型 | 必填 | 默认值 | 说明 |
+|--------|------|:----:|--------|------|
+| id | BIGINT | 是 | 自增主键 | 选项ID |
+| question_id | BIGINT | 是 | | 所属题目ID |
+| content | VARCHAR(1000) | 是 | | 选项内容 |
+| option_label | VARCHAR(10) | 是 | | 选项标签：A / B / C / D |
+| is_correct | TINYINT | 是 | 0 | 是否正确答案：0-否 1-是 |
+| sort_order | INT | 是 | 0 | 排序序号 |
+| create_time | DATETIME | 是 | CURRENT_TIMESTAMP | 创建时间 |
+| update_time | DATETIME | 是 | CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
+| deleted | TINYINT | 是 | 0 | 逻辑删除 |
+
+**索引**：
+- INDEX `idx_question_id` ON `question_id`
+
+**建表 SQL**：
+```sql
+CREATE TABLE `question_option` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '选项ID',
+  `question_id` BIGINT NOT NULL COMMENT '所属题目ID',
+  `content` VARCHAR(1000) NOT NULL COMMENT '选项内容',
+  `option_label` VARCHAR(10) NOT NULL COMMENT '选项标签：A/B/C/D等',
+  `is_correct` TINYINT NOT NULL DEFAULT 0 COMMENT '是否正确答案：0-否 1-是',
+  `sort_order` INT NOT NULL DEFAULT 0 COMMENT '排序序号',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除 1-已删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_question_id` (`question_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='题目选项表';
+```
+
+---
+
+### 3.6 题目-知识点关联表 (question_knowledge_point)
+
+| 字段名 | 类型 | 必填 | 默认值 | 说明 |
+|--------|------|:----:|--------|------|
+| id | BIGINT | 是 | 自增主键 | 主键ID |
+| question_id | BIGINT | 是 | | 题目ID |
+| knowledge_point_id | BIGINT | 是 | | 知识点ID |
+| create_time | DATETIME | 是 | CURRENT_TIMESTAMP | 创建时间 |
+
+**索引**：
+- INDEX `idx_question_id` ON `question_id`
+- INDEX `idx_knowledge_point_id` ON `knowledge_point_id`
+- UNIQUE INDEX `uk_question_kp` ON (`question_id`, `knowledge_point_id`)
+
+**建表 SQL**：
+```sql
+CREATE TABLE `question_knowledge_point` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `question_id` BIGINT NOT NULL COMMENT '题目ID',
+  `knowledge_point_id` BIGINT NOT NULL COMMENT '知识点ID',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_question_kp` (`question_id`, `knowledge_point_id`),
+  KEY `idx_question_id` (`question_id`),
+  KEY `idx_knowledge_point_id` (`knowledge_point_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='题目-知识点关联表';
+```
+
+---
+
+### 3.7 刷题记录表 (practice_record)
+
+| 字段名 | 类型 | 必填 | 默认值 | 说明 |
+|--------|------|:----:|--------|------|
+| id | BIGINT | 是 | 自增主键 | 记录ID |
+| user_id | BIGINT | 是 | | 用户ID |
+| question_id | BIGINT | 是 | | 题目ID |
+| user_answer | VARCHAR(1000) | 是 | | 用户答案 |
+| is_correct | TINYINT | 是 | | 是否正确：0-错误 1-正确 |
+| answer_time | INT | 否 | | 答题耗时（秒） |
+| create_time | DATETIME | 是 | CURRENT_TIMESTAMP | 答题时间 |
+
+**索引**：
+- INDEX `idx_user_id` ON `user_id`
+- INDEX `idx_question_id` ON `question_id`
+- INDEX `idx_create_time` ON `create_time`
+
+**建表 SQL**：
+```sql
+CREATE TABLE `practice_record` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '记录ID',
+  `user_id` BIGINT NOT NULL COMMENT '用户ID',
+  `question_id` BIGINT NOT NULL COMMENT '题目ID',
+  `user_answer` VARCHAR(1000) NOT NULL COMMENT '用户答案',
+  `is_correct` TINYINT NOT NULL COMMENT '是否正确：0-错误 1-正确',
+  `answer_time` INT DEFAULT NULL COMMENT '答题耗时（秒）',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '答题时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_question_id` (`question_id`),
+  KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='刷题记录表';
+```
+
+---
+
+### 3.8 错题本表 (wrong_question)
+
+| 字段名 | 类型 | 必填 | 默认值 | 说明 |
+|--------|------|:----:|--------|------|
+| id | BIGINT | 是 | 自增主键 | 错题记录ID |
+| user_id | BIGINT | 是 | | 用户ID |
+| question_id | BIGINT | 是 | | 题目ID |
+| wrong_count | INT | 是 | 1 | 答错次数 |
+| mastery_level | TINYINT | 是 | 0 | 掌握程度：0-未掌握 1-部分掌握 2-已掌握 |
+| last_wrong_answer | VARCHAR(1000) | 否 | | 最近一次错误答案 |
+| create_time | DATETIME | 是 | CURRENT_TIMESTAMP | 首次答错时间 |
+| update_time | DATETIME | 是 | CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
+| deleted | TINYINT | 是 | 0 | 逻辑删除（手动移出错题本） |
+
+**索引**：
+- INDEX `idx_user_id` ON `user_id`
+- INDEX `idx_question_id` ON `question_id`
+- UNIQUE INDEX `uk_user_question` ON (`user_id`, `question_id`)
+
+**建表 SQL**：
+```sql
+CREATE TABLE `wrong_question` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '错题记录ID',
+  `user_id` BIGINT NOT NULL COMMENT '用户ID',
+  `question_id` BIGINT NOT NULL COMMENT '题目ID',
+  `wrong_count` INT NOT NULL DEFAULT 1 COMMENT '答错次数',
+  `mastery_level` TINYINT NOT NULL DEFAULT 0 COMMENT '掌握程度：0-未掌握 1-部分掌握 2-已掌握',
+  `last_wrong_answer` VARCHAR(1000) DEFAULT NULL COMMENT '最近一次错误答案',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '首次答错时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-保留 1-移出错题本',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_question` (`user_id`, `question_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_question_id` (`question_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='错题本表';
+```
+
+---
+
+### 3.9 试卷表 (exam_paper)
+
+| 字段名 | 类型 | 必填 | 默认值 | 说明 |
+|--------|------|:----:|--------|------|
+| id | BIGINT | 是 | 自增主键 | 试卷ID |
+| title | VARCHAR(200) | 是 | | 试卷标题 |
+| description | TEXT | 否 | | 试卷描述 |
+| course_id | BIGINT | 否 | | 所属课程ID |
+| total_score | INT | 是 | 0 | 总分 |
+| duration | INT | 是 | 60 | 考试时长（分钟） |
+| question_count | INT | 是 | 0 | 题目数量 |
+| status | TINYINT | 是 | 0 | 状态：0-草稿 1-已发布 |
+| create_by | BIGINT | 否 | | 创建者ID |
+| create_time | DATETIME | 是 | CURRENT_TIMESTAMP | 创建时间 |
+| update_time | DATETIME | 是 | CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
+| deleted | TINYINT | 是 | 0 | 逻辑删除 |
+
+**建表 SQL**：
+```sql
+CREATE TABLE `exam_paper` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '试卷ID',
+  `title` VARCHAR(200) NOT NULL COMMENT '试卷标题',
+  `description` TEXT DEFAULT NULL COMMENT '试卷描述',
+  `course_id` BIGINT DEFAULT NULL COMMENT '所属课程ID',
+  `total_score` INT NOT NULL DEFAULT 0 COMMENT '总分',
+  `duration` INT NOT NULL DEFAULT 60 COMMENT '考试时长（分钟）',
+  `question_count` INT NOT NULL DEFAULT 0 COMMENT '题目数量',
+  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态：0-草稿 1-已发布',
+  `create_by` BIGINT DEFAULT NULL COMMENT '创建者ID',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除 1-已删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_course_id` (`course_id`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='试卷表';
+```
+
+---
+
+### 3.10 试卷-题目关联表 (exam_question)
+
+| 字段名 | 类型 | 必填 | 默认值 | 说明 |
+|--------|------|:----:|--------|------|
+| id | BIGINT | 是 | 自增主键 | 主键ID |
+| exam_paper_id | BIGINT | 是 | | 试卷ID |
+| question_id | BIGINT | 是 | | 题目ID |
+| sort_order | INT | 是 | 0 | 题目在试卷中的顺序 |
+| score | INT | 是 | 1 | 该题在本卷中的分值 |
+
+**索引**：
+- INDEX `idx_exam_paper_id` ON `exam_paper_id`
+- UNIQUE INDEX `uk_paper_question` ON (`exam_paper_id`, `question_id`)
+
+**建表 SQL**：
+```sql
+CREATE TABLE `exam_question` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `exam_paper_id` BIGINT NOT NULL COMMENT '试卷ID',
+  `question_id` BIGINT NOT NULL COMMENT '题目ID',
+  `sort_order` INT NOT NULL DEFAULT 0 COMMENT '题目在试卷中的顺序',
+  `score` INT NOT NULL DEFAULT 1 COMMENT '该题在本卷中的分值',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_paper_question` (`exam_paper_id`, `question_id`),
+  KEY `idx_exam_paper_id` (`exam_paper_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='试卷-题目关联表';
+```
+
+---
+
+### 3.11 考试记录表 (exam_record)
+
+| 字段名 | 类型 | 必填 | 默认值 | 说明 |
+|--------|------|:----:|--------|------|
+| id | BIGINT | 是 | 自增主键 | 考试记录ID |
+| user_id | BIGINT | 是 | | 用户ID |
+| exam_paper_id | BIGINT | 是 | | 试卷ID |
+| start_time | DATETIME | 是 | | 开始时间 |
+| end_time | DATETIME | 否 | | 结束时间 |
+| score | INT | 否 | | 得分 |
+| total_score | INT | 否 | | 总分 |
+| status | TINYINT | 是 | 0 | 状态：0-进行中 1-已完成 2-已超时 |
+| create_time | DATETIME | 是 | CURRENT_TIMESTAMP | 创建时间 |
+| update_time | DATETIME | 是 | CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
+
+**索引**：
+- INDEX `idx_user_id` ON `user_id`
+- INDEX `idx_exam_paper_id` ON `exam_paper_id`
+
+**建表 SQL**：
+```sql
+CREATE TABLE `exam_record` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '考试记录ID',
+  `user_id` BIGINT NOT NULL COMMENT '用户ID',
+  `exam_paper_id` BIGINT NOT NULL COMMENT '试卷ID',
+  `start_time` DATETIME NOT NULL COMMENT '开始时间',
+  `end_time` DATETIME DEFAULT NULL COMMENT '结束时间',
+  `score` INT DEFAULT NULL COMMENT '得分',
+  `total_score` INT DEFAULT NULL COMMENT '总分',
+  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态：0-进行中 1-已完成 2-已超时',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_exam_paper_id` (`exam_paper_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='考试记录表';
+```
+
+---
+
+### 3.12 考试答题详情表 (exam_answer)
+
+| 字段名 | 类型 | 必填 | 默认值 | 说明 |
+|--------|------|:----:|--------|------|
+| id | BIGINT | 是 | 自增主键 | 答题记录ID |
+| exam_record_id | BIGINT | 是 | | 考试记录ID |
+| question_id | BIGINT | 是 | | 题目ID |
+| user_answer | VARCHAR(1000) | 是 | | 用户答案 |
+| is_correct | TINYINT | 否 | | 是否正确：0-错误 1-正确 |
+| score | INT | 否 | | 该题得分 |
+| create_time | DATETIME | 是 | CURRENT_TIMESTAMP | 答题时间 |
+
+**索引**：
+- INDEX `idx_exam_record_id` ON `exam_record_id`
+
+**建表 SQL**：
+```sql
+CREATE TABLE `exam_answer` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '答题记录ID',
+  `exam_record_id` BIGINT NOT NULL COMMENT '考试记录ID',
+  `question_id` BIGINT NOT NULL COMMENT '题目ID',
+  `user_answer` VARCHAR(1000) NOT NULL COMMENT '用户答案',
+  `is_correct` TINYINT DEFAULT NULL COMMENT '是否正确：0-错误 1-正确',
+  `score` INT DEFAULT NULL COMMENT '该题得分',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '答题时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_exam_record_id` (`exam_record_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='考试答题详情表';
+```
+
+---
+
+### 3.13 AI 调用日志表 (ai_call_log) - 后期
+
+| 字段名 | 类型 | 必填 | 默认值 | 说明 |
+|--------|------|:----:|--------|------|
+| id | BIGINT | 是 | 自增主键 | 日志ID |
+| user_id | BIGINT | 否 | | 调用用户ID |
+| function_type | VARCHAR(50) 是 | | 功能类型：EXPLANATION / VARIANT / REVIEW / SUMMARY / GRADE |
+| request_params | TEXT | 否 | | 请求参数（JSON） |
+| response_content | TEXT | 否 | | 响应内容 |
+| model | VARCHAR(100) | 否 | | 使用的模型 |
+| tokens_used | INT | 否 | | Token 用量 |
+| status | TINYINT | 是 | 1 | 状态：0-失败 1-成功 |
+| error_message | VARCHAR(1000) | 否 | | 错误信息 |
+| duration | INT | 否 | | 调用耗时（毫秒） |
+| create_time | DATETIME | 是 | CURRENT_TIMESTAMP | 创建时间 |
+
+**建表 SQL**：
+```sql
+CREATE TABLE `ai_call_log` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+  `user_id` BIGINT DEFAULT NULL COMMENT '调用用户ID',
+  `function_type` VARCHAR(50) NOT NULL COMMENT '功能类型：EXPLANATION/VARIANT/REVIEW/SUMMARY/GRADE',
+  `request_params` TEXT DEFAULT NULL COMMENT '请求参数（JSON）',
+  `response_content` TEXT DEFAULT NULL COMMENT '响应内容',
+  `model` VARCHAR(100) DEFAULT NULL COMMENT '使用的模型',
+  `tokens_used` INT DEFAULT NULL COMMENT 'Token用量',
+  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态：0-失败 1-成功',
+  `error_message` VARCHAR(1000) DEFAULT NULL COMMENT '错误信息',
+  `duration` INT DEFAULT NULL COMMENT '调用耗时（毫秒）',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_function_type` (`function_type`),
+  KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='AI调用日志表';
+```
+
+---
+
+## 四、表关系说明
+
+### 4.1 外键关系（逻辑外键，不建物理外键）
+
+| 关系 | 父表 | 父表字段 | 子表 | 子表字段 |
+|------|------|----------|------|----------|
+| 课程→知识点 | course | id | knowledge_point | course_id |
+| 课程→题目 | course | id | question | course_id |
+| 题目→选项 | question | id | question_option | question_id |
+| 题目→知识点 | question | id | question_knowledge_point | question_id |
+| 知识点→题目 | knowledge_point | id | question_knowledge_point | knowledge_point_id |
+| 用户→刷题记录 | user | id | practice_record | user_id |
+| 用户→错题 | user | id | wrong_question | user_id |
+| 题目→刷题记录 | question | id | practice_record | question_id |
+| 题目→错题 | question | id | wrong_question | question_id |
+| 试卷→考试记录 | exam_paper | id | exam_record | exam_paper_id |
+| 考试记录→答题 | exam_record | id | exam_answer | exam_record_id |
+| 试卷→题目关联 | exam_paper | id | exam_question | exam_paper_id |
+
+> **注意**：不使用物理外键约束，通过应用层维护数据一致性。这是 MyBatis-Plus 项目的常见实践。
+
+### 4.2 知识点自引用关系
+
+```
+knowledge_point 表中 parent_id 指向同表的 id：
+- parent_id = 0  → 顶级知识点
+- parent_id = X  → 属于知识点 X 的子知识点
+```
+
+---
+
+## 五、初始测试数据
+
+### 5.1 管理员账号
+```sql
+INSERT INTO `user` (`username`, `password`, `nickname`, `role`, `status`) VALUES
+('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '管理员', 'ADMIN', 1);
+-- 密码: admin123 (BCrypt加密)
+```
+
+### 5.2 测试用户
+```sql
+INSERT INTO `user` (`username`, `password`, `nickname`, `role`, `status`) VALUES
+('testuser', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '测试用户', 'USER', 1);
+-- 密码: test123 (BCrypt加密)
+```
+
+### 5.3 示例课程
+```sql
+INSERT INTO `course` (`name`, `description`, `sort_order`) VALUES
+('Java 基础', 'Java 编程语言基础知识，包括语法、面向对象、异常处理等', 1),
+('数据结构与算法', '常见数据结构和算法的学习与练习', 2),
+('数据库原理', '关系型数据库原理、SQL 语法、索引优化等', 3),
+('计算机网络', 'TCP/IP、HTTP、网络协议等计算机网络基础知识', 4),
+('操作系统', '进程管理、内存管理、文件系统等操作系统核心知识', 5);
+```
+
+---
+
+## 六、数据量预估与优化建议
+
+### 6.1 数据量预估
+
+| 表 | 预估数据量 | 说明 |
+|----|-----------|------|
+| user | 1,000 | 测试规模 |
+| course | 10-50 | 课程数量有限 |
+| knowledge_point | 100-500 | 每课程 10-20 个知识点 |
+| question | 1,000-10,000 | 核心数据 |
+| question_option | 4,000-40,000 | 每题 4 个选项 |
+| practice_record | 10,000-100,000 | 用户刷题记录，增长最快 |
+| wrong_question | 1,000-10,000 | 错题记录 |
+| exam_paper | 50-200 | 试卷数量有限 |
+| exam_record | 1,000-10,000 | 考试记录 |
+| exam_answer | 10,000-100,000 | 考试答题详情 |
+
+### 6.2 优化建议
+
+**当前阶段（无需优化）**：
+- 数据量小，MySQL 默认配置足够
+- MyBatis-Plus 自动生成的基础 SQL 性能良好
+
+**后期优化方向**：
+1. **索引优化**：根据实际查询模式添加组合索引
+2. **分表**：practice_record 和 exam_answer 如果数据量过大，可以按用户ID分表
+3. **缓存**：Redis 缓存热点数据（课程列表、题目详情）
+4. **读写分离**：主从复制，读操作走从库
+5. **慢查询监控**：开启 MySQL 慢查询日志
+
+---
+
+## 七、后续扩展建议
+
+1. **学习计划表**：存储 AI 生成的复习计划
+2. **用户收藏表**：收藏题目/知识点
+3. **讨论区表**：题目讨论/问答
+4. **通知表**：系统通知/提醒
+5. **操作日志表**：管理端操作审计
+6. **用户学习进度表**：按知识点的学习进度跟踪

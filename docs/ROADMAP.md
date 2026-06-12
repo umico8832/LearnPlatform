@@ -1,0 +1,361 @@
+# AI 题库与错题复习系统 - 开发路线图
+
+## 阶段总览
+
+| 阶段 | 名称 | 状态 | 预计工作量 | 说明 |
+|:----:|------|:----:|-----------|------|
+| 0 | 项目规划 | ✅ 已完成 | 0.5天 | 文档产出 |
+| 1 | 项目骨架 | ⬜ 待开始 | 1天 | 前后端骨架 + Docker |
+| 2 | 用户与鉴权 | ⬜ 待开始 | 1.5天 | 注册登录 + JWT |
+| 3 | 课程与知识点 | ⬜ 待开始 | 1天 | CRUD + 前端页面 |
+| 4 | 题库系统 | ⬜ 待开始 | 2天 | 题目 CRUD + 前端 |
+| 5 | 刷题与判分 | ⬜ 待开始 | 2天 | 答题 + 判分 + 记录 |
+| 6 | 错题本 | ⬜ 待开始 | 1.5天 | 错题收集 + 重练 |
+| 7 | 试卷与考试 | ⬜ 待开始 | 2.5天 | 组卷 + 考试 + 成绩 |
+| 8 | AI 功能 | ⬜ 待开始 | 2天 | AI 解析 + 复习建议 |
+| 9 | 统计可视化 | ⬜ 待开始 | 1.5天 | 图表 + 面板 |
+| 10 | 质量提升 | ⬜ 待开始 | 2天 | 重构 + 校验 + 文档 |
+| 11 | 部署与简历 | ⬜ 待开始 | 1.5天 | Docker + README + 简历材料 |
+
+**预计总工期**：约 17-20 天
+
+---
+
+## Phase 0：项目规划 ✅
+
+### 目标
+完成项目前期文档，明确技术方案和开发计划。
+
+### 产出物
+- [x] docs/PRD.md - 产品需求文档
+- [x] docs/ARCHITECTURE.md - 架构设计文档
+- [x] docs/DB_DESIGN.md - 数据库设计文档
+- [x] docs/ROADMAP.md - 开发路线图
+- [x] docs/RESUME.md - 简历项目描述
+- [x] docs/API_DESIGN.md - 接口设计文档
+- [x] .gitignore - Git 忽略规则
+- [x] .env.example - 环境变量示例
+- [x] README.md - 项目说明
+
+---
+
+## Phase 1：项目骨架 ⬜
+
+### 目标
+创建可运行的前后端项目骨架，配置基础架构。
+
+### 后端任务
+- [ ] 创建 Spring Boot 3 项目（Maven）
+- [ ] 配置 pom.xml 依赖（MyBatis-Plus、Spring Security、JWT、Knife4j、Validation、Lombok）
+- [ ] 配置 application.yml（数据库、JWT、AI、Knife4j）
+- [ ] 创建项目目录结构（config、common、entity、mapper、service、controller、dto、security、enums）
+- [ ] 实现统一响应体 R<T>
+- [ ] 实现响应码枚举 ResultCode
+- [ ] 实现业务异常 BusinessException
+- [ ] 实现全局异常处理器 GlobalExceptionHandler
+- [ ] 配置 MyBatis-Plus（分页插件、自动填充、逻辑删除）
+- [ ] 配置 Knife4j 接口文档
+- [ ] 配置 CORS 跨域
+- [ ] 创建 health check 接口
+- [ ] 创建 Dockerfile
+
+### 前端任务
+- [ ] 使用 Vite 创建 Vue 3 + TypeScript 项目
+- [ ] 安装依赖（Element Plus、Pinia、Vue Router、Axios、ECharts）
+- [ ] 配置 Vite（代理、别名）
+- [ ] 创建目录结构（api、assets、components、router、stores、types、utils、views）
+- [ ] 配置 Axios 实例（基础 URL、拦截器、Token 注入）
+- [ ] 配置 Vue Router（路由守卫骨架）
+- [ ] 配置 Pinia Store 骨架
+- [ ] 创建基础布局组件（Header、Sidebar）
+- [ ] 创建 404 页面
+- [ ] 创建 Dockerfile 和 nginx.conf
+
+### 部署任务
+- [ ] 创建 docker-compose.yml（MySQL + Backend + Frontend）
+- [ ] 创建 .env.example
+- [ ] 创建 MySQL 初始化 SQL（schema.sql）
+- [ ] 更新 README.md（启动说明）
+
+### 验收标准
+1. `docker-compose up` 可以一键启动所有服务
+2. 后端访问 `http://localhost:8080/doc.html` 可以看到 Knife4j 接口文档
+3. 前端访问 `http://localhost:5173` 可以看到基础页面
+4. 健康检查接口 `GET /api/public/health` 返回正常
+5. 前端能成功请求后端接口（通过 Vite 代理）
+
+---
+
+## Phase 2：用户与鉴权 ⬜
+
+### 目标
+实现用户注册、登录、JWT 鉴权，前端完成登录注册页面。
+
+### 后端任务
+- [ ] 创建 User 实体类
+- [ ] 创建 UserMapper
+- [ ] 实现 JwtTokenProvider（生成、解析、验证 Token）
+- [ ] 实现 JwtAuthenticationFilter
+- [ ] 配置 SecurityConfig（权限规则）
+- [ ] 实现 UserDetailsServiceImpl
+- [ ] 实现 AuthService（注册、登录）
+- [ ] 实现 UserService（用户信息查询、修改）
+- [ ] 实现 AuthController（注册、登录、当前用户）
+- [ ] 实现 UserController（修改昵称、头像）
+- [ ] DTO：LoginRequest、RegisterRequest、LoginResponse、UserVO
+- [ ] 参数校验（@NotBlank、@Size 等）
+
+### 前端任务
+- [ ] 实现 auth.ts（Token 存储、获取、清除）
+- [ ] 实现 request.ts（Axios 拦截器：401 跳转登录）
+- [ ] 实现 user store（登录状态、用户信息）
+- [ ] 实现 API：user.ts（login、register、getCurrentUser、updateProfile）
+- [ ] 创建 LoginView.vue（登录表单）
+- [ ] 创建 RegisterView.vue（注册表单）
+- [ ] 配置路由守卫（未登录跳转登录页）
+- [ ] 登录成功后跳转首页
+
+### 验收标准
+1. 用户可以通过 POST /api/auth/register 注册
+2. 用户可以通过 POST /api/auth/login 登录并获得 JWT
+3. 携带 JWT 可以访问受保护接口
+4. 未携带 JWT 访问受保护接口返回 401
+5. 前端可以正常注册、登录
+6. 登录状态刷新后保持
+7. 退出登录清除 Token
+
+---
+
+## Phase 3：课程与知识点 ⬜
+
+### 目标
+实现课程和知识点的 CRUD，管理端页面可操作。
+
+### 后端任务
+- [ ] Course 实体 + Mapper + Service + Controller
+- [ ] KnowledgePoint 实体 + Mapper + Service + Controller
+- [ ] AdminCourseController（管理端课程 CRUD）
+- [ ] AdminKnowledgePointController（管理端知识点 CRUD）
+- [ ] CourseController（用户端课程列表、详情）
+- [ ] DTO：CourseCreateRequest、CourseVO、KnowledgePointCreateRequest、KnowledgePointVO
+- [ ] 知识点树形结构查询
+
+### 前端任务
+- [ ] 用户端 CourseListView.vue
+- [ ] 用户端 CourseDetailView.vue（课程下知识点列表）
+- [ ] 管理端 CourseManage.vue（课程表格 + 增删改）
+- [ ] 管理端 KnowledgePointManage.vue（知识点管理）
+- [ ] API：course.ts、knowledgePoint.ts
+
+### 验收标准
+1. 管理端可以创建、编辑、删除课程
+2. 管理端可以创建、编辑、删除知识点
+3. 知识点支持父子层级展示
+4. 用户端可以看到课程列表
+5. 课程详情页显示知识点树
+
+---
+
+## Phase 4：题库系统 ⬜
+
+### 目标
+实现题目的完整 CRUD，管理端可管理题目。
+
+### 后端任务
+- [ ] Question 实体 + Mapper + Service
+- [ ] QuestionOption 实体 + Mapper
+- [ ] QuestionKnowledgePoint 关联表 Mapper
+- [ ] AdminQuestionController（管理端题目 CRUD）
+- [ ] QuestionController（用户端查询题目）
+- [ ] 题目创建时同步创建选项和知识点关联
+- [ ] 题目查询支持按课程、知识点、题型、难度筛选
+- [ ] 题目分页查询
+
+### 前端任务
+- [ ] 管理端 QuestionManage.vue（题目列表、筛选）
+- [ ] 题目创建/编辑表单（题干、选项、解析、知识点选择、难度）
+- [ ] QuestionCard.vue 组件（题目展示）
+- [ ] API：question.ts
+
+### 验收标准
+1. 管理端可以创建各类型题目
+2. 创建题目时可以设置选项、关联知识点
+3. 题目列表支持筛选和分页
+4. 题目详情显示完整信息
+
+---
+
+## Phase 5：刷题与判分 ⬜
+
+### 目标
+用户可以进行刷题练习，系统自动判分并记录。
+
+### 后端任务
+- [ ] PracticeRecord 实体 + Mapper
+- [ ] PracticeService（获取题目、提交答案、判分）
+- [ ] PracticeController（获取练习题目、提交答案、刷题记录）
+- [ ] 判分逻辑：单选/多选/判断自动判分
+- [ ] 答题后返回正确答案和解析
+- [ ] 刷题记录查询
+
+### 前端任务
+- [ ] PracticeView.vue（选择刷题模式）
+- [ ] PracticeSessionView.vue（答题界面）
+- [ ] 答题后展示结果（对错、解析）
+- [ ] 刷题记录页面
+- [ ] API：practice.ts
+
+### 验收标准
+1. 用户可以选择按课程/知识点/随机模式刷题
+2. 提交答案后自动判分
+3. 答错题目显示正确答案和解析
+4. 刷题记录正确保存
+
+---
+
+## Phase 6：错题本 ⬜
+
+### 目标
+自动收集错题，支持错题重练和管理。
+
+### 后端任务
+- [ ] WrongQuestion 实体 + Mapper
+- [ ] WrongQuestionService（错题列表、移出、重练、掌握状态更新）
+- [ ] WrongQuestionController
+- [ ] PracticeService 中集成自动加入错题本逻辑
+- [ ] 错题按课程/知识点筛选
+- [ ] 高频错题知识点统计
+
+### 前端任务
+- [ ] WrongQuestionView.vue（错题列表）
+- [ ] 错题筛选功能
+- [ ] 错题重练功能
+- [ ] 掌握状态切换
+- [ ] API：wrongQuestion.ts
+
+### 验收标准
+1. 答错自动加入错题本
+2. 同一题不重复添加
+3. 可以手动移出错题本
+4. 可以进行错题重练
+5. 可以查看高频错题知识点
+
+---
+
+## Phase 7：试卷与考试 ⬜
+
+### 目标
+管理端可创建试卷，用户可参加考试并查看成绩。
+
+### 后端任务
+- [ ] ExamPaper、ExamQuestion、ExamRecord、ExamAnswer 实体 + Mapper
+- [ ] ExamPaperService（试卷 CRUD、组卷）
+- [ ] ExamService（开始考试、提交试卷、判分、考试记录）
+- [ ] AdminExamController（管理端试卷管理）
+- [ ] ExamController（用户端考试）
+- [ ] 手动选题和随机组卷逻辑
+
+### 前端任务
+- [ ] 管理端 ExamManage.vue（试卷管理、组卷）
+- [ ] 用户端 ExamListView.vue（试卷列表）
+- [ ] 用户端 ExamTakeView.vue（考试答题界面、倒计时）
+- [ ] 用户端 ExamResultView.vue（成绩、答题详情）
+- [ ] API：exam.ts
+
+### 验收标准
+1. 管理端可以创建试卷、手动/随机组卷
+2. 用户端可以看到已发布试卷
+3. 用户可以参加考试并提交
+4. 系统自动判分并记录成绩
+5. 用户可以查看考试结果和答题详情
+
+---
+
+## Phase 8：AI 功能 ⬜
+
+### 目标
+接入 AI Provider，实现题目解析、变式题、复习建议等功能。
+
+### 后端任务
+- [ ] AiProvider 接口
+- [ ] OpenAiProvider 实现
+- [ ] AiService（业务服务、Prompt 模板管理）
+- [ ] AiController（AI 解析、变式题、复习建议等接口）
+- [ ] AI 配置（api-base-url、api-key、model 环境变量）
+- [ ] AI 调用错误处理和降级
+- [ ] AiCallLog 实体（后期记录调用日志）
+
+### 前端任务
+- [ ] MarkdownRenderer.vue 组件
+- [ ] AI 解析展示组件
+- [ ] 变式题展示
+- [ ] 复习建议页面
+- [ ] API：ai.ts
+- [ ] AI 功能入口整合到刷题、错题本页面
+
+### 验收标准
+1. 未配置 API Key 时显示友好提示
+2. 配置后可调用 AI 生成题目解析
+3. AI 解析以 Markdown 格式渲染
+4. AI 调用超时/异常有友好提示
+5. 可以请求 AI 生成复习建议
+
+---
+
+## Phase 9：统计可视化 ⬜
+
+### 目标
+提供用户学习面板和管理端数据总览。
+
+### 后端任务
+- [ ] StatisticsService（用户统计、管理端统计）
+- [ ] StatisticsController
+- [ ] 统计接口：总刷题数、正确率、错题数、知识点掌握、每日趋势
+- [ ] 管理端统计接口：用户数、题目数、试卷数、课程分布
+
+### 前端任务
+- [ ] 用户端 HomeView.vue（学习面板、统计卡片、图表）
+- [ ] StatisticsView.vue（详细统计页面）
+- [ ] ECharts 图表：正确率趋势图、知识点雷达图
+- [ ] 管理端 AdminDashboard.vue（数据总览、图表）
+- [ ] API：statistics.ts
+
+### 验收标准
+1. 用户首页显示学习统计数据
+2. 统计页面有 ECharts 图表
+3. 管理端首页显示平台数据总览
+
+---
+
+## Phase 10：质量提升 ⬜
+
+### 目标
+代码重构、补齐校验、完善文档、优化体验。
+
+### 任务
+- [ ] 代码审查和重构
+- [ ] 参数校验补全（所有接口）
+- [ ] 接口文档补全（Knife4j 注解）
+- [ ] 前端体验优化（加载状态、错误提示、空状态）
+- [ ] 边界情况处理（重复提交、并发、空数据）
+- [ ] 日志规范化
+- [ ] SQL 优化检查
+- [ ] 安全检查（SQL 注入、XSS、越权）
+
+---
+
+## Phase 11：部署与简历材料 ⬜
+
+### 目标
+完善部署流程，产出简历和面试材料。
+
+### 任务
+- [ ] Docker Compose 完善（环境变量、健康检查）
+- [ ] README.md 完善（截图、启动说明、常见问题）
+- [ ] 项目截图制作
+- [ ] 演示流程文档
+- [ ] docs/RESUME.md 完善
+- [ ] 面试问答整理
+- [ ] 技术亮点总结
+- [ ] 后续扩展方向文档
+- [ ] Git 历史整理
