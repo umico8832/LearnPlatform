@@ -51,9 +51,17 @@ router.beforeEach((to, _from, next) => {
     document.title = `${title} - AI 题库与错题复习系统`
   }
 
-  // 检查是否需要登录
+  const loggedIn = isAuthenticated()
+
+  // 已登录用户访问登录/注册页，跳转首页
+  if (loggedIn && (to.path === '/login' || to.path === '/register')) {
+    next({ path: '/' })
+    return
+  }
+
+  // 未登录访问需认证页面，跳转登录页
   const requiresAuth = to.meta.requiresAuth !== false
-  if (requiresAuth && !isAuthenticated()) {
+  if (requiresAuth && !loggedIn) {
     next({ path: '/login', query: { redirect: to.fullPath } })
   } else {
     next()

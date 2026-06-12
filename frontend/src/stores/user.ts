@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { UserInfo } from '@/types/user'
 import { getToken, setToken, removeToken } from '@/utils/auth'
+import request from '@/utils/request'
+import type { ApiResponse } from '@/types/api'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref<string | null>(getToken())
@@ -26,6 +28,19 @@ export const useUserStore = defineStore('user', () => {
   }
 
   /**
+   * 获取当前用户信息（页面刷新后调用）
+   */
+  async function fetchUserInfo() {
+    if (!token.value) return
+    try {
+      const res = await request.get<ApiResponse<UserInfo>>('/auth/me')
+      userInfo.value = res.data.data
+    } catch {
+      clearLoginInfo()
+    }
+  }
+
+  /**
    * 是否已登录
    */
   const isLoggedIn = () => !!token.value
@@ -35,6 +50,7 @@ export const useUserStore = defineStore('user', () => {
     userInfo,
     setLoginInfo,
     clearLoginInfo,
+    fetchUserInfo,
     isLoggedIn,
   }
 })

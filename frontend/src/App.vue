@@ -3,7 +3,17 @@
 </template>
 
 <script setup lang="ts">
-// 根组件，通过 router-view 渲染页面
+import { onMounted } from 'vue'
+import { useUserStore } from '@/stores/user'
+import { isAuthenticated } from '@/utils/auth'
+
+// 页面刷新时恢复用户信息
+const userStore = useUserStore()
+onMounted(() => {
+  if (isAuthenticated()) {
+    userStore.fetchUserInfo()
+  }
+})
 </script>
 
 <style>

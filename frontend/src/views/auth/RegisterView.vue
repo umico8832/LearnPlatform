@@ -33,13 +33,11 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { User, Lock, UserFilled } from '@element-plus/icons-vue'
-import { useUserStore } from '@/stores/user'
 import request from '@/utils/request'
-import type { LoginResponse } from '@/types/user'
+import type { UserInfo } from '@/types/user'
 import type { ApiResponse } from '@/types/api'
 
 const router = useRouter()
-const userStore = useUserStore()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 
@@ -80,15 +78,13 @@ async function handleRegister() {
 
   loading.value = true
   try {
-    const res = await request.post<ApiResponse<LoginResponse>>('/auth/register', {
+    await request.post<ApiResponse<UserInfo>>('/auth/register', {
       username: form.username,
       password: form.password,
       nickname: form.nickname || undefined,
     })
-    const { token, user } = res.data.data
-    userStore.setLoginInfo(token, user)
-    ElMessage.success('注册成功')
-    router.push('/')
+    ElMessage.success('注册成功，请登录')
+    router.push('/login')
   } catch {
     // 错误已在拦截器中处理
   } finally {
