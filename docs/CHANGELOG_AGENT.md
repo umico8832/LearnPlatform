@@ -145,6 +145,68 @@ Phase 0：项目规划
 
 ---
 
+## Round 3 - 2026-06-12
+
+### 阶段
+Phase 1：项目骨架验证 → Phase 2：用户与鉴权准备
+
+### 本轮目标
+安装开发环境，修复编译错误，验证 Phase 1 骨架可运行，进入 Phase 2。
+
+### 完成内容
+
+#### 1. 开发环境安装
+- 通过 Homebrew 安装 Maven 3.9.16 和 Node.js（已有 v22.21.0 via nvm）
+- 启动本地 MySQL 8.0.43（/usr/local/mysql）
+- 创建 learn_platform 数据库并导入 schema.sql
+
+#### 2. 移除 Lombok（JDK 26 兼容性修复）
+- JDK 26 与 Spring Boot 3.2.5 管理的 Lombok 版本不兼容，注解处理器无法工作
+- 从 pom.xml 移除 Lombok 依赖
+- 手动重写 ResultCode.java（添加构造器、getter）
+- 手动重写 R.java（添加 getter/setter）
+- 手动重写 BusinessException.java（添加 getCode()）
+- 重写 GlobalExceptionHandler.java（用 SLF4J Logger 替代 @Slf4j）
+
+#### 3. Phase 1 验收通过
+- [x] 后端 `mvn clean compile` 编译成功
+- [x] 后端 `mvn spring-boot:run` 启动成功（0.688s）
+- [x] 健康检查 `GET /api/public/health` 返回 `{"code":0,"message":"success","data":{"status":"UP"}}`
+- [x] 前端 `npm run dev` 启动成功（Vite v5.4.21，507ms）
+- [x] Vite 代理 `localhost:5173/api/public/health` 透传后端成功
+
+#### 4. 文档更新
+- 更新 docs/ROADMAP.md：Phase 1 状态改为 ✅ 已完成
+
+### 修改文件清单
+| 文件 | 操作 |
+|------|------|
+| backend/pom.xml | 修改（移除 Lombok 依赖） |
+| backend/src/main/java/com/learnplatform/common/result/ResultCode.java | 修改（手写构造器和 getter） |
+| backend/src/main/java/com/learnplatform/common/result/R.java | 修改（手写 getter/setter） |
+| backend/src/main/java/com/learnplatform/common/exception/BusinessException.java | 修改（手写 getCode()） |
+| backend/src/main/java/com/learnplatform/common/exception/GlobalExceptionHandler.java | 修改（SLF4J Logger 替代 @Slf4j） |
+| docs/ROADMAP.md | 修改（Phase 1 状态更新） |
+
+### 验收结果
+- [x] 开发环境就绪（JDK 26、Maven 3.9.16、Node v22、MySQL 8.0）
+- [x] 后端编译通过（移除 Lombok 后）
+- [x] 后端启动成功，健康检查接口正常
+- [x] 前端启动成功，Vite 代理正常
+- [x] Phase 1 全部验收标准通过
+
+### 遗留问题
+- README.md Phase 1 启动说明待更新（与实际环境一致）
+- schema.sql 中 BCrypt 密码哈希值需在 Phase 2 验证
+
+### 下轮建议
+- 进入 Phase 2：用户与鉴权
+- 后端：User 实体、UserMapper、JwtTokenProvider、AuthService、AuthController
+- 前端：API 封装、user store 完善、登录/注册页面接真实接口
+- 建议 commit message: `docs(roadmap): Phase 1 项目骨架验证完成，进入 Phase 2`
+
+---
+
 ## Round 2 - 2026-06-12
 
 ### 阶段
