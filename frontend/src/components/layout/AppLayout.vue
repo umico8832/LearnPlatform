@@ -20,6 +20,23 @@
           <el-icon><Reading /></el-icon>
           <span>课程列表</span>
         </el-menu-item>
+
+        <template v-if="isAdmin">
+          <el-sub-menu index="admin">
+            <template #title>
+              <el-icon><Setting /></el-icon>
+              <span>后台管理</span>
+            </template>
+            <el-menu-item index="/admin/courses">
+              <el-icon><Collection /></el-icon>
+              <span>课程管理</span>
+            </el-menu-item>
+            <el-menu-item index="/admin/knowledge-points">
+              <el-icon><Notebook /></el-icon>
+              <span>知识点管理</span>
+            </el-menu-item>
+          </el-sub-menu>
+        </template>
       </el-menu>
     </el-aside>
 
@@ -61,7 +78,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { HomeFilled, Reading } from '@element-plus/icons-vue'
+import { HomeFilled, Reading, Setting, Collection, Notebook } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -69,6 +86,7 @@ const userStore = useUserStore()
 
 const activeMenu = computed(() => route.path)
 const userInfo = computed(() => userStore.userInfo)
+const isAdmin = computed(() => userStore.userInfo?.role === 'ADMIN')
 
 function handleCommand(command: string) {
   if (command === 'logout') {

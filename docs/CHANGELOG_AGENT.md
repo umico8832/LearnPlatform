@@ -145,6 +145,91 @@ Phase 0：项目规划
 
 ---
 
+## Round 4 - 2026-06-13
+
+### 阶段
+Phase 3：课程与知识点（前端部分）
+
+### 本轮目标
+完成 Phase 3 前端页面：课程详情页（显示知识点树）、管理端课程管理页面、管理端知识点管理页面。
+
+### 完成内容
+
+#### 1. 前端 API 模块
+- `frontend/src/api/course.ts` - 课程相关 API（列表、详情、创建、更新、删除）
+- `frontend/src/api/knowledgePoint.ts` - 知识点相关 API（树形查询、创建、更新、删除）
+
+#### 2. 课程详情页
+- `frontend/src/views/course/CourseDetailView.vue` - 用户端课程详情页
+  - 显示课程基本信息（名称、描述）
+  - 使用 el-tree 组件展示知识点树形结构
+  - 统计知识点总数
+  - 区分文件夹/叶子节点图标
+
+#### 3. 管理端课程管理页面
+- `frontend/src/views/admin/CourseManage.vue` - 课程 CRUD 管理
+  - 课程表格展示（ID、名称、描述、排序、状态、创建时间）
+  - 搜索功能
+  - 新增/编辑弹窗（表单校验）
+  - 删除确认（Popconfirm）
+  - 跳转到对应课程的知识点管理
+
+#### 4. 管理端知识点管理页面
+- `frontend/src/views/admin/KnowledgePointManage.vue` - 知识点 CRUD 管理
+  - 树形结构展示所有知识点
+  - 支持添加子知识点
+  - 编辑/删除操作
+  - 父知识点选择器（el-tree-select，排除自身及子节点）
+  - 空状态引导
+
+#### 5. 路由和导航更新
+- `frontend/src/router/index.ts` - 新增路由
+  - `/courses/:id` - 课程详情页
+  - `/admin/courses` - 管理端课程管理
+  - `/admin/knowledge-points` - 管理端知识点管理
+- `frontend/src/components/layout/AppLayout.vue` - 侧边栏更新
+  - 新增"后台管理"子菜单（仅 ADMIN 角色可见）
+  - 包含课程管理和知识点管理菜单项
+  - 添加 isAdmin 计算属性
+
+#### 6. 文档更新
+- `docs/ROADMAP.md` - Phase 3 状态更新为 🔵 进行中，所有任务标记完成
+
+### 修改文件清单
+| 文件 | 操作 |
+|------|------|
+| frontend/src/api/course.ts | 新建 |
+| frontend/src/api/knowledgePoint.ts | 新建 |
+| frontend/src/views/course/CourseDetailView.vue | 新建 |
+| frontend/src/views/admin/CourseManage.vue | 新建 |
+| frontend/src/views/admin/KnowledgePointManage.vue | 新建 |
+| frontend/src/router/index.ts | 修改（添加路由） |
+| frontend/src/components/layout/AppLayout.vue | 修改（添加管理端菜单） |
+| docs/ROADMAP.md | 修改（Phase 3 状态更新） |
+| docs/CHANGELOG_AGENT.md | 修改（添加本轮记录） |
+
+### 验收结果
+- [x] API 模块封装完整，类型定义清晰
+- [x] 课程详情页显示课程信息和知识点树
+- [x] 管理端课程管理支持增删改查
+- [x] 管理端知识点管理支持树形展示和 CRUD
+- [x] 知识点支持父子层级展示（el-tree）
+- [x] 侧边栏管理端菜单仅 ADMIN 可见
+- [x] 路由配置正确
+
+### 遗留问题
+- 管理端路由未做角色守卫（前端仅隐藏菜单，后端需配合权限校验）
+- 知识点拖拽排序功能未实现后端持久化
+- el-table 的 TS 类型兼容问题通过 `as` 类型断言处理
+
+### 下轮建议
+- 进入 Phase 4：题库系统
+- 后端：Question、QuestionOption 实体 + Mapper + Service + Controller
+- 前端：管理端题目管理页面、题目创建/编辑表单
+- 建议 commit message: `feat(frontend): 完成 Phase 3 前端课程详情页和管理端页面`
+
+---
+
 ## Round 3 - 2026-06-12
 
 ### 阶段

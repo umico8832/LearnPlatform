@@ -7,7 +7,7 @@
 | 0 | 项目规划 | ✅ 已完成 | 0.5天 | 文档产出 |
 | 1 | 项目骨架 | ✅ 已完成 | 1天 | 前后端骨架 + Docker |
 | 2 | 用户与鉴权 | 🔵 进行中 | 1.5天 | 注册登录 + JWT |
-| 3 | 课程与知识点 | ⬜ 待开始 | 1天 | CRUD + 前端页面 |
+| 3 | 课程与知识点 | 🔵 进行中 | 1天 | CRUD + 前端页面 |
 | 4 | 题库系统 | ⬜ 待开始 | 2天 | 题目 CRUD + 前端 |
 | 5 | 刷题与判分 | ⬜ 待开始 | 2天 | 答题 + 判分 + 记录 |
 | 6 | 错题本 | ⬜ 待开始 | 1.5天 | 错题收集 + 重练 |
@@ -126,26 +126,26 @@
 
 ---
 
-## Phase 3：课程与知识点 ⬜
+## Phase 3：课程与知识点 🔵
 
 ### 目标
 实现课程和知识点的 CRUD，管理端页面可操作。
 
 ### 后端任务
-- [ ] Course 实体 + Mapper + Service + Controller
-- [ ] KnowledgePoint 实体 + Mapper + Service + Controller
-- [ ] AdminCourseController（管理端课程 CRUD）
-- [ ] AdminKnowledgePointController（管理端知识点 CRUD）
-- [ ] CourseController（用户端课程列表、详情）
-- [ ] DTO：CourseCreateRequest、CourseVO、KnowledgePointCreateRequest、KnowledgePointVO
-- [ ] 知识点树形结构查询
+- [x] Course 实体 + Mapper + Service + Controller
+- [x] KnowledgePoint 实体 + Mapper + Service + Controller
+- [x] AdminCourseController（管理端课程 CRUD）
+- [x] AdminKnowledgePointController（管理端知识点 CRUD）
+- [x] CourseController（用户端课程列表、详情）
+- [x] DTO：CourseCreateRequest、CourseVO、KnowledgePointCreateRequest、KnowledgePointVO
+- [x] 知识点树形结构查询
 
 ### 前端任务
-- [ ] 用户端 CourseListView.vue
-- [ ] 用户端 CourseDetailView.vue（课程下知识点列表）
-- [ ] 管理端 CourseManage.vue（课程表格 + 增删改）
-- [ ] 管理端 KnowledgePointManage.vue（知识点管理）
-- [ ] API：course.ts、knowledgePoint.ts
+- [x] 用户端 CourseListView.vue
+- [x] 用户端 CourseDetailView.vue（课程下知识点列表）
+- [x] 管理端 CourseManage.vue（课程表格 + 增删改）
+- [x] 管理端 KnowledgePointManage.vue（知识点管理）
+- [x] API：course.ts、knowledgePoint.ts
 
 ### 验收标准
 1. 管理端可以创建、编辑、删除课程
