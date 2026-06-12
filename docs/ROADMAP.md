@@ -7,8 +7,8 @@
 | 0 | 项目规划 | ✅ 已完成 | 0.5天 | 文档产出 |
 | 1 | 项目骨架 | ✅ 已完成 | 1天 | 前后端骨架 + Docker |
 | 2 | 用户与鉴权 | 🔵 进行中 | 1.5天 | 注册登录 + JWT |
-| 3 | 课程与知识点 | 🔵 进行中 | 1天 | CRUD + 前端页面 |
-| 4 | 题库系统 | ⬜ 待开始 | 2天 | 题目 CRUD + 前端 |
+| 3 | 课程与知识点 | ✅ 已完成 | 1天 | CRUD + 前端页面 |
+| 4 | 题库系统 | 🔵 进行中 | 2天 | 题目 CRUD + 前端 |
 | 5 | 刷题与判分 | ⬜ 待开始 | 2天 | 答题 + 判分 + 记录 |
 | 6 | 错题本 | ⬜ 待开始 | 1.5天 | 错题收集 + 重练 |
 | 7 | 试卷与考试 | ⬜ 待开始 | 2.5天 | 组卷 + 考试 + 成绩 |
@@ -126,7 +126,7 @@
 
 ---
 
-## Phase 3：课程与知识点 🔵
+## Phase 3：课程与知识点 ✅
 
 ### 目标
 实现课程和知识点的 CRUD，管理端页面可操作。
@@ -156,26 +156,26 @@
 
 ---
 
-## Phase 4：题库系统 ⬜
+## Phase 4：题库系统 🔵
 
 ### 目标
 实现题目的完整 CRUD，管理端可管理题目。
 
 ### 后端任务
-- [ ] Question 实体 + Mapper + Service
-- [ ] QuestionOption 实体 + Mapper
-- [ ] QuestionKnowledgePoint 关联表 Mapper
-- [ ] AdminQuestionController（管理端题目 CRUD）
-- [ ] QuestionController（用户端查询题目）
-- [ ] 题目创建时同步创建选项和知识点关联
-- [ ] 题目查询支持按课程、知识点、题型、难度筛选
-- [ ] 题目分页查询
+- [x] Question 实体 + Mapper + Service
+- [x] QuestionOption 实体 + Mapper
+- [x] QuestionKnowledgePoint 关联表 Mapper
+- [x] AdminQuestionController（管理端题目 CRUD）
+- [x] QuestionController（用户端查询题目）
+- [x] 题目创建时同步创建选项和知识点关联
+- [x] 题目查询支持按课程、知识点、题型、难度筛选
+- [x] 题目分页查询
 
 ### 前端任务
-- [ ] 管理端 QuestionManage.vue（题目列表、筛选）
-- [ ] 题目创建/编辑表单（题干、选项、解析、知识点选择、难度）
-- [ ] QuestionCard.vue 组件（题目展示）
-- [ ] API：question.ts
+- [x] 管理端 QuestionManage.vue（题目列表、筛选）
+- [x] 题目创建/编辑表单（题干、选项、解析、知识点选择、难度）
+- [x] QuestionCard.vue 组件（题目展示 - QuestionListView.vue）
+- [x] API：question.ts
 
 ### 验收标准
 1. 管理端可以创建各类型题目

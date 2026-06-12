@@ -14,6 +14,122 @@
 
 ---
 
+## Round 5 - 2026-06-13
+
+### 阶段
+Phase 4：题库系统
+
+### 本轮目标
+完成 Phase 4 题库系统：后端题目 CRUD 全栈实现，前端管理端题目管理页面和用户端题库页面。
+
+### 完成内容
+
+#### 1. 后端实体类
+- `Question.java` - 题目实体（id、content、questionType、courseId、difficulty、analysis、tags、score、status、createBy）
+- `QuestionOption.java` - 题目选项实体（id、questionId、content、optionLabel、isCorrect、sortOrder）
+- `QuestionKnowledgePoint.java` - 题目-知识点关联实体（id、questionId、knowledgePointId）
+
+#### 2. 后端 Mapper
+- `QuestionMapper.java` - 题目 Mapper
+- `QuestionOptionMapper.java` - 题目选项 Mapper
+- `QuestionKnowledgePointMapper.java` - 题目-知识点关联 Mapper
+
+#### 3. 后端 DTO
+- `QuestionVO.java` - 题目 VO（含选项列表、知识点 ID 列表、知识点名称列表、课程名称）
+- `QuestionOptionVO.java` - 题目选项 VO
+- `QuestionCreateRequest.java` - 创建/更新题目请求 DTO（含 OptionItem 内部类）
+
+#### 4. 后端 Service
+- `QuestionService.java` - 题目服务
+  - 分页查询题目（管理端/用户端）
+  - 获取题目详情（含选项和知识点关联）
+  - 创建题目（事务：题目 + 选项 + 知识点关联）
+  - 更新题目（事务：更新基本信息 + 先删后插选项/知识点关联）
+  - 删除题目（事务：级联删除选项和知识点关联）
+
+#### 5. 后端 Controller
+- `AdminQuestionController.java` - 管理端题目 CRUD（GET/POST/PUT/DELETE）
+- `QuestionController.java` - 用户端题目查询（GET 列表、GET 详情）
+
+#### 6. 前端 API
+- `frontend/src/api/question.ts` - 题目相关 API 封装（类型定义 + 7 个接口方法）
+
+#### 7. 前端管理端页面
+- `frontend/src/views/admin/QuestionManage.vue` - 题目管理页面
+  - 题目列表表格（ID、题干、题型、课程、难度、分值、状态、创建时间）
+  - 多维度筛选（关键词、题型、课程、难度）
+  - 分页功能
+  - 新增/编辑题目弹窗（780px 宽）
+  - 选项动态编辑（支持添加/删除选项、设置正确答案）
+  - 题型切换自动重置选项（判断题自动填充正确/错误）
+  - 关联知识点树形选择器
+  - 难度星级评分、分值、标签输入
+  - 题目解析输入
+
+#### 8. 前端用户端页面
+- `frontend/src/views/course/QuestionListView.vue` - 题库浏览页面
+  - 题目卡片展示（题型标签、课程名、难度、分值）
+  - 选项列表展示
+  - 知识点标签展示
+  - 多维度筛选（题型、课程、难度）
+  - 分页功能
+
+#### 9. 路由和导航更新
+- `frontend/src/router/index.ts` - 新增路由
+  - `/questions` - 用户端题库页面
+  - `/admin/questions` - 管理端题目管理
+- `frontend/src/components/layout/AppLayout.vue` - 侧边栏更新
+  - 用户端新增"题库"菜单项
+  - 管理端新增"题目管理"菜单项
+
+#### 10. 文档更新
+- `docs/ROADMAP.md` - Phase 3 标记为 ✅ 已完成，Phase 4 标记为 🔵 进行中，所有任务标记完成
+
+### 修改文件清单
+| 文件 | 操作 |
+|------|------|
+| backend/src/main/java/com/learnplatform/entity/Question.java | 新建 |
+| backend/src/main/java/com/learnplatform/entity/QuestionOption.java | 新建 |
+| backend/src/main/java/com/learnplatform/entity/QuestionKnowledgePoint.java | 新建 |
+| backend/src/main/java/com/learnplatform/mapper/QuestionMapper.java | 新建 |
+| backend/src/main/java/com/learnplatform/mapper/QuestionOptionMapper.java | 新建 |
+| backend/src/main/java/com/learnplatform/mapper/QuestionKnowledgePointMapper.java | 新建 |
+| backend/src/main/java/com/learnplatform/dto/QuestionVO.java | 新建 |
+| backend/src/main/java/com/learnplatform/dto/QuestionOptionVO.java | 新建 |
+| backend/src/main/java/com/learnplatform/dto/QuestionCreateRequest.java | 新建 |
+| backend/src/main/java/com/learnplatform/service/QuestionService.java | 新建 |
+| backend/src/main/java/com/learnplatform/controller/AdminQuestionController.java | 新建 |
+| backend/src/main/java/com/learnplatform/controller/QuestionController.java | 新建 |
+| frontend/src/api/question.ts | 新建 |
+| frontend/src/views/admin/QuestionManage.vue | 新建 |
+| frontend/src/views/course/QuestionListView.vue | 新建 |
+| frontend/src/router/index.ts | 修改（添加路由） |
+| frontend/src/components/layout/AppLayout.vue | 修改（添加菜单项） |
+| docs/ROADMAP.md | 修改（Phase 3→✅，Phase 4→🔵） |
+| docs/CHANGELOG_AGENT.md | 修改（添加本轮记录） |
+
+### 验收结果
+- [x] 后端编译通过（mvn clean compile BUILD SUCCESS）
+- [x] 管理端可以创建各类型题目（单选/多选/判断/填空/简答）
+- [x] 创建题目时可以设置选项、关联知识点
+- [x] 题目列表支持筛选和分页
+- [x] 题目详情显示完整信息（选项、知识点、课程名）
+- [x] 用户端题库页面卡片式展示题目
+- [x] 侧边栏菜单正确显示题库和题目管理入口
+
+### 遗留问题
+- el-tree-select 的 `value` prop 类型需用 `as any` 断言处理
+- QuestionManage.vue 中 fetchKPTree 不传 courseId 时需清空树数据
+- 管理端路由未做前端角色守卫（仅隐藏菜单，后端 `/api/admin/**` 已做 ADMIN 角色校验）
+
+### 下轮建议
+- 进入 Phase 5：刷题与判分
+- 后端：PracticeRecord 实体 + PracticeService + PracticeController
+- 前端：PracticeView.vue（答题界面）、PracticeSessionView.vue
+- 建议 commit message: `feat(question): 完成 Phase 4 题库系统后端和前端`
+
+---
+
 ## Round 1 - 2026-06-12
 
 ### 阶段

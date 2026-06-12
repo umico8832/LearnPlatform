@@ -38,6 +38,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/course/CourseDetailView.vue'),
         meta: { title: '课程详情' },
       },
+      {
+        path: 'questions',
+        name: 'QuestionList',
+        component: () => import('@/views/course/QuestionListView.vue'),
+        meta: { title: '题库' },
+      },
       // 管理端路由
       {
         path: 'admin/courses',
@@ -50,6 +56,12 @@ const routes: RouteRecordRaw[] = [
         name: 'AdminKPManage',
         component: () => import('@/views/admin/KnowledgePointManage.vue'),
         meta: { title: '知识点管理', requiresAdmin: true },
+      },
+      {
+        path: 'admin/questions',
+        name: 'AdminQuestionManage',
+        component: () => import('@/views/admin/QuestionManage.vue'),
+        meta: { title: '题目管理', requiresAdmin: true },
       },
     ],
   },

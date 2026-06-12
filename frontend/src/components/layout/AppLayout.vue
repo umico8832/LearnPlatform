@@ -20,6 +20,10 @@
           <el-icon><Reading /></el-icon>
           <span>课程列表</span>
         </el-menu-item>
+        <el-menu-item index="/questions">
+          <el-icon><EditPen /></el-icon>
+          <span>题库</span>
+        </el-menu-item>
 
         <template v-if="isAdmin">
           <el-sub-menu index="admin">
@@ -34,6 +38,10 @@
             <el-menu-item index="/admin/knowledge-points">
               <el-icon><Notebook /></el-icon>
               <span>知识点管理</span>
+            </el-menu-item>
+            <el-menu-item index="/admin/questions">
+              <el-icon><EditPen /></el-icon>
+              <span>题目管理</span>
             </el-menu-item>
           </el-sub-menu>
         </template>
@@ -78,7 +86,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { HomeFilled, Reading, Setting, Collection, Notebook } from '@element-plus/icons-vue'
+import { HomeFilled, Reading, Setting, Collection, Notebook, EditPen } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
