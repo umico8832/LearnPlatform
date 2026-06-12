@@ -1,7 +1,5 @@
 package com.learnplatform.common.result;
 
-import lombok.Data;
-
 import java.io.Serializable;
 
 /**
@@ -9,7 +7,6 @@ import java.io.Serializable;
  *
  * @param <T> 数据类型
  */
-@Data
 public class R<T> implements Serializable {
 
     private int code;
@@ -22,6 +19,30 @@ public class R<T> implements Serializable {
     private R(int code, String message, T data) {
         this.code = code;
         this.message = message;
+        this.data = data;
+    }
+
+    public int getCode() {
+        return code;
+    }
+
+    public void setCode(int code) {
+        this.code = code;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public T getData() {
+        return data;
+    }
+
+    public void setData(T data) {
         this.data = data;
     }
 

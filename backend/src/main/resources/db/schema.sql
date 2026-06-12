@@ -245,11 +245,11 @@ CREATE TABLE IF NOT EXISTS `ai_call_log` (
 
 -- 管理员账号（密码: admin123）
 INSERT INTO `user` (`username`, `password`, `nickname`, `role`, `status`) VALUES
-('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '管理员', 'ADMIN', 1);
+('admin', '$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36PsLMZGp0XPSFLEHKZkQXG', '管理员', 'ADMIN', 1);
 
 -- 测试用户（密码: test123）
 INSERT INTO `user` (`username`, `password`, `nickname`, `role`, `status`) VALUES
-('testuser', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '测试用户', 'USER', 1);
+('testuser', '$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36PsLMZGp0XPSFLEHKZkQXG', '测试用户', 'USER', 1);
 
 -- 示例课程
 INSERT INTO `course` (`name`, `description`, `sort_order`) VALUES

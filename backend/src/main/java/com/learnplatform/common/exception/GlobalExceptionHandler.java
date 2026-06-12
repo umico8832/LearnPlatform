@@ -2,7 +2,8 @@ package com.learnplatform.common.exception;
 
 import com.learnplatform.common.result.R;
 import com.learnplatform.common.result.ResultCode;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -19,9 +20,10 @@ import java.util.stream.Collectors;
 /**
  * 全局异常处理器
  */
-@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /**
      * 业务异常
