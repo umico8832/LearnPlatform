@@ -12,9 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -42,6 +40,7 @@ public class WrongQuestionService {
      */
     @Transactional
     public void addWrongQuestion(Long userId, Long questionId, String userAnswer) {
+        log.info("加入错题本: userId={}, questionId={}", userId, questionId);
         LambdaQueryWrapper<WrongQuestion> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(WrongQuestion::getUserId, userId)
                .eq(WrongQuestion::getQuestionId, questionId);
@@ -67,7 +66,7 @@ public class WrongQuestionService {
     }
 
     /**
-     * 获取用户错题本（分页）
+     * 获取用户错题本（分页）- 使用批量查询优化 N+1
      */
     public Page<WrongQuestionVO> getWrongQuestions(Long userId, int pageNum, int pageSize,
                                                     Long courseId, Integer masteryLevel) {
@@ -81,8 +80,36 @@ public class WrongQuestionService {
 
         Page<WrongQuestion> result = wrongQuestionMapper.selectPage(page, wrapper);
 
+        // 批量加载关联的 Question（避免 N+1）
+        List<Long> questionIds = result.getRecords().stream()
+                .map(WrongQuestion::getQuestionId).distinct().collect(Collectors.toList());
+        Map<Long, Question> questionMap = new HashMap<>();
+        if (!questionIds.isEmpty()) {
+            LambdaQueryWrapper<Question> qWrapper = new LambdaQueryWrapper<>();
+            qWrapper.in(Question::getId, questionIds);
+            questionMapper.selectList(qWrapper).forEach(q -> questionMap.put(q.getId(), q));
+        }
+
+        // 批量加载关联的 Course（避免 N+1）
+        Set<Long> courseIds = questionMap.values().stream()
+                .map(Question::getCourseId).filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<Long, Course> courseMap = new HashMap<>();
+        if (!courseIds.isEmpty()) {
+            LambdaQueryWrapper<Course> cWrapper = new LambdaQueryWrapper<>();
+            cWrapper.in(Course::getId, courseIds);
+            courseMapper.selectList(cWrapper).forEach(c -> courseMap.put(c.getId(), c));
+        }
+
+        // 如果指定了 courseId，先过滤 questionIds
+        final Set<Long> filteredQuestionIds = courseId != null
+                ? questionMap.entrySet().stream()
+                        .filter(e -> courseId.equals(e.getValue().getCourseId()))
+                        .map(Map.Entry::getKey).collect(Collectors.toSet())
+                : null;
+
         Page<WrongQuestionVO> voPage = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
         voPage.setRecords(result.getRecords().stream()
+                .filter(wq -> filteredQuestionIds == null || filteredQuestionIds.contains(wq.getQuestionId()))
                 .map(wq -> {
                     WrongQuestionVO vo = new WrongQuestionVO();
                     vo.setId(wq.getId());
@@ -93,24 +120,18 @@ public class WrongQuestionService {
                     vo.setCreateTime(wq.getCreateTime());
                     vo.setUpdateTime(wq.getUpdateTime());
 
-                    Question question = questionMapper.selectById(wq.getQuestionId());
+                    Question question = questionMap.get(wq.getQuestionId());
                     if (question != null) {
                         vo.setQuestionContent(question.getContent());
                         vo.setQuestionType(question.getQuestionType());
                         vo.setCourseId(question.getCourseId());
                         vo.setDifficulty(question.getDifficulty());
-                        Course course = courseMapper.selectById(question.getCourseId());
+                        Course course = courseMap.get(question.getCourseId());
                         if (course != null) {
                             vo.setCourseName(course.getName());
                         }
                     }
                     return vo;
-                })
-                .filter(vo -> {
-                    if (courseId != null) {
-                        return courseId.equals(vo.getCourseId());
-                    }
-                    return true;
                 })
                 .collect(Collectors.toList()));
 
@@ -135,6 +156,7 @@ public class WrongQuestionService {
      */
     @Transactional
     public void removeWrongQuestion(Long id, Long userId) {
+        log.info("移出错题本: userId={}, id={}", userId, id);
         WrongQuestion wq = wrongQuestionMapper.selectById(id);
         if (wq == null || !wq.getUserId().equals(userId)) {
             throw new BusinessException(ResultCode.NOT_FOUND, "错题记录不存在");
@@ -147,6 +169,7 @@ public class WrongQuestionService {
      */
     @Transactional
     public void removeOnCorrect(Long userId, Long questionId) {
+        log.info("答对自动移出错题本: userId={}, questionId={}", userId, questionId);
         LambdaQueryWrapper<WrongQuestion> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(WrongQuestion::getUserId, userId)
                .eq(WrongQuestion::getQuestionId, questionId);
@@ -157,7 +180,7 @@ public class WrongQuestionService {
     }
 
     /**
-     * 获取错题本统计
+     * 获取错题本统计 - 使用批量查询优化 N+1
      */
     public Map<String, Object> getWrongQuestionStats(Long userId) {
         LambdaQueryWrapper<WrongQuestion> wrapper = new LambdaQueryWrapper<>();
@@ -169,11 +192,30 @@ public class WrongQuestionService {
         int partial = (int) list.stream().filter(w -> w.getMasteryLevel() != null && w.getMasteryLevel() == 1).count();
         int mastered = (int) list.stream().filter(w -> w.getMasteryLevel() != null && w.getMasteryLevel() == 2).count();
 
+        // 批量加载 Question（避免 N+1）
+        List<Long> questionIds = list.stream().map(WrongQuestion::getQuestionId).distinct().collect(Collectors.toList());
+        Map<Long, Question> questionMap = new HashMap<>();
+        if (!questionIds.isEmpty()) {
+            LambdaQueryWrapper<Question> qWrapper = new LambdaQueryWrapper<>();
+            qWrapper.in(Question::getId, questionIds);
+            questionMapper.selectList(qWrapper).forEach(q -> questionMap.put(q.getId(), q));
+        }
+
+        // 批量加载 Course（避免 N+1）
+        Set<Long> courseIds = questionMap.values().stream()
+                .map(Question::getCourseId).filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<Long, Course> courseMap = new HashMap<>();
+        if (!courseIds.isEmpty()) {
+            LambdaQueryWrapper<Course> cWrapper = new LambdaQueryWrapper<>();
+            cWrapper.in(Course::getId, courseIds);
+            courseMapper.selectList(cWrapper).forEach(c -> courseMap.put(c.getId(), c));
+        }
+
         Map<String, Integer> courseWrongCount = new HashMap<>();
         for (WrongQuestion wq : list) {
-            Question q = questionMapper.selectById(wq.getQuestionId());
+            Question q = questionMap.get(wq.getQuestionId());
             if (q != null) {
-                Course c = courseMapper.selectById(q.getCourseId());
+                Course c = courseMap.get(q.getCourseId());
                 if (c != null) {
                     courseWrongCount.merge(c.getName(), 1, Integer::sum);
                 }

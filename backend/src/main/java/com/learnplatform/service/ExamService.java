@@ -70,6 +70,7 @@ public class ExamService {
      */
     @Transactional
     public ExamRecordVO startExam(Long examPaperId, Long userId) {
+        log.info("开始考试: userId={}, examPaperId={}", userId, examPaperId);
         ExamPaper paper = examPaperMapper.selectById(examPaperId);
         if (paper == null) throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
         if (paper.getStatus() == null || paper.getStatus() != 1) {
@@ -92,6 +93,7 @@ public class ExamService {
      */
     @Transactional
     public ExamRecordVO submitExam(ExamSubmitRequest request, Long userId) {
+        log.info("提交考试: userId={}, examRecordId={}", userId, request.getExamRecordId());
         ExamRecord record = examRecordMapper.selectById(request.getExamRecordId());
         if (record == null) throw new BusinessException(ResultCode.NOT_FOUND, "考试记录不存在");
         if (!record.getUserId().equals(userId)) throw new BusinessException(ResultCode.FORBIDDEN, "无权操作");
@@ -159,6 +161,7 @@ public class ExamService {
         }
 
         // 更新考试记录
+        log.info("考试判分完成: userId={}, examRecordId={}, score={}/{}", userId, record.getId(), earnedScore, totalScore);
         record.setEndTime(LocalDateTime.now());
         record.setScore(earnedScore);
         record.setTotalScore(totalScore > 0 ? totalScore : paper.getTotalScore());

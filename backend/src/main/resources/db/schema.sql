@@ -127,7 +127,8 @@ CREATE TABLE IF NOT EXISTS `practice_record` (
   PRIMARY KEY (`id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_question_id` (`question_id`),
-  KEY `idx_create_time` (`create_time`)
+  KEY `idx_create_time` (`create_time`),
+  KEY `idx_user_create` (`user_id`, `create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='刷题记录表';
 
 -- ========================================
@@ -146,7 +147,9 @@ CREATE TABLE IF NOT EXISTS `wrong_question` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_user_question` (`user_id`, `question_id`),
   KEY `idx_user_id` (`user_id`),
-  KEY `idx_question_id` (`question_id`)
+  KEY `idx_question_id` (`question_id`),
+  KEY `idx_user_mastery` (`user_id`, `mastery_level`),
+  KEY `idx_user_update` (`user_id`, `update_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='错题本表';
 
 -- ========================================
@@ -200,7 +203,8 @@ CREATE TABLE IF NOT EXISTS `exam_record` (
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   KEY `idx_user_id` (`user_id`),
-  KEY `idx_exam_paper_id` (`exam_paper_id`)
+  KEY `idx_exam_paper_id` (`exam_paper_id`),
+  KEY `idx_user_create` (`user_id`, `create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='考试记录表';
 
 -- ========================================

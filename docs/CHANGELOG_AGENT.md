@@ -14,6 +14,77 @@
 
 ---
 
+## Round 13 - 2026-06-13
+
+### 阶段
+Phase 10：质量提升（第三轮）
+
+### 本轮目标
+日志规范化、SQL 优化检查、安全检查。
+
+### 完成内容
+
+#### 1. 日志规范化
+- `AuthService.java` - 添加 Logger，注册/登录关键操作 info 日志
+- `PracticeService.java` - 添加获取练习题目、提交答案、判分结果日志
+- `ExamService.java` - 添加开始考试、提交考试、判分完成日志
+- `WrongQuestionService.java` - 添加加入/移出错题本操作日志
+- **新建** `RequestLoggingFilter.java` - HTTP 请求日志过滤器，记录方法、URI、状态码、耗时，跳过健康检查和静态资源，4xx/5xx 用 warn 级别
+
+#### 2. SQL 优化
+- `schema.sql` - 添加复合索引：
+  - `practice_record`: `idx_user_create(user_id, create_time)` — 用户刷题记录按时间查询优化
+  - `exam_record`: `idx_user_create(user_id, create_time)` — 考试记录按时间查询优化
+  - `wrong_question`: `idx_user_mastery(user_id, mastery_level)` — 按掌握程度筛选优化
+  - `wrong_question`: `idx_user_update(user_id, update_time)` — 按更新时间排序优化
+- `WrongQuestionService.java` - 修复 N+1 查询问题：
+  - `getWrongQuestions()`: 批量加载 Question 和 Course，用 Map 缓存替代逐条 selectById
+  - `getWrongQuestionStats()`: 同样批量加载，避免 N+1 循环查询
+  - courseId 过滤改为在内存中通过 Map 过滤，而非 filter 后再查数据库
+
+#### 3. 安全检查
+- `SecurityConfig.java` - 添加安全响应头：
+  - `X-Content-Type-Options: nosniff` — 防止 MIME 类型嗅探
+  - `X-Frame-Options: SAMEORIGIN` — 防止点击劫持
+- 越权检查：ExamService 中 `submitExam`/`getExamResult` 已有 `!record.getUserId().equals(userId)` 检查 ✅
+- WrongQuestionService 中 `updateMasteryLevel`/`removeWrongQuestion` 已有 userId 校验 ✅
+- 后端接口 `/api/admin/**` 已通过 SecurityConfig 配置 `hasRole("ADMIN")` ✅
+- SQL 注入：MyBatis-Plus 使用参数化查询，无原生 SQL 拼接 ✅
+- XSS：题干内容存储为 Markdown，前端使用 marked 渲染（已做 HTML 输出），MyBatis-Plus 参数化查询防注入 ✅
+
+### 修改文件清单
+| 文件 | 操作 |
+|------|------|
+| backend/src/main/java/com/learnplatform/service/AuthService.java | 修改（添加 Logger 和日志） |
+| backend/src/main/java/com/learnplatform/service/PracticeService.java | 修改（添加关键操作日志） |
+| backend/src/main/java/com/learnplatform/service/ExamService.java | 修改（添加关键操作日志） |
+| backend/src/main/java/com/learnplatform/service/WrongQuestionService.java | 修改（添加日志 + 修复 N+1 查询） |
+| backend/src/main/java/com/learnplatform/config/RequestLoggingFilter.java | 新建（HTTP 请求日志过滤器） |
+| backend/src/main/java/com/learnplatform/config/SecurityConfig.java | 修改（添加安全响应头） |
+| backend/src/main/resources/db/schema.sql | 修改（添加复合索引） |
+| docs/CHANGELOG_AGENT.md | 修改（添加本轮记录） |
+
+### 验收结果
+- [x] 后端编译通过（mvn clean compile BUILD SUCCESS）
+- [x] 核心 Service 添加操作日志（info 级别）
+- [x] HTTP 请求日志过滤器记录所有 API 调用
+- [x] 数据库添加复合索引优化高频查询
+- [x] WrongQuestionService N+1 查询已修复（批量加载）
+- [x] SecurityConfig 添加安全响应头
+- [x] 越权检查验证通过
+
+### 遗留问题
+- 前端登录页 captcha 验证码未实现（优先级低）
+- 前端输入框未做 XSS 前端过滤（后端参数化查询已防注入，前端 marked 渲染为 Markdown）
+- AI 调用日志表 `ai_call_log` 已建表但未接入代码
+
+### 下轮建议
+- 进入 Phase 11：部署与简历
+- Docker Compose 完善、README 截图、演示流程文档、简历材料完善
+- 建议 commit message: `refactor(quality): 日志规范化、SQL 索引优化和安全响应头`
+
+---
+
 ## Round 12 - 2026-06-13
 
 ### 阶段

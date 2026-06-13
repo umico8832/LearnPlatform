@@ -100,6 +100,8 @@ public class PracticeService {
             Collections.shuffle(questions);
             questions = questions.subList(0, count);
         }
+        log.info("获取练习题目: courseId={}, questionType={}, difficulty={}, count={}",
+                courseId, questionType, difficulty, questions.size());
 
         // 转换为 VO（练习模式不返回正确答案）
         return questions.stream().map(q -> {
@@ -115,6 +117,7 @@ public class PracticeService {
      */
     @Transactional
     public PracticeResultVO submitAnswer(PracticeSubmitRequest request, Long userId) {
+        log.info("提交练习答案: userId={}, questionId={}", userId, request.getQuestionId());
         if (request.getQuestionId() == null) {
             throw new BusinessException(ResultCode.VALIDATION_ERROR, "题目ID不能为空");
         }
@@ -143,6 +146,7 @@ public class PracticeService {
         boolean isCorrect = checkAnswer(question.getQuestionType(), request.getUserAnswer().trim(), correctAnswer);
 
         // 保存答题记录
+        log.info("判分结果: userId={}, questionId={}, isCorrect={}", userId, request.getQuestionId(), isCorrect);
         PracticeRecord record = new PracticeRecord();
         record.setUserId(userId);
         record.setQuestionId(request.getQuestionId());

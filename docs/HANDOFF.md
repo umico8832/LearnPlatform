@@ -29,7 +29,7 @@
 - [x] Phase 7：试卷与考试 ✅
 - [x] Phase 8：AI 功能 ✅
 - [x] Phase 9：统计可视化 ✅
-- [ ] Phase 10：质量提升（进行中 - 参数校验、接口文档、前端体验优化已补全）
+- [ ] Phase 10：质量提升（进行中 - 参数校验、接口文档、前端体验优化、日志规范化、SQL优化、安全检查已完成）
 - [ ] Phase 11：部署与简历（待开始）
 
 ---
@@ -87,31 +87,29 @@ docker compose up -d
 ## 5. 当前遗留问题
 
 - 管理端统计接口未实现（用户数、题目数、试卷数）
-- AiCallLog 调用日志未实现
+- AiCallLog 调用日志未实现（ai_call_log 表已建，代码未接入）
 - 题目解析/变式题按钮未整合到刷题/错题页面
 - 无 AI 流式输出（SSE）
 - 管理端路由未做前端角色守卫（仅隐藏菜单，后端已做 ADMIN 校验）
-- 日志规范化未完成
-- SQL 优化检查未完成
-- 安全检查未完成
 
 ---
 
 ## 6. 下一步建议任务
 
-任务名称：Phase 10 - 质量提升（继续）或 Phase 11 - 部署与简历
+任务名称：Phase 11 - 部署与简历
 
-任务目标（Phase 10 剩余）：
-- 参数校验补全 ✅ Round 11
-- 接口文档补全（Knife4j 注解）✅ Round 11
-- 前端体验优化（loading、empty、error）✅ Round 12
-- AI 超时优化 ✅ Round 12
-- URL 路径修复 ✅ Round 12
-- 日志规范化
-- SQL 优化检查
-- 安全检查
+任务目标：
+- Docker Compose 完善（环境变量、健康检查）
+- README.md 完善（截图、启动说明、常见问题）
+- 项目截图制作
+- 演示流程文档
+- docs/RESUME.md 完善
+- 面试问答整理
+- 技术亮点总结
+- 后续扩展方向文档
+- Git 历史整理
 
-建议 commit message: `refactor(frontend): 优化前端加载状态、空状态和 AI 超时配置`
+建议 commit message: `refactor(quality): 日志规范化、SQL 索引优化和安全响应头`
 
 ---
 
@@ -142,10 +140,10 @@ docker compose up -d
 6. 除非遇到重大方向问题，否则不要频繁问我；
 7. 每轮结束都要更新 docs/CHANGELOG_AGENT.md 和必要文档。
 
-当前阶段：Phase 0-9 已完成，Phase 10 进行中（参数校验、接口文档、前端体验优化已完成）。
+当前阶段：Phase 0-9 已完成，Phase 10 进行中（参数校验、接口文档、前端体验优化、日志规范化、SQL优化、安全检查已完成）。
 
 已完成模块：用户鉴权、课程知识点、题库、刷题判分、错题本、试卷考试、AI 功能、统计可视化。
-待完成：质量提升剩余项（日志规范化、SQL优化、安全检查）和部署简历（Phase 11）。
+待完成：部署简历（Phase 11）。
 
 本地运行方式：
 - MySQL: sudo /usr/local/mysql/support-files/mysql.server start

@@ -34,6 +34,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // 安全响应头
+                .headers(headers -> headers
+                        .contentTypeOptions(contentType -> {})
+                        .frameOptions(frame -> frame.sameOrigin())
+                )
                 // 禁用 CSRF（REST API 不需要）
                 .csrf(AbstractHttpConfigurer::disable)
                 // 无状态 Session（REST API）

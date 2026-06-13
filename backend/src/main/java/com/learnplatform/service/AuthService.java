@@ -7,6 +7,8 @@ import com.learnplatform.dto.*;
 import com.learnplatform.entity.User;
 import com.learnplatform.mapper.UserMapper;
 import com.learnplatform.security.JwtTokenProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +17,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
@@ -30,6 +34,7 @@ public class AuthService {
      * 用户注册
      */
     public UserVO register(RegisterRequest request) {
+        log.info("用户注册: username={}", request.getUsername());
         // 检查用户名是否已存在
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(User::getUsername, request.getUsername());
@@ -47,6 +52,7 @@ public class AuthService {
         user.setStatus(1);
         user.setDeleted(0);
         userMapper.insert(user);
+        log.info("用户注册成功: userId={}, username={}", user.getId(), user.getUsername());
 
         return UserVO.fromUser(user);
     }
@@ -55,6 +61,7 @@ public class AuthService {
      * 用户登录
      */
     public LoginResponse login(LoginRequest request) {
+        log.info("用户登录: username={}", request.getUsername());
         // 查找用户
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(User::getUsername, request.getUsername());
@@ -76,6 +83,7 @@ public class AuthService {
 
         // 生成 Token
         String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername(), user.getRole());
+        log.info("用户登录成功: userId={}, username={}, role={}", user.getId(), user.getUsername(), user.getRole());
 
         // 构建响应
         LoginResponse response = new LoginResponse();
