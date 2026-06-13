@@ -10,7 +10,7 @@
 - **自动判分**：提交答案即时反馈，展示正确答案和解析
 - **错题本**：答错自动收集，支持错题重练和掌握状态管理
 - **模拟考试**：手动/随机组卷，倒计时考试，自动判分和成绩分析
-- **AI 辅助**：AI 生成题目解析、变式题、复习建议和知识点总结
+- **AI 辅助**：AI 流式生成题目解析和变式题，并提供复习建议与知识点总结
 - **数据统计**：学习趋势、正确率、知识点掌握雷达图等可视化面板
 
 ### 后台管理
@@ -106,7 +106,7 @@ LearnPlatform/
 #### 环境要求
 - JDK 21+（推荐 JDK 26）
 - Maven 3.8+
-- Node.js 18+
+- Node.js 20+（Docker 构建使用 Node.js 22）
 - MySQL 8.0+
 
 #### 1. 克隆项目
@@ -166,6 +166,12 @@ cp .env.example .env
 docker compose up -d
 ```
 
+如本机 80 或 8080 端口已被占用，可在 `.env` 中调整：
+```env
+FRONTEND_HOST_PORT=18000
+BACKEND_HOST_PORT=18080
+```
+
 #### 3. 查看服务状态
 ```bash
 docker compose ps
@@ -175,6 +181,8 @@ docker compose ps
 - 前端页面：http://localhost
 - 后端接口：http://localhost:8080
 - 接口文档：http://localhost:8080/doc.html
+
+首次创建数据库时会自动写入演示课程、知识点、题目和试卷，可直接使用下方账号体验完整流程。
 
 #### 5. 停止服务
 ```bash

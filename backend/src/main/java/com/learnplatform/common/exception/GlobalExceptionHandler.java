@@ -14,6 +14,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.stream.Collectors;
 
@@ -78,6 +79,16 @@ public class GlobalExceptionHandler {
     public R<Void> handleAccessDeniedException(AccessDeniedException e) {
         log.warn("权限不足: {}", e.getMessage());
         return R.fail(ResultCode.FORBIDDEN);
+    }
+
+    /**
+     * 不存在的接口或静态资源
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public R<Void> handleNoResourceFoundException(NoResourceFoundException e) {
+        log.warn("资源不存在: {}", e.getResourcePath());
+        return R.fail(ResultCode.NOT_FOUND);
     }
 
     /**

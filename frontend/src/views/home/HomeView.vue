@@ -87,7 +87,14 @@ import { useUserStore } from '@/stores/user'
 import { Promotion, WarningFilled, Trophy, MagicStick } from '@element-plus/icons-vue'
 import { getStatisticsOverview, getDailyTrend, getCourseStats } from '@/api/statistics'
 import type { StatisticsOverview } from '@/api/statistics'
-import * as echarts from 'echarts'
+import { use } from 'echarts/core'
+import { BarChart, RadarChart } from 'echarts/charts'
+import { GridComponent, LegendComponent, RadarComponent, TooltipComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+import type { ECharts } from 'echarts/core'
+import { init } from 'echarts/core'
+
+use([BarChart, RadarChart, GridComponent, LegendComponent, RadarComponent, TooltipComponent, CanvasRenderer])
 
 const userStore = useUserStore()
 const userInfo = computed(() => userStore.userInfo)
@@ -102,8 +109,8 @@ const trendEmpty = ref(false)
 const courseEmpty = ref(false)
 const trendChartRef = ref<HTMLElement | null>(null)
 const courseChartRef = ref<HTMLElement | null>(null)
-let trendChart: echarts.ECharts | null = null
-let courseChart: echarts.ECharts | null = null
+let trendChart: ECharts | null = null
+let courseChart: ECharts | null = null
 
 onMounted(async () => {
   // 加载统计数据
@@ -136,7 +143,7 @@ const loadTrendChart = async () => {
       return
     }
     const data = res.data
-    trendChart = echarts.init(trendChartRef.value)
+    trendChart = init(trendChartRef.value)
     trendChart.setOption({
       tooltip: { trigger: 'axis' },
       legend: { data: ['答对', '答错'], bottom: 0 },
@@ -162,7 +169,7 @@ const loadCourseChart = async () => {
       return
     }
     const data = res.data.slice(0, 6)
-    courseChart = echarts.init(courseChartRef.value)
+    courseChart = init(courseChartRef.value)
     courseChart.setOption({
       tooltip: { trigger: 'item', formatter: '{b}: {c}%' },
       radar: {

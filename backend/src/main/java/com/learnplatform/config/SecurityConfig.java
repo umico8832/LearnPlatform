@@ -4,6 +4,7 @@ import com.learnplatform.common.result.R;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.security.JwtAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -62,6 +63,8 @@ public class SecurityConfig {
                         })
                 )
                 .authorizeHttpRequests(auth -> auth
+                        // SSE 完成和异常会触发异步二次分发，响应此时已经完成首次鉴权。
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
                         // 公开接口
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()

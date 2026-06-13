@@ -491,21 +491,16 @@ GET /api/wrong-questions/statistics
 ### 9.1 试卷列表（用户端）
 
 ```
-GET /api/exams/papers
+GET /api/exam/papers
 ```
 
 ### 9.2 开始考试
 
 ```
-POST /api/exams/start
+POST /api/exam/start/{paperId}
 ```
 
-**请求体**：
-```json
-{
-  "paperId": 1
-}
-```
+`paperId` 通过路径参数传递。
 
 **响应**：
 ```json
@@ -538,13 +533,13 @@ POST /api/exams/start
 ### 9.3 提交考试
 
 ```
-POST /api/exams/submit
+POST /api/exam/submit
 ```
 
 **请求体**：
 ```json
 {
-  "recordId": 1,
+  "examRecordId": 1,
   "answers": [
     { "questionId": 1, "userAnswer": "A" },
     { "questionId": 2, "userAnswer": "B,C" }
@@ -555,7 +550,7 @@ POST /api/exams/submit
 ### 9.4 考试结果
 
 ```
-GET /api/exams/records/{recordId}/result
+GET /api/exam/result/{recordId}
 ```
 
 **响应**：
@@ -590,7 +585,7 @@ GET /api/exams/records/{recordId}/result
 ### 9.5 考试记录列表
 
 ```
-GET /api/exams/records
+GET /api/exam/records
 ```
 
 ---
@@ -646,6 +641,27 @@ POST /api/ai/variant
   }
 }
 ```
+
+### 10.2.1 AI 题目流式生成
+
+```
+POST /api/ai/explanation/stream
+POST /api/ai/variant/stream
+Accept: text/event-stream
+Authorization: Bearer <token>
+```
+
+请求体与同步接口一致。服务端通过 SSE 返回以下事件：
+
+```text
+event: content
+data: {"content":"生成内容分片"}
+
+event: done
+data: {"source":"ai"}
+```
+
+调用失败时返回 `error` 事件，数据格式为 `{"message":"错误信息"}`。同步接口继续保留用于兼容非流式调用场景。
 
 ### 10.3 AI 复习建议
 

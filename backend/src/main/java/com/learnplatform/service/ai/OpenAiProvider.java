@@ -3,6 +3,8 @@ package com.learnplatform.service.ai;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.config.AiConfig;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
@@ -10,9 +12,13 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * OpenAI 兼容的 AI Provider 实现
@@ -25,9 +31,11 @@ public class OpenAiProvider implements AiProvider {
 
     private final AiConfig aiConfig;
     private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
-    public OpenAiProvider(AiConfig aiConfig, RestTemplateBuilder restTemplateBuilder) {
+    public OpenAiProvider(AiConfig aiConfig, RestTemplateBuilder restTemplateBuilder, ObjectMapper objectMapper) {
         this.aiConfig = aiConfig;
+        this.objectMapper = objectMapper;
         Duration timeout = Duration.ofMillis(aiConfig.getTimeout());
         this.restTemplate = restTemplateBuilder
                 .setConnectTimeout(timeout)
@@ -37,12 +45,7 @@ public class OpenAiProvider implements AiProvider {
 
     @Override
     public String chat(String systemPrompt, String userPrompt) {
-        if (!aiConfig.isEnabled()) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR, "AI 功能未启用，请在环境变量中配置 AI_ENABLED=true 和 AI_API_KEY");
-        }
-        if (aiConfig.getApiKey() == null || aiConfig.getApiKey().isBlank()) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR, "AI API Key 未配置，请在环境变量中设置 AI_API_KEY");
-        }
+        validateConfig();
 
         String url = aiConfig.getApiBaseUrl().replaceAll("/+$", "") + "/chat/completions";
 
@@ -86,5 +89,87 @@ public class OpenAiProvider implements AiProvider {
             log.error("AI API 调用失败: {}", e.getMessage(), e);
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "AI 服务调用失败: " + e.getMessage());
         }
+    }
+
+    @Override
+    public void chatStream(String systemPrompt, String userPrompt, Consumer<String> onContent) {
+        validateConfig();
+
+        String url = aiConfig.getApiBaseUrl().replaceAll("/+$", "") + "/chat/completions";
+        Map<String, Object> body = buildRequestBody(systemPrompt, userPrompt, true);
+
+        try {
+            log.info("调用 AI 流式 API: model={}, url={}", aiConfig.getModel(), url);
+            restTemplate.execute(url, HttpMethod.POST, request -> {
+                request.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+                request.getHeaders().setAccept(List.of(MediaType.TEXT_EVENT_STREAM));
+                request.getHeaders().setBearerAuth(aiConfig.getApiKey());
+                objectMapper.writeValue(request.getBody(), body);
+            }, response -> {
+                if (!response.getStatusCode().is2xxSuccessful()) {
+                    throw new BusinessException(ResultCode.BUSINESS_ERROR,
+                            "AI 服务返回异常: HTTP " + response.getStatusCode().value());
+                }
+
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                        response.getBody(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        String content = parseStreamContent(line, objectMapper);
+                        if (content != null && !content.isEmpty()) {
+                            onContent.accept(content);
+                        }
+                    }
+                }
+                return null;
+            });
+            log.info("AI 流式调用完成");
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("AI 流式调用失败: {}", e.getMessage(), e);
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "AI 服务调用失败: " + e.getMessage());
+        }
+    }
+
+    static String parseStreamContent(String line, ObjectMapper objectMapper) {
+        if (line == null || !line.startsWith("data:")) {
+            return null;
+        }
+
+        String data = line.substring(5).trim();
+        if (data.isEmpty() || "[DONE]".equals(data)) {
+            return null;
+        }
+
+        try {
+            JsonNode root = objectMapper.readTree(data);
+            JsonNode content = root.path("choices").path(0).path("delta").path("content");
+            return content.isTextual() ? content.asText() : null;
+        } catch (Exception e) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "AI 流式响应解析失败");
+        }
+    }
+
+    private void validateConfig() {
+        if (!aiConfig.isEnabled()) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "AI 功能未启用，请在环境变量中配置 AI_ENABLED=true 和 AI_API_KEY");
+        }
+        if (aiConfig.getApiKey() == null || aiConfig.getApiKey().isBlank()) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "AI API Key 未配置，请在环境变量中设置 AI_API_KEY");
+        }
+    }
+
+    private Map<String, Object> buildRequestBody(String systemPrompt, String userPrompt, boolean stream) {
+        return Map.of(
+                "model", aiConfig.getModel(),
+                "messages", List.of(
+                        Map.of("role", "system", "content", systemPrompt),
+                        Map.of("role", "user", "content", userPrompt)
+                ),
+                "max_tokens", aiConfig.getMaxTokens(),
+                "temperature", 0.7,
+                "stream", stream
+        );
     }
 }

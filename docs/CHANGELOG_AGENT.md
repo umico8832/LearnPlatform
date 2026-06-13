@@ -14,6 +14,90 @@
 
 ---
 
+## Round 20 - 2026-06-13
+
+### 阶段
+Phase 12：遗留问题集中收尾
+
+### 本轮目标
+解决 AI SSE、Docker 演示环境、前端构建体积和依赖安全方面的遗留问题，并完成可重复的全链路验收。
+
+### 完成内容
+- 修复 Spring Security 异步分派拦截 SSE 的问题，流式接口可正常发送错误或完成事件并关闭连接。
+- 为 Nginx SSE 路径关闭代理缓冲，完成从前端入口到后端的 JWT 登录、题目查询和 AI 降级流式验证。
+- 补充 UTF-8 初始化设置及知识点、题目、选项和试卷演示数据，首次启动即可体验核心流程。
+- Docker Compose 支持自定义前后端宿主机端口，MySQL 不再暴露宿主机端口，并修复前端 IPv6 健康检查误报。
+- Docker 构建改用 Node 22、`npm ci` 和 `.dockerignore`，显著缩小构建上下文。
+- Element Plus 与图标改为按需加载，ECharts 改为模块化注册，消除超过 500 kB 的构建告警。
+- Vite 升级至 8.0.16、Vue 插件升级至 6.0.7，`npm audit` 从 2 个告警降为 0。
+- 补充 OpenAI 上游 SSE 解析测试，覆盖正常内容、结束事件、空内容和非法 JSON。
+- 修正考试接口文档中的旧路径，并将不存在的接口统一映射为 HTTP 404，而非误报 500。
+
+### 修改文件清单
+- 部署：`.env.example`、`docker-compose.yml`、`backend/.dockerignore`、`frontend/.dockerignore`、`frontend/Dockerfile`、`frontend/nginx.conf`
+- 后端：`SecurityConfig.java`、`GlobalExceptionHandler.java`、`AiAsyncConfig.java`、AI Controller/Service/Provider、`schema.sql`、`OpenAiProviderTest.java`
+- 前端：`package.json`、`package-lock.json`、`App.vue`、`main.ts`、`ai.ts`、`AiQuestionAssistant.vue`、`HomeView.vue`、`AdminDashboard.vue`
+- 文档：`README.md`、`API_DESIGN.md`、`ARCHITECTURE.md`、`DB_DESIGN.md`、`FUTURE.md`、`ROADMAP.md`、`HANDOFF.md`、`CHANGELOG_AGENT.md`
+
+### 验收结果
+- [x] `cd backend && mvn test`（8 tests，0 failures）
+- [x] `cd frontend && npm run build`（无超过 500 kB 的产物告警）
+- [x] `cd frontend && npm audit --audit-level=moderate`（0 vulnerabilities）
+- [x] Docker Compose MySQL、后端、前端健康启动
+- [x] Nginx 入口登录、题目列表与 AI 禁用 SSE 降级事件正常
+- [x] SSE 连接正常关闭，后端无异步鉴权异常
+
+### 遗留问题
+- 当前环境未配置真实 AI Key，无法验证第三方模型实际生成内容；相关解析单测和禁用降级全链路已覆盖。
+- Chrome 自动化扩展本轮无法建立连接，未完成页面截图式视觉验收。
+- AiCallLog 仍是后续增强项，不影响当前 AI 功能使用。
+
+### 下轮建议
+- 实现 P1 用户个人中心，补齐昵称与密码修改能力。
+- 建议 commit message: `fix(platform): 完成流式接口与部署遗留修复`
+
+---
+
+## Round 19 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代（第三轮）
+
+### 本轮目标
+实现题目解析与变式题的 AI 流式输出，缩短用户看到首段结果的等待时间。
+
+### 完成内容
+- `AiProvider` 新增流式调用契约，`OpenAiProvider` 支持 OpenAI 兼容接口的 `stream: true` SSE 响应解析。
+- 新增独立 `aiTaskExecutor`，避免 AI 长连接占用请求处理线程。
+- 新增 `/api/ai/explanation/stream` 与 `/api/ai/variant/stream`，通过 `content`、`done`、`error` 事件转发结果，并关闭 Nginx 响应缓冲。
+- 前端改用 `fetch + ReadableStream`，在保留 POST 请求体和 JWT 请求头的同时实时追加 Markdown 内容。
+- AI 助手支持切换题目时取消旧请求，并保留同步 AI 接口兼容现有调用。
+- 新增上游 SSE 分片解析测试，覆盖内容、结束事件、无内容事件与非法 JSON。
+- 更新 README、API、架构、路线图、扩展规划和交接文档。
+
+### 修改文件清单
+- 后端：`AiAsyncConfig.java`、`AiController.java`、`AiService.java`、`AiProvider.java`、`OpenAiProvider.java`
+- 后端测试：`OpenAiProviderTest.java`
+- 前端：`ai.ts`、`AiQuestionAssistant.vue`
+- 文档：`README.md`、`API_DESIGN.md`、`ARCHITECTURE.md`、`FUTURE.md`、`ROADMAP.md`、`HANDOFF.md`、`CHANGELOG_AGENT.md`
+
+### 验收结果
+- [x] `cd backend && mvn test`（8 tests，0 failures）
+- [x] `cd frontend && npm run build`
+- [x] `git diff --check`
+- [x] 同步 AI 接口保持兼容
+- [x] 前端流式请求携带 JWT，并支持中断旧请求
+
+### 遗留问题
+- 尚未使用真实 AI Key 进行浏览器端完整 SSE 联调。
+- 前端生产构建仍提示 ECharts/Element Plus 相关主包体积较大。
+
+### 下轮建议
+- 实现 P1 用户个人中心，补齐昵称与密码修改能力。
+- 建议 commit message: `feat(ai): 实现题目解析与变式题流式输出`
+
+---
+
 ## Round 18 - 2026-06-13
 
 ### 阶段

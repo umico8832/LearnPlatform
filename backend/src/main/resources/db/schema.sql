@@ -2,6 +2,8 @@
 -- 数据库：MySQL 8.0+
 -- 字符集：utf8mb4
 
+SET NAMES utf8mb4;
+
 CREATE DATABASE IF NOT EXISTS `learn_platform` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 
 USE `learn_platform`;
@@ -262,3 +264,41 @@ INSERT INTO `course` (`name`, `description`, `sort_order`) VALUES
 ('数据库原理', '关系型数据库原理、SQL 语法、索引优化等', 3),
 ('计算机网络', 'TCP/IP、HTTP、网络协议等计算机网络基础知识', 4),
 ('操作系统', '进程管理、内存管理、文件系统等操作系统核心知识', 5);
+
+-- Java 基础演示知识点
+INSERT INTO `knowledge_point` (`name`, `description`, `course_id`, `parent_id`, `sort_order`) VALUES
+('Java 语言基础', '变量、数据类型和基础语法', 1, 0, 1),
+('面向对象', '封装、继承和多态', 1, 0, 2),
+('异常处理', '异常体系与 try-catch-finally', 1, 0, 3);
+
+-- 演示题目
+INSERT INTO `question` (`content`, `question_type`, `course_id`, `difficulty`, `analysis`, `tags`, `score`, `status`, `create_by`) VALUES
+('Java 中用于定义类继承关系的关键字是？', 'SINGLE_CHOICE', 1, 1, '`extends` 用于类继承，`implements` 用于实现接口。', 'Java,继承', 5, 1, 1),
+('下列哪些属于 Java 的基本数据类型？', 'MULTIPLE_CHOICE', 1, 2, '`int` 和 `boolean` 是基本数据类型，`String` 和 `Integer` 是引用类型。', 'Java,数据类型', 5, 1, 1),
+('Java 的 `finally` 代码块通常会执行。', 'TRUE_FALSE', 1, 1, '除 JVM 直接退出等特殊情况外，`finally` 通常都会执行。', 'Java,异常处理', 5, 1, 1);
+
+INSERT INTO `question_option` (`question_id`, `content`, `option_label`, `is_correct`, `sort_order`) VALUES
+(1, 'extends', 'A', 1, 1),
+(1, 'implements', 'B', 0, 2),
+(1, 'import', 'C', 0, 3),
+(1, 'package', 'D', 0, 4),
+(2, 'int', 'A', 1, 1),
+(2, 'String', 'B', 0, 2),
+(2, 'boolean', 'C', 1, 3),
+(2, 'Integer', 'D', 0, 4),
+(3, '正确', 'A', 1, 1),
+(3, '错误', 'B', 0, 2);
+
+INSERT INTO `question_knowledge_point` (`question_id`, `knowledge_point_id`) VALUES
+(1, 2),
+(2, 1),
+(3, 3);
+
+-- 已发布演示试卷
+INSERT INTO `exam_paper` (`title`, `description`, `course_id`, `total_score`, `duration`, `question_count`, `status`, `create_by`) VALUES
+('Java 基础入门测验', '包含继承、数据类型和异常处理的基础测验。', 1, 15, 20, 3, 1, 1);
+
+INSERT INTO `exam_question` (`exam_paper_id`, `question_id`, `sort_order`, `score`) VALUES
+(1, 1, 1, 5),
+(1, 2, 2, 5),
+(1, 3, 3, 5);

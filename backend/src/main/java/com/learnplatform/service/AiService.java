@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -50,6 +51,31 @@ public class AiService {
      * AI 生成题目解析
      */
     public AiResponse generateExplanation(Long questionId) {
+        AiPrompt prompt = buildExplanationPrompt(questionId);
+        String content = aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt());
+        return new AiResponse(content, "ai");
+    }
+
+    public void generateExplanationStream(Long questionId, Consumer<String> onContent) {
+        AiPrompt prompt = buildExplanationPrompt(questionId);
+        aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent);
+    }
+
+    /**
+     * AI 生成变式题
+     */
+    public AiResponse generateVariant(Long questionId) {
+        AiPrompt prompt = buildVariantPrompt(questionId);
+        String content = aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt());
+        return new AiResponse(content, "ai");
+    }
+
+    public void generateVariantStream(Long questionId, Consumer<String> onContent) {
+        AiPrompt prompt = buildVariantPrompt(questionId);
+        aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent);
+    }
+
+    private AiPrompt buildExplanationPrompt(Long questionId) {
         Question question = questionMapper.selectById(questionId);
         if (question == null) throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
 
@@ -58,15 +84,10 @@ public class AiService {
         String systemPrompt = "你是一位专业的教育辅导老师。请为以下题目提供详细、清晰的解析。"
                 + "要求：\n1. 解释题目考查的知识点\n2. 分析正确答案的原因\n3. 如果有错误选项，解释为什么是错误的\n"
                 + "4. 用简洁易懂的语言\n5. 使用 Markdown 格式输出";
-
-        String content = aiProvider.chat(systemPrompt, "请解析这道题目：\n\n" + questionContext);
-        return new AiResponse(content, "ai");
+        return new AiPrompt(systemPrompt, "请解析这道题目：\n\n" + questionContext);
     }
 
-    /**
-     * AI 生成变式题
-     */
-    public AiResponse generateVariant(Long questionId) {
+    private AiPrompt buildVariantPrompt(Long questionId) {
         Question question = questionMapper.selectById(questionId);
         if (question == null) throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
 
@@ -75,9 +96,7 @@ public class AiService {
         String systemPrompt = "你是一位专业的出题老师。请基于给定的题目，生成 1-2 道变式题（类似知识点但不同问法）。"
                 + "要求：\n1. 考查相同知识点但换个角度\n2. 难度与原题相近\n3. 包含题目、选项和正确答案\n"
                 + "4. 使用 Markdown 格式输出";
-
-        String content = aiProvider.chat(systemPrompt, "基于以下题目生成变式题：\n\n" + questionContext);
-        return new AiResponse(content, "ai");
+        return new AiPrompt(systemPrompt, "基于以下题目生成变式题：\n\n" + questionContext);
     }
 
     /**
@@ -191,4 +210,6 @@ public class AiService {
             default: return type;
         }
     }
+
+    private record AiPrompt(String systemPrompt, String userPrompt) {}
 }

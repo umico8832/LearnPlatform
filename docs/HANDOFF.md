@@ -31,7 +31,7 @@
 - [x] Phase 9：统计可视化 ✅
 - [x] Phase 10：质量提升 ✅（参数校验、接口文档、前端体验优化、日志规范化、SQL优化、安全检查）
 - [x] Phase 11：部署与简历 ✅（项目截图为非阻塞演示素材）
-- [x] Phase 12：体验增强迭代（🔵 已完成 AI 题目助手整合）
+- [x] Phase 12：体验增强迭代（🔵 已完成 AI 题目助手、管理端统计、AI 流式输出与部署验收）
 
 ---
 
@@ -48,12 +48,14 @@
 8. **统计可视化**：首页统计卡片 + ECharts 趋势图 + 雷达图 + 快捷入口
 9. **AI 题目助手**：刷题结果与错题本内直接生成 AI 深度解析和变式题
 10. **管理端统计面板**：平台指标、题型分布、近 7 日活跃趋势、用户与试卷状态
+11. **AI 流式输出**：题目解析与变式题支持 JWT 认证的 POST SSE，前端实时渲染 Markdown
+12. **部署与构建收尾**：Docker Compose 三服务健康启动、UTF-8 演示数据、可配置宿主机端口、前端按需加载与 Vite 8 安全升级
 
 ### 后端关键文件
 - 统一响应：`R.java` + `ResultCode.java` + `BusinessException` + `GlobalExceptionHandler`
 - 实体：User, Course, KnowledgePoint, Question, QuestionOption, QuestionKnowledgePoint, PracticeRecord, WrongQuestion, ExamPaper, ExamQuestion, ExamRecord, ExamAnswer
 - 服务：AuthService, CourseService, KnowledgePointService, QuestionService, PracticeService, WrongQuestionService, ExamPaperService, ExamService, AiService, StatisticsService
-- AI：AiConfig, AiProvider(接口), OpenAiProvider, AiController
+- AI：AiConfig, AiAsyncConfig, AiProvider(同步/流式接口), OpenAiProvider, AiController
 
 ### 前端关键文件
 - API 封装：auth(user store), course, knowledgePoint, question, practice, wrongQuestion, exam, ai, statistics
@@ -93,8 +95,8 @@ docker compose up -d
 ## 5. 当前遗留问题
 
 - AiCallLog 调用日志未实现（ai_call_log 表已建，代码未接入）
-- 无 AI 流式输出（SSE）
-- 前端构建仍有 ECharts/Element Plus 主包体积警告，功能不受影响
+- 未配置真实 AI Key，因此第三方模型实际生成内容未执行；AI 禁用降级、JWT、Nginx 代理、SSE 传输与正常关闭均已验收
+- 当前会话无法连接 Chrome 自动化扩展，页面视觉验收未生成截图；接口与容器验收不受影响
 
 ---
 
@@ -110,9 +112,9 @@ docker compose up -d
 - [x] 后续扩展方向文档（docs/FUTURE.md）
 - [x] Git 历史整理（提交记录规范、分支清晰）
 
-后续开发建议：继续推进 P0 AI 流式输出（SSE），或实现 P1 用户个人中心。项目截图可在演示环境稳定后补充。
+后续开发建议：实现 P1 用户个人中心，或推进错题重练模式。项目截图可在浏览器自动化连接恢复后补充。
 
-建议 commit message: `feat(statistics): 完成管理端平台统计面板`
+建议 commit message: `fix(platform): 完成流式接口与部署遗留修复`
 
 ---
 
@@ -146,7 +148,7 @@ docker compose up -d
 当前阶段：Phase 0-11 已完成，Phase 12 体验增强迭代进行中。
 
 已完成模块：用户鉴权、课程知识点、题库、刷题判分、错题本、试卷考试、AI 功能、统计可视化、质量提升、部署简历。
-后续扩展方向：见 docs/FUTURE.md（P0-P3 四级优先级，15 个扩展方向）。
+后续扩展方向：见 docs/FUTURE.md；P0 AI 体验与管理端统计已完成，下一步进入 P1 用户个人中心或错题重练。
 
 本地运行方式：
 - MySQL: sudo /usr/local/mysql/support-files/mysql.server start

@@ -58,7 +58,7 @@
 |------|------|------|
 | Vue 3 | 3.4+ | 前端框架，Composition API |
 | TypeScript | 5.x | 类型安全 |
-| Vite | 5.x | 构建工具 |
+| Vite | 8.x | 构建工具 |
 | Element Plus | 2.x | UI 组件库 |
 | Pinia | 2.x | 状态管理 |
 | Vue Router | 4.x | 路由管理 |
@@ -477,6 +477,8 @@ AiService (业务服务)
   → AI 未配置   → 提示"AI 功能暂未开启"
 ```
 
+题目解析与变式题同时支持流式链路：前端使用带 JWT 请求头的 `fetch + ReadableStream` 发起 POST 请求，`AiController` 将任务交给独立 `aiTaskExecutor`，`OpenAiProvider` 读取上游 OpenAI 兼容 SSE 并通过 `SseEmitter` 转发 `content`、`done`、`error` 事件。同步接口继续保留，避免影响复习建议、知识点总结及已有调用方。
+
 ---
 
 ## 六、权限设计
@@ -581,7 +583,6 @@ if (AI 调用异常) {
 services:
   mysql:
     image: mysql:8.0
-    ports: 3306:3306
     volumes: mysql-data:/var/lib/mysql
     env: MYSQL_DATABASE, DB_PASSWORD
 
@@ -591,16 +592,18 @@ services:
 
   backend:
     build: ./backend
-    ports: 8080:8080
+    ports: ${BACKEND_HOST_PORT:-8080}:8080
     depends_on: mysql
     env: DB_URL, DB_USERNAME, DB_PASSWORD, JWT_SECRET, AI_API_KEY, AI_TIMEOUT, AI_MAX_TOKENS
 
   frontend:
     build: ./frontend
-    ports: 80:80
+    ports: ${FRONTEND_HOST_PORT:-80}:80
     depends_on: backend
     nginx.conf: 反向代理 /api → backend:8080
 ```
+
+MySQL 仅在 Compose 内部网络暴露，前后端宿主机端口可通过环境变量调整。Element Plus 组件与 ECharts 图表模块均按需引入，避免生产包整体加载。
 
 ### 8.2 Nginx 配置
 

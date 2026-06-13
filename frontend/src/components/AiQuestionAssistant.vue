@@ -27,7 +27,7 @@
       </div>
     </div>
 
-    <div v-if="activeResult || error" class="ai-result">
+    <div v-if="activeResult || error || loading" class="ai-result">
       <div class="result-heading">
         <span>{{ activeType === 'variant' ? '变式练习' : '补充解析' }}</span>
         <el-tag v-if="activeSource" size="small" effect="plain">{{ sourceLabel }}</el-tag>
@@ -39,7 +39,8 @@
         show-icon
         :closable="false"
       />
-      <MarkdownRenderer v-else :content="activeResult" />
+      <MarkdownRenderer v-else-if="activeResult" :content="activeResult" />
+      <div v-else-if="loading" class="stream-placeholder">正在连接 AI 服务...</div>
     </div>
   </section>
 </template>
@@ -47,7 +48,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { MagicStick, Reading } from '@element-plus/icons-vue'
-import { getExplanation, getVariant } from '@/api/ai'
+import { streamQuestionAi } from '@/api/ai'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 
 type AssistantType = 'explanation' | 'variant'
@@ -61,6 +62,7 @@ const loadingType = ref<AssistantType | null>(null)
 const error = ref('')
 const results = ref<Record<AssistantType, string>>({ explanation: '', variant: '' })
 const sources = ref<Record<AssistantType, string>>({ explanation: '', variant: '' })
+let abortController: AbortController | null = null
 
 const loading = computed(() => loadingType.value !== null)
 const activeResult = computed(() => activeType.value ? results.value[activeType.value] : '')
@@ -70,6 +72,8 @@ const sourceLabel = computed(() => activeSource.value === 'fallback' ? '本地�
 watch(() => props.questionId, reset)
 
 function reset() {
+  abortController?.abort()
+  abortController = null
   activeType.value = null
   loadingType.value = null
   error.value = ''
@@ -84,21 +88,27 @@ async function generate(type: AssistantType) {
   if (results.value[type]) return
 
   loadingType.value = type
+  results.value[type] = ''
+  const controller = new AbortController()
+  abortController = controller
   try {
-    const res = type === 'explanation'
-      ? await getExplanation(props.questionId)
-      : await getVariant(props.questionId)
-
-    if (res.code === 0 && res.data) {
-      results.value[type] = res.data.content
-      sources.value[type] = res.data.source
-    } else {
-      error.value = res.message || '生成失败，请稍后重试'
-    }
+    await streamQuestionAi(type, props.questionId, {
+      onContent: (content) => {
+        results.value[type] += content
+      },
+      onDone: (source) => {
+        sources.value[type] = source
+      },
+    }, controller.signal)
   } catch (e: any) {
-    error.value = e?.response?.data?.message || e?.message || 'AI 服务调用失败，请稍后重试'
+    if (e?.name !== 'AbortError') {
+      error.value = e?.message || 'AI 服务调用失败，请稍后重试'
+    }
   } finally {
-    loadingType.value = null
+    if (abortController === controller) {
+      abortController = null
+      loadingType.value = null
+    }
   }
 }
 </script>
@@ -153,6 +163,11 @@ async function generate(type: AssistantType) {
   color: #34495e;
   font-size: 14px;
   font-weight: 700;
+}
+
+.stream-placeholder {
+  color: #7a8797;
+  font-size: 13px;
 }
 
 @media (max-width: 720px) {

@@ -8,7 +8,17 @@ import com.learnplatform.service.AiService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 /**
  * AI 控制器
@@ -19,9 +29,11 @@ import org.springframework.web.bind.annotation.*;
 public class AiController {
 
     private final AiService aiService;
+    private final Executor aiTaskExecutor;
 
-    public AiController(AiService aiService) {
+    public AiController(AiService aiService, @Qualifier("aiTaskExecutor") Executor aiTaskExecutor) {
         this.aiService = aiService;
+        this.aiTaskExecutor = aiTaskExecutor;
     }
 
     /**
@@ -40,6 +52,18 @@ public class AiController {
     @PostMapping("/variant")
     public R<AiResponse> generateVariant(@RequestBody AiRequest request) {
         return R.ok(aiService.generateVariant(request.getQuestionId()));
+    }
+
+    @Operation(summary = "流式题目解析", description = "通过 SSE 逐段返回 AI 题目解析")
+    @PostMapping(value = "/explanation/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public ResponseEntity<SseEmitter> generateExplanationStream(@RequestBody AiRequest request) {
+        return stream(onContent -> aiService.generateExplanationStream(request.getQuestionId(), onContent));
+    }
+
+    @Operation(summary = "流式变式题", description = "通过 SSE 逐段返回 AI 变式题")
+    @PostMapping(value = "/variant/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public ResponseEntity<SseEmitter> generateVariantStream(@RequestBody AiRequest request) {
+        return stream(onContent -> aiService.generateVariantStream(request.getQuestionId(), onContent));
     }
 
     /**
@@ -61,5 +85,36 @@ public class AiController {
     @PostMapping("/summary")
     public R<AiResponse> generateSummary(@RequestBody AiRequest request) {
         return R.ok(aiService.generateSummary(request.getKnowledgePointId()));
+    }
+
+    private ResponseEntity<SseEmitter> stream(Consumer<Consumer<String>> generator) {
+        SseEmitter emitter = new SseEmitter(120_000L);
+        aiTaskExecutor.execute(() -> {
+            try {
+                generator.accept(content -> send(emitter, "content", Map.of("content", content)));
+                send(emitter, "done", Map.of("source", "ai"));
+                emitter.complete();
+            } catch (Exception e) {
+                try {
+                    send(emitter, "error", Map.of("message", e.getMessage() != null ? e.getMessage() : "AI 服务调用失败"));
+                } catch (Exception ignored) {
+                    // 客户端已断开时无需再次写入 SSE。
+                }
+                emitter.complete();
+            }
+        });
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CACHE_CONTROL, "no-cache")
+                .header("X-Accel-Buffering", "no")
+                .body(emitter);
+    }
+
+    private void send(SseEmitter emitter, String event, Object data) {
+        try {
+            emitter.send(SseEmitter.event().name(event).data(data, MediaType.APPLICATION_JSON));
+        } catch (IOException e) {
+            throw new IllegalStateException("SSE 连接已断开", e);
+        }
     }
 }

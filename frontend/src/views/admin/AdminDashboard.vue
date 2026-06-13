@@ -101,7 +101,13 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Collection, DataAnalysis, Document, Refresh, User } from '@element-plus/icons-vue'
-import * as echarts from 'echarts'
+import { init, use } from 'echarts/core'
+import { LineChart, PieChart } from 'echarts/charts'
+import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+import type { ECharts } from 'echarts/core'
+
+use([LineChart, PieChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer])
 import { getAdminStatisticsOverview } from '@/api/statistics'
 import type { AdminStatisticsOverview } from '@/api/statistics'
 
@@ -124,8 +130,8 @@ const stats = ref<AdminStatisticsOverview>({ ...emptyStats })
 const updateTime = ref('--')
 const activityChartRef = ref<HTMLElement | null>(null)
 const questionChartRef = ref<HTMLElement | null>(null)
-let activityChart: echarts.ECharts | null = null
-let questionChart: echarts.ECharts | null = null
+let activityChart: ECharts | null = null
+let questionChart: ECharts | null = null
 
 const metrics = computed(() => [
   {
@@ -204,7 +210,7 @@ function renderCharts() {
 function renderActivityChart() {
   if (!activityChartRef.value) return
   activityChart?.dispose()
-  activityChart = echarts.init(activityChartRef.value)
+  activityChart = init(activityChartRef.value)
   const data = stats.value.dailyActivity || []
   activityChart.setOption({
     tooltip: { trigger: 'axis' },
@@ -250,7 +256,7 @@ function renderActivityChart() {
 function renderQuestionChart() {
   if (!questionChartRef.value) return
   questionChart?.dispose()
-  questionChart = echarts.init(questionChartRef.value)
+  questionChart = init(questionChartRef.value)
   const data = Object.entries(stats.value.questionTypeDistribution || {})
     .map(([name, value]) => ({ name, value }))
   questionChart.setOption({
