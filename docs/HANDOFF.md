@@ -30,7 +30,7 @@
 - [x] Phase 8：AI 功能 ✅
 - [x] Phase 9：统计可视化 ✅
 - [x] Phase 10：质量提升 ✅（参数校验、接口文档、前端体验优化、日志规范化、SQL优化、安全检查）
-- [ ] Phase 11：部署与简历（进行中 - Docker Compose 完善、README 更新、演示流程文档、简历材料补充已完成）
+- [x] Phase 11：部署与简历（🔵 基本完成 - 仅剩项目截图需运行环境）
 
 ---
 
@@ -96,20 +96,22 @@ docker compose up -d
 
 ## 6. 下一步建议任务
 
-任务名称：Phase 11 - 部署与简历（收尾）
+任务名称：Phase 11 - 部署与简历（基本完成）
 
 已完成：
 - [x] Docker Compose 完善（健康检查、启动顺序、环境变量）
 - [x] README.md 完善（状态表、Lombok、JDK、FAQ）
 - [x] 演示流程文档（docs/DEMO.md）
 - [x] 简历材料完善（docs/RESUME.md 技术亮点 + 面试问答 Q8-Q10）
+- [x] 后续扩展方向文档（docs/FUTURE.md）
+- [x] Git 历史整理（提交记录规范、分支清晰）
 
 待完成：
-- [ ] 项目截图制作（需要运行环境截图）
-- [ ] 后续扩展方向文档
-- [ ] Git 历史整理
+- [ ] 项目截图制作（需要运行环境截图，非代码任务）
 
-建议 commit message: `docs(deploy): 完善部署配置、README、演示流程和简历材料`
+后续开发建议：按 docs/FUTURE.md 中 P0 优先级开始新一轮迭代。
+
+建议 commit message: `docs(future): 创建后续扩展方向文档，完成 Phase 11 收尾`
 
 ---
 
@@ -140,10 +142,10 @@ docker compose up -d
 6. 除非遇到重大方向问题，否则不要频繁问我；
 7. 每轮结束都要更新 docs/CHANGELOG_AGENT.md 和必要文档。
 
-当前阶段：Phase 0-9 已完成，Phase 10 进行中（参数校验、接口文档、前端体验优化、日志规范化、SQL优化、安全检查已完成）。
+当前阶段：Phase 0-11 全部基本完成（仅剩项目截图需运行环境）。
 
-已完成模块：用户鉴权、课程知识点、题库、刷题判分、错题本、试卷考试、AI 功能、统计可视化。
-待完成：部署简历（Phase 11）。
+已完成模块：用户鉴权、课程知识点、题库、刷题判分、错题本、试卷考试、AI 功能、统计可视化、质量提升、部署简历。
+后续扩展方向：见 docs/FUTURE.md（P0-P3 四级优先级，15 个扩展方向）。
 
 本地运行方式：
 - MySQL: sudo /usr/local/mysql/support-files/mysql.server start
