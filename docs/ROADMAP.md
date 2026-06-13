@@ -6,7 +6,7 @@
 |:----:|------|:----:|-----------|------|
 | 0 | 项目规划 | ✅ 已完成 | 0.5天 | 文档产出 |
 | 1 | 项目骨架 | ✅ 已完成 | 1天 | 前后端骨架 + Docker |
-| 2 | 用户与鉴权 | 🔵 进行中 | 1.5天 | 注册登录 + JWT |
+| 2 | 用户与鉴权 | ✅ 已完成 | 1.5天 | 注册登录 + JWT |
 | 3 | 课程与知识点 | ✅ 已完成 | 1天 | CRUD + 前端页面 |
 | 4 | 题库系统 | ✅ 已完成 | 2天 | 题目 CRUD + 前端 |
 | 5 | 刷题与判分 | ✅ 已完成 | 2天 | 答题 + 判分 + 记录 |
@@ -14,7 +14,7 @@
 | 7 | 试卷与考试 | ✅ 已完成 | 2.5天 | 组卷 + 考试 + 成绩 |
 | 8 | AI 功能 | ✅ 已完成 | 2天 | AI 解析 + 复习建议 |
 | 9 | 统计可视化 | ✅ 已完成 | 1.5天 | 图表 + 面板 |
-| 10 | 质量提升 | ⬜ 待开始 | 2天 | 重构 + 校验 + 文档 |
+| 10 | 质量提升 | 🔵 进行中 | 2天 | 重构 + 校验 + 文档 |
 | 11 | 部署与简历 | ⬜ 待开始 | 1.5天 | Docker + README + 简历材料 |
 
 **预计总工期**：约 17-20 天
@@ -86,34 +86,34 @@
 
 ---
 
-## Phase 2：用户与鉴权 🔵
+## Phase 2：用户与鉴权 ✅
 
 ### 目标
 实现用户注册、登录、JWT 鉴权，前端完成登录注册页面。
 
 ### 后端任务
-- [ ] 创建 User 实体类
-- [ ] 创建 UserMapper
-- [ ] 实现 JwtTokenProvider（生成、解析、验证 Token）
-- [ ] 实现 JwtAuthenticationFilter
-- [ ] 配置 SecurityConfig（权限规则）
-- [ ] 实现 UserDetailsServiceImpl
-- [ ] 实现 AuthService（注册、登录）
-- [ ] 实现 UserService（用户信息查询、修改）
-- [ ] 实现 AuthController（注册、登录、当前用户）
-- [ ] 实现 UserController（修改昵称、头像）
-- [ ] DTO：LoginRequest、RegisterRequest、LoginResponse、UserVO
-- [ ] 参数校验（@NotBlank、@Size 等）
+- [x] 创建 User 实体类
+- [x] 创建 UserMapper
+- [x] 实现 JwtTokenProvider（生成、解析、验证 Token）
+- [x] 实现 JwtAuthenticationFilter
+- [x] 配置 SecurityConfig（权限规则）
+- [x] 实现 UserDetailsServiceImpl
+- [x] 实现 AuthService（注册、登录）
+- [ ] 实现 UserService（用户信息查询、修改）（后期补充）
+- [x] 实现 AuthController（注册、登录、当前用户）
+- [ ] 实现 UserController（修改昵称、头像）（后期补充）
+- [x] DTO：LoginRequest、RegisterRequest、LoginResponse、UserVO
+- [x] 参数校验（@NotBlank、@Size 等）
 
 ### 前端任务
-- [ ] 实现 auth.ts（Token 存储、获取、清除）
-- [ ] 实现 request.ts（Axios 拦截器：401 跳转登录）
-- [ ] 实现 user store（登录状态、用户信息）
-- [ ] 实现 API：user.ts（login、register、getCurrentUser、updateProfile）
-- [ ] 创建 LoginView.vue（登录表单）
-- [ ] 创建 RegisterView.vue（注册表单）
-- [ ] 配置路由守卫（未登录跳转登录页）
-- [ ] 登录成功后跳转首页
+- [x] 实现 auth.ts（Token 存储、获取、清除）
+- [x] 实现 request.ts（Axios 拦截器：401 跳转登录）
+- [x] 实现 user store（登录状态、用户信息）
+- [x] 实现 API：user.ts（login、register、getCurrentUser、updateProfile）
+- [x] 创建 LoginView.vue（登录表单）
+- [x] 创建 RegisterView.vue（注册表单）
+- [x] 配置路由守卫（未登录跳转登录页）
+- [x] 登录成功后跳转首页
 
 ### 验收标准
 1. 用户可以通过 POST /api/auth/register 注册

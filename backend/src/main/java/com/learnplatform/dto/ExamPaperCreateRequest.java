@@ -1,14 +1,21 @@
 package com.learnplatform.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import java.util.List;
 
 /**
  * 创建/更新试卷请求
  */
 public class ExamPaperCreateRequest {
+    @NotBlank(message = "试卷名称不能为空")
     private String title;
     private String description;
+    @NotNull(message = "课程ID不能为空")
     private Long courseId;
+    @NotNull(message = "考试时长不能为空")
+    @Positive(message = "考试时长必须大于0")
     private Integer duration;
     private Integer status;
     private List<QuestionItem> questions;

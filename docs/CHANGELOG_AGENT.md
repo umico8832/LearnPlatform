@@ -14,6 +14,92 @@
 
 ---
 
+## Round 11 - 2026-06-13
+
+### 阶段
+Phase 10：质量提升（第一轮）
+
+### 本轮目标
+后端参数校验补全和接口文档补全（Knife4j/Swagger 注解），修复 ROADMAP Phase 2 状态。
+
+### 完成内容
+
+#### 1. DTO 参数校验补全
+- `QuestionCreateRequest.java` - 添加 @NotBlank(content, questionType)、@NotNull(courseId)
+- `PracticeSubmitRequest.java` - 添加 @NotNull(questionId)、@NotBlank(userAnswer)
+- `ExamPaperCreateRequest.java` - 添加 @NotBlank(title)、@NotNull(courseId, duration)、@Positive(duration)
+- `ExamSubmitRequest.java` - 添加 @NotNull(examRecordId)、@NotEmpty(answers)
+- LoginRequest、RegisterRequest 已有校验，无需修改
+
+#### 2. Controller @Valid 注解补全
+- `AdminQuestionController.java` - create/update 方法添加 @Valid
+- `PracticeController.java` - submitAnswer 方法添加 @Valid
+- `AdminExamController.java` - create/update 方法添加 @Valid
+- `ExamController.java` - submitExam 方法添加 @Valid
+- AuthController 已有 @Valid，无需修改
+
+#### 3. Knife4j/Swagger 注解补全（8 个 Controller）
+- `AuthController.java` - @Tag("认证管理") + 3 个 @Operation
+- `PracticeController.java` - @Tag("刷题练习") + 4 个 @Operation
+- `WrongQuestionController.java` - @Tag("错题本") + 4 个 @Operation
+- `AdminQuestionController.java` - @Tag("管理端-题目管理") + 5 个 @Operation
+- `ExamController.java` - @Tag("考试") + 6 个 @Operation
+- `AdminExamController.java` - @Tag("管理端-试卷管理") + 6 个 @Operation
+- `AiController.java` - @Tag("AI 功能") + 4 个 @Operation
+- `StatisticsController.java` - @Tag("统计") + 3 个 @Operation
+
+#### 4. 文档更新
+- `docs/ROADMAP.md` - Phase 2 状态修正为 ✅ 已完成，Phase 10 状态更新为 🔵 进行中
+
+### 修改文件清单
+| 文件 | 操作 |
+|------|------|
+| backend/src/main/java/com/learnplatform/dto/QuestionCreateRequest.java | 修改（添加 Validation） |
+| backend/src/main/java/com/learnplatform/dto/PracticeSubmitRequest.java | 修改（添加 Validation） |
+| backend/src/main/java/com/learnplatform/dto/ExamPaperCreateRequest.java | 修改（添加 Validation） |
+| backend/src/main/java/com/learnplatform/dto/ExamSubmitRequest.java | 修改（添加 Validation） |
+| backend/src/main/java/com/learnplatform/controller/AdminQuestionController.java | 修改（@Valid + Swagger） |
+| backend/src/main/java/com/learnplatform/controller/PracticeController.java | 修改（@Valid + Swagger） |
+| backend/src/main/java/com/learnplatform/controller/AdminExamController.java | 修改（@Valid + Swagger） |
+| backend/src/main/java/com/learnplatform/controller/ExamController.java | 修改（@Valid + Swagger） |
+| backend/src/main/java/com/learnplatform/controller/AuthController.java | 修改（Swagger） |
+| backend/src/main/java/com/learnplatform/controller/WrongQuestionController.java | 修改（Swagger） |
+| backend/src/main/java/com/learnplatform/controller/AiController.java | 修改（Swagger） |
+| backend/src/main/java/com/learnplatform/controller/StatisticsController.java | 修改（Swagger） |
+| docs/ROADMAP.md | 修改（Phase 2→✅，Phase 10→🔵） |
+| docs/CHANGELOG_AGENT.md | 修改（添加本轮记录） |
+
+### 验收结果
+- [x] 后端编译通过（mvn clean compile BUILD SUCCESS）
+- [x] 所有创建/更新请求 DTO 已添加 Validation 注解
+- [x] 所有 Controller 的 @RequestBody 方法已添加 @Valid
+- [x] 所有 Controller 已添加 @Tag 和 @Operation Swagger 注解
+- [x] ROADMAP Phase 2 状态已修正为 ✅
+
+### 遗留问题
+- 前端体验优化未完成（加载状态、错误提示、空状态）
+- 边界情况处理未完成（重复提交、并发）
+- 日志规范化未完成
+- SQL 优化检查未完成
+- 安全检查未完成
+
+### 下轮建议
+- 继续 Phase 10：前端体验优化
+- 为前端页面添加 loading 状态、空状态、错误提示
+- 建议 commit message: `refactor(quality): 补全参数校验和接口文档注解`
+
+每轮开发记录包含：
+- 轮次和日期
+- 当前阶段
+- 本轮目标
+- 完成内容
+- 修改文件清单
+- 验收结果
+- 遗留问题
+- 下轮建议
+
+---
+
 ## Round 10 - 2026-06-13
 
 ### 阶段

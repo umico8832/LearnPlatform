@@ -1,14 +1,25 @@
 package com.learnplatform.dto;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 
 /**
  * 创建/更新题目请求 DTO
  */
 public class QuestionCreateRequest {
+    @NotBlank(message = "题干内容不能为空")
     private String content;
+
+    @NotBlank(message = "题目类型不能为空")
     private String questionType;
+
+    @NotNull(message = "课程ID不能为空")
     private Long courseId;
+
     private Integer difficulty;
     private String analysis;
     private String tags;

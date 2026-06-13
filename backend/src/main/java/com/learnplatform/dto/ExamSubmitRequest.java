@@ -1,12 +1,16 @@
 package com.learnplatform.dto;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 /**
  * 提交考试请求
  */
 public class ExamSubmitRequest {
+    @NotNull(message = "考试记录ID不能为空")
     private Long examRecordId;
+    @NotEmpty(message = "答案列表不能为空")
     private List<AnswerItem> answers;
 
     public Long getExamRecordId() { return examRecordId; }
