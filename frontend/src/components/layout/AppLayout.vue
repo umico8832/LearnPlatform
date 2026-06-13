@@ -40,6 +40,10 @@
           <el-icon><Trophy /></el-icon>
           <span>考试</span>
         </el-menu-item>
+        <el-menu-item index="/ai/review">
+          <el-icon><MagicStick /></el-icon>
+          <span>AI 复习建议</span>
+        </el-menu-item>
 
         <template v-if="isAdmin">
           <el-sub-menu index="admin">
@@ -106,7 +110,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { HomeFilled, Reading, Setting, Collection, Notebook, EditPen, Promotion, Clock, WarningFilled, Trophy } from '@element-plus/icons-vue'
+import { HomeFilled, Reading, Setting, Collection, Notebook, EditPen, Promotion, Clock, WarningFilled, Trophy, MagicStick } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()

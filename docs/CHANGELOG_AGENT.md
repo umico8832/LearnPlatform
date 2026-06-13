@@ -14,6 +14,109 @@
 
 ---
 
+## Round 9 - 2026-06-13
+
+### 阶段
+Phase 8：AI 功能
+
+### 本轮目标
+完成 Phase 8 AI 功能：后端 AI Provider 架构（OpenAI 兼容接口）、4 个 AI 业务接口、前端 AI 复习建议页面和 Markdown 渲染组件。
+
+### 完成内容
+
+#### 1. 后端 AI 配置
+- `AiConfig.java` - AI 配置属性类（@ConfigurationProperties），读取 application.yml 中的 ai.* 配置
+
+#### 2. 后端 AI Provider
+- `service/ai/AiProvider.java` - AI Provider 接口（chat 方法）
+- `service/ai/OpenAiProvider.java` - OpenAI 兼容 API 实现
+  - 支持 OpenAI、DeepSeek、通义千问等兼容接口
+  - 错误处理：未启用/未配置 Key/API 错误
+
+#### 3. 后端 DTO
+- `AiRequest.java` - AI 请求 DTO（questionId、courseId、knowledgePointId）
+- `AiResponse.java` - AI 响应 VO（content + source）
+
+#### 4. 后端 Service
+- `AiService.java` - AI 业务服务
+  - generateExplanation() - 题目解析（构建题目上下文 + Prompt 模板）
+  - generateVariant() - 变式题生成
+  - generateReviewSuggestion() - 复习建议（基于错题数据分析）
+  - generateSummary() - 知识点总结
+
+#### 5. 后端 Controller
+- `AiController.java` - AI 控制器
+  - POST /api/ai/explanation - 题目解析
+  - POST /api/ai/variant - 变式题
+  - POST /api/ai/review-suggestion - 复习建议
+  - POST /api/ai/summary - 知识点总结
+
+#### 6. 前端依赖
+- 安装 marked（Markdown 渲染库）
+
+#### 7. 前端 API
+- `frontend/src/api/ai.ts` - AI API 封装（4 个接口方法）
+
+#### 8. 前端组件
+- `frontend/src/components/MarkdownRenderer.vue` - Markdown 渲染组件
+  - 使用 marked 解析 Markdown 为 HTML
+  - 完善的 CSS 样式（标题、列表、代码块、表格、引用）
+
+#### 9. 前端页面
+- `frontend/src/views/ai/ReviewSuggestionView.vue` - AI 复习建议页面
+  - 课程选择器（可选）
+  - 生成按钮（带加载状态）
+  - 结果 Markdown 渲染
+  - 错误提示
+
+#### 10. 路由和导航
+- `frontend/src/router/index.ts` - 新增 /ai/review 路由
+- `frontend/src/components/layout/AppLayout.vue` - 侧边栏新增"AI 复习建议"菜单项（MagicStick 图标）
+
+#### 11. 文档更新
+- `docs/ROADMAP.md` - Phase 8 标记为 ✅ 已完成
+
+### 修改文件清单
+| 文件 | 操作 |
+|------|------|
+| backend/src/main/java/com/learnplatform/config/AiConfig.java | 新建 |
+| backend/src/main/java/com/learnplatform/service/ai/AiProvider.java | 新建 |
+| backend/src/main/java/com/learnplatform/service/ai/OpenAiProvider.java | 新建 |
+| backend/src/main/java/com/learnplatform/dto/AiRequest.java | 新建 |
+| backend/src/main/java/com/learnplatform/dto/AiResponse.java | 新建 |
+| backend/src/main/java/com/learnplatform/service/AiService.java | 新建 |
+| backend/src/main/java/com/learnplatform/controller/AiController.java | 新建 |
+| frontend/package.json | 修改（新增 marked 依赖） |
+| frontend/src/api/ai.ts | 新建 |
+| frontend/src/components/MarkdownRenderer.vue | 新建 |
+| frontend/src/views/ai/ReviewSuggestionView.vue | 新建 |
+| frontend/src/router/index.ts | 修改（添加路由） |
+| frontend/src/components/layout/AppLayout.vue | 修改（添加菜单项） |
+| docs/ROADMAP.md | 修改（Phase 8→✅） |
+| docs/CHANGELOG_AGENT.md | 修改（添加本轮记录） |
+
+### 验收结果
+- [x] 后端编译通过（mvn clean compile BUILD SUCCESS）
+- [x] AI Provider 支持 OpenAI 兼容 API
+- [x] 未配置时给出友好提示
+- [x] 4 个 AI 接口实现（解析、变式题、复习建议、知识点总结）
+- [x] 前端 Markdown 渲染组件
+- [x] AI 复习建议页面
+- [x] 侧边栏 AI 复习建议入口
+
+### 遗留问题
+- 题目解析和变式题按钮未整合到刷题/错题页面（后续优化）
+- AiCallLog 调用日志未实现（后期）
+- 无流式输出（SSE），AI 响应需等待全部生成
+
+### 下轮建议
+- 进入 Phase 9：统计可视化
+- 后端：StatisticsService + StatisticsController
+- 前端：HomeView 学习面板、ECharts 图表
+- 建议 commit message: `feat(ai): 完成 Phase 8 AI 功能后端和前端`
+
+---
+
 ## Round 8 - 2026-06-13
 
 ### 阶段

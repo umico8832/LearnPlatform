@@ -63,6 +63,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '错题本' },
       },
       {
+        path: 'ai/review',
+        name: 'AiReview',
+        component: () => import('@/views/ai/ReviewSuggestionView.vue'),
+        meta: { title: 'AI 复习建议' },
+      },
+      {
         path: 'exams',
         name: 'ExamList',
         component: () => import('@/views/exam/ExamListView.vue'),

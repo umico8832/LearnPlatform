@@ -12,7 +12,7 @@
 | 5 | 刷题与判分 | ✅ 已完成 | 2天 | 答题 + 判分 + 记录 |
 | 6 | 错题本 | ✅ 已完成 | 1.5天 | 错题收集 + 重练 |
 | 7 | 试卷与考试 | ✅ 已完成 | 2.5天 | 组卷 + 考试 + 成绩 |
-| 8 | AI 功能 | ⬜ 待开始 | 2天 | AI 解析 + 复习建议 |
+| 8 | AI 功能 | ✅ 已完成 | 2天 | AI 解析 + 复习建议 |
 | 9 | 统计可视化 | ⬜ 待开始 | 1.5天 | 图表 + 面板 |
 | 10 | 质量提升 | ⬜ 待开始 | 2天 | 重构 + 校验 + 文档 |
 | 11 | 部署与简历 | ⬜ 待开始 | 1.5天 | Docker + README + 简历材料 |
@@ -272,27 +272,26 @@
 
 ---
 
-## Phase 8：AI 功能 ⬜
+## Phase 8：AI 功能 ✅
 
 ### 目标
 接入 AI Provider，实现题目解析、变式题、复习建议等功能。
 
 ### 后端任务
-- [ ] AiProvider 接口
-- [ ] OpenAiProvider 实现
-- [ ] AiService（业务服务、Prompt 模板管理）
-- [ ] AiController（AI 解析、变式题、复习建议等接口）
-- [ ] AI 配置（api-base-url、api-key、model 环境变量）
-- [ ] AI 调用错误处理和降级
+- [x] AiProvider 接口
+- [x] OpenAiProvider 实现（支持 OpenAI 兼容 API）
+- [x] AiService（题目解析、变式题、复习建议、知识点总结）
+- [x] AiController（4 个接口）
+- [x] AiConfig（AI_ENABLED、API_BASE_URL、API_KEY、MODEL 环境变量注入）
+- [x] AI 调用错误处理（未启用/未配置/API 错误）
 - [ ] AiCallLog 实体（后期记录调用日志）
 
 ### 前端任务
-- [ ] MarkdownRenderer.vue 组件
-- [ ] AI 解析展示组件
-- [ ] 变式题展示
-- [ ] 复习建议页面
-- [ ] API：ai.ts
-- [ ] AI 功能入口整合到刷题、错题本页面
+- [x] MarkdownRenderer.vue 组件（使用 marked 渲染 Markdown）
+- [x] AI API 封装（ai.ts）
+- [x] ReviewSuggestionView.vue（AI 复习建议页面）
+- [x] AI 功能入口整合到侧边栏导航
+- [ ] 题目解析和变式题按钮整合到刷题/错题页面（后续优化）
 
 ### 验收标准
 1. 未配置 API Key 时显示友好提示
