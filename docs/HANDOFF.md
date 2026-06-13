@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 10 — 质量提升（进行中）
+当前阶段：Phase 11 — 部署与简历（进行中）
 
 阶段状态：
 - [x] Phase 0：项目规划 ✅
@@ -29,8 +29,8 @@
 - [x] Phase 7：试卷与考试 ✅
 - [x] Phase 8：AI 功能 ✅
 - [x] Phase 9：统计可视化 ✅
-- [ ] Phase 10：质量提升（进行中 - 参数校验、接口文档、前端体验优化、日志规范化、SQL优化、安全检查已完成）
-- [ ] Phase 11：部署与简历（待开始）
+- [x] Phase 10：质量提升 ✅（参数校验、接口文档、前端体验优化、日志规范化、SQL优化、安全检查）
+- [ ] Phase 11：部署与简历（进行中 - Docker Compose 完善、README 更新、演示流程文档、简历材料补充已完成）
 
 ---
 
@@ -96,20 +96,20 @@ docker compose up -d
 
 ## 6. 下一步建议任务
 
-任务名称：Phase 11 - 部署与简历
+任务名称：Phase 11 - 部署与简历（收尾）
 
-任务目标：
-- Docker Compose 完善（环境变量、健康检查）
-- README.md 完善（截图、启动说明、常见问题）
-- 项目截图制作
-- 演示流程文档
-- docs/RESUME.md 完善
-- 面试问答整理
-- 技术亮点总结
-- 后续扩展方向文档
-- Git 历史整理
+已完成：
+- [x] Docker Compose 完善（健康检查、启动顺序、环境变量）
+- [x] README.md 完善（状态表、Lombok、JDK、FAQ）
+- [x] 演示流程文档（docs/DEMO.md）
+- [x] 简历材料完善（docs/RESUME.md 技术亮点 + 面试问答 Q8-Q10）
 
-建议 commit message: `refactor(quality): 日志规范化、SQL 索引优化和安全响应头`
+待完成：
+- [ ] 项目截图制作（需要运行环境截图）
+- [ ] 后续扩展方向文档
+- [ ] Git 历史整理
+
+建议 commit message: `docs(deploy): 完善部署配置、README、演示流程和简历材料`
 
 ---
 

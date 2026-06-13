@@ -31,7 +31,10 @@
 > - 前后端分离，RESTful 接口规范，统一响应结构和全局异常处理
 > - AI Provider 抽象层设计，支持多 AI 服务商切换，通过环境变量配置敏感信息
 > - 完善的数据库设计，12 张核心业务表，支持逻辑删除和自动填充
-> - Docker Compose 一键部署，包含 Nginx 反向代理和 MySQL 初始化
+> - Docker Compose 一键部署，包含健康检查和启动顺序控制
+> - 规范化日志体系：HTTP 请求日志、业务操作日志、AI 调用日志
+> - 性能优化：N+1 查询修复、复合索引、批量加载
+> - 安全加固：安全响应头、越权校验、SQL 注入防护
 
 ---
 
@@ -166,6 +169,34 @@
 > 4. **安全加固**：接口限流、操作日志审计、更细粒度的权限控制
 > 5. **前端优化**：骨架屏、虚拟列表、PWA 支持
 > 6. **部署优化**：CI/CD 流水线、多环境配置、日志收集和监控
+
+### Q8：你是怎么做性能优化的？
+
+> 1. **N+1 查询修复**：错题本列表查询原来是逐条查 Question，改为批量加载后用 Map 缓存，将 N+1 查询优化为 2 次查询。
+>
+> 2. **复合索引**：针对高频查询场景添加了复合索引，例如 `practice_record(user_id, create_time)` 优化用户刷题记录按时间查询，`wrong_question(user_id, mastery_level)` 优化按掌握程度筛选。
+>
+> 3. **AI 调用超时优化**：为 AI 接口创建独立的 Axios 实例，超时时间从默认 15 秒调整为 60 秒，避免 AI 长响应导致误报超时。
+
+### Q9：日志是怎么设计的？
+
+> 采用三层日志体系：
+>
+> 1. **HTTP 请求日志**：通过 `RequestLoggingFilter` 过滤器记录所有 API 调用，包括请求方法、URI、状态码、耗时。跳过健康检查和静态资源，4xx/5xx 用 warn 级别。
+>
+> 2. **业务操作日志**：核心 Service（AuthService、PracticeService、ExamService、WrongQuestionService）在关键操作处添加 info 级别日志，如用户注册、登录、答题提交、考试开始/结束等。
+>
+> 3. **安全日志**：认证失败、越权访问等安全事件通过 Spring Security 框架和自定义异常处理器记录。
+
+### Q10：项目中做了哪些安全措施？
+
+> 1. **认证授权**：Spring Security + JWT，管理端接口强制 ADMIN 角色
+> 2. **越权校验**：考试结果、错题本操作都校验 userId 是否匹配当前用户
+> 3. **安全响应头**：X-Content-Type-Options: nosniff（防 MIME 嗅探）、X-Frame-Options: SAMEORIGIN（防点击劫持）
+> 4. **SQL 注入防护**：MyBatis-Plus 参数化查询，无原生 SQL 拼接
+> 5. **XSS 防护**：题干内容存储为 Markdown，前端使用 marked 渲染，后端参数化查询防注入
+> 6. **参数校验**：所有创建/更新请求 DTO 添加 @NotBlank/@NotNull/@Valid 注解，Controller 方法添加 @Valid 校验
+> 7. **敏感信息管理**：API Key、JWT Secret 等通过环境变量配置，.env 文件不入 Git
 
 ---
 

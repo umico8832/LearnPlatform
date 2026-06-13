@@ -37,14 +37,15 @@
 ### 后端
 | 技术 | 说明 |
 |------|------|
-| Java 17+ | 编程语言 |
+| Java 17+ | 编程语言（推荐 JDK 21+） |
 | Spring Boot 3 | 应用框架 |
 | MyBatis-Plus | ORM 框架 |
 | Spring Security | 安全框架 |
 | JWT | 鉴权方案 |
 | Knife4j | 接口文档（Swagger 增强） |
 | Validation | 参数校验 |
-| Lombok | 代码简化 |
+
+> **注意**：本项目已移除 Lombok（JDK 26 兼容性问题），所有 Java 实体类使用手写 getter/setter/toString。
 
 ### 数据库 & 部署
 | 技术 | 说明 |
@@ -79,7 +80,7 @@ LearnPlatform/
 │   │   ├── controller/          # Controller 层
 │   │   ├── dto/                 # 数据传输对象
 │   │   ├── security/            # 安全模块（JWT）
-│   │   └── enums/               # 枚举类
+│   │   └── service/ai/          # AI Provider 抽象层
 │   ├── src/main/resources/
 │   │   ├── application.yml      # 应用配置
 │   │   └── db/schema.sql        # 建表 SQL
@@ -91,6 +92,7 @@ LearnPlatform/
 │   ├── API_DESIGN.md            # 接口设计
 │   ├── ROADMAP.md               # 开发路线图
 │   ├── RESUME.md                # 简历项目描述
+│   ├── DEMO.md                  # 演示流程
 │   └── CHANGELOG_AGENT.md       # 开发日志
 ├── docker-compose.yml           # Docker 编排
 ├── .env.example                 # 环境变量示例
@@ -102,14 +104,14 @@ LearnPlatform/
 ### 方式一：本地开发
 
 #### 环境要求
-- JDK 21+
+- JDK 21+（推荐 JDK 26）
 - Maven 3.8+
 - Node.js 18+
 - MySQL 8.0+
 
 #### 1. 克隆项目
 ```bash
-git clone <repo-url>
+git clone https://github.com/umico8832/LearnPlatform.git
 cd LearnPlatform
 ```
 
@@ -153,17 +155,22 @@ cp .env.example .env
 
 #### 2. 启动所有服务
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
-#### 3. 访问
+#### 3. 查看服务状态
+```bash
+docker compose ps
+```
+
+#### 4. 访问
 - 前端页面：http://localhost
 - 后端接口：http://localhost:8080
 - 接口文档：http://localhost:8080/doc.html
 
-#### 4. 停止服务
+#### 5. 停止服务
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ## 演示账号
@@ -174,6 +181,10 @@ docker-compose down
 | 普通用户 | testuser | test123 |
 
 > 注意：以上为开发环境演示账号，生产环境请修改密码。
+
+## 演示流程
+
+详见 [docs/DEMO.md](docs/DEMO.md)，包含完整的功能演示步骤和截图说明。
 
 ## 接口文档
 
@@ -188,17 +199,17 @@ docker-compose down
 | 阶段 | 名称 | 状态 |
 |:----:|------|:----:|
 | 0 | 项目规划 | ✅ |
-| 1 | 项目骨架 | ⬜ |
-| 2 | 用户与鉴权 | ⬜ |
-| 3 | 课程与知识点 | ⬜ |
-| 4 | 题库系统 | ⬜ |
-| 5 | 刷题与判分 | ⬜ |
-| 6 | 错题本 | ⬜ |
-| 7 | 试卷与考试 | ⬜ |
-| 8 | AI 功能 | ⬜ |
-| 9 | 统计可视化 | ⬜ |
-| 10 | 质量提升 | ⬜ |
-| 11 | 部署与简历 | ⬜ |
+| 1 | 项目骨架 | ✅ |
+| 2 | 用户与鉴权 | ✅ |
+| 3 | 课程与知识点 | ✅ |
+| 4 | 题库系统 | ✅ |
+| 5 | 刷题与判分 | ✅ |
+| 6 | 错题本 | ✅ |
+| 7 | 试卷与考试 | ✅ |
+| 8 | AI 功能 | ✅ |
+| 9 | 统计可视化 | ✅ |
+| 10 | 质量提升 | ✅ |
+| 11 | 部署与简历 | 🔵 |
 
 ## 项目规范
 
@@ -233,7 +244,16 @@ A: 本地开发时确认后端已启动在 8080 端口，且 Vite 代理配置�
 A: AI 功能需要配置有效的 API Key。在 `.env` 文件中设置 `AI_API_KEY`，并将 `AI_ENABLED` 设为 `true`。
 
 ### Q: Docker 启动后前端无法访问后端？
-A: 确认 docker-compose 中所有服务已正常启动（`docker-compose ps`），检查 Nginx 配置中的反向代理地址。
+A: 确认 docker compose 中所有服务已正常启动（`docker compose ps`），检查 Nginx 配置中的反向代理地址。
+
+### Q: 后端编译报 Lombok 相关错误？
+A: 本项目已移除 Lombok（JDK 26 兼容性问题），所有 Java 实体类使用手写 getter/setter/toString。请确保使用 JDK 21+ 编译。
+
+### Q: 如何查看 API 接口文档？
+A: 后端启动后访问 http://localhost:8080/doc.html 即可查看 Knife4j 接口文档，包含所有接口的请求参数和响应格式。
+
+### Q: 如何初始化测试数据？
+A: 数据库 schema.sql 包含建表 SQL。测试账号：管理员 admin/admin123，普通用户 testuser/test123。
 
 ## 文档索引
 
@@ -244,8 +264,10 @@ A: 确认 docker-compose 中所有服务已正常启动（`docker-compose ps`）
 | [DB_DESIGN.md](docs/DB_DESIGN.md) | 数据库设计文档 |
 | [API_DESIGN.md](docs/API_DESIGN.md) | 接口设计文档 |
 | [ROADMAP.md](docs/ROADMAP.md) | 开发路线图 |
+| [DEMO.md](docs/DEMO.md) | 演示流程文档 |
 | [RESUME.md](docs/RESUME.md) | 简历项目描述和面试问答 |
 | [CHANGELOG_AGENT.md](docs/CHANGELOG_AGENT.md) | 开发日志 |
+| [HANDOFF.md](docs/HANDOFF.md) | Agent 交接文档 |
 
 ## 许可证
 

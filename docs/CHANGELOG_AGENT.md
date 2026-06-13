@@ -14,6 +14,86 @@
 
 ---
 
+## Round 14 - 2026-06-13
+
+### 阶段
+Phase 11：部署与简历（第一轮）
+
+### 本轮目标
+完善 Docker Compose 部署配置、README 更新、演示流程文档创建、简历材料补充。
+
+### 完成内容
+
+#### 1. Docker Compose 完善
+- `docker-compose.yml` - backend 服务添加健康检查（wget /api/public/health）
+- `docker-compose.yml` - backend 添加 start_period 30s（等待 Spring Boot 启动）
+- `docker-compose.yml` - frontend 服务添加健康检查（wget /）
+- `docker-compose.yml` - frontend depends_on 改为 condition: service_healthy（确保后端就绪后才启动）
+- `docker-compose.yml` - backend 环境变量新增 AI_API_BASE_URL、AI_MODEL
+
+#### 2. README.md 完善
+- 移除 Lombok 技术栈说明（已因 JDK 26 兼容性问题移除）
+- JDK 版本说明更新（推荐 JDK 21+）
+- 开发计划状态表全部更新为实际完成状态
+- 新增演示流程文档链接
+- 新增 FAQ：Lombok 编译错误、API 文档查看、测试数据初始化
+- 修正 `docker-compose` 为 `docker compose`（新版命令）
+- 项目结构更新（service/ai/ 目录、docs/DEMO.md）
+- 克隆 URL 更新为实际 GitHub 地址
+
+#### 3. 演示流程文档
+- **新建** `docs/DEMO.md` - 完整的项目演示流程文档
+  - 演示准备（环境启动、演示账号、访问地址）
+  - 用户端功能演示（9 个步骤：登录→首页→课程→题库→刷题→记录→错题→考试→AI）
+  - 管理端功能演示（4 个步骤：课程管理→知识点→题目→试卷）
+  - 技术亮点演示（接口文档、安全机制、Docker 部署）
+  - 演示时间建议（20-30 分钟）
+  - 演示注意事项和测试数据初始化指南
+
+#### 4. 简历材料完善
+- `docs/RESUME.md` - 项目亮点新增 3 项（Docker 健康检查、日志体系、性能优化、安全加固）
+- `docs/RESUME.md` - 新增面试问答 Q8（性能优化：N+1 修复、复合索引、AI 超时优化）
+- `docs/RESUME.md` - 新增面试问答 Q9（日志设计：三层日志体系）
+- `docs/RESUME.md` - 新增面试问答 Q10（安全措施：7 项安全措施详解）
+
+#### 5. 文档更新
+- `docs/ROADMAP.md` - Phase 10 状态更新为 ✅ 已完成
+- `docs/ROADMAP.md` - Phase 11 状态更新为 🔵 进行中，已完成任务标记
+
+### 修改文件清单
+| 文件 | 操作 |
+|------|------|
+| docker-compose.yml | 修改（健康检查、启动顺序、环境变量） |
+| README.md | 重写（状态表、Lombok、JDK、FAQ、演示链接） |
+| docs/DEMO.md | 新建（演示流程文档） |
+| docs/RESUME.md | 修改（技术亮点 + 面试问答 Q8-Q10） |
+| docs/ROADMAP.md | 修改（Phase 10→✅，Phase 11→🔵） |
+| docs/CHANGELOG_AGENT.md | 修改（添加本轮记录） |
+
+### 验收结果
+- [x] Docker Compose backend/frontend 健康检查配置正确
+- [x] Docker Compose frontend 依赖 backend 健康状态启动
+- [x] README 状态表与实际一致
+- [x] README 移除 Lombok 说明，添加 JDK 版本推荐
+- [x] README 新增 FAQ 覆盖常见问题
+- [x] docs/DEMO.md 演示流程覆盖所有核心功能
+- [x] docs/RESUME.md 面试问答从 7 题扩展到 10 题
+- [x] ROADMAP Phase 10 标记为已完成
+
+### 遗留问题
+- 项目截图未制作（需要运行环境截图）
+- 后续扩展方向文档未创建
+- Git 历史整理未完成
+
+### 下轮建议
+- 制作项目截图（首页、刷题、错题本、考试、AI 功能页面）
+- 创建后续扩展方向文档
+- Git 历史整理（如果需要展示给面试官）
+- 或进入项目收尾：确认 Docker Compose 可一键启动
+- 建议 commit message: `docs(deploy): 完善部署配置、README、演示流程和简历材料`
+
+---
+
 ## Round 13 - 2026-06-13
 
 ### 阶段
