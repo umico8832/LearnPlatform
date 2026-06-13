@@ -3,6 +3,7 @@ package com.learnplatform.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
+import com.learnplatform.common.exception.ExamTimedOutException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.ExamSubmitRequest;
 import com.learnplatform.dto.ExamRecordVO;
@@ -94,10 +95,10 @@ public class ExamService {
     /**
      * 提交考试
      */
-    @Transactional
+    @Transactional(noRollbackFor = ExamTimedOutException.class)
     public ExamRecordVO submitExam(ExamSubmitRequest request, Long userId) {
         log.info("提交考试: userId={}, examRecordId={}", userId, request.getExamRecordId());
-        ExamRecord record = examRecordMapper.selectById(request.getExamRecordId());
+        ExamRecord record = examRecordMapper.selectByIdForUpdate(request.getExamRecordId());
         if (record == null) throw new BusinessException(ResultCode.NOT_FOUND, "考试记录不存在");
         if (!record.getUserId().equals(userId)) throw new BusinessException(ResultCode.FORBIDDEN, "无权操作");
         if (record.getStatus() != 0) throw new BusinessException(ResultCode.BUSINESS_ERROR, "考试已结束");
@@ -111,7 +112,7 @@ public class ExamService {
             record.setScore(0);
             record.setStatus(2);
             examRecordMapper.updateById(record);
-            throw new BusinessException(ResultCode.BUSINESS_ERROR, "考试已超时");
+            throw new ExamTimedOutException();
         }
 
         // 获取试卷题目关联

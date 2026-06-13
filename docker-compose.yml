@@ -9,7 +9,7 @@ services:
       MYSQL_COLLATION: utf8mb4_general_ci
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./backend/src/main/resources/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./backend/src/main/resources/db/migration/V1__baseline.sql:/docker-entrypoint-initdb.d/schema.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s

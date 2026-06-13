@@ -50,6 +50,7 @@
 | 技术 | 说明 |
 |------|------|
 | MySQL 8.0 | 主数据库 |
+| Flyway | 数据库版本迁移 |
 | Docker | 容器化 |
 | Docker Compose | 多容器编排 |
 | Nginx | 反向代理 |
@@ -82,7 +83,7 @@ LearnPlatform/
 │   │   └── service/ai/          # AI Provider 抽象层
 │   ├── src/main/resources/
 │   │   ├── application.yml      # 应用配置
-│   │   └── db/schema.sql        # 建表 SQL
+│   │   └── db/migration/        # Flyway 数据库迁移脚本
 │   └── pom.xml
 ├── docs/                        # 项目文档
 │   ├── PRD.md                   # 产品需求文档
@@ -116,7 +117,7 @@ cd LearnPlatform
 
 #### 2. 初始化数据库
 ```bash
-mysql -u root -p < backend/src/main/resources/db/schema.sql
+mysql -u root -p < backend/src/main/resources/db/migration/V1__baseline.sql
 ```
 
 #### 3. 配置环境变量

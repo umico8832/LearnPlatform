@@ -323,7 +323,7 @@ backend/
 │   │       ├── mapper/                              # MyBatis XML
 │   │       │   └── *.xml
 │   │       └── db/
-│   │           └── schema.sql                       # 建表 SQL
+│   │           └── migration/                       # Flyway 版本化迁移脚本
 │   └── test/
 │       └── java/com/learnplatform/
 │           ├── service/

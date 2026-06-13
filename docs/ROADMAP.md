@@ -285,7 +285,7 @@
 - [x] AiController（4 个接口）
 - [x] AiConfig（AI_ENABLED、API_BASE_URL、API_KEY、MODEL 环境变量注入）
 - [x] AI 调用错误处理（未启用/未配置/API 错误）
-- [ ] AiCallLog 实体（后期记录调用日志）
+- [x] AiCallLog 实体与管理端调用日志查询
 
 ### 前端任务
 - [x] MarkdownRenderer.vue 组件（使用 marked 渲染 Markdown）
@@ -381,3 +381,5 @@
 - [x] 学习计划与提醒
 - [x] AiCallLog 调用日志接入
 - [x] 核心业务可信度修复（API 路径、答案隐藏、考试防篡改、导入一致性）
+- [x] 考试并发与事务一致性修复（行锁、答题唯一约束、发布后不可变）
+- [x] Flyway 数据库版本迁移接入

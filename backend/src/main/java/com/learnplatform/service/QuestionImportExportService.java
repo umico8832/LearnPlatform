@@ -101,27 +101,27 @@ public class QuestionImportExportService {
         QuestionExcelDTO example = new QuestionExcelDTO();
         example.setContent("以下哪个是 Java 的基本数据类型？");
         example.setQuestionType("SINGLE_CHOICE");
-        example.setCourseName("Java基础");
+        example.setCourseName("Java 基础");
         example.setDifficulty(2);
         example.setOptions("A.int|B.String|C.ArrayList|D.HashMap");
         example.setAnswer("A");
         example.setAnalysis("int 是 Java 的 8 种基本数据类型之一，String、ArrayList、HashMap 是引用类型。");
         example.setScore(2);
         example.setTags("基础");
-        example.setKnowledgePoints("Java基础,数据类型");
+        example.setKnowledgePoints("Java 语言基础");
         template.add(example);
 
         QuestionExcelDTO example2 = new QuestionExcelDTO();
         example2.setContent("Java 是一种编译型语言。");
         example2.setQuestionType("TRUE_FALSE");
-        example2.setCourseName("Java基础");
+        example2.setCourseName("Java 基础");
         example2.setDifficulty(1);
         example2.setOptions("对|错");
         example2.setAnswer("错");
         example2.setAnalysis("Java 既是编译型语言（编译为字节码），也是解释型语言（JVM 解释执行字节码）。");
         example2.setScore(1);
         example2.setTags("基础");
-        example2.setKnowledgePoints("Java概述");
+        example2.setKnowledgePoints("Java 语言基础");
         template.add(example2);
 
         EasyExcel.write(response.getOutputStream(), QuestionExcelDTO.class)

@@ -14,6 +14,49 @@
 
 ---
 
+## Round 28 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+修复整体审查发现的考试事务、并发提交、判分基准漂移、JWT 状态失效和数据库迁移问题。
+
+### 完成内容
+- 考试提交改为 `SELECT ... FOR UPDATE` 锁定考试记录，并通过专用超时异常保留已写入的超时状态。
+- `exam_answer` 增加考试记录与题目的联合唯一约束，防止重复答题明细。
+- 已发布试卷禁止修改或删除，其引用题目也禁止修改或删除，保证考试期间判分基准稳定。
+- 空试卷禁止发布，包括创建或编辑时直接选择“已发布”的路径；试卷编辑、删除和发布使用行锁串行化。
+- JWT 认证增加数据库用户状态、角色、用户名和更新时间校验，账号禁用、改权或资料/密码更新后旧 Token 失效。
+- Excel 官方模板课程名和知识点名与演示数据对齐。
+- 接入 Flyway，将原初始化 SQL 调整为 V1 基线，并新增 V2 考试答题唯一约束迁移。
+- 后端 Docker 构建改用 `dependency:resolve`，避免 `go-offline` 下载无关站点与报告插件。
+- 新增 JWT 过滤器和试卷状态测试，考试测试改为验证锁查询及专用超时异常。
+
+### 修改文件清单
+- 后端：考试 Service/Mapper、试卷 Service、题目 Service/Mapper、JWT Filter/Provider、Excel 模板服务
+- 数据库与部署：Flyway V1/V2、application.yml、pom.xml、Dockerfile、docker-compose.yml
+- 测试：`ExamServiceTest`、`ExamPaperServiceTest`、`JwtAuthenticationFilterTest`
+- 文档：README、ARCHITECTURE、DB_DESIGN、API_DESIGN、ROADMAP、FUTURE、HANDOFF、DEMO、CHANGELOG_AGENT
+
+### 验收结果
+- [x] `cd backend && mvn test`（17 tests，0 failures）
+- [x] Flyway 依赖解析为 9.22.3
+- [x] `docker compose config --quiet` 通过
+- [x] Docker Compose 后端与 MySQL 健康启动，Flyway 成功基线 V1 并执行 V2
+- [x] `exam_answer.uk_record_question` 联合唯一索引已在实际 MySQL 中验证
+
+### 遗留问题
+- AI 接口尚未增加用户级限流和调用配额。
+- 管理端用户管理尚未实现。
+- 前端仍缺少组件和端到端自动化测试。
+
+### 下轮建议
+- 增加 AI 用户级限流与每日配额，并补充 Controller/数据库集成测试。
+- 建议 commit message: `fix(exam): 修复考试并发与事务一致性问题`
+
+---
+
 ## Round 27 - 2026-06-13
 
 ### 阶段

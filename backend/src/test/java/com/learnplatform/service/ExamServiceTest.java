@@ -1,6 +1,7 @@
 package com.learnplatform.service;
 
 import com.learnplatform.common.exception.BusinessException;
+import com.learnplatform.common.exception.ExamTimedOutException;
 import com.learnplatform.dto.ExamSubmitRequest;
 import com.learnplatform.entity.ExamPaper;
 import com.learnplatform.entity.ExamQuestion;
@@ -69,10 +70,10 @@ class ExamServiceTest {
     @Test
     void marksExpiredExamAsTimedOut() {
         ExamRecord record = record(LocalDateTime.now().minusMinutes(61));
-        when(examRecordMapper.selectById(1L)).thenReturn(record);
+        when(examRecordMapper.selectByIdForUpdate(1L)).thenReturn(record);
         when(examPaperMapper.selectById(2L)).thenReturn(paper());
 
-        BusinessException exception = assertThrows(BusinessException.class,
+        ExamTimedOutException exception = assertThrows(ExamTimedOutException.class,
                 () -> examService.submitExam(request(answer(10L, "A")), 7L));
 
         assertEquals("考试已超时", exception.getMessage());
@@ -81,7 +82,7 @@ class ExamServiceTest {
     }
 
     private void stubActiveExam() {
-        when(examRecordMapper.selectById(1L)).thenReturn(record(LocalDateTime.now()));
+        when(examRecordMapper.selectByIdForUpdate(1L)).thenReturn(record(LocalDateTime.now()));
         when(examPaperMapper.selectById(2L)).thenReturn(paper());
     }
 

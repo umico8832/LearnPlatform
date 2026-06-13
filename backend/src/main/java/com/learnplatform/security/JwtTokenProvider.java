@@ -77,6 +77,10 @@ public class JwtTokenProvider {
         return claims.get("role", String.class);
     }
 
+    public Date getIssuedAtFromToken(String token) {
+        return parseToken(token).getIssuedAt();
+    }
+
     /**
      * 验证 Token
      */

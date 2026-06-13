@@ -14,7 +14,7 @@
 sudo /usr/local/mysql/support-files/mysql.server start
 
 # 2. 初始化数据库（首次）
-mysql -u root -p < backend/src/main/resources/db/schema.sql
+mysql -u root -p < backend/src/main/resources/db/migration/V1__baseline.sql
 
 # 3. 启动后端
 cd backend
@@ -349,7 +349,7 @@ docker compose down
 
 1. 执行建表 SQL：
 ```bash
-mysql -u root -p < backend/src/main/resources/db/schema.sql
+mysql -u root -p < backend/src/main/resources/db/migration/V1__baseline.sql
 ```
 
 2. 使用管理员账号登录后端接口文档（http://localhost:8080/doc.html）

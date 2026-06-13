@@ -27,17 +27,20 @@ public class QuestionService {
     private final QuestionKnowledgePointMapper questionKnowledgePointMapper;
     private final CourseMapper courseMapper;
     private final KnowledgePointMapper knowledgePointMapper;
+    private final ExamQuestionMapper examQuestionMapper;
 
     public QuestionService(QuestionMapper questionMapper,
                            QuestionOptionMapper questionOptionMapper,
                            QuestionKnowledgePointMapper questionKnowledgePointMapper,
                            CourseMapper courseMapper,
-                           KnowledgePointMapper knowledgePointMapper) {
+                           KnowledgePointMapper knowledgePointMapper,
+                           ExamQuestionMapper examQuestionMapper) {
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
         this.courseMapper = courseMapper;
         this.knowledgePointMapper = knowledgePointMapper;
+        this.examQuestionMapper = examQuestionMapper;
     }
 
     /**
@@ -198,6 +201,7 @@ public class QuestionService {
         if (question == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
+        ensureNotUsedByPublishedPaper(id);
 
         // 更新题目基本信息
         if (request.getContent() != null) question.setContent(request.getContent());
@@ -257,6 +261,7 @@ public class QuestionService {
         if (question == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
+        ensureNotUsedByPublishedPaper(id);
         // 删除题目（逻辑删除）
         questionMapper.deleteById(id);
         // 删除选项（逻辑删除）
@@ -312,6 +317,12 @@ public class QuestionService {
         fillQuestionVO(vo);
         if (vo.getOptions() != null) {
             vo.getOptions().forEach(option -> option.setIsCorrect(null));
+        }
+    }
+
+    private void ensureNotUsedByPublishedPaper(Long questionId) {
+        if (examQuestionMapper.countPublishedPapersByQuestionId(questionId) > 0) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "题目已用于已发布试卷，不能修改或删除");
         }
     }
 }

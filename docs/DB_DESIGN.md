@@ -463,6 +463,7 @@ CREATE TABLE `exam_record` (
 
 **索引**：
 - INDEX `idx_exam_record_id` ON `exam_record_id`
+- UNIQUE INDEX `uk_record_question` ON (`exam_record_id`, `question_id`)
 
 **建表 SQL**：
 ```sql
@@ -475,6 +476,7 @@ CREATE TABLE `exam_answer` (
   `score` INT DEFAULT NULL COMMENT '该题得分',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '答题时间',
   PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_record_question` (`exam_record_id`, `question_id`),
   KEY `idx_exam_record_id` (`exam_record_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='考试答题详情表';
 ```
@@ -579,7 +581,7 @@ INSERT INTO `course` (`name`, `description`, `sort_order`) VALUES
 
 ### 5.4 演示学习数据
 
-初始化脚本使用 `utf8mb4` 客户端字符集，并为 Java 基础课程写入 3 个知识点、3 道客观题、题目选项、知识点关联及 1 份已发布试卷，用于首次 Docker 启动后的登录、题库、刷题和考试演示。
+数据库由 Flyway 管理，迁移脚本位于 `backend/src/main/resources/db/migration`。`V1__baseline.sql` 使用 `utf8mb4` 客户端字符集，并为 Java 基础课程写入演示数据；后续结构变化必须新增版本迁移，不再直接修改已发布迁移。
 
 ---
 

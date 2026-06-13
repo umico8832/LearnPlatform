@@ -87,6 +87,8 @@ public class ExamPaperService {
      */
     @Transactional
     public ExamPaperVO createExamPaper(ExamPaperCreateRequest request, Long createBy) {
+        ensurePublishable(request.getStatus(), request.getQuestions(), 0);
+
         ExamPaper paper = new ExamPaper();
         paper.setTitle(request.getTitle());
         paper.setDescription(request.getDescription());
@@ -130,8 +132,10 @@ public class ExamPaperService {
      */
     @Transactional
     public ExamPaperVO updateExamPaper(Long id, ExamPaperCreateRequest request) {
-        ExamPaper paper = examPaperMapper.selectById(id);
+        ExamPaper paper = examPaperMapper.selectByIdForUpdate(id);
         if (paper == null) throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
+        ensureDraft(paper, "已发布试卷不能修改");
+        ensurePublishable(request.getStatus(), request.getQuestions(), paper.getQuestionCount());
 
         if (request.getTitle() != null) paper.setTitle(request.getTitle());
         if (request.getDescription() != null) paper.setDescription(request.getDescription());
@@ -169,8 +173,9 @@ public class ExamPaperService {
      */
     @Transactional
     public void deleteExamPaper(Long id) {
-        ExamPaper paper = examPaperMapper.selectById(id);
+        ExamPaper paper = examPaperMapper.selectByIdForUpdate(id);
         if (paper == null) throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
+        ensureDraft(paper, "已发布试卷不能删除");
         examPaperMapper.deleteById(id);
         LambdaQueryWrapper<ExamQuestion> deleteWrapper = new LambdaQueryWrapper<>();
         deleteWrapper.eq(ExamQuestion::getExamPaperId, id);
@@ -180,14 +185,38 @@ public class ExamPaperService {
     /**
      * 发布试卷
      */
+    @Transactional
     public void publishExamPaper(Long id) {
-        ExamPaper paper = examPaperMapper.selectById(id);
+        ExamPaper paper = examPaperMapper.selectByIdForUpdate(id);
         if (paper == null) throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
+        if (paper.getQuestionCount() == null || paper.getQuestionCount() <= 0) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "空试卷不能发布");
+        }
         paper.setStatus(1);
         examPaperMapper.updateById(paper);
     }
 
     // ======================== 私有方法 ========================
+
+    private void ensureDraft(ExamPaper paper, String message) {
+        if (paper.getStatus() != null && paper.getStatus() == 1) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, message);
+        }
+    }
+
+    private void ensurePublishable(Integer requestedStatus,
+                                   List<ExamPaperCreateRequest.QuestionItem> questions,
+                                   Integer currentQuestionCount) {
+        if (requestedStatus == null || requestedStatus != 1) {
+            return;
+        }
+        int questionCount = questions != null
+                ? questions.size()
+                : (currentQuestionCount != null ? currentQuestionCount : 0);
+        if (questionCount <= 0) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "空试卷不能发布");
+        }
+    }
 
     private ExamPaperVO toVO(ExamPaper paper) {
         ExamPaperVO vo = new ExamPaperVO();
