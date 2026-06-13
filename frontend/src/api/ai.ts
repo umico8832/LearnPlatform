@@ -9,22 +9,22 @@ export interface AiResponse {
 
 /** AI 生成题目解析 */
 export function getExplanation(questionId: number) {
-  return aiService.post<any, ApiResponse<AiResponse>>('/ai/explanation', { questionId })
+  return aiService.post<ApiResponse<AiResponse>>('/ai/explanation', { questionId }).then((res) => res.data)
 }
 
 /** AI 生成变式题 */
 export function getVariant(questionId: number) {
-  return aiService.post<any, ApiResponse<AiResponse>>('/ai/variant', { questionId })
+  return aiService.post<ApiResponse<AiResponse>>('/ai/variant', { questionId }).then((res) => res.data)
 }
 
 /** AI 生成复习建议 */
 export function getReviewSuggestion(courseId?: number) {
-  return aiService.post<any, ApiResponse<AiResponse>>('/ai/review-suggestion', courseId ? { courseId } : {})
+  return aiService.post<ApiResponse<AiResponse>>('/ai/review-suggestion', courseId ? { courseId } : {}).then((res) => res.data)
 }
 
 /** AI 生成知识点总结 */
 export function getSummary(knowledgePointId: number) {
-  return aiService.post<any, ApiResponse<AiResponse>>('/ai/summary', { knowledgePointId })
+  return aiService.post<ApiResponse<AiResponse>>('/ai/summary', { knowledgePointId }).then((res) => res.data)
 }
 
 export type AiStreamType = 'explanation' | 'variant'

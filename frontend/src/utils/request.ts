@@ -21,7 +21,7 @@ const service: AxiosInstance = axios.create({
  */
 export const aiService: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
-  timeout: 60000,
+  timeout: 120000,
   headers: {
     'Content-Type': 'application/json',
   },

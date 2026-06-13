@@ -14,6 +14,80 @@
 
 ---
 
+## Round 31 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+复查用户实际使用时 AI 复习建议偶发“调用失败”的问题，并提升慢模型调用稳定性。
+
+### 完成内容
+- 在用户当前打开的 `http://localhost:18000/ai/review` 页面复现点击“生成复习建议”。
+- 通过 Docker 后端日志确认请求已进入 `mimo-v2.5-pro` 外部模型调用，且一次成功耗时约 29 秒。
+- 将前端 AI 专用 Axios 超时时间从 60 秒提升到 120 秒，降低模型响应波动导致的前端超时失败。
+- 将本地 `.env` 中后端 `AI_TIMEOUT` 提升到 120 秒，并重建后端/前端容器使配置生效。
+- 刷新 Web 页面后重新生成 AI 复习建议，页面成功渲染 Markdown 报告。
+
+### 修改文件清单
+- `frontend/src/utils/request.ts`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验收结果
+- [x] 后端容器环境确认：`AI_TIMEOUT=120000`、`AI_ENABLED=true`、`AI_MODEL=mimo-v2.5-pro`
+- [x] `cd frontend && npm run build`（构建成功；仍有 VueUse/Rolldown 纯注解警告，不影响构建）
+- [x] `docker compose up -d --build backend frontend` 成功，后端/前端容器恢复 healthy
+- [x] Web 页面刷新后点击“生成复习建议”，成功显示“个性化复习建议”报告
+
+### 遗留问题
+- 外部模型响应速度存在波动，当前已放宽到 120 秒；如仍偶发失败，需要考虑改为流式生成复习建议或增加重试机制。
+- 当前前端 AI 超时时间仍为代码常量，后续可抽为 `VITE_AI_TIMEOUT` 配置。
+
+### 下轮建议
+- 将 AI 复习建议改造成 SSE 流式输出，避免长时间空白等待，也更适合慢模型。
+- 建议 commit message: `fix(ai): 放宽 AI 请求超时时间`
+
+---
+
+## Round 30 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+配置本地 AI 环境变量并进入 Web 页面验证 AI 复习建议真实可用。
+
+### 完成内容
+- 将本地 `.env` 的 AI 配置切换为启用状态，并确认 `.env` 已被 Git 忽略。
+- 重建 Docker Compose 后端/前端容器，使后端读取新的 AI 环境变量。
+- 通过后端接口验证 `POST /api/ai/review-suggestion` 可真实调用外部 OpenAI 兼容接口并返回内容。
+- 修复前端 AI API 封装未解包 Axios 响应体的问题，避免页面收到成功响应后仍显示“生成失败”。
+- 使用 in-app Browser 登录 `testuser`，进入 `http://localhost:18000/ai/review`，点击“生成复习建议”，页面成功渲染 Markdown 复习报告。
+
+### 修改文件清单
+- `frontend/src/api/ai.ts`
+- `docs/CHANGELOG_AGENT.md`
+- `docs/ai-review-web-test.png`
+
+### 验收结果
+- [x] 外部 AI 普通 `chat/completions` 调用成功
+- [x] 外部 AI 流式 `chat/completions` 调用返回 SSE 分片
+- [x] Docker Compose 后端/前端容器重建并恢复 healthy
+- [x] 后端 `POST /api/ai/review-suggestion` 返回 `code=0`，生成内容长度约 1400+ 字符
+- [x] `cd frontend && npm run build`（构建成功；仍有 VueUse/Rolldown 纯注解警告，不影响构建）
+- [x] Web 页面级 AI 复习建议生成成功，页面显示“个性化复习建议”报告
+
+### 遗留问题
+- 当前 AI Key 仅保存在本地 `.env`，不要提交；该 Key 已在对话中出现，长期使用建议到服务商后台重新生成。
+- `mimo-v2.5-pro` 完整复习建议生成耗时约 40-60 秒，前端 AI 超时时间当前为 60 秒，网络波动时可能临界超时。
+
+### 下轮建议
+- 将前端 AI 专用超时时间从硬编码改为环境变量，或提升到 90 秒以适配较慢模型。
+- 为 `frontend/src/api/ai.ts` 增加轻量类型回归检查，避免 Axios 响应体解包问题再次出现。
+- 建议 commit message: `fix(ai): 修复复习建议页面响应解析问题`
+
+---
+
 ## Round 29 - 2026-06-13
 
 ### 阶段
