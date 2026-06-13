@@ -88,6 +88,12 @@ const routes: RouteRecordRaw[] = [
       },
       // 管理端路由
       {
+        path: 'admin',
+        name: 'AdminDashboard',
+        component: () => import('@/views/admin/AdminDashboard.vue'),
+        meta: { title: '平台总览', requiresAdmin: true },
+      },
+      {
         path: 'admin/courses',
         name: 'AdminCourseManage',
         component: () => import('@/views/admin/CourseManage.vue'),

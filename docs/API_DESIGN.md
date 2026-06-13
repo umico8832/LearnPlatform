@@ -736,13 +736,29 @@ GET /api/admin/statistics/overview
   "message": "success",
   "data": {
     "totalUsers": 100,
+    "enabledUsers": 96,
     "totalQuestions": 5000,
-    "totalCourses": 10,
+    "weeklyNewQuestions": 35,
     "totalExamPapers": 50,
-    "todayActiveUsers": 25
+    "publishedExamPapers": 42,
+    "draftExamPapers": 8,
+    "todayActiveUsers": 25,
+    "totalPracticeRecords": 12000,
+    "questionTypeDistribution": {
+      "单选题": 2400,
+      "多选题": 900,
+      "判断题": 800,
+      "填空题": 500,
+      "简答题": 400
+    },
+    "dailyActivity": [
+      { "date": "2026-06-07", "practiceCount": 120, "activeUsers": 18 }
+    ]
   }
 }
 ```
+
+仅管理员可访问。今日活跃用户按当天产生刷题记录的去重用户数统计。
 
 ---
 

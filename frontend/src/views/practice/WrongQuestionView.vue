@@ -78,6 +78,8 @@
           <span class="answer-wrong">{{ item.lastWrongAnswer }}</span>
         </div>
 
+        <AiQuestionAssistant :question-id="item.questionId" />
+
         <div class="wrong-card-footer">
           <div class="mastery-controls">
             <span class="label">掌握程度：</span>
@@ -119,6 +121,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getWrongQuestions, getWrongQuestionStats, updateMasteryLevel, removeWrongQuestion } from '@/api/wrongQuestion'
 import type { WrongQuestionVO, WrongQuestionStatsVO } from '@/api/wrongQuestion'
+import AiQuestionAssistant from '@/components/AiQuestionAssistant.vue'
 
 const loading = ref(false)
 const records = ref<WrongQuestionVO[]>([])
@@ -336,6 +339,7 @@ const formatTime = (time: string) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-top: 16px;
   padding-top: 12px;
   border-top: 1px solid #ebeef5;
 }

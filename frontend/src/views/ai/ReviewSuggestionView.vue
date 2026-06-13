@@ -30,7 +30,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
 import { MagicStick } from '@element-plus/icons-vue'
 import { getReviewSuggestion } from '@/api/ai'
 import { getCoursePage } from '@/api/course'

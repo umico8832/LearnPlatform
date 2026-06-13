@@ -2,6 +2,7 @@ package com.learnplatform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.StatisticsVO;
+import com.learnplatform.dto.AdminStatisticsVO;
 import com.learnplatform.entity.*;
 import com.learnplatform.mapper.*;
 import org.springframework.stereotype.Service;
@@ -22,15 +23,21 @@ public class StatisticsService {
     private final WrongQuestionMapper wrongQuestionMapper;
     private final QuestionMapper questionMapper;
     private final CourseMapper courseMapper;
+    private final UserMapper userMapper;
+    private final ExamPaperMapper examPaperMapper;
 
     public StatisticsService(PracticeRecordMapper practiceRecordMapper,
                              WrongQuestionMapper wrongQuestionMapper,
                              QuestionMapper questionMapper,
-                             CourseMapper courseMapper) {
+                             CourseMapper courseMapper,
+                             UserMapper userMapper,
+                             ExamPaperMapper examPaperMapper) {
         this.practiceRecordMapper = practiceRecordMapper;
         this.wrongQuestionMapper = wrongQuestionMapper;
         this.questionMapper = questionMapper;
         this.courseMapper = courseMapper;
+        this.userMapper = userMapper;
+        this.examPaperMapper = examPaperMapper;
     }
 
     /**
@@ -133,6 +140,69 @@ public class StatisticsService {
         return result;
     }
 
+    /**
+     * 获取管理端平台统计概览
+     */
+    public AdminStatisticsVO getAdminStatistics() {
+        AdminStatisticsVO vo = new AdminStatisticsVO();
+        LocalDate today = LocalDate.now();
+        LocalDateTime todayStart = today.atStartOfDay();
+        LocalDateTime weekStart = today.minusDays(6).atStartOfDay();
+
+        vo.setTotalUsers(userMapper.selectCount(null));
+        vo.setEnabledUsers(userMapper.selectCount(
+                new LambdaQueryWrapper<User>().eq(User::getStatus, 1)));
+        vo.setTotalQuestions(questionMapper.selectCount(null));
+        vo.setWeeklyNewQuestions(questionMapper.selectCount(
+                new LambdaQueryWrapper<Question>().ge(Question::getCreateTime, weekStart)));
+        vo.setTotalExamPapers(examPaperMapper.selectCount(null));
+        vo.setPublishedExamPapers(examPaperMapper.selectCount(
+                new LambdaQueryWrapper<ExamPaper>().eq(ExamPaper::getStatus, 1)));
+        vo.setDraftExamPapers(examPaperMapper.selectCount(
+                new LambdaQueryWrapper<ExamPaper>().eq(ExamPaper::getStatus, 0)));
+        vo.setTotalPracticeRecords(practiceRecordMapper.selectCount(null));
+
+        List<PracticeRecord> weeklyRecords = practiceRecordMapper.selectList(
+                new LambdaQueryWrapper<PracticeRecord>()
+                        .ge(PracticeRecord::getCreateTime, weekStart)
+                        .orderByAsc(PracticeRecord::getCreateTime));
+
+        long todayActiveUsers = weeklyRecords.stream()
+                .filter(record -> record.getCreateTime() != null && !record.getCreateTime().isBefore(todayStart))
+                .map(PracticeRecord::getUserId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .count();
+        vo.setTodayActiveUsers(todayActiveUsers);
+
+        Map<String, Long> typeDistribution = new LinkedHashMap<>();
+        typeDistribution.put("单选题", countQuestionsByType("SINGLE_CHOICE"));
+        typeDistribution.put("多选题", countQuestionsByType("MULTIPLE_CHOICE"));
+        typeDistribution.put("判断题", countQuestionsByType("TRUE_FALSE"));
+        typeDistribution.put("填空题", countQuestionsByType("FILL_BLANK"));
+        typeDistribution.put("简答题", countQuestionsByType("SHORT_ANSWER"));
+        vo.setQuestionTypeDistribution(typeDistribution);
+
+        Map<LocalDate, List<PracticeRecord>> recordsByDate = weeklyRecords.stream()
+                .filter(record -> record.getCreateTime() != null)
+                .collect(Collectors.groupingBy(record -> record.getCreateTime().toLocalDate()));
+        List<AdminStatisticsVO.DailyActivity> dailyActivity = new ArrayList<>();
+        for (int i = 6; i >= 0; i--) {
+            LocalDate date = today.minusDays(i);
+            List<PracticeRecord> dayRecords = recordsByDate.getOrDefault(date, Collections.emptyList());
+            long activeUsers = dayRecords.stream()
+                    .map(PracticeRecord::getUserId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .count();
+            dailyActivity.add(new AdminStatisticsVO.DailyActivity(
+                    date.toString(), dayRecords.size(), activeUsers));
+        }
+        vo.setDailyActivity(dailyActivity);
+
+        return vo;
+    }
+
     // ======================== 私有方法 ========================
 
     private int calculateStreak(List<PracticeRecord> records) {
@@ -157,5 +227,10 @@ public class StatisticsService {
             }
         }
         return streak;
+    }
+
+    private long countQuestionsByType(String questionType) {
+        return questionMapper.selectCount(
+                new LambdaQueryWrapper<Question>().eq(Question::getQuestionType, questionType));
     }
 }

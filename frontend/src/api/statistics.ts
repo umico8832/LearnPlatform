@@ -27,6 +27,26 @@ export interface CourseStatItem {
   correctRate: number
 }
 
+export interface AdminDailyActivity {
+  date: string
+  practiceCount: number
+  activeUsers: number
+}
+
+export interface AdminStatisticsOverview {
+  totalUsers: number
+  enabledUsers: number
+  totalQuestions: number
+  weeklyNewQuestions: number
+  totalExamPapers: number
+  publishedExamPapers: number
+  draftExamPapers: number
+  todayActiveUsers: number
+  totalPracticeRecords: number
+  questionTypeDistribution: Record<string, number>
+  dailyActivity: AdminDailyActivity[]
+}
+
 /** 获取学习统计概览 */
 export function getStatisticsOverview() {
   return request.get<any, ApiResponse<StatisticsOverview>>('/api/statistics/overview')
@@ -40,4 +60,9 @@ export function getDailyTrend() {
 /** 获取课程维度统计 */
 export function getCourseStats() {
   return request.get<any, ApiResponse<CourseStatItem[]>>('/api/statistics/course-stats')
+}
+
+/** 获取管理端平台统计概览 */
+export function getAdminStatisticsOverview() {
+  return request.get<any, ApiResponse<AdminStatisticsOverview>>('/admin/statistics/overview')
 }

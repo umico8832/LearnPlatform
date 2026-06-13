@@ -38,7 +38,7 @@
           default-expand-all
           :expand-on-click-node="false"
         >
-          <template #default="{ node, data }">
+          <template #default="{ data }">
             <div class="tree-node">
               <div class="node-left">
                 <el-icon v-if="data.children && data.children.length > 0" color="#409eff">

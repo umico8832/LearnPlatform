@@ -122,7 +122,7 @@
     </el-dialog>
 
     <!-- 题目选择弹窗 -->
-    <el-dialog v-model="showQuestionPicker" title="选择题目" width="900px" destroy-on-close>
+    <el-dialog v-model="showQuestionPicker" title="选择题目" width="900px" destroy-on-close @open="loadPickerQuestions">
       <div class="q-picker-filter">
         <el-input v-model="qPickerKeyword" placeholder="搜索题干关键词" clearable style="width: 200px" @keyup.enter="loadPickerQuestions" />
         <el-select v-model="qPickerType" placeholder="题型" clearable style="width: 120px" @change="loadPickerQuestions">
@@ -421,10 +421,6 @@ const formatTime = (time: string) => {
   return time.replace('T', ' ').substring(0, 19)
 }
 
-// 监听弹窗打开时加载题目选择器
-const watchPicker = () => {
-  if (showQuestionPicker.value) loadPickerQuestions()
-}
 </script>
 
 <style scoped>

@@ -86,7 +86,7 @@ import { ref, reactive, onMounted, onBeforeUnmount, computed, nextTick } from 'v
 import { useUserStore } from '@/stores/user'
 import { Promotion, WarningFilled, Trophy, MagicStick } from '@element-plus/icons-vue'
 import { getStatisticsOverview, getDailyTrend, getCourseStats } from '@/api/statistics'
-import type { StatisticsOverview, DailyTrendItem, CourseStatItem } from '@/api/statistics'
+import type { StatisticsOverview } from '@/api/statistics'
 import * as echarts from 'echarts'
 
 const userStore = useUserStore()

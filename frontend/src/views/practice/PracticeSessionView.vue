@@ -27,7 +27,7 @@
     <el-dialog
       v-model="showResult"
       :title="currentResult?.correct ? '🎉 答对了！' : '😢 答错了'"
-      width="480px"
+      width="680px"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       :show-close="false"
@@ -51,6 +51,11 @@
           <p class="analysis-title">📝 解析</p>
           <p class="analysis-text">{{ currentResult.analysis }}</p>
         </div>
+
+        <AiQuestionAssistant
+          v-if="currentResult"
+          :question-id="currentResult.questionId"
+        />
       </div>
 
       <template #footer>
@@ -190,10 +195,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { submitAnswer } from '@/api/practice'
 import type { PracticeQuestionVO, PracticeResultVO } from '@/api/practice'
+import AiQuestionAssistant from '@/components/AiQuestionAssistant.vue'
 
 const router = useRouter()
 

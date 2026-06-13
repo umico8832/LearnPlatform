@@ -227,7 +227,6 @@ import { getKnowledgeTree, type KnowledgePointVO } from '@/api/knowledgePoint'
 
 const questions = ref<QuestionVO[]>([])
 const loading = ref(false)
-const keyword = ref('')
 const pageNum = ref(1)
 const pageSize = ref(10)
 const total = ref(0)

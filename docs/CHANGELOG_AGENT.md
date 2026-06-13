@@ -14,6 +14,92 @@
 
 ---
 
+## Round 17 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代（第二轮）
+
+### 本轮目标
+实现 P0 管理端统计面板，并恢复前端标准生产构建。
+
+### 完成内容
+- 新增 `GET /api/admin/statistics/overview` 管理端统计接口，由 ADMIN 权限规则保护。
+- 聚合注册/启用用户、题目总量、本周新增题目、试卷发布状态、今日活跃用户和累计刷题量。
+- 返回题型分布及近 7 日刷题次数、活跃用户趋势。
+- 新增管理端平台总览页面，包含指标卡、趋势折线图、题型环图和状态仪表。
+- 增加管理端总览路由与侧边栏入口。
+- 清理既有 TypeScript 未使用声明，补充 Element Plus 中文语言包类型声明。
+- 修复试卷选题弹窗首次打开不自动加载题目的问题。
+
+### 修改文件清单
+- 后端：`AdminStatisticsController.java`、`AdminStatisticsVO.java`、`StatisticsService.java`
+- 前端：`AdminDashboard.vue`、`statistics.ts`、`router/index.ts`、`AppLayout.vue`
+- 构建清理：`env.d.ts` 及 6 个既有 Vue 页面
+- 文档：`API_DESIGN.md`、`DEMO.md`、`FUTURE.md`、`ROADMAP.md`、`RESUME.md`、`HANDOFF.md`、`CHANGELOG_AGENT.md`
+
+### 验收结果
+- [x] `cd backend && mvn test`
+- [x] `cd frontend && npm run build`
+- [x] `git diff --check`
+- [x] 后端管理端接口编译通过
+- [x] 前端标准 TypeScript 检查和生产构建通过
+
+### 遗留问题
+- 当前后端没有自动化测试用例，`mvn test` 主要验证编译与测试生命周期。
+- Vite 仍提示 ECharts/Element Plus 相关产物包体积较大，后续可按需拆包。
+- 管理端前端角色守卫尚未实现，后端接口权限已生效。
+
+### 下轮建议
+- 实现 P0 AI 流式输出（SSE），改善长内容生成等待体验。
+- 建议 commit message: `feat(statistics): 完成管理端平台统计面板`
+
+---
+
+## Round 16 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代（第一轮）
+
+### 本轮目标
+将 AI 题目解析和变式题能力整合到刷题结果与错题本，打通题目学习闭环。
+
+### 完成内容
+- 新增 `AiQuestionAssistant.vue`，统一封装 AI 深度解析、变式题生成、加载状态、错误提示和 Markdown 结果展示。
+- 刷题结果弹窗接入 AI 学习助手，并扩大弹窗宽度以容纳解析内容。
+- 错题卡片接入同一 AI 学习助手，可针对每道错题直接请求解析或变式题。
+- 同一道题的已生成结果在组件内缓存，切换解析类型时不重复请求。
+- 增加窄屏按钮自适应布局。
+
+### 修改文件清单
+| 文件 | 操作 |
+|------|------|
+| frontend/src/components/AiQuestionAssistant.vue | 新建 |
+| frontend/src/views/practice/PracticeSessionView.vue | 修改 |
+| frontend/src/views/practice/WrongQuestionView.vue | 修改 |
+| README.md | 修改 |
+| docs/FUTURE.md | 修改 |
+| docs/ROADMAP.md | 修改 |
+| docs/HANDOFF.md | 修改 |
+| docs/CHANGELOG_AGENT.md | 修改 |
+
+### 验收结果
+- [x] `npx vue-tsc --noEmit --noUnusedLocals false --noUnusedParameters false --noImplicitAny false`
+- [x] `npx vite build`
+- [x] 刷题与错题页面复用同一 AI 组件
+- [x] AI 请求具备加载、失败和结果展示状态
+- [ ] 浏览器可视化验证（当前会话内置浏览器实例不可用）
+
+### 遗留问题
+- 仓库完整 `npm run build` 仍被既有严格 TypeScript 清理项阻断，涉及 Element Plus 语言包声明及多个页面未使用变量；本轮生产 Vite 构建已通过。
+- AI 实际响应仍需在后端运行且配置有效 AI 环境变量后联调。
+- AI 流式输出尚未实现。
+
+### 下轮建议
+- 实现 P0 管理端统计面板，补齐平台运营数据总览。
+- 建议 commit message: `feat(ai): 集成刷题与错题 AI 解析助手`
+
+---
+
 ## Round 15 - 2026-06-13
 
 ### 阶段

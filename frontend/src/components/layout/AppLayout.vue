@@ -51,6 +51,10 @@
               <el-icon><Setting /></el-icon>
               <span>后台管理</span>
             </template>
+            <el-menu-item index="/admin">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>平台总览</span>
+            </el-menu-item>
             <el-menu-item index="/admin/courses">
               <el-icon><Collection /></el-icon>
               <span>课程管理</span>
@@ -110,7 +114,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { HomeFilled, Reading, Setting, Collection, Notebook, EditPen, Promotion, Clock, WarningFilled, Trophy, MagicStick } from '@element-plus/icons-vue'
+import { HomeFilled, Reading, Setting, Collection, Notebook, EditPen, Promotion, Clock, WarningFilled, Trophy, MagicStick, DataAnalysis } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()

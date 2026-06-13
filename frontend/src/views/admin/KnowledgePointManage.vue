@@ -20,7 +20,7 @@
           draggable
           :allow-drop="allowDrop"
         >
-          <template #default="{ node, data }">
+          <template #default="{ data }">
             <div class="tree-node">
               <div class="node-left">
                 <el-icon v-if="data.children && data.children.length > 0" color="#409eff">
@@ -150,18 +150,6 @@ const rules: FormRules = {
   name: [{ required: true, message: '请输入知识点名称', trigger: 'blur' }],
 }
 
-/** 递归收集所有节点 id，用于 el-tree-select 选项 */
-function flatTree(nodes: KnowledgePointVO[]): KnowledgePointVO[] {
-  const result: KnowledgePointVO[] = []
-  for (const node of nodes) {
-    result.push(node)
-    if (node.children && node.children.length > 0) {
-      result.push(...flatTree(node.children))
-    }
-  }
-  return result
-}
-
 /** 生成树选择器选项，排除当前编辑的节点及其子节点 */
 const treeOptions = computed(() => {
   if (!editingKP.value) return treeData.value
@@ -178,7 +166,7 @@ const treeOptions = computed(() => {
 })
 
 /** 不允许拖拽到叶子节点内部 */
-function allowDrop(draggingNode: any, dropNode: any, type: string) {
+function allowDrop(_draggingNode: any, _dropNode: any, type: string) {
   if (type === 'inner') {
     return true
   }
