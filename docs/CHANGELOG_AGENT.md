@@ -14,6 +14,47 @@
 
 ---
 
+## Round 26 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+实现 AiCallLog AI 调用日志接入，记录每次 AI 调用的用户、功能类型、耗时和状态，并提供管理端查询接口。
+
+### 完成内容
+- 新建 `AiCallLog` 实体（映射已有的 `ai_call_log` 表），含 id、userId、functionType、model、tokensUsed、status、errorMessage、duration、createTime。
+- 新建 `AiCallLogMapper`（MyBatis-Plus BaseMapper）。
+- 改造 `AiService`：注入 `AiConfig` 和 `AiCallLogMapper`，新增带 userId 参数的重载方法（generateExplanation、generateVariant、generateExplanationStream、generateVariantStream、generateReviewSuggestion、generateSummary）。
+- 新增 `callWithLog` 和 `callStreamWithLog` 工具方法，在 AI 调用前后记录耗时和状态到 `ai_call_log` 表。日志记录失败不阻断主流程。
+- 改造 `AiController`：所有 AI 接口（explanation、variant、explanation/stream、variant/stream、review-suggestion、summary）均通过 `@AuthenticationPrincipal` 获取 userId 并传递给带日志的重载方法。
+- 新建 `AdminAiCallLogController`（管理端 `/api/admin/ai-logs`）：分页查询日志（支持按 functionType/status 筛选）和统计概览（总调用/成功/失败次数）。
+- 更新 `docs/ROADMAP.md`、`docs/FUTURE.md`、`docs/CHANGELOG_AGENT.md`。
+
+### 修改文件清单
+- 后端新增：`AiCallLog.java`、`AiCallLogMapper.java`、`AdminAiCallLogController.java`
+- 后端修改：`AiService.java`（注入日志依赖 + 带 userId 重载方法 + 日志工具方法）、`AiController.java`（所有接口添加 @AuthenticationPrincipal + 调用带日志重载方法）
+- 文档：`docs/ROADMAP.md`、`docs/FUTURE.md`、`docs/CHANGELOG_AGENT.md`
+
+### 验收结果
+- [x] `cd backend && mvn clean compile`（BUILD SUCCESS）
+- [x] `cd backend && mvn test`（8 tests，0 failures）
+- [x] `cd frontend && npm run build`（built in 524ms）
+- [x] AiService 原有无 userId 参数的方法保留兼容，新增带 userId 的重载方法
+- [x] 管理端接口路径 `/api/admin/ai-logs` 匹配 SecurityConfig 权限规则
+
+### 遗留问题
+- 收藏按钮整合到刷题/错题页面（Round 23 遗留，可后续优化）
+- 收藏题目直接发起练习功能待实现
+- AiCallLog 的 tokensUsed 字段暂未从 OpenAI 响应中提取（依赖上游 API 的 usage 字段返回）
+
+### 下轮建议
+- 可实现 P2 社区/讨论功能或题目难度自适应
+- 或将收藏按钮整合到刷题/错题页面
+- 建议 commit message: `feat(ai): 接入 AiCallLog 调用日志与管理端查询接口`
+
+---
+
 ## Round 25 - 2026-06-13
 
 ### 阶段

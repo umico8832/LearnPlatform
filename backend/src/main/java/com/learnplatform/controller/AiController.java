@@ -37,33 +37,43 @@ public class AiController {
     }
 
     /**
-     * AI 生成题目解析
+     * AI 生成题目解析（带日志记录）
      */
     @Operation(summary = "题目解析", description = "AI 生成题目的详细解析")
     @PostMapping("/explanation")
-    public R<AiResponse> generateExplanation(@RequestBody AiRequest request) {
-        return R.ok(aiService.generateExplanation(request.getQuestionId()));
+    public R<AiResponse> generateExplanation(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody AiRequest request) {
+        return R.ok(aiService.generateExplanation(request.getQuestionId(), userDetails.getUserId()));
     }
 
     /**
-     * AI 生成变式题
+     * AI 生成变式题（带日志记录）
      */
     @Operation(summary = "变式题", description = "AI 基于原题生成变式题")
     @PostMapping("/variant")
-    public R<AiResponse> generateVariant(@RequestBody AiRequest request) {
-        return R.ok(aiService.generateVariant(request.getQuestionId()));
+    public R<AiResponse> generateVariant(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody AiRequest request) {
+        return R.ok(aiService.generateVariant(request.getQuestionId(), userDetails.getUserId()));
     }
 
     @Operation(summary = "流式题目解析", description = "通过 SSE 逐段返回 AI 题目解析")
     @PostMapping(value = "/explanation/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public ResponseEntity<SseEmitter> generateExplanationStream(@RequestBody AiRequest request) {
-        return stream(onContent -> aiService.generateExplanationStream(request.getQuestionId(), onContent));
+    public ResponseEntity<SseEmitter> generateExplanationStream(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody AiRequest request) {
+        Long userId = userDetails.getUserId();
+        return stream(onContent -> aiService.generateExplanationStream(request.getQuestionId(), userId, onContent));
     }
 
     @Operation(summary = "流式变式题", description = "通过 SSE 逐段返回 AI 变式题")
     @PostMapping(value = "/variant/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public ResponseEntity<SseEmitter> generateVariantStream(@RequestBody AiRequest request) {
-        return stream(onContent -> aiService.generateVariantStream(request.getQuestionId(), onContent));
+    public ResponseEntity<SseEmitter> generateVariantStream(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody AiRequest request) {
+        Long userId = userDetails.getUserId();
+        return stream(onContent -> aiService.generateVariantStream(request.getQuestionId(), userId, onContent));
     }
 
     /**
@@ -79,12 +89,14 @@ public class AiController {
     }
 
     /**
-     * AI 生成知识点总结
+     * AI 生成知识点总结（带日志记录）
      */
     @Operation(summary = "知识点总结", description = "AI 生成知识点的总结内容")
     @PostMapping("/summary")
-    public R<AiResponse> generateSummary(@RequestBody AiRequest request) {
-        return R.ok(aiService.generateSummary(request.getKnowledgePointId()));
+    public R<AiResponse> generateSummary(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody AiRequest request) {
+        return R.ok(aiService.generateSummary(request.getKnowledgePointId(), userDetails.getUserId()));
     }
 
     private ResponseEntity<SseEmitter> stream(Consumer<Consumer<String>> generator) {

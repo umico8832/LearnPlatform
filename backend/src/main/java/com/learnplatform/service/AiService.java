@@ -3,6 +3,7 @@ package com.learnplatform.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
+import com.learnplatform.config.AiConfig;
 import com.learnplatform.dto.AiResponse;
 import com.learnplatform.entity.*;
 import com.learnplatform.mapper.*;
@@ -24,6 +25,8 @@ public class AiService {
     private static final Logger log = LoggerFactory.getLogger(AiService.class);
 
     private final AiProvider aiProvider;
+    private final AiConfig aiConfig;
+    private final AiCallLogMapper aiCallLogMapper;
     private final QuestionMapper questionMapper;
     private final QuestionOptionMapper questionOptionMapper;
     private final QuestionKnowledgePointMapper questionKnowledgePointMapper;
@@ -32,6 +35,8 @@ public class AiService {
     private final WrongQuestionMapper wrongQuestionMapper;
 
     public AiService(AiProvider aiProvider,
+                     AiConfig aiConfig,
+                     AiCallLogMapper aiCallLogMapper,
                      QuestionMapper questionMapper,
                      QuestionOptionMapper questionOptionMapper,
                      QuestionKnowledgePointMapper questionKnowledgePointMapper,
@@ -39,6 +44,8 @@ public class AiService {
                      CourseMapper courseMapper,
                      WrongQuestionMapper wrongQuestionMapper) {
         this.aiProvider = aiProvider;
+        this.aiConfig = aiConfig;
+        this.aiCallLogMapper = aiCallLogMapper;
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
@@ -56,9 +63,19 @@ public class AiService {
         return new AiResponse(content, "ai");
     }
 
+    public AiResponse generateExplanation(Long questionId, Long userId) {
+        AiPrompt prompt = buildExplanationPrompt(questionId);
+        return callWithLog("explanation", userId, () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
+    }
+
     public void generateExplanationStream(Long questionId, Consumer<String> onContent) {
         AiPrompt prompt = buildExplanationPrompt(questionId);
         aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent);
+    }
+
+    public void generateExplanationStream(Long questionId, Long userId, Consumer<String> onContent) {
+        AiPrompt prompt = buildExplanationPrompt(questionId);
+        callStreamWithLog("explanation_stream", userId, () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
     }
 
     /**
@@ -70,9 +87,19 @@ public class AiService {
         return new AiResponse(content, "ai");
     }
 
+    public AiResponse generateVariant(Long questionId, Long userId) {
+        AiPrompt prompt = buildVariantPrompt(questionId);
+        return callWithLog("variant", userId, () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
+    }
+
     public void generateVariantStream(Long questionId, Consumer<String> onContent) {
         AiPrompt prompt = buildVariantPrompt(questionId);
         aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent);
+    }
+
+    public void generateVariantStream(Long questionId, Long userId, Consumer<String> onContent) {
+        AiPrompt prompt = buildVariantPrompt(questionId);
+        callStreamWithLog("variant_stream", userId, () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
     }
 
     private AiPrompt buildExplanationPrompt(Long questionId) {
@@ -103,6 +130,12 @@ public class AiService {
      * AI 生成复习建议
      */
     public AiResponse generateReviewSuggestion(Long userId, Long courseId) {
+        AiResponse result = generateReviewSuggestionInternal(userId, courseId);
+        // 无需额外记录日志，内部已记录
+        return result;
+    }
+
+    private AiResponse generateReviewSuggestionInternal(Long userId, Long courseId) {
         LambdaQueryWrapper<WrongQuestion> wqWrapper = new LambdaQueryWrapper<>();
         wqWrapper.eq(WrongQuestion::getUserId, userId).eq(WrongQuestion::getDeleted, 0);
         List<WrongQuestion> wrongQuestions = wrongQuestionMapper.selectList(wqWrapper);
@@ -134,14 +167,18 @@ public class AiService {
                 + "要求：\n1. 分析用户的薄弱环节\n2. 建议重点复习的知识点\n3. 推荐复习方法和计划\n"
                 + "4. 给予鼓励和指导\n5. 使用 Markdown 格式输出";
 
-        String content = aiProvider.chat(systemPrompt, "请根据以下学习数据给出复习建议：\n\n" + userContext);
-        return new AiResponse(content, "ai");
+        String finalUserContext = "请根据以下学习数据给出复习建议：\n\n" + userContext;
+        return callWithLog("review_suggestion", userId, () -> aiProvider.chat(systemPrompt, finalUserContext));
     }
 
     /**
      * AI 生成知识点总结
      */
     public AiResponse generateSummary(Long knowledgePointId) {
+        return generateSummary(knowledgePointId, null);
+    }
+
+    public AiResponse generateSummary(Long knowledgePointId, Long userId) {
         KnowledgePoint kp = knowledgePointMapper.selectById(knowledgePointId);
         if (kp == null) throw new BusinessException(ResultCode.NOT_FOUND, "知识点不存在");
 
@@ -156,8 +193,66 @@ public class AiService {
                 + "4. 如果有相关公式或规则请列出\n5. 使用 Markdown 格式输出";
 
         String userPrompt = String.format("请总结以下知识点：\n课程：%s\n知识点：%s", courseName, kp.getName());
-        String content = aiProvider.chat(systemPrompt, userPrompt);
-        return new AiResponse(content, "ai");
+        return callWithLog("summary", userId, () -> aiProvider.chat(systemPrompt, userPrompt));
+    }
+
+    // ======================== 日志工具方法 ========================
+
+    /**
+     * 带日志记录的同步 AI 调用
+     */
+    private AiResponse callWithLog(String functionType, Long userId, AiCallable callable) {
+        long start = System.currentTimeMillis();
+        boolean success = false;
+        String content = null;
+        String errorMessage = null;
+        try {
+            content = callable.call();
+            success = true;
+            return new AiResponse(content, "ai");
+        } catch (Exception e) {
+            errorMessage = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            throw e;
+        } finally {
+            int duration = (int) (System.currentTimeMillis() - start);
+            saveLog(userId, functionType, success, errorMessage, duration);
+        }
+    }
+
+    /**
+     * 带日志记录的流式 AI 调用
+     */
+    private void callStreamWithLog(String functionType, Long userId, Runnable runnable) {
+        long start = System.currentTimeMillis();
+        boolean success = false;
+        String errorMessage = null;
+        try {
+            runnable.run();
+            success = true;
+        } catch (Exception e) {
+            errorMessage = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            throw e;
+        } finally {
+            int duration = (int) (System.currentTimeMillis() - start);
+            saveLog(userId, functionType, success, errorMessage, duration);
+        }
+    }
+
+    private void saveLog(Long userId, String functionType, boolean success, String errorMessage, int duration) {
+        try {
+            AiCallLog callLog = new AiCallLog();
+            callLog.setUserId(userId);
+            callLog.setFunctionType(functionType);
+            callLog.setModel(aiConfig.getModel());
+            callLog.setStatus(success ? 1 : 0);
+            callLog.setErrorMessage(errorMessage);
+            callLog.setDuration(duration);
+            aiCallLogMapper.insert(callLog);
+            log.info("AI 调用日志已记录: type={}, userId={}, success={}, duration={}ms", functionType, userId, success, duration);
+        } catch (Exception e) {
+            // 日志记录失败不应影响主流程
+            log.warn("AI 调用日志记录失败: {}", e.getMessage());
+        }
     }
 
     // ======================== 私有方法 ========================
@@ -212,4 +307,9 @@ public class AiService {
     }
 
     private record AiPrompt(String systemPrompt, String userPrompt) {}
+
+    @FunctionalInterface
+    private interface AiCallable {
+        String call();
+    }
 }
