@@ -68,18 +68,18 @@
 
 ## P1：重要功能补充
 
-### 4. 用户个人中心
+### 4. 用户个人中心 ✅
 
-**现状**：用户无法修改个人信息（昵称、头像、密码）。
+**完成情况**：已实现修改昵称和修改密码功能，通过顶部下拉菜单进入个人中心页面。
 
 **功能**：
 - 修改昵称
 - 修改密码（需验证原密码）
-- 头像上传（可选，或使用 Gravatar）
-- 个人学习报告（本月刷题量、正确率趋势）
+- 头像上传（可选，或使用 Gravatar）（待实现）
+- 个人学习报告（本月刷题量、正确率趋势）（待实现）
 
 **涉及改动**：
-- 后端 `UserController`（PUT /api/user/profile、PUT /api/user/password）
+- 后端 `AuthController`（PUT /api/auth/profile、PUT /api/auth/password）
 - 前端 `ProfileView.vue`
 - 路由和导航更新
 

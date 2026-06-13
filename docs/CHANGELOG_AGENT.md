@@ -14,6 +14,48 @@
 
 ---
 
+## Round 21 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+实现 P1 用户个人中心，补齐昵称修改和密码修改能力。
+
+### 完成内容
+- 新增 `UpdateProfileRequest` 和 `UpdatePasswordRequest` DTO，含参数校验。
+- `AuthService` 新增 `updateProfile()` 和 `updatePassword()` 方法，密码修改需验证原密码且不能与原密码相同。
+- `AuthController` 新增 `PUT /api/auth/profile` 和 `PUT /api/auth/password` 两个接口，带 Knife4j 注解。
+- 前端新增 `user.ts` API 封装（`updateProfile`、`updatePassword`）。
+- 新建 `ProfileView.vue` 个人中心页面：左侧用户信息卡片（头像首字、昵称、角色、注册时间），右侧修改昵称表单和修改密码表单（含确认密码校验）。
+- 前端 `UserInfo` 类型新增 `createTime` 可选字段。
+- 路由新增 `/profile`，AppLayout 顶部下拉菜单新增"个人中心"入口。
+
+### 修改文件清单
+- 后端新增：`UpdateProfileRequest.java`、`UpdatePasswordRequest.java`
+- 后端修改：`AuthService.java`、`AuthController.java`
+- 前端新增：`api/user.ts`、`views/auth/ProfileView.vue`
+- 前端修改：`types/user.ts`、`router/index.ts`、`components/layout/AppLayout.vue`
+- 文档：`docs/ROADMAP.md`、`docs/CHANGELOG_AGENT.md`、`docs/HANDOFF.md`、`docs/FUTURE.md`
+
+### 验收结果
+- [x] `cd backend && mvn clean compile`（BUILD SUCCESS）
+- [x] `cd backend && mvn test`（8 tests，0 failures）
+- [x] `cd frontend && npm run build`（built in 515ms）
+- [x] ProfileView.vue 无 TS 错误
+- [x] 路由 `/profile` 已添加，AppLayout 下拉菜单已添加入口
+
+### 遗留问题
+- 头像上传功能未实现（当前使用首字头像占位，可后续扩展）
+- 错题重练模式仍未实现（下一个 P1 任务）
+- AiCallLog 仍未接入
+
+### 下轮建议
+- 实现 P1 错题重练模式：错题本页面新增"重练错题"按钮，支持按掌握程度筛选后重练。
+- 建议 commit message: `feat(auth): 实现用户个人中心（昵称修改、密码修改）`
+
+---
+
 ## Round 20 - 2026-06-13
 
 ### 阶段

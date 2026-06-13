@@ -104,4 +104,39 @@ public class AuthService {
         }
         return UserVO.fromUser(user);
     }
+
+    /**
+     * 修改个人信息（昵称）
+     */
+    public UserVO updateProfile(Long userId, UpdateProfileRequest request) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "用户不存在");
+        }
+        log.info("用户修改昵称: userId={}, newNickname={}", userId, request.getNickname());
+        user.setNickname(request.getNickname());
+        userMapper.updateById(user);
+        return UserVO.fromUser(user);
+    }
+
+    /**
+     * 修改密码
+     */
+    public void updatePassword(Long userId, UpdatePasswordRequest request) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "用户不存在");
+        }
+        // 验证原密码
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "原密码错误");
+        }
+        // 新密码不能与原密码相同
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "新密码不能与原密码相同");
+        }
+        log.info("用户修改密码: userId={}", userId);
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userMapper.updateById(user);
+    }
 }

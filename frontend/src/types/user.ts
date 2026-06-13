@@ -7,6 +7,7 @@ export interface UserInfo {
   nickname: string | null
   avatar: string | null
   role: 'USER' | 'ADMIN'
+  createTime?: string
 }
 
 /**

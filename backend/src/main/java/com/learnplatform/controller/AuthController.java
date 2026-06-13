@@ -56,4 +56,28 @@ public class AuthController {
         UserVO userVO = authService.getCurrentUser(userDetails.getUserId());
         return R.ok(userVO);
     }
+
+    /**
+     * 修改个人信息（昵称）
+     */
+    @Operation(summary = "修改个人信息", description = "修改当前用户的昵称")
+    @PutMapping("/profile")
+    public R<UserVO> updateProfile(@Valid @RequestBody UpdateProfileRequest request) {
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
+        UserVO userVO = authService.updateProfile(userDetails.getUserId(), request);
+        return R.ok(userVO);
+    }
+
+    /**
+     * 修改密码
+     */
+    @Operation(summary = "修改密码", description = "修改当前用户的登录密码，需验证原密码")
+    @PutMapping("/password")
+    public R<Void> updatePassword(@Valid @RequestBody UpdatePasswordRequest request) {
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
+        authService.updatePassword(userDetails.getUserId(), request);
+        return R.ok(null);
+    }
 }

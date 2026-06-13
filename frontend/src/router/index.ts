@@ -70,6 +70,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '错题本' },
       },
       {
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('@/views/auth/ProfileView.vue'),
+        meta: { title: '个人中心' },
+      },
+      {
         path: 'ai/review',
         name: 'AiReview',
         component: () => import('@/views/ai/ReviewSuggestionView.vue'),
