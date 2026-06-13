@@ -14,6 +14,52 @@
 
 ---
 
+## Round 32 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+将 AI 复习建议改造为 SSE 流式输出，降低慢模型调用时的空白等待感，并清理 AI 超时配置遗留项。
+
+### 完成内容
+- 新增后端 `POST /api/ai/review-suggestion/stream` 接口，通过 SSE 按 `content/done/error` 事件逐段返回复习建议。
+- 将复习建议 Prompt 构建逻辑抽为复用方法，同步与流式接口共享同一份上下文构建逻辑。
+- 流式复习建议接入 `AiCallLog`，使用 `review_suggestion_stream` 记录调用状态、模型和耗时。
+- 前端 AI API 抽出通用 SSE 读取函数，并新增 `streamReviewSuggestion`。
+- AI 复习建议页面改为边生成边渲染 Markdown，并支持“停止生成”。
+- Docker Nginx SSE 代理规则覆盖复习建议流式接口，禁用代理缓冲。
+- 前端 AI 同步请求超时时间改为 `VITE_AI_TIMEOUT`，并在 `.env.example` 中补充示例配置。
+- 更新 `docs/API_DESIGN.md`、`docs/FUTURE.md`、`docs/HANDOFF.md`。
+
+### 修改文件清单
+- `backend/src/main/java/com/learnplatform/controller/AiController.java`
+- `backend/src/main/java/com/learnplatform/service/AiService.java`
+- `frontend/src/api/ai.ts`
+- `frontend/src/views/ai/ReviewSuggestionView.vue`
+- `frontend/src/utils/request.ts`
+- `frontend/nginx.conf`
+- `.env.example`
+- `docs/API_DESIGN.md`
+- `docs/FUTURE.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验收结果
+- [x] `cd backend && mvn test`（17 tests，0 failures）
+- [x] `cd frontend && npm run build`（构建成功；仍有 VueUse/Rolldown 纯注解警告，不影响构建）
+
+### 遗留问题
+- AI 接口尚未加入用户级调用配额或限流。
+- 管理端用户列表、角色调整和账号启停尚未实现。
+- 前端仍缺少组件测试和端到端自动化测试。
+
+### 下轮建议
+- 增加 AI 用户级限流与每日配额，并补充 Controller/数据库集成测试。
+- 建议 commit message: `feat(ai): 支持复习建议流式输出`
+
+---
+
 ## Round 31 - 2026-06-13
 
 ### 阶段

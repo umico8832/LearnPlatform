@@ -649,11 +649,12 @@ POST /api/ai/variant
 ```
 POST /api/ai/explanation/stream
 POST /api/ai/variant/stream
+POST /api/ai/review-suggestion/stream
 Accept: text/event-stream
 Authorization: Bearer <token>
 ```
 
-请求体与同步接口一致。服务端通过 SSE 返回以下事件：
+请求体与对应同步接口一致。服务端通过 SSE 返回以下事件：
 
 ```text
 event: content
@@ -663,7 +664,7 @@ event: done
 data: {"source":"ai"}
 ```
 
-调用失败时返回 `error` 事件，数据格式为 `{"message":"错误信息"}`。同步接口继续保留用于兼容非流式调用场景。
+调用失败时返回 `error` 事件，数据格式为 `{"message":"错误信息"}`。同步接口继续保留用于兼容非流式调用场景。复习建议流式接口请求体同 `POST /api/ai/review-suggestion`，`courseId` 可选。
 
 ### 10.3 AI 复习建议
 

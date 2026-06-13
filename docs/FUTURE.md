@@ -32,7 +32,7 @@
 
 ### 2. AI 流式输出（SSE）
 
-**完成情况**：已为题目解析和变式题新增带 JWT 的 POST SSE 接口，前端通过 `fetch + ReadableStream` 实时追加 Markdown 内容；原同步接口继续保留。
+**完成情况**：已为题目解析、变式题和复习建议新增带 JWT 的 POST SSE 接口，前端通过 `fetch + ReadableStream` 实时追加 Markdown 内容；原同步接口继续保留。
 
 **现状**：AI 接口为同步调用，用户需等待全部生成完毕才能看到结果，体验差。
 

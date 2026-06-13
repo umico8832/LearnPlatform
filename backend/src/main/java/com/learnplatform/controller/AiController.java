@@ -88,6 +88,16 @@ public class AiController {
         return R.ok(aiService.generateReviewSuggestion(userDetails.getUserId(), courseId));
     }
 
+    @Operation(summary = "流式复习建议", description = "通过 SSE 逐段返回 AI 个性化复习建议")
+    @PostMapping(value = "/review-suggestion/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public ResponseEntity<SseEmitter> generateReviewSuggestionStream(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody(required = false) AiRequest request) {
+        Long userId = userDetails.getUserId();
+        Long courseId = (request != null) ? request.getCourseId() : null;
+        return stream(onContent -> aiService.generateReviewSuggestionStream(userId, courseId, onContent));
+    }
+
     /**
      * AI 生成知识点总结（带日志记录）
      */

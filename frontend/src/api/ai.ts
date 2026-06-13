@@ -42,15 +42,34 @@ export async function streamQuestionAi(
   signal?: AbortSignal,
 ) {
   const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+  await streamAiResponse(`${baseUrl}/ai/${type}/stream`, { questionId }, handlers, signal)
+}
+
+/** 流式生成复习建议。 */
+export async function streamReviewSuggestion(
+  courseId: number | undefined,
+  handlers: StreamHandlers,
+  signal?: AbortSignal,
+) {
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+  await streamAiResponse(`${baseUrl}/ai/review-suggestion/stream`, courseId ? { courseId } : {}, handlers, signal)
+}
+
+async function streamAiResponse(
+  url: string,
+  body: Record<string, unknown>,
+  handlers: StreamHandlers,
+  signal?: AbortSignal,
+) {
   const token = getToken()
-  const response = await fetch(`${baseUrl}/ai/${type}/stream`, {
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'text/event-stream',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ questionId }),
+    body: JSON.stringify(body),
     signal,
   })
 

@@ -130,12 +130,16 @@ public class AiService {
      * AI 生成复习建议
      */
     public AiResponse generateReviewSuggestion(Long userId, Long courseId) {
-        AiResponse result = generateReviewSuggestionInternal(userId, courseId);
-        // 无需额外记录日志，内部已记录
-        return result;
+        AiPrompt prompt = buildReviewSuggestionPrompt(userId, courseId);
+        return callWithLog("review_suggestion", userId, () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
     }
 
-    private AiResponse generateReviewSuggestionInternal(Long userId, Long courseId) {
+    public void generateReviewSuggestionStream(Long userId, Long courseId, Consumer<String> onContent) {
+        AiPrompt prompt = buildReviewSuggestionPrompt(userId, courseId);
+        callStreamWithLog("review_suggestion_stream", userId, () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
+    }
+
+    private AiPrompt buildReviewSuggestionPrompt(Long userId, Long courseId) {
         LambdaQueryWrapper<WrongQuestion> wqWrapper = new LambdaQueryWrapper<>();
         wqWrapper.eq(WrongQuestion::getUserId, userId).eq(WrongQuestion::getDeleted, 0);
         List<WrongQuestion> wrongQuestions = wrongQuestionMapper.selectList(wqWrapper);
@@ -167,8 +171,7 @@ public class AiService {
                 + "要求：\n1. 分析用户的薄弱环节\n2. 建议重点复习的知识点\n3. 推荐复习方法和计划\n"
                 + "4. 给予鼓励和指导\n5. 使用 Markdown 格式输出";
 
-        String finalUserContext = "请根据以下学习数据给出复习建议：\n\n" + userContext;
-        return callWithLog("review_suggestion", userId, () -> aiProvider.chat(systemPrompt, finalUserContext));
+        return new AiPrompt(systemPrompt, "请根据以下学习数据给出复习建议：\n\n" + userContext);
     }
 
     /**

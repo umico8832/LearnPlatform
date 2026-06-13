@@ -15,12 +15,14 @@
           <el-button type="primary" @click="generate" :loading="loading">
             <el-icon><MagicStick /></el-icon> 生成复习建议
           </el-button>
+          <el-button v-if="loading" @click="stopGenerate">停止生成</el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
-    <el-card v-if="result || error" shadow="hover" class="result-card">
+    <el-card v-if="result || error || loading" shadow="hover" class="result-card">
       <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" style="margin-bottom: 16px" />
+      <div v-if="loading && !result" class="stream-placeholder">正在连接 AI 服务...</div>
       <MarkdownRenderer v-if="result" :content="result" />
     </el-card>
 
@@ -29,9 +31,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { MagicStick } from '@element-plus/icons-vue'
-import { getReviewSuggestion } from '@/api/ai'
+import { streamReviewSuggestion } from '@/api/ai'
 import { getCoursePage } from '@/api/course'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 
@@ -40,6 +42,7 @@ const courseList = ref<{ id: number; name: string }[]>([])
 const loading = ref(false)
 const result = ref('')
 const error = ref('')
+const controller = ref<AbortController | null>(null)
 
 onMounted(async () => {
   try {
@@ -51,22 +54,35 @@ onMounted(async () => {
 })
 
 const generate = async () => {
+  controller.value?.abort()
+  controller.value = new AbortController()
   loading.value = true
   result.value = ''
   error.value = ''
   try {
-    const res = await getReviewSuggestion(courseId.value)
-    if (res.code === 0 && res.data) {
-      result.value = res.data.content
-    } else {
-      error.value = res.message || '生成失败'
-    }
+    await streamReviewSuggestion(courseId.value, {
+      onContent: (content) => {
+        result.value += content
+      },
+    }, controller.value.signal)
   } catch (e: any) {
-    error.value = e?.response?.data?.message || e?.message || 'AI 服务调用失败，请检查配置'
+    if (e?.name !== 'AbortError') {
+      error.value = e?.response?.data?.message || e?.message || 'AI 服务调用失败，请检查配置'
+    }
   } finally {
     loading.value = false
+    controller.value = null
   }
 }
+
+const stopGenerate = () => {
+  controller.value?.abort()
+  loading.value = false
+}
+
+onBeforeUnmount(() => {
+  controller.value?.abort()
+})
 </script>
 
 <style scoped>
@@ -74,4 +90,5 @@ const generate = async () => {
 .page-header h2 { margin: 0 0 16px; font-size: 20px; color: #303133; }
 .input-card { margin-bottom: 16px; }
 .result-card { margin-top: 16px; }
+.stream-placeholder { color: #909399; font-size: 14px; line-height: 24px; }
 </style>
