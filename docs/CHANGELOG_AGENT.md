@@ -14,6 +14,38 @@
 
 ---
 
+## Round 36 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+实现 P2 多端适配优化，提升移动端使用体验。
+
+### 完成内容
+- **移动端导航适配**：`AppLayout.vue` 重构为响应式布局，768px 以下自动隐藏侧边栏，显示汉堡菜单按钮，点击弹出抽屉式导航（带半透明遮罩），点击菜单项或遮罩自动关闭。
+- **答题界面移动端优化**：`PracticeSessionView.vue` 响应式改造——结果弹窗宽度自适应、进度栏自动换行、选项触摸友好（min-height: 48px）、判断题改为竖排、完成页统计和操作按钮适配小屏。
+- **首页统计与图表响应式**：`HomeView.vue` 统计卡片 xs/sm 设为 12 栏（2 列）、图表区域小屏独占整行、快捷入口 2×2 网格、学习计划进度条与连续天数纵向排列；新增 ECharts `resize` 监听，窗口变化时图表自适应重绘。
+- **全局 CSS 响应式工具**：`global.css` 新增移动端断点规则——页面容器/卡片内边距缩减、Dialog 全屏宽度、表格字号缩小、分页器自动换行。
+
+### 修改文件清单
+- 前端修改：`components/layout/AppLayout.vue`、`views/practice/PracticeSessionView.vue`、`views/home/HomeView.vue`、`assets/styles/global.css`
+
+### 验收结果
+- [x] `cd frontend && npm run build`（构建成功，593ms，TypeScript 无错误）
+- [x] `cd backend && mvn clean compile -q`（BUILD SUCCESS）
+- [x] 无新增 TypeScript 类型错误
+
+### 遗留问题
+- 其他页面（登录/注册、课程列表、错题本、考试列表等）尚未逐一进行移动端样式微调，但得益于 Element Plus 响应式栅格 + 全局 CSS 通用规则，基本可读可用。
+- 管理端表格在手机端仍可能横向溢出，后续可增加表格横向滚动或卡片模式。
+
+### 下轮建议
+- 可继续 P2 题目难度自适应（#11），或逐页精调移动端细节。
+- 建议 commit message: `feat(frontend): 多端响应式适配（移动端侧边栏、答题、图表）`
+
+---
+
 ## Round 35 - 2026-06-13
 
 ### 阶段

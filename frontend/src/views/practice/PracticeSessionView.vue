@@ -30,10 +30,11 @@
     <el-dialog
       v-model="showResult"
       :title="currentResult?.correct ? '🎉 答对了！' : '😢 答错了'"
-      width="680px"
+      :width="isMobile ? '95%' : '680px'"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       :show-close="false"
+      class="result-dialog"
     >
       <div class="result-content">
         <div class="result-icon">
@@ -196,7 +197,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
@@ -218,6 +219,11 @@ const correctCount = ref(0)
 const wrongCount = ref(0)
 const startTime = ref(Date.now())
 const practiceMode = ref<string>('')
+const isMobile = ref(false)
+
+function checkMobile() {
+  isMobile.value = window.innerWidth < 768
+}
 
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
 const isWrongPractice = computed(() => practiceMode.value === 'wrong_question')
@@ -232,6 +238,8 @@ const canSubmit = computed(() => {
 })
 
 onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
   const stored = sessionStorage.getItem('practice_questions')
   if (stored) {
     questions.value = JSON.parse(stored)
@@ -241,6 +249,10 @@ onMounted(() => {
     ElMessage.warning('没有练习题目，请先选择刷题模式')
     router.replace({ name: 'Practice' })
   }
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', checkMobile)
 })
 
 const toggleMulti = (label: string) => {
@@ -584,5 +596,72 @@ const getQuestionTypeTag = (type: string) => {
   display: flex;
   justify-content: center;
   gap: 16px;
+}
+
+/* 移动端适配 */
+@media (max-width: 767px) {
+  .practice-session {
+    padding: 12px;
+  }
+
+  .session-header {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .header-center {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .header-left .el-button span {
+    display: none;
+  }
+
+  .question-meta {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .difficulty-stars {
+    margin-left: 0;
+    width: 100%;
+    order: 5;
+  }
+
+  .question-content {
+    font-size: 15px;
+  }
+
+  .option-item {
+    padding: 12px 14px;
+    gap: 8px;
+    /* 触摸友好的最小高度 */
+    min-height: 48px;
+  }
+
+  .tf-options {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .finish-stats {
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .fs-value {
+    font-size: 24px;
+  }
+
+  .finish-container {
+    padding-top: 24px;
+  }
+
+  .el-dialog {
+    margin: 8px auto !important;
+  }
 }
 </style>

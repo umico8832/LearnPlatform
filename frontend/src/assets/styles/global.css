@@ -39,3 +39,36 @@ a {
   color: #303133;
   margin-bottom: 20px;
 }
+
+/* 移动端响应式工具类 */
+@media (max-width: 767px) {
+  .page-container {
+    padding: 12px;
+  }
+
+  .page-card {
+    padding: 14px;
+  }
+
+  .page-title {
+    font-size: 18px;
+    margin-bottom: 14px;
+  }
+
+  /* Element Plus Dialog 移动端适配 */
+  .el-dialog {
+    width: 92% !important;
+    margin: 16px auto !important;
+  }
+
+  /* Element Plus 表格移动端适配 */
+  .el-table {
+    font-size: 13px;
+  }
+
+  /* Element Plus 分页器移动端适配 */
+  .el-pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}

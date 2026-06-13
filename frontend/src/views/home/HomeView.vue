@@ -57,25 +57,25 @@
 
     <!-- 统计卡片 -->
     <el-row :gutter="16" class="stat-cards">
-      <el-col :span="6">
+      <el-col :xs="12" :sm="12" :md="6">
         <el-card shadow="hover" class="stat-card" v-loading="statsLoading" element-loading-background="rgba(255,255,255,0.8)">
           <div class="stat-value" style="color: #409eff">{{ stats.totalPractice }}</div>
           <div class="stat-label">总刷题数</div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="12" :sm="12" :md="6">
         <el-card shadow="hover" class="stat-card" v-loading="statsLoading" element-loading-background="rgba(255,255,255,0.8)">
           <div class="stat-value" style="color: #67c23a">{{ stats.correctRate }}%</div>
           <div class="stat-label">正确率</div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="12" :sm="12" :md="6">
         <el-card shadow="hover" class="stat-card" v-loading="statsLoading" element-loading-background="rgba(255,255,255,0.8)">
           <div class="stat-value" style="color: #e6a23c">{{ stats.todayPractice }}</div>
           <div class="stat-label">今日刷题</div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="12" :sm="12" :md="6">
         <el-card shadow="hover" class="stat-card" v-loading="statsLoading" element-loading-background="rgba(255,255,255,0.8)">
           <div class="stat-value" style="color: #f56c6c">{{ stats.streakDays }} 天</div>
           <div class="stat-label">连续学习</div>
@@ -85,14 +85,14 @@
 
     <!-- 图表区域 -->
     <el-row :gutter="16" class="chart-section">
-      <el-col :span="14">
+      <el-col :xs="24" :sm="24" :md="14">
         <el-card shadow="hover">
           <template #header><span>近 7 天刷题趋势</span></template>
           <div v-if="!trendEmpty" ref="trendChartRef" class="chart-container"></div>
           <el-empty v-else description="暂无刷题数据" :image-size="100" />
         </el-card>
       </el-col>
-      <el-col :span="10">
+      <el-col :xs="24" :sm="24" :md="10">
         <el-card shadow="hover">
           <template #header><span>课程正确率分布</span></template>
           <div v-if="!courseEmpty" ref="courseChartRef" class="chart-container"></div>
@@ -103,25 +103,25 @@
 
     <!-- 快捷入口 -->
     <el-row :gutter="16" class="quick-links">
-      <el-col :span="6">
+      <el-col :xs="12" :sm="12" :md="6">
         <el-card shadow="hover" class="link-card" @click="$router.push('/practice')">
           <el-icon :size="28" color="#409eff"><Promotion /></el-icon>
           <span>刷题练习</span>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="12" :sm="12" :md="6">
         <el-card shadow="hover" class="link-card" @click="$router.push('/wrong-questions')">
           <el-icon :size="28" color="#e6a23c"><WarningFilled /></el-icon>
           <span>错题本 ({{ stats.wrongQuestionCount }})</span>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="12" :sm="12" :md="6">
         <el-card shadow="hover" class="link-card" @click="$router.push('/exams')">
           <el-icon :size="28" color="#67c23a"><Trophy /></el-icon>
           <span>考试</span>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="12" :sm="12" :md="6">
         <el-card shadow="hover" class="link-card" @click="$router.push('/ai/review')">
           <el-icon :size="28" color="#9b59b6"><MagicStick /></el-icon>
           <span>AI 复习建议</span>
@@ -190,7 +190,13 @@ const courseChartRef = ref<HTMLElement | null>(null)
 let trendChart: ECharts | null = null
 let courseChart: ECharts | null = null
 
+function handleResize() {
+  trendChart?.resize()
+  courseChart?.resize()
+}
+
 onMounted(async () => {
+  window.addEventListener('resize', handleResize)
   // 加载学习计划
   try {
     const planRes = await getLearningPlan()
@@ -221,6 +227,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
   trendChart?.dispose()
   courseChart?.dispose()
 })
@@ -303,4 +310,20 @@ const loadCourseChart = async () => {
 .quick-links { margin-top: 8px; }
 .link-card { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; padding: 20px; }
 .link-card span { font-size: 14px; color: #606266; }
+
+/* 移动端适配 */
+@media (max-width: 767px) {
+  .home-container { padding: 12px; }
+  .welcome-section { margin-bottom: 16px; }
+  .welcome-section h2 { font-size: 18px; }
+  .stat-value { font-size: 22px; }
+  .stat-card :deep(.el-card__body) { padding: 12px 8px; }
+  .chart-container { height: 220px; }
+  .chart-section .el-col { margin-bottom: 12px; }
+  .plan-content { flex-direction: column; gap: 16px; }
+  .plan-streak { min-width: auto; }
+  .streak-value { font-size: 28px; }
+  .link-card { padding: 14px; }
+  .link-card span { font-size: 13px; }
+}
 </style>
