@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.result.R;
 import com.learnplatform.dto.*;
 import com.learnplatform.security.CustomUserDetails;
+import com.learnplatform.service.AdaptivePracticeService;
 import com.learnplatform.service.PracticeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,9 +24,12 @@ import java.util.Map;
 public class PracticeController {
 
     private final PracticeService practiceService;
+    private final AdaptivePracticeService adaptivePracticeService;
 
-    public PracticeController(PracticeService practiceService) {
+    public PracticeController(PracticeService practiceService,
+                              AdaptivePracticeService adaptivePracticeService) {
         this.practiceService = practiceService;
+        this.adaptivePracticeService = adaptivePracticeService;
     }
 
     /**
@@ -98,5 +102,36 @@ public class PracticeController {
         List<QuestionVO> questions = practiceService.getWrongQuestionPractice(
                 userDetails.getUserId(), masteryLevel, count);
         return R.ok(questions);
+    }
+
+    /**
+     * 自适应智能推荐题目
+     * 根据用户各难度级别的历史正确率动态调整题目难度分布
+     */
+    @Operation(summary = "智能推荐题目", description = "根据用户答题历史自适应推荐难度")
+    @GetMapping("/adaptive")
+    public R<List<QuestionVO>> getAdaptiveQuestions(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) Long knowledgePointId,
+            @RequestParam(required = false) String questionType,
+            @RequestParam(required = false) Integer count) {
+        List<QuestionVO> questions = adaptivePracticeService.getAdaptiveQuestions(
+                userDetails.getUserId(), courseId, knowledgePointId,
+                questionType, count);
+        return R.ok(questions);
+    }
+
+    /**
+     * 获取自适应推荐摘要
+     * 返回用户各难度级别的答题统计和推荐权重
+     */
+    @Operation(summary = "自适应推荐摘要", description = "获取用户各难度答题表现和推荐权重")
+    @GetMapping("/adaptive/summary")
+    public R<Map<String, Object>> getAdaptiveSummary(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Map<String, Object> summary = adaptivePracticeService.getAdaptiveSummary(
+                userDetails.getUserId());
+        return R.ok(summary);
     }
 }

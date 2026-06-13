@@ -107,3 +107,36 @@ export function getWrongQuestionPractice(params?: {
 }) {
   return request.get<any, ApiResponse<PracticeQuestionVO[]>>('/practice/wrong-questions', { params })
 }
+
+/** 自适应智能推荐题目 */
+export function getAdaptiveQuestions(params?: {
+  courseId?: number
+  knowledgePointId?: number
+  questionType?: string
+  count?: number
+}) {
+  return request.get<any, ApiResponse<PracticeQuestionVO[]>>('/practice/adaptive', { params })
+}
+
+/** 获取自适应推荐摘要（各难度答题表现和推荐权重） */
+export function getAdaptiveSummary() {
+  return request.get<any, ApiResponse<AdaptiveSummaryVO>>('/practice/adaptive/summary')
+}
+
+/** 自适应推荐摘要 VO */
+export interface AdaptiveSummaryVO {
+  totalAnswered: number
+  overallCorrectRate: number
+  recommendedDifficulty: number
+  difficultyDetails: AdaptiveDifficultyDetail[]
+}
+
+/** 自适应难度详情 */
+export interface AdaptiveDifficultyDetail {
+  difficulty: number
+  label: string
+  total: number
+  correct: number
+  correctRate: number
+  weight: number
+}

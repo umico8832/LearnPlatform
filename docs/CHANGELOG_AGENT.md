@@ -14,6 +14,41 @@
 
 ---
 
+## Round 37 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+实现 P2 题目难度自适应推荐（#11），根据用户历史答题表现动态调整题目难度分布。
+
+### 完成内容
+- **后端 `AdaptivePracticeService`**：自适应推荐算法核心服务。计算用户各难度级别（1-5 星）的答题正确率，通过加权概率采样确定各难度的选题比例。正确率 >75% 则提升更高难度权重，<50% 则加强当前和更低难度巩固，50-75% 保持当前难度。排除最近 20 道已做题目避免重复，不足时回退补充。新用户默认偏好简单/中等难度。
+- **后端 `PracticeController` 新增 2 个接口**：`GET /practice/adaptive`（自适应获取题目）、`GET /practice/adaptive/summary`（获取推荐摘要：各难度权重、正确率、推荐难度星级）。
+- **前端 `practice.ts` 新增 API**：`getAdaptiveQuestions` 和 `getAdaptiveSummary`，及 `AdaptiveSummaryVO`、`AdaptiveDifficultyDetail` 类型定义。
+- **前端 `PracticeView.vue` 重构**：新增智能推荐卡片——展示整体答题量、正确率、推荐难度星级；各难度权重彩色条形图（绿→红渐变，权重百分比 + 正确率）；一键智能推荐按钮（支持选课程和题目数量）；原刷题配置重命名为"自选模式"。
+
+### 修改文件清单
+- 后端新增：`AdaptivePracticeService.java`
+- 后端修改：`PracticeController.java`（新增 2 个接口 + AdaptivePracticeService 注入）
+- 前端修改：`api/practice.ts`、`views/practice/PracticeView.vue`
+- 文档：`docs/ROADMAP.md`、`docs/FUTURE.md`、`docs/CHANGELOG_AGENT.md`
+
+### 验收结果
+- [x] `cd backend && mvn clean compile -q`（BUILD SUCCESS）
+- [x] `cd frontend && npm run build`（构建成功，585ms，TypeScript 无错误）
+- [x] `/practice/adaptive` 和 `/practice/adaptive/summary` 接口路径在 SecurityConfig 权限规则内（`/api/practice/**` 需认证）
+
+### 遗留问题
+- 自适应算法当前基于全局答题记录，未区分课程或知识点维度。后续可按课程维度独立计算权重。
+- calculateDifficultyStats 对每条记录 selectById 题目可能有 N+1 问题，数据量大时可优化为批量查询。
+
+### 下轮建议
+- 可继续 P3 远期规划中的性能优化（Redis 缓存），或补齐技术债务（填空题/简答自动判分）。
+- 建议 commit message: `feat(practice): 实现题目难度自适应推荐`
+
+---
+
 ## Round 36 - 2026-06-13
 
 ### 阶段

@@ -178,7 +178,9 @@
 
 **预计工作量**：1-2 天
 
-### 11. 题目难度自适应
+### 11. 题目难度自适应 ✅
+
+**完成情况**：已实现基于用户各难度级别历史正确率的自适应推荐算法，使用加权概率采样分配题目难度分布，排除近期做过的题目，前端新增智能推荐卡片可视化各难度权重和正确率。
 
 **功能**：
 - 根据用户答题记录动态调整推荐题目难度
@@ -186,8 +188,10 @@
 - 答对率低的知识点推荐基础题目
 
 **涉及改动**：
-- `PracticeService` 推荐算法优化
-- 可基于简单加权算法或 ELO 评分
+- 后端新增 `AdaptivePracticeService`（自适应推荐算法）
+- `PracticeController` 新增 `/practice/adaptive` 和 `/practice/adaptive/summary` 两个接口
+- 前端 `practice.ts` 新增 `getAdaptiveQuestions` 和 `getAdaptiveSummary` API
+- `PracticeView.vue` 新增智能推荐卡片（难度权重可视化、推荐难度星级、正确率条形图）
 
 **预计工作量**：1-2 天
 
