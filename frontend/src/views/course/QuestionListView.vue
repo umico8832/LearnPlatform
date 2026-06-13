@@ -34,6 +34,12 @@
             <span class="course-name">{{ q.courseName }}</span>
             <span class="difficulty">{{ '⭐'.repeat(q.difficulty) }}</span>
             <span class="score">分值: {{ q.score }}</span>
+            <span class="favorite-btn" @click.stop="toggleFavorite(q.id)">
+              <el-icon :size="18" :color="favoriteSet.has(q.id) ? '#f7ba2a' : '#c0c4cc'">
+                <StarFilled v-if="favoriteSet.has(q.id)" />
+                <Star v-else />
+              </el-icon>
+            </span>
           </div>
           <div class="question-content">{{ q.content }}</div>
           <div v-if="q.options && q.options.length > 0" class="question-options">
@@ -67,8 +73,11 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { Star, StarFilled } from '@element-plus/icons-vue'
 import { getQuestionPage, type QuestionVO } from '@/api/question'
 import { getAllCourses, type CourseVO } from '@/api/course'
+import { getFavoriteIds, addFavorite, removeFavorite } from '@/api/favorite'
 
 const questions = ref<QuestionVO[]>([])
 const loading = ref(false)
@@ -83,6 +92,7 @@ const filters = reactive({
 })
 
 const courseList = ref<CourseVO[]>([])
+const favoriteSet = ref<Set<number>>(new Set())
 
 function questionTypeLabel(type: string) {
   const map: Record<string, string> = {
@@ -134,9 +144,39 @@ async function fetchCourses() {
   }
 }
 
+async function loadFavoriteIds() {
+  try {
+    const res = await getFavoriteIds()
+    if (res.code === 0 && res.data) {
+      favoriteSet.value = new Set(res.data)
+    }
+  } catch {
+    // ignore
+  }
+}
+
+async function toggleFavorite(questionId: number) {
+  try {
+    if (favoriteSet.value.has(questionId)) {
+      await removeFavorite(questionId)
+      favoriteSet.value.delete(questionId)
+      ElMessage.success('已取消收藏')
+    } else {
+      await addFavorite(questionId)
+      favoriteSet.value.add(questionId)
+      ElMessage.success('已收藏')
+    }
+    // 触发响应式更新
+    favoriteSet.value = new Set(favoriteSet.value)
+  } catch (e: any) {
+    ElMessage.error(e.message || '操作失败')
+  }
+}
+
 onMounted(() => {
   fetchQuestions()
   fetchCourses()
+  loadFavoriteIds()
 })
 </script>
 
@@ -219,6 +259,18 @@ onMounted(() => {
 
 .kp-tag {
   font-size: 12px;
+}
+
+.favorite-btn {
+  margin-left: auto;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s;
+}
+
+.favorite-btn:hover {
+  transform: scale(1.2);
 }
 
 .empty-state {

@@ -225,7 +225,21 @@ CREATE TABLE IF NOT EXISTS `exam_answer` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='考试答题详情表';
 
 -- ========================================
--- 13. AI 调用日志表（后期）
+-- 13. 题目收藏表
+-- ========================================
+CREATE TABLE IF NOT EXISTS `user_favorite_question` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` BIGINT NOT NULL COMMENT '用户ID',
+  `question_id` BIGINT NOT NULL COMMENT '题目ID',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_question` (`user_id`, `question_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_question_id` (`question_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='题目收藏表';
+
+-- ========================================
+-- 14. AI 调用日志表（后期）
 -- ========================================
 CREATE TABLE IF NOT EXISTS `ai_call_log` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '日志ID',

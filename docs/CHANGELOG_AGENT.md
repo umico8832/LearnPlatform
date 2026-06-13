@@ -14,6 +14,53 @@
 
 ---
 
+## Round 23 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+实现 P1 题目收藏/标记功能，支持用户收藏重要题目并在题库页面一键切换收藏状态。
+
+### 完成内容
+- 新建 `user_favorite_question` 表（schema.sql），含 user_id、question_id 唯一约束。
+- 后端新增 `UserFavoriteQuestion` 实体 + `UserFavoriteQuestionMapper`（含 countByUserAndQuestion 查询）。
+- 后端新增 `FavoriteQuestionVO`（含题目内容、题型、课程、难度等信息）。
+- 后端新增 `FavoriteService`：收藏/取消收藏/检查状态/分页列表/获取收藏 ID 列表。
+- 后端新增 `FavoriteController`（5 个接口：POST 收藏、DELETE 取消、GET 状态检查、GET 分页列表、GET ID 列表）。
+- 前端新增 `api/favorite.ts`（收藏/取消/检查/列表/IDs 5 个 API 方法）。
+- 前端新增 `views/practice/FavoriteView.vue` 收藏列表页面（表格展示 + 分页 + 取消收藏）。
+- 路由新增 `/favorites`，侧边栏新增"我的收藏"导航入口（StarFilled 图标）。
+- 题库页面 `QuestionListView.vue` 每题右侧新增星标收藏按钮，页面加载时批量获取收藏状态，点击即可收藏/取消。
+
+### 修改文件清单
+- 后端新增：`UserFavoriteQuestion.java`、`UserFavoriteQuestionMapper.java`、`FavoriteQuestionVO.java`、`FavoriteService.java`、`FavoriteController.java`
+- 后端修改：`schema.sql`（新增 user_favorite_question 表）
+- 前端新增：`api/favorite.ts`、`views/practice/FavoriteView.vue`
+- 前端修改：`router/index.ts`（新增路由）、`components/layout/AppLayout.vue`（侧边栏入口）、`views/course/QuestionListView.vue`（收藏按钮）
+- 文档：`docs/ROADMAP.md`、`docs/CHANGELOG_AGENT.md`、`docs/FUTURE.md`、`docs/HANDOFF.md`
+
+### 验收结果
+- [x] `cd backend && mvn clean compile`（BUILD SUCCESS）
+- [x] `cd backend && mvn test`（8 tests，0 failures）
+- [x] `cd frontend && npm run build`（built in 575ms）
+- [x] FavoriteView.vue 无 TS 错误
+- [x] QuestionListView.vue 收藏按钮逻辑完整
+- [x] 路由 `/favorites` 已添加，侧边栏已添加入口
+
+### 遗留问题
+- 刷题页面（PracticeSessionView）未整合收藏按钮（可后续优化）
+- 错题本页面未整合收藏按钮（可后续优化）
+- AiCallLog 仍未接入
+- 题目导入/导出（P1）尚未实现
+
+### 下轮建议
+- 实现 P1 题目导入/导出（Excel/CSV 批量导入题目）
+- 或实现 P1 AiCallLog 接入
+- 建议 commit message: `feat(favorite): 实现题目收藏功能`
+
+---
+
 ## Round 22 - 2026-06-13
 
 ### 阶段
