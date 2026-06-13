@@ -8,25 +8,25 @@
     <!-- 统计卡片 -->
     <el-row :gutter="16" class="stat-cards">
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
+        <el-card shadow="hover" class="stat-card" v-loading="statsLoading" element-loading-background="rgba(255,255,255,0.8)">
           <div class="stat-value" style="color: #409eff">{{ stats.totalPractice }}</div>
           <div class="stat-label">总刷题数</div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
+        <el-card shadow="hover" class="stat-card" v-loading="statsLoading" element-loading-background="rgba(255,255,255,0.8)">
           <div class="stat-value" style="color: #67c23a">{{ stats.correctRate }}%</div>
           <div class="stat-label">正确率</div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
+        <el-card shadow="hover" class="stat-card" v-loading="statsLoading" element-loading-background="rgba(255,255,255,0.8)">
           <div class="stat-value" style="color: #e6a23c">{{ stats.todayPractice }}</div>
           <div class="stat-label">今日刷题</div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
+        <el-card shadow="hover" class="stat-card" v-loading="statsLoading" element-loading-background="rgba(255,255,255,0.8)">
           <div class="stat-value" style="color: #f56c6c">{{ stats.streakDays }} 天</div>
           <div class="stat-label">连续学习</div>
         </el-card>
@@ -38,13 +38,15 @@
       <el-col :span="14">
         <el-card shadow="hover">
           <template #header><span>近 7 天刷题趋势</span></template>
-          <div ref="trendChartRef" class="chart-container"></div>
+          <div v-if="!trendEmpty" ref="trendChartRef" class="chart-container"></div>
+          <el-empty v-else description="暂无刷题数据" :image-size="100" />
         </el-card>
       </el-col>
       <el-col :span="10">
         <el-card shadow="hover">
           <template #header><span>课程正确率分布</span></template>
-          <div ref="courseChartRef" class="chart-container"></div>
+          <div v-if="!courseEmpty" ref="courseChartRef" class="chart-container"></div>
+          <el-empty v-else description="暂无课程数据" :image-size="100" />
         </el-card>
       </el-col>
     </el-row>
@@ -95,6 +97,9 @@ const stats = reactive<StatisticsOverview>({
   todayPractice: 0, streakDays: 0, wrongQuestionCount: 0, masteredCount: 0
 })
 
+const statsLoading = ref(true)
+const trendEmpty = ref(false)
+const courseEmpty = ref(false)
 const trendChartRef = ref<HTMLElement | null>(null)
 const courseChartRef = ref<HTMLElement | null>(null)
 let trendChart: echarts.ECharts | null = null
@@ -105,7 +110,11 @@ onMounted(async () => {
   try {
     const res = await getStatisticsOverview()
     if (res.code === 0 && res.data) Object.assign(stats, res.data)
-  } catch {}
+  } catch {
+    // 统计数据加载失败，保持默认值
+  } finally {
+    statsLoading.value = false
+  }
 
   // 加载图表数据
   await nextTick()
@@ -122,7 +131,10 @@ const loadTrendChart = async () => {
   if (!trendChartRef.value) return
   try {
     const res = await getDailyTrend()
-    if (res.code !== 0 || !res.data) return
+    if (res.code !== 0 || !res.data || res.data.length === 0) {
+      trendEmpty.value = true
+      return
+    }
     const data = res.data
     trendChart = echarts.init(trendChartRef.value)
     trendChart.setOption({
@@ -136,14 +148,19 @@ const loadTrendChart = async () => {
         { name: '答错', type: 'bar', stack: 'total', data: data.map(d => d.wrong), itemStyle: { color: '#f56c6c' } }
       ]
     })
-  } catch {}
+  } catch {
+    trendEmpty.value = true
+  }
 }
 
 const loadCourseChart = async () => {
   if (!courseChartRef.value) return
   try {
     const res = await getCourseStats()
-    if (res.code !== 0 || !res.data || res.data.length === 0) return
+    if (res.code !== 0 || !res.data || res.data.length === 0) {
+      courseEmpty.value = true
+      return
+    }
     const data = res.data.slice(0, 6)
     courseChart = echarts.init(courseChartRef.value)
     courseChart.setOption({
@@ -157,7 +174,9 @@ const loadCourseChart = async () => {
         data: [{ value: data.map(d => d.correctRate), name: '正确率', areaStyle: { opacity: 0.2 }, lineStyle: { color: '#409eff' }, itemStyle: { color: '#409eff' } }]
       }]
     })
-  } catch {}
+  } catch {
+    courseEmpty.value = true
+  }
 }
 </script>
 

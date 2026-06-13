@@ -14,6 +14,73 @@
 
 ---
 
+## Round 12 - 2026-06-13
+
+### 阶段
+Phase 10：质量提升（第二轮）
+
+### 本轮目标
+前端体验优化：loading 状态、空状态、错误提示，AI 超时优化，URL bug 修复。
+
+### 完成内容
+
+#### 1. HomeView.vue - 首页体验优化
+- 统计卡片添加 `v-loading` 加载状态
+- 趋势图表和雷达图添加空状态（`el-empty`）
+- 加载失败时显示空状态而非空白区域
+- 新增 `statsLoading`、`trendEmpty`、`courseEmpty` 响应式变量
+
+#### 2. CourseListView.vue - 课程列表优化
+- 课程列表区域添加 `v-loading` 加载状态
+- 加载时显示"加载课程中..."提示
+
+#### 3. PracticeView.vue - 刷题页优化 + Bug 修复
+- 统计卡片添加 `v-loading` 加载状态
+- 使用空值合并操作符 `??` 防止 null 值显示异常
+- **Bug 修复**：课程列表 API 路径从 `/api/courses` 改为 `/courses`（axios baseURL 已含 `/api`，原来请求路径变成了 `/api/api/courses`）
+- 新增 `statsLoading` 响应式变量
+
+#### 4. AI 超时优化
+- `request.ts` 新增 `aiService` 专用 Axios 实例（超时 60 秒）
+- AI 实例有独立的 Token 注入和错误处理拦截器
+- AI 超时提示更友好："AI 响应超时，请稍后重试"
+- `ai.ts` API 改用 `aiService` 发起请求，避免 AI 调用 15 秒超时
+
+#### 5. URL 修复
+- `ai.ts` 接口路径从 `/api/ai/xxx` 改为 `/ai/xxx`（避免 `/api/api/ai/xxx`）
+
+### 修改文件清单
+| 文件 | 操作 |
+|------|------|
+| frontend/src/views/home/HomeView.vue | 修改（loading + empty） |
+| frontend/src/views/course/CourseListView.vue | 修改（loading） |
+| frontend/src/views/practice/PracticeView.vue | 修改（loading + URL 修复） |
+| frontend/src/utils/request.ts | 修改（新增 aiService） |
+| frontend/src/api/ai.ts | 修改（用 aiService + 修复 URL） |
+| docs/CHANGELOG_AGENT.md | 修改（添加本轮记录） |
+
+### 验收结果
+- [x] 后端编译通过（mvn clean compile BUILD SUCCESS）
+- [x] 首页统计卡片有加载状态，图表有空状态
+- [x] 课程列表有加载状态
+- [x] 刷题页统计卡片有加载状态
+- [x] AI API 使用 60 秒超时实例
+- [x] AI API URL 路径修复
+- [x] 刷题页课程列表 URL 修复
+
+### 遗留问题
+- 边界情况处理（重复提交防护、并发）大部分页面已有基本防护
+- 日志规范化未完成
+- SQL 优化检查未完成
+- 安全检查未完成
+
+### 下轮建议
+- 继续 Phase 10：日志规范化 + 安全检查
+- 或进入 Phase 11：部署与简历
+- 建议 commit message: `refactor(frontend): 优化前端加载状态、空状态和 AI 超时配置`
+
+---
+
 ## Round 11 - 2026-06-13
 
 ### 阶段

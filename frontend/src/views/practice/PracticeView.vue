@@ -6,29 +6,29 @@
     </div>
 
     <!-- 统计卡片 -->
-    <div class="stats-row" v-if="stats">
+    <div class="stats-row">
       <el-row :gutter="20">
         <el-col :span="6">
-          <el-card shadow="hover" class="stat-card">
-            <div class="stat-value">{{ stats.totalAnswered }}</div>
+          <el-card shadow="hover" class="stat-card" v-loading="statsLoading" element-loading-background="rgba(255,255,255,0.8)">
+            <div class="stat-value">{{ stats?.totalAnswered ?? 0 }}</div>
             <div class="stat-label">总答题数</div>
           </el-card>
         </el-col>
         <el-col :span="6">
-          <el-card shadow="hover" class="stat-card stat-correct">
-            <div class="stat-value">{{ stats.correctCount }}</div>
+          <el-card shadow="hover" class="stat-card stat-correct" v-loading="statsLoading" element-loading-background="rgba(255,255,255,0.8)">
+            <div class="stat-value">{{ stats?.correctCount ?? 0 }}</div>
             <div class="stat-label">答对数</div>
           </el-card>
         </el-col>
         <el-col :span="6">
-          <el-card shadow="hover" class="stat-card stat-wrong">
-            <div class="stat-value">{{ stats.wrongCount }}</div>
+          <el-card shadow="hover" class="stat-card stat-wrong" v-loading="statsLoading" element-loading-background="rgba(255,255,255,0.8)">
+            <div class="stat-value">{{ stats?.wrongCount ?? 0 }}</div>
             <div class="stat-label">答错数</div>
           </el-card>
         </el-col>
         <el-col :span="6">
-          <el-card shadow="hover" class="stat-card stat-rate">
-            <div class="stat-value">{{ stats.correctRate }}%</div>
+          <el-card shadow="hover" class="stat-card stat-rate" v-loading="statsLoading" element-loading-background="rgba(255,255,255,0.8)">
+            <div class="stat-value">{{ stats?.correctRate ?? 0 }}%</div>
             <div class="stat-label">正确率</div>
           </el-card>
         </el-col>
@@ -93,6 +93,7 @@ import request from '@/utils/request'
 
 const router = useRouter()
 const loading = ref(false)
+const statsLoading = ref(true)
 const stats = ref<PracticeStatsVO | null>(null)
 const courseList = ref<any[]>([])
 
@@ -116,12 +117,14 @@ const loadStats = async () => {
     }
   } catch (e) {
     // ignore
+  } finally {
+    statsLoading.value = false
   }
 }
 
 const loadCourses = async () => {
   try {
-    const res = await request.get<any, any>('/api/courses', { params: { pageNum: 1, pageSize: 100 } })
+    const res = await request.get<any, any>('/courses', { params: { pageNum: 1, pageSize: 100 } })
     if (res.code === 0) {
       courseList.value = res.data?.records || []
     }

@@ -17,6 +17,63 @@ const service: AxiosInstance = axios.create({
 })
 
 /**
+ * AI 专用实例（超时更长，AI 生成可能需要 30-60 秒）
+ */
+export const aiService: AxiosInstance = axios.create({
+  baseURL: '/api',
+  timeout: 60000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+// AI 实例也注入 Token 和错误处理
+aiService.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const token = getToken()
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
+
+aiService.interceptors.response.use(
+  (response: AxiosResponse<ApiResponse>) => {
+    const res = response.data
+    if (res.code === 0) return response
+    if (res.code === 1002) {
+      removeToken()
+      router.push('/login')
+      ElMessage.error('登录已过期，请重新登录')
+      return Promise.reject(new Error(res.message))
+    }
+    ElMessage.error(res.message || '请求失败')
+    return Promise.reject(new Error(res.message))
+  },
+  (error) => {
+    if (error.response) {
+      const { status } = error.response
+      if (status === 401) {
+        removeToken()
+        router.push('/login')
+        ElMessage.error('登录已过期，请重新登录')
+      } else if (status === 500) {
+        ElMessage.error('AI 服务异常，请稍后重试')
+      } else {
+        ElMessage.error(`请求失败: ${status}`)
+      }
+    } else if (error.message.includes('timeout')) {
+      ElMessage.error('AI 响应超时，请稍后重试')
+    } else {
+      ElMessage.error('网络异常，请检查网络连接')
+    }
+    return Promise.reject(error)
+  }
+)
+
+/**
  * 请求拦截器：自动注入 Token
  */
 service.interceptors.request.use(

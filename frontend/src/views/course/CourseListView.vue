@@ -3,20 +3,22 @@
     <div class="page-header">
       <h2>课程列表</h2>
     </div>
-    <el-row :gutter="20">
-      <el-col v-for="course in courses" :key="course.id" :xs="24" :sm="12" :md="8" :lg="6">
-        <el-card class="course-card" shadow="hover" @click="goToDetail(course.id)">
-          <div class="course-cover">
-            <el-icon :size="48" color="#409eff"><Reading /></el-icon>
-          </div>
-          <h3>{{ course.name }}</h3>
-          <p class="course-desc">{{ course.description || '暂无描述' }}</p>
-        </el-card>
-      </el-col>
-      <el-col v-if="courses.length === 0 && !loading" :span="24">
-        <el-empty description="暂无课程" />
-      </el-col>
-    </el-row>
+    <div v-loading="loading" element-loading-text="加载课程中...">
+      <el-row :gutter="20">
+        <el-col v-for="course in courses" :key="course.id" :xs="24" :sm="12" :md="8" :lg="6">
+          <el-card class="course-card" shadow="hover" @click="goToDetail(course.id)">
+            <div class="course-cover">
+              <el-icon :size="48" color="#409eff"><Reading /></el-icon>
+            </div>
+            <h3>{{ course.name }}</h3>
+            <p class="course-desc">{{ course.description || '暂无描述' }}</p>
+          </el-card>
+        </el-col>
+        <el-col v-if="courses.length === 0 && !loading" :span="24">
+          <el-empty description="暂无课程" />
+        </el-col>
+      </el-row>
+    </div>
   </div>
 </template>
 
