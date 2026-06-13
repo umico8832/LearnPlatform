@@ -62,6 +62,24 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/practice/WrongQuestionView.vue'),
         meta: { title: '错题本' },
       },
+      {
+        path: 'exams',
+        name: 'ExamList',
+        component: () => import('@/views/exam/ExamListView.vue'),
+        meta: { title: '考试' },
+      },
+      {
+        path: 'exams/take/:recordId',
+        name: 'ExamTake',
+        component: () => import('@/views/exam/ExamTakeView.vue'),
+        meta: { title: '考试中' },
+      },
+      {
+        path: 'exams/result/:recordId',
+        name: 'ExamResult',
+        component: () => import('@/views/exam/ExamResultView.vue'),
+        meta: { title: '考试结果' },
+      },
       // 管理端路由
       {
         path: 'admin/courses',
@@ -80,6 +98,12 @@ const routes: RouteRecordRaw[] = [
         name: 'AdminQuestionManage',
         component: () => import('@/views/admin/QuestionManage.vue'),
         meta: { title: '题目管理', requiresAdmin: true },
+      },
+      {
+        path: 'admin/exams',
+        name: 'AdminExamManage',
+        component: () => import('@/views/admin/ExamManage.vue'),
+        meta: { title: '试卷管理', requiresAdmin: true },
       },
     ],
   },

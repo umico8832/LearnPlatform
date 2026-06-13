@@ -10,8 +10,8 @@
 | 3 | 课程与知识点 | ✅ 已完成 | 1天 | CRUD + 前端页面 |
 | 4 | 题库系统 | ✅ 已完成 | 2天 | 题目 CRUD + 前端 |
 | 5 | 刷题与判分 | ✅ 已完成 | 2天 | 答题 + 判分 + 记录 |
-| 6 | 错题本 | 🔵 进行中 | 1.5天 | 错题收集 + 重练 |
-| 7 | 试卷与考试 | ⬜ 待开始 | 2.5天 | 组卷 + 考试 + 成绩 |
+| 6 | 错题本 | ✅ 已完成 | 1.5天 | 错题收集 + 重练 |
+| 7 | 试卷与考试 | ✅ 已完成 | 2.5天 | 组卷 + 考试 + 成绩 |
 | 8 | AI 功能 | ⬜ 待开始 | 2天 | AI 解析 + 复习建议 |
 | 9 | 统计可视化 | ⬜ 待开始 | 1.5天 | 图表 + 面板 |
 | 10 | 质量提升 | ⬜ 待开始 | 2天 | 重构 + 校验 + 文档 |
@@ -243,25 +243,25 @@
 
 ---
 
-## Phase 7：试卷与考试 ⬜
+## Phase 7：试卷与考试 ✅
 
 ### 目标
 管理端可创建试卷，用户可参加考试并查看成绩。
 
 ### 后端任务
-- [ ] ExamPaper、ExamQuestion、ExamRecord、ExamAnswer 实体 + Mapper
-- [ ] ExamPaperService（试卷 CRUD、组卷）
-- [ ] ExamService（开始考试、提交试卷、判分、考试记录）
-- [ ] AdminExamController（管理端试卷管理）
-- [ ] ExamController（用户端考试）
-- [ ] 手动选题和随机组卷逻辑
+- [x] ExamPaper、ExamQuestion、ExamRecord、ExamAnswer 实体 + Mapper
+- [x] ExamPaperService（试卷 CRUD、组卷）
+- [x] ExamService（开始考试、提交试卷、判分、考试记录）
+- [x] AdminExamController（管理端试卷管理）
+- [x] ExamController（用户端考试）
+- [x] 手动选题和随机组卷逻辑
 
 ### 前端任务
-- [ ] 管理端 ExamManage.vue（试卷管理、组卷）
-- [ ] 用户端 ExamListView.vue（试卷列表）
-- [ ] 用户端 ExamTakeView.vue（考试答题界面、倒计时）
-- [ ] 用户端 ExamResultView.vue（成绩、答题详情）
-- [ ] API：exam.ts
+- [x] 管理端 ExamManage.vue（试卷管理、组卷）
+- [x] 用户端 ExamListView.vue（试卷列表 + 考试记录）
+- [x] 用户端 ExamTakeView.vue（考试答题界面、倒计时）
+- [x] 用户端 ExamResultView.vue（成绩、答题详情）
+- [x] API：exam.ts
 
 ### 验收标准
 1. 管理端可以创建试卷、手动/随机组卷

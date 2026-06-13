@@ -14,6 +14,111 @@
 
 ---
 
+## Round 8 - 2026-06-13
+
+### 阶段
+Phase 7：试卷与考试
+
+### 本轮目标
+完成 Phase 7 试卷与考试前端部分：管理端试卷管理页面、用户端考试结果页面、倒计时功能、路由和导航整合。
+
+### 完成内容
+
+#### 1. 前端 API 更新
+- `frontend/src/api/exam.ts` - 补充用户端 `getPaperDetail` 方法（指向 `/api/exam/papers/${id}`）
+
+#### 2. 管理端试卷管理页面
+- `frontend/src/views/admin/ExamManage.vue` - 试卷 CRUD 管理
+  - 试卷列表表格（ID、名称、课程、题数、总分、时长、状态、创建时间）
+  - 状态筛选（草稿/已发布）
+  - 新增/编辑试卷弹窗（800px 宽）
+  - 基本信息表单（名称、课程、描述、时长、状态）
+  - 组卷功能：题目选择器弹窗（搜索题干、题型筛选、勾选添加）
+  - 已选题目列表（题干预览、分值编辑、排序编辑、移除）
+  - 已选题数和总分统计
+  - 发布试卷操作
+  - 删除确认
+  - 分页功能
+
+#### 3. 用户端考试结果页面
+- `frontend/src/views/exam/ExamResultView.vue` - 考试结果展示
+  - 成绩卡片（得分大字、总分、正确率百分比、用时、题数）
+  - 答题详情列表（题号、题型、满分、得分、正确/错误标签）
+  - 每题展示（题干、我的答案、正确答案、解析）
+  - 正确/错误颜色区分
+  - 返回考试列表按钮
+  - 支持从 sessionStorage 和 API 两种方式获取结果
+
+#### 4. ExamListView 更新
+- 修复 API 调用：使用用户端 `getPaperDetail` 替代管理端 `getExamPaperDetail`
+- 新增"考试记录"标签页（el-tabs 切换）
+  - 记录表格（试卷名称、得分、状态、开始时间）
+  - 查看结果/继续考试操作
+  - 得分颜色区分（≥80% 绿色、≥60% 黄色、<60% 红色）
+  - 分页功能
+- 开始考试时将 duration 传入 sessionStorage
+
+#### 5. ExamTakeView 倒计时功能
+- 顶部显示剩余时间（MM:SS 格式）
+- 倒计时从试卷时长开始递减
+- 剩余 5 分钟时红色闪烁警告
+- 时间到自动提交试卷
+- 组件销毁时清除定时器
+- 导入 Timer 图标
+
+#### 6. 路由更新
+- `frontend/src/router/index.ts` - 新增路由
+  - `/exams` - 考试列表
+  - `/exams/take/:recordId` - 考试答题
+  - `/exams/result/:recordId` - 考试结果
+  - `/admin/exams` - 管理端试卷管理（requiresAdmin）
+
+#### 7. 导航菜单更新
+- `frontend/src/components/layout/AppLayout.vue`
+  - 用户端新增"考试"菜单项（Trophy 图标）
+  - 管理端新增"试卷管理"菜单项（Trophy 图标）
+
+#### 8. 文档更新
+- `docs/ROADMAP.md` - Phase 7 标记为 ✅ 已完成
+
+### 修改文件清单
+| 文件 | 操作 |
+|------|------|
+| frontend/src/api/exam.ts | 修改（补充 getPaperDetail） |
+| frontend/src/views/admin/ExamManage.vue | 新建 |
+| frontend/src/views/exam/ExamResultView.vue | 新建 |
+| frontend/src/views/exam/ExamListView.vue | 修改（修复 API + 考试记录 tab） |
+| frontend/src/views/exam/ExamTakeView.vue | 修改（添加倒计时） |
+| frontend/src/router/index.ts | 修改（添加路由） |
+| frontend/src/components/layout/AppLayout.vue | 修改（添加菜单项） |
+| docs/ROADMAP.md | 修改（Phase 7→✅） |
+| docs/CHANGELOG_AGENT.md | 修改（添加本轮记录） |
+
+### 验收结果
+- [x] 后端编译通过（mvn clean compile BUILD SUCCESS）
+- [x] 管理端可以创建试卷、手动选题组卷
+- [x] 管理端可以编辑、发布、删除试卷
+- [x] 用户端可以看到已发布试卷列表
+- [x] 用户可以开始考试并进入答题界面
+- [x] 答题界面有倒计时功能（剩余 5 分钟红色警告，时间到自动提交）
+- [x] 提交后跳转考试结果页面（得分、正确率、答题详情）
+- [x] 考试记录 tab 可以查看历史记录和结果
+- [x] 侧边栏用户端新增"考试"、管理端新增"试卷管理"菜单
+- [x] 路由配置正确
+
+### 遗留问题
+- 管理端试卷编辑时题目选择器的 `watchPicker` 函数未绑定到弹窗打开事件（需手动点击搜索）
+- 随机组卷功能未在前端实现（后端可支持）
+- 用户端考试列表未按课程筛选
+
+### 下轮建议
+- 进入 Phase 8：AI 功能
+- 后端：AiProvider 接口 + OpenAiProvider 实现 + AiService + AiController
+- 前端：MarkdownRenderer 组件 + AI 解析展示 + 复习建议页面
+- 建议 commit message: `feat(exam): 完成 Phase 7 试卷与考试前端`
+
+---
+
 ## Round 7 - 2026-06-13
 
 ### 阶段
