@@ -68,7 +68,17 @@ public class ExamPaperService {
         ExamPaper paper = examPaperMapper.selectById(id);
         if (paper == null) throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
         ExamPaperVO vo = toVO(paper);
-        fillQuestions(vo);
+        fillQuestions(vo, true);
+        return vo;
+    }
+
+    public ExamPaperVO getPublishedExamPaperById(Long id) {
+        ExamPaper paper = examPaperMapper.selectById(id);
+        if (paper == null || paper.getStatus() == null || paper.getStatus() != 1) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
+        }
+        ExamPaperVO vo = toVO(paper);
+        fillQuestions(vo, false);
         return vo;
     }
 
@@ -198,7 +208,7 @@ public class ExamPaperService {
         return vo;
     }
 
-    private void fillQuestions(ExamPaperVO vo) {
+    private void fillQuestions(ExamPaperVO vo, boolean includeCorrectAnswer) {
         LambdaQueryWrapper<ExamQuestion> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ExamQuestion::getExamPaperId, vo.getId()).orderByAsc(ExamQuestion::getSortOrder);
         List<ExamQuestion> eqs = examQuestionMapper.selectList(wrapper);
@@ -218,7 +228,13 @@ public class ExamPaperService {
                 LambdaQueryWrapper<QuestionOption> optWrapper = new LambdaQueryWrapper<>();
                 optWrapper.eq(QuestionOption::getQuestionId, q.getId()).orderByAsc(QuestionOption::getSortOrder);
                 List<QuestionOption> options = questionOptionMapper.selectList(optWrapper);
-                item.setOptions(options.stream().map(QuestionOptionVO::fromEntity).collect(Collectors.toList()));
+                item.setOptions(options.stream().map(option -> {
+                    QuestionOptionVO optionVO = QuestionOptionVO.fromEntity(option);
+                    if (!includeCorrectAnswer) {
+                        optionVO.setIsCorrect(null);
+                    }
+                    return optionVO;
+                }).collect(Collectors.toList()));
             }
             items.add(item);
         }

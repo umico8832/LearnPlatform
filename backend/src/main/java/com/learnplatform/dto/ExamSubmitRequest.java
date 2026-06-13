@@ -2,6 +2,7 @@ package com.learnplatform.dto;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.Valid;
 import java.util.List;
 
 /**
@@ -11,6 +12,7 @@ public class ExamSubmitRequest {
     @NotNull(message = "考试记录ID不能为空")
     private Long examRecordId;
     @NotEmpty(message = "答案列表不能为空")
+    @Valid
     private List<AnswerItem> answers;
 
     public Long getExamRecordId() { return examRecordId; }
@@ -19,6 +21,7 @@ public class ExamSubmitRequest {
     public void setAnswers(List<AnswerItem> answers) { this.answers = answers; }
 
     public static class AnswerItem {
+        @NotNull(message = "题目ID不能为空")
         private Long questionId;
         private String userAnswer;
 

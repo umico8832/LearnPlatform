@@ -76,12 +76,12 @@ export function getPracticeQuestions(params?: {
   difficulty?: number
   count?: number
 }) {
-  return request.get<any, ApiResponse<PracticeQuestionVO[]>>('/api/practice/questions', { params })
+  return request.get<any, ApiResponse<PracticeQuestionVO[]>>('/practice/questions', { params })
 }
 
 /** 提交答案 */
 export function submitAnswer(data: PracticeSubmitRequest) {
-  return request.post<any, ApiResponse<PracticeResultVO>>('/api/practice/submit', data)
+  return request.post<any, ApiResponse<PracticeResultVO>>('/practice/submit', data)
 }
 
 /** 获取练习记录（分页） */
@@ -92,12 +92,12 @@ export function getPracticeRecords(params: {
   courseId?: number
   isCorrect?: number
 }) {
-  return request.get<any, ApiResponse<PageData<PracticeRecordVO>>>('/api/practice/records', { params })
+  return request.get<any, ApiResponse<PageData<PracticeRecordVO>>>('/practice/records', { params })
 }
 
 /** 获取练习统计 */
 export function getPracticeStats() {
-  return request.get<any, ApiResponse<PracticeStatsVO>>('/api/practice/stats')
+  return request.get<any, ApiResponse<PracticeStatsVO>>('/practice/stats')
 }
 
 /** 获取错题重练题目 */
@@ -105,5 +105,5 @@ export function getWrongQuestionPractice(params?: {
   masteryLevel?: number
   count?: number
 }) {
-  return request.get<any, ApiResponse<PracticeQuestionVO[]>>('/api/practice/wrong-questions', { params })
+  return request.get<any, ApiResponse<PracticeQuestionVO[]>>('/practice/wrong-questions', { params })
 }

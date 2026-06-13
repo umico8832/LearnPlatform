@@ -200,6 +200,25 @@ public class PracticeService {
         Page<PracticeRecord> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<PracticeRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(PracticeRecord::getUserId, userId);
+        if (isCorrect != null) {
+            wrapper.eq(PracticeRecord::getIsCorrect, isCorrect);
+        }
+        if ((questionType != null && !questionType.isBlank()) || courseId != null) {
+            LambdaQueryWrapper<Question> questionWrapper = new LambdaQueryWrapper<>();
+            if (questionType != null && !questionType.isBlank()) {
+                questionWrapper.eq(Question::getQuestionType, questionType);
+            }
+            if (courseId != null) {
+                questionWrapper.eq(Question::getCourseId, courseId);
+            }
+            List<Long> questionIds = questionMapper.selectList(questionWrapper).stream()
+                    .map(Question::getId)
+                    .collect(Collectors.toList());
+            if (questionIds.isEmpty()) {
+                return new Page<>(pageNum, pageSize, 0);
+            }
+            wrapper.in(PracticeRecord::getQuestionId, questionIds);
+        }
         wrapper.orderByDesc(PracticeRecord::getCreateTime);
 
         Page<PracticeRecord> result = practiceRecordMapper.selectPage(page, wrapper);

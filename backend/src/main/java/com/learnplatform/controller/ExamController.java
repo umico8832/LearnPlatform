@@ -50,7 +50,7 @@ public class ExamController {
     @Operation(summary = "试卷详情", description = "获取试卷详情，用于考试前预览")
     @GetMapping("/papers/{id}")
     public R<ExamPaperVO> getPaperDetail(@PathVariable Long id) {
-        return R.ok(examPaperService.getExamPaperById(id));
+        return R.ok(examPaperService.getPublishedExamPaperById(id));
     }
 
 

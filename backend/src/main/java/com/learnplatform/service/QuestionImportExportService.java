@@ -113,7 +113,7 @@ public class QuestionImportExportService {
 
         QuestionExcelDTO example2 = new QuestionExcelDTO();
         example2.setContent("Java 是一种编译型语言。");
-        example2.setQuestionType("JUDGMENT");
+        example2.setQuestionType("TRUE_FALSE");
         example2.setCourseName("Java基础");
         example2.setDifficulty(1);
         example2.setOptions("对|错");
@@ -159,6 +159,7 @@ public class QuestionImportExportService {
         for (int i = 0; i < rows.size(); i++) {
             QuestionExcelDTO row = rows.get(i);
             int rowNum = i + 2; // Excel 行号（第 1 行是表头）
+            Long insertedQuestionId = null;
 
             try {
                 // 验证必填字段
@@ -177,7 +178,7 @@ public class QuestionImportExportService {
                 String questionType = normalizeQuestionType(row.getQuestionType());
                 if (questionType == null) {
                     result.addError("第 " + rowNum + " 行：不支持的题型 '" + row.getQuestionType()
-                            + "'，支持：单选/多选/判断/填空/简答 或 SINGLE_CHOICE/MULTIPLE_CHOICE/JUDGMENT/FILL_BLANK/SHORT_ANSWER");
+                            + "'，支持：单选/多选/判断/填空/简答 或 SINGLE_CHOICE/MULTIPLE_CHOICE/TRUE_FALSE/FILL_BLANK/SHORT_ANSWER");
                     result.setFailCount(result.getFailCount() + 1);
                     continue;
                 }
@@ -210,10 +211,11 @@ public class QuestionImportExportService {
                 question.setCreateBy(createBy);
                 question.setDeleted(0);
                 questionMapper.insert(question);
+                insertedQuestionId = question.getId();
 
                 // 处理选项
                 if ("SINGLE_CHOICE".equals(questionType) || "MULTIPLE_CHOICE".equals(questionType)
-                        || "JUDGMENT".equals(questionType)) {
+                        || "TRUE_FALSE".equals(questionType)) {
                     List<QuestionCreateRequest.OptionItem> optionItems = parseOptions(row.getOptions(),
                             row.getAnswer(), questionType);
                     for (QuestionCreateRequest.OptionItem item : optionItems) {
@@ -248,6 +250,7 @@ public class QuestionImportExportService {
 
                 result.setSuccessCount(result.getSuccessCount() + 1);
             } catch (Exception e) {
+                cleanupFailedImport(insertedQuestionId);
                 log.error("导入题目失败，第 {} 行: {}", rowNum, e.getMessage(), e);
                 result.addError("第 " + rowNum + " 行：导入失败 - " + e.getMessage());
                 result.setFailCount(result.getFailCount() + 1);
@@ -269,7 +272,7 @@ public class QuestionImportExportService {
         return switch (trimmed) {
             case "单选", "单选题", "SINGLE_CHOICE" -> "SINGLE_CHOICE";
             case "多选", "多选题", "MULTIPLE_CHOICE" -> "MULTIPLE_CHOICE";
-            case "判断", "判断题", "JUDGMENT" -> "JUDGMENT";
+            case "判断", "判断题", "TRUE_FALSE", "JUDGMENT" -> "TRUE_FALSE";
             case "填空", "填空题", "FILL_BLANK" -> "FILL_BLANK";
             case "简答", "简答题", "SHORT_ANSWER" -> "SHORT_ANSWER";
             default -> null;
@@ -286,7 +289,7 @@ public class QuestionImportExportService {
         List<QuestionCreateRequest.OptionItem> result = new ArrayList<>();
         if (optionsStr == null || optionsStr.trim().isEmpty()) {
             // 判断题自动生成选项
-            if ("JUDGMENT".equals(questionType)) {
+            if ("TRUE_FALSE".equals(questionType)) {
                 result.add(createOption("对", "A", answer != null && "对".equals(answer.trim()), 1));
                 result.add(createOption("错", "B", answer != null && "错".equals(answer.trim()), 2));
             }
@@ -328,7 +331,7 @@ public class QuestionImportExportService {
         Set<String> result = new HashSet<>();
         if (answer == null || answer.trim().isEmpty()) return result;
 
-        if ("JUDGMENT".equals(questionType)) {
+        if ("TRUE_FALSE".equals(questionType)) {
             result.add(answer.trim());
             return result;
         }
@@ -409,7 +412,7 @@ public class QuestionImportExportService {
         return switch (type) {
             case "SINGLE_CHOICE" -> "单选";
             case "MULTIPLE_CHOICE" -> "多选";
-            case "JUDGMENT" -> "判断";
+            case "TRUE_FALSE" -> "判断";
             case "FILL_BLANK" -> "填空";
             case "SHORT_ANSWER" -> "简答";
             default -> type;
@@ -434,5 +437,19 @@ public class QuestionImportExportService {
     private Map<String, Long> buildKnowledgePointNameToIdMap() {
         List<KnowledgePoint> kps = knowledgePointMapper.selectList(null);
         return kps.stream().collect(Collectors.toMap(KnowledgePoint::getName, KnowledgePoint::getId, (a, b) -> a));
+    }
+
+    private void cleanupFailedImport(Long questionId) {
+        if (questionId == null) {
+            return;
+        }
+        LambdaQueryWrapper<QuestionOption> optionWrapper = new LambdaQueryWrapper<>();
+        optionWrapper.eq(QuestionOption::getQuestionId, questionId);
+        questionOptionMapper.delete(optionWrapper);
+
+        LambdaQueryWrapper<QuestionKnowledgePoint> kpWrapper = new LambdaQueryWrapper<>();
+        kpWrapper.eq(QuestionKnowledgePoint::getQuestionId, questionId);
+        questionKnowledgePointMapper.delete(kpWrapper);
+        questionMapper.deleteById(questionId);
     }
 }

@@ -14,6 +14,46 @@
 
 ---
 
+## Round 27 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+修复整体审查发现的前端接口契约、答案泄露、考试判分、题型导入和筛选一致性问题。
+
+### 完成内容
+- 统一考试、刷题、错题本、收藏、学习计划和统计 API 的前端路径，避免产生 `/api/api/**`。
+- 用户端题库与已发布试卷不再返回正确选项标记，答题前隐藏题目解析。
+- 考试提交新增题目归属、重复题号和后端时限校验；总分完全以试卷配置计算。
+- Excel 判断题统一为 `TRUE_FALSE`，兼容 `JUDGMENT` 输入；失败行清理已插入数据。
+- 刷题记录的题型、课程和答题结果筛选正式生效。
+- 新增考试提交嵌套参数校验和 `ExamServiceTest`。
+- 修正 README 与 HANDOFF 中过时或超前的功能声明。
+
+### 修改文件清单
+- 后端：题目、考试、刷题记录、Excel 导入相关 Controller、Service 和 DTO
+- 后端测试：`ExamServiceTest.java`
+- 前端：考试、刷题、错题本、收藏、学习计划和统计 API 模块
+- 文档：`README.md`、`docs/ROADMAP.md`、`docs/API_DESIGN.md`、`docs/HANDOFF.md`、`docs/CHANGELOG_AGENT.md`
+
+### 验收结果
+- [x] `cd backend && mvn clean test`（11 tests，0 failures）
+- [x] `cd frontend && npm run build`（构建成功）
+- [x] 前端源码无重复 `/api` 请求前缀
+- [x] `git diff --check` 通过
+
+### 遗留问题
+- 管理端用户管理尚未实现。
+- 核心 CRUD 和数据库事务仍缺少更完整的集成测试。
+- 前端构建存在 VueUse 的 Rolldown 注解警告，不影响构建。
+
+### 下轮建议
+- 实现管理端用户列表、角色调整和账号启停。
+- 建议 commit message: `fix(platform): 修复核心接口契约与考试判分漏洞`
+
+---
+
 ## Round 26 - 2026-06-13
 
 ### 阶段

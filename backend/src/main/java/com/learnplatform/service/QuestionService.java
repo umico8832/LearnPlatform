@@ -70,7 +70,8 @@ public class QuestionService {
         voPage.setRecords(result.getRecords().stream()
                 .map(q -> {
                     QuestionVO vo = QuestionVO.fromEntity(q);
-                    fillQuestionVO(vo);
+                    vo.setAnalysis(null);
+                    fillQuestionVOForUser(vo);
                     return vo;
                 })
                 .collect(Collectors.toList()));
@@ -118,6 +119,17 @@ public class QuestionService {
         }
         QuestionVO vo = QuestionVO.fromEntity(question);
         fillQuestionVO(vo);
+        return vo;
+    }
+
+    public QuestionVO getEnabledQuestionById(Long id) {
+        Question question = questionMapper.selectById(id);
+        if (question == null || question.getStatus() == null || question.getStatus() != 1) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
+        }
+        QuestionVO vo = QuestionVO.fromEntity(question);
+        vo.setAnalysis(null);
+        fillQuestionVOForUser(vo);
         return vo;
     }
 
@@ -294,5 +306,12 @@ public class QuestionService {
             }
         }
         vo.setKnowledgePointNames(kpNames);
+    }
+
+    private void fillQuestionVOForUser(QuestionVO vo) {
+        fillQuestionVO(vo);
+        if (vo.getOptions() != null) {
+            vo.getOptions().forEach(option -> option.setIsCorrect(null));
+        }
     }
 }

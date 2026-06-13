@@ -105,6 +105,15 @@ public class ExamService {
         ExamPaper paper = examPaperMapper.selectById(record.getExamPaperId());
         if (paper == null) throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
 
+        LocalDateTime deadline = record.getStartTime().plusMinutes(paper.getDuration());
+        if (LocalDateTime.now().isAfter(deadline)) {
+            record.setEndTime(LocalDateTime.now());
+            record.setScore(0);
+            record.setStatus(2);
+            examRecordMapper.updateById(record);
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "考试已超时");
+        }
+
         // 获取试卷题目关联
         LambdaQueryWrapper<ExamQuestion> eqWrapper = new LambdaQueryWrapper<>();
         eqWrapper.eq(ExamQuestion::getExamPaperId, paper.getId());
@@ -112,17 +121,33 @@ public class ExamService {
         Map<Long, Integer> questionScoreMap = examQuestions.stream()
                 .collect(Collectors.toMap(ExamQuestion::getQuestionId, ExamQuestion::getScore, (a, b) -> a));
 
-        int totalScore = 0;
+        int totalScore = examQuestions.stream()
+                .mapToInt(eq -> eq.getScore() != null ? eq.getScore() : 1)
+                .sum();
         int earnedScore = 0;
+
+        Map<Long, String> submittedAnswers = new HashMap<>();
+        for (ExamSubmitRequest.AnswerItem answerItem : request.getAnswers()) {
+            Long questionId = answerItem.getQuestionId();
+            if (questionId == null || !questionScoreMap.containsKey(questionId)) {
+                throw new BusinessException(ResultCode.VALIDATION_ERROR, "提交内容包含非本试卷题目");
+            }
+            if (submittedAnswers.put(questionId, answerItem.getUserAnswer()) != null) {
+                throw new BusinessException(ResultCode.VALIDATION_ERROR, "同一道题不能重复提交");
+            }
+        }
 
         // 处理每道题的答案
         if (request.getAnswers() != null) {
-            for (ExamSubmitRequest.AnswerItem answerItem : request.getAnswers()) {
-                Question question = questionMapper.selectById(answerItem.getQuestionId());
-                if (question == null) continue;
+            for (ExamQuestion examQuestion : examQuestions) {
+                Long questionId = examQuestion.getQuestionId();
+                Question question = questionMapper.selectById(questionId);
+                if (question == null) {
+                    throw new BusinessException(ResultCode.NOT_FOUND, "试卷题目不存在");
+                }
 
-                int questionScore = questionScoreMap.getOrDefault(answerItem.getQuestionId(), 1);
-                totalScore += questionScore;
+                int questionScore = questionScoreMap.getOrDefault(questionId, 1);
+                String userAnswer = submittedAnswers.getOrDefault(questionId, "");
 
                 // 获取正确答案
                 LambdaQueryWrapper<QuestionOption> optWrapper = new LambdaQueryWrapper<>();
@@ -135,7 +160,7 @@ public class ExamService {
                 String correctAnswer = answerEvaluator.buildCorrectAnswer(correctOptions, question.getQuestionType());
 
                 boolean isCorrect = answerEvaluator.isCorrect(question.getQuestionType(),
-                        answerItem.getUserAnswer() != null ? answerItem.getUserAnswer().trim() : "",
+                        userAnswer != null ? userAnswer.trim() : "",
                         correctAnswer);
 
                 if (isCorrect) earnedScore += questionScore;
@@ -143,8 +168,8 @@ public class ExamService {
                 // 保存答题详情
                 ExamAnswer examAnswer = new ExamAnswer();
                 examAnswer.setExamRecordId(record.getId());
-                examAnswer.setQuestionId(answerItem.getQuestionId());
-                examAnswer.setUserAnswer(answerItem.getUserAnswer());
+                examAnswer.setQuestionId(questionId);
+                examAnswer.setUserAnswer(userAnswer != null ? userAnswer : "");
                 examAnswer.setIsCorrect(isCorrect ? 1 : 0);
                 examAnswer.setScore(isCorrect ? questionScore : 0);
                 examAnswerMapper.insert(examAnswer);
@@ -152,10 +177,9 @@ public class ExamService {
                 // 错题自动加入错题本
                 try {
                     if (isCorrect) {
-                        wrongQuestionService.removeOnCorrect(userId, answerItem.getQuestionId());
+                        wrongQuestionService.removeOnCorrect(userId, questionId);
                     } else {
-                        wrongQuestionService.addWrongQuestion(userId, answerItem.getQuestionId(),
-                                answerItem.getUserAnswer());
+                        wrongQuestionService.addWrongQuestion(userId, questionId, userAnswer);
                     }
                 } catch (Exception e) {
                     log.warn("考试错题本处理失败: {}", e.getMessage());
@@ -167,7 +191,7 @@ public class ExamService {
         log.info("考试判分完成: userId={}, examRecordId={}, score={}/{}", userId, record.getId(), earnedScore, totalScore);
         record.setEndTime(LocalDateTime.now());
         record.setScore(earnedScore);
-        record.setTotalScore(totalScore > 0 ? totalScore : paper.getTotalScore());
+        record.setTotalScore(totalScore);
         record.setStatus(1); // 已完成
         examRecordMapper.updateById(record);
 

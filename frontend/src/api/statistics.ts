@@ -49,17 +49,17 @@ export interface AdminStatisticsOverview {
 
 /** 获取学习统计概览 */
 export function getStatisticsOverview() {
-  return request.get<any, ApiResponse<StatisticsOverview>>('/api/statistics/overview')
+  return request.get<any, ApiResponse<StatisticsOverview>>('/statistics/overview')
 }
 
 /** 获取每日刷题趋势 */
 export function getDailyTrend() {
-  return request.get<any, ApiResponse<DailyTrendItem[]>>('/api/statistics/daily-trend')
+  return request.get<any, ApiResponse<DailyTrendItem[]>>('/statistics/daily-trend')
 }
 
 /** 获取课程维度统计 */
 export function getCourseStats() {
-  return request.get<any, ApiResponse<CourseStatItem[]>>('/api/statistics/course-stats')
+  return request.get<any, ApiResponse<CourseStatItem[]>>('/statistics/course-stats')
 }
 
 /** 获取管理端平台统计概览 */

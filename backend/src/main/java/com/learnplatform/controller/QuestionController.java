@@ -38,6 +38,6 @@ public class QuestionController {
      */
     @GetMapping("/{id}")
     public R<QuestionVO> getQuestion(@PathVariable Long id) {
-        return R.ok(questionService.getQuestionById(id));
+        return R.ok(questionService.getEnabledQuestionById(id));
     }
 }
