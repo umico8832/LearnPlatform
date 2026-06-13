@@ -14,6 +14,40 @@
 
 ---
 
+## Round 38 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+实现填空题多空判分和简答题关键词匹配，偿还技术债务 #3。
+
+### 完成内容
+- **`AnswerEvaluator` 增强**：重构判分组件，新增 `evaluateFillBlank()` 和 `evaluateShortAnswer()` 方法，替代原有简单的 `equalsIgnoreCase` 比较。
+- **填空题（FILL_BLANK）增强**：支持多空按 `|` 分隔逐空比较；单个空可配置多个可接受答案（逗号分隔，如 `CPU,中央处理器,处理器`）；忽略首尾空格和大小写；空数不一致直接判错。
+- **简答题（SHORT_ANSWER）新增**：关键词用 `|` 分隔，用户答案中包含任意一个关键词即算正确（OR 逻辑）；匹配时忽略大小写，对用户答案做文本规范化（去多余空白）。
+- **单元测试扩充**：`AnswerEvaluatorTest` 从 5 个测试扩展到 19 个，覆盖所有题型的基础判分、多空填空、多可接受答案填空、简答关键词匹配、null 安全和未知题型。
+
+### 修改文件清单
+- 后端修改：`AnswerEvaluator.java`
+- 后端测试：`AnswerEvaluatorTest.java`
+- 文档：`docs/FUTURE.md`、`docs/CHANGELOG_AGENT.md`
+
+### 验收结果
+- [x] `cd backend && mvn test`（19 AnswerEvaluatorTest + 其他测试，0 failures）
+- [x] `cd frontend && npm run build`（构建成功，526ms）
+- [x] 技术债务 #3 标记为 ✅
+
+### 遗留问题
+- 简答题关键词匹配是粗粒度的包含匹配，无法处理同义词或语义相近但措辞不同的情况。后续可通过 AI 评分增强。
+- 填空题和简答题的正确答案格式约定（`|` 分隔、`,` 分隔）需要在管理端创建题目时提供清晰的输入提示。
+
+### 下轮建议
+- 可继续偿还剩余技术债务（验证码、项目截图），或进入 P3 远期规划。
+- 建议 commit message: `fix(evaluator): 实现填空题多空判分与简答题关键词匹配`
+
+---
+
 ## Round 37 - 2026-06-13
 
 ### 阶段
