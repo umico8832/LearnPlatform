@@ -75,6 +75,10 @@
               <el-icon><Trophy /></el-icon>
               <span>试卷管理</span>
             </el-menu-item>
+            <el-menu-item index="/admin/users">
+              <el-icon><UserFilled /></el-icon>
+              <span>用户管理</span>
+            </el-menu-item>
           </el-sub-menu>
         </template>
       </el-menu>
@@ -119,7 +123,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { HomeFilled, Reading, Setting, Collection, Notebook, EditPen, Promotion, Clock, WarningFilled, Trophy, MagicStick, DataAnalysis, StarFilled } from '@element-plus/icons-vue'
+import { HomeFilled, Reading, Setting, Collection, Notebook, EditPen, Promotion, Clock, WarningFilled, Trophy, MagicStick, DataAnalysis, StarFilled, UserFilled } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()

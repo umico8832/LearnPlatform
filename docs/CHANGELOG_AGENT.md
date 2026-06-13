@@ -14,6 +14,45 @@
 
 ---
 
+## Round 33 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+实现管理端用户管理功能，支持用户列表查看、新增用户、角色调整、启停账号和重置密码。
+
+### 完成内容
+- 新增 `AdminUserController`：用户分页列表（支持关键词/角色/状态筛选）、管理员创建用户、修改角色、启用/禁用用户、重置密码、逻辑删除、用户统计概览，共 7 个接口。
+- 所有请求体参数使用 `@Valid` 校验，包含用户名唯一性检查、角色合法性校验和密码强度约束。
+- 新增前端 `api/adminUser.ts`，封装 7 个管理端用户 API 方法及类型定义。
+- 新增 `UserManage.vue` 管理端用户管理页面：统计卡片（总数/启用/禁用/管理员）、用户表格（角色标签、状态标签）、筛选工具栏（关键词/角色/状态）、分页。
+- 支持弹窗操作：新增用户、修改角色、重置密码；一键切换启用/禁用状态；Popconfirm 确认删除。
+- 路由新增 `/admin/users`，侧边栏后台管理新增"用户管理"入口（UserFilled 图标）。
+- `AppLayout.vue` 导入 `UserFilled` 图标。
+
+### 修改文件清单
+- 后端新增：`AdminUserController.java`
+- 前端新增：`api/adminUser.ts`、`views/admin/UserManage.vue`
+- 前端修改：`router/index.ts`（新增路由）、`components/layout/AppLayout.vue`（侧边栏入口 + UserFilled 图标）
+- 文档：`docs/CHANGELOG_AGENT.md`
+
+### 验收结果
+- [x] `cd backend && mvn clean compile`（BUILD SUCCESS）
+- [x] `cd frontend && npm run build`（构建成功，609ms）
+- [x] SecurityConfig `/api/admin/**` 已有 `hasRole("ADMIN")` 权限规则，无需额外配置
+- [x] Knife4j `@Tag` 和 `@Operation` 注解已添加
+
+### 遗留问题
+- 管理员不能修改自己的角色（无前端拦截，可后续优化）。
+- 用户创建时未设置管理员不能自降为普通用户（可后续增加保护）。
+
+### 下轮建议
+- 增加 AI 用户级限流与每日配额，或实现 P2 社区/讨论功能。
+- 建议 commit message: `feat(admin): 实现管理端用户管理功能`
+
+---
+
 ## Round 32 - 2026-06-13
 
 ### 阶段
