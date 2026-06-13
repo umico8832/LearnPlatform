@@ -29,6 +29,7 @@ public class PracticeService {
     private final PracticeRecordMapper practiceRecordMapper;
     private final CourseMapper courseMapper;
     private final KnowledgePointMapper knowledgePointMapper;
+    private final WrongQuestionMapper wrongQuestionMapper;
     private final WrongQuestionService wrongQuestionService;
     private final AnswerEvaluator answerEvaluator;
 
@@ -38,6 +39,7 @@ public class PracticeService {
                            PracticeRecordMapper practiceRecordMapper,
                            CourseMapper courseMapper,
                            KnowledgePointMapper knowledgePointMapper,
+                           WrongQuestionMapper wrongQuestionMapper,
                            WrongQuestionService wrongQuestionService,
                            AnswerEvaluator answerEvaluator) {
         this.questionMapper = questionMapper;
@@ -46,6 +48,7 @@ public class PracticeService {
         this.practiceRecordMapper = practiceRecordMapper;
         this.courseMapper = courseMapper;
         this.knowledgePointMapper = knowledgePointMapper;
+        this.wrongQuestionMapper = wrongQuestionMapper;
         this.wrongQuestionService = wrongQuestionService;
         this.answerEvaluator = answerEvaluator;
     }
@@ -250,6 +253,63 @@ public class PracticeService {
         stats.put("correctRate", Math.round(correctRate * 10.0) / 10.0);
 
         return stats;
+    }
+
+    /**
+     * 获取错题重练题目列表
+     * @param userId 用户ID
+     * @param masteryLevel 掌握程度筛选（可选：0=未掌握，1=部分掌握，2=已掌握）
+     * @param count 题目数量（默认10）
+     * @return 题目列表（不含答案）
+     */
+    public List<QuestionVO> getWrongQuestionPractice(Long userId, Integer masteryLevel, Integer count) {
+        if (count == null || count <= 0) {
+            count = 10;
+        }
+        if (count > 50) {
+            count = 50;
+        }
+
+        log.info("获取错题重练题目: userId={}, masteryLevel={}, count={}", userId, masteryLevel, count);
+
+        // 查询用户的错题本
+        LambdaQueryWrapper<WrongQuestion> wqWrapper = new LambdaQueryWrapper<>();
+        wqWrapper.eq(WrongQuestion::getUserId, userId);
+        if (masteryLevel != null) {
+            wqWrapper.eq(WrongQuestion::getMasteryLevel, masteryLevel);
+        }
+        wqWrapper.orderByDesc(WrongQuestion::getUpdateTime);
+
+        List<WrongQuestion> wrongQuestions = wrongQuestionMapper.selectList(wqWrapper);
+
+        if (wrongQuestions.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 随机选取指定数量
+        if (wrongQuestions.size() > count) {
+            Collections.shuffle(wrongQuestions);
+            wrongQuestions = wrongQuestions.subList(0, count);
+        }
+
+        // 获取题目
+        List<Long> questionIds = wrongQuestions.stream()
+                .map(WrongQuestion::getQuestionId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        LambdaQueryWrapper<Question> qWrapper = new LambdaQueryWrapper<>();
+        qWrapper.in(Question::getId, questionIds);
+        qWrapper.eq(Question::getStatus, 1);
+        List<Question> questions = questionMapper.selectList(qWrapper);
+
+        // 转换为 VO（练习模式不返回正确答案）
+        return questions.stream().map(q -> {
+            QuestionVO vo = QuestionVO.fromEntity(q);
+            vo.setAnalysis(null); // 练习模式不返回解析
+            fillQuestionVOForPractice(vo);
+            return vo;
+        }).collect(Collectors.toList());
     }
 
     // ======================== 私有方法 ========================

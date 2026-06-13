@@ -6,6 +6,9 @@
         <el-button @click="handleBack" text>
           <el-icon><ArrowLeft /></el-icon> 退出练习
         </el-button>
+        <el-tag v-if="isWrongPractice" type="danger" size="small" effect="dark" style="margin-left: 8px">
+          错题重练
+        </el-tag>
       </div>
       <div class="header-center">
         <span class="progress-text">{{ currentIndex + 1 }} / {{ questions.length }}</span>
@@ -214,8 +217,10 @@ const finished = ref(false)
 const correctCount = ref(0)
 const wrongCount = ref(0)
 const startTime = ref(Date.now())
+const practiceMode = ref<string>('')
 
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
+const isWrongPractice = computed(() => practiceMode.value === 'wrong_question')
 
 const canSubmit = computed(() => {
   if (!currentQuestion.value) return false
@@ -231,6 +236,7 @@ onMounted(() => {
   if (stored) {
     questions.value = JSON.parse(stored)
     startTime.value = Date.now()
+    practiceMode.value = sessionStorage.getItem('practice_mode') || ''
   } else {
     ElMessage.warning('没有练习题目，请先选择刷题模式')
     router.replace({ name: 'Practice' })
@@ -297,12 +303,22 @@ const nextQuestion = () => {
 
 const handleBack = () => {
   sessionStorage.removeItem('practice_questions')
-  router.push({ name: 'Practice' })
+  sessionStorage.removeItem('practice_mode')
+  if (isWrongPractice.value) {
+    router.push({ name: 'WrongQuestions' })
+  } else {
+    router.push({ name: 'Practice' })
+  }
 }
 
 const restartPractice = () => {
   sessionStorage.removeItem('practice_questions')
-  router.push({ name: 'Practice' })
+  sessionStorage.removeItem('practice_mode')
+  if (isWrongPractice.value) {
+    router.push({ name: 'WrongQuestions' })
+  } else {
+    router.push({ name: 'Practice' })
+  }
 }
 
 const getQuestionTypeLabel = (type: string) => {

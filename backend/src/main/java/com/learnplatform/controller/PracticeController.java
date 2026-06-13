@@ -84,4 +84,19 @@ public class PracticeController {
         Map<String, Object> stats = practiceService.getUserPracticeStats(userDetails.getUserId());
         return R.ok(stats);
     }
+
+    /**
+     * 获取错题重练题目
+     * 从错题本中按掌握程度筛选并随机抽取题目
+     */
+    @Operation(summary = "错题重练", description = "从错题本中随机抽取题目用于重练")
+    @GetMapping("/wrong-questions")
+    public R<List<QuestionVO>> getWrongQuestionPractice(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(required = false) Integer masteryLevel,
+            @RequestParam(required = false) Integer count) {
+        List<QuestionVO> questions = practiceService.getWrongQuestionPractice(
+                userDetails.getUserId(), masteryLevel, count);
+        return R.ok(questions);
+    }
 }

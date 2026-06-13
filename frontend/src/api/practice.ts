@@ -99,3 +99,11 @@ export function getPracticeRecords(params: {
 export function getPracticeStats() {
   return request.get<any, ApiResponse<PracticeStatsVO>>('/api/practice/stats')
 }
+
+/** 获取错题重练题目 */
+export function getWrongQuestionPractice(params?: {
+  masteryLevel?: number
+  count?: number
+}) {
+  return request.get<any, ApiResponse<PracticeQuestionVO[]>>('/api/practice/wrong-questions', { params })
+}

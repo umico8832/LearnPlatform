@@ -14,6 +14,46 @@
 
 ---
 
+## Round 22 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+实现 P1 错题重练模式，支持从错题本直接发起重练。
+
+### 完成内容
+- `PracticeService` 新增 `getWrongQuestionPractice()` 方法，从错题本中按掌握程度筛选并随机抽取题目。
+- `PracticeController` 新增 `GET /api/practice/wrong-questions` 接口，支持 masteryLevel 和 count 参数。
+- `PracticeService` 构造函数新增 `WrongQuestionMapper` 注入。
+- 前端 `practice.ts` 新增 `getWrongQuestionPractice()` API 方法。
+- `WrongQuestionView.vue` 页面头部新增"重练错题"按钮（RefreshRight 图标），点击后调用错题重练 API，将题目存入 sessionStorage 并标记 `practice_mode=wrong_question`，跳转到 PracticeSession。
+- `PracticeSessionView.vue` 支持错题重练模式：顶部显示"错题重练"标签；退出和再练按钮根据模式跳回错题本或刷题页。
+- 错题重练继承已有的错题本逻辑：答对自动移出错题本，答错累加错答次数。
+
+### 修改文件清单
+- 后端修改：`PracticeService.java`（新增方法 + WrongQuestionMapper 注入）、`PracticeController.java`（新接口）
+- 前端修改：`api/practice.ts`（新 API）、`views/practice/WrongQuestionView.vue`（重练按钮 + 逻辑）、`views/practice/PracticeSessionView.vue`（模式标识 + 导航）
+- 文档：`docs/ROADMAP.md`、`docs/CHANGELOG_AGENT.md`、`docs/HANDOFF.md`、`docs/FUTURE.md`
+
+### 验收结果
+- [x] `cd backend && mvn clean compile`（BUILD SUCCESS）
+- [x] `cd backend && mvn test`（8 tests，0 failures）
+- [x] `cd frontend && npm run build`（built in 508ms）
+- [x] PracticeSessionView.vue 无 TS 错误
+- [x] 路由名称 `WrongQuestions` 与 router 定义匹配
+
+### 遗留问题
+- 错题重练的"再练一次"按钮目前回到错题本页面，用户需再次点击重练（可优化为直接重新获取题目）
+- AiCallLog 仍未接入
+- 题目收藏功能（P1）尚未实现
+
+### 下轮建议
+- 实现 P1 题目收藏功能，或 P1 题目导入/导出
+- 建议 commit message: `feat(practice): 实现错题重练模式`
+
+---
+
 ## Round 21 - 2026-06-13
 
 ### 阶段

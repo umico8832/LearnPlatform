@@ -2,6 +2,10 @@
   <div class="wrong-question-container">
     <div class="page-header">
       <h2>错题本</h2>
+      <el-button type="primary" @click="handleStartWrongPractice" :loading="startPracticeLoading">
+        <el-icon><RefreshRight /></el-icon>
+        重练错题
+      </el-button>
     </div>
 
     <!-- 统计卡片 -->
@@ -118,12 +122,17 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { RefreshRight } from '@element-plus/icons-vue'
 import { getWrongQuestions, getWrongQuestionStats, updateMasteryLevel, removeWrongQuestion } from '@/api/wrongQuestion'
 import type { WrongQuestionVO, WrongQuestionStatsVO } from '@/api/wrongQuestion'
+import { getWrongQuestionPractice } from '@/api/practice'
 import AiQuestionAssistant from '@/components/AiQuestionAssistant.vue'
 
+const router = useRouter()
 const loading = ref(false)
+const startPracticeLoading = ref(false)
 const records = ref<WrongQuestionVO[]>([])
 const total = ref(0)
 const stats = ref<WrongQuestionStatsVO | null>(null)
@@ -240,6 +249,37 @@ const formatTime = (time: string) => {
   if (!time) return '-'
   return new Date(time).toLocaleString('zh-CN')
 }
+
+const handleStartWrongPractice = async () => {
+  if (stats.value && stats.value.total === 0) {
+    ElMessage.warning('错题本为空，暂无错题可重练')
+    return
+  }
+
+  startPracticeLoading.value = true
+  try {
+    const params: { masteryLevel?: number; count?: number } = { count: 10 }
+    if (filter.masteryLevel !== undefined) {
+      params.masteryLevel = filter.masteryLevel
+    }
+    const res = await getWrongQuestionPractice(params)
+    if (res.code === 0 && res.data) {
+      if (res.data.length === 0) {
+        ElMessage.warning('当前筛选条件下暂无错题可重练')
+        return
+      }
+      sessionStorage.setItem('practice_questions', JSON.stringify(res.data))
+      sessionStorage.setItem('practice_mode', 'wrong_question')
+      router.push({ name: 'PracticeSession' })
+    } else {
+      ElMessage.error(res.message || '获取错题失败')
+    }
+  } catch (e) {
+    ElMessage.error('获取错题重练题目失败')
+  } finally {
+    startPracticeLoading.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -247,8 +287,15 @@ const formatTime = (time: string) => {
   padding: 24px;
 }
 
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
 .page-header h2 {
-  margin: 0 0 16px;
+  margin: 0;
   font-size: 20px;
   color: #303133;
 }
