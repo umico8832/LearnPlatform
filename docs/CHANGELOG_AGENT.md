@@ -14,6 +14,47 @@
 
 ---
 
+## Round 35 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+实现 P2 社区/讨论功能，支持题目下方发表评论、回复和点赞。
+
+### 完成内容
+- 新建 Flyway V4 迁移：`question_comment` 表（评论内容、父子层级、回复目标用户、点赞数、状态/逻辑删除）和 `comment_like` 表（评论点赞，用户-评论唯一约束）。
+- 后端新增 `QuestionComment` 和 `CommentLike` 实体，对应 `QuestionCommentMapper` 和 `CommentLikeMapper`。
+- 后端新增 `CommentRequest` DTO（带 @NotBlank/@Max 校验）和 `CommentVO`（含昵称、头像、回复目标昵称、是否已点赞、子回复列表）。
+- 后端新增 `CommentService`：获取评论树（批量加载用户、查询已点赞状态、组装层级）、发表评论（含子评论）、删除评论（仅限本人+子评论级联）、点赞/取消点赞（事务原子操作）、评论数统计。
+- 后端新增 `CommentController`（5 个接口：GET 题目评论、POST 发表、DELETE 删除、POST 点赞、GET 评论数），路径 `/api/comments/**` 通过 SecurityConfig 已有规则自动鉴权。
+- 前端新增 `api/comment.ts`（5 个 API 方法 + CommentVO/CommentRequest 类型）。
+- 前端新增 `components/QuestionComment.vue`：讨论区组件，含评论输入框、回复切换、相对时间展示、点赞高亮、子回复嵌套展示、删除确认弹窗。
+- 题库页面 `QuestionListView.vue` 每题底部新增"讨论"按钮，点击展开/收起评论区；新增 `question-footer` 布局和样式。
+
+### 修改文件清单
+- 后端新增：`V4__create_question_comment_tables.sql`、`QuestionComment.java`、`CommentLike.java`、`QuestionCommentMapper.java`、`CommentLikeMapper.java`、`CommentRequest.java`、`CommentVO.java`、`CommentService.java`、`CommentController.java`
+- 前端新增：`api/comment.ts`、`components/QuestionComment.vue`
+- 前端修改：`views/course/QuestionListView.vue`
+- 文档：`docs/ROADMAP.md`、`docs/CHANGELOG_AGENT.md`、`docs/FUTURE.md`
+
+### 验收结果
+- [x] `cd backend && mvn clean compile -q`（BUILD SUCCESS）
+- [x] `cd frontend && npm run build`（构建成功，527ms）
+- [x] `/api/comments/**` 路径匹配 SecurityConfig 已有权限规则（需认证）
+- [x] 前端无 TypeScript 错误
+
+### 遗留问题
+- 评论暂无 XSS 过滤（DOMPurify 仅用于 Markdown，评论为纯文本，后续可扩展 Markdown 评论）。
+- 管理端无评论管理能力（审核/隐藏），可后续增加。
+- 评论区暂未集成到刷题页面（PracticeSessionView）。
+
+### 下轮建议
+- 可增加评论管理后台（管理端审核/隐藏评论），或继续 P2 多端适配。
+- 建议 commit message: `feat(comment): 实现题目讨论/评论功能`
+
+---
+
 ## Round 34 - 2026-06-13
 
 ### 阶段

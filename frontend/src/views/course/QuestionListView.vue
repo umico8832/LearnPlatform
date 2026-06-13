@@ -48,10 +48,19 @@
               <span>{{ opt.content }}</span>
             </div>
           </div>
-          <div v-if="q.knowledgePointNames && q.knowledgePointNames.length > 0" class="question-tags">
-            <el-tag v-for="name in q.knowledgePointNames" :key="name" size="small" type="info" class="kp-tag">
-              {{ name }}
-            </el-tag>
+          <div class="question-footer">
+            <div v-if="q.knowledgePointNames && q.knowledgePointNames.length > 0" class="question-tags">
+              <el-tag v-for="name in q.knowledgePointNames" :key="name" size="small" type="info" class="kp-tag">
+                {{ name }}
+              </el-tag>
+            </div>
+            <span class="comment-toggle" @click="toggleComment(q.id)">
+              <el-icon><ChatLineRound /></el-icon>
+              讨论
+            </span>
+          </div>
+          <div v-if="expandedComments.has(q.id)" class="comment-section">
+            <QuestionComment :question-id="q.id" />
           </div>
         </div>
       </div>
@@ -74,10 +83,11 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Star, StarFilled } from '@element-plus/icons-vue'
+import { Star, StarFilled, ChatLineRound } from '@element-plus/icons-vue'
 import { getQuestionPage, type QuestionVO } from '@/api/question'
 import { getAllCourses, type CourseVO } from '@/api/course'
 import { getFavoriteIds, addFavorite, removeFavorite } from '@/api/favorite'
+import QuestionComment from '@/components/QuestionComment.vue'
 
 const questions = ref<QuestionVO[]>([])
 const loading = ref(false)
@@ -93,6 +103,16 @@ const filters = reactive({
 
 const courseList = ref<CourseVO[]>([])
 const favoriteSet = ref<Set<number>>(new Set())
+const expandedComments = ref<Set<number>>(new Set())
+
+function toggleComment(questionId: number) {
+  if (expandedComments.value.has(questionId)) {
+    expandedComments.value.delete(questionId)
+  } else {
+    expandedComments.value.add(questionId)
+  }
+  expandedComments.value = new Set(expandedComments.value)
+}
 
 function questionTypeLabel(type: string) {
   const map: Record<string, string> = {
@@ -275,5 +295,32 @@ onMounted(() => {
 
 .empty-state {
   padding: 40px 0;
+}
+
+.question-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.comment-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #909399;
+  cursor: pointer;
+  transition: color 0.2s;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.comment-toggle:hover {
+  color: #409eff;
+}
+
+.comment-section {
+  margin-top: 8px;
 }
 </style>
