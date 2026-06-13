@@ -14,6 +14,48 @@
 
 ---
 
+## Round 29 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+关闭原有项目进程，重新启动 Docker Compose 服务，并对主要功能做冒烟测试。
+
+### 完成内容
+- 执行 `docker compose down` 关闭原有前端、后端、MySQL 容器后，重新 `docker compose up -d --build` 启动项目。
+- 验证容器状态：MySQL、Backend、Frontend 均为 healthy；当前访问端口为前端 `http://localhost:18000`、后端 `http://localhost:18080`。
+- 修复用户端题库列表错误返回解析和正确选项的问题，用户端列表/详情现在会隐藏 `analysis` 和 `options[].isCorrect`，管理端题目列表保留完整字段。
+- 新增 Flyway V3 迁移，补齐已有数据库缺失的 `learning_plan` 表，修复学习计划接口 500。
+- 使用接口冒烟测试覆盖登录、课程、知识点、题库、刷题、错题本、错题重练、收藏、学习计划、统计、考试、管理端统计、AI 日志和题目模板下载。
+- 使用 in-app Browser 验证前端登录、首页、课程、题库、刷题、错题本、收藏、考试和 AI 复习建议页面可访问。
+
+### 修改文件清单
+- `backend/src/main/java/com/learnplatform/service/QuestionService.java`
+- `backend/src/main/resources/db/migration/V3__create_learning_plan_table.sql`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验收结果
+- [x] `cd backend && mvn test`（17 tests，0 failures）
+- [x] `cd frontend && npm run build`（构建成功；仍有 VueUse/Rolldown 纯注解警告，不影响构建）
+- [x] `docker compose up -d --build` 成功，三个容器 healthy
+- [x] Flyway 成功执行 V3：`create learning plan table`
+- [x] 后端健康检查 `GET /api/public/health` 返回 success
+- [x] 接口冒烟测试主要功能通过
+- [x] 前端页面级登录和核心路由验证通过
+
+### 遗留问题
+- 当前环境未启用真实 AI Key，AI 解析接口按预期返回“AI 功能未启用”，未验证第三方模型真实生成内容。
+- 浏览器截图显示窄视口下 AI 复习建议页面按钮文字存在截断感，可后续做响应式优化。
+- 8080 端口仍有 Docker Desktop 自身代理监听；本项目实际通过 `.env` 映射到 18080/18000，服务访问不受影响。
+
+### 下轮建议
+- 优化 AI 复习建议页面窄屏布局，避免按钮与表单内容截断。
+- 增加题库脱敏和学习计划迁移的自动化回归测试。
+- 建议 commit message: `fix(question): 修复用户端题库答案泄露问题`
+
+---
+
 ## Round 28 - 2026-06-13
 
 ### 阶段

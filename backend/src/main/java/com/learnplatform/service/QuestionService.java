@@ -73,8 +73,7 @@ public class QuestionService {
         voPage.setRecords(result.getRecords().stream()
                 .map(q -> {
                     QuestionVO vo = QuestionVO.fromEntity(q);
-                    vo.setAnalysis(null);
-                    fillQuestionVOForUser(vo);
+                    fillQuestionVO(vo);
                     return vo;
                 })
                 .collect(Collectors.toList()));
@@ -105,7 +104,8 @@ public class QuestionService {
         voPage.setRecords(result.getRecords().stream()
                 .map(q -> {
                     QuestionVO vo = QuestionVO.fromEntity(q);
-                    fillQuestionVO(vo);
+                    vo.setAnalysis(null);
+                    fillQuestionVOForUser(vo);
                     return vo;
                 })
                 .collect(Collectors.toList()));
