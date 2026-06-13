@@ -14,6 +14,48 @@
 
 ---
 
+## Round 34 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+实现 AI 用户级每日调用配额，防止滥用并保护模型额度，同时提供用量查询接口。
+
+### 完成内容
+- `AiConfig` 新增 `dailyQuota` 配置项（默认 50 次/天），通过 `AI_DAILY_QUOTA` 环境变量注入。
+- `ResultCode` 新增 `QUOTA_EXCEEDED(1006, "调用额度已用完")` 响应码。
+- `AiService` 新增 `checkDailyQuota()`、`countTodayCalls()`、`getDailyUsage()` 三个方法，在所有带日志的 AI 调用（`callWithLog`/`callStreamWithLog`）前自动检查配额。
+- `AiController` 新增 `GET /api/ai/usage` 接口，返回当前用户今日已用次数和每日配额。
+- `application.yml` 新增 `ai.daily-quota` 配置项。
+- `.env.example` 新增 `AI_DAILY_QUOTA=50` 示例。
+- 前端 `api/ai.ts` 新增 `getAiUsage()` API 方法。
+- 前端 `api/ai.ts` 流式接口 `streamAiResponse()` 改进错误处理：4xx 响应体中提取 message，让配额超限等业务错误消息传递到 UI。
+- 前端 `AiQuestionAssistant.vue` 和 `ReviewSuggestionView.vue` 已有 `el-alert` 错误展示，配额超限时自动显示友好提示。
+
+### 修改文件清单
+- 后端修改：`AiConfig.java`、`ResultCode.java`、`AiService.java`、`AiController.java`、`application.yml`
+- 前端修改：`api/ai.ts`
+- 配置：`.env.example`
+- 文档：`docs/CHANGELOG_AGENT.md`
+
+### 验收结果
+- [x] `cd backend && mvn clean compile`（BUILD SUCCESS）
+- [x] `cd frontend && npm run build`（构建成功，543ms）
+- [x] `GET /api/ai/usage` 接口路径匹配 SecurityConfig 权限规则（`/api/**` 需认证）
+- [x] 配额检查在所有带日志的同步/流式调用前执行
+- [x] `dailyQuota ≤ 0` 时不限制，向后兼容
+
+### 遗留问题
+- 管理端可通过 `AdminAiCallLogController` 查看全平台调用日志，但缺少按用户的配额调整能力（可后续增加单用户配额覆盖）。
+- tokensUsed 字段暂未从上游 API 提取，仅记录调用次数。
+
+### 下轮建议
+- 增加 P2 社区/讨论功能，或继续补充核心 Controller/Service 集成测试。
+- 建议 commit message: `feat(ai): 实现 AI 用户级每日调用配额`
+
+---
+
 ## Round 33 - 2026-06-13
 
 ### 阶段

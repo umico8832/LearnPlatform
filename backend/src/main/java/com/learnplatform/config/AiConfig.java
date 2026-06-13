@@ -16,6 +16,8 @@ public class AiConfig {
     private String model = "gpt-3.5-turbo";
     private int timeout = 30000;
     private int maxTokens = 2000;
+    /** 每用户每日 AI 调用次数上限，0 或负数表示不限制 */
+    private int dailyQuota = 50;
 
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
@@ -34,4 +36,7 @@ public class AiConfig {
 
     public int getMaxTokens() { return maxTokens; }
     public void setMaxTokens(int maxTokens) { this.maxTokens = maxTokens; }
+
+    public int getDailyQuota() { return dailyQuota; }
+    public void setDailyQuota(int dailyQuota) { this.dailyQuota = dailyQuota; }
 }

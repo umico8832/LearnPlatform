@@ -99,6 +99,17 @@ public class AiController {
     }
 
     /**
+     * 查询当前用户今日 AI 调用用量
+     */
+    @Operation(summary = "AI 用量查询", description = "查询当前用户今日 AI 调用次数和每日配额")
+    @GetMapping("/usage")
+    public R<Map<String, Object>> getUsage(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        int[] usage = aiService.getDailyUsage(userDetails.getUserId());
+        return R.ok(Map.of("todayCount", usage[0], "dailyQuota", usage[1]));
+    }
+
+    /**
      * AI 生成知识点总结（带日志记录）
      */
     @Operation(summary = "知识点总结", description = "AI 生成知识点的总结内容")

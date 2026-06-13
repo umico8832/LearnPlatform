@@ -54,6 +54,7 @@ ai:
   model: ${AI_MODEL:gpt-3.5-turbo}
   timeout: ${AI_TIMEOUT:30000}
   max-tokens: ${AI_MAX_TOKENS:2000}
+  daily-quota: ${AI_DAILY_QUOTA:50}
 
 # Knife4j 配置
 springdoc:

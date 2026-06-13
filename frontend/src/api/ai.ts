@@ -27,6 +27,11 @@ export function getSummary(knowledgePointId: number) {
   return aiService.post<ApiResponse<AiResponse>>('/ai/summary', { knowledgePointId }).then((res) => res.data)
 }
 
+/** 查询当前用户今日 AI 调用用量 */
+export function getAiUsage() {
+  return aiService.get<ApiResponse<{ todayCount: number; dailyQuota: number }>>('/ai/usage').then((res) => res.data)
+}
+
 export type AiStreamType = 'explanation' | 'variant'
 
 interface StreamHandlers {
@@ -74,7 +79,15 @@ async function streamAiResponse(
   })
 
   if (!response.ok) {
-    throw new Error(response.status === 401 ? '登录已过期，请重新登录' : `AI 服务请求失败 (${response.status})`)
+    // 尝试从响应体中提取错误消息（配额超限等）
+    let errorMsg = ''
+    try {
+      const errBody = await response.json()
+      if (errBody?.message) errorMsg = errBody.message
+    } catch { /* ignore */ }
+    if (response.status === 401) throw new Error('登录已过期，请重新登录')
+    if (errorMsg) throw new Error(errorMsg)
+    throw new Error(`AI 服务请求失败 (${response.status})`)
   }
   if (!response.body) {
     throw new Error('浏览器不支持流式响应')

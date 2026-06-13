@@ -12,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -199,12 +201,52 @@ public class AiService {
         return callWithLog("summary", userId, () -> aiProvider.chat(systemPrompt, userPrompt));
     }
 
+    // ======================== 配额检查 ========================
+
+    /**
+     * 检查用户每日 AI 调用配额，超限则抛出异常
+     */
+    public void checkDailyQuota(Long userId) {
+        int dailyQuota = aiConfig.getDailyQuota();
+        if (dailyQuota <= 0) return; // 不限制
+
+        Long todayCount = countTodayCalls(userId);
+        if (todayCount >= dailyQuota) {
+            throw new BusinessException(ResultCode.QUOTA_EXCEEDED,
+                    "今日 AI 调用次数已达上限（" + dailyQuota + " 次），请明天再试");
+        }
+        log.debug("用户 {} 今日已调用 AI {} 次，配额 {} 次", userId, todayCount, dailyQuota);
+    }
+
+    /**
+     * 查询用户今日 AI 调用次数
+     */
+    public long countTodayCalls(Long userId) {
+        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+        LambdaQueryWrapper<AiCallLog> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(AiCallLog::getUserId, userId)
+               .ge(AiCallLog::getCreateTime, todayStart);
+        Long count = aiCallLogMapper.selectCount(wrapper);
+        return count != null ? count : 0;
+    }
+
+    /**
+     * 获取用户今日 AI 调用用量信息（用于接口返回）
+     * @return int[] {todayCount, dailyQuota}
+     */
+    public int[] getDailyUsage(Long userId) {
+        int dailyQuota = aiConfig.getDailyQuota();
+        long todayCount = countTodayCalls(userId);
+        return new int[]{(int) todayCount, dailyQuota};
+    }
+
     // ======================== 日志工具方法 ========================
 
     /**
      * 带日志记录的同步 AI 调用
      */
     private AiResponse callWithLog(String functionType, Long userId, AiCallable callable) {
+        checkDailyQuota(userId);
         long start = System.currentTimeMillis();
         boolean success = false;
         String content = null;
@@ -226,6 +268,7 @@ public class AiService {
      * 带日志记录的流式 AI 调用
      */
     private void callStreamWithLog(String functionType, Long userId, Runnable runnable) {
+        checkDailyQuota(userId);
         long start = System.currentTimeMillis();
         boolean success = false;
         String errorMessage = null;
