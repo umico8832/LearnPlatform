@@ -33,6 +33,7 @@ public class ExamService {
     private final QuestionMapper questionMapper;
     private final QuestionOptionMapper questionOptionMapper;
     private final WrongQuestionService wrongQuestionService;
+    private final AnswerEvaluator answerEvaluator;
 
     public ExamService(ExamRecordMapper examRecordMapper,
                        ExamAnswerMapper examAnswerMapper,
@@ -40,7 +41,8 @@ public class ExamService {
                        ExamQuestionMapper examQuestionMapper,
                        QuestionMapper questionMapper,
                        QuestionOptionMapper questionOptionMapper,
-                       WrongQuestionService wrongQuestionService) {
+                       WrongQuestionService wrongQuestionService,
+                       AnswerEvaluator answerEvaluator) {
         this.examRecordMapper = examRecordMapper;
         this.examAnswerMapper = examAnswerMapper;
         this.examPaperMapper = examPaperMapper;
@@ -48,6 +50,7 @@ public class ExamService {
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.wrongQuestionService = wrongQuestionService;
+        this.answerEvaluator = answerEvaluator;
     }
 
     /**
@@ -129,9 +132,9 @@ public class ExamService {
                 List<QuestionOption> correctOptions = options.stream()
                         .filter(o -> o.getIsCorrect() != null && o.getIsCorrect() == 1)
                         .collect(Collectors.toList());
-                String correctAnswer = buildCorrectAnswer(correctOptions, question.getQuestionType());
+                String correctAnswer = answerEvaluator.buildCorrectAnswer(correctOptions, question.getQuestionType());
 
-                boolean isCorrect = checkAnswer(question.getQuestionType(),
+                boolean isCorrect = answerEvaluator.isCorrect(question.getQuestionType(),
                         answerItem.getUserAnswer() != null ? answerItem.getUserAnswer().trim() : "",
                         correctAnswer);
 
@@ -217,7 +220,7 @@ public class ExamService {
                 List<QuestionOption> correctOptions = questionOptionMapper.selectList(optWrapper).stream()
                         .filter(o -> o.getIsCorrect() != null && o.getIsCorrect() == 1)
                         .collect(Collectors.toList());
-                avo.setCorrectAnswer(buildCorrectAnswer(correctOptions, question.getQuestionType()));
+                avo.setCorrectAnswer(answerEvaluator.buildCorrectAnswer(correctOptions, question.getQuestionType()));
             }
             answerVOs.add(avo);
         }
@@ -248,34 +251,4 @@ public class ExamService {
         return vo;
     }
 
-    private String buildCorrectAnswer(List<QuestionOption> correctOptions, String questionType) {
-        if ("TRUE_FALSE".equals(questionType)) {
-            if (!correctOptions.isEmpty()) {
-                String content = correctOptions.get(0).getContent();
-                return "TRUE".equalsIgnoreCase(content) || "正确".equals(content) ? "TRUE" : "FALSE";
-            }
-            return "";
-        }
-        List<String> labels = correctOptions.stream()
-                .map(QuestionOption::getOptionLabel).sorted().collect(Collectors.toList());
-        return String.join(",", labels);
-    }
-
-    private boolean checkAnswer(String questionType, String userAnswer, String correctAnswer) {
-        if (userAnswer == null || userAnswer.isEmpty()) return false;
-        if ("SINGLE_CHOICE".equals(questionType) || "TRUE_FALSE".equals(questionType)) {
-            return userAnswer.equalsIgnoreCase(correctAnswer);
-        }
-        if ("MULTIPLE_CHOICE".equals(questionType)) {
-            Set<String> userSet = Arrays.stream(userAnswer.split(","))
-                    .map(String::trim).map(String::toUpperCase).collect(Collectors.toSet());
-            Set<String> correctSet = Arrays.stream(correctAnswer.split(","))
-                    .map(String::trim).map(String::toUpperCase).collect(Collectors.toSet());
-            return userSet.equals(correctSet);
-        }
-        if ("FILL_BLANK".equals(questionType)) {
-            return userAnswer.trim().equalsIgnoreCase(correctAnswer.trim());
-        }
-        return false;
-    }
 }

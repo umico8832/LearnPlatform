@@ -126,6 +126,14 @@ cp .env.example .env
 # 编辑 .env 文件，填写数据库密码、JWT 密钥等
 ```
 
+本地通过 Maven 启动时，需要先在 `backend` 目录将根目录 `.env` 导出到当前 shell：
+
+```bash
+set -a
+source ../.env
+set +a
+```
+
 #### 4. 启动后端
 ```bash
 cd backend
@@ -209,7 +217,7 @@ docker compose down
 | 8 | AI 功能 | ✅ |
 | 9 | 统计可视化 | ✅ |
 | 10 | 质量提升 | ✅ |
-| 11 | 部署与简历 | 🔵 |
+| 11 | 部署与简历 | ✅ |
 | 12 | 体验增强迭代 | 🔵 |
 
 ## 项目规范

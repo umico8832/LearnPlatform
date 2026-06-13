@@ -14,6 +14,41 @@
 
 ---
 
+## Round 18 - 2026-06-13
+
+### 阶段
+Phase 12：安全、配置与工程可信度修复
+
+### 本轮目标
+修复项目审查发现的安全、演示账号、环境配置、Agent 规则冲突和自动化测试缺口。
+
+### 完成内容
+- Markdown 渲染接入 DOMPurify，净化题干、解析和 AI 内容生成的 HTML。
+- 补回缺失的 `/login` 路由，并让管理端路由执行 ADMIN 前端角色守卫。
+- 修正管理员和测试用户 BCrypt 种子密码。
+- 统一 `.env.example`、Docker Compose 与 Spring Boot 环境变量，AI 超时配置实际应用到 HTTP 客户端。
+- 抽取 `AnswerEvaluator`，统一练习和考试判分逻辑。
+- 新增 JWT 与客观题判分测试，共 5 个测试通过。
+- 清理 skills 中其他项目残留规则，明确 `AGENTS.md` 和用户当前要求的优先级。
+- 统一 Phase 11/12 状态与安全、架构、数据库说明。
+
+### 验收结果
+- [x] `cd backend && mvn clean test`（5 tests，0 failures）
+- [x] `cd frontend && npm run build`
+- [x] 演示账号 BCrypt Hash 与文档密码一致
+- [x] Markdown HTML 在进入 `v-html` 前经过 DOMPurify
+
+### 遗留问题
+- 前端生产构建仍提示 ECharts/Element Plus 主包超过 500 kB。
+- AiCallLog 和 AI SSE 流式输出尚未实现。
+- 尚未进行 Docker 容器启动后的浏览器全链路验收。
+
+### 下轮建议
+- 运行 Docker Compose 并执行登录、刷题、考试、AI 降级路径的完整演示验收。
+- 建议 commit message: `fix(platform): 修复安全配置并补充核心测试`
+
+---
+
 ## Round 17 - 2026-06-13
 
 ### 阶段
@@ -272,7 +307,7 @@ Phase 10：质量提升（第三轮）
 - WrongQuestionService 中 `updateMasteryLevel`/`removeWrongQuestion` 已有 userId 校验 ✅
 - 后端接口 `/api/admin/**` 已通过 SecurityConfig 配置 `hasRole("ADMIN")` ✅
 - SQL 注入：MyBatis-Plus 使用参数化查询，无原生 SQL 拼接 ✅
-- XSS：题干内容存储为 Markdown，前端使用 marked 渲染（已做 HTML 输出），MyBatis-Plus 参数化查询防注入 ✅
+- XSS：当时仅完成 Markdown HTML 输出，未净化风险已在 Round 18 通过 DOMPurify 修复。
 
 ### 修改文件清单
 | 文件 | 操作 |

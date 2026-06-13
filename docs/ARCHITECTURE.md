@@ -35,10 +35,10 @@
 └──────────────────────────┬──────────────────┬───────────┘
                            │                  │
                            ▼                  ▼
-                ┌──────────────┐    ┌──────────────┐
-                │  MySQL 8     │    │  Redis (可选) │
-                │  (主数据库)    │    │  (缓存/验证码) │
-                └──────────────┘    └──────────────┘
+                ┌──────────────┐
+                │  MySQL 8     │
+                │  (主数据库)    │
+                └──────────────┘
 
                            │
                            ▼
@@ -64,8 +64,8 @@
 | Vue Router | 4.x | 路由管理 |
 | Axios | 1.x | HTTP 请求 |
 | ECharts | 5.x | 图表可视化 |
-| markdown-it | - | Markdown 渲染 |
-| highlight.js | - | 代码高亮 |
+| marked | 18.x | Markdown 转 HTML |
+| DOMPurify | 3.x | Markdown HTML 安全净化 |
 
 ### 2.2 后端技术栈
 
@@ -86,7 +86,6 @@
 | 技术 | 版本 | 用途 |
 |------|------|------|
 | MySQL | 8.0+ | 主数据库 |
-| Redis | 7.x (可选) | 缓存、验证码、限流 |
 
 ### 2.4 部署
 
@@ -584,7 +583,7 @@ services:
     image: mysql:8.0
     ports: 3306:3306
     volumes: mysql-data:/var/lib/mysql
-    env: MYSQL_DATABASE, MYSQL_ROOT_PASSWORD
+    env: MYSQL_DATABASE, DB_PASSWORD
 
   redis:  # 可选
     image: redis:7-alpine
@@ -594,7 +593,7 @@ services:
     build: ./backend
     ports: 8080:8080
     depends_on: mysql
-    env: DB_URL, DB_PASSWORD, JWT_SECRET, AI_API_KEY
+    env: DB_URL, DB_USERNAME, DB_PASSWORD, JWT_SECRET, AI_API_KEY, AI_TIMEOUT, AI_MAX_TOKENS
 
   frontend:
     build: ./frontend

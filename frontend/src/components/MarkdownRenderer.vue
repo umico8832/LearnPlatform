@@ -5,15 +5,17 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 
 const props = defineProps<{ content: string }>()
 
 const renderedHtml = computed(() => {
   if (!props.content) return ''
   try {
-    return marked.parse(props.content) as string
+    const html = marked.parse(props.content) as string
+    return DOMPurify.sanitize(html)
   } catch {
-    return props.content
+    return DOMPurify.sanitize(props.content)
   }
 })
 </script>

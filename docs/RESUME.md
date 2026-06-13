@@ -34,7 +34,7 @@
 > - Docker Compose 一键部署，包含健康检查和启动顺序控制
 > - 规范化日志体系：HTTP 请求日志、业务操作日志、AI 调用日志
 > - 性能优化：N+1 查询修复、复合索引、批量加载
-> - 安全加固：安全响应头、越权校验、SQL 注入防护
+> - 安全加固：安全响应头、越权校验、参数化查询与 Markdown HTML 净化
 
 ---
 
@@ -194,7 +194,7 @@
 > 2. **越权校验**：考试结果、错题本操作都校验 userId 是否匹配当前用户
 > 3. **安全响应头**：X-Content-Type-Options: nosniff（防 MIME 嗅探）、X-Frame-Options: SAMEORIGIN（防点击劫持）
 > 4. **SQL 注入防护**：MyBatis-Plus 参数化查询，无原生 SQL 拼接
-> 5. **XSS 防护**：题干内容存储为 Markdown，前端使用 marked 渲染，后端参数化查询防注入
+> 5. **XSS 防护**：题干和 AI 内容使用 marked 转换 Markdown，再通过 DOMPurify 净化 HTML 后渲染
 > 6. **参数校验**：所有创建/更新请求 DTO 添加 @NotBlank/@NotNull/@Valid 注解，Controller 方法添加 @Valid 校验
 > 7. **敏感信息管理**：API Key、JWT Secret 等通过环境变量配置，.env 文件不入 Git
 

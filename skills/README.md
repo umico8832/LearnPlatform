@@ -44,11 +44,10 @@ skills/
 
 ## 与项目规则的关系
 
-- 所有 skills 需要结合本项目 `.clinerules/` 使用
-- Skills 不能覆盖或冲突于项目规则（`.clinerules/`）
-- 如果 skill 内容与 `.clinerules/` 不一致，以 `.clinerules/` 为准
+- 所有 skills 必须结合项目根目录 `AGENTS.md` 使用
+- Skills 不能覆盖或冲突于 `AGENTS.md`
+- 如果 skill 内容与 `AGENTS.md` 不一致，以 `AGENTS.md` 和用户当前明确要求为准
 
 ## 本地规则
 
-- 本目录不提交到 Git 仓库
-- 已通过 `.git/info/exclude` 排除
+- 本目录中的项目级 skills 已纳入 Git，用于不同 Agent 共享一致工作流

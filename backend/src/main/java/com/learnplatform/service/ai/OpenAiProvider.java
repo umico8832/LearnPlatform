@@ -6,9 +6,11 @@ import com.learnplatform.config.AiConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -24,9 +26,13 @@ public class OpenAiProvider implements AiProvider {
     private final AiConfig aiConfig;
     private final RestTemplate restTemplate;
 
-    public OpenAiProvider(AiConfig aiConfig) {
+    public OpenAiProvider(AiConfig aiConfig, RestTemplateBuilder restTemplateBuilder) {
         this.aiConfig = aiConfig;
-        this.restTemplate = new RestTemplate();
+        Duration timeout = Duration.ofMillis(aiConfig.getTimeout());
+        this.restTemplate = restTemplateBuilder
+                .setConnectTimeout(timeout)
+                .setReadTimeout(timeout)
+                .build();
     }
 
     @Override

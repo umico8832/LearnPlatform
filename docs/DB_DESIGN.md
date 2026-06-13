@@ -556,14 +556,14 @@ knowledge_point 表中 parent_id 指向同表的 id：
 ### 5.1 管理员账号
 ```sql
 INSERT INTO `user` (`username`, `password`, `nickname`, `role`, `status`) VALUES
-('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '管理员', 'ADMIN', 1);
+('admin', '$2a$10$ew3eqgztO50uM0K2V73iteEar40Byftspgl6u4qcWYgcobahZMixe', '管理员', 'ADMIN', 1);
 -- 密码: admin123 (BCrypt加密)
 ```
 
 ### 5.2 测试用户
 ```sql
 INSERT INTO `user` (`username`, `password`, `nickname`, `role`, `status`) VALUES
-('testuser', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '测试用户', 'USER', 1);
+('testuser', '$2a$10$kjBlBHk3g4kw2L2wajkoFOSaLPJTTdU3ZEjLWHLhMlhRIIllXz0x6', '测试用户', 'USER', 1);
 -- 密码: test123 (BCrypt加密)
 ```
 

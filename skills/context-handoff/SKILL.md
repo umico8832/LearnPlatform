@@ -28,7 +28,7 @@ description: 当用户要求生成摘要、交接笔记、新任务续接提示�
 - 建议后续步骤
 - 可直接复制的新任务提示词
 
-目标不是重复所有项目规则。长期项目约束应保留在 `.clinerules/` 中。
+目标不是重复所有项目规则。长期项目约束应保留在项目根目录 `AGENTS.md` 中。
 
 ## 摘要生成前的准备
 
@@ -62,7 +62,7 @@ git diff --cached
 4. 不要隐瞒未完成的工作或不确定性
 5. 清晰区分已完成工作、未完成工作、风险和后续步骤
 6. 保持摘要对启动新任务有实际价值
-7. 长期项目规则保留在 `.clinerules/` 中，仅在与当前任务直接相关时重复说明
+7. 长期项目规则保留在 `AGENTS.md` 中，仅在与当前任务直接相关时重复说明
 8. 如果当前任务修改了项目正式文件，需注明可能需要测试和提交确认
 9. 如果当前任务仅修改了本地 AI 辅助文件，需明确说明这些文件仅限本地使用，不应提交
 10. 如果没有任何文件变更，请明确说明
@@ -71,9 +71,6 @@ git diff --cached
 
 仅在与当前任务相关时才在摘要中包含以下内容：
 
-- 当前分支为 `dev-umico`
-- 不要在 `main` 分支上直接开发
-- Windows PowerShell 环境，不要使用 `&&`
 - rebase 和 push 需要用户确认
 - 遇到 rebase 冲突时暂停并询问用户
 - `git push --force-with-lease` 仅在用户确认后使用
@@ -84,9 +81,8 @@ git diff --cached
 - 不要猜测接口字段
 - 不要引入新的 UI 库
 - 前端应保持 Vue 3 + Element Plus + TypeScript 项目风格
-- 管理后台 API 使用 JWT + X-Admin-Secret 认证
-- 如果 Skill 内容与 `.clinerules/` 冲突，以 `.clinerules/` 为准
-- `.clinerules/`、`.clineignore`、`skills/` 等本地 AI 辅助文件不应提交，除非用户另有说明
+- 管理后台 API 使用 JWT + ADMIN 角色认证
+- 如果 Skill 内容与 `AGENTS.md` 冲突，以 `AGENTS.md` 和用户当前明确要求为准
 
 ## 输出格式
 
@@ -164,7 +160,7 @@ git diff --cached
 - 可能需要检查移动端
 - 可能需要运行 `npm run build`
 - 可能需要检查登录失败提示
-- 可能需要检查 JWT + X-Admin-Secret
+- 可能需要检查 JWT + ADMIN 角色权限
 - 可能需要同步 API 文档
 - 可能存在未提交或未暂存改动
 - 可能存在 git rebase 冲突风险

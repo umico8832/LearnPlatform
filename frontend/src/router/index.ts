@@ -1,8 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { isAuthenticated } from '@/utils/auth'
+import { useUserStore } from '@/stores/user'
 
 const routes: RouteRecordRaw[] = [
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/auth/LoginView.vue'),
+    meta: { requiresAuth: false, title: '登录' },
+  },
   {
     path: '/register',
     name: 'Register',
@@ -135,7 +142,7 @@ const router = createRouter({
 /**
  * 路由守卫：检查登录状态
  */
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to) => {
   // 设置页面标题
   const title = to.meta.title as string
   if (title) {
@@ -146,17 +153,29 @@ router.beforeEach((to, _from, next) => {
 
   // 已登录用户访问登录/注册页，跳转首页
   if (loggedIn && (to.path === '/login' || to.path === '/register')) {
-    next({ path: '/' })
-    return
+    return { path: '/' }
   }
 
   // 未登录访问需认证页面，跳转登录页
   const requiresAuth = to.meta.requiresAuth !== false
   if (requiresAuth && !loggedIn) {
-    next({ path: '/login', query: { redirect: to.fullPath } })
-  } else {
-    next()
+    return { path: '/login', query: { redirect: to.fullPath } }
   }
+
+  if (loggedIn && to.meta.requiresAdmin) {
+    const userStore = useUserStore()
+    if (!userStore.userInfo) {
+      await userStore.fetchUserInfo()
+    }
+    if (!userStore.userInfo) {
+      return { path: '/login', query: { redirect: to.fullPath } }
+    }
+    if (userStore.userInfo.role !== 'ADMIN') {
+      return { path: '/' }
+    }
+  }
+
+  return true
 })
 
 export default router

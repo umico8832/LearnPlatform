@@ -9,7 +9,7 @@ import type { ApiResponse } from '@/types/api'
  * 创建 Axios 实例
  */
 const service: AxiosInstance = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
@@ -20,7 +20,7 @@ const service: AxiosInstance = axios.create({
  * AI 专用实例（超时更长，AI 生成可能需要 30-60 秒）
  */
 export const aiService: AxiosInstance = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 60000,
   headers: {
     'Content-Type': 'application/json',

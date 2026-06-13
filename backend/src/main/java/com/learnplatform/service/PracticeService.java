@@ -30,6 +30,7 @@ public class PracticeService {
     private final CourseMapper courseMapper;
     private final KnowledgePointMapper knowledgePointMapper;
     private final WrongQuestionService wrongQuestionService;
+    private final AnswerEvaluator answerEvaluator;
 
     public PracticeService(QuestionMapper questionMapper,
                            QuestionOptionMapper questionOptionMapper,
@@ -37,7 +38,8 @@ public class PracticeService {
                            PracticeRecordMapper practiceRecordMapper,
                            CourseMapper courseMapper,
                            KnowledgePointMapper knowledgePointMapper,
-                           WrongQuestionService wrongQuestionService) {
+                           WrongQuestionService wrongQuestionService,
+                           AnswerEvaluator answerEvaluator) {
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
@@ -45,6 +47,7 @@ public class PracticeService {
         this.courseMapper = courseMapper;
         this.knowledgePointMapper = knowledgePointMapper;
         this.wrongQuestionService = wrongQuestionService;
+        this.answerEvaluator = answerEvaluator;
     }
 
     /**
@@ -140,10 +143,10 @@ public class PracticeService {
                 .filter(o -> o.getIsCorrect() != null && o.getIsCorrect() == 1)
                 .collect(Collectors.toList());
 
-        String correctAnswer = buildCorrectAnswer(correctOptions, question.getQuestionType());
+        String correctAnswer = answerEvaluator.buildCorrectAnswer(correctOptions, question.getQuestionType());
 
         // 判分
-        boolean isCorrect = checkAnswer(question.getQuestionType(), request.getUserAnswer().trim(), correctAnswer);
+        boolean isCorrect = answerEvaluator.isCorrect(question.getQuestionType(), request.getUserAnswer(), correctAnswer);
 
         // 保存答题记录
         log.info("判分结果: userId={}, questionId={}, isCorrect={}", userId, request.getQuestionId(), isCorrect);
@@ -250,56 +253,6 @@ public class PracticeService {
     }
 
     // ======================== 私有方法 ========================
-
-    /**
-     * 构建正确答案字符串
-     */
-    private String buildCorrectAnswer(List<QuestionOption> correctOptions, String questionType) {
-        if ("TRUE_FALSE".equals(questionType)) {
-            // 判断题：返回 "TRUE" 或 "FALSE"
-            if (!correctOptions.isEmpty()) {
-                return "TRUE".equals(correctOptions.get(0).getContent()) ||
-                       "正确".equals(correctOptions.get(0).getContent()) ||
-                       "true".equalsIgnoreCase(correctOptions.get(0).getContent())
-                       ? "TRUE" : "FALSE";
-            }
-            return "";
-        }
-
-        // 选择题：返回选项标签，逗号分隔
-        List<String> labels = correctOptions.stream()
-                .map(QuestionOption::getOptionLabel)
-                .sorted()
-                .collect(Collectors.toList());
-        return String.join(",", labels);
-    }
-
-    /**
-     * 判分逻辑
-     */
-    private boolean checkAnswer(String questionType, String userAnswer, String correctAnswer) {
-        if ("SINGLE_CHOICE".equals(questionType) || "TRUE_FALSE".equals(questionType)) {
-            return userAnswer.equalsIgnoreCase(correctAnswer);
-        }
-        if ("MULTIPLE_CHOICE".equals(questionType)) {
-            // 多选题：排序后比较
-            Set<String> userSet = Arrays.stream(userAnswer.split(","))
-                    .map(String::trim)
-                    .map(String::toUpperCase)
-                    .collect(Collectors.toSet());
-            Set<String> correctSet = Arrays.stream(correctAnswer.split(","))
-                    .map(String::trim)
-                    .map(String::toUpperCase)
-                    .collect(Collectors.toSet());
-            return userSet.equals(correctSet);
-        }
-        if ("FILL_BLANK".equals(questionType)) {
-            // 填空题：忽略前后空格，不区分大小写
-            return userAnswer.trim().equalsIgnoreCase(correctAnswer.trim());
-        }
-        // 简答题：暂不自动判分，标记为错误
-        return false;
-    }
 
     /**
      * 填充 QuestionVO（练习模式，不返回正确答案标记）

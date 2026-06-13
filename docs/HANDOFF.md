@@ -30,7 +30,7 @@
 - [x] Phase 8：AI 功能 ✅
 - [x] Phase 9：统计可视化 ✅
 - [x] Phase 10：质量提升 ✅（参数校验、接口文档、前端体验优化、日志规范化、SQL优化、安全检查）
-- [x] Phase 11：部署与简历（🔵 基本完成 - 仅剩项目截图需运行环境）
+- [x] Phase 11：部署与简历 ✅（项目截图为非阻塞演示素材）
 - [x] Phase 12：体验增强迭代（🔵 已完成 AI 题目助手整合）
 
 ---
@@ -72,6 +72,9 @@ sudo /usr/local/mysql/support-files/mysql.server start
 
 # 后端
 cd backend
+set -a
+source ../.env
+set +a
 mvn spring-boot:run
 
 # 前端
@@ -91,13 +94,13 @@ docker compose up -d
 
 - AiCallLog 调用日志未实现（ai_call_log 表已建，代码未接入）
 - 无 AI 流式输出（SSE）
-- 管理端路由未做前端角色守卫（仅隐藏菜单，后端已做 ADMIN 校验）
+- 前端构建仍有 ECharts/Element Plus 主包体积警告，功能不受影响
 
 ---
 
 ## 6. 下一步建议任务
 
-任务名称：Phase 11 - 部署与简历（基本完成）
+任务名称：Phase 12 - 体验增强迭代
 
 已完成：
 - [x] Docker Compose 完善（健康检查、启动顺序、环境变量）
@@ -107,10 +110,7 @@ docker compose up -d
 - [x] 后续扩展方向文档（docs/FUTURE.md）
 - [x] Git 历史整理（提交记录规范、分支清晰）
 
-待完成：
-- [ ] 项目截图制作（需要运行环境截图，非代码任务）
-
-后续开发建议：继续推进 P0 AI 流式输出（SSE），或实现 P1 用户个人中心。
+后续开发建议：继续推进 P0 AI 流式输出（SSE），或实现 P1 用户个人中心。项目截图可在演示环境稳定后补充。
 
 建议 commit message: `feat(statistics): 完成管理端平台统计面板`
 
@@ -143,7 +143,7 @@ docker compose up -d
 6. 除非遇到重大方向问题，否则不要频繁问我；
 7. 每轮结束都要更新 docs/CHANGELOG_AGENT.md 和必要文档。
 
-当前阶段：Phase 0-11 全部基本完成（仅剩项目截图需运行环境）。
+当前阶段：Phase 0-11 已完成，Phase 12 体验增强迭代进行中。
 
 已完成模块：用户鉴权、课程知识点、题库、刷题判分、错题本、试卷考试、AI 功能、统计可视化、质量提升、部署简历。
 后续扩展方向：见 docs/FUTURE.md（P0-P3 四级优先级，15 个扩展方向）。
