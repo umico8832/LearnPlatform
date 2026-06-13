@@ -2,7 +2,12 @@
   <div class="question-manage">
     <div class="page-header">
       <h2>题目管理</h2>
-      <el-button type="primary" :icon="Plus" @click="openDialog()">新增题目</el-button>
+      <div class="header-actions">
+        <el-button :icon="Download" @click="handleDownloadTemplate">下载模板</el-button>
+        <el-button :icon="Upload" @click="importDialogVisible = true">导入题目</el-button>
+        <el-button :icon="FolderOpened" @click="handleExport">导出题目</el-button>
+        <el-button type="primary" :icon="Plus" @click="openDialog()">新增题目</el-button>
+      </div>
     </div>
 
     <el-card shadow="never">
@@ -79,6 +84,55 @@
           @size-change="fetchQuestions"
         />
       </div>
+
+    <!-- 导入结果弹窗 -->
+    <el-dialog v-model="importResultVisible" title="导入结果" width="500px" destroy-on-close>
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="总行数">{{ importResult.totalRows }}</el-descriptions-item>
+        <el-descriptions-item label="成功数">
+          <el-tag type="success">{{ importResult.successCount }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="失败数">
+          <el-tag :type="importResult.failCount > 0 ? 'danger' : 'success'">{{ importResult.failCount }}</el-tag>
+        </el-descriptions-item>
+      </el-descriptions>
+      <div v-if="importResult.errors.length > 0" style="margin-top: 12px;">
+        <p style="color: #f56c6c; margin-bottom: 8px;">错误详情：</p>
+        <el-scrollbar max-height="200px">
+          <p v-for="(err, idx) in importResult.errors" :key="idx" style="font-size: 13px; color: #606266; margin: 4px 0;">
+            {{ err }}
+          </p>
+        </el-scrollbar>
+      </div>
+      <template #footer>
+        <el-button type="primary" @click="importResultVisible = false">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 导入弹窗 -->
+    <el-dialog v-model="importDialogVisible" title="导入题目" width="500px" destroy-on-close>
+      <el-upload
+        ref="uploadRef"
+        drag
+        accept=".xlsx,.xls"
+        :auto-upload="false"
+        :limit="1"
+        :on-change="onImportFileChange"
+        :on-exceed="() => ElMessage.warning('只能上传一个文件')"
+      >
+        <el-icon style="font-size: 40px; color: #c0c4cc; margin-bottom: 8px;"><Upload /></el-icon>
+        <div>将 Excel 文件拖到此处，或<em>点击上传</em></div>
+        <template #tip>
+          <div style="color: #909399; font-size: 12px; margin-top: 4px;">
+            仅支持 .xlsx / .xls 文件，可先<a href="javascript:void(0)" @click.stop="handleDownloadTemplate" style="color: #409eff">下载模板</a>
+          </div>
+        </template>
+      </el-upload>
+      <template #footer>
+        <el-button @click="importDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="importLoading" @click="handleImport">开始导入</el-button>
+      </template>
+    </el-dialog>
     </el-card>
 
     <!-- 新增/编辑弹窗 -->
@@ -210,17 +264,21 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { Plus, Search, Delete } from '@element-plus/icons-vue'
+import { Plus, Search, Delete, Download, Upload, FolderOpened } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import type { FormInstance, FormRules } from 'element-plus'
+import type { FormInstance, FormRules, UploadFile } from 'element-plus'
 import {
   getAdminQuestionPage,
   createQuestion,
   updateQuestion,
   deleteQuestion,
+  exportQuestions,
+  downloadTemplate,
+  importQuestions,
   type QuestionVO,
   type QuestionForm,
   type OptionItem,
+  type QuestionImportResult,
 } from '@/api/question'
 import { getAllCourses, type CourseVO } from '@/api/course'
 import { getKnowledgeTree, type KnowledgePointVO } from '@/api/knowledgePoint'
@@ -243,6 +301,19 @@ const courseList = ref<CourseVO[]>([])
 
 // 知识点树
 const kpTreeData = ref<KnowledgePointVO[]>([])
+
+// 导入/导出相关
+const importDialogVisible = ref(false)
+const importResultVisible = ref(false)
+const importLoading = ref(false)
+const importFile = ref<File | null>(null)
+const uploadRef = ref()
+const importResult = reactive<QuestionImportResult>({
+  totalRows: 0,
+  successCount: 0,
+  failCount: 0,
+  errors: [],
+})
 
 // 弹窗相关
 const dialogVisible = ref(false)
@@ -472,6 +543,82 @@ async function handleDelete(id: number) {
   }
 }
 
+// 导出题目
+async function handleExport() {
+  try {
+    const res = await exportQuestions({
+      questionType: filters.questionType || undefined,
+      courseId: filters.courseId || undefined,
+      difficulty: filters.difficulty || undefined,
+    })
+    const blob = new Blob([res.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = '题目导出.xlsx'
+    link.click()
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('导出成功')
+  } catch {
+    ElMessage.error('导出失败')
+  }
+}
+
+// 下载导入模板
+async function handleDownloadTemplate() {
+  try {
+    const res = await downloadTemplate()
+    const blob = new Blob([res.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = '题目导入模板.xlsx'
+    link.click()
+    window.URL.revokeObjectURL(url)
+  } catch {
+    ElMessage.error('模板下载失败')
+  }
+}
+
+// 文件选择
+function onImportFileChange(file: UploadFile) {
+  importFile.value = file.raw || null
+}
+
+// 导入题目
+async function handleImport() {
+  if (!importFile.value) {
+    ElMessage.warning('请先选择文件')
+    return
+  }
+  importLoading.value = true
+  try {
+    const res = await importQuestions(importFile.value)
+    const result = res.data.data
+    importResult.totalRows = result.totalRows
+    importResult.successCount = result.successCount
+    importResult.failCount = result.failCount
+    importResult.errors = result.errors || []
+    importDialogVisible.value = false
+    importResultVisible.value = true
+    importFile.value = null
+    if (uploadRef.value) {
+      uploadRef.value.clearFiles()
+    }
+    if (result.successCount > 0) {
+      fetchQuestions()
+    }
+  } catch {
+    ElMessage.error('导入失败')
+  } finally {
+    importLoading.value = false
+  }
+}
+
 onMounted(() => {
   fetchQuestions()
   fetchCourses()
@@ -491,6 +638,11 @@ onMounted(() => {
   margin: 0;
   font-size: 20px;
   color: #303133;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
 }
 
 .toolbar {

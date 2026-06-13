@@ -118,19 +118,20 @@
 
 **预计工作量**：1 天
 
-### 7. 题目导入/导出
+### 7. 题目导入/导出 ✅
 
-**现状**：题目只能逐条手动录入，效率低。
+**完成情况**：已实现 Excel 批量导入导出题目，支持下载模板、按条件导出、拖拽上传导入并展示详细导入结果（成功/失败行数及错误信息）。题型支持中英文，选项和知识点自动匹配已有数据。
 
 **功能**：
-- Excel/CSV 批量导入题目
-- 题目模板下载
-- 导出题目为 Excel
+- Excel 批量导入题目
+- 题目模板下载（含示例数据）
+- 导出题目为 Excel（支持按题型/课程/难度筛选）
 
 **涉及改动**：
-- 后端引入 Apache POI 或 EasyExcel
-- `AdminQuestionController` 新增 import/export 接口
-- 前端管理端增加导入/导出按钮
+- 后端引入 EasyExcel 3.3.4
+- `AdminQuestionController` 新增 import/export/template 3 个接口
+- `QuestionImportExportService` 处理导入导出逻辑
+- 前端管理端增加导入/导出/下载模板按钮及导入结果弹窗
 
 **预计工作量**：1.5 天
 

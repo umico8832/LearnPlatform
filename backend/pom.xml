@@ -76,6 +76,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- EasyExcel (Excel import/export) -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>easyexcel</artifactId>
+            <version>3.3.4</version>
+        </dependency>
+
         <!-- Knife4j (Swagger) -->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>

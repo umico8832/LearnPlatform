@@ -14,6 +14,52 @@
 
 ---
 
+## Round 24 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+实现 P1 题目导入/导出功能，支持 Excel 批量导入题目和按条件导出题目。
+
+### 完成内容
+- 后端引入 EasyExcel 3.3.4 依赖。
+- 新建 `QuestionExcelDTO`（10 列：题干、题型、课程名称、难度、选项、正确答案、解析、分值、标签、知识点）。
+- 新建 `QuestionImportResult` DTO（总行数、成功数、失败数、错误详情列表）。
+- 新建 `QuestionImportExportService`：导出题目（支持按题型/课程/难度筛选）、下载导入模板（含示例数据）、导入题目（校验必填字段、题型标准化支持中英文、课程名称匹配、选项解析、知识点关联、事务保护）。
+- `AdminQuestionController` 新增 3 个接口：`GET /export`（导出）、`GET /template`（下载模板）、`POST /import`（导入，MultipartFile）。
+- 前端 `question.ts` 新增 `exportQuestions`、`downloadTemplate`、`importQuestions` 3 个 API 方法及 `QuestionImportResult` 类型。
+- `QuestionManage.vue` 页面头部新增 3 个按钮：下载模板、导入题目、导出题目。
+- 新建导入弹窗（拖拽上传 Excel，支持文件类型校验）和导入结果弹窗（展示总行数/成功/失败及错误详情）。
+- 导出和模板下载通过 Blob 创建临时链接自动触发浏览器下载。
+
+### 修改文件清单
+- 后端新增：`QuestionExcelDTO.java`、`QuestionImportResult.java`、`QuestionImportExportService.java`
+- 后端修改：`pom.xml`（EasyExcel 依赖）、`AdminQuestionController.java`（3 个新接口）
+- 前端新增：无
+- 前端修改：`api/question.ts`（3 个 API + 1 个类型）、`views/admin/QuestionManage.vue`（导入/导出按钮 + 弹窗 + 逻辑）
+- 文档：`docs/ROADMAP.md`、`docs/CHANGELOG_AGENT.md`、`docs/FUTURE.md`
+
+### 验收结果
+- [x] `cd backend && mvn clean compile`（BUILD SUCCESS）
+- [x] `cd backend && mvn test`（8 tests，0 failures）
+- [x] `cd frontend && npm run build`（built in 554ms）
+- [x] QuestionManage.vue 无 TS 错误
+- [x] AdminQuestionController.java 无编译错误
+- [x] 导入/导出接口路径与 SecurityConfig 权限规则匹配（/api/admin/**）
+
+### 遗留问题
+- 刷题页面和错题本页面未整合收藏按钮（Round 23 遗留，可后续优化）
+- AiCallLog 仍未接入
+- 收藏题目直接发起练习功能待实现
+
+### 下轮建议
+- 可实现 P2 学习计划与提醒功能
+- 或接入 AiCallLog 调用日志
+- 建议 commit message: `feat(question): 实现题目 Excel 导入导出功能`
+
+---
+
 ## Round 23 - 2026-06-13
 
 ### 阶段

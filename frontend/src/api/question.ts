@@ -107,3 +107,39 @@ export function updateQuestion(id: number, data: QuestionForm) {
 export function deleteQuestion(id: number) {
   return request.delete<ApiResponse<void>>(`/admin/questions/${id}`)
 }
+
+/** 题目导入结果 */
+export interface QuestionImportResult {
+  totalRows: number
+  successCount: number
+  failCount: number
+  errors: string[]
+}
+
+/** 导出题目（管理端）- 返回 Blob 下载 */
+export function exportQuestions(params?: {
+  questionType?: string
+  courseId?: number
+  difficulty?: number
+}) {
+  return request.get('/admin/questions/export', {
+    params,
+    responseType: 'blob'
+  })
+}
+
+/** 下载导入模板 */
+export function downloadTemplate() {
+  return request.get('/admin/questions/template', {
+    responseType: 'blob'
+  })
+}
+
+/** 导入题目（管理端） */
+export function importQuestions(file: File) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request.post<ApiResponse<QuestionImportResult>>('/admin/questions/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}

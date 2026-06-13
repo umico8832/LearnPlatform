@@ -3,14 +3,20 @@ package com.learnplatform.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.result.R;
 import com.learnplatform.dto.QuestionCreateRequest;
+import com.learnplatform.dto.QuestionImportResult;
 import com.learnplatform.dto.QuestionVO;
 import com.learnplatform.security.CustomUserDetails;
+import com.learnplatform.service.QuestionImportExportService;
 import com.learnplatform.service.QuestionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 /**
  * 管理端题目控制器
@@ -21,9 +27,12 @@ import org.springframework.web.bind.annotation.*;
 public class AdminQuestionController {
 
     private final QuestionService questionService;
+    private final QuestionImportExportService questionImportExportService;
 
-    public AdminQuestionController(QuestionService questionService) {
+    public AdminQuestionController(QuestionService questionService,
+                                    QuestionImportExportService questionImportExportService) {
         this.questionService = questionService;
+        this.questionImportExportService = questionImportExportService;
     }
 
 
@@ -87,5 +96,47 @@ public class AdminQuestionController {
     public R<Void> deleteQuestion(@PathVariable Long id) {
         questionService.deleteQuestion(id);
         return R.ok();
+    }
+
+    /**
+     * 导出题目到 Excel
+     */
+    @Operation(summary = "导出题目", description = "导出题目到 Excel 文件，支持按题型、课程、难度筛选")
+    @GetMapping("/export")
+    public void exportQuestions(
+            HttpServletResponse response,
+            @RequestParam(required = false) String questionType,
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) Integer difficulty) throws IOException {
+        questionImportExportService.exportQuestions(response, questionType, courseId, difficulty);
+    }
+
+    /**
+     * 下载导入模板
+     */
+    @Operation(summary = "下载导入模板", description = "下载题目导入 Excel 模板")
+    @GetMapping("/template")
+    public void downloadTemplate(HttpServletResponse response) throws IOException {
+        questionImportExportService.downloadTemplate(response);
+    }
+
+    /**
+     * 从 Excel 导入题目
+     */
+    @Operation(summary = "导入题目", description = "从 Excel 文件批量导入题目")
+    @PostMapping("/import")
+    public R<QuestionImportResult> importQuestions(
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal CustomUserDetails userDetails) throws IOException {
+        if (file.isEmpty()) {
+            return R.businessError("上传文件不能为空");
+        }
+        String originalName = file.getOriginalFilename();
+        if (originalName != null && !originalName.endsWith(".xlsx") && !originalName.endsWith(".xls")) {
+            return R.businessError("仅支持 .xlsx 或 .xls 文件");
+        }
+        QuestionImportResult result = questionImportExportService.importQuestions(
+                file.getInputStream(), userDetails.getUserId());
+        return R.ok(result);
     }
 }
