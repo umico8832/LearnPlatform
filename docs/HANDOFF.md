@@ -16,125 +16,104 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 2 — 用户与鉴权（待开始）
+当前阶段：Phase 10 — 质量提升（待开始）
 
 阶段状态：
 - [x] Phase 0：项目规划 ✅
 - [x] Phase 1：项目骨架 ✅（已验证可运行）
-- [ ] Phase 2：用户与鉴权（待开始）
-- [ ] Phase 3 ~ Phase 11：待开始
+- [x] Phase 2：用户与鉴权 ✅（代码已实现，ROADMAP 未更新状态）
+- [x] Phase 3：课程与知识点 ✅
+- [x] Phase 4：题库系统 ✅
+- [x] Phase 5：刷题与判分 ✅
+- [x] Phase 6：错题本 ✅
+- [x] Phase 7：试卷与考试 ✅
+- [x] Phase 8：AI 功能 ✅
+- [x] Phase 9：统计可视化 ✅
+- [ ] Phase 10：质量提升（待开始）
+- [ ] Phase 11：部署与简历（待开始）
 
 ---
 
 ## 3. 已完成内容
 
-### 已完成模块
-- 项目文档体系（PRD、ARCHITECTURE、DB_DESIGN、API_DESIGN、ROADMAP、RESUME、CHANGELOG_AGENT）
-- .gitignore、.env.example、README.md、AGENTS.md
+### 核心功能模块
+1. **用户与鉴权**：JWT 登录注册、路由守卫、角色权限
+2. **课程与知识点**：CRUD + 树形结构 + 前端页面
+3. **题库系统**：5 种题型 CRUD + 选项管理 + 知识点关联
+4. **刷题与判分**：自动判分 + 答题记录 + 统计
+5. **错题本**：自动收集 + 掌握程度管理 + 统计
+6. **试卷与考试**：手动组卷 + 考试答题(倒计时) + 自动判分 + 成绩查看
+7. **AI 功能**：OpenAI 兼容 API + 题目解析 + 变式题 + 复习建议 + 知识点总结
+8. **统计可视化**：首页统计卡片 + ECharts 趋势图 + 雷达图 + 快捷入口
 
-### 已完成后端代码
-- pom.xml（Spring Boot 3.2.5 + MyBatis-Plus + JWT + Knife4j + Security，**已移除 Lombok**）
-- LearnPlatformApplication.java 启动类
-- application.yml 主配置（数据库、JWT、AI、Knife4j 环境变量注入）
-- R.java 统一响应体 + ResultCode 枚举（手写 getter/setter，无 Lombok）
-- BusinessException + GlobalExceptionHandler 全局异常处理（手写 getCode()，SLF4J Logger）
-- MyBatisPlusConfig（分页插件 + 自动填充）
-- CorsConfig、Knife4jConfig、SecurityConfig（Phase 1 暂时放行）
-- PublicController（健康检查 GET /api/public/health）
-- schema.sql（13 张表 + 初始测试数据，已导入 MySQL）
-- Dockerfile
+### 后端关键文件
+- 统一响应：`R.java` + `ResultCode.java` + `BusinessException` + `GlobalExceptionHandler`
+- 实体：User, Course, KnowledgePoint, Question, QuestionOption, QuestionKnowledgePoint, PracticeRecord, WrongQuestion, ExamPaper, ExamQuestion, ExamRecord, ExamAnswer
+- 服务：AuthService, CourseService, KnowledgePointService, QuestionService, PracticeService, WrongQuestionService, ExamPaperService, ExamService, AiService, StatisticsService
+- AI：AiConfig, AiProvider(接口), OpenAiProvider, AiController
 
-### 已完成前端代码
-- package.json（Vue 3 + Element Plus + Pinia + Axios + ECharts）
-- npm install 完成（159 packages）
-- vite.config.ts（代理 /api → localhost:8080、Element Plus 自动导入、路径别名）
-- main.ts + App.vue + global.css
-- types/api.ts、types/user.ts
-- utils/auth.ts（Token 管理）、utils/request.ts（Axios 封装）
-- router/index.ts（路由守卫）
-- stores/user.ts（Pinia 用户 Store）
-- components/layout/AppLayout.vue（侧边栏 + 顶部导航布局）
-- views/home/HomeView.vue（调用健康检查接口）
-- views/auth/LoginView.vue、RegisterView.vue
-- views/NotFoundView.vue
-- Dockerfile + nginx.conf
-
-### 已完成部署配置
-- docker-compose.yml（MySQL + Backend + Frontend 三服务）
+### 前端关键文件
+- API 封装：auth(user store), course, knowledgePoint, question, practice, wrongQuestion, exam, ai, statistics
+- 组件：AppLayout(侧边栏), MarkdownRenderer
+- 页面：HomeView(统计面板), Login/Register, CourseList/Detail, QuestionList, Practice/Session/Records, WrongQuestion, ExamList/Take/Result, ReviewSuggestion
+- 管理端：CourseManage, KnowledgePointManage, QuestionManage, ExamManage
 
 ---
 
-## 4. 未完成内容
+## 4. 运行方式
 
-- Phase 2：用户与鉴权（JWT 实现）
-- Phase 3 ~ Phase 11
-
----
-
-## 5. 运行方式
-
-### 本地开发（已验证通过）
-
-#### 启动 MySQL
+### 本地开发
 ```bash
+# MySQL
 sudo /usr/local/mysql/support-files/mysql.server start
-```
 
-#### 启动后端
-```bash
+# 后端
 cd backend
 mvn spring-boot:run
-# 访问：http://localhost:8080
-# 健康检查：http://localhost:8080/api/public/health
-# Knife4j 文档：http://localhost:8080/doc.html
-```
 
-#### 启动前端
-```bash
+# 前端
 cd frontend
 npm run dev
-# 访问：http://localhost:5173
 ```
 
-### Docker（一键启动）
+### Docker
 ```bash
 cp .env.example .env
 docker compose up -d
-docker compose ps
 ```
 
 ---
 
-## 6. 当前遗留问题
+## 5. 当前遗留问题
 
-- README.md 中的 JDK 版本说明需更新（实际使用 JDK 26，需 Java 17+ 编译目标）
-- Lombok 已移除，后续新增实体类需手写 getter/setter/toString
-- schema.sql 中的 BCrypt 密码哈希值需要在 Phase 2 验证是否正确
+- Phase 2 ROADMAP 状态未更新为 ✅（代码已实现但文档标记为 🔵 进行中）
+- 管理端统计接口未实现（用户数、题目数、试卷数）
+- AiCallLog 调用日志未实现
+- 题目解析/变式题按钮未整合到刷题/错题页面
+- 无 AI 流式输出（SSE）
+- 管理端路由未做前端角色守卫（仅隐藏菜单，后端已做 ADMIN 校验）
 
 ---
 
-## 7. 下一步建议任务
+## 6. 下一步建议任务
 
-任务名称：Phase 2 - 用户与鉴权
+任务名称：Phase 10 - 质量提升
 
 任务目标：
-- 后端：User 实体、UserMapper、JwtTokenProvider、JwtAuthenticationFilter、AuthService、AuthController
-- 后端：更新 SecurityConfig 权限规则（公开接口 vs 受保护接口）
-- 前端：完善 API 封装、user store、登录/注册页面接真实接口
-- 前端：路由守卫（未登录跳转登录页）
+- 代码审查和重构
+- 参数校验补全（所有接口）
+- 接口文档补全（Knife4j 注解）
+- 前端体验优化（加载状态、错误提示、空状态）
+- 边界情况处理（重复提交、并发、空数据）
+- 日志规范化
+- SQL 优化检查
+- 安全检查
 
-验收标准：
-1. 用户可以通过 POST /api/auth/register 注册
-2. 用户可以通过 POST /api/auth/login 登录并获得 JWT
-3. 携带 JWT 可以访问受保护接口
-4. 未携带 JWT 访问受保护接口返回 401
-5. 前端可以正常注册、登录
-6. 登录状态刷新后保持
-7. 退出登录清除 Token
+建议 commit message: `refactor(all): Phase 10 质量提升`
 
 ---
 
-## 8. 新对话续接提示词
+## 7. 新对话续接提示词
 
 ```
 你现在接手一个长期开发中的全栈 Web 项目。
@@ -161,7 +140,10 @@ docker compose ps
 6. 除非遇到重大方向问题，否则不要频繁问我；
 7. 每轮结束都要更新 docs/CHANGELOG_AGENT.md 和必要文档。
 
-当前阶段：Phase 1 已完成并验证通过，下一步进入 Phase 2 用户与鉴权。
+当前阶段：Phase 0-9 已完成，下一步进入 Phase 10 质量提升。
+
+已完成模块：用户鉴权、课程知识点、题库、刷题判分、错题本、试卷考试、AI 功能、统计可视化。
+待完成：质量提升（Phase 10）和部署简历（Phase 11）。
 
 本地运行方式：
 - MySQL: sudo /usr/local/mysql/support-files/mysql.server start
@@ -171,7 +153,7 @@ docker compose ps
 
 ---
 
-## 9. 交接注意事项
+## 8. 交接注意事项
 
 - 不要依赖旧对话记忆
 - 不要把 AGENTS.md 当进度表

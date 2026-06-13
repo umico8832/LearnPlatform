@@ -14,6 +14,43 @@
 
 ---
 
+## Round 10 - 2026-06-13
+
+### 阶段
+Phase 8：AI 功能 + Phase 9：统计可视化
+
+### 本轮目标
+完成 Phase 8 AI 功能和 Phase 9 统计可视化两个阶段。
+
+### 完成内容
+
+#### Phase 8：AI 功能
+- 后端：AiConfig + AiProvider 接口 + OpenAiProvider 实现 + AiService + AiController + DTO
+- 前端：MarkdownRenderer 组件 + ai.ts API + ReviewSuggestionView 页面
+- 安装 marked 依赖，路由和导航整合
+- Commit: `6fc7b09`
+
+#### Phase 9：统计可视化
+- 后端：StatisticsService + StatisticsController + StatisticsVO（3 个接口：overview、daily-trend、course-stats）
+- 前端：HomeView.vue 重写（统计卡片 + ECharts 趋势柱状图 + 课程雷达图 + 快捷入口）
+- 前端：statistics.ts API 封装
+- Commit: `8994987`
+
+### 遗留问题
+- 管理端统计接口未实现（用户数、题目数、试卷数）
+- Phase 10 质量提升未开始
+- Phase 11 部署与简历未开始
+- 上下文接近上限，建议交接
+
+### 下轮建议
+- 进入 Phase 10：质量提升
+- 代码审查和重构
+- 参数校验补全
+- 前端体验优化
+- 建议 commit message: `refactor(all): Phase 10 质量提升`
+
+---
+
 ## Round 9 - 2026-06-13
 
 ### 阶段
