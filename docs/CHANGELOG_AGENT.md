@@ -14,6 +14,50 @@
 
 ---
 
+## Round 25 - 2026-06-13
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+实现 P2 学习计划与提醒功能，支持每日刷题目标设置、今日进度展示和连续打卡天数统计。
+
+### 完成内容
+- 新建 `learning_plan` 表（schema.sql），含 user_id 唯一约束，默认每日目标 20 题。
+- 后端新增 `LearningPlan` 实体 + `LearningPlanMapper`。
+- 后端新增 `LearningPlanRequest`（带 @NotNull/@Min/@Max 校验）和 `LearningPlanVO`（含 dailyGoal、todayCount、progress、streakDays、lastPracticeDate）。
+- 后端新增 `LearningPlanService`：获取/创建默认计划、更新每日目标、统计今日刷题进度、计算连续打卡天数（从今天往前逐日查询 practice_record）。
+- 后端新增 `LearningPlanController`（2 个接口：GET 获取计划、PUT 更新目标）。
+- 前端新增 `api/learningPlan.ts`（getLearningPlan、updateDailyGoal API 方法）。
+- `HomeView.vue` 首页顶部新增学习计划卡片：进度条、今日刷题/目标统计、连续打卡天数、完成庆祝提示。
+- 新增"设置每日目标"弹窗（el-input-number + 保存按钮）。
+- 注意：项目 pom.xml 未配置 Lombok 依赖，所有新文件均使用手动 getter/setter。
+
+### 修改文件清单
+- 后端新增：`LearningPlan.java`、`LearningPlanMapper.java`、`LearningPlanRequest.java`、`LearningPlanVO.java`、`LearningPlanService.java`、`LearningPlanController.java`
+- 后端修改：`schema.sql`（新增 learning_plan 表）
+- 前端新增：`api/learningPlan.ts`
+- 前端修改：`views/home/HomeView.vue`（学习计划卡片 + 设置弹窗 + 样式）
+- 文档：`docs/ROADMAP.md`、`docs/CHANGELOG_AGENT.md`
+
+### 验收结果
+- [x] `cd backend && mvn clean compile`（BUILD SUCCESS）
+- [x] `cd backend && mvn test`（0 failures）
+- [x] `cd frontend && npm run build`（built in 601ms）
+
+### 遗留问题
+- 刷题页面和错题本页面未整合收藏按钮（Round 23 遗留）
+- AiCallLog 仍未接入
+- 收藏题目直接发起练习功能待实现
+- 学习周报功能未实现（可后续扩展）
+
+### 下轮建议
+- 可实现 P2 社区/讨论功能或题目难度自适应
+- 或接入 AiCallLog 调用日志
+- 建议 commit message: `feat(plan): 实现学习计划与每日目标提醒`
+
+---
+
 ## Round 24 - 2026-06-13
 
 ### 阶段

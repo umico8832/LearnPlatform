@@ -5,6 +5,56 @@
       <p class="subtitle">今天也要加油学习哦！</p>
     </div>
 
+    <!-- 学习计划进度 -->
+    <el-card shadow="hover" class="plan-card" v-loading="planLoading" element-loading-background="rgba(255,255,255,0.8)">
+      <div class="plan-header">
+        <div class="plan-title">
+          <el-icon :size="20" color="#409eff"><Calendar /></el-icon>
+          <span>今日学习计划</span>
+        </div>
+        <el-button type="primary" link @click="showGoalDialog = true">
+          <el-icon><Setting /></el-icon> 设置目标
+        </el-button>
+      </div>
+      <div class="plan-content">
+        <div class="plan-progress-area">
+          <el-progress
+            :percentage="plan.progress"
+            :stroke-width="18"
+            :color="plan.progress >= 100 ? '#67c23a' : '#409eff'"
+            :format="(p: number) => p >= 100 ? '✅ 已完成' : p + '%'"
+          />
+          <div class="plan-detail">
+            今日已刷 <strong>{{ plan.todayCount }}</strong> 题 / 目标 <strong>{{ plan.dailyGoal }}</strong> 题
+          </div>
+        </div>
+        <div class="plan-streak">
+          <div class="streak-value">{{ plan.streakDays }}</div>
+          <div class="streak-label">🔥 连续打卡天数</div>
+        </div>
+      </div>
+      <div v-if="plan.progress >= 100" class="plan-celebrate">
+        🎉 恭喜完成今日目标！坚持学习，每天进步一点点！
+      </div>
+    </el-card>
+
+    <!-- 设置每日目标弹窗 -->
+    <el-dialog v-model="showGoalDialog" title="设置每日刷题目标" width="400px" :close-on-click-modal="false">
+      <el-form label-width="100px">
+        <el-form-item label="每日目标">
+          <el-input-number v-model="goalInput" :min="1" :max="200" :step="5" />
+          <span style="margin-left: 8px; color: #909399;">题/天</span>
+        </el-form-item>
+        <el-form-item>
+          <el-text type="info" size="small">建议根据自身情况设置合理目标，坚持每天完成</el-text>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showGoalDialog = false">取消</el-button>
+        <el-button type="primary" :loading="goalSaving" @click="handleSaveGoal">保存</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 统计卡片 -->
     <el-row :gutter="16" class="stat-cards">
       <el-col :span="6">
@@ -84,8 +134,11 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
 import { useUserStore } from '@/stores/user'
-import { Promotion, WarningFilled, Trophy, MagicStick } from '@element-plus/icons-vue'
+import { Promotion, WarningFilled, Trophy, MagicStick, Calendar, Setting } from '@element-plus/icons-vue'
 import { getStatisticsOverview, getDailyTrend, getCourseStats } from '@/api/statistics'
+import { getLearningPlan, updateDailyGoal } from '@/api/learningPlan'
+import type { LearningPlanVO } from '@/api/learningPlan'
+import { ElMessage } from 'element-plus'
 import type { StatisticsOverview } from '@/api/statistics'
 import { use } from 'echarts/core'
 import { BarChart, RadarChart } from 'echarts/charts'
@@ -104,6 +157,31 @@ const stats = reactive<StatisticsOverview>({
   todayPractice: 0, streakDays: 0, wrongQuestionCount: 0, masteredCount: 0
 })
 
+// 学习计划
+const plan = reactive<LearningPlanVO>({
+  dailyGoal: 20, todayCount: 0, progress: 0, streakDays: 0, lastPracticeDate: null
+})
+const planLoading = ref(true)
+const showGoalDialog = ref(false)
+const goalInput = ref(20)
+const goalSaving = ref(false)
+
+const handleSaveGoal = async () => {
+  goalSaving.value = true
+  try {
+    const res = await updateDailyGoal(goalInput.value)
+    if (res.code === 0 && res.data) {
+      Object.assign(plan, res.data)
+      showGoalDialog.value = false
+      ElMessage.success('目标已更新')
+    }
+  } catch {
+    ElMessage.error('保存失败，请重试')
+  } finally {
+    goalSaving.value = false
+  }
+}
+
 const statsLoading = ref(true)
 const trendEmpty = ref(false)
 const courseEmpty = ref(false)
@@ -113,6 +191,19 @@ let trendChart: ECharts | null = null
 let courseChart: ECharts | null = null
 
 onMounted(async () => {
+  // 加载学习计划
+  try {
+    const planRes = await getLearningPlan()
+    if (planRes.code === 0 && planRes.data) {
+      Object.assign(plan, planRes.data)
+      goalInput.value = planRes.data.dailyGoal
+    }
+  } catch {
+    // 学习计划加载失败
+  } finally {
+    planLoading.value = false
+  }
+
   // 加载统计数据
   try {
     const res = await getStatisticsOverview()
@@ -198,6 +289,17 @@ const loadCourseChart = async () => {
 .stat-label { font-size: 13px; color: #909399; margin-top: 4px; }
 .chart-section { margin-bottom: 16px; }
 .chart-container { height: 280px; }
+.plan-card { margin-bottom: 16px; }
+.plan-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.plan-title { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; color: #303133; }
+.plan-content { display: flex; align-items: center; gap: 32px; }
+.plan-progress-area { flex: 1; }
+.plan-detail { margin-top: 8px; font-size: 14px; color: #606266; }
+.plan-detail strong { color: #409eff; font-size: 16px; }
+.plan-streak { text-align: center; min-width: 100px; }
+.streak-value { font-size: 36px; font-weight: 700; color: #e6a23c; line-height: 1; }
+.streak-label { font-size: 13px; color: #909399; margin-top: 4px; }
+.plan-celebrate { margin-top: 12px; padding: 8px 12px; background: #f0f9eb; border-radius: 6px; color: #67c23a; font-size: 14px; text-align: center; }
 .quick-links { margin-top: 8px; }
 .link-card { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; padding: 20px; }
 .link-card span { font-size: 14px; color: #606266; }
