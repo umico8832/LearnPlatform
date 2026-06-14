@@ -1,6 +1,7 @@
 package com.learnplatform.controller;
 
 import com.learnplatform.common.result.R;
+import com.learnplatform.dto.LearningReportVO;
 import com.learnplatform.dto.StatisticsVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.StatisticsService;
@@ -42,5 +43,11 @@ public class StatisticsController {
     @GetMapping("/course-stats")
     public R<List<Map<String, Object>>> getCourseStats(@AuthenticationPrincipal CustomUserDetails userDetails) {
         return R.ok(statisticsService.getCourseStats(userDetails.getUserId()));
+    }
+
+    @Operation(summary = "个人学习报告", description = "获取当前用户的月度学习报告（本月刷题量、正确率趋势、错题变化、考试成绩等）")
+    @GetMapping("/learning-report")
+    public R<LearningReportVO> getLearningReport(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(statisticsService.getLearningReport(userDetails.getUserId()));
     }
 }

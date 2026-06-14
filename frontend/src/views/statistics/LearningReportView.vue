@@ -1,0 +1,431 @@
+<template>
+  <div class="report-container">
+    <div class="report-header">
+      <h2>📊 个人学习报告</h2>
+      <p class="report-month">{{ currentMonthText }}</p>
+    </div>
+
+    <!-- 加载状态 -->
+    <div v-if="loading" v-loading="loading" style="height: 200px;"></div>
+
+    <template v-else>
+      <!-- 核心指标卡片 -->
+      <el-row :gutter="20" class="metric-row">
+        <el-col :xs="12" :sm="8" :md="4">
+          <el-card shadow="hover" class="metric-card">
+            <div class="metric-value primary">{{ report.monthTotalPractice }}</div>
+            <div class="metric-label">本月刷题</div>
+            <div class="metric-sub" :class="report.practiceGrowthRate >= 0 ? 'text-success' : 'text-danger'">
+              {{ report.practiceGrowthRate >= 0 ? '↑' : '↓' }} {{ Math.abs(report.practiceGrowthRate) }}%
+              <span class="vs-text">vs 上月 {{ report.lastMonthTotalPractice }}</span>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="8" :md="4">
+          <el-card shadow="hover" class="metric-card">
+            <div class="metric-value success">{{ report.monthCorrectRate }}%</div>
+            <div class="metric-label">本月正确率</div>
+            <div class="metric-sub text-muted">
+              {{ report.monthCorrectCount }}/{{ report.monthTotalPractice }} 对/总
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="8" :md="4">
+          <el-card shadow="hover" class="metric-card">
+            <div class="metric-value" :class="report.monthCorrectRate >= report.lastMonthCorrectRate ? 'success' : 'warning'">
+              {{ report.monthCorrectRate >= report.lastMonthCorrectRate ? '📈' : '📉' }}
+            </div>
+            <div class="metric-label">正确率变化</div>
+            <div class="metric-sub text-muted">
+              上月 {{ report.lastMonthCorrectRate }}%
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="8" :md="4">
+          <el-card shadow="hover" class="metric-card">
+            <div class="metric-value danger">{{ report.monthNewWrongCount }}</div>
+            <div class="metric-label">本月新增错题</div>
+            <div class="metric-sub text-muted">
+              已掌握 {{ report.monthMasteredCount }} 题
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="8" :md="4">
+          <el-card shadow="hover" class="metric-card">
+            <div class="metric-value primary">{{ report.monthExamCount }}</div>
+            <div class="metric-label">本月考试</div>
+            <div class="metric-sub text-muted">
+              平均 {{ report.monthExamAvgScore }} 分
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="8" :md="4">
+          <el-card shadow="hover" class="metric-card">
+            <div class="metric-value primary">{{ Object.values(report.questionTypeDistribution || {}).reduce((a, b) => a + b, 0) }}</div>
+            <div class="metric-label">本月题型覆盖</div>
+            <div class="metric-sub text-muted">
+              {{ Object.keys(report.questionTypeDistribution || {}).length }} 种题型
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <!-- 图表区域 -->
+      <el-row :gutter="20" class="chart-row">
+        <!-- 本月每日刷题趋势 -->
+        <el-col :xs="24" :lg="16">
+          <el-card shadow="hover">
+            <template #header>
+              <span class="chart-title">📈 本月每日刷题趋势</span>
+            </template>
+            <div v-if="report.dailyTrend && report.dailyTrend.length > 0">
+              <div ref="dailyChartRef" class="chart-container"></div>
+            </div>
+            <el-empty v-else description="暂无刷题数据" />
+          </el-card>
+        </el-col>
+
+        <!-- 题型分布 -->
+        <el-col :xs="24" :lg="8">
+          <el-card shadow="hover">
+            <template #header>
+              <span class="chart-title">📋 题型分布</span>
+            </template>
+            <div v-if="hasTypeData">
+              <div ref="typeChartRef" class="chart-container"></div>
+            </div>
+            <el-empty v-else description="暂无题型数据" />
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <!-- 课程正确率 -->
+      <el-row :gutter="20" class="chart-row">
+        <el-col :xs="24">
+          <el-card shadow="hover">
+            <template #header>
+              <span class="chart-title">📚 本月各课程正确率</span>
+            </template>
+            <div v-if="report.courseStats && report.courseStats.length > 0">
+              <div ref="courseChartRef" class="chart-container-lg"></div>
+            </div>
+            <el-empty v-else description="本月暂无课程刷题数据" />
+          </el-card>
+        </el-col>
+      </el-row>
+    </template>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { getLearningReport } from '@/api/statistics'
+import type { LearningReport } from '@/api/statistics'
+import { ElMessage } from 'element-plus'
+import { use } from 'echarts/core'
+import { BarChart, PieChart } from 'echarts/charts'
+import { GridComponent, LegendComponent, TooltipComponent, TitleComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+import type { ECharts } from 'echarts/core'
+import { init } from 'echarts/core'
+
+use([BarChart, PieChart, GridComponent, LegendComponent, TooltipComponent, TitleComponent, CanvasRenderer])
+
+const currentMonthText = computed(() => {
+  const now = new Date()
+  return `${now.getFullYear()} 年 ${now.getMonth() + 1} 月`
+})
+
+const loading = ref(true)
+const report = reactive<LearningReport>({
+  monthTotalPractice: 0,
+  monthCorrectCount: 0,
+  monthCorrectRate: 0,
+  monthNewWrongCount: 0,
+  monthMasteredCount: 0,
+  monthExamCount: 0,
+  monthExamAvgScore: 0,
+  lastMonthTotalPractice: 0,
+  lastMonthCorrectRate: 0,
+  practiceGrowthRate: 0,
+  dailyTrend: [],
+  courseStats: [],
+  questionTypeDistribution: {}
+})
+
+const hasTypeData = computed(() => {
+  const dist = report.questionTypeDistribution
+  return dist && Object.keys(dist).length > 0 && Object.values(dist).some(v => v > 0)
+})
+
+// Chart refs
+const dailyChartRef = ref<HTMLElement | null>(null)
+const typeChartRef = ref<HTMLElement | null>(null)
+const courseChartRef = ref<HTMLElement | null>(null)
+let dailyChart: ECharts | null = null
+let typeChart: ECharts | null = null
+let courseChart: ECharts | null = null
+
+function handleResize() {
+  dailyChart?.resize()
+  typeChart?.resize()
+  courseChart?.resize()
+}
+
+function initDailyChart() {
+  if (!dailyChartRef.value || !report.dailyTrend?.length) return
+  dailyChart = init(dailyChartRef.value)
+  const dates = report.dailyTrend.map(d => {
+    const parts = d.date.split('-')
+    return `${parts[1]}/${parts[2]}`
+  })
+  const corrects = report.dailyTrend.map(d => d.correct)
+  const wrongs = report.dailyTrend.map(d => d.wrong)
+
+  dailyChart.setOption({
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' }
+    },
+    legend: { data: ['答对', '答错'], top: 0, right: 0 },
+    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: dates,
+      axisLabel: { rotate: dates.length > 15 ? 45 : 0, fontSize: 11 }
+    },
+    yAxis: { type: 'value', minInterval: 1 },
+    series: [
+      {
+        name: '答对',
+        type: 'bar',
+        stack: 'total',
+        data: corrects,
+        itemStyle: { color: '#67c23a' },
+        barMaxWidth: 24
+      },
+      {
+        name: '答错',
+        type: 'bar',
+        stack: 'total',
+        data: wrongs,
+        itemStyle: { color: '#f56c6c' },
+        barMaxWidth: 24
+      }
+    ]
+  })
+}
+
+function initTypeChart() {
+  if (!typeChartRef.value || !hasTypeData.value) return
+  typeChart = init(typeChartRef.value)
+  const data = Object.entries(report.questionTypeDistribution)
+    .filter(([, v]) => v > 0)
+    .map(([name, value]) => ({ name, value }))
+
+  const colors = ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399']
+  typeChart.setOption({
+    tooltip: { trigger: 'item', formatter: '{b}: {c} 题 ({d}%)' },
+    legend: { orient: 'vertical', right: '5%', top: 'center' },
+    color: colors,
+    series: [{
+      type: 'pie',
+      radius: ['40%', '70%'],
+      center: ['40%', '50%'],
+      avoidLabelOverlap: false,
+      label: { show: false },
+      emphasis: {
+        label: { show: true, fontSize: 14, fontWeight: 'bold' }
+      },
+      data
+    }]
+  })
+}
+
+function initCourseChart() {
+  if (!courseChartRef.value || !report.courseStats?.length) return
+  courseChart = init(courseChartRef.value)
+  const names = report.courseStats.map(c => c.courseName)
+  const rates = report.courseStats.map(c => c.correctRate)
+  const totals = report.courseStats.map(c => c.total)
+
+  courseChart.setOption({
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: (params: unknown) => {
+        const list = params as Array<{ dataIndex: number }>
+        if (!list.length) return ''
+        const idx = list[0].dataIndex
+        return `${names[idx]}<br/>正确率: ${rates[idx]}%<br/>刷题量: ${totals[idx]} 题`
+      }
+    },
+    grid: { left: '3%', right: '4%', bottom: '8%', containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: names,
+      axisLabel: { rotate: names.length > 5 ? 30 : 0, fontSize: 12 }
+    },
+    yAxis: [
+      { type: 'value', name: '正确率(%)', max: 100, minInterval: 1 },
+      { type: 'value', name: '刷题量', minInterval: 1 }
+    ],
+    series: [
+      {
+        name: '正确率',
+        type: 'bar',
+        data: rates,
+        itemStyle: {
+          color: (params: { value: number }) => {
+            return params.value >= 80 ? '#67c23a' : params.value >= 60 ? '#e6a23c' : '#f56c6c'
+          }
+        },
+        barMaxWidth: 40,
+        label: { show: true, position: 'top', formatter: '{c}%', fontSize: 11 }
+      },
+      {
+        name: '刷题量',
+        type: 'bar',
+        yAxisIndex: 1,
+        data: totals,
+        itemStyle: { color: '#409eff', opacity: 0.5 },
+        barMaxWidth: 40
+      }
+    ]
+  })
+}
+
+onMounted(async () => {
+  window.addEventListener('resize', handleResize)
+  try {
+    const res = await getLearningReport()
+    if (res.code === 0 && res.data) {
+      Object.assign(report, res.data)
+    }
+  } catch {
+    ElMessage.error('加载学习报告失败')
+  } finally {
+    loading.value = false
+  }
+
+  await nextTick()
+  initDailyChart()
+  initTypeChart()
+  initCourseChart()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  dailyChart?.dispose()
+  typeChart?.dispose()
+  courseChart?.dispose()
+})
+</script>
+
+<style scoped>
+.report-container {
+  max-width: 1200px;
+}
+
+.report-header {
+  margin-bottom: 24px;
+}
+
+.report-header h2 {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.report-month {
+  margin: 0;
+  color: #909399;
+  font-size: 14px;
+}
+
+.metric-row {
+  margin-bottom: 20px;
+}
+
+.metric-row .el-col {
+  margin-bottom: 12px;
+}
+
+.metric-card {
+  text-align: center;
+  padding: 4px 0;
+}
+
+.metric-card .el-card__body {
+  padding: 16px 12px;
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.metric-value.primary { color: #409eff; }
+.metric-value.success { color: #67c23a; }
+.metric-value.warning { color: #e6a23c; }
+.metric-value.danger { color: #f56c6c; }
+
+.metric-label {
+  font-size: 13px;
+  color: #606266;
+  margin: 6px 0 4px;
+}
+
+.metric-sub {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.metric-sub.text-success { color: #67c23a; }
+.metric-sub.text-danger { color: #f56c6c; }
+.metric-sub.text-muted { color: #909399; }
+
+.vs-text {
+  font-size: 11px;
+  color: #c0c4cc;
+}
+
+.chart-row {
+  margin-bottom: 20px;
+}
+
+.chart-title {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.chart-container {
+  width: 100%;
+  height: 320px;
+}
+
+.chart-container-lg {
+  width: 100%;
+  height: 360px;
+}
+
+@media (max-width: 768px) {
+  .metric-value {
+    font-size: 22px;
+  }
+
+  .metric-label {
+    font-size: 12px;
+  }
+
+  .chart-container {
+    height: 260px;
+  }
+
+  .chart-container-lg {
+    height: 280px;
+  }
+}
+</style>

@@ -121,7 +121,7 @@ docker compose up -d
 - [x] Git 历史整理（提交记录规范、分支清晰）
 - [x] 后端刷题与错题本核心服务测试补充（`PracticeServiceTest`、`WrongQuestionServiceTest`）
 
-后续开发建议：按顺序继续完善“个人学习报告”，在个人中心或首页补充本月刷题量、正确率趋势、错题变化等学习报告；随后补充 GitHub Actions CI 和项目截图/演示素材。
+后续开发建议：可继续补充 GitHub Actions CI 或项目截图/演示素材，也可优化学习报告的 N+1 查询性能问题。
 
 建议 commit message: `feat(practice): 支持收藏题直接发起练习`
 

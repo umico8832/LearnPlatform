@@ -14,6 +14,49 @@
 
 ---
 
+## Round 40 - 2026-06-14
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+实现个人学习报告功能，在个人中心或独立页面展示本月刷题量、正确率趋势、错题变化、考试成绩和课程正确率等月度学习报告。
+
+### 完成内容
+- **后端 `LearningReportVO`**：个人学习报告数据传输对象，包含本月刷题量、正确率、上月环比、错题新增/掌握数、考试次数/平均分、每日趋势、各课程正确率、题型分布共 13 个维度。
+- **后端 `StatisticsService.getLearningReport()`**：聚合本月与上月刷题记录计算环比增长率；统计本月错题新增数和已掌握错题数；查询本月已完成考试的次数和平均分；生成本月每日刷题趋势（堆叠柱状图数据）；按课程统计正确率（含双轴图数据）；按题型统计刷题分布（饼图数据）。
+- **后端 `StatisticsController`**：新增 `GET /api/statistics/learning-report` 接口。
+- **前端 API**：`statistics.ts` 新增 `LearningReport` 类型和 `getLearningReport()` 方法。
+- **前端 `LearningReportView.vue`**：独立学习报告页面，包含 6 个核心指标卡片（本月刷题量+环比、正确率、正确率变化、新增错题、考试情况、题型覆盖）和 3 个 ECharts 图表（本月每日刷题趋势堆叠柱状图、题型分布环形图、各课程正确率+刷题量双轴柱状图），支持响应式布局和窗口 resize 自适应。
+- **路由与导航**：新增 `/learning-report` 路由，侧边栏"我的收藏"下方新增"学习报告"入口（DataLine 图标）。
+
+### 修改文件清单
+- 后端新增：`backend/src/main/java/com/learnplatform/dto/LearningReportVO.java`
+- 后端修改：`backend/src/main/java/com/learnplatform/service/StatisticsService.java`（注入 ExamRecordMapper + getLearningReport + getQuestionTypeName）
+- 后端修改：`backend/src/main/java/com/learnplatform/controller/StatisticsController.java`（新增接口）
+- 前端修改：`frontend/src/api/statistics.ts`（新增类型和方法）
+- 前端新增：`frontend/src/views/statistics/LearningReportView.vue`
+- 前端修改：`frontend/src/router/index.ts`（新增路由）
+- 前端修改：`frontend/src/components/layout/AppLayout.vue`（侧边栏入口 + DataLine 图标）
+
+### 验收结果
+- [x] `cd backend && mvn test`（45 tests，0 failures）
+- [x] `cd frontend && npm run build`（构建成功，621ms）
+- [x] 后端编译成功
+- [x] 前端 TypeScript 无错误
+- [x] `/api/statistics/learning-report` 路径匹配 SecurityConfig 权限规则（`/api/statistics/**` 需认证）
+
+### 遗留问题
+- 个人学习报告目前为独立页面，未嵌入个人中心（ProfileView）中。后续可在个人中心添加"查看学习报告"跳转按钮。
+- `getLearningReport()` 中 `questionMapper.selectById()` 对每条记录逐一查询，当数据量大时存在 N+1 性能问题，后续可优化为批量查询。
+- "个人学习报告"标记已完成，FUTURE.md #4 "个人学习报告" 待实现状态需更新。
+
+### 下轮建议
+- 更新 FUTURE.md 将"个人学习报告"标记为已完成，可继续补充 GitHub Actions CI 或项目截图素材。
+- 建议 commit message: `feat(statistics): 实现个人月度学习报告`
+
+---
+
 ## Round 39 - 2026-06-14
 
 ### 阶段

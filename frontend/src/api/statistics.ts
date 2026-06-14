@@ -66,3 +66,24 @@ export function getCourseStats() {
 export function getAdminStatisticsOverview() {
   return request.get<any, ApiResponse<AdminStatisticsOverview>>('/admin/statistics/overview')
 }
+
+export interface LearningReport {
+  monthTotalPractice: number
+  monthCorrectCount: number
+  monthCorrectRate: number
+  monthNewWrongCount: number
+  monthMasteredCount: number
+  monthExamCount: number
+  monthExamAvgScore: number
+  lastMonthTotalPractice: number
+  lastMonthCorrectRate: number
+  practiceGrowthRate: number
+  dailyTrend: DailyTrendItem[]
+  courseStats: CourseStatItem[]
+  questionTypeDistribution: Record<string, number>
+}
+
+/** 获取个人学习报告 */
+export function getLearningReport() {
+  return request.get<any, ApiResponse<LearningReport>>('/statistics/learning-report')
+}
