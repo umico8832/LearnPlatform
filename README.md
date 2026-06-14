@@ -214,6 +214,8 @@ docker compose down
 
 详见 [docs/ROADMAP.md](docs/ROADMAP.md)
 
+自动化测试的分层、范围和新增门槛见 [docs/TESTING.md](docs/TESTING.md)。
+
 | 阶段 | 名称 | 状态 |
 |:----:|------|:----:|
 | 0 | 项目规划 | ✅ |

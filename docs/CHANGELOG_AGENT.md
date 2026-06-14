@@ -14,6 +14,46 @@
 
 ---
 
+## Round 53 - 2026-06-14
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+收敛自动化测试策略，降低重复测试和多余测试依赖的长期维护成本。
+
+### 完成内容
+- 新增 `docs/TESTING.md`，明确后端与前端测试分层、必须新增测试的场景、通常不新增测试的场景及后续优先级。
+- 规定简单 CRUD API 每个导出函数通常只保留一个代表性契约用例，停止按参数组合堆叠等价测试。
+- 前端测试环境统一使用 `happy-dom`，移除未使用的 `jsdom` 开发依赖。
+- 更新 README、ROADMAP 与 HANDOFF，后续测试方向调整为真实 MySQL/Flyway 集成测试和少量关键 E2E 流程。
+- 保留现有稳定测试作为回归资产，不进行无收益的大规模删除。
+
+### 修改文件清单
+- 新增：`docs/TESTING.md`
+- 修改：`frontend/package.json`
+- 修改：`frontend/package-lock.json`
+- 修改：`README.md`
+- 修改：`docs/ROADMAP.md`
+- 修改：`docs/HANDOFF.md`
+- 修改：`docs/CHANGELOG_AGENT.md`
+
+### 验收结果
+- [x] `cd frontend && npm test`：21 个测试文件、187 个测试全部通过
+- [x] `cd frontend && npm run build`：生产构建成功
+- [x] `cd backend && mvn test -q`：151 个测试全部通过
+
+### 遗留问题
+- 尚未建立真实 MySQL/Flyway 集成测试和浏览器端 E2E 测试。
+
+### 下轮建议
+- 选择考试提交或刷题判分流程，先落地一条真实数据库集成测试。
+
+### 建议 commit message
+`docs(test): 明确测试分层与新增门槛`
+
+---
+
 ## Round 52 - 2026-06-14
 
 ### 阶段
