@@ -14,6 +14,37 @@
 
 ---
 
+## Round 50 - 2026-06-14
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+补充前端路由守卫（router guards）单元测试，覆盖认证重定向、管理员权限检查和页面标题设置等核心守卫逻辑。
+
+### 完成内容
+- **路由守卫测试（11 个）**：覆盖页面标题设置（1 个）、未登录用户访问需认证页面重定向（2 个）、未登录用户访问公开页面不拦截（2 个）、已登录用户访问登录/注册页重定向到首页（2 个）、管理员路由守卫——非 ADMIN 重定向（1 个）、ADMIN 用户可访问管理页（1 个）、未加载用户信息时先 fetchUserInfo（1 个）、fetchUserInfo 后仍无信息时重定向链（1 个）。
+- 使用 `createMemoryHistory` 创建独立 router 实例，通过 `vi.resetModules` + `vi.doMock` 隔离每个测试的 mock 状态。
+- store mock 使用 getter 语法（`get userInfo()`）确保 fetchUserInfo 后的值变更能被守卫感知。
+
+### 修改文件清单
+- 新增：`frontend/src/__tests__/router/guards.test.ts`（11 个测试）
+
+### 验收结果
+- [x] `cd frontend && npx vitest run` → 18 test files, 155 tests, 0 failures
+- [x] 新增 11 个测试（144 → 155），覆盖路由守卫核心逻辑
+- [x] 全部原有测试不受影响
+
+### 遗留问题
+- 前端页面级组件（PracticeSessionView、HomeView 等）尚未覆盖，需要更多 mocking 工作。
+- 项目截图（FUTURE.md #7）仍待补充，但为非阻塞演示素材。
+
+### 下轮建议
+- 可扩展前端测试覆盖到页面级组件，或进入 P3 远期规划。
+- 建议 commit message: `test(frontend): 补充路由守卫单元测试（11 个测试）`
+
+---
+
 ## Round 49 - 2026-06-14
 
 ### 阶段
