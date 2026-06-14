@@ -14,6 +14,47 @@
 
 ---
 
+## Round 44 - 2026-06-14
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+修复 JDK 26 下 `@AuthenticationPrincipal CustomUserDetails` 在 standalone MockMvc 中无法解析的兼容性问题，并补充 WrongQuestion、Statistics、Favorite 三个 Controller 的 MockMvc 集成测试。
+
+### 完成内容
+- **自定义 ArgumentResolver**：新建 `CustomUserDetailsArgumentResolver` 测试工具类，直接从 `SecurityContextHolder` ThreadLocal 中提取 `CustomUserDetails`，绕过 `AuthenticationPrincipalArgumentResolver` 在 standalone MockMvc + JDK 26 下的兼容性问题。
+- **PracticeControllerTest 修复**：将 `AuthenticationPrincipalArgumentResolver` 替换为 `CustomUserDetailsArgumentResolver`；`mockUser()` 改为直接设置 `SecurityContextHolder` ThreadLocal，不再依赖 `SecurityMockMvcRequestPostProcessors.authentication()`。**11 个测试全部通过**（之前 4 通过 7 失败）。
+- **WrongQuestionControllerTest（5 个测试）**：覆盖错题列表（默认/带筛选）、错题统计、更新掌握程度、移出错题本。
+- **StatisticsControllerTest（4 个测试）**：覆盖学习概览、每日趋势、课程统计、个人学习报告。
+- **FavoriteControllerTest（8 个测试）**：覆盖收藏/取消收藏、收藏状态检查、收藏列表分页、收藏 ID 列表。
+
+### 修改文件清单
+- 新增：`backend/src/test/java/com/learnplatform/controller/CustomUserDetailsArgumentResolver.java`
+- 修改：`backend/src/test/java/com/learnplatform/controller/PracticeControllerTest.java`（使用自定义 Resolver + SecurityContextHolder）
+- 新增：`backend/src/test/java/com/learnplatform/controller/WrongQuestionControllerTest.java`（5 个测试）
+- 新增：`backend/src/test/java/com/learnplatform/controller/StatisticsControllerTest.java`（4 个测试）
+- 新增：`backend/src/test/java/com/learnplatform/controller/FavoriteControllerTest.java`（8 个测试）
+
+### 验收结果
+- [x] `cd backend && mvn test` → 92 tests, 0 failures, 0 errors, BUILD SUCCESS
+- [x] `cd frontend && npm run build` → 构建成功（538ms）
+- [x] PracticeControllerTest：11/11 通过（Round 43 为 4/11）
+- [x] WrongQuestionControllerTest：5/5 通过
+- [x] StatisticsControllerTest：4/4 通过
+- [x] FavoriteControllerTest：8/8 通过
+- [x] 全部原有测试不受影响
+
+### 遗留问题
+- CommentController 使用 `@AuthenticationPrincipal Long userId`（非 CustomUser），需单独适配，暂未覆盖。
+- 前端仍缺少组件测试和端到端自动化测试。
+
+### 下轮建议
+- 可为 CommentController 添加测试（需创建 Long userId 的 ArgumentResolver），或补充 AdminXxxController 管理端接口测试。
+- 建议 commit message: `test(controller): 修复 JDK 26 @AuthenticationPrincipal 兼容性并补充 Controller 测试`
+
+---
+
 ## Round 43 - 2026-06-14
 
 ### 阶段

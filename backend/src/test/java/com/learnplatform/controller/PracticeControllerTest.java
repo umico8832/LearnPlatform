@@ -17,8 +17,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
-import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -56,15 +56,21 @@ class PracticeControllerTest {
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(practiceController)
                 .setControllerAdvice(new GlobalExceptionHandler())
-                .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
+                .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
                 .build();
     }
 
     private RequestPostProcessor mockUser(Long userId) {
-        CustomUserDetails details = new CustomUserDetails(userId, "testuser", "USER");
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                details, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
-        return SecurityMockMvcRequestPostProcessors.authentication(auth);
+        // 直接设置 SecurityContextHolder ThreadLocal，绕过 standalone MockMvc 无安全过滤器的问题
+        return request -> {
+            CustomUserDetails details = new CustomUserDetails(userId, "testuser", "USER");
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                    details, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(auth);
+            SecurityContextHolder.setContext(context);
+            return request;
+        };
     }
 
     // ======================== 获取练习题目 ========================

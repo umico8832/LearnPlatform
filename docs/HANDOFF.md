@@ -56,7 +56,7 @@
 16. **考试一致性**：提交行锁、超时状态保留、答题唯一约束、已发布试卷及引用题目不可变
 17. **数据库迁移**：Flyway 基线与增量迁移，已有数据库可自动基线升级
 18. **AI 用户级限流**：每日调用配额（默认 50 次/天），所有同步/流式接口受保护
-19. **后端核心测试**：45 个后端测试通过（JWT、判分、考试校验、刷题、错题本、试卷状态）
+19. **后端核心测试**：92 个后端测试通过（JWT、判分、考试校验、刷题、错题本、试卷状态、Controller MockMvc 集成测试覆盖 7 个 Controller）
 20. **多端适配**：移动端抽屉导航、答题界面触摸友好、统计图表响应式
 21. **题目难度自适应**：基于用户历史正确率的加权概率采样推荐
 22. **GitHub Actions CI**：后端测试 + 前端构建 + Docker 镜像验证
@@ -105,7 +105,7 @@ docker compose up -d
 ## 5. 当前遗留问题
 
 - 前端仍缺少组件测试和端到端自动化测试
-- 后端仍缺少 Controller/MockMvc 集成测试
+- CommentController 使用 `@AuthenticationPrincipal Long userId`（非 CustomUser），需单独适配测试
 - tokensUsed 字段暂未从上游 API 提取，仅记录调用次数
 - 管理端缺少按用户单独调整配额的能力（当前全局统一配额）
 - 项目截图未制作（非阻塞演示素材）
@@ -123,9 +123,9 @@ Phase 12 已基本完成。所有 P0-P2 功能、技术债务均已偿还。
 - 补充 README CI badge 展示
 - 补充项目截图/演示素材（FUTURE.md #7）
 - 进入 P3 远期规划：多租户、移动端 App、Redis 缓存、监控告警等
-- 补充 Controller/Service 集成测试（MockMvc）
+- 补充 CommentController 测试和 AdminXxxController 管理端接口测试
 
-建议 commit message: `ci(github): 新增 GitHub Actions CI 流水线`
+建议 commit message: `test(controller): 修复 JDK 26 @AuthenticationPrincipal 兼容性并补充 Controller 测试`
 
 ---
 
@@ -158,7 +158,7 @@ Phase 12 已基本完成。所有 P0-P2 功能、技术债务均已偿还。
 
 当前阶段：Phase 0-12 基本完成，P0-P2 功能全部实现。
 
-已完成模块：用户鉴权、课程知识点、题库、刷题判分（含填空简答增强）、错题本（含重练）、试卷考试、AI 功能（含流式输出与配额管理）、统计可视化（含个人学习报告）、质量提升、部署简历、收藏题练习、Excel 导入导出、学习计划、题目评论、多端适配、难度自适应、管理端用户管理、后端核心测试（45 个）、GitHub Actions CI。
+已完成模块：用户鉴权、课程知识点、题库、刷题判分（含填空简答增强）、错题本（含重练）、试卷考试、AI 功能（含流式输出与配额管理）、统计可视化（含个人学习报告）、质量提升、部署简历、收藏题练习、Excel 导入导出、学习计划、题目评论、多端适配、难度自适应、管理端用户管理、后端核心测试（92 个）、GitHub Actions CI。
 后续扩展方向：见 docs/FUTURE.md；可补充项目截图或进入 P3 远期规划。
 
 本地运行方式：
