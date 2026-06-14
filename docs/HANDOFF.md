@@ -57,6 +57,7 @@
 17. **数据库迁移**：Flyway 基线与增量迁移，已有数据库可自动基线升级
 18. **AI 用户级限流**：每日调用配额（默认 50 次/天），所有同步/流式接口受保护
 19. **后端核心测试**：151 个后端测试通过（JWT、判分、考试校验、刷题、错题本、试卷状态、Controller MockMvc 集成测试覆盖 10 个 Controller）
+23. **前端 Vitest 测试**：29 个前端测试通过（auth 工具函数 9 个、user Store 7 个、MarkdownRenderer 组件 10 个、NotFoundView 组件 3 个），CI 已集成 `npm test`
 20. **多端适配**：移动端抽屉导航、答题界面触摸友好、统计图表响应式
 21. **题目难度自适应**：基于用户历史正确率的加权概率采样推荐
 22. **GitHub Actions CI**：后端测试 + 前端构建 + Docker 镜像验证
@@ -104,7 +105,7 @@ docker compose up -d
 
 ## 5. 当前遗留问题
 
-- 前端仍缺少组件测试和端到端自动化测试
+- 前端页面级组件（PracticeSessionView、HomeView 等）尚未覆盖，需要更多 mocking 工作
 - tokensUsed 字段暂未从上游 API 提取，仅记录调用次数
 - 管理端缺少按用户单独调整配额的能力（当前全局统一配额）
 - 项目截图未制作（非阻塞演示素材）
@@ -119,10 +120,9 @@ docker compose up -d
 Phase 12 已基本完成。所有 P0-P2 功能、技术债务均已偿还。
 
 后续可选方向：
-- 补充 README CI badge 展示
+- 扩展前端测试覆盖（页面级组件、API 模块、router guards）
 - 补充项目截图/演示素材（FUTURE.md #7）
 - 进入 P3 远期规划：多租户、移动端 App、Redis 缓存、监控告警等
-- 补充前端 Vitest 组件测试或 E2E 测试
 
 建议 commit message: `test(controller): 补充 AdminUser/AdminCourse/AdminKnowledgePoint Controller 测试`
 
@@ -157,8 +157,8 @@ Phase 12 已基本完成。所有 P0-P2 功能、技术债务均已偿还。
 
 当前阶段：Phase 0-12 基本完成，P0-P2 功能全部实现。
 
-已完成模块：用户鉴权、课程知识点、题库、刷题判分（含填空简答增强）、错题本（含重练）、试卷考试、AI 功能（含流式输出与配额管理）、统计可视化（含个人学习报告）、质量提升、部署简历、收藏题练习、Excel 导入导出、学习计划、题目评论、多端适配、难度自适应、管理端用户管理、后端核心测试（92 个）、GitHub Actions CI。
-后续扩展方向：见 docs/FUTURE.md；可补充项目截图或进入 P3 远期规划。
+已完成模块：用户鉴权、课程知识点、题库、刷题判分（含填空简答增强）、错题本（含重练）、试卷考试、AI 功能（含流式输出与配额管理）、统计可视化（含个人学习报告）、质量提升、部署简历、收藏题练习、Excel 导入导出、学习计划、题目评论、多端适配、难度自适应、管理端用户管理、后端核心测试（151 个）、前端 Vitest 测试（29 个）、GitHub Actions CI。
+后续扩展方向：见 docs/FUTURE.md；可扩展前端测试覆盖或进入 P3 远期规划。
 
 本地运行方式：
 - MySQL: sudo /usr/local/mysql/support-files/mysql.server start

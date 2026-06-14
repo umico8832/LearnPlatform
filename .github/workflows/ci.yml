@@ -49,7 +49,7 @@ jobs:
         run: mvn clean test -B
 
   frontend:
-    name: Frontend Build
+    name: Frontend Test & Build
     runs-on: ubuntu-latest
 
     steps:
@@ -66,6 +66,10 @@ jobs:
       - name: Install dependencies
         working-directory: frontend
         run: npm ci
+
+      - name: Run tests
+        working-directory: frontend
+        run: npm test
 
       - name: Type check
         working-directory: frontend

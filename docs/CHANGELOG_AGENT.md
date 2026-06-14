@@ -14,6 +14,47 @@
 
 ---
 
+## Round 47 - 2026-06-14
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+搭建前端 Vitest 测试框架并补充关键模块的单元测试，填补前端 0 测试的空白。
+
+### 完成内容
+- **Vitest 框架接入**：安装 `vitest`、`happy-dom`、`@vue/test-utils`、`jsdom`，创建独立的 `vitest.config.ts` 配置文件（避免与 Vite 8 的 `test` 字段冲突），在 `package.json` 中新增 `test` 和 `test:watch` 脚本。
+- **auth 工具函数测试（9 个）**：覆盖 `getToken`、`setToken`、`removeToken`、`isAuthenticated` 四个函数，验证 localStorage 读写和边界情况（空 token）。
+- **user Store 测试（7 个）**：覆盖 `useUserStore` 的初始状态、`setLoginInfo`（token+userInfo 设置与 localStorage 持久化）、`clearLoginInfo`（清除状态与 localStorage）、`isLoggedIn`（登录状态判断）、`fetchUserInfo`（无 token 安全退出）。
+- **MarkdownRenderer 组件测试（10 个）**：覆盖空内容、纯文本、粗体、标题、列表、代码块、链接、blockquote 渲染，以及 XSS 防护验证（script 注入、onerror 事件注入均被 DOMPurify 过滤）。
+- **NotFoundView 组件测试（3 个）**：覆盖 404 标题、错误提示文案、返回首页按钮。
+- **GitHub Actions CI 更新**：Frontend Job 从"Frontend Build"更名为"Frontend Test & Build"，在 Type check 前新增 `npm test` 步骤。
+
+### 修改文件清单
+- 新增：`frontend/vitest.config.ts`
+- 新增：`frontend/src/__tests__/utils/auth.test.ts`（9 个测试）
+- 新增：`frontend/src/__tests__/stores/user.test.ts`（7 个测试）
+- 新增：`frontend/src/__tests__/components/MarkdownRenderer.test.ts`（10 个测试）
+- 新增：`frontend/src/__tests__/components/NotFoundView.test.ts`（3 个测试）
+- 修改：`frontend/package.json`（新增 vitest/jsdom/happy-dom/@vue/test-utils 依赖 + test/test:watch 脚本）
+- 修改：`.github/workflows/ci.yml`（新增 frontend 测试步骤）
+
+### 验收结果
+- [x] `cd frontend && npm test` → 4 test files, 29 tests, 0 failures, BUILD SUCCESS
+- [x] `cd backend && mvn test` → 151 tests, 0 failures, BUILD SUCCESS（未受影响）
+- [x] `.github/workflows/ci.yml` YAML 格式正确
+- [x] `cd frontend && npm run build` → 构建成功
+
+### 遗留问题
+- 前端页面级组件（PracticeSessionView、HomeView 等）尚未覆盖，因它们依赖 Element Plus 组件和 ECharts，需要更多 mocking 工作。
+- 项目截图（FUTURE.md #7）仍待补充，但为非阻塞演示素材。
+
+### 下轮建议
+- 可继续扩展前端测试覆盖（如 router guards、API 模块、页面级组件），或进入 P3 远期规划。
+- 建议 commit message: `test(frontend): 搭建 Vitest 测试框架并补充前端单元测试`
+
+---
+
 ## Round 46 - 2026-06-14
 
 ### 阶段
