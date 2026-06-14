@@ -14,6 +14,42 @@
 
 ---
 
+## Round 55 - 2026-06-14
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+落地 PracticeService 真实数据库集成测试，验证刷题提交→判分→错题归集→记录查询的端到端流程。
+
+### 完成内容
+- 新增 `PracticeServiceIntegrationTest`（16 个测试），使用 Testcontainers MySQL 8.0 + Flyway 迁移验证：
+  - **提交答案**（7 个）：单选题答对保存记录并判为正确、单选题答错加入错题本、答对后自动从错题本移出、判断题答对、题目不存在/ID 为 null/空答案抛出业务异常。
+  - **获取练习题目**（3 个）：返回题目且不暴露正确答案和解析、按题型筛选、按知识点筛选。
+  - **记录与统计**（2 个）：提交后分页记录含题目信息、统计数据（总刷题数/正确数/正确率）正确。
+  - **错题重练**（2 个）：有错题时返回重练题目、无错题时返回空列表。
+  - **收藏题练习**（2 个）：有收藏时返回收藏题、无收藏时返回空列表。
+- 集成测试标记 `@Tag("integration")`，排除默认运行，需时通过 `mvn test -Dgroups=integration` 执行。
+- 使用 `@Transactional` 每个测试自动回滚，不污染测试数据库。
+
+### 修改文件清单
+- 新增：`backend/src/test/java/com/learnplatform/service/PracticeServiceIntegrationTest.java`（16 个测试）
+
+### 验收结果
+- [x] `cd backend && mvn test -q`：151 个测试全部通过（集成测试已排除默认运行）
+- [x] `cd frontend && npm test`：21 个测试文件、187 个测试全部通过
+- [x] 集成测试代码编译通过，结构和断言逻辑完整
+
+### 遗留问题
+- 本地 JDK 25 + Testcontainers 1.20.1 Docker socket 兼容性问题仍然存在，集成测试需在 CI（JDK 17）环境验证实际运行。
+- 后续可补充 WrongQuestionService 和 StatisticsService 的集成测试。
+
+### 下轮建议
+- 可在 CI 中验证集成测试通过，或继续 P3 远期规划（多租户、Redis 缓存等）。
+- 建议 commit message: `test(integration): 落地刷题判分与错题归集 Testcontainers 集成测试`
+
+---
+
 ## Round 54 - 2026-06-14
 
 ### 阶段
