@@ -14,6 +14,40 @@
 
 ---
 
+## Round 56 - 2026-06-14
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+补充 WrongQuestionService Testcontainers 集成测试，验证错题本核心业务流程。
+
+### 完成内容
+- 新增 `WrongQuestionServiceIntegrationTest`（16 个测试），使用 Testcontainers MySQL 8.0 + Flyway 迁移验证：
+  - **加入错题本**（3 个）：新题目首次加入 wrongCount=1、同一题重复答错 wrongCount 递增、已掌握(masteryLevel=2)的题再次答错重置为未掌握(0)。
+  - **获取错题列表**（3 个）：分页返回含题目和课程信息、按掌握程度筛选、按课程筛选。
+  - **更新掌握程度**（3 个）：成功更新、记录不存在抛出业务异常、越权操作抛出业务异常。
+  - **移出错题本**（3 个）：逻辑删除成功、记录不存在抛出业务异常、越权操作抛出业务异常。
+  - **答对自动移出**（2 个）：有记录时成功移出、无记录时无异常。
+  - **错题统计**（2 个）：返回正确统计信息和课程分布、空错题本返回零值统计。
+
+### 修改文件清单
+- 新增：`backend/src/test/java/com/learnplatform/service/WrongQuestionServiceIntegrationTest.java`（16 个测试）
+
+### 验收结果
+- [x] `cd backend && mvn test -q`：151 个测试全部通过（集成测试已排除默认运行）
+- [x] `cd frontend && npm test`：21 个测试文件、187 个测试全部通过
+- [x] 集成测试代码编译通过，结构和断言逻辑完整
+
+### 遗留问题
+- 本地 JDK 25 + Testcontainers 1.20.1 Docker socket 兼容性问题仍然存在，集成测试需在 CI（JDK 17）环境验证实际运行。
+
+### 下轮建议
+- 可在 CI 中验证集成测试通过，或继续补充 StatisticsService 集成测试。
+- 建议 commit message: `test(integration): 落地错题本核心流程 Testcontainers 集成测试`
+
+---
+
 ## Round 55 - 2026-06-14
 
 ### 阶段
