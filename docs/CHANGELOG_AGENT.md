@@ -14,6 +14,46 @@
 
 ---
 
+## Round 49 - 2026-06-14
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+补充剩余 6 个前端 API 模块单元测试（adminUser, comment, wrongQuestion, learningPlan, question, ai），完成全部 API 模块测试覆盖。
+
+### 完成内容
+- **adminUser API 测试（9 个）**：覆盖 `getAdminUserList`（2 个：分页/筛选）、`createAdminUser`（2 个：基础/指定角色）、`updateUserRole`（1 个）、`updateUserStatus`（2 个：启用/禁用）、`resetUserPassword`（1 个）、`deleteAdminUser`（1 个）、`getAdminUserStats`（1 个）。
+- **comment API 测试（7 个）**：覆盖 `getComments`（2 个：带数据/不同ID）、`addComment`（2 个：顶级评论/回复）、`deleteComment`（1 个）、`toggleLike`（1 个）、`getCommentCount`（1 个）。
+- **wrongQuestion API 测试（7 个）**：覆盖 `getWrongQuestions`（3 个：分页/筛选/无参）、`getWrongQuestionStats`（1 个）、`updateMasteryLevel`（2 个：已掌握/未掌握）、`removeWrongQuestion`（1 个）。
+- **learningPlan API 测试（4 个）**：覆盖 `getLearningPlan`（2 个：正常/null lastPracticeDate）、`updateDailyGoal`（2 个：正常/小目标值）。
+- **question API 测试（12 个）**：覆盖 `getQuestionPage`（2 个：分页/筛选）、`getQuestionById`（1 个）、`getAdminQuestionPage`（2 个：基础/多筛选）、`getAdminQuestionById`（1 个）、`createQuestion`（1 个）、`updateQuestion`（1 个）、`deleteQuestion`（1 个）、`exportQuestions`（2 个：带筛选/无参）、`downloadTemplate`（1 个）、`importQuestions`（1 个：FormData+结果验证）。
+- **ai API 测试（14 个）**：覆盖 `getExplanation`（1 个）、`getVariant`（1 个）、`getReviewSuggestion`（2 个：无参/指定课程）、`getSummary`（1 个）、`getAiUsage`（1 个）、`streamQuestionAi`（4 个：SSE 正常/500 错误/401 过期/body 空）、`streamReviewSuggestion`（2 个：指定课程/无课程ID）。验证 AI API 的 `.then(res => res.data)` 解包行为和 fetch SSE 流式读取。
+
+### 修改文件清单
+- 新增：`frontend/src/__tests__/api/adminUser.test.ts`（9 个测试）
+- 新增：`frontend/src/__tests__/api/comment.test.ts`（7 个测试）
+- 新增：`frontend/src/__tests__/api/wrongQuestion.test.ts`（7 个测试）
+- 新增：`frontend/src/__tests__/api/learningPlan.test.ts`（4 个测试）
+- 新增：`frontend/src/__tests__/api/question.test.ts`（12 个测试）
+- 新增：`frontend/src/__tests__/api/ai.test.ts`（14 个测试）
+
+### 验收结果
+- [x] `cd frontend && npx vitest run` → 17 test files, 144 tests, 0 failures
+- [x] 新增 53 个测试（91 → 144），覆盖全部 13 个前端 API 模块
+- [x] AI 流式 API 使用 fetch+ReadableStream mock 正确测试 SSE 事件解析
+
+### 遗留问题
+- 前端页面级组件（PracticeSessionView、HomeView 等）尚未覆盖，需要更多 mocking 工作。
+- 项目截图（FUTURE.md #7）仍待补充，但为非阻塞演示素材。
+- router guards 测试可后续补充。
+
+### 下轮建议
+- 可扩展前端测试覆盖到 router guards 和页面级组件，或进入 P3 远期规划。
+- 建议 commit message: `test(frontend): 补充剩余 6 个 API 模块单元测试（53 个测试）`
+
+---
+
 ## Round 48 - 2026-06-14
 
 ### 阶段

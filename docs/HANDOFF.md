@@ -57,7 +57,7 @@
 17. **数据库迁移**：Flyway 基线与增量迁移，已有数据库可自动基线升级
 18. **AI 用户级限流**：每日调用配额（默认 50 次/天），所有同步/流式接口受保护
 19. **后端核心测试**：151 个后端测试通过（JWT、判分、考试校验、刷题、错题本、试卷状态、Controller MockMvc 集成测试覆盖 10 个 Controller）
-23. **前端 Vitest 测试**：91 个前端测试通过（auth 工具函数 9 个、user Store 7 个、MarkdownRenderer 组件 10 个、NotFoundView 组件 3 个、Practice API 14 个、Exam API 14 个、Favorite API 9 个、Course API 9 个、KnowledgePoint API 7 个、Statistics API 6 个、User API 3 个），CI 已集成 `npm test`
+23. **前端 Vitest 测试**：144 个前端测试通过（auth 工具函数 9 个、user Store 7 个、MarkdownRenderer 组件 10 个、NotFoundView 组件 3 个、Practice API 14 个、Exam API 14 个、Favorite API 9 个、Course API 9 个、KnowledgePoint API 7 个、Statistics API 6 个、User API 3 个、AdminUser API 9 个、Comment API 7 个、WrongQuestion API 7 个、LearningPlan API 4 个、Question API 12 个、AI API 14 个），CI 已集成 `npm test`
 20. **多端适配**：移动端抽屉导航、答题界面触摸友好、统计图表响应式
 21. **题目难度自适应**：基于用户历史正确率的加权概率采样推荐
 22. **GitHub Actions CI**：后端测试 + 前端构建 + Docker 镜像验证
@@ -106,7 +106,6 @@ docker compose up -d
 ## 5. 当前遗留问题
 
 - 前端页面级组件（PracticeSessionView、HomeView 等）尚未覆盖，需要更多 mocking 工作
-- 剩余 API 模块测试（adminUser, comment, wrongQuestion, learningPlan, question, ai）可后续补充
 - tokensUsed 字段暂未从上游 API 提取，仅记录调用次数
 - 管理端缺少按用户单独调整配额的能力（当前全局统一配额）
 - 项目截图未制作（非阻塞演示素材）
@@ -118,15 +117,14 @@ docker compose up -d
 
 任务名称：Phase 12 后续 — 体验增强收尾与远期规划
 
-Phase 12 已基本完成。所有 P0-P2 功能、技术债务均已偿还。
+Phase 12 已基本完成。所有 P0-P2 功能、技术债务均已偿还。前端全部 13 个 API 模块测试已覆盖。
 
 后续可选方向：
-- 补充剩余 API 模块测试（adminUser, comment, wrongQuestion, learningPlan, question, ai）
 - 扩展前端测试覆盖到 router guards 和页面级组件
 - 补充项目截图/演示素材（FUTURE.md #7）
 - 进入 P3 远期规划：多租户、移动端 App、Redis 缓存、监控告警等
 
-建议 commit message: `test(frontend): 补充 7 个 API 模块单元测试（62 个测试）`
+建议 commit message: `test(frontend): 补充剩余 6 个 API 模块单元测试（53 个测试）`
 
 ---
 
