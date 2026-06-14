@@ -14,6 +14,58 @@
 
 ---
 
+## Round 59 - 2026-06-14
+
+### 阶段
+Phase 12 → P3 远期规划
+
+### 本轮目标
+实现学习路径推荐功能（FUTURE.md P3 #14 学习路径推荐），根据用户在各知识点的练习表现生成个性化学习路径。
+
+### 完成内容
+- **后端 `LearningPathVO`**：学习路径推荐 VO，包含 PathStep（知识点优先级排序步骤）和 CourseOverview（课程掌握概况）两个内部类。
+- **后端 `LearningPathService`**：核心学习路径推荐服务：
+  - **知识点掌握分析**：遍历所有知识点，关联用户练习记录和错题数据，计算正确率、练习次数、错题数。
+  - **四级掌握状态**：MASTERED（≥70%）、NEEDS_REVIEW（50-70%）、WEAK（<50%）、NOT_STARTED（未练习）。
+  - **优先级评分算法**：WEAK 最高优先级（70+）、NOT_STARTED 中等（60）、NEEDS_REVIEW 中等（40+）、MASTERED 最低（5+），综合考虑正确率偏差和错题数量。
+  - **个性化推荐建议**：根据掌握状态和数据生成针对性文字建议。
+  - **课程筛选**：支持按课程 ID 筛选，null 时分析全部课程。
+  - **课程概况**：按课程分组统计掌握率、知识点覆盖数、练习量，按掌握率升序排列（薄弱课程优先）。
+- **后端 `StatisticsController`**：新增 `GET /api/statistics/learning-path?courseId=` 接口。
+- **前端 `statistics.ts`**：新增 LearningPathStep、LearningPathCourseOverview、LearningPath 类型定义和 `getLearningPath()` API 方法。
+- **前端 `LearningPathView.vue`**：完整的学习路径推荐页面：
+  - 课程下拉筛选 + 刷新按钮
+  - 四个概览统计卡片（总体掌握率、知识点总数、已掌握、需加强）
+  - 各课程掌握概况网格（进度条 + 掌握数/总数 + 练习量）
+  - 学习路径步骤表格（优先级序号 + 知识点 + 掌握状态标签 + 正确率 + 练习/错题数 + 学习建议）
+  - 状态筛选切换（全部/薄弱/需复习/未开始/已掌握）
+  - 响应式布局支持
+- **前端路由和导航**：router 新增 `/learning-path` 路由，侧边栏新增"🗺️ 学习路径"菜单项（Guide 图标）。
+
+### 修改文件清单
+- 新增：`backend/src/main/java/com/learnplatform/dto/LearningPathVO.java`
+- 新增：`backend/src/main/java/com/learnplatform/service/LearningPathService.java`
+- 修改：`backend/src/main/java/com/learnplatform/controller/StatisticsController.java`（注入 LearningPathService + 新增接口）
+- 修改：`frontend/src/api/statistics.ts`（新增类型 + API 方法）
+- 新增：`frontend/src/views/statistics/LearningPathView.vue`
+- 修改：`frontend/src/router/index.ts`（新增路由）
+- 修改：`frontend/src/components/layout/AppLayout.vue`（新增侧边栏菜单项 + Guide 图标）
+
+### 验收结果
+- [x] `cd backend && mvn test`：151 个测试全部通过
+- [x] `cd frontend && npm run build`：构建成功（642ms）
+- [x] 后端编译成功，无错误
+- [x] 前端 TypeScript 无错误
+
+### 遗留问题
+- 无
+
+### 下轮建议
+- 可继续 P3 远期规划中的其他项目，或偿还项目截图素材。
+- 建议 commit message: `feat(statistics): 实现学习路径推荐功能`
+
+---
+
 ## Round 58 - 2026-06-14
 
 ### 阶段

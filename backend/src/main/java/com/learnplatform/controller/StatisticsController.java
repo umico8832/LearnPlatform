@@ -1,9 +1,11 @@
 package com.learnplatform.controller;
 
 import com.learnplatform.common.result.R;
+import com.learnplatform.dto.LearningPathVO;
 import com.learnplatform.dto.LearningReportVO;
 import com.learnplatform.dto.StatisticsVO;
 import com.learnplatform.security.CustomUserDetails;
+import com.learnplatform.service.LearningPathService;
 import com.learnplatform.service.StatisticsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,9 +24,12 @@ import java.util.Map;
 public class StatisticsController {
 
     private final StatisticsService statisticsService;
+    private final LearningPathService learningPathService;
 
-    public StatisticsController(StatisticsService statisticsService) {
+    public StatisticsController(StatisticsService statisticsService,
+                                LearningPathService learningPathService) {
         this.statisticsService = statisticsService;
+        this.learningPathService = learningPathService;
     }
 
     @Operation(summary = "学习概览", description = "获取当前用户的学习统计数据（总刷题、正确率等）")
@@ -49,5 +54,13 @@ public class StatisticsController {
     @GetMapping("/learning-report")
     public R<LearningReportVO> getLearningReport(@AuthenticationPrincipal CustomUserDetails userDetails) {
         return R.ok(statisticsService.getLearningReport(userDetails.getUserId()));
+    }
+
+    @Operation(summary = "学习路径推荐", description = "根据用户在各知识点的练习表现，生成个性化学习路径推荐（可按课程筛选）")
+    @GetMapping("/learning-path")
+    public R<LearningPathVO> getLearningPath(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(required = false) Long courseId) {
+        return R.ok(learningPathService.getLearningPath(userDetails.getUserId(), courseId));
     }
 }

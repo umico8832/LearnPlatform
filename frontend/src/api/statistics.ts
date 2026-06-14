@@ -87,3 +87,45 @@ export interface LearningReport {
 export function getLearningReport() {
   return request.get<any, ApiResponse<LearningReport>>('/statistics/learning-report')
 }
+
+// ======================== 学习路径推荐 ========================
+
+export interface LearningPathStep {
+  order: number
+  knowledgePointId: number
+  knowledgePointName: string
+  courseId: number
+  courseName: string
+  parentId: number | null
+  correctRate: number
+  totalAttempts: number
+  wrongCount: number
+  masteryStatus: 'MASTERED' | 'NEEDS_REVIEW' | 'WEAK' | 'NOT_STARTED'
+  priorityScore: number
+  recommendation: string
+}
+
+export interface LearningPathCourseOverview {
+  courseId: number
+  courseName: string
+  correctRate: number
+  totalAttempts: number
+  knowledgePointCount: number
+  masteredPointCount: number
+}
+
+export interface LearningPath {
+  courseName: string
+  overallMastery: number
+  totalKnowledgePoints: number
+  masteredCount: number
+  weakCount: number
+  steps: LearningPathStep[]
+  courseOverviews: LearningPathCourseOverview[]
+}
+
+/** 获取学习路径推荐 */
+export function getLearningPath(courseId?: number) {
+  const params = courseId ? { courseId } : {}
+  return request.get<any, ApiResponse<LearningPath>>('/statistics/learning-path', { params })
+}

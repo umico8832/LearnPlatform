@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 12 — 体验增强迭代（基本完成，P3 AI 智能组卷已实现）
+当前阶段：Phase 12 — 体验增强迭代（基本完成，P3 AI 智能组卷 + 学习路径推荐已实现）
 
 阶段状态：
 - [x] Phase 0：项目规划 ✅
@@ -31,7 +31,7 @@
 - [x] Phase 9：统计可视化 ✅
 - [x] Phase 10：质量提升 ✅（参数校验、接口文档、前端体验优化、日志规范化、SQL优化、安全检查）
 - [x] Phase 11：部署与简历 ✅（项目截图为非阻塞演示素材）
-- [x] Phase 12：体验增强迭代（✅ 基本完成：AI 题目助手、管理端统计、AI 流式输出、用户个人中心、错题重练、收藏题练习、Excel 导入导出、学习计划、AI 调用日志、核心业务可信度修复、后端核心服务测试、社区评论、多端适配、题目难度自适应、填空简答判分增强、个人学习报告、GitHub Actions CI、CommentController/AdminExam/AdminQuestion Controller 测试、CommentRequest @Max→@Size 修复、AdminUser/AdminCourse/AdminKnowledgePoint Controller 测试、前端 API 模块测试 7 个模块 62 个测试、Testcontainers 集成测试 ExamService 10 个 + PracticeService 16 个 + WrongQuestionService 16 个 + StatisticsService 10 个、AI 智能组卷）
+- [x] Phase 12：体验增强迭代（✅ 基本完成：AI 题目助手、管理端统计、AI 流式输出、用户个人中心、错题重练、收藏题练习、Excel 导入导出、学习计划、AI 调用日志、核心业务可信度修复、后端核心服务测试、社区评论、多端适配、题目难度自适应、填空简答判分增强、个人学习报告、GitHub Actions CI、CommentController/AdminExam/AdminQuestion Controller 测试、CommentRequest @Max→@Size 修复、AdminUser/AdminCourse/AdminKnowledgePoint Controller 测试、前端 API 模块测试 7 个模块 62 个测试、Testcontainers 集成测试 ExamService 10 个 + PracticeService 16 个 + WrongQuestionService 16 个 + StatisticsService 10 个、AI 智能组卷、学习路径推荐）
 
 ---
 
@@ -125,7 +125,7 @@ Phase 12 已基本完成。所有 P0-P2 功能、技术债务均已偿还。现�
 - 在 CI 中验证集成测试通过，或升级 Testcontainers 版本解决 JDK 25 兼容问题
 - 建立登录、刷题、错题复习、考试等少量关键 E2E 流程
 - 补充项目截图/演示素材（FUTURE.md #7）
-- 进入 P3 远期规划：学习路径推荐、Redis 缓存、监控告警等
+- 进入 P3 远期规划：知识图谱可视化、Redis 缓存、监控告警、多租户等
 
 建议 commit message: `feat(exam): 实现 AI 智能组卷功能`
 
