@@ -129,3 +129,42 @@ export function getLearningPath(courseId?: number) {
   const params = courseId ? { courseId } : {}
   return request.get<any, ApiResponse<LearningPath>>('/statistics/learning-path', { params })
 }
+
+// ======================== 知识图谱 ========================
+
+export interface KnowledgeGraphNode {
+  id: number
+  name: string
+  courseId: number
+  courseName: string
+  parentId: number | null
+  nodeType: 'root' | 'parent' | 'leaf'
+  masteryLevel: number
+  accuracy: number
+  practiceCount: number
+  wrongCount: number
+  category: string
+}
+
+export interface KnowledgeGraphEdge {
+  source: number
+  target: number
+  relationType: string
+}
+
+export interface KnowledgeGraphCourse {
+  id: number
+  name: string
+}
+
+export interface KnowledgeGraph {
+  nodes: KnowledgeGraphNode[]
+  edges: KnowledgeGraphEdge[]
+  courses: KnowledgeGraphCourse[]
+}
+
+/** 获取知识图谱数据 */
+export function getKnowledgeGraph(courseId?: number) {
+  const params = courseId ? { courseId } : {}
+  return request.get<any, ApiResponse<KnowledgeGraph>>('/statistics/knowledge-graph', { params })
+}

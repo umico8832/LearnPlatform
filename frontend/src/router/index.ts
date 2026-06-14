@@ -94,6 +94,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '学习路径' },
       },
       {
+        path: 'knowledge-graph',
+        name: 'KnowledgeGraph',
+        component: () => import('@/views/statistics/KnowledgeGraphView.vue'),
+        meta: { title: '知识图谱' },
+      },
+      {
         path: 'ai/review',
         name: 'AiReview',
         component: () => import('@/views/ai/ReviewSuggestionView.vue'),

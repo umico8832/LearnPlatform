@@ -1,10 +1,12 @@
 package com.learnplatform.controller;
 
 import com.learnplatform.common.result.R;
+import com.learnplatform.dto.KnowledgeGraphVO;
 import com.learnplatform.dto.LearningPathVO;
 import com.learnplatform.dto.LearningReportVO;
 import com.learnplatform.dto.StatisticsVO;
 import com.learnplatform.security.CustomUserDetails;
+import com.learnplatform.service.KnowledgeGraphService;
 import com.learnplatform.service.LearningPathService;
 import com.learnplatform.service.StatisticsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,11 +27,14 @@ public class StatisticsController {
 
     private final StatisticsService statisticsService;
     private final LearningPathService learningPathService;
+    private final KnowledgeGraphService knowledgeGraphService;
 
     public StatisticsController(StatisticsService statisticsService,
-                                LearningPathService learningPathService) {
+                                LearningPathService learningPathService,
+                                KnowledgeGraphService knowledgeGraphService) {
         this.statisticsService = statisticsService;
         this.learningPathService = learningPathService;
+        this.knowledgeGraphService = knowledgeGraphService;
     }
 
     @Operation(summary = "学习概览", description = "获取当前用户的学习统计数据（总刷题、正确率等）")
@@ -62,5 +67,13 @@ public class StatisticsController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(required = false) Long courseId) {
         return R.ok(learningPathService.getLearningPath(userDetails.getUserId(), courseId));
+    }
+
+    @Operation(summary = "知识图谱", description = "获取知识图谱数据，包含知识点关系和用户练习表现（可按课程筛选）")
+    @GetMapping("/knowledge-graph")
+    public R<KnowledgeGraphVO> getKnowledgeGraph(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(required = false) Long courseId) {
+        return R.ok(knowledgeGraphService.getKnowledgeGraph(userDetails.getUserId(), courseId));
     }
 }

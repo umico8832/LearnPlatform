@@ -14,6 +14,59 @@
 
 ---
 
+## Round 60 - 2026-06-14
+
+### 阶段
+Phase 12 → P3 远期规划
+
+### 本轮目标
+实现知识图谱可视化功能（FUTURE.md P3 #14 知识图谱可视化），使用 ECharts Graph 展示知识点关系和用户掌握程度。
+
+### 完成内容
+- **后端 `KnowledgeGraphVO`**：知识图谱数据传输对象，包含 GraphNode（知识点节点：掌握程度、正确率、练习次数、错题数、节点类型、课程分类）、GraphEdge（父子关系边）、CourseInfo（课程分类）三个内部类。
+- **后端 `KnowledgeGraphService`**：核心知识图谱构建服务：
+  - **知识点加载**：支持按课程筛选，返回全部知识点。
+  - **关联分析**：通过 question_knowledge_point 关联表构建知识点→题目→用户练习记录的映射链路。
+  - **掌握程度计算**：四级掌握状态（0-未练习、1-薄弱<50%、2-需复习50-70%、3-已掌握≥70%），基于用户在该知识点关联题目上的正确率。
+  - **节点类型判断**：有子知识点的为 parent（大节点），叶子节点为 leaf（小节点）。
+  - **课程分组**：每个节点关联所属课程，用于 ECharts category 分组和图例显示。
+- **后端 `StatisticsController`**：新增 `GET /api/statistics/knowledge-graph?courseId=` 接口。
+- **前端 `statistics.ts`**：新增 KnowledgeGraphNode、KnowledgeGraphEdge、KnowledgeGraphCourse、KnowledgeGraph 类型定义和 `getKnowledgeGraph()` API 方法。
+- **前端 `KnowledgeGraphView.vue`**：完整的知识图谱可视化页面：
+  - 课程下拉筛选 + 刷新按钮 + 布局切换（力导向/环形）
+  - 图例说明（掌握程度四色 + 节点大小含义）
+  - 概览统计卡片（知识点数/关系数/课程数）
+  - ECharts Graph 力导向/环形布局，节点颜色按掌握程度着色（灰/红/橙/绿），节点大小按是否有子节点区分
+  - 支持拖拽、缩放、邻接高亮
+  - Tooltip 悬浮显示知识点详情（正确率/练习次数/错题数）
+  - 点击节点弹出右侧抽屉，展示详情和快捷操作（去刷题/查看学习路径）
+  - 响应式布局支持
+- **前端路由和导航**：router 新增 `/knowledge-graph` 路由，侧边栏"学习路径"下方新增"🕸️ 知识图谱"菜单项（Connection 图标）。
+
+### 修改文件清单
+- 新增：`backend/src/main/java/com/learnplatform/dto/KnowledgeGraphVO.java`
+- 新增：`backend/src/main/java/com/learnplatform/service/KnowledgeGraphService.java`
+- 修改：`backend/src/main/java/com/learnplatform/controller/StatisticsController.java`（注入 KnowledgeGraphService + 新增接口）
+- 修改：`frontend/src/api/statistics.ts`（新增类型 + API 方法）
+- 新增：`frontend/src/views/statistics/KnowledgeGraphView.vue`
+- 修改：`frontend/src/router/index.ts`（新增路由）
+- 修改：`frontend/src/components/layout/AppLayout.vue`（新增侧边栏菜单项 + Connection 图标）
+
+### 验收结果
+- [x] `cd backend && mvn test -q`：151 个测试全部通过
+- [x] `cd frontend && npm run build`：构建成功（661ms）
+- [x] 后端编译成功，无错误
+- [x] 前端 TypeScript 无错误
+
+### 遗留问题
+- 知识点之间目前只有父子关系的边，未建立知识点之间的"依赖关系"（如"二叉树"依赖"树的基本概念"），后续可在管理端添加知识点依赖管理。
+
+### 下轮建议
+- 可继续 P3 远期规划中的其他项目，或补充知识点之间的依赖关系边，或偿还项目截图素材。
+- 建议 commit message: `feat(graph): 实现知识图谱可视化功能`
+
+---
+
 ## Round 59 - 2026-06-14
 
 ### 阶段
