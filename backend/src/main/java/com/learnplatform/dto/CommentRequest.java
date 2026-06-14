@@ -1,9 +1,9 @@
 package com.learnplatform.dto;
 
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 /**
  * 评论创建/回复请求
@@ -14,7 +14,7 @@ public class CommentRequest {
     private Long questionId;
 
     @NotBlank(message = "评论内容不能为空")
-    @Max(value = 2000, message = "评论内容不能超过2000字")
+    @Size(max = 2000, message = "评论内容不能超过2000字")
     private String content;
 
     /** 父评论ID，0表示顶级评论 */

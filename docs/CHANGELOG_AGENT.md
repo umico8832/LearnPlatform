@@ -14,6 +14,45 @@
 
 ---
 
+## Round 45 - 2026-06-14
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+补充 CommentController、AdminQuestionController、AdminExamController 的 MockMvc 集成测试，修复 CommentRequest 中 `@Max` 对 String 字段无效的问题。
+
+### 完成内容
+- **LongUserIdArgumentResolver**：新建测试用 ArgumentResolver，解决 `@AuthenticationPrincipal Long userId` 在 standalone MockMvc + JDK 26 下的解析问题。
+- **CommentControllerTest（8 个测试）**：覆盖获取评论列表、发表评论成功/内容为空/题目ID为空、删除评论、点赞/取消点赞、评论计数。
+- **AdminQuestionControllerTest（10 个测试）**：覆盖题目列表（默认/带筛选）、题目详情/404、创建/更新/删除/删除不存在、导入空文件/非法扩展名校验。
+- **AdminExamControllerTest（7 个测试）**：覆盖试卷列表（默认/带筛选）、试卷详情、创建/更新/删除/发布。
+- **CommentRequest 修复**：将 `@Max(2000)` 改为 `@Size(max = 2000)`，修复 String 字段校验注解不生效的问题。
+
+### 修改文件清单
+- 新增：`backend/src/test/java/com/learnplatform/controller/LongUserIdArgumentResolver.java`
+- 新增：`backend/src/test/java/com/learnplatform/controller/CommentControllerTest.java`（8 个测试）
+- 新增：`backend/src/test/java/com/learnplatform/controller/AdminQuestionControllerTest.java`（10 个测试）
+- 新增：`backend/src/test/java/com/learnplatform/controller/AdminExamControllerTest.java`（7 个测试）
+- 修改：`backend/src/main/java/com/learnplatform/dto/CommentRequest.java`（@Max → @Size）
+
+### 验收结果
+- [x] `cd backend && mvn test` → 117 tests, 0 failures, 0 errors, BUILD SUCCESS
+- [x] CommentControllerTest：8/8 通过
+- [x] AdminQuestionControllerTest：10/10 通过
+- [x] AdminExamControllerTest：7/7 通过
+- [x] 全部原有测试不受影响（92 → 117）
+
+### 遗留问题
+- 前端仍缺少组件测试和端到端自动化测试。
+- tokensUsed 字段暂未从上游 API 提取。
+
+### 下轮建议
+- 可补充 AdminUserController、AdminCourseController、AdminKnowledgePointController 等管理端接口测试。
+- 建议 commit message: `test(controller): 补充 Comment/AdminQuestion/AdminExam Controller 测试并修复 CommentRequest 校验`
+
+---
+
 ## Round 44 - 2026-06-14
 
 ### 阶段

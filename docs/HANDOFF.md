@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 12 — 体验增强迭代（基本完成）
+当前阶段：Phase 12 — 体验增强迭代（基本完成，后端测试持续扩充中）
 
 阶段状态：
 - [x] Phase 0：项目规划 ✅
@@ -31,7 +31,7 @@
 - [x] Phase 9：统计可视化 ✅
 - [x] Phase 10：质量提升 ✅（参数校验、接口文档、前端体验优化、日志规范化、SQL优化、安全检查）
 - [x] Phase 11：部署与简历 ✅（项目截图为非阻塞演示素材）
-- [x] Phase 12：体验增强迭代（✅ 基本完成：AI 题目助手、管理端统计、AI 流式输出、用户个人中心、错题重练、收藏题练习、Excel 导入导出、学习计划、AI 调用日志、核心业务可信度修复、后端核心服务测试、社区评论、多端适配、题目难度自适应、填空简答判分增强、个人学习报告、GitHub Actions CI）
+- [x] Phase 12：体验增强迭代（✅ 基本完成：AI 题目助手、管理端统计、AI 流式输出、用户个人中心、错题重练、收藏题练习、Excel 导入导出、学习计划、AI 调用日志、核心业务可信度修复、后端核心服务测试、社区评论、多端适配、题目难度自适应、填空简答判分增强、个人学习报告、GitHub Actions CI、CommentController/AdminExam/AdminQuestion Controller 测试、CommentRequest @Max→@Size 修复）
 
 ---
 
@@ -105,7 +105,7 @@ docker compose up -d
 ## 5. 当前遗留问题
 
 - 前端仍缺少组件测试和端到端自动化测试
-- CommentController 使用 `@AuthenticationPrincipal Long userId`（非 CustomUser），需单独适配测试
+- CommentController 测试已完成（Round 45），使用自定义 LongUserIdArgumentResolver
 - tokensUsed 字段暂未从上游 API 提取，仅记录调用次数
 - 管理端缺少按用户单独调整配额的能力（当前全局统一配额）
 - 项目截图未制作（非阻塞演示素材）
@@ -123,9 +123,9 @@ Phase 12 已基本完成。所有 P0-P2 功能、技术债务均已偿还。
 - 补充 README CI badge 展示
 - 补充项目截图/演示素材（FUTURE.md #7）
 - 进入 P3 远期规划：多租户、移动端 App、Redis 缓存、监控告警等
-- 补充 CommentController 测试和 AdminXxxController 管理端接口测试
+- 补充 AdminUserController、AdminCourseController、AdminKnowledgePointController 管理端接口测试
 
-建议 commit message: `test(controller): 修复 JDK 26 @AuthenticationPrincipal 兼容性并补充 Controller 测试`
+建议 commit message: `test(controller): 补充 Comment/AdminQuestion/AdminExam Controller 测试并修复 CommentRequest 校验`
 
 ---
 
