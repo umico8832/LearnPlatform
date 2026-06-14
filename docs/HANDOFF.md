@@ -31,7 +31,7 @@
 - [x] Phase 9：统计可视化 ✅
 - [x] Phase 10：质量提升 ✅（参数校验、接口文档、前端体验优化、日志规范化、SQL优化、安全检查）
 - [x] Phase 11：部署与简历 ✅（项目截图为非阻塞演示素材）
-- [x] Phase 12：体验增强迭代（✅ 基本完成：AI 题目助手、管理端统计、AI 流式输出、用户个人中心、错题重练、收藏题练习、Excel 导入导出、学习计划、AI 调用日志、核心业务可信度修复、后端核心服务测试、社区评论、多端适配、题目难度自适应、填空简答判分增强、个人学习报告、GitHub Actions CI、CommentController/AdminExam/AdminQuestion Controller 测试、CommentRequest @Max→@Size 修复）
+- [x] Phase 12：体验增强迭代（✅ 基本完成：AI 题目助手、管理端统计、AI 流式输出、用户个人中心、错题重练、收藏题练习、Excel 导入导出、学习计划、AI 调用日志、核心业务可信度修复、后端核心服务测试、社区评论、多端适配、题目难度自适应、填空简答判分增强、个人学习报告、GitHub Actions CI、CommentController/AdminExam/AdminQuestion Controller 测试、CommentRequest @Max→@Size 修复、AdminUser/AdminCourse/AdminKnowledgePoint Controller 测试）
 
 ---
 
@@ -56,7 +56,7 @@
 16. **考试一致性**：提交行锁、超时状态保留、答题唯一约束、已发布试卷及引用题目不可变
 17. **数据库迁移**：Flyway 基线与增量迁移，已有数据库可自动基线升级
 18. **AI 用户级限流**：每日调用配额（默认 50 次/天），所有同步/流式接口受保护
-19. **后端核心测试**：92 个后端测试通过（JWT、判分、考试校验、刷题、错题本、试卷状态、Controller MockMvc 集成测试覆盖 7 个 Controller）
+19. **后端核心测试**：151 个后端测试通过（JWT、判分、考试校验、刷题、错题本、试卷状态、Controller MockMvc 集成测试覆盖 10 个 Controller）
 20. **多端适配**：移动端抽屉导航、答题界面触摸友好、统计图表响应式
 21. **题目难度自适应**：基于用户历史正确率的加权概率采样推荐
 22. **GitHub Actions CI**：后端测试 + 前端构建 + Docker 镜像验证
@@ -105,7 +105,6 @@ docker compose up -d
 ## 5. 当前遗留问题
 
 - 前端仍缺少组件测试和端到端自动化测试
-- CommentController 测试已完成（Round 45），使用自定义 LongUserIdArgumentResolver
 - tokensUsed 字段暂未从上游 API 提取，仅记录调用次数
 - 管理端缺少按用户单独调整配额的能力（当前全局统一配额）
 - 项目截图未制作（非阻塞演示素材）
@@ -123,9 +122,9 @@ Phase 12 已基本完成。所有 P0-P2 功能、技术债务均已偿还。
 - 补充 README CI badge 展示
 - 补充项目截图/演示素材（FUTURE.md #7）
 - 进入 P3 远期规划：多租户、移动端 App、Redis 缓存、监控告警等
-- 补充 AdminUserController、AdminCourseController、AdminKnowledgePointController 管理端接口测试
+- 补充前端 Vitest 组件测试或 E2E 测试
 
-建议 commit message: `test(controller): 补充 Comment/AdminQuestion/AdminExam Controller 测试并修复 CommentRequest 校验`
+建议 commit message: `test(controller): 补充 AdminUser/AdminCourse/AdminKnowledgePoint Controller 测试`
 
 ---
 

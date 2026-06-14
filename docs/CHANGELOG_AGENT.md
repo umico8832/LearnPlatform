@@ -14,6 +14,42 @@
 
 ---
 
+## Round 46 - 2026-06-14
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+补充 AdminUserController、AdminCourseController、AdminKnowledgePointController 三个管理端 Controller 的 MockMvc 集成测试。
+
+### 完成内容
+- **AdminUserControllerTest（21 个测试）**：覆盖用户列表（默认/带筛选）、创建用户（成功/默认值/重复用户名/校验失败×2）、修改角色（成功/无效角色/不存在/校验）、启用禁用（启用/禁用/无效状态校验/不存在）、重置密码（成功/不存在/校验）、删除用户（成功/不存在）、用户统计概览。
+- **AdminCourseControllerTest（6 个测试）**：覆盖创建课程（成功/业务异常）、更新课程（成功/不存在）、删除课程（成功/不存在）。
+- **AdminKnowledgePointControllerTest（7 个测试）**：覆盖创建知识点（成功/最少字段/业务异常）、更新知识点（成功/不存在）、删除知识点（成功/不存在）。
+
+### 修改文件清单
+- 新增：`backend/src/test/java/com/learnplatform/controller/AdminUserControllerTest.java`（21 个测试）
+- 新增：`backend/src/test/java/com/learnplatform/controller/AdminCourseControllerTest.java`（6 个测试）
+- 新增：`backend/src/test/java/com/learnplatform/controller/AdminKnowledgePointControllerTest.java`（7 个测试）
+
+### 验收结果
+- [x] `cd backend && mvn test` → 151 tests, 0 failures, 0 errors, BUILD SUCCESS
+- [x] AdminUserControllerTest：21/21 通过
+- [x] AdminCourseControllerTest：6/6 通过
+- [x] AdminKnowledgePointControllerTest：7/7 通过
+- [x] 全部原有测试不受影响（117 → 151）
+
+### 遗留问题
+- 前端仍缺少组件测试和端到端自动化测试。
+- tokensUsed 字段暂未从上游 API 提取。
+
+### 下轮建议
+- 可补充前端 Vitest 组件测试或 E2E 测试。
+- 可进入 P3 远期规划（多租户、Redis 缓存等）。
+- 建议 commit message: `test(controller): 补充 AdminUser/AdminCourse/AdminKnowledgePoint Controller 测试`
+
+---
+
 ## Round 45 - 2026-06-14
 
 ### 阶段
