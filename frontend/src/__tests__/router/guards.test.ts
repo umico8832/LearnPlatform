@@ -25,8 +25,6 @@ vi.mock('@/stores/user', () => ({
   })),
 }))
 
-import { isAuthenticated } from '@/utils/auth'
-
 /**
  * 模拟执行路由守卫逻辑。
  * 由于 router 是单例，我们重新创建一个 router 实例来测试守卫逻辑。

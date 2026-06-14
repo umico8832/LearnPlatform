@@ -14,6 +14,43 @@
 
 ---
 
+## Round 51 - 2026-06-14
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+修复 Node 22 环境下前端单元测试失败和生产构建被测试代码阻断的问题。
+
+### 完成内容
+- 新增统一 Vitest setup，使用内存版 `Storage` 提供稳定的 `localStorage` 测试环境。
+- 移除路由守卫测试中的未使用导入，恢复严格 TypeScript 检查和生产构建。
+- 复验全部前后端测试与前端生产构建。
+
+### 修改文件清单
+- `frontend/vitest.config.ts`
+- `frontend/src/__tests__/setup.ts`
+- `frontend/src/__tests__/router/guards.test.ts`
+- `docs/CHANGELOG_AGENT.md`
+- `docs/HANDOFF.md`
+
+### 验收结果
+- [x] `cd frontend && npm test`：18 个测试文件、155 个测试全部通过
+- [x] `cd frontend && npm run build`：构建成功
+- [x] `cd backend && mvn test -q`：151 个测试全部通过
+
+### 遗留问题
+- Vite 8 构建时会报告第三方 `@vueuse/core` PURE 注解位置警告，不影响构建产物。
+- 页面级组件和真实数据库端到端测试仍可继续补充。
+
+### 下轮建议
+- 增加基于真实 MySQL/Flyway 的关键业务集成测试，验证数据库迁移及前后端契约。
+
+### 建议 commit message
+`fix(frontend): 修复测试环境与生产构建失败问题`
+
+---
+
 ## Round 50 - 2026-06-14
 
 ### 阶段
