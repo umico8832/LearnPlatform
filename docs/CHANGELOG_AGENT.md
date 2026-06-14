@@ -14,6 +14,41 @@
 
 ---
 
+## Round 57 - 2026-06-14
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+补充 StatisticsService Testcontainers 集成测试，验证统计聚合核心业务逻辑。
+
+### 完成内容
+- 新增 `StatisticsServiceIntegrationTest`（10 个测试），使用 Testcontainers MySQL 8.0 + Flyway 迁移验证：
+  - **getUserStatistics**（3 个）：有记录时正确统计总刷题数/正确数/正确率/今日刷题/连续天数/错题本数量/已掌握数、其他用户数据隔离、不存在用户返回零值。
+  - **getDailyTrend**（2 个）：返回 7 天趋势且今日数据正确（3 题 2 对 1 错）、空用户 7 天全零。
+  - **getCourseStats**（2 个）：按课程分组统计正确率和刷题量（Java 基础 2 题 50%、数据结构 1 题 100%）、空用户返回空列表。
+  - **getAdminStatistics**（1 个）：平台概览包含用户/题目/练习记录计数、题型分布含单选题≥3、每日活跃 7 天数据且今日≥2 活跃用户。
+  - **getLearningReport**（2 个）：月度报告含刷题量/正确率/环比增长/错题新增/掌握数/考试次数和均分/每日趋势/课程统计/题型分布、空用户全零。
+- 集成测试标记 `@Tag("integration")`，排除默认运行，需时通过 `mvn test -Dgroups=integration` 执行。
+- 使用 `@Transactional` 每个测试自动回滚，不污染测试数据库。
+
+### 修改文件清单
+- 新增：`backend/src/test/java/com/learnplatform/service/StatisticsServiceIntegrationTest.java`（10 个测试）
+
+### 验收结果
+- [x] `cd backend && mvn test -q`：151 个测试全部通过（集成测试已排除默认运行）
+- [x] 集成测试代码编译通过，结构和断言逻辑完整
+
+### 遗留问题
+- 本地 JDK 25 + Testcontainers 1.20.1 Docker socket 兼容性问题仍然存在，集成测试需在 CI（JDK 17）环境验证实际运行。
+
+### 下轮建议
+- 至此 ExamService(10)、PracticeService(16)、WrongQuestionService(16)、StatisticsService(10) 四个核心服务集成测试已全部覆盖（共 52 个集成测试）。
+- 可在 CI 中验证集成测试通过，或继续建立登录、刷题等少量关键 E2E 流程。
+- 建议 commit message: `test(integration): 落地统计聚合核心流程 Testcontainers 集成测试`
+
+---
+
 ## Round 56 - 2026-06-14
 
 ### 阶段
