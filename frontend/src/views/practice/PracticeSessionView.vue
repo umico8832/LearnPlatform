@@ -9,6 +9,9 @@
         <el-tag v-if="isWrongPractice" type="danger" size="small" effect="dark" style="margin-left: 8px">
           错题重练
         </el-tag>
+        <el-tag v-if="isFavoritePractice" type="warning" size="small" effect="dark" style="margin-left: 8px">
+          收藏练习
+        </el-tag>
       </div>
       <div class="header-center">
         <span class="progress-text">{{ currentIndex + 1 }} / {{ questions.length }}</span>
@@ -227,6 +230,7 @@ function checkMobile() {
 
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
 const isWrongPractice = computed(() => practiceMode.value === 'wrong_question')
+const isFavoritePractice = computed(() => practiceMode.value === 'favorite')
 
 const canSubmit = computed(() => {
   if (!currentQuestion.value) return false
@@ -318,6 +322,8 @@ const handleBack = () => {
   sessionStorage.removeItem('practice_mode')
   if (isWrongPractice.value) {
     router.push({ name: 'WrongQuestions' })
+  } else if (isFavoritePractice.value) {
+    router.push({ name: 'Favorites' })
   } else {
     router.push({ name: 'Practice' })
   }
@@ -328,6 +334,8 @@ const restartPractice = () => {
   sessionStorage.removeItem('practice_mode')
   if (isWrongPractice.value) {
     router.push({ name: 'WrongQuestions' })
+  } else if (isFavoritePractice.value) {
+    router.push({ name: 'Favorites' })
   } else {
     router.push({ name: 'Practice' })
   }

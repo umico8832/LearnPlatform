@@ -419,6 +419,44 @@ GET /api/practice/records
 }
 ```
 
+### 7.4 收藏题练习
+
+```
+GET /api/practice/favorites
+```
+
+**说明**：从当前登录用户的收藏题目中获取练习题，返回结构与普通练习题一致，练习模式下不暴露正确答案和解析。
+
+**查询参数**：
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|:----:|------|
+| count | Integer | 否 | 题目数量，默认 10，最大 50 |
+| questionId | Long | 否 | 指定收藏题目 ID；传入时只返回该题，并校验该题属于当前用户收藏 |
+
+**响应**：
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "id": 1,
+      "content": "题目内容...",
+      "questionType": "SINGLE_CHOICE",
+      "courseName": "Java 基础",
+      "difficulty": 2,
+      "score": 5,
+      "options": [
+        { "id": 1, "optionLabel": "A", "content": "选项A", "isCorrect": 0 },
+        { "id": 2, "optionLabel": "B", "content": "选项B", "isCorrect": 0 }
+      ],
+      "knowledgePointIds": [1],
+      "knowledgePointNames": ["基础语法"]
+    }
+  ]
+}
+```
+
 ---
 
 ## 八、错题本接口

@@ -108,6 +108,14 @@ export function getWrongQuestionPractice(params?: {
   return request.get<any, ApiResponse<PracticeQuestionVO[]>>('/practice/wrong-questions', { params })
 }
 
+/** 获取收藏题练习题目 */
+export function getFavoritePractice(params?: {
+  count?: number
+  questionId?: number
+}) {
+  return request.get<any, ApiResponse<PracticeQuestionVO[]>>('/practice/favorites', { params })
+}
+
 /** 自适应智能推荐题目 */
 export function getAdaptiveQuestions(params?: {
   courseId?: number

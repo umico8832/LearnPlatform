@@ -105,6 +105,21 @@ public class PracticeController {
     }
 
     /**
+     * 获取收藏题练习题目
+     * 从当前用户收藏夹中随机抽取题目
+     */
+    @Operation(summary = "收藏题练习", description = "从当前用户收藏题目中随机抽取题目用于练习")
+    @GetMapping("/favorites")
+    public R<List<QuestionVO>> getFavoritePractice(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(required = false) Integer count,
+            @RequestParam(required = false) Long questionId) {
+        List<QuestionVO> questions = practiceService.getFavoritePractice(
+                userDetails.getUserId(), count, questionId);
+        return R.ok(questions);
+    }
+
+    /**
      * 自适应智能推荐题目
      * 根据用户各难度级别的历史正确率动态调整题目难度分布
      */

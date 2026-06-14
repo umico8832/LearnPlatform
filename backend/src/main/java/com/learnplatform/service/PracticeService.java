@@ -30,6 +30,7 @@ public class PracticeService {
     private final CourseMapper courseMapper;
     private final KnowledgePointMapper knowledgePointMapper;
     private final WrongQuestionMapper wrongQuestionMapper;
+    private final UserFavoriteQuestionMapper userFavoriteQuestionMapper;
     private final WrongQuestionService wrongQuestionService;
     private final AnswerEvaluator answerEvaluator;
 
@@ -40,6 +41,7 @@ public class PracticeService {
                            CourseMapper courseMapper,
                            KnowledgePointMapper knowledgePointMapper,
                            WrongQuestionMapper wrongQuestionMapper,
+                           UserFavoriteQuestionMapper userFavoriteQuestionMapper,
                            WrongQuestionService wrongQuestionService,
                            AnswerEvaluator answerEvaluator) {
         this.questionMapper = questionMapper;
@@ -49,6 +51,7 @@ public class PracticeService {
         this.courseMapper = courseMapper;
         this.knowledgePointMapper = knowledgePointMapper;
         this.wrongQuestionMapper = wrongQuestionMapper;
+        this.userFavoriteQuestionMapper = userFavoriteQuestionMapper;
         this.wrongQuestionService = wrongQuestionService;
         this.answerEvaluator = answerEvaluator;
     }
@@ -326,6 +329,53 @@ public class PracticeService {
         return questions.stream().map(q -> {
             QuestionVO vo = QuestionVO.fromEntity(q);
             vo.setAnalysis(null); // 练习模式不返回解析
+            fillQuestionVOForPractice(vo);
+            return vo;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * 获取收藏题练习题目列表
+     */
+    public List<QuestionVO> getFavoritePractice(Long userId, Integer count, Long questionId) {
+        if (count == null || count <= 0) {
+            count = 10;
+        }
+        if (count > 50) {
+            count = 50;
+        }
+
+        log.info("获取收藏题练习题目: userId={}, count={}", userId, count);
+
+        LambdaQueryWrapper<UserFavoriteQuestion> favoriteWrapper = new LambdaQueryWrapper<>();
+        favoriteWrapper.eq(UserFavoriteQuestion::getUserId, userId)
+                .orderByDesc(UserFavoriteQuestion::getCreateTime);
+        if (questionId != null) {
+            favoriteWrapper.eq(UserFavoriteQuestion::getQuestionId, questionId);
+        }
+        List<UserFavoriteQuestion> favorites = userFavoriteQuestionMapper.selectList(favoriteWrapper);
+        if (favorites.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        if (questionId == null && favorites.size() > count) {
+            Collections.shuffle(favorites);
+            favorites = favorites.subList(0, count);
+        }
+
+        List<Long> questionIds = favorites.stream()
+                .map(UserFavoriteQuestion::getQuestionId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        LambdaQueryWrapper<Question> qWrapper = new LambdaQueryWrapper<>();
+        qWrapper.in(Question::getId, questionIds);
+        qWrapper.eq(Question::getStatus, 1);
+        List<Question> questions = questionMapper.selectList(qWrapper);
+
+        return questions.stream().map(q -> {
+            QuestionVO vo = QuestionVO.fromEntity(q);
+            vo.setAnalysis(null);
             fillQuestionVOForPractice(vo);
             return vo;
         }).collect(Collectors.toList());

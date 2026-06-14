@@ -14,6 +14,48 @@
 
 ---
 
+## Round 39 - 2026-06-14
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+按后续开发优先级继续推进，先补充后端核心业务测试，再实现收藏题可直接发起练习。
+
+### 完成内容
+- **新增 `PracticeServiceTest`**：覆盖练习提交答案的核心路径，包括答对时保存正确记录并自动移出错题本、答错时保存错误记录并加入错题本、题目 ID 为空、答案为空、题目不存在等异常分支。
+- **新增 `WrongQuestionServiceTest`**：覆盖错题本核心规则，包括首次答错创建错题、重复答错累计次数、已掌握题目再次答错重置为未掌握、答对自动移出错题、越权更新掌握程度拦截、删除不存在记录拦截。
+- **JDK 26 测试兼容处理**：`PracticeServiceTest` 使用轻量 fake 子类记录错题服务调用，避免 Mockito inline mock 具体类时触发 Byte Buddy 对 Java 26 class version 的兼容问题。
+- **收藏题练习后端接口**：`PracticeService` 新增 `getFavoritePractice()`，`PracticeController` 新增 `GET /api/practice/favorites`，支持按数量随机抽取收藏题，也支持指定 `questionId` 发起单题练习；接口复用练习模式 VO，隐藏正确答案和解析。
+- **收藏页练习入口**：`FavoriteView.vue` 页面头部新增收藏题练习按钮和题数选择，表格操作列新增单题“练习”入口，进入 `PracticeSessionView.vue` 后标记 `practice_mode=favorite`。
+- **练习会话模式识别**：`PracticeSessionView.vue` 新增“收藏练习”标签，退出/完成后返回“我的收藏”页面。
+
+### 修改文件清单
+- 后端修改：`backend/src/main/java/com/learnplatform/service/PracticeService.java`
+- 后端修改：`backend/src/main/java/com/learnplatform/controller/PracticeController.java`
+- 后端测试：`backend/src/test/java/com/learnplatform/service/PracticeServiceTest.java`
+- 后端测试：`backend/src/test/java/com/learnplatform/service/WrongQuestionServiceTest.java`
+- 前端修改：`frontend/src/api/practice.ts`
+- 前端修改：`frontend/src/views/practice/FavoriteView.vue`
+- 前端修改：`frontend/src/views/practice/PracticeSessionView.vue`
+- 文档：`docs/API_DESIGN.md`、`docs/FUTURE.md`、`docs/CHANGELOG_AGENT.md`、`docs/HANDOFF.md`
+
+### 验收结果
+- [x] `cd backend && mvn test`
+- [x] 后端测试结果：45 tests，0 failures，0 errors，0 skipped
+- [x] `cd frontend && npm run build`
+- [x] 前端构建成功；存在 Vite/Rolldown 对 `@vueuse/core` pure annotation 的非阻塞警告
+
+### 遗留问题
+- 当前仍以单元测试为主，尚未补充基于 Spring 上下文和 MockMvc 的 Controller 集成测试。
+- 前端关键流程仍缺少 E2E 自动化测试。
+
+### 下轮建议
+- 按顺序继续完善“个人学习报告”：在个人中心或首页补充本月刷题量、正确率趋势、错题变化等学习报告。
+- 建议 commit message: `feat(practice): 支持收藏题直接发起练习`
+
+---
+
 ## Round 38 - 2026-06-13
 
 ### 阶段
