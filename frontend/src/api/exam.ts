@@ -67,6 +67,29 @@ export interface ExamSubmitRequest {
   answers: { questionId: number; userAnswer: string }[]
 }
 
+export interface SmartExamRequest {
+  courseId?: number
+  questionCount?: number
+  difficultyMode?: 'EASY' | 'BALANCED' | 'HARD' | 'ADAPTIVE'
+  includeWrongQuestions?: boolean
+  title?: string
+  duration?: number
+}
+
+export interface SmartExamPreview {
+  title: string
+  description: string
+  courseId: number
+  courseName: string
+  questionCount: number
+  totalScore: number
+  duration: number
+  knowledgePointDistribution: Record<string, number>
+  difficultyDistribution: Record<string, number>
+  questionIds: number[]
+  recommendation: string
+}
+
 // ======================== 管理端 API ========================
 
 export function getExamPaperList(params?: { pageNum?: number; pageSize?: number; courseId?: number; status?: number }) {
@@ -91,6 +114,14 @@ export function deleteExamPaper(id: number) {
 
 export function publishExamPaper(id: number) {
   return request.post<any, ApiResponse<null>>(`/admin/exam-papers/${id}/publish`)
+}
+
+export function smartExamPreview(data: SmartExamRequest) {
+  return request.post<any, ApiResponse<SmartExamPreview>>('/admin/exam-papers/smart-preview', data)
+}
+
+export function smartExamCreate(data: SmartExamPreview) {
+  return request.post<any, ApiResponse<ExamPaperVO>>('/admin/exam-papers/smart-create', data)
 }
 
 // ======================== 用户端 API ========================

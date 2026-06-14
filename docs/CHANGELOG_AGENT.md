@@ -14,6 +14,53 @@
 
 ---
 
+## Round 58 - 2026-06-14
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+实现 AI 智能组卷功能（P3 #14），根据知识点覆盖、难度分布和用户薄弱环节自动选择题目生成试卷。
+
+### 完成内容
+- **后端 `AiExamGenerationService`**：智能组卷核心服务，包含：
+  - **智能选题算法**：三轮选择策略——第一轮确保每个知识点至少一题覆盖，第二轮按难度目标补充，第三轮填充剩余。
+  - **优先级评分**：错题加权（+30）、难度适配、有解析题目优先、随机扰动防止重复。
+  - **四种难度模式**：EASY（偏基础 30%/35%/25%）、BALANCED（均衡 20%×5）、HARD（偏进阶 35%/30%/25%）、ADAPTIVE（根据用户各难度正确率动态调整）。
+  - **用户感知**：自动获取用户错题 ID 集合和各难度历史正确率，ADAPTIVE 模式下根据薄弱难度调整选题。
+  - **预览+确认两步流程**：preview 返回知识点分布、难度分布、推荐理由，createSmartExam 调用 ExamPaperService 创建试卷。
+- **后端 `AdminExamController`**：新增 2 个接口：
+  - `POST /api/admin/exam-papers/smart-preview`：智能组卷预览
+  - `POST /api/admin/exam-papers/smart-create`：确认创建智能试卷
+- **前端 `exam.ts`**：新增 `SmartExamRequest`、`SmartExamPreview` 类型定义，`smartExamPreview()` 和 `smartExamCreate()` API 方法。
+- **前端 `ExamManage.vue`**：
+  - 页面头部新增"🤖 智能组卷"按钮
+  - 智能组卷弹窗：课程选择、题目数量滑块（5-50）、四种难度模式切换、考试时长、包含错题开关、自定义标题
+  - 预览结果：试卷信息描述表、推荐理由提示、知识点覆盖进度条、难度分布进度条（彩色区分）
+  - 两步操作：先生成预览 → 确认创建 / 返回调整
+
+### 修改文件清单
+- 新增：`backend/src/main/java/com/learnplatform/service/AiExamGenerationService.java`
+- 修改：`backend/src/main/java/com/learnplatform/controller/AdminExamController.java`（新增 2 个接口 + 注入 AiExamGenerationService）
+- 修改：`frontend/src/api/exam.ts`（新增类型 + 2 个 API 方法）
+- 修改：`frontend/src/views/admin/ExamManage.vue`（智能组卷按钮 + 弹窗 + 预览）
+
+### 验收结果
+- [x] `cd backend && mvn test`：151 个测试全部通过
+- [x] `cd frontend && npm run build`：构建成功（531ms）
+- [x] 后端编译成功，无错误
+- [x] 前端 TypeScript 无错误
+
+### 遗留问题
+- 题目数量不足时（如某课程只有 3 题但请求 20 题），算法会返回实际可选的最大数量，前端可能需要提示。
+- `selectQuestionsBalanced` 中流式遍历 `sorted` 的第一轮知识点匹配在题库很大时可能有性能问题，后续可优化为预先构建倒排索引。
+
+### 下轮建议
+- 可继续 P3 远期规划中的其他 AI 增强功能（学习路径推荐），或偿还项目截图素材。
+- 建议 commit message: `feat(exam): 实现 AI 智能组卷功能`
+
+---
+
 ## Round 57 - 2026-06-14
 
 ### 阶段

@@ -5,6 +5,7 @@ import com.learnplatform.common.result.R;
 import com.learnplatform.dto.ExamPaperCreateRequest;
 import com.learnplatform.dto.ExamPaperVO;
 import com.learnplatform.security.CustomUserDetails;
+import com.learnplatform.service.AiExamGenerationService;
 import com.learnplatform.service.ExamPaperService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,9 +22,12 @@ import org.springframework.web.bind.annotation.*;
 public class AdminExamController {
 
     private final ExamPaperService examPaperService;
+    private final AiExamGenerationService aiExamGenerationService;
 
-    public AdminExamController(ExamPaperService examPaperService) {
+    public AdminExamController(ExamPaperService examPaperService,
+                               AiExamGenerationService aiExamGenerationService) {
         this.examPaperService = examPaperService;
+        this.aiExamGenerationService = aiExamGenerationService;
     }
 
     @Operation(summary = "试卷列表", description = "分页查询试卷列表")
@@ -68,5 +72,21 @@ public class AdminExamController {
     public R<Void> publish(@PathVariable Long id) {
         examPaperService.publishExamPaper(id);
         return R.ok(null);
+    }
+
+    @Operation(summary = "智能组卷预览", description = "根据知识点覆盖和难度分布智能推荐题目组合")
+    @PostMapping("/smart-preview")
+    public R<AiExamGenerationService.SmartExamPreview> smartPreview(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody AiExamGenerationService.SmartExamRequest request) {
+        return R.ok(aiExamGenerationService.preview(request, userDetails.getUserId()));
+    }
+
+    @Operation(summary = "确认智能组卷", description = "根据预览结果创建智能试卷")
+    @PostMapping("/smart-create")
+    public R<ExamPaperVO> smartCreate(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody AiExamGenerationService.SmartExamPreview preview) {
+        return R.ok(aiExamGenerationService.createSmartExam(preview, userDetails.getUserId()));
     }
 }
