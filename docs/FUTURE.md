@@ -141,13 +141,15 @@
 
 ## P2：锦上添花
 
-### 8. 学习计划与提醒
+### 8. 学习计划与提醒 ✅
+
+**完成情况**：已实现每日刷题目标设置（默认 20 题）、首页学习计划卡片展示今日进度、连续打卡天数统计和完成庆祝提示。用户可通过弹窗自定义每日目标。
 
 **功能**：
 - 设置每日刷题目标（如每天 20 题）
 - 首页显示今日目标进度
 - 连续打卡天数激励
-- 学习周报（可选：邮件/站内通知）
+- 学习周报（可选：邮件/站内通知）（待实现）
 
 **预计工作量**：1-2 天
 
@@ -252,9 +254,20 @@
 - 接口限流（防止恶意刷题）
 - 日志收集（ELK 或 Loki）
 - 监控告警（Prometheus + Grafana）
-- CI/CD 流水线（GitHub Actions）
 
 **预计工作量**：3-5 天
+
+### 16. CI/CD 流水线 ✅
+
+**完成情况**：已实现 GitHub Actions CI 流水线，包含后端编译测试（MySQL Service Container）、前端 TypeScript 检查构建和 Docker 镜像构建验证，三个 Job 自动并行/串行执行。
+
+**功能**：
+- 后端：JDK 17 + MySQL 8.0 Service Container + `mvn clean test`
+- 前端：Node 22 + `npm ci` + `npm run build`
+- Docker：`docker build` 后端/前端镜像验证
+- 触发条件：push main/develop、PR 到 main
+
+**预计工作量**：0.5 天
 
 ---
 

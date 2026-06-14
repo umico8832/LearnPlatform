@@ -14,6 +14,43 @@
 
 ---
 
+## Round 41 - 2026-06-14
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+实现 GitHub Actions CI/CD 流水线，并补齐个人中心到学习报告的跳转入口。
+
+### 完成内容
+- **GitHub Actions CI**：新增 `.github/workflows/ci.yml`，包含 3 个 Job：
+  - `backend`：JDK 17 + MySQL 8.0 Service Container，运行 `mvn clean test`
+  - `frontend`：Node 22 + `npm ci` + `npm run build`（TypeScript 检查）
+  - `docker`：依赖前后端 Job 通过后，`docker build` 验证后端和前端镜像构建
+  - 触发条件：push main/develop、PR 到 main
+- **个人中心学习报告入口**：`ProfileView.vue` 左侧用户信息卡片底部新增"查看学习报告"按钮，点击跳转 `/learning-report` 页面。
+- **文档更新**：`docs/FUTURE.md` 标记学习计划与提醒为 ✅，新增 CI/CD 流水线条目（#16 ✅）。
+
+### 修改文件清单
+- 新增：`.github/workflows/ci.yml`
+- 修改：`frontend/src/views/auth/ProfileView.vue`（DataLine 图标 + 学习报告按钮 + report-btn 样式）
+- 修改：`docs/FUTURE.md`（标记学习计划、新增 CI/CD）
+
+### 验收结果
+- [x] `cd backend && mvn test`（45 tests，0 failures）
+- [x] `cd frontend && npm run build`（构建成功，624ms）
+- [x] `.github/workflows/ci.yml` YAML 语法正确
+
+### 遗留问题
+- CI 流水线需推送到 GitHub 后才能触发运行验证，本地仅验证了 YAML 格式和构建产物。
+- 项目截图（FUTURE.md #7）仍待补充，但为非阻塞演示素材。
+
+### 下轮建议
+- 可补充 README 中的 CI badge 展示，或继续偿还项目截图素材。
+- 建议 commit message: `ci(github): 新增 GitHub Actions CI 流水线`
+
+---
+
 ## Round 40 - 2026-06-14
 
 ### 阶段

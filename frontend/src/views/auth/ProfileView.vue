@@ -16,6 +16,9 @@
                 <el-icon><Clock /></el-icon> 注册于 {{ userStore.userInfo.createTime?.slice(0, 10) }}
               </p>
             </div>
+            <el-button class="report-btn" type="primary" plain @click="$router.push('/learning-report')">
+              <el-icon><DataLine /></el-icon> 查看学习报告
+            </el-button>
           </div>
         </el-card>
       </el-col>
@@ -85,7 +88,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { User, Clock } from '@element-plus/icons-vue'
+import { User, Clock, DataLine } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { updateProfile, updatePassword } from '@/api/user'
 
@@ -227,6 +230,11 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.report-btn {
+  margin-top: 20px;
+  width: calc(100% - 40px);
 }
 
 .section-card {
