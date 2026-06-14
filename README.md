@@ -1,5 +1,7 @@
 # AI 题库与错题复习系统
 
+[![CI](https://github.com/umico8832/LearnPlatform/actions/workflows/ci.yml/badge.svg)](https://github.com/umico8832/LearnPlatform/actions/workflows/ci.yml)
+
 一款面向学习者和备考人群的在线刷题平台，结合 AI 能力提供智能解析、错题复习、模拟考试和个性化学习建议。
 
 ## 功能特性

@@ -1,13 +1,18 @@
 package com.learnplatform.controller;
 
+import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.R;
+import com.learnplatform.common.result.ResultCode;
+import com.learnplatform.config.LoginRateLimitService;
 import com.learnplatform.dto.*;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.springframework.security.core.Authentication;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,10 +24,14 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final AuthService authService;
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
-    public AuthController(AuthService authService) {
+    private final AuthService authService;
+    private final LoginRateLimitService rateLimitService;
+
+    public AuthController(AuthService authService, LoginRateLimitService rateLimitService) {
         this.authService = authService;
+        this.rateLimitService = rateLimitService;
     }
 
     /**
@@ -40,9 +49,48 @@ public class AuthController {
      */
     @Operation(summary = "用户登录", description = "用户名密码登录，返回JWT Token")
     @PostMapping("/login")
-    public R<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        LoginResponse response = authService.login(request);
-        return R.ok(response);
+    public R<LoginResponse> login(@Valid @RequestBody LoginRequest request,
+                                  HttpServletRequest httpRequest) {
+        String clientIp = extractClientIp(httpRequest);
+
+        // 检查 IP 限流
+        if (rateLimitService.isBlocked(clientIp)) {
+            long remaining = rateLimitService.getRemainingBlockSeconds(clientIp);
+            log.warn("IP {} 已被限流，剩余 {} 秒", clientIp, remaining);
+            throw new BusinessException(ResultCode.RATE_LIMITED,
+                    "登录失败次数过多，请 " + remaining + " 秒后再试");
+        }
+
+        try {
+            LoginResponse response = authService.login(request);
+            // 登录成功清除失败记录
+            rateLimitService.clearRecord(clientIp);
+            return R.ok(response);
+        } catch (BusinessException e) {
+            // 仅对认证失败（用户名或密码错误）记录失败次数
+            if (e.getCode() == ResultCode.UNAUTHORIZED.getCode()) {
+                rateLimitService.recordFailure(clientIp);
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * 从请求中提取客户端真实 IP，支持反向代理场景。
+     */
+    private String extractClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip != null && !ip.isEmpty()) {
+            // 取第一个 IP（客户端真实 IP）
+            ip = ip.split(",")[0].trim();
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        return ip;
     }
 
     /**

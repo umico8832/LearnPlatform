@@ -12,6 +12,7 @@ public enum ResultCode {
     NOT_FOUND(1004, "资源不存在"),
     BUSINESS_ERROR(1005, "业务异常"),
     QUOTA_EXCEEDED(1006, "调用额度已用完"),
+    RATE_LIMITED(1007, "请求过于频繁，请稍后再试"),
     SYSTEM_ERROR(5000, "系统异常");
 
     private final int code;

@@ -14,6 +14,46 @@
 
 ---
 
+## Round 42 - 2026-06-14
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+实现登录接口 IP 级限流防止暴力破解，并在 README 添加 CI 徽章。
+
+### 完成内容
+- **登录限流服务 `LoginRateLimitService`**：基于 ConcurrentHashMap 的 IP 级登录失败限流，同一 IP 在 15 分钟内连续失败超过 5 次后拒绝登录请求，窗口过期自动解除。支持 X-Forwarded-For/X-Real-IP 反向代理场景；每 5 分钟自动清理过期记录防止内存泄漏。
+- **AuthController 集成限流**：登录接口在认证前检查 IP 是否被封锁，认证失败时记录次数，登录成功时清除记录。返回 `RATE_LIMITED(1007)` 响应码及剩余封锁秒数友好提示。
+- **`ResultCode.RATE_LIMITED`**：新增响应码 1007，"请求过于频繁，请稍后再试"。
+- **单元测试 `LoginRateLimitServiceTest`**：6 个测试覆盖未封锁、达到上限封锁、成功清除、剩余秒数、未封锁返回 0、不同 IP 独立追踪等场景。
+- **README CI 徽章**：顶部新增 GitHub Actions CI 徽章，点击可跳转到 CI 详情页。
+- **FUTURE.md 更新**：技术债务 #6 验证码项更新说明已实现 IP 级限流。
+
+### 修改文件清单
+- 后端新增：`backend/src/main/java/com/learnplatform/config/LoginRateLimitService.java`
+- 后端修改：`backend/src/main/java/com/learnplatform/common/result/ResultCode.java`（新增 RATE_LIMITED）
+- 后端修改：`backend/src/main/java/com/learnplatform/controller/AuthController.java`（注入 LoginRateLimitService + 限流逻辑 + IP 提取）
+- 后端测试：`backend/src/test/java/com/learnplatform/service/LoginRateLimitServiceTest.java`（6 个测试）
+- 前端/文档修改：`README.md`（CI 徽章）、`docs/FUTURE.md`（技术债务 #6 说明更新）
+
+### 验收结果
+- [x] `cd backend && mvn test`（51 tests，0 failures）
+- [x] `cd frontend && npm run build`（构建成功，560ms）
+- [x] LoginRateLimitService 限流逻辑测试全覆盖
+- [x] AuthController 编译无错误
+- [x] README CI 徽章 Markdown 格式正确
+
+### 遗留问题
+- 限流基于内存 ConcurrentHashMap，多实例部署需改用 Redis。
+- 当前限流参数硬编码（5 次/15 分钟），后续可抽为 application.yml 配置项。
+
+### 下轮建议
+- 可将限流参数配置化（application.yml），或继续偿还项目截图素材。
+- 建议 commit message: `security(auth): 实现登录接口 IP 级限流防暴力破解`
+
+---
+
 ## Round 41 - 2026-06-14
 
 ### 阶段
