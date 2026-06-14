@@ -14,6 +14,46 @@
 
 ---
 
+## Round 54 - 2026-06-14
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+落地第一条真实数据库集成测试，验证考试提交流程中的事务、行锁、判分、错题归集和业务约束。
+
+### 完成内容
+- 引入 Testcontainers 1.20.1 依赖（MySQL + JUnit Jupiter），为集成测试提供真实 MySQL 8.0 容器。
+- 新增 `IntegrationTestBase` 抽象基类，通过 `@DynamicPropertySource` 自动注入 Testcontainers MySQL 连接信息，子类只需继承并声明 `@SpringBootTest @ActiveProfiles("integration")`。
+- 新增 `application-integration.yml` 测试配置，启用 Flyway 迁移、禁用 AI 和 Knife4j，使用测试专用 JWT Secret。
+- 新增 `ExamServiceIntegrationTest`（10 个测试）：开始考试、未发布试卷拒绝、全部答对满分、答错自动入错题本、重复提交拒绝、非试卷题目拒绝、越权提交拒绝、超时标记、exam_answer 唯一约束、Flyway 迁移约束验证。
+- 集成测试标记 `@Tag("integration")`，surefire 配置 `<excludedGroups>integration</excludedGroups>` 排除默认运行。需要时通过 `mvn test -Dgroups=integration` 单独执行。
+- 本地 Docker socket 路径为 `~/.docker/run/docker.sock`，Testcontainers 1.20.1 + JDK 25 自动发现存在兼容性问题，CI 环境（JDK 17）应可正常运行。
+
+### 修改文件清单
+- 修改：`backend/pom.xml`（新增 Testcontainers 依赖 + surefire excludedGroups 配置）
+- 新增：`backend/src/test/java/com/learnplatform/IntegrationTestBase.java`
+- 新增：`backend/src/test/resources/application-integration.yml`
+- 新增：`backend/src/test/java/com/learnplatform/service/ExamServiceIntegrationTest.java`（10 个测试）
+
+### 验收结果
+- [x] `cd backend && mvn test -q`：151 个测试全部通过（集成测试已排除默认运行）
+- [x] `cd frontend && npm run build`：生产构建成功（587ms）
+- [x] 集成测试代码通过编译，结构和断言逻辑完整
+
+### 遗留问题
+- 本地 JDK 25 + Testcontainers 1.20.1 自动发现 Docker socket 存在兼容性问题（`Could not find a valid Docker environment`），集成测试需要在 JDK 17 CI 环境中验证运行。
+- 后续可补充刷题判分和错题归集的真实数据库集成测试。
+
+### 下轮建议
+- 在 CI 中验证集成测试通过，或升级 Testcontainers 版本解决 JDK 25 兼容问题。
+- 可继续补充 PracticeService 集成测试或进入 P3 远期规划。
+
+### 建议 commit message
+`test(integration): 落地考试提交流程 Testcontainers 集成测试`
+
+---
+
 ## Round 53 - 2026-06-14
 
 ### 阶段
