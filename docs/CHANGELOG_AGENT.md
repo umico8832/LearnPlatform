@@ -14,6 +14,46 @@
 
 ---
 
+## Round 52 - 2026-06-14
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+补充前端页面级组件单元测试，覆盖认证页面和个人中心核心逻辑。
+
+### 完成内容
+- **LoginView 测试（10 个）**：覆盖页面标题/副标题渲染、输入框渲染、登录按钮、注册链接、表单值更新、登录 API 调用（含 token/user 参数验证）、登录成功消息与路由跳转、redirect query 参数跳转、验证失败不调用 API、API 错误优雅处理。
+- **RegisterView 测试（9 个）**：覆盖页面标题/副标题渲染、全部表单字段（用户名/密码/确认密码/昵称）、注册按钮、登录链接、注册 API 调用（含 nickname 传递）、空昵称发送 undefined、注册成功消息跳转登录页、验证失败不调用 API、API 错误优雅处理。
+- **ProfileView 测试（12 个）**：覆盖用户头像首字显示（含昵称回退用户名）、昵称展示、普通用户/管理员角色标签、注册日期渲染、个人信息/修改密码分区标题、禁用用户名字段、学习报告按钮、修改昵称 API 调用、修改密码 API 调用、两种操作的 API 错误优雅处理。
+- 使用 `vi.hoisted()` 解决 `vi.mock` 工厂函数中引用 top-level 变量的 hoisting 问题。
+- Element Plus 组件 stub 使用显式 prop 绑定（如 `:placeholder`）和 `$attrs` 转发确保属性正确传递。
+
+### 修改文件清单
+- 新增：`frontend/src/__tests__/views/LoginView.test.ts`（10 个测试）
+- 新增：`frontend/src/__tests__/views/RegisterView.test.ts`（9 个测试）
+- 新增：`frontend/src/__tests__/views/ProfileView.test.ts`（12 个测试）
+- 更新：`docs/CHANGELOG_AGENT.md`
+- 更新：`docs/HANDOFF.md`
+
+### 验收结果
+- [x] `cd frontend && npm test`：21 个测试文件、187 个测试全部通过（+32 新增）
+- [x] `cd frontend && npm run build`：构建成功
+- [x] `cd backend && mvn test -q`：151 个测试全部通过
+
+### 遗留问题
+- 页面级组件（HomeView、PracticeSessionView 等）尚未覆盖，需要更多 mocking 工作。
+- ProfileView 的密码表单提交需要通过 `vm` 直接设置 reactive 数据（因 stub v-model 链路问题）。
+
+### 下轮建议
+- 继续扩展页面级组件测试覆盖：HomeView（统计面板）、PracticeView（刷题入口）。
+- 或进入 P3 远期规划。
+
+### 建议 commit message
+`test(frontend): 补充认证与个人中心页面级组件测试（31 个测试）`
+
+---
+
 ## Round 51 - 2026-06-14
 
 ### 阶段
