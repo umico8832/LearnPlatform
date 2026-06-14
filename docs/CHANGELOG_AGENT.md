@@ -14,6 +14,49 @@
 
 ---
 
+## Round 48 - 2026-06-14
+
+### 阶段
+Phase 12：体验增强迭代
+
+### 本轮目标
+补充前端 API 模块单元测试，覆盖 7 个核心 API 模块的所有导出函数，验证请求路径、参数传递和响应解包。
+
+### 完成内容
+- **practice API 测试（14 个）**：覆盖 `getPracticeQuestions`（3 个：带参/无参/多筛选）、`submitAnswer`（2 个：带答案时间/不带）、`getPracticeRecords`（2 个：分页/多筛选）、`getPracticeStats`（1 个）、`getWrongQuestionPractice`（2 个：带参/无参）、`getFavoritePractice`（2 个：批量/单题）、`getAdaptiveQuestions`（1 个）、`getAdaptiveSummary`（1 个）。
+- **favorite API 测试（9 个）**：覆盖 `addFavorite`（2 个：收藏/不同ID）、`removeFavorite`（1 个）、`checkFavorite`（2 个：已收藏/未收藏）、`getFavorites`（2 个：带参/无参）、`getFavoriteIds`（2 个：有数据/空数组）。
+- **statistics API 测试（6 个）**：覆盖 `getStatisticsOverview`、`getDailyTrend`（2 个：有数据/空）、`getCourseStats`、`getAdminStatisticsOverview`、`getLearningReport`。
+- **exam API 测试（14 个）**：覆盖管理端 6 个接口（列表/详情/创建/更新/删除/发布）和用户端 6 个接口（已发布试卷/详情/开始/提交/结果/记录），含筛选和无参测试。
+- **user API 测试（3 个）**：覆盖 `updateProfile`（1 个）、`updatePassword`（2 个：成功/失败）。
+- **course API 测试（9 个）**：覆盖 `getAllCourses`（2 个：有数据/空）、`getCoursePage`（2 个：分页/关键词）、`getCourseById`、`createCourse`、`updateCourse`、`deleteCourse`（2 个：成功/不存在）。
+- **knowledgePoint API 测试（7 个）**：覆盖 `getKnowledgeTree`（2 个：有数据/空）、`createKnowledgePoint`（2 个：父级/子级）、`updateKnowledgePoint`、`deleteKnowledgePoint`（2 个：成功/不存在）。
+- 统一使用 `vi.mock('@/utils/request')` mock Axios 实例，通过 `vi.mocked(request)` 类型安全地验证调用参数。
+
+### 修改文件清单
+- 新增：`frontend/src/__tests__/api/practice.test.ts`（14 个测试）
+- 新增：`frontend/src/__tests__/api/favorite.test.ts`（9 个测试）
+- 新增：`frontend/src/__tests__/api/statistics.test.ts`（6 个测试）
+- 新增：`frontend/src/__tests__/api/exam.test.ts`（14 个测试）
+- 新增：`frontend/src/__tests__/api/user.test.ts`（3 个测试）
+- 新增：`frontend/src/__tests__/api/course.test.ts`（9 个测试）
+- 新增：`frontend/src/__tests__/api/knowledgePoint.test.ts`（7 个测试）
+
+### 验收结果
+- [x] `cd frontend && npm test` → 11 test files, 91 tests, 0 failures
+- [x] `cd frontend && npm run build` → 构建成功（563ms）
+- [x] API 测试与现有组件/Store 测试互不影响
+
+### 遗留问题
+- 前端页面级组件（PracticeSessionView、HomeView 等）尚未覆盖，需要更多 mocking 工作。
+- 项目截图（FUTURE.md #7）仍待补充，但为非阻塞演示素材。
+- router guards 和 adminUser/comment/wrongQuestion/learningPlan/question API 模块测试可后续补充。
+
+### 下轮建议
+- 可补充剩余 API 模块测试（adminUser, comment, wrongQuestion, learningPlan, question, ai），或继续扩展前端测试到 router guards 和页面级组件。
+- 建议 commit message: `test(frontend): 补充 7 个 API 模块单元测试（62 个测试）`
+
+---
+
 ## Round 47 - 2026-06-14
 
 ### 阶段

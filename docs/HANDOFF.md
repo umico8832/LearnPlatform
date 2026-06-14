@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 12 — 体验增强迭代（基本完成，后端测试持续扩充中）
+当前阶段：Phase 12 — 体验增强迭代（基本完成，后端+前端测试持续扩充中）
 
 阶段状态：
 - [x] Phase 0：项目规划 ✅
@@ -31,7 +31,7 @@
 - [x] Phase 9：统计可视化 ✅
 - [x] Phase 10：质量提升 ✅（参数校验、接口文档、前端体验优化、日志规范化、SQL优化、安全检查）
 - [x] Phase 11：部署与简历 ✅（项目截图为非阻塞演示素材）
-- [x] Phase 12：体验增强迭代（✅ 基本完成：AI 题目助手、管理端统计、AI 流式输出、用户个人中心、错题重练、收藏题练习、Excel 导入导出、学习计划、AI 调用日志、核心业务可信度修复、后端核心服务测试、社区评论、多端适配、题目难度自适应、填空简答判分增强、个人学习报告、GitHub Actions CI、CommentController/AdminExam/AdminQuestion Controller 测试、CommentRequest @Max→@Size 修复、AdminUser/AdminCourse/AdminKnowledgePoint Controller 测试）
+- [x] Phase 12：体验增强迭代（✅ 基本完成：AI 题目助手、管理端统计、AI 流式输出、用户个人中心、错题重练、收藏题练习、Excel 导入导出、学习计划、AI 调用日志、核心业务可信度修复、后端核心服务测试、社区评论、多端适配、题目难度自适应、填空简答判分增强、个人学习报告、GitHub Actions CI、CommentController/AdminExam/AdminQuestion Controller 测试、CommentRequest @Max→@Size 修复、AdminUser/AdminCourse/AdminKnowledgePoint Controller 测试、前端 API 模块测试 7 个模块 62 个测试）
 
 ---
 
@@ -57,7 +57,7 @@
 17. **数据库迁移**：Flyway 基线与增量迁移，已有数据库可自动基线升级
 18. **AI 用户级限流**：每日调用配额（默认 50 次/天），所有同步/流式接口受保护
 19. **后端核心测试**：151 个后端测试通过（JWT、判分、考试校验、刷题、错题本、试卷状态、Controller MockMvc 集成测试覆盖 10 个 Controller）
-23. **前端 Vitest 测试**：29 个前端测试通过（auth 工具函数 9 个、user Store 7 个、MarkdownRenderer 组件 10 个、NotFoundView 组件 3 个），CI 已集成 `npm test`
+23. **前端 Vitest 测试**：91 个前端测试通过（auth 工具函数 9 个、user Store 7 个、MarkdownRenderer 组件 10 个、NotFoundView 组件 3 个、Practice API 14 个、Exam API 14 个、Favorite API 9 个、Course API 9 个、KnowledgePoint API 7 个、Statistics API 6 个、User API 3 个），CI 已集成 `npm test`
 20. **多端适配**：移动端抽屉导航、答题界面触摸友好、统计图表响应式
 21. **题目难度自适应**：基于用户历史正确率的加权概率采样推荐
 22. **GitHub Actions CI**：后端测试 + 前端构建 + Docker 镜像验证
@@ -106,6 +106,7 @@ docker compose up -d
 ## 5. 当前遗留问题
 
 - 前端页面级组件（PracticeSessionView、HomeView 等）尚未覆盖，需要更多 mocking 工作
+- 剩余 API 模块测试（adminUser, comment, wrongQuestion, learningPlan, question, ai）可后续补充
 - tokensUsed 字段暂未从上游 API 提取，仅记录调用次数
 - 管理端缺少按用户单独调整配额的能力（当前全局统一配额）
 - 项目截图未制作（非阻塞演示素材）
@@ -120,11 +121,12 @@ docker compose up -d
 Phase 12 已基本完成。所有 P0-P2 功能、技术债务均已偿还。
 
 后续可选方向：
-- 扩展前端测试覆盖（页面级组件、API 模块、router guards）
+- 补充剩余 API 模块测试（adminUser, comment, wrongQuestion, learningPlan, question, ai）
+- 扩展前端测试覆盖到 router guards 和页面级组件
 - 补充项目截图/演示素材（FUTURE.md #7）
 - 进入 P3 远期规划：多租户、移动端 App、Redis 缓存、监控告警等
 
-建议 commit message: `test(controller): 补充 AdminUser/AdminCourse/AdminKnowledgePoint Controller 测试`
+建议 commit message: `test(frontend): 补充 7 个 API 模块单元测试（62 个测试）`
 
 ---
 
@@ -157,7 +159,7 @@ Phase 12 已基本完成。所有 P0-P2 功能、技术债务均已偿还。
 
 当前阶段：Phase 0-12 基本完成，P0-P2 功能全部实现。
 
-已完成模块：用户鉴权、课程知识点、题库、刷题判分（含填空简答增强）、错题本（含重练）、试卷考试、AI 功能（含流式输出与配额管理）、统计可视化（含个人学习报告）、质量提升、部署简历、收藏题练习、Excel 导入导出、学习计划、题目评论、多端适配、难度自适应、管理端用户管理、后端核心测试（151 个）、前端 Vitest 测试（29 个）、GitHub Actions CI。
+已完成模块：用户鉴权、课程知识点、题库、刷题判分（含填空简答增强）、错题本（含重练）、试卷考试、AI 功能（含流式输出与配额管理）、统计可视化（含个人学习报告）、质量提升、部署简历、收藏题练习、Excel 导入导出、学习计划、题目评论、多端适配、难度自适应、管理端用户管理、后端核心测试（151 个）、前端 Vitest 测试（91 个，含 7 个 API 模块测试）、GitHub Actions CI。
 后续扩展方向：见 docs/FUTURE.md；可扩展前端测试覆盖或进入 P3 远期规划。
 
 本地运行方式：
