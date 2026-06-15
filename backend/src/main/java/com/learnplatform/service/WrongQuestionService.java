@@ -26,13 +26,16 @@ public class WrongQuestionService {
     private final WrongQuestionMapper wrongQuestionMapper;
     private final QuestionMapper questionMapper;
     private final CourseMapper courseMapper;
+    private final CacheEvictService cacheEvictService;
 
     public WrongQuestionService(WrongQuestionMapper wrongQuestionMapper,
                                 QuestionMapper questionMapper,
-                                CourseMapper courseMapper) {
+                                CourseMapper courseMapper,
+                                CacheEvictService cacheEvictService) {
         this.wrongQuestionMapper = wrongQuestionMapper;
         this.questionMapper = questionMapper;
         this.courseMapper = courseMapper;
+        this.cacheEvictService = cacheEvictService;
     }
 
     /**
@@ -149,6 +152,7 @@ public class WrongQuestionService {
         }
         wq.setMasteryLevel(masteryLevel);
         wrongQuestionMapper.updateById(wq);
+        cacheEvictService.evictUserStatistics(userId);
     }
 
     /**
@@ -162,6 +166,7 @@ public class WrongQuestionService {
             throw new BusinessException(ResultCode.NOT_FOUND, "错题记录不存在");
         }
         wrongQuestionMapper.deleteById(id);
+        cacheEvictService.evictUserStatistics(userId);
     }
 
     /**

@@ -6,6 +6,7 @@ import com.learnplatform.dto.LearningReportVO;
 import com.learnplatform.dto.StatisticsVO;
 import com.learnplatform.entity.*;
 import com.learnplatform.mapper.*;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -47,6 +48,7 @@ public class StatisticsService {
     /**
      * 获取用户学习统计
      */
+    @Cacheable(value = "statistics", key = "#userId")
     public StatisticsVO getUserStatistics(Long userId) {
         StatisticsVO vo = new StatisticsVO();
 
@@ -83,6 +85,7 @@ public class StatisticsService {
     /**
      * 获取用户每日刷题趋势（最近 7 天）
      */
+    @Cacheable(value = "dailyTrend", key = "#userId")
     public List<Map<String, Object>> getDailyTrend(Long userId) {
         LocalDate today = LocalDate.now();
         LocalDateTime start = today.minusDays(6).atStartOfDay();
@@ -113,6 +116,7 @@ public class StatisticsService {
     /**
      * 获取用户知识点正确率分布（最近做过的题目按课程统计）
      */
+    @Cacheable(value = "courseStats", key = "#userId")
     public List<Map<String, Object>> getCourseStats(Long userId) {
         LambdaQueryWrapper<PracticeRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(PracticeRecord::getUserId, userId);
@@ -147,6 +151,7 @@ public class StatisticsService {
     /**
      * 获取管理端平台统计概览
      */
+    @Cacheable(value = "adminStatistics", key = "'global'")
     public AdminStatisticsVO getAdminStatistics() {
         AdminStatisticsVO vo = new AdminStatisticsVO();
         LocalDate today = LocalDate.now();
@@ -210,6 +215,7 @@ public class StatisticsService {
     /**
      * 获取个人学习报告
      */
+    @Cacheable(value = "learningReport", key = "#userId")
     public LearningReportVO getLearningReport(Long userId) {
         LearningReportVO vo = new LearningReportVO();
 

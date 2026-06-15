@@ -35,6 +35,7 @@ public class ExamService {
     private final QuestionOptionMapper questionOptionMapper;
     private final WrongQuestionService wrongQuestionService;
     private final AnswerEvaluator answerEvaluator;
+    private final CacheEvictService cacheEvictService;
 
     public ExamService(ExamRecordMapper examRecordMapper,
                        ExamAnswerMapper examAnswerMapper,
@@ -43,7 +44,8 @@ public class ExamService {
                        QuestionMapper questionMapper,
                        QuestionOptionMapper questionOptionMapper,
                        WrongQuestionService wrongQuestionService,
-                       AnswerEvaluator answerEvaluator) {
+                       AnswerEvaluator answerEvaluator,
+                       CacheEvictService cacheEvictService) {
         this.examRecordMapper = examRecordMapper;
         this.examAnswerMapper = examAnswerMapper;
         this.examPaperMapper = examPaperMapper;
@@ -52,6 +54,7 @@ public class ExamService {
         this.questionOptionMapper = questionOptionMapper;
         this.wrongQuestionService = wrongQuestionService;
         this.answerEvaluator = answerEvaluator;
+        this.cacheEvictService = cacheEvictService;
     }
 
     /**
@@ -195,6 +198,9 @@ public class ExamService {
         record.setTotalScore(totalScore);
         record.setStatus(1); // 已完成
         examRecordMapper.updateById(record);
+
+        // 清除统计缓存
+        cacheEvictService.evictUserStatistics(userId);
 
         return getExamResult(record.getId(), userId);
     }

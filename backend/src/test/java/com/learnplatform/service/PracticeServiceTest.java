@@ -45,6 +45,7 @@ class PracticeServiceTest {
     @Mock private KnowledgePointMapper knowledgePointMapper;
     @Mock private WrongQuestionMapper wrongQuestionMapper;
     @Mock private UserFavoriteQuestionMapper userFavoriteQuestionMapper;
+    @Mock private CacheEvictService cacheEvictService;
     private RecordingWrongQuestionService wrongQuestionService;
     private PracticeService practiceService;
 
@@ -54,7 +55,7 @@ class PracticeServiceTest {
         practiceService = new PracticeService(questionMapper, questionOptionMapper,
                 questionKnowledgePointMapper, practiceRecordMapper, courseMapper,
                 knowledgePointMapper, wrongQuestionMapper, userFavoriteQuestionMapper, wrongQuestionService,
-                new AnswerEvaluator());
+                new AnswerEvaluator(), cacheEvictService);
     }
 
     @Test
@@ -200,7 +201,7 @@ class PracticeServiceTest {
         private Long removedQuestionId;
 
         RecordingWrongQuestionService() {
-            super(null, null, null);
+            super(null, null, null, null);
         }
 
         @Override

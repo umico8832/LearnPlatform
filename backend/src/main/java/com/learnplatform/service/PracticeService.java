@@ -33,6 +33,7 @@ public class PracticeService {
     private final UserFavoriteQuestionMapper userFavoriteQuestionMapper;
     private final WrongQuestionService wrongQuestionService;
     private final AnswerEvaluator answerEvaluator;
+    private final CacheEvictService cacheEvictService;
 
     public PracticeService(QuestionMapper questionMapper,
                            QuestionOptionMapper questionOptionMapper,
@@ -43,7 +44,8 @@ public class PracticeService {
                            WrongQuestionMapper wrongQuestionMapper,
                            UserFavoriteQuestionMapper userFavoriteQuestionMapper,
                            WrongQuestionService wrongQuestionService,
-                           AnswerEvaluator answerEvaluator) {
+                           AnswerEvaluator answerEvaluator,
+                           CacheEvictService cacheEvictService) {
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
@@ -54,6 +56,7 @@ public class PracticeService {
         this.userFavoriteQuestionMapper = userFavoriteQuestionMapper;
         this.wrongQuestionService = wrongQuestionService;
         this.answerEvaluator = answerEvaluator;
+        this.cacheEvictService = cacheEvictService;
     }
 
     /**
@@ -190,6 +193,9 @@ public class PracticeService {
         result.setCorrectAnswer(correctAnswer);
         result.setAnalysis(question.getAnalysis());
         result.setScore(question.getScore());
+
+        // 清除统计缓存
+        cacheEvictService.evictUserStatistics(userId);
 
         return result;
     }

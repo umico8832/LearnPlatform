@@ -7,6 +7,7 @@ import com.learnplatform.dto.KnowledgeGraphVO.GraphEdge;
 import com.learnplatform.dto.KnowledgeGraphVO.GraphNode;
 import com.learnplatform.entity.*;
 import com.learnplatform.mapper.*;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -44,6 +45,7 @@ public class KnowledgeGraphService {
      * @param courseId 可选课程筛选
      * @return 图谱节点和边
      */
+    @Cacheable(value = "knowledgeGraph", key = "#userId + ':' + #courseId")
     public KnowledgeGraphVO getKnowledgeGraph(Long userId, Long courseId) {
         // 1. 查询知识点
         LambdaQueryWrapper<KnowledgePoint> kpWrapper = new LambdaQueryWrapper<>();

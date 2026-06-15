@@ -36,13 +36,14 @@ class ExamServiceTest {
     @Mock private ExamQuestionMapper examQuestionMapper;
     @Mock private QuestionMapper questionMapper;
     @Mock private QuestionOptionMapper questionOptionMapper;
+    @Mock private CacheEvictService cacheEvictService;
     private ExamService examService;
 
     @BeforeEach
     void setUp() {
         examService = new ExamService(examRecordMapper, examAnswerMapper, examPaperMapper,
                 examQuestionMapper, questionMapper, questionOptionMapper,
-                null, new AnswerEvaluator());
+                null, new AnswerEvaluator(), cacheEvictService);
     }
 
     @Test

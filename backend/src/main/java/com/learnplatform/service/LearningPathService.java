@@ -6,6 +6,7 @@ import com.learnplatform.entity.*;
 import com.learnplatform.mapper.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -57,6 +58,7 @@ public class LearningPathService {
      * @param courseId 可选课程 ID，为 null 时分析所有课程
      * @return 学习路径推荐结果
      */
+    @Cacheable(value = "learningPath", key = "#userId + ':' + #courseId")
     public LearningPathVO getLearningPath(Long userId, Long courseId) {
         log.info("生成学习路径推荐: userId={}, courseId={}", userId, courseId);
 

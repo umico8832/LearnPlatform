@@ -14,6 +14,63 @@
 
 ---
 
+## Round 61 - 2026-06-15
+
+### 阶段
+Phase 12 → P3 远期规划
+
+### 本轮目标
+实现 Redis 缓存集成（FUTURE.md P3 #15 性能与运维），为统计类高频读取、低频变更接口添加缓存层，提升接口响应速度。
+
+### 完成内容
+- **Redis 依赖与配置**：引入 `spring-boot-starter-data-redis`，配置 Lettuce 连接池，支持 `REDIS_HOST`/`REDIS_PORT`/`REDIS_PASSWORD` 环境变量。
+- **缓存类型可切换**：`CACHE_TYPE` 环境变量控制缓存后端（`redis` / `simple`），本地开发默认 `simple`（内存缓存，无需 Redis），Docker 部署默认 `redis`。通过 `@ConditionalOnProperty` 实现条件化 Bean 注册。
+- **RedisConfig**：自定义 `RedisCacheManager`，配置 7 个缓存区域及独立 TTL：`statistics`(5min)、`adminStatistics`(3min)、`dailyTrend`(5min)、`courseStats`(5min)、`learningReport`(10min)、`learningPath`(10min)、`knowledgeGraph`(10min)。使用 String 序列化 Key + JSON 序列化 Value，禁止缓存 null 值。
+- **StatisticsService 缓存**：`getUserStatistics`、`getDailyTrend`、`getCourseStats`、`getAdminStatistics`、`getLearningReport` 五个方法添加 `@Cacheable` 注解。
+- **LearningPathService 缓存**：`getLearningPath` 方法添加 `@Cacheable`，key 含 userId + courseId。
+- **KnowledgeGraphService 缓存**：`getKnowledgeGraph` 方法添加 `@Cacheable`，key 含 userId + courseId。
+- **CacheEvictService**：新增缓存清除服务，在刷题提交、考试提交、错题本变更时自动清除相关用户统计缓存和管理端统计缓存。
+- **缓存失效集成**：`PracticeService.submitAnswer()`、`ExamService.submitExam()`、`WrongQuestionService.updateMasteryLevel()`/`removeWrongQuestion()` 后自动调用 `cacheEvictService.evictUserStatistics()`。
+- **Docker Compose 更新**：新增 Redis 7 Alpine 服务，含 AOF 持久化、可选密码、健康检查；后端服务依赖 Redis 健康检查，传入 `CACHE_TYPE=redis`。
+- **测试适配**：`PracticeServiceTest`、`WrongQuestionServiceTest`、`ExamServiceTest` 适配新增的 `CacheEvictService` 构造函数参数（Mock 注入）；集成测试配置使用 `spring.cache.type: simple`。
+- **.env.example 更新**：新增 `REDIS_HOST`、`REDIS_PORT`、`REDIS_PASSWORD`、`REDIS_HOST_PORT` 配置项。
+
+### 修改文件清单
+- 修改：`backend/pom.xml`（新增 spring-boot-starter-data-redis 依赖）
+- 修改：`backend/src/main/resources/application.yml`（新增 Redis + Cache 配置）
+- 新增：`backend/src/main/java/com/learnplatform/config/RedisConfig.java`
+- 新增：`backend/src/main/java/com/learnplatform/service/CacheEvictService.java`
+- 修改：`backend/src/main/java/com/learnplatform/service/StatisticsService.java`（5 个 @Cacheable）
+- 修改：`backend/src/main/java/com/learnplatform/service/LearningPathService.java`（1 个 @Cacheable）
+- 修改：`backend/src/main/java/com/learnplatform/service/KnowledgeGraphService.java`（1 个 @Cacheable）
+- 修改：`backend/src/main/java/com/learnplatform/service/PracticeService.java`（注入 CacheEvictService + 提交后清除缓存）
+- 修改：`backend/src/main/java/com/learnplatform/service/ExamService.java`（注入 CacheEvictService + 提交后清除缓存）
+- 修改：`backend/src/main/java/com/learnplatform/service/WrongQuestionService.java`（注入 CacheEvictService + 更新/删除后清除缓存）
+- 修改：`backend/src/test/java/com/learnplatform/service/PracticeServiceTest.java`（适配新构造函数）
+- 修改：`backend/src/test/java/com/learnplatform/service/WrongQuestionServiceTest.java`（适配新构造函数）
+- 修改：`backend/src/test/java/com/learnplatform/service/ExamServiceTest.java`（适配新构造函数）
+- 修改：`backend/src/test/resources/application-integration.yml`（cache.type=simple）
+- 修改：`docker-compose.yml`（新增 Redis 服务 + CACHE_TYPE 环境变量）
+- 修改：`.env.example`（新增 Redis 配置项）
+
+### 验收结果
+- [x] `cd backend && mvn test -q`：151 个测试全部通过
+- [x] `cd frontend && npm run build`：构建成功（636ms）
+- [x] 后端编译成功，无错误
+- [x] 前端 TypeScript 无错误
+- [x] Docker Compose YAML 格式正确
+- [x] 本地开发无需 Redis 即可运行（CACHE_TYPE=simple）
+
+### 遗留问题
+- 本地 JDK 25 + Testcontainers 兼容性问题仍在，集成测试需在 CI（JDK 17）环境验证。
+- 缓存 TTL 参数目前硬编码在 RedisConfig 中，后续可抽为 application.yml 配置项。
+
+### 下轮建议
+- 可继续 P3 远期规划中的其他项目（监控告警、验证码），或偿还项目截图素材。
+- 建议 commit message: `perf(cache): 集成 Redis 缓存加速统计类接口`
+
+---
+
 ## Round 60 - 2026-06-14
 
 ### 阶段

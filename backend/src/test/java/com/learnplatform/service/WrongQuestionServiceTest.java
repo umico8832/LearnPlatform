@@ -25,12 +25,13 @@ class WrongQuestionServiceTest {
     @Mock private WrongQuestionMapper wrongQuestionMapper;
     @Mock private QuestionMapper questionMapper;
     @Mock private CourseMapper courseMapper;
+    @Mock private CacheEvictService cacheEvictService;
 
     private WrongQuestionService wrongQuestionService;
 
     @BeforeEach
     void setUp() {
-        wrongQuestionService = new WrongQuestionService(wrongQuestionMapper, questionMapper, courseMapper);
+        wrongQuestionService = new WrongQuestionService(wrongQuestionMapper, questionMapper, courseMapper, cacheEvictService);
     }
 
     @Test
