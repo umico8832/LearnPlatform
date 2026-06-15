@@ -391,3 +391,4 @@
 - [x] GitHub Actions CI 流水线（后端测试 + 前端构建 + Docker 镜像验证）
 - [x] 个人中心学习报告跳转入口
 - [x] 测试策略收敛（保留关键回归测试，停止为简单 CRUD 堆叠等价用例）
+- [x] P3 监控体系集成（Spring Boot Actuator + Micrometer Prometheus + Docker Compose Prometheus + Grafana）

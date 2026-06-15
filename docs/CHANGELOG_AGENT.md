@@ -14,6 +14,50 @@
 
 ---
 
+## Round 62 - 2026-06-15
+
+### 阶段
+Phase 12 → P3 远期规划
+
+### 本轮目标
+集成 Spring Boot Actuator + Prometheus + Grafana 监控体系（FUTURE.md P3 #15 性能与运维），提供健康检查端点、应用指标采集和可视化监控面板。
+
+### 完成内容
+- **Spring Boot Actuator**：引入 `spring-boot-starter-actuator` 依赖，暴露健康检查（`/actuator/health`）、应用信息（`/actuator/info`）和 Prometheus 指标（`/actuator/prometheus`）三个端点。
+- **Micrometer Prometheus**：引入 `micrometer-registry-prometheus` 依赖，自动采集 JVM、HTTP 请求、Tomcat 线程池等标准指标，并以 Prometheus 格式暴露。
+- **Actuator 配置**：`application.yml` 新增 `management` 配置块，配置端点暴露策略、健康检查详情级别（show-details: always）、指标标签（application=learn-platform）。
+- **SecurityConfig 放行**：在 Spring Security 权限规则中添加 `/actuator/**` permitAll，监控端点无需 JWT 认证。
+- **Prometheus 服务**：新增 `monitoring/prometheus.yml` 抓取配置，15s 间隔采集后端 `/actuator/prometheus` 指标，30 天数据保留。
+- **Grafana 服务**：Docker Compose 新增 Grafana 10.4.1，预配置 Prometheus 数据源地址，可选管理员密码。
+- **Docker Compose 更新**：新增 `prometheus` 和 `grafana` 两个服务，含健康检查、持久化卷和启动顺序依赖。后端健康检查改为使用 `/actuator/health` 端点。
+- **环境变量**：`.env.example` 新增 `PROMETHEUS_HOST_PORT`(9090)、`GRAFANA_HOST_PORT`(3000)、`GRAFANA_ADMIN_PASSWORD` 配置项。
+
+### 修改文件清单
+- 修改：`backend/pom.xml`（新增 actuator + micrometer-registry-prometheus 依赖）
+- 修改：`backend/src/main/resources/application.yml`（新增 management 配置块）
+- 修改：`backend/src/main/java/com/learnplatform/config/SecurityConfig.java`（新增 /actuator/** permitAll）
+- 新增：`monitoring/prometheus.yml`（Prometheus 抓取配置）
+- 修改：`docker-compose.yml`（新增 prometheus + grafana 服务，后端健康检查改用 actuator）
+- 修改：`.env.example`（新增监控配置项）
+
+### 验收结果
+- [x] `cd backend && mvn test -q`：151 个测试全部通过
+- [x] `cd frontend && npm run build`：构建成功（628ms）
+- [x] 后端编译成功，无错误
+- [x] Docker Compose YAML 格式正确
+- [x] SecurityConfig `/actuator/**` 放行规则位置正确（在 /api/admin/** 之前）
+
+### 遗留问题
+- 本地 JDK 25 + Testcontainers 兼容性问题仍在，集成测试需在 CI（JDK 17）环境验证。
+- Grafana Dashboard JSON 模板可后续补充，当前需手动添加 Prometheus 数据源和面板。
+- 生产环境应通过反向代理限制 `/actuator/prometheus` 端点访问（或添加 Basic Auth）。
+
+### 下轮建议
+- 可继续补充 Grafana Dashboard JSON 模板自动导入，或继续偿还项目截图素材。
+- 建议 commit message: `feat(monitoring): 集成 Actuator + Prometheus + Grafana 监控体系`
+
+---
+
 ## Round 61 - 2026-06-15
 
 ### 阶段

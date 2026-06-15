@@ -75,6 +75,26 @@ ai:
   max-tokens: ${AI_MAX_TOKENS:2000}
   daily-quota: ${AI_DAILY_QUOTA:50}
 
+# Actuator + Prometheus 监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
 # Knife4j 配置
 springdoc:
   swagger-ui:
