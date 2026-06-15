@@ -2,16 +2,23 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { nextTick } from 'vue'
 
-const { mockPost, mockPush, mockSetLoginInfo, mockSuccess, mockValidate } = vi.hoisted(() => ({
+const { mockPost, mockPush, mockSetLoginInfo, mockSuccess, mockValidate, mockGetCaptcha } = vi.hoisted(() => ({
   mockPost: vi.fn(),
   mockPush: vi.fn(),
   mockSetLoginInfo: vi.fn(),
   mockSuccess: vi.fn(),
   mockValidate: vi.fn().mockResolvedValue(true),
+  mockGetCaptcha: vi.fn().mockResolvedValue({
+    data: { data: { captchaId: 'test-captcha-id', image: 'data:image/png;base64,abc123' } },
+  }),
 }))
 
 vi.mock('@/utils/request', () => ({
   default: { post: (...args: unknown[]) => mockPost(...args) },
+}))
+
+vi.mock('@/api/user', () => ({
+  getCaptcha: (...args: unknown[]) => mockGetCaptcha(...args),
 }))
 
 const mockRoute: Record<string, unknown> = { query: {} }
@@ -69,13 +76,13 @@ describe('LoginView', () => {
     expect(wrapper.find('.login-subtitle').text()).toBe('用户登录')
   })
 
-  it('should render username and password inputs', () => {
+  it('should render username, password and captcha inputs', () => {
     const wrapper = mountLogin()
     const inputs = wrapper.findAll('input')
-    expect(inputs.length).toBeGreaterThanOrEqual(2)
-    // Verify the component rendered with correct form structure
+    expect(inputs.length).toBeGreaterThanOrEqual(3)
     expect(wrapper.html()).toContain('请输入用户名')
     expect(wrapper.html()).toContain('请输入密码')
+    expect(wrapper.html()).toContain('请输入计算结果')
   })
 
   it('should render a login button', () => {
@@ -95,8 +102,10 @@ describe('LoginView', () => {
     const inputs = wrapper.findAll('input')
     await inputs[0].setValue('testuser')
     await inputs[1].setValue('password123')
+    await inputs[2].setValue('42')
     expect((inputs[0].element as HTMLInputElement).value).toBe('testuser')
     expect((inputs[1].element as HTMLInputElement).value).toBe('password123')
+    expect((inputs[2].element as HTMLInputElement).value).toBe('42')
   })
 
   it('should call login API on successful form submission', async () => {
@@ -107,10 +116,16 @@ describe('LoginView', () => {
     const inputs = wrapper.findAll('input')
     await inputs[0].setValue('testuser')
     await inputs[1].setValue('password123')
+    await inputs[2].setValue('42')
     await nextTick()
     await wrapper.find('button').trigger('click')
     await flushPromises()
-    expect(mockPost).toHaveBeenCalledWith('/auth/login', { username: 'testuser', password: 'password123' })
+    expect(mockPost).toHaveBeenCalledWith('/auth/login', {
+      username: 'testuser',
+      password: 'password123',
+      captchaId: 'test-captcha-id',
+      captchaCode: '42',
+    })
   })
 
   it('should show success message and navigate after login', async () => {
@@ -121,6 +136,7 @@ describe('LoginView', () => {
     const inputs = wrapper.findAll('input')
     await inputs[0].setValue('testuser')
     await inputs[1].setValue('password123')
+    await inputs[2].setValue('42')
     await wrapper.find('button').trigger('click')
     await flushPromises()
     expect(mockSetLoginInfo).toHaveBeenCalledWith('jwt-token-123', { id: 1, username: 'testuser', role: 'USER' })
@@ -137,6 +153,7 @@ describe('LoginView', () => {
     const inputs = wrapper.findAll('input')
     await inputs[0].setValue('testuser')
     await inputs[1].setValue('password123')
+    await inputs[2].setValue('42')
     await wrapper.find('button').trigger('click')
     await flushPromises()
     expect(mockPush).toHaveBeenCalledWith('/practice')
@@ -148,6 +165,7 @@ describe('LoginView', () => {
     const inputs = wrapper.findAll('input')
     await inputs[0].setValue('testuser')
     await inputs[1].setValue('password123')
+    await inputs[2].setValue('42')
     await wrapper.find('button').trigger('click')
     await flushPromises()
     expect(mockPost).not.toHaveBeenCalled()
@@ -159,8 +177,11 @@ describe('LoginView', () => {
     const inputs = wrapper.findAll('input')
     await inputs[0].setValue('testuser')
     await inputs[1].setValue('wrongpassword')
+    await inputs[2].setValue('42')
     await wrapper.find('button').trigger('click')
     await flushPromises()
     expect(mockSetLoginInfo).not.toHaveBeenCalled()
+    // Should refresh captcha on error
+    expect(mockGetCaptcha).toHaveBeenCalledTimes(2) // once on mount + once on error
   })
 })

@@ -14,6 +14,52 @@
 
 ---
 
+## Round 64 - 2026-06-15
+
+### 阶段
+Phase 12 → P3 远期规划
+
+### 本轮目标
+实现登录验证码功能（FUTURE.md 技术债务 #6），与已有 IP 级限流形成完整的登录安全防护链。
+
+### 完成内容
+- **后端 `CaptchaService`**：基于 Java AWT BufferedImage/Graphics2D 实现数学验证码图片生成，无需外部库依赖。支持加减乘三种运算，结果保证非负。验证码答案以 ConcurrentHashMap 内存存储，5 分钟 TTL 自动过期，惰性清理防内存泄漏。验证码一次性使用，验证后立即失效。
+- **后端 `CaptchaController`**：`GET /api/auth/captcha` 公开接口，返回 captchaId 和 base64 编码的 PNG 图片 data URI。
+- **`LoginRequest` 扩展**：新增 `captchaId` 和 `captchaCode` 两个 `@NotBlank` 必填字段。
+- **`AuthController` 验证码校验**：登录接口在认证前先校验验证码，错误返回 `VALIDATION_ERROR(1001)`。
+- **`SecurityConfig` 放行**：`/api/auth/captcha` 加入公开接口列表。
+- **前端 `user.ts`**：新增 `CaptchaData` 类型和 `getCaptcha()` API 方法。
+- **前端 `LoginView.vue`**：新增验证码输入框和图片展示区，页面加载时自动获取验证码，点击图片可刷新，登录失败后自动刷新验证码。验证码行使用 flex 布局，输入框 + 图片并排显示。
+- **测试适配**：`AuthControllerTest` 4 个登录测试新增 `CaptchaService` Mock 和 captcha 字段；`LoginView.test.ts` 10 个测试适配验证码输入和 API 调用参数验证。
+
+### 修改文件清单
+- 新增：`backend/src/main/java/com/learnplatform/config/CaptchaService.java`
+- 新增：`backend/src/main/java/com/learnplatform/controller/CaptchaController.java`
+- 修改：`backend/src/main/java/com/learnplatform/dto/LoginRequest.java`（新增 captchaId + captchaCode 字段）
+- 修改：`backend/src/main/java/com/learnplatform/controller/AuthController.java`（注入 CaptchaService + 验证码校验）
+- 修改：`backend/src/main/java/com/learnplatform/config/SecurityConfig.java`（放行 /api/auth/captcha）
+- 修改：`frontend/src/api/user.ts`（新增 CaptchaData + getCaptcha）
+- 修改：`frontend/src/views/auth/LoginView.vue`（验证码输入框 + 图片 + 刷新逻辑）
+- 修改：`backend/src/test/java/com/learnplatform/controller/AuthControllerTest.java`（Mock CaptchaService + captcha 字段）
+- 修改：`frontend/src/__tests__/views/LoginView.test.ts`（适配验证码输入 + getCaptcha mock）
+
+### 验收结果
+- [x] `cd backend && mvn test`：151 个测试全部通过
+- [x] `cd frontend && npm test`：21 个测试文件、187 个测试全部通过
+- [x] `cd frontend && npm run build`：构建成功（544ms）
+- [x] 后端编译成功，无错误
+- [x] 前端 TypeScript 无错误
+
+### 遗留问题
+- 验证码基于内存存储，多实例部署需改用 Redis（与 LoginRateLimitService 同理）。
+- 验证码为数学运算模式，未使用扭曲字符识别，安全性适中。
+
+### 下轮建议
+- 可继续 FUTURE.md 中的其他项目，或偿还项目截图素材（FUTURE.md #7）。
+- 建议 commit message: `security(auth): 实现登录验证码功能`
+
+---
+
 ## Round 63 - 2026-06-15
 
 ### 阶段

@@ -3,6 +3,7 @@ package com.learnplatform.controller;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.R;
 import com.learnplatform.common.result.ResultCode;
+import com.learnplatform.config.CaptchaService;
 import com.learnplatform.config.LoginRateLimitService;
 import com.learnplatform.dto.*;
 import com.learnplatform.security.CustomUserDetails;
@@ -28,10 +29,12 @@ public class AuthController {
 
     private final AuthService authService;
     private final LoginRateLimitService rateLimitService;
+    private final CaptchaService captchaService;
 
-    public AuthController(AuthService authService, LoginRateLimitService rateLimitService) {
+    public AuthController(AuthService authService, LoginRateLimitService rateLimitService, CaptchaService captchaService) {
         this.authService = authService;
         this.rateLimitService = rateLimitService;
+        this.captchaService = captchaService;
     }
 
     /**
@@ -52,6 +55,11 @@ public class AuthController {
     public R<LoginResponse> login(@Valid @RequestBody LoginRequest request,
                                   HttpServletRequest httpRequest) {
         String clientIp = extractClientIp(httpRequest);
+
+        // 校验验证码
+        if (!captchaService.verifyCaptcha(request.getCaptchaId(), request.getCaptchaCode())) {
+            throw new BusinessException(ResultCode.VALIDATION_ERROR, "验证码错误或已过期");
+        }
 
         // 检查 IP 限流
         if (rateLimitService.isBlocked(clientIp)) {
