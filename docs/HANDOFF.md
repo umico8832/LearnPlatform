@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 12 — 体验增强迭代（基本完成，P3 AI 智能组卷 + 学习路径推荐 + 知识图谱可视化 + Redis 缓存 + 监控体系已实现）
+当前阶段：Phase 12 — 体验增强迭代（基本完成，P3 AI 智能组卷 + 学习路径推荐 + 知识图谱可视化 + Redis 缓存 + 监控体系 + Grafana Dashboard 自动导入已实现）
 
 阶段状态：
 - [x] Phase 0：项目规划 ✅
@@ -64,6 +64,7 @@
 22. **GitHub Actions CI**：后端测试 + 前端构建 + Docker 镜像验证
 23. **知识图谱可视化**：ECharts Graph 力导向/环形布局展示知识点关系，节点按掌握程度着色，支持课程筛选、详情抽屉和快捷跳转
 24. **Redis 缓存集成**：统计数据接口缓存（7 个缓存区域独立 TTL），刷题/考试/错题本变更时自动清除缓存，CACHE_TYPE 环境变量控制 Redis/Simple 切换，Docker Compose 新增 Redis 服务
+25. **Grafana Dashboard 自动导入**：Provisioning 配置自动加载 Prometheus 数据源和预置 Dashboard（20 个面板：应用概览、HTTP 请求、JVM 内存/线程/GC、系统资源、连接池），Docker Compose 启动即可用
 
 ### 后端关键文件
 - 统一响应：`R.java` + `ResultCode.java` + `BusinessException` + `GlobalExceptionHandler`
@@ -130,7 +131,7 @@ Phase 12 已基本完成。所有 P0-P2 功能、技术债务均已偿还。现�
 - 补充项目截图/演示素材（FUTURE.md #7）
 - 进入 P3 远期规划：监控告警、多租户、验证码等
 
-建议 commit message: `docs(roadmap): 修正文档状态一致性`
+建议 commit message: `feat(monitoring): 补充 Grafana Dashboard 自动导入配置`
 
 ---
 

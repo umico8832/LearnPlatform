@@ -14,6 +14,49 @@
 
 ---
 
+## Round 63 - 2026-06-15
+
+### 阶段
+Phase 12 → P3 远期规划
+
+### 本轮目标
+补充 Grafana Dashboard JSON 模板自动导入（Round 62 遗留问题），实现 Docker Compose 启动后 Grafana 自动加载 Prometheus 数据源和预置监控面板。
+
+### 完成内容
+- **Grafana Provisioning 配置**：新增 `monitoring/grafana/provisioning/datasources/datasource.yml`，自动配置 Prometheus 数据源（`http://prometheus:9090`）；新增 `monitoring/grafana/provisioning/dashboards/dashboards.yml`，配置 Dashboard 文件自动加载（30s 刷新间隔）。
+- **Grafana Dashboard JSON**：新增 `monitoring/grafana/dashboards/learn-platform.json`，包含 6 个监控分组共 20 个面板：
+  - **应用概览**（6 个 Stat 面板）：应用状态（UP/DOWN）、当前 QPS、平均响应时间、5xx 错误率、JVM 堆内存使用率、活跃线程数
+  - **HTTP 请求**（4 个时序面板）：请求速率按状态码、响应时间分位数（p50/p95/p99）、请求速率按 URI Top 10、慢请求 Top 10
+  - **JVM 内存**（2 个时序面板）：堆内存（Used/Committed/Max）、非堆内存
+  - **JVM 线程与 GC**（2 个时序面板）：线程状态（Live/Daemon/Peak/Runnable/Waiting/Blocked）、GC 活动（频率与耗时）
+  - **系统资源**（2 个时序面板）：文件描述符（Open/Max）、Tomcat 会话与线程池
+  - **连接池与缓存**（2 个时序面板）：HikariCP 连接池（Active/Idle/Pending/Max/Min）、连接池等待时间与超时
+- **Docker Compose 更新**：Grafana 服务新增 3 个只读卷挂载（datasource provisioning、dashboard provisioning、dashboard JSON 文件），启动后自动加载数据源和面板。
+- **验证**：后端 151 个测试全部通过，前端构建成功（690ms）。
+
+### 修改文件清单
+- 新增：`monitoring/grafana/provisioning/datasources/datasource.yml`（Prometheus 数据源自动配置）
+- 新增：`monitoring/grafana/provisioning/dashboards/dashboards.yml`（Dashboard 文件自动加载配置）
+- 新增：`monitoring/grafana/dashboards/learn-platform.json`（预置监控 Dashboard，20 个面板）
+- 修改：`docker-compose.yml`（Grafana 服务新增 3 个 provisioning 卷挂载）
+
+### 验收结果
+- [x] `cd backend && mvn test -q`：151 个测试全部通过
+- [x] `cd frontend && npm run build`：构建成功（690ms）
+- [x] Docker Compose YAML 格式正确
+- [x] Grafana provisioning 目录结构符合官方规范
+- [x] Dashboard JSON 使用 `${DS_PROMETHEUS}` 变量引用数据源，兼容 provisioning 自动注入
+
+### 遗留问题
+- 本地 JDK 25 + Testcontainers 兼容性问题仍在，集成测试需在 CI（JDK 17）环境验证。
+- 生产环境应通过反向代理限制 `/actuator/prometheus` 端点访问（或添加 Basic Auth）。
+
+### 下轮建议
+- 可继续偿还项目截图素材（FUTURE.md #7），或进入 P3 远期规划其他功能。
+- 建议 commit message: `feat(monitoring): 补充 Grafana Dashboard 自动导入配置`
+
+---
+
 ## Round 62 - 2026-06-15
 
 ### 阶段
