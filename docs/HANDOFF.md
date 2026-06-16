@@ -1,7 +1,7 @@
 # AI 题库与错题复习系统 - Agent 交接文档
 
 本文档用于跨对话、跨 Agent、跨开发阶段交接项目状态。
-新 Agent 接手时，必须先阅读本文件，再结合 `AGENTS.md`、`README.md`、`docs/ROADMAP.md`、`docs/CHANGELOG_AGENT.md` 和实际代码判断当前状态。
+新 Agent 接手时，必须先阅读本文件，再结合 `AGENTS.md`、`README.md`、`docs/ROADMAP.md`、`docs/CHANGELOG_AGENT.md` 和实际代码判断当前状态。涉及 Git、审查、重构或测试策略时，按 `AGENTS.md` 中的文档读取路由继续阅读对应子规则文档。
 
 ---
 
@@ -151,18 +151,29 @@ Phase 12 已基本完成。所有 P0-P2 功能、技术债务均已偿还。现�
 
 请先阅读以下文件：
 1. AGENTS.md
-2. README.md
+2. docs/HANDOFF.md
 3. docs/ROADMAP.md
 4. docs/CHANGELOG_AGENT.md
-5. docs/HANDOFF.md
+5. README.md
+
+按任务类型继续阅读：
+- 新增功能、重构、结构归属不清：docs/ENGINEERING_RULES.md
+- 测试策略或是否补测试：docs/TESTING.md
+- 接口变化：docs/API_DESIGN.md
+- 数据库变化：docs/DB_DESIGN.md
+- 架构、目录或模块边界：docs/ARCHITECTURE.md
+- commit、分支、回滚或 Git 历史：docs/AGENT_GIT_RULES.md
+- 审查、复盘或判断能否 commit：docs/AGENT_REVIEW_CHECKLIST.md
+- 演示或截图：docs/DEMO.md
+- 简历表述：docs/RESUME.md
 
 工作方式：
 1. 先根据 docs/HANDOFF.md 理解当前项目状态；
 2. 再根据 docs/ROADMAP.md 判断当前阶段；
 3. 再根据代码实际情况验证文档是否过时；
-4. 自动选择下一步最高优先级任务；
+4. 如果用户有明确任务，以用户当前要求优先；如果用户只说“继续开发”，再自动选择下一步最高优先级任务；
 5. 继续开发、测试、修复、更新文档；
-6. 除非遇到重大方向问题，否则不要频繁问我；
+6. 除非遇到重大方向、破坏性操作或需求冲突，否则不要频繁问我；
 7. 每轮结束都要更新 docs/CHANGELOG_AGENT.md 和必要文档。
 
 当前阶段：Phase 0-12 基本完成，P0-P2 功能全部实现。
@@ -182,6 +193,7 @@ Phase 12 已基本完成。所有 P0-P2 功能、技术债务均已偿还。现�
 
 - 不要依赖旧对话记忆
 - 不要把 AGENTS.md 当进度表
+- 不要把所有协作细节继续堆进 AGENTS.md；优先按 AGENTS.md 的读取路由维护子规则文档
 - 不要清空 docs/CHANGELOG_AGENT.md
 - 不要覆盖真实 .env
 - 不要提交真实 API Key

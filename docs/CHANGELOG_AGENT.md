@@ -14,6 +14,46 @@
 
 ---
 
+## Round 66 - 2026-06-16
+
+### 阶段
+Phase 12 → Agent 协作规则文档整理
+
+### 本轮目标
+基于当前仓库真实文档，对 AI Agent 相关长期规则做轻量重构，使 `AGENTS.md` 成为更短的总入口，并将 Git、审查和工程判断规则拆分为独立文档。
+
+### 完成内容
+- **`AGENTS.md` 瘦身**：保留项目定位、通用协作原则、用户当前明确要求优先、动态进度不得写入 `AGENTS.md`、安全硬底线和文档维护规则；移除与 README、ARCHITECTURE、TESTING 重复的大段技术栈、工程流程、Git 细则和质量清单。
+- **文档读取路由**：新增按任务类型读取文档的路由，覆盖新 Agent 接手、新增功能、测试策略、接口、数据库、架构、Git、审查、演示、简历、未来规划和 PRD。
+- **新增 Git 规则文档**：新增 `docs/AGENT_GIT_RULES.md`，集中记录 commit、分支、回滚、危险操作、提交前检查和 commit message 规范。
+- **新增审查清单**：新增 `docs/AGENT_REVIEW_CHECKLIST.md`，面向所有审查型 Agent，明确默认只读、重点检查项、输出分级和能否 commit 的判断标准。
+- **新增工程建议清单**：新增 `docs/ENGINEERING_RULES.md`，补充小步改动、代码归属、敏感模块、质量底线和文档同步建议，避免重复架构文档的大段目录说明。
+- **索引与交接更新**：更新 `README.md` 文档索引和 Git 规范入口；更新 `docs/HANDOFF.md` 新对话续接提示词，加入新子规则文档的读取路由。
+
+### 修改文件清单
+- 修改：`AGENTS.md`
+- 修改：`README.md`
+- 修改：`docs/HANDOFF.md`
+- 修改：`docs/CHANGELOG_AGENT.md`
+- 新增：`docs/AGENT_GIT_RULES.md`
+- 新增：`docs/AGENT_REVIEW_CHECKLIST.md`
+- 新增：`docs/ENGINEERING_RULES.md`
+
+### 验收结果
+- [x] 未修改后端业务代码、前端业务代码、数据库迁移脚本、Docker 配置或 CI 配置
+- [x] Markdown 链接和文档引用路径已检查
+- [x] 本轮为文档重构任务，未运行后端或前端测试
+
+### 遗留问题
+- 无阻塞遗留问题。
+- `docs/ARCHITECTURE.md` 中仍保留早期 Lombok 说明，和 README/HANDOFF 中“已移除 Lombok”的当前状态不一致；该问题不属于本轮 Agent 规则整理边界，建议后续单独修正文档一致性。
+
+### 下轮建议
+- 可单独做一轮架构文档一致性整理，更新 `docs/ARCHITECTURE.md` 中过时的技术栈细节。
+- 建议 commit message: `docs(agent): 重构 Agent 协作规则文档`
+
+---
+
 ## Round 65 - 2026-06-16
 
 ### 阶段

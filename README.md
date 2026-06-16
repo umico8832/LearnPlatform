@@ -246,12 +246,8 @@ docker compose down
 - 使用逻辑删除
 
 ### Git 提交规范
-```
-feat(module): 新功能描述
-fix(module): 修复描述
-docs: 文档更新
-refactor: 重构
-```
+
+Git、commit、分支、回滚和历史操作规则见 [docs/AGENT_GIT_RULES.md](docs/AGENT_GIT_RULES.md)。
 
 ## 常见问题
 
@@ -289,6 +285,9 @@ A: 数据库 schema.sql 包含建表 SQL。测试账号：管理员 admin/admin1
 | [RESUME.md](docs/RESUME.md) | 简历项目描述和面试问答 |
 | [CHANGELOG_AGENT.md](docs/CHANGELOG_AGENT.md) | 开发日志 |
 | [HANDOFF.md](docs/HANDOFF.md) | Agent 交接文档 |
+| [AGENT_GIT_RULES.md](docs/AGENT_GIT_RULES.md) | Agent Git、commit、分支和回滚规则 |
+| [AGENT_REVIEW_CHECKLIST.md](docs/AGENT_REVIEW_CHECKLIST.md) | 通用 Agent 审查清单 |
+| [ENGINEERING_RULES.md](docs/ENGINEERING_RULES.md) | 工程判断和代码归属建议清单 |
 
 ## 许可证
 
