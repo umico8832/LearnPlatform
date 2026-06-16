@@ -1,5 +1,15 @@
 <template>
   <section class="learning-asset">
+    <!-- 可折叠模式：仅显示标题栏，点击展开 -->
+    <div v-if="collapsible && !expanded" class="asset-collapsed" @click="expandAndLoad">
+      <span class="collapsed-icon">📚</span>
+      <span class="collapsed-text">AI 深度学习</span>
+      <span class="collapsed-hint">点击展开，获取 AI 讲解、步骤拆解、变式题等</span>
+      <el-icon class="collapsed-arrow"><ArrowRight /></el-icon>
+    </div>
+
+    <!-- 完整内容 -->
+    <template v-if="!collapsible || expanded">
     <div class="asset-header">
       <div>
         <div class="asset-title">📚 AI 深度学习</div>
@@ -68,12 +78,13 @@
         </div>
       </el-tab-pane>
     </el-tabs>
+    </template>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { Loading, MagicStick } from '@element-plus/icons-vue'
+import { Loading, MagicStick, ArrowRight } from '@element-plus/icons-vue'
 import {
   type AiAssetType,
   type QuestionLearningAsset,
@@ -82,9 +93,14 @@ import {
 } from '@/api/ai'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   questionId: number
-}>()
+  collapsible?: boolean
+}>(), {
+  collapsible: false,
+})
+
+const expanded = ref(false)
 
 interface AssetTab {
   type: AiAssetType
@@ -127,13 +143,24 @@ let abortController: AbortController | null = null
 
 const loading = computed(() => loadingType.value !== null)
 
-// 加载已有缓存资产
-onMounted(loadExistingAssets)
+// 加载已有缓存资产（非折叠模式立即加载，折叠模式展开时加载）
+onMounted(() => {
+  if (!props.collapsible) {
+    loadExistingAssets()
+  }
+})
 
 watch(() => props.questionId, () => {
   reset()
-  loadExistingAssets()
+  if (!props.collapsible || expanded.value) {
+    loadExistingAssets()
+  }
 })
+
+function expandAndLoad() {
+  expanded.value = true
+  loadExistingAssets()
+}
 
 function reset() {
   abortController?.abort()
@@ -304,6 +331,45 @@ async function generateTab(type: AiAssetType) {
   font-size: 13px;
   line-height: 1.6;
   max-width: 360px;
+}
+
+.asset-collapsed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: 1px dashed #c0d4e8;
+  border-radius: 8px;
+  background: #f0f6ff;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.asset-collapsed:hover {
+  background: #e4efff;
+  border-color: #a0c0e0;
+}
+
+.collapsed-icon {
+  font-size: 18px;
+}
+
+.collapsed-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.collapsed-hint {
+  font-size: 12px;
+  color: #909399;
+  margin-left: 4px;
+}
+
+.collapsed-arrow {
+  margin-left: auto;
+  color: #909399;
 }
 
 @keyframes fadeIn {

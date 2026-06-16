@@ -730,6 +730,79 @@ POST /api/ai/summary
 }
 ```
 
+### 10.5 AI 题目学习资产
+
+将一道题从"题干 + 答案 + 解析"升级为结构化 AI 学习对象，支持 6 种资产类型：标准解析、小白版解析、步骤拆解、错误选项分析、常见误区、变式题。
+
+#### 10.5.1 查询已缓存资产
+
+```
+GET /api/ai/assets/{questionId}
+```
+
+**响应**：
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "id": 1,
+      "questionId": 42,
+      "assetType": "FULL_EXPLANATION",
+      "label": "标准解析",
+      "content": "## 📌 考查知识点\n...",
+      "model": "gpt-4o-mini",
+      "createTime": "2026-06-16 22:00:00"
+    }
+  ]
+}
+```
+
+#### 10.5.2 同步生成/获取资产
+
+```
+POST /api/ai/asset/generate
+```
+
+**请求体**：
+```json
+{
+  "questionId": 42,
+  "assetType": "FULL_EXPLANATION"
+}
+```
+
+**assetType 枚举值**：
+| 值 | 说明 |
+|---|------|
+| FULL_EXPLANATION | 标准结构化解析 |
+| BEGINNER_EXPLANATION | 小白版解析 |
+| STEP_BY_STEP | 步骤拆解 |
+| WRONG_OPTION_ANALYSIS | 错误选项分析 |
+| COMMON_MISTAKES | 常见误区 |
+| VARIANT | 变式题 |
+
+有缓存直接返回，无缓存调用 AI 生成并缓存后返回。受每日 AI 调用配额限制。
+
+#### 10.5.3 流式生成资产
+
+```
+POST /api/ai/asset/stream
+Accept: text/event-stream
+Authorization: Bearer <token>
+```
+
+**请求体**：同 10.5.2。SSE 事件格式与 10.2.1 一致（`content` / `done` / `error` 事件）。生成完成后自动缓存。
+
+#### 10.5.4 清除题目资产缓存
+
+```
+DELETE /api/ai/assets/{questionId}
+```
+
+删除指定题目的所有 AI 学习资产缓存。适用于题目内容更新后需要重新生成资产的场景。
+
 ---
 
 ## 十一、统计接口

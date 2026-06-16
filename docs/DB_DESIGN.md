@@ -520,6 +520,41 @@ CREATE TABLE `ai_call_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='AI调用日志表';
 ```
 
+### 3.14 题目 AI 学习资产表 (question_ai_asset) - Phase 13
+
+存储 AI 生成的结构化学习资产缓存，避免对同一题同一类型重复调用 AI。
+
+| 字段名 | 类型 | 必填 | 默认值 | 说明 |
+|--------|------|:----:|--------|------|
+| id | BIGINT | 是 | 自增主键 | 资产ID |
+| question_id | BIGINT | 是 | | 题目ID |
+| asset_type | VARCHAR(50) | 是 | | 资产类型：FULL_EXPLANATION / BEGINNER_EXPLANATION / STEP_BY_STEP / WRONG_OPTION_ANALYSIS / COMMON_MISTAKES / VARIANT |
+| content | TEXT | 是 | | AI 生成的 Markdown 内容 |
+| model | VARCHAR(100) | 否 | | 生成内容的模型名称 |
+| create_time | DATETIME | 是 | CURRENT_TIMESTAMP | 创建时间 |
+| update_time | DATETIME | 是 | CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
+| deleted | TINYINT | 是 | 0 | 逻辑删除：0-正常 1-已删除 |
+
+**索引**：
+- 唯一索引：`uk_question_asset_type` (`question_id`, `asset_type`, `deleted`) — 同一题同一类型只保留一条缓存
+- 普通索引：`idx_question_id` (`question_id`)
+
+```sql
+CREATE TABLE `question_ai_asset` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '资产ID',
+  `question_id` BIGINT NOT NULL COMMENT '题目ID',
+  `asset_type` VARCHAR(50) NOT NULL COMMENT '资产类型',
+  `content` TEXT NOT NULL COMMENT 'AI生成内容（Markdown）',
+  `model` VARCHAR(100) DEFAULT NULL COMMENT '模型名称',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-正常 1-已删除',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_question_asset_type` (`question_id`, `asset_type`, `deleted`),
+  KEY `idx_question_id` (`question_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='题目AI学习资产表';
+```
+
 ---
 
 ## 四、表关系说明
@@ -537,6 +572,7 @@ CREATE TABLE `ai_call_log` (
 | 用户→错题 | user | id | wrong_question | user_id |
 | 题目→刷题记录 | question | id | practice_record | question_id |
 | 题目→错题 | question | id | wrong_question | question_id |
+| 题目→AI学习资产 | question | id | question_ai_asset | question_id |
 | 试卷→考试记录 | exam_paper | id | exam_record | exam_paper_id |
 | 考试记录→答题 | exam_record | id | exam_answer | exam_record_id |
 | 试卷→题目关联 | exam_paper | id | exam_question | exam_paper_id |

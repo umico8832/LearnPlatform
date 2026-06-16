@@ -84,8 +84,8 @@
 
         <AiQuestionAssistant :question-id="item.questionId" />
 
-        <!-- AI 深度学习资产（错题本中的 AI 讲解入口） -->
-        <QuestionLearningAsset :question-id="item.questionId" />
+        <!-- AI 深度学习资产（错题本中折叠展示，减少页面长度） -->
+        <QuestionLearningAsset :question-id="item.questionId" collapsible />
 
         <div class="wrong-card-footer">
           <div class="mastery-controls">

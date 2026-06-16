@@ -93,13 +93,24 @@ public class QuestionLearningAssetService {
         // 检查配额
         aiService.checkDailyQuota(userId);
 
-        // 生成
-        String content = generateAssetContent(questionId, assetType);
+        // 生成并记录调用日志
+        long start = System.currentTimeMillis();
+        boolean success = false;
+        String errorMessage = null;
+        String content;
+        try {
+            content = generateAssetContent(questionId, assetType);
+            success = true;
+        } catch (Exception e) {
+            errorMessage = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            throw e;
+        } finally {
+            int duration = (int) (System.currentTimeMillis() - start);
+            aiService.logCall(userId, "asset_" + assetType.name().toLowerCase(), success, errorMessage, duration);
+        }
 
         // 保存缓存
         QuestionAiAsset asset = saveAsset(questionId, assetType, content);
-
-        // 记录 AI 调用日志（通过 AiService 的日志机制）
         log.info("AI 学习资产已生成并缓存: questionId={}, type={}", questionId, assetType);
 
         return toVO(asset);
@@ -121,13 +132,25 @@ public class QuestionLearningAssetService {
         // 检查配额
         aiService.checkDailyQuota(userId);
 
-        // 流式生成并收集完整内容
+        // 流式生成并收集完整内容，同时记录调用日志
+        long start = System.currentTimeMillis();
+        boolean success = false;
+        String errorMessage = null;
         StringBuilder fullContent = new StringBuilder();
-        PromptPair prompt = buildAssetPrompt(questionId, assetType);
-        aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), chunk -> {
-            fullContent.append(chunk);
-            onContent.accept(chunk);
-        });
+        try {
+            PromptPair prompt = buildAssetPrompt(questionId, assetType);
+            aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), chunk -> {
+                fullContent.append(chunk);
+                onContent.accept(chunk);
+            });
+            success = true;
+        } catch (Exception e) {
+            errorMessage = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            throw e;
+        } finally {
+            int duration = (int) (System.currentTimeMillis() - start);
+            aiService.logCall(userId, "asset_" + assetType.name().toLowerCase() + "_stream", success, errorMessage, duration);
+        }
 
         // 生成完成后保存缓存
         try {

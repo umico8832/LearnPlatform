@@ -14,6 +14,51 @@
 
 ---
 
+## Round 69 - 2026-06-16
+
+### 阶段
+Phase 13：AI 题目学习资产 — 体验优化与文档补全
+
+### 本轮目标
+优化错题本中 QuestionLearningAsset 的展示方式，统一 AI 调用日志机制，补全 API 和数据库设计文档。
+
+### 完成内容
+- **AI 调用日志统一**：AiService 新增公开的 `logCall()` 方法，QuestionLearningAssetService 的同步和流式生成方法现在通过 `aiService.logCall()` 将调用记录写入 `ai_call_log` 表（functionType 格式：`asset_full_explanation`、`asset_variant_stream` 等），实现 AI 调用日志统一管理。
+- **错题本折叠优化**：QuestionLearningAsset 组件新增 `collapsible` prop，支持折叠/懒加载模式。折叠状态下仅显示一条可点击的提示条"📚 AI 深度学习 — 点击展开"，展开后才加载已有缓存资产。
+- **错题本集成**：WrongQuestionView.vue 中 QuestionLearningAsset 使用 `collapsible` 模式，大幅减少错题列表的页面长度。
+- **API 文档更新**：docs/API_DESIGN.md 新增 10.5 节"AI 题目学习资产"，完整记录 4 个接口（查询缓存、同步生成、流式生成、清除缓存）及 6 种 assetType 枚举。
+- **数据库文档更新**：docs/DB_DESIGN.md 新增 3.14 节 `question_ai_asset` 表结构、建表 SQL、索引设计和表关系说明。
+
+### 修改文件清单
+- `backend/src/main/java/com/learnplatform/service/AiService.java`（修改：新增 `logCall()` 公开方法）
+- `backend/src/main/java/com/learnplatform/service/QuestionLearningAssetService.java`（修改：同步和流式生成方法接入 AiService.logCall 记录调用日志）
+- `frontend/src/components/QuestionLearningAsset.vue`（修改：新增 `collapsible` prop、折叠/展开逻辑、折叠状态 UI 和样式）
+- `frontend/src/views/practice/WrongQuestionView.vue`（修改：QuestionLearningAsset 使用 `collapsible` 模式）
+- `docs/API_DESIGN.md`（修改：新增 10.5 AI 题目学习资产接口文档）
+- `docs/DB_DESIGN.md`（修改：新增 3.14 question_ai_asset 表结构，表关系新增题目→AI学习资产）
+
+### 验收结果
+- 后端编译通过（`mvn compile` EXIT_CODE=0）
+- 前端类型检查通过（`vue-tsc --noEmit` EXIT_CODE=0）
+- AI 调用日志统一写入 ai_call_log 表，functionType 可区分资产类型和调用方式
+- 错题本中 QuestionLearningAsset 默认折叠，点击后才展开加载，大幅减少初始页面长度
+- API 文档和数据库文档已同步更新
+
+### 遗留问题
+- QuestionLearningAssetService 单元测试未编写
+- AI 资产质量反馈机制未实现
+- 管理端清除 AI 学习资产缓存入口未实现
+
+### 下轮建议
+- 补充 QuestionLearningAssetService 单元测试
+- 管理端题目编辑页面添加清除 AI 学习资产缓存的入口
+- 考虑 AI 资产质量反馈机制（用户反馈讲解是否有帮助）
+
+### 建议 commit message
+`feat(ai): 统一 AI 调用日志 + 错题本学习资产折叠优化 + 补全 API/DB 文档`
+
+---
+
 ## Round 68 - 2026-06-16
 
 ### 阶段

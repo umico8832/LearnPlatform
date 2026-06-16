@@ -243,6 +243,13 @@ public class AiService {
     // ======================== 日志工具方法 ========================
 
     /**
+     * 公开的 AI 调用日志记录方法（供其他 Service 调用）
+     */
+    public void logCall(Long userId, String functionType, boolean success, String errorMessage, int duration) {
+        saveLog(userId, functionType, success, errorMessage, duration);
+    }
+
+    /**
      * 带日志记录的同步 AI 调用
      */
     private AiResponse callWithLog(String functionType, Long userId, AiCallable callable) {
