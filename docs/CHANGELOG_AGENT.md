@@ -14,6 +14,42 @@
 
 ---
 
+## Round 70 - 2026-06-16
+
+### 阶段
+Phase 13：AI 题目学习资产 — 单元测试补全
+
+### 本轮目标
+为 QuestionLearningAssetService 补充完整的单元测试，覆盖所有公开方法、缓存逻辑、AI 调用流程、日志记录、流式生成和异常处理。
+
+### 完成内容
+- **QuestionLearningAssetServiceTest 新增 22 个测试用例**，覆盖：
+  - `getAssets`：题目不存在抛异常、空缓存返回空列表、返回单条/多条缓存资产
+  - `getAsset`：未缓存返回 null、已缓存返回 VO
+  - `generateOrGetAsset`：缓存命中直接返回（不调用 AI）、缓存未命中调用 AI 并保存、成功/失败日志记录、6 种资产类型全覆盖
+  - `generateAssetStream`：缓存命中流式直接返回、缓存未命中流式生成并缓存、成功/失败日志记录、缓存保存失败不影响流式返回
+  - `clearAssets`：清除多条资产、空资产不报错
+  - Prompt 内容验证：完整题目上下文（题型、难度、选项、解析、知识点、课程）、无选项题目处理
+  - VO 转换：已知类型标签映射、未知类型降级为原始类型名
+
+### 修改文件清单
+- `backend/src/test/java/com/learnplatform/service/QuestionLearningAssetServiceTest.java`（新增）
+
+### 验收结果
+- 后端全量测试 173 个通过，0 失败，0 错误（`mvn test`）
+- QuestionLearningAssetServiceTest 22 个测试全部通过
+- 无回归问题
+
+### 遗留问题
+- 无新增遗留问题
+
+### 下轮建议
+- PracticeSessionView 中 QuestionLearningAsset 使用 collapsible 模式
+- AI 资产质量反馈机制（用户反馈讲解是否有帮助）
+- 管理端题目编辑页面添加清除 AI 学习资产缓存的入口
+
+---
+
 ## Round 69 - 2026-06-16
 
 ### 阶段
