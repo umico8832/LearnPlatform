@@ -1,4 +1,4 @@
-# AI 题库与错题复习系统 - Agent 交接文档
+# AI 驱动的题目学习平台 - Agent 交接文档
 
 本文档用于跨对话、跨 Agent、跨开发阶段交接项目状态。
 新 Agent 接手时，必须先阅读本文件，再结合 `AGENTS.md`、`README.md`、`docs/ROADMAP.md`、`docs/CHANGELOG_AGENT.md` 和实际代码判断当前状态。涉及 Git、审查、重构或测试策略时，按 `AGENTS.md` 中的文档读取路由继续阅读对应子规则文档。
@@ -7,8 +7,8 @@
 
 ## 1. 项目基本信息
 
-项目名称：AI 题库与错题复习系统
-项目定位：用于学习、刷题、错题复习和 AI 辅助学习的中大型 Web 项目
+项目名称：AI 驱动的题目学习平台
+项目定位：用于学习、刷题、错题复习、考试测评、题库管理和 AI 辅助学习的中大型 Web 项目。下一阶段将把题目从“题干 + 答案 + 解析”升级为可讲解、可交互、可诊断、可推荐、可共建的学习对象。
 开发环境：macOS (本地 MySQL 8.0.43、JDK 26、Maven 3.9.16、Node v22)
 技术栈：Vue 3 + TypeScript + Vite + Element Plus + Pinia | Spring Boot 3.2.5 + MyBatis-Plus + MySQL 8 + JWT + Knife4j | Docker Compose
 
@@ -16,7 +16,9 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 12 — 体验增强迭代（基本完成，P3 AI 智能组卷 + 学习路径推荐 + 知识图谱可视化 + Redis 缓存 + 监控体系 + Grafana Dashboard 自动导入 + 登录验证码 + 结构化 JSON 日志 + Loki 日志聚合已实现）
+当前阶段：Phase 13 — AI 题目学习资产（规划已明确，尚未开始代码实现）
+
+下一阶段主线：先把一道题讲透，把单题从“题干 + 答案 + 解析”升级为结构化 AI 学习对象，再考虑题库上传、OCR、爬虫和社区共建。
 
 阶段状态：
 - [x] Phase 0：项目规划 ✅
@@ -32,6 +34,7 @@
 - [x] Phase 10：质量提升 ✅（参数校验、接口文档、前端体验优化、日志规范化、SQL优化、安全检查）
 - [x] Phase 11：部署与简历 ✅（项目截图为非阻塞演示素材）
 - [x] Phase 12：体验增强迭代（✅ 基本完成：AI 题目助手、管理端统计、AI 流式输出、用户个人中心、错题重练、收藏题练习、Excel 导入导出、学习计划、AI 调用日志、核心业务可信度修复、后端核心服务测试、社区评论、多端适配、题目难度自适应、填空简答判分增强、个人学习报告、GitHub Actions CI、CommentController/AdminExam/AdminQuestion Controller 测试、CommentRequest @Max→@Size 修复、AdminUser/AdminCourse/AdminKnowledgePoint Controller 测试、前端 API 模块测试 7 个模块 62 个测试、Testcontainers 集成测试 ExamService 10 个 + PracticeService 16 个 + WrongQuestionService 16 个 + StatisticsService 10 个、AI 智能组卷、学习路径推荐、知识图谱可视化、Redis 缓存集成）
+- [ ] Phase 13：AI 题目学习资产（下一步开发主线：结构化题目讲解、小白版解析、步骤拆解、错误选项分析、常见误区、变式题闭环、学习资产缓存、答错后 AI 讲解入口）
 
 ---
 
@@ -119,22 +122,36 @@ docker compose up -d
 - CI 流水线需推送到 GitHub 后才能实际触发验证
 - 本地 JDK 25 + Testcontainers 1.20.1 Docker socket 兼容性问题，集成测试需在 CI（JDK 17）环境验证实际运行
 - 缓存 TTL 参数目前硬编码在 RedisConfig 中，后续可抽为 application.yml 配置项
+- Phase 13 还未实现代码；本轮只完成 AI 学习平台战略和路线图文档更新
 
 ---
 
 ## 6. 下一步建议任务
 
-任务名称：Phase 12 后续 — 体验增强收尾与远期规划
+任务名称：Phase 13 — AI 题目学习资产
 
-Phase 12 已基本完成。所有 P0-P2 功能、技术债务均已偿还。现有前后端测试已覆盖关键模块，后续遵循 `docs/TESTING.md` 按业务风险补充，不再追求测试数量或简单 CRUD 全排列覆盖。
+Phase 12 已基本完成。下一阶段应按 `docs/AI_LEARNING_PLATFORM_STRATEGY.md` 和 `docs/ROADMAP.md` 进入 Phase 13，把一道题从“题干 + 答案 + 解析”升级为结构化 AI 学习对象。
 
-后续可选方向：
-- 在 CI 中验证集成测试通过，或升级 Testcontainers 版本解决 JDK 25 兼容问题
-- 建立登录、刷题、错题复习、考试等少量关键 E2E 流程
-- 补充项目截图/演示素材（FUTURE.md #7）
-- 进入 P3 远期规划：监控告警、多租户、验证码等
+Phase 13 P0 建议优先拆解：
+- AI 结构化题目讲解
+- 小白版解析
+- 步骤拆解
+- 错误选项分析
+- 常见误区
+- 变式题闭环
+- 题目 AI 学习资产缓存
+- 答错后 AI 讲解入口
 
-建议 commit message: `feat(logging): 实现结构化 JSON 日志与 Grafana Loki 日志聚合`
+当前不优先做：
+- PDF / 图片 OCR
+- 爬虫
+- 用户上传题库自动入库
+- AI 自动审核发布题目
+- 复杂推荐系统
+
+建议后续真正开发 Phase 13 时，再同步更新 `docs/API_DESIGN.md`、`docs/DB_DESIGN.md` 和 `docs/ARCHITECTURE.md`。
+
+建议 commit message: `docs(strategy): 明确 AI 学习平台战略与 Phase 13 路线`
 
 ---
 
@@ -143,7 +160,7 @@ Phase 12 已基本完成。所有 P0-P2 功能、技术债务均已偿还。现�
 ```
 你现在接手一个长期开发中的全栈 Web 项目。
 
-项目名称：AI 题库与错题复习系统
+项目名称：AI 驱动的题目学习平台
 开发环境：macOS（本地 MySQL 8.0、JDK 26、Maven 3.9.16、Node v22）
 技术栈：Vue 3 + TypeScript + Vite + Element Plus + Pinia | Spring Boot 3.2.5 + MyBatis-Plus + MySQL 8 + JWT + Knife4j | Docker Compose
 
@@ -166,6 +183,7 @@ Phase 12 已基本完成。所有 P0-P2 功能、技术债务均已偿还。现�
 - 审查、复盘或判断能否 commit：docs/AGENT_REVIEW_CHECKLIST.md
 - 演示或截图：docs/DEMO.md
 - 简历表述：docs/RESUME.md
+- AI 学习平台战略、AI 长期能力地图、AI 功能优先级：docs/AI_LEARNING_PLATFORM_STRATEGY.md
 
 工作方式：
 1. 先根据 docs/HANDOFF.md 理解当前项目状态；
@@ -176,10 +194,12 @@ Phase 12 已基本完成。所有 P0-P2 功能、技术债务均已偿还。现�
 6. 除非遇到重大方向、破坏性操作或需求冲突，否则不要频繁问我；
 7. 每轮结束都要更新 docs/CHANGELOG_AGENT.md 和必要文档。
 
-当前阶段：Phase 0-12 基本完成，P0-P2 功能全部实现。
+当前阶段：Phase 13 — AI 题目学习资产（尚未开始代码实现）。
 
 已完成模块：用户鉴权、课程知识点、题库、刷题判分（含填空简答增强）、错题本（含重练）、试卷考试、AI 功能（含流式输出与配额管理）、统计可视化（含个人学习报告）、质量提升、部署简历、收藏题练习、Excel 导入导出、学习计划、题目评论、多端适配、难度自适应、管理端用户管理、后端核心测试（151 个）、前端 Vitest 测试（187 个，21 个测试文件）、GitHub Actions CI。
-后续扩展方向：见 docs/FUTURE.md 和 docs/TESTING.md；测试按业务风险补充，优先补充 StatisticsService 集成测试和关键 E2E 流程。
+下一阶段主线：Phase 13，把一道题从“题干 + 答案 + 解析”升级为结构化 AI 学习对象。P0 范围包括 AI 结构化题目讲解、小白版解析、步骤拆解、错误选项分析、常见误区、变式题闭环、题目 AI 学习资产缓存、答错后 AI 讲解入口。
+当前不优先做：PDF / 图片 OCR、爬虫、用户上传题库自动入库、AI 自动审核发布题目、复杂推荐系统。
+后续扩展方向：见 docs/AI_LEARNING_PLATFORM_STRATEGY.md、docs/FUTURE.md 和 docs/TESTING.md；测试按业务风险补充。
 
 本地运行方式：
 - MySQL: sudo /usr/local/mysql/support-files/mysql.server start

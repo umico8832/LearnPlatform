@@ -58,6 +58,7 @@
 - 涉及演示、截图、展示流程：`docs/DEMO.md`
 - 涉及简历表述：`docs/RESUME.md`
 - 涉及远期规划或候选功能：`docs/FUTURE.md`
+- 涉及 AI 学习平台战略、AI 长期能力地图、AI 功能优先级：`docs/AI_LEARNING_PLATFORM_STRATEGY.md`
 - 涉及产品范围和业务定义：`docs/PRD.md`
 
 前端页面美化、布局优化、交互优化时，如果存在 `skills/frontend-design/SKILL.md`，应先阅读；如果不存在，应明确说明缺失，不要假装已经参考。

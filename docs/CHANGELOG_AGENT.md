@@ -14,6 +14,53 @@
 
 ---
 
+## Round 67 - 2026-06-16
+
+### 阶段
+Phase 12 → Phase 13 战略规划
+
+### 本轮目标
+阅读现有项目文档和用户提供的长期 AI 学习平台功能清单，只做文档战略更新，不实现代码、不创建数据库迁移、不修改前端或后端源码。
+
+### 完成内容
+- **新增 AI 学习平台战略文档**：新增 `docs/AI_LEARNING_PLATFORM_STRATEGY.md`，将长期功能清单整理为项目新定位、核心竞争力、AI 能力地图、P0/P1/P2/P3 优先级、当前阶段只做什么、当前阶段不做什么和长期演进路线。
+- **AGENTS 最小修改**：仅在文档读取路由中增加 AI 学习平台战略、长期能力地图和功能优先级相关任务需阅读 `docs/AI_LEARNING_PLATFORM_STRATEGY.md`，没有把长期路线图塞进 `AGENTS.md`。
+- **PRD 定位升级**：将产品定位从“AI 题库与错题复习系统”升级为“AI 驱动的题目学习平台”，保留刷题、错题本、考试、题库管理等核心业务，并新增“让题目变成可讲解、可交互、可诊断、可推荐、可共建的学习对象”的产品目标描述。
+- **ROADMAP 长期阶段更新**：保留历史 Phase 0-12，在 Phase 12 后新增 Phase 13-16，并明确当前下一阶段为 Phase 13：AI 题目学习资产。Phase 13 P0 范围包括 AI 结构化题目讲解、小白版解析、步骤拆解、错误选项分析、常见误区、变式题闭环、题目 AI 学习资产缓存、答错后 AI 讲解入口。
+- **HANDOFF 接手信息更新**：更新当前项目阶段和下一步建议任务，明确下一阶段主线为 Phase 13，并写清当前不优先做 PDF / 图片 OCR、爬虫、用户上传题库自动入库、AI 自动审核发布题目和复杂推荐系统。
+
+### 修改文件清单
+- 新增：`docs/AI_LEARNING_PLATFORM_STRATEGY.md`
+- 修改：`AGENTS.md`
+- 修改：`docs/PRD.md`
+- 修改：`docs/ROADMAP.md`
+- 修改：`docs/HANDOFF.md`
+- 修改：`docs/CHANGELOG_AGENT.md`
+
+### 未修改文件
+- 未修改 `docs/API_DESIGN.md`
+- 未修改 `docs/DB_DESIGN.md`
+- 未修改 `docs/ARCHITECTURE.md`
+- 未修改任何后端业务代码、前端业务代码、数据库迁移脚本、Docker 配置或 CI 配置
+
+### 验收结果
+- [x] 已阅读 `AGENTS.md`、`docs/HANDOFF.md`、`docs/ROADMAP.md`、`docs/FUTURE.md`、`docs/PRD.md`、`docs/CHANGELOG_AGENT.md`
+- [x] 已阅读用户提供的《AILearnPlatform需要实现的功能.md》
+- [x] 长期功能清单已被压缩整理，没有原封不动复制 98 个功能到多个文档
+- [x] 文档明确先做 Phase 13，把一道题讲透，再考虑题库上传、OCR、爬虫和社区共建
+- [x] 本轮未运行前后端测试，因为没有修改业务代码
+
+### 遗留问题
+- Phase 13 只是路线与战略明确，尚未开始代码实现。
+- 后续真正开发 Phase 13 时，需要再更新接口、数据库和架构文档。
+
+### 下轮建议
+- 进入 Phase 13 第一轮开发前，先设计“题目 AI 学习资产”的数据结构、接口边界和缓存策略。
+- 优先落地 AI 结构化题目讲解、小白版解析、步骤拆解、错误选项分析和常见误区，再把现有变式题能力纳入闭环。
+- 建议 commit message: `docs(strategy): 明确 AI 学习平台战略与 Phase 13 路线`
+
+---
+
 ## Round 66 - 2026-06-16
 
 ### 阶段
