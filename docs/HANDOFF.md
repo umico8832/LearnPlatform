@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 13 — AI 题目学习资产（规划已明确，尚未开始代码实现）
+当前阶段：Phase 13 — AI 题目学习资产（代码实现第一轮完成，P0 核心能力已落地）
 
 下一阶段主线：先把一道题讲透，把单题从“题干 + 答案 + 解析”升级为结构化 AI 学习对象，再考虑题库上传、OCR、爬虫和社区共建。
 
@@ -34,7 +34,7 @@
 - [x] Phase 10：质量提升 ✅（参数校验、接口文档、前端体验优化、日志规范化、SQL优化、安全检查）
 - [x] Phase 11：部署与简历 ✅（项目截图为非阻塞演示素材）
 - [x] Phase 12：体验增强迭代（✅ 基本完成：AI 题目助手、管理端统计、AI 流式输出、用户个人中心、错题重练、收藏题练习、Excel 导入导出、学习计划、AI 调用日志、核心业务可信度修复、后端核心服务测试、社区评论、多端适配、题目难度自适应、填空简答判分增强、个人学习报告、GitHub Actions CI、CommentController/AdminExam/AdminQuestion Controller 测试、CommentRequest @Max→@Size 修复、AdminUser/AdminCourse/AdminKnowledgePoint Controller 测试、前端 API 模块测试 7 个模块 62 个测试、Testcontainers 集成测试 ExamService 10 个 + PracticeService 16 个 + WrongQuestionService 16 个 + StatisticsService 10 个、AI 智能组卷、学习路径推荐、知识图谱可视化、Redis 缓存集成）
-- [ ] Phase 13：AI 题目学习资产（下一步开发主线：结构化题目讲解、小白版解析、步骤拆解、错误选项分析、常见误区、变式题闭环、学习资产缓存、答错后 AI 讲解入口）
+- [ ] Phase 13：AI 题目学习资产（进行中：结构化题目讲解 ✅、小白版解析 ✅、步骤拆解 ✅、错误选项分析 ✅、常见误区 ✅、变式题闭环 ✅、学习资产缓存 ✅、答错后 AI 讲解入口 ✅）
 
 ---
 
@@ -122,25 +122,22 @@ docker compose up -d
 - CI 流水线需推送到 GitHub 后才能实际触发验证
 - 本地 JDK 25 + Testcontainers 1.20.1 Docker socket 兼容性问题，集成测试需在 CI（JDK 17）环境验证实际运行
 - 缓存 TTL 参数目前硬编码在 RedisConfig 中，后续可抽为 application.yml 配置项
-- Phase 13 还未实现代码；本轮只完成 AI 学习平台战略和路线图文档更新
+- Phase 13 P0 核心能力已实现（Round 68）：question_ai_asset 表、QuestionLearningAssetService、6 种结构化 Prompt、流式生成+缓存、前端 QuestionLearningAsset.vue 组件、答错后 AI 讲解入口
+- QuestionLearningAsset 在错题本中每个错题都展示，可能影响页面长度，后续可考虑折叠或懒加载
 
 ---
 
 ## 6. 下一步建议任务
 
-任务名称：Phase 13 — AI 题目学习资产
+任务名称：Phase 13 — AI 题目学习资产（继续深化）
 
-Phase 12 已基本完成。下一阶段应按 `docs/AI_LEARNING_PLATFORM_STRATEGY.md` 和 `docs/ROADMAP.md` 进入 Phase 13，把一道题从“题干 + 答案 + 解析”升级为结构化 AI 学习对象。
-
-Phase 13 P0 建议优先拆解：
-- AI 结构化题目讲解
-- 小白版解析
-- 步骤拆解
-- 错误选项分析
-- 常见误区
-- 变式题闭环
-- 题目 AI 学习资产缓存
-- 答错后 AI 讲解入口
+Phase 13 P0 核心能力已实现（Round 68）。下一步建议：
+- 更新 `docs/API_DESIGN.md` 和 `docs/DB_DESIGN.md`（新增学习资产接口和表结构）
+- 考虑在管理端题目编辑页面添加清除 AI 学习资产缓存的入口
+- 补充 QuestionLearningAssetService 的单元测试
+- 考虑 AI 资产质量反馈机制（用户反馈讲解是否有帮助）
+- 优化错题本中 QuestionLearningAsset 的展示方式（折叠/懒加载）
+- 统一 AI 调用日志（QuestionLearningAssetService 目前通过 log 记录，未写入 AiCallLog 表）
 
 当前不优先做：
 - PDF / 图片 OCR
@@ -149,9 +146,7 @@ Phase 13 P0 建议优先拆解：
 - AI 自动审核发布题目
 - 复杂推荐系统
 
-建议后续真正开发 Phase 13 时，再同步更新 `docs/API_DESIGN.md`、`docs/DB_DESIGN.md` 和 `docs/ARCHITECTURE.md`。
-
-建议 commit message: `docs(strategy): 明确 AI 学习平台战略与 Phase 13 路线`
+建议 commit message: `feat(ai): 实现 Phase 13 AI 题目学习资产（结构化讲解 + 缓存 + 答错入口）`
 
 ---
 
@@ -194,7 +189,7 @@ Phase 13 P0 建议优先拆解：
 6. 除非遇到重大方向、破坏性操作或需求冲突，否则不要频繁问我；
 7. 每轮结束都要更新 docs/CHANGELOG_AGENT.md 和必要文档。
 
-当前阶段：Phase 13 — AI 题目学习资产（尚未开始代码实现）。
+当前阶段：Phase 13 — AI 题目学习资产（P0 核心能力已完成第一轮实现）。
 
 已完成模块：用户鉴权、课程知识点、题库、刷题判分（含填空简答增强）、错题本（含重练）、试卷考试、AI 功能（含流式输出与配额管理）、统计可视化（含个人学习报告）、质量提升、部署简历、收藏题练习、Excel 导入导出、学习计划、题目评论、多端适配、难度自适应、管理端用户管理、后端核心测试（151 个）、前端 Vitest 测试（187 个，21 个测试文件）、GitHub Actions CI。
 下一阶段主线：Phase 13，把一道题从“题干 + 答案 + 解析”升级为结构化 AI 学习对象。P0 范围包括 AI 结构化题目讲解、小白版解析、步骤拆解、错误选项分析、常见误区、变式题闭环、题目 AI 学习资产缓存、答错后 AI 讲解入口。

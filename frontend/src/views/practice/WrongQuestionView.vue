@@ -84,6 +84,9 @@
 
         <AiQuestionAssistant :question-id="item.questionId" />
 
+        <!-- AI 深度学习资产（错题本中的 AI 讲解入口） -->
+        <QuestionLearningAsset :question-id="item.questionId" />
+
         <div class="wrong-card-footer">
           <div class="mastery-controls">
             <span class="label">掌握程度：</span>
@@ -129,6 +132,7 @@ import { getWrongQuestions, getWrongQuestionStats, updateMasteryLevel, removeWro
 import type { WrongQuestionVO, WrongQuestionStatsVO } from '@/api/wrongQuestion'
 import { getWrongQuestionPractice } from '@/api/practice'
 import AiQuestionAssistant from '@/components/AiQuestionAssistant.vue'
+import QuestionLearningAsset from '@/components/QuestionLearningAsset.vue'
 
 const router = useRouter()
 const loading = ref(false)

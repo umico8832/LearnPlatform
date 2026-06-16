@@ -1,10 +1,13 @@
 package com.learnplatform.controller;
 
+import com.learnplatform.dto.AiAssetType;
 import com.learnplatform.dto.AiRequest;
 import com.learnplatform.dto.AiResponse;
+import com.learnplatform.dto.QuestionLearningAssetVO;
 import com.learnplatform.common.result.R;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AiService;
+import com.learnplatform.service.QuestionLearningAssetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -29,10 +33,14 @@ import java.util.function.Consumer;
 public class AiController {
 
     private final AiService aiService;
+    private final QuestionLearningAssetService learningAssetService;
     private final Executor aiTaskExecutor;
 
-    public AiController(AiService aiService, @Qualifier("aiTaskExecutor") Executor aiTaskExecutor) {
+    public AiController(AiService aiService,
+                        QuestionLearningAssetService learningAssetService,
+                        @Qualifier("aiTaskExecutor") Executor aiTaskExecutor) {
         this.aiService = aiService;
+        this.learningAssetService = learningAssetService;
         this.aiTaskExecutor = aiTaskExecutor;
     }
 
@@ -118,6 +126,54 @@ public class AiController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody AiRequest request) {
         return R.ok(aiService.generateSummary(request.getKnowledgePointId(), userDetails.getUserId()));
+    }
+
+    // ======================== AI 学习资产接口 ========================
+
+    /**
+     * 查询一道题的所有已缓存 AI 学习资产
+     */
+    @Operation(summary = "查询题目学习资产", description = "获取指定题目的所有已缓存 AI 学习资产")
+    @GetMapping("/assets/{questionId}")
+    public R<List<QuestionLearningAssetVO>> getAssets(@PathVariable Long questionId) {
+        return R.ok(learningAssetService.getAssets(questionId));
+    }
+
+    /**
+     * 同步生成或获取指定类型的 AI 学习资产（优先返回缓存）
+     */
+    @Operation(summary = "生成学习资产", description = "同步生成或获取指定类型的 AI 学习资产，有缓存则直接返回")
+    @PostMapping("/asset/generate")
+    public R<QuestionLearningAssetVO> generateAsset(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody Map<String, Object> request) {
+        Long questionId = Long.valueOf(request.get("questionId").toString());
+        AiAssetType assetType = AiAssetType.valueOf(request.get("assetType").toString());
+        return R.ok(learningAssetService.generateOrGetAsset(questionId, assetType, userDetails.getUserId()));
+    }
+
+    /**
+     * 流式生成指定类型的 AI 学习资产（SSE）
+     */
+    @Operation(summary = "流式生成学习资产", description = "通过 SSE 流式生成 AI 学习资产，完成后自动缓存")
+    @PostMapping(value = "/asset/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public ResponseEntity<SseEmitter> generateAssetStream(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody Map<String, Object> request) {
+        Long questionId = Long.valueOf(request.get("questionId").toString());
+        AiAssetType assetType = AiAssetType.valueOf(request.get("assetType").toString());
+        Long userId = userDetails.getUserId();
+        return stream(onContent -> learningAssetService.generateAssetStream(questionId, assetType, userId, onContent));
+    }
+
+    /**
+     * 清除题目的 AI 学习资产缓存
+     */
+    @Operation(summary = "清除学习资产缓存", description = "删除指定题目的所有已缓存 AI 学习资产")
+    @DeleteMapping("/assets/{questionId}")
+    public R<Void> clearAssets(@PathVariable Long questionId) {
+        learningAssetService.clearAssets(questionId);
+        return R.ok(null);
     }
 
     private ResponseEntity<SseEmitter> stream(Consumer<Consumer<String>> generator) {

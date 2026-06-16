@@ -14,6 +14,74 @@
 
 ---
 
+## Round 68 - 2026-06-16
+
+### 阶段
+Phase 13：AI 题目学习资产 — 代码实现第一轮
+
+### 本轮目标
+实现 Phase 13 P0 核心能力：AI 结构化学习资产的生成、缓存和前端展示，以及答错后 AI 讲解入口。
+
+### 完成内容
+- **数据库迁移**：新增 `V5__create_question_ai_asset_table.sql`，创建 `question_ai_asset` 表存储 AI 生成的结构化学习资产缓存（question_id + asset_type 唯一约束）。
+- **后端实体**：新增 `QuestionAiAsset.java` 实体类（questionId, assetType, content, model, createTime, updateTime, deleted）。
+- **后端 Mapper**：新增 `QuestionAiAssetMapper.java`（BaseMapper）。
+- **后端 DTO**：新增 `AiAssetType.java` 枚举（6 种资产类型：FULL_EXPLANATION, BEGINNER_EXPLANATION, STEP_BY_STEP, WRONG_OPTION_ANALYSIS, COMMON_MISTAKES, VARIANT）和 `QuestionLearningAssetVO.java`。
+- **后端核心服务**：新增 `QuestionLearningAssetService.java`，实现：
+  - 查询题目已缓存资产列表
+  - 同步生成/获取资产（缓存优先）
+  - 流式生成资产（SSE，完成后自动缓存）
+  - 清除题目资产缓存
+  - 6 种专业 Prompt 模板（标准解析、小白版、步骤拆解、错误选项分析、常见误区、变式题）
+  - 配额检查复用 AiService
+- **后端 Controller 扩展**：AiController 新增 4 个接口：
+  - `GET /api/ai/assets/{questionId}` — 查询已缓存资产
+  - `POST /api/ai/asset/generate` — 同步生成/获取
+  - `POST /api/ai/asset/stream` — 流式生成（SSE）
+  - `DELETE /api/ai/assets/{questionId}` — 清除缓存
+- **前端 API 扩展**：`ai.ts` 新增 `AiAssetType`、`AI_ASSET_LABELS`、`QuestionLearningAsset` 类型和 `getQuestionAssets`、`generateAsset`、`streamAsset` 函数。
+- **前端组件**：新增 `QuestionLearningAsset.vue`，6 个 Tab 切换不同维度的 AI 学习资产，支持流式生成、缓存展示和加载状态。
+- **答错后 AI 讲解入口**：
+  - `PracticeSessionView.vue`：答错后自动展示 `QuestionLearningAsset` 组件（6 个 Tab 深度学习）。
+  - `WrongQuestionView.vue`：每道错题下方展示 `QuestionLearningAsset` 组件。
+- **验证**：后端 `mvn compile` 通过，前端 `vue-tsc --noEmit` 通过。
+
+### 修改文件清单
+- `backend/src/main/resources/db/migration/V5__create_question_ai_asset_table.sql`（新增）
+- `backend/src/main/java/com/learnplatform/entity/QuestionAiAsset.java`（新增）
+- `backend/src/main/java/com/learnplatform/mapper/QuestionAiAssetMapper.java`（新增）
+- `backend/src/main/java/com/learnplatform/dto/AiAssetType.java`（新增）
+- `backend/src/main/java/com/learnplatform/dto/QuestionLearningAssetVO.java`（新增）
+- `backend/src/main/java/com/learnplatform/service/QuestionLearningAssetService.java`（新增）
+- `backend/src/main/java/com/learnplatform/controller/AiController.java`（修改：注入 QuestionLearningAssetService，新增 4 个接口）
+- `frontend/src/api/ai.ts`（修改：新增学习资产 API 函数和类型）
+- `frontend/src/components/QuestionLearningAsset.vue`（新增）
+- `frontend/src/views/practice/PracticeSessionView.vue`（修改：集成 QuestionLearningAsset，答错后展示）
+- `frontend/src/views/practice/WrongQuestionView.vue`（修改：集成 QuestionLearningAsset）
+
+### 验收结果
+- 后端编译通过（`mvn compile` EXIT_CODE=0）
+- 前端类型检查通过（`vue-tsc --noEmit` 无错误）
+- 新增 6 种结构化 AI Prompt 模板，覆盖标准解析、小白版、步骤拆解、错误选项分析、常见误区和变式题
+- AI 学习资产自动缓存到 question_ai_asset 表，避免重复调用
+- 答错后在刷题结果弹窗和错题本中均可访问 AI 深度学习
+
+### 遗留问题
+- QuestionLearningAsset 在错题本中每个错题都会展示，可能影响页面长度，后续可考虑折叠或懒加载
+- AI 调用日志目前通过 QuestionLearningAssetService 的 log 记录，未通过 AiService 的 saveLog 机制（不消耗 AiCallLog 表行），后续可考虑统一
+- 未编写单元测试
+
+### 下轮建议
+- 更新 docs/API_DESIGN.md 和 docs/DB_DESIGN.md
+- 考虑在管理端题目编辑页面添加清除 AI 学习资产缓存的入口
+- 补充 QuestionLearningAssetService 的单元测试
+- 考虑 AI 资产质量反馈机制（用户反馈讲解是否有帮助）
+
+### 建议 commit message
+`feat(ai): 实现 Phase 13 AI 题目学习资产（结构化讲解 + 缓存 + 答错入口）`
+
+---
+
 ## Round 67 - 2026-06-16
 
 ### 阶段

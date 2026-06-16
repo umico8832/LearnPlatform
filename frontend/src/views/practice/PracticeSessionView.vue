@@ -63,6 +63,12 @@
           v-if="currentResult"
           :question-id="currentResult.questionId"
         />
+
+        <!-- 答错后展示 AI 深度学习资产（答错后的 AI 讲解入口） -->
+        <QuestionLearningAsset
+          v-if="currentResult && !currentResult.correct"
+          :question-id="currentResult.questionId"
+        />
       </div>
 
       <template #footer>
@@ -207,6 +213,7 @@ import { ArrowLeft } from '@element-plus/icons-vue'
 import { submitAnswer } from '@/api/practice'
 import type { PracticeQuestionVO, PracticeResultVO } from '@/api/practice'
 import AiQuestionAssistant from '@/components/AiQuestionAssistant.vue'
+import QuestionLearningAsset from '@/components/QuestionLearningAsset.vue'
 
 const router = useRouter()
 

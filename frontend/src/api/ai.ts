@@ -114,6 +114,59 @@ async function streamAiResponse(
   }
 }
 
+// ======================== AI 学习资产 API ========================
+
+/** AI 学习资产类型 */
+export type AiAssetType =
+  | 'FULL_EXPLANATION'
+  | 'BEGINNER_EXPLANATION'
+  | 'STEP_BY_STEP'
+  | 'WRONG_OPTION_ANALYSIS'
+  | 'COMMON_MISTAKES'
+  | 'VARIANT'
+
+/** AI 学习资产类型标签映射 */
+export const AI_ASSET_LABELS: Record<AiAssetType, string> = {
+  FULL_EXPLANATION: '标准解析',
+  BEGINNER_EXPLANATION: '小白版',
+  STEP_BY_STEP: '步骤拆解',
+  WRONG_OPTION_ANALYSIS: '错误选项分析',
+  COMMON_MISTAKES: '常见误区',
+  VARIANT: '变式题',
+}
+
+/** AI 学习资产 VO */
+export interface QuestionLearningAsset {
+  id: number
+  questionId: number
+  assetType: AiAssetType
+  assetTypeLabel: string
+  content: string
+  model: string
+  createTime: string
+}
+
+/** 查询一道题的所有已缓存 AI 学习资产 */
+export function getQuestionAssets(questionId: number) {
+  return aiService.get<ApiResponse<QuestionLearningAsset[]>>(`/ai/assets/${questionId}`).then((res) => res.data)
+}
+
+/** 同步生成或获取指定类型的 AI 学习资产 */
+export function generateAsset(questionId: number, assetType: AiAssetType) {
+  return aiService.post<ApiResponse<QuestionLearningAsset>>('/ai/asset/generate', { questionId, assetType }).then((res) => res.data)
+}
+
+/** 流式生成指定类型的 AI 学习资产 */
+export async function streamAsset(
+  questionId: number,
+  assetType: AiAssetType,
+  handlers: StreamHandlers,
+  signal?: AbortSignal,
+) {
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+  await streamAiResponse(`${baseUrl}/ai/asset/stream`, { questionId, assetType }, handlers, signal)
+}
+
 function handleStreamEvent(eventBlock: string, handlers: StreamHandlers) {
   let eventName = 'message'
   const dataLines: string[] = []
