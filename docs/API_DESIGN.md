@@ -803,6 +803,51 @@ DELETE /api/ai/assets/{questionId}
 
 删除指定题目的所有 AI 学习资产缓存。适用于题目内容更新后需要重新生成资产的场景。
 
+#### 10.5.5 提交资产反馈
+
+```
+POST /api/ai/asset/feedback
+```
+
+**请求体**：
+```json
+{
+  "questionId": 42,
+  "assetType": "FULL_EXPLANATION",
+  "helpful": true,
+  "comment": "解释得很清楚"
+}
+```
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|:----:|------|
+| questionId | Long | 是 | 题目ID |
+| assetType | String | 是 | 资产类型（见 10.5.2 枚举值表） |
+| helpful | Boolean | 是 | true-有帮助 false-无帮助 |
+| comment | String | 否 | 用户补充说明 |
+
+同一用户对同一题同一资产类型只能反馈一次，重复提交会更新已有反馈。
+
+#### 10.5.6 查询资产反馈
+
+```
+GET /api/ai/asset/feedback/{questionId}/{assetType}
+```
+
+**响应**（有反馈时）：
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "helpful": true,
+    "comment": "解释得很清楚"
+  }
+}
+```
+
+**响应**（无反馈时）：`data` 为 `null`。
+
 ---
 
 ## 十一、统计接口

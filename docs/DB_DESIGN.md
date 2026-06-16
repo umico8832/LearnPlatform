@@ -555,6 +555,40 @@ CREATE TABLE `question_ai_asset` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='题目AI学习资产表';
 ```
 
+### 3.15 AI 学习资产反馈表 (ai_asset_feedback) - Phase 13
+
+存储用户对 AI 生成的学习资产的质量反馈（有帮助/无帮助），同一用户对同一题同一资产类型只能反馈一次。
+
+| 字段名 | 类型 | 必填 | 默认值 | 说明 |
+|--------|------|:----:|--------|------|
+| id | BIGINT | 是 | 自增主键 | 反馈ID |
+| question_id | BIGINT | 是 | | 题目ID |
+| asset_type | VARCHAR(50) | 是 | | 资产类型 |
+| user_id | BIGINT | 是 | | 用户ID |
+| helpful | TINYINT | 是 | | 是否有帮助：1-有帮助 0-无帮助 |
+| comment | VARCHAR(500) | 否 | | 用户补充反馈文字（可选） |
+| create_time | DATETIME | 是 | CURRENT_TIMESTAMP | 创建时间 |
+
+**索引**：
+- 唯一索引：`uk_asset_user` (`question_id`, `asset_type`, `user_id`) — 同一用户对同一题同一类型只有一条反馈
+- 普通索引：`idx_question_asset` (`question_id`, `asset_type`)
+
+**建表 SQL**：
+```sql
+CREATE TABLE `ai_asset_feedback` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `question_id` BIGINT NOT NULL COMMENT '题目ID',
+  `asset_type` VARCHAR(50) NOT NULL COMMENT '资产类型',
+  `user_id` BIGINT NOT NULL COMMENT '用户ID',
+  `helpful` TINYINT NOT NULL COMMENT '是否有帮助：1-有帮助 0-无帮助',
+  `comment` VARCHAR(500) DEFAULT NULL COMMENT '用户补充反馈文字（可选）',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_asset_user` (`question_id`, `asset_type`, `user_id`),
+  KEY `idx_question_asset` (`question_id`, `asset_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='AI 学习资产质量反馈表';
+```
+
 ---
 
 ## 四、表关系说明
@@ -573,6 +607,7 @@ CREATE TABLE `question_ai_asset` (
 | 题目→刷题记录 | question | id | practice_record | question_id |
 | 题目→错题 | question | id | wrong_question | question_id |
 | 题目→AI学习资产 | question | id | question_ai_asset | question_id |
+| AI学习资产→反馈 | question_ai_asset | question_id, asset_type | ai_asset_feedback | question_id, asset_type |
 | 试卷→考试记录 | exam_paper | id | exam_record | exam_paper_id |
 | 考试记录→答题 | exam_record | id | exam_answer | exam_record_id |
 | 试卷→题目关联 | exam_paper | id | exam_question | exam_paper_id |

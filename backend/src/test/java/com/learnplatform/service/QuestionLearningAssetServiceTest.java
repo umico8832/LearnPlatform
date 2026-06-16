@@ -4,6 +4,7 @@ import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.config.AiConfig;
 import com.learnplatform.dto.AiAssetType;
 import com.learnplatform.dto.QuestionLearningAssetVO;
+import com.learnplatform.entity.AiAssetFeedback;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.Question;
@@ -493,6 +494,135 @@ class QuestionLearningAssetServiceTest {
 
         assertEquals(1, result.size());
         assertEquals("UNKNOWN_TYPE", result.get(0).getAssetTypeLabel());
+    }
+
+    // ======================== submitFeedback ========================
+
+    @Test
+    void submitFeedbackCreatesNewFeedbackWhenNoneExists() {
+        when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(null);
+        when(aiAssetFeedbackMapper.insert(any())).thenReturn(1);
+
+        service.submitFeedback(1L, "FULL_EXPLANATION", 7L, true, "very helpful");
+
+        verify(aiAssetFeedbackMapper).selectOne(any());
+        verify(aiAssetFeedbackMapper).insert(any());
+        verify(aiAssetFeedbackMapper, never()).updateById(any());
+
+        ArgumentCaptor<AiAssetFeedback> captor = ArgumentCaptor.forClass(AiAssetFeedback.class);
+        verify(aiAssetFeedbackMapper).insert(captor.capture());
+        AiAssetFeedback saved = captor.getValue();
+        assertEquals(1L, saved.getQuestionId());
+        assertEquals("FULL_EXPLANATION", saved.getAssetType());
+        assertEquals(7L, saved.getUserId());
+        assertEquals(true, saved.getHelpful());
+        assertEquals("very helpful", saved.getComment());
+    }
+
+    @Test
+    void submitFeedbackCreatesFeedbackWithNullComment() {
+        when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(null);
+        when(aiAssetFeedbackMapper.insert(any())).thenReturn(1);
+
+        service.submitFeedback(1L, "BEGINNER_EXPLANATION", 7L, false, null);
+
+        ArgumentCaptor<AiAssetFeedback> captor = ArgumentCaptor.forClass(AiAssetFeedback.class);
+        verify(aiAssetFeedbackMapper).insert(captor.capture());
+        AiAssetFeedback saved = captor.getValue();
+        assertEquals(false, saved.getHelpful());
+        assertNull(saved.getComment());
+    }
+
+    @Test
+    void submitFeedbackUpdatesExistingFeedback() {
+        AiAssetFeedback existing = new AiAssetFeedback();
+        existing.setId(100L);
+        existing.setQuestionId(1L);
+        existing.setAssetType("FULL_EXPLANATION");
+        existing.setUserId(7L);
+        existing.setHelpful(false);
+        existing.setComment("old comment");
+        when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(existing);
+        when(aiAssetFeedbackMapper.updateById(any())).thenReturn(1);
+
+        service.submitFeedback(1L, "FULL_EXPLANATION", 7L, true, "changed my mind");
+
+        verify(aiAssetFeedbackMapper, never()).insert(any());
+        verify(aiAssetFeedbackMapper).updateById(any());
+
+        ArgumentCaptor<AiAssetFeedback> captor = ArgumentCaptor.forClass(AiAssetFeedback.class);
+        verify(aiAssetFeedbackMapper).updateById(captor.capture());
+        AiAssetFeedback updated = captor.getValue();
+        assertEquals(100L, updated.getId());
+        assertEquals(true, updated.getHelpful());
+        assertEquals("changed my mind", updated.getComment());
+    }
+
+    @Test
+    void submitFeedbackUpdatesToNullComment() {
+        AiAssetFeedback existing = new AiAssetFeedback();
+        existing.setId(101L);
+        existing.setQuestionId(1L);
+        existing.setAssetType("VARIANT");
+        existing.setUserId(7L);
+        existing.setHelpful(true);
+        existing.setComment("was good");
+        when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(existing);
+        when(aiAssetFeedbackMapper.updateById(any())).thenReturn(1);
+
+        service.submitFeedback(1L, "VARIANT", 7L, false, null);
+
+        ArgumentCaptor<AiAssetFeedback> captor = ArgumentCaptor.forClass(AiAssetFeedback.class);
+        verify(aiAssetFeedbackMapper).updateById(captor.capture());
+        assertEquals(false, captor.getValue().getHelpful());
+        assertNull(captor.getValue().getComment());
+    }
+
+    // ======================== getUserFeedback ========================
+
+    @Test
+    void getUserFeedbackReturnsNullWhenNoFeedback() {
+        when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(null);
+
+        AiAssetFeedback result = service.getUserFeedback(1L, "FULL_EXPLANATION", 7L);
+
+        assertNull(result);
+    }
+
+    @Test
+    void getUserFeedbackReturnsExistingFeedback() {
+        AiAssetFeedback feedback = new AiAssetFeedback();
+        feedback.setId(200L);
+        feedback.setQuestionId(1L);
+        feedback.setAssetType("FULL_EXPLANATION");
+        feedback.setUserId(7L);
+        feedback.setHelpful(true);
+        feedback.setComment("great");
+        when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(feedback);
+
+        AiAssetFeedback result = service.getUserFeedback(1L, "FULL_EXPLANATION", 7L);
+
+        assertNotNull(result);
+        assertEquals(200L, result.getId());
+        assertEquals(true, result.getHelpful());
+        assertEquals("great", result.getComment());
+    }
+
+    @Test
+    void getUserFeedbackReturnsDifferentFeedbackPerAssetType() {
+        AiAssetFeedback beginnerFeedback = new AiAssetFeedback();
+        beginnerFeedback.setId(201L);
+        beginnerFeedback.setQuestionId(1L);
+        beginnerFeedback.setAssetType("BEGINNER_EXPLANATION");
+        beginnerFeedback.setUserId(7L);
+        beginnerFeedback.setHelpful(false);
+        when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(beginnerFeedback);
+
+        AiAssetFeedback result = service.getUserFeedback(1L, "BEGINNER_EXPLANATION", 7L);
+
+        assertNotNull(result);
+        assertEquals("BEGINNER_EXPLANATION", result.getAssetType());
+        assertEquals(false, result.getHelpful());
     }
 
     // ======================== Helpers ========================

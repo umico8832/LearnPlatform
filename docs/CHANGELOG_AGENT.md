@@ -14,6 +14,47 @@
 
 ---
 
+## Round 72 - 2026-06-16
+
+### 阶段
+Phase 13：AI 题目学习资产 — 收尾（反馈接口单元测试 + 文档补全）
+
+### 本轮目标
+为 feedback 接口补充后端单元测试，补全 API_DESIGN.md 和 DB_DESIGN.md 中反馈功能的文档。
+
+### 完成内容
+1. **QuestionLearningAssetService 反馈单元测试**：新增 7 个测试覆盖 `submitFeedback` 和 `getUserFeedback` 方法：
+   - `submitFeedbackCreatesNewFeedbackWhenNoneExists` — 首次反馈创建新记录
+   - `submitFeedbackCreatesFeedbackWithNullComment` — 无补充说明的反馈
+   - `submitFeedbackUpdatesExistingFeedback` — 重复提交更新已有反馈
+   - `submitFeedbackUpdatesToNullComment` — 更新时清除补充说明
+   - `getUserFeedbackReturnsNullWhenNoFeedback` — 无反馈时返回 null
+   - `getUserFeedbackReturnsExistingFeedback` — 查询已有反馈
+   - `getUserFeedbackReturnsDifferentFeedbackPerAssetType` — 按资产类型区分反馈
+2. **API_DESIGN.md 补全**：新增 10.5.5 提交资产反馈接口和 10.5.6 查询资产反馈接口文档
+3. **DB_DESIGN.md 补全**：新增 3.15 AI 学习资产反馈表 (ai_asset_feedback) 完整字段、索引和建表 SQL；表关系中新增 AI 学习资产→反馈关系
+4. **后端全量测试**：180 个测试全部通过（QuestionLearningAssetServiceTest 29 个，含 7 个新增）
+
+### 修改文件清单
+- `backend/src/test/java/com/learnplatform/service/QuestionLearningAssetServiceTest.java`（修改：新增 AiAssetFeedback import + 7 个 feedback 测试方法）
+- `docs/API_DESIGN.md`（修改：新增 10.5.5 和 10.5.6 反馈接口文档）
+- `docs/DB_DESIGN.md`（修改：新增 3.15 ai_asset_feedback 表 + 表关系新增反馈关系行）
+
+### 验收结果
+- 后端 180 个测试全部通过
+- API_DESIGN.md 包含完整 feedback 接口文档
+- DB_DESIGN.md 包含完整 feedback 表结构文档
+
+### 遗留问题
+- Phase 13 已完成全部计划内容，可标记为完成
+- 缓存 TTL 参数仍硬编码在 RedisConfig 中
+
+### 下轮建议
+- Phase 13 正式收尾（标记完成、HANDOFF/ROADMAP 更新）
+- 或进入 Phase 14（AI 可视化交互讲解）
+
+---
+
 ## Round 71 - 2026-06-16
 
 ### 阶段
