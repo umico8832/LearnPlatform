@@ -167,6 +167,41 @@ public class AiController {
     }
 
     /**
+     * 提交 AI 学习资产反馈
+     */
+    @Operation(summary = "资产反馈", description = "对 AI 学习资产给出有帮助/无帮助反馈")
+    @PostMapping("/asset/feedback")
+    public R<Void> submitAssetFeedback(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody Map<String, Object> request) {
+        Long questionId = Long.valueOf(request.get("questionId").toString());
+        String assetType = request.get("assetType").toString();
+        Boolean helpful = Boolean.valueOf(request.get("helpful").toString());
+        String comment = request.get("comment") != null ? request.get("comment").toString() : null;
+        learningAssetService.submitFeedback(questionId, assetType, userDetails.getUserId(), helpful, comment);
+        return R.ok(null);
+    }
+
+    /**
+     * 查询当前用户对某题某类型资产的反馈
+     */
+    @Operation(summary = "查询资产反馈", description = "查询当前用户对指定资产的反馈状态")
+    @GetMapping("/asset/feedback/{questionId}/{assetType}")
+    public R<Map<String, Object>> getAssetFeedback(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long questionId,
+            @PathVariable String assetType) {
+        var feedback = learningAssetService.getUserFeedback(questionId, assetType, userDetails.getUserId());
+        if (feedback == null) {
+            return R.ok(null);
+        }
+        return R.ok(Map.of(
+                "helpful", feedback.getHelpful(),
+                "comment", feedback.getComment() != null ? feedback.getComment() : ""
+        ));
+    }
+
+    /**
      * 清除题目的 AI 学习资产缓存
      */
     @Operation(summary = "清除学习资产缓存", description = "删除指定题目的所有已缓存 AI 学习资产")

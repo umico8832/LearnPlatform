@@ -61,9 +61,14 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="170" />
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="openDialog(row as QuestionVO)">编辑</el-button>
+            <el-popconfirm title="确定清除该题目的 AI 学习资产缓存？" @confirm="handleClearAiCache((row as QuestionVO).id)">
+              <template #reference>
+                <el-button type="warning" link size="small">清除AI缓存</el-button>
+              </template>
+            </el-popconfirm>
             <el-popconfirm title="确定删除该题目？" @confirm="handleDelete((row as QuestionVO).id)">
               <template #reference>
                 <el-button type="danger" link size="small">删除</el-button>
@@ -280,6 +285,7 @@ import {
   type OptionItem,
   type QuestionImportResult,
 } from '@/api/question'
+import { clearAssetCache } from '@/api/ai'
 import { getAllCourses, type CourseVO } from '@/api/course'
 import { getKnowledgeTree, type KnowledgePointVO } from '@/api/knowledgePoint'
 
@@ -540,6 +546,15 @@ async function handleDelete(id: number) {
     fetchQuestions()
   } catch {
     // 错误已在拦截器中处理
+  }
+}
+
+async function handleClearAiCache(questionId: number) {
+  try {
+    await clearAssetCache(questionId)
+    ElMessage.success('AI 学习资产缓存已清除')
+  } catch {
+    ElMessage.error('清除失败')
   }
 }
 

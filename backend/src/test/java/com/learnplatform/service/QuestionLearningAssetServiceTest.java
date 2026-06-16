@@ -12,6 +12,7 @@ import com.learnplatform.entity.QuestionKnowledgePoint;
 import com.learnplatform.entity.QuestionOption;
 import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
+import com.learnplatform.mapper.AiAssetFeedbackMapper;
 import com.learnplatform.mapper.QuestionAiAssetMapper;
 import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
@@ -50,6 +51,7 @@ class QuestionLearningAssetServiceTest {
     @Mock private AiConfig aiConfig;
     @Mock private AiService aiService;
     @Mock private QuestionAiAssetMapper questionAiAssetMapper;
+    @Mock private AiAssetFeedbackMapper aiAssetFeedbackMapper;
     @Mock private QuestionMapper questionMapper;
     @Mock private QuestionOptionMapper questionOptionMapper;
     @Mock private QuestionKnowledgePointMapper questionKnowledgePointMapper;
@@ -62,7 +64,8 @@ class QuestionLearningAssetServiceTest {
     void setUp() {
         service = new QuestionLearningAssetService(
                 aiProvider, aiConfig, aiService,
-                questionAiAssetMapper, questionMapper, questionOptionMapper,
+                questionAiAssetMapper, aiAssetFeedbackMapper,
+                questionMapper, questionOptionMapper,
                 questionKnowledgePointMapper, knowledgePointMapper, courseMapper
         );
     }

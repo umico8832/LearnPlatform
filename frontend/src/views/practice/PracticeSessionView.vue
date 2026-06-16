@@ -64,10 +64,11 @@
           :question-id="currentResult.questionId"
         />
 
-        <!-- 答错后展示 AI 深度学习资产（答错后的 AI 讲解入口） -->
+        <!-- 答错后展示 AI 深度学习资产（答错后的 AI 讲解入口），折叠模式减少弹窗长度 -->
         <QuestionLearningAsset
           v-if="currentResult && !currentResult.correct"
           :question-id="currentResult.questionId"
+          collapsible
         />
       </div>
 

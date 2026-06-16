@@ -167,6 +167,33 @@ export async function streamAsset(
   await streamAiResponse(`${baseUrl}/ai/asset/stream`, { questionId, assetType }, handlers, signal)
 }
 
+/** 提交 AI 学习资产反馈 */
+export function submitAssetFeedback(
+  questionId: number,
+  assetType: AiAssetType,
+  helpful: boolean,
+  comment?: string,
+) {
+  return aiService.post<ApiResponse<void>>('/ai/asset/feedback', {
+    questionId,
+    assetType,
+    helpful,
+    comment: comment || null,
+  }).then((res) => res.data)
+}
+
+/** 查询当前用户对某资产的反馈状态 */
+export function getAssetFeedback(questionId: number, assetType: AiAssetType) {
+  return aiService.get<ApiResponse<{ helpful: boolean; comment: string }>>(
+    `/ai/asset/feedback/${questionId}/${assetType}`,
+  ).then((res) => res.data)
+}
+
+/** 清除题目的 AI 学习资产缓存（管理端） */
+export function clearAssetCache(questionId: number) {
+  return aiService.delete<ApiResponse<void>>(`/ai/assets/${questionId}`).then((res) => res.data)
+}
+
 function handleStreamEvent(eventBlock: string, handlers: StreamHandlers) {
   let eventName = 'message'
   const dataLines: string[] = []

@@ -14,6 +14,56 @@
 
 ---
 
+## Round 71 - 2026-06-16
+
+### 阶段
+Phase 13：AI 题目学习资产 — 体验深化（反馈机制 + 缓存管理）
+
+### 本轮目标
+实现 AI 学习资产质量反馈机制、PracticeSessionView 折叠模式优化、管理端清除 AI 缓存入口。
+
+### 完成内容
+1. **PracticeSessionView 折叠模式**：答错后弹窗中的 QuestionLearningAsset 组件添加 `collapsible` prop，减少弹窗长度，用户点击才展开加载。
+2. **AI 资产质量反馈机制（全栈）**：
+   - 数据库迁移 `V6__create_ai_asset_feedback_table.sql`（ai_asset_feedback 表，唯一约束 question_id + asset_type + user_id）
+   - 后端 Entity `AiAssetFeedback` + Mapper `AiAssetFeedbackMapper`
+   - `QuestionLearningAssetService` 新增 `submitFeedback` 和 `getUserFeedback` 方法
+   - `AiController` 新增 `POST /ai/asset/feedback` 和 `GET /ai/asset/feedback/{questionId}/{assetType}` 接口
+   - 前端 API `submitAssetFeedback` 和 `getAssetFeedback`
+   - `QuestionLearningAsset.vue` 组件新增反馈 UI：👍/👎 按钮、已反馈状态展示、补充说明文字输入
+3. **管理端清除 AI 缓存入口**：
+   - `QuestionManage.vue` 操作列新增「清除AI缓存」按钮（popconfirm 确认）
+   - 前端 API `clearAssetCache` 调用已有的 `DELETE /ai/assets/{questionId}` 接口
+4. **测试适配**：`QuestionLearningAssetServiceTest` 构造函数新增 `AiAssetFeedbackMapper` 参数，173 个后端测试全部通过。
+
+### 修改文件清单
+- `backend/src/main/resources/db/migration/V6__create_ai_asset_feedback_table.sql`（新增）
+- `backend/src/main/java/com/learnplatform/entity/AiAssetFeedback.java`（新增）
+- `backend/src/main/java/com/learnplatform/mapper/AiAssetFeedbackMapper.java`（新增）
+- `backend/src/main/java/com/learnplatform/service/QuestionLearningAssetService.java`（修改：新增 AiAssetFeedbackMapper 依赖 + submitFeedback/getUserFeedback 方法）
+- `backend/src/main/java/com/learnplatform/controller/AiController.java`（修改：新增反馈提交和查询接口）
+- `frontend/src/api/ai.ts`（修改：新增 submitAssetFeedback、getAssetFeedback、clearAssetCache）
+- `frontend/src/components/QuestionLearningAsset.vue`（修改：全量重写，新增反馈 UI）
+- `frontend/src/views/practice/PracticeSessionView.vue`（修改：QuestionLearningAsset 添加 collapsible prop）
+- `frontend/src/views/admin/QuestionManage.vue`（修改：操作列新增清除AI缓存按钮）
+- `backend/src/test/java/com/learnplatform/service/QuestionLearningAssetServiceTest.java`（修改：构造函数适配新增参数）
+
+### 验收结果
+- 后端编译通过（`mvn compile` EXIT_CODE=0）
+- 后端测试 173 个全部通过（`mvn test` BUILD SUCCESS）
+- 前端类型检查通过（`vue-tsc --noEmit` EXIT_CODE=0）
+- 前端测试 187 个全部通过（21 个测试文件）
+
+### 遗留问题
+- 无新增遗留问题
+
+### 下轮建议
+- 为 feedback 接口补充后端单元测试
+- Phase 13 收尾文档更新（API_DESIGN、DB_DESIGN 补充 feedback 接口和表结构）
+- 考虑进入 Phase 14（AI 可视化交互讲解）或继续 Phase 13 深化
+
+---
+
 ## Round 70 - 2026-06-16
 
 ### 阶段

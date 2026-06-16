@@ -31,6 +31,7 @@ public class QuestionLearningAssetService {
     private final AiConfig aiConfig;
     private final AiService aiService;
     private final QuestionAiAssetMapper questionAiAssetMapper;
+    private final AiAssetFeedbackMapper aiAssetFeedbackMapper;
     private final QuestionMapper questionMapper;
     private final QuestionOptionMapper questionOptionMapper;
     private final QuestionKnowledgePointMapper questionKnowledgePointMapper;
@@ -41,6 +42,7 @@ public class QuestionLearningAssetService {
                                          AiConfig aiConfig,
                                          AiService aiService,
                                          QuestionAiAssetMapper questionAiAssetMapper,
+                                         AiAssetFeedbackMapper aiAssetFeedbackMapper,
                                          QuestionMapper questionMapper,
                                          QuestionOptionMapper questionOptionMapper,
                                          QuestionKnowledgePointMapper questionKnowledgePointMapper,
@@ -50,6 +52,7 @@ public class QuestionLearningAssetService {
         this.aiConfig = aiConfig;
         this.aiService = aiService;
         this.questionAiAssetMapper = questionAiAssetMapper;
+        this.aiAssetFeedbackMapper = aiAssetFeedbackMapper;
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
@@ -159,6 +162,44 @@ public class QuestionLearningAssetService {
         } catch (Exception e) {
             log.warn("AI 学习资产缓存保存失败（不影响流式返回）: {}", e.getMessage());
         }
+    }
+
+    /**
+     * 提交 AI 学习资产反馈（有帮助/无帮助）
+     * 同一用户对同一题同一资产类型只能反馈一次，重复提交会更新
+     */
+    public void submitFeedback(Long questionId, String assetType, Long userId, Boolean helpful, String comment) {
+        LambdaQueryWrapper<AiAssetFeedback> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(AiAssetFeedback::getQuestionId, questionId)
+               .eq(AiAssetFeedback::getAssetType, assetType)
+               .eq(AiAssetFeedback::getUserId, userId);
+        AiAssetFeedback existing = aiAssetFeedbackMapper.selectOne(wrapper);
+
+        if (existing != null) {
+            existing.setHelpful(helpful);
+            existing.setComment(comment);
+            aiAssetFeedbackMapper.updateById(existing);
+        } else {
+            AiAssetFeedback feedback = new AiAssetFeedback();
+            feedback.setQuestionId(questionId);
+            feedback.setAssetType(assetType);
+            feedback.setUserId(userId);
+            feedback.setHelpful(helpful);
+            feedback.setComment(comment);
+            aiAssetFeedbackMapper.insert(feedback);
+        }
+        log.info("AI 资产反馈已提交: questionId={}, type={}, userId={}, helpful={}", questionId, assetType, userId, helpful);
+    }
+
+    /**
+     * 查询当前用户对某题某类型资产的反馈
+     */
+    public AiAssetFeedback getUserFeedback(Long questionId, String assetType, Long userId) {
+        LambdaQueryWrapper<AiAssetFeedback> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(AiAssetFeedback::getQuestionId, questionId)
+               .eq(AiAssetFeedback::getAssetType, assetType)
+               .eq(AiAssetFeedback::getUserId, userId);
+        return aiAssetFeedbackMapper.selectOne(wrapper);
     }
 
     /**

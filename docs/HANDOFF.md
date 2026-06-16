@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 13 — AI 题目学习资产（代码实现 + 体验优化 + 文档补全 + 单元测试完成）
+当前阶段：Phase 13 — AI 题目学习资产（代码实现 + 体验优化 + 文档补全 + 单元测试 + 反馈机制 + 缓存管理）
 
 下一阶段主线：先把一道题讲透，把单题从“题干 + 答案 + 解析”升级为结构化 AI 学习对象，再考虑题库上传、OCR、爬虫和社区共建。
 
@@ -34,7 +34,7 @@
 - [x] Phase 10：质量提升 ✅（参数校验、接口文档、前端体验优化、日志规范化、SQL优化、安全检查）
 - [x] Phase 11：部署与简历 ✅（项目截图为非阻塞演示素材）
 - [x] Phase 12：体验增强迭代（✅ 基本完成：AI 题目助手、管理端统计、AI 流式输出、用户个人中心、错题重练、收藏题练习、Excel 导入导出、学习计划、AI 调用日志、核心业务可信度修复、后端核心服务测试、社区评论、多端适配、题目难度自适应、填空简答判分增强、个人学习报告、GitHub Actions CI、CommentController/AdminExam/AdminQuestion Controller 测试、CommentRequest @Max→@Size 修复、AdminUser/AdminCourse/AdminKnowledgePoint Controller 测试、前端 API 模块测试 7 个模块 62 个测试、Testcontainers 集成测试 ExamService 10 个 + PracticeService 16 个 + WrongQuestionService 16 个 + StatisticsService 10 个、AI 智能组卷、学习路径推荐、知识图谱可视化、Redis 缓存集成）
-- [ ] Phase 13：AI 题目学习资产（进行中：结构化题目讲解 ✅、小白版解析 ✅、步骤拆解 ✅、错误选项分析 ✅、常见误区 ✅、变式题闭环 ✅、学习资产缓存 ✅、答错后 AI 讲解入口 ✅、AI 调用日志统一 ✅、错题本折叠优化 ✅、API/DB 文档补全 ✅、QuestionLearningAssetService 单元测试 ✅）
+- [ ] Phase 13：AI 题目学习资产（进行中：结构化题目讲解 ✅、小白版解析 ✅、步骤拆解 ✅、错误选项分析 ✅、常见误区 ✅、变式题闭环 ✅、学习资产缓存 ✅、答错后 AI 讲解入口 ✅、AI 调用日志统一 ✅、错题本折叠优化 ✅、API/DB 文档补全 ✅、QuestionLearningAssetService 单元测试 ✅、AI 资产质量反馈机制 ✅、PracticeSessionView 折叠模式 ✅、管理端清除 AI 缓存入口 ✅）
 
 ---
 
@@ -122,19 +122,19 @@ docker compose up -d
 - CI 流水线需推送到 GitHub 后才能实际触发验证
 - 本地 JDK 25 + Testcontainers 1.20.1 Docker socket 兼容性问题，集成测试需在 CI（JDK 17）环境验证实际运行
 - 缓存 TTL 参数目前硬编码在 RedisConfig 中，后续可抽为 application.yml 配置项
-- Phase 13 P0 核心能力已实现（Round 68），体验优化与文档补全完成（Round 69），QuestionLearningAssetService 单元测试完成（Round 70，22 个测试）：question_ai_asset 表、QuestionLearningAssetService、6 种结构化 Prompt、流式生成+缓存、前端 QuestionLearningAsset.vue 组件、答错后 AI 讲解入口、AI 调用日志统一写入 ai_call_log 表、错题本中学习资产折叠展示、API/DB 文档已补全、后端全量 173 个测试通过
+- Phase 13 P0 核心能力已实现（Round 68），体验优化与文档补全完成（Round 69），QuestionLearningAssetService 单元测试完成（Round 70，22 个测试），AI 资产反馈机制+管理端缓存清理+PracticeSessionView 折叠模式完成（Round 71）：question_ai_asset 表、ai_asset_feedback 表、QuestionLearningAssetService、6 种结构化 Prompt、流式生成+缓存、前端 QuestionLearningAsset.vue 组件（含反馈 UI）、答错后 AI 讲解入口、AI 调用日志统一写入 ai_call_log 表、错题本中学习资产折叠展示、API/DB 文档已补全、后端全量 173 个测试通过、前端 187 个测试通过
 - 缓存 TTL 参数目前硬编码在 RedisConfig 中，后续可抽为 application.yml 配置项
 
 ---
 
 ## 6. 下一步建议任务
 
-任务名称：Phase 13 — AI 题目学习资产（继续深化）
+任务名称：Phase 13 收尾或进入 Phase 14
 
-Phase 13 P0 核心能力已实现（Round 68），体验优化与文档补全完成（Round 69），QuestionLearningAssetService 单元测试完成（Round 70，22 个测试）。下一步建议：
-- 管理端题目编辑页面添加清除 AI 学习资产缓存的入口
-- AI 资产质量反馈机制（用户反馈讲解是否有帮助）
-- 优化 PracticeSessionView 中 QuestionLearningAsset 的展示（考虑也使用 collapsible 模式）
+Phase 13 核心能力和体验深化已完成（Round 68-71）。下一步建议：
+- 为 feedback 接口补充后端单元测试
+- Phase 13 收尾文档更新（API_DESIGN、DB_DESIGN 补充 feedback 接口和表结构）
+- 考虑进入 Phase 14（AI 可视化交互讲解）或继续 Phase 13 深化
 
 当前不优先做：
 - PDF / 图片 OCR
@@ -143,7 +143,7 @@ Phase 13 P0 核心能力已实现（Round 68），体验优化与文档补全完
 - AI 自动审核发布题目
 - 复杂推荐系统
 
-建议 commit message: `feat(ai): 统一 AI 调用日志 + 错题本学习资产折叠优化 + 补全 API/DB 文档`
+建议 commit message: `feat(ai): 实现 AI 资产反馈机制 + 管理端缓存清理 + 刷题页折叠模式`
 
 ---
 
