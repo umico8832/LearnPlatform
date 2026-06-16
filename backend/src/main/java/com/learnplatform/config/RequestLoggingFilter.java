@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -47,10 +48,23 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             int status = response.getStatus();
             String uriWithQuery = queryString != null ? uri + "?" + queryString : uri;
 
-            if (status >= 400) {
-                log.warn("HTTP {} {} -> {} ({}ms)", method, uriWithQuery, status, duration);
-            } else {
-                log.info("HTTP {} {} -> {} ({}ms)", method, uriWithQuery, status, duration);
+            // 将请求上下文写入 MDC，供结构化 JSON 日志采集
+            MDC.put("httpMethod", method);
+            MDC.put("httpUri", uri);
+            MDC.put("httpStatus", String.valueOf(status));
+            MDC.put("durationMs", String.valueOf(duration));
+
+            try {
+                if (status >= 400) {
+                    log.warn("HTTP {} {} -> {} ({}ms)", method, uriWithQuery, status, duration);
+                } else {
+                    log.info("HTTP {} {} -> {} ({}ms)", method, uriWithQuery, status, duration);
+                }
+            } finally {
+                MDC.remove("httpMethod");
+                MDC.remove("httpUri");
+                MDC.remove("httpStatus");
+                MDC.remove("durationMs");
             }
         }
     }

@@ -109,6 +109,13 @@
             <version>3.3.4</version>
         </dependency>
 
+        <!-- Logstash Logback Encoder (structured JSON logging) -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>7.4</version>
+        </dependency>
+
         <!-- Knife4j (Swagger) -->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>

@@ -255,9 +255,9 @@
 - ~~Redis 缓存（统计数据缓存）~~ ✅ 已实现
 - ~~接口限流（登录 IP 级限流）~~ ✅ 已实现
 - ~~监控告警（Prometheus + Grafana）~~ ✅ 已实现
-- 日志收集（ELK 或 Loki）
+- ~~日志收集（结构化 JSON 日志 + Loki）~~ ✅ 已实现
 
-**完成情况**：已实现 Redis 缓存集成，统计数据接口（用户统计、每日趋势、课程统计、管理端概览、学习报告、学习路径、知识图谱）均通过 `@Cacheable` 注解缓存，7 个缓存区域配置独立 TTL（3-10 分钟）。刷题提交、考试提交、错题本变更时自动清除相关缓存。通过 `CACHE_TYPE` 环境变量控制 Redis/Simple 切换（本地开发默认 Simple 内存缓存，Docker 部署默认 Redis）。Docker Compose 新增 Redis 7 Alpine 服务，含 AOF 持久化和健康检查。已集成 Spring Boot Actuator + Micrometer Prometheus，暴露健康检查（`/actuator/health`）、应用信息（`/actuator/info`）和 Prometheus 指标（`/actuator/prometheus`）三个端点。Docker Compose 新增 Prometheus（v2.51.0，15s 采集间隔，30 天数据保留）和 Grafana（v10.4.1，可配管理员密码）服务。SecurityConfig 已放行 `/actuator/**` 端点。
+**完成情况**：已实现 Redis 缓存集成，统计数据接口（用户统计、每日趋势、课程统计、管理端概览、学习报告、学习路径、知识图谱）均通过 `@Cacheable` 注解缓存，7 个缓存区域配置独立 TTL（3-10 分钟）。刷题提交、考试提交、错题本变更时自动清除相关缓存。通过 `CACHE_TYPE` 环境变量控制 Redis/Simple 切换（本地开发默认 Simple 内存缓存，Docker 部署默认 Redis）。Docker Compose 新增 Redis 7 Alpine 服务，含 AOF 持久化和健康检查。已集成 Spring Boot Actuator + Micrometer Prometheus，暴露健康检查（`/actuator/health`）、应用信息（`/actuator/info`）和 Prometheus 指标（`/actuator/prometheus`）三个端点。Docker Compose 新增 Prometheus（v2.51.0，15s 采集间隔，30 天数据保留）和 Grafana（v10.4.1，可配管理员密码）服务。SecurityConfig 已放行 `/actuator/**` 端点。已实现结构化 JSON 日志（logstash-logback-encoder），通过 logback-spring.xml 按环境切换格式（dev=可读文本+traceId, prod/docker=结构化 JSON）。新增 TraceIdFilter 为每个请求生成 8 位 traceId 并注入 MDC（traceId/clientIp/userId），响应头返回 X-Trace-Id。Docker Compose 新增 Grafana Loki 2.9.4 日志聚合服务，Grafana 预配置 Loki 数据源和日志探索 Dashboard（6 个面板：日志量趋势、ERROR/WARN 趋势、日志流、级别分布、Top URI）。
 
 **预计工作量**：3-5 天
 

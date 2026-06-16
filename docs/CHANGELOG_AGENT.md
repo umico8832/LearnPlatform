@@ -14,6 +14,64 @@
 
 ---
 
+## Round 65 - 2026-06-16
+
+### 阶段
+Phase 12 → P3 远期规划
+
+### 本轮目标
+实现结构化 JSON 日志与 Grafana Loki 日志聚合（FUTURE.md P3 #15 日志收集），补全可观测性三大支柱（指标、日志、追踪）的最后一块。
+
+### 完成内容
+- **Logback 结构化日志**：引入 `logstash-logback-encoder 7.4`，创建 `logback-spring.xml` 按 Spring Profile 切换日志格式。开发环境（dev）输出可读的带 traceId 的文本日志；生产环境（prod/docker）输出结构化 JSON 日志，包含 service 名称、MDC 字段（traceId/clientIp/userId/httpMethod/httpUri/httpStatus/durationMs）、缩短的堆栈信息。
+- **请求追踪 ID（Trace ID）**：新增 `TraceIdFilter`（Order=HIGHEST_PRECEDENCE+5），为每个 HTTP 请求生成 8 位短 UUID 作为 traceId，写入 SLF4J MDC 和响应头 `X-Trace-Id`。同时提取客户端真实 IP（支持 X-Forwarded-For/X-Real-IP 反向代理场景）和已认证用户 ID。
+- **RequestLoggingFilter 增强**：请求日志过滤器新增 MDC 字段注入（httpMethod/httpUri/httpStatus/durationMs），使每条日志行自动携带完整的 HTTP 请求上下文。
+- **移除 MyBatis 硬编码日志**：`application.yml` 移除 `log-impl: org.apache.ibatis.logging.stdout.StdOutImpl`，由 logback-spring.xml 统一按 profile 管理（dev=DEBUG, prod=WARN）。
+- **Grafana Loki 日志聚合**：
+  - 新增 `monitoring/loki/loki-config.yml`，Loki 2.9.4 配置（TSDB 存储、本地文件系统、10MB/s 接入速率、7 天老样本拒绝、压缩与保留策略）。
+  - Grafana 数据源 provisioning 新增 Loki 数据源（`http://loki:3100`）。
+  - 新增 Grafana Loki 日志 Dashboard（`monitoring/grafana/dashboards/loki-logs.json`），包含 6 个面板：日志量趋势（按级别堆叠）、ERROR/WARN 日志趋势、应用日志流（结构化 JSON 解析+格式化）、日志级别分布饼图、Top 10 请求 URI 饼图。
+- **Docker Compose 更新**：
+  - 新增 `loki` 服务（grafana/loki:2.9.4），端口 `${LOKI_HOST_PORT:-3100}:3100`，挂载配置文件和持久化卷，健康检查通过 `/ready` 端点。
+  - 后端服务新增 Loki 依赖（`condition: service_healthy`）和 Docker 日志驱动配置（json-file, 10m×3）。
+  - Grafana 服务新增 Loki 依赖。
+  - 后端 `SPRING_PROFILES_ACTIVE` 默认值改为 `docker`（确保结构化 JSON 日志在 Docker 中生效）。
+  - 新增 `loki-data` 卷。
+- **环境变量**：`.env.example` 新增 `LOKI_HOST_PORT=3100` 配置项。
+
+### 修改文件清单
+- 修改：`backend/pom.xml`（新增 logstash-logback-encoder 7.4 依赖）
+- 新增：`backend/src/main/resources/logback-spring.xml`（多环境日志配置）
+- 新增：`backend/src/main/java/com/learnplatform/config/TraceIdFilter.java`（请求追踪 ID MDC Filter）
+- 修改：`backend/src/main/java/com/learnplatform/config/RequestLoggingFilter.java`（新增 MDC HTTP 上下文字段注入）
+- 修改：`backend/src/main/resources/application.yml`（移除 MyBatis log-impl 硬编码）
+- 新增：`monitoring/loki/loki-config.yml`（Loki 服务配置）
+- 新增：`monitoring/grafana/dashboards/loki-logs.json`（日志探索 Dashboard，6 个面板）
+- 修改：`monitoring/grafana/provisioning/datasources/datasource.yml`（新增 Loki 数据源）
+- 修改：`docker-compose.yml`（新增 Loki 服务 + 后端 Loki 依赖 + 日志驱动 + profiles 改 docker）
+- 修改：`.env.example`（新增 LOKI_HOST_PORT）
+
+### 验收结果
+- [x] `cd backend && mvn test`：151 个测试全部通过
+- [x] `cd frontend && npm run build`：构建成功（622ms）
+- [x] 后端编译成功，无错误
+- [x] logback-spring.xml 包含 dev/prod/test 三个 profile 配置
+- [x] TraceIdFilter 注册为 Spring Component，Order 正确
+- [x] Docker Compose YAML 格式正确，Loki 服务配置完整
+- [x] Grafana provisioning 包含 Prometheus + Loki 两个数据源
+
+### 遗留问题
+- 本地 Docker Loki 环境需要手动添加 Docker 日志驱动（如 docker driver loki），当前使用 json-file driver 供 Loki 通过 Docker 日志插件或文件采集。
+- Loki 的日志采集方式在本地开发和生产环境有差异，生产环境建议使用 Promtail 或 Docker Loki Driver。
+- 缓存 TTL 参数目前硬编码在 RedisConfig 中，后续可抽为 application.yml 配置项。
+
+### 下轮建议
+- 可补充 Promtail 配置或 Docker Loki Driver 集成，实现完整的日志采集链路。
+- 可继续偿还项目截图素材（FUTURE.md #7），或进入其他 P3 远期规划功能。
+- 建议 commit message: `feat(logging): 实现结构化 JSON 日志与 Grafana Loki 日志聚合`
+
+---
+
 ## Round 64 - 2026-06-15
 
 ### 阶段

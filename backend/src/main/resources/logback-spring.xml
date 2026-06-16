@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- 通用属性 -->
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="learn-platform"/>
+
+    <!-- ==================== 开发环境：可读的控制台输出 ==================== -->
+    <springProfile name="dev">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - [traceId=%X{traceId:-}] %msg%n</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+
+        <!-- MyBatis SQL 日志降级，避免刷屏 -->
+        <logger name="com.learnplatform.mapper" level="DEBUG"/>
+    </springProfile>
+
+    <!-- ==================== 生产环境：结构化 JSON 输出 ==================== -->
+    <springProfile name="prod,docker">
+        <!-- 控制台 JSON 输出（Docker 日志收集器采集 stdout） -->
+        <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <!-- 自定义字段 -->
+                <customFields>{"service":"${APP_NAME}"}</customFields>
+                <!-- 时间戳格式 -->
+                <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timestampPattern>
+                <!-- 包含 MDC 字段（traceId 等） -->
+                <includeMdcKeyName>traceId</includeMdcKeyName>
+                <includeMdcKeyName>spanId</includeMdcKeyName>
+                <includeMdcKeyName>userId</includeMdcKeyName>
+                <includeMdcKeyName>clientIp</includeMdcKeyName>
+                <includeMdcKeyName>httpMethod</includeMdcKeyName>
+                <includeMdcKeyName>httpUri</includeMdcKeyName>
+                <includeMdcKeyName>httpStatus</includeMdcKeyName>
+                <includeMdcKeyName>durationMs</includeMdcKeyName>
+                <!-- 日志消息中不重复堆栈，减少体积 -->
+                <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                    <maxDepthPerThrowable>30</maxDepthPerThrowable>
+                    <maxLength>2048</maxLength>
+                    <shortenedClassNameLength>20</shortenedClassNameLength>
+                    <exclude>sun\.reflect\..*</exclude>
+                    <exclude>java\.lang\.reflect\..*</exclude>
+                </throwableConverter>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_JSON"/>
+        </root>
+
+        <!-- 生产环境关闭 MyBatis SQL 日志 -->
+        <logger name="com.learnplatform.mapper" level="WARN"/>
+    </springProfile>
+
+    <!-- ==================== 测试环境：静默 ==================== -->
+    <springProfile name="test,integration">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
+
+        <root level="WARN">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+</configuration>

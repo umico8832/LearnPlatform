@@ -1,4 +1,22 @@
 services:
+  loki:
+    image: grafana/loki:2.9.4
+    container_name: learn-platform-loki
+    ports:
+      - "${LOKI_HOST_PORT:-3100}:3100"
+    volumes:
+      - ./monitoring/loki/loki-config.yml:/etc/loki/config.yml:ro
+      - loki-data:/loki
+    command: -config.file=/etc/loki/config.yml
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - learn-platform
+
   redis:
     image: redis:7-alpine
     container_name: learn-platform-redis
@@ -46,7 +64,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:?请在 .env 中设置 JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-604800}
       SERVER_PORT: ${SERVER_PORT:-8080}
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker}
       AI_API_KEY: ${AI_API_KEY:-}
       AI_ENABLED: ${AI_ENABLED:-false}
       AI_API_BASE_URL: ${AI_API_BASE_URL:-https://api.openai.com/v1}
@@ -62,6 +80,13 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      loki:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/public/health"]
       interval: 15s
@@ -127,6 +152,8 @@ services:
     depends_on:
       prometheus:
         condition: service_healthy
+      loki:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
       interval: 15s
@@ -141,6 +168,7 @@ volumes:
   redis-data:
   prometheus-data:
   grafana-data:
+  loki-data:
 
 networks:
   learn-platform:

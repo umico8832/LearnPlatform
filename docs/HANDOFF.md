@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 12 — 体验增强迭代（基本完成，P3 AI 智能组卷 + 学习路径推荐 + 知识图谱可视化 + Redis 缓存 + 监控体系 + Grafana Dashboard 自动导入 + 登录验证码已实现）
+当前阶段：Phase 12 — 体验增强迭代（基本完成，P3 AI 智能组卷 + 学习路径推荐 + 知识图谱可视化 + Redis 缓存 + 监控体系 + Grafana Dashboard 自动导入 + 登录验证码 + 结构化 JSON 日志 + Loki 日志聚合已实现）
 
 阶段状态：
 - [x] Phase 0：项目规划 ✅
@@ -66,6 +66,8 @@
 24. **Redis 缓存集成**：统计数据接口缓存（7 个缓存区域独立 TTL），刷题/考试/错题本变更时自动清除缓存，CACHE_TYPE 环境变量控制 Redis/Simple 切换，Docker Compose 新增 Redis 服务
 25. **Grafana Dashboard 自动导入**：Provisioning 配置自动加载 Prometheus 数据源和预置 Dashboard（20 个面板：应用概览、HTTP 请求、JVM 内存/线程/GC、系统资源、连接池），Docker Compose 启动即可用
 26. **登录验证码**：基于 Java AWT 的数学验证码图片生成，ConcurrentHashMap 内存存储 + 5 分钟 TTL + 一次性使用，与 IP 级限流形成完整登录安全防护链
+27. **结构化 JSON 日志**：logstash-logback-encoder 7.4 + logback-spring.xml 多环境日志配置（dev=可读文本+traceId, prod/docker=结构化 JSON），TraceIdFilter 为每个请求生成 8 位 traceId 写入 MDC 和响应头 X-Trace-Id，MDC 携带 traceId/clientIp/userId/httpMethod/httpUri/httpStatus/durationMs
+28. **Grafana Loki 日志聚合**：Loki 2.9.4 服务 + Grafana 预配置 Loki 数据源 + 日志探索 Dashboard（6 个面板：日志量趋势、ERROR/WARN 趋势、日志流、级别分布、Top URI），Docker Compose 启动即可用
 
 ### 后端关键文件
 - 统一响应：`R.java` + `ResultCode.java` + `BusinessException` + `GlobalExceptionHandler`
@@ -132,7 +134,7 @@ Phase 12 已基本完成。所有 P0-P2 功能、技术债务均已偿还。现�
 - 补充项目截图/演示素材（FUTURE.md #7）
 - 进入 P3 远期规划：监控告警、多租户、验证码等
 
-建议 commit message: `security(auth): 实现登录验证码功能`
+建议 commit message: `feat(logging): 实现结构化 JSON 日志与 Grafana Loki 日志聚合`
 
 ---
 
