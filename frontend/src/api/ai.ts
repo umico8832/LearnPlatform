@@ -124,6 +124,7 @@ export type AiAssetType =
   | 'WRONG_OPTION_ANALYSIS'
   | 'COMMON_MISTAKES'
   | 'VARIANT'
+  | 'VISUAL_INTERACTIVE'
 
 /** AI 学习资产类型标签映射 */
 export const AI_ASSET_LABELS: Record<AiAssetType, string> = {
@@ -133,6 +134,115 @@ export const AI_ASSET_LABELS: Record<AiAssetType, string> = {
   WRONG_OPTION_ANALYSIS: '错误选项分析',
   COMMON_MISTAKES: '常见误区',
   VARIANT: '变式题',
+  VISUAL_INTERACTIVE: '可视化讲解',
+}
+
+// ======================== 可视化交互讲解类型 ========================
+
+export type VisualElementState = 'default' | 'current' | 'highlight' | 'visited' | 'swapped' | 'sorted' | 'done' | 'pending'
+
+export interface VisualTextElement {
+  type: 'text'
+  label: string
+  content: string
+}
+
+export interface VisualStepItem {
+  content: string
+  status: 'done' | 'current' | 'pending'
+  detail?: string
+}
+
+export interface VisualStepListElement {
+  type: 'step_list'
+  label: string
+  steps: VisualStepItem[]
+}
+
+export interface VisualTableElement {
+  type: 'table'
+  label: string
+  headers: string[]
+  rows: string[][]
+}
+
+export interface VisualStateCell {
+  index: number
+  value: string
+  state: VisualElementState
+}
+
+export interface VisualStateArrayElement {
+  type: 'state_array'
+  label: string
+  description?: string
+  cells: VisualStateCell[]
+}
+
+export interface VisualMatrixCell {
+  value: string
+  state: VisualElementState
+}
+
+export interface VisualMatrixElement {
+  type: 'matrix'
+  label: string
+  description?: string
+  headers: string[]
+  rows: (string | VisualMatrixCell)[][]
+}
+
+export interface VisualTreeNode {
+  name: string
+  state?: VisualElementState
+  children: VisualTreeNode[]
+}
+
+export interface VisualTreeElement {
+  type: 'tree'
+  label: string
+  root: VisualTreeNode
+}
+
+export interface VisualBarItem {
+  label: string
+  value: number
+}
+
+export interface VisualBarChartElement {
+  type: 'bar_chart'
+  label: string
+  items: VisualBarItem[]
+}
+
+export interface VisualMarker {
+  position: number
+  label: string
+}
+
+export interface VisualNumberLineElement {
+  type: 'number_line'
+  label: string
+  min: number
+  max: number
+  current: number
+  markers: VisualMarker[]
+}
+
+export type VisualElement =
+  | VisualTextElement
+  | VisualStepListElement
+  | VisualTableElement
+  | VisualStateArrayElement
+  | VisualMatrixElement
+  | VisualTreeElement
+  | VisualBarChartElement
+  | VisualNumberLineElement
+
+export interface VisualInteractiveData {
+  title: string
+  summary: string
+  elements: VisualElement[]
 }
 
 /** AI 学习资产 VO */

@@ -38,7 +38,14 @@
               <el-tag size="small" effect="plain" type="success">已缓存</el-tag>
               <span v-if="assetModel[tab.type]" class="model-tag">模型：{{ assetModel[tab.type] }}</span>
             </div>
-            <MarkdownRenderer :content="tabContent[tab.type]" />
+            <QuestionVisualInteractive
+              v-if="tab.type === 'VISUAL_INTERACTIVE'"
+              :content="tabContent[tab.type]"
+            />
+            <MarkdownRenderer
+              v-else
+              :content="tabContent[tab.type]"
+            />
 
             <!-- 反馈区域 -->
             <div class="feedback-area">
@@ -119,7 +126,14 @@
               正在生成 {{ tab.label }}，请稍候...
             </div>
             <div v-if="streamBuffer" class="asset-result">
-              <MarkdownRenderer :content="streamBuffer" />
+              <QuestionVisualInteractive
+                v-if="activeTab === 'VISUAL_INTERACTIVE'"
+                :content="streamBuffer"
+              />
+              <MarkdownRenderer
+                v-else
+                :content="streamBuffer"
+              />
             </div>
           </div>
 
@@ -165,6 +179,7 @@ import {
   getAssetFeedback,
 } from '@/api/ai'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
+import QuestionVisualInteractive from '@/components/QuestionVisualInteractive.vue'
 
 const props = withDefaults(defineProps<{
   questionId: number
@@ -188,6 +203,7 @@ const assetTabs: AssetTab[] = [
   { type: 'STEP_BY_STEP', label: '步骤拆解', icon: '🪜', description: '将解题过程拆成明确的、可执行的步骤。' },
   { type: 'WRONG_OPTION_ANALYSIS', label: '错误选项', icon: '🎯', description: '分析每个错误选项利用了什么思维陷阱。' },
   { type: 'COMMON_MISTAKES', label: '常见误区', icon: '🚫', description: '列出学生最容易犯的错误和正确的理解。' },
+  { type: 'VISUAL_INTERACTIVE', label: '可视化讲解', icon: '📊', description: '用图表、数组、树等可视化元素展示解题过程，适合算法和数据结构题目。' },
   { type: 'VARIANT', label: '变式题', icon: '🔄', description: '基于原题生成 2 道变式练习，巩固知识点。' },
 ]
 
@@ -202,6 +218,7 @@ const tabContent = reactive<Record<AiAssetType, string>>({
   WRONG_OPTION_ANALYSIS: '',
   COMMON_MISTAKES: '',
   VARIANT: '',
+  VISUAL_INTERACTIVE: '',
 })
 const assetModel = reactive<Record<AiAssetType, string>>({
   FULL_EXPLANATION: '',
@@ -210,6 +227,7 @@ const assetModel = reactive<Record<AiAssetType, string>>({
   WRONG_OPTION_ANALYSIS: '',
   COMMON_MISTAKES: '',
   VARIANT: '',
+  VISUAL_INTERACTIVE: '',
 })
 
 // 反馈状态
@@ -220,6 +238,7 @@ const feedbackMap = reactive<Record<AiAssetType, { helpful: boolean | null; comm
   WRONG_OPTION_ANALYSIS: { helpful: null, comment: '' },
   COMMON_MISTAKES: { helpful: null, comment: '' },
   VARIANT: { helpful: null, comment: '' },
+  VISUAL_INTERACTIVE: { helpful: null, comment: '' },
 })
 const feedbackSubmitting = ref<AiAssetType | null>(null)
 const showCommentInput = ref<AiAssetType | null>(null)

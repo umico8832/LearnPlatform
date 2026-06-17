@@ -21,7 +21,10 @@ public enum AiAssetType {
     COMMON_MISTAKES("常见误区"),
 
     /** 变式题 */
-    VARIANT("变式题");
+    VARIANT("变式题"),
+
+    /** 可视化交互讲解（结构化 JSON 渲染） */
+    VISUAL_INTERACTIVE("可视化讲解");
 
     private final String label;
 
