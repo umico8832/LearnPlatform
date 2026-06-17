@@ -247,22 +247,125 @@
           </el-table-column>
           <el-table-column prop="courseName" label="课程" width="120" />
           <el-table-column prop="knowledgePointName" label="知识点" width="120" />
+          <el-table-column label="操作" width="100" align="center">
+            <template #default="{ row }">
+              <el-button
+                type="primary"
+                link
+                size="small"
+                @click="loadSimilarQuestions(row.questionId, row.questionContent)"
+              >
+                找相似题
+              </el-button>
+            </template>
+          </el-table-column>
         </el-table>
       </el-card>
     </template>
+
+    <!-- 相似题推荐弹窗 -->
+    <el-dialog
+      v-model="similarDialogVisible"
+      title="🔍 相似题推荐"
+      width="800px"
+      destroy-on-close
+    >
+      <div v-if="similarLoading" v-loading="true" style="height: 200px"></div>
+      <template v-else-if="similarData">
+        <div class="similar-source">
+          <strong>原题：</strong>{{ similarSourceContent }}
+        </div>
+        <el-table :data="similarData.similarQuestions" stripe style="margin-top: 12px">
+          <el-table-column label="题目内容" min-width="240" show-overflow-tooltip>
+            <template #default="{ row }">
+              <span>{{ row.questionContent }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="相似度" width="100" align="center">
+            <template #default="{ row }">
+              <el-progress
+                :percentage="row.similarityScore"
+                :stroke-width="14"
+                :text-inside="true"
+                :color="getSimilarityColor(row.similarityScore)"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column label="相似原因" width="140">
+            <template #default="{ row }">
+              <el-tag size="small" type="info">{{ row.reason }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="题型" width="80" align="center">
+            <template #default="{ row }">{{ row.questionType }}</template>
+          </el-table-column>
+          <el-table-column label="难度" width="80" align="center">
+            <template #default="{ row }">
+              <span v-if="row.difficulty">{{ '⭐'.repeat(row.difficulty) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="已练过" width="80" align="center">
+            <template #default="{ row }">
+              <el-tag :type="row.alreadyAttempted ? 'success' : 'info'" size="small">
+                {{ row.alreadyAttempted ? '是' : '否' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
+      </template>
+      <el-empty v-else description="暂无相似题目" />
+      <template #footer>
+        <el-button @click="similarDialogVisible = false">关闭</el-button>
+        <el-button
+          type="primary"
+          :disabled="!similarData?.similarQuestions?.length"
+          @click="startSimilarPractice"
+        >
+          开始练习相似题
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getLearningDiagnosis, getAiAdviceStream, type LearningDiagnosis } from '@/api/statistics'
+import { getLearningDiagnosis, getAiAdviceStream, getSimilarQuestions, type LearningDiagnosis, type SimilarQuestions } from '@/api/statistics'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const loading = ref(true)
 const data = ref<LearningDiagnosis | null>(null)
+
+// 相似题推荐
+const similarDialogVisible = ref(false)
+const similarLoading = ref(false)
+const similarData = ref<SimilarQuestions | null>(null)
+const similarSourceContent = ref('')
+
+async function loadSimilarQuestions(questionId: number, questionContent?: string) {
+  similarDialogVisible.value = true
+  similarLoading.value = true
+  similarData.value = null
+  similarSourceContent.value = questionContent || ''
+  try {
+    const res = await getSimilarQuestions(questionId, 8)
+    similarData.value = res.data
+  } catch (e: any) {
+    ElMessage.error('加载相似题失败: ' + (e.message || '未知错误'))
+  } finally {
+    similarLoading.value = false
+  }
+}
+
+function startSimilarPractice() {
+  if (!similarData.value?.similarQuestions?.length) return
+  const qIds = similarData.value.similarQuestions.map(q => q.questionId).join(',')
+  similarDialogVisible.value = false
+  router.push({ path: '/practice/session', query: { questionIds: qIds } })
+}
 
 // AI 个性化建议
 const aiAdviceLoading = ref(false)
@@ -386,6 +489,12 @@ function getReasonType(reason: string): 'danger' | 'warning' | 'info' | undefine
     case 'SPACED_REVIEW': return undefined
     default: return 'info'
   }
+}
+
+function getSimilarityColor(score: number): string {
+  if (score >= 80) return '#67c23a'
+  if (score >= 60) return '#e6a23c'
+  return '#409eff'
 }
 
 function startRecommendPractice() {
@@ -543,6 +652,15 @@ onMounted(async () => {
 
 .course-name {
   font-weight: 500;
+}
+
+.similar-source {
+  padding: 12px;
+  background: #f5f7fa;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.6;
 }
 
 .ai-advice-card {

@@ -14,6 +14,57 @@
 
 ---
 
+## Round 77 - 2026-06-17
+
+### 阶段
+Phase 15：AI 学习画像与个性化推荐 — 相似题推荐
+
+### 本轮目标
+在 Phase 15 学习诊断和 AI 个性化建议基础上，实现相似题推荐功能。当用户答错题目或在学习诊断页面浏览推荐题目时，可以一键查找相似题目进行巩固练习，形成"发现薄弱 → 找相似题 → 针对性练习"的学习闭环。
+
+### 完成内容
+1. **后端 `SimilarQuestionVO`（新建）**：相似题推荐 DTO，包含源题目信息和相似题目列表（`SimilarItem` 内嵌类），每项含相似度得分、相似原因、是否已练过等字段。
+2. **后端 `LearningDiagnosisService` 新增 `findSimilarQuestions` 方法**：
+   - 基于多维相似度评分（同知识点 +40、同题型 +30、同难度 +20、同课程 +10）对所有候选题目打分。
+   - 过滤已删除和相似度不足的题目，按得分降序返回 Top N。
+   - 标注用户是否已练习过每道相似题，方便用户选择未练过的题。
+3. **后端 `StatisticsController` 新增 `/similar-questions` 接口**：`GET /api/statistics/similar-questions?questionId=&limit=` 接口。
+4. **前端 `statistics.ts` 扩展**：新增 `SimilarQuestionItem`、`SimilarQuestions` TypeScript 接口 + `getSimilarQuestions()` API 函数。
+5. **前端 `LearningDiagnosisView.vue` 增强**：
+   - 推荐题目表格新增"找相似题"操作列。
+   - 新增相似题推荐弹窗（相似度进度条、相似原因、已练过标签、开始练习按钮）。
+   - `getSimilarityColor`、`loadSimilarQuestions`、`startSimilarPractice` 辅助函数。
+6. **前端 `WrongQuestionView.vue` 增强**：
+   - 每张错题卡片底部新增"🔍 找相似题"按钮。
+   - 新增相似题推荐弹窗（与诊断页共用同一交互模式）。
+
+### 修改文件清单
+- `backend/src/main/java/com/learnplatform/dto/SimilarQuestionVO.java`（新增）
+- `backend/src/main/java/com/learnplatform/service/LearningDiagnosisService.java`（修改：新增 findSimilarQuestions + questionToKps 辅助方法）
+- `backend/src/main/java/com/learnplatform/controller/StatisticsController.java`（修改：新增 SimilarQuestionVO import + /similar-questions 接口）
+- `frontend/src/api/statistics.ts`（修改：新增 SimilarQuestionItem、SimilarQuestions 接口 + getSimilarQuestions 函数）
+- `frontend/src/views/statistics/LearningDiagnosisView.vue`（修改：新增找相似题按钮、弹窗、辅助函数和 CSS）
+- `frontend/src/views/practice/WrongQuestionView.vue`（修改：新增找相似题按钮、弹窗、辅助函数和 CSS）
+
+### 验收结果
+- [x] `cd backend && mvn compile`：编译成功
+- [x] `cd backend && mvn test`：181 个测试全部通过
+- [x] `cd frontend && npx vue-tsc --noEmit`：TypeScript 检查通过，无错误
+- [x] `cd frontend && npm test`：21 个测试文件、187 个测试全部通过
+- [x] 后端接口 `GET /api/statistics/similar-questions` 设计完成
+- [x] 前端错题本和学习诊断页面均集成相似题推荐入口
+
+### 遗留问题
+- 相似题推荐基于结构化属性（知识点、题型、难度、课程）打分，不涉及文本语义分析，后续可引入向量相似度增强
+- 错题本弹窗尺寸在移动端可能需要适配
+
+### 下轮建议
+- 可继续 Phase 15 深化：补写 LearningDiagnosisService 单元测试
+- 或继续 Phase 14 候选方向：代码执行动画
+- 建议 commit message: `feat(ai): Phase 15 相似题推荐（错题巩固闭环）`
+
+---
+
 ## Round 76 - 2026-06-17
 
 ### 阶段

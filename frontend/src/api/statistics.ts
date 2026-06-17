@@ -264,3 +264,30 @@ export function getAiAdviceStream(): Promise<Response> {
     }
   })
 }
+
+// ======================== 相似题推荐 ========================
+
+export interface SimilarQuestionItem {
+  questionId: number
+  questionContent: string
+  questionType: string
+  difficulty: number | null
+  courseName: string | null
+  knowledgePointName: string | null
+  similarityScore: number
+  reason: string
+  alreadyAttempted: boolean
+}
+
+export interface SimilarQuestions {
+  sourceQuestionId: number
+  sourceQuestionContent: string
+  similarQuestions: SimilarQuestionItem[]
+}
+
+/** 获取相似题推荐 */
+export function getSimilarQuestions(questionId: number, limit = 5) {
+  return request.get<any, ApiResponse<SimilarQuestions>>('/statistics/similar-questions', {
+    params: { questionId, limit }
+  })
+}

@@ -4,6 +4,7 @@ import com.learnplatform.common.result.R;
 import com.learnplatform.dto.KnowledgeGraphVO;
 import com.learnplatform.dto.LearningDiagnosisVO;
 import com.learnplatform.dto.LearningPathVO;
+import com.learnplatform.dto.SimilarQuestionVO;
 import com.learnplatform.dto.LearningReportVO;
 import com.learnplatform.dto.StatisticsVO;
 import com.learnplatform.security.CustomUserDetails;
@@ -136,6 +137,18 @@ public class StatisticsController {
                 .header(HttpHeaders.CACHE_CONTROL, "no-cache")
                 .header("X-Accel-Buffering", "no")
                 .body(emitter);
+    }
+
+    // ======================== 相似题推荐 ========================
+
+    @Operation(summary = "相似题推荐", description = "根据指定题目推荐同知识点、同题型、同难度的相似题目，用于错题巩固")
+    @GetMapping("/similar-questions")
+    public R<SimilarQuestionVO> getSimilarQuestions(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam Long questionId,
+            @RequestParam(defaultValue = "5") int limit) {
+        return R.ok(learningDiagnosisService.findSimilarQuestions(
+                userDetails.getUserId(), questionId, limit));
     }
 
     private void sendSse(SseEmitter emitter, String event, Object data) {
