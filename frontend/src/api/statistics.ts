@@ -245,3 +245,22 @@ export interface LearningDiagnosis {
 export function getLearningDiagnosis() {
   return request.get<any, ApiResponse<LearningDiagnosis>>('/statistics/learning-diagnosis')
 }
+
+// ======================== AI 个性化学习建议 ========================
+
+/** 获取 AI 个性化学习建议（同步） */
+export function getAiAdvice() {
+  return request.post<any, ApiResponse<{ content: string; source: string }>>('/statistics/ai-advice')
+}
+
+/** 获取 AI 个性化学习建议（流式 SSE） */
+export function getAiAdviceStream(): Promise<Response> {
+  const token = localStorage.getItem('token') || ''
+  return fetch('/api/statistics/ai-advice/stream', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    }
+  })
+}

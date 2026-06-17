@@ -12,10 +12,40 @@
       <!-- 每日建议 -->
       <el-card class="advice-card" shadow="hover">
         <template #header>
-          <span>💡 每日学习建议</span>
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <span>💡 每日学习建议</span>
+            <el-button
+              type="primary"
+              size="small"
+              :loading="aiAdviceLoading"
+              @click="generateAiAdvice"
+              :disabled="aiAdviceStreaming"
+            >
+              🤖 AI 个性化建议
+            </el-button>
+          </div>
         </template>
         <div class="advice-content">
           <p v-for="(line, i) in adviceLines" :key="i">{{ line }}</p>
+        </div>
+      </el-card>
+
+      <!-- AI 个性化建议 -->
+      <el-card v-if="aiAdviceContent || aiAdviceLoading" class="ai-advice-card" shadow="hover">
+        <template #header>
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <span>🤖 AI 个性化学习建议</span>
+            <el-tag v-if="aiAdviceStreaming" type="success" size="small" effect="light">
+              生成中...
+            </el-tag>
+            <el-tag v-else-if="aiAdviceContent" type="info" size="small" effect="light">
+              AI 生成
+            </el-tag>
+          </div>
+        </template>
+        <div v-if="aiAdviceLoading && !aiAdviceContent" v-loading="true" style="height: 100px"></div>
+        <div v-else class="ai-advice-content">
+          <MarkdownRenderer :content="aiAdviceContent" />
         </div>
       </el-card>
 
@@ -226,12 +256,77 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getLearningDiagnosis, type LearningDiagnosis } from '@/api/statistics'
+import { getLearningDiagnosis, getAiAdviceStream, type LearningDiagnosis } from '@/api/statistics'
+import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const loading = ref(true)
 const data = ref<LearningDiagnosis | null>(null)
+
+// AI 个性化建议
+const aiAdviceLoading = ref(false)
+const aiAdviceStreaming = ref(false)
+const aiAdviceContent = ref('')
+const aiAdviceAbortController = ref<AbortController | null>(null)
+
+async function generateAiAdvice() {
+  aiAdviceLoading.value = true
+  aiAdviceStreaming.value = true
+  aiAdviceContent.value = ''
+
+  try {
+    aiAdviceAbortController.value = new AbortController()
+    const response = await getAiAdviceStream()
+
+    if (!response.ok) {
+      throw new Error(`请求失败: ${response.status}`)
+    }
+
+    const reader = response.body?.getReader()
+    if (!reader) {
+      throw new Error('无法读取响应流')
+    }
+
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+
+      for (const line of lines) {
+        if (line.startsWith('event:')) {
+          continue
+        }
+        if (line.startsWith('data:')) {
+          const jsonStr = line.slice(5).trim()
+          if (!jsonStr) continue
+          try {
+            const parsed = JSON.parse(jsonStr)
+            if (parsed.content !== undefined) {
+              aiAdviceContent.value += parsed.content
+            }
+          } catch {
+            // skip non-JSON data
+          }
+        }
+      }
+    }
+  } catch (e: any) {
+    if (e.name !== 'AbortError') {
+      ElMessage.error('AI 建议生成失败: ' + (e.message || '未知错误'))
+    }
+  } finally {
+    aiAdviceLoading.value = false
+    aiAdviceStreaming.value = false
+    aiAdviceAbortController.value = null
+  }
+}
 
 const adviceLines = computed(() => {
   if (!data.value?.dailyAdvice) return []
@@ -298,6 +393,7 @@ function startRecommendPractice() {
   const qIds = data.value.dailyRecommendations.map(q => q.questionId).join(',')
   router.push({ path: '/practice/session', query: { questionIds: qIds } })
 }
+
 
 onMounted(async () => {
   try {
@@ -447,6 +543,41 @@ onMounted(async () => {
 
 .course-name {
   font-weight: 500;
+}
+
+.ai-advice-card {
+  margin-top: 16px;
+  border-left: 3px solid #409eff;
+}
+
+.ai-advice-content {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #303133;
+}
+
+.ai-advice-content :deep(h1),
+.ai-advice-content :deep(h2),
+.ai-advice-content :deep(h3) {
+  margin-top: 16px;
+  margin-bottom: 8px;
+  color: #1a1a1a;
+}
+
+.ai-advice-content :deep(ul),
+.ai-advice-content :deep(ol) {
+  padding-left: 20px;
+}
+
+.ai-advice-content :deep(p) {
+  margin: 8px 0;
+}
+
+.ai-advice-content :deep(code) {
+  background: #f5f7fa;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 13px;
 }
 
 @media (max-width: 768px) {
