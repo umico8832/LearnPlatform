@@ -41,6 +41,7 @@ public class RedisConfig {
                 .withCacheConfiguration("learningReport", defaultConfig.entryTtl(Duration.ofMinutes(10)))
                 .withCacheConfiguration("learningPath", defaultConfig.entryTtl(Duration.ofMinutes(10)))
                 .withCacheConfiguration("knowledgeGraph", defaultConfig.entryTtl(Duration.ofMinutes(10)))
+                .withCacheConfiguration("learningDiagnosis", defaultConfig.entryTtl(Duration.ofMinutes(10)))
                 .build();
     }
 

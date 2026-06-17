@@ -2,11 +2,13 @@ package com.learnplatform.controller;
 
 import com.learnplatform.common.result.R;
 import com.learnplatform.dto.KnowledgeGraphVO;
+import com.learnplatform.dto.LearningDiagnosisVO;
 import com.learnplatform.dto.LearningPathVO;
 import com.learnplatform.dto.LearningReportVO;
 import com.learnplatform.dto.StatisticsVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.KnowledgeGraphService;
+import com.learnplatform.service.LearningDiagnosisService;
 import com.learnplatform.service.LearningPathService;
 import com.learnplatform.service.StatisticsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,13 +30,16 @@ public class StatisticsController {
     private final StatisticsService statisticsService;
     private final LearningPathService learningPathService;
     private final KnowledgeGraphService knowledgeGraphService;
+    private final LearningDiagnosisService learningDiagnosisService;
 
     public StatisticsController(StatisticsService statisticsService,
                                 LearningPathService learningPathService,
-                                KnowledgeGraphService knowledgeGraphService) {
+                                KnowledgeGraphService knowledgeGraphService,
+                                LearningDiagnosisService learningDiagnosisService) {
         this.statisticsService = statisticsService;
         this.learningPathService = learningPathService;
         this.knowledgeGraphService = knowledgeGraphService;
+        this.learningDiagnosisService = learningDiagnosisService;
     }
 
     @Operation(summary = "学习概览", description = "获取当前用户的学习统计数据（总刷题、正确率等）")
@@ -75,5 +80,12 @@ public class StatisticsController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(required = false) Long courseId) {
         return R.ok(knowledgeGraphService.getKnowledgeGraph(userDetails.getUserId(), courseId));
+    }
+
+    @Operation(summary = "学习诊断", description = "获取用户学习诊断数据，包含知识点薄弱诊断、错因分析、学习习惯和每日推荐题目")
+    @GetMapping("/learning-diagnosis")
+    public R<LearningDiagnosisVO> getLearningDiagnosis(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(learningDiagnosisService.getDiagnosis(userDetails.getUserId()));
     }
 }

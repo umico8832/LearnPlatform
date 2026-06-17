@@ -64,6 +64,10 @@
             <el-icon><Connection /></el-icon>
             <span>知识图谱</span>
           </el-menu-item>
+          <el-menu-item index="/learning-diagnosis">
+            <el-icon><TrendCharts /></el-icon>
+            <span>学习诊断</span>
+          </el-menu-item>
           <el-menu-item index="/exams">
             <el-icon><Trophy /></el-icon>
             <span>考试</span>
@@ -157,7 +161,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { HomeFilled, Reading, Setting, Collection, Notebook, EditPen, Promotion, Clock, WarningFilled, Trophy, MagicStick, DataAnalysis, StarFilled, UserFilled, Fold, Expand, DataLine, Guide, Connection } from '@element-plus/icons-vue'
+import { HomeFilled, Reading, Setting, Collection, Notebook, EditPen, Promotion, Clock, WarningFilled, Trophy, MagicStick, DataAnalysis, StarFilled, UserFilled, Fold, Expand, DataLine, Guide, Connection, TrendCharts } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()

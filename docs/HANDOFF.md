@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 14 — AI 可视化交互讲解 🚧 开发中（Round 73 完成 P0 文本可视化，Round 74 完成 P1 Mermaid 流程图）
+当前阶段：Phase 15 — AI 学习画像与个性化推荐 🚧 开发中（Round 75 完成 P0 学习诊断与每日推荐）
 
 下一阶段主线：先把一道题讲透，把单题从“题干 + 答案 + 解析”升级为结构化 AI 学习对象，再考虑题库上传、OCR、爬虫和社区共建。
 
@@ -36,6 +36,7 @@
 - [x] Phase 12：体验增强迭代（✅ 基本完成：AI 题目助手、管理端统计、AI 流式输出、用户个人中心、错题重练、收藏题练习、Excel 导入导出、学习计划、AI 调用日志、核心业务可信度修复、后端核心服务测试、社区评论、多端适配、题目难度自适应、填空简答判分增强、个人学习报告、GitHub Actions CI、CommentController/AdminExam/AdminQuestion Controller 测试、CommentRequest @Max→@Size 修复、AdminUser/AdminCourse/AdminKnowledgePoint Controller 测试、前端 API 模块测试 7 个模块 62 个测试、Testcontainers 集成测试 ExamService 10 个 + PracticeService 16 个 + WrongQuestionService 16 个 + StatisticsService 10 个、AI 智能组卷、学习路径推荐、知识图谱可视化、Redis 缓存集成）
 - [x] Phase 13：AI 题目学习资产 ✅（结构化题目讲解 ✅、小白版解析 ✅、步骤拆解 ✅、错误选项分析 ✅、常见误区 ✅、变式题闭环 ✅、学习资产缓存 ✅、答错后 AI 讲解入口 ✅、AI 调用日志统一 ✅、错题本折叠优化 ✅、API/DB 文档补全 ✅、QuestionLearningAssetService 单元测试 ✅、AI 资产质量反馈机制 ✅、PracticeSessionView 折叠模式 ✅、管理端清除 AI 缓存入口 ✅）
 - [ ] Phase 14：AI 可视化交互讲解 🚧（P0 文本可视化 ✅；P1 Mermaid 流程图 ✅：第 9 种 mermaid 元素类型 ✅、mermaid.js 动态 import ✅、异步 SVG 渲染 ✅、语法错误 fallback ✅、后端 Prompt 增强 ✅、单元测试 ✅；待做：代码执行动画）
+- [ ] Phase 15：AI 学习画像与个性化推荐 🚧（P0 学习诊断与每日推荐 ✅：知识点薄弱诊断 ✅、课程掌握概况 ✅、错因分析 ✅、学习习惯分析 ✅、每日推荐题目 ✅、每日建议 ✅、前端诊断页面 ✅；待做：AI 个性化建议、错题归因增强、相似题推荐）
 
 ---
 
@@ -130,11 +131,11 @@ docker compose up -d
 
 ## 6. 下一步建议任务
 
-任务名称：Phase 15 或 Phase 14 继续深化
+任务名称：Phase 15 继续深化 或 Phase 14 候选方向
 
-Phase 14 P0（Round 73）和 P1（Round 74）均已完成。下一步建议：
-- 进入 Phase 15（AI 学习画像与个性化推荐）
-- 或继续 Phase 14 深化：代码执行动画、SQL 执行顺序可视化
+Phase 15 P0（Round 75）已完成学习诊断与每日推荐。下一步建议：
+- 继续 Phase 15 深化：AI 个性化学习建议（接入 AI）、错题归因分析增强、相似题推荐
+- 或继续 Phase 14 候选方向：代码执行动画、SQL 执行顺序可视化
 
 当前不优先做：
 - PDF / 图片 OCR

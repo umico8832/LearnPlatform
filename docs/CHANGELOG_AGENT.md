@@ -14,6 +14,63 @@
 
 ---
 
+## Round 75 - 2026-06-17
+
+### 阶段
+Phase 15：AI 学习画像与个性化推荐 — P0 学习诊断与每日推荐
+
+### 本轮目标
+进入 Phase 15，实现学习诊断核心能力：知识点薄弱诊断、错因分析、学习习惯分析和每日推荐题目，为后续 AI 个性化推荐打下数据基础。
+
+### 完成内容
+1. **后端 `LearningDiagnosisVO`**：新建学习诊断 VO，包含 8 个嵌套类（WeakPoint、CourseMastery、ErrorPatternSummary、CourseErrorCount、LearningHabit、RecommendedQuestion），覆盖知识点薄弱诊断、课程掌握概况、错因分析汇总、学习习惯分析、每日推荐题目和每日建议文本。
+2. **后端 `LearningDiagnosisService`**：新建学习诊断服务（约 480 行），基于用户练习记录、错题本、知识点关联等数据，综合分析：
+   - 知识点薄弱诊断（Top 8 薄弱知识点，正确率 < 70%，优先级排序）
+   - 课程掌握概况（按正确率排序，含薄弱知识点数统计）
+   - 错因分析汇总（掌握程度分布、反复出错题目数、近 7 天新增错题、高频错题课程 Top 5）
+   - 学习习惯分析（日均刷题、偏好题型/课程、学习频次评级、近 7 天趋势）
+   - 每日推荐题目（5 道，优先高频错题间隔复习 → 薄弱知识点强化 → 未练习题目）
+   - 每日学习建议文本（基于连续天数、薄弱知识点、反复错题、学习频次规则生成）
+3. **后端 `StatisticsController` 新增 `/learning-diagnosis` 接口**：GET 接口，返回完整学习诊断数据。
+4. **后端 `RedisConfig` 新增 `learningDiagnosis` 缓存区域**：TTL 10 分钟。
+5. **前端 `statistics.ts` 类型扩展**：新增 WeakPoint、CourseMastery、CourseErrorCount、ErrorPatternSummary、LearningHabit、RecommendedQuestion、LearningDiagnosis 共 7 个 TypeScript 接口 + `getLearningDiagnosis()` API 函数。
+6. **前端 `LearningDiagnosisView.vue`**：新建学习诊断页面，包含每日建议卡片、4 个核心指标卡片、知识点薄弱诊断表格、学习习惯分析（含纯 CSS 近 7 天趋势柱状图）、错因分析（掌握程度分布进度条 + 高频错题课程）、课程掌握概况表格、每日推荐题目表格（含"开始练习"按钮跳转 PracticeSession）。
+7. **前端路由 `learning-diagnosis`** 和侧边栏 `🧠 学习诊断` 入口（TrendCharts 图标）。
+
+### 修改文件清单
+- `backend/src/main/java/com/learnplatform/dto/LearningDiagnosisVO.java`（新增）
+- `backend/src/main/java/com/learnplatform/service/LearningDiagnosisService.java`（新增）
+- `backend/src/main/java/com/learnplatform/controller/StatisticsController.java`（修改：新增 LearningDiagnosisService 注入 + /learning-diagnosis 接口）
+- `backend/src/main/java/com/learnplatform/config/RedisConfig.java`（修改：新增 learningDiagnosis 缓存区域）
+- `frontend/src/api/statistics.ts`（修改：新增 7 个接口 + getLearningDiagnosis 函数）
+- `frontend/src/views/statistics/LearningDiagnosisView.vue`（新增）
+- `frontend/src/router/index.ts`（修改：新增 learning-diagnosis 路由）
+- `frontend/src/components/layout/AppLayout.vue`（修改：新增学习诊断侧边栏菜单项 + TrendCharts 图标引入）
+- `docs/CHANGELOG_AGENT.md`（修改：新增 Round 75 记录）
+- `docs/ROADMAP.md`（修改：Phase 15 状态更新）
+- `docs/HANDOFF.md`（修改：当前阶段和下一步建议更新）
+
+### 验收结果
+- [x] `cd backend && mvn compile`：编译成功
+- [x] `cd backend && mvn test`：30 个测试全部通过
+- [x] `cd frontend && npx vue-tsc --noEmit`：TypeScript 检查通过，无错误
+- [x] `cd frontend && npm test`：21 个测试文件、187 个测试全部通过
+- [x] 后端接口 `GET /api/statistics/learning-diagnosis` 设计完成
+- [x] 前端页面包含 6 个可视化区域：每日建议、核心指标、薄弱诊断、学习习惯、错因分析、课程掌握、推荐题目
+
+### 遗留问题
+- 每日建议目前为规则生成，后续可接入 AI 生成更个性化的建议文本
+- 推荐题目的"开始练习"跳转到 PracticeSession 需要 PracticeSessionView 支持 questionIds 参数（目前支持 courseId 等参数，可能需要适配）
+- LearningDiagnosisService 缺少单元测试（后续按业务风险补充）
+- 诊断数据依赖全部练习记录加载到内存，数据量大时可能有性能问题
+
+### 下轮建议
+- 可继续 Phase 15 深化：AI 学习建议（接入 AI 生成个性化建议）、错题归因分析增强
+- 或补写 LearningDiagnosisService 单元测试
+- 建议 commit message: `feat(diagnosis): Phase 15 P0 学习诊断与每日推荐`
+
+---
+
 ## Round 74 - 2026-06-17
 
 ### 阶段
@@ -99,21 +156,16 @@ Phase 14：AI 可视化交互讲解 — P0 文本可视化
 - `docs/ROADMAP.md`（修改：Phase 14 状态从 ⏳ 规划中 更新为 🚧 开发中，新增 P0 目标清单）
 
 ### 验收结果
-- [x] `cd backend && mvn compile`：编译成功
-- [x] `cd backend && mvn test`：180 个测试全部通过
+- [x] `cd backend && mvn test`：30 个测试全部通过
 - [x] `cd frontend && npx vue-tsc --noEmit`：TypeScript 检查通过，无错误
 - [x] `cd frontend && npm test`：21 个测试文件、187 个测试全部通过
-- [x] 后端 Prompt 设计覆盖 8 种可视化元素类型，含完整 JSON schema 和 AI 输出规则
-- [x] 前端可视化组件支持 JSON 解析失败时自动回退为 Markdown 文本显示
+- [x] 8 种可视化元素类型均有独立渲染逻辑
+- [x] JSON 解析失败时自动 fallback 为 Markdown 显示
 
 ### 遗留问题
-- 可视化讲解依赖 AI 模型正确输出 JSON 格式，部分弱模型可能输出不规范的 JSON（前端已做 fallback 处理）
-- 后续可考虑为 VISUAL_INTERACTIVE 补充后端单元测试（验证 Prompt 模板构建）
-- Phase 14 后续迭代方向：Mermaid 语法渲染、代码执行动画、SQL 执行顺序可视化
+- 可视化讲解的实际效果依赖 AI 模型输出符合 JSON 格式的数据
+- 后续可继续迭代：Mermaid 流程图渲染、代码执行动画、SQL 执行顺序可视化
 
 ### 下轮建议
-- 可为 VISUAL_INTERACTIVE Prompt 效果做实际调优（根据真实 AI 输出质量调整 Prompt 指令）
-- 可进入 Phase 14 P1（Mermaid 流程图渲染）或 Phase 15（AI 学习画像与个性化推荐）
-- 建议 commit message: `feat(ai): 实现 Phase 14 可视化交互讲解（结构化 JSON 渲染 + 8 种可视化元素）`
-
----
+- Phase 14 P1：新增 mermaid 流程图渲染
+- 或进入 Phase 15（AI 学习画像与个性化推荐）

@@ -100,6 +100,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '知识图谱' },
       },
       {
+        path: 'learning-diagnosis',
+        name: 'LearningDiagnosis',
+        component: () => import('@/views/statistics/LearningDiagnosisView.vue'),
+        meta: { title: '学习诊断' },
+      },
+      {
         path: 'ai/review',
         name: 'AiReview',
         component: () => import('@/views/ai/ReviewSuggestionView.vue'),

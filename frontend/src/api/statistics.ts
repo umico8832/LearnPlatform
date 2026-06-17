@@ -168,3 +168,80 @@ export function getKnowledgeGraph(courseId?: number) {
   const params = courseId ? { courseId } : {}
   return request.get<any, ApiResponse<KnowledgeGraph>>('/statistics/knowledge-graph', { params })
 }
+
+// ======================== 学习诊断 ========================
+
+export interface WeakPoint {
+  knowledgePointId: number
+  knowledgePointName: string
+  courseId: number
+  courseName: string
+  correctRate: number
+  totalAttempts: number
+  wrongCount: number
+  masteryStatus: 'WEAK' | 'NEEDS_REVIEW' | 'NOT_STARTED'
+  priorityScore: number
+  diagnosis: string
+}
+
+export interface CourseMastery {
+  courseId: number
+  courseName: string
+  correctRate: number
+  totalAttempts: number
+  wrongCount: number
+  knowledgePointCount: number
+  weakPointCount: number
+}
+
+export interface CourseErrorCount {
+  courseId: number
+  courseName: string
+  wrongCount: number
+}
+
+export interface ErrorPatternSummary {
+  topErrorCourses: CourseErrorCount[]
+  masteryDistribution: Record<string, number>
+  repeatedErrorCount: number
+  recentNewWrongCount: number
+}
+
+export interface LearningHabit {
+  avgDailyPractice: number
+  preferredQuestionType: string
+  preferredCourse: string
+  weeklyTrend: DailyTrendItem[]
+  frequencyLevel: 'ACTIVE' | 'MODERATE' | 'INACTIVE'
+  frequencyDescription: string
+}
+
+export interface RecommendedQuestion {
+  questionId: number
+  reason: 'SPACED_REVIEW' | 'WEAK_POINT_REINFORCE' | 'ERROR_PRONE'
+  reasonDescription: string
+  questionContent: string
+  questionType: string
+  courseName: string | null
+  difficulty: number | null
+  knowledgePointName: string | null
+  lastWrongAnswer: string | null
+}
+
+export interface LearningDiagnosis {
+  totalPractice: number
+  overallCorrectRate: number
+  activeDaysLast30: number
+  streakDays: number
+  weakPoints: WeakPoint[]
+  courseMasteries: CourseMastery[]
+  errorPatterns: ErrorPatternSummary
+  learningHabit: LearningHabit
+  dailyRecommendations: RecommendedQuestion[]
+  dailyAdvice: string
+}
+
+/** 获取学习诊断数据 */
+export function getLearningDiagnosis() {
+  return request.get<any, ApiResponse<LearningDiagnosis>>('/statistics/learning-diagnosis')
+}
