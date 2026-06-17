@@ -388,6 +388,31 @@ class QuestionLearningAssetServiceTest {
     // ======================== Prompt content verification ========================
 
     @Test
+    void visualInteractivePromptContainsMermaidInstructions() {
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
+        doNothing().when(aiService).checkDailyQuota(7L);
+        setupFullQuestionContext();
+        when(aiConfig.getModel()).thenReturn("gpt-4");
+        when(aiProvider.chat(anyString(), anyString())).thenReturn("{}");
+        when(questionAiAssetMapper.insert(any())).thenReturn(1);
+
+        ArgumentCaptor<String> systemPromptCaptor = ArgumentCaptor.forClass(String.class);
+        service.generateOrGetAsset(1L, AiAssetType.VISUAL_INTERACTIVE, 7L);
+
+        verify(aiProvider).chat(systemPromptCaptor.capture(), anyString());
+        String systemPrompt = systemPromptCaptor.getValue();
+
+        // Verify mermaid type is in the prompt schema
+        assertContains(systemPrompt, "mermaid");
+        assertContains(systemPrompt, "Mermaid");
+        assertContains(systemPrompt, "flowchart");
+        assertContains(systemPrompt, "SQL");
+        assertContains(systemPrompt, "mermaid code 必须是合法的 Mermaid 语法");
+        // Verify 9th visualization element type description
+        assertContains(systemPrompt, "`mermaid`：Mermaid 流程图");
+    }
+
+    @Test
     void generateOrGetAssetBuildsCorrectQuestionContext() {
         when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
         doNothing().when(aiService).checkDailyQuota(7L);

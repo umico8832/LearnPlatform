@@ -229,6 +229,13 @@ export interface VisualNumberLineElement {
   markers: VisualMarker[]
 }
 
+export interface VisualMermaidElement {
+  type: 'mermaid'
+  label: string
+  code: string
+  caption?: string
+}
+
 export type VisualElement =
   | VisualTextElement
   | VisualStepListElement
@@ -238,6 +245,7 @@ export type VisualElement =
   | VisualTreeElement
   | VisualBarChartElement
   | VisualNumberLineElement
+  | VisualMermaidElement
 
 export interface VisualInteractiveData {
   title: string

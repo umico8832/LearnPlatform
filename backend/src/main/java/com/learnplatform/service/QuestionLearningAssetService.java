@@ -443,7 +443,8 @@ public class QuestionLearningAssetService {
                 + "- `matrix`：二维矩阵/DP 表格，字段为 headers + rows，每个 cell 可以是字符串或 {value, state} 对象\n"
                 + "- `tree`：树结构，字段为 root 对象（name/state/children 递归），state 可选 default/current/visited\n"
                 + "- `bar_chart`：柱状图对比，字段为 items 数组，每个 item 有 label/value（数值）\n"
-                + "- `number_line`：数轴/指针位置，字段为 min/max/current + markers 数组（position/label）\n\n"
+                + "- `number_line`：数轴/指针位置，字段为 min/max/current + markers 数组（position/label）\n"
+                + "- `mermaid`：Mermaid 流程图，字段为 code（Mermaid 语法）+ 可选 caption（图注说明），适合算法流程、SQL 执行顺序、网络协议交互、递归展开等\n\n"
                 + "**重要规则**：\n"
                 + "1. 只输出 JSON，不要输出 ```json ``` 代码块标记\n"
                 + "2. text 类型可用于插入讲解性 Markdown 内容\n"
@@ -452,7 +453,11 @@ public class QuestionLearningAssetService {
                 + "5. 对于指针/区间类题目，用 number_line 展示位置\n"
                 + "6. 对于 DP/矩阵类题目，用 matrix 展示填表过程\n"
                 + "7. 对于树/图类题目，用 tree 展示结构\n"
-                + "8. 所有 state 字段值必须是以下之一：default, current, highlight, visited, swapped, sorted, done, pending";
+                + "8. 对于算法流程、条件分支、循环逻辑，用 mermaid 展示流程图（flowchart TD 或 flowchart LR）\n"
+                + "9. 对于 SQL 查询执行过程，用 mermaid 展示执行顺序（flowchart TD）\n"
+                + "10. 对于递归展开过程，除了 tree 外也可用 mermaid flowchart 展示调用链\n"
+                + "11. mermaid code 必须是合法的 Mermaid 语法，不要包含 ```mermaid 代码块标记，直接写 Mermaid 语法内容\n"
+                + "12. 所有 state 字段值必须是以下之一：default, current, highlight, visited, swapped, sorted, done, pending";
         return new PromptPair(systemPrompt, "请为以下题目生成可视化讲解数据（严格输出 JSON）：\n\n" + questionContext);
     }
 

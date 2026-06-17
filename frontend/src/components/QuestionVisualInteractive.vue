@@ -171,6 +171,16 @@
             </div>
           </div>
         </div>
+
+        <!-- mermaid -->
+        <div v-else-if="el.type === 'mermaid'" class="vi-block">
+          <div class="vi-block-label">{{ el.label }}</div>
+          <div
+            :ref="(el2) => setMermaidRef(idx, el2 as HTMLElement)"
+            class="vi-mermaid-container"
+          />
+          <div v-if="el.caption" class="vi-mermaid-caption">{{ el.caption }}</div>
+        </div>
       </div>
     </div>
 
@@ -182,7 +192,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, defineComponent, h } from 'vue'
+import { ref, watch, defineComponent, h, nextTick } from 'vue'
 import type { PropType, VNode } from 'vue'
 import { Loading } from '@element-plus/icons-vue'
 import MarkdownRenderer from './MarkdownRenderer.vue'
@@ -192,6 +202,7 @@ import type {
   VisualTreeNode,
   VisualBarChartElement,
   VisualNumberLineElement,
+  VisualMermaidElement,
 } from '@/api/ai'
 
 /** 递归树节点渲染组件 */
@@ -221,6 +232,24 @@ const TreeNode = defineComponent({
   },
 })
 
+// Mermaid 实例（延迟初始化）
+let mermaidInstance: typeof import('mermaid').default | null = null
+let mermaidIdCounter = 0
+
+async function ensureMermaid(): Promise<typeof import('mermaid').default> {
+  if (!mermaidInstance) {
+    const mod = await import('mermaid')
+    mermaidInstance = mod.default
+    mermaidInstance.initialize({
+      startOnLoad: false,
+      theme: 'default',
+      securityLevel: 'loose',
+      flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' },
+    })
+  }
+  return mermaidInstance
+}
+
 const props = defineProps<{
   content: string
   loading?: boolean
@@ -230,6 +259,7 @@ const props = defineProps<{
 const data = ref<VisualInteractiveData | null>(null)
 const fallbackMode = ref(false)
 const rawContent = ref('')
+const mermaidRendered = ref<Record<number, boolean>>({})
 
 watch(
   () => props.content,
@@ -304,6 +334,67 @@ function getCellValue(cell: string | VisualMatrixCell): string {
   if (typeof cell === 'string') return cell
   return cell.value
 }
+
+// ======================== Mermaid 渲染 ========================
+
+const mermaidRefs = ref<Map<number, HTMLElement>>(new Map())
+
+function setMermaidRef(idx: number, el: HTMLElement | null) {
+  if (el) {
+    mermaidRefs.value.set(idx, el)
+  } else {
+    mermaidRefs.value.delete(idx)
+  }
+}
+
+// 当数据变化时，渲染所有 mermaid 元素
+watch(
+  data,
+  async (newData) => {
+    if (!newData) return
+    await nextTick()
+    // 用 setTimeout 确保 DOM 已完全渲染
+    setTimeout(() => renderAllMermaid(newData), 50)
+  },
+  { immediate: true },
+)
+
+async function renderAllMermaid(viData: VisualInteractiveData) {
+  const mermaid = await ensureMermaid()
+  for (let i = 0; i < viData.elements.length; i++) {
+    const el = viData.elements[i]
+    if (el.type !== 'mermaid') continue
+    const container = mermaidRefs.value.get(i)
+    if (!container) continue
+    // 避免重复渲染
+    if (mermaidRendered.value[i]) continue
+
+    const mermaidEl = el as VisualMermaidElement
+    try {
+      const id = `mermaid-${++mermaidIdCounter}-${Date.now()}`
+      const { svg } = await mermaid.render(id, mermaidEl.code)
+      container.innerHTML = svg
+      mermaidRendered.value[i] = true
+    } catch (err) {
+      // Mermaid 语法错误时显示原始代码
+      container.innerHTML = ''
+      const pre = document.createElement('pre')
+      pre.className = 'vi-mermaid-error'
+      pre.textContent = mermaidEl.code
+      container.appendChild(pre)
+      mermaidRendered.value[i] = true
+    }
+  }
+}
+
+// 内容变化时重置 mermaid 渲染状态
+watch(
+  () => props.content,
+  () => {
+    mermaidRendered.value = {}
+    mermaidRefs.value.clear()
+  },
+)
 </script>
 
 <script lang="ts">
@@ -698,5 +789,37 @@ export default { name: 'QuestionVisualInteractive' }
 
 .vi-fallback {
   padding: 4px 0;
+}
+
+/* mermaid */
+.vi-mermaid-container {
+  overflow-x: auto;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.vi-mermaid-container :deep(svg) {
+  max-width: 100%;
+  height: auto;
+}
+
+.vi-mermaid-caption {
+  font-size: 12px;
+  color: #909399;
+  text-align: center;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+.vi-mermaid-error {
+  background: #fef0f0;
+  border: 1px solid #fbc4c4;
+  border-radius: 4px;
+  padding: 12px;
+  font-size: 12px;
+  color: #f56c6c;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>
