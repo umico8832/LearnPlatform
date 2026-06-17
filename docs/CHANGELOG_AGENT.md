@@ -14,6 +14,46 @@
 
 ---
 
+## Round 78 - 2026-06-17
+
+### 阶段
+Phase 15：AI 学习画像与个性化推荐 — LearningDiagnosisService 单元测试
+
+### 本轮目标
+补写 LearningDiagnosisService 单元测试，覆盖学习诊断、相似题推荐、AI 建议三大核心能力，提升后端测试覆盖率。
+
+### 完成内容
+1. **新建 `LearningDiagnosisServiceTest`**：30 个单元测试，覆盖：
+   - **getDiagnosis 基本场景**（4 个）：空数据返回零值、正确率计算（50%/100%）、连续天数
+   - **学习习惯**（3 个）：空记录默认值、有记录时题型/课程偏好、7 天趋势结构
+   - **错因分析**（4 个）：无错题、反复出错（wrongCount>=3）、近 7 天新增错题、高频错题课程排序
+   - **知识点薄弱诊断**（3 个）：60% 正确率 => NEEDS_REVIEW、90% 正确率被过滤、未开始练习 => NOT_STARTED
+   - **每日推荐**（3 个）：从反复错题推荐（ERROR_PRONE）、限制最多 5 题、已掌握错题跳过
+   - **每日建议**（2 个）：有学习记录时建议、无记录时建议
+   - **课程掌握概况**（1 个）：正确率、练习次数
+   - **findSimilarQuestions**（4 个）：题目不存在返回空、同知识点相似题、排除源题、已练习标记
+   - **findSimilarQuestions 排序**（1 个）：相似度降序排序
+   - **generateAiAdvice**（3 个）：成功调用并记录日志、失败记录日志、Prompt 包含诊断数据
+   - **generateAiAdviceStream**（2 个）：流式输出拼接、失败记录日志
+
+### 修改文件清单
+- `backend/src/test/java/com/learnplatform/service/LearningDiagnosisServiceTest.java`（新增，30 个测试）
+
+### 验收结果
+- [x] `cd backend && mvn test`：211 个测试全部通过（新增 30 个，原有 181 个）
+- [x] LearningDiagnosisService 核心逻辑全覆盖：诊断、推荐、AI 建议、相似题
+
+### 遗留问题
+- 无
+
+### 下轮建议
+- 可继续 Phase 15 深化：错题归因分析增强
+- 或继续 Phase 14 候选方向：代码执行动画、SQL 执行顺序可视化
+- 或进入 Phase 16：题目投稿与 AI 题库生产
+- 建议 commit message: `test(backend): 补写 LearningDiagnosisService 单元测试（30 个）`
+
+---
+
 ## Round 77 - 2026-06-17
 
 ### 阶段

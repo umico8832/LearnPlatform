@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 15 — AI 学习画像与个性化推荐 🚧 开发中（Round 77 完成相似题推荐）
+当前阶段：Phase 15 — AI 学习画像与个性化推荐 🚧 开发中（Round 78 完成 LearningDiagnosisService 单元测试，后端 211 个测试）
 
 下一阶段主线：先把一道题讲透，把单题从“题干 + 答案 + 解析”升级为结构化 AI 学习对象，再考虑题库上传、OCR、爬虫和社区共建。
 
@@ -131,12 +131,12 @@ docker compose up -d
 
 ## 6. 下一步建议任务
 
-任务名称：Phase 15 继续深化 或 Phase 14 候选方向
+任务名称：Phase 15 继续深化 或 Phase 14 候选方向 或 Phase 16
 
-Phase 15（Round 75-77）已完成学习诊断 + AI 个性化学习建议 + 相似题推荐。下一步建议：
+Phase 15（Round 75-78）已完成学习诊断 + AI 个性化学习建议 + 相似题推荐 + LearningDiagnosisService 单元测试（30 个）。下一步建议：
 - 继续 Phase 15 深化：错题归因分析增强
-- 或补写 LearningDiagnosisService 单元测试
 - 或继续 Phase 14 候选方向：代码执行动画、SQL 执行顺序可视化
+- 或进入 Phase 16：题目投稿与 AI 题库生产
 
 当前不优先做：
 - 复杂推荐系统（向量相似度等）
@@ -145,7 +145,7 @@ Phase 15（Round 75-77）已完成学习诊断 + AI 个性化学习建议 + 相�
 - 用户上传题库自动入库
 - AI 自动审核发布题目
 
-建议 commit message: `feat(ai): Phase 15 相似题推荐（错题巩固闭环）`
+建议 commit message: `test(backend): 补写 LearningDiagnosisService 单元测试（30 个）`
 
 ---
 
