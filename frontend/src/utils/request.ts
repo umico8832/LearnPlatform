@@ -98,7 +98,7 @@ service.interceptors.response.use(
 
     // code === 0 表示成功
     if (res.code === 0) {
-      return response
+      return response.data as any
     }
 
     // 1002: 未登录 / Token 无效

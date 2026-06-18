@@ -67,12 +67,12 @@ export function getQuestionPage(params: {
   courseId?: number
   difficulty?: number
 }) {
-  return request.get<ApiResponse<PageResult<QuestionVO>>>('/questions', { params })
+  return request.get<any, ApiResponse<PageResult<QuestionVO>>>('/questions', { params })
 }
 
 /** 获取题目详情（用户端） */
 export function getQuestionById(id: number) {
-  return request.get<ApiResponse<QuestionVO>>(`/questions/${id}`)
+  return request.get<any, ApiResponse<QuestionVO>>(`/questions/${id}`)
 }
 
 /** 获取题目分页（管理端） */
@@ -85,27 +85,27 @@ export function getAdminQuestionPage(params: {
   difficulty?: number
   status?: number
 }) {
-  return request.get<ApiResponse<PageResult<QuestionVO>>>('/admin/questions', { params })
+  return request.get<any, ApiResponse<PageResult<QuestionVO>>>('/admin/questions', { params })
 }
 
 /** 获取题目详情（管理端） */
 export function getAdminQuestionById(id: number) {
-  return request.get<ApiResponse<QuestionVO>>(`/admin/questions/${id}`)
+  return request.get<any, ApiResponse<QuestionVO>>(`/admin/questions/${id}`)
 }
 
 /** 创建题目（管理端） */
 export function createQuestion(data: QuestionForm) {
-  return request.post<ApiResponse<QuestionVO>>('/admin/questions', data)
+  return request.post<any, ApiResponse<QuestionVO>>('/admin/questions', data)
 }
 
 /** 更新题目（管理端） */
 export function updateQuestion(id: number, data: QuestionForm) {
-  return request.put<ApiResponse<QuestionVO>>(`/admin/questions/${id}`, data)
+  return request.put<any, ApiResponse<QuestionVO>>(`/admin/questions/${id}`, data)
 }
 
 /** 删除题目（管理端） */
 export function deleteQuestion(id: number) {
-  return request.delete<ApiResponse<void>>(`/admin/questions/${id}`)
+  return request.delete<any, ApiResponse<void>>(`/admin/questions/${id}`)
 }
 
 /** 题目导入结果 */
@@ -139,7 +139,7 @@ export function downloadTemplate() {
 export function importQuestions(file: File) {
   const formData = new FormData()
   formData.append('file', file)
-  return request.post<ApiResponse<QuestionImportResult>>('/admin/questions/import', formData, {
+  return request.post<any, ApiResponse<QuestionImportResult>>('/admin/questions/import', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }

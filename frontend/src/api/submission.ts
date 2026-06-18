@@ -69,7 +69,7 @@ export interface SubmissionStats {
 
 /** 提交题目投稿 */
 export function submitQuestion(data: SubmissionForm) {
-  return request.post<ApiResponse<QuestionSubmissionVO>>('/submission', data)
+  return request.post<any, ApiResponse<QuestionSubmissionVO>>('/submission', data)
 }
 
 /** 我的投稿列表 */
@@ -78,12 +78,12 @@ export function getMySubmissions(params?: {
   pageSize?: number
   status?: number
 }) {
-  return request.get<ApiResponse<PageResult<QuestionSubmissionVO>>>('/submission/my', { params })
+  return request.get<any, ApiResponse<PageResult<QuestionSubmissionVO>>>('/submission/my', { params })
 }
 
 /** 投稿详情 */
 export function getSubmissionDetail(id: number) {
-  return request.get<ApiResponse<QuestionSubmissionVO>>(`/submission/${id}`)
+  return request.get<any, ApiResponse<QuestionSubmissionVO>>(`/submission/${id}`)
 }
 
 // ========== 管理端 ==========
@@ -96,25 +96,25 @@ export function getAdminSubmissions(params?: {
   courseId?: number
   keyword?: string
 }) {
-  return request.get<ApiResponse<PageResult<QuestionSubmissionVO>>>('/admin/submission', { params })
+  return request.get<any, ApiResponse<PageResult<QuestionSubmissionVO>>>('/admin/submission', { params })
 }
 
 /** 管理端投稿详情 */
 export function getAdminSubmissionDetail(id: number) {
-  return request.get<ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}`)
+  return request.get<any, ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}`)
 }
 
 /** 审核投稿 */
 export function reviewSubmission(id: number, data: ReviewForm) {
-  return request.post<ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}/review`, data)
+  return request.post<any, ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}/review`, data)
 }
 
 /** 投稿入库 */
 export function importSubmission(id: number) {
-  return request.post<ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}/import`)
+  return request.post<any, ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}/import`)
 }
 
 /** 投稿统计 */
 export function getSubmissionStats() {
-  return request.get<ApiResponse<SubmissionStats>>('/admin/submission/stats')
+  return request.get<any, ApiResponse<SubmissionStats>>('/admin/submission/stats')
 }

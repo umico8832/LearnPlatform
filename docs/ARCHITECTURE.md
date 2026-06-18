@@ -126,6 +126,7 @@ frontend/
 │   │   ├── question.ts          # 题目相关 API
 │   │   ├── practice.ts          # 刷题相关 API
 │   │   ├── wrongQuestion.ts     # 错题本 API
+│   │   ├── submission.ts        # 题目投稿 API
 │   │   ├── exam.ts              # 考试相关 API
 │   │   ├── ai.ts                # AI 相关 API
 │   │   └── statistics.ts        # 统计 API
@@ -168,7 +169,8 @@ frontend/
 │   │   │   └── CourseDetailView.vue
 │   │   ├── practice/            # 刷题
 │   │   │   ├── PracticeView.vue
-│   │   │   └── PracticeSessionView.vue
+│   │   │   ├── PracticeSessionView.vue
+│   │   │   └── QuestionSubmitView.vue
 │   │   ├── wrong/               # 错题本
 │   │   │   └── WrongQuestionView.vue
 │   │   ├── exam/                # 考试
@@ -185,6 +187,7 @@ frontend/
 │   │       ├── CourseManage.vue
 │   │       ├── KnowledgePointManage.vue
 │   │       ├── QuestionManage.vue
+│   │       ├── SubmissionManage.vue
 │   │       └── ExamManage.vue
 │   ├── App.vue                  # 根组件
 │   └── main.ts                  # 入口文件
@@ -481,6 +484,28 @@ AiService (业务服务)
 
 ---
 
+### 5.4 题目投稿与入库数据流
+
+```
+用户提交投稿 → QuestionSubmissionController.submit()
+  → QuestionSubmissionService 校验题型、选项和参考答案
+  → 保存 question_submission（状态=待审核）
+
+管理员审核 → AdminQuestionSubmissionController.review()
+  → 通过或拒绝投稿，记录审核意见、审核人和审核时间
+
+管理员入库 → AdminQuestionSubmissionController.import()
+  → 创建正式 question
+  → 根据题型创建 question_option
+  → 填空题/简答题将 correct_answer 作为 ANSWER 选项入库
+  → 可选写入 question_knowledge_point
+  → 更新 question_submission.status=已入库 和 imported_question_id
+```
+
+投稿表是审核流转表，不直接参与刷题；只有入库后的正式 `question` 与 `question_option` 会进入刷题、考试、错题本和 AI 学习资产链路。
+
+---
+
 ## 六、权限设计
 
 ### 6.1 角色权限矩阵
@@ -493,10 +518,12 @@ AiService (业务服务)
 | 错题本 | ✅ | ✅ |
 | 参加考试 | ✅ | ✅ |
 | 查看统计 | ✅ | ✅ |
+| 题目投稿 | ✅ | ✅ |
 | 管理用户 | ❌ | ✅ |
 | 管理课程 | ❌ | ✅ |
 | 管理知识点 | ❌ | ✅ |
 | 管理题目 | ❌ | ✅ |
+| 投稿审核与入库 | ❌ | ✅ |
 | 管理试卷 | ❌ | ✅ |
 | 管理端统计 | ❌ | ✅ |
 
@@ -515,6 +542,7 @@ AiService (业务服务)
 /api/wrong-questions/**
 /api/exams/**
 /api/statistics/**
+/api/submission/**
 /api/users/me
 
 # 管理员接口（需 ADMIN 角色）

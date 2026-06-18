@@ -9,7 +9,9 @@ const { mockPost, mockPush, mockSetLoginInfo, mockSuccess, mockValidate, mockGet
   mockSuccess: vi.fn(),
   mockValidate: vi.fn().mockResolvedValue(true),
   mockGetCaptcha: vi.fn().mockResolvedValue({
-    data: { data: { captchaId: 'test-captcha-id', image: 'data:image/png;base64,abc123' } },
+    code: 0,
+    data: { captchaId: 'test-captcha-id', image: 'data:image/png;base64,abc123' },
+    message: 'success',
   }),
 }))
 
@@ -110,7 +112,9 @@ describe('LoginView', () => {
 
   it('should call login API on successful form submission', async () => {
     mockPost.mockResolvedValue({
-      data: { data: { token: 'jwt-token-123', user: { id: 1, username: 'testuser', role: 'USER' } } },
+      code: 0,
+      data: { token: 'jwt-token-123', user: { id: 1, username: 'testuser', role: 'USER' } },
+      message: 'success',
     })
     const wrapper = mountLogin()
     const inputs = wrapper.findAll('input')
@@ -130,7 +134,9 @@ describe('LoginView', () => {
 
   it('should show success message and navigate after login', async () => {
     mockPost.mockResolvedValue({
-      data: { data: { token: 'jwt-token-123', user: { id: 1, username: 'testuser', role: 'USER' } } },
+      code: 0,
+      data: { token: 'jwt-token-123', user: { id: 1, username: 'testuser', role: 'USER' } },
+      message: 'success',
     })
     const wrapper = mountLogin()
     const inputs = wrapper.findAll('input')
@@ -147,7 +153,9 @@ describe('LoginView', () => {
   it('should redirect to query param path after login', async () => {
     mockRoute.query = { redirect: '/practice' }
     mockPost.mockResolvedValue({
-      data: { data: { token: 'jwt-token-123', user: { id: 1, username: 'testuser', role: 'USER' } } },
+      code: 0,
+      data: { token: 'jwt-token-123', user: { id: 1, username: 'testuser', role: 'USER' } },
+      message: 'success',
     })
     const wrapper = mountLogin()
     const inputs = wrapper.findAll('input')

@@ -106,8 +106,18 @@
           </el-form-item>
         </template>
 
+        <!-- 判断题答案 -->
+        <template v-if="form.questionType === 'TRUE_FALSE'">
+          <el-form-item label="正确答案">
+            <el-radio-group v-model="form.correctAnswer">
+              <el-radio-button value="TRUE">正确</el-radio-button>
+              <el-radio-button value="FALSE">错误</el-radio-button>
+            </el-radio-group>
+          </el-form-item>
+        </template>
+
         <!-- 填空/简答答案 -->
-        <template v-if="form.questionType === 'FILL_BLANK' || form.questionType === 'SHORT_ANSWER'">
+        <template v-else-if="form.questionType === 'FILL_BLANK' || form.questionType === 'SHORT_ANSWER'">
           <el-form-item label="正确答案">
             <el-input v-model="form.correctAnswer" type="textarea" :rows="2" placeholder="输入参考答案" />
           </el-form-item>
@@ -262,9 +272,9 @@ const loadSubmissions = async () => {
   loading.value = true
   try {
     const res = await getMySubmissions({ pageNum: pageNum.value, pageSize, status: statusFilter.value })
-    if (res.data.code === 200) {
-      submissions.value = res.data.data.records
-      total.value = res.data.data.total
+    if (res.code === 0 && res.data) {
+      submissions.value = res.data.records
+      total.value = res.data.total
     }
   } finally {
     loading.value = false
@@ -274,8 +284,8 @@ const loadSubmissions = async () => {
 const loadCourses = async () => {
   try {
     const res = await getAllCourses()
-    if (res.data.code === 200) {
-      courses.value = res.data.data
+    if (res.code === 0 && res.data) {
+      courses.value = res.data
     }
   } catch { /* ignore */ }
 }
@@ -312,6 +322,10 @@ const handleSubmit = async () => {
         ElMessage.warning('请标记至少一个正确答案')
         return
       }
+      if (form.questionType === 'SINGLE_CHOICE' && filled.filter(o => o.isCorrect).length !== 1) {
+        ElMessage.warning('单选题必须且只能标记 1 个正确答案')
+        return
+      }
       payload.optionsJson = JSON.stringify(filled.map((o, i) => ({
         content: o.content,
         label: String.fromCharCode(65 + i),
@@ -319,18 +333,30 @@ const handleSubmit = async () => {
       })))
     }
 
+    if (form.questionType === 'TRUE_FALSE') {
+      if (!form.correctAnswer) {
+        ElMessage.warning('请选择判断题正确答案')
+        return
+      }
+      payload.correctAnswer = form.correctAnswer
+    }
+
     if (form.questionType === 'FILL_BLANK' || form.questionType === 'SHORT_ANSWER') {
-      payload.correctAnswer = form.correctAnswer || undefined
+      if (!form.correctAnswer?.trim()) {
+        ElMessage.warning('请输入参考答案')
+        return
+      }
+      payload.correctAnswer = form.correctAnswer.trim()
     }
 
     const res = await submitQuestion(payload)
-    if (res.data.code === 200) {
+    if (res.code === 0) {
       ElMessage.success('投稿提交成功，等待管理员审核')
       showSubmitDialog.value = false
       resetForm()
       loadSubmissions()
     } else {
-      ElMessage.error(res.data.message || '提交失败')
+      ElMessage.error(res.message || '提交失败')
     }
   } finally {
     submitting.value = false

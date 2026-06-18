@@ -122,8 +122,8 @@ async function handleUpdateProfile() {
   try {
     const res = await updateProfile({ nickname: profileForm.nickname })
     // 更新 store 中的用户信息
-    if (userStore.userInfo && res.data.data) {
-      userStore.userInfo.nickname = res.data.data.nickname
+    if (userStore.userInfo && res.data) {
+      userStore.userInfo.nickname = res.data.nickname
     }
     ElMessage.success('昵称修改成功')
   } catch {

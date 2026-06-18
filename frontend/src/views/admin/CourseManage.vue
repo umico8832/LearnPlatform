@@ -123,7 +123,7 @@ async function fetchCourses() {
   loading.value = true
   try {
     const res = await getCoursePage({ pageNum: 1, pageSize: 100, keyword: keyword.value || undefined })
-    courses.value = res.data.data.records
+    courses.value = res.data.records
   } catch {
     // 错误已在拦截器中处理
   } finally {

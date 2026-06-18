@@ -1036,3 +1036,56 @@ POST   /api/admin/exam-papers/{id}/manual-compose  # 手动组卷
   "questionIds": [1, 2, 3, 4, 5],
   "scores": [5, 5, 5, 5, 5]
 }
+```
+
+### 12.6 题目投稿管理（Phase 16）
+
+用户端投稿接口：
+
+```
+POST /api/submission              # 提交题目投稿
+GET  /api/submission/my           # 我的投稿列表（pageNum/pageSize/status）
+GET  /api/submission/{id}         # 投稿详情
+```
+
+管理端投稿接口：
+
+```
+GET  /api/admin/submission              # 投稿列表（pageNum/pageSize/status/courseId/keyword）
+GET  /api/admin/submission/{id}         # 投稿详情
+POST /api/admin/submission/{id}/review  # 审核投稿（通过/拒绝）
+POST /api/admin/submission/{id}/import  # 将已通过投稿入库为正式题目
+GET  /api/admin/submission/stats        # 投稿状态统计
+```
+
+投稿请求体摘要：
+
+```json
+{
+  "content": "题干内容",
+  "questionType": "SINGLE_CHOICE",
+  "courseId": 1,
+  "difficulty": 3,
+  "analysis": "解析内容",
+  "optionsJson": "[{\"content\":\"选项A\",\"label\":\"A\",\"isCorrect\":true}]",
+  "correctAnswer": "TRUE 或 填空/简答参考答案",
+  "knowledgePointIds": "1,2",
+  "tags": "标签1,标签2",
+  "source": "题目来源"
+}
+```
+
+审核请求体：
+
+```json
+{
+  "status": 1,
+  "reviewComment": "审核意见"
+}
+```
+
+说明：
+- 投稿状态：`0` 待审核，`1` 已通过，`2` 已拒绝，`3` 已入库。
+- 选择题投稿必须提供不少于 2 个选项；单选题只能有 1 个正确答案，多选题至少 1 个正确答案。
+- 判断题投稿使用 `correctAnswer=TRUE/FALSE`，服务端会规范化为“正确/错误”两个正式选项。
+- 填空题和简答题投稿必须提供 `correctAnswer`，入库后会以 `ANSWER` 选项写入正式题目选项表，供刷题判分统一读取。

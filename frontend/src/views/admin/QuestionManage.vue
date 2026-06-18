@@ -429,8 +429,8 @@ async function fetchQuestions() {
       courseId: filters.courseId || undefined,
       difficulty: filters.difficulty || undefined,
     })
-    questions.value = res.data.data.records
-    total.value = res.data.data.total
+    questions.value = res.data.records
+    total.value = res.data.total
   } catch {
     // 错误已在拦截器中处理
   } finally {
@@ -441,7 +441,7 @@ async function fetchQuestions() {
 async function fetchCourses() {
   try {
     const res = await getAllCourses()
-    courseList.value = res.data.data
+    courseList.value = res.data
   } catch {
     // ignore
   }
@@ -454,7 +454,7 @@ async function fetchKPTree(courseId?: number) {
       return
     }
     const res = await getKnowledgeTree(courseId)
-    kpTreeData.value = res.data.data
+    kpTreeData.value = res.data
   } catch {
     kpTreeData.value = []
   }
@@ -613,7 +613,7 @@ async function handleImport() {
   importLoading.value = true
   try {
     const res = await importQuestions(importFile.value)
-    const result = res.data.data
+    const result = res.data
     importResult.totalRows = result.totalRows
     importResult.successCount = result.successCount
     importResult.failCount = result.failCount

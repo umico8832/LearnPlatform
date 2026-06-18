@@ -25,6 +25,14 @@ class AnswerEvaluatorTest {
         assertEquals("FALSE", evaluator.buildCorrectAnswer(List.of(option("B", "错误")), "TRUE_FALSE"));
     }
 
+    @Test
+    void buildsFillBlankAndShortAnswerFromOptionContent() {
+        assertEquals("CPU|内存", evaluator.buildCorrectAnswer(
+                List.of(option("ANSWER", "CPU|内存")), "FILL_BLANK"));
+        assertEquals("TCP|三次握手", evaluator.buildCorrectAnswer(
+                List.of(option("ANSWER", "TCP|三次握手")), "SHORT_ANSWER"));
+    }
+
     // ======================== SINGLE_CHOICE / TRUE_FALSE ========================
 
     @Test

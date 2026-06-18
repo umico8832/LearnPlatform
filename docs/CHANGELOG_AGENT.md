@@ -14,6 +14,95 @@
 
 ---
 
+## Round 83 - 2026-06-18
+
+### 阶段
+Phase 16：题目投稿与 AI 题库生产 — P0 修复加固
+
+### 本轮目标
+根据最新项目状态修复投稿中心的接口契约、题型答案、入库判分链路与文档同步问题，不新增 AI 业务功能。
+
+### 完成内容
+1. **统一前端 API 返回契约**：
+   - `frontend/src/utils/request.ts` 的主 Axios 实例成功响应统一返回后端 `R<T>` 包装对象。
+   - 修复课程详情、知识图谱、评论、用户/课程/题目/知识点/投稿相关页面的旧 `res.data.data` 访问方式。
+   - 保留 `aiService` 原响应行为，避免破坏现有流式/AI API 调用。
+
+2. **修复题目投稿表单**：
+   - 判断题新增“正确/错误”答案选择。
+   - 单选题前端校验改为必须且只能有 1 个正确答案。
+   - 填空题/简答题提交前要求参考答案非空。
+
+3. **修复后端投稿入库与判分链路**：
+   - `QuestionSubmissionService` 增强五类题型校验和规范化。
+   - 判断题投稿规范化为 TRUE/FALSE，并生成“正确/错误”两个正式选项。
+   - 填空题/简答题入库时将 `correctAnswer` 写入正式 `question_option`，`option_label=ANSWER`。
+   - `AnswerEvaluator.buildCorrectAnswer` 支持填空题/简答题从选项内容读取正确答案，保证入库投稿进入正式刷题后可以判分。
+
+4. **补充测试**：
+   - 新增 `QuestionSubmissionServiceTest`，覆盖单选多正确项拒绝、判断题规范化、填空题入库答案选项、判断题正式选项。
+   - 增补 `AnswerEvaluatorTest`，覆盖填空题/简答题从选项内容构建正确答案。
+
+5. **同步文档**：
+   - `docs/API_DESIGN.md` 补充 Phase 16 投稿接口与请求/审核规则。
+   - `docs/DB_DESIGN.md` 补充 `question_submission` 表、逻辑关系与入库规则。
+   - `docs/ARCHITECTURE.md` 补充投稿模块目录、投稿入库数据流与权限说明。
+   - `docs/ROADMAP.md` 明确当前下一阶段为 Phase 16 P1，并记录 P0 修复加固。
+   - `docs/HANDOFF.md` 更新当前阶段、下一步建议、续接提示和测试数量。
+
+### 修改文件清单
+- `backend/src/main/java/com/learnplatform/service/AnswerEvaluator.java`
+- `backend/src/main/java/com/learnplatform/service/QuestionSubmissionService.java`
+- `backend/src/test/java/com/learnplatform/service/AnswerEvaluatorTest.java`
+- `backend/src/test/java/com/learnplatform/service/QuestionSubmissionServiceTest.java`（新建）
+- `frontend/src/utils/request.ts`
+- `frontend/src/api/comment.ts`
+- `frontend/src/components/QuestionComment.vue`
+- `frontend/src/views/practice/QuestionSubmitView.vue`
+- `frontend/src/views/admin/SubmissionManage.vue`
+- `frontend/src/views/statistics/KnowledgeGraphView.vue`
+- `frontend/src/views/course/CourseDetailView.vue`
+- `frontend/src/stores/user.ts`
+- `frontend/src/views/auth/LoginView.vue`
+- `frontend/src/views/auth/RegisterView.vue`
+- `frontend/src/views/admin/CourseManage.vue`
+- `frontend/src/views/admin/KnowledgePointManage.vue`
+- `frontend/src/views/admin/UserManage.vue`
+- `frontend/src/views/admin/QuestionManage.vue`
+- `frontend/src/views/course/CourseListView.vue`
+- `frontend/src/views/course/QuestionListView.vue`
+- `frontend/src/views/auth/ProfileView.vue`
+- `frontend/src/__tests__/views/LoginView.test.ts`
+- `frontend/src/api/course.ts`
+- `frontend/src/api/question.ts`
+- `frontend/src/api/knowledgePoint.ts`
+- `frontend/src/api/user.ts`
+- `frontend/src/api/submission.ts`
+- `docs/API_DESIGN.md`
+- `docs/DB_DESIGN.md`
+- `docs/ARCHITECTURE.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验收结果
+- [x] `cd backend && mvn test`：232 个后端测试全部通过
+- [x] `cd frontend && npm run build`：前端构建成功
+- [x] `cd frontend && npm test -- --run`：187 个前端测试全部通过
+
+### 遗留问题
+- 前端构建仍提示第三方依赖 `@vueuse/core` 的 Rolldown pure annotation 警告，以及部分 chunk 超过 500 kB；不影响本轮构建通过。
+- 投稿管理暂未接入管理端 Dashboard 统计面板。
+- 暂无投稿数量限制，可后续增加每日投稿配额或风控策略。
+- 投稿入库后仍未主动清理题目列表/题目详情缓存，可后续按缓存策略补充。
+
+### 下轮建议
+- 进入 Phase 16 P1：AI 题目质检，先做投稿题目的格式、答案、解析完整性检查。
+- 再做管理员审核辅助：AI 给出风险点、修改建议和推荐审核意见，但不自动审核发布。
+- 建议 commit message: `fix(submission): 修复投稿入库判分链路并同步文档`
+
+---
+
 ## Round 82 - 2026-06-18
 
 ### 阶段

@@ -71,30 +71,7 @@ public class QuestionSubmissionService {
             throw new BusinessException(ResultCode.VALIDATION_ERROR, "不支持的题型: " + qt);
         }
 
-        // 选择题必须有选项
-        if ("SINGLE_CHOICE".equals(qt) || "MULTIPLE_CHOICE".equals(qt)) {
-            if (request.getOptionsJson() == null || request.getOptionsJson().isBlank()) {
-                throw new BusinessException(ResultCode.VALIDATION_ERROR, "选择题必须提供选项");
-            }
-            // 验证 optionsJson 是合法 JSON 数组
-            try {
-                List<?> options = objectMapper.readValue(request.getOptionsJson(), new TypeReference<List<?>>() {});
-                if (options.isEmpty()) {
-                    throw new BusinessException(ResultCode.VALIDATION_ERROR, "选项不能为空");
-                }
-            } catch (BusinessException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new BusinessException(ResultCode.VALIDATION_ERROR, "选项JSON格式不正确");
-            }
-        }
-
-        // 判断题默认选项
-        if ("TRUE_FALSE".equals(qt)) {
-            if (request.getOptionsJson() == null || request.getOptionsJson().isBlank()) {
-                request.setOptionsJson("[{\"content\":\"正确\",\"label\":\"A\",\"isCorrect\":false},{\"content\":\"错误\",\"label\":\"B\",\"isCorrect\":false}]");
-            }
-        }
+        normalizeAndValidateRequest(request, qt);
 
         QuestionSubmission submission = new QuestionSubmission();
         submission.setUserId(userId);
@@ -221,26 +198,7 @@ public class QuestionSubmissionService {
         question.setDeleted(0);
         questionMapper.insert(question);
 
-        // 解析并保存选项
-        if (submission.getOptionsJson() != null && !submission.getOptionsJson().isBlank()) {
-            try {
-                List<OptionItem> options = objectMapper.readValue(submission.getOptionsJson(),
-                        new TypeReference<List<OptionItem>>() {});
-                int order = 0;
-                for (OptionItem item : options) {
-                    QuestionOption option = new QuestionOption();
-                    option.setQuestionId(question.getId());
-                    option.setContent(item.content);
-                    option.setOptionLabel(item.label);
-                    option.setIsCorrect(item.isCorrect != null && item.isCorrect ? 1 : 0);
-                    option.setSortOrder(order++);
-                    option.setDeleted(0);
-                    questionOptionMapper.insert(option);
-                }
-            } catch (Exception e) {
-                log.warn("解析投稿选项JSON失败: {}", e.getMessage());
-            }
-        }
+        insertQuestionOptions(question.getId(), submission);
 
         // 保存知识点关联
         if (submission.getKnowledgePointIds() != null && !submission.getKnowledgePointIds().isBlank()) {
@@ -285,6 +243,134 @@ public class QuestionSubmissionService {
     private boolean isValidQuestionType(String type) {
         return Arrays.asList("SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE",
                 "FILL_BLANK", "SHORT_ANSWER").contains(type);
+    }
+
+    private void normalizeAndValidateRequest(QuestionSubmissionRequest request, String questionType) {
+        if ("SINGLE_CHOICE".equals(questionType) || "MULTIPLE_CHOICE".equals(questionType)) {
+            List<OptionItem> options = parseOptionsJson(request.getOptionsJson());
+            if (options.size() < 2) {
+                throw new BusinessException(ResultCode.VALIDATION_ERROR, "选择题至少需要 2 个选项");
+            }
+            int correctCount = 0;
+            for (int i = 0; i < options.size(); i++) {
+                OptionItem item = options.get(i);
+                if (item.content == null || item.content.trim().isEmpty()) {
+                    throw new BusinessException(ResultCode.VALIDATION_ERROR, "选项内容不能为空");
+                }
+                item.content = item.content.trim();
+                item.label = normalizeOptionLabel(item, i);
+                if (Boolean.TRUE.equals(item.isCorrect)) {
+                    correctCount++;
+                }
+            }
+            if ("SINGLE_CHOICE".equals(questionType) && correctCount != 1) {
+                throw new BusinessException(ResultCode.VALIDATION_ERROR, "单选题必须且只能有 1 个正确答案");
+            }
+            if ("MULTIPLE_CHOICE".equals(questionType) && correctCount < 1) {
+                throw new BusinessException(ResultCode.VALIDATION_ERROR, "多选题至少需要 1 个正确答案");
+            }
+            request.setOptionsJson(writeOptionsJson(options));
+            return;
+        }
+
+        if ("TRUE_FALSE".equals(questionType)) {
+            String normalizedAnswer = normalizeTrueFalseAnswer(request.getCorrectAnswer());
+            request.setCorrectAnswer(normalizedAnswer);
+            request.setOptionsJson(writeOptionsJson(List.of(
+                    optionItem("正确", "A", "TRUE".equals(normalizedAnswer)),
+                    optionItem("错误", "B", "FALSE".equals(normalizedAnswer))
+            )));
+            return;
+        }
+
+        if ("FILL_BLANK".equals(questionType) || "SHORT_ANSWER".equals(questionType)) {
+            if (request.getCorrectAnswer() == null || request.getCorrectAnswer().trim().isEmpty()) {
+                throw new BusinessException(ResultCode.VALIDATION_ERROR, "填空题和简答题必须提供参考答案");
+            }
+            request.setCorrectAnswer(request.getCorrectAnswer().trim());
+            request.setOptionsJson(null);
+        }
+    }
+
+    private List<OptionItem> parseOptionsJson(String optionsJson) {
+        if (optionsJson == null || optionsJson.isBlank()) {
+            throw new BusinessException(ResultCode.VALIDATION_ERROR, "选择题必须提供选项");
+        }
+        try {
+            return objectMapper.readValue(optionsJson, new TypeReference<List<OptionItem>>() {});
+        } catch (Exception e) {
+            throw new BusinessException(ResultCode.VALIDATION_ERROR, "选项JSON格式不正确");
+        }
+    }
+
+    private String writeOptionsJson(List<OptionItem> options) {
+        try {
+            return objectMapper.writeValueAsString(options);
+        } catch (Exception e) {
+            throw new BusinessException(ResultCode.SYSTEM_ERROR, "选项JSON序列化失败");
+        }
+    }
+
+    private String normalizeOptionLabel(OptionItem item, int index) {
+        String label = item.label != null ? item.label : item.optionLabel;
+        if (label == null || label.trim().isEmpty()) {
+            return String.valueOf((char) ('A' + index));
+        }
+        return label.trim().toUpperCase();
+    }
+
+    private String normalizeTrueFalseAnswer(String answer) {
+        if (answer == null || answer.trim().isEmpty()) {
+            throw new BusinessException(ResultCode.VALIDATION_ERROR, "判断题必须提供正确答案");
+        }
+        String normalized = answer.trim();
+        if ("TRUE".equalsIgnoreCase(normalized) || "正确".equals(normalized)
+                || "对".equals(normalized) || "A".equalsIgnoreCase(normalized)) {
+            return "TRUE";
+        }
+        if ("FALSE".equalsIgnoreCase(normalized) || "错误".equals(normalized)
+                || "错".equals(normalized) || "B".equalsIgnoreCase(normalized)) {
+            return "FALSE";
+        }
+        throw new BusinessException(ResultCode.VALIDATION_ERROR, "判断题答案只能是正确/错误");
+    }
+
+    private OptionItem optionItem(String content, String label, boolean isCorrect) {
+        OptionItem item = new OptionItem();
+        item.content = content;
+        item.label = label;
+        item.optionLabel = label;
+        item.isCorrect = isCorrect;
+        return item;
+    }
+
+    private void insertQuestionOptions(Long questionId, QuestionSubmission submission) {
+        String questionType = submission.getQuestionType();
+        if ("FILL_BLANK".equals(questionType) || "SHORT_ANSWER".equals(questionType)) {
+            insertOption(questionId, submission.getCorrectAnswer(), "ANSWER", true, 0);
+            return;
+        }
+
+        if ("TRUE_FALSE".equals(questionType) || "SINGLE_CHOICE".equals(questionType)
+                || "MULTIPLE_CHOICE".equals(questionType)) {
+            List<OptionItem> options = parseOptionsJson(submission.getOptionsJson());
+            for (int i = 0; i < options.size(); i++) {
+                OptionItem item = options.get(i);
+                insertOption(questionId, item.content, normalizeOptionLabel(item, i),
+                        Boolean.TRUE.equals(item.isCorrect), i);
+            }
+        }
+    }
+
+    private void insertOption(Long questionId, String content, String label, boolean isCorrect, int sortOrder) {
+        QuestionOption option = new QuestionOption();
+        option.setQuestionId(questionId);
+        option.setContent(content);
+        option.setOptionLabel(label);
+        option.setIsCorrect(isCorrect ? 1 : 0);
+        option.setSortOrder(sortOrder);
+        option.setDeleted(0);
+        questionOptionMapper.insert(option);
     }
 
     private QuestionSubmissionVO convertToVO(QuestionSubmission s) {
@@ -348,6 +434,7 @@ public class QuestionSubmissionService {
     public static class OptionItem {
         public String content;
         public String label;
+        public String optionLabel;
         public Boolean isCorrect;
     }
 }

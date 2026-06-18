@@ -100,8 +100,8 @@ async function fetchDetail() {
       getCourseById(courseId.value),
       getKnowledgeTree(courseId.value),
     ])
-    course.value = courseRes.data.data
-    treeData.value = treeRes.data.data
+    course.value = courseRes.data
+    treeData.value = treeRes.data || []
   } catch {
     // 错误已在拦截器中处理
   } finally {

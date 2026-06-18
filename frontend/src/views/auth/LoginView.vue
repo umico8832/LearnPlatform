@@ -67,7 +67,7 @@ const rules: FormRules = {
 async function refreshCaptcha() {
   try {
     const res = await getCaptcha()
-    const data = res.data.data
+    const data = res.data
     captchaId.value = data.captchaId
     captchaImage.value = data.image
     form.captchaCode = ''
@@ -86,13 +86,13 @@ async function handleLogin() {
 
   loading.value = true
   try {
-    const res = await request.post<ApiResponse<LoginResponse>>('/auth/login', {
+    const res = await request.post<any, ApiResponse<LoginResponse>>('/auth/login', {
       username: form.username,
       password: form.password,
       captchaId: captchaId.value,
       captchaCode: form.captchaCode,
     })
-    const { token, user } = res.data.data
+    const { token, user } = res.data
     userStore.setLoginInfo(token, user)
     ElMessage.success('登录成功')
     const redirect = (route.query.redirect as string) || '/'

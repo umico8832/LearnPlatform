@@ -177,7 +177,7 @@ async function fetchTree() {
   loading.value = true
   try {
     const res = await getKnowledgeTree(courseId.value)
-    treeData.value = res.data.data
+    treeData.value = res.data
   } catch {
     // 错误已在拦截器中处理
   } finally {

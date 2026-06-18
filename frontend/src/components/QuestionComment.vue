@@ -147,7 +147,8 @@ function formatTime(time: string): string {
 async function fetchComments() {
   loading.value = true
   try {
-    comments.value = await getComments(props.questionId)
+    const res = await getComments(props.questionId)
+    comments.value = res.data || []
   } catch {
     // error handled by interceptor
   } finally {
@@ -163,12 +164,14 @@ async function submitComment() {
   }
   submitting.value = true
   try {
-    const newC = await addComment({
+    const res = await addComment({
       questionId: props.questionId,
       content,
       parentId: replyParentId.value,
       replyToUserId: replyTarget.value?.userId,
     })
+    if (!res.data) return
+    const newC = res.data
     if (replyParentId.value === 0) {
       // 顶级评论，添加到列表头部
       comments.value.unshift(newC)
@@ -204,7 +207,8 @@ function cancelReply() {
 
 async function handleLike(comment: CommentVO) {
   try {
-    const liked = await toggleLike(comment.id)
+    const res = await toggleLike(comment.id)
+    const liked = !!res.data
     comment.likedByMe = liked
     comment.likeCount = liked ? comment.likeCount + 1 : Math.max(0, comment.likeCount - 1)
   } catch {

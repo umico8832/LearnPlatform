@@ -266,7 +266,7 @@ async function fetchUsers() {
       role: filterRole.value || undefined,
       status: filterStatus.value !== '' ? filterStatus.value : undefined,
     })
-    const data = res.data.data
+    const data = res.data
     users.value = data.records
     total.value = data.total
   } catch {
@@ -279,7 +279,7 @@ async function fetchUsers() {
 async function fetchStats() {
   try {
     const res: any = await getAdminUserStats()
-    const data = res.data.data
+    const data = res.data
     userStats.total = data.total
     userStats.active = data.active
     userStats.disabled = data.disabled

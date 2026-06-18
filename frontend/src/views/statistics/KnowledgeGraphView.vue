@@ -194,8 +194,8 @@ function resizeChart() {
 async function fetchCourses() {
   try {
     const res = await getAllCourses()
-    if (res.data?.code === 200 && res.data.data) {
-      courses.value = res.data.data.map((c) => ({ id: c.id, name: c.name }))
+    if (res.code === 0 && res.data) {
+      courses.value = res.data.map((c) => ({ id: c.id, name: c.name }))
     }
   } catch {
     // 静默失败
@@ -207,7 +207,7 @@ async function fetchData() {
   try {
     const courseId = selectedCourseId.value || undefined
     const res = await getKnowledgeGraph(courseId)
-    if (res.code === 200 && res.data) {
+    if (res.code === 0 && res.data) {
       graphData.value = res.data
       await nextTick()
       renderGraph()

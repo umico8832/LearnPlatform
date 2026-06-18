@@ -31,6 +31,12 @@ public class AnswerEvaluator {
             return "TRUE".equalsIgnoreCase(content) || "正确".equals(content) ? "TRUE" : "FALSE";
         }
 
+        if ("FILL_BLANK".equals(questionType) || "SHORT_ANSWER".equals(questionType)) {
+            return correctOptions.stream()
+                    .map(QuestionOption::getContent)
+                    .collect(Collectors.joining("|"));
+        }
+
         return correctOptions.stream()
                 .map(QuestionOption::getOptionLabel)
                 .sorted()

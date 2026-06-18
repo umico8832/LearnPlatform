@@ -17,9 +17,11 @@
 User (1) ──── (N) PracticeRecord
 User (1) ──── (N) WrongQuestion
 User (1) ──── (N) ExamRecord
+User (1) ──── (N) QuestionSubmission
 
 Course (1) ──── (N) KnowledgePoint
 Course (1) ──── (N) Question
+Course (1) ──── (N) QuestionSubmission
 
 KnowledgePoint (1) ──── (N) KnowledgePoint (自引用父子关系)
 KnowledgePoint (N) ──── (N) Question (通过 question_knowledge_point 中间表)
@@ -27,6 +29,7 @@ KnowledgePoint (N) ──── (N) Question (通过 question_knowledge_point �
 Question (1) ──── (N) QuestionOption
 Question (1) ──── (N) PracticeRecord
 Question (1) ──── (N) WrongQuestion
+Question (1) ──── (N) QuestionSubmission (通过 imported_question_id 记录入库结果)
 Question (N) ──── (N) ExamPaper (通过 exam_question 关联)
 
 ExamPaper (1) ──── (N) ExamQuestion
@@ -591,6 +594,46 @@ CREATE TABLE `ai_asset_feedback` (
 
 ---
 
+### 3.16 题目投稿表 (question_submission)
+
+`question_submission` 是 Phase 16 题目投稿中心的审核流转表，用于保存用户提交但尚未成为正式题库题目的内容。管理员审核通过后，可将投稿入库为正式 `question`，并通过 `imported_question_id` 记录入库后的题目 ID。
+
+| 字段名 | 类型 | 必填 | 默认值 | 说明 |
+|--------|------|:----:|--------|------|
+| id | BIGINT | 是 | 自增主键 | 投稿ID |
+| user_id | BIGINT | 是 | | 投稿用户ID |
+| content | TEXT | 是 | | 题干内容（支持 Markdown） |
+| question_type | VARCHAR(20) | 是 | | 题型：SINGLE_CHOICE / MULTIPLE_CHOICE / TRUE_FALSE / FILL_BLANK / SHORT_ANSWER |
+| course_id | BIGINT | 是 | | 所属课程ID |
+| difficulty | TINYINT | 是 | 3 | 难度等级：1-5 |
+| analysis | TEXT | 否 | | 题目解析 |
+| options_json | TEXT | 否 | | 选择题/判断题选项 JSON |
+| correct_answer | VARCHAR(2000) | 否 | | 判断题、填空题、简答题参考答案 |
+| knowledge_point_ids | VARCHAR(500) | 否 | | 关联知识点 ID，逗号分隔 |
+| tags | VARCHAR(500) | 否 | | 标签，逗号分隔 |
+| source | VARCHAR(200) | 否 | | 题目来源 |
+| status | TINYINT | 是 | 0 | 0-待审核 1-已通过 2-已拒绝 3-已入库 |
+| review_comment | VARCHAR(1000) | 否 | | 审核意见 |
+| reviewed_by | BIGINT | 否 | | 审核人ID |
+| reviewed_time | DATETIME | 否 | | 审核时间 |
+| imported_question_id | BIGINT | 否 | | 入库后的正式题目ID |
+| create_time | DATETIME | 是 | CURRENT_TIMESTAMP | 投稿时间 |
+| update_time | DATETIME | 是 | CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
+| deleted | TINYINT | 是 | 0 | 逻辑删除 |
+
+**索引**：
+- INDEX `idx_user_id` ON `user_id`
+- INDEX `idx_status` ON `status`
+- INDEX `idx_course_id` ON `course_id`
+- INDEX `idx_create_time` ON `create_time`
+
+**入库规则**：
+- 选择题入库时按 `options_json` 创建正式 `question_option`。
+- 判断题入库时会规范化为“正确/错误”两个正式选项，并标记唯一正确项。
+- 填空题和简答题入库时会将 `correct_answer` 写入 `question_option.content`，`option_label=ANSWER`，保持刷题判分统一从正式选项表读取正确答案。
+
+---
+
 ## 四、表关系说明
 
 ### 4.1 外键关系（逻辑外键，不建物理外键）
@@ -604,10 +647,14 @@ CREATE TABLE `ai_asset_feedback` (
 | 知识点→题目 | knowledge_point | id | question_knowledge_point | knowledge_point_id |
 | 用户→刷题记录 | user | id | practice_record | user_id |
 | 用户→错题 | user | id | wrong_question | user_id |
+| 用户→题目投稿 | user | id | question_submission | user_id |
+| 用户→投稿审核 | user | id | question_submission | reviewed_by |
 | 题目→刷题记录 | question | id | practice_record | question_id |
 | 题目→错题 | question | id | wrong_question | question_id |
 | 题目→AI学习资产 | question | id | question_ai_asset | question_id |
 | AI学习资产→反馈 | question_ai_asset | question_id, asset_type | ai_asset_feedback | question_id, asset_type |
+| 课程→题目投稿 | course | id | question_submission | course_id |
+| 正式题目→投稿入库结果 | question | id | question_submission | imported_question_id |
 | 试卷→考试记录 | exam_paper | id | exam_record | exam_paper_id |
 | 考试记录→答题 | exam_record | id | exam_answer | exam_record_id |
 | 试卷→题目关联 | exam_paper | id | exam_question | exam_paper_id |

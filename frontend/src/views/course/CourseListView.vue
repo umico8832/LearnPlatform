@@ -45,8 +45,8 @@ const loading = ref(false)
 async function fetchCourses() {
   loading.value = true
   try {
-    const res = await request.get<ApiResponse<CourseVO[]>>('/courses/list')
-    courses.value = res.data.data
+    const res = await request.get<any, ApiResponse<CourseVO[]>>('/courses/list')
+    courses.value = res.data
   } catch {
     // 错误已在拦截器中处理
   } finally {

@@ -146,8 +146,8 @@ async function fetchQuestions() {
       courseId: filters.courseId || undefined,
       difficulty: filters.difficulty || undefined,
     })
-    questions.value = res.data.data.records
-    total.value = res.data.data.total
+    questions.value = res.data.records
+    total.value = res.data.total
   } catch {
     // 错误已在拦截器中处理
   } finally {
@@ -158,7 +158,7 @@ async function fetchQuestions() {
 async function fetchCourses() {
   try {
     const res = await getAllCourses()
-    courseList.value = res.data.data
+    courseList.value = res.data
   } catch {
     // ignore
   }

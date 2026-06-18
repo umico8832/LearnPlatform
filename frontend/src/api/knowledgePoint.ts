@@ -24,20 +24,20 @@ export interface KnowledgePointForm {
 
 /** 获取课程下的知识点树 */
 export function getKnowledgeTree(courseId: number) {
-  return request.get<ApiResponse<KnowledgePointVO[]>>(`/knowledge-points/tree/${courseId}`)
+  return request.get<any, ApiResponse<KnowledgePointVO[]>>(`/knowledge-points/tree/${courseId}`)
 }
 
 /** 创建知识点（管理端） */
 export function createKnowledgePoint(data: KnowledgePointForm) {
-  return request.post<ApiResponse<KnowledgePointVO>>('/admin/knowledge-points', data)
+  return request.post<any, ApiResponse<KnowledgePointVO>>('/admin/knowledge-points', data)
 }
 
 /** 更新知识点（管理端） */
 export function updateKnowledgePoint(id: number, data: KnowledgePointForm) {
-  return request.put<ApiResponse<KnowledgePointVO>>(`/admin/knowledge-points/${id}`, data)
+  return request.put<any, ApiResponse<KnowledgePointVO>>(`/admin/knowledge-points/${id}`, data)
 }
 
 /** 删除知识点（管理端） */
 export function deleteKnowledgePoint(id: number) {
-  return request.delete<ApiResponse<void>>(`/admin/knowledge-points/${id}`)
+  return request.delete<any, ApiResponse<void>>(`/admin/knowledge-points/${id}`)
 }

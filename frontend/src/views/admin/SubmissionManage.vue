@@ -214,9 +214,9 @@ const loadSubmissions = async () => {
       status: statusFilter.value,
       keyword: keywordFilter.value || undefined,
     })
-    if (res.data.code === 200) {
-      submissions.value = res.data.data.records
-      total.value = res.data.data.total
+    if (res.code === 0 && res.data) {
+      submissions.value = res.data.records
+      total.value = res.data.total
     }
   } finally {
     loading.value = false
@@ -226,8 +226,8 @@ const loadSubmissions = async () => {
 const loadStats = async () => {
   try {
     const res = await getSubmissionStats()
-    if (res.data.code === 200) {
-      stats.value = res.data.data
+    if (res.code === 0 && res.data) {
+      stats.value = res.data
     }
   } catch { /* ignore */ }
 }
@@ -261,13 +261,13 @@ const handleReview = async () => {
       status: reviewAction.value,
       reviewComment: reviewComment.value || undefined,
     })
-    if (res.data.code === 200) {
+    if (res.code === 0) {
       ElMessage.success(reviewAction.value === 1 ? '已通过' : '已拒绝')
       showReviewDialog.value = false
       loadSubmissions()
       loadStats()
     } else {
-      ElMessage.error(res.data.message || '操作失败')
+      ElMessage.error(res.message || '操作失败')
     }
   } finally {
     reviewing.value = false
@@ -282,12 +282,12 @@ const handleImport = async (row: QuestionSubmissionVO) => {
       { type: 'warning' }
     )
     const res = await importSubmission(row.id)
-    if (res.data.code === 200) {
-      ElMessage.success('入库成功，题目ID: ' + res.data.data.importedQuestionId)
+    if (res.code === 0 && res.data) {
+      ElMessage.success('入库成功，题目ID: ' + res.data.importedQuestionId)
       loadSubmissions()
       loadStats()
     } else {
-      ElMessage.error(res.data.message || '入库失败')
+      ElMessage.error(res.message || '入库失败')
     }
   } catch { /* cancelled */ }
 }
