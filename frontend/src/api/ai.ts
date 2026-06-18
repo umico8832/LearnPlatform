@@ -277,6 +277,51 @@ export interface SqlExecutionElement {
   }
 }
 
+// ======================== 网络协议交互可视化类型 ========================
+
+export interface NetworkProtocolMessage {
+  from: number
+  to: number
+  content: string
+  description?: string
+  state?: VisualElementState
+}
+
+export interface NetworkProtocolElement {
+  type: 'network_protocol'
+  label: string
+  description?: string
+  entities: string[]
+  messages: NetworkProtocolMessage[]
+}
+
+// ======================== 操作系统过程可视化类型 ========================
+
+export interface OsProcessItem {
+  name: string
+  state: string
+  info?: string
+}
+
+export interface OsProcessStep {
+  description: string
+  state: OsProcessItem[]
+}
+
+export interface OsGanttItem {
+  label: string
+  start: number
+  end: number
+}
+
+export interface OsProcessElement {
+  type: 'os_process'
+  label: string
+  description?: string
+  steps: OsProcessStep[]
+  ganttChart?: OsGanttItem[]
+}
+
 export type VisualElement =
   | VisualTextElement
   | VisualStepListElement
@@ -289,6 +334,8 @@ export type VisualElement =
   | VisualMermaidElement
   | CodeAnimationElement
   | SqlExecutionElement
+  | NetworkProtocolElement
+  | OsProcessElement
 
 export interface VisualInteractiveData {
   title: string

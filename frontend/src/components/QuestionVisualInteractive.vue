@@ -184,6 +184,18 @@
           <SqlExecutionViewer :element="el" />
         </div>
 
+        <!-- network_protocol -->
+        <div v-else-if="el.type === 'network_protocol'" class="vi-block">
+          <div class="vi-block-label">🌐 {{ el.label }}</div>
+          <NetworkProtocolViewer :element="el" />
+        </div>
+
+        <!-- os_process -->
+        <div v-else-if="el.type === 'os_process'" class="vi-block">
+          <div class="vi-block-label">⚙️ {{ el.label }}</div>
+          <OsProcessViewer :element="el" />
+        </div>
+
         <!-- mermaid -->
         <div v-else-if="el.type === 'mermaid'" class="vi-block">
           <div class="vi-block-label">{{ el.label }}</div>
@@ -210,6 +222,8 @@ import { Loading } from '@element-plus/icons-vue'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import CodeAnimationViewer from './CodeAnimationViewer.vue'
 import SqlExecutionViewer from './SqlExecutionViewer.vue'
+import NetworkProtocolViewer from './NetworkProtocolViewer.vue'
+import OsProcessViewer from './OsProcessViewer.vue'
 import type {
   VisualInteractiveData,
   VisualMatrixCell,

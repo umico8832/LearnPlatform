@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 16 — 题目投稿与 AI 题库生产 🚧 开发中（Round 91 完成 Markdown 题目导入增强，后端 271 个测试）
+当前阶段：Phase 16 — 题目投稿与 AI 题库生产 🚧 开发中（Round 92 完成网络协议和操作系统过程可视化，后端 273 个测试）
 
 下一阶段主线：先把一道题讲透，把单题从“题干 + 答案 + 解析”升级为结构化 AI 学习对象，再考虑题库上传、OCR、爬虫和社区共建。
 
@@ -35,7 +35,7 @@
 - [x] Phase 11：部署与简历 ✅（项目截图为非阻塞演示素材）
 - [x] Phase 12：体验增强迭代（✅ 基本完成：AI 题目助手、管理端统计、AI 流式输出、用户个人中心、错题重练、收藏题练习、Excel 导入导出、学习计划、AI 调用日志、核心业务可信度修复、后端核心服务测试、社区评论、多端适配、题目难度自适应、填空简答判分增强、个人学习报告、GitHub Actions CI、CommentController/AdminExam/AdminQuestion Controller 测试、CommentRequest @Max→@Size 修复、AdminUser/AdminCourse/AdminKnowledgePoint Controller 测试、前端 API 模块测试 7 个模块 62 个测试、Testcontainers 集成测试 ExamService 10 个 + PracticeService 16 个 + WrongQuestionService 16 个 + StatisticsService 10 个、AI 智能组卷、学习路径推荐、知识图谱可视化、Redis 缓存集成）
 - [x] Phase 13：AI 题目学习资产 ✅（结构化题目讲解 ✅、小白版解析 ✅、步骤拆解 ✅、错误选项分析 ✅、常见误区 ✅、变式题闭环 ✅、学习资产缓存 ✅、答错后 AI 讲解入口 ✅、AI 调用日志统一 ✅、错题本折叠优化 ✅、API/DB 文档补全 ✅、QuestionLearningAssetService 单元测试 ✅、AI 资产质量反馈机制 ✅、PracticeSessionView 折叠模式 ✅、管理端清除 AI 缓存入口 ✅）
-- [ ] Phase 14：AI 可视化交互讲解 🚧（P0 文本可视化 ✅；P1 Mermaid 流程图 ✅：第 9 种 mermaid 元素类型 ✅、mermaid.js 动态 import ✅、异步 SVG 渲染 ✅、语法错误 fallback ✅、后端 Prompt 增强 ✅、单元测试 ✅；P2 代码执行动画 ✅：第 10 种 code_animation 元素类型 ✅、CodeAnimationViewer 组件 ✅、播放/暂停/步进控制 ✅、变量状态面板 ✅、暗色代码面板 ✅、Prompt 增强 ✅、单元测试 ✅；代码语法高亮 ✅：highlight.js 按需加载 18 种语言 ✅、逐行高亮方案 ✅、github-dark 主题 ✅、语言别名映射 ✅；P3 SQL 执行顺序可视化 ✅：第 11 种 sql_execution 元素类型 ✅、SqlExecutionViewer 组件 ✅、暗色 SQL 面板+子句高亮 ✅、中间结果预览 ✅、播放控制+速度调节 ✅、Prompt 增强 ✅、单元测试 ✅；待做：网络协议和操作系统过程可视化）
+- [x] Phase 14：AI 可视化交互讲解 ✅（P0 文本可视化 ✅；P1 Mermaid 流程图 ✅：第 9 种 mermaid 元素类型 ✅、mermaid.js 动态 import ✅、异步 SVG 渲染 ✅、语法错误 fallback ✅、后端 Prompt 增强 ✅、单元测试 ✅；P2 代码执行动画 ✅：第 10 种 code_animation 元素类型 ✅、CodeAnimationViewer 组件 ✅、播放/暂停/步进控制 ✅、变量状态面板 ✅、暗色代码面板 ✅、Prompt 增强 ✅、单元测试 ✅；代码语法高亮 ✅：highlight.js 按需加载 18 种语言 ✅、逐行高亮方案 ✅、github-dark 主题 ✅、语言别名映射 ✅；P3 SQL 执行顺序可视化 ✅：第 11 种 sql_execution 元素类型 ✅、SqlExecutionViewer 组件 ✅、暗色 SQL 面板+子句高亮 ✅、中间结果预览 ✅、播放控制+速度调节 ✅、Prompt 增强 ✅、单元测试 ✅；P4 网络协议和操作系统过程可视化 ✅：第 12 种 network_protocol 元素类型 ✅、NetworkProtocolViewer 组件 ✅、时序图风格渲染 ✅、箭头方向+状态高亮 ✅；第 13 种 os_process 元素类型 ✅、OsProcessViewer 组件 ✅、可折叠步骤面板+状态表格 ✅、甘特图 ✅、Prompt 增强 ✅、单元测试 ✅）
 - [ ] Phase 15：AI 学习画像与个性化推荐 🚧（P0 学习诊断与每日推荐 ✅；AI 个性化学习建议 ✅；相似题推荐 ✅；错题归因增强 ✅；单题错因分析 ✅：作答历史时间线、掌握趋势（IMPROVING/STAGNANT/DECLINING）、错误模式描述、连续错误检测、反复错题分析；待做：向量相似度增强推荐）
 - [ ] Phase 16：题目投稿与 AI 题库生产 🚧（P0 题目投稿中心 ✅：投稿表 Flyway V7 ✅、用户投稿提交 ✅、用户投稿列表 ✅、管理端投稿列表 ✅、管理员审核 ✅、投稿入库 ✅、投稿统计 ✅、前端页面 ✅、投稿链路修复加固 ✅；P1 AI 题目质检与审核辅助 ✅：5 维度 AI 质检 ✅、降级回退基础规则检查 ✅、管理端质检对话框 ✅、后端单元测试 7 个 ✅；P1 AI 知识点标注 ✅：AI 推荐知识点（置信度+理由）✅、一键应用到投稿 ✅、降级关键词匹配 ✅、管理端标注对话框 ✅、后端单元测试 8 个 ✅；P1 AI 难度评估 ✅：AI 评估难度 1-5 星 ✅、布鲁姆认知层次分析 ✅、影响因素列表 ✅、投稿者标注对比 ✅、降级规则评估 ✅、管理端难度评估对话框 ✅、后端单元测试 8 个 ✅；待做：质检结果缓存、标注结果缓存）
 
@@ -134,12 +134,12 @@ docker compose up -d
 
 任务名称：Phase 14/16 候选方向 — 网络协议和操作系统过程可视化 / 内容来源记录
 
-Phase 16 Round 91 已完成 Markdown 题目导入增强（MarkdownQuestionParser 解析器、import-markdown/template-markdown API、前端 Tab 化导入弹窗、11 个单元测试，后端 271 个测试全部通过，前端 187 个测试全部通过）。
+Phase 14 已完成网络协议和操作系统过程可视化（Round 92，network_protocol + os_process 两种新元素类型、NetworkProtocolViewer + OsProcessViewer 组件、Prompt 增强、2 个新单元测试，后端 273 个测试全部通过，前端 187 个测试全部通过）。Phase 14 现有 13 种可视化元素，候选方向已基本覆盖。
 
 下一步建议：
-- Phase 14 候选方向：网络协议和操作系统过程可视化
 - Phase 16 候选方向：内容来源记录和复审机制
-- 或开始规划 Phase 17 新阶段
+- Phase 17 新阶段规划
+- 或其他用户指定任务
 
 当前不优先做：
 - 复杂推荐系统（向量相似度等）
@@ -148,7 +148,7 @@ Phase 16 Round 91 已完成 Markdown 题目导入增强（MarkdownQuestionParser
 - 用户上传题库自动入库
 - AI 自动审核发布题目
 
-建议 commit message: `feat(import): 新增 Markdown 格式题目批量导入，管理端支持 Excel/Markdown 双格式导入`
+建议 commit message: `feat(visual): 新增网络协议时序图和操作系统过程可视化，Phase 14 可视化元素扩展至 13 种`
 
 ---
 
@@ -191,10 +191,10 @@ Phase 16 Round 91 已完成 Markdown 题目导入增强（MarkdownQuestionParser
 6. 除非遇到重大方向、破坏性操作或需求冲突，否则不要频繁问我；
 7. 每轮结束都要更新 docs/CHANGELOG_AGENT.md 和必要文档。
 
-当前阶段：Phase 16 — 题目投稿与 AI 题库生产（P0 投稿中心 + P1 AI 质检 + P1 AI 知识点标注 + P1 AI 难度评估已完成）。
+当前阶段：Phase 16 — 题目投稿与 AI 题库生产（P0 投稿中心 + P1 AI 质检 + P1 AI 知识点标注 + P1 AI 难度评估 + P1 结果缓存 + P1 一键填充审核意见 + Markdown 导入已完成）。Phase 14 可视化讲解已基本完成（13 种元素类型）。
 
-已完成模块：用户鉴权、课程知识点、题库、刷题判分（含填空简答增强）、错题本（含重练）、试卷考试、AI 功能（含流式输出与配额管理）、统计可视化（含个人学习报告）、质量提升、部署简历、收藏题练习、Excel 导入导出、学习计划、题目评论、多端适配、难度自适应、管理端用户管理、Phase 13 AI 题目学习资产、Phase 14 P0/P1 可视化讲解、Phase 15 学习画像与推荐、Phase 16 P0 题目投稿中心、Phase 16 P1 AI 质检与审核辅助、Phase 16 P1 AI 知识点标注、Phase 16 P1 AI 难度评估、后端测试 255 个、前端 Vitest 测试（187 个，21 个测试文件）、GitHub Actions CI。
-下一阶段主线：Phase 16 候选方向（结果缓存、一键填充审核意见）或 Phase 14 候选方向（代码执行动画）。
+已完成模块：用户鉴权、课程知识点、题库、刷题判分（含填空简答增强）、错题本（含重练）、试卷考试、AI 功能（含流式输出与配额管理）、统计可视化（含个人学习报告）、质量提升、部署简历、收藏题练习、Excel/Markdown 导入导出、学习计划、题目评论、多端适配、难度自适应、管理端用户管理、Phase 13 AI 题目学习资产、Phase 14 全部可视化讲解（13 种元素类型：文本/表格/柱状图/数轴/步骤列表/树/状态数组/矩阵/Mermaid/代码动画/SQL执行/网络协议/操作系统过程）、Phase 15 学习画像与推荐、Phase 16 全部功能、后端测试 273 个、前端 Vitest 测试（187 个，21 个测试文件）、GitHub Actions CI。
+下一阶段主线：Phase 16 候选方向（内容来源记录）或 Phase 17 新阶段规划。
 当前不优先做：PDF / 图片 OCR、爬虫、用户上传题库自动入库、AI 自动审核发布题目、复杂推荐系统。
 后续扩展方向：见 docs/AI_LEARNING_PLATFORM_STRATEGY.md、docs/FUTURE.md 和 docs/TESTING.md；测试按业务风险补充。
 

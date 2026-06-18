@@ -468,6 +468,71 @@ class QuestionLearningAssetServiceTest {
     }
 
     @Test
+    void visualInteractivePromptContainsNetworkProtocolInstructions() {
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
+        doNothing().when(aiService).checkDailyQuota(7L);
+        setupFullQuestionContext();
+        when(aiConfig.getModel()).thenReturn("gpt-4");
+        when(questionAiAssetMapper.insert(any())).thenReturn(1);
+
+        when(aiProvider.chat(anyString(), anyString())).thenReturn("{}");
+
+        ArgumentCaptor<String> systemPromptCaptor = ArgumentCaptor.forClass(String.class);
+        service.generateOrGetAsset(1L, AiAssetType.VISUAL_INTERACTIVE, 7L);
+
+        verify(aiProvider).chat(systemPromptCaptor.capture(), anyString());
+        String systemPrompt = systemPromptCaptor.getValue();
+
+        // Verify network_protocol type is in the prompt schema
+        assertContains(systemPrompt, "network_protocol");
+        assertContains(systemPrompt, "网络协议交互过程可视化");
+        assertContains(systemPrompt, "entities");
+        assertContains(systemPrompt, "messages");
+        assertContains(systemPrompt, "TCP 三次握手");
+        assertContains(systemPrompt, "HTTP");
+        assertContains(systemPrompt, "DNS");
+        assertContains(systemPrompt, "network_protocol 的 entities 必须按从左到右的排列顺序给出");
+        assertContains(systemPrompt, "messages 必须按时间顺序排列");
+        assertContains(systemPrompt, "网络协议类题目");
+        assertContains(systemPrompt, "优先使用 network_protocol");
+    }
+
+    @Test
+    void visualInteractivePromptContainsOsProcessInstructions() {
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
+        doNothing().when(aiService).checkDailyQuota(7L);
+        setupFullQuestionContext();
+        when(aiConfig.getModel()).thenReturn("gpt-4");
+        when(questionAiAssetMapper.insert(any())).thenReturn(1);
+
+        when(aiProvider.chat(anyString(), anyString())).thenReturn("{}");
+
+        ArgumentCaptor<String> systemPromptCaptor = ArgumentCaptor.forClass(String.class);
+        service.generateOrGetAsset(1L, AiAssetType.VISUAL_INTERACTIVE, 7L);
+
+        verify(aiProvider).chat(systemPromptCaptor.capture(), anyString());
+        String systemPrompt = systemPromptCaptor.getValue();
+
+        // Verify os_process type is in the prompt schema
+        assertContains(systemPrompt, "os_process");
+        assertContains(systemPrompt, "操作系统过程可视化");
+        assertContains(systemPrompt, "ganttChart");
+        assertContains(systemPrompt, "进程调度算法");
+        assertContains(systemPrompt, "FCFS");
+        assertContains(systemPrompt, "SJF");
+        assertContains(systemPrompt, "RR");
+        assertContains(systemPrompt, "页面置换算法");
+        assertContains(systemPrompt, "LRU");
+        assertContains(systemPrompt, "running");
+        assertContains(systemPrompt, "ready");
+        assertContains(systemPrompt, "waiting/blocked");
+        assertContains(systemPrompt, "terminated");
+        assertContains(systemPrompt, "ganttChart 中的 start/end 是时间刻度");
+        assertContains(systemPrompt, "操作系统类题目");
+        assertContains(systemPrompt, "优先使用 os_process");
+    }
+
+    @Test
     void generateOrGetAssetBuildsCorrectQuestionContext() {
         when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
         doNothing().when(aiService).checkDailyQuota(7L);

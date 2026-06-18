@@ -1,5 +1,69 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 92 - 2026-06-18
+
+### 阶段
+Phase 14：AI 可视化交互讲解 — 网络协议和操作系统过程可视化（候选方向）
+
+### 本轮目标
+新增 `network_protocol`（网络协议交互过程）和 `os_process`（操作系统过程）两种可视化元素类型，将 Phase 14 可视化元素从 11 种扩展到 13 种。网络协议类题目（TCP/IP、HTTP、DNS 等）和操作系统类题目（进程调度、页面置换等）现在可以通过结构化时序图和状态步骤甘特图进行可视化讲解。
+
+### 完成内容
+1. **后端 Prompt 增强**（`QuestionLearningAssetService.java`）：
+   - `buildVisualInteractivePrompt` 中新增 `network_protocol` 和 `os_process` 两种元素类型的完整定义和使用规则。
+   - `network_protocol`：时序图风格，entities（参与方数组）+ messages（消息数组，from/to 索引 + content + description + state）。
+   - `os_process`：操作系统过程可视化，steps（状态步骤数组）+ ganttChart（甘特图数组）。
+   - Prompt 规则 17-20：entities 排列顺序、state 术语规范、网络协议/操作系统题目优先使用对应元素。
+
+2. **前端类型定义**（`frontend/src/api/ai.ts`）：
+   - 新增 `NetworkProtocolMessage`、`NetworkProtocolElement`、`OsProcessItem`、`OsProcessStep`、`OsGanttItem`、`OsProcessElement` 接口。
+   - `VisualElement` 联合类型新增 `NetworkProtocolElement | OsProcessElement`。
+
+3. **前端组件** — `NetworkProtocolViewer.vue`（新建）：
+   - 时序图风格渲染：实体头部（蓝色圆角卡片）+ 生命线（虚线）+ 消息（SVG 箭头线 + 标签 + 描述）。
+   - 支持 current/highlight 状态高亮。
+   - 响应式适配（移动端实体间距和字号缩小）。
+
+4. **前端组件** — `OsProcessViewer.vue`（新建）：
+   - 可折叠步骤面板：每步显示进程/线程状态表格（状态徽章：running/ready/waiting/blocked/terminated）。
+   - 甘特图：时间刻度 + 蓝色渐变条形图，自动计算最大时间刻度。
+   - 行高亮：不同状态行用不同背景色（绿/蓝/黄/红）。
+   - 响应式适配。
+
+5. **前端集成**（`QuestionVisualInteractive.vue`）：
+   - 模板新增 `network_protocol`（🌐 图标）和 `os_process`（⚙️ 图标）渲染分支。
+   - import 新增 `NetworkProtocolViewer` 和 `OsProcessViewer`。
+
+6. **后端单元测试**（`QuestionLearningAssetServiceTest.java`，+2 个测试）：
+   - `visualInteractivePromptContainsNetworkProtocolInstructions`：验证 Prompt 包含 network_protocol 类型定义、entities/messages 字段、TCP/HTTP/DNS 关键字、排列顺序和优先使用规则。
+   - `visualInteractivePromptContainsOsProcessInstructions`：验证 Prompt 包含 os_process 类型定义、ganttChart 字段、FCFS/SJF/RR 调度算法、LRU 页面置换、state 术语规范和优先使用规则。
+
+### 验收结果
+- 后端 273 个测试全部通过（+2 个新测试）
+- 前端 TypeScript 编译无错误
+- 前端 187 个 Vitest 测试全部通过
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/service/QuestionLearningAssetService.java` — Prompt 新增 network_protocol + os_process 类型定义
+- `frontend/src/api/ai.ts` — 新增 6 个 TypeScript 接口 + VisualElement 联合类型扩展
+- `frontend/src/components/NetworkProtocolViewer.vue` — 新建网络协议时序图组件
+- `frontend/src/components/OsProcessViewer.vue` — 新建操作系统过程可视化组件
+- `frontend/src/components/QuestionVisualInteractive.vue` — 集成两个新组件
+- `backend/src/test/java/com/learnplatform/service/QuestionLearningAssetServiceTest.java` — 新增 2 个 Prompt 验证测试
+
+### 遗留问题
+- Phase 14 现有 13 种可视化元素（8 基础 + mermaid + code_animation + sql_execution + network_protocol + os_process），候选方向基本覆盖
+- 后续可考虑网络协议动画效果（逐条消息播放）和操作系统甘特图交互优化
+
+### 下轮建议
+- Phase 16 候选：内容来源记录和复审机制
+- Phase 17 新阶段规划
+- 或其他用户指定任务
+
+建议 commit message: `feat(visual): 新增网络协议时序图和操作系统过程可视化，Phase 14 可视化元素扩展至 13 种`
+
+---
+
 ## 格式说明
 
 每轮开发记录包含：

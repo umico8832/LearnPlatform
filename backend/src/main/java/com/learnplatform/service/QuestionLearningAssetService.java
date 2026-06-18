@@ -446,7 +446,9 @@ public class QuestionLearningAssetService {
                 + "- `number_line`：数轴/指针位置，字段为 min/max/current + markers 数组（position/label）\n"
                 + "- `mermaid`：Mermaid 流程图，字段为 code（Mermaid 语法）+ 可选 caption（图注说明），适合算法流程、SQL 执行顺序、网络协议交互、递归展开等\n"
                 + "- `code_animation`：代码执行动画，字段为 language（可选，如 java/python/sql/c）+ code（完整代码字符串）+ steps 数组。每个 step 有：lineStart/lineEnd（当前高亮的代码行号，从1开始）、description（本步骤说明文字）、variables 数组（变量名/值/changed是否变化）、output（可选，本步骤产生的控制台输出）。适合展示算法逐步执行过程、代码调试模拟、循环变量跟踪等。\n"
-                + "- `sql_execution`：SQL 执行顺序可视化，字段为 query（完整 SQL 语句）+ steps 数组（按 SQL 实际执行顺序排列）+ finalResult（可选，最终查询结果）。每个 step 有：clause（SQL 子句名，如 FROM、WHERE、GROUP BY 等）、description（本步骤执行说明）、resultHeaders（可选，中间结果列名）、resultRows（可选，中间结果数据行）、rowCount（可选，中间结果行数）。适合展示 SQL 查询的逻辑执行顺序、JOIN 过程、分组聚合等。**注意：steps 的顺序必须是 SQL 的逻辑执行顺序（FROM → JOIN → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT），而不是书写顺序。**\n\n"
+                + "- `sql_execution`：SQL 执行顺序可视化，字段为 query（完整 SQL 语句）+ steps 数组（按 SQL 实际执行顺序排列）+ finalResult（可选，最终查询结果）。每个 step 有：clause（SQL 子句名，如 FROM、WHERE、GROUP BY 等）、description（本步骤执行说明）、resultHeaders（可选，中间结果列名）、resultRows（可选，中间结果数据行）、rowCount（可选，中间结果行数）。适合展示 SQL 查询的逻辑执行顺序、JOIN 过程、分组聚合等。**注意：steps 的顺序必须是 SQL 的逻辑执行顺序（FROM → JOIN → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT），而不是书写顺序。**\n"
+                + "- `network_protocol`：网络协议交互过程可视化（时序图风格），字段为 entities（参与方名称数组）+ messages（消息数组，每条有 from/to 索引/content/可选 description/可选 state）。每条消息的 from 和 to 是 entities 数组的索引（从 0 开始），消息按时间顺序排列，渲染为从左到右的时序图。适合展示 TCP 三次握手/四次挥手、HTTP 请求响应、DNS 解析、ARP 协议、OSPF/BGP 路由交互等。\n"
+                + "- `os_process`：操作系统过程可视化，字段为 steps（状态步骤数组，每步有 description + state 进程/线程状态数组）+ 可选 ganttChart（甘特图数组，每项有 label/start/end 时间点）。state 数组中每个 item 有 name/state/可选 info，state 值如 running/waiting/ready/blocked/terminated 等。适合展示进程调度算法（FCFS/SJF/RR/Priority）、页面置换算法（LRU/FIFO/OPT）、磁盘调度（SCAN/C-SCAN）、死锁检测、生产者-消费者等。\n\n"
                 + "**重要规则**：\n"
                 + "1. 只输出 JSON，不要输出 ```json ``` 代码块标记\n"
                 + "2. text 类型可用于插入讲解性 Markdown 内容\n"
@@ -463,7 +465,11 @@ public class QuestionLearningAssetService {
                 + "13. code_animation 的 steps 应覆盖代码的关键执行步骤（不必每行都展示，选择关键节点），variables 数组展示当前作用域内所有活跃变量的值，changed=true 标记本步骤发生变化的变量\n"
                 + "14. code_animation 的 code 字段必须是完整可执行的代码（作为静态展示参考），lineStart/lineEnd 从 1 开始计数\n"
                 + "15. sql_execution 的 steps 必须按照 SQL 逻辑执行顺序排列（典型顺序：FROM/JOIN → WHERE → GROUP BY → HAVING → SELECT → DISTINCT → ORDER BY → LIMIT/OFFSET），每个 step 应尽量提供 resultHeaders 和 resultRows 展示中间结果（至少 3-5 行示例数据），让读者能看到数据如何在每一步被过滤和变换\n"
-                + "16. sql_execution 的 query 字段必须是原始 SQL 语句（方便对照），finalResult 展示最终输出结果";
+                + "16. sql_execution 的 query 字段必须是原始 SQL 语句（方便对照），finalResult 展示最终输出结果\n"
+                + "17. network_protocol 的 entities 必须按从左到右的排列顺序给出（如 [\"客户端\", \"服务器\"]），messages 必须按时间顺序排列，每条 message 的 from/to 是 entities 数组的索引（从 0 开始）。content 放消息名或数据包名，description 放该消息的详细说明\n"
+                + "18. os_process 的 state 值建议使用以下术语：running（运行中）、ready（就绪）、waiting/blocked（等待/阻塞）、terminated（终止），info 字段可放额外信息如剩余时间片等。ganttChart 中的 start/end 是时间刻度（从 0 开始的整数），每项代表一个进程在某段时间的执行区间\n"
+                + "19. 网络协议类题目（TCP/IP、HTTP、DNS、ARP 等）优先使用 network_protocol 元素\n"
+                + "20. 操作系统类题目（进程调度、页面置换、磁盘调度、死锁等）优先使用 os_process 元素";
         return new PromptPair(systemPrompt, "请为以下题目生成可视化讲解数据（严格输出 JSON）：\n\n" + questionContext);
     }
 
