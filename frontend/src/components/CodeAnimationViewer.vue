@@ -41,14 +41,13 @@
       <!-- 代码区域 -->
       <div class="ca-code-panel">
         <div v-if="element.language" class="ca-lang-tag">{{ element.language }}</div>
-        <pre class="ca-code"><code><template v-for="(line, li) in codeLines" :key="li"><span
+        <pre class="ca-code"><code><template v-for="(line, li) in highlightedLines" :key="li"><span
           :class="{
             'ca-line': true,
             'ca-line--active': isLineActive(li + 1),
             'ca-line--dim': !isLineActive(li + 1),
           }"
-        ><span class="ca-line-num">{{ li + 1 }}</span>{{ line }}
-</span></template></code></pre>
+        ><span class="ca-line-num">{{ li + 1 }}</span><span v-html="line" /></span></template></code></pre>
       </div>
 
       <!-- 变量面板 -->
@@ -91,6 +90,52 @@
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { DArrowLeft, DArrowRight, VideoPlay, VideoPause } from '@element-plus/icons-vue'
 import type { CodeAnimationElement } from '@/api/ai'
+import hljs from 'highlight.js/lib/core'
+import 'highlight.js/styles/github-dark.css'
+
+// 按需加载常用语言（避免打包全部语言）
+import python from 'highlight.js/lib/languages/python'
+import javascript from 'highlight.js/lib/languages/javascript'
+import typescript from 'highlight.js/lib/languages/typescript'
+import java from 'highlight.js/lib/languages/java'
+import cpp from 'highlight.js/lib/languages/cpp'
+import c from 'highlight.js/lib/languages/c'
+import sql from 'highlight.js/lib/languages/sql'
+import go from 'highlight.js/lib/languages/go'
+import rust from 'highlight.js/lib/languages/rust'
+import css from 'highlight.js/lib/languages/css'
+import xml from 'highlight.js/lib/languages/xml'
+import json from 'highlight.js/lib/languages/json'
+import bash from 'highlight.js/lib/languages/bash'
+import ruby from 'highlight.js/lib/languages/ruby'
+import php from 'highlight.js/lib/languages/php'
+import swift from 'highlight.js/lib/languages/swift'
+import kotlin from 'highlight.js/lib/languages/kotlin'
+import csharp from 'highlight.js/lib/languages/csharp'
+
+hljs.registerLanguage('python', python)
+hljs.registerLanguage('javascript', javascript)
+hljs.registerLanguage('js', javascript)
+hljs.registerLanguage('typescript', typescript)
+hljs.registerLanguage('ts', typescript)
+hljs.registerLanguage('java', java)
+hljs.registerLanguage('cpp', cpp)
+hljs.registerLanguage('c++', cpp)
+hljs.registerLanguage('c', c)
+hljs.registerLanguage('sql', sql)
+hljs.registerLanguage('go', go)
+hljs.registerLanguage('rust', rust)
+hljs.registerLanguage('css', css)
+hljs.registerLanguage('html', xml)
+hljs.registerLanguage('xml', xml)
+hljs.registerLanguage('json', json)
+hljs.registerLanguage('bash', bash)
+hljs.registerLanguage('shell', bash)
+hljs.registerLanguage('ruby', ruby)
+hljs.registerLanguage('php', php)
+hljs.registerLanguage('swift', swift)
+hljs.registerLanguage('kotlin', kotlin)
+hljs.registerLanguage('csharp', csharp)
 
 const props = defineProps<{
   element: CodeAnimationElement
@@ -102,6 +147,58 @@ const speedMs = ref(1000)
 let timer: ReturnType<typeof setTimeout> | null = null
 
 const codeLines = computed(() => props.element.code.split('\n'))
+
+/** 语言别名映射 */
+const langAlias: Record<string, string> = {
+  py: 'python',
+  python3: 'python',
+  js: 'javascript',
+  ts: 'typescript',
+  'c++': 'cpp',
+  'c#': 'csharp',
+  sh: 'bash',
+  shell: 'bash',
+  rb: 'ruby',
+  kt: 'kotlin',
+  htm: 'html',
+}
+
+function resolveLanguage(lang?: string): string {
+  if (!lang) return ''
+  const normalized = lang.toLowerCase().trim()
+  return langAlias[normalized] || normalized
+}
+
+/**
+ * 逐行高亮代码。
+ * 对代码动画场景，逐行高亮比整块高亮更可靠（避免跨行 span 闭合问题），
+ * 代价是失去跨行上下文（如多行字符串），对代码动画演示可接受。
+ */
+const highlightedLines = computed(() => {
+  const lang = resolveLanguage(props.element.language)
+  const canUseLang = lang && hljs.getLanguage(lang)
+
+  return codeLines.value.map((line) => {
+    if (!line) return ''
+    try {
+      if (canUseLang) {
+        return hljs.highlight(line, { language: lang }).value
+      }
+      return hljs.highlightAuto(line).value
+    } catch {
+      return escapeHtml(line)
+    }
+  })
+})
+
+function escapeHtml(text: string): string {
+  // 使用 unicode 转义避免编辑器自动格式化破坏 HTML 实体
+  const amp = '\u0026'
+  return text
+    .replace(/&/g, amp + 'amp;')
+    .replace(/</g, amp + 'lt;')
+    .replace(/>/g, amp + 'gt;')
+}
 
 const currentStepData = computed(() => props.element.steps[currentStep.value])
 
@@ -398,6 +495,12 @@ export default { name: 'CodeAnimationViewer' }
 
 .ca-desc-icon {
   flex-shrink: 0;
+}
+
+/* highlight.js 主题覆盖（全局 CSS 影响 v-html 内容） */
+:deep(.hljs) {
+  background: transparent;
+  padding: 0;
 }
 
 /* 移动端适配 */
