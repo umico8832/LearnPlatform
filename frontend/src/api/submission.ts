@@ -101,6 +101,25 @@ export interface SubmissionKPTagging {
   suggestedIds: string
 }
 
+/** AI 难度评估影响因素 */
+export interface DifficultyFactor {
+  name: string
+  description: string
+  impact: 'INCREASE' | 'DECREASE' | 'NEUTRAL'
+}
+
+/** AI 难度评估结果 */
+export interface SubmissionDifficultyAssessment {
+  suggestedDifficulty: number
+  originalDifficulty: number | null
+  difficultyMatch: boolean
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW'
+  reason: string
+  cognitiveLevel: string
+  factors: DifficultyFactor[]
+  summary: string
+}
+
 // ========== 用户端 ==========
 
 /** 提交题目投稿 */
@@ -170,4 +189,9 @@ export function applyKnowledgePoints(id: number, knowledgePointIds: string) {
   return request.post<any, ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}/apply-kp`, null, {
     params: { knowledgePointIds },
   })
+}
+
+/** AI 难度评估 */
+export function assessDifficulty(id: number) {
+  return request.post<any, ApiResponse<SubmissionDifficultyAssessment>>(`/admin/submission/${id}/difficulty-assessment`)
 }

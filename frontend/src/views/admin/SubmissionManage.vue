@@ -71,6 +71,7 @@
             </template>
             <el-button type="info" link @click="handleQualityCheck(row as QuestionSubmissionVO)">AI 质检</el-button>
             <el-button type="primary" link @click="handleKPTagging(row as QuestionSubmissionVO)">AI 标注</el-button>
+            <el-button type="success" link @click="handleDifficultyAssessment(row as QuestionSubmissionVO)">AI 测难度</el-button>
             <el-button v-if="(row as QuestionSubmissionVO).status === 1" type="warning" link @click="handleImport(row as QuestionSubmissionVO)">入库</el-button>
           </template>
         </el-table-column>
@@ -240,6 +241,59 @@
         <el-button @click="showQualityDialog = false">关闭</el-button>
       </template>
     </el-dialog>
+
+    <!-- AI 难度评估对话框 -->
+    <el-dialog v-model="showDifficultyDialog" title="AI 难度评估报告" width="720px">
+      <div v-if="difficultyLoading" v-loading="true" element-loading-text="AI 正在评估题目难度，请稍候..." style="min-height: 120px" />
+      <div v-else-if="difficultyResult">
+        <!-- 总评 -->
+        <el-card shadow="never" style="margin-bottom: 16px">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px">
+            <div>
+              <span style="font-size: 16px; font-weight: 600">AI 评估难度：</span>
+              <el-rate :model-value="difficultyResult.suggestedDifficulty" disabled :max="5" style="display: inline-flex; margin-left: 8px" />
+              <el-tag :type="difficultyConfidenceType(difficultyResult.confidence)" size="small" style="margin-left: 8px">
+                {{ difficultyConfidenceLabel(difficultyResult.confidence) }}
+              </el-tag>
+            </div>
+            <div v-if="difficultyResult.originalDifficulty">
+              <span style="font-size: 13px; color: #909399">投稿者标注：</span>
+              <el-rate :model-value="difficultyResult.originalDifficulty" disabled :max="5" style="display: inline-flex; margin-left: 4px" />
+              <el-tag v-if="difficultyResult.difficultyMatch" type="success" size="small" style="margin-left: 4px">一致</el-tag>
+              <el-tag v-else type="warning" size="small" style="margin-left: 4px">不一致</el-tag>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px">
+            <span style="font-size: 13px; color: #606266">认知层次：<el-tag size="small">{{ difficultyResult.cognitiveLevel }}</el-tag></span>
+          </div>
+          <p style="color: #606266; margin: 0">{{ difficultyResult.reason }}</p>
+        </el-card>
+
+        <!-- 难度影响因素 -->
+        <div v-if="difficultyResult.factors && difficultyResult.factors.length > 0" style="margin-bottom: 16px">
+          <div style="font-weight: 600; margin-bottom: 8px">影响难度的因素</div>
+          <el-table :data="difficultyResult.factors" border size="small">
+            <el-table-column label="因素" prop="name" width="120" />
+            <el-table-column label="说明" prop="description" min-width="200" show-overflow-tooltip />
+            <el-table-column label="影响" width="100">
+              <template #default="{ row }">
+                <el-tag :type="impactType(row.impact)" size="small">{{ impactLabel(row.impact) }}</el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+
+        <!-- 总结 -->
+        <el-card shadow="never" style="background: #f0f9ff">
+          <div style="font-size: 13px; color: #606266">
+            <strong>总结：</strong>{{ difficultyResult.summary }}
+          </div>
+        </el-card>
+      </div>
+      <template #footer>
+        <el-button @click="showDifficultyDialog = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -255,10 +309,12 @@ import {
   qualityCheckSubmission,
   kpTaggingSubmission,
   applyKnowledgePoints,
+  assessDifficulty,
   type QuestionSubmissionVO,
   type SubmissionStats,
   type SubmissionQualityCheck,
   type SubmissionKPTagging,
+  type SubmissionDifficultyAssessment,
 } from '@/api/submission'
 
 const router = useRouter()
@@ -281,6 +337,11 @@ const currentDetail = ref<QuestionSubmissionVO | null>(null)
 const reviewTarget = ref<QuestionSubmissionVO | null>(null)
 const reviewAction = ref(1) // 1=通过 2=拒绝
 const reviewComment = ref('')
+
+// AI 难度评估
+const showDifficultyDialog = ref(false)
+const difficultyLoading = ref(false)
+const difficultyResult = ref<SubmissionDifficultyAssessment | null>(null)
 
 // AI 知识点标注
 const showKPTaggingDialog = ref(false)
@@ -514,6 +575,48 @@ const handleApplyKP = async () => {
   } finally {
     applyingKP.value = false
   }
+}
+
+// ========== AI 难度评估 ==========
+
+const handleDifficultyAssessment = async (row: QuestionSubmissionVO) => {
+  difficultyResult.value = null
+  difficultyLoading.value = true
+  showDifficultyDialog.value = true
+  try {
+    const res = await assessDifficulty(row.id)
+    if (res.code === 0 && res.data) {
+      difficultyResult.value = res.data
+    } else {
+      ElMessage.error(res.message || '难度评估失败')
+      showDifficultyDialog.value = false
+    }
+  } catch {
+    ElMessage.error('难度评估请求失败')
+    showDifficultyDialog.value = false
+  } finally {
+    difficultyLoading.value = false
+  }
+}
+
+const difficultyConfidenceLabel = (c: string) => {
+  const map: Record<string, string> = { HIGH: '高度可信', MEDIUM: '较为可信', LOW: '仅供参考' }
+  return map[c] || c
+}
+
+const difficultyConfidenceType = (c: string) => {
+  const map: Record<string, string> = { HIGH: 'success', MEDIUM: '', LOW: 'info' }
+  return (map[c] || 'info') as any
+}
+
+const impactLabel = (impact: string) => {
+  const map: Record<string, string> = { INCREASE: '↑ 增难', DECREASE: '↓ 降难', NEUTRAL: '— 中性' }
+  return map[impact] || impact
+}
+
+const impactType = (impact: string) => {
+  const map: Record<string, string> = { INCREASE: 'danger', DECREASE: 'success', NEUTRAL: 'info' }
+  return (map[impact] || 'info') as any
 }
 
 onMounted(() => {

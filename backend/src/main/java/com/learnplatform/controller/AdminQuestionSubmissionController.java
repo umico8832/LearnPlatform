@@ -5,6 +5,7 @@ import com.learnplatform.common.result.R;
 import com.learnplatform.dto.QuestionReviewRequest;
 import com.learnplatform.dto.QuestionSubmissionVO;
 import com.learnplatform.dto.SubmissionKPTaggingVO;
+import com.learnplatform.dto.SubmissionDifficultyVO;
 import com.learnplatform.dto.SubmissionQualityCheckVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.QuestionSubmissionService;
@@ -26,13 +27,16 @@ public class AdminQuestionSubmissionController {
     private final QuestionSubmissionService submissionService;
     private final SubmissionAiQualityService qualityService;
     private final com.learnplatform.service.SubmissionKPTaggingService kpTaggingService;
+    private final com.learnplatform.service.SubmissionDifficultyAssessmentService difficultyAssessmentService;
 
     public AdminQuestionSubmissionController(QuestionSubmissionService submissionService,
                                               SubmissionAiQualityService qualityService,
-                                              com.learnplatform.service.SubmissionKPTaggingService kpTaggingService) {
+                                              com.learnplatform.service.SubmissionKPTaggingService kpTaggingService,
+                                              com.learnplatform.service.SubmissionDifficultyAssessmentService difficultyAssessmentService) {
         this.submissionService = submissionService;
         this.qualityService = qualityService;
         this.kpTaggingService = kpTaggingService;
+        this.difficultyAssessmentService = difficultyAssessmentService;
     }
 
     @Operation(summary = "投稿列表", description = "查看所有投稿，可按状态、课程、关键词筛选")
@@ -85,6 +89,14 @@ public class AdminQuestionSubmissionController {
     public R<QuestionSubmissionVO> applyKnowledgePoints(@PathVariable Long id,
                                                          @RequestParam String knowledgePointIds) {
         QuestionSubmissionVO vo = submissionService.updateKnowledgePointIds(id, knowledgePointIds);
+        return R.ok(vo);
+    }
+
+    @Operation(summary = "AI 难度评估", description = "AI 评估题目难度，与投稿者标注对比（不改变投稿数据）")
+    @PostMapping("/{id}/difficulty-assessment")
+    public R<SubmissionDifficultyVO> assessDifficulty(@PathVariable Long id) {
+        Long adminId = getCurrentUserId();
+        SubmissionDifficultyVO vo = difficultyAssessmentService.assessDifficulty(id, adminId);
         return R.ok(vo);
     }
 

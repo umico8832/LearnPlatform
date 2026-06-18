@@ -14,6 +14,59 @@
 
 ---
 
+## Round 86 - 2026-06-18
+
+### 阶段
+Phase 16：题目投稿与 AI 题库生产 — P1 AI 难度评估
+
+### 本轮目标
+实现 AI 难度评估功能，管理员可对投稿执行 AI 分析，自动评估题目难度，并与投稿者标注对比。
+
+### 完成内容
+1. **后端 AI 难度评估服务**：
+   - `SubmissionDifficultyAssessmentService`：调用 AI 基于题目内容、题型、选项和解析自动评估难度（1-5 星）。
+   - AI Prompt 工程：基于布鲁姆分类法（记忆/理解/应用/分析/评价/创建）评估认知层次，输出结构化 JSON。
+   - 每个评估包含置信度（HIGH/MEDIUM/LOW）、评估理由、认知层次和影响难度的因素列表。
+   - **AI 降级回退**：AI 调用失败时自动回退到基于规则的粗略评估（题型基础难度 + 内容长度调整）。
+   - AI 调用日志统一记录（functionType=submission_difficulty_assessment）。
+   - 难度值限制在 1-5 范围内，支持去除 Markdown 代码块包裹。
+
+2. **后端接口**：
+   - `POST /api/admin/submission/{id}/difficulty-assessment`：管理员对指定投稿执行 AI 难度评估，返回 `SubmissionDifficultyVO`。
+
+3. **DTO**：
+   - `SubmissionDifficultyVO`：suggestedDifficulty（AI 评估 1-5）、originalDifficulty（用户标注）、difficultyMatch（是否一致）、confidence（置信度）、reason（评估理由）、cognitiveLevel（认知层次）、factors（影响因素列表）、summary（总体说明）。
+   - `DifficultyFactor`：name、description、impact（INCREASE/DECREASE/NEUTRAL）。
+
+4. **前端**：
+   - `submission.ts`：新增 `DifficultyFactor`、`SubmissionDifficultyAssessment` 类型和 `assessDifficulty` API 函数。
+   - `SubmissionManage.vue`：操作列新增"AI 测难度"按钮，新增难度评估结果对话框（AI 评估星数 vs 投稿者标注、一致性判断、置信度标签、认知层次、影响因素表格、总结卡片）。
+
+5. **单元测试**：
+   - `SubmissionDifficultyAssessmentServiceTest`：8 个测试覆盖投稿不存在、AI 正常返回、难度不一致、AI 调用失败回退、Markdown 包裹解析、无效 JSON 回退、无原始难度、范围限制。
+
+### 验收结果
+- 后端 255 个测试全部通过（新增 8 个）
+- 前端无 TS 编译错误
+
+### 修改文件
+- 新增：`backend/src/main/java/com/learnplatform/dto/SubmissionDifficultyVO.java`
+- 新增：`backend/src/main/java/com/learnplatform/service/SubmissionDifficultyAssessmentService.java`
+- 新增：`backend/src/test/java/com/learnplatform/service/SubmissionDifficultyAssessmentServiceTest.java`
+- 修改：`backend/src/main/java/com/learnplatform/controller/AdminQuestionSubmissionController.java`（新增注入 + 接口）
+- 修改：`frontend/src/api/submission.ts`（新增类型 + API 函数）
+- 修改：`frontend/src/views/admin/SubmissionManage.vue`（新增按钮 + 对话框 + 逻辑）
+
+### 遗留问题
+无
+
+### 下轮建议
+- 继续 Phase 16 候选方向：质检结果缓存、标注结果缓存
+- 或 Phase 14 候选方向：代码执行动画
+- 或 Phase 16 P2：一键填充审核意见
+
+---
+
 ## Round 85 - 2026-06-18
 
 ### 阶段
