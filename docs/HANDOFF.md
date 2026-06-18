@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 14 — AI 可视化交互讲解 🚧 开发中（Round 90 完成 SQL 执行顺序可视化，后端 260 个测试）
+当前阶段：Phase 16 — 题目投稿与 AI 题库生产 🚧 开发中（Round 91 完成 Markdown 题目导入增强，后端 271 个测试）
 
 下一阶段主线：先把一道题讲透，把单题从“题干 + 答案 + 解析”升级为结构化 AI 学习对象，再考虑题库上传、OCR、爬虫和社区共建。
 
@@ -132,13 +132,13 @@ docker compose up -d
 
 ## 6. 下一步建议任务
 
-任务名称：Phase 14/16 候选方向 — 网络协议和操作系统过程可视化 / Excel 导入增强
+任务名称：Phase 14/16 候选方向 — 网络协议和操作系统过程可视化 / 内容来源记录
 
-Phase 14 Round 90 已完成 SQL 执行顺序可视化（第 11 种 sql_execution 元素类型、SqlExecutionViewer 组件、暗色 SQL 面板+子句高亮、中间结果预览、播放控制+速度调节、Prompt 增强+单元测试，后端 260 个测试全部通过，前端 187 个测试全部通过）。
+Phase 16 Round 91 已完成 Markdown 题目导入增强（MarkdownQuestionParser 解析器、import-markdown/template-markdown API、前端 Tab 化导入弹窗、11 个单元测试，后端 271 个测试全部通过，前端 187 个测试全部通过）。
 
 下一步建议：
 - Phase 14 候选方向：网络协议和操作系统过程可视化
-- Phase 16 候选方向：Excel / Markdown 导入增强
+- Phase 16 候选方向：内容来源记录和复审机制
 - 或开始规划 Phase 17 新阶段
 
 当前不优先做：
@@ -148,7 +148,7 @@ Phase 14 Round 90 已完成 SQL 执行顺序可视化（第 11 种 sql_execution
 - 用户上传题库自动入库
 - AI 自动审核发布题目
 
-建议 commit message: `feat(visual): 新增 sql_execution 可视化元素类型，SQL 执行顺序逐步展示`
+建议 commit message: `feat(import): 新增 Markdown 格式题目批量导入，管理端支持 Excel/Markdown 双格式导入`
 
 ---
 

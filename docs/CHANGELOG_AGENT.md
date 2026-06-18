@@ -14,6 +14,73 @@
 
 ---
 
+## Round 91 - 2026-06-18
+
+### 阶段
+Phase 16：题目投稿与 AI 题库生产 — Markdown 题目导入增强（候选方向）
+
+### 本轮目标
+新增 Markdown 格式题目批量导入功能，为管理端提供 Excel 之外的更灵活导入方式。Markdown 格式更易编写、可版本控制、适合开发者和教师批量出题。
+
+### 完成内容
+1. **后端 Markdown 解析服务**（`MarkdownQuestionParser.java`）：
+   - 完整的 Markdown 结构化解析器，使用正则匹配题目标题、字段（`**字段名**: 值`）和选项行（`- A. 内容`）。
+   - 支持 5 种题型：单选、多选、判断、填空、简答。
+   - 题型识别：标题含题型关键字 → 直接识别；无标题时从选项和答案自动推断（对/错→判断、多答案→多选、有选项→单选、无选项→简答）。
+   - 字段支持：题干、选项、答案、解析、课程、难度、知识点、标签、分值、题型。
+   - 字段顺序灵活（`**课程**` 可在 `**题干**` 前或后）。
+   - 多题用 `---` 分隔或新标题自动切分。
+   - 判断题可省略选项（自动生成对/错）。
+   - 知识点不存在时自动跳过不阻断导入。
+   - 完整的错误报告（行号+错误原因），与 Excel 导入复用 `QuestionImportResult` 结构。
+
+2. **后端 API 接口**（`AdminQuestionController.java`）：
+   - `POST /api/admin/questions/import-markdown` — 上传 `.md/.markdown` 文件导入。
+   - `GET /api/admin/questions/template-markdown` — 下载 Markdown 模板文件（含 5 种题型示例+完整格式说明）。
+
+3. **前端 API 调用**（`frontend/src/api/question.ts`）：
+   - `importQuestionsMarkdown(file)` — Markdown 导入 API。
+   - `downloadMarkdownTemplate()` — 下载 Markdown 模板。
+
+4. **前端导入弹窗升级**（`QuestionManage.vue`）：
+   - 导入弹窗改为 Tab 切换（Excel 导入 / Markdown 导入），每种格式有独立拖拽上传区。
+   - 下载模板按钮改为下拉菜单（Excel 模板 / Markdown 模板）。
+   - 导入结果复用同一个弹窗。
+
+5. **单元测试**（`MarkdownQuestionParserTest.java`，11 个测试）：
+   - 单选题解析、判断题解析、多选题解析、多题解析。
+   - 题型标准化（中文/英文映射）。
+   - 判断题自动推断、多选答案推断。
+   - 字段顺序灵活解析。
+   - 空文件处理。
+   - 知识点字段解析。
+   - 标题模式识别（纯题型名、顿号序号）。
+
+### 验收结果
+- 后端 271 个测试全部通过（+11 个新测试）
+- 前端 TypeScript 编译无错误
+- 前端 187 个 Vitest 测试全部通过
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/service/MarkdownQuestionParser.java` — 新建 Markdown 解析服务
+- `backend/src/main/java/com/learnplatform/controller/AdminQuestionController.java` — 新增 2 个接口
+- `frontend/src/api/question.ts` — 新增 2 个 API 函数
+- `frontend/src/views/admin/QuestionManage.vue` — 导入弹窗 Tab 化+模板下拉菜单
+- `backend/src/test/java/com/learnplatform/service/MarkdownQuestionParserTest.java` — 新建 11 个测试
+
+### 遗留问题
+- Markdown 模板为纯文本下载，后续可考虑前端 Markdown 预览/编辑器辅助编写
+- 目前不支持图片或 LaTeX 公式导入
+
+### 下轮建议
+- Phase 14 候选：网络协议和操作系统过程可视化
+- Phase 16 候选：投稿结果缓存（质检/标注/难度评估缓存已实现）；内容来源记录
+- 或开始规划 Phase 17 新阶段
+
+建议 commit message: `feat(import): 新增 Markdown 格式题目批量导入，管理端支持 Excel/Markdown 双格式导入`
+
+---
+
 ## Round 90 - 2026-06-18
 
 ### 阶段

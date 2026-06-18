@@ -135,11 +135,27 @@ export function downloadTemplate() {
   })
 }
 
-/** 导入题目（管理端） */
+/** 导入题目（管理端 - Excel） */
 export function importQuestions(file: File) {
   const formData = new FormData()
   formData.append('file', file)
   return request.post<any, ApiResponse<QuestionImportResult>>('/admin/questions/import', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
+/** 导入题目（管理端 - Markdown） */
+export function importQuestionsMarkdown(file: File) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request.post<any, ApiResponse<QuestionImportResult>>('/admin/questions/import-markdown', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
+/** 下载 Markdown 导入模板 */
+export function downloadMarkdownTemplate() {
+  return request.get('/admin/questions/template-markdown', {
+    responseType: 'blob'
   })
 }

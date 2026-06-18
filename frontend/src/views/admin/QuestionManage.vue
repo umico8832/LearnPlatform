@@ -3,7 +3,15 @@
     <div class="page-header">
       <h2>题目管理</h2>
       <div class="header-actions">
-        <el-button :icon="Download" @click="handleDownloadTemplate">下载模板</el-button>
+        <el-dropdown trigger="click">
+          <el-button :icon="Download">下载模板 <el-icon class="el-icon--right"><ArrowDown /></el-icon></el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="handleDownloadTemplate">Excel 模板 (.xlsx)</el-dropdown-item>
+              <el-dropdown-item @click="handleDownloadMdTemplate">Markdown 模板 (.md)</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
         <el-button :icon="Upload" @click="importDialogVisible = true">导入题目</el-button>
         <el-button :icon="FolderOpened" @click="handleExport">导出题目</el-button>
         <el-button type="primary" :icon="Plus" @click="openDialog()">新增题目</el-button>
@@ -115,24 +123,47 @@
     </el-dialog>
 
     <!-- 导入弹窗 -->
-    <el-dialog v-model="importDialogVisible" title="导入题目" width="500px" destroy-on-close>
-      <el-upload
-        ref="uploadRef"
-        drag
-        accept=".xlsx,.xls"
-        :auto-upload="false"
-        :limit="1"
-        :on-change="onImportFileChange"
-        :on-exceed="() => ElMessage.warning('只能上传一个文件')"
-      >
-        <el-icon style="font-size: 40px; color: #c0c4cc; margin-bottom: 8px;"><Upload /></el-icon>
-        <div>将 Excel 文件拖到此处，或<em>点击上传</em></div>
-        <template #tip>
-          <div style="color: #909399; font-size: 12px; margin-top: 4px;">
-            仅支持 .xlsx / .xls 文件，可先<a href="javascript:void(0)" @click.stop="handleDownloadTemplate" style="color: #409eff">下载模板</a>
-          </div>
-        </template>
-      </el-upload>
+    <el-dialog v-model="importDialogVisible" title="导入题目" width="540px" destroy-on-close>
+      <el-tabs v-model="importTab">
+        <el-tab-pane label="Excel 导入" name="excel">
+          <el-upload
+            ref="uploadRef"
+            drag
+            accept=".xlsx,.xls"
+            :auto-upload="false"
+            :limit="1"
+            :on-change="onImportFileChange"
+            :on-exceed="() => ElMessage.warning('只能上传一个文件')"
+          >
+            <el-icon style="font-size: 40px; color: #c0c4cc; margin-bottom: 8px;"><Upload /></el-icon>
+            <div>将 Excel 文件拖到此处，或<em>点击上传</em></div>
+            <template #tip>
+              <div style="color: #909399; font-size: 12px; margin-top: 4px;">
+                仅支持 .xlsx / .xls 文件，可先<a href="javascript:void(0)" @click.stop="handleDownloadTemplate" style="color: #409eff">下载模板</a>
+              </div>
+            </template>
+          </el-upload>
+        </el-tab-pane>
+        <el-tab-pane label="Markdown 导入" name="markdown">
+          <el-upload
+            ref="mdUploadRef"
+            drag
+            accept=".md,.markdown"
+            :auto-upload="false"
+            :limit="1"
+            :on-change="onMdFileChange"
+            :on-exceed="() => ElMessage.warning('只能上传一个文件')"
+          >
+            <el-icon style="font-size: 40px; color: #c0c4cc; margin-bottom: 8px;"><Upload /></el-icon>
+            <div>将 Markdown 文件拖到此处，或<em>点击上传</em></div>
+            <template #tip>
+              <div style="color: #909399; font-size: 12px; margin-top: 4px;">
+                仅支持 .md / .markdown 文件，可先<a href="javascript:void(0)" @click.stop="handleDownloadMdTemplate" style="color: #409eff">下载模板</a>
+              </div>
+            </template>
+          </el-upload>
+        </el-tab-pane>
+      </el-tabs>
       <template #footer>
         <el-button @click="importDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="importLoading" @click="handleImport">开始导入</el-button>
@@ -269,7 +300,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { Plus, Search, Delete, Download, Upload, FolderOpened } from '@element-plus/icons-vue'
+import { Plus, Search, Delete, Download, Upload, FolderOpened, ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules, UploadFile } from 'element-plus'
 import {
@@ -280,6 +311,8 @@ import {
   exportQuestions,
   downloadTemplate,
   importQuestions,
+  importQuestionsMarkdown,
+  downloadMarkdownTemplate,
   type QuestionVO,
   type QuestionForm,
   type OptionItem,
@@ -314,6 +347,8 @@ const importResultVisible = ref(false)
 const importLoading = ref(false)
 const importFile = ref<File | null>(null)
 const uploadRef = ref()
+const mdUploadRef = ref()
+const importTab = ref('excel')
 const importResult = reactive<QuestionImportResult>({
   totalRows: 0,
   successCount: 0,
@@ -604,7 +639,29 @@ function onImportFileChange(file: UploadFile) {
   importFile.value = file.raw || null
 }
 
-// 导入题目
+function onMdFileChange(file: UploadFile) {
+  importFile.value = file.raw || null
+}
+
+// 下载 Markdown 导入模板
+async function handleDownloadMdTemplate() {
+  try {
+    const res = await downloadMarkdownTemplate()
+    const blob = new Blob([res.data], {
+      type: 'text/markdown; charset=utf-8',
+    })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = '题目导入模板.md'
+    link.click()
+    window.URL.revokeObjectURL(url)
+  } catch {
+    ElMessage.error('模板下载失败')
+  }
+}
+
+// 导入题目（根据当前 Tab 选择 Excel 或 Markdown）
 async function handleImport() {
   if (!importFile.value) {
     ElMessage.warning('请先选择文件')
@@ -612,7 +669,10 @@ async function handleImport() {
   }
   importLoading.value = true
   try {
-    const res = await importQuestions(importFile.value)
+    const isMarkdown = importTab.value === 'markdown'
+    const res = isMarkdown
+      ? await importQuestionsMarkdown(importFile.value)
+      : await importQuestions(importFile.value)
     const result = res.data
     importResult.totalRows = result.totalRows
     importResult.successCount = result.successCount
@@ -623,6 +683,9 @@ async function handleImport() {
     importFile.value = null
     if (uploadRef.value) {
       uploadRef.value.clearFiles()
+    }
+    if (mdUploadRef.value) {
+      mdUploadRef.value.clearFiles()
     }
     if (result.successCount > 0) {
       fetchQuestions()
