@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.result.R;
 import com.learnplatform.dto.QuestionReviewRequest;
 import com.learnplatform.dto.QuestionSubmissionVO;
+import com.learnplatform.dto.SubmissionQualityCheckVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.QuestionSubmissionService;
+import com.learnplatform.service.SubmissionAiQualityService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -21,9 +23,12 @@ import org.springframework.web.bind.annotation.*;
 public class AdminQuestionSubmissionController {
 
     private final QuestionSubmissionService submissionService;
+    private final SubmissionAiQualityService qualityService;
 
-    public AdminQuestionSubmissionController(QuestionSubmissionService submissionService) {
+    public AdminQuestionSubmissionController(QuestionSubmissionService submissionService,
+                                              SubmissionAiQualityService qualityService) {
         this.submissionService = submissionService;
+        this.qualityService = qualityService;
     }
 
     @Operation(summary = "投稿列表", description = "查看所有投稿，可按状态、课程、关键词筛选")
@@ -52,6 +57,14 @@ public class AdminQuestionSubmissionController {
                                            @Valid @RequestBody QuestionReviewRequest request) {
         Long adminId = getCurrentUserId();
         QuestionSubmissionVO vo = submissionService.reviewSubmission(id, request, adminId);
+        return R.ok(vo);
+    }
+
+    @Operation(summary = "AI 质检", description = "对投稿进行 AI 质量检查，返回多维度检查结果（不改变投稿状态）")
+    @PostMapping("/{id}/quality-check")
+    public R<SubmissionQualityCheckVO> qualityCheck(@PathVariable Long id) {
+        Long adminId = getCurrentUserId();
+        SubmissionQualityCheckVO vo = qualityService.checkQuality(id, adminId);
         return R.ok(vo);
     }
 

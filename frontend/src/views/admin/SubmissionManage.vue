@@ -62,13 +62,14 @@
         <el-table-column label="投稿时间" width="170">
           <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="260" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="viewDetail(row as QuestionSubmissionVO)">详情</el-button>
             <template v-if="(row as QuestionSubmissionVO).status === 0">
               <el-button type="success" link @click="openReview(row as QuestionSubmissionVO, 1)">通过</el-button>
               <el-button type="danger" link @click="openReview(row as QuestionSubmissionVO, 2)">拒绝</el-button>
             </template>
+            <el-button type="info" link @click="handleQualityCheck(row as QuestionSubmissionVO)">AI 质检</el-button>
             <el-button v-if="(row as QuestionSubmissionVO).status === 1" type="warning" link @click="handleImport(row as QuestionSubmissionVO)">入库</el-button>
           </template>
         </el-table-column>
@@ -146,11 +147,65 @@
         </el-descriptions-item>
       </el-descriptions>
     </el-dialog>
+
+    <!-- AI 质检结果对话框 -->
+    <el-dialog v-model="showQualityDialog" title="AI 质检报告" width="720px">
+      <div v-if="qualityLoading" v-loading="true" element-loading-text="AI 正在分析题目质量，请稍候..." style="min-height: 120px" />
+      <div v-else-if="qualityResult">
+        <!-- 总评 -->
+        <el-card shadow="never" style="margin-bottom: 16px">
+          <div style="display: flex; align-items: center; justify-content: space-between">
+            <div>
+              <span style="font-size: 16px; font-weight: 600">综合评分：</span>
+              <el-tag :type="qualityResult.qualityScore >= 80 ? 'success' : qualityResult.qualityScore >= 50 ? 'warning' : 'danger'" size="large" style="font-size: 18px; margin-left: 8px">
+                {{ qualityResult.qualityScore }} 分
+              </el-tag>
+            </div>
+            <el-tag :type="recommendationType(qualityResult.recommendation)" size="large">
+              {{ recommendationLabel(qualityResult.recommendation) }}
+            </el-tag>
+          </div>
+          <p style="margin-top: 10px; color: #606266">{{ qualityResult.summary }}</p>
+        </el-card>
+
+        <!-- 五维检查 -->
+        <el-row :gutter="12" style="margin-bottom: 16px">
+          <el-col v-for="(item, idx) in qualityCheckItems" :key="idx" :span="12" style="margin-bottom: 8px">
+            <div style="display: flex; align-items: flex-start; gap: 8px; padding: 8px 12px; background: #f5f7fa; border-radius: 6px">
+              <el-tag :type="checkStatusType(item.status)" size="small" style="flex-shrink: 0">{{ checkStatusLabel(item.status) }}</el-tag>
+              <div>
+                <div style="font-weight: 600; font-size: 13px">{{ item.label }}</div>
+                <div style="font-size: 12px; color: #909399; margin-top: 2px">{{ item.detail }}</div>
+              </div>
+            </div>
+          </el-col>
+        </el-row>
+
+        <!-- 风险点 -->
+        <el-card v-if="qualityResult.riskPoints && qualityResult.riskPoints.length > 0" shadow="never" style="margin-bottom: 12px">
+          <template #header><span style="color: #e6a23c; font-weight: 600">⚠ 风险点</span></template>
+          <ul style="margin: 0; padding-left: 20px">
+            <li v-for="(point, idx) in qualityResult.riskPoints" :key="idx" style="color: #e6a23c; margin-bottom: 4px">{{ point }}</li>
+          </ul>
+        </el-card>
+
+        <!-- 修改建议 -->
+        <el-card v-if="qualityResult.suggestions && qualityResult.suggestions.length > 0" shadow="never">
+          <template #header><span style="color: #409eff; font-weight: 600">💡 修改建议</span></template>
+          <ul style="margin: 0; padding-left: 20px">
+            <li v-for="(sug, idx) in qualityResult.suggestions" :key="idx" style="color: #409eff; margin-bottom: 4px">{{ sug }}</li>
+          </ul>
+        </el-card>
+      </div>
+      <template #footer>
+        <el-button @click="showQualityDialog = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import {
@@ -158,8 +213,10 @@ import {
   reviewSubmission,
   importSubmission,
   getSubmissionStats,
+  qualityCheckSubmission,
   type QuestionSubmissionVO,
   type SubmissionStats,
+  type SubmissionQualityCheck,
 } from '@/api/submission'
 
 const router = useRouter()
@@ -175,6 +232,9 @@ const stats = ref<SubmissionStats>({ pending: 0, approved: 0, rejected: 0, impor
 
 const showReviewDialog = ref(false)
 const showDetailDialog = ref(false)
+const showQualityDialog = ref(false)
+const qualityLoading = ref(false)
+const qualityResult = ref<SubmissionQualityCheck | null>(null)
 const currentDetail = ref<QuestionSubmissionVO | null>(null)
 const reviewTarget = ref<QuestionSubmissionVO | null>(null)
 const reviewAction = ref(1) // 1=通过 2=拒绝
@@ -296,6 +356,60 @@ const goToQuestion = (id: number) => {
   showDetailDialog.value = false
   router.push({ path: '/admin/questions', query: { highlight: id } })
 }
+
+// ========== AI 质检 ==========
+
+const handleQualityCheck = async (row: QuestionSubmissionVO) => {
+  qualityResult.value = null
+  qualityLoading.value = true
+  showQualityDialog.value = true
+  try {
+    const res = await qualityCheckSubmission(row.id)
+    if (res.code === 0 && res.data) {
+      qualityResult.value = res.data
+    } else {
+      ElMessage.error(res.message || '质检失败')
+      showQualityDialog.value = false
+    }
+  } catch {
+    ElMessage.error('质检请求失败')
+    showQualityDialog.value = false
+  } finally {
+    qualityLoading.value = false
+  }
+}
+
+const recommendationLabel = (rec: string) => {
+  const map: Record<string, string> = { APPROVE: '推荐通过', REVISE: '建议修改', REJECT: '建议拒绝' }
+  return map[rec] || rec
+}
+
+const recommendationType = (rec: string) => {
+  const map: Record<string, string> = { APPROVE: 'success', REVISE: 'warning', REJECT: 'danger' }
+  return (map[rec] || 'info') as any
+}
+
+const checkStatusLabel = (status: string) => {
+  const map: Record<string, string> = { PASS: '通过', WARNING: '警告', FAIL: '不通过' }
+  return map[status] || status
+}
+
+const checkStatusType = (status: string) => {
+  const map: Record<string, string> = { PASS: 'success', WARNING: 'warning', FAIL: 'danger' }
+  return (map[status] || 'info') as any
+}
+
+const qualityCheckItems = computed(() => {
+  if (!qualityResult.value) return []
+  const r = qualityResult.value
+  return [
+    { label: '格式规范', status: r.formatCheck.status, detail: r.formatCheck.detail },
+    { label: '内容完整性', status: r.completenessCheck.status, detail: r.completenessCheck.detail },
+    { label: '答案正确性', status: r.answerCheck.status, detail: r.answerCheck.detail },
+    { label: '解析质量', status: r.analysisCheck.status, detail: r.analysisCheck.detail },
+    { label: '知识点相关性', status: r.knowledgePointCheck.status, detail: r.knowledgePointCheck.detail },
+  ]
+})
 
 onMounted(() => {
   loadSubmissions()

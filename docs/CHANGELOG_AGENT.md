@@ -14,6 +14,62 @@
 
 ---
 
+## Round 84 - 2026-06-18
+
+### 阶段
+Phase 16：题目投稿与 AI 题库生产 — P1 AI 题目质检与审核辅助
+
+### 本轮目标
+实现 AI 辅助投稿质量检查功能，管理员可在审核前对投稿进行 AI 质检，获得多维度检查结果、风险点和修改建议。
+
+### 完成内容
+1. **后端 AI 质检服务**：
+   - `SubmissionAiQualityService`：调用 AI 对投稿进行 5 维度质量检查（格式规范、内容完整性、答案正确性、解析质量、知识点相关性），输出结构化 JSON 结果。
+   - AI Prompt 工程：明确要求输出纯 JSON，包含质量评分、推荐审核意见、5 项检查结果、风险点和修改建议。
+   - JSON 解析健壮性：支持去除 Markdown 代码块包裹，解析失败时回退展示 AI 原始文本。
+   - **AI 降级回退**：AI 调用失败时自动回退到基础规则检查（题干长度、选项完整性、答案/解析/知识点关联等），确保功能始终可用。
+   - AI 调用日志统一记录（functionType=submission_quality_check）。
+
+2. **后端接口**：
+   - `POST /api/admin/submission/{id}/quality-check`：管理员对指定投稿执行 AI 质检，返回 `SubmissionQualityCheckVO`。
+   - 复用现有 AI 配额检查机制，受每日调用次数限制。
+
+3. **DTO**：
+   - `SubmissionQualityCheckVO`：质量评分、总评、推荐审核意见、5 维检查项（CheckItem: status + detail）、风险点列表、修改建议列表。
+
+4. **前端**：
+   - `submission.ts`：新增 `QualityCheckItem`、`SubmissionQualityCheck` 类型和 `qualityCheckSubmission` API 函数。
+   - `SubmissionManage.vue`：操作列新增"AI 质检"按钮，新增质检结果对话框（综合评分、推荐意见、5 维检查卡片、风险点列表、修改建议列表），使用 Element Plus v-loading 展示加载状态。
+
+5. **单元测试**：
+   - `SubmissionAiQualityServiceTest`：7 个测试覆盖投稿不存在、AI 正常返回 JSON 解析、AI 调用失败回退、Markdown 代码块包裹解析、缺少解析扣分、题干过短 FAIL、选择题缺选项 FAIL。
+
+### 修改文件清单
+- `backend/src/main/java/com/learnplatform/dto/SubmissionQualityCheckVO.java`（新建）
+- `backend/src/main/java/com/learnplatform/service/SubmissionAiQualityService.java`（新建）
+- `backend/src/main/java/com/learnplatform/controller/AdminQuestionSubmissionController.java`
+- `backend/src/test/java/com/learnplatform/service/SubmissionAiQualityServiceTest.java`（新建）
+- `frontend/src/api/submission.ts`
+- `frontend/src/views/admin/SubmissionManage.vue`
+
+### 验收结果
+- 后端编译通过，239 个测试全部通过（新增 7 个）
+- AI 质检接口正常工作，降级回退逻辑完整
+- 前端页面集成完成，质检结果对话框展示完整
+
+### 遗留问题
+- AI 质检依赖外部 AI 服务可用性，降级时仅做基础规则检查，无 AI 智能分析
+- 质检结果未缓存，每次点击都会重新调用 AI
+
+### 下轮建议
+- 继续 Phase 16 P1：AI 知识点标注（自动为投稿推荐知识点）或 AI 难度评估
+- 或优化质检体验：缓存质检结果、支持一键填充审核意见
+
+### 建议 commit message
+`feat(submission): 新增 AI 投稿质检与管理员审核辅助功能，后端 239 测试通过`
+
+---
+
 ## Round 83 - 2026-06-18
 
 ### 阶段

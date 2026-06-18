@@ -65,6 +65,26 @@ export interface SubmissionStats {
   imported: number
 }
 
+/** AI 质检单项结果 */
+export interface QualityCheckItem {
+  status: 'PASS' | 'WARNING' | 'FAIL'
+  detail: string
+}
+
+/** AI 质检结果 */
+export interface SubmissionQualityCheck {
+  qualityScore: number
+  summary: string
+  recommendation: 'APPROVE' | 'REVISE' | 'REJECT'
+  formatCheck: QualityCheckItem
+  completenessCheck: QualityCheckItem
+  answerCheck: QualityCheckItem
+  analysisCheck: QualityCheckItem
+  knowledgePointCheck: QualityCheckItem
+  riskPoints: string[]
+  suggestions: string[]
+}
+
 // ========== 用户端 ==========
 
 /** 提交题目投稿 */
@@ -117,4 +137,9 @@ export function importSubmission(id: number) {
 /** 投稿统计 */
 export function getSubmissionStats() {
   return request.get<any, ApiResponse<SubmissionStats>>('/admin/submission/stats')
+}
+
+/** AI 质检 */
+export function qualityCheckSubmission(id: number) {
+  return request.post<any, ApiResponse<SubmissionQualityCheck>>(`/admin/submission/${id}/quality-check`)
 }
