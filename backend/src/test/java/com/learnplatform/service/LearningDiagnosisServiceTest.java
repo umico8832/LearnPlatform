@@ -761,6 +761,399 @@ class LearningDiagnosisServiceTest {
         verify(aiService).logCall(eq(USER_ID), eq("learning_advice_stream"), eq(false), anyString(), any(Integer.class));
     }
 
+    // ======================== analyzeQuestionError — 单题错因分析 ========================
+
+    @Test
+    void analyzeQuestionErrorReturnsEmptyForNonexistentQuestion() {
+        when(questionMapper.selectById(999L)).thenReturn(null);
+
+        LearningDiagnosisVO.QuestionErrorAnalysis analysis = service.analyzeQuestionError(USER_ID, 999L);
+
+        assertNotNull(analysis);
+        assertEquals(999L, analysis.getQuestionId());
+        assertEquals("题目不存在", analysis.getQuestionContent());
+        assertTrue(analysis.getAttempts().isEmpty());
+    }
+
+    @Test
+    void analyzeQuestionErrorReturnsZeroAttemptsWhenNoRecords() {
+        Question q = stubQuestion(1L, "SINGLE_CHOICE", 10L);
+        q.setContent("What is polymorphism?");
+        when(questionMapper.selectById(1L)).thenReturn(q);
+
+        when(practiceRecordMapper.selectList(any())).thenReturn(Collections.emptyList());
+
+        // No wrong question
+        when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
+
+        // No knowledge points
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
+
+        Course course = stubCourse(10L, "Java Basics");
+        when(courseMapper.selectById(10L)).thenReturn(course);
+
+        LearningDiagnosisVO.QuestionErrorAnalysis analysis = service.analyzeQuestionError(USER_ID, 1L);
+
+        assertEquals(1L, analysis.getQuestionId());
+        assertEquals("What is polymorphism?", analysis.getQuestionContent());
+        assertEquals("单选题", analysis.getQuestionType());
+        assertEquals(3, analysis.getDifficulty());
+        assertEquals("Java Basics", analysis.getCourseName());
+        assertEquals(0, analysis.getTotalAttempts());
+        assertEquals(0, analysis.getCorrectCount());
+        assertEquals(0, analysis.getWrongCount());
+        assertEquals(0.0, analysis.getCorrectRate());
+        assertNull(analysis.getCurrentMasteryLevel());
+        assertTrue(analysis.getAttempts().isEmpty());
+        assertEquals("该题尚未作答。", analysis.getErrorPattern());
+    }
+
+    @Test
+    void analyzeQuestionErrorComputesCorrectRateWithMixedAttempts() {
+        Question q = stubQuestion(1L, "SINGLE_CHOICE", 10L);
+        when(questionMapper.selectById(1L)).thenReturn(q);
+
+        // 5 attempts: 3 correct, 2 wrong => 60%
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(4));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(3));
+        PracticeRecord r3 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(2));
+        PracticeRecord r4 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(1));
+        PracticeRecord r5 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now());
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2, r3, r4, r5));
+
+        when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
+
+        LearningDiagnosisVO.QuestionErrorAnalysis analysis = service.analyzeQuestionError(USER_ID, 1L);
+
+        assertEquals(5, analysis.getTotalAttempts());
+        assertEquals(3, analysis.getCorrectCount());
+        assertEquals(2, analysis.getWrongCount());
+        assertEquals(60.0, analysis.getCorrectRate());
+        assertEquals(5, analysis.getAttempts().size());
+    }
+
+    @Test
+    void analyzeQuestionErrorAllCorrectAttempts() {
+        Question q = stubQuestion(1L, "TRUE_FALSE", 10L);
+        when(questionMapper.selectById(1L)).thenReturn(q);
+
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(2));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(1));
+        PracticeRecord r3 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now());
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2, r3));
+
+        WrongQuestion wq = stubWrongQuestion(USER_ID, 1L, 1, 2);
+        when(wrongQuestionMapper.selectOne(any())).thenReturn(wq);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
+
+        LearningDiagnosisVO.QuestionErrorAnalysis analysis = service.analyzeQuestionError(USER_ID, 1L);
+
+        assertEquals(3, analysis.getTotalAttempts());
+        assertEquals(3, analysis.getCorrectCount());
+        assertEquals(0, analysis.getWrongCount());
+        assertEquals(100.0, analysis.getCorrectRate());
+        assertEquals(2, analysis.getCurrentMasteryLevel());
+        // Error pattern should say all correct
+        assertTrue(analysis.getErrorPattern().contains("全部答对"));
+    }
+
+    @Test
+    void analyzeQuestionErrorAllWrongAttempts() {
+        Question q = stubQuestion(1L, "SINGLE_CHOICE", 10L);
+        when(questionMapper.selectById(1L)).thenReturn(q);
+
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(2));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(1));
+        PracticeRecord r3 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now());
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2, r3));
+
+        WrongQuestion wq = stubWrongQuestion(USER_ID, 1L, 3, 0);
+        when(wrongQuestionMapper.selectOne(any())).thenReturn(wq);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
+
+        LearningDiagnosisVO.QuestionErrorAnalysis analysis = service.analyzeQuestionError(USER_ID, 1L);
+
+        assertEquals(3, analysis.getTotalAttempts());
+        assertEquals(0, analysis.getCorrectCount());
+        assertEquals(3, analysis.getWrongCount());
+        assertEquals(0.0, analysis.getCorrectRate());
+        assertEquals(0, analysis.getCurrentMasteryLevel());
+        // Should detect repeated errors
+        assertTrue(analysis.getErrorPattern().contains("反复错题"));
+        // Should detect consecutive wrong
+        assertTrue(analysis.getErrorPattern().contains("连续答错"));
+    }
+
+    @Test
+    void analyzeQuestionErrorDetectsImprovingTrend() {
+        Question q = stubQuestion(1L, "SINGLE_CHOICE", 10L);
+        when(questionMapper.selectById(1L)).thenReturn(q);
+
+        // 7 attempts: earlier 2 (both wrong, 0%), recent 5 (4 correct, 80%)
+        // recentRate(80) - earlierRate(0) = 80 >= 20 => IMPROVING
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(9));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(8));
+        PracticeRecord r3 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(4));
+        PracticeRecord r4 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(3));
+        PracticeRecord r5 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(2));
+        PracticeRecord r6 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(1));
+        PracticeRecord r7 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now());
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2, r3, r4, r5, r6, r7));
+
+        when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
+
+        LearningDiagnosisVO.QuestionErrorAnalysis analysis = service.analyzeQuestionError(USER_ID, 1L);
+
+        assertEquals("IMPROVING", analysis.getMasteryTrend());
+        assertNotNull(analysis.getTrendDescription());
+        assertTrue(analysis.getTrendDescription().contains("提升"));
+    }
+
+    @Test
+    void analyzeQuestionErrorDetectsDecliningTrend() {
+        Question q = stubQuestion(1L, "SINGLE_CHOICE", 10L);
+        when(questionMapper.selectById(1L)).thenReturn(q);
+
+        // 7 attempts: earlier 2 (both correct, 100%), recent 5 (1 correct 4 wrong, 20%)
+        // earlierRate(100) - recentRate(20) = 80 >= 20 => DECLINING
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(9));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(8));
+        PracticeRecord r3 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(4));
+        PracticeRecord r4 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(3));
+        PracticeRecord r5 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(2));
+        PracticeRecord r6 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(1));
+        PracticeRecord r7 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now());
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2, r3, r4, r5, r6, r7));
+
+        when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
+
+        LearningDiagnosisVO.QuestionErrorAnalysis analysis = service.analyzeQuestionError(USER_ID, 1L);
+
+        assertEquals("DECLINING", analysis.getMasteryTrend());
+        assertNotNull(analysis.getTrendDescription());
+        assertTrue(analysis.getTrendDescription().contains("下降"));
+    }
+
+    @Test
+    void analyzeQuestionErrorDetectsStagnantTrend() {
+        Question q = stubQuestion(1L, "SINGLE_CHOICE", 10L);
+        when(questionMapper.selectById(1L)).thenReturn(q);
+
+        // 7 attempts: earlier 2 (1 correct 1 wrong, 50%), recent 5 (3 correct 2 wrong, 60%)
+        // diff = 10 < 20 => STAGNANT, recentRate 60% not >=80 not <50 => "仍需巩固"
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(9));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(8));
+        PracticeRecord r3 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(4));
+        PracticeRecord r4 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(3));
+        PracticeRecord r5 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(2));
+        PracticeRecord r6 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(1));
+        PracticeRecord r7 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now());
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2, r3, r4, r5, r6, r7));
+
+        when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
+
+        LearningDiagnosisVO.QuestionErrorAnalysis analysis = service.analyzeQuestionError(USER_ID, 1L);
+
+        assertEquals("STAGNANT", analysis.getMasteryTrend());
+        assertTrue(analysis.getTrendDescription().contains("持平") || analysis.getTrendDescription().contains("巩固"));
+    }
+
+    @Test
+    void analyzeQuestionErrorOnlyTwoAttemptsHighRecent() {
+        Question q = stubQuestion(1L, "SINGLE_CHOICE", 10L);
+        when(questionMapper.selectById(1L)).thenReturn(q);
+
+        // Only 2 attempts (both correct), no earlier records
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(1));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now());
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2));
+
+        when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
+
+        LearningDiagnosisVO.QuestionErrorAnalysis analysis = service.analyzeQuestionError(USER_ID, 1L);
+
+        // 2 attempts, recent 100% => IMPROVING (recentRate >= 80)
+        assertEquals("IMPROVING", analysis.getMasteryTrend());
+    }
+
+    @Test
+    void analyzeQuestionErrorOnlyTwoAttemptsLowRecent() {
+        Question q = stubQuestion(1L, "SINGLE_CHOICE", 10L);
+        when(questionMapper.selectById(1L)).thenReturn(q);
+
+        // Only 2 attempts (both wrong), no earlier records
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(1));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now());
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2));
+
+        when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
+
+        LearningDiagnosisVO.QuestionErrorAnalysis analysis = service.analyzeQuestionError(USER_ID, 1L);
+
+        // 2 attempts, recent 0% => DECLINING (recentRate < 50)
+        assertEquals("DECLINING", analysis.getMasteryTrend());
+    }
+
+    @Test
+    void analyzeQuestionErrorResolvesKnowledgePointAndCourse() {
+        Question q = stubQuestion(1L, "SINGLE_CHOICE", 10L);
+        when(questionMapper.selectById(1L)).thenReturn(q);
+
+        when(practiceRecordMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
+
+        // Knowledge point mapping
+        QuestionKnowledgePoint qkp = new QuestionKnowledgePoint();
+        qkp.setQuestionId(1L);
+        qkp.setKnowledgePointId(5L);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(qkp));
+
+        KnowledgePoint kp = stubKnowledgePoint(5L, "OOP Polymorphism", 10L);
+        when(knowledgePointMapper.selectById(5L)).thenReturn(kp);
+
+        Course course = stubCourse(10L, "Advanced Java");
+        when(courseMapper.selectById(10L)).thenReturn(course);
+
+        LearningDiagnosisVO.QuestionErrorAnalysis analysis = service.analyzeQuestionError(USER_ID, 1L);
+
+        assertEquals("Advanced Java", analysis.getCourseName());
+        assertEquals("OOP Polymorphism", analysis.getKnowledgePointName());
+    }
+
+    @Test
+    void analyzeQuestionErrorErrorPatternRepeatedErrors() {
+        Question q = stubQuestion(1L, "SINGLE_CHOICE", 10L);
+        when(questionMapper.selectById(1L)).thenReturn(q);
+
+        // 4 attempts: 3 wrong, 1 correct
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(3));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(2));
+        PracticeRecord r3 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(1));
+        PracticeRecord r4 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now());
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2, r3, r4));
+
+        WrongQuestion wq = stubWrongQuestion(USER_ID, 1L, 3, 0);
+        when(wrongQuestionMapper.selectOne(any())).thenReturn(wq);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
+
+        LearningDiagnosisVO.QuestionErrorAnalysis analysis = service.analyzeQuestionError(USER_ID, 1L);
+
+        // wrongCount=3 >= 3 => repeated
+        assertTrue(analysis.getErrorPattern().contains("反复错题"));
+        // last record is correct
+        assertTrue(analysis.getErrorPattern().contains("最近一次已答对"));
+        // mastery level 0
+        assertTrue(analysis.getErrorPattern().contains("未掌握"));
+    }
+
+    @Test
+    void analyzeQuestionErrorErrorPatternConsecutiveWrong() {
+        Question q = stubQuestion(1L, "SINGLE_CHOICE", 10L);
+        when(questionMapper.selectById(1L)).thenReturn(q);
+
+        // 3 attempts: correct, wrong, wrong (last 2 consecutive wrong)
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(2));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(1));
+        PracticeRecord r3 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now());
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2, r3));
+
+        WrongQuestion wq = stubWrongQuestion(USER_ID, 1L, 2, 1);
+        when(wrongQuestionMapper.selectOne(any())).thenReturn(wq);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
+
+        LearningDiagnosisVO.QuestionErrorAnalysis analysis = service.analyzeQuestionError(USER_ID, 1L);
+
+        assertTrue(analysis.getErrorPattern().contains("连续答错 2 次"));
+        assertTrue(analysis.getErrorPattern().contains("部分掌握"));
+    }
+
+    @Test
+    void analyzeQuestionErrorErrorPatternRecentWrong() {
+        Question q = stubQuestion(1L, "SINGLE_CHOICE", 10L);
+        when(questionMapper.selectById(1L)).thenReturn(q);
+
+        // 2 attempts: correct then wrong
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(1));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now());
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2));
+
+        when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
+
+        LearningDiagnosisVO.QuestionErrorAnalysis analysis = service.analyzeQuestionError(USER_ID, 1L);
+
+        assertTrue(analysis.getErrorPattern().contains("最近一次作答仍然错误"));
+    }
+
+    @Test
+    void analyzeQuestionErrorSingleAttemptCorrect() {
+        Question q = stubQuestion(1L, "SINGLE_CHOICE", 10L);
+        when(questionMapper.selectById(1L)).thenReturn(q);
+
+        // Single correct attempt
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now());
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1));
+
+        when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
+
+        LearningDiagnosisVO.QuestionErrorAnalysis analysis = service.analyzeQuestionError(USER_ID, 1L);
+
+        assertEquals(1, analysis.getTotalAttempts());
+        assertEquals(100.0, analysis.getCorrectRate());
+        // With only 1 attempt, trend should be STAGNANT
+        assertEquals("STAGNANT", analysis.getMasteryTrend());
+        assertTrue(analysis.getErrorPattern().contains("全部答对"));
+    }
+
+    @Test
+    void analyzeQuestionErrorAttemptHistoryHasCorrectFields() {
+        Question q = stubQuestion(1L, "SINGLE_CHOICE", 10L);
+        when(questionMapper.selectById(1L)).thenReturn(q);
+
+        PracticeRecord r = new PracticeRecord();
+        r.setId(42L);
+        r.setUserId(USER_ID);
+        r.setQuestionId(1L);
+        r.setIsCorrect(0);
+        r.setUserAnswer("B");
+        r.setAnswerTime(30);
+        r.setCreateTime(LocalDateTime.of(2026, 6, 15, 14, 30, 0));
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r));
+
+        when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
+
+        LearningDiagnosisVO.QuestionErrorAnalysis analysis = service.analyzeQuestionError(USER_ID, 1L);
+
+        assertEquals(1, analysis.getAttempts().size());
+        LearningDiagnosisVO.AttemptHistory ah = analysis.getAttempts().get(0);
+        assertEquals(42L, ah.getRecordId());
+        assertEquals("B", ah.getUserAnswer());
+        assertEquals(0, ah.getIsCorrect());
+        assertEquals(30, ah.getAnswerTime());
+        assertEquals("2026-06-15T14:30", ah.getCreateTime());
+    }
+
     // ======================== Helpers ========================
 
     private PracticeRecord stubRecord(Long userId, Long questionId, int isCorrect, LocalDateTime createTime) {

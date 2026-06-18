@@ -14,6 +14,50 @@
 
 ---
 
+## Round 81 - 2026-06-18
+
+### 阶段
+Phase 15：AI 学习画像与个性化推荐 — 单题错因分析单元测试
+
+### 本轮目标
+补充 Round 80 新增的 `analyzeQuestionError` 方法的后端单元测试，覆盖掌握趋势算法、错误模式生成、作答历史等核心逻辑。
+
+### 完成内容
+1. **新增 16 个单元测试**（`LearningDiagnosisServiceTest`）：
+   - `analyzeQuestionErrorReturnsEmptyForNonexistentQuestion`：题目不存在返回空结果
+   - `analyzeQuestionErrorReturnsZeroAttemptsWhenNoRecords`：无作答记录时返回零值
+   - `analyzeQuestionErrorComputesCorrectRateWithMixedAttempts`：混合正确/错误作答的正确率计算（60%）
+   - `analyzeQuestionErrorAllCorrectAttempts`：全部正确场景（100%，掌握程度=已掌握）
+   - `analyzeQuestionErrorAllWrongAttempts`：全部错误场景（0%，反复错题 + 连续答错检测）
+   - `analyzeQuestionErrorDetectsImprovingTrend`：掌握趋势 IMPROVING（近期 80% vs 前期 0%，差异 ≥20%）
+   - `analyzeQuestionErrorDetectsDecliningTrend`：掌握趋势 DECLINING（近期 20% vs 前期 100%，差异 ≥20%）
+   - `analyzeQuestionErrorDetectsStagnantTrend`：掌握趋势 STAGNANT（差异 <20%）
+   - `analyzeQuestionErrorOnlyTwoAttemptsHighRecent`：仅 2 次作答且近期 100% → IMPROVING
+   - `analyzeQuestionErrorOnlyTwoAttemptsLowRecent`：仅 2 次作答且近期 0% → DECLINING
+   - `analyzeQuestionErrorResolvesKnowledgePointAndCourse`：知识点名称和课程名称正确解析
+   - `analyzeQuestionErrorErrorPatternRepeatedErrors`：错误模式包含反复错题 + 最近一次已答对 + 未掌握
+   - `analyzeQuestionErrorErrorPatternConsecutiveWrong`：错误模式包含连续答错次数 + 部分掌握
+   - `analyzeQuestionErrorErrorPatternRecentWrong`：错误模式包含最近一次作答仍然错误
+   - `analyzeQuestionErrorSingleAttemptCorrect`：单次正确作答（STAGNANT + 全部答对）
+   - `analyzeQuestionErrorAttemptHistoryHasCorrectFields`：作答历史字段映射验证（recordId、userAnswer、isCorrect、answerTime、createTime）
+
+### 修改文件清单
+- `backend/src/test/java/com/learnplatform/service/LearningDiagnosisServiceTest.java`（新增 16 个测试方法）
+
+### 验收结果
+- [x] `cd backend && mvn test -Dtest=LearningDiagnosisServiceTest`：46 个测试全部通过
+- [x] `cd backend && mvn test`：227 个后端测试全部通过（无回归）
+
+### 遗留问题
+- 无
+
+### 下轮建议
+- 继续 Phase 14 候选方向：代码执行动画、SQL 执行顺序可视化
+- 或进入 Phase 16：题目投稿与 AI 题库生产
+- 或前端 build 验证
+
+---
+
 ## Round 80 - 2026-06-18
 
 ### 阶段
