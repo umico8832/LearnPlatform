@@ -70,6 +70,7 @@
               <el-button type="danger" link @click="openReview(row as QuestionSubmissionVO, 2)">拒绝</el-button>
             </template>
             <el-button type="info" link @click="handleQualityCheck(row as QuestionSubmissionVO)">AI 质检</el-button>
+            <el-button type="primary" link @click="handleKPTagging(row as QuestionSubmissionVO)">AI 标注</el-button>
             <el-button v-if="(row as QuestionSubmissionVO).status === 1" type="warning" link @click="handleImport(row as QuestionSubmissionVO)">入库</el-button>
           </template>
         </el-table-column>
@@ -148,6 +149,44 @@
       </el-descriptions>
     </el-dialog>
 
+    <!-- AI 知识点标注对话框 -->
+    <el-dialog v-model="showKPTaggingDialog" title="AI 知识点标注" width="720px">
+      <div v-if="kpTaggingLoading" v-loading="true" element-loading-text="AI 正在分析题目知识点归属，请稍候..." style="min-height: 120px" />
+      <div v-else-if="kpTaggingResult">
+        <!-- AI 分析说明 -->
+        <el-alert :title="kpTaggingResult.analysis" type="info" show-icon :closable="false" style="margin-bottom: 16px" />
+
+        <!-- 推荐知识点列表 -->
+        <div v-if="kpTaggingResult.recommendations.length > 0">
+          <div style="font-weight: 600; margin-bottom: 8px">推荐知识点（共 {{ kpTaggingResult.recommendations.length }} 个）</div>
+          <el-table :data="kpTaggingResult.recommendations" border size="small" style="margin-bottom: 16px">
+            <el-table-column label="知识点" prop="name" min-width="120" />
+            <el-table-column label="课程" prop="courseName" width="120" />
+            <el-table-column label="置信度" width="100">
+              <template #default="{ row }">
+                <el-tag :type="confidenceType(row.confidence)" size="small">{{ confidenceLabel(row.confidence) }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="推荐理由" prop="reason" min-width="200" show-overflow-tooltip />
+          </el-table>
+
+          <el-card shadow="never" style="background: #f0f9ff">
+            <div style="font-size: 13px; color: #606266; margin-bottom: 8px">
+              <strong>一键应用：</strong>将以下知识点 ID 应用到投稿的「知识点IDs」字段
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px">
+              <el-input v-model="kpTaggingSuggestedIds" readonly style="flex: 1" />
+              <el-button type="primary" @click="handleApplyKP" :loading="applyingKP">应用到投稿</el-button>
+            </div>
+          </el-card>
+        </div>
+        <el-empty v-else description="未找到匹配的知识点" />
+      </div>
+      <template #footer>
+        <el-button @click="showKPTaggingDialog = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
     <!-- AI 质检结果对话框 -->
     <el-dialog v-model="showQualityDialog" title="AI 质检报告" width="720px">
       <div v-if="qualityLoading" v-loading="true" element-loading-text="AI 正在分析题目质量，请稍候..." style="min-height: 120px" />
@@ -214,9 +253,12 @@ import {
   importSubmission,
   getSubmissionStats,
   qualityCheckSubmission,
+  kpTaggingSubmission,
+  applyKnowledgePoints,
   type QuestionSubmissionVO,
   type SubmissionStats,
   type SubmissionQualityCheck,
+  type SubmissionKPTagging,
 } from '@/api/submission'
 
 const router = useRouter()
@@ -239,6 +281,14 @@ const currentDetail = ref<QuestionSubmissionVO | null>(null)
 const reviewTarget = ref<QuestionSubmissionVO | null>(null)
 const reviewAction = ref(1) // 1=通过 2=拒绝
 const reviewComment = ref('')
+
+// AI 知识点标注
+const showKPTaggingDialog = ref(false)
+const kpTaggingLoading = ref(false)
+const kpTaggingResult = ref<SubmissionKPTagging | null>(null)
+const kpTaggingSuggestedIds = ref('')
+const kpTaggingTarget = ref<QuestionSubmissionVO | null>(null)
+const applyingKP = ref(false)
 
 const questionTypeLabel = (type: string) => {
   const map: Record<string, string> = {
@@ -399,6 +449,16 @@ const checkStatusType = (status: string) => {
   return (map[status] || 'info') as any
 }
 
+const confidenceLabel = (c: string) => {
+  const map: Record<string, string> = { HIGH: '高度相关', MEDIUM: '中等相关', LOW: '可能相关' }
+  return map[c] || c
+}
+
+const confidenceType = (c: string) => {
+  const map: Record<string, string> = { HIGH: 'success', MEDIUM: '', LOW: 'info' }
+  return (map[c] || 'info') as any
+}
+
 const qualityCheckItems = computed(() => {
   if (!qualityResult.value) return []
   const r = qualityResult.value
@@ -410,6 +470,51 @@ const qualityCheckItems = computed(() => {
     { label: '知识点相关性', status: r.knowledgePointCheck.status, detail: r.knowledgePointCheck.detail },
   ]
 })
+
+// ========== AI 知识点标注 ==========
+
+const handleKPTagging = async (row: QuestionSubmissionVO) => {
+  kpTaggingResult.value = null
+  kpTaggingSuggestedIds.value = ''
+  kpTaggingTarget.value = row
+  kpTaggingLoading.value = true
+  showKPTaggingDialog.value = true
+  try {
+    const res = await kpTaggingSubmission(row.id)
+    if (res.code === 0 && res.data) {
+      kpTaggingResult.value = res.data
+      kpTaggingSuggestedIds.value = res.data.suggestedIds
+    } else {
+      ElMessage.error(res.message || '知识点标注失败')
+      showKPTaggingDialog.value = false
+    }
+  } catch {
+    ElMessage.error('标注请求失败')
+    showKPTaggingDialog.value = false
+  } finally {
+    kpTaggingLoading.value = false
+  }
+}
+
+const handleApplyKP = async () => {
+  if (!kpTaggingTarget.value || !kpTaggingSuggestedIds.value) {
+    ElMessage.warning('没有可应用的知识点')
+    return
+  }
+  applyingKP.value = true
+  try {
+    const res = await applyKnowledgePoints(kpTaggingTarget.value.id, kpTaggingSuggestedIds.value)
+    if (res.code === 0) {
+      ElMessage.success('知识点已应用到投稿')
+      showKPTaggingDialog.value = false
+      loadSubmissions()
+    } else {
+      ElMessage.error(res.message || '应用失败')
+    }
+  } finally {
+    applyingKP.value = false
+  }
+}
 
 onMounted(() => {
   loadSubmissions()

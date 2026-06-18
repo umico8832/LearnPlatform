@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.result.R;
 import com.learnplatform.dto.QuestionReviewRequest;
 import com.learnplatform.dto.QuestionSubmissionVO;
+import com.learnplatform.dto.SubmissionKPTaggingVO;
 import com.learnplatform.dto.SubmissionQualityCheckVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.QuestionSubmissionService;
@@ -24,11 +25,14 @@ public class AdminQuestionSubmissionController {
 
     private final QuestionSubmissionService submissionService;
     private final SubmissionAiQualityService qualityService;
+    private final com.learnplatform.service.SubmissionKPTaggingService kpTaggingService;
 
     public AdminQuestionSubmissionController(QuestionSubmissionService submissionService,
-                                              SubmissionAiQualityService qualityService) {
+                                              SubmissionAiQualityService qualityService,
+                                              com.learnplatform.service.SubmissionKPTaggingService kpTaggingService) {
         this.submissionService = submissionService;
         this.qualityService = qualityService;
+        this.kpTaggingService = kpTaggingService;
     }
 
     @Operation(summary = "投稿列表", description = "查看所有投稿，可按状态、课程、关键词筛选")
@@ -65,6 +69,22 @@ public class AdminQuestionSubmissionController {
     public R<SubmissionQualityCheckVO> qualityCheck(@PathVariable Long id) {
         Long adminId = getCurrentUserId();
         SubmissionQualityCheckVO vo = qualityService.checkQuality(id, adminId);
+        return R.ok(vo);
+    }
+
+    @Operation(summary = "AI 知识点标注", description = "AI 分析投稿内容，推荐最相关的知识点（不改变投稿数据）")
+    @PostMapping("/{id}/kp-tagging")
+    public R<SubmissionKPTaggingVO> kpTagging(@PathVariable Long id) {
+        Long adminId = getCurrentUserId();
+        SubmissionKPTaggingVO vo = kpTaggingService.tagKnowledgePoints(id, adminId);
+        return R.ok(vo);
+    }
+
+    @Operation(summary = "应用知识点标注", description = "将 AI 推荐的知识点 ID 应用到投稿的 knowledgePointIds 字段")
+    @PostMapping("/{id}/apply-kp")
+    public R<QuestionSubmissionVO> applyKnowledgePoints(@PathVariable Long id,
+                                                         @RequestParam String knowledgePointIds) {
+        QuestionSubmissionVO vo = submissionService.updateKnowledgePointIds(id, knowledgePointIds);
         return R.ok(vo);
     }
 

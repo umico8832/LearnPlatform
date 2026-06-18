@@ -14,6 +14,68 @@
 
 ---
 
+## Round 85 - 2026-06-18
+
+### 阶段
+Phase 16：题目投稿与 AI 题库生产 — P1 AI 知识点标注
+
+### 本轮目标
+实现 AI 辅助知识点标注功能，管理员可对投稿执行 AI 分析，自动推荐最相关的知识点，并一键应用到投稿。
+
+### 完成内容
+1. **后端 AI 知识点标注服务**：
+   - `SubmissionKPTaggingService`：调用 AI 分析投稿内容，结合课程下已有知识点列表，推荐最相关的知识点（最多 5 个）。
+   - AI Prompt 工程：将课程下所有知识点（ID + 名称 + 描述）提供给 AI，要求输出纯 JSON 结构化推荐结果。
+   - 每个推荐包含置信度（HIGH/MEDIUM/LOW）和推荐理由。
+   - **AI 降级回退**：AI 调用失败时自动回退到关键词匹配（题目内容中包含知识点名称即推荐）。
+   - AI 调用日志统一记录（functionType=submission_kp_tagging）。
+   - JSON 解析健壮性：支持去除 Markdown 代码块包裹，AI 推荐不存在的 ID 时自动跳过。
+
+2. **后端接口**：
+   - `POST /api/admin/submission/{id}/kp-tagging`：管理员对指定投稿执行 AI 知识点标注，返回 `SubmissionKPTaggingVO`。
+   - `POST /api/admin/submission/{id}/apply-kp?knowledgePointIds=...`：将推荐的知识点 ID 应用到投稿的 knowledgePointIds 字段。
+
+3. **DTO**：
+   - `SubmissionKPTaggingVO`：推荐知识点列表（TaggedKP: id/name/courseName/confidence/reason）、分析说明、suggestedIds（逗号分隔，便于前端一键应用）。
+
+4. **服务层增强**：
+   - `QuestionSubmissionService.updateKnowledgePointIds()`：更新投稿的知识点关联。
+
+5. **前端**：
+   - `submission.ts`：新增 `TaggedKnowledgePoint`、`SubmissionKPTagging` 类型和 `kpTaggingSubmission`、`applyKnowledgePoints` API 函数。
+   - `SubmissionManage.vue`：操作列新增"AI 标注"按钮，新增知识点标注结果对话框（AI 分析说明、推荐知识点表格、置信度标签、推荐理由、一键应用按钮）。
+
+6. **单元测试**：
+   - `SubmissionKPTaggingServiceTest`：8 个测试覆盖投稿不存在、无课程、无知识点、AI 正常返回、AI 调用失败回退、不存在 ID 跳过、Markdown 包裹解析、无效 JSON 回退。
+
+### 修改文件清单
+- `backend/src/main/java/com/learnplatform/dto/SubmissionKPTaggingVO.java`（新建）
+- `backend/src/main/java/com/learnplatform/service/SubmissionKPTaggingService.java`（新建）
+- `backend/src/main/java/com/learnplatform/controller/AdminQuestionSubmissionController.java`
+- `backend/src/main/java/com/learnplatform/service/QuestionSubmissionService.java`
+- `backend/src/test/java/com/learnplatform/service/SubmissionKPTaggingServiceTest.java`（新建）
+- `frontend/src/api/submission.ts`
+- `frontend/src/views/admin/SubmissionManage.vue`
+
+### 验收结果
+- 后端编译通过，247 个测试全部通过（新增 8 个）
+- AI 知识点标注接口正常工作，降级回退逻辑完整
+- 前端页面集成完成，标注结果对话框展示完整，一键应用功能可用
+
+### 遗留问题
+- 知识点标注依赖 AI 服务可用性，降级时仅做关键词匹配，精度有限
+- 未缓存标注结果，每次点击都会重新调用 AI
+
+### 下轮建议
+- 继续 Phase 16 P1：AI 难度评估（基于题目内容自动评估难度）
+- 或优化质检/标注体验：缓存结果、支持一键填充审核意见
+- 或继续 Phase 14 候选方向：代码执行动画
+
+### 建议 commit message
+`feat(submission): 新增 AI 知识点标注与一键应用功能，后端 247 测试通过`
+
+---
+
 ## Round 84 - 2026-06-18
 
 ### 阶段

@@ -238,6 +238,20 @@ public class QuestionSubmissionService {
         return submissionMapper.selectCount(wrapper);
     }
 
+    /**
+     * 更新投稿的知识点关联（管理端 AI 标注应用）
+     */
+    public QuestionSubmissionVO updateKnowledgePointIds(Long submissionId, String knowledgePointIds) {
+        QuestionSubmission submission = submissionMapper.selectById(submissionId);
+        if (submission == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "投稿不存在");
+        }
+        submission.setKnowledgePointIds(knowledgePointIds);
+        submissionMapper.updateById(submission);
+        log.info("更新投稿 {} 知识点为: {}", submissionId, knowledgePointIds);
+        return convertToVO(submission);
+    }
+
     // ========== private ==========
 
     private boolean isValidQuestionType(String type) {

@@ -85,6 +85,22 @@ export interface SubmissionQualityCheck {
   suggestions: string[]
 }
 
+/** AI 知识点标注推荐项 */
+export interface TaggedKnowledgePoint {
+  id: number
+  name: string
+  courseName: string
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW'
+  reason: string
+}
+
+/** AI 知识点标注结果 */
+export interface SubmissionKPTagging {
+  recommendations: TaggedKnowledgePoint[]
+  analysis: string
+  suggestedIds: string
+}
+
 // ========== 用户端 ==========
 
 /** 提交题目投稿 */
@@ -142,4 +158,16 @@ export function getSubmissionStats() {
 /** AI 质检 */
 export function qualityCheckSubmission(id: number) {
   return request.post<any, ApiResponse<SubmissionQualityCheck>>(`/admin/submission/${id}/quality-check`)
+}
+
+/** AI 知识点标注 */
+export function kpTaggingSubmission(id: number) {
+  return request.post<any, ApiResponse<SubmissionKPTagging>>(`/admin/submission/${id}/kp-tagging`)
+}
+
+/** 应用知识点标注结果到投稿 */
+export function applyKnowledgePoints(id: number, knowledgePointIds: string) {
+  return request.post<any, ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}/apply-kp`, null, {
+    params: { knowledgePointIds },
+  })
 }
