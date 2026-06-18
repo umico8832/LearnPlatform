@@ -200,11 +200,45 @@ export interface CourseErrorCount {
   wrongCount: number
 }
 
+export interface KnowledgePointErrorRank {
+  knowledgePointId: number
+  knowledgePointName: string
+  courseId: number
+  courseName: string
+  wrongCount: number
+  totalAttempts: number
+  correctRate: number
+}
+
+export interface RepeatedErrorItem {
+  questionId: number
+  questionContent: string
+  questionType: string
+  difficulty: number | null
+  wrongCount: number
+  masteryLevel: number | null
+  lastWrongAnswer: string | null
+  knowledgePointName: string | null
+  courseName: string | null
+}
+
+export interface WeeklyErrorTrendItem {
+  weekStart: string
+  weekEnd: string
+  label: string
+  count: number
+}
+
 export interface ErrorPatternSummary {
   topErrorCourses: CourseErrorCount[]
   masteryDistribution: Record<string, number>
   repeatedErrorCount: number
   recentNewWrongCount: number
+  questionTypeDistribution: Record<string, number>
+  difficultyDistribution: Record<number, number>
+  knowledgePointErrors: KnowledgePointErrorRank[]
+  repeatedErrors: RepeatedErrorItem[]
+  weeklyErrorTrend: WeeklyErrorTrendItem[]
 }
 
 export interface LearningHabit {

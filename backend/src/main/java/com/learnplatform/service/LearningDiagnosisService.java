@@ -106,7 +106,7 @@ public class LearningDiagnosisService {
         vo.setCourseMasteries(computeCourseMasteries(allRecords, allWrongs, allPoints, questionToKps));
 
         // 6. 错因分析汇总
-        vo.setErrorPatterns(computeErrorPatterns(allWrongs, allRecords));
+        vo.setErrorPatterns(computeErrorPatterns(allWrongs, allRecords, allPoints, questionToKps));
 
         // 7. 学习习惯分析
         vo.setLearningHabit(computeLearningHabit(allRecords));
@@ -337,7 +337,8 @@ public class LearningDiagnosisService {
     // ======================== 错因分析 ========================
 
     private LearningDiagnosisVO.ErrorPatternSummary computeErrorPatterns(
-            List<WrongQuestion> allWrongs, List<PracticeRecord> allRecords) {
+            List<WrongQuestion> allWrongs, List<PracticeRecord> allRecords,
+            List<KnowledgePoint> allPoints, Map<Long, Set<Long>> questionToKps) {
 
         LearningDiagnosisVO.ErrorPatternSummary summary = new LearningDiagnosisVO.ErrorPatternSummary();
 
@@ -357,7 +358,7 @@ public class LearningDiagnosisService {
                 .filter(w -> w.getCreateTime() != null && w.getCreateTime().isAfter(weekAgo))
                 .count());
 
-        // 高频错题课程（通过 question -> course）
+        // 批量查询错题关联的题目
         List<Long> questionIds = allWrongs.stream().map(WrongQuestion::getQuestionId)
                 .distinct().collect(Collectors.toList());
         Map<Long, Question> questionMap = new HashMap<>();
@@ -365,6 +366,8 @@ public class LearningDiagnosisService {
             questionMapper.selectList(new LambdaQueryWrapper<Question>().in(Question::getId, questionIds))
                     .forEach(q -> questionMap.put(q.getId(), q));
         }
+
+        // 批量查询课程
         Set<Long> courseIds = questionMap.values().stream()
                 .map(Question::getCourseId).filter(Objects::nonNull).collect(Collectors.toSet());
         Map<Long, Course> courseMap = new HashMap<>();
@@ -373,6 +376,7 @@ public class LearningDiagnosisService {
                     .forEach(c -> courseMap.put(c.getId(), c));
         }
 
+        // 高频错题课程
         Map<Long, Integer> courseWrongMap = new HashMap<>();
         for (WrongQuestion wq : allWrongs) {
             Question q = questionMap.get(wq.getQuestionId());
@@ -394,6 +398,133 @@ public class LearningDiagnosisService {
                 .limit(5)
                 .collect(Collectors.toList());
         summary.setTopErrorCourses(topCourses);
+
+        // ===== 新增：错题题型分布 =====
+        Map<String, Integer> typeDist = new LinkedHashMap<>();
+        for (WrongQuestion wq : allWrongs) {
+            Question q = questionMap.get(wq.getQuestionId());
+            if (q != null && q.getQuestionType() != null) {
+                String typeName = getQuestionTypeName(q.getQuestionType());
+                typeDist.merge(typeName, 1, Integer::sum);
+            }
+        }
+        summary.setQuestionTypeDistribution(typeDist);
+
+        // ===== 新增：错题难度分布 =====
+        Map<Integer, Integer> diffDist = new LinkedHashMap<>();
+        for (WrongQuestion wq : allWrongs) {
+            Question q = questionMap.get(wq.getQuestionId());
+            if (q != null && q.getDifficulty() != null) {
+                diffDist.merge(q.getDifficulty(), 1, Integer::sum);
+            }
+        }
+        // 按难度星级排序
+        Map<Integer, Integer> sortedDiffDist = new LinkedHashMap<>();
+        diffDist.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(e -> sortedDiffDist.put(e.getKey(), e.getValue()));
+        summary.setDifficultyDistribution(sortedDiffDist);
+
+        // ===== 新增：知识点错因排名（Top 8） =====
+        // 按知识点统计错题数
+        Map<Long, Integer> kpWrongMap = new HashMap<>();
+        Map<Long, Integer> kpTotalMap = new HashMap<>();
+        Map<Long, Long> kpCorrectMap = new HashMap<>();
+
+        // 统计错题中的知识点分布
+        for (WrongQuestion wq : allWrongs) {
+            Set<Long> kps = questionToKps.get(wq.getQuestionId());
+            if (kps != null) {
+                for (Long kpId : kps) {
+                    kpWrongMap.merge(kpId, wq.getWrongCount(), Integer::sum);
+                }
+            }
+        }
+
+        // 统计练习记录中的知识点总量和正确数
+        for (PracticeRecord r : allRecords) {
+            if (r.getQuestionId() == null) continue;
+            Set<Long> kps = questionToKps.get(r.getQuestionId());
+            if (kps != null) {
+                for (Long kpId : kps) {
+                    kpTotalMap.merge(kpId, 1, Integer::sum);
+                    if (r.getIsCorrect() != null && r.getIsCorrect() == 1) {
+                        kpCorrectMap.merge(kpId, 1L, Long::sum);
+                    }
+                }
+            }
+        }
+
+        // 构建知识点名称缓存
+        Map<Long, KnowledgePoint> kpMap = new HashMap<>();
+        allPoints.forEach(kp -> kpMap.put(kp.getId(), kp));
+
+        List<LearningDiagnosisVO.KnowledgePointErrorRank> kpErrors = kpWrongMap.entrySet().stream()
+                .map(e -> {
+                    LearningDiagnosisVO.KnowledgePointErrorRank rank = new LearningDiagnosisVO.KnowledgePointErrorRank();
+                    rank.setKnowledgePointId(e.getKey());
+                    KnowledgePoint kp = kpMap.get(e.getKey());
+                    rank.setKnowledgePointName(kp != null ? kp.getName() : "未知知识点");
+                    if (kp != null) {
+                        rank.setCourseId(kp.getCourseId());
+                        Course c = courseMap.get(kp.getCourseId());
+                        if (c == null && kp.getCourseId() != null) {
+                            c = courseMapper.selectById(kp.getCourseId());
+                            if (c != null) courseMap.put(kp.getCourseId(), c);
+                        }
+                        rank.setCourseName(c != null ? c.getName() : "未知课程");
+                    }
+                    rank.setWrongCount(e.getValue());
+                    int total = kpTotalMap.getOrDefault(e.getKey(), 0);
+                    rank.setTotalAttempts(total);
+                    long correct = kpCorrectMap.getOrDefault(e.getKey(), 0L);
+                    double rate = total == 0 ? 0 : Math.round(correct * 1000.0 / total) / 10.0;
+                    rank.setCorrectRate(rate);
+                    return rank;
+                })
+                .sorted((a, b) -> Integer.compare(b.getWrongCount(), a.getWrongCount()))
+                .limit(8)
+                .collect(Collectors.toList());
+        summary.setKnowledgePointErrors(kpErrors);
+
+        // ===== 新增：反复错题详情（wrongCount >= 2，最多 10 条） =====
+        List<LearningDiagnosisVO.RepeatedErrorItem> repeatedErrors = allWrongs.stream()
+                .filter(w -> w.getWrongCount() >= 2)
+                .sorted((a, b) -> Integer.compare(b.getWrongCount(), a.getWrongCount()))
+                .limit(10)
+                .map(wq -> {
+                    LearningDiagnosisVO.RepeatedErrorItem item = new LearningDiagnosisVO.RepeatedErrorItem();
+                    item.setQuestionId(wq.getQuestionId());
+                    item.setWrongCount(wq.getWrongCount());
+                    item.setMasteryLevel(wq.getMasteryLevel());
+                    item.setLastWrongAnswer(wq.getLastWrongAnswer());
+
+                    Question q = questionMap.get(wq.getQuestionId());
+                    if (q != null) {
+                        item.setQuestionContent(truncate(q.getContent(), 120));
+                        item.setQuestionType(getQuestionTypeName(q.getQuestionType()));
+                        item.setDifficulty(q.getDifficulty());
+                        if (q.getCourseId() != null) {
+                            Course c = courseMap.get(q.getCourseId());
+                            item.setCourseName(c != null ? c.getName() : null);
+                        }
+                    }
+
+                    // 知识点名称
+                    Set<Long> kps = questionToKps.get(wq.getQuestionId());
+                    if (kps != null && !kps.isEmpty()) {
+                        KnowledgePoint kp = kpMap.get(kps.iterator().next());
+                        item.setKnowledgePointName(kp != null ? kp.getName() : null);
+                    }
+
+                    return item;
+                })
+                .collect(Collectors.toList());
+        summary.setRepeatedErrors(repeatedErrors);
+
+        // ===== 新增：每周错题趋势（最近 4 周） =====
+        List<Map<String, Object>> weeklyErrorTrend = buildWeeklyErrorTrend(allWrongs);
+        summary.setWeeklyErrorTrend(weeklyErrorTrend);
 
         return summary;
     }
@@ -824,6 +955,27 @@ public class LearningDiagnosisService {
                 ep.getTopErrorCourses().forEach(c -> sb.append(c.getCourseName()).append("(").append(c.getWrongCount()).append(") "));
                 sb.append("\n");
             }
+            if (ep.getQuestionTypeDistribution() != null && !ep.getQuestionTypeDistribution().isEmpty()) {
+                sb.append("- 错题题型分布：");
+                ep.getQuestionTypeDistribution().forEach((k, v) -> sb.append(k).append("=").append(v).append(" "));
+                sb.append("\n");
+            }
+            if (ep.getDifficultyDistribution() != null && !ep.getDifficultyDistribution().isEmpty()) {
+                sb.append("- 错题难度分布：");
+                ep.getDifficultyDistribution().forEach((k, v) -> sb.append(k).append("星=").append(v).append(" "));
+                sb.append("\n");
+            }
+            if (ep.getKnowledgePointErrors() != null && !ep.getKnowledgePointErrors().isEmpty()) {
+                sb.append("- 知识点错因排名：\n");
+                ep.getKnowledgePointErrors().forEach(r -> sb.append("  · ").append(r.getKnowledgePointName())
+                        .append("（").append(r.getCourseName()).append("）：错 ").append(r.getWrongCount())
+                        .append(" 题，正确率 ").append(String.format("%.1f%%", r.getCorrectRate())).append("\n"));
+            }
+            if (ep.getWeeklyErrorTrend() != null && !ep.getWeeklyErrorTrend().isEmpty()) {
+                sb.append("- 近 4 周错题趋势：");
+                ep.getWeeklyErrorTrend().forEach(w -> sb.append(w.get("label")).append("=").append(w.get("count")).append(" "));
+                sb.append("\n");
+            }
             sb.append("\n");
         }
 
@@ -1074,6 +1226,36 @@ public class LearningDiagnosisService {
             case "SHORT_ANSWER": return "简答题";
             default: return questionType;
         }
+    }
+
+    /**
+     * 构建每周错题趋势（最近 4 周）
+     */
+    private List<Map<String, Object>> buildWeeklyErrorTrend(List<WrongQuestion> allWrongs) {
+        LocalDate today = LocalDate.now();
+        List<Map<String, Object>> trend = new ArrayList<>();
+
+        for (int week = 3; week >= 0; week--) {
+            LocalDate weekStart = today.minusWeeks(week).with(java.time.DayOfWeek.MONDAY);
+            LocalDate weekEnd = weekStart.plusDays(6);
+            LocalDateTime start = weekStart.atStartOfDay();
+            LocalDateTime end = weekEnd.atTime(LocalTime.MAX);
+
+            long weekErrors = allWrongs.stream()
+                    .filter(w -> w.getCreateTime() != null
+                            && !w.getCreateTime().isBefore(start)
+                            && !w.getCreateTime().isAfter(end))
+                    .count();
+
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("weekStart", weekStart.toString());
+            item.put("weekEnd", weekEnd.toString());
+            item.put("label", weekStart.getMonthValue() + "/" + weekStart.getDayOfMonth()
+                    + "-" + weekEnd.getMonthValue() + "/" + weekEnd.getDayOfMonth());
+            item.put("count", weekErrors);
+            trend.add(item);
+        }
+        return trend;
     }
 
     private String truncate(String text, int maxLen) {

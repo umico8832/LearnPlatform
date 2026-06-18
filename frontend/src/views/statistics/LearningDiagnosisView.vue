@@ -186,6 +186,130 @@
             <el-empty v-else description="暂无错题数据" :image-size="60" />
           </el-col>
         </el-row>
+
+        <!-- 错题题型 & 难度分布 -->
+        <el-row :gutter="24" style="margin-top: 20px">
+          <el-col :xs="24" :sm="12">
+            <h4>📊 错题题型分布</h4>
+            <div v-if="data.errorPatterns.questionTypeDistribution && Object.keys(data.errorPatterns.questionTypeDistribution).length">
+              <div v-for="(count, typeName) in data.errorPatterns.questionTypeDistribution" :key="typeName" class="mastery-item">
+                <span class="mastery-label">{{ typeName }}</span>
+                <el-progress
+                  :percentage="totalWrong > 0 ? Math.round(count / totalWrong * 100) : 0"
+                  color="#409eff"
+                  :stroke-width="18"
+                  :text-inside="true"
+                  :format="() => count + ' 道'"
+                />
+              </div>
+            </div>
+            <el-empty v-else description="暂无数据" :image-size="40" />
+          </el-col>
+          <el-col :xs="24" :sm="12">
+            <h4>⭐ 错题难度分布</h4>
+            <div v-if="data.errorPatterns.difficultyDistribution && Object.keys(data.errorPatterns.difficultyDistribution).length">
+              <div v-for="(count, diff) in data.errorPatterns.difficultyDistribution" :key="diff" class="mastery-item">
+                <span class="mastery-label">{{ '⭐'.repeat(Number(diff)) }}</span>
+                <el-progress
+                  :percentage="totalWrong > 0 ? Math.round(count / totalWrong * 100) : 0"
+                  :color="getDifficultyColor(Number(diff))"
+                  :stroke-width="18"
+                  :text-inside="true"
+                  :format="() => count + ' 道'"
+                />
+              </div>
+            </div>
+            <el-empty v-else description="暂无数据" :image-size="40" />
+          </el-col>
+        </el-row>
+
+        <!-- 每周错题趋势 -->
+        <div v-if="data.errorPatterns.weeklyErrorTrend && data.errorPatterns.weeklyErrorTrend.length" style="margin-top: 20px">
+          <h4>📈 近 4 周错题趋势</h4>
+          <div class="mini-chart">
+            <div v-for="(week, i) in data.errorPatterns.weeklyErrorTrend" :key="i" class="chart-bar-group">
+              <div class="chart-bar-wrapper">
+                <div class="chart-bar error-trend" :style="{ height: getWeeklyBarHeight(week.count) }"></div>
+              </div>
+              <div class="chart-date">{{ week.label }}</div>
+              <div class="chart-total">{{ week.count }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 知识点错因排名 -->
+        <div v-if="data.errorPatterns.knowledgePointErrors && data.errorPatterns.knowledgePointErrors.length" style="margin-top: 20px">
+          <h4>🎯 知识点错因排名</h4>
+          <el-table :data="data.errorPatterns.knowledgePointErrors" stripe size="small">
+            <el-table-column label="知识点" min-width="160">
+              <template #default="{ row }">
+                <div>
+                  <strong>{{ row.knowledgePointName }}</strong>
+                  <el-tag size="small" type="info" style="margin-left: 8px">{{ row.courseName }}</el-tag>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="wrongCount" label="错题数" width="80" align="center">
+              <template #default="{ row }">
+                <el-tag type="danger" size="small">{{ row.wrongCount }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="totalAttempts" label="练习数" width="80" align="center" />
+            <el-table-column label="正确率" width="120">
+              <template #default="{ row }">
+                <el-progress
+                  :percentage="Math.round(row.correctRate)"
+                  :color="getRateColor(row.correctRate)"
+                  :stroke-width="14"
+                  :text-inside="true"
+                />
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+
+        <!-- 反复错题详情 -->
+        <div v-if="data.errorPatterns.repeatedErrors && data.errorPatterns.repeatedErrors.length" style="margin-top: 20px">
+          <h4>🔄 反复错题详情</h4>
+          <el-table :data="data.errorPatterns.repeatedErrors" stripe size="small">
+            <el-table-column label="题目" min-width="240" show-overflow-tooltip>
+              <template #default="{ row }">
+                <span>{{ row.questionContent }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="questionType" label="题型" width="80" align="center" />
+            <el-table-column label="难度" width="80" align="center">
+              <template #default="{ row }">
+                <span v-if="row.difficulty">{{ '⭐'.repeat(row.difficulty) }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="wrongCount" label="错次" width="70" align="center">
+              <template #default="{ row }">
+                <el-tag type="danger" size="small">{{ row.wrongCount }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="掌握度" width="90" align="center">
+              <template #default="{ row }">
+                <el-tag :type="getMasteryLevelType(row.masteryLevel)" size="small">
+                  {{ getMasteryLevelLabel(row.masteryLevel) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="knowledgePointName" label="知识点" width="120" />
+            <el-table-column label="操作" width="100" align="center">
+              <template #default="{ row }">
+                <el-button
+                  type="primary"
+                  link
+                  size="small"
+                  @click="loadSimilarQuestions(row.questionId, row.questionContent)"
+                >
+                  找相似题
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
       </el-card>
 
       <!-- 课程掌握概况 -->
@@ -497,6 +621,38 @@ function getSimilarityColor(score: number): string {
   return '#409eff'
 }
 
+function getDifficultyColor(diff: number): string {
+  if (diff <= 1) return '#67c23a'
+  if (diff <= 2) return '#409eff'
+  if (diff <= 3) return '#e6a23c'
+  if (diff <= 4) return '#f56c6c'
+  return '#909399'
+}
+
+const maxWeeklyBarValue = computed(() => {
+  if (!data.value?.errorPatterns?.weeklyErrorTrend) return 1
+  const max = Math.max(...data.value.errorPatterns.weeklyErrorTrend.map(d => d.count))
+  return max || 1
+})
+
+function getWeeklyBarHeight(value: number): string {
+  return Math.max(4, (value / maxWeeklyBarValue.value) * 100) + 'px'
+}
+
+function getMasteryLevelType(level: number | null): 'danger' | 'warning' | 'success' | 'info' {
+  if (level === 0) return 'danger'
+  if (level === 1) return 'warning'
+  if (level === 2) return 'success'
+  return 'info'
+}
+
+function getMasteryLevelLabel(level: number | null): string {
+  if (level === 0) return '未掌握'
+  if (level === 1) return '部分掌握'
+  if (level === 2) return '已掌握'
+  return '未知'
+}
+
 function startRecommendPractice() {
   if (!data.value?.dailyRecommendations?.length) return
   const qIds = data.value.dailyRecommendations.map(q => q.questionId).join(',')
@@ -606,6 +762,10 @@ onMounted(async () => {
 
 .chart-bar.wrong {
   background: #f56c6c;
+}
+
+.chart-bar.error-trend {
+  background: #e6a23c;
 }
 
 .chart-date {

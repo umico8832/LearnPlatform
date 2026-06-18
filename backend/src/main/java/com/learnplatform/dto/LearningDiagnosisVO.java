@@ -136,6 +136,16 @@ public class LearningDiagnosisVO {
         private int repeatedErrorCount;
         /** 最近 7 天新增错题数 */
         private int recentNewWrongCount;
+        /** 错题题型分布（题型中文名 -> 错题数） */
+        private Map<String, Integer> questionTypeDistribution;
+        /** 错题难度分布（难度星级 -> 错题数） */
+        private Map<Integer, Integer> difficultyDistribution;
+        /** 知识点错因排名（按错题数排序 Top N） */
+        private List<KnowledgePointErrorRank> knowledgePointErrors;
+        /** 反复错题详情（wrongCount >= 2） */
+        private List<RepeatedErrorItem> repeatedErrors;
+        /** 每周错题趋势（最近 4 周，每周错题数） */
+        private List<Map<String, Object>> weeklyErrorTrend;
 
         public List<CourseErrorCount> getTopErrorCourses() { return topErrorCourses; }
         public void setTopErrorCourses(List<CourseErrorCount> topErrorCourses) { this.topErrorCourses = topErrorCourses; }
@@ -145,6 +155,16 @@ public class LearningDiagnosisVO {
         public void setRepeatedErrorCount(int repeatedErrorCount) { this.repeatedErrorCount = repeatedErrorCount; }
         public int getRecentNewWrongCount() { return recentNewWrongCount; }
         public void setRecentNewWrongCount(int recentNewWrongCount) { this.recentNewWrongCount = recentNewWrongCount; }
+        public Map<String, Integer> getQuestionTypeDistribution() { return questionTypeDistribution; }
+        public void setQuestionTypeDistribution(Map<String, Integer> questionTypeDistribution) { this.questionTypeDistribution = questionTypeDistribution; }
+        public Map<Integer, Integer> getDifficultyDistribution() { return difficultyDistribution; }
+        public void setDifficultyDistribution(Map<Integer, Integer> difficultyDistribution) { this.difficultyDistribution = difficultyDistribution; }
+        public List<KnowledgePointErrorRank> getKnowledgePointErrors() { return knowledgePointErrors; }
+        public void setKnowledgePointErrors(List<KnowledgePointErrorRank> knowledgePointErrors) { this.knowledgePointErrors = knowledgePointErrors; }
+        public List<RepeatedErrorItem> getRepeatedErrors() { return repeatedErrors; }
+        public void setRepeatedErrors(List<RepeatedErrorItem> repeatedErrors) { this.repeatedErrors = repeatedErrors; }
+        public List<Map<String, Object>> getWeeklyErrorTrend() { return weeklyErrorTrend; }
+        public void setWeeklyErrorTrend(List<Map<String, Object>> weeklyErrorTrend) { this.weeklyErrorTrend = weeklyErrorTrend; }
     }
 
     /**
@@ -161,6 +181,76 @@ public class LearningDiagnosisVO {
         public void setCourseName(String courseName) { this.courseName = courseName; }
         public int getWrongCount() { return wrongCount; }
         public void setWrongCount(int wrongCount) { this.wrongCount = wrongCount; }
+    }
+
+    /**
+     * 知识点错因排名
+     */
+    public static class KnowledgePointErrorRank {
+        private Long knowledgePointId;
+        private String knowledgePointName;
+        private Long courseId;
+        private String courseName;
+        /** 错题数 */
+        private int wrongCount;
+        /** 练习题数 */
+        private int totalAttempts;
+        /** 正确率 */
+        private double correctRate;
+
+        public Long getKnowledgePointId() { return knowledgePointId; }
+        public void setKnowledgePointId(Long knowledgePointId) { this.knowledgePointId = knowledgePointId; }
+        public String getKnowledgePointName() { return knowledgePointName; }
+        public void setKnowledgePointName(String knowledgePointName) { this.knowledgePointName = knowledgePointName; }
+        public Long getCourseId() { return courseId; }
+        public void setCourseId(Long courseId) { this.courseId = courseId; }
+        public String getCourseName() { return courseName; }
+        public void setCourseName(String courseName) { this.courseName = courseName; }
+        public int getWrongCount() { return wrongCount; }
+        public void setWrongCount(int wrongCount) { this.wrongCount = wrongCount; }
+        public int getTotalAttempts() { return totalAttempts; }
+        public void setTotalAttempts(int totalAttempts) { this.totalAttempts = totalAttempts; }
+        public double getCorrectRate() { return correctRate; }
+        public void setCorrectRate(double correctRate) { this.correctRate = correctRate; }
+    }
+
+    /**
+     * 反复错题详情
+     */
+    public static class RepeatedErrorItem {
+        private Long questionId;
+        private String questionContent;
+        private String questionType;
+        private Integer difficulty;
+        /** 错误次数 */
+        private int wrongCount;
+        /** 掌握程度 */
+        private Integer masteryLevel;
+        /** 最后一次答错的答案 */
+        private String lastWrongAnswer;
+        /** 关联的知识点名称 */
+        private String knowledgePointName;
+        /** 关联的课程名称 */
+        private String courseName;
+
+        public Long getQuestionId() { return questionId; }
+        public void setQuestionId(Long questionId) { this.questionId = questionId; }
+        public String getQuestionContent() { return questionContent; }
+        public void setQuestionContent(String questionContent) { this.questionContent = questionContent; }
+        public String getQuestionType() { return questionType; }
+        public void setQuestionType(String questionType) { this.questionType = questionType; }
+        public Integer getDifficulty() { return difficulty; }
+        public void setDifficulty(Integer difficulty) { this.difficulty = difficulty; }
+        public int getWrongCount() { return wrongCount; }
+        public void setWrongCount(int wrongCount) { this.wrongCount = wrongCount; }
+        public Integer getMasteryLevel() { return masteryLevel; }
+        public void setMasteryLevel(Integer masteryLevel) { this.masteryLevel = masteryLevel; }
+        public String getLastWrongAnswer() { return lastWrongAnswer; }
+        public void setLastWrongAnswer(String lastWrongAnswer) { this.lastWrongAnswer = lastWrongAnswer; }
+        public String getKnowledgePointName() { return knowledgePointName; }
+        public void setKnowledgePointName(String knowledgePointName) { this.knowledgePointName = knowledgePointName; }
+        public String getCourseName() { return courseName; }
+        public void setCourseName(String courseName) { this.courseName = courseName; }
     }
 
     /**

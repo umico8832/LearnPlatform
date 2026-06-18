@@ -14,6 +14,54 @@
 
 ---
 
+## Round 79 - 2026-06-18
+
+### 阶段
+Phase 15：AI 学习画像与个性化推荐 — 错题归因分析增强
+
+### 本轮目标
+增强学习诊断页面的错因分析能力，新增 5 个维度的错题归因数据，帮助用户更深入理解自己的错误模式。
+
+### 完成内容
+1. **后端 VO 扩展**（`LearningDiagnosisVO.ErrorPatternSummary`）新增 5 个字段：
+   - `questionTypeDistribution`：错题题型分布（单选/多选/判断/填空/简答各自错题数）
+   - `difficultyDistribution`：错题难度分布（按 1-5 星统计）
+   - `knowledgePointErrors`：知识点错因排名（Top 8，含错题数、练习数、正确率）
+   - `repeatedErrors`：反复错题详情（wrongCount >= 2，最多 10 条，含题型、难度、掌握度、知识点、课程）
+   - `weeklyErrorTrend`：近 4 周错题趋势（每周错题数，按周一起止）
+2. **新增内部类**：`KnowledgePointErrorRank`、`RepeatedErrorItem`
+3. **后端 Service 增强**：`computeErrorPatterns` 方法签名扩展（新增 allPoints、questionToKps 参数），新增 `buildWeeklyErrorTrend` 方法
+4. **AI Prompt 增强**：`buildAiAdviceUserPrompt` 现在包含错题题型分布、难度分布、知识点错因排名和每周错题趋势，让 AI 学习建议更精准
+5. **前端页面增强**（`LearningDiagnosisView.vue`）：
+   - 错题题型分布（进度条可视化）
+   - 错题难度分布（星级着色进度条）
+   - 近 4 周错题趋势（柱状图）
+   - 知识点错因排名表（知识点、错题数、练习数、正确率）
+   - 反复错题详情表（题目、题型、难度、错次、掌握度、知识点、找相似题操作）
+6. **前端 TypeScript 类型更新**（`statistics.ts`）：新增 `KnowledgePointErrorRank`、`RepeatedErrorItem`、`WeeklyErrorTrendItem` 接口，扩展 `ErrorPatternSummary`
+7. **前端辅助函数**：`getDifficultyColor`、`getWeeklyBarHeight`、`getMasteryLevelType`、`getMasteryLevelLabel`
+8. **CSS 补充**：`.chart-bar.error-trend` 样式
+
+### 修改文件清单
+- `backend/src/main/java/com/learnplatform/dto/LearningDiagnosisVO.java`（扩展 ErrorPatternSummary + 新增内部类）
+- `backend/src/main/java/com/learnplatform/service/LearningDiagnosisService.java`（computeErrorPatterns 增强 + buildWeeklyErrorTrend + AI Prompt 增强）
+- `frontend/src/api/statistics.ts`（新增 TS 接口）
+- `frontend/src/views/statistics/LearningDiagnosisView.vue`（新增 5 个可视化区域 + 辅助函数 + CSS）
+
+### 验收结果
+- [x] `cd backend && mvn test`：211 个测试全部通过
+- [x] `cd frontend && npm run build`：构建成功
+
+### 遗留问题
+- 无
+
+### 下轮建议
+- 继续 Phase 15 深化：单题错因分析（针对具体题目分析用户多次作答的错误模式变化）
+- 或继续 Phase 14 候选方向：代码执行动画、SQL 执行顺序可视化
+- 或进入 Phase 16：题目投稿与 AI 题库生产
+
+---
+
 ## Round 78 - 2026-06-17
 
 ### 阶段
