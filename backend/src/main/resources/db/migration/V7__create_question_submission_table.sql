@@ -1,0 +1,28 @@
+-- 题目投稿表
+CREATE TABLE IF NOT EXISTS `question_submission` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '投稿ID',
+  `user_id` BIGINT NOT NULL COMMENT '投稿用户ID',
+  `content` TEXT NOT NULL COMMENT '题干内容（支持Markdown）',
+  `question_type` VARCHAR(20) NOT NULL COMMENT '题型：SINGLE_CHOICE/MULTIPLE_CHOICE/TRUE_FALSE/FILL_BLANK/SHORT_ANSWER',
+  `course_id` BIGINT NOT NULL COMMENT '所属课程ID',
+  `difficulty` TINYINT NOT NULL DEFAULT 3 COMMENT '难度等级：1-5',
+  `analysis` TEXT DEFAULT NULL COMMENT '题目解析',
+  `options_json` TEXT DEFAULT NULL COMMENT '选项JSON（选择题/判断题）',
+  `correct_answer` VARCHAR(2000) DEFAULT NULL COMMENT '正确答案（填空/简答）',
+  `knowledge_point_ids` VARCHAR(500) DEFAULT NULL COMMENT '关联知识点ID，逗号分隔',
+  `tags` VARCHAR(500) DEFAULT NULL COMMENT '标签，逗号分隔',
+  `source` VARCHAR(200) DEFAULT NULL COMMENT '题目来源（教材/网络/原创等）',
+  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态：0-待审核 1-已通过 2-已拒绝 3-已入库',
+  `review_comment` VARCHAR(1000) DEFAULT NULL COMMENT '审核意见',
+  `reviewed_by` BIGINT DEFAULT NULL COMMENT '审核人ID',
+  `reviewed_time` DATETIME DEFAULT NULL COMMENT '审核时间',
+  `imported_question_id` BIGINT DEFAULT NULL COMMENT '入库后的题目ID',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '投稿时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除 1-已删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_course_id` (`course_id`),
+  KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='题目投稿表';

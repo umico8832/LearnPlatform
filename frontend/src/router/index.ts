@@ -112,6 +112,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'AI 复习建议' },
       },
       {
+        path: 'submit',
+        name: 'QuestionSubmit',
+        component: () => import('@/views/practice/QuestionSubmitView.vue'),
+        meta: { title: '题目投稿' },
+      },
+      {
         path: 'exams',
         name: 'ExamList',
         component: () => import('@/views/exam/ExamListView.vue'),
@@ -165,6 +171,12 @@ const routes: RouteRecordRaw[] = [
         name: 'AdminUserManage',
         component: () => import('@/views/admin/UserManage.vue'),
         meta: { title: '用户管理', requiresAdmin: true },
+      },
+      {
+        path: 'admin/submissions',
+        name: 'AdminSubmissionManage',
+        component: () => import('@/views/admin/SubmissionManage.vue'),
+        meta: { title: '投稿管理', requiresAdmin: true },
       },
     ],
   },

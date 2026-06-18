@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 15 — AI 学习画像与个性化推荐 🚧 开发中（Round 81 完成单题错因分析单元测试，后端 227 个测试）
+当前阶段：Phase 16 — 题目投稿与 AI 题库生产 🚧 开发中（Round 82 完成 P0 题目投稿中心，后端 227 个测试）
 
 下一阶段主线：先把一道题讲透，把单题从“题干 + 答案 + 解析”升级为结构化 AI 学习对象，再考虑题库上传、OCR、爬虫和社区共建。
 
@@ -37,6 +37,7 @@
 - [x] Phase 13：AI 题目学习资产 ✅（结构化题目讲解 ✅、小白版解析 ✅、步骤拆解 ✅、错误选项分析 ✅、常见误区 ✅、变式题闭环 ✅、学习资产缓存 ✅、答错后 AI 讲解入口 ✅、AI 调用日志统一 ✅、错题本折叠优化 ✅、API/DB 文档补全 ✅、QuestionLearningAssetService 单元测试 ✅、AI 资产质量反馈机制 ✅、PracticeSessionView 折叠模式 ✅、管理端清除 AI 缓存入口 ✅）
 - [ ] Phase 14：AI 可视化交互讲解 🚧（P0 文本可视化 ✅；P1 Mermaid 流程图 ✅：第 9 种 mermaid 元素类型 ✅、mermaid.js 动态 import ✅、异步 SVG 渲染 ✅、语法错误 fallback ✅、后端 Prompt 增强 ✅、单元测试 ✅；待做：代码执行动画）
 - [ ] Phase 15：AI 学习画像与个性化推荐 🚧（P0 学习诊断与每日推荐 ✅；AI 个性化学习建议 ✅；相似题推荐 ✅；错题归因增强 ✅；单题错因分析 ✅：作答历史时间线、掌握趋势（IMPROVING/STAGNANT/DECLINING）、错误模式描述、连续错误检测、反复错题分析；待做：向量相似度增强推荐）
+- [ ] Phase 16：题目投稿与 AI 题库生产 🚧（P0 题目投稿中心 ✅：投稿表 Flyway V7 ✅、用户投稿提交 ✅、用户投稿列表 ✅、管理端投稿列表 ✅、管理员审核 ✅、投稿入库 ✅、投稿统计 ✅、前端页面 ✅；待做：AI 题目质检、AI 知识点标注、AI 难度评估、管理员 AI 审核辅助）
 
 ---
 
@@ -124,18 +125,18 @@ docker compose up -d
 - CI 流水线需推送到 GitHub 后才能实际触发验证
 - 本地 JDK 25 + Testcontainers 1.20.1 Docker socket 兼容性问题，集成测试需在 CI（JDK 17）环境验证实际运行
 - 缓存 TTL 参数目前硬编码在 RedisConfig 中，后续可抽为 application.yml 配置项
-- Phase 13 全部完成（Round 68-72），Phase 14 P0 文本可视化已完成（Round 73），P1 Mermaid 流程图已完成（Round 74），Phase 15 P0 学习诊断已完成（Round 75），AI 个性化学习建议已完成（Round 76），相似题推荐已完成（Round 77）
+- Phase 13 全部完成（Round 68-72），Phase 14 P0 文本可视化已完成（Round 73），P1 Mermaid 流程图已完成（Round 74），Phase 15 P0 学习诊断已完成（Round 75），AI 个性化学习建议已完成（Round 76），相似题推荐已完成（Round 77），Phase 16 P0 题目投稿中心已完成（Round 82）
 - 缓存 TTL 参数目前硬编码在 RedisConfig 中，后续可抽为 application.yml 配置项
 
 ---
 
 ## 6. 下一步建议任务
 
-任务名称：Phase 14 候选方向 或 Phase 16
+任务名称：Phase 16 P1 方向 或 Phase 14 候选方向
 
-Phase 15（Round 75-81）已完成学习诊断 + AI 个性化学习建议 + 相似题推荐 + LearningDiagnosisService 单元测试（46 个，含单题错因分析 16 个）+ 错题归因分析增强 + 单题错因分析。Phase 15 核心能力已基本完成。下一步建议：
-- 继续 Phase 14 候选方向：代码执行动画、SQL 执行顺序可视化
-- 或进入 Phase 16：题目投稿与 AI 题库生产
+Phase 16 Round 82 已完成 P0 题目投稿中心（投稿提交、审核、入库全流程，含 Flyway V7、后端 9 个新文件、前端 3 个新文件 + 路由导航更新）。下一步建议：
+- 继续 Phase 16 P1 方向：AI 题目质检（AI 辅助检查投稿题目质量、格式规范）
+- 或继续 Phase 14 候选方向：代码执行动画、SQL 执行顺序可视化
 
 当前不优先做：
 - 复杂推荐系统（向量相似度等）
@@ -144,7 +145,7 @@ Phase 15（Round 75-81）已完成学习诊断 + AI 个性化学习建议 + 相�
 - 用户上传题库自动入库
 - AI 自动审核发布题目
 
-建议 commit message: `test(backend): 补充单题错因分析单元测试（16 个，后端 227 个）`
+建议 commit message: `feat(backend,frontend): 实现题目投稿中心（投稿、审核、入库，Phase 16 P0）`
 
 ---
 

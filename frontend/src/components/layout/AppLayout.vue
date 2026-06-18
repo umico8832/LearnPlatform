@@ -76,6 +76,10 @@
             <el-icon><MagicStick /></el-icon>
             <span>AI 复习建议</span>
           </el-menu-item>
+          <el-menu-item index="/submit">
+            <el-icon><Upload /></el-icon>
+            <span>题目投稿</span>
+          </el-menu-item>
 
           <template v-if="isAdmin">
             <el-sub-menu index="admin">
@@ -106,6 +110,10 @@
               <el-menu-item index="/admin/users">
                 <el-icon><UserFilled /></el-icon>
                 <span>用户管理</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/submissions">
+                <el-icon><Upload /></el-icon>
+                <span>投稿管理</span>
               </el-menu-item>
             </el-sub-menu>
           </template>
@@ -161,7 +169,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { HomeFilled, Reading, Setting, Collection, Notebook, EditPen, Promotion, Clock, WarningFilled, Trophy, MagicStick, DataAnalysis, StarFilled, UserFilled, Fold, Expand, DataLine, Guide, Connection, TrendCharts } from '@element-plus/icons-vue'
+import { HomeFilled, Reading, Setting, Collection, Notebook, EditPen, Promotion, Clock, WarningFilled, Trophy, MagicStick, DataAnalysis, StarFilled, UserFilled, Fold, Expand, DataLine, Guide, Connection, TrendCharts, Upload } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
