@@ -445,7 +445,8 @@ public class QuestionLearningAssetService {
                 + "- `bar_chart`：柱状图对比，字段为 items 数组，每个 item 有 label/value（数值）\n"
                 + "- `number_line`：数轴/指针位置，字段为 min/max/current + markers 数组（position/label）\n"
                 + "- `mermaid`：Mermaid 流程图，字段为 code（Mermaid 语法）+ 可选 caption（图注说明），适合算法流程、SQL 执行顺序、网络协议交互、递归展开等\n"
-                + "- `code_animation`：代码执行动画，字段为 language（可选，如 java/python/sql/c）+ code（完整代码字符串）+ steps 数组。每个 step 有：lineStart/lineEnd（当前高亮的代码行号，从1开始）、description（本步骤说明文字）、variables 数组（变量名/值/changed是否变化）、output（可选，本步骤产生的控制台输出）。适合展示算法逐步执行过程、代码调试模拟、循环变量跟踪等。\n\n"
+                + "- `code_animation`：代码执行动画，字段为 language（可选，如 java/python/sql/c）+ code（完整代码字符串）+ steps 数组。每个 step 有：lineStart/lineEnd（当前高亮的代码行号，从1开始）、description（本步骤说明文字）、variables 数组（变量名/值/changed是否变化）、output（可选，本步骤产生的控制台输出）。适合展示算法逐步执行过程、代码调试模拟、循环变量跟踪等。\n"
+                + "- `sql_execution`：SQL 执行顺序可视化，字段为 query（完整 SQL 语句）+ steps 数组（按 SQL 实际执行顺序排列）+ finalResult（可选，最终查询结果）。每个 step 有：clause（SQL 子句名，如 FROM、WHERE、GROUP BY 等）、description（本步骤执行说明）、resultHeaders（可选，中间结果列名）、resultRows（可选，中间结果数据行）、rowCount（可选，中间结果行数）。适合展示 SQL 查询的逻辑执行顺序、JOIN 过程、分组聚合等。**注意：steps 的顺序必须是 SQL 的逻辑执行顺序（FROM → JOIN → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT），而不是书写顺序。**\n\n"
                 + "**重要规则**：\n"
                 + "1. 只输出 JSON，不要输出 ```json ``` 代码块标记\n"
                 + "2. text 类型可用于插入讲解性 Markdown 内容\n"
@@ -455,12 +456,14 @@ public class QuestionLearningAssetService {
                 + "6. 对于 DP/矩阵类题目，用 matrix 展示填表过程\n"
                 + "7. 对于树/图类题目，用 tree 展示结构\n"
                 + "8. 对于算法流程、条件分支、循环逻辑，用 mermaid 展示流程图（flowchart TD 或 flowchart LR）\n"
-                + "9. 对于 SQL 查询执行过程，用 mermaid 展示执行顺序（flowchart TD）\n"
+                + "9. 对于 SQL 查询执行过程，优先使用 sql_execution 展示执行顺序（比 mermaid 更直观、有中间结果预览），只有在无法拆解执行步骤时才用 mermaid 作为备选\n"
                 + "10. 对于递归展开过程，除了 tree 外也可用 mermaid flowchart 展示调用链\n"
                 + "11. mermaid code 必须是合法的 Mermaid 语法，不要包含 ```mermaid 代码块标记，直接写 Mermaid 语法内容\n"
                 + "12. 所有 state 字段值必须是以下之一：default, current, highlight, visited, swapped, sorted, done, pending\n"
                 + "13. code_animation 的 steps 应覆盖代码的关键执行步骤（不必每行都展示，选择关键节点），variables 数组展示当前作用域内所有活跃变量的值，changed=true 标记本步骤发生变化的变量\n"
-                + "14. code_animation 的 code 字段必须是完整可执行的代码（作为静态展示参考），lineStart/lineEnd 从 1 开始计数";
+                + "14. code_animation 的 code 字段必须是完整可执行的代码（作为静态展示参考），lineStart/lineEnd 从 1 开始计数\n"
+                + "15. sql_execution 的 steps 必须按照 SQL 逻辑执行顺序排列（典型顺序：FROM/JOIN → WHERE → GROUP BY → HAVING → SELECT → DISTINCT → ORDER BY → LIMIT/OFFSET），每个 step 应尽量提供 resultHeaders 和 resultRows 展示中间结果（至少 3-5 行示例数据），让读者能看到数据如何在每一步被过滤和变换\n"
+                + "16. sql_execution 的 query 字段必须是原始 SQL 语句（方便对照），finalResult 展示最终输出结果";
         return new PromptPair(systemPrompt, "请为以下题目生成可视化讲解数据（严格输出 JSON）：\n\n" + questionContext);
     }
 

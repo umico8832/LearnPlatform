@@ -14,6 +14,65 @@
 
 ---
 
+## Round 90 - 2026-06-18
+
+### 阶段
+Phase 14：AI 可视化交互讲解 — SQL 执行顺序可视化增强（第 11 种可视化元素类型）
+
+### 本轮目标
+新增 `sql_execution` 可视化元素类型，为 SQL 查询题目提供专属的执行顺序可视化：逐步展示 SQL 子句（FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT）的逻辑执行过程，每步显示中间结果数据，支持自动播放和交互控制。
+
+### 完成内容
+1. **前端类型定义**（`frontend/src/api/ai.ts`）：
+   - 新增 `SqlExecutionStepItem`、`SqlExecutionElement` 两个接口。
+   - `VisualElement` 联合类型新增 `SqlExecutionElement`（第 11 种元素类型）。
+
+2. **前端 SqlExecutionViewer 组件**（`frontend/src/components/SqlExecutionViewer.vue`）：
+   - 暗色 SQL 代码面板：展示完整 SQL 语句，当前执行子句高亮显示。
+   - 步骤信息面板：蓝色步骤标签 + 子句名称 + 详细描述。
+   - 中间结果预览：每步可选展示 headers + rows 数据表格 + 行数统计。
+   - 最终结果面板：绿色边框展示最终查询结果。
+   - 播放控制栏：首步/上一步/播放暂停/下一步/末步按钮 + 速度调节滑块（300ms-3000ms）+ 进度圆点条。
+   - 响应式适配。
+
+3. **QuestionVisualInteractive.vue 集成**：
+   - 新增 `sql_execution` 元素渲染分支（🗃️ 图标标识）。
+   - 导入 SqlExecutionViewer 组件。
+
+4. **后端 Prompt 增强**（`QuestionLearningAssetService.buildVisualInteractivePrompt()`）：
+   - 新增 `sql_execution` 类型定义和使用规则（规则 15-16）。
+   - 规则 9 更新：SQL 查询优先使用 `sql_execution`，比 mermaid 更直观、有中间结果预览。
+   - 强调 steps 必须按 SQL 逻辑执行顺序排列（FROM/JOIN → WHERE → GROUP BY → HAVING → SELECT → DISTINCT → ORDER BY → LIMIT/OFFSET）。
+
+5. **后端单元测试**（`QuestionLearningAssetServiceTest`）：
+   - 新增 `visualInteractivePromptContainsSqlExecutionInstructions` 测试（第 32 个）。
+   - 验证 Prompt 包含 sql_execution 类型定义、字段说明和执行顺序指令。
+
+### 验收结果
+- 后端 260 个测试全部通过（+1 个新测试）
+- 前端 TypeScript 编译无错误
+- 前端 187 个 Vitest 测试全部通过
+
+### 修改文件
+- `frontend/src/api/ai.ts` — 新增 SqlExecutionStepItem、SqlExecutionElement 类型
+- `frontend/src/components/SqlExecutionViewer.vue` — 新建 SQL 执行顺序可视化组件
+- `frontend/src/components/QuestionVisualInteractive.vue` — 集成 sql_execution 元素渲染
+- `backend/src/main/java/com/learnplatform/service/QuestionLearningAssetService.java` — Prompt 增强
+- `backend/src/test/java/com/learnplatform/service/QuestionLearningAssetServiceTest.java` — 新增测试
+
+### 遗留问题
+- SQL 子句高亮基于关键字前缀匹配，对复杂嵌套子查询可能不够精确
+- 可考虑后续引入 SQL 解析库（如 JSqlParser）做更精确的子句定位
+
+### 下轮建议
+- Phase 14 候选：网络协议和操作系统过程可视化
+- Phase 16 候选：Excel / Markdown 导入增强
+- 或开始规划 Phase 17 新阶段
+
+建议 commit message: `feat(visual): 新增 sql_execution 可视化元素类型，SQL 执行顺序逐步展示`
+
+---
+
 ## Round 89 - 2026-06-18
 
 ### 阶段

@@ -258,6 +258,25 @@ export interface CodeAnimationElement {
   steps: CodeAnimationStep[]
 }
 
+export interface SqlExecutionStepItem {
+  clause: string
+  description: string
+  resultHeaders?: string[]
+  resultRows?: string[][]
+  rowCount?: number
+}
+
+export interface SqlExecutionElement {
+  type: 'sql_execution'
+  label: string
+  query: string
+  steps: SqlExecutionStepItem[]
+  finalResult?: {
+    headers: string[]
+    rows: string[][]
+  }
+}
+
 export type VisualElement =
   | VisualTextElement
   | VisualStepListElement
@@ -269,6 +288,7 @@ export type VisualElement =
   | VisualNumberLineElement
   | VisualMermaidElement
   | CodeAnimationElement
+  | SqlExecutionElement
 
 export interface VisualInteractiveData {
   title: string

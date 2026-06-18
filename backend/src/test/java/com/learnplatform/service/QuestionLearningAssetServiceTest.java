@@ -439,6 +439,35 @@ class QuestionLearningAssetServiceTest {
     }
 
     @Test
+    void visualInteractivePromptContainsSqlExecutionInstructions() {
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
+        doNothing().when(aiService).checkDailyQuota(7L);
+        setupFullQuestionContext();
+        when(aiConfig.getModel()).thenReturn("gpt-4");
+        when(questionAiAssetMapper.insert(any())).thenReturn(1);
+
+        when(aiProvider.chat(anyString(), anyString())).thenReturn("{}");
+
+        ArgumentCaptor<String> systemPromptCaptor = ArgumentCaptor.forClass(String.class);
+        service.generateOrGetAsset(1L, AiAssetType.VISUAL_INTERACTIVE, 7L);
+
+        verify(aiProvider).chat(systemPromptCaptor.capture(), anyString());
+        String systemPrompt = systemPromptCaptor.getValue();
+
+        // Verify sql_execution type is in the prompt schema
+        assertContains(systemPrompt, "sql_execution");
+        assertContains(systemPrompt, "SQL 执行顺序可视化");
+        assertContains(systemPrompt, "resultHeaders");
+        assertContains(systemPrompt, "resultRows");
+        assertContains(systemPrompt, "rowCount");
+        assertContains(systemPrompt, "clause");
+        assertContains(systemPrompt, "finalResult");
+        // Verify SQL execution order instructions
+        assertContains(systemPrompt, "FROM/JOIN \u2192 WHERE \u2192 GROUP BY \u2192 HAVING \u2192 SELECT \u2192 DISTINCT \u2192 ORDER BY \u2192 LIMIT/OFFSET");
+        assertContains(systemPrompt, "\u4F18\u5148\u4F7F\u7528 sql_execution \u5C55\u793A\u6267\u884C\u987A\u5E8F");
+    }
+
+    @Test
     void generateOrGetAssetBuildsCorrectQuestionContext() {
         when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
         doNothing().when(aiService).checkDailyQuota(7L);

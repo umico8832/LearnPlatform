@@ -178,6 +178,12 @@
           <CodeAnimationViewer :element="el" />
         </div>
 
+        <!-- sql_execution -->
+        <div v-else-if="el.type === 'sql_execution'" class="vi-block">
+          <div class="vi-block-label">🗃️ {{ el.label }}</div>
+          <SqlExecutionViewer :element="el" />
+        </div>
+
         <!-- mermaid -->
         <div v-else-if="el.type === 'mermaid'" class="vi-block">
           <div class="vi-block-label">{{ el.label }}</div>
@@ -203,6 +209,7 @@ import type { PropType, VNode } from 'vue'
 import { Loading } from '@element-plus/icons-vue'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import CodeAnimationViewer from './CodeAnimationViewer.vue'
+import SqlExecutionViewer from './SqlExecutionViewer.vue'
 import type {
   VisualInteractiveData,
   VisualMatrixCell,
