@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 16 — 题目投稿与 AI 题库生产 🚧 开发中（Round 86 完成 P1 AI 难度评估，后端 255 个测试）
+当前阶段：Phase 16 — 题目投稿与 AI 题库生产 🚧 开发中（Round 87 完成结果缓存 + 一键填充审核意见，后端 258 个测试）
 
 下一阶段主线：先把一道题讲透，把单题从“题干 + 答案 + 解析”升级为结构化 AI 学习对象，再考虑题库上传、OCR、爬虫和社区共建。
 
@@ -132,14 +132,14 @@ docker compose up -d
 
 ## 6. 下一步建议任务
 
-任务名称：Phase 16 候选方向 — 质检/标注/难度评估结果缓存或一键填充审核意见
+任务名称：Phase 16 候选方向 — Excel/Markdown 导入增强 或 Phase 14 代码执行动画
 
-Phase 16 Round 86 已完成 P1 AI 难度评估（SubmissionDifficultyAssessmentService AI 评估难度 1-5 星 + 布鲁姆认知层次 + 影响因素 + 投稿者标注对比 + 降级规则评估 + 管理端难度评估对话框 + 8 个单元测试，后端 255 个测试全部通过）。
+Phase 16 Round 87 已完成 P1 结果缓存 + 一键填充审核意见（三个 AI 评估服务 @Cacheable 缓存 30 分钟 + generateReviewComment 基于缓存质检结果生成审核意见 + 管理端审核对话框一键填充按钮 + 3 个单元测试，后端 258 个测试全部通过）。
 
 下一步建议：
-- Phase 16 候选方向：质检/标注/难度评估结果缓存、一键填充审核意见
-- 或 Phase 14 候选方向：代码执行动画、SQL 执行顺序可视化
-- 或 Phase 16 Excel/Markdown 导入增强
+- Phase 14 候选方向：代码执行动画、SQL 执行顺序可视化
+- Phase 16 候选方向：Excel / Markdown 导入增强
+- 或开始规划 Phase 17 新阶段
 
 当前不优先做：
 - 复杂推荐系统（向量相似度等）
@@ -148,7 +148,7 @@ Phase 16 Round 86 已完成 P1 AI 难度评估（SubmissionDifficultyAssessmentS
 - 用户上传题库自动入库
 - AI 自动审核发布题目
 
-建议 commit message: `feat(submission): 新增 AI 难度评估功能，后端 255 测试通过`
+建议 commit message: `feat(submission): 新增 AI 结果缓存与一键填充审核意见，后端 258 测试通过`
 
 ---
 

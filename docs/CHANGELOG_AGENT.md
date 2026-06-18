@@ -14,6 +14,55 @@
 
 ---
 
+## Round 87 - 2026-06-18
+
+### 阶段
+Phase 16：题目投稿与 AI 题库生产 — P1 结果缓存 + 一键填充审核意见
+
+### 本轮目标
+为投稿 AI 质检/知识点标注/难度评估添加缓存（节省 AI 调用配额、提升响应速度），并实现一键填充审核意见功能。
+
+### 完成内容
+1. **AI 结果缓存**：
+   - 三个 AI 评估服务（`SubmissionAiQualityService`、`SubmissionKPTaggingService`、`SubmissionDifficultyAssessmentService`）均添加 `@Cacheable` 注解。
+   - 缓存 key 为 `submissionId`，TTL 30 分钟。
+   - RedisConfig 新增 `submissionQuality`、`submissionKPTagging`、`submissionDifficulty` 三个缓存区域。
+   - 第二次及后续请求同一投稿的 AI 分析时，直接返回缓存结果，不消耗 AI 配额。
+
+2. **一键填充审核意见**：
+   - 后端：`SubmissionAiQualityService.generateReviewComment()` — 基于缓存的质检结果生成结构化审核意见文本（综合评分 + 检查项问题 + 风险点 + 修改建议）。
+   - 后端接口：`POST /api/admin/submission/{id}/generate-review-comment`，返回纯文本。
+   - 前端：审核对话框新增「🤖 AI 一键填充审核意见」按钮，点击后自动填充审核意见文本域。
+   - 调用链路：前端按钮 → 后端接口 → 复用缓存的质检结果 → 生成文本 → 填充输入框。
+
+3. **单元测试**：
+   - `SubmissionAiQualityServiceTest` 新增 3 个测试：包含评分和摘要、全部通过时不列出检查项、回退模式正常输出。
+   - 后端 258 个测试全部通过（新增 3 个）。
+
+### 验收结果
+- 后端 258 个测试全部通过（新增 3 个）
+- 前端无 TS 编译错误
+
+### 修改文件
+- 修改：`backend/src/main/java/com/learnplatform/config/RedisConfig.java`（新增 3 个缓存区域）
+- 修改：`backend/src/main/java/com/learnplatform/service/SubmissionAiQualityService.java`（@Cacheable + generateReviewComment）
+- 修改：`backend/src/main/java/com/learnplatform/service/SubmissionKPTaggingService.java`（@Cacheable）
+- 修改：`backend/src/main/java/com/learnplatform/service/SubmissionDifficultyAssessmentService.java`（@Cacheable）
+- 修改：`backend/src/main/java/com/learnplatform/controller/AdminQuestionSubmissionController.java`（新增 generateReviewComment 接口）
+- 修改：`frontend/src/api/submission.ts`（新增 generateReviewComment API）
+- 修改：`frontend/src/views/admin/SubmissionManage.vue`（审核对话框新增一键填充按钮 + handler）
+- 修改：`backend/src/test/java/com/learnplatform/service/SubmissionAiQualityServiceTest.java`（新增 3 个测试）
+
+### 遗留问题
+无
+
+### 下轮建议
+- Phase 14 候选方向：代码执行动画
+- Phase 16 候选方向：Excel / Markdown 导入增强
+- 或开始 Phase 17 新阶段规划
+
+---
+
 ## Round 86 - 2026-06-18
 
 ### 阶段

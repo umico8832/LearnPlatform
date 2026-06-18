@@ -181,4 +181,69 @@ class SubmissionAiQualityServiceTest {
 
         assertEquals("FAIL", result.getCompletenessCheck().getStatus());
     }
+
+    // ======================== generateReviewComment 测试 ========================
+
+    @Test
+    @DisplayName("生成审核意见：包含评分和摘要")
+    void generateReviewComment_includesScoreAndSummary() {
+        when(submissionMapper.selectById(1L)).thenReturn(sampleSubmission);
+        when(courseMapper.selectById(1L)).thenReturn(new Course());
+
+        String aiJson = "{\"qualityScore\":85,\"summary\":\"题目质量良好\",\"recommendation\":\"APPROVE\","
+                + "\"formatCheck\":{\"status\":\"PASS\",\"detail\":\"格式规范\"},"
+                + "\"completenessCheck\":{\"status\":\"PASS\",\"detail\":\"内容完整\"},"
+                + "\"answerCheck\":{\"status\":\"PASS\",\"detail\":\"答案正确\"},"
+                + "\"analysisCheck\":{\"status\":\"WARNING\",\"detail\":\"解析较简短\"},"
+                + "\"knowledgePointCheck\":{\"status\":\"PASS\",\"detail\":\"知识点相关\"},"
+                + "\"riskPoints\":[\"解析较简短\"],\"suggestions\":[\"建议补充更详细的解析\"]}";
+
+        when(aiProvider.chat(anyString(), anyString())).thenReturn(aiJson);
+
+        String comment = qualityService.generateReviewComment(1L, 1L);
+
+        assertNotNull(comment);
+        assertTrue(comment.contains("【AI 质检报告】"));
+        assertTrue(comment.contains("综合评分：85"));
+        assertTrue(comment.contains("解析较简短"));
+        assertTrue(comment.contains("建议补充更详细的解析"));
+    }
+
+    @Test
+    @DisplayName("生成审核意见：全部通过时不列出检查项")
+    void generateReviewComment_allPass_noCheckItems() {
+        when(submissionMapper.selectById(1L)).thenReturn(sampleSubmission);
+        when(courseMapper.selectById(1L)).thenReturn(new Course());
+
+        String aiJson = "{\"qualityScore\":95,\"summary\":\"质量优秀\",\"recommendation\":\"APPROVE\","
+                + "\"formatCheck\":{\"status\":\"PASS\",\"detail\":\"OK\"},"
+                + "\"completenessCheck\":{\"status\":\"PASS\",\"detail\":\"OK\"},"
+                + "\"answerCheck\":{\"status\":\"PASS\",\"detail\":\"OK\"},"
+                + "\"analysisCheck\":{\"status\":\"PASS\",\"detail\":\"OK\"},"
+                + "\"knowledgePointCheck\":{\"status\":\"PASS\",\"detail\":\"OK\"},"
+                + "\"riskPoints\":[],\"suggestions\":[]}";
+
+        when(aiProvider.chat(anyString(), anyString())).thenReturn(aiJson);
+
+        String comment = qualityService.generateReviewComment(1L, 1L);
+
+        assertNotNull(comment);
+        assertTrue(comment.contains("【AI 质检报告】"));
+        // 不应包含不通过的检查项
+        assertFalse(comment.contains("WARNING"));
+        assertFalse(comment.contains("FAIL"));
+    }
+
+    @Test
+    @DisplayName("生成审核意见：回退模式也正常输出")
+    void generateReviewComment_fallbackMode_works() {
+        when(submissionMapper.selectById(1L)).thenReturn(sampleSubmission);
+        when(aiProvider.chat(anyString(), anyString())).thenThrow(new RuntimeException("AI unavailable"));
+
+        String comment = qualityService.generateReviewComment(1L, 1L);
+
+        assertNotNull(comment);
+        assertTrue(comment.contains("【AI 质检报告】"));
+        assertTrue(comment.contains("分"));
+    }
 }

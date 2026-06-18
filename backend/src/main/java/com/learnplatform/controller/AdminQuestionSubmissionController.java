@@ -100,6 +100,14 @@ public class AdminQuestionSubmissionController {
         return R.ok(vo);
     }
 
+    @Operation(summary = "AI 生成审核意见", description = "基于 AI 质检结果自动生成审核意见建议文本，供管理员一键填充")
+    @PostMapping("/{id}/generate-review-comment")
+    public R<String> generateReviewComment(@PathVariable Long id) {
+        Long adminId = getCurrentUserId();
+        String comment = qualityService.generateReviewComment(id, adminId);
+        return R.ok(comment);
+    }
+
     @Operation(summary = "投稿入库", description = "将已通过审核的投稿导入题库")
     @PostMapping("/{id}/import")
     public R<QuestionSubmissionVO> importToQuestionBank(@PathVariable Long id) {

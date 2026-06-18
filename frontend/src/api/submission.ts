@@ -195,3 +195,8 @@ export function applyKnowledgePoints(id: number, knowledgePointIds: string) {
 export function assessDifficulty(id: number) {
   return request.post<any, ApiResponse<SubmissionDifficultyAssessment>>(`/admin/submission/${id}/difficulty-assessment`)
 }
+
+/** AI 生成审核意见（基于质检结果） */
+export function generateReviewComment(id: number) {
+  return request.post<any, ApiResponse<string>>(`/admin/submission/${id}/generate-review-comment`)
+}

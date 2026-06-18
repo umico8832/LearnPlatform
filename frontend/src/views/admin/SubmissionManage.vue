@@ -92,8 +92,12 @@
     <el-dialog v-model="showReviewDialog" :title="reviewAction === 1 ? '通过投稿' : '拒绝投稿'" width="500px">
       <el-form label-width="80px">
         <el-form-item label="审核意见">
-          <el-input v-model="reviewComment" type="textarea" :rows="3"
+          <el-input v-model="reviewComment" type="textarea" :rows="5"
             :placeholder="reviewAction === 1 ? '审核通过意见（可选）' : '请输入拒绝原因'" />
+          <el-button type="primary" link size="small" style="margin-top: 4px"
+            @click="handleGenerateReviewComment" :loading="generatingComment">
+            🤖 AI 一键填充审核意见
+          </el-button>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -310,6 +314,7 @@ import {
   kpTaggingSubmission,
   applyKnowledgePoints,
   assessDifficulty,
+  generateReviewComment,
   type QuestionSubmissionVO,
   type SubmissionStats,
   type SubmissionQualityCheck,
@@ -337,6 +342,9 @@ const currentDetail = ref<QuestionSubmissionVO | null>(null)
 const reviewTarget = ref<QuestionSubmissionVO | null>(null)
 const reviewAction = ref(1) // 1=通过 2=拒绝
 const reviewComment = ref('')
+
+// 一键填充审核意见
+const generatingComment = ref(false)
 
 // AI 难度评估
 const showDifficultyDialog = ref(false)
@@ -617,6 +625,26 @@ const impactLabel = (impact: string) => {
 const impactType = (impact: string) => {
   const map: Record<string, string> = { INCREASE: 'danger', DECREASE: 'success', NEUTRAL: 'info' }
   return (map[impact] || 'info') as any
+}
+
+// ========== 一键填充审核意见 ==========
+
+const handleGenerateReviewComment = async () => {
+  if (!reviewTarget.value) return
+  generatingComment.value = true
+  try {
+    const res = await generateReviewComment(reviewTarget.value.id)
+    if (res.code === 0 && res.data) {
+      reviewComment.value = res.data
+      ElMessage.success('AI 审核意见已填充')
+    } else {
+      ElMessage.error(res.message || '生成审核意见失败')
+    }
+  } catch {
+    ElMessage.error('生成审核意见请求失败')
+  } finally {
+    generatingComment.value = false
+  }
 }
 
 onMounted(() => {

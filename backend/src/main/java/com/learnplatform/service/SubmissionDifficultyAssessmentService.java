@@ -12,6 +12,7 @@ import com.learnplatform.mapper.QuestionSubmissionMapper;
 import com.learnplatform.service.ai.AiProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ public class SubmissionDifficultyAssessmentService {
      * @param userId       操作用户 ID（管理员）
      * @return 难度评估结果
      */
+    @Cacheable(value = "submissionDifficulty", key = "#submissionId")
     public SubmissionDifficultyVO assessDifficulty(Long submissionId, Long userId) {
         QuestionSubmission submission = submissionMapper.selectById(submissionId);
         if (submission == null) {

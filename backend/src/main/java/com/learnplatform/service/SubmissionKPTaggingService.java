@@ -15,6 +15,7 @@ import com.learnplatform.mapper.QuestionSubmissionMapper;
 import com.learnplatform.service.ai.AiProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -61,6 +62,7 @@ public class SubmissionKPTaggingService {
      * @param userId       操作用户 ID（管理员）
      * @return 知识点标注结果
      */
+    @Cacheable(value = "submissionKPTagging", key = "#submissionId")
     public SubmissionKPTaggingVO tagKnowledgePoints(Long submissionId, Long userId) {
         QuestionSubmission submission = submissionMapper.selectById(submissionId);
         if (submission == null) {

@@ -12,6 +12,7 @@ import com.learnplatform.mapper.QuestionSubmissionMapper;
 import com.learnplatform.service.ai.AiProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ public class SubmissionAiQualityService {
      * @param userId       操作用户 ID（管理员）
      * @return 质检结果
      */
+    @Cacheable(value = "submissionQuality", key = "#submissionId")
     public SubmissionQualityCheckVO checkQuality(Long submissionId, Long userId) {
         QuestionSubmission submission = submissionMapper.selectById(submissionId);
         if (submission == null) {
@@ -337,6 +339,60 @@ public class SubmissionAiQualityService {
         vo.setSuggestions(suggestions);
 
         return vo;
+    }
+
+    // ======================== 审核意见生成 ========================
+
+    /**
+     * 基于 AI 质检结果生成审核意见建议文本。
+     * 利用 checkQuality 的缓存，避免重复调用 AI。
+     *
+     * @param submissionId 投稿 ID
+     * @param userId       操作用户 ID（管理员）
+     * @return 审核意见文本，可直接填充到审核意见输入框
+     */
+    public String generateReviewComment(Long submissionId, Long userId) {
+        // 复用缓存的质检结果
+        SubmissionQualityCheckVO qc = checkQuality(submissionId, userId);
+
+        StringBuilder sb = new StringBuilder();
+
+        // 总评
+        sb.append("【AI 质检报告】\n");
+        sb.append("综合评分：").append(qc.getQualityScore()).append(" 分\n");
+        sb.append("AI 建议：").append(qc.getSummary()).append("\n");
+
+        // 不通过的检查项
+        appendCheckItemIfNotPass(sb, "格式规范", qc.getFormatCheck());
+        appendCheckItemIfNotPass(sb, "内容完整性", qc.getCompletenessCheck());
+        appendCheckItemIfNotPass(sb, "答案正确性", qc.getAnswerCheck());
+        appendCheckItemIfNotPass(sb, "解析质量", qc.getAnalysisCheck());
+        appendCheckItemIfNotPass(sb, "知识点相关性", qc.getKnowledgePointCheck());
+
+        // 风险点
+        if (qc.getRiskPoints() != null && !qc.getRiskPoints().isEmpty()) {
+            sb.append("\n风险点：\n");
+            for (String point : qc.getRiskPoints()) {
+                sb.append("- ").append(point).append("\n");
+            }
+        }
+
+        // 修改建议
+        if (qc.getSuggestions() != null && !qc.getSuggestions().isEmpty()) {
+            sb.append("\n修改建议：\n");
+            for (String sug : qc.getSuggestions()) {
+                sb.append("- ").append(sug).append("\n");
+            }
+        }
+
+        return sb.toString();
+    }
+
+    private void appendCheckItemIfNotPass(StringBuilder sb, String label, SubmissionQualityCheckVO.CheckItem item) {
+        if (item != null && !"PASS".equals(item.getStatus())) {
+            sb.append(label).append("：").append(item.getStatus())
+                    .append(" — ").append(item.getDetail()).append("\n");
+        }
     }
 
     // ======================== 工具方法 ========================
