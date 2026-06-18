@@ -325,3 +325,38 @@ export function getSimilarQuestions(questionId: number, limit = 5) {
     params: { questionId, limit }
   })
 }
+
+// ======================== 单题错因分析 ========================
+
+export interface AttemptHistory {
+  recordId: number
+  userAnswer: string | null
+  isCorrect: number | null
+  answerTime: number | null
+  createTime: string | null
+}
+
+export interface QuestionErrorAnalysis {
+  questionId: number
+  questionContent: string
+  questionType: string
+  difficulty: number | null
+  courseName: string | null
+  knowledgePointName: string | null
+  totalAttempts: number
+  correctCount: number
+  wrongCount: number
+  correctRate: number
+  currentMasteryLevel: number | null
+  masteryTrend: 'IMPROVING' | 'STAGNANT' | 'DECLINING'
+  trendDescription: string
+  attempts: AttemptHistory[]
+  errorPattern: string
+}
+
+/** 获取单题错因分析 */
+export function getQuestionErrorAnalysis(questionId: number) {
+  return request.get<any, ApiResponse<QuestionErrorAnalysis>>('/statistics/question-error-analysis', {
+    params: { questionId }
+  })
+}

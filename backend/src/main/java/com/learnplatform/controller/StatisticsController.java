@@ -139,6 +139,17 @@ public class StatisticsController {
                 .body(emitter);
     }
 
+    // ======================== 单题错因分析 ========================
+
+    @Operation(summary = "单题错因分析", description = "针对具体题目分析用户多次作答的错误模式变化，包含作答历史、掌握趋势和错误模式描述")
+    @GetMapping("/question-error-analysis")
+    public R<LearningDiagnosisVO.QuestionErrorAnalysis> getQuestionErrorAnalysis(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam Long questionId) {
+        return R.ok(learningDiagnosisService.analyzeQuestionError(
+                userDetails.getUserId(), questionId));
+    }
+
     // ======================== 相似题推荐 ========================
 
     @Operation(summary = "相似题推荐", description = "根据指定题目推荐同知识点、同题型、同难度的相似题目，用于错题巩固")

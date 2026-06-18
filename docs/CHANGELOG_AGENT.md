@@ -14,6 +14,53 @@
 
 ---
 
+## Round 80 - 2026-06-18
+
+### 阶段
+Phase 15：AI 学习画像与个性化推荐 — 单题错因分析
+
+### 本轮目标
+实现单题错因分析功能，针对具体题目分析用户多次作答的错误模式变化，包含作答历史、掌握趋势和错误模式描述。
+
+### 完成内容
+1. **后端 VO 扩展**（`LearningDiagnosisVO`）新增 2 个内部类：
+   - `QuestionErrorAnalysis`：单题错因分析结果（题目信息、作答统计、正确率、掌握程度、掌握趋势、作答历史、错误模式描述）
+   - `AttemptHistory`：单次作答记录（recordId、userAnswer、isCorrect、answerTime、createTime）
+2. **后端 Service 新增**（`LearningDiagnosisService`）：
+   - `analyzeQuestionError(userId, questionId)`：获取用户对该题所有练习记录，计算正确率、掌握趋势（IMPROVING/STAGNANT/DECLINING），生成错误模式描述
+   - `buildErrorPattern()`：分析连续错误、反复出错、掌握程度等模式
+   - 掌握趋势算法：最近 5 次正确率 vs 之前正确率，差异 ≥20% 判定为提升/下降
+3. **后端 Controller 新增**（`StatisticsController`）：
+   - `GET /api/statistics/question-error-analysis?questionId=` — 单题错因分析接口
+4. **前端 API 新增**（`statistics.ts`）：
+   - `AttemptHistory`、`QuestionErrorAnalysis` TypeScript 接口
+   - `getQuestionErrorAnalysis(questionId)` API 函数
+5. **前端页面增强**（`LearningDiagnosisView.vue`）：
+   - 反复错题详情表格新增"错因分析"操作按钮
+   - 单题错因分析弹窗：题目信息卡片、4 个核心统计指标（el-statistic）、掌握趋势 el-alert、掌握程度标签、错误模式分析框（橙色左边框）、el-timeline 作答历史时间线
+   - 辅助 CSS：`.error-analysis-header`、`.error-analysis-question`、`.error-analysis-tags`、`.error-pattern-box`
+
+### 修改文件清单
+- `backend/src/main/java/com/learnplatform/dto/LearningDiagnosisVO.java`（新增 QuestionErrorAnalysis + AttemptHistory 内部类）
+- `backend/src/main/java/com/learnplatform/service/LearningDiagnosisService.java`（新增 analyzeQuestionError + buildErrorPattern 方法）
+- `backend/src/main/java/com/learnplatform/controller/StatisticsController.java`（新增 question-error-analysis 接口）
+- `frontend/src/api/statistics.ts`（新增 TS 接口 + API 函数）
+- `frontend/src/views/statistics/LearningDiagnosisView.vue`（新增错因分析弹窗 + 按钮 + CSS）
+
+### 验收结果
+- [x] `cd backend && mvn test`：211 个测试全部通过
+- [x] `cd frontend && npm run build`：构建成功
+
+### 遗留问题
+- 无
+
+### 下轮建议
+- 继续 Phase 14 候选方向：代码执行动画、SQL 执行顺序可视化
+- 或进入 Phase 16：题目投稿与 AI 题库生产
+- 或补充单题错因分析的后端单元测试
+
+---
+
 ## Round 79 - 2026-06-18
 
 ### 阶段

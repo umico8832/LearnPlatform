@@ -296,7 +296,7 @@
               </template>
             </el-table-column>
             <el-table-column prop="knowledgePointName" label="知识点" width="120" />
-            <el-table-column label="操作" width="100" align="center">
+            <el-table-column label="操作" width="160" align="center">
               <template #default="{ row }">
                 <el-button
                   type="primary"
@@ -305,6 +305,14 @@
                   @click="loadSimilarQuestions(row.questionId, row.questionContent)"
                 >
                   找相似题
+                </el-button>
+                <el-button
+                  type="warning"
+                  link
+                  size="small"
+                  @click="loadQuestionErrorAnalysis(row.questionId)"
+                >
+                  错因分析
                 </el-button>
               </template>
             </el-table-column>
@@ -387,6 +395,109 @@
       </el-card>
     </template>
 
+    <!-- 单题错因分析弹窗 -->
+    <el-dialog
+      v-model="errorAnalysisDialogVisible"
+      title="🔍 单题错因分析"
+      width="750px"
+      destroy-on-close
+    >
+      <div v-if="errorAnalysisLoading" v-loading="true" style="height: 200px"></div>
+      <template v-else-if="errorAnalysisData">
+        <!-- 题目信息 -->
+        <div class="error-analysis-header">
+          <div class="error-analysis-question">{{ errorAnalysisData.questionContent }}</div>
+          <div class="error-analysis-tags">
+            <el-tag size="small">{{ errorAnalysisData.questionType }}</el-tag>
+            <el-tag v-if="errorAnalysisData.difficulty" size="small" type="warning">
+              {{ '⭐'.repeat(errorAnalysisData.difficulty) }}
+            </el-tag>
+            <el-tag v-if="errorAnalysisData.courseName" size="small" type="info">{{ errorAnalysisData.courseName }}</el-tag>
+            <el-tag v-if="errorAnalysisData.knowledgePointName" size="small" type="info">{{ errorAnalysisData.knowledgePointName }}</el-tag>
+          </div>
+        </div>
+
+        <!-- 核心指标 -->
+        <el-row :gutter="16" style="margin-top: 16px">
+          <el-col :span="6">
+            <el-statistic title="总作答" :value="errorAnalysisData.totalAttempts" />
+          </el-col>
+          <el-col :span="6">
+            <el-statistic title="答对" :value="errorAnalysisData.correctCount" />
+          </el-col>
+          <el-col :span="6">
+            <el-statistic title="答错" :value="errorAnalysisData.wrongCount" />
+          </el-col>
+          <el-col :span="6">
+            <el-statistic title="正确率">
+              <template #default>
+                <span :style="{ color: getRateColor(errorAnalysisData.correctRate), fontWeight: 700 }">
+                  {{ errorAnalysisData.correctRate }}%
+                </span>
+              </template>
+            </el-statistic>
+          </el-col>
+        </el-row>
+
+        <!-- 掌握趋势 -->
+        <el-alert
+          :title="errorAnalysisData.trendDescription"
+          :type="errorAnalysisData.masteryTrend === 'IMPROVING' ? 'success' : errorAnalysisData.masteryTrend === 'DECLINING' ? 'error' : 'info'"
+          :closable="false"
+          show-icon
+          style="margin-top: 16px"
+        />
+
+        <!-- 掌握程度 -->
+        <div v-if="errorAnalysisData.currentMasteryLevel !== null && errorAnalysisData.currentMasteryLevel !== undefined" style="margin-top: 12px">
+          <span style="font-size: 13px; color: #606266">当前掌握程度：</span>
+          <el-tag :type="getMasteryLevelType(errorAnalysisData.currentMasteryLevel)" size="small">
+            {{ getMasteryLevelLabel(errorAnalysisData.currentMasteryLevel) }}
+          </el-tag>
+        </div>
+
+        <!-- 错误模式描述 -->
+        <div class="error-pattern-box" style="margin-top: 16px">
+          <h4 style="margin: 0 0 8px; font-size: 14px; color: #303133">📋 错误模式分析</h4>
+          <p style="font-size: 14px; line-height: 1.8; color: #606266; margin: 0">{{ errorAnalysisData.errorPattern }}</p>
+        </div>
+
+        <!-- 作答历史 -->
+        <div v-if="errorAnalysisData.attempts && errorAnalysisData.attempts.length" style="margin-top: 16px">
+          <h4 style="margin: 0 0 8px; font-size: 14px; color: #303133">📝 作答历史（共 {{ errorAnalysisData.attempts.length }} 次）</h4>
+          <el-timeline>
+            <el-timeline-item
+              v-for="(attempt, i) in errorAnalysisData.attempts"
+              :key="i"
+              :type="attempt.isCorrect === 1 ? 'success' : attempt.isCorrect === 0 ? 'danger' : 'info'"
+              :timestamp="attempt.createTime ? attempt.createTime.replace('T', ' ') : ''"
+              placement="top"
+            >
+              <el-card shadow="never" body-style="padding: 10px 14px">
+                <div style="display: flex; justify-content: space-between; align-items: center">
+                  <span>
+                    <el-tag :type="attempt.isCorrect === 1 ? 'success' : 'danger'" size="small">
+                      {{ attempt.isCorrect === 1 ? '✓ 答对' : '✗ 答错' }}
+                    </el-tag>
+                    <span v-if="attempt.userAnswer" style="margin-left: 8px; font-size: 13px; color: #606266">
+                      答案：{{ attempt.userAnswer }}
+                    </span>
+                  </span>
+                  <span v-if="attempt.answerTime" style="font-size: 12px; color: #909399">
+                    用时 {{ attempt.answerTime }}s
+                  </span>
+                </div>
+              </el-card>
+            </el-timeline-item>
+          </el-timeline>
+        </div>
+      </template>
+      <el-empty v-else description="暂无数据" />
+      <template #footer>
+        <el-button @click="errorAnalysisDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 相似题推荐弹窗 -->
     <el-dialog
       v-model="similarDialogVisible"
@@ -455,13 +566,32 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getLearningDiagnosis, getAiAdviceStream, getSimilarQuestions, type LearningDiagnosis, type SimilarQuestions } from '@/api/statistics'
+import { getLearningDiagnosis, getAiAdviceStream, getSimilarQuestions, getQuestionErrorAnalysis, type LearningDiagnosis, type SimilarQuestions, type QuestionErrorAnalysis } from '@/api/statistics'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const loading = ref(true)
 const data = ref<LearningDiagnosis | null>(null)
+
+// 单题错因分析
+const errorAnalysisDialogVisible = ref(false)
+const errorAnalysisLoading = ref(false)
+const errorAnalysisData = ref<QuestionErrorAnalysis | null>(null)
+
+async function loadQuestionErrorAnalysis(questionId: number) {
+  errorAnalysisDialogVisible.value = true
+  errorAnalysisLoading.value = true
+  errorAnalysisData.value = null
+  try {
+    const res = await getQuestionErrorAnalysis(questionId)
+    errorAnalysisData.value = res.data
+  } catch (e: any) {
+    ElMessage.error('加载错因分析失败: ' + (e.message || '未知错误'))
+  } finally {
+    errorAnalysisLoading.value = false
+  }
+}
 
 // 相似题推荐
 const similarDialogVisible = ref(false)
@@ -821,6 +951,32 @@ onMounted(async () => {
   font-size: 13px;
   color: #606266;
   line-height: 1.6;
+}
+
+.error-analysis-header {
+  padding: 12px;
+  background: #f5f7fa;
+  border-radius: 6px;
+}
+
+.error-analysis-question {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #303133;
+  margin-bottom: 8px;
+}
+
+.error-analysis-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.error-pattern-box {
+  padding: 12px 16px;
+  background: #fdf6ec;
+  border-radius: 6px;
+  border-left: 3px solid #e6a23c;
 }
 
 .ai-advice-card {

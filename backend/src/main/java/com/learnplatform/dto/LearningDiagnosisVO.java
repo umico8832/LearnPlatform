@@ -285,6 +285,92 @@ public class LearningDiagnosisVO {
     }
 
     /**
+     * 单题错因分析
+     */
+    public static class QuestionErrorAnalysis {
+        private Long questionId;
+        private String questionContent;
+        private String questionType;
+        private Integer difficulty;
+        /** 课程名称 */
+        private String courseName;
+        /** 知识点名称 */
+        private String knowledgePointName;
+        /** 总作答次数 */
+        private int totalAttempts;
+        /** 答对次数 */
+        private int correctCount;
+        /** 答错次数 */
+        private int wrongCount;
+        /** 正确率 */
+        private double correctRate;
+        /** 当前掌握程度 */
+        private Integer currentMasteryLevel;
+        /** 掌握趋势：IMPROVING / STAGNANT / DECLINING */
+        private String masteryTrend;
+        /** 趋势描述 */
+        private String trendDescription;
+        /** 作答历史（按时间正序） */
+        private List<AttemptHistory> attempts;
+        /** 错误模式描述 */
+        private String errorPattern;
+
+        public Long getQuestionId() { return questionId; }
+        public void setQuestionId(Long questionId) { this.questionId = questionId; }
+        public String getQuestionContent() { return questionContent; }
+        public void setQuestionContent(String questionContent) { this.questionContent = questionContent; }
+        public String getQuestionType() { return questionType; }
+        public void setQuestionType(String questionType) { this.questionType = questionType; }
+        public Integer getDifficulty() { return difficulty; }
+        public void setDifficulty(Integer difficulty) { this.difficulty = difficulty; }
+        public String getCourseName() { return courseName; }
+        public void setCourseName(String courseName) { this.courseName = courseName; }
+        public String getKnowledgePointName() { return knowledgePointName; }
+        public void setKnowledgePointName(String knowledgePointName) { this.knowledgePointName = knowledgePointName; }
+        public int getTotalAttempts() { return totalAttempts; }
+        public void setTotalAttempts(int totalAttempts) { this.totalAttempts = totalAttempts; }
+        public int getCorrectCount() { return correctCount; }
+        public void setCorrectCount(int correctCount) { this.correctCount = correctCount; }
+        public int getWrongCount() { return wrongCount; }
+        public void setWrongCount(int wrongCount) { this.wrongCount = wrongCount; }
+        public double getCorrectRate() { return correctRate; }
+        public void setCorrectRate(double correctRate) { this.correctRate = correctRate; }
+        public Integer getCurrentMasteryLevel() { return currentMasteryLevel; }
+        public void setCurrentMasteryLevel(Integer currentMasteryLevel) { this.currentMasteryLevel = currentMasteryLevel; }
+        public String getMasteryTrend() { return masteryTrend; }
+        public void setMasteryTrend(String masteryTrend) { this.masteryTrend = masteryTrend; }
+        public String getTrendDescription() { return trendDescription; }
+        public void setTrendDescription(String trendDescription) { this.trendDescription = trendDescription; }
+        public List<AttemptHistory> getAttempts() { return attempts; }
+        public void setAttempts(List<AttemptHistory> attempts) { this.attempts = attempts; }
+        public String getErrorPattern() { return errorPattern; }
+        public void setErrorPattern(String errorPattern) { this.errorPattern = errorPattern; }
+    }
+
+    /**
+     * 单次作答记录（用于单题错因分析）
+     */
+    public static class AttemptHistory {
+        private Long recordId;
+        private String userAnswer;
+        private Integer isCorrect;
+        /** 作答用时（秒） */
+        private Integer answerTime;
+        private String createTime;
+
+        public Long getRecordId() { return recordId; }
+        public void setRecordId(Long recordId) { this.recordId = recordId; }
+        public String getUserAnswer() { return userAnswer; }
+        public void setUserAnswer(String userAnswer) { this.userAnswer = userAnswer; }
+        public Integer getIsCorrect() { return isCorrect; }
+        public void setIsCorrect(Integer isCorrect) { this.isCorrect = isCorrect; }
+        public Integer getAnswerTime() { return answerTime; }
+        public void setAnswerTime(Integer answerTime) { this.answerTime = answerTime; }
+        public String getCreateTime() { return createTime; }
+        public void setCreateTime(String createTime) { this.createTime = createTime; }
+    }
+
+    /**
      * 推荐题目
      */
     public static class RecommendedQuestion {
