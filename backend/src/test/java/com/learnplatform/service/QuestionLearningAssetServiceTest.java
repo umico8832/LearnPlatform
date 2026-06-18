@@ -413,6 +413,32 @@ class QuestionLearningAssetServiceTest {
     }
 
     @Test
+    void visualInteractivePromptContainsCodeAnimationInstructions() {
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
+        doNothing().when(aiService).checkDailyQuota(7L);
+        setupFullQuestionContext();
+        when(aiConfig.getModel()).thenReturn("gpt-4");
+        when(aiProvider.chat(anyString(), anyString())).thenReturn("{}");
+        when(questionAiAssetMapper.insert(any())).thenReturn(1);
+
+        ArgumentCaptor<String> systemPromptCaptor = ArgumentCaptor.forClass(String.class);
+        service.generateOrGetAsset(1L, AiAssetType.VISUAL_INTERACTIVE, 7L);
+
+        verify(aiProvider).chat(systemPromptCaptor.capture(), anyString());
+        String systemPrompt = systemPromptCaptor.getValue();
+
+        // Verify code_animation type is in the prompt schema
+        assertContains(systemPrompt, "code_animation");
+        assertContains(systemPrompt, "代码执行动画");
+        assertContains(systemPrompt, "lineStart");
+        assertContains(systemPrompt, "lineEnd");
+        assertContains(systemPrompt, "variables");
+        assertContains(systemPrompt, "changed");
+        assertContains(systemPrompt, "lineStart/lineEnd 从 1 开始计数");
+        assertContains(systemPrompt, "code 字段必须是完整可执行的代码");
+    }
+
+    @Test
     void generateOrGetAssetBuildsCorrectQuestionContext() {
         when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
         doNothing().when(aiService).checkDailyQuota(7L);

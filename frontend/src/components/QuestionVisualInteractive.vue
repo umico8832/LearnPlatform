@@ -172,6 +172,12 @@
           </div>
         </div>
 
+        <!-- code_animation -->
+        <div v-else-if="el.type === 'code_animation'" class="vi-block">
+          <div class="vi-block-label">▶ {{ el.label }}</div>
+          <CodeAnimationViewer :element="el" />
+        </div>
+
         <!-- mermaid -->
         <div v-else-if="el.type === 'mermaid'" class="vi-block">
           <div class="vi-block-label">{{ el.label }}</div>
@@ -196,6 +202,7 @@ import { ref, watch, defineComponent, h, nextTick } from 'vue'
 import type { PropType, VNode } from 'vue'
 import { Loading } from '@element-plus/icons-vue'
 import MarkdownRenderer from './MarkdownRenderer.vue'
+import CodeAnimationViewer from './CodeAnimationViewer.vue'
 import type {
   VisualInteractiveData,
   VisualMatrixCell,

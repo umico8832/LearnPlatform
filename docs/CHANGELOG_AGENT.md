@@ -14,6 +14,58 @@
 
 ---
 
+## Round 88 - 2026-06-18
+
+### 阶段
+Phase 14：AI 可视化交互讲解 — 代码执行动画（第 10 种可视化元素类型）
+
+### 本轮目标
+新增 `code_animation` 可视化元素类型，为编程/算法/数据结构类题目提供逐步代码执行动画，包括代码行高亮、变量状态面板、播放/暂停控制和进度条。
+
+### 完成内容
+1. **前端类型定义**：
+   - `frontend/src/api/ai.ts` 新增 `CodeAnimationVariable`、`CodeAnimationStep`、`CodeAnimationElement` 三个接口。
+   - `VisualElement` 联合类型新增 `CodeAnimationElement`（第 10 种元素类型）。
+
+2. **后端 Prompt 增强**：
+   - `QuestionLearningAssetService.buildVisualInteractivePrompt()` 的 system prompt 新增 `code_animation` 类型定义和使用规则。
+   - 包含字段说明：language（可选）、code（完整代码）、steps 数组（lineStart/lineEnd/description/variables/output）。
+   - 新增规则 13-14：steps 选择关键节点展示、code 字段必须完整、行号从 1 开始。
+
+3. **前端组件**：
+   - 新建 `CodeAnimationViewer.vue`：独立的代码执行动画子组件。
+   - 功能：播放/暂停/上一步/下一步控制、可调速度（快/正常/慢）、进度条、暗色主题代码面板（行高亮+行号）、变量状态面板（变化高亮+changed 标签）、控制台输出区域、步骤描述。
+   - 响应式适配：移动端变量面板自动换行到底部。
+
+4. **集成**：
+   - `QuestionVisualInteractive.vue` 模板新增 `code_animation` 分支渲染。
+   - 导入 `CodeAnimationViewer` 组件。
+
+5. **单元测试**：
+   - `QuestionLearningAssetServiceTest` 新增 `visualInteractivePromptContainsCodeAnimationInstructions` 测试（验证 prompt 包含 code_animation 定义）。
+   - 后端 259 个测试全部通过（新增 1 个）。
+
+### 验收结果
+- 后端 259 个测试全部通过（新增 1 个）
+- 前端 TS 编译无错误
+
+### 修改文件
+- 修改：`frontend/src/api/ai.ts`（新增 3 个类型接口 + VisualElement 联合类型扩展）
+- 修改：`backend/src/main/java/com/learnplatform/service/QuestionLearningAssetService.java`（prompt 增强）
+- 新建：`frontend/src/components/CodeAnimationViewer.vue`（代码执行动画子组件）
+- 修改：`frontend/src/components/QuestionVisualInteractive.vue`（导入 + 模板渲染分支）
+- 修改：`backend/src/test/java/com/learnplatform/service/QuestionLearningAssetServiceTest.java`（新增 1 个测试）
+
+### 遗留问题
+- 代码动画的代码面板暂无语法高亮（仅通过行背景色区分），后续可引入 highlight.js 或 shiki
+
+### 下轮建议
+- Phase 14 候选：SQL 执行顺序可视化增强（可用 mermaid sequenceDiagram + code_animation 组合）
+- Phase 16 候选：Excel / Markdown 导入增强
+- 或开始规划 Phase 17
+
+建议 commit message: `feat(visual): 新增代码执行动画可视化元素类型，后端 259 测试通过`
+
 ## Round 87 - 2026-06-18
 
 ### 阶段

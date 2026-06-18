@@ -236,6 +236,28 @@ export interface VisualMermaidElement {
   caption?: string
 }
 
+export interface CodeAnimationVariable {
+  name: string
+  value: string
+  changed?: boolean
+}
+
+export interface CodeAnimationStep {
+  lineStart: number
+  lineEnd: number
+  description: string
+  variables: CodeAnimationVariable[]
+  output?: string
+}
+
+export interface CodeAnimationElement {
+  type: 'code_animation'
+  label: string
+  language?: string
+  code: string
+  steps: CodeAnimationStep[]
+}
+
 export type VisualElement =
   | VisualTextElement
   | VisualStepListElement
@@ -246,6 +268,7 @@ export type VisualElement =
   | VisualBarChartElement
   | VisualNumberLineElement
   | VisualMermaidElement
+  | CodeAnimationElement
 
 export interface VisualInteractiveData {
   title: string
