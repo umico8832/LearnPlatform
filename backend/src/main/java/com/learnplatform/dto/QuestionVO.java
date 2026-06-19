@@ -18,6 +18,11 @@ public class QuestionVO {
     private String tags;
     private Integer score;
     private Integer status;
+    private String sourceType;
+    private String sourceReference;
+    private String lastReviewTime;
+    private String nextReviewTime;
+    private Integer reviewRounds;
     private String createTime;
     private String updateTime;
     private List<QuestionOptionVO> options;
@@ -36,6 +41,11 @@ public class QuestionVO {
         vo.setScore(q.getScore());
         vo.setStatus(q.getStatus());
         if (q.getCreateTime() != null) vo.setCreateTime(q.getCreateTime().toString());
+        if (q.getSourceType() != null) vo.setSourceType(q.getSourceType());
+        vo.setSourceReference(q.getSourceReference());
+        if (q.getLastReviewTime() != null) vo.setLastReviewTime(q.getLastReviewTime().toString());
+        if (q.getNextReviewTime() != null) vo.setNextReviewTime(q.getNextReviewTime().toString());
+        vo.setReviewRounds(q.getReviewRounds());
         if (q.getUpdateTime() != null) vo.setUpdateTime(q.getUpdateTime().toString());
         return vo;
     }
@@ -60,6 +70,16 @@ public class QuestionVO {
     public void setScore(Integer score) { this.score = score; }
     public Integer getStatus() { return status; }
     public void setStatus(Integer status) { this.status = status; }
+    public String getSourceType() { return sourceType; }
+    public void setSourceType(String sourceType) { this.sourceType = sourceType; }
+    public String getSourceReference() { return sourceReference; }
+    public void setSourceReference(String sourceReference) { this.sourceReference = sourceReference; }
+    public String getLastReviewTime() { return lastReviewTime; }
+    public void setLastReviewTime(String lastReviewTime) { this.lastReviewTime = lastReviewTime; }
+    public String getNextReviewTime() { return nextReviewTime; }
+    public void setNextReviewTime(String nextReviewTime) { this.nextReviewTime = nextReviewTime; }
+    public Integer getReviewRounds() { return reviewRounds; }
+    public void setReviewRounds(Integer reviewRounds) { this.reviewRounds = reviewRounds; }
     public String getCreateTime() { return createTime; }
     public void setCreateTime(String createTime) { this.createTime = createTime; }
     public String getUpdateTime() { return updateTime; }

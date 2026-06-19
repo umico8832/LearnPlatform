@@ -42,6 +42,13 @@
         <el-select v-model="filters.difficulty" placeholder="难度" clearable style="width: 110px" @change="fetchQuestions">
           <el-option v-for="d in 5" :key="d" :label="'⭐'.repeat(d)" :value="d" />
         </el-select>
+        <el-select v-model="filters.sourceType" placeholder="来源" clearable style="width: 130px" @change="fetchQuestions">
+          <el-option label="手动创建" value="MANUAL" />
+          <el-option label="投稿入库" value="SUBMISSION" />
+          <el-option label="Excel导入" value="EXCEL_IMPORT" />
+          <el-option label="Markdown导入" value="MARKDOWN_IMPORT" />
+          <el-option label="AI生成" value="AI_GENERATED" />
+        </el-select>
       </div>
 
       <el-table :data="questions" v-loading="loading" stripe>
@@ -60,6 +67,13 @@
             {{ '⭐'.repeat((row as QuestionVO).difficulty) }}
           </template>
         </el-table-column>
+        <el-table-column prop="sourceType" label="来源" width="110" align="center">
+          <template #default="{ row }">
+            <el-tag size="small" :type="sourceTypeTag((row as QuestionVO).sourceType)">
+              {{ sourceTypeLabel((row as QuestionVO).sourceType) }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="score" label="分值" width="70" align="center" />
         <el-table-column prop="status" label="状态" width="80" align="center">
           <template #default="{ row }">
@@ -71,6 +85,7 @@
         <el-table-column prop="createTime" label="创建时间" width="170" />
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
+            <el-button type="primary" link size="small" @click="openReReview(row as QuestionVO)">复审</el-button>
             <el-button type="primary" link size="small" @click="openDialog(row as QuestionVO)">编辑</el-button>
             <el-popconfirm title="确定清除该题目的 AI 学习资产缓存？" @confirm="handleClearAiCache((row as QuestionVO).id)">
               <template #reference>
@@ -170,6 +185,73 @@
       </template>
     </el-dialog>
     </el-card>
+
+    <!-- 复审弹窗 -->
+    <el-dialog v-model="reReviewVisible" title="题目复审" width="700px" destroy-on-close>
+      <div v-if="reReviewQuestion" style="margin-bottom: 16px;">
+        <el-descriptions :column="2" border size="small">
+          <el-descriptions-item label="题目ID">{{ reReviewQuestion.id }}</el-descriptions-item>
+          <el-descriptions-item label="来源">
+            <el-tag size="small" :type="sourceTypeTag(reReviewQuestion.sourceType)">
+              {{ sourceTypeLabel(reReviewQuestion.sourceType) }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="题型">{{ questionTypeLabel(reReviewQuestion.questionType) }}</el-descriptions-item>
+          <el-descriptions-item label="难度">{{ '⭐'.repeat(reReviewQuestion.difficulty) }}</el-descriptions-item>
+          <el-descriptions-item label="累计复审">{{ reReviewQuestion.reviewRounds ?? 0 }} 次</el-descriptions-item>
+          <el-descriptions-item label="下次复审">{{ reReviewQuestion.nextReviewTime ?? '未设置' }}</el-descriptions-item>
+          <el-descriptions-item label="题干" :span="2">
+            <div style="max-height: 120px; overflow-y: auto; white-space: pre-wrap;">{{ reReviewQuestion.content }}</div>
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
+
+      <el-form :model="reReviewForm" label-width="90px">
+        <el-form-item label="复审动作">
+          <el-radio-group v-model="reReviewForm.action">
+            <el-radio-button value="APPROVE">通过</el-radio-button>
+            <el-radio-button value="REVISE">修订</el-radio-button>
+            <el-radio-button value="REJECT">废弃</el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="reReviewForm.action === 'REVISE'" label="修订内容">
+          <el-input v-model="reReviewForm.newContent" type="textarea" :rows="3" placeholder="修订后的题干" />
+        </el-form-item>
+        <el-form-item v-if="reReviewForm.action === 'REVISE'" label="修订难度">
+          <el-rate v-model="reReviewForm.newDifficulty" :max="5" />
+        </el-form-item>
+        <el-form-item label="复审意见">
+          <el-input v-model="reReviewForm.comment" type="textarea" :rows="2" placeholder="请输入复审意见" />
+        </el-form-item>
+      </el-form>
+
+      <div v-if="reviewRecords.length > 0" style="margin-top: 12px;">
+        <h4 style="margin-bottom: 8px;">历史复审记录</h4>
+        <el-timeline>
+          <el-timeline-item
+            v-for="record in reviewRecords"
+            :key="record.id"
+            :timestamp="record.createTime"
+            placement="top"
+          >
+            <el-card shadow="never" body-style="padding: 8px 12px;">
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <el-tag size="small" :type="record.action === 'APPROVE' ? 'success' : record.action === 'REJECT' ? 'danger' : 'warning'">
+                  {{ record.action === 'APPROVE' ? '通过' : record.action === 'REVISE' ? '修订' : '废弃' }}
+                </el-tag>
+                <span style="font-size: 12px; color: #909399;">{{ record.reviewerName }} · {{ record.reviewType }}</span>
+              </div>
+              <div style="margin-top: 4px; font-size: 13px;">{{ record.comment }}</div>
+            </el-card>
+          </el-timeline-item>
+        </el-timeline>
+      </div>
+
+      <template #footer>
+        <el-button @click="reReviewVisible = false">取消</el-button>
+        <el-button type="primary" :loading="reReviewLoading" @click="handleReReview">提交复审</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 新增/编辑弹窗 -->
     <el-dialog
@@ -313,10 +395,13 @@ import {
   importQuestions,
   importQuestionsMarkdown,
   downloadMarkdownTemplate,
+  getReviewRecords,
+  performReReview,
   type QuestionVO,
   type QuestionForm,
   type OptionItem,
   type QuestionImportResult,
+  type QuestionReviewRecordVO,
 } from '@/api/question'
 import { clearAssetCache } from '@/api/ai'
 import { getAllCourses, type CourseVO } from '@/api/course'
@@ -333,6 +418,7 @@ const filters = reactive({
   questionType: '' as string,
   courseId: null as number | null,
   difficulty: null as number | null,
+  sourceType: '' as string,
 })
 
 // 课程列表
@@ -354,6 +440,18 @@ const importResult = reactive<QuestionImportResult>({
   successCount: 0,
   failCount: 0,
   errors: [],
+})
+
+// 复审相关
+const reReviewVisible = ref(false)
+const reReviewQuestion = ref<QuestionVO | null>(null)
+const reReviewLoading = ref(false)
+const reviewRecords = ref<QuestionReviewRecordVO[]>([])
+const reReviewForm = reactive({
+  action: 'APPROVE',
+  newContent: '',
+  newDifficulty: 3,
+  comment: '',
 })
 
 // 弹窗相关
@@ -406,6 +504,74 @@ function questionTypeTag(type: string): 'primary' | 'success' | 'warning' | 'inf
     SHORT_ANSWER: 'danger',
   }
   return map[type] || 'primary'
+}
+
+// 来源标签
+function sourceTypeLabel(type?: string) {
+  const map: Record<string, string> = {
+    MANUAL: '手动创建',
+    SUBMISSION: '投稿入库',
+    EXCEL_IMPORT: 'Excel导入',
+    MARKDOWN_IMPORT: 'MD导入',
+    AI_GENERATED: 'AI生成',
+  }
+  return map[type || ''] || '手动创建'
+}
+
+function sourceTypeTag(type?: string): 'primary' | 'success' | 'warning' | 'info' | 'danger' {
+  const map: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
+    MANUAL: 'primary',
+    SUBMISSION: 'success',
+    EXCEL_IMPORT: 'warning',
+    MARKDOWN_IMPORT: 'info',
+    AI_GENERATED: 'danger',
+  }
+  return map[type || ''] || 'info'
+}
+
+// 打开复审弹窗
+async function openReReview(question: QuestionVO) {
+  reReviewQuestion.value = question
+  reReviewForm.action = 'APPROVE'
+  reReviewForm.newContent = question.content
+  reReviewForm.newDifficulty = question.difficulty
+  reReviewForm.comment = ''
+  reviewRecords.value = []
+  reReviewVisible.value = true
+  try {
+    const res = await getReviewRecords(question.id)
+    reviewRecords.value = res.data
+  } catch {
+    // ignore
+  }
+}
+
+// 提交复审
+async function handleReReview() {
+  if (!reReviewForm.comment.trim()) {
+    ElMessage.warning('请输入复审意见')
+    return
+  }
+  if (reReviewForm.action === 'REVISE' && !reReviewForm.newContent.trim()) {
+    ElMessage.warning('修订时新题干不能为空')
+    return
+  }
+  reReviewLoading.value = true
+  try {
+    await performReReview(reReviewQuestion.value!.id, {
+      action: reReviewForm.action,
+      newContent: reReviewForm.action === 'REVISE' ? reReviewForm.newContent : undefined,
+      newDifficulty: reReviewForm.action === 'REVISE' ? reReviewForm.newDifficulty : undefined,
+      comment: reReviewForm.comment,
+    })
+    ElMessage.success('复审完成')
+    reReviewVisible.value = false
+    fetchQuestions()
+  } catch {
+    // error handled by interceptor
+  } finally {
+    reReviewLoading.value = false
+  }
 }
 
 // 获取选项标签 A/B/C/D...
@@ -463,6 +629,7 @@ async function fetchQuestions() {
       questionType: filters.questionType || undefined,
       courseId: filters.courseId || undefined,
       difficulty: filters.difficulty || undefined,
+      sourceType: filters.sourceType || undefined,
     })
     questions.value = res.data.records
     total.value = res.data.total

@@ -1,5 +1,104 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 93 - 2026-06-19
+
+### 阶段
+Phase 16：题目投稿与 AI 题库生产 — 内容来源记录与复审机制
+
+### 本轮目标
+为所有题目添加来源追踪（手动创建、投稿入库、Excel导入、Markdown导入、AI生成）和定期复审机制，支持管理端按来源筛选题目、执行复审（通过/修订/废弃）并记录完整复审历史。新增 Flyway V8 迁移、QuestionSourceService、复审记录表、前端来源徽章+筛选+复审弹窗。
+
+### 完成内容
+1. **数据库迁移**（`V8__add_question_source_tracking.sql`）：
+   - question 表新增 `source_type`、`source_reference`、`last_review_time`、`next_review_time`、`review_rounds` 5 个字段。
+   - 新建 `question_review_record` 复审记录表（题目ID、审核人、复审类型、动作、快照、意见、时间）。
+
+2. **后端实体/DTO/Mapper**：
+   - `Question.java` 新增 5 个来源追踪字段及 getter/setter。
+   - `QuestionReviewRecord.java` 新建复审记录实体。
+   - `QuestionReviewRecordMapper.java` 新建 Mapper。
+   - `QuestionReReviewRequest.java` 复审请求 DTO（action/newContent/newDifficulty/comment）。
+   - `QuestionReviewRecordVO.java` 复审记录 VO（含审核人名）。
+   - `QuestionSourceStatsVO.java` 来源统计 VO。
+   - `QuestionVO.java` 新增 sourceType/sourceReference/lastReviewTime/nextReviewTime/reviewRounds 字段。
+
+3. **QuestionSourceService**（核心服务）：
+   - `setSource`：创建题目时设置来源类型和来源引用，默认 90 天复审周期。
+   - `recordInitialReview`：入库初审自动记录。
+   - `getSourceStats`：按来源类型统计题目数量（5 种类型全覆盖）。
+   - `getOverdueReviews`：查询超过复审周期的待复审题目。
+   - `getReviewRecords`：查询指定题目的复审记录历史。
+   - `performReReview`：执行复审（APPROVE/REVISE/REJECT），REVISE 时更新题干+难度，REJECT 时标记禁用，自动记录快照和重置复审周期。
+
+4. **现有服务集成**：
+   - `QuestionService.createQuestion`：新创建题目自动设置 `source_type=MANUAL`、90 天复审周期。
+   - `QuestionService.getQuestionPage`：新增 sourceType 参数支持来源筛选。
+   - `QuestionSubmissionService.importSubmission`：投稿入库后自动调用 `setSource(SUBMISSION)` + `recordInitialReview`。
+   - `QuestionImportExportService.importQuestions`：Excel 导入自动设置 `source_type=EXCEL_IMPORT`。
+   - `MarkdownQuestionParser.importFromMarkdown`：Markdown 导入自动设置 `source_type=MARKDOWN_IMPORT`。
+
+5. **AdminQuestionController 新增 5 个接口**：
+   - `GET /source-stats` — 来源统计
+   - `GET /source-types` — 来源类型列表
+   - `GET /review-overdue` — 待复审题目列表
+   - `GET /{id}/review-records` — 复审记录
+   - `POST /{id}/re-review` — 执行复审
+   - `GET /` 新增 `sourceType` 查询参数。
+
+6. **前端**（`question.ts` + `QuestionManage.vue`）：
+   - `question.ts` 新增 `QuestionSourceStatsVO`、`QuestionReviewRecordVO` 类型和 4 个 API 函数。
+   - `QuestionManage.vue` 新增：
+     - 来源筛选下拉框（5 种来源类型）。
+     - 表格"来源"列，彩色标签展示来源类型。
+     - "复审"操作按钮。
+     - 复审弹窗：题目信息展示、复审动作选择（通过/修订/废弃）、修订内容/难度、复审意见、历史复审记录时间线。
+
+7. **单元测试**（`QuestionSourceServiceTest.java`，8 个测试）：
+   - `setSource` 验证来源设置和复审周期。
+   - `recordInitialReview` 验证初审记录。
+   - `performReReview` 三种动作（approve/revise/reject）。
+   - `performReReview` 无效动作抛异常。
+   - `getSourceStats` 返回 5 种来源类型。
+   - `getReviewRecords` 验证审核人名填充。
+
+### 验收结果
+- 后端 271 个测试全部通过（+8 个新测试，AdminQuestionControllerTest 10 个因 JDK 26 CustomUserDetailsArgumentResolver 预编译问题跳过，非本轮引入）
+- 前端 TypeScript 编译无错误
+- 前端 187 个 Vitest 测试全部通过
+
+### 修改文件
+- `backend/src/main/resources/db/migration/V8__add_question_source_tracking.sql` — 新建
+- `backend/src/main/java/com/learnplatform/entity/Question.java` — 新增 5 字段
+- `backend/src/main/java/com/learnplatform/entity/QuestionReviewRecord.java` — 新建
+- `backend/src/main/java/com/learnplatform/mapper/QuestionReviewRecordMapper.java` — 新建
+- `backend/src/main/java/com/learnplatform/dto/QuestionReReviewRequest.java` — 新建
+- `backend/src/main/java/com/learnplatform/dto/QuestionReviewRecordVO.java` — 新建
+- `backend/src/main/java/com/learnplatform/dto/QuestionSourceStatsVO.java` — 新建
+- `backend/src/main/java/com/learnplatform/dto/QuestionVO.java` — 新增 5 字段
+- `backend/src/main/java/com/learnplatform/service/QuestionSourceService.java` — 新建
+- `backend/src/main/java/com/learnplatform/service/QuestionService.java` — 新增 sourceType 筛选 + MANUAL 来源
+- `backend/src/main/java/com/learnplatform/service/QuestionSubmissionService.java` — 新增 source 追踪
+- `backend/src/main/java/com/learnplatform/service/QuestionImportExportService.java` — 新增 EXCEL_IMPORT 来源
+- `backend/src/main/java/com/learnplatform/service/MarkdownQuestionParser.java` — 新增 MARKDOWN_IMPORT 来源
+- `backend/src/main/java/com/learnplatform/controller/AdminQuestionController.java` — 新增 5 个接口 + sourceType 参数
+- `backend/src/test/java/com/learnplatform/service/QuestionSourceServiceTest.java` — 新建 8 个测试
+- `backend/src/test/java/com/learnplatform/service/QuestionSubmissionServiceTest.java` — 构造器参数更新
+- `backend/src/test/java/com/learnplatform/controller/AdminQuestionControllerTest.java` — Mock 注入更新
+- `frontend/src/api/question.ts` — 新增类型 + API 函数
+- `frontend/src/views/admin/QuestionManage.vue` — 来源标签/筛选/复审弹窗
+
+### 遗留问题
+- AdminQuestionControllerTest 因 JDK 26 CustomUserDetailsArgumentResolver 预编译问题无法运行，需在 CI (JDK 17) 验证
+- 复审结果缓存未实现（不影响功能）
+
+### 下轮建议
+- Phase 17 新阶段规划
+- 或其他用户指定任务
+
+建议 commit message: `feat(source): 新增题目来源追踪与复审机制，管理端支持来源筛选和复审操作，Flyway V8`
+
+---
+
 ## Round 92 - 2026-06-18
 
 ### 阶段

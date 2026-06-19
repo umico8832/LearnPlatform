@@ -44,11 +44,20 @@ public class QuestionService {
     }
 
     /**
-     * 分页查询题目（管理端，包含所有状态）
+     * 分页查询题目（管理端，包含所有状态）— 无 sourceType 的向后兼容重载
      */
     public Page<QuestionVO> getQuestionPage(int pageNum, int pageSize, String keyword,
                                              String questionType, Long courseId,
                                              Integer difficulty, Integer status) {
+        return getQuestionPage(pageNum, pageSize, keyword, questionType, courseId, difficulty, status, null);
+    }
+
+    /**
+     * 分页查询题目（管理端，包含所有状态，支持来源筛选）
+     */
+    public Page<QuestionVO> getQuestionPage(int pageNum, int pageSize, String keyword,
+                                             String questionType, Long courseId,
+                                             Integer difficulty, Integer status, String sourceType) {
         Page<Question> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<>();
         if (keyword != null && !keyword.isEmpty()) {
@@ -65,6 +74,9 @@ public class QuestionService {
         }
         if (status != null) {
             wrapper.eq(Question::getStatus, status);
+        }
+        if (sourceType != null && !sourceType.isEmpty()) {
+            wrapper.eq(Question::getSourceType, sourceType);
         }
         wrapper.orderByDesc(Question::getCreateTime);
         Page<Question> result = questionMapper.selectPage(page, wrapper);
@@ -158,6 +170,9 @@ public class QuestionService {
         question.setScore(request.getScore() != null ? request.getScore() : 1);
         question.setStatus(1);
         question.setCreateBy(createBy);
+        question.setSourceType("MANUAL");
+        question.setReviewRounds(0);
+        question.setNextReviewTime(java.time.LocalDateTime.now().plusDays(90));
         question.setDeleted(0);
         questionMapper.insert(question);
 

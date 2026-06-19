@@ -31,6 +31,21 @@ public class Question {
 
     private Long createBy;
 
+    /** 来源类型：MANUAL/SUBMISSION/EXCEL_IMPORT/MARKDOWN_IMPORT/AI_GENERATED */
+    private String sourceType;
+
+    /** 来源引用（投稿ID/导入批次ID等） */
+    private String sourceReference;
+
+    /** 最近复审时间 */
+    private LocalDateTime lastReviewTime;
+
+    /** 下次复审时间 */
+    private LocalDateTime nextReviewTime;
+
+    /** 累计复审轮次 */
+    private Integer reviewRounds;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
@@ -60,6 +75,16 @@ public class Question {
     public void setStatus(Integer status) { this.status = status; }
     public Long getCreateBy() { return createBy; }
     public void setCreateBy(Long createBy) { this.createBy = createBy; }
+    public String getSourceType() { return sourceType; }
+    public void setSourceType(String sourceType) { this.sourceType = sourceType; }
+    public String getSourceReference() { return sourceReference; }
+    public void setSourceReference(String sourceReference) { this.sourceReference = sourceReference; }
+    public LocalDateTime getLastReviewTime() { return lastReviewTime; }
+    public void setLastReviewTime(LocalDateTime lastReviewTime) { this.lastReviewTime = lastReviewTime; }
+    public LocalDateTime getNextReviewTime() { return nextReviewTime; }
+    public void setNextReviewTime(LocalDateTime nextReviewTime) { this.nextReviewTime = nextReviewTime; }
+    public Integer getReviewRounds() { return reviewRounds; }
+    public void setReviewRounds(Integer reviewRounds) { this.reviewRounds = reviewRounds; }
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
     public LocalDateTime getUpdateTime() { return updateTime; }

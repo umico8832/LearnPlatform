@@ -35,6 +35,7 @@ public class QuestionSubmissionService {
     private final UserMapper userMapper;
     private final KnowledgePointMapper knowledgePointMapper;
     private final ObjectMapper objectMapper;
+    private final QuestionSourceService questionSourceService;
 
     public QuestionSubmissionService(QuestionSubmissionMapper submissionMapper,
                                      QuestionMapper questionMapper,
@@ -43,7 +44,8 @@ public class QuestionSubmissionService {
                                      CourseMapper courseMapper,
                                      UserMapper userMapper,
                                      KnowledgePointMapper knowledgePointMapper,
-                                     ObjectMapper objectMapper) {
+                                     ObjectMapper objectMapper,
+                                     QuestionSourceService questionSourceService) {
         this.submissionMapper = submissionMapper;
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
@@ -52,6 +54,7 @@ public class QuestionSubmissionService {
         this.userMapper = userMapper;
         this.knowledgePointMapper = knowledgePointMapper;
         this.objectMapper = objectMapper;
+        this.questionSourceService = questionSourceService;
     }
 
     /**
@@ -218,6 +221,10 @@ public class QuestionSubmissionService {
                 }
             }
         }
+
+        // 设置题目来源追踪
+        questionSourceService.setSource(question.getId(), "SUBMISSION", "submission:" + submissionId);
+        questionSourceService.recordInitialReview(question.getId(), adminId, "投稿入库初审");
 
         // 更新投稿状态
         submission.setStatus(3); // 已入库

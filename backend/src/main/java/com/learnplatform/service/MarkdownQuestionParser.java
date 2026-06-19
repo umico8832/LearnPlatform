@@ -185,6 +185,9 @@ public class MarkdownQuestionParser {
                 question.setScore(raw.score != null ? raw.score : 1);
                 question.setStatus(1);
                 question.setCreateBy(createBy);
+                question.setSourceType("MARKDOWN_IMPORT");
+                question.setReviewRounds(0);
+                question.setNextReviewTime(java.time.LocalDateTime.now().plusDays(90));
                 question.setDeleted(0);
                 questionMapper.insert(question);
                 insertedQuestionId = question.getId();

@@ -22,6 +22,11 @@ export interface QuestionVO {
   tags: string | null
   score: number
   status: number
+  sourceType?: string
+  sourceReference?: string
+  lastReviewTime?: string
+  nextReviewTime?: string
+  reviewRounds?: number
   createTime: string
   updateTime: string
   options: QuestionOptionVO[]
@@ -76,6 +81,28 @@ export function getQuestionById(id: number) {
 }
 
 /** 获取题目分页（管理端） */
+/** 题目来源统计 */
+export interface QuestionSourceStatsVO {
+  sourceType: string
+  count: number
+}
+
+/** 复审记录 VO */
+export interface QuestionReviewRecordVO {
+  id: number
+  questionId: number
+  reviewerId: number
+  reviewerName: string
+  reviewType: string
+  action: string
+  oldContent: string
+  newContent: string
+  oldDifficulty: number
+  newDifficulty: number
+  comment: string
+  createTime: string
+}
+
 export function getAdminQuestionPage(params: {
   pageNum?: number
   pageSize?: number
@@ -84,6 +111,7 @@ export function getAdminQuestionPage(params: {
   courseId?: number
   difficulty?: number
   status?: number
+  sourceType?: string
 }) {
   return request.get<any, ApiResponse<PageResult<QuestionVO>>>('/admin/questions', { params })
 }
@@ -158,4 +186,29 @@ export function downloadMarkdownTemplate() {
   return request.get('/admin/questions/template-markdown', {
     responseType: 'blob'
   })
+}
+
+/** 获取题目来源统计 */
+export function getSourceStats() {
+  return request.get<any, ApiResponse<QuestionSourceStatsVO[]>>('/admin/questions/source-stats')
+}
+
+/** 获取待复审题目列表 */
+export function getReviewOverdue(params?: { pageNum?: number; pageSize?: number }) {
+  return request.get<any, ApiResponse<PageResult<QuestionVO>>>('/admin/questions/review-overdue', { params })
+}
+
+/** 获取题目的复审记录 */
+export function getReviewRecords(questionId: number) {
+  return request.get<any, ApiResponse<QuestionReviewRecordVO[]>>(`/admin/questions/${questionId}/review-records`)
+}
+
+/** 执行复审 */
+export function performReReview(questionId: number, data: {
+  action: string
+  newContent?: string
+  newDifficulty?: number
+  comment: string
+}) {
+  return request.post<any, ApiResponse<QuestionReviewRecordVO>>(`/admin/questions/${questionId}/re-review`, data)
 }

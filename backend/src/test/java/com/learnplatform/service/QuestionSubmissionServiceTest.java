@@ -42,13 +42,15 @@ class QuestionSubmissionServiceTest {
     @Mock private CourseMapper courseMapper;
     @Mock private UserMapper userMapper;
     @Mock private KnowledgePointMapper knowledgePointMapper;
+    @Mock private QuestionSourceService questionSourceService;
 
     private QuestionSubmissionService service;
 
     @BeforeEach
     void setUp() {
         service = new QuestionSubmissionService(submissionMapper, questionMapper, questionOptionMapper,
-                questionKnowledgePointMapper, courseMapper, userMapper, knowledgePointMapper, new ObjectMapper());
+                questionKnowledgePointMapper, courseMapper, userMapper, knowledgePointMapper, new ObjectMapper(),
+                questionSourceService);
     }
 
     @Test

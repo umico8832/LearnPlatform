@@ -6,8 +6,10 @@ import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.QuestionCreateRequest;
 import com.learnplatform.dto.QuestionVO;
 import com.learnplatform.security.CustomUserDetails;
+import com.learnplatform.service.MarkdownQuestionParser;
 import com.learnplatform.service.QuestionImportExportService;
 import com.learnplatform.service.QuestionService;
+import com.learnplatform.service.QuestionSourceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,6 +49,12 @@ class AdminQuestionControllerTest {
 
     @Mock
     private QuestionImportExportService questionImportExportService;
+
+    @Mock
+    private MarkdownQuestionParser markdownQuestionParser;
+
+    @Mock
+    private QuestionSourceService questionSourceService;
 
     @InjectMocks
     private AdminQuestionController adminQuestionController;
@@ -89,7 +97,7 @@ class AdminQuestionControllerTest {
         Page<QuestionVO> page = new Page<>(1, 10);
         page.setRecords(List.of(buildQuestionVO(1L, "什么是变量？")));
         page.setTotal(1);
-        when(questionService.getQuestionPage(eq(1), eq(10), eq(null), eq(null), eq(null), eq(null), eq(null)))
+        when(questionService.getQuestionPage(eq(1), eq(10), eq(null), eq(null), eq(null), eq(null), eq(null), eq(null)))
                 .thenReturn(page);
 
         mockMvc.perform(get("/api/admin/questions"))
@@ -103,7 +111,7 @@ class AdminQuestionControllerTest {
         Page<QuestionVO> page = new Page<>(1, 10);
         page.setRecords(List.of());
         page.setTotal(0);
-        when(questionService.getQuestionPage(eq(1), eq(10), eq("变量"), eq("SINGLE_CHOICE"), eq(1L), eq(2), eq(1)))
+        when(questionService.getQuestionPage(eq(1), eq(10), eq("变量"), eq("SINGLE_CHOICE"), eq(1L), eq(2), eq(1), eq(null)))
                 .thenReturn(page);
 
         mockMvc.perform(get("/api/admin/questions")

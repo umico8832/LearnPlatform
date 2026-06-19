@@ -2,13 +2,13 @@ package com.learnplatform.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.result.R;
-import com.learnplatform.dto.QuestionCreateRequest;
-import com.learnplatform.dto.QuestionImportResult;
-import com.learnplatform.dto.QuestionVO;
+import com.learnplatform.dto.*;
+import com.learnplatform.entity.Question;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.MarkdownQuestionParser;
 import com.learnplatform.service.QuestionImportExportService;
 import com.learnplatform.service.QuestionService;
+import com.learnplatform.service.QuestionSourceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * 管理端题目控制器
@@ -30,13 +31,16 @@ public class AdminQuestionController {
     private final QuestionService questionService;
     private final QuestionImportExportService questionImportExportService;
     private final MarkdownQuestionParser markdownQuestionParser;
+    private final QuestionSourceService questionSourceService;
 
     public AdminQuestionController(QuestionService questionService,
                                     QuestionImportExportService questionImportExportService,
-                                    MarkdownQuestionParser markdownQuestionParser) {
+                                    MarkdownQuestionParser markdownQuestionParser,
+                                    QuestionSourceService questionSourceService) {
         this.questionService = questionService;
         this.questionImportExportService = questionImportExportService;
         this.markdownQuestionParser = markdownQuestionParser;
+        this.questionSourceService = questionSourceService;
     }
 
 
@@ -52,9 +56,10 @@ public class AdminQuestionController {
             @RequestParam(required = false) String questionType,
             @RequestParam(required = false) Long courseId,
             @RequestParam(required = false) Integer difficulty,
-            @RequestParam(required = false) Integer status) {
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) String sourceType) {
         return R.ok(questionService.getQuestionPage(pageNum, pageSize, keyword,
-                questionType, courseId, difficulty, status));
+                questionType, courseId, difficulty, status, sourceType));
     }
 
 
@@ -100,6 +105,56 @@ public class AdminQuestionController {
     public R<Void> deleteQuestion(@PathVariable Long id) {
         questionService.deleteQuestion(id);
         return R.ok();
+    }
+
+    /**
+     * 题目来源统计
+     */
+    @Operation(summary = "题目来源统计", description = "获取各来源类型的题目数量统计")
+    @GetMapping("/source-stats")
+    public R<List<QuestionSourceStatsVO>> getSourceStats() {
+        return R.ok(questionSourceService.getSourceStats());
+    }
+
+    /**
+     * 来源类型列表（用于前端筛选下拉）
+     */
+    @Operation(summary = "来源类型列表", description = "获取所有来源类型标识")
+    @GetMapping("/source-types")
+    public R<List<String>> getSourceTypes() {
+        return R.ok(questionSourceService.getSourceTypes());
+    }
+
+    /**
+     * 待复审题目列表
+     */
+    @Operation(summary = "待复审题目", description = "获取超过复审周期的题目列表")
+    @GetMapping("/review-overdue")
+    public R<Page<Question>> getReviewOverdue(
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        return R.ok(questionSourceService.getOverdueReviews(pageNum, pageSize));
+    }
+
+    /**
+     * 获取题目的复审记录
+     */
+    @Operation(summary = "复审记录", description = "获取指定题目的所有复审记录")
+    @GetMapping("/{id}/review-records")
+    public R<List<QuestionReviewRecordVO>> getReviewRecords(@PathVariable Long id) {
+        return R.ok(questionSourceService.getReviewRecords(id));
+    }
+
+    /**
+     * 执行复审
+     */
+    @Operation(summary = "执行复审", description = "对题目执行复审（通过/修订/标记废弃）")
+    @PostMapping("/{id}/re-review")
+    public R<QuestionReviewRecordVO> performReReview(
+            @PathVariable Long id,
+            @Valid @RequestBody QuestionReReviewRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(questionSourceService.performReReview(id, request, userDetails.getUserId()));
     }
 
     /**
