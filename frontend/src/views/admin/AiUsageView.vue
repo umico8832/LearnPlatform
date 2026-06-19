@@ -1,0 +1,408 @@
+<template>
+  <div class="ai-usage-container">
+    <div class="page-header">
+      <h2>AI 调用分析</h2>
+      <div class="header-actions">
+        <el-select v-model="days" size="default" @change="fetchData" style="width: 140px">
+          <el-option label="近 7 天" :value="7" />
+          <el-option label="近 14 天" :value="14" />
+          <el-option label="近 30 天" :value="30" />
+          <el-option label="近 90 天" :value="90" />
+        </el-select>
+        <el-button :icon="Refresh" @click="fetchData" :loading="loading">刷新</el-button>
+      </div>
+    </div>
+
+    <div v-loading="loading" element-loading-text="加载中...">
+      <!-- 顶部统计卡片 -->
+      <el-row :gutter="16" class="stat-cards">
+        <el-col :xs="12" :sm="6">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-value primary">{{ overview.totalCalls?.toLocaleString() ?? '-' }}</div>
+            <div class="stat-label">总调用次数</div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="6">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-value success">{{ overview.successRate ?? '-' }}%</div>
+            <div class="stat-label">成功率</div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="6">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-value warning">{{ overview.todayCalls?.toLocaleString() ?? '-' }}</div>
+            <div class="stat-label">今日调用</div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="6">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-value info">{{ formatTokens(overview.totalTokens) }}</div>
+            <div class="stat-label">总 Tokens</div>
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="16" class="stat-cards secondary">
+        <el-col :xs="12" :sm="6">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-value success">{{ overview.successCalls?.toLocaleString() ?? '-' }}</div>
+            <div class="stat-label">成功调用</div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="6">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-value danger">{{ overview.failedCalls?.toLocaleString() ?? '-' }}</div>
+            <div class="stat-label">失败调用</div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="6">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-value info">{{ overview.avgDuration ? overview.avgDuration + 'ms' : '-' }}</div>
+            <div class="stat-label">平均耗时</div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="6">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-value warning">{{ formatTokens(overview.todayTokens) }}</div>
+            <div class="stat-label">今日 Tokens</div>
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <!-- 每日调用趋势 -->
+      <el-card shadow="hover" class="chart-card">
+        <template #header><span>每日调用趋势</span></template>
+        <div ref="trendChartRef" class="chart-container"></div>
+      </el-card>
+
+      <el-row :gutter="16" class="chart-row">
+        <!-- 按功能分布 -->
+        <el-col :xs="24" :md="12">
+          <el-card shadow="hover" class="chart-card">
+            <template #header><span>按功能分布</span></template>
+            <div ref="functionChartRef" class="chart-container"></div>
+          </el-card>
+        </el-col>
+        <!-- 按模型分布 -->
+        <el-col :xs="24" :md="12">
+          <el-card shadow="hover" class="chart-card">
+            <template #header><span>按模型分布</span></template>
+            <div ref="modelChartRef" class="chart-container"></div>
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="16" class="chart-row">
+        <!-- 功能调用详情 -->
+        <el-col :xs="24" :md="12">
+          <el-card shadow="hover">
+            <template #header><span>功能调用详情</span></template>
+            <el-table :data="overview.functionStats" stripe size="small" max-height="360">
+              <el-table-column prop="functionType" label="功能" min-width="120" />
+              <el-table-column prop="count" label="调用次数" width="90" align="right" />
+              <el-table-column label="成功率" width="80" align="right">
+                <template #default="{ row }">
+                  {{ row.count > 0 ? ((row.successCount / row.count) * 100).toFixed(1) : 0 }}%
+                </template>
+              </el-table-column>
+              <el-table-column label="Tokens" width="90" align="right">
+                <template #default="{ row }">{{ formatTokens(row.totalTokens) }}</template>
+              </el-table-column>
+              <el-table-column label="平均耗时" width="90" align="right">
+                <template #default="{ row }">{{ row.avgDuration ? row.avgDuration + 'ms' : '-' }}</template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+        </el-col>
+        <!-- Top 活跃用户 -->
+        <el-col :xs="24" :md="12">
+          <el-card shadow="hover">
+            <template #header><span>Top 活跃用户</span></template>
+            <el-table :data="overview.topUsers" stripe size="small" max-height="360">
+              <el-table-column label="#" width="50" type="index" align="center" />
+              <el-table-column prop="username" label="用户名" min-width="100" />
+              <el-table-column prop="callCount" label="调用次数" width="90" align="right" />
+              <el-table-column label="Tokens" width="90" align="right">
+                <template #default="{ row }">{{ formatTokens(row.totalTokens) }}</template>
+              </el-table-column>
+              <el-table-column label="平均耗时" width="90" align="right">
+                <template #default="{ row }">{{ row.avgDuration ? row.avgDuration + 'ms' : '-' }}</template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <!-- 最近失败调用 -->
+      <el-card shadow="hover" class="chart-card" v-if="overview.recentFailures?.length">
+        <template #header>
+          <div class="failure-header">
+            <span>最近失败调用</span>
+            <el-tag type="danger" size="small">{{ overview.recentFailures.length }} 条</el-tag>
+          </div>
+        </template>
+        <el-table :data="overview.recentFailures" stripe size="small" max-height="400">
+          <el-table-column prop="id" label="ID" width="70" />
+          <el-table-column prop="functionType" label="功能" width="140" />
+          <el-table-column prop="model" label="模型" width="140" />
+          <el-table-column prop="errorMessage" label="错误信息" min-width="200" show-overflow-tooltip />
+          <el-table-column prop="createTime" label="时间" width="170" />
+        </el-table>
+      </el-card>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { Refresh } from '@element-plus/icons-vue'
+import { getAiUsageOverview, type AiUsageOverview } from '@/api/aiUsage'
+import * as echarts from 'echarts/core'
+import { BarChart, PieChart, LineChart } from 'echarts/charts'
+import {
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent,
+} from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+
+echarts.use([
+  BarChart,
+  PieChart,
+  LineChart,
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent,
+  CanvasRenderer,
+])
+
+const days = ref(30)
+const loading = ref(false)
+const overview = reactive<AiUsageOverview>({
+  totalCalls: 0,
+  successCalls: 0,
+  failedCalls: 0,
+  successRate: 0,
+  totalTokens: 0,
+  avgDuration: 0,
+  todayCalls: 0,
+  todayTokens: 0,
+  functionStats: [],
+  modelStats: [],
+  dailyTrends: [],
+  topUsers: [],
+  recentFailures: [],
+})
+
+const trendChartRef = ref<HTMLElement>()
+const functionChartRef = ref<HTMLElement>()
+const modelChartRef = ref<HTMLElement>()
+
+let trendChart: echarts.ECharts | null = null
+let functionChart: echarts.ECharts | null = null
+let modelChart: echarts.ECharts | null = null
+
+function formatTokens(tokens: number | undefined): string {
+  if (!tokens) return '0'
+  if (tokens >= 1_000_000) return (tokens / 1_000_000).toFixed(1) + 'M'
+  if (tokens >= 1_000) return (tokens / 1_000).toFixed(1) + 'K'
+  return tokens.toLocaleString()
+}
+
+async function fetchData() {
+  loading.value = true
+  try {
+    const { data } = await getAiUsageOverview(days.value)
+    Object.assign(overview, data)
+    await nextTick()
+    renderCharts()
+  } catch (e: any) {
+    console.error('Failed to fetch AI usage overview', e)
+  } finally {
+    loading.value = false
+  }
+}
+
+function renderCharts() {
+  renderTrendChart()
+  renderFunctionChart()
+  renderModelChart()
+}
+
+function renderTrendChart() {
+  if (!trendChartRef.value) return
+  if (!trendChart) {
+    trendChart = echarts.init(trendChartRef.value)
+  }
+  const trends = overview.dailyTrends || []
+  trendChart.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['成功', '失败', 'Tokens'], bottom: 0 },
+    grid: { left: '3%', right: '4%', bottom: '12%', top: '8%', containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: trends.map(t => t.date.slice(5)),
+      axisLabel: { rotate: trends.length > 15 ? 45 : 0 },
+    },
+    yAxis: [
+      { type: 'value', name: '调用次数', position: 'left' },
+      { type: 'value', name: 'Tokens', position: 'right' },
+    ],
+    series: [
+      {
+        name: '成功',
+        type: 'bar',
+        stack: 'calls',
+        data: trends.map(t => t.successCount),
+        itemStyle: { color: '#67C23A' },
+      },
+      {
+        name: '失败',
+        type: 'bar',
+        stack: 'calls',
+        data: trends.map(t => t.failedCount),
+        itemStyle: { color: '#F56C6C' },
+      },
+      {
+        name: 'Tokens',
+        type: 'line',
+        yAxisIndex: 1,
+        data: trends.map(t => t.totalTokens),
+        itemStyle: { color: '#E6A23C' },
+        smooth: true,
+        lineStyle: { width: 2 },
+      },
+    ],
+  })
+}
+
+function renderFunctionChart() {
+  if (!functionChartRef.value) return
+  if (!functionChart) {
+    functionChart = echarts.init(functionChartRef.value)
+  }
+  const funcs = overview.functionStats || []
+  functionChart.setOption({
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    legend: { orient: 'vertical', right: '5%', top: 'center', type: 'scroll' },
+    series: [
+      {
+        type: 'pie',
+        radius: ['40%', '70%'],
+        center: ['35%', '50%'],
+        avoidLabelOverlap: true,
+        label: { show: false },
+        data: funcs.map(f => ({ name: f.functionType, value: f.count })),
+      },
+    ],
+  })
+}
+
+function renderModelChart() {
+  if (!modelChartRef.value) return
+  if (!modelChart) {
+    modelChart = echarts.init(modelChartRef.value)
+  }
+  const models = overview.modelStats || []
+  modelChart.setOption({
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    legend: { orient: 'vertical', right: '5%', top: 'center', type: 'scroll' },
+    series: [
+      {
+        type: 'pie',
+        radius: ['40%', '70%'],
+        center: ['35%', '50%'],
+        avoidLabelOverlap: true,
+        label: { show: false },
+        data: models.map(m => ({ name: m.model, value: m.count })),
+      },
+    ],
+  })
+}
+
+function handleResize() {
+  trendChart?.resize()
+  functionChart?.resize()
+  modelChart?.resize()
+}
+
+onMounted(() => {
+  fetchData()
+  window.addEventListener('resize', handleResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  trendChart?.dispose()
+  functionChart?.dispose()
+  modelChart?.dispose()
+})
+</script>
+
+<style scoped>
+.ai-usage-container {
+  padding: 4px 0;
+}
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.page-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.stat-cards {
+  margin-bottom: 16px;
+}
+.stat-cards.secondary {
+  margin-bottom: 20px;
+}
+.stat-card {
+  text-align: center;
+  padding: 8px 0;
+}
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.stat-value.primary { color: #409EFF; }
+.stat-value.success { color: #67C23A; }
+.stat-value.warning { color: #E6A23C; }
+.stat-value.danger { color: #F56C6C; }
+.stat-value.info { color: #909399; }
+.stat-label {
+  font-size: 13px;
+  color: #909399;
+  margin-top: 4px;
+}
+.chart-card {
+  margin-bottom: 16px;
+}
+.chart-row {
+  margin-bottom: 16px;
+}
+.chart-container {
+  width: 100%;
+  height: 320px;
+}
+.failure-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+@media (max-width: 768px) {
+  .stat-value { font-size: 20px; }
+  .chart-container { height: 240px; }
+  .page-header { flex-direction: column; gap: 8px; align-items: flex-start; }
+}
+</style>

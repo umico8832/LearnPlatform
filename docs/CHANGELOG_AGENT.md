@@ -1,5 +1,73 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 100 - 2026-06-19
+
+### 阶段
+Phase 19：AI 调用分析与成本控制面板 🚧 开发中
+
+### 本轮目标
+实现管理端 AI 调用分析面板，聚合 ai_call_log 数据，展示调用趋势、功能分布、模型分布、Top 活跃用户和失败调用详情，帮助管理员监控 AI 使用情况和成本。
+
+### 完成内容
+1. **后端 — AiUsageOverviewVO**：
+   - 包含全局统计（总调用、成功/失败、成功率、总 tokens、平均耗时、今日调用）。
+   - 5 个内嵌类：FunctionStats（按功能分组）、ModelStats（按模型分组）、DailyTrend（每日趋势）、TopUser（活跃用户）、RecentFailure（失败详情）。
+
+2. **后端 — AiUsageService**：
+   - 基于 AiCallLogMapper 查询指定天数范围内的所有日志。
+   - 流式聚合：全局统计、按功能分组、按模型分组、每日趋势（按日期填充空日期）、Top 10 活跃用户（批量查询用户名）、最近 20 条失败调用。
+
+3. **后端 — AdminAiUsageController**：
+   - `GET /api/admin/ai-usage/overview?days=30`：获取 AI 调用总览。
+   - 位于 `/api/admin/**` 路径下，自动受 ADMIN 角色保护。
+
+4. **前端 — aiUsage.ts API 模块**：
+   - 完整 TypeScript 类型定义（FunctionStats、ModelStats、DailyTrend、TopUser、RecentFailure、AiUsageOverview）。
+   - `getAiUsageOverview(days?)` API 函数。
+
+5. **前端 — AiUsageView.vue 管理端页面**：
+   - 8 个统计卡片（总调用/成功率/今日调用/总Tokens/成功调用/失败调用/平均耗时/今日Tokens）。
+   - 时间范围选择器（7/14/30/90 天）+ 刷新按钮。
+   - ECharts 每日调用趋势图（堆叠柱状图 + Tokens 折线图双 Y 轴）。
+   - ECharts 按功能分布和按模型分布饼图（环形图）。
+   - 功能调用详情表格和 Top 活跃用户表格。
+   - 最近失败调用表格（错误信息溢出省略）。
+   - 响应式适配（移动端卡片 2×2 网格、图表高度自适应）。
+
+6. **路由与导航**：
+   - 路由新增 `admin/ai-usage`（AdminAiUsage，requiresAdmin）。
+   - 侧边栏后台管理子菜单新增"AI 调用分析"（Monitor 图标）。
+
+7. **后端测试**：
+   - 新建 `AiUsageServiceTest.java`（11 个单元测试）：
+     - 正常返回总览数据、空数据零值、功能分组统计、模型分组统计、Top 用户排序、失败调用过滤、days 默认值、days=7 趋势图、Top 用户限制 10 人、平均耗时排除 null。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/dto/AiUsageOverviewVO.java`（新建）
+- `backend/src/main/java/com/learnplatform/service/AiUsageService.java`（新建）
+- `backend/src/main/java/com/learnplatform/controller/AdminAiUsageController.java`（新建）
+- `frontend/src/api/aiUsage.ts`（新建）
+- `frontend/src/views/admin/AiUsageView.vue`（新建）
+- `frontend/src/router/index.ts`（新增路由）
+- `frontend/src/components/layout/AppLayout.vue`（新增侧边栏菜单项）
+- `backend/src/test/java/com/learnplatform/service/AiUsageServiceTest.java`（新建，11 个测试）
+
+### 验证
+- 后端 `mvn test -Dtest="AiUsageServiceTest"` 全部通过（11/11 passed, BUILD SUCCESS）
+
+### 遗留问题
+- 无
+
+### 下一步建议
+- Phase 19 核心功能已完成，可标记为 ✅
+- 可选迭代：AI 调用日报/周报（定时生成报告）、AI 成本预估（基于 token 单价）、AI 配额管理增强（按用户独立调整配额）
+- 或进入其他用户指定任务
+
+### 建议 commit message
+`feat(admin): AI 调用分析与成本控制面板，11 个新单元测试`
+
+---
+
 ## Round 99 - 2026-06-19
 
 ### 阶段

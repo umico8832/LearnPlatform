@@ -184,6 +184,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/admin/SubmissionManage.vue'),
         meta: { title: '投稿管理', requiresAdmin: true },
       },
+      {
+        path: 'admin/ai-usage',
+        name: 'AdminAiUsage',
+        component: () => import('@/views/admin/AiUsageView.vue'),
+        meta: { title: 'AI 调用分析', requiresAdmin: true },
+      },
     ],
   },
   {

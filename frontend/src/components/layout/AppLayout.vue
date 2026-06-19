@@ -119,6 +119,10 @@
                 <el-icon><Upload /></el-icon>
                 <span>投稿管理</span>
               </el-menu-item>
+              <el-menu-item index="/admin/ai-usage">
+                <el-icon><Monitor /></el-icon>
+                <span>AI 调用分析</span>
+              </el-menu-item>
             </el-sub-menu>
           </template>
         </el-menu>
@@ -182,7 +186,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { HomeFilled, Reading, Setting, Collection, Notebook, EditPen, Promotion, Clock, WarningFilled, Trophy, MagicStick, DataAnalysis, StarFilled, UserFilled, Fold, Expand, DataLine, Guide, Connection, TrendCharts, Upload, Search } from '@element-plus/icons-vue'
+import { HomeFilled, Reading, Setting, Collection, Notebook, EditPen, Promotion, Clock, WarningFilled, Trophy, MagicStick, DataAnalysis, StarFilled, UserFilled, Fold, Expand, DataLine, Guide, Connection, TrendCharts, Upload, Search, Monitor } from '@element-plus/icons-vue'
 import GlobalSearchDialog from '@/components/GlobalSearchDialog.vue'
 
 const route = useRoute()
