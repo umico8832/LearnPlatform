@@ -46,6 +46,7 @@ class PracticeServiceTest {
     @Mock private WrongQuestionMapper wrongQuestionMapper;
     @Mock private UserFavoriteQuestionMapper userFavoriteQuestionMapper;
     @Mock private CacheEvictService cacheEvictService;
+    @Mock private SpacedRepetitionService spacedRepetitionService;
     private RecordingWrongQuestionService wrongQuestionService;
     private PracticeService practiceService;
 
@@ -55,7 +56,7 @@ class PracticeServiceTest {
         practiceService = new PracticeService(questionMapper, questionOptionMapper,
                 questionKnowledgePointMapper, practiceRecordMapper, courseMapper,
                 knowledgePointMapper, wrongQuestionMapper, userFavoriteQuestionMapper, wrongQuestionService,
-                new AnswerEvaluator(), cacheEvictService);
+                new AnswerEvaluator(), cacheEvictService, spacedRepetitionService);
     }
 
     @Test

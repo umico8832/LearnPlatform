@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 16 — 题目投稿与 AI 题库生产 🚧 开发中（Round 93 完成内容来源记录与复审机制，后端 271 个测试）
+当前阶段：Phase 17 — 间隔重复与智能复习 🚧 开发中（Round 94 完成 SM-2 算法核心、ReviewController、前端 ReviewView，后端 12 个新测试）
 
 下一阶段主线：先把一道题讲透，把单题从“题干 + 答案 + 解析”升级为结构化 AI 学习对象，再考虑题库上传、OCR、爬虫和社区共建。
 
@@ -38,6 +38,7 @@
 - [x] Phase 14：AI 可视化交互讲解 ✅（P0 文本可视化 ✅；P1 Mermaid 流程图 ✅：第 9 种 mermaid 元素类型 ✅、mermaid.js 动态 import ✅、异步 SVG 渲染 ✅、语法错误 fallback ✅、后端 Prompt 增强 ✅、单元测试 ✅；P2 代码执行动画 ✅：第 10 种 code_animation 元素类型 ✅、CodeAnimationViewer 组件 ✅、播放/暂停/步进控制 ✅、变量状态面板 ✅、暗色代码面板 ✅、Prompt 增强 ✅、单元测试 ✅；代码语法高亮 ✅：highlight.js 按需加载 18 种语言 ✅、逐行高亮方案 ✅、github-dark 主题 ✅、语言别名映射 ✅；P3 SQL 执行顺序可视化 ✅：第 11 种 sql_execution 元素类型 ✅、SqlExecutionViewer 组件 ✅、暗色 SQL 面板+子句高亮 ✅、中间结果预览 ✅、播放控制+速度调节 ✅、Prompt 增强 ✅、单元测试 ✅；P4 网络协议和操作系统过程可视化 ✅：第 12 种 network_protocol 元素类型 ✅、NetworkProtocolViewer 组件 ✅、时序图风格渲染 ✅、箭头方向+状态高亮 ✅；第 13 种 os_process 元素类型 ✅、OsProcessViewer 组件 ✅、可折叠步骤面板+状态表格 ✅、甘特图 ✅、Prompt 增强 ✅、单元测试 ✅）
 - [ ] Phase 15：AI 学习画像与个性化推荐 🚧（P0 学习诊断与每日推荐 ✅；AI 个性化学习建议 ✅；相似题推荐 ✅；错题归因增强 ✅；单题错因分析 ✅：作答历史时间线、掌握趋势（IMPROVING/STAGNANT/DECLINING）、错误模式描述、连续错误检测、反复错题分析；待做：向量相似度增强推荐）
 - [ ] Phase 16：题目投稿与 AI 题库生产 🚧（P0 题目投稿中心 ✅；P1 AI 质检 ✅；P1 AI 知识点标注 ✅；P1 AI 难度评估 ✅；P1 结果缓存 ✅；P1 一键填充审核意见 ✅；Markdown 导入 ✅；内容来源记录与复审机制 ✅：Flyway V8、5 种来源类型自动标记、复审记录表、定期复审机制、管理端来源筛选+复审弹窗、后端 8 个新测试；待做：复审结果缓存）
+- [ ] Phase 17：间隔重复与智能复习 🚧（SM-2 算法核心 ✅；question_review_schedule 表 Flyway V9 ✅；SpacedRepetitionService ✅；ReviewController 7 个接口 ✅；刷题自动加入复习计划 ✅；前端 ReviewView 页面 ✅；12 个单元测试 ✅；待做：错题自动复习调度、AI 复习建议整合、复习统计整合到学习报告）
 
 ---
 
@@ -132,12 +133,14 @@ docker compose up -d
 
 ## 6. 下一步建议任务
 
-任务名称：Phase 14/16 候选方向 — 网络协议和操作系统过程可视化 / 内容来源记录
+任务名称：Phase 17 后续方向 — 间隔重复与智能复习增强
 
-Phase 14 已完成网络协议和操作系统过程可视化（Round 92，network_protocol + os_process 两种新元素类型、NetworkProtocolViewer + OsProcessViewer 组件、Prompt 增强、2 个新单元测试，后端 273 个测试全部通过，前端 187 个测试全部通过）。Phase 14 现有 13 种可视化元素，候选方向已基本覆盖。
+Phase 17 已完成 SM-2 算法核心、ReviewController（7 个接口）、前端 ReviewView 页面和 12 个单元测试。刷题时自动加入复习计划已集成到 PracticeService。
 
 下一步建议：
-- Phase 17 新阶段规划
+- 错题自动复习调度（错题本错题自动加入复习计划）
+- AI 复习建议整合（基于复习统计数据生成个性化复习建议）
+- 复习统计整合到学习报告
 - 或其他用户指定任务
 
 当前不优先做：
@@ -147,7 +150,7 @@ Phase 14 已完成网络协议和操作系统过程可视化（Round 92，networ
 - 用户上传题库自动入库
 - AI 自动审核发布题目
 
-建议 commit message: `feat(source): 新增题目来源追踪与复审机制，管理端支持来源筛选和复审操作，Flyway V8`
+建议 commit message: `feat(review): 新增间隔重复复习系统（SM-2 算法），刷题自动加入复习计划，前端智能复习页面，Flyway V9`
 
 ---
 
@@ -190,10 +193,10 @@ Phase 14 已完成网络协议和操作系统过程可视化（Round 92，networ
 6. 除非遇到重大方向、破坏性操作或需求冲突，否则不要频繁问我；
 7. 每轮结束都要更新 docs/CHANGELOG_AGENT.md 和必要文档。
 
-当前阶段：Phase 16 — 题目投稿与 AI 题库生产（P0 投稿中心 + P1 AI 质检 + P1 AI 知识点标注 + P1 AI 难度评估 + P1 结果缓存 + P1 一键填充审核意见 + Markdown 导入 + 内容来源记录与复审机制已完成）。Phase 14 可视化讲解已基本完成（13 种元素类型）。
+当前阶段：Phase 17 — 间隔重复与智能复习（SM-2 算法核心 + Flyway V9 + SpacedRepetitionService + ReviewController + 前端 ReviewView + 12 个单元测试已完成）。Phase 16 题目投稿与 AI 题库生产已基本完成。Phase 14 可视化讲解已基本完成（13 种元素类型）。
 
-已完成模块：用户鉴权、课程知识点、题库、刷题判分（含填空简答增强）、错题本（含重练）、试卷考试、AI 功能（含流式输出与配额管理）、统计可视化（含个人学习报告）、质量提升、部署简历、收藏题练习、Excel/Markdown 导入导出、学习计划、题目评论、多端适配、难度自适应、管理端用户管理、Phase 13 AI 题目学习资产、Phase 14 全部可视化讲解（13 种元素类型）、Phase 15 学习画像与推荐、Phase 16 全部功能（含来源追踪与复审机制）、后端测试 271 个、前端 Vitest 测试（187 个，21 个测试文件）、GitHub Actions CI。
-下一阶段主线：Phase 17 新阶段规划。
+已完成模块：用户鉴权、课程知识点、题库、刷题判分（含填空简答增强）、错题本（含重练）、试卷考试、AI 功能（含流式输出与配额管理）、统计可视化（含个人学习报告）、质量提升、部署简历、收藏题练习、Excel/Markdown 导入导出、学习计划、题目评论、多端适配、难度自适应、管理端用户管理、Phase 13 AI 题目学习资产、Phase 14 全部可视化讲解（13 种元素类型）、Phase 15 学习画像与推荐、Phase 16 全部功能（含来源追踪与复审机制）、Phase 17 间隔重复复习系统（SM-2 算法）、后端测试 271+ 个、前端 Vitest 测试（187 个，21 个测试文件）、GitHub Actions CI。
+下一阶段主线：Phase 17 候选方向（错题自动复习调度、AI 复习建议整合、复习统计整合到学习报告）。
 当前不优先做：PDF / 图片 OCR、爬虫、用户上传题库自动入库、AI 自动审核发布题目、复杂推荐系统。
 后续扩展方向：见 docs/AI_LEARNING_PLATFORM_STRATEGY.md、docs/FUTURE.md 和 docs/TESTING.md；测试按业务风险补充。
 

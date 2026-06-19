@@ -1,5 +1,103 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 94 - 2026-06-19
+
+### 阶段
+Phase 17：间隔重复与智能复习 🚧 开发中
+
+### 本轮目标
+实现基于 SM-2（SuperMemo 2）算法的间隔重复复习系统。用户刷题后自动加入复习计划，系统根据答题质量动态调整复习间隔（1→6→EF*间隔），答错重置。提供复习统计、卡片管理、连续打卡等完整功能。新增 Flyway V9、question_review_schedule 表、SpacedRepetitionService、ReviewController、前端 ReviewView 页面。
+
+### 完成内容
+1. **数据库迁移**（`V9__create_review_schedule_table.sql`）：
+   - 新建 `question_review_schedule` 表（用户ID、题目ID、简易因子EF、间隔天数、连续正确次数、下次复习日期、上次复习日期、上次质量评分、总复习次数），含唯一索引 uk_user_question、日期索引。
+
+2. **后端实体/DTO/Mapper**：
+   - `QuestionReviewSchedule.java` — 复习计划实体（含 BigDecimal easeFactor、LocalDate nextReviewDate 等 SM-2 字段）。
+   - `QuestionReviewScheduleMapper.java` — MyBatis-Plus Mapper。
+   - `ReviewScheduleVO.java` — 复习卡片 VO（含题目内容、题型、课程名、逾期信息、状态标签）。
+   - `ReviewSubmitRequest.java` — 复习答题提交（userAnswer、selfAssessedQuality 0-5 自评）。
+   - `ReviewStatsVO.java` — 复习统计概览（总卡片数、待复习、逾期、已掌握、困难、连续天数、平均EF）。
+
+3. **SpacedRepetitionService**（核心 SM-2 算法服务）：
+   - `addToReviewPlan` — 自动将题目加入复习计划（幂等，已存在忽略）。
+   - `getDueReviewCards` — 获取今日待复习题目（含逾期，按日期+EF排序）。
+   - `submitReview` — 提交复习答案：自动判分、更新错题本、应用 SM-2 更新调度（EF/间隔/重复数）、记录 PracticeRecord。
+   - `getReviewStats` — 复习统计（新卡片/学习中/已掌握/困难分类、连续复习天数、平均EF）。
+   - `getAllReviewCards` — 获取全部复习计划卡片（支持课程筛选）。
+   - `removeFromReviewPlan` — 移出复习计划。
+   - `resetReviewProgress` — 重置复习进度。
+   - SM-2 公式：EF' = EF + (0.1 - (5-q) * (0.08 + (5-q) * 0.02))，EF ≥ 1.30；interval = 1, 6, interval*EF。
+
+4. **ReviewController**（7 个接口）：
+   - `GET /api/review/stats` — 复习统计概览
+   - `GET /api/review/due` — 今日待复习题目
+   - `GET /api/review/cards` — 全部复习计划卡片
+   - `POST /api/review/add/{questionId}` — 加入复习计划
+   - `POST /api/review/submit` — 提交复习答案
+   - `DELETE /api/review/remove/{questionId}` — 移出复习计划
+   - `POST /api/review/reset/{questionId}` — 重置复习进度
+
+5. **PracticeService 集成**：
+   - `submitAnswer` 方法新增自动加入复习计划调用（`spacedRepetitionService.addToReviewPlan`），异常静默处理不影响主流程。
+   - 构造器新增 `SpacedRepetitionService` 参数。
+
+6. **前端**：
+   - `review.ts` — 新建 API 模块（7 个函数 + 3 个 TS 接口）。
+   - `ReviewView.vue` — 智能复习页面（统计卡片 4 个、掌握进度条、复习会话卡片（答题+结果+下一题）、全部卡片列表表格（含移出/重置操作））。
+   - `router/index.ts` — 新增 `/review` 路由。
+   - `AppLayout.vue` — 侧边栏新增"智能复习"菜单项（Timer 图标）。
+
+7. **单元测试**（`SpacedRepetitionServiceTest.java`，12 个测试）：
+   - SM-2 第一次答对→间隔1天
+   - SM-2 第二次答对→间隔6天
+   - SM-2 第三次答对→间隔≈EF*6
+   - 完美回忆→EF增加
+   - 答错→重置重复数和间隔
+   - EF不低于最低值1.30
+   - 连续答错→EF保持最低值、间隔保持1天
+   - 稳定复习→间隔递增
+   - 自评质量优先
+   - 默认质量映射（答对→4，答错→1）
+   - 超出范围自评→使用默认
+   - null 字段处理不抛异常
+
+### 验证结果
+- 后端 18 个相关测试全部通过（SpacedRepetitionServiceTest 12 个 + PracticeServiceTest 6 个）
+- 前端 TypeScript 编译无错误
+
+### 修改文件
+新建：
+- `backend/src/main/resources/db/migration/V9__create_review_schedule_table.sql`
+- `backend/src/main/java/com/learnplatform/entity/QuestionReviewSchedule.java`
+- `backend/src/main/java/com/learnplatform/mapper/QuestionReviewScheduleMapper.java`
+- `backend/src/main/java/com/learnplatform/dto/ReviewScheduleVO.java`
+- `backend/src/main/java/com/learnplatform/dto/ReviewSubmitRequest.java`
+- `backend/src/main/java/com/learnplatform/dto/ReviewStatsVO.java`
+- `backend/src/main/java/com/learnplatform/service/SpacedRepetitionService.java`
+- `backend/src/main/java/com/learnplatform/controller/ReviewController.java`
+- `backend/src/test/java/com/learnplatform/service/SpacedRepetitionServiceTest.java`
+- `frontend/src/api/review.ts`
+- `frontend/src/views/practice/ReviewView.vue`
+
+修改：
+- `backend/src/main/java/com/learnplatform/service/PracticeService.java` — 新增 SpacedRepetitionService 依赖和自动加入复习计划
+- `backend/src/test/java/com/learnplatform/service/PracticeServiceTest.java` — 构造器参数更新
+- `frontend/src/router/index.ts` — 新增 /review 路由
+- `frontend/src/components/layout/AppLayout.vue` — 侧边栏新增智能复习菜单
+
+### 遗留问题
+- PracticeService 中 SpacedRepetitionService 与 PracticeService 存在循环依赖风险（Spring 懒加载可解），需后续验证
+- 前端复习会话的正确答案展示可进一步增强（当前仅展示间隔变化）
+
+### 下轮建议
+- Phase 17 后续候选：错题自动复习调度、AI 生成复习建议整合、复习统计整合到学习报告
+- 或 Phase 18 新阶段规划
+
+建议 commit message: `feat(review): 新增间隔重复复习系统（SM-2 算法），刷题自动加入复习计划，前端智能复习页面，Flyway V9`
+
+---
+
 ## Round 93 - 2026-06-19
 
 ### 阶段

@@ -34,6 +34,7 @@ public class PracticeService {
     private final WrongQuestionService wrongQuestionService;
     private final AnswerEvaluator answerEvaluator;
     private final CacheEvictService cacheEvictService;
+    private final SpacedRepetitionService spacedRepetitionService;
 
     public PracticeService(QuestionMapper questionMapper,
                            QuestionOptionMapper questionOptionMapper,
@@ -45,7 +46,8 @@ public class PracticeService {
                            UserFavoriteQuestionMapper userFavoriteQuestionMapper,
                            WrongQuestionService wrongQuestionService,
                            AnswerEvaluator answerEvaluator,
-                           CacheEvictService cacheEvictService) {
+                           CacheEvictService cacheEvictService,
+                           SpacedRepetitionService spacedRepetitionService) {
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
@@ -57,6 +59,7 @@ public class PracticeService {
         this.wrongQuestionService = wrongQuestionService;
         this.answerEvaluator = answerEvaluator;
         this.cacheEvictService = cacheEvictService;
+        this.spacedRepetitionService = spacedRepetitionService;
     }
 
     /**
@@ -196,6 +199,13 @@ public class PracticeService {
 
         // 清除统计缓存
         cacheEvictService.evictUserStatistics(userId);
+
+        // 自动加入间隔重复复习计划
+        try {
+            spacedRepetitionService.addToReviewPlan(userId, request.getQuestionId());
+        } catch (Exception e) {
+            log.warn("加入复习计划失败: {}", e.getMessage());
+        }
 
         return result;
     }

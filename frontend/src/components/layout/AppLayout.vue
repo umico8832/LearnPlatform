@@ -52,6 +52,10 @@
             <el-icon><StarFilled /></el-icon>
             <span>我的收藏</span>
           </el-menu-item>
+          <el-menu-item index="/review">
+            <el-icon><Timer /></el-icon>
+            <span>智能复习</span>
+          </el-menu-item>
           <el-menu-item index="/learning-report">
             <el-icon><DataLine /></el-icon>
             <span>学习报告</span>

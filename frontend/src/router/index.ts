@@ -76,6 +76,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '我的收藏' },
       },
       {
+        path: 'review',
+        name: 'Review',
+        component: () => import('@/views/practice/ReviewView.vue'),
+        meta: { title: '智能复习' },
+      },
+      {
         path: 'profile',
         name: 'Profile',
         component: () => import('@/views/auth/ProfileView.vue'),
