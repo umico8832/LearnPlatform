@@ -70,6 +70,50 @@
         </el-col>
       </el-row>
 
+      <!-- 复习统计卡片 -->
+      <el-row :gutter="20" class="metric-row" v-if="report.totalReviewCards > 0">
+        <el-col :xs="12" :sm="8" :md="4">
+          <el-card shadow="hover" class="metric-card">
+            <div class="metric-value primary">{{ report.totalReviewCards }}</div>
+            <div class="metric-label">复习卡片总数</div>
+            <div class="metric-sub text-muted">
+              已掌握 {{ report.masteredReviewCards }} 张
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="8" :md="4">
+          <el-card shadow="hover" class="metric-card">
+            <div class="metric-value success">{{ report.monthlyReviewedCount }}</div>
+            <div class="metric-label">本月复习次数</div>
+            <div class="metric-sub text-muted">
+              间隔重复系统
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="8" :md="4">
+          <el-card shadow="hover" class="metric-card">
+            <div class="metric-value" :class="report.reviewStreakDays > 0 ? 'success' : 'warning'">
+              {{ report.reviewStreakDays }}
+            </div>
+            <div class="metric-label">连续复习天数</div>
+            <div class="metric-sub text-muted">
+              坚持就是胜利 💪
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="8" :md="4">
+          <el-card shadow="hover" class="metric-card">
+            <div class="metric-value" :class="report.dueTodayCount > 0 ? 'danger' : 'success'">
+              {{ report.dueTodayCount }}
+            </div>
+            <div class="metric-label">今日待复习</div>
+            <div class="metric-sub text-muted">
+              {{ report.dueTodayCount > 0 ? '别忘了复习哦' : '已完成 ✓' }}
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+
       <!-- 图表区域 -->
       <el-row :gutter="20" class="chart-row">
         <!-- 本月每日刷题趋势 -->
@@ -95,6 +139,21 @@
               <div ref="typeChartRef" class="chart-container"></div>
             </div>
             <el-empty v-else description="暂无题型数据" />
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <!-- 本月每日复习趋势 -->
+      <el-row :gutter="20" class="chart-row" v-if="report.totalReviewCards > 0">
+        <el-col :xs="24">
+          <el-card shadow="hover">
+            <template #header>
+              <span class="chart-title">🔄 本月每日复习趋势</span>
+            </template>
+            <div v-if="report.monthlyReviewTrend && report.monthlyReviewTrend.length > 0">
+              <div ref="reviewChartRef" class="chart-container"></div>
+            </div>
+            <el-empty v-else description="本月暂无复习数据" />
           </el-card>
         </el-col>
       </el-row>
@@ -150,7 +209,13 @@ const report = reactive<LearningReport>({
   practiceGrowthRate: 0,
   dailyTrend: [],
   courseStats: [],
-  questionTypeDistribution: {}
+  questionTypeDistribution: {},
+  totalReviewCards: 0,
+  monthlyReviewedCount: 0,
+  reviewStreakDays: 0,
+  masteredReviewCards: 0,
+  dueTodayCount: 0,
+  monthlyReviewTrend: []
 })
 
 const hasTypeData = computed(() => {
@@ -162,14 +227,17 @@ const hasTypeData = computed(() => {
 const dailyChartRef = ref<HTMLElement | null>(null)
 const typeChartRef = ref<HTMLElement | null>(null)
 const courseChartRef = ref<HTMLElement | null>(null)
+const reviewChartRef = ref<HTMLElement | null>(null)
 let dailyChart: ECharts | null = null
 let typeChart: ECharts | null = null
 let courseChart: ECharts | null = null
+let reviewChart: ECharts | null = null
 
 function handleResize() {
   dailyChart?.resize()
   typeChart?.resize()
   courseChart?.resize()
+  reviewChart?.resize()
 }
 
 function initDailyChart() {
@@ -242,6 +310,42 @@ function initTypeChart() {
   })
 }
 
+function initReviewChart() {
+  if (!reviewChartRef.value || !report.monthlyReviewTrend?.length) return
+  reviewChart = init(reviewChartRef.value)
+  const now = new Date()
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+  const dates: string[] = []
+  for (let i = 0; i < report.monthlyReviewTrend.length; i++) {
+    const d = new Date(monthStart)
+    d.setDate(d.getDate() + i)
+    dates.push(`${d.getMonth() + 1}/${d.getDate()}`)
+  }
+
+  reviewChart.setOption({
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'line' }
+    },
+    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: dates,
+      axisLabel: { rotate: dates.length > 15 ? 45 : 0, fontSize: 11 }
+    },
+    yAxis: { type: 'value', minInterval: 1 },
+    series: [
+      {
+        name: '复习卡片数',
+        type: 'bar',
+        data: report.monthlyReviewTrend,
+        itemStyle: { color: '#7c4dff' },
+        barMaxWidth: 20
+      }
+    ]
+  })
+}
+
 function initCourseChart() {
   if (!courseChartRef.value || !report.courseStats?.length) return
   courseChart = init(courseChartRef.value)
@@ -311,6 +415,7 @@ onMounted(async () => {
   await nextTick()
   initDailyChart()
   initTypeChart()
+  initReviewChart()
   initCourseChart()
 })
 
@@ -319,6 +424,7 @@ onBeforeUnmount(() => {
   dailyChart?.dispose()
   typeChart?.dispose()
   courseChart?.dispose()
+  reviewChart?.dispose()
 })
 </script>
 

@@ -81,6 +81,13 @@ export interface LearningReport {
   dailyTrend: DailyTrendItem[]
   courseStats: CourseStatItem[]
   questionTypeDistribution: Record<string, number>
+  // 复习统计
+  totalReviewCards: number
+  monthlyReviewedCount: number
+  reviewStreakDays: number
+  masteredReviewCards: number
+  dueTodayCount: number
+  monthlyReviewTrend: number[]
 }
 
 /** 获取个人学习报告 */

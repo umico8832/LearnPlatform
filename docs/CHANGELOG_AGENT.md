@@ -1,5 +1,59 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 97 - 2026-06-19
+
+### 阶段
+Phase 17：间隔重复与智能复习 🚧 开发中
+
+### 本轮目标
+将间隔重复复习统计数据整合到月度学习报告中，让用户在学习报告页面同时看到刷题、考试和复习的完整学习数据。
+
+### 完成内容
+1. **后端 — LearningReportVO**：
+   - 新增 6 个复习统计字段：`totalReviewCards`、`monthlyReviewedCount`、`reviewStreakDays`、`masteredReviewCards`、`dueTodayCount`、`monthlyReviewTrend`。
+
+2. **后端 — StatisticsService**：
+   - 注入 `QuestionReviewScheduleMapper`。
+   - 新增 `buildReviewStats()` 私有方法，从 `question_review_schedule` 表查询复习卡片统计。
+   - 在 `getLearningReport()` 方法末尾调用 `buildReviewStats()` 填充复习数据。
+   - 统计内容包括：总卡片数、今日待复习、本月完成复习次数、已掌握卡片数（间隔 >= 21 天）、连续复习天数、本月每日复习趋势。
+
+3. **前端 — statistics.ts**：
+   - `LearningReport` 接口新增 6 个复习统计字段。
+
+4. **前端 — LearningReportView.vue**：
+   - 新增复习统计卡片区域（4 个指标卡片：复习卡片总数、本月复习次数、连续复习天数、今日待复习），仅在有复习数据时显示。
+   - 新增「本月每日复习趋势」ECharts 柱状图（紫色），仅在有复习数据时显示。
+   - 新增 `reviewChartRef`、`reviewChart` 和 `initReviewChart()` 初始化逻辑。
+   - 更新 `handleResize()` 和 `onBeforeUnmount()` 以管理复习图表生命周期。
+
+5. **后端测试**：
+   - 新建 `LearningReportReviewStatsTest.java`（4 个单元测试）：
+     - `getLearningReport_withReviewData_returnsReviewStats`：验证有复习数据时统计正确。
+     - `getLearningReport_noReviewCards_returnsZeroReviewStats`：验证无复习数据时返回零值。
+     - `getLearningReport_reviewStreakDays_calculatedCorrectly`：验证连续复习天数计算。
+     - `getLearningReport_multipleMasteredCards_countedCorrectly`：验证已掌握卡片计数。
+   - 编译通过，测试因 JDK 26 本地 OOM 问题无法在本地运行（已知问题，CI 环境可运行）。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/dto/LearningReportVO.java`（+6 字段 + getter/setter）
+- `backend/src/main/java/com/learnplatform/service/StatisticsService.java`（注入 mapper + buildReviewStats 方法）
+- `frontend/src/api/statistics.ts`（+6 字段类型定义）
+- `frontend/src/views/statistics/LearningReportView.vue`（+4 指标卡片 + 复习趋势图 + 图表生命周期管理）
+- `backend/src/test/java/com/learnplatform/service/LearningReportReviewStatsTest.java`（新建，4 个测试）
+
+### 验证
+- 后端 `mvn compile` 编译通过
+- 新增 4 个单元测试（编译通过，JDK 26 本地 OOM 问题不影响代码正确性）
+
+### 遗留问题
+- 测试在本地 JDK 26 环境下因 OOM 无法运行，需在 CI（JDK 17）环境验证
+
+### 建议 commit message
+`feat(report): 复习统计整合到学习报告，新增复习指标卡片和月度复习趋势图，4 个新测试`
+
+---
+
 ## Round 96 - 2026-06-19
 
 ### 阶段

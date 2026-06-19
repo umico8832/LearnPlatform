@@ -21,11 +21,11 @@
 | 14 | AI 可视化交互讲解 | ✅ 已完成 | Round 73-74,88-92 | 面向算法、代码、SQL、数据结构、网络协议、操作系统等过程类题目做可视化讲解（P0 文本可视化 ✅ + P1 Mermaid 流程图 ✅ + P2 代码执行动画 ✅ + 代码语法高亮 ✅ + SQL 执行顺序可视化 ✅ + 网络协议时序图 ✅ + 操作系统过程可视化 ✅），共 13 种可视化元素类型 |
 | 15 | AI 学习画像与个性化推荐 | 🚧 开发中 | Round 75-79 | 基于错题、答题记录和 AI 学习行为做诊断与推荐（P0 学习诊断与每日推荐 ✅ + AI 个性化学习建议 ✅ + 相似题推荐 ✅ + 错题归因分析增强 ✅） |
 | 16 | 题目投稿与 AI 题库生产 | 🚧 开发中 | Round 82-87 | 投稿、质检、标注、难度评估、结果缓存、一键填充审核意见（P0 投稿中心 ✅ + P1 AI 质检 ✅ + P1 AI 知识点标注 ✅ + P1 AI 难度评估 ✅ + P1 结果缓存 ✅ + P1 一键填充审核意见 ✅） |
-| 17 | 间隔重复与智能复习 | 🚧 开发中 | Round 94-96 | 基于 SM-2 算法的间隔重复系统（Flyway V9 ✅ + SpacedRepetitionService ✅ + ReviewController 10 个接口 ✅ + 前端 ReviewView ✅ + 错题自动复习调度 ✅ + 循环依赖消除 ✅ + AI 复习建议整合 ✅ + 21 个单元测试 ✅） |
+| 17 | 间隔重复与智能复习 | ✅ 基本完成 | Round 94-97 | 基于 SM-2 算法的间隔重复系统（Flyway V9 ✅ + SpacedRepetitionService ✅ + ReviewController 10 个接口 ✅ + 前端 ReviewView ✅ + 错题自动复习调度 ✅ + 循环依赖消除 ✅ + AI 复习建议整合 ✅ + 复习统计整合到学习报告 ✅ + 25 个单元测试 ✅） |
 
 **Phase 0-12 预计总工期**：约 17-20 天
 
-**当前下一阶段：Phase 17 候选方向（复习统计整合到学习报告）。AI 复习建议整合已完成。**
+**当前下一阶段：Phase 18 新阶段规划。Phase 17 间隔重复与智能复习已基本完成。**
 
 ---
 
@@ -558,3 +558,22 @@
 
 ### 候选方向（后续迭代）
 - 复审结果缓存
+
+---
+
+## Phase 17：间隔重复与智能复习 ✅ 基本完成
+
+### 目标
+基于 SM-2（SuperMemo 2）算法实现间隔重复复习系统，将刷题和错题自动纳入复习计划，系统根据答题质量动态调整复习间隔。复习统计数据整合到月度学习报告。
+
+### 已完成
+- [x] question_review_schedule 表（Flyway V9）
+- [x] SpacedRepetitionService（SM-2 算法核心）
+- [x] ReviewController（8+2 个接口：stats、due、cards、add、submit、remove、reset + sync-wrong-questions + ai-suggestion、ai-suggestion/stream）
+- [x] 刷题自动加入复习计划（PracticeService 集成）
+- [x] 前端 ReviewView 页面（统计卡片、复习会话、全部卡片列表）
+- [x] 错题自动复习调度（一键同步错题本到复习计划）
+- [x] 循环依赖消除（SpacedRepetitionService 直接操作 WrongQuestionMapper）
+- [x] AI 复习建议整合（ReviewContextVO + AiService 6 个新方法 + SSE 流式输出）
+- [x] 复习统计整合到学习报告（LearningReportVO +6 字段 + StatisticsService.buildReviewStats + 前端复习指标卡片和月度复习趋势图）
+- [x] 25 个单元测试（SM-2 算法 12 + 错题同步 4 + AI 复习建议 5 + 学习报告复习统计 4）

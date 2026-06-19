@@ -6,6 +6,8 @@ import com.learnplatform.dto.LearningReportVO;
 import com.learnplatform.dto.StatisticsVO;
 import com.learnplatform.entity.*;
 import com.learnplatform.mapper.*;
+import com.learnplatform.entity.QuestionReviewSchedule;
+import com.learnplatform.mapper.QuestionReviewScheduleMapper;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +30,7 @@ public class StatisticsService {
     private final UserMapper userMapper;
     private final ExamPaperMapper examPaperMapper;
     private final ExamRecordMapper examRecordMapper;
+    private final QuestionReviewScheduleMapper reviewScheduleMapper;
 
     public StatisticsService(PracticeRecordMapper practiceRecordMapper,
                              WrongQuestionMapper wrongQuestionMapper,
@@ -35,7 +38,8 @@ public class StatisticsService {
                              CourseMapper courseMapper,
                              UserMapper userMapper,
                              ExamPaperMapper examPaperMapper,
-                             ExamRecordMapper examRecordMapper) {
+                             ExamRecordMapper examRecordMapper,
+                             QuestionReviewScheduleMapper reviewScheduleMapper) {
         this.practiceRecordMapper = practiceRecordMapper;
         this.wrongQuestionMapper = wrongQuestionMapper;
         this.questionMapper = questionMapper;
@@ -43,6 +47,7 @@ public class StatisticsService {
         this.userMapper = userMapper;
         this.examPaperMapper = examPaperMapper;
         this.examRecordMapper = examRecordMapper;
+        this.reviewScheduleMapper = reviewScheduleMapper;
     }
 
     /**
@@ -352,7 +357,82 @@ public class StatisticsService {
         }
         vo.setQuestionTypeDistribution(typeDist);
 
+        // ========== 复习统计（间隔重复） ==========
+        buildReviewStats(vo, userId, today, monthStart);
+
         return vo;
+    }
+
+    /**
+     * 构建复习统计信息并填充到 LearningReportVO
+     */
+    private void buildReviewStats(LearningReportVO vo, Long userId, LocalDate today, LocalDate monthStart) {
+        // 1. 总卡片数
+        LambdaQueryWrapper<QuestionReviewSchedule> allWrapper = new LambdaQueryWrapper<>();
+        allWrapper.eq(QuestionReviewSchedule::getUserId, userId);
+        long totalCards = reviewScheduleMapper.selectCount(allWrapper);
+        vo.setTotalReviewCards((int) totalCards);
+
+        if (totalCards == 0) {
+            vo.setMonthlyReviewedCount(0);
+            vo.setReviewStreakDays(0);
+            vo.setMasteredReviewCards(0);
+            vo.setDueTodayCount(0);
+            vo.setMonthlyReviewTrend(Collections.emptyList());
+            return;
+        }
+
+        // 2. 今日待复习（今天及之前到期的）
+        LambdaQueryWrapper<QuestionReviewSchedule> dueWrapper = new LambdaQueryWrapper<>();
+        dueWrapper.eq(QuestionReviewSchedule::getUserId, userId)
+                  .le(QuestionReviewSchedule::getNextReviewDate, today);
+        Long dueCount = reviewScheduleMapper.selectCount(dueWrapper);
+        vo.setDueTodayCount(dueCount != null ? dueCount.intValue() : 0);
+
+        // 3. 本月完成复习次数（lastReviewDate 在本月范围内）
+        LambdaQueryWrapper<QuestionReviewSchedule> monthReviewWrapper = new LambdaQueryWrapper<>();
+        monthReviewWrapper.eq(QuestionReviewSchedule::getUserId, userId)
+                          .ge(QuestionReviewSchedule::getLastReviewDate, monthStart)
+                          .le(QuestionReviewSchedule::getLastReviewDate, today);
+        List<QuestionReviewSchedule> monthReviewed = reviewScheduleMapper.selectList(monthReviewWrapper);
+        vo.setMonthlyReviewedCount(monthReviewed.size());
+
+        // 4. 已掌握卡片数（间隔 >= 21 天）
+        List<QuestionReviewSchedule> allCards = reviewScheduleMapper.selectList(allWrapper);
+        int mastered = 0;
+        for (QuestionReviewSchedule card : allCards) {
+            if (card.getIntervalDays() != null && card.getIntervalDays() >= 21) {
+                mastered++;
+            }
+        }
+        vo.setMasteredReviewCards(mastered);
+
+        // 5. 连续复习天数
+        int streak = 0;
+        LocalDate checkDate = today;
+        while (true) {
+            LambdaQueryWrapper<QuestionReviewSchedule> streakWrapper = new LambdaQueryWrapper<>();
+            streakWrapper.eq(QuestionReviewSchedule::getUserId, userId)
+                         .eq(QuestionReviewSchedule::getLastReviewDate, checkDate);
+            if (reviewScheduleMapper.selectCount(streakWrapper) > 0) {
+                streak++;
+                checkDate = checkDate.minusDays(1);
+            } else {
+                break;
+            }
+        }
+        vo.setReviewStreakDays(streak);
+
+        // 6. 本月每日复习趋势（按天统计 lastReviewDate = 当天的卡片数）
+        List<Integer> monthlyTrend = new ArrayList<>();
+        for (int i = 0; i < today.getDayOfMonth(); i++) {
+            LocalDate d = monthStart.plusDays(i);
+            long dayCount = monthReviewed.stream()
+                    .filter(s -> d.equals(s.getLastReviewDate()))
+                    .count();
+            monthlyTrend.add((int) dayCount);
+        }
+        vo.setMonthlyReviewTrend(monthlyTrend);
     }
 
     // ======================== 私有方法 ========================

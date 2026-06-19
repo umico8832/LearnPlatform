@@ -47,6 +47,26 @@ public class LearningReportVO {
     /** 本月各题型刷题分布 */
     private Map<String, Integer> questionTypeDistribution;
 
+    // ======================== 复习统计 ========================
+
+    /** 复习计划总卡片数 */
+    private Integer totalReviewCards;
+
+    /** 本月完成复习次数 */
+    private Integer monthlyReviewedCount;
+
+    /** 连续复习天数 */
+    private Integer reviewStreakDays;
+
+    /** 已掌握卡片数（间隔 >= 21 天） */
+    private Integer masteredReviewCards;
+
+    /** 今日待复习数 */
+    private Integer dueTodayCount;
+
+    /** 本月每日复习趋势 */
+    private List<Integer> monthlyReviewTrend;
+
     public Integer getMonthTotalPractice() {
         return monthTotalPractice;
     }
@@ -149,5 +169,53 @@ public class LearningReportVO {
 
     public void setQuestionTypeDistribution(Map<String, Integer> questionTypeDistribution) {
         this.questionTypeDistribution = questionTypeDistribution;
+    }
+
+    public Integer getTotalReviewCards() {
+        return totalReviewCards;
+    }
+
+    public void setTotalReviewCards(Integer totalReviewCards) {
+        this.totalReviewCards = totalReviewCards;
+    }
+
+    public Integer getMonthlyReviewedCount() {
+        return monthlyReviewedCount;
+    }
+
+    public void setMonthlyReviewedCount(Integer monthlyReviewedCount) {
+        this.monthlyReviewedCount = monthlyReviewedCount;
+    }
+
+    public Integer getReviewStreakDays() {
+        return reviewStreakDays;
+    }
+
+    public void setReviewStreakDays(Integer reviewStreakDays) {
+        this.reviewStreakDays = reviewStreakDays;
+    }
+
+    public Integer getMasteredReviewCards() {
+        return masteredReviewCards;
+    }
+
+    public void setMasteredReviewCards(Integer masteredReviewCards) {
+        this.masteredReviewCards = masteredReviewCards;
+    }
+
+    public Integer getDueTodayCount() {
+        return dueTodayCount;
+    }
+
+    public void setDueTodayCount(Integer dueTodayCount) {
+        this.dueTodayCount = dueTodayCount;
+    }
+
+    public List<Integer> getMonthlyReviewTrend() {
+        return monthlyReviewTrend;
+    }
+
+    public void setMonthlyReviewTrend(List<Integer> monthlyReviewTrend) {
+        this.monthlyReviewTrend = monthlyReviewTrend;
     }
 }
