@@ -86,3 +86,20 @@ export function resetReviewProgress(questionId: number) {
 export function syncWrongQuestionsToReview() {
   return request.post<{ syncedCount: number }>('/api/review/sync-wrong-questions')
 }
+
+/** AI 复习建议（同步） */
+export function getAiReviewSuggestion() {
+  return request.post<{ content: string; source: string }>('/api/review/ai-suggestion')
+}
+
+/** AI 复习建议（流式 SSE） — 返回 fetch Response，调用方自行读取 SSE 流 */
+export async function getAiReviewSuggestionStream(token: string): Promise<Response> {
+  const base = import.meta.env.VITE_API_BASE_URL || ''
+  return fetch(`${base}/api/review/ai-suggestion/stream`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'text/event-stream',
+    },
+  })
+}

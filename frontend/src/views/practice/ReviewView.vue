@@ -59,8 +59,27 @@
           <el-button size="large" :loading="syncing" @click="handleSyncWrongQuestions">
             📥 同步错题到复习
           </el-button>
+          <el-button size="large" :loading="aiSuggestionLoading" :disabled="stats.totalCards === 0" @click="handleAiSuggestion">
+            🤖 AI 复习建议
+          </el-button>
         </div>
         <el-text type="info" size="small">平均简易因子: {{ stats.avgEaseFactor?.toFixed(2) ?? '-' }} | 连续 {{ stats.streakDays }} 天</el-text>
+      </div>
+    </el-card>
+
+    <!-- AI 复习建议区域 -->
+    <el-card v-if="aiSuggestionContent" shadow="hover" style="margin-bottom: 20px;">
+      <template #header>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span>🤖 AI 复习建议</span>
+          <el-button size="small" text @click="aiSuggestionContent = ''">收起</el-button>
+        </div>
+      </template>
+      <div class="ai-suggestion-content">
+        <MarkdownRenderer :content="aiSuggestionContent" />
+        <div v-if="aiSuggestionLoading" style="color:#909399; margin-top:8px; font-size:13px;">
+          <el-icon class="is-loading"><Loading /></el-icon> AI 正在生成建议...
+        </div>
       </div>
     </el-card>
 
@@ -185,6 +204,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Loading } from '@element-plus/icons-vue'
+import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
+import { getAiReviewSuggestionStream } from '@/api/review'
+import { getToken } from '@/utils/auth'
 import {
   getReviewStats,
   getDueReviewCards,
@@ -222,6 +245,10 @@ const showAllCards = ref(false)
 const allCards = ref<ReviewScheduleVO[]>([])
 const cardsLoading = ref(false)
 const syncing = ref(false)
+
+// AI 复习建议
+const aiSuggestionLoading = ref(false)
+const aiSuggestionContent = ref('')
 
 const currentCard = computed(() => dueCards.value[currentIndex.value] || null)
 
@@ -378,6 +405,65 @@ async function handleReset(questionId: number) {
   }
 }
 
+async function handleAiSuggestion() {
+  aiSuggestionLoading.value = true
+  aiSuggestionContent.value = ''
+  const token = getToken()
+  if (!token) {
+    ElMessage.error('请先登录')
+    aiSuggestionLoading.value = false
+    return
+  }
+  try {
+    const response = await getAiReviewSuggestionStream(token)
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
+    const reader = response.body?.getReader()
+    if (!reader) {
+      throw new Error('无法读取响应流')
+    }
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+      for (const line of lines) {
+        if (line.startsWith('event:')) {
+          // event type line
+        } else if (line.startsWith('data:')) {
+          const jsonStr = line.slice(5).trim()
+          if (!jsonStr) continue
+          try {
+            const data = JSON.parse(jsonStr)
+            // Check if this is a done or error event by looking at the previous event line
+            if (data.source === 'ai') {
+              // done event - handled by the loop ending
+            } else if (data.message) {
+              // error event
+              ElMessage.error(data.message)
+            } else if (data.content) {
+              aiSuggestionContent.value += data.content
+            }
+          } catch {
+            // skip non-JSON lines
+          }
+        }
+      }
+    }
+  } catch (e: any) {
+    if (e.name !== 'AbortError') {
+      ElMessage.error(e?.message || 'AI 复习建议获取失败')
+    }
+  } finally {
+    aiSuggestionLoading.value = false
+  }
+}
+
 onMounted(() => {
   loadStats()
 })
@@ -424,5 +510,9 @@ onMounted(() => {
   background: #f5f7fa;
   border-radius: 8px;
   white-space: pre-wrap;
+}
+.ai-suggestion-content {
+  line-height: 1.8;
+  font-size: 14px;
 }
 </style>

@@ -575,6 +575,52 @@ public class SpacedRepetitionService {
         return "学习中";
     }
 
+    // ========== AI 复习建议上下文 ==========
+
+    /**
+     * 收集复习上下文数据，用于构建 AI 复习建议 Prompt
+     */
+    public ReviewContextVO buildReviewContext(Long userId) {
+        ReviewContextVO ctx = new ReviewContextVO();
+
+        // 1. 复习统计概览
+        ctx.setStats(getReviewStats(userId));
+
+        LocalDate today = LocalDate.now();
+
+        // 2. 困难卡片（EF < 2.0，最多 10 条）
+        LambdaQueryWrapper<QuestionReviewSchedule> diffWrapper = new LambdaQueryWrapper<>();
+        diffWrapper.eq(QuestionReviewSchedule::getUserId, userId)
+                   .lt(QuestionReviewSchedule::getEaseFactor, DIFFICULT_THRESHOLD)
+                   .orderByAsc(QuestionReviewSchedule::getEaseFactor)
+                   .last("LIMIT 10");
+        List<QuestionReviewSchedule> diffCards = reviewScheduleMapper.selectList(diffWrapper);
+        ctx.setDifficultCards(fillScheduleVOs(diffCards, today));
+
+        // 3. 逾期卡片（最多 10 条）
+        LambdaQueryWrapper<QuestionReviewSchedule> overdueWrapper = new LambdaQueryWrapper<>();
+        overdueWrapper.eq(QuestionReviewSchedule::getUserId, userId)
+                      .lt(QuestionReviewSchedule::getNextReviewDate, today)
+                      .orderByAsc(QuestionReviewSchedule::getNextReviewDate)
+                      .last("LIMIT 10");
+        List<QuestionReviewSchedule> overdueCards = reviewScheduleMapper.selectList(overdueWrapper);
+        ctx.setOverdueCards(fillScheduleVOs(overdueCards, today));
+
+        // 4. 近 7 天每天复习量
+        java.util.List<Integer> dailyReviews = new java.util.ArrayList<>();
+        for (int i = 6; i >= 0; i--) {
+            LocalDate d = today.minusDays(i);
+            LambdaQueryWrapper<QuestionReviewSchedule> dayWrapper = new LambdaQueryWrapper<>();
+            dayWrapper.eq(QuestionReviewSchedule::getUserId, userId)
+                      .eq(QuestionReviewSchedule::getLastReviewDate, d);
+            Long count = reviewScheduleMapper.selectCount(dayWrapper);
+            dailyReviews.add(count != null ? count.intValue() : 0);
+        }
+        ctx.setRecentDailyReviews(dailyReviews);
+
+        return ctx;
+    }
+
     private String truncate(String text, int maxLen) {
         if (text == null) return "";
         // Remove markdown/HTML for preview

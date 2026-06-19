@@ -1,5 +1,70 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 96 - 2026-06-19
+
+### 阶段
+Phase 17：间隔重复与智能复习 🚧 开发中
+
+### 本轮目标
+实现 AI 复习建议整合功能：基于间隔重复复习统计数据（复习统计、困难卡片、逾期卡片、近 7 天复习量）构建结构化 Prompt，通过 SSE 流式输出个性化 AI 复习建议。
+
+### 完成内容
+1. **后端 — ReviewContextVO**：
+   - 新建 `ReviewContextVO`，包含复习统计概览、困难卡片列表、逾期卡片列表、近 7 天复习量。
+
+2. **后端 — SpacedRepetitionService**：
+   - 新增 `buildReviewContext(Long userId)` 方法：查询复习统计、困难卡片（EF<2.0，最多10条）、逾期卡片（最多10条）、近7天每天复习量。
+
+3. **后端 — AiService**：
+   - `AiPrompt` record 可见性从 `private` 改为包级别（便于测试）。
+   - 新增 `buildReviewSuggestionPromptWithContext(ReviewContextVO)`：将复习统计、近7天复习量、困难卡片详情、逾期卡片详情构建为结构化 Markdown 用户 Prompt。
+   - 新增 `generateReviewBasedSuggestionWithContext()` 同步方法。
+   - 新增 `generateReviewBasedSuggestionStreamWithContext()` 流式 SSE 方法。
+
+4. **后端 — ReviewController**：
+   - 构造器注入 `AiService` 和 `aiTaskExecutor`。
+   - 新增 `POST /api/review/ai-suggestion` 同步接口。
+   - 新增 `POST /api/review/ai-suggestion/stream` SSE 流式接口（120s 超时）。
+
+5. **前端 — review.ts**：
+   - 新增 `getAiReviewSuggestion()` 同步 API。
+   - 新增 `getAiReviewSuggestionStream(token)` SSE 流式 API（fetch + ReadableStream）。
+
+6. **前端 — ReviewView.vue**：
+   - 操作区新增「🤖 AI 复习建议」按钮（含 loading 状态，无复习卡片时禁用）。
+   - 新增 AI 复习建议展示区域：MarkdownRenderer 渲染 + loading 动画 + 收起按钮。
+   - `handleAiSuggestion()` 函数：fetch SSE 流式读取，逐块解析 JSON，拼接 content 到 aiSuggestionContent。
+
+7. **单元测试**（`ReviewAISuggestionTest.java`，5 个测试）：
+   - Prompt 应包含复习统计（总卡片数、今日待复习、逾期、连续天数、平均EF、近7天复习量）
+   - Prompt 应包含困难卡片详情（题目内容、EF值、课程名）
+   - Prompt 应包含逾期卡片详情（题目内容、逾期天数）
+   - 同步 AI 调用应正确调用 AiProvider
+   - 流式 AI 调用应正确调用 chatStream
+
+### 验证结果
+- 后端 ReviewAISuggestionTest 5 个测试全部通过
+- 前端 vue-tsc --noEmit 无错误
+
+### 修改文件
+新建：
+- `backend/src/main/java/com/learnplatform/dto/ReviewContextVO.java`
+- `backend/src/test/java/com/learnplatform/service/ReviewAISuggestionTest.java`
+
+修改：
+- `backend/src/main/java/com/learnplatform/service/SpacedRepetitionService.java` — 新增 buildReviewContext 方法
+- `backend/src/main/java/com/learnplatform/service/AiService.java` — AiPrompt 可见性调整 + 6 个新方法（Prompt 构建 + 同步/流式调用）
+- `backend/src/main/java/com/learnplatform/controller/ReviewController.java` — 注入 AiService + 2 个新接口
+- `frontend/src/api/review.ts` — 2 个新 API 函数
+- `frontend/src/views/practice/ReviewView.vue` — AI 复习建议按钮 + 展示区域 + SSE 流式渲染
+
+### 遗留问题
+- 无
+
+### 下轮建议
+- Phase 17 后续候选：复习统计整合到学习报告
+- 或其他用户指定任务
+
 ## Round 95 - 2026-06-19
 
 ### 阶段

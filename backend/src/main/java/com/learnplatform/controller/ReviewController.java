@@ -3,16 +3,25 @@ package com.learnplatform.controller;
 import com.learnplatform.common.result.R;
 import com.learnplatform.dto.*;
 import com.learnplatform.security.CustomUserDetails;
+import com.learnplatform.service.AiService;
 import com.learnplatform.service.SpacedRepetitionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 /**
  * 间隔重复复习控制器
@@ -23,9 +32,15 @@ import java.util.Map;
 public class ReviewController {
 
     private final SpacedRepetitionService spacedRepetitionService;
+    private final AiService aiService;
+    private final Executor aiTaskExecutor;
 
-    public ReviewController(SpacedRepetitionService spacedRepetitionService) {
+    public ReviewController(SpacedRepetitionService spacedRepetitionService,
+                            AiService aiService,
+                            @Qualifier("aiTaskExecutor") Executor aiTaskExecutor) {
         this.spacedRepetitionService = spacedRepetitionService;
+        this.aiService = aiService;
+        this.aiTaskExecutor = aiTaskExecutor;
     }
 
     @Operation(summary = "获取复习统计概览")
@@ -96,5 +111,54 @@ public class ReviewController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         spacedRepetitionService.resetReviewProgress(userDetails.getUserId(), questionId);
         return R.ok(null);
+    }
+
+    // ========== AI 复习建议 ==========
+
+    @Operation(summary = "AI 复习建议（同步）", description = "基于间隔重复复习统计数据生成个性化 AI 复习建议")
+    @PostMapping("/ai-suggestion")
+    public R<AiResponse> getAiSuggestion(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = userDetails.getUserId();
+        ReviewContextVO ctx = spacedRepetitionService.buildReviewContext(userId);
+        return R.ok(aiService.generateReviewBasedSuggestionWithContext(userId, ctx));
+    }
+
+    @Operation(summary = "AI 复习建议（流式 SSE）", description = "通过 SSE 流式返回基于复习数据的个性化 AI 建议")
+    @PostMapping(value = "/ai-suggestion/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public ResponseEntity<SseEmitter> getAiSuggestionStream(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = userDetails.getUserId();
+        ReviewContextVO ctx = spacedRepetitionService.buildReviewContext(userId);
+
+        SseEmitter emitter = new SseEmitter(120_000L);
+        aiTaskExecutor.execute(() -> {
+            try {
+                aiService.generateReviewBasedSuggestionStreamWithContext(userId, ctx,
+                        content -> send(emitter, "content", Map.of("content", content)));
+                send(emitter, "done", Map.of("source", "ai"));
+                emitter.complete();
+            } catch (Exception e) {
+                try {
+                    send(emitter, "error", Map.of("message",
+                            e.getMessage() != null ? e.getMessage() : "AI 服务调用失败"));
+                } catch (Exception ignored) {
+                }
+                emitter.complete();
+            }
+        });
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CACHE_CONTROL, "no-cache")
+                .header("X-Accel-Buffering", "no")
+                .body(emitter);
+    }
+
+    private void send(SseEmitter emitter, String event, Object data) {
+        try {
+            emitter.send(SseEmitter.event().name(event).data(data, MediaType.APPLICATION_JSON));
+        } catch (IOException e) {
+            throw new IllegalStateException("SSE 连接已断开", e);
+        }
     }
 }
