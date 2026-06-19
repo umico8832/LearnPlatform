@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 18 — 全局搜索与快捷导航 🚧 开发中（Round 98 完成核心全局搜索功能，跨题目/课程/知识点搜索 + ⌘K 快捷键 + 前端 GlobalSearchDialog + 7 个单元测试）
+当前阶段：Phase 18 — 全局搜索与快捷导航 ✅ 基本完成（Round 98 核心全局搜索 + Round 99 搜索历史 + 热门搜索 + 结果缓存，共 24 个单元测试）
 
 下一阶段主线：先把一道题讲透，把单题从“题干 + 答案 + 解析”升级为结构化 AI 学习对象，再考虑题库上传、OCR、爬虫和社区共建。
 
@@ -39,7 +39,7 @@
 - [ ] Phase 15：AI 学习画像与个性化推荐 🚧（P0 学习诊断与每日推荐 ✅；AI 个性化学习建议 ✅；相似题推荐 ✅；错题归因增强 ✅；单题错因分析 ✅：作答历史时间线、掌握趋势（IMPROVING/STAGNANT/DECLINING）、错误模式描述、连续错误检测、反复错题分析；待做：向量相似度增强推荐）
 - [ ] Phase 16：题目投稿与 AI 题库生产 🚧（P0 题目投稿中心 ✅；P1 AI 质检 ✅；P1 AI 知识点标注 ✅；P1 AI 难度评估 ✅；P1 结果缓存 ✅；P1 一键填充审核意见 ✅；Markdown 导入 ✅；内容来源记录与复审机制 ✅：Flyway V8、5 种来源类型自动标记、复审记录表、定期复审机制、管理端来源筛选+复审弹窗、后端 8 个新测试；待做：复审结果缓存）
 - [ ] Phase 17：间隔重复与智能复习 ✅（SM-2 算法核心 ✅；question_review_schedule 表 Flyway V9 ✅；SpacedRepetitionService ✅；ReviewController 8 个接口 ✅；刷题自动加入复习计划 ✅；前端 ReviewView 页面 ✅；错题自动复习调度 ✅；循环依赖消除 ✅；16 个单元测试 ✅；AI 复习建议整合 ✅：ReviewContextVO + SpacedRepetitionService.buildReviewContext + AiService 6 个新方法 + ReviewController 2 个新接口 + 前端 SSE 流式渲染 + 5 个新测试；复习统计整合到学习报告 ✅：LearningReportVO +6 复习统计字段 + StatisticsService.buildReviewStats + 前端复习指标卡片和月度复习趋势图 + 4 个新测试；Phase 17 基本完成）
-- [ ] Phase 18：全局搜索与快捷导航 🚧（GlobalSearchService ✅；GlobalSearchController 1 个接口 ✅；前端 GlobalSearchDialog 组件 ✅；⌘K/Ctrl+K 快捷键 ✅；键盘导航 ✅；关键词高亮 ✅；移动端适配 ✅；7 个单元测试 ✅）
+- [x] Phase 18：全局搜索与快捷导航 ✅ 基本完成（GlobalSearchService ✅；GlobalSearchController 4 个接口 ✅；前端 GlobalSearchDialog 组件 ✅；⌘K/Ctrl+K 快捷键 ✅；键盘导航 ✅；关键词高亮 ✅；移动端适配 ✅；搜索历史记录 ✅；热门搜索推荐 ✅；搜索结果缓存 @Cacheable ✅；搜索历史单条删除和全部清除 ✅；24 个单元测试 ✅）
 
 ---
 

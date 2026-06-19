@@ -45,6 +45,7 @@ public class RedisConfig {
                 .withCacheConfiguration("submissionQuality", defaultConfig.entryTtl(Duration.ofMinutes(30)))
                 .withCacheConfiguration("submissionKPTagging", defaultConfig.entryTtl(Duration.ofMinutes(30)))
                 .withCacheConfiguration("submissionDifficulty", defaultConfig.entryTtl(Duration.ofMinutes(30)))
+                .withCacheConfiguration("globalSearch", defaultConfig.entryTtl(Duration.ofMinutes(5)))
                 .build();
     }
 

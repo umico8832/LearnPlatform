@@ -18,6 +18,12 @@ export interface GlobalSearchResult {
   totalCount: number
 }
 
+/** 搜索建议（历史 + 热门） */
+export interface SearchSuggestions {
+  history: string[]
+  hotKeywords: string[]
+}
+
 /**
  * 全局搜索
  * @param keyword 搜索关键词
@@ -26,5 +32,29 @@ export interface GlobalSearchResult {
 export function globalSearch(keyword: string, limit?: number) {
   return request.get<GlobalSearchResult>('/api/search', {
     params: { keyword, limit },
+  })
+}
+
+/**
+ * 获取搜索建议（搜索历史 + 热门搜索）
+ */
+export function getSearchSuggestions() {
+  return request.get<SearchSuggestions>('/api/search/suggestions')
+}
+
+/**
+ * 清除当前用户全部搜索历史
+ */
+export function clearSearchHistory() {
+  return request.delete<void>('/api/search/history')
+}
+
+/**
+ * 删除单条搜索历史
+ * @param keyword 要删除的关键词
+ */
+export function removeSearchHistoryItem(keyword: string) {
+  return request.delete<void>('/api/search/history/item', {
+    params: { keyword },
   })
 }

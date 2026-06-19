@@ -11,6 +11,7 @@ import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -52,6 +53,7 @@ public class GlobalSearchService {
      * @param limit   每类结果最大条数（默认 5，最大 20）
      * @return 分组搜索结果
      */
+    @Cacheable(value = "globalSearch", key = "#keyword + '_' + #limit", condition = "#keyword != null && #keyword.trim().length() >= 2")
     public GlobalSearchResultVO search(String keyword, Integer limit) {
         if (keyword == null || keyword.trim().length() < MIN_QUERY_LENGTH) {
             return new GlobalSearchResultVO(new ArrayList<>(), new ArrayList<>(), new ArrayList<>());

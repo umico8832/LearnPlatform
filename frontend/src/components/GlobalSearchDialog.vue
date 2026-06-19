@@ -9,6 +9,7 @@
     :close-on-press-escape="true"
     class="global-search-dialog"
     @closed="handleClosed"
+    @opened="handleOpened"
   >
     <div class="search-container">
       <!-- 搜索输入框 -->
@@ -103,14 +104,61 @@
         </template>
       </div>
 
-      <!-- 未输入时的提示 -->
-      <div v-else class="search-hints">
-        <div class="hint-item">
-          <el-icon><Promotion /></el-icon>
-          <span>输入关键词搜索题目、课程和知识点</span>
+      <!-- 未输入时：搜索历史 + 热门搜索 -->
+      <div v-else class="search-suggestions">
+        <!-- 搜索历史 -->
+        <div v-if="suggestions.history.length > 0" class="suggestion-section">
+          <div class="section-header">
+            <span class="section-title">
+              <el-icon><Clock /></el-icon>
+              搜索历史
+            </span>
+            <span class="section-action" @click.stop="handleClearHistory">清除</span>
+          </div>
+          <div class="history-list">
+            <div
+              v-for="(item, idx) in suggestions.history"
+              :key="'h-' + idx"
+              class="history-item"
+              @click="fillKeyword(item)"
+            >
+              <el-icon class="history-icon"><Clock /></el-icon>
+              <span class="history-text">{{ item }}</span>
+              <el-icon class="history-delete" @click.stop="handleRemoveHistory(item)"><Close /></el-icon>
+            </div>
+          </div>
         </div>
-        <div class="hint-item hint-shortcut">
-          <span>按 <kbd>/</kbd> 或 <kbd>⌘K</kbd> 快速打开搜索</span>
+
+        <!-- 热门搜索 -->
+        <div v-if="suggestions.hotKeywords.length > 0" class="suggestion-section">
+          <div class="section-header">
+            <span class="section-title">
+              <el-icon><TrendCharts /></el-icon>
+              热门搜索
+            </span>
+          </div>
+          <div class="hot-keyword-list">
+            <span
+              v-for="(item, idx) in suggestions.hotKeywords"
+              :key="'hot-' + idx"
+              class="hot-keyword-tag"
+              @click="fillKeyword(item)"
+            >
+              <span class="hot-rank" :class="{ 'top-3': idx < 3 }">{{ idx + 1 }}</span>
+              {{ item }}
+            </span>
+          </div>
+        </div>
+
+        <!-- 无历史也无热门时的默认提示 -->
+        <div v-if="suggestions.history.length === 0 && suggestions.hotKeywords.length === 0" class="search-hints">
+          <div class="hint-item">
+            <el-icon><Promotion /></el-icon>
+            <span>输入关键词搜索题目、课程和知识点</span>
+          </div>
+          <div class="hint-item hint-shortcut">
+            <span>按 <kbd>/</kbd> 或 <kbd>⌘K</kbd> 快速打开搜索</span>
+          </div>
         </div>
       </div>
     </div>
@@ -120,8 +168,19 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import { Search, Loading, EditPen, Reading, Notebook, Promotion } from '@element-plus/icons-vue'
-import { globalSearch, type SearchItem, type GlobalSearchResult } from '@/api/search'
+import {
+  Search, Loading, EditPen, Reading, Notebook, Promotion,
+  Clock, Close, TrendCharts
+} from '@element-plus/icons-vue'
+import {
+  globalSearch,
+  getSearchSuggestions,
+  clearSearchHistory,
+  removeSearchHistoryItem,
+  type SearchItem,
+  type GlobalSearchResult,
+  type SearchSuggestions
+} from '@/api/search'
 
 const router = useRouter()
 
@@ -136,6 +195,12 @@ const results = ref<GlobalSearchResult>({
   totalCount: 0,
 })
 const activeIndex = ref(0)
+
+// 搜索建议
+const suggestions = ref<SearchSuggestions>({
+  history: [],
+  hotKeywords: [],
+})
 
 const inputRef = ref<HTMLInputElement>()
 const resultsRef = ref<HTMLDivElement>()
@@ -175,6 +240,21 @@ function open() {
   })
 }
 
+// 对话框打开后加载建议
+async function handleOpened() {
+  await loadSuggestions()
+}
+
+// 加载搜索建议
+async function loadSuggestions() {
+  try {
+    const res = await getSearchSuggestions()
+    suggestions.value = res.data
+  } catch {
+    suggestions.value = { history: [], hotKeywords: [] }
+  }
+}
+
 // 关闭搜索
 function close() {
   visible.value = false
@@ -185,6 +265,15 @@ function handleClosed() {
   keyword.value = ''
   results.value = { questions: [], courses: [], knowledgePoints: [], totalCount: 0 }
   activeIndex.value = 0
+  suggestions.value = { history: [], hotKeywords: [] }
+}
+
+// 填充关键词并触发搜索
+function fillKeyword(kw: string) {
+  keyword.value = kw
+  nextTick(() => {
+    doSearch(kw)
+  })
 }
 
 // 输入防抖
@@ -211,6 +300,26 @@ async function doSearch(q: string) {
     results.value = { questions: [], courses: [], knowledgePoints: [], totalCount: 0 }
   } finally {
     loading.value = false
+  }
+}
+
+// 清除搜索历史
+async function handleClearHistory() {
+  try {
+    await clearSearchHistory()
+    suggestions.value.history = []
+  } catch {
+    // ignore
+  }
+}
+
+// 删除单条搜索历史
+async function handleRemoveHistory(kw: string) {
+  try {
+    await removeSearchHistoryItem(kw)
+    suggestions.value.history = suggestions.value.history.filter(h => h !== kw)
+  } catch {
+    // ignore
   }
 }
 
@@ -451,7 +560,138 @@ defineExpose({ open })
   line-height: 1.4;
 }
 
-/* 提示区 */
+/* 搜索建议区（历史 + 热门） */
+.search-suggestions {
+  overflow-y: auto;
+  max-height: 50vh;
+  padding: 8px 0;
+}
+
+.suggestion-section {
+  padding: 4px 0;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px 4px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #909399;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.section-action {
+  font-size: 12px;
+  color: #c0c4cc;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.section-action:hover {
+  color: #409eff;
+}
+
+/* 搜索历史列表 */
+.history-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.history-item:hover {
+  background-color: #f5f7fa;
+}
+
+.history-icon {
+  color: #c0c4cc;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.history-text {
+  flex: 1;
+  font-size: 14px;
+  color: #303133;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-delete {
+  color: #c0c4cc;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+
+.history-item:hover .history-delete {
+  opacity: 1;
+}
+
+.history-delete:hover {
+  color: #f56c6c;
+}
+
+/* 热门搜索标签 */
+.hot-keyword-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 16px 12px;
+}
+
+.hot-keyword-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: #606266;
+  background: #f5f7fa;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.hot-keyword-tag:hover {
+  background: #ecf5ff;
+  color: #409eff;
+  border-color: #d9ecff;
+}
+
+.hot-rank {
+  font-size: 12px;
+  font-weight: 700;
+  color: #c0c4cc;
+  min-width: 14px;
+  text-align: center;
+}
+
+.hot-rank.top-3 {
+  color: #e6a23c;
+}
+
+/* 默认提示区 */
 .search-hints {
   padding: 32px 16px;
   display: flex;
@@ -494,6 +734,19 @@ defineExpose({ open })
 
   .search-results {
     max-height: 60vh;
+  }
+
+  .search-suggestions {
+    max-height: 60vh;
+  }
+
+  .history-delete {
+    opacity: 1;
+  }
+
+  .hot-keyword-tag {
+    padding: 8px 14px;
+    font-size: 14px;
   }
 }
 </style>

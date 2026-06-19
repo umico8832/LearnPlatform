@@ -1,5 +1,75 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 99 - 2026-06-19
+
+### 阶段
+Phase 18：全局搜索与快捷导航 🚧 开发中
+
+### 本轮目标
+完善 Phase 18 后续功能：搜索历史记录、热门搜索推荐、搜索结果缓存。
+
+### 完成内容
+1. **后端 — SearchHistoryService**：
+   - ConcurrentHashMap 内存存储用户级搜索历史（每用户最多 20 条，LRU 淘汰）。
+   - ConcurrentHashMap 存储全局热门关键词计数（最多 100 条，定期淘汰低频）。
+   - 用户历史独立隔离，搜索去重，时间倒序排列。
+   - 支持清除全部历史和删除单条历史。
+
+2. **后端 — GlobalSearchController 新增 3 个接口**：
+   - `GET /api/search/suggestions`：获取搜索历史 + 热门搜索关键词（二合一）。
+   - `DELETE /api/search/history`：清除当前用户全部搜索历史。
+   - `DELETE /api/search/history/item?keyword=xxx`：删除单条搜索历史。
+   - 搜索接口 `GET /api/search` 自动记录搜索历史和热门关键词。
+
+3. **后端 — GlobalSearchService 搜索缓存**：
+   - 添加 `@Cacheable(value = "globalSearch")` 注解，关键词 >= 2 字符时缓存 5 分钟。
+   - RedisConfig 新增 `globalSearch` 缓存区域（TTL 5 分钟）。
+
+4. **前端 — search.ts API 模块扩展**：
+   - 新增 `getSearchSuggestions()`、`clearSearchHistory()`、`removeSearchHistoryItem()` 三个 API 函数。
+   - 新增 `SearchSuggestions` 类型定义。
+
+5. **前端 — GlobalSearchDialog.vue 搜索建议集成**：
+   - 对话框打开时自动加载搜索历史和热门搜索。
+   - 搜索历史区域：显示最近 10 条，每条可点击填充搜索框，支持单条删除和一键清除。
+   - 热门搜索区域：标签形式展示 Top 10 热门关键词，排名前 3 金色高亮。
+   - 空搜索框状态：有历史/热门时显示建议，无数据时显示默认提示。
+   - 移动端适配（触摸友好的历史项和热门标签）。
+
+6. **后端测试**：
+   - 新建 `SearchHistoryServiceTest.java`（17 个单元测试）：
+     - 记录搜索 5 个：正常记录、去重、null userId、null 关键词、上限淘汰。
+     - 获取历史 4 个：空历史、null userId、用户隔离、最多 10 条。
+     - 热门搜索 4 个：正常记录、空数据、降序排列、最多 10 条。
+     - 清除历史 4 个：清除全部、null userId、删除单条、删除不存在项。
+   - 本地运行通过（24/24 passed，含 GlobalSearchServiceTest 7 个 + SearchHistoryServiceTest 17 个）。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/service/SearchHistoryService.java`（新建）
+- `backend/src/main/java/com/learnplatform/controller/GlobalSearchController.java`（重写，新增 3 个接口）
+- `backend/src/main/java/com/learnplatform/service/GlobalSearchService.java`（添加 @Cacheable）
+- `backend/src/main/java/com/learnplatform/config/RedisConfig.java`（新增 globalSearch 缓存区域）
+- `backend/src/test/java/com/learnplatform/service/SearchHistoryServiceTest.java`（新建，17 个测试）
+- `frontend/src/api/search.ts`（新增 3 个 API 函数 + SearchSuggestions 类型）
+- `frontend/src/components/GlobalSearchDialog.vue`（搜索历史 + 热门搜索 UI）
+
+### 验证
+- 后端 `mvn test -Dtest="SearchHistoryServiceTest,GlobalSearchServiceTest"` 全部通过（24/24 passed）
+- 前端文件创建/更新完成
+
+### 遗留问题
+- 无
+
+### 下一步建议
+- Phase 18 核心 + 后续迭代已基本完成，可标记为 ✅
+- 进入新阶段规划（见 docs/FUTURE.md 和 docs/AI_LEARNING_PLATFORM_STRATEGY.md）
+- 或其他用户指定任务
+
+### 建议 commit message
+`feat(search): 搜索历史、热门搜索与结果缓存，17 个新单元测试`
+
+---
+
 ## Round 98 - 2026-06-19
 
 ### 阶段
