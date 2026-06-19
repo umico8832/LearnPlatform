@@ -81,3 +81,8 @@ export function removeFromReviewPlan(questionId: number) {
 export function resetReviewProgress(questionId: number) {
   return request.post<void>(`/api/review/reset/${questionId}`)
 }
+
+/** 同步错题本到复习计划（未掌握/部分掌握的错题自动加入） */
+export function syncWrongQuestionsToReview() {
+  return request.post<{ syncedCount: number }>('/api/review/sync-wrong-questions')
+}

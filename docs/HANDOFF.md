@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 17 — 间隔重复与智能复习 🚧 开发中（Round 94 完成 SM-2 算法核心、ReviewController、前端 ReviewView，后端 12 个新测试）
+当前阶段：Phase 17 — 间隔重复与智能复习 🚧 开发中（Round 95 完成错题自动复习调度、循环依赖消除、ReviewController 8 个接口、前端同步按钮，后端 16 个测试）
 
 下一阶段主线：先把一道题讲透，把单题从“题干 + 答案 + 解析”升级为结构化 AI 学习对象，再考虑题库上传、OCR、爬虫和社区共建。
 
@@ -38,7 +38,7 @@
 - [x] Phase 14：AI 可视化交互讲解 ✅（P0 文本可视化 ✅；P1 Mermaid 流程图 ✅：第 9 种 mermaid 元素类型 ✅、mermaid.js 动态 import ✅、异步 SVG 渲染 ✅、语法错误 fallback ✅、后端 Prompt 增强 ✅、单元测试 ✅；P2 代码执行动画 ✅：第 10 种 code_animation 元素类型 ✅、CodeAnimationViewer 组件 ✅、播放/暂停/步进控制 ✅、变量状态面板 ✅、暗色代码面板 ✅、Prompt 增强 ✅、单元测试 ✅；代码语法高亮 ✅：highlight.js 按需加载 18 种语言 ✅、逐行高亮方案 ✅、github-dark 主题 ✅、语言别名映射 ✅；P3 SQL 执行顺序可视化 ✅：第 11 种 sql_execution 元素类型 ✅、SqlExecutionViewer 组件 ✅、暗色 SQL 面板+子句高亮 ✅、中间结果预览 ✅、播放控制+速度调节 ✅、Prompt 增强 ✅、单元测试 ✅；P4 网络协议和操作系统过程可视化 ✅：第 12 种 network_protocol 元素类型 ✅、NetworkProtocolViewer 组件 ✅、时序图风格渲染 ✅、箭头方向+状态高亮 ✅；第 13 种 os_process 元素类型 ✅、OsProcessViewer 组件 ✅、可折叠步骤面板+状态表格 ✅、甘特图 ✅、Prompt 增强 ✅、单元测试 ✅）
 - [ ] Phase 15：AI 学习画像与个性化推荐 🚧（P0 学习诊断与每日推荐 ✅；AI 个性化学习建议 ✅；相似题推荐 ✅；错题归因增强 ✅；单题错因分析 ✅：作答历史时间线、掌握趋势（IMPROVING/STAGNANT/DECLINING）、错误模式描述、连续错误检测、反复错题分析；待做：向量相似度增强推荐）
 - [ ] Phase 16：题目投稿与 AI 题库生产 🚧（P0 题目投稿中心 ✅；P1 AI 质检 ✅；P1 AI 知识点标注 ✅；P1 AI 难度评估 ✅；P1 结果缓存 ✅；P1 一键填充审核意见 ✅；Markdown 导入 ✅；内容来源记录与复审机制 ✅：Flyway V8、5 种来源类型自动标记、复审记录表、定期复审机制、管理端来源筛选+复审弹窗、后端 8 个新测试；待做：复审结果缓存）
-- [ ] Phase 17：间隔重复与智能复习 🚧（SM-2 算法核心 ✅；question_review_schedule 表 Flyway V9 ✅；SpacedRepetitionService ✅；ReviewController 7 个接口 ✅；刷题自动加入复习计划 ✅；前端 ReviewView 页面 ✅；12 个单元测试 ✅；待做：错题自动复习调度、AI 复习建议整合、复习统计整合到学习报告）
+- [ ] Phase 17：间隔重复与智能复习 🚧（SM-2 算法核心 ✅；question_review_schedule 表 Flyway V9 ✅；SpacedRepetitionService ✅；ReviewController 8 个接口 ✅；刷题自动加入复习计划 ✅；前端 ReviewView 页面 ✅；错题自动复习调度 ✅；循环依赖消除 ✅；16 个单元测试 ✅；待做：AI 复习建议整合、复习统计整合到学习报告）
 
 ---
 
@@ -133,13 +133,12 @@ docker compose up -d
 
 ## 6. 下一步建议任务
 
-任务名称：Phase 17 后续方向 — 间隔重复与智能复习增强
+任务名称：Phase 17 后续方向 — AI 复习建议整合
 
-Phase 17 已完成 SM-2 算法核心、ReviewController（7 个接口）、前端 ReviewView 页面和 12 个单元测试。刷题时自动加入复习计划已集成到 PracticeService。
+Phase 17 已完成 SM-2 算法核心、ReviewController（8 个接口）、前端 ReviewView 页面、错题自动复习调度和 16 个单元测试。循环依赖已消除（SpacedRepetitionService 直接注入 WrongQuestionMapper）。
 
 下一步建议：
-- 错题自动复习调度（错题本错题自动加入复习计划）
-- AI 复习建议整合（基于复习统计数据生成个性化复习建议）
+- AI 复习建议整合（基于复习统计数据生成个性化 AI 复习建议）
 - 复习统计整合到学习报告
 - 或其他用户指定任务
 
@@ -150,7 +149,7 @@ Phase 17 已完成 SM-2 算法核心、ReviewController（7 个接口）、前�
 - 用户上传题库自动入库
 - AI 自动审核发布题目
 
-建议 commit message: `feat(review): 新增间隔重复复习系统（SM-2 算法），刷题自动加入复习计划，前端智能复习页面，Flyway V9`
+建议 commit message: `feat(review): 错题自动复习调度，一键同步错题本到复习计划，消除循环依赖，新增 4 个单元测试`
 
 ---
 

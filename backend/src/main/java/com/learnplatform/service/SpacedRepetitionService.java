@@ -62,7 +62,7 @@ public class SpacedRepetitionService {
     private final CourseMapper courseMapper;
     private final QuestionOptionMapper questionOptionMapper;
     private final PracticeRecordMapper practiceRecordMapper;
-    private final WrongQuestionService wrongQuestionService;
+    private final WrongQuestionMapper wrongQuestionMapper;
     private final AnswerEvaluator answerEvaluator;
     private final CacheEvictService cacheEvictService;
 
@@ -71,7 +71,7 @@ public class SpacedRepetitionService {
                                     CourseMapper courseMapper,
                                     QuestionOptionMapper questionOptionMapper,
                                     PracticeRecordMapper practiceRecordMapper,
-                                    WrongQuestionService wrongQuestionService,
+                                    WrongQuestionMapper wrongQuestionMapper,
                                     AnswerEvaluator answerEvaluator,
                                     CacheEvictService cacheEvictService) {
         this.reviewScheduleMapper = reviewScheduleMapper;
@@ -79,7 +79,7 @@ public class SpacedRepetitionService {
         this.courseMapper = courseMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.practiceRecordMapper = practiceRecordMapper;
-        this.wrongQuestionService = wrongQuestionService;
+        this.wrongQuestionMapper = wrongQuestionMapper;
         this.answerEvaluator = answerEvaluator;
         this.cacheEvictService = cacheEvictService;
     }
@@ -106,6 +106,53 @@ public class SpacedRepetitionService {
         reviewScheduleMapper.insert(schedule);
 
         log.info("题目加入复习计划: userId={}, questionId={}", userId, questionId);
+    }
+
+    /**
+     * 将错题本中未掌握/部分掌握的题目同步到复习计划
+     * 返回新同步的题目数量
+     */
+    @Transactional
+    public int syncWrongQuestionsToReviewPlan(Long userId) {
+        // 1. 查询错题本中未掌握(masteryLevel=0)和部分掌握(masteryLevel=1)的题目
+        LambdaQueryWrapper<WrongQuestion> wqWrapper = new LambdaQueryWrapper<>();
+        wqWrapper.eq(WrongQuestion::getUserId, userId)
+                 .in(WrongQuestion::getMasteryLevel, 0, 1);
+        List<WrongQuestion> wrongQuestions = wrongQuestionMapper.selectList(wqWrapper);
+
+        if (wrongQuestions.isEmpty()) {
+            log.info("同步错题到复习计划: userId={}, 无符合条件的错题", userId);
+            return 0;
+        }
+
+        // 2. 查询已在复习计划中的题目ID集合
+        LambdaQueryWrapper<QuestionReviewSchedule> rsWrapper = new LambdaQueryWrapper<>();
+        rsWrapper.eq(QuestionReviewSchedule::getUserId, userId);
+        Set<Long> existingQuestionIds = reviewScheduleMapper.selectList(rsWrapper).stream()
+                .map(QuestionReviewSchedule::getQuestionId)
+                .collect(Collectors.toSet());
+
+        // 3. 过滤出不在复习计划中的错题并添加
+        int syncedCount = 0;
+        for (WrongQuestion wq : wrongQuestions) {
+            if (!existingQuestionIds.contains(wq.getQuestionId())) {
+                QuestionReviewSchedule schedule = new QuestionReviewSchedule();
+                schedule.setUserId(userId);
+                schedule.setQuestionId(wq.getQuestionId());
+                schedule.setEaseFactor(DEFAULT_EASE_FACTOR);
+                schedule.setIntervalDays(0);
+                schedule.setRepetitions(0);
+                schedule.setNextReviewDate(LocalDate.now());
+                schedule.setTotalReviews(0);
+                reviewScheduleMapper.insert(schedule);
+                syncedCount++;
+            }
+        }
+
+        if (syncedCount > 0) {
+            log.info("同步错题到复习计划: userId={}, 新增 {} 道错题", userId, syncedCount);
+        }
+        return syncedCount;
     }
 
     /**
@@ -177,11 +224,41 @@ public class SpacedRepetitionService {
 
         // 处理错题本
         if (isCorrect) {
-            try { wrongQuestionService.removeOnCorrect(userId, questionId); } catch (Exception e) {
+            try {
+                LambdaQueryWrapper<WrongQuestion> wqWrapper = new LambdaQueryWrapper<>();
+                wqWrapper.eq(WrongQuestion::getUserId, userId)
+                         .eq(WrongQuestion::getQuestionId, questionId);
+                WrongQuestion existing = wrongQuestionMapper.selectOne(wqWrapper);
+                if (existing != null) {
+                    wrongQuestionMapper.deleteById(existing.getId());
+                }
+            } catch (Exception e) {
                 log.warn("移出错题本失败: {}", e.getMessage());
             }
         } else {
-            try { wrongQuestionService.addWrongQuestion(userId, questionId, request.getUserAnswer().trim()); } catch (Exception e) {
+            try {
+                LambdaQueryWrapper<WrongQuestion> wqWrapper = new LambdaQueryWrapper<>();
+                wqWrapper.eq(WrongQuestion::getUserId, userId)
+                         .eq(WrongQuestion::getQuestionId, questionId);
+                WrongQuestion existing = wrongQuestionMapper.selectOne(wqWrapper);
+                if (existing != null) {
+                    existing.setWrongCount(existing.getWrongCount() + 1);
+                    existing.setLastWrongAnswer(request.getUserAnswer().trim());
+                    if (existing.getMasteryLevel() != null && existing.getMasteryLevel() == 2) {
+                        existing.setMasteryLevel(0);
+                    }
+                    wrongQuestionMapper.updateById(existing);
+                } else {
+                    WrongQuestion wq = new WrongQuestion();
+                    wq.setUserId(userId);
+                    wq.setQuestionId(questionId);
+                    wq.setWrongCount(1);
+                    wq.setMasteryLevel(0);
+                    wq.setLastWrongAnswer(request.getUserAnswer().trim());
+                    wq.setDeleted(0);
+                    wrongQuestionMapper.insert(wq);
+                }
+            } catch (Exception e) {
                 log.warn("加入错题本失败: {}", e.getMessage());
             }
         }

@@ -56,6 +56,9 @@
           <el-button size="large" @click="showAllCards = !showAllCards">
             {{ showAllCards ? '收起卡片列表' : '查看全部卡片' }}
           </el-button>
+          <el-button size="large" :loading="syncing" @click="handleSyncWrongQuestions">
+            📥 同步错题到复习
+          </el-button>
         </div>
         <el-text type="info" size="small">平均简易因子: {{ stats.avgEaseFactor?.toFixed(2) ?? '-' }} | 连续 {{ stats.streakDays }} 天</el-text>
       </div>
@@ -189,6 +192,7 @@ import {
   submitReview,
   removeFromReviewPlan,
   resetReviewProgress,
+  syncWrongQuestionsToReview,
   type ReviewStatsVO,
   type ReviewScheduleVO,
 } from '@/api/review'
@@ -217,6 +221,7 @@ const reviewComplete = ref(false)
 const showAllCards = ref(false)
 const allCards = ref<ReviewScheduleVO[]>([])
 const cardsLoading = ref(false)
+const syncing = ref(false)
 
 const currentCard = computed(() => dueCards.value[currentIndex.value] || null)
 
@@ -338,6 +343,27 @@ async function handleRemove(questionId: number) {
     await loadStats()
   } catch (e: any) {
     ElMessage.error(e?.message || '操作失败')
+  }
+}
+
+async function handleSyncWrongQuestions() {
+  syncing.value = true
+  try {
+    const { data } = await syncWrongQuestionsToReview()
+    const count = data.syncedCount
+    if (count > 0) {
+      ElMessage.success(`已同步 ${count} 道错题到复习计划`)
+      await loadStats()
+      if (showAllCards.value) {
+        await loadAllCards()
+      }
+    } else {
+      ElMessage.info('暂无新的错题需要同步（已在复习计划中的会跳过）')
+    }
+  } catch (e: any) {
+    ElMessage.error(e?.message || '同步失败')
+  } finally {
+    syncing.value = false
   }
 }
 

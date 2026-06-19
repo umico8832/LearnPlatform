@@ -10,7 +10,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 间隔重复复习控制器
@@ -57,6 +59,16 @@ public class ReviewController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         spacedRepetitionService.addToReviewPlan(userDetails.getUserId(), questionId);
         return R.ok(null);
+    }
+
+    @Operation(summary = "同步错题本到复习计划（未掌握/部分掌握的错题自动加入）")
+    @PostMapping("/sync-wrong-questions")
+    public R<Map<String, Object>> syncWrongQuestions(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        int synced = spacedRepetitionService.syncWrongQuestionsToReviewPlan(userDetails.getUserId());
+        Map<String, Object> result = new HashMap<>();
+        result.put("syncedCount", synced);
+        return R.ok(result);
     }
 
     @Operation(summary = "提交复习答案并更新调度")

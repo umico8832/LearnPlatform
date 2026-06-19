@@ -1,5 +1,57 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 95 - 2026-06-19
+
+### 阶段
+Phase 17：间隔重复与智能复习 🚧 开发中
+
+### 本轮目标
+实现错题自动复习调度功能：错题本中未掌握/部分掌握的题目可一键同步到复习计划。同时重构 SpacedRepetitionService 直接操作 WrongQuestionMapper（消除对 WrongQuestionService 的循环依赖），新增 4 个单元测试。
+
+### 完成内容
+1. **SpacedRepetitionService 重构**：
+   - 构造器参数从 `WrongQuestionService` 改为 `WrongQuestionMapper`（消除循环依赖风险）。
+   - `submitReview` 中错题本操作改为直接使用 WrongQuestionMapper（内联 addWrongQuestion 和 removeOnCorrect 逻辑）。
+   - 新增 `syncWrongQuestionsToReviewPlan(Long userId)` 方法：查询错题本中 masteryLevel=0/1 的题目，过滤已在复习计划中的，批量插入，返回新增数量。
+
+2. **ReviewController 新增接口**：
+   - `POST /api/review/sync-wrong-questions` — 同步错题本到复习计划，返回 `{ syncedCount }`。
+
+3. **前端**：
+   - `review.ts` — 新增 `syncWrongQuestionsToReview()` API 函数。
+   - `ReviewView.vue` — 操作区新增「📥 同步错题到复习」按钮（含 loading 状态），同步完成后显示新增数量并自动刷新统计。
+
+4. **单元测试**（`SpacedRepetitionSyncTest.java`，4 个测试）：
+   - 无错题时返回 0
+   - 所有错题已在计划中返回 0
+   - 新错题正确加入复习计划
+   - 部分已在计划中只添加新的
+
+### 验证结果
+- 后端 SpacedRepetitionServiceTest 12 个 + SpacedRepetitionSyncTest 4 个 + PracticeServiceTest 6 个 = 全部通过
+- 前端 vue-tsc --noEmit 无错误
+
+### 修改文件
+新建：
+- `backend/src/test/java/com/learnplatform/service/SpacedRepetitionSyncTest.java`
+
+修改：
+- `backend/src/main/java/com/learnplatform/service/SpacedRepetitionService.java` — 构造器重构（WrongQuestionService→WrongQuestionMapper）+ 新增 syncWrongQuestionsToReviewPlan + submitReview 错题本操作内联
+- `backend/src/main/java/com/learnplatform/controller/ReviewController.java` — 新增 POST /sync-wrong-questions
+- `frontend/src/api/review.ts` — 新增 syncWrongQuestionsToReview()
+- `frontend/src/views/practice/ReviewView.vue` — 新增同步按钮和 handleSyncWrongQuestions
+
+### 遗留问题
+- SpacedRepetitionServiceTest 内部 SyncTests 类已被移除（外层 service 仍传 null），已独立为 SpacedRepetitionSyncTest
+
+### 下轮建议
+- Phase 17 后续候选：AI 复习建议整合（基于复习统计数据生成个性化 AI 复习建议）、复习统计整合到学习报告
+- 或其他用户指定任务
+
+建议 commit message: `feat(review): 错题自动复习调度，一键同步错题本到复习计划，消除循环依赖，新增 4 个单元测试`
+
+---
+
 ## Round 94 - 2026-06-19
 
 ### 阶段

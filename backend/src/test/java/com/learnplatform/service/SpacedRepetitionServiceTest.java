@@ -9,7 +9,7 @@ import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * SpacedRepetitionService SM-2 算法单元测试
+ * SpacedRepetitionService SM-2 算法 + 错题同步 单元测试
  */
 class SpacedRepetitionServiceTest {
 
@@ -166,4 +166,5 @@ class SpacedRepetitionServiceTest {
         schedule.setNextReviewDate(LocalDate.now());
         return schedule;
     }
+
 }
