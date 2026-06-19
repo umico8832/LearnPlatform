@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 17 — 间隔重复与智能复习 🚧 开发中（Round 97 完成复习统计整合到学习报告，学习报告页面新增复习指标卡片和月度复习趋势图，后端 4 个新测试）
+当前阶段：Phase 18 — 全局搜索与快捷导航 🚧 开发中（Round 98 完成核心全局搜索功能，跨题目/课程/知识点搜索 + ⌘K 快捷键 + 前端 GlobalSearchDialog + 7 个单元测试）
 
 下一阶段主线：先把一道题讲透，把单题从“题干 + 答案 + 解析”升级为结构化 AI 学习对象，再考虑题库上传、OCR、爬虫和社区共建。
 
@@ -38,7 +38,8 @@
 - [x] Phase 14：AI 可视化交互讲解 ✅（P0 文本可视化 ✅；P1 Mermaid 流程图 ✅：第 9 种 mermaid 元素类型 ✅、mermaid.js 动态 import ✅、异步 SVG 渲染 ✅、语法错误 fallback ✅、后端 Prompt 增强 ✅、单元测试 ✅；P2 代码执行动画 ✅：第 10 种 code_animation 元素类型 ✅、CodeAnimationViewer 组件 ✅、播放/暂停/步进控制 ✅、变量状态面板 ✅、暗色代码面板 ✅、Prompt 增强 ✅、单元测试 ✅；代码语法高亮 ✅：highlight.js 按需加载 18 种语言 ✅、逐行高亮方案 ✅、github-dark 主题 ✅、语言别名映射 ✅；P3 SQL 执行顺序可视化 ✅：第 11 种 sql_execution 元素类型 ✅、SqlExecutionViewer 组件 ✅、暗色 SQL 面板+子句高亮 ✅、中间结果预览 ✅、播放控制+速度调节 ✅、Prompt 增强 ✅、单元测试 ✅；P4 网络协议和操作系统过程可视化 ✅：第 12 种 network_protocol 元素类型 ✅、NetworkProtocolViewer 组件 ✅、时序图风格渲染 ✅、箭头方向+状态高亮 ✅；第 13 种 os_process 元素类型 ✅、OsProcessViewer 组件 ✅、可折叠步骤面板+状态表格 ✅、甘特图 ✅、Prompt 增强 ✅、单元测试 ✅）
 - [ ] Phase 15：AI 学习画像与个性化推荐 🚧（P0 学习诊断与每日推荐 ✅；AI 个性化学习建议 ✅；相似题推荐 ✅；错题归因增强 ✅；单题错因分析 ✅：作答历史时间线、掌握趋势（IMPROVING/STAGNANT/DECLINING）、错误模式描述、连续错误检测、反复错题分析；待做：向量相似度增强推荐）
 - [ ] Phase 16：题目投稿与 AI 题库生产 🚧（P0 题目投稿中心 ✅；P1 AI 质检 ✅；P1 AI 知识点标注 ✅；P1 AI 难度评估 ✅；P1 结果缓存 ✅；P1 一键填充审核意见 ✅；Markdown 导入 ✅；内容来源记录与复审机制 ✅：Flyway V8、5 种来源类型自动标记、复审记录表、定期复审机制、管理端来源筛选+复审弹窗、后端 8 个新测试；待做：复审结果缓存）
-- [ ] Phase 17：间隔重复与智能复习 🚧（SM-2 算法核心 ✅；question_review_schedule 表 Flyway V9 ✅；SpacedRepetitionService ✅；ReviewController 8 个接口 ✅；刷题自动加入复习计划 ✅；前端 ReviewView 页面 ✅；错题自动复习调度 ✅；循环依赖消除 ✅；16 个单元测试 ✅；AI 复习建议整合 ✅：ReviewContextVO + SpacedRepetitionService.buildReviewContext + AiService 6 个新方法 + ReviewController 2 个新接口 + 前端 SSE 流式渲染 + 5 个新测试；复习统计整合到学习报告 ✅：LearningReportVO +6 复习统计字段 + StatisticsService.buildReviewStats + 前端复习指标卡片和月度复习趋势图 + 4 个新测试；Phase 17 基本完成）
+- [ ] Phase 17：间隔重复与智能复习 ✅（SM-2 算法核心 ✅；question_review_schedule 表 Flyway V9 ✅；SpacedRepetitionService ✅；ReviewController 8 个接口 ✅；刷题自动加入复习计划 ✅；前端 ReviewView 页面 ✅；错题自动复习调度 ✅；循环依赖消除 ✅；16 个单元测试 ✅；AI 复习建议整合 ✅：ReviewContextVO + SpacedRepetitionService.buildReviewContext + AiService 6 个新方法 + ReviewController 2 个新接口 + 前端 SSE 流式渲染 + 5 个新测试；复习统计整合到学习报告 ✅：LearningReportVO +6 复习统计字段 + StatisticsService.buildReviewStats + 前端复习指标卡片和月度复习趋势图 + 4 个新测试；Phase 17 基本完成）
+- [ ] Phase 18：全局搜索与快捷导航 🚧（GlobalSearchService ✅；GlobalSearchController 1 个接口 ✅；前端 GlobalSearchDialog 组件 ✅；⌘K/Ctrl+K 快捷键 ✅；键盘导航 ✅；关键词高亮 ✅；移动端适配 ✅；7 个单元测试 ✅）
 
 ---
 
@@ -133,12 +134,13 @@ docker compose up -d
 
 ## 6. 下一步建议任务
 
-任务名称：Phase 17 后续方向 — 进入 Phase 18 或其他用户指定任务
+任务名称：Phase 18 全局搜索与快捷导航 — 后续迭代或新用户指定任务
 
-Phase 17 已基本完成：SM-2 算法核心、ReviewController（8+2 个接口）、前端 ReviewView 页面、错题自动复习调度、AI 复习建议整合、复习统计整合到学习报告和 25 个单元测试。
+Phase 18 核心功能已完成：GlobalSearchService（题目/课程/知识点 LIKE 搜索）、GlobalSearchController（1 个 GET 接口）、前端 GlobalSearchDialog 组件（防抖搜索、分组结果、键盘导航、关键词高亮）、⌘K/Ctrl+K 快捷键、移动端适配、7 个单元测试。
 
 下一步建议：
-- 进入 Phase 18 新阶段规划（见 docs/FUTURE.md 和 docs/AI_LEARNING_PLATFORM_STRATEGY.md）
+- Phase 18 后续迭代：搜索历史记录、热门搜索推荐、搜索结果缓存
+- 进入 Phase 19 新阶段规划（见 docs/FUTURE.md 和 docs/AI_LEARNING_PLATFORM_STRATEGY.md）
 - 或其他用户指定任务
 
 当前不优先做：
@@ -191,10 +193,10 @@ Phase 17 已基本完成：SM-2 算法核心、ReviewController（8+2 个接口�
 6. 除非遇到重大方向、破坏性操作或需求冲突，否则不要频繁问我；
 7. 每轮结束都要更新 docs/CHANGELOG_AGENT.md 和必要文档。
 
-当前阶段：Phase 17 — 间隔重复与智能复习已基本完成（SM-2 算法 + ReviewController 10 个接口 + 前端 ReviewView + 错题自动复习调度 + AI 复习建议整合 + 复习统计整合到学习报告 + 25 个单元测试已完成）。Phase 16 题目投稿与 AI 题库生产已基本完成。Phase 14 可视化讲解已基本完成（13 种元素类型）。
+当前阶段：Phase 18 — 全局搜索与快捷导航核心功能已完成（GlobalSearchService + GlobalSearchController + 前端 GlobalSearchDialog + ⌘K 快捷键 + 7 个单元测试）。Phase 17 间隔重复与智能复习已基本完成。Phase 16 题目投稿与 AI 题库生产已基本完成。
 
-已完成模块：用户鉴权、课程知识点、题库、刷题判分（含填空简答增强）、错题本（含重练）、试卷考试、AI 功能（含流式输出与配额管理）、统计可视化（含个人学习报告）、质量提升、部署简历、收藏题练习、Excel/Markdown 导入导出、学习计划、题目评论、多端适配、难度自适应、管理端用户管理、Phase 13 AI 题目学习资产、Phase 14 全部可视化讲解（13 种元素类型）、Phase 15 学习画像与推荐、Phase 16 全部功能（含来源追踪与复审机制）、Phase 17 间隔重复复习系统（SM-2 算法）、后端测试 271+ 个、前端 Vitest 测试（187 个，21 个测试文件）、GitHub Actions CI。
-下一阶段主线：进入 Phase 18 新阶段规划。
+已完成模块：用户鉴权、课程知识点、题库、刷题判分（含填空简答增强）、错题本（含重练）、试卷考试、AI 功能（含流式输出与配额管理）、统计可视化（含个人学习报告）、质量提升、部署简历、收藏题练习、Excel/Markdown 导入导出、学习计划、题目评论、多端适配、难度自适应、管理端用户管理、Phase 13 AI 题目学习资产、Phase 14 全部可视化讲解（13 种元素类型）、Phase 15 学习画像与推荐、Phase 16 全部功能（含来源追踪与复审机制）、Phase 17 间隔重复复习系统（SM-2 算法）、Phase 18 全局搜索与快捷导航（核心功能）、后端测试 278+ 个、前端 Vitest 测试（187 个，21 个测试文件）、GitHub Actions CI。
+下一阶段主线：Phase 18 后续迭代（搜索历史、热门推荐等）或进入 Phase 19。
 当前不优先做：PDF / 图片 OCR、爬虫、用户上传题库自动入库、AI 自动审核发布题目、复杂推荐系统。
 后续扩展方向：见 docs/AI_LEARNING_PLATFORM_STRATEGY.md、docs/FUTURE.md 和 docs/TESTING.md；测试按业务风险补充。
 

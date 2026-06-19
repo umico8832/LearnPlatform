@@ -144,6 +144,12 @@
           </el-breadcrumb>
         </div>
         <div class="header-right">
+          <!-- 全局搜索入口 -->
+          <div class="header-search-trigger" @click="openSearch" title="搜索 (⌘K / Ctrl+K)">
+            <el-icon :size="18"><Search /></el-icon>
+            <span v-if="!isMobile" class="search-trigger-text">搜索</span>
+            <kbd v-if="!isMobile" class="search-trigger-kbd">⌘K</kbd>
+          </div>
           <el-dropdown @command="handleCommand">
             <span class="user-info">
               <el-avatar :size="32" :src="userInfo?.avatar || undefined">
@@ -167,13 +173,17 @@
       </el-main>
     </el-container>
   </el-container>
+
+  <!-- 全局搜索对话框 -->
+  <GlobalSearchDialog ref="searchDialogRef" />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { HomeFilled, Reading, Setting, Collection, Notebook, EditPen, Promotion, Clock, WarningFilled, Trophy, MagicStick, DataAnalysis, StarFilled, UserFilled, Fold, Expand, DataLine, Guide, Connection, TrendCharts, Upload } from '@element-plus/icons-vue'
+import { HomeFilled, Reading, Setting, Collection, Notebook, EditPen, Promotion, Clock, WarningFilled, Trophy, MagicStick, DataAnalysis, StarFilled, UserFilled, Fold, Expand, DataLine, Guide, Connection, TrendCharts, Upload, Search } from '@element-plus/icons-vue'
+import GlobalSearchDialog from '@/components/GlobalSearchDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -182,6 +192,12 @@ const userStore = useUserStore()
 const activeMenu = computed(() => route.path)
 const userInfo = computed(() => userStore.userInfo)
 const isAdmin = computed(() => userStore.userInfo?.role === 'ADMIN')
+
+// 全局搜索
+const searchDialogRef = ref<InstanceType<typeof GlobalSearchDialog>>()
+function openSearch() {
+  searchDialogRef.value?.open()
+}
 
 // 响应式断点
 const MOBILE_BREAKPOINT = 768
@@ -285,6 +301,46 @@ function handleCommand(command: string) {
 .header-right {
   display: flex;
   align-items: center;
+  gap: 16px;
+}
+
+/* 搜索触发按钮 */
+.header-search-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: #f0f2f5;
+  border: 1px solid #e4e7ed;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #909399;
+  font-size: 13px;
+}
+
+.header-search-trigger:hover {
+  border-color: #c0c4cc;
+  color: #606266;
+  background: #e8e8e8;
+}
+
+.search-trigger-text {
+  margin-left: 2px;
+}
+
+.search-trigger-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 5px;
+  font-size: 11px;
+  color: #b0b3b8;
+  background: #fff;
+  border: 1px solid #dcdfe6;
+  border-radius: 3px;
+  font-family: inherit;
+  margin-left: 4px;
 }
 
 .user-info {
@@ -352,6 +408,10 @@ function handleCommand(command: string) {
 
   .app-header {
     padding: 0 12px;
+  }
+
+  .header-search-trigger {
+    padding: 6px 8px;
   }
 }
 </style>

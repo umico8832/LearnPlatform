@@ -1,5 +1,74 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 98 - 2026-06-19
+
+### 阶段
+Phase 18：全局搜索与快捷导航 🚧 开发中
+
+### 本轮目标
+实现全局搜索功能，支持跨题目、课程、知识点的模糊搜索，提供快捷键盘入口（⌘K / Ctrl+K / /），结果分组展示并支持键盘导航和关键词高亮。
+
+### 完成内容
+1. **后端 — GlobalSearchResultVO**：
+   - 分组搜索结果 VO（questions / courses / knowledgePoints + totalCount）。
+   - 内部 SearchItem 类（id / title / subtitle / type / link / highlight）。
+
+2. **后端 — GlobalSearchService**：
+   - 对题目（content LIKE）、课程（name LIKE）、知识点（name LIKE）并行查询。
+   - 每类默认 5 条、最大 20 条限制。
+   - 题目副标题自动映射中文题型 + 难度星号。
+   - 超长文本截断 + 空查询防护。
+
+3. **后端 — GlobalSearchController**：
+   - `GET /api/search?keyword=&limit=` 接口，需要认证。
+   - Knife4j 注解完善。
+
+4. **前端 — search.ts API 模块**：
+   - `globalSearch()` 函数，类型定义 `SearchItem` 和 `GlobalSearchResult`。
+
+5. **前端 — GlobalSearchDialog.vue 组件**：
+   - 搜索对话框：输入框 + 250ms 防抖 + 结果分组展示 + 加载/空状态。
+   - 键盘导航：↑↓ 选择、Enter 跳转、Escape 关闭。
+   - 关键词高亮（mark 标签 + XSS 安全 escape）。
+   - 全局快捷键：⌘K / Ctrl+K 打开/关闭，/ 键快速打开。
+   - 移动端适配（95% 宽度、触摸友好 48px 行高）。
+
+6. **前端 — AppLayout.vue 集成**：
+   - header-right 新增搜索触发按钮（图标 + 文字 + ⌘K 快捷键提示）。
+   - 引入 GlobalSearchDialog 组件并暴露 open() 方法。
+
+7. **后端测试**：
+   - 新建 `GlobalSearchServiceTest.java`（7 个单元测试）：
+     - 空查询处理：null 关键词返回空、空字符串不调用 mapper。
+     - 正常搜索：分组结果验证、自定义 limit、limit 超限截断。
+     - 题型映射：副标题包含中文题型 + 难度、超长内容截断。
+   - 本地运行通过（7/7 passed）。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/dto/GlobalSearchResultVO.java`（新建）
+- `backend/src/main/java/com/learnplatform/service/GlobalSearchService.java`（新建）
+- `backend/src/main/java/com/learnplatform/controller/GlobalSearchController.java`（新建）
+- `backend/src/test/java/com/learnplatform/service/GlobalSearchServiceTest.java`（新建，7 个测试）
+- `frontend/src/api/search.ts`（新建）
+- `frontend/src/components/GlobalSearchDialog.vue`（新建）
+- `frontend/src/components/layout/AppLayout.vue`（搜索触发按钮 + 组件引用）
+
+### 验证
+- 后端 `mvn test -Dtest="GlobalSearchServiceTest"` 全部通过（7/7 passed）
+- 前端文件创建完成
+
+### 遗留问题
+- 无
+
+### 下一步建议
+- 完善 Phase 18 后续功能（搜索历史记录、热门搜索推荐等）
+- 或进入其他 Phase 18 子任务
+
+### 建议 commit message
+`feat(search): 全局搜索与快捷导航，跨题目/课程/知识点搜索 + ⌘K 快捷键 + 7 个单元测试`
+
+---
+
 ## Round 97 - 2026-06-19
 
 ### 阶段
