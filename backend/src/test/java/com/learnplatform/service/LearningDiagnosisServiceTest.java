@@ -86,6 +86,7 @@ class LearningDiagnosisServiceTest {
         assertTrue(vo.getCourseMasteries().isEmpty());
         assertNotNull(vo.getLearningHabit());
         assertNotNull(vo.getDailyAdvice());
+        verifyNoInteractions(questionKnowledgePointMapper);
     }
 
     @Test

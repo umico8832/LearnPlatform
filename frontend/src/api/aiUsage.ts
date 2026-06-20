@@ -65,7 +65,7 @@ export interface AiUsageOverview {
 
 /** 获取 AI 调用总览 */
 export function getAiUsageOverview(days?: number) {
-  return request.get<AiUsageOverview>('/api/admin/ai-usage/overview', {
+  return request.get<AiUsageOverview>('/admin/ai-usage/overview', {
     params: days ? { days } : {},
   })
 }

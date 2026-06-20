@@ -716,6 +716,10 @@ public class LearningDiagnosisService {
                     .map(LearningDiagnosisVO.RecommendedQuestion::getQuestionId)
                     .collect(Collectors.toSet());
 
+            if (weakKpIds.isEmpty()) {
+                return recommendations;
+            }
+
             LambdaQueryWrapper<QuestionKnowledgePoint> qkpWrapper = new LambdaQueryWrapper<>();
             qkpWrapper.in(QuestionKnowledgePoint::getKnowledgePointId, weakKpIds);
             List<QuestionKnowledgePoint> qkps = questionKnowledgePointMapper.selectList(qkpWrapper);

@@ -120,7 +120,8 @@ docker compose up -d
 
 ## 5. 当前遗留问题
 
-- 前端页面级组件（PracticeSessionView、HomeView 等）部分覆盖（LoginView/RegisterView/ProfileView 已完成），其余需要更多 mocking 工作
+- Docker Redis 缓存连接与管理端 AI 调用分析路径已在 Round 105 修复；Round 106 已完成登录、首页、课程、题库、刷题判分、错题本、管理员概览、课程管理与 AI 用量分析的浏览器点击验收。考试完整作答流程与演示截图仍待补齐。
+- 前端页面级组件仍是部分覆盖；Round 106 已为 `PracticeSessionView` 增加关闭动画状态转换回归测试。
 - tokensUsed 字段暂未从上游 API 提取，仅记录调用次数
 - 管理端缺少按用户单独调整配额的能力（当前全局统一配额）
 - 项目截图未制作（非阻塞演示素材）
@@ -135,14 +136,13 @@ docker compose up -d
 
 ## 6. 下一步建议任务
 
-任务名称：项目收尾与 AI 运营能力后续迭代
+任务名称：演示验收与 CI 收尾
 
-Phase 18 已完成搜索历史、热门搜索和结果缓存；Phase 19 已完成 AI 调用分析总览（Round 100）。
+1. 补做考试完整作答流程的浏览器验收，并制作项目截图。
+2. 推送至 GitHub 后确认 Actions CI 的实际运行结果。
+3. 若继续功能迭代，优先考虑用户独立 AI 配额、成本估算或调用日报。
 
-下一步建议：
-- 制作项目截图并按 `docs/DEMO.md` 完成一次演示验收
-- 推送后确认 GitHub Actions CI 实际运行结果
-- 需要继续迭代时，优先实现用户级独立 AI 配额、成本估算或调用日报
+Round 105 已验证 Docker Redis 网络连接、8 个缓存/管理接口及前端代理的 AI 用量接口均返回 200；Round 106 已完成核心浏览器点击验收并修复刷题结果弹窗闪屏。
 
 当前不优先做：
 - 复杂推荐系统（向量相似度等）
@@ -151,7 +151,7 @@ Phase 18 已完成搜索历史、热门搜索和结果缓存；Phase 19 已完�
 - 用户上传题库自动入库
 - AI 自动审核发布题目
 
-建议 commit message: `feat(report): 复习统计整合到学习报告，新增复习指标卡片和月度复习趋势图，4 个新测试`
+建议 commit message: `fix(practice): 修复切换下一题时结果弹窗闪屏`
 
 ---
 
@@ -194,10 +194,15 @@ Phase 18 已完成搜索历史、热门搜索和结果缓存；Phase 19 已完�
 6. 除非遇到重大方向、破坏性操作或需求冲突，否则不要频繁问我；
 7. 每轮结束都要更新 docs/CHANGELOG_AGENT.md 和必要文档。
 
-当前阶段：Phase 19 — AI 调用分析与成本控制面板已基本完成（AiUsageService + AdminAiUsageController + AiUsageView + 11 个单元测试）。Phase 17、18 已基本完成。
+当前阶段：Phase 19 — AI 调用分析与成本控制面板已基本完成。Round 105 已修复 Docker Redis 缓存与 AI 用量接口路径，Round 106 已完成核心浏览器点击验收并修复刷题结果弹窗的关闭动画闪屏。
 
 已完成模块：用户鉴权、课程知识点、题库、刷题判分（含填空简答增强）、错题本（含重练）、试卷考试、AI 功能（含流式输出与配额管理）、统计可视化（含个人学习报告）、质量提升、部署简历、收藏题练习、Excel/Markdown 导入导出、学习计划、题目评论、多端适配、难度自适应、管理端用户管理、Phase 13 AI 题目学习资产、Phase 14 全部可视化讲解（13 种元素类型）、Phase 15 学习画像与推荐、Phase 16 全部功能（含来源追踪与复审机制）、Phase 17 间隔重复复习系统（SM-2 算法）、Phase 18 全局搜索与快捷导航（核心功能）、后端测试 341 个、前端 Vitest 测试（187 个，21 个测试文件）、GitHub Actions CI。
-下一阶段主线：演示、文档和 CI 收尾；或继续 AI 运营能力（用户独立配额、成本预估、调用报告）。
+下一步建议：
+1. 补做考试完整作答流程的浏览器验收，并制作演示截图。
+2. 推送至 GitHub 后确认 Actions CI 实际运行结果。
+3. 若继续迭代，优先实现用户独立 AI 配额、成本估算或调用日报。
+
+当前验收基线：后端 `mvn test` 341 passed；前端 `npm test` 190 passed、`npm run build` 成功；核心用户与管理员页面已通过真实浏览器点击验收。
 当前不优先做：PDF / 图片 OCR、爬虫、用户上传题库自动入库、AI 自动审核发布题目、复杂推荐系统。
 后续扩展方向：见 docs/AI_LEARNING_PLATFORM_STRATEGY.md、docs/FUTURE.md 和 docs/TESTING.md；测试按业务风险补充。
 

@@ -1,5 +1,105 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 106 - 2026-06-20
+
+### 阶段
+真实浏览器验收缺陷修复
+
+### 完成内容
+1. 修复刷题结果弹窗在点击“下一题”后的关闭动画闪屏：结果数据现在会保留至 Element Plus 的 `closed` 事件触发，再切换题目与清理状态，不再短暂渲染为空的“答错了”反馈。
+2. 新增 `PracticeSessionView` 页面级回归测试，覆盖“关闭动画完成前仍保留当前反馈、结束后才进入下一题”的状态转换。
+
+### 修改文件
+- `frontend/src/views/practice/PracticeSessionView.vue`
+- `frontend/src/__tests__/views/PracticeSessionView.test.ts`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- 真实 Docker 浏览器验收：普通用户登录、首页、课程、题库、刷题即时判分、错题本；管理员登录、平台总览、课程管理、AI 调用分析均正常。
+- `npm test -- --run`：23 个文件、190 个测试通过。
+- `npm run build`：通过。
+
+### 遗留问题
+- AI 上游调用历史仍有网络握手/超时失败记录；管理端已能展示失败信息。
+- 项目演示截图与 GitHub Actions 实际推送验证仍待完成。
+
+### 建议 commit message
+`fix(practice): 修复切换下一题时结果弹窗闪屏`
+
+---
+
+## Round 105 - 2026-06-20
+
+### 阶段
+真实部署缺陷修复与回归
+
+### 完成内容
+1. 修复 Docker Redis 无密码场景：Redis 的 protected mode 会关闭来自同一 Docker 网络后端的连接，导致 Lettuce 握手失败并使缓存接口返回 500。现关闭该模式，并将宿主机端口限制为仅本机绑定。
+2. 修复管理端 AI 调用分析 API 重复 `/api` 前缀；新增前端 API 契约测试。
+3. 修复学习诊断在没有薄弱知识点时构造 `IN ()` 非法 SQL 的问题，并补充空数据回归断言。
+4. 重建 Docker 运行态并完成真实 HTTP 验收：8 个 Redis 相关统计/管理接口、以及经前端 Nginx 代理的 AI 用量接口均返回 200。
+
+### 修改文件
+- `docker-compose.yml`
+- `backend/src/main/java/com/learnplatform/service/LearningDiagnosisService.java`
+- `backend/src/test/java/com/learnplatform/service/LearningDiagnosisServiceTest.java`
+- `frontend/src/api/aiUsage.ts`
+- `frontend/src/__tests__/api/aiUsage.test.ts`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `mvn clean test`：341 passed。
+- `npm test`：22 个文件、189 passed；`npm run build`：通过。
+- Docker：Redis 从同网络容器 `PING` 返回 `PONG`；8 个缓存/管理接口和前端代理 AI 用量接口均为 HTTP 200。
+
+### 遗留问题
+- 仍需按 `docs/DEMO.md` 完成浏览器 UI 点击验收与截图制作。
+- CI 需推送到 GitHub 后实际触发验证。
+
+### 建议 commit message
+`fix(runtime): 修复 Redis 缓存与 AI 用量接口路径`
+
+---
+
+## Round 104 - 2026-06-20
+
+### 阶段
+真实部署验收与缺陷记录
+
+### 本轮目标
+在 Docker 运行环境中验证登录、普通用户与管理员的真实接口链路，识别阻断演示的运行时问题。
+
+### 完成内容
+1. 重建并切换 Docker 后端镜像，解决历史镜像未包含验证码接口免认证配置的问题；`GET /api/auth/captcha` 现已通过前端代理与后端直连验证为 200。
+2. 使用数学验证码登录演示账号 `testuser` 与 `admin`，携带真实 JWT 验证用户端和管理员端读取接口。
+3. 执行回归：后端 `mvn test` 341 个测试通过；前端 `npm test` 187 个测试通过；前端 `npm run build` 成功。
+4. 发现并记录以下待修复缺陷：
+   - Redis 缓存连接失败会使所有 `@Cacheable` 统计接口返回 500，影响首页、学习趋势、学习报告、学习路径、知识图谱、学习诊断，以及管理员平台概览和课程管理。
+   - 管理端 AI 调用分析页面前端请求路径为 `/api/api/admin/ai-usage/overview`，而正确后端路径是 `/api/admin/ai-usage/overview`，页面实际返回 404。
+
+### 修改文件
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验收结果
+- [x] Docker 前端、后端、MySQL、Redis、Loki 均已启动；前后端 healthcheck 正常。
+- [x] 验证码接口经 `http://localhost:18000/api/auth/captcha` 返回 200。
+- [x] 普通用户只读接口：20 项中 14 项通过；失败的 6 项均为 Redis 缓存连接异常导致的 500。
+- [x] 管理员只读接口：8 项中 5 项通过；平台概览和课程管理受 Redis 问题影响，AI 调用分析页面请求路径错误。
+- [x] 后端 `mvn test`：341 passed；前端 `npm test`：187 passed；`npm run build` 成功。
+
+### 遗留问题 / 下轮待办
+1. 优先修复 Docker Redis 连接配置：确认空 `REDIS_PASSWORD` 的 Spring 配置绑定、Redis 容器认证参数与后端 Lettuce 行为一致；修复后重建后端并复测全部缓存接口。
+2. 修复 `frontend/src/api/aiUsage.ts`：将 `'/api/admin/ai-usage/overview'` 改为 `'/admin/ai-usage/overview'`，补充 API 单元测试并验证管理端页面请求为 200。
+3. Redis 与 AI 用量修复后，使用可用浏览器完成 UI 点击验收：登录、首页、刷题提交、错题本、考试、管理员平台概览和 AI 调用分析。
+
+### 建议 commit message
+`fix(runtime): 修复 Redis 缓存连接与管理端 AI 用量接口路径`
+
+---
+
 ## Round 103 - 2026-06-20
 
 ### 阶段

@@ -38,6 +38,7 @@
       :close-on-press-escape="false"
       :show-close="false"
       class="result-dialog"
+      @closed="handleResultClosed"
     >
       <div class="result-content">
         <div class="result-icon">
@@ -225,6 +226,7 @@ const multiAnswers = ref<Set<string>>(new Set())
 const submitting = ref(false)
 const showResult = ref(false)
 const currentResult = ref<PracticeResultVO | null>(null)
+const pendingResultAction = ref(false)
 const finished = ref(false)
 const correctCount = ref(0)
 const wrongCount = ref(0)
@@ -312,7 +314,16 @@ const handleSubmit = async () => {
 }
 
 const nextQuestion = () => {
+  // Keep the current result intact until Element Plus finishes its closing
+  // transition. Clearing it immediately makes the leaving dialog briefly
+  // render as an empty "wrong answer" result.
+  pendingResultAction.value = true
   showResult.value = false
+}
+
+const handleResultClosed = () => {
+  if (!pendingResultAction.value) return
+  pendingResultAction.value = false
   currentResult.value = null
 
   if (currentIndex.value < questions.value.length - 1) {
