@@ -78,8 +78,7 @@
 | JWT (jjwt) | 0.12+ | Token 签发与验证 |
 | Knife4j | 4.x | 接口文档（Swagger 增强） |
 | Validation | - | 参数校验 |
-| Lombok | - | 简化 Java 代码 |
-| MapStruct (可选) | - | 对象映射 |
+| Lombok | 未使用 | 为兼容本地 JDK 26，实体与 DTO 使用手写访问器 |
 
 ### 2.3 数据库
 
@@ -480,6 +479,16 @@ AiService (业务服务)
   → AI 未配置   → 提示"AI 功能暂未开启"
 ```
 
+### 当前扩展模块（以代码为准）
+
+目录树保留核心分层示例；以下模块已在实际代码中独立落位：
+
+- 前端 API：`review.ts`、`search.ts`、`submission.ts`、`aiUsage.ts`；页面包括 `ReviewView`、`LearningDiagnosisView`、`SubmissionManage`、`AiUsageView`。
+- 前端组件：`GlobalSearchDialog`、AI 题目学习资产和多种可视化讲解组件。
+- 后端控制器：`ReviewController`、`GlobalSearchController`、`QuestionSubmissionController`、`AdminQuestionSubmissionController`、`AdminAiUsageController`。
+- 后端服务：间隔重复调度、学习诊断、搜索历史、投稿 AI 质检/标注/难度评估、题目来源复审和 AI 用量聚合。
+- 数据库迁移：V1-V9 由 Flyway 管理；V8 负责题目来源/复审，V9 负责间隔重复复习计划。
+
 题目解析与变式题同时支持流式链路：前端使用带 JWT 请求头的 `fetch + ReadableStream` 发起 POST 请求，`AiController` 将任务交给独立 `aiTaskExecutor`，`OpenAiProvider` 读取上游 OpenAI 兼容 SSE 并通过 `SseEmitter` 转发 `content`、`done`、`error` 事件。同步接口继续保留，避免影响复习建议、知识点总结及已有调用方。
 
 ---
@@ -504,6 +513,30 @@ AiService (业务服务)
 
 投稿表是审核流转表，不直接参与刷题；只有入库后的正式 `question` 与 `question_option` 会进入刷题、考试、错题本和 AI 学习资产链路。
 
+### 5.5 间隔重复与搜索数据流
+
+```
+用户完成练习或手动加入 → SpacedRepetitionService
+  → 写入/更新 question_review_schedule
+  → ReviewController 返回待复习卡片
+
+用户提交复习质量 → SM-2 计算新间隔与简易因子
+  → 更新下一次复习日期
+
+用户触发全局搜索 → GlobalSearchService 查询题目/课程/知识点
+  → SearchHistoryService 记录个人历史与热门关键词
+  → 返回分组结果；短期结果由缓存复用
+```
+
+### 5.6 AI 调用分析数据流
+
+```
+业务 AI 调用 → ai_call_log
+管理员访问 /api/admin/ai-usage/overview
+  → AiUsageService 按时间窗口聚合日志
+  → 返回调用趋势、成功率、Tokens、模型/功能分布、活跃用户和失败详情
+```
+
 ---
 
 ## 六、权限设计
@@ -526,6 +559,7 @@ AiService (业务服务)
 | 投稿审核与入库 | ❌ | ✅ |
 | 管理试卷 | ❌ | ✅ |
 | 管理端统计 | ❌ | ✅ |
+| AI 调用分析 | ❌ | ✅ |
 
 ### 6.2 接口权限规则
 
@@ -543,6 +577,8 @@ AiService (业务服务)
 /api/exams/**
 /api/statistics/**
 /api/submission/**
+/api/review/**
+/api/search/**
 /api/users/me
 
 # 管理员接口（需 ADMIN 角色）

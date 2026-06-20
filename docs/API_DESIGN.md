@@ -1089,3 +1089,54 @@ GET  /api/admin/submission/stats        # 投稿状态统计
 - 选择题投稿必须提供不少于 2 个选项；单选题只能有 1 个正确答案，多选题至少 1 个正确答案。
 - 判断题投稿使用 `correctAnswer=TRUE/FALSE`，服务端会规范化为“正确/错误”两个正式选项。
 - 填空题和简答题投稿必须提供 `correctAnswer`，入库后会以 `ANSWER` 选项写入正式题目选项表，供刷题判分统一读取。
+
+### 13. 间隔重复复习（Phase 17）
+
+以下接口均要求登录，复习调度基于 SM-2 算法维护：
+
+```
+GET    /api/review/stats                         # 复习统计概览
+GET    /api/review/due?courseId=&limit=           # 今日待复习卡片
+GET    /api/review/cards?courseId=                # 全部复习卡片
+POST   /api/review/add/{questionId}               # 加入复习计划
+POST   /api/review/sync-wrong-questions           # 同步未掌握/部分掌握错题
+POST   /api/review/submit                         # 提交复习结果并更新 SM-2 调度
+DELETE /api/review/remove/{questionId}            # 移出复习计划
+POST   /api/review/reset/{questionId}             # 重置复习进度
+POST   /api/review/ai-suggestion                  # AI 复习建议（同步）
+POST   /api/review/ai-suggestion/stream           # AI 复习建议（SSE）
+```
+
+`POST /api/review/submit` 请求体：
+
+```json
+{
+  "questionId": 1,
+  "userAnswer": "用户答案",
+  "answerTime": 30,
+  "selfAssessedQuality": 4
+}
+```
+
+`selfAssessedQuality` 可选，取值 0-5，代表本次回忆质量；未传时由系统根据判分结果映射。接口返回更新后的复习卡片和下次复习时间。
+
+### 14. 全局搜索与快捷导航（Phase 18）
+
+以下接口均要求登录：
+
+```
+GET    /api/search?keyword=Java&limit=5            # 跨题目/课程/知识点搜索
+GET    /api/search/suggestions                     # 当前用户历史 + 热门关键词
+DELETE /api/search/history                         # 清空当前用户搜索历史
+DELETE /api/search/history/item?keyword=Java      # 删除一条搜索历史
+```
+
+搜索结果按 `questions`、`courses`、`knowledgePoints` 分组返回；每类默认最多 5 条、最大 20 条。搜索时自动记录当前用户历史与全局热门关键词。
+
+### 15. AI 调用分析（Phase 19，管理员）
+
+```
+GET /api/admin/ai-usage/overview?days=30
+```
+
+返回最近指定天数内的 AI 调用总览，包含全局成功/失败统计、Tokens、平均耗时、每日趋势、按功能/模型分布、Top 活跃用户和最近失败调用。该接口位于 `/api/admin/**`，仅 ADMIN 可访问。

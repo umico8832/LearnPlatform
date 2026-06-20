@@ -1,5 +1,82 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 102 - 2026-06-20
+
+### 阶段
+构建与回归修复
+
+### 本轮目标
+修复实际验证中发现的前端生产构建失败和学习报告复习统计测试 OOM。
+
+### 完成内容
+1. 删除 `GlobalSearchDialog.vue` 未使用的 `watch` 导入，恢复 TypeScript 严格检查下的前端生产构建。
+2. 修正 `LearningReportReviewStatsTest` 的 `selectCount` mock 调用序列：为连续复习天数查询提供终止值，避免固定正数使测试循环不退出并耗尽堆内存。
+3. 删除无复习卡片场景中不会执行的多余 `selectList` stub。
+
+### 修改文件
+- `frontend/src/components/GlobalSearchDialog.vue`
+- `backend/src/test/java/com/learnplatform/service/LearningReportReviewStatsTest.java`
+- `docs/CHANGELOG_AGENT.md`
+- `docs/HANDOFF.md`
+
+### 验证
+- 前端：`npm test -- --run` 通过（21 个文件，187 个测试）。
+- 前端：`npm run build` 通过。
+- 后端：`mvn clean test -Dtest=LearningReportReviewStatsTest` 通过（4 个测试）。
+- 后端：`mvn test` 通过（341 个测试，0 failures / 0 errors）。
+
+### 遗留问题
+- MySQL / Docker 服务未在当前本机运行，登录、刷题等真实端到端链路仍待服务启动后验收。
+
+### 下一步建议
+- 启动 MySQL 或 Docker Compose 后，按 `docs/DEMO.md` 完成用户端与管理端端到端验收。
+
+### 建议 commit message
+`fix: 修复前端构建与复习统计测试循环`
+
+---
+
+## Round 101 - 2026-06-20
+
+### 阶段
+文档同步与项目收尾
+
+### 本轮目标
+校准项目说明、路线图、交接、接口、数据库和架构文档，使其与 Phase 19 和现有代码保持一致。
+
+### 完成内容
+1. README 阶段表更新至 Phase 19，并补充智能复习、搜索、学习诊断与题目内容治理能力。
+2. ROADMAP 新增 Phase 19，当前阶段改为 Phase 19 已基本完成，并明确演示/CI 收尾和 AI 运营能力候选任务。
+3. HANDOFF 清除已完成搜索功能的旧“下一步”描述，续接提示同步至 Phase 19。
+4. API_DESIGN 补充 Phase 17 复习、Phase 18 搜索和 Phase 19 AI 用量分析接口。
+5. DB_DESIGN 补充 V8 题目来源与复审、V9 间隔重复复习表，并修正审计表字段约定。
+6. ARCHITECTURE 同步当前扩展模块、权限边界和 Lombok 未使用的事实。
+
+### 修改文件
+- `README.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/API_DESIGN.md`
+- `docs/DB_DESIGN.md`
+- `docs/ARCHITECTURE.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- 对照 `ReviewController`、`GlobalSearchController`、`AdminAiUsageController`、Flyway V8/V9 和前端路由进行静态核对。
+- 文档改动不涉及业务代码，无需运行构建。
+
+### 遗留问题
+- 项目截图与 GitHub Actions 实际运行验证仍待完成。
+
+### 下一步建议
+- 按 `docs/DEMO.md` 制作并验收演示截图；推送后确认 CI。
+- 若继续功能迭代，优先用户独立 AI 配额、成本估算或调用日报。
+
+### 建议 commit message
+`docs: 同步 Phase 19 进度、复习搜索与 AI 用量分析文档`
+
+---
+
 ## Round 100 - 2026-06-19
 
 ### 阶段

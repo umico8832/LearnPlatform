@@ -78,9 +78,9 @@ class LearningReportReviewStatsTest {
         QuestionReviewSchedule card2 = createSchedule(userId, 102L, 2.3, 7, 2, today);
         QuestionReviewSchedule card3 = createSchedule(userId, 103L, 1.8, 1, 0, today);
 
-        // 总卡片数 = 3
+        // 调用顺序：总卡片、今日待复习、连续复习（今天/昨天/停止）
         when(reviewScheduleMapper.selectCount(any(LambdaQueryWrapper.class)))
-                .thenReturn(3L);
+                .thenReturn(3L, 3L, 2L, 1L, 0L);
 
         // 本月复习过的 + 全部卡片
         when(reviewScheduleMapper.selectList(any(LambdaQueryWrapper.class)))
@@ -107,8 +107,6 @@ class LearningReportReviewStatsTest {
         // 模拟无复习卡片
         when(reviewScheduleMapper.selectCount(any(LambdaQueryWrapper.class)))
                 .thenReturn(0L);
-        when(reviewScheduleMapper.selectList(any(LambdaQueryWrapper.class)))
-                .thenReturn(Collections.emptyList());
 
         LearningReportVO report = statisticsService.getLearningReport(userId);
 
@@ -153,8 +151,9 @@ class LearningReportReviewStatsTest {
         QuestionReviewSchedule card2 = createSchedule(userId, 102L, 2.8, 25, 4, today.minusDays(1));
         QuestionReviewSchedule card3 = createSchedule(userId, 103L, 2.0, 7, 2, today);
 
+        // 调用顺序：总卡片、今日待复习、连续复习（今天/昨天/前天/停止）
         when(reviewScheduleMapper.selectCount(any(LambdaQueryWrapper.class)))
-                .thenReturn(3L);
+                .thenReturn(3L, 3L, 1L, 1L, 1L, 0L);
         when(reviewScheduleMapper.selectList(any(LambdaQueryWrapper.class)))
                 .thenReturn(Arrays.asList(card1, card2, card3));
 

@@ -634,6 +634,47 @@ CREATE TABLE `ai_asset_feedback` (
 
 ---
 
+### 3.17 题目来源与复审（question 扩展、question_review_record）
+
+Flyway V8 为正式题目补充来源治理字段，并新增只追加的复审审计表。
+
+`question` 新增字段：
+
+| 字段名 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| source_type | VARCHAR(30) | MANUAL | 来源：MANUAL / SUBMISSION / EXCEL_IMPORT / MARKDOWN_IMPORT / AI_GENERATED |
+| source_reference | VARCHAR(500) | NULL | 来源引用，如投稿 ID 或导入批次 ID |
+| last_review_time | DATETIME | NULL | 最近复审时间 |
+| next_review_time | DATETIME | NULL | 下次复审时间 |
+| review_rounds | INT | 0 | 累计复审轮次 |
+
+`question_review_record` 用于保留复审动作快照：`question_id`、`reviewer_id`、复审类型、动作、题干/难度变更前后值、意见与 `create_time`。该表是审计记录，只有创建时间，不包含逻辑删除与更新时间。
+
+---
+
+### 3.18 间隔重复复习计划表 (question_review_schedule)
+
+Flyway V9 创建的用户级 SM-2 复习调度表；同一用户和题目只有一条有效计划。
+
+| 字段名 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| id | BIGINT | 自增主键 | 计划 ID |
+| user_id | BIGINT | | 用户 ID |
+| question_id | BIGINT | | 题目 ID |
+| ease_factor | DECIMAL(4,2) | 2.50 | SM-2 简易因子，最低 1.30 |
+| interval_days | INT | 0 | 当前复习间隔（天） |
+| repetitions | INT | 0 | 连续正确次数 |
+| next_review_date | DATE | | 下次复习日期 |
+| last_review_date | DATE | NULL | 上次复习日期 |
+| last_quality | INT | NULL | 上次回忆质量（0-5） |
+| total_reviews | INT | 0 | 总复习次数 |
+| create_time / update_time | DATETIME | CURRENT_TIMESTAMP | 创建与更新时间 |
+| deleted | INT | 0 | 逻辑删除标识 |
+
+**索引与约束**：唯一约束 `uk_user_question(user_id, question_id)`；索引 `idx_user_next_review(user_id, next_review_date, deleted)` 和 `idx_question_id(question_id)`。
+
+---
+
 ## 四、表关系说明
 
 ### 4.1 外键关系（逻辑外键，不建物理外键）
@@ -649,12 +690,16 @@ CREATE TABLE `ai_asset_feedback` (
 | 用户→错题 | user | id | wrong_question | user_id |
 | 用户→题目投稿 | user | id | question_submission | user_id |
 | 用户→投稿审核 | user | id | question_submission | reviewed_by |
+| 用户→复习计划 | user | id | question_review_schedule | user_id |
+| 用户→题目复审 | user | id | question_review_record | reviewer_id |
 | 题目→刷题记录 | question | id | practice_record | question_id |
 | 题目→错题 | question | id | wrong_question | question_id |
 | 题目→AI学习资产 | question | id | question_ai_asset | question_id |
 | AI学习资产→反馈 | question_ai_asset | question_id, asset_type | ai_asset_feedback | question_id, asset_type |
 | 课程→题目投稿 | course | id | question_submission | course_id |
 | 正式题目→投稿入库结果 | question | id | question_submission | imported_question_id |
+| 题目→复习计划 | question | id | question_review_schedule | question_id |
+| 题目→复审记录 | question | id | question_review_record | question_id |
 | 试卷→考试记录 | exam_paper | id | exam_record | exam_paper_id |
 | 考试记录→答题 | exam_record | id | exam_answer | exam_record_id |
 | 试卷→题目关联 | exam_paper | id | exam_question | exam_paper_id |
