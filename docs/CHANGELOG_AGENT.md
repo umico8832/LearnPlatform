@@ -1,5 +1,46 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 103 - 2026-06-20
+
+### 阶段
+构建与部署修复
+
+### 本轮目标
+修复真实运行环境中登录被验证码接口 401 阻断的问题，并恢复 Docker 后端镜像的可启动性。
+
+### 完成内容
+1. 定位旧 Docker 镜像与当前源码不一致：运行态 `/api/auth/captcha` 返回 401，而源码安全配置已放行该路径。
+2. 在 `pom.xml` 补充 `spring-boot-maven-plugin`，使 `mvn package` 产出可由 `java -jar` 运行的 Spring Boot 可执行 JAR；此前 Dockerfile 复制的是普通 JAR，重新构建后会因缺少 Main-Class 而无法启动。
+3. 新增 `scripts/load-env.sh`，安全加载 Docker 风格 `.env` 到本地 Maven 进程，不再让数据库 URL 中的 `&` 被 shell 解析为控制符。
+4. 更新 `.env.example`、README 和 HANDOFF 的本地启动命令。
+
+### 修改文件
+- `backend/pom.xml`
+- `scripts/load-env.sh`
+- `.env.example`
+- `README.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `mvn package -DskipTests` 成功，产物 Manifest 包含 Spring Boot `Main-Class` 与 `Start-Class`。
+- 使用当前 JAR 在 Docker 网络中启动一次性验证容器：`GET /api/auth/captcha` 返回 200。
+- 使用演示账号完成验证码登录，并以返回的 JWT 请求 `/api/auth/me`，均返回成功。
+- `scripts/load-env.sh .env.example` 能正确保留带 `&` 的数据库 URL。
+- 后端 `mvn test` 通过（341 个测试）；前端 `npm run build` 与 `npm test` 通过（187 个测试）。
+
+### 遗留问题
+- 需要在网络条件正常时执行一次 `docker compose build backend && docker compose up -d backend`，以替换本机历史旧镜像；本轮已验证其应使用的可执行 JAR。
+- 全量 Docker Compose 仍可能受外部镜像拉取和本机 6379 端口占用影响。
+
+### 下一步建议
+- 重建后端镜像后，继续按 `docs/DEMO.md` 补跑刷题、错题和考试的完整 UI 验收。
+
+### 建议 commit message
+`fix(deploy): 生成可执行后端 JAR 并修复本地环境加载`
+
+---
+
 ## Round 102 - 2026-06-20
 
 ### 阶段

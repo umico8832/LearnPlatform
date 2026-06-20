@@ -98,11 +98,9 @@
 # MySQL
 sudo /usr/local/mysql/support-files/mysql.server start
 
-# 后端
+# 后端（在项目根目录加载环境变量，避免直接 source .env）
+source scripts/load-env.sh .env
 cd backend
-set -a
-source ../.env
-set +a
 mvn spring-boot:run
 
 # 前端
@@ -116,6 +114,8 @@ cp .env.example .env
 docker compose up -d
 ```
 
+> 若本机已有历史镜像，修改后端代码后请执行 `docker compose build backend && docker compose up -d backend`，确保运行镜像与源码同步。
+
 ---
 
 ## 5. 当前遗留问题
@@ -127,6 +127,7 @@ docker compose up -d
 - CI 流水线需推送到 GitHub 后才能实际触发验证
 - 本地 JDK 25 + Testcontainers 1.20.1 Docker socket 兼容性问题，集成测试需在 CI（JDK 17）环境验证实际运行
 - 缓存 TTL 参数目前硬编码在 RedisConfig 中，后续可抽为 application.yml 配置项
+- Round 103 已修复 Docker 后端普通 JAR 无法 `java -jar` 启动的问题，并验证当前 JAR 的验证码和登录链路；本机历史镜像需重建后才会生效。
 - Phase 13 全部完成（Round 68-72），Phase 14 P0 文本可视化已完成（Round 73），P1 Mermaid 流程图已完成（Round 74），Phase 15 P0 学习诊断已完成（Round 75），AI 个性化学习建议已完成（Round 76），相似题推荐已完成（Round 77），Phase 16 P0 题目投稿中心已完成（Round 82），投稿链路修复加固已完成（Round 83），P1 AI 题目质检与审核辅助已完成（Round 84），P1 AI 知识点标注已完成（Round 85），P1 AI 难度评估已完成（Round 86）
 - 缓存 TTL 参数目前硬编码在 RedisConfig 中，后续可抽为 application.yml 配置项
 

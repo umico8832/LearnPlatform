@@ -130,12 +130,10 @@ cp .env.example .env
 # 编辑 .env 文件，填写数据库密码、JWT 密钥等
 ```
 
-本地通过 Maven 启动时，需要先在 `backend` 目录将根目录 `.env` 导出到当前 shell：
+本地通过 Maven 启动时，需要先在项目根目录加载 `.env`。请使用项目提供的加载脚本，不要直接 `source .env`（数据库 URL 中的 `&` 会被 shell 当作控制符）：
 
 ```bash
-set -a
-source ../.env
-set +a
+source scripts/load-env.sh .env
 ```
 
 #### 4. 启动后端
