@@ -1,5 +1,48 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 110 - 2026-06-21
+
+### 阶段
+Phase 20：浏览器 E2E 基线
+
+### 完成内容
+1. 引入 Playwright，并建立首条真实浏览器 E2E：普通用户完成验证码、账号密码登录，获得 JWT 会话后进入首页并浏览课程列表。
+2. 新增隔离 Spring `e2e` Profile：仅在 Docker E2E 环境中使用固定的一次性验证码答案；生产与开发环境仍使用随机数学验证码，且测试没有绕过账号密码、JWT、权限或路由守卫。
+3. 新增 `docker-compose.e2e.yml`，取消 Redis 宿主机端口暴露并促使 Nginx 在后端容器重建后重新解析服务地址，支持本地与 CI 可重复运行。
+4. 将浏览器 E2E 加入 GitHub Actions：安装 Chromium、启动隔离 Docker 环境、执行测试并上传失败报告。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/config/CaptchaService.java`
+- `backend/src/main/resources/application-e2e.yml`
+- `backend/src/test/java/com/learnplatform/config/CaptchaServiceTest.java`
+- `docker-compose.e2e.yml`
+- `frontend/package.json`
+- `frontend/package-lock.json`
+- `frontend/playwright.config.ts`
+- `frontend/e2e/auth-and-course.spec.ts`
+- `frontend/vitest.config.ts`
+- `.github/workflows/ci.yml`
+- `.gitignore`
+- `README.md`
+- `docs/TESTING.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd backend && mvn test`：343 个测试通过。
+- `cd frontend && npm test`：24 个文件、192 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 pure annotation 与大 chunk 警告）。
+- `E2E_BASE_URL=http://localhost:18000 npm run test:e2e`：Chromium 1 条测试通过；在真实 Docker E2E Profile 中验证。
+- Docker 已恢复普通 `dev` Profile，backend、frontend、MySQL、Redis、Loki 均健康。
+
+### 遗留问题
+- GitHub Actions 尚待推送后确认实际运行结果。
+- 真实演示截图，以及刷题、错题复习、考试和管理端审核的浏览器 E2E 仍待补充。
+
+### 建议 commit message
+`test(e2e): 覆盖真实登录与课程浏览`
+
 ## Round 109 - 2026-06-21
 
 ### 阶段

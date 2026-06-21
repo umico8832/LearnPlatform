@@ -1,0 +1,15 @@
+# 仅用于本地和 CI 的端到端测试，叠加到 docker-compose.yml 使用。
+services:
+  redis:
+    # 浏览器测试只使用容器网络；避免占用开发机已有的 6379 端口。
+    ports: !reset []
+
+  frontend:
+    # 触发前端重建容器，确保 Nginx 重新解析 e2e 后端容器地址。
+    labels:
+      com.learnplatform.e2e: "true"
+
+  backend:
+    environment:
+      SPRING_PROFILES_ACTIVE: e2e
+      CACHE_TYPE: simple

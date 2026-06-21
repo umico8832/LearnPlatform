@@ -17,6 +17,7 @@
 - 路由守卫测试：认证、角色权限和重定向。
 - 组件与页面测试：安全渲染、表单提交和关键交互。
 - API 封装测试：请求路径、HTTP 方法、参数结构和特殊响应处理。
+- Playwright 浏览器 E2E：在隔离 Docker 环境中覆盖真实验证码登录、JWT 会话和关键页面跳转。
 
 前端 DOM 环境统一使用 `happy-dom`，不同时维护多个 DOM 模拟实现。
 
@@ -44,7 +45,25 @@
 2. 为登录、刷题、错题复习、考试和管理员建题建立少量端到端流程。
 3. 按缺陷和业务风险补测试，不再按文件或接口数量追求全覆盖。
 
-## 5. 运行命令
+## 5. 浏览器 E2E 环境
+
+浏览器测试使用独立的 Spring `e2e` Profile（`docker-compose.e2e.yml`），仅在该 Profile 下将验证码答案固定为 `42`；它不会绕过账号密码、JWT、权限或路由守卫。开发和生产 Profile 仍使用随机一次性数学验证码。
+
+本地先启动隔离环境，再执行测试：
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --wait
+cd frontend
+npm run test:e2e
+```
+
+结束后执行：
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v
+```
+
+## 6. 运行命令
 
 ```bash
 cd frontend
@@ -56,4 +75,3 @@ npm run build
 cd backend
 mvn test
 ```
-

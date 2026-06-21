@@ -2,6 +2,7 @@ package com.learnplatform.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
@@ -36,9 +37,25 @@ public class CaptchaService {
     private final ConcurrentHashMap<String, CaptchaEntry> captchaStore = new ConcurrentHashMap<>();
 
     /**
+     * 仅由 e2e Profile 配置的固定验证码。生产和开发环境保持为空，继续使用随机数学验证码。
+     */
+    private final String fixedAnswer;
+
+    public CaptchaService(@Value("${captcha.fixed-answer:}") String fixedAnswer) {
+        this.fixedAnswer = fixedAnswer == null ? "" : fixedAnswer.trim();
+    }
+
+    /**
      * 生成验证码，返回 {captchaId, base64Image}
      */
     public CaptchaResult generateCaptcha() {
+        if (!fixedAnswer.isEmpty()) {
+            String captchaId = java.util.UUID.randomUUID().toString().replace("-", "");
+            captchaStore.put(captchaId, new CaptchaEntry(fixedAnswer, System.currentTimeMillis()));
+            cleanExpired();
+            return new CaptchaResult(captchaId, generateImage("E2E = ?"));
+        }
+
         // 生成数学表达式和答案
         int a = ThreadLocalRandom.current().nextInt(1, 20);
         int b = ThreadLocalRandom.current().nextInt(1, 20);

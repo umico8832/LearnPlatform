@@ -216,6 +216,8 @@ docker compose down
 
 自动化测试的分层、范围和新增门槛见 [docs/TESTING.md](docs/TESTING.md)。
 
+浏览器 E2E 使用隔离 Docker Profile 运行，避免削弱开发与生产环境的验证码安全；执行方式见 `docs/TESTING.md`。
+
 当前工作重点是完成考试端到端演示、真实截图和 CI 实跑验证；后续 AI 迭代将优先建设 token/成本、用户独立配额和调用报告等运营治理能力，详见 [docs/ROADMAP.md](docs/ROADMAP.md)。
 
 | 阶段 | 名称 | 状态 |
