@@ -1,5 +1,34 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 107 - 2026-06-21
+
+### 阶段
+路线图与文档校准
+
+### 完成内容
+1. 将下一阶段明确为 Phase 20“演示验收与 AI 运营治理”：优先完成考试完整流程验收、演示截图、CI 实跑和关键业务端到端测试。
+2. 将后续 AI 主线收敛为真实 token/成本、用户独立配额、调用报告与异常提醒；将内容复审缓存、重复题检测和学习效果指标列为后续衔接。
+3. 清理过期的 `FUTURE.md` 待办和 AI 战略中仍指向 Phase 13 的描述，避免已完成能力被重复列为计划。
+4. 同步更新交接提示与 README 阶段表；未修改业务代码、接口或数据库结构。
+
+### 修改文件
+- `README.md`
+- `docs/ROADMAP.md`
+- `docs/FUTURE.md`
+- `docs/AI_LEARNING_PLATFORM_STRATEGY.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- 静态核对 `docs/ROADMAP.md`、`docs/HANDOFF.md`、`docs/FUTURE.md` 与当前代码、测试及 CI 配置描述的一致性。
+- 本轮仅更新 Markdown 文档，未运行构建或测试。
+
+### 遗留问题
+- Phase 20 的验收、CI 实跑与 AI 运营治理功能尚未实施。
+
+### 建议 commit message
+`docs: 校准后续路线为演示验收与 AI 运营治理`
+
 ## Round 106 - 2026-06-20
 
 ### 阶段
