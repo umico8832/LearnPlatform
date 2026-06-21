@@ -496,7 +496,7 @@ CREATE TABLE `exam_answer` (
 | request_params | TEXT | 否 | | 请求参数（JSON） |
 | response_content | TEXT | 否 | | 响应内容 |
 | model | VARCHAR(100) | 否 | | 使用的模型 |
-| tokens_used | INT | 否 | | Token 用量 |
+| tokens_used | INT | 否 | | 上游响应返回的 total tokens；上游未返回 usage 时保持 NULL，禁止本地估算 |
 | status | TINYINT | 是 | 1 | 状态：0-失败 1-成功 |
 | error_message | VARCHAR(1000) | 否 | | 错误信息 |
 | duration | INT | 否 | | 调用耗时（毫秒） |

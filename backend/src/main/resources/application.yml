@@ -72,6 +72,8 @@ ai:
   model: ${AI_MODEL:gpt-3.5-turbo}
   timeout: ${AI_TIMEOUT:30000}
   max-tokens: ${AI_MAX_TOKENS:2000}
+  # OpenAI 的 stream_options.include_usage；不兼容的上游可设为 false
+  stream-include-usage: ${AI_STREAM_INCLUDE_USAGE:true}
   daily-quota: ${AI_DAILY_QUOTA:50}
 
 # Actuator + Prometheus 监控配置

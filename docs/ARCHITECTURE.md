@@ -601,7 +601,11 @@ ai:
   model: ${AI_MODEL:gpt-3.5-turbo}
   timeout: 30000
   max-tokens: 2000
+  # 流式响应请求最终 usage；若兼容上游不支持 stream_options，可设为 false
+  stream-include-usage: true
 ```
+
+OpenAI 兼容 Provider 会从同步响应的 `usage` 和流式最终事件的 `usage` 中读取真实 token 用量，并在同一调用线程交给统一调用日志写入 `ai_call_log.tokens_used`。未返回 usage 的上游保留 `NULL`，不会按字符数估算为真实成本。
 
 ### 7.2 Prompt 模板管理
 

@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Map;
+
 class OpenAiProviderTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -29,5 +31,25 @@ class OpenAiProviderTest {
     void rejectsMalformedSseJson() {
         assertThrows(BusinessException.class,
                 () -> OpenAiProvider.parseStreamContent("data: {invalid", objectMapper));
+    }
+
+    @Test
+    void parsesUsageFromCompletionResponse() {
+        AiTokenUsage usage = OpenAiProvider.parseTokenUsage(Map.of("usage", Map.of(
+                "prompt_tokens", 12, "completion_tokens", 8, "total_tokens", 20)));
+
+        assertNotNull(usage);
+        assertEquals(12, usage.promptTokens());
+        assertEquals(8, usage.completionTokens());
+        assertEquals(20, usage.totalTokens());
+    }
+
+    @Test
+    void parsesUsageFromFinalStreamEvent() throws Exception {
+        AiTokenUsage usage = OpenAiProvider.parseTokenUsage(objectMapper.readTree(
+                "{\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":8,\"total_tokens\":20}}"));
+
+        assertNotNull(usage);
+        assertEquals(20, usage.totalTokens());
     }
 }

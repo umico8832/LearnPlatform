@@ -11,6 +11,7 @@ import com.learnplatform.dto.ReviewStatsVO;
 import com.learnplatform.entity.*;
 import com.learnplatform.mapper.*;
 import com.learnplatform.service.ai.AiProvider;
+import com.learnplatform.service.ai.AiTokenUsage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -303,8 +304,13 @@ public class AiService {
             callLog.setStatus(success ? 1 : 0);
             callLog.setErrorMessage(errorMessage);
             callLog.setDuration(duration);
+            AiTokenUsage tokenUsage = success ? aiProvider.getLastTokenUsage() : null;
+            if (tokenUsage != null) {
+                callLog.setTokensUsed(tokenUsage.totalTokens());
+            }
             aiCallLogMapper.insert(callLog);
-            log.info("AI 调用日志已记录: type={}, userId={}, success={}, duration={}ms", functionType, userId, success, duration);
+            log.info("AI 调用日志已记录: type={}, userId={}, success={}, duration={}ms, tokens={}",
+                    functionType, userId, success, duration, callLog.getTokensUsed());
         } catch (Exception e) {
             // 日志记录失败不应影响主流程
             log.warn("AI 调用日志记录失败: {}", e.getMessage());

@@ -8,6 +8,13 @@ import java.util.function.Consumer;
 public interface AiProvider {
 
     /**
+     * 获取当前调用线程最近一次上游返回的 token 用量；上游未提供时返回 null。
+     */
+    default AiTokenUsage getLastTokenUsage() {
+        return null;
+    }
+
+    /**
      * 调用 AI 生成回复
      *
      * @param systemPrompt 系统提示词

@@ -1,5 +1,43 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 114 - 2026-06-21
+
+### 阶段
+Phase 20：AI 运营治理（真实 Token 用量）
+
+### 完成内容
+1. OpenAI 兼容 Provider 现在从同步响应 `usage` 和流式最终事件 `usage` 读取 prompt、completion 与 total token；统一 AI 调用日志写入真实 `total_tokens` 到既有 `ai_call_log.tokens_used` 字段。
+2. 流式调用默认发送 `stream_options.include_usage=true`，可通过 `AI_STREAM_INCLUDE_USAGE=false` 兼容不支持该扩展的上游；任何未返回 usage 的调用保持 `NULL`，不以字符数估算。
+3. 使用 `ThreadLocal` 隔离并发调用的上游 usage，统一日志入口覆盖既有同步、流式、学习资产和投稿 AI 服务调用，无需改变对外 API 或数据库结构。
+4. 新增 Provider usage 解析与 AI 日志写入回归测试；同步更新架构、API、数据库设计、路线图和交接信息。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/config/AiConfig.java`
+- `backend/src/main/java/com/learnplatform/service/AiService.java`
+- `backend/src/main/java/com/learnplatform/service/ai/AiProvider.java`
+- `backend/src/main/java/com/learnplatform/service/ai/AiTokenUsage.java`
+- `backend/src/main/java/com/learnplatform/service/ai/OpenAiProvider.java`
+- `backend/src/main/resources/application.yml`
+- `backend/src/test/java/com/learnplatform/service/AiServiceLoggingTest.java`
+- `backend/src/test/java/com/learnplatform/service/ai/OpenAiProviderTest.java`
+- `docs/API_DESIGN.md`
+- `docs/ARCHITECTURE.md`
+- `docs/DB_DESIGN.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd backend && mvn test`：347 个测试通过。
+- `git diff --check`：通过。
+
+### 遗留问题
+- 仍待按模型单价计算成本；当前记录真实总 token，但未拆分持久化输入/输出 token，因此不能精确应用不同输入/输出单价。
+- 真实演示截图与推送后的 GitHub Actions 实跑仍待完成。
+
+### 建议 commit message
+`feat(ai): 记录上游真实 token 用量`
+
 ## Round 113 - 2026-06-21
 
 ### 阶段

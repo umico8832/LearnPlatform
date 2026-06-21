@@ -1139,4 +1139,4 @@ DELETE /api/search/history/item?keyword=Java      # 删除一条搜索历史
 GET /api/admin/ai-usage/overview?days=30
 ```
 
-返回最近指定天数内的 AI 调用总览，包含全局成功/失败统计、Tokens、平均耗时、每日趋势、按功能/模型分布、Top 活跃用户和最近失败调用。该接口位于 `/api/admin/**`，仅 ADMIN 可访问。
+返回最近指定天数内的 AI 调用总览，包含全局成功/失败统计、Tokens、平均耗时、每日趋势、按功能/模型分布、Top 活跃用户和最近失败调用。`Tokens` 聚合自上游响应明确返回的 `usage.total_tokens`；不返回 usage 的兼容上游不会被本地估算。该接口位于 `/api/admin/**`，仅 ADMIN 可访问。
