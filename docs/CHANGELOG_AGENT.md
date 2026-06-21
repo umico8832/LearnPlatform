@@ -1,5 +1,62 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 113 - 2026-06-21
+
+### 阶段
+Phase 20：投稿审核入库浏览器 E2E
+
+### 完成内容
+1. 新增 Playwright 真实浏览器用例：普通用户提交一题单选投稿后，管理员重新登录，在投稿管理中检索、审核通过并正式入库。
+2. 用例覆盖真实验证码、账号密码、JWT、角色路由守卫、投稿表单校验、审核状态切换与入库确认；不依赖数据库直写或权限绕过。
+3. 清空隔离 E2E 数据卷后完整执行浏览器套件，登录/课程、刷题错题、考试判分和投稿审核入库共 4 条用例均通过。
+
+### 修改文件
+- `frontend/e2e/auth-and-course.spec.ts`
+- `README.md`
+- `docs/TESTING.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v`
+- `docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --wait`
+- `cd frontend && npm run test:e2e`：Chromium 4 条用例全部通过。
+
+### 遗留问题
+- 真实演示截图和 GitHub Actions 推送后的实际运行结果仍待完成。
+- 本轮未重新运行 Vitest 或后端 Maven 测试；改动仅涉及 E2E 与 Markdown 文档。
+
+### 建议 commit message
+`test(e2e): 覆盖投稿审核入库闭环`
+
+## Round 112 - 2026-06-21
+
+### 阶段
+Phase 20：考试浏览器 E2E
+
+### 完成内容
+1. 新增 Playwright 真实浏览器用例：普通用户完成验证码登录后，进入已发布演示试卷，依次完成单选、多选、判断三种题型作答，确认提交并查看自动判分结果详情。
+2. 断言真实前端会话跳转、提交确认、后端判分及结果页三题全对状态；用例未绕过账号密码、JWT、权限或考试提交接口。
+3. 收紧已有 E2E 的状态单选定位，避免错题卡内同名文本造成 Playwright strict-mode 歧义。
+
+### 修改文件
+- `frontend/e2e/auth-and-course.spec.ts`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd frontend && npm run test:e2e -- --grep '用户可完成考试'`：Chromium 考试 E2E 通过（15/15，三种题型、提交确认、结果详情）。
+- 隔离 Docker E2E Profile 已成功重建，镜像构建中的 `npm run build` 通过（保留既有第三方 pure annotation 与大 chunk 警告）。
+
+### 遗留问题
+- 本机复用的 Docker 数据卷含历史练习状态，全量 E2E 中既有刷题错题闭环用例会受历史数据干扰；本轮未清空开发数据卷。应在真正隔离的 E2E 数据卷或 CI 的全新容器中执行完整套件。
+- 管理端审核 E2E、真实演示截图与 GitHub Actions 实跑仍待完成。
+
+### 建议 commit message
+`test(e2e): 覆盖考试作答与判分闭环`
+
 ## Round 111 - 2026-06-21
 
 ### 阶段

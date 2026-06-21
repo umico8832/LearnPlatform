@@ -218,7 +218,7 @@ docker compose down
 
 浏览器 E2E 使用隔离 Docker Profile 运行，避免削弱开发与生产环境的验证码安全；执行方式见 `docs/TESTING.md`。
 
-当前工作重点是完成考试端到端演示、真实截图和 CI 实跑验证；后续 AI 迭代将优先建设 token/成本、用户独立配额和调用报告等运营治理能力，详见 [docs/ROADMAP.md](docs/ROADMAP.md)。
+当前工作重点是完成真实演示截图与 CI 实跑验证；登录、课程、刷题错题闭环、考试作答判分及投稿审核入库均已有浏览器 E2E 覆盖。后续 AI 迭代将优先建设 token/成本、用户独立配额和调用报告等运营治理能力，详见 [docs/ROADMAP.md](docs/ROADMAP.md)。
 
 | 阶段 | 名称 | 状态 |
 |:----:|------|:----:|
