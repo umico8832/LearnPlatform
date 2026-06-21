@@ -1,5 +1,33 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 111 - 2026-06-21
+
+### 阶段
+Phase 20：刷题与错题本浏览器 E2E
+
+### 完成内容
+1. 扩展 Playwright 真实浏览器用例，覆盖普通用户登录后进入刷题页、单题作答并获得答错反馈、完成练习、进入错题本、更新掌握程度及进入错题重练的完整闭环。
+2. 用例基于演示题库第二个选项均为错误答案的稳定前提，验证真实判分、错题归集、掌握程度接口与重练题目加载，不绕过账号密码、JWT、权限或业务接口。
+3. 修正 E2E 环境启动说明：若已运行普通 Docker Profile，需以 `--force-recreate` 重建容器，确保后端启用仅测试可用的 `e2e` Profile 和固定验证码。
+
+### 修改文件
+- `frontend/e2e/auth-and-course.spec.ts`
+- `docs/TESTING.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd frontend && npm run test:e2e`：Chromium 2 条用例全部通过（登录与课程浏览；刷题答错→错题本→掌握度更新→重练）。
+- 使用 `docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --force-recreate --wait` 启动后，确认后端处于 `e2e` Profile。
+
+### 遗留问题
+- 考试和管理端审核的浏览器 E2E、真实演示截图与 GitHub Actions 实跑仍待完成。
+- 本轮未重新运行 Vitest、前端构建或后端 Maven 测试；改动仅涉及 E2E 与 Markdown 文档。
+
+### 建议 commit message
+`test(e2e): 覆盖刷题错题重练闭环`
+
 ## Round 110 - 2026-06-21
 
 ### 阶段

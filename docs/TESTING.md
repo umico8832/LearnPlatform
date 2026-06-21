@@ -52,7 +52,8 @@
 本地先启动隔离环境，再执行测试：
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --wait
+# 若此前运行过普通开发 Profile，必须强制重建，使 backend 切换到 e2e Profile。
+docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --force-recreate --wait
 cd frontend
 npm run test:e2e
 ```
