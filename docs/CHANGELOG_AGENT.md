@@ -1,5 +1,35 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 117 - 2026-06-21
+
+### 阶段
+Phase 20：AI 运营治理（调用报告与异常提醒）
+
+### 完成内容
+1. 新增管理端 `GET /api/admin/ai-usage/report`：基于真实 `ai_call_log` 比较当前周期与前一等长周期；支持 1-90 天，缺省为 7 天。
+2. 报告返回调用次数、失败率、真实 Token、平均耗时、已知成本和环比；前一周期为零或成本未知时环比保持 `null`，不伪造增长率。
+3. 实现实时提醒：样本不少于 5 次时识别高失败率（≥10%）、失败率翻倍、明显延迟升高；调用量翻倍且增加至少 10 次时给出信息提醒。提醒由日志即时推导，不落库、不触发外部通知。
+4. 管理端 AI 调用分析页同步展示运营报告、环比指标和提醒；时间筛选与现有总览保持一致。
+5. 增加服务层和前端 API 契约测试，同步 README、接口、架构、路线图和交接文档。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/{dto/AiUsageReportVO.java,service/AiUsageService.java,controller/AdminAiUsageController.java}`
+- `backend/src/test/java/com/learnplatform/service/AiUsageServiceTest.java`
+- `frontend/src/{api/aiUsage.ts,views/admin/AiUsageView.vue,__tests__/api/aiUsage.test.ts}`
+- `README.md` 与 `docs/{API_DESIGN.md,ARCHITECTURE.md,ROADMAP.md,HANDOFF.md,CHANGELOG_AGENT.md}`
+
+### 验证
+- `cd backend && mvn test`：357 个测试通过。
+- `cd frontend && npm test -- --run`：24 个文件、195 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 pure annotation 与大 chunk 警告）。
+
+### 遗留问题
+- 提醒当前只在管理端实时展示，未支持阈值配置、持久化、去重和通知分发。
+- 配额调整原因与审计历史、调用 Prompt/模型版本追踪仍待实现。
+
+### 建议 commit message
+`feat(ai): 新增调用运营报告与异常提醒`
+
 ## Round 116 - 2026-06-21
 
 ### 阶段

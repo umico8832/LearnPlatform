@@ -1,6 +1,7 @@
 package com.learnplatform.service;
 
 import com.learnplatform.dto.AiUsageOverviewVO;
+import com.learnplatform.dto.AiUsageReportVO;
 import com.learnplatform.entity.AiCallLog;
 import com.learnplatform.entity.User;
 import com.learnplatform.mapper.AiCallLogMapper;
@@ -302,6 +303,70 @@ class AiUsageServiceTest {
 
             // 4 个有效 duration: 2000, 3500, 30000, 1800 => avg = 9325.0
             assertTrue(vo.getAvgDuration() > 0);
+        }
+    }
+
+    @Nested
+    @DisplayName("getReport 测试")
+    class GetReportTests {
+
+        @Test
+        @DisplayName("高失败率和调用量翻倍时生成可行动提醒")
+        void shouldGenerateAlertsForHighFailureRateAndUsageSpike() {
+            List<AiCallLog> logs = new ArrayList<>();
+            // 前一周期 5 次成功调用
+            for (int i = 0; i < 5; i++) {
+                logs.add(createLog(i + 1L, 1, 1000, LocalDateTime.now().minusDays(10)));
+            }
+            // 当前周期 15 次，其中 3 次失败，调用量翻倍且失败率超过 10%
+            for (int i = 0; i < 15; i++) {
+                logs.add(createLog(i + 10L, i < 3 ? 0 : 1, 1200, LocalDateTime.now().minusDays(1)));
+            }
+            when(aiCallLogMapper.selectList(any())).thenReturn(logs);
+
+            AiUsageReportVO report = aiUsageService.getReport(7);
+
+            assertEquals(7, report.getDays());
+            assertEquals(15L, report.getCurrent().getTotalCalls());
+            assertEquals(20.0, report.getCurrent().getFailureRate());
+            assertEquals(200.0, report.getChanges().getCallsPercent());
+            assertTrue(report.getAlerts().stream().anyMatch(item -> "HIGH_FAILURE_RATE".equals(item.getType())));
+            assertTrue(report.getAlerts().stream().anyMatch(item -> "CALL_VOLUME_SPIKE".equals(item.getType())));
+        }
+
+        @Test
+        @DisplayName("前一周期无调用时不伪造环比百分比")
+        void shouldKeepPercentChangeNullWhenPreviousPeriodIsEmpty() {
+            when(aiCallLogMapper.selectList(any())).thenReturn(List.of(
+                    createLog(1L, 1, 1000, LocalDateTime.now().minusHours(1))
+            ));
+
+            AiUsageReportVO report = aiUsageService.getReport(null);
+
+            assertEquals(7, report.getDays());
+            assertNull(report.getChanges().getCallsPercent());
+            assertNull(report.getChanges().getTokensPercent());
+            assertNull(report.getChanges().getAvgDurationPercent());
+        }
+
+        @Test
+        @DisplayName("报告周期最大限制为 90 天")
+        void shouldCapReportDaysAt90() {
+            when(aiCallLogMapper.selectList(any())).thenReturn(Collections.emptyList());
+
+            AiUsageReportVO report = aiUsageService.getReport(365);
+
+            assertEquals(90, report.getDays());
+        }
+
+        private AiCallLog createLog(Long id, int status, int duration, LocalDateTime createTime) {
+            AiCallLog log = new AiCallLog();
+            log.setId(id);
+            log.setStatus(status);
+            log.setDuration(duration);
+            log.setTokensUsed(100);
+            log.setCreateTime(createTime);
+            return log;
         }
     }
 }

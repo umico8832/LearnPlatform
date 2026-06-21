@@ -4,6 +4,7 @@
       <h2>AI 调用分析</h2>
       <div class="header-actions">
         <el-select v-model="days" size="default" @change="fetchData" style="width: 140px">
+          <el-option label="近 1 天" :value="1" />
           <el-option label="近 7 天" :value="7" />
           <el-option label="近 14 天" :value="14" />
           <el-option label="近 30 天" :value="30" />
@@ -83,6 +84,56 @@
           </el-card>
         </el-col>
       </el-row>
+
+      <el-card shadow="hover" class="report-card">
+        <template #header>
+          <div class="report-header">
+            <div>
+              <span>运营报告</span>
+              <span class="report-subtitle">与前一 {{ report.days }} 天周期对比</span>
+            </div>
+            <el-tag :type="report.alerts.length ? 'warning' : 'success'" effect="light">
+              {{ report.alerts.length ? `${report.alerts.length} 项待关注` : '运行平稳' }}
+            </el-tag>
+          </div>
+        </template>
+        <el-row :gutter="16" class="report-metrics">
+          <el-col :xs="12" :sm="6">
+            <div class="report-metric">
+              <span>调用量环比</span>
+              <strong :class="changeClass(report.changes.callsPercent)">{{ formatChange(report.changes.callsPercent) }}</strong>
+            </div>
+          </el-col>
+          <el-col :xs="12" :sm="6">
+            <div class="report-metric">
+              <span>Token 环比</span>
+              <strong :class="changeClass(report.changes.tokensPercent)">{{ formatChange(report.changes.tokensPercent) }}</strong>
+            </div>
+          </el-col>
+          <el-col :xs="12" :sm="6">
+            <div class="report-metric">
+              <span>失败率变化</span>
+              <strong :class="changeClass(report.changes.failureRatePointChange, true)">{{ formatPointChange(report.changes.failureRatePointChange) }}</strong>
+            </div>
+          </el-col>
+          <el-col :xs="12" :sm="6">
+            <div class="report-metric">
+              <span>平均耗时环比</span>
+              <strong :class="changeClass(report.changes.avgDurationPercent)">{{ formatChange(report.changes.avgDurationPercent) }}</strong>
+            </div>
+          </el-col>
+        </el-row>
+        <el-alert
+          v-for="alert in report.alerts"
+          :key="alert.type"
+          :title="alert.message"
+          :type="alert.level === 'WARNING' ? 'warning' : 'info'"
+          :closable="false"
+          show-icon
+          class="usage-alert"
+        />
+        <el-empty v-if="!report.alerts.length" description="当前周期未发现失败率、耗时或调用量异常" :image-size="52" />
+      </el-card>
 
       <!-- 每日调用趋势 -->
       <el-card shadow="hover" class="chart-card">
@@ -177,7 +228,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
-import { getAiUsageOverview, type AiUsageOverview } from '@/api/aiUsage'
+import { getAiUsageOverview, getAiUsageReport, type AiUsageOverview, type AiUsageReport } from '@/api/aiUsage'
 import * as echarts from 'echarts/core'
 import { BarChart, PieChart, LineChart } from 'echarts/charts'
 import {
@@ -218,6 +269,13 @@ const overview = reactive<AiUsageOverview>({
   topUsers: [],
   recentFailures: [],
 })
+const report = reactive<AiUsageReport>({
+  days: 7,
+  current: { totalCalls: 0, failedCalls: 0, failureRate: 0, totalTokens: 0, avgDuration: 0, totalCostUsd: null },
+  previous: { totalCalls: 0, failedCalls: 0, failureRate: 0, totalTokens: 0, avgDuration: 0, totalCostUsd: null },
+  changes: { callsPercent: null, tokensPercent: null, costPercent: null, failureRatePointChange: 0, avgDurationPercent: null },
+  alerts: [],
+})
 
 const trendChartRef = ref<HTMLElement>()
 const functionChartRef = ref<HTMLElement>()
@@ -239,11 +297,31 @@ function formatCost(cost: number | null | undefined): string {
   return '$' + cost.toFixed(cost < 0.01 ? 6 : 4)
 }
 
+function formatChange(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '—'
+  return `${value > 0 ? '+' : ''}${value.toFixed(1)}%`
+}
+
+function formatPointChange(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '—'
+  return `${value > 0 ? '+' : ''}${value.toFixed(1)} 个百分点`
+}
+
+function changeClass(value: number | null | undefined, isRiskMetric = false): string {
+  if (value === null || value === undefined || value === 0) return 'neutral'
+  const isIncrease = value > 0
+  return isRiskMetric ? (isIncrease ? 'negative' : 'positive') : (isIncrease ? 'positive' : 'negative')
+}
+
 async function fetchData() {
   loading.value = true
   try {
-    const { data } = await getAiUsageOverview(days.value)
-    Object.assign(overview, data)
+    const [overviewResponse, reportResponse] = await Promise.all([
+      getAiUsageOverview(days.value),
+      getAiUsageReport(days.value),
+    ])
+    Object.assign(overview, overviewResponse.data)
+    Object.assign(report, reportResponse.data)
     await nextTick()
     renderCharts()
   } catch (e: any) {
@@ -419,6 +497,47 @@ onBeforeUnmount(() => {
 .chart-card {
   margin-bottom: 16px;
 }
+.report-card {
+  margin-bottom: 16px;
+  border-left: 3px solid #409eff;
+}
+.report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.report-subtitle {
+  margin-left: 8px;
+  color: #909399;
+  font-size: 13px;
+  font-weight: normal;
+}
+.report-metrics {
+  margin-bottom: 12px;
+}
+.report-metric {
+  display: flex;
+  min-height: 58px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 12px;
+  border-left: 1px solid #ebeef5;
+}
+.report-metric span {
+  color: #909399;
+  font-size: 13px;
+}
+.report-metric strong {
+  font-size: 18px;
+}
+.positive { color: #67c23a; }
+.negative { color: #f56c6c; }
+.neutral { color: #909399; }
+.usage-alert + .usage-alert {
+  margin-top: 8px;
+}
 .chart-row {
   margin-bottom: 16px;
 }
@@ -435,5 +554,6 @@ onBeforeUnmount(() => {
   .stat-value { font-size: 20px; }
   .chart-container { height: 240px; }
   .page-header { flex-direction: column; gap: 8px; align-items: flex-start; }
+  .report-metric { border-left: none; padding: 8px 0; }
 }
 </style>

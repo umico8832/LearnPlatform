@@ -538,6 +538,9 @@ AiService (业务服务)
 管理员访问 /api/admin/ai-usage/overview
   → AiUsageService 按时间窗口聚合日志
   → 返回调用趋势、成功率、Tokens、已配置价格的成本、模型/功能分布、活跃用户和失败详情
+管理员访问 /api/admin/ai-usage/report
+  → AiUsageService 比较当前与前一等长日志窗口
+  → 返回周期环比，并实时识别失败率、延迟和调用量异常（不持久化、不发送外部通知）
 
 管理员在用户管理页设置 /api/admin/users/{id}/ai-daily-quota
   → 写入用户级覆盖值或清空为 NULL 恢复全局默认

@@ -1143,3 +1143,9 @@ GET /api/admin/ai-usage/overview?days=30
 ```
 
 返回最近指定天数内的 AI 调用总览，包含全局成功/失败统计、Tokens、平均耗时、每日趋势、按功能/模型分布、Top 活跃用户和最近失败调用。`Tokens` 聚合自上游响应明确返回的 `usage.total_tokens`；`totalCostUsd`、`todayCostUsd` 及各分组的 `totalCostUsd` 仅累计同时具备真实输入/输出 token 与已配置模型单价的调用。未返回 usage、缺少输入/输出拆分或未配置价格的调用成本均为 `null`，不会以字符数或默认价格估算。用户查询 `GET /api/ai/usage` 与实际调用限流均优先采用其 `aiDailyQuota` 覆盖值；该字段为 `null` 时继承 `ai.daily-quota`，为 `0` 时不限次数。管理端接口位于 `/api/admin/**`，仅 ADMIN 可访问。
+
+```
+GET /api/admin/ai-usage/report?days=7
+```
+
+返回当前统计周期与前一等长周期的运营报告；`days` 缺省为 7，最大为 90。报告包含调用量、失败率、真实 Tokens、平均耗时、已知成本及环比变化。环比的前一周期为零或成本未知时返回 `null`，不会虚构百分比。`alerts` 基于调用日志即时推导：当前周期至少 5 次调用且失败率不低于 10%、失败率较前一周期翻倍、平均耗时不低于 5 秒且较前一周期升高至少 50%，以及调用量翻倍且至少增加 10 次；提醒不落库、不发送外部通知，供管理端先行处置。

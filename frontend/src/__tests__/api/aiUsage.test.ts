@@ -7,7 +7,7 @@ vi.mock('@/utils/request', () => ({
 }))
 
 import request from '@/utils/request'
-import { getAiUsageOverview } from '@/api/aiUsage'
+import { getAiUsageOverview, getAiUsageReport } from '@/api/aiUsage'
 
 const mockedRequest = vi.mocked(request)
 
@@ -35,6 +35,16 @@ describe('AI usage API', () => {
 
     expect(mockedRequest.get).toHaveBeenCalledWith('/admin/ai-usage/overview', {
       params: {},
+    })
+  })
+
+  it('uses the report endpoint for operational reporting', async () => {
+    mockedRequest.get.mockResolvedValue({ code: 0, data: { days: 7 }, message: 'success' })
+
+    await getAiUsageReport(7)
+
+    expect(mockedRequest.get).toHaveBeenCalledWith('/admin/ai-usage/report', {
+      params: { days: 7 },
     })
   })
 })

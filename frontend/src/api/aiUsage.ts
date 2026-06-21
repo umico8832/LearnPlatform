@@ -69,9 +69,48 @@ export interface AiUsageOverview {
   recentFailures: RecentFailure[]
 }
 
+export interface AiUsagePeriodStats {
+  totalCalls: number
+  failedCalls: number
+  failureRate: number
+  totalTokens: number
+  avgDuration: number
+  totalCostUsd: number | null
+}
+
+export interface AiUsageChanges {
+  callsPercent: number | null
+  tokensPercent: number | null
+  costPercent: number | null
+  failureRatePointChange: number
+  avgDurationPercent: number | null
+}
+
+export interface AiUsageAlert {
+  level: 'INFO' | 'WARNING'
+  type: string
+  message: string
+}
+
+/** 当前周期与前一等长周期的 AI 运营报告 */
+export interface AiUsageReport {
+  days: number
+  current: AiUsagePeriodStats
+  previous: AiUsagePeriodStats
+  changes: AiUsageChanges
+  alerts: AiUsageAlert[]
+}
+
 /** 获取 AI 调用总览 */
 export function getAiUsageOverview(days?: number) {
   return request.get<AiUsageOverview>('/admin/ai-usage/overview', {
+    params: days ? { days } : {},
+  })
+}
+
+/** 获取 AI 调用运营报告与实时异常提醒 */
+export function getAiUsageReport(days?: number) {
+  return request.get<AiUsageReport>('/admin/ai-usage/report', {
     params: days ? { days } : {},
   })
 }
