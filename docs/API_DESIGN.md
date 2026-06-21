@@ -946,9 +946,12 @@ GET    /api/admin/users              # 用户列表
 PUT    /api/admin/users/{id}/role    # 修改角色
 PUT    /api/admin/users/{id}/status  # 启用/禁用
 PUT    /api/admin/users/{id}/ai-daily-quota # 设置用户 AI 日配额
+GET    /api/admin/users/{id}/ai-daily-quota/audits # 查询配额调整审计记录
 ```
 
-`PUT /api/admin/users/{id}/ai-daily-quota` 请求体为 `{ "dailyQuota": 100 }`。`dailyQuota` 可为 `0-10000` 的整数；`0` 表示该用户不限次数，`null` 表示清除覆盖值并继承服务端 `ai.daily-quota` 全局配置。仅管理员可调用。
+`PUT /api/admin/users/{id}/ai-daily-quota` 请求体为 `{ "dailyQuota": 100, "reason": "按学习计划提升配额" }`。`dailyQuota` 可为 `0-10000` 的整数；`0` 表示该用户不限次数，`null` 表示清除覆盖值并继承服务端 `ai.daily-quota` 全局配置。`reason` 必填、最长 500 字符；服务端会原子更新配额并记录操作管理员、调整前后值、原因和时间。仅管理员可调用。
+
+`GET /api/admin/users/{id}/ai-daily-quota/audits?page=1&size=10` 返回该用户的配额调整记录，按时间倒序分页。响应记录包含 `adminUserId`、`previousDailyQuota`、`newDailyQuota`、`reason` 与 `createTime`。
 
 ### 12.2 课程管理
 

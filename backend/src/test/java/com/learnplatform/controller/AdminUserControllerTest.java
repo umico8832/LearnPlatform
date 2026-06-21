@@ -5,7 +5,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.UserVO;
 import com.learnplatform.entity.User;
+import com.learnplatform.entity.AiQuotaAuditLog;
+import com.learnplatform.mapper.AiQuotaAuditLogMapper;
 import com.learnplatform.mapper.UserMapper;
+import com.learnplatform.security.CustomUserDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +18,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -41,13 +47,19 @@ class AdminUserControllerTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private AiQuotaAuditLogMapper aiQuotaAuditLogMapper;
 
     @InjectMocks
     private AdminUserController adminUserController;
 
     @BeforeEach
     void setUp() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(new CustomUserDetails(99L, "admin", "ADMIN"), null,
+                        List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));
         mockMvc = MockMvcBuilders.standaloneSetup(adminUserController)
+                .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -271,11 +283,15 @@ class AdminUserControllerTest {
 
         mockMvc.perform(put("/api/admin/users/{id}/ai-daily-quota", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"dailyQuota\":120}"))
+                        .content("{\"dailyQuota\":120,\"reason\":\"学习计划调整\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));
 
         assertEquals(120, user.getAiDailyQuota());
+        ArgumentCaptor<AiQuotaAuditLog> auditCaptor = ArgumentCaptor.forClass(AiQuotaAuditLog.class);
+        verify(aiQuotaAuditLogMapper).insert(auditCaptor.capture());
+        assertEquals(99L, auditCaptor.getValue().getAdminUserId());
+        assertEquals("学习计划调整", auditCaptor.getValue().getReason());
     }
 
     @Test
@@ -287,7 +303,7 @@ class AdminUserControllerTest {
 
         mockMvc.perform(put("/api/admin/users/{id}/ai-daily-quota", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"dailyQuota\":null}"))
+                        .content("{\"dailyQuota\":null,\"reason\":\"恢复默认策略\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));
 
@@ -298,7 +314,15 @@ class AdminUserControllerTest {
     void updateAiDailyQuota_rejectsNegativeQuota() throws Exception {
         mockMvc.perform(put("/api/admin/users/{id}/ai-daily-quota", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"dailyQuota\":-1}"))
+                        .content("{\"dailyQuota\":-1,\"reason\":\"无效值测试\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updateAiDailyQuota_rejectsBlankReason() throws Exception {
+        mockMvc.perform(put("/api/admin/users/{id}/ai-daily-quota", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"dailyQuota\":10,\"reason\":\" \"}"))
                 .andExpect(status().isBadRequest());
     }
 

@@ -1,5 +1,37 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 118 - 2026-06-21
+
+### 阶段
+Phase 20：AI 运营治理（配额审计与调用追踪）
+
+### 完成内容
+1. 新增 Flyway V12：创建 `ai_quota_audit_log`，并为 `ai_call_log` 新增 `trace_id` 和索引。
+2. 管理员调整用户 AI 日配额时必须填写原因；配额更新和审计插入在同一事务内完成，保留管理员、调整前后值、原因和时间。
+3. 管理端用户配额弹窗可展示近期调整记录；新增审计记录查询接口和前端 API 契约。
+4. `AiService` 将 MDC 请求 `traceId` 写入调用日志，便于在运营记录与应用日志之间回溯。
+5. 补充配额审计、原因校验、调用 traceId 的后端回归测试，并同步 README、API、数据库、架构、路线图和交接文档。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/{entity/AiQuotaAuditLog.java,mapper/AiQuotaAuditLogMapper.java,entity/AiCallLog.java,service/AiService.java,controller/AdminUserController.java}`
+- `backend/src/main/resources/db/migration/V12__add_ai_quota_audit_and_trace_id.sql`
+- `backend/src/test/java/com/learnplatform/{controller/AdminUserControllerTest.java,service/AiServiceLoggingTest.java}`
+- `frontend/src/{api/adminUser.ts,views/admin/UserManage.vue,__tests__/api/adminUser.test.ts}`
+- `README.md` 与 `docs/{API_DESIGN.md,DB_DESIGN.md,ARCHITECTURE.md,ROADMAP.md,HANDOFF.md,CHANGELOG_AGENT.md}`
+
+### 验证
+- `cd backend && mvn test`：359 个测试通过。
+- `cd frontend && npm test -- --run`：24 个文件、196 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 pure annotation 与大 chunk 警告）。
+- `git diff --check`：通过。
+
+### 遗留问题
+- AI 调用追踪尚未保存 Prompt/模型版本等上下文；不应记录敏感原始提示词或用户隐私。
+- 真实演示截图与推送后的 GitHub Actions 实跑仍待完成。
+
+### 建议 commit message
+`feat(ai): 审计用户配额调整并追踪调用请求`
+
 ## Round 117 - 2026-06-21
 
 ### 阶段

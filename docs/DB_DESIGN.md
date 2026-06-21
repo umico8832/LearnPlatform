@@ -505,6 +505,7 @@ CREATE TABLE `exam_answer` (
 | status | TINYINT | 是 | 1 | 状态：0-失败 1-成功 |
 | error_message | VARCHAR(1000) | 否 | | 错误信息 |
 | duration | INT | 否 | | 调用耗时（毫秒） |
+| trace_id | VARCHAR(32) | 否 | | 发起调用的 HTTP 请求追踪 ID；非 HTTP / 异步调用可为空 |
 | create_time | DATETIME | 是 | CURRENT_TIMESTAMP | 创建时间 |
 
 **建表 SQL**：
@@ -523,13 +524,31 @@ CREATE TABLE `ai_call_log` (
   `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态：0-失败 1-成功',
   `error_message` VARCHAR(1000) DEFAULT NULL COMMENT '错误信息',
   `duration` INT DEFAULT NULL COMMENT '调用耗时（毫秒）',
+  `trace_id` VARCHAR(32) DEFAULT NULL COMMENT '关联HTTP请求追踪ID',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_function_type` (`function_type`),
-  KEY `idx_create_time` (`create_time`)
+  KEY `idx_create_time` (`create_time`),
+  KEY `idx_trace_id` (`trace_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='AI调用日志表';
 ```
+
+### 3.13.1 AI 配额调整审计表 (ai_quota_audit_log)
+
+管理员修改用户级 AI 日配额时写入一条不可变记录；配额更新与审计插入在同一事务内完成。
+
+| 字段名 | 类型 | 必填 | 说明 |
+|--------|------|:----:|------|
+| id | BIGINT | 是 | 自增主键 |
+| user_id | BIGINT | 是 | 被调整配额的用户 ID |
+| admin_user_id | BIGINT | 是 | 执行调整的管理员 ID |
+| previous_daily_quota | INT | 否 | 调整前值；NULL 表示继承全局配置 |
+| new_daily_quota | INT | 否 | 调整后值；NULL 表示继承全局配置，0 表示不限次数 |
+| reason | VARCHAR(500) | 是 | 调整原因 |
+| create_time | DATETIME | 是 | 创建时间 |
+
+**索引**：`idx_user_create_time (user_id, create_time)`、`idx_admin_create_time (admin_user_id, create_time)`。
 
 ### 3.14 题目 AI 学习资产表 (question_ai_asset) - Phase 13
 

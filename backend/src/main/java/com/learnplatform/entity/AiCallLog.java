@@ -38,6 +38,9 @@ public class AiCallLog {
     /** 调用耗时（毫秒） */
     private Integer duration;
 
+    /** 关联本次 HTTP 请求的 traceId；异步或非 HTTP 调用可为空。 */
+    private String traceId;
+
     private LocalDateTime createTime;
 
     // ======================== getter / setter ========================
@@ -74,6 +77,9 @@ public class AiCallLog {
 
     public Integer getDuration() { return duration; }
     public void setDuration(Integer duration) { this.duration = duration; }
+
+    public String getTraceId() { return traceId; }
+    public void setTraceId(String traceId) { this.traceId = traceId; }
 
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }

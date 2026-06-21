@@ -15,6 +15,7 @@ import com.learnplatform.service.ai.AiCostCalculator;
 import com.learnplatform.service.ai.AiTokenUsage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -322,6 +323,7 @@ public class AiService {
             callLog.setStatus(success ? 1 : 0);
             callLog.setErrorMessage(errorMessage);
             callLog.setDuration(duration);
+            callLog.setTraceId(MDC.get("traceId"));
             AiTokenUsage tokenUsage = success ? aiProvider.getLastTokenUsage() : null;
             if (tokenUsage != null) {
                 callLog.setTokensUsed(tokenUsage.totalTokens());
@@ -330,8 +332,8 @@ public class AiService {
                 callLog.setCostUsd(aiCostCalculator.calculate(callLog.getModel(), tokenUsage));
             }
             aiCallLogMapper.insert(callLog);
-            log.info("AI 调用日志已记录: type={}, userId={}, success={}, duration={}ms, tokens={}, costUsd={}",
-                    functionType, userId, success, duration, callLog.getTokensUsed(), callLog.getCostUsd());
+            log.info("AI 调用日志已记录: type={}, userId={}, success={}, duration={}ms, tokens={}, costUsd={}, traceId={}",
+                    functionType, userId, success, duration, callLog.getTokensUsed(), callLog.getCostUsd(), callLog.getTraceId());
         } catch (Exception e) {
             // 日志记录失败不应影响主流程
             log.warn("AI 调用日志记录失败: {}", e.getMessage());

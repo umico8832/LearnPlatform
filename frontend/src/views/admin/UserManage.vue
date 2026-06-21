@@ -172,6 +172,18 @@
           <el-input-number v-model="aiDailyQuota" :min="0" :max="10000" :step="10" />
           <div class="form-tip">0 表示不限次数</div>
         </el-form-item>
+        <el-form-item label="调整原因" required>
+          <el-input v-model="aiQuotaReason" type="textarea" :rows="3" maxlength="500" show-word-limit placeholder="例如：按学习计划提升配额" />
+        </el-form-item>
+        <el-form-item v-if="aiQuotaAudits.length" label="最近记录">
+          <div class="quota-audit-list">
+            <div v-for="audit in aiQuotaAudits" :key="audit.id" class="quota-audit-item">
+              <span>{{ formatQuota(audit.previousDailyQuota) }} → {{ formatQuota(audit.newDailyQuota) }}</span>
+              <span>{{ audit.reason }}</span>
+              <small>{{ audit.createTime }}</small>
+            </div>
+          </div>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="aiQuotaDialogVisible = false">取消</el-button>
@@ -238,10 +250,12 @@ import {
   updateUserStatus,
   resetUserPassword,
   updateUserAiDailyQuota,
+  getUserAiDailyQuotaAudits,
   deleteAdminUser,
   getAdminUserStats,
   type AdminUserVO,
   type AdminUserStats,
+  type AiQuotaAuditLog,
 } from '@/api/adminUser'
 
 const users = ref<AdminUserVO[]>([])
@@ -295,6 +309,8 @@ const resetPwdRules: FormRules = {
 const aiQuotaDialogVisible = ref(false)
 const aiQuotaMode = ref<'inherit' | 'custom'>('inherit')
 const aiDailyQuota = ref(50)
+const aiQuotaReason = ref('')
+const aiQuotaAudits = ref<AiQuotaAuditLog[]>([])
 
 const submitting = ref(false)
 
@@ -422,20 +438,33 @@ async function handleResetPwd() {
   }
 }
 
-function openAiQuotaDialog(user: AdminUserVO) {
+async function openAiQuotaDialog(user: AdminUserVO) {
   editingUser.value = user
   aiQuotaMode.value = user.aiDailyQuota == null ? 'inherit' : 'custom'
   aiDailyQuota.value = user.aiDailyQuota ?? 50
+  aiQuotaReason.value = ''
+  aiQuotaAudits.value = []
   aiQuotaDialogVisible.value = true
+  try {
+    const res: any = await getUserAiDailyQuotaAudits(user.id)
+    aiQuotaAudits.value = res.data.records
+  } catch {
+    // 不影响管理员继续调整配额；请求拦截器会提示错误。
+  }
 }
 
 async function handleAiQuotaChange() {
   if (!editingUser.value) return
+  if (!aiQuotaReason.value.trim()) {
+    ElMessage.warning('请填写调整原因')
+    return
+  }
   submitting.value = true
   try {
     await updateUserAiDailyQuota(
       editingUser.value.id,
       aiQuotaMode.value === 'inherit' ? null : aiDailyQuota.value,
+      aiQuotaReason.value.trim(),
     )
     ElMessage.success('AI 日配额已更新')
     aiQuotaDialogVisible.value = false
@@ -445,6 +474,11 @@ async function handleAiQuotaChange() {
   } finally {
     submitting.value = false
   }
+}
+
+function formatQuota(quota: number | null) {
+  if (quota == null) return '继承全局'
+  return quota === 0 ? '不限次数' : `${quota} 次/日`
 }
 
 async function handleDelete(id: number) {
@@ -520,6 +554,27 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
+}
+
+.quota-audit-list {
+  width: 100%;
+  max-height: 160px;
+  overflow-y: auto;
+  color: #606266;
+  font-size: 12px;
+}
+
+.quota-audit-item {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 4px 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.quota-audit-item small {
+  grid-column: 1 / -1;
+  color: #909399;
 }
 
 .form-tip {

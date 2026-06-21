@@ -13,6 +13,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.MDC;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -50,6 +51,21 @@ class AiServiceLoggingTest {
         assertEquals(8, captor.getValue().getCompletionTokens());
         assertEquals(new java.math.BigDecimal("0.00000660"), captor.getValue().getCostUsd());
         assertEquals("gpt-4o-mini", captor.getValue().getModel());
+    }
+
+    @Test
+    void recordsRequestTraceIdWhenAvailable() {
+        when(aiConfig.getModel()).thenReturn("gpt-4o-mini");
+        MDC.put("traceId", "a1b2c3d4");
+        try {
+            aiService.logCall(7L, "explanation", true, null, 123);
+        } finally {
+            MDC.clear();
+        }
+
+        ArgumentCaptor<AiCallLog> captor = ArgumentCaptor.forClass(AiCallLog.class);
+        verify(aiCallLogMapper).insert(captor.capture());
+        assertEquals("a1b2c3d4", captor.getValue().getTraceId());
     }
 
     @Test

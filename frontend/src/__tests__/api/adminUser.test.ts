@@ -17,6 +17,7 @@ import {
   updateUserRole,
   updateUserStatus,
   updateUserAiDailyQuota,
+  getUserAiDailyQuotaAudits,
   resetUserPassword,
   deleteAdminUser,
   getAdminUserStats,
@@ -120,18 +121,23 @@ describe('AdminUser API', () => {
     it('应传递用户级 AI 日配额', async () => {
       mockedRequest.put.mockResolvedValue({ data: { code: 0 } })
 
-      await updateUserAiDailyQuota(3, 100)
+      await updateUserAiDailyQuota(3, 100, '学习计划调整')
 
-      expect(mockedRequest.put).toHaveBeenCalledWith('/admin/users/3/ai-daily-quota', { dailyQuota: 100 })
+      expect(mockedRequest.put).toHaveBeenCalledWith('/admin/users/3/ai-daily-quota', { dailyQuota: 100, reason: '学习计划调整' })
     })
 
     it('应支持清除覆盖值并继承全局配额', async () => {
       mockedRequest.put.mockResolvedValue({ data: { code: 0 } })
 
-      await updateUserAiDailyQuota(3, null)
+      await updateUserAiDailyQuota(3, null, '恢复默认')
 
-      expect(mockedRequest.put).toHaveBeenCalledWith('/admin/users/3/ai-daily-quota', { dailyQuota: null })
+      expect(mockedRequest.put).toHaveBeenCalledWith('/admin/users/3/ai-daily-quota', { dailyQuota: null, reason: '恢复默认' })
     })
+  })
+
+  it('gets AI quota audit records', async () => {
+    await getUserAiDailyQuotaAudits(3)
+    expect(mockedRequest.get).toHaveBeenCalledWith('/admin/users/3/ai-daily-quota/audits')
   })
 
   describe('resetUserPassword', () => {

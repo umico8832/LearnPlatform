@@ -37,6 +37,16 @@ export interface AdminUserStats {
   admins: number
 }
 
+export interface AiQuotaAuditLog {
+  id: number
+  userId: number
+  adminUserId: number
+  previousDailyQuota: number | null
+  newDailyQuota: number | null
+  reason: string
+  createTime: string
+}
+
 /** 获取用户分页列表 */
 export function getAdminUserList(params: {
   page?: number
@@ -64,8 +74,13 @@ export function updateUserStatus(id: number, status: number) {
 }
 
 /** 设置用户级 AI 日配额；null 表示恢复继承全局配置，0 表示不限次数 */
-export function updateUserAiDailyQuota(id: number, dailyQuota: number | null) {
-  return request.put(`/admin/users/${id}/ai-daily-quota`, { dailyQuota })
+export function updateUserAiDailyQuota(id: number, dailyQuota: number | null, reason: string) {
+  return request.put(`/admin/users/${id}/ai-daily-quota`, { dailyQuota, reason })
+}
+
+/** 查询某个用户的 AI 配额调整审计记录 */
+export function getUserAiDailyQuotaAudits(id: number) {
+  return request.get<{ records: AiQuotaAuditLog[] }>(`/admin/users/${id}/ai-daily-quota/audits`)
 }
 
 /** 重置用户密码 */

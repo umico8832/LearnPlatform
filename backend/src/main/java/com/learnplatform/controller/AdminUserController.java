@@ -6,7 +6,10 @@ import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.R;
 import com.learnplatform.dto.UserVO;
 import com.learnplatform.entity.User;
+import com.learnplatform.entity.AiQuotaAuditLog;
+import com.learnplatform.mapper.AiQuotaAuditLogMapper;
 import com.learnplatform.mapper.UserMapper;
+import com.learnplatform.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +20,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,10 +39,13 @@ public class AdminUserController {
 
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final AiQuotaAuditLogMapper aiQuotaAuditLogMapper;
 
-    public AdminUserController(UserMapper userMapper, PasswordEncoder passwordEncoder) {
+    public AdminUserController(UserMapper userMapper, PasswordEncoder passwordEncoder,
+                               AiQuotaAuditLogMapper aiQuotaAuditLogMapper) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
+        this.aiQuotaAuditLogMapper = aiQuotaAuditLogMapper;
     }
 
     /**
@@ -148,18 +156,42 @@ public class AdminUserController {
      */
     @Operation(summary = "设置用户 AI 日配额", description = "dailyQuota 为 null 时继承全局配置，0 表示不限次数")
     @PutMapping("/{id}/ai-daily-quota")
+    @Transactional
     public R<Void> updateAiDailyQuota(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateAiDailyQuotaRequest request
+            @Valid @RequestBody UpdateAiDailyQuotaRequest request,
+            @AuthenticationPrincipal CustomUserDetails adminUser
     ) {
         User user = userMapper.selectById(id);
         if (user == null) {
             throw new BusinessException("用户不存在");
         }
+        Integer previousDailyQuota = user.getAiDailyQuota();
         user.setAiDailyQuota(request.getDailyQuota());
         userMapper.updateById(user);
-        log.info("管理员设置用户 AI 日配额: userId={}, dailyQuota={}", id, request.getDailyQuota());
+        AiQuotaAuditLog auditLog = new AiQuotaAuditLog();
+        auditLog.setUserId(id);
+        auditLog.setAdminUserId(adminUser.getUserId());
+        auditLog.setPreviousDailyQuota(previousDailyQuota);
+        auditLog.setNewDailyQuota(request.getDailyQuota());
+        auditLog.setReason(request.getReason().trim());
+        aiQuotaAuditLogMapper.insert(auditLog);
+        log.info("管理员设置用户 AI 日配额: userId={}, adminUserId={}, previousDailyQuota={}, dailyQuota={}",
+                id, adminUser.getUserId(), previousDailyQuota, request.getDailyQuota());
         return R.ok();
+    }
+
+    @Operation(summary = "查询用户 AI 日配额调整记录")
+    @GetMapping("/{id}/ai-daily-quota/audits")
+    public R<Page<AiQuotaAuditLog>> listAiDailyQuotaAudits(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<AiQuotaAuditLog> result = aiQuotaAuditLogMapper.selectPage(new Page<>(page, size),
+                new LambdaQueryWrapper<AiQuotaAuditLog>()
+                        .eq(AiQuotaAuditLog::getUserId, id)
+                        .orderByDesc(AiQuotaAuditLog::getCreateTime));
+        return R.ok(result);
     }
 
     /**
@@ -275,8 +307,13 @@ public class AdminUserController {
         @Min(value = 0, message = "AI 日配额不能小于 0")
         @Max(value = 10000, message = "AI 日配额不能超过 10000")
         private Integer dailyQuota;
+        @NotBlank(message = "调整原因不能为空")
+        @Size(max = 500, message = "调整原因不能超过 500 个字符")
+        private String reason;
 
         public Integer getDailyQuota() { return dailyQuota; }
         public void setDailyQuota(Integer dailyQuota) { this.dailyQuota = dailyQuota; }
+        public String getReason() { return reason; }
+        public void setReason(String reason) { this.reason = reason; }
     }
 }

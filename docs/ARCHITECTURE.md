@@ -534,7 +534,7 @@ AiService (业务服务)
 业务 AI 调用 → OpenAiProvider 返回真实 prompt/completion/total usage
   → AiService 优先读取 user.ai_daily_quota（NULL 时继承 ai.daily-quota，0 不限）并检查当日用量
   → AiCostCalculator 读取按模型配置的 USD / 1M token 单价
-  → ai_call_log 固化 tokens_used、prompt_tokens、completion_tokens、cost_usd
+  → ai_call_log 固化 tokens_used、prompt_tokens、completion_tokens、cost_usd、trace_id
 管理员访问 /api/admin/ai-usage/overview
   → AiUsageService 按时间窗口聚合日志
   → 返回调用趋势、成功率、Tokens、已配置价格的成本、模型/功能分布、活跃用户和失败详情
@@ -615,6 +615,8 @@ ai:
 ```
 
 OpenAI 兼容 Provider 会从同步响应的 `usage` 和流式最终事件的 `usage` 中读取真实 token 用量，并在同一调用线程交给统一调用日志写入 `ai_call_log.tokens_used`、`prompt_tokens` 和 `completion_tokens`。`AiCostCalculator` 只在输入/输出 token 齐全且 `ai.model-prices` 配置了该模型正数单价时计算并固化 `cost_usd`；未返回 usage 或未配置价格的调用保留 `NULL`，不会按字符数或默认价格估算。
+
+`AiService` 同时从 MDC 读取请求级 `traceId` 写入 `ai_call_log.trace_id`，使一次 AI 调用可从管理端日志回溯到应用日志。管理员通过 `AdminUserController` 调整用户独立配额时，配额更新与 `ai_quota_audit_log` 审计记录处于同一事务，记录执行管理员、调整前后值和必填原因。
 
 ### 7.2 Prompt 模板管理
 
