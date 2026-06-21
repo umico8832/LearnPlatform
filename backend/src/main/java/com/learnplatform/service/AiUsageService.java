@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -87,6 +88,8 @@ public class AiUsageService {
                 .filter(l -> l.getTokensUsed() != null)
                 .mapToLong(AiCallLog::getTokensUsed)
                 .sum());
+        vo.setTotalCostUsd(sumCosts(allLogs));
+        vo.setTodayCostUsd(sumCosts(todayLogs));
 
         // ====== 按功能分组 ======
         Map<String, List<AiCallLog>> byFunction = allLogs.stream()
@@ -101,6 +104,7 @@ public class AiUsageService {
             fs.setSuccessCount(logs.stream().filter(l -> l.getStatus() != null && l.getStatus() == 1).count());
             fs.setFailedCount(fs.getCount() - fs.getSuccessCount());
             fs.setTotalTokens(logs.stream().filter(l -> l.getTokensUsed() != null).mapToLong(AiCallLog::getTokensUsed).sum());
+            fs.setTotalCostUsd(sumCosts(logs));
             fs.setAvgDuration(Math.round(logs.stream().filter(l -> l.getDuration() != null && l.getDuration() > 0).mapToInt(AiCallLog::getDuration).average().orElse(0) * 100.0) / 100.0);
             functionStats.add(fs);
         }
@@ -118,6 +122,7 @@ public class AiUsageService {
             List<AiCallLog> logs = entry.getValue();
             ms.setCount((long) logs.size());
             ms.setTotalTokens(logs.stream().filter(l -> l.getTokensUsed() != null).mapToLong(AiCallLog::getTokensUsed).sum());
+            ms.setTotalCostUsd(sumCosts(logs));
             ms.setAvgDuration(Math.round(logs.stream().filter(l -> l.getDuration() != null && l.getDuration() > 0).mapToInt(AiCallLog::getDuration).average().orElse(0) * 100.0) / 100.0);
             modelStats.add(ms);
         }
@@ -139,6 +144,7 @@ public class AiUsageService {
             dt.setSuccessCount(dayLogs.stream().filter(l -> l.getStatus() != null && l.getStatus() == 1).count());
             dt.setFailedCount(dt.getTotalCount() - dt.getSuccessCount());
             dt.setTotalTokens(dayLogs.stream().filter(l -> l.getTokensUsed() != null).mapToLong(AiCallLog::getTokensUsed).sum());
+            dt.setTotalCostUsd(sumCosts(dayLogs));
             dailyTrends.add(dt);
         }
         vo.setDailyTrends(dailyTrends);
@@ -164,6 +170,7 @@ public class AiUsageService {
             List<AiCallLog> userLogs = entry.getValue();
             tu.setCallCount((long) userLogs.size());
             tu.setTotalTokens(userLogs.stream().filter(l -> l.getTokensUsed() != null).mapToLong(AiCallLog::getTokensUsed).sum());
+            tu.setTotalCostUsd(sumCosts(userLogs));
             tu.setAvgDuration(Math.round(userLogs.stream().filter(l -> l.getDuration() != null && l.getDuration() > 0).mapToInt(AiCallLog::getDuration).average().orElse(0) * 100.0) / 100.0);
             topUsers.add(tu);
         }
@@ -192,5 +199,13 @@ public class AiUsageService {
 
         log.info("AI usage overview generated: {} calls in last {} days", totalCalls, days);
         return vo;
+    }
+
+    private BigDecimal sumCosts(List<AiCallLog> logs) {
+        return logs.stream()
+                .map(AiCallLog::getCostUsd)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal::add)
+                .orElse(null);
     }
 }

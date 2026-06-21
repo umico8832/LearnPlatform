@@ -1,6 +1,7 @@
 package com.learnplatform.dto;
 
 import java.util.List;
+import java.math.BigDecimal;
 
 /**
  * AI 调用分析总览 VO
@@ -31,6 +32,12 @@ public class AiUsageOverviewVO {
     /** 今日 tokens 使用量 */
     private Long todayTokens;
 
+    /** 已配置价格且 usage 完整的调用成本合计（USD） */
+    private BigDecimal totalCostUsd;
+
+    /** 今日已配置价格且 usage 完整的调用成本合计（USD） */
+    private BigDecimal todayCostUsd;
+
     /** 按功能分组的调用统计 */
     private List<FunctionStats> functionStats;
 
@@ -54,6 +61,7 @@ public class AiUsageOverviewVO {
         private Long successCount;
         private Long failedCount;
         private Long totalTokens;
+        private BigDecimal totalCostUsd;
         private Double avgDuration;
 
         public String getFunctionType() { return functionType; }
@@ -66,6 +74,8 @@ public class AiUsageOverviewVO {
         public void setFailedCount(Long failedCount) { this.failedCount = failedCount; }
         public Long getTotalTokens() { return totalTokens; }
         public void setTotalTokens(Long totalTokens) { this.totalTokens = totalTokens; }
+        public BigDecimal getTotalCostUsd() { return totalCostUsd; }
+        public void setTotalCostUsd(BigDecimal totalCostUsd) { this.totalCostUsd = totalCostUsd; }
         public Double getAvgDuration() { return avgDuration; }
         public void setAvgDuration(Double avgDuration) { this.avgDuration = avgDuration; }
     }
@@ -74,6 +84,7 @@ public class AiUsageOverviewVO {
         private String model;
         private Long count;
         private Long totalTokens;
+        private BigDecimal totalCostUsd;
         private Double avgDuration;
 
         public String getModel() { return model; }
@@ -82,6 +93,8 @@ public class AiUsageOverviewVO {
         public void setCount(Long count) { this.count = count; }
         public Long getTotalTokens() { return totalTokens; }
         public void setTotalTokens(Long totalTokens) { this.totalTokens = totalTokens; }
+        public BigDecimal getTotalCostUsd() { return totalCostUsd; }
+        public void setTotalCostUsd(BigDecimal totalCostUsd) { this.totalCostUsd = totalCostUsd; }
         public Double getAvgDuration() { return avgDuration; }
         public void setAvgDuration(Double avgDuration) { this.avgDuration = avgDuration; }
     }
@@ -92,6 +105,7 @@ public class AiUsageOverviewVO {
         private Long successCount;
         private Long failedCount;
         private Long totalTokens;
+        private BigDecimal totalCostUsd;
 
         public String getDate() { return date; }
         public void setDate(String date) { this.date = date; }
@@ -103,6 +117,8 @@ public class AiUsageOverviewVO {
         public void setFailedCount(Long failedCount) { this.failedCount = failedCount; }
         public Long getTotalTokens() { return totalTokens; }
         public void setTotalTokens(Long totalTokens) { this.totalTokens = totalTokens; }
+        public BigDecimal getTotalCostUsd() { return totalCostUsd; }
+        public void setTotalCostUsd(BigDecimal totalCostUsd) { this.totalCostUsd = totalCostUsd; }
     }
 
     public static class TopUser {
@@ -110,6 +126,7 @@ public class AiUsageOverviewVO {
         private String username;
         private Long callCount;
         private Long totalTokens;
+        private BigDecimal totalCostUsd;
         private Double avgDuration;
 
         public Long getUserId() { return userId; }
@@ -120,6 +137,8 @@ public class AiUsageOverviewVO {
         public void setCallCount(Long callCount) { this.callCount = callCount; }
         public Long getTotalTokens() { return totalTokens; }
         public void setTotalTokens(Long totalTokens) { this.totalTokens = totalTokens; }
+        public BigDecimal getTotalCostUsd() { return totalCostUsd; }
+        public void setTotalCostUsd(BigDecimal totalCostUsd) { this.totalCostUsd = totalCostUsd; }
         public Double getAvgDuration() { return avgDuration; }
         public void setAvgDuration(Double avgDuration) { this.avgDuration = avgDuration; }
     }
@@ -171,6 +190,12 @@ public class AiUsageOverviewVO {
 
     public Long getTodayTokens() { return todayTokens; }
     public void setTodayTokens(Long todayTokens) { this.todayTokens = todayTokens; }
+
+    public BigDecimal getTotalCostUsd() { return totalCostUsd; }
+    public void setTotalCostUsd(BigDecimal totalCostUsd) { this.totalCostUsd = totalCostUsd; }
+
+    public BigDecimal getTodayCostUsd() { return todayCostUsd; }
+    public void setTodayCostUsd(BigDecimal todayCostUsd) { this.todayCostUsd = todayCostUsd; }
 
     public List<FunctionStats> getFunctionStats() { return functionStats; }
     public void setFunctionStats(List<FunctionStats> functionStats) { this.functionStats = functionStats; }

@@ -497,6 +497,9 @@ CREATE TABLE `exam_answer` (
 | response_content | TEXT | 否 | | 响应内容 |
 | model | VARCHAR(100) | 否 | | 使用的模型 |
 | tokens_used | INT | 否 | | 上游响应返回的 total tokens；上游未返回 usage 时保持 NULL，禁止本地估算 |
+| prompt_tokens | INT | 否 | | 上游响应返回的输入 tokens；缺失时保持 NULL |
+| completion_tokens | INT | 否 | | 上游响应返回的输出 tokens；缺失时保持 NULL |
+| cost_usd | DECIMAL(16,8) | 否 | | 调用时按配置模型单价计算的 USD 成本；仅在输入/输出 token 完整且价格已配置时写入 |
 | status | TINYINT | 是 | 1 | 状态：0-失败 1-成功 |
 | error_message | VARCHAR(1000) | 否 | | 错误信息 |
 | duration | INT | 否 | | 调用耗时（毫秒） |
@@ -512,6 +515,9 @@ CREATE TABLE `ai_call_log` (
   `response_content` TEXT DEFAULT NULL COMMENT '响应内容',
   `model` VARCHAR(100) DEFAULT NULL COMMENT '使用的模型',
   `tokens_used` INT DEFAULT NULL COMMENT 'Token用量',
+  `prompt_tokens` INT DEFAULT NULL COMMENT '上游返回的输入tokens',
+  `completion_tokens` INT DEFAULT NULL COMMENT '上游返回的输出tokens',
+  `cost_usd` DECIMAL(16,8) DEFAULT NULL COMMENT '按调用时模型单价计算的USD成本',
   `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态：0-失败 1-成功',
   `error_message` VARCHAR(1000) DEFAULT NULL COMMENT '错误信息',
   `duration` INT DEFAULT NULL COMMENT '调用耗时（毫秒）',

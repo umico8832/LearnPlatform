@@ -11,6 +11,7 @@ import com.learnplatform.dto.ReviewStatsVO;
 import com.learnplatform.entity.*;
 import com.learnplatform.mapper.*;
 import com.learnplatform.service.ai.AiProvider;
+import com.learnplatform.service.ai.AiCostCalculator;
 import com.learnplatform.service.ai.AiTokenUsage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,7 @@ public class AiService {
     private static final Logger log = LoggerFactory.getLogger(AiService.class);
 
     private final AiProvider aiProvider;
+    private final AiCostCalculator aiCostCalculator;
     private final AiConfig aiConfig;
     private final AiCallLogMapper aiCallLogMapper;
     private final QuestionMapper questionMapper;
@@ -41,6 +43,7 @@ public class AiService {
     private final WrongQuestionMapper wrongQuestionMapper;
 
     public AiService(AiProvider aiProvider,
+                     AiCostCalculator aiCostCalculator,
                      AiConfig aiConfig,
                      AiCallLogMapper aiCallLogMapper,
                      QuestionMapper questionMapper,
@@ -50,6 +53,7 @@ public class AiService {
                      CourseMapper courseMapper,
                      WrongQuestionMapper wrongQuestionMapper) {
         this.aiProvider = aiProvider;
+        this.aiCostCalculator = aiCostCalculator;
         this.aiConfig = aiConfig;
         this.aiCallLogMapper = aiCallLogMapper;
         this.questionMapper = questionMapper;
@@ -307,10 +311,13 @@ public class AiService {
             AiTokenUsage tokenUsage = success ? aiProvider.getLastTokenUsage() : null;
             if (tokenUsage != null) {
                 callLog.setTokensUsed(tokenUsage.totalTokens());
+                callLog.setPromptTokens(tokenUsage.promptTokens());
+                callLog.setCompletionTokens(tokenUsage.completionTokens());
+                callLog.setCostUsd(aiCostCalculator.calculate(callLog.getModel(), tokenUsage));
             }
             aiCallLogMapper.insert(callLog);
-            log.info("AI 调用日志已记录: type={}, userId={}, success={}, duration={}ms, tokens={}",
-                    functionType, userId, success, duration, callLog.getTokensUsed());
+            log.info("AI 调用日志已记录: type={}, userId={}, success={}, duration={}ms, tokens={}, costUsd={}",
+                    functionType, userId, success, duration, callLog.getTokensUsed(), callLog.getCostUsd());
         } catch (Exception e) {
             // 日志记录失败不应影响主流程
             log.warn("AI 调用日志记录失败: {}", e.getMessage());

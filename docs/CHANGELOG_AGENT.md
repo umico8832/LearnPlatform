@@ -1,5 +1,40 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 115 - 2026-06-21
+
+### 阶段
+Phase 20：AI 运营治理（模型成本）
+
+### 完成内容
+1. 新增 Flyway V10，为 `ai_call_log` 保存真实 `prompt_tokens`、`completion_tokens` 和调用当时的 `cost_usd`；历史日志与 usage 不完整的调用保持空值。
+2. 新增按 `ai.model-prices.<model>` 配置的输入/输出 USD/百万 Token 单价计算器；只有上游提供完整真实 usage 且模型配置了正数单价时才固化成本，不使用字符数、默认价格或猜测值。
+3. 管理端 AI 调用分析总览及功能、模型、用户维度新增成本聚合展示；未配置价格或无完整 usage 时页面显示 `-`，避免把未知成本显示为零。
+4. 增加成本计算、调用日志持久化和聚合回归测试；同步更新 API、数据库、架构、路线图、交接和 README。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/config/AiConfig.java`
+- `backend/src/main/java/com/learnplatform/entity/AiCallLog.java`
+- `backend/src/main/java/com/learnplatform/service/AiService.java`
+- `backend/src/main/java/com/learnplatform/service/AiUsageService.java`
+- `backend/src/main/java/com/learnplatform/service/ai/AiCostCalculator.java`
+- `backend/src/main/java/com/learnplatform/dto/AiUsageOverviewVO.java`
+- `backend/src/main/resources/db/migration/V10__add_ai_call_cost_fields.sql`
+- `frontend/src/api/aiUsage.ts`
+- `frontend/src/views/admin/AiUsageView.vue`
+- 相关测试与项目文档
+
+### 验证
+- `cd backend && mvn test`：349 个测试通过。
+- `cd frontend && npm test -- --run`：24 个文件、192 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 pure annotation 与大 chunk 警告）。
+
+### 遗留问题
+- 需由部署管理员按实际供应商账单在 `ai.model-prices` 配置各模型单价；本轮刻意未内置可能过期的厂商价格。
+- 真实演示截图、推送后的 GitHub Actions 实跑、用户独立配额和调用报告仍待完成。
+
+### 建议 commit message
+`feat(ai): 记录并聚合模型调用成本`
+
 ## Round 114 - 2026-06-21
 
 ### 阶段

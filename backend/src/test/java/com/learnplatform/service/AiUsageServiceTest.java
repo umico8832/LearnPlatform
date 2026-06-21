@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -52,6 +53,7 @@ class AiUsageServiceTest {
         successLog.setFunctionType("explanation");
         successLog.setModel("gpt-4o");
         successLog.setTokensUsed(1500);
+        successLog.setCostUsd(new BigDecimal("0.00150000"));
         successLog.setStatus(1);
         successLog.setDuration(2000);
         successLog.setCreateTime(LocalDateTime.now().minusHours(1));
@@ -64,6 +66,7 @@ class AiUsageServiceTest {
         streamLog.setFunctionType("variant_question");
         streamLog.setModel("gpt-4o");
         streamLog.setTokensUsed(800);
+        streamLog.setCostUsd(new BigDecimal("0.00080000"));
         streamLog.setStatus(1);
         streamLog.setDuration(3500);
         streamLog.setCreateTime(LocalDateTime.now().minusDays(1));
@@ -89,6 +92,7 @@ class AiUsageServiceTest {
         reviewLog.setFunctionType("review_suggestion");
         reviewLog.setModel("gpt-4o");
         reviewLog.setTokensUsed(2000);
+        reviewLog.setCostUsd(new BigDecimal("0.00200000"));
         reviewLog.setStatus(1);
         reviewLog.setDuration(1800);
         reviewLog.setCreateTime(LocalDateTime.now().minusDays(2));
@@ -119,6 +123,8 @@ class AiUsageServiceTest {
             assertEquals(1L, vo.getFailedCalls());
             assertEquals(75.0, vo.getSuccessRate());
             assertEquals(4300L, vo.getTotalTokens());
+            assertEquals(new BigDecimal("0.00430000"), vo.getTotalCostUsd());
+            assertEquals(new BigDecimal("0.00150000"), vo.getTodayCostUsd());
             assertNotNull(vo.getFunctionStats());
             assertNotNull(vo.getModelStats());
             assertNotNull(vo.getDailyTrends());
@@ -139,6 +145,7 @@ class AiUsageServiceTest {
             assertEquals(0L, vo.getFailedCalls());
             assertEquals(0.0, vo.getSuccessRate());
             assertEquals(0L, vo.getTotalTokens());
+            assertNull(vo.getTotalCostUsd());
             assertTrue(vo.getFunctionStats().isEmpty());
             assertTrue(vo.getModelStats().isEmpty());
             assertFalse(vo.getDailyTrends().isEmpty()); // 趋势图仍有 30 个日期

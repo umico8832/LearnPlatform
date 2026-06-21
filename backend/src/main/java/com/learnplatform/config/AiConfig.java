@@ -3,6 +3,10 @@ package com.learnplatform.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import java.math.BigDecimal;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 /**
  * AI 配置属性
  */
@@ -20,6 +24,8 @@ public class AiConfig {
     private boolean streamIncludeUsage = true;
     /** 每用户每日 AI 调用次数上限，0 或负数表示不限制 */
     private int dailyQuota = 50;
+    /** 按模型配置的输入/输出单价，单位为 USD / 1M tokens。未配置的模型不计算成本。 */
+    private Map<String, ModelPrice> modelPrices = new LinkedHashMap<>();
 
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
@@ -44,4 +50,20 @@ public class AiConfig {
 
     public int getDailyQuota() { return dailyQuota; }
     public void setDailyQuota(int dailyQuota) { this.dailyQuota = dailyQuota; }
+
+    public Map<String, ModelPrice> getModelPrices() { return modelPrices; }
+    public void setModelPrices(Map<String, ModelPrice> modelPrices) {
+        this.modelPrices = modelPrices != null ? modelPrices : new LinkedHashMap<>();
+    }
+
+    public static class ModelPrice {
+        private BigDecimal inputPerMillion;
+        private BigDecimal outputPerMillion;
+
+        public BigDecimal getInputPerMillion() { return inputPerMillion; }
+        public void setInputPerMillion(BigDecimal inputPerMillion) { this.inputPerMillion = inputPerMillion; }
+
+        public BigDecimal getOutputPerMillion() { return outputPerMillion; }
+        public void setOutputPerMillion(BigDecimal outputPerMillion) { this.outputPerMillion = outputPerMillion; }
+    }
 }

@@ -25,7 +25,7 @@ public class AdminAiUsageController {
         this.aiUsageService = aiUsageService;
     }
 
-    @Operation(summary = "获取 AI 调用总览", description = "包含全局统计、功能分布、模型分布、每日趋势、Top 活跃用户、最近失败调用")
+    @Operation(summary = "获取 AI 调用总览", description = "包含全局统计、真实 Tokens、已配置单价的成本、功能/模型分布、每日趋势、Top 活跃用户和最近失败调用")
     @GetMapping("/overview")
     public R<AiUsageOverviewVO> getOverview(
             @Parameter(description = "最近天数，默认 30") @RequestParam(required = false) Integer days) {

@@ -4,6 +4,7 @@ import com.learnplatform.config.AiConfig;
 import com.learnplatform.entity.AiCallLog;
 import com.learnplatform.mapper.*;
 import com.learnplatform.service.ai.AiProvider;
+import com.learnplatform.service.ai.AiCostCalculator;
 import com.learnplatform.service.ai.AiTokenUsage;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,6 +22,7 @@ import static org.mockito.Mockito.*;
 class AiServiceLoggingTest {
 
     @Mock private AiProvider aiProvider;
+    @Mock private AiCostCalculator aiCostCalculator;
     @Mock private AiConfig aiConfig;
     @Mock private AiCallLogMapper aiCallLogMapper;
     @Mock private QuestionMapper questionMapper;
@@ -35,12 +37,16 @@ class AiServiceLoggingTest {
     void recordsExactUpstreamTotalTokensForSuccessfulCall() {
         when(aiConfig.getModel()).thenReturn("gpt-4o-mini");
         when(aiProvider.getLastTokenUsage()).thenReturn(new AiTokenUsage(12, 8, 20));
+        when(aiCostCalculator.calculate(eq("gpt-4o-mini"), any())).thenReturn(new java.math.BigDecimal("0.00000660"));
 
         aiService.logCall(7L, "explanation", true, null, 123);
 
         ArgumentCaptor<AiCallLog> captor = ArgumentCaptor.forClass(AiCallLog.class);
         verify(aiCallLogMapper).insert(captor.capture());
         assertEquals(20, captor.getValue().getTokensUsed());
+        assertEquals(12, captor.getValue().getPromptTokens());
+        assertEquals(8, captor.getValue().getCompletionTokens());
+        assertEquals(new java.math.BigDecimal("0.00000660"), captor.getValue().getCostUsd());
         assertEquals("gpt-4o-mini", captor.getValue().getModel());
     }
 

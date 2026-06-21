@@ -531,10 +531,12 @@ AiService (业务服务)
 ### 5.6 AI 调用分析数据流
 
 ```
-业务 AI 调用 → ai_call_log
+业务 AI 调用 → OpenAiProvider 返回真实 prompt/completion/total usage
+  → AiCostCalculator 读取按模型配置的 USD / 1M token 单价
+  → ai_call_log 固化 tokens_used、prompt_tokens、completion_tokens、cost_usd
 管理员访问 /api/admin/ai-usage/overview
   → AiUsageService 按时间窗口聚合日志
-  → 返回调用趋势、成功率、Tokens、模型/功能分布、活跃用户和失败详情
+  → 返回调用趋势、成功率、Tokens、已配置价格的成本、模型/功能分布、活跃用户和失败详情
 ```
 
 ---
@@ -605,7 +607,7 @@ ai:
   stream-include-usage: true
 ```
 
-OpenAI 兼容 Provider 会从同步响应的 `usage` 和流式最终事件的 `usage` 中读取真实 token 用量，并在同一调用线程交给统一调用日志写入 `ai_call_log.tokens_used`。未返回 usage 的上游保留 `NULL`，不会按字符数估算为真实成本。
+OpenAI 兼容 Provider 会从同步响应的 `usage` 和流式最终事件的 `usage` 中读取真实 token 用量，并在同一调用线程交给统一调用日志写入 `ai_call_log.tokens_used`、`prompt_tokens` 和 `completion_tokens`。`AiCostCalculator` 只在输入/输出 token 齐全且 `ai.model-prices` 配置了该模型正数单价时计算并固化 `cost_usd`；未返回 usage 或未配置价格的调用保留 `NULL`，不会按字符数或默认价格估算。
 
 ### 7.2 Prompt 模板管理
 

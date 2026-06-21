@@ -3,6 +3,7 @@ package com.learnplatform.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -21,6 +22,13 @@ public class AiCallLog {
     private String model;
 
     private Integer tokensUsed;
+
+    private Integer promptTokens;
+
+    private Integer completionTokens;
+
+    /** 按调用时模型单价计算的 USD 成本；缺少真实 usage 或价格配置时为 null。 */
+    private BigDecimal costUsd;
 
     /** 状态：0-失败 1-成功 */
     private Integer status;
@@ -48,6 +56,15 @@ public class AiCallLog {
 
     public Integer getTokensUsed() { return tokensUsed; }
     public void setTokensUsed(Integer tokensUsed) { this.tokensUsed = tokensUsed; }
+
+    public Integer getPromptTokens() { return promptTokens; }
+    public void setPromptTokens(Integer promptTokens) { this.promptTokens = promptTokens; }
+
+    public Integer getCompletionTokens() { return completionTokens; }
+    public void setCompletionTokens(Integer completionTokens) { this.completionTokens = completionTokens; }
+
+    public BigDecimal getCostUsd() { return costUsd; }
+    public void setCostUsd(BigDecimal costUsd) { this.costUsd = costUsd; }
 
     public Integer getStatus() { return status; }
     public void setStatus(Integer status) { this.status = status; }

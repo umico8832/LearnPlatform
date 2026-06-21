@@ -7,6 +7,7 @@ export interface FunctionStats {
   successCount: number
   failedCount: number
   totalTokens: number
+  totalCostUsd: number | null
   avgDuration: number
 }
 
@@ -15,6 +16,7 @@ export interface ModelStats {
   model: string
   count: number
   totalTokens: number
+  totalCostUsd: number | null
   avgDuration: number
 }
 
@@ -25,6 +27,7 @@ export interface DailyTrend {
   successCount: number
   failedCount: number
   totalTokens: number
+  totalCostUsd: number | null
 }
 
 /** Top 活跃用户 */
@@ -33,6 +36,7 @@ export interface TopUser {
   username: string
   callCount: number
   totalTokens: number
+  totalCostUsd: number | null
   avgDuration: number
 }
 
@@ -56,6 +60,8 @@ export interface AiUsageOverview {
   avgDuration: number
   todayCalls: number
   todayTokens: number
+  totalCostUsd: number | null
+  todayCostUsd: number | null
   functionStats: FunctionStats[]
   modelStats: ModelStats[]
   dailyTrends: DailyTrend[]

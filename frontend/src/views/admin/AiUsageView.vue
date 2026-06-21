@@ -42,6 +42,21 @@
         </el-col>
       </el-row>
 
+      <el-row :gutter="16" class="stat-cards cost-cards">
+        <el-col :xs="12" :sm="6">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-value primary">{{ formatCost(overview.totalCostUsd) }}</div>
+            <div class="stat-label">已计成本（USD）</div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="6">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-value warning">{{ formatCost(overview.todayCostUsd) }}</div>
+            <div class="stat-label">今日成本（USD）</div>
+          </el-card>
+        </el-col>
+      </el-row>
+
       <el-row :gutter="16" class="stat-cards secondary">
         <el-col :xs="12" :sm="6">
           <el-card shadow="hover" class="stat-card">
@@ -108,6 +123,9 @@
               <el-table-column label="Tokens" width="90" align="right">
                 <template #default="{ row }">{{ formatTokens(row.totalTokens) }}</template>
               </el-table-column>
+              <el-table-column label="成本(USD)" width="100" align="right">
+                <template #default="{ row }">{{ formatCost(row.totalCostUsd) }}</template>
+              </el-table-column>
               <el-table-column label="平均耗时" width="90" align="right">
                 <template #default="{ row }">{{ row.avgDuration ? row.avgDuration + 'ms' : '-' }}</template>
               </el-table-column>
@@ -124,6 +142,9 @@
               <el-table-column prop="callCount" label="调用次数" width="90" align="right" />
               <el-table-column label="Tokens" width="90" align="right">
                 <template #default="{ row }">{{ formatTokens(row.totalTokens) }}</template>
+              </el-table-column>
+              <el-table-column label="成本(USD)" width="100" align="right">
+                <template #default="{ row }">{{ formatCost(row.totalCostUsd) }}</template>
               </el-table-column>
               <el-table-column label="平均耗时" width="90" align="right">
                 <template #default="{ row }">{{ row.avgDuration ? row.avgDuration + 'ms' : '-' }}</template>
@@ -189,6 +210,8 @@ const overview = reactive<AiUsageOverview>({
   avgDuration: 0,
   todayCalls: 0,
   todayTokens: 0,
+  totalCostUsd: 0,
+  todayCostUsd: 0,
   functionStats: [],
   modelStats: [],
   dailyTrends: [],
@@ -209,6 +232,11 @@ function formatTokens(tokens: number | undefined): string {
   if (tokens >= 1_000_000) return (tokens / 1_000_000).toFixed(1) + 'M'
   if (tokens >= 1_000) return (tokens / 1_000).toFixed(1) + 'K'
   return tokens.toLocaleString()
+}
+
+function formatCost(cost: number | null | undefined): string {
+  if (cost === null || cost === undefined) return '-'
+  return '$' + cost.toFixed(cost < 0.01 ? 6 : 4)
 }
 
 async function fetchData() {
@@ -365,6 +393,9 @@ onBeforeUnmount(() => {
 }
 .stat-cards.secondary {
   margin-bottom: 20px;
+}
+.stat-cards.cost-cards {
+  margin-top: -4px;
 }
 .stat-card {
   text-align: center;

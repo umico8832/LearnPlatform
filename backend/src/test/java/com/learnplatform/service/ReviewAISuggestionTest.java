@@ -2,6 +2,7 @@ package com.learnplatform.service;
 
 import com.learnplatform.dto.*;
 import com.learnplatform.service.ai.AiProvider;
+import com.learnplatform.service.ai.AiCostCalculator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +34,9 @@ class ReviewAISuggestionTest {
     private AiProvider aiProvider;
 
     @Mock
+    private AiCostCalculator aiCostCalculator;
+
+    @Mock
     private com.learnplatform.config.AiConfig aiConfig;
 
     @Mock
@@ -61,7 +65,7 @@ class ReviewAISuggestionTest {
     @BeforeEach
     void setUp() {
         aiService = new AiService(
-                aiProvider, aiConfig, aiCallLogMapper,
+                aiProvider, aiCostCalculator, aiConfig, aiCallLogMapper,
                 questionMapper, questionOptionMapper,
                 questionKnowledgePointMapper, knowledgePointMapper,
                 courseMapper, wrongQuestionMapper);

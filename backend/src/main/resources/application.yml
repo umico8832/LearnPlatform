@@ -75,6 +75,11 @@ ai:
   # OpenAI 的 stream_options.include_usage；不兼容的上游可设为 false
   stream-include-usage: ${AI_STREAM_INCLUDE_USAGE:true}
   daily-quota: ${AI_DAILY_QUOTA:50}
+  # 按模型填写 USD / 1M tokens 单价；未配置的模型不会计算成本。
+  # model-prices:
+  #   your-model:
+  #     input-per-million: 0.15
+  #     output-per-million: 0.60
 
 # Actuator + Prometheus 监控配置
 management:
