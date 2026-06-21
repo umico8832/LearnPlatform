@@ -3,6 +3,7 @@ package com.learnplatform.service;
 import com.learnplatform.config.AiConfig;
 import com.learnplatform.entity.AiCallLog;
 import com.learnplatform.mapper.*;
+import com.learnplatform.entity.User;
 import com.learnplatform.service.ai.AiProvider;
 import com.learnplatform.service.ai.AiCostCalculator;
 import com.learnplatform.service.ai.AiTokenUsage;
@@ -25,6 +26,7 @@ class AiServiceLoggingTest {
     @Mock private AiCostCalculator aiCostCalculator;
     @Mock private AiConfig aiConfig;
     @Mock private AiCallLogMapper aiCallLogMapper;
+    @Mock private UserMapper userMapper;
     @Mock private QuestionMapper questionMapper;
     @Mock private QuestionOptionMapper questionOptionMapper;
     @Mock private QuestionKnowledgePointMapper questionKnowledgePointMapper;
@@ -58,5 +60,32 @@ class AiServiceLoggingTest {
         verify(aiCallLogMapper).insert(captor.capture());
         assertNull(captor.getValue().getTokensUsed());
         verify(aiProvider, never()).getLastTokenUsage();
+    }
+
+    @Test
+    void userQuotaOverridesGlobalQuota() {
+        User user = new User();
+        user.setAiDailyQuota(2);
+        when(userMapper.selectById(7L)).thenReturn(user);
+        when(aiCallLogMapper.selectCount(any())).thenReturn(2L);
+
+        com.learnplatform.common.exception.BusinessException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                com.learnplatform.common.exception.BusinessException.class,
+                () -> aiService.checkDailyQuota(7L));
+
+        assertEquals("今日 AI 调用次数已达上限（2 次），请明天再试", exception.getMessage());
+        verify(aiConfig, never()).getDailyQuota();
+    }
+
+    @Test
+    void nullUserQuotaInheritsGlobalQuotaForUsage() {
+        User user = new User();
+        user.setAiDailyQuota(null);
+        when(userMapper.selectById(7L)).thenReturn(user);
+        when(aiCallLogMapper.selectCount(any())).thenReturn(3L);
+        when(aiConfig.getDailyQuota()).thenReturn(50);
+
+        assertEquals(3, aiService.getDailyUsage(7L)[0]);
+        assertEquals(50, aiService.getDailyUsage(7L)[1]);
     }
 }

@@ -264,6 +264,45 @@ class AdminUserControllerTest {
     }
 
     @Test
+    void updateAiDailyQuota_setsCustomQuota() throws Exception {
+        User user = buildUser(1L, "testuser", "USER", 1);
+        when(userMapper.selectById(1L)).thenReturn(user);
+        when(userMapper.updateById(any(User.class))).thenReturn(1);
+
+        mockMvc.perform(put("/api/admin/users/{id}/ai-daily-quota", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"dailyQuota\":120}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+
+        assertEquals(120, user.getAiDailyQuota());
+    }
+
+    @Test
+    void updateAiDailyQuota_nullRestoresGlobalDefault() throws Exception {
+        User user = buildUser(1L, "testuser", "USER", 1);
+        user.setAiDailyQuota(120);
+        when(userMapper.selectById(1L)).thenReturn(user);
+        when(userMapper.updateById(any(User.class))).thenReturn(1);
+
+        mockMvc.perform(put("/api/admin/users/{id}/ai-daily-quota", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"dailyQuota\":null}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+
+        assertNull(user.getAiDailyQuota());
+    }
+
+    @Test
+    void updateAiDailyQuota_rejectsNegativeQuota() throws Exception {
+        mockMvc.perform(put("/api/admin/users/{id}/ai-daily-quota", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"dailyQuota\":-1}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void resetPassword_success() throws Exception {
         User user = buildUser(1L, "testuser", "USER", 1);
         when(userMapper.selectById(1L)).thenReturn(user);

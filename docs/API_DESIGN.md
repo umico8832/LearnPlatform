@@ -945,7 +945,10 @@ GET /api/admin/statistics/overview
 GET    /api/admin/users              # 用户列表
 PUT    /api/admin/users/{id}/role    # 修改角色
 PUT    /api/admin/users/{id}/status  # 启用/禁用
+PUT    /api/admin/users/{id}/ai-daily-quota # 设置用户 AI 日配额
 ```
+
+`PUT /api/admin/users/{id}/ai-daily-quota` 请求体为 `{ "dailyQuota": 100 }`。`dailyQuota` 可为 `0-10000` 的整数；`0` 表示该用户不限次数，`null` 表示清除覆盖值并继承服务端 `ai.daily-quota` 全局配置。仅管理员可调用。
 
 ### 12.2 课程管理
 
@@ -1139,4 +1142,4 @@ DELETE /api/search/history/item?keyword=Java      # 删除一条搜索历史
 GET /api/admin/ai-usage/overview?days=30
 ```
 
-返回最近指定天数内的 AI 调用总览，包含全局成功/失败统计、Tokens、平均耗时、每日趋势、按功能/模型分布、Top 活跃用户和最近失败调用。`Tokens` 聚合自上游响应明确返回的 `usage.total_tokens`；`totalCostUsd`、`todayCostUsd` 及各分组的 `totalCostUsd` 仅累计同时具备真实输入/输出 token 与已配置模型单价的调用。未返回 usage、缺少输入/输出拆分或未配置价格的调用成本均为 `null`，不会以字符数或默认价格估算。该接口位于 `/api/admin/**`，仅 ADMIN 可访问。
+返回最近指定天数内的 AI 调用总览，包含全局成功/失败统计、Tokens、平均耗时、每日趋势、按功能/模型分布、Top 活跃用户和最近失败调用。`Tokens` 聚合自上游响应明确返回的 `usage.total_tokens`；`totalCostUsd`、`todayCostUsd` 及各分组的 `totalCostUsd` 仅累计同时具备真实输入/输出 token 与已配置模型单价的调用。未返回 usage、缺少输入/输出拆分或未配置价格的调用成本均为 `null`，不会以字符数或默认价格估算。用户查询 `GET /api/ai/usage` 与实际调用限流均优先采用其 `aiDailyQuota` 覆盖值；该字段为 `null` 时继承 `ai.daily-quota`，为 `0` 时不限次数。管理端接口位于 `/api/admin/**`，仅 ADMIN 可访问。

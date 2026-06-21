@@ -25,6 +25,11 @@ public class User {
 
     private Integer status;
 
+    /**
+     * 用户级 AI 每日调用配额。NULL 表示继承 ai.daily-quota，0 表示不限次数。
+     */
+    private Integer aiDailyQuota;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
@@ -88,6 +93,14 @@ public class User {
 
     public void setStatus(Integer status) {
         this.status = status;
+    }
+
+    public Integer getAiDailyQuota() {
+        return aiDailyQuota;
+    }
+
+    public void setAiDailyQuota(Integer aiDailyQuota) {
+        this.aiDailyQuota = aiDailyQuota;
     }
 
     public LocalDateTime getCreateTime() {

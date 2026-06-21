@@ -532,11 +532,15 @@ AiService (业务服务)
 
 ```
 业务 AI 调用 → OpenAiProvider 返回真实 prompt/completion/total usage
+  → AiService 优先读取 user.ai_daily_quota（NULL 时继承 ai.daily-quota，0 不限）并检查当日用量
   → AiCostCalculator 读取按模型配置的 USD / 1M token 单价
   → ai_call_log 固化 tokens_used、prompt_tokens、completion_tokens、cost_usd
 管理员访问 /api/admin/ai-usage/overview
   → AiUsageService 按时间窗口聚合日志
   → 返回调用趋势、成功率、Tokens、已配置价格的成本、模型/功能分布、活跃用户和失败详情
+
+管理员在用户管理页设置 /api/admin/users/{id}/ai-daily-quota
+  → 写入用户级覆盖值或清空为 NULL 恢复全局默认
 ```
 
 ---

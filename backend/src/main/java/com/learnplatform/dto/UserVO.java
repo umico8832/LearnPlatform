@@ -13,6 +13,7 @@ public class UserVO {
     private String avatar;
     private String role;
     private Integer status;
+    private Integer aiDailyQuota;
     private String createTime;
 
     public UserVO() {
@@ -26,6 +27,7 @@ public class UserVO {
         vo.setAvatar(user.getAvatar());
         vo.setRole(user.getRole());
         vo.setStatus(user.getStatus());
+        vo.setAiDailyQuota(user.getAiDailyQuota());
         if (user.getCreateTime() != null) {
             vo.setCreateTime(user.getCreateTime().toString());
         }
@@ -78,6 +80,14 @@ public class UserVO {
 
     public void setStatus(Integer status) {
         this.status = status;
+    }
+
+    public Integer getAiDailyQuota() {
+        return aiDailyQuota;
+    }
+
+    public void setAiDailyQuota(Integer aiDailyQuota) {
+        this.aiDailyQuota = aiDailyQuota;
     }
 
     public String getCreateTime() {

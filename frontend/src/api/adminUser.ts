@@ -8,6 +8,8 @@ export interface AdminUserVO {
   avatar: string | null
   role: string
   status: number
+  /** null 表示继承全局 AI 日配额，0 表示不限次数 */
+  aiDailyQuota?: number | null
   createTime: string
 }
 
@@ -59,6 +61,11 @@ export function updateUserRole(id: number, role: string) {
 /** 启用/禁用用户 */
 export function updateUserStatus(id: number, status: number) {
   return request.put(`/admin/users/${id}/status`, { status })
+}
+
+/** 设置用户级 AI 日配额；null 表示恢复继承全局配置，0 表示不限次数 */
+export function updateUserAiDailyQuota(id: number, dailyQuota: number | null) {
+  return request.put(`/admin/users/${id}/ai-daily-quota`, { dailyQuota })
 }
 
 /** 重置用户密码 */

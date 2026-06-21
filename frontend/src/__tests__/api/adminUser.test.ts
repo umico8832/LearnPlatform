@@ -16,6 +16,7 @@ import {
   createAdminUser,
   updateUserRole,
   updateUserStatus,
+  updateUserAiDailyQuota,
   resetUserPassword,
   deleteAdminUser,
   getAdminUserStats,
@@ -112,6 +113,24 @@ describe('AdminUser API', () => {
       await updateUserStatus(3, 0)
 
       expect(mockedRequest.put).toHaveBeenCalledWith('/admin/users/3/status', { status: 0 })
+    })
+  })
+
+  describe('updateUserAiDailyQuota', () => {
+    it('应传递用户级 AI 日配额', async () => {
+      mockedRequest.put.mockResolvedValue({ data: { code: 0 } })
+
+      await updateUserAiDailyQuota(3, 100)
+
+      expect(mockedRequest.put).toHaveBeenCalledWith('/admin/users/3/ai-daily-quota', { dailyQuota: 100 })
+    })
+
+    it('应支持清除覆盖值并继承全局配额', async () => {
+      mockedRequest.put.mockResolvedValue({ data: { code: 0 } })
+
+      await updateUserAiDailyQuota(3, null)
+
+      expect(mockedRequest.put).toHaveBeenCalledWith('/admin/users/3/ai-daily-quota', { dailyQuota: null })
     })
   })
 

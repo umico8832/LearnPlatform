@@ -1,5 +1,36 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 116 - 2026-06-21
+
+### 阶段
+Phase 20：AI 运营治理（用户独立配额）
+
+### 完成内容
+1. 新增 Flyway V11 和 `user.ai_daily_quota`：`NULL` 继承全局 `ai.daily-quota`，`0` 表示不限次数，`1-10000` 为用户覆盖值。
+2. AI 限流检查和用户端用量查询统一优先读取用户级配额；未配置覆盖值时保持既有全局配额行为。
+3. 管理端用户表新增 AI 日配额展示与编辑弹窗，并新增 `PUT /api/admin/users/{id}/ai-daily-quota`；支持设置自定义次数或恢复继承全局配置。
+4. 新增限流覆盖值、控制器参数校验与前端 API 契约测试；同步更新 README、API、数据库、架构、路线图和交接文档。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/{entity/User.java,dto/UserVO.java,service/AiService.java,controller/AdminUserController.java}`
+- `backend/src/main/resources/db/migration/V11__add_user_ai_daily_quota.sql`
+- `backend/src/test/java/com/learnplatform/{service/AiServiceLoggingTest.java,service/ReviewAISuggestionTest.java,controller/AdminUserControllerTest.java}`
+- `frontend/src/{api/adminUser.ts,views/admin/UserManage.vue,__tests__/api/adminUser.test.ts}`
+- `README.md` 与 `docs/{API_DESIGN.md,DB_DESIGN.md,ARCHITECTURE.md,ROADMAP.md,HANDOFF.md,CHANGELOG_AGENT.md}`
+
+### 验证
+- `cd backend && mvn test`：354 个测试通过。
+- `cd frontend && npm test -- --run`：24 个文件、194 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 pure annotation 与大 chunk 警告）。
+- `git diff --check`：通过。
+
+### 遗留问题
+- 配额调整暂未记录管理员、原因与历史审计；调用日报/周报、失败率和异常用量提醒仍待开发。
+- 真实演示截图与推送后的 GitHub Actions 实跑仍待完成。
+
+### 建议 commit message
+`feat(ai): 支持用户独立日配额`
+
 ## Round 115 - 2026-06-21
 
 ### 阶段

@@ -53,6 +53,7 @@ ExamRecord (1) ──── (N) ExamAnswer
 | avatar | VARCHAR(500) | 否 | | 头像 URL |
 | role | VARCHAR(20) | 是 | 'USER' | 角色：USER / ADMIN |
 | status | TINYINT | 是 | 1 | 状态：0-禁用 1-启用 |
+| ai_daily_quota | INT | 否 | NULL | 用户级 AI 每日调用配额；NULL 继承 `ai.daily-quota` 全局配置，0 表示不限次数 |
 | create_time | DATETIME | 是 | CURRENT_TIMESTAMP | 创建时间 |
 | update_time | DATETIME | 是 | CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
 | deleted | TINYINT | 是 | 0 | 逻辑删除：0-未删除 1-已删除 |
@@ -70,6 +71,7 @@ CREATE TABLE `user` (
   `avatar` VARCHAR(500) DEFAULT NULL COMMENT '头像URL',
   `role` VARCHAR(20) NOT NULL DEFAULT 'USER' COMMENT '角色：USER-普通用户 ADMIN-管理员',
   `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态：0-禁用 1-启用',
+  `ai_daily_quota` INT DEFAULT NULL COMMENT '用户级AI每日调用配额，NULL继承全局配置，0不限次数',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除 1-已删除',

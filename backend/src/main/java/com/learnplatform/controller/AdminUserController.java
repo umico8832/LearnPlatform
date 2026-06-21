@@ -144,6 +144,25 @@ public class AdminUserController {
     }
 
     /**
+     * 设置用户级 AI 日配额。null 表示恢复继承全局配置，0 表示不限次数。
+     */
+    @Operation(summary = "设置用户 AI 日配额", description = "dailyQuota 为 null 时继承全局配置，0 表示不限次数")
+    @PutMapping("/{id}/ai-daily-quota")
+    public R<Void> updateAiDailyQuota(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateAiDailyQuotaRequest request
+    ) {
+        User user = userMapper.selectById(id);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        user.setAiDailyQuota(request.getDailyQuota());
+        userMapper.updateById(user);
+        log.info("管理员设置用户 AI 日配额: userId={}, dailyQuota={}", id, request.getDailyQuota());
+        return R.ok();
+    }
+
+    /**
      * 重置用户密码
      */
     @Operation(summary = "重置用户密码")
@@ -250,5 +269,14 @@ public class AdminUserController {
 
         public String getNewPassword() { return newPassword; }
         public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
+    }
+
+    public static class UpdateAiDailyQuotaRequest {
+        @Min(value = 0, message = "AI 日配额不能小于 0")
+        @Max(value = 10000, message = "AI 日配额不能超过 10000")
+        private Integer dailyQuota;
+
+        public Integer getDailyQuota() { return dailyQuota; }
+        public void setDailyQuota(Integer dailyQuota) { this.dailyQuota = dailyQuota; }
     }
 }

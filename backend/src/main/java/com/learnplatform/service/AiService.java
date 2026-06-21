@@ -35,6 +35,7 @@ public class AiService {
     private final AiCostCalculator aiCostCalculator;
     private final AiConfig aiConfig;
     private final AiCallLogMapper aiCallLogMapper;
+    private final UserMapper userMapper;
     private final QuestionMapper questionMapper;
     private final QuestionOptionMapper questionOptionMapper;
     private final QuestionKnowledgePointMapper questionKnowledgePointMapper;
@@ -46,6 +47,7 @@ public class AiService {
                      AiCostCalculator aiCostCalculator,
                      AiConfig aiConfig,
                      AiCallLogMapper aiCallLogMapper,
+                     UserMapper userMapper,
                      QuestionMapper questionMapper,
                      QuestionOptionMapper questionOptionMapper,
                      QuestionKnowledgePointMapper questionKnowledgePointMapper,
@@ -56,6 +58,7 @@ public class AiService {
         this.aiCostCalculator = aiCostCalculator;
         this.aiConfig = aiConfig;
         this.aiCallLogMapper = aiCallLogMapper;
+        this.userMapper = userMapper;
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
@@ -215,7 +218,7 @@ public class AiService {
      * 检查用户每日 AI 调用配额，超限则抛出异常
      */
     public void checkDailyQuota(Long userId) {
-        int dailyQuota = aiConfig.getDailyQuota();
+        int dailyQuota = resolveDailyQuota(userId);
         if (dailyQuota <= 0) return; // 不限制
 
         Long todayCount = countTodayCalls(userId);
@@ -243,9 +246,20 @@ public class AiService {
      * @return int[] {todayCount, dailyQuota}
      */
     public int[] getDailyUsage(Long userId) {
-        int dailyQuota = aiConfig.getDailyQuota();
+        int dailyQuota = resolveDailyQuota(userId);
         long todayCount = countTodayCalls(userId);
         return new int[]{(int) todayCount, dailyQuota};
+    }
+
+    /**
+     * 用户配置优先于全局默认值；空值表示继承，0 表示不限次数。
+     */
+    private int resolveDailyQuota(Long userId) {
+        User user = userMapper.selectById(userId);
+        if (user != null && user.getAiDailyQuota() != null) {
+            return user.getAiDailyQuota();
+        }
+        return aiConfig.getDailyQuota();
     }
 
     // ======================== 日志工具方法 ========================

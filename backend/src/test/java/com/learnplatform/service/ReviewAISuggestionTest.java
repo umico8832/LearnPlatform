@@ -43,6 +43,9 @@ class ReviewAISuggestionTest {
     private com.learnplatform.mapper.AiCallLogMapper aiCallLogMapper;
 
     @Mock
+    private com.learnplatform.mapper.UserMapper userMapper;
+
+    @Mock
     private com.learnplatform.mapper.QuestionMapper questionMapper;
 
     @Mock
@@ -65,7 +68,7 @@ class ReviewAISuggestionTest {
     @BeforeEach
     void setUp() {
         aiService = new AiService(
-                aiProvider, aiCostCalculator, aiConfig, aiCallLogMapper,
+                aiProvider, aiCostCalculator, aiConfig, aiCallLogMapper, userMapper,
                 questionMapper, questionOptionMapper,
                 questionKnowledgePointMapper, knowledgePointMapper,
                 courseMapper, wrongQuestionMapper);

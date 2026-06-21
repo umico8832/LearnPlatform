@@ -78,8 +78,15 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="AI 日配额" width="130" align="center">
+          <template #default="{ row }">
+            <span v-if="(row as AdminUserVO).aiDailyQuota == null">继承全局</span>
+            <el-tag v-else-if="(row as AdminUserVO).aiDailyQuota === 0" type="success" size="small">不限次数</el-tag>
+            <span v-else>{{ (row as AdminUserVO).aiDailyQuota }} 次</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="createTime" label="注册时间" width="170" />
-        <el-table-column label="操作" width="280" fixed="right">
+        <el-table-column label="操作" width="350" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="openRoleDialog(row as AdminUserVO)">改角色</el-button>
             <el-button
@@ -90,6 +97,7 @@
               {{ (row as AdminUserVO).status === 1 ? '禁用' : '启用' }}
             </el-button>
             <el-button type="info" link size="small" @click="openResetPwdDialog(row as AdminUserVO)">重置密码</el-button>
+            <el-button type="primary" link size="small" @click="openAiQuotaDialog(row as AdminUserVO)">AI 配额</el-button>
             <el-popconfirm title="确定删除该用户？此操作不可恢复。" @confirm="handleDelete((row as AdminUserVO).id)">
               <template #reference>
                 <el-button type="danger" link size="small">删除</el-button>
@@ -140,6 +148,34 @@
       <template #footer>
         <el-button @click="createDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="submitting" @click="handleCreate">创建</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- AI 配额弹窗 -->
+    <el-dialog
+      v-model="aiQuotaDialogVisible"
+      title="设置 AI 日配额"
+      width="400px"
+      destroy-on-close
+    >
+      <el-form label-width="100px">
+        <el-form-item label="用户">
+          <el-input :model-value="editingUser?.username" disabled />
+        </el-form-item>
+        <el-form-item label="配额策略">
+          <el-radio-group v-model="aiQuotaMode">
+            <el-radio value="inherit">继承全局</el-radio>
+            <el-radio value="custom">自定义</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="aiQuotaMode === 'custom'" label="每日次数">
+          <el-input-number v-model="aiDailyQuota" :min="0" :max="10000" :step="10" />
+          <div class="form-tip">0 表示不限次数</div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="aiQuotaDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submitting" @click="handleAiQuotaChange">保存</el-button>
       </template>
     </el-dialog>
 
@@ -201,6 +237,7 @@ import {
   updateUserRole,
   updateUserStatus,
   resetUserPassword,
+  updateUserAiDailyQuota,
   deleteAdminUser,
   getAdminUserStats,
   type AdminUserVO,
@@ -253,6 +290,11 @@ const resetPwdRules: FormRules = {
     { min: 6, max: 100, message: '密码长度6-100个字符', trigger: 'blur' },
   ],
 }
+
+// AI 配额
+const aiQuotaDialogVisible = ref(false)
+const aiQuotaMode = ref<'inherit' | 'custom'>('inherit')
+const aiDailyQuota = ref(50)
 
 const submitting = ref(false)
 
@@ -380,6 +422,31 @@ async function handleResetPwd() {
   }
 }
 
+function openAiQuotaDialog(user: AdminUserVO) {
+  editingUser.value = user
+  aiQuotaMode.value = user.aiDailyQuota == null ? 'inherit' : 'custom'
+  aiDailyQuota.value = user.aiDailyQuota ?? 50
+  aiQuotaDialogVisible.value = true
+}
+
+async function handleAiQuotaChange() {
+  if (!editingUser.value) return
+  submitting.value = true
+  try {
+    await updateUserAiDailyQuota(
+      editingUser.value.id,
+      aiQuotaMode.value === 'inherit' ? null : aiDailyQuota.value,
+    )
+    ElMessage.success('AI 日配额已更新')
+    aiQuotaDialogVisible.value = false
+    fetchUsers()
+  } catch {
+    // error handled by interceptor
+  } finally {
+    submitting.value = false
+  }
+}
+
 async function handleDelete(id: number) {
   try {
     await deleteAdminUser(id)
@@ -453,5 +520,12 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
+}
+
+.form-tip {
+  width: 100%;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #909399;
 }
 </style>
