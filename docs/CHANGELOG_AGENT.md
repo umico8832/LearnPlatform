@@ -1,5 +1,59 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 109 - 2026-06-21
+
+### 阶段
+Phase 20：考试交互回归测试
+
+### 完成内容
+1. 新增 `ExamTakeView` 页面级交互回归测试，覆盖单选、多选、判断三种题型的作答、提交确认、请求载荷、会话清理、结果缓存与结果页跳转。
+2. 覆盖考试会话缺失时的安全回退：给出提示并返回考试列表，避免直接进入无题目的考试页。
+3. 没有为绕过登录数学验证码添加测试后门；浏览器 E2E 仍需通过安全的专用登录态方案接入。
+
+### 修改文件
+- `frontend/src/__tests__/views/ExamTakeView.test.ts`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd frontend && npm test -- --run src/__tests__/views/ExamTakeView.test.ts`：2 个测试通过。
+- `cd frontend && npm test -- --run`：24 个文件、192 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+
+### 遗留问题
+- 仍需为浏览器 E2E 建立不削弱生产验证码安全性的专用登录态，并覆盖登录、刷题、错题复习、考试和管理端审核。
+
+### 建议 commit message
+`test(exam): 补充考试作答与提交交互回归`
+
+## Round 108 - 2026-06-21
+
+### 阶段
+Phase 20：真实考试浏览器验收
+
+### 完成内容
+1. 在健康运行的 Docker 环境中完成“Java 基础入门测验”真实浏览器验收：创建考试记录、单选/多选/判断三种题型作答、提交确认、自动判分与结果详情均正常。
+2. 本次全对提交结果为 15/15、正确率 100%；结果页正确展示每题得分、用户答案与解析。
+3. 同步路线图和交接文档，Phase 20 的考试完整浏览器验收项标记完成。
+
+### 修改文件
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- Docker Compose：frontend、backend、MySQL、Redis、Loki 服务均为 healthy。
+- 浏览器：`/exams` → 开始考试 → 三题作答 → 提交确认 → 结果页，完整链路通过。
+- `cd frontend && npm test -- --run`：23 个文件、190 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+
+### 遗留问题
+- 用户端与管理端真实演示截图、GitHub Actions 实跑和关键业务 E2E 仍待完成。
+
+### 建议 commit message
+`docs: 记录考试全流程浏览器验收`
+
 ## Round 107 - 2026-06-21
 
 ### 阶段
