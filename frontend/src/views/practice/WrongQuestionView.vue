@@ -1,46 +1,29 @@
 <template>
-  <div class="wrong-question-container">
-    <div class="page-header">
-      <h2>错题本</h2>
-      <el-button type="primary" @click="handleStartWrongPractice" :loading="startPracticeLoading">
-        <el-icon><RefreshRight /></el-icon>
+  <div class="wrong-question-container page-container">
+    <section class="page-hero">
+      <div>
+        <span class="section-kicker">薄弱项复盘</span>
+        <h2>错题本</h2>
+        <p>先处理未掌握题，再用相似题扩展练习，避免反复错在同一类问题上。</p>
+      </div>
+      <el-button type="primary" :icon="RefreshRight" @click="handleStartWrongPractice" :loading="startPracticeLoading">
         重练错题
       </el-button>
-    </div>
+    </section>
 
-    <!-- 统计卡片 -->
-    <div class="stats-row" v-if="stats">
-      <el-row :gutter="20">
-        <el-col :span="6">
-          <el-card shadow="hover" class="stat-card">
-            <div class="stat-value">{{ stats.total }}</div>
-            <div class="stat-label">总错题数</div>
-          </el-card>
-        </el-col>
-        <el-col :span="6">
-          <el-card shadow="hover" class="stat-card stat-unmastered">
-            <div class="stat-value">{{ stats.unmastered }}</div>
-            <div class="stat-label">未掌握</div>
-          </el-card>
-        </el-col>
-        <el-col :span="6">
-          <el-card shadow="hover" class="stat-card stat-partial">
-            <div class="stat-value">{{ stats.partial }}</div>
-            <div class="stat-label">部分掌握</div>
-          </el-card>
-        </el-col>
-        <el-col :span="6">
-          <el-card shadow="hover" class="stat-card stat-mastered">
-            <div class="stat-value">{{ stats.mastered }}</div>
-            <div class="stat-label">已掌握</div>
-          </el-card>
-        </el-col>
-      </el-row>
-    </div>
+    <section class="stats-grid" v-if="stats">
+      <el-card v-for="item in statCards" :key="item.label" shadow="never" class="stat-card">
+        <span>{{ item.label }}</span>
+        <strong :class="item.tone">{{ item.value }}</strong>
+      </el-card>
+    </section>
 
-    <!-- 筛选条件 -->
     <el-card class="filter-card" shadow="never">
-      <el-form :inline="true" :model="filter">
+      <div class="filter-title">
+        <strong>筛选错题</strong>
+        <span>当前筛选会同步影响“重练错题”范围</span>
+      </div>
+      <el-form :inline="true" :model="filter" class="filter-form">
         <el-form-item label="掌握程度">
           <el-select v-model="filter.masteryLevel" placeholder="全部" clearable>
             <el-option label="未掌握" :value="0" />
@@ -49,7 +32,7 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSearch">查询</el-button>
+          <el-button type="primary" :icon="Search" @click="handleSearch">查询</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -58,7 +41,7 @@
     <div class="wrong-list" v-loading="loading">
       <el-empty v-if="!loading && records.length === 0" description="暂无错题" />
 
-      <el-card v-for="item in records" :key="item.id" class="wrong-card" shadow="hover">
+      <el-card v-for="item in records" :key="item.id" class="wrong-card" shadow="never">
         <div class="wrong-card-header">
           <div class="wrong-meta">
             <el-tag :type="getTypeTag(item.questionType)" size="small">
@@ -98,12 +81,12 @@
           </div>
           <div class="footer-right">
             <span class="time">{{ formatTime(item.updateTime) }}</span>
-            <el-button type="primary" text size="small" @click="loadSimilarQuestions(item.questionId, item.questionContent)">
-              🔍 找相似题
+            <el-button type="primary" text size="small" :icon="Search" @click="loadSimilarQuestions(item.questionId, item.questionContent)">
+              找相似题
             </el-button>
             <el-popconfirm title="确定从错题本移出？" @confirm="handleRemove(item.id)">
               <template #reference>
-                <el-button type="danger" text size="small">移出错题本</el-button>
+                <el-button type="danger" text size="small" :icon="Delete">移出错题本</el-button>
               </template>
             </el-popconfirm>
           </div>
@@ -127,7 +110,7 @@
     <!-- 相似题推荐弹窗 -->
     <el-dialog
       v-model="similarDialogVisible"
-      title="🔍 相似题推荐"
+      title="相似题推荐"
       width="800px"
       destroy-on-close
     >
@@ -190,10 +173,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { RefreshRight } from '@element-plus/icons-vue'
+import { Delete, RefreshRight, Search } from '@element-plus/icons-vue'
 import { getWrongQuestions, getWrongQuestionStats, updateMasteryLevel, removeWrongQuestion } from '@/api/wrongQuestion'
 import type { WrongQuestionVO, WrongQuestionStatsVO } from '@/api/wrongQuestion'
 import { getWrongQuestionPractice } from '@/api/practice'
@@ -207,6 +190,13 @@ const startPracticeLoading = ref(false)
 const records = ref<WrongQuestionVO[]>([])
 const total = ref(0)
 const stats = ref<WrongQuestionStatsVO | null>(null)
+
+const statCards = computed(() => [
+  { label: '总错题数', value: stats.value?.total ?? 0, tone: 'tone-primary' },
+  { label: '未掌握', value: stats.value?.unmastered ?? 0, tone: 'tone-danger' },
+  { label: '部分掌握', value: stats.value?.partial ?? 0, tone: 'tone-warning' },
+  { label: '已掌握', value: stats.value?.mastered ?? 0, tone: 'tone-success' },
+])
 
 // 相似题推荐
 const similarDialogVisible = ref(false)
@@ -389,61 +379,108 @@ const handleStartWrongPractice = async () => {
 
 <style scoped>
 .wrong-question-container {
-  padding: 24px;
-}
-
-.page-header {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-hero {
+  display: flex;
+  align-items: flex-end;
   justify-content: space-between;
-  margin-bottom: 16px;
+  gap: 16px;
+  padding: 22px;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius);
+  box-shadow: var(--lp-shadow-sm);
 }
 
-.page-header h2 {
+.page-hero h2 {
+  margin: 4px 0 8px;
+  font-size: 24px;
+  color: var(--lp-text);
+}
+
+.page-hero p {
   margin: 0;
-  font-size: 20px;
-  color: #303133;
+  color: var(--lp-text-secondary);
+  font-size: 14px;
 }
 
-.stats-row {
-  margin-bottom: 16px;
+.section-kicker {
+  color: var(--lp-primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .stat-card {
-  text-align: center;
-  padding: 16px 0;
+  min-height: 94px;
 }
 
-.stat-value {
+.stat-card :deep(.el-card__body) {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stat-card span {
+  color: var(--lp-text-muted);
+  font-size: 13px;
+}
+
+.stat-card strong {
   font-size: 28px;
   font-weight: 700;
-  color: #409eff;
 }
 
-.stat-unmastered .stat-value {
-  color: #f56c6c;
+.tone-primary { color: var(--lp-primary); }
+.tone-danger { color: var(--lp-danger); }
+.tone-warning { color: var(--lp-warning); }
+.tone-success { color: var(--lp-success); }
+
+.filter-card :deep(.el-card__body) {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
-.stat-partial .stat-value {
-  color: #e6a23c;
+.filter-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.stat-mastered .stat-value {
-  color: #67c23a;
+.filter-title strong {
+  color: var(--lp-text);
 }
 
-.stat-label {
+.filter-title span {
+  color: var(--lp-text-muted);
   font-size: 13px;
-  color: #909399;
-  margin-top: 8px;
 }
 
-.filter-card {
-  margin-bottom: 16px;
+.filter-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.filter-form :deep(.el-form-item) {
+  margin-right: 0;
+  margin-bottom: 0;
 }
 
 .wrong-card {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .wrong-card-header {
@@ -457,18 +494,19 @@ const handleStartWrongPractice = async () => {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .wrong-count {
   font-size: 13px;
-  color: #f56c6c;
+  color: var(--lp-danger);
   font-weight: 600;
 }
 
 .wrong-content {
   font-size: 15px;
   line-height: 1.8;
-  color: #303133;
+  color: var(--lp-text);
   margin-bottom: 12px;
   white-space: pre-wrap;
 }
@@ -479,11 +517,11 @@ const handleStartWrongPractice = async () => {
 }
 
 .wrong-answer .label {
-  color: #909399;
+  color: var(--lp-text-muted);
 }
 
 .answer-wrong {
-  color: #f56c6c;
+  color: var(--lp-danger);
   font-weight: 600;
 }
 
@@ -493,7 +531,8 @@ const handleStartWrongPractice = async () => {
   justify-content: space-between;
   margin-top: 16px;
   padding-top: 12px;
-  border-top: 1px solid #ebeef5;
+  border-top: 1px solid var(--lp-border);
+  gap: 12px;
 }
 
 .mastery-controls {
@@ -504,26 +543,27 @@ const handleStartWrongPractice = async () => {
 
 .mastery-controls .label {
   font-size: 13px;
-  color: #909399;
+  color: var(--lp-text-muted);
 }
 
 .footer-right {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .time {
   font-size: 12px;
-  color: #c0c4cc;
+  color: var(--lp-text-muted);
 }
 
 .similar-source {
   padding: 12px;
-  background: #f5f7fa;
+  background: var(--lp-surface-soft);
   border-radius: 6px;
   font-size: 13px;
-  color: #606266;
+  color: var(--lp-text-secondary);
   line-height: 1.6;
 }
 
@@ -531,5 +571,40 @@ const handleStartWrongPractice = async () => {
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
+}
+
+@media (max-width: 900px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wrong-card-header,
+  .wrong-card-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-hero {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .page-hero .el-button,
+  .filter-form,
+  .filter-form :deep(.el-select) {
+    width: 100%;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mastery-controls {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 </style>

@@ -1,5 +1,84 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 124 - 2026-06-25
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（P2 核心业务页整理）
+
+### 完成内容
+1. 重构 `PracticeView.vue` 页面结构：改为“智能推荐 / 自选模式 / 练习方式说明”的任务面板，保留原有统计、课程/题型/难度筛选和开始刷题逻辑。
+2. 整理 `WrongQuestionView.vue`：统一页头、统计卡片、筛选区、错题卡片 footer 操作和相似题入口，移动端操作区可自然折行。
+3. 整理 `ReviewView.vue`：突出今日待复习和开始复习入口，统一复习统计、掌握进度、同步错题、AI 建议和复习会话样式。
+4. 整理 `ExamListView.vue`：新增考试中心页头和状态摘要，可用试卷卡片改为指标化展示；考试记录操作增加图标并保留继续考试/查看结果路径。
+5. 修复 `frontend/src/api/review.ts` 中重复 `/api` 前缀问题，避免智能复习页实际请求 `/api/api/review/...`；新增 API 契约测试覆盖复习计划、AI 建议和流式建议路径。
+6. 同步更新 `docs/ROADMAP.md` 与 `docs/HANDOFF.md`，标记 Practice/WrongQuestion/Review/ExamList 整理完成，并把下一步调整为 `QuestionListView.vue` 与管理端 P3。
+
+### 修改文件
+- `frontend/src/views/practice/PracticeView.vue`
+- `frontend/src/views/practice/WrongQuestionView.vue`
+- `frontend/src/views/practice/ReviewView.vue`
+- `frontend/src/views/exam/ExamListView.vue`
+- `frontend/src/api/review.ts`
+- `frontend/src/__tests__/api/review.test.ts`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd frontend && npm test -- --run`：25 个文件、203 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+- `cd frontend && npm run dev -- --host 127.0.0.1`：前端启动成功，访问 `http://127.0.0.1:5173/`。
+- Playwright 本地布局检查：`/practice`、`/wrong-questions`、`/review`、`/exams` 在桌面 1440x980 与移动端 390x844 均无横向溢出，页面标题和核心卡片正常渲染。
+- Playwright 网络路径检查：`/review` 页面移动端请求为 `/api/review/stats`，已不再出现 `/api/api/review/stats`。
+
+### 遗留问题
+- 本轮未启动后端；浏览器预览中的 502 请求失败提示来自接口代理不可用，不代表页面构建或布局失败。
+- `QuestionListView.vue` 题库浏览页仍待整理。
+- Phase 21 P3 管理端工作台与列表体验仍待完成。
+- Phase 20 的真实演示截图与推送后的 GitHub Actions 实跑仍待完成。
+
+### 建议 commit message
+`feat(frontend): 优化核心学习页面体验`
+
+## Round 123 - 2026-06-25
+
+### 阶段
+工程体检与稳定性修复
+
+### 完成内容
+1. 阅读项目结构、启动方式、测试方式和构建方式，确认当前为 Vue 3 + TypeScript + Vite 前端、Spring Boot 3.2.5 + Maven 后端、MySQL/Flyway/Docker Compose 部署。
+2. 本地执行依赖安装、安全审计、前端测试、前端构建、后端测试、后端打包和 Docker Compose 配置解析。
+3. 修复前端 npm audit 漏洞：`dompurify` 升到 `3.4.11`，`form-data` 升到 `4.0.6`，审计结果归零。
+4. 新增 `REPORT.md`，记录技术栈、发现问题、修复项、仍存在问题、下一步建议、本地运行方式和测试/构建命令。
+5. 当前工作区同时包含 Phase 21 P2 相关页面整理改动（Practice/Review/WrongQuestion/ExamList），本轮未回滚，并已纳入前端测试与构建验证。
+
+### 修改文件
+- `frontend/package-lock.json`
+- `REPORT.md`
+- `docs/CHANGELOG_AGENT.md`
+- `docs/HANDOFF.md`
+- `frontend/src/views/practice/PracticeView.vue`
+- `frontend/src/views/practice/ReviewView.vue`
+- `frontend/src/views/practice/WrongQuestionView.vue`
+- `frontend/src/views/exam/ExamListView.vue`
+
+### 验证
+- `cd frontend && npm ci`：通过，修复前提示 2 个 audit 漏洞；修复后仍提示本机 npm install-script 审批信息。
+- `cd frontend && npm audit --audit-level=moderate`：通过，0 vulnerabilities。
+- `cd frontend && npm test -- --run`：24 个文件、196 个测试通过。
+- `cd frontend && npm run build`：通过，保留既有第三方 pure annotation 与大 chunk 警告。
+- `cd backend && mvn test`：360 个测试通过。
+- `cd backend && mvn package -DskipTests`：通过。
+- `docker compose config --quiet`：通过。
+
+### 遗留问题
+- 项目暂未配置前端 lint 脚本或 ESLint，无法运行 lint。
+- 本轮未运行 Playwright E2E 和 Testcontainers integration 分组；完整复现命令已写入 `REPORT.md`。
+- 前端构建仍有大 chunk 警告和第三方 `@vueuse/core` pure annotation 警告，均不阻断构建。
+
+### 建议 commit message
+`chore: 完成工程体检并修复前端依赖漏洞`
+
 ## Round 122 - 2026-06-25
 
 ### 阶段

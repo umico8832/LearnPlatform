@@ -25,11 +25,11 @@
 | 18 | 全局搜索与快捷导航 | ✅ 基本完成 | Round 98-99 | 跨题目/课程/知识点的全局搜索（GlobalSearchService ✅ + GlobalSearchController 4 个接口 ✅ + 前端 GlobalSearchDialog 组件 ✅ + ⌘K/Ctrl+K 快捷键 ✅ + 键盘导航 ✅ + 关键词高亮 ✅ + 移动端适配 ✅ + 搜索历史记录 ✅ + 热门搜索推荐 ✅ + 搜索结果缓存 @Cacheable ✅ + 24 个单元测试 ✅） |
 | 19 | AI 调用分析与成本控制 | ✅ 基本完成 | Round 100、115 | 管理端 AI 调用总览（趋势、功能/模型分布、Top 用户、失败调用、真实 Tokens、平均耗时与按模型配置单价计算的成本） |
 | 20 | 演示验收与 AI 运营治理 | 🚧 开发中 | 2-3 个迭代 | 已覆盖关键业务真实浏览器 E2E，并完成独立配额、审计追踪、运营报告与实时异常提醒；继续完成演示截图、CI 实跑 |
-| 21 | 前端信息架构与视觉体验优化 | 🚧 开发中 | 2-4 个迭代 | AppLayout 分组导航、全局样式变量和首页学习工作台样板已完成；下一步整理核心业务页面 |
+| 21 | 前端信息架构与视觉体验优化 | 🚧 开发中 | 2-4 个迭代 | AppLayout 分组导航、首页学习工作台和 Practice/WrongQuestion/Review/ExamList 核心页整理已完成；下一步整理题库浏览与管理端页面 |
 
 **Phase 0-12 预计总工期**：约 17-20 天
 
-**当前阶段：Phase 20 演示验收与 AI 运营治理待截图和 CI 实跑收尾；Phase 21 前端信息架构与视觉体验优化已进入开发，第一轮 AppLayout + global.css + HomeView 样板已完成。向量推荐、OCR、爬虫和自动入库不在近期主线。**
+**当前阶段：Phase 20 演示验收与 AI 运营治理待截图和 CI 实跑收尾；Phase 21 前端信息架构与视觉体验优化已进入开发，AppLayout + global.css + HomeView 样板和 Practice/WrongQuestion/Review/ExamList 核心页整理已完成。向量推荐、OCR、爬虫和自动入库不在近期主线。**
 
 ---
 
@@ -674,9 +674,9 @@
 - [x] ECharts 配色与全局主题一致，空状态和加载状态保持精致但克制。
 
 ### P2：核心业务页面整理
-- [ ] `PracticeView.vue`：让刷题模式更像选择任务，而不是普通配置表单；突出“继续学习/开始练习”。
-- [ ] `WrongQuestionView.vue` 与 `ReviewView.vue`：统一复习相关页面的筛选、状态标签和操作按钮。
-- [ ] `ExamListView.vue`：区分“可参加 / 已完成 / 未发布或不可用”，减少信息噪音。
+- [x] `PracticeView.vue`：让刷题模式更像选择任务，而不是普通配置表单；突出“继续学习/开始练习”。
+- [x] `WrongQuestionView.vue` 与 `ReviewView.vue`：统一复习相关页面的筛选、状态标签和操作按钮。
+- [x] `ExamListView.vue`：区分“可参加 / 已完成 / 未发布或不可用”，减少信息噪音。
 - [ ] `QuestionListView.vue`：题目筛选区与题目卡片层级更清晰。
 
 ### P3：管理端工作台与列表体验
@@ -693,6 +693,6 @@
 
 ### 建议切分
 - 第 1 轮：只做 AppLayout + global.css + HomeView，建立样板。✅ 已完成
-- 第 2 轮：整理 Practice/WrongQuestion/Review/ExamList。
+- 第 2 轮：整理 Practice/WrongQuestion/Review/ExamList。✅ 已完成
 - 第 3 轮：整理 AdminDashboard 与管理端列表页。
 - 第 4 轮：浏览器验收、截图、微调和文档更新。

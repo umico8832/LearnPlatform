@@ -1,43 +1,43 @@
 <template>
-  <div class="review-container">
-    <h2 style="margin-bottom: 20px;">🧠 智能复习</h2>
+  <div class="review-container page-container">
+    <section class="review-hero">
+      <div>
+        <span class="section-kicker">间隔重复</span>
+        <h2>智能复习</h2>
+        <p>按到期时间处理复习卡片，先清空今日任务，再查看全部复习计划。</p>
+      </div>
+      <el-button type="primary" size="large" :icon="Reading" :disabled="stats.dueToday === 0" @click="startReview">
+        开始复习
+        <el-badge v-if="stats.overdue > 0" :value="`${stats.overdue}逾期`" type="danger" class="button-badge" />
+      </el-button>
+    </section>
 
-    <!-- 统计卡片 -->
-    <el-row :gutter="16" class="stats-row">
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="hover" class="stat-card stat-due">
-          <div class="stat-value">{{ stats.dueToday }}</div>
-          <div class="stat-label">今日待复习</div>
-        </el-card>
-      </el-col>
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="hover" class="stat-card stat-reviewed">
-          <div class="stat-value">{{ stats.reviewedToday }}</div>
-          <div class="stat-label">今日已完成</div>
-        </el-card>
-      </el-col>
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="hover" class="stat-card stat-mastered">
-          <div class="stat-value">{{ stats.masteredCards }}</div>
-          <div class="stat-label">已掌握</div>
-        </el-card>
-      </el-col>
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="hover" class="stat-card stat-streak">
-          <div class="stat-value">{{ stats.streakDays }}<span style="font-size:14px">天</span></div>
-          <div class="stat-label">连续复习</div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <section class="stats-grid">
+      <el-card shadow="never" class="stat-card stat-due">
+        <span>今日待复习</span>
+        <strong>{{ stats.dueToday }}</strong>
+      </el-card>
+      <el-card shadow="never" class="stat-card stat-reviewed">
+        <span>今日已完成</span>
+        <strong>{{ stats.reviewedToday }}</strong>
+      </el-card>
+      <el-card shadow="never" class="stat-card stat-mastered">
+        <span>已掌握</span>
+        <strong>{{ stats.masteredCards }}</strong>
+      </el-card>
+      <el-card shadow="never" class="stat-card stat-streak">
+        <span>连续复习</span>
+        <strong>{{ stats.streakDays }}<small>天</small></strong>
+      </el-card>
+    </section>
 
-    <!-- 学习进度条 -->
-    <el-card shadow="hover" v-if="stats.totalCards > 0" style="margin-bottom: 20px;">
-      <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-        <span style="font-weight:600;">掌握进度</span>
-        <span style="color:#909399; font-size:13px;">{{ stats.totalCards }} 张卡片</span>
+    <el-card shadow="never" v-if="stats.totalCards > 0" class="progress-card">
+      <div class="progress-header">
+        <span>掌握进度</span>
+        <small>{{ stats.totalCards }} 张卡片</small>
       </div>
       <el-progress :percentage="masteredPercent" :format="() => `${stats.masteredCards}/${stats.totalCards}`" />
-      <div style="display:flex; gap:20px; margin-top:12px; font-size:13px; color:#606266;">
+      <div class="status-row">
         <span><el-tag type="info" size="small">新卡片</el-tag> {{ stats.newCards }}</span>
         <span><el-tag type="warning" size="small">学习中</el-tag> {{ stats.learningCards }}</span>
         <span><el-tag type="success" size="small">已掌握</el-tag> {{ stats.masteredCards }}</span>
@@ -45,22 +45,17 @@
       </div>
     </el-card>
 
-    <!-- 操作区 -->
-    <el-card shadow="hover" style="margin-bottom: 20px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap:12px;">
+    <el-card shadow="never" class="action-card">
+      <div class="action-bar">
         <div>
-          <el-button type="primary" size="large" :disabled="stats.dueToday === 0" @click="startReview">
-            📖 开始复习
-            <el-badge v-if="stats.overdue > 0" :value="`${stats.overdue}逾期`" type="danger" style="margin-left:8px" />
-          </el-button>
-          <el-button size="large" @click="showAllCards = !showAllCards">
+          <el-button size="large" :icon="View" @click="showAllCards = !showAllCards">
             {{ showAllCards ? '收起卡片列表' : '查看全部卡片' }}
           </el-button>
-          <el-button size="large" :loading="syncing" @click="handleSyncWrongQuestions">
-            📥 同步错题到复习
+          <el-button size="large" :icon="Download" :loading="syncing" @click="handleSyncWrongQuestions">
+            同步错题到复习
           </el-button>
-          <el-button size="large" :loading="aiSuggestionLoading" :disabled="stats.totalCards === 0" @click="handleAiSuggestion">
-            🤖 AI 复习建议
+          <el-button size="large" :icon="MagicStick" :loading="aiSuggestionLoading" :disabled="stats.totalCards === 0" @click="handleAiSuggestion">
+            AI 复习建议
           </el-button>
         </div>
         <el-text type="info" size="small">平均简易因子: {{ stats.avgEaseFactor?.toFixed(2) ?? '-' }} | 连续 {{ stats.streakDays }} 天</el-text>
@@ -68,25 +63,25 @@
     </el-card>
 
     <!-- AI 复习建议区域 -->
-    <el-card v-if="aiSuggestionContent" shadow="hover" style="margin-bottom: 20px;">
+    <el-card v-if="aiSuggestionContent" shadow="never" class="ai-card">
       <template #header>
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span>🤖 AI 复习建议</span>
+        <div class="card-header">
+          <span>AI 复习建议</span>
           <el-button size="small" text @click="aiSuggestionContent = ''">收起</el-button>
         </div>
       </template>
       <div class="ai-suggestion-content">
         <MarkdownRenderer :content="aiSuggestionContent" />
-        <div v-if="aiSuggestionLoading" style="color:#909399; margin-top:8px; font-size:13px;">
+        <div v-if="aiSuggestionLoading" class="streaming-tip">
           <el-icon class="is-loading"><Loading /></el-icon> AI 正在生成建议...
         </div>
       </div>
     </el-card>
 
     <!-- 复习会话区域（当前待复习卡片） -->
-    <el-card v-if="reviewing && currentCard" shadow="hover" style="margin-bottom: 20px;" class="review-session">
+    <el-card v-if="reviewing && currentCard" shadow="never" class="review-session">
       <template #header>
-        <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="card-header">
           <span>复习进度: {{ currentIndex + 1 }} / {{ dueCards.length }}</span>
           <el-tag :type="statusTagType(currentCard.statusLabel)" size="small">{{ currentCard.statusLabel }}</el-tag>
         </div>
@@ -110,7 +105,7 @@
       </div>
 
       <!-- 答题输入 -->
-      <div style="margin-top: 16px;">
+      <div class="answer-box">
         <el-input
           v-model="userAnswer"
           type="textarea"
@@ -121,7 +116,7 @@
       </div>
 
       <!-- 操作按钮 -->
-      <div style="margin-top: 12px; display:flex; gap:12px; flex-wrap:wrap;">
+      <div class="session-actions">
         <el-button type="primary" @click="submitCurrentAnswer" :disabled="!userAnswer.trim() || answerSubmitted" :loading="submitting">
           提交答案
         </el-button>
@@ -139,28 +134,27 @@
         : `间隔已重置为 1 天，请继续加油！`"
       show-icon
       :closable="false"
-      style="margin-top: 16px;"
+      class="result-alert"
     />
 
-      <div v-if="answerSubmitted" style="margin-top: 12px;">
+      <div v-if="answerSubmitted" class="next-action">
         <el-button type="primary" @click="nextCard">
-          {{ currentIndex < dueCards.length - 1 ? '下一题 →' : '完成复习 🎉' }}
+          {{ currentIndex < dueCards.length - 1 ? '下一题' : '完成复习' }}
         </el-button>
       </div>
     </el-card>
 
     <!-- 复习完成 -->
-    <el-card v-if="reviewComplete" shadow="hover" style="margin-bottom: 20px; text-align:center;">
-      <div style="font-size:48px; margin-bottom:16px;">🎉</div>
+    <el-card v-if="reviewComplete" shadow="never" class="complete-card">
       <h3>今日复习完成！</h3>
-      <p style="color:#606266; margin:12px 0;">共复习 {{ reviewedCount }} 题，正确 {{ correctCount }} 题</p>
+      <p>共复习 {{ reviewedCount }} 题，正确 {{ correctCount }} 题</p>
       <el-button type="primary" @click="reviewComplete = false; reviewing = false;">返回</el-button>
     </el-card>
 
     <!-- 全部卡片列表 -->
-    <el-card v-if="showAllCards" shadow="hover">
+    <el-card v-if="showAllCards" shadow="never">
       <template #header>
-        <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="card-header">
           <span>复习计划卡片 ({{ allCards.length }})</span>
           <el-button size="small" @click="loadAllCards">刷新</el-button>
         </div>
@@ -204,7 +198,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Loading } from '@element-plus/icons-vue'
+import { Download, Loading, MagicStick, Reading, View } from '@element-plus/icons-vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { getAiReviewSuggestionStream } from '@/api/review'
 import { getToken } from '@/utils/auth'
@@ -471,48 +465,217 @@ onMounted(() => {
 
 <style scoped>
 .review-container {
-  padding: 20px;
-  max-width: 900px;
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
-.stats-row {
-  margin-bottom: 20px;
+
+.review-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius);
+  box-shadow: var(--lp-shadow-sm);
 }
+
+.review-hero h2 {
+  margin: 4px 0 8px;
+  font-size: 24px;
+  color: var(--lp-text);
+}
+
+.review-hero p {
+  margin: 0;
+  color: var(--lp-text-secondary);
+  font-size: 14px;
+}
+
+.section-kicker {
+  color: var(--lp-primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.button-badge {
+  margin-left: 8px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .stat-card {
-  text-align: center;
-  padding: 8px 0;
+  min-height: 94px;
 }
-.stat-value {
-  font-size: 32px;
+
+.stat-card :deep(.el-card__body) {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stat-card span {
+  color: var(--lp-text-muted);
+  font-size: 13px;
+}
+
+.stat-card strong {
+  font-size: 28px;
   font-weight: 700;
   line-height: 1.2;
 }
-.stat-label {
+
+.stat-card small {
   font-size: 13px;
-  color: #909399;
-  margin-top: 4px;
+  margin-left: 2px;
 }
-.stat-due .stat-value { color: #409eff; }
-.stat-reviewed .stat-value { color: #67c23a; }
-.stat-mastered .stat-value { color: #e6a23c; }
-.stat-streak .stat-value { color: #f56c6c; }
+
+.stat-due strong { color: var(--lp-primary); }
+.stat-reviewed strong { color: var(--lp-success); }
+.stat-mastered strong { color: var(--lp-warning); }
+.stat-streak strong { color: var(--lp-danger); }
+
+.progress-card,
+.action-card,
+.ai-card,
+.review-session {
+  margin: 0;
+}
+
+.progress-header,
+.card-header,
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-header {
+  margin-bottom: 8px;
+}
+
+.progress-header span,
+.card-header span {
+  font-weight: 700;
+  color: var(--lp-text);
+}
+
+.progress-header small {
+  color: var(--lp-text-muted);
+  font-size: 13px;
+}
+
+.status-row {
+  display: flex;
+  gap: 18px;
+  margin-top: 12px;
+  color: var(--lp-text-secondary);
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.action-bar {
+  flex-wrap: wrap;
+}
+
+.action-bar > div {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 
 .review-session {
-  border-left: 4px solid #409eff;
+  border-left: 4px solid var(--lp-primary);
 }
+
 .question-info {
   margin-bottom: 8px;
 }
+
 .question-content {
   font-size: 16px;
   line-height: 1.6;
   padding: 12px;
-  background: #f5f7fa;
+  background: var(--lp-surface-soft);
   border-radius: 8px;
   white-space: pre-wrap;
+  color: var(--lp-text);
 }
+
+.answer-box,
+.result-alert,
+.next-action {
+  margin-top: 16px;
+}
+
+.session-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.complete-card {
+  text-align: center;
+}
+
+.complete-card h3 {
+  margin: 0 0 10px;
+  color: var(--lp-text);
+}
+
+.complete-card p {
+  margin: 0 0 14px;
+  color: var(--lp-text-secondary);
+}
+
 .ai-suggestion-content {
   line-height: 1.8;
   font-size: 14px;
+}
+
+.streaming-tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--lp-text-muted);
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .review-hero,
+  .progress-header,
+  .card-header,
+  .action-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .review-hero {
+    padding: 16px;
+  }
+
+  .review-hero .el-button,
+  .action-bar .el-button {
+    width: 100%;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

@@ -45,57 +45,57 @@ export interface ReviewSubmitRequest {
 
 /** 获取复习统计概览 */
 export function getReviewStats() {
-  return request.get<ReviewStatsVO>('/api/review/stats')
+  return request.get<ReviewStatsVO>('/review/stats')
 }
 
 /** 获取今日待复习题目 */
 export function getDueReviewCards(courseId?: number, limit?: number) {
-  return request.get<ReviewScheduleVO[]>('/api/review/due', {
+  return request.get<ReviewScheduleVO[]>('/review/due', {
     params: { courseId, limit }
   })
 }
 
 /** 获取所有复习计划卡片 */
 export function getAllReviewCards(courseId?: number) {
-  return request.get<ReviewScheduleVO[]>('/api/review/cards', {
+  return request.get<ReviewScheduleVO[]>('/review/cards', {
     params: { courseId }
   })
 }
 
 /** 将题目加入复习计划 */
 export function addToReviewPlan(questionId: number) {
-  return request.post<void>(`/api/review/add/${questionId}`)
+  return request.post<void>(`/review/add/${questionId}`)
 }
 
 /** 提交复习答案 */
 export function submitReview(data: ReviewSubmitRequest) {
-  return request.post<ReviewScheduleVO>('/api/review/submit', data)
+  return request.post<ReviewScheduleVO>('/review/submit', data)
 }
 
 /** 移出复习计划 */
 export function removeFromReviewPlan(questionId: number) {
-  return request.delete<void>(`/api/review/remove/${questionId}`)
+  return request.delete<void>(`/review/remove/${questionId}`)
 }
 
 /** 重置复习进度 */
 export function resetReviewProgress(questionId: number) {
-  return request.post<void>(`/api/review/reset/${questionId}`)
+  return request.post<void>(`/review/reset/${questionId}`)
 }
 
 /** 同步错题本到复习计划（未掌握/部分掌握的错题自动加入） */
 export function syncWrongQuestionsToReview() {
-  return request.post<{ syncedCount: number }>('/api/review/sync-wrong-questions')
+  return request.post<{ syncedCount: number }>('/review/sync-wrong-questions')
 }
 
 /** AI 复习建议（同步） */
 export function getAiReviewSuggestion() {
-  return request.post<{ content: string; source: string }>('/api/review/ai-suggestion')
+  return request.post<{ content: string; source: string }>('/review/ai-suggestion')
 }
 
 /** AI 复习建议（流式 SSE） — 返回 fetch Response，调用方自行读取 SSE 流 */
 export async function getAiReviewSuggestionStream(token: string): Promise<Response> {
-  const base = import.meta.env.VITE_API_BASE_URL || ''
-  return fetch(`${base}/api/review/ai-suggestion/stream`, {
+  const base = import.meta.env.VITE_API_BASE_URL || '/api'
+  return fetch(`${base}/review/ai-suggestion/stream`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,

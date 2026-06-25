@@ -1,45 +1,38 @@
 <template>
-  <div class="practice-container">
-    <div class="practice-header">
-      <h2>刷题练习</h2>
-      <p class="subtitle">选择刷题模式，开始练习</p>
-    </div>
+  <div class="practice-container page-container">
+    <section class="practice-hero">
+      <div>
+        <span class="section-kicker">练习复习</span>
+        <h2>刷题练习</h2>
+        <p>优先用智能推荐保持节奏，也可以按课程、题型和难度自选一组题。</p>
+      </div>
+      <div class="hero-actions">
+        <el-button type="primary" :icon="Promotion" @click="startAdaptivePractice" :loading="adaptiveStartLoading">
+          智能推荐
+        </el-button>
+        <el-button :icon="Filter" @click="scrollToConfig">自选练习</el-button>
+      </div>
+    </section>
 
-    <!-- 统计卡片 -->
-    <div class="stats-row">
-      <el-row :gutter="20">
-        <el-col :xs="12" :sm="6">
-          <el-card shadow="hover" class="stat-card" v-loading="statsLoading" element-loading-background="rgba(255,255,255,0.8)">
-            <div class="stat-value">{{ stats?.totalAnswered ?? 0 }}</div>
-            <div class="stat-label">总答题数</div>
-          </el-card>
-        </el-col>
-        <el-col :xs="12" :sm="6">
-          <el-card shadow="hover" class="stat-card stat-correct" v-loading="statsLoading" element-loading-background="rgba(255,255,255,0.8)">
-            <div class="stat-value">{{ stats?.correctCount ?? 0 }}</div>
-            <div class="stat-label">答对数</div>
-          </el-card>
-        </el-col>
-        <el-col :xs="12" :sm="6">
-          <el-card shadow="hover" class="stat-card stat-wrong" v-loading="statsLoading" element-loading-background="rgba(255,255,255,0.8)">
-            <div class="stat-value">{{ stats?.wrongCount ?? 0 }}</div>
-            <div class="stat-label">答错数</div>
-          </el-card>
-        </el-col>
-        <el-col :xs="12" :sm="6">
-          <el-card shadow="hover" class="stat-card stat-rate" v-loading="statsLoading" element-loading-background="rgba(255,255,255,0.8)">
-            <div class="stat-value">{{ stats?.correctRate ?? 0 }}%</div>
-            <div class="stat-label">正确率</div>
-          </el-card>
-        </el-col>
-      </el-row>
-    </div>
+    <section class="stats-grid">
+      <el-card
+        v-for="item in statCards"
+        :key="item.label"
+        shadow="never"
+        class="stat-card"
+        v-loading="statsLoading"
+        element-loading-background="rgba(255,255,255,0.8)"
+      >
+        <span>{{ item.label }}</span>
+        <strong :class="item.tone">{{ item.value }}</strong>
+      </el-card>
+    </section>
 
-    <!-- 智能推荐卡片 -->
-    <el-card class="adaptive-card" v-loading="adaptiveLoading" element-loading-background="rgba(255,255,255,0.8)">
+    <section class="practice-grid">
+      <el-card class="adaptive-card" shadow="never" v-loading="adaptiveLoading" element-loading-background="rgba(255,255,255,0.8)">
       <template #header>
         <div class="card-header">
-          <span>🧠 智能推荐</span>
+          <span>智能推荐</span>
           <el-tag type="success" size="small" v-if="adaptiveSummary">自适应模式</el-tag>
         </div>
       </template>
@@ -91,10 +84,10 @@
         </div>
 
         <div class="adaptive-actions">
-          <el-button type="primary" size="large" @click="startAdaptivePractice" :loading="adaptiveStartLoading">
-            🎯 开始智能推荐练习
+          <el-button type="primary" size="large" :icon="MagicStick" @click="startAdaptivePractice" :loading="adaptiveStartLoading">
+            开始智能推荐练习
           </el-button>
-          <el-select v-model="adaptiveForm.courseId" placeholder="全部课程" clearable style="width: 200px; margin-left: 12px">
+          <el-select v-model="adaptiveForm.courseId" placeholder="全部课程" clearable class="action-control">
             <el-option
               v-for="course in courseList"
               :key="course.id"
@@ -102,26 +95,26 @@
               :value="course.id"
             />
           </el-select>
-          <el-input-number v-model="adaptiveForm.count" :min="5" :max="50" style="margin-left: 12px" />
+          <el-input-number v-model="adaptiveForm.count" :min="5" :max="50" />
         </div>
       </div>
 
       <div v-else-if="!adaptiveLoading" class="adaptive-empty">
         <el-empty description="暂无答题记录，开始刷题后将根据你的表现智能推荐题目">
-          <el-button type="primary" @click="scrollToConfig">开始刷题</el-button>
+          <el-button type="primary" :icon="Promotion" @click="scrollToConfig">开始刷题</el-button>
         </el-empty>
       </div>
     </el-card>
 
-    <!-- 刷题配置 -->
-    <el-card class="config-card" ref="configCardRef">
+      <el-card class="config-card" ref="configCardRef" shadow="never">
       <template #header>
         <div class="card-header">
           <span>自选模式</span>
+          <el-tag type="info" size="small">精准筛选</el-tag>
         </div>
       </template>
 
-      <el-form :model="form" label-width="100px">
+      <el-form :model="form" label-position="top">
         <el-form-item label="选择课程">
           <el-select v-model="form.courseId" placeholder="全部课程" clearable style="width: 100%">
             <el-option
@@ -152,19 +145,39 @@
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" size="large" @click="startPractice" :loading="loading">
+          <el-button type="primary" size="large" :icon="Promotion" @click="startPractice" :loading="loading">
             开始刷题
           </el-button>
         </el-form-item>
       </el-form>
     </el-card>
+    </section>
+
+    <section class="mode-strip">
+      <button type="button" class="mode-card" @click="scrollToConfig">
+        <el-icon><List /></el-icon>
+        <strong>按课程整理</strong>
+        <span>适合课后巩固，先选课程再控制题型和数量。</span>
+      </button>
+      <button type="button" class="mode-card" @click="scrollToConfig">
+        <el-icon><Filter /></el-icon>
+        <strong>按题型训练</strong>
+        <span>集中练选择、判断、填空或简答，便于查漏补缺。</span>
+      </button>
+      <button type="button" class="mode-card" @click="startAdaptivePractice">
+        <el-icon><TrendCharts /></el-icon>
+        <strong>按表现推荐</strong>
+        <span>根据历史正确率动态调整难度，减少盲目刷题。</span>
+      </button>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { Filter, List, MagicStick, Promotion, TrendCharts } from '@element-plus/icons-vue'
 import { getPracticeQuestions, getPracticeStats, getAdaptiveQuestions, getAdaptiveSummary } from '@/api/practice'
 import type { PracticeStatsVO, AdaptiveSummaryVO } from '@/api/practice'
 import request from '@/utils/request'
@@ -192,6 +205,13 @@ const adaptiveForm = reactive({
   courseId: undefined as number | undefined,
   count: 10
 })
+
+const statCards = computed(() => [
+  { label: '总答题数', value: stats.value?.totalAnswered ?? 0, tone: 'tone-primary' },
+  { label: '答对数', value: stats.value?.correctCount ?? 0, tone: 'tone-success' },
+  { label: '答错数', value: stats.value?.wrongCount ?? 0, tone: 'tone-danger' },
+  { label: '正确率', value: `${stats.value?.correctRate ?? 0}%`, tone: 'tone-warning' },
+])
 
 onMounted(() => {
   loadStats()
@@ -287,63 +307,83 @@ const scrollToConfig = () => {
 
 <style scoped>
 .practice-container {
-  padding: 24px;
-  max-width: 900px;
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
-.practice-header {
-  margin-bottom: 24px;
+.practice-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius);
+  box-shadow: var(--lp-shadow-sm);
 }
 
-.practice-header h2 {
-  margin: 0 0 8px;
+.practice-hero h2 {
+  margin: 4px 0 8px;
   font-size: 24px;
-  color: #303133;
+  color: var(--lp-text);
 }
 
-.subtitle {
+.practice-hero p {
   margin: 0;
-  color: #909399;
+  color: var(--lp-text-secondary);
   font-size: 14px;
 }
 
-.stats-row {
-  margin-bottom: 24px;
+.hero-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.section-kicker {
+  color: var(--lp-primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .stat-card {
-  text-align: center;
-  padding: 16px 0;
+  min-height: 94px;
 }
 
-.stat-value {
+.stat-card :deep(.el-card__body) {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stat-card span {
+  color: var(--lp-text-muted);
+  font-size: 13px;
+}
+
+.stat-card strong {
   font-size: 28px;
   font-weight: 700;
-  color: #409eff;
 }
 
-.stat-correct .stat-value {
-  color: #67c23a;
-}
+.tone-primary { color: var(--lp-primary); }
+.tone-success { color: var(--lp-success); }
+.tone-danger { color: var(--lp-danger); }
+.tone-warning { color: var(--lp-warning); }
 
-.stat-wrong .stat-value {
-  color: #f56c6c;
-}
-
-.stat-rate .stat-value {
-  color: #e6a23c;
-}
-
-.stat-label {
-  font-size: 13px;
-  color: #909399;
-  margin-top: 8px;
-}
-
-.adaptive-card {
-  margin-bottom: 24px;
-  border: 1px solid #e4e7ed;
+.practice-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+  gap: 16px;
 }
 
 .adaptive-content {
@@ -365,13 +405,13 @@ const scrollToConfig = () => {
 
 .overview-label {
   font-size: 13px;
-  color: #909399;
+  color: var(--lp-text-muted);
 }
 
 .overview-value {
   font-size: 20px;
   font-weight: 600;
-  color: #303133;
+  color: var(--lp-text);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -396,7 +436,7 @@ const scrollToConfig = () => {
 .diff-label {
   width: 36px;
   text-align: right;
-  color: #606266;
+  color: var(--lp-text-secondary);
   flex-shrink: 0;
 }
 
@@ -407,7 +447,7 @@ const scrollToConfig = () => {
 
 .diff-bar-bg {
   height: 12px;
-  background: #f0f2f5;
+  background: var(--lp-surface-soft);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -423,14 +463,14 @@ const scrollToConfig = () => {
   width: 40px;
   text-align: right;
   font-weight: 600;
-  color: #303133;
+  color: var(--lp-text);
   flex-shrink: 0;
 }
 
 .diff-rate {
   width: 90px;
   text-align: right;
-  color: #909399;
+  color: var(--lp-text-muted);
   flex-shrink: 0;
 }
 
@@ -438,15 +478,15 @@ const scrollToConfig = () => {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0;
+  gap: 10px;
+}
+
+.action-control {
+  width: 200px;
 }
 
 .adaptive-empty {
   padding: 12px 0;
-}
-
-.config-card {
-  margin-top: 24px;
 }
 
 .card-header {
@@ -455,5 +495,84 @@ const scrollToConfig = () => {
   justify-content: space-between;
   font-weight: 600;
   font-size: 16px;
+}
+
+.mode-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mode-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  align-items: start;
+  min-height: 104px;
+  padding: 16px;
+  text-align: left;
+  color: var(--lp-text);
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius);
+  cursor: pointer;
+  box-shadow: var(--lp-shadow-sm);
+}
+
+.mode-card .el-icon {
+  grid-row: span 2;
+  margin-top: 2px;
+  color: var(--lp-primary);
+  font-size: 20px;
+}
+
+.mode-card strong {
+  font-size: 15px;
+}
+
+.mode-card span {
+  color: var(--lp-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.mode-card:hover {
+  border-color: var(--lp-primary);
+}
+
+@media (max-width: 960px) {
+  .practice-grid,
+  .mode-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .practice-hero {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .hero-actions {
+    justify-content: stretch;
+  }
+
+  .hero-actions .el-button {
+    flex: 1;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .adaptive-actions,
+  .action-control {
+    width: 100%;
+  }
 }
 </style>
