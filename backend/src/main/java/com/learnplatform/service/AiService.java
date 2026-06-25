@@ -18,9 +18,14 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -79,7 +84,7 @@ public class AiService {
 
     public AiResponse generateExplanation(Long questionId, Long userId) {
         AiPrompt prompt = buildExplanationPrompt(questionId);
-        return callWithLog("explanation", userId, () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
+        return callWithLog("explanation", userId, prompt, () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
     }
 
     public void generateExplanationStream(Long questionId, Consumer<String> onContent) {
@@ -89,7 +94,7 @@ public class AiService {
 
     public void generateExplanationStream(Long questionId, Long userId, Consumer<String> onContent) {
         AiPrompt prompt = buildExplanationPrompt(questionId);
-        callStreamWithLog("explanation_stream", userId, () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
+        callStreamWithLog("explanation_stream", userId, prompt, () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
     }
 
     /**
@@ -103,7 +108,7 @@ public class AiService {
 
     public AiResponse generateVariant(Long questionId, Long userId) {
         AiPrompt prompt = buildVariantPrompt(questionId);
-        return callWithLog("variant", userId, () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
+        return callWithLog("variant", userId, prompt, () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
     }
 
     public void generateVariantStream(Long questionId, Consumer<String> onContent) {
@@ -113,7 +118,7 @@ public class AiService {
 
     public void generateVariantStream(Long questionId, Long userId, Consumer<String> onContent) {
         AiPrompt prompt = buildVariantPrompt(questionId);
-        callStreamWithLog("variant_stream", userId, () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
+        callStreamWithLog("variant_stream", userId, prompt, () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
     }
 
     private AiPrompt buildExplanationPrompt(Long questionId) {
@@ -145,12 +150,12 @@ public class AiService {
      */
     public AiResponse generateReviewSuggestion(Long userId, Long courseId) {
         AiPrompt prompt = buildReviewSuggestionPrompt(userId, courseId);
-        return callWithLog("review_suggestion", userId, () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
+        return callWithLog("review_suggestion", userId, prompt, () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
     }
 
     public void generateReviewSuggestionStream(Long userId, Long courseId, Consumer<String> onContent) {
         AiPrompt prompt = buildReviewSuggestionPrompt(userId, courseId);
-        callStreamWithLog("review_suggestion_stream", userId, () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
+        callStreamWithLog("review_suggestion_stream", userId, prompt, () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
     }
 
     private AiPrompt buildReviewSuggestionPrompt(Long userId, Long courseId) {
@@ -209,8 +214,8 @@ public class AiService {
                 + "要求：\n1. 清晰解释知识点的定义和概念\n2. 列出核心要点\n3. 提供实际例子\n"
                 + "4. 如果有相关公式或规则请列出\n5. 使用 Markdown 格式输出";
 
-        String userPrompt = String.format("请总结以下知识点：\n课程：%s\n知识点：%s", courseName, kp.getName());
-        return callWithLog("summary", userId, () -> aiProvider.chat(systemPrompt, userPrompt));
+        AiPrompt prompt = new AiPrompt(systemPrompt, String.format("请总结以下知识点：\n课程：%s\n知识点：%s", courseName, kp.getName()));
+        return callWithLog("summary", userId, prompt, () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
     }
 
     // ======================== 配额检查 ========================
@@ -269,13 +274,13 @@ public class AiService {
      * 公开的 AI 调用日志记录方法（供其他 Service 调用）
      */
     public void logCall(Long userId, String functionType, boolean success, String errorMessage, int duration) {
-        saveLog(userId, functionType, success, errorMessage, duration);
+        saveLog(userId, functionType, success, errorMessage, duration, null);
     }
 
     /**
      * 带日志记录的同步 AI 调用
      */
-    private AiResponse callWithLog(String functionType, Long userId, AiCallable callable) {
+    private AiResponse callWithLog(String functionType, Long userId, AiPrompt prompt, AiCallable callable) {
         checkDailyQuota(userId);
         long start = System.currentTimeMillis();
         boolean success = false;
@@ -290,14 +295,14 @@ public class AiService {
             throw e;
         } finally {
             int duration = (int) (System.currentTimeMillis() - start);
-            saveLog(userId, functionType, success, errorMessage, duration);
+            saveLog(userId, functionType, success, errorMessage, duration, prompt);
         }
     }
 
     /**
      * 带日志记录的流式 AI 调用
      */
-    private void callStreamWithLog(String functionType, Long userId, Runnable runnable) {
+    private void callStreamWithLog(String functionType, Long userId, AiPrompt prompt, Runnable runnable) {
         checkDailyQuota(userId);
         long start = System.currentTimeMillis();
         boolean success = false;
@@ -310,11 +315,11 @@ public class AiService {
             throw e;
         } finally {
             int duration = (int) (System.currentTimeMillis() - start);
-            saveLog(userId, functionType, success, errorMessage, duration);
+            saveLog(userId, functionType, success, errorMessage, duration, prompt);
         }
     }
 
-    private void saveLog(Long userId, String functionType, boolean success, String errorMessage, int duration) {
+    private void saveLog(Long userId, String functionType, boolean success, String errorMessage, int duration, AiPrompt prompt) {
         try {
             AiCallLog callLog = new AiCallLog();
             callLog.setUserId(userId);
@@ -324,6 +329,9 @@ public class AiService {
             callLog.setErrorMessage(errorMessage);
             callLog.setDuration(duration);
             callLog.setTraceId(MDC.get("traceId"));
+            callLog.setPromptTemplate(functionType);
+            callLog.setPromptHash(prompt == null ? null : promptHash(prompt));
+            callLog.setModelConfigVersion(modelConfigVersion());
             AiTokenUsage tokenUsage = success ? aiProvider.getLastTokenUsage() : null;
             if (tokenUsage != null) {
                 callLog.setTokensUsed(tokenUsage.totalTokens());
@@ -332,8 +340,8 @@ public class AiService {
                 callLog.setCostUsd(aiCostCalculator.calculate(callLog.getModel(), tokenUsage));
             }
             aiCallLogMapper.insert(callLog);
-            log.info("AI 调用日志已记录: type={}, userId={}, success={}, duration={}ms, tokens={}, costUsd={}, traceId={}",
-                    functionType, userId, success, duration, callLog.getTokensUsed(), callLog.getCostUsd(), callLog.getTraceId());
+            log.info("AI 调用日志已记录: type={}, userId={}, success={}, duration={}ms, tokens={}, costUsd={}, traceId={}, modelConfigVersion={}",
+                    functionType, userId, success, duration, callLog.getTokensUsed(), callLog.getCostUsd(), callLog.getTraceId(), callLog.getModelConfigVersion());
         } catch (Exception e) {
             // 日志记录失败不应影响主流程
             log.warn("AI 调用日志记录失败: {}", e.getMessage());
@@ -396,7 +404,7 @@ public class AiService {
      */
     public AiResponse generateReviewBasedSuggestion(Long userId) {
         AiPrompt prompt = buildReviewBasedSuggestionPrompt(userId);
-        return callWithLog("review_based_suggestion", userId,
+        return callWithLog("review_based_suggestion", userId, prompt,
                 () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
     }
 
@@ -405,7 +413,7 @@ public class AiService {
      */
     public void generateReviewBasedSuggestionStream(Long userId, Consumer<String> onContent) {
         AiPrompt prompt = buildReviewBasedSuggestionPrompt(userId);
-        callStreamWithLog("review_based_suggestion_stream", userId,
+        callStreamWithLog("review_based_suggestion_stream", userId, prompt,
                 () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
     }
 
@@ -510,7 +518,7 @@ public class AiService {
      */
     public AiResponse generateReviewBasedSuggestionWithContext(Long userId, ReviewContextVO ctx) {
         AiPrompt prompt = buildReviewSuggestionPromptWithContext(ctx);
-        return callWithLog("review_based_suggestion", userId,
+        return callWithLog("review_based_suggestion", userId, prompt,
                 () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
     }
 
@@ -519,8 +527,45 @@ public class AiService {
      */
     public void generateReviewBasedSuggestionStreamWithContext(Long userId, ReviewContextVO ctx, Consumer<String> onContent) {
         AiPrompt prompt = buildReviewSuggestionPromptWithContext(ctx);
-        callStreamWithLog("review_based_suggestion_stream", userId,
+        callStreamWithLog("review_based_suggestion_stream", userId, prompt,
                 () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
+    }
+
+    private String promptHash(AiPrompt prompt) {
+        return sha256("system:" + prompt.systemPrompt() + "\nuser:" + prompt.userPrompt());
+    }
+
+    private String modelConfigVersion() {
+        String model = aiConfig.getModel();
+        StringBuilder sb = new StringBuilder();
+        sb.append("model=").append(model)
+                .append(";maxTokens=").append(aiConfig.getMaxTokens())
+                .append(";streamIncludeUsage=").append(aiConfig.isStreamIncludeUsage());
+        Map<String, AiConfig.ModelPrice> prices = aiConfig.getModelPrices();
+        AiConfig.ModelPrice price = prices == null ? null : prices.get(model);
+        if (price != null) {
+            sb.append(";inputPerMillion=").append(toPlainString(price.getInputPerMillion()))
+                    .append(";outputPerMillion=").append(toPlainString(price.getOutputPerMillion()));
+        }
+        return sha256(sb.toString());
+    }
+
+    private String toPlainString(BigDecimal value) {
+        return value == null ? "" : value.stripTrailingZeros().toPlainString();
+    }
+
+    private String sha256(String value) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] bytes = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(bytes.length * 2);
+            for (byte b : bytes) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 algorithm is unavailable", e);
+        }
     }
 
     record AiPrompt(String systemPrompt, String userPrompt) {}

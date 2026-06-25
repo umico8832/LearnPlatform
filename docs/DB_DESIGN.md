@@ -506,6 +506,9 @@ CREATE TABLE `exam_answer` (
 | error_message | VARCHAR(1000) | 否 | | 错误信息 |
 | duration | INT | 否 | | 调用耗时（毫秒） |
 | trace_id | VARCHAR(32) | 否 | | 发起调用的 HTTP 请求追踪 ID；非 HTTP / 异步调用可为空 |
+| prompt_template | VARCHAR(100) | 否 | | Prompt 模板或功能标识，不包含原始提示词内容 |
+| prompt_hash | CHAR(64) | 否 | | system/user prompt 的 SHA-256 指纹，用于版本比对且不可反推原文 |
+| model_config_version | CHAR(64) | 否 | | 调用时模型相关配置指纹，覆盖模型名、maxTokens、stream usage 和该模型价格配置 |
 | create_time | DATETIME | 是 | CURRENT_TIMESTAMP | 创建时间 |
 
 **建表 SQL**：
@@ -525,12 +528,17 @@ CREATE TABLE `ai_call_log` (
   `error_message` VARCHAR(1000) DEFAULT NULL COMMENT '错误信息',
   `duration` INT DEFAULT NULL COMMENT '调用耗时（毫秒）',
   `trace_id` VARCHAR(32) DEFAULT NULL COMMENT '关联HTTP请求追踪ID',
+  `prompt_template` VARCHAR(100) DEFAULT NULL COMMENT 'Prompt模板或功能标识，不含原始提示词内容',
+  `prompt_hash` CHAR(64) DEFAULT NULL COMMENT 'system/user prompt的SHA-256指纹，不可反推出原文',
+  `model_config_version` CHAR(64) DEFAULT NULL COMMENT '调用时模型相关配置指纹',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_function_type` (`function_type`),
   KEY `idx_create_time` (`create_time`),
-  KEY `idx_trace_id` (`trace_id`)
+  KEY `idx_trace_id` (`trace_id`),
+  KEY `idx_prompt_template` (`prompt_template`),
+  KEY `idx_model_config_version` (`model_config_version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='AI调用日志表';
 ```
 

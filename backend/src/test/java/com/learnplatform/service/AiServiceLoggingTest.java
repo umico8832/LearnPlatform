@@ -2,6 +2,7 @@ package com.learnplatform.service;
 
 import com.learnplatform.config.AiConfig;
 import com.learnplatform.entity.AiCallLog;
+import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.mapper.*;
 import com.learnplatform.entity.User;
 import com.learnplatform.service.ai.AiProvider;
@@ -15,8 +16,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 
+import java.util.Collections;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -66,6 +71,31 @@ class AiServiceLoggingTest {
         ArgumentCaptor<AiCallLog> captor = ArgumentCaptor.forClass(AiCallLog.class);
         verify(aiCallLogMapper).insert(captor.capture());
         assertEquals("a1b2c3d4", captor.getValue().getTraceId());
+    }
+
+    @Test
+    void recordsPromptAndModelTraceMetadataWithoutRawPromptContent() {
+        KnowledgePoint kp = new KnowledgePoint();
+        kp.setId(3L);
+        kp.setName("二叉树遍历");
+        when(knowledgePointMapper.selectById(3L)).thenReturn(kp);
+        when(aiConfig.getModel()).thenReturn("gpt-4o-mini");
+        when(aiConfig.getMaxTokens()).thenReturn(2000);
+        when(aiConfig.isStreamIncludeUsage()).thenReturn(true);
+        when(aiConfig.getModelPrices()).thenReturn(Collections.emptyMap());
+        when(aiProvider.chat(anyString(), anyString())).thenReturn("summary");
+
+        aiService.generateSummary(3L, 7L);
+
+        ArgumentCaptor<AiCallLog> captor = ArgumentCaptor.forClass(AiCallLog.class);
+        verify(aiCallLogMapper).insert(captor.capture());
+        AiCallLog log = captor.getValue();
+        assertEquals("summary", log.getPromptTemplate());
+        assertNotNull(log.getPromptHash());
+        assertEquals(64, log.getPromptHash().length());
+        assertNotNull(log.getModelConfigVersion());
+        assertEquals(64, log.getModelConfigVersion().length());
+        assertFalse(log.getPromptHash().contains("二叉树遍历"));
     }
 
     @Test

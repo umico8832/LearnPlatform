@@ -81,6 +81,10 @@ class AiUsageServiceTest {
         failLog.setModel("gpt-3.5-turbo");
         failLog.setTokensUsed(null);
         failLog.setStatus(0);
+        failLog.setTraceId("badc0ffe");
+        failLog.setPromptTemplate("review_suggestion");
+        failLog.setPromptHash("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+        failLog.setModelConfigVersion("abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789");
         failLog.setErrorMessage("API timeout");
         failLog.setDuration(30000);
         failLog.setCreateTime(LocalDateTime.now().minusHours(5));
@@ -218,6 +222,10 @@ class AiUsageServiceTest {
             List<AiUsageOverviewVO.RecentFailure> failures = vo.getRecentFailures();
             assertEquals(1, failures.size());
             assertEquals("review_suggestion", failures.get(0).getFunctionType());
+            assertEquals("badc0ffe", failures.get(0).getTraceId());
+            assertEquals("review_suggestion", failures.get(0).getPromptTemplate());
+            assertEquals("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", failures.get(0).getPromptHash());
+            assertEquals("abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789", failures.get(0).getModelConfigVersion());
             assertEquals("API timeout", failures.get(0).getErrorMessage());
         }
 

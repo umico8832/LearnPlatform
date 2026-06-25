@@ -217,6 +217,15 @@
           <el-table-column prop="id" label="ID" width="70" />
           <el-table-column prop="functionType" label="功能" width="140" />
           <el-table-column prop="model" label="模型" width="140" />
+          <el-table-column label="Trace ID" width="110">
+            <template #default="{ row }">{{ row.traceId || '-' }}</template>
+          </el-table-column>
+          <el-table-column label="Prompt 指纹" width="110">
+            <template #default="{ row }">{{ shortHash(row.promptHash) }}</template>
+          </el-table-column>
+          <el-table-column label="模型配置" width="110">
+            <template #default="{ row }">{{ shortHash(row.modelConfigVersion) }}</template>
+          </el-table-column>
           <el-table-column prop="errorMessage" label="错误信息" min-width="200" show-overflow-tooltip />
           <el-table-column prop="createTime" label="时间" width="170" />
         </el-table>
@@ -295,6 +304,10 @@ function formatTokens(tokens: number | undefined): string {
 function formatCost(cost: number | null | undefined): string {
   if (cost === null || cost === undefined) return '-'
   return '$' + cost.toFixed(cost < 0.01 ? 6 : 4)
+}
+
+function shortHash(hash: string | null | undefined): string {
+  return hash ? hash.slice(0, 10) : '-'
 }
 
 function formatChange(value: number | null | undefined): string {

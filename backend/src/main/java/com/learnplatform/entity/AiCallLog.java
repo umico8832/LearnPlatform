@@ -41,6 +41,15 @@ public class AiCallLog {
     /** 关联本次 HTTP 请求的 traceId；异步或非 HTTP 调用可为空。 */
     private String traceId;
 
+    /** Prompt 模板或功能标识；不保存原始 prompt 内容。 */
+    private String promptTemplate;
+
+    /** system/user prompt 的 SHA-256 指纹，用于版本比对但不可还原原文。 */
+    private String promptHash;
+
+    /** 调用时模型相关配置的 SHA-256 指纹。 */
+    private String modelConfigVersion;
+
     private LocalDateTime createTime;
 
     // ======================== getter / setter ========================
@@ -81,6 +90,15 @@ public class AiCallLog {
     public String getTraceId() { return traceId; }
     public void setTraceId(String traceId) { this.traceId = traceId; }
 
+    public String getPromptTemplate() { return promptTemplate; }
+    public void setPromptTemplate(String promptTemplate) { this.promptTemplate = promptTemplate; }
+
+    public String getPromptHash() { return promptHash; }
+    public void setPromptHash(String promptHash) { this.promptHash = promptHash; }
+
+    public String getModelConfigVersion() { return modelConfigVersion; }
+    public void setModelConfigVersion(String modelConfigVersion) { this.modelConfigVersion = modelConfigVersion; }
+
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
 
@@ -91,6 +109,7 @@ public class AiCallLog {
                 ", userId=" + userId +
                 ", functionType='" + functionType + '\'' +
                 ", model='" + model + '\'' +
+                ", promptTemplate='" + promptTemplate + '\'' +
                 ", status=" + status +
                 ", duration=" + duration +
                 '}';

@@ -1,5 +1,35 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 120 - 2026-06-25
+
+### 阶段
+Phase 20：AI 运营治理（Prompt 与模型配置追踪）
+
+### 完成内容
+1. 新增 Flyway V13，为 `ai_call_log` 增加 `prompt_template`、`prompt_hash` 和 `model_config_version`，只保存模板名与不可逆指纹，不保存原始 Prompt 或响应正文。
+2. `AiService` 在统一调用日志中写入 Prompt SHA-256 指纹和模型配置版本指纹；模型配置指纹覆盖模型名、maxTokens、stream usage 开关和当前模型价格配置。
+3. 管理端 AI 调用分析的最近失败列表新增 Trace ID、Prompt 指纹和模型配置指纹，便于从运营页面回溯请求、Prompt 版本和模型配置。
+4. 补充后端回归测试，验证日志记录安全元数据且不会落原始 Prompt 内容，并同步 README、API、数据库、架构、路线图和交接文档。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/{entity/AiCallLog.java,service/AiService.java,service/AiUsageService.java,dto/AiUsageOverviewVO.java}`
+- `backend/src/main/resources/db/migration/V13__add_ai_call_prompt_and_model_trace.sql`
+- `backend/src/test/java/com/learnplatform/service/{AiServiceLoggingTest.java,AiUsageServiceTest.java}`
+- `frontend/src/{api/aiUsage.ts,views/admin/AiUsageView.vue}`
+- `README.md` 与 `docs/{API_DESIGN.md,DB_DESIGN.md,ARCHITECTURE.md,ROADMAP.md,HANDOFF.md,CHANGELOG_AGENT.md}`
+
+### 验证
+- `cd backend && mvn test -Dtest=AiServiceLoggingTest,AiUsageServiceTest`：20 个测试通过。
+- `cd backend && mvn test`：360 个测试通过。
+- `cd frontend && npm test -- --run`：24 个文件、196 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 pure annotation 与大 chunk 警告）。
+
+### 遗留问题
+- 真实演示截图与推送后的 GitHub Actions 实跑仍待完成。
+
+### 建议 commit message
+`feat(ai): 记录调用追踪指纹`
+
 ## Round 119 - 2026-06-23
 
 ### 阶段

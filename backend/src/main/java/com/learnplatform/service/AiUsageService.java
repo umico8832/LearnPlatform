@@ -198,6 +198,10 @@ public class AiUsageService {
                     rf.setUserId(l.getUserId());
                     rf.setFunctionType(l.getFunctionType());
                     rf.setModel(l.getModel());
+                    rf.setTraceId(l.getTraceId());
+                    rf.setPromptTemplate(l.getPromptTemplate());
+                    rf.setPromptHash(l.getPromptHash());
+                    rf.setModelConfigVersion(l.getModelConfigVersion());
                     rf.setErrorMessage(l.getErrorMessage());
                     rf.setCreateTime(l.getCreateTime() != null ? l.getCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : null);
                     return rf;

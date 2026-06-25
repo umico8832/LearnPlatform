@@ -46,6 +46,10 @@ export interface RecentFailure {
   userId: number
   functionType: string
   model: string
+  traceId?: string
+  promptTemplate?: string
+  promptHash?: string
+  modelConfigVersion?: string
   errorMessage: string
   createTime: string
 }

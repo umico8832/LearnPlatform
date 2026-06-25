@@ -148,6 +148,10 @@ public class AiUsageOverviewVO {
         private Long userId;
         private String functionType;
         private String model;
+        private String traceId;
+        private String promptTemplate;
+        private String promptHash;
+        private String modelConfigVersion;
         private String errorMessage;
         private String createTime;
 
@@ -159,6 +163,14 @@ public class AiUsageOverviewVO {
         public void setFunctionType(String functionType) { this.functionType = functionType; }
         public String getModel() { return model; }
         public void setModel(String model) { this.model = model; }
+        public String getTraceId() { return traceId; }
+        public void setTraceId(String traceId) { this.traceId = traceId; }
+        public String getPromptTemplate() { return promptTemplate; }
+        public void setPromptTemplate(String promptTemplate) { this.promptTemplate = promptTemplate; }
+        public String getPromptHash() { return promptHash; }
+        public void setPromptHash(String promptHash) { this.promptHash = promptHash; }
+        public String getModelConfigVersion() { return modelConfigVersion; }
+        public void setModelConfigVersion(String modelConfigVersion) { this.modelConfigVersion = modelConfigVersion; }
         public String getErrorMessage() { return errorMessage; }
         public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
         public String getCreateTime() { return createTime; }
