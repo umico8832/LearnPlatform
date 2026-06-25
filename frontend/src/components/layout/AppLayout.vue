@@ -1,165 +1,77 @@
 <template>
   <el-container class="app-layout">
-    <!-- 移动端遮罩层 -->
     <div
       v-if="isMobile && sidebarOpen"
       class="sidebar-overlay"
       @click="sidebarOpen = false"
     />
 
-    <!-- 侧边栏（桌面端固定 / 移动端抽屉） -->
     <el-aside
-      :width="isMobile ? '0px' : '220px'"
+      :width="isMobile ? '0px' : '248px'"
       :class="['app-sidebar', { 'mobile-open': isMobile && sidebarOpen }]"
     >
-      <div class="sidebar-inner" :style="{ width: '220px' }">
-        <div class="logo">
-          <h2>AI 题库系统</h2>
+      <div class="sidebar-inner">
+        <div class="brand">
+          <div class="brand-mark">AI</div>
+          <div class="brand-copy">
+            <strong>学习工作台</strong>
+            <span>题库 · 复习 · 诊断</span>
+          </div>
         </div>
+
         <el-menu
           :default-active="activeMenu"
           router
-          background-color="#001529"
-          text-color="#ffffffb3"
-          active-text-color="#409eff"
+          class="app-menu"
           @select="handleMenuSelect"
         >
-          <el-menu-item index="/">
-            <el-icon><HomeFilled /></el-icon>
-            <span>首页</span>
-          </el-menu-item>
-          <el-menu-item index="/courses">
-            <el-icon><Reading /></el-icon>
-            <span>课程列表</span>
-          </el-menu-item>
-          <el-menu-item index="/questions">
-            <el-icon><EditPen /></el-icon>
-            <span>题库</span>
-          </el-menu-item>
-          <el-menu-item index="/practice">
-            <el-icon><Promotion /></el-icon>
-            <span>刷题练习</span>
-          </el-menu-item>
-          <el-menu-item index="/practice/records">
-            <el-icon><Clock /></el-icon>
-            <span>刷题记录</span>
-          </el-menu-item>
-          <el-menu-item index="/wrong-questions">
-            <el-icon><WarningFilled /></el-icon>
-            <span>错题本</span>
-          </el-menu-item>
-          <el-menu-item index="/favorites">
-            <el-icon><StarFilled /></el-icon>
-            <span>我的收藏</span>
-          </el-menu-item>
-          <el-menu-item index="/review">
-            <el-icon><Timer /></el-icon>
-            <span>智能复习</span>
-          </el-menu-item>
-          <el-menu-item index="/learning-report">
-            <el-icon><DataLine /></el-icon>
-            <span>学习报告</span>
-          </el-menu-item>
-          <el-menu-item index="/learning-path">
-            <el-icon><Guide /></el-icon>
-            <span>学习路径</span>
-          </el-menu-item>
-          <el-menu-item index="/knowledge-graph">
-            <el-icon><Connection /></el-icon>
-            <span>知识图谱</span>
-          </el-menu-item>
-          <el-menu-item index="/learning-diagnosis">
-            <el-icon><TrendCharts /></el-icon>
-            <span>学习诊断</span>
-          </el-menu-item>
-          <el-menu-item index="/exams">
-            <el-icon><Trophy /></el-icon>
-            <span>考试</span>
-          </el-menu-item>
-          <el-menu-item index="/ai/review">
-            <el-icon><MagicStick /></el-icon>
-            <span>AI 复习建议</span>
-          </el-menu-item>
-          <el-menu-item index="/submit">
-            <el-icon><Upload /></el-icon>
-            <span>题目投稿</span>
-          </el-menu-item>
-
-          <template v-if="isAdmin">
-            <el-sub-menu index="admin">
-              <template #title>
-                <el-icon><Setting /></el-icon>
-                <span>后台管理</span>
-              </template>
-              <el-menu-item index="/admin">
-                <el-icon><DataAnalysis /></el-icon>
-                <span>平台总览</span>
-              </el-menu-item>
-              <el-menu-item index="/admin/courses">
-                <el-icon><Collection /></el-icon>
-                <span>课程管理</span>
-              </el-menu-item>
-              <el-menu-item index="/admin/knowledge-points">
-                <el-icon><Notebook /></el-icon>
-                <span>知识点管理</span>
-              </el-menu-item>
-              <el-menu-item index="/admin/questions">
-                <el-icon><EditPen /></el-icon>
-                <span>题目管理</span>
-              </el-menu-item>
-              <el-menu-item index="/admin/exams">
-                <el-icon><Trophy /></el-icon>
-                <span>试卷管理</span>
-              </el-menu-item>
-              <el-menu-item index="/admin/users">
-                <el-icon><UserFilled /></el-icon>
-                <span>用户管理</span>
-              </el-menu-item>
-              <el-menu-item index="/admin/submissions">
-                <el-icon><Upload /></el-icon>
-                <span>投稿管理</span>
-              </el-menu-item>
-              <el-menu-item index="/admin/ai-usage">
-                <el-icon><Monitor /></el-icon>
-                <span>AI 调用分析</span>
-              </el-menu-item>
-            </el-sub-menu>
+          <template v-for="section in visibleSections" :key="section.label">
+            <div class="menu-section-label">{{ section.label }}</div>
+            <el-menu-item
+              v-for="item in section.items"
+              :key="item.path"
+              :index="item.path"
+            >
+              <el-icon><component :is="item.icon" /></el-icon>
+              <span>{{ item.label }}</span>
+            </el-menu-item>
           </template>
         </el-menu>
       </div>
     </el-aside>
 
-    <!-- 主内容区 -->
-    <el-container>
-      <!-- 顶部导航 -->
+    <el-container class="app-content-shell">
       <el-header class="app-header">
         <div class="header-left">
-          <el-icon
+          <el-button
             v-if="isMobile"
             class="hamburger"
-            :size="22"
+            text
+            :icon="sidebarOpen ? Fold : Expand"
             @click="sidebarOpen = !sidebarOpen"
-          >
-            <Fold v-if="sidebarOpen" />
-            <Expand v-else />
-          </el-icon>
-          <el-breadcrumb v-if="!isMobile" separator="/">
-            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-          </el-breadcrumb>
-        </div>
-        <div class="header-right">
-          <!-- 全局搜索入口 -->
-          <div class="header-search-trigger" @click="openSearch" title="搜索 (⌘K / Ctrl+K)">
-            <el-icon :size="18"><Search /></el-icon>
-            <span v-if="!isMobile" class="search-trigger-text">搜索</span>
-            <kbd v-if="!isMobile" class="search-trigger-kbd">⌘K</kbd>
+          />
+          <div class="page-context">
+            <h1>{{ pageTitle }}</h1>
+            <p v-if="!isMobile">{{ pageDescription }}</p>
           </div>
+        </div>
+
+        <div class="header-right">
+          <button class="header-search-trigger" type="button" @click="openSearch">
+            <el-icon :size="18"><Search /></el-icon>
+            <span v-if="!isMobile" class="search-trigger-text">搜索题目、课程、知识点</span>
+            <kbd v-if="!isMobile" class="search-trigger-kbd">⌘K</kbd>
+          </button>
+
           <el-dropdown @command="handleCommand">
             <span class="user-info">
-              <el-avatar :size="32" :src="userInfo?.avatar || undefined">
-                {{ userInfo?.nickname?.charAt(0) || 'U' }}
+              <el-avatar :size="34" :src="userInfo?.avatar || undefined">
+                {{ avatarText }}
               </el-avatar>
-              <span v-if="!isMobile" class="username">{{ userInfo?.nickname || userInfo?.username || '用户' }}</span>
+              <span v-if="!isMobile" class="user-copy">
+                <strong>{{ userInfo?.nickname || userInfo?.username || '用户' }}</strong>
+                <small>{{ isAdmin ? '管理员' : '学习者' }}</small>
+              </span>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
@@ -171,39 +83,175 @@
         </div>
       </el-header>
 
-      <!-- 页面内容 -->
       <el-main class="app-main">
         <router-view />
       </el-main>
     </el-container>
   </el-container>
 
-  <!-- 全局搜索对话框 -->
   <GlobalSearchDialog ref="searchDialogRef" />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import type { Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { HomeFilled, Reading, Setting, Collection, Notebook, EditPen, Promotion, Clock, WarningFilled, Trophy, MagicStick, DataAnalysis, StarFilled, UserFilled, Fold, Expand, DataLine, Guide, Connection, TrendCharts, Upload, Search, Monitor } from '@element-plus/icons-vue'
+import {
+  HomeFilled,
+  Reading,
+  Collection,
+  Notebook,
+  EditPen,
+  Promotion,
+  Clock,
+  WarningFilled,
+  Trophy,
+  MagicStick,
+  DataAnalysis,
+  StarFilled,
+  UserFilled,
+  Fold,
+  Expand,
+  DataLine,
+  Guide,
+  Connection,
+  TrendCharts,
+  Upload,
+  Search,
+  Monitor,
+  Timer,
+} from '@element-plus/icons-vue'
 import GlobalSearchDialog from '@/components/GlobalSearchDialog.vue'
+
+interface NavItem {
+  path: string
+  label: string
+  icon: Component
+  adminOnly?: boolean
+}
+
+interface NavSection {
+  label: string
+  items: NavItem[]
+}
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
-const activeMenu = computed(() => route.path)
 const userInfo = computed(() => userStore.userInfo)
 const isAdmin = computed(() => userStore.userInfo?.role === 'ADMIN')
+const avatarText = computed(() => userInfo.value?.nickname?.charAt(0) || userInfo.value?.username?.charAt(0) || 'U')
 
-// 全局搜索
+const navSections: NavSection[] = [
+  {
+    label: '学习中心',
+    items: [
+      { path: '/', label: '学习首页', icon: HomeFilled },
+      { path: '/courses', label: '课程列表', icon: Reading },
+      { path: '/questions', label: '题库浏览', icon: EditPen },
+      { path: '/favorites', label: '我的收藏', icon: StarFilled },
+    ],
+  },
+  {
+    label: '练习复习',
+    items: [
+      { path: '/practice', label: '刷题练习', icon: Promotion },
+      { path: '/practice/records', label: '刷题记录', icon: Clock },
+      { path: '/wrong-questions', label: '错题本', icon: WarningFilled },
+      { path: '/review', label: '智能复习', icon: Timer },
+    ],
+  },
+  {
+    label: '考试测评',
+    items: [
+      { path: '/exams', label: '考试测评', icon: Trophy },
+      { path: '/learning-report', label: '学习报告', icon: DataLine },
+    ],
+  },
+  {
+    label: 'AI 与诊断',
+    items: [
+      { path: '/learning-diagnosis', label: '学习诊断', icon: TrendCharts },
+      { path: '/learning-path', label: '学习路径', icon: Guide },
+      { path: '/knowledge-graph', label: '知识图谱', icon: Connection },
+      { path: '/ai/review', label: 'AI 复习建议', icon: MagicStick },
+    ],
+  },
+  {
+    label: '内容共建',
+    items: [
+      { path: '/submit', label: '题目投稿', icon: Upload },
+    ],
+  },
+  {
+    label: '管理后台',
+    items: [
+      { path: '/admin', label: '平台总览', icon: DataAnalysis, adminOnly: true },
+      { path: '/admin/courses', label: '课程管理', icon: Collection, adminOnly: true },
+      { path: '/admin/knowledge-points', label: '知识点管理', icon: Notebook, adminOnly: true },
+      { path: '/admin/questions', label: '题目管理', icon: EditPen, adminOnly: true },
+      { path: '/admin/exams', label: '试卷管理', icon: Trophy, adminOnly: true },
+      { path: '/admin/users', label: '用户管理', icon: UserFilled, adminOnly: true },
+      { path: '/admin/submissions', label: '投稿管理', icon: Upload, adminOnly: true },
+      { path: '/admin/ai-usage', label: 'AI 调用分析', icon: Monitor, adminOnly: true },
+    ],
+  },
+]
+
+const visibleSections = computed(() =>
+  navSections
+    .map(section => ({
+      ...section,
+      items: section.items.filter(item => !item.adminOnly || isAdmin.value),
+    }))
+    .filter(section => section.items.length > 0),
+)
+
+const flatNavItems = computed(() => visibleSections.value.flatMap(section => section.items))
+const activeMenu = computed(() => {
+  const exact = flatNavItems.value.find(item => item.path === route.path)
+  if (exact) return exact.path
+  const matched = [...flatNavItems.value]
+    .filter(item => item.path !== '/' && route.path.startsWith(item.path))
+    .sort((a, b) => b.path.length - a.path.length)[0]
+  return matched?.path || '/'
+})
+
+const pageTitle = computed(() => (route.meta.title as string) || '学习工作台')
+const pageDescriptions: Record<string, string> = {
+  '/': '查看今日计划、学习指标和下一步任务。',
+  '/courses': '按课程组织知识点，找到适合当前阶段的学习内容。',
+  '/questions': '浏览题库并结合课程、知识点、题型快速筛选。',
+  '/practice': '选择练习任务，完成即时判分与解析复盘。',
+  '/practice/records': '回看练习历史，定位近期薄弱项。',
+  '/wrong-questions': '集中处理反复出错的题目，逐步提升掌握度。',
+  '/favorites': '沉淀值得反复查看的题目与解析。',
+  '/review': '按间隔重复计划安排今天的复习任务。',
+  '/exams': '参加模拟考试，检验阶段性学习效果。',
+  '/learning-report': '用数据复盘近期学习表现。',
+  '/learning-diagnosis': '结合答题记录生成学习诊断与建议。',
+  '/learning-path': '查看个性化学习路径和推荐顺序。',
+  '/knowledge-graph': '从知识结构视角理解课程关联。',
+  '/ai/review': '让 AI 汇总复习重点与补强建议。',
+  '/submit': '提交高质量题目，参与题库共建。',
+  '/admin': '查看平台运营概况与待处理事项。',
+  '/admin/courses': '维护课程基础信息和展示顺序。',
+  '/admin/knowledge-points': '管理知识点层级与课程归属。',
+  '/admin/questions': '维护题目、答案、解析和知识点关系。',
+  '/admin/exams': '创建试卷并管理发布状态。',
+  '/admin/users': '管理用户、角色与 AI 日配额。',
+  '/admin/submissions': '审核用户投稿并入库。',
+  '/admin/ai-usage': '追踪 AI 调用、成本、失败率和异常提醒。',
+}
+const pageDescription = computed(() => pageDescriptions[activeMenu.value] || '围绕当前任务继续推进学习。')
+
 const searchDialogRef = ref<InstanceType<typeof GlobalSearchDialog>>()
 function openSearch() {
   searchDialogRef.value?.open()
 }
 
-// 响应式断点
 const MOBILE_BREAKPOINT = 768
 const isMobile = ref(false)
 const sidebarOpen = ref(false)
@@ -216,7 +264,6 @@ function checkMobile() {
 }
 
 function handleMenuSelect() {
-  // 移动端点击菜单项后自动关闭侧边栏
   if (isMobile.value) {
     sidebarOpen.value = false
   }
@@ -243,129 +290,235 @@ function handleCommand(command: string) {
 
 <style scoped>
 .app-layout {
-  height: 100vh;
-  position: relative;
+  min-height: 100vh;
+  background: var(--lp-bg);
+  color: var(--lp-text);
 }
 
-/* 侧边栏 */
 .app-sidebar {
-  background-color: #001529;
+  background: #101820;
   overflow: hidden;
-  transition: width 0.3s ease;
+  transition: width 0.25s ease;
 }
 
 .sidebar-inner {
-  height: 100%;
+  width: 248px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* 自定义滚动条 */
 .sidebar-inner::-webkit-scrollbar {
   width: 4px;
 }
+
 .sidebar-inner::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
 }
 
-.logo {
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  flex-shrink: 0;
-}
-
-.logo h2 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.app-header {
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-  padding: 0 20px;
-  height: 60px;
-  flex-shrink: 0;
-}
-
-.header-left {
+.brand {
+  min-height: 76px;
   display: flex;
   align-items: center;
   gap: 12px;
+  padding: 16px 18px;
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.header-right {
+.brand-mark {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #f0c75e;
+  color: #14213d;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.brand-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.brand-copy strong {
+  font-size: 16px;
+  line-height: 1.15;
+}
+
+.brand-copy span {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 12px;
+}
+
+.app-menu {
+  flex: 1;
+  padding: 12px 10px 18px;
+  border-right: 0;
+  background: transparent;
+}
+
+.menu-section-label {
+  margin: 14px 10px 6px;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.app-menu :deep(.el-menu-item) {
+  height: 40px;
+  margin: 2px 0;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.74);
+  line-height: 40px;
+}
+
+.app-menu :deep(.el-menu-item:hover) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.app-menu :deep(.el-menu-item.is-active) {
+  background: #e9f4ff;
+  color: #0f5ea8;
+  font-weight: 700;
+}
+
+.app-content-shell {
+  min-width: 0;
+}
+
+.app-header {
+  height: 68px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 0 28px;
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid var(--lp-border);
+  backdrop-filter: blur(16px);
 }
 
-/* 搜索触发按钮 */
-.header-search-trigger {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  background: #f0f2f5;
-  border: 1px solid #e4e7ed;
-  cursor: pointer;
-  transition: all 0.2s;
-  color: #909399;
-  font-size: 13px;
-}
-
-.header-search-trigger:hover {
-  border-color: #c0c4cc;
-  color: #606266;
-  background: #e8e8e8;
-}
-
-.search-trigger-text {
-  margin-left: 2px;
-}
-
-.search-trigger-kbd {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1px 5px;
-  font-size: 11px;
-  color: #b0b3b8;
-  background: #fff;
-  border: 1px solid #dcdfe6;
-  border-radius: 3px;
-  font-family: inherit;
-  margin-left: 4px;
-}
-
+.header-left,
+.header-right,
 .user-info {
   display: flex;
   align-items: center;
-  cursor: pointer;
-  gap: 8px;
 }
 
-.username {
+.header-left {
+  gap: 12px;
+  min-width: 0;
+}
+
+.header-right {
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.hamburger {
+  color: var(--lp-text);
+}
+
+.page-context {
+  min-width: 0;
+}
+
+.page-context h1 {
+  margin: 0;
+  color: var(--lp-text);
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.page-context p {
+  margin: 3px 0 0;
+  color: var(--lp-text-muted);
+  font-size: 13px;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-search-trigger {
+  min-width: 256px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 10px 0 13px;
+  border: 1px solid var(--lp-border);
+  border-radius: 8px;
+  background: #f8fafc;
+  color: var(--lp-text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.header-search-trigger:hover {
+  background: #fff;
+  border-color: #9bb7d0;
+  box-shadow: 0 8px 22px rgba(34, 53, 74, 0.08);
+}
+
+.search-trigger-text {
+  flex: 1;
+  text-align: left;
+}
+
+.search-trigger-kbd {
+  padding: 2px 6px;
+  border: 1px solid #d6dee8;
+  border-radius: 5px;
+  background: #fff;
+  color: #6b7c8f;
+  font-size: 11px;
+  font-family: inherit;
+}
+
+.user-info {
+  gap: 9px;
+  cursor: pointer;
+}
+
+.user-copy {
+  display: grid;
+  gap: 2px;
+  color: var(--lp-text);
+  line-height: 1.1;
+}
+
+.user-copy strong {
   font-size: 14px;
-  color: #333;
+  font-weight: 700;
+}
+
+.user-copy small {
+  color: var(--lp-text-muted);
+  font-size: 12px;
 }
 
 .app-main {
-  background-color: #f0f2f5;
-  padding: 20px;
+  min-width: 0;
+  padding: 24px;
   overflow-y: auto;
+  background:
+    linear-gradient(180deg, rgba(241, 246, 249, 0.86), rgba(246, 248, 251, 1) 320px),
+    var(--lp-bg);
 }
 
-/* 移动端侧边栏覆盖 */
 @media (max-width: 767px) {
   .app-sidebar {
     position: fixed !important;
@@ -374,48 +527,42 @@ function handleCommand(command: string) {
     z-index: 2000;
     height: 100vh;
     width: 0 !important;
-    transition: width 0.3s ease;
   }
 
   .app-sidebar.mobile-open {
-    width: 220px !important;
-  }
-
-  .app-sidebar.mobile-open .sidebar-inner {
-    width: 220px;
+    width: 248px !important;
   }
 
   .sidebar-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.45);
+    inset: 0;
     z-index: 1999;
-    animation: fadeIn 0.25s ease;
+    background: rgba(9, 21, 34, 0.48);
   }
 
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+  .app-header {
+    height: 58px;
+    padding: 0 12px;
   }
 
-  .hamburger {
-    cursor: pointer;
-    color: #303133;
+  .page-context h1 {
+    font-size: 16px;
+  }
+
+  .header-right {
+    gap: 10px;
+  }
+
+  .header-search-trigger {
+    min-width: 40px;
+    width: 40px;
+    height: 36px;
+    justify-content: center;
+    padding: 0;
   }
 
   .app-main {
     padding: 12px;
-  }
-
-  .app-header {
-    padding: 0 12px;
-  }
-
-  .header-search-trigger {
-    padding: 6px 8px;
   }
 }
 </style>

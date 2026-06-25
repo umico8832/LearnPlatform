@@ -1,5 +1,63 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 122 - 2026-06-25
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（P0/P1 实施）
+
+### 完成内容
+1. 重构 `AppLayout.vue`：侧边栏从长列表改为“学习中心 / 练习复习 / 考试测评 / AI 与诊断 / 内容共建 / 管理后台”分组导航，管理入口继续按管理员角色显示。
+2. 顶部栏改为页面语境区：显示当前页面标题、辅助说明、全局搜索入口和用户身份；移动端保留抽屉导航。
+3. 更新 `global.css`：新增项目级 CSS 变量，统一背景、卡片、按钮、表格、空状态、弹窗和移动端基础间距。
+4. 重做 `HomeView.vue` 为学习工作台：整合今日计划、下一步建议、关键指标、6 个任务入口、趋势图和课程正确率图；继续使用真实统计与学习计划接口。
+
+### 修改文件
+- `frontend/src/components/layout/AppLayout.vue`
+- `frontend/src/assets/styles/global.css`
+- `frontend/src/views/home/HomeView.vue`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd frontend && npm test -- --run`：24 个文件、196 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 pure annotation 与大 chunk 警告）。
+- `cd frontend && npm run dev -- --host 127.0.0.1`：本地前端启动成功，访问 `http://127.0.0.1:5173/`。
+- Playwright 视觉检查：桌面 1440x980、移动端 390x844 均无横向溢出；首页渲染 6 个快捷入口；移动端抽屉展开宽度 248px，分组导航可见。
+
+### 遗留问题
+- 本轮只启动前端，未启动后端；截图中的请求失败提示来自接口代理 502，不代表 UI 构建失败。
+- Phase 21 P2/P3 未完成：Practice/WrongQuestion/Review/ExamList 和管理端页面仍需继续整理。
+- Phase 20 的真实演示截图与推送后的 GitHub Actions 实跑仍待完成。
+
+### 建议 commit message
+`feat(frontend): 优化学习工作台信息架构`
+
+## Round 121 - 2026-06-25
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（计划）
+
+### 完成内容
+1. 根据用户反馈“功能太混乱、布局不好看、太粗糙”，新增 Phase 21 前端专项计划。
+2. 明确设计方向：学习/管理工作台，不做营销页；优先统一导航分组、全局样式和首页工作台。
+3. 在路线图中拆分 P0-P3：壳层导航、首页样板、核心业务页、管理端页面，并写明验收标准。
+4. 更新交接文档，要求新对话先阅读 `skills/frontend-design/SKILL.md`，第一轮只做 `AppLayout.vue`、`global.css`、`HomeView.vue`。
+
+### 修改文件
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- 本轮仅更新规划文档，未修改前端代码，未运行测试。
+
+### 遗留问题
+- Phase 21 尚未实施；新对话应从 AppLayout + global.css + HomeView 开始。
+
+### 建议 commit message
+`docs(frontend): 规划前端体验优化`
+
 ## Round 120 - 2026-06-25
 
 ### 阶段
