@@ -1,15 +1,21 @@
 import { expect, test } from '@playwright/test'
+import type { Page } from '@playwright/test'
 
-test('用户可通过真实登录流程访问课程列表', async ({ page }) => {
+async function loginAs(page: Page, username: string, password: string) {
   await page.goto('/login')
   await expect(page.getByAltText('验证码')).toBeVisible()
 
-  await page.getByPlaceholder('请输入用户名').fill('testuser')
-  await page.getByPlaceholder('请输入密码').fill('test123')
+  await page.getByPlaceholder('请输入用户名').fill(username)
+  await page.getByPlaceholder('请输入密码').fill(password)
   await page.getByPlaceholder('请输入计算结果').fill('42')
   await page.getByRole('button', { name: '登 录' }).click()
 
   await expect(page).toHaveURL(/\/$/)
+}
+
+test('用户可通过真实登录流程访问课程列表', async ({ page }) => {
+  await loginAs(page, 'testuser', 'test123')
+
   await expect(page.getByText('AI 题库系统', { exact: true })).toBeVisible()
 
   await page.getByText('课程列表', { exact: true }).click()
@@ -19,17 +25,12 @@ test('用户可通过真实登录流程访问课程列表', async ({ page }) => 
 })
 
 test('用户答错后可在错题本更新掌握程度并重练', async ({ page }) => {
-  await page.goto('/login')
-  await page.getByPlaceholder('请输入用户名').fill('testuser')
-  await page.getByPlaceholder('请输入密码').fill('test123')
-  await page.getByPlaceholder('请输入计算结果').fill('42')
-  await page.getByRole('button', { name: '登 录' }).click()
-  await expect(page).toHaveURL(/\/$/)
+  await loginAs(page, 'testuser', 'test123')
 
   await page.getByRole('menuitem', { name: '刷题练习' }).click()
   await expect(page).toHaveURL(/\/practice$/)
   await page.locator('.config-card input').last().fill('1')
-  await page.getByRole('button', { name: '开始刷题' }).click()
+  await page.locator('.config-card').getByRole('button', { name: '开始刷题' }).click()
   await expect(page).toHaveURL(/\/practice\/session$/)
 
   // 演示题库中的三道题均将第二个选项设为错误答案，保证会进入错题闭环。
@@ -53,12 +54,7 @@ test('用户答错后可在错题本更新掌握程度并重练', async ({ page 
 })
 
 test('用户可完成考试并查看自动判分结果', async ({ page }) => {
-  await page.goto('/login')
-  await page.getByPlaceholder('请输入用户名').fill('testuser')
-  await page.getByPlaceholder('请输入密码').fill('test123')
-  await page.getByPlaceholder('请输入计算结果').fill('42')
-  await page.getByRole('button', { name: '登 录' }).click()
-  await expect(page).toHaveURL(/\/$/)
+  await loginAs(page, 'testuser', 'test123')
 
   await page.getByRole('menuitem', { name: '考试' }).click()
   await expect(page).toHaveURL(/\/exams$/)
@@ -90,12 +86,7 @@ test('用户可完成考试并查看自动判分结果', async ({ page }) => {
 test('用户投稿可由管理员审核并入库', async ({ page }) => {
   const questionContent = `E2E 投稿题目 ${Date.now()}`
 
-  await page.goto('/login')
-  await page.getByPlaceholder('请输入用户名').fill('testuser')
-  await page.getByPlaceholder('请输入密码').fill('test123')
-  await page.getByPlaceholder('请输入计算结果').fill('42')
-  await page.getByRole('button', { name: '登 录' }).click()
-  await expect(page).toHaveURL(/\/$/)
+  await loginAs(page, 'testuser', 'test123')
 
   await page.goto('/submit')
   await expect(page.getByRole('main').getByText('题目投稿', { exact: true })).toBeVisible()
@@ -116,12 +107,7 @@ test('用户投稿可由管理员审核并入库', async ({ page }) => {
   await expect(page.getByText('投稿提交成功，等待管理员审核')).toBeVisible()
 
   await page.evaluate(() => localStorage.clear())
-  await page.goto('/login')
-  await page.getByPlaceholder('请输入用户名').fill('admin')
-  await page.getByPlaceholder('请输入密码').fill('admin123')
-  await page.getByPlaceholder('请输入计算结果').fill('42')
-  await page.getByRole('button', { name: '登 录' }).click()
-  await expect(page).toHaveURL(/\/$/)
+  await loginAs(page, 'admin', 'admin123')
 
   await page.goto('/admin/submissions')
   await expect(page.getByRole('main').getByText('投稿管理', { exact: true })).toBeVisible()

@@ -1,5 +1,33 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 119 - 2026-06-23
+
+### 阶段
+Phase 20：GitHub Actions Browser E2E 修复
+
+### 完成内容
+1. 排查 GitHub Actions 失败：`Browser E2E` 在刷题错题闭环用例中因页面存在两个同名“开始刷题”按钮触发 Playwright strict mode。
+2. 将刷题 E2E 的按钮定位收窄到 `.config-card`，明确点击“自选模式”配置卡片内的“开始刷题”按钮。
+3. 抽取 E2E 登录 helper，所有浏览器用例统一等待验证码图片加载后再提交登录，降低验证码异步加载导致的本地/CI 偶发登录失败。
+
+### 修改文件
+- `frontend/e2e/auth-and-course.spec.ts`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --force-recreate --wait`：E2E 环境重建成功，全部服务 healthy。
+- `cd frontend && E2E_BASE_URL=http://localhost:18000 npm run test:e2e -- --grep '用户答错后可在错题本更新掌握程度并重练'`：1 条通过。
+- `cd frontend && E2E_BASE_URL=http://localhost:18000 npm run test:e2e`：4 条通过。
+- `cd frontend && npm test -- --run`：24 个文件、196 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 pure annotation 与大 chunk 警告）。
+
+### 遗留问题
+- 本轮未 push，仍需推送后等待 GitHub Actions 重新运行确认远端 CI 通过。
+- 本地 `gh` CLI 不可用，无法直接从终端拉取 Actions 日志；本轮通过 GitHub Actions 页面与本地复现完成排查。
+
+### 建议 commit message
+`test(e2e): 修复刷题入口定位并稳定登录流程`
+
 ## Round 118 - 2026-06-21
 
 ### 阶段
