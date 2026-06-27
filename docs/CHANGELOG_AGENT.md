@@ -1,5 +1,37 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 125 - 2026-06-27
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（题库浏览页整理）
+
+### 完成内容
+1. 重构 `QuestionListView.vue` 页面结构：从普通筛选表单和卡片列表改为“题库浏览工作台”，包含页头说明、结果统计、筛选侧栏和题目结果区。
+2. 优化题型、课程、难度筛选交互：题型改为按钮组，难度改为紧凑选项卡，筛选变更时自动回到第一页，并提供清空筛选入口。
+3. 整理题目卡片层级：题型、课程、难度、分值、选项、知识点标签、收藏和讨论入口分区更清晰。
+4. 补充桌面与移动端响应式样式，确保筛选区、题目选项、分页和操作按钮在窄屏下自然折行。
+5. 同步更新 `docs/ROADMAP.md` 与 `docs/HANDOFF.md`，标记 QuestionListView 整理完成，并把下一步调整为 Phase 21 P3 管理端工作台与列表体验。
+
+### 修改文件
+- `frontend/src/views/course/QuestionListView.vue`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd frontend && npm test -- --run`：25 个文件、203 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+- `cd frontend && npm run dev -- --host 127.0.0.1`：前端启动成功，访问 `http://127.0.0.1:5173/`。
+- Playwright 本地布局检查：`/questions` 在桌面 1440x980 与移动端 390x844 均无横向溢出，题库页标题、题目卡片和结果摘要正常渲染。
+
+### 遗留问题
+- 本轮未启动后端；浏览器检查使用本地拦截数据验证 UI 布局，不代表真实接口联调。
+- Phase 21 P3 管理端工作台与列表体验仍待完成。
+- Phase 20 的真实演示截图与推送后的 GitHub Actions 实跑仍待完成。
+
+### 建议 commit message
+`feat(frontend): 优化题库浏览页体验`
+
 ## Round 124 - 2026-06-25
 
 ### 阶段
