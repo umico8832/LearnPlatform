@@ -1,12 +1,19 @@
 <template>
-  <div class="course-manage">
-    <div class="page-header">
-      <h2>课程管理</h2>
-      <el-button type="primary" :icon="Plus" @click="openDialog()">新增课程</el-button>
-    </div>
+  <div class="course-manage admin-page">
+    <header class="admin-page-header">
+      <div>
+        <p class="admin-page-kicker">CONTENT SYSTEM</p>
+        <h2>课程管理</h2>
+        <p class="admin-page-description">维护学习内容的一级目录，课程排序会影响用户端列表展示。</p>
+      </div>
+      <div class="admin-header-actions">
+        <el-button type="primary" :icon="Plus" @click="openDialog()">新增课程</el-button>
+      </div>
+    </header>
 
-    <el-card shadow="never">
-      <div class="toolbar">
+    <el-card shadow="never" class="admin-table-card">
+      <div class="admin-toolbar">
+        <div class="admin-filter-group">
         <el-input
           v-model="keyword"
           placeholder="搜索课程名称"
@@ -16,9 +23,12 @@
           @clear="fetchCourses"
           @keyup.enter="fetchCourses"
         />
+        <el-button :icon="Search" @click="fetchCourses">查询</el-button>
+        </div>
+        <span class="table-summary">共 {{ courses.length }} 门课程</span>
       </div>
 
-      <el-table :data="courses" v-loading="loading" stripe>
+      <el-table :data="courses" v-loading="loading" stripe class="admin-data-table">
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="name" label="课程名称" min-width="160" />
         <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip>
@@ -37,11 +47,11 @@
         <el-table-column prop="createTime" label="创建时间" width="170" />
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link size="small" @click="openDialog(row as CourseVO)">编辑</el-button>
-            <el-button type="primary" link size="small" @click="goToKP(row as CourseVO)">知识点</el-button>
+            <el-button type="primary" link size="small" :icon="Edit" @click="openDialog(row as CourseVO)">编辑</el-button>
+            <el-button type="primary" link size="small" :icon="Connection" @click="goToKP(row as CourseVO)">知识点</el-button>
             <el-popconfirm title="确定删除该课程？" @confirm="handleDelete((row as CourseVO).id)">
               <template #reference>
-                <el-button type="danger" link size="small">删除</el-button>
+                <el-button type="danger" link size="small" :icon="Delete">删除</el-button>
               </template>
             </el-popconfirm>
           </template>
@@ -92,7 +102,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Plus, Search } from '@element-plus/icons-vue'
+import { Connection, Delete, Edit, Plus, Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { getCoursePage, createCourse, updateCourse, deleteCourse, type CourseVO } from '@/api/course'
@@ -190,20 +200,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.page-header h2 {
-  margin: 0;
-  font-size: 20px;
-  color: #303133;
-}
-
-.toolbar {
-  margin-bottom: 16px;
+.table-summary {
+  color: var(--lp-text-muted);
+  font-size: 13px;
 }
 </style>

@@ -1,62 +1,56 @@
 <template>
-  <div class="user-manage">
-    <div class="page-header">
-      <h2>用户管理</h2>
-      <el-button type="primary" :icon="Plus" @click="openCreateDialog()">新增用户</el-button>
-    </div>
+  <div class="user-manage admin-page">
+    <header class="admin-page-header">
+      <div>
+        <p class="admin-page-kicker">ACCESS CONTROL</p>
+        <h2>用户管理</h2>
+        <p class="admin-page-description">统一维护账号状态、角色权限与 AI 日配额，所有配额调整都会留下审计记录。</p>
+      </div>
+      <div class="admin-header-actions">
+        <el-button type="primary" :icon="Plus" @click="openCreateDialog()">新增用户</el-button>
+      </div>
+    </header>
 
-    <!-- 统计卡片 -->
-    <el-row :gutter="16" class="stats-row">
-      <el-col :span="6">
-        <el-card shadow="never" class="stat-card">
-          <div class="stat-label">用户总数</div>
-          <div class="stat-value">{{ userStats.total }}</div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="never" class="stat-card stat-active">
-          <div class="stat-label">已启用</div>
-          <div class="stat-value">{{ userStats.active }}</div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="never" class="stat-card stat-disabled">
-          <div class="stat-label">已禁用</div>
-          <div class="stat-value">{{ userStats.disabled }}</div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="never" class="stat-card stat-admin">
-          <div class="stat-label">管理员</div>
-          <div class="stat-value">{{ userStats.admins }}</div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <section class="admin-summary-grid">
+      <el-card v-for="item in statCards" :key="item.label" shadow="never" class="admin-summary-card">
+        <span class="admin-summary-icon" :class="item.className">
+          <el-icon><component :is="item.icon" /></el-icon>
+        </span>
+        <div class="admin-summary-copy">
+          <p class="admin-summary-label">{{ item.label }}</p>
+          <div class="admin-summary-value">{{ item.value }}</div>
+          <div class="admin-summary-note">{{ item.note }}</div>
+        </div>
+      </el-card>
+    </section>
 
-    <el-card shadow="never">
-      <!-- 筛选工具栏 -->
-      <div class="toolbar">
-        <el-input
-          v-model="keyword"
-          placeholder="搜索用户名/昵称"
-          :prefix-icon="Search"
-          clearable
-          style="width: 240px"
-          @clear="fetchUsers"
-          @keyup.enter="fetchUsers"
-        />
-        <el-select v-model="filterRole" placeholder="角色" clearable style="width: 120px; margin-left: 12px" @change="fetchUsers">
-          <el-option label="管理员" value="ADMIN" />
-          <el-option label="普通用户" value="USER" />
-        </el-select>
-        <el-select v-model="filterStatus" placeholder="状态" clearable style="width: 120px; margin-left: 12px" @change="fetchUsers">
-          <el-option label="启用" :value="1" />
-          <el-option label="禁用" :value="0" />
-        </el-select>
+    <el-card shadow="never" class="admin-table-card">
+      <div class="admin-toolbar">
+        <div class="admin-filter-group">
+          <el-input
+            v-model="keyword"
+            placeholder="搜索用户名/昵称"
+            :prefix-icon="Search"
+            clearable
+            style="width: 240px"
+            @clear="fetchUsers"
+            @keyup.enter="fetchUsers"
+          />
+          <el-select v-model="filterRole" placeholder="角色" clearable style="width: 130px" @change="fetchUsers">
+            <el-option label="管理员" value="ADMIN" />
+            <el-option label="普通用户" value="USER" />
+          </el-select>
+          <el-select v-model="filterStatus" placeholder="状态" clearable style="width: 120px" @change="fetchUsers">
+            <el-option label="启用" :value="1" />
+            <el-option label="禁用" :value="0" />
+          </el-select>
+          <el-button :icon="Search" @click="fetchUsers">查询</el-button>
+        </div>
+        <span class="table-summary">当前筛选 {{ total }} 位用户</span>
       </div>
 
       <!-- 用户表格 -->
-      <el-table :data="users" v-loading="loading" stripe>
+      <el-table :data="users" v-loading="loading" stripe class="admin-data-table">
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="username" label="用户名" min-width="120" />
         <el-table-column prop="nickname" label="昵称" min-width="120">
@@ -88,19 +82,20 @@
         <el-table-column prop="createTime" label="注册时间" width="170" />
         <el-table-column label="操作" width="350" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link size="small" @click="openRoleDialog(row as AdminUserVO)">改角色</el-button>
+            <el-button type="primary" link size="small" :icon="UserFilled" @click="openRoleDialog(row as AdminUserVO)">改角色</el-button>
             <el-button
               :type="(row as AdminUserVO).status === 1 ? 'warning' : 'success'"
               link size="small"
+              :icon="SwitchButton"
               @click="toggleStatus(row as AdminUserVO)"
             >
               {{ (row as AdminUserVO).status === 1 ? '禁用' : '启用' }}
             </el-button>
-            <el-button type="info" link size="small" @click="openResetPwdDialog(row as AdminUserVO)">重置密码</el-button>
-            <el-button type="primary" link size="small" @click="openAiQuotaDialog(row as AdminUserVO)">AI 配额</el-button>
+            <el-button type="info" link size="small" :icon="Key" @click="openResetPwdDialog(row as AdminUserVO)">重置密码</el-button>
+            <el-button type="primary" link size="small" :icon="Cpu" @click="openAiQuotaDialog(row as AdminUserVO)">AI 配额</el-button>
             <el-popconfirm title="确定删除该用户？此操作不可恢复。" @confirm="handleDelete((row as AdminUserVO).id)">
               <template #reference>
-                <el-button type="danger" link size="small">删除</el-button>
+                <el-button type="danger" link size="small" :icon="Delete">删除</el-button>
               </template>
             </el-popconfirm>
           </template>
@@ -108,7 +103,7 @@
       </el-table>
 
       <!-- 分页 -->
-      <div class="pagination-wrapper">
+      <div class="admin-pagination">
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
@@ -239,8 +234,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { Plus, Search } from '@element-plus/icons-vue'
+import { computed, ref, reactive, onMounted } from 'vue'
+import { CircleClose, CircleCheck, Cpu, Delete, Key, Plus, Search, SwitchButton, User, UserFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import {
@@ -313,6 +308,41 @@ const aiQuotaReason = ref('')
 const aiQuotaAudits = ref<AiQuotaAuditLog[]>([])
 
 const submitting = ref(false)
+
+const statCards = computed(() => [
+  {
+    label: '用户总数',
+    value: userStats.total,
+    note: '平台注册账号',
+    icon: User,
+    className: 'summary-total',
+  },
+  {
+    label: '已启用',
+    value: userStats.active,
+    note: `${activationRate.value}% 账号可登录`,
+    icon: CircleCheck,
+    className: 'summary-active',
+  },
+  {
+    label: '已禁用',
+    value: userStats.disabled,
+    note: '需管理员重新启用',
+    icon: CircleClose,
+    className: 'summary-disabled',
+  },
+  {
+    label: '管理员',
+    value: userStats.admins,
+    note: '拥有后台权限',
+    icon: UserFilled,
+    className: 'summary-admin',
+  },
+])
+
+const activationRate = computed(() => (
+  userStats.total > 0 ? Math.round((userStats.active / userStats.total) * 100) : 0
+))
 
 async function fetchUsers() {
   loading.value = true
@@ -499,61 +529,24 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
+.summary-active {
+  color: var(--lp-success);
+  background: #eef8f2;
 }
 
-.page-header h2 {
-  margin: 0;
-  font-size: 20px;
-  color: #303133;
+.summary-disabled {
+  color: var(--lp-warning);
+  background: #fff7e6;
 }
 
-.stats-row {
-  margin-bottom: 20px;
+.summary-admin {
+  color: var(--lp-danger);
+  background: #fff1f0;
 }
 
-.stat-card {
-  text-align: center;
-}
-
-.stat-label {
+.table-summary {
+  color: var(--lp-text-muted);
   font-size: 13px;
-  color: #909399;
-  margin-bottom: 8px;
-}
-
-.stat-value {
-  font-size: 28px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.stat-active .stat-value {
-  color: #67c23a;
-}
-
-.stat-disabled .stat-value {
-  color: #e6a23c;
-}
-
-.stat-admin .stat-value {
-  color: #f56c6c;
-}
-
-.toolbar {
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.pagination-wrapper {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
 }
 
 .quota-audit-list {

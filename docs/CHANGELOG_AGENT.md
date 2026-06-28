@@ -1,5 +1,69 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 127 - 2026-06-28
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（P3 管理端样板整理）
+
+### 完成内容
+1. 在 `global.css` 新增管理端通用页面骨架：统一后台页头、说明文字、操作区、筛选区、统计卡、表格卡片和分页样式。
+2. 整理 `AdminDashboard.vue` 外壳，使管理总览页接入统一后台页头与页面宽度节奏。
+3. 重构 `CourseManage.vue` 页头和表格容器，补充说明文字、查询按钮、结果摘要和图标化行操作。
+4. 重构 `UserManage.vue` 为后台账号工作台：统计卡改为统一摘要卡，筛选区和分页接入通用后台表格样式，行操作增加图标并保留原有角色、状态、密码和 AI 配额功能。
+5. 使用本地 Playwright 拦截数据检查 `/admin`、`/admin/courses`、`/admin/users` 的桌面与移动端布局，确认无横向溢出。
+
+### 修改文件
+- `frontend/src/assets/styles/global.css`
+- `frontend/src/views/admin/AdminDashboard.vue`
+- `frontend/src/views/admin/CourseManage.vue`
+- `frontend/src/views/admin/UserManage.vue`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd frontend && npm test -- --run`：25 个文件、203 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+- `cd frontend && npm run dev -- --host 127.0.0.1`：前端启动成功，访问 `http://127.0.0.1:5173/`。
+- Playwright 本地布局检查：使用拦截数据验证 `/admin`、`/admin/courses`、`/admin/users` 在桌面 1440x980 与移动端 390x844 均无横向溢出，标题和关键操作按钮正常渲染。
+
+### 遗留问题
+- 本轮未启动后端；浏览器检查使用本地拦截数据验证 UI 布局，不代表真实接口联调。
+- Phase 21 P3 仍可继续整理 `QuestionManage.vue`、`ExamManage.vue`、`SubmissionManage.vue` 与 `AiUsageView.vue`，让所有管理端列表页完全收敛到同一套后台基线。
+- Phase 20 的真实演示截图与推送后的 GitHub Actions 实跑仍待完成。
+
+### 建议 commit message
+`feat(frontend): 优化管理端页面体验`
+
+## Round 126 - 2026-06-28
+
+### 阶段
+协作规范与测试流程优化
+
+### 完成内容
+1. 新增 `skills/frontend-flow-test/SKILL.md`，定义 Agent 临时浏览器流程验收规范，强调只跑当前任务相关的最小业务闭环。
+2. 明确临时浏览器验收与正式 Vitest、后端测试、Playwright E2E 的关系：前者用于快速确认运行体验，后者用于长期回归保护。
+3. 在 `docs/TESTING.md` 增加“Agent 临时浏览器流程验收”章节，要求默认低 token 读取关键状态，失败时再逐级升级到局部 DOM、截图、日志和后端容器日志。
+4. 更新 `AGENTS.md`、`docs/HANDOFF.md` 和 `skills/README.md`，加入 `frontend-flow-test` 的读取路由与使用说明。
+
+### 修改文件
+- `skills/frontend-flow-test/SKILL.md`
+- `skills/README.md`
+- `AGENTS.md`
+- `docs/TESTING.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `python3 /Users/umico/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/frontend-flow-test`：通过。
+
+### 遗留问题
+- 本轮只更新协作规范和测试文档，未运行前后端自动化测试。
+- 后续进行前端浏览器临时验收时，应先使用该 skill；若发现可复现缺陷，再补正式回归测试。
+
+### 建议 commit message
+`docs(testing): 增加前端流程验收 skill`
+
 ## Round 125 - 2026-06-27
 
 ### 阶段

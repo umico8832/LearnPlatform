@@ -1,10 +1,10 @@
 <template>
-  <div class="dashboard-container">
-    <header class="dashboard-header">
+  <div class="dashboard-container admin-page">
+    <header class="dashboard-header admin-page-header">
       <div>
-        <p class="eyebrow">PLATFORM OVERVIEW</p>
+        <p class="admin-page-kicker">PLATFORM OVERVIEW</p>
         <h2>平台数据总览</h2>
-        <p class="header-description">掌握内容供给、用户活跃与练习趋势。</p>
+        <p class="admin-page-description">掌握内容供给、用户活跃与练习趋势，优先发现题库增长、试卷发布和活跃波动。</p>
       </div>
       <div class="update-time">
         <el-icon><Refresh /></el-icon>
@@ -287,43 +287,14 @@ function percentage(value: number, total: number) {
 <style scoped>
 .dashboard-container {
   min-height: 100%;
-  padding: 24px;
-  color: #1f2937;
-}
-
-.dashboard-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 24px;
-}
-
-.eyebrow {
-  margin: 0 0 8px;
-  color: #2563eb;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-}
-
-.dashboard-header h2 {
-  margin: 0;
-  font-size: 24px;
-  letter-spacing: -0.02em;
-}
-
-.header-description {
-  margin: 7px 0 0;
-  color: #7a8492;
-  font-size: 14px;
+  color: var(--lp-text);
 }
 
 .update-time {
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #8a94a3;
+  color: var(--lp-text-muted);
   font-size: 12px;
 }
 
@@ -341,8 +312,8 @@ function percentage(value: number, total: number) {
 .metric-card,
 .panel-card,
 .status-card {
-  border-color: #e7ebf0;
-  border-radius: 10px;
+  border-color: var(--lp-border);
+  border-radius: var(--lp-radius);
 }
 
 .metric-card :deep(.el-card__body) {
@@ -432,11 +403,6 @@ function percentage(value: number, total: number) {
 @media (max-width: 768px) {
   .dashboard-container {
     padding: 16px;
-  }
-
-  .dashboard-header {
-    align-items: flex-start;
-    flex-direction: column;
   }
 
   .activity-chart,
