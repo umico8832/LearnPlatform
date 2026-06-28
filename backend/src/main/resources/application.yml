@@ -86,11 +86,11 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,prometheus,info
+        include: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:health,prometheus}
       base-path: /actuator
   endpoint:
     health:
-      show-details: always
+      show-details: ${MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS:never}
     prometheus:
       enabled: true
   metrics:
@@ -100,6 +100,23 @@ management:
     metrics:
       export:
         enabled: true
+
+app:
+  cache:
+    default-ttl: ${CACHE_DEFAULT_TTL:10m}
+    ttl:
+      statistics: ${CACHE_TTL_STATISTICS:5m}
+      adminStatistics: ${CACHE_TTL_ADMIN_STATISTICS:3m}
+      dailyTrend: ${CACHE_TTL_DAILY_TREND:5m}
+      courseStats: ${CACHE_TTL_COURSE_STATS:5m}
+      learningReport: ${CACHE_TTL_LEARNING_REPORT:10m}
+      learningPath: ${CACHE_TTL_LEARNING_PATH:10m}
+      knowledgeGraph: ${CACHE_TTL_KNOWLEDGE_GRAPH:10m}
+      learningDiagnosis: ${CACHE_TTL_LEARNING_DIAGNOSIS:10m}
+      submissionQuality: ${CACHE_TTL_SUBMISSION_QUALITY:30m}
+      submissionKPTagging: ${CACHE_TTL_SUBMISSION_KP_TAGGING:30m}
+      submissionDifficulty: ${CACHE_TTL_SUBMISSION_DIFFICULTY:30m}
+      globalSearch: ${CACHE_TTL_GLOBAL_SEARCH:5m}
 
 # Knife4j 配置
 springdoc:

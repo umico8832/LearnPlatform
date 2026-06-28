@@ -1,5 +1,46 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 128 - 2026-06-28
+
+### 阶段
+工程化问题修复
+
+### 完成内容
+1. 修复全局搜索 API 封装重复 `/api` 前缀问题，避免请求落到 `/api/api/search`。
+2. 统一 AI 学习建议流式接口的 Base URL 获取方式，使其与其他流式接口一样支持 `VITE_API_BASE_URL`。
+3. 收紧 Actuator 默认暴露面：默认仅暴露 `health` 与 `prometheus`，健康详情默认不公开；Security 仅匿名放行健康检查和 Prometheus 指标。
+4. 新增 `CacheTtlProperties`，将 Redis 缓存 TTL 从 `RedisConfig` 硬编码迁移到 `application.yml` 和环境变量。
+5. 新增前端 API 契约测试，覆盖搜索路径和统计流式请求路径，防止 `/api` 前缀回归。
+
+### 修改文件
+- `frontend/src/api/search.ts`
+- `frontend/src/api/statistics.ts`
+- `frontend/src/__tests__/api/search.test.ts`
+- `frontend/src/__tests__/api/statistics.test.ts`
+- `backend/src/main/java/com/learnplatform/config/CacheTtlProperties.java`
+- `backend/src/main/java/com/learnplatform/config/RedisConfig.java`
+- `backend/src/main/java/com/learnplatform/config/SecurityConfig.java`
+- `backend/src/main/resources/application.yml`
+- `docs/HANDOFF.md`
+- `docs/FUTURE.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd frontend && npm test -- --run src/__tests__/api/search.test.ts src/__tests__/api/statistics.test.ts`：2 个文件、9 个测试通过。
+- `cd frontend && npm test -- --run`：26 个文件、206 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+- `cd backend && mvn test -Dtest=GlobalSearchServiceTest -q`：通过。
+- `cd backend && mvn test`：360 个测试通过。
+- `docker compose config --quiet`：通过。
+
+### 遗留问题
+- 前端暂未配置 lint 脚本或 ESLint。
+- 大型 Service 和页面组件仍可后续逐步拆分。
+- 本轮未处理刷题记录与错题/复习计划同步的容错边界，该问题需要结合业务期望决定是强一致还是保留尽力同步。
+
+### 建议 commit message
+`fix: 修复接口路径与配置治理问题`
+
 ## Round 127 - 2026-06-28
 
 ### 阶段

@@ -15,7 +15,6 @@
 - 推送后确认 GitHub Actions 的后端、前端和 Docker Job 实际通过。
 - 为登录、刷题、错题复习、考试和管理端审核增加少量高价值端到端测试。
 - 解决或明确记录本地 Testcontainers 与 JDK/Docker Socket 的兼容性方案。
-- 将 Redis 缓存 TTL 从 `RedisConfig` 硬编码值迁移到应用配置。
 
 ## P1：AI 运营治理
 
@@ -67,7 +66,6 @@
 | 浏览器级 E2E | 现有测试以单元、MockMvc 和部分 Testcontainers 为主 | P0 |
 | AI token 与成本 | 仅有调用次数和字段聚合，未提取真实上游 token | P1 |
 | 用户独立 AI 配额 | 当前为全局统一日配额 | P1 |
-| 缓存 TTL 配置化 | TTL 仍在 `RedisConfig` 中硬编码 | P1 |
 | Testcontainers 本地兼容性 | 本地 JDK/Docker Socket 组合待稳定验证 | P1 |
 
 ## 排期原则

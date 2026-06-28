@@ -297,7 +297,8 @@ export function getAiAdvice() {
 /** 获取 AI 个性化学习建议（流式 SSE） */
 export function getAiAdviceStream(): Promise<Response> {
   const token = localStorage.getItem('token') || ''
-  return fetch('/api/statistics/ai-advice/stream', {
+  const base = import.meta.env.VITE_API_BASE_URL || '/api'
+  return fetch(`${base}/statistics/ai-advice/stream`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

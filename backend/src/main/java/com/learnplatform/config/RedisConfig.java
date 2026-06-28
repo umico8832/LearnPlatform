@@ -1,6 +1,7 @@
 package com.learnplatform.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.support.SimpleCacheManager;
@@ -21,32 +22,42 @@ import java.time.Duration;
  */
 @Configuration
 @EnableCaching
+@EnableConfigurationProperties(CacheTtlProperties.class)
 public class RedisConfig {
 
     @Bean
     @ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis")
-    public CacheManager redisCacheManager(RedisConnectionFactory connectionFactory) {
+    public CacheManager redisCacheManager(RedisConnectionFactory connectionFactory,
+                                          CacheTtlProperties cacheTtlProperties) {
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(10))
+                .entryTtl(cacheTtlProperties.getDefaultTtl())
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()))
                 .disableCachingNullValues();
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
-                .withCacheConfiguration("statistics", defaultConfig.entryTtl(Duration.ofMinutes(5)))
-                .withCacheConfiguration("adminStatistics", defaultConfig.entryTtl(Duration.ofMinutes(3)))
-                .withCacheConfiguration("dailyTrend", defaultConfig.entryTtl(Duration.ofMinutes(5)))
-                .withCacheConfiguration("courseStats", defaultConfig.entryTtl(Duration.ofMinutes(5)))
-                .withCacheConfiguration("learningReport", defaultConfig.entryTtl(Duration.ofMinutes(10)))
-                .withCacheConfiguration("learningPath", defaultConfig.entryTtl(Duration.ofMinutes(10)))
-                .withCacheConfiguration("knowledgeGraph", defaultConfig.entryTtl(Duration.ofMinutes(10)))
-                .withCacheConfiguration("learningDiagnosis", defaultConfig.entryTtl(Duration.ofMinutes(10)))
-                .withCacheConfiguration("submissionQuality", defaultConfig.entryTtl(Duration.ofMinutes(30)))
-                .withCacheConfiguration("submissionKPTagging", defaultConfig.entryTtl(Duration.ofMinutes(30)))
-                .withCacheConfiguration("submissionDifficulty", defaultConfig.entryTtl(Duration.ofMinutes(30)))
-                .withCacheConfiguration("globalSearch", defaultConfig.entryTtl(Duration.ofMinutes(5)))
+                .withCacheConfiguration("statistics", cacheConfig(defaultConfig, cacheTtlProperties, "statistics", 5))
+                .withCacheConfiguration("adminStatistics", cacheConfig(defaultConfig, cacheTtlProperties, "adminStatistics", 3))
+                .withCacheConfiguration("dailyTrend", cacheConfig(defaultConfig, cacheTtlProperties, "dailyTrend", 5))
+                .withCacheConfiguration("courseStats", cacheConfig(defaultConfig, cacheTtlProperties, "courseStats", 5))
+                .withCacheConfiguration("learningReport", cacheConfig(defaultConfig, cacheTtlProperties, "learningReport", 10))
+                .withCacheConfiguration("learningPath", cacheConfig(defaultConfig, cacheTtlProperties, "learningPath", 10))
+                .withCacheConfiguration("knowledgeGraph", cacheConfig(defaultConfig, cacheTtlProperties, "knowledgeGraph", 10))
+                .withCacheConfiguration("learningDiagnosis", cacheConfig(defaultConfig, cacheTtlProperties, "learningDiagnosis", 10))
+                .withCacheConfiguration("submissionQuality", cacheConfig(defaultConfig, cacheTtlProperties, "submissionQuality", 30))
+                .withCacheConfiguration("submissionKPTagging", cacheConfig(defaultConfig, cacheTtlProperties, "submissionKPTagging", 30))
+                .withCacheConfiguration("submissionDifficulty", cacheConfig(defaultConfig, cacheTtlProperties, "submissionDifficulty", 30))
+                .withCacheConfiguration("globalSearch", cacheConfig(defaultConfig, cacheTtlProperties, "globalSearch", 5))
                 .build();
+    }
+
+    private RedisCacheConfiguration cacheConfig(RedisCacheConfiguration defaultConfig,
+                                                CacheTtlProperties cacheTtlProperties,
+                                                String cacheName,
+                                                long fallbackMinutes) {
+        Duration fallback = Duration.ofMinutes(fallbackMinutes);
+        return defaultConfig.entryTtl(cacheTtlProperties.ttlOf(cacheName, fallback));
     }
 
     @Bean

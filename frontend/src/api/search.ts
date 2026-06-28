@@ -30,7 +30,7 @@ export interface SearchSuggestions {
  * @param limit 每类结果最大条数（默认 5）
  */
 export function globalSearch(keyword: string, limit?: number) {
-  return request.get<GlobalSearchResult>('/api/search', {
+  return request.get<GlobalSearchResult>('/search', {
     params: { keyword, limit },
   })
 }
@@ -39,14 +39,14 @@ export function globalSearch(keyword: string, limit?: number) {
  * 获取搜索建议（搜索历史 + 热门搜索）
  */
 export function getSearchSuggestions() {
-  return request.get<SearchSuggestions>('/api/search/suggestions')
+  return request.get<SearchSuggestions>('/search/suggestions')
 }
 
 /**
  * 清除当前用户全部搜索历史
  */
 export function clearSearchHistory() {
-  return request.delete<void>('/api/search/history')
+  return request.delete<void>('/search/history')
 }
 
 /**
@@ -54,7 +54,7 @@ export function clearSearchHistory() {
  * @param keyword 要删除的关键词
  */
 export function removeSearchHistoryItem(keyword: string) {
-  return request.delete<void>('/api/search/history/item', {
+  return request.delete<void>('/search/history/item', {
     params: { keyword },
   })
 }

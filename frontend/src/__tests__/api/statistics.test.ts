@@ -16,6 +16,7 @@ import {
   getCourseStats,
   getAdminStatisticsOverview,
   getLearningReport,
+  getAiAdviceStream,
 } from '@/api/statistics'
 
 const mockedRequest = vi.mocked(request)
@@ -23,6 +24,9 @@ const mockedRequest = vi.mocked(request)
 describe('Statistics API', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
+    localStorage.clear()
   })
 
   describe('getStatisticsOverview', () => {
@@ -133,6 +137,25 @@ describe('Statistics API', () => {
 
       expect(mockedRequest.get).toHaveBeenCalledWith('/statistics/learning-report')
       expect(result).toEqual({ code: 0, data: mockReport, message: 'success' })
+    })
+  })
+
+  describe('getAiAdviceStream', () => {
+    it('应使用配置的 API Base URL 发起流式请求', async () => {
+      vi.stubEnv('VITE_API_BASE_URL', '/custom-api')
+      localStorage.setItem('token', 'jwt-token')
+      const fetchMock = vi.fn().mockResolvedValue(new Response())
+      vi.stubGlobal('fetch', fetchMock)
+
+      await getAiAdviceStream()
+
+      expect(fetchMock).toHaveBeenCalledWith('/custom-api/statistics/ai-advice/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer jwt-token',
+        },
+      })
     })
   })
 })

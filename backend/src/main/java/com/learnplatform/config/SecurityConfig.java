@@ -70,8 +70,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/captcha").permitAll()
                         // Knife4j / Swagger 文档
                         .requestMatchers("/doc.html", "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
-                        // Actuator 健康检查和 Prometheus 指标（无需认证）
-                        .requestMatchers("/actuator/**").permitAll()
+                        // Actuator 仅开放健康检查和 Prometheus 指标；其他管理端点仍需认证。
+                        .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/prometheus").permitAll()
                         // 管理端接口需要 ADMIN 角色
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // 其他接口需要认证（包括 /api/auth/me）
