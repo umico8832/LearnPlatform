@@ -1,5 +1,30 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 131 - 2026-06-28
+
+### 阶段
+CI 修复（Browser E2E 选择器兼容）
+
+### 完成内容
+1. 定位最新 GitHub Actions run `28326469277`：Frontend、Backend 和 Docker Build 均通过，Browser E2E 失败。
+2. 修复 `auth-and-course.spec.ts` 中 Phase 21 前端改版后过时的首页品牌文案断言：从旧 `AI 题库系统` 改为当前首页主区域的 `今日学习工作台`。
+3. 收窄课程列表与投稿管理测试中的定位范围：课程入口改为菜单项定位，课程标题和投稿搜索按钮限定在 `main` 区域，避免与全局搜索/布局标题产生 strict mode 冲突。
+
+### 修改文件
+- `frontend/e2e/auth-and-course.spec.ts`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd frontend && npm test -- --run`：26 个文件、206 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+- 尝试启动本地 Docker E2E 环境失败：Docker Desktop 处于手动暂停状态（`Docker Desktop is manually paused`），因此本地未能完整执行 `npm run test:e2e`。
+
+### 遗留问题
+- 需要推送后以 GitHub Actions 的 Browser E2E 结果确认修复是否完整。
+
+### 建议 commit message
+`test(e2e): 修复前端改版后的选择器`
+
 ## Round 130 - 2026-06-28
 
 ### 阶段

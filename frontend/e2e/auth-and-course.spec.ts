@@ -16,11 +16,11 @@ async function loginAs(page: Page, username: string, password: string) {
 test('用户可通过真实登录流程访问课程列表', async ({ page }) => {
   await loginAs(page, 'testuser', 'test123')
 
-  await expect(page.getByText('AI 题库系统', { exact: true })).toBeVisible()
+  await expect(page.getByRole('main').getByText('今日学习工作台', { exact: true })).toBeVisible()
 
-  await page.getByText('课程列表', { exact: true }).click()
+  await page.getByRole('menuitem', { name: '课程列表' }).click()
   await expect(page).toHaveURL(/\/courses$/)
-  await expect(page.getByRole('heading', { name: '课程列表' })).toBeVisible()
+  await expect(page.getByRole('main').getByRole('heading', { name: '课程列表' })).toBeVisible()
   await expect(page.locator('.course-card').first()).toBeVisible()
 })
 
@@ -112,7 +112,7 @@ test('用户投稿可由管理员审核并入库', async ({ page }) => {
   await page.goto('/admin/submissions')
   await expect(page.getByRole('main').getByText('投稿管理', { exact: true })).toBeVisible()
   await page.getByPlaceholder('搜索题干关键词').fill(questionContent)
-  await page.getByRole('button', { name: '搜索' }).click()
+  await page.getByRole('main').getByRole('button', { name: '搜索' }).click()
   const submissionRow = page.locator('.el-table__row').filter({ hasText: questionContent })
   await expect(submissionRow).toHaveCount(1)
   await submissionRow.getByRole('button', { name: '通过' }).click()
