@@ -25,11 +25,11 @@
 | 18 | 全局搜索与快捷导航 | ✅ 基本完成 | Round 98-99 | 跨题目/课程/知识点的全局搜索（GlobalSearchService ✅ + GlobalSearchController 4 个接口 ✅ + 前端 GlobalSearchDialog 组件 ✅ + ⌘K/Ctrl+K 快捷键 ✅ + 键盘导航 ✅ + 关键词高亮 ✅ + 移动端适配 ✅ + 搜索历史记录 ✅ + 热门搜索推荐 ✅ + 搜索结果缓存 @Cacheable ✅ + 24 个单元测试 ✅） |
 | 19 | AI 调用分析与成本控制 | ✅ 基本完成 | Round 100、115 | 管理端 AI 调用总览（趋势、功能/模型分布、Top 用户、失败调用、真实 Tokens、平均耗时与按模型配置单价计算的成本） |
 | 20 | 演示验收与 AI 运营治理 | 🚧 开发中 | 2-3 个迭代 | 已覆盖关键业务真实浏览器 E2E，并完成独立配额、审计追踪、运营报告与实时异常提醒；继续完成演示截图、CI 实跑 |
-| 21 | 前端信息架构与视觉体验优化 | 🚧 开发中 | 2-4 个迭代 | AppLayout 分组导航、首页学习工作台、核心业务页、题库浏览页，以及管理端主要列表页样板整理已完成；下一步进入演示截图、CI 实跑和细节 polish |
+| 21 | 前端信息架构与视觉体验优化 | 🚧 开发中 | 2-4 个迭代 | AppLayout 分组导航、首页学习工作台、核心业务页、题库浏览页，以及管理端主要页面样板整理已完成；下一步进入演示截图、CI 实跑和细节 polish |
 
 **Phase 0-12 预计总工期**：约 17-20 天
 
-**当前阶段：Phase 20 演示验收与 AI 运营治理待截图和 CI 实跑收尾；Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、QuestionList，以及管理端总览/Course/User/Question/Exam/Submission/AI Usage 主要页面整理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
+**当前阶段：Phase 20 演示验收与 AI 运营治理待截图和 CI 实跑收尾；Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、QuestionList，以及管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
 
 ---
 
@@ -683,6 +683,7 @@
 - [x] `AdminDashboard.vue`：接入统一后台页头、页面宽度和管理端视觉节奏。
 - [x] 建立管理端通用页面骨架：后台页头、说明文字、操作区、筛选区、统计卡、表格卡片和分页样式。
 - [x] `CourseManage.vue` 与 `UserManage.vue`：统一筛选区、统计/摘要、表格容器、行操作和移动端折行。
+- [x] `KnowledgePointManage.vue`：接入统一后台页头、知识点摘要卡、树结构搜索和移动端布局检查。
 - [x] `QuestionManage.vue`、`ExamManage.vue`、`SubmissionManage.vue` 与 `AiUsageView.vue`：接入统一后台页头、摘要卡、筛选/操作区、表格容器和移动端布局检查。
 - [ ] 后续 polish：继续补齐批量操作、空状态、长操作列收纳和真实演示截图。
 
@@ -697,5 +698,5 @@
 - 第 1 轮：只做 AppLayout + global.css + HomeView，建立样板。✅ 已完成
 - 第 2 轮：整理 Practice/WrongQuestion/Review/ExamList。✅ 已完成
 - 第 3 轮：整理 QuestionListView。✅ 已完成
-- 第 4 轮：整理 AdminDashboard 与管理端列表页。🚧 已完成总览/Course/User 样板
+- 第 4 轮：整理 AdminDashboard 与管理端列表页。✅ 已完成总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 样板
 - 第 5 轮：浏览器验收、截图、微调和文档更新。

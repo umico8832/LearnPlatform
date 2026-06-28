@@ -1,5 +1,38 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 130 - 2026-06-28
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（管理端知识点页 polish）
+
+### 完成内容
+1. 整理 `KnowledgePointManage.vue`：接入统一后台页头、操作区、管理端表格卡片和移动端折行基线。
+2. 新增知识点摘要卡：展示知识点总数、顶级节点、叶子节点和最大层级，帮助管理员快速判断课程知识结构规模。
+3. 新增本地关键词筛选：支持按知识点名称和描述过滤树结构，并保留命中节点的父级路径。
+4. 优化树节点视觉层级：文件夹/叶子节点图标分色，节点描述改为次级文本，行操作改为图标化按钮。
+5. 同步更新 `docs/ROADMAP.md`、`docs/HANDOFF.md` 和 `README.md`，将管理端知识点页纳入 Phase 21 管理端体验整理状态。
+
+### 修改文件
+- `frontend/src/views/admin/KnowledgePointManage.vue`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd frontend && npm test -- --run`：26 个文件、206 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+- `cd frontend && npm run dev -- --host 127.0.0.1`：前端启动成功，访问 `http://127.0.0.1:5173/`。
+- Playwright 本地布局检查：使用 mock 管理员会话和知识点树数据验证 `/admin/knowledge-points?courseId=1&courseName=Java%20%E5%90%8E%E7%AB%AF` 在桌面 1440x980 与移动端 390x844 均无横向溢出；统计值为 5/2/3/2，搜索 `Controller` 后树节点从 5 个收窄到 2 个。
+
+### 遗留问题
+- 本轮未启动后端；浏览器检查使用本地 mock 数据验证 UI 布局和筛选行为，不代表真实接口联调。
+- Phase 20 的真实演示截图与推送后的 GitHub Actions 实跑仍待完成。
+- 后续可继续做管理端批量操作、空状态细化、长操作列收纳和真实接口环境下的点击验收。
+
+### 建议 commit message
+`feat(frontend): 优化知识点管理页体验`
+
 ## Round 129 - 2026-06-28
 
 ### 阶段
