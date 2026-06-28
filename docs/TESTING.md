@@ -64,7 +64,18 @@ npm run test:e2e
 docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v
 ```
 
-## 6. 运行命令
+## 6. Agent 临时浏览器流程验收
+
+当用户要求“模拟用户试试”“打开浏览器跑一下流程”“看看这个页面能不能用”等临时验收时，先阅读 `skills/frontend-flow-test/SKILL.md`。该 skill 用于约束 Agent 选择最小业务闭环，并用低 token 方式记录关键状态。
+
+临时浏览器验收不替代正式自动化测试：
+
+- 若只是验证页面是否能进入、按钮是否能点、结果弹窗是否出现，执行与当前任务相关的最小闭环即可。
+- 若发现真实缺陷，按风险决定是否补 Vitest、后端测试或 Playwright E2E 回归用例。
+- 若准备发布、演示或修改了鉴权、路由、请求封装、全局布局等共享能力，应优先运行既有自动化测试，再补少量浏览器冒烟检查。
+- 默认不要输出完整 DOM 或每步截图；失败时再逐级增加局部 DOM、截图、日志和后端容器日志。
+
+## 7. 运行命令
 
 ```bash
 cd frontend

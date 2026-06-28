@@ -32,6 +32,7 @@ skills/
 | Skill 名称 | 目录 | 用途 |
 |------------|------|------|
 | `frontend-design` | `frontend-design/` | 创建独特、生产级的前端界面，避免通用 AI 美学，注重排版、色彩、动效和空间构图 |
+| `frontend-flow-test` | `frontend-flow-test/` | 前端临时浏览器业务闭环验收规范，强调最小相关流程和低 token 关键状态检查 |
 | `skill-creator` | `skill-creator/` | 创建新 skill、修改和改进现有 skill、运行评估和基准测试以衡量 skill 性能 |
 | `context-handoff` | `context-handoff/` | 当用户说"请生成摘要"时，生成新 Task 交接摘要和可复制的新任务启动提示词 |
 

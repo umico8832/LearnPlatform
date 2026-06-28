@@ -50,6 +50,7 @@
 
 - 新增功能、重构、代码归属不清：`docs/ENGINEERING_RULES.md`
 - 涉及测试策略、是否补测试、如何验证：`docs/TESTING.md`
+- 涉及前端浏览器流程验收、模拟用户操作、临时点击验证：`skills/frontend-flow-test/SKILL.md`，并结合 `docs/TESTING.md`
 - 涉及接口变化：`docs/API_DESIGN.md`
 - 涉及数据库结构或迁移：`docs/DB_DESIGN.md`
 - 涉及架构、目录、模块边界：`docs/ARCHITECTURE.md`，必要时读 `docs/ENGINEERING_RULES.md`
