@@ -1,8 +1,12 @@
 <template>
-  <div class="question-manage">
-    <div class="page-header">
-      <h2>题目管理</h2>
-      <div class="header-actions">
+  <div class="question-manage admin-page">
+    <header class="admin-page-header">
+      <div>
+        <p class="admin-page-kicker">QUESTION BANK</p>
+        <h2>题目管理</h2>
+        <p class="admin-page-description">维护正式题库、导入导出和内容复审，重点关注题目来源、状态与 AI 学习资产缓存。</p>
+      </div>
+      <div class="admin-header-actions">
         <el-dropdown trigger="click">
           <el-button :icon="Download">下载模板 <el-icon class="el-icon--right"><ArrowDown /></el-icon></el-button>
           <template #dropdown>
@@ -16,42 +20,59 @@
         <el-button :icon="FolderOpened" @click="handleExport">导出题目</el-button>
         <el-button type="primary" :icon="Plus" @click="openDialog()">新增题目</el-button>
       </div>
-    </div>
+    </header>
 
-    <el-card shadow="never">
-      <div class="toolbar">
-        <el-input
-          v-model="filters.keyword"
-          placeholder="搜索题干内容"
-          :prefix-icon="Search"
-          clearable
-          style="width: 220px"
-          @clear="fetchQuestions"
-          @keyup.enter="fetchQuestions"
-        />
-        <el-select v-model="filters.questionType" placeholder="题型" clearable style="width: 130px" @change="fetchQuestions">
-          <el-option label="单选题" value="SINGLE_CHOICE" />
-          <el-option label="多选题" value="MULTIPLE_CHOICE" />
-          <el-option label="判断题" value="TRUE_FALSE" />
-          <el-option label="填空题" value="FILL_BLANK" />
-          <el-option label="简答题" value="SHORT_ANSWER" />
-        </el-select>
-        <el-select v-model="filters.courseId" placeholder="所属课程" clearable style="width: 180px" @change="fetchQuestions">
-          <el-option v-for="c in courseList" :key="c.id" :label="c.name" :value="c.id" />
-        </el-select>
-        <el-select v-model="filters.difficulty" placeholder="难度" clearable style="width: 110px" @change="fetchQuestions">
-          <el-option v-for="d in 5" :key="d" :label="'⭐'.repeat(d)" :value="d" />
-        </el-select>
-        <el-select v-model="filters.sourceType" placeholder="来源" clearable style="width: 130px" @change="fetchQuestions">
-          <el-option label="手动创建" value="MANUAL" />
-          <el-option label="投稿入库" value="SUBMISSION" />
-          <el-option label="Excel导入" value="EXCEL_IMPORT" />
-          <el-option label="Markdown导入" value="MARKDOWN_IMPORT" />
-          <el-option label="AI生成" value="AI_GENERATED" />
-        </el-select>
+    <section class="admin-summary-grid">
+      <el-card v-for="item in questionStats" :key="item.label" shadow="never" class="admin-summary-card">
+        <span class="admin-summary-icon">
+          <el-icon><component :is="item.icon" /></el-icon>
+        </span>
+        <div class="admin-summary-copy">
+          <p class="admin-summary-label">{{ item.label }}</p>
+          <div class="admin-summary-value">{{ item.value }}</div>
+          <div class="admin-summary-note">{{ item.note }}</div>
+        </div>
+      </el-card>
+    </section>
+
+    <el-card shadow="never" class="admin-table-card">
+      <div class="admin-toolbar">
+        <div class="admin-filter-group">
+          <el-input
+            v-model="filters.keyword"
+            placeholder="搜索题干内容"
+            :prefix-icon="Search"
+            clearable
+            style="width: 220px"
+            @clear="fetchQuestions"
+            @keyup.enter="fetchQuestions"
+          />
+          <el-select v-model="filters.questionType" placeholder="题型" clearable style="width: 130px" @change="fetchQuestions">
+            <el-option label="单选题" value="SINGLE_CHOICE" />
+            <el-option label="多选题" value="MULTIPLE_CHOICE" />
+            <el-option label="判断题" value="TRUE_FALSE" />
+            <el-option label="填空题" value="FILL_BLANK" />
+            <el-option label="简答题" value="SHORT_ANSWER" />
+          </el-select>
+          <el-select v-model="filters.courseId" placeholder="所属课程" clearable style="width: 180px" @change="fetchQuestions">
+            <el-option v-for="c in courseList" :key="c.id" :label="c.name" :value="c.id" />
+          </el-select>
+          <el-select v-model="filters.difficulty" placeholder="难度" clearable style="width: 110px" @change="fetchQuestions">
+            <el-option v-for="d in 5" :key="d" :label="'⭐'.repeat(d)" :value="d" />
+          </el-select>
+          <el-select v-model="filters.sourceType" placeholder="来源" clearable style="width: 130px" @change="fetchQuestions">
+            <el-option label="手动创建" value="MANUAL" />
+            <el-option label="投稿入库" value="SUBMISSION" />
+            <el-option label="Excel导入" value="EXCEL_IMPORT" />
+            <el-option label="Markdown导入" value="MARKDOWN_IMPORT" />
+            <el-option label="AI生成" value="AI_GENERATED" />
+          </el-select>
+          <el-button :icon="Search" @click="fetchQuestions">查询</el-button>
+        </div>
+        <span class="table-summary">当前筛选 {{ total }} 道题</span>
       </div>
 
-      <el-table :data="questions" v-loading="loading" stripe>
+      <el-table :data="questions" v-loading="loading" stripe class="admin-data-table">
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="content" label="题干" min-width="240" show-overflow-tooltip />
         <el-table-column prop="questionType" label="题型" width="100" align="center">
@@ -85,23 +106,23 @@
         <el-table-column prop="createTime" label="创建时间" width="170" />
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link size="small" @click="openReReview(row as QuestionVO)">复审</el-button>
-            <el-button type="primary" link size="small" @click="openDialog(row as QuestionVO)">编辑</el-button>
+            <el-button type="primary" link size="small" :icon="RefreshRight" @click="openReReview(row as QuestionVO)">复审</el-button>
+            <el-button type="primary" link size="small" :icon="Edit" @click="openDialog(row as QuestionVO)">编辑</el-button>
             <el-popconfirm title="确定清除该题目的 AI 学习资产缓存？" @confirm="handleClearAiCache((row as QuestionVO).id)">
               <template #reference>
-                <el-button type="warning" link size="small">清除AI缓存</el-button>
+                <el-button type="warning" link size="small" :icon="DeleteFilled">清缓存</el-button>
               </template>
             </el-popconfirm>
             <el-popconfirm title="确定删除该题目？" @confirm="handleDelete((row as QuestionVO).id)">
               <template #reference>
-                <el-button type="danger" link size="small">删除</el-button>
+                <el-button type="danger" link size="small" :icon="Delete">删除</el-button>
               </template>
             </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
 
-      <div class="pagination-wrap">
+      <div class="admin-pagination">
         <el-pagination
           v-model:current-page="pageNum"
           v-model:page-size="pageSize"
@@ -382,7 +403,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { Plus, Search, Delete, Download, Upload, FolderOpened, ArrowDown } from '@element-plus/icons-vue'
+import { Plus, Search, Delete, Download, Upload, FolderOpened, ArrowDown, Edit, RefreshRight, DeleteFilled, Collection, DataAnalysis, DocumentChecked } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules, UploadFile } from 'element-plus'
 import {
@@ -477,6 +498,20 @@ const rules: FormRules = {
   questionType: [{ required: true, message: '请选择题型', trigger: 'change' }],
   courseId: [{ required: true, message: '请选择所属课程', trigger: 'change' }],
 }
+
+const questionStats = computed(() => {
+  const enabled = questions.value.filter(q => q.status === 1).length
+  const reviewable = questions.value.filter(q => q.sourceType && q.sourceType !== 'MANUAL').length
+  const avgScore = questions.value.length
+    ? Math.round(questions.value.reduce((sum, q) => sum + (q.score || 0), 0) / questions.value.length)
+    : 0
+  return [
+    { label: '筛选总量', value: total.value, note: `当前页 ${questions.value.length} 道`, icon: Collection },
+    { label: '当前页启用', value: enabled, note: `${questions.value.length - enabled} 道禁用`, icon: DocumentChecked },
+    { label: '来源追踪', value: reviewable, note: '当前页非手动来源', icon: RefreshRight },
+    { label: '平均分值', value: avgScore || '-', note: '当前页题目均分', icon: DataAnalysis },
+  ]
+})
 
 // 是否显示选项区域
 const showOptions = computed(() => {
@@ -872,35 +907,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.page-header h2 {
-  margin: 0;
-  font-size: 20px;
-  color: #303133;
-}
-
-.header-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.toolbar {
-  margin-bottom: 16px;
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.pagination-wrap {
-  margin-top: 16px;
-  display: flex;
-  justify-content: flex-end;
+.table-summary {
+  color: var(--lp-text-muted);
+  font-size: 13px;
 }
 
 .options-area {

@@ -1,58 +1,78 @@
 <template>
-  <div class="exam-manage-container">
-    <div class="page-header">
-      <h2>试卷管理</h2>
-      <div class="header-actions">
-        <el-button type="primary" @click="openDialog()">新增试卷</el-button>
-        <el-button type="warning" @click="openSmartDialog()">🤖 智能组卷</el-button>
+  <div class="exam-manage-container admin-page">
+    <header class="admin-page-header">
+      <div>
+        <p class="admin-page-kicker">EXAM CENTER</p>
+        <h2>试卷管理</h2>
+        <p class="admin-page-description">管理模拟考试试卷、题目组合和发布状态，发布后的试卷会出现在用户考试中心。</p>
       </div>
-    </div>
+      <div class="admin-header-actions">
+        <el-button type="warning" :icon="MagicStick" @click="openSmartDialog()">智能组卷</el-button>
+        <el-button type="primary" :icon="Plus" @click="openDialog()">新增试卷</el-button>
+      </div>
+    </header>
 
-    <!-- 筛选 -->
-    <div class="filter-bar">
-      <el-select v-model="filterStatus" placeholder="状态" clearable style="width: 120px" @change="loadPapers">
-        <el-option label="草稿" :value="0" />
-        <el-option label="已发布" :value="1" />
-      </el-select>
-      <el-button @click="loadPapers" :icon="Refresh">刷新</el-button>
-    </div>
+    <section class="admin-summary-grid">
+      <el-card v-for="item in paperStats" :key="item.label" shadow="never" class="admin-summary-card">
+        <span class="admin-summary-icon">
+          <el-icon><component :is="item.icon" /></el-icon>
+        </span>
+        <div class="admin-summary-copy">
+          <p class="admin-summary-label">{{ item.label }}</p>
+          <div class="admin-summary-value">{{ item.value }}</div>
+          <div class="admin-summary-note">{{ item.note }}</div>
+        </div>
+      </el-card>
+    </section>
 
-    <!-- 表格 -->
-    <el-table :data="papers as any" v-loading="loading" stripe>
-      <el-table-column prop="id" label="ID" width="60" />
-      <el-table-column prop="title" label="试卷名称" min-width="200" />
-      <el-table-column prop="courseName" label="课程" width="120" />
-      <el-table-column prop="questionCount" label="题数" width="80" />
-      <el-table-column prop="totalScore" label="总分" width="80" />
-      <el-table-column prop="duration" label="时长(分)" width="90" />
-      <el-table-column label="状态" width="90">
-        <template #default="{ row }">
-          <el-tag :type="(row as ExamPaperVO).status === 1 ? 'success' : 'info'" size="small">
-            {{ (row as ExamPaperVO).status === 1 ? '已发布' : '草稿' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="创建时间" width="170">
-        <template #default="{ row }">{{ formatTime((row as ExamPaperVO).createTime) }}</template>
-      </el-table-column>
-      <el-table-column label="操作" width="220" fixed="right">
-        <template #default="{ row }">
-          <el-button type="primary" link size="small" @click="openDialog(row as ExamPaperVO)">编辑</el-button>
-          <el-button v-if="(row as ExamPaperVO).status === 0" type="success" link size="small" @click="handlePublish(row as ExamPaperVO)">发布</el-button>
-          <el-button type="danger" link size="small" @click="handleDelete(row as ExamPaperVO)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <el-card shadow="never" class="admin-table-card">
+      <div class="admin-toolbar">
+        <div class="admin-filter-group">
+          <el-select v-model="filterStatus" placeholder="状态" clearable style="width: 120px" @change="loadPapers">
+            <el-option label="草稿" :value="0" />
+            <el-option label="已发布" :value="1" />
+          </el-select>
+          <el-button @click="loadPapers" :icon="Refresh">刷新</el-button>
+        </div>
+        <span class="table-summary">当前筛选 {{ total }} 份试卷</span>
+      </div>
 
-    <div class="pagination-wrapper" v-if="total > 0">
-      <el-pagination
-        v-model:current-page="pageNum"
-        :total="total"
-        :page-size="10"
-        layout="total, prev, pager, next"
-        @current-change="loadPapers"
-      />
-    </div>
+      <el-table :data="papers as any" v-loading="loading" stripe class="admin-data-table">
+        <el-table-column prop="id" label="ID" width="60" />
+        <el-table-column prop="title" label="试卷名称" min-width="200" />
+        <el-table-column prop="courseName" label="课程" width="120" />
+        <el-table-column prop="questionCount" label="题数" width="80" />
+        <el-table-column prop="totalScore" label="总分" width="80" />
+        <el-table-column prop="duration" label="时长(分)" width="90" />
+        <el-table-column label="状态" width="90">
+          <template #default="{ row }">
+            <el-tag :type="(row as ExamPaperVO).status === 1 ? 'success' : 'info'" size="small">
+              {{ (row as ExamPaperVO).status === 1 ? '已发布' : '草稿' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="创建时间" width="170">
+          <template #default="{ row }">{{ formatTime((row as ExamPaperVO).createTime) }}</template>
+        </el-table-column>
+        <el-table-column label="操作" width="220" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" link size="small" :icon="Edit" @click="openDialog(row as ExamPaperVO)">编辑</el-button>
+            <el-button v-if="(row as ExamPaperVO).status === 0" type="success" link size="small" :icon="Promotion" @click="handlePublish(row as ExamPaperVO)">发布</el-button>
+            <el-button type="danger" link size="small" :icon="Delete" @click="handleDelete(row as ExamPaperVO)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <div class="admin-pagination" v-if="total > 0">
+        <el-pagination
+          v-model:current-page="pageNum"
+          :total="total"
+          :page-size="10"
+          layout="total, prev, pager, next"
+          @current-change="loadPapers"
+        />
+      </div>
+    </el-card>
 
     <!-- 新增/编辑弹窗 -->
     <el-dialog v-model="dialogVisible" :title="editingId ? '编辑试卷' : '新增试卷'" width="800px" destroy-on-close>
@@ -262,7 +282,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh } from '@element-plus/icons-vue'
+import { Collection, Delete, Edit, MagicStick, Plus, Promotion, Refresh } from '@element-plus/icons-vue'
 import { getExamPaperList, getExamPaperDetail, createExamPaper, updateExamPaper, deleteExamPaper, publishExamPaper, smartExamPreview, smartExamCreate } from '@/api/exam'
 import type { ExamPaperVO, ExamPaperCreateRequest, SmartExamRequest, SmartExamPreview as SmartExamPreviewType } from '@/api/exam'
 import { getAdminQuestionPage } from '@/api/question'
@@ -317,6 +337,21 @@ const pickedQuestionMap = ref<Map<number, QuestionVO>>(new Map())
 
 const totalFormScore = computed(() => {
   return form.value.questions.reduce((sum, q) => sum + (q.score || 0), 0)
+})
+
+const paperStats = computed(() => {
+  const published = papers.value.filter(p => p.status === 1).length
+  const draft = papers.value.filter(p => p.status === 0).length
+  const totalQuestions = papers.value.reduce((sum, p) => sum + (p.questionCount || 0), 0)
+  const avgDuration = papers.value.length
+    ? Math.round(papers.value.reduce((sum, p) => sum + (p.duration || 0), 0) / papers.value.length)
+    : 0
+  return [
+    { label: '当前页试卷', value: papers.value.length, note: `筛选共 ${total.value} 份`, icon: Collection },
+    { label: '已发布', value: published, note: `草稿 ${draft} 份`, icon: Promotion },
+    { label: '题目总量', value: totalQuestions, note: '当前页题目合计', icon: Collection },
+    { label: '平均时长', value: avgDuration ? `${avgDuration}` : '-', note: '分钟 / 当前页', icon: Refresh },
+  ]
 })
 
 onMounted(() => {
@@ -584,11 +619,7 @@ const getDifficultyColor = (level: string) => {
 </script>
 
 <style scoped>
-.exam-manage-container { padding: 24px; }
-.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.page-header h2 { margin: 0; font-size: 20px; }
-.header-actions { display: flex; gap: 8px; }
-.filter-bar { display: flex; gap: 12px; margin-bottom: 16px; }
+.table-summary { color: var(--lp-text-muted); font-size: 13px; }
 .pagination-wrapper { display: flex; justify-content: flex-end; margin-top: 16px; }
 .q-content-preview { font-size: 13px; color: #606266; }
 .question-picker { border: 1px solid #ebeef5; border-radius: 8px; padding: 16px; }

@@ -1,45 +1,50 @@
 <template>
-  <div class="submission-manage-page">
-    <el-card>
-      <template #header>
-        <span>投稿管理</span>
-      </template>
+  <div class="submission-manage-page admin-page">
+    <header class="admin-page-header">
+      <div>
+        <p class="admin-page-kicker">CONTENT REVIEW</p>
+        <h2>投稿管理</h2>
+        <p class="admin-page-description">处理用户投稿、AI 质检、知识点标注和正式入库，确保题库生产流程可追踪。</p>
+      </div>
+      <div class="admin-header-actions">
+        <el-button :icon="Refresh" @click="refreshSubmissions" :loading="loading">刷新</el-button>
+      </div>
+    </header>
 
-      <!-- 统计卡片 -->
-      <el-row :gutter="16" style="margin-bottom: 20px">
-        <el-col :span="6">
-          <el-statistic title="待审核" :value="stats.pending">
-            <template #suffix><el-tag type="warning" size="small">待处理</el-tag></template>
-          </el-statistic>
-        </el-col>
-        <el-col :span="6">
-          <el-statistic title="已通过" :value="stats.approved" />
-        </el-col>
-        <el-col :span="6">
-          <el-statistic title="已拒绝" :value="stats.rejected" />
-        </el-col>
-        <el-col :span="6">
-          <el-statistic title="已入库" :value="stats.imported" />
-        </el-col>
-      </el-row>
+    <section class="admin-summary-grid">
+      <el-card v-for="item in submissionStats" :key="item.label" shadow="never" class="admin-summary-card">
+        <span class="admin-summary-icon">
+          <el-icon><component :is="item.icon" /></el-icon>
+        </span>
+        <div class="admin-summary-copy">
+          <p class="admin-summary-label">{{ item.label }}</p>
+          <div class="admin-summary-value">{{ item.value }}</div>
+          <div class="admin-summary-note">{{ item.note }}</div>
+        </div>
+      </el-card>
+    </section>
 
+    <el-card shadow="never" class="admin-table-card">
       <!-- 筛选栏 -->
-      <div class="filter-bar">
-        <el-radio-group v-model="statusFilter" @change="loadSubmissions">
-          <el-radio-button :value="undefined">全部</el-radio-button>
-          <el-radio-button :value="0">待审核</el-radio-button>
-          <el-radio-button :value="1">已通过</el-radio-button>
-          <el-radio-button :value="2">已拒绝</el-radio-button>
-          <el-radio-button :value="3">已入库</el-radio-button>
-        </el-radio-group>
-        <el-input v-model="keywordFilter" placeholder="搜索题干关键词" clearable
-          style="width: 220px; margin-left: 12px" @clear="loadSubmissions"
-          @keyup.enter="loadSubmissions" />
-        <el-button type="primary" @click="loadSubmissions" style="margin-left: 8px">搜索</el-button>
+      <div class="admin-toolbar">
+        <div class="admin-filter-group">
+          <el-radio-group v-model="statusFilter" @change="loadSubmissions">
+            <el-radio-button :value="undefined">全部</el-radio-button>
+            <el-radio-button :value="0">待审核</el-radio-button>
+            <el-radio-button :value="1">已通过</el-radio-button>
+            <el-radio-button :value="2">已拒绝</el-radio-button>
+            <el-radio-button :value="3">已入库</el-radio-button>
+          </el-radio-group>
+          <el-input v-model="keywordFilter" placeholder="搜索题干关键词" clearable
+            style="width: 220px" :prefix-icon="Search" @clear="loadSubmissions"
+            @keyup.enter="loadSubmissions" />
+          <el-button type="primary" :icon="Search" @click="loadSubmissions">搜索</el-button>
+        </div>
+        <span class="table-summary">当前筛选 {{ total }} 条投稿</span>
       </div>
 
       <!-- 列表 -->
-      <el-table :data="submissions" v-loading="loading" stripe>
+      <el-table :data="submissions" v-loading="loading" stripe class="admin-data-table">
         <el-table-column label="ID" prop="id" width="60" />
         <el-table-column label="题干" prop="content" show-overflow-tooltip min-width="200" />
         <el-table-column label="投稿人" width="100">
@@ -64,28 +69,28 @@
         </el-table-column>
         <el-table-column label="操作" width="260" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link @click="viewDetail(row as QuestionSubmissionVO)">详情</el-button>
+            <el-button type="primary" link :icon="View" @click="viewDetail(row as QuestionSubmissionVO)">详情</el-button>
             <template v-if="(row as QuestionSubmissionVO).status === 0">
-              <el-button type="success" link @click="openReview(row as QuestionSubmissionVO, 1)">通过</el-button>
-              <el-button type="danger" link @click="openReview(row as QuestionSubmissionVO, 2)">拒绝</el-button>
+              <el-button type="success" link :icon="Check" @click="openReview(row as QuestionSubmissionVO, 1)">通过</el-button>
+              <el-button type="danger" link :icon="Close" @click="openReview(row as QuestionSubmissionVO, 2)">拒绝</el-button>
             </template>
-            <el-button type="info" link @click="handleQualityCheck(row as QuestionSubmissionVO)">AI 质检</el-button>
-            <el-button type="primary" link @click="handleKPTagging(row as QuestionSubmissionVO)">AI 标注</el-button>
-            <el-button type="success" link @click="handleDifficultyAssessment(row as QuestionSubmissionVO)">AI 测难度</el-button>
-            <el-button v-if="(row as QuestionSubmissionVO).status === 1" type="warning" link @click="handleImport(row as QuestionSubmissionVO)">入库</el-button>
+            <el-button type="info" link :icon="MagicStick" @click="handleQualityCheck(row as QuestionSubmissionVO)">质检</el-button>
+            <el-button type="primary" link :icon="CollectionTag" @click="handleKPTagging(row as QuestionSubmissionVO)">标注</el-button>
+            <el-button type="success" link :icon="TrendCharts" @click="handleDifficultyAssessment(row as QuestionSubmissionVO)">测难度</el-button>
+            <el-button v-if="(row as QuestionSubmissionVO).status === 1" type="warning" link :icon="FolderAdd" @click="handleImport(row as QuestionSubmissionVO)">入库</el-button>
           </template>
         </el-table-column>
       </el-table>
 
-      <el-pagination
-        v-if="total > pageSize"
-        :current-page="pageNum"
-        :page-size="pageSize"
-        :total="total"
-        layout="total, prev, pager, next"
-        @current-change="handlePageChange"
-        style="margin-top: 16px; justify-content: flex-end"
-      />
+      <div class="admin-pagination" v-if="total > pageSize">
+        <el-pagination
+          :current-page="pageNum"
+          :page-size="pageSize"
+          :total="total"
+          layout="total, prev, pager, next"
+          @current-change="handlePageChange"
+        />
+      </div>
     </el-card>
 
     <!-- 审核对话框 -->
@@ -305,6 +310,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
+import { Check, Close, CollectionTag, FolderAdd, MagicStick, Refresh, Search, TrendCharts, View } from '@element-plus/icons-vue'
 import {
   getAdminSubmissions,
   reviewSubmission,
@@ -332,6 +338,13 @@ const pageNum = ref(1)
 const pageSize = 10
 const total = ref(0)
 const stats = ref<SubmissionStats>({ pending: 0, approved: 0, rejected: 0, imported: 0 })
+
+const submissionStats = computed(() => [
+  { label: '待审核', value: stats.value.pending, note: '需要管理员处理', icon: Search },
+  { label: '已通过', value: stats.value.approved, note: '可继续入库', icon: Check },
+  { label: '已拒绝', value: stats.value.rejected, note: '保留审核记录', icon: Close },
+  { label: '已入库', value: stats.value.imported, note: '进入正式题库', icon: FolderAdd },
+])
 
 const showReviewDialog = ref(false)
 const showDetailDialog = ref(false)
@@ -409,6 +422,11 @@ const loadStats = async () => {
       stats.value = res.data
     }
   } catch { /* ignore */ }
+}
+
+const refreshSubmissions = () => {
+  loadSubmissions()
+  loadStats()
 }
 
 const handlePageChange = (page: number) => {
@@ -654,10 +672,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.filter-bar {
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
+.table-summary {
+  color: var(--lp-text-muted);
+  font-size: 13px;
 }
 .detail-content {
   white-space: pre-wrap;

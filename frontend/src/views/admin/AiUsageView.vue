@@ -1,8 +1,12 @@
 <template>
-  <div class="ai-usage-container">
-    <div class="page-header">
-      <h2>AI 调用分析</h2>
-      <div class="header-actions">
+  <div class="ai-usage-container admin-page">
+    <header class="admin-page-header">
+      <div>
+        <p class="admin-page-kicker">AI OPERATIONS</p>
+        <h2>AI 调用分析</h2>
+        <p class="admin-page-description">跟踪调用量、Token、成本、失败率和模型分布，用于排查异常与控制运营成本。</p>
+      </div>
+      <div class="admin-header-actions">
         <el-select v-model="days" size="default" @change="fetchData" style="width: 140px">
           <el-option label="近 1 天" :value="1" />
           <el-option label="近 7 天" :value="7" />
@@ -12,78 +16,22 @@
         </el-select>
         <el-button :icon="Refresh" @click="fetchData" :loading="loading">刷新</el-button>
       </div>
-    </div>
+    </header>
 
     <div v-loading="loading" element-loading-text="加载中...">
       <!-- 顶部统计卡片 -->
-      <el-row :gutter="16" class="stat-cards">
-        <el-col :xs="12" :sm="6">
-          <el-card shadow="hover" class="stat-card">
-            <div class="stat-value primary">{{ overview.totalCalls?.toLocaleString() ?? '-' }}</div>
-            <div class="stat-label">总调用次数</div>
-          </el-card>
-        </el-col>
-        <el-col :xs="12" :sm="6">
-          <el-card shadow="hover" class="stat-card">
-            <div class="stat-value success">{{ overview.successRate ?? '-' }}%</div>
-            <div class="stat-label">成功率</div>
-          </el-card>
-        </el-col>
-        <el-col :xs="12" :sm="6">
-          <el-card shadow="hover" class="stat-card">
-            <div class="stat-value warning">{{ overview.todayCalls?.toLocaleString() ?? '-' }}</div>
-            <div class="stat-label">今日调用</div>
-          </el-card>
-        </el-col>
-        <el-col :xs="12" :sm="6">
-          <el-card shadow="hover" class="stat-card">
-            <div class="stat-value info">{{ formatTokens(overview.totalTokens) }}</div>
-            <div class="stat-label">总 Tokens</div>
-          </el-card>
-        </el-col>
-      </el-row>
-
-      <el-row :gutter="16" class="stat-cards cost-cards">
-        <el-col :xs="12" :sm="6">
-          <el-card shadow="hover" class="stat-card">
-            <div class="stat-value primary">{{ formatCost(overview.totalCostUsd) }}</div>
-            <div class="stat-label">已计成本（USD）</div>
-          </el-card>
-        </el-col>
-        <el-col :xs="12" :sm="6">
-          <el-card shadow="hover" class="stat-card">
-            <div class="stat-value warning">{{ formatCost(overview.todayCostUsd) }}</div>
-            <div class="stat-label">今日成本（USD）</div>
-          </el-card>
-        </el-col>
-      </el-row>
-
-      <el-row :gutter="16" class="stat-cards secondary">
-        <el-col :xs="12" :sm="6">
-          <el-card shadow="hover" class="stat-card">
-            <div class="stat-value success">{{ overview.successCalls?.toLocaleString() ?? '-' }}</div>
-            <div class="stat-label">成功调用</div>
-          </el-card>
-        </el-col>
-        <el-col :xs="12" :sm="6">
-          <el-card shadow="hover" class="stat-card">
-            <div class="stat-value danger">{{ overview.failedCalls?.toLocaleString() ?? '-' }}</div>
-            <div class="stat-label">失败调用</div>
-          </el-card>
-        </el-col>
-        <el-col :xs="12" :sm="6">
-          <el-card shadow="hover" class="stat-card">
-            <div class="stat-value info">{{ overview.avgDuration ? overview.avgDuration + 'ms' : '-' }}</div>
-            <div class="stat-label">平均耗时</div>
-          </el-card>
-        </el-col>
-        <el-col :xs="12" :sm="6">
-          <el-card shadow="hover" class="stat-card">
-            <div class="stat-value warning">{{ formatTokens(overview.todayTokens) }}</div>
-            <div class="stat-label">今日 Tokens</div>
-          </el-card>
-        </el-col>
-      </el-row>
+      <section class="admin-summary-grid usage-summary-grid">
+        <el-card v-for="item in usageStats" :key="item.label" shadow="never" class="admin-summary-card">
+          <span class="admin-summary-icon" :class="item.className">
+            <el-icon><component :is="item.icon" /></el-icon>
+          </span>
+          <div class="admin-summary-copy">
+            <p class="admin-summary-label">{{ item.label }}</p>
+            <div class="admin-summary-value">{{ item.value }}</div>
+            <div class="admin-summary-note">{{ item.note }}</div>
+          </div>
+        </el-card>
+      </section>
 
       <el-card shadow="hover" class="report-card">
         <template #header>
@@ -235,8 +183,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import { Refresh } from '@element-plus/icons-vue'
+import { computed, ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { Coin, DataLine, Money, Refresh, Timer, TrendCharts, Warning, SuccessFilled } from '@element-plus/icons-vue'
 import { getAiUsageOverview, getAiUsageReport, type AiUsageOverview, type AiUsageReport } from '@/api/aiUsage'
 import * as echarts from 'echarts/core'
 import { BarChart, PieChart, LineChart } from 'echarts/charts'
@@ -285,6 +233,17 @@ const report = reactive<AiUsageReport>({
   changes: { callsPercent: null, tokensPercent: null, costPercent: null, failureRatePointChange: 0, avgDurationPercent: null },
   alerts: [],
 })
+
+const usageStats = computed(() => [
+  { label: '总调用次数', value: overview.totalCalls?.toLocaleString() ?? '-', note: `今日 ${overview.todayCalls?.toLocaleString() ?? 0} 次`, icon: DataLine, className: 'is-primary' },
+  { label: '成功率', value: `${overview.successRate ?? '-'}%`, note: `成功 ${overview.successCalls?.toLocaleString() ?? 0} 次`, icon: SuccessFilled, className: 'is-success' },
+  { label: '失败调用', value: overview.failedCalls?.toLocaleString() ?? '-', note: report.alerts.length ? `${report.alerts.length} 项提醒` : '当前周期平稳', icon: Warning, className: 'is-danger' },
+  { label: '平均耗时', value: overview.avgDuration ? `${overview.avgDuration}ms` : '-', note: '同步与流式综合', icon: Timer, className: 'is-info' },
+  { label: '总 Tokens', value: formatTokens(overview.totalTokens), note: `今日 ${formatTokens(overview.todayTokens)}`, icon: Coin, className: 'is-warning' },
+  { label: '已计成本', value: formatCost(overview.totalCostUsd), note: `今日 ${formatCost(overview.todayCostUsd)}`, icon: Money, className: 'is-primary' },
+  { label: '功能类型', value: overview.functionStats?.length ?? 0, note: '有调用记录的功能', icon: TrendCharts, className: 'is-info' },
+  { label: '模型数量', value: overview.modelStats?.length ?? 0, note: '有调用记录的模型', icon: DataLine, className: 'is-success' },
+])
 
 const trendChartRef = ref<HTMLElement>()
 const functionChartRef = ref<HTMLElement>()
@@ -461,52 +420,14 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.ai-usage-container {
-  padding: 4px 0;
+.usage-summary-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-.page-header h2 {
-  margin: 0;
-  font-size: 20px;
-}
-.header-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-.stat-cards {
-  margin-bottom: 16px;
-}
-.stat-cards.secondary {
-  margin-bottom: 20px;
-}
-.stat-cards.cost-cards {
-  margin-top: -4px;
-}
-.stat-card {
-  text-align: center;
-  padding: 8px 0;
-}
-.stat-value {
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1.3;
-}
-.stat-value.primary { color: #409EFF; }
-.stat-value.success { color: #67C23A; }
-.stat-value.warning { color: #E6A23C; }
-.stat-value.danger { color: #F56C6C; }
-.stat-value.info { color: #909399; }
-.stat-label {
-  font-size: 13px;
-  color: #909399;
-  margin-top: 4px;
-}
+.admin-summary-icon.is-primary { color: var(--lp-primary); background: var(--lp-primary-soft); }
+.admin-summary-icon.is-success { color: var(--lp-success); background: #e9f8ef; }
+.admin-summary-icon.is-warning { color: var(--lp-warning); background: #fff7df; }
+.admin-summary-icon.is-danger { color: var(--lp-danger); background: #fff0ef; }
+.admin-summary-icon.is-info { color: var(--lp-text-secondary); background: #eef3f8; }
 .chart-card {
   margin-bottom: 16px;
 }
@@ -564,9 +485,7 @@ onBeforeUnmount(() => {
   gap: 8px;
 }
 @media (max-width: 768px) {
-  .stat-value { font-size: 20px; }
   .chart-container { height: 240px; }
-  .page-header { flex-direction: column; gap: 8px; align-items: flex-start; }
   .report-metric { border-left: none; padding: 8px 0; }
 }
 </style>

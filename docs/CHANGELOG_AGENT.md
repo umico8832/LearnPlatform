@@ -1,5 +1,40 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 129 - 2026-06-28
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（P3 管理端剩余页面整理）
+
+### 完成内容
+1. 整理 `QuestionManage.vue`：接入统一后台页头、摘要卡、筛选工具栏、表格卡片和分页样式；行操作改为图标化按钮，保留下载模板、导入、导出、新增、复审、编辑、清缓存和删除能力。
+2. 整理 `ExamManage.vue`：新增试卷管理页说明、摘要卡和统一表格容器；智能组卷与新增试卷操作进入统一页头操作区，发布/编辑/删除操作图标化。
+3. 整理 `SubmissionManage.vue`：将投稿统计改为管理端摘要卡，统一筛选区、刷新入口、表格容器、分页和 AI 质检/标注/测难度/入库操作展示。
+4. 整理 `AiUsageView.vue`：接入统一后台页头，将原分散统计卡收敛为 8 个运营摘要卡，保留运营报告、趋势图、分布图、功能详情、Top 用户和失败调用列表。
+5. 同步更新 `docs/ROADMAP.md` 与 `docs/HANDOFF.md`，将 Phase 21 P3 主要管理页整理状态更新为已完成，下一步转向演示截图、CI 实跑和细节 polish。
+
+### 修改文件
+- `frontend/src/views/admin/QuestionManage.vue`
+- `frontend/src/views/admin/ExamManage.vue`
+- `frontend/src/views/admin/SubmissionManage.vue`
+- `frontend/src/views/admin/AiUsageView.vue`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd frontend && npm test -- --run`：26 个文件、206 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+- `cd frontend && npm run dev -- --host 127.0.0.1`：前端启动成功，访问 `http://127.0.0.1:5173/`。
+- Playwright 本地布局检查：使用 mock 管理端接口数据验证 `/admin/questions`、`/admin/exams`、`/admin/submissions`、`/admin/ai-usage` 在桌面 1440x980 与移动端 390x844 均无横向溢出，页头操作区和摘要卡正常渲染。
+
+### 遗留问题
+- 本轮未启动后端；浏览器检查使用本地 mock 数据验证 UI 布局，不代表真实接口联调。
+- Phase 21 后续可继续做批量操作、空状态、长操作列收纳和真实接口环境下的管理端点击验收。
+- Phase 20 的真实演示截图与推送后的 GitHub Actions 实跑仍待完成。
+
+### 建议 commit message
+`feat(frontend): 优化管理端列表页体验`
+
 ## Round 128 - 2026-06-28
 
 ### 阶段

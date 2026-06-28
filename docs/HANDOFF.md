@@ -16,9 +16,9 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 20 — 演示验收与 AI 运营治理 🚧 收尾中（独立配额、审计追踪、运营报告、实时提醒、Prompt/模型配置追踪已完成，截图和 CI 实跑待完成）；Phase 21 — 前端信息架构与视觉体验优化 🚧 开发中（AppLayout 分组导航、全局样式变量、首页学习工作台样板、Practice/WrongQuestion/Review/ExamList/QuestionList 核心页整理已完成，管理端总览/Course/User 样板已完成）。Round 126 已新增 `skills/frontend-flow-test/SKILL.md`，用于规范低 token 的临时浏览器业务闭环验收；Round 127 已启动 P3 管理端体验整理。
+当前阶段：Phase 20 — 演示验收与 AI 运营治理 🚧 收尾中（独立配额、审计追踪、运营报告、实时提醒、Prompt/模型配置追踪已完成，截图和 CI 实跑待完成）；Phase 21 — 前端信息架构与视觉体验优化 🚧 开发中（AppLayout 分组导航、全局样式变量、首页学习工作台样板、Practice/WrongQuestion/Review/ExamList/QuestionList 核心页整理已完成，管理端总览/Course/User/Question/Exam/Submission/AI Usage 主要页面整理已完成）。Round 126 已新增 `skills/frontend-flow-test/SKILL.md`，用于规范低 token 的临时浏览器业务闭环验收；Round 129 已完成 P3 剩余管理页整理。
 
-下一阶段主线：继续 Phase 21 P3，按已建立的管理端通用样式继续整理 QuestionManage、ExamManage、SubmissionManage 与 AiUsageView；随后补用户端与管理端演示截图，并在推送后确认 CI 实跑。AI 调用日志已接入真实 token、按配置模型单价计算成本、用户独立配额、配额审计、请求追踪、Prompt/模型配置指纹，以及周期运营报告与实时异常提醒。内容复审缓存、重复题检测和学习效果指标属于后续衔接。OCR、爬虫、自动入库和复杂推荐仍非当前优先级。临时浏览器流程验收应先阅读 `skills/frontend-flow-test/SKILL.md`，只跑与当前任务相关的最小业务闭环，避免每次全量跑流程或输出大段 DOM。
+下一阶段主线：Phase 21 进入演示截图、CI 实跑和细节 polish；可优先补用户端与管理端演示截图，并在推送后确认 GitHub Actions。AI 调用日志已接入真实 token、按配置模型单价计算成本、用户独立配额、配额审计、请求追踪、Prompt/模型配置指纹，以及周期运营报告与实时异常提醒。内容复审缓存、重复题检测和学习效果指标属于后续衔接。OCR、爬虫、自动入库和复杂推荐仍非当前优先级。临时浏览器流程验收应先阅读 `skills/frontend-flow-test/SKILL.md`，只跑与当前任务相关的最小业务闭环，避免每次全量跑流程或输出大段 DOM。
 
 阶段状态：
 - [x] Phase 0：项目规划 ✅
@@ -42,7 +42,7 @@
 - [x] Phase 18：全局搜索与快捷导航 ✅ 基本完成（GlobalSearchService ✅；GlobalSearchController 4 个接口 ✅；前端 GlobalSearchDialog 组件 ✅；⌘K/Ctrl+K 快捷键 ✅；键盘导航 ✅；关键词高亮 ✅；移动端适配 ✅；搜索历史记录 ✅；热门搜索推荐 ✅；搜索结果缓存 @Cacheable ✅；搜索历史单条删除和全部清除 ✅；24 个单元测试 ✅）
 - [x] Phase 19：AI 调用分析与成本控制 ✅ 基本完成（调用趋势、功能/模型分布、Top 用户、失败调用、真实 Tokens、平均耗时与按配置单价聚合成本）
 - [ ] Phase 20：演示验收与 AI 运营治理 🚧（已完成：考试完整浏览器验收、考试页交互回归、关键业务浏览器 E2E、真实 token 与模型成本日志、管理员用户独立配额及审计、请求 traceId 追踪、Prompt/模型配置指纹、周期运营报告与实时异常提醒；待做：截图、CI 实跑）
-- [ ] Phase 21：前端信息架构与视觉体验优化 🚧（P0 壳层导航与全局样式 ✅；P1 首页学习工作台样板 ✅；P2 Practice/WrongQuestion/Review/ExamList/QuestionList ✅；P3 管理端总览/Course/User 样板 ✅；待做：继续整理 Question/Exam/Submission/AI Usage 管理页）
+- [ ] Phase 21：前端信息架构与视觉体验优化 🚧（P0 壳层导航与全局样式 ✅；P1 首页学习工作台样板 ✅；P2 Practice/WrongQuestion/Review/ExamList/QuestionList ✅；P3 管理端总览/Course/User/Question/Exam/Submission/AI Usage 主要页面整理 ✅；待做：演示截图、CI 实跑和细节 polish）
 
 ---
 
@@ -81,7 +81,7 @@
 28. **Grafana Loki 日志聚合**：Loki 2.9.4 服务 + Grafana 预配置 Loki 数据源 + 日志探索 Dashboard（6 个面板：日志量趋势、ERROR/WARN 趋势、日志流、级别分布、Top URI），Docker Compose 启动即可用
 29. **前端信息架构样板**：AppLayout 已从长菜单改为学习中心、练习复习、考试测评、AI 与诊断、内容共建、管理后台分组导航；顶部栏展示页面语境与全局搜索；首页已重做为学习工作台，整合今日计划、下一步建议、关键指标、6 个任务入口和图表区。
 30. **核心业务页体验整理**：PracticeView 改为“智能推荐 + 自选模式 + 练习方式说明”的任务面板；WrongQuestionView 统一统计、筛选和操作区；ReviewView 聚焦今日待复习、掌握进度和复习会话，并修复复习 API 重复 `/api` 前缀；ExamListView 区分可用试卷与考试记录；QuestionListView 改为题库浏览工作台，统一页头、筛选侧栏、结果摘要、题目卡片、收藏与讨论入口，减少信息噪音。
-31. **管理端体验样板**：`global.css` 已新增管理端通用页头、操作区、筛选区、统计卡、表格卡片和分页样式；`AdminDashboard.vue`、`CourseManage.vue`、`UserManage.vue` 已接入该基线，并通过桌面/移动端布局检查。
+31. **管理端体验样板**：`global.css` 已新增管理端通用页头、操作区、筛选区、统计卡、表格卡片和分页样式；`AdminDashboard.vue`、`CourseManage.vue`、`UserManage.vue`、`QuestionManage.vue`、`ExamManage.vue`、`SubmissionManage.vue`、`AiUsageView.vue` 已接入该基线，并通过桌面/移动端布局检查。
 
 ### 后端关键文件
 - 统一响应：`R.java` + `ResultCode.java` + `BusinessException` + `GlobalExceptionHandler`
@@ -145,12 +145,12 @@ docker compose up -d
 
 用户反馈当前项目“功能太混乱、布局不好看、太粗糙”，希望下一轮新对话先做前端美化和体验整理。新 Agent 应先阅读 `skills/frontend-design/SKILL.md`（当前仓库存在），再按 `docs/ROADMAP.md` 的 Phase 21 计划执行。
 
-建议下一轮做 Phase 21 后续整理：
-1. 继续执行 Phase 21 P3：按现有管理端通用样式整理 `QuestionManage.vue`、`ExamManage.vue`、`SubmissionManage.vue` 与 `AiUsageView.vue`。
-2. 优先统一剩余管理页的筛选区、表格密度、批量/行操作、空状态和移动端可读性。
-3. 继续验证 `npm test -- --run`、`npm run build`，并按 `skills/frontend-flow-test/SKILL.md` 用最小相关业务闭环检查桌面和移动端布局。
+建议下一轮做 Phase 21 / Phase 20 收尾：
+1. 制作用户端与管理端真实演示截图，优先覆盖首页、刷题/错题/复习、考试、题库、管理总览、题目管理、投稿管理与 AI 调用分析。
+2. 推送后确认 GitHub Actions 的后端、前端和 Docker Job 实跑结果。
+3. 继续做细节 polish：批量操作、空状态、长操作列收纳和真实接口环境下的管理端点击验收。
 
-Round 122 已完成 Phase 21 第一轮：`AppLayout.vue` 分组导航、`global.css` 设计变量和 `HomeView.vue` 学习工作台样板；本轮已通过前端测试、构建和桌面/移动端视觉检查。Round 123 完成工程体检：前端 `npm ci`、`npm audit --audit-level=moderate`、`npm test -- --run`、`npm run build` 通过；后端 `mvn test` 360 passed、`mvn package -DskipTests` 通过；`docker compose config --quiet` 通过。Round 124 完成 Phase 21 P2：整理 Practice/WrongQuestion/Review/ExamList，修复复习 API 重复 `/api` 前缀，并通过前端测试、构建和桌面/移动端浏览器布局检查。Round 125 完成 QuestionListView 题库浏览页整理，并通过前端测试、构建和桌面/移动端浏览器布局检查。Round 127 完成管理端通用样式基线、AdminDashboard/CourseManage/UserManage 样板整理，并通过前端测试、构建和桌面/移动端布局检查。Round 128 修复全局搜索重复 `/api` 前缀、统计流式接口 Base URL、Actuator 默认暴露面，并将 Redis 缓存 TTL 迁移到配置。
+Round 122 已完成 Phase 21 第一轮：`AppLayout.vue` 分组导航、`global.css` 设计变量和 `HomeView.vue` 学习工作台样板；本轮已通过前端测试、构建和桌面/移动端视觉检查。Round 123 完成工程体检：前端 `npm ci`、`npm audit --audit-level=moderate`、`npm test -- --run`、`npm run build` 通过；后端 `mvn test` 360 passed、`mvn package -DskipTests` 通过；`docker compose config --quiet` 通过。Round 124 完成 Phase 21 P2：整理 Practice/WrongQuestion/Review/ExamList，修复复习 API 重复 `/api` 前缀，并通过前端测试、构建和桌面/移动端浏览器布局检查。Round 125 完成 QuestionListView 题库浏览页整理，并通过前端测试、构建和桌面/移动端浏览器布局检查。Round 127 完成管理端通用样式基线、AdminDashboard/CourseManage/UserManage 样板整理，并通过前端测试、构建和桌面/移动端布局检查。Round 128 修复全局搜索重复 `/api` 前缀、统计流式接口 Base URL、Actuator 默认暴露面，并将 Redis 缓存 TTL 迁移到配置。Round 129 完成 QuestionManage/ExamManage/SubmissionManage/AiUsageView 管理页主整理，并通过前端测试、构建和桌面/移动端 mock 布局检查。
 
 Round 105 已验证 Docker Redis 网络连接、8 个缓存/管理接口及前端代理的 AI 用量接口均返回 200；Round 106 已完成核心浏览器点击验收并修复刷题结果弹窗闪屏；Round 108 已完成考试全流程浏览器验收；Round 110 已接入首条 Playwright E2E；Round 111 已补齐刷题错题闭环 E2E；Round 112 已补齐考试作答、提交及结果详情 E2E；Round 113 已补齐投稿审核入库 E2E；Round 114 已接入上游真实 token 用量记录；Round 115 已完成按配置单价固化和聚合模型成本；Round 116 已完成管理员用户独立 AI 日配额；Round 117 已完成周期运营报告和实时异常提醒；Round 118 已完成配额调整审计与 AI 调用 traceId 追踪；Round 120 已完成 Prompt/模型配置指纹追踪；Round 122 已完成前端壳层导航、全局样式和首页学习工作台样板。
 
@@ -161,7 +161,7 @@ Round 105 已验证 Docker Redis 网络连接、8 个缓存/管理接口及前�
 - 用户上传题库自动入库
 - AI 自动审核发布题目
 
-建议 commit message: `feat(frontend): 优化学习工作台信息架构`
+建议 commit message: `feat(frontend): 优化管理端列表页体验`
 
 ---
 
@@ -205,16 +205,16 @@ Round 105 已验证 Docker Redis 网络连接、8 个缓存/管理接口及前�
 6. 除非遇到重大方向、破坏性操作或需求冲突，否则不要频繁问我；
 7. 每轮结束都要更新 docs/CHANGELOG_AGENT.md 和必要文档。
 
-当前阶段：Phase 20“演示验收与 AI 运营治理”收尾中，Phase 21“前端信息架构与视觉体验优化”开发中。Round 105 已修复 Docker Redis 缓存与 AI 用量接口路径，Round 106 已完成核心浏览器点击验收并修复刷题结果弹窗的关闭动画闪屏，Round 108 已完成考试完整作答、提交和结果查看的真实 Docker 浏览器验收，Round 109 已补考试页交互回归测试，Round 110-113 已补 Playwright 登录/课程、刷题错题、考试判分及投稿审核入库闭环 E2E，Round 114 已记录上游真实 token，Round 115 已按管理员配置的模型单价固化并聚合成本，Round 116 已支持管理员给单用户设置、取消或解除 AI 日配额，Round 118 已补齐配额原因/历史审计与调用 traceId 追踪，Round 120 已补齐 Prompt 模板名、不可逆 Prompt 指纹和模型配置版本指纹，Round 122 已完成 AppLayout 分组导航、global.css 设计变量和 HomeView 学习工作台样板，Round 124 已完成 Practice/WrongQuestion/Review/ExamList 核心页整理，Round 125 已完成 QuestionListView 题库浏览页整理，Round 126 已新增 frontend-flow-test skill 规范临时浏览器流程验收，Round 127 已完成管理端总览/Course/User 样板整理。
+当前阶段：Phase 20“演示验收与 AI 运营治理”收尾中，Phase 21“前端信息架构与视觉体验优化”开发中。Round 105 已修复 Docker Redis 缓存与 AI 用量接口路径，Round 106 已完成核心浏览器点击验收并修复刷题结果弹窗的关闭动画闪屏，Round 108 已完成考试完整作答、提交和结果查看的真实 Docker 浏览器验收，Round 109 已补考试页交互回归测试，Round 110-113 已补 Playwright 登录/课程、刷题错题、考试判分及投稿审核入库闭环 E2E，Round 114 已记录上游真实 token，Round 115 已按管理员配置的模型单价固化并聚合成本，Round 116 已支持管理员给单用户设置、取消或解除 AI 日配额，Round 118 已补齐配额原因/历史审计与调用 traceId 追踪，Round 120 已补齐 Prompt 模板名、不可逆 Prompt 指纹和模型配置版本指纹，Round 122 已完成 AppLayout 分组导航、global.css 设计变量和 HomeView 学习工作台样板，Round 124 已完成 Practice/WrongQuestion/Review/ExamList 核心页整理，Round 125 已完成 QuestionListView 题库浏览页整理，Round 126 已新增 frontend-flow-test skill 规范临时浏览器流程验收，Round 127 已完成管理端总览/Course/User 样板整理，Round 129 已完成 QuestionManage/ExamManage/SubmissionManage/AiUsageView 管理页主整理。
 
-已完成模块：用户鉴权、课程知识点、题库、刷题判分（含填空简答增强）、错题本（含重练）、试卷考试、AI 功能（含流式输出、真实 token/成本日志、按用户独立的日配额及原因审计、调用 traceId、Prompt/模型配置追踪、周期运营报告/实时异常提醒）、统计可视化（含个人学习报告）、质量提升、部署简历、收藏题练习、Excel/Markdown 导入导出、学习计划、题目评论、多端适配、难度自适应、管理端用户管理、Phase 13 AI 题目学习资产、Phase 14 全部可视化讲解（13 种元素类型）、Phase 15 的学习诊断/建议/规则相似题与错因分析、Phase 16 的投稿/AI 质检/标注/难度评估/来源追踪与复审机制、Phase 17 间隔重复复习系统（SM-2 算法）、Phase 18 全局搜索与快捷导航（核心功能）、后端测试 360 个、前端 Vitest 测试（最新已验证 203 个）、GitHub Actions CI 配置。
+已完成模块：用户鉴权、课程知识点、题库、刷题判分（含填空简答增强）、错题本（含重练）、试卷考试、AI 功能（含流式输出、真实 token/成本日志、按用户独立的日配额及原因审计、调用 traceId、Prompt/模型配置追踪、周期运营报告/实时异常提醒）、统计可视化（含个人学习报告）、质量提升、部署简历、收藏题练习、Excel/Markdown 导入导出、学习计划、题目评论、多端适配、难度自适应、管理端用户管理、Phase 13 AI 题目学习资产、Phase 14 全部可视化讲解（13 种元素类型）、Phase 15 的学习诊断/建议/规则相似题与错因分析、Phase 16 的投稿/AI 质检/标注/难度评估/来源追踪与复审机制、Phase 17 间隔重复复习系统（SM-2 算法）、Phase 18 全局搜索与快捷导航（核心功能）、Phase 21 用户端与管理端主要页面整理、后端测试 360 个、前端 Vitest 测试（最新已验证 206 个）、GitHub Actions CI 配置。
 下一步建议：
-1. 继续 Phase 21 P3：整理 QuestionManage、ExamManage、SubmissionManage 与 AiUsageView。
-2. 然后制作用户端与管理端演示截图。
-3. 推送至 GitHub 后确认 Actions CI 实际运行结果。
-4. 之后处理 Testcontainers 兼容性与缓存 TTL 配置化。
+1. 制作用户端与管理端演示截图。
+2. 推送至 GitHub 后确认 Actions CI 实际运行结果。
+3. 继续管理端细节 polish：批量操作、空状态、长操作列收纳和真实接口点击验收。
+4. 之后处理 Testcontainers 兼容性与后续缓存/运营治理细节。
 
-当前验收基线：后端 `mvn test` 360 passed，`mvn package -DskipTests` 成功；前端 `npm ci`、`npm audit --audit-level=moderate`、`npm test -- --run` 203 passed、`npm run build` 成功；`docker compose config --quiet` 成功。Round 122 已用 Playwright 检查桌面 1440x980 和移动端 390x844 首页无横向溢出，移动端抽屉导航展开正常。Round 124 已用本地 Playwright 检查 `/practice`、`/wrong-questions`、`/review`、`/exams` 桌面 1440x980 与移动端 390x844 均无横向溢出，并确认 `/review` 请求路径为 `/api/review/stats`。Round 125 已用本地 Playwright 检查 `/questions` 桌面 1440x980 与移动端 390x844 均无横向溢出。核心用户与管理员页面已通过真实浏览器点击验收；后续临时浏览器流程验收应按 `skills/frontend-flow-test/SKILL.md` 只跑最小相关闭环。
+当前验收基线：后端 `mvn test` 360 passed，`mvn package -DskipTests` 成功；前端 `npm ci`、`npm audit --audit-level=moderate`、`npm test -- --run` 206 passed、`npm run build` 成功；`docker compose config --quiet` 成功。Round 122 已用 Playwright 检查桌面 1440x980 和移动端 390x844 首页无横向溢出，移动端抽屉导航展开正常。Round 124 已用本地 Playwright 检查 `/practice`、`/wrong-questions`、`/review`、`/exams` 桌面 1440x980 与移动端 390x844 均无横向溢出，并确认 `/review` 请求路径为 `/api/review/stats`。Round 125 已用本地 Playwright 检查 `/questions` 桌面 1440x980 与移动端 390x844 均无横向溢出。Round 129 已用本地 Playwright mock 数据检查 `/admin/questions`、`/admin/exams`、`/admin/submissions`、`/admin/ai-usage` 在桌面 1440x980 与移动端 390x844 均无横向溢出。核心用户与管理员页面已通过真实浏览器点击验收；后续临时浏览器流程验收应按 `skills/frontend-flow-test/SKILL.md` 只跑最小相关闭环。
 当前不优先做：PDF / 图片 OCR、爬虫、用户上传题库自动入库、AI 自动审核发布题目、复杂推荐系统（包括向量推荐）。
 后续扩展方向：见 docs/AI_LEARNING_PLATFORM_STRATEGY.md、docs/FUTURE.md 和 docs/TESTING.md；测试按业务风险补充。
 
