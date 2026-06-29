@@ -147,6 +147,7 @@
 
 <script setup lang="ts">
 import { computed, ref, reactive, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Star, StarFilled, ChatLineRound } from '@element-plus/icons-vue'
 import { getQuestionPage, type QuestionVO } from '@/api/question'
@@ -154,6 +155,7 @@ import { getAllCourses, type CourseVO } from '@/api/course'
 import { getFavoriteIds, addFavorite, removeFavorite } from '@/api/favorite'
 import QuestionComment from '@/components/QuestionComment.vue'
 
+const route = useRoute()
 const questions = ref<QuestionVO[]>([])
 const loading = ref(false)
 const pageNum = ref(1)
@@ -251,6 +253,11 @@ function resetFilters() {
   handleFilterChange()
 }
 
+function applyRouteFilters() {
+  const routeCourseId = Number(route.query.courseId)
+  filters.courseId = Number.isFinite(routeCourseId) && routeCourseId > 0 ? routeCourseId : null
+}
+
 async function fetchQuestions() {
   loading.value = true
   try {
@@ -308,6 +315,7 @@ async function toggleFavorite(questionId: number) {
 }
 
 onMounted(() => {
+  applyRouteFilters()
   fetchQuestions()
   fetchCourses()
   loadFavoriteIds()

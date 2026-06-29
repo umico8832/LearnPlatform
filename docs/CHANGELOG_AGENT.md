@@ -1,5 +1,39 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 132 - 2026-06-28
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（课程入口页 polish）
+
+### 完成内容
+1. 重做 `CourseListView.vue` 为课程中心工作台：新增课程页头、快捷入口、课程摘要卡、课程搜索、课程卡片操作区和空状态，统一使用 Phase 21 全局视觉变量。
+2. 重做 `CourseDetailView.vue`：新增课程详情页头、查看题目/开始练习动线、知识点总数/顶级节点/叶子节点/最大层级摘要卡，并优化知识点树节点层级与移动端折行。
+3. 为 `QuestionListView.vue` 增加 `courseId` 路由参数初始化，使从课程页点击“查看题目”后实际按课程筛选请求题库接口。
+4. 同步更新 `docs/ROADMAP.md`、`docs/HANDOFF.md` 和 `README.md`，将课程入口与详情页纳入 Phase 21 用户端整理状态。
+
+### 修改文件
+- `frontend/src/views/course/CourseListView.vue`
+- `frontend/src/views/course/CourseDetailView.vue`
+- `frontend/src/views/course/QuestionListView.vue`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd frontend && npm test -- --run`：26 个文件、206 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+- `cd frontend && npm run dev -- --host 127.0.0.1`：前端启动成功，访问 `http://127.0.0.1:5173/`。
+- Playwright 本地布局检查：使用 mock 登录态和课程/知识点/题库接口验证 `/courses`、`/courses/1` 在桌面 1440x980 与移动端 390x844 均无横向溢出；课程搜索 `Java` 可收窄为 1 门课程；课程详情知识点摘要显示 4 个知识点；从课程详情进入题库会请求 `/api/questions?pageNum=1&pageSize=10&courseId=1`。
+
+### 遗留问题
+- 本轮未启动后端；浏览器检查使用本地 mock 数据验证 UI 布局、搜索和路由参数，不代表真实接口联调。
+- Phase 20 的真实演示截图与推送后的 GitHub Actions 实跑仍待完成。
+- 后续可继续整理刷题记录、收藏题、学习报告等二级用户页，或转向演示截图制作。
+
+### 建议 commit message
+`feat(frontend): 优化课程入口页体验`
+
 ## Round 131 - 2026-06-28
 
 ### 阶段
