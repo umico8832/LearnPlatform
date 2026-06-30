@@ -80,24 +80,29 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="注册时间" width="170" />
-        <el-table-column label="操作" width="350" fixed="right">
+        <el-table-column label="操作" width="210" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link size="small" :icon="UserFilled" @click="openRoleDialog(row as AdminUserVO)">改角色</el-button>
-            <el-button
-              :type="(row as AdminUserVO).status === 1 ? 'warning' : 'success'"
-              link size="small"
-              :icon="SwitchButton"
-              @click="toggleStatus(row as AdminUserVO)"
-            >
-              {{ (row as AdminUserVO).status === 1 ? '禁用' : '启用' }}
-            </el-button>
-            <el-button type="info" link size="small" :icon="Key" @click="openResetPwdDialog(row as AdminUserVO)">重置密码</el-button>
-            <el-button type="primary" link size="small" :icon="Cpu" @click="openAiQuotaDialog(row as AdminUserVO)">AI 配额</el-button>
-            <el-popconfirm title="确定删除该用户？此操作不可恢复。" @confirm="handleDelete((row as AdminUserVO).id)">
-              <template #reference>
-                <el-button type="danger" link size="small" :icon="Delete">删除</el-button>
-              </template>
-            </el-popconfirm>
+            <div class="admin-row-actions">
+              <el-button type="primary" link size="small" :icon="UserFilled" @click="openRoleDialog(row as AdminUserVO)">改角色</el-button>
+              <el-button
+                :type="(row as AdminUserVO).status === 1 ? 'warning' : 'success'"
+                link size="small"
+                :icon="SwitchButton"
+                @click="toggleStatus(row as AdminUserVO)"
+              >
+                {{ (row as AdminUserVO).status === 1 ? '禁用' : '启用' }}
+              </el-button>
+              <el-dropdown trigger="click" @command="command => handleUserRowCommand(command as string, row as AdminUserVO)">
+                <el-button link size="small" :icon="MoreFilled">更多</el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="reset" :icon="Key">重置密码</el-dropdown-item>
+                    <el-dropdown-item command="quota" :icon="Cpu">AI 配额</el-dropdown-item>
+                    <el-dropdown-item command="delete" :icon="Delete" class="danger-dropdown-item">删除用户</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -235,8 +240,8 @@
 
 <script setup lang="ts">
 import { computed, ref, reactive, onMounted } from 'vue'
-import { CircleClose, CircleCheck, Cpu, Delete, Key, Plus, Search, SwitchButton, User, UserFilled } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { CircleClose, CircleCheck, Cpu, Delete, Key, MoreFilled, Plus, Search, SwitchButton, User, UserFilled } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import {
   getAdminUserList,
@@ -343,6 +348,29 @@ const statCards = computed(() => [
 const activationRate = computed(() => (
   userStats.total > 0 ? Math.round((userStats.active / userStats.total) * 100) : 0
 ))
+
+const handleUserRowCommand = async (command: string, user: AdminUserVO) => {
+  if (command === 'reset') {
+    openResetPwdDialog(user)
+    return
+  }
+  if (command === 'quota') {
+    openAiQuotaDialog(user)
+    return
+  }
+  if (command === 'delete') {
+    try {
+      await ElMessageBox.confirm('确定删除该用户？此操作不可恢复。', '删除用户', {
+        type: 'warning',
+        confirmButtonText: '删除',
+        cancelButtonText: '取消',
+      })
+      await handleDelete(user.id)
+    } catch {
+      // 用户取消确认时不提示错误。
+    }
+  }
+}
 
 async function fetchUsers() {
   loading.value = true

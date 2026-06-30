@@ -104,20 +104,21 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="170" />
-        <el-table-column label="操作" width="220" fixed="right">
+        <el-table-column label="操作" width="185" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link size="small" :icon="RefreshRight" @click="openReReview(row as QuestionVO)">复审</el-button>
-            <el-button type="primary" link size="small" :icon="Edit" @click="openDialog(row as QuestionVO)">编辑</el-button>
-            <el-popconfirm title="确定清除该题目的 AI 学习资产缓存？" @confirm="handleClearAiCache((row as QuestionVO).id)">
-              <template #reference>
-                <el-button type="warning" link size="small" :icon="DeleteFilled">清缓存</el-button>
-              </template>
-            </el-popconfirm>
-            <el-popconfirm title="确定删除该题目？" @confirm="handleDelete((row as QuestionVO).id)">
-              <template #reference>
-                <el-button type="danger" link size="small" :icon="Delete">删除</el-button>
-              </template>
-            </el-popconfirm>
+            <div class="admin-row-actions">
+              <el-button type="primary" link size="small" :icon="RefreshRight" @click="openReReview(row as QuestionVO)">复审</el-button>
+              <el-button type="primary" link size="small" :icon="Edit" @click="openDialog(row as QuestionVO)">编辑</el-button>
+              <el-dropdown trigger="click" @command="command => handleQuestionRowCommand(command as string, row as QuestionVO)">
+                <el-button link size="small" :icon="MoreFilled">更多</el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="cache" :icon="DeleteFilled">清缓存</el-dropdown-item>
+                    <el-dropdown-item command="delete" :icon="Delete" class="danger-dropdown-item">删除题目</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -403,8 +404,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { Plus, Search, Delete, Download, Upload, FolderOpened, ArrowDown, Edit, RefreshRight, DeleteFilled, Collection, DataAnalysis, DocumentChecked } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { Plus, Search, Delete, Download, Upload, FolderOpened, ArrowDown, Edit, RefreshRight, DeleteFilled, Collection, DataAnalysis, DocumentChecked, MoreFilled } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules, UploadFile } from 'element-plus'
 import {
   getAdminQuestionPage,
@@ -512,6 +513,34 @@ const questionStats = computed(() => {
     { label: '平均分值', value: avgScore || '-', note: '当前页题目均分', icon: DataAnalysis },
   ]
 })
+
+const handleQuestionRowCommand = async (command: string, question: QuestionVO) => {
+  if (command === 'cache') {
+    try {
+      await ElMessageBox.confirm('确定清除该题目的 AI 学习资产缓存？', '清除缓存', {
+        type: 'warning',
+        confirmButtonText: '清除',
+        cancelButtonText: '取消',
+      })
+      await handleClearAiCache(question.id)
+    } catch {
+      // 用户取消确认时不提示错误。
+    }
+    return
+  }
+  if (command === 'delete') {
+    try {
+      await ElMessageBox.confirm('确定删除该题目？', '删除题目', {
+        type: 'warning',
+        confirmButtonText: '删除',
+        cancelButtonText: '取消',
+      })
+      await handleDelete(question.id)
+    } catch {
+      // 用户取消确认时不提示错误。
+    }
+  }
+}
 
 // 是否显示选项区域
 const showOptions = computed(() => {

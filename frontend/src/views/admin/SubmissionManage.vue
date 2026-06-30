@@ -67,17 +67,26 @@
         <el-table-column label="投稿时间" width="170">
           <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="260" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link :icon="View" @click="viewDetail(row as QuestionSubmissionVO)">详情</el-button>
-            <template v-if="(row as QuestionSubmissionVO).status === 0">
-              <el-button type="success" link :icon="Check" @click="openReview(row as QuestionSubmissionVO, 1)">通过</el-button>
-              <el-button type="danger" link :icon="Close" @click="openReview(row as QuestionSubmissionVO, 2)">拒绝</el-button>
-            </template>
-            <el-button type="info" link :icon="MagicStick" @click="handleQualityCheck(row as QuestionSubmissionVO)">质检</el-button>
-            <el-button type="primary" link :icon="CollectionTag" @click="handleKPTagging(row as QuestionSubmissionVO)">标注</el-button>
-            <el-button type="success" link :icon="TrendCharts" @click="handleDifficultyAssessment(row as QuestionSubmissionVO)">测难度</el-button>
-            <el-button v-if="(row as QuestionSubmissionVO).status === 1" type="warning" link :icon="FolderAdd" @click="handleImport(row as QuestionSubmissionVO)">入库</el-button>
+            <div class="admin-row-actions">
+              <el-button type="primary" link :icon="View" @click="viewDetail(row as QuestionSubmissionVO)">详情</el-button>
+              <template v-if="(row as QuestionSubmissionVO).status === 0">
+                <el-button type="success" link :icon="Check" @click="openReview(row as QuestionSubmissionVO, 1)">通过</el-button>
+                <el-button type="danger" link :icon="Close" @click="openReview(row as QuestionSubmissionVO, 2)">拒绝</el-button>
+              </template>
+              <el-button v-else-if="(row as QuestionSubmissionVO).status === 1" type="warning" link :icon="FolderAdd" @click="handleImport(row as QuestionSubmissionVO)">入库</el-button>
+              <el-dropdown trigger="click" @command="command => handleSubmissionRowCommand(command as string, row as QuestionSubmissionVO)">
+                <el-button link :icon="MoreFilled">AI 工具</el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="quality" :icon="MagicStick">AI 质检</el-dropdown-item>
+                    <el-dropdown-item command="tagging" :icon="CollectionTag">知识点标注</el-dropdown-item>
+                    <el-dropdown-item command="difficulty" :icon="TrendCharts">难度评估</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -310,7 +319,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { Check, Close, CollectionTag, FolderAdd, MagicStick, Refresh, Search, TrendCharts, View } from '@element-plus/icons-vue'
+import { Check, Close, CollectionTag, FolderAdd, MagicStick, MoreFilled, Refresh, Search, TrendCharts, View } from '@element-plus/icons-vue'
 import {
   getAdminSubmissions,
   reviewSubmission,
@@ -345,6 +354,20 @@ const submissionStats = computed(() => [
   { label: '已拒绝', value: stats.value.rejected, note: '保留审核记录', icon: Close },
   { label: '已入库', value: stats.value.imported, note: '进入正式题库', icon: FolderAdd },
 ])
+
+const handleSubmissionRowCommand = (command: string, submission: QuestionSubmissionVO) => {
+  if (command === 'quality') {
+    handleQualityCheck(submission)
+    return
+  }
+  if (command === 'tagging') {
+    handleKPTagging(submission)
+    return
+  }
+  if (command === 'difficulty') {
+    handleDifficultyAssessment(submission)
+  }
+}
 
 const showReviewDialog = ref(false)
 const showDetailDialog = ref(false)

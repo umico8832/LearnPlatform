@@ -1,5 +1,39 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 134 - 2026-06-30
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（管理端操作列 polish）
+
+### 完成内容
+1. 收纳 `UserManage.vue` 表格长操作列：保留“改角色/启禁用”高频动作，将“重置密码/AI 配额/删除用户”放入“更多”菜单，操作列宽度从 350 降至 210。
+2. 收纳 `QuestionManage.vue` 表格操作列：保留“复审/编辑”，将“清缓存/删除题目”放入“更多”菜单，并改用二次确认弹窗保护高风险动作。
+3. 收纳 `SubmissionManage.vue` 投稿操作列：保留“详情/审核/入库”等状态相关主动作，将 AI 质检、知识点标注和难度评估归入“AI 工具”菜单。
+4. 在 `global.css` 新增 `admin-row-actions` 和危险下拉项样式，统一后台表格行操作的间距、换行和危险操作色彩。
+
+### 修改文件
+- `frontend/src/assets/styles/global.css`
+- `frontend/src/views/admin/UserManage.vue`
+- `frontend/src/views/admin/QuestionManage.vue`
+- `frontend/src/views/admin/SubmissionManage.vue`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd frontend && npm test -- --run`：26 个文件、206 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+- `cd frontend && npm run dev -- --host 127.0.0.1`：前端启动成功，访问 `http://127.0.0.1:5173/`。
+- 尝试用本机 Chrome + Playwright mock 管理端接口检查 `/admin/users`、`/admin/questions`、`/admin/submissions`；因本轮临时 mock 环境未能稳定等待到表格行操作，未作为通过项。构建和类型检查已确认模板与 TS 无编译错误。
+
+### 遗留问题
+- 本轮未启动后端，未做真实接口点击验收；后续如继续管理端 polish，可在 Docker/E2E 环境中补管理员真实点击检查。
+- Phase 20 推送后的 GitHub Actions 实跑仍待完成。
+
+### 建议 commit message
+`feat(frontend): 收纳管理端表格操作列`
+
 ## Round 133 - 2026-06-29
 
 ### 阶段

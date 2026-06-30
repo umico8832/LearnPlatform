@@ -216,6 +216,27 @@ a {
   line-height: 1.5;
 }
 
+.admin-row-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.admin-row-actions .el-button + .el-button {
+  margin-left: 0;
+}
+
+.admin-row-actions .el-dropdown {
+  line-height: 1;
+}
+
+.danger-dropdown-item {
+  color: var(--lp-danger) !important;
+}
+
 .admin-pagination {
   display: flex;
   justify-content: flex-end;
