@@ -11,5 +11,5 @@ services:
 
   backend:
     environment:
-      SPRING_PROFILES_ACTIVE: e2e
+      SPRING_PROFILES_ACTIVE: e2e,docker
       CACHE_TYPE: simple

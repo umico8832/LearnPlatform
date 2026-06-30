@@ -48,6 +48,26 @@ docker compose ps  # 确认所有服务正常
 | 后端接口 | http://localhost:8080 | http://localhost:8080 |
 | 接口文档 | http://localhost:8080/doc.html | http://localhost:8080/doc.html |
 
+### 演示截图
+
+推荐使用隔离的 E2E Docker Profile 生成真实演示截图，避免污染本地开发数据库；该 Profile 仅固定登录验证码答案为 `42`，账号密码、JWT、权限和真实接口仍正常校验。
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --force-recreate --wait
+cd frontend
+npm run screenshots:demo
+```
+
+默认访问 `http://localhost:18000`，并将截图输出到 `docs/demo-screenshots/`。如端口不同，可指定：
+
+```bash
+DEMO_BASE_URL=http://localhost:5173 npm run screenshots:demo
+```
+
+脚本会覆盖用户端首页、课程、题库、刷题、错题、复习、考试，以及管理端总览、题目管理、投稿管理和 AI 调用分析；若页面加载时出现 4xx/5xx API 响应，脚本会失败，避免生成不可信截图。
+
+当前仓库已生成一组桌面演示截图，见 `docs/demo-screenshots/`。
+
 ---
 
 ## 演示流程

@@ -4,7 +4,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cache.support.SimpleCacheManager;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
@@ -24,6 +24,21 @@ import java.time.Duration;
 @EnableCaching
 @EnableConfigurationProperties(CacheTtlProperties.class)
 public class RedisConfig {
+
+    private static final String[] CACHE_NAMES = {
+            "statistics",
+            "adminStatistics",
+            "dailyTrend",
+            "courseStats",
+            "learningReport",
+            "learningPath",
+            "knowledgeGraph",
+            "learningDiagnosis",
+            "submissionQuality",
+            "submissionKPTagging",
+            "submissionDifficulty",
+            "globalSearch"
+    };
 
     @Bean
     @ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis")
@@ -63,6 +78,6 @@ public class RedisConfig {
     @Bean
     @ConditionalOnProperty(name = "spring.cache.type", havingValue = "simple", matchIfMissing = true)
     public CacheManager simpleCacheManager() {
-        return new SimpleCacheManager();
+        return new ConcurrentMapCacheManager(CACHE_NAMES);
     }
 }

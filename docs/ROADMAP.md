@@ -24,12 +24,12 @@
 | 17 | 间隔重复与智能复习 | ✅ 基本完成 | Round 94-97 | 基于 SM-2 算法的间隔重复系统（Flyway V9 ✅ + SpacedRepetitionService ✅ + ReviewController 10 个接口 ✅ + 前端 ReviewView ✅ + 错题自动复习调度 ✅ + 循环依赖消除 ✅ + AI 复习建议整合 ✅ + 复习统计整合到学习报告 ✅ + 25 个单元测试 ✅） |
 | 18 | 全局搜索与快捷导航 | ✅ 基本完成 | Round 98-99 | 跨题目/课程/知识点的全局搜索（GlobalSearchService ✅ + GlobalSearchController 4 个接口 ✅ + 前端 GlobalSearchDialog 组件 ✅ + ⌘K/Ctrl+K 快捷键 ✅ + 键盘导航 ✅ + 关键词高亮 ✅ + 移动端适配 ✅ + 搜索历史记录 ✅ + 热门搜索推荐 ✅ + 搜索结果缓存 @Cacheable ✅ + 24 个单元测试 ✅） |
 | 19 | AI 调用分析与成本控制 | ✅ 基本完成 | Round 100、115 | 管理端 AI 调用总览（趋势、功能/模型分布、Top 用户、失败调用、真实 Tokens、平均耗时与按模型配置单价计算的成本） |
-| 20 | 演示验收与 AI 运营治理 | 🚧 开发中 | 2-3 个迭代 | 已覆盖关键业务真实浏览器 E2E，并完成独立配额、审计追踪、运营报告与实时异常提醒；继续完成演示截图、CI 实跑 |
-| 21 | 前端信息架构与视觉体验优化 | 🚧 开发中 | 2-4 个迭代 | AppLayout 分组导航、首页学习工作台、核心业务页、课程入口/详情页、题库浏览页，以及管理端主要页面样板整理已完成；下一步进入演示截图、CI 实跑和细节 polish |
+| 20 | 演示验收与 AI 运营治理 | 🚧 开发中 | 2-3 个迭代 | 已覆盖关键业务真实浏览器 E2E，并完成独立配额、审计追踪、运营报告与实时异常提醒；演示截图已产出，继续 CI 实跑 |
+| 21 | 前端信息架构与视觉体验优化 | 🚧 开发中 | 2-4 个迭代 | AppLayout 分组导航、首页学习工作台、核心业务页、课程入口/详情页、题库浏览页，以及管理端主要页面样板整理已完成；下一步进入 CI 实跑和细节 polish |
 
 **Phase 0-12 预计总工期**：约 17-20 天
 
-**当前阶段：Phase 20 演示验收与 AI 运营治理待截图和 CI 实跑收尾；Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList，以及管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
+**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图，仍待推送后完成 CI 实跑；Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList，以及管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
 
 ---
 
@@ -361,7 +361,7 @@
 ### 任务
 - [x] Docker Compose 完善（backend/frontend 健康检查、启动顺序、AI 环境变量）
 - [x] README.md 完善（状态表更新、Lombok 说明、JDK 版本、FAQ 补充、演示流程链接）
-- [ ] 项目截图制作（非阻塞演示素材，不影响阶段完成）
+- [x] 项目截图制作（Round 133 已产出真实演示截图，见 `docs/demo-screenshots/`）
 - [x] 演示流程文档（docs/DEMO.md）
 - [x] docs/RESUME.md 完善（技术亮点更新、面试问答补充 Q8-Q10）
 - [x] 面试问答整理（性能优化、日志设计、安全措施）
@@ -623,11 +623,12 @@
 
 ### P0：演示验收与质量收尾
 - [x] 考试完整作答、提交、结果查看已完成真实 Docker 浏览器验收（Round 108：3 题作答、确认提交、自动判分与结果详情均正常）。
-- [ ] 按 `docs/DEMO.md` 制作用户端和管理端真实演示截图。
+- [x] 按 `docs/DEMO.md` 制作用户端和管理端真实演示截图（Round 133：11 张桌面截图已输出到 `docs/demo-screenshots/`）。
 - [ ] 推送后确认 GitHub Actions 的后端、前端和 Docker Job 实际通过。
 - [x] 建立安全的浏览器 E2E 登录态：隔离 `e2e` Profile 固定一次性验证码答案，仍验证真实账号密码、JWT 与路由守卫（Round 110）。
 - [x] 为刷题、错题复习、考试和管理端审核补充少量高价值端到端测试（已补考试页 2 条页面级交互回归；浏览器 E2E 覆盖登录、课程浏览、刷题答错→错题本→掌握度更新→重练、三种题型作答→提交→自动判分→结果详情，以及用户投稿→管理员通过→正式入库；Round 113）。
-- [ ] 处理 Testcontainers 本地兼容性，并将 Redis 缓存 TTL 提取为配置项。
+- [x] 将 Redis 缓存 TTL 提取为配置项，并修复 simple cache 模式下未注册缓存名导致统计接口 500 的问题。
+- [ ] 处理 Testcontainers 本地兼容性。
 
 ### P1：AI 运营治理
 - [x] 从 OpenAI 兼容上游响应记录真实 token 用量：同步响应读取 `usage`，流式请求默认请求并读取最终 `usage` 事件；不支持该扩展的上游可关闭 `AI_STREAM_INCLUDE_USAGE`，此时不进行本地估算。
@@ -686,7 +687,7 @@
 - [x] `CourseManage.vue` 与 `UserManage.vue`：统一筛选区、统计/摘要、表格容器、行操作和移动端折行。
 - [x] `KnowledgePointManage.vue`：接入统一后台页头、知识点摘要卡、树结构搜索和移动端布局检查。
 - [x] `QuestionManage.vue`、`ExamManage.vue`、`SubmissionManage.vue` 与 `AiUsageView.vue`：接入统一后台页头、摘要卡、筛选/操作区、表格容器和移动端布局检查。
-- [ ] 后续 polish：继续补齐批量操作、空状态、长操作列收纳和真实演示截图。
+- [ ] 后续 polish：继续补齐批量操作、空状态、长操作列收纳和真实接口点击验收。
 
 ### 验收标准
 1. `npm test -- --run` 通过，必要时补页面交互测试。
@@ -701,4 +702,4 @@
 - 第 3 轮：整理 QuestionListView。✅ 已完成
 - 第 4 轮：整理 AdminDashboard 与管理端列表页。✅ 已完成总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 样板
 - 第 5 轮：整理课程入口与详情页。✅ 已完成
-- 第 6 轮：浏览器验收、截图、微调和文档更新。
+- 第 6 轮：浏览器验收、截图、微调和文档更新。🚧 截图已完成，CI 实跑和细节 polish 待继续

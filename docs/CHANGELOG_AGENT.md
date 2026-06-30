@@ -1,5 +1,50 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 133 - 2026-06-29
+
+### 阶段
+Phase 20：演示验收与 AI 运营治理（演示截图流水线）
+
+### 完成内容
+1. 新增 `frontend/scripts/capture-demo-screenshots.mjs`，基于 Playwright 登录真实前端与后端接口，批量生成桌面演示截图。
+2. 新增 `npm run screenshots:demo` 命令，默认连接 `http://localhost:18000` 的 E2E Docker 前端，并输出到 `docs/demo-screenshots/`。
+3. 截图覆盖用户端首页、课程、题库、刷题、错题、复习、考试，以及管理端平台总览、题目管理、投稿管理和 AI 调用分析。
+4. 脚本在页面截图期间监听 `/api/` 4xx/5xx 响应，发现接口错误时直接失败，避免生成不可信演示素材。
+5. 修复 simple cache 模式下未注册缓存名导致统计接口 500 的问题，避免 E2E、本地 simple 缓存环境访问首页统计失败。
+6. 将 E2E Docker 后端 profile 调整为 `e2e,docker`，保留固定验证码与 simple cache，同时启用 Docker JSON 日志，方便定位演示验收异常。
+7. 在可用 Docker 环境中生成 11 张真实演示截图，输出到 `docs/demo-screenshots/`。
+8. 更新 `docs/DEMO.md`、`docs/ROADMAP.md`、`docs/HANDOFF.md` 和 `README.md`，补充截图生成方式与当前状态。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/config/RedisConfig.java`
+- `backend/src/test/java/com/learnplatform/config/RedisConfigTest.java`
+- `docker-compose.e2e.yml`
+- `frontend/scripts/capture-demo-screenshots.mjs`
+- `frontend/package.json`
+- `docs/demo-screenshots/*.png`
+- `docs/DEMO.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd frontend && node --check scripts/capture-demo-screenshots.mjs`：通过。
+- `cd frontend && npm test -- --run`：26 个文件、206 个测试通过。
+- `cd backend && mvn test -Dtest=RedisConfigTest`：通过。
+- `cd backend && mvn test`：361 个测试通过。
+- `docker compose -f docker-compose.yml -f docker-compose.e2e.yml config --quiet`：通过。
+- `docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --force-recreate --wait backend frontend`：通过，后端与前端容器健康。
+- `cd frontend && npm run screenshots:demo`：通过，生成 11 张 1440px 宽桌面截图。
+- 抽检 `desktop-01-home-workbench.png` 与 `desktop-11-admin-ai-usage.png`：内容为真实登录后的学习者首页和管理端 AI 调用分析页。
+
+### 遗留问题
+- Phase 20 推送后的 GitHub Actions 实跑仍待完成。
+- 当前 E2E Docker 环境仍在运行，后续不用时可执行 `docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v` 清理。
+
+### 建议 commit message
+`chore(demo): 生成演示截图并修复 simple cache`
+
 ## Round 132 - 2026-06-28
 
 ### 阶段
