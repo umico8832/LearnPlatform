@@ -44,19 +44,8 @@ public class WrongQuestionService {
     @Transactional
     public void addWrongQuestion(Long userId, Long questionId, String userAnswer) {
         log.info("加入错题本: userId={}, questionId={}", userId, questionId);
-        LambdaQueryWrapper<WrongQuestion> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(WrongQuestion::getUserId, userId)
-               .eq(WrongQuestion::getQuestionId, questionId);
-        WrongQuestion existing = wrongQuestionMapper.selectOne(wrapper);
-
-        if (existing != null) {
-            existing.setWrongCount(existing.getWrongCount() + 1);
-            existing.setLastWrongAnswer(userAnswer);
-            if (existing.getMasteryLevel() != null && existing.getMasteryLevel() == 2) {
-                existing.setMasteryLevel(0);
-            }
-            wrongQuestionMapper.updateById(existing);
-        } else {
+        int updated = wrongQuestionMapper.reviveOrIncrement(userId, questionId, userAnswer);
+        if (updated == 0) {
             WrongQuestion wq = new WrongQuestion();
             wq.setUserId(userId);
             wq.setQuestionId(questionId);

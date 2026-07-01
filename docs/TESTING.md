@@ -49,7 +49,7 @@
 
 浏览器测试使用独立的 Spring `e2e` Profile（`docker-compose.e2e.yml`），仅在该 Profile 下将验证码答案固定为 `42`；它不会绕过账号密码、JWT、权限或路由守卫。开发和生产 Profile 仍使用随机一次性数学验证码。
 
-本地先启动隔离环境，再执行测试：
+本地先启动隔离环境，再执行浏览器 E2E：
 
 ```bash
 # 若此前运行过普通开发 Profile，必须强制重建，使 backend 切换到 e2e Profile。
@@ -87,3 +87,13 @@ npm run build
 cd backend
 mvn test
 ```
+
+默认后端单测会排除 `@Tag("integration")` 的 Testcontainers 集成测试。如需单独运行集成测试，清空默认排除项并按需指定类名：
+
+```bash
+cd backend
+mvn test -DexcludedGroups= -Dgroups=integration
+mvn test -DexcludedGroups= -Dtest=WrongQuestionServiceIntegrationTest
+```
+
+若本地 Docker CLI 可用但 Testcontainers 报无法找到 Docker environment，优先按 `docs/HANDOFF.md` 记录为本机 Docker Desktop Socket 兼容性问题；不要把 0 tests 当作集成测试通过。

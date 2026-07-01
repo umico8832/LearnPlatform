@@ -390,6 +390,32 @@ class WrongQuestionServiceIntegrationTest extends IntegrationTestBase {
 
     @Test
     @Order(14)
+    @DisplayName("加入错题本：逻辑删除后再次答错应复活原记录")
+    void addWrongQuestion_afterLogicalDelete_revivesExistingRecord() {
+        wrongQuestionService.addWrongQuestion(userId, questionId2, "B");
+
+        LambdaQueryWrapper<WrongQuestion> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(WrongQuestion::getUserId, userId)
+               .eq(WrongQuestion::getQuestionId, questionId2);
+        WrongQuestion before = wrongQuestionMapper.selectOne(wrapper);
+        assertNotNull(before, "加入后应有错题记录");
+
+        wrongQuestionService.removeOnCorrect(userId, questionId2);
+        assertNull(wrongQuestionMapper.selectById(before.getId()), "移出后普通查询应查不到逻辑删除记录");
+
+        wrongQuestionService.addWrongQuestion(userId, questionId2, "C");
+
+        WrongQuestion revived = wrongQuestionMapper.selectOne(wrapper);
+        assertNotNull(revived, "再次答错应复活错题记录");
+        assertEquals(before.getId(), revived.getId(), "应复活原记录而不是插入新记录");
+        assertEquals(2, revived.getWrongCount(), "复活后 wrongCount 应继续递增");
+        assertEquals(0, revived.getMasteryLevel(), "复活后应回到未掌握");
+        assertEquals("C", revived.getLastWrongAnswer(), "应记录最新错误答案");
+        assertEquals(0, revived.getDeleted(), "复活后 deleted 应为 0");
+    }
+
+    @Test
+    @Order(15)
     @DisplayName("答对自动移出：错题本中无记录时无操作")
     void removeOnCorrect_noRecord_noException() {
         // 使用一个不在错题本中的题目
@@ -400,7 +426,7 @@ class WrongQuestionServiceIntegrationTest extends IntegrationTestBase {
     // ======================== getWrongQuestionStats 测试 ========================
 
     @Test
-    @Order(15)
+    @Order(16)
     @DisplayName("错题统计：返回正确的统计信息和课程分布")
     void getWrongQuestionStats_returnsCorrectStats() {
         // 确保有不同掌握程度的错题
@@ -430,7 +456,7 @@ class WrongQuestionServiceIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    @Order(16)
+    @Order(17)
     @DisplayName("错题统计：空错题本返回零值统计")
     void getWrongQuestionStats_emptyBook_returnsZeros() {
         User freshUser = new User();

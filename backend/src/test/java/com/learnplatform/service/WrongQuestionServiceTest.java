@@ -36,7 +36,7 @@ class WrongQuestionServiceTest {
 
     @Test
     void addWrongQuestionCreatesRecordWhenAbsent() {
-        when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
+        when(wrongQuestionMapper.reviveOrIncrement(7L, 10L, "B")).thenReturn(0);
 
         wrongQuestionService.addWrongQuestion(7L, 10L, "B");
 
@@ -54,29 +54,23 @@ class WrongQuestionServiceTest {
 
     @Test
     void addWrongQuestionIncrementsExistingRecord() {
-        WrongQuestion existing = wrongQuestion(1L, 7L, 10L, 2, 1, "A");
-        when(wrongQuestionMapper.selectOne(any())).thenReturn(existing);
+        when(wrongQuestionMapper.reviveOrIncrement(7L, 10L, "C")).thenReturn(1);
 
         wrongQuestionService.addWrongQuestion(7L, 10L, "C");
 
-        assertEquals(3, existing.getWrongCount());
-        assertEquals(1, existing.getMasteryLevel());
-        assertEquals("C", existing.getLastWrongAnswer());
-        verify(wrongQuestionMapper).updateById(existing);
+        verify(wrongQuestionMapper).reviveOrIncrement(7L, 10L, "C");
+        verify(wrongQuestionMapper, never()).updateById(any());
         verify(wrongQuestionMapper, never()).insert(any());
     }
 
     @Test
     void addWrongQuestionResetsMasteredRecordToUnmastered() {
-        WrongQuestion existing = wrongQuestion(1L, 7L, 10L, 2, 2, "A");
-        when(wrongQuestionMapper.selectOne(any())).thenReturn(existing);
+        when(wrongQuestionMapper.reviveOrIncrement(7L, 10L, "D")).thenReturn(1);
 
         wrongQuestionService.addWrongQuestion(7L, 10L, "D");
 
-        assertEquals(3, existing.getWrongCount());
-        assertEquals(0, existing.getMasteryLevel());
-        assertEquals("D", existing.getLastWrongAnswer());
-        verify(wrongQuestionMapper).updateById(existing);
+        verify(wrongQuestionMapper).reviveOrIncrement(7L, 10L, "D");
+        verify(wrongQuestionMapper, never()).insert(any());
     }
 
     @Test

@@ -25,11 +25,11 @@
 | 18 | 全局搜索与快捷导航 | ✅ 基本完成 | Round 98-99 | 跨题目/课程/知识点的全局搜索（GlobalSearchService ✅ + GlobalSearchController 4 个接口 ✅ + 前端 GlobalSearchDialog 组件 ✅ + ⌘K/Ctrl+K 快捷键 ✅ + 键盘导航 ✅ + 关键词高亮 ✅ + 移动端适配 ✅ + 搜索历史记录 ✅ + 热门搜索推荐 ✅ + 搜索结果缓存 @Cacheable ✅ + 24 个单元测试 ✅） |
 | 19 | AI 调用分析与成本控制 | ✅ 基本完成 | Round 100、115 | 管理端 AI 调用总览（趋势、功能/模型分布、Top 用户、失败调用、真实 Tokens、平均耗时与按模型配置单价计算的成本） |
 | 20 | 演示验收与 AI 运营治理 | 🚧 开发中 | 2-3 个迭代 | 已覆盖关键业务真实浏览器 E2E，并完成独立配额、审计追踪、运营报告与实时异常提醒；演示截图已产出，继续 CI 实跑 |
-| 21 | 前端信息架构与视觉体验优化 | 🚧 开发中 | 2-4 个迭代 | AppLayout 分组导航、首页学习工作台、核心业务页、课程入口/详情页、题库浏览页、管理端主要页面样板整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态和已知 Element Plus radio 旧 API 清理已完成；下一步进入 CI 实跑和真实接口点击验收 |
+| 21 | 前端信息架构与视觉体验优化 | 🚧 开发中 | 2-4 个迭代 | AppLayout 分组导航、首页学习工作台、核心业务页、课程入口/详情页、题库浏览页、管理端主要页面样板整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态和已知 Element Plus radio 旧 API 清理已完成；真实 E2E 已复跑通过，下一步推送后确认 CI |
 
 **Phase 0-12 预计总工期**：约 17-20 天
 
-**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图，仍待推送后完成 CI 实跑；Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList、管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态和已知 Element Plus radio 旧 API 清理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
+**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图；Round 137 修复了错题逻辑删除后再次答错的唯一键冲突，并复跑 4 条真实 Playwright E2E 通过，仍待推送后完成 CI 实跑。Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList、管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态和已知 Element Plus radio 旧 API 清理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
 
 ---
 
@@ -627,6 +627,7 @@
 - [ ] 推送后确认 GitHub Actions 的后端、前端和 Docker Job 实际通过。
 - [x] 建立安全的浏览器 E2E 登录态：隔离 `e2e` Profile 固定一次性验证码答案，仍验证真实账号密码、JWT 与路由守卫（Round 110）。
 - [x] 为刷题、错题复习、考试和管理端审核补充少量高价值端到端测试（已补考试页 2 条页面级交互回归；浏览器 E2E 覆盖登录、课程浏览、刷题答错→错题本→掌握度更新→重练、三种题型作答→提交→自动判分→结果详情，以及用户投稿→管理员通过→正式入库；Round 113）。
+- [x] 复跑真实 Docker E2E 并修复错题逻辑删除后再次答错触发唯一键冲突的问题（Round 137：4 条 Playwright 真实业务闭环通过）。
 - [x] 将 Redis 缓存 TTL 提取为配置项，并修复 simple cache 模式下未注册缓存名导致统计接口 500 的问题。
 - [ ] 处理 Testcontainers 本地兼容性。
 

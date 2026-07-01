@@ -22,6 +22,7 @@
         <mybatis-plus.version>3.5.5</mybatis-plus.version>
         <jjwt.version>0.12.5</jjwt.version>
         <knife4j.version>4.4.0</knife4j.version>
+        <excludedGroups>integration</excludedGroups>
     </properties>
 
     <dependencies>
@@ -176,7 +177,7 @@
                     <systemPropertyVariables>
                         <net.bytebuddy.experimental>true</net.bytebuddy.experimental>
                     </systemPropertyVariables>
-                    <excludedGroups>integration</excludedGroups>
+                    <excludedGroups>${excludedGroups}</excludedGroups>
                 </configuration>
             </plugin>
         </plugins>

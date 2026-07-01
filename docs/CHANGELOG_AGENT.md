@@ -1,5 +1,45 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 137 - 2026-07-01
+
+### 阶段
+Phase 20 / Phase 21：真实接口 E2E 验收与错题本业务修复
+
+### 完成内容
+1. 在 Docker E2E 环境中重跑真实浏览器流程，发现“刷题答错→错题本”闭环在重复答错已逻辑删除错题时会因 `wrong_question.uk_user_question` 唯一键冲突返回 500。
+2. 修复 `WrongQuestionService.addWrongQuestion`：新增数据库级 `reviveOrIncrement` 更新，命中历史错题记录时递增 `wrong_count`、更新最近错误答案、必要时重置掌握度并将 `deleted` 复活为 0；未命中时才插入新记录。
+3. 为错题本服务补充回归测试：单元测试覆盖新增 mapper 更新路径；集成测试类新增“逻辑删除后再次答错应复活原记录”用例。
+4. 调整 Maven Surefire 配置，让 `excludedGroups` 可通过命令行覆盖，避免集成测试命令出现 0 tests 的假绿；同步更新 `docs/TESTING.md`。
+5. 使用修复后的后端镜像重建 Docker E2E 环境，并确认 4 条 Playwright 真实业务闭环全部通过。
+
+### 修改文件
+- `backend/pom.xml`
+- `backend/src/main/java/com/learnplatform/mapper/WrongQuestionMapper.java`
+- `backend/src/main/java/com/learnplatform/service/WrongQuestionService.java`
+- `backend/src/test/java/com/learnplatform/service/WrongQuestionServiceTest.java`
+- `backend/src/test/java/com/learnplatform/service/WrongQuestionServiceIntegrationTest.java`
+- `docs/TESTING.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd backend && mvn test -Dtest=WrongQuestionServiceTest`：6 个测试通过。
+- `docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --force-recreate --wait backend frontend`：后端与前端容器使用当前源码重建并健康启动。
+- `cd frontend && npm run test:e2e`：4 条 Playwright 真实 E2E 通过（登录课程、刷题错题重练、考试判分、投稿审核入库）。
+- `cd backend && mvn test`：361 个测试通过。
+- `cd backend && mvn test -DexcludedGroups= -Dtest=WrongQuestionServiceIntegrationTest`：集成类已不再 0 tests，但本机 Testcontainers 无法连接 Docker Desktop Java 客户端，执行失败；本轮用真实 Docker E2E 覆盖了该业务缺陷。
+
+### 遗留问题
+- Phase 20 推送后的 GitHub Actions 实跑仍待完成；当前 `main` 本地仍领先远端。
+- 本机 Testcontainers 与 Docker Desktop Socket 兼容性仍待处理，CI 使用 JDK 17 作为基线。
+- 前端构建仍有第三方 `@vueuse/core` pure annotation 和大 chunk 警告，不阻断构建。
+- Docker/E2E 环境当前处于运行状态，如不需要可执行 `docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v` 清理。
+
+### 建议 commit message
+`fix(backend): 修复错题复活时唯一键冲突`
+
 ## Round 136 - 2026-07-01
 
 ### 阶段
