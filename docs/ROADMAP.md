@@ -25,11 +25,11 @@
 | 18 | 全局搜索与快捷导航 | ✅ 基本完成 | Round 98-99 | 跨题目/课程/知识点的全局搜索（GlobalSearchService ✅ + GlobalSearchController 4 个接口 ✅ + 前端 GlobalSearchDialog 组件 ✅ + ⌘K/Ctrl+K 快捷键 ✅ + 键盘导航 ✅ + 关键词高亮 ✅ + 移动端适配 ✅ + 搜索历史记录 ✅ + 热门搜索推荐 ✅ + 搜索结果缓存 @Cacheable ✅ + 24 个单元测试 ✅） |
 | 19 | AI 调用分析与成本控制 | ✅ 基本完成 | Round 100、115 | 管理端 AI 调用总览（趋势、功能/模型分布、Top 用户、失败调用、真实 Tokens、平均耗时与按模型配置单价计算的成本） |
 | 20 | 演示验收与 AI 运营治理 | 🚧 开发中 | 2-3 个迭代 | 已覆盖关键业务真实浏览器 E2E，并完成独立配额、审计追踪、运营报告与实时异常提醒；演示截图已产出，继续 CI 实跑 |
-| 21 | 前端信息架构与视觉体验优化 | 🚧 开发中 | 2-4 个迭代 | AppLayout 分组导航、首页学习工作台、核心业务页、课程入口/详情页、题库浏览页、管理端主要页面样板整理，以及用户/题目/投稿管理长操作列收纳已完成；下一步进入 CI 实跑和细节 polish |
+| 21 | 前端信息架构与视觉体验优化 | 🚧 开发中 | 2-4 个迭代 | AppLayout 分组导航、首页学习工作台、核心业务页、课程入口/详情页、题库浏览页、管理端主要页面样板整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态和已知 Element Plus radio 旧 API 清理已完成；下一步进入 CI 实跑和真实接口点击验收 |
 
 **Phase 0-12 预计总工期**：约 17-20 天
 
-**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图，仍待推送后完成 CI 实跑；Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList、管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理，以及用户/题目/投稿管理长操作列收纳。向量推荐、OCR、爬虫和自动入库不在近期主线。**
+**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图，仍待推送后完成 CI 实跑；Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList、管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态和已知 Element Plus radio 旧 API 清理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
 
 ---
 
@@ -687,7 +687,9 @@
 - [x] `CourseManage.vue` 与 `UserManage.vue`：统一筛选区、统计/摘要、表格容器、行操作和移动端折行。
 - [x] `KnowledgePointManage.vue`：接入统一后台页头、知识点摘要卡、树结构搜索和移动端布局检查。
 - [x] `QuestionManage.vue`、`ExamManage.vue`、`SubmissionManage.vue` 与 `AiUsageView.vue`：接入统一后台页头、摘要卡、筛选/操作区、表格容器和移动端布局检查。
-- [ ] 后续 polish：继续补齐批量操作、空状态、长操作列收纳和真实接口点击验收。
+- [x] `UserManage.vue`、`QuestionManage.vue` 与 `SubmissionManage.vue`：补齐表格选择列、批量操作工具条、空状态和选择清空逻辑。
+- [x] 清理 `LearningPathView.vue` 的 Element Plus radio `label` 旧 API，并确认 `frontend/src` 无同类旧写法。
+- [ ] 后续 polish：继续补真实接口点击验收、其他运行时告警排查和 CI 实跑。
 
 ### 验收标准
 1. `npm test -- --run` 通过，必要时补页面交互测试。
@@ -702,4 +704,4 @@
 - 第 3 轮：整理 QuestionListView。✅ 已完成
 - 第 4 轮：整理 AdminDashboard 与管理端列表页。✅ 已完成总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 样板
 - 第 5 轮：整理课程入口与详情页。✅ 已完成
-- 第 6 轮：浏览器验收、截图、微调和文档更新。🚧 截图已完成，CI 实跑和细节 polish 待继续
+- 第 6 轮：浏览器验收、截图、微调和文档更新。🚧 截图、管理端批量操作与空状态、Element Plus radio 旧 API 清理已完成，CI 实跑和真实接口点击验收待继续

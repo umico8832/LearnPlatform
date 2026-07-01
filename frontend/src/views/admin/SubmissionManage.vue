@@ -44,7 +44,24 @@
       </div>
 
       <!-- 列表 -->
-      <el-table :data="submissions" v-loading="loading" stripe class="admin-data-table">
+      <div v-if="selectedSubmissions.length" class="admin-bulk-bar">
+        <span class="admin-bulk-copy">已选择 <strong>{{ selectedSubmissions.length }}</strong> 条投稿</span>
+        <div class="admin-bulk-actions">
+          <el-button size="small" type="success" :icon="Check" @click="handleBulkApprove">批量通过待审核</el-button>
+          <el-button size="small" type="warning" :icon="FolderAdd" @click="handleBulkImport">批量入库已通过</el-button>
+          <el-button size="small" @click="clearSubmissionSelection">清空选择</el-button>
+        </div>
+      </div>
+
+      <el-table
+        ref="submissionTableRef"
+        :data="submissions"
+        v-loading="loading"
+        stripe
+        class="admin-data-table"
+        @selection-change="handleSubmissionSelectionChange"
+      >
+        <el-table-column type="selection" width="44" />
         <el-table-column label="ID" prop="id" width="60" />
         <el-table-column label="题干" prop="content" show-overflow-tooltip min-width="200" />
         <el-table-column label="投稿人" width="100">
@@ -89,6 +106,9 @@
             </div>
           </template>
         </el-table-column>
+        <template #empty>
+          <el-empty class="admin-table-empty" description="没有匹配的投稿" />
+        </template>
       </el-table>
 
       <div class="admin-pagination" v-if="total > pageSize">
@@ -318,6 +338,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import type { TableInstance } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { Check, Close, CollectionTag, FolderAdd, MagicStick, MoreFilled, Refresh, Search, TrendCharts, View } from '@element-plus/icons-vue'
 import {
@@ -341,6 +362,8 @@ const router = useRouter()
 const loading = ref(false)
 const reviewing = ref(false)
 const submissions = ref<QuestionSubmissionVO[]>([])
+const submissionTableRef = ref<TableInstance>()
+const selectedSubmissions = ref<QuestionSubmissionVO[]>([])
 const statusFilter = ref<number | undefined>(undefined)
 const keywordFilter = ref('')
 const pageNum = ref(1)
@@ -367,6 +390,14 @@ const handleSubmissionRowCommand = (command: string, submission: QuestionSubmiss
   if (command === 'difficulty') {
     handleDifficultyAssessment(submission)
   }
+}
+
+const handleSubmissionSelectionChange = (selection: QuestionSubmissionVO[]) => {
+  selectedSubmissions.value = selection
+}
+
+const clearSubmissionSelection = () => {
+  submissionTableRef.value?.clearSelection()
 }
 
 const showReviewDialog = ref(false)
@@ -432,6 +463,7 @@ const loadSubmissions = async () => {
     if (res.code === 0 && res.data) {
       submissions.value = res.data.records
       total.value = res.data.total
+      selectedSubmissions.value = []
     }
   } finally {
     loading.value = false
@@ -494,6 +526,37 @@ const handleReview = async () => {
   }
 }
 
+const handleBulkApprove = async () => {
+  if (!selectedSubmissions.value.length) return
+  const targets = selectedSubmissions.value.filter(item => item.status === 0)
+  if (!targets.length) {
+    ElMessage.info('选中的投稿中没有待审核记录')
+    clearSubmissionSelection()
+    return
+  }
+  try {
+    await ElMessageBox.confirm(`确定通过选中的 ${targets.length} 条待审核投稿？`, '批量通过投稿', {
+      type: 'warning',
+      confirmButtonText: '通过',
+      cancelButtonText: '取消',
+    })
+    loading.value = true
+    const results = await Promise.allSettled(targets.map(item => reviewSubmission(item.id, {
+      status: 1,
+      reviewComment: '批量审核通过',
+    })))
+    const failed = results.filter(result => result.status === 'rejected').length
+    if (failed > 0) {
+      ElMessage.warning(`已通过 ${targets.length - failed} 条投稿，${failed} 条处理失败`)
+    } else {
+      ElMessage.success(`已通过 ${targets.length} 条投稿`)
+    }
+    await Promise.all([loadSubmissions(), loadStats()])
+  } catch { /* cancelled */ } finally {
+    loading.value = false
+  }
+}
+
 const handleImport = async (row: QuestionSubmissionVO) => {
   try {
     await ElMessageBox.confirm(
@@ -510,6 +573,34 @@ const handleImport = async (row: QuestionSubmissionVO) => {
       ElMessage.error(res.message || '入库失败')
     }
   } catch { /* cancelled */ }
+}
+
+const handleBulkImport = async () => {
+  if (!selectedSubmissions.value.length) return
+  const targets = selectedSubmissions.value.filter(item => item.status === 1)
+  if (!targets.length) {
+    ElMessage.info('选中的投稿中没有已通过记录')
+    clearSubmissionSelection()
+    return
+  }
+  try {
+    await ElMessageBox.confirm(`确认将选中的 ${targets.length} 条已通过投稿入库为正式题目？`, '批量入库', {
+      type: 'warning',
+      confirmButtonText: '入库',
+      cancelButtonText: '取消',
+    })
+    loading.value = true
+    const results = await Promise.allSettled(targets.map(item => importSubmission(item.id)))
+    const failed = results.filter(result => result.status === 'rejected').length
+    if (failed > 0) {
+      ElMessage.warning(`已入库 ${targets.length - failed} 条投稿，${failed} 条处理失败`)
+    } else {
+      ElMessage.success(`已入库 ${targets.length} 条投稿`)
+    }
+    await Promise.all([loadSubmissions(), loadStats()])
+  } catch { /* cancelled */ } finally {
+    loading.value = false
+  }
 }
 
 const goToQuestion = (id: number) => {

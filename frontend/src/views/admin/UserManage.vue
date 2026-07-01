@@ -50,7 +50,24 @@
       </div>
 
       <!-- 用户表格 -->
-      <el-table :data="users" v-loading="loading" stripe class="admin-data-table">
+      <div v-if="selectedUsers.length" class="admin-bulk-bar">
+        <span class="admin-bulk-copy">已选择 <strong>{{ selectedUsers.length }}</strong> 位用户</span>
+        <div class="admin-bulk-actions">
+          <el-button size="small" :icon="CircleCheck" @click="handleBulkStatus(1)">批量启用</el-button>
+          <el-button size="small" :icon="CircleClose" @click="handleBulkStatus(0)">批量禁用</el-button>
+          <el-button size="small" @click="clearUserSelection">清空选择</el-button>
+        </div>
+      </div>
+
+      <el-table
+        ref="userTableRef"
+        :data="users"
+        v-loading="loading"
+        stripe
+        class="admin-data-table"
+        @selection-change="handleUserSelectionChange"
+      >
+        <el-table-column type="selection" width="44" />
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="username" label="用户名" min-width="120" />
         <el-table-column prop="nickname" label="昵称" min-width="120">
@@ -105,6 +122,11 @@
             </div>
           </template>
         </el-table-column>
+        <template #empty>
+          <el-empty class="admin-table-empty" description="没有匹配的用户">
+            <el-button type="primary" :icon="Plus" @click="openCreateDialog()">新增用户</el-button>
+          </el-empty>
+        </template>
       </el-table>
 
       <!-- 分页 -->
@@ -242,7 +264,7 @@
 import { computed, ref, reactive, onMounted } from 'vue'
 import { CircleClose, CircleCheck, Cpu, Delete, Key, MoreFilled, Plus, Search, SwitchButton, User, UserFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { FormInstance, FormRules } from 'element-plus'
+import type { FormInstance, FormRules, TableInstance } from 'element-plus'
 import {
   getAdminUserList,
   createAdminUser,
@@ -259,6 +281,8 @@ import {
 } from '@/api/adminUser'
 
 const users = ref<AdminUserVO[]>([])
+const userTableRef = ref<TableInstance>()
+const selectedUsers = ref<AdminUserVO[]>([])
 const loading = ref(false)
 const keyword = ref('')
 const filterRole = ref('')
@@ -372,6 +396,14 @@ const handleUserRowCommand = async (command: string, user: AdminUserVO) => {
   }
 }
 
+const handleUserSelectionChange = (selection: AdminUserVO[]) => {
+  selectedUsers.value = selection
+}
+
+const clearUserSelection = () => {
+  userTableRef.value?.clearSelection()
+}
+
 async function fetchUsers() {
   loading.value = true
   try {
@@ -385,6 +417,7 @@ async function fetchUsers() {
     const data = res.data
     users.value = data.records
     total.value = data.total
+    selectedUsers.value = []
   } catch {
     // error handled by interceptor
   } finally {
@@ -469,6 +502,38 @@ async function toggleStatus(user: AdminUserVO) {
     fetchStats()
   } catch {
     // error handled by interceptor
+  }
+}
+
+async function handleBulkStatus(status: number) {
+  if (!selectedUsers.value.length) return
+  const action = status === 1 ? '启用' : '禁用'
+  try {
+    await ElMessageBox.confirm(`确定${action}选中的 ${selectedUsers.value.length} 位用户？`, `批量${action}`, {
+      type: 'warning',
+      confirmButtonText: action,
+      cancelButtonText: '取消',
+    })
+    const targets = selectedUsers.value.filter(user => user.status !== status)
+    if (!targets.length) {
+      ElMessage.info(`选中用户已全部处于${action}状态`)
+      clearUserSelection()
+      return
+    }
+    loading.value = true
+    const results = await Promise.allSettled(targets.map(user => updateUserStatus(user.id, status)))
+    const failed = results.filter(result => result.status === 'rejected').length
+    if (failed > 0) {
+      ElMessage.warning(`已${action} ${targets.length - failed} 位用户，${failed} 位处理失败`)
+    } else {
+      ElMessage.success(`已${action} ${targets.length} 位用户`)
+    }
+    await fetchUsers()
+    await fetchStats()
+  } catch {
+    // 用户取消确认时不提示错误。
+  } finally {
+    loading.value = false
   }
 }
 

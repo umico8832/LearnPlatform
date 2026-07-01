@@ -1,5 +1,70 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 136 - 2026-07-01
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（Element Plus 旧 API 收尾）
+
+### 完成内容
+1. 清理 `LearningPathView.vue` 中 `el-radio-button` 继续使用 `label` 作为取值的旧写法，改为 Element Plus 当前推荐的 `value` 属性。
+2. 使用 `rg` 扫描 `frontend/src`，确认不再存在 `el-radio` / `el-radio-button` 的旧 `label` 取值写法。
+3. 保留 Round 135 的管理端批量操作、空状态和相关文档改动，在其基础上做小范围收尾。
+
+### 修改文件
+- `frontend/src/views/statistics/LearningPathView.vue`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `rg "<el-radio[^\\n>]*label=|<el-radio-button[^\\n>]*label=" frontend/src -n`：无命中。
+- `cd frontend && npm test -- --run`：26 个文件、206 个测试通过。
+- `cd frontend && npm run build`：通过（仍保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+
+### 遗留问题
+- 本轮未启动后端，未做真实接口点击验收。
+- Phase 20 推送后的 GitHub Actions 实跑仍待完成。
+- 构建仍有第三方依赖 pure annotation 和大 chunk 警告，不阻断构建。
+
+### 建议 commit message
+`fix(frontend): 清理 Element Plus 单选按钮旧 API`
+
+## Round 135 - 2026-06-30
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（管理端批量操作与空状态 polish）
+
+### 完成内容
+1. 为 `UserManage.vue` 增加表格选择列和批量工具条，支持批量启用/禁用选中用户，并在翻页、筛选后清空旧选择，降低误操作风险。
+2. 为 `QuestionManage.vue` 增加表格选择列和批量工具条，支持批量清除 AI 学习资产缓存、批量删除题目，两个高风险动作均保留二次确认。
+3. 为 `SubmissionManage.vue` 增加表格选择列和批量工具条，支持批量通过待审核投稿、批量入库已通过投稿，并按投稿状态过滤可处理项。
+4. 在 `global.css` 新增 `admin-bulk-bar`、`admin-bulk-actions` 和 `admin-table-empty` 样式，统一后台批量操作区和空状态展示。
+5. 为用户、题目、投稿三张高频管理表补充空状态；用户和题目空状态提供直接新增入口。
+
+### 修改文件
+- `frontend/src/assets/styles/global.css`
+- `frontend/src/views/admin/UserManage.vue`
+- `frontend/src/views/admin/QuestionManage.vue`
+- `frontend/src/views/admin/SubmissionManage.vue`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd frontend && npm test -- --run`：26 个文件、206 个测试通过。
+- `cd frontend && npm run build`：通过（保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+- `cd frontend && npm run dev -- --host 127.0.0.1`：5173 被占用，Vite 自动启动在 `http://127.0.0.1:5174/`。
+- Playwright 本地 mock 管理端接口检查 `/admin/users`、`/admin/questions`、`/admin/submissions`：三页选中首行后批量工具条出现，点击“清空选择”后工具条消失；桌面 1440x980 无横向溢出；题目空状态“没有匹配的题目”可见。
+
+### 遗留问题
+- 本轮未启动后端，浏览器检查使用 mock 数据，不代表真实接口点击验收。
+- 浏览器检查期间观察到既有 Element Plus radio `label` 旧 API 警告；本轮未扩范围处理。
+- Phase 20 推送后的 GitHub Actions 实跑仍待完成。
+
+### 建议 commit message
+`feat(frontend): 补齐管理端批量操作与空状态`
+
 ## Round 134 - 2026-06-30
 
 ### 阶段

@@ -72,7 +72,24 @@
         <span class="table-summary">当前筛选 {{ total }} 道题</span>
       </div>
 
-      <el-table :data="questions" v-loading="loading" stripe class="admin-data-table">
+      <div v-if="selectedQuestions.length" class="admin-bulk-bar">
+        <span class="admin-bulk-copy">已选择 <strong>{{ selectedQuestions.length }}</strong> 道题目</span>
+        <div class="admin-bulk-actions">
+          <el-button size="small" :icon="DeleteFilled" @click="handleBulkClearAiCache">批量清缓存</el-button>
+          <el-button size="small" type="danger" :icon="Delete" @click="handleBulkDelete">批量删除</el-button>
+          <el-button size="small" @click="clearQuestionSelection">清空选择</el-button>
+        </div>
+      </div>
+
+      <el-table
+        ref="questionTableRef"
+        :data="questions"
+        v-loading="loading"
+        stripe
+        class="admin-data-table"
+        @selection-change="handleQuestionSelectionChange"
+      >
+        <el-table-column type="selection" width="44" />
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="content" label="题干" min-width="240" show-overflow-tooltip />
         <el-table-column prop="questionType" label="题型" width="100" align="center">
@@ -121,6 +138,11 @@
             </div>
           </template>
         </el-table-column>
+        <template #empty>
+          <el-empty class="admin-table-empty" description="没有匹配的题目">
+            <el-button type="primary" :icon="Plus" @click="openDialog()">新增题目</el-button>
+          </el-empty>
+        </template>
       </el-table>
 
       <div class="admin-pagination">
@@ -406,7 +428,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { Plus, Search, Delete, Download, Upload, FolderOpened, ArrowDown, Edit, RefreshRight, DeleteFilled, Collection, DataAnalysis, DocumentChecked, MoreFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { FormInstance, FormRules, UploadFile } from 'element-plus'
+import type { FormInstance, FormRules, TableInstance, UploadFile } from 'element-plus'
 import {
   getAdminQuestionPage,
   createQuestion,
@@ -430,6 +452,8 @@ import { getAllCourses, type CourseVO } from '@/api/course'
 import { getKnowledgeTree, type KnowledgePointVO } from '@/api/knowledgePoint'
 
 const questions = ref<QuestionVO[]>([])
+const questionTableRef = ref<TableInstance>()
+const selectedQuestions = ref<QuestionVO[]>([])
 const loading = ref(false)
 const pageNum = ref(1)
 const pageSize = ref(10)
@@ -540,6 +564,14 @@ const handleQuestionRowCommand = async (command: string, question: QuestionVO) =
       // 用户取消确认时不提示错误。
     }
   }
+}
+
+const handleQuestionSelectionChange = (selection: QuestionVO[]) => {
+  selectedQuestions.value = selection
+}
+
+const clearQuestionSelection = () => {
+  questionTableRef.value?.clearSelection()
 }
 
 // 是否显示选项区域
@@ -697,6 +729,7 @@ async function fetchQuestions() {
     })
     questions.value = res.data.records
     total.value = res.data.total
+    selectedQuestions.value = []
   } catch {
     // 错误已在拦截器中处理
   } finally {
@@ -815,12 +848,62 @@ async function handleDelete(id: number) {
   }
 }
 
+async function handleBulkDelete() {
+  if (!selectedQuestions.value.length) return
+  try {
+    await ElMessageBox.confirm(`确定删除选中的 ${selectedQuestions.value.length} 道题目？此操作不可恢复。`, '批量删除题目', {
+      type: 'warning',
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+    })
+    loading.value = true
+    const targets = [...selectedQuestions.value]
+    const results = await Promise.allSettled(targets.map(question => deleteQuestion(question.id)))
+    const failed = results.filter(result => result.status === 'rejected').length
+    if (failed > 0) {
+      ElMessage.warning(`已删除 ${targets.length - failed} 道题，${failed} 道处理失败`)
+    } else {
+      ElMessage.success(`已删除 ${targets.length} 道题`)
+    }
+    await fetchQuestions()
+  } catch {
+    // 用户取消确认时不提示错误。
+  } finally {
+    loading.value = false
+  }
+}
+
 async function handleClearAiCache(questionId: number) {
   try {
     await clearAssetCache(questionId)
     ElMessage.success('AI 学习资产缓存已清除')
   } catch {
     ElMessage.error('清除失败')
+  }
+}
+
+async function handleBulkClearAiCache() {
+  if (!selectedQuestions.value.length) return
+  try {
+    await ElMessageBox.confirm(`确定清除选中 ${selectedQuestions.value.length} 道题目的 AI 学习资产缓存？`, '批量清除缓存', {
+      type: 'warning',
+      confirmButtonText: '清除',
+      cancelButtonText: '取消',
+    })
+    loading.value = true
+    const targets = [...selectedQuestions.value]
+    const results = await Promise.allSettled(targets.map(question => clearAssetCache(question.id)))
+    const failed = results.filter(result => result.status === 'rejected').length
+    if (failed > 0) {
+      ElMessage.warning(`已清除 ${targets.length - failed} 道题缓存，${failed} 道处理失败`)
+    } else {
+      ElMessage.success(`已清除 ${targets.length} 道题缓存`)
+    }
+    clearQuestionSelection()
+  } catch {
+    // 用户取消确认时不提示错误。
+  } finally {
+    loading.value = false
   }
 }
 

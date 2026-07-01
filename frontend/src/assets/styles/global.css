@@ -203,6 +203,33 @@ a {
   background: var(--lp-surface-soft);
 }
 
+.admin-bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--lp-border);
+  background: #fffdf5;
+}
+
+.admin-bulk-copy {
+  color: var(--lp-text-secondary);
+  font-size: 13px;
+}
+
+.admin-bulk-copy strong {
+  color: var(--lp-primary);
+  font-weight: 800;
+}
+
+.admin-bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .admin-table-card .el-table {
   --el-table-border-color: var(--lp-border);
 }
@@ -231,6 +258,10 @@ a {
 
 .admin-row-actions .el-dropdown {
   line-height: 1;
+}
+
+.admin-table-empty {
+  padding: 34px 0;
 }
 
 .danger-dropdown-item {
@@ -326,8 +357,16 @@ a {
   .admin-toolbar,
   .admin-filter-group,
   .admin-filter-group .el-input,
-  .admin-filter-group .el-select {
+  .admin-filter-group .el-select,
+  .admin-bulk-bar,
+  .admin-bulk-actions,
+  .admin-bulk-actions .el-button {
     width: 100% !important;
+  }
+
+  .admin-bulk-bar {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .admin-summary-grid {

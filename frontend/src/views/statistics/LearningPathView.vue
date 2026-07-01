@@ -88,11 +88,11 @@
       <!-- 状态筛选 -->
       <div class="status-filter">
         <el-radio-group v-model="statusFilter" size="small">
-          <el-radio-button label="ALL">全部</el-radio-button>
-          <el-radio-button label="WEAK">薄弱</el-radio-button>
-          <el-radio-button label="NEEDS_REVIEW">需复习</el-radio-button>
-          <el-radio-button label="NOT_STARTED">未开始</el-radio-button>
-          <el-radio-button label="MASTERED">已掌握</el-radio-button>
+          <el-radio-button value="ALL">全部</el-radio-button>
+          <el-radio-button value="WEAK">薄弱</el-radio-button>
+          <el-radio-button value="NEEDS_REVIEW">需复习</el-radio-button>
+          <el-radio-button value="NOT_STARTED">未开始</el-radio-button>
+          <el-radio-button value="MASTERED">已掌握</el-radio-button>
         </el-radio-group>
       </div>
 
