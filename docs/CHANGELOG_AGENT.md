@@ -1,5 +1,51 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 140 - 2026-07-02
+
+### 阶段
+Phase 20：AI 运营治理（运营提醒持久化与确认）
+
+### 完成内容
+1. 新增 `ai_usage_alert` 表和 Flyway V14 迁移，用于保存 AI 运营报告生成的异常提醒、统计周期、指标快照、确认人和确认时间。
+2. 扩展 `AiUsageService`：运营报告命中高失败率、失败率突增、延迟突增或调用量突增时写入未确认提醒；同类型、同周期天数、同一天生成的未确认提醒会更新同一条记录，避免刷新页面制造重复待办。
+3. 新增管理端提醒接口：查询未确认 AI 运营提醒、确认指定提醒；确认操作会记录当前管理员 ID 与确认时间。
+4. 管理端 `AiUsageView` 的报告提醒区新增周期展示和“确认”按钮，确认成功后刷新运营报告。
+5. 补充后端服务测试和前端 API 契约测试，并同步 API、DB、路线图、交接文档和 README。
+
+### 修改文件
+- `backend/src/main/resources/db/migration/V14__create_ai_usage_alert_table.sql`
+- `backend/src/main/java/com/learnplatform/entity/AiUsageAlert.java`
+- `backend/src/main/java/com/learnplatform/mapper/AiUsageAlertMapper.java`
+- `backend/src/main/java/com/learnplatform/dto/AiUsageAlertVO.java`
+- `backend/src/main/java/com/learnplatform/dto/AiUsageReportVO.java`
+- `backend/src/main/java/com/learnplatform/service/AiUsageService.java`
+- `backend/src/main/java/com/learnplatform/controller/AdminAiUsageController.java`
+- `backend/src/test/java/com/learnplatform/service/AiUsageServiceTest.java`
+- `frontend/src/api/aiUsage.ts`
+- `frontend/src/__tests__/api/aiUsage.test.ts`
+- `frontend/src/views/admin/AiUsageView.vue`
+- `docs/API_DESIGN.md`
+- `docs/DB_DESIGN.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd backend && mvn test -Dtest=AiUsageServiceTest`：16 个测试通过。
+- `cd frontend && npm test -- --run src/__tests__/api/aiUsage.test.ts`：5 个测试通过。
+- `cd backend && mvn test`：367 个默认后端测试通过。
+- `cd frontend && npm test -- --run`：26 个文件、209 个测试通过。
+- `cd frontend && npm run build`：通过（仍保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+
+### 遗留问题
+- 本轮未启动真实后端或 Docker E2E 环境，未做管理端 AI 调用分析页真实点击验收。
+- AI 运营提醒当前支持持久化与管理员确认，尚未发送站内信或外部通知。
+- Phase 20 推送后的 GitHub Actions 实跑仍待完成。
+
+### 建议 commit message
+`feat(ai): 持久化运营异常提醒`
+
 ## Round 139 - 2026-07-02
 
 ### 阶段

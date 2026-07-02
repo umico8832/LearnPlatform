@@ -558,6 +558,29 @@ CREATE TABLE `ai_call_log` (
 
 **索引**：`idx_user_create_time (user_id, create_time)`、`idx_admin_create_time (admin_user_id, create_time)`。
 
+### 3.13.2 AI 运营提醒表 (ai_usage_alert)
+
+管理端 AI 运营报告命中高失败率、失败率突增、延迟突增或调用量突增时写入未确认提醒；同类型、同周期天数、同一天生成的未确认提醒会更新同一条记录。管理员确认后记录确认人和确认时间。
+
+| 字段名 | 类型 | 必填 | 说明 |
+|--------|------|:----:|------|
+| id | BIGINT | 是 | 自增主键 |
+| level | VARCHAR(20) | 是 | 提醒级别：INFO / WARNING |
+| alert_type | VARCHAR(50) | 是 | 提醒类型，如 HIGH_FAILURE_RATE |
+| message | VARCHAR(500) | 是 | 提醒内容 |
+| period_days | INT | 是 | 统计周期天数 |
+| period_start | DATETIME | 是 | 当前统计周期开始时间 |
+| period_end | DATETIME | 是 | 当前统计周期结束时间 |
+| metric_snapshot | TEXT | 否 | 触发提醒时的关键指标 JSON 快照 |
+| status | VARCHAR(20) | 是 | OPEN / ACKNOWLEDGED |
+| acknowledged_by | BIGINT | 否 | 确认提醒的管理员 ID |
+| acknowledged_time | DATETIME | 否 | 确认时间 |
+| create_time | DATETIME | 是 | 创建时间 |
+| update_time | DATETIME | 是 | 更新时间 |
+| deleted | TINYINT | 是 | 逻辑删除 |
+
+**索引**：`idx_status_period (status, period_end)`、`idx_type_period (alert_type, period_start, period_end)`、`idx_acknowledged_by (acknowledged_by)`。
+
 ### 3.14 题目 AI 学习资产表 (question_ai_asset) - Phase 13
 
 存储 AI 生成的结构化学习资产缓存，避免对同一题同一类型重复调用 AI。

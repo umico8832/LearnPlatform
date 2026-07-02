@@ -2,14 +2,20 @@ package com.learnplatform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.AiUsageOverviewVO;
+import com.learnplatform.dto.AiUsageAlertVO;
 import com.learnplatform.dto.AiUsageReportVO;
 import com.learnplatform.entity.AiCallLog;
+import com.learnplatform.entity.AiUsageAlert;
 import com.learnplatform.entity.User;
 import com.learnplatform.mapper.AiCallLogMapper;
+import com.learnplatform.mapper.AiUsageAlertMapper;
 import com.learnplatform.mapper.UserMapper;
+import com.learnplatform.common.exception.BusinessException;
+import com.learnplatform.common.result.ResultCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,14 +37,19 @@ public class AiUsageService {
     private static final double FAILURE_RATE_ALERT_THRESHOLD = 10.0;
     private static final int SLOW_DURATION_ALERT_THRESHOLD_MS = 5000;
     private static final long USAGE_SPIKE_MIN_DELTA = 10;
+    private static final String ALERT_STATUS_OPEN = "OPEN";
+    private static final String ALERT_STATUS_ACKNOWLEDGED = "ACKNOWLEDGED";
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private static final Logger log = LoggerFactory.getLogger(AiUsageService.class);
 
     private final AiCallLogMapper aiCallLogMapper;
+    private final AiUsageAlertMapper aiUsageAlertMapper;
     private final UserMapper userMapper;
 
-    public AiUsageService(AiCallLogMapper aiCallLogMapper, UserMapper userMapper) {
+    public AiUsageService(AiCallLogMapper aiCallLogMapper, AiUsageAlertMapper aiUsageAlertMapper, UserMapper userMapper) {
         this.aiCallLogMapper = aiCallLogMapper;
+        this.aiUsageAlertMapper = aiUsageAlertMapper;
         this.userMapper = userMapper;
     }
 
@@ -217,6 +228,7 @@ public class AiUsageService {
      * 生成当前周期相对前一等长周期的运营报告。提醒仅由已有调用日志实时推导，
      * 不会把一次偶发的低样本波动误报为异常。
      */
+    @Transactional
     public AiUsageReportVO getReport(Integer days) {
         int resolvedDays = resolveReportDays(days);
         LocalDateTime now = LocalDateTime.now();
@@ -244,8 +256,36 @@ public class AiUsageService {
         report.setCurrent(current);
         report.setPrevious(previous);
         report.setChanges(changes);
-        report.setAlerts(buildAlerts(current, previous, changes));
+        report.setAlerts(syncAlerts(buildAlerts(current, previous, changes), resolvedDays, currentStart, now, current, previous, changes));
         return report;
+    }
+
+    public List<AiUsageAlertVO> getOpenAlerts(Integer limit) {
+        int resolvedLimit = limit == null || limit <= 0 ? 20 : Math.min(limit, 100);
+        return aiUsageAlertMapper.selectList(new LambdaQueryWrapper<AiUsageAlert>()
+                        .eq(AiUsageAlert::getStatus, ALERT_STATUS_OPEN)
+                        .orderByDesc(AiUsageAlert::getPeriodEnd)
+                        .orderByDesc(AiUsageAlert::getCreateTime)
+                        .last("LIMIT " + resolvedLimit))
+                .stream()
+                .map(this::toAlertVO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public AiUsageAlertVO acknowledgeAlert(Long alertId, Long adminUserId) {
+        AiUsageAlert alert = aiUsageAlertMapper.selectById(alertId);
+        if (alert == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "AI 运营提醒不存在");
+        }
+        if (!ALERT_STATUS_OPEN.equals(alert.getStatus())) {
+            return toAlertVO(alert);
+        }
+        alert.setStatus(ALERT_STATUS_ACKNOWLEDGED);
+        alert.setAcknowledgedBy(adminUserId);
+        alert.setAcknowledgedTime(LocalDateTime.now());
+        aiUsageAlertMapper.updateById(alert);
+        return toAlertVO(alert);
     }
 
     private int resolveReportDays(Integer days) {
@@ -304,6 +344,99 @@ public class AiUsageService {
                     "调用量较前一周期增长 " + changes.getCallsPercent() + "%（+" + (current.getTotalCalls() - previous.getTotalCalls()) + " 次）。"));
         }
         return alerts;
+    }
+
+    private List<AiUsageReportVO.Alert> syncAlerts(List<AiUsageReportVO.Alert> alerts,
+                                                   int days,
+                                                   LocalDateTime periodStart,
+                                                   LocalDateTime periodEnd,
+                                                   AiUsageReportVO.PeriodStats current,
+                                                   AiUsageReportVO.PeriodStats previous,
+                                                   AiUsageReportVO.ChangeStats changes) {
+        if (alerts.isEmpty()) {
+            return alerts;
+        }
+        String snapshot = buildMetricSnapshot(current, previous, changes);
+        List<AiUsageReportVO.Alert> synced = new ArrayList<>();
+        for (AiUsageReportVO.Alert alert : alerts) {
+            AiUsageAlert entity = findOpenAlert(alert.getType(), days, periodEnd);
+            if (entity == null) {
+                entity = new AiUsageAlert();
+                entity.setAlertType(alert.getType());
+                entity.setPeriodDays(days);
+                entity.setPeriodStart(periodStart);
+                entity.setPeriodEnd(periodEnd);
+                entity.setStatus(ALERT_STATUS_OPEN);
+                entity.setLevel(alert.getLevel());
+                entity.setMessage(alert.getMessage());
+                entity.setMetricSnapshot(snapshot);
+                aiUsageAlertMapper.insert(entity);
+            } else {
+                entity.setLevel(alert.getLevel());
+                entity.setMessage(alert.getMessage());
+                entity.setMetricSnapshot(snapshot);
+                aiUsageAlertMapper.updateById(entity);
+            }
+            alert.setId(entity.getId());
+            alert.setStatus(entity.getStatus());
+            alert.setPeriodStart(formatDateTime(entity.getPeriodStart()));
+            alert.setPeriodEnd(formatDateTime(entity.getPeriodEnd()));
+            synced.add(alert);
+        }
+        return synced;
+    }
+
+    private AiUsageAlert findOpenAlert(String type, int days, LocalDateTime periodEnd) {
+        LocalDateTime reportDayStart = LocalDateTime.of(periodEnd.toLocalDate(), LocalTime.MIN);
+        LocalDateTime reportDayEnd = reportDayStart.plusDays(1);
+        return aiUsageAlertMapper.selectOne(new LambdaQueryWrapper<AiUsageAlert>()
+                .eq(AiUsageAlert::getAlertType, type)
+                .eq(AiUsageAlert::getPeriodDays, days)
+                .eq(AiUsageAlert::getStatus, ALERT_STATUS_OPEN)
+                .ge(AiUsageAlert::getPeriodEnd, reportDayStart)
+                .lt(AiUsageAlert::getPeriodEnd, reportDayEnd)
+                .orderByDesc(AiUsageAlert::getUpdateTime)
+                .last("LIMIT 1"));
+    }
+
+    private String buildMetricSnapshot(AiUsageReportVO.PeriodStats current,
+                                       AiUsageReportVO.PeriodStats previous,
+                                       AiUsageReportVO.ChangeStats changes) {
+        return "{" +
+                "\"currentCalls\":" + current.getTotalCalls() +
+                ",\"currentFailedCalls\":" + current.getFailedCalls() +
+                ",\"currentFailureRate\":" + current.getFailureRate() +
+                ",\"currentAvgDuration\":" + current.getAvgDuration() +
+                ",\"previousCalls\":" + previous.getTotalCalls() +
+                ",\"previousFailureRate\":" + previous.getFailureRate() +
+                ",\"callsPercent\":" + nullableNumber(changes.getCallsPercent()) +
+                ",\"avgDurationPercent\":" + nullableNumber(changes.getAvgDurationPercent()) +
+                "}";
+    }
+
+    private String nullableNumber(Number value) {
+        return value == null ? "null" : value.toString();
+    }
+
+    private AiUsageAlertVO toAlertVO(AiUsageAlert alert) {
+        AiUsageAlertVO vo = new AiUsageAlertVO();
+        vo.setId(alert.getId());
+        vo.setLevel(alert.getLevel());
+        vo.setType(alert.getAlertType());
+        vo.setMessage(alert.getMessage());
+        vo.setPeriodDays(alert.getPeriodDays());
+        vo.setPeriodStart(formatDateTime(alert.getPeriodStart()));
+        vo.setPeriodEnd(formatDateTime(alert.getPeriodEnd()));
+        vo.setStatus(alert.getStatus());
+        vo.setAcknowledgedBy(alert.getAcknowledgedBy());
+        vo.setAcknowledgedTime(formatDateTime(alert.getAcknowledgedTime()));
+        vo.setCreateTime(formatDateTime(alert.getCreateTime()));
+        vo.setUpdateTime(formatDateTime(alert.getUpdateTime()));
+        return vo;
+    }
+
+    private String formatDateTime(LocalDateTime time) {
+        return time == null ? null : time.format(DATE_TIME_FORMATTER);
     }
 
     private Double percentChange(Number current, Number previous) {

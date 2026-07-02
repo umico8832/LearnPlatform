@@ -1,16 +1,23 @@
 package com.learnplatform.controller;
 
 import com.learnplatform.common.result.R;
+import com.learnplatform.dto.AiUsageAlertVO;
 import com.learnplatform.dto.AiUsageOverviewVO;
 import com.learnplatform.dto.AiUsageReportVO;
+import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AiUsageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * 管理端 AI 调用分析控制器
@@ -38,5 +45,20 @@ public class AdminAiUsageController {
     public R<AiUsageReportVO> getReport(
             @Parameter(description = "报告周期天数，默认 7；支持 1-90") @RequestParam(required = false) Integer days) {
         return R.ok(aiUsageService.getReport(days));
+    }
+
+    @Operation(summary = "获取未确认 AI 运营提醒", description = "返回已持久化且尚未确认的 AI 运营提醒")
+    @GetMapping("/alerts")
+    public R<List<AiUsageAlertVO>> getOpenAlerts(
+            @Parameter(description = "返回数量，默认 20，最大 100") @RequestParam(required = false) Integer limit) {
+        return R.ok(aiUsageService.getOpenAlerts(limit));
+    }
+
+    @Operation(summary = "确认 AI 运营提醒", description = "管理员确认提醒后记录处理人和确认时间")
+    @PostMapping("/alerts/{id}/acknowledge")
+    public R<AiUsageAlertVO> acknowledgeAlert(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(aiUsageService.acknowledgeAlert(id, userDetails.getUserId()));
     }
 }

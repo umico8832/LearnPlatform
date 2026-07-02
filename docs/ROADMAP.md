@@ -24,12 +24,12 @@
 | 17 | 间隔重复与智能复习 | ✅ 基本完成 | Round 94-97 | 基于 SM-2 算法的间隔重复系统（Flyway V9 ✅ + SpacedRepetitionService ✅ + ReviewController 10 个接口 ✅ + 前端 ReviewView ✅ + 错题自动复习调度 ✅ + 循环依赖消除 ✅ + AI 复习建议整合 ✅ + 复习统计整合到学习报告 ✅ + 25 个单元测试 ✅） |
 | 18 | 全局搜索与快捷导航 | ✅ 基本完成 | Round 98-99 | 跨题目/课程/知识点的全局搜索（GlobalSearchService ✅ + GlobalSearchController 4 个接口 ✅ + 前端 GlobalSearchDialog 组件 ✅ + ⌘K/Ctrl+K 快捷键 ✅ + 键盘导航 ✅ + 关键词高亮 ✅ + 移动端适配 ✅ + 搜索历史记录 ✅ + 热门搜索推荐 ✅ + 搜索结果缓存 @Cacheable ✅ + 24 个单元测试 ✅） |
 | 19 | AI 调用分析与成本控制 | ✅ 基本完成 | Round 100、115 | 管理端 AI 调用总览（趋势、功能/模型分布、Top 用户、失败调用、真实 Tokens、平均耗时与按模型配置单价计算的成本） |
-| 20 | 演示验收与 AI 运营治理 | 🚧 开发中 | 2-3 个迭代 | 已覆盖关键业务真实浏览器 E2E，并完成独立配额、审计追踪、运营报告与实时异常提醒；演示截图已产出，继续 CI 实跑 |
+| 20 | 演示验收与 AI 运营治理 | 🚧 开发中 | 2-3 个迭代 | 已覆盖关键业务真实浏览器 E2E，并完成独立配额、审计追踪、运营报告、异常提醒持久化与确认；演示截图已产出，继续 CI 实跑 |
 | 21 | 前端信息架构与视觉体验优化 | 🚧 开发中 | 2-4 个迭代 | AppLayout 分组导航、首页学习工作台、核心业务页、课程入口/详情页、题库浏览页、管理端主要页面样板整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态和已知 Element Plus radio 旧 API 清理已完成；真实 E2E 已复跑通过，下一步推送后确认 CI |
 
 **Phase 0-12 预计总工期**：约 17-20 天
 
-**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图；Round 137 修复了错题逻辑删除后再次答错的唯一键冲突，并复跑 4 条真实 Playwright E2E 通过；Round 138 修复本地 Testcontainers 与 Docker Engine 29 兼容问题，并确认 53 个真实 MySQL 集成测试通过；Round 139 新增正式题目 AI 复审建议与缓存，仍待推送后完成 CI 实跑。Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList、管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态和已知 Element Plus radio 旧 API 清理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
+**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图；Round 137 修复了错题逻辑删除后再次答错的唯一键冲突，并复跑 4 条真实 Playwright E2E 通过；Round 138 修复本地 Testcontainers 与 Docker Engine 29 兼容问题，并确认 53 个真实 MySQL 集成测试通过；Round 139 新增正式题目 AI 复审建议与缓存；Round 140 新增 AI 运营提醒持久化与确认能力，仍待推送后完成 CI 实跑。Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList、管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态和已知 Element Plus radio 旧 API 清理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
 
 ---
 
@@ -606,7 +606,7 @@
 - [x] 每日趋势、按功能/模型分布、Top 活跃用户、最近失败调用
 - [x] 管理端 `AiUsageView` 与 7/14/30/90 天筛选
 - [x] 保存真实输入/输出 token，并按 `ai.model-prices` 的模型单价固化与聚合 USD 成本；缺少 usage 或价格时明确保持空值
-- [x] `AiUsageServiceTest` 11 个单元测试
+- [x] `AiUsageServiceTest` 16 个单元测试
 
 ### 候选方向
 - 按用户独立配置 AI 配额
@@ -634,6 +634,7 @@
 - [x] 按模型单价估算调用成本，并在管理端显示成本趋势。
 - [x] 支持管理员按用户调整 AI 配额：用户可继承全局 `ai.daily-quota`、设置 0 为不限次数，或设置 1-10000 次的覆盖值；调整必须填写原因，并原子保存管理员、前后值与时间的审计记录（Round 116、118）。
 - [x] 增加调用日报/周报、失败率与异常用量提醒：管理端可按 1/7/14/30/90 天查看当前与前一等长周期环比；高失败率、失败率翻倍、延迟异常和调用量翻倍由真实日志即时推导（Round 117）。
+- [x] 持久化 AI 运营提醒并支持管理员确认：报告生成的异常提醒会落库，同类型同周期当天未确认提醒复用同一条记录，确认后记录处理人和时间（Round 140）。
 - [x] AI 调用日志记录请求级 `trace_id`，可关联管理端调用记录与应用日志（Round 118）。
 - [x] 为调用日志补充 Prompt/模型版本等追踪信息：保存模板名、不可逆 Prompt SHA-256 指纹和模型配置版本指纹，不保存原始 Prompt 内容（Round 120）。
 

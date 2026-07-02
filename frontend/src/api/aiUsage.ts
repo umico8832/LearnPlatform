@@ -91,9 +91,18 @@ export interface AiUsageChanges {
 }
 
 export interface AiUsageAlert {
+  id?: number
   level: 'INFO' | 'WARNING'
   type: string
   message: string
+  periodDays?: number
+  periodStart?: string
+  periodEnd?: string
+  status?: 'OPEN' | 'ACKNOWLEDGED'
+  acknowledgedBy?: number
+  acknowledgedTime?: string
+  createTime?: string
+  updateTime?: string
 }
 
 /** 当前周期与前一等长周期的 AI 运营报告 */
@@ -117,4 +126,16 @@ export function getAiUsageReport(days?: number) {
   return request.get<AiUsageReport>('/admin/ai-usage/report', {
     params: days ? { days } : {},
   })
+}
+
+/** 获取未确认 AI 运营提醒 */
+export function getAiUsageAlerts(limit?: number) {
+  return request.get<AiUsageAlert[]>('/admin/ai-usage/alerts', {
+    params: limit ? { limit } : {},
+  })
+}
+
+/** 确认 AI 运营提醒 */
+export function acknowledgeAiUsageAlert(id: number) {
+  return request.post<AiUsageAlert>(`/admin/ai-usage/alerts/${id}/acknowledge`)
 }

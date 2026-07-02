@@ -3,8 +3,10 @@ package com.learnplatform.service;
 import com.learnplatform.dto.AiUsageOverviewVO;
 import com.learnplatform.dto.AiUsageReportVO;
 import com.learnplatform.entity.AiCallLog;
+import com.learnplatform.entity.AiUsageAlert;
 import com.learnplatform.entity.User;
 import com.learnplatform.mapper.AiCallLogMapper;
+import com.learnplatform.mapper.AiUsageAlertMapper;
 import com.learnplatform.mapper.UserMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -34,6 +37,9 @@ class AiUsageServiceTest {
 
     @Mock
     private AiCallLogMapper aiCallLogMapper;
+
+    @Mock
+    private AiUsageAlertMapper aiUsageAlertMapper;
 
     @Mock
     private UserMapper userMapper;
@@ -340,6 +346,7 @@ class AiUsageServiceTest {
             assertEquals(200.0, report.getChanges().getCallsPercent());
             assertTrue(report.getAlerts().stream().anyMatch(item -> "HIGH_FAILURE_RATE".equals(item.getType())));
             assertTrue(report.getAlerts().stream().anyMatch(item -> "CALL_VOLUME_SPIKE".equals(item.getType())));
+            verify(aiUsageAlertMapper, atLeastOnce()).insert(any(AiUsageAlert.class));
         }
 
         @Test
@@ -365,6 +372,48 @@ class AiUsageServiceTest {
             AiUsageReportVO report = aiUsageService.getReport(365);
 
             assertEquals(90, report.getDays());
+        }
+
+        @Test
+        @DisplayName("生成提醒时保存可确认的运营提醒")
+        void shouldPersistGeneratedAlertForAcknowledgement() {
+            List<AiCallLog> logs = new ArrayList<>();
+            for (int i = 0; i < 6; i++) {
+                logs.add(createLog(i + 1L, i < 2 ? 0 : 1, 1200, LocalDateTime.now().minusHours(1)));
+            }
+            when(aiCallLogMapper.selectList(any())).thenReturn(logs);
+
+            aiUsageService.getReport(1);
+
+            var captor = forClass(AiUsageAlert.class);
+            verify(aiUsageAlertMapper, atLeastOnce()).insert(captor.capture());
+            AiUsageAlert saved = captor.getAllValues().stream()
+                    .filter(item -> "HIGH_FAILURE_RATE".equals(item.getAlertType()))
+                    .findFirst()
+                    .orElseThrow();
+            assertEquals("OPEN", saved.getStatus());
+            assertEquals(1, saved.getPeriodDays());
+            assertTrue(saved.getMetricSnapshot().contains("\"currentFailureRate\""));
+        }
+
+        @Test
+        @DisplayName("确认提醒时写入管理员和确认时间")
+        void shouldAcknowledgeOpenAlert() {
+            AiUsageAlert alert = new AiUsageAlert();
+            alert.setId(9L);
+            alert.setLevel("WARNING");
+            alert.setAlertType("HIGH_FAILURE_RATE");
+            alert.setMessage("失败率过高");
+            alert.setPeriodDays(7);
+            alert.setStatus("OPEN");
+            when(aiUsageAlertMapper.selectById(9L)).thenReturn(alert);
+
+            var result = aiUsageService.acknowledgeAlert(9L, 1L);
+
+            assertEquals("ACKNOWLEDGED", result.getStatus());
+            assertEquals(1L, result.getAcknowledgedBy());
+            assertNotNull(result.getAcknowledgedTime());
+            verify(aiUsageAlertMapper).updateById(alert);
         }
 
         private AiCallLog createLog(Long id, int status, int duration, LocalDateTime createTime) {

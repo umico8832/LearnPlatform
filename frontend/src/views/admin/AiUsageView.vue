@@ -79,7 +79,24 @@
           :closable="false"
           show-icon
           class="usage-alert"
-        />
+        >
+          <template #default>
+            <div class="usage-alert-content">
+              <span v-if="alert.periodStart && alert.periodEnd" class="usage-alert-period">
+                {{ alert.periodStart }} 至 {{ alert.periodEnd }}
+              </span>
+              <el-button
+                v-if="alert.id && alert.status === 'OPEN'"
+                link
+                type="primary"
+                :loading="acknowledgingId === alert.id"
+                @click="handleAcknowledgeAlert(alert.id)"
+              >
+                确认
+              </el-button>
+            </div>
+          </template>
+        </el-alert>
         <el-empty v-if="!report.alerts.length" description="当前周期未发现失败率、耗时或调用量异常" :image-size="52" />
       </el-card>
 
@@ -185,7 +202,8 @@
 <script setup lang="ts">
 import { computed, ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { Coin, DataLine, Money, Refresh, Timer, TrendCharts, Warning, SuccessFilled } from '@element-plus/icons-vue'
-import { getAiUsageOverview, getAiUsageReport, type AiUsageOverview, type AiUsageReport } from '@/api/aiUsage'
+import { ElMessage } from 'element-plus'
+import { acknowledgeAiUsageAlert, getAiUsageOverview, getAiUsageReport, type AiUsageOverview, type AiUsageReport } from '@/api/aiUsage'
 import * as echarts from 'echarts/core'
 import { BarChart, PieChart, LineChart } from 'echarts/charts'
 import {
@@ -209,6 +227,7 @@ echarts.use([
 
 const days = ref(30)
 const loading = ref(false)
+const acknowledgingId = ref<number | null>(null)
 const overview = reactive<AiUsageOverview>({
   totalCalls: 0,
   successCalls: 0,
@@ -300,6 +319,20 @@ async function fetchData() {
     console.error('Failed to fetch AI usage overview', e)
   } finally {
     loading.value = false
+  }
+}
+
+async function handleAcknowledgeAlert(id: number) {
+  acknowledgingId.value = id
+  try {
+    await acknowledgeAiUsageAlert(id)
+    ElMessage.success('已确认该提醒')
+    await fetchData()
+  } catch (e: any) {
+    console.error('Failed to acknowledge AI usage alert', e)
+    ElMessage.error(e?.message || '确认提醒失败')
+  } finally {
+    acknowledgingId.value = null
   }
 }
 
@@ -471,6 +504,17 @@ onBeforeUnmount(() => {
 .neutral { color: #909399; }
 .usage-alert + .usage-alert {
   margin-top: 8px;
+}
+.usage-alert-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+.usage-alert-period {
+  color: #909399;
+  font-size: 12px;
 }
 .chart-row {
   margin-bottom: 16px;

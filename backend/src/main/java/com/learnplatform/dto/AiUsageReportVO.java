@@ -57,9 +57,13 @@ public class AiUsageReportVO {
     }
 
     public static class Alert {
+        private Long id;
         private String level;
         private String type;
         private String message;
+        private String status;
+        private String periodStart;
+        private String periodEnd;
 
         public Alert() { }
         public Alert(String level, String type, String message) {
@@ -67,12 +71,20 @@ public class AiUsageReportVO {
             this.type = type;
             this.message = message;
         }
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
         public String getLevel() { return level; }
         public void setLevel(String level) { this.level = level; }
         public String getType() { return type; }
         public void setType(String type) { this.type = type; }
         public String getMessage() { return message; }
         public void setMessage(String message) { this.message = message; }
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
+        public String getPeriodStart() { return periodStart; }
+        public void setPeriodStart(String periodStart) { this.periodStart = periodStart; }
+        public String getPeriodEnd() { return periodEnd; }
+        public void setPeriodEnd(String periodEnd) { this.periodEnd = periodEnd; }
     }
 
     public Integer getDays() { return days; }
