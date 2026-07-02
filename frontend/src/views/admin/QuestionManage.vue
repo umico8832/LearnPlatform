@@ -18,6 +18,7 @@
         </el-dropdown>
         <el-button :icon="Upload" @click="importDialogVisible = true">导入题目</el-button>
         <el-button :icon="FolderOpened" @click="handleExport">导出题目</el-button>
+        <el-button :icon="Warning" @click="openCorrectionDrawer">纠错记录</el-button>
         <el-button type="primary" :icon="Plus" @click="openDialog()">新增题目</el-button>
       </div>
     </header>
@@ -494,12 +495,63 @@
         </div>
       </div>
     </el-drawer>
+
+    <!-- 题目纠错记录抽屉 -->
+    <el-drawer v-model="correctionDrawerVisible" title="题目纠错记录" size="560px" destroy-on-close>
+      <div class="correction-drawer">
+        <div class="correction-toolbar">
+          <el-select v-model="correctionFilters.status" placeholder="处理状态" clearable style="width: 150px" @change="fetchCorrectionReports">
+            <el-option label="待处理" value="OPEN" />
+            <el-option label="已处理" value="RESOLVED" />
+            <el-option label="已驳回" value="REJECTED" />
+          </el-select>
+          <el-button :icon="RefreshRight" :loading="correctionLoading" @click="fetchCorrectionReports">刷新</el-button>
+        </div>
+        <div v-loading="correctionLoading" class="correction-list">
+          <el-empty v-if="correctionReports.length === 0 && !correctionLoading" description="暂无题目纠错记录" />
+          <el-card v-for="report in correctionReports" :key="report.id" shadow="never" class="correction-card">
+            <div class="correction-card-head">
+              <div>
+                <strong>#{{ report.questionId }}</strong>
+                <span>{{ reportTypeLabel(report.reportType) }} · {{ report.reporterName || '用户' }}</span>
+              </div>
+              <el-tag size="small" :type="correctionStatusTag(report.status)">
+                {{ correctionStatusLabel(report.status) }}
+              </el-tag>
+            </div>
+            <p class="correction-question-content">{{ report.questionContent || '题目内容不可用' }}</p>
+            <p class="correction-description">{{ report.description }}</p>
+            <div v-if="report.handlerComment" class="correction-handler">
+              {{ report.handlerName || '管理员' }}：{{ report.handlerComment }}
+            </div>
+            <div class="correction-card-actions">
+              <span>{{ report.createTime }}</span>
+              <div v-if="report.status === 'OPEN'">
+                <el-button size="small" text type="primary" @click="handleProcessCorrection(report, 'RESOLVED')">标记已处理</el-button>
+                <el-button size="small" text type="danger" @click="handleProcessCorrection(report, 'REJECTED')">驳回</el-button>
+              </div>
+            </div>
+          </el-card>
+        </div>
+        <div class="admin-pagination">
+          <el-pagination
+            v-model:current-page="correctionPageNum"
+            v-model:page-size="correctionPageSize"
+            :total="correctionTotal"
+            :page-sizes="[10, 20, 50]"
+            layout="total, prev, pager, next"
+            @current-change="fetchCorrectionReports"
+            @size-change="fetchCorrectionReports"
+          />
+        </div>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { Plus, Search, Delete, Download, Upload, FolderOpened, ArrowDown, Edit, RefreshRight, DeleteFilled, Collection, DataAnalysis, DocumentChecked, MoreFilled, Connection } from '@element-plus/icons-vue'
+import { Plus, Search, Delete, Download, Upload, FolderOpened, ArrowDown, Edit, RefreshRight, DeleteFilled, Collection, DataAnalysis, DocumentChecked, MoreFilled, Connection, Warning } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules, TableInstance, UploadFile } from 'element-plus'
 import {
@@ -516,6 +568,8 @@ import {
   getReviewSuggestion,
   performReReview,
   detectDuplicateQuestions,
+  getAdminQuestionCorrectionReports,
+  processQuestionCorrectionReport,
   type QuestionVO,
   type QuestionForm,
   type OptionItem,
@@ -523,6 +577,7 @@ import {
   type QuestionReviewRecordVO,
   type QuestionReviewSuggestionVO,
   type QuestionDuplicateGroupVO,
+  type QuestionCorrectionReportVO,
 } from '@/api/question'
 import { clearAssetCache } from '@/api/ai'
 import { getAllCourses, type CourseVO } from '@/api/course'
@@ -575,6 +630,15 @@ const reviewSuggestionLoading = ref(false)
 const duplicateDrawerVisible = ref(false)
 const duplicateLoading = ref(false)
 const duplicateGroups = ref<QuestionDuplicateGroupVO[]>([])
+const correctionDrawerVisible = ref(false)
+const correctionLoading = ref(false)
+const correctionReports = ref<QuestionCorrectionReportVO[]>([])
+const correctionPageNum = ref(1)
+const correctionPageSize = ref(10)
+const correctionTotal = ref(0)
+const correctionFilters = reactive({
+  status: 'OPEN',
+})
 const reReviewForm = reactive({
   action: 'APPROVE',
   newContent: '',
@@ -714,6 +778,35 @@ function reviewActionLabel(action: string) {
     REJECT: '废弃',
   }
   return map[action] || action
+}
+
+function reportTypeLabel(type: string) {
+  const map: Record<string, string> = {
+    CONTENT: '题干问题',
+    ANSWER: '答案问题',
+    ANALYSIS: '解析问题',
+    KNOWLEDGE_POINT: '知识点问题',
+    OTHER: '其他问题',
+  }
+  return map[type] || type
+}
+
+function correctionStatusLabel(status: string) {
+  const map: Record<string, string> = {
+    OPEN: '待处理',
+    RESOLVED: '已处理',
+    REJECTED: '已驳回',
+  }
+  return map[status] || status
+}
+
+function correctionStatusTag(status: string): 'primary' | 'success' | 'warning' | 'info' | 'danger' {
+  const map: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
+    OPEN: 'warning',
+    RESOLVED: 'success',
+    REJECTED: 'info',
+  }
+  return map[status] || 'info'
 }
 
 // 打开复审弹窗
@@ -874,6 +967,51 @@ async function handleDetectDuplicates() {
     // 错误已在拦截器中处理
   } finally {
     duplicateLoading.value = false
+  }
+}
+
+async function openCorrectionDrawer() {
+  correctionDrawerVisible.value = true
+  correctionPageNum.value = 1
+  await fetchCorrectionReports()
+}
+
+async function fetchCorrectionReports() {
+  correctionLoading.value = true
+  try {
+    const res = await getAdminQuestionCorrectionReports({
+      pageNum: correctionPageNum.value,
+      pageSize: correctionPageSize.value,
+      status: correctionFilters.status || undefined,
+    })
+    correctionReports.value = res.data.records
+    correctionTotal.value = res.data.total
+  } catch {
+    // 错误已在拦截器中处理
+  } finally {
+    correctionLoading.value = false
+  }
+}
+
+async function handleProcessCorrection(report: QuestionCorrectionReportVO, status: 'RESOLVED' | 'REJECTED') {
+  const title = status === 'RESOLVED' ? '标记已处理' : '驳回纠错'
+  const message = status === 'RESOLVED' ? '请输入处理说明' : '请输入驳回原因'
+  try {
+    const result = await ElMessageBox.prompt(message, title, {
+      confirmButtonText: '提交',
+      cancelButtonText: '取消',
+      inputType: 'textarea',
+      inputPattern: /\S+/,
+      inputErrorMessage: '处理说明不能为空',
+    })
+    await processQuestionCorrectionReport(report.id, {
+      status,
+      handlerComment: result.value.trim(),
+    })
+    ElMessage.success(status === 'RESOLVED' ? '已标记处理完成' : '已驳回纠错')
+    await fetchCorrectionReports()
+  } catch {
+    // 用户取消确认时不提示错误。
   }
 }
 
@@ -1295,8 +1433,76 @@ onMounted(() => {
   justify-content: flex-end;
 }
 
+.correction-drawer,
+.correction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.correction-toolbar {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.correction-card {
+  border-radius: 8px;
+}
+
+.correction-card-head,
+.correction-card-actions {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.correction-card-head strong {
+  color: var(--lp-text-primary);
+  margin-right: 8px;
+}
+
+.correction-card-head span,
+.correction-card-actions span {
+  color: var(--lp-text-muted);
+  font-size: 12px;
+}
+
+.correction-question-content {
+  color: var(--lp-text-primary);
+  font-weight: 600;
+  line-height: 1.6;
+  margin: 10px 0 6px;
+}
+
+.correction-description {
+  background: var(--lp-bg-soft);
+  border: 1px solid var(--lp-border-light);
+  border-radius: 8px;
+  color: var(--lp-text-regular);
+  line-height: 1.6;
+  margin: 0 0 10px;
+  padding: 10px;
+}
+
+.correction-handler {
+  color: var(--lp-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
 @media (max-width: 720px) {
   .review-suggestion-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .correction-card-head,
+  .correction-card-actions,
+  .correction-toolbar {
     align-items: flex-start;
     flex-direction: column;
   }

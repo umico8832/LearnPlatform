@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.QuestionCreateRequest;
+import com.learnplatform.dto.QuestionCorrectionReportVO;
 import com.learnplatform.dto.QuestionDuplicateGroupVO;
 import com.learnplatform.dto.QuestionReviewSuggestionVO;
 import com.learnplatform.dto.QuestionVO;
@@ -61,6 +62,9 @@ class AdminQuestionControllerTest {
 
     @Mock
     private QuestionReviewSuggestionService questionReviewSuggestionService;
+
+    @Mock
+    private com.learnplatform.service.QuestionCorrectionReportService correctionReportService;
 
     @InjectMocks
     private AdminQuestionController adminQuestionController;
@@ -242,6 +246,46 @@ class AdminQuestionControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data[0].matchType").value("EXACT"))
                 .andExpect(jsonPath("$.data[0].questions[1].id").value(2));
+    }
+
+    @Test
+    void listCorrectionReports_success() throws Exception {
+        Page<QuestionCorrectionReportVO> page = new Page<>(1, 10);
+        QuestionCorrectionReportVO report = new QuestionCorrectionReportVO();
+        report.setId(5L);
+        report.setQuestionId(1L);
+        report.setReportType("ANSWER");
+        report.setStatus("OPEN");
+        page.setRecords(List.of(report));
+        page.setTotal(1);
+        when(correctionReportService.getAdminReports(eq(1), eq(10), eq("OPEN"), eq(1L))).thenReturn(page);
+
+        mockMvc.perform(get("/api/admin/questions/correction-reports")
+                        .param("status", "OPEN")
+                        .param("questionId", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.records[0].reportType").value("ANSWER"));
+    }
+
+    @Test
+    void processCorrectionReport_success() throws Exception {
+        Long adminId = 1L;
+        QuestionCorrectionReportVO report = new QuestionCorrectionReportVO();
+        report.setId(5L);
+        report.setStatus("RESOLVED");
+        report.setHandlerId(adminId);
+        report.setHandlerComment("已修正解析");
+        when(correctionReportService.processReport(eq(5L), any(), eq(adminId))).thenReturn(report);
+
+        mockMvc.perform(post("/api/admin/questions/correction-reports/{reportId}/process", 5L)
+                        .with(mockAdmin(adminId))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"RESOLVED\",\"handlerComment\":\"已修正解析\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.status").value("RESOLVED"))
+                .andExpect(jsonPath("$.data.handlerComment").value("已修正解析"));
     }
 
     @Test

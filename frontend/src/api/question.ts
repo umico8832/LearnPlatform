@@ -124,6 +124,24 @@ export interface QuestionDuplicateGroupVO {
   questions: QuestionVO[]
 }
 
+/** 题目纠错反馈 */
+export interface QuestionCorrectionReportVO {
+  id: number
+  questionId: number
+  questionContent?: string
+  reporterId: number
+  reporterName?: string
+  reportType: 'CONTENT' | 'ANSWER' | 'ANALYSIS' | 'KNOWLEDGE_POINT' | 'OTHER'
+  description: string
+  status: 'OPEN' | 'RESOLVED' | 'REJECTED'
+  handlerId?: number
+  handlerName?: string
+  handlerComment?: string
+  handledTime?: string
+  createTime: string
+  updateTime: string
+}
+
 export function getAdminQuestionPage(params: {
   pageNum?: number
   pageSize?: number
@@ -165,6 +183,41 @@ export function detectDuplicateQuestions(params?: {
   limit?: number
 }) {
   return request.get<any, ApiResponse<QuestionDuplicateGroupVO[]>>('/admin/questions/duplicates', { params })
+}
+
+/** 提交题目纠错反馈 */
+export function submitQuestionCorrectionReport(questionId: number, data: {
+  reportType: string
+  description: string
+}) {
+  return request.post<any, ApiResponse<QuestionCorrectionReportVO>>(`/questions/${questionId}/correction-reports`, data)
+}
+
+/** 我的题目纠错反馈 */
+export function getMyQuestionCorrectionReports(params?: {
+  pageNum?: number
+  pageSize?: number
+  status?: string
+}) {
+  return request.get<any, ApiResponse<PageResult<QuestionCorrectionReportVO>>>('/questions/correction-reports/my', { params })
+}
+
+/** 管理端题目纠错反馈列表 */
+export function getAdminQuestionCorrectionReports(params?: {
+  pageNum?: number
+  pageSize?: number
+  status?: string
+  questionId?: number
+}) {
+  return request.get<any, ApiResponse<PageResult<QuestionCorrectionReportVO>>>('/admin/questions/correction-reports', { params })
+}
+
+/** 管理端处理题目纠错反馈 */
+export function processQuestionCorrectionReport(reportId: number, data: {
+  status: string
+  handlerComment: string
+}) {
+  return request.post<any, ApiResponse<QuestionCorrectionReportVO>>(`/admin/questions/correction-reports/${reportId}/process`, data)
 }
 
 /** 题目导入结果 */

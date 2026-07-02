@@ -318,6 +318,23 @@ GET /api/questions/{id}
 
 > **注意**：用户端获取题目时不返回 `isCorrect` 字段，提交答案后才返回正确选项。
 
+### 6.3 用户端 - 提交题目纠错反馈
+
+```
+POST /api/questions/{id}/correction-reports
+GET  /api/questions/correction-reports/my
+```
+
+**提交请求体**：
+```json
+{
+  "reportType": "ANSWER",
+  "description": "我认为本题正确答案应为 B，当前选项和解析不一致。"
+}
+```
+
+说明：`reportType` 取值为 `CONTENT`、`ANSWER`、`ANALYSIS`、`KNOWLEDGE_POINT`、`OTHER`。提交后状态为 `OPEN`，不会自动修改题目内容、答案或解析。
+
 ---
 
 ## 七、刷题接口
@@ -987,6 +1004,8 @@ DELETE /api/admin/knowledge-points/{id}            # 删除知识点
 ```
 GET    /api/admin/questions          # 题目列表（支持筛选）
 GET    /api/admin/questions/duplicates # 疑似重复题目检测
+GET    /api/admin/questions/correction-reports # 题目纠错反馈列表
+POST   /api/admin/questions/correction-reports/{reportId}/process # 处理题目纠错反馈
 POST   /api/admin/questions          # 创建题目
 PUT    /api/admin/questions/{id}     # 更新题目
 DELETE /api/admin/questions/{id}     # 删除题目
@@ -1045,6 +1064,24 @@ GET /api/admin/questions/duplicates
 ```
 
 说明：`matchType` 取值为 `EXACT`、`SIMILAR`。检测会按课程和题型分桶，只提示疑似重复题目，不会自动合并、删除或修改题库内容。
+
+题目纠错反馈：
+
+```
+GET  /api/admin/questions/correction-reports?status=OPEN&questionId=1
+POST /api/admin/questions/correction-reports/{reportId}/process
+```
+
+处理请求体：
+
+```json
+{
+  "status": "RESOLVED",
+  "handlerComment": "已核对题目并修正解析。"
+}
+```
+
+说明：`status` 取值为 `OPEN`、`RESOLVED`、`REJECTED`。该接口只记录处理状态、处理人、处理说明和处理时间；若需要修改正式题目内容，仍应使用题目编辑或复审流程完成。
 
 正式题目来源与复审接口：
 

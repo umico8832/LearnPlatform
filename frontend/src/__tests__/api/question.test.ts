@@ -24,6 +24,9 @@ import {
   importQuestions,
   getReviewSuggestion,
   detectDuplicateQuestions,
+  submitQuestionCorrectionReport,
+  getAdminQuestionCorrectionReports,
+  processQuestionCorrectionReport,
 } from '@/api/question'
 
 const mockedRequest = vi.mocked(request)
@@ -228,6 +231,48 @@ describe('Question API', () => {
 
       expect(mockedRequest.get).toHaveBeenCalledWith('/admin/questions/duplicates', {
         params: { courseId: 1, questionType: 'SHORT_ANSWER', minSimilarity: 92, limit: 20 },
+      })
+    })
+  })
+
+  describe('submitQuestionCorrectionReport', () => {
+    it('应使用 POST 请求提交题目纠错反馈', async () => {
+      mockedRequest.post.mockResolvedValue({
+        code: 0,
+        data: { id: 1, status: 'OPEN' },
+        message: 'success',
+      })
+
+      await submitQuestionCorrectionReport(12, { reportType: 'ANSWER', description: '答案应为 B' })
+
+      expect(mockedRequest.post).toHaveBeenCalledWith('/questions/12/correction-reports', {
+        reportType: 'ANSWER',
+        description: '答案应为 B',
+      })
+    })
+  })
+
+  describe('getAdminQuestionCorrectionReports', () => {
+    it('应使用 GET 请求获取管理端题目纠错反馈', async () => {
+      mockedRequest.get.mockResolvedValue({ code: 0, data: { records: [], total: 0 }, message: 'success' })
+
+      await getAdminQuestionCorrectionReports({ pageNum: 1, pageSize: 10, status: 'OPEN', questionId: 3 })
+
+      expect(mockedRequest.get).toHaveBeenCalledWith('/admin/questions/correction-reports', {
+        params: { pageNum: 1, pageSize: 10, status: 'OPEN', questionId: 3 },
+      })
+    })
+  })
+
+  describe('processQuestionCorrectionReport', () => {
+    it('应使用 POST 请求处理题目纠错反馈', async () => {
+      mockedRequest.post.mockResolvedValue({ code: 0, data: { id: 5, status: 'RESOLVED' }, message: 'success' })
+
+      await processQuestionCorrectionReport(5, { status: 'RESOLVED', handlerComment: '已修正' })
+
+      expect(mockedRequest.post).toHaveBeenCalledWith('/admin/questions/correction-reports/5/process', {
+        status: 'RESOLVED',
+        handlerComment: '已修正',
       })
     })
   })

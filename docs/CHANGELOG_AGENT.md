@@ -1,5 +1,56 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 145 - 2026-07-03
+
+### 阶段
+Phase 20：内容治理（题目纠错反馈闭环）
+
+### 完成内容
+1. 新增 `question_correction_report` 表，用于记录用户对正式题目的题干、答案、解析、知识点或其他问题反馈。
+2. 新增用户端纠错接口：题库卡片可提交纠错反馈；提交后只进入 `OPEN` 待处理状态，不自动修改题目。
+3. 新增管理端纠错反馈列表和处理接口：管理员可按状态查看、标记已处理或驳回，并记录处理人、处理说明和处理时间。
+4. 题目管理页新增“纠错记录”抽屉，支持刷新、筛选待处理/已处理/已驳回记录和提交处理说明。
+5. 补充后端服务测试、Controller 契约测试和前端 API 契约测试。
+6. 同步更新 API 文档、DB 文档、路线图、交接文档和 README。
+
+### 修改文件
+- `backend/src/main/resources/db/migration/V15__create_question_correction_report_table.sql`
+- `backend/src/main/java/com/learnplatform/entity/QuestionCorrectionReport.java`
+- `backend/src/main/java/com/learnplatform/mapper/QuestionCorrectionReportMapper.java`
+- `backend/src/main/java/com/learnplatform/dto/QuestionCorrectionReportRequest.java`
+- `backend/src/main/java/com/learnplatform/dto/QuestionCorrectionProcessRequest.java`
+- `backend/src/main/java/com/learnplatform/dto/QuestionCorrectionReportVO.java`
+- `backend/src/main/java/com/learnplatform/service/QuestionCorrectionReportService.java`
+- `backend/src/main/java/com/learnplatform/controller/QuestionController.java`
+- `backend/src/main/java/com/learnplatform/controller/AdminQuestionController.java`
+- `backend/src/test/java/com/learnplatform/service/QuestionCorrectionReportServiceTest.java`
+- `backend/src/test/java/com/learnplatform/controller/AdminQuestionControllerTest.java`
+- `frontend/src/api/question.ts`
+- `frontend/src/__tests__/api/question.test.ts`
+- `frontend/src/views/course/QuestionListView.vue`
+- `frontend/src/views/admin/QuestionManage.vue`
+- `docs/API_DESIGN.md`
+- `docs/DB_DESIGN.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd backend && mvn test -Dtest=QuestionCorrectionReportServiceTest,AdminQuestionControllerTest`：20 个测试通过。
+- `cd frontend && npm test -- --run src/__tests__/api/question.test.ts`：18 个测试通过。
+- `cd backend && mvn test`：384 个默认后端测试通过。
+- `cd frontend && npm test -- --run`：26 个文件、213 个测试通过。
+- `cd frontend && npm run build`：通过（仍保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+
+### 遗留问题
+- 本轮未启动真实后端或 Docker E2E 环境，未做题库页纠错弹窗和管理端纠错记录抽屉的真实点击验收。
+- 当前只完成纠错反馈和处理留痕；题目版本记录仍留作后续任务。
+- Phase 20 推送后的 GitHub Actions 实跑仍待用户确认 push 后完成。
+
+### commit message
+`feat(question): 新增题目纠错反馈闭环`
+
 ## Round 144 - 2026-07-03
 
 ### 阶段

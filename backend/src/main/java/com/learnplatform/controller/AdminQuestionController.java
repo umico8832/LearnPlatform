@@ -34,17 +34,20 @@ public class AdminQuestionController {
     private final MarkdownQuestionParser markdownQuestionParser;
     private final QuestionSourceService questionSourceService;
     private final QuestionReviewSuggestionService questionReviewSuggestionService;
+    private final com.learnplatform.service.QuestionCorrectionReportService correctionReportService;
 
     public AdminQuestionController(QuestionService questionService,
                                     QuestionImportExportService questionImportExportService,
                                     MarkdownQuestionParser markdownQuestionParser,
                                     QuestionSourceService questionSourceService,
-                                    QuestionReviewSuggestionService questionReviewSuggestionService) {
+                                    QuestionReviewSuggestionService questionReviewSuggestionService,
+                                    com.learnplatform.service.QuestionCorrectionReportService correctionReportService) {
         this.questionService = questionService;
         this.questionImportExportService = questionImportExportService;
         this.markdownQuestionParser = markdownQuestionParser;
         this.questionSourceService = questionSourceService;
         this.questionReviewSuggestionService = questionReviewSuggestionService;
+        this.correctionReportService = correctionReportService;
     }
 
 
@@ -140,6 +143,31 @@ public class AdminQuestionController {
     @GetMapping("/source-types")
     public R<List<String>> getSourceTypes() {
         return R.ok(questionSourceService.getSourceTypes());
+    }
+
+    /**
+     * 管理端题目纠错反馈列表
+     */
+    @Operation(summary = "题目纠错反馈", description = "分页查看用户提交的正式题目纠错反馈")
+    @GetMapping("/correction-reports")
+    public R<Page<QuestionCorrectionReportVO>> listCorrectionReports(
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long questionId) {
+        return R.ok(correctionReportService.getAdminReports(pageNum, pageSize, status, questionId));
+    }
+
+    /**
+     * 处理题目纠错反馈
+     */
+    @Operation(summary = "处理题目纠错反馈", description = "管理员标记纠错反馈为已处理、驳回或重新打开")
+    @PostMapping("/correction-reports/{reportId}/process")
+    public R<QuestionCorrectionReportVO> processCorrectionReport(
+            @PathVariable Long reportId,
+            @Valid @RequestBody QuestionCorrectionProcessRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(correctionReportService.processReport(reportId, request, userDetails.getUserId()));
     }
 
     /**

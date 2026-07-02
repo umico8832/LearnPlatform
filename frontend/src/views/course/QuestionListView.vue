@@ -112,6 +112,10 @@
                 <el-icon><ChatLineRound /></el-icon>
                 <span>{{ expandedComments.has(q.id) ? '收起讨论' : '讨论' }}</span>
               </button>
+              <button type="button" class="text-action" @click="openCorrectionDialog(q)">
+                <el-icon><Warning /></el-icon>
+                <span>纠错</span>
+              </button>
             </div>
 
             <div class="question-footer">
@@ -142,6 +146,38 @@
         </div>
       </main>
     </section>
+
+    <el-dialog v-model="correctionDialogVisible" title="提交题目纠错" width="520px" destroy-on-close>
+      <div v-if="correctionQuestion" class="correction-question">
+        <span>#{{ correctionQuestion.id }} · {{ questionTypeLabel(correctionQuestion.questionType) }}</span>
+        <p>{{ correctionQuestion.content }}</p>
+      </div>
+      <el-form label-width="88px" @submit.prevent>
+        <el-form-item label="问题类型">
+          <el-select v-model="correctionForm.reportType" style="width: 100%">
+            <el-option label="题干内容错误" value="CONTENT" />
+            <el-option label="答案有误" value="ANSWER" />
+            <el-option label="解析有误" value="ANALYSIS" />
+            <el-option label="知识点关联错误" value="KNOWLEDGE_POINT" />
+            <el-option label="其他问题" value="OTHER" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="问题描述">
+          <el-input
+            v-model="correctionForm.description"
+            type="textarea"
+            :rows="4"
+            maxlength="1000"
+            show-word-limit
+            placeholder="请描述你发现的问题，例如正确答案、题干错字或解析不清楚之处"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="correctionDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="correctionSubmitting" @click="submitCorrection">提交纠错</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -149,8 +185,8 @@
 import { computed, ref, reactive, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Star, StarFilled, ChatLineRound } from '@element-plus/icons-vue'
-import { getQuestionPage, type QuestionVO } from '@/api/question'
+import { Star, StarFilled, ChatLineRound, Warning } from '@element-plus/icons-vue'
+import { getQuestionPage, submitQuestionCorrectionReport, type QuestionVO } from '@/api/question'
 import { getAllCourses, type CourseVO } from '@/api/course'
 import { getFavoriteIds, addFavorite, removeFavorite } from '@/api/favorite'
 import QuestionComment from '@/components/QuestionComment.vue'
@@ -188,6 +224,13 @@ const difficultyOptions = [
 const courseList = ref<CourseVO[]>([])
 const favoriteSet = ref<Set<number>>(new Set())
 const expandedComments = ref<Set<number>>(new Set())
+const correctionDialogVisible = ref(false)
+const correctionSubmitting = ref(false)
+const correctionQuestion = ref<QuestionVO | null>(null)
+const correctionForm = reactive({
+  reportType: 'CONTENT',
+  description: '',
+})
 
 const activeFilterCount = computed(() => {
   return [filters.questionType, filters.courseId, filters.difficulty].filter(Boolean).length
@@ -311,6 +354,34 @@ async function toggleFavorite(questionId: number) {
     favoriteSet.value = new Set(favoriteSet.value)
   } catch (e: any) {
     ElMessage.error(e.message || '操作失败')
+  }
+}
+
+function openCorrectionDialog(question: QuestionVO) {
+  correctionQuestion.value = question
+  correctionForm.reportType = 'CONTENT'
+  correctionForm.description = ''
+  correctionDialogVisible.value = true
+}
+
+async function submitCorrection() {
+  if (!correctionQuestion.value) return
+  if (!correctionForm.description.trim()) {
+    ElMessage.warning('请填写问题描述')
+    return
+  }
+  correctionSubmitting.value = true
+  try {
+    await submitQuestionCorrectionReport(correctionQuestion.value.id, {
+      reportType: correctionForm.reportType,
+      description: correctionForm.description.trim(),
+    })
+    ElMessage.success('纠错反馈已提交')
+    correctionDialogVisible.value = false
+  } catch {
+    // 错误已在拦截器中处理
+  } finally {
+    correctionSubmitting.value = false
   }
 }
 
@@ -605,6 +676,8 @@ onMounted(() => {
 .question-side {
   display: flex;
   align-items: flex-start;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
 }
 
@@ -643,6 +716,27 @@ onMounted(() => {
 .text-action:hover {
   color: var(--lp-primary);
   border-color: var(--lp-primary);
+}
+
+.correction-question {
+  margin-bottom: 14px;
+  padding: 12px;
+  background: var(--lp-surface-soft);
+  border: 1px solid var(--lp-border);
+  border-radius: 7px;
+}
+
+.correction-question span {
+  color: var(--lp-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.correction-question p {
+  margin: 6px 0 0;
+  color: var(--lp-text);
+  font-size: 14px;
+  line-height: 1.7;
 }
 
 .question-footer {
