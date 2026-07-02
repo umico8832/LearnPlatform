@@ -1,5 +1,52 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 139 - 2026-07-02
+
+### 阶段
+Phase 16 / Phase 20：正式题目 AI 复审建议与缓存
+
+### 完成内容
+1. 新增正式题目 AI 复审建议服务：管理员可对已入库题目生成 `APPROVE` / `REVISE` / `REJECT` 建议、置信分、风险点、修订建议、答案检查和知识点/时效性分析。
+2. 新增 `questionReviewSuggestion` 缓存区域，默认 TTL 30 分钟；题目编辑、删除或提交正式复审后会清除对应题目的复审建议缓存，避免复用过期建议。
+3. 管理端题目复审弹窗新增“AI 复审建议”入口，支持查看建议摘要并一键填入复审动作、修订内容、难度和复审意见。
+4. 补充后端服务测试、控制器接口测试和前端 API 契约测试，覆盖 AI 正常 JSON、AI 失败回退、题目不存在和接口路径。
+5. 同步更新 API 文档、路线图、交接文档、README 和环境变量示例。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/dto/QuestionReviewSuggestionVO.java`
+- `backend/src/main/java/com/learnplatform/service/QuestionReviewSuggestionService.java`
+- `backend/src/main/java/com/learnplatform/controller/AdminQuestionController.java`
+- `backend/src/main/java/com/learnplatform/config/RedisConfig.java`
+- `backend/src/main/java/com/learnplatform/service/QuestionService.java`
+- `backend/src/main/java/com/learnplatform/service/QuestionSourceService.java`
+- `backend/src/main/resources/application.yml`
+- `backend/src/test/java/com/learnplatform/service/QuestionReviewSuggestionServiceTest.java`
+- `backend/src/test/java/com/learnplatform/controller/AdminQuestionControllerTest.java`
+- `frontend/src/api/question.ts`
+- `frontend/src/__tests__/api/question.test.ts`
+- `frontend/src/views/admin/QuestionManage.vue`
+- `.env.example`
+- `docs/API_DESIGN.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd backend && mvn test -Dtest=QuestionReviewSuggestionServiceTest,AdminQuestionControllerTest,QuestionSourceServiceTest`：22 个测试通过。
+- `cd backend && mvn test`：365 个默认后端测试通过。
+- `cd frontend && npm test -- --run src/__tests__/api/question.test.ts`：14 个测试通过。
+- `cd frontend && npm test -- --run`：26 个文件、207 个测试通过。
+- `cd frontend && npm run build`：通过（仍保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+
+### 遗留问题
+- 本轮未启动真实后端或 Docker E2E 环境，未做管理端复审弹窗真实点击验收。
+- Phase 20 推送后的 GitHub Actions 实跑仍待完成。
+- 前端构建仍有第三方 `@vueuse/core` pure annotation 和大 chunk 警告，不阻断构建。
+
+### 建议 commit message
+`feat(ai): 新增题目复审建议缓存`
+
 ## Round 138 - 2026-07-01
 
 ### 阶段

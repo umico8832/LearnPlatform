@@ -37,6 +37,7 @@ public class RedisConfig {
             "submissionQuality",
             "submissionKPTagging",
             "submissionDifficulty",
+            "questionReviewSuggestion",
             "globalSearch"
     };
 
@@ -63,6 +64,7 @@ public class RedisConfig {
                 .withCacheConfiguration("submissionQuality", cacheConfig(defaultConfig, cacheTtlProperties, "submissionQuality", 30))
                 .withCacheConfiguration("submissionKPTagging", cacheConfig(defaultConfig, cacheTtlProperties, "submissionKPTagging", 30))
                 .withCacheConfiguration("submissionDifficulty", cacheConfig(defaultConfig, cacheTtlProperties, "submissionDifficulty", 30))
+                .withCacheConfiguration("questionReviewSuggestion", cacheConfig(defaultConfig, cacheTtlProperties, "questionReviewSuggestion", 30))
                 .withCacheConfiguration("globalSearch", cacheConfig(defaultConfig, cacheTtlProperties, "globalSearch", 5))
                 .build();
     }

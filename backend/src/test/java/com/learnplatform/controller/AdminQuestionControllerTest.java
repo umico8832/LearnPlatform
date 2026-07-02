@@ -4,10 +4,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.QuestionCreateRequest;
+import com.learnplatform.dto.QuestionReviewSuggestionVO;
 import com.learnplatform.dto.QuestionVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.MarkdownQuestionParser;
 import com.learnplatform.service.QuestionImportExportService;
+import com.learnplatform.service.QuestionReviewSuggestionService;
 import com.learnplatform.service.QuestionService;
 import com.learnplatform.service.QuestionSourceService;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,6 +57,9 @@ class AdminQuestionControllerTest {
 
     @Mock
     private QuestionSourceService questionSourceService;
+
+    @Mock
+    private QuestionReviewSuggestionService questionReviewSuggestionService;
 
     @InjectMocks
     private AdminQuestionController adminQuestionController;
@@ -196,6 +201,23 @@ class AdminQuestionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(1005))
                 .andExpect(jsonPath("$.message").value("题目不存在"));
+    }
+
+    @Test
+    void getReviewSuggestion_success() throws Exception {
+        Long adminId = 1L;
+        QuestionReviewSuggestionVO suggestion = new QuestionReviewSuggestionVO();
+        suggestion.setRecommendation("APPROVE");
+        suggestion.setConfidenceScore(90);
+        suggestion.setSummary("题目可继续使用");
+        when(questionReviewSuggestionService.generateSuggestion(eq(1L), eq(adminId))).thenReturn(suggestion);
+
+        mockMvc.perform(get("/api/admin/questions/{id}/review-suggestion", 1L)
+                        .with(mockAdmin(adminId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.recommendation").value("APPROVE"))
+                .andExpect(jsonPath("$.data.confidenceScore").value(90));
     }
 
     @Test

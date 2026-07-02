@@ -22,6 +22,7 @@ import {
   exportQuestions,
   downloadTemplate,
   importQuestions,
+  getReviewSuggestion,
 } from '@/api/question'
 
 const mockedRequest = vi.mocked(request)
@@ -197,6 +198,20 @@ describe('Question API', () => {
       await deleteQuestion(8)
 
       expect(mockedRequest.delete).toHaveBeenCalledWith('/admin/questions/8')
+    })
+  })
+
+  describe('getReviewSuggestion', () => {
+    it('应使用 GET 请求获取 AI 复审建议', async () => {
+      mockedRequest.get.mockResolvedValue({
+        code: 0,
+        data: { recommendation: 'APPROVE', confidenceScore: 90, summary: '题目可继续使用' },
+        message: 'success',
+      })
+
+      await getReviewSuggestion(12)
+
+      expect(mockedRequest.get).toHaveBeenCalledWith('/admin/questions/12/review-suggestion')
     })
   })
 

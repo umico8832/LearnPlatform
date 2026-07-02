@@ -7,6 +7,7 @@ import com.learnplatform.entity.Question;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.MarkdownQuestionParser;
 import com.learnplatform.service.QuestionImportExportService;
+import com.learnplatform.service.QuestionReviewSuggestionService;
 import com.learnplatform.service.QuestionService;
 import com.learnplatform.service.QuestionSourceService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,15 +33,18 @@ public class AdminQuestionController {
     private final QuestionImportExportService questionImportExportService;
     private final MarkdownQuestionParser markdownQuestionParser;
     private final QuestionSourceService questionSourceService;
+    private final QuestionReviewSuggestionService questionReviewSuggestionService;
 
     public AdminQuestionController(QuestionService questionService,
                                     QuestionImportExportService questionImportExportService,
                                     MarkdownQuestionParser markdownQuestionParser,
-                                    QuestionSourceService questionSourceService) {
+                                    QuestionSourceService questionSourceService,
+                                    QuestionReviewSuggestionService questionReviewSuggestionService) {
         this.questionService = questionService;
         this.questionImportExportService = questionImportExportService;
         this.markdownQuestionParser = markdownQuestionParser;
         this.questionSourceService = questionSourceService;
+        this.questionReviewSuggestionService = questionReviewSuggestionService;
     }
 
 
@@ -143,6 +147,17 @@ public class AdminQuestionController {
     @GetMapping("/{id}/review-records")
     public R<List<QuestionReviewRecordVO>> getReviewRecords(@PathVariable Long id) {
         return R.ok(questionSourceService.getReviewRecords(id));
+    }
+
+    /**
+     * 获取题目的 AI 复审建议
+     */
+    @Operation(summary = "AI 复审建议", description = "对正式题目生成缓存化 AI 复审建议")
+    @GetMapping("/{id}/review-suggestion")
+    public R<QuestionReviewSuggestionVO> getReviewSuggestion(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(questionReviewSuggestionService.generateSuggestion(id, userDetails.getUserId()));
     }
 
     /**

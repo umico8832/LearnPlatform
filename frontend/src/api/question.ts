@@ -103,6 +103,19 @@ export interface QuestionReviewRecordVO {
   createTime: string
 }
 
+/** AI 复审建议 VO */
+export interface QuestionReviewSuggestionVO {
+  recommendation: 'APPROVE' | 'REVISE' | 'REJECT'
+  confidenceScore: number
+  summary: string
+  suggestedContent?: string
+  suggestedDifficulty?: number
+  riskPoints: string[]
+  suggestions: string[]
+  answerAnalysis?: string
+  knowledgeAnalysis?: string
+}
+
 export function getAdminQuestionPage(params: {
   pageNum?: number
   pageSize?: number
@@ -201,6 +214,11 @@ export function getReviewOverdue(params?: { pageNum?: number; pageSize?: number 
 /** 获取题目的复审记录 */
 export function getReviewRecords(questionId: number) {
   return request.get<any, ApiResponse<QuestionReviewRecordVO[]>>(`/admin/questions/${questionId}/review-records`)
+}
+
+/** 获取 AI 复审建议 */
+export function getReviewSuggestion(questionId: number) {
+  return request.get<any, ApiResponse<QuestionReviewSuggestionVO>>(`/admin/questions/${questionId}/review-suggestion`)
 }
 
 /** 执行复审 */

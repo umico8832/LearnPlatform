@@ -251,6 +251,42 @@
       </div>
 
       <el-form :model="reReviewForm" label-width="90px">
+        <div class="review-suggestion-actions">
+          <el-button :icon="DataAnalysis" :loading="reviewSuggestionLoading" @click="handleReviewSuggestion">
+            AI 复审建议
+          </el-button>
+          <span v-if="reviewSuggestion" class="review-suggestion-meta">
+            建议：{{ reviewActionLabel(reviewSuggestion.recommendation) }} · 置信分 {{ reviewSuggestion.confidenceScore }}
+          </span>
+        </div>
+
+        <el-alert
+          v-if="reviewSuggestion"
+          class="review-suggestion-panel"
+          :type="reviewSuggestion.recommendation === 'REJECT' ? 'error' : reviewSuggestion.recommendation === 'REVISE' ? 'warning' : 'success'"
+          :closable="false"
+          show-icon
+        >
+          <template #title>{{ reviewSuggestion.summary }}</template>
+          <div class="review-suggestion-content">
+            <p v-if="reviewSuggestion.answerAnalysis">{{ reviewSuggestion.answerAnalysis }}</p>
+            <p v-if="reviewSuggestion.knowledgeAnalysis">{{ reviewSuggestion.knowledgeAnalysis }}</p>
+            <div v-if="reviewSuggestion.riskPoints?.length">
+              <strong>风险点</strong>
+              <ul>
+                <li v-for="item in reviewSuggestion.riskPoints" :key="item">{{ item }}</li>
+              </ul>
+            </div>
+            <div v-if="reviewSuggestion.suggestions?.length">
+              <strong>修订建议</strong>
+              <ul>
+                <li v-for="item in reviewSuggestion.suggestions" :key="item">{{ item }}</li>
+              </ul>
+            </div>
+            <el-button size="small" text type="primary" @click="applyReviewSuggestion">应用到表单</el-button>
+          </div>
+        </el-alert>
+
         <el-form-item label="复审动作">
           <el-radio-group v-model="reReviewForm.action">
             <el-radio-button value="APPROVE">通过</el-radio-button>
@@ -440,12 +476,14 @@ import {
   importQuestionsMarkdown,
   downloadMarkdownTemplate,
   getReviewRecords,
+  getReviewSuggestion,
   performReReview,
   type QuestionVO,
   type QuestionForm,
   type OptionItem,
   type QuestionImportResult,
   type QuestionReviewRecordVO,
+  type QuestionReviewSuggestionVO,
 } from '@/api/question'
 import { clearAssetCache } from '@/api/ai'
 import { getAllCourses, type CourseVO } from '@/api/course'
@@ -493,6 +531,8 @@ const reReviewVisible = ref(false)
 const reReviewQuestion = ref<QuestionVO | null>(null)
 const reReviewLoading = ref(false)
 const reviewRecords = ref<QuestionReviewRecordVO[]>([])
+const reviewSuggestion = ref<QuestionReviewSuggestionVO | null>(null)
+const reviewSuggestionLoading = ref(false)
 const reReviewForm = reactive({
   action: 'APPROVE',
   newContent: '',
@@ -625,6 +665,15 @@ function sourceTypeTag(type?: string): 'primary' | 'success' | 'warning' | 'info
   return map[type || ''] || 'info'
 }
 
+function reviewActionLabel(action: string) {
+  const map: Record<string, string> = {
+    APPROVE: '通过',
+    REVISE: '修订',
+    REJECT: '废弃',
+  }
+  return map[action] || action
+}
+
 // 打开复审弹窗
 async function openReReview(question: QuestionVO) {
   reReviewQuestion.value = question
@@ -633,6 +682,7 @@ async function openReReview(question: QuestionVO) {
   reReviewForm.newDifficulty = question.difficulty
   reReviewForm.comment = ''
   reviewRecords.value = []
+  reviewSuggestion.value = null
   reReviewVisible.value = true
   try {
     const res = await getReviewRecords(question.id)
@@ -640,6 +690,31 @@ async function openReReview(question: QuestionVO) {
   } catch {
     // ignore
   }
+}
+
+async function handleReviewSuggestion() {
+  if (!reReviewQuestion.value) return
+  reviewSuggestionLoading.value = true
+  try {
+    const res = await getReviewSuggestion(reReviewQuestion.value.id)
+    reviewSuggestion.value = res.data
+    ElMessage.success('AI 复审建议已生成')
+  } catch {
+    // error handled by interceptor
+  } finally {
+    reviewSuggestionLoading.value = false
+  }
+}
+
+function applyReviewSuggestion() {
+  if (!reviewSuggestion.value) return
+  reReviewForm.action = reviewSuggestion.value.recommendation
+  if (reviewSuggestion.value.recommendation === 'REVISE') {
+    reReviewForm.newContent = reviewSuggestion.value.suggestedContent || reReviewQuestion.value?.content || ''
+    reReviewForm.newDifficulty = reviewSuggestion.value.suggestedDifficulty || reReviewQuestion.value?.difficulty || 3
+  }
+  reReviewForm.comment = reviewSuggestion.value.summary
+  ElMessage.success('已填入复审表单')
 }
 
 // 提交复审
@@ -1037,5 +1112,43 @@ onMounted(() => {
 
 .option-correct {
   white-space: nowrap;
+}
+
+.review-suggestion-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.review-suggestion-meta {
+  color: var(--lp-text-muted);
+  font-size: 13px;
+}
+
+.review-suggestion-panel {
+  margin-bottom: 16px;
+}
+
+.review-suggestion-content {
+  color: var(--lp-text-regular);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.review-suggestion-content p {
+  margin: 6px 0;
+}
+
+.review-suggestion-content ul {
+  margin: 6px 0 8px;
+  padding-left: 18px;
+}
+
+@media (max-width: 720px) {
+  .review-suggestion-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 </style>

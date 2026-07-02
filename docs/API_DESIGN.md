@@ -1012,6 +1012,35 @@ PUT    /api/admin/questions/{id}/status  # 启用/禁用
 }
 ```
 
+正式题目来源与复审接口：
+
+```
+GET  /api/admin/questions/source-stats              # 题目来源统计
+GET  /api/admin/questions/source-types              # 来源类型列表
+GET  /api/admin/questions/review-overdue            # 待复审题目列表
+GET  /api/admin/questions/{id}/review-records       # 题目复审记录
+GET  /api/admin/questions/{id}/review-suggestion    # AI 复审建议（按题目缓存）
+POST /api/admin/questions/{id}/re-review            # 执行复审
+```
+
+AI 复审建议响应摘要：
+
+```json
+{
+  "recommendation": "REVISE",
+  "confidenceScore": 88,
+  "summary": "题目可用但解析可增强",
+  "suggestedContent": "修订后的建议题干",
+  "suggestedDifficulty": 3,
+  "riskPoints": ["解析略短"],
+  "suggestions": ["补充错误选项说明"],
+  "answerAnalysis": "答案与选项一致",
+  "knowledgeAnalysis": "知识点匹配当前课程"
+}
+```
+
+说明：`recommendation` 取值为 `APPROVE`、`REVISE`、`REJECT`。该接口只提供审核辅助建议，不直接修改题目；结果进入 `questionReviewSuggestion` 缓存，题目编辑、删除或正式提交复审后会清除对应缓存。
+
 ### 12.5 试卷管理
 
 ```

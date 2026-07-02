@@ -116,6 +116,7 @@ app:
       submissionQuality: ${CACHE_TTL_SUBMISSION_QUALITY:30m}
       submissionKPTagging: ${CACHE_TTL_SUBMISSION_KP_TAGGING:30m}
       submissionDifficulty: ${CACHE_TTL_SUBMISSION_DIFFICULTY:30m}
+      questionReviewSuggestion: ${CACHE_TTL_QUESTION_REVIEW_SUGGESTION:30m}
       globalSearch: ${CACHE_TTL_GLOBAL_SEARCH:5m}
 
 # Knife4j 配置

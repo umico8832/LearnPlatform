@@ -9,6 +9,7 @@ import com.learnplatform.dto.QuestionOptionVO;
 import com.learnplatform.dto.QuestionVO;
 import com.learnplatform.entity.*;
 import com.learnplatform.mapper.*;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -210,6 +211,7 @@ public class QuestionService {
     /**
      * 更新题目
      */
+    @CacheEvict(value = "questionReviewSuggestion", key = "#id")
     @Transactional
     public QuestionVO updateQuestion(Long id, QuestionCreateRequest request) {
         Question question = questionMapper.selectById(id);
@@ -270,6 +272,7 @@ public class QuestionService {
     /**
      * 删除题目（级联删除选项和知识点关联）
      */
+    @CacheEvict(value = "questionReviewSuggestion", key = "#id")
     @Transactional
     public void deleteQuestion(Long id) {
         Question question = questionMapper.selectById(id);
