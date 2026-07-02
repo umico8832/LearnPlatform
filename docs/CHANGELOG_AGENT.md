@@ -1,5 +1,29 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 142 - 2026-07-03
+
+### 阶段
+协作规则调整：自动提交默认行为
+
+### 完成内容
+1. 更新 `AGENTS.md`：明确实现功能、修复问题、重构或文档规则变更完成后，Agent 应在验证和文档同步后自动创建一次聚焦提交。
+2. 更新 `docs/AGENT_GIT_RULES.md`：将“未明确要求不得 commit”调整为“符合自动提交场景则默认提交”，并补充只读分析、审查、调研、重大风险未确认、不相关未提交改动等例外。
+3. 保留 push、force push、rebase、reset、清理历史和改写远端分支必须确认的安全边界。
+
+### 修改文件
+- `AGENTS.md`
+- `docs/AGENT_GIT_RULES.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `git diff --check`：通过。
+
+### 遗留问题
+- 自动提交只适用于本地 commit；推送远端仍需用户明确确认。
+
+### commit message
+`docs(agent): 默认启用完成后自动提交`
+
 ## Round 141 - 2026-07-02
 
 ### 阶段
