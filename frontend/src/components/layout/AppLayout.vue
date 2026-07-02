@@ -63,6 +63,78 @@
             <kbd v-if="!isMobile" class="search-trigger-kbd">⌘K</kbd>
           </button>
 
+          <el-dropdown
+            v-if="isAdmin"
+            trigger="click"
+            popper-class="ops-alert-dropdown"
+            @visible-change="handleAlertDropdownVisible"
+          >
+            <button class="header-icon-button" type="button" aria-label="AI 运营提醒">
+              <el-badge
+                :value="openAlertCount"
+                :hidden="openAlertCount === 0"
+                :max="99"
+                type="danger"
+              >
+                <el-icon :size="18"><Bell /></el-icon>
+              </el-badge>
+            </button>
+            <template #dropdown>
+              <div class="ops-alert-panel">
+                <div class="ops-alert-panel-header">
+                  <strong>AI 运营提醒</strong>
+                  <el-button
+                    link
+                    type="primary"
+                    :loading="alertsLoading"
+                    @click.stop="fetchOpenAlerts"
+                  >
+                    刷新
+                  </el-button>
+                </div>
+                <div v-if="openAlerts.length" class="ops-alert-list">
+                  <div
+                    v-for="alert in openAlerts"
+                    :key="alert.id || alert.type"
+                    class="ops-alert-item"
+                  >
+                    <div>
+                      <div class="ops-alert-title">
+                        <el-tag
+                          size="small"
+                          :type="alert.level === 'WARNING' ? 'warning' : 'info'"
+                          effect="light"
+                        >
+                          {{ alert.level === 'WARNING' ? '告警' : '提示' }}
+                        </el-tag>
+                        <span>{{ alert.type }}</span>
+                      </div>
+                      <p>{{ alert.message }}</p>
+                      <small v-if="alert.periodStart && alert.periodEnd">
+                        {{ alert.periodStart }} 至 {{ alert.periodEnd }}
+                      </small>
+                    </div>
+                    <el-button
+                      v-if="alert.id"
+                      size="small"
+                      text
+                      type="primary"
+                      :loading="acknowledgingAlertId === alert.id"
+                      @click.stop="handleAcknowledgeOpenAlert(alert.id)"
+                    >
+                      确认
+                    </el-button>
+                  </div>
+                </div>
+                <el-empty
+                  v-else
+                  description="暂无未确认提醒"
+                  :image-size="48"
+                />
+              </div>
+            </template>
+          </el-dropdown>
+
           <el-dropdown @command="handleCommand">
             <span class="user-info">
               <el-avatar :size="34" :src="userInfo?.avatar || undefined">
@@ -93,11 +165,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import type { Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { acknowledgeAiUsageAlert, getAiUsageAlerts, type AiUsageAlert } from '@/api/aiUsage'
+import { ElMessage } from 'element-plus'
 import {
+  Bell,
   HomeFilled,
   Reading,
   Collection,
@@ -143,6 +218,10 @@ const userStore = useUserStore()
 const userInfo = computed(() => userStore.userInfo)
 const isAdmin = computed(() => userStore.userInfo?.role === 'ADMIN')
 const avatarText = computed(() => userInfo.value?.nickname?.charAt(0) || userInfo.value?.username?.charAt(0) || 'U')
+const openAlerts = ref<AiUsageAlert[]>([])
+const alertsLoading = ref(false)
+const acknowledgingAlertId = ref<number | null>(null)
+const openAlertCount = computed(() => openAlerts.value.length)
 
 const navSections: NavSection[] = [
   {
@@ -252,6 +331,39 @@ function openSearch() {
   searchDialogRef.value?.open()
 }
 
+async function fetchOpenAlerts() {
+  if (!isAdmin.value || alertsLoading.value) return
+  alertsLoading.value = true
+  try {
+    const response = await getAiUsageAlerts(20)
+    openAlerts.value = response.data || []
+  } catch (error) {
+    console.error('Failed to fetch AI usage alerts', error)
+  } finally {
+    alertsLoading.value = false
+  }
+}
+
+function handleAlertDropdownVisible(visible: boolean) {
+  if (visible) {
+    fetchOpenAlerts()
+  }
+}
+
+async function handleAcknowledgeOpenAlert(id: number) {
+  acknowledgingAlertId.value = id
+  try {
+    await acknowledgeAiUsageAlert(id)
+    openAlerts.value = openAlerts.value.filter(alert => alert.id !== id)
+    ElMessage.success('已确认 AI 运营提醒')
+  } catch (error: any) {
+    console.error('Failed to acknowledge AI usage alert', error)
+    ElMessage.error(error?.message || '确认提醒失败')
+  } finally {
+    acknowledgingAlertId.value = null
+  }
+}
+
 const MOBILE_BREAKPOINT = 768
 const isMobile = ref(false)
 const sidebarOpen = ref(false)
@@ -271,7 +383,16 @@ function handleMenuSelect() {
 
 onMounted(() => {
   checkMobile()
+  fetchOpenAlerts()
   window.addEventListener('resize', checkMobile)
+})
+
+watch(isAdmin, (value) => {
+  if (value) {
+    fetchOpenAlerts()
+  } else {
+    openAlerts.value = []
+  }
 })
 
 onBeforeUnmount(() => {
@@ -488,6 +609,83 @@ function handleCommand(command: string) {
   font-family: inherit;
 }
 
+.header-icon-button {
+  width: 38px;
+  height: 38px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--lp-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--lp-text-secondary);
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+
+.header-icon-button:hover {
+  border-color: #d19a2c;
+  color: #9b6a09;
+  box-shadow: 0 8px 22px rgba(157, 111, 24, 0.1);
+}
+
+.ops-alert-panel {
+  width: min(360px, calc(100vw - 24px));
+  padding: 12px;
+}
+
+.ops-alert-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 2px 10px;
+  border-bottom: 1px solid var(--lp-border);
+}
+
+.ops-alert-panel-header strong {
+  color: var(--lp-text);
+  font-size: 14px;
+}
+
+.ops-alert-list {
+  max-height: 360px;
+  overflow-y: auto;
+  padding-top: 8px;
+}
+
+.ops-alert-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 10px 2px;
+  border-bottom: 1px solid #eef1f5;
+}
+
+.ops-alert-item:last-child {
+  border-bottom: 0;
+}
+
+.ops-alert-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--lp-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ops-alert-item p {
+  margin: 6px 0 5px;
+  color: var(--lp-text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.ops-alert-item small {
+  color: var(--lp-text-muted);
+  font-size: 12px;
+}
+
 .user-info {
   gap: 9px;
   cursor: pointer;
@@ -559,6 +757,11 @@ function handleCommand(command: string) {
     height: 36px;
     justify-content: center;
     padding: 0;
+  }
+
+  .header-icon-button {
+    width: 36px;
+    height: 36px;
   }
 
   .app-main {

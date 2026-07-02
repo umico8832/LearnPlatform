@@ -29,7 +29,7 @@
 
 **Phase 0-12 预计总工期**：约 17-20 天
 
-**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图；Round 137 修复了错题逻辑删除后再次答错的唯一键冲突，并复跑 4 条真实 Playwright E2E 通过；Round 138 修复本地 Testcontainers 与 Docker Engine 29 兼容问题，并确认 53 个真实 MySQL 集成测试通过；Round 139 新增正式题目 AI 复审建议与缓存；Round 140 新增 AI 运营提醒持久化与确认能力，仍待推送后完成 CI 实跑。Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList、管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态和已知 Element Plus radio 旧 API 清理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
+**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图；Round 137 修复了错题逻辑删除后再次答错的唯一键冲突，并复跑 4 条真实 Playwright E2E 通过；Round 138 修复本地 Testcontainers 与 Docker Engine 29 兼容问题，并确认 53 个真实 MySQL 集成测试通过；Round 139 新增正式题目 AI 复审建议与缓存；Round 140 新增 AI 运营提醒持久化与确认能力；Round 141 新增管理员顶部栏 AI 运营提醒站内入口，仍待推送后完成 CI 实跑。Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList、管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态、顶部运营提醒入口和已知 Element Plus radio 旧 API 清理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
 
 ---
 
@@ -635,6 +635,7 @@
 - [x] 支持管理员按用户调整 AI 配额：用户可继承全局 `ai.daily-quota`、设置 0 为不限次数，或设置 1-10000 次的覆盖值；调整必须填写原因，并原子保存管理员、前后值与时间的审计记录（Round 116、118）。
 - [x] 增加调用日报/周报、失败率与异常用量提醒：管理端可按 1/7/14/30/90 天查看当前与前一等长周期环比；高失败率、失败率翻倍、延迟异常和调用量翻倍由真实日志即时推导（Round 117）。
 - [x] 持久化 AI 运营提醒并支持管理员确认：报告生成的异常提醒会落库，同类型同周期当天未确认提醒复用同一条记录，确认后记录处理人和时间（Round 140）。
+- [x] 为 AI 运营提醒增加站内入口：管理员顶部栏显示未确认提醒角标，下拉可查看、刷新并直接确认提醒（Round 141）。
 - [x] AI 调用日志记录请求级 `trace_id`，可关联管理端调用记录与应用日志（Round 118）。
 - [x] 为调用日志补充 Prompt/模型版本等追踪信息：保存模板名、不可逆 Prompt SHA-256 指纹和模型配置版本指纹，不保存原始 Prompt 内容（Round 120）。
 

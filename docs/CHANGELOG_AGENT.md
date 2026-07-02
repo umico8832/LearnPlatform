@@ -1,5 +1,37 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 141 - 2026-07-02
+
+### 阶段
+Phase 20 / Phase 21：AI 运营提醒站内入口与前端壳层 polish
+
+### 完成内容
+1. 在 `AppLayout.vue` 顶部栏新增管理员专属 AI 运营提醒入口，复用已存在的未确认提醒查询接口展示数字角标和提醒下拉。
+2. 下拉面板支持刷新未确认提醒、查看提醒等级/类型/消息/周期，并可直接确认提醒；确认成功后即时从顶部待办列表移除。
+3. 处理管理员身份异步恢复场景：管理员信息就绪后自动拉取提醒，普通用户不展示入口且会清空提醒状态。
+4. 补充桌面端和移动端样式，避免提醒按钮挤压搜索入口和用户菜单。
+5. 同步更新路线图、交接文档和 README。
+
+### 修改文件
+- `frontend/src/components/layout/AppLayout.vue`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd frontend && npm test -- --run src/__tests__/api/aiUsage.test.ts`：5 个测试通过。
+- `cd frontend && npm test -- --run`：26 个文件、209 个测试通过。
+- `cd frontend && npm run build`：通过（仍保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+
+### 遗留问题
+- 本轮未启动真实后端或 Docker E2E 环境，未做顶部栏提醒下拉的真实接口点击验收。
+- AI 运营提醒已有站内顶部入口和管理页确认入口，尚未接入站外通知（邮件、Webhook 等）。
+- Phase 20 推送后的 GitHub Actions 实跑仍待完成。
+
+### 建议 commit message
+`feat(frontend): 新增 AI 运营提醒顶部入口`
+
 ## Round 140 - 2026-07-02
 
 ### 阶段
