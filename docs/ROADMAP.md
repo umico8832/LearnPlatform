@@ -29,7 +29,7 @@
 
 **Phase 0-12 预计总工期**：约 17-20 天
 
-**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图；Round 137 修复了错题逻辑删除后再次答错的唯一键冲突，并复跑 4 条真实 Playwright E2E 通过；Round 138 修复本地 Testcontainers 与 Docker Engine 29 兼容问题，并确认 53 个真实 MySQL 集成测试通过；Round 139 新增正式题目 AI 复审建议与缓存；Round 140 新增 AI 运营提醒持久化与确认能力；Round 141 新增管理员顶部栏 AI 运营提醒站内入口；Round 143 新增 AI 运营提醒可选 webhook 站外通知，仍待推送后完成 CI 实跑。Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList、管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态、顶部运营提醒入口和已知 Element Plus radio 旧 API 清理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
+**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图；Round 137 修复了错题逻辑删除后再次答错的唯一键冲突，并复跑 4 条真实 Playwright E2E 通过；Round 138 修复本地 Testcontainers 与 Docker Engine 29 兼容问题，并确认 53 个真实 MySQL 集成测试通过；Round 139 新增正式题目 AI 复审建议与缓存；Round 140 新增 AI 运营提醒持久化与确认能力；Round 141 新增管理员顶部栏 AI 运营提醒站内入口；Round 143 新增 AI 运营提醒可选 webhook 站外通知；Round 144 新增管理端疑似重复题检测，仍待推送后完成 CI 实跑。Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList、管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态、顶部运营提醒入口和已知 Element Plus radio 旧 API 清理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
 
 ---
 
@@ -642,7 +642,8 @@
 
 ### P2：后续衔接
 - [x] 缓存正式题目复审建议，降低重复审核成本（Round 139）。
-- [ ] 实现重复题/高度相似题检测、题目版本和纠错记录。
+- [x] 实现重复题/高度相似题检测：管理端可按当前课程和题型筛选检测题干精确重复或高相似分组，结果只提示不自动合并（Round 144）。
+- [ ] 建立题目版本和纠错记录。
 - [ ] 建立 AI 讲解、变式训练与间隔复习的学习效果指标。
 
 ### 暂不优先

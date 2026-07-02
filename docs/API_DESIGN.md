@@ -986,6 +986,7 @@ DELETE /api/admin/knowledge-points/{id}            # 删除知识点
 
 ```
 GET    /api/admin/questions          # 题目列表（支持筛选）
+GET    /api/admin/questions/duplicates # 疑似重复题目检测
 POST   /api/admin/questions          # 创建题目
 PUT    /api/admin/questions/{id}     # 更新题目
 DELETE /api/admin/questions/{id}     # 删除题目
@@ -1011,6 +1012,39 @@ PUT    /api/admin/questions/{id}/status  # 启用/禁用
   ]
 }
 ```
+
+**疑似重复题目检测**：
+
+```
+GET /api/admin/questions/duplicates
+```
+
+查询参数：
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|:----:|--------|------|
+| courseId | long | 否 | | 仅检测指定课程 |
+| questionType | string | 否 | | 仅检测指定题型 |
+| minSimilarity | int | 否 | 92 | 相似度阈值，后端限制在 70-100 |
+| limit | int | 否 | 20 | 最多返回分组数，后端限制在 1-50 |
+
+响应示例：
+
+```json
+[
+  {
+    "matchType": "EXACT",
+    "similarityScore": 100,
+    "representativeContent": "Java 中 == 和 equals 有什么区别？",
+    "questions": [
+      { "id": 1, "content": "Java 中 == 和 equals 有什么区别？", "questionType": "SHORT_ANSWER" },
+      { "id": 2, "content": "Java中==和equals有什么区别", "questionType": "SHORT_ANSWER" }
+    ]
+  }
+]
+```
+
+说明：`matchType` 取值为 `EXACT`、`SIMILAR`。检测会按课程和题型分桶，只提示疑似重复题目，不会自动合并、删除或修改题库内容。
 
 正式题目来源与复审接口：
 

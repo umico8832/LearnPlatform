@@ -1,5 +1,47 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 144 - 2026-07-03
+
+### 阶段
+Phase 20：内容治理（疑似重复题检测）
+
+### 完成内容
+1. 新增管理端疑似重复题检测接口 `GET /api/admin/questions/duplicates`，支持按课程、题型、相似度阈值和返回分组数筛选。
+2. 后端按课程和题型分桶检测题干精确重复或高相似题目；结果只提示疑似重复分组，不自动合并、删除或修改题库。
+3. 题目管理页新增“重复检测”按钮和抽屉，复用当前筛选条件展示重复组、相似度、题目信息，并提供编辑和复审入口。
+4. 补充后端服务测试、Controller 契约测试和前端 API 契约测试。
+5. 同步更新 API 文档、路线图、交接文档和 README。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/controller/AdminQuestionController.java`
+- `backend/src/main/java/com/learnplatform/dto/QuestionDuplicateGroupVO.java`
+- `backend/src/main/java/com/learnplatform/service/QuestionService.java`
+- `backend/src/test/java/com/learnplatform/controller/AdminQuestionControllerTest.java`
+- `backend/src/test/java/com/learnplatform/service/QuestionServiceTest.java`
+- `frontend/src/api/question.ts`
+- `frontend/src/__tests__/api/question.test.ts`
+- `frontend/src/views/admin/QuestionManage.vue`
+- `docs/API_DESIGN.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd backend && mvn test -Dtest=QuestionServiceTest,AdminQuestionControllerTest`：15 个测试通过。
+- `cd frontend && npm test -- --run src/__tests__/api/question.test.ts`：15 个测试通过。
+- `cd backend && mvn test`：376 个默认后端测试通过。
+- `cd frontend && npm test -- --run`：26 个文件、210 个测试通过。
+- `cd frontend && npm run build`：通过（仍保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+
+### 遗留问题
+- 本轮未启动真实后端或 Docker E2E 环境，未做题目管理页重复检测抽屉的真实点击验收。
+- 重复题检测只做内容治理提示；题目版本、纠错记录和自动合并流程仍留作后续任务。
+- Phase 20 推送后的 GitHub Actions 实跑仍待用户确认 push 后完成。
+
+### commit message
+`feat(question): 新增疑似重复题检测`
+
 ## Round 143 - 2026-07-03
 
 ### 阶段

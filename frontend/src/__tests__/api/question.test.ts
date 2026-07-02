@@ -23,6 +23,7 @@ import {
   downloadTemplate,
   importQuestions,
   getReviewSuggestion,
+  detectDuplicateQuestions,
 } from '@/api/question'
 
 const mockedRequest = vi.mocked(request)
@@ -212,6 +213,22 @@ describe('Question API', () => {
       await getReviewSuggestion(12)
 
       expect(mockedRequest.get).toHaveBeenCalledWith('/admin/questions/12/review-suggestion')
+    })
+  })
+
+  describe('detectDuplicateQuestions', () => {
+    it('应使用 GET 请求检测疑似重复题目', async () => {
+      mockedRequest.get.mockResolvedValue({
+        code: 0,
+        data: [{ matchType: 'EXACT', similarityScore: 100, questions: [] }],
+        message: 'success',
+      })
+
+      await detectDuplicateQuestions({ courseId: 1, questionType: 'SHORT_ANSWER', minSimilarity: 92, limit: 20 })
+
+      expect(mockedRequest.get).toHaveBeenCalledWith('/admin/questions/duplicates', {
+        params: { courseId: 1, questionType: 'SHORT_ANSWER', minSimilarity: 92, limit: 20 },
+      })
     })
   })
 

@@ -68,6 +68,7 @@
             <el-option label="AI生成" value="AI_GENERATED" />
           </el-select>
           <el-button :icon="Search" @click="fetchQuestions">查询</el-button>
+          <el-button :icon="Connection" :loading="duplicateLoading" @click="handleDetectDuplicates">重复检测</el-button>
         </div>
         <span class="table-summary">当前筛选 {{ total }} 道题</span>
       </div>
@@ -457,12 +458,48 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 疑似重复题目抽屉 -->
+    <el-drawer v-model="duplicateDrawerVisible" title="疑似重复题目" size="560px" destroy-on-close>
+      <div class="duplicate-drawer">
+        <div class="duplicate-summary">
+          <span>按当前课程与题型筛选检测</span>
+          <strong>{{ duplicateGroups.length }}</strong>
+          <span>组疑似重复</span>
+        </div>
+        <el-empty v-if="duplicateGroups.length === 0" description="当前筛选下暂未发现疑似重复题目" />
+        <div v-else class="duplicate-group-list">
+          <el-card v-for="group in duplicateGroups" :key="group.questions.map(q => q.id).join('-')" shadow="never" class="duplicate-group-card">
+            <div class="duplicate-group-head">
+              <el-tag :type="group.matchType === 'EXACT' ? 'danger' : 'warning'" size="small">
+                {{ group.matchType === 'EXACT' ? '精确重复' : '高相似' }}
+              </el-tag>
+              <span>相似度 {{ group.similarityScore }}%</span>
+            </div>
+            <p class="duplicate-representative">{{ group.representativeContent }}</p>
+            <div class="duplicate-question-list">
+              <div v-for="question in group.questions" :key="question.id" class="duplicate-question-item">
+                <div>
+                  <strong>#{{ question.id }}</strong>
+                  <span>{{ question.courseName || '未命名课程' }} · {{ questionTypeLabel(question.questionType) }}</span>
+                </div>
+                <p>{{ question.content }}</p>
+                <div class="duplicate-question-actions">
+                  <el-button size="small" text type="primary" :icon="Edit" @click="openDialog(question)">编辑</el-button>
+                  <el-button size="small" text type="primary" :icon="RefreshRight" @click="openReReview(question)">复审</el-button>
+                </div>
+              </div>
+            </div>
+          </el-card>
+        </div>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { Plus, Search, Delete, Download, Upload, FolderOpened, ArrowDown, Edit, RefreshRight, DeleteFilled, Collection, DataAnalysis, DocumentChecked, MoreFilled } from '@element-plus/icons-vue'
+import { Plus, Search, Delete, Download, Upload, FolderOpened, ArrowDown, Edit, RefreshRight, DeleteFilled, Collection, DataAnalysis, DocumentChecked, MoreFilled, Connection } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules, TableInstance, UploadFile } from 'element-plus'
 import {
@@ -478,12 +515,14 @@ import {
   getReviewRecords,
   getReviewSuggestion,
   performReReview,
+  detectDuplicateQuestions,
   type QuestionVO,
   type QuestionForm,
   type OptionItem,
   type QuestionImportResult,
   type QuestionReviewRecordVO,
   type QuestionReviewSuggestionVO,
+  type QuestionDuplicateGroupVO,
 } from '@/api/question'
 import { clearAssetCache } from '@/api/ai'
 import { getAllCourses, type CourseVO } from '@/api/course'
@@ -533,6 +572,9 @@ const reReviewLoading = ref(false)
 const reviewRecords = ref<QuestionReviewRecordVO[]>([])
 const reviewSuggestion = ref<QuestionReviewSuggestionVO | null>(null)
 const reviewSuggestionLoading = ref(false)
+const duplicateDrawerVisible = ref(false)
+const duplicateLoading = ref(false)
+const duplicateGroups = ref<QuestionDuplicateGroupVO[]>([])
 const reReviewForm = reactive({
   action: 'APPROVE',
   newContent: '',
@@ -809,6 +851,29 @@ async function fetchQuestions() {
     // 错误已在拦截器中处理
   } finally {
     loading.value = false
+  }
+}
+
+async function handleDetectDuplicates() {
+  duplicateLoading.value = true
+  try {
+    const res = await detectDuplicateQuestions({
+      courseId: filters.courseId || undefined,
+      questionType: filters.questionType || undefined,
+      minSimilarity: 92,
+      limit: 20,
+    })
+    duplicateGroups.value = res.data
+    duplicateDrawerVisible.value = true
+    if (res.data.length > 0) {
+      ElMessage.warning(`发现 ${res.data.length} 组疑似重复题目`)
+    } else {
+      ElMessage.success('未发现疑似重复题目')
+    }
+  } catch {
+    // 错误已在拦截器中处理
+  } finally {
+    duplicateLoading.value = false
   }
 }
 
@@ -1143,6 +1208,91 @@ onMounted(() => {
 .review-suggestion-content ul {
   margin: 6px 0 8px;
   padding-left: 18px;
+}
+
+.duplicate-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.duplicate-summary {
+  align-items: center;
+  background: var(--lp-bg-soft);
+  border: 1px solid var(--lp-border-light);
+  border-radius: 8px;
+  color: var(--lp-text-muted);
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px;
+}
+
+.duplicate-summary strong {
+  color: var(--lp-text-primary);
+  font-size: 20px;
+}
+
+.duplicate-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.duplicate-group-card {
+  border-radius: 8px;
+}
+
+.duplicate-group-head {
+  align-items: center;
+  color: var(--lp-text-muted);
+  display: flex;
+  gap: 10px;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.duplicate-representative {
+  color: var(--lp-text-primary);
+  font-weight: 600;
+  line-height: 1.6;
+  margin: 0 0 10px;
+}
+
+.duplicate-question-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.duplicate-question-item {
+  background: var(--lp-bg-soft);
+  border: 1px solid var(--lp-border-light);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.duplicate-question-item > div:first-child {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.duplicate-question-item span {
+  color: var(--lp-text-muted);
+  font-size: 12px;
+}
+
+.duplicate-question-item p {
+  color: var(--lp-text-regular);
+  line-height: 1.5;
+  margin: 8px 0;
+}
+
+.duplicate-question-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 @media (max-width: 720px) {

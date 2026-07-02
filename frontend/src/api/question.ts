@@ -116,6 +116,14 @@ export interface QuestionReviewSuggestionVO {
   knowledgeAnalysis?: string
 }
 
+/** 疑似重复题目分组 */
+export interface QuestionDuplicateGroupVO {
+  matchType: 'EXACT' | 'SIMILAR'
+  similarityScore: number
+  representativeContent: string
+  questions: QuestionVO[]
+}
+
 export function getAdminQuestionPage(params: {
   pageNum?: number
   pageSize?: number
@@ -147,6 +155,16 @@ export function updateQuestion(id: number, data: QuestionForm) {
 /** 删除题目（管理端） */
 export function deleteQuestion(id: number) {
   return request.delete<any, ApiResponse<void>>(`/admin/questions/${id}`)
+}
+
+/** 检测疑似重复题目 */
+export function detectDuplicateQuestions(params?: {
+  courseId?: number
+  questionType?: string
+  minSimilarity?: number
+  limit?: number
+}) {
+  return request.get<any, ApiResponse<QuestionDuplicateGroupVO[]>>('/admin/questions/duplicates', { params })
 }
 
 /** 题目导入结果 */

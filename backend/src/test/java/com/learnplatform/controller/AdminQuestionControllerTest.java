@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.QuestionCreateRequest;
+import com.learnplatform.dto.QuestionDuplicateGroupVO;
 import com.learnplatform.dto.QuestionReviewSuggestionVO;
 import com.learnplatform.dto.QuestionVO;
 import com.learnplatform.security.CustomUserDetails;
@@ -218,6 +219,29 @@ class AdminQuestionControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.recommendation").value("APPROVE"))
                 .andExpect(jsonPath("$.data.confidenceScore").value(90));
+    }
+
+    @Test
+    void findDuplicateQuestions_success() throws Exception {
+        QuestionDuplicateGroupVO group = new QuestionDuplicateGroupVO();
+        group.setMatchType("EXACT");
+        group.setSimilarityScore(100);
+        group.setRepresentativeContent("Java 中 == 和 equals 有什么区别？");
+        group.setQuestions(List.of(
+                buildQuestionVO(1L, "Java 中 == 和 equals 有什么区别？"),
+                buildQuestionVO(2L, "Java中==和equals有什么区别")));
+        when(questionService.findDuplicateGroups(eq(1L), eq("SHORT_ANSWER"), eq(92), eq(10)))
+                .thenReturn(List.of(group));
+
+        mockMvc.perform(get("/api/admin/questions/duplicates")
+                        .param("courseId", "1")
+                        .param("questionType", "SHORT_ANSWER")
+                        .param("minSimilarity", "92")
+                        .param("limit", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data[0].matchType").value("EXACT"))
+                .andExpect(jsonPath("$.data[0].questions[1].id").value(2));
     }
 
     @Test

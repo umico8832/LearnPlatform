@@ -66,6 +66,19 @@ public class AdminQuestionController {
                 questionType, courseId, difficulty, status, sourceType));
     }
 
+    /**
+     * 检测疑似重复题目
+     */
+    @Operation(summary = "疑似重复题目", description = "按课程和题型分桶检测题干精确重复或高相似题目")
+    @GetMapping("/duplicates")
+    public R<List<QuestionDuplicateGroupVO>> findDuplicateQuestions(
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) String questionType,
+            @RequestParam(required = false) Integer minSimilarity,
+            @RequestParam(required = false) Integer limit) {
+        return R.ok(questionService.findDuplicateGroups(courseId, questionType, minSimilarity, limit));
+    }
+
 
     /**
      * 获取题目详情
