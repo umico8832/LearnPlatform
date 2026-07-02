@@ -24,6 +24,12 @@ public class AiConfig {
     private boolean streamIncludeUsage = true;
     /** 每用户每日 AI 调用次数上限，0 或负数表示不限制 */
     private int dailyQuota = 50;
+    /** AI 运营提醒 webhook 通知开关，默认关闭 */
+    private boolean alertWebhookEnabled = false;
+    /** AI 运营提醒 webhook 地址，开启后由运维填写，不保存任何密钥示例 */
+    private String alertWebhookUrl = "";
+    /** AI 运营提醒 webhook 请求超时时间 */
+    private int alertWebhookTimeout = 5000;
     /** 按模型配置的输入/输出单价，单位为 USD / 1M tokens。未配置的模型不计算成本。 */
     private Map<String, ModelPrice> modelPrices = new LinkedHashMap<>();
 
@@ -50,6 +56,15 @@ public class AiConfig {
 
     public int getDailyQuota() { return dailyQuota; }
     public void setDailyQuota(int dailyQuota) { this.dailyQuota = dailyQuota; }
+
+    public boolean isAlertWebhookEnabled() { return alertWebhookEnabled; }
+    public void setAlertWebhookEnabled(boolean alertWebhookEnabled) { this.alertWebhookEnabled = alertWebhookEnabled; }
+
+    public String getAlertWebhookUrl() { return alertWebhookUrl; }
+    public void setAlertWebhookUrl(String alertWebhookUrl) { this.alertWebhookUrl = alertWebhookUrl; }
+
+    public int getAlertWebhookTimeout() { return alertWebhookTimeout; }
+    public void setAlertWebhookTimeout(int alertWebhookTimeout) { this.alertWebhookTimeout = alertWebhookTimeout; }
 
     public Map<String, ModelPrice> getModelPrices() { return modelPrices; }
     public void setModelPrices(Map<String, ModelPrice> modelPrices) {

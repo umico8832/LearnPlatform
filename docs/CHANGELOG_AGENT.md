@@ -1,5 +1,44 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 143 - 2026-07-03
+
+### 阶段
+Phase 20：AI 运营治理（运营提醒 webhook 站外通知）
+
+### 完成内容
+1. 新增 `AiUsageAlertNotificationService`：支持在 AI 运营提醒新建后发送结构化 webhook payload，默认关闭。
+2. 扩展 `AiConfig` 与 `application.yml`：新增 `AI_ALERT_WEBHOOK_ENABLED`、`AI_ALERT_WEBHOOK_URL`、`AI_ALERT_WEBHOOK_TIMEOUT` 配置；`.env.example` 仅保留示例开关和空 URL。
+3. 调整 `AiUsageService`：仅在 `ai_usage_alert` 新插入时触发站外通知；同类型同周期当天未确认提醒复用时只更新站内记录，避免重复通知。
+4. webhook 发送失败只记录日志，不影响运营报告生成、提醒落库或管理员确认流程。
+5. 补充后端单元测试，覆盖新提醒通知、复用提醒不重复通知、默认关闭、空 URL 和发送异常场景。
+6. 同步更新 API、DB、路线图、交接文档和 README。
+
+### 修改文件
+- `.env.example`
+- `backend/src/main/java/com/learnplatform/config/AiConfig.java`
+- `backend/src/main/java/com/learnplatform/service/AiUsageAlertNotificationService.java`
+- `backend/src/main/java/com/learnplatform/service/AiUsageService.java`
+- `backend/src/main/resources/application.yml`
+- `backend/src/test/java/com/learnplatform/service/AiUsageAlertNotificationServiceTest.java`
+- `backend/src/test/java/com/learnplatform/service/AiUsageServiceTest.java`
+- `docs/API_DESIGN.md`
+- `docs/DB_DESIGN.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd backend && mvn test -Dtest=AiUsageServiceTest,AiUsageAlertNotificationServiceTest`：21 个测试通过。
+- `cd backend && mvn test`：372 个默认后端测试通过。
+
+### 遗留问题
+- 本轮不新增邮件、短信或具体第三方机器人适配器；当前通过通用 webhook 网关对接。
+- Phase 20 推送后的 GitHub Actions 实跑仍待用户确认 push 后完成。
+
+### 建议 commit message
+`feat(ai): 支持运营提醒 webhook 通知`
+
 ## Round 142 - 2026-07-03
 
 ### 阶段

@@ -46,11 +46,16 @@ public class AiUsageService {
     private final AiCallLogMapper aiCallLogMapper;
     private final AiUsageAlertMapper aiUsageAlertMapper;
     private final UserMapper userMapper;
+    private final AiUsageAlertNotificationService alertNotificationService;
 
-    public AiUsageService(AiCallLogMapper aiCallLogMapper, AiUsageAlertMapper aiUsageAlertMapper, UserMapper userMapper) {
+    public AiUsageService(AiCallLogMapper aiCallLogMapper,
+                          AiUsageAlertMapper aiUsageAlertMapper,
+                          UserMapper userMapper,
+                          AiUsageAlertNotificationService alertNotificationService) {
         this.aiCallLogMapper = aiCallLogMapper;
         this.aiUsageAlertMapper = aiUsageAlertMapper;
         this.userMapper = userMapper;
+        this.alertNotificationService = alertNotificationService;
     }
 
     /**
@@ -371,6 +376,7 @@ public class AiUsageService {
                 entity.setMessage(alert.getMessage());
                 entity.setMetricSnapshot(snapshot);
                 aiUsageAlertMapper.insert(entity);
+                alertNotificationService.notifyCreatedAlert(entity);
             } else {
                 entity.setLevel(alert.getLevel());
                 entity.setMessage(alert.getMessage());

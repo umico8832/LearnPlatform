@@ -44,6 +44,9 @@ class AiUsageServiceTest {
     @Mock
     private UserMapper userMapper;
 
+    @Mock
+    private AiUsageAlertNotificationService alertNotificationService;
+
     @InjectMocks
     private AiUsageService aiUsageService;
 
@@ -63,7 +66,7 @@ class AiUsageServiceTest {
         successLog.setCostUsd(new BigDecimal("0.00150000"));
         successLog.setStatus(1);
         successLog.setDuration(2000);
-        successLog.setCreateTime(LocalDateTime.now().minusHours(1));
+        successLog.setCreateTime(LocalDateTime.now());
         sampleLogs.add(successLog);
 
         // 流式日志
@@ -347,6 +350,7 @@ class AiUsageServiceTest {
             assertTrue(report.getAlerts().stream().anyMatch(item -> "HIGH_FAILURE_RATE".equals(item.getType())));
             assertTrue(report.getAlerts().stream().anyMatch(item -> "CALL_VOLUME_SPIKE".equals(item.getType())));
             verify(aiUsageAlertMapper, atLeastOnce()).insert(any(AiUsageAlert.class));
+            verify(alertNotificationService, atLeastOnce()).notifyCreatedAlert(any(AiUsageAlert.class));
         }
 
         @Test
@@ -394,6 +398,38 @@ class AiUsageServiceTest {
             assertEquals("OPEN", saved.getStatus());
             assertEquals(1, saved.getPeriodDays());
             assertTrue(saved.getMetricSnapshot().contains("\"currentFailureRate\""));
+            verify(alertNotificationService, atLeastOnce()).notifyCreatedAlert(any(AiUsageAlert.class));
+        }
+
+        @Test
+        @DisplayName("复用当天未确认提醒时不重复发送站外通知")
+        void shouldNotNotifyWebhookWhenReusingOpenAlert() {
+            List<AiCallLog> logs = new ArrayList<>();
+            for (int i = 0; i < 6; i++) {
+                logs.add(createLog(i + 1L, i < 2 ? 0 : 1, 1200, LocalDateTime.now().minusHours(1)));
+            }
+            AiUsageAlert existing = new AiUsageAlert();
+            existing.setId(5L);
+            existing.setLevel("WARNING");
+            existing.setAlertType("HIGH_FAILURE_RATE");
+            existing.setMessage("旧提醒");
+            existing.setPeriodDays(1);
+            existing.setPeriodStart(LocalDateTime.now().minusDays(1));
+            existing.setPeriodEnd(LocalDateTime.now());
+            existing.setStatus("OPEN");
+            when(aiCallLogMapper.selectList(any())).thenReturn(logs);
+            when(aiUsageAlertMapper.selectOne(any())).thenReturn(existing);
+
+            AiUsageReportVO report = aiUsageService.getReport(1);
+
+            assertEquals(5L, report.getAlerts().stream()
+                    .filter(item -> "HIGH_FAILURE_RATE".equals(item.getType()))
+                    .findFirst()
+                    .orElseThrow()
+                    .getId());
+            verify(aiUsageAlertMapper, never()).insert(any(AiUsageAlert.class));
+            verify(aiUsageAlertMapper, atLeastOnce()).updateById(existing);
+            verify(alertNotificationService, never()).notifyCreatedAlert(any(AiUsageAlert.class));
         }
 
         @Test
