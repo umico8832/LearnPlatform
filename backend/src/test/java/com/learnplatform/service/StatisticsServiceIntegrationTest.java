@@ -122,6 +122,7 @@ class StatisticsServiceIntegrationTest extends IntegrationTestBase {
 
         QuestionOption opt1 = new QuestionOption();
         opt1.setQuestionId(questionId1);
+        opt1.setOptionLabel("A");
         opt1.setContent("int a = 1;");
         opt1.setIsCorrect(1);
         opt1.setSortOrder(1);
@@ -139,6 +140,7 @@ class StatisticsServiceIntegrationTest extends IntegrationTestBase {
 
         QuestionOption opt2 = new QuestionOption();
         opt2.setQuestionId(questionId2);
+        opt2.setOptionLabel("A");
         opt2.setContent("for");
         opt2.setIsCorrect(1);
         opt2.setSortOrder(1);
@@ -156,6 +158,7 @@ class StatisticsServiceIntegrationTest extends IntegrationTestBase {
 
         QuestionOption opt3 = new QuestionOption();
         opt3.setQuestionId(questionId3);
+        opt3.setOptionLabel("A");
         opt3.setContent("快速排序");
         opt3.setIsCorrect(1);
         opt3.setSortOrder(1);
@@ -224,7 +227,10 @@ class StatisticsServiceIntegrationTest extends IntegrationTestBase {
         ExamRecord examRecord = new ExamRecord();
         examRecord.setUserId(userId);
         examRecord.setExamPaperId(0L); // 简化，不关联真实试卷
+        examRecord.setStartTime(now.minusMinutes(30));
+        examRecord.setEndTime(now);
         examRecord.setScore(85);
+        examRecord.setTotalScore(100);
         examRecord.setStatus(1);
         examRecord.setCreateTime(now);
         examRecordMapper.insert(examRecord);
@@ -286,9 +292,9 @@ class StatisticsServiceIntegrationTest extends IntegrationTestBase {
         // 今天应该有数据
         Map<String, Object> todayItem = trend.get(6); // 最后一个是今天
         assertNotNull(todayItem.get("date"));
-        assertTrue((int) todayItem.get("total") >= 3);
-        assertEquals(2, (int) todayItem.get("correct"));
-        assertTrue((int) todayItem.get("wrong") >= 1);
+        assertTrue(numberValue(todayItem.get("total")) >= 3);
+        assertEquals(2, numberValue(todayItem.get("correct")));
+        assertTrue(numberValue(todayItem.get("wrong")) >= 1);
     }
 
     @Test
@@ -298,9 +304,9 @@ class StatisticsServiceIntegrationTest extends IntegrationTestBase {
 
         assertEquals(7, trend.size());
         for (Map<String, Object> day : trend) {
-            assertEquals(0, day.get("total"));
-            assertEquals(0, day.get("correct"));
-            assertEquals(0, day.get("wrong"));
+            assertEquals(0, numberValue(day.get("total")));
+            assertEquals(0, numberValue(day.get("correct")));
+            assertEquals(0, numberValue(day.get("wrong")));
         }
     }
 
@@ -316,15 +322,15 @@ class StatisticsServiceIntegrationTest extends IntegrationTestBase {
         // 按 total 降序，course1 有 2 条，course2 有 1 条
         Map<String, Object> first = courseStats.get(0);
         assertEquals(courseId1, first.get("courseId"));
-        assertEquals(2, first.get("total"));
-        assertEquals(1, first.get("correct"));
+        assertEquals(2, numberValue(first.get("total")));
+        assertEquals(1, numberValue(first.get("correct")));
         // correctRate = 1/2 * 100 = 50.0
         assertEquals(50.0, (double) first.get("correctRate"), 0.1);
 
         Map<String, Object> second = courseStats.get(1);
         assertEquals(courseId2, second.get("courseId"));
-        assertEquals(1, second.get("total"));
-        assertEquals(1, second.get("correct"));
+        assertEquals(1, numberValue(second.get("total")));
+        assertEquals(1, numberValue(second.get("correct")));
         assertEquals(100.0, (double) second.get("correctRate"), 0.1);
     }
 
@@ -422,5 +428,10 @@ class StatisticsServiceIntegrationTest extends IntegrationTestBase {
         assertNotNull(vo.getDailyTrend());
         assertNotNull(vo.getCourseStats());
         assertTrue(vo.getCourseStats().isEmpty());
+    }
+
+    private static long numberValue(Object value) {
+        assertTrue(value instanceof Number, "value should be numeric");
+        return ((Number) value).longValue();
     }
 }

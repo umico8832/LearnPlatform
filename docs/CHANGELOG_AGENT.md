@@ -1,5 +1,43 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 138 - 2026-07-01
+
+### 阶段
+Phase 20：演示验收与 AI 运营治理（Testcontainers 集成测试修复）
+
+### 完成内容
+1. 复现本地 Testcontainers 失败原因：Docker CLI 与 Docker Desktop 正常，但旧 Testcontainers `1.20.1` 在 Docker Engine 29 下无法识别有效 Docker 环境。
+2. 将后端 Testcontainers 依赖升级到 `1.21.4`，恢复 Docker Desktop / Docker Engine 29 环境下的容器连接能力。
+3. 修复集成测试容器与真实 Flyway 基线迁移不一致的问题：容器数据库名改为 `learn_platform`，Flyway 使用容器 root 用户执行迁移，业务数据源继续使用测试用户。
+4. 补齐真实表约束下的集成测试夹具：考试、刷题和统计测试中的题目课程、选项标签、考试记录时间和总分字段。
+5. 修复 `StatisticsService` 对 Map 聚合数值类型的强转假设，统一按 `Number` 读取排序值，避免真实 MySQL 下 `Integer`/`Long` 混用导致 `ClassCastException`。
+
+### 修改文件
+- `backend/pom.xml`
+- `backend/src/main/java/com/learnplatform/service/StatisticsService.java`
+- `backend/src/test/java/com/learnplatform/IntegrationTestBase.java`
+- `backend/src/test/java/com/learnplatform/service/ExamServiceIntegrationTest.java`
+- `backend/src/test/java/com/learnplatform/service/PracticeServiceIntegrationTest.java`
+- `backend/src/test/java/com/learnplatform/service/StatisticsServiceIntegrationTest.java`
+- `docs/TESTING.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd backend && mvn test -DexcludedGroups= -Dtest=WrongQuestionServiceIntegrationTest`：17 个真实 MySQL 集成测试通过。
+- `cd backend && mvn test -DexcludedGroups= -Dgroups=integration`：53 个真实 MySQL 集成测试通过。
+- `cd backend && mvn test`：361 个默认后端测试通过。
+
+### 遗留问题
+- Phase 20 推送后的 GitHub Actions 实跑仍待完成；当前 `main` 本地仍领先远端。
+- 前端构建仍有第三方 `@vueuse/core` pure annotation 和大 chunk 警告，不阻断构建。
+- Docker/E2E 环境当前处于运行状态，如不需要可执行 `docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v` 清理。
+
+### 建议 commit message
+`test(backend): 修复 Testcontainers 集成测试基线`
+
 ## Round 137 - 2026-07-01
 
 ### 阶段

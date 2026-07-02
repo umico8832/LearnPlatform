@@ -60,6 +60,7 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
     @BeforeAll
     static void setupTestData(
             @Autowired UserMapper userMapper,
+            @Autowired CourseMapper courseMapper,
             @Autowired QuestionMapper questionMapper,
             @Autowired QuestionOptionMapper questionOptionMapper,
             @Autowired ExamPaperMapper examPaperMapper,
@@ -78,10 +79,19 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
         userMapper.insert(user);
         userId = user.getId();
 
+        Course course = new Course();
+        course.setName("考试集成测试课程");
+        course.setDeleted(0);
+        course.setCreateTime(LocalDateTime.now());
+        course.setUpdateTime(LocalDateTime.now());
+        courseMapper.insert(course);
+        Long courseId = course.getId();
+
         // 2. 创建单选题 (SINGLE_CHOICE)
         Question q1 = new Question();
         q1.setContent("1+1=?");
         q1.setQuestionType("SINGLE_CHOICE");
+        q1.setCourseId(courseId);
         q1.setDifficulty(1);
         q1.setAnalysis("1+1=2");
         q1.setDeleted(0);
@@ -92,6 +102,7 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
 
         QuestionOption opt1a = new QuestionOption();
         opt1a.setQuestionId(question1Id);
+        opt1a.setOptionLabel("A");
         opt1a.setContent("2");
         opt1a.setIsCorrect(1);
         opt1a.setSortOrder(1);
@@ -99,6 +110,7 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
 
         QuestionOption opt1b = new QuestionOption();
         opt1b.setQuestionId(question1Id);
+        opt1b.setOptionLabel("B");
         opt1b.setContent("3");
         opt1b.setIsCorrect(0);
         opt1b.setSortOrder(2);
@@ -108,6 +120,7 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
         Question q2 = new Question();
         q2.setContent("以下哪些是偶数?");
         q2.setQuestionType("MULTIPLE_CHOICE");
+        q2.setCourseId(courseId);
         q2.setDifficulty(2);
         q2.setAnalysis("2和4是偶数");
         q2.setDeleted(0);
@@ -118,6 +131,7 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
 
         QuestionOption opt2a = new QuestionOption();
         opt2a.setQuestionId(question2Id);
+        opt2a.setOptionLabel("A");
         opt2a.setContent("2");
         opt2a.setIsCorrect(1);
         opt2a.setSortOrder(1);
@@ -125,6 +139,7 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
 
         QuestionOption opt2b = new QuestionOption();
         opt2b.setQuestionId(question2Id);
+        opt2b.setOptionLabel("B");
         opt2b.setContent("3");
         opt2b.setIsCorrect(0);
         opt2b.setSortOrder(2);
@@ -132,6 +147,7 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
 
         QuestionOption opt2c = new QuestionOption();
         opt2c.setQuestionId(question2Id);
+        opt2c.setOptionLabel("C");
         opt2c.setContent("4");
         opt2c.setIsCorrect(1);
         opt2c.setSortOrder(3);
@@ -215,11 +231,11 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
 
         ExamSubmitRequest.AnswerItem ans1 = new ExamSubmitRequest.AnswerItem();
         ans1.setQuestionId(question1Id);
-        ans1.setUserAnswer("2");
+        ans1.setUserAnswer("A");
 
         ExamSubmitRequest.AnswerItem ans2 = new ExamSubmitRequest.AnswerItem();
         ans2.setQuestionId(question2Id);
-        ans2.setUserAnswer("2,4");
+        ans2.setUserAnswer("A,C");
 
         request.setAnswers(List.of(ans1, ans2));
 
@@ -257,12 +273,12 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
         // 单选题答错
         ExamSubmitRequest.AnswerItem ans1 = new ExamSubmitRequest.AnswerItem();
         ans1.setQuestionId(question1Id);
-        ans1.setUserAnswer("3");
+        ans1.setUserAnswer("B");
 
         // 多选题答错（只选了一个正确答案）
         ExamSubmitRequest.AnswerItem ans2 = new ExamSubmitRequest.AnswerItem();
         ans2.setQuestionId(question2Id);
-        ans2.setUserAnswer("2");
+        ans2.setUserAnswer("A");
 
         request.setAnswers(List.of(ans1, ans2));
 
@@ -297,7 +313,7 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
 
         ExamSubmitRequest.AnswerItem ans = new ExamSubmitRequest.AnswerItem();
         ans.setQuestionId(question1Id);
-        ans.setUserAnswer("2");
+        ans.setUserAnswer("A");
         request.setAnswers(List.of(ans));
 
         // 第一次提交
@@ -320,7 +336,7 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
 
         ExamSubmitRequest.AnswerItem ans = new ExamSubmitRequest.AnswerItem();
         ans.setQuestionId(999999L); // 不存在的题目
-        ans.setUserAnswer("2");
+        ans.setUserAnswer("A");
         request.setAnswers(List.of(ans));
 
         assertThrows(BusinessException.class,

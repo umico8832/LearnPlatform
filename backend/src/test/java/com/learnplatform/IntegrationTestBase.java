@@ -24,7 +24,7 @@ public abstract class IntegrationTestBase {
 
     private static final MySQLContainer<?> MYSQL =
             new MySQLContainer<>("mysql:8.0")
-                    .withDatabaseName("learn_platform_test")
+                    .withDatabaseName("learn_platform")
                     .withUsername("test")
                     .withPassword("test")
                     .withCommand("--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci");
@@ -38,5 +38,7 @@ public abstract class IntegrationTestBase {
         registry.add("spring.datasource.url", MYSQL::getJdbcUrl);
         registry.add("spring.datasource.username", MYSQL::getUsername);
         registry.add("spring.datasource.password", MYSQL::getPassword);
+        registry.add("spring.flyway.user", () -> "root");
+        registry.add("spring.flyway.password", MYSQL::getPassword);
     }
 }

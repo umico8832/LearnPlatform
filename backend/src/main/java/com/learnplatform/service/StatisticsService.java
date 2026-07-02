@@ -149,7 +149,7 @@ public class StatisticsService {
             item.put("correctRate", courseRecords.isEmpty() ? 0 : Math.round(correct * 1000.0 / courseRecords.size()) / 10.0);
             result.add(item);
         }
-        result.sort((a, b) -> Long.compare((long) b.get("total"), (long) a.get("total")));
+        result.sort((a, b) -> Long.compare(numberValue(b.get("total")), numberValue(a.get("total"))));
         return result;
     }
 
@@ -343,7 +343,7 @@ public class StatisticsService {
                     : Math.round(correct * 1000.0 / records.size()) / 10.0);
             courseStats.add(item);
         }
-        courseStats.sort((a, b) -> Long.compare((long) b.get("total"), (long) a.get("total")));
+        courseStats.sort((a, b) -> Long.compare(numberValue(b.get("total")), numberValue(a.get("total"))));
         vo.setCourseStats(courseStats);
 
         // ========== 本月各题型刷题分布 ==========
@@ -476,5 +476,12 @@ public class StatisticsService {
             case "SHORT_ANSWER": return "简答题";
             default: return questionType;
         }
+    }
+
+    private static long numberValue(Object value) {
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        return 0L;
     }
 }

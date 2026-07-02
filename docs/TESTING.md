@@ -96,4 +96,6 @@ mvn test -DexcludedGroups= -Dgroups=integration
 mvn test -DexcludedGroups= -Dtest=WrongQuestionServiceIntegrationTest
 ```
 
-若本地 Docker CLI 可用但 Testcontainers 报无法找到 Docker environment，优先按 `docs/HANDOFF.md` 记录为本机 Docker Desktop Socket 兼容性问题；不要把 0 tests 当作集成测试通过。
+当前 Testcontainers 版本为 `1.21.4`，用于兼容 Docker Desktop / Docker Engine 29 的 API 变化。集成测试容器数据库名与基线迁移保持为 `learn_platform`，Flyway 使用容器 root 用户执行迁移，业务数据源仍使用测试用户。
+
+若本地 Docker CLI 可用但 Testcontainers 报无法找到 Docker environment，先确认依赖版本、Docker context 和 socket 路径；不要把 0 tests 当作集成测试通过。

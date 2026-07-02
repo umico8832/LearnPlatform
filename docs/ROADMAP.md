@@ -29,7 +29,7 @@
 
 **Phase 0-12 预计总工期**：约 17-20 天
 
-**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图；Round 137 修复了错题逻辑删除后再次答错的唯一键冲突，并复跑 4 条真实 Playwright E2E 通过，仍待推送后完成 CI 实跑。Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList、管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态和已知 Element Plus radio 旧 API 清理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
+**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图；Round 137 修复了错题逻辑删除后再次答错的唯一键冲突，并复跑 4 条真实 Playwright E2E 通过；Round 138 修复本地 Testcontainers 与 Docker Engine 29 兼容问题，并确认 53 个真实 MySQL 集成测试通过，仍待推送后完成 CI 实跑。Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList、管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态和已知 Element Plus radio 旧 API 清理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
 
 ---
 
@@ -629,7 +629,7 @@
 - [x] 为刷题、错题复习、考试和管理端审核补充少量高价值端到端测试（已补考试页 2 条页面级交互回归；浏览器 E2E 覆盖登录、课程浏览、刷题答错→错题本→掌握度更新→重练、三种题型作答→提交→自动判分→结果详情，以及用户投稿→管理员通过→正式入库；Round 113）。
 - [x] 复跑真实 Docker E2E 并修复错题逻辑删除后再次答错触发唯一键冲突的问题（Round 137：4 条 Playwright 真实业务闭环通过）。
 - [x] 将 Redis 缓存 TTL 提取为配置项，并修复 simple cache 模式下未注册缓存名导致统计接口 500 的问题。
-- [ ] 处理 Testcontainers 本地兼容性。
+- [x] 处理 Testcontainers 本地兼容性（Round 138：升级到 `1.21.4`，对齐集成测试数据库和 Flyway 迁移账号，53 个真实 MySQL 集成测试通过）。
 
 ### P1：AI 运营治理
 - [x] 从 OpenAI 兼容上游响应记录真实 token 用量：同步响应读取 `usage`，流式请求默认请求并读取最终 `usage` 事件；不支持该扩展的上游可关闭 `AI_STREAM_INCLUDE_USAGE`，此时不进行本地估算。
@@ -705,4 +705,4 @@
 - 第 3 轮：整理 QuestionListView。✅ 已完成
 - 第 4 轮：整理 AdminDashboard 与管理端列表页。✅ 已完成总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 样板
 - 第 5 轮：整理课程入口与详情页。✅ 已完成
-- 第 6 轮：浏览器验收、截图、微调和文档更新。🚧 截图、管理端批量操作与空状态、Element Plus radio 旧 API 清理已完成，CI 实跑和真实接口点击验收待继续
+- 第 6 轮：浏览器验收、截图、微调和文档更新。🚧 截图、管理端批量操作与空状态、Element Plus radio 旧 API 清理、本地 Testcontainers 集成测试修复已完成，CI 实跑和真实接口点击验收待继续

@@ -120,6 +120,7 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
 
         QuestionOption opt1a = new QuestionOption();
         opt1a.setQuestionId(singleChoiceQId);
+        opt1a.setOptionLabel("A");
         opt1a.setContent("地球");
         opt1a.setIsCorrect(0);
         opt1a.setSortOrder(1);
@@ -127,6 +128,7 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
 
         QuestionOption opt1b = new QuestionOption();
         opt1b.setQuestionId(singleChoiceQId);
+        opt1b.setOptionLabel("B");
         opt1b.setContent("木星");
         opt1b.setIsCorrect(1);
         opt1b.setSortOrder(2);
@@ -134,6 +136,7 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
 
         QuestionOption opt1c = new QuestionOption();
         opt1c.setQuestionId(singleChoiceQId);
+        opt1c.setOptionLabel("C");
         opt1c.setContent("土星");
         opt1c.setIsCorrect(0);
         opt1c.setSortOrder(3);
@@ -155,6 +158,7 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
 
         QuestionOption opt2a = new QuestionOption();
         opt2a.setQuestionId(multiChoiceQId);
+        opt2a.setOptionLabel("A");
         opt2a.setContent("Java");
         opt2a.setIsCorrect(1);
         opt2a.setSortOrder(1);
@@ -162,6 +166,7 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
 
         QuestionOption opt2b = new QuestionOption();
         opt2b.setQuestionId(multiChoiceQId);
+        opt2b.setOptionLabel("B");
         opt2b.setContent("HTML");
         opt2b.setIsCorrect(0);
         opt2b.setSortOrder(2);
@@ -169,6 +174,7 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
 
         QuestionOption opt2c = new QuestionOption();
         opt2c.setQuestionId(multiChoiceQId);
+        opt2c.setOptionLabel("C");
         opt2c.setContent("Python");
         opt2c.setIsCorrect(1);
         opt2c.setSortOrder(3);
@@ -204,6 +210,7 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
 
         QuestionOption opt4a = new QuestionOption();
         opt4a.setQuestionId(trueFalseQId);
+        opt4a.setOptionLabel("A");
         opt4a.setContent("正确");
         opt4a.setIsCorrect(0);
         opt4a.setSortOrder(1);
@@ -211,6 +218,7 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
 
         QuestionOption opt4b = new QuestionOption();
         opt4b.setQuestionId(trueFalseQId);
+        opt4b.setOptionLabel("B");
         opt4b.setContent("错误");
         opt4b.setIsCorrect(1);
         opt4b.setSortOrder(2);

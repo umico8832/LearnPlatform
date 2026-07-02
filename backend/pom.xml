@@ -22,6 +22,7 @@
         <mybatis-plus.version>3.5.5</mybatis-plus.version>
         <jjwt.version>0.12.5</jjwt.version>
         <knife4j.version>4.4.0</knife4j.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
         <excludedGroups>integration</excludedGroups>
     </properties>
 
@@ -139,13 +140,13 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>mysql</artifactId>
-            <version>1.20.1</version>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>1.20.1</version>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
         <!-- ByteBuddy override for JDK 26 compatibility -->
