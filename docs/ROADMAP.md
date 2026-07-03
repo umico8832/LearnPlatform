@@ -25,11 +25,11 @@
 | 18 | 全局搜索与快捷导航 | ✅ 基本完成 | Round 98-99 | 跨题目/课程/知识点的全局搜索（GlobalSearchService ✅ + GlobalSearchController 4 个接口 ✅ + 前端 GlobalSearchDialog 组件 ✅ + ⌘K/Ctrl+K 快捷键 ✅ + 键盘导航 ✅ + 关键词高亮 ✅ + 移动端适配 ✅ + 搜索历史记录 ✅ + 热门搜索推荐 ✅ + 搜索结果缓存 @Cacheable ✅ + 24 个单元测试 ✅） |
 | 19 | AI 调用分析与成本控制 | ✅ 基本完成 | Round 100、115 | 管理端 AI 调用总览（趋势、功能/模型分布、Top 用户、失败调用、真实 Tokens、平均耗时与按模型配置单价计算的成本） |
 | 20 | 演示验收与 AI 运营治理 | 🚧 开发中 | 2-3 个迭代 | 已覆盖关键业务真实浏览器 E2E，并完成独立配额、审计追踪、运营报告、异常提醒持久化确认、疑似重复题检测、题目纠错反馈闭环、题目版本记录和学习效果指标；演示截图已产出，继续 CI 实跑 |
-| 21 | 前端信息架构与视觉体验优化 | 🚧 开发中 | 2-4 个迭代 | AppLayout 分组导航、首页学习工作台、核心业务页、课程入口/详情页、题库浏览页、收藏题页、学习报告效果面板 polish、管理端主要页面样板整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态和已知 Element Plus radio 旧 API 清理已完成；真实 E2E 已复跑通过，下一步推送后确认 CI |
+| 21 | 前端信息架构与视觉体验优化 | 🚧 开发中 | 2-4 个迭代 | AppLayout 分组导航、首页学习工作台、核心业务页、课程入口/详情页、题库浏览页、收藏题页、AI 复习建议页、学习报告效果面板 polish、管理端主要页面样板整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态和已知 Element Plus radio 旧 API 清理已完成；真实 E2E 已复跑通过，下一步推送后确认 CI |
 
 **Phase 0-12 预计总工期**：约 17-20 天
 
-**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图；Round 137 修复了错题逻辑删除后再次答错的唯一键冲突，并复跑 4 条真实 Playwright E2E 通过；Round 138 修复本地 Testcontainers 与 Docker Engine 29 兼容问题，并确认 53 个真实 MySQL 集成测试通过；Round 139 新增正式题目 AI 复审建议与缓存；Round 140 新增 AI 运营提醒持久化与确认能力；Round 141 新增管理员顶部栏 AI 运营提醒站内入口；Round 143 新增 AI 运营提醒可选 webhook 站外通知；Round 144 新增管理端疑似重复题检测；Round 145 新增用户题目纠错反馈和管理端处理留痕；Round 146 新增题目版本记录和管理端查看入口；Round 147 新增个人学习报告学习效果指标，仍待推送后完成 CI 实跑。Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList、PracticeRecord 刷题记录复盘页、Favorite 收藏题页、学习报告学习效果面板 polish、管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态、顶部运营提醒入口和已知 Element Plus radio 旧 API 清理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
+**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图；Round 137 修复了错题逻辑删除后再次答错的唯一键冲突，并复跑 4 条真实 Playwright E2E 通过；Round 138 修复本地 Testcontainers 与 Docker Engine 29 兼容问题，并确认 53 个真实 MySQL 集成测试通过；Round 139 新增正式题目 AI 复审建议与缓存；Round 140 新增 AI 运营提醒持久化与确认能力；Round 141 新增管理员顶部栏 AI 运营提醒站内入口；Round 143 新增 AI 运营提醒可选 webhook 站外通知；Round 144 新增管理端疑似重复题检测；Round 145 新增用户题目纠错反馈和管理端处理留痕；Round 146 新增题目版本记录和管理端查看入口；Round 147 新增个人学习报告学习效果指标，仍待推送后完成 CI 实跑。Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList、PracticeRecord 刷题记录复盘页、Favorite 收藏题页、AI 复习建议页、学习报告学习效果面板 polish、管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态、顶部运营提醒入口和已知 Element Plus radio 旧 API 清理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
 
 ---
 
@@ -687,6 +687,7 @@
 - [x] `QuestionListView.vue`：题目筛选区与题目卡片层级更清晰。
 - [x] `PracticeRecordView.vue`：整理为练习复盘页，补充当前页摘要、筛选重置、表格空状态和移动端折行（Round 149）。
 - [x] `FavoriteView.vue`：整理为重点题库页，补充收藏摘要、收藏练习配置、表格空状态和移动端折行（Round 150）。
+- [x] `ReviewSuggestionView.vue`：整理为 AI 学习教练台，补充生成范围、流式结果状态、复制结果和移动端布局（Round 151）。
 
 ### P3：管理端工作台与列表体验
 - [x] `AdminDashboard.vue`：接入统一后台页头、页面宽度和管理端视觉节奏。

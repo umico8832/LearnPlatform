@@ -1,5 +1,35 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 151 - 2026-07-03
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（AI 复习建议页 polish）
+
+### 完成内容
+1. 将 AI 复习建议页整理为“AI 学习教练台”，补充页头说明、生成范围控制和结果阅读区域。
+2. 保留原有流式生成与中断逻辑，新增当前课程范围说明、生成状态元信息和重新生成动线。
+3. 新增结果复制操作，便于用户把生成的复习清单保存到外部笔记或学习计划。
+4. 新增三条轻量引导信息，说明建议会围绕优先级、学习证据和行动清单组织。
+5. 补充桌面双栏与移动端单栏响应式样式，避免课程选择、按钮和结果区在窄屏挤压。
+
+### 修改文件
+- `frontend/src/views/ai/ReviewSuggestionView.vue`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd frontend && npm run build`：通过（仍保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+- 本地 Vite + Playwright mock 数据检查 `/ai/review`：桌面 1440x980 与移动端 390x844 均可展示页面标题、当前范围和 mock 流式结果，且无页面级横向溢出。
+
+### 遗留问题
+- 本轮未启动真实后端、未调用真实 AI 服务，浏览器检查使用 mock 课程与 mock SSE 响应。
+- Phase 20 推送后的 GitHub Actions 实跑仍待用户确认 push 后完成。
+
+### commit message
+`style(ai): 优化 AI 复习建议页体验`
+
 ## Round 150 - 2026-07-03
 
 ### 阶段
