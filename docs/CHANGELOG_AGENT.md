@@ -1,5 +1,35 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 149 - 2026-07-03
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（刷题记录页 polish）
+
+### 完成内容
+1. 将刷题记录页从普通表格页整理为“练习复盘”工作台，新增页头说明和“继续刷题”入口。
+2. 新增当前页摘要卡：当前页记录数、当前页正确率、当前页错题数和平均耗时，帮助用户快速判断最近练习状态。
+3. 优化筛选区，补充筛选说明、查询按钮图标和重置操作；查询与分页大小变化会自动回到第一页。
+4. 整理记录表格容器、表头统计、空状态和“去刷第一题”入口；答案为空时显示占位，避免表格空白误解。
+5. 补充移动端响应式样式，摘要卡、页头操作和筛选按钮在窄屏自动折行。
+
+### 修改文件
+- `frontend/src/views/practice/PracticeRecordView.vue`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd frontend && npm test -- --run`：26 个测试文件、214 个测试通过。
+- `cd frontend && npm run build`：通过（仍保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+
+### 遗留问题
+- 本轮未启动真实后端或 Docker E2E 环境，未做刷题记录页真实数据点击验收。
+- Phase 20 推送后的 GitHub Actions 实跑仍待用户确认 push 后完成。
+
+### commit message
+`style(practice): 优化刷题记录页体验`
+
 ## Round 148 - 2026-07-03
 
 ### 阶段

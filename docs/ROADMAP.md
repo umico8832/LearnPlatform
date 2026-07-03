@@ -29,7 +29,7 @@
 
 **Phase 0-12 预计总工期**：约 17-20 天
 
-**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图；Round 137 修复了错题逻辑删除后再次答错的唯一键冲突，并复跑 4 条真实 Playwright E2E 通过；Round 138 修复本地 Testcontainers 与 Docker Engine 29 兼容问题，并确认 53 个真实 MySQL 集成测试通过；Round 139 新增正式题目 AI 复审建议与缓存；Round 140 新增 AI 运营提醒持久化与确认能力；Round 141 新增管理员顶部栏 AI 运营提醒站内入口；Round 143 新增 AI 运营提醒可选 webhook 站外通知；Round 144 新增管理端疑似重复题检测；Round 145 新增用户题目纠错反馈和管理端处理留痕；Round 146 新增题目版本记录和管理端查看入口；Round 147 新增个人学习报告学习效果指标，仍待推送后完成 CI 实跑。Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList、学习报告学习效果面板 polish、管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态、顶部运营提醒入口和已知 Element Plus radio 旧 API 清理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
+**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图；Round 137 修复了错题逻辑删除后再次答错的唯一键冲突，并复跑 4 条真实 Playwright E2E 通过；Round 138 修复本地 Testcontainers 与 Docker Engine 29 兼容问题，并确认 53 个真实 MySQL 集成测试通过；Round 139 新增正式题目 AI 复审建议与缓存；Round 140 新增 AI 运营提醒持久化与确认能力；Round 141 新增管理员顶部栏 AI 运营提醒站内入口；Round 143 新增 AI 运营提醒可选 webhook 站外通知；Round 144 新增管理端疑似重复题检测；Round 145 新增用户题目纠错反馈和管理端处理留痕；Round 146 新增题目版本记录和管理端查看入口；Round 147 新增个人学习报告学习效果指标，仍待推送后完成 CI 实跑。Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList、PracticeRecord 刷题记录复盘页、学习报告学习效果面板 polish、管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态、顶部运营提醒入口和已知 Element Plus radio 旧 API 清理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
 
 ---
 
@@ -685,6 +685,7 @@
 - [x] `ExamListView.vue`：区分“可参加 / 已完成 / 未发布或不可用”，减少信息噪音。
 - [x] `CourseListView.vue` 与 `CourseDetailView.vue`：课程入口、知识点结构概览、课程搜索和跳转题库动线更清晰。
 - [x] `QuestionListView.vue`：题目筛选区与题目卡片层级更清晰。
+- [x] `PracticeRecordView.vue`：整理为练习复盘页，补充当前页摘要、筛选重置、表格空状态和移动端折行（Round 149）。
 
 ### P3：管理端工作台与列表体验
 - [x] `AdminDashboard.vue`：接入统一后台页头、页面宽度和管理端视觉节奏。
