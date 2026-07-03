@@ -32,6 +32,7 @@ class QuestionServiceTest {
     @Mock private CourseMapper courseMapper;
     @Mock private KnowledgePointMapper knowledgePointMapper;
     @Mock private ExamQuestionMapper examQuestionMapper;
+    @Mock private QuestionVersionService questionVersionService;
 
     private QuestionService questionService;
 
@@ -43,7 +44,8 @@ class QuestionServiceTest {
                 questionKnowledgePointMapper,
                 courseMapper,
                 knowledgePointMapper,
-                examQuestionMapper);
+                examQuestionMapper,
+                questionVersionService);
     }
 
     @Test

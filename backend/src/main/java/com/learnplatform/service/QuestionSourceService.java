@@ -35,13 +35,16 @@ public class QuestionSourceService {
     private final QuestionMapper questionMapper;
     private final QuestionReviewRecordMapper reviewRecordMapper;
     private final UserMapper userMapper;
+    private final QuestionVersionService questionVersionService;
 
     public QuestionSourceService(QuestionMapper questionMapper,
                                   QuestionReviewRecordMapper reviewRecordMapper,
-                                  UserMapper userMapper) {
+                                  UserMapper userMapper,
+                                  QuestionVersionService questionVersionService) {
         this.questionMapper = questionMapper;
         this.reviewRecordMapper = reviewRecordMapper;
         this.userMapper = userMapper;
+        this.questionVersionService = questionVersionService;
     }
 
     /**
@@ -138,6 +141,7 @@ public class QuestionSourceService {
         if (question == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
+        String snapshotBefore = questionVersionService.buildSnapshotJson(question);
 
         String action = request.getAction().toUpperCase();
         if (!Arrays.asList("APPROVE", "REVISE", "REJECT").contains(action)) {
@@ -182,6 +186,9 @@ public class QuestionSourceService {
         questionMapper.updateById(question);
 
         reviewRecordMapper.insert(record);
+        questionVersionService.recordChangeSnapshots(questionId, "REVIEW_" + action, reviewerId,
+                "题目复审：" + action, snapshotBefore,
+                questionVersionService.buildSnapshotJson(questionMapper.selectById(questionId)));
         return convertRecordToVO(record);
     }
 

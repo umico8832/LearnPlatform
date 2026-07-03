@@ -1,5 +1,57 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 146 - 2026-07-03
+
+### 阶段
+Phase 20：内容治理（题目版本记录）
+
+### 完成内容
+1. 新增 `question_version` 表，用于记录正式题目的创建、编辑、删除和复审变更快照。
+2. 新增题目版本记录服务：按题目递增 `versionNo`，保存变更类型、操作人、摘要、变更前/后 JSON 快照（含题目核心字段、选项和知识点 ID）。
+3. 题目创建、更新、删除和正式复审（通过/修订/废弃）已自动写入版本记录；版本记录只做审计追踪，不提供自动回滚。
+4. 新增管理端接口 `GET /api/admin/questions/{id}/versions`，可查看指定题目的版本时间线。
+5. 题目管理页“更多”菜单新增“版本记录”抽屉，可查看操作人、版本号、变更类型和可折叠快照。
+6. 补充后端服务测试、Controller 契约测试和前端 API 契约测试。
+7. 同步更新 API 文档、DB 文档、路线图、交接文档和 README。
+
+### 修改文件
+- `backend/src/main/resources/db/migration/V16__create_question_version_table.sql`
+- `backend/src/main/java/com/learnplatform/entity/QuestionVersion.java`
+- `backend/src/main/java/com/learnplatform/mapper/QuestionVersionMapper.java`
+- `backend/src/main/java/com/learnplatform/dto/QuestionVersionVO.java`
+- `backend/src/main/java/com/learnplatform/service/QuestionVersionService.java`
+- `backend/src/main/java/com/learnplatform/service/QuestionService.java`
+- `backend/src/main/java/com/learnplatform/service/QuestionSourceService.java`
+- `backend/src/main/java/com/learnplatform/controller/AdminQuestionController.java`
+- `backend/src/test/java/com/learnplatform/service/QuestionVersionServiceTest.java`
+- `backend/src/test/java/com/learnplatform/service/QuestionServiceTest.java`
+- `backend/src/test/java/com/learnplatform/service/QuestionSourceServiceTest.java`
+- `backend/src/test/java/com/learnplatform/controller/AdminQuestionControllerTest.java`
+- `frontend/src/api/question.ts`
+- `frontend/src/__tests__/api/question.test.ts`
+- `frontend/src/views/admin/QuestionManage.vue`
+- `docs/API_DESIGN.md`
+- `docs/DB_DESIGN.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd backend && mvn test -Dtest=QuestionVersionServiceTest,QuestionServiceTest,QuestionSourceServiceTest,AdminQuestionControllerTest`：28 个测试通过。
+- `cd frontend && npm test -- --run src/__tests__/api/question.test.ts`：19 个测试通过。
+- `cd frontend && npm run build`：通过（仍保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+- `cd backend && mvn test`：387 个默认后端测试通过。
+- `cd frontend && npm test -- --run`：26 个文件、214 个测试通过。
+
+### 遗留问题
+- 本轮未启动真实后端或 Docker E2E 环境，未做题目管理页版本记录抽屉的真实点击验收。
+- 版本记录当前只支持查看，不支持自动回滚；如需回滚，应在后续设计安全的复审/编辑流程。
+- Phase 20 推送后的 GitHub Actions 实跑仍待用户确认 push 后完成。
+
+### commit message
+`feat(question): 新增题目版本记录`
+
 ## Round 145 - 2026-07-03
 
 ### 阶段

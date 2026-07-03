@@ -37,19 +37,22 @@ public class QuestionService {
     private final CourseMapper courseMapper;
     private final KnowledgePointMapper knowledgePointMapper;
     private final ExamQuestionMapper examQuestionMapper;
+    private final QuestionVersionService questionVersionService;
 
     public QuestionService(QuestionMapper questionMapper,
                            QuestionOptionMapper questionOptionMapper,
                            QuestionKnowledgePointMapper questionKnowledgePointMapper,
                            CourseMapper courseMapper,
                            KnowledgePointMapper knowledgePointMapper,
-                           ExamQuestionMapper examQuestionMapper) {
+                           ExamQuestionMapper examQuestionMapper,
+                           QuestionVersionService questionVersionService) {
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
         this.courseMapper = courseMapper;
         this.knowledgePointMapper = knowledgePointMapper;
         this.examQuestionMapper = examQuestionMapper;
+        this.questionVersionService = questionVersionService;
     }
 
     /**
@@ -284,6 +287,8 @@ public class QuestionService {
             }
         }
 
+        questionVersionService.recordChange(question.getId(), "CREATE", createBy,
+                "创建题目", null, questionMapper.selectById(question.getId()));
         return getQuestionById(question.getId());
     }
 
@@ -292,12 +297,13 @@ public class QuestionService {
      */
     @CacheEvict(value = "questionReviewSuggestion", key = "#id")
     @Transactional
-    public QuestionVO updateQuestion(Long id, QuestionCreateRequest request) {
+    public QuestionVO updateQuestion(Long id, QuestionCreateRequest request, Long operatorId) {
         Question question = questionMapper.selectById(id);
         if (question == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
         ensureNotUsedByPublishedPaper(id);
+        String snapshotBefore = questionVersionService.buildSnapshotJson(question);
 
         // 更新题目基本信息
         if (request.getContent() != null) question.setContent(request.getContent());
@@ -345,6 +351,9 @@ public class QuestionService {
             }
         }
 
+        questionVersionService.recordChangeSnapshots(id, "UPDATE", operatorId,
+                "更新题目内容、选项或知识点", snapshotBefore,
+                questionVersionService.buildSnapshotJson(questionMapper.selectById(id)));
         return getQuestionById(id);
     }
 
@@ -353,12 +362,13 @@ public class QuestionService {
      */
     @CacheEvict(value = "questionReviewSuggestion", key = "#id")
     @Transactional
-    public void deleteQuestion(Long id) {
+    public void deleteQuestion(Long id, Long operatorId) {
         Question question = questionMapper.selectById(id);
         if (question == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
         ensureNotUsedByPublishedPaper(id);
+        String snapshotBefore = questionVersionService.buildSnapshotJson(question);
         // 删除题目（逻辑删除）
         questionMapper.deleteById(id);
         // 删除选项（逻辑删除）
@@ -369,6 +379,8 @@ public class QuestionService {
         LambdaQueryWrapper<QuestionKnowledgePoint> kpWrapper = new LambdaQueryWrapper<>();
         kpWrapper.eq(QuestionKnowledgePoint::getQuestionId, id);
         questionKnowledgePointMapper.delete(kpWrapper);
+        questionVersionService.recordChangeSnapshots(id, "DELETE", operatorId,
+                "删除题目", snapshotBefore, null);
     }
 
     /**

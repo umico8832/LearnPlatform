@@ -132,6 +132,7 @@
                 <el-button link size="small" :icon="MoreFilled">更多</el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
+                    <el-dropdown-item command="versions" :icon="Clock">版本记录</el-dropdown-item>
                     <el-dropdown-item command="cache" :icon="DeleteFilled">清缓存</el-dropdown-item>
                     <el-dropdown-item command="delete" :icon="Delete" class="danger-dropdown-item">删除题目</el-dropdown-item>
                   </el-dropdown-menu>
@@ -546,12 +547,54 @@
         </div>
       </div>
     </el-drawer>
+
+    <!-- 题目版本记录抽屉 -->
+    <el-drawer v-model="versionDrawerVisible" title="题目版本记录" size="620px" destroy-on-close>
+      <div class="version-drawer">
+        <div class="version-summary">
+          <span v-if="versionQuestion">#{{ versionQuestion.id }} · {{ versionQuestion.content }}</span>
+          <el-button :icon="RefreshRight" :loading="versionLoading" @click="fetchQuestionVersions">刷新</el-button>
+        </div>
+        <div v-loading="versionLoading" class="version-list">
+          <el-empty v-if="questionVersions.length === 0 && !versionLoading" description="暂无版本记录" />
+          <el-timeline v-else>
+            <el-timeline-item
+              v-for="version in questionVersions"
+              :key="version.id"
+              :timestamp="version.createTime"
+              placement="top"
+            >
+              <el-card shadow="never" class="version-card">
+                <div class="version-card-head">
+                  <div>
+                    <strong>v{{ version.versionNo }}</strong>
+                    <span>{{ changeTypeLabel(version.changeType) }} · {{ version.operatorName || '系统' }}</span>
+                  </div>
+                  <el-tag size="small" :type="changeTypeTag(version.changeType)">
+                    {{ changeTypeLabel(version.changeType) }}
+                  </el-tag>
+                </div>
+                <p v-if="version.changeSummary" class="version-summary-text">{{ version.changeSummary }}</p>
+                <el-collapse>
+                  <el-collapse-item v-if="version.snapshotBefore" title="变更前快照" name="before">
+                    <pre class="snapshot-block">{{ formatSnapshot(version.snapshotBefore) }}</pre>
+                  </el-collapse-item>
+                  <el-collapse-item v-if="version.snapshotAfter" title="变更后快照" name="after">
+                    <pre class="snapshot-block">{{ formatSnapshot(version.snapshotAfter) }}</pre>
+                  </el-collapse-item>
+                </el-collapse>
+              </el-card>
+            </el-timeline-item>
+          </el-timeline>
+        </div>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { Plus, Search, Delete, Download, Upload, FolderOpened, ArrowDown, Edit, RefreshRight, DeleteFilled, Collection, DataAnalysis, DocumentChecked, MoreFilled, Connection, Warning } from '@element-plus/icons-vue'
+import { Plus, Search, Delete, Download, Upload, FolderOpened, ArrowDown, Edit, RefreshRight, DeleteFilled, Collection, DataAnalysis, DocumentChecked, MoreFilled, Connection, Warning, Clock } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules, TableInstance, UploadFile } from 'element-plus'
 import {
@@ -568,6 +611,7 @@ import {
   getReviewSuggestion,
   performReReview,
   detectDuplicateQuestions,
+  getQuestionVersions,
   getAdminQuestionCorrectionReports,
   processQuestionCorrectionReport,
   type QuestionVO,
@@ -578,6 +622,7 @@ import {
   type QuestionReviewSuggestionVO,
   type QuestionDuplicateGroupVO,
   type QuestionCorrectionReportVO,
+  type QuestionVersionVO,
 } from '@/api/question'
 import { clearAssetCache } from '@/api/ai'
 import { getAllCourses, type CourseVO } from '@/api/course'
@@ -639,6 +684,10 @@ const correctionTotal = ref(0)
 const correctionFilters = reactive({
   status: 'OPEN',
 })
+const versionDrawerVisible = ref(false)
+const versionLoading = ref(false)
+const versionQuestion = ref<QuestionVO | null>(null)
+const questionVersions = ref<QuestionVersionVO[]>([])
 const reReviewForm = reactive({
   action: 'APPROVE',
   newContent: '',
@@ -696,6 +745,10 @@ const handleQuestionRowCommand = async (command: string, question: QuestionVO) =
     } catch {
       // 用户取消确认时不提示错误。
     }
+    return
+  }
+  if (command === 'versions') {
+    await openVersionDrawer(question)
     return
   }
   if (command === 'delete') {
@@ -807,6 +860,39 @@ function correctionStatusTag(status: string): 'primary' | 'success' | 'warning' 
     REJECTED: 'info',
   }
   return map[status] || 'info'
+}
+
+function changeTypeLabel(type: string) {
+  const map: Record<string, string> = {
+    CREATE: '创建',
+    UPDATE: '更新',
+    DELETE: '删除',
+    REVIEW_APPROVE: '复审通过',
+    REVIEW_REVISE: '复审修订',
+    REVIEW_REJECT: '复审废弃',
+  }
+  return map[type] || type
+}
+
+function changeTypeTag(type: string): 'primary' | 'success' | 'warning' | 'info' | 'danger' {
+  const map: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
+    CREATE: 'success',
+    UPDATE: 'primary',
+    DELETE: 'danger',
+    REVIEW_APPROVE: 'success',
+    REVIEW_REVISE: 'warning',
+    REVIEW_REJECT: 'danger',
+  }
+  return map[type] || 'info'
+}
+
+function formatSnapshot(snapshot?: string) {
+  if (!snapshot) return ''
+  try {
+    return JSON.stringify(JSON.parse(snapshot), null, 2)
+  } catch {
+    return snapshot
+  }
 }
 
 // 打开复审弹窗
@@ -1012,6 +1098,25 @@ async function handleProcessCorrection(report: QuestionCorrectionReportVO, statu
     await fetchCorrectionReports()
   } catch {
     // 用户取消确认时不提示错误。
+  }
+}
+
+async function openVersionDrawer(question: QuestionVO) {
+  versionQuestion.value = question
+  versionDrawerVisible.value = true
+  await fetchQuestionVersions()
+}
+
+async function fetchQuestionVersions() {
+  if (!versionQuestion.value) return
+  versionLoading.value = true
+  try {
+    const res = await getQuestionVersions(versionQuestion.value.id)
+    questionVersions.value = res.data
+  } catch {
+    // 错误已在拦截器中处理
+  } finally {
+    versionLoading.value = false
   }
 }
 
@@ -1494,6 +1599,76 @@ onMounted(() => {
   margin-bottom: 10px;
 }
 
+.version-drawer,
+.version-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.version-summary {
+  align-items: center;
+  background: var(--lp-bg-soft);
+  border: 1px solid var(--lp-border-light);
+  border-radius: 8px;
+  color: var(--lp-text-muted);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  line-height: 1.5;
+  padding: 12px 14px;
+}
+
+.version-summary span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.version-card {
+  border-radius: 8px;
+}
+
+.version-card-head {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.version-card-head strong {
+  color: var(--lp-text-primary);
+  margin-right: 8px;
+}
+
+.version-card-head span {
+  color: var(--lp-text-muted);
+  font-size: 12px;
+}
+
+.version-summary-text {
+  color: var(--lp-text-regular);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+
+.snapshot-block {
+  background: #101418;
+  border-radius: 8px;
+  color: #d6e2ee;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+  max-height: 260px;
+  overflow: auto;
+  padding: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 @media (max-width: 720px) {
   .review-suggestion-actions {
     align-items: flex-start;
@@ -1502,9 +1677,15 @@ onMounted(() => {
 
   .correction-card-head,
   .correction-card-actions,
-  .correction-toolbar {
+  .correction-toolbar,
+  .version-card-head,
+  .version-summary {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .version-summary span {
+    white-space: normal;
   }
 }
 </style>

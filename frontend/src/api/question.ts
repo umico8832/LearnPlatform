@@ -142,6 +142,20 @@ export interface QuestionCorrectionReportVO {
   updateTime: string
 }
 
+/** 题目版本记录 */
+export interface QuestionVersionVO {
+  id: number
+  questionId: number
+  versionNo: number
+  changeType: 'CREATE' | 'UPDATE' | 'DELETE' | 'REVIEW_APPROVE' | 'REVIEW_REVISE' | 'REVIEW_REJECT'
+  operatorId?: number
+  operatorName?: string
+  changeSummary?: string
+  snapshotBefore?: string
+  snapshotAfter?: string
+  createTime: string
+}
+
 export function getAdminQuestionPage(params: {
   pageNum?: number
   pageSize?: number
@@ -218,6 +232,11 @@ export function processQuestionCorrectionReport(reportId: number, data: {
   handlerComment: string
 }) {
   return request.post<any, ApiResponse<QuestionCorrectionReportVO>>(`/admin/questions/correction-reports/${reportId}/process`, data)
+}
+
+/** 管理端题目版本记录 */
+export function getQuestionVersions(questionId: number) {
+  return request.get<any, ApiResponse<QuestionVersionVO[]>>(`/admin/questions/${questionId}/versions`)
 }
 
 /** 题目导入结果 */

@@ -10,6 +10,7 @@ import com.learnplatform.service.QuestionImportExportService;
 import com.learnplatform.service.QuestionReviewSuggestionService;
 import com.learnplatform.service.QuestionService;
 import com.learnplatform.service.QuestionSourceService;
+import com.learnplatform.service.QuestionVersionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
@@ -35,19 +36,22 @@ public class AdminQuestionController {
     private final QuestionSourceService questionSourceService;
     private final QuestionReviewSuggestionService questionReviewSuggestionService;
     private final com.learnplatform.service.QuestionCorrectionReportService correctionReportService;
+    private final QuestionVersionService questionVersionService;
 
     public AdminQuestionController(QuestionService questionService,
                                     QuestionImportExportService questionImportExportService,
                                     MarkdownQuestionParser markdownQuestionParser,
                                     QuestionSourceService questionSourceService,
                                     QuestionReviewSuggestionService questionReviewSuggestionService,
-                                    com.learnplatform.service.QuestionCorrectionReportService correctionReportService) {
+                                    com.learnplatform.service.QuestionCorrectionReportService correctionReportService,
+                                    QuestionVersionService questionVersionService) {
         this.questionService = questionService;
         this.questionImportExportService = questionImportExportService;
         this.markdownQuestionParser = markdownQuestionParser;
         this.questionSourceService = questionSourceService;
         this.questionReviewSuggestionService = questionReviewSuggestionService;
         this.correctionReportService = correctionReportService;
+        this.questionVersionService = questionVersionService;
     }
 
 
@@ -112,8 +116,9 @@ public class AdminQuestionController {
     @PutMapping("/{id}")
     public R<QuestionVO> updateQuestion(
             @PathVariable Long id,
-            @Valid @RequestBody QuestionCreateRequest request) {
-        return R.ok(questionService.updateQuestion(id, request));
+            @Valid @RequestBody QuestionCreateRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(questionService.updateQuestion(id, request, userDetails.getUserId()));
     }
 
 
@@ -122,9 +127,19 @@ public class AdminQuestionController {
      */
     @Operation(summary = "删除题目", description = "级联删除题目及其选项和知识点关联")
     @DeleteMapping("/{id}")
-    public R<Void> deleteQuestion(@PathVariable Long id) {
-        questionService.deleteQuestion(id);
+    public R<Void> deleteQuestion(@PathVariable Long id,
+                                  @AuthenticationPrincipal CustomUserDetails userDetails) {
+        questionService.deleteQuestion(id, userDetails.getUserId());
         return R.ok();
+    }
+
+    /**
+     * 题目版本记录
+     */
+    @Operation(summary = "题目版本记录", description = "查看指定题目的创建、修改、删除与复审变更快照")
+    @GetMapping("/{id}/versions")
+    public R<List<QuestionVersionVO>> getQuestionVersions(@PathVariable Long id) {
+        return R.ok(questionVersionService.getQuestionVersions(id));
     }
 
     /**

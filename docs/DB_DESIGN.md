@@ -30,6 +30,7 @@ Question (1) ──── (N) QuestionOption
 Question (1) ──── (N) PracticeRecord
 Question (1) ──── (N) WrongQuestion
 Question (1) ──── (N) QuestionSubmission (通过 imported_question_id 记录入库结果)
+Question (1) ──── (N) QuestionVersion
 Question (N) ──── (N) ExamPaper (通过 exam_question 关联)
 
 ExamPaper (1) ──── (N) ExamQuestion
@@ -733,7 +734,29 @@ Flyway V15 创建，用于记录用户对正式题目的纠错反馈，以及管
 
 ---
 
-### 3.19 间隔重复复习计划表 (question_review_schedule)
+### 3.19 题目版本记录表 (question_version)
+
+Flyway V16 创建，用于记录正式题目的创建、编辑、删除和复审变更快照。该表只做审计追踪，不提供自动回滚，也不替代题目编辑或复审流程。
+
+| 字段名 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| id | BIGINT | 自增主键 | 版本记录 ID |
+| question_id | BIGINT | | 题目 ID |
+| version_no | INT | | 同一题目内从 1 递增的版本号 |
+| change_type | VARCHAR(30) | | CREATE / UPDATE / DELETE / REVIEW_APPROVE / REVIEW_REVISE / REVIEW_REJECT |
+| operator_id | BIGINT | NULL | 操作人 ID |
+| change_summary | VARCHAR(500) | NULL | 变更摘要 |
+| snapshot_before | JSON | NULL | 变更前快照 |
+| snapshot_after | JSON | NULL | 变更后快照 |
+| create_time | DATETIME | CURRENT_TIMESTAMP | 创建时间 |
+| update_time | DATETIME | CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
+| deleted | TINYINT | 0 | 逻辑删除 |
+
+索引与约束：唯一约束 `uk_question_version(question_id, version_no)`；索引 `idx_question_id`、`idx_operator_id`、`idx_change_type`、`idx_create_time`。
+
+---
+
+### 3.20 间隔重复复习计划表 (question_review_schedule)
 
 Flyway V9 创建的用户级 SM-2 复习调度表；同一用户和题目只有一条有效计划。
 
@@ -775,6 +798,7 @@ Flyway V9 创建的用户级 SM-2 复习调度表；同一用户和题目只有�
 | 用户→题目复审 | user | id | question_review_record | reviewer_id |
 | 用户→题目纠错 | user | id | question_correction_report | reporter_id |
 | 用户→纠错处理 | user | id | question_correction_report | handler_id |
+| 用户→题目版本操作 | user | id | question_version | operator_id |
 | 题目→刷题记录 | question | id | practice_record | question_id |
 | 题目→错题 | question | id | wrong_question | question_id |
 | 题目→AI学习资产 | question | id | question_ai_asset | question_id |
@@ -784,6 +808,7 @@ Flyway V9 创建的用户级 SM-2 复习调度表；同一用户和题目只有�
 | 题目→复习计划 | question | id | question_review_schedule | question_id |
 | 题目→复审记录 | question | id | question_review_record | question_id |
 | 题目→纠错反馈 | question | id | question_correction_report | question_id |
+| 题目→版本记录 | question | id | question_version | question_id |
 | 试卷→考试记录 | exam_paper | id | exam_record | exam_paper_id |
 | 考试记录→答题 | exam_record | id | exam_answer | exam_record_id |
 | 试卷→题目关联 | exam_paper | id | exam_question | exam_paper_id |

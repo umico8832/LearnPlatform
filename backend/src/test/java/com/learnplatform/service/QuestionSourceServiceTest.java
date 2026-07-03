@@ -34,6 +34,7 @@ class QuestionSourceServiceTest {
     @Mock private QuestionMapper questionMapper;
     @Mock private QuestionReviewRecordMapper reviewRecordMapper;
     @Mock private UserMapper userMapper;
+    @Mock private QuestionVersionService questionVersionService;
 
     private QuestionSourceService service;
 
@@ -41,7 +42,7 @@ class QuestionSourceServiceTest {
     void setUp() {
         // Init MyBatis-Plus lambda cache for Question entity
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), Question.class);
-        service = new QuestionSourceService(questionMapper, reviewRecordMapper, userMapper);
+        service = new QuestionSourceService(questionMapper, reviewRecordMapper, userMapper, questionVersionService);
     }
 
     @Test

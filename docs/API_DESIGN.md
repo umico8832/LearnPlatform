@@ -1006,6 +1006,7 @@ GET    /api/admin/questions          # 题目列表（支持筛选）
 GET    /api/admin/questions/duplicates # 疑似重复题目检测
 GET    /api/admin/questions/correction-reports # 题目纠错反馈列表
 POST   /api/admin/questions/correction-reports/{reportId}/process # 处理题目纠错反馈
+GET    /api/admin/questions/{id}/versions # 题目版本记录
 POST   /api/admin/questions          # 创建题目
 PUT    /api/admin/questions/{id}     # 更新题目
 DELETE /api/admin/questions/{id}     # 删除题目
@@ -1082,6 +1083,33 @@ POST /api/admin/questions/correction-reports/{reportId}/process
 ```
 
 说明：`status` 取值为 `OPEN`、`RESOLVED`、`REJECTED`。该接口只记录处理状态、处理人、处理说明和处理时间；若需要修改正式题目内容，仍应使用题目编辑或复审流程完成。
+
+题目版本记录：
+
+```
+GET /api/admin/questions/{id}/versions
+```
+
+响应示例：
+
+```json
+[
+  {
+    "id": 1,
+    "questionId": 10,
+    "versionNo": 2,
+    "changeType": "UPDATE",
+    "operatorId": 1,
+    "operatorName": "管理员",
+    "changeSummary": "更新题目内容、选项或知识点",
+    "snapshotBefore": "{\"content\":\"旧题干\"}",
+    "snapshotAfter": "{\"content\":\"新题干\"}",
+    "createTime": "2026-07-03T12:00:00"
+  }
+]
+```
+
+说明：`changeType` 取值为 `CREATE`、`UPDATE`、`DELETE`、`REVIEW_APPROVE`、`REVIEW_REVISE`、`REVIEW_REJECT`。快照保存题目核心字段、选项和知识点 ID，用于审计追踪；当前仅支持查看，不提供自动回滚。
 
 正式题目来源与复审接口：
 

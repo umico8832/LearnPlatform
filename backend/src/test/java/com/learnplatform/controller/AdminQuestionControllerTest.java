@@ -7,6 +7,7 @@ import com.learnplatform.dto.QuestionCreateRequest;
 import com.learnplatform.dto.QuestionCorrectionReportVO;
 import com.learnplatform.dto.QuestionDuplicateGroupVO;
 import com.learnplatform.dto.QuestionReviewSuggestionVO;
+import com.learnplatform.dto.QuestionVersionVO;
 import com.learnplatform.dto.QuestionVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.MarkdownQuestionParser;
@@ -14,6 +15,7 @@ import com.learnplatform.service.QuestionImportExportService;
 import com.learnplatform.service.QuestionReviewSuggestionService;
 import com.learnplatform.service.QuestionService;
 import com.learnplatform.service.QuestionSourceService;
+import com.learnplatform.service.QuestionVersionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -65,6 +67,9 @@ class AdminQuestionControllerTest {
 
     @Mock
     private com.learnplatform.service.QuestionCorrectionReportService correctionReportService;
+
+    @Mock
+    private QuestionVersionService questionVersionService;
 
     @InjectMocks
     private AdminQuestionController adminQuestionController;
@@ -174,38 +179,60 @@ class AdminQuestionControllerTest {
 
     @Test
     void updateQuestion_success() throws Exception {
+        Long adminId = 1L;
         QuestionVO vo = buildQuestionVO(1L, "更新后题目");
-        when(questionService.updateQuestion(eq(1L), any(QuestionCreateRequest.class))).thenReturn(vo);
+        when(questionService.updateQuestion(eq(1L), any(QuestionCreateRequest.class), eq(adminId))).thenReturn(vo);
 
         mockMvc.perform(put("/api/admin/questions/{id}", 1L)
+                        .with(mockAdmin(adminId))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"content\":\"更新后题目\",\"questionType\":\"SINGLE_CHOICE\",\"courseId\":1,\"difficulty\":2,\"score\":5}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.content").value("更新后题目"));
 
-        verify(questionService).updateQuestion(eq(1L), any(QuestionCreateRequest.class));
+        verify(questionService).updateQuestion(eq(1L), any(QuestionCreateRequest.class), eq(adminId));
     }
 
     @Test
     void deleteQuestion_success() throws Exception {
-        doNothing().when(questionService).deleteQuestion(eq(1L));
+        Long adminId = 1L;
+        doNothing().when(questionService).deleteQuestion(eq(1L), eq(adminId));
 
-        mockMvc.perform(delete("/api/admin/questions/{id}", 1L))
+        mockMvc.perform(delete("/api/admin/questions/{id}", 1L)
+                        .with(mockAdmin(adminId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));
 
-        verify(questionService).deleteQuestion(eq(1L));
+        verify(questionService).deleteQuestion(eq(1L), eq(adminId));
     }
 
     @Test
     void deleteQuestion_notFound_throwsException() throws Exception {
-        doThrow(new BusinessException("题目不存在")).when(questionService).deleteQuestion(eq(999L));
+        Long adminId = 1L;
+        doThrow(new BusinessException("题目不存在")).when(questionService).deleteQuestion(eq(999L), eq(adminId));
 
-        mockMvc.perform(delete("/api/admin/questions/{id}", 999L))
+        mockMvc.perform(delete("/api/admin/questions/{id}", 999L)
+                        .with(mockAdmin(adminId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(1005))
                 .andExpect(jsonPath("$.message").value("题目不存在"));
+    }
+
+    @Test
+    void getQuestionVersions_success() throws Exception {
+        QuestionVersionVO version = new QuestionVersionVO();
+        version.setQuestionId(1L);
+        version.setVersionNo(2);
+        version.setChangeType("UPDATE");
+        version.setChangeSummary("更新题目内容");
+        when(questionVersionService.getQuestionVersions(eq(1L))).thenReturn(List.of(version));
+
+        mockMvc.perform(get("/api/admin/questions/{id}/versions", 1L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data[0].versionNo").value(2))
+                .andExpect(jsonPath("$.data[0].changeType").value("UPDATE"));
     }
 
     @Test

@@ -27,6 +27,7 @@ import {
   submitQuestionCorrectionReport,
   getAdminQuestionCorrectionReports,
   processQuestionCorrectionReport,
+  getQuestionVersions,
 } from '@/api/question'
 
 const mockedRequest = vi.mocked(request)
@@ -274,6 +275,16 @@ describe('Question API', () => {
         status: 'RESOLVED',
         handlerComment: '已修正',
       })
+    })
+  })
+
+  describe('getQuestionVersions', () => {
+    it('应使用 GET 请求获取题目版本记录', async () => {
+      mockedRequest.get.mockResolvedValue({ code: 0, data: [{ versionNo: 1, changeType: 'CREATE' }], message: 'success' })
+
+      await getQuestionVersions(7)
+
+      expect(mockedRequest.get).toHaveBeenCalledWith('/admin/questions/7/versions')
     })
   })
 
