@@ -49,7 +49,7 @@ const globalStubs = {
   'el-icon': { template: '<span class="icon"><slot /></span>' },
   'el-form': {
     template: '<form @submit.prevent><slot /></form>',
-    props: ['model', 'rules', 'labelWidth'],
+    props: ['model', 'rules', 'labelWidth', 'labelPosition'],
     methods: {
       validate: () => Promise.resolve(mockValidateResult),
       resetFields: vi.fn(),
@@ -63,7 +63,7 @@ const globalStubs = {
   },
   'el-button': {
     template: '<button :disabled="loading" :class="type" @click="$emit(\'click\')"><slot /></button>',
-    props: ['type', 'loading', 'plain'],
+    props: ['type', 'loading', 'plain', 'icon'],
     emits: ['click'],
   },
   User: { template: '<span />' },
@@ -92,6 +92,12 @@ describe('ProfileView', () => {
         mocks: { $router: { push: mockPush } },
       },
     })
+  }
+
+  function findButtonByText(wrapper: ReturnType<typeof mountProfile>, text: string) {
+    const button = wrapper.findAll('button').find((item) => item.text().includes(text))
+    expect(button, `button with text ${text}`).toBeTruthy()
+    return button!
   }
 
   it('should render user avatar with first character of name', () => {
@@ -128,7 +134,8 @@ describe('ProfileView', () => {
 
   it('should render registration date', () => {
     const wrapper = mountProfile()
-    expect(wrapper.html()).toContain('注册于 2025-01-15')
+    expect(wrapper.html()).toContain('注册时间')
+    expect(wrapper.html()).toContain('2025-01-15')
   })
 
   it('should render profile section title', () => {
@@ -154,8 +161,7 @@ describe('ProfileView', () => {
       data: { data: { nickname: 'NewNick' } },
     })
     const wrapper = mountProfile()
-    // buttons: [0]=查看学习报告, [1]=保存修改, [2]=修改密码
-    const saveBtn = wrapper.findAll('button')[1]
+    const saveBtn = findButtonByText(wrapper, '保存修改')
     await saveBtn.trigger('click')
     await flushPromises()
     expect(mockUpdateProfile).toHaveBeenCalledWith({ nickname: 'TestNick' })
@@ -172,8 +178,7 @@ describe('ProfileView', () => {
     passwordForm.newPassword = 'newpass123'
     passwordForm.confirmPassword = 'newpass123'
     await wrapper.vm.$nextTick()
-    // buttons: [0]=查看学习报告, [1]=保存修改, [2]=修改密码
-    const changePwdBtn = wrapper.findAll('button')[2]
+    const changePwdBtn = findButtonByText(wrapper, '修改密码')
     await changePwdBtn.trigger('click')
     await flushPromises()
     expect(mockUpdatePassword).toHaveBeenCalledWith({
@@ -186,7 +191,7 @@ describe('ProfileView', () => {
   it('should handle updateProfile API error gracefully', async () => {
     mockUpdateProfile.mockRejectedValue(new Error('error'))
     const wrapper = mountProfile()
-    const saveBtn = wrapper.findAll('button')[1]
+    const saveBtn = findButtonByText(wrapper, '保存修改')
     await saveBtn.trigger('click')
     await flushPromises()
     expect(mockSuccess).not.toHaveBeenCalled()
@@ -195,7 +200,7 @@ describe('ProfileView', () => {
   it('should handle updatePassword API error gracefully', async () => {
     mockUpdatePassword.mockRejectedValue(new Error('error'))
     const wrapper = mountProfile()
-    const changePwdBtn = wrapper.findAll('button')[2]
+    const changePwdBtn = findButtonByText(wrapper, '修改密码')
     await changePwdBtn.trigger('click')
     await flushPromises()
     expect(mockSuccess).not.toHaveBeenCalled()

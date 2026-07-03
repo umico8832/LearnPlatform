@@ -1,5 +1,37 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 152 - 2026-07-03
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（个人中心 polish）
+
+### 完成内容
+1. 将个人中心整理为“账户与学习档案”页面，新增页头说明、学习报告与继续刷题入口。
+2. 将左侧用户卡改为身份档案面板，集中展示头像、角色、登录账号、注册时间和账户安全提示。
+3. 新增学习报告、智能复习、我的收藏三个常用入口，帮助用户从个人中心回到学习闭环。
+4. 将个人信息和修改密码表单改为更清晰的设置卡片，保留原有昵称更新、密码更新和表单校验逻辑。
+5. 补充桌面双栏与移动端单栏响应式样式，避免按钮、表单和快捷入口在窄屏挤压。
+
+### 修改文件
+- `frontend/src/views/auth/ProfileView.vue`
+- `frontend/src/__tests__/views/ProfileView.test.ts`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd frontend && npm test -- --run src/__tests__/views/ProfileView.test.ts`：13 个测试通过。
+- `cd frontend && npm run build`：通过（仍保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+- 本地 Vite + Playwright mock `/api/auth/me` 检查 `/profile`：桌面 1440x980 与移动端 390x844 均可展示页面标题、学习报告按钮、保存修改按钮和密码安全提示，且无页面级横向溢出。
+
+### 遗留问题
+- 本轮未启动真实后端或 Docker E2E 环境，浏览器检查使用 mock 当前用户接口。
+- Phase 20 推送后的 GitHub Actions 实跑仍待用户确认 push 后完成。
+
+### commit message
+`style(profile): 优化个人中心体验`
+
 ## Round 151 - 2026-07-03
 
 ### 阶段
