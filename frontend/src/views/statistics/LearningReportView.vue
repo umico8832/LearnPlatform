@@ -1,8 +1,10 @@
 <template>
   <div class="report-container">
     <div class="report-header">
-      <h2>📊 个人学习报告</h2>
-      <p class="report-month">{{ currentMonthText }}</p>
+      <div>
+        <h2>个人学习报告</h2>
+        <p class="report-month">{{ currentMonthText }} · 学习表现复盘</p>
+      </div>
     </div>
 
     <!-- 加载状态 -->
@@ -32,12 +34,12 @@
         </el-col>
         <el-col :xs="12" :sm="8" :md="4">
           <el-card shadow="hover" class="metric-card">
-            <div class="metric-value" :class="report.monthCorrectRate >= report.lastMonthCorrectRate ? 'success' : 'warning'">
-              {{ report.monthCorrectRate >= report.lastMonthCorrectRate ? '📈' : '📉' }}
+            <div class="metric-value" :class="report.correctRateChange >= 0 ? 'success' : 'warning'">
+              {{ report.correctRateChange >= 0 ? '+' : '' }}{{ report.correctRateChange }}
             </div>
             <div class="metric-label">正确率变化</div>
             <div class="metric-sub text-muted">
-              上月 {{ report.lastMonthCorrectRate }}%
+              pct · 上月 {{ report.lastMonthCorrectRate }}%
             </div>
           </el-card>
         </el-col>
@@ -70,7 +72,7 @@
         </el-col>
       </el-row>
 
-      <el-card shadow="hover" class="effect-card">
+      <el-card shadow="hover" class="effect-card" :class="effectLevelClass">
         <div class="effect-summary">
           <div>
             <div class="section-title">学习效果</div>
@@ -79,32 +81,27 @@
               <el-tag :type="effectTagType" effect="light">{{ report.learningEffectScore }} 分</el-tag>
             </div>
             <p>{{ report.learningEffectSummary }}</p>
+            <div class="effect-note">
+              <span>综合分由正确率变化、错题转化、复习掌握和活跃天数共同构成</span>
+            </div>
           </div>
           <el-progress
             type="dashboard"
-            :percentage="Math.round(report.learningEffectScore)"
+            :percentage="effectScorePercent"
             :color="effectProgressColor"
             :width="116"
           />
         </div>
         <div class="effect-grid">
-          <div class="effect-item">
-            <span>正确率提升</span>
-            <strong :class="report.correctRateChange >= 0 ? 'text-success' : 'text-danger'">
-              {{ report.correctRateChange >= 0 ? '+' : '' }}{{ report.correctRateChange }} pct
-            </strong>
-          </div>
-          <div class="effect-item">
-            <span>错题转化率</span>
-            <strong>{{ report.wrongQuestionConversionRate }}%</strong>
-          </div>
-          <div class="effect-item">
-            <span>复习掌握率</span>
-            <strong>{{ report.reviewMasteryRate }}%</strong>
-          </div>
-          <div class="effect-item">
-            <span>活跃学习天数</span>
-            <strong>{{ report.activeStudyDays }} 天</strong>
+          <div v-for="item in effectDimensions" :key="item.label" class="effect-item">
+            <div class="effect-item-head">
+              <span>{{ item.label }}</span>
+              <strong :class="item.className">{{ item.display }}</strong>
+            </div>
+            <div class="effect-bar">
+              <i :style="{ width: `${item.progress}%`, backgroundColor: item.color }"></i>
+            </div>
+            <p>{{ item.description }}</p>
           </div>
         </div>
       </el-card>
@@ -287,6 +284,56 @@ const effectProgressColor = computed(() => {
     default: return '#f56c6c'
   }
 })
+
+const effectLevelClass = computed(() => `is-${report.learningEffectLevel.toLowerCase().replace('_', '-')}`)
+
+const effectScorePercent = computed(() => clampPercent(Math.round(report.learningEffectScore)))
+
+const effectDimensions = computed(() => [
+  {
+    label: '正确率提升',
+    display: `${report.correctRateChange >= 0 ? '+' : ''}${report.correctRateChange} pct`,
+    description: report.correctRateChange >= 0 ? '本月答题质量高于上月基线' : '本月正确率低于上月，需要回看薄弱题型',
+    progress: clampPercent(50 + report.correctRateChange * 2),
+    color: report.correctRateChange >= 0 ? '#67c23a' : '#f56c6c',
+    className: report.correctRateChange >= 0 ? 'text-success' : 'text-danger'
+  },
+  {
+    label: '错题转化率',
+    display: `${report.wrongQuestionConversionRate}%`,
+    description: '衡量新增错题中已转化为掌握的比例',
+    progress: clampPercent(report.wrongQuestionConversionRate),
+    color: '#409eff',
+    className: ''
+  },
+  {
+    label: '复习掌握率',
+    display: `${report.reviewMasteryRate}%`,
+    description: '间隔重复卡片中已达到掌握状态的比例',
+    progress: clampPercent(report.reviewMasteryRate),
+    color: '#7c4dff',
+    className: ''
+  },
+  {
+    label: '活跃学习天数',
+    display: `${report.activeStudyDays} 天`,
+    description: '本月产生真实学习记录的天数',
+    progress: activeStudyProgress.value,
+    color: '#e6a23c',
+    className: ''
+  }
+])
+
+const activeStudyProgress = computed(() => {
+  const now = new Date()
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  return clampPercent(Math.round((report.activeStudyDays / daysInMonth) * 100))
+})
+
+function clampPercent(value: number) {
+  if (!Number.isFinite(value)) return 0
+  return Math.max(0, Math.min(100, value))
+}
 
 // Chart refs
 const dailyChartRef = ref<HTMLElement | null>(null)
@@ -499,19 +546,24 @@ onBeforeUnmount(() => {
 }
 
 .report-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
 .report-header h2 {
-  margin: 0 0 4px;
-  font-size: 22px;
-  font-weight: 600;
-  color: #303133;
+  margin: 0 0 6px;
+  color: #1f2d3d;
+  font-size: 26px;
+  font-weight: 750;
+  letter-spacing: 0;
 }
 
 .report-month {
   margin: 0;
-  color: #909399;
+  color: #7b8794;
   font-size: 14px;
 }
 
@@ -526,6 +578,7 @@ onBeforeUnmount(() => {
 .metric-card {
   text-align: center;
   padding: 4px 0;
+  border: 1px solid #edf0f5;
 }
 
 .metric-card .el-card__body {
@@ -536,6 +589,7 @@ onBeforeUnmount(() => {
   font-size: 28px;
   font-weight: 700;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .metric-value.primary { color: #409eff; }
@@ -568,6 +622,27 @@ onBeforeUnmount(() => {
 
 .effect-card {
   margin-bottom: 20px;
+  overflow: hidden;
+  border: 1px solid #e6ebf2;
+  background:
+    linear-gradient(135deg, rgba(64, 158, 255, 0.08), rgba(103, 194, 58, 0.05) 42%, rgba(255, 255, 255, 0) 72%),
+    #fff;
+}
+
+.effect-card.is-excellent {
+  border-color: rgba(103, 194, 58, 0.35);
+}
+
+.effect-card.is-improving {
+  border-color: rgba(64, 158, 255, 0.35);
+}
+
+.effect-card.is-stable {
+  border-color: rgba(230, 162, 60, 0.35);
+}
+
+.effect-card.is-at-risk {
+  border-color: rgba(245, 108, 108, 0.32);
 }
 
 .effect-summary {
@@ -579,8 +654,11 @@ onBeforeUnmount(() => {
 
 .section-title {
   margin-bottom: 8px;
-  color: #909399;
-  font-size: 13px;
+  color: #6b7785;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
 .effect-title {
@@ -600,6 +678,18 @@ onBeforeUnmount(() => {
   line-height: 1.7;
 }
 
+.effect-note {
+  display: inline-flex;
+  margin-top: 12px;
+  padding: 7px 10px;
+  border: 1px solid #d9e6f7;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #526578;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .effect-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -610,20 +700,51 @@ onBeforeUnmount(() => {
 .effect-item {
   border: 1px solid #ebeef5;
   border-radius: 8px;
-  padding: 14px 16px;
-  background: #fafcff;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 6px 18px rgba(31, 45, 61, 0.04);
 }
 
-.effect-item span {
-  display: block;
-  margin-bottom: 6px;
+.effect-item-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.effect-item-head span {
   color: #909399;
   font-size: 12px;
 }
 
-.effect-item strong {
+.effect-item-head strong {
   color: #303133;
   font-size: 18px;
+  white-space: nowrap;
+}
+
+.effect-bar {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eef2f7;
+}
+
+.effect-bar i {
+  display: block;
+  height: 100%;
+  min-width: 4px;
+  border-radius: inherit;
+  transition: width 0.2s ease;
+}
+
+.effect-item p {
+  min-height: 36px;
+  margin: 10px 0 0;
+  color: #6b7785;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .chart-row {
@@ -646,6 +767,14 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
+  .report-header {
+    align-items: flex-start;
+  }
+
+  .report-header h2 {
+    font-size: 22px;
+  }
+
   .metric-value {
     font-size: 22px;
   }
@@ -672,6 +801,10 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 520px) {
+  .report-header {
+    flex-direction: column;
+  }
+
   .effect-summary {
     flex-direction: column;
   }

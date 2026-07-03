@@ -1,5 +1,35 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 148 - 2026-07-03
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（学习报告 polish）
+
+### 完成内容
+1. 优化个人学习报告页标题和月份副标题，让页面更像月度学习复盘而不是普通统计列表。
+2. 将“正确率变化”指标从趋势图标改为明确的百分点数值，便于用户直接理解本月相较上月的变化。
+3. 打磨“学习效果”面板：按学习效果等级调整卡片边框，新增综合分构成说明，并将正确率提升、错题转化率、复习掌握率、活跃学习天数统一为带进度条的解释型指标。
+4. 为学习效果综合分和拆解指标增加 0-100 进度保护，避免异常数据导致进度组件或条形展示溢出。
+5. 同步补充响应式样式，桌面四列展示，移动端自动折行。
+
+### 修改文件
+- `frontend/src/views/statistics/LearningReportView.vue`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd frontend && npm run build`：通过（仍保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+- 本地 Vite + Playwright mock 数据检查 `/learning-report`：桌面 1440x980 与移动端 390x844 均展示学习效果区、4 个拆解指标，且无横向溢出。
+
+### 遗留问题
+- 本轮未启动真实后端或 Docker E2E 环境，学习报告页使用 mock 数据做视觉冒烟。
+- Phase 20 推送后的 GitHub Actions 实跑仍待用户确认 push 后完成。
+
+### commit message
+`style(report): 优化学习报告效果面板`
+
 ## Round 147 - 2026-07-03
 
 ### 阶段
