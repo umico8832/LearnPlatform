@@ -1,5 +1,36 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 150 - 2026-07-03
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（收藏题页 polish）
+
+### 完成内容
+1. 将收藏题页整理为“重点题库”工作台，新增页头说明、收藏题练习入口和浏览题库入口。
+2. 新增收藏摘要卡：收藏总数、当前页课程数、平均难度和最近收藏时间，帮助用户快速判断收藏清单状态。
+3. 新增收藏题练习配置卡，保留题目数量选择并强化“开始练习”动线。
+4. 整理收藏明细表格容器、刷新按钮、空状态和“去题库收藏”入口；取消收藏后若当前页清空会自动回退上一页。
+5. 补充移动端响应式样式，摘要卡、页头按钮和练习控制区在窄屏自动折行。
+
+### 修改文件
+- `frontend/src/views/practice/FavoriteView.vue`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd frontend && npm test -- --run`：26 个测试文件、214 个测试通过。
+- `cd frontend && npm run build`：通过（仍保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+- 本地 Vite + Playwright mock 数据检查 `/favorites`：桌面 1440x980 与移动端 390x844 均展示收藏摘要和关键操作，且无页面级横向溢出。
+
+### 遗留问题
+- 本轮未启动真实后端或 Docker E2E 环境，未做收藏题页真实数据点击验收。
+- Phase 20 推送后的 GitHub Actions 实跑仍待用户确认 push 后完成。
+
+### commit message
+`style(practice): 优化收藏题页体验`
+
 ## Round 149 - 2026-07-03
 
 ### 阶段
