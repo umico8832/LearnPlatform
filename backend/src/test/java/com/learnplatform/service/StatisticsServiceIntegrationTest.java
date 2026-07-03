@@ -388,11 +388,14 @@ class StatisticsServiceIntegrationTest extends IntegrationTestBase {
         assertEquals(0.0, vo.getLastMonthCorrectRate());
         // 刷题量环比：上月 0，本月 3，增长 100%
         assertEquals(100.0, vo.getPracticeGrowthRate(), 0.1);
+        assertEquals(66.7, vo.getCorrectRateChange(), 0.1);
+        assertEquals(1, vo.getActiveStudyDays());
 
         // 本月错题新增
         assertTrue(vo.getMonthNewWrongCount() >= 1);
         // 已掌握错题数
         assertTrue(vo.getMonthMasteredCount() >= 1);
+        assertTrue(vo.getWrongQuestionConversionRate() > 0);
 
         // 本月考试
         assertEquals(1, vo.getMonthExamCount());
@@ -410,6 +413,13 @@ class StatisticsServiceIntegrationTest extends IntegrationTestBase {
         assertNotNull(vo.getQuestionTypeDistribution());
         assertTrue(vo.getQuestionTypeDistribution().containsKey("单选题"));
         assertEquals(3, vo.getQuestionTypeDistribution().get("单选题"));
+
+        // 学习效果指标
+        assertNotNull(vo.getLearningEffectScore());
+        assertTrue(vo.getLearningEffectScore() > 0);
+        assertNotNull(vo.getLearningEffectLevel());
+        assertNotNull(vo.getLearningEffectLabel());
+        assertNotNull(vo.getLearningEffectSummary());
     }
 
     @Test
@@ -425,6 +435,11 @@ class StatisticsServiceIntegrationTest extends IntegrationTestBase {
         assertEquals(0, vo.getMonthMasteredCount());
         assertEquals(0, vo.getMonthExamCount());
         assertEquals(0.0, vo.getMonthExamAvgScore());
+        assertEquals(0.0, vo.getCorrectRateChange());
+        assertEquals(0.0, vo.getWrongQuestionConversionRate());
+        assertEquals(0.0, vo.getReviewMasteryRate());
+        assertEquals(0, vo.getActiveStudyDays());
+        assertEquals("AT_RISK", vo.getLearningEffectLevel());
         assertNotNull(vo.getDailyTrend());
         assertNotNull(vo.getCourseStats());
         assertTrue(vo.getCourseStats().isEmpty());

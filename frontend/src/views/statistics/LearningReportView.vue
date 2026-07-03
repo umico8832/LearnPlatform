@@ -70,6 +70,45 @@
         </el-col>
       </el-row>
 
+      <el-card shadow="hover" class="effect-card">
+        <div class="effect-summary">
+          <div>
+            <div class="section-title">学习效果</div>
+            <div class="effect-title">
+              <span>{{ report.learningEffectLabel }}</span>
+              <el-tag :type="effectTagType" effect="light">{{ report.learningEffectScore }} 分</el-tag>
+            </div>
+            <p>{{ report.learningEffectSummary }}</p>
+          </div>
+          <el-progress
+            type="dashboard"
+            :percentage="Math.round(report.learningEffectScore)"
+            :color="effectProgressColor"
+            :width="116"
+          />
+        </div>
+        <div class="effect-grid">
+          <div class="effect-item">
+            <span>正确率提升</span>
+            <strong :class="report.correctRateChange >= 0 ? 'text-success' : 'text-danger'">
+              {{ report.correctRateChange >= 0 ? '+' : '' }}{{ report.correctRateChange }} pct
+            </strong>
+          </div>
+          <div class="effect-item">
+            <span>错题转化率</span>
+            <strong>{{ report.wrongQuestionConversionRate }}%</strong>
+          </div>
+          <div class="effect-item">
+            <span>复习掌握率</span>
+            <strong>{{ report.reviewMasteryRate }}%</strong>
+          </div>
+          <div class="effect-item">
+            <span>活跃学习天数</span>
+            <strong>{{ report.activeStudyDays }} 天</strong>
+          </div>
+        </div>
+      </el-card>
+
       <!-- 复习统计卡片 -->
       <el-row :gutter="20" class="metric-row" v-if="report.totalReviewCards > 0">
         <el-col :xs="12" :sm="8" :md="4">
@@ -207,6 +246,14 @@ const report = reactive<LearningReport>({
   lastMonthTotalPractice: 0,
   lastMonthCorrectRate: 0,
   practiceGrowthRate: 0,
+  correctRateChange: 0,
+  learningEffectScore: 0,
+  learningEffectLevel: 'AT_RISK',
+  learningEffectLabel: '需要关注',
+  learningEffectSummary: '暂无足够学习数据，先完成几组练习建立基线。',
+  wrongQuestionConversionRate: 0,
+  reviewMasteryRate: 0,
+  activeStudyDays: 0,
   dailyTrend: [],
   courseStats: [],
   questionTypeDistribution: {},
@@ -221,6 +268,24 @@ const report = reactive<LearningReport>({
 const hasTypeData = computed(() => {
   const dist = report.questionTypeDistribution
   return dist && Object.keys(dist).length > 0 && Object.values(dist).some(v => v > 0)
+})
+
+const effectTagType = computed(() => {
+  switch (report.learningEffectLevel) {
+    case 'EXCELLENT': return 'success'
+    case 'IMPROVING': return 'primary'
+    case 'STABLE': return 'warning'
+    default: return 'danger'
+  }
+})
+
+const effectProgressColor = computed(() => {
+  switch (report.learningEffectLevel) {
+    case 'EXCELLENT': return '#67c23a'
+    case 'IMPROVING': return '#409eff'
+    case 'STABLE': return '#e6a23c'
+    default: return '#f56c6c'
+  }
 })
 
 // Chart refs
@@ -493,9 +558,72 @@ onBeforeUnmount(() => {
 .metric-sub.text-danger { color: #f56c6c; }
 .metric-sub.text-muted { color: #909399; }
 
+.text-success { color: #67c23a; }
+.text-danger { color: #f56c6c; }
+
 .vs-text {
   font-size: 11px;
   color: #c0c4cc;
+}
+
+.effect-card {
+  margin-bottom: 20px;
+}
+
+.effect-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.section-title {
+  margin-bottom: 8px;
+  color: #909399;
+  font-size: 13px;
+}
+
+.effect-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #303133;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.effect-summary p {
+  max-width: 720px;
+  margin: 10px 0 0;
+  color: #606266;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.effect-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.effect-item {
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: #fafcff;
+}
+
+.effect-item span {
+  display: block;
+  margin-bottom: 6px;
+  color: #909399;
+  font-size: 12px;
+}
+
+.effect-item strong {
+  color: #303133;
+  font-size: 18px;
 }
 
 .chart-row {
@@ -532,6 +660,24 @@ onBeforeUnmount(() => {
 
   .chart-container-lg {
     height: 280px;
+  }
+
+  .effect-summary {
+    align-items: flex-start;
+  }
+
+  .effect-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .effect-summary {
+    flex-direction: column;
+  }
+
+  .effect-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -78,6 +78,14 @@ export interface LearningReport {
   lastMonthTotalPractice: number
   lastMonthCorrectRate: number
   practiceGrowthRate: number
+  correctRateChange: number
+  learningEffectScore: number
+  learningEffectLevel: 'EXCELLENT' | 'IMPROVING' | 'STABLE' | 'AT_RISK'
+  learningEffectLabel: string
+  learningEffectSummary: string
+  wrongQuestionConversionRate: number
+  reviewMasteryRate: number
+  activeStudyDays: number
   dailyTrend: DailyTrendItem[]
   courseStats: CourseStatItem[]
   questionTypeDistribution: Record<string, number>

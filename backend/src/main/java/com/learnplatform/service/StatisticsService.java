@@ -266,6 +266,12 @@ public class StatisticsService {
             double growth = (monthRecords.size() - lastMonthRecords.size()) * 100.0 / lastMonthRecords.size();
             vo.setPracticeGrowthRate(Math.round(growth * 10.0) / 10.0);
         }
+        vo.setCorrectRateChange(round1(vo.getMonthCorrectRate() - vo.getLastMonthCorrectRate()));
+        vo.setActiveStudyDays((int) monthRecords.stream()
+                .filter(r -> r.getCreateTime() != null)
+                .map(r -> r.getCreateTime().toLocalDate())
+                .distinct()
+                .count());
 
         // ========== 本月错题变化 ==========
         LambdaQueryWrapper<WrongQuestion> monthWrongWrapper = new LambdaQueryWrapper<>();
@@ -359,6 +365,7 @@ public class StatisticsService {
 
         // ========== 复习统计（间隔重复） ==========
         buildReviewStats(vo, userId, today, monthStart);
+        buildLearningEffectMetrics(vo, today);
 
         return vo;
     }
@@ -435,6 +442,50 @@ public class StatisticsService {
         vo.setMonthlyReviewTrend(monthlyTrend);
     }
 
+    /**
+     * 构建学习效果指标：用正确率、环比、错题转化、复习掌握和活跃天数形成可解释的综合结论。
+     */
+    private void buildLearningEffectMetrics(LearningReportVO vo, LocalDate today) {
+        int newWrongCount = defaultInt(vo.getMonthNewWrongCount());
+        int masteredWrongCount = defaultInt(vo.getMonthMasteredCount());
+        int wrongBase = newWrongCount + masteredWrongCount;
+        double wrongConversionRate = wrongBase == 0 ? 0.0 : masteredWrongCount * 100.0 / wrongBase;
+        vo.setWrongQuestionConversionRate(round1(wrongConversionRate));
+
+        int totalReviewCards = defaultInt(vo.getTotalReviewCards());
+        int masteredReviewCards = defaultInt(vo.getMasteredReviewCards());
+        double reviewMasteryRate = totalReviewCards == 0 ? 0.0 : masteredReviewCards * 100.0 / totalReviewCards;
+        vo.setReviewMasteryRate(round1(reviewMasteryRate));
+
+        double activityRate = today.getDayOfMonth() == 0 ? 0.0
+                : defaultInt(vo.getActiveStudyDays()) * 100.0 / today.getDayOfMonth();
+        double trendScore = clamp(50.0 + defaultDouble(vo.getCorrectRateChange()) * 2.0, 0.0, 100.0);
+        double score = defaultDouble(vo.getMonthCorrectRate()) * 0.45
+                + trendScore * 0.20
+                + wrongConversionRate * 0.15
+                + reviewMasteryRate * 0.10
+                + activityRate * 0.10;
+        vo.setLearningEffectScore(round1(score));
+
+        if (vo.getLearningEffectScore() >= 85.0) {
+            vo.setLearningEffectLevel("EXCELLENT");
+            vo.setLearningEffectLabel("效果优秀");
+            vo.setLearningEffectSummary("本月正确率、错题转化和复习掌握都处于较好状态，可以继续增加综合题和考试训练。");
+        } else if (vo.getLearningEffectScore() >= 70.0) {
+            vo.setLearningEffectLevel("IMPROVING");
+            vo.setLearningEffectLabel("稳步提升");
+            vo.setLearningEffectSummary("学习效果正在提升，建议保持当前节奏，并优先复盘新增错题。");
+        } else if (vo.getLearningEffectScore() >= 50.0) {
+            vo.setLearningEffectLevel("STABLE");
+            vo.setLearningEffectLabel("基本稳定");
+            vo.setLearningEffectSummary("本月有学习沉淀，但提升不够明显，建议增加间隔复习和薄弱课程专项练习。");
+        } else {
+            vo.setLearningEffectLevel("AT_RISK");
+            vo.setLearningEffectLabel("需要关注");
+            vo.setLearningEffectSummary("当前学习效果偏弱，建议先恢复稳定刷题频率，并集中处理未掌握错题。");
+        }
+    }
+
     // ======================== 私有方法 ========================
 
     private int calculateStreak(List<PracticeRecord> records) {
@@ -483,5 +534,21 @@ public class StatisticsService {
             return number.longValue();
         }
         return 0L;
+    }
+
+    private static int defaultInt(Integer value) {
+        return value != null ? value : 0;
+    }
+
+    private static double defaultDouble(Double value) {
+        return value != null ? value : 0.0;
+    }
+
+    private static double round1(double value) {
+        return Math.round(value * 10.0) / 10.0;
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
     }
 }

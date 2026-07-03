@@ -952,6 +952,27 @@ GET /api/admin/statistics/overview
 
 仅管理员可访问。今日活跃用户按当天产生刷题记录的去重用户数统计。
 
+### 11.5 个人学习报告
+
+```
+GET /api/statistics/learning-report
+```
+
+返回当前用户月度学习报告，包含本月刷题量、正确率、错题、考试、复习统计与学习效果指标。
+
+学习效果指标字段：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| correctRateChange | Double | 本月正确率较上月变化，单位为百分点 |
+| learningEffectScore | Double | 学习效果综合分，0-100 |
+| learningEffectLevel | String | `EXCELLENT` / `IMPROVING` / `STABLE` / `AT_RISK` |
+| learningEffectLabel | String | 学习效果等级文案 |
+| learningEffectSummary | String | 学习效果建议摘要 |
+| wrongQuestionConversionRate | Double | 错题转化率，已掌握错题 / 新增错题与已掌握错题合计 |
+| reviewMasteryRate | Double | 复习掌握率，已掌握复习卡片 / 复习卡片总数 |
+| activeStudyDays | Integer | 本月活跃学习天数 |
+
 ---
 
 ## 十二、管理端接口

@@ -124,6 +124,8 @@ class StatisticsControllerTest {
         LearningReportVO report = new LearningReportVO();
         report.setMonthTotalPractice(150);
         report.setMonthCorrectRate(0.8);
+        report.setLearningEffectScore(76.5);
+        report.setLearningEffectLevel("IMPROVING");
 
         when(statisticsService.getLearningReport(eq(1L))).thenReturn(report);
 
@@ -131,6 +133,8 @@ class StatisticsControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.monthTotalPractice").value(150))
-                .andExpect(jsonPath("$.data.monthCorrectRate").value(0.8));
+                .andExpect(jsonPath("$.data.monthCorrectRate").value(0.8))
+                .andExpect(jsonPath("$.data.learningEffectScore").value(76.5))
+                .andExpect(jsonPath("$.data.learningEffectLevel").value("IMPROVING"));
     }
 }

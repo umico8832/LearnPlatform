@@ -95,6 +95,9 @@ class LearningReportReviewStatsTest {
         // masteredReviewCards: card1 has intervalDays=30 >= 21 → 1 mastered
         assertEquals(1, report.getMasteredReviewCards());
         assertEquals(3, report.getDueTodayCount());
+        assertEquals(33.3, report.getReviewMasteryRate(), 0.1);
+        assertNotNull(report.getLearningEffectScore());
+        assertNotNull(report.getLearningEffectLevel());
         assertNotNull(report.getMonthlyReviewTrend());
         // monthlyReviewTrend 应该有当月天数个条目
         assertEquals(today.getDayOfMonth(), report.getMonthlyReviewTrend().size());
@@ -116,6 +119,8 @@ class LearningReportReviewStatsTest {
         assertEquals(0, report.getReviewStreakDays());
         assertEquals(0, report.getMasteredReviewCards());
         assertEquals(0, report.getDueTodayCount());
+        assertEquals(0.0, report.getReviewMasteryRate(), 0.1);
+        assertEquals("AT_RISK", report.getLearningEffectLevel());
         assertNotNull(report.getMonthlyReviewTrend());
         assertTrue(report.getMonthlyReviewTrend().isEmpty());
     }

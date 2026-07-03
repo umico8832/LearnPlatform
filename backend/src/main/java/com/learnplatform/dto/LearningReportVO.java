@@ -38,6 +38,30 @@ public class LearningReportVO {
     /** 刷题量环比增长率（百分比） */
     private Double practiceGrowthRate;
 
+    /** 正确率较上月变化（百分点） */
+    private Double correctRateChange;
+
+    /** 学习效果综合分（0-100） */
+    private Double learningEffectScore;
+
+    /** 学习效果等级：EXCELLENT / IMPROVING / STABLE / AT_RISK */
+    private String learningEffectLevel;
+
+    /** 学习效果等级文案 */
+    private String learningEffectLabel;
+
+    /** 学习效果建议摘要 */
+    private String learningEffectSummary;
+
+    /** 错题转化率（已掌握错题 / 新增错题与已掌握错题合计） */
+    private Double wrongQuestionConversionRate;
+
+    /** 复习掌握率（已掌握复习卡片 / 复习卡片总数） */
+    private Double reviewMasteryRate;
+
+    /** 本月活跃学习天数 */
+    private Integer activeStudyDays;
+
     /** 本月每日刷题趋势 */
     private List<Map<String, Object>> dailyTrend;
 
@@ -145,6 +169,70 @@ public class LearningReportVO {
 
     public void setPracticeGrowthRate(Double practiceGrowthRate) {
         this.practiceGrowthRate = practiceGrowthRate;
+    }
+
+    public Double getCorrectRateChange() {
+        return correctRateChange;
+    }
+
+    public void setCorrectRateChange(Double correctRateChange) {
+        this.correctRateChange = correctRateChange;
+    }
+
+    public Double getLearningEffectScore() {
+        return learningEffectScore;
+    }
+
+    public void setLearningEffectScore(Double learningEffectScore) {
+        this.learningEffectScore = learningEffectScore;
+    }
+
+    public String getLearningEffectLevel() {
+        return learningEffectLevel;
+    }
+
+    public void setLearningEffectLevel(String learningEffectLevel) {
+        this.learningEffectLevel = learningEffectLevel;
+    }
+
+    public String getLearningEffectLabel() {
+        return learningEffectLabel;
+    }
+
+    public void setLearningEffectLabel(String learningEffectLabel) {
+        this.learningEffectLabel = learningEffectLabel;
+    }
+
+    public String getLearningEffectSummary() {
+        return learningEffectSummary;
+    }
+
+    public void setLearningEffectSummary(String learningEffectSummary) {
+        this.learningEffectSummary = learningEffectSummary;
+    }
+
+    public Double getWrongQuestionConversionRate() {
+        return wrongQuestionConversionRate;
+    }
+
+    public void setWrongQuestionConversionRate(Double wrongQuestionConversionRate) {
+        this.wrongQuestionConversionRate = wrongQuestionConversionRate;
+    }
+
+    public Double getReviewMasteryRate() {
+        return reviewMasteryRate;
+    }
+
+    public void setReviewMasteryRate(Double reviewMasteryRate) {
+        this.reviewMasteryRate = reviewMasteryRate;
+    }
+
+    public Integer getActiveStudyDays() {
+        return activeStudyDays;
+    }
+
+    public void setActiveStudyDays(Integer activeStudyDays) {
+        this.activeStudyDays = activeStudyDays;
     }
 
     public List<Map<String, Object>> getDailyTrend() {

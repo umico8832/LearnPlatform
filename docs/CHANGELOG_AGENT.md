@@ -1,5 +1,46 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 147 - 2026-07-03
+
+### 阶段
+Phase 20：学习效果闭环
+
+### 完成内容
+1. 个人学习报告新增学习效果指标：正确率变化、学习效果综合分、等级、等级文案、建议摘要、错题转化率、复习掌握率和本月活跃学习天数。
+2. 后端 `StatisticsService` 基于已有练习记录、错题本和间隔复习计划实时计算学习效果，不新增数据库表。
+3. 前端学习报告页新增“学习效果”面板，展示综合分、效果等级、建议摘要和关键拆解指标。
+4. 同步更新前端统计 API 类型和契约测试。
+5. 同步更新 API 文档、路线图、交接文档和 README。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/dto/LearningReportVO.java`
+- `backend/src/main/java/com/learnplatform/service/StatisticsService.java`
+- `backend/src/test/java/com/learnplatform/service/StatisticsServiceIntegrationTest.java`
+- `backend/src/test/java/com/learnplatform/service/LearningReportReviewStatsTest.java`
+- `backend/src/test/java/com/learnplatform/controller/StatisticsControllerTest.java`
+- `frontend/src/api/statistics.ts`
+- `frontend/src/__tests__/api/statistics.test.ts`
+- `frontend/src/views/statistics/LearningReportView.vue`
+- `docs/API_DESIGN.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd backend && mvn test -Dtest=LearningReportReviewStatsTest,StatisticsControllerTest`：8 个测试通过。
+- `cd frontend && npm test -- --run src/__tests__/api/statistics.test.ts`：7 个测试通过。
+- `cd frontend && npm run build`：通过（仍保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+- `cd backend && mvn test`：387 个默认后端测试通过。
+- `cd frontend && npm test -- --run`：26 个文件、214 个测试通过。
+
+### 遗留问题
+- 本轮未启动真实后端或 Docker E2E 环境，未做学习报告页真实点击验收。
+- Phase 20 推送后的 GitHub Actions 实跑仍待用户确认 push 后完成。
+
+### commit message
+`feat(statistics): 新增学习效果指标`
+
 ## Round 146 - 2026-07-03
 
 ### 阶段
