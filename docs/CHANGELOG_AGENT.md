@@ -1,5 +1,36 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 153 - 2026-07-09
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（学习路径页 polish）
+
+### 完成内容
+1. 将学习路径页整理为“学习路线”工作台，新增页头说明、课程筛选和刷新操作区。
+2. 新增路径摘要卡，集中展示总体掌握率、薄弱点、需复习数和推荐步骤数。
+3. 新增“优先处理”卡片，突出路径第一项知识点，并提供针对练习和知识图谱跳转入口。
+4. 将掌握状态筛选改为路径分布按钮，保留全部、薄弱、需复习、未开始和已掌握筛选能力。
+5. 整理课程掌握概况、推荐路径表格和移动端卡片列表；从知识图谱携带 `courseId` 进入时会自动选中课程并请求对应路径数据。
+
+### 修改文件
+- `frontend/src/views/statistics/LearningPathView.vue`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd frontend && npm run build`：通过（仍保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+- 本地 Vite + Playwright mock 数据检查 `/learning-path?courseId=2`：桌面 1440x980 与移动端 390x844 均展示页面标题、优先知识点和推荐路径计数，且无页面级横向溢出。
+- Playwright mock 验证学习路径接口请求为 `/api/statistics/learning-path?courseId=2`。
+
+### 遗留问题
+- 本轮未启动真实后端或 Docker E2E 环境，浏览器检查使用 mock 学习路径与课程数据。
+- Phase 20 推送后的 GitHub Actions 实跑仍待用户确认 push 后完成。
+
+### commit message
+`style(report): 优化学习路径页体验`
+
 ## Round 152 - 2026-07-03
 
 ### 阶段
