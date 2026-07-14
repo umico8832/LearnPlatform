@@ -1,5 +1,34 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 155 - 2026-07-14
+
+### 阶段
+Phase 20：演示验收与 AI 运营治理（Docker/E2E 启动修复）
+
+### 完成内容
+1. 本地 CI 等价验证发现 AI 运营提醒 webhook 服务存在两个构造器，但未显式指定 Spring 注入构造器，导致 Docker/E2E 后端启动失败。
+2. 为生产构造器补充 `@Autowired`，保留测试专用的 `RestOperations` 构造器，恢复 Spring 容器正常装配。
+3. 新增构造器注入标记回归断言；本轮同时完成后端、前端与两张 CI 镜像的本地验证，并复跑 4 条真实 Playwright E2E。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/service/AiUsageAlertNotificationService.java`
+- `backend/src/test/java/com/learnplatform/service/AiUsageAlertNotificationServiceTest.java`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd backend && mvn test -Dtest=AiUsageAlertNotificationServiceTest`：通过。
+- `cd backend && mvn clean test -B`：388 个测试通过。
+- `cd frontend && npm test && npm run build`：26 个测试文件、214 个测试通过，构建通过。
+- `docker build -t learnplatform-backend:ci-local ./backend`、`docker build -t learnplatform-frontend:ci-local ./frontend`：通过。
+
+### 遗留问题
+- GitHub Actions 仍需在推送后确认实际运行结果。
+
+### commit message
+`fix(ai): 修复运营提醒服务启动注入`
+
 ## Round 154 - 2026-07-14
 
 ### 阶段

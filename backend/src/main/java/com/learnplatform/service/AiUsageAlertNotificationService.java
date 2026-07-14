@@ -6,6 +6,7 @@ import com.learnplatform.entity.AiUsageAlert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -31,6 +32,7 @@ public class AiUsageAlertNotificationService {
     private final ObjectMapper objectMapper;
     private final RestOperations restOperations;
 
+    @Autowired
     public AiUsageAlertNotificationService(AiConfig aiConfig,
                                            RestTemplateBuilder restTemplateBuilder,
                                            ObjectMapper objectMapper) {

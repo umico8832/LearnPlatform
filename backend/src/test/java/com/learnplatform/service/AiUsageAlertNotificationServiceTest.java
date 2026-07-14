@@ -5,10 +5,12 @@ import com.learnplatform.config.AiConfig;
 import com.learnplatform.entity.AiUsageAlert;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestOperations;
 
 import java.time.LocalDateTime;
+import java.lang.reflect.Constructor;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -16,11 +18,23 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AiUsageAlertNotificationServiceTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestOperations restOperations = mock(RestOperations.class);
+
+    @Test
+    @DisplayName("Spring 使用 webhook 通知服务的配置构造器")
+    void shouldMarkConfigurationConstructorForSpringInjection() {
+        Constructor<?> constructor = java.util.Arrays.stream(AiUsageAlertNotificationService.class.getConstructors())
+                .filter(candidate -> candidate.getParameterCount() == 3)
+                .findFirst()
+                .orElseThrow();
+
+        assertTrue(constructor.isAnnotationPresent(Autowired.class));
+    }
 
     @Test
     @DisplayName("默认关闭时不发送 webhook")
