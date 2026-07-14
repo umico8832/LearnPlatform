@@ -24,7 +24,7 @@ Phase 20：演示验收与 AI 运营治理（Docker/E2E 启动修复）
 - `docker build -t learnplatform-backend:ci-local ./backend`、`docker build -t learnplatform-frontend:ci-local ./frontend`：通过。
 
 ### 遗留问题
-- GitHub Actions 仍需在推送后确认实际运行结果。
+- GitHub Actions CI #26 已确认 Backend、Frontend、Docker Build 和 Browser E2E 全部通过；后续可继续真实接口点击验收与运行时告警排查。
 
 ### commit message
 `fix(ai): 修复运营提醒服务启动注入`

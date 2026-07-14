@@ -24,12 +24,12 @@
 | 17 | 间隔重复与智能复习 | ✅ 基本完成 | Round 94-97 | 基于 SM-2 算法的间隔重复系统（Flyway V9 ✅ + SpacedRepetitionService ✅ + ReviewController 10 个接口 ✅ + 前端 ReviewView ✅ + 错题自动复习调度 ✅ + 循环依赖消除 ✅ + AI 复习建议整合 ✅ + 复习统计整合到学习报告 ✅ + 25 个单元测试 ✅） |
 | 18 | 全局搜索与快捷导航 | ✅ 基本完成 | Round 98-99 | 跨题目/课程/知识点的全局搜索（GlobalSearchService ✅ + GlobalSearchController 4 个接口 ✅ + 前端 GlobalSearchDialog 组件 ✅ + ⌘K/Ctrl+K 快捷键 ✅ + 键盘导航 ✅ + 关键词高亮 ✅ + 移动端适配 ✅ + 搜索历史记录 ✅ + 热门搜索推荐 ✅ + 搜索结果缓存 @Cacheable ✅ + 24 个单元测试 ✅） |
 | 19 | AI 调用分析与成本控制 | ✅ 基本完成 | Round 100、115 | 管理端 AI 调用总览（趋势、功能/模型分布、Top 用户、失败调用、真实 Tokens、平均耗时与按模型配置单价计算的成本） |
-| 20 | 演示验收与 AI 运营治理 | 🚧 开发中 | 2-3 个迭代 | 已覆盖关键业务真实浏览器 E2E，并完成独立配额、审计追踪、运营报告、异常提醒持久化确认、疑似重复题检测、题目纠错反馈闭环、题目版本记录和学习效果指标；演示截图已产出，继续 CI 实跑 |
-| 21 | 前端信息架构与视觉体验优化 | 🚧 开发中 | 2-4 个迭代 | AppLayout 分组导航、首页学习工作台、核心业务页、课程入口/详情页、题库浏览页、个人中心、收藏题页、AI 复习建议页、学习路径页、学习报告效果面板 polish、管理端主要页面样板整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态和已知 Element Plus radio 旧 API 清理已完成；真实 E2E 已复跑通过，下一步推送后确认 CI |
+| 20 | 演示验收与 AI 运营治理 | 🚧 开发中 | 2-3 个迭代 | 已覆盖关键业务真实浏览器 E2E，并完成独立配额、审计追踪、运营报告、异常提醒持久化确认、疑似重复题检测、题目纠错反馈闭环、题目版本记录和学习效果指标；演示截图已产出，CI #26 全部通过 |
+| 21 | 前端信息架构与视觉体验优化 | 🚧 开发中 | 2-4 个迭代 | AppLayout 分组导航、首页学习工作台、核心业务页、课程入口/详情页、题库浏览页、个人中心、收藏题页、AI 复习建议页、学习路径页、学习报告效果面板 polish、管理端主要页面样板整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态和已知 Element Plus radio 旧 API 清理已完成；真实 E2E 已复跑通过，CI #26 全部通过 |
 
 **Phase 0-12 预计总工期**：约 17-20 天
 
-**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图；Round 137 修复了错题逻辑删除后再次答错的唯一键冲突，并复跑 4 条真实 Playwright E2E 通过；Round 138 修复本地 Testcontainers 与 Docker Engine 29 兼容问题，并确认 53 个真实 MySQL 集成测试通过；Round 139 新增正式题目 AI 复审建议与缓存；Round 140 新增 AI 运营提醒持久化与确认能力；Round 141 新增管理员顶部栏 AI 运营提醒站内入口；Round 143 新增 AI 运营提醒可选 webhook 站外通知；Round 144 新增管理端疑似重复题检测；Round 145 新增用户题目纠错反馈和管理端处理留痕；Round 146 新增题目版本记录和管理端查看入口；Round 147 新增个人学习报告学习效果指标；Round 155 修复 AI 运营提醒 webhook 服务的 Spring 构造器注入，恢复 Docker/E2E 后端启动，并复跑 4 条真实 Playwright E2E 通过；仍待推送后完成 CI 实跑。Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList、PracticeRecord 刷题记录复盘页、Favorite 收藏题页、AI 复习建议页、Profile 个人中心页、LearningPath 学习路径页、学习报告学习效果面板 polish、管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态、顶部运营提醒入口和已知 Element Plus radio 旧 API 清理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
+**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图；Round 137 修复了错题逻辑删除后再次答错的唯一键冲突，并复跑 4 条真实 Playwright E2E 通过；Round 138 修复本地 Testcontainers 与 Docker Engine 29 兼容问题，并确认 53 个真实 MySQL 集成测试通过；Round 139 新增正式题目 AI 复审建议与缓存；Round 140 新增 AI 运营提醒持久化与确认能力；Round 141 新增管理员顶部栏 AI 运营提醒站内入口；Round 143 新增 AI 运营提醒可选 webhook 站外通知；Round 144 新增管理端疑似重复题检测；Round 145 新增用户题目纠错反馈和管理端处理留痕；Round 146 新增题目版本记录和管理端查看入口；Round 147 新增个人学习报告学习效果指标；Round 155 修复 AI 运营提醒 webhook 服务的 Spring 构造器注入，恢复 Docker/E2E 后端启动，并复跑 4 条真实 Playwright E2E 通过；GitHub Actions CI #26 的 Backend、Frontend、Docker Build 和 Browser E2E 全部通过。Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList、PracticeRecord 刷题记录复盘页、Favorite 收藏题页、AI 复习建议页、Profile 个人中心页、LearningPath 学习路径页、学习报告学习效果面板 polish、管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态、顶部运营提醒入口和已知 Element Plus radio 旧 API 清理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
 
 ---
 
@@ -622,7 +622,7 @@
 ### P0：演示验收与质量收尾
 - [x] 考试完整作答、提交、结果查看已完成真实 Docker 浏览器验收（Round 108：3 题作答、确认提交、自动判分与结果详情均正常）。
 - [x] 按 `docs/DEMO.md` 制作用户端和管理端真实演示截图（Round 133：11 张桌面截图已输出到 `docs/demo-screenshots/`）。
-- [ ] 推送后确认 GitHub Actions 的后端、前端和 Docker Job 实际通过。
+- [x] GitHub Actions CI #26 已确认 Backend、Frontend、Docker Build 和 Browser E2E 全部通过（Round 155）。
 - [x] 建立安全的浏览器 E2E 登录态：隔离 `e2e` Profile 固定一次性验证码答案，仍验证真实账号密码、JWT 与路由守卫（Round 110）。
 - [x] 为刷题、错题复习、考试和管理端审核补充少量高价值端到端测试（已补考试页 2 条页面级交互回归；浏览器 E2E 覆盖登录、课程浏览、刷题答错→错题本→掌握度更新→重练、三种题型作答→提交→自动判分→结果详情，以及用户投稿→管理员通过→正式入库；Round 113）。
 - [x] 复跑真实 Docker E2E 并修复错题逻辑删除后再次答错触发唯一键冲突的问题（Round 137：4 条 Playwright 真实业务闭环通过）。
@@ -700,7 +700,7 @@
 - [x] `QuestionManage.vue`、`ExamManage.vue`、`SubmissionManage.vue` 与 `AiUsageView.vue`：接入统一后台页头、摘要卡、筛选/操作区、表格容器和移动端布局检查。
 - [x] `UserManage.vue`、`QuestionManage.vue` 与 `SubmissionManage.vue`：补齐表格选择列、批量操作工具条、空状态和选择清空逻辑。
 - [x] 清理 `LearningPathView.vue` 的 Element Plus radio `label` 旧 API，并确认 `frontend/src` 无同类旧写法。
-- [ ] 后续 polish：继续补真实接口点击验收、其他运行时告警排查和 CI 实跑。
+- [ ] 后续 polish：继续补真实接口点击验收和其他运行时告警排查。
 
 ### 验收标准
 1. `npm test -- --run` 通过，必要时补页面交互测试。
@@ -715,4 +715,4 @@
 - 第 3 轮：整理 QuestionListView。✅ 已完成
 - 第 4 轮：整理 AdminDashboard 与管理端列表页。✅ 已完成总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 样板
 - 第 5 轮：整理课程入口与详情页。✅ 已完成
-- 第 6 轮：浏览器验收、截图、微调和文档更新。🚧 截图、管理端批量操作与空状态、Element Plus radio 旧 API 清理、本地 Testcontainers 集成测试修复已完成，CI 实跑和真实接口点击验收待继续
+- 第 6 轮：浏览器验收、截图、微调和文档更新。🚧 截图、管理端批量操作与空状态、Element Plus radio 旧 API 清理、本地 Testcontainers 集成测试修复和 CI #26 实跑均已完成，真实接口点击验收待继续
