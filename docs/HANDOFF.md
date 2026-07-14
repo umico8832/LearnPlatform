@@ -18,7 +18,7 @@
 
 当前阶段：Phase 20 — 演示验收与 AI 运营治理 🚧 收尾中（独立配额、审计追踪、运营报告、异常提醒持久化与确认、顶部站内提醒入口、可选 webhook 站外通知、Prompt/模型配置追踪、正式题目 AI 复审建议缓存、疑似重复题检测、题目纠错反馈与处理留痕、题目版本记录、个人学习报告学习效果指标已完成，演示截图生成脚本与 11 张真实截图已完成，本地 Testcontainers 集成测试已恢复，Round 155 已修复 AI 运营提醒 webhook 服务导致 Docker/E2E 后端启动失败的构造器注入问题，并复跑 4 条真实 Playwright E2E 通过；GitHub Actions CI #26 的 Backend、Frontend、Docker Build 和 Browser E2E 已全部通过）；Phase 21 — 前端信息架构与视觉体验优化 🚧 开发中（AppLayout 分组导航、全局样式变量、首页学习工作台样板、Practice/WrongQuestion/Review/ExamList/CourseList/CourseDetail/QuestionList/PracticeRecord/Favorite/AI Review/Profile/LearningPath/KnowledgeGraph 核心页整理已完成，学习报告学习效果面板 polish 已完成，管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理已完成，User/Question/Submission 长操作列收纳、批量操作和空状态已完成，顶部 AI 运营提醒入口已完成，已知 Element Plus radio `label` 旧 API 已清理）。Round 126 已新增 `skills/frontend-flow-test/SKILL.md`，用于规范低 token 的临时浏览器业务闭环验收；Round 132 已完成课程入口与详情页体验补齐；Round 133 已新增可复用 Playwright 演示截图脚本并产出真实截图；Round 134 已完成管理端表格长操作列收纳；Round 135 已完成管理端批量操作工具条和空状态；Round 136 已清理 Element Plus 单选按钮旧 API；Round 137 修复错题逻辑删除后再次答错的唯一键冲突，并确认 4 条真实 Playwright E2E 通过；Round 138 修复 Testcontainers 与 Docker Engine 29 兼容问题，并确认 53 个真实 MySQL 集成测试通过；Round 139 新增正式题目 AI 复审建议接口、缓存和管理端入口；Round 140 新增 AI 运营提醒持久化与确认入口；Round 141 新增管理员顶部栏 AI 运营提醒站内入口；Round 143 新增 AI 运营提醒可选 webhook 站外通知；Round 144 新增管理端疑似重复题检测；Round 145 新增题目纠错反馈闭环；Round 146 新增题目版本记录；Round 147 新增学习效果指标；Round 148 完成学习报告学习效果面板 polish；Round 149 完成刷题记录页练习复盘体验整理；Round 150 完成收藏题页重点题库体验整理；Round 151 完成 AI 复习建议页体验整理；Round 152 完成个人中心体验整理；Round 153 完成学习路径页体验整理；Round 154 完成知识图谱页体验整理。
 
-下一阶段主线：Phase 20/21 的 CI #26 已通过，后续可继续真实接口点击验收与运行时告警排查。AI 调用日志已接入真实 token、按配置模型单价计算成本、用户独立配额、配额审计、请求追踪、Prompt/模型配置指纹、周期运营报告、异常提醒持久化与确认、正式题目复审建议缓存、管理端疑似重复题检测、题目纠错反馈处理留痕、题目版本记录，以及个人学习报告学习效果指标。OCR、爬虫、自动入库和复杂推荐仍非当前优先级。临时浏览器流程验收应先阅读 `skills/frontend-flow-test/SKILL.md`，只跑与当前任务相关的最小业务闭环，避免每次全量跑流程或输出大段 DOM。
+下一阶段主线：Phase 21 代表性高频页面已完成真实接口点击验收，Playwright 现有 5 条真实 E2E，新增巡检会拦截 `/api/` 5xx 与浏览器 `console.error`。后续可聚焦前端大 chunk 告警的可控分包，或转入下一个高价值产品任务。OCR、爬虫、自动入库和复杂推荐仍非当前优先级。临时浏览器流程验收应先阅读 `skills/frontend-flow-test/SKILL.md`，只跑最小业务闭环。
 
 阶段状态：
 - [x] Phase 0：项目规划 ✅
@@ -41,8 +41,8 @@
 - [x] Phase 17：间隔重复与智能复习 ✅ 基本完成（SM-2 算法、复习计划、错题同步、AI 复习建议、学习报告复习统计、25 个单元测试）
 - [x] Phase 18：全局搜索与快捷导航 ✅ 基本完成（GlobalSearchService ✅；GlobalSearchController 4 个接口 ✅；前端 GlobalSearchDialog 组件 ✅；⌘K/Ctrl+K 快捷键 ✅；键盘导航 ✅；关键词高亮 ✅；移动端适配 ✅；搜索历史记录 ✅；热门搜索推荐 ✅；搜索结果缓存 @Cacheable ✅；搜索历史单条删除和全部清除 ✅；24 个单元测试 ✅）
 - [x] Phase 19：AI 调用分析与成本控制 ✅ 基本完成（调用趋势、功能/模型分布、Top 用户、失败调用、真实 Tokens、平均耗时与按配置单价聚合成本）
-- [ ] Phase 20：演示验收与 AI 运营治理 🚧（已完成：考试完整浏览器验收、考试页交互回归、关键业务浏览器 E2E、真实 token 与模型成本日志、管理员用户独立配额及审计、请求 traceId 追踪、Prompt/模型配置指纹、周期运营报告与异常提醒持久化确认、真实演示截图、错题复活唯一键冲突修复、管理端疑似重复题检测、题目纠错反馈处理留痕、题目版本记录、学习效果指标、CI #26 全部通过；待做：真实接口点击验收与运行时告警排查）
-- [ ] Phase 21：前端信息架构与视觉体验优化 🚧（P0 壳层导航与全局样式 ✅；P1 首页学习工作台样板 ✅；P2 Practice/WrongQuestion/Review/ExamList/CourseList/CourseDetail/QuestionList/PracticeRecord/Favorite/AI Review/Profile/LearningPath/KnowledgeGraph ✅；P3 管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理 ✅；P4 User/Question/Submission 长操作列收纳 ✅；P5 管理端批量操作和空状态 ✅；P6 Element Plus radio 旧 API 清理 ✅；P7 学习报告学习效果面板 polish ✅；真实 Docker E2E 复跑 ✅；CI #26 全部通过；待做：真实接口点击验收）
+- [x] Phase 20：演示验收与 AI 运营治理 ✅（真实演示截图、关键业务 E2E、真实 token/成本日志、独立配额及审计、请求追踪、Prompt/模型指纹、运营报告与持久化提醒、内容治理、学习效果指标、CI #26 与真实接口点击验收均已完成）
+- [x] Phase 21：前端信息架构与视觉体验优化 ✅（壳层导航、用户与管理端主要页面、长操作列、批量操作、空状态、学习报告 polish 和真实接口点击验收均已完成；Round 156 全量 5 条 Playwright E2E 通过）
 
 ---
 
@@ -149,7 +149,7 @@ docker compose up -d
 用户反馈当前项目“功能太混乱、布局不好看、太粗糙”，希望下一轮新对话先做前端美化和体验整理。新 Agent 应先阅读 `skills/frontend-design/SKILL.md`（当前仓库存在），再按 `docs/ROADMAP.md` 的 Phase 21 计划执行。
 
 建议下一轮做 Phase 21 / Phase 20 收尾：
-1. 补充高频用户与管理员页面的真实接口点击验收，并按发现的问题补充回归测试。
+1. 评估并处理前端大 chunk 告警，优先对实际进入首屏或频繁加载的资源做可验证的分包优化。
 2. 如需刷新演示素材，启动 Docker/E2E 环境后执行 `cd frontend && npm run screenshots:demo`，截图会覆盖 `docs/demo-screenshots/`。
 3. 继续排查未阻断构建的第三方 pure annotation 与大 chunk 告警，或继续二级用户页体验整理。
 

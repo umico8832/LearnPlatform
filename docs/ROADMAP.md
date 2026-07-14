@@ -614,7 +614,7 @@
 
 ---
 
-## Phase 20：演示验收与 AI 运营治理 🚧
+## Phase 20：演示验收与 AI 运营治理 ✅
 
 ### 目标
 将已完成的业务能力收敛为可稳定演示、可自动验证、可控制 AI 成本的项目基线；本阶段不新增与该目标无关的大型功能。
@@ -655,7 +655,7 @@
 
 ---
 
-## Phase 21：前端信息架构与视觉体验优化 🚧
+## Phase 21：前端信息架构与视觉体验优化 ✅
 
 ### 背景
 当前功能已经足够丰富，但用户端和管理端入口较多，侧边栏呈现为长列表，首页和部分页面的视觉层级偏弱，容易给人“功能堆叠、粗糙、不好找”的感觉。下一轮前端优化应优先做信息架构和设计系统收敛，而不是零散改颜色。
@@ -700,7 +700,7 @@
 - [x] `QuestionManage.vue`、`ExamManage.vue`、`SubmissionManage.vue` 与 `AiUsageView.vue`：接入统一后台页头、摘要卡、筛选/操作区、表格容器和移动端布局检查。
 - [x] `UserManage.vue`、`QuestionManage.vue` 与 `SubmissionManage.vue`：补齐表格选择列、批量操作工具条、空状态和选择清空逻辑。
 - [x] 清理 `LearningPathView.vue` 的 Element Plus radio `label` 旧 API，并确认 `frontend/src` 无同类旧写法。
-- [ ] 后续 polish：继续补真实接口点击验收和其他运行时告警排查。
+- [x] 真实接口点击验收：用户端首页/刷题/错题/智能复习/考试与管理端总览/题目/投稿/AI 调用分析已通过真实 Docker E2E，并固化 `/api/` 5xx 与 `console.error` 巡检（Round 156）。
 
 ### 验收标准
 1. `npm test -- --run` 通过，必要时补页面交互测试。
@@ -715,4 +715,4 @@
 - 第 3 轮：整理 QuestionListView。✅ 已完成
 - 第 4 轮：整理 AdminDashboard 与管理端列表页。✅ 已完成总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 样板
 - 第 5 轮：整理课程入口与详情页。✅ 已完成
-- 第 6 轮：浏览器验收、截图、微调和文档更新。🚧 截图、管理端批量操作与空状态、Element Plus radio 旧 API 清理、本地 Testcontainers 集成测试修复和 CI #26 实跑均已完成，真实接口点击验收待继续
+- 第 6 轮：浏览器验收、截图、微调和文档更新。✅ 截图、管理端批量操作与空状态、Element Plus radio 旧 API 清理、Testcontainers 修复、CI #26 实跑和真实接口点击验收均已完成

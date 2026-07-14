@@ -24,6 +24,55 @@ test('用户可通过真实登录流程访问课程列表', async ({ page }) => 
   await expect(page.locator('.course-card').first()).toBeVisible()
 })
 
+test('高频用户与管理页面可通过真实接口加载', async ({ page }) => {
+  const apiServerErrors: string[] = []
+  const consoleErrors: string[] = []
+
+  page.on('response', (response) => {
+    if (response.url().includes('/api/') && response.status() >= 500) {
+      apiServerErrors.push(`${response.status()} ${response.request().method()} ${response.url()}`)
+    }
+  })
+  page.on('console', (message) => {
+    if (message.type() === 'error') {
+      consoleErrors.push(message.text())
+    }
+  })
+
+  await loginAs(page, 'testuser', 'test123')
+
+  const learnerPages = [
+    ['/', '今日学习工作台'],
+    ['/practice', '刷题练习'],
+    ['/wrong-questions', '错题本'],
+    ['/review', '智能复习'],
+    ['/exams', '考试中心'],
+  ] as const
+
+  for (const [path, heading] of learnerPages) {
+    await page.goto(path)
+    await expect(page.getByRole('main').getByText(heading, { exact: true }).first()).toBeVisible()
+  }
+
+  await page.evaluate(() => localStorage.clear())
+  await loginAs(page, 'admin', 'admin123')
+
+  const adminPages = [
+    ['/admin', '平台数据总览'],
+    ['/admin/questions', '题目管理'],
+    ['/admin/submissions', '投稿管理'],
+    ['/admin/ai-usage', 'AI 调用分析'],
+  ] as const
+
+  for (const [path, heading] of adminPages) {
+    await page.goto(path)
+    await expect(page.getByRole('main').getByRole('heading', { name: heading, exact: true })).toBeVisible()
+  }
+
+  expect(apiServerErrors, `页面加载期间出现 5xx 接口：\n${apiServerErrors.join('\n')}`).toEqual([])
+  expect(consoleErrors, `页面加载期间出现 console.error：\n${consoleErrors.join('\n')}`).toEqual([])
+})
+
 test('用户答错后可在错题本更新掌握程度并重练', async ({ page }) => {
   await loginAs(page, 'testuser', 'test123')
 

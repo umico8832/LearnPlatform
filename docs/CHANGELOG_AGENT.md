@@ -1,5 +1,34 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 156 - 2026-07-14
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（真实接口点击验收）
+
+### 完成内容
+1. 在隔离 Docker E2E 环境中完成高频用户页面真实接口验收：首页、刷题练习、错题本、智能复习和考试中心均可正常加载。
+2. 完成高频管理页面真实接口验收：平台数据总览、题目管理、投稿管理和 AI 调用分析均可正常加载。
+3. 将验收固化为 Playwright E2E 回归，统一监测上述页面的 `/api/` 5xx 响应与浏览器 `console.error`。
+4. 复跑全量浏览器套件，原有登录课程、刷题错题、考试判分和投稿审核入库闭环无回归。
+
+### 修改文件
+- `frontend/e2e/auth-and-course.spec.ts`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- Docker E2E 全部服务健康启动，前端生产构建通过。
+- `cd frontend && npm run test:e2e -- --grep '高频用户与管理页面'`：新增巡检 1 条通过。
+- `cd frontend && npm run test:e2e`：5 条 Playwright 真实 E2E 全部通过。
+
+### 遗留问题
+- 前端构建仍保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告，本轮无新增运行时错误。
+
+### commit message
+`test(e2e): 补齐高频页面真实接口巡检`
+
 ## Round 155 - 2026-07-14
 
 ### 阶段
