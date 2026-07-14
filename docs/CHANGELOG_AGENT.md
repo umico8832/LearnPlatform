@@ -1,5 +1,36 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 154 - 2026-07-14
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（知识图谱页 polish）
+
+### 完成内容
+1. 将知识图谱页整理为学习工作台，新增课程范围页头、知识点掌握概况、图谱阅读指引和布局切换区。
+2. 图谱摘要会按真实接口数据展示知识点总数、薄弱点、待复习点和已掌握点；保留 ECharts 力导向、环形、拖动和缩放能力。
+3. 节点详情新增掌握进度条；首次练习的知识点也可直接进入针对练习，不再因练习次数为 0 被禁用。
+4. 支持从学习路径携带 `courseId` 进入，并按该课程请求图谱；同时为图表 tooltip 中的名称和课程名添加 HTML 转义。
+5. 补齐桌面与移动端响应式布局，并同步更新路线图、交接文档和 README。
+
+### 修改文件
+- `frontend/src/views/statistics/KnowledgeGraphView.vue`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd frontend && npm test -- --run`：26 个测试文件、214 个测试通过。
+- `cd frontend && npm run build`：通过（仍保留既有第三方 `@vueuse/core` pure annotation 与大 chunk 警告）。
+- 本地 Vite + Playwright mock 数据检查 `/knowledge-graph?courseId=2`：确认请求携带 `courseId=2`、页面摘要与图谱区域正常渲染，控制台无错误。
+
+### 遗留问题
+- 浏览器检查使用 mock 课程与知识图谱接口，未启动真实后端或 Docker E2E 环境。
+- 本地 `main` 的既有提交尚未获授权推送；GitHub Actions CI 实跑仍待用户明确授权 push 后完成。
+
+### commit message
+`style(statistics): 优化知识图谱页体验`
+
 ## Round 153 - 2026-07-09
 
 ### 阶段

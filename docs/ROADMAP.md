@@ -690,6 +690,7 @@
 - [x] `ReviewSuggestionView.vue`：整理为 AI 学习教练台，补充生成范围、流式结果状态、复制结果和移动端布局（Round 151）。
 - [x] `ProfileView.vue`：整理为账户与学习档案页，补充身份档案、常用入口、设置卡片和移动端布局（Round 152）。
 - [x] `LearningPathView.vue`：整理为学习路线工作台，补充优先处理知识点、路径分布筛选、课程概况、移动端卡片列表和 `courseId` 入参联动（Round 153）。
+- [x] `KnowledgeGraphView.vue`：整理为知识结构工作台，补充课程范围联动、掌握概况、图谱阅读指引、布局切换、节点掌握进度和移动端布局；支持接收学习路径传入的 `courseId`（Round 154）。
 
 ### P3：管理端工作台与列表体验
 - [x] `AdminDashboard.vue`：接入统一后台页头、页面宽度和管理端视觉节奏。
