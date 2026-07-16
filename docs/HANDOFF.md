@@ -16,9 +16,9 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 20 — 演示验收与 AI 运营治理、Phase 21 — 前端信息架构与视觉体验优化均已完成。Round 156 已将高频用户/管理页面真实接口巡检固化为第 5 条 Playwright E2E；Round 157 完成 Element Plus 样式按需打包和构建产物预算收尾，生产入口 CSS 从 361.86 kB（gzip 49.04 kB）降至 54.41 kB（gzip 8.48 kB）。
+当前阶段：Phase 20 — 演示验收与 AI 运营治理、Phase 21 — 前端信息架构与视觉体验优化均已完成；Phase 22 — AI 学习效果验证已启动。Round 158 完成 AI 学习资产真实查看记录、阅读后同题作答对照和管理端效果观察面板。
 
-下一阶段主线：前端首屏样式体积和大 chunk 告警已完成评估与收尾，可转入下一个高价值产品任务。Playwright 现有 5 条真实 E2E，高频页面巡检会拦截 `/api/` 5xx 与浏览器 `console.error`。OCR、爬虫、自动入库和复杂推荐仍非当前优先级；临时浏览器流程验收应先阅读 `skills/frontend-flow-test/SKILL.md`，只跑最小业务闭环。
+下一阶段主线：先积累真实资产查看与作答样本，再评估是否扩展“按知识点的跨题迁移效果”和“变式训练完成率”；不要用调用量或生成次数代替学习效果。Playwright 现有 5 条真实 E2E，高频页面巡检会拦截 `/api/` 5xx 与浏览器 `console.error`。OCR、爬虫、自动入库和复杂推荐仍非当前优先级。
 
 阶段状态：
 - [x] Phase 0：项目规划 ✅
@@ -43,6 +43,7 @@
 - [x] Phase 19：AI 调用分析与成本控制 ✅ 基本完成（调用趋势、功能/模型分布、Top 用户、失败调用、真实 Tokens、平均耗时与按配置单价聚合成本）
 - [x] Phase 20：演示验收与 AI 运营治理 ✅（真实演示截图、关键业务 E2E、真实 token/成本日志、独立配额及审计、请求追踪、Prompt/模型指纹、运营报告与持久化提醒、内容治理、学习效果指标、CI #26 与真实接口点击验收均已完成）
 - [x] Phase 21：前端信息架构与视觉体验优化 ✅（壳层导航、用户与管理端主要页面、长操作列、批量操作、空状态、学习报告 polish 和真实接口点击验收均已完成；Round 156 全量 5 条 Playwright E2E 通过）
+- [ ] Phase 22：AI 学习效果验证 🚧（真实资产查看记录 ✅；阅读后同题作答对照 ✅；管理端效果观察面板 ✅；待真实样本积累后评估跨题迁移与变式训练指标）
 
 ---
 
@@ -85,6 +86,7 @@
 32. **题目纠错反馈闭环**：用户端题库卡片可提交题干、答案、解析、知识点或其他纠错反馈；管理端题目管理页可按状态查看、标记已处理或驳回，并记录处理人、处理说明和处理时间；该能力只做治理留痕，不自动修改题库。
 33. **题目版本记录**：新增 `question_version` 表，题目创建、编辑、删除和正式复审会记录前后 JSON 快照；管理端题目列表可在“更多”中查看版本时间线，辅助追溯内容治理变化，不自动回滚题库。
 34. **学习效果指标**：个人学习报告基于正确率变化、错题转化、复习掌握和活跃学习天数生成综合分、等级和建议摘要；前端已将正确率变化、错题转化率、复习掌握率和活跃学习天数整理为带进度条的解释型指标，帮助展示 AI 讲解、错题复习与间隔复习后的学习效果。
+35. **AI 学习效果观察**：`ai_asset_view` 按用户、题目、资产类型和日期聚合真实查看；管理端按首次查看时间对比阅读后同题作答与未阅读前/未阅读作答，展示覆盖、反馈、正确率、样本量和资产类型明细，并明确不作因果推断。
 
 ### 后端关键文件
 - 统一响应：`R.java` + `ResultCode.java` + `BusinessException` + `GlobalExceptionHandler`
@@ -139,14 +141,15 @@ docker compose up -d
 - Redis 缓存 TTL 已迁移到 `application.yml` 的 `app.cache.ttl` 与环境变量配置。
 - 前端暂未配置 lint 脚本或 ESLint；`npm run build` 仍有第三方 `@vueuse/core` pure annotation 提示，但不阻断构建。Mermaid 593.66 kB 高级图表解析器是按需加载的单模块，已将构建预算设为 600 kB；入口 CSS 已降至 54.41 kB。
 - Phase 15 的向量相似度推荐仍未完成，但不阻断当前主线；Phase 16 的正式题目复审建议缓存已在 Round 139 完成；题目版本记录已在 Round 146 完成；个人学习报告学习效果指标已在 Round 147 完成，学习效果面板视觉 polish 已在 Round 148 完成；刷题记录页练习复盘体验整理已在 Round 149 完成；收藏题页重点题库体验整理已在 Round 150 完成；AI 复习建议页体验整理已在 Round 151 完成；个人中心体验整理已在 Round 152 完成；学习路径页体验整理已在 Round 153 完成。
+- Round 158 的效果统计目前只比较同一道题，适合验证“查看后重练”的短期关联；跨题知识迁移和变式训练完成率尚未建立真实事件，必须等数据定义清楚后再做。
 
 ---
 
 ## 6. 下一步建议任务
 
-任务名称：选择下一项高价值产品任务
+任务名称：积累并扩展 AI 学习效果真实指标
 
-Phase 20/21 与前端加载性能收尾均已完成。建议下一轮先结合 `docs/AI_LEARNING_PLATFORM_STRATEGY.md`、`docs/FUTURE.md` 和真实代码选择一个聚焦任务；不要回到 OCR、爬虫、自动入库或复杂向量推荐。若需要刷新演示素材，启动 Docker/E2E 环境后执行 `cd frontend && npm run screenshots:demo`。
+Phase 22 首版已完成，下一轮不应立刻增加复杂模型。先通过真实使用积累 `ai_asset_view` 与 `practice_record` 样本；若继续开发，优先定义并落地“变式训练完成事件”或“知识点跨题迁移”中的一个最小闭环，并继续明确样本量和观察性边界。不要回到 OCR、爬虫、自动入库或复杂向量推荐。
 
 Round 122 已完成 Phase 21 第一轮：`AppLayout.vue` 分组导航、`global.css` 设计变量和 `HomeView.vue` 学习工作台样板；本轮已通过前端测试、构建和桌面/移动端视觉检查。Round 123 完成工程体检：前端 `npm ci`、`npm audit --audit-level=moderate`、`npm test -- --run`、`npm run build` 通过；后端 `mvn test` 360 passed、`mvn package -DskipTests` 通过；`docker compose config --quiet` 通过。Round 124 完成 Phase 21 P2：整理 Practice/WrongQuestion/Review/ExamList，修复复习 API 重复 `/api` 前缀，并通过前端测试、构建和桌面/移动端浏览器布局检查。Round 125 完成 QuestionListView 题库浏览页整理，并通过前端测试、构建和桌面/移动端浏览器布局检查。Round 127 完成管理端通用样式基线、AdminDashboard/CourseManage/UserManage 样板整理，并通过前端测试、构建和桌面/移动端布局检查。Round 128 修复全局搜索重复 `/api` 前缀、统计流式接口 Base URL、Actuator 默认暴露面，并将 Redis 缓存 TTL 迁移到配置。Round 129 完成 QuestionManage/ExamManage/SubmissionManage/AiUsageView 管理页主整理，并通过前端测试、构建和桌面/移动端 mock 布局检查。Round 130 完成 KnowledgePointManage 体验补齐，新增知识点摘要卡、树结构搜索和桌面/移动端 mock 布局检查。Round 132 完成 CourseList/CourseDetail 体验补齐，并验证从课程详情进入题库会携带 `courseId` 筛选。Round 133 新增 `frontend/scripts/capture-demo-screenshots.mjs` 和 `npm run screenshots:demo`，修复 simple cache 模式统计接口 500，调整 E2E profile 日志，并在真实 E2E 环境中生成 11 张演示截图。Round 134 完成 User/Question/Submission 管理页长操作列收纳，并通过前端测试与构建。Round 135 完成 User/Question/Submission 管理页批量操作工具条和空状态，并通过前端测试、构建和 Playwright mock 浏览器检查。Round 136 清理 LearningPathView 的 Element Plus radio 旧 API，并通过前端测试与构建。Round 137 修复错题逻辑删除后再次答错的唯一键冲突，更新集成测试命令配置，并通过后端 361 个测试与 4 条真实 Docker E2E。Round 138 修复 Testcontainers 与 Docker Engine 29 兼容问题、对齐真实迁移约束下的集成测试夹具，并通过后端 361 个默认测试与 53 个真实 MySQL 集成测试。Round 139 新增正式题目 AI 复审建议服务、`questionReviewSuggestion` 缓存和管理端复审弹窗入口，并通过后端 365 个默认测试、前端 207 个测试与前端构建。Round 140 新增 AI 运营提醒持久化与确认入口，并通过后端 367 个默认测试、前端 209 个测试与前端构建。Round 141 新增管理员顶部栏 AI 运营提醒站内入口，并通过前端 AI Usage API 测试与前端构建。
 
@@ -161,7 +164,7 @@ Round 105 已验证 Docker Redis 网络连接、8 个缓存/管理接口及前�
 - 用户上传题库自动入库
 - AI 自动审核发布题目
 
-建议 commit message: `feat(frontend): 优化课程入口页体验`
+建议 commit message: `feat(ai): 建立学习资产效果观察闭环`
 
 ---
 
@@ -207,11 +210,15 @@ Round 105 已验证 Docker Redis 网络连接、8 个缓存/管理接口及前�
 
 当前阶段：Phase 20“演示验收与 AI 运营治理”收尾中，Phase 21“前端信息架构与视觉体验优化”开发中。Round 105 已修复 Docker Redis 缓存与 AI 用量接口路径，Round 106 已完成核心浏览器点击验收并修复刷题结果弹窗的关闭动画闪屏，Round 108 已完成考试完整作答、提交和结果查看的真实 Docker 浏览器验收，Round 109 已补考试页交互回归测试，Round 110-113 已补 Playwright 登录/课程、刷题错题、考试判分及投稿审核入库闭环 E2E，Round 114 已记录上游真实 token，Round 115 已按管理员配置的模型单价固化并聚合成本，Round 116 已支持管理员给单用户设置、取消或解除 AI 日配额，Round 118 已补齐配额原因/历史审计与调用 traceId 追踪，Round 120 已补齐 Prompt 模板名、不可逆 Prompt 指纹和模型配置版本指纹，Round 122 已完成 AppLayout 分组导航、global.css 设计变量和 HomeView 学习工作台样板，Round 124 已完成 Practice/WrongQuestion/Review/ExamList 核心页整理，Round 125 已完成 QuestionListView 题库浏览页整理，Round 126 已新增 frontend-flow-test skill 规范临时浏览器流程验收，Round 127 已完成管理端总览/Course/User 样板整理，Round 129 已完成 QuestionManage/ExamManage/SubmissionManage/AiUsageView 管理页主整理，Round 130 已完成 KnowledgePointManage 体验补齐，Round 132 已完成 CourseList/CourseDetail 课程入口页整理，Round 134 已完成 User/Question/Submission 管理页长操作列收纳，Round 135 已完成 User/Question/Submission 管理页批量操作和空状态，Round 136 已清理 Element Plus 单选按钮旧 API，Round 137 已修复错题逻辑删除后再次答错的唯一键冲突并复跑真实 Docker E2E 通过，Round 138 已修复 Testcontainers 与 Docker Engine 29 兼容问题并确认 53 个真实 MySQL 集成测试通过，Round 139 已完成正式题目 AI 复审建议缓存和管理端入口，Round 140 已完成 AI 运营提醒持久化与确认入口，Round 141 已完成管理员顶部栏 AI 运营提醒站内入口，Round 145 已完成题目纠错反馈闭环，Round 146 已完成题目版本记录，Round 147 已完成个人学习报告学习效果指标，Round 148 已完成学习报告学习效果面板 polish，Round 149 已完成刷题记录页练习复盘体验整理，Round 150 已完成收藏题页重点题库体验整理，Round 151 已完成 AI 复习建议页体验整理，Round 152 已完成个人中心体验整理，Round 153 已完成学习路径页体验整理。
 
+Round 158 更新：Phase 20/21 已完成，Phase 22“AI 学习效果验证”已启动；真实资产查看记录、阅读后同题作答对照和管理端效果观察面板已完成。
+
 已完成模块：用户鉴权、课程知识点、题库、刷题判分（含填空简答增强）、错题本（含重练）、试卷考试、AI 功能（含流式输出、真实 token/成本日志、按用户独立的日配额及原因审计、调用 traceId、Prompt/模型配置追踪、周期运营报告/异常提醒持久化确认、正式题目 AI 复审建议缓存）、统计可视化（含个人学习报告和学习效果指标）、质量提升、部署简历、收藏题练习、Excel/Markdown 导入导出、学习计划、题目评论、多端适配、难度自适应、管理端用户管理、管理端疑似重复题检测、题目纠错反馈处理留痕、题目版本记录、Phase 13 AI 题目学习资产、Phase 14 全部可视化讲解（13 种元素类型）、Phase 15 的学习诊断/建议/规则相似题与错因分析、Phase 16 的投稿/AI 质检/标注/难度评估/来源追踪与复审机制、Phase 17 间隔重复复习系统（SM-2 算法）、Phase 18 全局搜索与快捷导航（核心功能）、Phase 21 用户端与管理端主要页面整理、刷题记录页复盘体验、收藏题页重点题库体验、AI 复习建议页体验、个人中心账户与学习档案体验、学习路径路线工作台体验、管理端高频列表批量操作和空状态、后端测试 388 个、前端 Vitest 测试（最新已验证 214 个）、GitHub Actions CI #26 全部通过。
+
+最新验证：默认后端测试 396 个、前端 Vitest 217 个通过；本轮 Testcontainers 因 Docker daemon 未运行而未复验 V17，既有 53 个集成测试通过记录来自 Round 138。
 下一步建议：
-1. 推送至 GitHub 后确认 Actions CI 实际运行结果。
-2. 必要时刷新 `docs/demo-screenshots/` 演示截图。
-3. 之后继续后续缓存/运营治理细节。
+1. 先积累 `ai_asset_view` 与后续 `practice_record` 的真实样本。
+2. 有足够数据后，在“知识点跨题迁移”与“变式训练完成率”中选择一个最小闭环。
+3. Docker daemon 恢复后复跑 Testcontainers，确认 V17 在真实 MySQL 上迁移通过。
 
 当前验收基线：后端 `mvn test` 387 passed，`mvn test -DexcludedGroups= -Dgroups=integration` 53 passed，`mvn package -DskipTests` 成功；前端 `npm ci`、`npm audit --audit-level=moderate`、`npm test -- --run` 214 passed、`npm run build` 成功；`docker compose config --quiet` 成功。Round 122 已用 Playwright 检查桌面 1440x980 和移动端 390x844 首页无横向溢出，移动端抽屉导航展开正常。Round 124 已用本地 Playwright 检查 `/practice`、`/wrong-questions`、`/review`、`/exams` 桌面 1440x980 与移动端 390x844 均无横向溢出，并确认 `/review` 请求路径为 `/api/review/stats`。Round 125 已用本地 Playwright 检查 `/questions` 桌面 1440x980 与移动端 390x844 均无横向溢出。Round 129 已用本地 Playwright mock 数据检查 `/admin/questions`、`/admin/exams`、`/admin/submissions`、`/admin/ai-usage` 在桌面 1440x980 与移动端 390x844 均无横向溢出。Round 130 已用本地 Playwright mock 数据检查 `/admin/knowledge-points?courseId=1&courseName=Java%20%E5%90%8E%E7%AB%AF` 在桌面 1440x980 与移动端 390x844 均无横向溢出，并验证知识点树搜索可收窄结果。Round 132 已用本地 Playwright mock 数据检查 `/courses`、`/courses/1` 在桌面 1440x980 与移动端 390x844 均无横向溢出，并验证从课程详情进入题库会请求 `/api/questions?pageNum=1&pageSize=10&courseId=1`。Round 133 已用 E2E Docker 环境生成 11 张真实演示截图。Round 135 已用本地 Playwright mock 数据检查 `/admin/users`、`/admin/questions`、`/admin/submissions` 批量工具条、清空选择、题目空状态和桌面 1440x980 无横向溢出。Round 136 已确认 `frontend/src` 中不再存在 `el-radio` / `el-radio-button` 旧 `label` 取值写法。Round 137 已在当前源码 Docker E2E 环境中重建 backend/frontend 并运行 `npm run test:e2e`，4 条真实业务闭环通过；Round 138 已确认本机 Testcontainers 集成测试可连接 Docker Desktop 并通过 53 个真实 MySQL 用例。Round 150 已用本地 Playwright mock 数据检查 `/favorites` 桌面 1440x980 与移动端 390x844 均无页面级横向溢出，收藏摘要与关键操作可见。Round 151 已用本地 Playwright mock 数据检查 `/ai/review` 桌面 1440x980 与移动端 390x844 均无页面级横向溢出，页面标题、当前范围和 mock 流式结果可见。Round 152 已用本地 Playwright mock 当前用户接口检查 `/profile` 桌面 1440x980 与移动端 390x844 均无页面级横向溢出，学习报告按钮、保存修改按钮和密码安全提示可见。Round 153 已用本地 Playwright mock 数据检查 `/learning-path?courseId=2` 桌面 1440x980 与移动端 390x844 均无页面级横向溢出，学习路径接口携带 `courseId=2`，页面标题、优先知识点和路径计数可见。核心用户与管理员页面已通过真实浏览器点击验收；后续临时浏览器流程验收应按 `skills/frontend-flow-test/SKILL.md` 只跑最小相关闭环。
 当前不优先做：PDF / 图片 OCR、爬虫、用户上传题库自动入库、AI 自动审核发布题目、复杂推荐系统（包括向量推荐）。

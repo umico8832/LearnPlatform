@@ -114,6 +114,35 @@ export interface AiUsageReport {
   alerts: AiUsageAlert[]
 }
 
+export interface AiAssetTypeEffect {
+  assetType: string
+  assetTypeLabel: string
+  viewCount: number
+  userCount: number
+  feedbackCount: number
+  helpfulRate: number | null
+}
+
+/** AI 学习资产使用与后续同题作答的观察性统计 */
+export interface AiLearningEffect {
+  days: number
+  periodStart: string
+  periodEnd: string
+  assetViewCount: number
+  engagedUserCount: number
+  viewedQuestionCount: number
+  feedbackCount: number
+  helpfulRate: number | null
+  afterViewPracticeCount: number
+  afterViewCorrectRate: number | null
+  baselinePracticeCount: number
+  baselineCorrectRate: number | null
+  correctRateLift: number | null
+  conclusionLevel: 'INSUFFICIENT_DATA' | 'POSITIVE_ASSOCIATION' | 'NO_CLEAR_DIFFERENCE' | 'NEEDS_ATTENTION'
+  conclusion: string
+  assetTypeStats: AiAssetTypeEffect[]
+}
+
 /** 获取 AI 调用总览 */
 export function getAiUsageOverview(days?: number) {
   return request.get<AiUsageOverview>('/admin/ai-usage/overview', {
@@ -124,6 +153,13 @@ export function getAiUsageOverview(days?: number) {
 /** 获取 AI 调用运营报告与实时异常提醒 */
 export function getAiUsageReport(days?: number) {
   return request.get<AiUsageReport>('/admin/ai-usage/report', {
+    params: days ? { days } : {},
+  })
+}
+
+/** 获取 AI 学习资产使用与后续答题表现的观察性统计 */
+export function getAiLearningEffect(days?: number) {
+  return request.get<AiLearningEffect>('/admin/ai-usage/learning-effect', {
     params: days ? { days } : {},
   })
 }

@@ -540,7 +540,16 @@ AiService (业务服务)
   → 返回调用趋势、成功率、Tokens、已配置价格的成本、模型/功能分布、活跃用户和失败详情
 管理员访问 /api/admin/ai-usage/report
   → AiUsageService 比较当前与前一等长日志窗口
-  → 返回周期环比，并实时识别失败率、延迟和调用量异常（不持久化、不发送外部通知）
+  → 返回周期环比，识别失败率、延迟和调用量异常
+  → ai_usage_alert 持久化未确认提醒；可选 webhook 只通知新提醒
+
+用户实际展开某题的 AI 学习资产
+  → POST /api/ai/asset/view
+  → ai_asset_view 按用户、题目、资产类型和日期原子聚合
+管理员访问 /api/admin/ai-usage/learning-effect
+  → AiLearningEffectService 以同题首次查看时间切分周期内 practice_record
+  → 对比阅读后作答与未阅读前/未阅读作答正确率
+  → 合并 ai_asset_feedback，返回覆盖、反馈、样本量和观察性结论
 
 管理员在用户管理页设置 /api/admin/users/{id}/ai-daily-quota
   → 写入用户级覆盖值或清空为 NULL 恢复全局默认

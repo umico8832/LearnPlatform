@@ -397,6 +397,11 @@ export function getAssetFeedback(questionId: number, assetType: AiAssetType) {
   ).then((res) => res.data)
 }
 
+/** 记录当前用户实际看到某类 AI 学习资产 */
+export function recordAssetView(questionId: number, assetType: AiAssetType) {
+  return aiService.post<ApiResponse<void>>('/ai/asset/view', { questionId, assetType }).then((res) => res.data)
+}
+
 /** 清除题目的 AI 学习资产缓存（管理端） */
 export function clearAssetCache(questionId: number) {
   return aiService.delete<ApiResponse<void>>(`/ai/assets/${questionId}`).then((res) => res.data)

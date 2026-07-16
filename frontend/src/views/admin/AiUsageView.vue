@@ -4,7 +4,7 @@
       <div>
         <p class="admin-page-kicker">AI OPERATIONS</p>
         <h2>AI 调用分析</h2>
-        <p class="admin-page-description">跟踪调用量、Token、成本、失败率和模型分布，用于排查异常与控制运营成本。</p>
+        <p class="admin-page-description">同时跟踪 AI 调用成本与真实学习行为，用于排查异常、控制成本并观察学习资产价值。</p>
       </div>
       <div class="admin-header-actions">
         <el-select v-model="days" size="default" @change="fetchData" style="width: 140px">
@@ -98,6 +98,82 @@
           </template>
         </el-alert>
         <el-empty v-if="!report.alerts.length" description="当前周期未发现失败率、耗时或调用量异常" :image-size="52" />
+      </el-card>
+
+      <el-card shadow="hover" class="learning-effect-card">
+        <template #header>
+          <div class="effect-card-header">
+            <div>
+              <span>AI 学习效果观察</span>
+              <span class="report-subtitle">实际阅读行为与后续同题作答对照</span>
+            </div>
+            <el-tag :type="effectTagType" effect="light">{{ effectTagLabel }}</el-tag>
+          </div>
+        </template>
+
+        <div class="effect-context">
+          <div>
+            <strong>{{ learningEffect.periodStart || '-' }} 至 {{ learningEffect.periodEnd || '-' }}</strong>
+            <p>只统计用户实际看到已缓存学习资产的行为；正确率差异属于观察性关联，不代表因果提升。</p>
+          </div>
+          <div class="effect-coverage">
+            <span><b>{{ learningEffect.assetViewCount }}</b> 次查看</span>
+            <span><b>{{ learningEffect.engagedUserCount }}</b> 位用户</span>
+            <span><b>{{ learningEffect.viewedQuestionCount }}</b> 道题</span>
+          </div>
+        </div>
+
+        <div class="effect-comparison">
+          <div class="effect-group is-after-view">
+            <span class="effect-group-label">阅读后同题作答</span>
+            <strong>{{ formatRate(learningEffect.afterViewCorrectRate) }}</strong>
+            <div class="effect-rate-track">
+              <i :style="{ width: rateWidth(learningEffect.afterViewCorrectRate) }"></i>
+            </div>
+            <small>{{ learningEffect.afterViewPracticeCount }} 条作答样本</small>
+          </div>
+          <div class="effect-lift">
+            <span>正确率差异</span>
+            <strong :class="effectLiftClass">{{ formatLift(learningEffect.correctRateLift) }}</strong>
+            <small>阅读后组 − 对照组</small>
+          </div>
+          <div class="effect-group is-baseline">
+            <span class="effect-group-label">未阅读前 / 未阅读作答</span>
+            <strong>{{ formatRate(learningEffect.baselineCorrectRate) }}</strong>
+            <div class="effect-rate-track">
+              <i :style="{ width: rateWidth(learningEffect.baselineCorrectRate) }"></i>
+            </div>
+            <small>{{ learningEffect.baselinePracticeCount }} 条作答样本</small>
+          </div>
+        </div>
+
+        <el-alert
+          :title="learningEffect.conclusion"
+          :type="effectAlertType"
+          :closable="false"
+          show-icon
+          class="effect-conclusion"
+        />
+
+        <div class="effect-detail-grid">
+          <div class="effect-feedback">
+            <span>内容反馈</span>
+            <strong>{{ formatRate(learningEffect.helpfulRate) }}</strong>
+            <small>{{ learningEffect.feedbackCount }} 条反馈中的有帮助占比</small>
+          </div>
+          <el-table :data="learningEffect.assetTypeStats" stripe size="small" class="effect-type-table">
+            <el-table-column prop="assetTypeLabel" label="资产类型" min-width="120" />
+            <el-table-column prop="viewCount" label="查看" width="76" align="right" />
+            <el-table-column prop="userCount" label="用户" width="76" align="right" />
+            <el-table-column prop="feedbackCount" label="反馈" width="76" align="right" />
+            <el-table-column label="有帮助率" width="96" align="right">
+              <template #default="{ row }">{{ formatRate(row.helpfulRate) }}</template>
+            </el-table-column>
+            <template #empty>
+              <el-empty description="当前周期暂无学习资产查看数据" :image-size="48" />
+            </template>
+          </el-table>
+        </div>
       </el-card>
 
       <!-- 每日调用趋势 -->
@@ -203,7 +279,15 @@
 import { computed, ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { Coin, DataLine, Money, Refresh, Timer, TrendCharts, Warning, SuccessFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { acknowledgeAiUsageAlert, getAiUsageOverview, getAiUsageReport, type AiUsageOverview, type AiUsageReport } from '@/api/aiUsage'
+import {
+  acknowledgeAiUsageAlert,
+  getAiLearningEffect,
+  getAiUsageOverview,
+  getAiUsageReport,
+  type AiLearningEffect,
+  type AiUsageOverview,
+  type AiUsageReport,
+} from '@/api/aiUsage'
 import * as echarts from 'echarts/core'
 import { BarChart, PieChart, LineChart } from 'echarts/charts'
 import {
@@ -252,6 +336,47 @@ const report = reactive<AiUsageReport>({
   changes: { callsPercent: null, tokensPercent: null, costPercent: null, failureRatePointChange: 0, avgDurationPercent: null },
   alerts: [],
 })
+const learningEffect = reactive<AiLearningEffect>({
+  days: 30,
+  periodStart: '',
+  periodEnd: '',
+  assetViewCount: 0,
+  engagedUserCount: 0,
+  viewedQuestionCount: 0,
+  feedbackCount: 0,
+  helpfulRate: null,
+  afterViewPracticeCount: 0,
+  afterViewCorrectRate: null,
+  baselinePracticeCount: 0,
+  baselineCorrectRate: null,
+  correctRateLift: null,
+  conclusionLevel: 'INSUFFICIENT_DATA',
+  conclusion: '当前暂无足够数据。',
+  assetTypeStats: [],
+})
+
+const effectTagLabel = computed(() => ({
+  INSUFFICIENT_DATA: '样本积累中',
+  POSITIVE_ASSOCIATION: '正向关联',
+  NO_CLEAR_DIFFERENCE: '差异不明确',
+  NEEDS_ATTENTION: '需要关注',
+}[learningEffect.conclusionLevel]))
+
+const effectTagType = computed(() => ({
+  INSUFFICIENT_DATA: 'info',
+  POSITIVE_ASSOCIATION: 'success',
+  NO_CLEAR_DIFFERENCE: 'info',
+  NEEDS_ATTENTION: 'warning',
+}[learningEffect.conclusionLevel] as 'info' | 'success' | 'warning'))
+
+const effectAlertType = computed(() => learningEffect.conclusionLevel === 'NEEDS_ATTENTION'
+  ? 'warning'
+  : learningEffect.conclusionLevel === 'POSITIVE_ASSOCIATION' ? 'success' : 'info')
+
+const effectLiftClass = computed(() => {
+  if (learningEffect.correctRateLift === null || learningEffect.correctRateLift === 0) return 'neutral'
+  return learningEffect.correctRateLift > 0 ? 'positive' : 'negative'
+})
 
 const usageStats = computed(() => [
   { label: '总调用次数', value: overview.totalCalls?.toLocaleString() ?? '-', note: `今日 ${overview.todayCalls?.toLocaleString() ?? 0} 次`, icon: DataLine, className: 'is-primary' },
@@ -298,6 +423,20 @@ function formatPointChange(value: number | null | undefined): string {
   return `${value > 0 ? '+' : ''}${value.toFixed(1)} 个百分点`
 }
 
+function formatRate(value: number | null | undefined): string {
+  return value === null || value === undefined ? '—' : `${value.toFixed(1)}%`
+}
+
+function formatLift(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '—'
+  return `${value > 0 ? '+' : ''}${value.toFixed(1)} 个百分点`
+}
+
+function rateWidth(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '0%'
+  return `${Math.max(0, Math.min(100, value))}%`
+}
+
 function changeClass(value: number | null | undefined, isRiskMetric = false): string {
   if (value === null || value === undefined || value === 0) return 'neutral'
   const isIncrease = value > 0
@@ -307,12 +446,14 @@ function changeClass(value: number | null | undefined, isRiskMetric = false): st
 async function fetchData() {
   loading.value = true
   try {
-    const [overviewResponse, reportResponse] = await Promise.all([
+    const [overviewResponse, reportResponse, effectResponse] = await Promise.all([
       getAiUsageOverview(days.value),
       getAiUsageReport(days.value),
+      getAiLearningEffect(days.value),
     ])
     Object.assign(overview, overviewResponse.data)
     Object.assign(report, reportResponse.data)
+    Object.assign(learningEffect, effectResponse.data)
     await nextTick()
     renderCharts()
   } catch (e: any) {
@@ -468,6 +609,138 @@ onBeforeUnmount(() => {
   margin-bottom: 16px;
   border-left: 3px solid #409eff;
 }
+.learning-effect-card {
+  margin-bottom: 16px;
+  border-left: 3px solid var(--lp-success);
+}
+.effect-card-header,
+.effect-context,
+.effect-comparison,
+.effect-detail-grid {
+  display: flex;
+  align-items: center;
+}
+.effect-card-header,
+.effect-context {
+  justify-content: space-between;
+  gap: 20px;
+}
+.effect-context {
+  padding: 4px 2px 18px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+.effect-context strong {
+  color: var(--lp-text-primary);
+  font-size: 14px;
+}
+.effect-context p {
+  max-width: 720px;
+  margin: 6px 0 0;
+  color: var(--lp-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.effect-coverage {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+.effect-coverage span {
+  padding: 8px 10px;
+  border: 1px solid #dbe7e0;
+  border-radius: 8px;
+  background: #f4faf6;
+  color: var(--lp-text-secondary);
+  font-size: 12px;
+}
+.effect-coverage b {
+  color: #25794d;
+  font-size: 15px;
+}
+.effect-comparison {
+  justify-content: center;
+  gap: 28px;
+  padding: 24px 0;
+}
+.effect-group {
+  width: min(300px, 32%);
+  padding: 18px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  background: #fafcfe;
+}
+.effect-group.is-after-view {
+  border-color: #cce8d7;
+  background: #f3fbf6;
+}
+.effect-group-label,
+.effect-group small,
+.effect-lift span,
+.effect-lift small,
+.effect-feedback span,
+.effect-feedback small {
+  display: block;
+  color: var(--lp-text-secondary);
+  font-size: 12px;
+}
+.effect-group strong {
+  display: block;
+  margin: 8px 0 10px;
+  color: var(--lp-text-primary);
+  font-size: 28px;
+  line-height: 1;
+}
+.effect-rate-track {
+  height: 7px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e9eef4;
+}
+.effect-rate-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #8aa1b8;
+}
+.is-after-view .effect-rate-track i {
+  background: var(--lp-success);
+}
+.effect-lift {
+  min-width: 150px;
+  text-align: center;
+}
+.effect-lift strong {
+  display: block;
+  margin: 8px 0;
+  font-size: 18px;
+}
+.effect-conclusion {
+  margin-bottom: 18px;
+}
+.effect-detail-grid {
+  align-items: stretch;
+  gap: 16px;
+}
+.effect-feedback {
+  display: flex;
+  width: 180px;
+  flex: 0 0 180px;
+  flex-direction: column;
+  justify-content: center;
+  padding: 20px;
+  border-radius: 10px;
+  background: var(--lp-primary-soft);
+}
+.effect-feedback strong {
+  margin: 10px 0 8px;
+  color: var(--lp-primary);
+  font-size: 28px;
+}
+.effect-type-table {
+  min-width: 0;
+  flex: 1;
+}
 .report-header {
   display: flex;
   align-items: center;
@@ -531,5 +804,16 @@ onBeforeUnmount(() => {
 @media (max-width: 768px) {
   .chart-container { height: 240px; }
   .report-metric { border-left: none; padding: 8px 0; }
+  .effect-card-header,
+  .effect-context,
+  .effect-comparison,
+  .effect-detail-grid {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .effect-coverage { flex-wrap: wrap; }
+  .effect-group,
+  .effect-feedback { width: auto; }
+  .effect-lift { min-width: 0; }
 }
 </style>

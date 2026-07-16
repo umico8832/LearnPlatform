@@ -4,8 +4,10 @@ import com.learnplatform.common.result.R;
 import com.learnplatform.dto.AiUsageAlertVO;
 import com.learnplatform.dto.AiUsageOverviewVO;
 import com.learnplatform.dto.AiUsageReportVO;
+import com.learnplatform.dto.AiLearningEffectVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AiUsageService;
+import com.learnplatform.service.AiLearningEffectService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,9 +30,12 @@ import java.util.List;
 public class AdminAiUsageController {
 
     private final AiUsageService aiUsageService;
+    private final AiLearningEffectService learningEffectService;
 
-    public AdminAiUsageController(AiUsageService aiUsageService) {
+    public AdminAiUsageController(AiUsageService aiUsageService,
+                                  AiLearningEffectService learningEffectService) {
         this.aiUsageService = aiUsageService;
+        this.learningEffectService = learningEffectService;
     }
 
     @Operation(summary = "获取 AI 调用总览", description = "包含全局统计、真实 Tokens、已配置单价的成本、功能/模型分布、每日趋势、Top 活跃用户和最近失败调用")
@@ -45,6 +50,13 @@ public class AdminAiUsageController {
     public R<AiUsageReportVO> getReport(
             @Parameter(description = "报告周期天数，默认 7；支持 1-90") @RequestParam(required = false) Integer days) {
         return R.ok(aiUsageService.getReport(days));
+    }
+
+    @Operation(summary = "获取 AI 学习效果观察", description = "对比同题阅读 AI 学习资产后的作答与基线作答，只表达观察性关联，不代表因果结论")
+    @GetMapping("/learning-effect")
+    public R<AiLearningEffectVO> getLearningEffect(
+            @Parameter(description = "统计周期天数，默认 30；支持 1-90") @RequestParam(required = false) Integer days) {
+        return R.ok(learningEffectService.getLearningEffect(days));
     }
 
     @Operation(summary = "获取未确认 AI 运营提醒", description = "返回已持久化且尚未确认的 AI 运营提醒")

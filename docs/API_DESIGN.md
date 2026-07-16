@@ -865,6 +865,22 @@ GET /api/ai/asset/feedback/{questionId}/{assetType}
 
 **响应**（无反馈时）：`data` 为 `null`。
 
+#### 10.5.7 记录资产查看
+
+```
+POST /api/ai/asset/view
+```
+
+**请求体**：
+```json
+{
+  "questionId": 42,
+  "assetType": "FULL_EXPLANATION"
+}
+```
+
+仅当对应题目的该类缓存资产真实存在时记录。服务端按“用户 + 题目 + 资产类型 + 日期”聚合查看次数，前端只在内容实际可见时调用；该数据用于学习效果观察，不计入 AI 调用配额。
+
 ---
 
 ## 十一、统计接口
@@ -1303,6 +1319,28 @@ GET /api/admin/ai-usage/report?days=7
 返回当前统计周期与前一等长周期的运营报告；`days` 缺省为 7，最大为 90。报告包含调用量、失败率、真实 Tokens、平均耗时、已知成本及环比变化。环比的前一周期为零或成本未知时返回 `null`，不会虚构百分比。`alerts` 基于调用日志推导：当前周期至少 5 次调用且失败率不低于 10%、失败率较前一周期翻倍、平均耗时不低于 5 秒且较前一周期升高至少 50%，以及调用量翻倍且至少增加 10 次。
 
 报告生成的异常提醒会持久化为未确认记录：同类型、同周期天数、同一天生成的未确认提醒会更新同一条记录，返回的 `alerts` 包含 `id`、`status`、`periodStart` 和 `periodEnd`。管理员可确认提醒，系统记录确认人和确认时间。若开启 `AI_ALERT_WEBHOOK_ENABLED=true` 并配置 `AI_ALERT_WEBHOOK_URL`，系统仅在新提醒创建时发送一次结构化 webhook payload；复用当天未确认提醒只更新站内记录，不重复站外通知，webhook 失败只写日志、不阻断报告生成。
+
+```
+GET /api/admin/ai-usage/learning-effect?days=30
+```
+
+返回 AI 学习资产的真实查看覆盖、用户反馈和后续同题作答对照。`days` 缺省为 30，限制为 1-90。核心字段：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| assetViewCount | Long | 周期内按日聚合的资产查看次数 |
+| engagedUserCount | Long | 周期内查看资产的去重用户数 |
+| viewedQuestionCount | Long | 周期内被查看资产的去重题目数 |
+| helpfulRate | Double/null | 周期内反馈的“有帮助”占比，单位为百分比 |
+| afterViewPracticeCount | Long | 同一用户阅读同题资产后产生的作答样本数 |
+| afterViewCorrectRate | Double/null | 阅读后同题作答正确率，单位为百分比 |
+| baselinePracticeCount | Long | 未发生同题阅读前或从未阅读时的作答样本数 |
+| baselineCorrectRate | Double/null | 对照组作答正确率，单位为百分比 |
+| correctRateLift | Double/null | 阅读后组减对照组，单位为百分点 |
+| conclusionLevel | String | `INSUFFICIENT_DATA` / `POSITIVE_ASSOCIATION` / `NO_CLEAR_DIFFERENCE` / `NEEDS_ATTENTION` |
+| assetTypeStats | Array | 各资产类型的查看、用户、反馈和有帮助率 |
+
+当任一对照组少于 5 条作答时，接口返回 `INSUFFICIENT_DATA`。该接口只描述真实行为中的观察性关联，不将正确率差异解释为 AI 内容造成的因果提升。
 
 ```
 GET /api/admin/ai-usage/alerts?limit=20

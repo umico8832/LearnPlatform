@@ -8,7 +8,7 @@ vi.mock('@/utils/request', () => ({
 }))
 
 import request from '@/utils/request'
-import { acknowledgeAiUsageAlert, getAiUsageAlerts, getAiUsageOverview, getAiUsageReport } from '@/api/aiUsage'
+import { acknowledgeAiUsageAlert, getAiLearningEffect, getAiUsageAlerts, getAiUsageOverview, getAiUsageReport } from '@/api/aiUsage'
 
 const mockedRequest = vi.mocked(request)
 
@@ -56,6 +56,16 @@ describe('AI usage API', () => {
 
     expect(mockedRequest.get).toHaveBeenCalledWith('/admin/ai-usage/alerts', {
       params: { limit: 10 },
+    })
+  })
+
+  it('uses the learning effect observation endpoint', async () => {
+    mockedRequest.get.mockResolvedValue({ code: 0, data: { days: 30 }, message: 'success' })
+
+    await getAiLearningEffect(30)
+
+    expect(mockedRequest.get).toHaveBeenCalledWith('/admin/ai-usage/learning-effect', {
+      params: { days: 30 },
     })
   })
 

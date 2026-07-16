@@ -24,6 +24,7 @@ import {
   getReviewSuggestion,
   getSummary,
   getAiUsage,
+  recordAssetView,
   streamQuestionAi,
   streamReviewSuggestion,
 } from '@/api/ai'
@@ -99,6 +100,19 @@ describe('AI API', () => {
 
       expect(mockAiGet).toHaveBeenCalledWith('/ai/usage')
       expect(result).toEqual({ todayCount: 12, dailyQuota: 50 })
+    })
+  })
+
+  describe('recordAssetView', () => {
+    it('records a visible cached learning asset', async () => {
+      mockAiPost.mockResolvedValue({ code: 0, data: null, message: 'success' })
+
+      await recordAssetView(10, 'STEP_BY_STEP')
+
+      expect(mockAiPost).toHaveBeenCalledWith('/ai/asset/view', {
+        questionId: 10,
+        assetType: 'STEP_BY_STEP',
+      })
     })
   })
 

@@ -1,5 +1,5 @@
 <template>
-  <section class="learning-asset">
+  <section ref="assetRoot" class="learning-asset">
     <!-- 可折叠模式：仅显示标题栏，点击展开 -->
     <div v-if="collapsible && !expanded" class="asset-collapsed" @click="expandAndLoad">
       <span class="collapsed-icon">📚</span>
@@ -168,7 +168,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { Loading, MagicStick, ArrowRight } from '@element-plus/icons-vue'
 import {
   type AiAssetType,
@@ -177,6 +177,7 @@ import {
   streamAsset,
   submitAssetFeedback,
   getAssetFeedback,
+  recordAssetView,
 } from '@/api/ai'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import QuestionVisualInteractive from '@/components/QuestionVisualInteractive.vue'
@@ -189,6 +190,9 @@ const props = withDefaults(defineProps<{
 })
 
 const expanded = ref(false)
+const assetRoot = ref<HTMLElement | null>(null)
+const isInViewport = ref(false)
+let visibilityObserver: IntersectionObserver | null = null
 
 interface AssetTab {
   type: AiAssetType
@@ -244,14 +248,29 @@ const feedbackSubmitting = ref<AiAssetType | null>(null)
 const showCommentInput = ref<AiAssetType | null>(null)
 
 let abortController: AbortController | null = null
+const trackedViews = new Set<string>()
 
 const loading = computed(() => loadingType.value !== null)
 
 // 加载已有缓存资产（非折叠模式立即加载，折叠模式展开时加载）
 onMounted(() => {
+  if (typeof IntersectionObserver === 'undefined') {
+    isInViewport.value = true
+  } else if (assetRoot.value) {
+    visibilityObserver = new IntersectionObserver((entries) => {
+      const entry = entries[0]
+      isInViewport.value = Boolean(entry?.isIntersecting)
+      if (isInViewport.value) trackVisibleAsset(activeTab.value)
+    }, { threshold: 0.1 })
+    visibilityObserver.observe(assetRoot.value)
+  }
   if (!props.collapsible) {
     loadExistingAssets()
   }
+})
+
+onBeforeUnmount(() => {
+  visibilityObserver?.disconnect()
 })
 
 watch(() => props.questionId, () => {
@@ -293,6 +312,7 @@ async function loadExistingAssets() {
       for (const asset of data.data as QuestionLearningAsset[]) {
         loadFeedback(asset.assetType)
       }
+      trackVisibleAsset(activeTab.value)
     }
   } catch {
     // 静默失败，用户可手动触发生成
@@ -357,6 +377,17 @@ function onTabChange() {
     loadingType.value = null
     streamBuffer.value = ''
   }
+  trackVisibleAsset(activeTab.value)
+}
+
+function trackVisibleAsset(assetType: AiAssetType) {
+  if (!isInViewport.value || !tabContent[assetType]) return
+  const key = `${props.questionId}:${assetType}`
+  if (trackedViews.has(key)) return
+  trackedViews.add(key)
+  recordAssetView(props.questionId, assetType).catch(() => {
+    trackedViews.delete(key)
+  })
 }
 
 async function generateTab(type: AiAssetType) {
@@ -378,6 +409,7 @@ async function generateTab(type: AiAssetType) {
         // 流式完成，将 buffer 存入缓存内容
         tabContent[type] = streamBuffer.value
         streamBuffer.value = ''
+        trackVisibleAsset(type)
       },
     }, controller.signal)
   } catch (e: any) {

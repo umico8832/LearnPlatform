@@ -31,6 +31,7 @@ Question (1) ──── (N) PracticeRecord
 Question (1) ──── (N) WrongQuestion
 Question (1) ──── (N) QuestionSubmission (通过 imported_question_id 记录入库结果)
 Question (1) ──── (N) QuestionVersion
+Question (1) ──── (N) AiAssetView
 Question (N) ──── (N) ExamPaper (通过 exam_question 关联)
 
 ExamPaper (1) ──── (N) ExamQuestion
@@ -779,6 +780,27 @@ Flyway V9 创建的用户级 SM-2 复习调度表；同一用户和题目只有�
 
 ---
 
+### 3.21 AI 学习资产查看记录表 (ai_asset_view)
+
+Flyway V17 创建，用于记录用户实际看到某道题某类 AI 学习资产的行为。为控制事件量，同一用户、题目、资产类型在同一天只保留一行，并原子累加 `view_count`；该表用于观察学习资产使用与后续同题作答的相关性，不作为 AI 调用次数或配额依据。
+
+| 字段名 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| id | BIGINT | 自增主键 | 查看记录 ID |
+| user_id | BIGINT | | 用户 ID |
+| question_id | BIGINT | | 题目 ID |
+| asset_type | VARCHAR(50) | | AI 学习资产类型 |
+| view_date | DATE | | 查看日期 |
+| view_count | INT | 1 | 当日查看次数 |
+| first_view_time | DATETIME | CURRENT_TIMESTAMP | 当日首次查看时间 |
+| last_view_time | DATETIME | CURRENT_TIMESTAMP | 当日最近查看时间 |
+| create_time | DATETIME | CURRENT_TIMESTAMP | 创建时间 |
+| update_time | DATETIME | CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
+
+索引与约束：唯一约束 `uk_user_question_asset_date(user_id, question_id, asset_type, view_date)`；索引 `idx_view_date(view_date)`、`idx_user_question_time(user_id, question_id, first_view_time)`。
+
+---
+
 ## 四、表关系说明
 
 ### 4.1 外键关系（逻辑外键，不建物理外键）
@@ -799,10 +821,12 @@ Flyway V9 创建的用户级 SM-2 复习调度表；同一用户和题目只有�
 | 用户→题目纠错 | user | id | question_correction_report | reporter_id |
 | 用户→纠错处理 | user | id | question_correction_report | handler_id |
 | 用户→题目版本操作 | user | id | question_version | operator_id |
+| 用户→AI资产查看 | user | id | ai_asset_view | user_id |
 | 题目→刷题记录 | question | id | practice_record | question_id |
 | 题目→错题 | question | id | wrong_question | question_id |
 | 题目→AI学习资产 | question | id | question_ai_asset | question_id |
 | AI学习资产→反馈 | question_ai_asset | question_id, asset_type | ai_asset_feedback | question_id, asset_type |
+| AI学习资产→查看 | question_ai_asset | question_id, asset_type | ai_asset_view | question_id, asset_type |
 | 课程→题目投稿 | course | id | question_submission | course_id |
 | 正式题目→投稿入库结果 | question | id | question_submission | imported_question_id |
 | 题目→复习计划 | question | id | question_review_schedule | question_id |
@@ -873,6 +897,7 @@ INSERT INTO `course` (`name`, `description`, `sort_order`) VALUES
 | exam_paper | 50-200 | 试卷数量有限 |
 | exam_record | 1,000-10,000 | 考试记录 |
 | exam_answer | 10,000-100,000 | 考试答题详情 |
+| ai_asset_view | 10,000-100,000 | 按用户、题目、资产类型和日期聚合的查看记录 |
 
 ### 6.2 优化建议
 

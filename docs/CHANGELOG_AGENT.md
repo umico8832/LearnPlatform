@@ -1,5 +1,61 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 158 - 2026-07-16
+
+### 阶段
+Phase 22：AI 学习效果验证（首版闭环）
+
+### 完成内容
+1. 新增 Flyway V17 `ai_asset_view`，按“用户 × 题目 × 资产类型 × 日期”聚合真实查看行为，使用唯一键和 `ON DUPLICATE KEY UPDATE` 原子累加次数。
+2. 学习资产组件只在已展开且内容进入浏览器视口后上报查看，同一组件会话避免重复请求；后端仅接受真实存在的缓存资产。
+3. 新增 AI 学习效果统计服务和管理端接口，按同一用户/同一道题的首次查看时间区分“阅读后作答”和“未阅读前/未阅读作答”，聚合正确率、样本量、查看覆盖、反馈有帮助率和资产类型明细。
+4. 管理端 AI 调用分析页新增学习效果观察面板；任一对照组少于 5 条时显示样本不足，所有文案明确说明只代表观察性关联，不作因果推断。
+5. 同步 API、数据库、架构、PRD、路线图、交接、README 和简历文档，启动 Phase 22。
+
+### 修改文件
+- `backend/src/main/resources/db/migration/V17__create_ai_asset_view_table.sql`
+- `backend/src/main/java/com/learnplatform/entity/AiAssetView.java`
+- `backend/src/main/java/com/learnplatform/mapper/AiAssetViewMapper.java`
+- `backend/src/main/java/com/learnplatform/dto/AiLearningEffectVO.java`
+- `backend/src/main/java/com/learnplatform/dto/AiAssetViewRequest.java`
+- `backend/src/main/java/com/learnplatform/service/AiLearningEffectService.java`
+- `backend/src/main/java/com/learnplatform/controller/AiController.java`
+- `backend/src/main/java/com/learnplatform/controller/AdminAiUsageController.java`
+- `backend/src/test/java/com/learnplatform/service/AiLearningEffectServiceTest.java`
+- `backend/src/test/java/com/learnplatform/controller/AdminAiUsageControllerTest.java`
+- `backend/src/test/java/com/learnplatform/controller/AiAssetViewControllerTest.java`
+- `frontend/src/api/ai.ts`
+- `frontend/src/api/aiUsage.ts`
+- `frontend/src/components/QuestionLearningAsset.vue`
+- `frontend/src/views/admin/AiUsageView.vue`
+- `frontend/src/__tests__/api/ai.test.ts`
+- `frontend/src/__tests__/api/aiUsage.test.ts`
+- `frontend/src/__tests__/components/QuestionLearningAsset.test.ts`
+- `README.md`
+- `docs/API_DESIGN.md`
+- `docs/DB_DESIGN.md`
+- `docs/ARCHITECTURE.md`
+- `docs/PRD.md`
+- `docs/RESUME.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd backend && mvn test`：396 个默认测试通过。
+- `cd frontend && npm test -- --run`：27 个测试文件、217 个测试通过。
+- `cd frontend && npm run build`：通过；仅保留既有第三方 `@vueuse/core` pure annotation 提示。
+- `docker compose config --quiet`：通过。
+- `cd backend && mvn test -DexcludedGroups= -Dtest=StatisticsServiceIntegrationTest`：未执行到测试逻辑；当前 Docker daemon 未运行，Testcontainers 在连接 `/Users/umico/.docker/run/docker.sock` 时失败，因此本轮未形成 V17 真实 MySQL 迁移结论。
+- 本地浏览器打开 `/admin/ai-usage` 时因无可用登录态且 Docker 后端未启动停留在登录页，未伪造已登录状态；本轮视觉验收以 Vue 类型检查和生产构建为准。
+
+### 遗留问题
+- Docker daemon 恢复后需复跑至少一个 Testcontainers 集成测试，确认 V17 在真实 MySQL 上完成迁移。
+- 首版只观察同题重练的短期关联；跨题知识迁移和变式训练完成率需先积累真实数据并定义完成事件。
+
+### commit message
+`feat(ai): 建立学习资产效果观察闭环`
+
 ## Round 157 - 2026-07-16
 
 ### 阶段

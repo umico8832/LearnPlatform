@@ -1,15 +1,18 @@
 package com.learnplatform.controller;
 
 import com.learnplatform.dto.AiAssetType;
+import com.learnplatform.dto.AiAssetViewRequest;
 import com.learnplatform.dto.AiRequest;
 import com.learnplatform.dto.AiResponse;
 import com.learnplatform.dto.QuestionLearningAssetVO;
 import com.learnplatform.common.result.R;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AiService;
+import com.learnplatform.service.AiLearningEffectService;
 import com.learnplatform.service.QuestionLearningAssetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
@@ -34,13 +37,16 @@ public class AiController {
 
     private final AiService aiService;
     private final QuestionLearningAssetService learningAssetService;
+    private final AiLearningEffectService learningEffectService;
     private final Executor aiTaskExecutor;
 
     public AiController(AiService aiService,
                         QuestionLearningAssetService learningAssetService,
+                        AiLearningEffectService learningEffectService,
                         @Qualifier("aiTaskExecutor") Executor aiTaskExecutor) {
         this.aiService = aiService;
         this.learningAssetService = learningAssetService;
+        this.learningEffectService = learningEffectService;
         this.aiTaskExecutor = aiTaskExecutor;
     }
 
@@ -199,6 +205,16 @@ public class AiController {
                 "helpful", feedback.getHelpful(),
                 "comment", feedback.getComment() != null ? feedback.getComment() : ""
         ));
+    }
+
+    @Operation(summary = "记录资产查看", description = "记录当前用户实际看到某类已缓存 AI 学习资产，按日聚合重复查看")
+    @PostMapping("/asset/view")
+    public R<Void> recordAssetView(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody AiAssetViewRequest request) {
+        learningEffectService.recordAssetView(
+                request.getQuestionId(), request.getAssetType(), userDetails.getUserId());
+        return R.ok(null);
     }
 
     /**
