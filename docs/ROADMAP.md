@@ -24,12 +24,12 @@
 | 17 | 间隔重复与智能复习 | ✅ 基本完成 | Round 94-97 | 基于 SM-2 算法的间隔重复系统（Flyway V9 ✅ + SpacedRepetitionService ✅ + ReviewController 10 个接口 ✅ + 前端 ReviewView ✅ + 错题自动复习调度 ✅ + 循环依赖消除 ✅ + AI 复习建议整合 ✅ + 复习统计整合到学习报告 ✅ + 25 个单元测试 ✅） |
 | 18 | 全局搜索与快捷导航 | ✅ 基本完成 | Round 98-99 | 跨题目/课程/知识点的全局搜索（GlobalSearchService ✅ + GlobalSearchController 4 个接口 ✅ + 前端 GlobalSearchDialog 组件 ✅ + ⌘K/Ctrl+K 快捷键 ✅ + 键盘导航 ✅ + 关键词高亮 ✅ + 移动端适配 ✅ + 搜索历史记录 ✅ + 热门搜索推荐 ✅ + 搜索结果缓存 @Cacheable ✅ + 24 个单元测试 ✅） |
 | 19 | AI 调用分析与成本控制 | ✅ 基本完成 | Round 100、115 | 管理端 AI 调用总览（趋势、功能/模型分布、Top 用户、失败调用、真实 Tokens、平均耗时与按模型配置单价计算的成本） |
-| 20 | 演示验收与 AI 运营治理 | 🚧 开发中 | 2-3 个迭代 | 已覆盖关键业务真实浏览器 E2E，并完成独立配额、审计追踪、运营报告、异常提醒持久化确认、疑似重复题检测、题目纠错反馈闭环、题目版本记录和学习效果指标；演示截图已产出，CI #26 全部通过 |
-| 21 | 前端信息架构与视觉体验优化 | 🚧 开发中 | 2-4 个迭代 | AppLayout 分组导航、首页学习工作台、核心业务页、课程入口/详情页、题库浏览页、个人中心、收藏题页、AI 复习建议页、学习路径页、学习报告效果面板 polish、管理端主要页面样板整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态和已知 Element Plus radio 旧 API 清理已完成；真实 E2E 已复跑通过，CI #26 全部通过 |
+| 20 | 演示验收与 AI 运营治理 | ✅ 已完成 | 2-3 个迭代 | 已覆盖关键业务真实浏览器 E2E，并完成独立配额、审计追踪、运营报告、异常提醒持久化确认、疑似重复题检测、题目纠错反馈闭环、题目版本记录和学习效果指标；演示截图已产出，CI #26 全部通过 |
+| 21 | 前端信息架构与视觉体验优化 | ✅ 已完成 | 2-4 个迭代 | AppLayout 分组导航、主要用户/管理页面、批量操作、空状态和真实接口点击验收均已完成；Round 157 补齐 Element Plus 样式按需打包，入口 CSS 从 361.86 kB 降至 54.41 kB |
 
 **Phase 0-12 预计总工期**：约 17-20 天
 
-**当前阶段：Phase 20 演示验收与 AI 运营治理已补齐 `npm run screenshots:demo` 演示截图脚本，并在 Docker/E2E 环境中产出 11 张真实演示截图；Round 137 修复了错题逻辑删除后再次答错的唯一键冲突，并复跑 4 条真实 Playwright E2E 通过；Round 138 修复本地 Testcontainers 与 Docker Engine 29 兼容问题，并确认 53 个真实 MySQL 集成测试通过；Round 139 新增正式题目 AI 复审建议与缓存；Round 140 新增 AI 运营提醒持久化与确认能力；Round 141 新增管理员顶部栏 AI 运营提醒站内入口；Round 143 新增 AI 运营提醒可选 webhook 站外通知；Round 144 新增管理端疑似重复题检测；Round 145 新增用户题目纠错反馈和管理端处理留痕；Round 146 新增题目版本记录和管理端查看入口；Round 147 新增个人学习报告学习效果指标；Round 155 修复 AI 运营提醒 webhook 服务的 Spring 构造器注入，恢复 Docker/E2E 后端启动，并复跑 4 条真实 Playwright E2E 通过；GitHub Actions CI #26 的 Backend、Frontend、Docker Build 和 Browser E2E 全部通过。Phase 21 前端信息架构与视觉体验优化已完成 AppLayout + global.css + HomeView 样板、Practice/WrongQuestion/Review/ExamList、CourseList/CourseDetail、QuestionList、PracticeRecord 刷题记录复盘页、Favorite 收藏题页、AI 复习建议页、Profile 个人中心页、LearningPath 学习路径页、学习报告学习效果面板 polish、管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理，以及用户/题目/投稿管理长操作列收纳、批量操作、空状态、顶部运营提醒入口和已知 Element Plus radio 旧 API 清理。向量推荐、OCR、爬虫和自动入库不在近期主线。**
+**当前阶段：Phase 20 与 Phase 21 已完成。Round 156 已将高频用户/管理页面真实接口巡检固化为第 5 条 Playwright E2E；Round 157 移除 Element Plus 全量 CSS，引入消息提示与确认框的必要全局样式，其余组件样式由现有按需解析器随路由拆分。生产入口 CSS 从 361.86 kB（gzip 49.04 kB）降至 54.41 kB（gzip 8.48 kB）。Mermaid 593.66 kB 高级图表解析器保持按需加载，并以 600 kB 构建预算继续约束后续增长。向量推荐、OCR、爬虫和自动入库不在近期主线。**
 
 ---
 
@@ -701,6 +701,10 @@
 - [x] `UserManage.vue`、`QuestionManage.vue` 与 `SubmissionManage.vue`：补齐表格选择列、批量操作工具条、空状态和选择清空逻辑。
 - [x] 清理 `LearningPathView.vue` 的 Element Plus radio `label` 旧 API，并确认 `frontend/src` 无同类旧写法。
 - [x] 真实接口点击验收：用户端首页/刷题/错题/智能复习/考试与管理端总览/题目/投稿/AI 调用分析已通过真实 Docker E2E，并固化 `/api/` 5xx 与 `console.error` 巡检（Round 156）。
+
+### P4：加载性能收尾
+- [x] 移除 Element Plus 全量 CSS，保留消息提示与确认框的必要全局样式，其余组件样式按路由拆分；入口 CSS 从 361.86 kB（gzip 49.04 kB）降至 54.41 kB（gzip 8.48 kB）（Round 157）。
+- [x] 评估构建大 chunk：唯一超出默认 500 kB 的文件为按需加载的 Mermaid 高级图表解析器单模块，无法继续拆分；构建预算收敛为 600 kB，后续更大产物仍会告警（Round 157）。
 
 ### 验收标准
 1. `npm test -- --run` 通过，必要时补页面交互测试。

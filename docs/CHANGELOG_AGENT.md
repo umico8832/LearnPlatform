@@ -1,5 +1,35 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 157 - 2026-07-16
+
+### 阶段
+Phase 21：前端信息架构与视觉体验优化（加载性能收尾）
+
+### 完成内容
+1. 移除入口中的 Element Plus 全量 CSS，引入消息提示和确认框的必要全局样式，其余组件样式继续由现有按需解析器随路由拆分。
+2. 生产入口 CSS 从 361.86 kB（gzip 49.04 kB）降至 54.41 kB（gzip 8.48 kB），未修改页面业务逻辑或后端接口。
+3. 定位唯一超出默认 500 kB 的产物为 Mermaid 按需加载的高级图表解析器单模块；该模块无法继续拆分，因此将构建告警预算收敛为 600 kB，后续更大产物仍会告警。
+4. 同步修正路线图和交接文档中 Phase 20/21 状态不一致的问题。
+
+### 修改文件
+- `frontend/src/main.ts`
+- `frontend/vite.config.ts`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+- `README.md`
+
+### 验证
+- `cd frontend && npm test -- --run`：26 个测试文件、214 个测试通过。
+- `cd frontend && npm run build`：通过；入口 CSS 为 54.41 kB（gzip 8.48 kB），不再出现大 chunk 告警，仅保留第三方 `@vueuse/core` pure annotation 提示。
+- 本地生产预览 + Playwright mock 验证 `/login`：按钮、表单、业务错误消息均保持 Element Plus 样式，页面无横向溢出。
+
+### 遗留问题
+- Vite/Rolldown 仍会报告第三方 `@vueuse/core` pure annotation 位置提示，不影响构建或运行。
+
+### commit message
+`perf(frontend): 按需加载 Element Plus 样式`
+
 ## Round 156 - 2026-07-14
 
 ### 阶段

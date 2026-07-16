@@ -16,9 +16,9 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 20 — 演示验收与 AI 运营治理 🚧 收尾中（独立配额、审计追踪、运营报告、异常提醒持久化与确认、顶部站内提醒入口、可选 webhook 站外通知、Prompt/模型配置追踪、正式题目 AI 复审建议缓存、疑似重复题检测、题目纠错反馈与处理留痕、题目版本记录、个人学习报告学习效果指标已完成，演示截图生成脚本与 11 张真实截图已完成，本地 Testcontainers 集成测试已恢复，Round 155 已修复 AI 运营提醒 webhook 服务导致 Docker/E2E 后端启动失败的构造器注入问题，并复跑 4 条真实 Playwright E2E 通过；GitHub Actions CI #26 的 Backend、Frontend、Docker Build 和 Browser E2E 已全部通过）；Phase 21 — 前端信息架构与视觉体验优化 🚧 开发中（AppLayout 分组导航、全局样式变量、首页学习工作台样板、Practice/WrongQuestion/Review/ExamList/CourseList/CourseDetail/QuestionList/PracticeRecord/Favorite/AI Review/Profile/LearningPath/KnowledgeGraph 核心页整理已完成，学习报告学习效果面板 polish 已完成，管理端总览/Course/KnowledgePoint/User/Question/Exam/Submission/AI Usage 主要页面整理已完成，User/Question/Submission 长操作列收纳、批量操作和空状态已完成，顶部 AI 运营提醒入口已完成，已知 Element Plus radio `label` 旧 API 已清理）。Round 126 已新增 `skills/frontend-flow-test/SKILL.md`，用于规范低 token 的临时浏览器业务闭环验收；Round 132 已完成课程入口与详情页体验补齐；Round 133 已新增可复用 Playwright 演示截图脚本并产出真实截图；Round 134 已完成管理端表格长操作列收纳；Round 135 已完成管理端批量操作工具条和空状态；Round 136 已清理 Element Plus 单选按钮旧 API；Round 137 修复错题逻辑删除后再次答错的唯一键冲突，并确认 4 条真实 Playwright E2E 通过；Round 138 修复 Testcontainers 与 Docker Engine 29 兼容问题，并确认 53 个真实 MySQL 集成测试通过；Round 139 新增正式题目 AI 复审建议接口、缓存和管理端入口；Round 140 新增 AI 运营提醒持久化与确认入口；Round 141 新增管理员顶部栏 AI 运营提醒站内入口；Round 143 新增 AI 运营提醒可选 webhook 站外通知；Round 144 新增管理端疑似重复题检测；Round 145 新增题目纠错反馈闭环；Round 146 新增题目版本记录；Round 147 新增学习效果指标；Round 148 完成学习报告学习效果面板 polish；Round 149 完成刷题记录页练习复盘体验整理；Round 150 完成收藏题页重点题库体验整理；Round 151 完成 AI 复习建议页体验整理；Round 152 完成个人中心体验整理；Round 153 完成学习路径页体验整理；Round 154 完成知识图谱页体验整理。
+当前阶段：Phase 20 — 演示验收与 AI 运营治理、Phase 21 — 前端信息架构与视觉体验优化均已完成。Round 156 已将高频用户/管理页面真实接口巡检固化为第 5 条 Playwright E2E；Round 157 完成 Element Plus 样式按需打包和构建产物预算收尾，生产入口 CSS 从 361.86 kB（gzip 49.04 kB）降至 54.41 kB（gzip 8.48 kB）。
 
-下一阶段主线：Phase 21 代表性高频页面已完成真实接口点击验收，Playwright 现有 5 条真实 E2E，新增巡检会拦截 `/api/` 5xx 与浏览器 `console.error`。后续可聚焦前端大 chunk 告警的可控分包，或转入下一个高价值产品任务。OCR、爬虫、自动入库和复杂推荐仍非当前优先级。临时浏览器流程验收应先阅读 `skills/frontend-flow-test/SKILL.md`，只跑最小业务闭环。
+下一阶段主线：前端首屏样式体积和大 chunk 告警已完成评估与收尾，可转入下一个高价值产品任务。Playwright 现有 5 条真实 E2E，高频页面巡检会拦截 `/api/` 5xx 与浏览器 `console.error`。OCR、爬虫、自动入库和复杂推荐仍非当前优先级；临时浏览器流程验收应先阅读 `skills/frontend-flow-test/SKILL.md`，只跑最小业务闭环。
 
 阶段状态：
 - [x] Phase 0：项目规划 ✅
@@ -137,21 +137,16 @@ docker compose up -d
 - 运营提醒已在报告生成时持久化为 `ai_usage_alert`，同类型、同周期天数、同一天生成的未确认提醒会复用同一条记录；管理员可在 AI 调用分析页或顶部栏提醒下拉中确认提醒。若配置 `AI_ALERT_WEBHOOK_ENABLED=true` 和 `AI_ALERT_WEBHOOK_URL`，新提醒创建后会发送一次结构化 webhook，复用提醒不重复发送；发送失败只记录日志，不影响报告生成。
 - 本地 Testcontainers 已在 Docker Desktop / Docker Engine 29 环境恢复：Round 138 升级 Testcontainers 到 `1.21.4`，集成测试容器数据库与基线迁移对齐为 `learn_platform`，Flyway 使用容器 root 用户执行迁移；`mvn test -DexcludedGroups= -Dgroups=integration` 53 个真实 MySQL 集成测试通过。
 - Redis 缓存 TTL 已迁移到 `application.yml` 的 `app.cache.ttl` 与环境变量配置。
-- 前端暂未配置 lint 脚本或 ESLint；`npm run build` 仍有第三方 `@vueuse/core` pure annotation 和大 chunk 警告，但不阻断构建。
+- 前端暂未配置 lint 脚本或 ESLint；`npm run build` 仍有第三方 `@vueuse/core` pure annotation 提示，但不阻断构建。Mermaid 593.66 kB 高级图表解析器是按需加载的单模块，已将构建预算设为 600 kB；入口 CSS 已降至 54.41 kB。
 - Phase 15 的向量相似度推荐仍未完成，但不阻断当前主线；Phase 16 的正式题目复审建议缓存已在 Round 139 完成；题目版本记录已在 Round 146 完成；个人学习报告学习效果指标已在 Round 147 完成，学习效果面板视觉 polish 已在 Round 148 完成；刷题记录页练习复盘体验整理已在 Round 149 完成；收藏题页重点题库体验整理已在 Round 150 完成；AI 复习建议页体验整理已在 Round 151 完成；个人中心体验整理已在 Round 152 完成；学习路径页体验整理已在 Round 153 完成。
 
 ---
 
 ## 6. 下一步建议任务
 
-任务名称：Phase 21 — 前端信息架构与视觉体验优化
+任务名称：选择下一项高价值产品任务
 
-用户反馈当前项目“功能太混乱、布局不好看、太粗糙”，希望下一轮新对话先做前端美化和体验整理。新 Agent 应先阅读 `skills/frontend-design/SKILL.md`（当前仓库存在），再按 `docs/ROADMAP.md` 的 Phase 21 计划执行。
-
-建议下一轮做 Phase 21 / Phase 20 收尾：
-1. 评估并处理前端大 chunk 告警，优先对实际进入首屏或频繁加载的资源做可验证的分包优化。
-2. 如需刷新演示素材，启动 Docker/E2E 环境后执行 `cd frontend && npm run screenshots:demo`，截图会覆盖 `docs/demo-screenshots/`。
-3. 继续排查未阻断构建的第三方 pure annotation 与大 chunk 告警，或继续二级用户页体验整理。
+Phase 20/21 与前端加载性能收尾均已完成。建议下一轮先结合 `docs/AI_LEARNING_PLATFORM_STRATEGY.md`、`docs/FUTURE.md` 和真实代码选择一个聚焦任务；不要回到 OCR、爬虫、自动入库或复杂向量推荐。若需要刷新演示素材，启动 Docker/E2E 环境后执行 `cd frontend && npm run screenshots:demo`。
 
 Round 122 已完成 Phase 21 第一轮：`AppLayout.vue` 分组导航、`global.css` 设计变量和 `HomeView.vue` 学习工作台样板；本轮已通过前端测试、构建和桌面/移动端视觉检查。Round 123 完成工程体检：前端 `npm ci`、`npm audit --audit-level=moderate`、`npm test -- --run`、`npm run build` 通过；后端 `mvn test` 360 passed、`mvn package -DskipTests` 通过；`docker compose config --quiet` 通过。Round 124 完成 Phase 21 P2：整理 Practice/WrongQuestion/Review/ExamList，修复复习 API 重复 `/api` 前缀，并通过前端测试、构建和桌面/移动端浏览器布局检查。Round 125 完成 QuestionListView 题库浏览页整理，并通过前端测试、构建和桌面/移动端浏览器布局检查。Round 127 完成管理端通用样式基线、AdminDashboard/CourseManage/UserManage 样板整理，并通过前端测试、构建和桌面/移动端布局检查。Round 128 修复全局搜索重复 `/api` 前缀、统计流式接口 Base URL、Actuator 默认暴露面，并将 Redis 缓存 TTL 迁移到配置。Round 129 完成 QuestionManage/ExamManage/SubmissionManage/AiUsageView 管理页主整理，并通过前端测试、构建和桌面/移动端 mock 布局检查。Round 130 完成 KnowledgePointManage 体验补齐，新增知识点摘要卡、树结构搜索和桌面/移动端 mock 布局检查。Round 132 完成 CourseList/CourseDetail 体验补齐，并验证从课程详情进入题库会携带 `courseId` 筛选。Round 133 新增 `frontend/scripts/capture-demo-screenshots.mjs` 和 `npm run screenshots:demo`，修复 simple cache 模式统计接口 500，调整 E2E profile 日志，并在真实 E2E 环境中生成 11 张演示截图。Round 134 完成 User/Question/Submission 管理页长操作列收纳，并通过前端测试与构建。Round 135 完成 User/Question/Submission 管理页批量操作工具条和空状态，并通过前端测试、构建和 Playwright mock 浏览器检查。Round 136 清理 LearningPathView 的 Element Plus radio 旧 API，并通过前端测试与构建。Round 137 修复错题逻辑删除后再次答错的唯一键冲突，更新集成测试命令配置，并通过后端 361 个测试与 4 条真实 Docker E2E。Round 138 修复 Testcontainers 与 Docker Engine 29 兼容问题、对齐真实迁移约束下的集成测试夹具，并通过后端 361 个默认测试与 53 个真实 MySQL 集成测试。Round 139 新增正式题目 AI 复审建议服务、`questionReviewSuggestion` 缓存和管理端复审弹窗入口，并通过后端 365 个默认测试、前端 207 个测试与前端构建。Round 140 新增 AI 运营提醒持久化与确认入口，并通过后端 367 个默认测试、前端 209 个测试与前端构建。Round 141 新增管理员顶部栏 AI 运营提醒站内入口，并通过前端 AI Usage API 测试与前端构建。
 

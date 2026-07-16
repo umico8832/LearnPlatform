@@ -32,4 +32,9 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    // Mermaid 的高级图表解析器是按需加载的单模块产物（约 594 kB），无法继续拆分。
+    // 仅将预算提高到 600 kB，避免掩盖后续更大的业务或首屏 chunk。
+    chunkSizeWarningLimit: 600,
+  },
 })
