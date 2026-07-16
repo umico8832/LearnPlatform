@@ -2,6 +2,7 @@ package com.learnplatform.controller;
 
 import com.learnplatform.dto.AiAssetType;
 import com.learnplatform.dto.AiAssetViewRequest;
+import com.learnplatform.dto.AiVariantTrainingVO;
 import com.learnplatform.dto.AiRequest;
 import com.learnplatform.dto.AiResponse;
 import com.learnplatform.dto.QuestionLearningAssetVO;
@@ -209,12 +210,19 @@ public class AiController {
 
     @Operation(summary = "记录资产查看", description = "记录当前用户实际看到某类已缓存 AI 学习资产，按日聚合重复查看")
     @PostMapping("/asset/view")
-    public R<Void> recordAssetView(
+    public R<AiVariantTrainingVO> recordAssetView(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody AiAssetViewRequest request) {
-        learningEffectService.recordAssetView(
-                request.getQuestionId(), request.getAssetType(), userDetails.getUserId());
-        return R.ok(null);
+        return R.ok(learningEffectService.recordAssetView(
+                request.getQuestionId(), request.getAssetType(), userDetails.getUserId()));
+    }
+
+    @Operation(summary = "完成变式训练", description = "用户显式确认完成当前缓存版本的变式题训练；该事件不代表系统自动判分")
+    @PostMapping("/variant-training/{questionId}/complete")
+    public R<AiVariantTrainingVO> completeVariantTraining(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long questionId) {
+        return R.ok(learningEffectService.completeVariantTraining(questionId, userDetails.getUserId()));
     }
 
     /**

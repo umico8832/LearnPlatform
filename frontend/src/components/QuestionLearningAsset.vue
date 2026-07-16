@@ -47,6 +47,21 @@
               :content="tabContent[tab.type]"
             />
 
+            <div v-if="tab.type === 'VARIANT'" class="variant-training-panel">
+              <div>
+                <strong>{{ variantTraining.completed ? '本组变式训练已完成' : '完成这组变式训练了吗？' }}</strong>
+                <p>请先独立作答并核对解析，再确认完成。该记录是学习者自我确认，不代表系统自动判分。</p>
+              </div>
+              <el-button
+                type="primary"
+                :loading="variantTrainingSubmitting"
+                :disabled="variantTraining.completed"
+                @click="handleVariantTrainingComplete"
+              >
+                {{ variantTraining.completed ? '✓ 已标记完成' : '标记已完成' }}
+              </el-button>
+            </div>
+
             <!-- 反馈区域 -->
             <div class="feedback-area">
               <div v-if="feedbackMap[tab.type]?.helpful === null" class="feedback-prompt">
@@ -178,9 +193,12 @@ import {
   submitAssetFeedback,
   getAssetFeedback,
   recordAssetView,
+  completeVariantTraining,
+  type AiVariantTrainingStatus,
 } from '@/api/ai'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import QuestionVisualInteractive from '@/components/QuestionVisualInteractive.vue'
+import { ElMessage } from 'element-plus'
 
 const props = withDefaults(defineProps<{
   questionId: number
@@ -246,6 +264,18 @@ const feedbackMap = reactive<Record<AiAssetType, { helpful: boolean | null; comm
 })
 const feedbackSubmitting = ref<AiAssetType | null>(null)
 const showCommentInput = ref<AiAssetType | null>(null)
+const variantTrainingSubmitting = ref(false)
+const variantTraining = reactive<{
+  status: '' | 'STARTED' | 'COMPLETED'
+  completed: boolean
+  startedTime: string
+  completedTime: string
+}>({
+  status: '',
+  completed: false,
+  startedTime: '',
+  completedTime: '',
+})
 
 let abortController: AbortController | null = null
 const trackedViews = new Set<string>()
@@ -293,6 +323,11 @@ function reset() {
   streamBuffer.value = ''
   showCommentInput.value = null
   feedbackSubmitting.value = null
+  variantTrainingSubmitting.value = false
+  variantTraining.status = ''
+  variantTraining.completed = false
+  variantTraining.startedTime = ''
+  variantTraining.completedTime = ''
   for (const key of Object.keys(tabContent) as AiAssetType[]) {
     tabContent[key] = ''
     assetModel[key] = ''
@@ -385,9 +420,38 @@ function trackVisibleAsset(assetType: AiAssetType) {
   const key = `${props.questionId}:${assetType}`
   if (trackedViews.has(key)) return
   trackedViews.add(key)
-  recordAssetView(props.questionId, assetType).catch(() => {
-    trackedViews.delete(key)
-  })
+  recordAssetView(props.questionId, assetType)
+    .then((response) => {
+      if (assetType === 'VARIANT' && response.data) applyVariantTraining(response.data)
+    })
+    .catch(() => {
+      trackedViews.delete(key)
+    })
+}
+
+function applyVariantTraining(training: AiVariantTrainingStatus) {
+  variantTraining.status = training.status
+  variantTraining.completed = training.completed
+  variantTraining.startedTime = training.startedTime || ''
+  variantTraining.completedTime = training.completedTime || ''
+}
+
+async function handleVariantTrainingComplete() {
+  if (variantTraining.completed || variantTrainingSubmitting.value) return
+  variantTrainingSubmitting.value = true
+  try {
+    if (!variantTraining.status) {
+      const startedResponse = await recordAssetView(props.questionId, 'VARIANT')
+      if (startedResponse.data) applyVariantTraining(startedResponse.data)
+    }
+    const completedResponse = await completeVariantTraining(props.questionId)
+    applyVariantTraining(completedResponse.data)
+    ElMessage.success('已记录本组变式训练完成')
+  } catch (e: any) {
+    ElMessage.error(e?.message || '记录训练完成失败，请稍后重试')
+  } finally {
+    variantTrainingSubmitting.value = false
+  }
 }
 
 async function generateTab(type: AiAssetType) {
@@ -571,6 +635,30 @@ async function generateTab(type: AiAssetType) {
   border-top: 1px solid #ebeef5;
 }
 
+.variant-training-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid #cce5d5;
+  border-radius: 10px;
+  background: #f3faf5;
+}
+
+.variant-training-panel strong {
+  color: #256b43;
+  font-size: 14px;
+}
+
+.variant-training-panel p {
+  margin: 5px 0 0;
+  color: #6f7e75;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
 .feedback-prompt {
   display: flex;
   align-items: center;
@@ -617,6 +705,11 @@ async function generateTab(type: AiAssetType) {
 
   .feedback-comment {
     max-width: 100%;
+  }
+
+  .variant-training-panel {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 </style>

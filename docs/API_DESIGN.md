@@ -749,7 +749,7 @@ POST /api/ai/summary
 
 ### 10.5 AI 题目学习资产
 
-将一道题从"题干 + 答案 + 解析"升级为结构化 AI 学习对象，支持 6 种资产类型：标准解析、小白版解析、步骤拆解、错误选项分析、常见误区、变式题。
+将一道题从"题干 + 答案 + 解析"升级为结构化 AI 学习对象，支持 7 种资产类型：标准解析、小白版解析、步骤拆解、错误选项分析、常见误区、变式题、可视化讲解。
 
 #### 10.5.1 查询已缓存资产
 
@@ -799,6 +799,7 @@ POST /api/ai/asset/generate
 | WRONG_OPTION_ANALYSIS | 错误选项分析 |
 | COMMON_MISTAKES | 常见误区 |
 | VARIANT | 变式题 |
+| VISUAL_INTERACTIVE | 可视化交互讲解 |
 
 有缓存直接返回，无缓存调用 AI 生成并缓存后返回。受每日 AI 调用配额限制。
 
@@ -880,6 +881,16 @@ POST /api/ai/asset/view
 ```
 
 仅当对应题目的该类缓存资产真实存在时记录。服务端按“用户 + 题目 + 资产类型 + 日期”聚合查看次数，前端只在内容实际可见时调用；该数据用于学习效果观察，不计入 AI 调用配额。
+
+当 `assetType=VARIANT` 时，该接口还会为当前缓存资产版本幂等创建变式训练开始记录，并在 `data` 返回 `assetId`、`status`、`completed`、`startedTime` 和 `completedTime`；其他资产类型的 `data` 为 `null`。
+
+#### 10.5.8 显式确认变式训练完成
+
+```
+POST /api/ai/variant-training/{questionId}/complete
+```
+
+仅允许完成当前缓存版本且已经进入可见状态的变式题训练。重复调用保持幂等。该事件代表用户自我确认已经独立作答并核对解析，不代表系统对变式题进行了自动判分。
 
 ---
 
@@ -1332,6 +1343,9 @@ GET /api/admin/ai-usage/learning-effect?days=30
 | engagedUserCount | Long | 周期内查看资产的去重用户数 |
 | viewedQuestionCount | Long | 周期内被查看资产的去重题目数 |
 | helpfulRate | Double/null | 周期内反馈的“有帮助”占比，单位为百分比 |
+| variantTrainingStartedCount | Long | 周期内首次进入可见状态的变式训练数，按用户和缓存资产版本去重 |
+| variantTrainingCompletedCount | Long | 上述周期开始队列中已显式确认完成的训练数 |
+| variantTrainingCompletionRate | Double/null | 完成数除以开始数，单位为百分比；无开始记录时为 `null` |
 | afterViewPracticeCount | Long | 同一用户阅读同题资产后产生的作答样本数 |
 | afterViewCorrectRate | Double/null | 阅读后同题作答正确率，单位为百分比 |
 | baselinePracticeCount | Long | 未发生同题阅读前或从未阅读时的作答样本数 |
@@ -1340,7 +1354,7 @@ GET /api/admin/ai-usage/learning-effect?days=30
 | conclusionLevel | String | `INSUFFICIENT_DATA` / `POSITIVE_ASSOCIATION` / `NO_CLEAR_DIFFERENCE` / `NEEDS_ATTENTION` |
 | assetTypeStats | Array | 各资产类型的查看、用户、反馈和有帮助率 |
 
-当任一对照组少于 5 条作答时，接口返回 `INSUFFICIENT_DATA`。该接口只描述真实行为中的观察性关联，不将正确率差异解释为 AI 内容造成的因果提升。
+变式训练完成率按“周期内开始的训练队列”计算，完成事件必须来自用户显式确认，不从 AI 生成或调用日志推断。当任一同题作答对照组少于 5 条时，接口返回 `INSUFFICIENT_DATA`。该接口只描述真实行为中的观察性关联，不将正确率差异解释为 AI 内容造成的因果提升。
 
 ```
 GET /api/admin/ai-usage/alerts?limit=20

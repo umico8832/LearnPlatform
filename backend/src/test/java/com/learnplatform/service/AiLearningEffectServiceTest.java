@@ -5,10 +5,12 @@ import com.learnplatform.dto.AiAssetType;
 import com.learnplatform.dto.AiLearningEffectVO;
 import com.learnplatform.entity.AiAssetFeedback;
 import com.learnplatform.entity.AiAssetView;
+import com.learnplatform.entity.AiVariantTraining;
 import com.learnplatform.entity.PracticeRecord;
 import com.learnplatform.entity.QuestionAiAsset;
 import com.learnplatform.mapper.AiAssetFeedbackMapper;
 import com.learnplatform.mapper.AiAssetViewMapper;
+import com.learnplatform.mapper.AiVariantTrainingMapper;
 import com.learnplatform.mapper.PracticeRecordMapper;
 import com.learnplatform.mapper.QuestionAiAssetMapper;
 import org.junit.jupiter.api.Test;
@@ -37,10 +39,11 @@ class AiLearningEffectServiceTest {
     @Mock private QuestionAiAssetMapper questionAiAssetMapper;
     @Mock private AiAssetFeedbackMapper aiAssetFeedbackMapper;
     @Mock private PracticeRecordMapper practiceRecordMapper;
+    @Mock private AiVariantTrainingMapper aiVariantTrainingMapper;
 
     private AiLearningEffectService service() {
         return new AiLearningEffectService(aiAssetViewMapper, questionAiAssetMapper,
-                aiAssetFeedbackMapper, practiceRecordMapper);
+                aiAssetFeedbackMapper, practiceRecordMapper, aiVariantTrainingMapper);
     }
 
     @Test
@@ -61,6 +64,55 @@ class AiLearningEffectServiceTest {
         service().recordAssetView(8L, AiAssetType.STEP_BY_STEP, 3L);
 
         verify(aiAssetViewMapper).upsertDailyView(3L, 8L, "STEP_BY_STEP");
+        verify(aiVariantTrainingMapper, never()).upsertStarted(any(), any(), any());
+    }
+
+    @Test
+    void recordVariantViewStartsTrainingForCurrentAsset() {
+        QuestionAiAsset asset = new QuestionAiAsset();
+        asset.setId(15L);
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(asset);
+        AiVariantTraining training = variantTraining(3L, 8L, 15L, "STARTED",
+                LocalDateTime.now(), null);
+        when(aiVariantTrainingMapper.selectOne(any())).thenReturn(training);
+
+        var result = service().recordAssetView(8L, AiAssetType.VARIANT, 3L);
+
+        verify(aiAssetViewMapper).upsertDailyView(3L, 8L, "VARIANT");
+        verify(aiVariantTrainingMapper).upsertStarted(3L, 8L, 15L);
+        assertEquals("STARTED", result.getStatus());
+        assertEquals(false, result.getCompleted());
+    }
+
+    @Test
+    void completeVariantTrainingRequiresStartedRecord() {
+        QuestionAiAsset asset = new QuestionAiAsset();
+        asset.setId(15L);
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(asset);
+        when(aiVariantTrainingMapper.selectOne(any())).thenReturn(null);
+
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> service().completeVariantTraining(8L, 3L));
+
+        assertEquals("请先查看变式题，再标记训练完成", exception.getMessage());
+        verify(aiVariantTrainingMapper, never()).updateById(any());
+    }
+
+    @Test
+    void completeVariantTrainingMarksCurrentAssetAndReturnsStatus() {
+        QuestionAiAsset asset = new QuestionAiAsset();
+        asset.setId(15L);
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(asset);
+        AiVariantTraining training = variantTraining(3L, 8L, 15L, "STARTED",
+                LocalDateTime.now().minusMinutes(5), null);
+        training.setId(20L);
+        when(aiVariantTrainingMapper.selectOne(any())).thenReturn(training);
+
+        var result = service().completeVariantTraining(8L, 3L);
+
+        verify(aiVariantTrainingMapper).updateById(training);
+        assertEquals("COMPLETED", result.getStatus());
+        assertEquals(true, result.getCompleted());
     }
 
     @Test
@@ -68,6 +120,7 @@ class AiLearningEffectServiceTest {
         when(aiAssetViewMapper.selectList(any())).thenReturn(Collections.emptyList());
         when(aiAssetFeedbackMapper.selectList(any())).thenReturn(Collections.emptyList());
         when(practiceRecordMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(aiVariantTrainingMapper.selectList(any())).thenReturn(Collections.emptyList());
 
         AiLearningEffectVO result = service().getLearningEffect(30);
 
@@ -96,6 +149,10 @@ class AiLearningEffectServiceTest {
             practices.add(practice(2L, 10L, i < 2, now.minusDays(8).plusHours(i)));
         }
         when(practiceRecordMapper.selectList(any())).thenReturn(practices);
+        when(aiVariantTrainingMapper.selectList(any())).thenReturn(List.of(
+                variantTraining(1L, 10L, 100L, "COMPLETED", now.minusDays(4), now.minusDays(3)),
+                variantTraining(2L, 10L, 100L, "STARTED", now.minusDays(2), null)
+        ));
 
         AiLearningEffectVO result = service().getLearningEffect(30);
 
@@ -109,6 +166,9 @@ class AiLearningEffectServiceTest {
         assertEquals(6L, result.getBaselinePracticeCount());
         assertEquals(33.3, result.getBaselineCorrectRate());
         assertEquals(46.7, result.getCorrectRateLift());
+        assertEquals(2L, result.getVariantTrainingStartedCount());
+        assertEquals(1L, result.getVariantTrainingCompletedCount());
+        assertEquals(50.0, result.getVariantTrainingCompletionRate());
         assertEquals("POSITIVE_ASSOCIATION", result.getConclusionLevel());
         assertEquals(1, result.getAssetTypeStats().size());
         assertEquals("标准解析", result.getAssetTypeStats().get(0).getAssetTypeLabel());
@@ -119,6 +179,7 @@ class AiLearningEffectServiceTest {
         when(aiAssetViewMapper.selectList(any())).thenReturn(Collections.emptyList());
         when(aiAssetFeedbackMapper.selectList(any())).thenReturn(Collections.emptyList());
         when(practiceRecordMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(aiVariantTrainingMapper.selectList(any())).thenReturn(Collections.emptyList());
 
         AiLearningEffectVO result = service().getLearningEffect(365);
 
@@ -152,5 +213,17 @@ class AiLearningEffectServiceTest {
         record.setIsCorrect(correct ? 1 : 0);
         record.setCreateTime(createTime);
         return record;
+    }
+
+    private AiVariantTraining variantTraining(Long userId, Long questionId, Long assetId, String status,
+                                              LocalDateTime startedTime, LocalDateTime completedTime) {
+        AiVariantTraining training = new AiVariantTraining();
+        training.setUserId(userId);
+        training.setQuestionId(questionId);
+        training.setAssetId(assetId);
+        training.setStatus(status);
+        training.setStartedTime(startedTime);
+        training.setCompletedTime(completedTime);
+        return training;
     }
 }

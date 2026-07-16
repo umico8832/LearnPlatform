@@ -2,6 +2,7 @@ package com.learnplatform.controller;
 
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.AiAssetType;
+import com.learnplatform.dto.AiVariantTrainingVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AiLearningEffectService;
 import com.learnplatform.service.AiService;
@@ -24,6 +25,7 @@ import java.util.List;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -49,14 +51,38 @@ class AiAssetViewControllerTest {
 
     @Test
     void recordAssetViewUsesAuthenticatedUser() throws Exception {
+        AiVariantTrainingVO training = new AiVariantTrainingVO();
+        training.setQuestionId(42L);
+        training.setAssetId(9L);
+        training.setStatus("STARTED");
+        training.setCompleted(false);
+        when(learningEffectService.recordAssetView(42L, AiAssetType.VARIANT, 7L)).thenReturn(training);
+
         mockMvc.perform(post("/api/ai/asset/view")
                         .with(mockUser(7L))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"questionId\":42,\"assetType\":\"STEP_BY_STEP\"}"))
+                        .content("{\"questionId\":42,\"assetType\":\"VARIANT\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(0));
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.status").value("STARTED"))
+                .andExpect(jsonPath("$.data.completed").value(false));
 
-        verify(learningEffectService).recordAssetView(42L, AiAssetType.STEP_BY_STEP, 7L);
+        verify(learningEffectService).recordAssetView(42L, AiAssetType.VARIANT, 7L);
+    }
+
+    @Test
+    void completeVariantTrainingUsesAuthenticatedUser() throws Exception {
+        AiVariantTrainingVO training = new AiVariantTrainingVO();
+        training.setQuestionId(42L);
+        training.setStatus("COMPLETED");
+        training.setCompleted(true);
+        when(learningEffectService.completeVariantTraining(42L, 7L)).thenReturn(training);
+
+        mockMvc.perform(post("/api/ai/variant-training/42/complete").with(mockUser(7L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.completed").value(true));
+
+        verify(learningEffectService).completeVariantTraining(42L, 7L);
     }
 
     @Test

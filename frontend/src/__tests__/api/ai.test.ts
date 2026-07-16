@@ -25,6 +25,7 @@ import {
   getSummary,
   getAiUsage,
   recordAssetView,
+  completeVariantTraining,
   streamQuestionAi,
   streamReviewSuggestion,
 } from '@/api/ai'
@@ -113,6 +114,23 @@ describe('AI API', () => {
         questionId: 10,
         assetType: 'STEP_BY_STEP',
       })
+    })
+  })
+
+  describe('completeVariantTraining', () => {
+    it('records explicit completion for the current variant asset', async () => {
+      mockAiPost.mockResolvedValue({
+        data: {
+          code: 0,
+          data: { questionId: 10, assetId: 3, status: 'COMPLETED', completed: true },
+          message: 'success',
+        },
+      })
+
+      const result = await completeVariantTraining(10)
+
+      expect(mockAiPost).toHaveBeenCalledWith('/ai/variant-training/10/complete')
+      expect(result.data.completed).toBe(true)
     })
   })
 

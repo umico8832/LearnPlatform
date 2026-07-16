@@ -2,16 +2,18 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
-const { getQuestionAssets, getAssetFeedback, recordAssetView } = vi.hoisted(() => ({
+const { getQuestionAssets, getAssetFeedback, recordAssetView, completeVariantTraining } = vi.hoisted(() => ({
   getQuestionAssets: vi.fn(),
   getAssetFeedback: vi.fn(),
   recordAssetView: vi.fn(),
+  completeVariantTraining: vi.fn(),
 }))
 
 vi.mock('@/api/ai', () => ({
   getQuestionAssets,
   getAssetFeedback,
   recordAssetView,
+  completeVariantTraining,
   streamAsset: vi.fn(),
   submitAssetFeedback: vi.fn(),
 }))
@@ -45,6 +47,18 @@ describe('QuestionLearningAsset view tracking', () => {
     })
     getAssetFeedback.mockResolvedValue({ code: 0, data: null })
     recordAssetView.mockResolvedValue({ code: 0, data: null })
+    completeVariantTraining.mockResolvedValue({
+      code: 0,
+      message: 'success',
+      data: {
+        questionId: 42,
+        assetId: 2,
+        status: 'COMPLETED',
+        completed: true,
+        startedTime: '2026-07-16T12:00:00',
+        completedTime: '2026-07-16T12:10:00',
+      },
+    })
 
     class MockIntersectionObserver {
       constructor(callback: IntersectionObserverCallback) {
@@ -89,5 +103,59 @@ describe('QuestionLearningAsset view tracking', () => {
     intersectionCallback([{ isIntersecting: true }] as IntersectionObserverEntry[], {} as IntersectionObserver)
     await nextTick()
     expect(recordAssetView).toHaveBeenCalledTimes(1)
+  })
+
+  it('records variant completion only after explicit user confirmation', async () => {
+    getQuestionAssets.mockResolvedValue({
+      code: 0,
+      data: [{
+        id: 2,
+        questionId: 42,
+        assetType: 'VARIANT',
+        assetTypeLabel: '变式题',
+        content: 'variant exercises',
+        model: 'test-model',
+        createTime: '2026-07-16T12:00:00',
+      }],
+    })
+    recordAssetView.mockResolvedValue({
+      code: 0,
+      message: 'success',
+      data: {
+        questionId: 42,
+        assetId: 2,
+        status: 'STARTED',
+        completed: false,
+        startedTime: '2026-07-16T12:00:00',
+        completedTime: null,
+      },
+    })
+
+    const wrapper = mount(QuestionLearningAsset, {
+      props: { questionId: 42 },
+      global: {
+        stubs: {
+          'el-tabs': { template: '<div><slot /></div>' },
+          'el-tab-pane': { template: '<section><slot name="label" /><slot /></section>' },
+          'el-tag': { template: '<span><slot /></span>' },
+          'el-button': { template: '<button :disabled="$attrs.disabled" @click="$emit(\'click\')"><slot /></button>' },
+          'el-input': { template: '<textarea />' },
+          'el-alert': { template: '<div />' },
+          'el-icon': { template: '<i><slot /></i>' },
+        },
+      },
+    })
+    await flushPromises()
+
+    const completeButton = wrapper.find('.variant-training-panel button')
+    expect(completeButton.exists()).toBe(true)
+    expect(completeVariantTraining).not.toHaveBeenCalled()
+
+    await completeButton.trigger('click')
+    await flushPromises()
+
+    expect(recordAssetView).toHaveBeenCalledWith(42, 'VARIANT')
+    expect(completeVariantTraining).toHaveBeenCalledWith(42)
+    expect(wrapper.text()).toContain('已标记完成')
   })
 })

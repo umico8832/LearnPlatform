@@ -161,6 +161,12 @@
             <strong>{{ formatRate(learningEffect.helpfulRate) }}</strong>
             <small>{{ learningEffect.feedbackCount }} 条反馈中的有帮助占比</small>
           </div>
+          <div class="effect-feedback is-variant-training">
+            <span>变式训练完成率</span>
+            <strong>{{ formatRate(learningEffect.variantTrainingCompletionRate) }}</strong>
+            <small>{{ learningEffect.variantTrainingCompletedCount }} / {{ learningEffect.variantTrainingStartedCount }} 个周期内开始记录</small>
+            <em>用户显式确认，非自动判分</em>
+          </div>
           <el-table :data="learningEffect.assetTypeStats" stripe size="small" class="effect-type-table">
             <el-table-column prop="assetTypeLabel" label="资产类型" min-width="120" />
             <el-table-column prop="viewCount" label="查看" width="76" align="right" />
@@ -345,6 +351,9 @@ const learningEffect = reactive<AiLearningEffect>({
   viewedQuestionCount: 0,
   feedbackCount: 0,
   helpfulRate: null,
+  variantTrainingStartedCount: 0,
+  variantTrainingCompletedCount: 0,
+  variantTrainingCompletionRate: null,
   afterViewPracticeCount: 0,
   afterViewCorrectRate: null,
   baselinePracticeCount: 0,
@@ -736,6 +745,19 @@ onBeforeUnmount(() => {
   margin: 10px 0 8px;
   color: var(--lp-primary);
   font-size: 28px;
+}
+.effect-feedback.is-variant-training {
+  background: #f3faf5;
+}
+.effect-feedback.is-variant-training strong {
+  color: var(--lp-success);
+}
+.effect-feedback em {
+  margin-top: 10px;
+  color: var(--lp-text-tertiary);
+  font-size: 11px;
+  font-style: normal;
+  line-height: 1.4;
 }
 .effect-type-table {
   min-width: 0;

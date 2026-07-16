@@ -1,5 +1,65 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 159 - 2026-07-16
+
+### 阶段
+Phase 22：AI 学习效果验证（变式训练真实完成事件）
+
+### 完成内容
+1. 新增 Flyway V18 `ai_variant_training`，按“用户 × 变式题缓存资产版本”幂等记录 `STARTED/COMPLETED`，重复查看只更新最近查看时间，不重复增加训练样本。
+2. 变式题内容真实进入视口时，在原有资产查看记录之外创建训练开始事件；用户只有在独立作答并核对解析后点击“标记已完成”，才记录显式完成事件，重复确认保持幂等。
+3. 学习资产组件新增变式训练完成入口，并明确完成是用户自我确认，不代表系统自动判分；请求失败时保留可重试路径。
+4. 管理端学习效果面板新增周期内变式训练开始数、完成数和完成率。完成率按“周期内开始的训练队列”计算，避免把跨周期完成或 AI 生成次数混入分母。
+5. 补充后端服务/Controller 测试、前端 API/组件测试，并同步 API、数据库、架构、PRD、路线图、交接、README 和简历文档。
+
+### 修改文件
+- `backend/src/main/resources/db/migration/V18__create_ai_variant_training_table.sql`
+- `backend/src/main/java/com/learnplatform/entity/AiVariantTraining.java`
+- `backend/src/main/java/com/learnplatform/mapper/AiVariantTrainingMapper.java`
+- `backend/src/main/java/com/learnplatform/dto/AiVariantTrainingVO.java`
+- `backend/src/main/java/com/learnplatform/dto/AiLearningEffectVO.java`
+- `backend/src/main/java/com/learnplatform/service/AiLearningEffectService.java`
+- `backend/src/main/java/com/learnplatform/controller/AiController.java`
+- `backend/src/main/java/com/learnplatform/controller/AdminAiUsageController.java`
+- `backend/src/test/java/com/learnplatform/service/AiLearningEffectServiceTest.java`
+- `backend/src/test/java/com/learnplatform/service/AiVariantTrainingIntegrationTest.java`
+- `backend/src/test/java/com/learnplatform/controller/AiAssetViewControllerTest.java`
+- `backend/src/test/java/com/learnplatform/controller/AdminAiUsageControllerTest.java`
+- `frontend/src/api/ai.ts`
+- `frontend/src/api/aiUsage.ts`
+- `frontend/src/components/QuestionLearningAsset.vue`
+- `frontend/src/views/admin/AiUsageView.vue`
+- `frontend/src/__tests__/api/ai.test.ts`
+- `frontend/src/__tests__/components/QuestionLearningAsset.test.ts`
+- `README.md`
+- `docs/API_DESIGN.md`
+- `docs/DB_DESIGN.md`
+- `docs/ARCHITECTURE.md`
+- `docs/PRD.md`
+- `docs/RESUME.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/TESTING.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd backend && mvn test`：400 个默认测试通过。
+- `cd frontend && npm test -- --run`：27 个测试文件、219 个测试通过。
+- `cd frontend && npm run build`：通过；仅保留既有第三方 `@vueuse/core` pure annotation 提示。
+- `cd backend && mvn test -DexcludedGroups= -Dtest=StatisticsServiceIntegrationTest`：10 个既有真实 MySQL Testcontainers 用例通过，Flyway V18 成功迁移。
+- `cd backend && mvn test -DexcludedGroups= -Dtest=AiVariantTrainingIntegrationTest`：1 个变式训练真实 MySQL 用例通过，验证唯一约束、幂等开始、重复完成和完成率聚合。
+- `cd backend && mvn test -DexcludedGroups= -Dgroups=integration`：5 个集成测试类、54 个真实 MySQL 用例全部通过。
+- `docker compose config --quiet`：通过。
+
+### 遗留问题
+- 当前变式题是包含答案与解析的 Markdown 学习资产，显式完成只能表示用户自我确认，不能用于推断正确率。
+- 学习效果仍以同题短期关联为主；跨题知识迁移需要先定义知识点、观察窗口和最小样本量。
+
+### commit message
+`feat(ai): 记录变式训练真实完成事件`
+
+---
+
 ## Round 158 - 2026-07-16
 
 ### 阶段

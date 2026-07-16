@@ -40,6 +40,9 @@ class AdminAiUsageControllerTest {
         vo.setAfterViewPracticeCount(24L);
         vo.setAfterViewCorrectRate(75.0);
         vo.setCorrectRateLift(8.5);
+        vo.setVariantTrainingStartedCount(12L);
+        vo.setVariantTrainingCompletedCount(9L);
+        vo.setVariantTrainingCompletionRate(75.0);
         vo.setConclusionLevel("POSITIVE_ASSOCIATION");
         when(learningEffectService.getLearningEffect(30)).thenReturn(vo);
 
@@ -50,6 +53,9 @@ class AdminAiUsageControllerTest {
                 .andExpect(jsonPath("$.data.afterViewPracticeCount").value(24))
                 .andExpect(jsonPath("$.data.afterViewCorrectRate").value(75.0))
                 .andExpect(jsonPath("$.data.correctRateLift").value(8.5))
+                .andExpect(jsonPath("$.data.variantTrainingStartedCount").value(12))
+                .andExpect(jsonPath("$.data.variantTrainingCompletedCount").value(9))
+                .andExpect(jsonPath("$.data.variantTrainingCompletionRate").value(75.0))
                 .andExpect(jsonPath("$.data.conclusionLevel").value("POSITIVE_ASSOCIATION"));
     }
 }

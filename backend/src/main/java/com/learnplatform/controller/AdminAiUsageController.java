@@ -52,7 +52,7 @@ public class AdminAiUsageController {
         return R.ok(aiUsageService.getReport(days));
     }
 
-    @Operation(summary = "获取 AI 学习效果观察", description = "对比同题阅读 AI 学习资产后的作答与基线作答，只表达观察性关联，不代表因果结论")
+    @Operation(summary = "获取 AI 学习效果观察", description = "返回变式训练真实完成率，并对比同题阅读 AI 学习资产后的作答与基线作答；只表达观察性关联，不代表因果结论")
     @GetMapping("/learning-effect")
     public R<AiLearningEffectVO> getLearningEffect(
             @Parameter(description = "统计周期天数，默认 30；支持 1-90") @RequestParam(required = false) Integer days) {

@@ -133,6 +133,9 @@ export interface AiLearningEffect {
   viewedQuestionCount: number
   feedbackCount: number
   helpfulRate: number | null
+  variantTrainingStartedCount: number
+  variantTrainingCompletedCount: number
+  variantTrainingCompletionRate: number | null
   afterViewPracticeCount: number
   afterViewCorrectRate: number | null
   baselinePracticeCount: number

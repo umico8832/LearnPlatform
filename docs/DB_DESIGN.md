@@ -801,6 +801,27 @@ Flyway V17 创建，用于记录用户实际看到某道题某类 AI 学习资�
 
 ---
 
+### 3.22 AI 变式训练记录表 (ai_variant_training)
+
+Flyway V18 创建，用于区分“看到了变式题”和“用户显式确认完成训练”。变式题进入浏览器视口时创建 `STARTED` 记录，用户独立作答并核对解析后点击确认才更新为 `COMPLETED`；不从 AI 生成次数或调用日志推断完成。
+
+| 字段名 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| id | BIGINT | 自增主键 | 训练记录 ID |
+| user_id | BIGINT | | 用户 ID |
+| question_id | BIGINT | | 原题 ID |
+| asset_id | BIGINT | | 当前变式题缓存资产 ID |
+| status | VARCHAR(20) | STARTED | `STARTED` / `COMPLETED` |
+| started_time | DATETIME | CURRENT_TIMESTAMP | 首次开始时间 |
+| last_view_time | DATETIME | CURRENT_TIMESTAMP | 最近查看时间 |
+| completed_time | DATETIME | NULL | 用户显式确认完成时间 |
+| create_time | DATETIME | CURRENT_TIMESTAMP | 创建时间 |
+| update_time | DATETIME | CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
+
+索引与约束：唯一约束 `uk_user_asset(user_id, asset_id)`，确保同一缓存资产版本不会因重复切换标签产生多条训练；索引 `idx_question_status(question_id, status)`、`idx_started_time(started_time)`、`idx_completed_time(completed_time)`。
+
+---
+
 ## 四、表关系说明
 
 ### 4.1 外键关系（逻辑外键，不建物理外键）
@@ -822,11 +843,13 @@ Flyway V17 创建，用于记录用户实际看到某道题某类 AI 学习资�
 | 用户→纠错处理 | user | id | question_correction_report | handler_id |
 | 用户→题目版本操作 | user | id | question_version | operator_id |
 | 用户→AI资产查看 | user | id | ai_asset_view | user_id |
+| 用户→变式训练 | user | id | ai_variant_training | user_id |
 | 题目→刷题记录 | question | id | practice_record | question_id |
 | 题目→错题 | question | id | wrong_question | question_id |
 | 题目→AI学习资产 | question | id | question_ai_asset | question_id |
 | AI学习资产→反馈 | question_ai_asset | question_id, asset_type | ai_asset_feedback | question_id, asset_type |
 | AI学习资产→查看 | question_ai_asset | question_id, asset_type | ai_asset_view | question_id, asset_type |
+| AI学习资产→变式训练 | question_ai_asset | id | ai_variant_training | asset_id |
 | 课程→题目投稿 | course | id | question_submission | course_id |
 | 正式题目→投稿入库结果 | question | id | question_submission | imported_question_id |
 | 题目→复习计划 | question | id | question_review_schedule | question_id |
@@ -898,6 +921,7 @@ INSERT INTO `course` (`name`, `description`, `sort_order`) VALUES
 | exam_record | 1,000-10,000 | 考试记录 |
 | exam_answer | 10,000-100,000 | 考试答题详情 |
 | ai_asset_view | 10,000-100,000 | 按用户、题目、资产类型和日期聚合的查看记录 |
+| ai_variant_training | 5,000-50,000 | 按用户和变式题缓存资产版本去重的训练记录 |
 
 ### 6.2 优化建议
 

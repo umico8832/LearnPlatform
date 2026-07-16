@@ -354,6 +354,16 @@ export interface QuestionLearningAsset {
   createTime: string
 }
 
+/** 当前缓存变式题的训练状态；完成由用户显式确认，不代表自动判分。 */
+export interface AiVariantTrainingStatus {
+  questionId: number
+  assetId: number
+  status: 'STARTED' | 'COMPLETED'
+  completed: boolean
+  startedTime: string
+  completedTime: string | null
+}
+
 /** 查询一道题的所有已缓存 AI 学习资产 */
 export function getQuestionAssets(questionId: number) {
   return aiService.get<ApiResponse<QuestionLearningAsset[]>>(`/ai/assets/${questionId}`).then((res) => res.data)
@@ -399,7 +409,14 @@ export function getAssetFeedback(questionId: number, assetType: AiAssetType) {
 
 /** 记录当前用户实际看到某类 AI 学习资产 */
 export function recordAssetView(questionId: number, assetType: AiAssetType) {
-  return aiService.post<ApiResponse<void>>('/ai/asset/view', { questionId, assetType }).then((res) => res.data)
+  return aiService.post<ApiResponse<AiVariantTrainingStatus | null>>('/ai/asset/view', { questionId, assetType }).then((res) => res.data)
+}
+
+/** 显式确认完成当前缓存版本的变式题训练。 */
+export function completeVariantTraining(questionId: number) {
+  return aiService.post<ApiResponse<AiVariantTrainingStatus>>(
+    `/ai/variant-training/${questionId}/complete`,
+  ).then((res) => res.data)
 }
 
 /** 清除题目的 AI 学习资产缓存（管理端） */
