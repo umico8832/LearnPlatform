@@ -107,6 +107,7 @@ class AiVariantTrainingIntegrationTest extends IntegrationTestBase {
         assertEquals(0L, effect.getVariantDifficultySufficientCount());
         assertEquals("INSUFFICIENT_DATA", effect.getVariantDifficultyReadiness());
         assertEquals(1L, effect.getVariantDifficultyStats().get(2).getAnsweredCount());
+        assertEquals(1L, effect.getVariantDifficultyStats().get(2).getAnsweredUserCount());
         assertEquals(100.0, effect.getVariantDifficultyStats().get(2).getCorrectRate());
     }
 }

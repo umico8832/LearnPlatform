@@ -134,6 +134,7 @@ class AiLearningEffectServiceTest {
 
         assertEquals(30, result.getDays());
         assertEquals(5L, result.getMinimumComparisonSample());
+        assertEquals(3L, result.getMinimumDistinctUsers());
         assertEquals(0L, result.getAssetViewCount());
         assertEquals(0L, result.getAfterViewPracticeCount());
         assertNull(result.getAfterViewCorrectRate());
@@ -146,19 +147,27 @@ class AiLearningEffectServiceTest {
     @Test
     void getLearningEffectSeparatesAnswersBeforeAndAfterFirstView() {
         LocalDateTime now = LocalDateTime.now();
-        AiAssetView view = view(1L, 10L, "FULL_EXPLANATION", now.minusDays(10), 3);
-        when(aiAssetViewMapper.selectList(any())).thenReturn(List.of(view));
+        when(aiAssetViewMapper.selectList(any())).thenReturn(List.of(
+                view(1L, 10L, "FULL_EXPLANATION", now.minusDays(10), 1),
+                view(3L, 10L, "FULL_EXPLANATION", now.minusDays(10), 1),
+                view(4L, 10L, "FULL_EXPLANATION", now.minusDays(10), 1)));
 
         AiAssetFeedback helpful = feedback("FULL_EXPLANATION", true, now.minusDays(2));
         AiAssetFeedback unhelpful = feedback("FULL_EXPLANATION", false, now.minusDays(1));
         when(aiAssetFeedbackMapper.selectList(any())).thenReturn(List.of(helpful, unhelpful));
 
         List<PracticeRecord> practices = new ArrayList<>();
+        practices.add(practice(1L, 10L, true, now.minusDays(9)));
+        practices.add(practice(1L, 10L, true, now.minusDays(9).plusHours(1)));
+        practices.add(practice(3L, 10L, true, now.minusDays(9).plusHours(2)));
+        practices.add(practice(3L, 10L, true, now.minusDays(9).plusHours(3)));
+        practices.add(practice(4L, 10L, false, now.minusDays(9).plusHours(4)));
         practices.add(practice(1L, 10L, false, now.minusDays(11)));
-        for (int i = 0; i < 5; i++) {
-            practices.add(practice(1L, 10L, i < 4, now.minusDays(9).plusHours(i)));
-            practices.add(practice(2L, 10L, i < 2, now.minusDays(8).plusHours(i)));
-        }
+        practices.add(practice(2L, 10L, true, now.minusDays(8)));
+        practices.add(practice(2L, 10L, true, now.minusDays(8).plusHours(1)));
+        practices.add(practice(5L, 10L, false, now.minusDays(8).plusHours(2)));
+        practices.add(practice(5L, 10L, false, now.minusDays(8).plusHours(3)));
+        practices.add(practice(6L, 10L, false, now.minusDays(8).plusHours(4)));
         when(practiceRecordMapper.selectList(any())).thenReturn(practices);
         AiVariantTraining answeredTraining = variantTraining(
                 1L, 10L, 100L, "COMPLETED", now.minusDays(4), now.minusDays(3));
@@ -174,13 +183,15 @@ class AiLearningEffectServiceTest {
         AiLearningEffectVO result = service().getLearningEffect(30);
 
         assertEquals(3L, result.getAssetViewCount());
-        assertEquals(1L, result.getEngagedUserCount());
+        assertEquals(3L, result.getEngagedUserCount());
         assertEquals(1L, result.getViewedQuestionCount());
         assertEquals(2L, result.getFeedbackCount());
         assertEquals(50.0, result.getHelpfulRate());
         assertEquals(5L, result.getAfterViewPracticeCount());
+        assertEquals(3L, result.getAfterViewUserCount());
         assertEquals(80.0, result.getAfterViewCorrectRate());
         assertEquals(6L, result.getBaselinePracticeCount());
+        assertEquals(4L, result.getBaselineUserCount());
         assertEquals(33.3, result.getBaselineCorrectRate());
         assertEquals(46.7, result.getCorrectRateLift());
         assertEquals(2L, result.getVariantTrainingStartedCount());
@@ -197,8 +208,10 @@ class AiLearningEffectServiceTest {
         assertEquals(1, result.getAssetTypeStats().size());
         assertEquals("标准解析", result.getAssetTypeStats().get(0).getAssetTypeLabel());
         assertEquals(5L, result.getAssetTypeStats().get(0).getAfterViewPracticeCount());
+        assertEquals(3L, result.getAssetTypeStats().get(0).getAfterViewUserCount());
         assertEquals(80.0, result.getAssetTypeStats().get(0).getAfterViewCorrectRate());
         assertEquals(6L, result.getAssetTypeStats().get(0).getBaselinePracticeCount());
+        assertEquals(4L, result.getAssetTypeStats().get(0).getBaselineUserCount());
         assertEquals(33.3, result.getAssetTypeStats().get(0).getBaselineCorrectRate());
         assertEquals(46.7, result.getAssetTypeStats().get(0).getCorrectRateLift());
         assertEquals(true, result.getAssetTypeStats().get(0).getSampleSufficient());
@@ -235,6 +248,30 @@ class AiLearningEffectServiceTest {
     }
 
     @Test
+    void getLearningEffectRejectsAttemptVolumeFromOneLearnerAsRepresentative() {
+        LocalDateTime now = LocalDateTime.now();
+        when(aiAssetViewMapper.selectList(any())).thenReturn(List.of(
+                view(1L, 10L, "FULL_EXPLANATION", now.minusDays(10), 1)));
+        when(aiAssetFeedbackMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(aiVariantTrainingMapper.selectList(any())).thenReturn(Collections.emptyList());
+        List<PracticeRecord> practices = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            practices.add(practice(1L, 10L, true, now.minusDays(9).plusHours(i)));
+            practices.add(practice(2L, 10L, false, now.minusDays(8).plusHours(i)));
+        }
+        when(practiceRecordMapper.selectList(any())).thenReturn(practices);
+
+        AiLearningEffectVO result = service().getLearningEffect(30);
+
+        assertEquals(5L, result.getAfterViewPracticeCount());
+        assertEquals(1L, result.getAfterViewUserCount());
+        assertEquals(5L, result.getBaselinePracticeCount());
+        assertEquals(1L, result.getBaselineUserCount());
+        assertEquals("INSUFFICIENT_DATA", result.getConclusionLevel());
+        assertEquals(false, result.getAssetTypeStats().get(0).getSampleSufficient());
+    }
+
+    @Test
     void getLearningEffectClampsPeriodToNinetyDays() {
         when(aiAssetViewMapper.selectList(any())).thenReturn(Collections.emptyList());
         when(aiAssetFeedbackMapper.selectList(any())).thenReturn(Collections.emptyList());
@@ -251,8 +288,8 @@ class AiLearningEffectServiceTest {
         LocalDateTime now = LocalDateTime.now();
         when(aiAssetViewMapper.selectList(any())).thenReturn(List.of(
                 view(1L, 10L, "FULL_EXPLANATION", now.minusDays(10), 1),
-                view(2L, 12L, "FULL_EXPLANATION", now.minusDays(40), 1),
-                view(2L, 10L, "FULL_EXPLANATION", now.minusDays(2), 1)));
+                view(2L, 10L, "FULL_EXPLANATION", now.minusDays(10), 1),
+                view(3L, 10L, "FULL_EXPLANATION", now.minusDays(10), 1)));
         when(aiAssetFeedbackMapper.selectList(any())).thenReturn(Collections.emptyList());
         when(aiVariantTrainingMapper.selectList(any())).thenReturn(Collections.emptyList());
         when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(
@@ -261,20 +298,20 @@ class AiLearningEffectServiceTest {
 
         List<PracticeRecord> practices = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
-            practices.add(practice(1L, 11L, i < 4, now.minusDays(9).plusHours(i)));
-            practices.add(practice(1L, 11L, i < 2, now.minusDays(11).plusHours(i)));
+            long userId = i % 3 + 1L;
+            practices.add(practice(userId, 11L, i < 4, now.minusDays(9).plusHours(i)));
+            practices.add(practice(userId, 11L, i < 2, now.minusDays(11).plusHours(i)));
         }
-        practices.add(practice(1L, 10L, true, now.minusDays(9)));
-        practices.add(practice(1L, 20L, true, now.minusDays(9)));
-        practices.add(practice(2L, 11L, true, now.minusDays(5)));
         when(practiceRecordMapper.selectList(any())).thenReturn(practices);
 
         AiLearningEffectVO result = service().getLearningEffect(30);
 
         assertEquals(30, result.getCrossQuestionWindowDays());
         assertEquals(5L, result.getCrossQuestionAfterViewPracticeCount());
+        assertEquals(3L, result.getCrossQuestionAfterViewUserCount());
         assertEquals(80.0, result.getCrossQuestionAfterViewCorrectRate());
         assertEquals(5L, result.getCrossQuestionBaselinePracticeCount());
+        assertEquals(3L, result.getCrossQuestionBaselineUserCount());
         assertEquals(40.0, result.getCrossQuestionBaselineCorrectRate());
         assertEquals(40.0, result.getCrossQuestionCorrectRateLift());
         assertEquals("POSITIVE_ASSOCIATION", result.getCrossQuestionConclusionLevel());
@@ -309,6 +346,7 @@ class AiLearningEffectServiceTest {
         assertEquals(2L, result.getVariantDifficultyCoveredCount());
         assertEquals(2L, result.getVariantDifficultySufficientCount());
         assertEquals(80.0, result.getVariantDifficultyStats().get(1).getCorrectRate());
+        assertEquals(5L, result.getVariantDifficultyStats().get(1).getAnsweredUserCount());
         assertEquals(40.0, result.getVariantDifficultyStats().get(3).getCorrectRate());
     }
 

@@ -38,7 +38,9 @@ class AdminAiUsageControllerTest {
         AiLearningEffectVO vo = new AiLearningEffectVO();
         vo.setDays(30);
         vo.setMinimumComparisonSample(5L);
+        vo.setMinimumDistinctUsers(3L);
         vo.setAfterViewPracticeCount(24L);
+        vo.setAfterViewUserCount(8L);
         vo.setAfterViewCorrectRate(75.0);
         vo.setCorrectRateLift(8.5);
         vo.setVariantTrainingStartedCount(12L);
@@ -55,12 +57,14 @@ class AdminAiUsageControllerTest {
         difficulty.setDifficulty(3);
         difficulty.setDifficultyLabel("中等");
         difficulty.setAnsweredCount(8L);
+        difficulty.setAnsweredUserCount(6L);
         difficulty.setCorrectCount(6L);
         difficulty.setCorrectRate(75.0);
         difficulty.setSampleSufficient(true);
         vo.setVariantDifficultyStats(java.util.List.of(difficulty));
         vo.setCrossQuestionWindowDays(30);
         vo.setCrossQuestionAfterViewPracticeCount(18L);
+        vo.setCrossQuestionAfterViewUserCount(7L);
         vo.setCrossQuestionAfterViewCorrectRate(72.2);
         vo.setCrossQuestionCorrectRateLift(6.7);
         vo.setCrossQuestionConclusionLevel("POSITIVE_ASSOCIATION");
@@ -69,8 +73,10 @@ class AdminAiUsageControllerTest {
         assetType.setAssetType("FULL_EXPLANATION");
         assetType.setAssetTypeLabel("标准解析");
         assetType.setAfterViewPracticeCount(12L);
+        assetType.setAfterViewUserCount(5L);
         assetType.setAfterViewCorrectRate(75.0);
         assetType.setBaselinePracticeCount(10L);
+        assetType.setBaselineUserCount(4L);
         assetType.setBaselineCorrectRate(60.0);
         assetType.setCorrectRateLift(15.0);
         assetType.setSampleSufficient(true);
@@ -83,7 +89,9 @@ class AdminAiUsageControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.days").value(30))
                 .andExpect(jsonPath("$.data.minimumComparisonSample").value(5))
+                .andExpect(jsonPath("$.data.minimumDistinctUsers").value(3))
                 .andExpect(jsonPath("$.data.afterViewPracticeCount").value(24))
+                .andExpect(jsonPath("$.data.afterViewUserCount").value(8))
                 .andExpect(jsonPath("$.data.afterViewCorrectRate").value(75.0))
                 .andExpect(jsonPath("$.data.correctRateLift").value(8.5))
                 .andExpect(jsonPath("$.data.variantTrainingStartedCount").value(12))
@@ -96,13 +104,16 @@ class AdminAiUsageControllerTest {
                 .andExpect(jsonPath("$.data.variantDifficultyCoveredCount").value(2))
                 .andExpect(jsonPath("$.data.variantDifficultyReadiness").value("INSUFFICIENT_DATA"))
                 .andExpect(jsonPath("$.data.variantDifficultyStats[0].difficultyLabel").value("中等"))
+                .andExpect(jsonPath("$.data.variantDifficultyStats[0].answeredUserCount").value(6))
                 .andExpect(jsonPath("$.data.variantDifficultyStats[0].sampleSufficient").value(true))
                 .andExpect(jsonPath("$.data.crossQuestionWindowDays").value(30))
                 .andExpect(jsonPath("$.data.crossQuestionAfterViewPracticeCount").value(18))
+                .andExpect(jsonPath("$.data.crossQuestionAfterViewUserCount").value(7))
                 .andExpect(jsonPath("$.data.crossQuestionAfterViewCorrectRate").value(72.2))
                 .andExpect(jsonPath("$.data.crossQuestionCorrectRateLift").value(6.7))
                 .andExpect(jsonPath("$.data.crossQuestionConclusionLevel").value("POSITIVE_ASSOCIATION"))
                 .andExpect(jsonPath("$.data.assetTypeStats[0].afterViewPracticeCount").value(12))
+                .andExpect(jsonPath("$.data.assetTypeStats[0].afterViewUserCount").value(5))
                 .andExpect(jsonPath("$.data.assetTypeStats[0].baselineCorrectRate").value(60.0))
                 .andExpect(jsonPath("$.data.assetTypeStats[0].correctRateLift").value(15.0))
                 .andExpect(jsonPath("$.data.assetTypeStats[0].sampleSufficient").value(true))

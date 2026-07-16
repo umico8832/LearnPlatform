@@ -1,5 +1,52 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 164 - 2026-07-16
+
+### 阶段
+Phase 22：AI 学习效果验证（样本代表性门槛）
+
+### 完成内容
+1. 为同题、共享知识点跨题和按资产类型观察新增阅读后组/对照组去重学习者数；任一组需同时达到 5 条作答与 3 位学习者，才输出方向性状态。
+2. 结构化变式难度样本新增去重学习者数；每档需同时达到 5 条首次判分与 3 位学习者，且至少两个难度档达标后才进入分层观察就绪状态。
+3. 管理端在同题、跨题、资产类型和难度区域并列展示作答量与学习者覆盖，明确避免少数高频用户主导观察结论。
+4. 新增“单个用户刷够作答条数仍保持样本不足”的回归测试，并扩展 Controller 契约与真实 MySQL 集成断言。
+5. 同步 API、架构、PRD、路线图、交接、README、战略、后续方向和简历文档；不新增数据表，不进入课程/用户基础分层、资产排名或自动推荐。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/dto/AiLearningEffectVO.java`
+- `backend/src/main/java/com/learnplatform/service/AiLearningEffectService.java`
+- `backend/src/test/java/com/learnplatform/service/AiLearningEffectServiceTest.java`
+- `backend/src/test/java/com/learnplatform/service/AiVariantTrainingIntegrationTest.java`
+- `backend/src/test/java/com/learnplatform/controller/AdminAiUsageControllerTest.java`
+- `frontend/src/api/aiUsage.ts`
+- `frontend/src/views/admin/AiUsageView.vue`
+- `README.md`
+- `docs/API_DESIGN.md`
+- `docs/ARCHITECTURE.md`
+- `docs/PRD.md`
+- `docs/RESUME.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/AI_LEARNING_PLATFORM_STRATEGY.md`
+- `docs/FUTURE.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd backend && mvn test -Dtest=AiLearningEffectServiceTest,AdminAiUsageControllerTest`：13 个聚焦测试通过。
+- `cd backend && mvn clean test`：410 个默认测试通过，并确认 212 个主源码文件从干净目录重新编译。
+- `cd backend && mvn test -DexcludedGroups= -Dtest=AiVariantTrainingIntegrationTest`：2 个真实 MySQL 用例通过，确认变式难度去重学习者数可在真实 Mapper 数据上聚合。
+- `cd frontend && npm test -- --run src/__tests__/api/aiUsage.test.ts`：6 个 API 契约测试通过。
+- `cd frontend && npm test -- --run`：28 个测试文件、222 个测试通过。
+- `cd frontend && npm run build`：通过；仅保留既有第三方 `@vueuse/core` pure annotation 提示。
+- `docker compose config --quiet`：通过。
+
+### 遗留问题
+- 3 位学习者是首版代表性下限，不等于统计显著性或因果识别；真实样本足够后再评估课程或用户基础分层。
+- 多资产暴露仍可能让同一作答进入多个资产类型观察组，因此类型数据仍不能直接排名或驱动推荐。
+
+### commit message
+`feat(ai): 增加学习效果独立用户门槛`
+
 ## Round 163 - 2026-07-16
 
 ### 阶段

@@ -114,7 +114,7 @@
         <div class="effect-context">
           <div>
             <strong>{{ learningEffect.periodStart || '-' }} 至 {{ learningEffect.periodEnd || '-' }}</strong>
-            <p>只统计用户实际看到已缓存学习资产后的真实作答；同题与跨题正确率差异均属于观察性关联，不代表因果提升。</p>
+            <p>只统计用户实际看到已缓存学习资产后的真实作答；方向判断同时要求作答量与独立学习者覆盖，避免少数高频用户主导结论。</p>
           </div>
           <div class="effect-coverage">
             <span><b>{{ learningEffect.assetViewCount }}</b> 次查看</span>
@@ -130,7 +130,7 @@
             <div class="effect-rate-track">
               <i :style="{ width: rateWidth(learningEffect.afterViewCorrectRate) }"></i>
             </div>
-            <small>{{ learningEffect.afterViewPracticeCount }} 条作答样本</small>
+            <small>{{ learningEffect.afterViewPracticeCount }} 条作答 · {{ learningEffect.afterViewUserCount }} 位学习者</small>
           </div>
           <div class="effect-lift">
             <span>正确率差异</span>
@@ -143,7 +143,7 @@
             <div class="effect-rate-track">
               <i :style="{ width: rateWidth(learningEffect.baselineCorrectRate) }"></i>
             </div>
-            <small>{{ learningEffect.baselinePracticeCount }} 条作答样本</small>
+            <small>{{ learningEffect.baselinePracticeCount }} 条作答 · {{ learningEffect.baselineUserCount }} 位学习者</small>
           </div>
         </div>
 
@@ -159,7 +159,7 @@
           <div class="transfer-header">
             <div>
               <strong>知识点跨题迁移</strong>
-              <p>排除原题重答，仅比较共享知识点的另一道题；前后组均限制在相关阅读前后 {{ learningEffect.crossQuestionWindowDays }} 天，对照组不含更早暴露。</p>
+              <p>排除原题重答，仅比较共享知识点的另一道题；前后组均限制在相关阅读前后 {{ learningEffect.crossQuestionWindowDays }} 天，对照组不含更早暴露，且每组至少覆盖 {{ learningEffect.minimumDistinctUsers }} 位学习者。</p>
             </div>
             <el-tag :type="transferTagType" effect="plain">{{ transferTagLabel }}</el-tag>
           </div>
@@ -171,7 +171,7 @@
               <div class="effect-rate-track">
                 <i :style="{ width: rateWidth(learningEffect.crossQuestionAfterViewCorrectRate) }"></i>
               </div>
-              <small>{{ learningEffect.crossQuestionAfterViewPracticeCount }} 条作答样本</small>
+              <small>{{ learningEffect.crossQuestionAfterViewPracticeCount }} 条作答 · {{ learningEffect.crossQuestionAfterViewUserCount }} 位学习者</small>
             </div>
             <div class="effect-lift">
               <span>正确率差异</span>
@@ -184,7 +184,7 @@
               <div class="effect-rate-track">
                 <i :style="{ width: rateWidth(learningEffect.crossQuestionBaselineCorrectRate) }"></i>
               </div>
-              <small>{{ learningEffect.crossQuestionBaselinePracticeCount }} 条作答样本</small>
+              <small>{{ learningEffect.crossQuestionBaselinePracticeCount }} 条作答 · {{ learningEffect.crossQuestionBaselineUserCount }} 位学习者</small>
             </div>
           </div>
 
@@ -233,7 +233,7 @@
           <div class="transfer-header">
             <div>
               <strong>按资产类型观察同题表现</strong>
-              <p>分别按每类资产的首次查看时间切分周期内作答；任一组少于 {{ learningEffect.minimumComparisonSample }} 条时不判断方向。用户看过多类资产时，同一作答可能进入多个类型观察组，因此这里不做资产排名或自动推荐。</p>
+              <p>分别按每类资产的首次查看时间切分周期内作答；任一组少于 {{ learningEffect.minimumComparisonSample }} 条或 {{ learningEffect.minimumDistinctUsers }} 位学习者时不判断方向。多资产暴露样本可能重叠，因此不做资产排名或自动推荐。</p>
             </div>
           </div>
           <el-table :data="learningEffect.assetTypeStats" stripe size="small" class="asset-type-effect-table">
@@ -242,7 +242,7 @@
               <template #default="{ row }">
                 <div class="asset-type-effect-value">
                   <strong>{{ formatRate(row.afterViewCorrectRate) }}</strong>
-                  <small>{{ row.afterViewPracticeCount }} 条</small>
+                  <small>{{ row.afterViewPracticeCount }} 条 · {{ row.afterViewUserCount }} 人</small>
                 </div>
               </template>
             </el-table-column>
@@ -250,7 +250,7 @@
               <template #default="{ row }">
                 <div class="asset-type-effect-value">
                   <strong>{{ formatRate(row.baselineCorrectRate) }}</strong>
-                  <small>{{ row.baselinePracticeCount }} 条</small>
+                  <small>{{ row.baselinePracticeCount }} 条 · {{ row.baselineUserCount }} 人</small>
                 </div>
               </template>
             </el-table-column>
@@ -278,7 +278,7 @@
           <div class="transfer-header">
             <div>
               <strong>结构化变式难度样本</strong>
-              <p>只按服务端首次判分归档；每个难度档至少 {{ learningEffect.variantDifficultyMinimumSample }} 条，且至少两个难度档达标后，才提示可开始分层观察。</p>
+              <p>只按服务端首次判分归档；每档至少 {{ learningEffect.variantDifficultyMinimumSample }} 条且覆盖 {{ learningEffect.minimumDistinctUsers }} 位学习者，至少两个难度档达标后才提示可开始分层观察。</p>
             </div>
             <el-tag :type="variantDifficultyReady ? 'success' : 'info'" effect="plain">
               {{ variantDifficultyReady ? '可开始分层观察' : '样本积累中' }}
@@ -293,6 +293,7 @@
               <template #default="{ row }">{{ row.difficulty }} · {{ row.difficultyLabel }}</template>
             </el-table-column>
             <el-table-column prop="answeredCount" label="首次判分" width="96" align="right" />
+            <el-table-column prop="answeredUserCount" label="学习者" width="82" align="right" />
             <el-table-column prop="correctCount" label="正确" width="76" align="right" />
             <el-table-column label="正确率" width="96" align="right">
               <template #default="{ row }">{{ formatRate(row.correctRate) }}</template>
@@ -485,6 +486,7 @@ const learningEffect = reactive<AiLearningEffect>({
   feedbackCount: 0,
   helpfulRate: null,
   minimumComparisonSample: 5,
+  minimumDistinctUsers: 3,
   variantTrainingStartedCount: 0,
   variantTrainingCompletedCount: 0,
   variantTrainingCompletionRate: null,
@@ -498,16 +500,20 @@ const learningEffect = reactive<AiLearningEffect>({
   variantDifficultyConclusion: '暂无结构化变式首次判分样本。',
   variantDifficultyStats: [],
   afterViewPracticeCount: 0,
+  afterViewUserCount: 0,
   afterViewCorrectRate: null,
   baselinePracticeCount: 0,
+  baselineUserCount: 0,
   baselineCorrectRate: null,
   correctRateLift: null,
   conclusionLevel: 'INSUFFICIENT_DATA',
   conclusion: '当前暂无足够数据。',
   crossQuestionWindowDays: 30,
   crossQuestionAfterViewPracticeCount: 0,
+  crossQuestionAfterViewUserCount: 0,
   crossQuestionAfterViewCorrectRate: null,
   crossQuestionBaselinePracticeCount: 0,
+  crossQuestionBaselineUserCount: 0,
   crossQuestionBaselineCorrectRate: null,
   crossQuestionCorrectRateLift: null,
   crossQuestionConclusionLevel: 'INSUFFICIENT_DATA',

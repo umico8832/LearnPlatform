@@ -1358,7 +1358,8 @@ GET /api/admin/ai-usage/learning-effect?days=30
 | engagedUserCount | Long | 周期内查看资产的去重用户数 |
 | viewedQuestionCount | Long | 周期内被查看资产的去重题目数 |
 | helpfulRate | Double/null | 周期内反馈的“有帮助”占比，单位为百分比 |
-| minimumComparisonSample | Long | 同题、跨题和单资产类型任一对照组输出方向性状态的最小样本数，当前为 5 |
+| minimumComparisonSample | Long | 同题、跨题和单资产类型任一对照组输出方向性状态的最小作答数，当前为 5 |
+| minimumDistinctUsers | Long | 上述对照组与单个变式难度档输出方向性/就绪状态所需的最少去重学习者数，当前为 3 |
 | variantTrainingStartedCount | Long | 周期内首次进入可见状态的变式训练数，按用户和缓存资产版本去重 |
 | variantTrainingCompletedCount | Long | 上述周期开始队列中已显式确认完成的训练数 |
 | variantTrainingCompletionRate | Double/null | 完成数除以开始数，单位为百分比；无开始记录时为 `null` |
@@ -1370,24 +1371,28 @@ GET /api/admin/ai-usage/learning-effect?days=30
 | variantDifficultySufficientCount | Long | 周期内达到最小样本门槛的难度档数量 |
 | variantDifficultyReadiness | String | `INSUFFICIENT_DATA` / `READY`；至少两个难度档达标后才为 `READY` |
 | variantDifficultyConclusion | String | 仅描述难度样本覆盖与分层就绪度，不解释学习效果 |
-| variantDifficultyStats | Array | 固定返回难度 1-5 的首次判分数、正确数、正确率和样本是否达标 |
+| variantDifficultyStats | Array | 固定返回难度 1-5 的首次判分数、去重学习者数、正确数、正确率和样本是否达标 |
 | afterViewPracticeCount | Long | 同一用户阅读同题资产后产生的作答样本数 |
+| afterViewUserCount | Long | 阅读后同题作答组的去重学习者数 |
 | afterViewCorrectRate | Double/null | 阅读后同题作答正确率，单位为百分比 |
 | baselinePracticeCount | Long | 未发生同题阅读前或从未阅读时的作答样本数 |
+| baselineUserCount | Long | 同题对照组的去重学习者数 |
 | baselineCorrectRate | Double/null | 对照组作答正确率，单位为百分比 |
 | correctRateLift | Double/null | 阅读后组减对照组，单位为百分点 |
 | conclusionLevel | String | `INSUFFICIENT_DATA` / `POSITIVE_ASSOCIATION` / `NO_CLEAR_DIFFERENCE` / `NEEDS_ATTENTION` |
 | crossQuestionWindowDays | Integer | 跨题迁移相关阅读前后观察窗口，当前固定为 30 天 |
 | crossQuestionAfterViewPracticeCount | Long | 阅读某题资产后，在窗口内作答另一道共享知识点题目的样本数 |
+| crossQuestionAfterViewUserCount | Long | 阅读后跨题组的去重学习者数 |
 | crossQuestionAfterViewCorrectRate | Double/null | 阅读后的跨题作答正确率，单位为百分比 |
 | crossQuestionBaselinePracticeCount | Long | 首次相关阅读前、同一窗口内的跨题作答样本数；已有更早相关资产暴露者不计入 |
+| crossQuestionBaselineUserCount | Long | 阅读前跨题对照组的去重学习者数 |
 | crossQuestionBaselineCorrectRate | Double/null | 阅读前跨题对照组正确率，单位为百分比 |
 | crossQuestionCorrectRateLift | Double/null | 阅读后跨题组减阅读前跨题组，单位为百分点 |
 | crossQuestionConclusionLevel | String | 跨题观察结论，枚举与 `conclusionLevel` 相同 |
 | crossQuestionConclusion | String | 带样本限制和非因果声明的跨题观察说明 |
 | assetTypeStats | Array | 各资产类型的查看、用户、反馈、有帮助率，以及按该类型首次查看切分的同题两组样本数、正确率、百分点差异、样本状态和观察说明 |
 
-跨题迁移只匹配同一用户、不同题目且至少共享一个知识点的记录，排除原题重答；阅读后组与阅读前组均使用 30 天窗口，对照组还会排除已有更早相关阅读的用户，降低历史暴露污染。任一跨题组少于 5 条时，`crossQuestionConclusionLevel` 返回 `INSUFFICIENT_DATA`。变式训练完成率兼容旧版显式确认和新版真实判分，但结构化变式正确率与难度分布只来自服务端首次判分，不从完成按钮、AI 生成或调用日志推断。难度分布固定返回 1-5 档；每档至少 5 条且至少两个难度档达标后，`variantDifficultyReadiness` 才返回 `READY`，该状态只表示可以开始分层观察，不代表不同难度已存在效果差异。当任一同题作答对照组少于 5 条时，`conclusionLevel` 返回 `INSUFFICIENT_DATA`。`assetTypeStats` 对每种周期内出现的资产类型重复同题切分，新增 `afterViewPracticeCount`、`afterViewCorrectRate`、`baselinePracticeCount`、`baselineCorrectRate`、`correctRateLift`、`sampleSufficient`、`conclusionLevel` 和 `conclusion`；任一类型的任一组少于 5 条时不判断方向。同一作答可能因用户看过多类资产进入多个类型观察组，因此类型明细不能直接用于资产排名或自动推荐。该接口只描述真实行为中的观察性关联，不将正确率差异解释为 AI 内容造成的因果提升。
+跨题迁移只匹配同一用户、不同题目且至少共享一个知识点的记录，排除原题重答；阅读后组与阅读前组均使用 30 天窗口，对照组还会排除已有更早相关阅读的用户，降低历史暴露污染。同题、跨题和单资产类型的任一对照组都必须同时达到 5 条作答与 3 位去重学习者，否则对应结论返回 `INSUFFICIENT_DATA`，避免单个高频用户主导方向判断。变式训练完成率兼容旧版显式确认和新版真实判分，但结构化变式正确率与难度分布只来自服务端首次判分，不从完成按钮、AI 生成或调用日志推断。难度分布固定返回 1-5 档，明细额外返回 `answeredUserCount`；每档至少 5 条、3 位学习者且至少两个难度档达标后，`variantDifficultyReadiness` 才返回 `READY`，该状态只表示可以开始分层观察，不代表不同难度已存在效果差异。`assetTypeStats` 对每种周期内出现的资产类型重复同题切分，包含两组作答数、去重学习者数、正确率、百分点差异、样本状态和说明。同一作答可能因用户看过多类资产进入多个类型观察组，因此类型明细不能直接用于资产排名或自动推荐。该接口只描述真实行为中的观察性关联，不将正确率差异解释为 AI 内容造成的因果提升。
 
 ```
 GET /api/admin/ai-usage/alerts?limit=20

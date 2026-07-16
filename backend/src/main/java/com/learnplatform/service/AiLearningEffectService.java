@@ -46,6 +46,7 @@ public class AiLearningEffectService {
     private static final int MAX_DAYS = 90;
     private static final int CROSS_QUESTION_WINDOW_DAYS = 30;
     private static final long MIN_COMPARISON_SAMPLE = 5L;
+    private static final long MIN_DISTINCT_USERS = 3L;
 
     private final AiAssetViewMapper aiAssetViewMapper;
     private final QuestionAiAssetMapper questionAiAssetMapper;
@@ -164,6 +165,8 @@ public class AiLearningEffectService {
         long afterViewCorrectCount = 0;
         long baselinePracticeCount = 0;
         long baselineCorrectCount = 0;
+        Set<Long> afterViewUsers = new HashSet<>();
+        Set<Long> baselineUsers = new HashSet<>();
         for (PracticeRecord practice : practices) {
             LocalDateTime firstView = firstViewByUserQuestion.get(
                     new UserQuestionKey(practice.getUserId(), practice.getQuestionId()));
@@ -171,9 +174,11 @@ public class AiLearningEffectService {
                     && !practice.getCreateTime().isBefore(firstView);
             if (afterView) {
                 afterViewPracticeCount++;
+                if (practice.getUserId() != null) afterViewUsers.add(practice.getUserId());
                 if (Integer.valueOf(1).equals(practice.getIsCorrect())) afterViewCorrectCount++;
             } else {
                 baselinePracticeCount++;
+                if (practice.getUserId() != null) baselineUsers.add(practice.getUserId());
                 if (Integer.valueOf(1).equals(practice.getIsCorrect())) baselineCorrectCount++;
             }
         }
@@ -196,6 +201,7 @@ public class AiLearningEffectService {
         vo.setHelpfulRate(percentage(periodFeedback.stream().filter(item -> Boolean.TRUE.equals(item.getHelpful())).count(),
                 periodFeedback.size()));
         vo.setMinimumComparisonSample(MIN_COMPARISON_SAMPLE);
+        vo.setMinimumDistinctUsers(MIN_DISTINCT_USERS);
         long completedVariantTrainingCount = variantTrainingCohort.stream()
                 .filter(training -> training.getCompletedTime() != null
                         && training.getCompletedTime().isBefore(endExclusive))
@@ -217,8 +223,10 @@ public class AiLearningEffectService {
         vo.setVariantTrainingCorrectRate(percentage(correctVariantTrainingCount, answeredVariantTrainingCount));
         applyVariantDifficultyStats(vo, variantTrainingCohort, endExclusive);
         vo.setAfterViewPracticeCount(afterViewPracticeCount);
+        vo.setAfterViewUserCount((long) afterViewUsers.size());
         vo.setAfterViewCorrectRate(afterViewRate);
         vo.setBaselinePracticeCount(baselinePracticeCount);
+        vo.setBaselineUserCount((long) baselineUsers.size());
         vo.setBaselineCorrectRate(baselineRate);
         vo.setCorrectRateLift(lift);
         applyConclusion(vo);
@@ -263,10 +271,16 @@ public class AiLearningEffectService {
                             .equals(difficultyByAssetId.get(training.getAssetId())))
                     .toList();
             long answeredCount = difficultyTrainings.size();
+            long answeredUserCount = difficultyTrainings.stream()
+                    .map(AiVariantTraining::getUserId)
+                    .filter(userId -> userId != null)
+                    .distinct()
+                    .count();
             long correctCount = difficultyTrainings.stream()
                     .filter(training -> Integer.valueOf(1).equals(training.getIsCorrect()))
                     .count();
-            boolean sampleSufficient = answeredCount >= MIN_COMPARISON_SAMPLE;
+            boolean sampleSufficient = answeredCount >= MIN_COMPARISON_SAMPLE
+                    && answeredUserCount >= MIN_DISTINCT_USERS;
             if (answeredCount > 0) coveredCount++;
             if (sampleSufficient) sufficientCount++;
 
@@ -274,6 +288,7 @@ public class AiLearningEffectService {
             item.setDifficulty(difficulty);
             item.setDifficultyLabel(difficultyLabel(difficulty));
             item.setAnsweredCount(answeredCount);
+            item.setAnsweredUserCount(answeredUserCount);
             item.setCorrectCount(correctCount);
             item.setCorrectRate(percentage(correctCount, answeredCount));
             item.setSampleSufficient(sampleSufficient);
@@ -288,15 +303,16 @@ public class AiLearningEffectService {
             vo.setVariantDifficultyReadiness("READY");
             vo.setVariantDifficultyConclusion("已有 " + sufficientCount
                     + " 个难度档各不少于 " + MIN_COMPARISON_SAMPLE
-                    + " 条首次判分，可开始分难度观察；结论仍只代表样本结构与相关性。");
+                    + " 条首次判分且覆盖至少 " + MIN_DISTINCT_USERS
+                    + " 位学习者，可开始分难度观察；结论仍只代表样本结构与相关性。");
         } else if (answeredTrainings.isEmpty()) {
             vo.setVariantDifficultyReadiness("INSUFFICIENT_DATA");
             vo.setVariantDifficultyConclusion("暂无结构化变式首次判分样本，先继续积累真实作答，不进入难度分层。");
         } else {
             vo.setVariantDifficultyReadiness("INSUFFICIENT_DATA");
             vo.setVariantDifficultyConclusion("当前覆盖 " + coveredCount + " 个难度档，仅 "
-                    + sufficientCount + " 个达到每档 " + MIN_COMPARISON_SAMPLE
-                    + " 条门槛，继续积累后再进行难度分层。");
+                    + sufficientCount + " 个同时达到每档 " + MIN_COMPARISON_SAMPLE
+                    + " 条、" + MIN_DISTINCT_USERS + " 位学习者门槛，继续积累后再进行难度分层。");
         }
     }
 
@@ -359,9 +375,11 @@ public class AiLearningEffectService {
 
             if (hasRecentPriorRelatedView) {
                 result.afterViewPracticeCount++;
+                result.afterViewUsers.add(practice.getUserId());
                 if (Integer.valueOf(1).equals(practice.getIsCorrect())) result.afterViewCorrectCount++;
             } else if (!hasPriorRelatedView && hasUpcomingRelatedView) {
                 result.baselinePracticeCount++;
+                result.baselineUsers.add(practice.getUserId());
                 if (Integer.valueOf(1).equals(practice.getIsCorrect())) result.baselineCorrectCount++;
             }
         }
@@ -382,15 +400,22 @@ public class AiLearningEffectService {
 
         vo.setCrossQuestionWindowDays(CROSS_QUESTION_WINDOW_DAYS);
         vo.setCrossQuestionAfterViewPracticeCount(stats.afterViewPracticeCount);
+        vo.setCrossQuestionAfterViewUserCount((long) stats.afterViewUsers.size());
         vo.setCrossQuestionAfterViewCorrectRate(afterRate);
         vo.setCrossQuestionBaselinePracticeCount(stats.baselinePracticeCount);
+        vo.setCrossQuestionBaselineUserCount((long) stats.baselineUsers.size());
         vo.setCrossQuestionBaselineCorrectRate(baselineRate);
         vo.setCrossQuestionCorrectRateLift(lift);
 
         if (stats.afterViewPracticeCount < MIN_COMPARISON_SAMPLE
-                || stats.baselinePracticeCount < MIN_COMPARISON_SAMPLE || lift == null) {
+                || stats.baselinePracticeCount < MIN_COMPARISON_SAMPLE
+                || stats.afterViewUsers.size() < MIN_DISTINCT_USERS
+                || stats.baselineUsers.size() < MIN_DISTINCT_USERS
+                || lift == null) {
             vo.setCrossQuestionConclusionLevel("INSUFFICIENT_DATA");
-            vo.setCrossQuestionConclusion("跨题对照样本不足，先积累共享知识点题目的真实作答，暂不判断迁移效果。");
+            vo.setCrossQuestionConclusion("跨题任一对照组需至少 " + MIN_COMPARISON_SAMPLE
+                    + " 条作答且覆盖 " + MIN_DISTINCT_USERS
+                    + " 位学习者；当前代表性不足，暂不判断迁移效果。");
         } else if (lift >= 5.0) {
             vo.setCrossQuestionConclusionLevel("POSITIVE_ASSOCIATION");
             vo.setCrossQuestionConclusion("30 天窗口内，共享知识点的跨题作答正确率更高，已观察到正向关联；该结果仍不代表因果提升。");
@@ -429,6 +454,8 @@ public class AiLearningEffectService {
             long afterViewCorrectCount = 0;
             long baselinePracticeCount = 0;
             long baselineCorrectCount = 0;
+            Set<Long> afterViewUsers = new HashSet<>();
+            Set<Long> baselineUsers = new HashSet<>();
             for (PracticeRecord practice : practices) {
                 if (practice.getUserId() == null || practice.getQuestionId() == null
                         || practice.getCreateTime() == null) {
@@ -440,9 +467,11 @@ public class AiLearningEffectService {
                         && !practice.getCreateTime().isBefore(firstTypeView);
                 if (afterView) {
                     afterViewPracticeCount++;
+                    afterViewUsers.add(practice.getUserId());
                     if (Integer.valueOf(1).equals(practice.getIsCorrect())) afterViewCorrectCount++;
                 } else {
                     baselinePracticeCount++;
+                    baselineUsers.add(practice.getUserId());
                     if (Integer.valueOf(1).equals(practice.getIsCorrect())) baselineCorrectCount++;
                 }
             }
@@ -458,8 +487,10 @@ public class AiLearningEffectService {
                     typeFeedback.stream().filter(entry -> Boolean.TRUE.equals(entry.getHelpful())).count(),
                     typeFeedback.size()));
             item.setAfterViewPracticeCount(afterViewPracticeCount);
+            item.setAfterViewUserCount((long) afterViewUsers.size());
             item.setAfterViewCorrectRate(percentage(afterViewCorrectCount, afterViewPracticeCount));
             item.setBaselinePracticeCount(baselinePracticeCount);
+            item.setBaselineUserCount((long) baselineUsers.size());
             item.setBaselineCorrectRate(percentage(baselineCorrectCount, baselinePracticeCount));
             item.setCorrectRateLift(item.getAfterViewCorrectRate() == null || item.getBaselineCorrectRate() == null
                     ? null : roundOne(item.getAfterViewCorrectRate() - item.getBaselineCorrectRate()));
@@ -473,12 +504,15 @@ public class AiLearningEffectService {
     private void applyAssetTypeConclusion(AiLearningEffectVO.AssetTypeEffect item) {
         boolean sampleSufficient = item.getAfterViewPracticeCount() >= MIN_COMPARISON_SAMPLE
                 && item.getBaselinePracticeCount() >= MIN_COMPARISON_SAMPLE
+                && item.getAfterViewUserCount() >= MIN_DISTINCT_USERS
+                && item.getBaselineUserCount() >= MIN_DISTINCT_USERS
                 && item.getCorrectRateLift() != null;
         item.setSampleSufficient(sampleSufficient);
         if (!sampleSufficient) {
             item.setConclusionLevel("INSUFFICIENT_DATA");
-            item.setConclusion("该资产类型的任一对照组少于 " + MIN_COMPARISON_SAMPLE
-                    + " 条作答，继续积累真实样本，不进入内容价值判断。");
+            item.setConclusion("该资产类型任一对照组需至少 " + MIN_COMPARISON_SAMPLE
+                    + " 条作答且覆盖 " + MIN_DISTINCT_USERS
+                    + " 位学习者，继续积累真实样本，不进入内容价值判断。");
         } else if (item.getCorrectRateLift() >= 5.0) {
             item.setConclusionLevel("POSITIVE_ASSOCIATION");
             item.setConclusion("该资产类型阅读后的同题正确率更高，当前仅视为观察性正向关联。");
@@ -494,9 +528,13 @@ public class AiLearningEffectService {
     private void applyConclusion(AiLearningEffectVO vo) {
         if (vo.getAfterViewPracticeCount() < MIN_COMPARISON_SAMPLE
                 || vo.getBaselinePracticeCount() < MIN_COMPARISON_SAMPLE
+                || vo.getAfterViewUserCount() < MIN_DISTINCT_USERS
+                || vo.getBaselineUserCount() < MIN_DISTINCT_USERS
                 || vo.getCorrectRateLift() == null) {
             vo.setConclusionLevel("INSUFFICIENT_DATA");
-            vo.setConclusion("当前对照样本不足，先继续积累真实查看与后续作答数据，暂不判断学习效果。");
+            vo.setConclusion("任一同题对照组需至少 " + MIN_COMPARISON_SAMPLE
+                    + " 条作答且覆盖 " + MIN_DISTINCT_USERS
+                    + " 位学习者；当前代表性不足，暂不判断学习效果。");
         } else if (vo.getCorrectRateLift() >= 5.0) {
             vo.setConclusionLevel("POSITIVE_ASSOCIATION");
             vo.setConclusion("阅读 AI 学习资产后的同题作答正确率更高，已观察到正向关联；仍需结合样本结构持续验证。");
@@ -569,5 +607,7 @@ public class AiLearningEffectService {
         private long afterViewCorrectCount;
         private long baselinePracticeCount;
         private long baselineCorrectCount;
+        private final Set<Long> afterViewUsers = new HashSet<>();
+        private final Set<Long> baselineUsers = new HashSet<>();
     }
 }

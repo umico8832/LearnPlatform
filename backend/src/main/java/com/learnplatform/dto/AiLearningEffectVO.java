@@ -18,6 +18,7 @@ public class AiLearningEffectVO {
     private Long feedbackCount;
     private Double helpfulRate;
     private Long minimumComparisonSample;
+    private Long minimumDistinctUsers;
     private Long variantTrainingStartedCount;
     private Long variantTrainingCompletedCount;
     private Double variantTrainingCompletionRate;
@@ -31,16 +32,20 @@ public class AiLearningEffectVO {
     private String variantDifficultyConclusion;
     private List<VariantDifficultyEffect> variantDifficultyStats = new ArrayList<>();
     private Long afterViewPracticeCount;
+    private Long afterViewUserCount;
     private Double afterViewCorrectRate;
     private Long baselinePracticeCount;
+    private Long baselineUserCount;
     private Double baselineCorrectRate;
     private Double correctRateLift;
     private String conclusionLevel;
     private String conclusion;
     private Integer crossQuestionWindowDays;
     private Long crossQuestionAfterViewPracticeCount;
+    private Long crossQuestionAfterViewUserCount;
     private Double crossQuestionAfterViewCorrectRate;
     private Long crossQuestionBaselinePracticeCount;
+    private Long crossQuestionBaselineUserCount;
     private Double crossQuestionBaselineCorrectRate;
     private Double crossQuestionCorrectRateLift;
     private String crossQuestionConclusionLevel;
@@ -65,6 +70,8 @@ public class AiLearningEffectVO {
     public void setHelpfulRate(Double helpfulRate) { this.helpfulRate = helpfulRate; }
     public Long getMinimumComparisonSample() { return minimumComparisonSample; }
     public void setMinimumComparisonSample(Long minimumComparisonSample) { this.minimumComparisonSample = minimumComparisonSample; }
+    public Long getMinimumDistinctUsers() { return minimumDistinctUsers; }
+    public void setMinimumDistinctUsers(Long minimumDistinctUsers) { this.minimumDistinctUsers = minimumDistinctUsers; }
     public Long getVariantTrainingStartedCount() { return variantTrainingStartedCount; }
     public void setVariantTrainingStartedCount(Long variantTrainingStartedCount) { this.variantTrainingStartedCount = variantTrainingStartedCount; }
     public Long getVariantTrainingCompletedCount() { return variantTrainingCompletedCount; }
@@ -91,10 +98,14 @@ public class AiLearningEffectVO {
     public void setVariantDifficultyStats(List<VariantDifficultyEffect> variantDifficultyStats) { this.variantDifficultyStats = variantDifficultyStats; }
     public Long getAfterViewPracticeCount() { return afterViewPracticeCount; }
     public void setAfterViewPracticeCount(Long afterViewPracticeCount) { this.afterViewPracticeCount = afterViewPracticeCount; }
+    public Long getAfterViewUserCount() { return afterViewUserCount; }
+    public void setAfterViewUserCount(Long afterViewUserCount) { this.afterViewUserCount = afterViewUserCount; }
     public Double getAfterViewCorrectRate() { return afterViewCorrectRate; }
     public void setAfterViewCorrectRate(Double afterViewCorrectRate) { this.afterViewCorrectRate = afterViewCorrectRate; }
     public Long getBaselinePracticeCount() { return baselinePracticeCount; }
     public void setBaselinePracticeCount(Long baselinePracticeCount) { this.baselinePracticeCount = baselinePracticeCount; }
+    public Long getBaselineUserCount() { return baselineUserCount; }
+    public void setBaselineUserCount(Long baselineUserCount) { this.baselineUserCount = baselineUserCount; }
     public Double getBaselineCorrectRate() { return baselineCorrectRate; }
     public void setBaselineCorrectRate(Double baselineCorrectRate) { this.baselineCorrectRate = baselineCorrectRate; }
     public Double getCorrectRateLift() { return correctRateLift; }
@@ -107,10 +118,14 @@ public class AiLearningEffectVO {
     public void setCrossQuestionWindowDays(Integer crossQuestionWindowDays) { this.crossQuestionWindowDays = crossQuestionWindowDays; }
     public Long getCrossQuestionAfterViewPracticeCount() { return crossQuestionAfterViewPracticeCount; }
     public void setCrossQuestionAfterViewPracticeCount(Long crossQuestionAfterViewPracticeCount) { this.crossQuestionAfterViewPracticeCount = crossQuestionAfterViewPracticeCount; }
+    public Long getCrossQuestionAfterViewUserCount() { return crossQuestionAfterViewUserCount; }
+    public void setCrossQuestionAfterViewUserCount(Long crossQuestionAfterViewUserCount) { this.crossQuestionAfterViewUserCount = crossQuestionAfterViewUserCount; }
     public Double getCrossQuestionAfterViewCorrectRate() { return crossQuestionAfterViewCorrectRate; }
     public void setCrossQuestionAfterViewCorrectRate(Double crossQuestionAfterViewCorrectRate) { this.crossQuestionAfterViewCorrectRate = crossQuestionAfterViewCorrectRate; }
     public Long getCrossQuestionBaselinePracticeCount() { return crossQuestionBaselinePracticeCount; }
     public void setCrossQuestionBaselinePracticeCount(Long crossQuestionBaselinePracticeCount) { this.crossQuestionBaselinePracticeCount = crossQuestionBaselinePracticeCount; }
+    public Long getCrossQuestionBaselineUserCount() { return crossQuestionBaselineUserCount; }
+    public void setCrossQuestionBaselineUserCount(Long crossQuestionBaselineUserCount) { this.crossQuestionBaselineUserCount = crossQuestionBaselineUserCount; }
     public Double getCrossQuestionBaselineCorrectRate() { return crossQuestionBaselineCorrectRate; }
     public void setCrossQuestionBaselineCorrectRate(Double crossQuestionBaselineCorrectRate) { this.crossQuestionBaselineCorrectRate = crossQuestionBaselineCorrectRate; }
     public Double getCrossQuestionCorrectRateLift() { return crossQuestionCorrectRateLift; }
@@ -130,8 +145,10 @@ public class AiLearningEffectVO {
         private Long feedbackCount;
         private Double helpfulRate;
         private Long afterViewPracticeCount;
+        private Long afterViewUserCount;
         private Double afterViewCorrectRate;
         private Long baselinePracticeCount;
+        private Long baselineUserCount;
         private Double baselineCorrectRate;
         private Double correctRateLift;
         private Boolean sampleSufficient;
@@ -152,10 +169,14 @@ public class AiLearningEffectVO {
         public void setHelpfulRate(Double helpfulRate) { this.helpfulRate = helpfulRate; }
         public Long getAfterViewPracticeCount() { return afterViewPracticeCount; }
         public void setAfterViewPracticeCount(Long afterViewPracticeCount) { this.afterViewPracticeCount = afterViewPracticeCount; }
+        public Long getAfterViewUserCount() { return afterViewUserCount; }
+        public void setAfterViewUserCount(Long afterViewUserCount) { this.afterViewUserCount = afterViewUserCount; }
         public Double getAfterViewCorrectRate() { return afterViewCorrectRate; }
         public void setAfterViewCorrectRate(Double afterViewCorrectRate) { this.afterViewCorrectRate = afterViewCorrectRate; }
         public Long getBaselinePracticeCount() { return baselinePracticeCount; }
         public void setBaselinePracticeCount(Long baselinePracticeCount) { this.baselinePracticeCount = baselinePracticeCount; }
+        public Long getBaselineUserCount() { return baselineUserCount; }
+        public void setBaselineUserCount(Long baselineUserCount) { this.baselineUserCount = baselineUserCount; }
         public Double getBaselineCorrectRate() { return baselineCorrectRate; }
         public void setBaselineCorrectRate(Double baselineCorrectRate) { this.baselineCorrectRate = baselineCorrectRate; }
         public Double getCorrectRateLift() { return correctRateLift; }
@@ -172,6 +193,7 @@ public class AiLearningEffectVO {
         private Integer difficulty;
         private String difficultyLabel;
         private Long answeredCount;
+        private Long answeredUserCount;
         private Long correctCount;
         private Double correctRate;
         private Boolean sampleSufficient;
@@ -182,6 +204,8 @@ public class AiLearningEffectVO {
         public void setDifficultyLabel(String difficultyLabel) { this.difficultyLabel = difficultyLabel; }
         public Long getAnsweredCount() { return answeredCount; }
         public void setAnsweredCount(Long answeredCount) { this.answeredCount = answeredCount; }
+        public Long getAnsweredUserCount() { return answeredUserCount; }
+        public void setAnsweredUserCount(Long answeredUserCount) { this.answeredUserCount = answeredUserCount; }
         public Long getCorrectCount() { return correctCount; }
         public void setCorrectCount(Long correctCount) { this.correctCount = correctCount; }
         public Double getCorrectRate() { return correctRate; }

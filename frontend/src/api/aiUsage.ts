@@ -122,8 +122,10 @@ export interface AiAssetTypeEffect {
   feedbackCount: number
   helpfulRate: number | null
   afterViewPracticeCount: number
+  afterViewUserCount: number
   afterViewCorrectRate: number | null
   baselinePracticeCount: number
+  baselineUserCount: number
   baselineCorrectRate: number | null
   correctRateLift: number | null
   sampleSufficient: boolean
@@ -135,6 +137,7 @@ export interface AiVariantDifficultyEffect {
   difficulty: number
   difficultyLabel: string
   answeredCount: number
+  answeredUserCount: number
   correctCount: number
   correctRate: number | null
   sampleSufficient: boolean
@@ -151,6 +154,7 @@ export interface AiLearningEffect {
   feedbackCount: number
   helpfulRate: number | null
   minimumComparisonSample: number
+  minimumDistinctUsers: number
   variantTrainingStartedCount: number
   variantTrainingCompletedCount: number
   variantTrainingCompletionRate: number | null
@@ -164,16 +168,20 @@ export interface AiLearningEffect {
   variantDifficultyConclusion: string
   variantDifficultyStats: AiVariantDifficultyEffect[]
   afterViewPracticeCount: number
+  afterViewUserCount: number
   afterViewCorrectRate: number | null
   baselinePracticeCount: number
+  baselineUserCount: number
   baselineCorrectRate: number | null
   correctRateLift: number | null
   conclusionLevel: 'INSUFFICIENT_DATA' | 'POSITIVE_ASSOCIATION' | 'NO_CLEAR_DIFFERENCE' | 'NEEDS_ATTENTION'
   conclusion: string
   crossQuestionWindowDays: number
   crossQuestionAfterViewPracticeCount: number
+  crossQuestionAfterViewUserCount: number
   crossQuestionAfterViewCorrectRate: number | null
   crossQuestionBaselinePracticeCount: number
+  crossQuestionBaselineUserCount: number
   crossQuestionBaselineCorrectRate: number | null
   crossQuestionCorrectRateLift: number | null
   crossQuestionConclusionLevel: 'INSUFFICIENT_DATA' | 'POSITIVE_ASSOCIATION' | 'NO_CLEAR_DIFFERENCE' | 'NEEDS_ATTENTION'
