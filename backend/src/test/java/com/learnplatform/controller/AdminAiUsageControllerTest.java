@@ -43,6 +43,11 @@ class AdminAiUsageControllerTest {
         vo.setVariantTrainingStartedCount(12L);
         vo.setVariantTrainingCompletedCount(9L);
         vo.setVariantTrainingCompletionRate(75.0);
+        vo.setCrossQuestionWindowDays(30);
+        vo.setCrossQuestionAfterViewPracticeCount(18L);
+        vo.setCrossQuestionAfterViewCorrectRate(72.2);
+        vo.setCrossQuestionCorrectRateLift(6.7);
+        vo.setCrossQuestionConclusionLevel("POSITIVE_ASSOCIATION");
         vo.setConclusionLevel("POSITIVE_ASSOCIATION");
         when(learningEffectService.getLearningEffect(30)).thenReturn(vo);
 
@@ -56,6 +61,11 @@ class AdminAiUsageControllerTest {
                 .andExpect(jsonPath("$.data.variantTrainingStartedCount").value(12))
                 .andExpect(jsonPath("$.data.variantTrainingCompletedCount").value(9))
                 .andExpect(jsonPath("$.data.variantTrainingCompletionRate").value(75.0))
+                .andExpect(jsonPath("$.data.crossQuestionWindowDays").value(30))
+                .andExpect(jsonPath("$.data.crossQuestionAfterViewPracticeCount").value(18))
+                .andExpect(jsonPath("$.data.crossQuestionAfterViewCorrectRate").value(72.2))
+                .andExpect(jsonPath("$.data.crossQuestionCorrectRateLift").value(6.7))
+                .andExpect(jsonPath("$.data.crossQuestionConclusionLevel").value("POSITIVE_ASSOCIATION"))
                 .andExpect(jsonPath("$.data.conclusionLevel").value("POSITIVE_ASSOCIATION"));
     }
 }

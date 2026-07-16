@@ -27,6 +27,14 @@ public class AiLearningEffectVO {
     private Double correctRateLift;
     private String conclusionLevel;
     private String conclusion;
+    private Integer crossQuestionWindowDays;
+    private Long crossQuestionAfterViewPracticeCount;
+    private Double crossQuestionAfterViewCorrectRate;
+    private Long crossQuestionBaselinePracticeCount;
+    private Double crossQuestionBaselineCorrectRate;
+    private Double crossQuestionCorrectRateLift;
+    private String crossQuestionConclusionLevel;
+    private String crossQuestionConclusion;
     private List<AssetTypeEffect> assetTypeStats = new ArrayList<>();
 
     public Integer getDays() { return days; }
@@ -65,6 +73,22 @@ public class AiLearningEffectVO {
     public void setConclusionLevel(String conclusionLevel) { this.conclusionLevel = conclusionLevel; }
     public String getConclusion() { return conclusion; }
     public void setConclusion(String conclusion) { this.conclusion = conclusion; }
+    public Integer getCrossQuestionWindowDays() { return crossQuestionWindowDays; }
+    public void setCrossQuestionWindowDays(Integer crossQuestionWindowDays) { this.crossQuestionWindowDays = crossQuestionWindowDays; }
+    public Long getCrossQuestionAfterViewPracticeCount() { return crossQuestionAfterViewPracticeCount; }
+    public void setCrossQuestionAfterViewPracticeCount(Long crossQuestionAfterViewPracticeCount) { this.crossQuestionAfterViewPracticeCount = crossQuestionAfterViewPracticeCount; }
+    public Double getCrossQuestionAfterViewCorrectRate() { return crossQuestionAfterViewCorrectRate; }
+    public void setCrossQuestionAfterViewCorrectRate(Double crossQuestionAfterViewCorrectRate) { this.crossQuestionAfterViewCorrectRate = crossQuestionAfterViewCorrectRate; }
+    public Long getCrossQuestionBaselinePracticeCount() { return crossQuestionBaselinePracticeCount; }
+    public void setCrossQuestionBaselinePracticeCount(Long crossQuestionBaselinePracticeCount) { this.crossQuestionBaselinePracticeCount = crossQuestionBaselinePracticeCount; }
+    public Double getCrossQuestionBaselineCorrectRate() { return crossQuestionBaselineCorrectRate; }
+    public void setCrossQuestionBaselineCorrectRate(Double crossQuestionBaselineCorrectRate) { this.crossQuestionBaselineCorrectRate = crossQuestionBaselineCorrectRate; }
+    public Double getCrossQuestionCorrectRateLift() { return crossQuestionCorrectRateLift; }
+    public void setCrossQuestionCorrectRateLift(Double crossQuestionCorrectRateLift) { this.crossQuestionCorrectRateLift = crossQuestionCorrectRateLift; }
+    public String getCrossQuestionConclusionLevel() { return crossQuestionConclusionLevel; }
+    public void setCrossQuestionConclusionLevel(String crossQuestionConclusionLevel) { this.crossQuestionConclusionLevel = crossQuestionConclusionLevel; }
+    public String getCrossQuestionConclusion() { return crossQuestionConclusion; }
+    public void setCrossQuestionConclusion(String crossQuestionConclusion) { this.crossQuestionConclusion = crossQuestionConclusion; }
     public List<AssetTypeEffect> getAssetTypeStats() { return assetTypeStats; }
     public void setAssetTypeStats(List<AssetTypeEffect> assetTypeStats) { this.assetTypeStats = assetTypeStats; }
 

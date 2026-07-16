@@ -16,9 +16,9 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 20 — 演示验收与 AI 运营治理、Phase 21 — 前端信息架构与视觉体验优化均已完成；Phase 22 — AI 学习效果验证持续推进。Round 159 完成变式训练真实开始/完成事件、用户显式完成入口和管理端完成率观察。
+当前阶段：Phase 20 — 演示验收与 AI 运营治理、Phase 21 — 前端信息架构与视觉体验优化均已完成；Phase 22 — AI 学习效果验证持续推进。Round 160 完成共享知识点的 30 天跨题迁移观察口径与管理端展示。
 
-下一阶段主线：先积累 `ai_asset_view`、`ai_variant_training` 与 `practice_record` 真实样本；若继续开发，优先定义“按知识点的跨题迁移”最小口径，或先把 Markdown 变式题升级为结构化可判分题目后再统计正确率。不要用调用量、生成次数或完成按钮推断答题正确性。Playwright 现有 5 条真实 E2E，高频页面巡检会拦截 `/api/` 5xx 与浏览器 `console.error`。OCR、爬虫、自动入库和复杂推荐仍非当前优先级。
+下一阶段主线：先积累 `ai_asset_view`、`ai_variant_training` 与 `practice_record` 真实样本，观察同题与跨题两套指标的样本结构；若继续开发，可基于真实数据评估是否按题目难度分层，或先把 Markdown 变式题升级为结构化可判分题目后再统计正确率。不要用调用量、生成次数或完成按钮推断答题正确性。Playwright 现有 5 条真实 E2E，高频页面巡检会拦截 `/api/` 5xx 与浏览器 `console.error`。OCR、爬虫、自动入库和复杂推荐仍非当前优先级。
 
 阶段状态：
 - [x] Phase 0：项目规划 ✅
@@ -43,7 +43,7 @@
 - [x] Phase 19：AI 调用分析与成本控制 ✅ 基本完成（调用趋势、功能/模型分布、Top 用户、失败调用、真实 Tokens、平均耗时与按配置单价聚合成本）
 - [x] Phase 20：演示验收与 AI 运营治理 ✅（真实演示截图、关键业务 E2E、真实 token/成本日志、独立配额及审计、请求追踪、Prompt/模型指纹、运营报告与持久化提醒、内容治理、学习效果指标、CI #26 与真实接口点击验收均已完成）
 - [x] Phase 21：前端信息架构与视觉体验优化 ✅（壳层导航、用户与管理端主要页面、长操作列、批量操作、空状态、学习报告 polish 和真实接口点击验收均已完成；Round 156 全量 5 条 Playwright E2E 通过）
-- [ ] Phase 22：AI 学习效果验证 🚧（真实资产查看记录 ✅；阅读后同题作答对照 ✅；管理端效果观察面板 ✅；变式训练开始/完成事件与完成率 ✅；待真实样本积累后评估跨题迁移或结构化变式判分）
+- [ ] Phase 22：AI 学习效果验证 🚧（真实资产查看记录 ✅；阅读后同题作答对照 ✅；变式训练开始/完成事件与完成率 ✅；共享知识点跨题迁移观察 ✅；待真实样本积累后评估难度分层或结构化变式判分）
 
 ---
 
@@ -88,6 +88,7 @@
 34. **学习效果指标**：个人学习报告基于正确率变化、错题转化、复习掌握和活跃学习天数生成综合分、等级和建议摘要；前端已将正确率变化、错题转化率、复习掌握率和活跃学习天数整理为带进度条的解释型指标，帮助展示 AI 讲解、错题复习与间隔复习后的学习效果。
 35. **AI 学习效果观察**：`ai_asset_view` 按用户、题目、资产类型和日期聚合真实查看；管理端按首次查看时间对比阅读后同题作答与未阅读前/未阅读作答，展示覆盖、反馈、正确率、样本量和资产类型明细，并明确不作因果推断。
 36. **变式训练真实完成事件**：`ai_variant_training` 按用户与变式题缓存资产版本记录 `STARTED/COMPLETED`；内容进入视口才开始，用户完成后显式确认，管理端按周期开始队列展示完成率并明确不代表自动判分。
+37. **知识点跨题迁移观察**：管理端排除原题重答，以题目共享知识点匹配同一用户的其他题作答；相关阅读前后均使用 30 天窗口，对照组排除已有更早暴露，任一组少于 5 条不输出方向性结论。
 
 ### 后端关键文件
 - 统一响应：`R.java` + `ResultCode.java` + `BusinessException` + `GlobalExceptionHandler`
@@ -142,15 +143,15 @@ docker compose up -d
 - Redis 缓存 TTL 已迁移到 `application.yml` 的 `app.cache.ttl` 与环境变量配置。
 - 前端暂未配置 lint 脚本或 ESLint；`npm run build` 仍有第三方 `@vueuse/core` pure annotation 提示，但不阻断构建。Mermaid 593.66 kB 高级图表解析器是按需加载的单模块，已将构建预算设为 600 kB；入口 CSS 已降至 54.41 kB。
 - Phase 15 的向量相似度推荐仍未完成，但不阻断当前主线；Phase 16 的正式题目复审建议缓存已在 Round 139 完成；题目版本记录已在 Round 146 完成；个人学习报告学习效果指标已在 Round 147 完成，学习效果面板视觉 polish 已在 Round 148 完成；刷题记录页练习复盘体验整理已在 Round 149 完成；收藏题页重点题库体验整理已在 Round 150 完成；AI 复习建议页体验整理已在 Round 151 完成；个人中心体验整理已在 Round 152 完成；学习路径页体验整理已在 Round 153 完成。
-- Round 159 已建立变式训练开始与显式完成事件，但当前变式题仍是带答案解析的 Markdown 内容，完成状态只代表用户自我确认，不提供自动判分或正确率；同题作答对照仍只适合观察“查看后重练”的短期关联，跨题知识迁移尚未建立。
+- Round 160 已建立共享知识点的跨题迁移观察，但当前样本仍需真实积累，指标也未按题目难度、课程或用户基础分层；当前变式题仍是带答案解析的 Markdown 内容，完成状态只代表用户自我确认，不提供自动判分或正确率。
 
 ---
 
 ## 6. 下一步建议任务
 
-任务名称：积累样本并定义下一层 AI 学习效果指标
+任务名称：积累样本并验证下一层 AI 学习效果口径
 
-Phase 22 已完成资产查看、同题作答对照和变式训练显式完成率。下一轮不应立刻增加复杂模型；先积累 `ai_asset_view`、`ai_variant_training` 与 `practice_record` 样本。若继续开发，优先定义“知识点跨题迁移”的最小观察口径；若要统计变式题正确率，必须先把当前 Markdown 资产升级为结构化可作答、可判分的数据，不得从完成按钮推断正确性。不要回到 OCR、爬虫、自动入库或复杂向量推荐。
+Phase 22 已完成资产查看、同题作答对照、变式训练显式完成率和共享知识点跨题迁移观察。下一轮不应立刻增加复杂模型；先积累 `ai_asset_view`、`ai_variant_training` 与 `practice_record` 样本并检查样本结构。若数据量足够，可评估按题目难度分层；若要统计变式题正确率，必须先把当前 Markdown 资产升级为结构化可作答、可判分的数据，不得从完成按钮推断正确性。不要回到 OCR、爬虫、自动入库或复杂向量推荐。
 
 Round 122 已完成 Phase 21 第一轮：`AppLayout.vue` 分组导航、`global.css` 设计变量和 `HomeView.vue` 学习工作台样板；本轮已通过前端测试、构建和桌面/移动端视觉检查。Round 123 完成工程体检：前端 `npm ci`、`npm audit --audit-level=moderate`、`npm test -- --run`、`npm run build` 通过；后端 `mvn test` 360 passed、`mvn package -DskipTests` 通过；`docker compose config --quiet` 通过。Round 124 完成 Phase 21 P2：整理 Practice/WrongQuestion/Review/ExamList，修复复习 API 重复 `/api` 前缀，并通过前端测试、构建和桌面/移动端浏览器布局检查。Round 125 完成 QuestionListView 题库浏览页整理，并通过前端测试、构建和桌面/移动端浏览器布局检查。Round 127 完成管理端通用样式基线、AdminDashboard/CourseManage/UserManage 样板整理，并通过前端测试、构建和桌面/移动端布局检查。Round 128 修复全局搜索重复 `/api` 前缀、统计流式接口 Base URL、Actuator 默认暴露面，并将 Redis 缓存 TTL 迁移到配置。Round 129 完成 QuestionManage/ExamManage/SubmissionManage/AiUsageView 管理页主整理，并通过前端测试、构建和桌面/移动端 mock 布局检查。Round 130 完成 KnowledgePointManage 体验补齐，新增知识点摘要卡、树结构搜索和桌面/移动端 mock 布局检查。Round 132 完成 CourseList/CourseDetail 体验补齐，并验证从课程详情进入题库会携带 `courseId` 筛选。Round 133 新增 `frontend/scripts/capture-demo-screenshots.mjs` 和 `npm run screenshots:demo`，修复 simple cache 模式统计接口 500，调整 E2E profile 日志，并在真实 E2E 环境中生成 11 张演示截图。Round 134 完成 User/Question/Submission 管理页长操作列收纳，并通过前端测试与构建。Round 135 完成 User/Question/Submission 管理页批量操作工具条和空状态，并通过前端测试、构建和 Playwright mock 浏览器检查。Round 136 清理 LearningPathView 的 Element Plus radio 旧 API，并通过前端测试与构建。Round 137 修复错题逻辑删除后再次答错的唯一键冲突，更新集成测试命令配置，并通过后端 361 个测试与 4 条真实 Docker E2E。Round 138 修复 Testcontainers 与 Docker Engine 29 兼容问题、对齐真实迁移约束下的集成测试夹具，并通过后端 361 个默认测试与 53 个真实 MySQL 集成测试。Round 139 新增正式题目 AI 复审建议服务、`questionReviewSuggestion` 缓存和管理端复审弹窗入口，并通过后端 365 个默认测试、前端 207 个测试与前端构建。Round 140 新增 AI 运营提醒持久化与确认入口，并通过后端 367 个默认测试、前端 209 个测试与前端构建。Round 141 新增管理员顶部栏 AI 运营提醒站内入口，并通过前端 AI Usage API 测试与前端构建。
 
@@ -211,17 +212,17 @@ Round 105 已验证 Docker Redis 网络连接、8 个缓存/管理接口及前�
 
 当前阶段：Phase 20“演示验收与 AI 运营治理”和 Phase 21“前端信息架构与视觉体验优化”均已完成，Phase 22“AI 学习效果验证”持续推进。既有 Round 105-157 已完成演示验收、AI 运营治理、内容治理、主要页面体验与性能收尾，具体历史见 `docs/CHANGELOG_AGENT.md`。
 
-Round 159 更新：在 Round 158 的真实资产查看和同题作答对照基础上，新增变式训练真实开始/完成事件、用户显式完成入口和管理端周期完成率；完成只代表用户自我确认，不代表自动判分。
+Round 160 更新：在真实资产查看、同题作答对照和变式训练完成率基础上，新增共享知识点的跨题迁移观察；原题重答被排除，相关阅读前后使用 30 天窗口，对照组排除已有更早暴露，任一组少于 5 条不输出方向性结论。
 
-已完成模块：用户鉴权、课程知识点、题库、刷题判分、错题本、试卷考试、AI 流式能力与运营治理、学习资产与可视化讲解、统计可视化、内容治理、投稿生产、间隔重复、全局搜索、部署演示和主要页面体验；Phase 22 已具备资产真实查看、阅读后同题作答对照、变式训练显式完成事件与管理端观察面板。GitHub Actions CI #26 全部通过。
+已完成模块：用户鉴权、课程知识点、题库、刷题判分、错题本、试卷考试、AI 流式能力与运营治理、学习资产与可视化讲解、统计可视化、内容治理、投稿生产、间隔重复、全局搜索、部署演示和主要页面体验；Phase 22 已具备资产真实查看、阅读后同题作答对照、变式训练显式完成事件、共享知识点跨题迁移与管理端观察面板。GitHub Actions CI #26 全部通过。
 
-最新验证：默认后端测试 400 个、前端 Vitest 219 个和前端生产构建通过；5 个 Testcontainers 集成测试类的 54 个真实 MySQL 用例全部通过，确认 Flyway V18、变式训练唯一约束、幂等开始、重复完成和完成率聚合；`docker compose config --quiet` 通过。
+最新验证：默认后端测试 401 个、前端 Vitest 219 个和前端生产构建通过；5 个 Testcontainers 集成测试类的 54 个真实 MySQL 用例全部通过，确认 Flyway V18、变式训练约束与新增跨题统计在真实 Mapper 查询下正常工作；`docker compose config --quiet` 通过。
 下一步建议：
 1. 先积累 `ai_asset_view`、`ai_variant_training` 与 `practice_record` 的真实样本。
-2. 优先定义“知识点跨题迁移”的最小观察口径、窗口和样本阈值。
+2. 样本足够后评估是否按题目难度、课程或用户基础分层，避免聚合结构误导。
 3. 若要统计变式题正确率，先把 Markdown 变式题升级为结构化可作答、可判分数据。
 
-当前验收基线：后端默认测试 400 passed；真实 MySQL Testcontainers 全量 54 passed；前端 Vitest 219 passed、生产构建成功；`docker compose config --quiet` 成功。核心用户与管理员页面已有 5 条真实 Docker Playwright E2E；后续临时浏览器流程验收按 `skills/frontend-flow-test/SKILL.md` 只跑最小相关闭环。
+当前验收基线：后端默认测试 401 passed；真实 MySQL Testcontainers 全量 54 passed；前端 Vitest 219 passed、生产构建成功；`docker compose config --quiet` 成功。核心用户与管理员页面已有 5 条真实 Docker Playwright E2E；后续临时浏览器流程验收按 `skills/frontend-flow-test/SKILL.md` 只跑最小相关闭环。
 当前不优先做：PDF / 图片 OCR、爬虫、用户上传题库自动入库、AI 自动审核发布题目、复杂推荐系统（包括向量推荐）。
 后续扩展方向：见 docs/AI_LEARNING_PLATFORM_STRATEGY.md、docs/FUTURE.md 和 docs/TESTING.md；测试按业务风险补充。
 

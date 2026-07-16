@@ -1335,7 +1335,7 @@ GET /api/admin/ai-usage/report?days=7
 GET /api/admin/ai-usage/learning-effect?days=30
 ```
 
-返回 AI 学习资产的真实查看覆盖、用户反馈和后续同题作答对照。`days` 缺省为 30，限制为 1-90。核心字段：
+返回 AI 学习资产的真实查看覆盖、用户反馈、后续同题作答和知识点跨题迁移对照。`days` 缺省为 30，限制为 1-90。核心字段：
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -1352,9 +1352,17 @@ GET /api/admin/ai-usage/learning-effect?days=30
 | baselineCorrectRate | Double/null | 对照组作答正确率，单位为百分比 |
 | correctRateLift | Double/null | 阅读后组减对照组，单位为百分点 |
 | conclusionLevel | String | `INSUFFICIENT_DATA` / `POSITIVE_ASSOCIATION` / `NO_CLEAR_DIFFERENCE` / `NEEDS_ATTENTION` |
+| crossQuestionWindowDays | Integer | 跨题迁移相关阅读前后观察窗口，当前固定为 30 天 |
+| crossQuestionAfterViewPracticeCount | Long | 阅读某题资产后，在窗口内作答另一道共享知识点题目的样本数 |
+| crossQuestionAfterViewCorrectRate | Double/null | 阅读后的跨题作答正确率，单位为百分比 |
+| crossQuestionBaselinePracticeCount | Long | 首次相关阅读前、同一窗口内的跨题作答样本数；已有更早相关资产暴露者不计入 |
+| crossQuestionBaselineCorrectRate | Double/null | 阅读前跨题对照组正确率，单位为百分比 |
+| crossQuestionCorrectRateLift | Double/null | 阅读后跨题组减阅读前跨题组，单位为百分点 |
+| crossQuestionConclusionLevel | String | 跨题观察结论，枚举与 `conclusionLevel` 相同 |
+| crossQuestionConclusion | String | 带样本限制和非因果声明的跨题观察说明 |
 | assetTypeStats | Array | 各资产类型的查看、用户、反馈和有帮助率 |
 
-变式训练完成率按“周期内开始的训练队列”计算，完成事件必须来自用户显式确认，不从 AI 生成或调用日志推断。当任一同题作答对照组少于 5 条时，接口返回 `INSUFFICIENT_DATA`。该接口只描述真实行为中的观察性关联，不将正确率差异解释为 AI 内容造成的因果提升。
+跨题迁移只匹配同一用户、不同题目且至少共享一个知识点的记录，排除原题重答；阅读后组与阅读前组均使用 30 天窗口，对照组还会排除已有更早相关阅读的用户，降低历史暴露污染。任一跨题组少于 5 条时，`crossQuestionConclusionLevel` 返回 `INSUFFICIENT_DATA`。变式训练完成率按“周期内开始的训练队列”计算，完成事件必须来自用户显式确认，不从 AI 生成或调用日志推断。当任一同题作答对照组少于 5 条时，`conclusionLevel` 返回 `INSUFFICIENT_DATA`。该接口只描述真实行为中的观察性关联，不将正确率差异解释为 AI 内容造成的因果提升。
 
 ```
 GET /api/admin/ai-usage/alerts?limit=20

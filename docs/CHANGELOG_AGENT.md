@@ -1,5 +1,50 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 160 - 2026-07-16
+
+### 阶段
+Phase 22：AI 学习效果验证（知识点跨题迁移观察）
+
+### 完成内容
+1. 在既有学习效果接口中新增共享知识点的跨题迁移口径：同一用户阅读某题 AI 资产后，30 天内作答另一道共享知识点的题才进入阅读后组，原题重答明确排除。
+2. 阅读前对照组使用同样 30 天窗口，并排除已有更早相关阅读的用户；任一组少于 5 条时保持 `INSUFFICIENT_DATA`，不输出方向性判断。
+3. 管理端 AI 学习效果面板新增跨题阅读后/阅读前正确率、样本量、百分点差异和独立结论，同时保留同题观察与变式训练完成率。
+4. 复用 `ai_asset_view`、`practice_record` 与 `question_knowledge_point` 真实数据，不新增事件表，不把原题记忆、生成次数或完成按钮冒充迁移效果。
+5. 补充服务与 Controller 回归断言，并同步 API、数据库说明、架构、PRD、路线图、交接、README 和简历文档。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/dto/AiLearningEffectVO.java`
+- `backend/src/main/java/com/learnplatform/service/AiLearningEffectService.java`
+- `backend/src/test/java/com/learnplatform/controller/AdminAiUsageControllerTest.java`
+- `backend/src/test/java/com/learnplatform/service/AiLearningEffectServiceTest.java`
+- `frontend/src/api/aiUsage.ts`
+- `frontend/src/views/admin/AiUsageView.vue`
+- `README.md`
+- `docs/API_DESIGN.md`
+- `docs/ARCHITECTURE.md`
+- `docs/DB_DESIGN.md`
+- `docs/PRD.md`
+- `docs/RESUME.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd backend && mvn clean test`：干净重编译后 401 个默认测试通过。
+- `cd backend && mvn test -DexcludedGroups= -Dgroups=integration`：5 个 Testcontainers 集成测试类、54 个真实 MySQL 用例全部通过；新增知识点关联查询在真实 Mapper 环境正常执行。
+- `cd frontend && npm test -- --run`：27 个测试文件、219 个测试通过。
+- `cd frontend && npm run build`：通过；仅保留既有第三方 `@vueuse/core` pure annotation 提示。
+- `docker compose config --quiet`：通过。
+
+### 遗留问题
+- 跨题迁移仍是观察性统计，尚未按题目难度、课程或用户基础分层；需先积累真实样本再判断是否拆分。
+- 当前变式题仍是带答案解析的 Markdown 学习资产，显式完成不代表自动判分或正确率。
+
+### commit message
+`feat(ai): 增加知识点跨题迁移观察`
+
+---
+
 ## Round 159 - 2026-07-16
 
 ### 阶段

@@ -105,7 +105,7 @@
           <div class="effect-card-header">
             <div>
               <span>AI 学习效果观察</span>
-              <span class="report-subtitle">实际阅读行为与后续同题作答对照</span>
+              <span class="report-subtitle">同题记忆与知识点跨题迁移对照</span>
             </div>
             <el-tag :type="effectTagType" effect="light">{{ effectTagLabel }}</el-tag>
           </div>
@@ -114,7 +114,7 @@
         <div class="effect-context">
           <div>
             <strong>{{ learningEffect.periodStart || '-' }} 至 {{ learningEffect.periodEnd || '-' }}</strong>
-            <p>只统计用户实际看到已缓存学习资产的行为；正确率差异属于观察性关联，不代表因果提升。</p>
+            <p>只统计用户实际看到已缓存学习资产后的真实作答；同题与跨题正确率差异均属于观察性关联，不代表因果提升。</p>
           </div>
           <div class="effect-coverage">
             <span><b>{{ learningEffect.assetViewCount }}</b> 次查看</span>
@@ -154,6 +154,48 @@
           show-icon
           class="effect-conclusion"
         />
+
+        <section class="transfer-observation">
+          <div class="transfer-header">
+            <div>
+              <strong>知识点跨题迁移</strong>
+              <p>排除原题重答，仅比较共享知识点的另一道题；前后组均限制在相关阅读前后 {{ learningEffect.crossQuestionWindowDays }} 天，对照组不含更早暴露。</p>
+            </div>
+            <el-tag :type="transferTagType" effect="plain">{{ transferTagLabel }}</el-tag>
+          </div>
+
+          <div class="effect-comparison is-transfer">
+            <div class="effect-group is-after-view">
+              <span class="effect-group-label">阅读后跨题作答</span>
+              <strong>{{ formatRate(learningEffect.crossQuestionAfterViewCorrectRate) }}</strong>
+              <div class="effect-rate-track">
+                <i :style="{ width: rateWidth(learningEffect.crossQuestionAfterViewCorrectRate) }"></i>
+              </div>
+              <small>{{ learningEffect.crossQuestionAfterViewPracticeCount }} 条作答样本</small>
+            </div>
+            <div class="effect-lift">
+              <span>正确率差异</span>
+              <strong :class="transferLiftClass">{{ formatLift(learningEffect.crossQuestionCorrectRateLift) }}</strong>
+              <small>阅读后组 − 阅读前组</small>
+            </div>
+            <div class="effect-group is-baseline">
+              <span class="effect-group-label">首次相关阅读前跨题作答</span>
+              <strong>{{ formatRate(learningEffect.crossQuestionBaselineCorrectRate) }}</strong>
+              <div class="effect-rate-track">
+                <i :style="{ width: rateWidth(learningEffect.crossQuestionBaselineCorrectRate) }"></i>
+              </div>
+              <small>{{ learningEffect.crossQuestionBaselinePracticeCount }} 条作答样本</small>
+            </div>
+          </div>
+
+          <el-alert
+            :title="learningEffect.crossQuestionConclusion"
+            :type="transferAlertType"
+            :closable="false"
+            show-icon
+            class="effect-conclusion"
+          />
+        </section>
 
         <div class="effect-detail-grid">
           <div class="effect-feedback">
@@ -361,6 +403,14 @@ const learningEffect = reactive<AiLearningEffect>({
   correctRateLift: null,
   conclusionLevel: 'INSUFFICIENT_DATA',
   conclusion: '当前暂无足够数据。',
+  crossQuestionWindowDays: 30,
+  crossQuestionAfterViewPracticeCount: 0,
+  crossQuestionAfterViewCorrectRate: null,
+  crossQuestionBaselinePracticeCount: 0,
+  crossQuestionBaselineCorrectRate: null,
+  crossQuestionCorrectRateLift: null,
+  crossQuestionConclusionLevel: 'INSUFFICIENT_DATA',
+  crossQuestionConclusion: '当前暂无足够的跨题作答数据。',
   assetTypeStats: [],
 })
 
@@ -385,6 +435,29 @@ const effectAlertType = computed(() => learningEffect.conclusionLevel === 'NEEDS
 const effectLiftClass = computed(() => {
   if (learningEffect.correctRateLift === null || learningEffect.correctRateLift === 0) return 'neutral'
   return learningEffect.correctRateLift > 0 ? 'positive' : 'negative'
+})
+
+const transferTagLabel = computed(() => ({
+  INSUFFICIENT_DATA: '跨题样本积累中',
+  POSITIVE_ASSOCIATION: '跨题正向关联',
+  NO_CLEAR_DIFFERENCE: '跨题差异不明确',
+  NEEDS_ATTENTION: '跨题效果需关注',
+}[learningEffect.crossQuestionConclusionLevel]))
+
+const transferTagType = computed(() => ({
+  INSUFFICIENT_DATA: 'info',
+  POSITIVE_ASSOCIATION: 'success',
+  NO_CLEAR_DIFFERENCE: 'info',
+  NEEDS_ATTENTION: 'warning',
+}[learningEffect.crossQuestionConclusionLevel] as 'info' | 'success' | 'warning'))
+
+const transferAlertType = computed(() => learningEffect.crossQuestionConclusionLevel === 'NEEDS_ATTENTION'
+  ? 'warning'
+  : learningEffect.crossQuestionConclusionLevel === 'POSITIVE_ASSOCIATION' ? 'success' : 'info')
+
+const transferLiftClass = computed(() => {
+  if (learningEffect.crossQuestionCorrectRateLift === null || learningEffect.crossQuestionCorrectRateLift === 0) return 'neutral'
+  return learningEffect.crossQuestionCorrectRateLift > 0 ? 'positive' : 'negative'
 })
 
 const usageStats = computed(() => [
@@ -727,6 +800,30 @@ onBeforeUnmount(() => {
 .effect-conclusion {
   margin-bottom: 18px;
 }
+.transfer-observation {
+  margin-bottom: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+.transfer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.transfer-header strong {
+  color: var(--lp-text-primary);
+  font-size: 15px;
+}
+.transfer-header p {
+  margin: 6px 0 0;
+  color: var(--lp-text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.effect-comparison.is-transfer {
+  padding-top: 18px;
+}
 .effect-detail-grid {
   align-items: stretch;
   gap: 16px;
@@ -829,7 +926,8 @@ onBeforeUnmount(() => {
   .effect-card-header,
   .effect-context,
   .effect-comparison,
-  .effect-detail-grid {
+  .effect-detail-grid,
+  .transfer-header {
     align-items: stretch;
     flex-direction: column;
   }

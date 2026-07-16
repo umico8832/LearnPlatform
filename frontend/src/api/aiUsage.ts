@@ -123,7 +123,7 @@ export interface AiAssetTypeEffect {
   helpfulRate: number | null
 }
 
-/** AI 学习资产使用与后续同题作答的观察性统计 */
+/** AI 学习资产使用与后续同题、跨题作答的观察性统计 */
 export interface AiLearningEffect {
   days: number
   periodStart: string
@@ -143,6 +143,14 @@ export interface AiLearningEffect {
   correctRateLift: number | null
   conclusionLevel: 'INSUFFICIENT_DATA' | 'POSITIVE_ASSOCIATION' | 'NO_CLEAR_DIFFERENCE' | 'NEEDS_ATTENTION'
   conclusion: string
+  crossQuestionWindowDays: number
+  crossQuestionAfterViewPracticeCount: number
+  crossQuestionAfterViewCorrectRate: number | null
+  crossQuestionBaselinePracticeCount: number
+  crossQuestionBaselineCorrectRate: number | null
+  crossQuestionCorrectRateLift: number | null
+  crossQuestionConclusionLevel: 'INSUFFICIENT_DATA' | 'POSITIVE_ASSOCIATION' | 'NO_CLEAR_DIFFERENCE' | 'NEEDS_ATTENTION'
+  crossQuestionConclusion: string
   assetTypeStats: AiAssetTypeEffect[]
 }
 

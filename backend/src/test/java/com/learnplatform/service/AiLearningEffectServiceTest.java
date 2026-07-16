@@ -8,11 +8,13 @@ import com.learnplatform.entity.AiAssetView;
 import com.learnplatform.entity.AiVariantTraining;
 import com.learnplatform.entity.PracticeRecord;
 import com.learnplatform.entity.QuestionAiAsset;
+import com.learnplatform.entity.QuestionKnowledgePoint;
 import com.learnplatform.mapper.AiAssetFeedbackMapper;
 import com.learnplatform.mapper.AiAssetViewMapper;
 import com.learnplatform.mapper.AiVariantTrainingMapper;
 import com.learnplatform.mapper.PracticeRecordMapper;
 import com.learnplatform.mapper.QuestionAiAssetMapper;
+import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -40,10 +42,12 @@ class AiLearningEffectServiceTest {
     @Mock private AiAssetFeedbackMapper aiAssetFeedbackMapper;
     @Mock private PracticeRecordMapper practiceRecordMapper;
     @Mock private AiVariantTrainingMapper aiVariantTrainingMapper;
+    @Mock private QuestionKnowledgePointMapper questionKnowledgePointMapper;
 
     private AiLearningEffectService service() {
         return new AiLearningEffectService(aiAssetViewMapper, questionAiAssetMapper,
-                aiAssetFeedbackMapper, practiceRecordMapper, aiVariantTrainingMapper);
+                aiAssetFeedbackMapper, practiceRecordMapper, aiVariantTrainingMapper,
+                questionKnowledgePointMapper);
     }
 
     @Test
@@ -186,6 +190,40 @@ class AiLearningEffectServiceTest {
         assertEquals(90, result.getDays());
     }
 
+    @Test
+    void getLearningEffectMeasuresCrossQuestionTransferWithinSharedKnowledgePointWindow() {
+        LocalDateTime now = LocalDateTime.now();
+        when(aiAssetViewMapper.selectList(any())).thenReturn(List.of(
+                view(1L, 10L, "FULL_EXPLANATION", now.minusDays(10), 1),
+                view(2L, 12L, "FULL_EXPLANATION", now.minusDays(40), 1),
+                view(2L, 10L, "FULL_EXPLANATION", now.minusDays(2), 1)));
+        when(aiAssetFeedbackMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(aiVariantTrainingMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(
+                relation(10L, 100L), relation(11L, 100L), relation(12L, 100L),
+                relation(20L, 200L)));
+
+        List<PracticeRecord> practices = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            practices.add(practice(1L, 11L, i < 4, now.minusDays(9).plusHours(i)));
+            practices.add(practice(1L, 11L, i < 2, now.minusDays(11).plusHours(i)));
+        }
+        practices.add(practice(1L, 10L, true, now.minusDays(9)));
+        practices.add(practice(1L, 20L, true, now.minusDays(9)));
+        practices.add(practice(2L, 11L, true, now.minusDays(5)));
+        when(practiceRecordMapper.selectList(any())).thenReturn(practices);
+
+        AiLearningEffectVO result = service().getLearningEffect(30);
+
+        assertEquals(30, result.getCrossQuestionWindowDays());
+        assertEquals(5L, result.getCrossQuestionAfterViewPracticeCount());
+        assertEquals(80.0, result.getCrossQuestionAfterViewCorrectRate());
+        assertEquals(5L, result.getCrossQuestionBaselinePracticeCount());
+        assertEquals(40.0, result.getCrossQuestionBaselineCorrectRate());
+        assertEquals(40.0, result.getCrossQuestionCorrectRateLift());
+        assertEquals("POSITIVE_ASSOCIATION", result.getCrossQuestionConclusionLevel());
+    }
+
     private AiAssetView view(Long userId, Long questionId, String assetType,
                              LocalDateTime firstViewTime, int count) {
         AiAssetView view = new AiAssetView();
@@ -225,5 +263,12 @@ class AiLearningEffectServiceTest {
         training.setStartedTime(startedTime);
         training.setCompletedTime(completedTime);
         return training;
+    }
+
+    private QuestionKnowledgePoint relation(Long questionId, Long knowledgePointId) {
+        QuestionKnowledgePoint relation = new QuestionKnowledgePoint();
+        relation.setQuestionId(questionId);
+        relation.setKnowledgePointId(knowledgePointId);
+        return relation;
     }
 }

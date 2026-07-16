@@ -553,8 +553,10 @@ AiService (业务服务)
 管理员访问 /api/admin/ai-usage/learning-effect
   → AiLearningEffectService 以同题首次查看时间切分周期内 practice_record
   → 对比阅读后作答与未阅读前/未阅读作答正确率
+  → 通过 question_knowledge_point 匹配不同题目的共享知识点，按相关阅读前后 30 天观察跨题迁移
+  → 排除原题重答和已有更早暴露的跨题对照样本；任一组少于 5 条不输出方向性判断
   → 合并 ai_asset_feedback 与周期内开始的变式训练队列
-  → 返回覆盖、反馈、训练完成率、作答样本量和观察性结论
+  → 返回覆盖、反馈、训练完成率、同题/跨题样本量和观察性结论
 
 管理员在用户管理页设置 /api/admin/users/{id}/ai-daily-quota
   → 写入用户级覆盖值或清空为 NULL 恢复全局默认
