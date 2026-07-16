@@ -547,16 +547,21 @@ AiService (业务服务)
   → POST /api/ai/asset/view
   → ai_asset_view 按用户、题目、资产类型和日期原子聚合
   → 若为 VARIANT，则 ai_variant_training 按用户与缓存资产版本幂等记录 STARTED
-用户完成变式题并显式确认
-  → POST /api/ai/variant-training/{questionId}/complete
-  → 当前缓存版本的训练记录更新为 COMPLETED，不以 AI 调用或生成次数代替
+用户打开 V19 后生成的结构化变式题
+  → QuestionLearningAssetService 要求 AI 输出单选题 JSON
+  → AiVariantQuestionService 完整校验后分离公开资产与服务端私有答案
+  → 前端只收到题干、选项和难度，不提前返回正确答案与解析
+用户首次提交结构化变式答案
+  → POST /api/ai/variant-training/{questionId}/answer
+  → AnswerEvaluator 服务端判分并锁定首次结果，写入 user_answer/is_correct/answered_time
+  → 训练更新为 COMPLETED；旧 Markdown 缓存继续兼容显式完成接口
 管理员访问 /api/admin/ai-usage/learning-effect
   → AiLearningEffectService 以同题首次查看时间切分周期内 practice_record
   → 对比阅读后作答与未阅读前/未阅读作答正确率
   → 通过 question_knowledge_point 匹配不同题目的共享知识点，按相关阅读前后 30 天观察跨题迁移
   → 排除原题重答和已有更早暴露的跨题对照样本；任一组少于 5 条不输出方向性判断
   → 合并 ai_asset_feedback 与周期内开始的变式训练队列
-  → 返回覆盖、反馈、训练完成率、同题/跨题样本量和观察性结论
+  → 返回覆盖、反馈、训练完成率、结构化变式首次判分正确率、同题/跨题样本量和观察性结论
 
 管理员在用户管理页设置 /api/admin/users/{id}/ai-daily-quota
   → 写入用户级覆盖值或清空为 NULL 恢复全局默认

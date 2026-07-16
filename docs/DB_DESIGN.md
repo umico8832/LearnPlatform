@@ -803,7 +803,7 @@ Flyway V17 创建，用于记录用户实际看到某道题某类 AI 学习资�
 
 ### 3.22 AI 变式训练记录表 (ai_variant_training)
 
-Flyway V18 创建，用于区分“看到了变式题”和“用户显式确认完成训练”。变式题进入浏览器视口时创建 `STARTED` 记录，用户独立作答并核对解析后点击确认才更新为 `COMPLETED`；不从 AI 生成次数或调用日志推断完成。
+Flyway V18 创建，用于区分“看到了变式题”和“完成训练”。变式题进入浏览器视口时创建 `STARTED` 记录；V19 为结构化变式题补充首次答案和真实判分字段，旧 Markdown 缓存仍可通过显式确认更新为 `COMPLETED`。
 
 | 字段名 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
@@ -812,13 +812,34 @@ Flyway V18 创建，用于区分“看到了变式题”和“用户显式确认
 | question_id | BIGINT | | 原题 ID |
 | asset_id | BIGINT | | 当前变式题缓存资产 ID |
 | status | VARCHAR(20) | STARTED | `STARTED` / `COMPLETED` |
+| user_answer | VARCHAR(500) | NULL | V19：结构化变式题首次提交答案 |
+| is_correct | TINYINT | NULL | V19：首次提交是否正确，1-正确 0-错误 |
+| answered_time | DATETIME | NULL | V19：首次服务端判分时间 |
 | started_time | DATETIME | CURRENT_TIMESTAMP | 首次开始时间 |
 | last_view_time | DATETIME | CURRENT_TIMESTAMP | 最近查看时间 |
 | completed_time | DATETIME | NULL | 用户显式确认完成时间 |
 | create_time | DATETIME | CURRENT_TIMESTAMP | 创建时间 |
 | update_time | DATETIME | CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
 
-索引与约束：唯一约束 `uk_user_asset(user_id, asset_id)`，确保同一缓存资产版本不会因重复切换标签产生多条训练；索引 `idx_question_status(question_id, status)`、`idx_started_time(started_time)`、`idx_completed_time(completed_time)`。
+索引与约束：唯一约束 `uk_user_asset(user_id, asset_id)`，确保同一缓存资产版本不会因重复切换标签产生多条训练；索引 `idx_question_status(question_id, status)`、`idx_started_time(started_time)`、`idx_completed_time(completed_time)`、`idx_answered_time(answered_time)`、`idx_answer_result(is_correct, answered_time)`。
+
+### 3.23 结构化 AI 变式题表 (ai_variant_question)
+
+Flyway V19 创建。公开的 `question_ai_asset.content` 只保存脱敏提示，真正的题干、选项、标准答案和提交后解析保存在本表；学习资产查询只返回不含答案与解析的安全 VO。首版固定生成单选题，但保留 `question_type` 便于后续扩展。
+
+| 字段名 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| id | BIGINT | 自增主键 | 结构化变式题 ID |
+| asset_id | BIGINT | | 对应的变式题缓存资产 ID |
+| question_type | VARCHAR(30) | | 首版固定 `SINGLE_CHOICE` |
+| question_content | TEXT | | 变式题题干 |
+| options_json | TEXT | | 不含正确性标记的选项 JSON |
+| correct_answer | VARCHAR(100) | | 仅服务端判分使用的正确答案 |
+| analysis | TEXT | | 首次提交后展示的解析 |
+| difficulty | TINYINT | 3 | 难度等级 1-5 |
+| create_time / update_time | DATETIME | CURRENT_TIMESTAMP | 创建与更新时间 |
+
+索引与约束：唯一约束 `uk_asset_id(asset_id)`；索引 `idx_question_type(question_type)`、`idx_difficulty(difficulty)`。
 
 ---
 
@@ -850,6 +871,7 @@ Flyway V18 创建，用于区分“看到了变式题”和“用户显式确认
 | AI学习资产→反馈 | question_ai_asset | question_id, asset_type | ai_asset_feedback | question_id, asset_type |
 | AI学习资产→查看 | question_ai_asset | question_id, asset_type | ai_asset_view | question_id, asset_type |
 | AI学习资产→变式训练 | question_ai_asset | id | ai_variant_training | asset_id |
+| AI学习资产→结构化变式题 | question_ai_asset | id | ai_variant_question | asset_id |
 | 课程→题目投稿 | course | id | question_submission | course_id |
 | 正式题目→投稿入库结果 | question | id | question_submission | imported_question_id |
 | 题目→复习计划 | question | id | question_review_schedule | question_id |
@@ -900,7 +922,7 @@ INSERT INTO `course` (`name`, `description`, `sort_order`) VALUES
 
 ### 5.4 演示学习数据
 
-数据库由 Flyway 管理，迁移脚本位于 `backend/src/main/resources/db/migration`。`V1__baseline.sql` 使用 `utf8mb4` 客户端字符集，并为 Java 基础课程写入演示数据；后续结构变化必须新增版本迁移，不再直接修改已发布迁移。
+数据库由 Flyway 管理，迁移脚本位于 `backend/src/main/resources/db/migration`。`V1__baseline.sql` 使用 `utf8mb4` 客户端字符集，并为 Java 基础课程写入演示数据；当前已迁移至 V19，后续结构变化必须新增版本迁移，不再直接修改已发布迁移。
 
 ---
 
@@ -922,6 +944,7 @@ INSERT INTO `course` (`name`, `description`, `sort_order`) VALUES
 | exam_answer | 10,000-100,000 | 考试答题详情 |
 | ai_asset_view | 10,000-100,000 | 按用户、题目、资产类型和日期聚合的查看记录 |
 | ai_variant_training | 5,000-50,000 | 按用户和变式题缓存资产版本去重的训练记录 |
+| ai_variant_question | 1,000-10,000 | 每个结构化变式资产一条私有题目与答案记录 |
 
 ### 6.2 优化建议
 

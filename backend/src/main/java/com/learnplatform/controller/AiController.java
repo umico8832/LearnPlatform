@@ -3,6 +3,7 @@ package com.learnplatform.controller;
 import com.learnplatform.dto.AiAssetType;
 import com.learnplatform.dto.AiAssetViewRequest;
 import com.learnplatform.dto.AiVariantTrainingVO;
+import com.learnplatform.dto.AiVariantAnswerRequest;
 import com.learnplatform.dto.AiRequest;
 import com.learnplatform.dto.AiResponse;
 import com.learnplatform.dto.QuestionLearningAssetVO;
@@ -217,12 +218,22 @@ public class AiController {
                 request.getQuestionId(), request.getAssetType(), userDetails.getUserId()));
     }
 
-    @Operation(summary = "完成变式训练", description = "用户显式确认完成当前缓存版本的变式题训练；该事件不代表系统自动判分")
+    @Operation(summary = "完成旧版变式训练", description = "兼容旧 Markdown 缓存的显式完成；结构化变式题必须提交答案判分")
     @PostMapping("/variant-training/{questionId}/complete")
     public R<AiVariantTrainingVO> completeVariantTraining(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long questionId) {
         return R.ok(learningEffectService.completeVariantTraining(questionId, userDetails.getUserId()));
+    }
+
+    @Operation(summary = "提交结构化变式题答案", description = "服务端对当前缓存版本进行首次判分；重复提交返回首次结果，不覆盖学习样本")
+    @PostMapping("/variant-training/{questionId}/answer")
+    public R<AiVariantTrainingVO> submitVariantAnswer(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long questionId,
+            @Valid @RequestBody AiVariantAnswerRequest request) {
+        return R.ok(learningEffectService.submitVariantAnswer(
+                questionId, userDetails.getUserId(), request.getUserAnswer()));
     }
 
     /**

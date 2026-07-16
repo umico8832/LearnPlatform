@@ -20,7 +20,7 @@ public class QuestionLearningAssetVO {
     /** 资产类型中文标签 */
     private String assetTypeLabel;
 
-    /** AI 生成的 Markdown 内容 */
+    /** AI 生成的公开内容；结构化变式题答案不在此字段返回 */
     private String content;
 
     /** AI 模型名称 */
@@ -28,6 +28,9 @@ public class QuestionLearningAssetVO {
 
     /** 创建时间 */
     private LocalDateTime createTime;
+
+    /** 变式题资产对应的安全作答结构；旧 Markdown 缓存为 null。 */
+    private AiVariantQuestionVO variantQuestion;
 
     public QuestionLearningAssetVO() {}
 
@@ -63,4 +66,7 @@ public class QuestionLearningAssetVO {
 
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
+
+    public AiVariantQuestionVO getVariantQuestion() { return variantQuestion; }
+    public void setVariantQuestion(AiVariantQuestionVO variantQuestion) { this.variantQuestion = variantQuestion; }
 }

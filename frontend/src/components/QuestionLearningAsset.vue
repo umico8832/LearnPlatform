@@ -42,12 +42,19 @@
               v-if="tab.type === 'VISUAL_INTERACTIVE'"
               :content="tabContent[tab.type]"
             />
+            <AiVariantQuestionCard
+              v-else-if="tab.type === 'VARIANT' && variantQuestion"
+              :question-id="questionId"
+              :question="variantQuestion"
+              :training="variantTraining"
+              @answered="applyVariantTraining"
+            />
             <MarkdownRenderer
               v-else
               :content="tabContent[tab.type]"
             />
 
-            <div v-if="tab.type === 'VARIANT'" class="variant-training-panel">
+            <div v-if="tab.type === 'VARIANT' && !variantQuestion" class="variant-training-panel">
               <div>
                 <strong>{{ variantTraining.completed ? '本组变式训练已完成' : '完成这组变式训练了吗？' }}</strong>
                 <p>请先独立作答并核对解析，再确认完成。该记录是学习者自我确认，不代表系统自动判分。</p>
@@ -189,15 +196,18 @@ import {
   type AiAssetType,
   type QuestionLearningAsset,
   getQuestionAssets,
+  generateAsset,
   streamAsset,
   submitAssetFeedback,
   getAssetFeedback,
   recordAssetView,
   completeVariantTraining,
   type AiVariantTrainingStatus,
+  type AiVariantQuestion,
 } from '@/api/ai'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import QuestionVisualInteractive from '@/components/QuestionVisualInteractive.vue'
+import AiVariantQuestionCard from '@/components/AiVariantQuestionCard.vue'
 import { ElMessage } from 'element-plus'
 
 const props = withDefaults(defineProps<{
@@ -226,7 +236,7 @@ const assetTabs: AssetTab[] = [
   { type: 'WRONG_OPTION_ANALYSIS', label: '错误选项', icon: '🎯', description: '分析每个错误选项利用了什么思维陷阱。' },
   { type: 'COMMON_MISTAKES', label: '常见误区', icon: '🚫', description: '列出学生最容易犯的错误和正确的理解。' },
   { type: 'VISUAL_INTERACTIVE', label: '可视化讲解', icon: '📊', description: '用图表、数组、树等可视化元素展示解题过程，适合算法和数据结构题目。' },
-  { type: 'VARIANT', label: '变式题', icon: '🔄', description: '基于原题生成 2 道变式练习，巩固知识点。' },
+  { type: 'VARIANT', label: '变式题', icon: '🔄', description: '生成 1 道可提交、可判分的单选变式题，检验知识迁移。' },
 ]
 
 const activeTab = ref<AiAssetType>('FULL_EXPLANATION')
@@ -251,6 +261,7 @@ const assetModel = reactive<Record<AiAssetType, string>>({
   VARIANT: '',
   VISUAL_INTERACTIVE: '',
 })
+const variantQuestion = ref<AiVariantQuestion | null>(null)
 
 // 反馈状态
 const feedbackMap = reactive<Record<AiAssetType, { helpful: boolean | null; comment: string }>>({
@@ -268,12 +279,24 @@ const variantTrainingSubmitting = ref(false)
 const variantTraining = reactive<{
   status: '' | 'STARTED' | 'COMPLETED'
   completed: boolean
+  answered: boolean
+  correct: boolean | null
+  userAnswer: string
+  correctAnswer: string
+  analysis: string
   startedTime: string
+  answeredTime: string
   completedTime: string
 }>({
   status: '',
   completed: false,
+  answered: false,
+  correct: null,
+  userAnswer: '',
+  correctAnswer: '',
+  analysis: '',
   startedTime: '',
+  answeredTime: '',
   completedTime: '',
 })
 
@@ -326,8 +349,15 @@ function reset() {
   variantTrainingSubmitting.value = false
   variantTraining.status = ''
   variantTraining.completed = false
+  variantTraining.answered = false
+  variantTraining.correct = null
+  variantTraining.userAnswer = ''
+  variantTraining.correctAnswer = ''
+  variantTraining.analysis = ''
   variantTraining.startedTime = ''
+  variantTraining.answeredTime = ''
   variantTraining.completedTime = ''
+  variantQuestion.value = null
   for (const key of Object.keys(tabContent) as AiAssetType[]) {
     tabContent[key] = ''
     assetModel[key] = ''
@@ -342,6 +372,9 @@ async function loadExistingAssets() {
       for (const asset of data.data as QuestionLearningAsset[]) {
         tabContent[asset.assetType] = asset.content
         assetModel[asset.assetType] = asset.model || ''
+        if (asset.assetType === 'VARIANT') {
+          variantQuestion.value = asset.variantQuestion || null
+        }
       }
       // 加载已有资产的反馈状态
       for (const asset of data.data as QuestionLearningAsset[]) {
@@ -432,7 +465,13 @@ function trackVisibleAsset(assetType: AiAssetType) {
 function applyVariantTraining(training: AiVariantTrainingStatus) {
   variantTraining.status = training.status
   variantTraining.completed = training.completed
+  variantTraining.answered = Boolean(training.answered)
+  variantTraining.correct = training.correct ?? null
+  variantTraining.userAnswer = training.userAnswer || ''
+  variantTraining.correctAnswer = training.correctAnswer || ''
+  variantTraining.analysis = training.analysis || ''
   variantTraining.startedTime = training.startedTime || ''
+  variantTraining.answeredTime = training.answeredTime || ''
   variantTraining.completedTime = training.completedTime || ''
 }
 
@@ -465,6 +504,15 @@ async function generateTab(type: AiAssetType) {
   abortController = controller
 
   try {
+    if (type === 'VARIANT') {
+      const response = await generateAsset(props.questionId, type)
+      const asset = response.data
+      tabContent[type] = asset.content
+      assetModel[type] = asset.model || ''
+      variantQuestion.value = asset.variantQuestion || null
+      trackVisibleAsset(type)
+      return
+    }
     await streamAsset(props.questionId, type, {
       onContent: (content) => {
         streamBuffer.value += content

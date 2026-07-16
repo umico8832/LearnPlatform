@@ -43,6 +43,9 @@ class AdminAiUsageControllerTest {
         vo.setVariantTrainingStartedCount(12L);
         vo.setVariantTrainingCompletedCount(9L);
         vo.setVariantTrainingCompletionRate(75.0);
+        vo.setVariantTrainingAnsweredCount(8L);
+        vo.setVariantTrainingCorrectCount(6L);
+        vo.setVariantTrainingCorrectRate(75.0);
         vo.setCrossQuestionWindowDays(30);
         vo.setCrossQuestionAfterViewPracticeCount(18L);
         vo.setCrossQuestionAfterViewCorrectRate(72.2);
@@ -61,6 +64,9 @@ class AdminAiUsageControllerTest {
                 .andExpect(jsonPath("$.data.variantTrainingStartedCount").value(12))
                 .andExpect(jsonPath("$.data.variantTrainingCompletedCount").value(9))
                 .andExpect(jsonPath("$.data.variantTrainingCompletionRate").value(75.0))
+                .andExpect(jsonPath("$.data.variantTrainingAnsweredCount").value(8))
+                .andExpect(jsonPath("$.data.variantTrainingCorrectCount").value(6))
+                .andExpect(jsonPath("$.data.variantTrainingCorrectRate").value(75.0))
                 .andExpect(jsonPath("$.data.crossQuestionWindowDays").value(30))
                 .andExpect(jsonPath("$.data.crossQuestionAfterViewPracticeCount").value(18))
                 .andExpect(jsonPath("$.data.crossQuestionAfterViewCorrectRate").value(72.2))

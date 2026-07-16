@@ -20,6 +20,9 @@ public class AiLearningEffectVO {
     private Long variantTrainingStartedCount;
     private Long variantTrainingCompletedCount;
     private Double variantTrainingCompletionRate;
+    private Long variantTrainingAnsweredCount;
+    private Long variantTrainingCorrectCount;
+    private Double variantTrainingCorrectRate;
     private Long afterViewPracticeCount;
     private Double afterViewCorrectRate;
     private Long baselinePracticeCount;
@@ -59,6 +62,12 @@ public class AiLearningEffectVO {
     public void setVariantTrainingCompletedCount(Long variantTrainingCompletedCount) { this.variantTrainingCompletedCount = variantTrainingCompletedCount; }
     public Double getVariantTrainingCompletionRate() { return variantTrainingCompletionRate; }
     public void setVariantTrainingCompletionRate(Double variantTrainingCompletionRate) { this.variantTrainingCompletionRate = variantTrainingCompletionRate; }
+    public Long getVariantTrainingAnsweredCount() { return variantTrainingAnsweredCount; }
+    public void setVariantTrainingAnsweredCount(Long variantTrainingAnsweredCount) { this.variantTrainingAnsweredCount = variantTrainingAnsweredCount; }
+    public Long getVariantTrainingCorrectCount() { return variantTrainingCorrectCount; }
+    public void setVariantTrainingCorrectCount(Long variantTrainingCorrectCount) { this.variantTrainingCorrectCount = variantTrainingCorrectCount; }
+    public Double getVariantTrainingCorrectRate() { return variantTrainingCorrectRate; }
+    public void setVariantTrainingCorrectRate(Double variantTrainingCorrectRate) { this.variantTrainingCorrectRate = variantTrainingCorrectRate; }
     public Long getAfterViewPracticeCount() { return afterViewPracticeCount; }
     public void setAfterViewPracticeCount(Long afterViewPracticeCount) { this.afterViewPracticeCount = afterViewPracticeCount; }
     public Double getAfterViewCorrectRate() { return afterViewCorrectRate; }

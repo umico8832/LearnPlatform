@@ -20,7 +20,7 @@ public class QuestionAiAsset {
     /** 资产类型 */
     private String assetType;
 
-    /** AI 生成的 Markdown 内容 */
+    /** AI 生成的公开内容；结构化变式题不在此保存私有答案 */
     private String content;
 
     /** AI 模型名称 */

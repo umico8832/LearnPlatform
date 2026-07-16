@@ -43,11 +43,12 @@ class AiLearningEffectServiceTest {
     @Mock private PracticeRecordMapper practiceRecordMapper;
     @Mock private AiVariantTrainingMapper aiVariantTrainingMapper;
     @Mock private QuestionKnowledgePointMapper questionKnowledgePointMapper;
+    @Mock private AiVariantQuestionService aiVariantQuestionService;
 
     private AiLearningEffectService service() {
         return new AiLearningEffectService(aiAssetViewMapper, questionAiAssetMapper,
                 aiAssetFeedbackMapper, practiceRecordMapper, aiVariantTrainingMapper,
-                questionKnowledgePointMapper);
+                questionKnowledgePointMapper, aiVariantQuestionService);
     }
 
     @Test
@@ -153,8 +154,13 @@ class AiLearningEffectServiceTest {
             practices.add(practice(2L, 10L, i < 2, now.minusDays(8).plusHours(i)));
         }
         when(practiceRecordMapper.selectList(any())).thenReturn(practices);
+        AiVariantTraining answeredTraining = variantTraining(
+                1L, 10L, 100L, "COMPLETED", now.minusDays(4), now.minusDays(3));
+        answeredTraining.setAnsweredTime(now.minusDays(3));
+        answeredTraining.setIsCorrect(1);
+        answeredTraining.setUserAnswer("B");
         when(aiVariantTrainingMapper.selectList(any())).thenReturn(List.of(
-                variantTraining(1L, 10L, 100L, "COMPLETED", now.minusDays(4), now.minusDays(3)),
+                answeredTraining,
                 variantTraining(2L, 10L, 100L, "STARTED", now.minusDays(2), null)
         ));
 
@@ -173,6 +179,9 @@ class AiLearningEffectServiceTest {
         assertEquals(2L, result.getVariantTrainingStartedCount());
         assertEquals(1L, result.getVariantTrainingCompletedCount());
         assertEquals(50.0, result.getVariantTrainingCompletionRate());
+        assertEquals(1L, result.getVariantTrainingAnsweredCount());
+        assertEquals(1L, result.getVariantTrainingCorrectCount());
+        assertEquals(100.0, result.getVariantTrainingCorrectRate());
         assertEquals("POSITIVE_ASSOCIATION", result.getConclusionLevel());
         assertEquals(1, result.getAssetTypeStats().size());
         assertEquals("标准解析", result.getAssetTypeStats().get(0).getAssetTypeLabel());

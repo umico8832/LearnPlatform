@@ -58,6 +58,7 @@ class QuestionLearningAssetServiceTest {
     @Mock private QuestionKnowledgePointMapper questionKnowledgePointMapper;
     @Mock private KnowledgePointMapper knowledgePointMapper;
     @Mock private CourseMapper courseMapper;
+    @Mock private AiVariantQuestionService aiVariantQuestionService;
 
     private QuestionLearningAssetService service;
 
@@ -67,7 +68,8 @@ class QuestionLearningAssetServiceTest {
                 aiProvider, aiConfig, aiService,
                 questionAiAssetMapper, aiAssetFeedbackMapper,
                 questionMapper, questionOptionMapper,
-                questionKnowledgePointMapper, knowledgePointMapper, courseMapper
+                questionKnowledgePointMapper, knowledgePointMapper, courseMapper,
+                aiVariantQuestionService
         );
     }
 
@@ -236,6 +238,10 @@ class QuestionLearningAssetServiceTest {
             when(aiConfig.getModel()).thenReturn("gpt-4");
             when(aiProvider.chat(anyString(), anyString())).thenReturn("content for " + type);
             when(questionAiAssetMapper.insert(any())).thenReturn(1);
+            if (type == AiAssetType.VARIANT) {
+                when(aiVariantQuestionService.saveGeneratedAsset(eq(1L), eq("gpt-4"), anyString()))
+                        .thenReturn(stubAsset(1L, "VARIANT", "structured variant"));
+            }
 
             QuestionLearningAssetVO result = service.generateOrGetAsset(1L, type, 7L);
 
@@ -296,23 +302,23 @@ class QuestionLearningAssetServiceTest {
     }
 
     @Test
-    void generateAssetStreamLogsCallOnSuccess() {
+    void generateAssetStreamUsesSafeSynchronousPathForVariant() {
         when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
         doNothing().when(aiService).checkDailyQuota(7L);
         setupFullQuestionContext();
         when(aiConfig.getModel()).thenReturn("gpt-4");
-        org.mockito.Mockito.doAnswer(invocation -> {
-            Consumer<String> callback = invocation.getArgument(2);
-            callback.accept("content");
-            return null;
-        }).when(aiProvider).chatStream(anyString(), anyString(), any(Consumer.class));
-        when(questionAiAssetMapper.insert(any())).thenReturn(1);
+        when(aiProvider.chat(anyString(), anyString())).thenReturn("private structured json");
+        when(aiVariantQuestionService.saveGeneratedAsset(1L, "gpt-4", "private structured json"))
+                .thenReturn(stubAsset(1L, "VARIANT", "safe variant content"));
 
-        service.generateAssetStream(1L, AiAssetType.VARIANT, 7L, chunk -> {});
+        List<String> chunks = new ArrayList<>();
+        service.generateAssetStream(1L, AiAssetType.VARIANT, 7L, chunks::add);
 
         ArgumentCaptor<String> typeCaptor = ArgumentCaptor.forClass(String.class);
         verify(aiService).logCall(eq(7L), typeCaptor.capture(), eq(true), eq(null), any(Integer.class));
-        assertEquals("asset_variant_stream", typeCaptor.getValue());
+        assertEquals("asset_variant", typeCaptor.getValue());
+        assertEquals(List.of("safe variant content"), chunks);
+        verify(aiProvider, never()).chatStream(anyString(), anyString(), any());
     }
 
     @Test

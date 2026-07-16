@@ -767,7 +767,7 @@ GET /api/ai/assets/{questionId}
       "id": 1,
       "questionId": 42,
       "assetType": "FULL_EXPLANATION",
-      "label": "标准解析",
+      "assetTypeLabel": "标准解析",
       "content": "## 📌 考查知识点\n...",
       "model": "gpt-4o-mini",
       "createTime": "2026-06-16 22:00:00"
@@ -803,6 +803,8 @@ POST /api/ai/asset/generate
 
 有缓存直接返回，无缓存调用 AI 生成并缓存后返回。受每日 AI 调用配额限制。
 
+当 `assetType=VARIANT` 且为 V19 后新生成的资产时，响应额外包含 `variantQuestion`：`id`、`questionType`、`questionContent`、`options` 和 `difficulty`。该对象刻意不返回 `correctAnswer` 与 `analysis`；标准答案只在提交后随首次判分结果返回。V19 前已有的 Markdown 变式缓存保持 `variantQuestion=null`，继续走旧版展示。
+
 #### 10.5.3 流式生成资产
 
 ```
@@ -811,7 +813,7 @@ Accept: text/event-stream
 Authorization: Bearer <token>
 ```
 
-**请求体**：同 10.5.2。SSE 事件格式与 10.2.1 一致（`content` / `done` / `error` 事件）。生成完成后自动缓存。
+**请求体**：同 10.5.2。SSE 事件格式与 10.2.1 一致（`content` / `done` / `error` 事件）。生成完成后自动缓存。结构化变式题包含服务端私有答案，因此 `VARIANT` 会在完整 JSON 校验、私有答案落库和公开内容脱敏后一次性返回，不透传包含答案的上游流式片段。
 
 #### 10.5.4 清除题目资产缓存
 
@@ -890,7 +892,20 @@ POST /api/ai/asset/view
 POST /api/ai/variant-training/{questionId}/complete
 ```
 
-仅允许完成当前缓存版本且已经进入可见状态的变式题训练。重复调用保持幂等。该事件代表用户自我确认已经独立作答并核对解析，不代表系统对变式题进行了自动判分。
+仅用于兼容 V19 前的 Markdown 变式题：允许完成当前缓存版本且已经进入可见状态的训练，重复调用保持幂等。结构化变式题会拒绝该接口，必须提交答案完成真实判分。
+
+#### 10.5.9 提交结构化变式题答案
+
+```
+POST /api/ai/variant-training/{questionId}/answer
+```
+
+**请求体**：
+```json
+{ "userAnswer": "B" }
+```
+
+服务端只判定当前缓存资产版本，并要求用户已通过可见性上报开始训练。首版结构化变式题固定为单选题，复用平台 `AnswerEvaluator` 判分。首次提交会写入 `userAnswer`、`isCorrect`、`answeredTime`，同时将训练更新为 `COMPLETED`；重复提交只返回首次结果，不覆盖样本。响应在 `answered=true` 后包含 `correct`、`userAnswer`、`correctAnswer`、`analysis` 和时间字段。
 
 ---
 
@@ -1346,6 +1361,9 @@ GET /api/admin/ai-usage/learning-effect?days=30
 | variantTrainingStartedCount | Long | 周期内首次进入可见状态的变式训练数，按用户和缓存资产版本去重 |
 | variantTrainingCompletedCount | Long | 上述周期开始队列中已显式确认完成的训练数 |
 | variantTrainingCompletionRate | Double/null | 完成数除以开始数，单位为百分比；无开始记录时为 `null` |
+| variantTrainingAnsweredCount | Long | 上述周期开始队列中完成服务端首次判分的结构化变式训练数 |
+| variantTrainingCorrectCount | Long | 首次判分正确的结构化变式训练数 |
+| variantTrainingCorrectRate | Double/null | 正确数除以首次判分数，单位为百分比；无判分记录时为 `null` |
 | afterViewPracticeCount | Long | 同一用户阅读同题资产后产生的作答样本数 |
 | afterViewCorrectRate | Double/null | 阅读后同题作答正确率，单位为百分比 |
 | baselinePracticeCount | Long | 未发生同题阅读前或从未阅读时的作答样本数 |
@@ -1362,7 +1380,7 @@ GET /api/admin/ai-usage/learning-effect?days=30
 | crossQuestionConclusion | String | 带样本限制和非因果声明的跨题观察说明 |
 | assetTypeStats | Array | 各资产类型的查看、用户、反馈和有帮助率 |
 
-跨题迁移只匹配同一用户、不同题目且至少共享一个知识点的记录，排除原题重答；阅读后组与阅读前组均使用 30 天窗口，对照组还会排除已有更早相关阅读的用户，降低历史暴露污染。任一跨题组少于 5 条时，`crossQuestionConclusionLevel` 返回 `INSUFFICIENT_DATA`。变式训练完成率按“周期内开始的训练队列”计算，完成事件必须来自用户显式确认，不从 AI 生成或调用日志推断。当任一同题作答对照组少于 5 条时，`conclusionLevel` 返回 `INSUFFICIENT_DATA`。该接口只描述真实行为中的观察性关联，不将正确率差异解释为 AI 内容造成的因果提升。
+跨题迁移只匹配同一用户、不同题目且至少共享一个知识点的记录，排除原题重答；阅读后组与阅读前组均使用 30 天窗口，对照组还会排除已有更早相关阅读的用户，降低历史暴露污染。任一跨题组少于 5 条时，`crossQuestionConclusionLevel` 返回 `INSUFFICIENT_DATA`。变式训练完成率兼容旧版显式确认和新版真实判分，但结构化变式正确率只来自服务端首次判分，不从完成按钮、AI 生成或调用日志推断。当任一同题作答对照组少于 5 条时，`conclusionLevel` 返回 `INSUFFICIENT_DATA`。该接口只描述真实行为中的观察性关联，不将正确率差异解释为 AI 内容造成的因果提升。
 
 ```
 GET /api/admin/ai-usage/alerts?limit=20

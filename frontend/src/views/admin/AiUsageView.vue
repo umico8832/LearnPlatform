@@ -207,7 +207,13 @@
             <span>变式训练完成率</span>
             <strong>{{ formatRate(learningEffect.variantTrainingCompletionRate) }}</strong>
             <small>{{ learningEffect.variantTrainingCompletedCount }} / {{ learningEffect.variantTrainingStartedCount }} 个周期内开始记录</small>
-            <em>用户显式确认，非自动判分</em>
+            <em>兼容旧版手动确认与新版提交判分</em>
+          </div>
+          <div class="effect-feedback is-variant-accuracy">
+            <span>结构化变式正确率</span>
+            <strong>{{ formatRate(learningEffect.variantTrainingCorrectRate) }}</strong>
+            <small>{{ learningEffect.variantTrainingCorrectCount }} / {{ learningEffect.variantTrainingAnsweredCount }} 次首次判分</small>
+            <em>只统计服务端真实判分</em>
           </div>
           <el-table :data="learningEffect.assetTypeStats" stripe size="small" class="effect-type-table">
             <el-table-column prop="assetTypeLabel" label="资产类型" min-width="120" />
@@ -396,6 +402,9 @@ const learningEffect = reactive<AiLearningEffect>({
   variantTrainingStartedCount: 0,
   variantTrainingCompletedCount: 0,
   variantTrainingCompletionRate: null,
+  variantTrainingAnsweredCount: 0,
+  variantTrainingCorrectCount: 0,
+  variantTrainingCorrectRate: null,
   afterViewPracticeCount: 0,
   afterViewCorrectRate: null,
   baselinePracticeCount: 0,
@@ -848,6 +857,12 @@ onBeforeUnmount(() => {
 }
 .effect-feedback.is-variant-training strong {
   color: var(--lp-success);
+}
+.effect-feedback.is-variant-accuracy {
+  background: #fff7e8;
+}
+.effect-feedback.is-variant-accuracy strong {
+  color: #a96812;
 }
 .effect-feedback em {
   margin-top: 10px;

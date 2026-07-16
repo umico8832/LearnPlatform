@@ -352,15 +352,36 @@ export interface QuestionLearningAsset {
   content: string
   model: string
   createTime: string
+  variantQuestion?: AiVariantQuestion | null
 }
 
-/** 当前缓存变式题的训练状态；完成由用户显式确认，不代表自动判分。 */
+export interface AiVariantQuestionOption {
+  label: string
+  content: string
+}
+
+/** 作答前可安全返回的结构化变式题，不包含答案与解析。 */
+export interface AiVariantQuestion {
+  id: number
+  questionType: 'SINGLE_CHOICE'
+  questionContent: string
+  options: AiVariantQuestionOption[]
+  difficulty: number
+}
+
+/** 当前缓存变式题的训练与首次判分状态。 */
 export interface AiVariantTrainingStatus {
   questionId: number
   assetId: number
   status: 'STARTED' | 'COMPLETED'
   completed: boolean
+  answered: boolean
+  correct?: boolean | null
+  userAnswer?: string | null
+  correctAnswer?: string | null
+  analysis?: string | null
   startedTime: string
+  answeredTime?: string | null
   completedTime: string | null
 }
 
@@ -416,6 +437,14 @@ export function recordAssetView(questionId: number, assetType: AiAssetType) {
 export function completeVariantTraining(questionId: number) {
   return aiService.post<ApiResponse<AiVariantTrainingStatus>>(
     `/ai/variant-training/${questionId}/complete`,
+  ).then((res) => res.data)
+}
+
+/** 提交结构化变式题答案；服务端保留首次判分结果。 */
+export function submitVariantAnswer(questionId: number, userAnswer: string) {
+  return aiService.post<ApiResponse<AiVariantTrainingStatus>>(
+    `/ai/variant-training/${questionId}/answer`,
+    { userAnswer },
   ).then((res) => res.data)
 }
 

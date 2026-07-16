@@ -51,19 +51,22 @@ public class AiLearningEffectService {
     private final PracticeRecordMapper practiceRecordMapper;
     private final AiVariantTrainingMapper aiVariantTrainingMapper;
     private final QuestionKnowledgePointMapper questionKnowledgePointMapper;
+    private final AiVariantQuestionService aiVariantQuestionService;
 
     public AiLearningEffectService(AiAssetViewMapper aiAssetViewMapper,
                                    QuestionAiAssetMapper questionAiAssetMapper,
                                    AiAssetFeedbackMapper aiAssetFeedbackMapper,
                                    PracticeRecordMapper practiceRecordMapper,
                                    AiVariantTrainingMapper aiVariantTrainingMapper,
-                                   QuestionKnowledgePointMapper questionKnowledgePointMapper) {
+                                   QuestionKnowledgePointMapper questionKnowledgePointMapper,
+                                   AiVariantQuestionService aiVariantQuestionService) {
         this.aiAssetViewMapper = aiAssetViewMapper;
         this.questionAiAssetMapper = questionAiAssetMapper;
         this.aiAssetFeedbackMapper = aiAssetFeedbackMapper;
         this.practiceRecordMapper = practiceRecordMapper;
         this.aiVariantTrainingMapper = aiVariantTrainingMapper;
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
+        this.aiVariantQuestionService = aiVariantQuestionService;
     }
 
     /**
@@ -96,6 +99,9 @@ public class AiLearningEffectService {
         if (asset == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "变式题学习资产不存在");
         }
+        if (aiVariantQuestionService.hasStructuredQuestion(asset.getId())) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "结构化变式题请提交答案完成训练");
+        }
         AiVariantTraining training = findVariantTraining(userId, asset.getId());
         if (training == null) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "请先查看变式题，再标记训练完成");
@@ -106,6 +112,10 @@ public class AiLearningEffectService {
             aiVariantTrainingMapper.updateById(training);
         }
         return toVariantTrainingVO(training);
+    }
+
+    public AiVariantTrainingVO submitVariantAnswer(Long questionId, Long userId, String userAnswer) {
+        return aiVariantQuestionService.submitAnswer(questionId, userId, userAnswer);
     }
 
     public AiLearningEffectVO getLearningEffect(Integer requestedDays) {
@@ -184,9 +194,21 @@ public class AiLearningEffectService {
                 .filter(training -> training.getCompletedTime() != null
                         && training.getCompletedTime().isBefore(endExclusive))
                 .count();
+        long answeredVariantTrainingCount = variantTrainingCohort.stream()
+                .filter(training -> training.getAnsweredTime() != null
+                        && training.getAnsweredTime().isBefore(endExclusive))
+                .count();
+        long correctVariantTrainingCount = variantTrainingCohort.stream()
+                .filter(training -> training.getAnsweredTime() != null
+                        && training.getAnsweredTime().isBefore(endExclusive)
+                        && Integer.valueOf(1).equals(training.getIsCorrect()))
+                .count();
         vo.setVariantTrainingStartedCount((long) variantTrainingCohort.size());
         vo.setVariantTrainingCompletedCount(completedVariantTrainingCount);
         vo.setVariantTrainingCompletionRate(percentage(completedVariantTrainingCount, variantTrainingCohort.size()));
+        vo.setVariantTrainingAnsweredCount(answeredVariantTrainingCount);
+        vo.setVariantTrainingCorrectCount(correctVariantTrainingCount);
+        vo.setVariantTrainingCorrectRate(percentage(correctVariantTrainingCount, answeredVariantTrainingCount));
         vo.setAfterViewPracticeCount(afterViewPracticeCount);
         vo.setAfterViewCorrectRate(afterViewRate);
         vo.setBaselinePracticeCount(baselinePracticeCount);
@@ -385,7 +407,8 @@ public class AiLearningEffectService {
         vo.setCompleted("COMPLETED".equals(training.getStatus()));
         vo.setStartedTime(training.getStartedTime());
         vo.setCompletedTime(training.getCompletedTime());
-        return vo;
+        AiVariantTrainingVO enriched = aiVariantQuestionService.enrichTrainingVO(training, vo);
+        return enriched != null ? enriched : vo;
     }
 
     private record UserQuestionKey(Long userId, Long questionId) {}

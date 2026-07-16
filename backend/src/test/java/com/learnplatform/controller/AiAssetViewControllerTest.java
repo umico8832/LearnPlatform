@@ -86,6 +86,27 @@ class AiAssetViewControllerTest {
     }
 
     @Test
+    void submitVariantAnswerUsesAuthenticatedUser() throws Exception {
+        AiVariantTrainingVO training = new AiVariantTrainingVO();
+        training.setQuestionId(42L);
+        training.setStatus("COMPLETED");
+        training.setCompleted(true);
+        training.setAnswered(true);
+        training.setCorrect(true);
+        when(learningEffectService.submitVariantAnswer(42L, 7L, "B")).thenReturn(training);
+
+        mockMvc.perform(post("/api/ai/variant-training/42/answer")
+                        .with(mockUser(7L))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userAnswer\":\"B\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.answered").value(true))
+                .andExpect(jsonPath("$.data.correct").value(true));
+
+        verify(learningEffectService).submitVariantAnswer(42L, 7L, "B");
+    }
+
+    @Test
     void recordAssetViewRejectsMissingFields() throws Exception {
         mockMvc.perform(post("/api/ai/asset/view")
                         .with(mockUser(7L))

@@ -26,6 +26,7 @@ import {
   getAiUsage,
   recordAssetView,
   completeVariantTraining,
+  submitVariantAnswer,
   streamQuestionAi,
   streamReviewSuggestion,
 } from '@/api/ai'
@@ -131,6 +132,23 @@ describe('AI API', () => {
 
       expect(mockAiPost).toHaveBeenCalledWith('/ai/variant-training/10/complete')
       expect(result.data.completed).toBe(true)
+    })
+  })
+
+  describe('submitVariantAnswer', () => {
+    it('submits the selected answer for server-side grading', async () => {
+      mockAiPost.mockResolvedValue({
+        data: {
+          code: 0,
+          data: { questionId: 10, answered: true, correct: true, userAnswer: 'B' },
+          message: 'success',
+        },
+      })
+
+      const result = await submitVariantAnswer(10, 'B')
+
+      expect(mockAiPost).toHaveBeenCalledWith('/ai/variant-training/10/answer', { userAnswer: 'B' })
+      expect(result.data.correct).toBe(true)
     })
   })
 

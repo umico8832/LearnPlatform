@@ -1,5 +1,74 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 161 - 2026-07-16
+
+### 阶段
+Phase 22：AI 学习效果验证（结构化变式题真实判分）
+
+### 完成内容
+1. 新增 Flyway V19 `ai_variant_question`，把结构化变式题的题干、选项、标准答案和解析独立保存；公开学习资产只返回不含答案与解析的安全作答结构。
+2. 将新变式题 Prompt 收敛为 1 道结构化单选题；AI JSON 必须通过题干、选项数量、标签唯一、正确答案归属和难度范围校验后才能缓存。变式生成不再流式透传私有答案。
+3. 新增结构化变式答题接口，复用平台 `AnswerEvaluator` 服务端判分；首次提交写入答案、正确性和判分时间并完成训练，重复提交只返回首次结果，不覆盖学习样本。
+4. 新增专用变式训练卡，支持独立选项作答、提交判分、正确/错误反馈与提交后解析；V19 前的 Markdown 变式缓存继续保留原有显式完成入口。
+5. 管理端学习效果面板新增结构化变式首次判分数、正确数和正确率；完成率兼容新旧资产，但正确率只统计服务端真实判分。
+6. 补齐服务、Controller、前端 API/组件与真实 MySQL 集成测试，并同步 API、数据库、架构、PRD、战略、路线图、交接、README、测试策略和简历文档。
+
+### 修改文件
+- `backend/src/main/resources/db/migration/V19__create_structured_ai_variant_question.sql`
+- `backend/src/main/java/com/learnplatform/entity/AiVariantQuestion.java`
+- `backend/src/main/java/com/learnplatform/entity/AiVariantTraining.java`
+- `backend/src/main/java/com/learnplatform/mapper/AiVariantQuestionMapper.java`
+- `backend/src/main/java/com/learnplatform/dto/AiVariantQuestionVO.java`
+- `backend/src/main/java/com/learnplatform/dto/AiVariantAnswerRequest.java`
+- `backend/src/main/java/com/learnplatform/dto/AiVariantTrainingVO.java`
+- `backend/src/main/java/com/learnplatform/dto/AiLearningEffectVO.java`
+- `backend/src/main/java/com/learnplatform/dto/QuestionLearningAssetVO.java`
+- `backend/src/main/java/com/learnplatform/service/AiVariantQuestionService.java`
+- `backend/src/main/java/com/learnplatform/service/QuestionLearningAssetService.java`
+- `backend/src/main/java/com/learnplatform/service/AiLearningEffectService.java`
+- `backend/src/main/java/com/learnplatform/controller/AiController.java`
+- `backend/src/test/java/com/learnplatform/service/AiVariantQuestionServiceTest.java`
+- `backend/src/test/java/com/learnplatform/service/AiVariantTrainingIntegrationTest.java`
+- `backend/src/test/java/com/learnplatform/service/QuestionLearningAssetServiceTest.java`
+- `backend/src/test/java/com/learnplatform/service/AiLearningEffectServiceTest.java`
+- `backend/src/test/java/com/learnplatform/controller/AiAssetViewControllerTest.java`
+- `backend/src/test/java/com/learnplatform/controller/AdminAiUsageControllerTest.java`
+- `frontend/src/components/AiVariantQuestionCard.vue`
+- `frontend/src/components/QuestionLearningAsset.vue`
+- `frontend/src/api/ai.ts`
+- `frontend/src/api/aiUsage.ts`
+- `frontend/src/views/admin/AiUsageView.vue`
+- `frontend/src/__tests__/api/ai.test.ts`
+- `frontend/src/__tests__/components/AiVariantQuestionCard.test.ts`
+- `frontend/src/__tests__/components/QuestionLearningAsset.test.ts`
+- `README.md`
+- `docs/API_DESIGN.md`
+- `docs/DB_DESIGN.md`
+- `docs/ARCHITECTURE.md`
+- `docs/PRD.md`
+- `docs/AI_LEARNING_PLATFORM_STRATEGY.md`
+- `docs/RESUME.md`
+- `docs/ROADMAP.md`
+- `docs/TESTING.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd backend && mvn test`：407 个默认测试通过。
+- `cd backend && mvn test -DexcludedGroups= -Dgroups=integration`：5 个 Testcontainers 集成测试类、55 个真实 MySQL 用例全部通过，确认 V19 迁移、私有答案、首次判分字段和正确率聚合。
+- `cd frontend && npm test -- --run`：28 个测试文件、222 个测试通过。
+- `cd frontend && npm run build`：通过；仅保留既有第三方 `@vueuse/core` pure annotation 提示。
+- `docker compose config --quiet`：通过。
+
+### 遗留问题
+- 旧 Markdown 变式缓存不会自动转换；管理员清除某题 AI 缓存后，新生成内容才进入结构化判分链路。
+- 首版结构化变式题固定为单选题，每个缓存资产 1 题；需要先积累真实判分样本，再评估多题型、多题组或难度分层。
+
+### commit message
+`feat(ai): 支持结构化变式题真实判分`
+
+---
+
 ## Round 160 - 2026-07-16
 
 ### 阶段

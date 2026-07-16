@@ -2,11 +2,12 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
-const { getQuestionAssets, getAssetFeedback, recordAssetView, completeVariantTraining } = vi.hoisted(() => ({
+const { getQuestionAssets, getAssetFeedback, recordAssetView, completeVariantTraining, generateAsset } = vi.hoisted(() => ({
   getQuestionAssets: vi.fn(),
   getAssetFeedback: vi.fn(),
   recordAssetView: vi.fn(),
   completeVariantTraining: vi.fn(),
+  generateAsset: vi.fn(),
 }))
 
 vi.mock('@/api/ai', () => ({
@@ -14,6 +15,7 @@ vi.mock('@/api/ai', () => ({
   getAssetFeedback,
   recordAssetView,
   completeVariantTraining,
+  generateAsset,
   streamAsset: vi.fn(),
   submitAssetFeedback: vi.fn(),
 }))

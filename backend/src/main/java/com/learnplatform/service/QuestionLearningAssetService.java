@@ -37,6 +37,7 @@ public class QuestionLearningAssetService {
     private final QuestionKnowledgePointMapper questionKnowledgePointMapper;
     private final KnowledgePointMapper knowledgePointMapper;
     private final CourseMapper courseMapper;
+    private final AiVariantQuestionService aiVariantQuestionService;
 
     public QuestionLearningAssetService(AiProvider aiProvider,
                                          AiConfig aiConfig,
@@ -47,7 +48,8 @@ public class QuestionLearningAssetService {
                                          QuestionOptionMapper questionOptionMapper,
                                          QuestionKnowledgePointMapper questionKnowledgePointMapper,
                                          KnowledgePointMapper knowledgePointMapper,
-                                         CourseMapper courseMapper) {
+                                         CourseMapper courseMapper,
+                                         AiVariantQuestionService aiVariantQuestionService) {
         this.aiProvider = aiProvider;
         this.aiConfig = aiConfig;
         this.aiService = aiService;
@@ -58,6 +60,7 @@ public class QuestionLearningAssetService {
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
         this.knowledgePointMapper = knowledgePointMapper;
         this.courseMapper = courseMapper;
+        this.aiVariantQuestionService = aiVariantQuestionService;
     }
 
     /**
@@ -100,9 +103,12 @@ public class QuestionLearningAssetService {
         long start = System.currentTimeMillis();
         boolean success = false;
         String errorMessage = null;
-        String content;
+        QuestionAiAsset asset;
         try {
-            content = generateAssetContent(questionId, assetType);
+            String content = generateAssetContent(questionId, assetType);
+            asset = assetType == AiAssetType.VARIANT
+                    ? aiVariantQuestionService.saveGeneratedAsset(questionId, aiConfig.getModel(), content)
+                    : saveAsset(questionId, assetType, content);
             success = true;
         } catch (Exception e) {
             errorMessage = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
@@ -112,8 +118,6 @@ public class QuestionLearningAssetService {
             aiService.logCall(userId, "asset_" + assetType.name().toLowerCase(), success, errorMessage, duration);
         }
 
-        // 保存缓存
-        QuestionAiAsset asset = saveAsset(questionId, assetType, content);
         log.info("AI 学习资产已生成并缓存: questionId={}, type={}", questionId, assetType);
 
         return toVO(asset);
@@ -124,6 +128,13 @@ public class QuestionLearningAssetService {
      */
     public void generateAssetStream(Long questionId, AiAssetType assetType, Long userId,
                                      Consumer<String> onContent) {
+        // 结构化变式题包含服务端私有答案，必须等完整 JSON 校验并脱敏后再返回。
+        if (assetType == AiAssetType.VARIANT) {
+            QuestionLearningAssetVO asset = generateOrGetAsset(questionId, assetType, userId);
+            onContent.accept(asset.getContent());
+            return;
+        }
+
         // 先查缓存
         QuestionAiAsset cached = findAsset(questionId, assetType.name());
         if (cached != null) {
@@ -339,13 +350,27 @@ public class QuestionLearningAssetService {
 
     private PromptPair buildVariantPrompt(String questionContext) {
         String systemPrompt = "你是一位专业的出题老师。\n\n"
-                + "请基于给定的题目，生成 **2 道变式题**：\n\n"
+                + "请基于给定题目生成 **1 道可自动判分的单选变式题**。\n\n"
                 + "要求：\n"
                 + "1. 考查相同知识点，但换个角度或问法\n"
                 + "2. 难度与原题相近\n"
-                + "3. 每道变式题包含：题目、选项（如有）、正确答案、简要解析\n"
-                + "4. 使用清晰的格式区分两道题\n\n"
-                + "使用 Markdown 格式输出。";
+                + "3. 提供 4 个不重复的选项，标签固定为 A、B、C、D，且只有一个正确答案\n"
+                + "4. 解析必须说明正确选项为什么成立，并点出至少一个干扰项的误区\n"
+                + "5. difficulty 为 1-5 的整数\n\n"
+                + "你必须且只能输出一个合法 JSON 对象，不要输出 Markdown 代码块或其他文字：\n"
+                + "{\n"
+                + "  \"questionType\": \"SINGLE_CHOICE\",\n"
+                + "  \"questionContent\": \"变式题题干\",\n"
+                + "  \"options\": [\n"
+                + "    {\"label\": \"A\", \"content\": \"选项A\"},\n"
+                + "    {\"label\": \"B\", \"content\": \"选项B\"},\n"
+                + "    {\"label\": \"C\", \"content\": \"选项C\"},\n"
+                + "    {\"label\": \"D\", \"content\": \"选项D\"}\n"
+                + "  ],\n"
+                + "  \"correctAnswer\": \"A\",\n"
+                + "  \"analysis\": \"提交后展示的简要解析\",\n"
+                + "  \"difficulty\": 3\n"
+                + "}";
         return new PromptPair(systemPrompt, "基于以下题目生成变式题：\n\n" + questionContext);
     }
 
@@ -547,7 +572,7 @@ public class QuestionLearningAssetService {
         } catch (IllegalArgumentException e) {
             label = asset.getAssetType();
         }
-        return new QuestionLearningAssetVO(
+        QuestionLearningAssetVO vo = new QuestionLearningAssetVO(
                 asset.getId(),
                 asset.getQuestionId(),
                 asset.getAssetType(),
@@ -556,6 +581,10 @@ public class QuestionLearningAssetService {
                 asset.getModel(),
                 asset.getCreateTime()
         );
+        if (AiAssetType.VARIANT.name().equals(asset.getAssetType())) {
+            vo.setVariantQuestion(aiVariantQuestionService.getPublicQuestion(asset.getId()));
+        }
+        return vo;
     }
 
     private record PromptPair(String systemPrompt, String userPrompt) {}
