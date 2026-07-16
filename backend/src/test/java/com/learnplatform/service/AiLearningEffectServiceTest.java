@@ -5,12 +5,14 @@ import com.learnplatform.dto.AiAssetType;
 import com.learnplatform.dto.AiLearningEffectVO;
 import com.learnplatform.entity.AiAssetFeedback;
 import com.learnplatform.entity.AiAssetView;
+import com.learnplatform.entity.AiVariantQuestion;
 import com.learnplatform.entity.AiVariantTraining;
 import com.learnplatform.entity.PracticeRecord;
 import com.learnplatform.entity.QuestionAiAsset;
 import com.learnplatform.entity.QuestionKnowledgePoint;
 import com.learnplatform.mapper.AiAssetFeedbackMapper;
 import com.learnplatform.mapper.AiAssetViewMapper;
+import com.learnplatform.mapper.AiVariantQuestionMapper;
 import com.learnplatform.mapper.AiVariantTrainingMapper;
 import com.learnplatform.mapper.PracticeRecordMapper;
 import com.learnplatform.mapper.QuestionAiAssetMapper;
@@ -42,13 +44,14 @@ class AiLearningEffectServiceTest {
     @Mock private AiAssetFeedbackMapper aiAssetFeedbackMapper;
     @Mock private PracticeRecordMapper practiceRecordMapper;
     @Mock private AiVariantTrainingMapper aiVariantTrainingMapper;
+    @Mock private AiVariantQuestionMapper aiVariantQuestionMapper;
     @Mock private QuestionKnowledgePointMapper questionKnowledgePointMapper;
     @Mock private AiVariantQuestionService aiVariantQuestionService;
 
     private AiLearningEffectService service() {
         return new AiLearningEffectService(aiAssetViewMapper, questionAiAssetMapper,
                 aiAssetFeedbackMapper, practiceRecordMapper, aiVariantTrainingMapper,
-                questionKnowledgePointMapper, aiVariantQuestionService);
+                aiVariantQuestionMapper, questionKnowledgePointMapper, aiVariantQuestionService);
     }
 
     @Test
@@ -135,6 +138,8 @@ class AiLearningEffectServiceTest {
         assertNull(result.getAfterViewCorrectRate());
         assertNull(result.getCorrectRateLift());
         assertEquals("INSUFFICIENT_DATA", result.getConclusionLevel());
+        assertEquals("INSUFFICIENT_DATA", result.getVariantDifficultyReadiness());
+        assertEquals(5, result.getVariantDifficultyStats().size());
     }
 
     @Test
@@ -163,6 +168,7 @@ class AiLearningEffectServiceTest {
                 answeredTraining,
                 variantTraining(2L, 10L, 100L, "STARTED", now.minusDays(2), null)
         ));
+        when(aiVariantQuestionMapper.selectList(any())).thenReturn(List.of(variantQuestion(100L, 3)));
 
         AiLearningEffectVO result = service().getLearningEffect(30);
 
@@ -182,6 +188,10 @@ class AiLearningEffectServiceTest {
         assertEquals(1L, result.getVariantTrainingAnsweredCount());
         assertEquals(1L, result.getVariantTrainingCorrectCount());
         assertEquals(100.0, result.getVariantTrainingCorrectRate());
+        assertEquals(1L, result.getVariantDifficultyCoveredCount());
+        assertEquals(0L, result.getVariantDifficultySufficientCount());
+        assertEquals(1L, result.getVariantDifficultyStats().get(2).getAnsweredCount());
+        assertEquals(100.0, result.getVariantDifficultyStats().get(2).getCorrectRate());
         assertEquals("POSITIVE_ASSOCIATION", result.getConclusionLevel());
         assertEquals(1, result.getAssetTypeStats().size());
         assertEquals("标准解析", result.getAssetTypeStats().get(0).getAssetTypeLabel());
@@ -233,6 +243,38 @@ class AiLearningEffectServiceTest {
         assertEquals("POSITIVE_ASSOCIATION", result.getCrossQuestionConclusionLevel());
     }
 
+    @Test
+    void getLearningEffectMarksDifficultyStratificationReadyWithTwoSufficientBuckets() {
+        LocalDateTime now = LocalDateTime.now();
+        when(aiAssetViewMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(aiAssetFeedbackMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(practiceRecordMapper.selectList(any())).thenReturn(Collections.emptyList());
+        List<AiVariantTraining> trainings = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            AiVariantTraining easy = variantTraining((long) i + 1, 10L, 100L, "COMPLETED",
+                    now.minusDays(2), now.minusDays(1));
+            easy.setAnsweredTime(now.minusDays(1));
+            easy.setIsCorrect(i < 4 ? 1 : 0);
+            trainings.add(easy);
+            AiVariantTraining hard = variantTraining((long) i + 11, 20L, 200L, "COMPLETED",
+                    now.minusDays(2), now.minusDays(1));
+            hard.setAnsweredTime(now.minusDays(1));
+            hard.setIsCorrect(i < 2 ? 1 : 0);
+            trainings.add(hard);
+        }
+        when(aiVariantTrainingMapper.selectList(any())).thenReturn(trainings);
+        when(aiVariantQuestionMapper.selectList(any())).thenReturn(List.of(
+                variantQuestion(100L, 2), variantQuestion(200L, 4)));
+
+        AiLearningEffectVO result = service().getLearningEffect(30);
+
+        assertEquals("READY", result.getVariantDifficultyReadiness());
+        assertEquals(2L, result.getVariantDifficultyCoveredCount());
+        assertEquals(2L, result.getVariantDifficultySufficientCount());
+        assertEquals(80.0, result.getVariantDifficultyStats().get(1).getCorrectRate());
+        assertEquals(40.0, result.getVariantDifficultyStats().get(3).getCorrectRate());
+    }
+
     private AiAssetView view(Long userId, Long questionId, String assetType,
                              LocalDateTime firstViewTime, int count) {
         AiAssetView view = new AiAssetView();
@@ -279,5 +321,12 @@ class AiLearningEffectServiceTest {
         relation.setQuestionId(questionId);
         relation.setKnowledgePointId(knowledgePointId);
         return relation;
+    }
+
+    private AiVariantQuestion variantQuestion(Long assetId, int difficulty) {
+        AiVariantQuestion question = new AiVariantQuestion();
+        question.setAssetId(assetId);
+        question.setDifficulty(difficulty);
+        return question;
     }
 }

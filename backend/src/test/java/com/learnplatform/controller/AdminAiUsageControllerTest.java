@@ -46,6 +46,18 @@ class AdminAiUsageControllerTest {
         vo.setVariantTrainingAnsweredCount(8L);
         vo.setVariantTrainingCorrectCount(6L);
         vo.setVariantTrainingCorrectRate(75.0);
+        vo.setVariantDifficultyMinimumSample(5L);
+        vo.setVariantDifficultyCoveredCount(2L);
+        vo.setVariantDifficultySufficientCount(1L);
+        vo.setVariantDifficultyReadiness("INSUFFICIENT_DATA");
+        AiLearningEffectVO.VariantDifficultyEffect difficulty = new AiLearningEffectVO.VariantDifficultyEffect();
+        difficulty.setDifficulty(3);
+        difficulty.setDifficultyLabel("中等");
+        difficulty.setAnsweredCount(8L);
+        difficulty.setCorrectCount(6L);
+        difficulty.setCorrectRate(75.0);
+        difficulty.setSampleSufficient(true);
+        vo.setVariantDifficultyStats(java.util.List.of(difficulty));
         vo.setCrossQuestionWindowDays(30);
         vo.setCrossQuestionAfterViewPracticeCount(18L);
         vo.setCrossQuestionAfterViewCorrectRate(72.2);
@@ -67,6 +79,11 @@ class AdminAiUsageControllerTest {
                 .andExpect(jsonPath("$.data.variantTrainingAnsweredCount").value(8))
                 .andExpect(jsonPath("$.data.variantTrainingCorrectCount").value(6))
                 .andExpect(jsonPath("$.data.variantTrainingCorrectRate").value(75.0))
+                .andExpect(jsonPath("$.data.variantDifficultyMinimumSample").value(5))
+                .andExpect(jsonPath("$.data.variantDifficultyCoveredCount").value(2))
+                .andExpect(jsonPath("$.data.variantDifficultyReadiness").value("INSUFFICIENT_DATA"))
+                .andExpect(jsonPath("$.data.variantDifficultyStats[0].difficultyLabel").value("中等"))
+                .andExpect(jsonPath("$.data.variantDifficultyStats[0].sampleSufficient").value(true))
                 .andExpect(jsonPath("$.data.crossQuestionWindowDays").value(30))
                 .andExpect(jsonPath("$.data.crossQuestionAfterViewPracticeCount").value(18))
                 .andExpect(jsonPath("$.data.crossQuestionAfterViewCorrectRate").value(72.2))

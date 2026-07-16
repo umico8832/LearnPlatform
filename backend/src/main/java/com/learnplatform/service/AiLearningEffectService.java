@@ -8,12 +8,14 @@ import com.learnplatform.dto.AiLearningEffectVO;
 import com.learnplatform.dto.AiVariantTrainingVO;
 import com.learnplatform.entity.AiAssetFeedback;
 import com.learnplatform.entity.AiAssetView;
+import com.learnplatform.entity.AiVariantQuestion;
 import com.learnplatform.entity.AiVariantTraining;
 import com.learnplatform.entity.PracticeRecord;
 import com.learnplatform.entity.QuestionAiAsset;
 import com.learnplatform.entity.QuestionKnowledgePoint;
 import com.learnplatform.mapper.AiAssetFeedbackMapper;
 import com.learnplatform.mapper.AiAssetViewMapper;
+import com.learnplatform.mapper.AiVariantQuestionMapper;
 import com.learnplatform.mapper.AiVariantTrainingMapper;
 import com.learnplatform.mapper.PracticeRecordMapper;
 import com.learnplatform.mapper.QuestionAiAssetMapper;
@@ -50,6 +52,7 @@ public class AiLearningEffectService {
     private final AiAssetFeedbackMapper aiAssetFeedbackMapper;
     private final PracticeRecordMapper practiceRecordMapper;
     private final AiVariantTrainingMapper aiVariantTrainingMapper;
+    private final AiVariantQuestionMapper aiVariantQuestionMapper;
     private final QuestionKnowledgePointMapper questionKnowledgePointMapper;
     private final AiVariantQuestionService aiVariantQuestionService;
 
@@ -58,6 +61,7 @@ public class AiLearningEffectService {
                                    AiAssetFeedbackMapper aiAssetFeedbackMapper,
                                    PracticeRecordMapper practiceRecordMapper,
                                    AiVariantTrainingMapper aiVariantTrainingMapper,
+                                   AiVariantQuestionMapper aiVariantQuestionMapper,
                                    QuestionKnowledgePointMapper questionKnowledgePointMapper,
                                    AiVariantQuestionService aiVariantQuestionService) {
         this.aiAssetViewMapper = aiAssetViewMapper;
@@ -65,6 +69,7 @@ public class AiLearningEffectService {
         this.aiAssetFeedbackMapper = aiAssetFeedbackMapper;
         this.practiceRecordMapper = practiceRecordMapper;
         this.aiVariantTrainingMapper = aiVariantTrainingMapper;
+        this.aiVariantQuestionMapper = aiVariantQuestionMapper;
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
         this.aiVariantQuestionService = aiVariantQuestionService;
     }
@@ -209,6 +214,7 @@ public class AiLearningEffectService {
         vo.setVariantTrainingAnsweredCount(answeredVariantTrainingCount);
         vo.setVariantTrainingCorrectCount(correctVariantTrainingCount);
         vo.setVariantTrainingCorrectRate(percentage(correctVariantTrainingCount, answeredVariantTrainingCount));
+        applyVariantDifficultyStats(vo, variantTrainingCohort, endExclusive);
         vo.setAfterViewPracticeCount(afterViewPracticeCount);
         vo.setAfterViewCorrectRate(afterViewRate);
         vo.setBaselinePracticeCount(baselinePracticeCount);
@@ -218,6 +224,78 @@ public class AiLearningEffectService {
         applyCrossQuestionStats(vo, crossQuestionStats);
         vo.setAssetTypeStats(buildAssetTypeStats(periodViews, periodFeedback));
         return vo;
+    }
+
+    /**
+     * 仅按结构化变式题的服务端首次判分统计难度样本结构。
+     * 每个难度档至少达到同一最小样本门槛，且至少两个难度档达标后，才提示可开始分层观察。
+     */
+    private void applyVariantDifficultyStats(AiLearningEffectVO vo,
+                                             List<AiVariantTraining> trainingCohort,
+                                             LocalDateTime endExclusive) {
+        List<AiVariantTraining> answeredTrainings = trainingCohort.stream()
+                .filter(training -> training.getAssetId() != null
+                        && training.getAnsweredTime() != null
+                        && training.getAnsweredTime().isBefore(endExclusive))
+                .toList();
+        Map<Long, Integer> difficultyByAssetId = new HashMap<>();
+        if (!answeredTrainings.isEmpty()) {
+            Set<Long> assetIds = answeredTrainings.stream()
+                    .map(AiVariantTraining::getAssetId)
+                    .collect(java.util.stream.Collectors.toSet());
+            for (AiVariantQuestion question : aiVariantQuestionMapper.selectList(
+                    new LambdaQueryWrapper<AiVariantQuestion>().in(AiVariantQuestion::getAssetId, assetIds))) {
+                if (question.getAssetId() != null && question.getDifficulty() != null) {
+                    difficultyByAssetId.put(question.getAssetId(), question.getDifficulty());
+                }
+            }
+        }
+
+        List<AiLearningEffectVO.VariantDifficultyEffect> stats = new ArrayList<>();
+        long coveredCount = 0;
+        long sufficientCount = 0;
+        for (int difficulty = 1; difficulty <= 5; difficulty++) {
+            final int currentDifficulty = difficulty;
+            List<AiVariantTraining> difficultyTrainings = answeredTrainings.stream()
+                    .filter(training -> Integer.valueOf(currentDifficulty)
+                            .equals(difficultyByAssetId.get(training.getAssetId())))
+                    .toList();
+            long answeredCount = difficultyTrainings.size();
+            long correctCount = difficultyTrainings.stream()
+                    .filter(training -> Integer.valueOf(1).equals(training.getIsCorrect()))
+                    .count();
+            boolean sampleSufficient = answeredCount >= MIN_COMPARISON_SAMPLE;
+            if (answeredCount > 0) coveredCount++;
+            if (sampleSufficient) sufficientCount++;
+
+            AiLearningEffectVO.VariantDifficultyEffect item = new AiLearningEffectVO.VariantDifficultyEffect();
+            item.setDifficulty(difficulty);
+            item.setDifficultyLabel(difficultyLabel(difficulty));
+            item.setAnsweredCount(answeredCount);
+            item.setCorrectCount(correctCount);
+            item.setCorrectRate(percentage(correctCount, answeredCount));
+            item.setSampleSufficient(sampleSufficient);
+            stats.add(item);
+        }
+
+        vo.setVariantDifficultyMinimumSample(MIN_COMPARISON_SAMPLE);
+        vo.setVariantDifficultyCoveredCount(coveredCount);
+        vo.setVariantDifficultySufficientCount(sufficientCount);
+        vo.setVariantDifficultyStats(stats);
+        if (sufficientCount >= 2) {
+            vo.setVariantDifficultyReadiness("READY");
+            vo.setVariantDifficultyConclusion("已有 " + sufficientCount
+                    + " 个难度档各不少于 " + MIN_COMPARISON_SAMPLE
+                    + " 条首次判分，可开始分难度观察；结论仍只代表样本结构与相关性。");
+        } else if (answeredTrainings.isEmpty()) {
+            vo.setVariantDifficultyReadiness("INSUFFICIENT_DATA");
+            vo.setVariantDifficultyConclusion("暂无结构化变式首次判分样本，先继续积累真实作答，不进入难度分层。");
+        } else {
+            vo.setVariantDifficultyReadiness("INSUFFICIENT_DATA");
+            vo.setVariantDifficultyConclusion("当前覆盖 " + coveredCount + " 个难度档，仅 "
+                    + sufficientCount + " 个达到每档 " + MIN_COMPARISON_SAMPLE
+                    + " 条门槛，继续积累后再进行难度分层。");
+        }
     }
 
     /**
@@ -390,6 +468,17 @@ public class AiLearningEffectService {
         } catch (IllegalArgumentException ex) {
             return assetType;
         }
+    }
+
+    private String difficultyLabel(int difficulty) {
+        return switch (difficulty) {
+            case 1 -> "入门";
+            case 2 -> "简单";
+            case 3 -> "中等";
+            case 4 -> "较难";
+            case 5 -> "困难";
+            default -> "未知";
+        };
     }
 
     private AiVariantTraining findVariantTraining(Long userId, Long assetId) {

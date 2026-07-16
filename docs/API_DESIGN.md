@@ -1364,6 +1364,12 @@ GET /api/admin/ai-usage/learning-effect?days=30
 | variantTrainingAnsweredCount | Long | 上述周期开始队列中完成服务端首次判分的结构化变式训练数 |
 | variantTrainingCorrectCount | Long | 首次判分正确的结构化变式训练数 |
 | variantTrainingCorrectRate | Double/null | 正确数除以首次判分数，单位为百分比；无判分记录时为 `null` |
+| variantDifficultyMinimumSample | Long | 单个难度档进入分层观察的最小首次判分样本数，当前为 5 |
+| variantDifficultyCoveredCount | Long | 周期内至少有 1 条首次判分的难度档数量 |
+| variantDifficultySufficientCount | Long | 周期内达到最小样本门槛的难度档数量 |
+| variantDifficultyReadiness | String | `INSUFFICIENT_DATA` / `READY`；至少两个难度档达标后才为 `READY` |
+| variantDifficultyConclusion | String | 仅描述难度样本覆盖与分层就绪度，不解释学习效果 |
+| variantDifficultyStats | Array | 固定返回难度 1-5 的首次判分数、正确数、正确率和样本是否达标 |
 | afterViewPracticeCount | Long | 同一用户阅读同题资产后产生的作答样本数 |
 | afterViewCorrectRate | Double/null | 阅读后同题作答正确率，单位为百分比 |
 | baselinePracticeCount | Long | 未发生同题阅读前或从未阅读时的作答样本数 |
@@ -1380,7 +1386,7 @@ GET /api/admin/ai-usage/learning-effect?days=30
 | crossQuestionConclusion | String | 带样本限制和非因果声明的跨题观察说明 |
 | assetTypeStats | Array | 各资产类型的查看、用户、反馈和有帮助率 |
 
-跨题迁移只匹配同一用户、不同题目且至少共享一个知识点的记录，排除原题重答；阅读后组与阅读前组均使用 30 天窗口，对照组还会排除已有更早相关阅读的用户，降低历史暴露污染。任一跨题组少于 5 条时，`crossQuestionConclusionLevel` 返回 `INSUFFICIENT_DATA`。变式训练完成率兼容旧版显式确认和新版真实判分，但结构化变式正确率只来自服务端首次判分，不从完成按钮、AI 生成或调用日志推断。当任一同题作答对照组少于 5 条时，`conclusionLevel` 返回 `INSUFFICIENT_DATA`。该接口只描述真实行为中的观察性关联，不将正确率差异解释为 AI 内容造成的因果提升。
+跨题迁移只匹配同一用户、不同题目且至少共享一个知识点的记录，排除原题重答；阅读后组与阅读前组均使用 30 天窗口，对照组还会排除已有更早相关阅读的用户，降低历史暴露污染。任一跨题组少于 5 条时，`crossQuestionConclusionLevel` 返回 `INSUFFICIENT_DATA`。变式训练完成率兼容旧版显式确认和新版真实判分，但结构化变式正确率与难度分布只来自服务端首次判分，不从完成按钮、AI 生成或调用日志推断。难度分布固定返回 1-5 档；每档至少 5 条且至少两个难度档达标后，`variantDifficultyReadiness` 才返回 `READY`，该状态只表示可以开始分层观察，不代表不同难度已存在效果差异。当任一同题作答对照组少于 5 条时，`conclusionLevel` 返回 `INSUFFICIENT_DATA`。该接口只描述真实行为中的观察性关联，不将正确率差异解释为 AI 内容造成的因果提升。
 
 ```
 GET /api/admin/ai-usage/alerts?limit=20

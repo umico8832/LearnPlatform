@@ -228,6 +228,46 @@
             </template>
           </el-table>
         </div>
+
+        <section class="variant-sample-structure">
+          <div class="transfer-header">
+            <div>
+              <strong>结构化变式难度样本</strong>
+              <p>只按服务端首次判分归档；每个难度档至少 {{ learningEffect.variantDifficultyMinimumSample }} 条，且至少两个难度档达标后，才提示可开始分层观察。</p>
+            </div>
+            <el-tag :type="variantDifficultyReady ? 'success' : 'info'" effect="plain">
+              {{ variantDifficultyReady ? '可开始分层观察' : '样本积累中' }}
+            </el-tag>
+          </div>
+          <div class="variant-sample-summary">
+            <span>已覆盖 <b>{{ learningEffect.variantDifficultyCoveredCount }}</b> / 5 个难度档</span>
+            <span>达标 <b>{{ learningEffect.variantDifficultySufficientCount }}</b> 个难度档</span>
+          </div>
+          <el-table :data="learningEffect.variantDifficultyStats" stripe size="small" class="variant-difficulty-table">
+            <el-table-column label="难度" min-width="120">
+              <template #default="{ row }">{{ row.difficulty }} · {{ row.difficultyLabel }}</template>
+            </el-table-column>
+            <el-table-column prop="answeredCount" label="首次判分" width="96" align="right" />
+            <el-table-column prop="correctCount" label="正确" width="76" align="right" />
+            <el-table-column label="正确率" width="96" align="right">
+              <template #default="{ row }">{{ formatRate(row.correctRate) }}</template>
+            </el-table-column>
+            <el-table-column label="样本状态" width="116" align="center">
+              <template #default="{ row }">
+                <el-tag :type="row.sampleSufficient ? 'success' : 'info'" size="small" effect="light">
+                  {{ row.sampleSufficient ? '达到门槛' : '继续积累' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-alert
+            :title="learningEffect.variantDifficultyConclusion"
+            :type="variantDifficultyReady ? 'success' : 'info'"
+            :closable="false"
+            show-icon
+            class="effect-conclusion variant-difficulty-conclusion"
+          />
+        </section>
       </el-card>
 
       <!-- 每日调用趋势 -->
@@ -405,6 +445,12 @@ const learningEffect = reactive<AiLearningEffect>({
   variantTrainingAnsweredCount: 0,
   variantTrainingCorrectCount: 0,
   variantTrainingCorrectRate: null,
+  variantDifficultyMinimumSample: 5,
+  variantDifficultyCoveredCount: 0,
+  variantDifficultySufficientCount: 0,
+  variantDifficultyReadiness: 'INSUFFICIENT_DATA',
+  variantDifficultyConclusion: '暂无结构化变式首次判分样本。',
+  variantDifficultyStats: [],
   afterViewPracticeCount: 0,
   afterViewCorrectRate: null,
   baselinePracticeCount: 0,
@@ -468,6 +514,8 @@ const transferLiftClass = computed(() => {
   if (learningEffect.crossQuestionCorrectRateLift === null || learningEffect.crossQuestionCorrectRateLift === 0) return 'neutral'
   return learningEffect.crossQuestionCorrectRateLift > 0 ? 'positive' : 'negative'
 })
+
+const variantDifficultyReady = computed(() => learningEffect.variantDifficultyReadiness === 'READY')
 
 const usageStats = computed(() => [
   { label: '总调用次数', value: overview.totalCalls?.toLocaleString() ?? '-', note: `今日 ${overview.todayCalls?.toLocaleString() ?? 0} 次`, icon: DataLine, className: 'is-primary' },
@@ -874,6 +922,34 @@ onBeforeUnmount(() => {
 .effect-type-table {
   min-width: 0;
   flex: 1;
+}
+.variant-sample-structure {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+.variant-sample-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0;
+}
+.variant-sample-summary span {
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #f4f7fa;
+  color: var(--lp-text-secondary);
+  font-size: 12px;
+}
+.variant-sample-summary b {
+  color: var(--lp-text-primary);
+  font-size: 14px;
+}
+.variant-difficulty-table {
+  margin-bottom: 14px;
+}
+.variant-difficulty-conclusion {
+  margin-bottom: 0;
 }
 .report-header {
   display: flex;

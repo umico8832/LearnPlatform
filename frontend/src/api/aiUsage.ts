@@ -123,6 +123,15 @@ export interface AiAssetTypeEffect {
   helpfulRate: number | null
 }
 
+export interface AiVariantDifficultyEffect {
+  difficulty: number
+  difficultyLabel: string
+  answeredCount: number
+  correctCount: number
+  correctRate: number | null
+  sampleSufficient: boolean
+}
+
 /** AI 学习资产使用与后续同题、跨题作答的观察性统计 */
 export interface AiLearningEffect {
   days: number
@@ -139,6 +148,12 @@ export interface AiLearningEffect {
   variantTrainingAnsweredCount: number
   variantTrainingCorrectCount: number
   variantTrainingCorrectRate: number | null
+  variantDifficultyMinimumSample: number
+  variantDifficultyCoveredCount: number
+  variantDifficultySufficientCount: number
+  variantDifficultyReadiness: 'INSUFFICIENT_DATA' | 'READY'
+  variantDifficultyConclusion: string
+  variantDifficultyStats: AiVariantDifficultyEffect[]
   afterViewPracticeCount: number
   afterViewCorrectRate: number | null
   baselinePracticeCount: number

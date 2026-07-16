@@ -23,6 +23,12 @@ public class AiLearningEffectVO {
     private Long variantTrainingAnsweredCount;
     private Long variantTrainingCorrectCount;
     private Double variantTrainingCorrectRate;
+    private Long variantDifficultyMinimumSample;
+    private Long variantDifficultyCoveredCount;
+    private Long variantDifficultySufficientCount;
+    private String variantDifficultyReadiness;
+    private String variantDifficultyConclusion;
+    private List<VariantDifficultyEffect> variantDifficultyStats = new ArrayList<>();
     private Long afterViewPracticeCount;
     private Double afterViewCorrectRate;
     private Long baselinePracticeCount;
@@ -68,6 +74,18 @@ public class AiLearningEffectVO {
     public void setVariantTrainingCorrectCount(Long variantTrainingCorrectCount) { this.variantTrainingCorrectCount = variantTrainingCorrectCount; }
     public Double getVariantTrainingCorrectRate() { return variantTrainingCorrectRate; }
     public void setVariantTrainingCorrectRate(Double variantTrainingCorrectRate) { this.variantTrainingCorrectRate = variantTrainingCorrectRate; }
+    public Long getVariantDifficultyMinimumSample() { return variantDifficultyMinimumSample; }
+    public void setVariantDifficultyMinimumSample(Long variantDifficultyMinimumSample) { this.variantDifficultyMinimumSample = variantDifficultyMinimumSample; }
+    public Long getVariantDifficultyCoveredCount() { return variantDifficultyCoveredCount; }
+    public void setVariantDifficultyCoveredCount(Long variantDifficultyCoveredCount) { this.variantDifficultyCoveredCount = variantDifficultyCoveredCount; }
+    public Long getVariantDifficultySufficientCount() { return variantDifficultySufficientCount; }
+    public void setVariantDifficultySufficientCount(Long variantDifficultySufficientCount) { this.variantDifficultySufficientCount = variantDifficultySufficientCount; }
+    public String getVariantDifficultyReadiness() { return variantDifficultyReadiness; }
+    public void setVariantDifficultyReadiness(String variantDifficultyReadiness) { this.variantDifficultyReadiness = variantDifficultyReadiness; }
+    public String getVariantDifficultyConclusion() { return variantDifficultyConclusion; }
+    public void setVariantDifficultyConclusion(String variantDifficultyConclusion) { this.variantDifficultyConclusion = variantDifficultyConclusion; }
+    public List<VariantDifficultyEffect> getVariantDifficultyStats() { return variantDifficultyStats; }
+    public void setVariantDifficultyStats(List<VariantDifficultyEffect> variantDifficultyStats) { this.variantDifficultyStats = variantDifficultyStats; }
     public Long getAfterViewPracticeCount() { return afterViewPracticeCount; }
     public void setAfterViewPracticeCount(Long afterViewPracticeCount) { this.afterViewPracticeCount = afterViewPracticeCount; }
     public Double getAfterViewCorrectRate() { return afterViewCorrectRate; }
@@ -121,5 +139,27 @@ public class AiLearningEffectVO {
         public void setFeedbackCount(Long feedbackCount) { this.feedbackCount = feedbackCount; }
         public Double getHelpfulRate() { return helpfulRate; }
         public void setHelpfulRate(Double helpfulRate) { this.helpfulRate = helpfulRate; }
+    }
+
+    public static class VariantDifficultyEffect {
+        private Integer difficulty;
+        private String difficultyLabel;
+        private Long answeredCount;
+        private Long correctCount;
+        private Double correctRate;
+        private Boolean sampleSufficient;
+
+        public Integer getDifficulty() { return difficulty; }
+        public void setDifficulty(Integer difficulty) { this.difficulty = difficulty; }
+        public String getDifficultyLabel() { return difficultyLabel; }
+        public void setDifficultyLabel(String difficultyLabel) { this.difficultyLabel = difficultyLabel; }
+        public Long getAnsweredCount() { return answeredCount; }
+        public void setAnsweredCount(Long answeredCount) { this.answeredCount = answeredCount; }
+        public Long getCorrectCount() { return correctCount; }
+        public void setCorrectCount(Long correctCount) { this.correctCount = correctCount; }
+        public Double getCorrectRate() { return correctRate; }
+        public void setCorrectRate(Double correctRate) { this.correctRate = correctRate; }
+        public Boolean getSampleSufficient() { return sampleSufficient; }
+        public void setSampleSufficient(Boolean sampleSufficient) { this.sampleSufficient = sampleSufficient; }
     }
 }

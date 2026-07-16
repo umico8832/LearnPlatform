@@ -1,5 +1,48 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 162 - 2026-07-16
+
+### 阶段
+Phase 22：AI 学习效果验证（结构化变式难度样本就绪度）
+
+### 完成内容
+1. 在既有学习效果接口中新增结构化变式难度样本统计，只按周期内服务端真实首次判分关联 `ai_variant_question.difficulty`，固定返回 1-5 档样本数、正确数和正确率。
+2. 为每个难度档设置 5 条最低样本门槛；只有至少两个难度档达标时才返回 `READY`，否则只说明覆盖情况，不输出难度效果判断。
+3. 管理端 AI 学习效果面板新增难度样本表、覆盖/达标摘要和分层就绪提示，明确生成次数、未作答资产和旧版完成按钮均不进入难度正确率。
+4. 补充服务、Controller 与真实 MySQL 集成断言，并同步 API、数据库说明、架构、PRD、路线图、交接、README 和简历文档。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/dto/AiLearningEffectVO.java`
+- `backend/src/main/java/com/learnplatform/service/AiLearningEffectService.java`
+- `backend/src/test/java/com/learnplatform/service/AiLearningEffectServiceTest.java`
+- `backend/src/test/java/com/learnplatform/service/AiVariantTrainingIntegrationTest.java`
+- `backend/src/test/java/com/learnplatform/controller/AdminAiUsageControllerTest.java`
+- `frontend/src/api/aiUsage.ts`
+- `frontend/src/views/admin/AiUsageView.vue`
+- `README.md`
+- `docs/API_DESIGN.md`
+- `docs/ARCHITECTURE.md`
+- `docs/DB_DESIGN.md`
+- `docs/PRD.md`
+- `docs/RESUME.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd backend && mvn test`：408 个默认测试通过。
+- `cd backend && mvn test -DexcludedGroups= -Dgroups=integration`：5 个 Testcontainers 集成测试类、55 个真实 MySQL 用例全部通过，确认难度字段与首次判分可在真实 Mapper 环境正确聚合。
+- `cd frontend && npm test -- --run`：28 个测试文件、222 个测试通过。
+- `cd frontend && npm run build`：通过；仅保留既有第三方 `@vueuse/core` pure annotation 提示。
+- `docker compose config --quiet`：通过。
+
+### 遗留问题
+- 当前只判断难度分层的样本就绪度，不比较课程或用户基础；真实样本达到门槛后再评估下一层口径。
+- 首版仍是每个缓存资产 1 道结构化单选题，多题型或多题组不在当前主线。
+
+### commit message
+`feat(ai): 展示变式题难度样本就绪度`
+
 ## Round 161 - 2026-07-16
 
 ### 阶段
