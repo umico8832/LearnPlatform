@@ -37,6 +37,7 @@ class AdminAiUsageControllerTest {
     void getLearningEffectReturnsObservationMetrics() throws Exception {
         AiLearningEffectVO vo = new AiLearningEffectVO();
         vo.setDays(30);
+        vo.setMinimumComparisonSample(5L);
         vo.setAfterViewPracticeCount(24L);
         vo.setAfterViewCorrectRate(75.0);
         vo.setCorrectRateLift(8.5);
@@ -64,12 +65,24 @@ class AdminAiUsageControllerTest {
         vo.setCrossQuestionCorrectRateLift(6.7);
         vo.setCrossQuestionConclusionLevel("POSITIVE_ASSOCIATION");
         vo.setConclusionLevel("POSITIVE_ASSOCIATION");
+        AiLearningEffectVO.AssetTypeEffect assetType = new AiLearningEffectVO.AssetTypeEffect();
+        assetType.setAssetType("FULL_EXPLANATION");
+        assetType.setAssetTypeLabel("标准解析");
+        assetType.setAfterViewPracticeCount(12L);
+        assetType.setAfterViewCorrectRate(75.0);
+        assetType.setBaselinePracticeCount(10L);
+        assetType.setBaselineCorrectRate(60.0);
+        assetType.setCorrectRateLift(15.0);
+        assetType.setSampleSufficient(true);
+        assetType.setConclusionLevel("POSITIVE_ASSOCIATION");
+        vo.setAssetTypeStats(java.util.List.of(assetType));
         when(learningEffectService.getLearningEffect(30)).thenReturn(vo);
 
         mockMvc.perform(get("/api/admin/ai-usage/learning-effect").param("days", "30"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.days").value(30))
+                .andExpect(jsonPath("$.data.minimumComparisonSample").value(5))
                 .andExpect(jsonPath("$.data.afterViewPracticeCount").value(24))
                 .andExpect(jsonPath("$.data.afterViewCorrectRate").value(75.0))
                 .andExpect(jsonPath("$.data.correctRateLift").value(8.5))
@@ -89,6 +102,11 @@ class AdminAiUsageControllerTest {
                 .andExpect(jsonPath("$.data.crossQuestionAfterViewCorrectRate").value(72.2))
                 .andExpect(jsonPath("$.data.crossQuestionCorrectRateLift").value(6.7))
                 .andExpect(jsonPath("$.data.crossQuestionConclusionLevel").value("POSITIVE_ASSOCIATION"))
+                .andExpect(jsonPath("$.data.assetTypeStats[0].afterViewPracticeCount").value(12))
+                .andExpect(jsonPath("$.data.assetTypeStats[0].baselineCorrectRate").value(60.0))
+                .andExpect(jsonPath("$.data.assetTypeStats[0].correctRateLift").value(15.0))
+                .andExpect(jsonPath("$.data.assetTypeStats[0].sampleSufficient").value(true))
+                .andExpect(jsonPath("$.data.assetTypeStats[0].conclusionLevel").value("POSITIVE_ASSOCIATION"))
                 .andExpect(jsonPath("$.data.conclusionLevel").value("POSITIVE_ASSOCIATION"));
     }
 }

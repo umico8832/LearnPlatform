@@ -195,6 +195,7 @@ public class AiLearningEffectService {
         vo.setFeedbackCount((long) periodFeedback.size());
         vo.setHelpfulRate(percentage(periodFeedback.stream().filter(item -> Boolean.TRUE.equals(item.getHelpful())).count(),
                 periodFeedback.size()));
+        vo.setMinimumComparisonSample(MIN_COMPARISON_SAMPLE);
         long completedVariantTrainingCount = variantTrainingCohort.stream()
                 .filter(training -> training.getCompletedTime() != null
                         && training.getCompletedTime().isBefore(endExclusive))
@@ -222,7 +223,8 @@ public class AiLearningEffectService {
         vo.setCorrectRateLift(lift);
         applyConclusion(vo);
         applyCrossQuestionStats(vo, crossQuestionStats);
-        vo.setAssetTypeStats(buildAssetTypeStats(periodViews, periodFeedback));
+        vo.setAssetTypeStats(buildAssetTypeStats(
+                periodViews, periodFeedback, allRelevantViews, practices));
         return vo;
     }
 
@@ -401,18 +403,49 @@ public class AiLearningEffectService {
         }
     }
 
-    private List<AiLearningEffectVO.AssetTypeEffect> buildAssetTypeStats(List<AiAssetView> views,
-                                                                          List<AiAssetFeedback> feedback) {
+    private List<AiLearningEffectVO.AssetTypeEffect> buildAssetTypeStats(List<AiAssetView> periodViews,
+                                                                          List<AiAssetFeedback> feedback,
+                                                                          List<AiAssetView> allRelevantViews,
+                                                                          List<PracticeRecord> practices) {
         Set<String> assetTypes = new LinkedHashSet<>();
-        views.stream().map(AiAssetView::getAssetType).filter(type -> type != null).forEach(assetTypes::add);
+        periodViews.stream().map(AiAssetView::getAssetType).filter(type -> type != null).forEach(assetTypes::add);
         feedback.stream().map(AiAssetFeedback::getAssetType).filter(type -> type != null).forEach(assetTypes::add);
 
         List<AiLearningEffectVO.AssetTypeEffect> result = new ArrayList<>();
         for (String assetType : assetTypes) {
-            List<AiAssetView> typeViews = views.stream()
+            List<AiAssetView> typeViews = periodViews.stream()
                     .filter(view -> assetType.equals(view.getAssetType())).toList();
             List<AiAssetFeedback> typeFeedback = feedback.stream()
                     .filter(item -> assetType.equals(item.getAssetType())).toList();
+            Map<UserQuestionKey, LocalDateTime> firstTypeViewByUserQuestion = new HashMap<>();
+            for (AiAssetView view : allRelevantViews) {
+                if (!assetType.equals(view.getAssetType()) || view.getFirstViewTime() == null) continue;
+                UserQuestionKey key = new UserQuestionKey(view.getUserId(), view.getQuestionId());
+                firstTypeViewByUserQuestion.merge(key, view.getFirstViewTime(),
+                        (left, right) -> left.isBefore(right) ? left : right);
+            }
+
+            long afterViewPracticeCount = 0;
+            long afterViewCorrectCount = 0;
+            long baselinePracticeCount = 0;
+            long baselineCorrectCount = 0;
+            for (PracticeRecord practice : practices) {
+                if (practice.getUserId() == null || practice.getQuestionId() == null
+                        || practice.getCreateTime() == null) {
+                    continue;
+                }
+                LocalDateTime firstTypeView = firstTypeViewByUserQuestion.get(
+                        new UserQuestionKey(practice.getUserId(), practice.getQuestionId()));
+                boolean afterView = firstTypeView != null
+                        && !practice.getCreateTime().isBefore(firstTypeView);
+                if (afterView) {
+                    afterViewPracticeCount++;
+                    if (Integer.valueOf(1).equals(practice.getIsCorrect())) afterViewCorrectCount++;
+                } else {
+                    baselinePracticeCount++;
+                    if (Integer.valueOf(1).equals(practice.getIsCorrect())) baselineCorrectCount++;
+                }
+            }
 
             AiLearningEffectVO.AssetTypeEffect item = new AiLearningEffectVO.AssetTypeEffect();
             item.setAssetType(assetType);
@@ -424,10 +457,38 @@ public class AiLearningEffectService {
             item.setHelpfulRate(percentage(
                     typeFeedback.stream().filter(entry -> Boolean.TRUE.equals(entry.getHelpful())).count(),
                     typeFeedback.size()));
+            item.setAfterViewPracticeCount(afterViewPracticeCount);
+            item.setAfterViewCorrectRate(percentage(afterViewCorrectCount, afterViewPracticeCount));
+            item.setBaselinePracticeCount(baselinePracticeCount);
+            item.setBaselineCorrectRate(percentage(baselineCorrectCount, baselinePracticeCount));
+            item.setCorrectRateLift(item.getAfterViewCorrectRate() == null || item.getBaselineCorrectRate() == null
+                    ? null : roundOne(item.getAfterViewCorrectRate() - item.getBaselineCorrectRate()));
+            applyAssetTypeConclusion(item);
             result.add(item);
         }
         result.sort(Comparator.comparingLong(AiLearningEffectVO.AssetTypeEffect::getViewCount).reversed());
         return result;
+    }
+
+    private void applyAssetTypeConclusion(AiLearningEffectVO.AssetTypeEffect item) {
+        boolean sampleSufficient = item.getAfterViewPracticeCount() >= MIN_COMPARISON_SAMPLE
+                && item.getBaselinePracticeCount() >= MIN_COMPARISON_SAMPLE
+                && item.getCorrectRateLift() != null;
+        item.setSampleSufficient(sampleSufficient);
+        if (!sampleSufficient) {
+            item.setConclusionLevel("INSUFFICIENT_DATA");
+            item.setConclusion("该资产类型的任一对照组少于 " + MIN_COMPARISON_SAMPLE
+                    + " 条作答，继续积累真实样本，不进入内容价值判断。");
+        } else if (item.getCorrectRateLift() >= 5.0) {
+            item.setConclusionLevel("POSITIVE_ASSOCIATION");
+            item.setConclusion("该资产类型阅读后的同题正确率更高，当前仅视为观察性正向关联。");
+        } else if (item.getCorrectRateLift() <= -5.0) {
+            item.setConclusionLevel("NEEDS_ATTENTION");
+            item.setConclusion("该资产类型阅读后的同题正确率未体现提升，建议结合反馈与题目难度排查。");
+        } else {
+            item.setConclusionLevel("NO_CLEAR_DIFFERENCE");
+            item.setConclusion("该资产类型两组正确率差异较小，尚未观察到明确关联。");
+        }
     }
 
     private void applyConclusion(AiLearningEffectVO vo) {

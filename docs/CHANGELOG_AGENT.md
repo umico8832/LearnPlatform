@@ -1,5 +1,49 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 163 - 2026-07-16
+
+### 阶段
+Phase 22：AI 学习效果验证（按资产类型观察同题表现）
+
+### 完成内容
+1. 将现有资产类型查看/反馈明细扩展为同题表现观察：按用户、题目和资产类型的首次真实查看时间，分别统计周期内阅读后组与未阅读/阅读前组的作答数、正确率和百分点差异。
+2. 每种资产类型的两个对照组都必须达到 5 条真实作答才输出方向性状态；样本不足时明确保持 `INSUFFICIENT_DATA`，不进入内容价值判断。
+3. 管理端新增按资产类型的观察表，并明确同一用户看过多类资产时样本可能重叠，因此不做资产排名、不自动调整推荐策略。
+4. 补充服务与 Controller 契约测试，并同步 API、架构、PRD、路线图、交接、README、战略、后续方向和简历文档。
+
+### 修改文件
+- `backend/src/main/java/com/learnplatform/dto/AiLearningEffectVO.java`
+- `backend/src/main/java/com/learnplatform/service/AiLearningEffectService.java`
+- `backend/src/test/java/com/learnplatform/service/AiLearningEffectServiceTest.java`
+- `backend/src/test/java/com/learnplatform/controller/AdminAiUsageControllerTest.java`
+- `frontend/src/api/aiUsage.ts`
+- `frontend/src/views/admin/AiUsageView.vue`
+- `README.md`
+- `docs/API_DESIGN.md`
+- `docs/ARCHITECTURE.md`
+- `docs/PRD.md`
+- `docs/RESUME.md`
+- `docs/ROADMAP.md`
+- `docs/HANDOFF.md`
+- `docs/AI_LEARNING_PLATFORM_STRATEGY.md`
+- `docs/FUTURE.md`
+- `docs/CHANGELOG_AGENT.md`
+
+### 验证
+- `cd backend && mvn test -Dtest=AiLearningEffectServiceTest,AdminAiUsageControllerTest`：12 个聚焦测试通过。
+- `cd frontend && npm test -- --run src/__tests__/api/aiUsage.test.ts`：6 个 API 契约测试通过。
+- `cd backend && mvn clean test`：409 个默认测试通过，并确认本轮 Java 源码从干净目录重新编译。
+- `cd frontend && npm test -- --run`：28 个测试文件、222 个测试通过。
+- `cd frontend && npm run build`：通过；仅保留既有第三方 `@vueuse/core` pure annotation 提示。
+- `docker compose config --quiet`：通过。
+
+### 遗留问题
+- 各资产类型样本可能重叠，当前只用于观察，不支持因果归因、资产排名或自动推荐。
+- 真实样本达到门槛后再评估课程或用户基础分层；数据不足时继续保持当前保守口径。
+
+### commit message
+`feat(ai): 按资产类型观察同题学习效果`
+
 ## Round 162 - 2026-07-16
 
 ### 阶段

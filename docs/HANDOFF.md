@@ -16,9 +16,9 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 20 — 演示验收与 AI 运营治理、Phase 21 — 前端信息架构与视觉体验优化均已完成；Phase 22 — AI 学习效果验证持续推进。Round 162 完成结构化变式首次判分的 1-5 难度样本分布与分层就绪度展示。
+当前阶段：Phase 20 — 演示验收与 AI 运营治理、Phase 21 — 前端信息架构与视觉体验优化均已完成；Phase 22 — AI 学习效果验证持续推进。Round 163 完成按资产类型首次查看时间切分的同题表现观察。
 
-下一阶段主线：继续积累 `ai_asset_view`、`ai_variant_training`、`ai_variant_question` 与 `practice_record` 真实样本；管理端已按难度展示结构化变式首次判分分布，每档至少 5 条且至少两个难度档达标后才提示可开始分层观察。样本足够后再评估课程或用户基础分层。不要用调用量、生成次数或旧版完成按钮推断答题正确性。Playwright 现有 5 条真实 E2E，高频页面巡检会拦截 `/api/` 5xx 与浏览器 `console.error`。OCR、爬虫、自动入库和复杂推荐仍非当前优先级。
+下一阶段主线：继续积累 `ai_asset_view`、`ai_variant_training`、`ai_variant_question` 与 `practice_record` 真实样本；管理端已按资产类型展示同题两组正确率与样本门槛，每类两组均至少 5 条才输出方向性状态，多资产暴露样本允许重叠且不进入资产排名或自动推荐。样本足够后再评估课程或用户基础分层。不要用调用量、生成次数或旧版完成按钮推断答题正确性。Playwright 现有 5 条真实 E2E，高频页面巡检会拦截 `/api/` 5xx 与浏览器 `console.error`。OCR、爬虫、自动入库和复杂推荐仍非当前优先级。
 
 阶段状态：
 - [x] Phase 0：项目规划 ✅
@@ -43,7 +43,7 @@
 - [x] Phase 19：AI 调用分析与成本控制 ✅ 基本完成（调用趋势、功能/模型分布、Top 用户、失败调用、真实 Tokens、平均耗时与按配置单价聚合成本）
 - [x] Phase 20：演示验收与 AI 运营治理 ✅（真实演示截图、关键业务 E2E、真实 token/成本日志、独立配额及审计、请求追踪、Prompt/模型指纹、运营报告与持久化提醒、内容治理、学习效果指标、CI #26 与真实接口点击验收均已完成）
 - [x] Phase 21：前端信息架构与视觉体验优化 ✅（壳层导航、用户与管理端主要页面、长操作列、批量操作、空状态、学习报告 polish 和真实接口点击验收均已完成；Round 156 全量 5 条 Playwright E2E 通过）
-- [ ] Phase 22：AI 学习效果验证 🚧（真实资产查看记录 ✅；阅读后同题作答对照 ✅；变式训练开始/完成事件与完成率 ✅；共享知识点跨题迁移观察 ✅；结构化变式首次判分与正确率 ✅；难度样本分布与分层就绪度 ✅；待真实样本积累后评估课程或用户基础分层）
+- [ ] Phase 22：AI 学习效果验证 🚧（真实资产查看记录 ✅；阅读后同题作答对照 ✅；按资产类型的同题观察 ✅；变式训练开始/完成事件与完成率 ✅；共享知识点跨题迁移观察 ✅；结构化变式首次判分与正确率 ✅；难度样本分布与分层就绪度 ✅；待真实样本积累后评估课程或用户基础分层）
 
 ---
 
@@ -90,6 +90,7 @@
 36. **变式训练真实完成事件**：`ai_variant_training` 按用户与变式题缓存资产版本记录 `STARTED/COMPLETED`；内容进入视口才开始，用户完成后显式确认，管理端按周期开始队列展示完成率并明确不代表自动判分。
 37. **知识点跨题迁移观察**：管理端排除原题重答，以题目共享知识点匹配同一用户的其他题作答；相关阅读前后均使用 30 天窗口，对照组排除已有更早暴露，任一组少于 5 条不输出方向性结论。
 38. **结构化变式难度样本结构**：管理端只按服务端真实首次判分汇总 1-5 难度档的样本数、正确率和达标状态；每档至少 5 条且至少两个难度档达标后才提示可开始分层观察，样本不足时不输出效果结论。
+39. **按资产类型的同题观察**：管理端按每种资产类型的首次查看时间分别切分周期内同题作答；两组均至少 5 条才显示方向性状态，并明确多资产暴露会产生重叠样本，不能直接用于资产排名或推荐。
 
 ### 后端关键文件
 - 统一响应：`R.java` + `ResultCode.java` + `BusinessException` + `GlobalExceptionHandler`
@@ -144,7 +145,7 @@ docker compose up -d
 - Redis 缓存 TTL 已迁移到 `application.yml` 的 `app.cache.ttl` 与环境变量配置。
 - 前端暂未配置 lint 脚本或 ESLint；`npm run build` 仍有第三方 `@vueuse/core` pure annotation 提示，但不阻断构建。Mermaid 593.66 kB 高级图表解析器是按需加载的单模块，已将构建预算设为 600 kB；入口 CSS 已降至 54.41 kB。
 - Phase 15 的向量相似度推荐仍未完成，但不阻断当前主线；Phase 16 的正式题目复审建议缓存已在 Round 139 完成；题目版本记录已在 Round 146 完成；个人学习报告学习效果指标已在 Round 147 完成，学习效果面板视觉 polish 已在 Round 148 完成；刷题记录页练习复盘体验整理已在 Round 149 完成；收藏题页重点题库体验整理已在 Round 150 完成；AI 复习建议页体验整理已在 Round 151 完成；个人中心体验整理已在 Round 152 完成；学习路径页体验整理已在 Round 153 完成。
-- Round 162 已按结构化变式真实首次判分展示 1-5 难度样本结构，并设置每档 5 条、至少两个难度档达标的分层就绪门槛。当前真实样本仍需积累，课程与用户基础分层尚未进入实现。
+- Round 163 已按资产类型首次查看时间展示同题阅读后组与对照组；每类两组均至少 5 条才输出方向性状态，多资产暴露样本允许重叠且不进入资产排名或推荐。当前真实样本仍需积累，课程与用户基础分层尚未进入实现。
 
 ---
 
@@ -152,7 +153,7 @@ docker compose up -d
 
 任务名称：继续积累样本并评估课程或用户基础分层
 
-Phase 22 已完成资产查看、同题作答对照、变式训练完成率、共享知识点跨题迁移、结构化变式首次判分与难度样本就绪度。下一轮不应立刻增加复杂模型；继续积累真实样本，待至少两个难度档各有 5 条首次判分后再观察分层结果，并评估课程或用户基础分层是否具备足够样本。不要回到 OCR、爬虫、自动入库或复杂向量推荐。
+Phase 22 已完成资产查看、同题作答对照、按资产类型的样本门槛观察、变式训练完成率、共享知识点跨题迁移、结构化变式首次判分与难度样本就绪度。下一轮不应立刻增加复杂模型；继续积累真实样本，再评估课程或用户基础分层是否具备足够样本。不要回到 OCR、爬虫、自动入库或复杂向量推荐。
 
 Round 122 已完成 Phase 21 第一轮：`AppLayout.vue` 分组导航、`global.css` 设计变量和 `HomeView.vue` 学习工作台样板；本轮已通过前端测试、构建和桌面/移动端视觉检查。Round 123 完成工程体检：前端 `npm ci`、`npm audit --audit-level=moderate`、`npm test -- --run`、`npm run build` 通过；后端 `mvn test` 360 passed、`mvn package -DskipTests` 通过；`docker compose config --quiet` 通过。Round 124 完成 Phase 21 P2：整理 Practice/WrongQuestion/Review/ExamList，修复复习 API 重复 `/api` 前缀，并通过前端测试、构建和桌面/移动端浏览器布局检查。Round 125 完成 QuestionListView 题库浏览页整理，并通过前端测试、构建和桌面/移动端浏览器布局检查。Round 127 完成管理端通用样式基线、AdminDashboard/CourseManage/UserManage 样板整理，并通过前端测试、构建和桌面/移动端布局检查。Round 128 修复全局搜索重复 `/api` 前缀、统计流式接口 Base URL、Actuator 默认暴露面，并将 Redis 缓存 TTL 迁移到配置。Round 129 完成 QuestionManage/ExamManage/SubmissionManage/AiUsageView 管理页主整理，并通过前端测试、构建和桌面/移动端 mock 布局检查。Round 130 完成 KnowledgePointManage 体验补齐，新增知识点摘要卡、树结构搜索和桌面/移动端 mock 布局检查。Round 132 完成 CourseList/CourseDetail 体验补齐，并验证从课程详情进入题库会携带 `courseId` 筛选。Round 133 新增 `frontend/scripts/capture-demo-screenshots.mjs` 和 `npm run screenshots:demo`，修复 simple cache 模式统计接口 500，调整 E2E profile 日志，并在真实 E2E 环境中生成 11 张演示截图。Round 134 完成 User/Question/Submission 管理页长操作列收纳，并通过前端测试与构建。Round 135 完成 User/Question/Submission 管理页批量操作工具条和空状态，并通过前端测试、构建和 Playwright mock 浏览器检查。Round 136 清理 LearningPathView 的 Element Plus radio 旧 API，并通过前端测试与构建。Round 137 修复错题逻辑删除后再次答错的唯一键冲突，更新集成测试命令配置，并通过后端 361 个测试与 4 条真实 Docker E2E。Round 138 修复 Testcontainers 与 Docker Engine 29 兼容问题、对齐真实迁移约束下的集成测试夹具，并通过后端 361 个默认测试与 53 个真实 MySQL 集成测试。Round 139 新增正式题目 AI 复审建议服务、`questionReviewSuggestion` 缓存和管理端复审弹窗入口，并通过后端 365 个默认测试、前端 207 个测试与前端构建。Round 140 新增 AI 运营提醒持久化与确认入口，并通过后端 367 个默认测试、前端 209 个测试与前端构建。Round 141 新增管理员顶部栏 AI 运营提醒站内入口，并通过前端 AI Usage API 测试与前端构建。
 
@@ -167,7 +168,7 @@ Round 105 已验证 Docker Redis 网络连接、8 个缓存/管理接口及前�
 - 用户上传题库自动入库
 - AI 自动审核发布题目
 
-建议 commit message: `feat(ai): 建立学习资产效果观察闭环`
+建议 commit message: `feat(ai): 按资产类型观察同题学习效果`
 
 ---
 
@@ -213,17 +214,17 @@ Round 105 已验证 Docker Redis 网络连接、8 个缓存/管理接口及前�
 
 当前阶段：Phase 20“演示验收与 AI 运营治理”和 Phase 21“前端信息架构与视觉体验优化”均已完成，Phase 22“AI 学习效果验证”持续推进。既有 Round 105-157 已完成演示验收、AI 运营治理、内容治理、主要页面体验与性能收尾，具体历史见 `docs/CHANGELOG_AGENT.md`。
 
-Round 162 更新：管理端只按结构化变式的服务端首次判分汇总 1-5 难度样本；每档至少 5 条且至少两个难度档达标后才显示可开始分层观察，样本不足时只展示覆盖情况。Round 161 的私有答案与首次判分规则保持不变。
+Round 163 更新：管理端按每种资产类型的首次查看时间切分同题阅读后组与对照组；每类两组均至少 5 条才输出方向性状态，多资产暴露样本允许重叠，不用于资产排名或自动推荐。Round 161 的私有答案与首次判分规则保持不变。
 
-已完成模块：用户鉴权、课程知识点、题库、刷题判分、错题本、试卷考试、AI 流式能力与运营治理、学习资产与可视化讲解、统计可视化、内容治理、投稿生产、间隔重复、全局搜索、部署演示和主要页面体验；Phase 22 已具备资产真实查看、阅读后同题作答对照、变式训练完成事件、结构化首次判分、难度样本就绪度、共享知识点跨题迁移与管理端观察面板。GitHub Actions CI #26 全部通过。
+已完成模块：用户鉴权、课程知识点、题库、刷题判分、错题本、试卷考试、AI 流式能力与运营治理、学习资产与可视化讲解、统计可视化、内容治理、投稿生产、间隔重复、全局搜索、部署演示和主要页面体验；Phase 22 已具备资产真实查看、阅读后同题作答对照、按资产类型观察、变式训练完成事件、结构化首次判分、难度样本就绪度、共享知识点跨题迁移与管理端观察面板。GitHub Actions CI #26 全部通过。
 
-最新验证：默认后端测试 408 个、前端 Vitest 222 个和前端生产构建通过；5 个 Testcontainers 集成测试类的 55 个真实 MySQL 用例全部通过，确认 Flyway V19、结构化私有答案、首次判分字段、正确率与难度样本聚合在真实 Mapper 查询下正常工作；`docker compose config --quiet` 通过。
+最新验证：默认后端测试 409 个、前端 Vitest 222 个和前端生产构建通过；5 个 Testcontainers 集成测试类的 55 个真实 MySQL 用例全部通过，确认 Flyway V19、结构化私有答案、首次判分字段、正确率与难度样本聚合在真实 Mapper 查询下正常工作；`docker compose config --quiet` 通过。
 下一步建议：
 1. 继续积累 `ai_asset_view`、`ai_variant_training`、`ai_variant_question` 与 `practice_record` 的真实样本。
 2. 观察管理端难度样本门槛；至少两个难度档各有 5 条首次判分前，不进入分层效果判断或推荐策略。
 3. 样本足够后评估课程或用户基础分层，避免聚合结构误导。
 
-当前验收基线：后端默认测试 408 passed；真实 MySQL Testcontainers 全量 55 passed；前端 Vitest 222 passed、生产构建成功；`docker compose config --quiet` 成功。核心用户与管理员页面已有 5 条真实 Docker Playwright E2E；后续临时浏览器流程验收按 `skills/frontend-flow-test/SKILL.md` 只跑最小相关闭环。
+当前验收基线：后端默认测试 409 passed；真实 MySQL Testcontainers 全量 55 passed；前端 Vitest 222 passed、生产构建成功；`docker compose config --quiet` 成功。核心用户与管理员页面已有 5 条真实 Docker Playwright E2E；后续临时浏览器流程验收按 `skills/frontend-flow-test/SKILL.md` 只跑最小相关闭环。
 当前不优先做：PDF / 图片 OCR、爬虫、用户上传题库自动入库、AI 自动审核发布题目、复杂推荐系统（包括向量推荐）。
 后续扩展方向：见 docs/AI_LEARNING_PLATFORM_STRATEGY.md、docs/FUTURE.md 和 docs/TESTING.md；测试按业务风险补充。
 

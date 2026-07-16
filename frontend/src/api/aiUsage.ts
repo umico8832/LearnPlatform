@@ -121,6 +121,14 @@ export interface AiAssetTypeEffect {
   userCount: number
   feedbackCount: number
   helpfulRate: number | null
+  afterViewPracticeCount: number
+  afterViewCorrectRate: number | null
+  baselinePracticeCount: number
+  baselineCorrectRate: number | null
+  correctRateLift: number | null
+  sampleSufficient: boolean
+  conclusionLevel: 'INSUFFICIENT_DATA' | 'POSITIVE_ASSOCIATION' | 'NO_CLEAR_DIFFERENCE' | 'NEEDS_ATTENTION'
+  conclusion: string
 }
 
 export interface AiVariantDifficultyEffect {
@@ -142,6 +150,7 @@ export interface AiLearningEffect {
   viewedQuestionCount: number
   feedbackCount: number
   helpfulRate: number | null
+  minimumComparisonSample: number
   variantTrainingStartedCount: number
   variantTrainingCompletedCount: number
   variantTrainingCompletionRate: number | null

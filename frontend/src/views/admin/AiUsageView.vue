@@ -229,6 +229,51 @@
           </el-table>
         </div>
 
+        <section class="asset-type-observation">
+          <div class="transfer-header">
+            <div>
+              <strong>按资产类型观察同题表现</strong>
+              <p>分别按每类资产的首次查看时间切分周期内作答；任一组少于 {{ learningEffect.minimumComparisonSample }} 条时不判断方向。用户看过多类资产时，同一作答可能进入多个类型观察组，因此这里不做资产排名或自动推荐。</p>
+            </div>
+          </div>
+          <el-table :data="learningEffect.assetTypeStats" stripe size="small" class="asset-type-effect-table">
+            <el-table-column prop="assetTypeLabel" label="资产类型" min-width="128" />
+            <el-table-column label="阅读后同题" min-width="118" align="right">
+              <template #default="{ row }">
+                <div class="asset-type-effect-value">
+                  <strong>{{ formatRate(row.afterViewCorrectRate) }}</strong>
+                  <small>{{ row.afterViewPracticeCount }} 条</small>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="未阅读 / 阅读前" min-width="132" align="right">
+              <template #default="{ row }">
+                <div class="asset-type-effect-value">
+                  <strong>{{ formatRate(row.baselineCorrectRate) }}</strong>
+                  <small>{{ row.baselinePracticeCount }} 条</small>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="正确率差异" min-width="116" align="right">
+              <template #default="{ row }">
+                <strong :class="liftClass(row.correctRateLift)">{{ formatLift(row.correctRateLift) }}</strong>
+              </template>
+            </el-table-column>
+            <el-table-column label="观察状态" min-width="126" align="center">
+              <template #default="{ row }">
+                <el-tooltip :content="row.conclusion" placement="top">
+                  <el-tag :type="assetTypeTagType(row.conclusionLevel)" size="small" effect="light">
+                    {{ assetTypeTagLabel(row.conclusionLevel) }}
+                  </el-tag>
+                </el-tooltip>
+              </template>
+            </el-table-column>
+            <template #empty>
+              <el-empty description="当前周期暂无可分类型观察的数据" :image-size="48" />
+            </template>
+          </el-table>
+        </section>
+
         <section class="variant-sample-structure">
           <div class="transfer-header">
             <div>
@@ -439,6 +484,7 @@ const learningEffect = reactive<AiLearningEffect>({
   viewedQuestionCount: 0,
   feedbackCount: 0,
   helpfulRate: null,
+  minimumComparisonSample: 5,
   variantTrainingStartedCount: 0,
   variantTrainingCompletedCount: 0,
   variantTrainingCompletionRate: null,
@@ -574,6 +620,26 @@ function formatLift(value: number | null | undefined): string {
 function rateWidth(value: number | null | undefined): string {
   if (value === null || value === undefined) return '0%'
   return `${Math.max(0, Math.min(100, value))}%`
+}
+
+function liftClass(value: number | null | undefined): string {
+  if (value === null || value === undefined || value === 0) return 'neutral'
+  return value > 0 ? 'positive' : 'negative'
+}
+
+function assetTypeTagLabel(level: AiLearningEffect['conclusionLevel']): string {
+  return {
+    INSUFFICIENT_DATA: '样本积累中',
+    POSITIVE_ASSOCIATION: '正向关联',
+    NO_CLEAR_DIFFERENCE: '差异不明确',
+    NEEDS_ATTENTION: '需要关注',
+  }[level]
+}
+
+function assetTypeTagType(level: AiLearningEffect['conclusionLevel']): 'info' | 'success' | 'warning' {
+  if (level === 'POSITIVE_ASSOCIATION') return 'success'
+  if (level === 'NEEDS_ATTENTION') return 'warning'
+  return 'info'
 }
 
 function changeClass(value: number | null | undefined, isRiskMetric = false): string {
@@ -922,6 +988,27 @@ onBeforeUnmount(() => {
 .effect-type-table {
   min-width: 0;
   flex: 1;
+}
+.asset-type-observation {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+.asset-type-effect-table {
+  margin-top: 14px;
+}
+.asset-type-effect-value {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.asset-type-effect-value strong {
+  color: var(--lp-text-primary);
+}
+.asset-type-effect-value small {
+  color: var(--lp-text-tertiary);
+  font-size: 11px;
 }
 .variant-sample-structure {
   margin-top: 22px;

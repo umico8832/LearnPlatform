@@ -133,6 +133,7 @@ class AiLearningEffectServiceTest {
         AiLearningEffectVO result = service().getLearningEffect(30);
 
         assertEquals(30, result.getDays());
+        assertEquals(5L, result.getMinimumComparisonSample());
         assertEquals(0L, result.getAssetViewCount());
         assertEquals(0L, result.getAfterViewPracticeCount());
         assertNull(result.getAfterViewCorrectRate());
@@ -195,6 +196,42 @@ class AiLearningEffectServiceTest {
         assertEquals("POSITIVE_ASSOCIATION", result.getConclusionLevel());
         assertEquals(1, result.getAssetTypeStats().size());
         assertEquals("标准解析", result.getAssetTypeStats().get(0).getAssetTypeLabel());
+        assertEquals(5L, result.getAssetTypeStats().get(0).getAfterViewPracticeCount());
+        assertEquals(80.0, result.getAssetTypeStats().get(0).getAfterViewCorrectRate());
+        assertEquals(6L, result.getAssetTypeStats().get(0).getBaselinePracticeCount());
+        assertEquals(33.3, result.getAssetTypeStats().get(0).getBaselineCorrectRate());
+        assertEquals(46.7, result.getAssetTypeStats().get(0).getCorrectRateLift());
+        assertEquals(true, result.getAssetTypeStats().get(0).getSampleSufficient());
+        assertEquals("POSITIVE_ASSOCIATION", result.getAssetTypeStats().get(0).getConclusionLevel());
+    }
+
+    @Test
+    void getLearningEffectKeepsAssetTypeExposureCohortsIndependent() {
+        LocalDateTime now = LocalDateTime.now();
+        when(aiAssetViewMapper.selectList(any())).thenReturn(List.of(
+                view(1L, 10L, "FULL_EXPLANATION", now.minusDays(10), 1),
+                view(1L, 10L, "STEP_BY_STEP", now.minusDays(4), 1)));
+        when(aiAssetFeedbackMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(aiVariantTrainingMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(
+                practice(1L, 10L, true, now.minusDays(9)),
+                practice(1L, 10L, true, now.minusDays(3)),
+                practice(2L, 10L, false, now.minusDays(2))));
+
+        AiLearningEffectVO result = service().getLearningEffect(30);
+
+        AiLearningEffectVO.AssetTypeEffect fullExplanation = result.getAssetTypeStats().stream()
+                .filter(item -> "FULL_EXPLANATION".equals(item.getAssetType()))
+                .findFirst().orElseThrow();
+        AiLearningEffectVO.AssetTypeEffect stepByStep = result.getAssetTypeStats().stream()
+                .filter(item -> "STEP_BY_STEP".equals(item.getAssetType()))
+                .findFirst().orElseThrow();
+        assertEquals(2L, fullExplanation.getAfterViewPracticeCount());
+        assertEquals(1L, fullExplanation.getBaselinePracticeCount());
+        assertEquals(1L, stepByStep.getAfterViewPracticeCount());
+        assertEquals(2L, stepByStep.getBaselinePracticeCount());
+        assertEquals(false, fullExplanation.getSampleSufficient());
+        assertEquals("INSUFFICIENT_DATA", stepByStep.getConclusionLevel());
     }
 
     @Test

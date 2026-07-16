@@ -17,6 +17,7 @@ public class AiLearningEffectVO {
     private Long viewedQuestionCount;
     private Long feedbackCount;
     private Double helpfulRate;
+    private Long minimumComparisonSample;
     private Long variantTrainingStartedCount;
     private Long variantTrainingCompletedCount;
     private Double variantTrainingCompletionRate;
@@ -62,6 +63,8 @@ public class AiLearningEffectVO {
     public void setFeedbackCount(Long feedbackCount) { this.feedbackCount = feedbackCount; }
     public Double getHelpfulRate() { return helpfulRate; }
     public void setHelpfulRate(Double helpfulRate) { this.helpfulRate = helpfulRate; }
+    public Long getMinimumComparisonSample() { return minimumComparisonSample; }
+    public void setMinimumComparisonSample(Long minimumComparisonSample) { this.minimumComparisonSample = minimumComparisonSample; }
     public Long getVariantTrainingStartedCount() { return variantTrainingStartedCount; }
     public void setVariantTrainingStartedCount(Long variantTrainingStartedCount) { this.variantTrainingStartedCount = variantTrainingStartedCount; }
     public Long getVariantTrainingCompletedCount() { return variantTrainingCompletedCount; }
@@ -126,6 +129,14 @@ public class AiLearningEffectVO {
         private Long userCount;
         private Long feedbackCount;
         private Double helpfulRate;
+        private Long afterViewPracticeCount;
+        private Double afterViewCorrectRate;
+        private Long baselinePracticeCount;
+        private Double baselineCorrectRate;
+        private Double correctRateLift;
+        private Boolean sampleSufficient;
+        private String conclusionLevel;
+        private String conclusion;
 
         public String getAssetType() { return assetType; }
         public void setAssetType(String assetType) { this.assetType = assetType; }
@@ -139,6 +150,22 @@ public class AiLearningEffectVO {
         public void setFeedbackCount(Long feedbackCount) { this.feedbackCount = feedbackCount; }
         public Double getHelpfulRate() { return helpfulRate; }
         public void setHelpfulRate(Double helpfulRate) { this.helpfulRate = helpfulRate; }
+        public Long getAfterViewPracticeCount() { return afterViewPracticeCount; }
+        public void setAfterViewPracticeCount(Long afterViewPracticeCount) { this.afterViewPracticeCount = afterViewPracticeCount; }
+        public Double getAfterViewCorrectRate() { return afterViewCorrectRate; }
+        public void setAfterViewCorrectRate(Double afterViewCorrectRate) { this.afterViewCorrectRate = afterViewCorrectRate; }
+        public Long getBaselinePracticeCount() { return baselinePracticeCount; }
+        public void setBaselinePracticeCount(Long baselinePracticeCount) { this.baselinePracticeCount = baselinePracticeCount; }
+        public Double getBaselineCorrectRate() { return baselineCorrectRate; }
+        public void setBaselineCorrectRate(Double baselineCorrectRate) { this.baselineCorrectRate = baselineCorrectRate; }
+        public Double getCorrectRateLift() { return correctRateLift; }
+        public void setCorrectRateLift(Double correctRateLift) { this.correctRateLift = correctRateLift; }
+        public Boolean getSampleSufficient() { return sampleSufficient; }
+        public void setSampleSufficient(Boolean sampleSufficient) { this.sampleSufficient = sampleSufficient; }
+        public String getConclusionLevel() { return conclusionLevel; }
+        public void setConclusionLevel(String conclusionLevel) { this.conclusionLevel = conclusionLevel; }
+        public String getConclusion() { return conclusion; }
+        public void setConclusion(String conclusion) { this.conclusion = conclusion; }
     }
 
     public static class VariantDifficultyEffect {
