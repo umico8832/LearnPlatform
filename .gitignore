@@ -66,6 +66,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # ==================== Misc ====================
+local-experiments/deeptutor-data-structure/
 *.swp
 *.swo
 *~
