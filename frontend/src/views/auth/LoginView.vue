@@ -86,7 +86,7 @@ async function handleLogin() {
 
   loading.value = true
   try {
-    const res = await request.post<any, ApiResponse<LoginResponse>>('/auth/login', {
+    const res = await request.post<unknown, ApiResponse<LoginResponse>>('/auth/login', {
       username: form.username,
       password: form.password,
       captchaId: captchaId.value,

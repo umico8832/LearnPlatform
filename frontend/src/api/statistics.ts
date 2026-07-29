@@ -49,22 +49,22 @@ export interface AdminStatisticsOverview {
 
 /** 获取学习统计概览 */
 export function getStatisticsOverview() {
-  return request.get<any, ApiResponse<StatisticsOverview>>('/statistics/overview')
+  return request.get<unknown, ApiResponse<StatisticsOverview>>('/statistics/overview')
 }
 
 /** 获取每日刷题趋势 */
 export function getDailyTrend() {
-  return request.get<any, ApiResponse<DailyTrendItem[]>>('/statistics/daily-trend')
+  return request.get<unknown, ApiResponse<DailyTrendItem[]>>('/statistics/daily-trend')
 }
 
 /** 获取课程维度统计 */
 export function getCourseStats() {
-  return request.get<any, ApiResponse<CourseStatItem[]>>('/statistics/course-stats')
+  return request.get<unknown, ApiResponse<CourseStatItem[]>>('/statistics/course-stats')
 }
 
 /** 获取管理端平台统计概览 */
 export function getAdminStatisticsOverview() {
-  return request.get<any, ApiResponse<AdminStatisticsOverview>>('/admin/statistics/overview')
+  return request.get<unknown, ApiResponse<AdminStatisticsOverview>>('/admin/statistics/overview')
 }
 
 export interface LearningReport {
@@ -100,7 +100,7 @@ export interface LearningReport {
 
 /** 获取个人学习报告 */
 export function getLearningReport() {
-  return request.get<any, ApiResponse<LearningReport>>('/statistics/learning-report')
+  return request.get<unknown, ApiResponse<LearningReport>>('/statistics/learning-report')
 }
 
 // ======================== 学习路径推荐 ========================
@@ -142,7 +142,7 @@ export interface LearningPath {
 /** 获取学习路径推荐 */
 export function getLearningPath(courseId?: number) {
   const params = courseId ? { courseId } : {}
-  return request.get<any, ApiResponse<LearningPath>>('/statistics/learning-path', { params })
+  return request.get<unknown, ApiResponse<LearningPath>>('/statistics/learning-path', { params })
 }
 
 // ======================== 知识图谱 ========================
@@ -181,7 +181,7 @@ export interface KnowledgeGraph {
 /** 获取知识图谱数据 */
 export function getKnowledgeGraph(courseId?: number) {
   const params = courseId ? { courseId } : {}
-  return request.get<any, ApiResponse<KnowledgeGraph>>('/statistics/knowledge-graph', { params })
+  return request.get<unknown, ApiResponse<KnowledgeGraph>>('/statistics/knowledge-graph', { params })
 }
 
 // ======================== 学习诊断 ========================
@@ -292,14 +292,14 @@ export interface LearningDiagnosis {
 
 /** 获取学习诊断数据 */
 export function getLearningDiagnosis() {
-  return request.get<any, ApiResponse<LearningDiagnosis>>('/statistics/learning-diagnosis')
+  return request.get<unknown, ApiResponse<LearningDiagnosis>>('/statistics/learning-diagnosis')
 }
 
 // ======================== AI 个性化学习建议 ========================
 
 /** 获取 AI 个性化学习建议（同步） */
 export function getAiAdvice() {
-  return request.post<any, ApiResponse<{ content: string; source: string }>>('/statistics/ai-advice')
+  return request.post<unknown, ApiResponse<{ content: string; source: string }>>('/statistics/ai-advice')
 }
 
 /** 获取 AI 个性化学习建议（流式 SSE） */
@@ -337,7 +337,7 @@ export interface SimilarQuestions {
 
 /** 获取相似题推荐 */
 export function getSimilarQuestions(questionId: number, limit = 5) {
-  return request.get<any, ApiResponse<SimilarQuestions>>('/statistics/similar-questions', {
+  return request.get<unknown, ApiResponse<SimilarQuestions>>('/statistics/similar-questions', {
     params: { questionId, limit }
   })
 }
@@ -372,7 +372,7 @@ export interface QuestionErrorAnalysis {
 
 /** 获取单题错因分析 */
 export function getQuestionErrorAnalysis(questionId: number) {
-  return request.get<any, ApiResponse<QuestionErrorAnalysis>>('/statistics/question-error-analysis', {
+  return request.get<unknown, ApiResponse<QuestionErrorAnalysis>>('/statistics/question-error-analysis', {
     params: { questionId }
   })
 }

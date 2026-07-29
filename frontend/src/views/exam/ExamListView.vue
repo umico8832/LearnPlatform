@@ -137,7 +137,7 @@ const loadPapers = async () => {
       papers.value = res.data.records || []
       total.value = res.data.total || 0
     }
-  } catch (e) {
+  } catch {
     ElMessage.error('获取试卷列表失败')
   } finally {
     loading.value = false
@@ -152,7 +152,7 @@ const loadRecords = async () => {
       records.value = res.data.records || []
       recordsTotal.value = res.data.total || 0
     }
-  } catch (e) {
+  } catch {
     ElMessage.error('获取考试记录失败')
   } finally {
     recordsLoading.value = false
@@ -181,7 +181,7 @@ const handleStartExam = async (paperId: number) => {
     } else {
       ElMessage.error(startRes.message || '开始考试失败')
     }
-  } catch (e) {
+  } catch {
     ElMessage.error('开始考试失败')
   } finally {
     startingId.value = null

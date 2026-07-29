@@ -45,6 +45,8 @@ public class LearningDiagnosisService {
     private final CourseMapper courseMapper;
     private final AiProvider aiProvider;
     private final AiService aiService;
+    private final LearningQuestionErrorAnalysisService questionErrorAnalysisService;
+    private final SimilarQuestionRecommendationService similarQuestionRecommendationService;
 
     public LearningDiagnosisService(KnowledgePointMapper knowledgePointMapper,
                                      QuestionKnowledgePointMapper questionKnowledgePointMapper,
@@ -53,7 +55,9 @@ public class LearningDiagnosisService {
                                      WrongQuestionMapper wrongQuestionMapper,
                                      CourseMapper courseMapper,
                                      AiProvider aiProvider,
-                                     AiService aiService) {
+                                     AiService aiService,
+                                     LearningQuestionErrorAnalysisService questionErrorAnalysisService,
+                                     SimilarQuestionRecommendationService similarQuestionRecommendationService) {
         this.knowledgePointMapper = knowledgePointMapper;
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
         this.questionMapper = questionMapper;
@@ -62,6 +66,8 @@ public class LearningDiagnosisService {
         this.courseMapper = courseMapper;
         this.aiProvider = aiProvider;
         this.aiService = aiService;
+        this.questionErrorAnalysisService = questionErrorAnalysisService;
+        this.similarQuestionRecommendationService = similarQuestionRecommendationService;
     }
 
     /**
@@ -1014,341 +1020,14 @@ public class LearningDiagnosisService {
         return sb.toString();
     }
 
-    // ======================== 单题错因分析 ========================
-
-    /**
-     * 分析用户对某个具体题目的错误模式
-     *
-     * @param userId     当前用户
-     * @param questionId 目标题目
-     */
+    /** 委托独立服务完成单题错因分析。 */
     public LearningDiagnosisVO.QuestionErrorAnalysis analyzeQuestionError(Long userId, Long questionId) {
-        log.info("单题错因分析: userId={}, questionId={}", userId, questionId);
-
-        Question question = questionMapper.selectById(questionId);
-        if (question == null) {
-            LearningDiagnosisVO.QuestionErrorAnalysis empty = new LearningDiagnosisVO.QuestionErrorAnalysis();
-            empty.setQuestionId(questionId);
-            empty.setQuestionContent("题目不存在");
-            empty.setAttempts(Collections.emptyList());
-            return empty;
-        }
-
-        // 1. 获取用户对该题的所有练习记录（按时间正序）
-        LambdaQueryWrapper<PracticeRecord> prWrapper = new LambdaQueryWrapper<>();
-        prWrapper.eq(PracticeRecord::getUserId, userId)
-                .eq(PracticeRecord::getQuestionId, questionId)
-                .orderByAsc(PracticeRecord::getCreateTime);
-        List<PracticeRecord> records = practiceRecordMapper.selectList(prWrapper);
-
-        // 2. 获取错题本信息
-        LambdaQueryWrapper<WrongQuestion> wqWrapper = new LambdaQueryWrapper<>();
-        wqWrapper.eq(WrongQuestion::getUserId, userId)
-                .eq(WrongQuestion::getQuestionId, questionId)
-                .eq(WrongQuestion::getDeleted, 0);
-        WrongQuestion wrongQuestion = wrongQuestionMapper.selectOne(wqWrapper);
-
-        // 3. 构建作答历史
-        List<LearningDiagnosisVO.AttemptHistory> attempts = new ArrayList<>();
-        for (PracticeRecord r : records) {
-            LearningDiagnosisVO.AttemptHistory ah = new LearningDiagnosisVO.AttemptHistory();
-            ah.setRecordId(r.getId());
-            ah.setUserAnswer(r.getUserAnswer());
-            ah.setIsCorrect(r.getIsCorrect());
-            ah.setAnswerTime(r.getAnswerTime());
-            ah.setCreateTime(r.getCreateTime() != null ? r.getCreateTime().toString() : null);
-            attempts.add(ah);
-        }
-
-        // 4. 统计正确/错误次数
-        int totalAttempts = records.size();
-        int correctCount = (int) records.stream()
-                .filter(r -> r.getIsCorrect() != null && r.getIsCorrect() == 1).count();
-        int wrongCount = totalAttempts - correctCount;
-        double correctRate = totalAttempts == 0 ? 0
-                : Math.round(correctCount * 1000.0 / totalAttempts) / 10.0;
-
-        // 5. 计算掌握趋势
-        String masteryTrend = "STAGNANT";
-        String trendDescription = "暂无足够数据判断趋势";
-        if (totalAttempts >= 2) {
-            // 取最近 5 次的正确率 vs 之前的正确率
-            int recentN = Math.min(5, totalAttempts);
-            List<PracticeRecord> recentRecords = records.subList(totalAttempts - recentN, totalAttempts);
-            long recentCorrect = recentRecords.stream()
-                    .filter(r -> r.getIsCorrect() != null && r.getIsCorrect() == 1).count();
-            double recentRate = recentCorrect * 100.0 / recentN;
-
-            if (totalAttempts > recentN) {
-                List<PracticeRecord> earlierRecords = records.subList(0, totalAttempts - recentN);
-                long earlierCorrect = earlierRecords.stream()
-                        .filter(r -> r.getIsCorrect() != null && r.getIsCorrect() == 1).count();
-                double earlierRate = earlierCorrect * 100.0 / earlierRecords.size();
-
-                if (recentRate - earlierRate >= 20) {
-                    masteryTrend = "IMPROVING";
-                    trendDescription = String.format("近期正确率从 %.0f%% 提升到 %.0f%%，正在进步！",
-                            earlierRate, recentRate);
-                } else if (earlierRate - recentRate >= 20) {
-                    masteryTrend = "DECLINING";
-                    trendDescription = String.format("近期正确率从 %.0f%% 下降到 %.0f%%，需要加强复习。",
-                            earlierRate, recentRate);
-                } else {
-                    masteryTrend = "STAGNANT";
-                    trendDescription = String.format("近期正确率 %.0f%%，基本持平。", recentRate);
-                }
-            } else {
-                if (recentRate >= 80) {
-                    masteryTrend = "IMPROVING";
-                    trendDescription = String.format("最近 %d 次正确率 %.0f%%，表现良好。", recentN, recentRate);
-                } else if (recentRate < 50) {
-                    masteryTrend = "DECLINING";
-                    trendDescription = String.format("最近 %d 次正确率仅 %.0f%%，需要重点关注。", recentN, recentRate);
-                } else {
-                    trendDescription = String.format("最近 %d 次正确率 %.0f%%，仍需巩固。", recentN, recentRate);
-                }
-            }
-        }
-
-        // 6. 生成错误模式描述
-        String errorPattern = buildErrorPattern(records, wrongCount, totalAttempts, wrongQuestion);
-
-        // 7. 获取课程名和知识点名
-        Course course = courseMapper.selectById(question.getCourseId());
-        Set<Long> kpIds = questionToKps(questionId);
-        String kpName = null;
-        if (!kpIds.isEmpty()) {
-            KnowledgePoint kp = knowledgePointMapper.selectById(kpIds.iterator().next());
-            kpName = kp != null ? kp.getName() : null;
-        }
-
-        // 8. 组装返回
-        LearningDiagnosisVO.QuestionErrorAnalysis analysis = new LearningDiagnosisVO.QuestionErrorAnalysis();
-        analysis.setQuestionId(questionId);
-        analysis.setQuestionContent(question.getContent());
-        analysis.setQuestionType(getQuestionTypeName(question.getQuestionType()));
-        analysis.setDifficulty(question.getDifficulty());
-        analysis.setCourseName(course != null ? course.getName() : null);
-        analysis.setKnowledgePointName(kpName);
-        analysis.setTotalAttempts(totalAttempts);
-        analysis.setCorrectCount(correctCount);
-        analysis.setWrongCount(wrongCount);
-        analysis.setCorrectRate(correctRate);
-        analysis.setCurrentMasteryLevel(wrongQuestion != null ? wrongQuestion.getMasteryLevel() : null);
-        analysis.setMasteryTrend(masteryTrend);
-        analysis.setTrendDescription(trendDescription);
-        analysis.setAttempts(attempts);
-        analysis.setErrorPattern(errorPattern);
-
-        return analysis;
+        return questionErrorAnalysisService.analyzeQuestionError(userId, questionId);
     }
 
-    private String buildErrorPattern(List<PracticeRecord> records, int wrongCount,
-                                      int totalAttempts, WrongQuestion wrongQuestion) {
-        if (totalAttempts == 0) {
-            return "该题尚未作答。";
-        }
-
-        StringBuilder sb = new StringBuilder();
-
-        // 是否反复出错
-        if (wrongCount >= 3) {
-            sb.append(String.format("⚠️ 该题已累计答错 %d 次（共作答 %d 次），属于反复错题。", wrongCount, totalAttempts));
-        } else if (wrongCount >= 1) {
-            sb.append(String.format("该题共作答 %d 次，答错 %d 次。", totalAttempts, wrongCount));
-        } else {
-            sb.append(String.format("该题共作答 %d 次，全部答对！", totalAttempts));
-        }
-
-        // 是否最近刚答错
-        if (!records.isEmpty()) {
-            PracticeRecord last = records.get(records.size() - 1);
-            if (last.getIsCorrect() != null && last.getIsCorrect() == 0) {
-                sb.append(" 最近一次作答仍然错误。");
-            } else if (last.getIsCorrect() != null && last.getIsCorrect() == 1 && wrongCount > 0) {
-                sb.append(" 最近一次已答对。");
-            }
-        }
-
-        // 连续错误检测
-        int consecutiveWrong = 0;
-        for (int i = records.size() - 1; i >= 0; i--) {
-            if (records.get(i).getIsCorrect() != null && records.get(i).getIsCorrect() == 0) {
-                consecutiveWrong++;
-            } else {
-                break;
-            }
-        }
-        if (consecutiveWrong >= 2) {
-            sb.append(String.format(" 已连续答错 %d 次。", consecutiveWrong));
-        }
-
-        // 掌握程度
-        if (wrongQuestion != null && wrongQuestion.getMasteryLevel() != null) {
-            switch (wrongQuestion.getMasteryLevel()) {
-                case 0: sb.append(" 当前掌握程度：未掌握。"); break;
-                case 1: sb.append(" 当前掌握程度：部分掌握。"); break;
-                case 2: sb.append(" 当前掌握程度：已掌握。"); break;
-            }
-        }
-
-        return sb.toString();
-    }
-
-    // ======================== 相似题推荐 ========================
-
-    /**
-     * 为指定错题推荐相似题目
-     *
-     * 相似度评分策略（满分 100）：
-     * - 同知识点：+40 分
-     * - 同题型：+30 分
-     * - 同难度（±1）：+20 分
-     * - 同课程：+10 分
-     *
-     * @param userId     当前用户
-     * @param questionId 源题目（通常是答错的题）
-     * @param limit      最多推荐数量
-     */
+    /** 委托独立服务完成相似题推荐。 */
     public SimilarQuestionVO findSimilarQuestions(Long userId, Long questionId, int limit) {
-        log.info("相似题推荐: userId={}, questionId={}, limit={}", userId, questionId, limit);
-
-        Question source = questionMapper.selectById(questionId);
-        if (source == null) {
-            SimilarQuestionVO empty = new SimilarQuestionVO();
-            empty.setSourceQuestionId(questionId);
-            empty.setSourceQuestionContent("题目不存在");
-            empty.setSimilarQuestions(Collections.emptyList());
-            return empty;
-        }
-
-        // 1. 获取源题目的知识点
-        Set<Long> sourceKpIds = questionToKps(questionId);
-
-        // 2. 获取用户已练习过的题目 ID
-        LambdaQueryWrapper<PracticeRecord> prWrapper = new LambdaQueryWrapper<>();
-        prWrapper.eq(PracticeRecord::getUserId, userId).select(PracticeRecord::getQuestionId);
-        Set<Long> attemptedIds = practiceRecordMapper.selectList(prWrapper).stream()
-                .map(PracticeRecord::getQuestionId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-
-        // 3. 获取所有候选题目（排除源题本身和已删除的）
-        LambdaQueryWrapper<Question> qWrapper = new LambdaQueryWrapper<>();
-        qWrapper.ne(Question::getId, questionId).eq(Question::getStatus, 1);
-        List<Question> candidates = questionMapper.selectList(qWrapper);
-
-        // 4. 获取所有知识点关联（用于批量查询）
-        Set<Long> allCandidateIds = candidates.stream().map(Question::getId).collect(Collectors.toSet());
-        Map<Long, Set<Long>> candidateKpsMap = new HashMap<>();
-        if (!allCandidateIds.isEmpty()) {
-            LambdaQueryWrapper<QuestionKnowledgePoint> qkpWrapper = new LambdaQueryWrapper<>();
-            qkpWrapper.in(QuestionKnowledgePoint::getQuestionId, allCandidateIds);
-            questionKnowledgePointMapper.selectList(qkpWrapper).forEach(qkp ->
-                    candidateKpsMap.computeIfAbsent(qkp.getQuestionId(), k -> new HashSet<>())
-                            .add(qkp.getKnowledgePointId())
-            );
-        }
-
-        // 5. 获取课程名称缓存
-        Map<Long, String> courseNameCache = new HashMap<>();
-        Map<Long, String> kpNameCache = new HashMap<>();
-
-        // 6. 计算相似度并排序
-        List<SimilarQuestionVO.SimilarItem> items = new ArrayList<>();
-        for (Question candidate : candidates) {
-            int score = 0;
-            List<String> reasons = new ArrayList<>();
-
-            // 同知识点：+40
-            Set<Long> candidateKpIds = candidateKpsMap.getOrDefault(candidate.getId(), Collections.emptySet());
-            Set<Long> sharedKps = new HashSet<>(sourceKpIds);
-            sharedKps.retainAll(candidateKpIds);
-            if (!sharedKps.isEmpty()) {
-                score += 40;
-                reasons.add("同知识点");
-            }
-
-            // 同题型：+30
-            if (source.getQuestionType() != null && source.getQuestionType().equals(candidate.getQuestionType())) {
-                score += 30;
-                reasons.add("同题型");
-            }
-
-            // 同难度（±1）：+20
-            if (source.getDifficulty() != null && candidate.getDifficulty() != null) {
-                int diff = Math.abs(source.getDifficulty() - candidate.getDifficulty());
-                if (diff == 0) {
-                    score += 20;
-                    reasons.add("同难度");
-                } else if (diff == 1) {
-                    score += 10;
-                    reasons.add("难度相近");
-                }
-            }
-
-            // 同课程：+10
-            if (source.getCourseId() != null && source.getCourseId().equals(candidate.getCourseId())) {
-                score += 10;
-                reasons.add("同课程");
-            }
-
-            // 仅保留有一定相似度的题目
-            if (score < 30) continue;
-
-            // 构建结果项
-            SimilarQuestionVO.SimilarItem item = new SimilarQuestionVO.SimilarItem();
-            item.setQuestionId(candidate.getId());
-            item.setQuestionContent(truncate(candidate.getContent(), 100));
-            item.setQuestionType(getQuestionTypeName(candidate.getQuestionType()));
-            item.setDifficulty(candidate.getDifficulty());
-            item.setSimilarityScore(score);
-            item.setReason(String.join("、", reasons));
-            item.setAlreadyAttempted(attemptedIds.contains(candidate.getId()));
-
-            // 课程名称
-            if (candidate.getCourseId() != null) {
-                String cname = courseNameCache.computeIfAbsent(candidate.getCourseId(), id -> {
-                    Course c = courseMapper.selectById(id);
-                    return c != null ? c.getName() : null;
-                });
-                item.setCourseName(cname);
-            }
-
-            // 知识点名称（取第一个）
-            if (!candidateKpIds.isEmpty()) {
-                Long firstKpId = candidateKpIds.iterator().next();
-                String kpName = kpNameCache.computeIfAbsent(firstKpId, id -> {
-                    KnowledgePoint kp = knowledgePointMapper.selectById(id);
-                    return kp != null ? kp.getName() : null;
-                });
-                item.setKnowledgePointName(kpName);
-            }
-
-            items.add(item);
-        }
-
-        // 7. 按相似度降序排序，取前 N
-        items.sort((a, b) -> Integer.compare(b.getSimilarityScore(), a.getSimilarityScore()));
-        List<SimilarQuestionVO.SimilarItem> topItems = items.stream().limit(limit).collect(Collectors.toList());
-
-        // 8. 组装返回
-        SimilarQuestionVO vo = new SimilarQuestionVO();
-        vo.setSourceQuestionId(questionId);
-        vo.setSourceQuestionContent(truncate(source.getContent(), 100));
-        vo.setSimilarQuestions(topItems);
-        return vo;
-    }
-
-    /**
-     * 获取单个题目关联的知识点 ID 集合
-     */
-    private Set<Long> questionToKps(Long questionId) {
-        LambdaQueryWrapper<QuestionKnowledgePoint> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(QuestionKnowledgePoint::getQuestionId, questionId);
-        return questionKnowledgePointMapper.selectList(wrapper).stream()
-                .map(QuestionKnowledgePoint::getKnowledgePointId)
-                .collect(Collectors.toSet());
+        return similarQuestionRecommendationService.findSimilarQuestions(userId, questionId, limit);
     }
 
     // ======================== 工具方法 ========================

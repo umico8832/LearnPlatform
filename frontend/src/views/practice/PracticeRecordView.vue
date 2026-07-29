@@ -180,7 +180,7 @@ const loadRecords = async () => {
       records.value = res.data.records || []
       total.value = res.data.total || 0
     }
-  } catch (e) {
+  } catch {
     ElMessage.error('获取记录失败')
   } finally {
     loading.value = false

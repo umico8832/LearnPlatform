@@ -133,7 +133,7 @@ onMounted(async () => {
     } else {
       ElMessage.error('获取考试结果失败')
     }
-  } catch (e) {
+  } catch {
     ElMessage.error('获取考试结果失败')
   } finally {
     loading.value = false

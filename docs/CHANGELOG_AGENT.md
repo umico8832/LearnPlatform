@@ -1,5 +1,35 @@
 # AI 题库与错题复习系统 - 开发日志
 
+## Round 165 - 2026-07-29
+
+### 阶段
+Phase 22：工程质量治理与模块化重构
+
+### 完成内容
+1. 后端 `verify` 新增 Checkstyle、SpotBugs 和 JaCoCo；SpotBugs 门禁发现并删除 AI 复习建议中的无效局部对象。
+2. GitHub Actions 将默认后端任务升级为 `mvn clean verify`，新增独立 Testcontainers 集成测试 job。
+3. 前端新增 ESLint、Prettier 和 Vitest coverage 命令；修复 21 个 ESLint 阻断项，并将 API 请求层显式 `any` 改为 `unknown`。
+4. 将单题错因分析与相似题推荐从 `LearningDiagnosisService` 拆为两个独立服务，原服务从 1450 行降至 1129 行且保持接口不变。
+5. 将题目管理页的治理抽屉、导入导出流程和展示映射拆为独立组件、组合函数与工具模块，页面从 1691 行降至 1206 行。
+6. 同步 README、架构、测试、路线图和交接文档。
+
+### 验证
+- `cd backend && mvn clean verify -B`：410 个默认测试通过，Checkstyle 0 违规、SpotBugs 0 问题，JaCoCo 报告成功生成。
+- `cd frontend && npm test -- --run`：28 个测试文件、222 个测试通过。
+- `cd frontend && npm run coverage`：222 个测试通过；语句覆盖率 54.28%、分支 39.67%、函数 51.43%、行覆盖率 55%。
+- `cd frontend && npm run lint`：0 个阻断错误；保留 73 个存量显式 `any` 警告。
+- `cd frontend && npm run format:check && npm run build`：通过；构建仅保留既有第三方 pure annotation 提示。
+- `cd frontend && npm audit --omit=dev --audit-level=high`：无生产高危漏洞；剩余 1 个 ECharts 中危公告，官方修复要求升级到存在破坏性变化的 6.1.0。
+- `docker compose config --quiet`、`git diff --check`：通过。
+- 本机 Docker daemon 当前不可用，Testcontainers 命令因找不到 `/var/run/docker.sock` 未执行成功；CI 已新增独立 Docker runner job，历史全量基线为 5 类、55 个真实 MySQL 用例通过。
+
+### 遗留问题
+- ESLint 仍将部分既有页面和第三方组件边界的显式 `any` 报为警告；API 公共契约层已完成第一轮收紧，后续按页面逐步消除。
+- ECharts 中危公告需要结合可视化页面回归测试单独完成 6.x 升级，不使用 `npm audit fix --force` 直接跨主版本。
+
+### commit message
+`refactor(engineering): 完善质量门禁并拆分大模块`
+
 ## Round 164 - 2026-07-16
 
 ### 阶段

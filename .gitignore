@@ -35,6 +35,7 @@ frontend/dist/
 frontend/.vite/
 frontend/playwright-report/
 frontend/test-results/
+frontend/coverage/
 frontend/src/auto-imports.d.ts
 frontend/src/components.d.ts
 

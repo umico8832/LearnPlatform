@@ -12,10 +12,10 @@ export interface LearningPlanVO {
 
 /** 获取学习计划（含今日进度和连续打卡） */
 export function getLearningPlan() {
-  return request.get<any, ApiResponse<LearningPlanVO>>('/learning-plan')
+  return request.get<unknown, ApiResponse<LearningPlanVO>>('/learning-plan')
 }
 
 /** 更新每日刷题目标 */
 export function updateDailyGoal(dailyGoal: number) {
-  return request.put<any, ApiResponse<LearningPlanVO>>('/learning-plan', { dailyGoal })
+  return request.put<unknown, ApiResponse<LearningPlanVO>>('/learning-plan', { dailyGoal })
 }

@@ -1,0 +1,7 @@
+dist/
+node_modules/
+playwright-report/
+test-results/
+coverage/
+src/auto-imports.d.ts
+src/components.d.ts

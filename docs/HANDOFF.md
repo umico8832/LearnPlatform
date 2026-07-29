@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 20 — 演示验收与 AI 运营治理、Phase 21 — 前端信息架构与视觉体验优化均已完成；Phase 22 — AI 学习效果验证持续推进。Round 164 完成效果样本的去重学习者覆盖门槛。
+当前阶段：Phase 20 — 演示验收与 AI 运营治理、Phase 21 — 前端信息架构与视觉体验优化均已完成；Phase 22 — AI 学习效果验证持续推进。Round 165 完成工程质量门禁、真实 MySQL CI 和首轮大模块拆分。
 
 下一阶段主线：继续积累 `ai_asset_view`、`ai_variant_training`、`ai_variant_question` 与 `practice_record` 真实样本；同题、跨题、资产类型和变式难度观察已同时检查作答量与去重学习者数，比较组需至少 5 条作答、3 位学习者才输出方向性状态。多资产暴露样本允许重叠且不进入资产排名或自动推荐。样本足够后再评估课程或用户基础分层。不要用少数高频用户、调用量、生成次数或旧版完成按钮推断学习效果。Playwright 现有 5 条真实 E2E，高频页面巡检会拦截 `/api/` 5xx 与浏览器 `console.error`。OCR、爬虫、自动入库和复杂推荐仍非当前优先级。
 
@@ -136,6 +136,10 @@ docker compose up -d
 
 ## 5. 当前遗留问题
 
+- 前端 ESLint 当前为 0 个阻断错误、73 个存量显式 `any` 警告；API 公共契约已从 `any` 收紧为 `unknown`，其余应按页面逐步消除。
+- 生产依赖审计剩余 ECharts 1 个中危公告，修复要求升级到存在破坏性变化的 6.1.0，应在可视化页面回归测试覆盖下单独处理。
+- 本机 Docker daemon 当前不可用，Round 165 新增的 Testcontainers CI job 尚无法在本机复跑；历史真实 MySQL 基线为 5 类、55 个用例通过。
+
 - 考试完整作答、提交与结果查看已完成真实 Docker 浏览器验收；项目已新增 `npm run screenshots:demo` 演示截图脚本，并已在 `docs/demo-screenshots/` 产出 11 张真实桌面截图。
 - GitHub Actions CI #26 已确认后端、前端、Docker Build 和 Browser E2E 全部通过。
 - 已建立隔离的 `e2e` Profile，并以 Playwright 覆盖真实账号密码、验证码、JWT、课程浏览、“刷题答错→错题本→掌握度更新→重练”、“考试三题作答→提交→自动判分→结果详情”，以及“用户投稿→管理员通过→正式入库”闭环。Round 137 已在当前源码 Docker E2E 环境中复跑 4 条全部通过，并修复重复答错逻辑删除错题导致 `/api/practice/submit` 500 的问题。若普通 Docker 环境已启动，按 `docs/TESTING.md` 使用 `--force-recreate` 切换到 E2E Profile。
@@ -225,7 +229,7 @@ Round 164 更新：同题、跨题、资产类型和变式难度样本均新增�
 2. 观察管理端双门槛；至少两个难度档各有 5 条首次判分且覆盖 3 位学习者前，不进入分层效果判断或推荐策略。
 3. 样本足够后评估课程或用户基础分层，避免聚合结构误导。
 
-当前验收基线：后端默认测试 410 passed；真实 MySQL Testcontainers 全量基线 55 passed，本轮聚焦 2 passed；前端 Vitest 222 passed、生产构建成功；`docker compose config --quiet` 成功。核心用户与管理员页面已有 5 条真实 Docker Playwright E2E；后续临时浏览器流程验收按 `skills/frontend-flow-test/SKILL.md` 只跑最小相关闭环。
+当前验收基线：后端默认测试 410 passed，Checkstyle 0 违规、SpotBugs 0 问题并生成 JaCoCo 报告；真实 MySQL Testcontainers 历史全量基线 55 passed，本机本轮因 Docker daemon 不可用未重跑，CI 已新增独立集成测试 job；前端 Vitest 222 passed、覆盖率报告、ESLint（0 阻断）、Prettier 聚焦检查和生产构建成功；`docker compose config --quiet` 成功。核心用户与管理员页面已有 5 条真实 Docker Playwright E2E。
 当前不优先做：PDF / 图片 OCR、爬虫、用户上传题库自动入库、AI 自动审核发布题目、复杂推荐系统（包括向量推荐）。
 后续扩展方向：见 docs/AI_LEARNING_PLATFORM_STRATEGY.md、docs/FUTURE.md 和 docs/TESTING.md；测试按业务风险补充。
 

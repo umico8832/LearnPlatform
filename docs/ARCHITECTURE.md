@@ -98,6 +98,12 @@
 
 ## 三、项目目录结构
 
+### 3.0 当前模块化补充
+
+- `LearningDiagnosisService` 保留综合诊断与 AI 建议入口；单题错因分析由 `LearningQuestionErrorAnalysisService` 负责，相似题评分由 `SimilarQuestionRecommendationService` 负责，Controller 契约不变。
+- 管理端题目页将内容治理抽屉拆到 `QuestionGovernanceDrawers.vue`，导入导出拆到 `useQuestionImportExport.ts`，展示映射拆到 `questionManagePresentation.ts`。
+- 后端构建在 `verify` 阶段执行 Checkstyle、SpotBugs 和 JaCoCo；前端通过 ESLint、TypeScript、Vitest 与 Playwright 分层验证。
+
 ### 3.1 项目根目录
 
 ```

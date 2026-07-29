@@ -1,7 +1,7 @@
 /**
  * 统一响应结构
  */
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   code: number
   message: string
   data: T
@@ -10,7 +10,7 @@ export interface ApiResponse<T = any> {
 /**
  * 分页响应结构
  */
-export interface PageData<T = any> {
+export interface PageData<T = unknown> {
   records: T[]
   total: number
   page: number

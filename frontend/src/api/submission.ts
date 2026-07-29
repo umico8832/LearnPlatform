@@ -124,7 +124,7 @@ export interface SubmissionDifficultyAssessment {
 
 /** 提交题目投稿 */
 export function submitQuestion(data: SubmissionForm) {
-  return request.post<any, ApiResponse<QuestionSubmissionVO>>('/submission', data)
+  return request.post<unknown, ApiResponse<QuestionSubmissionVO>>('/submission', data)
 }
 
 /** 我的投稿列表 */
@@ -133,12 +133,12 @@ export function getMySubmissions(params?: {
   pageSize?: number
   status?: number
 }) {
-  return request.get<any, ApiResponse<PageResult<QuestionSubmissionVO>>>('/submission/my', { params })
+  return request.get<unknown, ApiResponse<PageResult<QuestionSubmissionVO>>>('/submission/my', { params })
 }
 
 /** 投稿详情 */
 export function getSubmissionDetail(id: number) {
-  return request.get<any, ApiResponse<QuestionSubmissionVO>>(`/submission/${id}`)
+  return request.get<unknown, ApiResponse<QuestionSubmissionVO>>(`/submission/${id}`)
 }
 
 // ========== 管理端 ==========
@@ -151,52 +151,52 @@ export function getAdminSubmissions(params?: {
   courseId?: number
   keyword?: string
 }) {
-  return request.get<any, ApiResponse<PageResult<QuestionSubmissionVO>>>('/admin/submission', { params })
+  return request.get<unknown, ApiResponse<PageResult<QuestionSubmissionVO>>>('/admin/submission', { params })
 }
 
 /** 管理端投稿详情 */
 export function getAdminSubmissionDetail(id: number) {
-  return request.get<any, ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}`)
+  return request.get<unknown, ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}`)
 }
 
 /** 审核投稿 */
 export function reviewSubmission(id: number, data: ReviewForm) {
-  return request.post<any, ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}/review`, data)
+  return request.post<unknown, ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}/review`, data)
 }
 
 /** 投稿入库 */
 export function importSubmission(id: number) {
-  return request.post<any, ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}/import`)
+  return request.post<unknown, ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}/import`)
 }
 
 /** 投稿统计 */
 export function getSubmissionStats() {
-  return request.get<any, ApiResponse<SubmissionStats>>('/admin/submission/stats')
+  return request.get<unknown, ApiResponse<SubmissionStats>>('/admin/submission/stats')
 }
 
 /** AI 质检 */
 export function qualityCheckSubmission(id: number) {
-  return request.post<any, ApiResponse<SubmissionQualityCheck>>(`/admin/submission/${id}/quality-check`)
+  return request.post<unknown, ApiResponse<SubmissionQualityCheck>>(`/admin/submission/${id}/quality-check`)
 }
 
 /** AI 知识点标注 */
 export function kpTaggingSubmission(id: number) {
-  return request.post<any, ApiResponse<SubmissionKPTagging>>(`/admin/submission/${id}/kp-tagging`)
+  return request.post<unknown, ApiResponse<SubmissionKPTagging>>(`/admin/submission/${id}/kp-tagging`)
 }
 
 /** 应用知识点标注结果到投稿 */
 export function applyKnowledgePoints(id: number, knowledgePointIds: string) {
-  return request.post<any, ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}/apply-kp`, null, {
+  return request.post<unknown, ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}/apply-kp`, null, {
     params: { knowledgePointIds },
   })
 }
 
 /** AI 难度评估 */
 export function assessDifficulty(id: number) {
-  return request.post<any, ApiResponse<SubmissionDifficultyAssessment>>(`/admin/submission/${id}/difficulty-assessment`)
+  return request.post<unknown, ApiResponse<SubmissionDifficultyAssessment>>(`/admin/submission/${id}/difficulty-assessment`)
 }
 
 /** AI 生成审核意见（基于质检结果） */
 export function generateReviewComment(id: number) {
-  return request.post<any, ApiResponse<string>>(`/admin/submission/${id}/generate-review-comment`)
+  return request.post<unknown, ApiResponse<string>>(`/admin/submission/${id}/generate-review-comment`)
 }

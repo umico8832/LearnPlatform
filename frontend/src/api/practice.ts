@@ -76,12 +76,12 @@ export function getPracticeQuestions(params?: {
   difficulty?: number
   count?: number
 }) {
-  return request.get<any, ApiResponse<PracticeQuestionVO[]>>('/practice/questions', { params })
+  return request.get<unknown, ApiResponse<PracticeQuestionVO[]>>('/practice/questions', { params })
 }
 
 /** 提交答案 */
 export function submitAnswer(data: PracticeSubmitRequest) {
-  return request.post<any, ApiResponse<PracticeResultVO>>('/practice/submit', data)
+  return request.post<unknown, ApiResponse<PracticeResultVO>>('/practice/submit', data)
 }
 
 /** 获取练习记录（分页） */
@@ -92,12 +92,12 @@ export function getPracticeRecords(params: {
   courseId?: number
   isCorrect?: number
 }) {
-  return request.get<any, ApiResponse<PageData<PracticeRecordVO>>>('/practice/records', { params })
+  return request.get<unknown, ApiResponse<PageData<PracticeRecordVO>>>('/practice/records', { params })
 }
 
 /** 获取练习统计 */
 export function getPracticeStats() {
-  return request.get<any, ApiResponse<PracticeStatsVO>>('/practice/stats')
+  return request.get<unknown, ApiResponse<PracticeStatsVO>>('/practice/stats')
 }
 
 /** 获取错题重练题目 */
@@ -105,7 +105,7 @@ export function getWrongQuestionPractice(params?: {
   masteryLevel?: number
   count?: number
 }) {
-  return request.get<any, ApiResponse<PracticeQuestionVO[]>>('/practice/wrong-questions', { params })
+  return request.get<unknown, ApiResponse<PracticeQuestionVO[]>>('/practice/wrong-questions', { params })
 }
 
 /** 获取收藏题练习题目 */
@@ -113,7 +113,7 @@ export function getFavoritePractice(params?: {
   count?: number
   questionId?: number
 }) {
-  return request.get<any, ApiResponse<PracticeQuestionVO[]>>('/practice/favorites', { params })
+  return request.get<unknown, ApiResponse<PracticeQuestionVO[]>>('/practice/favorites', { params })
 }
 
 /** 自适应智能推荐题目 */
@@ -123,12 +123,12 @@ export function getAdaptiveQuestions(params?: {
   questionType?: string
   count?: number
 }) {
-  return request.get<any, ApiResponse<PracticeQuestionVO[]>>('/practice/adaptive', { params })
+  return request.get<unknown, ApiResponse<PracticeQuestionVO[]>>('/practice/adaptive', { params })
 }
 
 /** 获取自适应推荐摘要（各难度答题表现和推荐权重） */
 export function getAdaptiveSummary() {
-  return request.get<any, ApiResponse<AdaptiveSummaryVO>>('/practice/adaptive/summary')
+  return request.get<unknown, ApiResponse<AdaptiveSummaryVO>>('/practice/adaptive/summary')
 }
 
 /** 自适应推荐摘要 VO */

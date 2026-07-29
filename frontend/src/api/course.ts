@@ -30,30 +30,30 @@ interface PageResult<T> {
 
 /** 获取所有启用课程（不分页） */
 export function getAllCourses() {
-  return request.get<any, ApiResponse<CourseVO[]>>('/courses/list')
+  return request.get<unknown, ApiResponse<CourseVO[]>>('/courses/list')
 }
 
 /** 获取课程分页 */
 export function getCoursePage(params: { pageNum?: number; pageSize?: number; keyword?: string }) {
-  return request.get<any, ApiResponse<PageResult<CourseVO>>>('/courses', { params })
+  return request.get<unknown, ApiResponse<PageResult<CourseVO>>>('/courses', { params })
 }
 
 /** 获取课程详情 */
 export function getCourseById(id: number) {
-  return request.get<any, ApiResponse<CourseVO>>(`/courses/${id}`)
+  return request.get<unknown, ApiResponse<CourseVO>>(`/courses/${id}`)
 }
 
 /** 创建课程（管理端） */
 export function createCourse(data: CourseForm) {
-  return request.post<any, ApiResponse<CourseVO>>('/admin/courses', data)
+  return request.post<unknown, ApiResponse<CourseVO>>('/admin/courses', data)
 }
 
 /** 更新课程（管理端） */
 export function updateCourse(id: number, data: CourseForm) {
-  return request.put<any, ApiResponse<CourseVO>>(`/admin/courses/${id}`, data)
+  return request.put<unknown, ApiResponse<CourseVO>>(`/admin/courses/${id}`, data)
 }
 
 /** 删除课程（管理端） */
 export function deleteCourse(id: number) {
-  return request.delete<any, ApiResponse<void>>(`/admin/courses/${id}`)
+  return request.delete<unknown, ApiResponse<void>>(`/admin/courses/${id}`)
 }

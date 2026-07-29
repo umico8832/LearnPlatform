@@ -260,7 +260,7 @@ const loadRecords = async () => {
       records.value = res.data.records || []
       total.value = res.data.total || 0
     }
-  } catch (e) {
+  } catch {
     ElMessage.error('获取错题列表失败')
   } finally {
     loading.value = false
@@ -273,7 +273,7 @@ const loadStats = async () => {
     if (res.code === 0) {
       stats.value = res.data
     }
-  } catch (e) {
+  } catch {
     // ignore
   }
 }
@@ -290,7 +290,7 @@ const handleMasteryChange = async (id: number, masteryLevel: number) => {
       ElMessage.success('掌握程度已更新')
       loadStats()
     }
-  } catch (e) {
+  } catch {
     ElMessage.error('更新失败')
   }
 }
@@ -303,7 +303,7 @@ const handleRemove = async (id: number) => {
       loadRecords()
       loadStats()
     }
-  } catch (e) {
+  } catch {
     ElMessage.error('移出失败')
   }
 }
@@ -369,7 +369,7 @@ const handleStartWrongPractice = async () => {
     } else {
       ElMessage.error(res.message || '获取错题失败')
     }
-  } catch (e) {
+  } catch {
     ElMessage.error('获取错题重练题目失败')
   } finally {
     startPracticeLoading.value = false

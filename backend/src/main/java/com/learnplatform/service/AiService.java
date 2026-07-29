@@ -418,10 +418,6 @@ public class AiService {
     }
 
     private AiPrompt buildReviewBasedSuggestionPrompt(Long userId) {
-        ReviewContextVO ctx = new ReviewContextVO();
-        // 这里需要从 SpacedRepetitionService 获取上下文，但为了避免循环依赖，我们直接在这里构建
-        // 由调用方传入 context 或在 controller 层组装
-
         String systemPrompt = "你是一位资深学习教练，精通间隔重复（Spaced Repetition）和艾宾浩斯遗忘曲线理论。"
                 + "请根据用户当前的复习计划数据和答题表现，生成个性化复习建议。\n\n"
                 + "要求：\n"

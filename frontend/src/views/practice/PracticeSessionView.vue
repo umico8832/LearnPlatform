@@ -306,7 +306,7 @@ const handleSubmit = async () => {
     } else {
       ElMessage.error(res.message || '提交失败')
     }
-  } catch (e) {
+  } catch {
     ElMessage.error('提交答案失败')
   } finally {
     submitting.value = false

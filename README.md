@@ -225,6 +225,21 @@ npm run screenshots:demo
 
 自动化测试的分层、范围和新增门槛见 [docs/TESTING.md](docs/TESTING.md)。
 
+本地质量检查：
+
+```bash
+cd backend
+mvn clean verify
+
+cd ../frontend
+npm run lint
+npm run format:check
+npm run coverage
+npm run build
+```
+
+后端 `verify` 包含 Checkstyle、SpotBugs 和 JaCoCo 报告生成；CI 另有独立 Testcontainers job 验证真实 MySQL 与 Flyway 约束。
+
 浏览器 E2E 使用隔离 Docker Profile 运行，避免削弱开发与生产环境的验证码安全；执行方式见 `docs/TESTING.md`。
 
 Phase 20 演示验收与 AI 运营治理、Phase 21 前端信息架构与视觉体验优化均已完成，Phase 22 AI 学习效果验证持续推进。平台会记录用户实际看到的 AI 学习资产；V19 后新生成的变式题为结构化单选题，答案仅保存在服务端，首次提交后真实判分并锁定结果，旧 Markdown 缓存仍兼容显式完成。管理端除变式正确率与同题作答对照外，还会展示真实首次判分在 1-5 难度档的样本结构、按资产类型切分的同题观察，并排除原题重答，在相关阅读前后 30 天内观察共享知识点的跨题迁移。同题、跨题、资产类型和难度观察都同时要求最低作答量与去重学习者覆盖，避免少数高频用户主导方向判断；多资产暴露可能产生重叠样本，因此不直接排名或自动推荐。所有统计均明确为观察性数据，不把调用量、生成次数或完成按钮冒充自动判分。登录、课程、刷题错题、考试判分、投稿审核和高频页面巡检已有 5 条真实 Docker E2E 覆盖。后端默认测试 410 个、前端 Vitest 222 个均已通过；5 个 Testcontainers 集成测试类的 55 个真实 MySQL 用例全部通过。详见 [docs/ROADMAP.md](docs/ROADMAP.md)。

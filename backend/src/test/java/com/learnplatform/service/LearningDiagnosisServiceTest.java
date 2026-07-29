@@ -62,7 +62,11 @@ class LearningDiagnosisServiceTest {
                 knowledgePointMapper, questionKnowledgePointMapper,
                 questionMapper, practiceRecordMapper,
                 wrongQuestionMapper, courseMapper,
-                aiProvider, aiService
+                aiProvider, aiService,
+                new LearningQuestionErrorAnalysisService(questionMapper, practiceRecordMapper,
+                        wrongQuestionMapper, courseMapper, knowledgePointMapper, questionKnowledgePointMapper),
+                new SimilarQuestionRecommendationService(questionMapper, practiceRecordMapper,
+                        courseMapper, knowledgePointMapper, questionKnowledgePointMapper)
         );
     }
 

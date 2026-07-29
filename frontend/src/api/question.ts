@@ -72,12 +72,12 @@ export function getQuestionPage(params: {
   courseId?: number
   difficulty?: number
 }) {
-  return request.get<any, ApiResponse<PageResult<QuestionVO>>>('/questions', { params })
+  return request.get<unknown, ApiResponse<PageResult<QuestionVO>>>('/questions', { params })
 }
 
 /** 获取题目详情（用户端） */
 export function getQuestionById(id: number) {
-  return request.get<any, ApiResponse<QuestionVO>>(`/questions/${id}`)
+  return request.get<unknown, ApiResponse<QuestionVO>>(`/questions/${id}`)
 }
 
 /** 获取题目分页（管理端） */
@@ -166,27 +166,27 @@ export function getAdminQuestionPage(params: {
   status?: number
   sourceType?: string
 }) {
-  return request.get<any, ApiResponse<PageResult<QuestionVO>>>('/admin/questions', { params })
+  return request.get<unknown, ApiResponse<PageResult<QuestionVO>>>('/admin/questions', { params })
 }
 
 /** 获取题目详情（管理端） */
 export function getAdminQuestionById(id: number) {
-  return request.get<any, ApiResponse<QuestionVO>>(`/admin/questions/${id}`)
+  return request.get<unknown, ApiResponse<QuestionVO>>(`/admin/questions/${id}`)
 }
 
 /** 创建题目（管理端） */
 export function createQuestion(data: QuestionForm) {
-  return request.post<any, ApiResponse<QuestionVO>>('/admin/questions', data)
+  return request.post<unknown, ApiResponse<QuestionVO>>('/admin/questions', data)
 }
 
 /** 更新题目（管理端） */
 export function updateQuestion(id: number, data: QuestionForm) {
-  return request.put<any, ApiResponse<QuestionVO>>(`/admin/questions/${id}`, data)
+  return request.put<unknown, ApiResponse<QuestionVO>>(`/admin/questions/${id}`, data)
 }
 
 /** 删除题目（管理端） */
 export function deleteQuestion(id: number) {
-  return request.delete<any, ApiResponse<void>>(`/admin/questions/${id}`)
+  return request.delete<unknown, ApiResponse<void>>(`/admin/questions/${id}`)
 }
 
 /** 检测疑似重复题目 */
@@ -196,7 +196,7 @@ export function detectDuplicateQuestions(params?: {
   minSimilarity?: number
   limit?: number
 }) {
-  return request.get<any, ApiResponse<QuestionDuplicateGroupVO[]>>('/admin/questions/duplicates', { params })
+  return request.get<unknown, ApiResponse<QuestionDuplicateGroupVO[]>>('/admin/questions/duplicates', { params })
 }
 
 /** 提交题目纠错反馈 */
@@ -204,7 +204,7 @@ export function submitQuestionCorrectionReport(questionId: number, data: {
   reportType: string
   description: string
 }) {
-  return request.post<any, ApiResponse<QuestionCorrectionReportVO>>(`/questions/${questionId}/correction-reports`, data)
+  return request.post<unknown, ApiResponse<QuestionCorrectionReportVO>>(`/questions/${questionId}/correction-reports`, data)
 }
 
 /** 我的题目纠错反馈 */
@@ -213,7 +213,7 @@ export function getMyQuestionCorrectionReports(params?: {
   pageSize?: number
   status?: string
 }) {
-  return request.get<any, ApiResponse<PageResult<QuestionCorrectionReportVO>>>('/questions/correction-reports/my', { params })
+  return request.get<unknown, ApiResponse<PageResult<QuestionCorrectionReportVO>>>('/questions/correction-reports/my', { params })
 }
 
 /** 管理端题目纠错反馈列表 */
@@ -223,7 +223,7 @@ export function getAdminQuestionCorrectionReports(params?: {
   status?: string
   questionId?: number
 }) {
-  return request.get<any, ApiResponse<PageResult<QuestionCorrectionReportVO>>>('/admin/questions/correction-reports', { params })
+  return request.get<unknown, ApiResponse<PageResult<QuestionCorrectionReportVO>>>('/admin/questions/correction-reports', { params })
 }
 
 /** 管理端处理题目纠错反馈 */
@@ -231,12 +231,12 @@ export function processQuestionCorrectionReport(reportId: number, data: {
   status: string
   handlerComment: string
 }) {
-  return request.post<any, ApiResponse<QuestionCorrectionReportVO>>(`/admin/questions/correction-reports/${reportId}/process`, data)
+  return request.post<unknown, ApiResponse<QuestionCorrectionReportVO>>(`/admin/questions/correction-reports/${reportId}/process`, data)
 }
 
 /** 管理端题目版本记录 */
 export function getQuestionVersions(questionId: number) {
-  return request.get<any, ApiResponse<QuestionVersionVO[]>>(`/admin/questions/${questionId}/versions`)
+  return request.get<unknown, ApiResponse<QuestionVersionVO[]>>(`/admin/questions/${questionId}/versions`)
 }
 
 /** 题目导入结果 */
@@ -270,7 +270,7 @@ export function downloadTemplate() {
 export function importQuestions(file: File) {
   const formData = new FormData()
   formData.append('file', file)
-  return request.post<any, ApiResponse<QuestionImportResult>>('/admin/questions/import', formData, {
+  return request.post<unknown, ApiResponse<QuestionImportResult>>('/admin/questions/import', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }
@@ -279,7 +279,7 @@ export function importQuestions(file: File) {
 export function importQuestionsMarkdown(file: File) {
   const formData = new FormData()
   formData.append('file', file)
-  return request.post<any, ApiResponse<QuestionImportResult>>('/admin/questions/import-markdown', formData, {
+  return request.post<unknown, ApiResponse<QuestionImportResult>>('/admin/questions/import-markdown', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }
@@ -293,22 +293,22 @@ export function downloadMarkdownTemplate() {
 
 /** 获取题目来源统计 */
 export function getSourceStats() {
-  return request.get<any, ApiResponse<QuestionSourceStatsVO[]>>('/admin/questions/source-stats')
+  return request.get<unknown, ApiResponse<QuestionSourceStatsVO[]>>('/admin/questions/source-stats')
 }
 
 /** 获取待复审题目列表 */
 export function getReviewOverdue(params?: { pageNum?: number; pageSize?: number }) {
-  return request.get<any, ApiResponse<PageResult<QuestionVO>>>('/admin/questions/review-overdue', { params })
+  return request.get<unknown, ApiResponse<PageResult<QuestionVO>>>('/admin/questions/review-overdue', { params })
 }
 
 /** 获取题目的复审记录 */
 export function getReviewRecords(questionId: number) {
-  return request.get<any, ApiResponse<QuestionReviewRecordVO[]>>(`/admin/questions/${questionId}/review-records`)
+  return request.get<unknown, ApiResponse<QuestionReviewRecordVO[]>>(`/admin/questions/${questionId}/review-records`)
 }
 
 /** 获取 AI 复审建议 */
 export function getReviewSuggestion(questionId: number) {
-  return request.get<any, ApiResponse<QuestionReviewSuggestionVO>>(`/admin/questions/${questionId}/review-suggestion`)
+  return request.get<unknown, ApiResponse<QuestionReviewSuggestionVO>>(`/admin/questions/${questionId}/review-suggestion`)
 }
 
 /** 执行复审 */
@@ -318,5 +318,5 @@ export function performReReview(questionId: number, data: {
   newDifficulty?: number
   comment: string
 }) {
-  return request.post<any, ApiResponse<QuestionReviewRecordVO>>(`/admin/questions/${questionId}/re-review`, data)
+  return request.post<unknown, ApiResponse<QuestionReviewRecordVO>>(`/admin/questions/${questionId}/re-review`, data)
 }

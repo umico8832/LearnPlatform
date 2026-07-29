@@ -93,59 +93,59 @@ export interface SmartExamPreview {
 // ======================== 管理端 API ========================
 
 export function getExamPaperList(params?: { pageNum?: number; pageSize?: number; courseId?: number; status?: number }) {
-  return request.get<any, ApiResponse<PageData<ExamPaperVO>>>('/admin/exam-papers', { params })
+  return request.get<unknown, ApiResponse<PageData<ExamPaperVO>>>('/admin/exam-papers', { params })
 }
 
 export function getExamPaperDetail(id: number) {
-  return request.get<any, ApiResponse<ExamPaperVO>>(`/admin/exam-papers/${id}`)
+  return request.get<unknown, ApiResponse<ExamPaperVO>>(`/admin/exam-papers/${id}`)
 }
 
 export function createExamPaper(data: ExamPaperCreateRequest) {
-  return request.post<any, ApiResponse<ExamPaperVO>>('/admin/exam-papers', data)
+  return request.post<unknown, ApiResponse<ExamPaperVO>>('/admin/exam-papers', data)
 }
 
 export function updateExamPaper(id: number, data: ExamPaperCreateRequest) {
-  return request.put<any, ApiResponse<ExamPaperVO>>(`/admin/exam-papers/${id}`, data)
+  return request.put<unknown, ApiResponse<ExamPaperVO>>(`/admin/exam-papers/${id}`, data)
 }
 
 export function deleteExamPaper(id: number) {
-  return request.delete<any, ApiResponse<null>>(`/admin/exam-papers/${id}`)
+  return request.delete<unknown, ApiResponse<null>>(`/admin/exam-papers/${id}`)
 }
 
 export function publishExamPaper(id: number) {
-  return request.post<any, ApiResponse<null>>(`/admin/exam-papers/${id}/publish`)
+  return request.post<unknown, ApiResponse<null>>(`/admin/exam-papers/${id}/publish`)
 }
 
 export function smartExamPreview(data: SmartExamRequest) {
-  return request.post<any, ApiResponse<SmartExamPreview>>('/admin/exam-papers/smart-preview', data)
+  return request.post<unknown, ApiResponse<SmartExamPreview>>('/admin/exam-papers/smart-preview', data)
 }
 
 export function smartExamCreate(data: SmartExamPreview) {
-  return request.post<any, ApiResponse<ExamPaperVO>>('/admin/exam-papers/smart-create', data)
+  return request.post<unknown, ApiResponse<ExamPaperVO>>('/admin/exam-papers/smart-create', data)
 }
 
 // ======================== 用户端 API ========================
 
 export function getPublishedPapers(params?: { pageNum?: number; pageSize?: number; courseId?: number }) {
-  return request.get<any, ApiResponse<PageData<ExamPaperVO>>>('/exam/papers', { params })
+  return request.get<unknown, ApiResponse<PageData<ExamPaperVO>>>('/exam/papers', { params })
 }
 
 export function getPaperDetail(id: number) {
-  return request.get<any, ApiResponse<ExamPaperVO>>(`/exam/papers/${id}`)
+  return request.get<unknown, ApiResponse<ExamPaperVO>>(`/exam/papers/${id}`)
 }
 
 export function startExam(paperId: number) {
-  return request.post<any, ApiResponse<ExamRecordVO>>(`/exam/start/${paperId}`)
+  return request.post<unknown, ApiResponse<ExamRecordVO>>(`/exam/start/${paperId}`)
 }
 
 export function submitExam(data: ExamSubmitRequest) {
-  return request.post<any, ApiResponse<ExamRecordVO>>('/exam/submit', data)
+  return request.post<unknown, ApiResponse<ExamRecordVO>>('/exam/submit', data)
 }
 
 export function getExamResult(recordId: number) {
-  return request.get<any, ApiResponse<ExamRecordVO>>(`/exam/result/${recordId}`)
+  return request.get<unknown, ApiResponse<ExamRecordVO>>(`/exam/result/${recordId}`)
 }
 
 export function getMyExamRecords(params?: { pageNum?: number; pageSize?: number }) {
-  return request.get<any, ApiResponse<PageData<ExamRecordVO>>>('/exam/records', { params })
+  return request.get<unknown, ApiResponse<PageData<ExamRecordVO>>>('/exam/records', { params })
 }

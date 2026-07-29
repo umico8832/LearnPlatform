@@ -104,7 +104,11 @@ const isMultiSelected = (qId: number, label: string) => multiAnswers.value[qId]?
 const toggleMulti = (qId: number, label: string) => {
   if (!multiAnswers.value[qId]) multiAnswers.value[qId] = new Set()
   const s = multiAnswers.value[qId]
-  s.has(label) ? s.delete(label) : s.add(label)
+  if (s.has(label)) {
+    s.delete(label)
+  } else {
+    s.add(label)
+  }
   answers.value[qId] = Array.from(s).sort().join(',')
 }
 
@@ -161,7 +165,7 @@ const doSubmit = async () => {
       ElMessage.error(res.message || '提交失败')
       submitted.value = false
     }
-  } catch (e) {
+  } catch {
     ElMessage.error('提交失败')
     submitted.value = false
   }

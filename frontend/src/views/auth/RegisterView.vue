@@ -78,7 +78,7 @@ async function handleRegister() {
 
   loading.value = true
   try {
-    await request.post<any, ApiResponse<UserInfo>>('/auth/register', {
+    await request.post<unknown, ApiResponse<UserInfo>>('/auth/register', {
       username: form.username,
       password: form.password,
       nickname: form.nickname || undefined,

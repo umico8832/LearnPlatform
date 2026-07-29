@@ -265,7 +265,7 @@ async function loadStats() {
   try {
     const { data } = await getReviewStats()
     stats.value = data
-  } catch (e) {
+  } catch {
     // ignore
   }
 }
@@ -274,7 +274,7 @@ async function loadDueCards() {
   try {
     const { data } = await getDueReviewCards(undefined, 30)
     dueCards.value = data
-  } catch (e) {
+  } catch {
     ElMessage.error('获取待复习题目失败')
   }
 }
@@ -284,7 +284,7 @@ async function loadAllCards() {
   try {
     const { data } = await getAllReviewCards()
     allCards.value = data
-  } catch (e) {
+  } catch {
     ElMessage.error('获取复习卡片失败')
   } finally {
     cardsLoading.value = false

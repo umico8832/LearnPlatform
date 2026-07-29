@@ -33,7 +33,7 @@ export const useUserStore = defineStore('user', () => {
   async function fetchUserInfo() {
     if (!token.value) return
     try {
-      const res = await request.get<any, ApiResponse<UserInfo>>('/auth/me')
+      const res = await request.get<unknown, ApiResponse<UserInfo>>('/auth/me')
       userInfo.value = res.data
     } catch {
       clearLoginInfo()

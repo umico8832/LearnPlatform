@@ -18,6 +18,8 @@
 - 组件与页面测试：安全渲染、表单提交和关键交互。
 - API 封装测试：请求路径、HTTP 方法、参数结构和特殊响应处理。
 - Playwright 浏览器 E2E：在隔离 Docker 环境中覆盖真实验证码登录、JWT 会话和关键页面跳转。
+- ESLint：检查 Vue/TypeScript 的未使用变量、无效表达式和 Vue 模板基础规则；存量显式 `any` 当前以警告呈现，新代码应优先使用明确类型或 `unknown`。
+- Prettier：通过 `npm run format:check` 检查工程配置与本轮完成结构拆分的题目管理模块；存量页面按后续修改范围逐步纳入，避免一次性格式化制造大范围无语义 diff。
 
 前端 DOM 环境统一使用 `happy-dom`，不同时维护多个 DOM 模拟实现。
 
@@ -98,5 +100,7 @@ mvn test -DexcludedGroups= -Dtest=AiVariantTrainingIntegrationTest
 ```
 
 当前 Testcontainers 版本为 `1.21.4`，用于兼容 Docker Desktop / Docker Engine 29 的 API 变化。集成测试容器数据库名与基线迁移保持为 `learn_platform`，Flyway 使用容器 root 用户执行迁移，业务数据源仍使用测试用户。现有 5 个集成测试类共 55 个用例；其中 `AiVariantTrainingIntegrationTest` 专门验证 Flyway V18/V19、变式训练唯一约束、幂等开始、旧版重复完成、结构化首次判分和正确率聚合。
+
+GitHub Actions 将 Testcontainers 集成测试作为独立 job 执行，避免默认 `excludedGroups=integration` 让真实 MySQL 约束退出提交门禁。后端常规 job 使用 `mvn clean verify`，同时执行 Checkstyle、SpotBugs 和 JaCoCo 报告生成。
 
 若本地 Docker CLI 可用但 Testcontainers 报无法找到 Docker environment，先确认依赖版本、Docker context 和 socket 路径；不要把 0 tests 当作集成测试通过。

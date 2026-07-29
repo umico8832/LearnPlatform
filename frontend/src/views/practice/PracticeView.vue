@@ -225,7 +225,7 @@ const loadStats = async () => {
     if (res.code === 0) {
       stats.value = res.data
     }
-  } catch (e) {
+  } catch {
     // ignore
   } finally {
     statsLoading.value = false
@@ -238,7 +238,7 @@ const loadCourses = async () => {
     if (res.code === 0) {
       courseList.value = res.data?.records || []
     }
-  } catch (e) {
+  } catch {
     // ignore
   }
 }
@@ -249,7 +249,7 @@ const loadAdaptiveSummary = async () => {
     if (res.code === 0 && res.data && res.data.totalAnswered > 0) {
       adaptiveSummary.value = res.data
     }
-  } catch (e) {
+  } catch {
     // ignore
   } finally {
     adaptiveLoading.value = false
@@ -270,7 +270,7 @@ const startAdaptivePractice = async () => {
     } else {
       ElMessage.warning('暂无可推荐的题目，请先添加题目或调整筛选条件')
     }
-  } catch (e) {
+  } catch {
     ElMessage.error('获取题目失败')
   } finally {
     adaptiveStartLoading.value = false
@@ -293,7 +293,7 @@ const startPractice = async () => {
     } else {
       ElMessage.warning('未找到符合条件的题目，请调整筛选条件')
     }
-  } catch (e) {
+  } catch {
     ElMessage.error('获取题目失败')
   } finally {
     loading.value = false
