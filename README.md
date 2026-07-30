@@ -224,6 +224,7 @@ npm run screenshots:demo
 详见 [docs/ROADMAP.md](docs/ROADMAP.md)
 
 自动化测试的分层、范围和新增门槛见 [docs/TESTING.md](docs/TESTING.md)。
+AI Agent 的任务契约、测试先行循环、完成定义和可复制 Prompt 见 [docs/AI_AGENT_DEVELOPMENT_WORKFLOW.md](docs/AI_AGENT_DEVELOPMENT_WORKFLOW.md)。
 
 本地质量检查：
 
@@ -238,7 +239,7 @@ npm run coverage
 npm run build
 ```
 
-后端 `verify` 包含 Checkstyle、SpotBugs 和 JaCoCo 报告生成；CI 另有独立 Testcontainers job 验证真实 MySQL 与 Flyway 约束。
+后端 `verify` 包含 Checkstyle、SpotBugs、JaCoCo 报告和覆盖率门槛；前端 `coverage` 显式统计全部 TypeScript/Vue 源码并执行防退化门槛。CI 另有独立 Testcontainers job 验证真实 MySQL 与 Flyway 约束。
 
 浏览器 E2E 使用隔离 Docker Profile 运行，避免削弱开发与生产环境的验证码安全；执行方式见 `docs/TESTING.md`。
 

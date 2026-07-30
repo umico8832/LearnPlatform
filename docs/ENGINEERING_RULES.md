@@ -73,6 +73,7 @@
 
 ## 6. 测试与文档
 
+- 行为改动按 `docs/AI_AGENT_DEVELOPMENT_WORKFLOW.md` 执行任务契约、Red-Green-Refactor、验证和交付流程。
 - 是否补测试按 `docs/TESTING.md` 判断，不追求数量，优先保护高风险业务。
 - 接口变化同步 `docs/API_DESIGN.md`。
 - 数据库变化同步 `docs/DB_DESIGN.md`。

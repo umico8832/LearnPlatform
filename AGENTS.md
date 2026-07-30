@@ -51,6 +51,7 @@
 按任务类型继续读取：
 
 - 新增功能、重构、代码归属不清：`docs/ENGINEERING_RULES.md`
+- 新增功能、修复缺陷、重构或其他行为改动：`docs/AI_AGENT_DEVELOPMENT_WORKFLOW.md`
 - 涉及测试策略、是否补测试、如何验证：`docs/TESTING.md`
 - 涉及前端浏览器流程验收、模拟用户操作、临时点击验证：`skills/frontend-flow-test/SKILL.md`，并结合 `docs/TESTING.md`
 - 涉及接口变化：`docs/API_DESIGN.md`
@@ -101,6 +102,7 @@
 - 引入无必要的复杂架构；
 - 混合多个无关任务到一次提交；
 - 大范围重构但不说明原因。
+- 对 `docs/TESTING.md` 规定必须新增测试的行为改动，未先形成有效失败用例且不说明合理例外。
 
 安全规则：
 

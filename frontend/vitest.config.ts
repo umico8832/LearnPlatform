@@ -9,6 +9,16 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/__tests__/setup.ts'],
     exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
+    coverage: {
+      include: ['src/**/*.{ts,vue}'],
+      exclude: ['src/**/*.d.ts'],
+      thresholds: {
+        statements: 12,
+        branches: 8,
+        functions: 10,
+        lines: 12,
+      },
+    },
   },
   resolve: {
     alias: {

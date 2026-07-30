@@ -86,9 +86,9 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Run tests
+      - name: Run tests with coverage gate
         working-directory: frontend
-        run: npm test
+        run: npm run coverage
 
       - name: Run lint
         working-directory: frontend

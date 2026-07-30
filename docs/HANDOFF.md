@@ -16,7 +16,7 @@
 
 ## 2. 当前项目阶段
 
-当前阶段：Phase 20 — 演示验收与 AI 运营治理、Phase 21 — 前端信息架构与视觉体验优化均已完成；Phase 22 — AI 学习效果验证持续推进。Round 165 完成工程质量门禁、真实 MySQL CI 和首轮大模块拆分。
+当前阶段：Phase 20 — 演示验收与 AI 运营治理、Phase 21 — 前端信息架构与视觉体验优化均已完成；Phase 22 — AI 学习效果验证持续推进。Round 165 完成工程质量门禁、真实 MySQL CI 和首轮大模块拆分；Round 166 建立 AI Agent 任务 Prompt、风险驱动 TDD 协议、PR 证据清单和前后端覆盖率防退化门禁。
 
 下一阶段主线：继续积累 `ai_asset_view`、`ai_variant_training`、`ai_variant_question` 与 `practice_record` 真实样本；同题、跨题、资产类型和变式难度观察已同时检查作答量与去重学习者数，比较组需至少 5 条作答、3 位学习者才输出方向性状态。多资产暴露样本允许重叠且不进入资产排名或自动推荐。样本足够后再评估课程或用户基础分层。不要用少数高频用户、调用量、生成次数或旧版完成按钮推断学习效果。Playwright 现有 5 条真实 E2E，高频页面巡检会拦截 `/api/` 5xx 与浏览器 `console.error`。OCR、爬虫、自动入库和复杂推荐仍非当前优先级。
 
@@ -197,6 +197,7 @@ Round 105 已验证 Docker Redis 网络连接、8 个缓存/管理接口及前�
 
 按任务类型继续阅读：
 - 新增功能、重构、结构归属不清：docs/ENGINEERING_RULES.md
+- 新增功能、修复缺陷、重构或其他行为改动：docs/AI_AGENT_DEVELOPMENT_WORKFLOW.md
 - 测试策略或是否补测试：docs/TESTING.md
 - 接口变化：docs/API_DESIGN.md
 - 数据库变化：docs/DB_DESIGN.md
@@ -219,17 +220,17 @@ Round 105 已验证 Docker Redis 网络连接、8 个缓存/管理接口及前�
 
 当前阶段：Phase 20“演示验收与 AI 运营治理”和 Phase 21“前端信息架构与视觉体验优化”均已完成，Phase 22“AI 学习效果验证”持续推进。既有 Round 105-157 已完成演示验收、AI 运营治理、内容治理、主要页面体验与性能收尾，具体历史见 `docs/CHANGELOG_AGENT.md`。
 
-Round 164 更新：同题、跨题、资产类型和变式难度样本均新增去重学习者数；比较组需同时达到至少 5 条作答和 3 位学习者才输出方向性状态，避免少数高频用户主导结论。Round 161 的私有答案与首次判分规则保持不变。
+Round 164 更新：同题、跨题、资产类型和变式难度样本均新增去重学习者数；比较组需同时达到至少 5 条作答和 3 位学习者才输出方向性状态，避免少数高频用户主导结论。Round 161 的私有答案与首次判分规则保持不变。Round 165 完成工程质量门禁和首轮大模块拆分；Round 166 新增 AI Agent 开发工作流，高风险行为与缺陷修复默认先形成有效失败用例，并启用前后端覆盖率防退化门槛。
 
 已完成模块：用户鉴权、课程知识点、题库、刷题判分、错题本、试卷考试、AI 流式能力与运营治理、学习资产与可视化讲解、统计可视化、内容治理、投稿生产、间隔重复、全局搜索、部署演示和主要页面体验；Phase 22 已具备资产真实查看、阅读后同题作答对照、按资产类型观察、变式训练完成事件、结构化首次判分、难度样本就绪度、共享知识点跨题迁移、独立学习者覆盖门槛与管理端观察面板。GitHub Actions CI #26 全部通过。
 
-最新验证：默认后端测试 410 个、前端 Vitest 222 个和前端生产构建通过；`AiVariantTrainingIntegrationTest` 2 个真实 MySQL 用例通过并确认难度档去重学习者数可聚合，既有全量基线仍为 5 个 Testcontainers 集成测试类、55 个用例；`docker compose config --quiet` 通过。
+最新验证：Round 166 后端 `mvn clean verify` 通过 410 个默认测试、Checkstyle、SpotBugs 和 JaCoCo 行 50%/分支 35% 门槛；前端 Vitest 222 个通过，显式纳入全部 TypeScript/Vue 源码后语句 12.5%、分支 8.11%、函数 10.27%、行 12.9%，四项防退化门槛通过。`AiVariantTrainingIntegrationTest` 2 个真实 MySQL 用例通过并确认难度档去重学习者数可聚合，既有全量基线仍为 5 个 Testcontainers 集成测试类、55 个用例；`docker compose config --quiet` 通过。
 下一步建议：
 1. 继续积累 `ai_asset_view`、`ai_variant_training`、`ai_variant_question` 与 `practice_record` 的真实样本。
 2. 观察管理端双门槛；至少两个难度档各有 5 条首次判分且覆盖 3 位学习者前，不进入分层效果判断或推荐策略。
 3. 样本足够后评估课程或用户基础分层，避免聚合结构误导。
 
-当前验收基线：后端默认测试 410 passed，Checkstyle 0 违规、SpotBugs 0 问题并生成 JaCoCo 报告；真实 MySQL Testcontainers 历史全量基线 55 passed，本机本轮因 Docker daemon 不可用未重跑，CI 已新增独立集成测试 job；前端 Vitest 222 passed、覆盖率报告、ESLint（0 阻断）、Prettier 聚焦检查和生产构建成功；`docker compose config --quiet` 成功。核心用户与管理员页面已有 5 条真实 Docker Playwright E2E。
+当前验收基线：后端默认测试 410 passed，Checkstyle 0 违规、SpotBugs 0 问题，JaCoCo 行 50%/分支 35% 防退化门槛启用；真实 MySQL Testcontainers 历史全量基线 55 passed，CI 有独立集成测试 job；前端 Vitest 222 passed，全源码语句/行 12%、函数 10%、分支 8% 防退化门槛启用，ESLint（0 阻断）、Prettier 聚焦检查和生产构建成功；`docker compose config --quiet` 成功。核心用户与管理员页面已有 5 条真实 Docker Playwright E2E。
 当前不优先做：PDF / 图片 OCR、爬虫、用户上传题库自动入库、AI 自动审核发布题目、复杂推荐系统（包括向量推荐）。
 后续扩展方向：见 docs/AI_LEARNING_PLATFORM_STRATEGY.md、docs/FUTURE.md 和 docs/TESTING.md；测试按业务风险补充。
 
