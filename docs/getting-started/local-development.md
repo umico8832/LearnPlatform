@@ -2,7 +2,7 @@
 
 ## 环境要求
 
-- JDK 21+（项目当前推荐 JDK 26）
+- JDK 17+（`pom.xml` 的编译基线为 Java 17）
 - Maven 3.8+
 - Node.js 20+
 - MySQL 8.0+
@@ -13,7 +13,7 @@
 cp .env.example .env
 ```
 
-编辑 `.env` 后，从仓库根目录使用项目脚本加载。不要直接 `source .env`，数据库 URL 中的 `&` 可能被 shell 当作控制符。
+变量含义见[配置说明](configuration.md)。编辑 `.env` 后，从仓库根目录使用项目脚本加载。不要直接 `source .env`，数据库 URL 中的 `&` 可能被 shell 当作控制符。
 
 ```bash
 source scripts/load-env.sh .env
@@ -41,7 +41,7 @@ mvn spring-boot:run
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
@@ -58,4 +58,4 @@ npm test
 npm run build
 ```
 
-完整质量门禁和 E2E 方式见[测试策略](../development/testing.md)。
+完整质量门禁和 E2E 方式见[测试策略](../development/testing.md)，启动异常见[常见问题排查](troubleshooting.md)。

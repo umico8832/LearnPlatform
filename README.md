@@ -42,7 +42,7 @@ cd backend
 mvn spring-boot:run
 
 cd ../frontend
-npm install
+npm ci
 npm run dev
 ```
 
@@ -98,7 +98,7 @@ LearnPlatform/
 ├── frontend/            # Vue 3 前端
 ├── backend/             # Spring Boot 后端
 ├── docs/                # 正式项目文档
-├── skills/              # LearnPlatform 项目 Skills
+├── .agents/skills/      # LearnPlatform 项目 Skills
 ├── .codex/skills/       # 第三方开源 Skills 包
 ├── scripts/             # 项目脚本
 ├── monitoring/          # 监控配置
@@ -113,8 +113,8 @@ LearnPlatform/
 - [产品路线图](docs/product/roadmap.md)
 - [系统架构](docs/architecture/overview.md)
 - [架构决策](docs/architecture/decisions/index.md)
-- [API 参考](docs/reference/api.md)
-- [数据库参考](docs/reference/database.md)
+- [API 参考](docs/reference/api/index.md)
+- [数据库参考](docs/reference/database/index.md)
 - [开发工作流](docs/development/workflow.md)
 - [测试策略](docs/development/testing.md)
 - [Agent 与 Skills](docs/development/agent-tooling.md)
@@ -129,7 +129,7 @@ LearnPlatform/
 - 普通接口：`/api/**`
 - 管理接口：`/api/admin/**`
 
-精确契约以后端代码、迁移和[参考文档](docs/reference/api.md)为准。
+精确契约以后端代码、迁移和[API 参考](docs/reference/api/index.md)为准。
 
 ## 许可证
 

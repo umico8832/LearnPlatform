@@ -53,8 +53,8 @@ LearnPlatform 是一个用于刷题、错题复习、考试和 AI 辅助学习�
 - AI 学习平台战略：`docs/product/ai-learning-platform-strategy.md`
 - 架构和模块边界：`docs/architecture/overview.md`
 - 重大架构决策：`docs/architecture/decisions/`
-- API：`docs/reference/api.md`
-- 数据库或迁移：`docs/reference/database.md`
+- API：`docs/reference/api/index.md`
+- 数据库或迁移：`docs/reference/database/index.md`
 - 新增功能、修复、重构：`docs/development/workflow.md`
 - 工程归属：`docs/development/engineering-rules.md`
 - 测试策略：`docs/development/testing.md`
@@ -67,11 +67,11 @@ LearnPlatform 是一个用于刷题、错题复习、考试和 AI 辅助学习�
 前端美化、布局或交互优化时：
 
 1. 读取 `.codex/skills/ui-ux-pro-max/SKILL.md` 获取通用 UX 和设计判断；
-2. 读取 `skills/frontend-design/SKILL.md` 获取项目落地约束；
+2. 读取 `.agents/skills/frontend-design/SKILL.md` 获取项目落地约束；
 3. 检查真实 Vue 3、Element Plus 和现有设计变量；
 4. 只有用户明确要求 shadcn/ui、Radix 或 Tailwind 时才使用 `.codex/skills/ui-styling/SKILL.md` 的实现路径。
 
-临时浏览器流程验收读取 `skills/frontend-flow-test/SKILL.md`，并结合 `docs/development/testing.md`。
+临时浏览器流程验收读取 `.agents/skills/frontend-flow-test/SKILL.md`，并结合 `docs/development/testing.md`。
 
 ## 5. 状态与文档权威来源
 
@@ -80,8 +80,8 @@ LearnPlatform 是一个用于刷题、错题复习、考试和 AI 辅助学习�
 - 每轮历史：`docs/project/changelog/`
 - 产品范围：`docs/product/prd.md`
 - 架构：`docs/architecture/`
-- API：`docs/reference/api.md`
-- 数据库：`docs/reference/database.md`
+- API：`docs/reference/api/index.md`
+- 数据库：`docs/reference/database/index.md`
 
 README、HANDOFF 和 ROADMAP 不复制 STATUS 中的动态细节。
 
@@ -96,7 +96,7 @@ README、HANDOFF 和 ROADMAP 不复制 STATUS 中的动态细节。
 
 ## 6. Skills 所有权
 
-- `skills/` 是 LearnPlatform 项目自有或显式依赖的跨 Agent 工作流。
+- `.agents/skills/` 是 LearnPlatform 项目自有、遵循当前 Codex 仓库级标准的跨 Agent 工作流。
 - `.codex/skills/` 是通过上游默认安装方式维护的第三方开源 Skill 包。
 - 不直接修改、移动或重写 `.codex/skills/`；升级时按真实上游方式执行。
 - 使用不熟悉的 Skill 前必须完整阅读对应 `SKILL.md`，不得根据名称猜测。

@@ -1,64 +1,82 @@
-# Agent 与 Skills 工具边界
+# Agent 与 Skills
 
-本文档说明 LearnPlatform 中长期规则、项目 Skills 和第三方 Skills 的所有权与使用方式。
+本文档说明 LearnPlatform 长期规则、项目 Skills、第三方安装包和 Codex 官方目录之间的边界。
 
 ## 层级
 
-| 层级 | 位置 | 所有权 | 用途 |
+| 层级 | 位置 | 所有者 | 用途 |
 |---|---|---|---|
-| 项目长期规则 | `/AGENTS.md` | LearnPlatform | 每次任务都必须遵守的规则和文档路由 |
-| 项目 Skills | `/skills/` | LearnPlatform | 项目特有、跨 Agent 可复用的工作流 |
-| 第三方 Skills | `/.codex/skills/` | 上游开源项目 | 通过上游默认安装方式进入项目的通用能力 |
-| 系统 Skills | Codex/Agent 运行环境 | 平台提供方 | 平台内置的通用能力 |
+| 长期规则 | `/AGENTS.md` | LearnPlatform | 每次任务都遵守的稳定规则和文档路由 |
+| 项目 Skills | `/.agents/skills/` | LearnPlatform | 仓库级可复用工作流 |
+| 第三方安装包 | `/.codex/skills/` | 上游开源项目 | 通过该上游默认方式安装的通用设计能力 |
+| 系统或插件 Skills | Codex 运行环境 | 平台或插件提供方 | 文档、浏览器、GitHub 等通用能力 |
+
+OpenAI 当前文档把仓库级独立 Skill 标准目录定义为 `.agents/skills`。本项目的第三方开源包仍按其上游安装方式保存在 `.codex/skills`；当前 Codex Desktop 会话能够发现这些 Skill，但这项实测兼容行为不等于把 `.codex/skills` 声明为通用标准目录。
+
+## 项目 Skills
+
+| Skill | 触发条件 | 边界 |
+|---|---|---|
+| `frontend-design` | LearnPlatform 页面设计、重构、响应式或视觉审查 | 服从 Vue 3、Element Plus 和现有变量 |
+| `frontend-flow-test` | 用户要求打开浏览器模拟或检查前端流程 | 只跑最小业务闭环，不替代自动测试 |
+| `context-handoff` | 用户明确要求交接、续接提示或上下文转移 | 不用于普通进度总结 |
+
+每个项目 Skill 使用：
+
+```text
+.agents/skills/<name>/
+├── SKILL.md
+└── agents/openai.yaml
+```
+
+`SKILL.md` 保存触发描述和工作流，`agents/openai.yaml` 保存 Codex UI 元数据。项目事实通过链接读取 `docs/`，不复制进 Skill。
 
 ## 第三方 `.codex/skills`
 
-当前安装包含：
+当前安装清单来自各 Skill frontmatter：
 
-- `banner-design`
-- `brand`
-- `design`
-- `design-system`
-- `slides`
-- `ui-styling`
-- `ui-ux-pro-max`
+| Skill | 声明版本 | 主要用途 |
+|---|---:|---|
+| `banner-design` | 1.0.0 | 社交、广告和网站横幅 |
+| `brand` | 1.0.0 | 品牌声音、视觉身份和资产一致性 |
+| `design` | 2.1.0 | 品牌、图标、演示和综合设计路由 |
+| `design-system` | 1.0.0 | Token、组件规范和系统设计 |
+| `slides` | 1.0.0 | HTML 战略演示文稿 |
+| `ui-styling` | 1.0.0 | shadcn/ui、Radix 和 Tailwind UI |
+| `ui-ux-pro-max` | 未声明 | 框架无关的 UX、布局和视觉判断 |
 
-管理规则：
+仓库目前没有可验证的上游 URL、安装命令和版本锁，因此不补写猜测来源。获得用户真实安装记录后，再增加可复现安装清单。
 
-- 保持上游目录、文件名和资源结构。
-- 不为适配 LearnPlatform 直接修改上游文件。
-- 安装和更新继续使用上游项目的默认方式。
-- 本仓库目前没有保存可验证的安装清单、上游 URL 或版本锁；更新前应从用户提供的来源或真实安装记录确认，不能根据作者名猜测。
-- 使用前完整阅读相关 `SKILL.md`；遇到它引用的其他 Skill、脚本或工具时核对真实可用性。
-- 上游内容与项目规则冲突时，以用户当前要求和 `AGENTS.md` 为准。
+## 使用方式
 
-当前已确认的依赖边界：
+Codex 起初只读取 Skill 的名称和描述。以下情况才读取完整 `SKILL.md`：
 
-- `ui-styling` 明确面向 shadcn/ui、Radix UI 和 Tailwind，不用于默认 Vue 3 + Element Plus 实现。
-- `ui-ux-pro-max` 可用于框架无关的 UX、可访问性、布局、动效和视觉质量判断；采用其中栈专属建议前需核对目标栈。
-- `design` 与 `banner-design` 声明的 `ai-artist`、`ai-multimodal`、`chrome-devtools`、`assets-organizing`、`project-management` 当前未在仓库或 `~/.claude/skills` 找到；不得假装这些步骤已经执行。
-- `brand` 与 `design-system` 的同步脚本期望品牌指南和 Design Token 文件；项目建立这些资产后再启用对应写入流程。
+1. 用户使用 `$skill-name` 显式调用；
+2. 当前任务与 description 明确匹配；
+3. `AGENTS.md` 针对项目任务显式路由。
 
-## 项目 `skills/`
+这些 Skill 不参与 Vue、Spring Boot、Maven、Vite 或 Docker 的运行时构建。
 
-| Skill | 用途 | 适用边界 |
-|---|---|---|
-| `frontend-design` | LearnPlatform 前端视觉方向与实现约束 | 必须服从 Vue 3、Element Plus 和现有设计变量 |
-| `frontend-flow-test` | 临时浏览器最小业务闭环验收 | 不替代 Vitest、后端测试或 Playwright E2E |
-| `context-handoff` | 用户明确要求交接时生成最小续接材料 | 不复制长期规则或完整历史 |
+前端任务的项目路由：
 
-项目不复制平台已经提供且资源更完整的通用 `skill-creator`。
+1. UX、布局、可访问性和视觉判断读取 `ui-ux-pro-max`；
+2. LearnPlatform 实现读取项目 `frontend-design`；
+3. 只有用户明确要求 Tailwind、shadcn/ui 或 Radix 时才采用 `ui-styling`；
+4. 临时浏览器验收读取 `frontend-flow-test`。
 
-## UI 路由
+横幅、品牌、设计系统和演示 Skill 只在对应产物任务中触发，不参与普通业务开发。
 
-1. UX、可访问性、布局或视觉判断：读取 `ui-ux-pro-max`。
-2. LearnPlatform 页面落地：读取项目 `frontend-design`，并检查现有 Vue/Element Plus 代码。
-3. 只有用户明确要求 shadcn/ui、Radix 或 Tailwind 时，才采用 `ui-styling` 的实现路径。
-4. 浏览器临时验收：读取 `frontend-flow-test` 并结合[测试策略](testing.md)。
+## 已知依赖边界
 
-## 维护原则
+- `design` 和 `banner-design` 声明的部分辅助 Skill 当前不在项目安装清单中，不能假装已经调用。
+- `brand` 和 `design-system` 的部分脚本需要项目先提供品牌指南或 Token 文件。
+- `ui-styling` 默认技术栈与本项目不同，不能直接替换 Element Plus。
+- 第三方 Skill 中残留的 `.claude/skills` 路径属于上游内容；使用相关脚本前必须解析真实文件位置。
 
-- 不熟悉的 Skill 必须先阅读，不根据名称或目录猜测。
-- Skill 只保存可重复工作流；项目事实放在 `docs/`，长期硬规则放在 `AGENTS.md`。
-- Skill 引用正式文档，不复制大段规则。
-- 修改项目 Skill 后验证 frontmatter、资源引用和应触发/不应触发边界。
+## 维护
+
+- 不直接修改、移动或格式化 `.codex/skills`。
+- 第三方升级使用真实上游安装方式。
+- 不同时保留 `.agents/skills` 和其他目录下的同名项目 Skill。
+- 修改项目 Skill 后运行系统 `skill-creator` 的 `quick_validate.py`。
+- Skill 与用户要求或 `AGENTS.md` 冲突时，以用户要求和仓库规则为准。

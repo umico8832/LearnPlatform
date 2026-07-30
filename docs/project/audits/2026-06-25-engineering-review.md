@@ -2,6 +2,8 @@
 
 体检日期：2026-06-25
 
+> 历史审计归档。本文记录当日基线，测试数量、遗留问题和下一步不得作为当前状态；当前事实见[项目状态](../status.md)。
+
 ## 当前项目技术栈
 
 - 前端：Vue 3、TypeScript、Vite 8、Element Plus、Pinia、Vue Router、Axios、ECharts、Vitest、Playwright。

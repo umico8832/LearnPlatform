@@ -1,0 +1,4 @@
+interface:
+  display_name: "LearnPlatform Frontend Design"
+  short_description: "Design and review the existing Vue interface"
+  default_prompt: "Use $frontend-design to improve this LearnPlatform page within the existing design system."

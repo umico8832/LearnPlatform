@@ -39,4 +39,4 @@ docker compose up -d backend
 docker compose down
 ```
 
-浏览器 E2E 使用隔离的 `docker-compose.e2e.yml`，执行方式和安全边界见[测试策略](../development/testing.md)。
+变量含义见[配置说明](configuration.md)，启动异常见[常见问题排查](troubleshooting.md)。浏览器 E2E 使用隔离的 `docker-compose.e2e.yml`，执行方式和安全边界见[测试策略](../development/testing.md)。

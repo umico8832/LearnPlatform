@@ -72,7 +72,7 @@ docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v
 
 ## 6. Agent 临时浏览器流程验收
 
-当用户要求“模拟用户试试”“打开浏览器跑一下流程”“看看这个页面能不能用”等临时验收时，先阅读 `skills/frontend-flow-test/SKILL.md`。该 skill 用于约束 Agent 选择最小业务闭环，并用低 token 方式记录关键状态。
+当用户要求“模拟用户试试”“打开浏览器跑一下流程”“看看这个页面能不能用”等临时验收时，先阅读 `.agents/skills/frontend-flow-test/SKILL.md`。该 Skill 用于约束 Agent 选择最小业务闭环，并用低 token 方式记录关键状态。
 
 临时浏览器验收不替代正式自动化测试：
 

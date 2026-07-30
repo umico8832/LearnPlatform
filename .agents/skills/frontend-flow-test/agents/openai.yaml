@@ -1,0 +1,4 @@
+interface:
+  display_name: "LearnPlatform Frontend Flow Test"
+  short_description: "Verify one minimal real browser business flow"
+  default_prompt: "Use $frontend-flow-test to verify the smallest relevant LearnPlatform browser flow."

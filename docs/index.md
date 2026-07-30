@@ -5,14 +5,16 @@
 ## 快速入口
 
 - 第一次运行项目：[本地开发](getting-started/local-development.md) 或 [Docker 开发](getting-started/docker-development.md)
+- 配置与排错：[配置说明](getting-started/configuration.md)和[常见问题排查](getting-started/troubleshooting.md)
 - 了解产品：[产品需求](product/prd.md) 与 [产品路线图](product/roadmap.md)
 - 了解系统：[系统架构](architecture/overview.md)
-- 查询契约：[API 参考](reference/api.md) 与 [数据库参考](reference/database.md)
+- 查询契约：[API 参考](reference/api/index.md) 与 [数据库参考](reference/database/index.md)
 - 开始开发：[AI Agent 开发工作流](development/workflow.md) 与 [测试策略](development/testing.md)
 - 工程协作：[工程规则](development/engineering-rules.md)、[Git 规则](development/git-rules.md)与[审查清单](development/review-checklist.md)
 - 查看当前状态：[项目状态](project/status.md)
 - 跨对话续接：[Agent 交接](project/handoff.md)
 - 查看历史：[开发日志索引](project/changelog/index.md)
+- 查看历史体检：[工程审计归档](project/audits/index.md)
 - 准备演示：[演示流程](showcase/demo.md)
 - 准备项目介绍：[简历材料](showcase/resume.md)
 
@@ -38,8 +40,8 @@
 | 产品范围 | [product/prd.md](product/prd.md) |
 | 架构边界 | [architecture/overview.md](architecture/overview.md) |
 | 重要架构决策 | [architecture/decisions/](architecture/decisions/index.md) |
-| API 契约 | [reference/api.md](reference/api.md) |
-| 数据库结构 | [reference/database.md](reference/database.md) |
+| API 契约 | [reference/api/index.md](reference/api/index.md) |
+| 数据库结构 | [reference/database/index.md](reference/database/index.md) |
 | 测试要求 | [development/testing.md](development/testing.md) |
 | Agent 与 Skills 使用边界 | [development/agent-tooling.md](development/agent-tooling.md) |
 
