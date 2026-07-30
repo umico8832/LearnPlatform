@@ -2,231 +2,81 @@
 
 [![CI](https://github.com/umico8832/LearnPlatform/actions/workflows/ci.yml/badge.svg)](https://github.com/umico8832/LearnPlatform/actions/workflows/ci.yml)
 
-一款面向学习者和备考人群的在线刷题平台，结合 AI 能力提供智能解析、错题复习、模拟考试和个性化学习建议。
+LearnPlatform 是一套面向学习者和备考人群的前后端分离刷题平台，提供题库、练习判分、错题复习、模拟考试、学习诊断和 AI 辅助学习能力。
 
-## 功能特性
+## 核心能力
 
-### 核心功能
-- **题库管理**：支持单选、多选、判断、填空、简答等多种题型
-- **在线刷题**：按课程、知识点、随机、顺序等多种练习模式
-- **自动判分**：提交答案即时反馈，展示正确答案和解析
-- **错题本**：答错自动收集，支持错题重练和掌握状态管理
-- **模拟考试**：手动/随机组卷，倒计时考试，自动判分和成绩分析
-- **AI 辅助**：AI 流式生成题目解析，并生成答案仅在服务端保存、可提交真实判分的结构化变式题，同时提供复习建议与知识点总结
-- **数据统计**：学习趋势、正确率、知识点掌握雷达图、月度学习效果指标，以及 AI 资产真实查看、结构化变式首次判分正确率与难度样本分布、按资产类型的后续同题作答和知识点跨题迁移对照；方向判断同时校验作答量与去重学习者覆盖
-- **智能复习与搜索**：SM-2 间隔重复复习、全局搜索、搜索历史与热门搜索
-- **学习与内容闭环**：学习诊断、题目投稿审核、AI 质检、题目来源追踪、AI 复审建议与缓存、题目纠错反馈、题目版本记录
+- 课程、知识点和多题型题库管理。
+- 顺序、随机、课程和知识点练习，提交后真实判分。
+- 错题自动收集、掌握状态、重练和间隔重复。
+- 试卷组卷、倒计时考试、自动判分和结果分析。
+- AI 流式解析、复习建议、学习资产和结构化变式题。
+- 学习报告、薄弱知识点、全局搜索和个性化建议。
+- 题目投稿、AI 质检、纠错反馈、复审和版本记录。
+- AI Token、成本、配额、审计、提醒和观察性学习效果分析。
+- 管理端课程、题目、试卷、用户、投稿和 AI 运营管理。
 
-### 后台管理
-- 课程和知识点管理
-- 题目管理（CRUD、启用/禁用、疑似重复检测、纠错反馈处理、版本记录查看）
-- 试卷管理（创建、组卷、发布）
-- 平台数据总览
+当前阶段和最新验证见[项目状态](docs/project/status.md)。
 
 ## 技术栈
 
-### 前端
-| 技术 | 说明 |
-|------|------|
-| Vue 3 | 前端框架，Composition API |
-| TypeScript | 类型安全 |
-| Vite | 构建工具 |
-| Element Plus | UI 组件库 |
-| Pinia | 状态管理 |
-| Vue Router | 路由管理 |
-| Axios | HTTP 请求 |
-| ECharts | 图表可视化 |
+| 层级 | 技术 |
+|---|---|
+| 前端 | Vue 3、TypeScript、Vite、Element Plus、Pinia、Vue Router、Axios、ECharts |
+| 后端 | Java 17+、Spring Boot 3、MyBatis-Plus、Spring Security、JWT、Validation、Knife4j |
+| 数据 | MySQL 8、Flyway |
+| 部署 | Docker、Docker Compose、Nginx |
+| 测试 | JUnit、Mockito、MockMvc、Testcontainers、Vitest、Playwright |
 
-### 后端
-| 技术 | 说明 |
-|------|------|
-| Java 17+ | 编程语言（推荐 JDK 21+） |
-| Spring Boot 3 | 应用框架 |
-| MyBatis-Plus | ORM 框架 |
-| Spring Security | 安全框架 |
-| JWT | 鉴权方案 |
-| Knife4j | 接口文档（Swagger 增强） |
-| Validation | 参数校验 |
-
-> **注意**：本项目已移除 Lombok（JDK 26 兼容性问题），所有 Java 实体类使用手写 getter/setter/toString。
-
-### 数据库 & 部署
-| 技术 | 说明 |
-|------|------|
-| MySQL 8.0 | 主数据库 |
-| Flyway | 数据库版本迁移 |
-| Docker | 容器化 |
-| Docker Compose | 多容器编排 |
-| Nginx | 反向代理 |
-
-## 项目结构
-
-```
-LearnPlatform/
-├── frontend/                    # 前端项目（Vue 3 + TypeScript）
-│   ├── src/
-│   │   ├── api/                 # API 请求模块
-│   │   ├── components/          # 公共组件
-│   │   ├── router/              # 路由配置
-│   │   ├── stores/              # Pinia 状态管理
-│   │   ├── types/               # TypeScript 类型
-│   │   ├── utils/               # 工具函数
-│   │   └── views/               # 页面视图
-│   ├── package.json
-│   └── vite.config.ts
-├── backend/                     # 后端项目（Spring Boot 3）
-│   ├── src/main/java/com/learnplatform/
-│   │   ├── config/              # 配置类
-│   │   ├── common/              # 公共模块（响应体、异常处理）
-│   │   ├── entity/              # 实体类
-│   │   ├── mapper/              # MyBatis Mapper
-│   │   ├── service/             # Service 层
-│   │   ├── controller/          # Controller 层
-│   │   ├── dto/                 # 数据传输对象
-│   │   ├── security/            # 安全模块（JWT）
-│   │   └── service/ai/          # AI Provider 抽象层
-│   ├── src/main/resources/
-│   │   ├── application.yml      # 应用配置
-│   │   └── db/migration/        # Flyway 数据库迁移脚本
-│   └── pom.xml
-├── docs/                        # 项目文档
-│   ├── PRD.md                   # 产品需求文档
-│   ├── ARCHITECTURE.md          # 架构设计
-│   ├── DB_DESIGN.md             # 数据库设计
-│   ├── API_DESIGN.md            # 接口设计
-│   ├── ROADMAP.md               # 开发路线图
-│   ├── RESUME.md                # 简历项目描述
-│   ├── DEMO.md                  # 演示流程
-│   └── CHANGELOG_AGENT.md       # 开发日志
-├── docker-compose.yml           # Docker 编排
-├── .env.example                 # 环境变量示例
-└── README.md                    # 项目说明
-```
+项目已移除 Lombok，Java 实体使用手写 getter、setter 和 `toString`。
 
 ## 快速开始
 
-### 方式一：本地开发
+### 本地开发
 
-#### 环境要求
-- JDK 21+（推荐 JDK 26）
-- Maven 3.8+
-- Node.js 20+（Docker 构建使用 Node.js 22）
-- MySQL 8.0+
-
-#### 1. 克隆项目
-```bash
-git clone https://github.com/umico8832/LearnPlatform.git
-cd LearnPlatform
-```
-
-#### 2. 初始化数据库
-```bash
-mysql -u root -p < backend/src/main/resources/db/migration/V1__baseline.sql
-```
-
-#### 3. 配置环境变量
 ```bash
 cp .env.example .env
-# 编辑 .env 文件，填写数据库密码、JWT 密钥等
-```
-
-本地通过 Maven 启动时，需要先在项目根目录加载 `.env`。请使用项目提供的加载脚本，不要直接 `source .env`（数据库 URL 中的 `&` 会被 shell 当作控制符）：
-
-```bash
 source scripts/load-env.sh .env
-```
 
-#### 4. 启动后端
-```bash
 cd backend
 mvn spring-boot:run
-```
-后端启动后访问接口文档：http://localhost:8080/doc.html
 
-#### 5. 启动前端
-```bash
-cd frontend
+cd ../frontend
 npm install
 npm run dev
 ```
-前端访问：http://localhost:5173
 
-### 方式二：Docker Compose 一键启动
+- 前端：`http://localhost:5173`
+- 后端：`http://localhost:8080`
+- Knife4j：`http://localhost:8080/doc.html`
 
-#### 环境要求
-- Docker 20.10+
-- Docker Compose 2.0+
+完整步骤见[本地开发指南](docs/getting-started/local-development.md)。
 
-#### 1. 配置环境变量
+### Docker
+
 ```bash
 cp .env.example .env
-# 编辑 .env 文件，填写配置
-```
-
-#### 2. 启动所有服务
-```bash
 docker compose up -d
-```
-
-如本机 80 或 8080 端口已被占用，可在 `.env` 中调整：
-```env
-FRONTEND_HOST_PORT=18000
-BACKEND_HOST_PORT=18080
-```
-
-#### 3. 查看服务状态
-```bash
 docker compose ps
 ```
 
-#### 4. 访问
-- 前端页面：http://localhost
-- 后端接口：http://localhost:8080
-- 接口文档：http://localhost:8080/doc.html
+- 前端：`http://localhost`
+- 后端：`http://localhost:8080`
 
-首次创建数据库时会自动写入演示课程、知识点、题目和试卷，可直接使用下方账号体验完整流程。
-
-#### 5. 停止服务
-```bash
-docker compose down
-```
+端口调整、镜像重建和停止方式见[Docker 开发指南](docs/getting-started/docker-development.md)。
 
 ## 演示账号
 
 | 角色 | 用户名 | 密码 |
-|------|--------|------|
-| 管理员 | admin | admin123 |
-| 普通用户 | testuser | test123 |
+|---|---|---|
+| 管理员 | `admin` | `admin123` |
+| 普通用户 | `testuser` | `test123` |
 
-> 注意：以上为开发环境演示账号，生产环境请修改密码。
+以上仅用于开发和演示环境。
 
-## 演示流程
+演示流程和真实截图见[演示文档](docs/showcase/demo.md)。
 
-详见 [docs/DEMO.md](docs/DEMO.md)，包含完整的功能演示步骤和截图说明。
-
-演示截图可在隔离 E2E 环境启动后生成：
-
-```bash
-cd frontend
-npm run screenshots:demo
-```
-
-当前已生成的演示截图位于 [docs/demo-screenshots](docs/demo-screenshots)。
-
-## 接口文档
-
-后端启动后，访问 Knife4j 接口文档：
-- 本地开发：http://localhost:8080/doc.html
-- Docker 部署：http://localhost:8080/doc.html
-
-## 开发计划
-
-详见 [docs/ROADMAP.md](docs/ROADMAP.md)
-
-自动化测试的分层、范围和新增门槛见 [docs/TESTING.md](docs/TESTING.md)。
-AI Agent 的任务契约、测试先行循环、完成定义和可复制 Prompt 见 [docs/AI_AGENT_DEVELOPMENT_WORKFLOW.md](docs/AI_AGENT_DEVELOPMENT_WORKFLOW.md)。
-
-本地质量检查：
+## 质量检查
 
 ```bash
 cd backend
@@ -239,97 +89,48 @@ npm run coverage
 npm run build
 ```
 
-后端 `verify` 包含 Checkstyle、SpotBugs、JaCoCo 报告和覆盖率门槛；前端 `coverage` 显式统计全部 TypeScript/Vue 源码并执行防退化门槛。CI 另有独立 Testcontainers job 验证真实 MySQL 与 Flyway 约束。
+真实 MySQL Testcontainers、隔离 Docker E2E 和覆盖率门槛见[测试策略](docs/development/testing.md)。
 
-浏览器 E2E 使用隔离 Docker Profile 运行，避免削弱开发与生产环境的验证码安全；执行方式见 `docs/TESTING.md`。
+## 项目结构
 
-Phase 20 演示验收与 AI 运营治理、Phase 21 前端信息架构与视觉体验优化均已完成，Phase 22 AI 学习效果验证持续推进。平台会记录用户实际看到的 AI 学习资产；V19 后新生成的变式题为结构化单选题，答案仅保存在服务端，首次提交后真实判分并锁定结果，旧 Markdown 缓存仍兼容显式完成。管理端除变式正确率与同题作答对照外，还会展示真实首次判分在 1-5 难度档的样本结构、按资产类型切分的同题观察，并排除原题重答，在相关阅读前后 30 天内观察共享知识点的跨题迁移。同题、跨题、资产类型和难度观察都同时要求最低作答量与去重学习者覆盖，避免少数高频用户主导方向判断；多资产暴露可能产生重叠样本，因此不直接排名或自动推荐。所有统计均明确为观察性数据，不把调用量、生成次数或完成按钮冒充自动判分。登录、课程、刷题错题、考试判分、投稿审核和高频页面巡检已有 5 条真实 Docker E2E 覆盖。后端默认测试 410 个、前端 Vitest 222 个均已通过；5 个 Testcontainers 集成测试类的 55 个真实 MySQL 用例全部通过。详见 [docs/ROADMAP.md](docs/ROADMAP.md)。
+```text
+LearnPlatform/
+├── frontend/            # Vue 3 前端
+├── backend/             # Spring Boot 后端
+├── docs/                # 正式项目文档
+├── skills/              # LearnPlatform 项目 Skills
+├── .codex/skills/       # 第三方开源 Skills 包
+├── scripts/             # 项目脚本
+├── monitoring/          # 监控配置
+├── docker-compose.yml
+└── AGENTS.md            # Agent 长期协作入口
+```
 
-Phase 21 的高频页面真实接口验收已固化为 Playwright 回归：用户端覆盖首页、刷题、错题、智能复习和考试，管理端覆盖总览、题目、投稿和 AI 调用分析，并会检测 API 5xx 与浏览器运行时错误。当前 5 条真实 Docker E2E 全部通过。
+## 文档
 
-| 阶段 | 名称 | 状态 |
-|:----:|------|:----:|
-| 0 | 项目规划 | ✅ |
-| 1 | 项目骨架 | ✅ |
-| 2 | 用户与鉴权 | ✅ |
-| 3 | 课程与知识点 | ✅ |
-| 4 | 题库系统 | ✅ |
-| 5 | 刷题与判分 | ✅ |
-| 6 | 错题本 | ✅ |
-| 7 | 试卷与考试 | ✅ |
-| 8 | AI 功能 | ✅ |
-| 9 | 统计可视化 | ✅ |
-| 10 | 质量提升 | ✅ |
-| 11 | 部署与简历 | ✅ |
-| 12 | 体验增强迭代 | ✅ 基本完成 |
-| 13 | AI 题目学习资产 | ✅ |
-| 14 | AI 可视化交互讲解 | ✅ |
-| 15 | AI 学习画像与个性化推荐 | 🚧 |
-| 16 | 题目投稿与 AI 题库生产 | 🚧 |
-| 17 | 间隔重复与智能复习 | ✅ 基本完成 |
-| 18 | 全局搜索与快捷导航 | ✅ 基本完成 |
-| 19 | AI 调用分析与成本控制 | ✅ 基本完成 |
-| 20 | 演示验收与 AI 运营治理 | ✅ |
-| 21 | 前端信息架构与视觉体验优化 | ✅ |
-| 22 | AI 学习效果验证 | 🚧 |
+- [文档中心](docs/index.md)
+- [产品需求](docs/product/prd.md)
+- [产品路线图](docs/product/roadmap.md)
+- [系统架构](docs/architecture/overview.md)
+- [架构决策](docs/architecture/decisions/index.md)
+- [API 参考](docs/reference/api.md)
+- [数据库参考](docs/reference/database.md)
+- [开发工作流](docs/development/workflow.md)
+- [测试策略](docs/development/testing.md)
+- [Agent 与 Skills](docs/development/agent-tooling.md)
+- [项目状态](docs/project/status.md)
+- [开发日志](docs/project/changelog/index.md)
+- [演示流程](docs/showcase/demo.md)
+- [简历材料](docs/showcase/resume.md)
 
-## 项目规范
+## 接口约定
 
-### 接口规范
-- 统一响应结构：`{ "code": 0, "message": "success", "data": {} }`
-- RESTful 风格
-- 普通用户接口：`/api/**`
-- 管理端接口：`/api/admin/**`
+- 统一响应：`{ "code": 0, "message": "success", "data": {} }`
+- 普通接口：`/api/**`
+- 管理接口：`/api/admin/**`
 
-### 数据库规范
-- 表名和字段名：snake_case
-- 业务主表通常包含：create_time、update_time、deleted，并使用逻辑删除
-- 只追加的审计记录表可不包含 update_time / deleted，具体以 `docs/DB_DESIGN.md` 和 Flyway 迁移为准
-
-### Git 提交规范
-
-Git、commit、分支、回滚和历史操作规则见 [docs/AGENT_GIT_RULES.md](docs/AGENT_GIT_RULES.md)。
-
-## 常见问题
-
-### Q: 后端启动失败，提示数据库连接错误？
-A: 请确认 MySQL 服务已启动，并检查 `.env` 文件中的数据库配置是否正确。
-
-### Q: 前端请求后端接口报 404？
-A: 本地开发时确认后端已启动在 8080 端口，且 Vite 代理配置正确。
-
-### Q: AI 功能不可用？
-A: AI 功能需要配置有效的 API Key。在 `.env` 文件中设置 `AI_API_KEY`，并将 `AI_ENABLED` 设为 `true`。
-
-### Q: Docker 启动后前端无法访问后端？
-A: 确认 docker compose 中所有服务已正常启动（`docker compose ps`），检查 Nginx 配置中的反向代理地址。
-
-### Q: 后端编译报 Lombok 相关错误？
-A: 本项目已移除 Lombok（JDK 26 兼容性问题），所有 Java 实体类使用手写 getter/setter/toString。请确保使用 JDK 21+ 编译。
-
-### Q: 如何查看 API 接口文档？
-A: 后端启动后访问 http://localhost:8080/doc.html 即可查看 Knife4j 接口文档，包含所有接口的请求参数和响应格式。
-
-### Q: 如何初始化测试数据？
-A: 数据库 schema.sql 包含建表 SQL。测试账号：管理员 admin/admin123，普通用户 testuser/test123。
-
-## 文档索引
-
-| 文档 | 说明 |
-|------|------|
-| [PRD.md](docs/PRD.md) | 产品需求文档 |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | 架构设计文档 |
-| [DB_DESIGN.md](docs/DB_DESIGN.md) | 数据库设计文档 |
-| [API_DESIGN.md](docs/API_DESIGN.md) | 接口设计文档 |
-| [ROADMAP.md](docs/ROADMAP.md) | 开发路线图 |
-| [DEMO.md](docs/DEMO.md) | 演示流程文档 |
-| [RESUME.md](docs/RESUME.md) | 简历项目描述和面试问答 |
-| [CHANGELOG_AGENT.md](docs/CHANGELOG_AGENT.md) | 开发日志 |
-| [HANDOFF.md](docs/HANDOFF.md) | Agent 交接文档 |
-| [AGENT_GIT_RULES.md](docs/AGENT_GIT_RULES.md) | Agent Git、commit、分支和回滚规则 |
-| [AGENT_REVIEW_CHECKLIST.md](docs/AGENT_REVIEW_CHECKLIST.md) | 通用 Agent 审查清单 |
-| [ENGINEERING_RULES.md](docs/ENGINEERING_RULES.md) | 工程判断和代码归属建议清单 |
+精确契约以后端代码、迁移和[参考文档](docs/reference/api.md)为准。
 
 ## 许可证
 
-本项目仅供学习和简历展示使用。
+本项目仅供个人学习和简历展示使用。

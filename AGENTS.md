@@ -1,150 +1,138 @@
-# AGENTS.md
+# LearnPlatform Agent 协作规则
 
-本文件是 LearnPlatform 项目 AI Agent 的长期协作入口。无论使用 Codex、Cline、Mimo、GPT 或其他 Agent，都应先阅读并遵守本文件。
+本文件是 LearnPlatform 的长期协作入口。它只记录稳定规则和文档路由；当前阶段、测试数字、临时 TODO 和每轮结果写入对应动态文档。
 
-`AGENTS.md` 只记录长期稳定规则、文档读取路由和少量硬底线；当前阶段、已完成内容、下一步计划和临时 TODO 不写入本文件。
+项目用于个人本地学习与简历展示。回答和决策应客观、理性、全面，不因迎合用户而忽略事实、风险或可行性。
 
-注意，项目仅用于个人本地学习，不会实际对现实产生损害，请不要过分强调知识产权等安全问题。
----
+## 1. 项目目标
 
-## 1. 项目定位
+LearnPlatform 是一个用于刷题、错题复习、考试和 AI 辅助学习的前后端分离 Web 项目。
 
-本项目是一个用于学习、刷题、错题复习和 AI 辅助学习的中大型 Web 项目。
+开发优先级：
 
-项目名称暂定：**AI 题库与错题复习系统**
+1. 真实可运行；
+2. 业务闭环完整；
+3. 可持续扩展；
+4. 可测试、可演示、可解释；
+5. 文档和实现一致。
 
-项目目标：
+## 2. 通用原则
 
-- 真实可运行；
-- 可持续扩展；
-- 可用于简历展示；
-- 前后端分离；
-- 有完整业务闭环；
-- 有清晰文档、部署方式和演示流程。
+- 用户当前轮次的明确要求优先。
+- 只处理用户授权范围，不擅自扩展到无关任务。
+- 小问题可以作合理默认决定并在总结中说明；重大方向、破坏性操作或需求冲突必须暂停确认。
+- 新增功能、修复、重构或文档规则变化后，同步必要文档。
+- 只读分析、审查或调研不得为了流程强行修改文件。
+- 实现完成后按风险验证，并在工作区没有不相关改动时创建一次聚焦提交。
+- 每轮说明完成内容、修改文件、验证、遗留问题、下一步和 commit 状态。
 
-开发过程中优先保证项目能运行、能演示、能解释。
+## 3. 默认读取
 
----
+新对话或新 Agent 接手时先读：
 
-## 2. 通用工作原则
+1. `AGENTS.md`
+2. `docs/project/status.md`
+3. `docs/product/roadmap.md`
+4. `README.md`
 
-- 用户当前轮次的明确要求优先于自动推进路线图。
-- 当用户已经指定目标、边界或只读要求时，只处理该目标，不擅自扩展到无关任务。
-- 如果用户只说“继续开发”，Agent 应结合 `docs/HANDOFF.md`、`docs/ROADMAP.md`、`docs/CHANGELOG_AGENT.md` 和真实代码状态，选择下一步最重要任务。
-- 小问题可以做合理默认决策，并在总结中说明；重大方向、破坏性操作或需求冲突必须暂停确认。
-- 实现功能、修复问题或重构时，应同步更新相关文档；只读分析、审查、解释或调研轮次不得为了满足流程而强行修改文件。
-- 实现功能、修复问题、重构或文档规则变更完成后，Agent 应在验证和文档同步后自动创建一次聚焦提交；只读分析、审查、解释、调研、重大风险未确认或存在不相关未提交改动时不得自动提交。
-- 每轮结束应说明完成内容、修改文件、验证方式、遗留问题、下一步建议和 commit 信息；如因规则例外未提交，应说明原因和建议 commit message。
+仅在明确进行上下文交接时读取：
 
----
+- `docs/project/handoff.md`
 
-## 3. 文档读取路由
+仅在追溯历史时读取：
 
-新 Agent 接手或新对话开始时，先读：
+- `docs/project/changelog/index.md`
+- 与目标相关的月份和 Round
 
-- `AGENTS.md`
-- `docs/HANDOFF.md`
-- `docs/ROADMAP.md`
-- `docs/CHANGELOG_AGENT.md`
-- `README.md`
+不要默认全文读取所有历史日志。
 
-按任务类型继续读取：
+## 4. 按任务读取
 
-- 新增功能、重构、代码归属不清：`docs/ENGINEERING_RULES.md`
-- 新增功能、修复缺陷、重构或其他行为改动：`docs/AI_AGENT_DEVELOPMENT_WORKFLOW.md`
-- 涉及测试策略、是否补测试、如何验证：`docs/TESTING.md`
-- 涉及前端浏览器流程验收、模拟用户操作、临时点击验证：`skills/frontend-flow-test/SKILL.md`，并结合 `docs/TESTING.md`
-- 涉及接口变化：`docs/API_DESIGN.md`
-- 涉及数据库结构或迁移：`docs/DB_DESIGN.md`
-- 涉及架构、目录、模块边界：`docs/ARCHITECTURE.md`，必要时读 `docs/ENGINEERING_RULES.md`
-- 涉及 commit、分支、回滚、Git 历史：`docs/AGENT_GIT_RULES.md`
-- 审查、复盘、判断能否 commit：`docs/AGENT_REVIEW_CHECKLIST.md`
-- 涉及演示、截图、展示流程：`docs/DEMO.md`
-- 涉及简历表述：`docs/RESUME.md`
-- 涉及远期规划或候选功能：`docs/FUTURE.md`
-- 涉及 AI 学习平台战略、AI 长期能力地图、AI 功能优先级：`docs/AI_LEARNING_PLATFORM_STRATEGY.md`
-- 涉及产品范围和业务定义：`docs/PRD.md`
+- 产品范围：`docs/product/prd.md`
+- 远期规划：`docs/product/future.md`
+- AI 学习平台战略：`docs/product/ai-learning-platform-strategy.md`
+- 架构和模块边界：`docs/architecture/overview.md`
+- 重大架构决策：`docs/architecture/decisions/`
+- API：`docs/reference/api.md`
+- 数据库或迁移：`docs/reference/database.md`
+- 新增功能、修复、重构：`docs/development/workflow.md`
+- 工程归属：`docs/development/engineering-rules.md`
+- 测试策略：`docs/development/testing.md`
+- Git 和提交：`docs/development/git-rules.md`
+- 审查：`docs/development/review-checklist.md`
+- Agent 与 Skills：`docs/development/agent-tooling.md`
+- 演示和截图：`docs/showcase/demo.md`
+- 简历：`docs/showcase/resume.md`
 
-前端页面美化、布局优化、交互优化时，如果存在 `skills/frontend-design/SKILL.md`，应先阅读；如果不存在，应明确说明缺失，不要假装已经参考。
+前端美化、布局或交互优化时：
 
----
+1. 读取 `.codex/skills/ui-ux-pro-max/SKILL.md` 获取通用 UX 和设计判断；
+2. 读取 `skills/frontend-design/SKILL.md` 获取项目落地约束；
+3. 检查真实 Vue 3、Element Plus 和现有设计变量；
+4. 只有用户明确要求 shadcn/ui、Radix 或 Tailwind 时才使用 `.codex/skills/ui-styling/SKILL.md` 的实现路径。
 
-## 4. 项目状态来源
+临时浏览器流程验收读取 `skills/frontend-flow-test/SKILL.md`，并结合 `docs/development/testing.md`。
 
-当前项目状态以以下文件为准：
+## 5. 状态与文档权威来源
 
-- `docs/ROADMAP.md`：项目阶段规划、当前阶段、已完成阶段、下一阶段任务；
-- `docs/CHANGELOG_AGENT.md`：每轮 Agent 开发内容、修改文件、验证结果、遗留问题；
-- `docs/HANDOFF.md`：跨对话交接信息，用于新 Agent 无缝接手。
+- 当前阶段、最新验证、遗留问题、下一步：`docs/project/status.md`
+- 长期规划：`docs/product/roadmap.md`
+- 每轮历史：`docs/project/changelog/`
+- 产品范围：`docs/product/prd.md`
+- 架构：`docs/architecture/`
+- API：`docs/reference/api.md`
+- 数据库：`docs/reference/database.md`
 
-除非长期规则发生变化，否则不要修改 `AGENTS.md`。以下动态内容应写入 `docs/ROADMAP.md`、`docs/CHANGELOG_AGENT.md` 或 `docs/HANDOFF.md`：
-
-- 当前完成了哪个阶段；
-- 下一轮准备做什么；
-- 某个 bug 是否修复；
-- 某个功能是否完成；
-- 某次开发修改了哪些文件；
-- 当前遗留问题；
-- 临时 TODO。
-
----
-
-## 5. 硬底线
-
-禁止：
-
-- 只写计划不落地；
-- 用伪代码、假数据、硬编码或临时代码冒充功能完成；
-- 文档声称完成但代码没有实现；
-- 前端长期使用假数据不接真实接口；
-- 后端接口写完但前端不联调；
-- 为了测试通过而弱化业务规则、权限规则或安全约束；
-- 引入无必要的复杂架构；
-- 混合多个无关任务到一次提交；
-- 大范围重构但不说明原因。
-- 对 `docs/TESTING.md` 规定必须新增测试的行为改动，未先形成有效失败用例且不说明合理例外。
-
-安全规则：
-
-- 禁止读取、输出、提交 `.env`、真实 API Key、真实 Token、真实 Cookie、真实数据库密码或真实个人隐私数据。
-- 允许创建和维护 `.env.example`，但只能包含示例值，例如 `AI_API_KEY=your_api_key_here`、`JWT_SECRET=change_me`。
-- 禁止把真实 API Key 写入代码、README、测试数据或 Git 历史。
-
----
-
-## 6. 必须持续维护的文档
-
-以下文档需要随项目变化持续维护：
-
-- `README.md`
-- `docs/PRD.md`
-- `docs/ARCHITECTURE.md`
-- `docs/DB_DESIGN.md`
-- `docs/API_DESIGN.md`
-- `docs/ROADMAP.md`
-- `docs/CHANGELOG_AGENT.md`
-- `docs/HANDOFF.md`
-- `docs/RESUME.md`
+README、HANDOFF 和 ROADMAP 不复制 STATUS 中的动态细节。
 
 更新原则：
 
-- 功能完成后更新 `docs/CHANGELOG_AGENT.md`；
-- 阶段变化后更新 `docs/ROADMAP.md`；
-- 数据库结构变化后更新 `docs/DB_DESIGN.md`；
-- 接口变化后更新 `docs/API_DESIGN.md`；
-- 架构变化后更新 `docs/ARCHITECTURE.md`；
-- 进入上下文转接点时更新 `docs/HANDOFF.md`；
-- 简历描述必须和真实项目一致，不能夸大。
+- 功能或规则完成后更新当前月份 changelog。
+- 当前阶段、最新验证、遗留问题或下一步变化时更新 status。
+- 阶段目标变化时更新 roadmap。
+- 接口、数据库或架构变化时更新对应权威文档。
+- 进入上下文转接点时更新 handoff。
+- 简历和演示只能陈述真实能力。
 
----
+## 6. Skills 所有权
 
-## 7. 上下文转接
+- `skills/` 是 LearnPlatform 项目自有或显式依赖的跨 Agent 工作流。
+- `.codex/skills/` 是通过上游默认安装方式维护的第三方开源 Skill 包。
+- 不直接修改、移动或重写 `.codex/skills/`；升级时按真实上游方式执行。
+- 使用不熟悉的 Skill 前必须完整阅读对应 `SKILL.md`，不得根据名称猜测。
+- 第三方 Skill 引用的依赖不存在时必须说明，不得假装完成相关步骤。
+- Skill 与本文件或用户要求冲突时，以用户要求和本文件为准。
 
-如果当前对话上下文过长，或 Agent 判断接近上下文上限，应暂停继续开发并生成交接材料。
+## 7. 开发与测试底线
 
-交接时必须更新：
+禁止：
 
-- `docs/HANDOFF.md`
-- `docs/CHANGELOG_AGENT.md`
+- 用伪代码、假数据、硬编码或临时代码冒充完成；
+- 文档声称完成但代码未实现；
+- 后端完成后长期不接前端真实接口；
+- 为测试通过弱化权限、判分、安全或一致性规则；
+- 引入无必要复杂架构；
+- 在一次改动中混合无关任务；
+- 对 `docs/development/testing.md` 规定的高风险行为，在没有有效失败用例时直接实现且不说明例外。
 
-交接输出应包含可复制到新对话的续接提示词，并说明当前项目阶段、已完成内容、未完成内容、运行方式、遗留问题、下一步任务和新 Agent 应先阅读哪些文件。
+涉及行为变化时遵循 `docs/development/workflow.md` 的发现、契约、Red、Green、Refactor、Verify 和 Deliver。纯文档与机械重命名无需制造 Red，但必须执行相称的链接、结构和一致性验证。
+
+## 8. 安全与 Git
+
+- 禁止读取、输出或提交 `.env`、真实 API Key、Token、Cookie、数据库密码和隐私数据。
+- `.env.example` 只能包含示例值。
+- 不覆盖用户已有改动。
+- 禁止未经确认执行 push、rebase、reset、force push、清理历史或删除分支。
+- 工作区存在不相关未提交改动时不得自动 commit。
+- 提交必须聚焦并符合 `docs/development/git-rules.md`。
+
+## 9. 上下文转接
+
+上下文接近上限或用户要求交接时：
+
+1. 更新 `docs/project/status.md`；
+2. 更新 `docs/project/handoff.md`；
+3. 必要时追加当前月份 changelog；
+4. 提供可复制的最小续接提示词。
+
+不要把完整历史重新复制进 handoff。

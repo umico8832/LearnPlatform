@@ -1,186 +1,66 @@
 ---
 name: context-handoff
-description: 当用户要求生成摘要、交接笔记、新任务续接提示词，或说"请生成摘要"时使用此 Skill。本 Skill 基于 git status、git diff、已读文件、已修改文件、用户需求、关键决策、风险和后续步骤来总结当前任务状态。
+description: Generate a concise, evidence-based LearnPlatform handoff when the user explicitly asks for a summary, handoff, continuation prompt, or context transfer. Do not trigger for ordinary progress updates or final task summaries.
 ---
 
-# 上下文交接 Skill / 新 Task 交接摘要
+# Context Handoff
 
-## 何时使用
+Generate the minimum context another Agent needs to continue safely. Do not repeat the full project history or all long-term rules.
 
-当用户明确要求生成交接摘要时使用此 Skill，例如：
+## Read first
 
-- 请生成摘要
-- 生成摘要
+1. Check `git status --short`.
+2. Check the current task diff when changes exist.
+3. Read `docs/project/status.md`.
+4. Read only the task-relevant parts of `docs/project/changelog/index.md` and its linked month.
+5. Use `AGENTS.md` as the long-term rule source.
 
-## 目标
+Do not inspect or expose `.env`, credentials, tokens, cookies, database passwords, or private user data.
 
-生成一份简洁但完整的交接摘要，可以直接复制到新的 Cline 任务中。
+## Update project handoff
 
-摘要应保留以下信息：
+When the user requests a repository handoff artifact, update `docs/project/handoff.md` with:
 
-- 当前任务目标
-- 用户需求
-- 已读取的文件
-- 已修改的文件
-- 重要决策
-- 未完成的工作
-- 风险
-- 建议后续步骤
-- 可直接复制的新任务提示词
+- current objective;
+- completed work;
+- unfinished work;
+- changed files;
+- validation already run;
+- known risks or blockers;
+- next 1–3 actions;
+- a minimal continuation prompt.
 
-目标不是重复所有项目规则。长期项目约束应保留在项目根目录 `AGENTS.md` 中。
+Link to `docs/project/status.md` instead of copying current phase, test counts, and all known issues. Link to the changelog instead of copying previous rounds.
 
-## 摘要生成前的准备
+## Conversation output
 
-先检查当前真实状态。
+Use this structure:
 
-建议逐条执行以下命令：
+```markdown
+# 交接摘要
 
-```powershell
-git status
-git diff
+## 当前目标
+
+## 已完成
+
+## 未完成
+
+## 修改文件
+
+## 验证
+
+## 风险与限制
+
+## 下一步
+
+## 续接提示词
 ```
 
-如果存在暂存区内容，再检查：
+Distinguish facts verified from files or commands from inferences. If no files changed, say so explicitly.
 
-```powershell
-git diff --cached
-```
-注意：
+## Boundaries
 
-必须基于实际命令输出、已修改文件、已读取文件和当前对话需求来生成摘要。
-不要仅凭记忆进行总结。
-摘要生成期间不要执行会改变项目状态的操作，例如修改代码、提交、合并、推送、安装依赖或删除文件。
-
-## 摘要编写规则
-
-生成交接摘要时：
-
-1. 不要写模糊的概括
-2. 不要复制大段代码
-3. 不要编造不存在的文件、变更或决策
-4. 不要隐瞒未完成的工作或不确定性
-5. 清晰区分已完成工作、未完成工作、风险和后续步骤
-6. 保持摘要对启动新任务有实际价值
-7. 长期项目规则保留在 `AGENTS.md` 中，仅在与当前任务直接相关时重复说明
-8. 如果当前任务修改了项目正式文件，需注明可能需要测试和提交确认
-9. 如果当前任务仅修改了本地 AI 辅助文件，需明确说明这些文件仅限本地使用，不应提交
-10. 如果没有任何文件变更，请明确说明
-
-## 需要保留的重要项目约束
-
-仅在与当前任务相关时才在摘要中包含以下内容：
-
-- rebase 和 push 需要用户确认
-- 遇到 rebase 冲突时暂停并询问用户
-- `git push --force-with-lease` 仅在用户确认后使用
-- 禁止使用 `git push --force`
-- 不要读取或输出真实 `.env` 密钥
-- 不要未经确认删除文件
-- 不要在未明确要求的情况下修改数据库表结构
-- 不要猜测接口字段
-- 不要引入新的 UI 库
-- 前端应保持 Vue 3 + Element Plus + TypeScript 项目风格
-- 管理后台 API 使用 JWT + ADMIN 角色认证
-- 如果 Skill 内容与 `AGENTS.md` 冲突，以 `AGENTS.md` 和用户当前明确要求为准
-
-## 输出格式
-
-触发此 Skill 时，严格按照以下结构输出：
-
----
-
-# 新 Task 交接摘要
-
-## 1. 当前任务目标
-
-说明当前 task 原本要完成什么。
-
-## 2. 用户明确要求
-
-列出用户在当前 task 中明确提出的要求和限制。
-
-只写与当前任务相关的要求，不要机械复制所有项目规则。
-
-## 3. 已读取的关键文件
-
-格式：
-
-- `文件路径`：读取原因；读到的关键信息
-
-如果没有明确读取过文件，请写：
-
-- 暂无明确读取文件记录
-
-## 4. 已修改的文件
-
-格式：
-
-- `文件路径`：修改内容；修改目的；是否属于正式项目文件
-
-如果没有修改文件，请写：
-
-- 暂无文件修改
-
-## 5. 未修改但参考过的文件
-
-格式：
-
-- `文件路径`：参考原因
-
-如果没有参考文件，请写：
-
-- 暂无
-
-## 6. 关键决策
-
-说明当前 task 中做出的重要判断，例如：
-
-- 为什么只改某些文件
-- 为什么不引入新依赖
-- 为什么不修改接口
-- 为什么采用当前方案
-- 哪些方案被放弃
-- 哪些问题留给后续处理
-
-## 7. 当前完成状态
-
-按以下格式写：
-
-- 已完成：
-- 未完成：
-- 不确定：
-- 需要用户确认：
-
-## 8. 风险和注意事项
-
-列出后续继续时容易出错的点，例如：
-
-- 可能存在文档与实现不一致
-- 可能需要检查移动端
-- 可能需要运行 `npm run build`
-- 可能需要检查登录失败提示
-- 可能需要检查 JWT + ADMIN 角色权限
-- 可能需要同步 API 文档
-- 可能存在未提交或未暂存改动
-- 可能存在 git rebase 冲突风险
-
-## 9. 建议下一步
-
-给出 1～3 项最建议的新 task 后续动作。
-
-不要列太多，优先列最关键的下一步。
-
-## 10. 新 Task 启动提示词
-
-最后生成一段可以直接复制到新 Cline task 的提示词。
-
-启动提示词必须包含：
-
-- 上一 task 的核心结论
-- 要继续处理的目标
-- 建议读取的最小文件集合
-- 不允许做的事情
-- 建议验证方式
-
-启动提示词必须尽可能让新 task 继承你的上下文，可以让他继续完成你的工作。
+- Do not modify business code while preparing a handoff.
+- Do not commit, push, rebase, delete, install dependencies, or clean the worktree as part of summary generation.
+- Do not include unrelated historical detail.
+- Do not claim a test passed unless its command result is available.

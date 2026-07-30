@@ -45,7 +45,7 @@
 1. 前端 lint 尚未配置。建议后续单独引入 ESLint + Vue/TypeScript 规则，并先以 warning 或有限目录方式接入，避免一次性产生大量格式化噪音。
 2. 前端构建的大 chunk 警告仍存在。主要来自 Element Plus、ECharts、Mermaid/可视化相关依赖，建议后续按页面和图表能力继续做动态加载与 chunk 拆分。
 3. `@vueuse/core` pure annotation 警告来自第三方包和 Vite/Rolldown 解析行为，本轮未改动第三方构建链。
-4. 本轮未运行 Playwright E2E。完整 E2E 需要启动隔离 Docker 环境，命令见 `docs/TESTING.md`。
+4. 本轮未运行 Playwright E2E。完整 E2E 需要启动隔离 Docker 环境，命令见 `docs/development/testing.md`。
 5. 本轮未运行 Testcontainers 集成测试。默认 `mvn test` 已排除 `integration` 分组，如需验证真实 MySQL 约束，可执行 `cd backend && mvn test -Dgroups=integration`。
 
 ## 建议的下一步开发方向

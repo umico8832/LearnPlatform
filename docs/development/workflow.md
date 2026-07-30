@@ -64,7 +64,7 @@
 
 ### 3.3 Red
 
-符合 `docs/TESTING.md`“必须新增测试”的行为改动，先增加或修改一个能够失败的聚焦测试：
+符合 `docs/development/testing.md`“必须新增测试”的行为改动，先增加或修改一个能够失败的聚焦测试：
 
 1. 测试应描述用户可观察行为或业务约束，不绑定无关实现细节。
 2. 运行该测试并确认失败原因与目标一致；编译错误、夹具错误或环境故障不算有效 Red。
@@ -102,9 +102,9 @@
 ### 3.7 Deliver
 
 1. 检查 diff 是否只包含本轮范围。
-2. 同步接口、数据库、架构、测试、路线图、交接和开发日志中的相关内容。
-3. 按 `docs/AGENT_REVIEW_CHECKLIST.md` 自审。
-4. 按 `docs/AGENT_GIT_RULES.md` 创建一次聚焦提交。
+2. 同步当前月份 changelog，以及本轮实际影响的接口、数据库、架构、测试、路线图或状态文档；不要机械更新无关文档。
+3. 按 `docs/development/review-checklist.md` 自审。
+4. 按 `docs/development/git-rules.md` 创建一次聚焦提交。
 5. 汇报完成内容、修改文件、Red/Green 证据、完整验证、遗留风险和 commit。
 
 ---

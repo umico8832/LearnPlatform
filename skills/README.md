@@ -1,54 +1,23 @@
-# Skills 目录
+# LearnPlatform 项目 Skills
 
-> 本目录用于存放 Cline/Claude skills。
-> 仅本地使用，不提交到仓库。
+本目录保存由 LearnPlatform 维护或显式依赖的跨 Agent 工作流。第三方开源 Skill 包位于 `.codex/skills/`，两者所有权和更新方式不同。
 
-## 使用说明
+## 项目 Skills
 
-本目录供开发者手动添加自定义 skill 文件，扩展 Cline 的辅助能力。
+| Skill | 用途 |
+|---|---|
+| `frontend-design` | 将通用设计判断落到 LearnPlatform 的 Vue 3、Element Plus 和现有设计变量 |
+| `frontend-flow-test` | 临时浏览器最小业务闭环验收 |
+| `context-handoff` | 用户明确要求交接时生成最小、可验证的续接材料 |
 
-**除非用户要求，否则不要自动生成任何 SKILL.md 文件。**
+## 第三方 Skills
 
-## 目录结构
+`.codex/skills/` 由上游开源项目按默认安装方式维护。不要把其中内容复制、移动或手工改造成项目 Skill；具体边界见 [`docs/development/agent-tooling.md`](../docs/development/agent-tooling.md)。
 
-每个 skill 占一个独立子目录，包含 `SKILL.md` 作为主文件，可选附带 `assets/`、`references/`、`scripts/` 等资源。
+## 规则
 
-```
-skills/
-├── README.md
-├── context-handoff/
-│   └── SKILL.md
-├── frontend-design/
-│   └── SKILL.md
-└── skill-creator/
-    ├── SKILL.md
-    ├── assets/
-    ├── references/
-    └── scripts/
-```
-
-## 已导入的 Skill
-
-| Skill 名称 | 目录 | 用途 |
-|------------|------|------|
-| `frontend-design` | `frontend-design/` | 创建独特、生产级的前端界面，避免通用 AI 美学，注重排版、色彩、动效和空间构图 |
-| `frontend-flow-test` | `frontend-flow-test/` | 前端临时浏览器业务闭环验收规范，强调最小相关流程和低 token 关键状态检查 |
-| `skill-creator` | `skill-creator/` | 创建新 skill、修改和改进现有 skill、运行评估和基准测试以衡量 skill 性能 |
-| `context-handoff` | `context-handoff/` | 当用户说"请生成摘要"时，生成新 Task 交接摘要和可复制的新任务启动提示词 |
-
-## 建议后续可导入的 Skill 类型
-
-| Skill 名称 | 用途 |
-|------------|------|
-| `bugfix-minimal-change` | Bug 最小改动修复流程 |
-| `frontend-ux-check` | 前端交互体验检查清单 |
-
-## 与项目规则的关系
-
-- 所有 skills 必须结合项目根目录 `AGENTS.md` 使用
-- Skills 不能覆盖或冲突于 `AGENTS.md`
-- 如果 skill 内容与 `AGENTS.md` 不一致，以 `AGENTS.md` 和用户当前明确要求为准
-
-## 本地规则
-
-- 本目录中的项目级 skills 已纳入 Git，用于不同 Agent 共享一致工作流
+- 使用前完整阅读对应 `SKILL.md`。
+- 项目事实引用 `docs/` 权威文档，不在 Skill 中复制。
+- 长期硬规则写入根目录 `AGENTS.md`。
+- Skill 与用户要求或 `AGENTS.md` 冲突时，以用户要求和 `AGENTS.md` 为准。
+- 创建或维护 Skill 使用当前 Agent 平台提供的系统 `skill-creator`，项目不保存不完整副本。

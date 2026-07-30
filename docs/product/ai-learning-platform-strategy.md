@@ -1,8 +1,8 @@
-# AI 驱动的题目学习平台战略文档
+# AI 学习平台战略
 
 本文档用于承接长期 AI 学习平台方向，帮助后续 Agent 在不偏离当前工程基础的前提下，逐步把项目从“题库 + 错题复习系统”升级为“AI 驱动的题目学习平台”。
 
-本文档只记录战略、能力地图和优先级，不替代 `docs/PRD.md`、`docs/ROADMAP.md`、`docs/API_DESIGN.md`、`docs/DB_DESIGN.md` 或 `docs/ARCHITECTURE.md`。具体接口、数据库和架构设计应在对应阶段真正开发前再落到专项文档中。
+本文档只记录战略、能力地图和优先级，不替代 `docs/product/prd.md`、`docs/product/roadmap.md`、`docs/reference/api.md`、`docs/reference/database.md` 或 `docs/architecture/overview.md`。具体接口、数据库和架构设计应在对应阶段真正开发前再落到专项文档中。
 
 ---
 

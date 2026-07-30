@@ -21,17 +21,17 @@
 审查时优先检查：
 
 - 是否符合用户当前轮次的明确要求；
-- 是否符合 `docs/ROADMAP.md` 中的当前项目阶段；
+- 是否符合 `docs/product/roadmap.md` 中的当前项目阶段；
 - 是否越界修改了无关文件或无关模块；
 - 是否存在伪实现、硬编码、长期假数据或临时代码冒充完成；
 - 是否弱化业务规则、权限规则、安全规则或数据一致性；
-- 是否破坏 `docs/ARCHITECTURE.md` 中的架构边界；
+- 是否破坏 `docs/architecture/overview.md` 中的架构边界；
 - 是否让大文件、大类、大组件继续膨胀，且没有合理拆分计划；
 - 是否缺少必要测试或验证；
 - 是否遗漏接口、数据库、架构、演示、简历等相关文档同步；
 - 是否可以安全 commit。
 
-涉及测试判断时，参考 `docs/TESTING.md`；涉及 Git 判断时，参考 `docs/AGENT_GIT_RULES.md`。
+涉及测试判断时，参考 `docs/development/testing.md`；涉及 Git 判断时，参考 `docs/development/git-rules.md`。
 
 ---
 
@@ -55,7 +55,7 @@
 - 是否存在不应提交的文件；
 - 必要测试或构建是否通过，未执行项是否有合理说明；
 - 相关文档是否同步；
-- commit message 是否符合 `docs/AGENT_GIT_RULES.md`；
+- commit message 是否符合 `docs/development/git-rules.md`；
 - 是否还有必须马上改的问题。
 
 如果存在阻塞问题，应明确说“不建议 commit”，并列出最小修复项。

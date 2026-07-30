@@ -1,6 +1,6 @@
-# 工程规则建议清单
+# 工程规则
 
-本文档为 LearnPlatform 的工程判断辅助清单，用于新增功能、修复问题、重构或判断代码归属时参考。它不替代 `docs/ARCHITECTURE.md`、`docs/API_DESIGN.md`、`docs/DB_DESIGN.md` 和 `docs/TESTING.md`。
+本文档为 LearnPlatform 的工程判断辅助清单，用于新增功能、修复问题、重构或判断代码归属时参考。它不替代 `docs/architecture/overview.md`、`docs/reference/api.md`、`docs/reference/database.md` 和 `docs/development/testing.md`。
 
 ---
 
@@ -73,9 +73,9 @@
 
 ## 6. 测试与文档
 
-- 行为改动按 `docs/AI_AGENT_DEVELOPMENT_WORKFLOW.md` 执行任务契约、Red-Green-Refactor、验证和交付流程。
-- 是否补测试按 `docs/TESTING.md` 判断，不追求数量，优先保护高风险业务。
-- 接口变化同步 `docs/API_DESIGN.md`。
-- 数据库变化同步 `docs/DB_DESIGN.md`。
-- 架构或目录边界变化同步 `docs/ARCHITECTURE.md`。
-- 每轮开发记录同步 `docs/CHANGELOG_AGENT.md`。
+- 行为改动按 `docs/development/workflow.md` 执行任务契约、Red-Green-Refactor、验证和交付流程。
+- 是否补测试按 `docs/development/testing.md` 判断，不追求数量，优先保护高风险业务。
+- 接口变化同步 `docs/reference/api.md`。
+- 数据库变化同步 `docs/reference/database.md`。
+- 架构或目录边界变化同步 `docs/architecture/overview.md`。
+- 每轮开发记录追加到 `docs/project/changelog/` 的当前月份文件；月份变化时同步更新索引。

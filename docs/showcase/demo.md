@@ -1,4 +1,4 @@
-# AI 题库与错题复习系统 - 演示流程
+# 演示流程
 
 本文档用于指导项目演示，涵盖所有核心功能模块的操作步骤。
 
@@ -9,29 +9,12 @@
 ### 环境启动
 
 #### 方式一：本地开发
-```bash
-# 1. 启动 MySQL
-sudo /usr/local/mysql/support-files/mysql.server start
 
-# 2. 初始化数据库（首次）
-mysql -u root -p < backend/src/main/resources/db/migration/V1__baseline.sql
-
-# 3. 启动后端
-cd backend
-mvn spring-boot:run
-
-# 4. 启动前端
-cd frontend
-npm install
-npm run dev
-```
+按[本地开发指南](../getting-started/local-development.md)启动 MySQL、后端和前端。
 
 #### 方式二：Docker Compose
-```bash
-cp .env.example .env
-docker compose up -d
-docker compose ps  # 确认所有服务正常
-```
+
+按[Docker 开发指南](../getting-started/docker-development.md)启动并检查服务。
 
 ### 演示账号
 
@@ -58,7 +41,7 @@ cd frontend
 npm run screenshots:demo
 ```
 
-默认访问 `http://localhost:18000`，并将截图输出到 `docs/demo-screenshots/`。如端口不同，可指定：
+默认访问 `http://localhost:18000`，并将截图输出到 `docs/showcase/screenshots/`。如端口不同，可指定：
 
 ```bash
 DEMO_BASE_URL=http://localhost:5173 npm run screenshots:demo
@@ -66,7 +49,7 @@ DEMO_BASE_URL=http://localhost:5173 npm run screenshots:demo
 
 脚本会覆盖用户端首页、课程、题库、刷题、错题、复习、考试，以及管理端总览、题目管理、投稿管理和 AI 调用分析；若页面加载时出现 4xx/5xx API 响应，脚本会失败，避免生成不可信截图。
 
-当前仓库已生成一组桌面演示截图，见 `docs/demo-screenshots/`。
+当前仓库已生成一组桌面演示截图，见 `docs/showcase/screenshots/`。
 
 ---
 

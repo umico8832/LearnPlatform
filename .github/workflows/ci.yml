@@ -7,6 +7,22 @@ on:
     branches: [main]
 
 jobs:
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate documentation and project Skills
+        run: python3 scripts/check-docs.py
+
   backend:
     name: Backend Build & Test
     runs-on: ubuntu-latest

@@ -5,7 +5,7 @@ description: Use this skill when Codex needs to perform temporary frontend brows
 
 # Frontend Flow Test
 
-Use this skill for temporary browser-based verification. It does not replace Vitest, backend tests, or Playwright E2E. Its job is to make ad hoc Agent browser checks small, relevant, and cheap.
+Use this skill for temporary browser-based verification. It does not replace Vitest, backend tests, or Playwright E2E. Its job is to make ad hoc Agent browser checks small, relevant, and cheap. Use `docs/development/testing.md` as the canonical testing policy.
 
 ## Core Rule
 

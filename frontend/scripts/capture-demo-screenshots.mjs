@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(__dirname, '..', '..')
 
 const baseURL = process.env.DEMO_BASE_URL || process.env.E2E_BASE_URL || 'http://localhost:18000'
-const outputDir = path.resolve(repoRoot, process.env.DEMO_SCREENSHOT_DIR || 'docs/demo-screenshots')
+const outputDir = path.resolve(repoRoot, process.env.DEMO_SCREENSHOT_DIR || 'docs/showcase/screenshots')
 const captchaCode = process.env.DEMO_CAPTCHA_CODE || '42'
 
 const users = {
