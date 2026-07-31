@@ -124,7 +124,7 @@ README、HANDOFF 和 ROADMAP 不复制 STATUS 中的动态细节。
 - `.env.example` 只能包含示例值。
 - 不覆盖用户已有改动。
 - 禁止未经确认执行 push、rebase、reset、force push、清理历史或删除分支。
-- 工作区存在不相关未提交改动时不得自动 commit。
+- 工作区存在不相关未提交改动时，只有能够可靠隔离本轮文件或代码块且不依赖其他改动，才可只暂存本轮范围；否则不得自动 commit。
 - 提交必须聚焦并符合 `docs/development/git-rules.md`。
 
 ## 9. 上下文转接
