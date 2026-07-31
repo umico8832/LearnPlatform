@@ -98,8 +98,7 @@ LearnPlatform/
 ├── frontend/            # Vue 3 前端
 ├── backend/             # Spring Boot 后端
 ├── docs/                # 正式项目文档
-├── .agents/skills/      # LearnPlatform 项目 Skills
-├── .codex/skills/       # 第三方开源 Skills 包
+├── .agents/skills/      # 项目自有与上游安装的仓库级 Skills
 ├── scripts/             # 项目脚本
 ├── monitoring/          # 监控配置
 ├── docker-compose.yml

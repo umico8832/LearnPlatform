@@ -11,10 +11,10 @@ Create usable, coherent learning and administration interfaces that fit the exis
 
 1. Inspect the target Vue component and nearby shared styles.
 2. Read `docs/architecture/frontend.md` for frontend boundaries.
-3. Read `.codex/skills/ui-ux-pro-max/SKILL.md` when the task needs UX, accessibility, layout, interaction, typography, color, motion, or chart guidance.
+3. Read `.agents/skills/ui-ux-pro-max/SKILL.md` when the task needs UX, accessibility, layout, interaction, typography, color, motion, or chart guidance.
 4. Reuse existing global CSS variables, Element Plus components, ECharts patterns, icons, and page conventions.
 
-Do not use `.codex/skills/ui-styling/SKILL.md` as an implementation guide unless the user explicitly requests shadcn/ui, Radix UI, or Tailwind.
+Do not use `.agents/skills/ui-styling/SKILL.md` as an implementation guide unless the user explicitly requests shadcn/ui, Radix UI, or Tailwind.
 
 ## Product direction
 

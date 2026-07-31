@@ -343,7 +343,12 @@ Extract key information from user request:
 - **Product type**: Entertainment (social, video, music, gaming), Tool (scanner, editor, converter), Productivity (task manager, notes, calendar), or hybrid
 - **Target audience**: C-end consumer users; consider age group, usage context (commute, leisure, work)
 - **Style keywords**: playful, vibrant, minimal, dark mode, content-first, immersive, etc.
-- **Stack**: React Native (this project's only tech stack)
+- **Stack**: whatever the user is actually building with — infer it from the project
+  (package.json, existing files, explicit request) or ask. Then load its rules with
+  `--stack <name>` (see "Available Stacks"). Do not assume React Native.
+- **Platform**: web or native app. Several sections below are scoped to App UI
+  (iOS/Android/React Native/Flutter) and do not apply to desktop-web work —
+  safe areas, haptics, bottom nav and Dynamic Type are mobile-only concerns.
 
 ### Step 2: Generate Design System (REQUIRED)
 
@@ -442,7 +447,9 @@ python3 skills/ui-ux-pro-max/scripts/search.py "<keyword>" --domain <domain> [-n
 | Landing structure | `landing` | `--domain landing "hero social-proof"` |
 | React Native perf | `react` | `--domain react "rerender memo list"` |
 | App interface a11y | `web` | `--domain web "accessibilityLabel touch safe-areas"` |
-| AI prompt / CSS keywords | `prompt` | `--domain prompt "minimalism"` |
+| Icon suggestions | `icons` | `--domain icons "navigation arrows"` |
+| Individual Google Fonts | `google-fonts` | `--domain google-fonts "variable sans serif"` |
+| GSAP animation snippets | `gsap` | `--domain gsap "scroll reveal stagger"` |
 
 ### Step 4: Stack Guidelines
 
@@ -470,14 +477,12 @@ python3 skills/ui-ux-pro-max/scripts/search.py "<keyword>" --stack <stack>
 | `gsap` | GSAP animation skeletons by intensity tier | scroll reveal, stagger, magnetic cursor, page transition |
 | `react` | React/Next.js performance | waterfall, bundle, suspense, memo, rerender, cache |
 | `web` | App interface guidelines (iOS/Android/React Native) | accessibilityLabel, touch targets, safe areas, Dynamic Type |
-| `prompt` | AI prompts, CSS keywords | (style name) |
+| `icons` | Icon recommendations with import code | arrow, navigation, lucide, phosphor |
+| `google-fonts` | Individual Google Fonts lookup | sans serif, monospace, japanese, variable font, popular |
 
 ### Available Stacks
 
-| Stack | Focus |
-|-------|-------|
-| `react-native` | Components, Navigation, Lists |
-| `javafx` | Enterprise desktop apps, AtlantaFX themes, FXML, CSS, Controls, Binding, Threading, Packaging |
+`react`, `nextjs`, `vue`, `svelte`, `astro`, `swiftui`, `react-native`, `flutter`, `nuxtjs`, `nuxt-ui`, `html-tailwind`, `shadcn`, `jetpack-compose`, `threejs`, `angular`, `laravel`, `javafx`, `wpf`, `winui`, `avalonia`, `uno`, `uwp`
 
 **JavaFX enterprise examples:**
 

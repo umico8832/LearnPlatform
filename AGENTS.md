@@ -66,10 +66,10 @@ LearnPlatform 是一个用于刷题、错题复习、考试和 AI 辅助学习�
 
 前端美化、布局或交互优化时：
 
-1. 读取 `.codex/skills/ui-ux-pro-max/SKILL.md` 获取通用 UX 和设计判断；
+1. 读取 `.agents/skills/ui-ux-pro-max/SKILL.md` 获取通用 UX 和设计判断；
 2. 读取 `.agents/skills/frontend-design/SKILL.md` 获取项目落地约束；
 3. 检查真实 Vue 3、Element Plus 和现有设计变量；
-4. 只有用户明确要求 shadcn/ui、Radix 或 Tailwind 时才使用 `.codex/skills/ui-styling/SKILL.md` 的实现路径。
+4. 只有用户明确要求 shadcn/ui、Radix 或 Tailwind 时才使用 `.agents/skills/ui-styling/SKILL.md` 的实现路径。
 
 临时浏览器流程验收读取 `.agents/skills/frontend-flow-test/SKILL.md`，并结合 `docs/development/testing.md`。
 
@@ -96,9 +96,10 @@ README、HANDOFF 和 ROADMAP 不复制 STATUS 中的动态细节。
 
 ## 6. Skills 所有权
 
-- `.agents/skills/` 是 LearnPlatform 项目自有、遵循当前 Codex 仓库级标准的跨 Agent 工作流。
-- `.codex/skills/` 是通过上游默认安装方式维护的第三方开源 Skill 包。
-- 不直接修改、移动或重写 `.codex/skills/`；升级时按真实上游方式执行。
+- `.agents/skills/` 是当前 Codex 仓库级标准目录，同时容纳 LearnPlatform 自有工作流和上游安装的通用 Skill。
+- `context-handoff`、`frontend-design`、`frontend-flow-test` 由 LearnPlatform 维护。
+- `banner-design`、`brand`、`design`、`design-system`、`slides`、`ui-styling`、`ui-ux-pro-max` 由 `ui-ux-pro-max-cli` 按上游默认方式生成。
+- 不直接修改、移动或重写上游生成的 Skill；升级时执行 `npm install -g ui-ux-pro-max-cli@latest` 和 `uipro init --ai codex --force`。
 - 使用不熟悉的 Skill 前必须完整阅读对应 `SKILL.md`，不得根据名称猜测。
 - 第三方 Skill 引用的依赖不存在时必须说明，不得假装完成相关步骤。
 - Skill 与本文件或用户要求冲突时，以用户要求和本文件为准。

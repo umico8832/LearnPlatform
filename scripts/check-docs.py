@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate LearnPlatform documentation links, navigation, and project Skills."""
+"""Validate LearnPlatform documentation links, navigation, and repository Skills."""
 
 from __future__ import annotations
 
@@ -13,6 +13,20 @@ from urllib.parse import unquote
 ROOT = Path(__file__).resolve().parents[1]
 DOCS_ROOT = ROOT / "docs"
 PROJECT_SKILLS_ROOT = ROOT / ".agents" / "skills"
+PROJECT_SKILL_NAMES = frozenset(
+    {"context-handoff", "frontend-design", "frontend-flow-test"}
+)
+UPSTREAM_SKILL_NAMES = frozenset(
+    {
+        "banner-design",
+        "brand",
+        "design",
+        "design-system",
+        "slides",
+        "ui-styling",
+        "ui-ux-pro-max",
+    }
+)
 
 MARKDOWN_LINK = re.compile(r"!?\[[^\]]*]\(([^)]+)\)")
 FRONTMATTER_FIELD = re.compile(r"^([a-zA-Z0-9_-]+):\s*(.+?)\s*$")
@@ -74,7 +88,8 @@ OLD_BASENAMES = (
 def markdown_files() -> list[Path]:
     files = [ROOT / "README.md", ROOT / "AGENTS.md"]
     files.extend(sorted(DOCS_ROOT.rglob("*.md")))
-    files.extend(sorted(PROJECT_SKILLS_ROOT.rglob("*.md")))
+    for skill_name in sorted(PROJECT_SKILL_NAMES):
+        files.extend(sorted((PROJECT_SKILLS_ROOT / skill_name).rglob("*.md")))
     pull_request_template = ROOT / ".github" / "PULL_REQUEST_TEMPLATE.md"
     if pull_request_template.exists():
         files.append(pull_request_template)
@@ -319,7 +334,7 @@ def parse_frontmatter(path: Path) -> dict[str, str]:
     return {}
 
 
-def check_project_skills(errors: list[str]) -> None:
+def check_repository_skills(errors: list[str]) -> None:
     names: dict[str, Path] = {}
     for skill_file in sorted(PROJECT_SKILLS_ROOT.glob("*/SKILL.md")):
         fields = parse_frontmatter(skill_file)
@@ -338,10 +353,12 @@ def check_project_skills(errors: list[str]) -> None:
         if name:
             if name in names:
                 errors.append(
-                    f"{relative}: duplicate project Skill name also used by "
+                    f"{relative}: duplicate repository Skill name also used by "
                     f"{names[name].relative_to(ROOT)}"
                 )
             names[name] = skill_file
+        if skill_file.parent.name not in PROJECT_SKILL_NAMES:
+            continue
         metadata = skill_file.parent / "agents" / "openai.yaml"
         if not metadata.exists():
             errors.append(f"{relative}: missing agents/openai.yaml")
@@ -355,14 +372,16 @@ def check_project_skills(errors: list[str]) -> None:
                 f"{metadata.relative_to(ROOT)}: default_prompt must mention ${name}"
             )
 
-    third_party_root = ROOT / ".codex" / "skills"
-    for skill_file in sorted(third_party_root.glob("*/SKILL.md")):
-        name = parse_frontmatter(skill_file).get("name")
-        if name in names:
-            errors.append(
-                f"{skill_file.relative_to(ROOT)}: name collides with project Skill "
-                f"{names[name].relative_to(ROOT)}"
-            )
+    actual_names = set(names)
+    expected_names = PROJECT_SKILL_NAMES | UPSTREAM_SKILL_NAMES
+    for missing in sorted(expected_names - actual_names):
+        errors.append(f".agents/skills/{missing}: expected Skill is missing")
+    for unknown in sorted(actual_names - expected_names):
+        errors.append(f".agents/skills/{unknown}: ownership is not documented")
+
+    legacy_root = ROOT / ".codex" / "skills"
+    if any(legacy_root.glob("*/SKILL.md")):
+        errors.append(".codex/skills: legacy repository Skills must be removed")
 
 
 def main() -> int:
@@ -373,7 +392,7 @@ def main() -> int:
     check_old_paths(files, errors)
     check_markdown_structure(files, errors)
     check_json_examples(files, errors)
-    check_project_skills(errors)
+    check_repository_skills(errors)
     check_api_inventory(errors)
     check_database_inventory(errors)
 
@@ -385,7 +404,7 @@ def main() -> int:
 
     print(
         "Documentation validation passed: "
-        f"{len(files)} Markdown files and project Skills checked."
+        f"{len(files)} Markdown files and repository Skills checked."
     )
     return 0
 
