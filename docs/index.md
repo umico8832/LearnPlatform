@@ -6,7 +6,7 @@
 
 - 第一次运行项目：[本地开发](getting-started/local-development.md) 或 [Docker 开发](getting-started/docker-development.md)
 - 配置与排错：[配置说明](getting-started/configuration.md)和[常见问题排查](getting-started/troubleshooting.md)
-- 了解产品：[产品需求](product/prd.md) 与 [产品路线图](product/roadmap.md)
+- 了解产品：[产品需求](product/prd.md)、[产品路线图](product/roadmap.md)、[后续扩展方向](product/future.md)与[AI 学习平台战略](product/ai-learning-platform-strategy.md)
 - 了解系统：[系统架构](architecture/overview.md)
 - 查询契约：[API 参考](reference/api/index.md) 与 [数据库参考](reference/database/index.md)
 - 开始开发：[AI Agent 开发工作流](development/workflow.md) 与 [测试策略](development/testing.md)

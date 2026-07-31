@@ -44,16 +44,13 @@
 
 ---
 
-## 4. 业务与质量底线
+## 4. 跨层约束
 
-- 不用伪实现冒充完成功能。
-- 不把临时代码写成长期方案。
-- 不用硬编码绕过权限、状态、判分、配额、缓存或数据一致性规则。
-- 不为了让测试通过而降低真实业务约束。
 - 前后端字段和枚举含义应保持一致。
 - 新增依赖要说明原因，并优先使用项目已有技术栈和模式。
 - 数据库字段命名使用 `snake_case`，Java / TypeScript 字段命名保持项目现有风格。
-- 涉及真实密钥、Token、Cookie、数据库密码和个人隐私数据时，遵守 `AGENTS.md` 的安全底线。
+- 权限、判分、配额、审核状态和持久化结果以服务端事实为准。
+- 接口、数据库和架构的权威来源分别见 `docs/reference/api/`、`docs/reference/database/` 和 `docs/architecture/`。
 
 ---
 
@@ -70,12 +67,3 @@
 - Docker、部署、监控、日志和 CI。
 
 ---
-
-## 6. 测试与文档
-
-- 行为改动按 `docs/development/workflow.md` 执行任务契约、Red-Green-Refactor、验证和交付流程。
-- 是否补测试按 `docs/development/testing.md` 判断，不追求数量，优先保护高风险业务。
-- 接口变化同步 `docs/reference/api/` 中对应领域文档。
-- 数据库变化同步 `docs/reference/database/` 中对应领域文档。
-- 架构或目录边界变化同步 `docs/architecture/overview.md`。
-- 每轮开发记录追加到 `docs/project/changelog/` 的当前月份文件；月份变化时同步更新索引。

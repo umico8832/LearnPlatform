@@ -75,23 +75,30 @@ LearnPlatform 是一个用于刷题、错题复习、考试和 AI 辅助学习�
 
 ## 5. 状态与文档权威来源
 
-- 当前阶段、最新验证、遗留问题、下一步：`docs/project/status.md`
-- 长期规划：`docs/product/roadmap.md`
-- 每轮历史：`docs/project/changelog/`
-- 产品范围：`docs/product/prd.md`
-- 架构：`docs/architecture/`
-- API：`docs/reference/api/index.md`
-- 数据库：`docs/reference/database/index.md`
+| 内容 | 唯一权威来源 |
+|---|---|
+| 产品范围与稳定验收标准 | `docs/product/prd.md` |
+| 长期阶段与候选方向 | `docs/product/roadmap.md`、`docs/product/future.md` |
+| 当前阶段、最新验证、遗留问题与下一步 | `docs/project/status.md` |
+| 单轮过程、版本和历史结果 | `docs/project/changelog/` |
+| 架构、API 与数据库契约 | `docs/architecture/`、`docs/reference/` |
+| 跨对话最小续接信息 | `docs/project/handoff.md` |
 
-README、HANDOFF 和 ROADMAP 不复制 STATUS 中的动态细节。
+README、HANDOFF 和 ROADMAP 不复制 STATUS 中的动态细节。写入长期规则前还必须同时满足：
+
+1. 后续任务会反复用到；
+2. 不能由代码、测试或脚本直接强制；
+3. 现有权威文档没有表达；
+4. 删除后确实可能导致错误决策。
+
+不满足时，当前事实写入 status，单次事实写入 changelog，可执行约束写入检查脚本。不要把一次故障、工具版本、测试数量或临时兼容办法升级为长期规则。
 
 更新原则：
 
-- 功能或规则完成后更新当前月份 changelog。
-- 当前阶段、最新验证、遗留问题或下一步变化时更新 status。
-- 阶段目标变化时更新 roadmap。
-- 接口、数据库或架构变化时更新对应权威文档。
-- 进入上下文转接点时更新 handoff。
+- 只更新事实发生变化的权威文档，不机械“同步所有文档”。
+- 功能或规则完成后更新当前月份 changelog；动态状态变化时更新 status。
+- 阶段、接口、数据库或架构变化时更新对应权威文档。
+- 只有进入上下文转接点时更新 handoff。
 - 简历和演示只能陈述真实能力。
 
 ## 6. Skills 所有权

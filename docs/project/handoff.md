@@ -31,10 +31,8 @@ Phase 22 持续积累真实学习样本。在同题、跨题、资产类型和�
 
 ## 注意事项
 
-- 项目已移除 Lombok。
 - 不读取或覆盖真实 `.env`。
-- `.codex/skills` 是第三方上游安装内容，不直接修改。
-- 项目自有工作流位于 `/.agents/skills`。
+- 项目 Skills 与上游安装的通用 Skills 均位于 `/.agents/skills`，所有权见[Agent 与 Skills](../development/agent-tooling.md)。
 - 文档或状态与代码冲突时，先以真实代码验证，再修正文档。
 
 ## 续接提示词

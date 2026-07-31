@@ -47,7 +47,7 @@ API 和表结构分别见[API 参考](../reference/api/index.md)与[数据库参
 |---|---|
 | 接口路径和方法 | Spring Controller 与 OpenAPI |
 | 请求和响应字段 | DTO、VO、前端 API 类型 |
-| 数据库结构 | Flyway V1–V19 |
+| 数据库结构 | `backend/src/main/resources/db/migration/` |
 | 权限 | `SecurityConfig` 与业务 Service |
 | 部署服务和端口 | Compose、Dockerfile、Nginx 配置 |
 | 当前阶段和验证数字 | `docs/project/status.md` |

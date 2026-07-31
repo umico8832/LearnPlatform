@@ -84,6 +84,55 @@ OLD_BASENAMES = (
     "RESUME.md",
 )
 
+CONTENT_RULES: dict[str, tuple[tuple[re.Pattern[str], str], ...]] = {
+    "AGENTS.md": (
+        (
+            re.compile(r"\b20\d{2}-\d{2}-\d{2}\b"),
+            "stable rules must not contain a dated project fact",
+        ),
+        (
+            re.compile(r"\bRound\s+\d+\b", re.IGNORECASE),
+            "round results belong in status or changelog",
+        ),
+    ),
+    "docs/development/agent-tooling.md": (
+        (
+            re.compile(r"当前(?:生成)?版本|声明版本"),
+            "installed versions belong in changelog, not the maintenance guide",
+        ),
+        (
+            re.compile(r"argument-hint|尾随(?:空格|字符)|git diff --check"),
+            "one-off upstream defects belong in changelog",
+        ),
+    ),
+    "docs/development/testing.md": (
+        (
+            re.compile(r"本轮完成|当前\s*Testcontainers\s*版本"),
+            "transient implementation facts do not belong in the test strategy",
+        ),
+        (
+            re.compile(r"现有\s*\d+\s*个.*(?:测试|用例)|真实基线为"),
+            "test counts and measured baselines belong in status or changelog",
+        ),
+    ),
+    "docs/product/prd.md": (
+        (
+            re.compile(r"当前主线|Phase\s*\d+", re.IGNORECASE),
+            "current phase belongs in status or roadmap, not the PRD",
+        ),
+    ),
+    "docs/product/roadmap.md": (
+        (
+            re.compile(r"当前工作：|Round\s*级", re.IGNORECASE),
+            "current work and round instructions do not belong in the roadmap",
+        ),
+    ),
+}
+
+BRITTLE_SHOWCASE_FACT = re.compile(
+    r"\bV\d+\s*[–—-]\s*V\d+\b|\d+\s*张(?:业务)?表"
+)
+
 
 def markdown_files() -> list[Path]:
     files = [ROOT / "README.md", ROOT / "AGENTS.md"]
@@ -221,6 +270,47 @@ def check_old_paths(files: list[Path], errors: list[str]) -> None:
             ):
                 errors.append(
                     f"{path.relative_to(ROOT)}: contains legacy path {skill_path}"
+                )
+
+
+def check_document_ownership(files: list[Path], errors: list[str]) -> None:
+    history_roots = (
+        DOCS_ROOT / "project" / "changelog",
+        DOCS_ROOT / "project" / "audits",
+    )
+    for path in files:
+        relative = path.relative_to(ROOT).as_posix()
+        text = path.read_text(encoding="utf-8")
+        is_history = any(path.is_relative_to(root) for root in history_roots)
+
+        if not is_history and ".codex/skills" in text:
+            errors.append(
+                f"{relative}: contains obsolete repository Skill path .codex/skills"
+            )
+
+        if not is_history and path != DOCS_ROOT / "project" / "status.md":
+            if re.search(r"\bRound\s+\d+\b", text, re.IGNORECASE):
+                errors.append(
+                    f"{relative}: numbered round facts belong in status or changelog"
+                )
+
+        for pattern, message in CONTENT_RULES.get(relative, ()):
+            match = pattern.search(text)
+            if match:
+                line = text.count("\n", 0, match.start()) + 1
+                errors.append(f"{relative}:{line}: {message}")
+
+        if relative in {
+            "README.md",
+            "docs/showcase/demo.md",
+            "docs/showcase/resume.md",
+        }:
+            match = BRITTLE_SHOWCASE_FACT.search(text)
+            if match:
+                line = text.count("\n", 0, match.start()) + 1
+                errors.append(
+                    f"{relative}:{line}: brittle migration or table count belongs "
+                    "in database reference or status"
                 )
 
 
@@ -390,6 +480,7 @@ def main() -> int:
     check_links(files, errors)
     check_docs_navigation(errors)
     check_old_paths(files, errors)
+    check_document_ownership(files, errors)
     check_markdown_structure(files, errors)
     check_json_examples(files, errors)
     check_repository_skills(errors)

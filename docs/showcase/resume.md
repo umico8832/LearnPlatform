@@ -53,10 +53,9 @@
 
 ### 工程质量
 
-- Flyway V1–V19 管理 29 张业务表及其演进。
+- Flyway 管理数据库迁移，Testcontainers 验证真实 MySQL 约束。
 - Maven `verify` 接入 Checkstyle、SpotBugs 和 JaCoCo。
 - 前端使用 ESLint、Prettier、Vitest 和全源码覆盖率门槛。
-- Testcontainers 验证真实 MySQL 迁移、唯一约束和事务。
 - Playwright 在隔离 Docker Profile 中覆盖登录、练习错题、考试和投稿审核等流程。
 - Compose 集成 MySQL、Redis、Nginx、Prometheus、Grafana 和 Loki。
 
@@ -88,7 +87,7 @@
 - 使用数据库唯一约束和事务处理考试重复提交。
 - 将 AI 流式最终 usage 传入统一调用日志。
 - 拆分过大的学习诊断 Service 和管理端题目页面，同时保持接口不变。
-- 识别“只统计被加载文件”的虚高覆盖率，并改为全源码覆盖基线。
+- 将前端覆盖率统计扩展到全部源码，避免只统计已加载文件造成虚高。
 
 ## 不应声称
 

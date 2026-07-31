@@ -28,8 +28,6 @@ LearnPlatform 是一套面向学习者和备考人群的前后端分离刷题平
 | 部署 | Docker、Docker Compose、Nginx |
 | 测试 | JUnit、Mockito、MockMvc、Testcontainers、Vitest、Playwright |
 
-项目已移除 Lombok，Java 实体使用手写 getter、setter 和 `toString`。
-
 ## 快速开始
 
 ### 本地开发

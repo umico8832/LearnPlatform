@@ -42,7 +42,7 @@ Compose 通过健康条件控制后端、前端和监控依赖启动顺序。
 
 - MySQL 数据保存在命名卷 `mysql-data`。
 - Redis、Prometheus、Grafana 和 Loki 使用独立命名卷。
-- 后端启动时由 Flyway 执行 V1–V19。
+- 后端启动时由 Flyway 按版本顺序执行数据库迁移。
 - Compose 的 MySQL 初始化挂载 V1 只用于首次空卷引导；后续结构演进仍由后端 Flyway 完成。
 
 ## 环境边界

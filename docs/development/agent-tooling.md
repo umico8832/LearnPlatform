@@ -11,7 +11,7 @@
 | 上游 Skills | `/.agents/skills/` | `nextlevelbuilder/ui-ux-pro-max-skill` | 通过上游 CLI 生成的通用设计能力 |
 | 系统或插件 Skills | Codex 运行环境 | 平台或插件提供方 | 文档、浏览器、GitHub 等通用能力 |
 
-OpenAI 当前文档把仓库级独立 Skill 标准目录定义为 `.agents/skills`。上游 `ui-ux-pro-max-skill` 已在 2026-07-27 将 Codex 默认安装目录从 `.codex/skills` 修正为 `.agents/skills`，因此两类 Skill 共享标准目录，通过所有权清单和维护方式区分。
+仓库级 Skill 统一位于 `.agents/skills`。项目自有和上游生成内容通过所有权清单与维护方式区分，不通过重复目录区分。
 
 ## 项目 Skills
 
@@ -33,24 +33,16 @@ OpenAI 当前文档把仓库级独立 Skill 标准目录定义为 `.agents/skill
 
 ## 上游 `ui-ux-pro-max-skill`
 
-来源和安装基线：
+来源与安装方式：
 
 - 上游仓库：`https://github.com/nextlevelbuilder/ui-ux-pro-max-skill`
 - npm 包：`ui-ux-pro-max-cli`
-- 当前生成版本：`2.11.3`
 - Codex 项目安装命令：`uipro init --ai codex --force`
 
-当前生成清单来自各 Skill frontmatter：
+生成清单：
 
-| Skill | 声明版本 | 主要用途 |
-|---|---:|---|
-| `banner-design` | 1.0.0 | 社交、广告和网站横幅 |
-| `brand` | 1.0.0 | 品牌声音、视觉身份和资产一致性 |
-| `design` | 2.1.0 | 品牌、图标、演示和综合设计路由 |
-| `design-system` | 1.0.0 | Token、组件规范和系统设计 |
-| `slides` | 1.0.0 | HTML 战略演示文稿 |
-| `ui-styling` | 1.0.0 | shadcn/ui、Radix 和 Tailwind UI |
-| `ui-ux-pro-max` | 未声明 | 框架无关的 UX、布局和视觉判断 |
+- `banner-design`、`brand`、`design`、`design-system`
+- `slides`、`ui-styling`、`ui-ux-pro-max`
 
 上述 7 个目录均由上游 CLI 生成。不要在其中维护 LearnPlatform 专属规则；项目约束应写入 `AGENTS.md` 或项目自有 Skill。
 
@@ -73,14 +65,12 @@ Codex 起初只读取 Skill 的名称和描述。以下情况才读取完整 `SK
 
 横幅、品牌、设计系统和演示 Skill 只在对应产物任务中触发，不参与普通业务开发。
 
-## 已知依赖边界
+## 依赖边界
 
-- `banner-design`、`brand`、`design`、`design-system`、`slides` 和 `ui-styling` 的上游 frontmatter 含 `argument-hint`，当前系统 `skill-creator` 校验器不接受该字段；不要直接修改生成文件规避上游问题。
-- `ui-ux-pro-max/scripts/design_system.py` 的上游生成版本含空白尾随字符，会让全量 `git diff --check` 报警；项目自有差异应单独通过检查，不直接格式化上游文件。
-- `design` 和 `banner-design` 声明的部分辅助 Skill 当前不在项目安装清单中，不能假装已经调用。
-- `brand` 和 `design-system` 的部分脚本需要项目先提供品牌指南或 Token 文件。
-- `ui-styling` 默认技术栈与本项目不同，不能直接替换 Element Plus。
-- 第三方 Skill 中残留的 `.claude/skills` 路径属于上游内容；使用相关脚本前必须解析真实文件位置。
+- 使用不熟悉的 Skill 前完整阅读其 `SKILL.md`，并核对其引用的脚本、资源和辅助 Skill 是否真实存在。
+- `brand` 和 `design-system` 需要品牌指南或 Token 时，以项目已有资产为准；缺少输入时先说明。
+- `ui-styling` 的默认技术栈与本项目不同，不能直接替换 Element Plus。
+- 上游内容中的路径或命令必须按当前仓库解析，不能根据示例路径猜测。
 
 ## 维护
 
@@ -92,7 +82,6 @@ Codex 起初只读取 Skill 的名称和描述。以下情况才读取完整 `SK
   uipro init --ai codex --force
   ```
 
-- 升级后核对上游变更、运行 `python3 scripts/check-docs.py`，分别记录项目 Skill、上游 Skill 和全量 `git diff --check` 的真实结果，并在 changelog 记录实际 CLI 版本。
-- 不在 `.codex/skills` 或其他目录保留同名副本，避免 Codex 暴露重复 Skill。
+- 升级后核对生成清单并运行 `python3 scripts/check-docs.py`；版本和单次验证结果只记入 changelog。
 - 修改项目 Skill 后运行系统 `skill-creator` 的 `quick_validate.py`。
 - Skill 与用户要求或 `AGENTS.md` 冲突时，以用户要求和仓库规则为准。

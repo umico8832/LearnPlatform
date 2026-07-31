@@ -4,7 +4,7 @@
 
 涉及行为变化的开发流程同时遵守 `docs/development/workflow.md`。本项目对高风险行为和缺陷修复要求测试先行，但不把纯样式、文档和无行为机械修改包装成严格 TDD。
 
-## 1. 当前测试层级
+## 1. 测试层级
 
 ### 后端
 
@@ -20,8 +20,8 @@
 - 组件与页面测试：安全渲染、表单提交和关键交互。
 - API 封装测试：请求路径、HTTP 方法、参数结构和特殊响应处理。
 - Playwright 浏览器 E2E：在隔离 Docker 环境中覆盖真实验证码登录、JWT 会话和关键页面跳转。
-- ESLint：检查 Vue/TypeScript 的未使用变量、无效表达式和 Vue 模板基础规则；存量显式 `any` 当前以警告呈现，新代码应优先使用明确类型或 `unknown`。
-- Prettier：通过 `npm run format:check` 检查工程配置与本轮完成结构拆分的题目管理模块；存量页面按后续修改范围逐步纳入，避免一次性格式化制造大范围无语义 diff。
+- ESLint：检查 Vue/TypeScript 的未使用变量、无效表达式和 Vue 模板基础规则。
+- Prettier：通过 `npm run format:check` 检查已纳入格式化范围的文件。
 
 前端 DOM 环境统一使用 `happy-dom`，不同时维护多个 DOM 模拟实现。
 
@@ -45,10 +45,10 @@
 
 简单 CRUD API 每个导出函数通常保留一个代表性契约用例即可。错误分支只有在本项目包含额外处理逻辑时才单独测试。
 
-## 4. 后续优先级
+## 4. 测试投资优先级
 
 1. 使用真实 MySQL 和 Flyway 验证关键数据库迁移与业务约束。
-2. 为新增的高风险业务流程补充端到端覆盖；当前基线已覆盖登录、刷题错题复习、考试及投稿审核入库。
+2. 为新增的高风险跨层业务流程补充端到端覆盖。
 3. 按缺陷和业务风险补测试，不再按文件或接口数量追求全覆盖。
 
 ## 5. 浏览器 E2E 环境
@@ -103,8 +103,6 @@ mvn test -DexcludedGroups= -Dtest=WrongQuestionServiceIntegrationTest
 mvn test -DexcludedGroups= -Dtest=AiVariantTrainingIntegrationTest
 ```
 
-当前 Testcontainers 版本为 `1.21.4`，用于兼容 Docker Desktop / Docker Engine 29 的 API 变化。集成测试容器数据库名与基线迁移保持为 `learn_platform`，Flyway 使用容器 root 用户执行迁移，业务数据源仍使用测试用户。现有 5 个集成测试类共 55 个用例；其中 `AiVariantTrainingIntegrationTest` 专门验证 Flyway V18/V19、变式训练唯一约束、幂等开始、旧版重复完成、结构化首次判分和正确率聚合。
-
 GitHub Actions 将 Testcontainers 集成测试作为独立 job 执行，避免默认 `excludedGroups=integration` 让真实 MySQL 约束退出提交门禁。后端常规 job 使用 `mvn clean verify`，同时执行 Checkstyle、SpotBugs 和 JaCoCo 报告生成。
 
 覆盖率门槛是防倒退基线，不是追求数字的目标：
@@ -112,6 +110,6 @@ GitHub Actions 将 Testcontainers 集成测试作为独立 job 执行，避免�
 - 后端 JaCoCo：行覆盖率不低于 50%，分支覆盖率不低于 35%；
 - 前端 Vitest 显式统计全部 `src/**/*.ts` 与 `src/**/*.vue`（排除生成的 `.d.ts`）：语句和行覆盖率不低于 12%，函数覆盖率不低于 10%，分支覆盖率不低于 8%。
 
-前端初始门槛较低，因为此前 55% 的报告只统计被测试加载的文件；显式纳入全部源码后的真实基线为语句 12.5%、分支 8.11%、函数 10.27%、行 12.9%。新增高风险逻辑即使整体覆盖率仍高于门槛，也必须按业务风险补充针对性测试。提高门槛前应先确认本地和 CI 基线稳定，避免通过排除未测试业务代码换取数字。
+新增高风险逻辑即使整体覆盖率仍高于门槛，也必须按业务风险补充针对性测试。提高门槛前应先确认本地和 CI 基线稳定，禁止通过排除未测试业务代码换取数字。
 
 若本地 Docker CLI 可用但 Testcontainers 报无法找到 Docker environment，先确认依赖版本、Docker context 和 socket 路径；不要把 0 tests 当作集成测试通过。

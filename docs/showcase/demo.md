@@ -106,7 +106,7 @@
 - Knife4j：`http://localhost:8080/doc.html`
 - OpenAPI：`http://localhost:8080/v3/api-docs`
 - 未登录请求 401、普通用户访问管理接口 403
-- Flyway V1–V19
+- Flyway 迁移与数据库约束
 - CI 中的后端、前端、文档、Docker、Testcontainers 和 E2E 分层
 - Grafana、Prometheus 和 Loki
 
