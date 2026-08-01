@@ -1,4 +1,0 @@
-interface:
-  display_name: "LearnPlatform Context Handoff"
-  short_description: "Create a concise, evidence-based project handoff"
-  default_prompt: "Use $context-handoff to prepare a minimal verified continuation handoff."

@@ -19,7 +19,6 @@
 |---|---|---|
 | `frontend-design` | LearnPlatform 页面设计、重构、响应式或视觉审查 | 服从 Vue 3、Element Plus 和现有变量 |
 | `frontend-flow-test` | 用户要求打开浏览器模拟或检查前端流程 | 只跑最小业务闭环，不替代自动测试 |
-| `context-handoff` | 用户明确要求交接、续接提示或上下文转移 | 不用于普通进度总结 |
 
 每个项目 Skill 使用：
 

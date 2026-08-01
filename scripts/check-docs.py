@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DOCS_ROOT = ROOT / "docs"
 PROJECT_SKILLS_ROOT = ROOT / ".agents" / "skills"
 PROJECT_SKILL_NAMES = frozenset(
-    {"context-handoff", "frontend-design", "frontend-flow-test"}
+    {"frontend-design", "frontend-flow-test"}
 )
 UPSTREAM_SKILL_NAMES = frozenset(
     {
@@ -57,7 +57,6 @@ OLD_PATHS = (
     "docs/ENGINEERING_RULES.md",
     "docs/AGENT_GIT_RULES.md",
     "docs/AGENT_REVIEW_CHECKLIST.md",
-    "docs/HANDOFF.md",
     "docs/CHANGELOG_AGENT.md",
     "docs/DEMO.md",
     "docs/RESUME.md",
@@ -78,7 +77,6 @@ OLD_BASENAMES = (
     "ENGINEERING_RULES.md",
     "AGENT_GIT_RULES.md",
     "AGENT_REVIEW_CHECKLIST.md",
-    "HANDOFF.md",
     "CHANGELOG_AGENT.md",
     "DEMO.md",
     "RESUME.md",
@@ -263,7 +261,6 @@ def check_old_paths(files: list[Path], errors: list[str]) -> None:
         for skill_path in (
             "skills/frontend-design",
             "skills/frontend-flow-test",
-            "skills/context-handoff",
         ):
             if re.search(
                 rf"(?<![a-zA-Z0-9_./-]){re.escape(skill_path)}", text

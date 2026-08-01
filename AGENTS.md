@@ -35,10 +35,6 @@ LearnPlatform 是一个用于刷题、错题复习、考试和 AI 辅助学习�
 3. `docs/product/roadmap.md`
 4. `README.md`
 
-仅在明确进行上下文交接时读取：
-
-- `docs/project/handoff.md`
-
 仅在追溯历史时读取：
 
 - `docs/project/changelog/index.md`
@@ -82,9 +78,8 @@ LearnPlatform 是一个用于刷题、错题复习、考试和 AI 辅助学习�
 | 当前阶段、最新验证、遗留问题与下一步 | `docs/project/status.md` |
 | 单轮过程、版本和历史结果 | `docs/project/changelog/` |
 | 架构、API 与数据库契约 | `docs/architecture/`、`docs/reference/` |
-| 跨对话最小续接信息 | `docs/project/handoff.md` |
 
-README、HANDOFF 和 ROADMAP 不复制 STATUS 中的动态细节。写入长期规则前还必须同时满足：
+README 和 ROADMAP 不复制 STATUS 中的动态细节。写入长期规则前还必须同时满足：
 
 1. 后续任务会反复用到；
 2. 不能由代码、测试或脚本直接强制；
@@ -98,13 +93,12 @@ README、HANDOFF 和 ROADMAP 不复制 STATUS 中的动态细节。写入长期�
 - 只更新事实发生变化的权威文档，不机械“同步所有文档”。
 - 功能或规则完成后更新当前月份 changelog；动态状态变化时更新 status。
 - 阶段、接口、数据库或架构变化时更新对应权威文档。
-- 只有进入上下文转接点时更新 handoff。
 - 简历和演示只能陈述真实能力。
 
 ## 6. Skills 所有权
 
 - `.agents/skills/` 是当前 Codex 仓库级标准目录，同时容纳 LearnPlatform 自有工作流和上游安装的通用 Skill。
-- `context-handoff`、`frontend-design`、`frontend-flow-test` 由 LearnPlatform 维护。
+- `frontend-design`、`frontend-flow-test` 由 LearnPlatform 维护。
 - `banner-design`、`brand`、`design`、`design-system`、`slides`、`ui-styling`、`ui-ux-pro-max` 由 `ui-ux-pro-max-cli` 按上游默认方式生成。
 - 不直接修改、移动或重写上游生成的 Skill；升级时执行 `npm install -g ui-ux-pro-max-cli@latest` 和 `uipro init --ai codex --force`。
 - 使用不熟悉的 Skill 前必须完整阅读对应 `SKILL.md`，不得根据名称猜测。
@@ -133,14 +127,3 @@ README、HANDOFF 和 ROADMAP 不复制 STATUS 中的动态细节。写入长期�
 - 禁止未经确认执行 push、rebase、reset、force push、清理历史或删除分支。
 - 工作区存在不相关未提交改动时，只有能够可靠隔离本轮文件或代码块且不依赖其他改动，才可只暂存本轮范围；否则不得自动 commit。
 - 提交必须聚焦并符合 `docs/development/git-rules.md`。
-
-## 9. 上下文转接
-
-上下文接近上限或用户要求交接时：
-
-1. 更新 `docs/project/status.md`；
-2. 更新 `docs/project/handoff.md`；
-3. 必要时追加当前月份 changelog；
-4. 提供可复制的最小续接提示词。
-
-不要把完整历史重新复制进 handoff。
