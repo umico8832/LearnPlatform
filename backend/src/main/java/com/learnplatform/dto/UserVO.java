@@ -9,6 +9,7 @@ public class UserVO {
 
     private Long id;
     private String username;
+    private String email;
     private String nickname;
     private String avatar;
     private String role;
@@ -23,6 +24,7 @@ public class UserVO {
         UserVO vo = new UserVO();
         vo.setId(user.getId());
         vo.setUsername(user.getUsername());
+        vo.setEmail(user.getEmail());
         vo.setNickname(user.getNickname());
         vo.setAvatar(user.getAvatar());
         vo.setRole(user.getRole());
@@ -49,6 +51,10 @@ public class UserVO {
     public void setUsername(String username) {
         this.username = username;
     }
+
+    public String getEmail() { return email; }
+
+    public void setEmail(String email) { this.email = email; }
 
     public String getNickname() {
         return nickname;

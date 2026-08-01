@@ -1,195 +1,31 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
-import { nextTick } from 'vue'
-
-const { mockPost, mockPush, mockSetLoginInfo, mockSuccess, mockValidate, mockGetCaptcha } = vi.hoisted(() => ({
-  mockPost: vi.fn(),
-  mockPush: vi.fn(),
-  mockSetLoginInfo: vi.fn(),
-  mockSuccess: vi.fn(),
-  mockValidate: vi.fn().mockResolvedValue(true),
-  mockGetCaptcha: vi.fn().mockResolvedValue({
-    code: 0,
-    data: { captchaId: 'test-captcha-id', image: 'data:image/png;base64,abc123' },
-    message: 'success',
-  }),
-}))
-
-vi.mock('@/utils/request', () => ({
-  default: { post: (...args: unknown[]) => mockPost(...args) },
-}))
-
-vi.mock('@/api/user', () => ({
-  getCaptcha: (...args: unknown[]) => mockGetCaptcha(...args),
-}))
-
-const mockRoute: Record<string, unknown> = { query: {} }
-vi.mock('vue-router', () => ({
-  useRouter: () => ({ push: mockPush }),
-  useRoute: () => mockRoute,
-  RouterLink: { template: '<a><slot /></a>' },
-}))
-
-vi.mock('@/stores/user', () => ({
-  useUserStore: () => ({ setLoginInfo: mockSetLoginInfo }),
-}))
-
-vi.mock('element-plus', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('element-plus')>()
-  return { ...actual, ElMessage: { ...actual.ElMessage, success: mockSuccess } }
-})
-
-const globalStubs = {
-  'el-form': {
-    template: '<form @submit.prevent><slot /></form>',
-    props: ['model', 'rules', 'labelWidth', 'size'],
-    methods: { validate: (...args: unknown[]) => mockValidate(...args) },
-  },
-  'el-form-item': { template: '<div class="form-item"><slot /></div>', props: ['prop'] },
-  'el-input': {
-    template: '<input :value="modelValue" :placeholder="placeholder" :type="type || \'text\'" @input="$emit(\'update:modelValue\', $event.target.value)" />',
-    props: ['modelValue', 'type', 'placeholder', 'prefixIcon', 'showPassword'],
-    emits: ['update:modelValue'],
-  },
-  'router-link': { template: '<a><slot /></a>' },
-  'el-button': {
-    template: '<button :disabled="loading" @click="$emit(\'click\')"><slot /></button>',
-    props: ['type', 'loading'],
-    emits: ['click'],
-  },
-}
-
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { defineComponent, h } from 'vue'
 import LoginView from '@/views/auth/LoginView.vue'
 
-describe('LoginView', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    mockRoute.query = {}
-    mockValidate.mockResolvedValue(true)
-  })
+const { mockLogin, mockPush, mockSetLoginInfo, mockSuccess, mockValidate } = vi.hoisted(() => ({
+  mockLogin: vi.fn(), mockPush: vi.fn(), mockSetLoginInfo: vi.fn(), mockSuccess: vi.fn(), mockValidate: vi.fn().mockResolvedValue(true),
+}))
+const mockRoute: { query: Record<string, string> } = { query: {} }
+vi.mock('@/api/auth', () => ({ login: (...args: unknown[]) => mockLogin(...args) }))
+vi.mock('@/stores/user', () => ({ useUserStore: () => ({ setLoginInfo: mockSetLoginInfo }) }))
+vi.mock('vue-router', () => ({ useRouter: () => ({ push: mockPush }), useRoute: () => mockRoute, RouterLink: { template: '<a><slot /></a>' } }))
+vi.mock('element-plus', async (importOriginal) => { const actual=await importOriginal<typeof import('element-plus')>();return {...actual,ElMessage:{...actual.ElMessage,success:mockSuccess}} })
 
-  function mountLogin() {
-    return mount(LoginView, { global: { stubs: { ...globalStubs } } })
-  }
+const stubs = {
+  'el-form': { template:'<form><slot /></form>', props:['model','rules'], methods:{validate:()=>mockValidate()} },
+  'el-form-item': { template:'<label><slot /></label>', props:['label','prop'] },
+  'el-input': { template:'<input :value="modelValue" :placeholder="placeholder" :type="type||\'text\'" @input="$emit(\'update:modelValue\',$event.target.value)" />', props:['modelValue','placeholder','type'] },
+  'el-button': { template:'<button :disabled="disabled"><slot /></button>', props:['disabled','loading','nativeType'] },
+  'el-icon': { template:'<span><slot /></span>' },
+  TurnstileWidget: defineComponent({ emits:['update:modelValue'], setup(_props,{emit}){emit('update:modelValue','turnstile-ok');return()=>h('div',{class:'turnstile-stub'})} }),
+}
+function mountLogin(){return mount(LoginView,{global:{stubs}})}
 
-  it('should render the page title and subtitle', () => {
-    const wrapper = mountLogin()
-    expect(wrapper.find('h2').text()).toBe('AI 题库与错题复习系统')
-    expect(wrapper.find('.login-subtitle').text()).toBe('用户登录')
-  })
-
-  it('should render username, password and captcha inputs', () => {
-    const wrapper = mountLogin()
-    const inputs = wrapper.findAll('input')
-    expect(inputs.length).toBeGreaterThanOrEqual(3)
-    expect(wrapper.html()).toContain('请输入用户名')
-    expect(wrapper.html()).toContain('请输入密码')
-    expect(wrapper.html()).toContain('请输入计算结果')
-  })
-
-  it('should render a login button', () => {
-    const wrapper = mountLogin()
-    expect(wrapper.find('button').text()).toContain('登 录')
-  })
-
-  it('should render a register link', () => {
-    const wrapper = mountLogin()
-    const footer = wrapper.find('.login-footer')
-    expect(footer.text()).toContain('还没有账号？')
-    expect(footer.text()).toContain('立即注册')
-  })
-
-  it('should update form values when inputs change', async () => {
-    const wrapper = mountLogin()
-    const inputs = wrapper.findAll('input')
-    await inputs[0].setValue('testuser')
-    await inputs[1].setValue('password123')
-    await inputs[2].setValue('42')
-    expect((inputs[0].element as HTMLInputElement).value).toBe('testuser')
-    expect((inputs[1].element as HTMLInputElement).value).toBe('password123')
-    expect((inputs[2].element as HTMLInputElement).value).toBe('42')
-  })
-
-  it('should call login API on successful form submission', async () => {
-    mockPost.mockResolvedValue({
-      code: 0,
-      data: { token: 'jwt-token-123', user: { id: 1, username: 'testuser', role: 'USER' } },
-      message: 'success',
-    })
-    const wrapper = mountLogin()
-    const inputs = wrapper.findAll('input')
-    await inputs[0].setValue('testuser')
-    await inputs[1].setValue('password123')
-    await inputs[2].setValue('42')
-    await nextTick()
-    await wrapper.find('button').trigger('click')
-    await flushPromises()
-    expect(mockPost).toHaveBeenCalledWith('/auth/login', {
-      username: 'testuser',
-      password: 'password123',
-      captchaId: 'test-captcha-id',
-      captchaCode: '42',
-    })
-  })
-
-  it('should show success message and navigate after login', async () => {
-    mockPost.mockResolvedValue({
-      code: 0,
-      data: { token: 'jwt-token-123', user: { id: 1, username: 'testuser', role: 'USER' } },
-      message: 'success',
-    })
-    const wrapper = mountLogin()
-    const inputs = wrapper.findAll('input')
-    await inputs[0].setValue('testuser')
-    await inputs[1].setValue('password123')
-    await inputs[2].setValue('42')
-    await wrapper.find('button').trigger('click')
-    await flushPromises()
-    expect(mockSetLoginInfo).toHaveBeenCalledWith('jwt-token-123', { id: 1, username: 'testuser', role: 'USER' })
-    expect(mockSuccess).toHaveBeenCalledWith('登录成功')
-    expect(mockPush).toHaveBeenCalledWith('/')
-  })
-
-  it('should redirect to query param path after login', async () => {
-    mockRoute.query = { redirect: '/practice' }
-    mockPost.mockResolvedValue({
-      code: 0,
-      data: { token: 'jwt-token-123', user: { id: 1, username: 'testuser', role: 'USER' } },
-      message: 'success',
-    })
-    const wrapper = mountLogin()
-    const inputs = wrapper.findAll('input')
-    await inputs[0].setValue('testuser')
-    await inputs[1].setValue('password123')
-    await inputs[2].setValue('42')
-    await wrapper.find('button').trigger('click')
-    await flushPromises()
-    expect(mockPush).toHaveBeenCalledWith('/practice')
-  })
-
-  it('should not call API when validation fails', async () => {
-    mockValidate.mockResolvedValue(false)
-    const wrapper = mountLogin()
-    const inputs = wrapper.findAll('input')
-    await inputs[0].setValue('testuser')
-    await inputs[1].setValue('password123')
-    await inputs[2].setValue('42')
-    await wrapper.find('button').trigger('click')
-    await flushPromises()
-    expect(mockPost).not.toHaveBeenCalled()
-  })
-
-  it('should handle login API error gracefully', async () => {
-    mockPost.mockRejectedValue(new Error('Network error'))
-    const wrapper = mountLogin()
-    const inputs = wrapper.findAll('input')
-    await inputs[0].setValue('testuser')
-    await inputs[1].setValue('wrongpassword')
-    await inputs[2].setValue('42')
-    await wrapper.find('button').trigger('click')
-    await flushPromises()
-    expect(mockSetLoginInfo).not.toHaveBeenCalled()
-    // Should refresh captcha on error
-    expect(mockGetCaptcha).toHaveBeenCalledTimes(2) // once on mount + once on error
-  })
+describe('LoginView',()=>{
+  beforeEach(()=>{vi.clearAllMocks();mockValidate.mockResolvedValue(true);mockRoute.query={};mockLogin.mockResolvedValue({data:{token:'jwt',user:{id:1,username:'learner',role:'USER'}}})})
+  it('renders mature account login fields and password recovery entry',()=>{const w=mountLogin();expect(w.text()).toContain('欢迎回来');expect(w.html()).toContain('请输入用户名或邮箱');expect(w.html()).toContain('请输入密码');expect(w.text()).toContain('忘记密码？')})
+  it('submits account, password and Turnstile token',async()=>{const w=mountLogin();const inputs=w.findAll('input');await inputs[0].setValue('learner@example.com');await inputs[1].setValue('password123');await flushPromises();await w.find('form').trigger('submit');await flushPromises();expect(mockLogin).toHaveBeenCalledWith({account:'learner@example.com',password:'password123',turnstileToken:'turnstile-ok'});expect(mockSetLoginInfo).toHaveBeenCalled();expect(mockPush).toHaveBeenCalledWith('/')})
+  it('preserves guarded redirect',async()=>{mockRoute.query={redirect:'/exams'};const w=mountLogin();const inputs=w.findAll('input');await inputs[0].setValue('learner');await inputs[1].setValue('password123');await flushPromises();await w.find('form').trigger('submit');await flushPromises();expect(mockPush).toHaveBeenCalledWith('/exams')})
+  it('does not submit invalid form',async()=>{mockValidate.mockResolvedValue(false);const w=mountLogin();await w.find('form').trigger('submit');await flushPromises();expect(mockLogin).not.toHaveBeenCalled()})
 })

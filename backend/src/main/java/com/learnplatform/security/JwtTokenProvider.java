@@ -40,6 +40,10 @@ public class JwtTokenProvider {
      * 生成 Token
      */
     public String generateToken(Long userId, String username, String role) {
+        return generateToken(userId, username, role, 0);
+    }
+
+    public String generateToken(Long userId, String username, String role, Integer authVersion) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpiration * 1000);
 
@@ -47,6 +51,7 @@ public class JwtTokenProvider {
                 .subject(username)
                 .claim("userId", userId)
                 .claim("role", role)
+                .claim("authVersion", authVersion)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(getSigningKey())
@@ -79,6 +84,10 @@ public class JwtTokenProvider {
 
     public Date getIssuedAtFromToken(String token) {
         return parseToken(token).getIssuedAt();
+    }
+
+    public Integer getAuthVersionFromToken(String token) {
+        return parseToken(token).get("authVersion", Integer.class);
     }
 
     /**

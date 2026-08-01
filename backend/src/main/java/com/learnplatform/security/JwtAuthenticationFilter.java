@@ -53,7 +53,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String role = jwtTokenProvider.getRoleFromToken(token);
                 User user = userMapper.selectById(userId);
 
-                if (!isCurrentUserValid(user, username, role, jwtTokenProvider.getIssuedAtFromToken(token))) {
+                if (!isCurrentUserValid(user, username, role,
+                        jwtTokenProvider.getIssuedAtFromToken(token),
+                        jwtTokenProvider.getAuthVersionFromToken(token))) {
                     filterChain.doFilter(request, response);
                     return;
                 }
@@ -77,11 +79,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private boolean isCurrentUserValid(User user, String username, String role, Date issuedAt) {
+    private boolean isCurrentUserValid(User user, String username, String role, Date issuedAt,
+                                       Integer tokenAuthVersion) {
         if (user == null || user.getStatus() == null || user.getStatus() != 1) {
             return false;
         }
         if (!Objects.equals(user.getUsername(), username) || !Objects.equals(user.getRole(), role)) {
+            return false;
+        }
+        int currentVersion = user.getAuthVersion() == null ? 0 : user.getAuthVersion();
+        if (!Objects.equals(currentVersion, tokenAuthVersion == null ? 0 : tokenAuthVersion)) {
             return false;
         }
         if (user.getUpdateTime() == null || issuedAt == null) {

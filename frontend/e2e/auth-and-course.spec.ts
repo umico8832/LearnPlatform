@@ -3,12 +3,11 @@ import type { Page } from '@playwright/test'
 
 async function loginAs(page: Page, username: string, password: string) {
   await page.goto('/login')
-  await expect(page.getByAltText('验证码')).toBeVisible()
-
-  await page.getByPlaceholder('请输入用户名').fill(username)
+  await page.getByPlaceholder('请输入用户名或邮箱').fill(username)
   await page.getByPlaceholder('请输入密码').fill(password)
-  await page.getByPlaceholder('请输入计算结果').fill('42')
-  await page.getByRole('button', { name: '登 录' }).click()
+  const loginButton = page.getByRole('button', { name: '登录' })
+  await expect(loginButton).toBeEnabled({ timeout: 15_000 })
+  await loginButton.click()
 
   await expect(page).toHaveURL(/\/$/)
 }

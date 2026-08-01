@@ -1,5 +1,7 @@
 # 多阶段构建：前端 Vue 应用
 FROM node:22-alpine AS build
+ARG VITE_TURNSTILE_SITE_KEY
+ENV VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci

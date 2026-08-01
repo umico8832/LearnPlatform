@@ -3,11 +3,14 @@ package com.learnplatform.controller;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.R;
 import com.learnplatform.common.result.ResultCode;
-import com.learnplatform.config.CaptchaService;
 import com.learnplatform.config.LoginRateLimitService;
 import com.learnplatform.dto.*;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AuthService;
+import com.learnplatform.service.ClientIpResolver;
+import com.learnplatform.service.EmailVerificationService;
+import com.learnplatform.service.PasswordResetService;
+import com.learnplatform.service.TurnstileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,12 +32,20 @@ public class AuthController {
 
     private final AuthService authService;
     private final LoginRateLimitService rateLimitService;
-    private final CaptchaService captchaService;
+    private final TurnstileService turnstileService;
+    private final EmailVerificationService emailVerificationService;
+    private final PasswordResetService passwordResetService;
+    private final ClientIpResolver clientIpResolver;
 
-    public AuthController(AuthService authService, LoginRateLimitService rateLimitService, CaptchaService captchaService) {
+    public AuthController(AuthService authService, LoginRateLimitService rateLimitService,
+                          TurnstileService turnstileService, EmailVerificationService emailVerificationService,
+                          PasswordResetService passwordResetService, ClientIpResolver clientIpResolver) {
         this.authService = authService;
         this.rateLimitService = rateLimitService;
-        this.captchaService = captchaService;
+        this.turnstileService = turnstileService;
+        this.emailVerificationService = emailVerificationService;
+        this.passwordResetService = passwordResetService;
+        this.clientIpResolver = clientIpResolver;
     }
 
     /**
@@ -54,12 +65,8 @@ public class AuthController {
     @PostMapping("/login")
     public R<LoginResponse> login(@Valid @RequestBody LoginRequest request,
                                   HttpServletRequest httpRequest) {
-        String clientIp = extractClientIp(httpRequest);
-
-        // 校验验证码
-        if (!captchaService.verifyCaptcha(request.getCaptchaId(), request.getCaptchaCode())) {
-            throw new BusinessException(ResultCode.VALIDATION_ERROR, "验证码错误或已过期");
-        }
+        String clientIp = clientIpResolver.resolve(httpRequest);
+        turnstileService.verify(request.getTurnstileToken(), clientIp);
 
         // 检查 IP 限流
         if (rateLimitService.isBlocked(clientIp)) {
@@ -83,22 +90,40 @@ public class AuthController {
         }
     }
 
-    /**
-     * 从请求中提取客户端真实 IP，支持反向代理场景。
-     */
-    private String extractClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip != null && !ip.isEmpty()) {
-            // 取第一个 IP（客户端真实 IP）
-            ip = ip.split(",")[0].trim();
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("X-Real-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        return ip;
+    @PostMapping("/email/register-code")
+    public R<Void> sendRegisterCode(@Valid @RequestBody SendEmailCodeRequest request,
+                                    HttpServletRequest httpRequest) {
+        String clientIp = clientIpResolver.resolve(httpRequest);
+        turnstileService.verify(request.getTurnstileToken(), clientIp);
+        emailVerificationService.sendRegistrationCode(
+                request.getEmail(), clientIp, httpRequest.getHeader("User-Agent"));
+        return R.ok(null);
+    }
+
+    @PostMapping("/email/verify-register-code")
+    public R<VerificationTicketResponse> verifyRegisterCode(
+            @Valid @RequestBody VerifyEmailCodeRequest request) {
+        return R.ok(emailVerificationService.verifyRegistrationCode(request.getEmail(), request.getCode()));
+    }
+
+    @PostMapping("/password/forgot")
+    public R<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request,
+                                  HttpServletRequest httpRequest) {
+        String clientIp = clientIpResolver.resolve(httpRequest);
+        turnstileService.verify(request.getTurnstileToken(), clientIp);
+        passwordResetService.requestReset(request.getEmail(), clientIp);
+        return R.ok(null);
+    }
+
+    @GetMapping("/password/reset/validate")
+    public R<String> validateResetToken(@RequestParam String token) {
+        return R.ok(passwordResetService.validateToken(token));
+    }
+
+    @PostMapping("/password/reset")
+    public R<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request.getToken(), request.getPassword());
+        return R.ok(null);
     }
 
     /**

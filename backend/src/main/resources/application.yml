@@ -47,6 +47,16 @@ spring:
     time-zone: Asia/Shanghai
     default-property-inclusion: non_null
 
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:1025}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    from: ${SMTP_FROM:no-reply@learnplatform.local}
+    properties:
+      mail.smtp.auth: ${SMTP_AUTH:false}
+      mail.smtp.starttls.enable: ${SMTP_STARTTLS:false}
+
 # MyBatis-Plus 配置
 mybatis-plus:
   configuration:
@@ -63,6 +73,32 @@ mybatis-plus:
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:604800}  # 默认7天，单位秒
+
+turnstile:
+  enabled: ${TURNSTILE_ENABLED:false}
+  secret-key: ${TURNSTILE_SECRET_KEY:}
+
+auth:
+  token-secret: ${AUTH_TOKEN_SECRET:}
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  cache:
+    default-ttl: ${CACHE_DEFAULT_TTL:10m}
+    ttl:
+      statistics: ${CACHE_TTL_STATISTICS:5m}
+      adminStatistics: ${CACHE_TTL_ADMIN_STATISTICS:3m}
+      dailyTrend: ${CACHE_TTL_DAILY_TREND:5m}
+      courseStats: ${CACHE_TTL_COURSE_STATS:5m}
+      learningReport: ${CACHE_TTL_LEARNING_REPORT:10m}
+      learningPath: ${CACHE_TTL_LEARNING_PATH:10m}
+      knowledgeGraph: ${CACHE_TTL_KNOWLEDGE_GRAPH:10m}
+      learningDiagnosis: ${CACHE_TTL_LEARNING_DIAGNOSIS:10m}
+      submissionQuality: ${CACHE_TTL_SUBMISSION_QUALITY:30m}
+      submissionKPTagging: ${CACHE_TTL_SUBMISSION_KP_TAGGING:30m}
+      submissionDifficulty: ${CACHE_TTL_SUBMISSION_DIFFICULTY:30m}
+      questionReviewSuggestion: ${CACHE_TTL_QUESTION_REVIEW_SUGGESTION:30m}
+      globalSearch: ${CACHE_TTL_GLOBAL_SEARCH:5m}
 
 # AI 配置
 ai:
@@ -104,24 +140,6 @@ management:
     metrics:
       export:
         enabled: true
-
-app:
-  cache:
-    default-ttl: ${CACHE_DEFAULT_TTL:10m}
-    ttl:
-      statistics: ${CACHE_TTL_STATISTICS:5m}
-      adminStatistics: ${CACHE_TTL_ADMIN_STATISTICS:3m}
-      dailyTrend: ${CACHE_TTL_DAILY_TREND:5m}
-      courseStats: ${CACHE_TTL_COURSE_STATS:5m}
-      learningReport: ${CACHE_TTL_LEARNING_REPORT:10m}
-      learningPath: ${CACHE_TTL_LEARNING_PATH:10m}
-      knowledgeGraph: ${CACHE_TTL_KNOWLEDGE_GRAPH:10m}
-      learningDiagnosis: ${CACHE_TTL_LEARNING_DIAGNOSIS:10m}
-      submissionQuality: ${CACHE_TTL_SUBMISSION_QUALITY:30m}
-      submissionKPTagging: ${CACHE_TTL_SUBMISSION_KP_TAGGING:30m}
-      submissionDifficulty: ${CACHE_TTL_SUBMISSION_DIFFICULTY:30m}
-      questionReviewSuggestion: ${CACHE_TTL_QUESTION_REVIEW_SUGGESTION:30m}
-      globalSearch: ${CACHE_TTL_GLOBAL_SEARCH:5m}
 
 # Knife4j 配置
 springdoc:

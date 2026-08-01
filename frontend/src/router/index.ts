@@ -17,6 +17,18 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: false, title: '注册' },
   },
   {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import('@/views/auth/ForgotPasswordView.vue'),
+    meta: { requiresAuth: false, title: '忘记密码' },
+  },
+  {
+    path: '/reset-password',
+    name: 'ResetPassword',
+    component: () => import('@/views/auth/ResetPasswordView.vue'),
+    meta: { requiresAuth: false, title: '重置密码' },
+  },
+  {
     path: '/',
     component: () => import('@/components/layout/AppLayout.vue'),
     meta: { requiresAuth: true },
@@ -218,7 +230,7 @@ router.beforeEach(async (to) => {
   const loggedIn = isAuthenticated()
 
   // 已登录用户访问登录/注册页，跳转首页
-  if (loggedIn && (to.path === '/login' || to.path === '/register')) {
+  if (loggedIn && ['/login', '/register', '/forgot-password', '/reset-password'].includes(to.path)) {
     return { path: '/' }
   }
 

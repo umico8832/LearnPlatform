@@ -11,6 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.Locale;
 
 /**
  * 认证服务
@@ -23,16 +27,20 @@ public class AuthService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final EmailVerificationService emailVerificationService;
 
-    public AuthService(UserMapper userMapper, PasswordEncoder passwordEncoder, JwtTokenProvider jwtTokenProvider) {
+    public AuthService(UserMapper userMapper, PasswordEncoder passwordEncoder,
+                       JwtTokenProvider jwtTokenProvider, EmailVerificationService emailVerificationService) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.emailVerificationService = emailVerificationService;
     }
 
     /**
      * 用户注册
      */
+    @Transactional
     public UserVO register(RegisterRequest request) {
         log.info("用户注册: username={}", request.getUsername());
         // 检查用户名是否已存在
@@ -43,13 +51,23 @@ public class AuthService {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "用户名已存在");
         }
 
+        String email = emailVerificationService.normalizeEmail(request.getEmail());
+        Long emailCount = userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getEmail, email));
+        if (emailCount > 0) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "邮箱已被注册");
+        }
+        emailVerificationService.consumeRegistrationTicket(email, request.getVerificationTicket());
+
         // 创建用户
         User user = new User();
         user.setUsername(request.getUsername());
+        user.setEmail(email);
+        user.setEmailVerifiedAt(LocalDateTime.now());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setNickname(request.getNickname() != null ? request.getNickname() : request.getUsername());
         user.setRole("USER");
         user.setStatus(1);
+        user.setAuthVersion(0);
         user.setDeleted(0);
         userMapper.insert(user);
         log.info("用户注册成功: userId={}, username={}", user.getId(), user.getUsername());
@@ -61,10 +79,15 @@ public class AuthService {
      * 用户登录
      */
     public LoginResponse login(LoginRequest request) {
-        log.info("用户登录: username={}", request.getUsername());
+        String account = request.getAccount().trim();
+        log.info("用户登录请求");
         // 查找用户
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(User::getUsername, request.getUsername());
+        if (account.contains("@")) {
+            wrapper.eq(User::getEmail, account.toLowerCase(Locale.ROOT));
+        } else {
+            wrapper.eq(User::getUsername, account);
+        }
         User user = userMapper.selectOne(wrapper);
 
         if (user == null) {
@@ -82,7 +105,8 @@ public class AuthService {
         }
 
         // 生成 Token
-        String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername(), user.getRole());
+        String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername(), user.getRole(),
+                user.getAuthVersion() == null ? 0 : user.getAuthVersion());
         log.info("用户登录成功: userId={}, username={}, role={}", user.getId(), user.getUsername(), user.getRole());
 
         // 构建响应
@@ -137,6 +161,7 @@ public class AuthService {
         }
         log.info("用户修改密码: userId={}", userId);
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setAuthVersion((user.getAuthVersion() == null ? 0 : user.getAuthVersion()) + 1);
         userMapper.updateById(user);
     }
 }

@@ -67,7 +67,8 @@ public class SecurityConfig {
                         .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
                         // 公开接口
                         .requestMatchers("/api/public/**").permitAll()
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/captcha").permitAll()
+                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/email/**",
+                                "/api/auth/password/forgot", "/api/auth/password/reset/**").permitAll()
                         // Knife4j / Swagger 文档
                         .requestMatchers("/doc.html", "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
                         // Actuator 仅开放健康检查和 Prometheus 指标；其他管理端点仍需认证。

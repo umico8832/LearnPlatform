@@ -8,7 +8,6 @@ const repoRoot = path.resolve(__dirname, '..', '..')
 
 const baseURL = process.env.DEMO_BASE_URL || process.env.E2E_BASE_URL || 'http://localhost:18000'
 const outputDir = path.resolve(repoRoot, process.env.DEMO_SCREENSHOT_DIR || 'docs/showcase/screenshots')
-const captchaCode = process.env.DEMO_CAPTCHA_CODE || '42'
 
 const users = {
   learner: { username: 'testuser', password: 'test123' },
@@ -34,11 +33,12 @@ const adminPages = [
 
 async function loginAs(page, user) {
   await page.goto('/login')
-  await page.getByAltText('验证码').waitFor({ timeout: 15000 })
-  await page.getByPlaceholder('请输入用户名').fill(user.username)
+  await page.getByPlaceholder('请输入用户名或邮箱').fill(user.username)
   await page.getByPlaceholder('请输入密码').fill(user.password)
-  await page.getByPlaceholder('请输入计算结果').fill(captchaCode)
-  await page.getByRole('button', { name: '登 录' }).click()
+  const loginButton = page.getByRole('button', { name: '登录' })
+  await loginButton.waitFor({ state: 'visible' })
+  await page.waitForFunction(() => !document.querySelector('button.auth-primary')?.disabled)
+  await loginButton.click()
   await page.waitForURL('**/')
 }
 

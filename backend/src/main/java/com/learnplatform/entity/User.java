@@ -15,6 +15,10 @@ public class User {
 
     private String username;
 
+    private String email;
+
+    private LocalDateTime emailVerifiedAt;
+
     private String password;
 
     private String nickname;
@@ -24,6 +28,8 @@ public class User {
     private String role;
 
     private Integer status;
+
+    private Integer authVersion;
 
     /**
      * 用户级 AI 每日调用配额。NULL 表示继承 ai.daily-quota，0 表示不限次数。
@@ -53,6 +59,22 @@ public class User {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public LocalDateTime getEmailVerifiedAt() {
+        return emailVerifiedAt;
+    }
+
+    public void setEmailVerifiedAt(LocalDateTime emailVerifiedAt) {
+        this.emailVerifiedAt = emailVerifiedAt;
     }
 
     public String getPassword() {
@@ -93,6 +115,14 @@ public class User {
 
     public void setStatus(Integer status) {
         this.status = status;
+    }
+
+    public Integer getAuthVersion() {
+        return authVersion;
+    }
+
+    public void setAuthVersion(Integer authVersion) {
+        this.authVersion = authVersion;
     }
 
     public Integer getAiDailyQuota() {

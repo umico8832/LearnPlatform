@@ -4,10 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.common.result.ResultCode;
-import com.learnplatform.config.CaptchaService;
 import com.learnplatform.config.LoginRateLimitService;
 import com.learnplatform.dto.*;
 import com.learnplatform.service.AuthService;
+import com.learnplatform.service.ClientIpResolver;
+import com.learnplatform.service.EmailVerificationService;
+import com.learnplatform.service.PasswordResetService;
+import com.learnplatform.service.TurnstileService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,7 +42,16 @@ class AuthControllerTest {
     private LoginRateLimitService rateLimitService;
 
     @Mock
-    private CaptchaService captchaService;
+    private TurnstileService turnstileService;
+
+    @Mock
+    private EmailVerificationService emailVerificationService;
+
+    @Mock
+    private PasswordResetService passwordResetService;
+
+    @Mock
+    private ClientIpResolver clientIpResolver;
 
     @InjectMocks
     private AuthController authController;
@@ -48,6 +60,7 @@ class AuthControllerTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(clientIpResolver.resolve(any())).thenReturn("127.0.0.1");
         mockMvc = MockMvcBuilders.standaloneSetup(authController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
@@ -66,7 +79,9 @@ class AuthControllerTest {
 
         RegisterRequest request = new RegisterRequest();
         request.setUsername("testuser");
-        request.setPassword("123456");
+        request.setEmail("learner@example.com");
+        request.setPassword("password123");
+        request.setVerificationTicket("verified-ticket");
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -80,7 +95,9 @@ class AuthControllerTest {
     void register_blankUsername_returns400() throws Exception {
         RegisterRequest request = new RegisterRequest();
         request.setUsername("");
-        request.setPassword("123456");
+        request.setEmail("learner@example.com");
+        request.setPassword("password123");
+        request.setVerificationTicket("verified-ticket");
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -93,7 +110,9 @@ class AuthControllerTest {
     void register_shortPassword_returns400() throws Exception {
         RegisterRequest request = new RegisterRequest();
         request.setUsername("testuser");
+        request.setEmail("learner@example.com");
         request.setPassword("123");
+        request.setVerificationTicket("verified-ticket");
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -109,7 +128,9 @@ class AuthControllerTest {
 
         RegisterRequest request = new RegisterRequest();
         request.setUsername("existing");
-        request.setPassword("123456");
+        request.setEmail("learner@example.com");
+        request.setPassword("password123");
+        request.setVerificationTicket("verified-ticket");
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -130,15 +151,13 @@ class AuthControllerTest {
         response.setToken("jwt-token-123");
         response.setUser(userVO);
 
-        when(captchaService.verifyCaptcha(anyString(), anyString())).thenReturn(true);
         when(rateLimitService.isBlocked(anyString())).thenReturn(false);
         when(authService.login(any(LoginRequest.class))).thenReturn(response);
 
         LoginRequest request = new LoginRequest();
-        request.setUsername("testuser");
+        request.setAccount("testuser");
         request.setPassword("123456");
-        request.setCaptchaId("test-captcha-id");
-        request.setCaptchaCode("42");
+        request.setTurnstileToken("verified-token");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -152,16 +171,14 @@ class AuthControllerTest {
 
     @Test
     void login_wrongPassword_returnsUnauthorized() throws Exception {
-        when(captchaService.verifyCaptcha(anyString(), anyString())).thenReturn(true);
         when(rateLimitService.isBlocked(anyString())).thenReturn(false);
         when(authService.login(any(LoginRequest.class)))
                 .thenThrow(new BusinessException(ResultCode.UNAUTHORIZED, "用户名或密码错误"));
 
         LoginRequest request = new LoginRequest();
-        request.setUsername("testuser");
+        request.setAccount("testuser");
         request.setPassword("wrong");
-        request.setCaptchaId("test-captcha-id");
-        request.setCaptchaCode("42");
+        request.setTurnstileToken("verified-token");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -175,15 +192,13 @@ class AuthControllerTest {
 
     @Test
     void login_rateLimited_returnsRateLimited() throws Exception {
-        when(captchaService.verifyCaptcha(anyString(), anyString())).thenReturn(true);
         when(rateLimitService.isBlocked(anyString())).thenReturn(true);
         when(rateLimitService.getRemainingBlockSeconds(anyString())).thenReturn(300L);
 
         LoginRequest request = new LoginRequest();
-        request.setUsername("testuser");
+        request.setAccount("testuser");
         request.setPassword("123456");
-        request.setCaptchaId("test-captcha-id");
-        request.setCaptchaCode("42");
+        request.setTurnstileToken("verified-token");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -195,15 +210,54 @@ class AuthControllerTest {
     @Test
     void login_blankFields_returns400() throws Exception {
         LoginRequest request = new LoginRequest();
-        request.setUsername("");
+        request.setAccount("");
         request.setPassword("");
-        request.setCaptchaId("");
-        request.setCaptchaCode("");
+        request.setTurnstileToken("");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(1001));
+    }
+
+    @Test
+    void login_acceptsAccountAndTurnstileToken() throws Exception {
+        UserVO userVO = new UserVO();
+        userVO.setId(1L);
+        userVO.setUsername("testuser");
+
+        LoginResponse response = new LoginResponse();
+        response.setToken("jwt-token-123");
+        response.setUser(userVO);
+
+        when(rateLimitService.isBlocked(anyString())).thenReturn(false);
+        when(authService.login(any(LoginRequest.class))).thenReturn(response);
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "account": "learner@example.com",
+                                  "password": "password123",
+                                  "turnstileToken": "verified-token"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+    }
+
+    @Test
+    void forgotPasswordEndpoint_isPublicAndReturnsNeutralResult() throws Exception {
+        mockMvc.perform(post("/api/auth/password/forgot")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "unknown@example.com",
+                                  "turnstileToken": "verified-token"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
     }
 }
