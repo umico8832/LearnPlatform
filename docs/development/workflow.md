@@ -104,7 +104,7 @@
 1. 检查 diff 是否只包含本轮范围。
 2. 同步当前月份 changelog，以及本轮实际影响的接口、数据库、架构、测试、路线图或状态文档；不要机械更新无关文档。
 3. 按 `docs/development/review-checklist.md` 自审。
-4. 按 `docs/development/git-rules.md` 创建一次聚焦提交。
+4. 按 `docs/development/git-rules.md` 创建一个或多个可独立验证、回滚的聚焦提交；不要按文件类型机械拆分。
 5. 汇报完成内容、修改文件、Red/Green 证据、完整验证、遗留风险和 commit。
 
 ---

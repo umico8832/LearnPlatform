@@ -25,6 +25,12 @@
 
 前端 DOM 环境统一使用 `happy-dom`，不同时维护多个 DOM 模拟实现。
 
+### 仓库工具
+
+- `scripts/tests/` 使用 Python 标准库 `unittest` 验证文档、Git 和其他仓库级检查工具的核心规则。
+- 工具测试必须覆盖正常输入、边界和主要拒绝路径，不能只在 CI 中用一个真实样例冒烟。
+- 仓库工具保持无第三方运行时依赖，避免为了轻量检查额外建立 Python 依赖环境。
+
 ## 2. 必须新增测试的情况
 
 - 修改判分、考试提交、错题归集、权限或限流规则。
@@ -82,6 +88,11 @@ docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v
 - 默认不要输出完整 DOM 或每步截图；失败时再逐级增加局部 DOM、截图、日志和后端容器日志。
 
 ## 7. 运行命令
+
+```bash
+python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+python3 scripts/check-docs.py
+```
 
 ```bash
 cd frontend
