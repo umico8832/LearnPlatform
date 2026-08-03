@@ -42,5 +42,18 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 "INSERT INTO user_course (user_id, course_id) VALUES (?, ?)",
                 90001L,
                 courseId));
+
+        jdbcTemplate.update("""
+                INSERT INTO course_learning_event
+                    (user_id, course_id, event_type, event_source, subject_type, subject_id,
+                     source_record_id, idempotency_key, event_version, occurred_time)
+                VALUES (?, ?, 'PRACTICE_ANSWERED', 'PRACTICE', 'QUESTION', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+                """, 90001L, courseId, 80001L, 70001L, "PRACTICE:70001");
+        assertThrows(DuplicateKeyException.class, () -> jdbcTemplate.update("""
+                INSERT INTO course_learning_event
+                    (user_id, course_id, event_type, event_source, subject_type, subject_id,
+                     source_record_id, idempotency_key, event_version, occurred_time)
+                VALUES (?, ?, 'PRACTICE_ANSWERED', 'PRACTICE', 'QUESTION', ?, ?, ?, 1, CURRENT_TIMESTAMP)
+                """, 90001L, courseId, 80001L, 70001L, "PRACTICE:70001"));
     }
 }

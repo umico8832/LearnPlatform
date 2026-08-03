@@ -12,6 +12,7 @@ import com.learnplatform.entity.*;
 import com.learnplatform.mapper.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +37,7 @@ public class ExamService {
     private final WrongQuestionService wrongQuestionService;
     private final AnswerEvaluator answerEvaluator;
     private final CacheEvictService cacheEvictService;
+    private final CourseLearningEventService courseLearningEventService;
 
     public ExamService(ExamRecordMapper examRecordMapper,
                        ExamAnswerMapper examAnswerMapper,
@@ -46,6 +48,21 @@ public class ExamService {
                        WrongQuestionService wrongQuestionService,
                        AnswerEvaluator answerEvaluator,
                        CacheEvictService cacheEvictService) {
+        this(examRecordMapper, examAnswerMapper, examPaperMapper, examQuestionMapper, questionMapper,
+                questionOptionMapper, wrongQuestionService, answerEvaluator, cacheEvictService, null);
+    }
+
+    @Autowired
+    public ExamService(ExamRecordMapper examRecordMapper,
+                       ExamAnswerMapper examAnswerMapper,
+                       ExamPaperMapper examPaperMapper,
+                       ExamQuestionMapper examQuestionMapper,
+                       QuestionMapper questionMapper,
+                       QuestionOptionMapper questionOptionMapper,
+                       WrongQuestionService wrongQuestionService,
+                       AnswerEvaluator answerEvaluator,
+                       CacheEvictService cacheEvictService,
+                       CourseLearningEventService courseLearningEventService) {
         this.examRecordMapper = examRecordMapper;
         this.examAnswerMapper = examAnswerMapper;
         this.examPaperMapper = examPaperMapper;
@@ -55,6 +72,7 @@ public class ExamService {
         this.wrongQuestionService = wrongQuestionService;
         this.answerEvaluator = answerEvaluator;
         this.cacheEvictService = cacheEvictService;
+        this.courseLearningEventService = courseLearningEventService;
     }
 
     /**
@@ -177,6 +195,10 @@ public class ExamService {
                 examAnswer.setIsCorrect(isCorrect ? 1 : 0);
                 examAnswer.setScore(isCorrect ? questionScore : 0);
                 examAnswerMapper.insert(examAnswer);
+                if (courseLearningEventService != null) {
+                    courseLearningEventService.recordQuestionAnswer(userId, question, "EXAM_ANSWERED", "EXAM",
+                            examAnswer.getId(), isCorrect, examAnswer.getCreateTime());
+                }
 
                 // 错题自动加入错题本
                 try {

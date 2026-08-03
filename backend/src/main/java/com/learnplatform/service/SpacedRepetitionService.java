@@ -8,6 +8,7 @@ import com.learnplatform.entity.*;
 import com.learnplatform.mapper.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,6 +66,7 @@ public class SpacedRepetitionService {
     private final WrongQuestionMapper wrongQuestionMapper;
     private final AnswerEvaluator answerEvaluator;
     private final CacheEvictService cacheEvictService;
+    private final CourseLearningEventService courseLearningEventService;
 
     public SpacedRepetitionService(QuestionReviewScheduleMapper reviewScheduleMapper,
                                     QuestionMapper questionMapper,
@@ -74,6 +76,20 @@ public class SpacedRepetitionService {
                                     WrongQuestionMapper wrongQuestionMapper,
                                     AnswerEvaluator answerEvaluator,
                                     CacheEvictService cacheEvictService) {
+        this(reviewScheduleMapper, questionMapper, courseMapper, questionOptionMapper, practiceRecordMapper,
+                wrongQuestionMapper, answerEvaluator, cacheEvictService, null);
+    }
+
+    @Autowired
+    public SpacedRepetitionService(QuestionReviewScheduleMapper reviewScheduleMapper,
+                                    QuestionMapper questionMapper,
+                                    CourseMapper courseMapper,
+                                    QuestionOptionMapper questionOptionMapper,
+                                    PracticeRecordMapper practiceRecordMapper,
+                                    WrongQuestionMapper wrongQuestionMapper,
+                                    AnswerEvaluator answerEvaluator,
+                                    CacheEvictService cacheEvictService,
+                                    CourseLearningEventService courseLearningEventService) {
         this.reviewScheduleMapper = reviewScheduleMapper;
         this.questionMapper = questionMapper;
         this.courseMapper = courseMapper;
@@ -82,6 +98,7 @@ public class SpacedRepetitionService {
         this.wrongQuestionMapper = wrongQuestionMapper;
         this.answerEvaluator = answerEvaluator;
         this.cacheEvictService = cacheEvictService;
+        this.courseLearningEventService = courseLearningEventService;
     }
 
     /**
@@ -221,6 +238,10 @@ public class SpacedRepetitionService {
         record.setIsCorrect(isCorrect ? 1 : 0);
         record.setAnswerTime(request.getAnswerTime());
         practiceRecordMapper.insert(record);
+        if (courseLearningEventService != null) {
+            courseLearningEventService.recordQuestionAnswer(userId, question, "REVIEW_ANSWERED", "REVIEW",
+                    record.getId(), isCorrect, record.getCreateTime());
+        }
 
         // 处理错题本
         if (isCorrect) {

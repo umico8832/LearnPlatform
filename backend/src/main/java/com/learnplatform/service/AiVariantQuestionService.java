@@ -17,6 +17,7 @@ import com.learnplatform.mapper.AiVariantTrainingMapper;
 import com.learnplatform.mapper.QuestionAiAssetMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,17 +40,30 @@ public class AiVariantQuestionService {
     private final AiVariantQuestionMapper aiVariantQuestionMapper;
     private final AiVariantTrainingMapper aiVariantTrainingMapper;
     private final AnswerEvaluator answerEvaluator;
+    private final CourseLearningEventService courseLearningEventService;
 
     public AiVariantQuestionService(ObjectMapper objectMapper,
                                     QuestionAiAssetMapper questionAiAssetMapper,
                                     AiVariantQuestionMapper aiVariantQuestionMapper,
                                     AiVariantTrainingMapper aiVariantTrainingMapper,
                                     AnswerEvaluator answerEvaluator) {
+        this(objectMapper, questionAiAssetMapper, aiVariantQuestionMapper, aiVariantTrainingMapper,
+                answerEvaluator, null);
+    }
+
+    @Autowired
+    public AiVariantQuestionService(ObjectMapper objectMapper,
+                                    QuestionAiAssetMapper questionAiAssetMapper,
+                                    AiVariantQuestionMapper aiVariantQuestionMapper,
+                                    AiVariantTrainingMapper aiVariantTrainingMapper,
+                                    AnswerEvaluator answerEvaluator,
+                                    CourseLearningEventService courseLearningEventService) {
         this.objectMapper = objectMapper;
         this.questionAiAssetMapper = questionAiAssetMapper;
         this.aiVariantQuestionMapper = aiVariantQuestionMapper;
         this.aiVariantTrainingMapper = aiVariantTrainingMapper;
         this.answerEvaluator = answerEvaluator;
+        this.courseLearningEventService = courseLearningEventService;
     }
 
     /** 先校验完整 AI JSON，再在同一事务中保存公开资产与私有答案。 */
@@ -137,6 +151,14 @@ public class AiVariantQuestionService {
         training.setStatus("COMPLETED");
         training.setCompletedTime(now);
         aiVariantTrainingMapper.updateById(training);
+        if (courseLearningEventService != null) {
+            com.learnplatform.entity.Question sourceQuestion = new com.learnplatform.entity.Question();
+            sourceQuestion.setId(questionId);
+            // 变式题的课程归属仍由原题决定，避免客户端传入或复制课程范围。
+            sourceQuestion.setCourseId(questionAiAssetMapper.findCourseIdByQuestionId(questionId));
+            courseLearningEventService.recordQuestionAnswer(userId, sourceQuestion, "AI_VARIANT_ANSWERED", "AI_TUTOR",
+                    training.getId(), correct, now);
+        }
         return enrichTrainingVO(training, newTrainingVO(training));
     }
 

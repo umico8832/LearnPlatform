@@ -10,10 +10,15 @@
 | `course` | V1 | 课程元数据和排序 | 删除前检查题目与知识点引用 |
 | `knowledge_point` | V1 | 树形知识点 | `parent_id` 表达同课程内父子关系 |
 | `user_course` | V21 | 用户加入个人课程库的关系 | 用户与课程组合唯一；加入课程不表示学习或掌握 |
+| `course_learning_event` | V22 | 跨 AI 教学与试卷入口的课程学习事实 | `(user_id, course_id, idempotency_key)` 唯一；事件追加且带版本、来源和发生时间 |
 
 V21 为课程和知识点增加可空的 `content_key` 与 `content_source`。`content_key` 用于在
 AiStu、Web 后端和后续内容导入之间保持稳定引用；存量平台内容可以继续使用空键。
 `content_source` 记录内容来源，不代表审核结论或权威等级。
+
+`course_learning_event` 只记录已加入个人课程库后产生的课程内事实；普通题库练习不会
+被自动解释为课程进度。首版映射练习、复习、考试逐题作答与结构化 AI 变式题的首次判分，
+不保存用户原始答案或把事件直接折算为掌握度。
 
 ## 题目
 
