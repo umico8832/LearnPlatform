@@ -42,6 +42,7 @@ flowchart LR
 | [后端架构](backend.md) | 分层、事务、认证、错误处理和模块边界 |
 | [AI 子系统](ai-system.md) | Provider、流式响应、资产、治理和观察 |
 | [核心数据流](data-flow.md) | 练习、考试、投稿、复习和 AI 学习 |
+| [AiStu 资源复用](aistu-resource-reuse.md) | 408 知识、Tutor 协议和互动课件的迁移边界 |
 | [部署架构](deployment.md) | Docker Compose、Nginx、监控和环境配置 |
 | [架构决策](decisions/index.md) | 已确认的重要方案及其权衡 |
 

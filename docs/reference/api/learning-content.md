@@ -8,8 +8,12 @@
 | `GET /api/courses/list` | 获取课程简表 |
 | `GET /api/courses/{id}` | 获取课程详情 |
 | `GET /api/knowledge-points/tree/{courseId}` | 获取课程知识点树 |
+| `POST /api/my-courses/{courseId}` | 将已开放课程幂等加入当前用户的个人课程库 |
+| `GET /api/my-courses` | 查询当前用户的个人课程库 |
 
 课程和知识点的写接口位于[管理与治理 API](admin-governance.md#课程与知识点管理)。
+个人课程库关系以服务端认证用户为准，客户端不能指定或查询其他用户的 `userId`。
+添加课程只建立学习入口，不表示已经开始学习或掌握课程内容。
 
 ## 题库与纠错
 

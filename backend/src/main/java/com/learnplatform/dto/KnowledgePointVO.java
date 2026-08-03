@@ -9,6 +9,8 @@ public class KnowledgePointVO {
     private String description;
     private Long courseId;
     private Long parentId;
+    private String contentKey;
+    private String contentSource;
     private Integer sortOrder;
     private String createTime;
     private List<KnowledgePointVO> children;
@@ -20,6 +22,8 @@ public class KnowledgePointVO {
         vo.setDescription(kp.getDescription());
         vo.setCourseId(kp.getCourseId());
         vo.setParentId(kp.getParentId());
+        vo.setContentKey(kp.getContentKey());
+        vo.setContentSource(kp.getContentSource());
         vo.setSortOrder(kp.getSortOrder());
         if (kp.getCreateTime() != null) vo.setCreateTime(kp.getCreateTime().toString());
         return vo;
@@ -35,6 +39,10 @@ public class KnowledgePointVO {
     public void setCourseId(Long courseId) { this.courseId = courseId; }
     public Long getParentId() { return parentId; }
     public void setParentId(Long parentId) { this.parentId = parentId; }
+    public String getContentKey() { return contentKey; }
+    public void setContentKey(String contentKey) { this.contentKey = contentKey; }
+    public String getContentSource() { return contentSource; }
+    public void setContentSource(String contentSource) { this.contentSource = contentSource; }
     public Integer getSortOrder() { return sortOrder; }
     public void setSortOrder(Integer sortOrder) { this.sortOrder = sortOrder; }
     public String getCreateTime() { return createTime; }

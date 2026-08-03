@@ -9,6 +9,11 @@
 | `password_reset_token` | V20 | 一次性密码重置令牌 | 只保存令牌 HMAC；过期或已使用令牌不可重复消费 |
 | `course` | V1 | 课程元数据和排序 | 删除前检查题目与知识点引用 |
 | `knowledge_point` | V1 | 树形知识点 | `parent_id` 表达同课程内父子关系 |
+| `user_course` | V21 | 用户加入个人课程库的关系 | 用户与课程组合唯一；加入课程不表示学习或掌握 |
+
+V21 为课程和知识点增加可空的 `content_key` 与 `content_source`。`content_key` 用于在
+AiStu、Web 后端和后续内容导入之间保持稳定引用；存量平台内容可以继续使用空键。
+`content_source` 记录内容来源，不代表审核结论或权威等级。
 
 ## 题目
 

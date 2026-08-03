@@ -52,6 +52,7 @@ public class KnowledgePointService {
         kp.setParentId(parentId != null ? parentId : 0L);
         kp.setName(name);
         kp.setDescription(description);
+        kp.setContentSource("PLATFORM");
         kp.setSortOrder(sortOrder != null ? sortOrder : 0);
         kp.setDeleted(0);
         knowledgePointMapper.insert(kp);

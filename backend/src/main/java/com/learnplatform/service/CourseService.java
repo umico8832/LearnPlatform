@@ -71,6 +71,7 @@ public class CourseService {
         Course course = new Course();
         course.setName(name);
         course.setDescription(description);
+        course.setContentSource("PLATFORM");
         course.setSortOrder(sortOrder != null ? sortOrder : 0);
         course.setStatus(1);
         course.setDeleted(0);

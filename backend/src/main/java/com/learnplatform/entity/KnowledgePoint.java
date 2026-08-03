@@ -21,6 +21,10 @@ public class KnowledgePoint {
 
     private Long parentId;
 
+    private String contentKey;
+
+    private String contentSource;
+
     private Integer sortOrder;
 
     @TableField(fill = FieldFill.INSERT)
@@ -42,6 +46,10 @@ public class KnowledgePoint {
     public void setCourseId(Long courseId) { this.courseId = courseId; }
     public Long getParentId() { return parentId; }
     public void setParentId(Long parentId) { this.parentId = parentId; }
+    public String getContentKey() { return contentKey; }
+    public void setContentKey(String contentKey) { this.contentKey = contentKey; }
+    public String getContentSource() { return contentSource; }
+    public void setContentSource(String contentSource) { this.contentSource = contentSource; }
     public Integer getSortOrder() { return sortOrder; }
     public void setSortOrder(Integer sortOrder) { this.sortOrder = sortOrder; }
     public LocalDateTime getCreateTime() { return createTime; }

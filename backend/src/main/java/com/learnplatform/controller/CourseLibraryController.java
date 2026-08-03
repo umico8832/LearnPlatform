@@ -1,0 +1,43 @@
+package com.learnplatform.controller;
+
+import com.learnplatform.common.result.R;
+import com.learnplatform.dto.UserCourseVO;
+import com.learnplatform.security.CustomUserDetails;
+import com.learnplatform.service.CourseLibraryService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@Tag(name = "个人课程库", description = "当前用户添加和查询个人课程")
+@RestController
+@RequestMapping("/api/my-courses")
+public class CourseLibraryController {
+
+    private final CourseLibraryService courseLibraryService;
+
+    public CourseLibraryController(CourseLibraryService courseLibraryService) {
+        this.courseLibraryService = courseLibraryService;
+    }
+
+    @Operation(summary = "添加课程到个人课程库")
+    @PostMapping("/{courseId}")
+    public R<UserCourseVO> addCourse(
+            @PathVariable Long courseId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(courseLibraryService.addCourse(userDetails.getUserId(), courseId));
+    }
+
+    @Operation(summary = "查询个人课程库")
+    @GetMapping
+    public R<List<UserCourseVO>> getMyCourses(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(courseLibraryService.getMyCourses(userDetails.getUserId()));
+    }
+}

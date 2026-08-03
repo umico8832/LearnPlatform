@@ -19,6 +19,10 @@ public class Course {
 
     private String coverImage;
 
+    private String contentKey;
+
+    private String contentSource;
+
     private Integer sortOrder;
 
     private Integer status;
@@ -40,6 +44,10 @@ public class Course {
     public void setDescription(String description) { this.description = description; }
     public String getCoverImage() { return coverImage; }
     public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
+    public String getContentKey() { return contentKey; }
+    public void setContentKey(String contentKey) { this.contentKey = contentKey; }
+    public String getContentSource() { return contentSource; }
+    public void setContentSource(String contentSource) { this.contentSource = contentSource; }
     public Integer getSortOrder() { return sortOrder; }
     public void setSortOrder(Integer sortOrder) { this.sortOrder = sortOrder; }
     public Integer getStatus() { return status; }

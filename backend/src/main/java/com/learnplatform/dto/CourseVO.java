@@ -7,6 +7,8 @@ public class CourseVO {
     private String name;
     private String description;
     private String coverImage;
+    private String contentKey;
+    private String contentSource;
     private Integer sortOrder;
     private Integer status;
     private String createTime;
@@ -17,6 +19,8 @@ public class CourseVO {
         vo.setName(c.getName());
         vo.setDescription(c.getDescription());
         vo.setCoverImage(c.getCoverImage());
+        vo.setContentKey(c.getContentKey());
+        vo.setContentSource(c.getContentSource());
         vo.setSortOrder(c.getSortOrder());
         vo.setStatus(c.getStatus());
         if (c.getCreateTime() != null) vo.setCreateTime(c.getCreateTime().toString());
@@ -31,6 +35,10 @@ public class CourseVO {
     public void setDescription(String description) { this.description = description; }
     public String getCoverImage() { return coverImage; }
     public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
+    public String getContentKey() { return contentKey; }
+    public void setContentKey(String contentKey) { this.contentKey = contentKey; }
+    public String getContentSource() { return contentSource; }
+    public void setContentSource(String contentSource) { this.contentSource = contentSource; }
     public Integer getSortOrder() { return sortOrder; }
     public void setSortOrder(Integer sortOrder) { this.sortOrder = sortOrder; }
     public Integer getStatus() { return status; }
