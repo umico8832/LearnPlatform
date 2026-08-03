@@ -43,6 +43,8 @@ export interface LearningTargetVO {
   questionId: number | null
   knowledgePointId: number | null
 }
+export interface TutorSessionVO { sessionKey: string; title: string; lesson: { summary: string; steps: string[]; visualizationId: string }; check: { id: string; prompt: string; options: { id: string; text: string }[] } }
+export interface TutorCheckResultVO { correct: boolean; explanation: string }
 
 /** 创建/更新课程请求 */
 export interface CourseForm {
@@ -88,6 +90,12 @@ export function addCourseToLibrary(courseId: number) {
 /** 获取当前用户已加入课程的学习总览。 */
 export function getCourseOverview(courseId: number) {
   return request.get<unknown, ApiResponse<CourseOverviewVO>>(`/my-courses/${courseId}/overview`)
+}
+export function startTutorSession(courseId: number, knowledgePointId: number) {
+  return request.post<unknown, ApiResponse<TutorSessionVO>>(`/my-courses/${courseId}/tutor-sessions`, undefined, { params: { knowledgePointId } })
+}
+export function submitTutorCheck(courseId: number, sessionKey: string, optionId: string) {
+  return request.post<unknown, ApiResponse<TutorCheckResultVO>>(`/my-courses/${courseId}/tutor-sessions/${sessionKey}/check`, { optionId })
 }
 
 /** 创建课程（管理端） */

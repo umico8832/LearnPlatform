@@ -59,6 +59,20 @@ public class CourseLearningEventService {
         }
     }
 
+    /** Tutor 理解检查的首次服务端判分是课程学习事实；讲解展示本身不写入事件。 */
+    public void recordTutorCheck(Long userId, Long courseId, Long knowledgePointId, Long sessionId, boolean correct) {
+        if (userId == null || courseId == null || knowledgePointId == null || sessionId == null
+                || !hasCourseInLibrary(userId, courseId)) {
+            return;
+        }
+        CourseLearningEvent event = new CourseLearningEvent();
+        event.setUserId(userId); event.setCourseId(courseId); event.setEventType("TUTOR_CHECK_ANSWERED");
+        event.setEventSource("AI_TUTOR"); event.setSubjectType("KNOWLEDGE_POINT"); event.setSubjectId(knowledgePointId);
+        event.setSourceRecordId(sessionId); event.setIdempotencyKey("AI_TUTOR:" + sessionId); event.setEventVersion(EVENT_VERSION);
+        event.setPayloadJson("{\"isCorrect\":" + correct + "}"); event.setOccurredTime(LocalDateTime.now());
+        try { courseLearningEventMapper.insert(event); } catch (DuplicateKeyException ignored) { }
+    }
+
     private boolean hasCourseInLibrary(Long userId, Long courseId) {
         return userCourseMapper.selectCount(new LambdaQueryWrapper<UserCourse>()
                 .eq(UserCourse::getUserId, userId)

@@ -11,6 +11,8 @@
 | `knowledge_point` | V1 | 树形知识点 | `parent_id` 表达同课程内父子关系 |
 | `user_course` | V21 | 用户加入个人课程库的关系 | 用户与课程组合唯一；加入课程不表示学习或掌握 |
 | `course_learning_event` | V22 | 跨 AI 教学与试卷入口的课程学习事实 | `(user_id, course_id, idempotency_key)` 唯一；事件追加且带版本、来源和发生时间 |
+| `tutor_content` | V24 | 已审查、版本化的 Tutor 教学内容和检查定义 | `(content_key, content_version)` 唯一；正确选项不返回客户端 |
+| `tutor_session` | V24 | 用户课程 Tutor 会话及首次检查结果 | `session_key` 唯一；会话归属用户、课程与知识点 |
 
 V21 为课程和知识点增加可空的 `content_key` 与 `content_source`。`content_key` 用于在
 AiStu、Web 后端和后续内容导入之间保持稳定引用；存量平台内容可以继续使用空键。

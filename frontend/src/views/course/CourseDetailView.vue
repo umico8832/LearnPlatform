@@ -78,6 +78,7 @@
                 <el-tag v-if="data.children && data.children.length > 0" size="small" type="info" effect="plain">
                   {{ data.children.length }} 子项
                 </el-tag>
+                <el-button v-if="data.contentKey === 'ods-arraystack-insertion'" size="small" type="primary" @click.stop="openTutor(data.id)">开始 AI 教学</el-button>
               </div>
             </div>
           </template>
@@ -149,6 +150,8 @@ async function fetchDetail() {
 function goToQuestions() {
   router.push({ name: 'QuestionList', query: { courseId: String(courseId.value) } })
 }
+
+function openTutor(knowledgePointId: number) { router.push({ name: 'TutorSession', params: { id: courseId.value }, query: { knowledgePointId: String(knowledgePointId) } }) }
 
 async function addToLibrary() {
   if (addingToLibrary.value) return

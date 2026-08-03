@@ -17,6 +17,8 @@ import {
   getMyCourses,
   addCourseToLibrary,
   getCourseOverview,
+  startTutorSession,
+  submitTutorCheck,
   createCourse,
   updateCourse,
   deleteCourse,
@@ -108,6 +110,14 @@ describe('Course API', () => {
       await getCourseOverview(408)
 
       expect(mockedRequest.get).toHaveBeenCalledWith('/my-courses/408/overview')
+    })
+
+    it('应以课程和知识点创建 Tutor 会话并提交服务端检查', async () => {
+      mockedRequest.post.mockResolvedValue({ code: 0, data: {}, message: 'success' })
+      await startTutorSession(408, 31)
+      await submitTutorCheck(408, 'session-key', 'RIGHT_TO_LEFT')
+      expect(mockedRequest.post).toHaveBeenNthCalledWith(1, '/my-courses/408/tutor-sessions', undefined, { params: { knowledgePointId: 31 } })
+      expect(mockedRequest.post).toHaveBeenNthCalledWith(2, '/my-courses/408/tutor-sessions/session-key/check', { optionId: 'RIGHT_TO_LEFT' })
     })
   })
 
