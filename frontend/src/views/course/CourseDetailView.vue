@@ -16,7 +16,14 @@
       </div>
       <div class="hero-actions">
         <el-button :icon="Collection" @click="goToQuestions">查看题目</el-button>
-        <el-button type="primary" :icon="DataLine" @click="router.push({ name: 'Practice' })">开始练习</el-button>
+        <el-button
+          type="primary"
+          :icon="Collection"
+          :loading="addingToLibrary"
+          @click="addToLibrary"
+        >
+          加入课程库
+        </el-button>
       </div>
     </section>
 
@@ -87,8 +94,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Collection, DataLine, Document, Folder, Reading } from '@element-plus/icons-vue'
-import { getCourseById, type CourseVO } from '@/api/course'
+import { ElMessage } from 'element-plus'
+import { ArrowLeft, Collection, Document, Folder, Reading } from '@element-plus/icons-vue'
+import { addCourseToLibrary, getCourseById, type CourseVO } from '@/api/course'
 import { getKnowledgeTree, type KnowledgePointVO } from '@/api/knowledgePoint'
 
 const route = useRoute()
@@ -97,6 +105,7 @@ const router = useRouter()
 const course = ref<CourseVO | null>(null)
 const treeData = ref<KnowledgePointVO[]>([])
 const loading = ref(false)
+const addingToLibrary = ref(false)
 
 const courseId = computed(() => Number(route.params.id))
 
@@ -139,6 +148,20 @@ async function fetchDetail() {
 
 function goToQuestions() {
   router.push({ name: 'QuestionList', query: { courseId: String(courseId.value) } })
+}
+
+async function addToLibrary() {
+  if (addingToLibrary.value) return
+  addingToLibrary.value = true
+  try {
+    await addCourseToLibrary(courseId.value)
+    ElMessage.success('已加入课程库，可从课程库进入课程内容。')
+    await router.push({ name: 'MyCourses' })
+  } catch {
+    // 错误已在拦截器中处理
+  } finally {
+    addingToLibrary.value = false
+  }
 }
 
 onMounted(() => {

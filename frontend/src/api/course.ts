@@ -12,6 +12,18 @@ export interface CourseVO {
   createTime: string
 }
 
+/** 当前用户课程库中的课程 */
+export interface UserCourseVO {
+  id: number
+  courseId: number
+  courseName: string
+  description: string | null
+  coverImage: string | null
+  contentKey: string | null
+  contentSource: string | null
+  addedAt: string
+}
+
 /** 创建/更新课程请求 */
 export interface CourseForm {
   name: string
@@ -41,6 +53,16 @@ export function getCoursePage(params: { pageNum?: number; pageSize?: number; key
 /** 获取课程详情 */
 export function getCourseById(id: number) {
   return request.get<unknown, ApiResponse<CourseVO>>(`/courses/${id}`)
+}
+
+/** 获取当前用户的个人课程库 */
+export function getMyCourses() {
+  return request.get<unknown, ApiResponse<UserCourseVO[]>>('/my-courses')
+}
+
+/** 幂等地将课程加入当前用户的个人课程库 */
+export function addCourseToLibrary(courseId: number) {
+  return request.post<unknown, ApiResponse<UserCourseVO>>(`/my-courses/${courseId}`)
 }
 
 /** 创建课程（管理端） */

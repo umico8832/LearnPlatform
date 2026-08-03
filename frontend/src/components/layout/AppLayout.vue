@@ -228,6 +228,7 @@ const navSections: NavSection[] = [
     label: '学习中心',
     items: [
       { path: '/', label: '学习首页', icon: HomeFilled },
+      { path: '/my-courses', label: '我的课程库', icon: Collection },
       { path: '/courses', label: '课程列表', icon: Reading },
       { path: '/questions', label: '题库浏览', icon: EditPen },
       { path: '/favorites', label: '我的收藏', icon: StarFilled },
@@ -302,6 +303,7 @@ const pageTitle = computed(() => (route.meta.title as string) || '学习工作�
 const pageDescriptions: Record<string, string> = {
   '/': '查看今日计划、学习指标和下一步任务。',
   '/courses': '按课程组织知识点，找到适合当前阶段的学习内容。',
+  '/my-courses': '集中查看已加入的课程，并进入课程内容继续规划学习。',
   '/questions': '浏览题库并结合课程、知识点、题型快速筛选。',
   '/practice': '选择练习任务，完成即时判分与解析复盘。',
   '/practice/records': '回看练习历史，定位近期薄弱项。',

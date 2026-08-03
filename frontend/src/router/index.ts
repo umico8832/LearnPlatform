@@ -52,6 +52,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '课程详情' },
       },
       {
+        path: 'my-courses',
+        name: 'MyCourses',
+        component: () => import('@/views/course/MyCoursesView.vue'),
+        meta: { title: '我的课程库' },
+      },
+      {
         path: 'questions',
         name: 'QuestionList',
         component: () => import('@/views/course/QuestionListView.vue'),
