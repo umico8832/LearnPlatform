@@ -116,7 +116,7 @@ public class CourseOverviewService {
         }
         KnowledgePoint firstRoot = knowledgePointMapper.selectOne(new LambdaQueryWrapper<KnowledgePoint>()
                 .eq(KnowledgePoint::getCourseId, courseId)
-                .isNull(KnowledgePoint::getParentId)
+                .eq(KnowledgePoint::getParentId, 0L)
                 .orderByAsc(KnowledgePoint::getSortOrder)
                 .last("LIMIT 1"));
         CourseOverviewVO.LearningTargetVO defaultTarget = new CourseOverviewVO.LearningTargetVO();

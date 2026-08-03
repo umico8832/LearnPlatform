@@ -28,11 +28,19 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 Long.class,
                 "cs408-data-structures");
         Integer chapterCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM knowledge_point WHERE course_id = ? AND content_source = 'AISTU'",
+                "SELECT COUNT(*) FROM knowledge_point WHERE course_id = ? AND content_source = 'AISTU' AND parent_id = 0",
                 Integer.class,
                 courseId);
 
         assertEquals(8, chapterCount);
+        Integer atomicKnowledgeCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM knowledge_point WHERE course_id = ? AND content_key = ? "
+                        + "AND content_source = 'AISTU' AND content_version = 1 "
+                        + "AND content_review_status = 'REVIEWED'",
+                Integer.class,
+                courseId,
+                "ods-arraystack-insertion");
+        assertEquals(1, atomicKnowledgeCount);
 
         jdbcTemplate.update(
                 "INSERT INTO user_course (user_id, course_id) VALUES (?, ?)",

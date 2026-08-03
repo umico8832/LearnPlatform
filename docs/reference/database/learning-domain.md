@@ -14,7 +14,10 @@
 
 V21 为课程和知识点增加可空的 `content_key` 与 `content_source`。`content_key` 用于在
 AiStu、Web 后端和后续内容导入之间保持稳定引用；存量平台内容可以继续使用空键。
-`content_source` 记录内容来源，不代表审核结论或权威等级。
+`content_source` 记录内容来源，不代表审核结论或权威等级。V23 为需要分批迁入的原子
+知识增加可空的 `content_version` 和 `content_review_status`；后者只保存迁入时的审查
+事实，不能替代 Web 端的发布或权限状态。首个记录 `ods-arraystack-insertion` 绑定
+父目录“栈、队列和数组”，版本为 1、迁入时状态为 `REVIEWED`。
 
 `course_learning_event` 只记录已加入个人课程库后产生的课程内事实；普通题库练习不会
 被自动解释为课程进度。首版映射练习、复习、考试逐题作答与结构化 AI 变式题的首次判分，

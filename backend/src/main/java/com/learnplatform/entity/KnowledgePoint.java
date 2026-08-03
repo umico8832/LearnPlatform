@@ -25,6 +25,10 @@ public class KnowledgePoint {
 
     private String contentSource;
 
+    private Integer contentVersion;
+
+    private String contentReviewStatus;
+
     private Integer sortOrder;
 
     @TableField(fill = FieldFill.INSERT)
@@ -50,6 +54,10 @@ public class KnowledgePoint {
     public void setContentKey(String contentKey) { this.contentKey = contentKey; }
     public String getContentSource() { return contentSource; }
     public void setContentSource(String contentSource) { this.contentSource = contentSource; }
+    public Integer getContentVersion() { return contentVersion; }
+    public void setContentVersion(Integer contentVersion) { this.contentVersion = contentVersion; }
+    public String getContentReviewStatus() { return contentReviewStatus; }
+    public void setContentReviewStatus(String contentReviewStatus) { this.contentReviewStatus = contentReviewStatus; }
     public Integer getSortOrder() { return sortOrder; }
     public void setSortOrder(Integer sortOrder) { this.sortOrder = sortOrder; }
     public LocalDateTime getCreateTime() { return createTime; }

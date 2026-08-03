@@ -15,9 +15,13 @@ import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionReviewScheduleMapper;
 import com.learnplatform.mapper.UserCourseMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
+import org.apache.ibatis.session.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -27,7 +31,9 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -45,6 +51,7 @@ class CourseOverviewServiceTest {
 
     @BeforeEach
     void setUp() {
+        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new Configuration(), ""), KnowledgePoint.class);
         service = new CourseOverviewService(userCourseMapper, courseMapper, eventMapper,
                 wrongQuestionMapper, reviewScheduleMapper, questionMapper, knowledgePointMapper);
     }
@@ -78,6 +85,23 @@ class CourseOverviewServiceTest {
                 () -> service.getOverview(7L, 10L));
 
         assertEquals("请先将课程加入个人课程库", exception.getMessage());
+    }
+
+    @Test
+    void usesPlatformRootConventionWhenSelectingDefaultCourseTarget() {
+        when(userCourseMapper.selectCount(any())).thenReturn(1L);
+        when(courseMapper.selectById(10L)).thenReturn(course());
+        when(eventMapper.selectList(any())).thenReturn(List.of());
+        when(questionMapper.selectList(any())).thenReturn(List.of());
+        when(knowledgePointMapper.selectOne(any())).thenReturn(rootKnowledgePoint());
+
+        service.getOverview(7L, 10L);
+
+        ArgumentCaptor<com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<KnowledgePoint>> captor =
+                ArgumentCaptor.forClass(com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper.class);
+        verify(knowledgePointMapper).selectOne(captor.capture());
+        assertTrue(captor.getValue().getSqlSegment().contains("parentId ="),
+                captor.getValue().getSqlSegment());
     }
 
     private Course course() {

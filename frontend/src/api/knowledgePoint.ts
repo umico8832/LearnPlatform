@@ -8,6 +8,10 @@ export interface KnowledgePointVO {
   description: string
   courseId: number
   parentId: number
+  contentKey?: string
+  contentSource?: string
+  contentVersion?: number
+  contentReviewStatus?: string
   sortOrder: number
   createTime: string
   children?: KnowledgePointVO[]
