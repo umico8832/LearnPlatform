@@ -2,8 +2,10 @@ package com.learnplatform.controller;
 
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.UserCourseVO;
+import com.learnplatform.dto.CourseOverviewVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.CourseLibraryService;
+import com.learnplatform.service.CourseOverviewService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,10 +34,11 @@ class CourseLibraryControllerTest {
     private MockMvc mockMvc;
 
     @Mock private CourseLibraryService courseLibraryService;
+    @Mock private CourseOverviewService courseOverviewService;
 
     @BeforeEach
     void setUp() {
-        CourseLibraryController controller = new CourseLibraryController(courseLibraryService);
+        CourseLibraryController controller = new CourseLibraryController(courseLibraryService, courseOverviewService);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
@@ -67,6 +70,21 @@ class CourseLibraryControllerTest {
                 .andExpect(jsonPath("$.data").isArray());
 
         verify(courseLibraryService).getMyCourses(7L);
+    }
+
+    @Test
+    void getCourseOverviewUsesAuthenticatedUser() throws Exception {
+        CourseOverviewVO overview = new CourseOverviewVO();
+        overview.setCourseId(10L);
+        overview.setAnsweredCount(3);
+        when(courseOverviewService.getOverview(7L, 10L)).thenReturn(overview);
+
+        mockMvc.perform(get("/api/my-courses/10/overview").with(mockUser(7L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.courseId").value(10))
+                .andExpect(jsonPath("$.data.answeredCount").value(3));
+
+        verify(courseOverviewService).getOverview(7L, 10L);
     }
 
     private RequestPostProcessor mockUser(Long userId) {

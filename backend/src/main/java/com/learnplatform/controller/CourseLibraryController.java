@@ -2,8 +2,10 @@ package com.learnplatform.controller;
 
 import com.learnplatform.common.result.R;
 import com.learnplatform.dto.UserCourseVO;
+import com.learnplatform.dto.CourseOverviewVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.CourseLibraryService;
+import com.learnplatform.service.CourseOverviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,9 +23,12 @@ import java.util.List;
 public class CourseLibraryController {
 
     private final CourseLibraryService courseLibraryService;
+    private final CourseOverviewService courseOverviewService;
 
-    public CourseLibraryController(CourseLibraryService courseLibraryService) {
+    public CourseLibraryController(CourseLibraryService courseLibraryService,
+                                   CourseOverviewService courseOverviewService) {
         this.courseLibraryService = courseLibraryService;
+        this.courseOverviewService = courseOverviewService;
     }
 
     @Operation(summary = "添加课程到个人课程库")
@@ -39,5 +44,13 @@ public class CourseLibraryController {
     public R<List<UserCourseVO>> getMyCourses(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return R.ok(courseLibraryService.getMyCourses(userDetails.getUserId()));
+    }
+
+    @Operation(summary = "查询课程学习总览")
+    @GetMapping("/{courseId}/overview")
+    public R<CourseOverviewVO> getCourseOverview(
+            @PathVariable Long courseId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(courseOverviewService.getOverview(userDetails.getUserId(), courseId));
     }
 }

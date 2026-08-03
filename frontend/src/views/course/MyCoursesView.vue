@@ -4,7 +4,7 @@
       <div>
         <span class="section-kicker">个人课程库</span>
         <h2>已加入的课程</h2>
-        <p>加入课程只建立学习入口；学习进度、待复习和错题会在后续课程总览中统一呈现。</p>
+        <p>从已加入课程进入学习总览，查看真实作答、复习与错题记录，并选择下一步。</p>
       </div>
       <el-button type="primary" :icon="Plus" @click="router.push({ name: 'CourseList' })">
         浏览课程
@@ -31,7 +31,7 @@
             <span>加入于 {{ formatDate(course.addedAt) }}</span>
           </div>
           <el-button type="primary" plain :icon="ArrowRight" @click="openCourse(course.courseId)">
-            查看课程内容
+            进入学习总览
           </el-button>
         </article>
       </div>
@@ -79,7 +79,7 @@ async function fetchMyCourses() {
 }
 
 function openCourse(courseId: number) {
-  router.push({ name: 'CourseDetail', params: { id: courseId } })
+  router.push({ name: 'CourseOverview', params: { id: courseId } })
 }
 
 onMounted(fetchMyCourses)

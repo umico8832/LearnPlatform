@@ -24,6 +24,26 @@ export interface UserCourseVO {
   addedAt: string
 }
 
+/** 已加入课程的真实学习事实聚合，不包含推断掌握度。 */
+export interface CourseOverviewVO {
+  courseId: number
+  courseName: string
+  answeredCount: number
+  correctCount: number
+  dueReviewCount: number
+  unresolvedWrongCount: number
+  lastLearningTime: string | null
+  recommendedTargets: LearningTargetVO[]
+}
+
+export interface LearningTargetVO {
+  type: 'DUE_REVIEW' | 'WRONG_QUESTION' | 'COURSE_SEQUENCE'
+  title: string
+  reason: string
+  questionId: number | null
+  knowledgePointId: number | null
+}
+
 /** 创建/更新课程请求 */
 export interface CourseForm {
   name: string
@@ -63,6 +83,11 @@ export function getMyCourses() {
 /** 幂等地将课程加入当前用户的个人课程库 */
 export function addCourseToLibrary(courseId: number) {
   return request.post<unknown, ApiResponse<UserCourseVO>>(`/my-courses/${courseId}`)
+}
+
+/** 获取当前用户已加入课程的学习总览。 */
+export function getCourseOverview(courseId: number) {
+  return request.get<unknown, ApiResponse<CourseOverviewVO>>(`/my-courses/${courseId}/overview`)
 }
 
 /** 创建课程（管理端） */

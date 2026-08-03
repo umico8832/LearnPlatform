@@ -16,6 +16,7 @@ import {
   getCourseById,
   getMyCourses,
   addCourseToLibrary,
+  getCourseOverview,
   createCourse,
   updateCourse,
   deleteCourse,
@@ -99,6 +100,14 @@ describe('Course API', () => {
       await addCourseToLibrary(408)
 
       expect(mockedRequest.post).toHaveBeenCalledWith('/my-courses/408')
+    })
+
+    it('应使用 GET 请求获取已加入课程的学习总览', async () => {
+      mockedRequest.get.mockResolvedValue({ code: 0, data: { courseId: 408 }, message: 'success' })
+
+      await getCourseOverview(408)
+
+      expect(mockedRequest.get).toHaveBeenCalledWith('/my-courses/408/overview')
     })
   })
 

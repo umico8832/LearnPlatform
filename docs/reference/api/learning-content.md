@@ -10,10 +10,16 @@
 | `GET /api/knowledge-points/tree/{courseId}` | 获取课程知识点树 |
 | `POST /api/my-courses/{courseId}` | 将已开放课程幂等加入当前用户的个人课程库 |
 | `GET /api/my-courses` | 查询当前用户的个人课程库 |
+| `GET /api/my-courses/{courseId}/overview` | 查询已加入课程的学习概况与下一步候选目标 |
 
 课程和知识点的写接口位于[管理与治理 API](admin-governance.md#课程与知识点管理)。
 个人课程库关系以服务端认证用户为准，客户端不能指定或查询其他用户的 `userId`。
 添加课程只建立学习入口，不表示已经开始学习或掌握课程内容。
+
+课程总览仅对当前用户已加入的课程开放。它从已保存的课程学习事件、错题与到期复习计划聚合
+`answeredCount`、`correctCount`、`dueReviewCount`、`unresolvedWrongCount` 和最近学习时间；
+不会返回或推断“掌握度”。`recommendedTargets` 依次给出到期复习、未掌握错题和课程默认目录
+的可执行入口，客户端只可按当前课程跳转到既有学习页面。
 
 ## 题库与纠错
 
