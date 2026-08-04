@@ -16,10 +16,15 @@
       </div>
       <div class="hero-actions">
         <el-button :icon="Collection" @click="goToQuestions">查看题目</el-button>
+        <el-button v-if="isInLibrary" type="primary" :icon="Reading" @click="goToCourseOverview">
+          进入课程总览
+        </el-button>
         <el-button
+          v-else
           type="primary"
           :icon="Collection"
           :loading="addingToLibrary"
+          :disabled="loading"
           @click="addToLibrary"
         >
           加入课程库
@@ -78,7 +83,21 @@
                 <el-tag v-if="data.children && data.children.length > 0" size="small" type="info" effect="plain">
                   {{ data.children.length }} 子项
                 </el-tag>
-                <el-button v-if="data.contentKey === 'ods-arraystack-insertion'" size="small" type="primary" @click.stop="openTutor(data.id)">开始 AI 教学</el-button>
+                <el-button
+                  v-if="data.contentKey === 'ods-arraystack-insertion' && isInLibrary"
+                  size="small"
+                  type="primary"
+                  @click.stop="openTutor(data.id)"
+                  >开始 AI 教学</el-button
+                >
+                <el-tag
+                  v-else-if="data.contentKey === 'ods-arraystack-insertion'"
+                  size="small"
+                  type="info"
+                  effect="plain"
+                >
+                  加入课程库后可学习
+                </el-tag>
               </div>
             </div>
           </template>
@@ -97,7 +116,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Collection, Document, Folder, Reading } from '@element-plus/icons-vue'
-import { addCourseToLibrary, getCourseById, type CourseVO } from '@/api/course'
+import { addCourseToLibrary, getCourseById, getMyCourses, type CourseVO } from '@/api/course'
 import { getKnowledgeTree, type KnowledgePointVO } from '@/api/knowledgePoint'
 
 const route = useRoute()
@@ -107,6 +126,7 @@ const course = ref<CourseVO | null>(null)
 const treeData = ref<KnowledgePointVO[]>([])
 const loading = ref(false)
 const addingToLibrary = ref(false)
+const isInLibrary = ref(false)
 
 const courseId = computed(() => Number(route.params.id))
 
@@ -134,12 +154,14 @@ const maxDepth = computed(() => getMaxDepth(treeData.value))
 async function fetchDetail() {
   loading.value = true
   try {
-    const [courseRes, treeRes] = await Promise.all([
+    const [courseRes, treeRes, libraryRes] = await Promise.all([
       getCourseById(courseId.value),
       getKnowledgeTree(courseId.value),
+      getMyCourses(),
     ])
     course.value = courseRes.data
     treeData.value = treeRes.data || []
+    isInLibrary.value = (libraryRes.data || []).some((item) => item.courseId === courseId.value)
   } catch {
     // 错误已在拦截器中处理
   } finally {
@@ -151,15 +173,26 @@ function goToQuestions() {
   router.push({ name: 'QuestionList', query: { courseId: String(courseId.value) } })
 }
 
-function openTutor(knowledgePointId: number) { router.push({ name: 'TutorSession', params: { id: courseId.value }, query: { knowledgePointId: String(knowledgePointId) } }) }
+function goToCourseOverview() {
+  router.push({ name: 'CourseOverview', params: { id: courseId.value } })
+}
+
+function openTutor(knowledgePointId: number) {
+  router.push({
+    name: 'TutorSession',
+    params: { id: courseId.value },
+    query: { knowledgePointId: String(knowledgePointId) },
+  })
+}
 
 async function addToLibrary() {
   if (addingToLibrary.value) return
   addingToLibrary.value = true
   try {
     await addCourseToLibrary(courseId.value)
-    ElMessage.success('已加入课程库，可从课程库进入课程内容。')
-    await router.push({ name: 'MyCourses' })
+    isInLibrary.value = true
+    ElMessage.success('已加入课程库，正在进入课程总览。')
+    await router.push({ name: 'CourseOverview', params: { id: courseId.value } })
   } catch {
     // 错误已在拦截器中处理
   } finally {
