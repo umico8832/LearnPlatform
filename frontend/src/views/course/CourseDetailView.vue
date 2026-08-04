@@ -133,6 +133,7 @@ const availableTutorContentKeys = new Set([
   'ods-arraystack-performance',
   'ods-fastarraystack-block-copy',
   'ods-arrayqueue-representation',
+  'ods-arrayqueue-enqueue',
 ])
 
 function isAvailableTutorContent(contentKey?: string) {

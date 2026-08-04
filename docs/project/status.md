@@ -39,14 +39,14 @@ Web 优先平台。第一步先定义统一课程学习状态，再用 408 数�
 
 ## 最新验证基线
 
-业务代码基线（Round 192）：
+业务代码基线（Round 193）：
 
 - 后端 `mvn clean verify -B`：438 个默认测试通过。
 - Checkstyle：0 违规。
 - SpotBugs：0 问题。
 - JaCoCo：行覆盖率 50%、分支覆盖率 35% 门槛通过。
-- 前端 `npm run coverage`：35 个测试文件、229 个测试通过。
-- 前端全源码覆盖率：语句 16.46%、分支 13.54%、函数 14.28%、行 15.52%。
+- 前端 `npm run coverage`：36 个测试文件、231 个测试通过。
+- 前端全源码覆盖率：语句 16.79%、分支 14.10%、函数 14.60%、行 15.82%。
 - 认证数据库迁移 Testcontainers 聚焦测试：1 个测试通过。
 - 个人课程库迁移 Testcontainers 聚焦测试：1 个测试通过，覆盖 AiStu 408 顶层目录、首个原子知识元数据、受限互动课件定义和用户课程唯一约束。
 - 认证页浏览器检查：桌面与 375px 移动端无横向溢出，登录、分步注册、找回密码和无效重置链接状态可访问。
@@ -73,13 +73,13 @@ Web 优先平台。第一步先定义统一课程学习状态，再用 408 数�
 - 当前课程、题库、会话、错题和复习数据尚未形成统一课程学习状态。
 - 课程总览已将已审查、尚未完成理解检查的 Tutor 内容作为可继续目标，并显示已迁入 Tutor 内容的
   服务端检查状态；其他原子知识、课件互动状态和阶段测评尚未接入。
-- AiStu 的 408 顶层目录与八个已审查原子知识 `ods-array-size-capacity`、`ods-arraystack-insertion`、`ods-arraystack-removal`、`ods-arraystack-resize`、`ods-arraystack-amortized-resize`、`ods-arraystack-performance`、`ods-fastarraystack-block-copy`、`ods-arrayqueue-representation` 已迁入；当前仅
+- AiStu 的 408 顶层目录与九个已审查原子知识 `ods-array-size-capacity`、`ods-arraystack-insertion`、`ods-arraystack-removal`、`ods-arraystack-resize`、`ods-arraystack-amortized-resize`、`ods-arraystack-performance`、`ods-fastarraystack-block-copy`、`ods-arrayqueue-representation`、`ods-arrayqueue-enqueue` 已迁入；当前仅
   ArrayStack 与 ArrayQueue 的受限互动课件完成 Web 展示，其他 AiStu 课件尚未迁入。
 
 ## 下一步
 
 1. 确认一张具备试卷、年份、题号和来源的 408 结构化真题；在来源缺失前不以自拟题替代。
-2. 为下一批独立审查、迁入并可访问的 Tutor 后续知识确定内容切片；优先评估 ArrayQueue 的入队，并继续保持桌面端和全部管理页面不并行改造。
+2. 为下一批独立审查、迁入并可访问的 Tutor 后续知识确定内容切片；优先评估 ArrayQueue 的出队，并继续保持桌面端和全部管理页面不并行改造。
 
 ## 暂不优先
 

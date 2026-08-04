@@ -19,6 +19,7 @@ import {
   getCourseOverview,
   startTutorSession,
   submitTutorCheck,
+  isArrayQueueEnqueueCourseware,
   isArrayQueueRepresentationCourseware,
   createCourse,
   updateCourse,
@@ -38,6 +39,15 @@ describe('Course API', () => {
     })).toBe(true)
     expect(isArrayQueueRepresentationCourseware({
       kind: 'ARRAY_QUEUE_REPRESENTATION', version: 1, capacity: 8, headIndex: 8, elements: ['A'], script: 'alert(1)',
+    })).toBe(false)
+  })
+
+  it('只接受容量充足的 ArrayQueue 入队回放配置', () => {
+    expect(isArrayQueueEnqueueCourseware({
+      kind: 'ARRAY_QUEUE_ENQUEUE', version: 1, capacity: 8, headIndex: 6, elements: ['A', 'B', 'C', 'D', 'E'], enqueueValue: 'F',
+    })).toBe(true)
+    expect(isArrayQueueEnqueueCourseware({
+      kind: 'ARRAY_QUEUE_ENQUEUE', version: 1, capacity: 5, headIndex: 1, elements: ['A', 'B', 'C', 'D', 'E'], enqueueValue: 'F', script: 'alert(1)',
     })).toBe(false)
   })
 
