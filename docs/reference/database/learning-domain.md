@@ -19,8 +19,9 @@ AiStu、Web 后端和后续内容导入之间保持稳定引用；存量平台�
 `content_source` 记录内容来源，不代表审核结论或权威等级。V23 为需要分批迁入的原子
 知识增加可空的 `content_version` 和 `content_review_status`；后者只保存迁入时的审查
 事实，不能替代 Web 端的发布或权限状态。`ods-array-size-capacity`、
-`ods-arraystack-insertion`、`ods-arraystack-removal`、`ods-arraystack-resize` 与
-`ods-arraystack-amortized-resize` 与 `ods-arraystack-performance` 均绑定父目录“栈、队列和数组”，
+`ods-arraystack-insertion`、`ods-arraystack-removal`、`ods-arraystack-resize`、
+`ods-arraystack-amortized-resize`、`ods-arraystack-performance` 与
+`ods-fastarraystack-block-copy` 均绑定父目录“栈、队列和数组”，
 版本为 1、迁入时状态为 `REVIEWED`。
 
 `course_learning_event` 只记录已加入个人课程库后产生的课程内事实；普通题库练习不会
@@ -55,6 +56,10 @@ V30 迁入“ArrayStack 调整容量的摊还成本”的独立 Tutor 内容和�
 V31 迁入“ArrayStack 的操作复杂度”的独立 Tutor 内容和理解检查。它只汇总 `get/set` 的
 `O(1)` 最坏时间、忽略 `resize` 的按位 `add/remove` 成本 `O(1+n-i)`，以及尾端 push/pop 的
 `O(1)` 摊还时间；单次尾端更新仍可能因 resize 耗时 `O(n)`，不将摊还界写成最坏界。
+
+V32 迁入“FastArrayStack 的批量复制优化”的独立 Tutor 内容和理解检查。它只陈述批量复制
+可以替代连续区间的显式循环并降低常数开销；由于处理元素数不变，插入、删除和 `resize` 的
+渐近时间复杂度不变，且不承诺固定加速倍数。
 
 ## 题目
 
