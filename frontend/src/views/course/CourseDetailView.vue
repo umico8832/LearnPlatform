@@ -84,18 +84,13 @@
                   {{ data.children.length }} 子项
                 </el-tag>
                 <el-button
-                  v-if="data.contentKey === 'ods-arraystack-insertion' && isInLibrary"
+                  v-if="isAvailableTutorContent(data.contentKey) && isInLibrary"
                   size="small"
                   type="primary"
                   @click.stop="openTutor(data.id)"
                   >开始 AI 教学</el-button
                 >
-                <el-tag
-                  v-else-if="data.contentKey === 'ods-arraystack-insertion'"
-                  size="small"
-                  type="info"
-                  effect="plain"
-                >
+                <el-tag v-else-if="isAvailableTutorContent(data.contentKey)" size="small" type="info" effect="plain">
                   加入课程库后可学习
                 </el-tag>
               </div>
@@ -129,6 +124,15 @@ const addingToLibrary = ref(false)
 const isInLibrary = ref(false)
 
 const courseId = computed(() => Number(route.params.id))
+const availableTutorContentKeys = new Set([
+  'ods-array-size-capacity',
+  'ods-arraystack-insertion',
+  'ods-arraystack-removal',
+])
+
+function isAvailableTutorContent(contentKey?: string) {
+  return !!contentKey && availableTutorContentKeys.has(contentKey)
+}
 
 function countNodes(nodes: KnowledgePointVO[]): number {
   return nodes.reduce((sum, node) => sum + 1 + countNodes(node.children || []), 0)

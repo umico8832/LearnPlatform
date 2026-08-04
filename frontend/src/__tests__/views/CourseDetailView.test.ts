@@ -32,7 +32,7 @@ import CourseDetailView from '@/views/course/CourseDetailView.vue'
 
 const stubs = {
   'el-button': {
-    template: '<button :disabled="loading" @click="$emit(\'click\')"><slot /></button>',
+    template: '<button :disabled="loading" @click="$emit(\'click\', $event)"><slot /></button>',
     props: ['loading', 'type', 'icon', 'text'],
     emits: ['click'],
   },
@@ -57,7 +57,9 @@ describe('CourseDetailView', () => {
     mockGetCourseById.mockResolvedValue({ data: { id: 408, name: '408 数据结构', description: '课程描述' } })
     mockGetKnowledgeTree.mockResolvedValue({
       data: [
+        { id: 30, name: '元素数量与数组容量', description: '', contentKey: 'ods-array-size-capacity', children: [] },
         { id: 31, name: 'ArrayStack 按位插入', description: '', contentKey: 'ods-arraystack-insertion', children: [] },
+        { id: 32, name: 'ArrayStack 按位删除', description: '', contentKey: 'ods-arraystack-removal', children: [] },
       ],
     })
     mockAddCourseToLibrary.mockResolvedValue({ data: { courseId: 408 } })
@@ -95,5 +97,20 @@ describe('CourseDetailView', () => {
 
     expect(mockPush).toHaveBeenCalledWith({ name: 'CourseOverview', params: { id: 408 } })
     expect(mockAddCourseToLibrary).not.toHaveBeenCalled()
+  })
+
+  it('已加入课程库时，为已迁入的容量前置知识提供 Tutor 入口', async () => {
+    mockGetMyCourses.mockResolvedValue({ data: [{ courseId: 408 }] })
+    const wrapper = mount(CourseDetailView, { global: { stubs } })
+    await flushPromises()
+
+    const tutorButtons = wrapper.findAll('button').filter((item) => item.text().includes('开始 AI 教学'))
+    expect(tutorButtons).toHaveLength(3)
+    await tutorButtons[0].trigger('click')
+    expect(mockPush).toHaveBeenCalledWith({
+      name: 'TutorSession',
+      params: { id: 408 },
+      query: { knowledgePointId: '30' },
+    })
   })
 })

@@ -18,9 +18,9 @@ V21 为课程和知识点增加可空的 `content_key` 与 `content_source`。`c
 AiStu、Web 后端和后续内容导入之间保持稳定引用；存量平台内容可以继续使用空键。
 `content_source` 记录内容来源，不代表审核结论或权威等级。V23 为需要分批迁入的原子
 知识增加可空的 `content_version` 和 `content_review_status`；后者只保存迁入时的审查
-事实，不能替代 Web 端的发布或权限状态。`ods-arraystack-insertion` 与
-`ods-arraystack-removal` 均绑定父目录“栈、队列和数组”，版本为 1、迁入时状态为
-`REVIEWED`。
+事实，不能替代 Web 端的发布或权限状态。`ods-array-size-capacity`、
+`ods-arraystack-insertion` 与 `ods-arraystack-removal` 均绑定父目录“栈、队列和数组”，
+版本为 1、迁入时状态为 `REVIEWED`。
 
 `course_learning_event` 只记录已加入个人课程库后产生的课程内事实；普通题库练习不会
 被自动解释为课程进度。首版映射练习、复习、考试逐题作答与结构化 AI 变式题的首次判分，
@@ -37,6 +37,10 @@ V26 在同一已审查内容中增加前置与后续路径提示。它们只能�
 V27 迁入 ArrayStack 按位删除的独立 Tutor 内容与理解检查。理解检查的正确选项和正误解释
 均保存在已审查的 `check_json` 中；服务端只在判分结果中返回对应解释，不能将某一内容的
 固定解释复用于其他内容。
+
+V28 迁入“元素数量与数组容量”的独立 Tutor 内容与理解检查。它以 `n`、`length(a)` 和
+`0 ≤ n ≤ length(a)` 为审查范围，不把空闲槽位解释为逻辑元素；插入与删除内容中的同名
+前置提示同时更新为可从课程目录进入的已迁入内容。
 
 ## 题目
 

@@ -15,9 +15,9 @@ LearnPlatform 使用 MySQL 8，结构由 Flyway 迁移管理。运行时数据�
 ## 当前基线
 
 - 数据库：MySQL 8。
-- 迁移：V1–V26。
+- 迁移：V1–V28。
 - 基线迁移：`V1__baseline.sql`。
-- 最新迁移：`V26__add_arraystack_tutor_learning_path.sql`。
+- 最新迁移：`V28__seed_reviewed_array_size_capacity_tutor_content.sql`。
 - 逻辑外键为主，跨聚合一致性由 Service 事务和数据库唯一约束共同保证。
 
 ## 维护规则
