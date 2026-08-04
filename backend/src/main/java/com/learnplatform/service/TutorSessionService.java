@@ -71,7 +71,9 @@ public class TutorSessionService {
     private TutorCheckResultVO result(boolean correct, TutorContent content) {
         TutorCheckResultVO result = new TutorCheckResultVO();
         result.setCorrect(correct);
-        result.setExplanation(correct ? "正确：从右向左先腾出后面的槽位，避免覆盖尚未搬移的元素。" : "不正确：从左向右会先覆盖 a[i+1] 等尚未搬走的元素。");
+        JsonNode check = parse(content.getCheckJson());
+        String explanation = check.path(correct ? "correctExplanation" : "incorrectExplanation").asText();
+        result.setExplanation(explanation.isBlank() ? (correct ? "回答正确。" : "回答不正确，请回看教学步骤。") : explanation);
         JsonNode guidance = parse(content.getLessonJson()).path(correct ? "nextStep" : "prerequisite");
         if (guidance.isObject() && !guidance.path("title").asText().isBlank()) {
             result.setGuidanceType(correct ? "NEXT_TARGET" : "PREREQUISITE");

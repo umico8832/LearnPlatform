@@ -66,4 +66,21 @@ class TutorSessionServiceTest {
         assertEquals("NEXT_TARGET", correctResult.getGuidanceType());
         assertEquals("ArrayStack 的操作复杂度", correctResult.getGuidanceTitle());
     }
+
+    @Test void usesReviewedContentFeedbackInsteadOfArrayStackInsertionSpecificText() {
+        UserCourseMapper users = mock(UserCourseMapper.class); KnowledgePointMapper points = mock(KnowledgePointMapper.class);
+        TutorContentMapper contents = mock(TutorContentMapper.class); TutorSessionMapper sessions = mock(TutorSessionMapper.class);
+        CourseLearningEventService events = mock(CourseLearningEventService.class);
+        TutorContent content = new TutorContent(); content.setId(8L);
+        content.setCheckJson("{\"correctOptionId\":\"LEFT_TO_RIGHT\",\"correctExplanation\":\"正确：删除后从左向右搬移后缀，填补空位。\",\"incorrectExplanation\":\"不正确：从右向左会覆盖尚未读取的后继元素。\"}");
+        content.setLessonJson("{}");
+        TutorSession session = new TutorSession(); session.setId(9L); session.setUserId(7L); session.setCourseId(10L); session.setKnowledgePointId(3L); session.setTutorContentId(8L);
+        when(sessions.selectOne(any())).thenReturn(session);
+        when(contents.selectById(8L)).thenReturn(content);
+        when(sessions.update(any(), any())).thenReturn(1);
+        TutorSessionService service = new TutorSessionService(users, points, contents, sessions, new ObjectMapper(), events);
+
+        TutorCheckAnswerRequest answer = new TutorCheckAnswerRequest(); answer.setOptionId("LEFT_TO_RIGHT");
+        assertEquals("正确：删除后从左向右搬移后缀，填补空位。", service.answer(7L, "session", answer).getExplanation());
+    }
 }
