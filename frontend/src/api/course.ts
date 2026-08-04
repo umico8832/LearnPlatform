@@ -43,8 +43,29 @@ export interface LearningTargetVO {
   questionId: number | null
   knowledgePointId: number | null
 }
-export interface TutorSessionVO { sessionKey: string; title: string; lesson: { summary: string; steps: string[]; visualizationId: string }; check: { id: string; prompt: string; options: { id: string; text: string }[] } }
+export interface ArrayStackInsertionCourseware {
+  kind: 'ARRAY_STACK_INSERTION'
+  version: 1
+  capacity: number
+  initialElements: string[]
+  insertIndex: number
+  insertValue: string
+}
+export interface TutorSessionVO { sessionKey: string; title: string; lesson: { summary: string; steps: string[]; visualizationId: string; visualization?: ArrayStackInsertionCourseware }; check: { id: string; prompt: string; options: { id: string; text: string }[] } }
 export interface TutorCheckResultVO { correct: boolean; explanation: string }
+
+/** 仅接受当前已审查、无可执行字段的 ArrayStack 课件参数。 */
+export function isArrayStackInsertionCourseware(value: unknown): value is ArrayStackInsertionCourseware {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Record<string, unknown>
+  return candidate.kind === 'ARRAY_STACK_INSERTION'
+    && candidate.version === 1
+    && Number.isInteger(candidate.capacity) && (candidate.capacity as number) >= 1 && (candidate.capacity as number) <= 12
+    && Array.isArray(candidate.initialElements) && candidate.initialElements.length < (candidate.capacity as number)
+    && candidate.initialElements.every((item) => typeof item === 'string' && item.length > 0 && item.length <= 32)
+    && Number.isInteger(candidate.insertIndex) && (candidate.insertIndex as number) >= 0 && (candidate.insertIndex as number) <= candidate.initialElements.length
+    && typeof candidate.insertValue === 'string' && candidate.insertValue.length > 0 && candidate.insertValue.length <= 32
+}
 
 /** 创建/更新课程请求 */
 export interface CourseForm {

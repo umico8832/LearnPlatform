@@ -26,6 +26,11 @@
 Tutor 仅可打开已加入课程、属于该课程且审查状态为 `REVIEWED` 的内容；响应不会返回正确选项。
 理解检查由服务端首次判分并写入可追加课程学习事件，重复提交返回既有结果。
 
+首个已审查 Tutor 内容在 `lesson.visualization` 中使用受限的
+`ARRAY_STACK_INSERTION` v1 Schema：`capacity`（1–12）、`initialElements`（非空字符串数组，
+长度小于 capacity）、`insertIndex` 与 `insertValue`。客户端仅对通过该 Schema 校验的固定类型
+渲染器进行回放，拒绝把课件 JSON 解释为脚本、动态组件或通用可执行配置。
+
 ## 题库与纠错
 
 | 接口 | 说明 |

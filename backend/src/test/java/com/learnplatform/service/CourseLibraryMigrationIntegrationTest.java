@@ -41,6 +41,12 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 courseId,
                 "ods-arraystack-insertion");
         assertEquals(1, atomicKnowledgeCount);
+        String coursewareKind = jdbcTemplate.queryForObject(
+                "SELECT JSON_UNQUOTE(JSON_EXTRACT(lesson_json, '$.visualization.kind')) "
+                        + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
+                String.class,
+                "ods-arraystack-insertion");
+        assertEquals("ARRAY_STACK_INSERTION", coursewareKind);
 
         jdbcTemplate.update(
                 "INSERT INTO user_course (user_id, course_id) VALUES (?, ?)",
