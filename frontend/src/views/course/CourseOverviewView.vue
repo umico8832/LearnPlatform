@@ -35,6 +35,28 @@
           </article>
         </div>
 
+        <section v-if="overview.tutorProgress.length" class="tutor-progress-panel" aria-labelledby="tutor-progress-heading">
+          <div class="panel-header">
+            <div>
+              <span class="section-kicker">课程目录</span>
+              <h3 id="tutor-progress-heading">已迁入教学内容</h3>
+            </div>
+            <el-tag type="info" effect="plain">仅显示已审查内容</el-tag>
+          </div>
+          <p class="tutor-progress-note">状态仅来自服务端保存的理解检查；其余目录内容尚未迁入时不会被推断为未完成。</p>
+          <div class="tutor-progress-list">
+            <article v-for="item in overview.tutorProgress" :key="item.knowledgePointId" class="tutor-progress-item">
+              <div>
+                <h4>{{ item.title }}</h4>
+                <span class="progress-status">{{ tutorStatusLabel(item.status) }}</span>
+              </div>
+              <el-button :type="item.status === 'IN_PROGRESS' ? 'primary' : 'default'" @click="openTutor(item.knowledgePointId)">
+                {{ tutorActionLabel(item.status) }}
+              </el-button>
+            </article>
+          </div>
+        </section>
+
         <div class="overview-grid">
           <section class="target-panel" aria-labelledby="next-target-heading">
             <div class="panel-header">
@@ -115,6 +137,26 @@ function openCourseContent() {
   router.push({ name: 'CourseDetail', params: { id: courseId.value } })
 }
 
+function openTutor(knowledgePointId: number) {
+  router.push({
+    name: 'TutorSession',
+    params: { id: courseId.value },
+    query: { knowledgePointId: String(knowledgePointId) },
+  })
+}
+
+function tutorStatusLabel(status: string) {
+  if (status === 'COMPLETED') return '已完成理解检查'
+  if (status === 'IN_PROGRESS') return '已尝试'
+  return '未开始'
+}
+
+function tutorActionLabel(status: string) {
+  if (status === 'IN_PROGRESS') return '继续学习'
+  if (status === 'COMPLETED') return '再次学习'
+  return '开始学习'
+}
+
 function openTarget(target: LearningTargetVO) {
   if (target.type === 'TUTOR' && target.knowledgePointId) {
     router.push({
@@ -150,6 +192,12 @@ onMounted(fetchOverview)
 .stat-card strong { display: block; margin: 10px 0 5px; color: var(--lp-primary); font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; }
 .stat-card.warning strong { color: var(--el-color-warning); }
 .stat-card.emphasis { background: var(--lp-surface-soft); }
+.tutor-progress-panel { margin-top: 16px; padding: 18px; border: 1px solid var(--lp-border); border-radius: var(--lp-radius); background: var(--lp-surface-soft); }
+.tutor-progress-note { margin: 8px 0 0; color: var(--lp-text-secondary); font-size: 14px; line-height: 1.7; }
+.tutor-progress-list { display: grid; gap: 10px; margin-top: 14px; }
+.tutor-progress-item { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px; border: 1px solid var(--lp-border); border-radius: 8px; background: var(--lp-surface); }
+.tutor-progress-item h4 { margin: 0; color: var(--lp-text); font-size: 15px; }
+.progress-status { display: inline-block; margin-top: 6px; color: var(--lp-text-secondary); font-size: 13px; line-height: 1.5; }
 .overview-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(260px, .8fr); gap: 14px; margin-top: 16px; }
 .target-panel, .activity-panel { padding: 18px; }
 .panel-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
@@ -162,5 +210,5 @@ onMounted(fetchOverview)
 .target-copy p { margin-top: 3px; }
 .activity-panel .el-button { margin-top: 10px; }
 @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .overview-grid { grid-template-columns: 1fr; } }
-@media (max-width: 767px) { .overview-hero { align-items: stretch; flex-direction: column; } .overview-hero > .el-button { width: 100%; } .stats-grid { grid-template-columns: 1fr; } .target-item { grid-template-columns: auto minmax(0, 1fr); } .target-item .el-button { grid-column: 2; justify-self: start; } }
+@media (max-width: 767px) { .overview-hero { align-items: stretch; flex-direction: column; } .overview-hero > .el-button { width: 100%; } .stats-grid { grid-template-columns: 1fr; } .target-item { grid-template-columns: auto minmax(0, 1fr); } .target-item .el-button { grid-column: 2; justify-self: start; } .tutor-progress-panel { padding: 16px; } .tutor-progress-item { align-items: flex-start; flex-direction: column; } .tutor-progress-item .el-button { width: 100%; } }
 </style>

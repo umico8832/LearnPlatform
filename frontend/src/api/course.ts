@@ -34,6 +34,7 @@ export interface CourseOverviewVO {
   unresolvedWrongCount: number
   lastLearningTime: string | null
   recommendedTargets: LearningTargetVO[]
+  tutorProgress: TutorProgressVO[]
 }
 
 export interface LearningTargetVO {
@@ -42,6 +43,11 @@ export interface LearningTargetVO {
   reason: string
   questionId: number | null
   knowledgePointId: number | null
+}
+export interface TutorProgressVO {
+  knowledgePointId: number
+  title: string
+  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED'
 }
 export interface ArrayStackInsertionCourseware {
   kind: 'ARRAY_STACK_INSERTION'

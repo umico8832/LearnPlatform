@@ -14,6 +14,7 @@ public class CourseOverviewVO {
     private int unresolvedWrongCount;
     private LocalDateTime lastLearningTime;
     private List<LearningTargetVO> recommendedTargets;
+    private List<TutorProgressVO> tutorProgress;
 
     public Long getCourseId() { return courseId; }
     public void setCourseId(Long courseId) { this.courseId = courseId; }
@@ -31,6 +32,8 @@ public class CourseOverviewVO {
     public void setLastLearningTime(LocalDateTime lastLearningTime) { this.lastLearningTime = lastLearningTime; }
     public List<LearningTargetVO> getRecommendedTargets() { return recommendedTargets; }
     public void setRecommendedTargets(List<LearningTargetVO> recommendedTargets) { this.recommendedTargets = recommendedTargets; }
+    public List<TutorProgressVO> getTutorProgress() { return tutorProgress; }
+    public void setTutorProgress(List<TutorProgressVO> tutorProgress) { this.tutorProgress = tutorProgress; }
 
     public static class LearningTargetVO {
         private String type;
@@ -49,5 +52,19 @@ public class CourseOverviewVO {
         public void setQuestionId(Long questionId) { this.questionId = questionId; }
         public Long getKnowledgePointId() { return knowledgePointId; }
         public void setKnowledgePointId(Long knowledgePointId) { this.knowledgePointId = knowledgePointId; }
+    }
+
+    /** 已迁入且审查通过的 Tutor 内容进度，不推断其他目录节点的掌握情况。 */
+    public static class TutorProgressVO {
+        private Long knowledgePointId;
+        private String title;
+        private String status;
+
+        public Long getKnowledgePointId() { return knowledgePointId; }
+        public void setKnowledgePointId(Long knowledgePointId) { this.knowledgePointId = knowledgePointId; }
+        public String getTitle() { return title; }
+        public void setTitle(String title) { this.title = title; }
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
     }
 }

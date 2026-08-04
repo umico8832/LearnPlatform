@@ -132,6 +132,41 @@ class CourseOverviewServiceTest {
         assertEquals("COURSE_SEQUENCE", overview.getRecommendedTargets().get(0).getType());
     }
 
+    @Test
+    void derivesTutorProgressFromServerSideCheckFacts() {
+        when(userCourseMapper.selectCount(any())).thenReturn(1L);
+        when(courseMapper.selectById(10L)).thenReturn(course());
+        when(eventMapper.selectList(any())).thenReturn(List.of());
+        when(questionMapper.selectList(any())).thenReturn(List.of());
+        when(knowledgePointMapper.selectOne(any())).thenReturn(rootKnowledgePoint());
+        KnowledgePoint first = tutorKnowledgePoint(41L);
+        first.setName("ArrayStack 的按位插入");
+        first.setSortOrder(20);
+        KnowledgePoint second = tutorKnowledgePoint(42L);
+        second.setName("ArrayStack 的容量调整");
+        second.setSortOrder(30);
+        KnowledgePoint third = tutorKnowledgePoint(43L);
+        third.setName("ArrayStack 的按位删除");
+        third.setSortOrder(40);
+        when(knowledgePointMapper.selectList(any())).thenReturn(List.of(third, second, first));
+        when(tutorContentMapper.selectList(any())).thenReturn(List.of(
+                tutorContent(42L, 82L), tutorContent(43L, 83L), tutorContent(41L, 81L)));
+        TutorSession attempted = new TutorSession();
+        attempted.setTutorContentId(82L);
+        attempted.setCheckCorrect(false);
+        when(tutorSessionMapper.selectList(any())).thenReturn(List.of(completedTutorSession(81L), attempted));
+
+        CourseOverviewVO overview = service.getOverview(7L, 10L);
+
+        assertEquals(3, overview.getTutorProgress().size());
+        assertEquals("COMPLETED", overview.getTutorProgress().get(0).getStatus());
+        assertEquals("IN_PROGRESS", overview.getTutorProgress().get(1).getStatus());
+        assertEquals("NOT_STARTED", overview.getTutorProgress().get(2).getStatus());
+        assertEquals(41L, overview.getTutorProgress().get(0).getKnowledgePointId());
+        assertEquals(42L, overview.getTutorProgress().get(1).getKnowledgePointId());
+        assertEquals(43L, overview.getTutorProgress().get(2).getKnowledgePointId());
+    }
+
     private Course course() {
         Course course = new Course();
         course.setId(10L);

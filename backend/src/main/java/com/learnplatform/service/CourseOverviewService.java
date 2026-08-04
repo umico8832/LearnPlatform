@@ -102,7 +102,9 @@ public class CourseOverviewService {
         overview.setDueReviewCount(dueSchedules.size());
         overview.setUnresolvedWrongCount(unresolvedWrongQuestions.size());
         overview.setLastLearningTime(events.isEmpty() ? null : events.get(0).getOccurredTime());
-        overview.setRecommendedTargets(buildTargets(userId, courseId, dueSchedules, unresolvedWrongQuestions));
+        List<TutorProgress> tutorProgress = findTutorProgress(userId, courseId);
+        overview.setTutorProgress(tutorProgress.stream().map(this::toTutorProgressView).toList());
+        overview.setRecommendedTargets(buildTargets(courseId, dueSchedules, unresolvedWrongQuestions, tutorProgress));
         return overview;
     }
 
@@ -116,9 +118,11 @@ public class CourseOverviewService {
     }
 
     private List<CourseOverviewVO.LearningTargetVO> buildTargets(
-            Long userId, Long courseId, List<QuestionReviewSchedule> dueSchedules, List<WrongQuestion> wrongQuestions) {
+            Long courseId, List<QuestionReviewSchedule> dueSchedules, List<WrongQuestion> wrongQuestions,
+            List<TutorProgress> tutorProgress) {
         List<CourseOverviewVO.LearningTargetVO> targets = new ArrayList<>();
-        nextUnfinishedTutorTarget(userId, courseId).ifPresent(targets::add);
+        tutorProgress.stream().filter(progress -> !"COMPLETED".equals(progress.status()))
+                .findFirst().map(progress -> tutorTarget(progress.content())).ifPresent(targets::add);
         if (!dueSchedules.isEmpty()) {
             targets.add(questionTarget("DUE_REVIEW", "优先复习到期题目", "有 " + dueSchedules.size()
                     + " 道题已到复习时间", dueSchedules.get(0).getQuestionId()));
@@ -141,29 +145,31 @@ public class CourseOverviewService {
         return targets;
     }
 
-    private java.util.Optional<CourseOverviewVO.LearningTargetVO> nextUnfinishedTutorTarget(Long userId, Long courseId) {
+    private List<TutorProgress> findTutorProgress(Long userId, Long courseId) {
         List<KnowledgePoint> points = knowledgePointMapper.selectList(new LambdaQueryWrapper<KnowledgePoint>()
                 .eq(KnowledgePoint::getCourseId, courseId)
                 .orderByAsc(KnowledgePoint::getSortOrder));
-        if (points.isEmpty()) return java.util.Optional.empty();
+        if (points.isEmpty()) return List.of();
         List<Long> pointIds = points.stream().map(KnowledgePoint::getId).toList();
         List<TutorContent> contents = tutorContentMapper.selectList(new LambdaQueryWrapper<TutorContent>()
                 .in(TutorContent::getKnowledgePointId, pointIds)
                 .eq(TutorContent::getReviewStatus, "REVIEWED"));
-        if (contents.isEmpty()) return java.util.Optional.empty();
+        if (contents.isEmpty()) return List.of();
         Set<Long> contentIds = contents.stream().map(TutorContent::getId).collect(Collectors.toSet());
-        Set<Long> completedContentIds = tutorSessionMapper.selectList(new LambdaQueryWrapper<TutorSession>()
+        List<TutorSession> sessions = tutorSessionMapper.selectList(new LambdaQueryWrapper<TutorSession>()
                         .eq(TutorSession::getUserId, userId)
                         .eq(TutorSession::getCourseId, courseId)
-                        .eq(TutorSession::getCheckCorrect, true)
-                        .in(TutorSession::getTutorContentId, contentIds))
-                .stream().map(TutorSession::getTutorContentId).collect(Collectors.toSet());
+                        .in(TutorSession::getTutorContentId, contentIds));
+        Set<Long> completedContentIds = sessions.stream().filter(session -> Boolean.TRUE.equals(session.getCheckCorrect()))
+                .map(TutorSession::getTutorContentId).collect(Collectors.toSet());
+        Set<Long> attemptedContentIds = sessions.stream().map(TutorSession::getTutorContentId).collect(Collectors.toSet());
         Map<Long, Integer> pointOrder = points.stream().collect(Collectors.toMap(KnowledgePoint::getId,
                 point -> point.getSortOrder() == null ? Integer.MAX_VALUE : point.getSortOrder(), (left, right) -> left));
         return contents.stream()
-                .filter(content -> !completedContentIds.contains(content.getId()))
-                .min(Comparator.comparing(content -> pointOrder.getOrDefault(content.getKnowledgePointId(), Integer.MAX_VALUE)))
-                .map(this::tutorTarget);
+                .sorted(Comparator.comparing(content -> pointOrder.getOrDefault(content.getKnowledgePointId(), Integer.MAX_VALUE)))
+                .map(content -> new TutorProgress(content, completedContentIds.contains(content.getId()) ? "COMPLETED"
+                        : attemptedContentIds.contains(content.getId()) ? "IN_PROGRESS" : "NOT_STARTED"))
+                .toList();
     }
 
     private CourseOverviewVO.LearningTargetVO questionTarget(String type, String title, String reason,
@@ -184,4 +190,14 @@ public class CourseOverviewService {
         target.setKnowledgePointId(content.getKnowledgePointId());
         return target;
     }
+
+    private CourseOverviewVO.TutorProgressVO toTutorProgressView(TutorProgress progress) {
+        CourseOverviewVO.TutorProgressVO view = new CourseOverviewVO.TutorProgressVO();
+        view.setKnowledgePointId(progress.content().getKnowledgePointId());
+        view.setTitle(progress.content().getTitle());
+        view.setStatus(progress.status());
+        return view;
+    }
+
+    private record TutorProgress(TutorContent content, String status) { }
 }
