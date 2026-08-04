@@ -57,8 +57,14 @@ export interface ArrayStackInsertionCourseware {
   insertIndex: number
   insertValue: string
 }
+export interface ArrayStackResizeCourseware {
+  kind: 'ARRAY_STACK_RESIZE'
+  version: 1
+  previousCapacity: number
+  initialElements: string[]
+}
 export interface TutorLearningPathItem { contentKey: string; title: string; description: string }
-export interface TutorSessionVO { sessionKey: string; title: string; lesson: { summary: string; steps: string[]; visualizationId: string; visualization?: ArrayStackInsertionCourseware; prerequisite?: TutorLearningPathItem; nextStep?: TutorLearningPathItem }; check: { id: string; prompt: string; options: { id: string; text: string }[] } }
+export interface TutorSessionVO { sessionKey: string; title: string; lesson: { summary: string; steps: string[]; visualizationId: string; visualization?: ArrayStackInsertionCourseware | ArrayStackResizeCourseware; prerequisite?: TutorLearningPathItem; nextStep?: TutorLearningPathItem }; check: { id: string; prompt: string; options: { id: string; text: string }[] } }
 export interface TutorCheckResultVO { correct: boolean; explanation: string; guidanceType: 'PREREQUISITE' | 'NEXT_TARGET' | null; guidanceTitle: string | null; guidanceDescription: string | null }
 
 /** 仅接受当前已审查、无可执行字段的 ArrayStack 课件参数。 */
@@ -72,6 +78,18 @@ export function isArrayStackInsertionCourseware(value: unknown): value is ArrayS
     && candidate.initialElements.every((item) => typeof item === 'string' && item.length > 0 && item.length <= 32)
     && Number.isInteger(candidate.insertIndex) && (candidate.insertIndex as number) >= 0 && (candidate.insertIndex as number) <= candidate.initialElements.length
     && typeof candidate.insertValue === 'string' && candidate.insertValue.length > 0 && candidate.insertValue.length <= 32
+}
+
+/** 仅接受当前已审查、无可执行字段的 ArrayStack 容量调整课件参数。 */
+export function isArrayStackResizeCourseware(value: unknown): value is ArrayStackResizeCourseware {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Record<string, unknown>
+  return candidate.kind === 'ARRAY_STACK_RESIZE'
+    && candidate.version === 1
+    && Number.isInteger(candidate.previousCapacity) && (candidate.previousCapacity as number) >= 1 && (candidate.previousCapacity as number) <= 12
+    && Array.isArray(candidate.initialElements) && candidate.initialElements.length > 0
+    && candidate.initialElements.length === candidate.previousCapacity
+    && candidate.initialElements.every((item) => typeof item === 'string' && item.length > 0 && item.length <= 32)
 }
 
 /** 创建/更新课程请求 */

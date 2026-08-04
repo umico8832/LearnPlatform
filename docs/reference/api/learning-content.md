@@ -33,10 +33,12 @@ Tutor 仅可打开已加入课程、属于该课程且审查状态为 `REVIEWED`
 `guidanceTitle` 和 `guidanceDescription`：答错时为前置补充（`PREREQUISITE`），答对时为
 后续目标（`NEXT_TARGET`）。它们只是路径提示，不表示关联的独立知识已经迁入或可直接打开。
 
-首个已审查 Tutor 内容在 `lesson.visualization` 中使用受限的
+已审查 Tutor 内容在 `lesson.visualization` 中使用受限的
 `ARRAY_STACK_INSERTION` v1 Schema：`capacity`（1–12）、`initialElements`（非空字符串数组，
 长度小于 capacity）、`insertIndex` 与 `insertValue`。客户端仅对通过该 Schema 校验的固定类型
-渲染器进行回放，拒绝把课件 JSON 解释为脚本、动态组件或通用可执行配置。
+渲染器进行回放。`ARRAY_STACK_RESIZE` v1 Schema 使用 `previousCapacity`（1–12）和与其长度
+相等的非空 `initialElements`，固定渲染器据此展示 `max(1, 2n)` 的新数组和按序复制。两种类型都
+拒绝把课件 JSON 解释为脚本、动态组件或通用可执行配置。
 
 ## 题库与纠错
 

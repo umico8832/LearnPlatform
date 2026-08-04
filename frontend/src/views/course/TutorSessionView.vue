@@ -25,6 +25,7 @@
         </ol>
       </section>
       <TutorArrayStackInsertion v-if="courseware" :visualization="courseware" />
+      <TutorArrayStackResize v-if="resizeCourseware" :visualization="resizeCourseware" />
       <section class="card check">
         <h3>理解检查</h3>
         <p>{{ session.check.prompt }}</p>
@@ -60,8 +61,10 @@ import { computed, onMounted, ref } from 'vue'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 import TutorArrayStackInsertion from '@/components/TutorArrayStackInsertion.vue'
+import TutorArrayStackResize from '@/components/TutorArrayStackResize.vue'
 import {
   isArrayStackInsertionCourseware,
+  isArrayStackResizeCourseware,
   startTutorSession,
   submitTutorCheck,
   type TutorCheckResultVO,
@@ -79,6 +82,11 @@ const courseId = computed(() => Number(route.params.id))
 const pointId = computed(() => Number(route.query.knowledgePointId))
 const courseware = computed(() =>
   session.value && isArrayStackInsertionCourseware(session.value.lesson.visualization)
+    ? session.value.lesson.visualization
+    : null,
+)
+const resizeCourseware = computed(() =>
+  session.value && isArrayStackResizeCourseware(session.value.lesson.visualization)
     ? session.value.lesson.visualization
     : null,
 )

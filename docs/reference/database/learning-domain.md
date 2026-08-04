@@ -19,7 +19,7 @@ AiStu、Web 后端和后续内容导入之间保持稳定引用；存量平台�
 `content_source` 记录内容来源，不代表审核结论或权威等级。V23 为需要分批迁入的原子
 知识增加可空的 `content_version` 和 `content_review_status`；后者只保存迁入时的审查
 事实，不能替代 Web 端的发布或权限状态。`ods-array-size-capacity`、
-`ods-arraystack-insertion` 与 `ods-arraystack-removal` 均绑定父目录“栈、队列和数组”，
+`ods-arraystack-insertion`、`ods-arraystack-removal` 与 `ods-arraystack-resize` 均绑定父目录“栈、队列和数组”，
 版本为 1、迁入时状态为 `REVIEWED`。
 
 `course_learning_event` 只记录已加入个人课程库后产生的课程内事实；普通题库练习不会
@@ -41,6 +41,11 @@ V27 迁入 ArrayStack 按位删除的独立 Tutor 内容与理解检查。理解
 V28 迁入“元素数量与数组容量”的独立 Tutor 内容与理解检查。它以 `n`、`length(a)` 和
 `0 ≤ n ≤ length(a)` 为审查范围，不把空闲槽位解释为逻辑元素；插入与删除内容中的同名
 前置提示同时更新为可从课程目录进入的已迁入内容。
+
+V29 迁入“ArrayStack 的容量调整”的独立 Tutor 内容、理解检查和 `ARRAY_STACK_RESIZE` v1
+受限课件定义。课件只保存旧容量和有效元素；固定客户端渲染器推导 `max(1, 2n)` 的新容量与
+复制状态，不存储脚本、动态组件或用户运行态。内容只陈述单次 `resize` 的 `O(n)` 成本，摊还
+分析仍是未迁入的独立后续知识。
 
 ## 题目
 
