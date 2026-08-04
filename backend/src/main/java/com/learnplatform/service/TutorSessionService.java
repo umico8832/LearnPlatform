@@ -48,8 +48,9 @@ public class TutorSessionService {
     public TutorCheckResultVO answer(Long userId, String sessionKey, TutorCheckAnswerRequest request) {
         TutorSession session = sessionMapper.selectOne(new LambdaQueryWrapper<TutorSession>().eq(TutorSession::getSessionKey, sessionKey));
         if (session == null || !userId.equals(session.getUserId())) throw new BusinessException(ResultCode.NOT_FOUND, "Tutor 会话不存在");
-        if (session.getCheckCorrect() != null) return result(session.getCheckCorrect());
         TutorContent content = contentMapper.selectById(session.getTutorContentId());
+        if (content == null) throw new BusinessException(ResultCode.NOT_FOUND, "Tutor 教学内容不存在");
+        if (session.getCheckCorrect() != null) return result(session.getCheckCorrect(), content);
         JsonNode check = parse(content.getCheckJson()); String correctOption = check.path("correctOptionId").asText();
         boolean correct = correctOption.equals(request.getOptionId());
         int updated = sessionMapper.update(null, new LambdaUpdateWrapper<TutorSession>()
@@ -58,16 +59,28 @@ public class TutorSessionService {
                 .set(TutorSession::getCheckAnsweredAt, LocalDateTime.now()));
         if (updated == 0) {
             TutorSession persisted = sessionMapper.selectById(session.getId());
-            return result(Boolean.TRUE.equals(persisted.getCheckCorrect()));
+            return result(Boolean.TRUE.equals(persisted.getCheckCorrect()), content);
         }
         events.recordTutorCheck(userId, session.getCourseId(), session.getKnowledgePointId(), session.getId(), correct);
-        return result(correct);
+        return result(correct, content);
     }
     private TutorSessionVO view(TutorSession session, TutorContent content) {
         TutorSessionVO view = new TutorSessionVO(); view.setSessionKey(session.getSessionKey()); view.setTitle(content.getTitle()); view.setLesson(parse(content.getLessonJson()));
         JsonNode check = parse(content.getCheckJson()).deepCopy(); ((com.fasterxml.jackson.databind.node.ObjectNode) check).remove("correctOptionId"); view.setCheck(check); return view;
     }
-    private TutorCheckResultVO result(boolean correct) { TutorCheckResultVO result = new TutorCheckResultVO(); result.setCorrect(correct); result.setExplanation(correct ? "正确：从右向左先腾出后面的槽位，避免覆盖尚未搬移的元素。" : "不正确：从左向右会先覆盖 a[i+1] 等尚未搬走的元素。"); return result; }
+    private TutorCheckResultVO result(boolean correct, TutorContent content) {
+        TutorCheckResultVO result = new TutorCheckResultVO();
+        result.setCorrect(correct);
+        result.setExplanation(correct ? "正确：从右向左先腾出后面的槽位，避免覆盖尚未搬移的元素。" : "不正确：从左向右会先覆盖 a[i+1] 等尚未搬走的元素。");
+        JsonNode guidance = parse(content.getLessonJson()).path(correct ? "nextStep" : "prerequisite");
+        if (guidance.isObject() && !guidance.path("title").asText().isBlank()) {
+            result.setGuidanceType(correct ? "NEXT_TARGET" : "PREREQUISITE");
+            result.setGuidanceTitle(guidance.path("title").asText());
+            String description = guidance.path("description").asText();
+            result.setGuidanceDescription(description.isBlank() ? null : description);
+        }
+        return result;
+    }
     private JsonNode parse(String value) { try { return objectMapper.readTree(value); } catch (Exception e) { throw new IllegalStateException("已审查教学内容格式无效", e); } }
     private void requireCourse(Long userId, Long courseId) { if (userCourseMapper.selectCount(new LambdaQueryWrapper<UserCourse>().eq(UserCourse::getUserId, userId).eq(UserCourse::getCourseId, courseId)) == 0) throw new BusinessException(ResultCode.FORBIDDEN, "请先将课程加入个人课程库"); }
 }
