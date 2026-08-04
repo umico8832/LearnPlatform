@@ -98,3 +98,7 @@ React 组件、Electron IPC、窗口生命周期和本地持久化不属于共�
 第九批选定 `ods-arrayqueue-enqueue`（ArrayQueue 的入队）。独立审查范围限定为：容量足够时，
 将新元素写入 `a[(j+n) mod capacity]`，随后令 `n` 加一；已有队列元素不发生搬移。固定 Web
 课件仅回放队尾槽位定位、写入和计数更新，不延伸至满队 `resize`、出队或复杂度结论。
+
+第十批选定 `ods-arrayqueue-dequeue`（ArrayQueue 的出队）。独立审查范围限定为：非空队列保存
+`a[j]` 后，将 `j` 更新为 `(j+1) mod capacity`、`n` 减一；其余元素不发生搬移。固定 Web 课件仅
+回放队首读取、队首下标前移与计数更新，不延伸至空队列、缩容或复杂度结论。

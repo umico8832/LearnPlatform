@@ -45,8 +45,8 @@ Web 优先平台。第一步先定义统一课程学习状态，再用 408 数�
 - Checkstyle：0 违规。
 - SpotBugs：0 问题。
 - JaCoCo：行覆盖率 50%、分支覆盖率 35% 门槛通过。
-- 前端 `npm run coverage`：36 个测试文件、231 个测试通过。
-- 前端全源码覆盖率：语句 16.79%、分支 14.10%、函数 14.60%、行 15.82%。
+- 前端 `npm run coverage`：37 个测试文件、233 个测试通过。
+- 前端全源码覆盖率：语句 17.15%、分支 14.69%、函数 14.99%、行 16.16%。
 - 认证数据库迁移 Testcontainers 聚焦测试：1 个测试通过。
 - 个人课程库迁移 Testcontainers 聚焦测试：1 个测试通过，覆盖 AiStu 408 顶层目录、首个原子知识元数据、受限互动课件定义和用户课程唯一约束。
 - 认证页浏览器检查：桌面与 375px 移动端无横向溢出，登录、分步注册、找回密码和无效重置链接状态可访问。
@@ -73,7 +73,7 @@ Web 优先平台。第一步先定义统一课程学习状态，再用 408 数�
 - 当前课程、题库、会话、错题和复习数据尚未形成统一课程学习状态。
 - 课程总览已将已审查、尚未完成理解检查的 Tutor 内容作为可继续目标，并显示已迁入 Tutor 内容的
   服务端检查状态；其他原子知识、课件互动状态和阶段测评尚未接入。
-- AiStu 的 408 顶层目录与九个已审查原子知识 `ods-array-size-capacity`、`ods-arraystack-insertion`、`ods-arraystack-removal`、`ods-arraystack-resize`、`ods-arraystack-amortized-resize`、`ods-arraystack-performance`、`ods-fastarraystack-block-copy`、`ods-arrayqueue-representation`、`ods-arrayqueue-enqueue` 已迁入；当前仅
+- AiStu 的 408 顶层目录与十个已审查原子知识 `ods-array-size-capacity`、`ods-arraystack-insertion`、`ods-arraystack-removal`、`ods-arraystack-resize`、`ods-arraystack-amortized-resize`、`ods-arraystack-performance`、`ods-fastarraystack-block-copy`、`ods-arrayqueue-representation`、`ods-arrayqueue-enqueue`、`ods-arrayqueue-dequeue` 已迁入；当前仅
   ArrayStack 与 ArrayQueue 的受限互动课件完成 Web 展示，其他 AiStu 课件尚未迁入。
 
 ## 下一步

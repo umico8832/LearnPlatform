@@ -21,7 +21,8 @@ AiStu、Web 后端和后续内容导入之间保持稳定引用；存量平台�
 事实，不能替代 Web 端的发布或权限状态。`ods-array-size-capacity`、
 `ods-arraystack-insertion`、`ods-arraystack-removal`、`ods-arraystack-resize`、
 `ods-arraystack-amortized-resize`、`ods-arraystack-performance` 与
-`ods-fastarraystack-block-copy`、`ods-arrayqueue-representation` 均绑定父目录“栈、队列和数组”，
+`ods-fastarraystack-block-copy`、`ods-arrayqueue-representation`、`ods-arrayqueue-enqueue` 与
+`ods-arrayqueue-dequeue` 均绑定父目录“栈、队列和数组”，
 版本为 1、迁入时状态为 `REVIEWED`。
 
 `course_learning_event` 只记录已加入个人课程库后产生的课程内事实；普通题库练习不会
@@ -70,6 +71,11 @@ V34 迁入“ArrayQueue 的入队”的独立 Tutor 内容、理解检查与 `AR
 定义。配置只包含容量、队首物理下标、既有逻辑元素和新元素；固定客户端渲染器据此回放容量充足时
 `a[(j+n) mod capacity]` 的队尾写入及 `n` 增加，不存储脚本、动态组件或用户运行态。内容不延伸至
 满队扩容、出队或其复杂度结论。
+
+V35 迁入“ArrayQueue 的出队”的独立 Tutor 内容、理解检查与 `ARRAY_QUEUE_DEQUEUE` v1 受限课件
+定义。配置只包含容量、队首物理下标和非空逻辑元素；固定客户端渲染器据此回放读出 `a[j]`、
+`j = (j+1) mod capacity` 与 `n` 减一，不存储脚本、动态组件或用户运行态。内容不延伸至空队列、
+缩容或其复杂度结论。
 
 ## 题目
 

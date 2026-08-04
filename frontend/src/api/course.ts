@@ -78,8 +78,15 @@ export interface ArrayQueueEnqueueCourseware {
   elements: string[]
   enqueueValue: string
 }
+export interface ArrayQueueDequeueCourseware {
+  kind: 'ARRAY_QUEUE_DEQUEUE'
+  version: 1
+  capacity: number
+  headIndex: number
+  elements: string[]
+}
 export interface TutorLearningPathItem { contentKey: string; title: string; description: string }
-export interface TutorSessionVO { sessionKey: string; title: string; lesson: { summary: string; steps: string[]; visualizationId: string; visualization?: ArrayStackInsertionCourseware | ArrayStackResizeCourseware | ArrayQueueRepresentationCourseware | ArrayQueueEnqueueCourseware; prerequisite?: TutorLearningPathItem; nextStep?: TutorLearningPathItem }; check: { id: string; prompt: string; options: { id: string; text: string }[] } }
+export interface TutorSessionVO { sessionKey: string; title: string; lesson: { summary: string; steps: string[]; visualizationId: string; visualization?: ArrayStackInsertionCourseware | ArrayStackResizeCourseware | ArrayQueueRepresentationCourseware | ArrayQueueEnqueueCourseware | ArrayQueueDequeueCourseware; prerequisite?: TutorLearningPathItem; nextStep?: TutorLearningPathItem }; check: { id: string; prompt: string; options: { id: string; text: string }[] } }
 export interface TutorCheckResultVO { correct: boolean; explanation: string; guidanceType: 'PREREQUISITE' | 'NEXT_TARGET' | null; guidanceTitle: string | null; guidanceDescription: string | null }
 
 /** 仅接受当前已审查、无可执行字段的 ArrayStack 课件参数。 */
@@ -132,6 +139,19 @@ export function isArrayQueueEnqueueCourseware(value: unknown): value is ArrayQue
     && Array.isArray(candidate.elements) && candidate.elements.length > 0 && candidate.elements.length < (candidate.capacity as number)
     && candidate.elements.every((item) => typeof item === 'string' && item.length > 0 && item.length <= 32)
     && typeof candidate.enqueueValue === 'string' && candidate.enqueueValue.length > 0 && candidate.enqueueValue.length <= 32
+}
+
+/** 仅接受非空、无可执行字段的 ArrayQueue 出队课件参数。 */
+export function isArrayQueueDequeueCourseware(value: unknown): value is ArrayQueueDequeueCourseware {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Record<string, unknown>
+  return Object.keys(candidate).every((key) => ['kind', 'version', 'capacity', 'headIndex', 'elements'].includes(key))
+    && candidate.kind === 'ARRAY_QUEUE_DEQUEUE'
+    && candidate.version === 1
+    && Number.isInteger(candidate.capacity) && (candidate.capacity as number) >= 2 && (candidate.capacity as number) <= 12
+    && Number.isInteger(candidate.headIndex) && (candidate.headIndex as number) >= 0 && (candidate.headIndex as number) < (candidate.capacity as number)
+    && Array.isArray(candidate.elements) && candidate.elements.length > 0 && candidate.elements.length <= (candidate.capacity as number)
+    && candidate.elements.every((item) => typeof item === 'string' && item.length > 0 && item.length <= 32)
 }
 
 /** 创建/更新课程请求 */
