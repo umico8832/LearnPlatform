@@ -37,8 +37,10 @@ Tutor 仅可打开已加入课程、属于该课程且审查状态为 `REVIEWED`
 `ARRAY_STACK_INSERTION` v1 Schema：`capacity`（1–12）、`initialElements`（非空字符串数组，
 长度小于 capacity）、`insertIndex` 与 `insertValue`。客户端仅对通过该 Schema 校验的固定类型
 渲染器进行回放。`ARRAY_STACK_RESIZE` v1 Schema 使用 `previousCapacity`（1–12）和与其长度
-相等的非空 `initialElements`，固定渲染器据此展示 `max(1, 2n)` 的新数组和按序复制。两种类型都
-拒绝把课件 JSON 解释为脚本、动态组件或通用可执行配置。
+相等的非空 `initialElements`，固定渲染器据此展示 `max(1, 2n)` 的新数组和按序复制。
+`ARRAY_QUEUE_REPRESENTATION` v1 Schema 使用 `capacity`（2–12）、`headIndex`（合法物理下标）和
+长度小于 capacity 的非空 `elements`；固定渲染器只展示 `a[(j+k) mod capacity]` 映射与 FIFO
+逻辑顺序。所有类型都拒绝把课件 JSON 解释为脚本、动态组件或通用可执行配置。
 
 ## 题库与纠错
 

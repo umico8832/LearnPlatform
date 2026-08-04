@@ -19,6 +19,7 @@ import {
   getCourseOverview,
   startTutorSession,
   submitTutorCheck,
+  isArrayQueueRepresentationCourseware,
   createCourse,
   updateCourse,
   deleteCourse,
@@ -29,6 +30,15 @@ const mockedRequest = vi.mocked(request)
 describe('Course API', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('只接受受限的 ArrayQueue 循环数组课件配置', () => {
+    expect(isArrayQueueRepresentationCourseware({
+      kind: 'ARRAY_QUEUE_REPRESENTATION', version: 1, capacity: 8, headIndex: 6, elements: ['A', 'B'],
+    })).toBe(true)
+    expect(isArrayQueueRepresentationCourseware({
+      kind: 'ARRAY_QUEUE_REPRESENTATION', version: 1, capacity: 8, headIndex: 8, elements: ['A'], script: 'alert(1)',
+    })).toBe(false)
   })
 
   describe('getAllCourses', () => {

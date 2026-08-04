@@ -21,7 +21,7 @@ AiStu、Web 后端和后续内容导入之间保持稳定引用；存量平台�
 事实，不能替代 Web 端的发布或权限状态。`ods-array-size-capacity`、
 `ods-arraystack-insertion`、`ods-arraystack-removal`、`ods-arraystack-resize`、
 `ods-arraystack-amortized-resize`、`ods-arraystack-performance` 与
-`ods-fastarraystack-block-copy` 均绑定父目录“栈、队列和数组”，
+`ods-fastarraystack-block-copy`、`ods-arrayqueue-representation` 均绑定父目录“栈、队列和数组”，
 版本为 1、迁入时状态为 `REVIEWED`。
 
 `course_learning_event` 只记录已加入个人课程库后产生的课程内事实；普通题库练习不会
@@ -60,6 +60,11 @@ V31 迁入“ArrayStack 的操作复杂度”的独立 Tutor 内容和理解检�
 V32 迁入“FastArrayStack 的批量复制优化”的独立 Tutor 内容和理解检查。它只陈述批量复制
 可以替代连续区间的显式循环并降低常数开销；由于处理元素数不变，插入、删除和 `resize` 的
 渐近时间复杂度不变，且不承诺固定加速倍数。
+
+V33 迁入“ArrayQueue 的循环数组表示”的独立 Tutor 内容、理解检查与
+`ARRAY_QUEUE_REPRESENTATION` v1 受限课件定义。配置只包含容量、队首物理下标和逻辑元素序列；
+固定客户端渲染器据此回放 `a[(j+k) mod capacity]` 的回绕映射，不存储脚本、动态组件或用户运行态。
+内容不延伸至入队、出队、扩缩容或其复杂度结论。
 
 ## 题目
 
