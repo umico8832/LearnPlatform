@@ -61,6 +61,7 @@ describe('CourseDetailView', () => {
         { id: 31, name: 'ArrayStack 按位插入', description: '', contentKey: 'ods-arraystack-insertion', children: [] },
         { id: 32, name: 'ArrayStack 按位删除', description: '', contentKey: 'ods-arraystack-removal', children: [] },
         { id: 33, name: 'ArrayStack 的容量调整', description: '', contentKey: 'ods-arraystack-resize', children: [] },
+        { id: 34, name: 'ArrayStack 调整容量的摊还成本', description: '', contentKey: 'ods-arraystack-amortized-resize', children: [] },
       ],
     })
     mockAddCourseToLibrary.mockResolvedValue({ data: { courseId: 408 } })
@@ -106,12 +107,12 @@ describe('CourseDetailView', () => {
     await flushPromises()
 
     const tutorButtons = wrapper.findAll('button').filter((item) => item.text().includes('开始 AI 教学'))
-    expect(tutorButtons).toHaveLength(4)
-    await tutorButtons[3].trigger('click')
+    expect(tutorButtons).toHaveLength(5)
+    await tutorButtons[4].trigger('click')
     expect(mockPush).toHaveBeenCalledWith({
       name: 'TutorSession',
       params: { id: 408 },
-      query: { knowledgePointId: '33' },
+      query: { knowledgePointId: '34' },
     })
   })
 })

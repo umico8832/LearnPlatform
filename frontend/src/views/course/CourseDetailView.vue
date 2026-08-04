@@ -129,6 +129,7 @@ const availableTutorContentKeys = new Set([
   'ods-arraystack-insertion',
   'ods-arraystack-removal',
   'ods-arraystack-resize',
+  'ods-arraystack-amortized-resize',
 ])
 
 function isAvailableTutorContent(contentKey?: string) {
