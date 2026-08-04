@@ -116,6 +116,14 @@ function openCourseContent() {
 }
 
 function openTarget(target: LearningTargetVO) {
+  if (target.type === 'TUTOR' && target.knowledgePointId) {
+    router.push({
+      name: 'TutorSession',
+      params: { id: courseId.value },
+      query: { knowledgePointId: String(target.knowledgePointId) },
+    })
+    return
+  }
   router.push({ name: 'QuestionList', query: { courseId: String(courseId.value), target: target.type } })
 }
 

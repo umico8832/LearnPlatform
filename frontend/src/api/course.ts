@@ -37,7 +37,7 @@ export interface CourseOverviewVO {
 }
 
 export interface LearningTargetVO {
-  type: 'DUE_REVIEW' | 'WRONG_QUESTION' | 'COURSE_SEQUENCE'
+  type: 'TUTOR' | 'DUE_REVIEW' | 'WRONG_QUESTION' | 'COURSE_SEQUENCE'
   title: string
   reason: string
   questionId: number | null

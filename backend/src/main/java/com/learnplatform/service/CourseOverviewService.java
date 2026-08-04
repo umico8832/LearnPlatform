@@ -9,6 +9,8 @@ import com.learnplatform.entity.CourseLearningEvent;
 import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionReviewSchedule;
+import com.learnplatform.entity.TutorContent;
+import com.learnplatform.entity.TutorSession;
 import com.learnplatform.entity.UserCourse;
 import com.learnplatform.entity.WrongQuestion;
 import com.learnplatform.mapper.CourseLearningEventMapper;
@@ -18,12 +20,17 @@ import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionReviewScheduleMapper;
 import com.learnplatform.mapper.UserCourseMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
+import com.learnplatform.mapper.TutorContentMapper;
+import com.learnplatform.mapper.TutorSessionMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /** 从已有的课程学习事实、错题与复习计划构建课程页概览，不另存进度副本。 */
 @Service
@@ -36,11 +43,14 @@ public class CourseOverviewService {
     private final QuestionReviewScheduleMapper reviewScheduleMapper;
     private final QuestionMapper questionMapper;
     private final KnowledgePointMapper knowledgePointMapper;
+    private final TutorContentMapper tutorContentMapper;
+    private final TutorSessionMapper tutorSessionMapper;
 
     public CourseOverviewService(UserCourseMapper userCourseMapper, CourseMapper courseMapper,
                                  CourseLearningEventMapper eventMapper, WrongQuestionMapper wrongQuestionMapper,
                                  QuestionReviewScheduleMapper reviewScheduleMapper, QuestionMapper questionMapper,
-                                 KnowledgePointMapper knowledgePointMapper) {
+                                 KnowledgePointMapper knowledgePointMapper, TutorContentMapper tutorContentMapper,
+                                 TutorSessionMapper tutorSessionMapper) {
         this.userCourseMapper = userCourseMapper;
         this.courseMapper = courseMapper;
         this.eventMapper = eventMapper;
@@ -48,6 +58,8 @@ public class CourseOverviewService {
         this.reviewScheduleMapper = reviewScheduleMapper;
         this.questionMapper = questionMapper;
         this.knowledgePointMapper = knowledgePointMapper;
+        this.tutorContentMapper = tutorContentMapper;
+        this.tutorSessionMapper = tutorSessionMapper;
     }
 
     public CourseOverviewVO getOverview(Long userId, Long courseId) {
@@ -90,7 +102,7 @@ public class CourseOverviewService {
         overview.setDueReviewCount(dueSchedules.size());
         overview.setUnresolvedWrongCount(unresolvedWrongQuestions.size());
         overview.setLastLearningTime(events.isEmpty() ? null : events.get(0).getOccurredTime());
-        overview.setRecommendedTargets(buildTargets(courseId, dueSchedules, unresolvedWrongQuestions));
+        overview.setRecommendedTargets(buildTargets(userId, courseId, dueSchedules, unresolvedWrongQuestions));
         return overview;
     }
 
@@ -104,8 +116,9 @@ public class CourseOverviewService {
     }
 
     private List<CourseOverviewVO.LearningTargetVO> buildTargets(
-            Long courseId, List<QuestionReviewSchedule> dueSchedules, List<WrongQuestion> wrongQuestions) {
+            Long userId, Long courseId, List<QuestionReviewSchedule> dueSchedules, List<WrongQuestion> wrongQuestions) {
         List<CourseOverviewVO.LearningTargetVO> targets = new ArrayList<>();
+        nextUnfinishedTutorTarget(userId, courseId).ifPresent(targets::add);
         if (!dueSchedules.isEmpty()) {
             targets.add(questionTarget("DUE_REVIEW", "优先复习到期题目", "有 " + dueSchedules.size()
                     + " 道题已到复习时间", dueSchedules.get(0).getQuestionId()));
@@ -128,6 +141,31 @@ public class CourseOverviewService {
         return targets;
     }
 
+    private java.util.Optional<CourseOverviewVO.LearningTargetVO> nextUnfinishedTutorTarget(Long userId, Long courseId) {
+        List<KnowledgePoint> points = knowledgePointMapper.selectList(new LambdaQueryWrapper<KnowledgePoint>()
+                .eq(KnowledgePoint::getCourseId, courseId)
+                .orderByAsc(KnowledgePoint::getSortOrder));
+        if (points.isEmpty()) return java.util.Optional.empty();
+        List<Long> pointIds = points.stream().map(KnowledgePoint::getId).toList();
+        List<TutorContent> contents = tutorContentMapper.selectList(new LambdaQueryWrapper<TutorContent>()
+                .in(TutorContent::getKnowledgePointId, pointIds)
+                .eq(TutorContent::getReviewStatus, "REVIEWED"));
+        if (contents.isEmpty()) return java.util.Optional.empty();
+        Set<Long> contentIds = contents.stream().map(TutorContent::getId).collect(Collectors.toSet());
+        Set<Long> completedContentIds = tutorSessionMapper.selectList(new LambdaQueryWrapper<TutorSession>()
+                        .eq(TutorSession::getUserId, userId)
+                        .eq(TutorSession::getCourseId, courseId)
+                        .eq(TutorSession::getCheckCorrect, true)
+                        .in(TutorSession::getTutorContentId, contentIds))
+                .stream().map(TutorSession::getTutorContentId).collect(Collectors.toSet());
+        Map<Long, Integer> pointOrder = points.stream().collect(Collectors.toMap(KnowledgePoint::getId,
+                point -> point.getSortOrder() == null ? Integer.MAX_VALUE : point.getSortOrder(), (left, right) -> left));
+        return contents.stream()
+                .filter(content -> !completedContentIds.contains(content.getId()))
+                .min(Comparator.comparing(content -> pointOrder.getOrDefault(content.getKnowledgePointId(), Integer.MAX_VALUE)))
+                .map(this::tutorTarget);
+    }
+
     private CourseOverviewVO.LearningTargetVO questionTarget(String type, String title, String reason,
                                                                Long questionId) {
         CourseOverviewVO.LearningTargetVO target = new CourseOverviewVO.LearningTargetVO();
@@ -135,6 +173,15 @@ public class CourseOverviewService {
         target.setTitle(title);
         target.setReason(reason);
         target.setQuestionId(questionId);
+        return target;
+    }
+
+    private CourseOverviewVO.LearningTargetVO tutorTarget(TutorContent content) {
+        CourseOverviewVO.LearningTargetVO target = new CourseOverviewVO.LearningTargetVO();
+        target.setType("TUTOR");
+        target.setTitle("继续 AI 教学：“" + content.getTitle() + "”");
+        target.setReason("这是当前课程中已审查、尚未完成理解检查的教学内容");
+        target.setKnowledgePointId(content.getKnowledgePointId());
         return target;
     }
 }

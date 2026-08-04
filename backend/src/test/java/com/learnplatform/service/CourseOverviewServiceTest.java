@@ -8,6 +8,8 @@ import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionReviewSchedule;
 import com.learnplatform.entity.WrongQuestion;
+import com.learnplatform.entity.TutorContent;
+import com.learnplatform.entity.TutorSession;
 import com.learnplatform.mapper.CourseLearningEventMapper;
 import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
@@ -15,6 +17,8 @@ import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionReviewScheduleMapper;
 import com.learnplatform.mapper.UserCourseMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
+import com.learnplatform.mapper.TutorContentMapper;
+import com.learnplatform.mapper.TutorSessionMapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.apache.ibatis.session.Configuration;
@@ -46,6 +50,8 @@ class CourseOverviewServiceTest {
     @Mock private QuestionReviewScheduleMapper reviewScheduleMapper;
     @Mock private QuestionMapper questionMapper;
     @Mock private KnowledgePointMapper knowledgePointMapper;
+    @Mock private TutorContentMapper tutorContentMapper;
+    @Mock private TutorSessionMapper tutorSessionMapper;
 
     private CourseOverviewService service;
 
@@ -53,7 +59,8 @@ class CourseOverviewServiceTest {
     void setUp() {
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new Configuration(), ""), KnowledgePoint.class);
         service = new CourseOverviewService(userCourseMapper, courseMapper, eventMapper,
-                wrongQuestionMapper, reviewScheduleMapper, questionMapper, knowledgePointMapper);
+                wrongQuestionMapper, reviewScheduleMapper, questionMapper, knowledgePointMapper,
+                tutorContentMapper, tutorSessionMapper);
     }
 
     @Test
@@ -65,6 +72,9 @@ class CourseOverviewServiceTest {
         when(wrongQuestionMapper.selectList(any())).thenReturn(List.of(wrongQuestion(22L, 3)));
         when(reviewScheduleMapper.selectList(any())).thenReturn(List.of(reviewSchedule(21L)));
         when(knowledgePointMapper.selectOne(any())).thenReturn(rootKnowledgePoint());
+        when(knowledgePointMapper.selectList(any())).thenReturn(List.of(tutorKnowledgePoint(41L)));
+        when(tutorContentMapper.selectList(any())).thenReturn(List.of(tutorContent(41L, 81L)));
+        when(tutorSessionMapper.selectList(any())).thenReturn(List.of());
 
         CourseOverviewVO overview = service.getOverview(7L, 10L);
 
@@ -72,9 +82,11 @@ class CourseOverviewServiceTest {
         assertEquals(1, overview.getCorrectCount());
         assertEquals(1, overview.getDueReviewCount());
         assertEquals(1, overview.getUnresolvedWrongCount());
-        assertEquals("DUE_REVIEW", overview.getRecommendedTargets().get(0).getType());
-        assertEquals(21L, overview.getRecommendedTargets().get(0).getQuestionId());
-        assertEquals("COURSE_SEQUENCE", overview.getRecommendedTargets().get(2).getType());
+        assertEquals("TUTOR", overview.getRecommendedTargets().get(0).getType());
+        assertEquals(41L, overview.getRecommendedTargets().get(0).getKnowledgePointId());
+        assertEquals("DUE_REVIEW", overview.getRecommendedTargets().get(1).getType());
+        assertEquals(21L, overview.getRecommendedTargets().get(1).getQuestionId());
+        assertEquals("COURSE_SEQUENCE", overview.getRecommendedTargets().get(3).getType());
     }
 
     @Test
@@ -102,6 +114,22 @@ class CourseOverviewServiceTest {
         verify(knowledgePointMapper).selectOne(captor.capture());
         assertTrue(captor.getValue().getSqlSegment().contains("parentId ="),
                 captor.getValue().getSqlSegment());
+    }
+
+    @Test
+    void excludesTutorContentAfterItsFirstCorrectCheck() {
+        when(userCourseMapper.selectCount(any())).thenReturn(1L);
+        when(courseMapper.selectById(10L)).thenReturn(course());
+        when(eventMapper.selectList(any())).thenReturn(List.of());
+        when(questionMapper.selectList(any())).thenReturn(List.of());
+        when(knowledgePointMapper.selectOne(any())).thenReturn(rootKnowledgePoint());
+        when(knowledgePointMapper.selectList(any())).thenReturn(List.of(tutorKnowledgePoint(41L)));
+        when(tutorContentMapper.selectList(any())).thenReturn(List.of(tutorContent(41L, 81L)));
+        when(tutorSessionMapper.selectList(any())).thenReturn(List.of(completedTutorSession(81L)));
+
+        CourseOverviewVO overview = service.getOverview(7L, 10L);
+
+        assertEquals("COURSE_SEQUENCE", overview.getRecommendedTargets().get(0).getType());
     }
 
     private Course course() {
@@ -145,5 +173,27 @@ class CourseOverviewServiceTest {
         point.setId(31L);
         point.setName("基本概念");
         return point;
+    }
+
+    private KnowledgePoint tutorKnowledgePoint(Long id) {
+        KnowledgePoint point = new KnowledgePoint();
+        point.setId(id);
+        point.setCourseId(10L);
+        return point;
+    }
+
+    private TutorContent tutorContent(Long knowledgePointId, Long id) {
+        TutorContent content = new TutorContent();
+        content.setId(id);
+        content.setKnowledgePointId(knowledgePointId);
+        content.setTitle("ArrayStack 的按位插入");
+        return content;
+    }
+
+    private TutorSession completedTutorSession(Long tutorContentId) {
+        TutorSession session = new TutorSession();
+        session.setTutorContentId(tutorContentId);
+        session.setCheckCorrect(true);
+        return session;
     }
 }
