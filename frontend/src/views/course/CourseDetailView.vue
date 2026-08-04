@@ -135,6 +135,7 @@ const availableTutorContentKeys = new Set([
   'ods-arrayqueue-representation',
   'ods-arrayqueue-enqueue',
   'ods-arrayqueue-dequeue',
+  'ods-arrayqueue-resize',
 ])
 
 function isAvailableTutorContent(contentKey?: string) {

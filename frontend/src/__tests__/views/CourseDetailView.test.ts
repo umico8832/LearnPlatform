@@ -67,6 +67,7 @@ describe('CourseDetailView', () => {
         { id: 37, name: 'ArrayQueue 的循环数组表示', description: '', contentKey: 'ods-arrayqueue-representation', children: [] },
         { id: 38, name: 'ArrayQueue 的入队', description: '', contentKey: 'ods-arrayqueue-enqueue', children: [] },
         { id: 39, name: 'ArrayQueue 的出队', description: '', contentKey: 'ods-arrayqueue-dequeue', children: [] },
+        { id: 40, name: 'ArrayQueue 调整容量时的线性化复制', description: '', contentKey: 'ods-arrayqueue-resize', children: [] },
       ],
     })
     mockAddCourseToLibrary.mockResolvedValue({ data: { courseId: 408 } })
@@ -106,18 +107,18 @@ describe('CourseDetailView', () => {
     expect(mockAddCourseToLibrary).not.toHaveBeenCalled()
   })
 
-  it('已加入课程库时，为已迁入的 ArrayQueue 出队知识提供 Tutor 入口', async () => {
+  it('已加入课程库时，为已迁入的 ArrayQueue 线性化复制知识提供 Tutor 入口', async () => {
     mockGetMyCourses.mockResolvedValue({ data: [{ courseId: 408 }] })
     const wrapper = mount(CourseDetailView, { global: { stubs } })
     await flushPromises()
 
     const tutorButtons = wrapper.findAll('button').filter((item) => item.text().includes('开始 AI 教学'))
-    expect(tutorButtons).toHaveLength(10)
-    await tutorButtons[9].trigger('click')
+    expect(tutorButtons).toHaveLength(11)
+    await tutorButtons[10].trigger('click')
     expect(mockPush).toHaveBeenCalledWith({
       name: 'TutorSession',
       params: { id: 408 },
-      query: { knowledgePointId: '39' },
+      query: { knowledgePointId: '40' },
     })
   })
 })

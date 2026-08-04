@@ -29,6 +29,7 @@
       <TutorArrayQueueRepresentation v-if="queueCourseware" :visualization="queueCourseware" />
       <TutorArrayQueueEnqueue v-if="queueEnqueueCourseware" :visualization="queueEnqueueCourseware" />
       <TutorArrayQueueDequeue v-if="queueDequeueCourseware" :visualization="queueDequeueCourseware" />
+      <TutorArrayQueueResize v-if="queueResizeCourseware" :visualization="queueResizeCourseware" />
       <section class="card check">
         <h3>理解检查</h3>
         <p>{{ session.check.prompt }}</p>
@@ -68,12 +69,14 @@ import TutorArrayStackResize from '@/components/TutorArrayStackResize.vue'
 import TutorArrayQueueRepresentation from '@/components/TutorArrayQueueRepresentation.vue'
 import TutorArrayQueueEnqueue from '@/components/TutorArrayQueueEnqueue.vue'
 import TutorArrayQueueDequeue from '@/components/TutorArrayQueueDequeue.vue'
+import TutorArrayQueueResize from '@/components/TutorArrayQueueResize.vue'
 import {
   isArrayStackInsertionCourseware,
   isArrayStackResizeCourseware,
   isArrayQueueRepresentationCourseware,
   isArrayQueueEnqueueCourseware,
   isArrayQueueDequeueCourseware,
+  isArrayQueueResizeCourseware,
   startTutorSession,
   submitTutorCheck,
   type TutorCheckResultVO,
@@ -111,6 +114,11 @@ const queueEnqueueCourseware = computed(() =>
 )
 const queueDequeueCourseware = computed(() =>
   session.value && isArrayQueueDequeueCourseware(session.value.lesson.visualization)
+    ? session.value.lesson.visualization
+    : null,
+)
+const queueResizeCourseware = computed(() =>
+  session.value && isArrayQueueResizeCourseware(session.value.lesson.visualization)
     ? session.value.lesson.visualization
     : null,
 )

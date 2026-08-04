@@ -22,7 +22,7 @@ AiStu、Web 后端和后续内容导入之间保持稳定引用；存量平台�
 `ods-arraystack-insertion`、`ods-arraystack-removal`、`ods-arraystack-resize`、
 `ods-arraystack-amortized-resize`、`ods-arraystack-performance` 与
 `ods-fastarraystack-block-copy`、`ods-arrayqueue-representation`、`ods-arrayqueue-enqueue` 与
-`ods-arrayqueue-dequeue` 均绑定父目录“栈、队列和数组”，
+`ods-arrayqueue-dequeue`、`ods-arrayqueue-resize` 均绑定父目录“栈、队列和数组”，
 版本为 1、迁入时状态为 `REVIEWED`。
 
 `course_learning_event` 只记录已加入个人课程库后产生的课程内事实；普通题库练习不会
@@ -76,6 +76,11 @@ V35 迁入“ArrayQueue 的出队”的独立 Tutor 内容、理解检查与 `AR
 定义。配置只包含容量、队首物理下标和非空逻辑元素；固定客户端渲染器据此回放读出 `a[j]`、
 `j = (j+1) mod capacity` 与 `n` 减一，不存储脚本、动态组件或用户运行态。内容不延伸至空队列、
 缩容或其复杂度结论。
+
+V36 迁入“ArrayQueue 调整容量时的线性化复制”的独立 Tutor 内容、理解检查与
+`ARRAY_QUEUE_RESIZE` v1 受限课件定义。配置只包含旧数组容量、队首物理下标和跨界的非空逻辑元素；
+固定客户端渲染器据此回放 `b[k] = a[(j+k) mod oldCapacity]` 的 FIFO 复制与 `j = 0`，不存储脚本、
+动态组件或用户运行态。内容不陈述扩缩容触发条件、特定容量策略的合理性或摊还复杂度。
 
 ## 题目
 

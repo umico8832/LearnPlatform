@@ -43,7 +43,9 @@ Tutor 仅可打开已加入课程、属于该课程且审查状态为 `REVIEWED`
 逻辑顺序。`ARRAY_QUEUE_ENQUEUE` v1 Schema 在相同循环数组参数外增加非空 `enqueueValue`，并要求
 `elements.length < capacity`；固定渲染器只回放 `a[(j+n) mod capacity]` 的写入与 `n` 增加。
 `ARRAY_QUEUE_DEQUEUE` v1 Schema 使用同一循环数组参数，但只要求非空 `elements`；固定渲染器只回放
-读出 `a[j]`、`j = (j+1) mod capacity` 与 `n` 减一。
+读出 `a[j]`、`j = (j+1) mod capacity` 与 `n` 减一。`ARRAY_QUEUE_RESIZE` v1 Schema 使用
+`previousCapacity`（2–12）、`headIndex` 和非空 `elements`，且逻辑元素必须跨越旧数组末端；固定渲染器
+只回放 `b[k] = a[(j+k) mod oldCapacity]` 的 FIFO 复制与 `j = 0`，不解释触发条件或摊还复杂度。
 所有类型都拒绝把课件 JSON 解释为脚本、动态组件或通用可执行配置。
 
 ## 题库与纠错

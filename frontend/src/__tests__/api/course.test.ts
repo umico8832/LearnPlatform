@@ -22,6 +22,7 @@ import {
   isArrayQueueDequeueCourseware,
   isArrayQueueEnqueueCourseware,
   isArrayQueueRepresentationCourseware,
+  isArrayQueueResizeCourseware,
   createCourse,
   updateCourse,
   deleteCourse,
@@ -58,6 +59,15 @@ describe('Course API', () => {
     })).toBe(true)
     expect(isArrayQueueDequeueCourseware({
       kind: 'ARRAY_QUEUE_DEQUEUE', version: 1, capacity: 8, headIndex: 6, elements: [], script: 'alert(1)',
+    })).toBe(false)
+  })
+
+  it('只接受跨界、无可执行字段的 ArrayQueue 线性化复制配置', () => {
+    expect(isArrayQueueResizeCourseware({
+      kind: 'ARRAY_QUEUE_RESIZE', version: 1, previousCapacity: 8, headIndex: 6, elements: ['A', 'B', 'C', 'D', 'E'],
+    })).toBe(true)
+    expect(isArrayQueueResizeCourseware({
+      kind: 'ARRAY_QUEUE_RESIZE', version: 1, previousCapacity: 8, headIndex: 2, elements: ['A', 'B'], script: 'alert(1)',
     })).toBe(false)
   })
 

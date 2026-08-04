@@ -42,7 +42,7 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 "ods-arraystack-insertion");
         assertEquals(1, atomicKnowledgeCount);
         Integer reviewedTutorCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM knowledge_point WHERE course_id = ? AND content_key IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "SELECT COUNT(*) FROM knowledge_point WHERE course_id = ? AND content_key IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                         + "AND content_source = 'AISTU' AND content_version = 1 AND content_review_status = 'REVIEWED'",
                 Integer.class,
                 courseId,
@@ -55,8 +55,9 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 "ods-fastarraystack-block-copy",
                 "ods-arrayqueue-representation",
                 "ods-arrayqueue-enqueue",
-                "ods-arrayqueue-dequeue");
-        assertEquals(10, reviewedTutorCount);
+                "ods-arrayqueue-dequeue",
+                "ods-arrayqueue-resize");
+        assertEquals(11, reviewedTutorCount);
         String coursewareKind = jdbcTemplate.queryForObject(
                 "SELECT JSON_UNQUOTE(JSON_EXTRACT(lesson_json, '$.visualization.kind')) "
                         + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
@@ -87,6 +88,12 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 String.class,
                 "ods-arrayqueue-dequeue");
         assertEquals("ARRAY_QUEUE_DEQUEUE", dequeueCoursewareKind);
+        String queueResizeCoursewareKind = jdbcTemplate.queryForObject(
+                "SELECT JSON_UNQUOTE(JSON_EXTRACT(lesson_json, '$.visualization.kind')) "
+                        + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
+                String.class,
+                "ods-arrayqueue-resize");
+        assertEquals("ARRAY_QUEUE_RESIZE", queueResizeCoursewareKind);
         String removalCorrectOption = jdbcTemplate.queryForObject(
                 "SELECT JSON_UNQUOTE(JSON_EXTRACT(check_json, '$.correctOptionId')) "
                         + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
@@ -123,6 +130,12 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 String.class,
                 "ods-arrayqueue-dequeue");
         assertEquals("ADVANCE_HEAD", dequeueCorrectOption);
+        String queueResizeCorrectOption = jdbcTemplate.queryForObject(
+                "SELECT JSON_UNQUOTE(JSON_EXTRACT(check_json, '$.correctOptionId')) "
+                        + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
+                String.class,
+                "ods-arrayqueue-resize");
+        assertEquals("COPY_LOGICAL_ORDER", queueResizeCorrectOption);
 
         jdbcTemplate.update(
                 "INSERT INTO user_course (user_id, course_id) VALUES (?, ?)",
