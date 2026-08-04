@@ -20,7 +20,7 @@ AiStu、Web 后端和后续内容导入之间保持稳定引用；存量平台�
 知识增加可空的 `content_version` 和 `content_review_status`；后者只保存迁入时的审查
 事实，不能替代 Web 端的发布或权限状态。`ods-array-size-capacity`、
 `ods-arraystack-insertion`、`ods-arraystack-removal`、`ods-arraystack-resize` 与
-`ods-arraystack-amortized-resize` 均绑定父目录“栈、队列和数组”，
+`ods-arraystack-amortized-resize` 与 `ods-arraystack-performance` 均绑定父目录“栈、队列和数组”，
 版本为 1、迁入时状态为 `REVIEWED`。
 
 `course_learning_event` 只记录已加入个人课程库后产生的课程内事实；普通题库练习不会
@@ -51,6 +51,10 @@ V29 迁入“ArrayStack 的容量调整”的独立 Tutor 内容、理解检查�
 V30 迁入“ArrayStack 调整容量的摊还成本”的独立 Tutor 内容和理解检查。该内容只陈述从空
 结构开始的 `m` 次 `add/remove` 中全部 `resize` 总成本为 `O(m)`，并明确单次触发仍可能为
 `O(n)`；它不创建可执行课件，也不将结论扩展为尚未迁入的完整操作复杂度教学。
+
+V31 迁入“ArrayStack 的操作复杂度”的独立 Tutor 内容和理解检查。它只汇总 `get/set` 的
+`O(1)` 最坏时间、忽略 `resize` 的按位 `add/remove` 成本 `O(1+n-i)`，以及尾端 push/pop 的
+`O(1)` 摊还时间；单次尾端更新仍可能因 resize 耗时 `O(n)`，不将摊还界写成最坏界。
 
 ## 题目
 

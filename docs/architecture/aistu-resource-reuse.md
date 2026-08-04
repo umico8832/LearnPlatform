@@ -79,3 +79,8 @@ React 组件、Electron IPC、窗口生命周期和本地持久化不属于共�
 范围限定为：从空结构开始的任意 `m` 次 `add` 与 `remove` 中，全部 `resize` 的总成本为
 `O(m)`；它不改变一次实际 `resize` 的 `O(n)` 最坏成本，也不自动扩大为全部 ArrayStack
 操作复杂度结论。
+
+第六批选定 `ods-arraystack-performance`（ArrayStack 的操作复杂度）。独立审查范围限定为：
+`get/set` 的最坏时间为 `O(1)`；忽略 `resize` 时 `add(i,x)` 与 `remove(i)` 为
+`O(1+n-i)`；以尾端 `add(n,x)` 和 `remove(n-1)` 实现的 push/pop 为 `O(1)` 摊还时间。
+单次尾端操作仍可能触发 `O(n)` 的 resize，不将摊还结论错误提升为最坏常数时间。
