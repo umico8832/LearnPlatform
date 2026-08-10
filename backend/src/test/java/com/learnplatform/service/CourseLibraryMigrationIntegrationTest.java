@@ -42,7 +42,7 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 "ods-arraystack-insertion");
         assertEquals(1, atomicKnowledgeCount);
         Integer reviewedTutorCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM knowledge_point WHERE course_id = ? AND content_key IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "SELECT COUNT(*) FROM knowledge_point WHERE course_id = ? AND content_key IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                         + "AND content_source = 'AISTU' AND content_version = 1 AND content_review_status = 'REVIEWED'",
                 Integer.class,
                 courseId,
@@ -89,8 +89,12 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 "cs408-stack-pop-sequences",
                 "cs408-parentheses-matching",
                 "cs408-expression-evaluation",
-                "cs408-recursion-call-stack");
-        assertEquals(44, reviewedTutorCount);
+                "cs408-recursion-call-stack",
+                "cs408-queue-fifo",
+                "cs408-circular-queue-representation",
+                "cs408-circular-queue-state",
+                "cs408-linked-queue");
+        assertEquals(48, reviewedTutorCount);
         String coursewareKind = jdbcTemplate.queryForObject(
                 "SELECT JSON_UNQUOTE(JSON_EXTRACT(lesson_json, '$.visualization.kind')) "
                         + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
@@ -175,6 +179,12 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 String.class,
                 "cs408-recursion-call-stack");
         assertEquals("FACTORIAL_CALL_STACK", factorialCallStackCoursewareKind);
+        String circularQueueCoursewareKind = jdbcTemplate.queryForObject(
+                "SELECT JSON_UNQUOTE(JSON_EXTRACT(lesson_json, '$.visualization.kind')) "
+                        + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
+                String.class,
+                "cs408-circular-queue-state");
+        assertEquals("ARRAY_QUEUE_REPRESENTATION", circularQueueCoursewareKind);
         String removalCorrectOption = jdbcTemplate.queryForObject(
                 "SELECT JSON_UNQUOTE(JSON_EXTRACT(check_json, '$.correctOptionId')) "
                         + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
@@ -275,6 +285,10 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
         assertCorrectOption("cs408-parentheses-matching", "STACK_EMPTY_END");
         assertCorrectOption("cs408-expression-evaluation", "RIGHT_THEN_LEFT");
         assertCorrectOption("cs408-recursion-call-stack", "INNER_RETURNS_FIRST");
+        assertCorrectOption("cs408-queue-fifo", "FIFO_ENDS");
+        assertCorrectOption("cs408-circular-queue-representation", "MODULO_WRAP");
+        assertCorrectOption("cs408-circular-queue-state", "ONE_EMPTY_SLOT");
+        assertCorrectOption("cs408-linked-queue", "RESET_REAR");
         assertArrayQueuePath("ods-arrayqueue-representation", null, "ods-arrayqueue-enqueue");
         assertArrayQueuePath("ods-arrayqueue-enqueue", "ods-arrayqueue-representation", "ods-arrayqueue-dequeue");
         assertArrayQueuePath("ods-arrayqueue-dequeue", "ods-arrayqueue-representation", "ods-arrayqueue-resize");
@@ -306,6 +320,10 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
         assertArrayDequePath("cs408-parentheses-matching", "cs408-stack-lifo", "cs408-expression-evaluation");
         assertArrayDequePath("cs408-expression-evaluation", "cs408-stack-lifo", "cs408-recursion-call-stack");
         assertArrayDequePath("cs408-recursion-call-stack", "cs408-stack-lifo", null);
+        assertArrayDequePath("cs408-queue-fifo", "cs408-linear-list-definition-operations", "cs408-circular-queue-representation");
+        assertArrayDequePath("cs408-circular-queue-representation", "cs408-queue-fifo", "cs408-circular-queue-state");
+        assertArrayDequePath("cs408-circular-queue-state", "cs408-circular-queue-representation", "cs408-linked-queue");
+        assertArrayDequePath("cs408-linked-queue", "cs408-queue-fifo", null);
 
         jdbcTemplate.update(
                 "INSERT INTO user_course (user_id, course_id) VALUES (?, ?)",
