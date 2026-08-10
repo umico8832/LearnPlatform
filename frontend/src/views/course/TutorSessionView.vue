@@ -30,6 +30,8 @@
       <TutorArrayQueueEnqueue v-if="queueEnqueueCourseware" :visualization="queueEnqueueCourseware" />
       <TutorArrayQueueDequeue v-if="queueDequeueCourseware" :visualization="queueDequeueCourseware" />
       <TutorArrayQueueResize v-if="queueResizeCourseware" :visualization="queueResizeCourseware" />
+      <TutorArrayDequeRepresentation v-if="dequeCourseware" :visualization="dequeCourseware" />
+      <TutorArrayDequeFrontShiftInsert v-if="dequeFrontShiftCourseware" :visualization="dequeFrontShiftCourseware" />
       <section class="card check">
         <h3>理解检查</h3>
         <p>{{ session.check.prompt }}</p>
@@ -76,6 +78,8 @@ import TutorArrayQueueRepresentation from '@/components/TutorArrayQueueRepresent
 import TutorArrayQueueEnqueue from '@/components/TutorArrayQueueEnqueue.vue'
 import TutorArrayQueueDequeue from '@/components/TutorArrayQueueDequeue.vue'
 import TutorArrayQueueResize from '@/components/TutorArrayQueueResize.vue'
+import TutorArrayDequeRepresentation from '@/components/TutorArrayDequeRepresentation.vue'
+import TutorArrayDequeFrontShiftInsert from '@/components/TutorArrayDequeFrontShiftInsert.vue'
 import {
   isArrayStackInsertionCourseware,
   isArrayStackResizeCourseware,
@@ -83,6 +87,8 @@ import {
   isArrayQueueEnqueueCourseware,
   isArrayQueueDequeueCourseware,
   isArrayQueueResizeCourseware,
+  isArrayDequeRepresentationCourseware,
+  isArrayDequeFrontShiftInsertCourseware,
   startTutorSession,
   submitTutorCheck,
   type TutorCheckResultVO,
@@ -125,6 +131,16 @@ const queueDequeueCourseware = computed(() =>
 )
 const queueResizeCourseware = computed(() =>
   session.value && isArrayQueueResizeCourseware(session.value.lesson.visualization)
+    ? session.value.lesson.visualization
+    : null,
+)
+const dequeCourseware = computed(() =>
+  session.value && isArrayDequeRepresentationCourseware(session.value.lesson.visualization)
+    ? session.value.lesson.visualization
+    : null,
+)
+const dequeFrontShiftCourseware = computed(() =>
+  session.value && isArrayDequeFrontShiftInsertCourseware(session.value.lesson.visualization)
     ? session.value.lesson.visualization
     : null,
 )

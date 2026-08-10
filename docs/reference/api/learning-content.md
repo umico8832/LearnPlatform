@@ -48,6 +48,12 @@ Tutor 仅可打开已加入课程、属于该课程且审查状态为 `REVIEWED`
 读出 `a[j]`、`j = (j+1) mod capacity` 与 `n` 减一。`ARRAY_QUEUE_RESIZE` v1 Schema 使用
 `previousCapacity`（2–12）、`headIndex` 和非空 `elements`，且逻辑元素必须跨越旧数组末端；固定渲染器
 只回放 `b[k] = a[(j+k) mod oldCapacity]` 的 FIFO 复制与 `j = 0`，不解释触发条件或摊还复杂度。
+`ARRAY_DEQUE_REPRESENTATION` v1 Schema 使用 `capacity`（2–12）、`headIndex`、非空 `elements` 与
+范围内的 `accessIndex`；固定渲染器只回放逻辑下标 `i` 到 `a[(j+i) mod capacity]` 的映射和 `get(i)`
+访问，不实现插入、删除、搬移或脚本化行为。
+`ARRAY_DEQUE_FRONT_SHIFT_INSERT` v1 Schema 使用 `capacity`（3–12）、`headIndex`、至少两个且未满的
+`elements`、靠近逻辑前端的 `insertIndex` 与非空 `insertValue`；固定渲染器只回放 `j` 左移回绕、前缀
+搬移和写入，不实现尾端分支、删除、resize 或通用操作脚本。
 所有类型都拒绝把课件 JSON 解释为脚本、动态组件或通用可执行配置。
 
 ## 题库与纠错

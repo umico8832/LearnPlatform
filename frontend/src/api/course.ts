@@ -92,8 +92,25 @@ export interface ArrayQueueResizeCourseware {
   headIndex: number
   elements: string[]
 }
+export interface ArrayDequeRepresentationCourseware {
+  kind: 'ARRAY_DEQUE_REPRESENTATION'
+  version: 1
+  capacity: number
+  headIndex: number
+  elements: string[]
+  accessIndex: number
+}
+export interface ArrayDequeFrontShiftInsertCourseware {
+  kind: 'ARRAY_DEQUE_FRONT_SHIFT_INSERT'
+  version: 1
+  capacity: number
+  headIndex: number
+  elements: string[]
+  insertIndex: number
+  insertValue: string
+}
 export interface TutorLearningPathItem { contentKey: string; title: string; description: string }
-export interface TutorSessionVO { sessionKey: string; title: string; lesson: { summary: string; steps: string[]; visualizationId: string; visualization?: ArrayStackInsertionCourseware | ArrayStackResizeCourseware | ArrayQueueRepresentationCourseware | ArrayQueueEnqueueCourseware | ArrayQueueDequeueCourseware | ArrayQueueResizeCourseware; prerequisite?: TutorLearningPathItem; nextStep?: TutorLearningPathItem }; check: { id: string; prompt: string; options: { id: string; text: string }[] } }
+export interface TutorSessionVO { sessionKey: string; title: string; lesson: { summary: string; steps: string[]; visualizationId: string; visualization?: ArrayStackInsertionCourseware | ArrayStackResizeCourseware | ArrayQueueRepresentationCourseware | ArrayQueueEnqueueCourseware | ArrayQueueDequeueCourseware | ArrayQueueResizeCourseware | ArrayDequeRepresentationCourseware | ArrayDequeFrontShiftInsertCourseware; prerequisite?: TutorLearningPathItem; nextStep?: TutorLearningPathItem }; check: { id: string; prompt: string; options: { id: string; text: string }[] } }
 export interface TutorCheckResultVO { correct: boolean; explanation: string; guidanceType: 'PREREQUISITE' | 'NEXT_TARGET' | null; guidanceTitle: string | null; guidanceDescription: string | null; guidanceKnowledgePointId: number | null }
 
 /** 仅接受当前已审查、无可执行字段的 ArrayStack 课件参数。 */
@@ -173,6 +190,35 @@ export function isArrayQueueResizeCourseware(value: unknown): value is ArrayQueu
     && Array.isArray(candidate.elements) && candidate.elements.length > 0 && candidate.elements.length <= (candidate.previousCapacity as number)
     && (candidate.headIndex as number) + candidate.elements.length > (candidate.previousCapacity as number)
     && candidate.elements.every((item) => typeof item === 'string' && item.length > 0 && item.length <= 32)
+}
+
+/** 仅接受已审查、无可执行字段的 ArrayDeque 逻辑访问课件参数。 */
+export function isArrayDequeRepresentationCourseware(value: unknown): value is ArrayDequeRepresentationCourseware {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Record<string, unknown>
+  return Object.keys(candidate).every((key) => ['kind', 'version', 'capacity', 'headIndex', 'elements', 'accessIndex'].includes(key))
+    && candidate.kind === 'ARRAY_DEQUE_REPRESENTATION'
+    && candidate.version === 1
+    && Number.isInteger(candidate.capacity) && (candidate.capacity as number) >= 2 && (candidate.capacity as number) <= 12
+    && Number.isInteger(candidate.headIndex) && (candidate.headIndex as number) >= 0 && (candidate.headIndex as number) < (candidate.capacity as number)
+    && Array.isArray(candidate.elements) && candidate.elements.length > 0 && candidate.elements.length <= (candidate.capacity as number)
+    && candidate.elements.every((item) => typeof item === 'string' && item.length > 0 && item.length <= 32)
+    && Number.isInteger(candidate.accessIndex) && (candidate.accessIndex as number) >= 0 && (candidate.accessIndex as number) < candidate.elements.length
+}
+
+/** 仅接受已审查、靠近逻辑前端插入的 ArrayDeque 课件参数。 */
+export function isArrayDequeFrontShiftInsertCourseware(value: unknown): value is ArrayDequeFrontShiftInsertCourseware {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Record<string, unknown>
+  return Object.keys(candidate).every((key) => ['kind', 'version', 'capacity', 'headIndex', 'elements', 'insertIndex', 'insertValue'].includes(key))
+    && candidate.kind === 'ARRAY_DEQUE_FRONT_SHIFT_INSERT'
+    && candidate.version === 1
+    && Number.isInteger(candidate.capacity) && (candidate.capacity as number) >= 3 && (candidate.capacity as number) <= 12
+    && Number.isInteger(candidate.headIndex) && (candidate.headIndex as number) >= 0 && (candidate.headIndex as number) < (candidate.capacity as number)
+    && Array.isArray(candidate.elements) && candidate.elements.length >= 2 && candidate.elements.length < (candidate.capacity as number)
+    && candidate.elements.every((item) => typeof item === 'string' && item.length > 0 && item.length <= 32)
+    && Number.isInteger(candidate.insertIndex) && (candidate.insertIndex as number) > 0 && (candidate.insertIndex as number) < candidate.elements.length / 2
+    && typeof candidate.insertValue === 'string' && candidate.insertValue.length > 0 && candidate.insertValue.length <= 32
 }
 
 /** 创建/更新课程请求 */

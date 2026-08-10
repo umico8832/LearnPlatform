@@ -116,3 +116,17 @@ React 组件、Electron IPC、窗口生命周期和本地持久化不属于共�
 ArrayQueue 模块完成时，Web 端只复用 AiStu 已审查关系中的稳定 `contentKey`，用 V38 将循环数组表示、
 入队、出队、线性化复制和操作复杂度连成受限学习路径。服务端解析路径后再次校验目标课程归属和
 `REVIEWED` 状态，再向客户端返回可导航知识点 ID；数据库中的标题或目标标识不能直接成为权限事实。
+
+第十三批选定 `ods-arraydeque-representation`（ArrayDeque 的循环数组表示与访问）。独立审查范围限定为：
+逻辑起点 `j`、元素数量 `n` 与 `a[(j+i) mod capacity]` 的逻辑下标映射，`get(i)`/`set(i, x)` 可直接
+访问对应槽位。固定 Web 课件只回放回绕与指定 `get(i)` 访问，不延伸至插入、删除时向较近端搬移、
+resize 或复杂度结论。
+
+第十四批选定 `ods-arraydeque-nearest-end-shifting`（ArrayDeque 向较近端搬移）。独立审查范围限定为：
+插入位置靠近逻辑前端时，先将 `j` 左移回绕，仅搬移前缀再写入；它不将该分支概括为固定后缀搬移，
+也不包含尾端分支、删除、resize 或复杂度。第十五批选定 `ods-arraydeque-performance`，限定为
+`get/set` 的 `O(1)`、忽略 resize 的 `O(1 + min(i, n-i))` 更新成本，以及从空结构开始的 m 次更新中
+resize 总成本 `O(m)`；不将摊还界写成单次最坏界。
+
+ArrayDeque 模块完成时，Web 端用 V40/V41 将表示、近端搬移和复杂度连成受限学习路径。与其他 Tutor
+路径一致，服务端只在目标属于当前课程且状态为 `REVIEWED` 时返回可导航知识点 ID。
