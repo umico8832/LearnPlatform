@@ -105,6 +105,13 @@ V41 迁入“ArrayDeque 的操作复杂度”的独立 Tutor 内容和理解检�
 `add/remove(i)` 的 `O(1 + min(i, n-i))`，以及从空结构开始的 `m` 次更新中 resize 的 `O(m)` 总成本；
 单次 resize 仍可能为 `O(n)`，不能被摊还结论覆盖。
 
+V42–V46 迁入 DualArrayDeque 的完整独立 Tutor 模块：双栈表示、按位更新、三倍失衡下的再平衡、
+再平衡摊还成本和操作复杂度。V42 的 `DUAL_ARRAY_DEQUE_REPRESENTATION` v1 只保存受限的 `front`、
+`back` 与访问下标，固定客户端回放前缀逆序和后缀正序映射；V44 的
+`DUAL_ARRAY_DEQUE_BALANCE` v1 只接受满足三倍失衡的两栈状态，并按逻辑序列回放重建。其余内容不创建
+可执行课件。五项内容形成已审查路径：表示、更新、再平衡、摊还成本、复杂度；服务端仍逐次验证目标
+属于课程且为 `REVIEWED`，正确选项只保留在服务端 `check_json`。
+
 ## 题目
 
 | 表 | 首次迁移 | 职责 | 关键约束 |

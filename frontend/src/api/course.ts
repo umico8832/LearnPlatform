@@ -109,8 +109,21 @@ export interface ArrayDequeFrontShiftInsertCourseware {
   insertIndex: number
   insertValue: string
 }
+export interface DualArrayDequeRepresentationCourseware {
+  kind: 'DUAL_ARRAY_DEQUE_REPRESENTATION'
+  version: 1
+  front: string[]
+  back: string[]
+  accessIndex: number
+}
+export interface DualArrayDequeBalanceCourseware {
+  kind: 'DUAL_ARRAY_DEQUE_BALANCE'
+  version: 1
+  front: string[]
+  back: string[]
+}
 export interface TutorLearningPathItem { contentKey: string; title: string; description: string }
-export interface TutorSessionVO { sessionKey: string; title: string; lesson: { summary: string; steps: string[]; visualizationId: string; visualization?: ArrayStackInsertionCourseware | ArrayStackResizeCourseware | ArrayQueueRepresentationCourseware | ArrayQueueEnqueueCourseware | ArrayQueueDequeueCourseware | ArrayQueueResizeCourseware | ArrayDequeRepresentationCourseware | ArrayDequeFrontShiftInsertCourseware; prerequisite?: TutorLearningPathItem; nextStep?: TutorLearningPathItem }; check: { id: string; prompt: string; options: { id: string; text: string }[] } }
+export interface TutorSessionVO { sessionKey: string; title: string; lesson: { summary: string; steps: string[]; visualizationId: string; visualization?: ArrayStackInsertionCourseware | ArrayStackResizeCourseware | ArrayQueueRepresentationCourseware | ArrayQueueEnqueueCourseware | ArrayQueueDequeueCourseware | ArrayQueueResizeCourseware | ArrayDequeRepresentationCourseware | ArrayDequeFrontShiftInsertCourseware | DualArrayDequeRepresentationCourseware | DualArrayDequeBalanceCourseware; prerequisite?: TutorLearningPathItem; nextStep?: TutorLearningPathItem }; check: { id: string; prompt: string; options: { id: string; text: string }[] } }
 export interface TutorCheckResultVO { correct: boolean; explanation: string; guidanceType: 'PREREQUISITE' | 'NEXT_TARGET' | null; guidanceTitle: string | null; guidanceDescription: string | null; guidanceKnowledgePointId: number | null }
 
 /** 仅接受当前已审查、无可执行字段的 ArrayStack 课件参数。 */
@@ -219,6 +232,35 @@ export function isArrayDequeFrontShiftInsertCourseware(value: unknown): value is
     && candidate.elements.every((item) => typeof item === 'string' && item.length > 0 && item.length <= 32)
     && Number.isInteger(candidate.insertIndex) && (candidate.insertIndex as number) > 0 && (candidate.insertIndex as number) < candidate.elements.length / 2
     && typeof candidate.insertValue === 'string' && candidate.insertValue.length > 0 && candidate.insertValue.length <= 32
+}
+
+/** 仅接受已审查、无可执行字段的 DualArrayDeque 双栈表示参数。 */
+export function isDualArrayDequeRepresentationCourseware(value: unknown): value is DualArrayDequeRepresentationCourseware {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Record<string, unknown>
+  const hasValidStack = (stack: unknown) => Array.isArray(stack) && stack.length <= 6 && stack.every((item) => typeof item === 'string' && item.length > 0 && item.length <= 32)
+  return Object.keys(candidate).every((key) => ['kind', 'version', 'front', 'back', 'accessIndex'].includes(key))
+    && candidate.kind === 'DUAL_ARRAY_DEQUE_REPRESENTATION'
+    && candidate.version === 1
+    && hasValidStack(candidate.front)
+    && hasValidStack(candidate.back)
+    && (candidate.front as unknown[]).length + (candidate.back as unknown[]).length > 0
+    && Number.isInteger(candidate.accessIndex) && (candidate.accessIndex as number) >= 0 && (candidate.accessIndex as number) < (candidate.front as unknown[]).length + (candidate.back as unknown[]).length
+}
+
+/** 仅接受已审查、满足三倍失衡条件的 DualArrayDeque 再平衡参数。 */
+export function isDualArrayDequeBalanceCourseware(value: unknown): value is DualArrayDequeBalanceCourseware {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Record<string, unknown>
+  const hasValidStack = (stack: unknown) => Array.isArray(stack) && stack.length <= 6 && stack.every((item) => typeof item === 'string' && item.length > 0 && item.length <= 32)
+  if (!hasValidStack(candidate.front) || !hasValidStack(candidate.back)) return false
+  const frontSize = (candidate.front as unknown[]).length
+  const backSize = (candidate.back as unknown[]).length
+  return Object.keys(candidate).every((key) => ['kind', 'version', 'front', 'back'].includes(key))
+    && candidate.kind === 'DUAL_ARRAY_DEQUE_BALANCE'
+    && candidate.version === 1
+    && frontSize + backSize >= 2
+    && (frontSize > 3 * backSize || backSize > 3 * frontSize)
 }
 
 /** 创建/更新课程请求 */

@@ -130,3 +130,13 @@ resize 总成本 `O(m)`；不将摊还界写成单次最坏界。
 
 ArrayDeque 模块完成时，Web 端用 V40/V41 将表示、近端搬移和复杂度连成受限学习路径。与其他 Tutor
 路径一致，服务端只在目标属于当前课程且状态为 `REVIEWED` 时返回可导航知识点 ID。
+
+第十六至二十批选定 `ods-dualarraydeque-representation`、`ods-dualarraydeque-end-operations`、
+`ods-dualarraydeque-balance`、`ods-dualarraydeque-amortized-balance` 与 `ods-dualarraydeque-performance`。
+独立审查范围分别限定为双栈的前缀逆序/后缀正序表示、按位更新的内部栈路由、严格三倍失衡后的按逻辑
+顺序重建、两次重建之间的摊还间隔，以及与 ArrayDeque 相同的渐近时间界。只有表示和再平衡使用固定
+受限 Web 课件：前者回放下标映射，后者回放一次已满足触发条件的重建；两者均不接受脚本、动态组件或
+用户运行态，也不将一次 `O(n)` 重建误称为最坏 `O(1)`。
+
+DualArrayDeque 模块通过 V42–V46 形成顺序学习路径。路径数据只保存稳定 `contentKey`、标题和说明，
+服务端在返回可导航 ID 前继续验证课程归属和 `REVIEWED` 状态。

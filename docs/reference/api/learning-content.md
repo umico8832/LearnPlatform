@@ -54,6 +54,11 @@ Tutor 仅可打开已加入课程、属于该课程且审查状态为 `REVIEWED`
 `ARRAY_DEQUE_FRONT_SHIFT_INSERT` v1 Schema 使用 `capacity`（3–12）、`headIndex`、至少两个且未满的
 `elements`、靠近逻辑前端的 `insertIndex` 与非空 `insertValue`；固定渲染器只回放 `j` 左移回绕、前缀
 搬移和写入，不实现尾端分支、删除、resize 或通用操作脚本。
+`DUAL_ARRAY_DEQUE_REPRESENTATION` v1 Schema 使用长度至多 6 的 `front`、`back` 字符串数组和范围内的
+`accessIndex`，且两栈合计至少一个元素；固定渲染器只回放 `reverse(front)` 后接 `back` 的逻辑顺序与
+前缀反向/后缀偏移下标映射。`DUAL_ARRAY_DEQUE_BALANCE` v1 Schema 使用同样受限的两栈数组，要求总元素
+数至少为 2 且一侧严格超过另一侧三倍；固定渲染器只回放按逻辑顺序重建为近似等大的两栈，不接受操作、
+脚本或用户运行态。
 所有类型都拒绝把课件 JSON 解释为脚本、动态组件或通用可执行配置。
 
 ## 题库与纠错

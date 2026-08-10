@@ -1,0 +1,11 @@
+-- DualArrayDeque 模块：三倍失衡时按逻辑顺序重建为近似等大的两个栈。
+INSERT INTO knowledge_point (name, description, course_id, parent_id, content_key, content_source, content_version, content_review_status, sort_order, deleted)
+SELECT 'DualArrayDeque 的再平衡', '当一侧元素数超过另一侧三倍时，按逻辑顺序重建：front 逆序保存前 floor(n/2) 个元素，back 正序保存剩余元素。', course.id, parent.id, 'ods-dualarraydeque-balance', 'AISTU', 1, 'REVIEWED', 26, 0
+FROM course JOIN knowledge_point parent ON parent.course_id = course.id AND parent.content_key = '408-stacks-queues-arrays' LEFT JOIN knowledge_point existing ON existing.content_key = 'ods-dualarraydeque-balance'
+WHERE course.content_key = 'cs408-data-structures' AND existing.id IS NULL;
+INSERT INTO tutor_content (knowledge_point_id, content_key, content_version, review_status, title, lesson_json, check_json)
+SELECT point.id, 'ods-dualarraydeque-balance', 1, 'REVIEWED', 'DualArrayDeque 的再平衡',
+JSON_OBJECT('summary', '当 n≥2 且 front 或 back 的大小超过另一侧三倍时，balance 按逻辑 List 顺序重建两栈：front 逆序保存前 floor(n/2) 个元素，back 正序保存其余元素。一次重建移动 O(n) 个元素。', 'steps', JSON_ARRAY('只在 n≥2 且一侧超过另一侧三倍时触发重建', '按 reverse(front) 后接 back 得到原逻辑序列', '前 floor(n/2) 个元素逆序写入新的 front', '其余 ceil(n/2) 个元素正序写入新的 back'), 'visualization', JSON_OBJECT('kind', 'DUAL_ARRAY_DEQUE_BALANCE', 'version', 1, 'front', JSON_ARRAY('B'), 'back', JSON_ARRAY('C', 'D', 'E', 'F', 'G')), 'prerequisite', JSON_OBJECT('contentKey', 'ods-dualarraydeque-end-operations', 'title', 'DualArrayDeque 的按位更新', 'description', '更新后才需要判断是否调用 balance。'), 'nextStep', JSON_OBJECT('contentKey', 'ods-dualarraydeque-amortized-balance', 'title', 'DualArrayDeque 再平衡的摊还成本', 'description', '理解单次 O(n) 重建为何不破坏长期效率。')),
+JSON_OBJECT('id', 'dualarraydeque-balance-rebuild-v1', 'prompt', 'balance 触发后，逻辑序列的前 floor(n/2) 个元素应如何保存？', 'options', JSON_ARRAY(JSON_OBJECT('id', 'REBUILD_HALVES', 'text', '逆序写入 front，其余元素正序写入 back'), JSON_OBJECT('id', 'COPY_BOTH_FORWARD', 'text', '两侧都按逻辑顺序直接写入')), 'correctOptionId', 'REBUILD_HALVES', 'correctExplanation', '正确：front 的布局不变量始终是逆序保存逻辑前缀，重建后仍须保持该映射。', 'incorrectExplanation', '不正确：front 若正序保存，就不能用既定的反向下标公式访问逻辑前端。')
+FROM knowledge_point point LEFT JOIN tutor_content existing ON existing.content_key = 'ods-dualarraydeque-balance' AND existing.content_version = 1
+WHERE point.content_key = 'ods-dualarraydeque-balance' AND existing.id IS NULL;

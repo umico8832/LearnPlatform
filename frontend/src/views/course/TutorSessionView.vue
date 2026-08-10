@@ -32,6 +32,8 @@
       <TutorArrayQueueResize v-if="queueResizeCourseware" :visualization="queueResizeCourseware" />
       <TutorArrayDequeRepresentation v-if="dequeCourseware" :visualization="dequeCourseware" />
       <TutorArrayDequeFrontShiftInsert v-if="dequeFrontShiftCourseware" :visualization="dequeFrontShiftCourseware" />
+      <TutorDualArrayDequeRepresentation v-if="dualDequeCourseware" :visualization="dualDequeCourseware" />
+      <TutorDualArrayDequeBalance v-if="dualDequeBalanceCourseware" :visualization="dualDequeBalanceCourseware" />
       <section class="card check">
         <h3>理解检查</h3>
         <p>{{ session.check.prompt }}</p>
@@ -80,6 +82,8 @@ import TutorArrayQueueDequeue from '@/components/TutorArrayQueueDequeue.vue'
 import TutorArrayQueueResize from '@/components/TutorArrayQueueResize.vue'
 import TutorArrayDequeRepresentation from '@/components/TutorArrayDequeRepresentation.vue'
 import TutorArrayDequeFrontShiftInsert from '@/components/TutorArrayDequeFrontShiftInsert.vue'
+import TutorDualArrayDequeRepresentation from '@/components/TutorDualArrayDequeRepresentation.vue'
+import TutorDualArrayDequeBalance from '@/components/TutorDualArrayDequeBalance.vue'
 import {
   isArrayStackInsertionCourseware,
   isArrayStackResizeCourseware,
@@ -89,6 +93,8 @@ import {
   isArrayQueueResizeCourseware,
   isArrayDequeRepresentationCourseware,
   isArrayDequeFrontShiftInsertCourseware,
+  isDualArrayDequeRepresentationCourseware,
+  isDualArrayDequeBalanceCourseware,
   startTutorSession,
   submitTutorCheck,
   type TutorCheckResultVO,
@@ -141,6 +147,16 @@ const dequeCourseware = computed(() =>
 )
 const dequeFrontShiftCourseware = computed(() =>
   session.value && isArrayDequeFrontShiftInsertCourseware(session.value.lesson.visualization)
+    ? session.value.lesson.visualization
+    : null,
+)
+const dualDequeCourseware = computed(() =>
+  session.value && isDualArrayDequeRepresentationCourseware(session.value.lesson.visualization)
+    ? session.value.lesson.visualization
+    : null,
+)
+const dualDequeBalanceCourseware = computed(() =>
+  session.value && isDualArrayDequeBalanceCourseware(session.value.lesson.visualization)
     ? session.value.lesson.visualization
     : null,
 )

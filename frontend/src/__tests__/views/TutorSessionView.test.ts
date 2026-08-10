@@ -18,6 +18,8 @@ vi.mock('@/api/course', () => ({
   isArrayQueueResizeCourseware: () => false,
   isArrayDequeRepresentationCourseware: () => false,
   isArrayDequeFrontShiftInsertCourseware: () => false,
+  isDualArrayDequeRepresentationCourseware: () => false,
+  isDualArrayDequeBalanceCourseware: () => false,
 }))
 
 vi.mock('vue-router', () => ({
@@ -50,6 +52,8 @@ const stubs = {
   TutorArrayQueueResize: true,
   TutorArrayDequeRepresentation: true,
   TutorArrayDequeFrontShiftInsert: true,
+  TutorDualArrayDequeRepresentation: true,
+  TutorDualArrayDequeBalance: true,
 }
 
 function findButton(wrapper: ReturnType<typeof mount>, text: string) {
