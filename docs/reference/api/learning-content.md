@@ -30,8 +30,10 @@
 Tutor 仅可打开已加入课程、属于该课程且审查状态为 `REVIEWED` 的内容；响应不会返回正确选项。
 理解检查由服务端首次判分并写入可追加课程学习事件，重复提交返回既有结果。
 当已审查教学内容显式声明路径时，理解检查响应会额外给出 `guidanceType`、
-`guidanceTitle` 和 `guidanceDescription`：答错时为前置补充（`PREREQUISITE`），答对时为
-后续目标（`NEXT_TARGET`）。它们只是路径提示，不表示关联的独立知识已经迁入或可直接打开。
+`guidanceTitle`、`guidanceDescription` 和可空的 `guidanceKnowledgePointId`：答错时为前置补充
+（`PREREQUISITE`），答对时为后续目标（`NEXT_TARGET`）。前三项只表达路径建议；服务端仅在目标
+属于当前课程且知识点状态为 `REVIEWED` 时返回可导航 ID，客户端不能用内容中的任意标识绕过课程
+与审查边界。
 
 已审查 Tutor 内容在 `lesson.visualization` 中使用受限的
 `ARRAY_STACK_INSERTION` v1 Schema：`capacity`（1–12）、`initialElements`（非空字符串数组，

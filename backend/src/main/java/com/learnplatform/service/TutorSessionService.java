@@ -50,7 +50,9 @@ public class TutorSessionService {
         if (session == null || !userId.equals(session.getUserId())) throw new BusinessException(ResultCode.NOT_FOUND, "Tutor 会话不存在");
         TutorContent content = contentMapper.selectById(session.getTutorContentId());
         if (content == null) throw new BusinessException(ResultCode.NOT_FOUND, "Tutor 教学内容不存在");
-        if (session.getCheckCorrect() != null) return result(session.getCheckCorrect(), content);
+        if (session.getCheckCorrect() != null) {
+            return result(session.getCheckCorrect(), content, session.getCourseId());
+        }
         JsonNode check = parse(content.getCheckJson()); String correctOption = check.path("correctOptionId").asText();
         boolean correct = correctOption.equals(request.getOptionId());
         int updated = sessionMapper.update(null, new LambdaUpdateWrapper<TutorSession>()
@@ -59,16 +61,16 @@ public class TutorSessionService {
                 .set(TutorSession::getCheckAnsweredAt, LocalDateTime.now()));
         if (updated == 0) {
             TutorSession persisted = sessionMapper.selectById(session.getId());
-            return result(Boolean.TRUE.equals(persisted.getCheckCorrect()), content);
+            return result(Boolean.TRUE.equals(persisted.getCheckCorrect()), content, persisted.getCourseId());
         }
         events.recordTutorCheck(userId, session.getCourseId(), session.getKnowledgePointId(), session.getId(), correct);
-        return result(correct, content);
+        return result(correct, content, session.getCourseId());
     }
     private TutorSessionVO view(TutorSession session, TutorContent content) {
         TutorSessionVO view = new TutorSessionVO(); view.setSessionKey(session.getSessionKey()); view.setTitle(content.getTitle()); view.setLesson(parse(content.getLessonJson()));
         JsonNode check = parse(content.getCheckJson()).deepCopy(); ((com.fasterxml.jackson.databind.node.ObjectNode) check).remove("correctOptionId"); view.setCheck(check); return view;
     }
-    private TutorCheckResultVO result(boolean correct, TutorContent content) {
+    private TutorCheckResultVO result(boolean correct, TutorContent content, Long courseId) {
         TutorCheckResultVO result = new TutorCheckResultVO();
         result.setCorrect(correct);
         JsonNode check = parse(content.getCheckJson());
@@ -80,6 +82,14 @@ public class TutorSessionService {
             result.setGuidanceTitle(guidance.path("title").asText());
             String description = guidance.path("description").asText();
             result.setGuidanceDescription(description.isBlank() ? null : description);
+            String contentKey = guidance.path("contentKey").asText();
+            if (!contentKey.isBlank()) {
+                KnowledgePoint target = knowledgePointMapper.selectOne(new LambdaQueryWrapper<KnowledgePoint>()
+                        .eq(KnowledgePoint::getCourseId, courseId)
+                        .eq(KnowledgePoint::getContentKey, contentKey)
+                        .eq(KnowledgePoint::getContentReviewStatus, "REVIEWED"));
+                if (target != null) result.setGuidanceKnowledgePointId(target.getId());
+            }
         }
         return result;
     }

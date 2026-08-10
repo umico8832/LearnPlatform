@@ -7,6 +7,7 @@ public class TutorCheckResultVO {
     private String guidanceType;
     private String guidanceTitle;
     private String guidanceDescription;
+    private Long guidanceKnowledgePointId;
 
     public boolean isCorrect() { return correct; }
     public void setCorrect(boolean value) { correct = value; }
@@ -18,4 +19,6 @@ public class TutorCheckResultVO {
     public void setGuidanceTitle(String value) { guidanceTitle = value; }
     public String getGuidanceDescription() { return guidanceDescription; }
     public void setGuidanceDescription(String value) { guidanceDescription = value; }
+    public Long getGuidanceKnowledgePointId() { return guidanceKnowledgePointId; }
+    public void setGuidanceKnowledgePointId(Long value) { guidanceKnowledgePointId = value; }
 }

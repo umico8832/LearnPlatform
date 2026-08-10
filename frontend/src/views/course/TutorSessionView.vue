@@ -55,13 +55,19 @@
           <span class="path-kicker">{{ result.guidanceType === 'PREREQUISITE' ? '建议先回看' : '建议下一步' }}</span>
           <h4>{{ result.guidanceTitle }}</h4>
           <p>{{ result.guidanceDescription }}</p>
+          <el-button
+            v-if="result.guidanceKnowledgePointId"
+            type="primary"
+            @click="openGuidance(result.guidanceKnowledgePointId)"
+            >{{ result.guidanceType === 'PREREQUISITE' ? '复习前置内容' : '学习下一内容' }}</el-button
+          >
         </div>
       </section>
     </template>
   </main>
 </template>
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 import TutorArrayStackInsertion from '@/components/TutorArrayStackInsertion.vue'
@@ -124,6 +130,10 @@ const queueResizeCourseware = computed(() =>
 )
 async function load() {
   loading.value = true
+  failed.value = false
+  session.value = undefined
+  optionId.value = ''
+  result.value = undefined
   try {
     session.value = (await startTutorSession(courseId.value, pointId.value)).data
   } catch {
@@ -131,6 +141,13 @@ async function load() {
   } finally {
     loading.value = false
   }
+}
+function openGuidance(knowledgePointId: number) {
+  router.push({
+    name: 'TutorSession',
+    params: { id: courseId.value },
+    query: { knowledgePointId: String(knowledgePointId) },
+  })
 }
 async function submit() {
   if (!session.value) return
@@ -142,6 +159,9 @@ async function submit() {
   }
 }
 onMounted(load)
+watch(pointId, (value, previous) => {
+  if (value !== previous) load()
+})
 </script>
 <style scoped>
 .tutor {

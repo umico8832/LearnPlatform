@@ -49,22 +49,29 @@ class TutorSessionServiceTest {
         CourseLearningEventService events = mock(CourseLearningEventService.class);
         TutorContent content = new TutorContent(); content.setId(8L);
         content.setCheckJson("{\"correctOptionId\":\"RIGHT_TO_LEFT\"}");
-        content.setLessonJson("{\"prerequisite\":{\"title\":\"元素数量与数组容量\",\"description\":\"先区分 n 与 capacity。\"},\"nextStep\":{\"title\":\"ArrayStack 的操作复杂度\",\"description\":\"再分析搬移成本。\"}}");
+        content.setLessonJson("{\"prerequisite\":{\"contentKey\":\"ods-array-size-capacity\",\"title\":\"元素数量与数组容量\",\"description\":\"先区分 n 与 capacity。\"},\"nextStep\":{\"contentKey\":\"ods-arraystack-performance\",\"title\":\"ArrayStack 的操作复杂度\",\"description\":\"再分析搬移成本。\"}}");
         TutorSession session = new TutorSession(); session.setId(9L); session.setUserId(7L); session.setCourseId(10L); session.setKnowledgePointId(3L); session.setTutorContentId(8L);
         when(sessions.selectOne(any())).thenReturn(session);
         when(contents.selectById(8L)).thenReturn(content);
         when(sessions.update(any(), any())).thenReturn(1);
+        KnowledgePoint prerequisite = new KnowledgePoint(); prerequisite.setId(30L);
+        KnowledgePoint nextTarget = new KnowledgePoint(); nextTarget.setId(35L);
+        when(points.selectOne(any())).thenReturn(prerequisite, nextTarget);
         TutorSessionService service = new TutorSessionService(users, points, contents, sessions, new ObjectMapper(), events);
 
         TutorCheckAnswerRequest incorrect = new TutorCheckAnswerRequest(); incorrect.setOptionId("LEFT_TO_RIGHT");
         TutorCheckResultVO incorrectResult = service.answer(7L, "session", incorrect);
         assertEquals("PREREQUISITE", incorrectResult.getGuidanceType());
         assertEquals("元素数量与数组容量", incorrectResult.getGuidanceTitle());
+        assertEquals(30L, new ObjectMapper().valueToTree(incorrectResult)
+                .path("guidanceKnowledgePointId").asLong());
 
         TutorCheckAnswerRequest correct = new TutorCheckAnswerRequest(); correct.setOptionId("RIGHT_TO_LEFT");
         TutorCheckResultVO correctResult = service.answer(7L, "session", correct);
         assertEquals("NEXT_TARGET", correctResult.getGuidanceType());
         assertEquals("ArrayStack 的操作复杂度", correctResult.getGuidanceTitle());
+        assertEquals(35L, new ObjectMapper().valueToTree(correctResult)
+                .path("guidanceKnowledgePointId").asLong());
     }
 
     @Test void usesReviewedContentFeedbackInsteadOfArrayStackInsertionSpecificText() {

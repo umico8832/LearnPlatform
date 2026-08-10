@@ -94,7 +94,7 @@ export interface ArrayQueueResizeCourseware {
 }
 export interface TutorLearningPathItem { contentKey: string; title: string; description: string }
 export interface TutorSessionVO { sessionKey: string; title: string; lesson: { summary: string; steps: string[]; visualizationId: string; visualization?: ArrayStackInsertionCourseware | ArrayStackResizeCourseware | ArrayQueueRepresentationCourseware | ArrayQueueEnqueueCourseware | ArrayQueueDequeueCourseware | ArrayQueueResizeCourseware; prerequisite?: TutorLearningPathItem; nextStep?: TutorLearningPathItem }; check: { id: string; prompt: string; options: { id: string; text: string }[] } }
-export interface TutorCheckResultVO { correct: boolean; explanation: string; guidanceType: 'PREREQUISITE' | 'NEXT_TARGET' | null; guidanceTitle: string | null; guidanceDescription: string | null }
+export interface TutorCheckResultVO { correct: boolean; explanation: string; guidanceType: 'PREREQUISITE' | 'NEXT_TARGET' | null; guidanceTitle: string | null; guidanceDescription: string | null; guidanceKnowledgePointId: number | null }
 
 /** 仅接受当前已审查、无可执行字段的 ArrayStack 课件参数。 */
 export function isArrayStackInsertionCourseware(value: unknown): value is ArrayStackInsertionCourseware {

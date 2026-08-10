@@ -42,7 +42,7 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 "ods-arraystack-insertion");
         assertEquals(1, atomicKnowledgeCount);
         Integer reviewedTutorCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM knowledge_point WHERE course_id = ? AND content_key IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "SELECT COUNT(*) FROM knowledge_point WHERE course_id = ? AND content_key IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                         + "AND content_source = 'AISTU' AND content_version = 1 AND content_review_status = 'REVIEWED'",
                 Integer.class,
                 courseId,
@@ -56,8 +56,9 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 "ods-arrayqueue-representation",
                 "ods-arrayqueue-enqueue",
                 "ods-arrayqueue-dequeue",
-                "ods-arrayqueue-resize");
-        assertEquals(11, reviewedTutorCount);
+                "ods-arrayqueue-resize",
+                "ods-arrayqueue-performance");
+        assertEquals(12, reviewedTutorCount);
         String coursewareKind = jdbcTemplate.queryForObject(
                 "SELECT JSON_UNQUOTE(JSON_EXTRACT(lesson_json, '$.visualization.kind')) "
                         + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
@@ -136,6 +137,17 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 String.class,
                 "ods-arrayqueue-resize");
         assertEquals("COPY_LOGICAL_ORDER", queueResizeCorrectOption);
+        String queuePerformanceCorrectOption = jdbcTemplate.queryForObject(
+                "SELECT JSON_UNQUOTE(JSON_EXTRACT(check_json, '$.correctOptionId')) "
+                        + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
+                String.class,
+                "ods-arrayqueue-performance");
+        assertEquals("QUEUE_AMORTIZED", queuePerformanceCorrectOption);
+        assertArrayQueuePath("ods-arrayqueue-representation", null, "ods-arrayqueue-enqueue");
+        assertArrayQueuePath("ods-arrayqueue-enqueue", "ods-arrayqueue-representation", "ods-arrayqueue-dequeue");
+        assertArrayQueuePath("ods-arrayqueue-dequeue", "ods-arrayqueue-representation", "ods-arrayqueue-resize");
+        assertArrayQueuePath("ods-arrayqueue-resize", "ods-arrayqueue-representation", "ods-arrayqueue-performance");
+        assertArrayQueuePath("ods-arrayqueue-performance", "ods-arrayqueue-resize", null);
 
         jdbcTemplate.update(
                 "INSERT INTO user_course (user_id, course_id) VALUES (?, ?)",
@@ -158,5 +170,20 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                      source_record_id, idempotency_key, event_version, occurred_time)
                 VALUES (?, ?, 'PRACTICE_ANSWERED', 'PRACTICE', 'QUESTION', ?, ?, ?, 1, CURRENT_TIMESTAMP)
                 """, 90001L, courseId, 80001L, 70001L, "PRACTICE:70001"));
+    }
+
+    private void assertArrayQueuePath(String contentKey, String prerequisiteKey, String nextStepKey) {
+        String prerequisite = jdbcTemplate.queryForObject(
+                "SELECT JSON_UNQUOTE(JSON_EXTRACT(lesson_json, '$.prerequisite.contentKey')) "
+                        + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
+                String.class,
+                contentKey);
+        String nextStep = jdbcTemplate.queryForObject(
+                "SELECT JSON_UNQUOTE(JSON_EXTRACT(lesson_json, '$.nextStep.contentKey')) "
+                        + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
+                String.class,
+                contentKey);
+        assertEquals(prerequisiteKey, prerequisite);
+        assertEquals(nextStepKey, nextStep);
     }
 }

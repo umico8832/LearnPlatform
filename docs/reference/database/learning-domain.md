@@ -22,7 +22,7 @@ AiStu、Web 后端和后续内容导入之间保持稳定引用；存量平台�
 `ods-arraystack-insertion`、`ods-arraystack-removal`、`ods-arraystack-resize`、
 `ods-arraystack-amortized-resize`、`ods-arraystack-performance` 与
 `ods-fastarraystack-block-copy`、`ods-arrayqueue-representation`、`ods-arrayqueue-enqueue` 与
-`ods-arrayqueue-dequeue`、`ods-arrayqueue-resize` 均绑定父目录“栈、队列和数组”，
+`ods-arrayqueue-dequeue`、`ods-arrayqueue-resize`、`ods-arrayqueue-performance` 均绑定父目录“栈、队列和数组”，
 版本为 1、迁入时状态为 `REVIEWED`。
 
 `course_learning_event` 只记录已加入个人课程库后产生的课程内事实；普通题库练习不会
@@ -81,6 +81,14 @@ V36 迁入“ArrayQueue 调整容量时的线性化复制”的独立 Tutor 内�
 `ARRAY_QUEUE_RESIZE` v1 受限课件定义。配置只包含旧数组容量、队首物理下标和跨界的非空逻辑元素；
 固定客户端渲染器据此回放 `b[k] = a[(j+k) mod oldCapacity]` 的 FIFO 复制与 `j = 0`，不存储脚本、
 动态组件或用户运行态。内容不陈述扩缩容触发条件、特定容量策略的合理性或摊还复杂度。
+
+V37 迁入“ArrayQueue 的操作复杂度”的独立 Tutor 内容和理解检查。它区分忽略 `resize` 的入队、出队
+`O(1)` 时间，与从空队列开始的 `m` 次更新中全部 `resize` 的 `O(m)` 总成本；因此更新为 `O(1)`
+摊还时间，但一次实际 `resize` 仍可能为 `O(n)`。本切片不创建课件，也不把摊还界误写成最坏界。
+
+V38 将五个已审查 ArrayQueue 内容收敛为模块级学习路径：正确理解后按循环数组表示、入队、出队、
+线性化复制和操作复杂度依次继续，相关内容答错时可回到已审查前置。路径只保存稳定 `contentKey`、
+标题和说明；服务端只有在目标属于当前课程且状态为 `REVIEWED` 时才返回可导航的知识点 ID。
 
 ## 题目
 
