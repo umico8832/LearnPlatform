@@ -197,6 +197,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, Loading, MagicStick, Reading, View } from '@element-plus/icons-vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
@@ -213,6 +214,16 @@ import {
   type ReviewStatsVO,
   type ReviewScheduleVO,
 } from '@/api/review'
+
+const route = useRoute()
+
+function positiveQueryNumber(value: unknown) {
+  const parsed = Number(value)
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined
+}
+
+const targetCourseId = computed(() => positiveQueryNumber(route.query.courseId))
+const targetQuestionId = computed(() => positiveQueryNumber(route.query.questionId))
 
 // 统计数据
 const stats = ref<ReviewStatsVO>({
@@ -272,7 +283,7 @@ async function loadStats() {
 
 async function loadDueCards() {
   try {
-    const { data } = await getDueReviewCards(undefined, 30)
+    const { data } = await getDueReviewCards(targetCourseId.value, 30, targetQuestionId.value)
     dueCards.value = data
   } catch {
     ElMessage.error('获取待复习题目失败')
@@ -458,8 +469,11 @@ async function handleAiSuggestion() {
   }
 }
 
-onMounted(() => {
-  loadStats()
+onMounted(async () => {
+  await loadStats()
+  if (targetCourseId.value || targetQuestionId.value) {
+    await startReview()
+  }
 })
 </script>
 

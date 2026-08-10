@@ -174,7 +174,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Delete, RefreshRight, Search } from '@element-plus/icons-vue'
 import { getWrongQuestions, getWrongQuestionStats, updateMasteryLevel, removeWrongQuestion } from '@/api/wrongQuestion'
@@ -185,6 +185,7 @@ import AiQuestionAssistant from '@/components/AiQuestionAssistant.vue'
 import QuestionLearningAsset from '@/components/QuestionLearningAsset.vue'
 
 const router = useRouter()
+const route = useRoute()
 const loading = ref(false)
 const startPracticeLoading = ref(false)
 const records = ref<WrongQuestionVO[]>([])
@@ -241,6 +242,14 @@ const pagination = reactive({
   pageSize: 10
 })
 
+function positiveQueryNumber(value: unknown) {
+  const parsed = Number(value)
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined
+}
+
+const targetCourseId = computed(() => positiveQueryNumber(route.query.courseId))
+const targetQuestionId = computed(() => positiveQueryNumber(route.query.questionId))
+
 onMounted(() => {
   loadRecords()
   loadStats()
@@ -249,9 +258,17 @@ onMounted(() => {
 const loadRecords = async () => {
   loading.value = true
   try {
-    const params: any = {
+    const params: {
+      pageNum: number
+      pageSize: number
+      courseId?: number
+      questionId?: number
+      masteryLevel?: number
+    } = {
       pageNum: pagination.pageNum,
-      pageSize: pagination.pageSize
+      pageSize: pagination.pageSize,
+      courseId: targetCourseId.value,
+      questionId: targetQuestionId.value,
     }
     if (filter.masteryLevel !== undefined) params.masteryLevel = filter.masteryLevel
 

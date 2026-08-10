@@ -70,7 +70,8 @@ class WrongQuestionControllerTest {
         page.setRecords(List.of());
         page.setTotal(0);
 
-        when(wrongQuestionService.getWrongQuestions(eq(1L), eq(1), eq(10), isNull(), isNull()))
+        when(wrongQuestionService.getWrongQuestions(
+                eq(1L), eq(1), eq(10), isNull(), isNull(), isNull()))
                 .thenReturn(page);
 
         mockMvc.perform(get("/api/wrong-questions").with(mockUser(1L)))
@@ -85,16 +86,20 @@ class WrongQuestionControllerTest {
         page.setRecords(List.of());
         page.setTotal(0);
 
-        when(wrongQuestionService.getWrongQuestions(eq(1L), eq(1), eq(5), eq(2L), eq(1)))
+        when(wrongQuestionService.getWrongQuestions(
+                eq(1L), eq(1), eq(5), eq(2L), eq(21L), eq(1)))
                 .thenReturn(page);
 
         mockMvc.perform(get("/api/wrong-questions")
                         .with(mockUser(1L))
                         .param("pageSize", "5")
                         .param("courseId", "2")
+                        .param("questionId", "21")
                         .param("masteryLevel", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));
+
+        verify(wrongQuestionService).getWrongQuestions(1L, 1, 5, 2L, 21L, 1);
     }
 
     // ======================== 错题统计 ========================

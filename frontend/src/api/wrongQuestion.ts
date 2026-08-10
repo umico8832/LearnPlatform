@@ -35,6 +35,7 @@ export function getWrongQuestions(params: {
   pageNum?: number
   pageSize?: number
   courseId?: number
+  questionId?: number
   masteryLevel?: number
 }) {
   return request.get<unknown, ApiResponse<PageData<WrongQuestionVO>>>('/wrong-questions', { params })

@@ -19,7 +19,7 @@
 
 | 接口 | 说明 |
 |---|---|
-| `GET /api/wrong-questions` | 查询错题 |
+| `GET /api/wrong-questions` | 查询错题；可用 `courseId`、`questionId` 和掌握状态筛选 |
 | `GET /api/wrong-questions/stats` | 查询错题统计 |
 | `PUT /api/wrong-questions/{id}/mastery` | 更新掌握状态 |
 | `DELETE /api/wrong-questions/{id}` | 移出错题本 |
@@ -36,7 +36,7 @@
 | 接口 | 说明 |
 |---|---|
 | `GET /api/review/stats` | 获取复习统计 |
-| `GET /api/review/due` | 获取到期复习项 |
+| `GET /api/review/due` | 获取到期复习项；可用 `courseId`、`questionId` 精确定位课程目标 |
 | `GET /api/review/cards` | 获取复习卡片 |
 | `POST /api/review/add/{questionId}` | 将题目加入复习 |
 | `POST /api/review/sync-wrong-questions` | 同步错题到复习计划 |
@@ -45,6 +45,10 @@
 | `POST /api/review/reset/{questionId}` | 重置题目复习进度 |
 | `POST /api/review/ai-suggestion` | 获取 AI 复习建议 |
 | `POST /api/review/ai-suggestion/stream` | 流式获取 AI 复习建议 |
+
+从课程总览进入复习或错题时，客户端同时传递服务端“开始学习”返回的 `courseId` 和
+`questionId`。两个条件按交集生效且只能读取当前认证用户的数据：到期复习会在数量限制前筛选，
+错题会在数据库分页前筛选，因此返回记录和分页总数都属于目标课程；不传条件时保持原有全局入口。
 
 ## 学习统计与诊断
 

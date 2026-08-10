@@ -275,10 +275,16 @@ class WrongQuestionServiceIntegrationTest extends IntegrationTestBase {
         Page<WrongQuestionVO> page = wrongQuestionService.getWrongQuestions(
                 userId, 1, 10, courseId1, null);
 
+        assertEquals(1, page.getTotal(), "分页总数应只统计目标课程的错题");
         assertFalse(page.getRecords().isEmpty(), "应返回课程A的错题");
         page.getRecords().forEach(vo ->
                 assertEquals("错题测试课程A", vo.getCourseName(),
                         "按课程筛选应只返回该课程的错题"));
+
+        Page<WrongQuestionVO> focused = wrongQuestionService.getWrongQuestions(
+                userId, 1, 10, courseId1, questionId1, null);
+        assertEquals(1, focused.getTotal(), "课程深链应只返回服务端选择的目标题目");
+        assertEquals(questionId1, focused.getRecords().get(0).getQuestionId());
     }
 
     // ======================== updateMasteryLevel 测试 ========================

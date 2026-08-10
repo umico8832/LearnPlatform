@@ -176,19 +176,54 @@ public class SpacedRepetitionService {
      * 获取今日待复习题目（含逾期）
      */
     public List<ReviewScheduleVO> getDueReviewCards(Long userId, Long courseId, int limit) {
+        return getDueReviewCards(userId, courseId, null, limit);
+    }
+
+    /**
+     * 获取课程内今日待复习题目，可进一步定位到统一课程状态选择的目标题目。
+     */
+    public List<ReviewScheduleVO> getDueReviewCards(Long userId, Long courseId, Long questionId, int limit) {
         if (limit <= 0 || limit > 50) {
             limit = 20;
+        }
+
+        Set<Long> courseQuestionIds = null;
+        if (courseId != null) {
+            courseQuestionIds = questionMapper.selectList(new LambdaQueryWrapper<Question>()
+                            .eq(Question::getCourseId, courseId)).stream()
+                    .map(Question::getId)
+                    .collect(Collectors.toSet());
+            if (courseQuestionIds.isEmpty()) {
+                return List.of();
+            }
         }
 
         LocalDate today = LocalDate.now();
         LambdaQueryWrapper<QuestionReviewSchedule> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(QuestionReviewSchedule::getUserId, userId)
-               .le(QuestionReviewSchedule::getNextReviewDate, today)
-               .orderByAsc(QuestionReviewSchedule::getNextReviewDate) // 逾期最多的优先
-               .orderByDesc(QuestionReviewSchedule::getEaseFactor);   // 简单的排后面
+                .le(QuestionReviewSchedule::getNextReviewDate, today);
+        if (courseQuestionIds != null) {
+            wrapper.in(QuestionReviewSchedule::getQuestionId, courseQuestionIds);
+        }
+        if (questionId != null) {
+            wrapper.eq(QuestionReviewSchedule::getQuestionId, questionId);
+        }
+        wrapper.orderByAsc(QuestionReviewSchedule::getNextReviewDate) // 逾期最多的优先
+                .orderByDesc(QuestionReviewSchedule::getEaseFactor);  // 简单的排后面
         wrapper.last("LIMIT " + limit);
 
         List<QuestionReviewSchedule> schedules = reviewScheduleMapper.selectList(wrapper);
+        if (courseQuestionIds != null) {
+            Set<Long> allowedQuestionIds = courseQuestionIds;
+            schedules = schedules.stream()
+                    .filter(schedule -> allowedQuestionIds.contains(schedule.getQuestionId()))
+                    .toList();
+        }
+        if (questionId != null) {
+            schedules = schedules.stream()
+                    .filter(schedule -> questionId.equals(schedule.getQuestionId()))
+                    .toList();
+        }
         return fillScheduleVOs(schedules, today);
     }
 

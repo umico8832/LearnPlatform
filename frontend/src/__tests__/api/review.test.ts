@@ -44,10 +44,10 @@ describe('Review API', () => {
   it('应使用 GET 请求获取待复习题目', async () => {
     mockedRequest.get.mockResolvedValue([])
 
-    await getDueReviewCards(2, 30)
+    await getDueReviewCards(2, 30, 21)
 
     expect(mockedRequest.get).toHaveBeenCalledWith('/review/due', {
-      params: { courseId: 2, limit: 30 },
+      params: { courseId: 2, questionId: 21, limit: 30 },
     })
   })
 

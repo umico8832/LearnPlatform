@@ -37,9 +37,10 @@ public class WrongQuestionController {
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) Long questionId,
             @RequestParam(required = false) Integer masteryLevel) {
         Page<WrongQuestionVO> page = wrongQuestionService.getWrongQuestions(
-                userDetails.getUserId(), pageNum, pageSize, courseId, masteryLevel);
+                userDetails.getUserId(), pageNum, pageSize, courseId, questionId, masteryLevel);
         return R.ok(page);
     }
 

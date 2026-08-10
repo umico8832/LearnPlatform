@@ -62,9 +62,30 @@ public class WrongQuestionService {
      */
     public Page<WrongQuestionVO> getWrongQuestions(Long userId, int pageNum, int pageSize,
                                                     Long courseId, Integer masteryLevel) {
+        return getWrongQuestions(userId, pageNum, pageSize, courseId, null, masteryLevel);
+    }
+
+    /** 分页查询当前用户错题，可在数据库分页前限定课程和目标题目。 */
+    public Page<WrongQuestionVO> getWrongQuestions(Long userId, int pageNum, int pageSize,
+                                                    Long courseId, Long questionId, Integer masteryLevel) {
         Page<WrongQuestion> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<WrongQuestion> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(WrongQuestion::getUserId, userId);
+        if (courseId != null) {
+            Set<Long> courseQuestionIds = questionMapper.selectList(new LambdaQueryWrapper<Question>()
+                            .eq(Question::getCourseId, courseId)).stream()
+                    .map(Question::getId)
+                    .collect(Collectors.toSet());
+            if (courseQuestionIds.isEmpty()) {
+                Page<WrongQuestionVO> emptyPage = new Page<>(pageNum, pageSize, 0);
+                emptyPage.setRecords(List.of());
+                return emptyPage;
+            }
+            wrapper.in(WrongQuestion::getQuestionId, courseQuestionIds);
+        }
+        if (questionId != null) {
+            wrapper.eq(WrongQuestion::getQuestionId, questionId);
+        }
         if (masteryLevel != null) {
             wrapper.eq(WrongQuestion::getMasteryLevel, masteryLevel);
         }
@@ -92,16 +113,8 @@ public class WrongQuestionService {
             courseMapper.selectList(cWrapper).forEach(c -> courseMap.put(c.getId(), c));
         }
 
-        // 如果指定了 courseId，先过滤 questionIds
-        final Set<Long> filteredQuestionIds = courseId != null
-                ? questionMap.entrySet().stream()
-                        .filter(e -> courseId.equals(e.getValue().getCourseId()))
-                        .map(Map.Entry::getKey).collect(Collectors.toSet())
-                : null;
-
         Page<WrongQuestionVO> voPage = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
         voPage.setRecords(result.getRecords().stream()
-                .filter(wq -> filteredQuestionIds == null || filteredQuestionIds.contains(wq.getQuestionId()))
                 .map(wq -> {
                     WrongQuestionVO vo = new WrongQuestionVO();
                     vo.setId(wq.getId());

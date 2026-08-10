@@ -58,13 +58,13 @@ describe('WrongQuestion API', () => {
       expect(result).toEqual({ code: 0, data: mockPageData, message: 'success' })
     })
 
-    it('应支持按课程和掌握程度筛选', async () => {
+    it('应支持按课程、目标题目和掌握程度筛选', async () => {
       mockedRequest.get.mockResolvedValue({ code: 0, data: { records: [], total: 0 }, message: 'success' })
 
-      await getWrongQuestions({ pageNum: 1, pageSize: 10, courseId: 2, masteryLevel: 0 })
+      await getWrongQuestions({ pageNum: 1, pageSize: 10, courseId: 2, questionId: 21, masteryLevel: 0 })
 
       expect(mockedRequest.get).toHaveBeenCalledWith('/wrong-questions', {
-        params: { pageNum: 1, pageSize: 10, courseId: 2, masteryLevel: 0 },
+        params: { pageNum: 1, pageSize: 10, courseId: 2, questionId: 21, masteryLevel: 0 },
       })
     })
 
