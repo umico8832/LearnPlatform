@@ -4,7 +4,7 @@
       <div>
         <p class="admin-page-kicker">EXAM CENTER</p>
         <h2>试卷管理</h2>
-        <p class="admin-page-description">管理模拟考试试卷、题目组合和发布状态，发布后的试卷会出现在用户考试中心。</p>
+        <p class="admin-page-description">管理普通练习与来源可核验的官方试卷，配置题目结构和发布状态。</p>
       </div>
       <div class="admin-header-actions">
         <el-button type="warning" :icon="MagicStick" @click="openSmartDialog()">智能组卷</el-button>
@@ -40,6 +40,18 @@
       <el-table :data="papers as any" v-loading="loading" stripe class="admin-data-table">
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="title" label="试卷名称" min-width="200" />
+        <el-table-column label="性质" width="100">
+          <template #default="{ row }">
+            <el-tag :type="paperTypeTag((row as ExamPaperVO))" size="small">
+              {{ paperTypeLabel((row as ExamPaperVO)) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="考试年份" width="110">
+          <template #default="{ row }">
+            {{ (row as ExamPaperVO).examYear || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="courseName" label="课程" width="120" />
         <el-table-column prop="questionCount" label="题数" width="80" />
         <el-table-column prop="totalScore" label="总分" width="80" />
@@ -75,7 +87,7 @@
     </el-card>
 
     <!-- 新增/编辑弹窗 -->
-    <el-dialog v-model="dialogVisible" :title="editingId ? '编辑试卷' : '新增试卷'" width="800px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="editingId ? '编辑试卷' : '新增试卷'" width="min(1120px, 94vw)" destroy-on-close>
       <el-form :model="form" label-width="80px">
         <el-form-item label="试卷名称" required>
           <el-input v-model="form.title" placeholder="请输入试卷名称" />
@@ -88,6 +100,39 @@
         <el-form-item label="描述">
           <el-input v-model="form.description" type="textarea" :rows="2" placeholder="试卷描述（可选）" />
         </el-form-item>
+        <el-form-item label="试卷性质">
+          <el-select v-model="form.paperType" style="width: 100%">
+            <el-option label="普通练习" value="PRACTICE" />
+            <el-option label="官方原题试卷" value="OFFICIAL_EXAM" />
+          </el-select>
+        </el-form-item>
+        <template v-if="form.paperType === 'OFFICIAL_EXAM'">
+          <el-alert
+            title="官方原题必须保留可核验来源与完整题号；AI 生成题和自拟题不能标记为官方原题。"
+            type="warning"
+            :closable="false"
+            show-icon
+            class="provenance-alert"
+          />
+          <el-row :gutter="16">
+            <el-col :span="16">
+              <el-form-item label="考试名称" required>
+                <el-input v-model="form.examName" placeholder="例如：全国硕士研究生招生考试" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="考试年份" required>
+                <el-input-number v-model="form.examYear" :min="1900" :max="currentYear" style="width: 100%" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="来源引用" required>
+            <el-input v-model="form.sourceReference" type="textarea" :rows="2" placeholder="填写可复核的出版物、文件或页面引用" />
+          </el-form-item>
+          <el-form-item label="来源核验">
+            <el-switch v-model="form.sourceVerified" active-text="已人工核验" inactive-text="尚未核验" />
+          </el-form-item>
+        </template>
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="考试时长">
@@ -113,9 +158,28 @@
           </div>
           <el-table :data="form.questions as any" size="small" max-height="300" v-if="form.questions.length > 0">
             <el-table-column type="index" width="40" />
-            <el-table-column label="题干" min-width="300">
+            <el-table-column label="题干" min-width="220">
               <template #default="{ row }">
                 <span class="q-content-preview">{{ getQuestionContent((row as FormQuestionItem).questionId) }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="分区" width="130">
+              <template #default="{ row }">
+                <el-input v-model="row.sectionTitle" size="small" placeholder="第一部分" />
+              </template>
+            </el-table-column>
+            <el-table-column label="大/小/子题" width="210">
+              <template #default="{ row }">
+                <div class="question-number-parts">
+                  <el-input v-model="row.majorQuestionNumber" size="small" placeholder="大题" />
+                  <el-input v-model="row.minorQuestionNumber" size="small" placeholder="小题" />
+                  <el-input v-model="row.subquestionNumber" size="small" placeholder="子题" />
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="展示题号" width="120">
+              <template #default="{ row }">
+                <el-input v-model="row.displayNumber" size="small" placeholder="1(1)(a)" />
               </template>
             </el-table-column>
             <el-table-column label="分值" width="120">
@@ -284,7 +348,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Collection, Delete, Edit, MagicStick, Plus, Promotion, Refresh } from '@element-plus/icons-vue'
 import { getExamPaperList, getExamPaperDetail, createExamPaper, updateExamPaper, deleteExamPaper, publishExamPaper, smartExamPreview, smartExamCreate } from '@/api/exam'
-import type { ExamPaperVO, ExamPaperCreateRequest, SmartExamRequest, SmartExamPreview as SmartExamPreviewType } from '@/api/exam'
+import type { ExamPaperVO, ExamPaperCreateRequest, PaperType, SmartExamRequest, SmartExamPreview as SmartExamPreviewType } from '@/api/exam'
 import { getAdminQuestionPage } from '@/api/question'
 import type { QuestionVO } from '@/api/question'
 import { getCoursePage } from '@/api/course'
@@ -309,6 +373,11 @@ const form = ref<{
   courseId: number | undefined
   duration: number
   status: number
+  paperType: PaperType
+  examName: string
+  examYear: number | undefined
+  sourceReference: string
+  sourceVerified: boolean
   questions: FormQuestionItem[]
 }>({
   title: '',
@@ -316,6 +385,11 @@ const form = ref<{
   courseId: undefined,
   duration: 60,
   status: 0,
+  paperType: 'PRACTICE',
+  examName: '',
+  examYear: undefined,
+  sourceReference: '',
+  sourceVerified: false,
   questions: []
 })
 
@@ -323,7 +397,14 @@ interface FormQuestionItem {
   questionId: number
   sortOrder: number
   score: number
+  sectionTitle: string
+  majorQuestionNumber: string
+  minorQuestionNumber: string
+  subquestionNumber: string
+  displayNumber: string
 }
+
+const currentYear = new Date().getFullYear()
 
 // 题目选择器
 const showQuestionPicker = ref(false)
@@ -396,10 +477,20 @@ const openDialog = async (paper?: ExamPaperVO) => {
           courseId: d.courseId || undefined,
           duration: d.duration || 60,
           status: d.status || 0,
+          paperType: d.paperType || 'PRACTICE',
+          examName: d.examName || '',
+          examYear: d.examYear || undefined,
+          sourceReference: d.sourceReference || '',
+          sourceVerified: d.sourceVerified || false,
           questions: (d.questions || []).map((q, idx) => ({
             questionId: q.questionId,
             sortOrder: q.sortOrder || idx,
-            score: q.score || 1
+            score: q.score || 1,
+            sectionTitle: q.sectionTitle || '',
+            majorQuestionNumber: q.majorQuestionNumber || '',
+            minorQuestionNumber: q.minorQuestionNumber || '',
+            subquestionNumber: q.subquestionNumber || '',
+            displayNumber: q.displayNumber || '',
           }))
         }
         // 预填充题目内容到 map
@@ -419,7 +510,19 @@ const openDialog = async (paper?: ExamPaperVO) => {
     }
   } else {
     editingId.value = null
-    form.value = { title: '', description: '', courseId: undefined, duration: 60, status: 0, questions: [] }
+    form.value = {
+      title: '',
+      description: '',
+      courseId: undefined,
+      duration: 60,
+      status: 0,
+      paperType: 'PRACTICE',
+      examName: '',
+      examYear: undefined,
+      sourceReference: '',
+      sourceVerified: false,
+      questions: [],
+    }
     pickedQuestionMap.value.clear()
   }
   dialogVisible.value = true
@@ -430,6 +533,20 @@ const handleSubmit = async () => {
     ElMessage.warning('请输入试卷名称')
     return
   }
+  if (form.value.paperType === 'OFFICIAL_EXAM' && form.value.status === 1) {
+    if (!form.value.examName.trim() || !form.value.examYear || !form.value.sourceReference.trim()) {
+      ElMessage.warning('发布官方试卷前请填写考试名称、年份和来源')
+      return
+    }
+    if (!form.value.sourceVerified) {
+      ElMessage.warning('发布官方试卷前必须完成人工来源核验')
+      return
+    }
+    if (form.value.questions.some((question) => !question.displayNumber.trim())) {
+      ElMessage.warning('官方试卷每道题都必须填写展示题号')
+      return
+    }
+  }
   submitting.value = true
   const data: ExamPaperCreateRequest = {
     title: form.value.title,
@@ -437,10 +554,20 @@ const handleSubmit = async () => {
     courseId: form.value.courseId,
     duration: form.value.duration,
     status: form.value.status,
+    paperType: form.value.paperType,
+    examName: form.value.examName || undefined,
+    examYear: form.value.examYear,
+    sourceReference: form.value.sourceReference || undefined,
+    sourceVerified: form.value.sourceVerified,
     questions: form.value.questions.map((q, idx) => ({
       questionId: q.questionId,
       sortOrder: q.sortOrder ?? idx,
-      score: q.score
+      score: q.score,
+      sectionTitle: q.sectionTitle || undefined,
+      majorQuestionNumber: q.majorQuestionNumber || undefined,
+      minorQuestionNumber: q.minorQuestionNumber || undefined,
+      subquestionNumber: q.subquestionNumber || undefined,
+      displayNumber: q.displayNumber || undefined,
     }))
   }
   try {
@@ -511,7 +638,16 @@ const togglePickQuestion = (q: QuestionVO) => {
   if (idx >= 0) {
     form.value.questions.splice(idx, 1)
   } else {
-    form.value.questions.push({ questionId: q.id, sortOrder: form.value.questions.length, score: q.score || 1 })
+    form.value.questions.push({
+      questionId: q.id,
+      sortOrder: form.value.questions.length,
+      score: q.score || 1,
+      sectionTitle: '',
+      majorQuestionNumber: '',
+      minorQuestionNumber: '',
+      subquestionNumber: '',
+      displayNumber: '',
+    })
     pickedQuestionMap.value.set(q.id, q)
   }
 }
@@ -538,6 +674,18 @@ const getQuestionContent = (questionId: number) => {
 const getTypeLabel = (type: string) => {
   const map: Record<string, string> = { SINGLE_CHOICE: '单选', MULTIPLE_CHOICE: '多选', TRUE_FALSE: '判断', FILL_BLANK: '填空', SHORT_ANSWER: '简答' }
   return map[type] || type
+}
+
+const paperTypeLabel = (paper: Pick<ExamPaperVO, 'paperType' | 'sourceVerified'>) => {
+  if (paper.paperType === 'OFFICIAL_EXAM') {
+    return paper.sourceVerified ? '官方原题' : '官方待核验'
+  }
+  return '普通练习'
+}
+
+const paperTypeTag = (paper: Pick<ExamPaperVO, 'paperType' | 'sourceVerified'>) => {
+  if (paper.paperType === 'OFFICIAL_EXAM') return paper.sourceVerified ? 'success' : 'warning'
+  return 'info'
 }
 
 const formatTime = (time: string) => {
@@ -623,6 +771,8 @@ const getDifficultyColor = (level: string) => {
 .pagination-wrapper { display: flex; justify-content: flex-end; margin-top: 16px; }
 .q-content-preview { font-size: 13px; color: #606266; }
 .question-picker { border: 1px solid #ebeef5; border-radius: 8px; padding: 16px; }
+.provenance-alert { margin-bottom: 16px; }
+.question-number-parts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
 .picker-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .picker-info { font-size: 13px; color: #909399; }
 .q-picker-filter { display: flex; gap: 12px; margin-bottom: 16px; }

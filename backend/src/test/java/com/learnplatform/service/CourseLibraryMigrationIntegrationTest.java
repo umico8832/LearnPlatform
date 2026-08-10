@@ -23,6 +23,21 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
 
     @Test
     void migrationImportsAiStuCourseStructureAndProtectsLibraryUniqueness() {
+        Integer paperProvenanceColumns = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_schema = DATABASE() AND table_name = 'exam_paper'
+                  AND column_name IN ('paper_type', 'exam_name', 'exam_year',
+                                      'source_reference', 'source_verified')
+                """, Integer.class);
+        Integer questionStructureColumns = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_schema = DATABASE() AND table_name = 'exam_question'
+                  AND column_name IN ('section_title', 'major_question_number',
+                                      'minor_question_number', 'subquestion_number', 'display_number')
+                """, Integer.class);
+        assertEquals(5, paperProvenanceColumns);
+        assertEquals(5, questionStructureColumns);
+
         Long courseId = jdbcTemplate.queryForObject(
                 "SELECT id FROM course WHERE content_key = ?",
                 Long.class,

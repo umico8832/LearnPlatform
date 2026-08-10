@@ -29,6 +29,16 @@ public class ExamPaper {
 
     private Long createBy;
 
+    private String paperType;
+
+    private String examName;
+
+    private Integer examYear;
+
+    private String sourceReference;
+
+    private Boolean sourceVerified;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
@@ -56,6 +66,16 @@ public class ExamPaper {
     public void setStatus(Integer status) { this.status = status; }
     public Long getCreateBy() { return createBy; }
     public void setCreateBy(Long createBy) { this.createBy = createBy; }
+    public String getPaperType() { return paperType; }
+    public void setPaperType(String paperType) { this.paperType = paperType; }
+    public String getExamName() { return examName; }
+    public void setExamName(String examName) { this.examName = examName; }
+    public Integer getExamYear() { return examYear; }
+    public void setExamYear(Integer examYear) { this.examYear = examYear; }
+    public String getSourceReference() { return sourceReference; }
+    public void setSourceReference(String sourceReference) { this.sourceReference = sourceReference; }
+    public Boolean getSourceVerified() { return sourceVerified; }
+    public void setSourceVerified(Boolean sourceVerified) { this.sourceVerified = sourceVerified; }
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
     public LocalDateTime getUpdateTime() { return updateTime; }

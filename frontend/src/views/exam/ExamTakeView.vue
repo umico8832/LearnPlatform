@@ -19,7 +19,9 @@
 
     <div v-else-if="currentQuestion" class="question-area">
       <el-card shadow="hover">
+        <div v-if="currentQuestion.sectionTitle" class="q-section">{{ currentQuestion.sectionTitle }}</div>
         <div class="q-meta">
+          <strong class="q-number">{{ currentQuestion.displayNumber || `第 ${currentIndex + 1} 题` }}</strong>
           <el-tag size="small">{{ getTypeLabel(currentQuestion.questionType) }}</el-tag>
           <span class="q-score">分值：{{ currentQuestion.score }} 分</span>
         </div>
@@ -65,7 +67,8 @@
         <div class="sheet-grid">
           <div v-for="(q, idx) in questions" :key="q.questionId"
             :class="['sheet-item', { answered: answers[q.questionId], current: idx === currentIndex }]"
-            @click="currentIndex = idx">{{ idx + 1 }}</div>
+            :title="q.displayNumber || `第 ${idx + 1} 题`"
+            @click="currentIndex = idx">{{ q.displayNumber || idx + 1 }}</div>
         </div>
       </div>
     </div>
@@ -185,6 +188,8 @@ const getTypeLabel = (type: string) => {
 .question-area { display: flex; gap: 20px; }
 .question-area > .el-card { flex: 1; }
 .q-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.q-section { margin-bottom: 8px; color: #606266; font-size: 13px; font-weight: 600; }
+.q-number { color: #303133; font-size: 15px; }
 .q-score { font-size: 13px; color: #909399; }
 .q-content { font-size: 16px; line-height: 1.8; margin-bottom: 20px; white-space: pre-wrap; }
 .option-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
@@ -198,7 +203,7 @@ const getTypeLabel = (type: string) => {
 .answer-sheet { width: 200px; padding: 16px; background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.08); height: fit-content; position: sticky; top: 20px; }
 .answer-sheet h4 { margin: 0 0 12px; font-size: 14px; }
 .sheet-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-.sheet-item { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 12px; cursor: pointer; }
+.sheet-item { display: flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; padding: 0 4px; overflow: hidden; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 11px; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
 .sheet-item.answered { background: #409eff; color: #fff; border-color: #409eff; }
 .sheet-item.current { border-color: #e6a23c; box-shadow: 0 0 0 2px #e6a23c; }
 .countdown { display: inline-flex; align-items: center; gap: 4px; margin-left: 16px; font-size: 16px; font-weight: 600; color: #409eff; }

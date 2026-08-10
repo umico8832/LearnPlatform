@@ -17,6 +17,11 @@ public class ExamPaperVO {
     private Integer questionCount;
     private Integer status;
     private Long createBy;
+    private String paperType;
+    private String examName;
+    private Integer examYear;
+    private String sourceReference;
+    private Boolean sourceVerified;
     private LocalDateTime createTime;
     private List<ExamQuestionItem> questions;
 
@@ -40,6 +45,16 @@ public class ExamPaperVO {
     public void setStatus(Integer status) { this.status = status; }
     public Long getCreateBy() { return createBy; }
     public void setCreateBy(Long createBy) { this.createBy = createBy; }
+    public String getPaperType() { return paperType; }
+    public void setPaperType(String paperType) { this.paperType = paperType; }
+    public String getExamName() { return examName; }
+    public void setExamName(String examName) { this.examName = examName; }
+    public Integer getExamYear() { return examYear; }
+    public void setExamYear(Integer examYear) { this.examYear = examYear; }
+    public String getSourceReference() { return sourceReference; }
+    public void setSourceReference(String sourceReference) { this.sourceReference = sourceReference; }
+    public Boolean getSourceVerified() { return sourceVerified; }
+    public void setSourceVerified(Boolean sourceVerified) { this.sourceVerified = sourceVerified; }
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
     public List<ExamQuestionItem> getQuestions() { return questions; }
@@ -52,6 +67,11 @@ public class ExamPaperVO {
         private Integer score;
         private String content;
         private String questionType;
+        private String sectionTitle;
+        private String majorQuestionNumber;
+        private String minorQuestionNumber;
+        private String subquestionNumber;
+        private String displayNumber;
         private List<QuestionOptionVO> options;
 
         public Long getQuestionId() { return questionId; }
@@ -64,6 +84,16 @@ public class ExamPaperVO {
         public void setContent(String content) { this.content = content; }
         public String getQuestionType() { return questionType; }
         public void setQuestionType(String questionType) { this.questionType = questionType; }
+        public String getSectionTitle() { return sectionTitle; }
+        public void setSectionTitle(String sectionTitle) { this.sectionTitle = sectionTitle; }
+        public String getMajorQuestionNumber() { return majorQuestionNumber; }
+        public void setMajorQuestionNumber(String majorQuestionNumber) { this.majorQuestionNumber = majorQuestionNumber; }
+        public String getMinorQuestionNumber() { return minorQuestionNumber; }
+        public void setMinorQuestionNumber(String minorQuestionNumber) { this.minorQuestionNumber = minorQuestionNumber; }
+        public String getSubquestionNumber() { return subquestionNumber; }
+        public void setSubquestionNumber(String subquestionNumber) { this.subquestionNumber = subquestionNumber; }
+        public String getDisplayNumber() { return displayNumber; }
+        public void setDisplayNumber(String displayNumber) { this.displayNumber = displayNumber; }
         public List<QuestionOptionVO> getOptions() { return options; }
         public void setOptions(List<QuestionOptionVO> options) { this.options = options; }
     }

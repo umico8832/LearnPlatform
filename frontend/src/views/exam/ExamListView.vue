@@ -20,10 +20,17 @@
           <el-card v-for="paper in papers" :key="paper.id" class="exam-card" shadow="never">
             <div class="exam-card-header">
               <div>
-                <h3>{{ paper.title }}</h3>
+                <div class="exam-title-line">
+                  <h3>{{ paper.title }}</h3>
+                  <el-tag :type="paperTypeTag(paper)" size="small">{{ paperTypeLabel(paper) }}</el-tag>
+                </div>
                 <p class="exam-desc" v-if="paper.description">{{ paper.description }}</p>
               </div>
               <el-tag type="success" size="small">可参加</el-tag>
+            </div>
+            <div v-if="isVerifiedOfficial(paper)" class="official-source">
+              <strong>{{ paper.examYear }} · {{ paper.examName }}</strong>
+              <span>来源：{{ paper.sourceReference }}</span>
             </div>
             <div class="exam-metrics">
               <span v-if="paper.courseName"><el-icon><Reading /></el-icon>{{ paper.courseName }}</span>
@@ -208,6 +215,22 @@ const formatTime = (time: string) => {
   if (!time) return '-'
   return time.replace('T', ' ').substring(0, 19)
 }
+
+const isVerifiedOfficial = (paper: ExamPaperVO) => {
+  return paper.paperType === 'OFFICIAL_EXAM' && paper.sourceVerified
+}
+
+const paperTypeLabel = (paper: ExamPaperVO) => {
+  if (isVerifiedOfficial(paper)) return '官方原题'
+  if (paper.paperType === 'OFFICIAL_EXAM') return '来源未核验'
+  return '普通练习'
+}
+
+const paperTypeTag = (paper: ExamPaperVO) => {
+  if (isVerifiedOfficial(paper)) return 'success'
+  if (paper.paperType === 'OFFICIAL_EXAM') return 'warning'
+  return 'info'
+}
 </script>
 
 <style scoped>
@@ -292,6 +315,31 @@ const formatTime = (time: string) => {
   margin: 0;
   font-size: 18px;
   color: var(--lp-text);
+}
+
+.exam-title-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.official-source {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: -2px 0 14px;
+  padding: 10px 12px;
+  color: var(--lp-text-secondary);
+  background: var(--lp-success-soft, #f0f9eb);
+  border: 1px solid color-mix(in srgb, var(--lp-success) 28%, transparent);
+  border-radius: 7px;
+  font-size: 13px;
+}
+
+.official-source strong {
+  color: var(--lp-text);
+  font-weight: 700;
 }
 
 .exam-desc {

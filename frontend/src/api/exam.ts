@@ -14,6 +14,11 @@ export interface ExamPaperVO {
   questionCount: number
   status: number
   createBy: number
+  paperType: PaperType
+  examName: string | null
+  examYear: number | null
+  sourceReference: string | null
+  sourceVerified: boolean
   createTime: string
   questions: ExamQuestionItem[]
 }
@@ -24,8 +29,15 @@ export interface ExamQuestionItem {
   score: number
   content: string
   questionType: string
+  sectionTitle: string | null
+  majorQuestionNumber: string | null
+  minorQuestionNumber: string | null
+  subquestionNumber: string | null
+  displayNumber: string | null
   options: { id: number; content: string; optionLabel: string; sortOrder: number }[]
 }
+
+export type PaperType = 'PRACTICE' | 'OFFICIAL_EXAM'
 
 export interface ExamPaperCreateRequest {
   title: string
@@ -33,7 +45,21 @@ export interface ExamPaperCreateRequest {
   courseId?: number
   duration?: number
   status?: number
-  questions?: { questionId: number; sortOrder?: number; score?: number }[]
+  paperType?: PaperType
+  examName?: string
+  examYear?: number
+  sourceReference?: string
+  sourceVerified?: boolean
+  questions?: {
+    questionId: number
+    sortOrder?: number
+    score?: number
+    sectionTitle?: string
+    majorQuestionNumber?: string
+    minorQuestionNumber?: string
+    subquestionNumber?: string
+    displayNumber?: string
+  }[]
 }
 
 export interface ExamRecordVO {

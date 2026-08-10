@@ -52,6 +52,8 @@ const questions = [
     score: 5,
     content: '继承关键字是？',
     questionType: 'SINGLE_CHOICE',
+    sectionTitle: '第一部分 数据结构',
+    displayNumber: '1(1)',
     options: [
       { id: 11, optionLabel: 'A', content: 'extends', sortOrder: 1 },
       { id: 12, optionLabel: 'B', content: 'implements', sortOrder: 2 },
@@ -98,6 +100,10 @@ describe('ExamTakeView', () => {
   it('submits answers for single choice, multiple choice, and true/false then opens the result page', async () => {
     const wrapper = mount(ExamTakeView, { global: { stubs } })
     await flushPromises()
+
+    expect(wrapper.find('.q-section').text()).toBe('第一部分 数据结构')
+    expect(wrapper.find('.q-number').text()).toBe('1(1)')
+    expect(wrapper.findAll('.sheet-item')[0].text()).toBe('1(1)')
 
     await wrapper.findAll('.option-item').find(item => item.text().includes('extends'))!.trigger('click')
     await wrapper.findAll('button').find(button => button.text().includes('下一题'))!.trigger('click')

@@ -14,9 +14,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -26,6 +28,9 @@ import java.util.stream.Collectors;
 public class ExamPaperService {
 
     private static final Logger log = LoggerFactory.getLogger(ExamPaperService.class);
+    private static final String DEFAULT_PAPER_TYPE = "PRACTICE";
+    private static final String OFFICIAL_PAPER_TYPE = "OFFICIAL_EXAM";
+    private static final Set<String> PAPER_TYPES = Set.of(DEFAULT_PAPER_TYPE, OFFICIAL_PAPER_TYPE);
 
     private final ExamPaperMapper examPaperMapper;
     private final ExamQuestionMapper examQuestionMapper;
@@ -87,7 +92,12 @@ public class ExamPaperService {
      */
     @Transactional
     public ExamPaperVO createExamPaper(ExamPaperCreateRequest request, Long createBy) {
+        String paperType = normalizePaperType(request.getPaperType());
+        ensurePaperTypeSupported(paperType);
         ensurePublishable(request.getStatus(), request.getQuestions(), 0);
+        ensureOfficialRequestReady(request.getStatus(), paperType, request.getExamName(),
+                request.getExamYear(), request.getSourceReference(), request.getSourceVerified(),
+                request.getQuestions(), null);
 
         ExamPaper paper = new ExamPaper();
         paper.setTitle(request.getTitle());
@@ -96,6 +106,11 @@ public class ExamPaperService {
         paper.setDuration(request.getDuration() != null ? request.getDuration() : 60);
         paper.setStatus(request.getStatus() != null ? request.getStatus() : 0);
         paper.setCreateBy(createBy);
+        paper.setPaperType(paperType);
+        paper.setExamName(request.getExamName());
+        paper.setExamYear(request.getExamYear());
+        paper.setSourceReference(request.getSourceReference());
+        paper.setSourceVerified(Boolean.TRUE.equals(request.getSourceVerified()));
         paper.setDeleted(0);
 
         int totalScore = 0;
@@ -120,6 +135,7 @@ public class ExamPaperService {
                 eq.setQuestionId(item.getQuestionId());
                 eq.setSortOrder(item.getSortOrder() != null ? item.getSortOrder() : 0);
                 eq.setScore(item.getScore() != null ? item.getScore() : 1);
+                applyQuestionStructure(eq, item);
                 examQuestionMapper.insert(eq);
             }
         }
@@ -135,13 +151,31 @@ public class ExamPaperService {
         ExamPaper paper = examPaperMapper.selectByIdForUpdate(id);
         if (paper == null) throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
         ensureDraft(paper, "已发布试卷不能修改");
+        String paperType = request.getPaperType() != null
+                ? normalizePaperType(request.getPaperType()) : normalizePaperType(paper.getPaperType());
+        ensurePaperTypeSupported(paperType);
         ensurePublishable(request.getStatus(), request.getQuestions(), paper.getQuestionCount());
+
+        String examName = request.getExamName() != null ? request.getExamName() : paper.getExamName();
+        Integer examYear = request.getExamYear() != null ? request.getExamYear() : paper.getExamYear();
+        String sourceReference = request.getSourceReference() != null
+                ? request.getSourceReference() : paper.getSourceReference();
+        Boolean sourceVerified = request.getSourceVerified() != null
+                ? request.getSourceVerified() : paper.getSourceVerified();
+        Integer status = request.getStatus() != null ? request.getStatus() : paper.getStatus();
+        ensureOfficialRequestReady(status, paperType, examName, examYear, sourceReference,
+                sourceVerified, request.getQuestions(), id);
 
         if (request.getTitle() != null) paper.setTitle(request.getTitle());
         if (request.getDescription() != null) paper.setDescription(request.getDescription());
         if (request.getCourseId() != null) paper.setCourseId(request.getCourseId());
         if (request.getDuration() != null) paper.setDuration(request.getDuration());
         if (request.getStatus() != null) paper.setStatus(request.getStatus());
+        paper.setPaperType(paperType);
+        if (request.getExamName() != null) paper.setExamName(request.getExamName());
+        if (request.getExamYear() != null) paper.setExamYear(request.getExamYear());
+        if (request.getSourceReference() != null) paper.setSourceReference(request.getSourceReference());
+        if (request.getSourceVerified() != null) paper.setSourceVerified(request.getSourceVerified());
         examPaperMapper.updateById(paper);
 
         // 更新题目关联
@@ -157,6 +191,7 @@ public class ExamPaperService {
                 eq.setQuestionId(item.getQuestionId());
                 eq.setSortOrder(item.getSortOrder() != null ? item.getSortOrder() : 0);
                 eq.setScore(item.getScore() != null ? item.getScore() : 1);
+                applyQuestionStructure(eq, item);
                 examQuestionMapper.insert(eq);
                 totalScore += (item.getScore() != null ? item.getScore() : 1);
             }
@@ -192,6 +227,7 @@ public class ExamPaperService {
         if (paper.getQuestionCount() == null || paper.getQuestionCount() <= 0) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "空试卷不能发布");
         }
+        ensureOfficialPaperReady(paper);
         paper.setStatus(1);
         examPaperMapper.updateById(paper);
     }
@@ -218,6 +254,81 @@ public class ExamPaperService {
         }
     }
 
+    private void ensureOfficialRequestReady(Integer status, String paperType, String examName,
+                                            Integer examYear, String sourceReference, Boolean sourceVerified,
+                                            List<ExamPaperCreateRequest.QuestionItem> questions, Long paperId) {
+        if (status == null || status != 1 || !OFFICIAL_PAPER_TYPE.equals(paperType)) {
+            return;
+        }
+        ensureOfficialMetadata(examName, examYear, sourceReference, sourceVerified);
+        if (questions != null) {
+            if (questions.stream().anyMatch(item -> item == null || isBlank(item.getDisplayNumber()))) {
+                throw new BusinessException(ResultCode.BUSINESS_ERROR, "官方试卷每道题必须填写展示题号");
+            }
+            return;
+        }
+        if (paperId != null) {
+            ensureOfficialQuestionNumbers(findExamQuestions(paperId));
+        }
+    }
+
+    private void ensureOfficialPaperReady(ExamPaper paper) {
+        String paperType = normalizePaperType(paper.getPaperType());
+        ensurePaperTypeSupported(paperType);
+        if (!OFFICIAL_PAPER_TYPE.equals(paperType)) {
+            return;
+        }
+        ensureOfficialMetadata(paper.getExamName(), paper.getExamYear(), paper.getSourceReference(),
+                paper.getSourceVerified());
+        ensureOfficialQuestionNumbers(findExamQuestions(paper.getId()));
+    }
+
+    private void ensureOfficialMetadata(String examName, Integer examYear, String sourceReference,
+                                        Boolean sourceVerified) {
+        int currentYear = Year.now().getValue();
+        if (isBlank(examName) || examYear == null || examYear < 1900 || examYear > currentYear
+                || isBlank(sourceReference)) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR,
+                    "官方试卷发布前必须填写有效的考试名称、年份和来源");
+        }
+        if (!Boolean.TRUE.equals(sourceVerified)) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "官方试卷发布前必须确认来源已核验");
+        }
+    }
+
+    private void ensureOfficialQuestionNumbers(List<ExamQuestion> questions) {
+        if (questions.isEmpty() || questions.stream().anyMatch(item -> isBlank(item.getDisplayNumber()))) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "官方试卷每道题必须填写展示题号");
+        }
+    }
+
+    private List<ExamQuestion> findExamQuestions(Long paperId) {
+        return examQuestionMapper.selectList(new LambdaQueryWrapper<ExamQuestion>()
+                .eq(ExamQuestion::getExamPaperId, paperId));
+    }
+
+    private String normalizePaperType(String paperType) {
+        return isBlank(paperType) ? DEFAULT_PAPER_TYPE : paperType.trim();
+    }
+
+    private void ensurePaperTypeSupported(String paperType) {
+        if (!PAPER_TYPES.contains(paperType)) {
+            throw new BusinessException(ResultCode.VALIDATION_ERROR, "不支持的试卷类型");
+        }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private void applyQuestionStructure(ExamQuestion examQuestion, ExamPaperCreateRequest.QuestionItem item) {
+        examQuestion.setSectionTitle(item.getSectionTitle());
+        examQuestion.setMajorQuestionNumber(item.getMajorQuestionNumber());
+        examQuestion.setMinorQuestionNumber(item.getMinorQuestionNumber());
+        examQuestion.setSubquestionNumber(item.getSubquestionNumber());
+        examQuestion.setDisplayNumber(item.getDisplayNumber());
+    }
+
     private ExamPaperVO toVO(ExamPaper paper) {
         ExamPaperVO vo = new ExamPaperVO();
         vo.setId(paper.getId());
@@ -229,6 +340,11 @@ public class ExamPaperService {
         vo.setQuestionCount(paper.getQuestionCount());
         vo.setStatus(paper.getStatus());
         vo.setCreateBy(paper.getCreateBy());
+        vo.setPaperType(normalizePaperType(paper.getPaperType()));
+        vo.setExamName(paper.getExamName());
+        vo.setExamYear(paper.getExamYear());
+        vo.setSourceReference(paper.getSourceReference());
+        vo.setSourceVerified(Boolean.TRUE.equals(paper.getSourceVerified()));
         vo.setCreateTime(paper.getCreateTime());
         if (paper.getCourseId() != null) {
             Course course = courseMapper.selectById(paper.getCourseId());
@@ -248,6 +364,11 @@ public class ExamPaperService {
             item.setQuestionId(eq.getQuestionId());
             item.setSortOrder(eq.getSortOrder());
             item.setScore(eq.getScore());
+            item.setSectionTitle(eq.getSectionTitle());
+            item.setMajorQuestionNumber(eq.getMajorQuestionNumber());
+            item.setMinorQuestionNumber(eq.getMinorQuestionNumber());
+            item.setSubquestionNumber(eq.getSubquestionNumber());
+            item.setDisplayNumber(eq.getDisplayNumber());
 
             Question q = questionMapper.selectById(eq.getQuestionId());
             if (q != null) {
