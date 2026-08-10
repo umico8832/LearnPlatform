@@ -140,3 +140,9 @@ ArrayDeque 模块完成时，Web 端用 V40/V41 将表示、近端搬移和复�
 
 DualArrayDeque 模块通过 V42–V46 形成顺序学习路径。路径数据只保存稳定 `contentKey`、标题和说明，
 服务端在返回可导航 ID 前继续验证课程归属和 `REVIEWED` 状态。
+
+第二十一至二十六批选定 `ods-rootisharraystack-block-layout`、`ods-rootisharraystack-index-mapping`、
+`ods-rootisharraystack-update`、`ods-rootisharraystack-grow-shrink`、`ods-rootisharraystack-space` 与
+`ods-rootisharraystack-performance`。范围依次限定为递增容量块、下标定位公式、跨块按位搬移、块级增缩、
+平方根额外空间界和复杂度汇总。只有递增块布局采用固定受限课件；课件数据验证每个块的容量不变量，
+不接受公式执行、脚本或用户运行态。V47–V52 将六项内容连接为课程内学习路径。

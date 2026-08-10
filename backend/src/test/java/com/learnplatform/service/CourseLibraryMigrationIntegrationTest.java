@@ -42,7 +42,7 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 "ods-arraystack-insertion");
         assertEquals(1, atomicKnowledgeCount);
         Integer reviewedTutorCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM knowledge_point WHERE course_id = ? AND content_key IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "SELECT COUNT(*) FROM knowledge_point WHERE course_id = ? AND content_key IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                         + "AND content_source = 'AISTU' AND content_version = 1 AND content_review_status = 'REVIEWED'",
                 Integer.class,
                 courseId,
@@ -65,8 +65,14 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 "ods-dualarraydeque-end-operations",
                 "ods-dualarraydeque-balance",
                 "ods-dualarraydeque-amortized-balance",
-                "ods-dualarraydeque-performance");
-        assertEquals(20, reviewedTutorCount);
+                "ods-dualarraydeque-performance",
+                "ods-rootisharraystack-block-layout",
+                "ods-rootisharraystack-index-mapping",
+                "ods-rootisharraystack-update",
+                "ods-rootisharraystack-grow-shrink",
+                "ods-rootisharraystack-space",
+                "ods-rootisharraystack-performance");
+        assertEquals(26, reviewedTutorCount);
         String coursewareKind = jdbcTemplate.queryForObject(
                 "SELECT JSON_UNQUOTE(JSON_EXTRACT(lesson_json, '$.visualization.kind')) "
                         + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
@@ -127,6 +133,12 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 String.class,
                 "ods-dualarraydeque-balance");
         assertEquals("DUAL_ARRAY_DEQUE_BALANCE", dualDequeBalanceCoursewareKind);
+        String rootishLayoutCoursewareKind = jdbcTemplate.queryForObject(
+                "SELECT JSON_UNQUOTE(JSON_EXTRACT(lesson_json, '$.visualization.kind')) "
+                        + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
+                String.class,
+                "ods-rootisharraystack-block-layout");
+        assertEquals("ROOTISH_ARRAY_STACK_LAYOUT", rootishLayoutCoursewareKind);
         String removalCorrectOption = jdbcTemplate.queryForObject(
                 "SELECT JSON_UNQUOTE(JSON_EXTRACT(check_json, '$.correctOptionId')) "
                         + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
@@ -203,6 +215,12 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
         assertCorrectOption("ods-dualarraydeque-balance", "REBUILD_HALVES");
         assertCorrectOption("ods-dualarraydeque-amortized-balance", "TOTAL_LINEAR");
         assertCorrectOption("ods-dualarraydeque-performance", "NEAREST_END");
+        assertCorrectOption("ods-rootisharraystack-block-layout", "INCREASING_BLOCK");
+        assertCorrectOption("ods-rootisharraystack-index-mapping", "PREVIOUS_CAPACITY");
+        assertCorrectOption("ods-rootisharraystack-update", "RIGHT_TO_LEFT");
+        assertCorrectOption("ods-rootisharraystack-grow-shrink", "NO_COPY");
+        assertCorrectOption("ods-rootisharraystack-space", "BLOCK_COUNT");
+        assertCorrectOption("ods-rootisharraystack-performance", "SQRT_SPACE");
         assertArrayQueuePath("ods-arrayqueue-representation", null, "ods-arrayqueue-enqueue");
         assertArrayQueuePath("ods-arrayqueue-enqueue", "ods-arrayqueue-representation", "ods-arrayqueue-dequeue");
         assertArrayQueuePath("ods-arrayqueue-dequeue", "ods-arrayqueue-representation", "ods-arrayqueue-resize");
@@ -216,6 +234,12 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
         assertArrayDequePath("ods-dualarraydeque-balance", "ods-dualarraydeque-end-operations", "ods-dualarraydeque-amortized-balance");
         assertArrayDequePath("ods-dualarraydeque-amortized-balance", "ods-dualarraydeque-balance", "ods-dualarraydeque-performance");
         assertArrayDequePath("ods-dualarraydeque-performance", "ods-dualarraydeque-amortized-balance", null);
+        assertArrayDequePath("ods-rootisharraystack-block-layout", "ods-arraydeque-representation", "ods-rootisharraystack-index-mapping");
+        assertArrayDequePath("ods-rootisharraystack-index-mapping", "ods-rootisharraystack-block-layout", "ods-rootisharraystack-update");
+        assertArrayDequePath("ods-rootisharraystack-update", "ods-rootisharraystack-index-mapping", "ods-rootisharraystack-grow-shrink");
+        assertArrayDequePath("ods-rootisharraystack-grow-shrink", "ods-rootisharraystack-update", "ods-rootisharraystack-space");
+        assertArrayDequePath("ods-rootisharraystack-space", "ods-rootisharraystack-grow-shrink", "ods-rootisharraystack-performance");
+        assertArrayDequePath("ods-rootisharraystack-performance", "ods-rootisharraystack-space", null);
 
         jdbcTemplate.update(
                 "INSERT INTO user_course (user_id, course_id) VALUES (?, ?)",

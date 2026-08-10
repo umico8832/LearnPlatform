@@ -38,6 +38,8 @@ Web 优先平台。第一步先定义统一课程学习状态，再用 408 数�
   已形成课程内学习路径；理解检查继续由服务端判分，并可安全跳转到当前课程内已审查的前置或下一内容。
 - DualArrayDeque Web Tutor 学习模块：双栈表示、按位更新、三倍失衡再平衡、摊还成本和操作复杂度五个
   已审查内容已形成课程内学习路径；双栈映射和一次失衡重建以受限 Vue 课件回放，理解检查仍由服务端判分。
+- RootishArrayStack Web Tutor 学习模块：递增块布局、下标映射、按位更新、块增缩、空间界和性能六项已审查
+  内容已形成课程内学习路径；递增块布局以受限 Vue 课件回放，理解检查仍由服务端判分。
 - 课程总览会展示已迁入、已审查 Tutor 内容的服务端学习状态：无会话为未开始，存在未正确会话为已尝试，首次正确理解检查为已完成；尚未迁入的课程目录节点不生成伪进度。
 - 按产品、架构、开发、参考、项目状态和展示材料分类的文档体系，以及项目 Skill 与上游 Skill 的明确维护边界。
 
@@ -49,11 +51,11 @@ Web 优先平台。第一步先定义统一课程学习状态，再用 408 数�
 - Checkstyle：0 违规。
 - SpotBugs：0 问题。
 - JaCoCo：行覆盖率 50%、分支覆盖率 35% 门槛通过。
-- 前端 `npm run coverage`：43 个测试文件、240 个测试通过。
-- 前端全源码覆盖率：语句 19.55%、分支 17.03%、函数 17.16%、行 18.40%。
+- 前端 `npm run coverage`：44 个测试文件、241 个测试通过。
+- 前端全源码覆盖率：语句 19.75%、分支 17.15%、函数 17.42%、行 18.55%。
 - 认证数据库迁移 Testcontainers 聚焦测试：1 个测试通过。
-- 个人课程库迁移 Testcontainers 聚焦测试：1 个测试通过，覆盖 V1 至 V46 完整迁移链、AiStu 408
-  顶层目录、二十个已审查 Tutor 内容、受限互动课件、ArrayQueue/ArrayDeque/DualArrayDeque 学习路径和用户课程唯一约束。
+- 个人课程库迁移 Testcontainers 聚焦测试：1 个测试通过，覆盖 V1 至 V52 完整迁移链、AiStu 408
+  顶层目录、二十六个已审查 Tutor 内容、受限互动课件和 ArrayQueue/ArrayDeque/DualArrayDeque/RootishArrayStack 学习路径及用户课程唯一约束。
 - 认证页浏览器检查：桌面与 375px 移动端无横向溢出，登录、分步注册、找回密码和无效重置链接状态可访问。
 - 真实 MySQL Testcontainers 历史全量基线：5 个测试类、55 个用例。
 - `docker compose config --quiet`：通过。
@@ -78,15 +80,14 @@ Web 优先平台。第一步先定义统一课程学习状态，再用 408 数�
 - 当前课程、题库、会话、错题和复习数据尚未形成统一课程学习状态。
 - 课程总览已将已审查、尚未完成理解检查的 Tutor 内容作为可继续目标，并显示已迁入 Tutor 内容的
   服务端检查状态；其他原子知识、课件互动状态和阶段测评尚未接入。
-- AiStu 的 408 顶层目录与二十个已审查原子知识已迁入，其中新增 `ods-dualarraydeque-representation`、
-  `ods-dualarraydeque-end-operations`、`ods-dualarraydeque-balance`、`ods-dualarraydeque-amortized-balance`、
-  `ods-dualarraydeque-performance`；当前 ArrayStack、ArrayQueue、ArrayDeque 及 DualArrayDeque 的指定受限
-  互动课件已完成 Web 展示，其他 AiStu 课件尚未迁入。
+- AiStu 的 408 顶层目录与二十六个已审查原子知识已迁入，其中新增六项 RootishArrayStack 内容；当前
+  ArrayStack、ArrayQueue、ArrayDeque、DualArrayDeque 及 RootishArrayStack 的指定受限互动课件已完成 Web 展示，
+  其他 AiStu 课件尚未迁入。
 
 ## 下一步
 
 1. 确认一张具备试卷、年份、题号和来源的 408 结构化真题；在来源缺失前不以自拟题替代。
-2. 为下一批独立审查、迁入并可访问的 Tutor 后续知识确定内容切片；优先评估相邻 RootishArrayStack 的递增块布局，并继续保持桌面端和全部管理页面不并行改造。
+2. 为下一批独立审查、迁入并可访问的 Tutor 后续知识确定内容切片；优先评估数组式线性表布局权衡，并继续保持桌面端和全部管理页面不并行改造。
 
 ## 暂不优先
 

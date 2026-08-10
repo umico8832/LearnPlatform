@@ -1,0 +1,11 @@
+-- RootishArrayStack 模块首项：递增块布局与总容量公式，不包含下标映射或更新。
+INSERT INTO knowledge_point (name, description, course_id, parent_id, content_key, content_source, content_version, content_review_status, sort_order, deleted)
+SELECT 'RootishArrayStack 的递增块布局', '使用长度依次为 1、2、…、r 的数组块按逻辑顺序存放元素，总容量为 r(r+1)/2。', course.id, parent.id, 'ods-rootisharraystack-block-layout', 'AISTU', 1, 'REVIEWED', 29, 0
+FROM course JOIN knowledge_point parent ON parent.course_id = course.id AND parent.content_key = '408-stacks-queues-arrays' LEFT JOIN knowledge_point existing ON existing.content_key = 'ods-rootisharraystack-block-layout'
+WHERE course.content_key = 'cs408-data-structures' AND existing.id IS NULL;
+INSERT INTO tutor_content (knowledge_point_id, content_key, content_version, review_status, title, lesson_json, check_json)
+SELECT point.id, 'ods-rootisharraystack-block-layout', 1, 'REVIEWED', 'RootishArrayStack 的递增块布局',
+JSON_OBJECT('summary', 'RootishArrayStack 维护 r 个递增数组块：第 b 个块长度为 b+1。逻辑元素按下标顺序跨块存放，全部块的总容量为 1+2+…+r=r(r+1)/2。', 'steps', JSON_ARRAY('第 0 个块容量为 1，第 1 个块容量为 2，依此递增', '元素按逻辑顺序先填满较小块，再进入下一块', '块在内存中无需连续，逻辑序列仍跨块连续', 'r 个块的总容量为 r(r+1)/2'), 'visualization', JSON_OBJECT('kind', 'ROOTISH_ARRAY_STACK_LAYOUT', 'version', 1, 'blocks', JSON_ARRAY(JSON_ARRAY('A'), JSON_ARRAY('B', 'C'), JSON_ARRAY('D', 'E', 'F'))), 'prerequisite', JSON_OBJECT('contentKey', 'ods-arraydeque-representation', 'title', 'ArrayDeque 的循环数组表示', 'description', '先理解逻辑序列可以由不同的内部存储布局表示。'), 'nextStep', JSON_OBJECT('contentKey', 'ods-rootisharraystack-index-mapping', 'title', 'RootishArrayStack 的下标到块映射', 'description', '继续学习如何从逻辑下标定位块与块内位置。')),
+JSON_OBJECT('id', 'rootisharraystack-block-layout-v1', 'prompt', 'RootishArrayStack 有 r 个块时，第 b 个块（从 0 开始）的容量是什么？', 'options', JSON_ARRAY(JSON_OBJECT('id', 'INCREASING_BLOCK', 'text', 'b+1，块容量从 1 逐块递增'), JSON_OBJECT('id', 'UNIFORM_BLOCK', 'text', '所有块都具有相同的固定容量')), 'correctOptionId', 'INCREASING_BLOCK', 'correctExplanation', '正确：第 b 个块的长度就是 b+1，因此前 r 个块的容量和为 r(r+1)/2。', 'incorrectExplanation', '不正确：RootishArrayStack 的空间特性来自块长度递增，而不是固定大小分块。')
+FROM knowledge_point point LEFT JOIN tutor_content existing ON existing.content_key = 'ods-rootisharraystack-block-layout' AND existing.content_version = 1
+WHERE point.content_key = 'ods-rootisharraystack-block-layout' AND existing.id IS NULL;
