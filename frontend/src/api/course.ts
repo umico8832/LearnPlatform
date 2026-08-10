@@ -378,6 +378,12 @@ export function addCourseToLibrary(courseId: number) {
 export function getCourseOverview(courseId: number) {
   return request.get<unknown, ApiResponse<CourseOverviewVO>>(`/my-courses/${courseId}/overview`)
 }
+
+/** 不由客户端预选知识点，按当前统一课程状态取得下一学习目标。 */
+export function startCourseLearning(courseId: number) {
+  return request.post<unknown, ApiResponse<LearningTargetVO>>(`/my-courses/${courseId}/start-learning`)
+}
+
 export function startTutorSession(courseId: number, knowledgePointId: number) {
   return request.post<unknown, ApiResponse<TutorSessionVO>>(`/my-courses/${courseId}/tutor-sessions`, undefined, { params: { knowledgePointId } })
 }

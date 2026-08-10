@@ -1,13 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 
-const { mockGetCourseOverview, mockPush } = vi.hoisted(() => ({
+const { mockGetCourseOverview, mockStartCourseLearning, mockPush } = vi.hoisted(() => ({
   mockGetCourseOverview: vi.fn(),
+  mockStartCourseLearning: vi.fn(),
   mockPush: vi.fn(),
 }))
 
 vi.mock('@/api/course', () => ({
   getCourseOverview: (...args: unknown[]) => mockGetCourseOverview(...args),
+  startCourseLearning: (...args: unknown[]) => mockStartCourseLearning(...args),
 }))
 
 vi.mock('vue-router', () => ({
@@ -64,6 +66,57 @@ describe('CourseOverviewView', () => {
       name: 'TutorSession',
       params: { id: 408 },
       query: { knowledgePointId: '32' },
+    })
+  })
+
+  it('未指定知识点时请求服务端选择下一目标', async () => {
+    mockStartCourseLearning.mockResolvedValue({
+      data: {
+        type: 'TUTOR',
+        title: '继续 AI 教学',
+        reason: '当前首个未完成教学内容',
+        questionId: null,
+        knowledgePointId: 31,
+      },
+    })
+    const wrapper = mount(CourseOverviewView, { global: { stubs } })
+    await flushPromises()
+
+    const button = wrapper.find('button[aria-label="按统一课程状态开始学习"]')
+    expect(button.exists()).toBe(true)
+    await button.trigger('click')
+    await flushPromises()
+
+    expect(mockStartCourseLearning).toHaveBeenCalledWith(408)
+    expect(mockPush).toHaveBeenCalledWith({
+      name: 'TutorSession',
+      params: { id: 408 },
+      query: { knowledgePointId: '31' },
+    })
+  })
+
+  it.each([
+    ['DUE_REVIEW', 'Review', 21],
+    ['WRONG_QUESTION', 'WrongQuestions', 22],
+  ])('将服务端选择的 %s 目标送到对应学习入口', async (type, routeName, questionId) => {
+    mockStartCourseLearning.mockResolvedValue({
+      data: {
+        type,
+        title: '继续课程学习',
+        reason: '来自统一课程状态',
+        questionId,
+        knowledgePointId: null,
+      },
+    })
+    const wrapper = mount(CourseOverviewView, { global: { stubs } })
+    await flushPromises()
+
+    await wrapper.find('button[aria-label="按统一课程状态开始学习"]').trigger('click')
+    await flushPromises()
+
+    expect(mockPush).toHaveBeenCalledWith({
+      name: routeName,
+      query: { courseId: '408', questionId: String(questionId) },
     })
   })
 })

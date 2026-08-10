@@ -7,7 +7,18 @@
         <h2>{{ overview?.courseName || '课程总览' }}</h2>
         <p>这里呈现已发生的作答、复习与错题事实；它们不会被浏览时长或自评替代。</p>
       </div>
-      <el-button :icon="Collection" @click="openCourseContent">查看课程目录</el-button>
+      <div class="hero-actions">
+        <el-button :icon="Collection" @click="openCourseContent">查看课程目录</el-button>
+        <el-button
+          type="primary"
+          :icon="ArrowRight"
+          :loading="starting"
+          aria-label="按统一课程状态开始学习"
+          @click="startLearning"
+        >
+          开始学习
+        </el-button>
+      </div>
     </section>
 
     <section v-loading="loading" class="overview-content" element-loading-text="正在汇总学习记录...">
@@ -110,12 +121,13 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, ArrowRight, Collection, Refresh } from '@element-plus/icons-vue'
-import { getCourseOverview, type CourseOverviewVO, type LearningTargetVO } from '@/api/course'
+import { getCourseOverview, startCourseLearning, type CourseOverviewVO, type LearningTargetVO } from '@/api/course'
 
 const route = useRoute()
 const router = useRouter()
 const overview = ref<CourseOverviewVO | null>(null)
 const loading = ref(false)
+const starting = ref(false)
 const loadFailed = ref(false)
 const courseId = computed(() => Number(route.params.id))
 
@@ -135,6 +147,16 @@ async function fetchOverview() {
 
 function openCourseContent() {
   router.push({ name: 'CourseDetail', params: { id: courseId.value } })
+}
+
+async function startLearning() {
+  starting.value = true
+  try {
+    const response = await startCourseLearning(courseId.value)
+    openTarget(response.data)
+  } finally {
+    starting.value = false
+  }
 }
 
 function openTutor(knowledgePointId: number) {
@@ -166,7 +188,20 @@ function openTarget(target: LearningTargetVO) {
     })
     return
   }
-  router.push({ name: 'QuestionList', query: { courseId: String(courseId.value), target: target.type } })
+  const query = {
+    courseId: String(courseId.value),
+    ...(target.questionId ? { questionId: String(target.questionId) } : {}),
+    ...(target.knowledgePointId ? { knowledgePointId: String(target.knowledgePointId) } : {}),
+  }
+  if (target.type === 'DUE_REVIEW') {
+    router.push({ name: 'Review', query })
+    return
+  }
+  if (target.type === 'WRONG_QUESTION') {
+    router.push({ name: 'WrongQuestions', query })
+    return
+  }
+  router.push({ name: 'QuestionList', query })
 }
 
 function formatDateTime(value: string) {
@@ -181,6 +216,7 @@ onMounted(fetchOverview)
 .course-overview { display: flex; flex-direction: column; gap: 16px; }
 .overview-hero, .overview-content, .target-panel, .activity-panel, .stat-card { background: var(--lp-surface); border: 1px solid var(--lp-border); border-radius: var(--lp-radius); box-shadow: var(--lp-shadow-sm); }
 .overview-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 22px; }
+.hero-actions { display: flex; flex: none; gap: 10px; }
 .overview-hero h2, .panel-header h3, .activity-panel h3, .target-copy h4 { margin: 0; color: var(--lp-text); }
 .overview-hero h2 { margin-top: 4px; font-size: 24px; line-height: 1.25; }
 .overview-hero p, .target-copy p, .activity-panel p { max-width: 720px; margin: 8px 0 0; color: var(--lp-text-secondary); font-size: 14px; line-height: 1.7; }
@@ -210,5 +246,5 @@ onMounted(fetchOverview)
 .target-copy p { margin-top: 3px; }
 .activity-panel .el-button { margin-top: 10px; }
 @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .overview-grid { grid-template-columns: 1fr; } }
-@media (max-width: 767px) { .overview-hero { align-items: stretch; flex-direction: column; } .overview-hero > .el-button { width: 100%; } .stats-grid { grid-template-columns: 1fr; } .target-item { grid-template-columns: auto minmax(0, 1fr); } .target-item .el-button { grid-column: 2; justify-self: start; } .tutor-progress-panel { padding: 16px; } .tutor-progress-item { align-items: flex-start; flex-direction: column; } .tutor-progress-item .el-button { width: 100%; } }
+@media (max-width: 767px) { .overview-hero { align-items: stretch; flex-direction: column; } .hero-actions { align-items: stretch; flex-direction: column; } .hero-actions .el-button { width: 100%; margin-left: 0; } .stats-grid { grid-template-columns: 1fr; } .target-item { grid-template-columns: auto minmax(0, 1fr); } .target-item .el-button { grid-column: 2; justify-self: start; } .tutor-progress-panel { padding: 16px; } .tutor-progress-item { align-items: flex-start; flex-direction: column; } .tutor-progress-item .el-button { width: 100%; } }
 </style>

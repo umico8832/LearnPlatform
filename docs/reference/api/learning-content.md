@@ -11,6 +11,7 @@
 | `POST /api/my-courses/{courseId}` | 将已开放课程幂等加入当前用户的个人课程库 |
 | `GET /api/my-courses` | 查询当前用户的个人课程库 |
 | `GET /api/my-courses/{courseId}/overview` | 查询已加入课程的学习概况与下一步候选目标 |
+| `POST /api/my-courses/{courseId}/start-learning` | 不指定知识点，按当前统一课程状态选择下一学习目标 |
 | `POST /api/my-courses/{courseId}/tutor-sessions` | 以已审查的课程知识点开始 Tutor 会话（必填查询参数 `knowledgePointId`） |
 | `POST /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/check` | 提交该会话的理解检查 `{ "optionId": "..." }` |
 
@@ -26,6 +27,11 @@
 到期复习、未掌握错题和课程默认目录。Tutor 目标携带当前课程内的
 `knowledgePointId`，客户端只能跳转到既有 Tutor 页面；一次正确理解检查后，该内容不再作为
 未完成教学推荐。
+
+`start-learning` 不接收 `knowledgePointId`、`questionId` 或客户端排序结果，而是在请求发生时复用课程总览的
+统一排序并返回首个目标。响应目标类型为 `TUTOR`、`DUE_REVIEW`、`WRONG_QUESTION` 或
+`COURSE_SEQUENCE`，只携带对应的可空 `knowledgePointId` 或 `questionId`。选择目标本身不生成掌握证据；
+实际 Tutor 理解检查或题目判分发生后才写入课程学习事实。
 
 Tutor 仅可打开已加入课程、属于该课程且审查状态为 `REVIEWED` 的内容；响应不会返回正确选项。
 理解检查由服务端首次判分并写入可追加课程学习事件，重复提交返回既有结果。

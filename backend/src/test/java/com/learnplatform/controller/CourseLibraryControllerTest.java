@@ -87,6 +87,22 @@ class CourseLibraryControllerTest {
         verify(courseOverviewService).getOverview(7L, 10L);
     }
 
+    @Test
+    void startLearningAcceptsNoClientSelectedKnowledgePoint() throws Exception {
+        CourseOverviewVO.LearningTargetVO target = new CourseOverviewVO.LearningTargetVO();
+        target.setType("TUTOR");
+        target.setKnowledgePointId(41L);
+        target.setTitle("继续 AI 教学");
+        when(courseOverviewService.selectStartTarget(7L, 10L)).thenReturn(target);
+
+        mockMvc.perform(post("/api/my-courses/10/start-learning").with(mockUser(7L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.type").value("TUTOR"))
+                .andExpect(jsonPath("$.data.knowledgePointId").value(41));
+
+        verify(courseOverviewService).selectStartTarget(7L, 10L);
+    }
+
     private RequestPostProcessor mockUser(Long userId) {
         return request -> {
             CustomUserDetails details = new CustomUserDetails(userId, "testuser", "USER");

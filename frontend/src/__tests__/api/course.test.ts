@@ -17,6 +17,7 @@ import {
   getMyCourses,
   addCourseToLibrary,
   getCourseOverview,
+  startCourseLearning,
   startTutorSession,
   submitTutorCheck,
   isArrayQueueDequeueCourseware,
@@ -150,6 +151,14 @@ describe('Course API', () => {
       await getCourseOverview(408)
 
       expect(mockedRequest.get).toHaveBeenCalledWith('/my-courses/408/overview')
+    })
+
+    it('应在不指定知识点时请求服务端选择下一学习目标', async () => {
+      mockedRequest.post.mockResolvedValue({ code: 0, data: { type: 'TUTOR' }, message: 'success' })
+
+      await startCourseLearning(408)
+
+      expect(mockedRequest.post).toHaveBeenCalledWith('/my-courses/408/start-learning')
     })
 
     it('应以课程和知识点创建 Tutor 会话并提交服务端检查', async () => {

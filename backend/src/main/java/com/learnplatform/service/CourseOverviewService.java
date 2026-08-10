@@ -108,6 +108,15 @@ public class CourseOverviewService {
         return overview;
     }
 
+    /** 复用课程总览的统一排序，为未显式指定目标的“开始学习”选择首个可解释目标。 */
+    public CourseOverviewVO.LearningTargetVO selectStartTarget(Long userId, Long courseId) {
+        List<CourseOverviewVO.LearningTargetVO> targets = getOverview(userId, courseId).getRecommendedTargets();
+        if (targets == null || targets.isEmpty()) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "课程暂无可学习内容");
+        }
+        return targets.get(0);
+    }
+
     private void requireInLibrary(Long userId, Long courseId) {
         long count = userCourseMapper.selectCount(new LambdaQueryWrapper<UserCourse>()
                 .eq(UserCourse::getUserId, userId)

@@ -90,6 +90,23 @@ class CourseOverviewServiceTest {
     }
 
     @Test
+    void selectsFirstUnifiedTargetWhenClientDoesNotSpecifyKnowledgePoint() {
+        when(userCourseMapper.selectCount(any())).thenReturn(1L);
+        when(courseMapper.selectById(10L)).thenReturn(course());
+        when(eventMapper.selectList(any())).thenReturn(List.of());
+        when(questionMapper.selectList(any())).thenReturn(List.of());
+        when(knowledgePointMapper.selectOne(any())).thenReturn(rootKnowledgePoint());
+        when(knowledgePointMapper.selectList(any())).thenReturn(List.of(tutorKnowledgePoint(41L)));
+        when(tutorContentMapper.selectList(any())).thenReturn(List.of(tutorContent(41L, 81L)));
+        when(tutorSessionMapper.selectList(any())).thenReturn(List.of());
+
+        CourseOverviewVO.LearningTargetVO target = service.selectStartTarget(7L, 10L);
+
+        assertEquals("TUTOR", target.getType());
+        assertEquals(41L, target.getKnowledgePointId());
+    }
+
+    @Test
     void rejectsOverviewForCourseOutsideUsersLibrary() {
         when(userCourseMapper.selectCount(any())).thenReturn(0L);
 

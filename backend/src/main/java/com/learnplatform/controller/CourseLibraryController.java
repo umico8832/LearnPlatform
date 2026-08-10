@@ -53,4 +53,12 @@ public class CourseLibraryController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return R.ok(courseOverviewService.getOverview(userDetails.getUserId(), courseId));
     }
+
+    @Operation(summary = "按统一课程状态选择下一学习目标")
+    @PostMapping("/{courseId}/start-learning")
+    public R<CourseOverviewVO.LearningTargetVO> startLearning(
+            @PathVariable Long courseId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(courseOverviewService.selectStartTarget(userDetails.getUserId(), courseId));
+    }
 }
