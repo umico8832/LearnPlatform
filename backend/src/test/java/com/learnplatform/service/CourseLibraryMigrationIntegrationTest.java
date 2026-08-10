@@ -42,7 +42,7 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 "ods-arraystack-insertion");
         assertEquals(1, atomicKnowledgeCount);
         Integer reviewedTutorCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM knowledge_point WHERE course_id = ? AND content_key IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "SELECT COUNT(*) FROM knowledge_point WHERE course_id = ? AND content_key IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                         + "AND content_source = 'AISTU' AND content_version = 1 AND content_review_status = 'REVIEWED'",
                 Integer.class,
                 courseId,
@@ -71,8 +71,14 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 "ods-rootisharraystack-update",
                 "ods-rootisharraystack-grow-shrink",
                 "ods-rootisharraystack-space",
-                "ods-rootisharraystack-performance");
-        assertEquals(26, reviewedTutorCount);
+                "ods-rootisharraystack-performance",
+                "ods-array-layout-tradeoffs",
+                "cs408-linear-list-definition-operations",
+                "cs408-sequential-list-storage",
+                "cs408-sequential-list-insert-delete",
+                "cs408-singly-linked-list",
+                "cs408-linked-list-insert-delete");
+        assertEquals(32, reviewedTutorCount);
         String coursewareKind = jdbcTemplate.queryForObject(
                 "SELECT JSON_UNQUOTE(JSON_EXTRACT(lesson_json, '$.visualization.kind')) "
                         + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
@@ -139,6 +145,12 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 String.class,
                 "ods-rootisharraystack-block-layout");
         assertEquals("ROOTISH_ARRAY_STACK_LAYOUT", rootishLayoutCoursewareKind);
+        String sequentialStorageCoursewareKind = jdbcTemplate.queryForObject(
+                "SELECT JSON_UNQUOTE(JSON_EXTRACT(lesson_json, '$.visualization.kind')) "
+                        + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
+                String.class,
+                "cs408-sequential-list-storage");
+        assertEquals("SEQUENTIAL_LIST_STORAGE", sequentialStorageCoursewareKind);
         String removalCorrectOption = jdbcTemplate.queryForObject(
                 "SELECT JSON_UNQUOTE(JSON_EXTRACT(check_json, '$.correctOptionId')) "
                         + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
@@ -221,6 +233,12 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
         assertCorrectOption("ods-rootisharraystack-grow-shrink", "NO_COPY");
         assertCorrectOption("ods-rootisharraystack-space", "BLOCK_COUNT");
         assertCorrectOption("ods-rootisharraystack-performance", "SQRT_SPACE");
+        assertCorrectOption("ods-array-layout-tradeoffs", "SPACE_TRADEOFF");
+        assertCorrectOption("cs408-linear-list-definition-operations", "UNIQUE_NEIGHBORS");
+        assertCorrectOption("cs408-sequential-list-storage", "OFFSET_EIGHT");
+        assertCorrectOption("cs408-sequential-list-insert-delete", "AVOID_OVERWRITE");
+        assertCorrectOption("cs408-singly-linked-list", "TRAVERSE_NEXT");
+        assertCorrectOption("cs408-linked-list-insert-delete", "CONNECT_SUCCESSOR");
         assertArrayQueuePath("ods-arrayqueue-representation", null, "ods-arrayqueue-enqueue");
         assertArrayQueuePath("ods-arrayqueue-enqueue", "ods-arrayqueue-representation", "ods-arrayqueue-dequeue");
         assertArrayQueuePath("ods-arrayqueue-dequeue", "ods-arrayqueue-representation", "ods-arrayqueue-resize");

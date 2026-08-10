@@ -127,8 +127,16 @@ export interface RootishArrayStackLayoutCourseware {
   version: 1
   blocks: string[][]
 }
+export interface SequentialListStorageCourseware {
+  kind: 'SEQUENTIAL_LIST_STORAGE'
+  version: 1
+  baseAddress: number
+  elementWidth: number
+  elements: string[]
+  accessIndex: number
+}
 export interface TutorLearningPathItem { contentKey: string; title: string; description: string }
-export interface TutorSessionVO { sessionKey: string; title: string; lesson: { summary: string; steps: string[]; visualizationId: string; visualization?: ArrayStackInsertionCourseware | ArrayStackResizeCourseware | ArrayQueueRepresentationCourseware | ArrayQueueEnqueueCourseware | ArrayQueueDequeueCourseware | ArrayQueueResizeCourseware | ArrayDequeRepresentationCourseware | ArrayDequeFrontShiftInsertCourseware | DualArrayDequeRepresentationCourseware | DualArrayDequeBalanceCourseware | RootishArrayStackLayoutCourseware; prerequisite?: TutorLearningPathItem; nextStep?: TutorLearningPathItem }; check: { id: string; prompt: string; options: { id: string; text: string }[] } }
+export interface TutorSessionVO { sessionKey: string; title: string; lesson: { summary: string; steps: string[]; visualizationId: string; visualization?: ArrayStackInsertionCourseware | ArrayStackResizeCourseware | ArrayQueueRepresentationCourseware | ArrayQueueEnqueueCourseware | ArrayQueueDequeueCourseware | ArrayQueueResizeCourseware | ArrayDequeRepresentationCourseware | ArrayDequeFrontShiftInsertCourseware | DualArrayDequeRepresentationCourseware | DualArrayDequeBalanceCourseware | RootishArrayStackLayoutCourseware | SequentialListStorageCourseware; prerequisite?: TutorLearningPathItem; nextStep?: TutorLearningPathItem }; check: { id: string; prompt: string; options: { id: string; text: string }[] } }
 export interface TutorCheckResultVO { correct: boolean; explanation: string; guidanceType: 'PREREQUISITE' | 'NEXT_TARGET' | null; guidanceTitle: string | null; guidanceDescription: string | null; guidanceKnowledgePointId: number | null }
 
 /** 仅接受当前已审查、无可执行字段的 ArrayStack 课件参数。 */
@@ -278,6 +286,20 @@ export function isRootishArrayStackLayoutCourseware(value: unknown): value is Ro
     && Array.isArray(candidate.blocks) && candidate.blocks.length > 0 && candidate.blocks.length <= 5
     && candidate.blocks.every((block, index) => Array.isArray(block) && block.length === index + 1
       && block.every((item) => typeof item === 'string' && item.length > 0 && item.length <= 32))
+}
+
+/** 仅接受已审查、固定地址参数的顺序表连续存储课件。 */
+export function isSequentialListStorageCourseware(value: unknown): value is SequentialListStorageCourseware {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Record<string, unknown>
+  return Object.keys(candidate).every((key) => ['kind', 'version', 'baseAddress', 'elementWidth', 'elements', 'accessIndex'].includes(key))
+    && candidate.kind === 'SEQUENTIAL_LIST_STORAGE'
+    && candidate.version === 1
+    && Number.isInteger(candidate.baseAddress) && (candidate.baseAddress as number) >= 0 && (candidate.baseAddress as number) <= 1_000_000
+    && Number.isInteger(candidate.elementWidth) && (candidate.elementWidth as number) >= 1 && (candidate.elementWidth as number) <= 64
+    && Array.isArray(candidate.elements) && candidate.elements.length > 0 && candidate.elements.length <= 8
+    && candidate.elements.every((item) => typeof item === 'string' && item.length > 0 && item.length <= 32)
+    && Number.isInteger(candidate.accessIndex) && (candidate.accessIndex as number) >= 0 && (candidate.accessIndex as number) < candidate.elements.length
 }
 
 /** 创建/更新课程请求 */

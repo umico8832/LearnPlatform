@@ -35,6 +35,7 @@
       <TutorDualArrayDequeRepresentation v-if="dualDequeCourseware" :visualization="dualDequeCourseware" />
       <TutorDualArrayDequeBalance v-if="dualDequeBalanceCourseware" :visualization="dualDequeBalanceCourseware" />
       <TutorRootishArrayStackLayout v-if="rootishLayoutCourseware" :visualization="rootishLayoutCourseware" />
+      <TutorSequentialListStorage v-if="sequentialStorageCourseware" :visualization="sequentialStorageCourseware" />
       <section class="card check">
         <h3>理解检查</h3>
         <p>{{ session.check.prompt }}</p>
@@ -86,6 +87,7 @@ import TutorArrayDequeFrontShiftInsert from '@/components/TutorArrayDequeFrontSh
 import TutorDualArrayDequeRepresentation from '@/components/TutorDualArrayDequeRepresentation.vue'
 import TutorDualArrayDequeBalance from '@/components/TutorDualArrayDequeBalance.vue'
 import TutorRootishArrayStackLayout from '@/components/TutorRootishArrayStackLayout.vue'
+import TutorSequentialListStorage from '@/components/TutorSequentialListStorage.vue'
 import {
   isArrayStackInsertionCourseware,
   isArrayStackResizeCourseware,
@@ -98,6 +100,7 @@ import {
   isDualArrayDequeRepresentationCourseware,
   isDualArrayDequeBalanceCourseware,
   isRootishArrayStackLayoutCourseware,
+  isSequentialListStorageCourseware,
   startTutorSession,
   submitTutorCheck,
   type TutorCheckResultVO,
@@ -165,6 +168,11 @@ const dualDequeBalanceCourseware = computed(() =>
 )
 const rootishLayoutCourseware = computed(() =>
   session.value && isRootishArrayStackLayoutCourseware(session.value.lesson.visualization)
+    ? session.value.lesson.visualization
+    : null,
+)
+const sequentialStorageCourseware = computed(() =>
+  session.value && isSequentialListStorageCourseware(session.value.lesson.visualization)
     ? session.value.lesson.visualization
     : null,
 )
