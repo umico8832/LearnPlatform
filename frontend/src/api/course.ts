@@ -135,8 +135,13 @@ export interface SequentialListStorageCourseware {
   elements: string[]
   accessIndex: number
 }
+export interface LinkedListReversalCourseware {
+  kind: 'LINKED_LIST_REVERSAL'
+  version: 1
+  elements: string[]
+}
 export interface TutorLearningPathItem { contentKey: string; title: string; description: string }
-export interface TutorSessionVO { sessionKey: string; title: string; lesson: { summary: string; steps: string[]; visualizationId: string; visualization?: ArrayStackInsertionCourseware | ArrayStackResizeCourseware | ArrayQueueRepresentationCourseware | ArrayQueueEnqueueCourseware | ArrayQueueDequeueCourseware | ArrayQueueResizeCourseware | ArrayDequeRepresentationCourseware | ArrayDequeFrontShiftInsertCourseware | DualArrayDequeRepresentationCourseware | DualArrayDequeBalanceCourseware | RootishArrayStackLayoutCourseware | SequentialListStorageCourseware; prerequisite?: TutorLearningPathItem; nextStep?: TutorLearningPathItem }; check: { id: string; prompt: string; options: { id: string; text: string }[] } }
+export interface TutorSessionVO { sessionKey: string; title: string; lesson: { summary: string; steps: string[]; visualizationId: string; visualization?: ArrayStackInsertionCourseware | ArrayStackResizeCourseware | ArrayQueueRepresentationCourseware | ArrayQueueEnqueueCourseware | ArrayQueueDequeueCourseware | ArrayQueueResizeCourseware | ArrayDequeRepresentationCourseware | ArrayDequeFrontShiftInsertCourseware | DualArrayDequeRepresentationCourseware | DualArrayDequeBalanceCourseware | RootishArrayStackLayoutCourseware | SequentialListStorageCourseware | LinkedListReversalCourseware; prerequisite?: TutorLearningPathItem; nextStep?: TutorLearningPathItem }; check: { id: string; prompt: string; options: { id: string; text: string }[] } }
 export interface TutorCheckResultVO { correct: boolean; explanation: string; guidanceType: 'PREREQUISITE' | 'NEXT_TARGET' | null; guidanceTitle: string | null; guidanceDescription: string | null; guidanceKnowledgePointId: number | null }
 
 /** 仅接受当前已审查、无可执行字段的 ArrayStack 课件参数。 */
@@ -300,6 +305,17 @@ export function isSequentialListStorageCourseware(value: unknown): value is Sequ
     && Array.isArray(candidate.elements) && candidate.elements.length > 0 && candidate.elements.length <= 8
     && candidate.elements.every((item) => typeof item === 'string' && item.length > 0 && item.length <= 32)
     && Number.isInteger(candidate.accessIndex) && (candidate.accessIndex as number) >= 0 && (candidate.accessIndex as number) < candidate.elements.length
+}
+
+/** 仅接受已审查、无可执行字段的单链表逆置课件参数。 */
+export function isLinkedListReversalCourseware(value: unknown): value is LinkedListReversalCourseware {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Record<string, unknown>
+  return Object.keys(candidate).every((key) => ['kind', 'version', 'elements'].includes(key))
+    && candidate.kind === 'LINKED_LIST_REVERSAL'
+    && candidate.version === 1
+    && Array.isArray(candidate.elements) && candidate.elements.length >= 2 && candidate.elements.length <= 6
+    && candidate.elements.every((item) => typeof item === 'string' && item.length > 0 && item.length <= 32)
 }
 
 /** 创建/更新课程请求 */

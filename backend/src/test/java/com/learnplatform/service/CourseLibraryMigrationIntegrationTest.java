@@ -42,7 +42,7 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 "ods-arraystack-insertion");
         assertEquals(1, atomicKnowledgeCount);
         Integer reviewedTutorCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM knowledge_point WHERE course_id = ? AND content_key IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "SELECT COUNT(*) FROM knowledge_point WHERE course_id = ? AND content_key IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                         + "AND content_source = 'AISTU' AND content_version = 1 AND content_review_status = 'REVIEWED'",
                 Integer.class,
                 courseId,
@@ -77,8 +77,13 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 "cs408-sequential-list-storage",
                 "cs408-sequential-list-insert-delete",
                 "cs408-singly-linked-list",
-                "cs408-linked-list-insert-delete");
-        assertEquals(32, reviewedTutorCount);
+                "cs408-linked-list-insert-delete",
+                "cs408-doubly-linked-list",
+                "cs408-circular-linked-list",
+                "cs408-linked-list-reversal",
+                "cs408-linked-list-merge",
+                "cs408-sequential-vs-linked");
+        assertEquals(37, reviewedTutorCount);
         String coursewareKind = jdbcTemplate.queryForObject(
                 "SELECT JSON_UNQUOTE(JSON_EXTRACT(lesson_json, '$.visualization.kind')) "
                         + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
@@ -151,6 +156,12 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 String.class,
                 "cs408-sequential-list-storage");
         assertEquals("SEQUENTIAL_LIST_STORAGE", sequentialStorageCoursewareKind);
+        String linkedListReversalCoursewareKind = jdbcTemplate.queryForObject(
+                "SELECT JSON_UNQUOTE(JSON_EXTRACT(lesson_json, '$.visualization.kind')) "
+                        + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
+                String.class,
+                "cs408-linked-list-reversal");
+        assertEquals("LINKED_LIST_REVERSAL", linkedListReversalCoursewareKind);
         String removalCorrectOption = jdbcTemplate.queryForObject(
                 "SELECT JSON_UNQUOTE(JSON_EXTRACT(check_json, '$.correctOptionId')) "
                         + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
@@ -239,6 +250,11 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
         assertCorrectOption("cs408-sequential-list-insert-delete", "AVOID_OVERWRITE");
         assertCorrectOption("cs408-singly-linked-list", "TRAVERSE_NEXT");
         assertCorrectOption("cs408-linked-list-insert-delete", "CONNECT_SUCCESSOR");
+        assertCorrectOption("cs408-doubly-linked-list", "PAIR_INVARIANTS");
+        assertCorrectOption("cs408-circular-linked-list", "RETURN_TO_START");
+        assertCorrectOption("cs408-linked-list-reversal", "SAVE_NEXT");
+        assertCorrectOption("cs408-linked-list-merge", "LEFT_ON_EQUAL");
+        assertCorrectOption("cs408-sequential-vs-linked", "OPERATION_PROFILE");
         assertArrayQueuePath("ods-arrayqueue-representation", null, "ods-arrayqueue-enqueue");
         assertArrayQueuePath("ods-arrayqueue-enqueue", "ods-arrayqueue-representation", "ods-arrayqueue-dequeue");
         assertArrayQueuePath("ods-arrayqueue-dequeue", "ods-arrayqueue-representation", "ods-arrayqueue-resize");
@@ -258,6 +274,11 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
         assertArrayDequePath("ods-rootisharraystack-grow-shrink", "ods-rootisharraystack-update", "ods-rootisharraystack-space");
         assertArrayDequePath("ods-rootisharraystack-space", "ods-rootisharraystack-grow-shrink", "ods-rootisharraystack-performance");
         assertArrayDequePath("ods-rootisharraystack-performance", "ods-rootisharraystack-space", null);
+        assertArrayDequePath("cs408-doubly-linked-list", "cs408-linked-list-insert-delete", "cs408-circular-linked-list");
+        assertArrayDequePath("cs408-circular-linked-list", "cs408-singly-linked-list", "cs408-linked-list-reversal");
+        assertArrayDequePath("cs408-linked-list-reversal", "cs408-singly-linked-list", "cs408-linked-list-merge");
+        assertArrayDequePath("cs408-linked-list-merge", "cs408-singly-linked-list", "cs408-sequential-vs-linked");
+        assertArrayDequePath("cs408-sequential-vs-linked", "cs408-sequential-list-storage", null);
 
         jdbcTemplate.update(
                 "INSERT INTO user_course (user_id, course_id) VALUES (?, ?)",

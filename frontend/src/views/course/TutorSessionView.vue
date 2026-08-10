@@ -36,6 +36,7 @@
       <TutorDualArrayDequeBalance v-if="dualDequeBalanceCourseware" :visualization="dualDequeBalanceCourseware" />
       <TutorRootishArrayStackLayout v-if="rootishLayoutCourseware" :visualization="rootishLayoutCourseware" />
       <TutorSequentialListStorage v-if="sequentialStorageCourseware" :visualization="sequentialStorageCourseware" />
+      <TutorLinkedListReversal v-if="linkedListReversalCourseware" :visualization="linkedListReversalCourseware" />
       <section class="card check">
         <h3>理解检查</h3>
         <p>{{ session.check.prompt }}</p>
@@ -88,6 +89,7 @@ import TutorDualArrayDequeRepresentation from '@/components/TutorDualArrayDequeR
 import TutorDualArrayDequeBalance from '@/components/TutorDualArrayDequeBalance.vue'
 import TutorRootishArrayStackLayout from '@/components/TutorRootishArrayStackLayout.vue'
 import TutorSequentialListStorage from '@/components/TutorSequentialListStorage.vue'
+import TutorLinkedListReversal from '@/components/TutorLinkedListReversal.vue'
 import {
   isArrayStackInsertionCourseware,
   isArrayStackResizeCourseware,
@@ -101,6 +103,7 @@ import {
   isDualArrayDequeBalanceCourseware,
   isRootishArrayStackLayoutCourseware,
   isSequentialListStorageCourseware,
+  isLinkedListReversalCourseware,
   startTutorSession,
   submitTutorCheck,
   type TutorCheckResultVO,
@@ -173,6 +176,11 @@ const rootishLayoutCourseware = computed(() =>
 )
 const sequentialStorageCourseware = computed(() =>
   session.value && isSequentialListStorageCourseware(session.value.lesson.visualization)
+    ? session.value.lesson.visualization
+    : null,
+)
+const linkedListReversalCourseware = computed(() =>
+  session.value && isLinkedListReversalCourseware(session.value.lesson.visualization)
     ? session.value.lesson.visualization
     : null,
 )
