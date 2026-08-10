@@ -42,7 +42,7 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 "ods-arraystack-insertion");
         assertEquals(1, atomicKnowledgeCount);
         Integer reviewedTutorCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM knowledge_point WHERE course_id = ? AND content_key IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "SELECT COUNT(*) FROM knowledge_point WHERE course_id = ? AND content_key IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                         + "AND content_source = 'AISTU' AND content_version = 1 AND content_review_status = 'REVIEWED'",
                 Integer.class,
                 courseId,
@@ -86,8 +86,11 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 "cs408-stack-lifo",
                 "cs408-sequential-stack",
                 "cs408-linked-stack",
-                "cs408-stack-pop-sequences");
-        assertEquals(41, reviewedTutorCount);
+                "cs408-stack-pop-sequences",
+                "cs408-parentheses-matching",
+                "cs408-expression-evaluation",
+                "cs408-recursion-call-stack");
+        assertEquals(44, reviewedTutorCount);
         String coursewareKind = jdbcTemplate.queryForObject(
                 "SELECT JSON_UNQUOTE(JSON_EXTRACT(lesson_json, '$.visualization.kind')) "
                         + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
@@ -166,6 +169,12 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 String.class,
                 "cs408-linked-list-reversal");
         assertEquals("LINKED_LIST_REVERSAL", linkedListReversalCoursewareKind);
+        String factorialCallStackCoursewareKind = jdbcTemplate.queryForObject(
+                "SELECT JSON_UNQUOTE(JSON_EXTRACT(lesson_json, '$.visualization.kind')) "
+                        + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
+                String.class,
+                "cs408-recursion-call-stack");
+        assertEquals("FACTORIAL_CALL_STACK", factorialCallStackCoursewareKind);
         String removalCorrectOption = jdbcTemplate.queryForObject(
                 "SELECT JSON_UNQUOTE(JSON_EXTRACT(check_json, '$.correctOptionId')) "
                         + "FROM tutor_content WHERE content_key = ? AND content_version = 1",
@@ -263,6 +272,9 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
         assertCorrectOption("cs408-sequential-stack", "KEEP_CONVENTION");
         assertCorrectOption("cs408-linked-stack", "HEAD_PUSH");
         assertCorrectOption("cs408-stack-pop-sequences", "SIMULATE_TOP");
+        assertCorrectOption("cs408-parentheses-matching", "STACK_EMPTY_END");
+        assertCorrectOption("cs408-expression-evaluation", "RIGHT_THEN_LEFT");
+        assertCorrectOption("cs408-recursion-call-stack", "INNER_RETURNS_FIRST");
         assertArrayQueuePath("ods-arrayqueue-representation", null, "ods-arrayqueue-enqueue");
         assertArrayQueuePath("ods-arrayqueue-enqueue", "ods-arrayqueue-representation", "ods-arrayqueue-dequeue");
         assertArrayQueuePath("ods-arrayqueue-dequeue", "ods-arrayqueue-representation", "ods-arrayqueue-resize");
@@ -291,6 +303,9 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
         assertArrayDequePath("cs408-sequential-stack", "cs408-stack-lifo", "cs408-linked-stack");
         assertArrayDequePath("cs408-linked-stack", "cs408-stack-lifo", "cs408-stack-pop-sequences");
         assertArrayDequePath("cs408-stack-pop-sequences", "cs408-stack-lifo", null);
+        assertArrayDequePath("cs408-parentheses-matching", "cs408-stack-lifo", "cs408-expression-evaluation");
+        assertArrayDequePath("cs408-expression-evaluation", "cs408-stack-lifo", "cs408-recursion-call-stack");
+        assertArrayDequePath("cs408-recursion-call-stack", "cs408-stack-lifo", null);
 
         jdbcTemplate.update(
                 "INSERT INTO user_course (user_id, course_id) VALUES (?, ?)",

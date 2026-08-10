@@ -23,6 +23,7 @@ vi.mock('@/api/course', () => ({
   isRootishArrayStackLayoutCourseware: () => false,
   isSequentialListStorageCourseware: () => false,
   isLinkedListReversalCourseware: () => false,
+  isFactorialCallStackCourseware: () => false,
 }))
 
 vi.mock('vue-router', () => ({
@@ -60,6 +61,7 @@ const stubs = {
   TutorRootishArrayStackLayout: true,
   TutorSequentialListStorage: true,
   TutorLinkedListReversal: true,
+  TutorFactorialCallStack: true,
 }
 
 function findButton(wrapper: ReturnType<typeof mount>, text: string) {

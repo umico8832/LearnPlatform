@@ -140,8 +140,13 @@ export interface LinkedListReversalCourseware {
   version: 1
   elements: string[]
 }
+export interface FactorialCallStackCourseware {
+  kind: 'FACTORIAL_CALL_STACK'
+  version: 1
+  startValue: number
+}
 export interface TutorLearningPathItem { contentKey: string; title: string; description: string }
-export interface TutorSessionVO { sessionKey: string; title: string; lesson: { summary: string; steps: string[]; visualizationId: string; visualization?: ArrayStackInsertionCourseware | ArrayStackResizeCourseware | ArrayQueueRepresentationCourseware | ArrayQueueEnqueueCourseware | ArrayQueueDequeueCourseware | ArrayQueueResizeCourseware | ArrayDequeRepresentationCourseware | ArrayDequeFrontShiftInsertCourseware | DualArrayDequeRepresentationCourseware | DualArrayDequeBalanceCourseware | RootishArrayStackLayoutCourseware | SequentialListStorageCourseware | LinkedListReversalCourseware; prerequisite?: TutorLearningPathItem; nextStep?: TutorLearningPathItem }; check: { id: string; prompt: string; options: { id: string; text: string }[] } }
+export interface TutorSessionVO { sessionKey: string; title: string; lesson: { summary: string; steps: string[]; visualizationId: string; visualization?: ArrayStackInsertionCourseware | ArrayStackResizeCourseware | ArrayQueueRepresentationCourseware | ArrayQueueEnqueueCourseware | ArrayQueueDequeueCourseware | ArrayQueueResizeCourseware | ArrayDequeRepresentationCourseware | ArrayDequeFrontShiftInsertCourseware | DualArrayDequeRepresentationCourseware | DualArrayDequeBalanceCourseware | RootishArrayStackLayoutCourseware | SequentialListStorageCourseware | LinkedListReversalCourseware | FactorialCallStackCourseware; prerequisite?: TutorLearningPathItem; nextStep?: TutorLearningPathItem }; check: { id: string; prompt: string; options: { id: string; text: string }[] } }
 export interface TutorCheckResultVO { correct: boolean; explanation: string; guidanceType: 'PREREQUISITE' | 'NEXT_TARGET' | null; guidanceTitle: string | null; guidanceDescription: string | null; guidanceKnowledgePointId: number | null }
 
 /** 仅接受当前已审查、无可执行字段的 ArrayStack 课件参数。 */
@@ -316,6 +321,16 @@ export function isLinkedListReversalCourseware(value: unknown): value is LinkedL
     && candidate.version === 1
     && Array.isArray(candidate.elements) && candidate.elements.length >= 2 && candidate.elements.length <= 6
     && candidate.elements.every((item) => typeof item === 'string' && item.length > 0 && item.length <= 32)
+}
+
+/** 仅接受已审查、小规模固定阶乘参数的调用栈课件。 */
+export function isFactorialCallStackCourseware(value: unknown): value is FactorialCallStackCourseware {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Record<string, unknown>
+  return Object.keys(candidate).every((key) => ['kind', 'version', 'startValue'].includes(key))
+    && candidate.kind === 'FACTORIAL_CALL_STACK'
+    && candidate.version === 1
+    && Number.isInteger(candidate.startValue) && (candidate.startValue as number) >= 2 && (candidate.startValue as number) <= 6
 }
 
 /** 创建/更新课程请求 */
