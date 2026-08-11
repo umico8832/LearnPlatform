@@ -43,6 +43,13 @@ sequenceDiagram
 
 开始考试创建 `exam_record`。提交时锁定记录，校验归属、状态、题目集合和时限，再写入 `exam_answer` 并固化总分。详细事务见[练习与考试数据](../reference/database/assessment-domain.md)。
 
+## 试卷学习
+
+已加入课程的用户可以为该课程下的已发布试卷创建或恢复一个进行中 `exam_learning_session`。每次逐题
+提交都会在锁定会话后校验用户、试卷与题目边界，由服务端判分并追加 `exam_learning_answer`；判分结果
+继续投影到错题、复习计划和课程学习事件。全部题目至少尝试一次后，会话才能完成并转为只读逐题复盘。
+这条链路不复用 `exam_record`，因此不会削弱考试模式的时限、完整提交和提前隐藏答案规则。
+
 ## 投稿与正式入库
 
 ```mermaid

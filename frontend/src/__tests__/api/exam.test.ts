@@ -20,6 +20,10 @@ import {
   getPublishedPapers,
   getPaperDetail,
   startExam,
+  startExamLearningSession,
+  getExamLearningSession,
+  submitExamLearningAnswer,
+  completeExamLearningSession,
   submitExam,
   getExamResult,
   getMyExamRecords,
@@ -151,6 +155,27 @@ describe('Exam API', () => {
 
         expect(mockedRequest.post).toHaveBeenCalledWith('/exam/start/1')
         expect(result).toEqual({ code: 0, data: mockRecord, message: 'success' })
+      })
+    })
+
+    describe('试卷学习模式', () => {
+      it('应创建、读取、逐题提交并完成学习会话', async () => {
+        mockedRequest.post.mockResolvedValue({ code: 0, data: { id: 30 }, message: 'success' })
+        mockedRequest.get.mockResolvedValue({ code: 0, data: { id: 30 }, message: 'success' })
+
+        await startExamLearningSession(2)
+        await getExamLearningSession(30)
+        await submitExamLearningAnswer(30, { questionId: 10, userAnswer: 'A', answerTime: 12 })
+        await completeExamLearningSession(30)
+
+        expect(mockedRequest.post).toHaveBeenNthCalledWith(1, '/exam/papers/2/learning-sessions')
+        expect(mockedRequest.get).toHaveBeenCalledWith('/exam/learning-sessions/30')
+        expect(mockedRequest.post).toHaveBeenNthCalledWith(2, '/exam/learning-sessions/30/answers', {
+          questionId: 10,
+          userAnswer: 'A',
+          answerTime: 12,
+        })
+        expect(mockedRequest.post).toHaveBeenNthCalledWith(3, '/exam/learning-sessions/30/complete')
       })
     })
 

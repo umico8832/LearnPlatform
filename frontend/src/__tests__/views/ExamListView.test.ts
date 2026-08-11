@@ -11,10 +11,12 @@ vi.mock('@/api/exam', () => ({
   getMyExamRecords: (...args: unknown[]) => mockGetMyExamRecords(...args),
   getPaperDetail: vi.fn(),
   startExam: vi.fn(),
+  startExamLearningSession: vi.fn(),
 }))
 
 vi.mock('vue-router', async (importOriginal) => ({
   ...await importOriginal<typeof import('vue-router')>(),
+  useRoute: () => ({ query: {} }),
   useRouter: () => ({ push: vi.fn() }),
 }))
 

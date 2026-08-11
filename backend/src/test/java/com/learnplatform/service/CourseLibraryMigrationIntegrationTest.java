@@ -37,6 +37,25 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 """, Integer.class);
         assertEquals(5, paperProvenanceColumns);
         assertEquals(5, questionStructureColumns);
+        Integer learningSessionTables = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.tables
+                WHERE table_schema = DATABASE()
+                  AND table_name IN ('exam_learning_session', 'exam_learning_answer')
+                """, Integer.class);
+        Integer learningSessionColumns = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_schema = DATABASE() AND (
+                    (table_name = 'exam_learning_session'
+                     AND column_name IN ('user_id', 'exam_paper_id', 'status', 'current_question_id',
+                                         'active_session_key', 'start_time', 'complete_time'))
+                    OR
+                    (table_name = 'exam_learning_answer'
+                     AND column_name IN ('session_id', 'question_id', 'attempt_no', 'user_answer',
+                                         'is_correct', 'score', 'answer_time', 'create_time'))
+                )
+                """, Integer.class);
+        assertEquals(2, learningSessionTables);
+        assertEquals(15, learningSessionColumns);
 
         Long courseId = jdbcTemplate.queryForObject(
                 "SELECT id FROM course WHERE content_key = ?",

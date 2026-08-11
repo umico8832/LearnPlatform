@@ -9,6 +9,7 @@
       </div>
       <div class="hero-actions">
         <el-button :icon="Collection" @click="openCourseContent">查看课程目录</el-button>
+        <el-button :icon="Document" @click="openCoursePapers">学习课程试卷</el-button>
         <el-button
           type="primary"
           :icon="ArrowRight"
@@ -120,7 +121,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, ArrowRight, Collection, Refresh } from '@element-plus/icons-vue'
+import { ArrowLeft, ArrowRight, Collection, Document, Refresh } from '@element-plus/icons-vue'
 import { getCourseOverview, startCourseLearning, type CourseOverviewVO, type LearningTargetVO } from '@/api/course'
 
 const route = useRoute()
@@ -147,6 +148,10 @@ async function fetchOverview() {
 
 function openCourseContent() {
   router.push({ name: 'CourseDetail', params: { id: courseId.value } })
+}
+
+function openCoursePapers() {
+  router.push({ name: 'ExamList', query: { courseId: String(courseId.value) } })
 }
 
 async function startLearning() {

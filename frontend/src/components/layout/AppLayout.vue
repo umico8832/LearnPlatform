@@ -310,7 +310,7 @@ const pageDescriptions: Record<string, string> = {
   '/wrong-questions': '集中处理反复出错的题目，逐步提升掌握度。',
   '/favorites': '沉淀值得反复查看的题目与解析。',
   '/review': '按间隔重复计划安排今天的复习任务。',
-  '/exams': '参加模拟考试，检验阶段性学习效果。',
+  '/exams': '用学习模式逐题理解试卷，或进入考试模式检验阶段性学习效果。',
   '/learning-report': '用数据复盘近期学习表现。',
   '/learning-diagnosis': '结合答题记录生成学习诊断与建议。',
   '/learning-path': '查看个性化学习路径和推荐顺序。',

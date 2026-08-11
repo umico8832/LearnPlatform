@@ -3,11 +3,15 @@ package com.learnplatform.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.result.R;
 import com.learnplatform.dto.ExamRecordVO;
+import com.learnplatform.dto.ExamLearningAnswerRequest;
+import com.learnplatform.dto.ExamLearningAnswerResultVO;
+import com.learnplatform.dto.ExamLearningSessionVO;
 import com.learnplatform.dto.ExamSubmitRequest;
 import com.learnplatform.dto.ExamPaperVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.ExamService;
 import com.learnplatform.service.ExamPaperService;
+import com.learnplatform.service.ExamPaperLearningService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -24,10 +28,13 @@ public class ExamController {
 
     private final ExamService examService;
     private final ExamPaperService examPaperService;
+    private final ExamPaperLearningService examPaperLearningService;
 
-    public ExamController(ExamService examService, ExamPaperService examPaperService) {
+    public ExamController(ExamService examService, ExamPaperService examPaperService,
+                          ExamPaperLearningService examPaperLearningService) {
         this.examService = examService;
         this.examPaperService = examPaperService;
+        this.examPaperLearningService = examPaperLearningService;
     }
 
 
@@ -63,6 +70,39 @@ public class ExamController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long paperId) {
         return R.ok(examService.startExam(paperId, userDetails.getUserId()));
+    }
+
+    @Operation(summary = "开始或恢复试卷学习会话")
+    @PostMapping("/papers/{paperId}/learning-sessions")
+    public R<ExamLearningSessionVO> startLearningSession(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long paperId) {
+        return R.ok(examPaperLearningService.startSession(paperId, userDetails.getUserId()));
+    }
+
+    @Operation(summary = "获取本人试卷学习会话")
+    @GetMapping("/learning-sessions/{sessionId}")
+    public R<ExamLearningSessionVO> getLearningSession(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long sessionId) {
+        return R.ok(examPaperLearningService.getSession(sessionId, userDetails.getUserId()));
+    }
+
+    @Operation(summary = "提交试卷学习逐题答案")
+    @PostMapping("/learning-sessions/{sessionId}/answers")
+    public R<ExamLearningAnswerResultVO> submitLearningAnswer(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long sessionId,
+            @Valid @RequestBody ExamLearningAnswerRequest request) {
+        return R.ok(examPaperLearningService.submitAnswer(sessionId, request, userDetails.getUserId()));
+    }
+
+    @Operation(summary = "完成本轮试卷学习")
+    @PostMapping("/learning-sessions/{sessionId}/complete")
+    public R<ExamLearningSessionVO> completeLearningSession(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long sessionId) {
+        return R.ok(examPaperLearningService.completeSession(sessionId, userDetails.getUserId()));
     }
 
 

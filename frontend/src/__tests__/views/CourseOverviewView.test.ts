@@ -69,6 +69,18 @@ describe('CourseOverviewView', () => {
     })
   })
 
+  it('从课程中枢进入当前课程的试卷学习入口', async () => {
+    const wrapper = mount(CourseOverviewView, { global: { stubs } })
+    await flushPromises()
+
+    await findButton(wrapper, '学习课程试卷').trigger('click')
+
+    expect(mockPush).toHaveBeenCalledWith({
+      name: 'ExamList',
+      query: { courseId: '408' },
+    })
+  })
+
   it('未指定知识点时请求服务端选择下一目标', async () => {
     mockStartCourseLearning.mockResolvedValue({
       data: {

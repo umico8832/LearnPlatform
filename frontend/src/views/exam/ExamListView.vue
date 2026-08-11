@@ -39,8 +39,16 @@
               <span><el-icon><Medal /></el-icon>{{ paper.totalScore }} 分</span>
             </div>
             <div class="exam-actions">
+              <el-button
+                v-if="paper.courseId"
+                :icon="Reading"
+                @click="handleStartLearning(paper.id)"
+                :loading="learningId === paper.id"
+              >
+                学习模式
+              </el-button>
               <el-button type="primary" :icon="EditPen" @click="handleStartExam(paper.id)" :loading="startingId === paper.id">
-                开始考试
+                考试模式
               </el-button>
             </div>
           </el-card>
@@ -109,13 +117,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Document, EditPen, Medal, Reading, Timer, View } from '@element-plus/icons-vue'
-import { getPublishedPapers, startExam, getPaperDetail, getMyExamRecords } from '@/api/exam'
+import { getPublishedPapers, startExam, startExamLearningSession, getPaperDetail, getMyExamRecords } from '@/api/exam'
 import type { ExamPaperVO, ExamRecordVO } from '@/api/exam'
 
 const router = useRouter()
+const route = useRoute()
 const activeTab = ref('papers')
 
 // 试卷列表
@@ -124,6 +133,8 @@ const papers = ref<ExamPaperVO[]>([])
 const total = ref(0)
 const pageNum = ref(1)
 const startingId = ref<number | null>(null)
+const learningId = ref<number | null>(null)
+const courseId = Number(route.query.courseId)
 
 // 考试记录
 const recordsLoading = ref(false)
@@ -139,7 +150,11 @@ onMounted(() => {
 const loadPapers = async () => {
   loading.value = true
   try {
-    const res = await getPublishedPapers({ pageNum: pageNum.value, pageSize: 10 })
+    const res = await getPublishedPapers({
+      pageNum: pageNum.value,
+      pageSize: 10,
+      courseId: Number.isFinite(courseId) && courseId > 0 ? courseId : undefined,
+    })
     if (res.code === 0 && res.data) {
       papers.value = res.data.records || []
       total.value = res.data.total || 0
@@ -192,6 +207,22 @@ const handleStartExam = async (paperId: number) => {
     ElMessage.error('开始考试失败')
   } finally {
     startingId.value = null
+  }
+}
+
+const handleStartLearning = async (paperId: number) => {
+  learningId.value = paperId
+  try {
+    const res = await startExamLearningSession(paperId)
+    if (res.code === 0 && res.data) {
+      router.push({ name: 'ExamLearning', params: { sessionId: String(res.data.id) } })
+    } else {
+      ElMessage.error(res.message || '开始试卷学习失败')
+    }
+  } catch {
+    ElMessage.error('开始试卷学习失败，请确认课程已加入课程库')
+  } finally {
+    learningId.value = null
   }
 }
 
@@ -374,7 +405,9 @@ const paperTypeTag = (paper: ExamPaperVO) => {
 }
 
 .exam-actions {
-  text-align: right;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .pagination-wrapper { display: flex; justify-content: flex-end; margin-top: 16px; }

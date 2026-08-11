@@ -93,6 +93,53 @@ export interface ExamSubmitRequest {
   answers: { questionId: number; userAnswer: string }[]
 }
 
+export interface ExamLearningAnswerResultVO {
+  answerId: number
+  questionId: number
+  attemptNo: number
+  userAnswer: string
+  correct: boolean
+  score: number
+  fullScore: number
+  correctAnswer: string
+  analysis: string | null
+  answeredAt: string
+}
+
+export interface ExamLearningQuestionItem {
+  questionId: number
+  sortOrder: number
+  score: number
+  content: string
+  questionType: string
+  sectionTitle: string | null
+  majorQuestionNumber: string | null
+  minorQuestionNumber: string | null
+  subquestionNumber: string | null
+  displayNumber: string | null
+  options: { id: number; content: string; optionLabel: string; sortOrder: number }[]
+  latestAnswer: ExamLearningAnswerResultVO | null
+}
+
+export interface ExamLearningSessionVO {
+  id: number
+  examPaperId: number
+  paperTitle: string
+  courseId: number
+  paperType: PaperType
+  examName: string | null
+  examYear: number | null
+  sourceReference: string | null
+  sourceVerified: boolean
+  status: number
+  currentQuestionId: number
+  answeredQuestionCount: number
+  correctQuestionCount: number
+  startTime: string
+  completeTime: string | null
+  questions: ExamLearningQuestionItem[]
+}
+
 export interface SmartExamRequest {
   courseId?: number
   questionCount?: number
@@ -162,6 +209,30 @@ export function getPaperDetail(id: number) {
 
 export function startExam(paperId: number) {
   return request.post<unknown, ApiResponse<ExamRecordVO>>(`/exam/start/${paperId}`)
+}
+
+export function startExamLearningSession(paperId: number) {
+  return request.post<unknown, ApiResponse<ExamLearningSessionVO>>(`/exam/papers/${paperId}/learning-sessions`)
+}
+
+export function getExamLearningSession(sessionId: number) {
+  return request.get<unknown, ApiResponse<ExamLearningSessionVO>>(`/exam/learning-sessions/${sessionId}`)
+}
+
+export function submitExamLearningAnswer(
+  sessionId: number,
+  data: { questionId: number; userAnswer: string; answerTime?: number },
+) {
+  return request.post<unknown, ApiResponse<ExamLearningAnswerResultVO>>(
+    `/exam/learning-sessions/${sessionId}/answers`,
+    data,
+  )
+}
+
+export function completeExamLearningSession(sessionId: number) {
+  return request.post<unknown, ApiResponse<ExamLearningSessionVO>>(
+    `/exam/learning-sessions/${sessionId}/complete`,
+  )
 }
 
 export function submitExam(data: ExamSubmitRequest) {
