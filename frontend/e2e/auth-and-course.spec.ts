@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import type { Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
 
 async function loginAs(page: Page, username: string, password: string) {
   await page.goto('/login')
@@ -10,6 +10,13 @@ async function loginAs(page: Page, username: string, password: string) {
   await loginButton.click()
 
   await expect(page).toHaveURL(/\/$/)
+}
+
+async function readCountdownSeconds(countdown: Locator) {
+  const text = await countdown.textContent()
+  const match = text?.match(/(\d+):(\d{2})/)
+  if (!match) throw new Error(`无法解析考试倒计时：${text ?? '<empty>'}`)
+  return Number(match[1]) * 60 + Number(match[2])
 }
 
 test('用户可通过真实登录流程访问课程列表', async ({ page }) => {
@@ -101,21 +108,38 @@ test('用户答错后可在错题本更新掌握程度并重练', async ({ page 
   await expect(page.getByText('错题重练', { exact: true })).toBeVisible()
 })
 
-test('用户可完成考试并查看自动判分结果', async ({ page }) => {
+test('用户刷新后可继续限时考试并查看自动判分结果', async ({ page }) => {
   await loginAs(page, 'testuser', 'test123')
 
   await page.getByRole('menuitem', { name: '考试' }).click()
   await expect(page).toHaveURL(/\/exams$/)
   const examCard = page.locator('.exam-card').filter({ hasText: 'Java 基础入门测验' })
   await expect(examCard).toBeVisible()
-  await examCard.getByRole('button', { name: '开始考试' }).click()
+  await examCard.getByRole('button', { name: '考试模式' }).click()
   await expect(page).toHaveURL(/\/exams\/take\/\d+$/)
+
+  const takeUrl = page.url()
+  const countdown = page.locator('.take-header .countdown')
+  await expect(page.getByRole('heading', { name: '考试进行中' })).toBeVisible()
+  await expect(page.locator('.question-area')).toBeVisible()
+  await expect(countdown).toHaveText(/\d+:\d{2}/)
+  const startedSeconds = await readCountdownSeconds(countdown)
+  expect(startedSeconds).toBeGreaterThan(0)
+  await expect.poll(() => readCountdownSeconds(countdown), { timeout: 5_000 }).toBeLessThan(startedSeconds)
+  const beforeReloadSeconds = await readCountdownSeconds(countdown)
+
+  await page.reload()
+  await expect(page).toHaveURL(takeUrl)
+  await expect(page.getByRole('heading', { name: '考试进行中' })).toBeVisible()
+  await expect(page.locator('.question-area')).toBeVisible()
+  await expect(countdown).toHaveText(/\d+:\d{2}/)
+  expect(await readCountdownSeconds(countdown)).toBeLessThanOrEqual(beforeReloadSeconds)
 
   // 演示试卷固定包含单选、多选和判断三题，分别覆盖三种作答状态与后端判分。
   await page.locator('.question-area .option-item').filter({ hasText: 'extends' }).click()
   await page.getByRole('button', { name: '下一题' }).click()
-  await page.getByText('Aint', { exact: true }).click()
-  await page.getByText('Cboolean', { exact: true }).click()
+  await page.getByRole('button', { name: /^A\s+int$/ }).click()
+  await page.getByRole('button', { name: /^C\s+boolean$/ }).click()
   await page.getByRole('button', { name: '下一题' }).click()
   await page.locator('.question-area .option-item').filter({ hasText: '正确' }).click()
 

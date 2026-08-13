@@ -28,6 +28,10 @@ public class ExamRecord {
     /** 状态：0-进行中 1-已完成 2-已超时 */
     private Integer status;
 
+    /** 进行中考试幂等键，完成或超时后释放 */
+    @TableField(updateStrategy = FieldStrategy.ALWAYS)
+    private String activeExamKey;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
@@ -50,6 +54,8 @@ public class ExamRecord {
     public void setTotalScore(Integer totalScore) { this.totalScore = totalScore; }
     public Integer getStatus() { return status; }
     public void setStatus(Integer status) { this.status = status; }
+    public String getActiveExamKey() { return activeExamKey; }
+    public void setActiveExamKey(String activeExamKey) { this.activeExamKey = activeExamKey; }
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
     public LocalDateTime getUpdateTime() { return updateTime; }

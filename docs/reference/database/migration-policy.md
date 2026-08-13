@@ -18,6 +18,7 @@
 | V23–V74 | 408 课程目录、Tutor 内容、受限课件和学习路径 |
 | V75 | 试卷来源核验与原始题号结构 |
 | V76 | 课程试卷学习会话与逐题多次尝试 |
+| V77 | 限时考试活动记录幂等键、存量活动记录收敛与并发唯一约束 |
 
 ## 编写规则
 
@@ -47,7 +48,7 @@ mvn clean verify
 
 ```bash
 cd backend
-mvn test -Dgroups=integration
+mvn test -DexcludedGroups= -Dgroups=integration
 ```
 
 Testcontainers 测试应覆盖空库迁移、关键唯一约束、幂等操作和事务边界。具体命令和当前测试分层见[测试策略](../../development/testing.md)。

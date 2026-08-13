@@ -5,6 +5,7 @@ import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.ExamLearningAnswerRequest;
 import com.learnplatform.dto.ExamLearningAnswerResultVO;
 import com.learnplatform.dto.ExamLearningSessionVO;
+import com.learnplatform.dto.ExamRecordVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.ExamPaperLearningService;
 import com.learnplatform.service.ExamPaperService;
@@ -96,6 +97,23 @@ class ExamLearningControllerTest {
                 .andExpect(jsonPath("$.data.status").value(1));
 
         verify(learningService).completeSession(30L, 7L);
+    }
+
+    @Test
+    void readsAuthenticatedTimedExamSessionWithoutAnswerDetails() throws Exception {
+        ExamRecordVO session = new ExamRecordVO();
+        session.setId(40L);
+        session.setExamPaperId(2L);
+        session.setStatus(0);
+        when(examService.getExamSession(40L, 7L)).thenReturn(session);
+
+        mockMvc.perform(get("/api/exam/records/40/session").with(mockUser(7L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(40))
+                .andExpect(jsonPath("$.data.examPaperId").value(2))
+                .andExpect(jsonPath("$.data.answers").doesNotExist());
+
+        verify(examService).getExamSession(40L, 7L);
     }
 
     private RequestPostProcessor mockUser(Long userId) {

@@ -74,14 +74,14 @@
             <el-table-column label="得分" width="120">
               <template #default="{ row }">
                 <span :class="['score-text', getScoreClass(row as ExamRecordVO)]">
-                  {{ (row as ExamRecordVO).score }} / {{ (row as ExamRecordVO).totalScore }}
+                  {{ formatScore(row as ExamRecordVO) }}
                 </span>
               </template>
             </el-table-column>
             <el-table-column label="状态" width="100">
               <template #default="{ row }">
-                <el-tag :type="(row as ExamRecordVO).status === 1 ? 'success' : 'warning'" size="small">
-                  {{ (row as ExamRecordVO).status === 1 ? '已完成' : '进行中' }}
+                <el-tag :type="recordStatusTag((row as ExamRecordVO).status)" size="small">
+                  {{ recordStatusLabel((row as ExamRecordVO).status) }}
                 </el-tag>
               </template>
             </el-table-column>
@@ -93,12 +93,43 @@
                 <el-button v-if="(row as ExamRecordVO).status === 1" type="primary" link size="small" :icon="View" @click="viewResult((row as ExamRecordVO).id)">
                   查看结果
                 </el-button>
-                <el-button v-else type="warning" link size="small" :icon="EditPen" @click="continueExam(row as ExamRecordVO)">
+                <el-button v-else-if="(row as ExamRecordVO).status === 0" type="warning" link size="small" :icon="EditPen" @click="continueExam(row as ExamRecordVO)">
                   继续考试
                 </el-button>
+                <span v-else class="record-finished-hint">不可继续</span>
               </template>
             </el-table-column>
           </el-table>
+
+          <div v-if="records.length > 0" class="record-mobile-list" aria-label="考试记录">
+            <article v-for="record in records" :key="record.id" class="record-mobile-card">
+              <div class="record-mobile-header">
+                <h3>{{ record.examTitle }}</h3>
+                <el-tag :type="recordStatusTag(record.status)" size="small">
+                  {{ recordStatusLabel(record.status) }}
+                </el-tag>
+              </div>
+              <dl class="record-mobile-meta">
+                <div>
+                  <dt>得分</dt>
+                  <dd :class="['score-text', getScoreClass(record)]">{{ formatScore(record) }}</dd>
+                </div>
+                <div>
+                  <dt>开始时间</dt>
+                  <dd>{{ formatTime(record.startTime) }}</dd>
+                </div>
+              </dl>
+              <div class="record-mobile-action">
+                <el-button v-if="record.status === 1" type="primary" :icon="View" @click="viewResult(record.id)">
+                  查看结果
+                </el-button>
+                <el-button v-else-if="record.status === 0" type="warning" :icon="EditPen" @click="continueExam(record)">
+                  继续考试
+                </el-button>
+                <span v-else class="record-finished-hint">考试已超时，不可继续</span>
+              </div>
+            </article>
+          </div>
         </div>
 
         <div class="pagination-wrapper" v-if="recordsTotal > 0">
@@ -120,12 +151,12 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Document, EditPen, Medal, Reading, Timer, View } from '@element-plus/icons-vue'
-import { getPublishedPapers, startExam, startExamLearningSession, getPaperDetail, getMyExamRecords } from '@/api/exam'
-import type { ExamPaperVO, ExamRecordVO } from '@/api/exam'
+import { getPublishedPapers, startExam, startExamLearningSession, getMyExamRecords } from '@/api/exam'
+import type { ExamPaperVO, ExamRecordVO, ExamStatus } from '@/api/exam'
 
 const router = useRouter()
 const route = useRoute()
-const activeTab = ref('papers')
+const activeTab = ref(route.query.tab === 'records' ? 'records' : 'papers')
 
 // 试卷列表
 const loading = ref(false)
@@ -188,17 +219,8 @@ const handleTabChange = (tab: string | number) => {
 const handleStartExam = async (paperId: number) => {
   startingId.value = paperId
   try {
-    const detailRes = await getPaperDetail(paperId)
-    if (detailRes.code !== 0 || !detailRes.data) {
-      ElMessage.error('获取试卷详情失败')
-      return
-    }
     const startRes = await startExam(paperId)
     if (startRes.code === 0 && startRes.data) {
-      sessionStorage.setItem('exam_session_' + startRes.data.id, JSON.stringify({
-        questions: detailRes.data.questions || [],
-        duration: detailRes.data.duration || 60
-      }))
       router.push({ name: 'ExamTake', params: { recordId: String(startRes.data.id) } })
     } else {
       ElMessage.error(startRes.message || '开始考试失败')
@@ -235,11 +257,30 @@ const continueExam = (record: ExamRecordVO) => {
 }
 
 const getScoreClass = (row: ExamRecordVO) => {
-  if (!row.totalScore || row.totalScore === 0) return ''
+  if (row.status !== 1 || row.score == null || !row.totalScore || row.totalScore === 0) return ''
   const ratio = row.score / row.totalScore
   if (ratio >= 0.8) return 'score-high'
   if (ratio >= 0.6) return 'score-mid'
   return 'score-low'
+}
+
+const formatScore = (row: ExamRecordVO) => {
+  if (row.status !== 1 || row.score == null) return `— / ${row.totalScore}`
+  return `${row.score} / ${row.totalScore}`
+}
+
+const recordStatusLabel = (status: ExamStatus) => {
+  if (status === 0) return '进行中'
+  if (status === 1) return '已完成'
+  if (status === 2) return '已超时'
+  return '未知状态'
+}
+
+const recordStatusTag = (status: ExamStatus): 'success' | 'warning' | 'danger' | 'info' => {
+  if (status === 0) return 'warning'
+  if (status === 1) return 'success'
+  if (status === 2) return 'danger'
+  return 'info'
 }
 
 const formatTime = (time: string) => {
@@ -415,6 +456,8 @@ const paperTypeTag = (paper: ExamPaperVO) => {
 .score-high { color: var(--lp-success); }
 .score-mid { color: var(--lp-warning); }
 .score-low { color: var(--lp-danger); }
+.record-finished-hint { color: var(--lp-text-secondary); font-size: 13px; }
+.record-mobile-list { display: none; }
 
 @media (max-width: 860px) {
   .exam-metrics {
@@ -443,6 +486,73 @@ const paperTypeTag = (paper: ExamPaperVO) => {
 
   .exam-actions .el-button {
     width: 100%;
+  }
+
+  .record-panel > .el-table {
+    display: none;
+  }
+
+  .record-mobile-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .record-mobile-card {
+    padding: 16px;
+    background: var(--lp-surface);
+    border: 1px solid var(--lp-border);
+    border-radius: var(--lp-radius-sm, 8px);
+  }
+
+  .record-mobile-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .record-mobile-header h3 {
+    min-width: 0;
+    margin: 0;
+    color: var(--lp-text);
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .record-mobile-meta {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 12px;
+    margin: 16px 0;
+  }
+
+  .record-mobile-meta div {
+    min-width: 0;
+  }
+
+  .record-mobile-meta dt {
+    margin-bottom: 4px;
+    color: var(--lp-text-secondary);
+    font-size: 12px;
+  }
+
+  .record-mobile-meta dd {
+    margin: 0;
+    color: var(--lp-text);
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  .record-mobile-action {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-height: 44px;
+  }
+
+  .record-mobile-action .el-button {
+    min-height: 44px;
   }
 }
 </style>

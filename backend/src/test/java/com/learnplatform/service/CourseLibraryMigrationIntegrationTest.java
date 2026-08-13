@@ -56,6 +56,12 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                 """, Integer.class);
         assertEquals(2, learningSessionTables);
         assertEquals(15, learningSessionColumns);
+        Integer activeExamColumns = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_schema = DATABASE() AND table_name = 'exam_record'
+                  AND column_name = 'active_exam_key'
+                """, Integer.class);
+        assertEquals(1, activeExamColumns);
 
         Long courseId = jdbcTemplate.queryForObject(
                 "SELECT id FROM course WHERE content_key = ?",
@@ -380,6 +386,38 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
                      source_record_id, idempotency_key, event_version, occurred_time)
                 VALUES (?, ?, 'PRACTICE_ANSWERED', 'PRACTICE', 'QUESTION', ?, ?, ?, 1, CURRENT_TIMESTAMP)
                 """, 90001L, courseId, 80001L, 70001L, "PRACTICE:70001"));
+    }
+
+    @Test
+    void activeExamKeyAllowsOnlyOneRecoverableRecordUntilReleased() {
+        jdbcTemplate.update("""
+                INSERT INTO exam_record
+                    (user_id, exam_paper_id, start_time, total_score, status, active_exam_key)
+                VALUES (99001, 99002, CURRENT_TIMESTAMP, 100, 0, 'EXAM:99001:99002')
+                """);
+
+        assertThrows(DuplicateKeyException.class, () -> jdbcTemplate.update("""
+                INSERT INTO exam_record
+                    (user_id, exam_paper_id, start_time, total_score, status, active_exam_key)
+                VALUES (99001, 99002, CURRENT_TIMESTAMP, 100, 0, 'EXAM:99001:99002')
+                """));
+
+        jdbcTemplate.update("""
+                UPDATE exam_record
+                SET status = 1, end_time = CURRENT_TIMESTAMP, active_exam_key = NULL
+                WHERE active_exam_key = 'EXAM:99001:99002'
+                """);
+        jdbcTemplate.update("""
+                INSERT INTO exam_record
+                    (user_id, exam_paper_id, start_time, total_score, status, active_exam_key)
+                VALUES (99001, 99002, CURRENT_TIMESTAMP, 100, 0, 'EXAM:99001:99002')
+                """);
+
+        Integer activeCount = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM exam_record
+                WHERE active_exam_key = 'EXAM:99001:99002' AND status = 0
+                """, Integer.class);
+        assertEquals(1, activeCount);
     }
 
     private void assertArrayQueuePath(String contentKey, String prerequisiteKey, String nextStepKey) {

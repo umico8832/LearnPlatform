@@ -72,6 +72,14 @@ public class ExamController {
         return R.ok(examService.startExam(paperId, userDetails.getUserId()));
     }
 
+    @Operation(summary = "获取本人限时考试会话")
+    @GetMapping("/records/{recordId}/session")
+    public R<ExamRecordVO> getExamSession(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long recordId) {
+        return R.ok(examService.getExamSession(recordId, userDetails.getUserId()));
+    }
+
     @Operation(summary = "开始或恢复试卷学习会话")
     @PostMapping("/papers/{paperId}/learning-sessions")
     public R<ExamLearningSessionVO> startLearningSession(

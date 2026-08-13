@@ -20,6 +20,7 @@ import {
   getPublishedPapers,
   getPaperDetail,
   startExam,
+  getExamSession,
   startExamLearningSession,
   getExamLearningSession,
   submitExamLearningAnswer,
@@ -155,6 +156,24 @@ describe('Exam API', () => {
 
         expect(mockedRequest.post).toHaveBeenCalledWith('/exam/start/1')
         expect(result).toEqual({ code: 0, data: mockRecord, message: 'success' })
+      })
+    })
+
+    describe('getExamSession', () => {
+      it('应使用 GET 请求恢复服务端权威考试会话', async () => {
+        const mockSession = {
+          id: 10,
+          examPaperId: 1,
+          status: 0,
+          deadline: '2026-08-13T10:30:00',
+          serverTime: '2026-08-13T10:00:00',
+        }
+        mockedRequest.get.mockResolvedValue({ code: 0, data: mockSession, message: 'success' })
+
+        const result = await getExamSession(10)
+
+        expect(mockedRequest.get).toHaveBeenCalledWith('/exam/records/10/session')
+        expect(result).toEqual({ code: 0, data: mockSession, message: 'success' })
       })
     })
 

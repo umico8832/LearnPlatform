@@ -38,6 +38,7 @@ export interface ExamQuestionItem {
 }
 
 export type PaperType = 'PRACTICE' | 'OFFICIAL_EXAM'
+export type ExamStatus = 0 | 1 | 2
 
 export interface ExamPaperCreateRequest {
   title: string
@@ -66,13 +67,21 @@ export interface ExamRecordVO {
   id: number
   examPaperId: number
   examTitle: string
+  courseId: number | null
+  paperType: PaperType
+  examName: string | null
+  examYear: number | null
+  sourceReference: string | null
+  sourceVerified: boolean | null
   startTime: string
-  endTime: string
-  score: number
+  deadline: string | null
+  serverTime: string | null
+  endTime: string | null
+  score: number | null
   totalScore: number
-  status: number
+  status: ExamStatus
   duration: number
-  answers: ExamAnswerVO[]
+  answers: ExamAnswerVO[] | null
 }
 
 export interface ExamAnswerVO {
@@ -81,11 +90,16 @@ export interface ExamAnswerVO {
   questionType: string
   sortOrder: number
   fullScore: number
+  sectionTitle: string | null
+  majorQuestionNumber: string | null
+  minorQuestionNumber: string | null
+  subquestionNumber: string | null
+  displayNumber: string | null
   userAnswer: string
   isCorrect: number
   score: number
   correctAnswer: string
-  analysis: string
+  analysis: string | null
 }
 
 export interface ExamSubmitRequest {
@@ -209,6 +223,10 @@ export function getPaperDetail(id: number) {
 
 export function startExam(paperId: number) {
   return request.post<unknown, ApiResponse<ExamRecordVO>>(`/exam/start/${paperId}`)
+}
+
+export function getExamSession(recordId: number) {
+  return request.get<unknown, ApiResponse<ExamRecordVO>>(`/exam/records/${recordId}/session`)
 }
 
 export function startExamLearningSession(paperId: number) {

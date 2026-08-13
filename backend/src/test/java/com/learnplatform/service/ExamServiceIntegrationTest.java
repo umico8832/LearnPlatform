@@ -384,6 +384,7 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
         record.setStartTime(LocalDateTime.now().minusHours(2));
         record.setTotalScore(20);
         record.setStatus(0); // 进行中
+        record.setActiveExamKey("EXAM:" + userId + ":" + examPaperId);
         examRecordMapper.insert(record);
 
         ExamSubmitRequest request = new ExamSubmitRequest();
@@ -402,6 +403,7 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
         ExamRecord updated = examRecordMapper.selectById(record.getId());
         assertEquals(2, updated.getStatus(), "超时考试状态应为2");
         assertEquals(0, updated.getScore(), "超时考试分数应为0");
+        assertNull(updated.getActiveExamKey(), "超时后应释放活动考试键");
     }
 
     @Test
@@ -465,5 +467,31 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
         assertThrows(Exception.class,
                 () -> examAnswerMapper.insert(answer2),
                 "exam_answer 唯一约束 (exam_record_id, question_id) 应生效");
+    }
+
+    @Test
+    @Order(11)
+    @DisplayName("活动考试：重复开始恢复同一记录，提交后允许新一轮")
+    void activeExam_reusesRecordUntilSubmissionReleasesIt() {
+        ExamRecordVO first = examService.startExam(examPaperId, userId);
+        ExamRecordVO resumed = examService.startExam(examPaperId, userId);
+
+        assertEquals(first.getId(), resumed.getId());
+        assertNotNull(examRecordMapper.selectById(first.getId()).getActiveExamKey());
+
+        ExamSubmitRequest request = new ExamSubmitRequest();
+        request.setExamRecordId(first.getId());
+        ExamSubmitRequest.AnswerItem answer1 = new ExamSubmitRequest.AnswerItem();
+        answer1.setQuestionId(question1Id);
+        answer1.setUserAnswer("A");
+        ExamSubmitRequest.AnswerItem answer2 = new ExamSubmitRequest.AnswerItem();
+        answer2.setQuestionId(question2Id);
+        answer2.setUserAnswer("A,C");
+        request.setAnswers(List.of(answer1, answer2));
+        examService.submitExam(request, userId);
+
+        assertNull(examRecordMapper.selectById(first.getId()).getActiveExamKey());
+        ExamRecordVO nextAttempt = examService.startExam(examPaperId, userId);
+        assertNotEquals(first.getId(), nextAttempt.getId());
     }
 }

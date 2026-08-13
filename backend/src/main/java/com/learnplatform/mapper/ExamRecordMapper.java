@@ -11,4 +11,10 @@ public interface ExamRecordMapper extends BaseMapper<ExamRecord> {
 
     @Select("SELECT * FROM exam_record WHERE id = #{id} FOR UPDATE")
     ExamRecord selectByIdForUpdate(@Param("id") Long id);
+
+    @Select("SELECT * FROM exam_record WHERE active_exam_key = #{activeExamKey}")
+    ExamRecord selectByActiveExamKey(@Param("activeExamKey") String activeExamKey);
+
+    @Select("SELECT * FROM exam_record WHERE active_exam_key = #{activeExamKey} FOR UPDATE")
+    ExamRecord selectByActiveExamKeyForUpdate(@Param("activeExamKey") String activeExamKey);
 }
