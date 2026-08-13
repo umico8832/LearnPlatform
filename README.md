@@ -28,7 +28,7 @@ LearnPlatform 是一个 Web 优先的 AI 课程学习平台。用户将课程加
 | 层级 | 技术 |
 |---|---|
 | 前端 | Vue 3、TypeScript、Vite、Element Plus、Pinia、Vue Router、Axios、ECharts |
-| 后端 | Java 17+、Spring Boot 3、MyBatis-Plus、Spring Security、JWT、Validation、Knife4j |
+| 后端 | Java 21、Spring Boot 3、MyBatis-Plus、Spring Security、JWT、Validation、Knife4j |
 | 数据 | MySQL 8、Flyway |
 | 部署 | Docker、Docker Compose、Nginx |
 | 测试 | JUnit、Mockito、MockMvc、Testcontainers、Vitest、Playwright |

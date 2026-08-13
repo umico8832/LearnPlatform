@@ -2,7 +2,7 @@
 
 ## 环境要求
 
-- JDK 17+（`pom.xml` 的编译基线为 Java 17）
+- JDK 21（`pom.xml`、CI 与 Docker 的基线统一为 Java 21）
 - Maven 3.8+
 - Node.js 20+
 - MySQL 8.0+

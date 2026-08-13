@@ -66,9 +66,13 @@ Web 优先平台。第一步先定义统一课程学习状态，再用 408 数�
 
 ## 最新验证基线
 
+工程配置基线（Round 210）：
+
+- 后端 Maven 编译目标、GitHub Actions 构建环境和 Docker 构建/运行镜像统一使用 Java 21。
+
 业务代码基线（Round 209）：
 
-- 后端 `mvn clean verify -B`：457 个默认测试通过。
+- 后端使用 Java 21 执行 `mvn clean verify -B`：457 个默认测试通过。
 - Checkstyle：0 违规。
 - SpotBugs：0 问题。
 - JaCoCo：行覆盖率 50%、分支覆盖率 35% 门槛通过。

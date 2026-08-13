@@ -2,7 +2,7 @@
 
 ## 技术与分层
 
-后端使用 Java 17+、Spring Boot、Spring Security、MyBatis-Plus、Validation、Flyway、Redis 和 Knife4j。
+后端使用 Java 21、Spring Boot、Spring Security、MyBatis-Plus、Validation、Flyway、Redis 和 Knife4j。
 
 ```text
 backend/src/main/java/com/learnplatform/
