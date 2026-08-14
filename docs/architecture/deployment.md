@@ -19,14 +19,17 @@
 ```mermaid
 flowchart LR
     Browser --> Nginx
-    Nginx -->|static| SPA["Vue files"]
+    Nginx -->|/ learner static| Learner["学习端 Vue"]
+    Nginx -->|/admin-app/ admin static| Admin["独立管理端首个切片"]
     Nginx -->|/api| Backend
     Nginx -->|/doc.html /v3/api-docs| Backend
     Backend --> MySQL
     Backend --> Redis
 ```
 
-Nginx 为 SPA 使用 `try_files ... /index.html`。AI SSE 路径禁用代理缓冲，避免生成结束后才一次性返回。
+Nginx 为学习端使用 `try_files ... /index.html`，为独立管理端过渡入口使用
+`try_files ... /admin-app/index.html`。两个静态构建位于同一镜像并共用 `/api/` 代理；AI SSE 路径禁用
+代理缓冲，避免生成结束后才一次性返回。管理页面全部迁移前，旧 `/admin/**` 仍由学习端 SPA 承载。
 
 ## 健康检查
 

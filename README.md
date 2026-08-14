@@ -50,6 +50,7 @@ npm run dev
 ```
 
 - 前端：`http://localhost:5173`
+- 独立管理端首个切片：另运行 `npm run dev:admin` 后访问 `http://localhost:5174/admin-app/`
 - 后端：`http://localhost:8080`
 - Knife4j：`http://localhost:8080/doc.html`
 
@@ -64,6 +65,7 @@ docker compose ps
 ```
 
 - 前端：`http://localhost`
+- 独立管理端首个切片：`http://localhost/admin-app/`
 - 后端：`http://localhost:8080`
 
 端口调整、镜像重建和停止方式见[Docker 开发指南](docs/getting-started/docker-development.md)。

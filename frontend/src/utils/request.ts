@@ -2,7 +2,7 @@ import axios from 'axios'
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
 import { getToken, removeToken } from './auth'
-import router from '@/router'
+import { redirectToLogin } from './authNavigation'
 import type { ApiResponse } from '@/types/api'
 
 /**
@@ -45,7 +45,7 @@ aiService.interceptors.response.use(
     if (res.code === 0) return response
     if (res.code === 1002) {
       removeToken()
-      router.push('/login')
+      redirectToLogin()
       ElMessage.error('登录已过期，请重新登录')
       return Promise.reject(new Error(res.message))
     }
@@ -57,7 +57,7 @@ aiService.interceptors.response.use(
       const { status } = error.response
       if (status === 401) {
         removeToken()
-        router.push('/login')
+        redirectToLogin()
         ElMessage.error('登录已过期，请重新登录')
       } else if (status === 500) {
         ElMessage.error('AI 服务异常，请稍后重试')
@@ -104,7 +104,7 @@ service.interceptors.response.use(
     // 1002: 未登录 / Token 无效
     if (res.code === 1002) {
       removeToken()
-      router.push('/login')
+      redirectToLogin()
       ElMessage.error('登录已过期，请重新登录')
       return Promise.reject(new Error(res.message))
     }
@@ -119,7 +119,7 @@ service.interceptors.response.use(
       switch (status) {
         case 401:
           removeToken()
-          router.push('/login')
+          redirectToLogin()
           ElMessage.error('登录已过期，请重新登录')
           break
         case 403:

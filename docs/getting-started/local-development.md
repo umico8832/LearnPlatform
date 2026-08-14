@@ -45,7 +45,14 @@ npm ci
 npm run dev
 ```
 
-前端默认地址：`http://localhost:5173`。
+学习端默认地址：`http://localhost:5173`。需要独立调试已迁移的管理端页面时，另开终端执行：
+
+```bash
+cd frontend
+npm run dev:admin
+```
+
+管理端过渡入口：`http://localhost:5174/admin-app/`。Docker 环境由同一 Nginx 在 `/admin-app/` 提供该构建。
 
 ## 5. 基础验证
 

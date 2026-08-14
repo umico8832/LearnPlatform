@@ -2,10 +2,13 @@
 
 ## 技术与职责
 
-前端使用 Vue 3、TypeScript、Vite、Element Plus、Pinia、Vue Router、Axios 和 ECharts。同一个 SPA 同时承载学习者页面与 `/admin` 管理页面。
+前端使用 Vue 3、TypeScript、Vite、Element Plus、Pinia、Vue Router、Axios 和 ECharts。学习端仍承载尚未
+迁移的 `/admin` 页面；独立管理端首个切片已经建立自己的入口、Router、布局和构建产物，并在过渡路径
+`/admin-app/` 承载主观题批阅。两个构建继续复用稳定的 API 类型、请求客户端、鉴权存储和设计变量。
 
 ```text
 frontend/src/
+├── admin/        # 独立管理端入口、Router、布局与管理端专属页面
 ├── api/          # 按业务域封装请求和 TypeScript 契约
 ├── assets/       # 全局样式与静态资源
 ├── components/   # 可复用组件与布局
@@ -14,9 +17,14 @@ frontend/src/
 ├── types/        # 共享类型
 ├── utils/        # 请求、格式化和领域辅助函数
 └── views/        # 用户端与管理端页面
+frontend/admin/   # 独立管理端 HTML 入口
 ```
 
 目录清单只描述稳定边界，不枚举每个页面文件；真实文件以源码为准。
+
+`npm run build` 先生成学习端 `dist/`，再由 `vite.admin.config.ts` 生成 `dist/admin-app/`；管理端可以用
+`npm run dev:admin` 在 5174 端口独立开发。迁移期间旧 `/admin/**` 路由继续存在，待全部管理页面迁完并
+完成权限与部署回归后，再将独立构建从 `/admin-app/` 切换到目标 `/admin/`。
 
 ## 页面分层
 
@@ -50,6 +58,8 @@ sequenceDiagram
 - 管理页面隐藏只是体验优化，真正权限由后端 `/api/admin/**` 校验。
 - 页面不得通过修改 Pinia 或 localStorage 获得管理权限。
 - 登录失效由统一请求层清理本地状态并引导重新认证。
+- 请求层不直接依赖任一 Router；两个入口分别注册登录跳转处理器。独立管理端会在路由进入和登录成功时
+  双重检查 `ADMIN` 角色，但安全边界仍是后端 `/api/admin/**` 权限校验。
 
 ## 内容安全
 

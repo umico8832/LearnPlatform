@@ -12,6 +12,16 @@ async function loginAs(page: Page, username: string, password: string) {
   await expect(page).toHaveURL(/\/$/)
 }
 
+async function loginToAdminApp(page: Page, username: string, password: string) {
+  await page.goto('/admin-app/login')
+  await page.getByPlaceholder('请输入用户名或邮箱').fill(username)
+  await page.getByPlaceholder('请输入密码').fill(password)
+  const loginButton = page.getByRole('button', { name: '登录管理系统' })
+  await expect(loginButton).toBeEnabled({ timeout: 15_000 })
+  await loginButton.click()
+  await expect(page).toHaveURL(/\/admin-app\/subjective-reviews$/)
+}
+
 async function readCountdownSeconds(countdown: Locator) {
   const text = await countdown.textContent()
   const match = text?.match(/(\d+):(\d{2})/)
@@ -262,8 +272,7 @@ test('2026主观题提交后由管理员按评分点批阅并固化总分', asyn
   await expect(page.locator('.answer-item').filter({ hasText: '第41题' })).not.toContainText('正确答案')
 
   await page.evaluate(() => localStorage.clear())
-  await loginAs(page, 'admin', 'admin123')
-  await page.goto('/admin/subjective-reviews')
+  await loginToAdminApp(page, 'admin', 'admin123')
   await expect(page.getByRole('heading', { name: '主观题批阅', level: 1 })).toBeVisible()
 
   for (let reviewIndex = 0; reviewIndex < 2; reviewIndex += 1) {
