@@ -17,6 +17,7 @@ import com.learnplatform.entity.UserCourse;
 import com.learnplatform.entity.WrongQuestion;
 import com.learnplatform.mapper.CourseLearningEventMapper;
 import com.learnplatform.mapper.CourseStageAssessmentMapper;
+import com.learnplatform.mapper.CourseStageAssessmentQuestionMapper;
 import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
@@ -49,13 +50,15 @@ public class CourseOverviewService {
     private final TutorContentMapper tutorContentMapper;
     private final TutorSessionMapper tutorSessionMapper;
     private final CourseStageAssessmentMapper stageAssessmentMapper;
+    private final CourseStageAssessmentQuestionMapper stageAssessmentQuestionMapper;
 
     public CourseOverviewService(UserCourseMapper userCourseMapper, CourseMapper courseMapper,
                                  CourseLearningEventMapper eventMapper, WrongQuestionMapper wrongQuestionMapper,
                                  QuestionReviewScheduleMapper reviewScheduleMapper, QuestionMapper questionMapper,
                                  KnowledgePointMapper knowledgePointMapper, TutorContentMapper tutorContentMapper,
                                  TutorSessionMapper tutorSessionMapper,
-                                 CourseStageAssessmentMapper stageAssessmentMapper) {
+                                 CourseStageAssessmentMapper stageAssessmentMapper,
+                                 CourseStageAssessmentQuestionMapper stageAssessmentQuestionMapper) {
         this.userCourseMapper = userCourseMapper;
         this.courseMapper = courseMapper;
         this.eventMapper = eventMapper;
@@ -66,6 +69,7 @@ public class CourseOverviewService {
         this.tutorContentMapper = tutorContentMapper;
         this.tutorSessionMapper = tutorSessionMapper;
         this.stageAssessmentMapper = stageAssessmentMapper;
+        this.stageAssessmentQuestionMapper = stageAssessmentQuestionMapper;
     }
 
     public CourseOverviewVO getOverview(Long userId, Long courseId) {
@@ -228,6 +232,8 @@ public class CourseOverviewService {
         view.setCorrectCount(assessment.getCorrectCount());
         view.setStartTime(assessment.getStartTime());
         view.setCompleteTime(assessment.getCompleteTime());
+        view.setSourceComposition(CourseStageAssessmentSourceComposition.from(
+                stageAssessmentQuestionMapper.selectByAssessmentId(assessment.getId())));
         return view;
     }
 

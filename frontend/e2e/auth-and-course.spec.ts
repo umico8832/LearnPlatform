@@ -451,6 +451,7 @@ test('用户可完成2026真题学习与限时考试并复盘可信来源', asyn
   await page.getByRole('button', { name: '阶段测评' }).click()
   const assessmentDialog = page.getByRole('dialog', { name: '课程阶段测评' })
   await expect(assessmentDialog).toContainText(/按当前错题|确定性课程题序/)
+  await expect(assessmentDialog).toContainText('题源构成：')
   const assessmentQuestions = await assessmentDialog.locator('.assessment-question').all()
   expect(assessmentQuestions.length).toBeGreaterThan(0)
   for (const question of assessmentQuestions) {
@@ -464,6 +465,7 @@ test('用户可完成2026真题学习与限时考试并复盘可信来源', asyn
   await page.getByRole('button', { name: '测评历史' }).click()
   const historyDialog = page.getByRole('dialog', { name: '阶段测评历史' })
   await expect(historyDialog).toContainText(/答对 \d+ \/ \d+ 题/)
+  await expect(historyDialog).toContainText('题源：')
   await historyDialog.getByRole('button', { name: '查看复盘' }).first().click()
   await expect(assessmentDialog).toContainText(/答对 \d+ \/ \d+ 题/)
   await assessmentDialog.getByRole('button', { name: '关闭', exact: true }).click()

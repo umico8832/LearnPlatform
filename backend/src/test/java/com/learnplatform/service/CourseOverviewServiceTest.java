@@ -13,6 +13,7 @@ import com.learnplatform.entity.TutorContent;
 import com.learnplatform.entity.TutorSession;
 import com.learnplatform.mapper.CourseLearningEventMapper;
 import com.learnplatform.mapper.CourseStageAssessmentMapper;
+import com.learnplatform.mapper.CourseStageAssessmentQuestionMapper;
 import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
@@ -55,6 +56,7 @@ class CourseOverviewServiceTest {
     @Mock private TutorContentMapper tutorContentMapper;
     @Mock private TutorSessionMapper tutorSessionMapper;
     @Mock private CourseStageAssessmentMapper stageAssessmentMapper;
+    @Mock private CourseStageAssessmentQuestionMapper stageAssessmentQuestionMapper;
 
     private CourseOverviewService service;
 
@@ -63,7 +65,7 @@ class CourseOverviewServiceTest {
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new Configuration(), ""), KnowledgePoint.class);
         service = new CourseOverviewService(userCourseMapper, courseMapper, eventMapper,
                 wrongQuestionMapper, reviewScheduleMapper, questionMapper, knowledgePointMapper,
-                tutorContentMapper, tutorSessionMapper, stageAssessmentMapper);
+                tutorContentMapper, tutorSessionMapper, stageAssessmentMapper, stageAssessmentQuestionMapper);
     }
 
     @Test
@@ -200,12 +202,17 @@ class CourseOverviewServiceTest {
         latest.setCorrectCount(3);
         latest.setCompleteTime(LocalDateTime.of(2026, 8, 15, 11, 0));
         when(stageAssessmentMapper.selectLatestCompleted(7L, 10L)).thenReturn(latest);
+        com.learnplatform.entity.CourseStageAssessmentQuestion snapshot =
+                new com.learnplatform.entity.CourseStageAssessmentQuestion();
+        snapshot.setSourceCategorySnapshot("OFFICIAL_EXAM");
+        when(stageAssessmentQuestionMapper.selectByAssessmentId(51L)).thenReturn(List.of(snapshot));
 
         CourseOverviewVO overview = service.getOverview(7L, 10L);
 
         assertEquals(51L, overview.getLatestStageAssessment().getId());
         assertEquals(3, overview.getLatestStageAssessment().getCorrectCount());
         assertEquals(5, overview.getLatestStageAssessment().getQuestionCount());
+        assertEquals(1, overview.getLatestStageAssessment().getSourceComposition().getOfficialExamCount());
     }
 
     private Course course() {

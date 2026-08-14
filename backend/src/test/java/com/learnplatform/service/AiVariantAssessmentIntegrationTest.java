@@ -105,9 +105,17 @@ class AiVariantAssessmentIntegrationTest extends IntegrationTestBase {
 
         CourseStageAssessmentVO assessment = assessmentService.start(userId, 1L, create);
 
+        assertEquals(1, assessment.getSourceComposition().getAiGeneratedCount());
         assertTrue(assessment.getQuestions().stream().anyMatch(question ->
                 publishedQuestionId.equals(question.getQuestionId())
                         && "AI_GENERATED".equals(question.getSourceType())
                         && motherQuestionId.equals(question.getOriginQuestionId())));
+        jdbcTemplate.update("UPDATE question SET source_type = 'MANUAL', origin_question_id = NULL WHERE id = ?",
+                publishedQuestionId);
+        jdbcTemplate.update("UPDATE course_stage_assessment SET status = 'COMPLETED', active_session_key = NULL, "
+                + "correct_count = 0, complete_time = CURRENT_TIMESTAMP WHERE id = ?", assessment.getId());
+
+        assertEquals(1, assessmentService.listCompleted(userId, 1L, 1, 10).getRecords().get(0)
+                .getSourceComposition().getAiGeneratedCount());
     }
 }

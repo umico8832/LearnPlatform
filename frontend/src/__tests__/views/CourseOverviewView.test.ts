@@ -229,6 +229,12 @@ describe('CourseOverviewView', () => {
           selectionStrategy: 'LEARNING_STATE_PRIORITY',
           questionCount: 5,
           correctCount: 3,
+          sourceComposition: {
+            officialExamCount: 3,
+            manualCount: 0,
+            userPrivateCount: 0,
+            aiGeneratedCount: 2,
+          },
           startTime: '2026-08-15T10:00:00',
           completeTime: '2026-08-15T10:05:00',
         },
@@ -244,6 +250,12 @@ describe('CourseOverviewView', () => {
             selectionStrategy: 'LEARNING_STATE_PRIORITY',
             questionCount: 5,
             correctCount: 3,
+            sourceComposition: {
+              officialExamCount: 3,
+              manualCount: 0,
+              userPrivateCount: 0,
+              aiGeneratedCount: 2,
+            },
             completeTime: '2026-08-15T10:05:00',
           },
         ],
@@ -260,6 +272,12 @@ describe('CourseOverviewView', () => {
         selectionStrategy: 'LEARNING_STATE_PRIORITY',
         questionCount: 1,
         correctCount: 1,
+        sourceComposition: {
+          officialExamCount: 0,
+          manualCount: 0,
+          userPrivateCount: 0,
+          aiGeneratedCount: 1,
+        },
         questions: [
           {
             id: 61,
@@ -279,6 +297,7 @@ describe('CourseOverviewView', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('最近阶段测评')
     expect(wrapper.text()).toContain('答对 3 / 5 题')
+    expect(wrapper.text()).toContain('官方原题 3 · AI 生成题 2')
     const vm = wrapper.vm as unknown as {
       openAssessmentHistory: () => Promise<void>
       openAssessmentDetail: (id: number) => Promise<void>
@@ -287,6 +306,7 @@ describe('CourseOverviewView', () => {
     await vm.openAssessmentHistory()
     expect(mockGetAssessmentHistory).toHaveBeenCalledWith(408, 1, 10)
     expect(wrapper.text()).toContain('按当前学习事实优先选题')
+    expect(wrapper.text()).toContain('官方原题 3 · AI 生成题 2')
     await vm.openAssessmentDetail(51)
     expect(mockGetAssessmentDetail).toHaveBeenCalledWith(51)
     expect(wrapper.text()).toContain('栈顶元素先离开')

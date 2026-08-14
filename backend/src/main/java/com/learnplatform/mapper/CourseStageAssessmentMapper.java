@@ -108,4 +108,12 @@ public interface CourseStageAssessmentMapper extends BaseMapper<CourseStageAsses
               )
             """)
     Long countPrioritySignals(@Param("userId") Long userId, @Param("courseId") Long courseId);
+
+    @Select("""
+            SELECT COUNT(*) FROM exam_question eq
+            JOIN exam_paper ep ON ep.id = eq.exam_paper_id
+            WHERE eq.question_id = #{questionId} AND ep.paper_type = 'OFFICIAL_EXAM'
+              AND ep.source_verified = 1 AND ep.status = 1 AND ep.deleted = 0
+            """)
+    Long countVerifiedOfficialPaperReferences(@Param("questionId") Long questionId);
 }

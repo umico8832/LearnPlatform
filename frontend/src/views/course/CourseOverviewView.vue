@@ -114,6 +114,7 @@
                 答对 {{ overview.latestStageAssessment.correctCount }} /
                 {{ overview.latestStageAssessment.questionCount }} 题
               </span>
+              <small>题源：{{ sourceCompositionText(overview.latestStageAssessment.sourceComposition) }}</small>
               <small>{{ formatDateTime(overview.latestStageAssessment.completeTime) }}</small>
               <el-button text @click="openAssessmentDetail(overview.latestStageAssessment.id)">查看逐题复盘</el-button>
             </div>
@@ -149,6 +150,7 @@
             <strong>答对 {{ item.correctCount }} / {{ item.questionCount }} 题</strong>
             <p>{{ formatDateTime(item.completeTime) }}</p>
             <small>{{ assessmentStrategyText(item.selectionStrategy) }}</small>
+            <small>题源：{{ sourceCompositionText(item.sourceComposition) }}</small>
           </div>
           <el-button @click="openAssessmentDetail(item.id)">查看复盘</el-button>
         </article>
@@ -171,6 +173,7 @@
           :closable="false"
           show-icon
         />
+        <p class="assessment-source-composition">题源构成：{{ sourceCompositionText(assessment.sourceComposition) }}</p>
         <p v-if="assessment.status === 'COMPLETED'" class="assessment-summary">
           答对 {{ assessment.correctCount }} / {{ assessment.questionCount }} 题
         </p>
@@ -273,6 +276,19 @@ const assessmentStrategyLabel = computed(() =>
 
 function assessmentStrategyText(strategy: CourseStageAssessmentSummaryVO['selectionStrategy']) {
   return strategy === 'LEARNING_STATE_PRIORITY' ? '按当前学习事实优先选题' : '确定性课程题序'
+}
+
+function sourceCompositionText(composition: CourseStageAssessmentSummaryVO['sourceComposition']) {
+  if (!composition) return '暂无题源快照'
+  return [
+    ['官方原题', composition.officialExamCount],
+    ['平台人工题', composition.manualCount],
+    ['用户私有题', composition.userPrivateCount],
+    ['AI 生成题', composition.aiGeneratedCount],
+  ]
+    .filter(([, count]) => Number(count) > 0)
+    .map(([label, count]) => `${label} ${count}`)
+    .join(' · ')
 }
 
 async function fetchOverview() {
@@ -684,6 +700,11 @@ onMounted(fetchOverview)
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 6px;
+}
+.assessment-source-composition {
+  margin: 10px 0 16px;
+  color: var(--lp-text-muted);
+  font-size: 13px;
 }
 .assessment-options {
   display: grid;

@@ -15,6 +15,7 @@ public class CourseStageAssessmentQuestion {
     private Integer sortOrder;
     private String questionType;
     private String sourceTypeSnapshot;
+    private String sourceCategorySnapshot;
     private Long originQuestionIdSnapshot;
     private String contentSnapshot;
     private String optionsSnapshot;
@@ -38,6 +39,8 @@ public class CourseStageAssessmentQuestion {
     public void setQuestionType(String questionType) { this.questionType = questionType; }
     public String getSourceTypeSnapshot() { return sourceTypeSnapshot; }
     public void setSourceTypeSnapshot(String value) { this.sourceTypeSnapshot = value; }
+    public String getSourceCategorySnapshot() { return sourceCategorySnapshot; }
+    public void setSourceCategorySnapshot(String value) { this.sourceCategorySnapshot = value; }
     public Long getOriginQuestionIdSnapshot() { return originQuestionIdSnapshot; }
     public void setOriginQuestionIdSnapshot(Long value) { this.originQuestionIdSnapshot = value; }
     public String getContentSnapshot() { return contentSnapshot; }

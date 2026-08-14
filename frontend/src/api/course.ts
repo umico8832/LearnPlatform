@@ -60,7 +60,15 @@ export interface CourseStageAssessmentVO {
   correctCount: number | null
   startTime: string
   completeTime: string | null
+  sourceComposition: CourseStageAssessmentSourceCompositionVO
   questions: CourseStageAssessmentQuestion[]
+}
+
+export interface CourseStageAssessmentSourceCompositionVO {
+  officialExamCount: number
+  manualCount: number
+  userPrivateCount: number
+  aiGeneratedCount: number
 }
 
 export interface CourseStageAssessmentQuestion {
@@ -69,6 +77,7 @@ export interface CourseStageAssessmentQuestion {
   sortOrder: number
   questionType: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE'
   sourceType: string
+  sourceCategory: 'OFFICIAL_EXAM' | 'MANUAL' | 'USER_PRIVATE' | 'AI_GENERATED'
   originQuestionId: number | null
   content: string
   options: { label: string; content: string }[]
@@ -84,6 +93,7 @@ export interface CourseStageAssessmentSummaryVO {
   selectionStrategy: 'LEARNING_STATE_PRIORITY' | 'COURSE_SEQUENCE_FALLBACK'
   questionCount: number
   correctCount: number
+  sourceComposition: CourseStageAssessmentSourceCompositionVO
   startTime: string
   completeTime: string
 }

@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class CourseStageAssessmentService {
@@ -153,7 +154,14 @@ public class CourseStageAssessmentService {
         Page<CourseStageAssessment> source = assessmentMapper.selectCompletedPage(
                 new Page<>(pageNum, pageSize), userId, courseId);
         Page<CourseStageAssessmentSummaryVO> result = new Page<>(source.getCurrent(), source.getSize(), source.getTotal());
-        result.setRecords(source.getRecords().stream().map(this::toSummary).toList());
+        List<Long> assessmentIds = source.getRecords().stream().map(CourseStageAssessment::getId).toList();
+        Map<Long, List<CourseStageAssessmentQuestion>> sourcesByAssessment = assessmentIds.isEmpty()
+                ? Map.of()
+                : assessmentQuestionMapper.selectSourcesByAssessmentIds(assessmentIds).stream()
+                        .collect(Collectors.groupingBy(CourseStageAssessmentQuestion::getAssessmentId));
+        result.setRecords(source.getRecords().stream()
+                .map(item -> toSummary(item, sourcesByAssessment.getOrDefault(item.getId(), List.of())))
+                .toList());
         return result;
     }
 
@@ -172,7 +180,8 @@ public class CourseStageAssessmentService {
         }
     }
 
-    private CourseStageAssessmentSummaryVO toSummary(CourseStageAssessment assessment) {
+    private CourseStageAssessmentSummaryVO toSummary(
+            CourseStageAssessment assessment, List<CourseStageAssessmentQuestion> sourceItems) {
         CourseStageAssessmentSummaryVO view = new CourseStageAssessmentSummaryVO();
         view.setId(assessment.getId());
         view.setSelectionStrategy(assessment.getSelectionStrategy());
@@ -180,6 +189,7 @@ public class CourseStageAssessmentService {
         view.setCorrectCount(assessment.getCorrectCount());
         view.setStartTime(assessment.getStartTime());
         view.setCompleteTime(assessment.getCompleteTime());
+        view.setSourceComposition(CourseStageAssessmentSourceComposition.from(sourceItems));
         return view;
     }
 
@@ -205,6 +215,7 @@ public class CourseStageAssessmentService {
         item.setSortOrder(sortOrder);
         item.setQuestionType(question.getQuestionType());
         item.setSourceTypeSnapshot(question.getSourceType() == null ? "MANUAL" : question.getSourceType());
+        item.setSourceCategorySnapshot(sourceCategory(question));
         item.setOriginQuestionIdSnapshot(question.getOriginQuestionId());
         item.setContentSnapshot(question.getContent());
         item.setOptionsSnapshot(writeJson(optionSnapshot));
@@ -239,6 +250,7 @@ public class CourseStageAssessmentService {
         view.setStartTime(assessment.getStartTime());
         view.setCompleteTime(assessment.getCompleteTime());
         List<CourseStageAssessmentQuestion> items = assessmentQuestionMapper.selectByAssessmentId(assessment.getId());
+        view.setSourceComposition(CourseStageAssessmentSourceComposition.from(items));
         view.setQuestions(items.stream().map(item -> toQuestionView(item, completed)).toList());
         return view;
     }
@@ -251,6 +263,7 @@ public class CourseStageAssessmentService {
         view.setSortOrder(item.getSortOrder());
         view.setQuestionType(item.getQuestionType());
         view.setSourceType(item.getSourceTypeSnapshot());
+        view.setSourceCategory(item.getSourceCategorySnapshot());
         view.setOriginQuestionId(item.getOriginQuestionIdSnapshot());
         view.setContent(item.getContentSnapshot());
         view.setOptions(readOptions(item.getOptionsSnapshot()));
@@ -260,6 +273,14 @@ public class CourseStageAssessmentService {
         view.setCorrectAnswer(completed ? item.getCorrectAnswerSnapshot() : null);
         view.setAnalysis(completed ? item.getAnalysisSnapshot() : null);
         return view;
+    }
+
+    String sourceCategory(Question question) {
+        if ("AI_GENERATED".equals(question.getSourceType())) return "AI_GENERATED";
+        if ("PRIVATE".equals(question.getVisibility())
+                || "USER_PRIVATE_IMPORT".equals(question.getSourceType())) return "USER_PRIVATE";
+        Long officialReferences = assessmentMapper.countVerifiedOfficialPaperReferences(question.getId());
+        return officialReferences != null && officialReferences > 0 ? "OFFICIAL_EXAM" : "MANUAL";
     }
 
     private String writeJson(Object value) {

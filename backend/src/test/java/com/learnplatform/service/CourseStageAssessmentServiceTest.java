@@ -77,7 +77,55 @@ class CourseStageAssessmentServiceTest {
                 ArgumentCaptor.forClass(CourseStageAssessmentQuestion.class);
         verify(assessmentQuestionMapper).insert(snapshotCaptor.capture());
         assertEquals("AI_GENERATED", snapshotCaptor.getValue().getSourceTypeSnapshot());
+        assertEquals("AI_GENERATED", snapshotCaptor.getValue().getSourceCategorySnapshot());
         assertEquals(20L, snapshotCaptor.getValue().getOriginQuestionIdSnapshot());
+        assertEquals(1, created.getSourceComposition().getAiGeneratedCount());
+    }
+
+    @Test
+    void snapshotsVerifiedOfficialPaperCategoryInsteadOfInferringItFromManualSourceType() {
+        Question official = question();
+        official.setSourceType("MANUAL");
+        official.setOriginQuestionId(null);
+        when(assessmentMapper.lockUserCourse(7L, 10L)).thenReturn(91L);
+        when(assessmentMapper.selectActive(7L, 10L)).thenReturn(null);
+        when(assessmentMapper.selectCandidateQuestions(7L, 10L, 1)).thenReturn(List.of(official));
+        when(assessmentMapper.countPrioritySignals(7L, 10L)).thenReturn(0L);
+        when(assessmentMapper.countVerifiedOfficialPaperReferences(21L)).thenReturn(1L);
+        when(optionMapper.selectList(any())).thenReturn(options());
+        doAnswer(invocation -> {
+            ((CourseStageAssessment) invocation.getArgument(0)).setId(51L);
+            return 1;
+        }).when(assessmentMapper).insert(any(CourseStageAssessment.class));
+        when(assessmentQuestionMapper.selectByAssessmentId(51L)).thenAnswer(invocation -> {
+            CourseStageAssessmentQuestion item = snapshot();
+            item.setSourceCategorySnapshot("OFFICIAL_EXAM");
+            return List.of(item);
+        });
+        CourseStageAssessmentCreateRequest request = new CourseStageAssessmentCreateRequest();
+        request.setQuestionCount(1);
+
+        CourseStageAssessmentVO created = service.start(7L, 10L, request);
+
+        ArgumentCaptor<CourseStageAssessmentQuestion> captor =
+                ArgumentCaptor.forClass(CourseStageAssessmentQuestion.class);
+        verify(assessmentQuestionMapper).insert(captor.capture());
+        assertEquals("OFFICIAL_EXAM", captor.getValue().getSourceCategorySnapshot());
+        assertEquals(1, created.getSourceComposition().getOfficialExamCount());
+    }
+
+    @Test
+    void classifiesPrivateAndManualQuestionsWithoutChangingTheirRawSource() {
+        Question privateQuestion = question();
+        privateQuestion.setVisibility("PRIVATE");
+        privateQuestion.setSourceType("USER_PRIVATE_IMPORT");
+        assertEquals("USER_PRIVATE", service.sourceCategory(privateQuestion));
+
+        Question manualQuestion = question();
+        manualQuestion.setVisibility("PUBLIC");
+        manualQuestion.setSourceType("MARKDOWN_IMPORT");
+        when(assessmentMapper.countVerifiedOfficialPaperReferences(21L)).thenReturn(0L);
+        assertEquals("MANUAL", service.sourceCategory(manualQuestion));
     }
 
     @Test
@@ -137,12 +185,14 @@ class CourseStageAssessmentServiceTest {
         page.setRecords(List.of(item));
         when(assessmentMapper.selectCompletedPage(any(), org.mockito.ArgumentMatchers.eq(7L),
                 org.mockito.ArgumentMatchers.eq(10L))).thenReturn(page);
+        when(assessmentQuestionMapper.selectSourcesByAssessmentIds(List.of(51L))).thenReturn(List.of(snapshot()));
 
         Page<CourseStageAssessmentSummaryVO> result = service.listCompleted(7L, 10L, 1, 10);
 
         assertEquals(1, result.getTotal());
         assertEquals(51L, result.getRecords().get(0).getId());
         assertEquals(1, result.getRecords().get(0).getCorrectCount());
+        assertEquals(1, result.getRecords().get(0).getSourceComposition().getAiGeneratedCount());
     }
 
     @Test
@@ -202,6 +252,8 @@ class CourseStageAssessmentServiceTest {
         item.setQuestionId(21L);
         item.setSortOrder(1);
         item.setQuestionType("SINGLE_CHOICE");
+        item.setSourceTypeSnapshot("AI_GENERATED");
+        item.setSourceCategorySnapshot("AI_GENERATED");
         item.setContentSnapshot("栈的访问顺序是？");
         item.setOptionsSnapshot("[{\"label\":\"A\",\"content\":\"后进先出\"}]");
         item.setCorrectAnswerSnapshot("A");

@@ -14,7 +14,7 @@
 | `tutor_content` | V24 | 已审查、版本化的 Tutor 教学内容和检查定义 | `(content_key, content_version)` 唯一；正确选项不返回客户端 |
 | `tutor_session` | V24，V80 扩展 | 用户课程 Tutor 会话、学习证据聚合快照及首次检查结果 | `session_key` 唯一；会话归属用户、课程与知识点 |
 | `course_stage_assessment` | V86 | 用户课程阶段测评会话、选题策略与汇总结果 | `(user_id, course_id, active_session_key)` 限制一个进行中会话；完成时活动键清空 |
-| `course_stage_assessment_question` | V86，V87 扩展 | 测评题目、答案、解析、来源快照及用户作答 | 会话内原题和排序均唯一；提交前不通过 API 暴露答案快照 |
+| `course_stage_assessment_question` | V86，V87/V88 扩展 | 测评题目、答案、解析、来源快照及用户作答 | 会话内原题和排序均唯一；提交前不通过 API 暴露答案快照 |
 
 V21 为课程和知识点增加可空的 `content_key` 与 `content_source`。`content_key` 用于在
 AiStu、Web 后端和后续内容导入之间保持稳定引用；存量平台内容可以继续使用空键。
@@ -44,6 +44,10 @@ V86 增加课程阶段测评会话和逐题快照。创建时仅从当前用户�
 V87 为正式 `question` 增加可空母题引用，并为测评题快照固化来源类型和母题 ID。审查通过的变式题在
 首次创建及版本快照中即标记为 `AI_GENERATED`；阶段测评仍只查询当前课程已发布正式题，因此待审、
 驳回和其他课程的变式题不会越过发布边界。
+
+V88 为测评题增加 `source_category_snapshot`，按 `OFFICIAL_EXAM`、`MANUAL`、`USER_PRIVATE`、
+`AI_GENERATED` 固化展示类别。官方原题以创建时是否被已发布、来源核验的官方试卷引用为准；AI 和私有
+来源优先保持自身边界。迁移会对既有快照执行一次分类回填，之后历史统计不再读取当前正式题来源。
 
 V25 为 `ods-arraystack-insertion` 的 `tutor_content.lesson_json` 增加已审查的
 `ARRAY_STACK_INSERTION` v1 参数定义。它只包含容量、初始槽位和插入参数；课件动画状态由

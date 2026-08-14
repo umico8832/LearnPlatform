@@ -10,6 +10,7 @@ public class CourseStageAssessmentSummaryVO {
     private Integer correctCount;
     private LocalDateTime startTime;
     private LocalDateTime completeTime;
+    private CourseStageAssessmentSourceCompositionVO sourceComposition;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -23,4 +24,6 @@ public class CourseStageAssessmentSummaryVO {
     public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
     public LocalDateTime getCompleteTime() { return completeTime; }
     public void setCompleteTime(LocalDateTime completeTime) { this.completeTime = completeTime; }
+    public CourseStageAssessmentSourceCompositionVO getSourceComposition() { return sourceComposition; }
+    public void setSourceComposition(CourseStageAssessmentSourceCompositionVO value) { this.sourceComposition = value; }
 }

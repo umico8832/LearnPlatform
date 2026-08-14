@@ -12,6 +12,7 @@ public class CourseStageAssessmentVO {
     private Integer correctCount;
     private LocalDateTime startTime;
     private LocalDateTime completeTime;
+    private CourseStageAssessmentSourceCompositionVO sourceComposition;
     private List<QuestionItem> questions;
 
     public Long getId() { return id; }
@@ -30,6 +31,8 @@ public class CourseStageAssessmentVO {
     public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
     public LocalDateTime getCompleteTime() { return completeTime; }
     public void setCompleteTime(LocalDateTime completeTime) { this.completeTime = completeTime; }
+    public CourseStageAssessmentSourceCompositionVO getSourceComposition() { return sourceComposition; }
+    public void setSourceComposition(CourseStageAssessmentSourceCompositionVO value) { this.sourceComposition = value; }
     public List<QuestionItem> getQuestions() { return questions; }
     public void setQuestions(List<QuestionItem> questions) { this.questions = questions; }
 
@@ -39,6 +42,7 @@ public class CourseStageAssessmentVO {
         private Integer sortOrder;
         private String questionType;
         private String sourceType;
+        private String sourceCategory;
         private Long originQuestionId;
         private String content;
         private List<OptionItem> options;
@@ -58,6 +62,8 @@ public class CourseStageAssessmentVO {
         public void setQuestionType(String questionType) { this.questionType = questionType; }
         public String getSourceType() { return sourceType; }
         public void setSourceType(String sourceType) { this.sourceType = sourceType; }
+        public String getSourceCategory() { return sourceCategory; }
+        public void setSourceCategory(String sourceCategory) { this.sourceCategory = sourceCategory; }
         public Long getOriginQuestionId() { return originQuestionId; }
         public void setOriginQuestionId(Long originQuestionId) { this.originQuestionId = originQuestionId; }
         public String getContent() { return content; }
