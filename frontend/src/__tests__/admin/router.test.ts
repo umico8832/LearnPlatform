@@ -53,4 +53,15 @@ describe('独立管理端路由守卫', () => {
     expect(router.currentRoute.value.name).toBe('AdminLogin')
     expect(mockClearLoginInfo).toHaveBeenCalled()
   })
+
+  it('独立管理端提供总览和试卷管理路由', async () => {
+    setToken('token')
+    state.userInfo = { role: 'ADMIN' }
+    const router = createAdminRouter(createMemoryHistory('/admin-app/'))
+    await router.push('/')
+    await router.isReady()
+    expect(router.currentRoute.value.name).toBe('AdminDashboard')
+    await router.push('/exams')
+    expect(router.currentRoute.value.name).toBe('AdminExamManage')
+  })
 })

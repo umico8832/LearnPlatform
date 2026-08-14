@@ -13,7 +13,8 @@ async function loginAs(page: Page, username: string, password: string) {
 }
 
 async function loginToAdminApp(page: Page, username: string, password: string) {
-  await page.goto('/admin-app/login')
+  await page.goto('/admin-app/subjective-reviews')
+  await expect(page).toHaveURL(/\/admin-app\/login\?redirect=/)
   await page.getByPlaceholder('请输入用户名或邮箱').fill(username)
   await page.getByPlaceholder('请输入密码').fill(password)
   const loginButton = page.getByRole('button', { name: '登录管理系统' })
@@ -84,6 +85,12 @@ test('高频用户与管理页面可通过真实接口加载', async ({ page }) 
     await page.goto(path)
     await expect(page.getByRole('main').getByRole('heading', { name: heading, exact: true })).toBeVisible()
   }
+
+  await page.goto('/admin-app/')
+  await expect(page.getByRole('main').getByRole('heading', { name: '平台数据总览', exact: true })).toBeVisible()
+  await page.getByRole('navigation', { name: '管理导航' }).getByRole('link', { name: '试卷管理' }).click()
+  await expect(page).toHaveURL(/\/admin-app\/exams$/)
+  await expect(page.getByRole('main').getByRole('heading', { name: '试卷管理', exact: true })).toBeVisible()
 
   expect(apiServerErrors, `页面加载期间出现 5xx 接口：\n${apiServerErrors.join('\n')}`).toEqual([])
   expect(consoleErrors, `页面加载期间出现 console.error：\n${consoleErrors.join('\n')}`).toEqual([])

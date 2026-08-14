@@ -17,7 +17,18 @@ export function createAdminRouter(history: RouterHistory = createWebHistory(impo
         path: '/',
         component: () => import('./AdminLayout.vue'),
         children: [
-          { path: '', redirect: { name: 'AdminSubjectiveReviews' } },
+          {
+            path: '',
+            name: 'AdminDashboard',
+            component: () => import('@/views/admin/AdminDashboard.vue'),
+            meta: { title: '平台数据总览' },
+          },
+          {
+            path: 'exams',
+            name: 'AdminExamManage',
+            component: () => import('@/views/admin/ExamManage.vue'),
+            meta: { title: '试卷管理' },
+          },
           {
             path: 'subjective-reviews',
             name: 'AdminSubjectiveReviews',
@@ -26,7 +37,7 @@ export function createAdminRouter(history: RouterHistory = createWebHistory(impo
           },
         ],
       },
-      { path: '/:pathMatch(.*)*', redirect: { name: 'AdminSubjectiveReviews' } },
+      { path: '/:pathMatch(.*)*', redirect: { name: 'AdminDashboard' } },
     ],
   })
 
@@ -37,7 +48,7 @@ export function createAdminRouter(history: RouterHistory = createWebHistory(impo
       if (!loggedIn) return true
       const userStore = useUserStore()
       if (!userStore.userInfo) await userStore.fetchUserInfo()
-      if (userStore.userInfo?.role === 'ADMIN') return { name: 'AdminSubjectiveReviews' }
+      if (userStore.userInfo?.role === 'ADMIN') return { name: 'AdminDashboard' }
       userStore.clearLoginInfo()
       return true
     }

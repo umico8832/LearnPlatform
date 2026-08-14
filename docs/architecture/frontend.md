@@ -4,7 +4,8 @@
 
 前端使用 Vue 3、TypeScript、Vite、Element Plus、Pinia、Vue Router、Axios 和 ECharts。学习端仍承载尚未
 迁移的 `/admin` 页面；独立管理端首个切片已经建立自己的入口、Router、布局和构建产物，并在过渡路径
-`/admin-app/` 承载主观题批阅。两个构建继续复用稳定的 API 类型、请求客户端、鉴权存储和设计变量。
+`/admin-app/` 已承载平台总览、试卷管理和主观题批阅。两个构建继续复用稳定的 API 类型、请求客户端、
+鉴权存储和设计变量。
 
 ```text
 frontend/src/

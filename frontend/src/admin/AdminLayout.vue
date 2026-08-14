@@ -6,6 +6,8 @@
         <strong>管理系统</strong>
       </a>
       <nav aria-label="管理导航">
+        <router-link to="/">平台总览</router-link>
+        <router-link to="/exams">试卷管理</router-link>
         <router-link to="/subjective-reviews">主观题批阅</router-link>
       </nav>
       <a class="admin-shell-legacy" href="/admin">旧版管理入口</a>
