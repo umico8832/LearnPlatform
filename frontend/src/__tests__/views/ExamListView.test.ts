@@ -16,6 +16,7 @@ const {
   mockCreatePrivateExamDocxDraft,
   mockGetPrivateExamSource,
   mockGetPrivateExamStorageUsage,
+  mockGetPrivateExamStorageFiles,
   mockDownloadPrivateExamSourceFile,
   mockDownloadPrivateExamDraftSourceFile,
   mockCreatePrivateExamDraft,
@@ -42,6 +43,7 @@ const {
   mockCreatePrivateExamDocxDraft: vi.fn(),
   mockGetPrivateExamSource: vi.fn(),
   mockGetPrivateExamStorageUsage: vi.fn(),
+  mockGetPrivateExamStorageFiles: vi.fn(),
   mockDownloadPrivateExamSourceFile: vi.fn(),
   mockDownloadPrivateExamDraftSourceFile: vi.fn(),
   mockCreatePrivateExamDraft: vi.fn(),
@@ -71,6 +73,7 @@ vi.mock('@/api/exam', () => ({
   createPrivateExamDocxDraft: (...args: unknown[]) => mockCreatePrivateExamDocxDraft(...args),
   getPrivateExamSource: (...args: unknown[]) => mockGetPrivateExamSource(...args),
   getPrivateExamStorageUsage: (...args: unknown[]) => mockGetPrivateExamStorageUsage(...args),
+  getPrivateExamStorageFiles: (...args: unknown[]) => mockGetPrivateExamStorageFiles(...args),
   downloadPrivateExamSourceFile: (...args: unknown[]) => mockDownloadPrivateExamSourceFile(...args),
   downloadPrivateExamDraftSourceFile: (...args: unknown[]) => mockDownloadPrivateExamDraftSourceFile(...args),
   createPrivateExamDraft: (...args: unknown[]) => mockCreatePrivateExamDraft(...args),
@@ -138,6 +141,26 @@ describe('ExamListView paper provenance', () => {
       code: 0,
       data: { usedBytes: 26214400, limitBytes: 104857600, remainingBytes: 78643200, fileCount: 3 },
     })
+    mockGetPrivateExamStorageFiles.mockResolvedValue({
+      code: 0,
+      data: {
+        total: 1,
+        records: [
+          {
+            id: 11,
+            sourceName: 'paper.pdf',
+            sourceFormat: 'PDF',
+            sourceMediaType: 'application/pdf',
+            sourceSize: 2048,
+            createTime: '2026-08-15T10:00:00',
+            associationType: 'DRAFT',
+            associationId: 31,
+            associationTitle: '待复核试卷',
+            associationStatus: 'REVIEWING',
+          },
+        ],
+      },
+    })
     mockDownloadPrivateExamSourceFile.mockResolvedValue({
       data: new Blob(['pdf']),
       headers: { 'content-type': 'application/pdf' },
@@ -190,6 +213,28 @@ describe('ExamListView paper provenance', () => {
 
     expect(mockGetPrivateExamStorageUsage).toHaveBeenCalledTimes(1)
     expect(wrapper.text()).toContain('原文件存储：25 MB / 100 MB · 3 个文件')
+  })
+
+  it('从累计用量进入仅含元数据和关联对象的原文件清单', async () => {
+    const wrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as {
+      openStorageDialog: () => Promise<void>
+      deleteStorageItem: (item: Record<string, unknown>) => Promise<void>
+      storageFiles: Record<string, unknown>[]
+    }
+
+    await vm.openStorageDialog()
+    await flushPromises()
+
+    expect(mockGetPrivateExamStorageFiles).toHaveBeenCalledWith({ pageNum: 1, pageSize: 10 })
+    expect(wrapper.text()).toContain('paper.pdf')
+    expect(wrapper.text()).toContain('关联草稿：待复核试卷')
+    expect(wrapper.text()).not.toContain('application/pdf')
+
+    await vm.deleteStorageItem(vm.storageFiles[0])
+    expect(mockDeletePrivateExamDraft).toHaveBeenCalledWith(31)
+    expect(mockGetPrivateExamStorageFiles).toHaveBeenCalledTimes(2)
   })
 
   it('解析预览后显式确认才创建私有试卷', async () => {

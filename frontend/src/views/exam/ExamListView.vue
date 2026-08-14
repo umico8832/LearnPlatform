@@ -197,10 +197,13 @@
         :closable="false"
         show-icon
       />
-      <p v-if="storageUsage" class="source-meta">
-        原文件存储：{{ formatStorage(storageUsage.usedBytes) }} / {{ formatStorage(storageUsage.limitBytes) }} ·
-        {{ storageUsage.fileCount }} 个文件
-      </p>
+      <div v-if="storageUsage" class="storage-summary">
+        <span>
+          原文件存储：{{ formatStorage(storageUsage.usedBytes) }} / {{ formatStorage(storageUsage.limitBytes) }} ·
+          {{ storageUsage.fileCount }} 个文件
+        </span>
+        <el-button type="primary" link @click="openStorageDialog">查看明细</el-button>
+      </div>
       <el-form v-if="!importPreview && !activeDraft" label-position="top" class="import-form">
         <section v-if="privateDrafts.length" class="draft-list">
           <strong>待复核草稿</strong>
@@ -393,6 +396,49 @@
       </template>
     </el-dialog>
 
+    <el-dialog v-model="storageDialogVisible" title="我的原文件存储" width="min(760px, 92vw)" append-to-body>
+      <p class="source-meta">这里只展示原文件元数据；下载和删除始终通过当前关联的草稿或私有试卷处理。</p>
+      <div v-loading="storageFilesLoading" class="storage-list">
+        <el-empty v-if="!storageFilesLoading && !storageFiles.length" description="暂无已保存的 PDF 或 DOCX 原文件" />
+        <article v-for="item in storageFiles" :key="item.id" class="storage-item">
+          <div class="storage-item-main">
+            <div class="storage-item-title">
+              <strong>{{ item.sourceName }}</strong>
+              <el-tag size="small">{{ item.sourceFormat }}</el-tag>
+            </div>
+            <p>{{ formatStorage(item.sourceSize) }} · {{ formatTime(item.createTime) }}</p>
+            <p>{{ storageAssociationLabel(item) }}</p>
+          </div>
+          <div class="storage-item-actions">
+            <el-button
+              v-if="item.associationType !== 'UNREFERENCED'"
+              plain
+              :loading="storageDownloadingId === item.id"
+              @click="downloadStorageItem(item)"
+              >下载</el-button
+            >
+            <el-button
+              v-if="item.associationType !== 'UNREFERENCED'"
+              type="danger"
+              plain
+              :loading="storageDeletingId === item.id"
+              @click="deleteStorageItem(item)"
+              >删除关联内容</el-button
+            >
+          </div>
+        </article>
+      </div>
+      <div v-if="storageFilesTotal > 10" class="pagination-wrapper">
+        <el-pagination
+          v-model:current-page="storageFilesPage"
+          :total="storageFilesTotal"
+          :page-size="10"
+          layout="total, prev, pager, next"
+          @current-change="loadStorageFiles"
+        />
+      </div>
+    </el-dialog>
+
     <el-dialog v-model="sourceDialogVisible" title="私有试卷原始资料" width="min(760px, 92vw)">
       <template v-if="privateSource">
         <p class="source-meta">
@@ -434,6 +480,7 @@ import {
   generatePrivateExamDraftAnswer,
   getMyExamRecords,
   getPrivateExamDrafts,
+  getPrivateExamStorageFiles,
   getPrivateExamStorageUsage,
   getPrivateExamSource,
   getPublishedPapers,
@@ -452,6 +499,7 @@ import type {
   PrivateExamImportPreview,
   PrivateExamImportRequest,
   PrivateExamSource,
+  PrivateExamSourceStorageItem,
   PrivateExamStorageUsage,
 } from '@/api/exam'
 import { getAllCourses } from '@/api/course'
@@ -485,6 +533,13 @@ const draftAnalyses = ref<Record<number, string>>({})
 const sourceDialogVisible = ref(false)
 const privateSource = ref<PrivateExamSource | null>(null)
 const storageUsage = ref<PrivateExamStorageUsage | null>(null)
+const storageDialogVisible = ref(false)
+const storageFilesLoading = ref(false)
+const storageFiles = ref<PrivateExamSourceStorageItem[]>([])
+const storageFilesTotal = ref(0)
+const storageFilesPage = ref(1)
+const storageDownloadingId = ref<number | null>(null)
+const storageDeletingId = ref<number | null>(null)
 const sourceDownloading = ref(false)
 const sourceFile = ref<File | null>(null)
 const emptyImportForm = (): PrivateExamImportRequest => ({
@@ -546,6 +601,27 @@ async function loadStorageUsage() {
   } catch {
     storageUsage.value = null
   }
+}
+
+async function loadStorageFiles() {
+  storageFilesLoading.value = true
+  try {
+    const res = await getPrivateExamStorageFiles({ pageNum: storageFilesPage.value, pageSize: 10 })
+    storageFiles.value = res.code === 0 && res.data ? res.data.records : []
+    storageFilesTotal.value = res.code === 0 && res.data ? res.data.total : 0
+  } catch {
+    storageFiles.value = []
+    storageFilesTotal.value = 0
+    ElMessage.error('获取原文件清单失败')
+  } finally {
+    storageFilesLoading.value = false
+  }
+}
+
+const openStorageDialog = async () => {
+  storageFilesPage.value = 1
+  storageDialogVisible.value = true
+  await loadStorageFiles()
 }
 
 const openImportDialog = async () => {
@@ -837,6 +913,58 @@ const saveSourceFile = (data: BlobPart, mediaType: string, filename: string) => 
   link.download = filename
   link.click()
   window.URL.revokeObjectURL(url)
+}
+
+const storageAssociationLabel = (item: PrivateExamSourceStorageItem) => {
+  if (item.associationType === 'PAPER') return `关联试卷：${item.associationTitle || '已确认私有试卷'}`
+  if (item.associationType === 'DRAFT') return `关联草稿：${item.associationTitle || '待复核草稿'}`
+  return '未关联业务内容'
+}
+
+const downloadStorageItem = async (item: PrivateExamSourceStorageItem) => {
+  if (!item.associationId || item.associationType === 'UNREFERENCED') return
+  storageDownloadingId.value = item.id
+  try {
+    const response =
+      item.associationType === 'PAPER'
+        ? await downloadPrivateExamSourceFile(item.associationId)
+        : await downloadPrivateExamDraftSourceFile(item.associationId)
+    saveSourceFile(
+      response.data,
+      String(response.headers['content-type'] || 'application/octet-stream'),
+      item.sourceName,
+    )
+  } catch {
+    ElMessage.error('原文件下载失败')
+  } finally {
+    storageDownloadingId.value = null
+  }
+}
+
+const deleteStorageItem = async (item: PrivateExamSourceStorageItem) => {
+  if (!item.associationId || item.associationType === 'UNREFERENCED') return
+  const target = item.associationType === 'PAPER' ? '私有试卷及其原文件' : '草稿及其原文件'
+  const confirmed = await ElMessageBox.confirm(
+    `确认删除“${item.associationTitle || item.sourceName}”对应的${target}？受学习或考试记录引用时将无法删除。`,
+    '删除关联内容',
+    { type: 'warning', confirmButtonText: '确认删除', cancelButtonText: '取消' },
+  )
+    .then(() => true)
+    .catch(() => false)
+  if (!confirmed) return
+  storageDeletingId.value = item.id
+  try {
+    const res =
+      item.associationType === 'PAPER'
+        ? await deletePrivateExamPaper(item.associationId)
+        : await deletePrivateExamDraft(item.associationId)
+    if (res.code === 0) {
+      ElMessage.success(`${target}已删除`)
+      await Promise.all([loadStorageUsage(), loadStorageFiles(), loadPrivateDrafts(), loadPapers()])
+    }
+  } finally {
+    storageDeletingId.value = null
+  }
 }
 
 const downloadPaperSource = async () => {
@@ -1226,6 +1354,46 @@ const paperTypeTag = (paper: ExamPaperVO) => {
   color: var(--lp-text-secondary);
   font-size: 13px;
 }
+.storage-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0;
+  color: var(--lp-text-secondary);
+  font-size: 13px;
+}
+.storage-list {
+  min-height: 120px;
+}
+.storage-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--lp-border);
+}
+.storage-item:last-child {
+  border-bottom: 0;
+}
+.storage-item-main {
+  min-width: 0;
+}
+.storage-item-title,
+.storage-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.storage-item-title strong {
+  overflow-wrap: anywhere;
+}
+.storage-item p {
+  margin: 5px 0 0;
+  color: var(--lp-text-secondary);
+  font-size: 13px;
+}
 .source-content {
   max-height: 56vh;
   overflow: auto;
@@ -1330,6 +1498,14 @@ const paperTypeTag = (paper: ExamPaperVO) => {
 
   .import-grid {
     grid-template-columns: 1fr;
+  }
+  .storage-summary,
+  .storage-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .storage-item-actions .el-button {
+    min-height: 44px;
   }
   .preview-summary {
     flex-direction: column;

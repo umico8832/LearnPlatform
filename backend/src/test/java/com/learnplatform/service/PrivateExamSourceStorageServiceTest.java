@@ -1,6 +1,8 @@
 package com.learnplatform.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
+import com.learnplatform.dto.PrivateExamSourceStorageItemVO;
 import com.learnplatform.dto.PrivateExamStorageUsageVO;
 import com.learnplatform.entity.UserExamSource;
 import com.learnplatform.mapper.UserExamSourceMapper;
@@ -14,6 +16,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -82,5 +86,23 @@ class PrivateExamSourceStorageServiceTest {
         assertEquals(100L, usage.getLimitBytes());
         assertEquals(70L, usage.getRemainingBytes());
         assertEquals(2L, usage.getFileCount());
+    }
+
+    @Test
+    void listsOnlyOwnerStoredFilesWithBusinessAssociationMetadata() {
+        PrivateExamSourceStorageItemVO item = new PrivateExamSourceStorageItemVO();
+        item.setId(11L);
+        item.setSourceName("paper.pdf");
+        item.setAssociationType("DRAFT");
+        item.setAssociationId(31L);
+        Page<PrivateExamSourceStorageItemVO> page = new Page<>(1, 10, 1);
+        page.setRecords(java.util.List.of(item));
+        when(sourceMapper.selectOwnedStoredFiles(any(Page.class), eq(7L))).thenReturn(page);
+
+        Page<PrivateExamSourceStorageItemVO> result = service.listFiles(7L, 1, 10);
+
+        assertEquals(1L, result.getTotal());
+        assertEquals("paper.pdf", result.getRecords().get(0).getSourceName());
+        assertEquals("DRAFT", result.getRecords().get(0).getAssociationType());
     }
 }

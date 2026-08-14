@@ -13,6 +13,7 @@ import com.learnplatform.dto.PrivateExamImportPreviewVO;
 import com.learnplatform.dto.PrivateExamImportRequest;
 import com.learnplatform.dto.PrivateExamSourceVO;
 import com.learnplatform.dto.PrivateExamStorageUsageVO;
+import com.learnplatform.dto.PrivateExamSourceStorageItemVO;
 import com.learnplatform.dto.PrivateExamDraftConfirmRequest;
 import com.learnplatform.dto.PrivateExamDraftCreateRequest;
 import com.learnplatform.dto.PrivateExamDraftReviewRequest;
@@ -247,6 +248,14 @@ public class ExamController {
     public R<PrivateExamStorageUsageVO> getPrivatePaperSourceStorage(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return R.ok(privateExamSourceStorageService.getUsage(userDetails.getUserId()));
+    }
+
+    @GetMapping("/private-papers/source-storage/files")
+    public R<Page<PrivateExamSourceStorageItemVO>> listPrivatePaperSourceStorageFiles(
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(privateExamSourceStorageService.listFiles(userDetails.getUserId(), pageNum, pageSize));
     }
 
     @GetMapping("/private-papers/{paperId}/source/file")

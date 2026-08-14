@@ -290,6 +290,19 @@ export interface PrivateExamStorageUsage {
   fileCount: number
 }
 
+export interface PrivateExamSourceStorageItem {
+  id: number
+  sourceName: string
+  sourceFormat: 'PDF' | 'DOCX'
+  sourceMediaType: string
+  sourceSize: number
+  createTime: string
+  associationType: 'DRAFT' | 'PAPER' | 'UNREFERENCED'
+  associationId: number | null
+  associationTitle: string | null
+  associationStatus: string
+}
+
 // ======================== 管理端 API ========================
 
 export function getExamPaperList(params?: { pageNum?: number; pageSize?: number; courseId?: number; status?: number }) {
@@ -477,6 +490,13 @@ export function getPrivateExamSource(paperId: number) {
 
 export function getPrivateExamStorageUsage() {
   return request.get<unknown, ApiResponse<PrivateExamStorageUsage>>('/exam/private-papers/source-storage')
+}
+
+export function getPrivateExamStorageFiles(params?: { pageNum?: number; pageSize?: number }) {
+  return request.get<unknown, ApiResponse<PageData<PrivateExamSourceStorageItem>>>(
+    '/exam/private-papers/source-storage/files',
+    { params },
+  )
 }
 
 export function downloadPrivateExamSourceFile(paperId: number) {

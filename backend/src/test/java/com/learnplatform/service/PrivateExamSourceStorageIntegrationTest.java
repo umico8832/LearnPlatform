@@ -1,7 +1,9 @@
 package com.learnplatform.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.common.exception.BusinessException;
+import com.learnplatform.dto.PrivateExamSourceStorageItemVO;
 import com.learnplatform.entity.UserExamSource;
 import com.learnplatform.mapper.UserExamSourceMapper;
 import org.junit.jupiter.api.AfterEach;
@@ -34,9 +36,11 @@ class PrivateExamSourceStorageIntegrationTest extends IntegrationTestBase {
 
     @AfterEach
     void cleanUp() {
+        jdbcTemplate.update("DELETE FROM private_exam_import_draft WHERE owner_user_id IN "
+                + "(SELECT id FROM user WHERE username LIKE ?)", USERNAME + "%");
         jdbcTemplate.update("DELETE FROM user_exam_source WHERE owner_user_id IN "
-                + "(SELECT id FROM user WHERE username = ?)", USERNAME);
-        jdbcTemplate.update("DELETE FROM user WHERE username = ?", USERNAME);
+                + "(SELECT id FROM user WHERE username LIKE ?)", USERNAME + "%");
+        jdbcTemplate.update("DELETE FROM user WHERE username LIKE ?", USERNAME + "%");
     }
 
     @Test
@@ -66,6 +70,34 @@ class PrivateExamSourceStorageIntegrationTest extends IntegrationTestBase {
         assertEquals(0L, storageService.getUsage(userId).getUsedBytes());
     }
 
+    @Test
+    void storageInventoryReturnsOnlyOwnerMetadataAndDraftAssociation() {
+        jdbcTemplate.update("INSERT INTO user (username,password,role,status,deleted) VALUES (?,'test','USER',1,0)",
+                USERNAME);
+        jdbcTemplate.update("INSERT INTO user (username,password,role,status,deleted) VALUES (?,'test','USER',1,0)",
+                USERNAME + "-other");
+        Long userId = jdbcTemplate.queryForObject("SELECT id FROM user WHERE username = ?", Long.class, USERNAME);
+        Long otherId = jdbcTemplate.queryForObject(
+                "SELECT id FROM user WHERE username = ?", Long.class, USERNAME + "-other");
+        UserExamSource owned = insertSource(userId, "owned.pdf", "12345678".getBytes());
+        insertSource(otherId, "other.pdf", "1234".getBytes());
+        jdbcTemplate.update("""
+                INSERT INTO private_exam_import_draft
+                  (owner_user_id,title,course_id,duration,source_record_id,status)
+                VALUES (?,'待复核试卷',1,30,?,'REVIEWING')
+                """, userId, owned.getId());
+
+        Page<PrivateExamSourceStorageItemVO> page = storageService.listFiles(userId, 1, 10);
+
+        assertEquals(1L, page.getTotal());
+        PrivateExamSourceStorageItemVO item = page.getRecords().get(0);
+        assertEquals("owned.pdf", item.getSourceName());
+        assertEquals(8L, item.getSourceSize());
+        assertEquals("DRAFT", item.getAssociationType());
+        assertEquals("待复核试卷", item.getAssociationTitle());
+        assertEquals("REVIEWING", item.getAssociationStatus());
+    }
+
     private String storeEightBytes(Long userId, String filename,
                                    CountDownLatch ready, CountDownLatch start) throws Exception {
         ready.countDown();
@@ -85,5 +117,19 @@ class PrivateExamSourceStorageIntegrationTest extends IntegrationTestBase {
         } catch (BusinessException exception) {
             return exception.getMessage();
         }
+    }
+
+    private UserExamSource insertSource(Long ownerUserId, String filename, byte[] bytes) {
+        UserExamSource source = new UserExamSource();
+        source.setOwnerUserId(ownerUserId);
+        source.setSourceName(filename);
+        source.setSourceFormat("PDF");
+        source.setContentSha256("0".repeat(64));
+        source.setOriginalContent("test");
+        source.setSourceMediaType("application/pdf");
+        source.setSourceSize((long) bytes.length);
+        source.setSourceFile(bytes);
+        sourceMapper.insert(source);
+        return source;
     }
 }

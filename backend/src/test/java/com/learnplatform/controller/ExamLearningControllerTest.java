@@ -1,6 +1,7 @@
 package com.learnplatform.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.ExamLearningAnswerRequest;
 import com.learnplatform.dto.ExamLearningAnswerResultVO;
@@ -13,6 +14,7 @@ import com.learnplatform.dto.PrivateExamImportRequest;
 import com.learnplatform.dto.PrivateExamDraftCreateRequest;
 import com.learnplatform.dto.PrivateExamDraftVO;
 import com.learnplatform.dto.PrivateExamStorageUsageVO;
+import com.learnplatform.dto.PrivateExamSourceStorageItemVO;
 import com.learnplatform.dto.PrivateExamPdfRequest;
 import com.learnplatform.dto.PrivateExamDocxRequest;
 import com.learnplatform.security.CustomUserDetails;
@@ -306,6 +308,28 @@ class ExamLearningControllerTest {
                 .andExpect(jsonPath("$.data.usedBytes").value(1024))
                 .andExpect(jsonPath("$.data.limitBytes").value(104857600))
                 .andExpect(jsonPath("$.data.fileCount").value(2));
+    }
+
+    @Test
+    void listsAuthenticatedOwnerSourceStorageFiles() throws Exception {
+        PrivateExamSourceStorageItemVO item = new PrivateExamSourceStorageItemVO();
+        item.setId(11L);
+        item.setSourceName("paper.pdf");
+        item.setSourceFormat("PDF");
+        item.setSourceSize(1024L);
+        item.setAssociationType("PAPER");
+        item.setAssociationId(51L);
+        item.setAssociationTitle("我的试卷");
+        Page<PrivateExamSourceStorageItemVO> page = new Page<>(1, 10, 1);
+        page.setRecords(List.of(item));
+        when(privateExamSourceStorageService.listFiles(7L, 1, 10)).thenReturn(page);
+
+        mockMvc.perform(get("/api/exam/private-papers/source-storage/files")
+                        .param("pageNum", "1").param("pageSize", "10").with(mockUser(7L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.records[0].sourceName").value("paper.pdf"))
+                .andExpect(jsonPath("$.data.records[0].associationType").value("PAPER"));
     }
 
     private PrivateExamImportRequest privateImportRequest() {

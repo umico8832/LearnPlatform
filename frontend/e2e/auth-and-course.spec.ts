@@ -375,9 +375,20 @@ test('用户可上传文本型PDF并沿用预览确认与来源追溯', async ({
   await expect(sourceDialog).toContainText('private-exam-text.pdf · PDF')
   await expect(sourceDialog).toContainText('题干：PDF中的栈遵循哪种访问顺序？')
   await page.keyboard.press('Escape')
-  await card.getByRole('button', { name: '删除试卷' }).click()
-  await page.getByRole('dialog', { name: '删除私有试卷' }).getByRole('button', { name: '确认删除' }).click()
-  await expect(page.getByText('私有试卷已删除')).toBeVisible()
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByRole('button', { name: '导入私有试卷' }).click()
+  const reopenedImportDialog = page.getByRole('dialog', { name: '导入私有试卷' })
+  await reopenedImportDialog.getByRole('button', { name: '查看明细' }).click()
+  const storageDialog = page.getByRole('dialog', { name: '我的原文件存储' })
+  await expect(storageDialog).toContainText('private-exam-text.pdf')
+  await expect(storageDialog).toContainText(`关联试卷：${paperTitle}`)
+  await expect(storageDialog).not.toContainText('application/pdf')
+  expect(await storageDialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
+  await storageDialog.getByRole('button', { name: '删除关联内容' }).click()
+  await page.getByRole('dialog', { name: '删除关联内容' }).getByRole('button', { name: '确认删除' }).click()
+  await expect(page.getByText('私有试卷及其原文件已删除')).toBeVisible()
+  await expect(storageDialog).not.toContainText(paperTitle)
 })
 
 test('用户可上传有限DOCX并提取段落表格进入同一确认闭环', async ({ page }) => {

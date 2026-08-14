@@ -33,6 +33,7 @@ import {
   downloadPrivateExamSourceFile,
   downloadPrivateExamDraftSourceFile,
   getPrivateExamStorageUsage,
+  getPrivateExamStorageFiles,
 } from '@/api/exam'
 
 const mockedRequest = vi.mocked(request)
@@ -266,16 +267,12 @@ describe('Exam API', () => {
       await downloadPrivateExamSourceFile(51)
       await downloadPrivateExamDraftSourceFile(31)
 
-      expect(mockedRequest.get).toHaveBeenNthCalledWith(
-        1,
-        '/exam/private-papers/51/source/file',
-        { responseType: 'blob' },
-      )
-      expect(mockedRequest.get).toHaveBeenNthCalledWith(
-        2,
-        '/exam/private-papers/drafts/31/source/file',
-        { responseType: 'blob' },
-      )
+      expect(mockedRequest.get).toHaveBeenNthCalledWith(1, '/exam/private-papers/51/source/file', {
+        responseType: 'blob',
+      })
+      expect(mockedRequest.get).toHaveBeenNthCalledWith(2, '/exam/private-papers/drafts/31/source/file', {
+        responseType: 'blob',
+      })
     })
 
     it('查询当前所有者累计存储用量', async () => {
@@ -284,6 +281,16 @@ describe('Exam API', () => {
       await getPrivateExamStorageUsage()
 
       expect(mockedRequest.get).toHaveBeenCalledWith('/exam/private-papers/source-storage')
+    })
+
+    it('分页查询当前所有者原文件存储清单', async () => {
+      mockedRequest.get.mockResolvedValue({ code: 0, data: { records: [], total: 0 } })
+
+      await getPrivateExamStorageFiles({ pageNum: 2, pageSize: 10 })
+
+      expect(mockedRequest.get).toHaveBeenCalledWith('/exam/private-papers/source-storage/files', {
+        params: { pageNum: 2, pageSize: 10 },
+      })
     })
   })
 })

@@ -1,7 +1,9 @@
 package com.learnplatform.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
+import com.learnplatform.dto.PrivateExamSourceStorageItemVO;
 import com.learnplatform.dto.PrivateExamStorageUsageVO;
 import com.learnplatform.entity.UserExamSource;
 import com.learnplatform.mapper.UserExamSourceMapper;
@@ -55,6 +57,12 @@ public class PrivateExamSourceStorageService {
         vo.setRemainingBytes(Math.max(0, limitBytes - usedBytes));
         vo.setFileCount(sourceMapper.countOwnedFiles(ownerUserId));
         return vo;
+    }
+
+    public Page<PrivateExamSourceStorageItemVO> listFiles(Long ownerUserId, int pageNum, int pageSize) {
+        int safePageNum = Math.max(1, pageNum);
+        int safePageSize = Math.min(50, Math.max(1, pageSize));
+        return sourceMapper.selectOwnedStoredFiles(new Page<>(safePageNum, safePageSize), ownerUserId);
     }
 
     private String expectedMediaType(String sourceFormat) {
