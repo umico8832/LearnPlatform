@@ -7,6 +7,8 @@
       </a>
       <nav aria-label="管理导航">
         <router-link to="/">平台总览</router-link>
+        <router-link to="/courses">课程管理</router-link>
+        <router-link to="/questions">题目管理</router-link>
         <router-link to="/exams">试卷管理</router-link>
         <router-link to="/subjective-reviews">主观题批阅</router-link>
       </nav>

@@ -7,7 +7,7 @@
         <p class="admin-page-description">维护课程「{{ courseName }}」的知识结构，父子层级会影响题目归类、诊断和复习路径。</p>
       </div>
       <div class="admin-header-actions">
-        <el-button :icon="ArrowLeft" @click="router.push('/admin/courses')">返回课程</el-button>
+        <el-button :icon="ArrowLeft" @click="router.push({ name: 'AdminCourseManage' })">返回课程</el-button>
         <el-button type="primary" :icon="Plus" @click="openDialog()">新增知识点</el-button>
       </div>
     </header>
@@ -356,7 +356,7 @@ async function handleDelete(id: number) {
 onMounted(() => {
   if (!courseId.value) {
     ElMessage.warning('请从课程管理页面进入')
-    router.push('/admin/courses')
+    router.push({ name: 'AdminCourseManage' })
     return
   }
   fetchTree()

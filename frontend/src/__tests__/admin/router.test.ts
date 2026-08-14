@@ -64,4 +64,17 @@ describe('独立管理端路由守卫', () => {
     await router.push('/exams')
     expect(router.currentRoute.value.name).toBe('AdminExamManage')
   })
+
+  it('独立管理端提供课程知识点和题目管理路由', async () => {
+    setToken('token')
+    state.userInfo = { role: 'ADMIN' }
+    const router = createAdminRouter(createMemoryHistory('/admin-app/'))
+    await router.push('/courses')
+    await router.isReady()
+    expect(router.currentRoute.value.name).toBe('AdminCourseManage')
+    await router.push('/knowledge-points?courseId=1')
+    expect(router.currentRoute.value.name).toBe('AdminKPManage')
+    await router.push('/questions')
+    expect(router.currentRoute.value.name).toBe('AdminQuestionManage')
+  })
 })

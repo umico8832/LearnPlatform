@@ -191,7 +191,10 @@ async function handleDelete(id: number) {
 }
 
 function goToKP(course: CourseVO) {
-  router.push(`/admin/knowledge-points?courseId=${course.id}&courseName=${encodeURIComponent(course.name)}`)
+  router.push({
+    name: 'AdminKPManage',
+    query: { courseId: course.id, courseName: course.name },
+  })
 }
 
 onMounted(() => {
