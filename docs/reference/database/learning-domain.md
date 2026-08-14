@@ -13,6 +13,8 @@
 | `course_learning_event` | V22 | 跨 AI 教学与试卷入口的课程学习事实 | `(user_id, course_id, idempotency_key)` 唯一；事件追加且带版本、来源和发生时间 |
 | `tutor_content` | V24 | 已审查、版本化的 Tutor 教学内容和检查定义 | `(content_key, content_version)` 唯一；正确选项不返回客户端 |
 | `tutor_session` | V24，V80 扩展 | 用户课程 Tutor 会话、学习证据聚合快照及首次检查结果 | `session_key` 唯一；会话归属用户、课程与知识点 |
+| `course_stage_assessment` | V86 | 用户课程阶段测评会话、选题策略与汇总结果 | `(user_id, course_id, active_session_key)` 限制一个进行中会话；完成时活动键清空 |
+| `course_stage_assessment_question` | V86 | 测评题目、答案与解析快照及用户作答 | 会话内原题和排序均唯一；提交前不通过 API 暴露答案快照 |
 
 V21 为课程和知识点增加可空的 `content_key` 与 `content_source`。`content_key` 用于在
 AiStu、Web 后端和后续内容导入之间保持稳定引用；存量平台内容可以继续使用空键。
@@ -33,6 +35,10 @@ V80 为 `tutor_session` 增加 `learning_context_json`。开始 Tutor 会话时�
 同课程祖先目录所关联的题目中聚合试卷学习作答与错答、成功的试卷 AI 辅导、当前未掌握错题、到期
 复习和历史复习作答，并把计数与最近时间固化为会话快照。该字段不保存原始答案、正确答案或 AI 输出，
 也不替代 `course_learning_event`、错题和复习计划等原始事实。
+
+V86 增加课程阶段测评会话和逐题快照。创建时仅从当前用户可见的课程客观题中选取题目，并固化题干、
+选项、正确答案和解析，避免测评期间原题变更破坏判分一致性。完成事务显式将活动键写为 `NULL`，再把
+逐题正误投影到错题、复习计划和课程学习事件；题目快照保存判分依据，不替代原始题目或课程事件。
 
 V25 为 `ods-arraystack-insertion` 的 `tutor_content.lesson_json` 增加已审查的
 `ARRAY_STACK_INSERTION` v1 参数定义。它只包含容量、初始槽位和插入参数；课件动画状态由

@@ -12,6 +12,8 @@
 | `GET /api/my-courses` | 查询当前用户的个人课程库 |
 | `GET /api/my-courses/{courseId}/overview` | 查询已加入课程的学习概况与下一步候选目标 |
 | `POST /api/my-courses/{courseId}/start-learning` | 不指定知识点，按当前统一课程状态选择下一学习目标 |
+| `POST /api/my-courses/{courseId}/stage-assessments` | 创建或恢复当前用户在课程中的进行中阶段测评 |
+| `POST /api/my-courses/stage-assessments/{assessmentId}/submit` | 完整提交本人阶段测评并由服务端判分 |
 | `POST /api/my-courses/{courseId}/tutor-sessions` | 以已审查的课程知识点开始 Tutor 会话（必填查询参数 `knowledgePointId`） |
 | `POST /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/check` | 提交该会话的理解检查 `{ "optionId": "..." }` |
 
@@ -32,6 +34,16 @@
 统一排序并返回首个目标。响应目标类型为 `TUTOR`、`DUE_REVIEW`、`WRONG_QUESTION` 或
 `COURSE_SEQUENCE`，只携带对应的可空 `knowledgePointId` 或 `questionId`。选择目标本身不生成掌握证据；
 实际 Tutor 理解检查或题目判分发生后才写入课程学习事实。
+
+阶段测评仅对已加入课程开放。创建请求可传 `questionCount`（1–20，默认 5），同一用户与课程最多保留
+一个进行中会话并在重复创建时恢复。服务端只选择当前用户可访问的已发布单选、多选和判断题，优先顺序为
+未掌握错题、到期复习、近期错误课程事件和题目 ID；存在上述事实时返回
+`LEARNING_STATE_PRIORITY`，否则返回 `COURSE_SEQUENCE_FALLBACK`，后者不能宣称为 AI 个性化。
+题目在创建时固化题干、选项、答案和解析快照，但进行中响应不返回正确答案与解析。
+
+提交必须包含全部且不重复的测评题答案。服务端按快照答案统一判分，完成后返回逐题正误、参考答案与解析，
+并将每题结果写入错题、间隔复习计划和来源为 `STAGE_ASSESSMENT` 的课程学习事件；重复提交已完成测评
+只返回既有结果，不重复写学习事实。完成会释放活动会话键，后续可以开启新一轮。
 
 Tutor 仅可打开已加入课程、属于该课程且审查状态为 `REVIEWED` 的内容；响应不会返回正确选项。
 理解检查由服务端首次判分并写入可追加课程学习事件，重复提交返回既有结果。

@@ -1,15 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 
-const { mockGetCourseOverview, mockStartCourseLearning, mockPush } = vi.hoisted(() => ({
-  mockGetCourseOverview: vi.fn(),
-  mockStartCourseLearning: vi.fn(),
-  mockPush: vi.fn(),
-}))
+const { mockGetCourseOverview, mockStartCourseLearning, mockStartAssessment, mockSubmitAssessment, mockPush } =
+  vi.hoisted(() => ({
+    mockGetCourseOverview: vi.fn(),
+    mockStartCourseLearning: vi.fn(),
+    mockStartAssessment: vi.fn(),
+    mockSubmitAssessment: vi.fn(),
+    mockPush: vi.fn(),
+  }))
 
 vi.mock('@/api/course', () => ({
   getCourseOverview: (...args: unknown[]) => mockGetCourseOverview(...args),
   startCourseLearning: (...args: unknown[]) => mockStartCourseLearning(...args),
+  startCourseStageAssessment: (...args: unknown[]) => mockStartAssessment(...args),
+  submitCourseStageAssessment: (...args: unknown[]) => mockSubmitAssessment(...args),
 }))
 
 vi.mock('vue-router', () => ({
@@ -23,6 +28,12 @@ const stubs = {
   'el-button': { template: '<button @click="$emit(\'click\')"><slot /></button>', emits: ['click'] },
   'el-tag': { template: '<span><slot /></span>' },
   'el-result': { template: '<section><slot /><slot name="extra" /></section>' },
+  'el-alert': { template: '<p>{{ title }}</p>', props: ['title'] },
+  'el-dialog': { template: '<section><slot /><slot name="footer" /></section>' },
+  'el-radio-group': { template: '<div><slot /></div>' },
+  'el-radio': { template: '<label><slot /></label>' },
+  'el-checkbox-group': { template: '<div><slot /></div>' },
+  'el-checkbox': { template: '<label><slot /></label>' },
 }
 
 function findButton(wrapper: ReturnType<typeof mount>, text: string) {
@@ -130,5 +141,60 @@ describe('CourseOverviewView', () => {
       name: routeName,
       query: { courseId: '408', questionId: String(questionId) },
     })
+  })
+
+  it('主动发起阶段测评并在完整作答后展示服务端结果', async () => {
+    const started = {
+      id: 51,
+      courseId: 408,
+      status: 'IN_PROGRESS',
+      selectionStrategy: 'COURSE_SEQUENCE_FALLBACK',
+      questionCount: 1,
+      correctCount: null,
+      questions: [
+        {
+          id: 61,
+          questionId: 21,
+          sortOrder: 1,
+          questionType: 'SINGLE_CHOICE',
+          content: '栈的访问顺序是？',
+          options: [{ label: 'A', content: 'LIFO' }],
+          score: 2,
+          userAnswer: null,
+          correct: null,
+          correctAnswer: null,
+          analysis: null,
+        },
+      ],
+    }
+    mockStartAssessment.mockResolvedValue({ data: started })
+    mockSubmitAssessment.mockResolvedValue({
+      data: {
+        ...started,
+        status: 'COMPLETED',
+        correctCount: 1,
+        questions: [
+          { ...started.questions[0], userAnswer: 'A', correct: true, correctAnswer: 'A', analysis: '栈顶元素先离开' },
+        ],
+      },
+    })
+    const wrapper = mount(CourseOverviewView, { global: { stubs } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as {
+      startAssessment: () => Promise<void>
+      submitAssessment: () => Promise<void>
+      assessmentAnswers: Record<number, string[]>
+    }
+
+    await vm.startAssessment()
+    expect(mockStartAssessment).toHaveBeenCalledWith(408, 5)
+    expect(wrapper.text()).toContain('确定性课程题序')
+    expect(wrapper.text()).not.toContain('栈顶元素先离开')
+    vm.assessmentAnswers[61] = ['A']
+    await vm.submitAssessment()
+
+    expect(mockSubmitAssessment).toHaveBeenCalledWith(51, [{ assessmentQuestionId: 61, userAnswer: 'A' }])
+    expect(wrapper.text()).toContain('答对 1 / 1 题')
+    expect(wrapper.text()).toContain('栈顶元素先离开')
   })
 })

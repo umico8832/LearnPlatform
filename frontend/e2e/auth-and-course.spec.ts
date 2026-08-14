@@ -442,8 +442,24 @@ test('用户可完成2026真题学习与限时考试并复盘可信来源', asyn
     await joinButton.click()
     await expect(page).toHaveURL(/\/my-courses\/\d+$/)
   } else {
-    await expect(page.getByRole('button', { name: '进入课程总览' })).toBeVisible()
+    const overviewButton = page.getByRole('button', { name: '进入课程总览' })
+    await expect(overviewButton).toBeVisible()
+    await overviewButton.click()
   }
+
+  await page.getByRole('button', { name: '阶段测评' }).click()
+  const assessmentDialog = page.getByRole('dialog', { name: '课程阶段测评' })
+  await expect(assessmentDialog).toContainText(/按当前错题|确定性课程题序/)
+  const assessmentQuestions = await assessmentDialog.locator('.assessment-question').all()
+  expect(assessmentQuestions.length).toBeGreaterThan(0)
+  for (const question of assessmentQuestions) {
+    const checkboxes = question.locator('.el-checkbox')
+    if ((await checkboxes.count()) > 0) await checkboxes.first().click()
+    else await question.locator('.el-radio').first().click()
+  }
+  await assessmentDialog.getByRole('button', { name: '提交测评' }).click()
+  await expect(assessmentDialog).toContainText(/答对 \d+ \/ \d+ 题/)
+  await assessmentDialog.getByRole('button', { name: '关闭', exact: true }).click()
 
   await page.goto('/exams')
   const officialCard = page.locator('.exam-card').filter({ hasText: '2026 年 408 真题·数据结构选择题' })

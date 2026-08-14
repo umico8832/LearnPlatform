@@ -10,6 +10,7 @@
       <div class="hero-actions">
         <el-button :icon="Collection" @click="openCourseContent">查看课程目录</el-button>
         <el-button :icon="Document" @click="openCoursePapers">学习课程试卷</el-button>
+        <el-button :icon="DataAnalysis" :loading="assessmentStarting" @click="startAssessment">阶段测评</el-button>
         <el-button
           type="primary"
           :icon="ArrowRight"
@@ -47,7 +48,11 @@
           </article>
         </div>
 
-        <section v-if="overview.tutorProgress.length" class="tutor-progress-panel" aria-labelledby="tutor-progress-heading">
+        <section
+          v-if="overview.tutorProgress.length"
+          class="tutor-progress-panel"
+          aria-labelledby="tutor-progress-heading"
+        >
           <div class="panel-header">
             <div>
               <span class="section-kicker">课程目录</span>
@@ -62,7 +67,10 @@
                 <h4>{{ item.title }}</h4>
                 <span class="progress-status">{{ tutorStatusLabel(item.status) }}</span>
               </div>
-              <el-button :type="item.status === 'IN_PROGRESS' ? 'primary' : 'default'" @click="openTutor(item.knowledgePointId)">
+              <el-button
+                :type="item.status === 'IN_PROGRESS' ? 'primary' : 'default'"
+                @click="openTutor(item.knowledgePointId)"
+              >
                 {{ tutorActionLabel(item.status) }}
               </el-button>
             </article>
@@ -85,11 +93,7 @@
                   <h4>{{ target.title }}</h4>
                   <p>{{ target.reason }}</p>
                 </div>
-                <el-button
-                  :type="index === 0 ? 'primary' : 'default'"
-                  :icon="ArrowRight"
-                  @click="openTarget(target)"
-                >
+                <el-button :type="index === 0 ? 'primary' : 'default'" :icon="ArrowRight" @click="openTarget(target)">
                   开始
                 </el-button>
               </article>
@@ -115,14 +119,81 @@
         <template #extra><el-button type="primary" @click="fetchOverview">重新加载</el-button></template>
       </el-result>
     </section>
+
+    <el-dialog v-model="assessmentDialogVisible" title="课程阶段测评" width="min(780px, 94vw)">
+      <template v-if="assessment">
+        <el-alert
+          :title="assessmentStrategyLabel"
+          :type="assessment.selectionStrategy === 'LEARNING_STATE_PRIORITY' ? 'info' : 'warning'"
+          :closable="false"
+          show-icon
+        />
+        <p v-if="assessment.status === 'COMPLETED'" class="assessment-summary">
+          答对 {{ assessment.correctCount }} / {{ assessment.questionCount }} 题
+        </p>
+        <div class="assessment-list">
+          <article v-for="question in assessment.questions" :key="question.id" class="assessment-question">
+            <div class="assessment-question-header">
+              <strong>{{ question.sortOrder }}. {{ question.content }}</strong>
+              <el-tag v-if="question.correct != null" :type="question.correct ? 'success' : 'danger'">
+                {{ question.correct ? '正确' : '错误' }}
+              </el-tag>
+            </div>
+            <el-checkbox-group
+              v-if="question.questionType === 'MULTIPLE_CHOICE'"
+              v-model="assessmentAnswers[question.id]"
+              :disabled="assessment.status === 'COMPLETED'"
+              class="assessment-options"
+            >
+              <el-checkbox v-for="option in question.options" :key="option.label" :value="option.label">
+                {{ option.label }}. {{ option.content }}
+              </el-checkbox>
+            </el-checkbox-group>
+            <el-radio-group
+              v-else
+              v-model="assessmentAnswers[question.id][0]"
+              :disabled="assessment.status === 'COMPLETED'"
+              class="assessment-options"
+            >
+              <el-radio v-for="option in question.options" :key="option.label" :value="option.label">
+                {{ option.content }}
+              </el-radio>
+            </el-radio-group>
+            <div v-if="assessment.status === 'COMPLETED'" class="assessment-result">
+              <p>参考答案：{{ question.correctAnswer }}</p>
+              <p>{{ question.analysis || '暂无解析' }}</p>
+            </div>
+          </article>
+        </div>
+      </template>
+      <template #footer>
+        <el-button @click="assessmentDialogVisible = false">关闭</el-button>
+        <el-button
+          v-if="assessment?.status === 'IN_PROGRESS'"
+          type="primary"
+          :loading="assessmentSubmitting"
+          @click="submitAssessment"
+          >提交测评</el-button
+        >
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, ArrowRight, Collection, Document, Refresh } from '@element-plus/icons-vue'
-import { getCourseOverview, startCourseLearning, type CourseOverviewVO, type LearningTargetVO } from '@/api/course'
+import { ElMessage } from 'element-plus'
+import { ArrowLeft, ArrowRight, Collection, DataAnalysis, Document, Refresh } from '@element-plus/icons-vue'
+import {
+  getCourseOverview,
+  startCourseLearning,
+  startCourseStageAssessment,
+  submitCourseStageAssessment,
+  type CourseOverviewVO,
+  type CourseStageAssessmentVO,
+  type LearningTargetVO,
+} from '@/api/course'
 
 const route = useRoute()
 const router = useRouter()
@@ -130,7 +201,17 @@ const overview = ref<CourseOverviewVO | null>(null)
 const loading = ref(false)
 const starting = ref(false)
 const loadFailed = ref(false)
+const assessmentStarting = ref(false)
+const assessmentSubmitting = ref(false)
+const assessmentDialogVisible = ref(false)
+const assessment = ref<CourseStageAssessmentVO | null>(null)
+const assessmentAnswers = ref<Record<number, string[]>>({})
 const courseId = computed(() => Number(route.params.id))
+const assessmentStrategyLabel = computed(() =>
+  assessment.value?.selectionStrategy === 'LEARNING_STATE_PRIORITY'
+    ? '按当前错题、到期复习和近期错误记录优先选题'
+    : '学习数据不足，采用确定性课程题序；本次不标记为 AI 个性化',
+)
 
 async function fetchOverview() {
   loading.value = true
@@ -161,6 +242,46 @@ async function startLearning() {
     openTarget(response.data)
   } finally {
     starting.value = false
+  }
+}
+
+function syncAssessmentAnswers(value: CourseStageAssessmentVO) {
+  assessmentAnswers.value = Object.fromEntries(
+    value.questions.map((question) => [question.id, question.userAnswer ? question.userAnswer.split(',') : []]),
+  )
+}
+
+async function startAssessment() {
+  assessmentStarting.value = true
+  try {
+    const response = await startCourseStageAssessment(courseId.value, 5)
+    assessment.value = response.data
+    syncAssessmentAnswers(response.data)
+    assessmentDialogVisible.value = true
+  } finally {
+    assessmentStarting.value = false
+  }
+}
+
+async function submitAssessment() {
+  if (!assessment.value) return
+  const incomplete = assessment.value.questions.some((question) => !assessmentAnswers.value[question.id]?.length)
+  if (incomplete) {
+    ElMessage.warning('请完成全部题目后再提交')
+    return
+  }
+  assessmentSubmitting.value = true
+  try {
+    const answers = assessment.value.questions.map((question) => ({
+      assessmentQuestionId: question.id,
+      userAnswer: [...assessmentAnswers.value[question.id]].sort().join(','),
+    }))
+    const response = await submitCourseStageAssessment(assessment.value.id, answers)
+    assessment.value = response.data
+    syncAssessmentAnswers(response.data)
+    await fetchOverview()
+  } finally {
+    assessmentSubmitting.value = false
   }
 }
 
@@ -218,38 +339,285 @@ onMounted(fetchOverview)
 </script>
 
 <style scoped>
-.course-overview { display: flex; flex-direction: column; gap: 16px; }
-.overview-hero, .overview-content, .target-panel, .activity-panel, .stat-card { background: var(--lp-surface); border: 1px solid var(--lp-border); border-radius: var(--lp-radius); box-shadow: var(--lp-shadow-sm); }
-.overview-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 22px; }
-.hero-actions { display: flex; flex: none; gap: 10px; }
-.overview-hero h2, .panel-header h3, .activity-panel h3, .target-copy h4 { margin: 0; color: var(--lp-text); }
-.overview-hero h2 { margin-top: 4px; font-size: 24px; line-height: 1.25; }
-.overview-hero p, .target-copy p, .activity-panel p { max-width: 720px; margin: 8px 0 0; color: var(--lp-text-secondary); font-size: 14px; line-height: 1.7; }
-.section-kicker { display: block; margin-top: 10px; color: var(--lp-primary); font-size: 12px; font-weight: 800; }
-.overview-content { min-height: 320px; padding: 18px; }
-.stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-.stat-card { min-height: 122px; padding: 16px; }
-.stat-card span, .stat-card small { display: block; color: var(--lp-text-muted); font-size: 13px; line-height: 1.5; }
-.stat-card strong { display: block; margin: 10px 0 5px; color: var(--lp-primary); font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; }
-.stat-card.warning strong { color: var(--el-color-warning); }
-.stat-card.emphasis { background: var(--lp-surface-soft); }
-.tutor-progress-panel { margin-top: 16px; padding: 18px; border: 1px solid var(--lp-border); border-radius: var(--lp-radius); background: var(--lp-surface-soft); }
-.tutor-progress-note { margin: 8px 0 0; color: var(--lp-text-secondary); font-size: 14px; line-height: 1.7; }
-.tutor-progress-list { display: grid; gap: 10px; margin-top: 14px; }
-.tutor-progress-item { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px; border: 1px solid var(--lp-border); border-radius: 8px; background: var(--lp-surface); }
-.tutor-progress-item h4 { margin: 0; color: var(--lp-text); font-size: 15px; }
-.progress-status { display: inline-block; margin-top: 6px; color: var(--lp-text-secondary); font-size: 13px; line-height: 1.5; }
-.overview-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(260px, .8fr); gap: 14px; margin-top: 16px; }
-.target-panel, .activity-panel { padding: 18px; }
-.panel-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-.panel-header .section-kicker, .activity-panel .section-kicker { margin-top: 0; }
-.panel-header h3, .activity-panel h3 { margin-top: 4px; font-size: 18px; }
-.target-list { display: flex; flex-direction: column; gap: 10px; }
-.target-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--lp-border); border-radius: 8px; background: var(--lp-surface-soft); }
-.target-index { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: var(--lp-primary-soft); color: var(--lp-primary); font-size: 14px; font-weight: 800; }
-.target-copy h4 { font-size: 15px; line-height: 1.45; }
-.target-copy p { margin-top: 3px; }
-.activity-panel .el-button { margin-top: 10px; }
-@media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .overview-grid { grid-template-columns: 1fr; } }
-@media (max-width: 767px) { .overview-hero { align-items: stretch; flex-direction: column; } .hero-actions { align-items: stretch; flex-direction: column; } .hero-actions .el-button { width: 100%; margin-left: 0; } .stats-grid { grid-template-columns: 1fr; } .target-item { grid-template-columns: auto minmax(0, 1fr); } .target-item .el-button { grid-column: 2; justify-self: start; } .tutor-progress-panel { padding: 16px; } .tutor-progress-item { align-items: flex-start; flex-direction: column; } .tutor-progress-item .el-button { width: 100%; } }
+.course-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.overview-hero,
+.overview-content,
+.target-panel,
+.activity-panel,
+.stat-card {
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius);
+  box-shadow: var(--lp-shadow-sm);
+}
+.overview-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px;
+}
+.hero-actions {
+  display: flex;
+  flex: none;
+  gap: 10px;
+}
+.overview-hero h2,
+.panel-header h3,
+.activity-panel h3,
+.target-copy h4 {
+  margin: 0;
+  color: var(--lp-text);
+}
+.overview-hero h2 {
+  margin-top: 4px;
+  font-size: 24px;
+  line-height: 1.25;
+}
+.overview-hero p,
+.target-copy p,
+.activity-panel p {
+  max-width: 720px;
+  margin: 8px 0 0;
+  color: var(--lp-text-secondary);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.section-kicker {
+  display: block;
+  margin-top: 10px;
+  color: var(--lp-primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+.overview-content {
+  min-height: 320px;
+  padding: 18px;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.stat-card {
+  min-height: 122px;
+  padding: 16px;
+}
+.stat-card span,
+.stat-card small {
+  display: block;
+  color: var(--lp-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.stat-card strong {
+  display: block;
+  margin: 10px 0 5px;
+  color: var(--lp-primary);
+  font-size: 30px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.stat-card.warning strong {
+  color: var(--el-color-warning);
+}
+.stat-card.emphasis {
+  background: var(--lp-surface-soft);
+}
+.tutor-progress-panel {
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius);
+  background: var(--lp-surface-soft);
+}
+.tutor-progress-note {
+  margin: 8px 0 0;
+  color: var(--lp-text-secondary);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.tutor-progress-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+.tutor-progress-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid var(--lp-border);
+  border-radius: 8px;
+  background: var(--lp-surface);
+}
+.tutor-progress-item h4 {
+  margin: 0;
+  color: var(--lp-text);
+  font-size: 15px;
+}
+.progress-status {
+  display: inline-block;
+  margin-top: 6px;
+  color: var(--lp-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(260px, 0.8fr);
+  gap: 14px;
+  margin-top: 16px;
+}
+.target-panel,
+.activity-panel {
+  padding: 18px;
+}
+.panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.panel-header .section-kicker,
+.activity-panel .section-kicker {
+  margin-top: 0;
+}
+.panel-header h3,
+.activity-panel h3 {
+  margin-top: 4px;
+  font-size: 18px;
+}
+.target-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.target-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--lp-border);
+  border-radius: 8px;
+  background: var(--lp-surface-soft);
+}
+.target-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--lp-primary-soft);
+  color: var(--lp-primary);
+  font-size: 14px;
+  font-weight: 800;
+}
+.target-copy h4 {
+  font-size: 15px;
+  line-height: 1.45;
+}
+.target-copy p {
+  margin-top: 3px;
+}
+.activity-panel .el-button {
+  margin-top: 10px;
+}
+.assessment-summary {
+  margin: 16px 0 0;
+  color: var(--lp-text);
+  font-size: 20px;
+  font-weight: 700;
+}
+.assessment-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+.assessment-question {
+  padding: 16px;
+  border: 1px solid var(--lp-border);
+  border-radius: 8px;
+  background: var(--lp-surface-soft);
+}
+.assessment-question-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--lp-text);
+  line-height: 1.6;
+}
+.assessment-options {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+.assessment-result {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--lp-surface);
+  color: var(--lp-text-secondary);
+}
+.assessment-result p {
+  margin: 0;
+  line-height: 1.6;
+}
+.assessment-result p + p {
+  margin-top: 4px;
+}
+@media (max-width: 900px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .overview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 767px) {
+  .overview-hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .hero-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .hero-actions .el-button {
+    width: 100%;
+    margin-left: 0;
+  }
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .target-item {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .target-item .el-button {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .tutor-progress-panel {
+    padding: 16px;
+  }
+  .tutor-progress-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .tutor-progress-item .el-button {
+    width: 100%;
+  }
+  .assessment-question-header {
+    flex-direction: column;
+  }
+}
 </style>

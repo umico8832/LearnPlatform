@@ -18,6 +18,8 @@ import {
   addCourseToLibrary,
   getCourseOverview,
   startCourseLearning,
+  startCourseStageAssessment,
+  submitCourseStageAssessment,
   startTutorSession,
   submitTutorCheck,
   isArrayQueueDequeueCourseware,
@@ -37,39 +39,93 @@ describe('Course API', () => {
   })
 
   it('只接受受限的 ArrayQueue 循环数组课件配置', () => {
-    expect(isArrayQueueRepresentationCourseware({
-      kind: 'ARRAY_QUEUE_REPRESENTATION', version: 1, capacity: 8, headIndex: 6, elements: ['A', 'B'],
-    })).toBe(true)
-    expect(isArrayQueueRepresentationCourseware({
-      kind: 'ARRAY_QUEUE_REPRESENTATION', version: 1, capacity: 8, headIndex: 8, elements: ['A'], script: 'alert(1)',
-    })).toBe(false)
+    expect(
+      isArrayQueueRepresentationCourseware({
+        kind: 'ARRAY_QUEUE_REPRESENTATION',
+        version: 1,
+        capacity: 8,
+        headIndex: 6,
+        elements: ['A', 'B'],
+      }),
+    ).toBe(true)
+    expect(
+      isArrayQueueRepresentationCourseware({
+        kind: 'ARRAY_QUEUE_REPRESENTATION',
+        version: 1,
+        capacity: 8,
+        headIndex: 8,
+        elements: ['A'],
+        script: 'alert(1)',
+      }),
+    ).toBe(false)
   })
 
   it('只接受容量充足的 ArrayQueue 入队回放配置', () => {
-    expect(isArrayQueueEnqueueCourseware({
-      kind: 'ARRAY_QUEUE_ENQUEUE', version: 1, capacity: 8, headIndex: 6, elements: ['A', 'B', 'C', 'D', 'E'], enqueueValue: 'F',
-    })).toBe(true)
-    expect(isArrayQueueEnqueueCourseware({
-      kind: 'ARRAY_QUEUE_ENQUEUE', version: 1, capacity: 5, headIndex: 1, elements: ['A', 'B', 'C', 'D', 'E'], enqueueValue: 'F', script: 'alert(1)',
-    })).toBe(false)
+    expect(
+      isArrayQueueEnqueueCourseware({
+        kind: 'ARRAY_QUEUE_ENQUEUE',
+        version: 1,
+        capacity: 8,
+        headIndex: 6,
+        elements: ['A', 'B', 'C', 'D', 'E'],
+        enqueueValue: 'F',
+      }),
+    ).toBe(true)
+    expect(
+      isArrayQueueEnqueueCourseware({
+        kind: 'ARRAY_QUEUE_ENQUEUE',
+        version: 1,
+        capacity: 5,
+        headIndex: 1,
+        elements: ['A', 'B', 'C', 'D', 'E'],
+        enqueueValue: 'F',
+        script: 'alert(1)',
+      }),
+    ).toBe(false)
   })
 
   it('只接受非空、无可执行字段的 ArrayQueue 出队回放配置', () => {
-    expect(isArrayQueueDequeueCourseware({
-      kind: 'ARRAY_QUEUE_DEQUEUE', version: 1, capacity: 8, headIndex: 6, elements: ['A', 'B', 'C', 'D', 'E'],
-    })).toBe(true)
-    expect(isArrayQueueDequeueCourseware({
-      kind: 'ARRAY_QUEUE_DEQUEUE', version: 1, capacity: 8, headIndex: 6, elements: [], script: 'alert(1)',
-    })).toBe(false)
+    expect(
+      isArrayQueueDequeueCourseware({
+        kind: 'ARRAY_QUEUE_DEQUEUE',
+        version: 1,
+        capacity: 8,
+        headIndex: 6,
+        elements: ['A', 'B', 'C', 'D', 'E'],
+      }),
+    ).toBe(true)
+    expect(
+      isArrayQueueDequeueCourseware({
+        kind: 'ARRAY_QUEUE_DEQUEUE',
+        version: 1,
+        capacity: 8,
+        headIndex: 6,
+        elements: [],
+        script: 'alert(1)',
+      }),
+    ).toBe(false)
   })
 
   it('只接受跨界、无可执行字段的 ArrayQueue 线性化复制配置', () => {
-    expect(isArrayQueueResizeCourseware({
-      kind: 'ARRAY_QUEUE_RESIZE', version: 1, previousCapacity: 8, headIndex: 6, elements: ['A', 'B', 'C', 'D', 'E'],
-    })).toBe(true)
-    expect(isArrayQueueResizeCourseware({
-      kind: 'ARRAY_QUEUE_RESIZE', version: 1, previousCapacity: 8, headIndex: 2, elements: ['A', 'B'], script: 'alert(1)',
-    })).toBe(false)
+    expect(
+      isArrayQueueResizeCourseware({
+        kind: 'ARRAY_QUEUE_RESIZE',
+        version: 1,
+        previousCapacity: 8,
+        headIndex: 6,
+        elements: ['A', 'B', 'C', 'D', 'E'],
+      }),
+    ).toBe(true)
+    expect(
+      isArrayQueueResizeCourseware({
+        kind: 'ARRAY_QUEUE_RESIZE',
+        version: 1,
+        previousCapacity: 8,
+        headIndex: 2,
+        elements: ['A', 'B'],
+        script: 'alert(1)',
+      }),
+    ).toBe(false)
   })
 
   describe('getAllCourses', () => {
@@ -161,12 +217,30 @@ describe('Course API', () => {
       expect(mockedRequest.post).toHaveBeenCalledWith('/my-courses/408/start-learning')
     })
 
+    it('应创建并提交课程阶段测评', async () => {
+      mockedRequest.post.mockResolvedValue({ code: 0, data: { id: 51 }, message: 'success' })
+
+      await startCourseStageAssessment(408, 5)
+      await submitCourseStageAssessment(51, [{ assessmentQuestionId: 61, userAnswer: 'A' }])
+
+      expect(mockedRequest.post).toHaveBeenNthCalledWith(1, '/my-courses/408/stage-assessments', {
+        questionCount: 5,
+      })
+      expect(mockedRequest.post).toHaveBeenNthCalledWith(2, '/my-courses/stage-assessments/51/submit', {
+        answers: [{ assessmentQuestionId: 61, userAnswer: 'A' }],
+      })
+    })
+
     it('应以课程和知识点创建 Tutor 会话并提交服务端检查', async () => {
       mockedRequest.post.mockResolvedValue({ code: 0, data: {}, message: 'success' })
       await startTutorSession(408, 31)
       await submitTutorCheck(408, 'session-key', 'RIGHT_TO_LEFT')
-      expect(mockedRequest.post).toHaveBeenNthCalledWith(1, '/my-courses/408/tutor-sessions', undefined, { params: { knowledgePointId: 31 } })
-      expect(mockedRequest.post).toHaveBeenNthCalledWith(2, '/my-courses/408/tutor-sessions/session-key/check', { optionId: 'RIGHT_TO_LEFT' })
+      expect(mockedRequest.post).toHaveBeenNthCalledWith(1, '/my-courses/408/tutor-sessions', undefined, {
+        params: { knowledgePointId: 31 },
+      })
+      expect(mockedRequest.post).toHaveBeenNthCalledWith(2, '/my-courses/408/tutor-sessions/session-key/check', {
+        optionId: 'RIGHT_TO_LEFT',
+      })
     })
   })
 

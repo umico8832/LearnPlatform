@@ -3,9 +3,13 @@ package com.learnplatform.controller;
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.UserCourseVO;
 import com.learnplatform.dto.CourseOverviewVO;
+import com.learnplatform.dto.CourseStageAssessmentCreateRequest;
+import com.learnplatform.dto.CourseStageAssessmentSubmitRequest;
+import com.learnplatform.dto.CourseStageAssessmentVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.CourseLibraryService;
 import com.learnplatform.service.CourseOverviewService;
+import com.learnplatform.service.CourseStageAssessmentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,10 +39,12 @@ class CourseLibraryControllerTest {
 
     @Mock private CourseLibraryService courseLibraryService;
     @Mock private CourseOverviewService courseOverviewService;
+    @Mock private CourseStageAssessmentService stageAssessmentService;
 
     @BeforeEach
     void setUp() {
-        CourseLibraryController controller = new CourseLibraryController(courseLibraryService, courseOverviewService);
+        CourseLibraryController controller = new CourseLibraryController(
+                courseLibraryService, courseOverviewService, stageAssessmentService);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
@@ -101,6 +107,35 @@ class CourseLibraryControllerTest {
                 .andExpect(jsonPath("$.data.knowledgePointId").value(41));
 
         verify(courseOverviewService).selectStartTarget(7L, 10L);
+    }
+
+    @Test
+    void startsAndSubmitsStageAssessmentAsAuthenticatedUser() throws Exception {
+        CourseStageAssessmentVO started = new CourseStageAssessmentVO();
+        started.setId(51L);
+        started.setCourseId(10L);
+        started.setStatus("IN_PROGRESS");
+        when(stageAssessmentService.start(
+                org.mockito.ArgumentMatchers.eq(7L), org.mockito.ArgumentMatchers.eq(10L),
+                org.mockito.ArgumentMatchers.any(CourseStageAssessmentCreateRequest.class))).thenReturn(started);
+        CourseStageAssessmentVO completed = new CourseStageAssessmentVO();
+        completed.setId(51L);
+        completed.setStatus("COMPLETED");
+        completed.setCorrectCount(1);
+        when(stageAssessmentService.submit(
+                org.mockito.ArgumentMatchers.eq(51L), org.mockito.ArgumentMatchers.eq(7L),
+                org.mockito.ArgumentMatchers.any(CourseStageAssessmentSubmitRequest.class))).thenReturn(completed);
+
+        mockMvc.perform(post("/api/my-courses/10/stage-assessments").with(mockUser(7L))
+                        .contentType("application/json").content("{\"questionCount\":5}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("IN_PROGRESS"));
+        mockMvc.perform(post("/api/my-courses/stage-assessments/51/submit").with(mockUser(7L))
+                        .contentType("application/json")
+                        .content("{\"answers\":[{\"assessmentQuestionId\":61,\"userAnswer\":\"A\"}]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.data.correctCount").value(1));
     }
 
     private RequestPostProcessor mockUser(Long userId) {
