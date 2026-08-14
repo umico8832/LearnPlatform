@@ -14,6 +14,9 @@ const {
   mockReviewPrivateExamDraftQuestion,
   mockConfirmPrivateExamDraft,
   mockGetPrivateExamDrafts,
+  mockDeletePrivateExamDraft,
+  mockDeletePrivateExamPaper,
+  mockConfirmDialog,
   mockPush,
 } = vi.hoisted(() => ({
   mockGetPublishedPapers: vi.fn(),
@@ -28,6 +31,9 @@ const {
   mockReviewPrivateExamDraftQuestion: vi.fn(),
   mockConfirmPrivateExamDraft: vi.fn(),
   mockGetPrivateExamDrafts: vi.fn(),
+  mockDeletePrivateExamDraft: vi.fn(),
+  mockDeletePrivateExamPaper: vi.fn(),
+  mockConfirmDialog: vi.fn(),
   mockPush: vi.fn(),
 }))
 
@@ -45,6 +51,13 @@ vi.mock('@/api/exam', () => ({
   reviewPrivateExamDraftQuestion: (...args: unknown[]) => mockReviewPrivateExamDraftQuestion(...args),
   confirmPrivateExamDraft: (...args: unknown[]) => mockConfirmPrivateExamDraft(...args),
   getPrivateExamDrafts: (...args: unknown[]) => mockGetPrivateExamDrafts(...args),
+  deletePrivateExamDraft: (...args: unknown[]) => mockDeletePrivateExamDraft(...args),
+  deletePrivateExamPaper: (...args: unknown[]) => mockDeletePrivateExamPaper(...args),
+}))
+
+vi.mock('element-plus', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('element-plus')>()),
+  ElMessageBox: { confirm: (...args: unknown[]) => mockConfirmDialog(...args) },
 }))
 
 vi.mock('@/api/course', () => ({
@@ -93,6 +106,9 @@ describe('ExamListView paper provenance', () => {
     mockStartExam.mockResolvedValue({ code: 0, data: { id: 101, examPaperId: 1, status: 0 } })
     mockGetMyExamRecords.mockResolvedValue({ code: 0, data: { records: [], total: 0 } })
     mockGetPrivateExamDrafts.mockResolvedValue({ code: 0, data: [] })
+    mockConfirmDialog.mockResolvedValue(undefined)
+    mockDeletePrivateExamDraft.mockResolvedValue({ code: 0, data: null })
+    mockDeletePrivateExamPaper.mockResolvedValue({ code: 0, data: null })
     mockGetPublishedPapers.mockResolvedValue({
       code: 0,
       data: {
@@ -296,6 +312,37 @@ describe('ExamListView paper provenance', () => {
     })
     await vm.confirmDraft()
     expect(mockConfirmPrivateExamDraft).toHaveBeenCalledWith(31)
+  })
+
+  it('显式确认后删除未引用草稿和私有试卷', async () => {
+    const wrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
+    await flushPromises()
+    const draftFixture = {
+      id: 31,
+      title: '待删除草稿',
+      courseId: 10,
+      duration: 30,
+      status: 'DRAFT' as const,
+      confirmedPaperId: null,
+      reviewedQuestionCount: 0,
+      questionCount: 1,
+      createTime: '2026-08-15T10:00:00',
+      questions: [],
+    }
+    const paperFixture = { id: 51, title: '待删除私有试卷', visibility: 'PRIVATE' as const }
+    const vm = wrapper.vm as unknown as {
+      privateDrafts: (typeof draftFixture)[]
+      deleteDraft: (draft: typeof draftFixture) => Promise<void>
+      deletePaper: (paper: typeof paperFixture) => Promise<void>
+    }
+    vm.privateDrafts = [draftFixture]
+
+    await vm.deleteDraft(draftFixture)
+    expect(mockDeletePrivateExamDraft).toHaveBeenCalledWith(31)
+    expect(vm.privateDrafts).toEqual([])
+    await vm.deletePaper(paperFixture)
+    expect(mockDeletePrivateExamPaper).toHaveBeenCalledWith(51)
+    expect(mockConfirmDialog).toHaveBeenCalledTimes(2)
   })
 
   it('只把来源已核验的官方试卷标记为官方原题并展示来源', async () => {

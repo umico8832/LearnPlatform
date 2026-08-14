@@ -19,6 +19,8 @@
 | `POST /api/exam/private-papers/drafts/{draftId}/questions/{questionId}/ai-answer` | 为一题生成受结构校验的 AI 答案与解析建议 |
 | `PUT /api/exam/private-papers/drafts/{draftId}/questions/{questionId}/review` | 所有者提交该题最终答案和解析并标记已复核 |
 | `POST /api/exam/private-papers/drafts/{draftId}/confirm` | 全部题目复核后显式确认并启用私有试卷 |
+| `DELETE /api/exam/private-papers/drafts/{draftId}` | 所有者删除尚未确认启用的私有试卷草稿 |
+| `DELETE /api/exam/private-papers/{paperId}` | 所有者删除尚未产生考试、学习或衍生事实的私有试卷 |
 | `GET /api/exam/private-papers/{paperId}/source` | 仅所有者读取该私有试卷的原始资料 |
 
 同一用户对同一张已发布试卷最多保留一个活动考试记录。再次调用开始接口时，未过期记录会被复用；
@@ -46,6 +48,11 @@ SHA-256 哈希及 `confirmed=true`，内容变化后必须重新预览。确认�
 私有试卷会出现在所有者的可用试卷列表中，可进入考试模式；关联课程已加入课程库时也可进入学习模式。
 其他用户和管理端的试卷、题库、搜索、练习候选、AI 资产及统计接口不会返回私有正文。该入口不调用
 管理员官方试卷写接口，不自动公开，也不把用户资料标记为官方原题。
+
+未确认草稿可由所有者直接删除；`CONFIRMED` 草稿只能通过其已启用私有试卷统一清理。私有试卷只有在
+没有考试记录、试卷学习会话、逐题作答、错题、收藏、复习计划或其他题目衍生内容时才能删除。删除操作
+在事务中锁定并物理清理专属试卷、拆解题目、选项和关联草稿；原始资料仅在不再被任何草稿或试卷引用时
+删除。跨账号删除按不存在处理，避免暴露私有内容标识。
 
 ## 用户端试卷学习
 

@@ -22,6 +22,7 @@ import com.learnplatform.service.ExamPaperService;
 import com.learnplatform.service.ExamPaperLearningService;
 import com.learnplatform.service.PrivateExamImportService;
 import com.learnplatform.service.PrivateExamDraftService;
+import com.learnplatform.service.PrivateExamContentLifecycleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -43,16 +44,19 @@ public class ExamController {
     private final ExamPaperLearningService examPaperLearningService;
     private final PrivateExamImportService privateExamImportService;
     private final PrivateExamDraftService privateExamDraftService;
+    private final PrivateExamContentLifecycleService privateExamContentLifecycleService;
 
     public ExamController(ExamService examService, ExamPaperService examPaperService,
                           ExamPaperLearningService examPaperLearningService,
                           PrivateExamImportService privateExamImportService,
-                          PrivateExamDraftService privateExamDraftService) {
+                          PrivateExamDraftService privateExamDraftService,
+                          PrivateExamContentLifecycleService privateExamContentLifecycleService) {
         this.examService = examService;
         this.examPaperService = examPaperService;
         this.examPaperLearningService = examPaperLearningService;
         this.privateExamImportService = privateExamImportService;
         this.privateExamDraftService = privateExamDraftService;
+        this.privateExamContentLifecycleService = privateExamContentLifecycleService;
     }
 
 
@@ -137,6 +141,22 @@ public class ExamController {
             @Valid @RequestBody PrivateExamDraftConfirmRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return R.ok(privateExamDraftService.confirm(draftId, request, userDetails.getUserId()));
+    }
+
+    @DeleteMapping("/private-papers/drafts/{draftId}")
+    public R<Void> deletePrivatePaperDraft(
+            @PathVariable Long draftId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        privateExamContentLifecycleService.deleteDraft(draftId, userDetails.getUserId());
+        return R.ok();
+    }
+
+    @DeleteMapping("/private-papers/{paperId}")
+    public R<Void> deletePrivatePaper(
+            @PathVariable Long paperId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        privateExamContentLifecycleService.deletePaper(paperId, userDetails.getUserId());
+        return R.ok();
     }
 
     @GetMapping("/private-papers/{paperId}/source")

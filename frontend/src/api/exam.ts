@@ -379,6 +379,14 @@ export function confirmPrivateExamDraft(draftId: number) {
   })
 }
 
+export function deletePrivateExamDraft(draftId: number) {
+  return request.delete<unknown, ApiResponse<null>>(`/exam/private-papers/drafts/${draftId}`)
+}
+
+export function deletePrivateExamPaper(paperId: number) {
+  return request.delete<unknown, ApiResponse<null>>(`/exam/private-papers/${paperId}`)
+}
+
 export function getPrivateExamSource(paperId: number) {
   return request.get<unknown, ApiResponse<PrivateExamSource>>(`/exam/private-papers/${paperId}/source`)
 }

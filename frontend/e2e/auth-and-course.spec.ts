@@ -235,6 +235,12 @@ test('用户可预览确认结构化私有试卷并隔离给其他账号', async
   await expect(page).toHaveURL(/\/exams\/result\/\d+$/)
   await expect(page.locator('.score-number')).toHaveText('2')
 
+  await page.goto('/exams')
+  const referencedCard = page.locator('.exam-card').filter({ hasText: paperTitle })
+  await referencedCard.getByRole('button', { name: '删除试卷' }).click()
+  await page.getByRole('dialog', { name: '删除私有试卷' }).getByRole('button', { name: '确认删除' }).click()
+  await expect(page.getByText('私有试卷已有考试、学习记录或衍生内容，不能删除')).toBeVisible()
+
   await page.evaluate(() => localStorage.clear())
   await loginAs(page, 'admin', 'admin123')
   await page.goto('/exams')
@@ -288,6 +294,56 @@ test('无答案私有题必须经过AI建议与逐题人工复核才可启用', 
   await page.locator('.take-header').getByRole('button', { name: '提交试卷' }).click()
   await page.getByRole('dialog', { name: '提交确认' }).getByRole('button', { name: '确定' }).click()
   await expect(page.locator('.score-number')).toHaveText('2')
+})
+
+test('用户可删除未引用的私有试卷和未确认草稿', async ({ page }) => {
+  const suffix = Date.now()
+  const paperTitle = `E2E 待删除试卷 ${suffix}`
+  const draftTitle = `E2E 待删除草稿 ${suffix}`
+  await loginAs(page, 'testuser', 'test123')
+  await page.goto('/exams')
+  await page.getByRole('button', { name: '导入私有试卷' }).click()
+  let dialog = page.getByRole('dialog', { name: '导入私有试卷' })
+  await dialog.getByRole('textbox', { name: '试卷标题' }).fill(paperTitle)
+  await dialog.getByRole('combobox', { name: '所属课程' }).click()
+  await page.getByRole('option', { name: '408 数据结构' }).click()
+  await dialog.getByRole('textbox', { name: '原始资料名称' }).fill('delete-paper.md')
+  await dialog.getByRole('textbox', { name: '原始内容' }).fill(`## 1. 单选题
+**题干**: 待删除试卷题目？
+**选项**:
+- A. 是
+- B. 否
+**答案**: A
+**解析**: 删除前未产生学习事实。
+**分值**: 1`)
+  await dialog.getByRole('button', { name: '解析并预览' }).click()
+  await dialog.getByRole('button', { name: '确认导入' }).click()
+  const paperCard = page.locator('.exam-card').filter({ hasText: paperTitle })
+  await paperCard.getByRole('button', { name: '删除试卷' }).click()
+  await page.getByRole('dialog', { name: '删除私有试卷' }).getByRole('button', { name: '确认删除' }).click()
+  await expect(page.getByText('私有试卷已删除')).toBeVisible()
+  await expect(page.getByText(paperTitle, { exact: true })).toHaveCount(0)
+
+  await page.getByRole('button', { name: '导入私有试卷' }).click()
+  dialog = page.getByRole('dialog', { name: '导入私有试卷' })
+  await dialog.getByRole('textbox', { name: '试卷标题' }).fill(draftTitle)
+  await dialog.getByRole('combobox', { name: '所属课程' }).click()
+  await page.getByRole('option', { name: '408 数据结构' }).click()
+  await dialog.getByRole('textbox', { name: '原始资料名称' }).fill('delete-draft.md')
+  await dialog.getByRole('textbox', { name: '原始内容' }).fill(`## 1. 单选题
+**题干**: 待删除草稿题目？
+**选项**:
+- A. 是
+- B. 否
+**分值**: 1`)
+  await dialog.getByRole('button', { name: '解析并预览' }).click()
+  await dialog.getByRole('button', { name: '创建 AI 补全草稿' }).click()
+  await dialog.getByRole('button', { name: '返回导入' }).click()
+  const draftItem = dialog.locator('.draft-list-item').filter({ hasText: draftTitle })
+  await draftItem.getByRole('button', { name: '删除草稿', exact: true }).click()
+  await page.getByRole('dialog', { name: '删除私有试卷草稿' }).getByRole('button', { name: '确认删除' }).click()
+  await expect(page.getByText('私有试卷草稿已删除')).toBeVisible()
+  await expect(dialog.getByText(draftTitle)).toHaveCount(0)
 })
 
 test('用户可完成2026真题学习与限时考试并复盘可信来源', async ({ page }) => {

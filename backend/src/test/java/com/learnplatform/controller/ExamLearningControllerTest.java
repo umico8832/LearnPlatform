@@ -18,6 +18,7 @@ import com.learnplatform.service.ExamPaperService;
 import com.learnplatform.service.ExamService;
 import com.learnplatform.service.PrivateExamImportService;
 import com.learnplatform.service.PrivateExamDraftService;
+import com.learnplatform.service.PrivateExamContentLifecycleService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,6 +39,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -49,13 +51,15 @@ class ExamLearningControllerTest {
     @Mock private ExamPaperLearningService learningService;
     @Mock private PrivateExamImportService privateExamImportService;
     @Mock private PrivateExamDraftService privateExamDraftService;
+    @Mock private PrivateExamContentLifecycleService privateExamContentLifecycleService;
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
         ExamController controller = new ExamController(
-                examService, examPaperService, learningService, privateExamImportService, privateExamDraftService);
+                examService, examPaperService, learningService, privateExamImportService, privateExamDraftService,
+                privateExamContentLifecycleService);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
@@ -192,6 +196,17 @@ class ExamLearningControllerTest {
         mockMvc.perform(post("/api/exam/private-papers/drafts/31/confirm").with(mockUser(7L))
                         .contentType("application/json").content("{\"confirmed\":true}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.id").value(51));
+    }
+
+    @Test
+    void deletesOwnedPrivateDraftAndPaperThroughUserEndpoints() throws Exception {
+        mockMvc.perform(delete("/api/exam/private-papers/drafts/31").with(mockUser(7L)))
+                .andExpect(status().isOk());
+        mockMvc.perform(delete("/api/exam/private-papers/51").with(mockUser(7L)))
+                .andExpect(status().isOk());
+
+        verify(privateExamContentLifecycleService).deleteDraft(31L, 7L);
+        verify(privateExamContentLifecycleService).deletePaper(51L, 7L);
     }
 
     private PrivateExamImportRequest privateImportRequest() {

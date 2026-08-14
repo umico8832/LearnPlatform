@@ -53,6 +53,15 @@
             </div>
             <div class="exam-actions">
               <el-button
+                v-if="paper.visibility === 'PRIVATE'"
+                type="danger"
+                plain
+                :loading="deletingPaperId === paper.id"
+                @click="deletePaper(paper)"
+              >
+                删除试卷
+              </el-button>
+              <el-button
                 v-if="paper.courseId"
                 :icon="Reading"
                 @click="handleStartLearning(paper.id)"
@@ -191,9 +200,14 @@
       <el-form v-if="!importPreview && !activeDraft" label-position="top" class="import-form">
         <section v-if="privateDrafts.length" class="draft-list">
           <strong>待复核草稿</strong>
-          <el-button v-for="draft in privateDrafts" :key="draft.id" plain @click="openDraft(draft)">
-            {{ draft.title }} · {{ draft.reviewedQuestionCount }}/{{ draft.questionCount }} 已复核
-          </el-button>
+          <div v-for="draft in privateDrafts" :key="draft.id" class="draft-list-item">
+            <el-button plain @click="openDraft(draft)">
+              {{ draft.title }} · {{ draft.reviewedQuestionCount }}/{{ draft.questionCount }} 已复核
+            </el-button>
+            <el-button type="danger" link :loading="deletingDraftId === draft.id" @click="deleteDraft(draft)">
+              删除草稿
+            </el-button>
+          </div>
         </section>
         <div class="import-grid">
           <el-form-item label="试卷标题">
@@ -357,12 +371,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, EditPen, Medal, Reading, Timer, Upload, View } from '@element-plus/icons-vue'
 import {
   confirmPrivateExamDraft,
   confirmPrivateExamImport,
   createPrivateExamDraft,
+  deletePrivateExamDraft,
+  deletePrivateExamPaper,
   generatePrivateExamDraftAnswer,
   getMyExamRecords,
   getPrivateExamDrafts,
@@ -406,6 +422,8 @@ const privateDrafts = ref<PrivateExamDraft[]>([])
 const activeDraft = ref<PrivateExamDraft | null>(null)
 const generatingQuestionId = ref<number | null>(null)
 const reviewingQuestionId = ref<number | null>(null)
+const deletingDraftId = ref<number | null>(null)
+const deletingPaperId = ref<number | null>(null)
 const draftAnswers = ref<Record<number, string[]>>({})
 const draftAnalyses = ref<Record<number, string>>({})
 const sourceDialogVisible = ref(false)
@@ -500,6 +518,49 @@ const loadPrivateDrafts = async () => {
     if (res.code === 0 && res.data) privateDrafts.value = res.data
   } catch {
     ElMessage.error('获取待复核草稿失败')
+  }
+}
+
+const deleteDraft = async (draft: PrivateExamDraft) => {
+  const confirmed = await ElMessageBox.confirm(
+    `删除草稿“${draft.title}”及其未引用原始资料？此操作不可恢复。`,
+    '删除私有试卷草稿',
+    { type: 'warning', confirmButtonText: '确认删除', cancelButtonText: '取消' },
+  )
+    .then(() => true)
+    .catch(() => false)
+  if (!confirmed) return
+  deletingDraftId.value = draft.id
+  try {
+    const res = await deletePrivateExamDraft(draft.id)
+    if (res.code === 0) {
+      privateDrafts.value = privateDrafts.value.filter((item) => item.id !== draft.id)
+      if (activeDraft.value?.id === draft.id) activeDraft.value = null
+      ElMessage.success('私有试卷草稿已删除')
+    }
+  } finally {
+    deletingDraftId.value = null
+  }
+}
+
+const deletePaper = async (paper: ExamPaperVO) => {
+  const confirmed = await ElMessageBox.confirm(
+    `仅未产生考试、学习记录或衍生内容的私有试卷可删除。确认删除“${paper.title}”？`,
+    '删除私有试卷',
+    { type: 'warning', confirmButtonText: '确认删除', cancelButtonText: '取消' },
+  )
+    .then(() => true)
+    .catch(() => false)
+  if (!confirmed) return
+  deletingPaperId.value = paper.id
+  try {
+    const res = await deletePrivateExamPaper(paper.id)
+    if (res.code === 0) {
+      ElMessage.success('私有试卷已删除')
+      await loadPapers()
+    }
+  } finally {
+    deletingPaperId.value = null
   }
 }
 
@@ -906,6 +967,11 @@ const paperTypeTag = (paper: ExamPaperVO) => {
   background: var(--lp-warning-soft, #fdf6ec);
   border: 1px solid color-mix(in srgb, var(--lp-warning) 28%, transparent);
   border-radius: 8px;
+}
+.draft-list-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 .import-grid {
   display: grid;
