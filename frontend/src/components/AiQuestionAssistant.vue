@@ -3,13 +3,17 @@
     <div class="ai-toolbar">
       <div>
         <div class="ai-title">AI 学习助手</div>
-        <div class="ai-subtitle">针对当前题目补充思路，或生成一道同类练习。</div>
+        <div class="ai-subtitle">
+          {{
+            learningSessionId ? '结合本轮试卷位置和最近作答提供辅导。' : '针对当前题目补充思路，或生成一道同类练习。'
+          }}
+        </div>
       </div>
       <div class="ai-actions">
         <el-button
           :type="activeType === 'explanation' ? 'primary' : 'default'"
           :loading="loadingType === 'explanation'"
-          :disabled="loading"
+          :disabled="loading || disabled"
           @click="generate('explanation')"
         >
           <el-icon><Reading /></el-icon>
@@ -18,7 +22,7 @@
         <el-button
           :type="activeType === 'variant' ? 'warning' : 'default'"
           :loading="loadingType === 'variant'"
-          :disabled="loading"
+          :disabled="loading || disabled"
           @click="generate('variant')"
         >
           <el-icon><MagicStick /></el-icon>
@@ -27,18 +31,14 @@
       </div>
     </div>
 
+    <p v-if="disabled && disabledReason" class="disabled-reason">{{ disabledReason }}</p>
+
     <div v-if="activeResult || error || loading" class="ai-result">
       <div class="result-heading">
         <span>{{ activeType === 'variant' ? '变式练习' : '补充解析' }}</span>
         <el-tag v-if="activeSource" size="small" effect="plain">{{ sourceLabel }}</el-tag>
       </div>
-      <el-alert
-        v-if="error"
-        :title="error"
-        type="error"
-        show-icon
-        :closable="false"
-      />
+      <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" />
       <MarkdownRenderer v-else-if="activeResult" :content="activeResult" />
       <div v-else-if="loading" class="stream-placeholder">正在连接 AI 服务...</div>
     </div>
@@ -48,13 +48,16 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { MagicStick, Reading } from '@element-plus/icons-vue'
-import { streamQuestionAi } from '@/api/ai'
+import { streamExamLearningAi, streamQuestionAi } from '@/api/ai'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 
 type AssistantType = 'explanation' | 'variant'
 
 const props = defineProps<{
   questionId: number
+  learningSessionId?: number
+  disabled?: boolean
+  disabledReason?: string
 }>()
 
 const activeType = ref<AssistantType | null>(null)
@@ -65,11 +68,11 @@ const sources = ref<Record<AssistantType, string>>({ explanation: '', variant: '
 let abortController: AbortController | null = null
 
 const loading = computed(() => loadingType.value !== null)
-const activeResult = computed(() => activeType.value ? results.value[activeType.value] : '')
-const activeSource = computed(() => activeType.value ? sources.value[activeType.value] : '')
-const sourceLabel = computed(() => activeSource.value === 'fallback' ? '本地提示' : 'AI 生成')
+const activeResult = computed(() => (activeType.value ? results.value[activeType.value] : ''))
+const activeSource = computed(() => (activeType.value ? sources.value[activeType.value] : ''))
+const sourceLabel = computed(() => (activeSource.value === 'fallback' ? '本地提示' : 'AI 生成'))
 
-watch(() => props.questionId, reset)
+watch(() => [props.questionId, props.learningSessionId], reset)
 
 function reset() {
   abortController?.abort()
@@ -82,6 +85,7 @@ function reset() {
 }
 
 async function generate(type: AssistantType) {
+  if (props.disabled) return
   activeType.value = type
   error.value = ''
 
@@ -92,14 +96,19 @@ async function generate(type: AssistantType) {
   const controller = new AbortController()
   abortController = controller
   try {
-    await streamQuestionAi(type, props.questionId, {
-      onContent: (content) => {
+    const handlers = {
+      onContent: (content: string) => {
         results.value[type] += content
       },
-      onDone: (source) => {
+      onDone: (source: string) => {
         sources.value[type] = source
       },
-    }, controller.signal)
+    }
+    if (props.learningSessionId) {
+      await streamExamLearningAi(type, props.learningSessionId, props.questionId, handlers, controller.signal)
+    } else {
+      await streamQuestionAi(type, props.questionId, handlers, controller.signal)
+    }
   } catch (e: any) {
     if (e?.name !== 'AbortError') {
       error.value = e?.message || 'AI 服务调用失败，请稍后重试'
@@ -147,6 +156,12 @@ async function generate(type: AssistantType) {
   display: flex;
   flex-shrink: 0;
   gap: 8px;
+}
+
+.disabled-reason {
+  margin: 10px 0 0;
+  color: #7a8797;
+  font-size: 12px;
 }
 
 .ai-result {

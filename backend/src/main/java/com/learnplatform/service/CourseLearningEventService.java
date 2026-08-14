@@ -73,6 +73,36 @@ public class CourseLearningEventService {
         try { courseLearningEventMapper.insert(event); } catch (DuplicateKeyException ignored) { }
     }
 
+    public void recordPaperLearningAiAssistance(Long userId, Long courseId, Long questionId,
+                                                Long interactionId, Long sessionId, Long paperId,
+                                                String interactionType, Long answerId,
+                                                LocalDateTime occurredTime) {
+        if (userId == null || courseId == null || questionId == null || interactionId == null
+                || !hasCourseInLibrary(userId, courseId)) {
+            return;
+        }
+        CourseLearningEvent event = new CourseLearningEvent();
+        event.setUserId(userId);
+        event.setCourseId(courseId);
+        event.setEventType("PAPER_LEARNING_AI_ASSISTED");
+        event.setEventSource("PAPER_LEARNING_AI");
+        event.setSubjectType(SUBJECT_TYPE_QUESTION);
+        event.setSubjectId(questionId);
+        event.setSourceRecordId(interactionId);
+        event.setIdempotencyKey("PAPER_LEARNING_AI:" + interactionId);
+        event.setEventVersion(EVENT_VERSION);
+        event.setPayloadJson("{\"sessionId\":" + sessionId
+                + ",\"paperId\":" + paperId
+                + ",\"interactionType\":\"" + interactionType
+                + "\",\"answerId\":" + answerId + "}");
+        event.setOccurredTime(occurredTime != null ? occurredTime : LocalDateTime.now());
+        try {
+            courseLearningEventMapper.insert(event);
+        } catch (DuplicateKeyException ignored) {
+            // 同一次已完成交互重放不能制造第二条课程事实。
+        }
+    }
+
     private boolean hasCourseInLibrary(Long userId, Long courseId) {
         return userCourseMapper.selectCount(new LambdaQueryWrapper<UserCourse>()
                 .eq(UserCourse::getUserId, userId)

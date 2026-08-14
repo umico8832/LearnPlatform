@@ -20,8 +20,8 @@ flowchart LR
 |---|---|
 | 用户与内容 | `user`、`course`、`knowledge_point`、`user_course`、`question`、`question_option`、`question_knowledge_point` |
 | 互动与投稿 | `user_favorite_question`、`question_comment`、`comment_like`、`question_submission`、`question_correction_report`、`question_review_record`、`question_version` |
-| 练习与复习 | `practice_record`、`wrong_question`、`learning_plan`、`question_review_schedule` |
-| 试卷与考试 | `exam_paper`、`exam_question`、`exam_record`、`exam_answer` |
+| 练习与复习 | `practice_record`、`wrong_question`、`learning_plan`、`question_review_schedule`、`course_learning_event` |
+| 试卷与考试 | `exam_paper`、`exam_question`、`exam_record`、`exam_answer`、`exam_learning_session`、`exam_learning_answer`、`exam_learning_ai_interaction` |
 | AI 与运营 | `ai_call_log`、`ai_quota_audit_log`、`ai_usage_alert`、`question_ai_asset`、`ai_asset_feedback`、`ai_asset_view`、`ai_variant_training`、`ai_variant_question` |
 
 ## 关系原则
@@ -29,7 +29,7 @@ flowchart LR
 - `question` 是练习、错题、试卷、复习和 AI 资产共同引用的核心聚合。
 - `user_course` 只表达用户拥有课程学习入口，不承担掌握度或学习完成状态。
 - `question_knowledge_point` 和 `exam_question` 是多对多关系表。
-- `practice_record` 和 `exam_answer` 保存真实判分事实，不能由前端统计结果反写。
+- `practice_record`、`exam_answer` 和 `exam_learning_answer` 保存真实判分事实，不能由前端统计结果反写。
 - `wrong_question` 和 `question_review_schedule` 是从学习行为派生、但具有独立生命周期的用户状态。
 - AI 学习效果由资产查看、变式训练和后续练习记录组合观察，不单独保存“AI 有效”结论。
 

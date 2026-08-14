@@ -28,6 +28,7 @@ import {
   completeVariantTraining,
   submitVariantAnswer,
   streamQuestionAi,
+  streamExamLearningAi,
   streamReviewSuggestion,
 } from '@/api/ai'
 
@@ -163,10 +164,13 @@ describe('AI API', () => {
         },
       })
 
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-        ok: true,
-        body: stream,
-      }))
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: true,
+          body: stream,
+        }),
+      )
 
       const onContent = vi.fn()
       const onDone = vi.fn()
@@ -188,11 +192,14 @@ describe('AI API', () => {
     })
 
     it('应在响应失败时抛出错误', async () => {
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-        ok: false,
-        status: 500,
-        json: () => Promise.resolve({ message: '服务器错误' }),
-      }))
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: false,
+          status: 500,
+          json: () => Promise.resolve({ message: '服务器错误' }),
+        }),
+      )
 
       const onContent = vi.fn()
 
@@ -200,22 +207,48 @@ describe('AI API', () => {
     })
 
     it('应在 401 时抛出登录过期错误', async () => {
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-        ok: false,
-        status: 401,
-        json: () => Promise.reject(new Error()),
-      }))
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: false,
+          status: 401,
+          json: () => Promise.reject(new Error()),
+        }),
+      )
 
       await expect(streamQuestionAi('explanation', 1, { onContent: vi.fn() })).rejects.toThrow('登录已过期')
     })
 
     it('应在 body 为空时抛出不支持错误', async () => {
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-        ok: true,
-        body: null,
-      }))
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: true,
+          body: null,
+        }),
+      )
 
       await expect(streamQuestionAi('explanation', 1, { onContent: vi.fn() })).rejects.toThrow('浏览器不支持流式响应')
+    })
+  })
+
+  describe('streamExamLearningAi', () => {
+    it('binds the SSE request to the learning session and question route', async () => {
+      const encoder = new TextEncoder()
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode('event: done\ndata: {"source":"ai"}\n\n'))
+          controller.close()
+        },
+      })
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, body: stream }))
+
+      await streamExamLearningAi('explanation', 30, 10, { onContent: vi.fn() })
+
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/exam/learning-sessions/30/questions/10/ai/explanation/stream',
+        expect.objectContaining({ method: 'POST', body: JSON.stringify({}) }),
+      )
     })
   })
 
@@ -230,10 +263,13 @@ describe('AI API', () => {
         },
       })
 
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-        ok: true,
-        body: stream,
-      }))
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: true,
+          body: stream,
+        }),
+      )
 
       const onContent = vi.fn()
       await streamReviewSuggestion(3, { onContent })
@@ -257,10 +293,13 @@ describe('AI API', () => {
         },
       })
 
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-        ok: true,
-        body: stream,
-      }))
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: true,
+          body: stream,
+        }),
+      )
 
       await streamReviewSuggestion(undefined, { onContent: vi.fn() })
 

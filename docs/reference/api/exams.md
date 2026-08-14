@@ -26,6 +26,7 @@
 | `POST /api/exam/papers/{paperId}/learning-sessions` | 创建或恢复当前用户在该试卷上的进行中学习会话 |
 | `GET /api/exam/learning-sessions/{sessionId}` | 获取本人学习会话、原始题号结构和每题最近一次作答 |
 | `POST /api/exam/learning-sessions/{sessionId}/answers` | 逐题提交答案并立即返回服务端判分与解析 |
+| `POST /api/exam/learning-sessions/{sessionId}/questions/{questionId}/ai/{assistanceType}/stream` | 基于本人当前学习会话和该题最近一次作答流式生成解析或变式辅导 |
 | `POST /api/exam/learning-sessions/{sessionId}/complete` | 在全部题目至少作答一次后完成本轮学习 |
 
 试卷学习模式仅面向已发布、已关联课程且课程已加入当前用户课程库的试卷。同一用户和试卷最多保留一个
@@ -33,6 +34,11 @@
 会话摘要。未作答题目不返回正确选项、正确答案和解析；逐题提交后只返回该题的判分与解析，完成态页面
 可继续作为只读逐题复盘入口。学习模式不创建或复用 `exam_record`，也不改变考试模式的时限与一次提交
 语义。
+
+AI 辅导只接受 `explanation` 和 `variant` 两种类型，并要求当前题已经至少作答一次。服务端验证会话创建者、
+课程成员关系、试卷与题目归属，再将最近一次答案、尝试序号和判分结果写入本次调用上下文；成功调用会形成
+课程学习事件。交互记录只保存这些业务引用、状态和失败摘要，不保存完整提示词或模型输出。通用题目助手
+仍可用于其他练习入口，但不能替代这条试卷学习上下文链路。
 
 ## 判分边界
 

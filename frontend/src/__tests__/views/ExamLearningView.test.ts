@@ -15,7 +15,7 @@ vi.mock('@/api/exam', () => ({
 }))
 
 vi.mock('vue-router', async (importOriginal) => ({
-  ...await importOriginal<typeof import('vue-router')>(),
+  ...(await importOriginal<typeof import('vue-router')>()),
   useRoute: () => ({ params: { sessionId: '30' } }),
   useRouter: () => ({ push: vi.fn() }),
 }))
@@ -56,20 +56,22 @@ const session = () => ({
   correctQuestionCount: 0,
   startTime: '2026-08-11T00:00:00',
   completeTime: null,
-  questions: [{
-    questionId: 10,
-    sortOrder: 1,
-    score: 5,
-    content: '正确选项是？',
-    questionType: 'SINGLE_CHOICE',
-    sectionTitle: '第一部分',
-    majorQuestionNumber: '1',
-    minorQuestionNumber: '1',
-    subquestionNumber: null,
-    displayNumber: '1(1)',
-    options: [{ id: 100, optionLabel: 'A', content: '正确', sortOrder: 1 }],
-    latestAnswer: null,
-  }],
+  questions: [
+    {
+      questionId: 10,
+      sortOrder: 1,
+      score: 5,
+      content: '正确选项是？',
+      questionType: 'SINGLE_CHOICE',
+      sectionTitle: '第一部分',
+      majorQuestionNumber: '1',
+      minorQuestionNumber: '1',
+      subquestionNumber: null,
+      displayNumber: '1(1)',
+      options: [{ id: 100, optionLabel: 'A', content: '正确', sortOrder: 1 }],
+      latestAnswer: null,
+    },
+  ],
 })
 
 describe('ExamLearningView', () => {
@@ -90,7 +92,10 @@ describe('ExamLearningView', () => {
         analysis: '解析',
       },
     })
-    mockCompleteSession.mockResolvedValue({ code: 0, data: { ...session(), status: 1, answeredQuestionCount: 1, correctQuestionCount: 1 } })
+    mockCompleteSession.mockResolvedValue({
+      code: 0,
+      data: { ...session(), status: 1, answeredQuestionCount: 1, correctQuestionCount: 1 },
+    })
   })
 
   it('按原题号逐题判分并在全部作答后完成本轮学习', async () => {
@@ -102,18 +107,31 @@ describe('ExamLearningView', () => {
     expect(mockGetSession).toHaveBeenCalledWith(30)
     expect(wrapper.text()).toContain('2025 · 全国硕士研究生招生考试 · 来源：公开文件')
     expect(wrapper.text()).toContain('1(1)')
+    const assistant = wrapper.findComponent({ name: 'AiQuestionAssistant' })
+    expect(assistant.props('learningSessionId')).toBe(30)
+    expect(assistant.props('disabled')).toBe(true)
 
     await wrapper.find('.option-item').trigger('click')
-    await wrapper.findAll('button').find(button => button.text().includes('提交答案'))!.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('提交答案'))!
+      .trigger('click')
     await flushPromises()
 
-    expect(mockSubmitAnswer).toHaveBeenCalledWith(30, expect.objectContaining({
-      questionId: 10,
-      userAnswer: 'A',
-    }))
+    expect(mockSubmitAnswer).toHaveBeenCalledWith(
+      30,
+      expect.objectContaining({
+        questionId: 10,
+        userAnswer: 'A',
+      }),
+    )
     expect(wrapper.text()).toContain('回答正确')
+    expect(assistant.props('disabled')).toBe(false)
 
-    await wrapper.findAll('button').find(button => button.text().includes('完成本轮学习'))!.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('完成本轮学习'))!
+      .trigger('click')
     await flushPromises()
 
     expect(mockCompleteSession).toHaveBeenCalledWith(30)

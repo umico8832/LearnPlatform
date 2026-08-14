@@ -11,7 +11,11 @@
         </div>
         <div class="header-actions">
           <el-tag :type="session.status === 1 ? 'success' : 'primary'">
-            {{ session.status === 1 ? '本轮已完成' : `${session.answeredQuestionCount}/${session.questions.length} 已作答` }}
+            {{
+              session.status === 1
+                ? '本轮已完成'
+                : `${session.answeredQuestionCount}/${session.questions.length} 已作答`
+            }}
           </el-tag>
           <el-button @click="router.push('/exams')">返回试卷列表</el-button>
         </div>
@@ -36,7 +40,8 @@
               :disabled="session.status === 1"
               @click="userAnswer = option.optionLabel"
             >
-              <span>{{ option.optionLabel }}</span>{{ option.content }}
+              <span>{{ option.optionLabel }}</span
+              >{{ option.content }}
             </button>
           </div>
           <div v-else-if="currentQuestion.questionType === 'MULTIPLE_CHOICE'" class="option-list">
@@ -48,12 +53,27 @@
               :disabled="session.status === 1"
               @click="toggleMulti(option.optionLabel)"
             >
-              <span>{{ option.optionLabel }}</span>{{ option.content }}
+              <span>{{ option.optionLabel }}</span
+              >{{ option.content }}
             </button>
           </div>
           <div v-else-if="currentQuestion.questionType === 'TRUE_FALSE'" class="option-list true-false-list">
-            <button type="button" :class="['option-item', { selected: userAnswer === 'TRUE' }]" :disabled="session.status === 1" @click="userAnswer = 'TRUE'">正确</button>
-            <button type="button" :class="['option-item', { selected: userAnswer === 'FALSE' }]" :disabled="session.status === 1" @click="userAnswer = 'FALSE'">错误</button>
+            <button
+              type="button"
+              :class="['option-item', { selected: userAnswer === 'TRUE' }]"
+              :disabled="session.status === 1"
+              @click="userAnswer = 'TRUE'"
+            >
+              正确
+            </button>
+            <button
+              type="button"
+              :class="['option-item', { selected: userAnswer === 'FALSE' }]"
+              :disabled="session.status === 1"
+              @click="userAnswer = 'FALSE'"
+            >
+              错误
+            </button>
           </div>
           <el-input
             v-else
@@ -64,26 +84,44 @@
             placeholder="请输入你的答案"
           />
 
-          <div v-if="currentQuestion.latestAnswer" class="answer-result" :class="currentQuestion.latestAnswer.correct ? 'is-correct' : 'is-wrong'">
+          <div
+            v-if="currentQuestion.latestAnswer"
+            class="answer-result"
+            :class="currentQuestion.latestAnswer.correct ? 'is-correct' : 'is-wrong'"
+          >
             <div class="result-title">
               {{ currentQuestion.latestAnswer.correct ? '回答正确' : '回答错误' }}
               <span>第 {{ currentQuestion.latestAnswer.attemptNo }} 次尝试</span>
             </div>
             <p>你的答案：{{ currentQuestion.latestAnswer.userAnswer }}</p>
-            <p v-if="!currentQuestion.latestAnswer.correct">正确答案：{{ currentQuestion.latestAnswer.correctAnswer }}</p>
+            <p v-if="!currentQuestion.latestAnswer.correct">
+              正确答案：{{ currentQuestion.latestAnswer.correctAnswer }}
+            </p>
             <p v-if="currentQuestion.latestAnswer.analysis">解析：{{ currentQuestion.latestAnswer.analysis }}</p>
           </div>
 
           <div class="question-actions">
             <el-button :disabled="currentIndex === 0" @click="goTo(currentIndex - 1)">上一题</el-button>
-            <el-button v-if="session.status === 0" type="primary" :disabled="!canSubmit" :loading="submitting" @click="submitCurrentAnswer">
+            <el-button
+              v-if="session.status === 0"
+              type="primary"
+              :disabled="!canSubmit"
+              :loading="submitting"
+              @click="submitCurrentAnswer"
+            >
               {{ currentQuestion.latestAnswer ? '再次作答' : '提交答案' }}
             </el-button>
-            <el-button :disabled="currentIndex >= session.questions.length - 1" @click="goTo(currentIndex + 1)">下一题</el-button>
+            <el-button :disabled="currentIndex >= session.questions.length - 1" @click="goTo(currentIndex + 1)"
+              >下一题</el-button
+            >
           </div>
 
-          <AiQuestionAssistant :question-id="currentQuestion.questionId" />
-          <QuestionLearningAsset :question-id="currentQuestion.questionId" collapsible />
+          <AiQuestionAssistant
+            :question-id="currentQuestion.questionId"
+            :learning-session-id="session.id"
+            :disabled="!currentQuestion.latestAnswer"
+            disabled-reason="先提交本题答案，再让 AI 结合本轮真实作答提供辅导。"
+          />
         </el-card>
 
         <aside class="answer-sheet">
@@ -97,7 +135,14 @@
               v-for="(question, index) in session.questions"
               :key="question.questionId"
               type="button"
-              :class="['sheet-item', { current: index === currentIndex, answered: question.latestAnswer, correct: question.latestAnswer?.correct }]"
+              :class="[
+                'sheet-item',
+                {
+                  current: index === currentIndex,
+                  answered: question.latestAnswer,
+                  correct: question.latestAnswer?.correct,
+                },
+              ]"
               :title="question.displayNumber || `第 ${index + 1} 题`"
               @click="goTo(index)"
             >
@@ -114,7 +159,12 @@
           >
             完成本轮学习
           </el-button>
-          <p v-if="session.status === 0 && session.answeredQuestionCount < session.questions.length" class="complete-hint">全部题目至少作答一次后可完成。</p>
+          <p
+            v-if="session.status === 0 && session.answeredQuestionCount < session.questions.length"
+            class="complete-hint"
+          >
+            全部题目至少作答一次后可完成。
+          </p>
         </aside>
       </section>
     </template>
@@ -128,14 +178,9 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import {
-  completeExamLearningSession,
-  getExamLearningSession,
-  submitExamLearningAnswer,
-} from '@/api/exam'
+import { completeExamLearningSession, getExamLearningSession, submitExamLearningAnswer } from '@/api/exam'
 import type { ExamLearningSessionVO } from '@/api/exam'
 import AiQuestionAssistant from '@/components/AiQuestionAssistant.vue'
-import QuestionLearningAsset from '@/components/QuestionLearningAsset.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -167,7 +212,9 @@ onMounted(async () => {
     const response = await getExamLearningSession(sessionId)
     if (response.code === 0 && response.data) {
       session.value = response.data
-      const savedIndex = response.data.questions.findIndex(item => item.questionId === response.data.currentQuestionId)
+      const savedIndex = response.data.questions.findIndex(
+        (item) => item.questionId === response.data.currentQuestionId,
+      )
       currentIndex.value = savedIndex >= 0 ? savedIndex : 0
       resetAnswerInput()
     } else {
@@ -204,9 +251,10 @@ function goTo(index: number) {
 async function submitCurrentAnswer() {
   if (!session.value || !currentQuestion.value || !canSubmit.value) return
   submitting.value = true
-  const answer = currentQuestion.value.questionType === 'MULTIPLE_CHOICE'
-    ? Array.from(multiAnswers.value).sort().join(',')
-    : userAnswer.value.trim()
+  const answer =
+    currentQuestion.value.questionType === 'MULTIPLE_CHOICE'
+      ? Array.from(multiAnswers.value).sort().join(',')
+      : userAnswer.value.trim()
   try {
     const response = await submitExamLearningAnswer(session.value.id, {
       questionId: currentQuestion.value.questionId,
@@ -229,8 +277,8 @@ async function submitCurrentAnswer() {
 
 function refreshSummary() {
   if (!session.value) return
-  session.value.answeredQuestionCount = session.value.questions.filter(item => item.latestAnswer).length
-  session.value.correctQuestionCount = session.value.questions.filter(item => item.latestAnswer?.correct).length
+  session.value.answeredQuestionCount = session.value.questions.filter((item) => item.latestAnswer).length
+  session.value.correctQuestionCount = session.value.questions.filter((item) => item.latestAnswer?.correct).length
 }
 
 async function completeLearning() {
@@ -253,50 +301,250 @@ async function completeLearning() {
 
 function questionTypeLabel(type: string) {
   const labels: Record<string, string> = {
-    SINGLE_CHOICE: '单选', MULTIPLE_CHOICE: '多选', TRUE_FALSE: '判断',
-    FILL_BLANK: '填空', SHORT_ANSWER: '简答',
+    SINGLE_CHOICE: '单选',
+    MULTIPLE_CHOICE: '多选',
+    TRUE_FALSE: '判断',
+    FILL_BLANK: '填空',
+    SHORT_ANSWER: '简答',
   }
   return labels[type] || type
 }
 </script>
 
 <style scoped>
-.paper-learning { display: flex; flex-direction: column; gap: 16px; }
-.learning-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 22px; background: var(--lp-surface); border: 1px solid var(--lp-border); border-radius: var(--lp-radius); box-shadow: var(--lp-shadow-sm); }
-.section-kicker { color: var(--lp-primary); font-size: 12px; font-weight: 800; }
-.learning-header h2 { margin: 4px 0 6px; color: var(--lp-text); font-size: 24px; }
-.paper-source { margin: 0; color: var(--lp-text-secondary); font-size: 13px; }
-.header-actions { display: flex; align-items: center; gap: 10px; }
-.learning-layout { display: grid; grid-template-columns: minmax(0, 1fr) 230px; gap: 16px; align-items: start; }
-.question-card { min-width: 0; }
-.question-section { margin-bottom: 8px; color: var(--lp-text-secondary); font-size: 13px; font-weight: 700; }
-.question-meta { display: flex; align-items: center; gap: 8px; color: var(--lp-text-secondary); font-size: 13px; }
-.question-meta strong { color: var(--lp-text); font-size: 16px; }
-.question-content { margin: 18px 0; color: var(--lp-text); font-size: 16px; line-height: 1.8; white-space: pre-wrap; }
-.option-list { display: flex; flex-direction: column; gap: 10px; }
-.option-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; color: var(--lp-text); text-align: left; background: var(--lp-surface); border: 1px solid var(--lp-border); border-radius: 8px; cursor: pointer; }
-.option-item span { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; color: var(--lp-primary); background: var(--lp-primary-soft); border-radius: 50%; font-weight: 800; }
-.option-item.selected { border-color: var(--lp-primary); background: var(--lp-primary-soft); }
-.option-item:disabled { cursor: default; opacity: .72; }
-.true-false-list { flex-direction: row; }
-.true-false-list .option-item { justify-content: center; }
-.answer-result { margin-top: 18px; padding: 14px; border: 1px solid var(--lp-border); border-left-width: 4px; border-radius: 8px; }
-.answer-result.is-correct { border-left-color: var(--lp-success); background: #f0f9eb; }
-.answer-result.is-wrong { border-left-color: var(--lp-danger); background: #fef0f0; }
-.answer-result p { margin: 8px 0 0; color: var(--lp-text-secondary); font-size: 13px; line-height: 1.6; }
-.result-title { display: flex; justify-content: space-between; color: var(--lp-text); font-weight: 800; }
-.result-title span { color: var(--lp-text-secondary); font-size: 12px; font-weight: 500; }
-.question-actions { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
-.answer-sheet { position: sticky; top: 16px; padding: 16px; background: var(--lp-surface); border: 1px solid var(--lp-border); border-radius: var(--lp-radius); box-shadow: var(--lp-shadow-sm); }
-.answer-sheet h3 { margin: 0 0 8px; color: var(--lp-text); font-size: 16px; }
-.sheet-summary { display: flex; justify-content: space-between; margin-bottom: 14px; color: var(--lp-text-secondary); font-size: 12px; }
-.sheet-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
-.sheet-item { min-width: 0; height: 34px; overflow: hidden; color: var(--lp-text-secondary); background: var(--lp-surface-soft); border: 1px solid var(--lp-border); border-radius: 6px; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
-.sheet-item.answered { color: #fff; background: var(--lp-warning); border-color: var(--lp-warning); }
-.sheet-item.correct { background: var(--lp-success); border-color: var(--lp-success); }
-.sheet-item.current { box-shadow: 0 0 0 2px var(--lp-primary); }
-.complete-button { width: 100%; margin-top: 16px; }
-.complete-hint { margin: 8px 0 0; color: var(--lp-text-secondary); font-size: 12px; line-height: 1.5; }
-@media (max-width: 860px) { .learning-layout { grid-template-columns: 1fr; } .answer-sheet { position: static; } }
-@media (max-width: 640px) { .learning-header { align-items: stretch; flex-direction: column; padding: 16px; } .header-actions { justify-content: space-between; } .true-false-list { flex-direction: column; } .question-actions { flex-wrap: wrap; } }
+.paper-learning {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.learning-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius);
+  box-shadow: var(--lp-shadow-sm);
+}
+.section-kicker {
+  color: var(--lp-primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+.learning-header h2 {
+  margin: 4px 0 6px;
+  color: var(--lp-text);
+  font-size: 24px;
+}
+.paper-source {
+  margin: 0;
+  color: var(--lp-text-secondary);
+  font-size: 13px;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.learning-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 230px;
+  gap: 16px;
+  align-items: start;
+}
+.question-card {
+  min-width: 0;
+}
+.question-section {
+  margin-bottom: 8px;
+  color: var(--lp-text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+.question-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--lp-text-secondary);
+  font-size: 13px;
+}
+.question-meta strong {
+  color: var(--lp-text);
+  font-size: 16px;
+}
+.question-content {
+  margin: 18px 0;
+  color: var(--lp-text);
+  font-size: 16px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+.option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.option-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  color: var(--lp-text);
+  text-align: left;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.option-item span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  color: var(--lp-primary);
+  background: var(--lp-primary-soft);
+  border-radius: 50%;
+  font-weight: 800;
+}
+.option-item.selected {
+  border-color: var(--lp-primary);
+  background: var(--lp-primary-soft);
+}
+.option-item:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+.true-false-list {
+  flex-direction: row;
+}
+.true-false-list .option-item {
+  justify-content: center;
+}
+.answer-result {
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid var(--lp-border);
+  border-left-width: 4px;
+  border-radius: 8px;
+}
+.answer-result.is-correct {
+  border-left-color: var(--lp-success);
+  background: #f0f9eb;
+}
+.answer-result.is-wrong {
+  border-left-color: var(--lp-danger);
+  background: #fef0f0;
+}
+.answer-result p {
+  margin: 8px 0 0;
+  color: var(--lp-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.result-title {
+  display: flex;
+  justify-content: space-between;
+  color: var(--lp-text);
+  font-weight: 800;
+}
+.result-title span {
+  color: var(--lp-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+.question-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+.answer-sheet {
+  position: sticky;
+  top: 16px;
+  padding: 16px;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius);
+  box-shadow: var(--lp-shadow-sm);
+}
+.answer-sheet h3 {
+  margin: 0 0 8px;
+  color: var(--lp-text);
+  font-size: 16px;
+}
+.sheet-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  color: var(--lp-text-secondary);
+  font-size: 12px;
+}
+.sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.sheet-item {
+  min-width: 0;
+  height: 34px;
+  overflow: hidden;
+  color: var(--lp-text-secondary);
+  background: var(--lp-surface-soft);
+  border: 1px solid var(--lp-border);
+  border-radius: 6px;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.sheet-item.answered {
+  color: #fff;
+  background: var(--lp-warning);
+  border-color: var(--lp-warning);
+}
+.sheet-item.correct {
+  background: var(--lp-success);
+  border-color: var(--lp-success);
+}
+.sheet-item.current {
+  box-shadow: 0 0 0 2px var(--lp-primary);
+}
+.complete-button {
+  width: 100%;
+  margin-top: 16px;
+}
+.complete-hint {
+  margin: 8px 0 0;
+  color: var(--lp-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+@media (max-width: 860px) {
+  .learning-layout {
+    grid-template-columns: 1fr;
+  }
+  .answer-sheet {
+    position: static;
+  }
+}
+@media (max-width: 640px) {
+  .learning-header {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 16px;
+  }
+  .header-actions {
+    justify-content: space-between;
+  }
+  .true-false-list {
+    flex-direction: column;
+  }
+  .question-actions {
+    flex-wrap: wrap;
+  }
+}
 </style>

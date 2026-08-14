@@ -121,6 +121,29 @@ public class AiService {
         callStreamWithLog("variant_stream", userId, prompt, () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
     }
 
+    /** 在已校验的试卷学习上下文中生成辅导，不接受客户端拼装的课程或作答事实。 */
+    public void generatePaperLearningAssistanceStream(Long questionId, String assistanceType,
+                                                      String learningContext, Long userId,
+                                                      Consumer<String> onContent) {
+        Question question = questionMapper.selectById(questionId);
+        if (question == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
+        }
+        String questionContext = buildQuestionContext(question);
+        boolean variant = "VARIANT".equals(assistanceType);
+        String systemPrompt = variant
+                ? "你是一位试卷学习辅导老师。请基于原题和用户真实作答生成一道同知识点练习，"
+                + "明确说明它是 AI 生成练习而非官方原题，给出答案与解析，并使用 Markdown。"
+                : "你是一位试卷学习辅导老师。请结合原试卷位置和用户最近一次真实作答，"
+                + "针对错误或不完整理解给出清晰讲解，分析关键步骤与选项，并使用 Markdown。";
+        AiPrompt prompt = new AiPrompt(systemPrompt,
+                "## 试卷学习上下文\n" + learningContext + "\n\n## 当前原题\n" + questionContext);
+        String functionType = variant
+                ? "paper_learning_variant_stream" : "paper_learning_explanation_stream";
+        callStreamWithLog(functionType, userId, prompt,
+                () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
+    }
+
     private AiPrompt buildExplanationPrompt(Long questionId) {
         Question question = questionMapper.selectById(questionId);
         if (question == null) throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");

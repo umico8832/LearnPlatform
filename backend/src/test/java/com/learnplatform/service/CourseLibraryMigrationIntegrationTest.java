@@ -22,6 +22,81 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
     @Autowired private JdbcTemplate jdbcTemplate;
 
     @Test
+    void migrationCreatesTraceableExamLearningAiInteractionTable() {
+        Integer tableCount = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.tables
+                WHERE table_schema = DATABASE() AND table_name = 'exam_learning_ai_interaction'
+                """, Integer.class);
+        Integer columnCount = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_schema = DATABASE() AND table_name = 'exam_learning_ai_interaction'
+                  AND column_name IN ('id', 'user_id', 'course_id', 'exam_paper_id',
+                                      'learning_session_id', 'question_id', 'answer_id',
+                                      'answer_attempt_no', 'answer_correct', 'interaction_type',
+                                      'status', 'error_message', 'start_time', 'complete_time', 'create_time')
+                """, Integer.class);
+
+        assertEquals(1, tableCount);
+        assertEquals(15, columnCount);
+    }
+
+    @Test
+    void migrationImportsVerified2026Cs408DataStructureObjectivePaper() {
+        Long courseId = jdbcTemplate.queryForObject(
+                "SELECT id FROM course WHERE content_key = ?",
+                Long.class,
+                "cs408-data-structures");
+        Long paperId = jdbcTemplate.queryForObject("""
+                SELECT id FROM exam_paper
+                WHERE course_id = ? AND paper_type = 'OFFICIAL_EXAM'
+                  AND exam_year = 2026 AND title = '2026 年 408 真题·数据结构选择题'
+                  AND source_reference = 'https://csgraduates.com/study_methods/408quiz/2026/'
+                  AND source_verified = 1 AND status = 1 AND deleted = 0
+                """, Long.class, courseId);
+
+        Integer questionCount = jdbcTemplate.queryForObject(
+                "SELECT question_count FROM exam_paper WHERE id = ?", Integer.class, paperId);
+        Integer totalScore = jdbcTemplate.queryForObject(
+                "SELECT total_score FROM exam_paper WHERE id = ?", Integer.class, paperId);
+        Integer linkedQuestionCount = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM exam_question eq
+                JOIN question q ON q.id = eq.question_id
+                WHERE eq.exam_paper_id = ? AND q.course_id = ? AND q.status = 1 AND q.deleted = 0
+                  AND eq.section_title = '一、单项选择题（数据结构）'
+                  AND eq.display_number = CONCAT('第', eq.minor_question_number, '题')
+                """, Integer.class, paperId, courseId);
+        Integer optionCount = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM question_option qo
+                JOIN exam_question eq ON eq.question_id = qo.question_id
+                WHERE eq.exam_paper_id = ? AND qo.deleted = 0
+                """, Integer.class, paperId);
+        Integer correctOptionCount = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM question_option qo
+                JOIN exam_question eq ON eq.question_id = qo.question_id
+                WHERE eq.exam_paper_id = ? AND qo.deleted = 0 AND qo.is_correct = 1
+                """, Integer.class, paperId);
+        String answerKey = jdbcTemplate.queryForObject("""
+                SELECT GROUP_CONCAT(qo.option_label ORDER BY eq.sort_order SEPARATOR ',')
+                FROM question_option qo
+                JOIN exam_question eq ON eq.question_id = qo.question_id
+                WHERE eq.exam_paper_id = ? AND qo.deleted = 0 AND qo.is_correct = 1
+                """, String.class, paperId);
+        Integer knowledgeMappedCount = jdbcTemplate.queryForObject("""
+                SELECT COUNT(DISTINCT qkp.question_id) FROM question_knowledge_point qkp
+                JOIN exam_question eq ON eq.question_id = qkp.question_id
+                WHERE eq.exam_paper_id = ?
+                """, Integer.class, paperId);
+
+        assertEquals(11, questionCount);
+        assertEquals(22, totalScore);
+        assertEquals(11, linkedQuestionCount);
+        assertEquals(44, optionCount);
+        assertEquals(11, correctOptionCount);
+        assertEquals("A,D,C,B,D,D,B,D,B,A,C", answerKey);
+        assertEquals(11, knowledgeMappedCount);
+    }
+
+    @Test
     void migrationImportsAiStuCourseStructureAndProtectsLibraryUniqueness() {
         Integer paperProvenanceColumns = jdbcTemplate.queryForObject("""
                 SELECT COUNT(*) FROM information_schema.columns

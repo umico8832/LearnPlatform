@@ -19,7 +19,9 @@ export function getVariant(questionId: number) {
 
 /** AI 生成复习建议 */
 export function getReviewSuggestion(courseId?: number) {
-  return aiService.post<ApiResponse<AiResponse>>('/ai/review-suggestion', courseId ? { courseId } : {}).then((res) => res.data)
+  return aiService
+    .post<ApiResponse<AiResponse>>('/ai/review-suggestion', courseId ? { courseId } : {})
+    .then((res) => res.data)
 }
 
 /** AI 生成知识点总结 */
@@ -48,6 +50,23 @@ export async function streamQuestionAi(
 ) {
   const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
   await streamAiResponse(`${baseUrl}/ai/${type}/stream`, { questionId }, handlers, signal)
+}
+
+/** 在服务端已校验的试卷学习会话中生成 AI 辅导。 */
+export async function streamExamLearningAi(
+  type: AiStreamType,
+  sessionId: number,
+  questionId: number,
+  handlers: StreamHandlers,
+  signal?: AbortSignal,
+) {
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+  await streamAiResponse(
+    `${baseUrl}/exam/learning-sessions/${sessionId}/questions/${questionId}/ai/${type}/stream`,
+    {},
+    handlers,
+    signal,
+  )
 }
 
 /** 流式生成复习建议。 */
@@ -84,7 +103,9 @@ async function streamAiResponse(
     try {
       const errBody = await response.json()
       if (errBody?.message) errorMsg = errBody.message
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     if (response.status === 401) throw new Error('登录已过期，请重新登录')
     if (errorMsg) throw new Error(errorMsg)
     throw new Error(`AI 服务请求失败 (${response.status})`)
@@ -139,7 +160,8 @@ export const AI_ASSET_LABELS: Record<AiAssetType, string> = {
 
 // ======================== 可视化交互讲解类型 ========================
 
-export type VisualElementState = 'default' | 'current' | 'highlight' | 'visited' | 'swapped' | 'sorted' | 'done' | 'pending'
+export type VisualElementState =
+  'default' | 'current' | 'highlight' | 'visited' | 'swapped' | 'sorted' | 'done' | 'pending'
 
 export interface VisualTextElement {
   type: 'text'
@@ -392,7 +414,9 @@ export function getQuestionAssets(questionId: number) {
 
 /** 同步生成或获取指定类型的 AI 学习资产 */
 export function generateAsset(questionId: number, assetType: AiAssetType) {
-  return aiService.post<ApiResponse<QuestionLearningAsset>>('/ai/asset/generate', { questionId, assetType }).then((res) => res.data)
+  return aiService
+    .post<ApiResponse<QuestionLearningAsset>>('/ai/asset/generate', { questionId, assetType })
+    .then((res) => res.data)
 }
 
 /** 流式生成指定类型的 AI 学习资产 */
@@ -407,45 +431,43 @@ export async function streamAsset(
 }
 
 /** 提交 AI 学习资产反馈 */
-export function submitAssetFeedback(
-  questionId: number,
-  assetType: AiAssetType,
-  helpful: boolean,
-  comment?: string,
-) {
-  return aiService.post<ApiResponse<void>>('/ai/asset/feedback', {
-    questionId,
-    assetType,
-    helpful,
-    comment: comment || null,
-  }).then((res) => res.data)
+export function submitAssetFeedback(questionId: number, assetType: AiAssetType, helpful: boolean, comment?: string) {
+  return aiService
+    .post<ApiResponse<void>>('/ai/asset/feedback', {
+      questionId,
+      assetType,
+      helpful,
+      comment: comment || null,
+    })
+    .then((res) => res.data)
 }
 
 /** 查询当前用户对某资产的反馈状态 */
 export function getAssetFeedback(questionId: number, assetType: AiAssetType) {
-  return aiService.get<ApiResponse<{ helpful: boolean; comment: string }>>(
-    `/ai/asset/feedback/${questionId}/${assetType}`,
-  ).then((res) => res.data)
+  return aiService
+    .get<ApiResponse<{ helpful: boolean; comment: string }>>(`/ai/asset/feedback/${questionId}/${assetType}`)
+    .then((res) => res.data)
 }
 
 /** 记录当前用户实际看到某类 AI 学习资产 */
 export function recordAssetView(questionId: number, assetType: AiAssetType) {
-  return aiService.post<ApiResponse<AiVariantTrainingStatus | null>>('/ai/asset/view', { questionId, assetType }).then((res) => res.data)
+  return aiService
+    .post<ApiResponse<AiVariantTrainingStatus | null>>('/ai/asset/view', { questionId, assetType })
+    .then((res) => res.data)
 }
 
 /** 显式确认完成当前缓存版本的变式题训练。 */
 export function completeVariantTraining(questionId: number) {
-  return aiService.post<ApiResponse<AiVariantTrainingStatus>>(
-    `/ai/variant-training/${questionId}/complete`,
-  ).then((res) => res.data)
+  return aiService
+    .post<ApiResponse<AiVariantTrainingStatus>>(`/ai/variant-training/${questionId}/complete`)
+    .then((res) => res.data)
 }
 
 /** 提交结构化变式题答案；服务端保留首次判分结果。 */
 export function submitVariantAnswer(questionId: number, userAnswer: string) {
-  return aiService.post<ApiResponse<AiVariantTrainingStatus>>(
-    `/ai/variant-training/${questionId}/answer`,
-    { userAnswer },
-  ).then((res) => res.data)
+  return aiService
+    .post<ApiResponse<AiVariantTrainingStatus>>(`/ai/variant-training/${questionId}/answer`, { userAnswer })
+    .then((res) => res.data)
 }
 
 /** 清除题目的 AI 学习资产缓存（管理端） */
