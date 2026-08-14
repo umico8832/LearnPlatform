@@ -1,6 +1,7 @@
 package com.learnplatform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,6 +9,7 @@ import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.CourseStageAssessmentCreateRequest;
 import com.learnplatform.dto.CourseStageAssessmentSubmitRequest;
+import com.learnplatform.dto.CourseStageAssessmentSummaryVO;
 import com.learnplatform.dto.CourseStageAssessmentVO;
 import com.learnplatform.entity.CourseStageAssessment;
 import com.learnplatform.entity.CourseStageAssessmentQuestion;
@@ -140,6 +142,45 @@ public class CourseStageAssessmentService {
         assessment.setCompleteTime(answeredTime);
         assessmentMapper.complete(assessmentId, userId, correctCount, answeredTime);
         return toView(assessment);
+    }
+
+    public Page<CourseStageAssessmentSummaryVO> listCompleted(
+            Long userId, Long courseId, int pageNum, int pageSize) {
+        requireCourseInLibrary(userId, courseId);
+        if (pageNum < 1 || pageSize < 1 || pageSize > 50) {
+            throw validation("分页参数不合法");
+        }
+        Page<CourseStageAssessment> source = assessmentMapper.selectCompletedPage(
+                new Page<>(pageNum, pageSize), userId, courseId);
+        Page<CourseStageAssessmentSummaryVO> result = new Page<>(source.getCurrent(), source.getSize(), source.getTotal());
+        result.setRecords(source.getRecords().stream().map(this::toSummary).toList());
+        return result;
+    }
+
+    public CourseStageAssessmentVO getCompleted(Long assessmentId, Long userId) {
+        CourseStageAssessment assessment = assessmentMapper.selectOwned(assessmentId, userId);
+        if (assessment == null || !COMPLETED.equals(assessment.getStatus())) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "已完成阶段测评不存在");
+        }
+        return toView(assessment);
+    }
+
+    private void requireCourseInLibrary(Long userId, Long courseId) {
+        Long count = assessmentMapper.countUserCourse(userId, courseId);
+        if (count == null || count == 0) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "请先将课程加入个人课程库");
+        }
+    }
+
+    private CourseStageAssessmentSummaryVO toSummary(CourseStageAssessment assessment) {
+        CourseStageAssessmentSummaryVO view = new CourseStageAssessmentSummaryVO();
+        view.setId(assessment.getId());
+        view.setSelectionStrategy(assessment.getSelectionStrategy());
+        view.setQuestionCount(assessment.getQuestionCount());
+        view.setCorrectCount(assessment.getCorrectCount());
+        view.setStartTime(assessment.getStartTime());
+        view.setCompleteTime(assessment.getCompleteTime());
+        return view;
     }
 
     private void createSnapshot(Long assessmentId, int sortOrder, Question question) {

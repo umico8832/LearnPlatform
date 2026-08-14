@@ -1,9 +1,12 @@
 package com.learnplatform.service;
 
 import com.learnplatform.IntegrationTestBase;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.learnplatform.dto.CourseOverviewVO;
 import com.learnplatform.dto.CourseStageAssessmentCreateRequest;
 import com.learnplatform.dto.CourseStageAssessmentSubmitRequest;
 import com.learnplatform.dto.CourseStageAssessmentVO;
+import com.learnplatform.dto.CourseStageAssessmentSummaryVO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -26,6 +29,7 @@ class CourseStageAssessmentIntegrationTest extends IntegrationTestBase {
 
     @Autowired private JdbcTemplate jdbcTemplate;
     @Autowired private CourseStageAssessmentService service;
+    @Autowired private CourseOverviewService overviewService;
 
     @AfterEach
     void cleanUp() {
@@ -78,6 +82,13 @@ class CourseStageAssessmentIntegrationTest extends IntegrationTestBase {
                 "SELECT COUNT(*) FROM wrong_question WHERE user_id = ? AND deleted = 0", Integer.class, userId));
         assertEquals(3, jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM question_review_schedule WHERE user_id = ?", Integer.class, userId));
+        Page<CourseStageAssessmentSummaryVO> history = service.listCompleted(userId, 1L, 1, 10);
+        assertEquals(1, history.getTotal());
+        assertEquals(completed.getId(), history.getRecords().get(0).getId());
+        assertEquals("A", service.getCompleted(completed.getId(), userId)
+                .getQuestions().get(0).getCorrectAnswer());
+        CourseOverviewVO overview = overviewService.getOverview(userId, 1L);
+        assertEquals(completed.getId(), overview.getLatestStageAssessment().getId());
         CourseStageAssessmentVO restarted = service.start(userId, 1L, create);
         assertNotEquals(completed.getId(), restarted.getId());
         assertEquals("IN_PROGRESS", restarted.getStatus());

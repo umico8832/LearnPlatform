@@ -20,6 +20,8 @@ import {
   startCourseLearning,
   startCourseStageAssessment,
   submitCourseStageAssessment,
+  getCourseStageAssessmentHistory,
+  getCourseStageAssessmentDetail,
   startTutorSession,
   submitTutorCheck,
   isArrayQueueDequeueCourseware,
@@ -207,6 +209,18 @@ describe('Course API', () => {
       await getCourseOverview(408)
 
       expect(mockedRequest.get).toHaveBeenCalledWith('/my-courses/408/overview')
+    })
+
+    it('应读取本人课程阶段测评历史与已完成详情', async () => {
+      mockedRequest.get.mockResolvedValue({ code: 0, data: { records: [] }, message: 'success' })
+
+      await getCourseStageAssessmentHistory(408, 2, 10)
+      await getCourseStageAssessmentDetail(51)
+
+      expect(mockedRequest.get).toHaveBeenNthCalledWith(1, '/my-courses/408/stage-assessments', {
+        params: { pageNum: 2, pageSize: 10 },
+      })
+      expect(mockedRequest.get).toHaveBeenNthCalledWith(2, '/my-courses/stage-assessments/51')
     })
 
     it('应在不指定知识点时请求服务端选择下一学习目标', async () => {

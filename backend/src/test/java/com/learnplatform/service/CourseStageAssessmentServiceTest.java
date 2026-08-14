@@ -1,9 +1,11 @@
 package com.learnplatform.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.CourseStageAssessmentCreateRequest;
 import com.learnplatform.dto.CourseStageAssessmentSubmitRequest;
+import com.learnplatform.dto.CourseStageAssessmentSummaryVO;
 import com.learnplatform.dto.CourseStageAssessmentVO;
 import com.learnplatform.entity.CourseStageAssessment;
 import com.learnplatform.entity.CourseStageAssessmentQuestion;
@@ -20,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -119,6 +122,49 @@ class CourseStageAssessmentServiceTest {
                 org.mockito.ArgumentMatchers.eq("STAGE_ASSESSMENT_ANSWERED"),
                 org.mockito.ArgumentMatchers.eq("STAGE_ASSESSMENT"), anyLong(),
                 org.mockito.ArgumentMatchers.eq(true), any());
+    }
+
+    @Test
+    void listsOnlyCompletedAssessmentsForJoinedCourse() {
+        when(assessmentMapper.countUserCourse(7L, 10L)).thenReturn(1L);
+        CourseStageAssessment item = completedAssessment();
+        Page<CourseStageAssessment> page = new Page<>(1, 10, 1);
+        page.setRecords(List.of(item));
+        when(assessmentMapper.selectCompletedPage(any(), org.mockito.ArgumentMatchers.eq(7L),
+                org.mockito.ArgumentMatchers.eq(10L))).thenReturn(page);
+
+        Page<CourseStageAssessmentSummaryVO> result = service.listCompleted(7L, 10L, 1, 10);
+
+        assertEquals(1, result.getTotal());
+        assertEquals(51L, result.getRecords().get(0).getId());
+        assertEquals(1, result.getRecords().get(0).getCorrectCount());
+    }
+
+    @Test
+    void returnsOwnedCompletedDetailAndRejectsOtherUsersAssessment() {
+        CourseStageAssessment item = completedAssessment();
+        when(assessmentMapper.selectOwned(51L, 7L)).thenReturn(item);
+        when(assessmentQuestionMapper.selectByAssessmentId(51L)).thenReturn(List.of(snapshot()));
+
+        CourseStageAssessmentVO detail = service.getCompleted(51L, 7L);
+
+        assertEquals("A", detail.getQuestions().get(0).getCorrectAnswer());
+        when(assessmentMapper.selectOwned(51L, 8L)).thenReturn(null);
+        assertThrows(BusinessException.class, () -> service.getCompleted(51L, 8L));
+    }
+
+    private CourseStageAssessment completedAssessment() {
+        CourseStageAssessment assessment = new CourseStageAssessment();
+        assessment.setId(51L);
+        assessment.setUserId(7L);
+        assessment.setCourseId(10L);
+        assessment.setStatus("COMPLETED");
+        assessment.setSelectionStrategy("LEARNING_STATE_PRIORITY");
+        assessment.setQuestionCount(1);
+        assessment.setCorrectCount(1);
+        assessment.setStartTime(LocalDateTime.of(2026, 8, 15, 10, 0));
+        assessment.setCompleteTime(LocalDateTime.of(2026, 8, 15, 10, 5));
+        return assessment;
     }
 
     private Question question() {

@@ -13,6 +13,8 @@
 | `GET /api/my-courses/{courseId}/overview` | 查询已加入课程的学习概况与下一步候选目标 |
 | `POST /api/my-courses/{courseId}/start-learning` | 不指定知识点，按当前统一课程状态选择下一学习目标 |
 | `POST /api/my-courses/{courseId}/stage-assessments` | 创建或恢复当前用户在课程中的进行中阶段测评 |
+| `GET /api/my-courses/{courseId}/stage-assessments` | 分页查询当前用户在课程中的已完成测评摘要 |
+| `GET /api/my-courses/stage-assessments/{assessmentId}` | 查询本人已完成测评的逐题复盘 |
 | `POST /api/my-courses/stage-assessments/{assessmentId}/submit` | 完整提交本人阶段测评并由服务端判分 |
 | `POST /api/my-courses/{courseId}/tutor-sessions` | 以已审查的课程知识点开始 Tutor 会话（必填查询参数 `knowledgePointId`） |
 | `POST /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/check` | 提交该会话的理解检查 `{ "optionId": "..." }` |
@@ -44,6 +46,9 @@
 提交必须包含全部且不重复的测评题答案。服务端按快照答案统一判分，完成后返回逐题正误、参考答案与解析，
 并将每题结果写入错题、间隔复习计划和来源为 `STAGE_ASSESSMENT` 的课程学习事件；重复提交已完成测评
 只返回既有结果，不重复写学习事实。完成会释放活动会话键，后续可以开启新一轮。
+历史接口只返回当前用户在已加入课程中的已完成记录，并按完成时间倒序分页；摘要只含题数、正确数、
+选题策略和时间。逐题详情继续以会话所有者校验，并使用创建时快照复盘。课程总览的
+`latestStageAssessment` 只表示最近一次完成事实，不生成掌握度或趋势结论。
 
 Tutor 仅可打开已加入课程、属于该课程且审查状态为 `REVIEWED` 的内容；响应不会返回正确选项。
 理解检查由服务端首次判分并写入可追加课程学习事件，重复提交返回既有结果。

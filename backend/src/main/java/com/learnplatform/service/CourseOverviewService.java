@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.CourseOverviewVO;
+import com.learnplatform.dto.CourseStageAssessmentSummaryVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.CourseLearningEvent;
+import com.learnplatform.entity.CourseStageAssessment;
 import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionReviewSchedule;
@@ -14,6 +16,7 @@ import com.learnplatform.entity.TutorSession;
 import com.learnplatform.entity.UserCourse;
 import com.learnplatform.entity.WrongQuestion;
 import com.learnplatform.mapper.CourseLearningEventMapper;
+import com.learnplatform.mapper.CourseStageAssessmentMapper;
 import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
@@ -45,12 +48,14 @@ public class CourseOverviewService {
     private final KnowledgePointMapper knowledgePointMapper;
     private final TutorContentMapper tutorContentMapper;
     private final TutorSessionMapper tutorSessionMapper;
+    private final CourseStageAssessmentMapper stageAssessmentMapper;
 
     public CourseOverviewService(UserCourseMapper userCourseMapper, CourseMapper courseMapper,
                                  CourseLearningEventMapper eventMapper, WrongQuestionMapper wrongQuestionMapper,
                                  QuestionReviewScheduleMapper reviewScheduleMapper, QuestionMapper questionMapper,
                                  KnowledgePointMapper knowledgePointMapper, TutorContentMapper tutorContentMapper,
-                                 TutorSessionMapper tutorSessionMapper) {
+                                 TutorSessionMapper tutorSessionMapper,
+                                 CourseStageAssessmentMapper stageAssessmentMapper) {
         this.userCourseMapper = userCourseMapper;
         this.courseMapper = courseMapper;
         this.eventMapper = eventMapper;
@@ -60,6 +65,7 @@ public class CourseOverviewService {
         this.knowledgePointMapper = knowledgePointMapper;
         this.tutorContentMapper = tutorContentMapper;
         this.tutorSessionMapper = tutorSessionMapper;
+        this.stageAssessmentMapper = stageAssessmentMapper;
     }
 
     public CourseOverviewVO getOverview(Long userId, Long courseId) {
@@ -108,6 +114,8 @@ public class CourseOverviewService {
         List<TutorProgress> tutorProgress = findTutorProgress(userId, courseId);
         overview.setTutorProgress(tutorProgress.stream().map(this::toTutorProgressView).toList());
         overview.setRecommendedTargets(buildTargets(courseId, dueSchedules, unresolvedWrongQuestions, tutorProgress));
+        overview.setLatestStageAssessment(toAssessmentSummary(
+                stageAssessmentMapper.selectLatestCompleted(userId, courseId)));
         return overview;
     }
 
@@ -208,6 +216,18 @@ public class CourseOverviewService {
         view.setKnowledgePointId(progress.content().getKnowledgePointId());
         view.setTitle(progress.content().getTitle());
         view.setStatus(progress.status());
+        return view;
+    }
+
+    private CourseStageAssessmentSummaryVO toAssessmentSummary(CourseStageAssessment assessment) {
+        if (assessment == null) return null;
+        CourseStageAssessmentSummaryVO view = new CourseStageAssessmentSummaryVO();
+        view.setId(assessment.getId());
+        view.setSelectionStrategy(assessment.getSelectionStrategy());
+        view.setQuestionCount(assessment.getQuestionCount());
+        view.setCorrectCount(assessment.getCorrectCount());
+        view.setStartTime(assessment.getStartTime());
+        view.setCompleteTime(assessment.getCompleteTime());
         return view;
     }
 

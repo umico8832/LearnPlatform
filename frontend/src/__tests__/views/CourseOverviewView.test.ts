@@ -1,20 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 
-const { mockGetCourseOverview, mockStartCourseLearning, mockStartAssessment, mockSubmitAssessment, mockPush } =
-  vi.hoisted(() => ({
-    mockGetCourseOverview: vi.fn(),
-    mockStartCourseLearning: vi.fn(),
-    mockStartAssessment: vi.fn(),
-    mockSubmitAssessment: vi.fn(),
-    mockPush: vi.fn(),
-  }))
+const {
+  mockGetCourseOverview,
+  mockStartCourseLearning,
+  mockStartAssessment,
+  mockSubmitAssessment,
+  mockGetAssessmentHistory,
+  mockGetAssessmentDetail,
+  mockPush,
+} = vi.hoisted(() => ({
+  mockGetCourseOverview: vi.fn(),
+  mockStartCourseLearning: vi.fn(),
+  mockStartAssessment: vi.fn(),
+  mockSubmitAssessment: vi.fn(),
+  mockGetAssessmentHistory: vi.fn(),
+  mockGetAssessmentDetail: vi.fn(),
+  mockPush: vi.fn(),
+}))
 
 vi.mock('@/api/course', () => ({
   getCourseOverview: (...args: unknown[]) => mockGetCourseOverview(...args),
   startCourseLearning: (...args: unknown[]) => mockStartCourseLearning(...args),
   startCourseStageAssessment: (...args: unknown[]) => mockStartAssessment(...args),
   submitCourseStageAssessment: (...args: unknown[]) => mockSubmitAssessment(...args),
+  getCourseStageAssessmentHistory: (...args: unknown[]) => mockGetAssessmentHistory(...args),
+  getCourseStageAssessmentDetail: (...args: unknown[]) => mockGetAssessmentDetail(...args),
 }))
 
 vi.mock('vue-router', () => ({
@@ -34,6 +45,7 @@ const stubs = {
   'el-radio': { template: '<label><slot /></label>' },
   'el-checkbox-group': { template: '<div><slot /></div>' },
   'el-checkbox': { template: '<label><slot /></label>' },
+  'el-pagination': { template: '<nav />' },
 }
 
 function findButton(wrapper: ReturnType<typeof mount>, text: string) {
@@ -54,6 +66,7 @@ describe('CourseOverviewView', () => {
         dueReviewCount: 0,
         unresolvedWrongCount: 0,
         lastLearningTime: null,
+        latestStageAssessment: null,
         recommendedTargets: [],
         tutorProgress: [
           { knowledgePointId: 31, title: 'ArrayStack 的按位插入', status: 'COMPLETED' },
@@ -195,6 +208,84 @@ describe('CourseOverviewView', () => {
 
     expect(mockSubmitAssessment).toHaveBeenCalledWith(51, [{ assessmentQuestionId: 61, userAnswer: 'A' }])
     expect(wrapper.text()).toContain('答对 1 / 1 题')
+    expect(wrapper.text()).toContain('栈顶元素先离开')
+  })
+
+  it('展示最近测评事实并可从本人历史打开逐题复盘', async () => {
+    mockGetCourseOverview.mockResolvedValue({
+      data: {
+        courseId: 408,
+        courseName: '408 数据结构',
+        answeredCount: 5,
+        correctCount: 3,
+        dueReviewCount: 1,
+        unresolvedWrongCount: 2,
+        lastLearningTime: '2026-08-15T10:05:00',
+        latestStageAssessment: {
+          id: 51,
+          selectionStrategy: 'LEARNING_STATE_PRIORITY',
+          questionCount: 5,
+          correctCount: 3,
+          startTime: '2026-08-15T10:00:00',
+          completeTime: '2026-08-15T10:05:00',
+        },
+        recommendedTargets: [],
+        tutorProgress: [],
+      },
+    })
+    mockGetAssessmentHistory.mockResolvedValue({
+      data: {
+        records: [
+          {
+            id: 51,
+            selectionStrategy: 'LEARNING_STATE_PRIORITY',
+            questionCount: 5,
+            correctCount: 3,
+            completeTime: '2026-08-15T10:05:00',
+          },
+        ],
+        total: 1,
+        current: 1,
+        size: 10,
+      },
+    })
+    mockGetAssessmentDetail.mockResolvedValue({
+      data: {
+        id: 51,
+        courseId: 408,
+        status: 'COMPLETED',
+        selectionStrategy: 'LEARNING_STATE_PRIORITY',
+        questionCount: 1,
+        correctCount: 1,
+        questions: [
+          {
+            id: 61,
+            sortOrder: 1,
+            questionType: 'SINGLE_CHOICE',
+            content: '栈的访问顺序是？',
+            options: [{ label: 'A', content: 'LIFO' }],
+            userAnswer: 'A',
+            correct: true,
+            correctAnswer: 'A',
+            analysis: '栈顶元素先离开',
+          },
+        ],
+      },
+    })
+    const wrapper = mount(CourseOverviewView, { global: { stubs } })
+    await flushPromises()
+    expect(wrapper.text()).toContain('最近阶段测评')
+    expect(wrapper.text()).toContain('答对 3 / 5 题')
+    const vm = wrapper.vm as unknown as {
+      openAssessmentHistory: () => Promise<void>
+      openAssessmentDetail: (id: number) => Promise<void>
+    }
+
+    await vm.openAssessmentHistory()
+    expect(mockGetAssessmentHistory).toHaveBeenCalledWith(408, 1, 10)
+    expect(wrapper.text()).toContain('按当前学习事实优先选题')
+    await vm.openAssessmentDetail(51)
+    expect(mockGetAssessmentDetail).toHaveBeenCalledWith(51)
     expect(wrapper.text()).toContain('栈顶元素先离开')
   })
 })

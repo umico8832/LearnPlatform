@@ -1,11 +1,13 @@
 package com.learnplatform.controller;
 
 import com.learnplatform.common.exception.GlobalExceptionHandler;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.dto.UserCourseVO;
 import com.learnplatform.dto.CourseOverviewVO;
 import com.learnplatform.dto.CourseStageAssessmentCreateRequest;
 import com.learnplatform.dto.CourseStageAssessmentSubmitRequest;
 import com.learnplatform.dto.CourseStageAssessmentVO;
+import com.learnplatform.dto.CourseStageAssessmentSummaryVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.CourseLibraryService;
 import com.learnplatform.service.CourseOverviewService;
@@ -136,6 +138,29 @@ class CourseLibraryControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("COMPLETED"))
                 .andExpect(jsonPath("$.data.correctCount").value(1));
+    }
+
+    @Test
+    void listsAndReadsOwnedCompletedStageAssessments() throws Exception {
+        CourseStageAssessmentSummaryVO summary = new CourseStageAssessmentSummaryVO();
+        summary.setId(51L);
+        summary.setQuestionCount(5);
+        summary.setCorrectCount(3);
+        Page<CourseStageAssessmentSummaryVO> page = new Page<>(1, 10, 1);
+        page.setRecords(List.of(summary));
+        when(stageAssessmentService.listCompleted(7L, 10L, 1, 10)).thenReturn(page);
+        CourseStageAssessmentVO detail = new CourseStageAssessmentVO();
+        detail.setId(51L);
+        detail.setStatus("COMPLETED");
+        when(stageAssessmentService.getCompleted(51L, 7L)).thenReturn(detail);
+
+        mockMvc.perform(get("/api/my-courses/10/stage-assessments").with(mockUser(7L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.records[0].id").value(51))
+                .andExpect(jsonPath("$.data.records[0].correctCount").value(3));
+        mockMvc.perform(get("/api/my-courses/stage-assessments/51").with(mockUser(7L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("COMPLETED"));
     }
 
     private RequestPostProcessor mockUser(Long userId) {

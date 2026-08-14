@@ -15,6 +15,7 @@ public class CourseOverviewVO {
     private LocalDateTime lastLearningTime;
     private List<LearningTargetVO> recommendedTargets;
     private List<TutorProgressVO> tutorProgress;
+    private CourseStageAssessmentSummaryVO latestStageAssessment;
 
     public Long getCourseId() { return courseId; }
     public void setCourseId(Long courseId) { this.courseId = courseId; }
@@ -34,6 +35,8 @@ public class CourseOverviewVO {
     public void setRecommendedTargets(List<LearningTargetVO> recommendedTargets) { this.recommendedTargets = recommendedTargets; }
     public List<TutorProgressVO> getTutorProgress() { return tutorProgress; }
     public void setTutorProgress(List<TutorProgressVO> tutorProgress) { this.tutorProgress = tutorProgress; }
+    public CourseStageAssessmentSummaryVO getLatestStageAssessment() { return latestStageAssessment; }
+    public void setLatestStageAssessment(CourseStageAssessmentSummaryVO value) { this.latestStageAssessment = value; }
 
     public static class LearningTargetVO {
         private String type;

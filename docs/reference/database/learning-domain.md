@@ -38,7 +38,8 @@ V80 为 `tutor_session` 增加 `learning_context_json`。开始 Tutor 会话时�
 
 V86 增加课程阶段测评会话和逐题快照。创建时仅从当前用户可见的课程客观题中选取题目，并固化题干、
 选项、正确答案和解析，避免测评期间原题变更破坏判分一致性。完成事务显式将活动键写为 `NULL`，再把
-逐题正误投影到错题、复习计划和课程学习事件；题目快照保存判分依据，不替代原始题目或课程事件。
+逐题正误投影到错题、复习计划和课程学习事件；已完成会话按 `(user_id, course_id, complete_time)` 读取
+本人分页历史和最近摘要，题目快照保存判分与复盘依据，不替代原始题目或课程事件。
 
 V25 为 `ods-arraystack-insertion` 的 `tutor_content.lesson_json` 增加已审查的
 `ARRAY_STACK_INSERTION` v1 参数定义。它只包含容量、初始槽位和插入参数；课件动画状态由

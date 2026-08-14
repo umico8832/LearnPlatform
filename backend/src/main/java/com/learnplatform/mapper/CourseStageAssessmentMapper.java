@@ -1,6 +1,7 @@
 package com.learnplatform.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.entity.CourseStageAssessment;
 import com.learnplatform.entity.Question;
 import org.apache.ibatis.annotations.Mapper;
@@ -14,6 +15,9 @@ import java.util.List;
 public interface CourseStageAssessmentMapper extends BaseMapper<CourseStageAssessment> {
     @Select("SELECT id FROM user_course WHERE user_id = #{userId} AND course_id = #{courseId} FOR UPDATE")
     Long lockUserCourse(@Param("userId") Long userId, @Param("courseId") Long courseId);
+
+    @Select("SELECT COUNT(*) FROM user_course WHERE user_id = #{userId} AND course_id = #{courseId}")
+    Long countUserCourse(@Param("userId") Long userId, @Param("courseId") Long courseId);
 
     @Select("""
             SELECT * FROM course_stage_assessment
@@ -29,6 +33,30 @@ public interface CourseStageAssessmentMapper extends BaseMapper<CourseStageAsses
             """)
     CourseStageAssessment selectOwnedForUpdate(@Param("assessmentId") Long assessmentId,
                                                 @Param("userId") Long userId);
+
+    @Select("""
+            SELECT * FROM course_stage_assessment
+            WHERE id = #{assessmentId} AND user_id = #{userId}
+            """)
+    CourseStageAssessment selectOwned(@Param("assessmentId") Long assessmentId,
+                                      @Param("userId") Long userId);
+
+    @Select("""
+            SELECT * FROM course_stage_assessment
+            WHERE user_id = #{userId} AND course_id = #{courseId} AND status = 'COMPLETED'
+            ORDER BY complete_time DESC, id DESC
+            """)
+    Page<CourseStageAssessment> selectCompletedPage(Page<CourseStageAssessment> page,
+                                                    @Param("userId") Long userId,
+                                                    @Param("courseId") Long courseId);
+
+    @Select("""
+            SELECT * FROM course_stage_assessment
+            WHERE user_id = #{userId} AND course_id = #{courseId} AND status = 'COMPLETED'
+            ORDER BY complete_time DESC, id DESC LIMIT 1
+            """)
+    CourseStageAssessment selectLatestCompleted(@Param("userId") Long userId,
+                                                 @Param("courseId") Long courseId);
 
     @Update("""
             UPDATE course_stage_assessment

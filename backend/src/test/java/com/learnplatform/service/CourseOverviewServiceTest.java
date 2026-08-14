@@ -4,6 +4,7 @@ import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.CourseOverviewVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.CourseLearningEvent;
+import com.learnplatform.entity.CourseStageAssessment;
 import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionReviewSchedule;
@@ -11,6 +12,7 @@ import com.learnplatform.entity.WrongQuestion;
 import com.learnplatform.entity.TutorContent;
 import com.learnplatform.entity.TutorSession;
 import com.learnplatform.mapper.CourseLearningEventMapper;
+import com.learnplatform.mapper.CourseStageAssessmentMapper;
 import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
@@ -52,6 +54,7 @@ class CourseOverviewServiceTest {
     @Mock private KnowledgePointMapper knowledgePointMapper;
     @Mock private TutorContentMapper tutorContentMapper;
     @Mock private TutorSessionMapper tutorSessionMapper;
+    @Mock private CourseStageAssessmentMapper stageAssessmentMapper;
 
     private CourseOverviewService service;
 
@@ -60,7 +63,7 @@ class CourseOverviewServiceTest {
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new Configuration(), ""), KnowledgePoint.class);
         service = new CourseOverviewService(userCourseMapper, courseMapper, eventMapper,
                 wrongQuestionMapper, reviewScheduleMapper, questionMapper, knowledgePointMapper,
-                tutorContentMapper, tutorSessionMapper);
+                tutorContentMapper, tutorSessionMapper, stageAssessmentMapper);
     }
 
     @Test
@@ -182,6 +185,27 @@ class CourseOverviewServiceTest {
         assertEquals(41L, overview.getTutorProgress().get(0).getKnowledgePointId());
         assertEquals(42L, overview.getTutorProgress().get(1).getKnowledgePointId());
         assertEquals(43L, overview.getTutorProgress().get(2).getKnowledgePointId());
+    }
+
+    @Test
+    void exposesLatestCompletedAssessmentAsFactWithoutInferringMastery() {
+        when(userCourseMapper.selectCount(any())).thenReturn(1L);
+        when(courseMapper.selectById(10L)).thenReturn(course());
+        when(eventMapper.selectList(any())).thenReturn(List.of());
+        when(questionMapper.selectList(any())).thenReturn(List.of());
+        when(knowledgePointMapper.selectOne(any())).thenReturn(rootKnowledgePoint());
+        CourseStageAssessment latest = new CourseStageAssessment();
+        latest.setId(51L);
+        latest.setQuestionCount(5);
+        latest.setCorrectCount(3);
+        latest.setCompleteTime(LocalDateTime.of(2026, 8, 15, 11, 0));
+        when(stageAssessmentMapper.selectLatestCompleted(7L, 10L)).thenReturn(latest);
+
+        CourseOverviewVO overview = service.getOverview(7L, 10L);
+
+        assertEquals(51L, overview.getLatestStageAssessment().getId());
+        assertEquals(3, overview.getLatestStageAssessment().getCorrectCount());
+        assertEquals(5, overview.getLatestStageAssessment().getQuestionCount());
     }
 
     private Course course() {

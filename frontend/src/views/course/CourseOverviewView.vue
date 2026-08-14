@@ -11,6 +11,9 @@
         <el-button :icon="Collection" @click="openCourseContent">查看课程目录</el-button>
         <el-button :icon="Document" @click="openCoursePapers">学习课程试卷</el-button>
         <el-button :icon="DataAnalysis" :loading="assessmentStarting" @click="startAssessment">阶段测评</el-button>
+        <el-button :icon="DataAnalysis" :loading="assessmentHistoryLoading" @click="openAssessmentHistory">
+          测评历史
+        </el-button>
         <el-button
           type="primary"
           :icon="ArrowRight"
@@ -105,6 +108,15 @@
             <h3 id="activity-heading">学习记录</h3>
             <p v-if="overview.lastLearningTime">最近一次课程内判分：{{ formatDateTime(overview.lastLearningTime) }}</p>
             <p v-else>还没有课程内学习记录。可从课程目录或题目开始。</p>
+            <div v-if="overview.latestStageAssessment" class="latest-assessment">
+              <strong>最近阶段测评</strong>
+              <span>
+                答对 {{ overview.latestStageAssessment.correctCount }} /
+                {{ overview.latestStageAssessment.questionCount }} 题
+              </span>
+              <small>{{ formatDateTime(overview.latestStageAssessment.completeTime) }}</small>
+              <el-button text @click="openAssessmentDetail(overview.latestStageAssessment.id)">查看逐题复盘</el-button>
+            </div>
             <el-button text :icon="Refresh" :loading="loading" @click="fetchOverview">刷新记录</el-button>
           </aside>
         </div>
@@ -119,6 +131,37 @@
         <template #extra><el-button type="primary" @click="fetchOverview">重新加载</el-button></template>
       </el-result>
     </section>
+
+    <el-dialog v-model="assessmentHistoryVisible" title="阶段测评历史" width="min(680px, 94vw)">
+      <el-result v-if="assessmentHistoryFailed" icon="error" title="暂时无法读取测评历史" sub-title="请稍后重试。">
+        <template #extra
+          ><el-button type="primary" @click="loadAssessmentHistory(assessmentHistoryPage)"
+            >重新加载</el-button
+          ></template
+        >
+      </el-result>
+      <p v-else-if="!assessmentHistoryLoading && !assessmentHistory.length" class="history-empty">
+        还没有已完成的阶段测评。
+      </p>
+      <div v-else v-loading="assessmentHistoryLoading" class="assessment-history-list">
+        <article v-for="item in assessmentHistory" :key="item.id" class="assessment-history-item">
+          <div>
+            <strong>答对 {{ item.correctCount }} / {{ item.questionCount }} 题</strong>
+            <p>{{ formatDateTime(item.completeTime) }}</p>
+            <small>{{ assessmentStrategyText(item.selectionStrategy) }}</small>
+          </div>
+          <el-button @click="openAssessmentDetail(item.id)">查看复盘</el-button>
+        </article>
+      </div>
+      <el-pagination
+        v-if="assessmentHistoryTotal > assessmentHistoryPageSize"
+        layout="prev, pager, next"
+        :current-page="assessmentHistoryPage"
+        :page-size="assessmentHistoryPageSize"
+        :total="assessmentHistoryTotal"
+        @current-change="loadAssessmentHistory"
+      />
+    </el-dialog>
 
     <el-dialog v-model="assessmentDialogVisible" title="课程阶段测评" width="min(780px, 94vw)">
       <template v-if="assessment">
@@ -187,11 +230,14 @@ import { ElMessage } from 'element-plus'
 import { ArrowLeft, ArrowRight, Collection, DataAnalysis, Document, Refresh } from '@element-plus/icons-vue'
 import {
   getCourseOverview,
+  getCourseStageAssessmentDetail,
+  getCourseStageAssessmentHistory,
   startCourseLearning,
   startCourseStageAssessment,
   submitCourseStageAssessment,
   type CourseOverviewVO,
   type CourseStageAssessmentVO,
+  type CourseStageAssessmentSummaryVO,
   type LearningTargetVO,
 } from '@/api/course'
 
@@ -206,12 +252,23 @@ const assessmentSubmitting = ref(false)
 const assessmentDialogVisible = ref(false)
 const assessment = ref<CourseStageAssessmentVO | null>(null)
 const assessmentAnswers = ref<Record<number, string[]>>({})
+const assessmentHistoryVisible = ref(false)
+const assessmentHistoryLoading = ref(false)
+const assessmentHistoryFailed = ref(false)
+const assessmentHistory = ref<CourseStageAssessmentSummaryVO[]>([])
+const assessmentHistoryPage = ref(1)
+const assessmentHistoryPageSize = 10
+const assessmentHistoryTotal = ref(0)
 const courseId = computed(() => Number(route.params.id))
 const assessmentStrategyLabel = computed(() =>
   assessment.value?.selectionStrategy === 'LEARNING_STATE_PRIORITY'
     ? '按当前错题、到期复习和近期错误记录优先选题'
     : '学习数据不足，采用确定性课程题序；本次不标记为 AI 个性化',
 )
+
+function assessmentStrategyText(strategy: CourseStageAssessmentSummaryVO['selectionStrategy']) {
+  return strategy === 'LEARNING_STATE_PRIORITY' ? '按当前学习事实优先选题' : '确定性课程题序'
+}
 
 async function fetchOverview() {
   loading.value = true
@@ -261,6 +318,34 @@ async function startAssessment() {
   } finally {
     assessmentStarting.value = false
   }
+}
+
+async function loadAssessmentHistory(page = 1) {
+  assessmentHistoryLoading.value = true
+  assessmentHistoryFailed.value = false
+  try {
+    const response = await getCourseStageAssessmentHistory(courseId.value, page, assessmentHistoryPageSize)
+    assessmentHistory.value = response.data.records
+    assessmentHistoryPage.value = response.data.current
+    assessmentHistoryTotal.value = response.data.total
+  } catch {
+    assessmentHistoryFailed.value = true
+  } finally {
+    assessmentHistoryLoading.value = false
+  }
+}
+
+async function openAssessmentHistory() {
+  assessmentHistoryVisible.value = true
+  await loadAssessmentHistory(1)
+}
+
+async function openAssessmentDetail(assessmentId: number) {
+  const response = await getCourseStageAssessmentDetail(assessmentId)
+  assessment.value = response.data
+  syncAssessmentAnswers(response.data)
+  assessmentHistoryVisible.value = false
+  assessmentDialogVisible.value = true
 }
 
 async function submitAssessment() {
@@ -531,6 +616,39 @@ onMounted(fetchOverview)
 .activity-panel .el-button {
   margin-top: 10px;
 }
+.latest-assessment {
+  display: grid;
+  gap: 4px;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid var(--lp-border);
+  border-radius: 8px;
+  background: var(--lp-surface-soft);
+}
+.latest-assessment small,
+.assessment-history-item small {
+  color: var(--lp-text-muted);
+}
+.assessment-history-list {
+  display: grid;
+  gap: 10px;
+  min-height: 80px;
+}
+.assessment-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid var(--lp-border);
+  border-radius: 8px;
+  background: var(--lp-surface-soft);
+}
+.assessment-history-item p,
+.history-empty {
+  margin: 4px 0;
+  color: var(--lp-text-secondary);
+}
 .assessment-summary {
   margin: 16px 0 0;
   color: var(--lp-text);
@@ -618,6 +736,13 @@ onMounted(fetchOverview)
   }
   .assessment-question-header {
     flex-direction: column;
+  }
+  .assessment-history-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .assessment-history-item .el-button {
+    width: 100%;
   }
 }
 </style>

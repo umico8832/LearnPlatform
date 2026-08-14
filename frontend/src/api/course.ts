@@ -33,6 +33,7 @@ export interface CourseOverviewVO {
   dueReviewCount: number
   unresolvedWrongCount: number
   lastLearningTime: string | null
+  latestStageAssessment: CourseStageAssessmentSummaryVO | null
   recommendedTargets: LearningTargetVO[]
   tutorProgress: TutorProgressVO[]
 }
@@ -74,6 +75,15 @@ export interface CourseStageAssessmentQuestion {
   correct: boolean | null
   correctAnswer: string | null
   analysis: string | null
+}
+
+export interface CourseStageAssessmentSummaryVO {
+  id: number
+  selectionStrategy: 'LEARNING_STATE_PRIORITY' | 'COURSE_SEQUENCE_FALLBACK'
+  questionCount: number
+  correctCount: number
+  startTime: string
+  completeTime: string
 }
 export interface ArrayStackInsertionCourseware {
   kind: 'ARRAY_STACK_INSERTION'
@@ -591,6 +601,17 @@ export function submitCourseStageAssessment(
     `/my-courses/stage-assessments/${assessmentId}/submit`,
     { answers },
   )
+}
+
+export function getCourseStageAssessmentHistory(courseId: number, pageNum = 1, pageSize = 10) {
+  return request.get<unknown, ApiResponse<PageResult<CourseStageAssessmentSummaryVO>>>(
+    `/my-courses/${courseId}/stage-assessments`,
+    { params: { pageNum, pageSize } },
+  )
+}
+
+export function getCourseStageAssessmentDetail(assessmentId: number) {
+  return request.get<unknown, ApiResponse<CourseStageAssessmentVO>>(`/my-courses/stage-assessments/${assessmentId}`)
 }
 
 export function startTutorSession(courseId: number, knowledgePointId: number) {
