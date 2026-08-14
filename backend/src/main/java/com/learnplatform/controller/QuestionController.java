@@ -46,8 +46,9 @@ public class QuestionController {
      * 获取题目详情
      */
     @GetMapping("/{id}")
-    public R<QuestionVO> getQuestion(@PathVariable Long id) {
-        return R.ok(questionService.getEnabledQuestionById(id));
+    public R<QuestionVO> getQuestion(@PathVariable Long id,
+                                     @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(questionService.getEnabledQuestionById(id, userDetails.getUserId()));
     }
 
     /**

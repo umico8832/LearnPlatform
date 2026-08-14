@@ -8,10 +8,15 @@ import com.learnplatform.dto.ExamLearningAnswerResultVO;
 import com.learnplatform.dto.ExamLearningSessionVO;
 import com.learnplatform.dto.ExamSubmitRequest;
 import com.learnplatform.dto.ExamPaperVO;
+import com.learnplatform.dto.PrivateExamImportConfirmRequest;
+import com.learnplatform.dto.PrivateExamImportPreviewVO;
+import com.learnplatform.dto.PrivateExamImportRequest;
+import com.learnplatform.dto.PrivateExamSourceVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.ExamService;
 import com.learnplatform.service.ExamPaperService;
 import com.learnplatform.service.ExamPaperLearningService;
+import com.learnplatform.service.PrivateExamImportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -29,12 +34,15 @@ public class ExamController {
     private final ExamService examService;
     private final ExamPaperService examPaperService;
     private final ExamPaperLearningService examPaperLearningService;
+    private final PrivateExamImportService privateExamImportService;
 
     public ExamController(ExamService examService, ExamPaperService examPaperService,
-                          ExamPaperLearningService examPaperLearningService) {
+                          ExamPaperLearningService examPaperLearningService,
+                          PrivateExamImportService privateExamImportService) {
         this.examService = examService;
         this.examPaperService = examPaperService;
         this.examPaperLearningService = examPaperLearningService;
+        this.privateExamImportService = privateExamImportService;
     }
 
 
@@ -44,10 +52,12 @@ public class ExamController {
     @Operation(summary = "试卷列表", description = "获取已发布的试卷列表")
     @GetMapping("/papers")
     public R<Page<ExamPaperVO>> getPublishedPapers(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) Long courseId) {
-        return R.ok(examPaperService.getExamPaperPage(pageNum, pageSize, courseId, 1));
+        return R.ok(examPaperService.getAccessiblePublishedExamPaperPage(
+                userDetails.getUserId(), pageNum, pageSize, courseId));
     }
 
 
@@ -56,8 +66,29 @@ public class ExamController {
      */
     @Operation(summary = "试卷详情", description = "获取试卷详情，用于考试前预览")
     @GetMapping("/papers/{id}")
-    public R<ExamPaperVO> getPaperDetail(@PathVariable Long id) {
-        return R.ok(examPaperService.getPublishedExamPaperById(id));
+    public R<ExamPaperVO> getPaperDetail(@PathVariable Long id,
+                                         @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(examPaperService.getAccessiblePublishedExamPaperById(id, userDetails.getUserId()));
+    }
+
+    @PostMapping("/private-papers/import/preview")
+    public R<PrivateExamImportPreviewVO> previewPrivatePaper(
+            @Valid @RequestBody PrivateExamImportRequest request) {
+        return R.ok(privateExamImportService.preview(request));
+    }
+
+    @PostMapping("/private-papers/import/confirm")
+    public R<ExamPaperVO> confirmPrivatePaper(
+            @Valid @RequestBody PrivateExamImportConfirmRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(privateExamImportService.confirm(request, userDetails.getUserId()));
+    }
+
+    @GetMapping("/private-papers/{paperId}/source")
+    public R<PrivateExamSourceVO> getPrivatePaperSource(
+            @PathVariable Long paperId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(privateExamImportService.getSource(paperId, userDetails.getUserId()));
     }
 
 

@@ -193,6 +193,54 @@ test('用户刷新后可继续限时考试并查看自动判分结果', async ({
   await expect(page.locator('.result-tag').filter({ hasText: '正确' })).toHaveCount(3)
 })
 
+test('用户可预览确认结构化私有试卷并隔离给其他账号', async ({ page }) => {
+  const paperTitle = `E2E 私有试卷 ${Date.now()}`
+  await loginAs(page, 'testuser', 'test123')
+  await page.goto('/exams')
+  await page.getByRole('button', { name: '导入私有试卷' }).click()
+  const dialog = page.getByRole('dialog', { name: '导入私有试卷' })
+  await dialog.getByRole('textbox', { name: '试卷标题' }).fill(paperTitle)
+  await dialog.getByRole('combobox', { name: '所属课程' }).click()
+  await page.getByRole('option', { name: '408 数据结构' }).click()
+  await dialog.getByRole('textbox', { name: '原始资料名称' }).fill('e2e-private.md')
+  await dialog.getByRole('textbox', { name: '原始内容' }).fill(`## 1. 单选题
+**题干**: 栈遵循哪种访问顺序？
+**选项**:
+- A. 先进先出
+- B. 先进后出
+**答案**: B
+**解析**: 栈遵循 LIFO。
+**分值**: 2`)
+  await dialog.getByRole('button', { name: '解析并预览' }).click()
+  await expect(dialog).toContainText('1 题 · 2 分 · 60 分钟')
+  await expect(dialog).toContainText('确认答案：B')
+  await dialog.getByRole('button', { name: '确认导入' }).click()
+  await expect(page.getByText('私有试卷已导入')).toBeVisible()
+
+  const privateCard = page.locator('.exam-card').filter({ hasText: paperTitle })
+  await expect(privateCard).toContainText('我的私有试卷')
+  await expect(privateCard).toContainText('仅你可见 · 已确认导入')
+  await privateCard.getByRole('button', { name: '查看原始资料' }).click()
+  const sourceDialog = page.getByRole('dialog', { name: '私有试卷原始资料' })
+  await expect(sourceDialog).toContainText('e2e-private.md')
+  await expect(sourceDialog).toContainText('栈遵循哪种访问顺序？')
+  await page.keyboard.press('Escape')
+  await expect(sourceDialog).toBeHidden()
+
+  await privateCard.getByRole('button', { name: '考试模式' }).click()
+  await expect(page).toHaveURL(/\/exams\/take\/\d+$/)
+  await page.locator('.question-area .option-item').filter({ hasText: '先进后出' }).click()
+  await page.locator('.take-header').getByRole('button', { name: '提交试卷' }).click()
+  await page.getByRole('dialog', { name: '提交确认' }).getByRole('button', { name: '确定' }).click()
+  await expect(page).toHaveURL(/\/exams\/result\/\d+$/)
+  await expect(page.locator('.score-number')).toHaveText('2')
+
+  await page.evaluate(() => localStorage.clear())
+  await loginAs(page, 'admin', 'admin123')
+  await page.goto('/exams')
+  await expect(page.getByText(paperTitle, { exact: true })).toHaveCount(0)
+})
+
 test('用户可完成2026真题学习与限时考试并复盘可信来源', async ({ page }) => {
   await loginAs(page, 'testuser', 'test123')
 

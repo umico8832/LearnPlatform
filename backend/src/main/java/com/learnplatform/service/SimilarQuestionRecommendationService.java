@@ -69,7 +69,7 @@ public class SimilarQuestionRecommendationService {
         log.info("相似题推荐: userId={}, questionId={}, limit={}", userId, questionId, limit);
 
         Question source = questionMapper.selectById(questionId);
-        if (source == null) {
+        if (!QuestionAccessPolicy.canAccess(source, userId)) {
             SimilarQuestionVO empty = new SimilarQuestionVO();
             empty.setSourceQuestionId(questionId);
             empty.setSourceQuestionContent("题目不存在");
@@ -90,7 +90,9 @@ public class SimilarQuestionRecommendationService {
 
         // 3. 获取所有候选题目（排除源题本身和已删除的）
         LambdaQueryWrapper<Question> qWrapper = new LambdaQueryWrapper<>();
-        qWrapper.ne(Question::getId, questionId).eq(Question::getStatus, 1);
+        qWrapper.ne(Question::getId, questionId)
+                .eq(Question::getStatus, 1)
+                .eq(Question::getVisibility, "PUBLIC");
         List<Question> candidates = questionMapper.selectList(qWrapper);
 
         // 4. 获取所有知识点关联（用于批量查询）

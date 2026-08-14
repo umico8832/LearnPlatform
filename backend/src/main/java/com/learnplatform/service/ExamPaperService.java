@@ -61,6 +61,7 @@ public class ExamPaperService {
         LambdaQueryWrapper<ExamPaper> wrapper = new LambdaQueryWrapper<>();
         if (courseId != null) wrapper.eq(ExamPaper::getCourseId, courseId);
         if (status != null) wrapper.eq(ExamPaper::getStatus, status);
+        wrapper.eq(ExamPaper::getVisibility, "PUBLIC");
         wrapper.orderByDesc(ExamPaper::getCreateTime);
         Page<ExamPaper> result = examPaperMapper.selectPage(page, wrapper);
 
@@ -69,25 +70,50 @@ public class ExamPaperService {
         return voPage;
     }
 
+    public Page<ExamPaperVO> getAccessiblePublishedExamPaperPage(Long userId, int pageNum,
+                                                                 int pageSize, Long courseId) {
+        Page<ExamPaper> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<ExamPaper> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ExamPaper::getStatus, 1)
+                .and(scope -> scope.eq(ExamPaper::getVisibility, "PUBLIC")
+                        .or(privateScope -> privateScope.eq(ExamPaper::getVisibility, "PRIVATE")
+                                .eq(ExamPaper::getOwnerUserId, userId)));
+        if (courseId != null) wrapper.eq(ExamPaper::getCourseId, courseId);
+        wrapper.orderByDesc(ExamPaper::getCreateTime);
+        Page<ExamPaper> result = examPaperMapper.selectPage(page, wrapper);
+        Page<ExamPaperVO> voPage = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
+        voPage.setRecords(result.getRecords().stream().map(this::toVO).toList());
+        return voPage;
+    }
+
     /**
      * 获取试卷详情
      */
     public ExamPaperVO getExamPaperById(Long id) {
         ExamPaper paper = examPaperMapper.selectById(id);
-        if (paper == null) throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
+        if (paper == null || "PRIVATE".equals(paper.getVisibility())) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
+        }
         ExamPaperVO vo = toVO(paper);
         fillQuestions(vo, true);
         return vo;
     }
 
-    public ExamPaperVO getPublishedExamPaperById(Long id) {
+    public ExamPaperVO getAccessiblePublishedExamPaperById(Long id, Long userId) {
         ExamPaper paper = examPaperMapper.selectById(id);
-        if (paper == null || paper.getStatus() == null || paper.getStatus() != 1) {
+        if (paper == null || paper.getStatus() == null || paper.getStatus() != 1
+                || !canAccess(paper, userId)) {
             throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
         }
         ExamPaperVO vo = toVO(paper);
         fillQuestions(vo, false);
         return vo;
+    }
+
+    public boolean canAccess(ExamPaper paper, Long userId) {
+        String visibility = paper.getVisibility();
+        if (visibility == null || "PUBLIC".equals(visibility)) return true;
+        return "PRIVATE".equals(visibility) && userId != null && userId.equals(paper.getOwnerUserId());
     }
 
     /**
@@ -110,6 +136,7 @@ public class ExamPaperService {
         paper.setDuration(request.getDuration() != null ? request.getDuration() : 60);
         paper.setStatus(request.getStatus() != null ? request.getStatus() : 0);
         paper.setCreateBy(createBy);
+        paper.setVisibility("PUBLIC");
         paper.setPaperType(paperType);
         paper.setExamName(request.getExamName());
         paper.setExamYear(request.getExamYear());
@@ -385,11 +412,14 @@ public class ExamPaperService {
         vo.setQuestionCount(paper.getQuestionCount());
         vo.setStatus(paper.getStatus());
         vo.setCreateBy(paper.getCreateBy());
+        vo.setOwnerUserId(paper.getOwnerUserId());
+        vo.setVisibility(paper.getVisibility() != null ? paper.getVisibility() : "PUBLIC");
         vo.setPaperType(normalizePaperType(paper.getPaperType()));
         vo.setExamName(paper.getExamName());
         vo.setExamYear(paper.getExamYear());
         vo.setSourceReference(paper.getSourceReference());
         vo.setSourceVerified(Boolean.TRUE.equals(paper.getSourceVerified()));
+        vo.setImportStatus(paper.getImportStatus());
         vo.setCreateTime(paper.getCreateTime());
         if (paper.getCourseId() != null) {
             Course course = courseMapper.selectById(paper.getCourseId());

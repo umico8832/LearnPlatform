@@ -105,6 +105,7 @@ public class PracticeService {
 
         LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Question::getStatus, 1);
+        wrapper.eq(Question::getVisibility, "PUBLIC");
 
         if (courseId != null) {
             wrapper.eq(Question::getCourseId, courseId);
@@ -163,7 +164,7 @@ public class PracticeService {
         }
 
         Question question = questionMapper.selectById(request.getQuestionId());
-        if (question == null) {
+        if (!QuestionAccessPolicy.canAccess(question, userId)) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
 
@@ -250,6 +251,9 @@ public class PracticeService {
         }
         if ((questionType != null && !questionType.isBlank()) || courseId != null) {
             LambdaQueryWrapper<Question> questionWrapper = new LambdaQueryWrapper<>();
+            questionWrapper.and(scope -> scope.eq(Question::getVisibility, "PUBLIC")
+                    .or(privateScope -> privateScope.eq(Question::getVisibility, "PRIVATE")
+                            .eq(Question::getOwnerUserId, userId)));
             if (questionType != null && !questionType.isBlank()) {
                 questionWrapper.eq(Question::getQuestionType, questionType);
             }
@@ -281,7 +285,7 @@ public class PracticeService {
 
                     // 查询题目信息
                     Question question = questionMapper.selectById(record.getQuestionId());
-                    if (question != null) {
+                    if (QuestionAccessPolicy.canAccess(question, userId)) {
                         vo.setQuestionContent(question.getContent());
                         vo.setQuestionType(question.getQuestionType());
                         vo.setDifficulty(question.getDifficulty());
@@ -365,6 +369,9 @@ public class PracticeService {
         LambdaQueryWrapper<Question> qWrapper = new LambdaQueryWrapper<>();
         qWrapper.in(Question::getId, questionIds);
         qWrapper.eq(Question::getStatus, 1);
+        qWrapper.and(scope -> scope.eq(Question::getVisibility, "PUBLIC")
+                .or(privateScope -> privateScope.eq(Question::getVisibility, "PRIVATE")
+                        .eq(Question::getOwnerUserId, userId)));
         List<Question> questions = questionMapper.selectList(qWrapper);
 
         // 转换为 VO（练习模式不返回正确答案）
@@ -413,6 +420,9 @@ public class PracticeService {
         LambdaQueryWrapper<Question> qWrapper = new LambdaQueryWrapper<>();
         qWrapper.in(Question::getId, questionIds);
         qWrapper.eq(Question::getStatus, 1);
+        qWrapper.and(scope -> scope.eq(Question::getVisibility, "PUBLIC")
+                .or(privateScope -> privateScope.eq(Question::getVisibility, "PRIVATE")
+                        .eq(Question::getOwnerUserId, userId)));
         List<Question> questions = questionMapper.selectList(qWrapper);
 
         return questions.stream().map(q -> {

@@ -6,10 +6,15 @@ import com.learnplatform.dto.ExamLearningAnswerRequest;
 import com.learnplatform.dto.ExamLearningAnswerResultVO;
 import com.learnplatform.dto.ExamLearningSessionVO;
 import com.learnplatform.dto.ExamRecordVO;
+import com.learnplatform.dto.ExamPaperVO;
+import com.learnplatform.dto.PrivateExamImportConfirmRequest;
+import com.learnplatform.dto.PrivateExamImportPreviewVO;
+import com.learnplatform.dto.PrivateExamImportRequest;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.ExamPaperLearningService;
 import com.learnplatform.service.ExamPaperService;
 import com.learnplatform.service.ExamService;
+import com.learnplatform.service.PrivateExamImportService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,12 +43,14 @@ class ExamLearningControllerTest {
     @Mock private ExamService examService;
     @Mock private ExamPaperService examPaperService;
     @Mock private ExamPaperLearningService learningService;
+    @Mock private PrivateExamImportService privateExamImportService;
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
-        ExamController controller = new ExamController(examService, examPaperService, learningService);
+        ExamController controller = new ExamController(
+                examService, examPaperService, learningService, privateExamImportService);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
@@ -114,6 +121,59 @@ class ExamLearningControllerTest {
                 .andExpect(jsonPath("$.data.answers").doesNotExist());
 
         verify(examService).getExamSession(40L, 7L);
+    }
+
+    @Test
+    void previewsThenConfirmsPrivateImportForAuthenticatedOwner() throws Exception {
+        PrivateExamImportRequest previewRequest = privateImportRequest();
+        PrivateExamImportPreviewVO preview = new PrivateExamImportPreviewVO();
+        preview.setContentHash("a".repeat(64));
+        preview.setQuestionCount(1);
+        when(privateExamImportService.preview(org.mockito.ArgumentMatchers.any())).thenReturn(preview);
+
+        mockMvc.perform(post("/api/exam/private-papers/import/preview")
+                        .with(mockUser(7L)).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(previewRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.questionCount").value(1));
+
+        PrivateExamImportConfirmRequest confirmRequest = new PrivateExamImportConfirmRequest();
+        copyPrivateImport(previewRequest, confirmRequest);
+        confirmRequest.setExpectedContentHash("a".repeat(64));
+        confirmRequest.setConfirmed(true);
+        ExamPaperVO paper = new ExamPaperVO();
+        paper.setId(9L);
+        when(privateExamImportService.confirm(
+                org.mockito.ArgumentMatchers.any(PrivateExamImportConfirmRequest.class),
+                org.mockito.ArgumentMatchers.eq(7L))).thenReturn(paper);
+        mockMvc.perform(post("/api/exam/private-papers/import/confirm")
+                        .with(mockUser(7L)).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(confirmRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(9));
+        verify(privateExamImportService).confirm(
+                org.mockito.ArgumentMatchers.any(PrivateExamImportConfirmRequest.class),
+                org.mockito.ArgumentMatchers.eq(7L));
+    }
+
+    private PrivateExamImportRequest privateImportRequest() {
+        PrivateExamImportRequest request = new PrivateExamImportRequest();
+        request.setTitle("我的试卷");
+        request.setCourseId(10L);
+        request.setDuration(30);
+        request.setSourceName("paper.txt");
+        request.setSourceFormat("TEXT");
+        request.setContent("题型：单选题\n题干：示例\n选项：\nA. 是\nB. 否\n答案：A");
+        return request;
+    }
+
+    private void copyPrivateImport(PrivateExamImportRequest source, PrivateExamImportRequest target) {
+        target.setTitle(source.getTitle());
+        target.setCourseId(source.getCourseId());
+        target.setDuration(source.getDuration());
+        target.setSourceName(source.getSourceName());
+        target.setSourceFormat(source.getSourceFormat());
+        target.setContent(source.getContent());
     }
 
     private RequestPostProcessor mockUser(Long userId) {

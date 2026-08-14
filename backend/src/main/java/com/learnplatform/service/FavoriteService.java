@@ -42,7 +42,8 @@ public class FavoriteService {
     public void addFavorite(Long userId, Long questionId) {
         // 检查题目是否存在
         Question question = questionMapper.selectById(questionId);
-        if (question == null || question.getDeleted() == 1) {
+        if (!QuestionAccessPolicy.canAccess(question, userId)
+                || Integer.valueOf(1).equals(question.getDeleted())) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
         // 检查是否已收藏
@@ -93,7 +94,7 @@ public class FavoriteService {
         List<FavoriteQuestionVO> voList = favoritePage.getRecords().stream()
                 .map(fav -> {
                     Question question = questionMapper.selectById(fav.getQuestionId());
-                    if (question == null) return null;
+                    if (!QuestionAccessPolicy.canAccess(question, userId)) return null;
                     FavoriteQuestionVO vo = new FavoriteQuestionVO();
                     vo.setId(fav.getId());
                     vo.setQuestionId(fav.getQuestionId());

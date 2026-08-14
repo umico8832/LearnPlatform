@@ -68,13 +68,22 @@ public class QuestionLearningAssetService {
      */
     public List<QuestionLearningAssetVO> getAssets(Long questionId) {
         Question question = questionMapper.selectById(questionId);
-        if (question == null) throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
+        if (!QuestionAccessPolicy.isPublic(question)) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
+        }
 
         LambdaQueryWrapper<QuestionAiAsset> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(QuestionAiAsset::getQuestionId, questionId);
         List<QuestionAiAsset> assets = questionAiAssetMapper.selectList(wrapper);
 
         return assets.stream().map(this::toVO).collect(Collectors.toList());
+    }
+
+    public List<QuestionLearningAssetVO> getAssets(Long questionId, Long userId) {
+        ensureAccessible(questionId, userId);
+        LambdaQueryWrapper<QuestionAiAsset> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(QuestionAiAsset::getQuestionId, questionId);
+        return questionAiAssetMapper.selectList(wrapper).stream().map(this::toVO).toList();
     }
 
     /**
@@ -89,6 +98,7 @@ public class QuestionLearningAssetService {
      * 生成或获取指定类型的 AI 学习资产（同步，有缓存则直接返回）
      */
     public QuestionLearningAssetVO generateOrGetAsset(Long questionId, AiAssetType assetType, Long userId) {
+        ensureAccessible(questionId, userId);
         // 先查缓存
         QuestionAiAsset cached = findAsset(questionId, assetType.name());
         if (cached != null) {
@@ -128,6 +138,7 @@ public class QuestionLearningAssetService {
      */
     public void generateAssetStream(Long questionId, AiAssetType assetType, Long userId,
                                      Consumer<String> onContent) {
+        ensureAccessible(questionId, userId);
         // 结构化变式题包含服务端私有答案，必须等完整 JSON 校验并脱敏后再返回。
         if (assetType == AiAssetType.VARIANT) {
             QuestionLearningAssetVO asset = generateOrGetAsset(questionId, assetType, userId);
@@ -180,6 +191,7 @@ public class QuestionLearningAssetService {
      * 同一用户对同一题同一资产类型只能反馈一次，重复提交会更新
      */
     public void submitFeedback(Long questionId, String assetType, Long userId, Boolean helpful, String comment) {
+        ensureAccessible(questionId, userId);
         LambdaQueryWrapper<AiAssetFeedback> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(AiAssetFeedback::getQuestionId, questionId)
                .eq(AiAssetFeedback::getAssetType, assetType)
@@ -206,6 +218,7 @@ public class QuestionLearningAssetService {
      * 查询当前用户对某题某类型资产的反馈
      */
     public AiAssetFeedback getUserFeedback(Long questionId, String assetType, Long userId) {
+        ensureAccessible(questionId, userId);
         LambdaQueryWrapper<AiAssetFeedback> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(AiAssetFeedback::getQuestionId, questionId)
                .eq(AiAssetFeedback::getAssetType, assetType)
@@ -227,7 +240,20 @@ public class QuestionLearningAssetService {
         log.info("已清除题目 {} 的所有 AI 学习资产缓存，共 {} 条", questionId, assets.size());
     }
 
+    @Transactional
+    public void clearAssets(Long questionId, Long userId) {
+        ensureAccessible(questionId, userId);
+        clearAssets(questionId);
+    }
+
     // ======================== 内部方法 ========================
+
+    private void ensureAccessible(Long questionId, Long userId) {
+        Question question = questionMapper.selectById(questionId);
+        if (!QuestionAccessPolicy.canAccess(question, userId)) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
+        }
+    }
 
     private QuestionAiAsset findAsset(Long questionId, String assetType) {
         LambdaQueryWrapper<QuestionAiAsset> wrapper = new LambdaQueryWrapper<>();

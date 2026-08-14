@@ -48,7 +48,8 @@ public class QuestionCorrectionReportService {
                                                    QuestionCorrectionReportRequest request,
                                                    Long reporterId) {
         Question question = questionMapper.selectById(questionId);
-        if (question == null || question.getStatus() == null || question.getStatus() != 1) {
+        if (!QuestionAccessPolicy.isPublic(question)
+                || question.getStatus() == null || question.getStatus() != 1) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
 

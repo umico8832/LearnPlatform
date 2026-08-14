@@ -107,6 +107,9 @@ public class ExamService {
         log.info("开始考试: userId={}, examPaperId={}", userId, examPaperId);
         ExamPaper paper = examPaperMapper.selectById(examPaperId);
         if (paper == null) throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
+        if (!canAccessPaper(paper, userId)) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
+        }
         if (paper.getStatus() == null || paper.getStatus() != 1) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "试卷未发布");
         }
@@ -141,6 +144,11 @@ public class ExamService {
         }
 
         return toVO(record, now);
+    }
+
+    private boolean canAccessPaper(ExamPaper paper, Long userId) {
+        return paper.getVisibility() == null || "PUBLIC".equals(paper.getVisibility())
+                || ("PRIVATE".equals(paper.getVisibility()) && userId.equals(paper.getOwnerUserId()));
     }
 
     /**

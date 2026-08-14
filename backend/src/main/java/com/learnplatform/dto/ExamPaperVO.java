@@ -17,11 +17,14 @@ public class ExamPaperVO {
     private Integer questionCount;
     private Integer status;
     private Long createBy;
+    private Long ownerUserId;
+    private String visibility;
     private String paperType;
     private String examName;
     private Integer examYear;
     private String sourceReference;
     private Boolean sourceVerified;
+    private String importStatus;
     private LocalDateTime createTime;
     private List<ExamQuestionItem> questions;
 
@@ -45,6 +48,10 @@ public class ExamPaperVO {
     public void setStatus(Integer status) { this.status = status; }
     public Long getCreateBy() { return createBy; }
     public void setCreateBy(Long createBy) { this.createBy = createBy; }
+    public Long getOwnerUserId() { return ownerUserId; }
+    public void setOwnerUserId(Long ownerUserId) { this.ownerUserId = ownerUserId; }
+    public String getVisibility() { return visibility; }
+    public void setVisibility(String visibility) { this.visibility = visibility; }
     public String getPaperType() { return paperType; }
     public void setPaperType(String paperType) { this.paperType = paperType; }
     public String getExamName() { return examName; }
@@ -55,6 +62,8 @@ public class ExamPaperVO {
     public void setSourceReference(String sourceReference) { this.sourceReference = sourceReference; }
     public Boolean getSourceVerified() { return sourceVerified; }
     public void setSourceVerified(Boolean sourceVerified) { this.sourceVerified = sourceVerified; }
+    public String getImportStatus() { return importStatus; }
+    public void setImportStatus(String importStatus) { this.importStatus = importStatus; }
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
     public List<ExamQuestionItem> getQuestions() { return questions; }

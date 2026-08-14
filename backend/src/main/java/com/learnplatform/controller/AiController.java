@@ -143,8 +143,10 @@ public class AiController {
      */
     @Operation(summary = "查询题目学习资产", description = "获取指定题目的所有已缓存 AI 学习资产")
     @GetMapping("/assets/{questionId}")
-    public R<List<QuestionLearningAssetVO>> getAssets(@PathVariable Long questionId) {
-        return R.ok(learningAssetService.getAssets(questionId));
+    public R<List<QuestionLearningAssetVO>> getAssets(
+            @PathVariable Long questionId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(learningAssetService.getAssets(questionId, userDetails.getUserId()));
     }
 
     /**
@@ -241,8 +243,9 @@ public class AiController {
      */
     @Operation(summary = "清除学习资产缓存", description = "删除指定题目的所有已缓存 AI 学习资产")
     @DeleteMapping("/assets/{questionId}")
-    public R<Void> clearAssets(@PathVariable Long questionId) {
-        learningAssetService.clearAssets(questionId);
+    public R<Void> clearAssets(@PathVariable Long questionId,
+                               @AuthenticationPrincipal CustomUserDetails userDetails) {
+        learningAssetService.clearAssets(questionId, userDetails.getUserId());
         return R.ok(null);
     }
 

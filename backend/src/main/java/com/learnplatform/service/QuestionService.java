@@ -72,6 +72,7 @@ public class QuestionService {
                                              Integer difficulty, Integer status, String sourceType) {
         Page<Question> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Question::getVisibility, "PUBLIC");
         if (keyword != null && !keyword.isEmpty()) {
             wrapper.like(Question::getContent, keyword);
         }
@@ -112,6 +113,7 @@ public class QuestionService {
         Page<Question> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Question::getStatus, 1);
+        wrapper.eq(Question::getVisibility, "PUBLIC");
         if (questionType != null && !questionType.isEmpty()) {
             wrapper.eq(Question::getQuestionType, questionType);
         }
@@ -141,7 +143,7 @@ public class QuestionService {
      */
     public QuestionVO getQuestionById(Long id) {
         Question question = questionMapper.selectById(id);
-        if (question == null) {
+        if (question == null || "PRIVATE".equals(question.getVisibility())) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
         QuestionVO vo = QuestionVO.fromEntity(question);
@@ -149,9 +151,12 @@ public class QuestionService {
         return vo;
     }
 
-    public QuestionVO getEnabledQuestionById(Long id) {
+    public QuestionVO getEnabledQuestionById(Long id, Long userId) {
         Question question = questionMapper.selectById(id);
-        if (question == null || question.getStatus() == null || question.getStatus() != 1) {
+        boolean accessible = question != null && (question.getVisibility() == null
+                || "PUBLIC".equals(question.getVisibility())
+                || ("PRIVATE".equals(question.getVisibility()) && userId.equals(question.getOwnerUserId())));
+        if (!accessible || question.getStatus() == null || question.getStatus() != 1) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
         QuestionVO vo = QuestionVO.fromEntity(question);
@@ -169,6 +174,7 @@ public class QuestionService {
         int maxGroups = limit != null ? Math.max(1, Math.min(50, limit)) : 20;
 
         LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Question::getVisibility, "PUBLIC");
         if (courseId != null) {
             wrapper.eq(Question::getCourseId, courseId);
         }
@@ -253,6 +259,7 @@ public class QuestionService {
         question.setScore(request.getScore() != null ? request.getScore() : 1);
         question.setStatus(1);
         question.setCreateBy(createBy);
+        question.setVisibility("PUBLIC");
         question.setSourceType("MANUAL");
         question.setReviewRounds(0);
         question.setNextReviewTime(java.time.LocalDateTime.now().plusDays(90));
@@ -299,7 +306,7 @@ public class QuestionService {
     @Transactional
     public QuestionVO updateQuestion(Long id, QuestionCreateRequest request, Long operatorId) {
         Question question = questionMapper.selectById(id);
-        if (question == null) {
+        if (question == null || "PRIVATE".equals(question.getVisibility())) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
         ensureNotUsedByPublishedPaper(id);
@@ -364,7 +371,7 @@ public class QuestionService {
     @Transactional
     public void deleteQuestion(Long id, Long operatorId) {
         Question question = questionMapper.selectById(id);
-        if (question == null) {
+        if (question == null || "PRIVATE".equals(question.getVisibility())) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
         ensureNotUsedByPublishedPaper(id);

@@ -40,6 +40,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -71,6 +72,7 @@ class QuestionLearningAssetServiceTest {
                 questionKnowledgePointMapper, knowledgePointMapper, courseMapper,
                 aiVariantQuestionService
         );
+        lenient().when(questionMapper.selectById(anyLong())).thenReturn(stubQuestion());
     }
 
     // ======================== getAssets ========================

@@ -14,11 +14,14 @@ export interface ExamPaperVO {
   questionCount: number
   status: number
   createBy: number
+  ownerUserId: number | null
+  visibility: 'PUBLIC' | 'PRIVATE'
   paperType: PaperType
   examName: string | null
   examYear: number | null
   sourceReference: string | null
   sourceVerified: boolean
+  importStatus: 'CONFIRMED' | null
   createTime: string
   questions: ExamQuestionItem[]
 }
@@ -37,7 +40,7 @@ export interface ExamQuestionItem {
   options: { id: number; content: string; optionLabel: string; sortOrder: number }[]
 }
 
-export type PaperType = 'PRACTICE' | 'OFFICIAL_EXAM'
+export type PaperType = 'PRACTICE' | 'OFFICIAL_EXAM' | 'USER_PRIVATE'
 export type ExamStatus = 0 | 1 | 2 | 3
 
 export interface ExamPaperCreateRequest {
@@ -212,6 +215,38 @@ export interface SmartExamPreview {
   recommendation: string
 }
 
+export interface PrivateExamImportRequest {
+  title: string
+  courseId: number
+  duration: number
+  sourceName: string
+  sourceFormat: 'MARKDOWN' | 'TEXT'
+  content: string
+}
+
+export interface PrivateExamImportPreview extends PrivateExamImportRequest {
+  contentHash: string
+  questionCount: number
+  totalScore: number
+  questions: {
+    content: string
+    questionType: string
+    answer: string
+    analysis: string | null
+    score: number
+    options: { label: string; content: string; correct: boolean }[]
+  }[]
+}
+
+export interface PrivateExamSource {
+  paperId: number
+  sourceName: string
+  sourceFormat: 'MARKDOWN' | 'TEXT'
+  contentHash: string
+  originalContent: string
+  createTime: string
+}
+
 // ======================== 管理端 API ========================
 
 export function getExamPaperList(params?: { pageNum?: number; pageSize?: number; courseId?: number; status?: number }) {
@@ -265,6 +300,20 @@ export function getPublishedPapers(params?: { pageNum?: number; pageSize?: numbe
 
 export function getPaperDetail(id: number) {
   return request.get<unknown, ApiResponse<ExamPaperVO>>(`/exam/papers/${id}`)
+}
+
+export function previewPrivateExamImport(data: PrivateExamImportRequest) {
+  return request.post<unknown, ApiResponse<PrivateExamImportPreview>>('/exam/private-papers/import/preview', data)
+}
+
+export function confirmPrivateExamImport(
+  data: PrivateExamImportRequest & { expectedContentHash: string; confirmed: true },
+) {
+  return request.post<unknown, ApiResponse<ExamPaperVO>>('/exam/private-papers/import/confirm', data)
+}
+
+export function getPrivateExamSource(paperId: number) {
+  return request.get<unknown, ApiResponse<PrivateExamSource>>(`/exam/private-papers/${paperId}/source`)
 }
 
 export function startExam(paperId: number) {

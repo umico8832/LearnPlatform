@@ -132,6 +132,7 @@ public class AiExamGenerationService {
         // 1. 查询题库中可用题目
         LambdaQueryWrapper<Question> qw = new LambdaQueryWrapper<>();
         qw.eq(Question::getStatus, 1); // 仅启用的题目
+        qw.eq(Question::getVisibility, "PUBLIC");
         if (request.getCourseId() != null) {
             qw.eq(Question::getCourseId, request.getCourseId());
         }
@@ -493,7 +494,8 @@ public class AiExamGenerationService {
         if (request.getCourseId() != null) {
             // 尝试获取课程名
             LambdaQueryWrapper<Question> qw = new LambdaQueryWrapper<>();
-            qw.eq(Question::getCourseId, request.getCourseId()).last("LIMIT 1");
+            qw.eq(Question::getCourseId, request.getCourseId())
+                    .eq(Question::getVisibility, "PUBLIC").last("LIMIT 1");
             Question sample = questionMapper.selectOne(qw);
             if (sample != null) {
                 // courseName 不在 Question 表中，需要通过 courseId 查

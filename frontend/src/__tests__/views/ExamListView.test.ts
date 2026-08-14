@@ -6,12 +6,18 @@ const {
   mockGetMyExamRecords,
   mockGetPaperDetail,
   mockStartExam,
+  mockPreviewPrivateExamImport,
+  mockConfirmPrivateExamImport,
+  mockGetPrivateExamSource,
   mockPush,
 } = vi.hoisted(() => ({
   mockGetPublishedPapers: vi.fn(),
   mockGetMyExamRecords: vi.fn(),
   mockGetPaperDetail: vi.fn(),
   mockStartExam: vi.fn(),
+  mockPreviewPrivateExamImport: vi.fn(),
+  mockConfirmPrivateExamImport: vi.fn(),
+  mockGetPrivateExamSource: vi.fn(),
   mockPush: vi.fn(),
 }))
 
@@ -21,10 +27,17 @@ vi.mock('@/api/exam', () => ({
   getPaperDetail: (...args: unknown[]) => mockGetPaperDetail(...args),
   startExam: (...args: unknown[]) => mockStartExam(...args),
   startExamLearningSession: vi.fn(),
+  previewPrivateExamImport: (...args: unknown[]) => mockPreviewPrivateExamImport(...args),
+  confirmPrivateExamImport: (...args: unknown[]) => mockConfirmPrivateExamImport(...args),
+  getPrivateExamSource: (...args: unknown[]) => mockGetPrivateExamSource(...args),
+}))
+
+vi.mock('@/api/course', () => ({
+  getAllCourses: vi.fn().mockResolvedValue({ code: 0, data: [{ id: 10, name: '数据结构' }] }),
 }))
 
 vi.mock('vue-router', async (importOriginal) => ({
-  ...await importOriginal<typeof import('vue-router')>(),
+  ...(await importOriginal<typeof import('vue-router')>()),
   useRoute: () => ({ query: {} }),
   useRouter: () => ({ push: mockPush }),
 }))
@@ -46,6 +59,14 @@ const stubs = {
   'el-table': { template: '<div><slot /></div>' },
   'el-table-column': { template: '<div />' },
   'el-pagination': { template: '<div />' },
+  'el-dialog': { template: '<div><slot /><slot name="footer" /></div>' },
+  'el-alert': { template: '<div />' },
+  'el-form': { template: '<form><slot /></form>' },
+  'el-form-item': { template: '<label><slot /></label>' },
+  'el-input': { template: '<textarea />' },
+  'el-input-number': { template: '<input />' },
+  'el-select': { template: '<select><slot /></select>' },
+  'el-option': { template: '<option />' },
 }
 
 describe('ExamListView paper provenance', () => {
@@ -85,6 +106,67 @@ describe('ExamListView paper provenance', () => {
     })
   })
 
+  it('解析预览后显式确认才创建私有试卷', async () => {
+    mockPreviewPrivateExamImport.mockResolvedValue({
+      code: 0,
+      data: {
+        title: '我的练习卷',
+        courseId: 10,
+        duration: 30,
+        sourceName: 'notes.txt',
+        sourceFormat: 'TEXT',
+        contentHash: 'a'.repeat(64),
+        questionCount: 1,
+        totalScore: 2,
+        questions: [
+          {
+            content: '栈遵循哪种顺序？',
+            questionType: 'SINGLE_CHOICE',
+            answer: 'B',
+            score: 2,
+            options: [
+              { label: 'A', content: 'FIFO', correct: false },
+              { label: 'B', content: 'LIFO', correct: true },
+            ],
+          },
+        ],
+      },
+    })
+    mockConfirmPrivateExamImport.mockResolvedValue({ code: 0, data: { id: 9 } })
+    const wrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as {
+      importForm: {
+        title: string
+        courseId: number
+        duration: number
+        sourceName: string
+        sourceFormat: 'TEXT'
+        content: string
+      }
+      previewImport: () => Promise<void>
+      confirmImport: () => Promise<void>
+    }
+    vm.importForm = {
+      title: '我的练习卷',
+      courseId: 10,
+      duration: 30,
+      sourceName: 'notes.txt',
+      sourceFormat: 'TEXT',
+      content: '题目内容',
+    }
+    await vm.previewImport()
+    expect(mockConfirmPrivateExamImport).not.toHaveBeenCalled()
+    await vm.confirmImport()
+    expect(mockConfirmPrivateExamImport).toHaveBeenCalledWith(
+      expect.objectContaining({
+        expectedContentHash: 'a'.repeat(64),
+        confirmed: true,
+      }),
+    )
+  })
+
   it('只把来源已核验的官方试卷标记为官方原题并展示来源', async () => {
     const wrapper = mount(ExamListView, {
       global: {
@@ -109,7 +191,10 @@ describe('ExamListView paper provenance', () => {
     })
     await flushPromises()
 
-    await wrapper.findAll('button').find(button => button.text().includes('考试模式'))!.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('考试模式'))!
+      .trigger('click')
     await flushPromises()
 
     expect(mockStartExam).toHaveBeenCalledWith(1)
@@ -126,7 +211,14 @@ describe('ExamListView paper provenance', () => {
         total: 3,
         records: [
           { id: 11, examTitle: '进行中的试卷', status: 0, startTime: '2026-08-13T10:00:00', totalScore: 100 },
-          { id: 12, examTitle: '已完成的试卷', status: 1, startTime: '2026-08-12T10:00:00', score: 80, totalScore: 100 },
+          {
+            id: 12,
+            examTitle: '已完成的试卷',
+            status: 1,
+            startTime: '2026-08-12T10:00:00',
+            score: 80,
+            totalScore: 100,
+          },
           { id: 13, examTitle: '超时的试卷', status: 2, startTime: '2026-08-11T10:00:00', score: 0, totalScore: 100 },
         ],
       },

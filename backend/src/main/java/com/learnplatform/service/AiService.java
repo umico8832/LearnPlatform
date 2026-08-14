@@ -83,7 +83,7 @@ public class AiService {
     }
 
     public AiResponse generateExplanation(Long questionId, Long userId) {
-        AiPrompt prompt = buildExplanationPrompt(questionId);
+        AiPrompt prompt = buildExplanationPrompt(questionId, userId);
         return callWithLog("explanation", userId, prompt, () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
     }
 
@@ -93,7 +93,7 @@ public class AiService {
     }
 
     public void generateExplanationStream(Long questionId, Long userId, Consumer<String> onContent) {
-        AiPrompt prompt = buildExplanationPrompt(questionId);
+        AiPrompt prompt = buildExplanationPrompt(questionId, userId);
         callStreamWithLog("explanation_stream", userId, prompt, () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
     }
 
@@ -107,7 +107,7 @@ public class AiService {
     }
 
     public AiResponse generateVariant(Long questionId, Long userId) {
-        AiPrompt prompt = buildVariantPrompt(questionId);
+        AiPrompt prompt = buildVariantPrompt(questionId, userId);
         return callWithLog("variant", userId, prompt, () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
     }
 
@@ -117,7 +117,7 @@ public class AiService {
     }
 
     public void generateVariantStream(Long questionId, Long userId, Consumer<String> onContent) {
-        AiPrompt prompt = buildVariantPrompt(questionId);
+        AiPrompt prompt = buildVariantPrompt(questionId, userId);
         callStreamWithLog("variant_stream", userId, prompt, () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
     }
 
@@ -126,7 +126,7 @@ public class AiService {
                                                       String learningContext, Long userId,
                                                       Consumer<String> onContent) {
         Question question = questionMapper.selectById(questionId);
-        if (question == null) {
+        if (!QuestionAccessPolicy.canAccess(question, userId)) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
         String questionContext = buildQuestionContext(question);
@@ -146,7 +146,9 @@ public class AiService {
 
     private AiPrompt buildExplanationPrompt(Long questionId) {
         Question question = questionMapper.selectById(questionId);
-        if (question == null) throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
+        if (!QuestionAccessPolicy.isPublic(question)) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
+        }
 
         String questionContext = buildQuestionContext(question);
 
@@ -156,12 +158,38 @@ public class AiService {
         return new AiPrompt(systemPrompt, "请解析这道题目：\n\n" + questionContext);
     }
 
+    private AiPrompt buildExplanationPrompt(Long questionId, Long userId) {
+        Question question = questionMapper.selectById(questionId);
+        if (!QuestionAccessPolicy.canAccess(question, userId)) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
+        }
+        String questionContext = buildQuestionContext(question);
+        String systemPrompt = "你是一位专业的教育辅导老师。请为以下题目提供详细、清晰的解析。"
+                + "要求：\n1. 解释题目考查的知识点\n2. 分析正确答案的原因\n3. 如果有错误选项，解释为什么是错误的\n"
+                + "4. 用简洁易懂的语言\n5. 使用 Markdown 格式输出";
+        return new AiPrompt(systemPrompt, "请解析这道题目：\n\n" + questionContext);
+    }
+
     private AiPrompt buildVariantPrompt(Long questionId) {
         Question question = questionMapper.selectById(questionId);
-        if (question == null) throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
+        if (!QuestionAccessPolicy.isPublic(question)) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
+        }
 
         String questionContext = buildQuestionContext(question);
 
+        String systemPrompt = "你是一位专业的出题老师。请基于给定的题目，生成 1-2 道变式题（类似知识点但不同问法）。"
+                + "要求：\n1. 考查相同知识点但换个角度\n2. 难度与原题相近\n3. 包含题目、选项和正确答案\n"
+                + "4. 使用 Markdown 格式输出";
+        return new AiPrompt(systemPrompt, "基于以下题目生成变式题：\n\n" + questionContext);
+    }
+
+    private AiPrompt buildVariantPrompt(Long questionId, Long userId) {
+        Question question = questionMapper.selectById(questionId);
+        if (!QuestionAccessPolicy.canAccess(question, userId)) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
+        }
+        String questionContext = buildQuestionContext(question);
         String systemPrompt = "你是一位专业的出题老师。请基于给定的题目，生成 1-2 道变式题（类似知识点但不同问法）。"
                 + "要求：\n1. 考查相同知识点但换个角度\n2. 难度与原题相近\n3. 包含题目、选项和正确答案\n"
                 + "4. 使用 Markdown 格式输出";

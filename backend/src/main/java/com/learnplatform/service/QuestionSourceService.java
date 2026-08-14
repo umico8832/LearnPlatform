@@ -89,7 +89,9 @@ public class QuestionSourceService {
     public List<QuestionSourceStatsVO> getSourceStats() {
         // 查询所有未删除的题目来源类型分布
         List<Question> questions = questionMapper.selectList(
-                new LambdaQueryWrapper<Question>().select(Question::getSourceType));
+                new LambdaQueryWrapper<Question>()
+                        .eq(Question::getVisibility, "PUBLIC")
+                        .select(Question::getSourceType));
 
         Map<String, Long> grouped = questions.stream()
                 .collect(Collectors.groupingBy(
@@ -110,6 +112,7 @@ public class QuestionSourceService {
         Page<Question> page = new Page<>(pageNum, pageSize);
         LocalDateTime now = LocalDateTime.now();
         LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Question::getVisibility, "PUBLIC");
         wrapper.and(w -> w
                 .le(Question::getNextReviewTime, now)
                 .or()
@@ -138,7 +141,7 @@ public class QuestionSourceService {
     @Transactional
     public QuestionReviewRecordVO performReReview(Long questionId, QuestionReReviewRequest request, Long reviewerId) {
         Question question = questionMapper.selectById(questionId);
-        if (question == null) {
+        if (question == null || "PRIVATE".equals(question.getVisibility())) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
         String snapshotBefore = questionVersionService.buildSnapshotJson(question);

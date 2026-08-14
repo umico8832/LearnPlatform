@@ -166,14 +166,19 @@ public class StatisticsService {
         vo.setTotalUsers(userMapper.selectCount(null));
         vo.setEnabledUsers(userMapper.selectCount(
                 new LambdaQueryWrapper<User>().eq(User::getStatus, 1)));
-        vo.setTotalQuestions(questionMapper.selectCount(null));
+        vo.setTotalQuestions(questionMapper.selectCount(
+                new LambdaQueryWrapper<Question>().eq(Question::getVisibility, "PUBLIC")));
         vo.setWeeklyNewQuestions(questionMapper.selectCount(
-                new LambdaQueryWrapper<Question>().ge(Question::getCreateTime, weekStart)));
-        vo.setTotalExamPapers(examPaperMapper.selectCount(null));
+                new LambdaQueryWrapper<Question>().eq(Question::getVisibility, "PUBLIC")
+                        .ge(Question::getCreateTime, weekStart)));
+        vo.setTotalExamPapers(examPaperMapper.selectCount(
+                new LambdaQueryWrapper<ExamPaper>().eq(ExamPaper::getVisibility, "PUBLIC")));
         vo.setPublishedExamPapers(examPaperMapper.selectCount(
-                new LambdaQueryWrapper<ExamPaper>().eq(ExamPaper::getStatus, 1)));
+                new LambdaQueryWrapper<ExamPaper>().eq(ExamPaper::getVisibility, "PUBLIC")
+                        .eq(ExamPaper::getStatus, 1)));
         vo.setDraftExamPapers(examPaperMapper.selectCount(
-                new LambdaQueryWrapper<ExamPaper>().eq(ExamPaper::getStatus, 0)));
+                new LambdaQueryWrapper<ExamPaper>().eq(ExamPaper::getVisibility, "PUBLIC")
+                        .eq(ExamPaper::getStatus, 0)));
         vo.setTotalPracticeRecords(practiceRecordMapper.selectCount(null));
 
         List<PracticeRecord> weeklyRecords = practiceRecordMapper.selectList(
@@ -514,7 +519,8 @@ public class StatisticsService {
 
     private long countQuestionsByType(String questionType) {
         return questionMapper.selectCount(
-                new LambdaQueryWrapper<Question>().eq(Question::getQuestionType, questionType));
+                new LambdaQueryWrapper<Question>().eq(Question::getVisibility, "PUBLIC")
+                        .eq(Question::getQuestionType, questionType));
     }
 
     private String getQuestionTypeName(String questionType) {

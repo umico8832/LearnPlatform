@@ -31,6 +31,10 @@ public class Question {
 
     private Long createBy;
 
+    private Long ownerUserId;
+
+    private String visibility;
+
     /** 来源类型：MANUAL/SUBMISSION/EXCEL_IMPORT/MARKDOWN_IMPORT/AI_GENERATED */
     private String sourceType;
 
@@ -75,6 +79,10 @@ public class Question {
     public void setStatus(Integer status) { this.status = status; }
     public Long getCreateBy() { return createBy; }
     public void setCreateBy(Long createBy) { this.createBy = createBy; }
+    public Long getOwnerUserId() { return ownerUserId; }
+    public void setOwnerUserId(Long ownerUserId) { this.ownerUserId = ownerUserId; }
+    public String getVisibility() { return visibility; }
+    public void setVisibility(String visibility) { this.visibility = visibility; }
     public String getSourceType() { return sourceType; }
     public void setSourceType(String sourceType) { this.sourceType = sourceType; }
     public String getSourceReference() { return sourceReference; }

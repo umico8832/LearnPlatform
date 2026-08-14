@@ -74,7 +74,10 @@ public class CourseOverviewService {
                 .eq(CourseLearningEvent::getCourseId, courseId)
                 .orderByDesc(CourseLearningEvent::getOccurredTime));
         List<Question> courseQuestions = questionMapper.selectList(new LambdaQueryWrapper<Question>()
-                .eq(Question::getCourseId, courseId));
+                .eq(Question::getCourseId, courseId)
+                .and(scope -> scope.eq(Question::getVisibility, "PUBLIC")
+                        .or(privateScope -> privateScope.eq(Question::getVisibility, "PRIVATE")
+                                .eq(Question::getOwnerUserId, userId))));
         List<Long> questionIds = courseQuestions.stream().map(Question::getId).toList();
         List<WrongQuestion> unresolvedWrongQuestions = questionIds.isEmpty() ? List.of()
                 : wrongQuestionMapper.selectList(new LambdaQueryWrapper<WrongQuestion>()

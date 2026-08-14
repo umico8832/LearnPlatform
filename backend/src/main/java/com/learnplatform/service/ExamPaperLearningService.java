@@ -198,6 +198,10 @@ public class ExamPaperLearningService {
         if (paper == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
         }
+        if (!(paper.getVisibility() == null || "PUBLIC".equals(paper.getVisibility())
+                || ("PRIVATE".equals(paper.getVisibility()) && userId.equals(paper.getOwnerUserId())))) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
+        }
         if (!Integer.valueOf(1).equals(paper.getStatus())) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "试卷未发布");
         }

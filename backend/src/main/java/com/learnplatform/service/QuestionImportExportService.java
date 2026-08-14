@@ -61,6 +61,7 @@ public class QuestionImportExportService {
 
         // 查询题目
         LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Question::getVisibility, "PUBLIC");
         if (questionType != null && !questionType.isEmpty()) {
             wrapper.eq(Question::getQuestionType, questionType);
         }

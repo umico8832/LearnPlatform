@@ -363,6 +363,7 @@ public class AdaptivePracticeService {
                                            Set<Long> excludeIds) {
         LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Question::getStatus, 1)
+               .eq(Question::getVisibility, "PUBLIC")
                .eq(Question::getDifficulty, difficulty);
 
         if (courseId != null) {

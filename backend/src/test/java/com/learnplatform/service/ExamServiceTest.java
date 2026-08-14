@@ -110,6 +110,20 @@ class ExamServiceTest {
     }
 
     @Test
+    void rejectsStartingAnotherUsersPrivatePaper() {
+        ExamPaper paper = publishedPaper();
+        paper.setVisibility("PRIVATE");
+        paper.setOwnerUserId(8L);
+        when(examPaperMapper.selectById(2L)).thenReturn(paper);
+
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> examService.startExam(2L, 7L));
+
+        assertEquals("试卷不存在", exception.getMessage());
+        verify(examRecordMapper, never()).insert(any());
+    }
+
+    @Test
     void expiresStaleActiveExamBeforeStartingANewAttempt() {
         ExamRecord stale = record(LocalDateTime.now().minusMinutes(61));
         stale.setActiveExamKey("EXAM:7:2");

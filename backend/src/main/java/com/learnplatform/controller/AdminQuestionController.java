@@ -139,6 +139,7 @@ public class AdminQuestionController {
     @Operation(summary = "题目版本记录", description = "查看指定题目的创建、修改、删除与复审变更快照")
     @GetMapping("/{id}/versions")
     public R<List<QuestionVersionVO>> getQuestionVersions(@PathVariable Long id) {
+        questionService.getQuestionById(id);
         return R.ok(questionVersionService.getQuestionVersions(id));
     }
 
@@ -202,6 +203,7 @@ public class AdminQuestionController {
     @Operation(summary = "复审记录", description = "获取指定题目的所有复审记录")
     @GetMapping("/{id}/review-records")
     public R<List<QuestionReviewRecordVO>> getReviewRecords(@PathVariable Long id) {
+        questionService.getQuestionById(id);
         return R.ok(questionSourceService.getReviewRecords(id));
     }
 
@@ -213,6 +215,7 @@ public class AdminQuestionController {
     public R<QuestionReviewSuggestionVO> getReviewSuggestion(
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
+        questionService.getQuestionById(id);
         return R.ok(questionReviewSuggestionService.generateSuggestion(id, userDetails.getUserId()));
     }
 
@@ -225,6 +228,7 @@ public class AdminQuestionController {
             @PathVariable Long id,
             @Valid @RequestBody QuestionReReviewRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
+        questionService.getQuestionById(id);
         return R.ok(questionSourceService.performReReview(id, request, userDetails.getUserId()));
     }
 

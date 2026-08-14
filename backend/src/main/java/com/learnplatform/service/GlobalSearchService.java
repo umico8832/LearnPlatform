@@ -80,6 +80,7 @@ public class GlobalSearchService {
         LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<Question>()
                 .like(Question::getContent, keyword)
                 .eq(Question::getStatus, 1)
+                .eq(Question::getVisibility, "PUBLIC")
                 .orderByDesc(Question::getCreateTime)
                 .last("LIMIT " + limit);
 

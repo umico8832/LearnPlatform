@@ -22,6 +22,28 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
     @Autowired private JdbcTemplate jdbcTemplate;
 
     @Test
+    void migrationCreatesPrivatePaperOwnershipAndTraceableSourceContract() {
+        Integer sourceTable = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.tables
+                WHERE table_schema = DATABASE() AND table_name = 'user_exam_source'
+                """, Integer.class);
+        Integer paperColumns = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_schema = DATABASE() AND table_name = 'exam_paper'
+                  AND column_name IN ('owner_user_id', 'visibility', 'source_record_id', 'import_status')
+                """, Integer.class);
+        Integer questionColumns = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_schema = DATABASE() AND table_name = 'question'
+                  AND column_name IN ('owner_user_id', 'visibility')
+                """, Integer.class);
+
+        assertEquals(1, sourceTable);
+        assertEquals(4, paperColumns);
+        assertEquals(2, questionColumns);
+    }
+
+    @Test
     void migrationAddsTutorLearningContextSnapshot() {
         Integer columnCount = jdbcTemplate.queryForObject("""
                 SELECT COUNT(*) FROM information_schema.columns
