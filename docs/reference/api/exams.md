@@ -30,6 +30,7 @@
 | `GET /api/exam/private-papers/{paperId}/source` | 仅所有者读取该私有试卷的原始资料 |
 | `GET /api/exam/private-papers/{paperId}/source/file` | 仅所有者下载已确认试卷的 PDF/DOCX 原文件 |
 | `GET /api/exam/private-papers/drafts/{draftId}/source/file` | 仅所有者下载待复核草稿的 PDF/DOCX 原文件 |
+| `GET /api/exam/private-papers/source-storage` | 查询本人原文件累计用量、配额、剩余空间和文件数 |
 
 同一用户对同一张已发布试卷最多保留一个活动考试记录。再次调用开始接口时，未过期记录会被复用；
 已过期记录会固化为超时并释放活动键，再创建新一轮。考试状态为 `0` 进行中、`1` 已完成、`2` 已超时、
@@ -59,6 +60,11 @@ SHA-256 哈希及 `confirmed=true`，内容变化后必须重新预览。PDF 的
 当前所有者的私有试卷或草稿引用，返回附件响应并使用 `private, no-store` 与 `nosniff`；发送前重新校验
 长度、媒体类型和 SHA-256。接口不生成公共 URL，不向管理员开放正文或原文件。Markdown/文本来源只保留
 既有正文追溯，不提供不存在的原文件下载。
+
+原文件累计配额由 `PRIVATE_EXAM_SOURCE_STORAGE_LIMIT_BYTES` 配置，本地默认 100MB。确认或创建草稿的事务
+先锁定所有者用户行，再汇总现存 `source_size` 并判断本次原文件是否可写入，避免并发请求同时越过上限；
+超过配额返回额度错误且不创建来源、草稿或试卷。来源随既有生命周期删除后，用量由当前记录实时汇总并
+自然释放。用量查询不读取 BLOB。
 
 存在缺失答案时只能创建复核草稿，不能直接确认导入。每道缺失答案题可单独调用 AI 建议接口；模型输出
 必须是严格 JSON，答案标签必须属于现有选项并满足单选/判断一个、多选至少两个的结构规则。AI 建议不会

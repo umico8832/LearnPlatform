@@ -79,6 +79,9 @@ jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:604800}  # 默认7天，单位秒
 
+private-exam:
+  source-storage-limit-bytes: ${PRIVATE_EXAM_SOURCE_STORAGE_LIMIT_BYTES:104857600}
+
 turnstile:
   enabled: ${TURNSTILE_ENABLED:false}
   secret-key: ${TURNSTILE_SECRET_KEY:}

@@ -197,6 +197,10 @@
         :closable="false"
         show-icon
       />
+      <p v-if="storageUsage" class="source-meta">
+        原文件存储：{{ formatStorage(storageUsage.usedBytes) }} / {{ formatStorage(storageUsage.limitBytes) }} ·
+        {{ storageUsage.fileCount }} 个文件
+      </p>
       <el-form v-if="!importPreview && !activeDraft" label-position="top" class="import-form">
         <section v-if="privateDrafts.length" class="draft-list">
           <strong>待复核草稿</strong>
@@ -430,6 +434,7 @@ import {
   generatePrivateExamDraftAnswer,
   getMyExamRecords,
   getPrivateExamDrafts,
+  getPrivateExamStorageUsage,
   getPrivateExamSource,
   getPublishedPapers,
   previewPrivateExamImport,
@@ -447,6 +452,7 @@ import type {
   PrivateExamImportPreview,
   PrivateExamImportRequest,
   PrivateExamSource,
+  PrivateExamStorageUsage,
 } from '@/api/exam'
 import { getAllCourses } from '@/api/course'
 import type { CourseVO } from '@/api/course'
@@ -478,6 +484,7 @@ const draftAnswers = ref<Record<number, string[]>>({})
 const draftAnalyses = ref<Record<number, string>>({})
 const sourceDialogVisible = ref(false)
 const privateSource = ref<PrivateExamSource | null>(null)
+const storageUsage = ref<PrivateExamStorageUsage | null>(null)
 const sourceDownloading = ref(false)
 const sourceFile = ref<File | null>(null)
 const emptyImportForm = (): PrivateExamImportRequest => ({
@@ -532,6 +539,15 @@ onMounted(() => {
   loadRecords()
 })
 
+async function loadStorageUsage() {
+  try {
+    const res = await getPrivateExamStorageUsage()
+    storageUsage.value = res.code === 0 && res.data ? res.data : null
+  } catch {
+    storageUsage.value = null
+  }
+}
+
 const openImportDialog = async () => {
   importDialogVisible.value = true
   if (!courses.value.length) {
@@ -543,6 +559,12 @@ const openImportDialog = async () => {
     }
   }
   await loadPrivateDrafts()
+  await loadStorageUsage()
+}
+
+const formatStorage = (bytes: number) => {
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(bytes % (1024 * 1024) === 0 ? 0 : 1)} MB`
 }
 
 const validateImportForm = () => {
@@ -644,6 +666,7 @@ const deleteDraft = async (draft: PrivateExamDraft) => {
     if (res.code === 0) {
       privateDrafts.value = privateDrafts.value.filter((item) => item.id !== draft.id)
       if (activeDraft.value?.id === draft.id) activeDraft.value = null
+      await loadStorageUsage()
       ElMessage.success('私有试卷草稿已删除')
     }
   } finally {

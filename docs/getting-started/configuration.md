@@ -29,6 +29,7 @@ cp .env.example .env
 | `BACKEND_HOST_PORT` | 后端宿主端口 | `8080` |
 | `FRONTEND_HOST_PORT` | 前端宿主端口 | `80` |
 | `SPRING_PROFILES_ACTIVE` | Spring Profile | 本地 `dev`，Compose 默认覆盖为 `docker` |
+| `PRIVATE_EXAM_SOURCE_STORAGE_LIMIT_BYTES` | 每位用户的私有试卷原文件累计配额 | `104857600`（100MB） |
 
 ## Redis
 

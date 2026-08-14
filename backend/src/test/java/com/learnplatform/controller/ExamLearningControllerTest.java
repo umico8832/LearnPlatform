@@ -12,6 +12,7 @@ import com.learnplatform.dto.PrivateExamImportPreviewVO;
 import com.learnplatform.dto.PrivateExamImportRequest;
 import com.learnplatform.dto.PrivateExamDraftCreateRequest;
 import com.learnplatform.dto.PrivateExamDraftVO;
+import com.learnplatform.dto.PrivateExamStorageUsageVO;
 import com.learnplatform.dto.PrivateExamPdfRequest;
 import com.learnplatform.dto.PrivateExamDocxRequest;
 import com.learnplatform.security.CustomUserDetails;
@@ -25,6 +26,7 @@ import com.learnplatform.service.PrivateExamPdfImportService;
 import com.learnplatform.service.PrivateExamDocxImportService;
 import com.learnplatform.service.PrivateExamSourceFile;
 import com.learnplatform.service.PrivateExamSourceFileService;
+import com.learnplatform.service.PrivateExamSourceStorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -64,6 +66,7 @@ class ExamLearningControllerTest {
     @Mock private PrivateExamPdfImportService privateExamPdfImportService;
     @Mock private PrivateExamDocxImportService privateExamDocxImportService;
     @Mock private PrivateExamSourceFileService privateExamSourceFileService;
+    @Mock private PrivateExamSourceStorageService privateExamSourceStorageService;
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -72,7 +75,7 @@ class ExamLearningControllerTest {
         ExamController controller = new ExamController(
                 examService, examPaperService, learningService, privateExamImportService, privateExamDraftService,
                 privateExamContentLifecycleService, privateExamPdfImportService, privateExamDocxImportService,
-                privateExamSourceFileService);
+                privateExamSourceFileService, privateExamSourceStorageService);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
@@ -287,6 +290,22 @@ class ExamLearningControllerTest {
                 .andExpect(content().bytes(docx))
                 .andExpect(content().contentType(
                         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+    }
+
+    @Test
+    void returnsAuthenticatedOwnerSourceStorageUsage() throws Exception {
+        PrivateExamStorageUsageVO usage = new PrivateExamStorageUsageVO();
+        usage.setUsedBytes(1024L);
+        usage.setLimitBytes(104857600L);
+        usage.setRemainingBytes(104856576L);
+        usage.setFileCount(2L);
+        when(privateExamSourceStorageService.getUsage(7L)).thenReturn(usage);
+
+        mockMvc.perform(get("/api/exam/private-papers/source-storage").with(mockUser(7L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.usedBytes").value(1024))
+                .andExpect(jsonPath("$.data.limitBytes").value(104857600))
+                .andExpect(jsonPath("$.data.fileCount").value(2));
     }
 
     private PrivateExamImportRequest privateImportRequest() {

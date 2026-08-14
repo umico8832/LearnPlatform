@@ -36,6 +36,7 @@ import static org.mockito.Mockito.when;
 class PrivateExamDraftServiceTest {
     @Mock private PrivateExamImportService importService;
     @Mock private UserExamSourceMapper sourceMapper;
+    @Mock private PrivateExamSourceStorageService sourceStorageService;
     @Mock private PrivateExamImportDraftMapper draftMapper;
     @Mock private PrivateExamDraftQuestionMapper questionMapper;
     @Mock private AiProvider aiProvider;
@@ -45,15 +46,15 @@ class PrivateExamDraftServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new PrivateExamDraftService(importService, sourceMapper, draftMapper,
+        service = new PrivateExamDraftService(importService, sourceMapper, sourceStorageService, draftMapper,
                 questionMapper, aiProvider, aiService, objectMapper);
     }
 
     @Test
-    void createsOwnerDraftWithoutEnablingPaper() {
+    void createsOwnerDraftWithQuotaCheckedSourceFileWithoutEnablingPaper() {
         PrivateExamDraftCreateRequest request = createRequest();
         PrivateExamImportPreviewVO preview = preview(false);
-        when(importService.preview(request)).thenReturn(preview);
+        when(importService.previewWithSourceHash(request, "a".repeat(64))).thenReturn(preview);
         when(sourceMapper.insert(any())).thenAnswer(invocation -> {
             ((UserExamSource) invocation.getArgument(0)).setId(21L);
             return 1;
@@ -69,9 +70,16 @@ class PrivateExamDraftServiceTest {
         when(draftMapper.selectById(31L)).thenReturn(draft(7L, "DRAFT"));
         when(questionMapper.selectList(any())).thenReturn(List.of(question("PENDING", "PENDING")));
 
-        PrivateExamDraftVO result = service.create(request, 7L);
+        byte[] sourceFile = "%PDF-file".getBytes();
+        request.setSourceFormat("PDF");
+        PrivateExamDraftVO result = service.createWithSourceFile(
+                request, 7L, "a".repeat(64), sourceFile, "application/pdf");
 
         assertEquals("DRAFT", result.getStatus());
+        verify(sourceStorageService).attachFileWithinQuota(
+                org.mockito.ArgumentMatchers.any(UserExamSource.class),
+                org.mockito.ArgumentMatchers.eq(7L), org.mockito.ArgumentMatchers.eq(sourceFile),
+                org.mockito.ArgumentMatchers.eq("application/pdf"));
         ArgumentCaptor<PrivateExamDraftQuestion> captor = ArgumentCaptor.forClass(PrivateExamDraftQuestion.class);
         verify(questionMapper).insert(captor.capture());
         assertEquals("PENDING", captor.getValue().getGenerationStatus());

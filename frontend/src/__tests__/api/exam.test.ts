@@ -32,6 +32,7 @@ import {
   gradeSubjectiveAnswer,
   downloadPrivateExamSourceFile,
   downloadPrivateExamDraftSourceFile,
+  getPrivateExamStorageUsage,
 } from '@/api/exam'
 
 const mockedRequest = vi.mocked(request)
@@ -275,6 +276,14 @@ describe('Exam API', () => {
         '/exam/private-papers/drafts/31/source/file',
         { responseType: 'blob' },
       )
+    })
+
+    it('查询当前所有者累计存储用量', async () => {
+      mockedRequest.get.mockResolvedValue({ code: 0, data: { usedBytes: 10, limitBytes: 100 } })
+
+      await getPrivateExamStorageUsage()
+
+      expect(mockedRequest.get).toHaveBeenCalledWith('/exam/private-papers/source-storage')
     })
   })
 })

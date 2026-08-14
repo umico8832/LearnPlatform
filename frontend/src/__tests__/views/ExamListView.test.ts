@@ -15,6 +15,7 @@ const {
   mockConfirmPrivateExamDocx,
   mockCreatePrivateExamDocxDraft,
   mockGetPrivateExamSource,
+  mockGetPrivateExamStorageUsage,
   mockDownloadPrivateExamSourceFile,
   mockDownloadPrivateExamDraftSourceFile,
   mockCreatePrivateExamDraft,
@@ -40,6 +41,7 @@ const {
   mockConfirmPrivateExamDocx: vi.fn(),
   mockCreatePrivateExamDocxDraft: vi.fn(),
   mockGetPrivateExamSource: vi.fn(),
+  mockGetPrivateExamStorageUsage: vi.fn(),
   mockDownloadPrivateExamSourceFile: vi.fn(),
   mockDownloadPrivateExamDraftSourceFile: vi.fn(),
   mockCreatePrivateExamDraft: vi.fn(),
@@ -68,6 +70,7 @@ vi.mock('@/api/exam', () => ({
   confirmPrivateExamDocx: (...args: unknown[]) => mockConfirmPrivateExamDocx(...args),
   createPrivateExamDocxDraft: (...args: unknown[]) => mockCreatePrivateExamDocxDraft(...args),
   getPrivateExamSource: (...args: unknown[]) => mockGetPrivateExamSource(...args),
+  getPrivateExamStorageUsage: (...args: unknown[]) => mockGetPrivateExamStorageUsage(...args),
   downloadPrivateExamSourceFile: (...args: unknown[]) => mockDownloadPrivateExamSourceFile(...args),
   downloadPrivateExamDraftSourceFile: (...args: unknown[]) => mockDownloadPrivateExamDraftSourceFile(...args),
   createPrivateExamDraft: (...args: unknown[]) => mockCreatePrivateExamDraft(...args),
@@ -131,6 +134,10 @@ describe('ExamListView paper provenance', () => {
     mockStartExam.mockResolvedValue({ code: 0, data: { id: 101, examPaperId: 1, status: 0 } })
     mockGetMyExamRecords.mockResolvedValue({ code: 0, data: { records: [], total: 0 } })
     mockGetPrivateExamDrafts.mockResolvedValue({ code: 0, data: [] })
+    mockGetPrivateExamStorageUsage.mockResolvedValue({
+      code: 0,
+      data: { usedBytes: 26214400, limitBytes: 104857600, remainingBytes: 78643200, fileCount: 3 },
+    })
     mockDownloadPrivateExamSourceFile.mockResolvedValue({
       data: new Blob(['pdf']),
       headers: { 'content-type': 'application/pdf' },
@@ -171,6 +178,18 @@ describe('ExamListView paper provenance', () => {
         ],
       },
     })
+  })
+
+  it('打开导入对话框时展示所有者原文件累计用量', async () => {
+    const wrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as { openImportDialog: () => Promise<void> }
+
+    await vm.openImportDialog()
+    await flushPromises()
+
+    expect(mockGetPrivateExamStorageUsage).toHaveBeenCalledTimes(1)
+    expect(wrapper.text()).toContain('原文件存储：25 MB / 100 MB · 3 个文件')
   })
 
   it('解析预览后显式确认才创建私有试卷', async () => {

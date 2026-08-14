@@ -283,6 +283,13 @@ export interface PrivateExamSource {
   createTime: string
 }
 
+export interface PrivateExamStorageUsage {
+  usedBytes: number
+  limitBytes: number
+  remainingBytes: number
+  fileCount: number
+}
+
 // ======================== 管理端 API ========================
 
 export function getExamPaperList(params?: { pageNum?: number; pageSize?: number; courseId?: number; status?: number }) {
@@ -466,6 +473,10 @@ export function deletePrivateExamPaper(paperId: number) {
 
 export function getPrivateExamSource(paperId: number) {
   return request.get<unknown, ApiResponse<PrivateExamSource>>(`/exam/private-papers/${paperId}/source`)
+}
+
+export function getPrivateExamStorageUsage() {
+  return request.get<unknown, ApiResponse<PrivateExamStorageUsage>>('/exam/private-papers/source-storage')
 }
 
 export function downloadPrivateExamSourceFile(paperId: number) {

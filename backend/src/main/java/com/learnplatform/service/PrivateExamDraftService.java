@@ -35,6 +35,7 @@ public class PrivateExamDraftService {
 
     private final PrivateExamImportService importService;
     private final UserExamSourceMapper sourceMapper;
+    private final PrivateExamSourceStorageService sourceStorageService;
     private final PrivateExamImportDraftMapper draftMapper;
     private final PrivateExamDraftQuestionMapper draftQuestionMapper;
     private final AiProvider aiProvider;
@@ -43,6 +44,7 @@ public class PrivateExamDraftService {
 
     public PrivateExamDraftService(PrivateExamImportService importService,
                                    UserExamSourceMapper sourceMapper,
+                                   PrivateExamSourceStorageService sourceStorageService,
                                    PrivateExamImportDraftMapper draftMapper,
                                    PrivateExamDraftQuestionMapper draftQuestionMapper,
                                    AiProvider aiProvider,
@@ -50,6 +52,7 @@ public class PrivateExamDraftService {
                                    ObjectMapper objectMapper) {
         this.importService = importService;
         this.sourceMapper = sourceMapper;
+        this.sourceStorageService = sourceStorageService;
         this.draftMapper = draftMapper;
         this.draftQuestionMapper = draftQuestionMapper;
         this.aiProvider = aiProvider;
@@ -93,14 +96,7 @@ public class PrivateExamDraftService {
         source.setSourceFormat(request.getSourceFormat());
         source.setContentSha256(preview.getContentHash());
         source.setOriginalContent(request.getContent());
-        if (sourceFile != null) {
-            if (sourceFile.length == 0 || sourceFile.length > 10L * 1024 * 1024 || sourceMediaType == null) {
-                throw validation("原始文件无效");
-            }
-            source.setSourceMediaType(sourceMediaType);
-            source.setSourceSize((long) sourceFile.length);
-            source.setSourceFile(sourceFile);
-        }
+        sourceStorageService.attachFileWithinQuota(source, userId, sourceFile, sourceMediaType);
         sourceMapper.insert(source);
 
         PrivateExamImportDraft draft = new PrivateExamImportDraft();

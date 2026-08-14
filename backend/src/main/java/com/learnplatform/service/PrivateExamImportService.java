@@ -46,6 +46,7 @@ public class PrivateExamImportService {
     private final MarkdownQuestionParser markdownQuestionParser;
     private final CourseMapper courseMapper;
     private final UserExamSourceMapper sourceMapper;
+    private final PrivateExamSourceStorageService sourceStorageService;
     private final ExamPaperMapper paperMapper;
     private final ExamQuestionMapper examQuestionMapper;
     private final QuestionMapper questionMapper;
@@ -55,6 +56,7 @@ public class PrivateExamImportService {
     public PrivateExamImportService(MarkdownQuestionParser markdownQuestionParser,
                                     CourseMapper courseMapper,
                                     UserExamSourceMapper sourceMapper,
+                                    PrivateExamSourceStorageService sourceStorageService,
                                     ExamPaperMapper paperMapper,
                                     ExamQuestionMapper examQuestionMapper,
                                     QuestionMapper questionMapper,
@@ -63,6 +65,7 @@ public class PrivateExamImportService {
         this.markdownQuestionParser = markdownQuestionParser;
         this.courseMapper = courseMapper;
         this.sourceMapper = sourceMapper;
+        this.sourceStorageService = sourceStorageService;
         this.paperMapper = paperMapper;
         this.examQuestionMapper = examQuestionMapper;
         this.questionMapper = questionMapper;
@@ -106,7 +109,7 @@ public class PrivateExamImportService {
         source.setSourceFormat(request.getSourceFormat());
         source.setContentSha256(sourceHash);
         source.setOriginalContent(request.getContent());
-        attachSourceFile(source, sourceFile, sourceMediaType);
+        sourceStorageService.attachFileWithinQuota(source, userId, sourceFile, sourceMediaType);
         sourceMapper.insert(source);
         PrivateExamImportPreviewVO preview = toPreview(request, questions, sourceHash);
         return createConfirmedPaper(preview.getTitle(), preview.getCourseId(), preview.getDuration(),
@@ -131,16 +134,6 @@ public class PrivateExamImportService {
         vo.setOriginalFileAvailable(source.getSourceSize() != null && source.getSourceSize() > 0);
         vo.setCreateTime(source.getCreateTime());
         return vo;
-    }
-
-    private void attachSourceFile(UserExamSource source, byte[] sourceFile, String sourceMediaType) {
-        if (sourceFile == null) return;
-        if (sourceFile.length == 0 || sourceFile.length > 10L * 1024 * 1024 || sourceMediaType == null) {
-            throw new BusinessException(ResultCode.VALIDATION_ERROR, "原始文件无效");
-        }
-        source.setSourceMediaType(sourceMediaType);
-        source.setSourceSize((long) sourceFile.length);
-        source.setSourceFile(sourceFile);
     }
 
     ExamPaperVO createConfirmedPaper(String title, Long courseId, Integer duration,

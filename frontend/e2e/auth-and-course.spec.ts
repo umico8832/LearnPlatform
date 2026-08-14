@@ -201,6 +201,7 @@ test('用户可预览确认结构化私有试卷并隔离给其他账号', async
   await page.goto('/exams')
   await page.getByRole('button', { name: '导入私有试卷' }).click()
   const dialog = page.getByRole('dialog', { name: '导入私有试卷' })
+  await expect(dialog).toContainText('原文件存储：0 KB / 100 MB')
   await dialog.getByRole('textbox', { name: '试卷标题' }).fill(paperTitle)
   await dialog.getByRole('combobox', { name: '所属课程' }).click()
   await page.getByRole('option', { name: '408 数据结构' }).click()

@@ -12,6 +12,7 @@ import com.learnplatform.dto.PrivateExamImportConfirmRequest;
 import com.learnplatform.dto.PrivateExamImportPreviewVO;
 import com.learnplatform.dto.PrivateExamImportRequest;
 import com.learnplatform.dto.PrivateExamSourceVO;
+import com.learnplatform.dto.PrivateExamStorageUsageVO;
 import com.learnplatform.dto.PrivateExamDraftConfirmRequest;
 import com.learnplatform.dto.PrivateExamDraftCreateRequest;
 import com.learnplatform.dto.PrivateExamDraftReviewRequest;
@@ -33,6 +34,7 @@ import com.learnplatform.service.PrivateExamPdfImportService;
 import com.learnplatform.service.PrivateExamDocxImportService;
 import com.learnplatform.service.PrivateExamSourceFile;
 import com.learnplatform.service.PrivateExamSourceFileService;
+import com.learnplatform.service.PrivateExamSourceStorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -65,6 +67,7 @@ public class ExamController {
     private final PrivateExamPdfImportService privateExamPdfImportService;
     private final PrivateExamDocxImportService privateExamDocxImportService;
     private final PrivateExamSourceFileService privateExamSourceFileService;
+    private final PrivateExamSourceStorageService privateExamSourceStorageService;
 
     public ExamController(ExamService examService, ExamPaperService examPaperService,
                           ExamPaperLearningService examPaperLearningService,
@@ -73,7 +76,8 @@ public class ExamController {
                           PrivateExamContentLifecycleService privateExamContentLifecycleService,
                           PrivateExamPdfImportService privateExamPdfImportService,
                           PrivateExamDocxImportService privateExamDocxImportService,
-                          PrivateExamSourceFileService privateExamSourceFileService) {
+                          PrivateExamSourceFileService privateExamSourceFileService,
+                          PrivateExamSourceStorageService privateExamSourceStorageService) {
         this.examService = examService;
         this.examPaperService = examPaperService;
         this.examPaperLearningService = examPaperLearningService;
@@ -83,6 +87,7 @@ public class ExamController {
         this.privateExamPdfImportService = privateExamPdfImportService;
         this.privateExamDocxImportService = privateExamDocxImportService;
         this.privateExamSourceFileService = privateExamSourceFileService;
+        this.privateExamSourceStorageService = privateExamSourceStorageService;
     }
 
 
@@ -236,6 +241,12 @@ public class ExamController {
             @PathVariable Long paperId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return R.ok(privateExamImportService.getSource(paperId, userDetails.getUserId()));
+    }
+
+    @GetMapping("/private-papers/source-storage")
+    public R<PrivateExamStorageUsageVO> getPrivatePaperSourceStorage(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(privateExamSourceStorageService.getUsage(userDetails.getUserId()));
     }
 
     @GetMapping("/private-papers/{paperId}/source/file")

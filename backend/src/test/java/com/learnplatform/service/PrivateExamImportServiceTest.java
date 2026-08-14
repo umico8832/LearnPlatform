@@ -35,6 +35,7 @@ import static org.mockito.Mockito.when;
 class PrivateExamImportServiceTest {
     @Mock private CourseMapper courseMapper;
     @Mock private UserExamSourceMapper sourceMapper;
+    @Mock private PrivateExamSourceStorageService sourceStorageService;
     @Mock private ExamPaperMapper paperMapper;
     @Mock private ExamQuestionMapper examQuestionMapper;
     @Mock private QuestionMapper questionMapper;
@@ -48,7 +49,7 @@ class PrivateExamImportServiceTest {
     void setUp() {
         MarkdownQuestionParser parser = new MarkdownQuestionParser(
                 questionMapper, optionMapper, questionKnowledgePointMapper, courseMapper, knowledgePointMapper);
-        service = new PrivateExamImportService(parser, courseMapper, sourceMapper, paperMapper,
+        service = new PrivateExamImportService(parser, courseMapper, sourceMapper, sourceStorageService, paperMapper,
                 examQuestionMapper, questionMapper, optionMapper, examPaperService);
         Course course = new Course();
         course.setId(10L);
@@ -121,7 +122,7 @@ class PrivateExamImportServiceTest {
     }
 
     @Test
-    void persistsConfirmedPaperAndQuestionsAsOwnerPrivateContent() {
+    void persistsConfirmedPaperQuestionsAndQuotaCheckedSourceFileAsOwnerPrivateContent() {
         PrivateExamImportRequest previewRequest = request();
         String hash = service.preview(previewRequest).getContentHash();
         PrivateExamImportConfirmRequest request = confirmRequest();
@@ -145,8 +146,14 @@ class PrivateExamImportServiceTest {
         created.setId(41L);
         when(examPaperService.getAccessiblePublishedExamPaperById(41L, 7L)).thenReturn(created);
 
-        service.confirm(request, 7L);
+        byte[] sourceFile = "%PDF-file".getBytes();
+        request.setSourceFormat("PDF");
+        service.confirmWithSourceFile(request, 7L, hash, sourceFile, "application/pdf");
 
+        verify(sourceStorageService).attachFileWithinQuota(
+                org.mockito.ArgumentMatchers.any(UserExamSource.class),
+                org.mockito.ArgumentMatchers.eq(7L), org.mockito.ArgumentMatchers.eq(sourceFile),
+                org.mockito.ArgumentMatchers.eq("application/pdf"));
         ArgumentCaptor<ExamPaper> paperCaptor = ArgumentCaptor.forClass(ExamPaper.class);
         verify(paperMapper).insert(paperCaptor.capture());
         assertEquals("PRIVATE", paperCaptor.getValue().getVisibility());
