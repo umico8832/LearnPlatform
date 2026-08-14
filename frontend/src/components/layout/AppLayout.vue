@@ -1,15 +1,8 @@
 <template>
   <el-container class="app-layout">
-    <div
-      v-if="isMobile && sidebarOpen"
-      class="sidebar-overlay"
-      @click="sidebarOpen = false"
-    />
+    <div v-if="isMobile && sidebarOpen" class="sidebar-overlay" @click="sidebarOpen = false" />
 
-    <el-aside
-      :width="isMobile ? '0px' : '248px'"
-      :class="['app-sidebar', { 'mobile-open': isMobile && sidebarOpen }]"
-    >
+    <el-aside :width="isMobile ? '0px' : '248px'" :class="['app-sidebar', { 'mobile-open': isMobile && sidebarOpen }]">
       <div class="sidebar-inner">
         <div class="brand">
           <div class="brand-mark">AI</div>
@@ -19,24 +12,19 @@
           </div>
         </div>
 
-        <el-menu
-          :default-active="activeMenu"
-          router
-          class="app-menu"
-          @select="handleMenuSelect"
-        >
+        <el-menu :default-active="activeMenu" router class="app-menu" @select="handleMenuSelect">
           <template v-for="section in visibleSections" :key="section.label">
             <div class="menu-section-label">{{ section.label }}</div>
-            <el-menu-item
-              v-for="item in section.items"
-              :key="item.path"
-              :index="item.path"
-            >
+            <el-menu-item v-for="item in section.items" :key="item.path" :index="item.path">
               <el-icon><component :is="item.icon" /></el-icon>
               <span>{{ item.label }}</span>
             </el-menu-item>
           </template>
         </el-menu>
+        <a v-if="isAdmin" class="admin-system-entry" href="/admin/">
+          <el-icon><DataAnalysis /></el-icon>
+          <span>进入管理系统</span>
+        </a>
       </div>
     </el-aside>
 
@@ -70,12 +58,7 @@
             @visible-change="handleAlertDropdownVisible"
           >
             <button class="header-icon-button" type="button" aria-label="AI 运营提醒">
-              <el-badge
-                :value="openAlertCount"
-                :hidden="openAlertCount === 0"
-                :max="99"
-                type="danger"
-              >
+              <el-badge :value="openAlertCount" :hidden="openAlertCount === 0" :max="99" type="danger">
                 <el-icon :size="18"><Bell /></el-icon>
               </el-badge>
             </button>
@@ -83,28 +66,15 @@
               <div class="ops-alert-panel">
                 <div class="ops-alert-panel-header">
                   <strong>AI 运营提醒</strong>
-                  <el-button
-                    link
-                    type="primary"
-                    :loading="alertsLoading"
-                    @click.stop="fetchOpenAlerts"
-                  >
+                  <el-button link type="primary" :loading="alertsLoading" @click.stop="fetchOpenAlerts">
                     刷新
                   </el-button>
                 </div>
                 <div v-if="openAlerts.length" class="ops-alert-list">
-                  <div
-                    v-for="alert in openAlerts"
-                    :key="alert.id || alert.type"
-                    class="ops-alert-item"
-                  >
+                  <div v-for="alert in openAlerts" :key="alert.id || alert.type" class="ops-alert-item">
                     <div>
                       <div class="ops-alert-title">
-                        <el-tag
-                          size="small"
-                          :type="alert.level === 'WARNING' ? 'warning' : 'info'"
-                          effect="light"
-                        >
+                        <el-tag size="small" :type="alert.level === 'WARNING' ? 'warning' : 'info'" effect="light">
                           {{ alert.level === 'WARNING' ? '告警' : '提示' }}
                         </el-tag>
                         <span>{{ alert.type }}</span>
@@ -126,11 +96,7 @@
                     </el-button>
                   </div>
                 </div>
-                <el-empty
-                  v-else
-                  description="暂无未确认提醒"
-                  :image-size="48"
-                />
+                <el-empty v-else description="暂无未确认提醒" :image-size="48" />
               </div>
             </template>
           </el-dropdown>
@@ -176,7 +142,6 @@ import {
   HomeFilled,
   Reading,
   Collection,
-  Notebook,
   EditPen,
   Promotion,
   Clock,
@@ -185,7 +150,6 @@ import {
   MagicStick,
   DataAnalysis,
   StarFilled,
-  UserFilled,
   Fold,
   Expand,
   DataLine,
@@ -194,7 +158,6 @@ import {
   TrendCharts,
   Upload,
   Search,
-  Monitor,
   Timer,
 } from '@element-plus/icons-vue'
 import GlobalSearchDialog from '@/components/GlobalSearchDialog.vue'
@@ -261,41 +224,25 @@ const navSections: NavSection[] = [
   },
   {
     label: '内容共建',
-    items: [
-      { path: '/submit', label: '题目投稿', icon: Upload },
-    ],
-  },
-  {
-    label: '管理后台',
-    items: [
-      { path: '/admin', label: '平台总览', icon: DataAnalysis, adminOnly: true },
-      { path: '/admin/courses', label: '课程管理', icon: Collection, adminOnly: true },
-      { path: '/admin/knowledge-points', label: '知识点管理', icon: Notebook, adminOnly: true },
-      { path: '/admin/questions', label: '题目管理', icon: EditPen, adminOnly: true },
-      { path: '/admin/exams', label: '试卷管理', icon: Trophy, adminOnly: true },
-      { path: '/admin/subjective-reviews', label: '主观题批阅', icon: EditPen, adminOnly: true },
-      { path: '/admin/users', label: '用户管理', icon: UserFilled, adminOnly: true },
-      { path: '/admin/submissions', label: '投稿管理', icon: Upload, adminOnly: true },
-      { path: '/admin/ai-usage', label: 'AI 调用分析', icon: Monitor, adminOnly: true },
-    ],
+    items: [{ path: '/submit', label: '题目投稿', icon: Upload }],
   },
 ]
 
 const visibleSections = computed(() =>
   navSections
-    .map(section => ({
+    .map((section) => ({
       ...section,
-      items: section.items.filter(item => !item.adminOnly || isAdmin.value),
+      items: section.items.filter((item) => !item.adminOnly || isAdmin.value),
     }))
-    .filter(section => section.items.length > 0),
+    .filter((section) => section.items.length > 0),
 )
 
-const flatNavItems = computed(() => visibleSections.value.flatMap(section => section.items))
+const flatNavItems = computed(() => visibleSections.value.flatMap((section) => section.items))
 const activeMenu = computed(() => {
-  const exact = flatNavItems.value.find(item => item.path === route.path)
+  const exact = flatNavItems.value.find((item) => item.path === route.path)
   if (exact) return exact.path
   const matched = [...flatNavItems.value]
-    .filter(item => item.path !== '/' && route.path.startsWith(item.path))
+    .filter((item) => item.path !== '/' && route.path.startsWith(item.path))
     .sort((a, b) => b.path.length - a.path.length)[0]
   return matched?.path || '/'
 })
@@ -318,15 +265,6 @@ const pageDescriptions: Record<string, string> = {
   '/knowledge-graph': '从知识结构视角理解课程关联。',
   '/ai/review': '让 AI 汇总复习重点与补强建议。',
   '/submit': '提交高质量题目，参与题库共建。',
-  '/admin': '查看平台运营概况与待处理事项。',
-  '/admin/courses': '维护课程基础信息和展示顺序。',
-  '/admin/knowledge-points': '管理知识点层级与课程归属。',
-  '/admin/questions': '维护题目、答案、解析和知识点关系。',
-  '/admin/exams': '创建试卷并管理发布状态。',
-  '/admin/subjective-reviews': '按已配置评分点人工复核综合应用题并固化最终成绩。',
-  '/admin/users': '管理用户、角色与 AI 日配额。',
-  '/admin/submissions': '审核用户投稿并入库。',
-  '/admin/ai-usage': '追踪 AI 调用、成本、失败率和异常提醒。',
 }
 const pageDescription = computed(() => pageDescriptions[activeMenu.value] || '围绕当前任务继续推进学习。')
 
@@ -358,7 +296,7 @@ async function handleAcknowledgeOpenAlert(id: number) {
   acknowledgingAlertId.value = id
   try {
     await acknowledgeAiUsageAlert(id)
-    openAlerts.value = openAlerts.value.filter(alert => alert.id !== id)
+    openAlerts.value = openAlerts.value.filter((alert) => alert.id !== id)
     ElMessage.success('已确认 AI 运营提醒')
   } catch (error: any) {
     console.error('Failed to acknowledge AI usage alert', error)
@@ -516,6 +454,22 @@ function handleCommand(command: string) {
   font-weight: 700;
 }
 
+.admin-system-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 12px 16px;
+  padding: 11px 12px;
+  border: 1px solid rgba(240, 199, 94, 0.35);
+  border-radius: 8px;
+  color: #f7dda0;
+  text-decoration: none;
+}
+
+.admin-system-entry:hover {
+  background: rgba(240, 199, 94, 0.1);
+}
+
 .app-content-shell {
   min-width: 0;
 }
@@ -589,7 +543,10 @@ function handleCommand(command: string) {
   color: var(--lp-text-muted);
   cursor: pointer;
   font-size: 13px;
-  transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .header-search-trigger:hover {
@@ -623,7 +580,10 @@ function handleCommand(command: string) {
   background: #fff;
   color: var(--lp-text-secondary);
   cursor: pointer;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    color 0.18s ease;
 }
 
 .header-icon-button:hover {
@@ -716,9 +676,7 @@ function handleCommand(command: string) {
   min-width: 0;
   padding: 24px;
   overflow-y: auto;
-  background:
-    linear-gradient(180deg, rgba(241, 246, 249, 0.86), rgba(246, 248, 251, 1) 320px),
-    var(--lp-bg);
+  background: linear-gradient(180deg, rgba(241, 246, 249, 0.86), rgba(246, 248, 251, 1) 320px), var(--lp-bg);
 }
 
 @media (max-width: 767px) {

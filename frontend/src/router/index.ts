@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { isAuthenticated } from '@/utils/auth'
-import { useUserStore } from '@/stores/user'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -63,7 +62,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/course/CourseOverviewView.vue'),
         meta: { title: '课程总览' },
       },
-      { path: 'my-courses/:id/tutor', name: 'TutorSession', component: () => import('@/views/course/TutorSessionView.vue'), meta: { title: 'AI 教学' } },
+      {
+        path: 'my-courses/:id/tutor',
+        name: 'TutorSession',
+        component: () => import('@/views/course/TutorSessionView.vue'),
+        meta: { title: 'AI 教学' },
+      },
       {
         path: 'questions',
         name: 'QuestionList',
@@ -172,61 +176,6 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/exam/ExamResultView.vue'),
         meta: { title: '考试结果' },
       },
-      // 管理端路由
-      {
-        path: 'admin',
-        name: 'AdminDashboard',
-        component: () => import('@/views/admin/AdminDashboard.vue'),
-        meta: { title: '平台总览', requiresAdmin: true },
-      },
-      {
-        path: 'admin/courses',
-        name: 'AdminCourseManage',
-        component: () => import('@/views/admin/CourseManage.vue'),
-        meta: { title: '课程管理', requiresAdmin: true },
-      },
-      {
-        path: 'admin/knowledge-points',
-        name: 'AdminKPManage',
-        component: () => import('@/views/admin/KnowledgePointManage.vue'),
-        meta: { title: '知识点管理', requiresAdmin: true },
-      },
-      {
-        path: 'admin/questions',
-        name: 'AdminQuestionManage',
-        component: () => import('@/views/admin/QuestionManage.vue'),
-        meta: { title: '题目管理', requiresAdmin: true },
-      },
-      {
-        path: 'admin/exams',
-        name: 'AdminExamManage',
-        component: () => import('@/views/admin/ExamManage.vue'),
-        meta: { title: '试卷管理', requiresAdmin: true },
-      },
-      {
-        path: 'admin/subjective-reviews',
-        name: 'AdminSubjectiveReviews',
-        component: () => import('@/views/admin/SubjectiveReviewView.vue'),
-        meta: { title: '主观题批阅', requiresAdmin: true },
-      },
-      {
-        path: 'admin/users',
-        name: 'AdminUserManage',
-        component: () => import('@/views/admin/UserManage.vue'),
-        meta: { title: '用户管理', requiresAdmin: true },
-      },
-      {
-        path: 'admin/submissions',
-        name: 'AdminSubmissionManage',
-        component: () => import('@/views/admin/SubmissionManage.vue'),
-        meta: { title: '投稿管理', requiresAdmin: true },
-      },
-      {
-        path: 'admin/ai-usage',
-        name: 'AdminAiUsage',
-        component: () => import('@/views/admin/AiUsageView.vue'),
-        meta: { title: 'AI 调用分析', requiresAdmin: true },
-      },
     ],
   },
   {
@@ -263,19 +212,6 @@ router.beforeEach(async (to) => {
   const requiresAuth = to.meta.requiresAuth !== false
   if (requiresAuth && !loggedIn) {
     return { path: '/login', query: { redirect: to.fullPath } }
-  }
-
-  if (loggedIn && to.meta.requiresAdmin) {
-    const userStore = useUserStore()
-    if (!userStore.userInfo) {
-      await userStore.fetchUserInfo()
-    }
-    if (!userStore.userInfo) {
-      return { path: '/login', query: { redirect: to.fullPath } }
-    }
-    if (userStore.userInfo.role !== 'ADMIN') {
-      return { path: '/' }
-    }
   }
 
   return true

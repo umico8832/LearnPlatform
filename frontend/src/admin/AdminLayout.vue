@@ -1,7 +1,7 @@
 <template>
   <div class="admin-shell">
     <aside class="admin-shell-sidebar">
-      <a class="admin-shell-brand" href="/admin-app/">
+      <a class="admin-shell-brand" href="/admin/">
         <span>LP</span>
         <strong>管理系统</strong>
       </a>
@@ -15,7 +15,7 @@
         <router-link to="/submissions">投稿管理</router-link>
         <router-link to="/ai-usage">AI 调用分析</router-link>
       </nav>
-      <a class="admin-shell-legacy" href="/admin">旧版管理入口</a>
+      <a class="admin-shell-legacy" href="/">进入学习端</a>
     </aside>
     <section class="admin-shell-content">
       <header>

@@ -52,7 +52,7 @@ cd frontend
 npm run dev:admin
 ```
 
-管理端过渡入口：`http://localhost:5174/admin-app/`。Docker 环境由同一 Nginx 在 `/admin-app/` 提供该构建。
+管理端入口：`http://localhost:5174/admin/`。Docker 环境由同一 Nginx 在 `/admin/` 提供该构建。
 
 ## 5. 基础验证
 

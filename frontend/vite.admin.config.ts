@@ -7,7 +7,7 @@ import { resolve } from 'path'
 
 export default defineConfig({
   root: resolve(__dirname, 'admin'),
-  base: '/admin-app/',
+  base: '/admin/',
   plugins: [
     vue(),
     AutoImport({
@@ -23,7 +23,7 @@ export default defineConfig({
     proxy: { '/api': { target: 'http://localhost:8080', changeOrigin: true } },
   },
   build: {
-    outDir: resolve(__dirname, 'dist/admin-app'),
+    outDir: resolve(__dirname, 'dist/admin'),
     emptyOutDir: false,
     chunkSizeWarningLimit: 600,
   },

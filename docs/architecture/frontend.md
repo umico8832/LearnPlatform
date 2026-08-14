@@ -2,10 +2,9 @@
 
 ## 技术与职责
 
-前端使用 Vue 3、TypeScript、Vite、Element Plus、Pinia、Vue Router、Axios 和 ECharts。学习端仍承载尚未
-迁移的 `/admin` 页面；独立管理端首个切片已经建立自己的入口、Router、布局和构建产物，并在过渡路径
-`/admin-app/` 已承载全部现有管理页面：平台总览、课程、知识点、题目、试卷、主观题批阅、用户、投稿与
-AI 运营。两个构建继续复用稳定的 API 类型、请求客户端、鉴权存储和设计变量。
+前端使用 Vue 3、TypeScript、Vite、Element Plus、Pinia、Vue Router、Axios 和 ECharts。学习端与管理端
+拥有独立 HTML 入口、Router、布局和构建产物；`/admin/` 承载全部管理页面，学习端不再注册管理路由。
+两个构建继续复用稳定的 API 类型、请求客户端、鉴权存储和设计变量。
 
 ```text
 frontend/src/
@@ -23,9 +22,9 @@ frontend/admin/   # 独立管理端 HTML 入口
 
 目录清单只描述稳定边界，不枚举每个页面文件；真实文件以源码为准。
 
-`npm run build` 先生成学习端 `dist/`，再由 `vite.admin.config.ts` 生成 `dist/admin-app/`；管理端可以用
-`npm run dev:admin` 在 5174 端口独立开发。迁移期间旧 `/admin/**` 路由继续存在，待全部管理页面迁完并
-完成权限与部署回归后，再将独立构建从 `/admin-app/` 切换到目标 `/admin/`。
+`npm run build` 先生成学习端 `dist/`，再由 `vite.admin.config.ts` 生成 `dist/admin/`；管理端可以用
+`npm run dev:admin` 在 5174 端口独立开发。学习端管理员通过外部链接进入 `/admin/`，普通学习路由与管理
+路由不再共享 Router 或布局。
 
 ## 页面分层
 

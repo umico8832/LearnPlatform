@@ -13,14 +13,14 @@ async function loginAs(page: Page, username: string, password: string) {
 }
 
 async function loginToAdminApp(page: Page, username: string, password: string) {
-  await page.goto('/admin-app/subjective-reviews')
-  await expect(page).toHaveURL(/\/admin-app\/login\?redirect=/)
+  await page.goto('/admin/subjective-reviews')
+  await expect(page).toHaveURL(/\/admin\/login\?redirect=/)
   await page.getByPlaceholder('请输入用户名或邮箱').fill(username)
   await page.getByPlaceholder('请输入密码').fill(password)
   const loginButton = page.getByRole('button', { name: '登录管理系统' })
   await expect(loginButton).toBeEnabled({ timeout: 15_000 })
   await loginButton.click()
-  await expect(page).toHaveURL(/\/admin-app\/subjective-reviews$/)
+  await expect(page).toHaveURL(/\/admin\/subjective-reviews$/)
 }
 
 async function readCountdownSeconds(countdown: Locator) {
@@ -86,22 +86,22 @@ test('高频用户与管理页面可通过真实接口加载', async ({ page }) 
     await expect(page.getByRole('main').getByRole('heading', { name: heading, exact: true })).toBeVisible()
   }
 
-  await page.goto('/admin-app/')
+  await page.goto('/admin/')
   await expect(page.getByRole('main').getByRole('heading', { name: '平台数据总览', exact: true })).toBeVisible()
   await page.getByRole('navigation', { name: '管理导航' }).getByRole('link', { name: '试卷管理' }).click()
-  await expect(page).toHaveURL(/\/admin-app\/exams$/)
+  await expect(page).toHaveURL(/\/admin\/exams$/)
   await expect(page.getByRole('main').getByRole('heading', { name: '试卷管理', exact: true })).toBeVisible()
   await page.getByRole('navigation', { name: '管理导航' }).getByRole('link', { name: '课程管理' }).click()
   await expect(page.getByRole('main').getByRole('heading', { name: '课程管理', exact: true })).toBeVisible()
   await page.locator('.admin-data-table').getByRole('button', { name: '知识点' }).first().click()
-  await expect(page).toHaveURL(/\/admin-app\/knowledge-points\?courseId=/)
+  await expect(page).toHaveURL(/\/admin\/knowledge-points\?courseId=/)
   await expect(page.getByRole('main').getByRole('heading', { name: '知识点管理', exact: true })).toBeVisible()
   await page.getByRole('navigation', { name: '管理导航' }).getByRole('link', { name: '题目管理' }).click()
   await expect(page.getByRole('main').getByRole('heading', { name: '题目管理', exact: true })).toBeVisible()
   for (const [path, heading] of [
-    ['/admin-app/users', '用户管理'],
-    ['/admin-app/submissions', '投稿管理'],
-    ['/admin-app/ai-usage', 'AI 调用分析'],
+    ['/admin/users', '用户管理'],
+    ['/admin/submissions', '投稿管理'],
+    ['/admin/ai-usage', 'AI 调用分析'],
   ] as const) {
     await page.goto(path)
     await expect(page.getByRole('main').getByRole('heading', { name: heading, exact: true })).toBeVisible()
