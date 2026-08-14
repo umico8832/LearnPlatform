@@ -90,7 +90,7 @@
             </el-table-column>
             <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row }">
-                <el-button v-if="(row as ExamRecordVO).status === 1" type="primary" link size="small" :icon="View" @click="viewResult((row as ExamRecordVO).id)">
+                <el-button v-if="[1, 3].includes((row as ExamRecordVO).status)" type="primary" link size="small" :icon="View" @click="viewResult((row as ExamRecordVO).id)">
                   查看结果
                 </el-button>
                 <el-button v-else-if="(row as ExamRecordVO).status === 0" type="warning" link size="small" :icon="EditPen" @click="continueExam(row as ExamRecordVO)">
@@ -120,7 +120,7 @@
                 </div>
               </dl>
               <div class="record-mobile-action">
-                <el-button v-if="record.status === 1" type="primary" :icon="View" @click="viewResult(record.id)">
+                <el-button v-if="[1, 3].includes(record.status)" type="primary" :icon="View" @click="viewResult(record.id)">
                   查看结果
                 </el-button>
                 <el-button v-else-if="record.status === 0" type="warning" :icon="EditPen" @click="continueExam(record)">
@@ -265,6 +265,7 @@ const getScoreClass = (row: ExamRecordVO) => {
 }
 
 const formatScore = (row: ExamRecordVO) => {
+  if (row.status === 3) return `${row.score ?? 0} / ${row.totalScore}（暂定）`
   if (row.status !== 1 || row.score == null) return `— / ${row.totalScore}`
   return `${row.score} / ${row.totalScore}`
 }
@@ -273,6 +274,7 @@ const recordStatusLabel = (status: ExamStatus) => {
   if (status === 0) return '进行中'
   if (status === 1) return '已完成'
   if (status === 2) return '已超时'
+  if (status === 3) return '待人工批阅'
   return '未知状态'
 }
 
@@ -280,6 +282,7 @@ const recordStatusTag = (status: ExamStatus): 'success' | 'warning' | 'danger' |
   if (status === 0) return 'warning'
   if (status === 1) return 'success'
   if (status === 2) return 'danger'
+  if (status === 3) return 'warning'
   return 'info'
 }
 

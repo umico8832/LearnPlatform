@@ -80,6 +80,9 @@ public class ExamRecordVO {
         private Integer score;
         private String correctAnswer;
         private String analysis;
+        private String gradingStatus;
+        private String reviewComment;
+        private String reviewDetailJson;
 
         public Long getQuestionId() { return questionId; }
         public void setQuestionId(Long questionId) { this.questionId = questionId; }
@@ -111,5 +114,11 @@ public class ExamRecordVO {
         public void setCorrectAnswer(String correctAnswer) { this.correctAnswer = correctAnswer; }
         public String getAnalysis() { return analysis; }
         public void setAnalysis(String analysis) { this.analysis = analysis; }
+        public String getGradingStatus() { return gradingStatus; }
+        public void setGradingStatus(String gradingStatus) { this.gradingStatus = gradingStatus; }
+        public String getReviewComment() { return reviewComment; }
+        public void setReviewComment(String reviewComment) { this.reviewComment = reviewComment; }
+        public String getReviewDetailJson() { return reviewDetailJson; }
+        public void setReviewDetailJson(String reviewDetailJson) { this.reviewDetailJson = reviewDetailJson; }
     }
 }

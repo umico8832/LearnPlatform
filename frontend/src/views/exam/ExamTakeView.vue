@@ -211,7 +211,7 @@ onMounted(async () => {
     }
 
     const session = sessionRes.data
-    if (session.status === 1) {
+    if (session.status === 1 || session.status === 3) {
       await router.replace({ name: 'ExamResult', params: { recordId: String(recordId.value) } })
       return
     }

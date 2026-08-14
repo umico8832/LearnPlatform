@@ -84,6 +84,9 @@ test('用户答错后可在错题本更新掌握程度并重练', async ({ page 
 
   await page.getByRole('menuitem', { name: '刷题练习' }).click()
   await expect(page).toHaveURL(/\/practice$/)
+  const questionTypeField = page.locator('.config-card .el-form-item').filter({ hasText: '题型' })
+  await questionTypeField.locator('.el-select').click()
+  await page.getByRole('option', { name: '单选题' }).click()
   await page.locator('.config-card input').last().fill('1')
   await page.locator('.config-card').getByRole('button', { name: '开始刷题' }).click()
   await expect(page).toHaveURL(/\/practice\/session$/)
@@ -192,7 +195,10 @@ test('用户可完成2026真题学习与限时考试并复盘可信来源', asyn
 
   for (let questionNumber = 1; questionNumber <= 11; questionNumber += 1) {
     if (questionNumber > 1) {
-      await page.locator('.sheet-item').filter({ hasText: `第${questionNumber}题` }).click()
+      await page
+        .locator('.sheet-item')
+        .filter({ hasText: `第${questionNumber}题` })
+        .click()
     }
     await page.locator('.question-card .option-item').first().click()
     await page.getByRole('button', { name: '提交答案' }).click()
@@ -222,12 +228,67 @@ test('用户可完成2026真题学习与限时考试并复盘可信来源', asyn
   await expect(page.locator('.score-number')).toHaveText('4')
   await expect(page.locator('.source-panel')).toContainText('来源已核验')
   await expect(page.locator('.source-panel')).toContainText('2026 · 全国硕士研究生招生考试计算机学科专业基础')
-  await expect(page.locator('.source-panel')).toContainText(
-    'https://csgraduates.com/study_methods/408quiz/2026/',
-  )
+  await expect(page.locator('.source-panel')).toContainText('https://csgraduates.com/study_methods/408quiz/2026/')
   await expect(page.locator('.result-tag')).toHaveCount(11)
   await expect(page.locator('.answer-item').first()).toContainText('第1题')
   await expect(page.locator('.answer-item').first()).toContainText('一、单项选择题（数据结构）')
+})
+
+test('2026主观题提交后由管理员按评分点批阅并固化总分', async ({ page }) => {
+  await loginAs(page, 'testuser', 'test123')
+  await page.goto('/exams')
+  const paperCard = page.locator('.exam-card').filter({ hasText: '2026 年 408 真题·数据结构部分' })
+  await expect(paperCard).toContainText('13 题')
+  await expect(paperCard).toContainText('45 分')
+  await paperCard.getByRole('button', { name: '考试模式' }).click()
+
+  for (let questionNumber = 1; questionNumber <= 13; questionNumber += 1) {
+    if (questionNumber <= 11) {
+      await page.locator('.question-area .option-item').first().click()
+    } else {
+      await page.locator('.question-area textarea').fill(`第${questionNumber === 12 ? 41 : 42}题 E2E 分步作答`)
+    }
+    if (questionNumber < 13) {
+      await page.getByRole('button', { name: '下一题' }).click()
+    }
+  }
+  await page.locator('.take-header').getByRole('button', { name: '提交试卷' }).click()
+  await page.getByRole('dialog', { name: '提交确认' }).getByRole('button', { name: '确定' }).click()
+
+  await expect(page).toHaveURL(/\/exams\/result\/\d+$/)
+  const resultUrl = page.url()
+  await expect(page.getByText('当前分数为暂定分')).toBeVisible()
+  await expect(page.locator('.result-tag').filter({ hasText: '待人工批阅' })).toHaveCount(2)
+  await expect(page.locator('.answer-item').filter({ hasText: '第41题' })).not.toContainText('正确答案')
+
+  await page.evaluate(() => localStorage.clear())
+  await loginAs(page, 'admin', 'admin123')
+  await page.goto('/admin/subjective-reviews')
+  await expect(page.getByRole('heading', { name: '主观题批阅', level: 1 })).toBeVisible()
+
+  for (let reviewIndex = 0; reviewIndex < 2; reviewIndex += 1) {
+    await page.locator('.el-table__row').first().getByRole('button', { name: '开始批阅' }).click()
+    const drawer = page.getByRole('dialog', { name: '按评分点批阅' })
+    const scoreInputs = drawer.locator('.rubric-point .el-input-number input')
+    const pointCount = await scoreInputs.count()
+    const scores = pointCount === 3 ? [4, 8, 1] : [2, 2, 2, 4]
+    await expect(scoreInputs).toHaveCount(scores.length)
+    for (let index = 0; index < scores.length; index += 1) {
+      await scoreInputs.nth(index).fill(String(scores[index]))
+    }
+    await drawer.getByRole('textbox', { name: '总体批阅意见' }).fill('E2E 按评分点复核完成')
+    await drawer.getByRole('button', { name: '确认并完成批阅' }).click()
+    await expect(page.getByText('批阅已保存，考试成绩已重新计算')).toBeVisible()
+  }
+  await expect(page.getByText('当前没有待批阅答案')).toBeVisible()
+
+  await page.evaluate(() => localStorage.clear())
+  await loginAs(page, 'testuser', 'test123')
+  await page.goto(resultUrl)
+  await expect(page.locator('.score-number')).toHaveText('27')
+  await expect(page.getByText('当前分数为暂定分')).toHaveCount(0)
+  await expect(page.locator('.answer-item').filter({ hasText: '第41题' })).toContainText('E2E 按评分点复核完成')
+  await expect(page.locator('.result-tag')).toHaveCount(13)
 })
 
 test('用户投稿可由管理员审核并入库', async ({ page }) => {

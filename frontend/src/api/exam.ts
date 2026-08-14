@@ -38,7 +38,7 @@ export interface ExamQuestionItem {
 }
 
 export type PaperType = 'PRACTICE' | 'OFFICIAL_EXAM'
-export type ExamStatus = 0 | 1 | 2
+export type ExamStatus = 0 | 1 | 2 | 3
 
 export interface ExamPaperCreateRequest {
   title: string
@@ -96,10 +96,13 @@ export interface ExamAnswerVO {
   subquestionNumber: string | null
   displayNumber: string | null
   userAnswer: string
-  isCorrect: number
-  score: number
-  correctAnswer: string
+  isCorrect: number | null
+  score: number | null
+  correctAnswer: string | null
   analysis: string | null
+  gradingStatus: 'AUTO_GRADED' | 'PENDING' | 'REVIEWED'
+  reviewComment: string | null
+  reviewDetailJson: string | null
 }
 
 export interface ExamSubmitRequest {
@@ -112,12 +115,44 @@ export interface ExamLearningAnswerResultVO {
   questionId: number
   attemptNo: number
   userAnswer: string
-  correct: boolean
-  score: number
+  correct: boolean | null
+  score: number | null
   fullScore: number
   correctAnswer: string
   analysis: string | null
   answeredAt: string
+  gradingStatus: 'AUTO_GRADED' | 'SELF_REVIEW'
+}
+
+export interface SubjectiveGradingPointVO {
+  pointKey: string
+  title: string
+  description: string
+  referenceAnswer: string
+  maxScore: number
+  sortOrder: number
+}
+
+export interface SubjectiveAnswerReviewVO {
+  answerId: number
+  examRecordId: number
+  userId: number
+  examTitle: string
+  displayNumber: string
+  content: string
+  userAnswer: string
+  fullScore: number
+  gradingStatus: 'PENDING' | 'REVIEWED'
+  score: number | null
+  reviewComment: string | null
+  reviewDetailJson: string | null
+  submittedAt: string
+  gradingPoints: SubjectiveGradingPointVO[]
+}
+
+export interface SubjectiveGradingRequest {
+  points: { pointKey: string; awardedScore: number; comment?: string }[]
+  reviewComment?: string
 }
 
 export interface ExamLearningQuestionItem {
@@ -211,6 +246,17 @@ export function smartExamCreate(data: SmartExamPreview) {
   return request.post<unknown, ApiResponse<ExamPaperVO>>('/admin/exam-papers/smart-create', data)
 }
 
+export function getPendingSubjectiveReviews() {
+  return request.get<unknown, ApiResponse<SubjectiveAnswerReviewVO[]>>('/admin/exam-papers/subjective-reviews/pending')
+}
+
+export function gradeSubjectiveAnswer(answerId: number, data: SubjectiveGradingRequest) {
+  return request.post<unknown, ApiResponse<SubjectiveAnswerReviewVO>>(
+    `/admin/exam-papers/subjective-reviews/${answerId}`,
+    data,
+  )
+}
+
 // ======================== 用户端 API ========================
 
 export function getPublishedPapers(params?: { pageNum?: number; pageSize?: number; courseId?: number }) {
@@ -248,9 +294,7 @@ export function submitExamLearningAnswer(
 }
 
 export function completeExamLearningSession(sessionId: number) {
-  return request.post<unknown, ApiResponse<ExamLearningSessionVO>>(
-    `/exam/learning-sessions/${sessionId}/complete`,
-  )
+  return request.post<unknown, ApiResponse<ExamLearningSessionVO>>(`/exam/learning-sessions/${sessionId}/complete`)
 }
 
 export function submitExam(data: ExamSubmitRequest) {

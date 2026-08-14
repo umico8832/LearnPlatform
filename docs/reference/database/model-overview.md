@@ -21,7 +21,7 @@ flowchart LR
 | 用户与内容 | `user`、`course`、`knowledge_point`、`user_course`、`question`、`question_option`、`question_knowledge_point` |
 | 互动与投稿 | `user_favorite_question`、`question_comment`、`comment_like`、`question_submission`、`question_correction_report`、`question_review_record`、`question_version` |
 | 练习与复习 | `practice_record`、`wrong_question`、`learning_plan`、`question_review_schedule`、`course_learning_event` |
-| 试卷与考试 | `exam_paper`、`exam_question`、`exam_record`、`exam_answer`、`exam_learning_session`、`exam_learning_answer`、`exam_learning_ai_interaction` |
+| 试卷与考试 | `exam_paper`、`exam_question`、`exam_record`、`exam_answer`、`subjective_grading_point`、`exam_learning_session`、`exam_learning_answer`、`exam_learning_ai_interaction` |
 | AI 与运营 | `ai_call_log`、`ai_quota_audit_log`、`ai_usage_alert`、`question_ai_asset`、`ai_asset_feedback`、`ai_asset_view`、`ai_variant_training`、`ai_variant_question` |
 
 ## 关系原则

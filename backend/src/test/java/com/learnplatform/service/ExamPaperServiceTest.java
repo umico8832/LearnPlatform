@@ -9,6 +9,7 @@ import com.learnplatform.mapper.ExamPaperMapper;
 import com.learnplatform.mapper.ExamQuestionMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
+import com.learnplatform.mapper.SubjectiveGradingPointMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,12 +35,13 @@ class ExamPaperServiceTest {
     @Mock private QuestionMapper questionMapper;
     @Mock private QuestionOptionMapper questionOptionMapper;
     @Mock private CourseMapper courseMapper;
+    @Mock private SubjectiveGradingPointMapper subjectiveGradingPointMapper;
     private ExamPaperService examPaperService;
 
     @BeforeEach
     void setUp() {
         examPaperService = new ExamPaperService(examPaperMapper, examQuestionMapper,
-                questionMapper, questionOptionMapper, courseMapper);
+                questionMapper, questionOptionMapper, courseMapper, subjectiveGradingPointMapper);
     }
 
     @Test
@@ -64,6 +66,26 @@ class ExamPaperServiceTest {
 
         assertEquals("空试卷不能发布", exception.getMessage());
         verify(examPaperMapper, never()).updateById(paper);
+    }
+
+    @Test
+    void rejectsPublishingShortAnswerWithoutCompleteRubric() {
+        ExamPaper paper = paper(0, 1);
+        ExamQuestion relation = new ExamQuestion();
+        relation.setQuestionId(10L);
+        relation.setScore(13);
+        when(examPaperMapper.selectByIdForUpdate(1L)).thenReturn(paper);
+        when(examQuestionMapper.selectList(org.mockito.ArgumentMatchers.any())).thenReturn(List.of(relation));
+        com.learnplatform.entity.Question question = new com.learnplatform.entity.Question();
+        question.setId(10L);
+        question.setQuestionType("SHORT_ANSWER");
+        when(questionMapper.selectById(10L)).thenReturn(question);
+        when(subjectiveGradingPointMapper.selectList(org.mockito.ArgumentMatchers.any())).thenReturn(List.of());
+
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> examPaperService.publishExamPaper(1L));
+
+        assertEquals("主观题发布前必须配置与题目分值一致的评分点", exception.getMessage());
     }
 
     @Test

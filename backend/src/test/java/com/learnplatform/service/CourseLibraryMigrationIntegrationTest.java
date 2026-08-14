@@ -108,6 +108,49 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void migrationAdds2026SubjectivePaperAndTraceableManualGradingSchema() {
+        Long paperId = jdbcTemplate.queryForObject("""
+                SELECT id FROM exam_paper
+                WHERE title = '2026 年 408 真题·数据结构部分'
+                  AND paper_type = 'OFFICIAL_EXAM' AND exam_year = 2026
+                  AND source_verified = 1 AND status = 1 AND deleted = 0
+                """, Long.class);
+        Integer questionCount = jdbcTemplate.queryForObject(
+                "SELECT question_count FROM exam_paper WHERE id = ?", Integer.class, paperId);
+        Integer totalScore = jdbcTemplate.queryForObject(
+                "SELECT total_score FROM exam_paper WHERE id = ?", Integer.class, paperId);
+        Integer subjectiveCount = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM exam_question eq
+                JOIN question q ON q.id = eq.question_id
+                WHERE eq.exam_paper_id = ? AND q.question_type = 'SHORT_ANSWER'
+                  AND eq.display_number IN ('第41题', '第42题')
+                """, Integer.class, paperId);
+        Integer invalidRubricCount = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM (
+                  SELECT eq.question_id, eq.score, SUM(sgp.max_score) rubric_score
+                  FROM exam_question eq
+                  JOIN question q ON q.id = eq.question_id AND q.question_type = 'SHORT_ANSWER'
+                  JOIN subjective_grading_point sgp ON sgp.question_id = eq.question_id
+                  WHERE eq.exam_paper_id = ?
+                  GROUP BY eq.question_id, eq.score
+                  HAVING rubric_score <> eq.score
+                ) invalid_rubric
+                """, Integer.class, paperId);
+        Integer gradingColumns = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_schema = DATABASE() AND table_name = 'exam_answer'
+                  AND column_name IN ('grading_status', 'reviewer_id', 'review_comment',
+                                      'review_detail_json', 'reviewed_at')
+                """, Integer.class);
+
+        assertEquals(13, questionCount);
+        assertEquals(45, totalScore);
+        assertEquals(2, subjectiveCount);
+        assertEquals(0, invalidRubricCount);
+        assertEquals(5, gradingColumns);
+    }
+
+    @Test
     void migrationImportsAiStuCourseStructureAndProtectsLibraryUniqueness() {
         Integer paperProvenanceColumns = jdbcTemplate.queryForObject("""
                 SELECT COUNT(*) FROM information_schema.columns

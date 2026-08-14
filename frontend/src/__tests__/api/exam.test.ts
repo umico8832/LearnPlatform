@@ -28,6 +28,8 @@ import {
   submitExam,
   getExamResult,
   getMyExamRecords,
+  getPendingSubjectiveReviews,
+  gradeSubjectiveAnswer,
 } from '@/api/exam'
 
 const mockedRequest = vi.mocked(request)
@@ -113,6 +115,18 @@ describe('Exam API', () => {
 
         expect(mockedRequest.post).toHaveBeenCalledWith('/admin/exam-papers/1/publish')
       })
+    })
+
+    it('应读取待批阅队列并按评分点提交人工批阅', async () => {
+      mockedRequest.get.mockResolvedValue({ code: 0, data: [], message: 'success' })
+      mockedRequest.post.mockResolvedValue({ code: 0, data: { answerId: 9 }, message: 'success' })
+      const payload = { points: [{ pointKey: 'idea', awardedScore: 4 }], reviewComment: '完成' }
+
+      await getPendingSubjectiveReviews()
+      await gradeSubjectiveAnswer(9, payload)
+
+      expect(mockedRequest.get).toHaveBeenCalledWith('/admin/exam-papers/subjective-reviews/pending')
+      expect(mockedRequest.post).toHaveBeenCalledWith('/admin/exam-papers/subjective-reviews/9', payload)
     })
   })
 

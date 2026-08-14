@@ -4,9 +4,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.result.R;
 import com.learnplatform.dto.ExamPaperCreateRequest;
 import com.learnplatform.dto.ExamPaperVO;
+import com.learnplatform.dto.SubjectiveAnswerReviewVO;
+import com.learnplatform.dto.SubjectiveGradingRequest;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AiExamGenerationService;
 import com.learnplatform.service.ExamPaperService;
+import com.learnplatform.service.SubjectiveExamGradingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -23,11 +26,14 @@ public class AdminExamController {
 
     private final ExamPaperService examPaperService;
     private final AiExamGenerationService aiExamGenerationService;
+    private final SubjectiveExamGradingService subjectiveExamGradingService;
 
     public AdminExamController(ExamPaperService examPaperService,
-                               AiExamGenerationService aiExamGenerationService) {
+                               AiExamGenerationService aiExamGenerationService,
+                               SubjectiveExamGradingService subjectiveExamGradingService) {
         this.examPaperService = examPaperService;
         this.aiExamGenerationService = aiExamGenerationService;
+        this.subjectiveExamGradingService = subjectiveExamGradingService;
     }
 
     @Operation(summary = "试卷列表", description = "分页查询试卷列表")
@@ -88,5 +94,20 @@ public class AdminExamController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody AiExamGenerationService.SmartExamPreview preview) {
         return R.ok(aiExamGenerationService.createSmartExam(preview, userDetails.getUserId()));
+    }
+
+    @Operation(summary = "待人工批阅的主观题答案")
+    @GetMapping("/subjective-reviews/pending")
+    public R<java.util.List<SubjectiveAnswerReviewVO>> pendingSubjectiveReviews() {
+        return R.ok(subjectiveExamGradingService.listPending());
+    }
+
+    @Operation(summary = "按评分点批阅主观题答案")
+    @PostMapping("/subjective-reviews/{answerId}")
+    public R<SubjectiveAnswerReviewVO> gradeSubjectiveAnswer(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long answerId,
+            @Valid @RequestBody SubjectiveGradingRequest request) {
+        return R.ok(subjectiveExamGradingService.grade(answerId, request, userDetails.getUserId()));
     }
 }

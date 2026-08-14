@@ -31,6 +31,7 @@ public class ExamService {
     private static final int ACTIVE = 0;
     private static final int COMPLETED = 1;
     private static final int TIMED_OUT = 2;
+    private static final int PENDING_REVIEW = 3;
     private static final ZoneId EXAM_ZONE = ZoneId.of("Asia/Shanghai");
 
     private final ExamRecordMapper examRecordMapper;
@@ -192,6 +193,7 @@ public class ExamService {
                 .mapToInt(eq -> eq.getScore() != null ? eq.getScore() : 1)
                 .sum();
         int earnedScore = 0;
+        boolean hasPendingReview = false;
 
         Map<Long, String> submittedAnswers = new HashMap<>();
         for (ExamSubmitRequest.AnswerItem answerItem : request.getAnswers()) {
@@ -226,27 +228,32 @@ public class ExamService {
                         .collect(Collectors.toList());
                 String correctAnswer = answerEvaluator.buildCorrectAnswer(correctOptions, question.getQuestionType());
 
-                boolean isCorrect = answerEvaluator.isCorrect(question.getQuestionType(),
-                        userAnswer != null ? userAnswer.trim() : "",
-                        correctAnswer);
+                boolean manualGrading = "SHORT_ANSWER".equals(question.getQuestionType());
+                boolean isCorrect = !manualGrading && answerEvaluator.isCorrect(question.getQuestionType(),
+                        userAnswer != null ? userAnswer.trim() : "", correctAnswer);
 
                 if (isCorrect) earnedScore += questionScore;
+                if (manualGrading) hasPendingReview = true;
 
                 // 保存答题详情
                 ExamAnswer examAnswer = new ExamAnswer();
                 examAnswer.setExamRecordId(record.getId());
                 examAnswer.setQuestionId(questionId);
                 examAnswer.setUserAnswer(userAnswer != null ? userAnswer : "");
-                examAnswer.setIsCorrect(isCorrect ? 1 : 0);
-                examAnswer.setScore(isCorrect ? questionScore : 0);
+                examAnswer.setIsCorrect(manualGrading ? null : (isCorrect ? 1 : 0));
+                examAnswer.setScore(manualGrading ? null : (isCorrect ? questionScore : 0));
+                examAnswer.setGradingStatus(manualGrading ? "PENDING" : "AUTO_GRADED");
                 examAnswerMapper.insert(examAnswer);
-                if (courseLearningEventService != null) {
+                if (!manualGrading && courseLearningEventService != null) {
                     courseLearningEventService.recordQuestionAnswer(userId, question, "EXAM_ANSWERED", "EXAM",
                             examAnswer.getId(), isCorrect, examAnswer.getCreateTime());
                 }
 
                 // 错题自动加入错题本
                 try {
+                    if (manualGrading) {
+                        continue;
+                    }
                     if (isCorrect) {
                         wrongQuestionService.removeOnCorrect(userId, questionId);
                     } else {
@@ -263,7 +270,7 @@ public class ExamService {
         record.setEndTime(currentExamTime());
         record.setScore(earnedScore);
         record.setTotalScore(totalScore);
-        record.setStatus(COMPLETED);
+        record.setStatus(hasPendingReview ? PENDING_REVIEW : COMPLETED);
         record.setActiveExamKey(null);
         examRecordMapper.updateById(record);
 
@@ -280,7 +287,8 @@ public class ExamService {
         ExamRecord record = examRecordMapper.selectById(examRecordId);
         if (record == null) throw new BusinessException(ResultCode.NOT_FOUND, "考试记录不存在");
         if (!record.getUserId().equals(userId)) throw new BusinessException(ResultCode.FORBIDDEN, "无权操作");
-        if (record.getStatus() == null || record.getStatus() != COMPLETED) {
+        if (record.getStatus() == null
+                || (record.getStatus() != COMPLETED && record.getStatus() != PENDING_REVIEW)) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "考试尚未完成");
         }
 
@@ -309,6 +317,9 @@ public class ExamService {
             avo.setUserAnswer(answer.getUserAnswer());
             avo.setIsCorrect(answer.getIsCorrect());
             avo.setScore(answer.getScore());
+            avo.setGradingStatus(answer.getGradingStatus());
+            avo.setReviewComment(answer.getReviewComment());
+            avo.setReviewDetailJson(answer.getReviewDetailJson());
             avo.setSortOrder(questionOrderMap.getOrDefault(answer.getQuestionId(), 0));
             avo.setFullScore(questionScoreMap.getOrDefault(answer.getQuestionId(), 1));
 
@@ -325,7 +336,8 @@ public class ExamService {
             if (question != null) {
                 avo.setContent(question.getContent());
                 avo.setQuestionType(question.getQuestionType());
-                avo.setAnalysis(question.getAnalysis());
+                boolean pending = "PENDING".equals(answer.getGradingStatus());
+                avo.setAnalysis(pending ? null : question.getAnalysis());
 
                 LambdaQueryWrapper<QuestionOption> optWrapper = new LambdaQueryWrapper<>();
                 optWrapper.eq(QuestionOption::getQuestionId, question.getId())
@@ -333,7 +345,8 @@ public class ExamService {
                 List<QuestionOption> correctOptions = questionOptionMapper.selectList(optWrapper).stream()
                         .filter(o -> o.getIsCorrect() != null && o.getIsCorrect() == 1)
                         .collect(Collectors.toList());
-                avo.setCorrectAnswer(answerEvaluator.buildCorrectAnswer(correctOptions, question.getQuestionType()));
+                avo.setCorrectAnswer(pending ? null
+                        : answerEvaluator.buildCorrectAnswer(correctOptions, question.getQuestionType()));
             }
             answerVOs.add(avo);
         }

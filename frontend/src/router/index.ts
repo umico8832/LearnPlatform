@@ -204,6 +204,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '试卷管理', requiresAdmin: true },
       },
       {
+        path: 'admin/subjective-reviews',
+        name: 'AdminSubjectiveReviews',
+        component: () => import('@/views/admin/SubjectiveReviewView.vue'),
+        meta: { title: '主观题批阅', requiresAdmin: true },
+      },
+      {
         path: 'admin/users',
         name: 'AdminUserManage',
         component: () => import('@/views/admin/UserManage.vue'),

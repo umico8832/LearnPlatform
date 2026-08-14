@@ -13,6 +13,7 @@ public class ExamLearningAnswerResultVO {
     private String correctAnswer;
     private String analysis;
     private LocalDateTime answeredAt;
+    private String gradingStatus;
 
     public Long getAnswerId() { return answerId; }
     public void setAnswerId(Long answerId) { this.answerId = answerId; }
@@ -34,4 +35,6 @@ public class ExamLearningAnswerResultVO {
     public void setAnalysis(String analysis) { this.analysis = analysis; }
     public LocalDateTime getAnsweredAt() { return answeredAt; }
     public void setAnsweredAt(LocalDateTime answeredAt) { this.answeredAt = answeredAt; }
+    public String getGradingStatus() { return gradingStatus; }
+    public void setGradingStatus(String gradingStatus) { this.gradingStatus = gradingStatus; }
 }

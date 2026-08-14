@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -129,6 +130,24 @@ class ExamPaperLearningServiceTest {
                 eq(captor.getValue().getCreateTime()));
         verify(wrongQuestionService).removeOnCorrect(7L, 10L);
         verify(spacedRepetitionService).addToReviewPlan(7L, 10L);
+    }
+
+    @Test
+    void subjectiveLearningAnswerUsesSelfReviewWithoutFakeScore() {
+        stubActiveSession();
+        stubEligiblePaper();
+        Question subjective = question();
+        subjective.setQuestionType("SHORT_ANSWER");
+        subjective.setAnalysis("分步参考答案");
+        when(questionMapper.selectById(10L)).thenReturn(subjective);
+        when(questionOptionMapper.selectList(any())).thenReturn(List.of());
+        when(learningAnswerMapper.selectCount(any())).thenReturn(0L);
+
+        ExamLearningAnswerResultVO result = service.submitAnswer(30L, request(10L, "算法作答"), 7L);
+
+        assertNull(result.getCorrect());
+        assertNull(result.getScore());
+        assertEquals("分步参考答案", result.getAnalysis());
     }
 
     @Test

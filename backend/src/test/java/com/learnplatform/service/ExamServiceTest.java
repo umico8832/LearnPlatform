@@ -10,6 +10,7 @@ import com.learnplatform.entity.ExamAnswer;
 import com.learnplatform.entity.ExamPaper;
 import com.learnplatform.entity.ExamQuestion;
 import com.learnplatform.entity.ExamRecord;
+import com.learnplatform.entity.Question;
 import com.learnplatform.mapper.ExamAnswerMapper;
 import com.learnplatform.mapper.ExamPaperMapper;
 import com.learnplatform.mapper.ExamQuestionMapper;
@@ -182,6 +183,33 @@ class ExamServiceTest {
                 () -> examService.getExamResult(1L, 7L));
 
         assertEquals("考试尚未完成", exception.getMessage());
+    }
+
+    @Test
+    void shortAnswerSubmissionWaitsForManualReviewInsteadOfKeywordGrading() {
+        ExamRecord record = record(LocalDateTime.now());
+        when(examRecordMapper.selectByIdForUpdate(1L)).thenReturn(record);
+        when(examRecordMapper.selectById(1L)).thenReturn(record);
+        when(examPaperMapper.selectById(2L)).thenReturn(paper());
+        ExamQuestion paperQuestion = examQuestion(10L, 13);
+        paperQuestion.setSortOrder(1);
+        when(examQuestionMapper.selectList(any())).thenReturn(List.of(paperQuestion));
+        Question question = new Question();
+        question.setId(10L);
+        question.setQuestionType("SHORT_ANSWER");
+        when(questionMapper.selectById(10L)).thenReturn(question);
+        when(questionOptionMapper.selectList(any())).thenReturn(List.of());
+        when(examAnswerMapper.selectList(any())).thenReturn(List.of());
+
+        ExamRecordVO result = examService.submitExam(
+                request(answer(10L, "先中序遍历，再记录最小差值与全部并列结点")), 7L);
+
+        ArgumentCaptor<ExamAnswer> answerCaptor = ArgumentCaptor.forClass(ExamAnswer.class);
+        verify(examAnswerMapper).insert(answerCaptor.capture());
+        assertNull(answerCaptor.getValue().getIsCorrect());
+        assertNull(answerCaptor.getValue().getScore());
+        assertEquals(3, result.getStatus());
+        assertEquals(0, result.getScore());
     }
 
     @Test

@@ -23,6 +23,17 @@ public class ExamAnswer {
 
     private Integer score;
 
+    /** AUTO_GRADED / PENDING / REVIEWED */
+    private String gradingStatus;
+
+    private Long reviewerId;
+
+    private String reviewComment;
+
+    private String reviewDetailJson;
+
+    private LocalDateTime reviewedAt;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
@@ -38,6 +49,16 @@ public class ExamAnswer {
     public void setIsCorrect(Integer isCorrect) { this.isCorrect = isCorrect; }
     public Integer getScore() { return score; }
     public void setScore(Integer score) { this.score = score; }
+    public String getGradingStatus() { return gradingStatus; }
+    public void setGradingStatus(String gradingStatus) { this.gradingStatus = gradingStatus; }
+    public Long getReviewerId() { return reviewerId; }
+    public void setReviewerId(Long reviewerId) { this.reviewerId = reviewerId; }
+    public String getReviewComment() { return reviewComment; }
+    public void setReviewComment(String reviewComment) { this.reviewComment = reviewComment; }
+    public String getReviewDetailJson() { return reviewDetailJson; }
+    public void setReviewDetailJson(String reviewDetailJson) { this.reviewDetailJson = reviewDetailJson; }
+    public LocalDateTime getReviewedAt() { return reviewedAt; }
+    public void setReviewedAt(LocalDateTime reviewedAt) { this.reviewedAt = reviewedAt; }
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
 }

@@ -12,7 +12,7 @@ vi.mock('@/api/exam', () => ({
 }))
 
 vi.mock('vue-router', async (importOriginal) => ({
-  ...await importOriginal<typeof import('vue-router')>(),
+  ...(await importOriginal<typeof import('vue-router')>()),
   useRoute: () => ({ params: { recordId: '101' } }),
   useRouter: () => ({ push: mockPush }),
 }))
@@ -32,6 +32,7 @@ const stubs = {
     emits: ['click'],
   },
   'el-empty': { template: '<div><slot /></div>' },
+  'el-alert': { template: '<div>{{ title }}</div>', props: ['title'] },
 }
 
 describe('ExamResultView authoritative review', () => {
@@ -119,10 +120,10 @@ describe('ExamResultView authoritative review', () => {
     })
     await flushPromises()
 
-    const courseButton = wrapper.findAll('button').find(button => button.text().includes('返回课程总览'))!
-    const reviewButton = wrapper.findAll('button').find(button => button.text().includes('复习此错题'))!
+    const courseButton = wrapper.findAll('button').find((button) => button.text().includes('返回课程总览'))!
+    const reviewButton = wrapper.findAll('button').find((button) => button.text().includes('复习此错题'))!
     expect(courseButton).toBeTruthy()
-    expect(wrapper.findAll('button').filter(button => button.text().includes('复习此错题'))).toHaveLength(1)
+    expect(wrapper.findAll('button').filter((button) => button.text().includes('复习此错题'))).toHaveLength(1)
 
     await courseButton.trigger('click')
     await reviewButton.trigger('click')
@@ -163,5 +164,48 @@ describe('ExamResultView authoritative review', () => {
 
     expect(wrapper.text()).toContain('0 题 · 0 题需复习')
     expect(wrapper.findAll('.answer-item')).toHaveLength(0)
+  })
+
+  it('主观题待批阅时只展示暂定分且不泄露答案与解析', async () => {
+    mockGetExamResult.mockResolvedValue({
+      code: 0,
+      data: {
+        id: 101,
+        examPaperId: 7,
+        examTitle: '含主观题试卷',
+        courseId: 408,
+        paperType: 'OFFICIAL_EXAM',
+        startTime: '2026-08-13T10:00:00',
+        endTime: '2026-08-13T10:20:00',
+        score: 22,
+        totalScore: 45,
+        status: 3,
+        answers: [
+          {
+            questionId: 41,
+            content: '算法题',
+            questionType: 'SHORT_ANSWER',
+            fullScore: 13,
+            displayNumber: '第41题',
+            userAnswer: '我的算法',
+            isCorrect: null,
+            score: null,
+            correctAnswer: null,
+            analysis: null,
+            gradingStatus: 'PENDING',
+          },
+        ],
+      },
+    })
+
+    const wrapper = mount(ExamResultView, {
+      global: { stubs, directives: { loading: () => undefined } },
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('暂定分')
+    expect(wrapper.text()).toContain('待人工批阅')
+    expect(wrapper.text()).not.toContain('正确答案')
+    expect(wrapper.text()).not.toContain('复习此错题')
   })
 })

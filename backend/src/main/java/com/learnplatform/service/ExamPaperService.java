@@ -37,17 +37,20 @@ public class ExamPaperService {
     private final QuestionMapper questionMapper;
     private final QuestionOptionMapper questionOptionMapper;
     private final CourseMapper courseMapper;
+    private final SubjectiveGradingPointMapper subjectiveGradingPointMapper;
 
     public ExamPaperService(ExamPaperMapper examPaperMapper,
                             ExamQuestionMapper examQuestionMapper,
                             QuestionMapper questionMapper,
                             QuestionOptionMapper questionOptionMapper,
-                            CourseMapper courseMapper) {
+                            CourseMapper courseMapper,
+                            SubjectiveGradingPointMapper subjectiveGradingPointMapper) {
         this.examPaperMapper = examPaperMapper;
         this.examQuestionMapper = examQuestionMapper;
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.courseMapper = courseMapper;
+        this.subjectiveGradingPointMapper = subjectiveGradingPointMapper;
     }
 
     /**
@@ -98,6 +101,7 @@ public class ExamPaperService {
         ensureOfficialRequestReady(request.getStatus(), paperType, request.getExamName(),
                 request.getExamYear(), request.getSourceReference(), request.getSourceVerified(),
                 request.getQuestions(), null);
+        ensureManualGradingReady(request.getStatus(), request.getQuestions(), null);
 
         ExamPaper paper = new ExamPaper();
         paper.setTitle(request.getTitle());
@@ -165,6 +169,7 @@ public class ExamPaperService {
         Integer status = request.getStatus() != null ? request.getStatus() : paper.getStatus();
         ensureOfficialRequestReady(status, paperType, examName, examYear, sourceReference,
                 sourceVerified, request.getQuestions(), id);
+        ensureManualGradingReady(status, request.getQuestions(), id);
 
         if (request.getTitle() != null) paper.setTitle(request.getTitle());
         if (request.getDescription() != null) paper.setDescription(request.getDescription());
@@ -228,6 +233,7 @@ public class ExamPaperService {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "空试卷不能发布");
         }
         ensureOfficialPaperReady(paper);
+        ensureManualGradingReady(1, null, paper.getId());
         paper.setStatus(1);
         examPaperMapper.updateById(paper);
     }
@@ -299,6 +305,45 @@ public class ExamPaperService {
     private void ensureOfficialQuestionNumbers(List<ExamQuestion> questions) {
         if (questions.isEmpty() || questions.stream().anyMatch(item -> isBlank(item.getDisplayNumber()))) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "官方试卷每道题必须填写展示题号");
+        }
+    }
+
+    private void ensureManualGradingReady(Integer status,
+                                          List<ExamPaperCreateRequest.QuestionItem> requestedQuestions,
+                                          Long paperId) {
+        if (status == null || status != 1) {
+            return;
+        }
+        if (requestedQuestions != null) {
+            for (ExamPaperCreateRequest.QuestionItem item : requestedQuestions) {
+                ensureQuestionRubric(item.getQuestionId(), item.getScore() != null ? item.getScore() : 1);
+            }
+            return;
+        }
+        if (paperId != null) {
+            for (ExamQuestion relation : findExamQuestions(paperId)) {
+                ensureQuestionRubric(relation.getQuestionId(),
+                        relation.getScore() != null ? relation.getScore() : 1);
+            }
+        }
+    }
+
+    private void ensureQuestionRubric(Long questionId, int fullScore) {
+        Question question = questionMapper.selectById(questionId);
+        if (question == null || !"SHORT_ANSWER".equals(question.getQuestionType())) {
+            return;
+        }
+        List<SubjectiveGradingPoint> points = subjectiveGradingPointMapper.selectList(
+                new LambdaQueryWrapper<SubjectiveGradingPoint>()
+                        .eq(SubjectiveGradingPoint::getQuestionId, questionId));
+        int rubricScore = points.stream()
+                .map(SubjectiveGradingPoint::getMaxScore)
+                .filter(java.util.Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .sum();
+        if (points.isEmpty() || rubricScore != fullScore) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR,
+                    "主观题发布前必须配置与题目分值一致的评分点");
         }
     }
 

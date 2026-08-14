@@ -142,7 +142,9 @@ public class ExamPaperLearningService {
         List<QuestionOption> options = loadOptions(question.getId());
         String correctAnswer = buildCorrectAnswer(question, options);
         String userAnswer = request.getUserAnswer().trim();
-        boolean correct = answerEvaluator.isCorrect(question.getQuestionType(), userAnswer, correctAnswer);
+        boolean manualSelfReview = "SHORT_ANSWER".equals(question.getQuestionType());
+        boolean correct = !manualSelfReview
+                && answerEvaluator.isCorrect(question.getQuestionType(), userAnswer, correctAnswer);
         long previousAttempts = learningAnswerMapper.selectCount(
                 new LambdaQueryWrapper<ExamLearningAnswer>()
                         .eq(ExamLearningAnswer::getSessionId, sessionId)
@@ -153,17 +155,19 @@ public class ExamPaperLearningService {
         answer.setQuestionId(question.getId());
         answer.setAttemptNo(Math.toIntExact(previousAttempts + 1));
         answer.setUserAnswer(userAnswer);
-        answer.setIsCorrect(correct ? 1 : 0);
-        answer.setScore(correct ? scoreOf(paperQuestion) : 0);
+        answer.setIsCorrect(manualSelfReview ? null : (correct ? 1 : 0));
+        answer.setScore(manualSelfReview ? null : (correct ? scoreOf(paperQuestion) : 0));
         answer.setAnswerTime(request.getAnswerTime());
         answer.setCreateTime(LocalDateTime.now());
         learningAnswerMapper.insert(answer);
 
         session.setCurrentQuestionId(nextQuestionId(paperQuestions, question.getId()));
         sessionMapper.updateById(session);
-        courseLearningEventService.recordQuestionAnswer(userId, question,
-                "PAPER_LEARNING_ANSWERED", "PAPER_LEARNING", answer.getId(), correct, answer.getCreateTime());
-        updateWrongQuestionAndReview(userId, question.getId(), userAnswer, correct);
+        if (!manualSelfReview) {
+            courseLearningEventService.recordQuestionAnswer(userId, question,
+                    "PAPER_LEARNING_ANSWERED", "PAPER_LEARNING", answer.getId(), correct, answer.getCreateTime());
+            updateWrongQuestionAndReview(userId, question.getId(), userAnswer, correct);
+        }
         cacheEvictService.evictUserStatistics(userId);
 
         return toAnswerResult(answer, paperQuestion, question, correctAnswer);
@@ -371,11 +375,13 @@ public class ExamPaperLearningService {
         result.setQuestionId(answer.getQuestionId());
         result.setAttemptNo(answer.getAttemptNo());
         result.setUserAnswer(answer.getUserAnswer());
-        result.setCorrect(Integer.valueOf(1).equals(answer.getIsCorrect()));
+        boolean manualSelfReview = "SHORT_ANSWER".equals(question.getQuestionType());
+        result.setCorrect(manualSelfReview ? null : Integer.valueOf(1).equals(answer.getIsCorrect()));
         result.setScore(answer.getScore());
         result.setFullScore(scoreOf(paperQuestion));
-        result.setCorrectAnswer(correctAnswer);
+        result.setCorrectAnswer(manualSelfReview ? null : correctAnswer);
         result.setAnalysis(question.getAnalysis());
+        result.setGradingStatus(manualSelfReview ? "SELF_REVIEW" : "AUTO_GRADED");
         result.setAnsweredAt(answer.getCreateTime());
         return result;
     }

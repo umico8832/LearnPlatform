@@ -137,4 +137,38 @@ describe('ExamLearningView', () => {
     expect(mockCompleteSession).toHaveBeenCalledWith(30)
     expect(mockSuccess).toHaveBeenCalledWith('本轮试卷学习已完成，可继续查看逐题复盘')
   })
+
+  it('主观题学习只展示自评参考，不显示伪造的对错和分数', async () => {
+    const subjectiveSession = session()
+    subjectiveSession.questions[0] = {
+      ...subjectiveSession.questions[0],
+      questionType: 'SHORT_ANSWER',
+      content: '算法综合应用题',
+      options: [],
+      latestAnswer: {
+        answerId: 82,
+        questionId: 10,
+        attemptNo: 1,
+        userAnswer: '我的算法',
+        correct: null,
+        score: null,
+        fullScore: 13,
+        correctAnswer: null,
+        analysis: '分步参考答案',
+        gradingStatus: 'SELF_REVIEW',
+      },
+    } as never
+    subjectiveSession.answeredQuestionCount = 1
+    mockGetSession.mockResolvedValue({ code: 0, data: subjectiveSession })
+
+    const wrapper = mount(ExamLearningView, {
+      global: { stubs, directives: { loading: () => undefined } },
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('已保存，按参考答案自评')
+    expect(wrapper.text()).toContain('分步参考答案')
+    expect(wrapper.text()).not.toContain('回答错误')
+    expect(wrapper.text()).not.toContain('正确答案：')
+  })
 })

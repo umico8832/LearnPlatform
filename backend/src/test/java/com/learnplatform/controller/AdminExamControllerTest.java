@@ -4,8 +4,11 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.ExamPaperCreateRequest;
 import com.learnplatform.dto.ExamPaperVO;
+import com.learnplatform.dto.SubjectiveAnswerReviewVO;
+import com.learnplatform.dto.SubjectiveGradingRequest;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.ExamPaperService;
+import com.learnplatform.service.SubjectiveExamGradingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,6 +45,9 @@ class AdminExamControllerTest {
 
     @Mock
     private ExamPaperService examPaperService;
+
+    @Mock
+    private SubjectiveExamGradingService subjectiveExamGradingService;
 
     @InjectMocks
     private AdminExamController adminExamController;
@@ -171,5 +177,31 @@ class AdminExamControllerTest {
                 .andExpect(jsonPath("$.code").value(0));
 
         verify(examPaperService).publishExamPaper(eq(1L));
+    }
+
+    @Test
+    void listsAndGradesPendingSubjectiveAnswers() throws Exception {
+        SubjectiveAnswerReviewVO pending = new SubjectiveAnswerReviewVO();
+        pending.setAnswerId(9L);
+        pending.setDisplayNumber("第41题");
+        when(subjectiveExamGradingService.listPending()).thenReturn(List.of(pending));
+        when(subjectiveExamGradingService.grade(eq(9L), any(SubjectiveGradingRequest.class), eq(1L)))
+                .thenReturn(pending);
+
+        mockMvc.perform(get("/api/admin/exam-papers/subjective-reviews/pending"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].displayNumber").value("第41题"));
+
+        mockMvc.perform(post("/api/admin/exam-papers/subjective-reviews/{answerId}", 9L)
+                        .with(mockAdmin(1L))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"points":[{"pointKey":"idea","awardedScore":4}],
+                                 "reviewComment":"完成"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.answerId").value(9));
+
+        verify(subjectiveExamGradingService).grade(eq(9L), any(SubjectiveGradingRequest.class), eq(1L));
     }
 }

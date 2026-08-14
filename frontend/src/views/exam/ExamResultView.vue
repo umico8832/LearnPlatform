@@ -18,6 +18,15 @@
               </div>
             </div>
 
+            <el-alert
+              v-if="result.status === 3"
+              title="客观题已判分，主观题正在等待管理员按评分点复核；当前分数为暂定分。"
+              type="warning"
+              :closable="false"
+              show-icon
+              class="grading-alert"
+            />
+
             <dl class="score-meta">
               <div class="meta-item">
                 <dt class="meta-label">用时</dt>
@@ -74,21 +83,21 @@
                 <span class="q-index">{{ answer.displayNumber || `${idx + 1}.` }}</span>
                 <el-tag size="small">{{ getTypeLabel(answer.questionType) }}</el-tag>
                 <span class="q-score-tag">满分 {{ answer.fullScore }} 分</span>
-                <el-tag :type="answer.isCorrect === 1 ? 'success' : 'danger'" size="small" class="result-tag">
-                  {{ answer.isCorrect === 1 ? '正确' : '错误' }}
+                <el-tag :type="answer.gradingStatus === 'PENDING' ? 'warning' : answer.isCorrect === 1 ? 'success' : 'danger'" size="small" class="result-tag">
+                  {{ answer.gradingStatus === 'PENDING' ? '待人工批阅' : answer.isCorrect === 1 ? '正确' : '错误' }}
                 </el-tag>
-                <span class="earned-score">得 {{ answer.score }} 分</span>
+                <span class="earned-score">{{ answer.score == null ? '待评分' : `得 ${answer.score} 分` }}</span>
               </div>
 
               <div class="answer-content">{{ answer.content }}</div>
               <dl class="answer-detail">
                 <div class="detail-row">
                   <dt class="detail-label">我的答案</dt>
-                  <dd :class="['detail-value', answer.isCorrect === 1 ? 'correct' : 'wrong']">
+                  <dd :class="['detail-value', answer.isCorrect === 1 ? 'correct' : answer.gradingStatus === 'PENDING' ? '' : 'wrong']">
                     {{ answer.userAnswer || '未作答' }}
                   </dd>
                 </div>
-                <div v-if="answer.isCorrect !== 1" class="detail-row">
+                <div v-if="answer.gradingStatus !== 'PENDING' && answer.isCorrect !== 1" class="detail-row">
                   <dt class="detail-label">正确答案</dt>
                   <dd class="detail-value correct">{{ answer.correctAnswer }}</dd>
                 </div>
@@ -96,9 +105,13 @@
                   <dt class="detail-label">解析</dt>
                   <dd class="detail-value analysis">{{ answer.analysis }}</dd>
                 </div>
+                <div v-if="answer.reviewComment" class="detail-row">
+                  <dt class="detail-label">批阅意见</dt>
+                  <dd class="detail-value analysis">{{ answer.reviewComment }}</dd>
+                </div>
               </dl>
 
-              <div v-if="answer.isCorrect !== 1 && result.courseId" class="answer-actions">
+              <div v-if="answer.gradingStatus !== 'PENDING' && answer.isCorrect !== 1 && result.courseId" class="answer-actions">
                 <el-button type="primary" plain @click="reviewWrongAnswer(answer.questionId)">
                   复习此错题
                 </el-button>
@@ -133,7 +146,7 @@ const scoreRate = computed(() => {
 })
 
 const answers = computed(() => result.value?.answers || [])
-const wrongAnswers = computed(() => answers.value.filter(answer => answer.isCorrect !== 1))
+const wrongAnswers = computed(() => answers.value.filter(answer => answer.gradingStatus !== 'PENDING' && answer.isCorrect === 0))
 const isOfficialPaper = computed(() => result.value?.paperType === 'OFFICIAL_EXAM')
 const officialPaperTitle = computed(() => {
   if (!result.value) return ''
