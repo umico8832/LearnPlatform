@@ -86,6 +86,29 @@ class PrivateExamImportServiceTest {
     }
 
     @Test
+    void previewsEnglishStructuredTextExtractedFromDocx() {
+        PrivateExamImportRequest request = request();
+        request.setSourceName("paper.docx");
+        request.setSourceFormat("DOCX");
+        request.setContent("""
+                Type: SINGLE_CHOICE
+                Question: Which access order does a queue follow?
+                Options:
+                A. First in, first out
+                B. Last in, first out
+                Answer: A
+                Analysis: A queue follows FIFO.
+                Score: 2
+                """);
+
+        PrivateExamImportPreviewVO preview = service.previewWithSourceHash(request, "a".repeat(64));
+
+        assertEquals(1, preview.getQuestionCount());
+        assertEquals("Which access order does a queue follow?", preview.getQuestions().get(0).getContent());
+        assertEquals(true, preview.getQuestions().get(0).getOptions().get(0).getCorrect());
+    }
+
+    @Test
     void rejectsConfirmationWhenSourceChangedAfterPreview() {
         PrivateExamImportConfirmRequest request = confirmRequest();
         request.setExpectedContentHash("0".repeat(64));

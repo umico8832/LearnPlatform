@@ -38,7 +38,9 @@ public class PrivateExamImportService {
     private static final int MAX_QUESTIONS = 100;
     private static final Set<String> SUPPORTED_TYPES = Set.of(
             "SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE");
-    private static final Pattern TEXT_FIELD = Pattern.compile("^(题型|题干|题目|选项|答案|解析|分值)[:：]\\s*(.*)$");
+    private static final Pattern TEXT_FIELD = Pattern.compile(
+            "^(题型|题干|题目|选项|答案|解析|分值|type|question|options|answer|analysis|score)[:：]\\s*(.*)$",
+            Pattern.CASE_INSENSITIVE);
     private static final Pattern TEXT_OPTION = Pattern.compile("^([A-Fa-f])[.、．]\\s*(.+)$");
 
     private final MarkdownQuestionParser markdownQuestionParser;
@@ -221,7 +223,7 @@ public class PrivateExamImportService {
 
     private List<ParsedQuestion> parseAndValidate(PrivateExamImportRequest request, boolean requireAnswers) {
         List<ParsedQuestion> questions = "TEXT".equals(request.getSourceFormat())
-                || "PDF".equals(request.getSourceFormat())
+                || "PDF".equals(request.getSourceFormat()) || "DOCX".equals(request.getSourceFormat())
                 ? parseText(request.getContent()) : parseMarkdown(request.getContent());
         if (questions.isEmpty()) {
             throw new BusinessException(ResultCode.VALIDATION_ERROR, "未识别到题目");
@@ -267,15 +269,15 @@ public class PrivateExamImportService {
             if (line.isEmpty()) continue;
             Matcher field = TEXT_FIELD.matcher(line);
             if (field.matches()) {
-                String name = field.group(1);
+                String name = field.group(1).toLowerCase(Locale.ROOT);
                 String value = field.group(2).trim();
-                optionsBlock = "选项".equals(name);
+                optionsBlock = "选项".equals(name) || "options".equals(name);
                 switch (name) {
-                    case "题型" -> current.type = markdownQuestionParser.normalizeQuestionType(value);
-                    case "题干", "题目" -> current.content = value;
-                    case "答案" -> current.answer = value;
-                    case "解析" -> current.analysis = value;
-                    case "分值" -> current.score = parseScore(value);
+                    case "题型", "type" -> current.type = markdownQuestionParser.normalizeQuestionType(value);
+                    case "题干", "题目", "question" -> current.content = value;
+                    case "答案", "answer" -> current.answer = value;
+                    case "解析", "analysis" -> current.analysis = value;
+                    case "分值", "score" -> current.score = parseScore(value);
                     default -> { }
                 }
                 continue;
@@ -420,7 +422,8 @@ public class PrivateExamImportService {
 
     private String formatLabel(String format) {
         if ("MARKDOWN".equals(format)) return "Markdown";
-        return "PDF".equals(format) ? "PDF" : "文本";
+        if ("PDF".equals(format)) return "PDF";
+        return "DOCX".equals(format) ? "DOCX" : "文本";
     }
 
     private record RawOption(String label, String content) { }

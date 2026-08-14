@@ -19,6 +19,9 @@ import com.learnplatform.dto.PrivateExamDraftVO;
 import com.learnplatform.dto.PrivateExamPdfConfirmRequest;
 import com.learnplatform.dto.PrivateExamPdfDraftCreateRequest;
 import com.learnplatform.dto.PrivateExamPdfRequest;
+import com.learnplatform.dto.PrivateExamDocxConfirmRequest;
+import com.learnplatform.dto.PrivateExamDocxDraftCreateRequest;
+import com.learnplatform.dto.PrivateExamDocxRequest;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.ExamService;
 import com.learnplatform.service.ExamPaperService;
@@ -27,6 +30,7 @@ import com.learnplatform.service.PrivateExamImportService;
 import com.learnplatform.service.PrivateExamDraftService;
 import com.learnplatform.service.PrivateExamContentLifecycleService;
 import com.learnplatform.service.PrivateExamPdfImportService;
+import com.learnplatform.service.PrivateExamDocxImportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -51,13 +55,15 @@ public class ExamController {
     private final PrivateExamDraftService privateExamDraftService;
     private final PrivateExamContentLifecycleService privateExamContentLifecycleService;
     private final PrivateExamPdfImportService privateExamPdfImportService;
+    private final PrivateExamDocxImportService privateExamDocxImportService;
 
     public ExamController(ExamService examService, ExamPaperService examPaperService,
                           ExamPaperLearningService examPaperLearningService,
                           PrivateExamImportService privateExamImportService,
                           PrivateExamDraftService privateExamDraftService,
                           PrivateExamContentLifecycleService privateExamContentLifecycleService,
-                          PrivateExamPdfImportService privateExamPdfImportService) {
+                          PrivateExamPdfImportService privateExamPdfImportService,
+                          PrivateExamDocxImportService privateExamDocxImportService) {
         this.examService = examService;
         this.examPaperService = examPaperService;
         this.examPaperLearningService = examPaperLearningService;
@@ -65,6 +71,7 @@ public class ExamController {
         this.privateExamDraftService = privateExamDraftService;
         this.privateExamContentLifecycleService = privateExamContentLifecycleService;
         this.privateExamPdfImportService = privateExamPdfImportService;
+        this.privateExamDocxImportService = privateExamDocxImportService;
     }
 
 
@@ -120,6 +127,29 @@ public class ExamController {
             @RequestPart("file") MultipartFile file,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return R.ok(privateExamPdfImportService.createDraft(metadata, file, userDetails.getUserId()));
+    }
+
+    @PostMapping(value = "/private-papers/import/docx/preview", consumes = "multipart/form-data")
+    public R<PrivateExamImportPreviewVO> previewPrivatePaperDocx(
+            @Valid @RequestPart("metadata") PrivateExamDocxRequest metadata,
+            @RequestPart("file") MultipartFile file) {
+        return R.ok(privateExamDocxImportService.preview(metadata, file));
+    }
+
+    @PostMapping(value = "/private-papers/import/docx/confirm", consumes = "multipart/form-data")
+    public R<ExamPaperVO> confirmPrivatePaperDocx(
+            @Valid @RequestPart("metadata") PrivateExamDocxConfirmRequest metadata,
+            @RequestPart("file") MultipartFile file,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(privateExamDocxImportService.confirm(metadata, file, userDetails.getUserId()));
+    }
+
+    @PostMapping(value = "/private-papers/drafts/docx", consumes = "multipart/form-data")
+    public R<PrivateExamDraftVO> createPrivatePaperDocxDraft(
+            @Valid @RequestPart("metadata") PrivateExamDocxDraftCreateRequest metadata,
+            @RequestPart("file") MultipartFile file,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(privateExamDocxImportService.createDraft(metadata, file, userDetails.getUserId()));
     }
 
     @PostMapping("/private-papers/import/confirm")

@@ -220,7 +220,7 @@ export interface PrivateExamImportRequest {
   courseId: number
   duration: number
   sourceName: string
-  sourceFormat: 'MARKDOWN' | 'TEXT' | 'PDF'
+  sourceFormat: 'MARKDOWN' | 'TEXT' | 'PDF' | 'DOCX'
   content: string
 }
 
@@ -273,7 +273,7 @@ export interface PrivateExamDraft {
 export interface PrivateExamSource {
   paperId: number
   sourceName: string
-  sourceFormat: 'MARKDOWN' | 'TEXT' | 'PDF'
+  sourceFormat: 'MARKDOWN' | 'TEXT' | 'PDF' | 'DOCX'
   contentHash: string
   originalContent: string
   createTime: string
@@ -338,45 +338,75 @@ export function previewPrivateExamImport(data: PrivateExamImportRequest) {
   return request.post<unknown, ApiResponse<PrivateExamImportPreview>>('/exam/private-papers/import/preview', data)
 }
 
-export interface PrivateExamPdfMetadata {
+export interface PrivateExamFileMetadata {
   title: string
   courseId: number
   duration: number
 }
 
-function pdfFormData(metadata: object, file: File) {
+function fileFormData(metadata: object, file: File) {
   const data = new FormData()
   data.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }))
   data.append('file', file)
   return data
 }
 
-export function previewPrivateExamPdf(metadata: PrivateExamPdfMetadata, file: File) {
+export function previewPrivateExamPdf(metadata: PrivateExamFileMetadata, file: File) {
   return request.post<unknown, ApiResponse<PrivateExamImportPreview>>(
     '/exam/private-papers/import/pdf/preview',
-    pdfFormData(metadata, file),
+    fileFormData(metadata, file),
     { headers: { 'Content-Type': 'multipart/form-data' } },
   )
 }
 
 export function confirmPrivateExamPdf(
-  metadata: PrivateExamPdfMetadata & { expectedContentHash: string; confirmed: true },
+  metadata: PrivateExamFileMetadata & { expectedContentHash: string; confirmed: true },
   file: File,
 ) {
   return request.post<unknown, ApiResponse<ExamPaperVO>>(
     '/exam/private-papers/import/pdf/confirm',
-    pdfFormData(metadata, file),
+    fileFormData(metadata, file),
     { headers: { 'Content-Type': 'multipart/form-data' } },
   )
 }
 
 export function createPrivateExamPdfDraft(
-  metadata: PrivateExamPdfMetadata & { expectedContentHash: string },
+  metadata: PrivateExamFileMetadata & { expectedContentHash: string },
   file: File,
 ) {
   return request.post<unknown, ApiResponse<PrivateExamDraft>>(
     '/exam/private-papers/drafts/pdf',
-    pdfFormData(metadata, file),
+    fileFormData(metadata, file),
+    { headers: { 'Content-Type': 'multipart/form-data' } },
+  )
+}
+
+export function previewPrivateExamDocx(metadata: PrivateExamFileMetadata, file: File) {
+  return request.post<unknown, ApiResponse<PrivateExamImportPreview>>(
+    '/exam/private-papers/import/docx/preview',
+    fileFormData(metadata, file),
+    { headers: { 'Content-Type': 'multipart/form-data' } },
+  )
+}
+
+export function confirmPrivateExamDocx(
+  metadata: PrivateExamFileMetadata & { expectedContentHash: string; confirmed: true },
+  file: File,
+) {
+  return request.post<unknown, ApiResponse<ExamPaperVO>>(
+    '/exam/private-papers/import/docx/confirm',
+    fileFormData(metadata, file),
+    { headers: { 'Content-Type': 'multipart/form-data' } },
+  )
+}
+
+export function createPrivateExamDocxDraft(
+  metadata: PrivateExamFileMetadata & { expectedContentHash: string },
+  file: File,
+) {
+  return request.post<unknown, ApiResponse<PrivateExamDraft>>(
+    '/exam/private-papers/drafts/docx',
+    fileFormData(metadata, file),
     { headers: { 'Content-Type': 'multipart/form-data' } },
   )
 }

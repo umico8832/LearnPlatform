@@ -97,9 +97,10 @@ V75 只增加来源和原始题号结构，不导入任何试卷或题目。`exa
 V83 为 `exam_paper` 和 `question` 增加 `owner_user_id` 与 `visibility`；存量内容通过非空默认值保持
 `PUBLIC`。确认导入的试卷使用 `paper_type=USER_PRIVATE`、`visibility=PRIVATE`、`status=1` 和
 `import_status=CONFIRMED`，其拆解题目也绑定相同所有者与私有可见性。`source_record_id` 指向
-`user_exam_source`，后者保存原始名称、`MARKDOWN/TEXT/PDF` 格式、SHA-256 和用户确认时的解析正文。
+`user_exam_source`，后者保存原始名称、`MARKDOWN/TEXT/PDF/DOCX` 格式、SHA-256 和用户确认时的解析正文。
 Markdown/文本的哈希针对规范化输入内容；PDF 的哈希针对上传文件原始字节，正文保存 PDFBox 提取文本，
-不保存 PDF 二进制文件。预览、确认和草稿创建使用同一哈希连续性约束。
+DOCX 同样以原文件字节计算哈希，正文只保存 Apache POI 提取的普通段落和表格文本；两者均不保存原始
+二进制文件。预览、确认和草稿创建使用同一哈希连续性约束。
 
 预览不写库；确认时原始资料、试卷、题目、选项和关联关系在同一事务中创建。用户端读取、考试开始和
 学习会话均校验试卷可见性，公共题库、练习候选、搜索、相似题、AI 资产、管理列表和管理统计排除其他

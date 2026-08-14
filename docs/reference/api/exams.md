@@ -17,6 +17,9 @@
 | `POST /api/exam/private-papers/import/pdf/preview` | 从文本型 PDF 提取已有文本并进入同一无写库预览 |
 | `POST /api/exam/private-papers/import/pdf/confirm` | 重新上传同一 PDF，以原文件哈希确认并创建本人私有试卷 |
 | `POST /api/exam/private-papers/drafts/pdf` | 重新上传同一 PDF，将含缺失答案的预览保存为本人复核草稿 |
+| `POST /api/exam/private-papers/import/docx/preview` | 从有限 DOCX 提取普通段落和表格并进入同一无写库预览 |
+| `POST /api/exam/private-papers/import/docx/confirm` | 重新上传同一 DOCX，以原文件哈希确认并创建本人私有试卷 |
+| `POST /api/exam/private-papers/drafts/docx` | 重新上传同一 DOCX，将含缺失答案的预览保存为本人复核草稿 |
 | `GET /api/exam/private-papers/drafts` | 查询本人尚未确认启用的私有试卷草稿 |
 | `GET /api/exam/private-papers/drafts/{draftId}` | 读取本人草稿和逐题复核状态 |
 | `POST /api/exam/private-papers/drafts/{draftId}/questions/{questionId}/ai-answer` | 为一题生成受结构校验的 AI 答案与解析建议 |
@@ -37,16 +40,20 @@
 
 ## 用户私有试卷导入
 
-首期接受不超过 100000 字符、最多 100 题的结构化 `MARKDOWN`、`TEXT`，以及最大 10MB、200 页且已有
-文本层的 `PDF`，并仅支持单选、多选和判断题。PDF 接口使用 `multipart/form-data`，其中 `metadata` 为
-JSON part、`file` 为 PDF part；服务端校验扩展名、文件头、大小、页数和提取文本长度。空文本、扫描件、
+首期接受不超过 100000 字符、最多 100 题的结构化 `MARKDOWN`、`TEXT`，最大 10MB、200 页且已有
+文本层的 `PDF`，以及最大 10MB 且只含普通段落/表格文本的 `DOCX`，并仅支持单选、多选和判断题。
+文件接口使用 `multipart/form-data`，其中 `metadata` 为
+JSON part、`file` 为上传文件 part；服务端校验扩展名、文件头、大小和提取文本长度，PDF 额外校验页数。空文本、扫描件、
 加密或损坏 PDF 会明确拒绝，不执行 OCR、复杂版式猜测或外部内容识别。
+DOCX 会按正文顺序提取普通段落和表格单元格，支持中英文结构化字段；图片、公式、文本框、嵌套表格、
+页眉页脚及其他复杂对象会明确拒绝，不尝试静默丢弃后继续导入。
 
 预览接口校验课程、题干、选项和分值，但不产生数据库写入；答案完整时，确认接口必须提交同一原始内容的
 SHA-256 哈希及 `confirmed=true`，内容变化后必须重新预览。PDF 的哈希以原始上传字节计算，确认或创建
-草稿时必须重新上传同一文件，服务端会再次校验、提取并比对哈希。确认成功后试卷和拆解题目均标记为
+草稿时必须重新上传同一文件，服务端会再次校验、提取并比对哈希；DOCX 使用相同的原始字节哈希约束。
+确认成功后试卷和拆解题目均标记为
 `PRIVATE`、绑定 `ownerUserId`，原始名称、格式、哈希和全文保存到仅所有者可读取的资料记录。
-PDF 资料记录保存文件名、`PDF` 格式、原文件哈希和提取文本，不持久化原始二进制文件。
+PDF/DOCX 资料记录保存文件名、格式、原文件哈希和提取文本，不持久化原始二进制文件。
 
 存在缺失答案时只能创建复核草稿，不能直接确认导入。每道缺失答案题可单独调用 AI 建议接口；模型输出
 必须是严格 JSON，答案标签必须属于现有选项并满足单选/判断一个、多选至少两个的结构规则。AI 建议不会

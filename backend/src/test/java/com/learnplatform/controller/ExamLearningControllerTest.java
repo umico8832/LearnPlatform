@@ -13,6 +13,7 @@ import com.learnplatform.dto.PrivateExamImportRequest;
 import com.learnplatform.dto.PrivateExamDraftCreateRequest;
 import com.learnplatform.dto.PrivateExamDraftVO;
 import com.learnplatform.dto.PrivateExamPdfRequest;
+import com.learnplatform.dto.PrivateExamDocxRequest;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.ExamPaperLearningService;
 import com.learnplatform.service.ExamPaperService;
@@ -21,6 +22,7 @@ import com.learnplatform.service.PrivateExamImportService;
 import com.learnplatform.service.PrivateExamDraftService;
 import com.learnplatform.service.PrivateExamContentLifecycleService;
 import com.learnplatform.service.PrivateExamPdfImportService;
+import com.learnplatform.service.PrivateExamDocxImportService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,6 +58,7 @@ class ExamLearningControllerTest {
     @Mock private PrivateExamDraftService privateExamDraftService;
     @Mock private PrivateExamContentLifecycleService privateExamContentLifecycleService;
     @Mock private PrivateExamPdfImportService privateExamPdfImportService;
+    @Mock private PrivateExamDocxImportService privateExamDocxImportService;
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -63,7 +66,7 @@ class ExamLearningControllerTest {
     void setUp() {
         ExamController controller = new ExamController(
                 examService, examPaperService, learningService, privateExamImportService, privateExamDraftService,
-                privateExamContentLifecycleService, privateExamPdfImportService);
+                privateExamContentLifecycleService, privateExamPdfImportService, privateExamDocxImportService);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
@@ -229,6 +232,28 @@ class ExamLearningControllerTest {
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(
                         "/api/exam/private-papers/import/pdf/preview")
+                        .file(metadataPart).file(file).with(mockUser(7L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.questionCount").value(1));
+    }
+
+    @Test
+    void previewsDocxThroughMultipartEndpoint() throws Exception {
+        PrivateExamDocxRequest metadata = new PrivateExamDocxRequest();
+        metadata.setTitle("DOCX 试卷");
+        metadata.setCourseId(10L);
+        metadata.setDuration(30);
+        PrivateExamImportPreviewVO preview = new PrivateExamImportPreviewVO();
+        preview.setQuestionCount(1);
+        when(privateExamDocxImportService.preview(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any())).thenReturn(preview);
+        MockMultipartFile metadataPart = new MockMultipartFile("metadata", "", "application/json",
+                objectMapper.writeValueAsBytes(metadata));
+        MockMultipartFile file = new MockMultipartFile("file", "paper.docx",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "PK-test".getBytes());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(
+                        "/api/exam/private-papers/import/docx/preview")
                         .file(metadataPart).file(file).with(mockUser(7L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.questionCount").value(1));

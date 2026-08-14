@@ -27,6 +27,7 @@
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <spotbugs.plugin.version>4.10.2.0</spotbugs.plugin.version>
         <pdfbox.version>3.0.8</pdfbox.version>
+        <poi.version>5.5.1</poi.version>
         <excludedGroups>integration</excludedGroups>
     </properties>
 
@@ -119,6 +120,12 @@
             <groupId>com.alibaba</groupId>
             <artifactId>easyexcel</artifactId>
             <version>3.3.4</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.poi</groupId>
+                    <artifactId>poi-ooxml-schemas</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Extract the existing text layer from user-provided PDFs; OCR is intentionally excluded. -->
@@ -132,6 +139,13 @@
                     <artifactId>commons-logging</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <!-- Extract ordinary paragraphs and tables from user-provided DOCX files. -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>${poi.version}</version>
         </dependency>
 
         <!-- Logstash Logback Encoder (structured JSON logging) -->

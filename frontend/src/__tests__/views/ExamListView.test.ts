@@ -11,6 +11,9 @@ const {
   mockPreviewPrivateExamPdf,
   mockConfirmPrivateExamPdf,
   mockCreatePrivateExamPdfDraft,
+  mockPreviewPrivateExamDocx,
+  mockConfirmPrivateExamDocx,
+  mockCreatePrivateExamDocxDraft,
   mockGetPrivateExamSource,
   mockCreatePrivateExamDraft,
   mockGeneratePrivateExamDraftAnswer,
@@ -31,6 +34,9 @@ const {
   mockPreviewPrivateExamPdf: vi.fn(),
   mockConfirmPrivateExamPdf: vi.fn(),
   mockCreatePrivateExamPdfDraft: vi.fn(),
+  mockPreviewPrivateExamDocx: vi.fn(),
+  mockConfirmPrivateExamDocx: vi.fn(),
+  mockCreatePrivateExamDocxDraft: vi.fn(),
   mockGetPrivateExamSource: vi.fn(),
   mockCreatePrivateExamDraft: vi.fn(),
   mockGeneratePrivateExamDraftAnswer: vi.fn(),
@@ -54,6 +60,9 @@ vi.mock('@/api/exam', () => ({
   previewPrivateExamPdf: (...args: unknown[]) => mockPreviewPrivateExamPdf(...args),
   confirmPrivateExamPdf: (...args: unknown[]) => mockConfirmPrivateExamPdf(...args),
   createPrivateExamPdfDraft: (...args: unknown[]) => mockCreatePrivateExamPdfDraft(...args),
+  previewPrivateExamDocx: (...args: unknown[]) => mockPreviewPrivateExamDocx(...args),
+  confirmPrivateExamDocx: (...args: unknown[]) => mockConfirmPrivateExamDocx(...args),
+  createPrivateExamDocxDraft: (...args: unknown[]) => mockCreatePrivateExamDocxDraft(...args),
   getPrivateExamSource: (...args: unknown[]) => mockGetPrivateExamSource(...args),
   createPrivateExamDraft: (...args: unknown[]) => mockCreatePrivateExamDraft(...args),
   generatePrivateExamDraftAnswer: (...args: unknown[]) => mockGeneratePrivateExamDraftAnswer(...args),
@@ -347,7 +356,7 @@ describe('ExamListView paper provenance', () => {
     const file = new File(['%PDF-test'], 'paper.pdf', { type: 'application/pdf' })
     const vm = wrapper.vm as unknown as {
       importForm: Record<string, unknown>
-      pdfFile: File | null
+      sourceFile: File | null
       previewImport: () => Promise<void>
       confirmImport: () => Promise<void>
     }
@@ -359,13 +368,61 @@ describe('ExamListView paper provenance', () => {
       sourceFormat: 'PDF',
       content: '',
     }
-    vm.pdfFile = file
+    vm.sourceFile = file
 
     await vm.previewImport()
     expect(mockPreviewPrivateExamPdf).toHaveBeenCalledWith({ title: 'PDF 试卷', courseId: 10, duration: 30 }, file)
     await vm.confirmImport()
     expect(mockConfirmPrivateExamPdf).toHaveBeenCalledWith(
       { title: 'PDF 试卷', courseId: 10, duration: 30, expectedContentHash: hash, confirmed: true },
+      file,
+    )
+  })
+
+  it('DOCX重复提交原文件并使用预览哈希确认', async () => {
+    const hash = 'd'.repeat(64)
+    mockPreviewPrivateExamDocx.mockResolvedValue({
+      code: 0,
+      data: {
+        title: 'DOCX 试卷',
+        courseId: 10,
+        duration: 30,
+        sourceName: 'paper.docx',
+        sourceFormat: 'DOCX',
+        contentHash: hash,
+        questionCount: 1,
+        totalScore: 2,
+        requiresAnswerReview: false,
+        questions: [],
+      },
+    })
+    mockConfirmPrivateExamDocx.mockResolvedValue({ code: 0, data: { id: 53 } })
+    const wrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
+    await flushPromises()
+    const file = new File(['PK-docx-test'], 'paper.docx', {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    })
+    const vm = wrapper.vm as unknown as {
+      importForm: Record<string, unknown>
+      sourceFile: File | null
+      previewImport: () => Promise<void>
+      confirmImport: () => Promise<void>
+    }
+    vm.importForm = {
+      title: 'DOCX 试卷',
+      courseId: 10,
+      duration: 30,
+      sourceName: 'paper.docx',
+      sourceFormat: 'DOCX',
+      content: '',
+    }
+    vm.sourceFile = file
+
+    await vm.previewImport()
+    expect(mockPreviewPrivateExamDocx).toHaveBeenCalledWith({ title: 'DOCX 试卷', courseId: 10, duration: 30 }, file)
+    await vm.confirmImport()
+    expect(mockConfirmPrivateExamDocx).toHaveBeenCalledWith(
+      { title: 'DOCX 试卷', courseId: 10, duration: 30, expectedContentHash: hash, confirmed: true },
       file,
     )
   })
