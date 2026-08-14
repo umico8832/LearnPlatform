@@ -155,6 +155,81 @@ test('用户刷新后可继续限时考试并查看自动判分结果', async ({
   await expect(page.locator('.result-tag').filter({ hasText: '正确' })).toHaveCount(3)
 })
 
+test('用户可完成2026真题学习与限时考试并复盘可信来源', async ({ page }) => {
+  await loginAs(page, 'testuser', 'test123')
+
+  await page.goto('/courses')
+  const courseCard = page.locator('.course-card').filter({ hasText: '408 数据结构' })
+  await expect(courseCard).toBeVisible()
+  await courseCard.getByRole('button', { name: '课程详情' }).click()
+  await expect(page.getByRole('heading', { name: '408 数据结构' })).toBeVisible()
+  const joinButton = page.getByRole('button', { name: '加入课程库' })
+  if (await joinButton.isVisible()) {
+    await joinButton.click()
+    await expect(page).toHaveURL(/\/my-courses\/\d+$/)
+  } else {
+    await expect(page.getByRole('button', { name: '进入课程总览' })).toBeVisible()
+  }
+
+  await page.goto('/exams')
+  const officialCard = page.locator('.exam-card').filter({ hasText: '2026 年 408 真题·数据结构选择题' })
+  await expect(officialCard).toBeVisible()
+  await expect(officialCard).toContainText('官方原题')
+  await expect(officialCard).toContainText('2026 · 全国硕士研究生招生考试计算机学科专业基础')
+  await expect(officialCard).toContainText('https://csgraduates.com/study_methods/408quiz/2026/')
+  await expect(officialCard).toContainText('11 题')
+  await expect(officialCard).toContainText('22 分')
+
+  await officialCard.getByRole('button', { name: '学习模式' }).click()
+  await expect(page).toHaveURL(/\/exams\/learn\/\d+$/)
+  await expect(page.getByRole('heading', { name: '2026 年 408 真题·数据结构选择题' })).toBeVisible()
+  await expect(page.locator('.learning-header')).toContainText(
+    '2026 · 全国硕士研究生招生考试计算机学科专业基础综合 · 来源：https://csgraduates.com/study_methods/408quiz/2026/',
+  )
+  await expect(page.locator('.question-meta')).toContainText('第1题')
+  await expect(page.locator('.question-section')).toHaveText('一、单项选择题（数据结构）')
+  await expect(page.getByRole('button', { name: 'AI 深度解析' })).toBeDisabled()
+
+  for (let questionNumber = 1; questionNumber <= 11; questionNumber += 1) {
+    if (questionNumber > 1) {
+      await page.locator('.sheet-item').filter({ hasText: `第${questionNumber}题` }).click()
+    }
+    await page.locator('.question-card .option-item').first().click()
+    await page.getByRole('button', { name: '提交答案' }).click()
+    await expect(page.locator('.answer-result')).toBeVisible()
+  }
+  await expect(page.getByRole('button', { name: 'AI 深度解析' })).toBeEnabled()
+  await page.getByRole('button', { name: '完成本轮学习' }).click()
+  await expect(page.locator('.learning-header')).toContainText('本轮已完成')
+
+  await page.goto('/exams')
+  const examCard = page.locator('.exam-card').filter({ hasText: '2026 年 408 真题·数据结构选择题' })
+  await examCard.getByRole('button', { name: '考试模式' }).click()
+  await expect(page).toHaveURL(/\/exams\/take\/\d+$/)
+  await expect(page.locator('.question-area')).toBeVisible()
+  for (let questionNumber = 1; questionNumber <= 11; questionNumber += 1) {
+    await page.locator('.question-area .option-item').first().click()
+    if (questionNumber < 11) {
+      await page.getByRole('button', { name: '下一题' }).click()
+    }
+  }
+  await page.locator('.take-header').getByRole('button', { name: '提交试卷' }).click()
+  const confirmDialog = page.getByRole('dialog', { name: '提交确认' })
+  await confirmDialog.getByRole('button', { name: '确定' }).click()
+
+  await expect(page).toHaveURL(/\/exams\/result\/\d+$/)
+  await expect(page.getByRole('heading', { name: '2026 年 408 真题·数据结构选择题' })).toBeVisible()
+  await expect(page.locator('.score-number')).toHaveText('4')
+  await expect(page.locator('.source-panel')).toContainText('来源已核验')
+  await expect(page.locator('.source-panel')).toContainText('2026 · 全国硕士研究生招生考试计算机学科专业基础')
+  await expect(page.locator('.source-panel')).toContainText(
+    'https://csgraduates.com/study_methods/408quiz/2026/',
+  )
+  await expect(page.locator('.result-tag')).toHaveCount(11)
+  await expect(page.locator('.answer-item').first()).toContainText('第1题')
+  await expect(page.locator('.answer-item').first()).toContainText('一、单项选择题（数据结构）')
+})
+
 test('用户投稿可由管理员审核并入库', async ({ page }) => {
   const questionContent = `E2E 投稿题目 ${Date.now()}`
 
