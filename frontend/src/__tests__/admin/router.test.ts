@@ -77,4 +77,19 @@ describe('独立管理端路由守卫', () => {
     await router.push('/questions')
     expect(router.currentRoute.value.name).toBe('AdminQuestionManage')
   })
+
+  it('独立管理端提供用户投稿和 AI 运营路由', async () => {
+    setToken('token')
+    state.userInfo = { role: 'ADMIN' }
+    const router = createAdminRouter(createMemoryHistory('/admin-app/'))
+    for (const [path, name] of [
+      ['/users', 'AdminUserManage'],
+      ['/submissions', 'AdminSubmissionManage'],
+      ['/ai-usage', 'AdminAiUsage'],
+    ] as const) {
+      await router.push(path)
+      await router.isReady()
+      expect(router.currentRoute.value.name).toBe(name)
+    }
+  })
 })

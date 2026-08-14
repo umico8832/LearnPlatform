@@ -11,6 +11,9 @@
         <router-link to="/questions">题目管理</router-link>
         <router-link to="/exams">试卷管理</router-link>
         <router-link to="/subjective-reviews">主观题批阅</router-link>
+        <router-link to="/users">用户管理</router-link>
+        <router-link to="/submissions">投稿管理</router-link>
+        <router-link to="/ai-usage">AI 调用分析</router-link>
       </nav>
       <a class="admin-shell-legacy" href="/admin">旧版管理入口</a>
     </aside>

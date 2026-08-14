@@ -605,7 +605,7 @@ const handleBulkImport = async () => {
 
 const goToQuestion = (id: number) => {
   showDetailDialog.value = false
-  router.push({ path: '/admin/questions', query: { highlight: id } })
+  router.push({ name: 'AdminQuestionManage', query: { highlight: id } })
 }
 
 // ========== AI 质检 ==========

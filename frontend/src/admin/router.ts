@@ -48,6 +48,24 @@ export function createAdminRouter(history: RouterHistory = createWebHistory(impo
             meta: { title: '题目管理' },
           },
           {
+            path: 'users',
+            name: 'AdminUserManage',
+            component: () => import('@/views/admin/UserManage.vue'),
+            meta: { title: '用户管理' },
+          },
+          {
+            path: 'submissions',
+            name: 'AdminSubmissionManage',
+            component: () => import('@/views/admin/SubmissionManage.vue'),
+            meta: { title: '投稿管理' },
+          },
+          {
+            path: 'ai-usage',
+            name: 'AdminAiUsage',
+            component: () => import('@/views/admin/AiUsageView.vue'),
+            meta: { title: 'AI 调用分析' },
+          },
+          {
             path: 'subjective-reviews',
             name: 'AdminSubjectiveReviews',
             component: () => import('@/views/admin/SubjectiveReviewView.vue'),

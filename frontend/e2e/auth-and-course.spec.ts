@@ -98,6 +98,14 @@ test('高频用户与管理页面可通过真实接口加载', async ({ page }) 
   await expect(page.getByRole('main').getByRole('heading', { name: '知识点管理', exact: true })).toBeVisible()
   await page.getByRole('navigation', { name: '管理导航' }).getByRole('link', { name: '题目管理' }).click()
   await expect(page.getByRole('main').getByRole('heading', { name: '题目管理', exact: true })).toBeVisible()
+  for (const [path, heading] of [
+    ['/admin-app/users', '用户管理'],
+    ['/admin-app/submissions', '投稿管理'],
+    ['/admin-app/ai-usage', 'AI 调用分析'],
+  ] as const) {
+    await page.goto(path)
+    await expect(page.getByRole('main').getByRole('heading', { name: heading, exact: true })).toBeVisible()
+  }
 
   expect(apiServerErrors, `页面加载期间出现 5xx 接口：\n${apiServerErrors.join('\n')}`).toEqual([])
   expect(consoleErrors, `页面加载期间出现 console.error：\n${consoleErrors.join('\n')}`).toEqual([])
