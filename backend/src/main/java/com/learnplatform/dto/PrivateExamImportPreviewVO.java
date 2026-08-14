@@ -11,6 +11,7 @@ public class PrivateExamImportPreviewVO {
     private String contentHash;
     private Integer questionCount;
     private Integer totalScore;
+    private Boolean requiresAnswerReview;
     private List<QuestionPreview> questions;
 
     public String getTitle() { return title; }
@@ -29,6 +30,8 @@ public class PrivateExamImportPreviewVO {
     public void setQuestionCount(Integer questionCount) { this.questionCount = questionCount; }
     public Integer getTotalScore() { return totalScore; }
     public void setTotalScore(Integer totalScore) { this.totalScore = totalScore; }
+    public Boolean getRequiresAnswerReview() { return requiresAnswerReview; }
+    public void setRequiresAnswerReview(Boolean requiresAnswerReview) { this.requiresAnswerReview = requiresAnswerReview; }
     public List<QuestionPreview> getQuestions() { return questions; }
     public void setQuestions(List<QuestionPreview> questions) { this.questions = questions; }
 
@@ -38,6 +41,7 @@ public class PrivateExamImportPreviewVO {
         private String answer;
         private String analysis;
         private Integer score;
+        private Boolean answerComplete;
         private List<OptionPreview> options;
 
         public String getContent() { return content; }
@@ -50,6 +54,8 @@ public class PrivateExamImportPreviewVO {
         public void setAnalysis(String analysis) { this.analysis = analysis; }
         public Integer getScore() { return score; }
         public void setScore(Integer score) { this.score = score; }
+        public Boolean getAnswerComplete() { return answerComplete; }
+        public void setAnswerComplete(Boolean answerComplete) { this.answerComplete = answerComplete; }
         public List<OptionPreview> getOptions() { return options; }
         public void setOptions(List<OptionPreview> options) { this.options = options; }
     }

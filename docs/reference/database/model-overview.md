@@ -21,7 +21,7 @@ flowchart LR
 | 用户与内容 | `user`、`course`、`knowledge_point`、`user_course`、`question`、`question_option`、`question_knowledge_point` |
 | 互动与投稿 | `user_favorite_question`、`question_comment`、`comment_like`、`question_submission`、`question_correction_report`、`question_review_record`、`question_version` |
 | 练习与复习 | `practice_record`、`wrong_question`、`learning_plan`、`question_review_schedule`、`course_learning_event` |
-| 试卷与考试 | `exam_paper`、`exam_question`、`exam_record`、`exam_answer`、`subjective_grading_point`、`exam_learning_session`、`exam_learning_answer`、`exam_learning_ai_interaction`、`user_exam_source` |
+| 试卷与考试 | `exam_paper`、`exam_question`、`exam_record`、`exam_answer`、`subjective_grading_point`、`exam_learning_session`、`exam_learning_answer`、`exam_learning_ai_interaction`、`user_exam_source`、`private_exam_import_draft`、`private_exam_draft_question` |
 | AI 与运营 | `ai_call_log`、`ai_quota_audit_log`、`ai_usage_alert`、`question_ai_asset`、`ai_asset_feedback`、`ai_asset_view`、`ai_variant_training`、`ai_variant_question` |
 
 ## 关系原则
@@ -33,6 +33,8 @@ flowchart LR
 - `wrong_question` 和 `question_review_schedule` 是从学习行为派生、但具有独立生命周期的用户状态。
 - AI 学习效果由资产查看、变式训练和后续练习记录组合观察，不单独保存“AI 有效”结论。
 - 用户私有试卷与拆解题目绑定所有者和 `PRIVATE` 可见性；原始资料单独保存，不进入公共内容治理域。
+- 缺失答案的私有资料先进入独立草稿表；AI 建议与用户最终复核分层保存，只有全部逐题复核后才创建
+  可判分的 `exam_paper` 和 `question`。
 
 ## 通用字段
 

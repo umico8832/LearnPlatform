@@ -228,13 +228,45 @@ export interface PrivateExamImportPreview extends PrivateExamImportRequest {
   contentHash: string
   questionCount: number
   totalScore: number
+  requiresAnswerReview: boolean
   questions: {
     content: string
     questionType: string
-    answer: string
+    answer: string | null
     analysis: string | null
     score: number
+    answerComplete: boolean
     options: { label: string; content: string; correct: boolean }[]
+  }[]
+}
+
+export type PrivateExamDraftStatus = 'DRAFT' | 'AI_GENERATED' | 'REVIEWING' | 'READY' | 'CONFIRMED'
+
+export interface PrivateExamDraft {
+  id: number
+  title: string
+  courseId: number
+  duration: number
+  status: PrivateExamDraftStatus
+  confirmedPaperId: number | null
+  reviewedQuestionCount: number
+  questionCount: number
+  createTime: string
+  questions: {
+    id: number
+    sortOrder: number
+    content: string
+    questionType: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE'
+    score: number
+    options: { label: string; content: string }[]
+    originalAnswerLabels: string[]
+    originalAnalysis: string | null
+    aiAnswerLabels: string[]
+    aiAnalysis: string | null
+    generationStatus: 'NOT_REQUIRED' | 'PENDING' | 'GENERATED'
+    finalAnswerLabels: string[]
+    finalAnalysis: string | null
+    reviewStatus: 'PENDING' | 'REVIEWED'
   }[]
 }
 
@@ -310,6 +342,41 @@ export function confirmPrivateExamImport(
   data: PrivateExamImportRequest & { expectedContentHash: string; confirmed: true },
 ) {
   return request.post<unknown, ApiResponse<ExamPaperVO>>('/exam/private-papers/import/confirm', data)
+}
+
+export function createPrivateExamDraft(data: PrivateExamImportRequest & { expectedContentHash: string }) {
+  return request.post<unknown, ApiResponse<PrivateExamDraft>>('/exam/private-papers/drafts', data)
+}
+
+export function getPrivateExamDrafts() {
+  return request.get<unknown, ApiResponse<PrivateExamDraft[]>>('/exam/private-papers/drafts')
+}
+
+export function getPrivateExamDraft(draftId: number) {
+  return request.get<unknown, ApiResponse<PrivateExamDraft>>(`/exam/private-papers/drafts/${draftId}`)
+}
+
+export function generatePrivateExamDraftAnswer(draftId: number, questionId: number) {
+  return request.post<unknown, ApiResponse<PrivateExamDraft>>(
+    `/exam/private-papers/drafts/${draftId}/questions/${questionId}/ai-answer`,
+  )
+}
+
+export function reviewPrivateExamDraftQuestion(
+  draftId: number,
+  questionId: number,
+  data: { answerLabels: string[]; analysis: string },
+) {
+  return request.put<unknown, ApiResponse<PrivateExamDraft>>(
+    `/exam/private-papers/drafts/${draftId}/questions/${questionId}/review`,
+    data,
+  )
+}
+
+export function confirmPrivateExamDraft(draftId: number) {
+  return request.post<unknown, ApiResponse<ExamPaperVO>>(`/exam/private-papers/drafts/${draftId}/confirm`, {
+    confirmed: true,
+  })
 }
 
 export function getPrivateExamSource(paperId: number) {

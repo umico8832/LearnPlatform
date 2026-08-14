@@ -10,11 +10,14 @@ import com.learnplatform.dto.ExamPaperVO;
 import com.learnplatform.dto.PrivateExamImportConfirmRequest;
 import com.learnplatform.dto.PrivateExamImportPreviewVO;
 import com.learnplatform.dto.PrivateExamImportRequest;
+import com.learnplatform.dto.PrivateExamDraftCreateRequest;
+import com.learnplatform.dto.PrivateExamDraftVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.ExamPaperLearningService;
 import com.learnplatform.service.ExamPaperService;
 import com.learnplatform.service.ExamService;
 import com.learnplatform.service.PrivateExamImportService;
+import com.learnplatform.service.PrivateExamDraftService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +37,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -44,13 +48,14 @@ class ExamLearningControllerTest {
     @Mock private ExamPaperService examPaperService;
     @Mock private ExamPaperLearningService learningService;
     @Mock private PrivateExamImportService privateExamImportService;
+    @Mock private PrivateExamDraftService privateExamDraftService;
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
         ExamController controller = new ExamController(
-                examService, examPaperService, learningService, privateExamImportService);
+                examService, examPaperService, learningService, privateExamImportService, privateExamDraftService);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
@@ -154,6 +159,39 @@ class ExamLearningControllerTest {
         verify(privateExamImportService).confirm(
                 org.mockito.ArgumentMatchers.any(PrivateExamImportConfirmRequest.class),
                 org.mockito.ArgumentMatchers.eq(7L));
+    }
+
+    @Test
+    void createsGeneratesReviewsAndConfirmsPrivateDraftForAuthenticatedOwner() throws Exception {
+        PrivateExamDraftCreateRequest createRequest = new PrivateExamDraftCreateRequest();
+        copyPrivateImport(privateImportRequest(), createRequest);
+        createRequest.setExpectedContentHash("a".repeat(64));
+        PrivateExamDraftVO draft = new PrivateExamDraftVO();
+        draft.setId(31L);
+        draft.setStatus("DRAFT");
+        when(privateExamDraftService.create(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.eq(7L))).thenReturn(draft);
+        when(privateExamDraftService.generateAnswer(31L, 41L, 7L)).thenReturn(draft);
+        when(privateExamDraftService.reviewQuestion(org.mockito.ArgumentMatchers.eq(31L),
+                org.mockito.ArgumentMatchers.eq(41L), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.eq(7L))).thenReturn(draft);
+        ExamPaperVO paper = new ExamPaperVO();
+        paper.setId(51L);
+        when(privateExamDraftService.confirm(org.mockito.ArgumentMatchers.eq(31L),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(7L))).thenReturn(paper);
+
+        mockMvc.perform(post("/api/exam/private-papers/drafts").with(mockUser(7L))
+                        .contentType("application/json").content(objectMapper.writeValueAsString(createRequest)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.id").value(31));
+        mockMvc.perform(post("/api/exam/private-papers/drafts/31/questions/41/ai-answer").with(mockUser(7L)))
+                .andExpect(status().isOk());
+        mockMvc.perform(put("/api/exam/private-papers/drafts/31/questions/41/review").with(mockUser(7L))
+                        .contentType("application/json")
+                        .content("{\"answerLabels\":[\"A\"],\"analysis\":\"人工复核解析\"}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/exam/private-papers/drafts/31/confirm").with(mockUser(7L))
+                        .contentType("application/json").content("{\"confirmed\":true}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.id").value(51));
     }
 
     private PrivateExamImportRequest privateImportRequest() {

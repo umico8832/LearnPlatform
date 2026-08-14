@@ -22,6 +22,30 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
     @Autowired private JdbcTemplate jdbcTemplate;
 
     @Test
+    void migrationCreatesPrivateExamDraftReviewStateMachine() {
+        Integer tables = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.tables
+                WHERE table_schema = DATABASE()
+                  AND table_name IN ('private_exam_import_draft', 'private_exam_draft_question')
+                """, Integer.class);
+        Integer draftColumns = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_schema = DATABASE() AND table_name = 'private_exam_import_draft'
+                  AND column_name IN ('owner_user_id', 'source_record_id', 'status', 'confirmed_paper_id')
+                """, Integer.class);
+        Integer questionColumns = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_schema = DATABASE() AND table_name = 'private_exam_draft_question'
+                  AND column_name IN ('ai_answer_json', 'ai_analysis', 'generation_status',
+                                      'final_answer_json', 'final_analysis', 'review_status')
+                """, Integer.class);
+
+        assertEquals(2, tables);
+        assertEquals(4, draftColumns);
+        assertEquals(6, questionColumns);
+    }
+
+    @Test
     void migrationCreatesPrivatePaperOwnershipAndTraceableSourceContract() {
         Integer sourceTable = jdbcTemplate.queryForObject("""
                 SELECT COUNT(*) FROM information_schema.tables

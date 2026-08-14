@@ -183,12 +183,18 @@
 
     <el-dialog v-model="importDialogVisible" title="导入私有试卷" width="min(760px, 92vw)" @closed="resetImport">
       <el-alert
-        title="仅支持结构化 Markdown 或文本；预览确认后才会保存，内容默认仅本人可见。"
+        title="仅支持结构化 Markdown 或文本；无答案题目会先保存为草稿，AI 建议必须逐题人工复核后才能启用。"
         type="info"
         :closable="false"
         show-icon
       />
-      <el-form v-if="!importPreview" label-position="top" class="import-form">
+      <el-form v-if="!importPreview && !activeDraft" label-position="top" class="import-form">
+        <section v-if="privateDrafts.length" class="draft-list">
+          <strong>待复核草稿</strong>
+          <el-button v-for="draft in privateDrafts" :key="draft.id" plain @click="openDraft(draft)">
+            {{ draft.title }} · {{ draft.reviewedQuestionCount }}/{{ draft.questionCount }} 已复核
+          </el-button>
+        </section>
         <div class="import-grid">
           <el-form-item label="试卷标题">
             <el-input v-model="importForm.title" maxlength="200" />
@@ -223,7 +229,7 @@
         </el-form-item>
       </el-form>
 
-      <section v-else class="import-preview">
+      <section v-else-if="importPreview" class="import-preview">
         <div class="preview-summary">
           <strong>{{ importPreview.title }}</strong>
           <span
@@ -241,17 +247,99 @@
               {{ option.label }}. {{ option.content }}
             </li>
           </ul>
-          <p>确认答案：{{ question.answer }}</p>
+          <p v-if="question.answerComplete">确认答案：{{ question.answer }}</p>
+          <el-alert v-else title="未提供可靠答案，将进入 AI 建议与人工逐题复核草稿" type="warning" :closable="false" />
+        </article>
+      </section>
+
+      <section v-else-if="activeDraft" class="draft-review">
+        <div class="preview-summary">
+          <strong>{{ activeDraft.title }}</strong>
+          <span>{{ activeDraft.reviewedQuestionCount }}/{{ activeDraft.questionCount }} 题已人工复核</span>
+        </div>
+        <el-alert
+          title="AI 只提供建议，不会直接成为判分答案；每题必须由你选择答案并确认解析。"
+          type="warning"
+          :closable="false"
+        />
+        <article v-for="question in activeDraft.questions" :key="question.id" class="draft-question">
+          <div class="draft-question-title">
+            <strong>{{ question.sortOrder }}. {{ question.content }}</strong>
+            <el-tag :type="question.reviewStatus === 'REVIEWED' ? 'success' : 'warning'">
+              {{ question.reviewStatus === 'REVIEWED' ? '已复核' : '待复核' }}
+            </el-tag>
+          </div>
+          <ul>
+            <li v-for="option in question.options" :key="option.label">{{ option.label }}. {{ option.content }}</li>
+          </ul>
+          <el-button
+            v-if="question.generationStatus === 'PENDING'"
+            type="primary"
+            plain
+            :loading="generatingQuestionId === question.id"
+            @click="generateDraftAnswer(question.id)"
+          >
+            生成 AI 答案与解析
+          </el-button>
+          <template v-else>
+            <p v-if="question.generationStatus === 'GENERATED'" class="ai-suggestion">
+              AI 建议：{{ question.aiAnswerLabels.join('、') }} · {{ question.aiAnalysis }}
+            </p>
+            <p v-else class="ai-suggestion">原资料答案：{{ question.originalAnswerLabels.join('、') || '未提供' }}</p>
+            <el-form-item label="人工确认答案">
+              <el-checkbox-group v-model="draftAnswers[question.id]" :disabled="question.reviewStatus === 'REVIEWED'">
+                <el-checkbox v-for="option in question.options" :key="option.label" :value="option.label">
+                  {{ option.label }}
+                </el-checkbox>
+              </el-checkbox-group>
+            </el-form-item>
+            <el-form-item label="人工确认解析">
+              <el-input
+                v-model="draftAnalyses[question.id]"
+                type="textarea"
+                :rows="3"
+                maxlength="10000"
+                :disabled="question.reviewStatus === 'REVIEWED'"
+              />
+            </el-form-item>
+            <el-button
+              v-if="question.reviewStatus !== 'REVIEWED'"
+              type="success"
+              :loading="reviewingQuestionId === question.id"
+              @click="reviewDraftQuestion(question.id)"
+            >
+              确认本题
+            </el-button>
+          </template>
         </article>
       </section>
 
       <template #footer>
         <el-button v-if="importPreview" @click="importPreview = null">返回修改</el-button>
+        <el-button v-if="activeDraft" @click="activeDraft = null">返回导入</el-button>
         <el-button @click="importDialogVisible = false">取消</el-button>
-        <el-button v-if="!importPreview" type="primary" :loading="previewLoading" @click="previewImport"
+        <el-button v-if="!importPreview && !activeDraft" type="primary" :loading="previewLoading" @click="previewImport"
           >解析并预览</el-button
         >
-        <el-button v-else type="primary" :loading="confirmLoading" @click="confirmImport">确认导入</el-button>
+        <el-button
+          v-else-if="importPreview?.requiresAnswerReview"
+          type="warning"
+          :loading="confirmLoading"
+          @click="createAnswerDraft"
+        >
+          创建 AI 补全草稿
+        </el-button>
+        <el-button v-else-if="importPreview" type="primary" :loading="confirmLoading" @click="confirmImport"
+          >确认导入</el-button
+        >
+        <el-button
+          v-else-if="activeDraft?.status === 'READY'"
+          type="primary"
+          :loading="confirmLoading"
+          @click="confirmDraft"
+        >
+          确认启用试卷
+        </el-button>
       </template>
     </el-dialog>
 
@@ -272,11 +360,16 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Document, EditPen, Medal, Reading, Timer, Upload, View } from '@element-plus/icons-vue'
 import {
+  confirmPrivateExamDraft,
   confirmPrivateExamImport,
+  createPrivateExamDraft,
+  generatePrivateExamDraftAnswer,
   getMyExamRecords,
+  getPrivateExamDrafts,
   getPrivateExamSource,
   getPublishedPapers,
   previewPrivateExamImport,
+  reviewPrivateExamDraftQuestion,
   startExam,
   startExamLearningSession,
 } from '@/api/exam'
@@ -284,6 +377,7 @@ import type {
   ExamPaperVO,
   ExamRecordVO,
   ExamStatus,
+  PrivateExamDraft,
   PrivateExamImportPreview,
   PrivateExamImportRequest,
   PrivateExamSource,
@@ -308,6 +402,12 @@ const importDialogVisible = ref(false)
 const previewLoading = ref(false)
 const confirmLoading = ref(false)
 const importPreview = ref<PrivateExamImportPreview | null>(null)
+const privateDrafts = ref<PrivateExamDraft[]>([])
+const activeDraft = ref<PrivateExamDraft | null>(null)
+const generatingQuestionId = ref<number | null>(null)
+const reviewingQuestionId = ref<number | null>(null)
+const draftAnswers = ref<Record<number, string[]>>({})
+const draftAnalyses = ref<Record<number, string>>({})
 const sourceDialogVisible = ref(false)
 const privateSource = ref<PrivateExamSource | null>(null)
 const emptyImportForm = (): PrivateExamImportRequest => ({
@@ -334,13 +434,15 @@ onMounted(() => {
 
 const openImportDialog = async () => {
   importDialogVisible.value = true
-  if (courses.value.length) return
-  try {
-    const res = await getAllCourses()
-    if (res.code === 0 && res.data) courses.value = res.data
-  } catch {
-    ElMessage.error('获取课程列表失败')
+  if (!courses.value.length) {
+    try {
+      const res = await getAllCourses()
+      if (res.code === 0 && res.data) courses.value = res.data
+    } catch {
+      ElMessage.error('获取课程列表失败')
+    }
   }
+  await loadPrivateDrafts()
 }
 
 const validateImportForm = () => {
@@ -392,6 +494,130 @@ const confirmImport = async () => {
   }
 }
 
+const loadPrivateDrafts = async () => {
+  try {
+    const res = await getPrivateExamDrafts()
+    if (res.code === 0 && res.data) privateDrafts.value = res.data
+  } catch {
+    ElMessage.error('获取待复核草稿失败')
+  }
+}
+
+const syncDraftForm = (draft: PrivateExamDraft) => {
+  draft.questions.forEach((question) => {
+    draftAnswers.value[question.id] = [
+      ...(question.finalAnswerLabels.length
+        ? question.finalAnswerLabels
+        : question.aiAnswerLabels.length
+          ? question.aiAnswerLabels
+          : question.originalAnswerLabels),
+    ]
+    draftAnalyses.value[question.id] = question.finalAnalysis || question.aiAnalysis || question.originalAnalysis || ''
+  })
+}
+
+const openDraft = (draft: PrivateExamDraft) => {
+  activeDraft.value = draft
+  importPreview.value = null
+  syncDraftForm(draft)
+}
+
+const replaceDraft = (draft: PrivateExamDraft) => {
+  activeDraft.value = draft
+  const index = privateDrafts.value.findIndex((item) => item.id === draft.id)
+  if (index >= 0) privateDrafts.value[index] = draft
+  else privateDrafts.value.unshift(draft)
+  syncDraftForm(draft)
+}
+
+const createAnswerDraft = async () => {
+  if (!importPreview.value) return
+  confirmLoading.value = true
+  try {
+    const res = await createPrivateExamDraft({
+      ...importForm.value,
+      expectedContentHash: importPreview.value.contentHash,
+    })
+    if (res.code === 0 && res.data) {
+      replaceDraft(res.data)
+      importPreview.value = null
+      ElMessage.success('草稿已保存，请逐题生成并复核答案')
+    } else ElMessage.error(res.message || '创建草稿失败')
+  } catch {
+    ElMessage.error('创建草稿失败')
+  } finally {
+    confirmLoading.value = false
+  }
+}
+
+const generateDraftAnswer = async (questionId: number) => {
+  if (!activeDraft.value) return
+  generatingQuestionId.value = questionId
+  try {
+    const res = await generatePrivateExamDraftAnswer(activeDraft.value.id, questionId)
+    if (res.code === 0 && res.data) {
+      replaceDraft(res.data)
+      ElMessage.success('AI 建议已生成，请人工核对')
+    } else ElMessage.error(res.message || 'AI 生成失败')
+  } catch {
+    ElMessage.error('AI 生成失败，请稍后重试')
+  } finally {
+    generatingQuestionId.value = null
+  }
+}
+
+const reviewDraftQuestion = async (questionId: number) => {
+  if (!activeDraft.value) return
+  const question = activeDraft.value.questions.find((item) => item.id === questionId)
+  const answers = draftAnswers.value[questionId] || []
+  const analysis = draftAnalyses.value[questionId]?.trim() || ''
+  if (!question || !answers.length || !analysis) {
+    ElMessage.warning('请选择答案并填写人工确认解析')
+    return
+  }
+  if (question.questionType !== 'MULTIPLE_CHOICE' && answers.length !== 1) {
+    ElMessage.warning('单选或判断题只能确认一个答案')
+    return
+  }
+  if (question.questionType === 'MULTIPLE_CHOICE' && answers.length < 2) {
+    ElMessage.warning('多选题至少确认两个答案')
+    return
+  }
+  reviewingQuestionId.value = questionId
+  try {
+    const res = await reviewPrivateExamDraftQuestion(activeDraft.value.id, questionId, {
+      answerLabels: answers,
+      analysis,
+    })
+    if (res.code === 0 && res.data) {
+      replaceDraft(res.data)
+      ElMessage.success('本题已人工复核')
+    } else ElMessage.error(res.message || '复核失败')
+  } catch {
+    ElMessage.error('复核失败')
+  } finally {
+    reviewingQuestionId.value = null
+  }
+}
+
+const confirmDraft = async () => {
+  if (!activeDraft.value) return
+  confirmLoading.value = true
+  try {
+    const res = await confirmPrivateExamDraft(activeDraft.value.id)
+    if (res.code === 0 && res.data) {
+      ElMessage.success('私有试卷已人工确认并启用')
+      importDialogVisible.value = false
+      pageNum.value = 1
+      await loadPapers()
+    } else ElMessage.error(res.message || '启用失败')
+  } catch {
+    ElMessage.error('启用失败')
+  } finally {
+    confirmLoading.value = false
+  }
+}
+
 const showOriginalSource = async (paperId: number) => {
   try {
     const res = await getPrivateExamSource(paperId)
@@ -406,6 +632,9 @@ const showOriginalSource = async (paperId: number) => {
 
 const resetImport = () => {
   importPreview.value = null
+  activeDraft.value = null
+  draftAnswers.value = {}
+  draftAnalyses.value = {}
   importForm.value = emptyImportForm()
 }
 
@@ -667,6 +896,17 @@ const paperTypeTag = (paper: ExamPaperVO) => {
 .import-form {
   margin-top: 18px;
 }
+.draft-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--lp-warning-soft, #fdf6ec);
+  border: 1px solid color-mix(in srgb, var(--lp-warning) 28%, transparent);
+  border-radius: 8px;
+}
 .import-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -705,6 +945,32 @@ const paperTypeTag = (paper: ExamPaperVO) => {
   margin: 0;
   color: var(--lp-text-secondary);
   font-size: 13px;
+}
+.draft-review {
+  margin-top: 16px;
+}
+.draft-question {
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid var(--lp-border);
+  border-radius: 8px;
+}
+.draft-question-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.draft-question ul {
+  padding-left: 22px;
+  color: var(--lp-text-secondary);
+}
+.ai-suggestion {
+  padding: 10px 12px;
+  color: var(--lp-text-secondary);
+  background: var(--lp-surface-muted);
+  border-radius: 6px;
+  white-space: pre-wrap;
 }
 .source-meta {
   overflow-wrap: anywhere;

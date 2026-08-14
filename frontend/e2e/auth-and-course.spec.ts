@@ -241,6 +241,55 @@ test('用户可预览确认结构化私有试卷并隔离给其他账号', async
   await expect(page.getByText(paperTitle, { exact: true })).toHaveCount(0)
 })
 
+test('无答案私有题必须经过AI建议与逐题人工复核才可启用', async ({ page }) => {
+  const paperTitle = `E2E AI复核试卷 ${Date.now()}`
+  await loginAs(page, 'testuser', 'test123')
+  await page.goto('/exams')
+  await page.getByRole('button', { name: '导入私有试卷' }).click()
+  let dialog = page.getByRole('dialog', { name: '导入私有试卷' })
+  await dialog.getByRole('textbox', { name: '试卷标题' }).fill(paperTitle)
+  await dialog.getByRole('combobox', { name: '所属课程' }).click()
+  await page.getByRole('option', { name: '408 数据结构' }).click()
+  await dialog.getByRole('textbox', { name: '原始资料名称' }).fill('e2e-answerless.md')
+  await dialog.getByRole('textbox', { name: '原始内容' }).fill(`## 1. 单选题
+**题干**: 先进后出的数据结构是？
+**选项**:
+- A. 栈
+- B. 队列
+**分值**: 2`)
+  await dialog.getByRole('button', { name: '解析并预览' }).click()
+  await expect(dialog).toContainText('未提供可靠答案')
+  await expect(dialog.getByRole('button', { name: '确认导入' })).toHaveCount(0)
+  await dialog.getByRole('button', { name: '创建 AI 补全草稿' }).click()
+  await expect(page.getByText('草稿已保存，请逐题生成并复核答案')).toBeVisible()
+
+  // 草稿关闭后仍能从服务端恢复，且尚未出现在可考试试卷列表。
+  await dialog.getByRole('button', { name: '取消' }).click()
+  await expect(page.getByText(paperTitle, { exact: true })).toHaveCount(0)
+  await page.getByRole('button', { name: '导入私有试卷' }).click()
+  dialog = page.getByRole('dialog', { name: '导入私有试卷' })
+  await dialog.getByRole('button', { name: new RegExp(paperTitle) }).click()
+  await expect(dialog).toContainText('0/1 题已人工复核')
+
+  await dialog.getByRole('button', { name: '生成 AI 答案与解析' }).click()
+  await expect(dialog).toContainText('AI 建议：A · 栈遵循后进先出的访问顺序。')
+  await expect(dialog.getByRole('button', { name: '确认启用试卷' })).toHaveCount(0)
+  await dialog.getByRole('checkbox', { name: 'A' }).check()
+  await dialog.getByRole('textbox', { name: '人工确认解析' }).fill('人工复核：栈遵循后进先出。')
+  await dialog.getByRole('button', { name: '确认本题' }).click()
+  await expect(dialog).toContainText('1/1 题已人工复核')
+  await dialog.getByRole('button', { name: '确认启用试卷' }).click()
+  await expect(page.getByText('私有试卷已人工确认并启用')).toBeVisible()
+
+  const card = page.locator('.exam-card').filter({ hasText: paperTitle })
+  await expect(card).toContainText('可参加')
+  await card.getByRole('button', { name: '考试模式' }).click()
+  await page.locator('.question-area .option-item').filter({ hasText: '栈' }).click()
+  await page.locator('.take-header').getByRole('button', { name: '提交试卷' }).click()
+  await page.getByRole('dialog', { name: '提交确认' }).getByRole('button', { name: '确定' }).click()
+  await expect(page.locator('.score-number')).toHaveText('2')
+})
+
 test('用户可完成2026真题学习与限时考试并复盘可信来源', async ({ page }) => {
   await loginAs(page, 'testuser', 'test123')
 

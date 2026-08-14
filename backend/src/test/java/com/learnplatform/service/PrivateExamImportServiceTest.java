@@ -68,6 +68,24 @@ class PrivateExamImportServiceTest {
     }
 
     @Test
+    void previewsAnswerlessObjectiveQuestionsForDraftImport() {
+        PrivateExamImportRequest request = request();
+        request.setContent("""
+                题型：单选题
+                题干：先进后出的数据结构是？
+                选项：
+                A. 栈
+                B. 队列
+                分值：1
+                """);
+
+        PrivateExamImportPreviewVO preview = service.preview(request);
+
+        assertEquals(1, preview.getQuestionCount());
+        assertEquals(null, preview.getQuestions().get(0).getAnswer());
+    }
+
+    @Test
     void rejectsConfirmationWhenSourceChangedAfterPreview() {
         PrivateExamImportConfirmRequest request = confirmRequest();
         request.setExpectedContentHash("0".repeat(64));

@@ -1,5 +1,17 @@
 # 仅用于本地和 CI 的端到端测试，叠加到 docker-compose.yml 使用。
 services:
+  ai-mock:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./frontend/e2e/ai-mock.conf:/etc/nginx/nginx.conf:ro
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/health"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+    networks:
+      - learn-platform
+
   redis:
     # 浏览器测试只使用容器网络；避免占用开发机已有的 6379 端口。
     ports: !reset []
@@ -21,3 +33,10 @@ services:
       # local .env defines production Turnstile settings.
       TURNSTILE_ENABLED: "true"
       TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA"
+      AI_ENABLED: "true"
+      AI_API_KEY: "e2e-test-key"
+      AI_API_BASE_URL: "http://ai-mock/v1"
+      AI_MODEL: "e2e-deterministic"
+    depends_on:
+      ai-mock:
+        condition: service_healthy

@@ -70,7 +70,7 @@ public class PrivateExamImportService {
 
     public PrivateExamImportPreviewVO preview(PrivateExamImportRequest request) {
         ensureCourseExists(request.getCourseId());
-        List<ParsedQuestion> questions = parseAndValidate(request);
+        List<ParsedQuestion> questions = parseAndValidate(request, false);
         return toPreview(request, questions, sha256(request.getContent()));
     }
 
@@ -81,7 +81,7 @@ public class PrivateExamImportService {
         if (!contentHash.equalsIgnoreCase(request.getExpectedContentHash())) {
             throw new BusinessException(ResultCode.VALIDATION_ERROR, "原始资料已变化，请重新预览确认");
         }
-        List<ParsedQuestion> questions = parseAndValidate(request);
+        List<ParsedQuestion> questions = parseAndValidate(request, true);
 
         UserExamSource source = new UserExamSource();
         source.setOwnerUserId(userId);
@@ -90,66 +90,9 @@ public class PrivateExamImportService {
         source.setContentSha256(contentHash);
         source.setOriginalContent(request.getContent());
         sourceMapper.insert(source);
-
-        ExamPaper paper = new ExamPaper();
-        paper.setTitle(request.getTitle().trim());
-        paper.setDescription("由用户确认的结构化" + formatLabel(request.getSourceFormat()) + "资料导入");
-        paper.setCourseId(request.getCourseId());
-        paper.setTotalScore(questions.stream().mapToInt(ParsedQuestion::score).sum());
-        paper.setDuration(request.getDuration() != null ? request.getDuration() : 60);
-        paper.setQuestionCount(questions.size());
-        paper.setStatus(1);
-        paper.setCreateBy(userId);
-        paper.setOwnerUserId(userId);
-        paper.setVisibility("PRIVATE");
-        paper.setPaperType("USER_PRIVATE");
-        paper.setSourceReference("user-source:" + contentHash);
-        paper.setSourceVerified(false);
-        paper.setSourceRecordId(source.getId());
-        paper.setImportStatus("CONFIRMED");
-        paper.setDeleted(0);
-        paperMapper.insert(paper);
-
-        for (int index = 0; index < questions.size(); index++) {
-            ParsedQuestion parsed = questions.get(index);
-            Question question = new Question();
-            question.setContent(parsed.content());
-            question.setQuestionType(parsed.type());
-            question.setCourseId(request.getCourseId());
-            question.setDifficulty(3);
-            question.setAnalysis(parsed.analysis());
-            question.setScore(parsed.score());
-            question.setStatus(1);
-            question.setCreateBy(userId);
-            question.setOwnerUserId(userId);
-            question.setVisibility("PRIVATE");
-            question.setSourceType("USER_PRIVATE_IMPORT");
-            question.setSourceReference("user-source:" + source.getId());
-            question.setReviewRounds(0);
-            question.setDeleted(0);
-            questionMapper.insert(question);
-
-            for (int optionIndex = 0; optionIndex < parsed.options().size(); optionIndex++) {
-                ParsedOption parsedOption = parsed.options().get(optionIndex);
-                QuestionOption option = new QuestionOption();
-                option.setQuestionId(question.getId());
-                option.setContent(parsedOption.content());
-                option.setOptionLabel(parsedOption.label());
-                option.setIsCorrect(parsedOption.correct() ? 1 : 0);
-                option.setSortOrder(optionIndex + 1);
-                option.setDeleted(0);
-                optionMapper.insert(option);
-            }
-
-            ExamQuestion relation = new ExamQuestion();
-            relation.setExamPaperId(paper.getId());
-            relation.setQuestionId(question.getId());
-            relation.setSortOrder(index + 1);
-            relation.setScore(parsed.score());
-            relation.setDisplayNumber(String.valueOf(index + 1));
-            examQuestionMapper.insert(relation);
-        }
-        return examPaperService.getAccessiblePublishedExamPaperById(paper.getId(), userId);
+        PrivateExamImportPreviewVO preview = toPreview(request, questions, contentHash);
+        return createConfirmedPaper(preview.getTitle(), preview.getCourseId(), preview.getDuration(),
+                source, preview.getQuestions(), userId);
     }
 
     public PrivateExamSourceVO getSource(Long paperId, Long userId) {
@@ -171,7 +114,103 @@ public class PrivateExamImportService {
         return vo;
     }
 
-    private List<ParsedQuestion> parseAndValidate(PrivateExamImportRequest request) {
+    ExamPaperVO createConfirmedPaper(String title, Long courseId, Integer duration,
+                                     UserExamSource source,
+                                     List<PrivateExamImportPreviewVO.QuestionPreview> questions,
+                                     Long userId) {
+        if (source == null || source.getId() == null || !userId.equals(source.getOwnerUserId())) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "原始资料不存在");
+        }
+        for (int index = 0; index < questions.size(); index++) {
+            validateConfirmedQuestion(questions.get(index), index + 1);
+        }
+
+        ExamPaper paper = new ExamPaper();
+        paper.setTitle(title.trim());
+        paper.setDescription("由用户复核确认的结构化" + formatLabel(source.getSourceFormat()) + "资料导入");
+        paper.setCourseId(courseId);
+        paper.setTotalScore(questions.stream().mapToInt(PrivateExamImportPreviewVO.QuestionPreview::getScore).sum());
+        paper.setDuration(duration != null ? duration : 60);
+        paper.setQuestionCount(questions.size());
+        paper.setStatus(1);
+        paper.setCreateBy(userId);
+        paper.setOwnerUserId(userId);
+        paper.setVisibility("PRIVATE");
+        paper.setPaperType("USER_PRIVATE");
+        paper.setSourceReference("user-source:" + source.getContentSha256());
+        paper.setSourceVerified(false);
+        paper.setSourceRecordId(source.getId());
+        paper.setImportStatus("CONFIRMED");
+        paper.setDeleted(0);
+        paperMapper.insert(paper);
+
+        for (int index = 0; index < questions.size(); index++) {
+            PrivateExamImportPreviewVO.QuestionPreview item = questions.get(index);
+            Question question = new Question();
+            question.setContent(item.getContent());
+            question.setQuestionType(item.getQuestionType());
+            question.setCourseId(courseId);
+            question.setDifficulty(3);
+            question.setAnalysis(item.getAnalysis());
+            question.setScore(item.getScore());
+            question.setStatus(1);
+            question.setCreateBy(userId);
+            question.setOwnerUserId(userId);
+            question.setVisibility("PRIVATE");
+            question.setSourceType("USER_PRIVATE_IMPORT");
+            question.setSourceReference("user-source:" + source.getId());
+            question.setReviewRounds(0);
+            question.setDeleted(0);
+            questionMapper.insert(question);
+
+            for (int optionIndex = 0; optionIndex < item.getOptions().size(); optionIndex++) {
+                PrivateExamImportPreviewVO.OptionPreview itemOption = item.getOptions().get(optionIndex);
+                QuestionOption option = new QuestionOption();
+                option.setQuestionId(question.getId());
+                option.setContent(itemOption.getContent());
+                option.setOptionLabel(itemOption.getLabel());
+                option.setIsCorrect(Boolean.TRUE.equals(itemOption.getCorrect()) ? 1 : 0);
+                option.setSortOrder(optionIndex + 1);
+                option.setDeleted(0);
+                optionMapper.insert(option);
+            }
+
+            ExamQuestion relation = new ExamQuestion();
+            relation.setExamPaperId(paper.getId());
+            relation.setQuestionId(question.getId());
+            relation.setSortOrder(index + 1);
+            relation.setScore(item.getScore());
+            relation.setDisplayNumber(String.valueOf(index + 1));
+            examQuestionMapper.insert(relation);
+        }
+        return examPaperService.getAccessiblePublishedExamPaperById(paper.getId(), userId);
+    }
+
+    ExamPaperVO getConfirmedPaper(Long paperId, Long userId) {
+        return examPaperService.getAccessiblePublishedExamPaperById(paperId, userId);
+    }
+
+    private void validateConfirmedQuestion(PrivateExamImportPreviewVO.QuestionPreview question, int number) {
+        if (question.getContent() == null || question.getContent().isBlank()
+                || !SUPPORTED_TYPES.contains(question.getQuestionType())
+                || question.getScore() == null || question.getScore() < 1 || question.getScore() > 100
+                || question.getOptions() == null || question.getOptions().size() < 2
+                || question.getOptions().size() > 6) {
+            throw invalid(number, "题目结构不完整");
+        }
+        long correctCount = question.getOptions().stream()
+                .filter(option -> Boolean.TRUE.equals(option.getCorrect())).count();
+        if (correctCount == 0) throw invalid(number, "答案必须匹配现有选项");
+        if (("SINGLE_CHOICE".equals(question.getQuestionType())
+                || "TRUE_FALSE".equals(question.getQuestionType())) && correctCount != 1) {
+            throw invalid(number, "单选或判断题只能有一个正确答案");
+        }
+        if ("MULTIPLE_CHOICE".equals(question.getQuestionType()) && correctCount < 2) {
+            throw invalid(number, "多选题至少需要两个正确答案");
+        }
+    }
+
+    private List<ParsedQuestion> parseAndValidate(PrivateExamImportRequest request, boolean requireAnswers) {
         List<ParsedQuestion> questions = "TEXT".equals(request.getSourceFormat())
                 ? parseText(request.getContent()) : parseMarkdown(request.getContent());
         if (questions.isEmpty()) {
@@ -181,7 +220,7 @@ public class PrivateExamImportService {
             throw new BusinessException(ResultCode.VALIDATION_ERROR, "一次最多导入100道题");
         }
         for (int index = 0; index < questions.size(); index++) {
-            validateQuestion(questions.get(index), index + 1);
+            validateQuestion(questions.get(index), index + 1, requireAnswers);
         }
         return questions;
     }
@@ -260,7 +299,7 @@ public class PrivateExamImportService {
                 analysis != null ? analysis.trim() : null, score != null ? score : 1, options);
     }
 
-    private void validateQuestion(ParsedQuestion question, int number) {
+    private void validateQuestion(ParsedQuestion question, int number, boolean requireAnswers) {
         if (question.content() == null || question.content().isBlank()) {
             throw invalid(number, "题干不能为空");
         }
@@ -275,7 +314,10 @@ public class PrivateExamImportService {
         }
         long correctCount = question.options().stream().filter(ParsedOption::correct).count();
         if (correctCount == 0) {
-            throw invalid(number, "答案必须匹配现有选项");
+            if (requireAnswers) {
+                throw invalid(number, "答案必须匹配现有选项");
+            }
+            return;
         }
         if (("SINGLE_CHOICE".equals(question.type()) || "TRUE_FALSE".equals(question.type()))
                 && correctCount != 1) {
@@ -334,6 +376,8 @@ public class PrivateExamImportService {
         preview.setContentHash(hash);
         preview.setQuestionCount(questions.size());
         preview.setTotalScore(questions.stream().mapToInt(ParsedQuestion::score).sum());
+        preview.setRequiresAnswerReview(questions.stream().anyMatch(question ->
+                question.options().stream().noneMatch(ParsedOption::correct)));
         preview.setQuestions(questions.stream().map(question -> {
             PrivateExamImportPreviewVO.QuestionPreview item = new PrivateExamImportPreviewVO.QuestionPreview();
             item.setContent(question.content());
@@ -341,6 +385,7 @@ public class PrivateExamImportService {
             item.setAnswer(question.answer());
             item.setAnalysis(question.analysis());
             item.setScore(question.score());
+            item.setAnswerComplete(question.options().stream().anyMatch(ParsedOption::correct));
             item.setOptions(question.options().stream().map(option ->
                     new PrivateExamImportPreviewVO.OptionPreview(
                             option.label(), option.content(), option.correct())).toList());

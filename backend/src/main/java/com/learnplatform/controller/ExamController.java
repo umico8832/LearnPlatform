@@ -12,16 +12,23 @@ import com.learnplatform.dto.PrivateExamImportConfirmRequest;
 import com.learnplatform.dto.PrivateExamImportPreviewVO;
 import com.learnplatform.dto.PrivateExamImportRequest;
 import com.learnplatform.dto.PrivateExamSourceVO;
+import com.learnplatform.dto.PrivateExamDraftConfirmRequest;
+import com.learnplatform.dto.PrivateExamDraftCreateRequest;
+import com.learnplatform.dto.PrivateExamDraftReviewRequest;
+import com.learnplatform.dto.PrivateExamDraftVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.ExamService;
 import com.learnplatform.service.ExamPaperService;
 import com.learnplatform.service.ExamPaperLearningService;
 import com.learnplatform.service.PrivateExamImportService;
+import com.learnplatform.service.PrivateExamDraftService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 用户端考试控制器
@@ -35,14 +42,17 @@ public class ExamController {
     private final ExamPaperService examPaperService;
     private final ExamPaperLearningService examPaperLearningService;
     private final PrivateExamImportService privateExamImportService;
+    private final PrivateExamDraftService privateExamDraftService;
 
     public ExamController(ExamService examService, ExamPaperService examPaperService,
                           ExamPaperLearningService examPaperLearningService,
-                          PrivateExamImportService privateExamImportService) {
+                          PrivateExamImportService privateExamImportService,
+                          PrivateExamDraftService privateExamDraftService) {
         this.examService = examService;
         this.examPaperService = examPaperService;
         this.examPaperLearningService = examPaperLearningService;
         this.privateExamImportService = privateExamImportService;
+        this.privateExamDraftService = privateExamDraftService;
     }
 
 
@@ -82,6 +92,51 @@ public class ExamController {
             @Valid @RequestBody PrivateExamImportConfirmRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return R.ok(privateExamImportService.confirm(request, userDetails.getUserId()));
+    }
+
+    @PostMapping("/private-papers/drafts")
+    public R<PrivateExamDraftVO> createPrivatePaperDraft(
+            @Valid @RequestBody PrivateExamDraftCreateRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(privateExamDraftService.create(request, userDetails.getUserId()));
+    }
+
+    @GetMapping("/private-papers/drafts/{draftId}")
+    public R<PrivateExamDraftVO> getPrivatePaperDraft(
+            @PathVariable Long draftId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(privateExamDraftService.get(draftId, userDetails.getUserId()));
+    }
+
+    @GetMapping("/private-papers/drafts")
+    public R<List<PrivateExamDraftVO>> listPrivatePaperDrafts(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(privateExamDraftService.listActive(userDetails.getUserId()));
+    }
+
+    @PostMapping("/private-papers/drafts/{draftId}/questions/{questionId}/ai-answer")
+    public R<PrivateExamDraftVO> generatePrivatePaperDraftAnswer(
+            @PathVariable Long draftId,
+            @PathVariable Long questionId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(privateExamDraftService.generateAnswer(draftId, questionId, userDetails.getUserId()));
+    }
+
+    @PutMapping("/private-papers/drafts/{draftId}/questions/{questionId}/review")
+    public R<PrivateExamDraftVO> reviewPrivatePaperDraftQuestion(
+            @PathVariable Long draftId,
+            @PathVariable Long questionId,
+            @Valid @RequestBody PrivateExamDraftReviewRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(privateExamDraftService.reviewQuestion(draftId, questionId, request, userDetails.getUserId()));
+    }
+
+    @PostMapping("/private-papers/drafts/{draftId}/confirm")
+    public R<ExamPaperVO> confirmPrivatePaperDraft(
+            @PathVariable Long draftId,
+            @Valid @RequestBody PrivateExamDraftConfirmRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(privateExamDraftService.confirm(draftId, request, userDetails.getUserId()));
     }
 
     @GetMapping("/private-papers/{paperId}/source")

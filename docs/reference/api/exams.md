@@ -13,6 +13,12 @@
 | `GET /api/exam/records` | 查询本人考试记录 |
 | `POST /api/exam/private-papers/import/preview` | 解析有限结构化 Markdown/文本，只返回预览且不写库 |
 | `POST /api/exam/private-papers/import/confirm` | 携带预览内容哈希并显式确认后创建本人私有试卷 |
+| `POST /api/exam/private-papers/drafts` | 将含缺失答案的预览保存为本人复核草稿 |
+| `GET /api/exam/private-papers/drafts` | 查询本人尚未确认启用的私有试卷草稿 |
+| `GET /api/exam/private-papers/drafts/{draftId}` | 读取本人草稿和逐题复核状态 |
+| `POST /api/exam/private-papers/drafts/{draftId}/questions/{questionId}/ai-answer` | 为一题生成受结构校验的 AI 答案与解析建议 |
+| `PUT /api/exam/private-papers/drafts/{draftId}/questions/{questionId}/review` | 所有者提交该题最终答案和解析并标记已复核 |
+| `POST /api/exam/private-papers/drafts/{draftId}/confirm` | 全部题目复核后显式确认并启用私有试卷 |
 | `GET /api/exam/private-papers/{paperId}/source` | 仅所有者读取该私有试卷的原始资料 |
 
 同一用户对同一张已发布试卷最多保留一个活动考试记录。再次调用开始接口时，未过期记录会被复用；
@@ -27,9 +33,15 @@
 ## 用户私有试卷导入
 
 首期只接受不超过 100000 字符、最多 100 题的结构化 `MARKDOWN` 或 `TEXT`，并仅支持单选、多选和判断题。
-预览接口校验课程、题干、选项、答案和分值，但不产生数据库写入；确认接口必须提交同一原始内容的
+预览接口校验课程、题干、选项和分值，但不产生数据库写入；答案完整时，确认接口必须提交同一原始内容的
 SHA-256 哈希及 `confirmed=true`，内容变化后必须重新预览。确认成功后试卷和拆解题目均标记为
 `PRIVATE`、绑定 `ownerUserId`，原始名称、格式、哈希和全文保存到仅所有者可读取的资料记录。
+
+存在缺失答案时只能创建复核草稿，不能直接确认导入。每道缺失答案题可单独调用 AI 建议接口；模型输出
+必须是严格 JSON，答案标签必须属于现有选项并满足单选/判断一个、多选至少两个的结构规则。AI 建议不会
+直接写入正式题目的正确选项，所有者必须逐题提交最终答案和解析；全部题目进入 `REVIEWED` 后草稿才进入
+`READY`。确认启用在事务中锁定草稿，创建一次正式私有试卷并记录关联试卷 ID，重复确认返回同一试卷。
+未确认草稿不会出现在试卷列表、考试、学习、公共题库或管理端。AI 调用继续执行个人配额和调用审计。
 
 私有试卷会出现在所有者的可用试卷列表中，可进入考试模式；关联课程已加入课程库时也可进入学习模式。
 其他用户和管理端的试卷、题库、搜索、练习候选、AI 资产及统计接口不会返回私有正文。该入口不调用

@@ -9,6 +9,11 @@ const {
   mockPreviewPrivateExamImport,
   mockConfirmPrivateExamImport,
   mockGetPrivateExamSource,
+  mockCreatePrivateExamDraft,
+  mockGeneratePrivateExamDraftAnswer,
+  mockReviewPrivateExamDraftQuestion,
+  mockConfirmPrivateExamDraft,
+  mockGetPrivateExamDrafts,
   mockPush,
 } = vi.hoisted(() => ({
   mockGetPublishedPapers: vi.fn(),
@@ -18,6 +23,11 @@ const {
   mockPreviewPrivateExamImport: vi.fn(),
   mockConfirmPrivateExamImport: vi.fn(),
   mockGetPrivateExamSource: vi.fn(),
+  mockCreatePrivateExamDraft: vi.fn(),
+  mockGeneratePrivateExamDraftAnswer: vi.fn(),
+  mockReviewPrivateExamDraftQuestion: vi.fn(),
+  mockConfirmPrivateExamDraft: vi.fn(),
+  mockGetPrivateExamDrafts: vi.fn(),
   mockPush: vi.fn(),
 }))
 
@@ -30,6 +40,11 @@ vi.mock('@/api/exam', () => ({
   previewPrivateExamImport: (...args: unknown[]) => mockPreviewPrivateExamImport(...args),
   confirmPrivateExamImport: (...args: unknown[]) => mockConfirmPrivateExamImport(...args),
   getPrivateExamSource: (...args: unknown[]) => mockGetPrivateExamSource(...args),
+  createPrivateExamDraft: (...args: unknown[]) => mockCreatePrivateExamDraft(...args),
+  generatePrivateExamDraftAnswer: (...args: unknown[]) => mockGeneratePrivateExamDraftAnswer(...args),
+  reviewPrivateExamDraftQuestion: (...args: unknown[]) => mockReviewPrivateExamDraftQuestion(...args),
+  confirmPrivateExamDraft: (...args: unknown[]) => mockConfirmPrivateExamDraft(...args),
+  getPrivateExamDrafts: (...args: unknown[]) => mockGetPrivateExamDrafts(...args),
 }))
 
 vi.mock('@/api/course', () => ({
@@ -67,6 +82,8 @@ const stubs = {
   'el-input-number': { template: '<input />' },
   'el-select': { template: '<select><slot /></select>' },
   'el-option': { template: '<option />' },
+  'el-checkbox-group': { template: '<div><slot /></div>' },
+  'el-checkbox': { template: '<label><slot /></label>' },
 }
 
 describe('ExamListView paper provenance', () => {
@@ -75,6 +92,7 @@ describe('ExamListView paper provenance', () => {
     sessionStorage.clear()
     mockStartExam.mockResolvedValue({ code: 0, data: { id: 101, examPaperId: 1, status: 0 } })
     mockGetMyExamRecords.mockResolvedValue({ code: 0, data: { records: [], total: 0 } })
+    mockGetPrivateExamDrafts.mockResolvedValue({ code: 0, data: [] })
     mockGetPublishedPapers.mockResolvedValue({
       code: 0,
       data: {
@@ -165,6 +183,119 @@ describe('ExamListView paper provenance', () => {
         confirmed: true,
       }),
     )
+  })
+
+  it('无答案题目必须经过AI建议和逐题人工复核后才启用', async () => {
+    const draftQuestion = {
+      id: 41,
+      sortOrder: 1,
+      content: '先进后出的数据结构是？',
+      questionType: 'SINGLE_CHOICE',
+      score: 1,
+      options: [
+        { label: 'A', content: '栈' },
+        { label: 'B', content: '队列' },
+      ],
+      originalAnswerLabels: [],
+      originalAnalysis: null,
+      aiAnswerLabels: [],
+      aiAnalysis: null,
+      generationStatus: 'PENDING',
+      finalAnswerLabels: [],
+      finalAnalysis: null,
+      reviewStatus: 'PENDING',
+    }
+    const draft = {
+      id: 31,
+      title: 'AI 补全卷',
+      courseId: 10,
+      duration: 30,
+      status: 'DRAFT',
+      confirmedPaperId: null,
+      reviewedQuestionCount: 0,
+      questionCount: 1,
+      createTime: '2026-08-15T10:00:00',
+      questions: [draftQuestion],
+    }
+    mockPreviewPrivateExamImport.mockResolvedValue({
+      code: 0,
+      data: {
+        title: 'AI 补全卷',
+        courseId: 10,
+        duration: 30,
+        sourceName: 'answerless.txt',
+        sourceFormat: 'TEXT',
+        contentHash: 'b'.repeat(64),
+        questionCount: 1,
+        totalScore: 1,
+        requiresAnswerReview: true,
+        questions: [
+          {
+            content: draftQuestion.content,
+            questionType: draftQuestion.questionType,
+            answer: null,
+            analysis: null,
+            score: 1,
+            answerComplete: false,
+            options: draftQuestion.options.map((option) => ({ ...option, correct: false })),
+          },
+        ],
+      },
+    })
+    mockCreatePrivateExamDraft.mockResolvedValue({ code: 0, data: draft })
+    const generated = {
+      ...draft,
+      status: 'AI_GENERATED',
+      questions: [
+        {
+          ...draftQuestion,
+          generationStatus: 'GENERATED',
+          aiAnswerLabels: ['A'],
+          aiAnalysis: '栈遵循后进先出。',
+        },
+      ],
+    }
+    mockGeneratePrivateExamDraftAnswer.mockResolvedValue({ code: 0, data: generated })
+    mockReviewPrivateExamDraftQuestion.mockResolvedValue({
+      code: 0,
+      data: {
+        ...generated,
+        status: 'READY',
+        reviewedQuestionCount: 1,
+        questions: [{ ...generated.questions[0], reviewStatus: 'REVIEWED' }],
+      },
+    })
+    mockConfirmPrivateExamDraft.mockResolvedValue({ code: 0, data: { id: 51 } })
+    const wrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as {
+      importForm: Record<string, unknown>
+      previewImport: () => Promise<void>
+      createAnswerDraft: () => Promise<void>
+      generateDraftAnswer: (questionId: number) => Promise<void>
+      reviewDraftQuestion: (questionId: number) => Promise<void>
+      confirmDraft: () => Promise<void>
+    }
+    vm.importForm = {
+      title: 'AI 补全卷',
+      courseId: 10,
+      duration: 30,
+      sourceName: 'answerless.txt',
+      sourceFormat: 'TEXT',
+      content: '无答案结构化题目',
+    }
+
+    await vm.previewImport()
+    await vm.createAnswerDraft()
+    expect(mockConfirmPrivateExamDraft).not.toHaveBeenCalled()
+    await vm.generateDraftAnswer(41)
+    await vm.reviewDraftQuestion(41)
+    expect(mockReviewPrivateExamDraftQuestion).toHaveBeenCalledWith(31, 41, {
+      answerLabels: ['A'],
+      analysis: '栈遵循后进先出。',
+    })
+    await vm.confirmDraft()
+    expect(mockConfirmPrivateExamDraft).toHaveBeenCalledWith(31)
   })
 
   it('只把来源已核验的官方试卷标记为官方原题并展示来源', async () => {
