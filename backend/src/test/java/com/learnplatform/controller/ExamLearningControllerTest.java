@@ -12,6 +12,7 @@ import com.learnplatform.dto.PrivateExamImportPreviewVO;
 import com.learnplatform.dto.PrivateExamImportRequest;
 import com.learnplatform.dto.PrivateExamDraftCreateRequest;
 import com.learnplatform.dto.PrivateExamDraftVO;
+import com.learnplatform.dto.PrivateExamPdfRequest;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.ExamPaperLearningService;
 import com.learnplatform.service.ExamPaperService;
@@ -19,6 +20,7 @@ import com.learnplatform.service.ExamService;
 import com.learnplatform.service.PrivateExamImportService;
 import com.learnplatform.service.PrivateExamDraftService;
 import com.learnplatform.service.PrivateExamContentLifecycleService;
+import com.learnplatform.service.PrivateExamPdfImportService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,6 +32,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
@@ -52,6 +55,7 @@ class ExamLearningControllerTest {
     @Mock private PrivateExamImportService privateExamImportService;
     @Mock private PrivateExamDraftService privateExamDraftService;
     @Mock private PrivateExamContentLifecycleService privateExamContentLifecycleService;
+    @Mock private PrivateExamPdfImportService privateExamPdfImportService;
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -59,7 +63,7 @@ class ExamLearningControllerTest {
     void setUp() {
         ExamController controller = new ExamController(
                 examService, examPaperService, learningService, privateExamImportService, privateExamDraftService,
-                privateExamContentLifecycleService);
+                privateExamContentLifecycleService, privateExamPdfImportService);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
@@ -207,6 +211,27 @@ class ExamLearningControllerTest {
 
         verify(privateExamContentLifecycleService).deleteDraft(31L, 7L);
         verify(privateExamContentLifecycleService).deletePaper(51L, 7L);
+    }
+
+    @Test
+    void previewsTextPdfThroughMultipartEndpoint() throws Exception {
+        PrivateExamPdfRequest metadata = new PrivateExamPdfRequest();
+        metadata.setTitle("PDF 试卷");
+        metadata.setCourseId(10L);
+        metadata.setDuration(30);
+        PrivateExamImportPreviewVO preview = new PrivateExamImportPreviewVO();
+        preview.setQuestionCount(1);
+        when(privateExamPdfImportService.preview(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any())).thenReturn(preview);
+        MockMultipartFile metadataPart = new MockMultipartFile("metadata", "", "application/json",
+                objectMapper.writeValueAsBytes(metadata));
+        MockMultipartFile file = new MockMultipartFile("file", "paper.pdf", "application/pdf", "%PDF-test".getBytes());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(
+                        "/api/exam/private-papers/import/pdf/preview")
+                        .file(metadataPart).file(file).with(mockUser(7L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.questionCount").value(1));
     }
 
     private PrivateExamImportRequest privateImportRequest() {

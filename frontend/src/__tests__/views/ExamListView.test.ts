@@ -8,6 +8,9 @@ const {
   mockStartExam,
   mockPreviewPrivateExamImport,
   mockConfirmPrivateExamImport,
+  mockPreviewPrivateExamPdf,
+  mockConfirmPrivateExamPdf,
+  mockCreatePrivateExamPdfDraft,
   mockGetPrivateExamSource,
   mockCreatePrivateExamDraft,
   mockGeneratePrivateExamDraftAnswer,
@@ -25,6 +28,9 @@ const {
   mockStartExam: vi.fn(),
   mockPreviewPrivateExamImport: vi.fn(),
   mockConfirmPrivateExamImport: vi.fn(),
+  mockPreviewPrivateExamPdf: vi.fn(),
+  mockConfirmPrivateExamPdf: vi.fn(),
+  mockCreatePrivateExamPdfDraft: vi.fn(),
   mockGetPrivateExamSource: vi.fn(),
   mockCreatePrivateExamDraft: vi.fn(),
   mockGeneratePrivateExamDraftAnswer: vi.fn(),
@@ -45,6 +51,9 @@ vi.mock('@/api/exam', () => ({
   startExamLearningSession: vi.fn(),
   previewPrivateExamImport: (...args: unknown[]) => mockPreviewPrivateExamImport(...args),
   confirmPrivateExamImport: (...args: unknown[]) => mockConfirmPrivateExamImport(...args),
+  previewPrivateExamPdf: (...args: unknown[]) => mockPreviewPrivateExamPdf(...args),
+  confirmPrivateExamPdf: (...args: unknown[]) => mockConfirmPrivateExamPdf(...args),
+  createPrivateExamPdfDraft: (...args: unknown[]) => mockCreatePrivateExamPdfDraft(...args),
   getPrivateExamSource: (...args: unknown[]) => mockGetPrivateExamSource(...args),
   createPrivateExamDraft: (...args: unknown[]) => mockCreatePrivateExamDraft(...args),
   generatePrivateExamDraftAnswer: (...args: unknown[]) => mockGeneratePrivateExamDraftAnswer(...args),
@@ -97,6 +106,7 @@ const stubs = {
   'el-option': { template: '<option />' },
   'el-checkbox-group': { template: '<div><slot /></div>' },
   'el-checkbox': { template: '<label><slot /></label>' },
+  'el-upload': { template: '<div><slot /><slot name="tip" /></div>' },
 }
 
 describe('ExamListView paper provenance', () => {
@@ -312,6 +322,52 @@ describe('ExamListView paper provenance', () => {
     })
     await vm.confirmDraft()
     expect(mockConfirmPrivateExamDraft).toHaveBeenCalledWith(31)
+  })
+
+  it('文本型PDF重复提交原文件并使用预览哈希确认', async () => {
+    const hash = 'c'.repeat(64)
+    mockPreviewPrivateExamPdf.mockResolvedValue({
+      code: 0,
+      data: {
+        title: 'PDF 试卷',
+        courseId: 10,
+        duration: 30,
+        sourceName: 'paper.pdf',
+        sourceFormat: 'PDF',
+        contentHash: hash,
+        questionCount: 1,
+        totalScore: 2,
+        requiresAnswerReview: false,
+        questions: [],
+      },
+    })
+    mockConfirmPrivateExamPdf.mockResolvedValue({ code: 0, data: { id: 52 } })
+    const wrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
+    await flushPromises()
+    const file = new File(['%PDF-test'], 'paper.pdf', { type: 'application/pdf' })
+    const vm = wrapper.vm as unknown as {
+      importForm: Record<string, unknown>
+      pdfFile: File | null
+      previewImport: () => Promise<void>
+      confirmImport: () => Promise<void>
+    }
+    vm.importForm = {
+      title: 'PDF 试卷',
+      courseId: 10,
+      duration: 30,
+      sourceName: 'paper.pdf',
+      sourceFormat: 'PDF',
+      content: '',
+    }
+    vm.pdfFile = file
+
+    await vm.previewImport()
+    expect(mockPreviewPrivateExamPdf).toHaveBeenCalledWith({ title: 'PDF 试卷', courseId: 10, duration: 30 }, file)
+    await vm.confirmImport()
+    expect(mockConfirmPrivateExamPdf).toHaveBeenCalledWith(
+      { title: 'PDF 试卷', courseId: 10, duration: 30, expectedContentHash: hash, confirmed: true },
+      file,
+    )
   })
 
   it('显式确认后删除未引用草稿和私有试卷', async () => {

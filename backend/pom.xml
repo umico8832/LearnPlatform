@@ -26,6 +26,7 @@
         <jacoco.version>0.8.15</jacoco.version>
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <spotbugs.plugin.version>4.10.2.0</spotbugs.plugin.version>
+        <pdfbox.version>3.0.8</pdfbox.version>
         <excludedGroups>integration</excludedGroups>
     </properties>
 
@@ -118,6 +119,19 @@
             <groupId>com.alibaba</groupId>
             <artifactId>easyexcel</artifactId>
             <version>3.3.4</version>
+        </dependency>
+
+        <!-- Extract the existing text layer from user-provided PDFs; OCR is intentionally excluded. -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>${pdfbox.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Logstash Logback Encoder (structured JSON logging) -->

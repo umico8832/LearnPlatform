@@ -59,7 +59,17 @@ public class PrivateExamDraftService {
 
     @Transactional
     public PrivateExamDraftVO create(PrivateExamDraftCreateRequest request, Long userId) {
-        PrivateExamImportPreviewVO preview = importService.preview(request);
+        return createFromPreview(request, userId, importService.preview(request));
+    }
+
+    @Transactional
+    public PrivateExamDraftVO createWithSourceHash(PrivateExamDraftCreateRequest request, Long userId,
+                                                    String sourceHash) {
+        return createFromPreview(request, userId, importService.previewWithSourceHash(request, sourceHash));
+    }
+
+    private PrivateExamDraftVO createFromPreview(PrivateExamDraftCreateRequest request, Long userId,
+                                                  PrivateExamImportPreviewVO preview) {
         if (!preview.getContentHash().equalsIgnoreCase(request.getExpectedContentHash())) {
             throw validation("原始资料已变化，请重新预览");
         }

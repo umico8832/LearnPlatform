@@ -192,7 +192,7 @@
 
     <el-dialog v-model="importDialogVisible" title="导入私有试卷" width="min(760px, 92vw)" @closed="resetImport">
       <el-alert
-        title="仅支持结构化 Markdown 或文本；无答案题目会先保存为草稿，AI 建议必须逐题人工复核后才能启用。"
+        title="支持结构化 Markdown、文本或文本型 PDF；无答案题目会先保存为草稿，AI 建议必须逐题人工复核后才能启用。"
         type="info"
         :closable="false"
         show-icon
@@ -219,19 +219,39 @@
             </el-select>
           </el-form-item>
           <el-form-item label="原始资料名称">
-            <el-input v-model="importForm.sourceName" maxlength="255" placeholder="例如：数据结构练习.md" />
+            <el-input
+              v-model="importForm.sourceName"
+              maxlength="255"
+              :disabled="importForm.sourceFormat === 'PDF'"
+              placeholder="例如：数据结构练习.md"
+            />
           </el-form-item>
           <el-form-item label="格式">
             <el-select v-model="importForm.sourceFormat">
               <el-option label="Markdown" value="MARKDOWN" />
               <el-option label="结构化文本" value="TEXT" />
+              <el-option label="文本型 PDF" value="PDF" />
             </el-select>
           </el-form-item>
           <el-form-item label="考试时长（分钟）">
             <el-input-number v-model="importForm.duration" :min="1" :max="600" />
           </el-form-item>
         </div>
-        <el-form-item label="原始内容">
+        <el-form-item v-if="importForm.sourceFormat === 'PDF'" label="PDF 文件">
+          <el-upload
+            accept="application/pdf,.pdf"
+            :auto-upload="false"
+            :limit="1"
+            :on-change="selectPdfFile"
+            :on-remove="removePdfFile"
+          >
+            <el-button plain>选择文本型 PDF</el-button>
+            <template #tip>
+              <span class="upload-tip">最大 10MB、200 页；只提取已有文本，扫描件不做 OCR。</span>
+            </template>
+          </el-upload>
+        </el-form-item>
+        <el-form-item v-else label="原始内容">
           <el-input
             v-model="importForm.content"
             type="textarea"
@@ -372,11 +392,14 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import type { UploadFile } from 'element-plus'
 import { Document, EditPen, Medal, Reading, Timer, Upload, View } from '@element-plus/icons-vue'
 import {
   confirmPrivateExamDraft,
   confirmPrivateExamImport,
+  confirmPrivateExamPdf,
   createPrivateExamDraft,
+  createPrivateExamPdfDraft,
   deletePrivateExamDraft,
   deletePrivateExamPaper,
   generatePrivateExamDraftAnswer,
@@ -385,6 +408,7 @@ import {
   getPrivateExamSource,
   getPublishedPapers,
   previewPrivateExamImport,
+  previewPrivateExamPdf,
   reviewPrivateExamDraftQuestion,
   startExam,
   startExamLearningSession,
@@ -428,6 +452,7 @@ const draftAnswers = ref<Record<number, string[]>>({})
 const draftAnalyses = ref<Record<number, string>>({})
 const sourceDialogVisible = ref(false)
 const privateSource = ref<PrivateExamSource | null>(null)
+const pdfFile = ref<File | null>(null)
 const emptyImportForm = (): PrivateExamImportRequest => ({
   title: '',
   courseId: Number.isFinite(courseId) && courseId > 0 ? courseId : 0,
@@ -438,6 +463,23 @@ const emptyImportForm = (): PrivateExamImportRequest => ({
 })
 const importForm = ref<PrivateExamImportRequest>(emptyImportForm())
 const importPlaceholder = `## 1. 单选题\n**题干**: 栈遵循哪种访问顺序？\n**选项**:\n- A. 先进先出\n- B. 先进后出\n**答案**: B\n**解析**: 栈遵循 LIFO。\n**分值**: 2`
+
+const selectPdfFile = (uploadFile: UploadFile) => {
+  pdfFile.value = uploadFile.raw || null
+  importForm.value.sourceName = uploadFile.name
+  importForm.value.content = ''
+}
+
+const removePdfFile = () => {
+  pdfFile.value = null
+  importForm.value.sourceName = ''
+}
+
+const pdfMetadata = () => ({
+  title: importForm.value.title,
+  courseId: importForm.value.courseId,
+  duration: importForm.value.duration,
+})
 
 // 考试记录
 const recordsLoading = ref(false)
@@ -464,6 +506,13 @@ const openImportDialog = async () => {
 }
 
 const validateImportForm = () => {
+  if (importForm.value.sourceFormat === 'PDF') {
+    if (!importForm.value.title.trim() || !importForm.value.courseId || !pdfFile.value) {
+      ElMessage.warning('请完整填写标题、课程并选择 PDF 文件')
+      return false
+    }
+    return true
+  }
   if (
     !importForm.value.title.trim() ||
     !importForm.value.sourceName.trim() ||
@@ -480,7 +529,10 @@ const previewImport = async () => {
   if (!validateImportForm()) return
   previewLoading.value = true
   try {
-    const res = await previewPrivateExamImport(importForm.value)
+    const res =
+      importForm.value.sourceFormat === 'PDF' && pdfFile.value
+        ? await previewPrivateExamPdf(pdfMetadata(), pdfFile.value)
+        : await previewPrivateExamImport(importForm.value)
     if (res.code === 0 && res.data) importPreview.value = res.data
     else ElMessage.error(res.message || '解析失败')
   } catch {
@@ -494,11 +546,17 @@ const confirmImport = async () => {
   if (!importPreview.value) return
   confirmLoading.value = true
   try {
-    const res = await confirmPrivateExamImport({
-      ...importForm.value,
-      expectedContentHash: importPreview.value.contentHash,
-      confirmed: true,
-    })
+    const res =
+      importForm.value.sourceFormat === 'PDF' && pdfFile.value
+        ? await confirmPrivateExamPdf(
+            { ...pdfMetadata(), expectedContentHash: importPreview.value.contentHash, confirmed: true },
+            pdfFile.value,
+          )
+        : await confirmPrivateExamImport({
+            ...importForm.value,
+            expectedContentHash: importPreview.value.contentHash,
+            confirmed: true,
+          })
     if (res.code === 0 && res.data) {
       ElMessage.success('私有试卷已导入')
       importDialogVisible.value = false
@@ -595,10 +653,16 @@ const createAnswerDraft = async () => {
   if (!importPreview.value) return
   confirmLoading.value = true
   try {
-    const res = await createPrivateExamDraft({
-      ...importForm.value,
-      expectedContentHash: importPreview.value.contentHash,
-    })
+    const res =
+      importForm.value.sourceFormat === 'PDF' && pdfFile.value
+        ? await createPrivateExamPdfDraft(
+            { ...pdfMetadata(), expectedContentHash: importPreview.value.contentHash },
+            pdfFile.value,
+          )
+        : await createPrivateExamDraft({
+            ...importForm.value,
+            expectedContentHash: importPreview.value.contentHash,
+          })
     if (res.code === 0 && res.data) {
       replaceDraft(res.data)
       importPreview.value = null

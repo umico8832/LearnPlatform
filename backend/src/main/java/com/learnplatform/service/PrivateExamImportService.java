@@ -69,16 +69,25 @@ public class PrivateExamImportService {
     }
 
     public PrivateExamImportPreviewVO preview(PrivateExamImportRequest request) {
+        return previewWithSourceHash(request, sha256(request.getContent()));
+    }
+
+    public PrivateExamImportPreviewVO previewWithSourceHash(PrivateExamImportRequest request, String sourceHash) {
         ensureCourseExists(request.getCourseId());
         List<ParsedQuestion> questions = parseAndValidate(request, false);
-        return toPreview(request, questions, sha256(request.getContent()));
+        return toPreview(request, questions, sourceHash);
     }
 
     @Transactional
     public ExamPaperVO confirm(PrivateExamImportConfirmRequest request, Long userId) {
+        return confirmWithSourceHash(request, userId, sha256(request.getContent()));
+    }
+
+    @Transactional
+    public ExamPaperVO confirmWithSourceHash(PrivateExamImportConfirmRequest request, Long userId,
+                                             String sourceHash) {
         ensureCourseExists(request.getCourseId());
-        String contentHash = sha256(request.getContent());
-        if (!contentHash.equalsIgnoreCase(request.getExpectedContentHash())) {
+        if (!sourceHash.equalsIgnoreCase(request.getExpectedContentHash())) {
             throw new BusinessException(ResultCode.VALIDATION_ERROR, "原始资料已变化，请重新预览确认");
         }
         List<ParsedQuestion> questions = parseAndValidate(request, true);
@@ -87,10 +96,10 @@ public class PrivateExamImportService {
         source.setOwnerUserId(userId);
         source.setSourceName(request.getSourceName().trim());
         source.setSourceFormat(request.getSourceFormat());
-        source.setContentSha256(contentHash);
+        source.setContentSha256(sourceHash);
         source.setOriginalContent(request.getContent());
         sourceMapper.insert(source);
-        PrivateExamImportPreviewVO preview = toPreview(request, questions, contentHash);
+        PrivateExamImportPreviewVO preview = toPreview(request, questions, sourceHash);
         return createConfirmedPaper(preview.getTitle(), preview.getCourseId(), preview.getDuration(),
                 source, preview.getQuestions(), userId);
     }
@@ -212,6 +221,7 @@ public class PrivateExamImportService {
 
     private List<ParsedQuestion> parseAndValidate(PrivateExamImportRequest request, boolean requireAnswers) {
         List<ParsedQuestion> questions = "TEXT".equals(request.getSourceFormat())
+                || "PDF".equals(request.getSourceFormat())
                 ? parseText(request.getContent()) : parseMarkdown(request.getContent());
         if (questions.isEmpty()) {
             throw new BusinessException(ResultCode.VALIDATION_ERROR, "未识别到题目");
@@ -409,7 +419,8 @@ public class PrivateExamImportService {
     }
 
     private String formatLabel(String format) {
-        return "MARKDOWN".equals(format) ? "Markdown" : "文本";
+        if ("MARKDOWN".equals(format)) return "Markdown";
+        return "PDF".equals(format) ? "PDF" : "文本";
     }
 
     private record RawOption(String label, String content) { }

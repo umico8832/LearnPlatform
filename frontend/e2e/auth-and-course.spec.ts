@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import type { Locator, Page } from '@playwright/test'
+import path from 'node:path'
 
 async function loginAs(page: Page, username: string, password: string) {
   await page.goto('/login')
@@ -344,6 +345,37 @@ test('用户可删除未引用的私有试卷和未确认草稿', async ({ page 
   await page.getByRole('dialog', { name: '删除私有试卷草稿' }).getByRole('button', { name: '确认删除' }).click()
   await expect(page.getByText('私有试卷草稿已删除')).toBeVisible()
   await expect(dialog.getByText(draftTitle)).toHaveCount(0)
+})
+
+test('用户可上传文本型PDF并沿用预览确认与来源追溯', async ({ page }) => {
+  const paperTitle = `E2E PDF 私有试卷 ${Date.now()}`
+  await loginAs(page, 'testuser', 'test123')
+  await page.goto('/exams')
+  await page.getByRole('button', { name: '导入私有试卷' }).click()
+  const dialog = page.getByRole('dialog', { name: '导入私有试卷' })
+  await dialog.getByRole('textbox', { name: '试卷标题' }).fill(paperTitle)
+  await dialog.getByRole('combobox', { name: '所属课程' }).click()
+  await page.getByRole('option', { name: '408 数据结构' }).click()
+  await dialog.getByRole('combobox', { name: '格式' }).focus()
+  await page.keyboard.press('ArrowDown')
+  await page.getByRole('option', { name: '文本型 PDF' }).click()
+  await dialog.locator('input[type="file"]').setInputFiles(path.resolve('e2e/fixtures/private-exam-text.pdf'))
+  await expect(dialog.getByRole('textbox', { name: '原始资料名称' })).toHaveValue('private-exam-text.pdf')
+  await dialog.getByRole('button', { name: '解析并预览' }).click()
+  await expect(dialog).toContainText('PDF中的栈遵循哪种访问顺序？')
+  await expect(dialog).toContainText('确认答案：B')
+  await dialog.getByRole('button', { name: '确认导入' }).click()
+  await expect(page.getByText('私有试卷已导入')).toBeVisible()
+
+  const card = page.locator('.exam-card').filter({ hasText: paperTitle })
+  await card.getByRole('button', { name: '查看原始资料' }).click()
+  const sourceDialog = page.getByRole('dialog', { name: '私有试卷原始资料' })
+  await expect(sourceDialog).toContainText('private-exam-text.pdf · PDF')
+  await expect(sourceDialog).toContainText('题干：PDF中的栈遵循哪种访问顺序？')
+  await page.keyboard.press('Escape')
+  await card.getByRole('button', { name: '删除试卷' }).click()
+  await page.getByRole('dialog', { name: '删除私有试卷' }).getByRole('button', { name: '确认删除' }).click()
+  await expect(page.getByText('私有试卷已删除')).toBeVisible()
 })
 
 test('用户可完成2026真题学习与限时考试并复盘可信来源', async ({ page }) => {
