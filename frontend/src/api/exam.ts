@@ -249,6 +249,9 @@ export interface PrivateExamDraft {
   duration: number
   status: PrivateExamDraftStatus
   confirmedPaperId: number | null
+  sourceName: string | null
+  sourceFormat: 'MARKDOWN' | 'TEXT' | 'PDF' | 'DOCX' | null
+  originalFileAvailable: boolean
   reviewedQuestionCount: number
   questionCount: number
   createTime: string
@@ -276,6 +279,7 @@ export interface PrivateExamSource {
   sourceFormat: 'MARKDOWN' | 'TEXT' | 'PDF' | 'DOCX'
   contentHash: string
   originalContent: string
+  originalFileAvailable: boolean
   createTime: string
 }
 
@@ -462,6 +466,14 @@ export function deletePrivateExamPaper(paperId: number) {
 
 export function getPrivateExamSource(paperId: number) {
   return request.get<unknown, ApiResponse<PrivateExamSource>>(`/exam/private-papers/${paperId}/source`)
+}
+
+export function downloadPrivateExamSourceFile(paperId: number) {
+  return request.get(`/exam/private-papers/${paperId}/source/file`, { responseType: 'blob' })
+}
+
+export function downloadPrivateExamDraftSourceFile(draftId: number) {
+  return request.get(`/exam/private-papers/drafts/${draftId}/source/file`, { responseType: 'blob' })
 }
 
 export function startExam(paperId: number) {

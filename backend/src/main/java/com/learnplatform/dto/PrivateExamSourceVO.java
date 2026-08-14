@@ -8,6 +8,7 @@ public class PrivateExamSourceVO {
     private String sourceFormat;
     private String contentHash;
     private String originalContent;
+    private Boolean originalFileAvailable;
     private LocalDateTime createTime;
 
     public Long getPaperId() { return paperId; }
@@ -20,6 +21,8 @@ public class PrivateExamSourceVO {
     public void setContentHash(String contentHash) { this.contentHash = contentHash; }
     public String getOriginalContent() { return originalContent; }
     public void setOriginalContent(String originalContent) { this.originalContent = originalContent; }
+    public Boolean getOriginalFileAvailable() { return originalFileAvailable; }
+    public void setOriginalFileAvailable(Boolean originalFileAvailable) { this.originalFileAvailable = originalFileAvailable; }
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
 }

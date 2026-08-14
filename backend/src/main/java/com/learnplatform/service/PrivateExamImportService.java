@@ -88,6 +88,12 @@ public class PrivateExamImportService {
     @Transactional
     public ExamPaperVO confirmWithSourceHash(PrivateExamImportConfirmRequest request, Long userId,
                                              String sourceHash) {
+        return confirmWithSourceFile(request, userId, sourceHash, null, null);
+    }
+
+    @Transactional
+    public ExamPaperVO confirmWithSourceFile(PrivateExamImportConfirmRequest request, Long userId,
+                                             String sourceHash, byte[] sourceFile, String sourceMediaType) {
         ensureCourseExists(request.getCourseId());
         if (!sourceHash.equalsIgnoreCase(request.getExpectedContentHash())) {
             throw new BusinessException(ResultCode.VALIDATION_ERROR, "原始资料已变化，请重新预览确认");
@@ -100,6 +106,7 @@ public class PrivateExamImportService {
         source.setSourceFormat(request.getSourceFormat());
         source.setContentSha256(sourceHash);
         source.setOriginalContent(request.getContent());
+        attachSourceFile(source, sourceFile, sourceMediaType);
         sourceMapper.insert(source);
         PrivateExamImportPreviewVO preview = toPreview(request, questions, sourceHash);
         return createConfirmedPaper(preview.getTitle(), preview.getCourseId(), preview.getDuration(),
@@ -121,8 +128,19 @@ public class PrivateExamImportService {
         vo.setSourceFormat(source.getSourceFormat());
         vo.setContentHash(source.getContentSha256());
         vo.setOriginalContent(source.getOriginalContent());
+        vo.setOriginalFileAvailable(source.getSourceSize() != null && source.getSourceSize() > 0);
         vo.setCreateTime(source.getCreateTime());
         return vo;
+    }
+
+    private void attachSourceFile(UserExamSource source, byte[] sourceFile, String sourceMediaType) {
+        if (sourceFile == null) return;
+        if (sourceFile.length == 0 || sourceFile.length > 10L * 1024 * 1024 || sourceMediaType == null) {
+            throw new BusinessException(ResultCode.VALIDATION_ERROR, "原始文件无效");
+        }
+        source.setSourceMediaType(sourceMediaType);
+        source.setSourceSize((long) sourceFile.length);
+        source.setSourceFile(sourceFile);
     }
 
     ExamPaperVO createConfirmedPaper(String title, Long courseId, Integer duration,

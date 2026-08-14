@@ -30,6 +30,8 @@ import {
   getMyExamRecords,
   getPendingSubjectiveReviews,
   gradeSubjectiveAnswer,
+  downloadPrivateExamSourceFile,
+  downloadPrivateExamDraftSourceFile,
 } from '@/api/exam'
 
 const mockedRequest = vi.mocked(request)
@@ -253,6 +255,26 @@ describe('Exam API', () => {
           params: { pageNum: 1, pageSize: 20 },
         })
       })
+    })
+  })
+
+  describe('私有试卷原文件', () => {
+    it('以 blob 响应下载已确认试卷和草稿的所有者原文件', async () => {
+      mockedRequest.get.mockResolvedValue({ data: new Blob() })
+
+      await downloadPrivateExamSourceFile(51)
+      await downloadPrivateExamDraftSourceFile(31)
+
+      expect(mockedRequest.get).toHaveBeenNthCalledWith(
+        1,
+        '/exam/private-papers/51/source/file',
+        { responseType: 'blob' },
+      )
+      expect(mockedRequest.get).toHaveBeenNthCalledWith(
+        2,
+        '/exam/private-papers/drafts/31/source/file',
+        { responseType: 'blob' },
+      )
     })
   })
 })

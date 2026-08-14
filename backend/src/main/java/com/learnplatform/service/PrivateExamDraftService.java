@@ -59,17 +59,27 @@ public class PrivateExamDraftService {
 
     @Transactional
     public PrivateExamDraftVO create(PrivateExamDraftCreateRequest request, Long userId) {
-        return createFromPreview(request, userId, importService.preview(request));
+        return createFromPreview(request, userId, importService.preview(request), null, null);
     }
 
     @Transactional
     public PrivateExamDraftVO createWithSourceHash(PrivateExamDraftCreateRequest request, Long userId,
                                                     String sourceHash) {
-        return createFromPreview(request, userId, importService.previewWithSourceHash(request, sourceHash));
+        return createFromPreview(request, userId, importService.previewWithSourceHash(request, sourceHash),
+                null, null);
+    }
+
+    @Transactional
+    public PrivateExamDraftVO createWithSourceFile(PrivateExamDraftCreateRequest request, Long userId,
+                                                    String sourceHash, byte[] sourceFile,
+                                                    String sourceMediaType) {
+        return createFromPreview(request, userId, importService.previewWithSourceHash(request, sourceHash),
+                sourceFile, sourceMediaType);
     }
 
     private PrivateExamDraftVO createFromPreview(PrivateExamDraftCreateRequest request, Long userId,
-                                                  PrivateExamImportPreviewVO preview) {
+                                                  PrivateExamImportPreviewVO preview,
+                                                  byte[] sourceFile, String sourceMediaType) {
         if (!preview.getContentHash().equalsIgnoreCase(request.getExpectedContentHash())) {
             throw validation("原始资料已变化，请重新预览");
         }
@@ -83,6 +93,14 @@ public class PrivateExamDraftService {
         source.setSourceFormat(request.getSourceFormat());
         source.setContentSha256(preview.getContentHash());
         source.setOriginalContent(request.getContent());
+        if (sourceFile != null) {
+            if (sourceFile.length == 0 || sourceFile.length > 10L * 1024 * 1024 || sourceMediaType == null) {
+                throw validation("原始文件无效");
+            }
+            source.setSourceMediaType(sourceMediaType);
+            source.setSourceSize((long) sourceFile.length);
+            source.setSourceFile(sourceFile);
+        }
         sourceMapper.insert(source);
 
         PrivateExamImportDraft draft = new PrivateExamImportDraft();
@@ -336,6 +354,14 @@ public class PrivateExamDraftService {
         vo.setDuration(draft.getDuration());
         vo.setStatus(draft.getStatus());
         vo.setConfirmedPaperId(draft.getConfirmedPaperId());
+        UserExamSource source = sourceMapper.selectById(draft.getSourceRecordId());
+        if (source != null && draft.getOwnerUserId().equals(source.getOwnerUserId())) {
+            vo.setSourceName(source.getSourceName());
+            vo.setSourceFormat(source.getSourceFormat());
+            vo.setOriginalFileAvailable(source.getSourceSize() != null && source.getSourceSize() > 0);
+        } else {
+            vo.setOriginalFileAvailable(false);
+        }
         vo.setQuestionCount(questions.size());
         vo.setReviewedQuestionCount((int) questions.stream()
                 .filter(question -> "REVIEWED".equals(question.getReviewStatus())).count());

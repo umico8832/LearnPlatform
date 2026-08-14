@@ -295,6 +295,14 @@
           <strong>{{ activeDraft.title }}</strong>
           <span>{{ activeDraft.reviewedQuestionCount }}/{{ activeDraft.questionCount }} 题已人工复核</span>
         </div>
+        <el-button
+          v-if="activeDraft.originalFileAvailable"
+          plain
+          :loading="sourceDownloading"
+          @click="downloadDraftSource"
+        >
+          下载草稿原文件
+        </el-button>
         <el-alert
           title="AI 只提供建议，不会直接成为判分答案；每题必须由你选择答案并确认解析。"
           type="warning"
@@ -386,6 +394,15 @@
         <p class="source-meta">
           {{ privateSource.sourceName }} · {{ privateSource.sourceFormat }} · {{ privateSource.contentHash }}
         </p>
+        <el-button
+          v-if="privateSource.originalFileAvailable"
+          type="primary"
+          plain
+          :loading="sourceDownloading"
+          @click="downloadPaperSource"
+        >
+          下载原文件
+        </el-button>
         <pre class="source-content">{{ privateSource.originalContent }}</pre>
       </template>
     </el-dialog>
@@ -408,6 +425,8 @@ import {
   createPrivateExamDocxDraft,
   deletePrivateExamDraft,
   deletePrivateExamPaper,
+  downloadPrivateExamDraftSourceFile,
+  downloadPrivateExamSourceFile,
   generatePrivateExamDraftAnswer,
   getMyExamRecords,
   getPrivateExamDrafts,
@@ -459,6 +478,7 @@ const draftAnswers = ref<Record<number, string[]>>({})
 const draftAnalyses = ref<Record<number, string>>({})
 const sourceDialogVisible = ref(false)
 const privateSource = ref<PrivateExamSource | null>(null)
+const sourceDownloading = ref(false)
 const sourceFile = ref<File | null>(null)
 const emptyImportForm = (): PrivateExamImportRequest => ({
   title: '',
@@ -784,6 +804,49 @@ const showOriginalSource = async (paperId: number) => {
     }
   } catch {
     ElMessage.error('原始资料不可用')
+  }
+}
+
+const saveSourceFile = (data: BlobPart, mediaType: string, filename: string) => {
+  const url = window.URL.createObjectURL(new Blob([data], { type: mediaType }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  window.URL.revokeObjectURL(url)
+}
+
+const downloadPaperSource = async () => {
+  if (!privateSource.value) return
+  sourceDownloading.value = true
+  try {
+    const response = await downloadPrivateExamSourceFile(privateSource.value.paperId)
+    saveSourceFile(
+      response.data,
+      String(response.headers['content-type'] || 'application/octet-stream'),
+      privateSource.value.sourceName,
+    )
+  } catch {
+    ElMessage.error('原文件下载失败')
+  } finally {
+    sourceDownloading.value = false
+  }
+}
+
+const downloadDraftSource = async () => {
+  if (!activeDraft.value?.sourceName) return
+  sourceDownloading.value = true
+  try {
+    const response = await downloadPrivateExamDraftSourceFile(activeDraft.value.id)
+    saveSourceFile(
+      response.data,
+      String(response.headers['content-type'] || 'application/octet-stream'),
+      activeDraft.value.sourceName,
+    )
+  } catch {
+    ElMessage.error('原文件下载失败')
+  } finally {
+    sourceDownloading.value = false
   }
 }
 

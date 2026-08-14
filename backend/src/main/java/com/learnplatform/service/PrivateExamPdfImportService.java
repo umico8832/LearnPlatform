@@ -26,6 +26,7 @@ import java.util.Locale;
 
 @Service
 public class PrivateExamPdfImportService {
+    private static final String MEDIA_TYPE = "application/pdf";
     private static final long MAX_FILE_SIZE = 10L * 1024 * 1024;
     private static final int MAX_PAGES = 200;
     private static final int MAX_TEXT_LENGTH = 100000;
@@ -50,7 +51,7 @@ public class PrivateExamPdfImportService {
         copy(pdf.request(), request);
         request.setExpectedContentHash(metadata.getExpectedContentHash());
         request.setConfirmed(metadata.isConfirmed());
-        return importService.confirmWithSourceHash(request, userId, pdf.hash());
+        return importService.confirmWithSourceFile(request, userId, pdf.hash(), pdf.bytes(), MEDIA_TYPE);
     }
 
     public PrivateExamDraftVO createDraft(PrivateExamPdfDraftCreateRequest metadata,
@@ -59,7 +60,7 @@ public class PrivateExamPdfImportService {
         PrivateExamDraftCreateRequest request = new PrivateExamDraftCreateRequest();
         copy(pdf.request(), request);
         request.setExpectedContentHash(metadata.getExpectedContentHash());
-        return draftService.createWithSourceHash(request, userId, pdf.hash());
+        return draftService.createWithSourceFile(request, userId, pdf.hash(), pdf.bytes(), MEDIA_TYPE);
     }
 
     private PreparedPdf prepare(PrivateExamPdfRequest metadata, MultipartFile file) {
@@ -73,7 +74,7 @@ public class PrivateExamPdfImportService {
         request.setSourceName(filename);
         request.setSourceFormat("PDF");
         request.setContent(text);
-        return new PreparedPdf(request, sha256(bytes));
+        return new PreparedPdf(request, sha256(bytes), bytes);
     }
 
     private byte[] readFile(MultipartFile file) {
@@ -139,5 +140,5 @@ public class PrivateExamPdfImportService {
         return new BusinessException(ResultCode.VALIDATION_ERROR, message);
     }
 
-    private record PreparedPdf(PrivateExamImportRequest request, String hash) { }
+    private record PreparedPdf(PrivateExamImportRequest request, String hash, byte[] bytes) { }
 }

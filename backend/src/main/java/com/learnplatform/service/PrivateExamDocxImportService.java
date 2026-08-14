@@ -31,6 +31,8 @@ import java.util.Locale;
 
 @Service
 public class PrivateExamDocxImportService {
+    private static final String MEDIA_TYPE =
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     private static final long MAX_FILE_SIZE = 10L * 1024 * 1024;
     private static final int MAX_TEXT_LENGTH = 100000;
 
@@ -54,7 +56,7 @@ public class PrivateExamDocxImportService {
         copy(docx.request(), request);
         request.setExpectedContentHash(metadata.getExpectedContentHash());
         request.setConfirmed(metadata.isConfirmed());
-        return importService.confirmWithSourceHash(request, userId, docx.hash());
+        return importService.confirmWithSourceFile(request, userId, docx.hash(), docx.bytes(), MEDIA_TYPE);
     }
 
     public PrivateExamDraftVO createDraft(PrivateExamDocxDraftCreateRequest metadata,
@@ -63,7 +65,7 @@ public class PrivateExamDocxImportService {
         PrivateExamDraftCreateRequest request = new PrivateExamDraftCreateRequest();
         copy(docx.request(), request);
         request.setExpectedContentHash(metadata.getExpectedContentHash());
-        return draftService.createWithSourceHash(request, userId, docx.hash());
+        return draftService.createWithSourceFile(request, userId, docx.hash(), docx.bytes(), MEDIA_TYPE);
     }
 
     private PreparedDocx prepare(PrivateExamDocxRequest metadata, MultipartFile file) {
@@ -77,7 +79,7 @@ public class PrivateExamDocxImportService {
         request.setSourceName(filename);
         request.setSourceFormat("DOCX");
         request.setContent(text);
-        return new PreparedDocx(request, sha256(bytes));
+        return new PreparedDocx(request, sha256(bytes), bytes);
     }
 
     private byte[] readFile(MultipartFile file) {
@@ -179,5 +181,5 @@ public class PrivateExamDocxImportService {
         return new BusinessException(ResultCode.VALIDATION_ERROR, message);
     }
 
-    private record PreparedDocx(PrivateExamImportRequest request, String hash) { }
+    private record PreparedDocx(PrivateExamImportRequest request, String hash, byte[] bytes) { }
 }

@@ -94,6 +94,24 @@ service.interceptors.request.use(
  */
 service.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
+    if (response.config.responseType === 'blob') {
+      const blob = response.data as unknown
+      const contentType = String(response.headers['content-type'] || '')
+      if (blob instanceof Blob && contentType.includes('application/json')) {
+        return blob.text().then((text) => {
+          const errorResponse = JSON.parse(text) as ApiResponse
+          if (errorResponse.code === 1002) {
+            removeToken()
+            redirectToLogin()
+            ElMessage.error('登录已过期，请重新登录')
+          } else {
+            ElMessage.error(errorResponse.message || '请求失败')
+          }
+          return Promise.reject(new Error(errorResponse.message || '请求失败'))
+        })
+      }
+      return response
+    }
     const res = response.data
 
     // code === 0 表示成功

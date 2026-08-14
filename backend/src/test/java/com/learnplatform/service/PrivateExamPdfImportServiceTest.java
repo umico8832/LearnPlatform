@@ -109,13 +109,15 @@ class PrivateExamPdfImportServiceTest {
         metadata.setExpectedContentHash(sha256(bytes));
         metadata.setConfirmed(true);
         ExamPaperVO expected = new ExamPaperVO();
-        when(importService.confirmWithSourceHash(any(), org.mockito.ArgumentMatchers.eq(7L), anyString()))
+        when(importService.confirmWithSourceFile(any(), org.mockito.ArgumentMatchers.eq(7L), anyString(),
+                org.mockito.ArgumentMatchers.eq(bytes), org.mockito.ArgumentMatchers.eq("application/pdf")))
                 .thenReturn(expected);
 
         assertEquals(expected, service.confirm(metadata, file, 7L));
 
-        verify(importService).confirmWithSourceHash(any(), org.mockito.ArgumentMatchers.eq(7L),
-                org.mockito.ArgumentMatchers.eq(sha256(bytes)));
+        verify(importService).confirmWithSourceFile(any(), org.mockito.ArgumentMatchers.eq(7L),
+                org.mockito.ArgumentMatchers.eq(sha256(bytes)), org.mockito.ArgumentMatchers.eq(bytes),
+                org.mockito.ArgumentMatchers.eq("application/pdf"));
     }
 
     @Test
@@ -126,13 +128,15 @@ class PrivateExamPdfImportServiceTest {
         copyMetadata(metadata);
         metadata.setExpectedContentHash(sha256(bytes));
         PrivateExamDraftVO expected = new PrivateExamDraftVO();
-        when(draftService.createWithSourceHash(any(), org.mockito.ArgumentMatchers.eq(7L), anyString()))
+        when(draftService.createWithSourceFile(any(), org.mockito.ArgumentMatchers.eq(7L), anyString(),
+                org.mockito.ArgumentMatchers.eq(bytes), org.mockito.ArgumentMatchers.eq("application/pdf")))
                 .thenReturn(expected);
 
         assertEquals(expected, service.createDraft(metadata, file, 7L));
 
-        verify(draftService).createWithSourceHash(any(), org.mockito.ArgumentMatchers.eq(7L),
-                org.mockito.ArgumentMatchers.eq(sha256(bytes)));
+        verify(draftService).createWithSourceFile(any(), org.mockito.ArgumentMatchers.eq(7L),
+                org.mockito.ArgumentMatchers.eq(sha256(bytes)), org.mockito.ArgumentMatchers.eq(bytes),
+                org.mockito.ArgumentMatchers.eq("application/pdf"));
     }
 
     private PrivateExamPdfRequest metadata() {

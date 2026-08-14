@@ -17,6 +17,10 @@ public class UserExamSource {
     private String sourceFormat;
     private String contentSha256;
     private String originalContent;
+    private String sourceMediaType;
+    private Long sourceSize;
+    @TableField(select = false)
+    private byte[] sourceFile;
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
@@ -32,6 +36,12 @@ public class UserExamSource {
     public void setContentSha256(String contentSha256) { this.contentSha256 = contentSha256; }
     public String getOriginalContent() { return originalContent; }
     public void setOriginalContent(String originalContent) { this.originalContent = originalContent; }
+    public String getSourceMediaType() { return sourceMediaType; }
+    public void setSourceMediaType(String sourceMediaType) { this.sourceMediaType = sourceMediaType; }
+    public Long getSourceSize() { return sourceSize; }
+    public void setSourceSize(Long sourceSize) { this.sourceSize = sourceSize; }
+    public byte[] getSourceFile() { return sourceFile; }
+    public void setSourceFile(byte[] sourceFile) { this.sourceFile = sourceFile; }
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
 }

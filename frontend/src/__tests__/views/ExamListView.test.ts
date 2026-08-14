@@ -15,6 +15,8 @@ const {
   mockConfirmPrivateExamDocx,
   mockCreatePrivateExamDocxDraft,
   mockGetPrivateExamSource,
+  mockDownloadPrivateExamSourceFile,
+  mockDownloadPrivateExamDraftSourceFile,
   mockCreatePrivateExamDraft,
   mockGeneratePrivateExamDraftAnswer,
   mockReviewPrivateExamDraftQuestion,
@@ -38,6 +40,8 @@ const {
   mockConfirmPrivateExamDocx: vi.fn(),
   mockCreatePrivateExamDocxDraft: vi.fn(),
   mockGetPrivateExamSource: vi.fn(),
+  mockDownloadPrivateExamSourceFile: vi.fn(),
+  mockDownloadPrivateExamDraftSourceFile: vi.fn(),
   mockCreatePrivateExamDraft: vi.fn(),
   mockGeneratePrivateExamDraftAnswer: vi.fn(),
   mockReviewPrivateExamDraftQuestion: vi.fn(),
@@ -64,6 +68,8 @@ vi.mock('@/api/exam', () => ({
   confirmPrivateExamDocx: (...args: unknown[]) => mockConfirmPrivateExamDocx(...args),
   createPrivateExamDocxDraft: (...args: unknown[]) => mockCreatePrivateExamDocxDraft(...args),
   getPrivateExamSource: (...args: unknown[]) => mockGetPrivateExamSource(...args),
+  downloadPrivateExamSourceFile: (...args: unknown[]) => mockDownloadPrivateExamSourceFile(...args),
+  downloadPrivateExamDraftSourceFile: (...args: unknown[]) => mockDownloadPrivateExamDraftSourceFile(...args),
   createPrivateExamDraft: (...args: unknown[]) => mockCreatePrivateExamDraft(...args),
   generatePrivateExamDraftAnswer: (...args: unknown[]) => mockGeneratePrivateExamDraftAnswer(...args),
   reviewPrivateExamDraftQuestion: (...args: unknown[]) => mockReviewPrivateExamDraftQuestion(...args),
@@ -125,6 +131,14 @@ describe('ExamListView paper provenance', () => {
     mockStartExam.mockResolvedValue({ code: 0, data: { id: 101, examPaperId: 1, status: 0 } })
     mockGetMyExamRecords.mockResolvedValue({ code: 0, data: { records: [], total: 0 } })
     mockGetPrivateExamDrafts.mockResolvedValue({ code: 0, data: [] })
+    mockDownloadPrivateExamSourceFile.mockResolvedValue({
+      data: new Blob(['pdf']),
+      headers: { 'content-type': 'application/pdf' },
+    })
+    mockDownloadPrivateExamDraftSourceFile.mockResolvedValue({
+      data: new Blob(['docx']),
+      headers: { 'content-type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
+    })
     mockConfirmDialog.mockResolvedValue(undefined)
     mockDeletePrivateExamDraft.mockResolvedValue({ code: 0, data: null })
     mockDeletePrivateExamPaper.mockResolvedValue({ code: 0, data: null })
@@ -456,6 +470,38 @@ describe('ExamListView paper provenance', () => {
     await vm.deletePaper(paperFixture)
     expect(mockDeletePrivateExamPaper).toHaveBeenCalledWith(51)
     expect(mockConfirmDialog).toHaveBeenCalledTimes(2)
+  })
+
+  it('仅在原文件可用时下载已确认试卷或草稿来源', async () => {
+    const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test')
+    const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
+    const wrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as {
+      privateSource: Record<string, unknown> | null
+      activeDraft: Record<string, unknown> | null
+      downloadPaperSource: () => Promise<void>
+      downloadDraftSource: () => Promise<void>
+    }
+    vm.privateSource = {
+      paperId: 51,
+      sourceName: 'paper.pdf',
+      sourceFormat: 'PDF',
+      originalFileAvailable: true,
+    }
+    vm.activeDraft = {
+      id: 31,
+      sourceName: 'paper.docx',
+      originalFileAvailable: true,
+    }
+
+    await vm.downloadPaperSource()
+    await vm.downloadDraftSource()
+
+    expect(mockDownloadPrivateExamSourceFile).toHaveBeenCalledWith(51)
+    expect(mockDownloadPrivateExamDraftSourceFile).toHaveBeenCalledWith(31)
+    expect(createObjectURL).toHaveBeenCalledTimes(2)
+    expect(revokeObjectURL).toHaveBeenCalledTimes(2)
   })
 
   it('只把来源已核验的官方试卷标记为官方原题并展示来源', async () => {

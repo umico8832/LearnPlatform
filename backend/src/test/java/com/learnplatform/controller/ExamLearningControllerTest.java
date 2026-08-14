@@ -23,6 +23,8 @@ import com.learnplatform.service.PrivateExamDraftService;
 import com.learnplatform.service.PrivateExamContentLifecycleService;
 import com.learnplatform.service.PrivateExamPdfImportService;
 import com.learnplatform.service.PrivateExamDocxImportService;
+import com.learnplatform.service.PrivateExamSourceFile;
+import com.learnplatform.service.PrivateExamSourceFileService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,6 +48,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
@@ -59,6 +63,7 @@ class ExamLearningControllerTest {
     @Mock private PrivateExamContentLifecycleService privateExamContentLifecycleService;
     @Mock private PrivateExamPdfImportService privateExamPdfImportService;
     @Mock private PrivateExamDocxImportService privateExamDocxImportService;
+    @Mock private PrivateExamSourceFileService privateExamSourceFileService;
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -66,7 +71,8 @@ class ExamLearningControllerTest {
     void setUp() {
         ExamController controller = new ExamController(
                 examService, examPaperService, learningService, privateExamImportService, privateExamDraftService,
-                privateExamContentLifecycleService, privateExamPdfImportService, privateExamDocxImportService);
+                privateExamContentLifecycleService, privateExamPdfImportService, privateExamDocxImportService,
+                privateExamSourceFileService);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
@@ -257,6 +263,30 @@ class ExamLearningControllerTest {
                         .file(metadataPart).file(file).with(mockUser(7L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.questionCount").value(1));
+    }
+
+    @Test
+    void downloadsOwnedPaperAndDraftSourceFilesWithPrivateHeaders() throws Exception {
+        byte[] pdf = "%PDF-source".getBytes();
+        byte[] docx = "PK-source".getBytes();
+        when(privateExamSourceFileService.getForPaper(51L, 7L))
+                .thenReturn(new PrivateExamSourceFile("试卷.pdf", "application/pdf", pdf));
+        when(privateExamSourceFileService.getForDraft(31L, 7L)).thenReturn(new PrivateExamSourceFile(
+                "paper.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", docx));
+
+        mockMvc.perform(get("/api/exam/private-papers/51/source/file").with(mockUser(7L)))
+                .andExpect(status().isOk())
+                .andExpect(content().bytes(pdf))
+                .andExpect(content().contentType("application/pdf"))
+                .andExpect(header().string("Content-Disposition",
+                        org.hamcrest.Matchers.containsString("attachment")))
+                .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.containsString("no-store")))
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"));
+        mockMvc.perform(get("/api/exam/private-papers/drafts/31/source/file").with(mockUser(7L)))
+                .andExpect(status().isOk())
+                .andExpect(content().bytes(docx))
+                .andExpect(content().contentType(
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
     }
 
     private PrivateExamImportRequest privateImportRequest() {

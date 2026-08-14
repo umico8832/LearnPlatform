@@ -10,6 +10,9 @@ public class PrivateExamDraftVO {
     private Integer duration;
     private String status;
     private Long confirmedPaperId;
+    private String sourceName;
+    private String sourceFormat;
+    private Boolean originalFileAvailable;
     private Integer reviewedQuestionCount;
     private Integer questionCount;
     private LocalDateTime createTime;
@@ -27,6 +30,12 @@ public class PrivateExamDraftVO {
     public void setStatus(String status) { this.status = status; }
     public Long getConfirmedPaperId() { return confirmedPaperId; }
     public void setConfirmedPaperId(Long confirmedPaperId) { this.confirmedPaperId = confirmedPaperId; }
+    public String getSourceName() { return sourceName; }
+    public void setSourceName(String sourceName) { this.sourceName = sourceName; }
+    public String getSourceFormat() { return sourceFormat; }
+    public void setSourceFormat(String sourceFormat) { this.sourceFormat = sourceFormat; }
+    public Boolean getOriginalFileAvailable() { return originalFileAvailable; }
+    public void setOriginalFileAvailable(Boolean originalFileAvailable) { this.originalFileAvailable = originalFileAvailable; }
     public Integer getReviewedQuestionCount() { return reviewedQuestionCount; }
     public void setReviewedQuestionCount(Integer reviewedQuestionCount) { this.reviewedQuestionCount = reviewedQuestionCount; }
     public Integer getQuestionCount() { return questionCount; }

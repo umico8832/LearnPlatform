@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import type { Locator, Page } from '@playwright/test'
 import path from 'node:path'
+import { readFile } from 'node:fs/promises'
 
 async function loginAs(page: Page, username: string, password: string) {
   await page.goto('/login')
@@ -403,6 +404,13 @@ test('用户可上传有限DOCX并提取段落表格进入同一确认闭环', a
   const sourceDialog = page.getByRole('dialog', { name: '私有试卷原始资料' })
   await expect(sourceDialog).toContainText('private-exam-text.docx · DOCX')
   await expect(sourceDialog).toContainText('A. First in, first out')
+  const downloadPromise = page.waitForEvent('download')
+  await sourceDialog.getByRole('button', { name: '下载原文件' }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toBe('private-exam-text.docx')
+  expect(await readFile(await download.path())).toEqual(
+    await readFile(path.resolve('e2e/fixtures/private-exam-text.docx')),
+  )
   await page.keyboard.press('Escape')
   await card.getByRole('button', { name: '删除试卷' }).click()
   await page.getByRole('dialog', { name: '删除私有试卷' }).getByRole('button', { name: '确认删除' }).click()

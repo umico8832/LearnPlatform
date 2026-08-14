@@ -31,14 +31,22 @@ import com.learnplatform.service.PrivateExamDraftService;
 import com.learnplatform.service.PrivateExamContentLifecycleService;
 import com.learnplatform.service.PrivateExamPdfImportService;
 import com.learnplatform.service.PrivateExamDocxImportService;
+import com.learnplatform.service.PrivateExamSourceFile;
+import com.learnplatform.service.PrivateExamSourceFileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.nio.charset.StandardCharsets;
 
 /**
  * 用户端考试控制器
@@ -56,6 +64,7 @@ public class ExamController {
     private final PrivateExamContentLifecycleService privateExamContentLifecycleService;
     private final PrivateExamPdfImportService privateExamPdfImportService;
     private final PrivateExamDocxImportService privateExamDocxImportService;
+    private final PrivateExamSourceFileService privateExamSourceFileService;
 
     public ExamController(ExamService examService, ExamPaperService examPaperService,
                           ExamPaperLearningService examPaperLearningService,
@@ -63,7 +72,8 @@ public class ExamController {
                           PrivateExamDraftService privateExamDraftService,
                           PrivateExamContentLifecycleService privateExamContentLifecycleService,
                           PrivateExamPdfImportService privateExamPdfImportService,
-                          PrivateExamDocxImportService privateExamDocxImportService) {
+                          PrivateExamDocxImportService privateExamDocxImportService,
+                          PrivateExamSourceFileService privateExamSourceFileService) {
         this.examService = examService;
         this.examPaperService = examPaperService;
         this.examPaperLearningService = examPaperLearningService;
@@ -72,6 +82,7 @@ public class ExamController {
         this.privateExamContentLifecycleService = privateExamContentLifecycleService;
         this.privateExamPdfImportService = privateExamPdfImportService;
         this.privateExamDocxImportService = privateExamDocxImportService;
+        this.privateExamSourceFileService = privateExamSourceFileService;
     }
 
 
@@ -225,6 +236,32 @@ public class ExamController {
             @PathVariable Long paperId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return R.ok(privateExamImportService.getSource(paperId, userDetails.getUserId()));
+    }
+
+    @GetMapping("/private-papers/{paperId}/source/file")
+    public ResponseEntity<byte[]> downloadPrivatePaperSourceFile(
+            @PathVariable Long paperId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return sourceFileResponse(privateExamSourceFileService.getForPaper(paperId, userDetails.getUserId()));
+    }
+
+    @GetMapping("/private-papers/drafts/{draftId}/source/file")
+    public ResponseEntity<byte[]> downloadPrivatePaperDraftSourceFile(
+            @PathVariable Long draftId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return sourceFileResponse(privateExamSourceFileService.getForDraft(draftId, userDetails.getUserId()));
+    }
+
+    private ResponseEntity<byte[]> sourceFileResponse(PrivateExamSourceFile file) {
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename(file.filename(), StandardCharsets.UTF_8).build();
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(file.mediaType()))
+                .contentLength(file.content().length)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .header("X-Content-Type-Options", "nosniff")
+                .cacheControl(CacheControl.noStore().cachePrivate())
+                .body(file.content());
     }
 
 

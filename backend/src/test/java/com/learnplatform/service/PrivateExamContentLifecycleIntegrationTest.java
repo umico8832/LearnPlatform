@@ -10,8 +10,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.MessageDigest;
+import java.util.HexFormat;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("integration")
 @SpringBootTest
@@ -25,6 +29,8 @@ class PrivateExamContentLifecycleIntegrationTest extends IntegrationTestBase {
     void deletesUnconfirmedDraftAndItsUnreferencedSource() {
         Long userId = userId();
         Long sourceId = insertSource(userId, "draft-source");
+        assertTrue(jdbcTemplate.queryForObject(
+                "SELECT OCTET_LENGTH(source_file) FROM user_exam_source WHERE id = ?", Long.class, sourceId) > 0);
         jdbcTemplate.update("""
                 INSERT INTO private_exam_import_draft
                   (owner_user_id,title,course_id,duration,source_record_id,status)
@@ -109,12 +115,22 @@ class PrivateExamContentLifecycleIntegrationTest extends IntegrationTestBase {
     }
 
     private Long insertSource(Long userId, String suffix) {
+        byte[] sourceFile = ("%PDF-" + suffix).getBytes();
         jdbcTemplate.update("""
                 INSERT INTO user_exam_source
-                  (owner_user_id,source_name,source_format,content_sha256,original_content)
-                VALUES (?,?,'TEXT',?,'原始资料')
-                """, userId, suffix + ".txt", String.format("%064x", Math.abs(suffix.hashCode())));
+                  (owner_user_id,source_name,source_format,content_sha256,original_content,
+                   source_media_type,source_size,source_file)
+                VALUES (?,?,'PDF',?,'原始资料','application/pdf',?,?)
+                """, userId, suffix + ".pdf", sha256(sourceFile), sourceFile.length, sourceFile);
         return lastId();
+    }
+
+    private String sha256(byte[] bytes) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
     }
 
     private Long userId() {

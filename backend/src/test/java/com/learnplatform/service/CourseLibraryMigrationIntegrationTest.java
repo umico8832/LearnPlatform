@@ -68,6 +68,23 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void migrationAddsRestrictedPrivateExamSourceFileColumns() {
+        Integer columns = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_schema = DATABASE() AND table_name = 'user_exam_source'
+                  AND column_name IN ('source_media_type', 'source_size', 'source_file')
+                """, Integer.class);
+        String blobType = jdbcTemplate.queryForObject("""
+                SELECT data_type FROM information_schema.columns
+                WHERE table_schema = DATABASE() AND table_name = 'user_exam_source'
+                  AND column_name = 'source_file'
+                """, String.class);
+
+        assertEquals(3, columns);
+        assertEquals("mediumblob", blobType);
+    }
+
+    @Test
     void migrationAddsTutorLearningContextSnapshot() {
         Integer columnCount = jdbcTemplate.queryForObject("""
                 SELECT COUNT(*) FROM information_schema.columns
