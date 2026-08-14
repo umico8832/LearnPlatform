@@ -35,6 +35,11 @@
 
 Tutor 仅可打开已加入课程、属于该课程且审查状态为 `REVIEWED` 的内容；响应不会返回正确选项。
 理解检查由服务端首次判分并写入可追加课程学习事件，重复提交返回既有结果。
+启动 Tutor 会话时，响应的 `learningContext` 会返回目标知识点及其同课程祖先目录范围内的服务端证据
+聚合快照：`paperAnswerCount`、`paperIncorrectCount`、`paperAiAssistanceCount`、
+`unresolvedWrongCount`、`dueReviewCount`、`reviewAnswerCount` 和 `latestEvidenceAt`。快照随会话保存，
+只包含计数与时间，不返回原始答案、正确答案或 AI 输出，也不能被解释为掌握度；没有相关证据时前端不
+制造进度卡片。
 当已审查教学内容显式声明路径时，理解检查响应会额外给出 `guidanceType`、
 `guidanceTitle`、`guidanceDescription` 和可空的 `guidanceKnowledgePointId`：答错时为前置补充
 （`PREREQUISITE`），答对时为后续目标（`NEXT_TARGET`）。前三项只表达路径建议；服务端仅在目标

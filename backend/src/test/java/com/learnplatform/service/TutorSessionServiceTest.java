@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.TutorCheckAnswerRequest;
 import com.learnplatform.dto.TutorCheckResultVO;
+import com.learnplatform.dto.TutorLearningContextVO;
 import com.learnplatform.dto.TutorSessionVO;
 import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.TutorContent;
@@ -31,15 +32,25 @@ class TutorSessionServiceTest {
         UserCourseMapper users = mock(UserCourseMapper.class); KnowledgePointMapper points = mock(KnowledgePointMapper.class);
         TutorContentMapper contents = mock(TutorContentMapper.class); TutorSessionMapper sessions = mock(TutorSessionMapper.class);
         CourseLearningEventService events = mock(CourseLearningEventService.class);
+        TutorLearningContextService contexts = mock(TutorLearningContextService.class);
         when(users.selectCount(any())).thenReturn(1L); KnowledgePoint point = new KnowledgePoint(); point.setId(3L); point.setCourseId(10L); point.setContentReviewStatus("REVIEWED"); when(points.selectById(3L)).thenReturn(point);
         TutorContent content = new TutorContent(); content.setId(8L); content.setTitle("ArrayStack"); content.setLessonJson("{\"summary\":\"x\"}"); content.setCheckJson("{\"correctOptionId\":\"RIGHT_TO_LEFT\",\"options\":[]}"); when(contents.selectOne(any())).thenReturn(content);
+        TutorLearningContextVO learningContext = new TutorLearningContextVO();
+        learningContext.setPaperAnswerCount(3); learningContext.setUnresolvedWrongCount(2);
+        when(contexts.summarize(7L, 10L, 3L)).thenReturn(learningContext);
         doAnswer(i -> { ((TutorSession) i.getArgument(0)).setId(9L); return 1; }).when(sessions).insert(any());
-        TutorSessionVO result = new TutorSessionService(users, points, contents, sessions, new ObjectMapper(), events).start(7L, 10L, 3L);
+        TutorSessionVO result = new TutorSessionService(
+                users, points, contents, sessions, new ObjectMapper(), events, contexts).start(7L, 10L, 3L);
         assertFalse(result.getCheck().has("correctOptionId")); assertNotNull(result.getSessionKey());
+        assertEquals(3, result.getLearningContext().getPaperAnswerCount());
+        assertEquals(2, result.getLearningContext().getUnresolvedWrongCount());
+        verify(sessions).insert(argThat(session -> session.getLearningContextJson().contains("\"paperAnswerCount\":3")));
     }
     @Test void rejectsTutorStartOutsideLibrary() {
         UserCourseMapper users = mock(UserCourseMapper.class); when(users.selectCount(any())).thenReturn(0L);
-        TutorSessionService service = new TutorSessionService(users, mock(KnowledgePointMapper.class), mock(TutorContentMapper.class), mock(TutorSessionMapper.class), new ObjectMapper(), mock(CourseLearningEventService.class));
+        TutorSessionService service = new TutorSessionService(users, mock(KnowledgePointMapper.class),
+                mock(TutorContentMapper.class), mock(TutorSessionMapper.class), new ObjectMapper(),
+                mock(CourseLearningEventService.class), mock(TutorLearningContextService.class));
         assertThrows(BusinessException.class, () -> service.start(7L, 10L, 3L));
     }
 
@@ -57,7 +68,8 @@ class TutorSessionServiceTest {
         KnowledgePoint prerequisite = new KnowledgePoint(); prerequisite.setId(30L);
         KnowledgePoint nextTarget = new KnowledgePoint(); nextTarget.setId(35L);
         when(points.selectOne(any())).thenReturn(prerequisite, nextTarget);
-        TutorSessionService service = new TutorSessionService(users, points, contents, sessions, new ObjectMapper(), events);
+        TutorSessionService service = new TutorSessionService(users, points, contents, sessions,
+                new ObjectMapper(), events, mock(TutorLearningContextService.class));
 
         TutorCheckAnswerRequest incorrect = new TutorCheckAnswerRequest(); incorrect.setOptionId("LEFT_TO_RIGHT");
         TutorCheckResultVO incorrectResult = service.answer(7L, "session", incorrect);
@@ -85,7 +97,8 @@ class TutorSessionServiceTest {
         when(sessions.selectOne(any())).thenReturn(session);
         when(contents.selectById(8L)).thenReturn(content);
         when(sessions.update(any(), any())).thenReturn(1);
-        TutorSessionService service = new TutorSessionService(users, points, contents, sessions, new ObjectMapper(), events);
+        TutorSessionService service = new TutorSessionService(users, points, contents, sessions,
+                new ObjectMapper(), events, mock(TutorLearningContextService.class));
 
         TutorCheckAnswerRequest answer = new TutorCheckAnswerRequest(); answer.setOptionId("LEFT_TO_RIGHT");
         assertEquals("正确：删除后从左向右搬移后缀，填补空位。", service.answer(7L, "session", answer).getExplanation());

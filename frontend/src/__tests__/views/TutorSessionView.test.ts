@@ -79,6 +79,15 @@ describe('TutorSessionView', () => {
         title: 'ArrayQueue 的循环数组表示',
         lesson: { summary: 'summary', steps: ['step'] },
         check: { id: 'check', prompt: 'prompt', options: [{ id: 'RIGHT', text: '正确选项' }] },
+        learningContext: {
+          paperAnswerCount: 3,
+          paperIncorrectCount: 2,
+          paperAiAssistanceCount: 1,
+          unresolvedWrongCount: 2,
+          dueReviewCount: 1,
+          reviewAnswerCount: 4,
+          latestEvidenceAt: '2026-08-15T09:30:00',
+        },
       },
     })
     mockSubmitTutorCheck.mockResolvedValue({
@@ -107,5 +116,44 @@ describe('TutorSessionView', () => {
       params: { id: 408 },
       query: { knowledgePointId: '38' },
     })
+  })
+
+  it('展示Tutor会话启动时消费的跨入口学习证据', async () => {
+    const wrapper = mount(TutorSessionView, { global: { stubs } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('跨入口学习证据')
+    expect(wrapper.text()).toContain('3次真题学习作答')
+    expect(wrapper.text()).toContain('其中 2 次答错')
+    expect(wrapper.text()).toContain('1次试卷 AI 辅导')
+    expect(wrapper.text()).toContain('2道未掌握错题')
+    expect(wrapper.text()).toContain('1道到期复习')
+    expect(wrapper.text()).toContain('4次复习作答')
+    expect(wrapper.text()).toContain('2026-08-15 09:30')
+  })
+
+  it('没有相关证据时不制造学习进度卡片', async () => {
+    mockStartTutorSession.mockResolvedValueOnce({
+      data: {
+        sessionKey: 'empty-context-session',
+        title: 'ArrayQueue 的循环数组表示',
+        lesson: { summary: 'summary', steps: ['step'] },
+        check: { id: 'check', prompt: 'prompt', options: [] },
+        learningContext: {
+          paperAnswerCount: 0,
+          paperIncorrectCount: 0,
+          paperAiAssistanceCount: 0,
+          unresolvedWrongCount: 0,
+          dueReviewCount: 0,
+          reviewAnswerCount: 0,
+          latestEvidenceAt: null,
+        },
+      },
+    })
+
+    const wrapper = mount(TutorSessionView, { global: { stubs } })
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('跨入口学习证据')
   })
 })

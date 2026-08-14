@@ -3,6 +3,7 @@ package com.learnplatform.service;
 import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.dto.ExamLearningAnswerRequest;
 import com.learnplatform.dto.ExamLearningSessionVO;
+import com.learnplatform.dto.TutorSessionVO;
 import com.learnplatform.service.ai.AiProvider;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,7 @@ class ExamLearningAiIntegrationTest extends IntegrationTestBase {
     @Autowired private JdbcTemplate jdbcTemplate;
     @Autowired private ExamPaperLearningService learningService;
     @Autowired private ExamLearningAiService learningAiService;
+    @Autowired private TutorSessionService tutorSessionService;
     @MockBean private AiProvider aiProvider;
 
     @Test
@@ -78,5 +80,34 @@ class ExamLearningAiIntegrationTest extends IntegrationTestBase {
                 """, Integer.class, userId, courseId, questionId);
         assertEquals(1, interactionCount);
         assertEquals(1, eventCount);
+
+        Long mappedKnowledgePointId = jdbcTemplate.queryForObject("""
+                SELECT knowledge_point_id FROM question_knowledge_point
+                WHERE question_id = ? ORDER BY id LIMIT 1
+                """, Long.class, questionId);
+        Long tutorKnowledgePointId = jdbcTemplate.queryForObject("""
+                WITH RECURSIVE descendants AS (
+                    SELECT id FROM knowledge_point WHERE id = ? AND course_id = ?
+                    UNION ALL
+                    SELECT kp.id FROM knowledge_point kp
+                    JOIN descendants parent ON kp.parent_id = parent.id
+                    WHERE kp.course_id = ? AND kp.deleted = 0
+                )
+                SELECT descendants.id FROM descendants
+                JOIN tutor_content ON tutor_content.knowledge_point_id = descendants.id
+                WHERE tutor_content.review_status = 'REVIEWED'
+                ORDER BY tutor_content.id LIMIT 1
+                """, Long.class, mappedKnowledgePointId, courseId, courseId);
+        TutorSessionVO tutor = tutorSessionService.start(userId, courseId, tutorKnowledgePointId);
+
+        assertEquals(1, tutor.getLearningContext().getPaperAnswerCount());
+        assertEquals(1, tutor.getLearningContext().getPaperIncorrectCount());
+        assertEquals(1, tutor.getLearningContext().getPaperAiAssistanceCount());
+        assertEquals(1, tutor.getLearningContext().getUnresolvedWrongCount());
+        Integer snapshotPaperAnswers = jdbcTemplate.queryForObject("""
+                SELECT CAST(JSON_UNQUOTE(JSON_EXTRACT(learning_context_json, '$.paperAnswerCount')) AS UNSIGNED)
+                FROM tutor_session WHERE session_key = ?
+                """, Integer.class, tutor.getSessionKey());
+        assertEquals(1, snapshotPaperAnswers);
     }
 }

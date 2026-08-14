@@ -13,6 +13,34 @@
         <h2>{{ session.title }}</h2>
         <p>{{ session.lesson.summary }}</p>
       </section>
+      <section v-if="hasLearningContext" class="context-card" aria-labelledby="learning-context-heading">
+        <span class="path-kicker">跨入口学习证据</span>
+        <h3 id="learning-context-heading">本节 Tutor 已衔接你的课程学习记录</h3>
+        <p>以下是目标知识点及其课程目录范围内的服务端记录，不代表已经掌握。</p>
+        <div class="evidence-grid">
+          <div v-if="session.learningContext.paperAnswerCount" class="evidence-item">
+            <strong>{{ session.learningContext.paperAnswerCount }}</strong><span>次真题学习作答</span>
+            <small v-if="session.learningContext.paperIncorrectCount">
+              其中 {{ session.learningContext.paperIncorrectCount }} 次答错
+            </small>
+          </div>
+          <div v-if="session.learningContext.paperAiAssistanceCount" class="evidence-item">
+            <strong>{{ session.learningContext.paperAiAssistanceCount }}</strong><span>次试卷 AI 辅导</span>
+          </div>
+          <div v-if="session.learningContext.unresolvedWrongCount" class="evidence-item">
+            <strong>{{ session.learningContext.unresolvedWrongCount }}</strong><span>道未掌握错题</span>
+          </div>
+          <div v-if="session.learningContext.dueReviewCount" class="evidence-item">
+            <strong>{{ session.learningContext.dueReviewCount }}</strong><span>道到期复习</span>
+          </div>
+          <div v-if="session.learningContext.reviewAnswerCount" class="evidence-item">
+            <strong>{{ session.learningContext.reviewAnswerCount }}</strong><span>次复习作答</span>
+          </div>
+        </div>
+        <small v-if="session.learningContext.latestEvidenceAt" class="evidence-time">
+          最近相关记录：{{ formatEvidenceTime(session.learningContext.latestEvidenceAt) }}
+        </small>
+      </section>
       <section v-if="session.lesson.prerequisite" class="path-card prerequisite" aria-labelledby="prerequisite-heading">
         <span class="path-kicker">学习前提</span>
         <h3 id="prerequisite-heading">{{ session.lesson.prerequisite.title }}</h3>
@@ -192,6 +220,19 @@ const factorialCallStackCourseware = computed(() =>
     ? session.value.lesson.visualization
     : null,
 )
+const hasLearningContext = computed(() => {
+  const context = session.value?.learningContext
+  return !!context && [
+    context.paperAnswerCount,
+    context.paperAiAssistanceCount,
+    context.unresolvedWrongCount,
+    context.dueReviewCount,
+    context.reviewAnswerCount,
+  ].some(count => count > 0)
+})
+function formatEvidenceTime(value: string) {
+  return value.replace('T', ' ').slice(0, 16)
+}
 async function load() {
   loading.value = true
   failed.value = false
@@ -235,12 +276,49 @@ watch(pointId, (value, previous) => {
 }
 .hero,
 .card,
-.path-card {
+.path-card,
+.context-card {
   padding: 22px;
   background: var(--lp-surface);
   border: 1px solid var(--lp-border);
   border-radius: var(--lp-radius);
   box-shadow: var(--lp-shadow-sm);
+}
+.context-card > p {
+  margin: 8px 0 16px;
+  color: var(--lp-text-secondary);
+}
+.evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 10px;
+}
+.evidence-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px;
+  background: var(--lp-surface-soft);
+  border: 1px solid var(--lp-border);
+  border-radius: 8px;
+}
+.evidence-item strong {
+  color: var(--lp-primary);
+  font-size: 22px;
+}
+.evidence-item span {
+  color: var(--lp-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+.evidence-item small,
+.evidence-time {
+  color: var(--lp-text-secondary);
+  font-size: 12px;
+}
+.evidence-time {
+  display: block;
+  margin-top: 12px;
 }
 .hero span,
 .path-kicker {

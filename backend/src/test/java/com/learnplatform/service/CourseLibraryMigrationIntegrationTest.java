@@ -22,6 +22,17 @@ class CourseLibraryMigrationIntegrationTest extends IntegrationTestBase {
     @Autowired private JdbcTemplate jdbcTemplate;
 
     @Test
+    void migrationAddsTutorLearningContextSnapshot() {
+        Integer columnCount = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_schema = DATABASE() AND table_name = 'tutor_session'
+                  AND column_name = 'learning_context_json' AND data_type = 'json'
+                """, Integer.class);
+
+        assertEquals(1, columnCount);
+    }
+
+    @Test
     void migrationCreatesTraceableExamLearningAiInteractionTable() {
         Integer tableCount = jdbcTemplate.queryForObject("""
                 SELECT COUNT(*) FROM information_schema.tables

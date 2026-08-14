@@ -8,6 +8,7 @@ import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.TutorCheckAnswerRequest;
 import com.learnplatform.dto.TutorCheckResultVO;
+import com.learnplatform.dto.TutorLearningContextVO;
 import com.learnplatform.dto.TutorSessionVO;
 import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.TutorContent;
@@ -27,8 +28,13 @@ import java.util.UUID;
 public class TutorSessionService {
     private final UserCourseMapper userCourseMapper; private final KnowledgePointMapper knowledgePointMapper;
     private final TutorContentMapper contentMapper; private final TutorSessionMapper sessionMapper; private final ObjectMapper objectMapper; private final CourseLearningEventService events;
-    public TutorSessionService(UserCourseMapper users, KnowledgePointMapper points, TutorContentMapper contents, TutorSessionMapper sessions, ObjectMapper json, CourseLearningEventService learningEvents) {
-        userCourseMapper = users; knowledgePointMapper = points; contentMapper = contents; sessionMapper = sessions; objectMapper = json; events = learningEvents;
+    private final TutorLearningContextService learningContextService;
+    public TutorSessionService(UserCourseMapper users, KnowledgePointMapper points, TutorContentMapper contents,
+                               TutorSessionMapper sessions, ObjectMapper json,
+                               CourseLearningEventService learningEvents,
+                               TutorLearningContextService contextService) {
+        userCourseMapper = users; knowledgePointMapper = points; contentMapper = contents; sessionMapper = sessions;
+        objectMapper = json; events = learningEvents; learningContextService = contextService;
     }
     @Transactional
     public TutorSessionVO start(Long userId, Long courseId, Long knowledgePointId) {
@@ -40,8 +46,10 @@ public class TutorSessionService {
         TutorContent content = contentMapper.selectOne(new LambdaQueryWrapper<TutorContent>()
                 .eq(TutorContent::getKnowledgePointId, knowledgePointId).eq(TutorContent::getReviewStatus, "REVIEWED"));
         if (content == null) throw new BusinessException(ResultCode.NOT_FOUND, "教学内容尚未发布");
+        TutorLearningContextVO learningContext = learningContextService.summarize(userId, courseId, knowledgePointId);
         TutorSession session = new TutorSession(); session.setSessionKey(UUID.randomUUID().toString()); session.setUserId(userId);
-        session.setCourseId(courseId); session.setKnowledgePointId(knowledgePointId); session.setTutorContentId(content.getId()); sessionMapper.insert(session);
+        session.setCourseId(courseId); session.setKnowledgePointId(knowledgePointId); session.setTutorContentId(content.getId());
+        session.setLearningContextJson(writeContext(learningContext)); sessionMapper.insert(session);
         return view(session, content);
     }
     @Transactional
@@ -68,6 +76,7 @@ public class TutorSessionService {
     }
     private TutorSessionVO view(TutorSession session, TutorContent content) {
         TutorSessionVO view = new TutorSessionVO(); view.setSessionKey(session.getSessionKey()); view.setTitle(content.getTitle()); view.setLesson(parse(content.getLessonJson()));
+        view.setLearningContext(readContext(session.getLearningContextJson()));
         JsonNode check = parse(content.getCheckJson()).deepCopy(); ((com.fasterxml.jackson.databind.node.ObjectNode) check).remove("correctOptionId"); view.setCheck(check); return view;
     }
     private TutorCheckResultVO result(boolean correct, TutorContent content, Long courseId) {
@@ -94,5 +103,7 @@ public class TutorSessionService {
         return result;
     }
     private JsonNode parse(String value) { try { return objectMapper.readTree(value); } catch (Exception e) { throw new IllegalStateException("已审查教学内容格式无效", e); } }
+    private String writeContext(TutorLearningContextVO value) { try { return objectMapper.writeValueAsString(value); } catch (Exception e) { throw new IllegalStateException("Tutor 学习上下文无法保存", e); } }
+    private TutorLearningContextVO readContext(String value) { try { return value == null || value.isBlank() ? new TutorLearningContextVO() : objectMapper.readValue(value, TutorLearningContextVO.class); } catch (Exception e) { throw new IllegalStateException("Tutor 学习上下文格式无效", e); } }
     private void requireCourse(Long userId, Long courseId) { if (userCourseMapper.selectCount(new LambdaQueryWrapper<UserCourse>().eq(UserCourse::getUserId, userId).eq(UserCourse::getCourseId, courseId)) == 0) throw new BusinessException(ResultCode.FORBIDDEN, "请先将课程加入个人课程库"); }
 }
