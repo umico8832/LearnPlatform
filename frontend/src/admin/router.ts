@@ -66,6 +66,12 @@ export function createAdminRouter(history: RouterHistory = createWebHistory(impo
             meta: { title: 'AI 调用分析' },
           },
           {
+            path: 'ai-variant-reviews',
+            name: 'AdminAiVariantReviews',
+            component: () => import('@/views/admin/AiVariantReviewView.vue'),
+            meta: { title: 'AI 变式题审查' },
+          },
+          {
             path: 'subjective-reviews',
             name: 'AdminSubjectiveReviews',
             component: () => import('@/views/admin/SubjectiveReviewView.vue'),

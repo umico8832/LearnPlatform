@@ -86,6 +86,7 @@ describe('独立管理端路由守卫', () => {
       ['/users', 'AdminUserManage'],
       ['/submissions', 'AdminSubmissionManage'],
       ['/ai-usage', 'AdminAiUsage'],
+      ['/ai-variant-reviews', 'AdminAiVariantReviews'],
     ] as const) {
       await router.push(path)
       await router.isReady()

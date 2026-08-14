@@ -38,6 +38,8 @@ public class CourseStageAssessmentVO {
         private Long questionId;
         private Integer sortOrder;
         private String questionType;
+        private String sourceType;
+        private Long originQuestionId;
         private String content;
         private List<OptionItem> options;
         private Integer score;
@@ -54,6 +56,10 @@ public class CourseStageAssessmentVO {
         public void setSortOrder(Integer sortOrder) { this.sortOrder = sortOrder; }
         public String getQuestionType() { return questionType; }
         public void setQuestionType(String questionType) { this.questionType = questionType; }
+        public String getSourceType() { return sourceType; }
+        public void setSourceType(String sourceType) { this.sourceType = sourceType; }
+        public Long getOriginQuestionId() { return originQuestionId; }
+        public void setOriginQuestionId(Long originQuestionId) { this.originQuestionId = originQuestionId; }
         public String getContent() { return content; }
         public void setContent(String content) { this.content = content; }
         public List<OptionItem> getOptions() { return options; }

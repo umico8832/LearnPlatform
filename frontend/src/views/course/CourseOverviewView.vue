@@ -178,9 +178,14 @@
           <article v-for="question in assessment.questions" :key="question.id" class="assessment-question">
             <div class="assessment-question-header">
               <strong>{{ question.sortOrder }}. {{ question.content }}</strong>
-              <el-tag v-if="question.correct != null" :type="question.correct ? 'success' : 'danger'">
-                {{ question.correct ? '正确' : '错误' }}
-              </el-tag>
+              <div class="assessment-question-tags">
+                <el-tag v-if="question.sourceType === 'AI_GENERATED'" type="warning" effect="plain">
+                  AI 审查生成题<span v-if="question.originQuestionId"> · 母题 #{{ question.originQuestionId }}</span>
+                </el-tag>
+                <el-tag v-if="question.correct != null" :type="question.correct ? 'success' : 'danger'">
+                  {{ question.correct ? '正确' : '错误' }}
+                </el-tag>
+              </div>
             </div>
             <el-checkbox-group
               v-if="question.questionType === 'MULTIPLE_CHOICE'"
@@ -673,6 +678,12 @@ onMounted(fetchOverview)
   gap: 12px;
   color: var(--lp-text);
   line-height: 1.6;
+}
+.assessment-question-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
 }
 .assessment-options {
   display: grid;

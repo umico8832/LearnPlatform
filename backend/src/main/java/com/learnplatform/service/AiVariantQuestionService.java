@@ -86,6 +86,7 @@ public class AiVariantQuestionService {
         question.setCorrectAnswer(parsed.correctAnswer());
         question.setAnalysis(parsed.analysis());
         question.setDifficulty(parsed.difficulty());
+        question.setReviewStatus("PENDING");
         aiVariantQuestionMapper.insert(question);
         return asset;
     }

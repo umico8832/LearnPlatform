@@ -41,6 +41,8 @@ public class Question {
     /** 来源引用（投稿ID/导入批次ID等） */
     private String sourceReference;
 
+    private Long originQuestionId;
+
     /** 最近复审时间 */
     private LocalDateTime lastReviewTime;
 
@@ -87,6 +89,8 @@ public class Question {
     public void setSourceType(String sourceType) { this.sourceType = sourceType; }
     public String getSourceReference() { return sourceReference; }
     public void setSourceReference(String sourceReference) { this.sourceReference = sourceReference; }
+    public Long getOriginQuestionId() { return originQuestionId; }
+    public void setOriginQuestionId(Long originQuestionId) { this.originQuestionId = originQuestionId; }
     public LocalDateTime getLastReviewTime() { return lastReviewTime; }
     public void setLastReviewTime(LocalDateTime lastReviewTime) { this.lastReviewTime = lastReviewTime; }
     public LocalDateTime getNextReviewTime() { return nextReviewTime; }

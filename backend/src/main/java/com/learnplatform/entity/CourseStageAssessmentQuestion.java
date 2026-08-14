@@ -14,6 +14,8 @@ public class CourseStageAssessmentQuestion {
     private Long questionId;
     private Integer sortOrder;
     private String questionType;
+    private String sourceTypeSnapshot;
+    private Long originQuestionIdSnapshot;
     private String contentSnapshot;
     private String optionsSnapshot;
     private String correctAnswerSnapshot;
@@ -34,6 +36,10 @@ public class CourseStageAssessmentQuestion {
     public void setSortOrder(Integer sortOrder) { this.sortOrder = sortOrder; }
     public String getQuestionType() { return questionType; }
     public void setQuestionType(String questionType) { this.questionType = questionType; }
+    public String getSourceTypeSnapshot() { return sourceTypeSnapshot; }
+    public void setSourceTypeSnapshot(String value) { this.sourceTypeSnapshot = value; }
+    public Long getOriginQuestionIdSnapshot() { return originQuestionIdSnapshot; }
+    public void setOriginQuestionIdSnapshot(Long value) { this.originQuestionIdSnapshot = value; }
     public String getContentSnapshot() { return contentSnapshot; }
     public void setContentSnapshot(String contentSnapshot) { this.contentSnapshot = contentSnapshot; }
     public String getOptionsSnapshot() { return optionsSnapshot; }

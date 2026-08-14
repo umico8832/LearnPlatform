@@ -170,6 +170,8 @@ describe('CourseOverviewView', () => {
           questionId: 21,
           sortOrder: 1,
           questionType: 'SINGLE_CHOICE',
+          sourceType: 'AI_GENERATED',
+          originQuestionId: 20,
           content: '栈的访问顺序是？',
           options: [{ label: 'A', content: 'LIFO' }],
           score: 2,
@@ -202,6 +204,7 @@ describe('CourseOverviewView', () => {
     await vm.startAssessment()
     expect(mockStartAssessment).toHaveBeenCalledWith(408, 5)
     expect(wrapper.text()).toContain('确定性课程题序')
+    expect(wrapper.text()).toContain('AI 审查生成题 · 母题 #20')
     expect(wrapper.text()).not.toContain('栈顶元素先离开')
     vm.assessmentAnswers[61] = ['A']
     await vm.submitAssessment()

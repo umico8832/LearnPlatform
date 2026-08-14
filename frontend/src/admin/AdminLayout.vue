@@ -13,6 +13,7 @@
         <router-link to="/subjective-reviews">主观题批阅</router-link>
         <router-link to="/users">用户管理</router-link>
         <router-link to="/submissions">投稿管理</router-link>
+        <router-link to="/ai-variant-reviews">AI 变式题审查</router-link>
         <router-link to="/ai-usage">AI 调用分析</router-link>
       </nav>
       <a class="admin-shell-legacy" href="/">进入学习端</a>

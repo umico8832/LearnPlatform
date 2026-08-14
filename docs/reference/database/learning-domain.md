@@ -14,7 +14,7 @@
 | `tutor_content` | V24 | 已审查、版本化的 Tutor 教学内容和检查定义 | `(content_key, content_version)` 唯一；正确选项不返回客户端 |
 | `tutor_session` | V24，V80 扩展 | 用户课程 Tutor 会话、学习证据聚合快照及首次检查结果 | `session_key` 唯一；会话归属用户、课程与知识点 |
 | `course_stage_assessment` | V86 | 用户课程阶段测评会话、选题策略与汇总结果 | `(user_id, course_id, active_session_key)` 限制一个进行中会话；完成时活动键清空 |
-| `course_stage_assessment_question` | V86 | 测评题目、答案与解析快照及用户作答 | 会话内原题和排序均唯一；提交前不通过 API 暴露答案快照 |
+| `course_stage_assessment_question` | V86，V87 扩展 | 测评题目、答案、解析、来源快照及用户作答 | 会话内原题和排序均唯一；提交前不通过 API 暴露答案快照 |
 
 V21 为课程和知识点增加可空的 `content_key` 与 `content_source`。`content_key` 用于在
 AiStu、Web 后端和后续内容导入之间保持稳定引用；存量平台内容可以继续使用空键。
@@ -40,6 +40,10 @@ V86 增加课程阶段测评会话和逐题快照。创建时仅从当前用户�
 选项、正确答案和解析，避免测评期间原题变更破坏判分一致性。完成事务显式将活动键写为 `NULL`，再把
 逐题正误投影到错题、复习计划和课程学习事件；已完成会话按 `(user_id, course_id, complete_time)` 读取
 本人分页历史和最近摘要，题目快照保存判分与复盘依据，不替代原始题目或课程事件。
+
+V87 为正式 `question` 增加可空母题引用，并为测评题快照固化来源类型和母题 ID。审查通过的变式题在
+首次创建及版本快照中即标记为 `AI_GENERATED`；阶段测评仍只查询当前课程已发布正式题，因此待审、
+驳回和其他课程的变式题不会越过发布边界。
 
 V25 为 `ods-arraystack-insertion` 的 `tutor_content.lesson_json` 增加已审查的
 `ARRAY_STACK_INSERTION` v1 参数定义。它只包含容量、初始槽位和插入参数；课件动画状态由
@@ -155,7 +159,7 @@ V71–V74 迁入队列基础模块：FIFO 语义、循环队列数组表示、�
 
 | 表 | 首次迁移 | 职责 | 关键约束 |
 |---|---|---|---|
-| `question` | V1，V8 扩展 | 题干、题型、答案、解析、来源和复审状态 | 正式题目受试卷引用和发布状态保护 |
+| `question` | V1，V8/V87 扩展 | 题干、题型、答案、解析、来源、可空母题和复审状态 | 正式题目受试卷引用和发布状态保护 |
 | `question_option` | V1 | 选择题选项及正确标记 | 用户端 DTO 不得暴露正确标记 |
 | `question_knowledge_point` | V1 | 题目与知识点多对多关联 | 题目和知识点组合不能重复 |
 | `question_version` | V16 | 正式题目修改前后的版本快照 | 版本只追加，不覆盖历史 |

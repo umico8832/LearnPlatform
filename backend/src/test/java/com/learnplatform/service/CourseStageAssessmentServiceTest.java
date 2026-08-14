@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
@@ -72,7 +73,11 @@ class CourseStageAssessmentServiceTest {
         assertNull(created.getQuestions().get(0).getCorrectAnswer());
         assertNull(created.getQuestions().get(0).getAnalysis());
         verify(assessmentMapper).insert(any(CourseStageAssessment.class));
-        verify(assessmentQuestionMapper).insert(any(CourseStageAssessmentQuestion.class));
+        ArgumentCaptor<CourseStageAssessmentQuestion> snapshotCaptor =
+                ArgumentCaptor.forClass(CourseStageAssessmentQuestion.class);
+        verify(assessmentQuestionMapper).insert(snapshotCaptor.capture());
+        assertEquals("AI_GENERATED", snapshotCaptor.getValue().getSourceTypeSnapshot());
+        assertEquals(20L, snapshotCaptor.getValue().getOriginQuestionIdSnapshot());
     }
 
     @Test
@@ -175,6 +180,8 @@ class CourseStageAssessmentServiceTest {
         question.setQuestionType("SINGLE_CHOICE");
         question.setScore(2);
         question.setAnalysis("后进先出");
+        question.setSourceType("AI_GENERATED");
+        question.setOriginQuestionId(20L);
         return question;
     }
 

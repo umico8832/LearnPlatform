@@ -242,6 +242,18 @@ public class QuestionService {
      */
     @Transactional
     public QuestionVO createQuestion(QuestionCreateRequest request, Long createBy) {
+        return createQuestion(request, createBy, "MANUAL", null, null);
+    }
+
+    /** 将已审查的 AI 变式题创建为正式题目，并在首个版本快照中保留来源链路。 */
+    @Transactional
+    public QuestionVO createReviewedAiQuestion(QuestionCreateRequest request, Long createBy,
+                                                String sourceReference, Long originQuestionId) {
+        return createQuestion(request, createBy, "AI_GENERATED", sourceReference, originQuestionId);
+    }
+
+    private QuestionVO createQuestion(QuestionCreateRequest request, Long createBy,
+                                      String sourceType, String sourceReference, Long originQuestionId) {
         // 校验课程是否存在
         Course course = courseMapper.selectById(request.getCourseId());
         if (course == null) {
@@ -260,7 +272,9 @@ public class QuestionService {
         question.setStatus(1);
         question.setCreateBy(createBy);
         question.setVisibility("PUBLIC");
-        question.setSourceType("MANUAL");
+        question.setSourceType(sourceType);
+        question.setSourceReference(sourceReference);
+        question.setOriginQuestionId(originQuestionId);
         question.setReviewRounds(0);
         question.setNextReviewTime(java.time.LocalDateTime.now().plusDays(90));
         question.setDeleted(0);

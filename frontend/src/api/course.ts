@@ -68,6 +68,8 @@ export interface CourseStageAssessmentQuestion {
   questionId: number
   sortOrder: number
   questionType: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE'
+  sourceType: string
+  originQuestionId: number | null
   content: string
   options: { label: string; content: string }[]
   score: number

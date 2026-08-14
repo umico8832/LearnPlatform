@@ -1,21 +1,17 @@
-package com.learnplatform.entity;
-
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+package com.learnplatform.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
-/** 服务端保存的结构化 AI 变式题，正确答案不会随学习资产查询直接返回。 */
-@TableName("ai_variant_question")
-public class AiVariantQuestion {
-
-    @TableId(type = IdType.AUTO)
+public class AiVariantReviewVO {
     private Long id;
-    private Long assetId;
-    private String questionType;
+    private Long motherQuestionId;
+    private String motherQuestionContent;
+    private Long courseId;
+    private String courseName;
     private String questionContent;
-    private String optionsJson;
+    private String questionType;
+    private List<AiVariantQuestionVO.Option> options;
     private String correctAnswer;
     private String analysis;
     private Integer difficulty;
@@ -24,19 +20,23 @@ public class AiVariantQuestion {
     private Long reviewedBy;
     private LocalDateTime reviewedTime;
     private Long publishedQuestionId;
-    private LocalDateTime createTime;
-    private LocalDateTime updateTime;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public Long getAssetId() { return assetId; }
-    public void setAssetId(Long assetId) { this.assetId = assetId; }
+    public Long getMotherQuestionId() { return motherQuestionId; }
+    public void setMotherQuestionId(Long value) { this.motherQuestionId = value; }
+    public String getMotherQuestionContent() { return motherQuestionContent; }
+    public void setMotherQuestionContent(String value) { this.motherQuestionContent = value; }
+    public Long getCourseId() { return courseId; }
+    public void setCourseId(Long courseId) { this.courseId = courseId; }
+    public String getCourseName() { return courseName; }
+    public void setCourseName(String courseName) { this.courseName = courseName; }
+    public String getQuestionContent() { return questionContent; }
+    public void setQuestionContent(String value) { this.questionContent = value; }
     public String getQuestionType() { return questionType; }
     public void setQuestionType(String questionType) { this.questionType = questionType; }
-    public String getQuestionContent() { return questionContent; }
-    public void setQuestionContent(String questionContent) { this.questionContent = questionContent; }
-    public String getOptionsJson() { return optionsJson; }
-    public void setOptionsJson(String optionsJson) { this.optionsJson = optionsJson; }
+    public List<AiVariantQuestionVO.Option> getOptions() { return options; }
+    public void setOptions(List<AiVariantQuestionVO.Option> options) { this.options = options; }
     public String getCorrectAnswer() { return correctAnswer; }
     public void setCorrectAnswer(String correctAnswer) { this.correctAnswer = correctAnswer; }
     public String getAnalysis() { return analysis; }
@@ -52,9 +52,5 @@ public class AiVariantQuestion {
     public LocalDateTime getReviewedTime() { return reviewedTime; }
     public void setReviewedTime(LocalDateTime reviewedTime) { this.reviewedTime = reviewedTime; }
     public Long getPublishedQuestionId() { return publishedQuestionId; }
-    public void setPublishedQuestionId(Long publishedQuestionId) { this.publishedQuestionId = publishedQuestionId; }
-    public LocalDateTime getCreateTime() { return createTime; }
-    public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
-    public LocalDateTime getUpdateTime() { return updateTime; }
-    public void setUpdateTime(LocalDateTime updateTime) { this.updateTime = updateTime; }
+    public void setPublishedQuestionId(Long value) { this.publishedQuestionId = value; }
 }

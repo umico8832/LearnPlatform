@@ -69,6 +69,7 @@ class AiVariantQuestionServiceTest {
         assertEquals(21L, privateQuestion.getAssetId());
         assertEquals("B", privateQuestion.getCorrectAnswer());
         assertEquals("SINGLE_CHOICE", privateQuestion.getQuestionType());
+        assertEquals("PENDING", privateQuestion.getReviewStatus());
     }
 
     @Test

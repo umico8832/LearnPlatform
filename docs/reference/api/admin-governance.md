@@ -69,6 +69,16 @@
 
 AI 结果只作为审核辅助，不能绕过管理员确认自动发布。
 
+## AI 变式题审查
+
+| 接口 | 说明 |
+|---|---|
+| `GET /api/admin/ai-variant-reviews` | 按 `PENDING`、`APPROVED` 或 `REJECTED` 分页读取结构化变式题审查队列 |
+| `POST /api/admin/ai-variant-reviews/{variantId}` | 提交 `APPROVE` 或 `REJECT`；驳回必须填写说明 |
+
+批准操作只接受母题仍为当前课程公开已发布题目的结构化变式题，并将其物化为正式题目。正式题从首次版本
+快照起保留 `AI_GENERATED`、`AI_VARIANT:{variantId}` 和母题 ID；待审或驳回项不会进入阶段测评。
+
 ## AI 运营
 
 | 接口 | 说明 |

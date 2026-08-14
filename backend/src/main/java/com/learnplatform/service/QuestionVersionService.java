@@ -118,6 +118,7 @@ public class QuestionVersionService {
         snapshot.put("status", question.getStatus());
         snapshot.put("sourceType", question.getSourceType());
         snapshot.put("sourceReference", question.getSourceReference());
+        snapshot.put("originQuestionId", question.getOriginQuestionId());
         snapshot.put("lastReviewTime", question.getLastReviewTime());
         snapshot.put("nextReviewTime", question.getNextReviewTime());
         snapshot.put("reviewRounds", question.getReviewRounds());

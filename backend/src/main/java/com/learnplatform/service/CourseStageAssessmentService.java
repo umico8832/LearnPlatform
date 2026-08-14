@@ -204,6 +204,8 @@ public class CourseStageAssessmentService {
         item.setQuestionId(question.getId());
         item.setSortOrder(sortOrder);
         item.setQuestionType(question.getQuestionType());
+        item.setSourceTypeSnapshot(question.getSourceType() == null ? "MANUAL" : question.getSourceType());
+        item.setOriginQuestionIdSnapshot(question.getOriginQuestionId());
         item.setContentSnapshot(question.getContent());
         item.setOptionsSnapshot(writeJson(optionSnapshot));
         item.setCorrectAnswerSnapshot(correctAnswer);
@@ -248,6 +250,8 @@ public class CourseStageAssessmentService {
         view.setQuestionId(item.getQuestionId());
         view.setSortOrder(item.getSortOrder());
         view.setQuestionType(item.getQuestionType());
+        view.setSourceType(item.getSourceTypeSnapshot());
+        view.setOriginQuestionId(item.getOriginQuestionIdSnapshot());
         view.setContent(item.getContentSnapshot());
         view.setOptions(readOptions(item.getOptionsSnapshot()));
         view.setScore(item.getScore());

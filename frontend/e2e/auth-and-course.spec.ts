@@ -80,6 +80,7 @@ test('高频用户与管理页面可通过真实接口加载', async ({ page }) 
     ['/admin', '平台数据总览'],
     ['/admin/questions', '题目管理'],
     ['/admin/submissions', '投稿管理'],
+    ['/admin/ai-variant-reviews', 'AI 变式题审查'],
     ['/admin/ai-usage', 'AI 调用分析'],
   ] as const
 
