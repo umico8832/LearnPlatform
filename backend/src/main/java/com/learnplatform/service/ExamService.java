@@ -16,6 +16,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -44,6 +45,7 @@ public class ExamService {
     private final AnswerEvaluator answerEvaluator;
     private final CacheEvictService cacheEvictService;
     private final CourseLearningEventService courseLearningEventService;
+    private final Clock clock;
 
     public ExamService(ExamRecordMapper examRecordMapper,
                        ExamAnswerMapper examAnswerMapper,
@@ -69,6 +71,25 @@ public class ExamService {
                        AnswerEvaluator answerEvaluator,
                        CacheEvictService cacheEvictService,
                        CourseLearningEventService courseLearningEventService) {
+        this(examRecordMapper, examAnswerMapper, examPaperMapper, examQuestionMapper, questionMapper,
+                questionOptionMapper, wrongQuestionService, answerEvaluator, cacheEvictService,
+                courseLearningEventService, Clock.system(EXAM_ZONE));
+    }
+
+    /**
+     * 测试专用构造：允许注入固定 Clock，使考试时间语义不依赖机器系统时区或真实墙钟。
+     */
+    ExamService(ExamRecordMapper examRecordMapper,
+                ExamAnswerMapper examAnswerMapper,
+                ExamPaperMapper examPaperMapper,
+                ExamQuestionMapper examQuestionMapper,
+                QuestionMapper questionMapper,
+                QuestionOptionMapper questionOptionMapper,
+                WrongQuestionService wrongQuestionService,
+                AnswerEvaluator answerEvaluator,
+                CacheEvictService cacheEvictService,
+                CourseLearningEventService courseLearningEventService,
+                Clock clock) {
         this.examRecordMapper = examRecordMapper;
         this.examAnswerMapper = examAnswerMapper;
         this.examPaperMapper = examPaperMapper;
@@ -79,6 +100,7 @@ public class ExamService {
         this.answerEvaluator = answerEvaluator;
         this.cacheEvictService = cacheEvictService;
         this.courseLearningEventService = courseLearningEventService;
+        this.clock = clock;
     }
 
     /**
@@ -417,7 +439,7 @@ public class ExamService {
     }
 
     private LocalDateTime currentExamTime() {
-        return LocalDateTime.now(EXAM_ZONE);
+        return LocalDateTime.now(clock);
     }
 
     private boolean isExpired(ExamRecord record, ExamPaper paper, LocalDateTime now) {

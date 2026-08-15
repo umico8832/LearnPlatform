@@ -25,7 +25,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.ArgumentCaptor;
 import org.springframework.dao.DuplicateKeyException;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -51,11 +54,18 @@ class ExamServiceTest {
     @Mock private CacheEvictService cacheEvictService;
     private ExamService examService;
 
+    /**
+     * 固定时钟：考试时间语义固定在 Asia/Shanghai，测试结果不依赖机器系统时区，
+     * 也不依赖真实墙钟的流逝速度。
+     */
+    private static final Clock FIXED_CLOCK = Clock.fixed(
+            Instant.parse("2026-01-01T00:00:00Z"), ZoneId.of("Asia/Shanghai"));
+
     @BeforeEach
     void setUp() {
         examService = new ExamService(examRecordMapper, examAnswerMapper, examPaperMapper,
                 examQuestionMapper, questionMapper, questionOptionMapper,
-                null, new AnswerEvaluator(), cacheEvictService);
+                null, new AnswerEvaluator(), cacheEvictService, null, FIXED_CLOCK);
     }
 
     @Test
@@ -82,7 +92,7 @@ class ExamServiceTest {
 
     @Test
     void marksExpiredExamAsTimedOut() {
-        ExamRecord record = record(LocalDateTime.now().minusMinutes(61));
+        ExamRecord record = record(LocalDateTime.now(FIXED_CLOCK).minusMinutes(61));
         when(examRecordMapper.selectByIdForUpdate(1L)).thenReturn(record);
         when(examPaperMapper.selectById(2L)).thenReturn(paper());
 
@@ -95,8 +105,21 @@ class ExamServiceTest {
     }
 
     @Test
+    void marksExamTimedOutExactlyAtItsServerDeadline() {
+        ExamRecord record = record(LocalDateTime.now(FIXED_CLOCK).minusMinutes(60));
+        when(examRecordMapper.selectByIdForUpdate(1L)).thenReturn(record);
+        when(examPaperMapper.selectById(2L)).thenReturn(paper());
+
+        ExamTimedOutException exception = assertThrows(ExamTimedOutException.class,
+                () -> examService.submitExam(request(answer(10L, "A")), 7L));
+
+        assertEquals("考试已超时", exception.getMessage());
+        assertEquals(2, record.getStatus());
+    }
+
+    @Test
     void reusesActiveExamBeforeItsServerDeadline() {
-        ExamRecord active = record(LocalDateTime.now().minusMinutes(10));
+        ExamRecord active = record(LocalDateTime.now(FIXED_CLOCK).minusMinutes(10));
         active.setActiveExamKey("EXAM:7:2");
         when(examPaperMapper.selectById(2L)).thenReturn(publishedPaper());
         when(examRecordMapper.selectByActiveExamKey("EXAM:7:2")).thenReturn(active);
@@ -125,7 +148,7 @@ class ExamServiceTest {
 
     @Test
     void expiresStaleActiveExamBeforeStartingANewAttempt() {
-        ExamRecord stale = record(LocalDateTime.now().minusMinutes(61));
+        ExamRecord stale = record(LocalDateTime.now(FIXED_CLOCK).minusMinutes(61));
         stale.setActiveExamKey("EXAM:7:2");
         when(examPaperMapper.selectById(2L)).thenReturn(publishedPaper());
         when(examRecordMapper.selectByActiveExamKey("EXAM:7:2")).thenReturn(stale);
@@ -149,7 +172,7 @@ class ExamServiceTest {
 
     @Test
     void recoversConcurrentActiveExamWhenUniqueKeyWinsTheRace() {
-        ExamRecord concurrent = record(LocalDateTime.now());
+        ExamRecord concurrent = record(LocalDateTime.now(FIXED_CLOCK));
         concurrent.setActiveExamKey("EXAM:7:2");
         when(examPaperMapper.selectById(2L)).thenReturn(publishedPaper());
         when(examRecordMapper.selectByActiveExamKey("EXAM:7:2")).thenReturn(null);
@@ -164,7 +187,7 @@ class ExamServiceTest {
 
     @Test
     void sessionReadPersistsTimeoutAndReturnsAuthoritativeClock() {
-        ExamRecord stale = record(LocalDateTime.now().minusMinutes(61));
+        ExamRecord stale = record(LocalDateTime.now(FIXED_CLOCK).minusMinutes(61));
         stale.setActiveExamKey("EXAM:7:2");
         when(examRecordMapper.selectByIdForUpdate(1L)).thenReturn(stale);
         when(examPaperMapper.selectById(2L)).thenReturn(publishedPaper());
@@ -181,7 +204,7 @@ class ExamServiceTest {
 
     @Test
     void sessionReadRejectsAnotherUsersRecord() {
-        when(examRecordMapper.selectByIdForUpdate(1L)).thenReturn(record(LocalDateTime.now()));
+        when(examRecordMapper.selectByIdForUpdate(1L)).thenReturn(record(LocalDateTime.now(FIXED_CLOCK)));
 
         BusinessException exception = assertThrows(BusinessException.class,
                 () -> examService.getExamSession(1L, 8L));
@@ -191,7 +214,7 @@ class ExamServiceTest {
 
     @Test
     void resultCannotExposeAnswersBeforeExamCompletion() {
-        when(examRecordMapper.selectById(1L)).thenReturn(record(LocalDateTime.now()));
+        when(examRecordMapper.selectById(1L)).thenReturn(record(LocalDateTime.now(FIXED_CLOCK)));
 
         BusinessException exception = assertThrows(BusinessException.class,
                 () -> examService.getExamResult(1L, 7L));
@@ -201,7 +224,7 @@ class ExamServiceTest {
 
     @Test
     void shortAnswerSubmissionWaitsForManualReviewInsteadOfKeywordGrading() {
-        ExamRecord record = record(LocalDateTime.now());
+        ExamRecord record = record(LocalDateTime.now(FIXED_CLOCK));
         when(examRecordMapper.selectByIdForUpdate(1L)).thenReturn(record);
         when(examRecordMapper.selectById(1L)).thenReturn(record);
         when(examPaperMapper.selectById(2L)).thenReturn(paper());
@@ -242,7 +265,7 @@ class ExamServiceTest {
         answer.setIsCorrect(1);
         answer.setScore(5);
 
-        ExamRecord completed = record(LocalDateTime.now());
+        ExamRecord completed = record(LocalDateTime.now(FIXED_CLOCK));
         completed.setStatus(1);
         when(examRecordMapper.selectById(1L)).thenReturn(completed);
         when(examPaperMapper.selectById(2L)).thenReturn(paperWithSourceMetadata());
@@ -264,7 +287,7 @@ class ExamServiceTest {
     @Test
     void preservesPaperSourceMetadataInExamRecordList() {
         Page<ExamRecord> records = new Page<>(1, 10, 1);
-        records.setRecords(List.of(record(LocalDateTime.now())));
+        records.setRecords(List.of(record(LocalDateTime.now(FIXED_CLOCK))));
         when(examRecordMapper.selectPage(any(), any())).thenReturn(records);
         when(examPaperMapper.selectById(2L)).thenReturn(paperWithSourceMetadata());
 
@@ -274,7 +297,7 @@ class ExamServiceTest {
     }
 
     private void stubActiveExam() {
-        when(examRecordMapper.selectByIdForUpdate(1L)).thenReturn(record(LocalDateTime.now()));
+        when(examRecordMapper.selectByIdForUpdate(1L)).thenReturn(record(LocalDateTime.now(FIXED_CLOCK)));
         when(examPaperMapper.selectById(2L)).thenReturn(paper());
     }
 

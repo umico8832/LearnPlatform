@@ -16,6 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -377,11 +378,11 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
     @Order(8)
     @DisplayName("提交考试：超时提交应标记考试超时")
     void submitExam_timedOut_marksRecordAsTimedOut() {
-        // 创建一个超时的考试记录（手动设置开始时间为2小时前，限时1分钟）
+        // 创建一个超时的考试记录（开始时间以服务端 Asia/Shanghai 墙钟为基准，2 小时前）
         ExamRecord record = new ExamRecord();
         record.setUserId(userId);
         record.setExamPaperId(examPaperId);
-        record.setStartTime(LocalDateTime.now().minusHours(2));
+        record.setStartTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")).minusHours(2));
         record.setTotalScore(20);
         record.setStatus(0); // 进行中
         record.setActiveExamKey("EXAM:" + userId + ":" + examPaperId);
