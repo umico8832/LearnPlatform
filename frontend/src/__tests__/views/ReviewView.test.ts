@@ -18,8 +18,11 @@ vi.mock('@/api/review', () => ({
 }))
 
 vi.mock('@/utils/auth', () => ({ getToken: vi.fn() }))
+let routeQuery: Record<string, string> = { courseId: '408', questionId: '21' }
+
 vi.mock('vue-router', () => ({
-  useRoute: () => ({ query: { courseId: '408', questionId: '21' } }),
+  useRoute: () => ({ query: routeQuery }),
+  useRouter: () => ({ replace: vi.fn() }),
 }))
 
 import ReviewView from '@/views/practice/ReviewView.vue'
@@ -27,6 +30,7 @@ import ReviewView from '@/views/practice/ReviewView.vue'
 describe('ReviewView course target', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    routeQuery = { courseId: '408', questionId: '21' }
     mockGetReviewStats.mockResolvedValue({
       data: {
         totalCards: 1,
@@ -67,7 +71,21 @@ describe('ReviewView course target', () => {
     })
     await flushPromises()
 
-    expect(mockGetDueReviewCards).toHaveBeenCalledWith(408, 30, 21)
+    expect(mockGetDueReviewCards).toHaveBeenCalledWith(408, 30, 21, undefined)
     expect(wrapper.text()).toContain('课程目标复习题')
+  })
+
+  it('从知识点入口进入时按知识点筛选并展示可清除的筛选标记', async () => {
+    routeQuery = { courseId: '408', knowledgePointId: '31', knowledgePointName: '栈' }
+    const wrapper = mount(ReviewView, {
+      global: {
+        stubs: { MarkdownRenderer: true },
+        directives: { loading: () => undefined },
+      },
+    })
+    await flushPromises()
+
+    expect(mockGetDueReviewCards).toHaveBeenCalledWith(408, 30, undefined, 31)
+    expect(wrapper.text()).toContain('知识点：栈')
   })
 })

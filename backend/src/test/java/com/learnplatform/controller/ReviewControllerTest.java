@@ -49,7 +49,7 @@ class ReviewControllerTest {
     void dueCardsForwardCourseAndServerSelectedQuestion() throws Exception {
         ReviewScheduleVO card = new ReviewScheduleVO();
         card.setQuestionId(21L);
-        when(spacedRepetitionService.getDueReviewCards(7L, 10L, 21L, 30))
+        when(spacedRepetitionService.getDueReviewCards(7L, 10L, 21L, null, 30))
                 .thenReturn(List.of(card));
 
         mockMvc.perform(get("/api/review/due")
@@ -60,7 +60,25 @@ class ReviewControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].questionId").value(21));
 
-        verify(spacedRepetitionService).getDueReviewCards(7L, 10L, 21L, 30);
+        verify(spacedRepetitionService).getDueReviewCards(7L, 10L, 21L, null, 30);
+    }
+
+    @Test
+    void dueCardsForwardKnowledgePointFilter() throws Exception {
+        ReviewScheduleVO card = new ReviewScheduleVO();
+        card.setQuestionId(101L);
+        when(spacedRepetitionService.getDueReviewCards(7L, 10L, null, 31L, 30))
+                .thenReturn(List.of(card));
+
+        mockMvc.perform(get("/api/review/due")
+                        .with(mockUser(7L))
+                        .param("courseId", "10")
+                        .param("knowledgePointId", "31")
+                        .param("limit", "30"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].questionId").value(101));
+
+        verify(spacedRepetitionService).getDueReviewCards(7L, 10L, null, 31L, 30);
     }
 
     private RequestPostProcessor mockUser(Long userId) {

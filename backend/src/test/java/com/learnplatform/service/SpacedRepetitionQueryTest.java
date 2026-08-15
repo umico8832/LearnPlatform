@@ -7,6 +7,7 @@ import com.learnplatform.entity.Course;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionReviewSchedule;
 import com.learnplatform.mapper.CourseMapper;
+import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionReviewScheduleMapper;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
@@ -33,6 +34,7 @@ class SpacedRepetitionQueryTest {
     @Mock private QuestionReviewScheduleMapper reviewScheduleMapper;
     @Mock private QuestionMapper questionMapper;
     @Mock private CourseMapper courseMapper;
+    @Mock private KnowledgePointMapper knowledgePointMapper;
 
     private SpacedRepetitionService service;
 
@@ -41,7 +43,7 @@ class SpacedRepetitionQueryTest {
         TableInfoHelper.initTableInfo(
                 new MapperBuilderAssistant(new Configuration(), ""), QuestionReviewSchedule.class);
         service = new SpacedRepetitionService(reviewScheduleMapper, questionMapper, courseMapper,
-                null, null, null, null, null);
+                null, null, null, null, null, knowledgePointMapper, null);
     }
 
     @Test
@@ -72,6 +74,21 @@ class SpacedRepetitionQueryTest {
         List<ReviewScheduleVO> cards = service.getDueReviewCards(7L, 10L, 101L, 30);
 
         assertEquals(List.of(101L), cards.stream().map(ReviewScheduleVO::getQuestionId).toList());
+    }
+
+    @Test
+    void dueCardsCanBeFilteredByKnowledgePoint() {
+        when(knowledgePointMapper.selectQuestionIdsByKnowledgePointId(31L)).thenReturn(List.of(101L));
+        when(reviewScheduleMapper.selectList(any())).thenReturn(List.of(schedule(101L), schedule(202L)));
+        when(questionMapper.selectList(any())).thenReturn(List.of(question(101L, 10L)));
+        when(questionMapper.selectBatchIds(any()))
+                .thenReturn(List.of(question(101L, 10L), question(202L, 20L)));
+        when(courseMapper.selectBatchIds(any())).thenReturn(List.of(course(10L), course(20L)));
+
+        List<ReviewScheduleVO> cards = service.getDueReviewCards(7L, 10L, null, 31L, 30);
+
+        assertEquals(List.of(101L), cards.stream().map(ReviewScheduleVO::getQuestionId).toList());
+        verify(knowledgePointMapper).selectQuestionIdsByKnowledgePointId(31L);
     }
 
     private QuestionReviewSchedule schedule(Long questionId) {

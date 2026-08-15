@@ -55,10 +55,11 @@ public class ReviewController {
     public R<List<ReviewScheduleVO>> getDueCards(
             @Parameter(description = "课程ID筛选") @RequestParam(required = false) Long courseId,
             @Parameter(description = "目标题目ID") @RequestParam(required = false) Long questionId,
+            @Parameter(description = "知识点ID筛选") @RequestParam(required = false) Long knowledgePointId,
             @Parameter(description = "数量限制") @RequestParam(required = false, defaultValue = "20") Integer limit,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return R.ok(spacedRepetitionService.getDueReviewCards(
-                userDetails.getUserId(), courseId, questionId, limit));
+                userDetails.getUserId(), courseId, questionId, knowledgePointId, limit));
     }
 
     @Operation(summary = "获取所有复习计划卡片")

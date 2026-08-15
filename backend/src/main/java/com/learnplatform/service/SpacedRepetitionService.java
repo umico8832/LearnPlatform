@@ -66,6 +66,7 @@ public class SpacedRepetitionService {
     private final WrongQuestionMapper wrongQuestionMapper;
     private final AnswerEvaluator answerEvaluator;
     private final CacheEvictService cacheEvictService;
+    private final KnowledgePointMapper knowledgePointMapper;
     private final CourseLearningEventService courseLearningEventService;
 
     public SpacedRepetitionService(QuestionReviewScheduleMapper reviewScheduleMapper,
@@ -77,7 +78,7 @@ public class SpacedRepetitionService {
                                     AnswerEvaluator answerEvaluator,
                                     CacheEvictService cacheEvictService) {
         this(reviewScheduleMapper, questionMapper, courseMapper, questionOptionMapper, practiceRecordMapper,
-                wrongQuestionMapper, answerEvaluator, cacheEvictService, null);
+                wrongQuestionMapper, answerEvaluator, cacheEvictService, null, null);
     }
 
     @Autowired
@@ -89,6 +90,7 @@ public class SpacedRepetitionService {
                                     WrongQuestionMapper wrongQuestionMapper,
                                     AnswerEvaluator answerEvaluator,
                                     CacheEvictService cacheEvictService,
+                                    KnowledgePointMapper knowledgePointMapper,
                                     CourseLearningEventService courseLearningEventService) {
         this.reviewScheduleMapper = reviewScheduleMapper;
         this.questionMapper = questionMapper;
@@ -98,6 +100,7 @@ public class SpacedRepetitionService {
         this.wrongQuestionMapper = wrongQuestionMapper;
         this.answerEvaluator = answerEvaluator;
         this.cacheEvictService = cacheEvictService;
+        this.knowledgePointMapper = knowledgePointMapper;
         this.courseLearningEventService = courseLearningEventService;
     }
 
@@ -176,13 +179,21 @@ public class SpacedRepetitionService {
      * 获取今日待复习题目（含逾期）
      */
     public List<ReviewScheduleVO> getDueReviewCards(Long userId, Long courseId, int limit) {
-        return getDueReviewCards(userId, courseId, null, limit);
+        return getDueReviewCards(userId, courseId, null, null, limit);
     }
 
     /**
      * 获取课程内今日待复习题目，可进一步定位到统一课程状态选择的目标题目。
      */
     public List<ReviewScheduleVO> getDueReviewCards(Long userId, Long courseId, Long questionId, int limit) {
+        return getDueReviewCards(userId, courseId, questionId, null, limit);
+    }
+
+    /**
+     * 获取课程内今日待复习题目，可限定课程、目标题目和知识点（数据库分页前筛选）。
+     */
+    public List<ReviewScheduleVO> getDueReviewCards(Long userId, Long courseId, Long questionId,
+                                                    Long knowledgePointId, int limit) {
         if (limit <= 0 || limit > 50) {
             limit = 20;
         }
@@ -197,6 +208,14 @@ public class SpacedRepetitionService {
                 return List.of();
             }
         }
+        Set<Long> kpQuestionIds = null;
+        if (knowledgePointId != null) {
+            kpQuestionIds = new HashSet<>(knowledgePointMapper
+                    .selectQuestionIdsByKnowledgePointId(knowledgePointId));
+            if (kpQuestionIds.isEmpty()) {
+                return List.of();
+            }
+        }
 
         LocalDate today = LocalDate.now();
         LambdaQueryWrapper<QuestionReviewSchedule> wrapper = new LambdaQueryWrapper<>();
@@ -204,6 +223,9 @@ public class SpacedRepetitionService {
                 .le(QuestionReviewSchedule::getNextReviewDate, today);
         if (courseQuestionIds != null) {
             wrapper.in(QuestionReviewSchedule::getQuestionId, courseQuestionIds);
+        }
+        if (kpQuestionIds != null) {
+            wrapper.in(QuestionReviewSchedule::getQuestionId, kpQuestionIds);
         }
         if (questionId != null) {
             wrapper.eq(QuestionReviewSchedule::getQuestionId, questionId);
@@ -215,6 +237,12 @@ public class SpacedRepetitionService {
         List<QuestionReviewSchedule> schedules = reviewScheduleMapper.selectList(wrapper);
         if (courseQuestionIds != null) {
             Set<Long> allowedQuestionIds = courseQuestionIds;
+            schedules = schedules.stream()
+                    .filter(schedule -> allowedQuestionIds.contains(schedule.getQuestionId()))
+                    .toList();
+        }
+        if (kpQuestionIds != null) {
+            Set<Long> allowedQuestionIds = kpQuestionIds;
             schedules = schedules.stream()
                     .filter(schedule -> allowedQuestionIds.contains(schedule.getQuestionId()))
                     .toList();

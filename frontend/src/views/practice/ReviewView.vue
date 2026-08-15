@@ -12,6 +12,12 @@
       </el-button>
     </section>
 
+    <div v-if="targetKnowledgePointName" class="kp-filter-chip">
+      <el-tag type="info" effect="plain" closable @close="clearKnowledgePointFilter">
+        知识点：{{ targetKnowledgePointName }}
+      </el-tag>
+    </div>
+
     <section class="stats-grid">
       <el-card shadow="never" class="stat-card stat-due">
         <span>今日待复习</span>
@@ -223,7 +229,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { errorMessage, isAbortError } from '@/utils/errors'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, Loading, MagicStick, Reading, View } from '@element-plus/icons-vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
@@ -242,6 +248,7 @@ import {
 } from '@/api/review'
 
 const route = useRoute()
+const router = useRouter()
 
 function positiveQueryNumber(value: unknown) {
   const parsed = Number(value)
@@ -250,6 +257,18 @@ function positiveQueryNumber(value: unknown) {
 
 const targetCourseId = computed(() => positiveQueryNumber(route.query.courseId))
 const targetQuestionId = computed(() => positiveQueryNumber(route.query.questionId))
+const targetKnowledgePointId = computed(() => positiveQueryNumber(route.query.knowledgePointId))
+const targetKnowledgePointName = computed(() =>
+  typeof route.query.knowledgePointName === 'string' ? route.query.knowledgePointName : '',
+)
+
+async function clearKnowledgePointFilter() {
+  const query = { ...route.query }
+  delete query.knowledgePointId
+  delete query.knowledgePointName
+  await router.replace({ query })
+  await loadDueCards()
+}
 
 // 统计数据
 const stats = ref<ReviewStatsVO>({
@@ -326,7 +345,12 @@ async function loadStats() {
 
 async function loadDueCards() {
   try {
-    const { data } = await getDueReviewCards(targetCourseId.value, 30, targetQuestionId.value)
+    const { data } = await getDueReviewCards(
+      targetCourseId.value,
+      30,
+      targetQuestionId.value,
+      targetKnowledgePointId.value,
+    )
     dueCards.value = data
   } catch {
     ElMessage.error('获取待复习题目失败')
@@ -525,6 +549,10 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.kp-filter-chip {
+  margin-top: 14px;
 }
 
 .review-hero {

@@ -49,9 +49,14 @@ export function getReviewStats() {
 }
 
 /** 获取今日待复习题目 */
-export function getDueReviewCards(courseId?: number, limit?: number, questionId?: number) {
+export function getDueReviewCards(
+  courseId?: number,
+  limit?: number,
+  questionId?: number,
+  knowledgePointId?: number,
+) {
   return request.get<ReviewScheduleVO[]>('/review/due', {
-    params: { courseId, questionId, limit }
+    params: { courseId, questionId, knowledgePointId, limit },
   })
 }
 
