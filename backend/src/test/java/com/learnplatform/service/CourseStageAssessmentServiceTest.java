@@ -299,7 +299,8 @@ class CourseStageAssessmentServiceTest {
         Page<CourseStageAssessment> page = new Page<>(1, 10, 1);
         page.setRecords(List.of(item));
         when(assessmentMapper.selectCompletedPage(any(), org.mockito.ArgumentMatchers.eq(7L),
-                org.mockito.ArgumentMatchers.eq(10L))).thenReturn(page);
+                org.mockito.ArgumentMatchers.eq(10L), org.mockito.ArgumentMatchers.isNull()))
+                .thenReturn(page);
         when(assessmentQuestionMapper.selectSourcesByAssessmentIds(List.of(51L))).thenReturn(List.of(snapshot()));
 
         Page<CourseStageAssessmentSummaryVO> result = service.listCompleted(7L, 10L, 1, 10);
@@ -308,6 +309,23 @@ class CourseStageAssessmentServiceTest {
         assertEquals(51L, result.getRecords().get(0).getId());
         assertEquals(1, result.getRecords().get(0).getCorrectCount());
         assertEquals(1, result.getRecords().get(0).getSourceComposition().getAiGeneratedCount());
+    }
+
+    @Test
+    void historyCanBeFilteredByKnowledgePoint() {
+        when(assessmentMapper.countUserCourse(7L, 10L)).thenReturn(1L);
+        Page<CourseStageAssessment> page = new Page<>(1, 10, 1);
+        page.setRecords(List.of(completedAssessment()));
+        when(assessmentMapper.selectCompletedPage(any(), org.mockito.ArgumentMatchers.eq(7L),
+                org.mockito.ArgumentMatchers.eq(10L), org.mockito.ArgumentMatchers.eq(31L)))
+                .thenReturn(page);
+        when(assessmentQuestionMapper.selectSourcesByAssessmentIds(List.of(51L))).thenReturn(List.of(snapshot()));
+
+        Page<CourseStageAssessmentSummaryVO> result = service.listCompleted(7L, 10L, 1, 10, 31L);
+
+        assertEquals(1, result.getTotal());
+        verify(assessmentMapper).selectCompletedPage(any(), org.mockito.ArgumentMatchers.eq(7L),
+                org.mockito.ArgumentMatchers.eq(10L), org.mockito.ArgumentMatchers.eq(31L));
     }
 
     @Test

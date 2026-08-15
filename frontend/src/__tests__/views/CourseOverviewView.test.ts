@@ -357,6 +357,38 @@ describe('CourseOverviewView', () => {
     })
   })
 
+  it('测评历史可按已审查知识点筛选并重置分页', async () => {
+    mockGetAssessmentHistory.mockResolvedValue({
+      data: {
+        records: [
+          {
+            id: 53,
+            selectionStrategy: 'COURSE_SEQUENCE_FALLBACK',
+            questionCount: 2,
+            correctCount: 1,
+            sourceComposition: { officialExamCount: 0, manualCount: 2, userPrivateCount: 0, aiGeneratedCount: 0 },
+            completeTime: '2026-08-15T10:05:00',
+          },
+        ],
+        total: 1,
+        current: 1,
+        size: 10,
+      },
+    })
+    const wrapper = mount(CourseOverviewView, { global: { stubs } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as {
+      assessmentHistoryKnowledgePointId: number
+      loadAssessmentHistory: (page?: number) => Promise<void>
+    }
+
+    vm.assessmentHistoryKnowledgePointId = 31
+    await vm.loadAssessmentHistory(1)
+
+    expect(mockGetAssessmentHistory).toHaveBeenCalledWith(408, 1, 10, 31)
+    expect(wrapper.text()).toContain('答对 1 / 2 题')
+  })
+
   it('展示最近测评事实并可从本人历史打开逐题复盘', async () => {
     mockGetCourseOverview.mockResolvedValue({
       data: {
@@ -452,7 +484,7 @@ describe('CourseOverviewView', () => {
     }
 
     await vm.openAssessmentHistory()
-    expect(mockGetAssessmentHistory).toHaveBeenCalledWith(408, 1, 10)
+    expect(mockGetAssessmentHistory).toHaveBeenCalledWith(408, 1, 10, null)
     expect(wrapper.text()).toContain('按当前学习事实优先选题')
     expect(wrapper.text()).toContain('官方原题 3 · AI 生成题 2')
     await vm.openAssessmentDetail(51)

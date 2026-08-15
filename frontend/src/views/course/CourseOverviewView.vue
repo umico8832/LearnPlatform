@@ -138,6 +138,22 @@
     </section>
 
     <el-dialog v-model="assessmentHistoryVisible" title="阶段测评历史" width="min(680px, 94vw)">
+      <div class="history-filter-row">
+        <el-select
+          v-model="assessmentHistoryKnowledgePointId"
+          placeholder="按知识点筛选"
+          clearable
+          @change="onHistoryKnowledgePointChange"
+        >
+          <el-option :value="0" label="全部知识点" />
+          <el-option
+            v-for="item in overview?.tutorProgress ?? []"
+            :key="item.knowledgePointId"
+            :value="item.knowledgePointId"
+            :label="item.title"
+          />
+        </el-select>
+      </div>
       <el-result v-if="assessmentHistoryFailed" icon="error" title="暂时无法读取测评历史" sub-title="请稍后重试。">
         <template #extra
           ><el-button type="primary" @click="loadAssessmentHistory(assessmentHistoryPage)"
@@ -351,6 +367,7 @@ const assessmentDialogVisible = ref(false)
 const assessment = ref<CourseStageAssessmentVO | null>(null)
 const assessmentAnswers = ref<Record<number, string[]>>({})
 const assessmentHistoryVisible = ref(false)
+const assessmentHistoryKnowledgePointId = ref<number>(0)
 const assessmentHistoryLoading = ref(false)
 const assessmentHistoryFailed = ref(false)
 const assessmentHistory = ref<CourseStageAssessmentSummaryVO[]>([])
@@ -445,11 +462,20 @@ async function startAssessment() {
   }
 }
 
+function onHistoryKnowledgePointChange() {
+  loadAssessmentHistory(1)
+}
+
 async function loadAssessmentHistory(page = 1) {
   assessmentHistoryLoading.value = true
   assessmentHistoryFailed.value = false
   try {
-    const response = await getCourseStageAssessmentHistory(courseId.value, page, assessmentHistoryPageSize)
+    const response = await getCourseStageAssessmentHistory(
+      courseId.value,
+      page,
+      assessmentHistoryPageSize,
+      assessmentHistoryKnowledgePointId.value === 0 ? null : assessmentHistoryKnowledgePointId.value,
+    )
     assessmentHistory.value = response.data.records
     assessmentHistoryPage.value = response.data.current
     assessmentHistoryTotal.value = response.data.total
@@ -795,6 +821,14 @@ onMounted(fetchOverview)
   border-radius: 8px;
   background: var(--lp-surface-soft);
 }
+.history-filter-row {
+  margin-bottom: 12px;
+}
+
+.history-filter-row :deep(.el-select) {
+  width: min(280px, 100%);
+}
+
 .assessment-history-item p,
 .history-empty {
   margin: 4px 0;

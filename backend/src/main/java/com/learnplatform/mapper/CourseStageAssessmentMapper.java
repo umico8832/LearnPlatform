@@ -42,13 +42,19 @@ public interface CourseStageAssessmentMapper extends BaseMapper<CourseStageAsses
                                       @Param("userId") Long userId);
 
     @Select("""
-            SELECT * FROM course_stage_assessment
-            WHERE user_id = #{userId} AND course_id = #{courseId} AND status = 'COMPLETED'
-            ORDER BY complete_time DESC, id DESC
+            SELECT a.* FROM course_stage_assessment a
+            WHERE a.user_id = #{userId} AND a.course_id = #{courseId} AND a.status = 'COMPLETED'
+              AND (#{knowledgePointId} IS NULL OR EXISTS (
+                SELECT 1 FROM course_stage_assessment_question q
+                WHERE q.assessment_id = a.id
+                  AND JSON_CONTAINS(q.knowledge_points_json, JSON_OBJECT('id', #{knowledgePointId}))
+              ))
+            ORDER BY a.complete_time DESC, a.id DESC
             """)
     Page<CourseStageAssessment> selectCompletedPage(Page<CourseStageAssessment> page,
                                                     @Param("userId") Long userId,
-                                                    @Param("courseId") Long courseId);
+                                                    @Param("courseId") Long courseId,
+                                                    @Param("knowledgePointId") Long knowledgePointId);
 
     @Select("""
             SELECT * FROM course_stage_assessment

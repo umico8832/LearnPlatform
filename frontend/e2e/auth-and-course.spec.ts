@@ -498,6 +498,7 @@ test('用户可完成2026真题学习与限时考试并复盘可信来源', asyn
 
   await page.getByRole('button', { name: '测评历史' }).click()
   const historyDialog = page.getByRole('dialog', { name: '阶段测评历史' })
+  await expect(historyDialog.locator('.el-select').first()).toBeVisible()
   await expect(historyDialog).toContainText(/答对 \d+ \/ \d+ 题/)
   await expect(historyDialog).toContainText('题源：')
   await historyDialog.getByRole('button', { name: '查看复盘' }).first().click()

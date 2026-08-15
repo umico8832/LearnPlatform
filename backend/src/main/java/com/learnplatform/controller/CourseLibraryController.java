@@ -98,9 +98,10 @@ public class CourseLibraryController {
             @PathVariable Long courseId,
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) Long knowledgePointId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return R.ok(stageAssessmentService.listCompleted(
-                userDetails.getUserId(), courseId, pageNum, pageSize));
+                userDetails.getUserId(), courseId, pageNum, pageSize, knowledgePointId));
     }
 
     @Operation(summary = "查询本人已完成阶段测评复盘")

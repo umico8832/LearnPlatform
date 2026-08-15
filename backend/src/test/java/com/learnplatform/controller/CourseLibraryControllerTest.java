@@ -148,7 +148,7 @@ class CourseLibraryControllerTest {
         summary.setCorrectCount(3);
         Page<CourseStageAssessmentSummaryVO> page = new Page<>(1, 10, 1);
         page.setRecords(List.of(summary));
-        when(stageAssessmentService.listCompleted(7L, 10L, 1, 10)).thenReturn(page);
+        when(stageAssessmentService.listCompleted(7L, 10L, 1, 10, null)).thenReturn(page);
         CourseStageAssessmentVO detail = new CourseStageAssessmentVO();
         detail.setId(51L);
         detail.setStatus("COMPLETED");

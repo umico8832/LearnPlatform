@@ -162,12 +162,18 @@ public class CourseStageAssessmentService {
 
     public Page<CourseStageAssessmentSummaryVO> listCompleted(
             Long userId, Long courseId, int pageNum, int pageSize) {
+        return listCompleted(userId, courseId, pageNum, pageSize, null);
+    }
+
+    /** 分页查询本人已完成测评；可按知识点范围过滤（基于逐题快照的知识点归属）。 */
+    public Page<CourseStageAssessmentSummaryVO> listCompleted(
+            Long userId, Long courseId, int pageNum, int pageSize, Long knowledgePointId) {
         requireCourseInLibrary(userId, courseId);
         if (pageNum < 1 || pageSize < 1 || pageSize > 50) {
             throw validation("分页参数不合法");
         }
         Page<CourseStageAssessment> source = assessmentMapper.selectCompletedPage(
-                new Page<>(pageNum, pageSize), userId, courseId);
+                new Page<>(pageNum, pageSize), userId, courseId, knowledgePointId);
         Page<CourseStageAssessmentSummaryVO> result = new Page<>(source.getCurrent(), source.getSize(), source.getTotal());
         List<Long> assessmentIds = source.getRecords().stream().map(CourseStageAssessment::getId).toList();
         Map<Long, List<CourseStageAssessmentQuestion>> sourcesByAssessment = assessmentIds.isEmpty()

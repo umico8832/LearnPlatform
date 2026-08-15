@@ -161,6 +161,11 @@ class CourseStageAssessmentIntegrationTest extends IntegrationTestBase {
         assertEquals(kpId, overview.getLatestStageAssessment().getKnowledgePointSummary().get(0).getId());
         assertEquals("测试限定知识点", overview.getLatestStageAssessment().getKnowledgePointSummary().get(0).getName());
         assertEquals(2, overview.getLatestStageAssessment().getKnowledgePointSummary().get(0).getQuestionCount());
+        Page<CourseStageAssessmentSummaryVO> kpHistory = service.listCompleted(userId, 1L, 1, 10, kpId);
+        assertEquals(1, kpHistory.getTotal());
+        assertEquals(started.getId(), kpHistory.getRecords().get(0).getId());
+        Page<CourseStageAssessmentSummaryVO> otherKp = service.listCompleted(userId, 1L, 1, 10, 999999L);
+        assertEquals(0, otherKp.getTotal());
         Page<CourseStageAssessmentSummaryVO> history = service.listCompleted(userId, 1L, 1, 10);
         assertEquals("测试限定知识点", history.getRecords().get(0).getTargetKnowledgePointName());
 

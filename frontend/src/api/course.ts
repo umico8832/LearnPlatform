@@ -635,10 +635,15 @@ export function submitCourseStageAssessment(
   )
 }
 
-export function getCourseStageAssessmentHistory(courseId: number, pageNum = 1, pageSize = 10) {
+export function getCourseStageAssessmentHistory(
+  courseId: number,
+  pageNum = 1,
+  pageSize = 10,
+  knowledgePointId?: number | null,
+) {
   return request.get<unknown, ApiResponse<PageResult<CourseStageAssessmentSummaryVO>>>(
     `/my-courses/${courseId}/stage-assessments`,
-    { params: { pageNum, pageSize } },
+    { params: { pageNum, pageSize, knowledgePointId: knowledgePointId ?? undefined } },
   )
 }
 
