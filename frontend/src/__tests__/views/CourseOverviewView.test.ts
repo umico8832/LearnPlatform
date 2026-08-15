@@ -295,7 +295,15 @@ describe('CourseOverviewView', () => {
         },
       ],
     }
-    mockGetAssessmentDetail.mockResolvedValue({ data: detail })
+    mockGetAssessmentDetail.mockResolvedValue({
+      data: {
+        ...detail,
+        knowledgePointSummary: [
+          { id: 31, name: '栈', questionCount: 1, correctCount: 0 },
+          { id: 999, name: '未审查目录节点', questionCount: 1, correctCount: 1 },
+        ],
+      },
+    })
     mockGetAssessmentHistory.mockResolvedValue({
       data: {
         records: [
@@ -323,12 +331,20 @@ describe('CourseOverviewView', () => {
 
     expect(wrapper.text()).toContain('知识点：栈')
     expect(wrapper.text()).toContain('知识点：未审查目录节点')
+    expect(wrapper.text()).toContain('按知识点统计')
+    expect(wrapper.text()).toContain('答对 0 / 1 题')
     await findButton(wrapper, '进入错题复习').trigger('click')
     expect(mockPush).toHaveBeenCalledWith({
       name: 'WrongQuestions',
       query: { courseId: '408', questionId: '21' },
     })
     await findButton(wrapper, '知识点：栈').trigger('click')
+    expect(mockPush).toHaveBeenCalledWith({
+      name: 'TutorSession',
+      params: { id: 408 },
+      query: { knowledgePointId: '31' },
+    })
+    await findButton(wrapper, '进入教学').trigger('click')
     expect(mockPush).toHaveBeenCalledWith({
       name: 'TutorSession',
       params: { id: 408 },

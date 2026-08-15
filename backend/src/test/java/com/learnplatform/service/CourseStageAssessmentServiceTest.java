@@ -218,6 +218,32 @@ class CourseStageAssessmentServiceTest {
     }
 
     @Test
+    void summarizesCompletedAssessmentByKnowledgePointFacts() {
+        CourseStageAssessment item = completedAssessment();
+        when(assessmentMapper.selectOwned(51L, 7L)).thenReturn(item);
+        CourseStageAssessmentQuestion wrong = snapshot();
+        wrong.setKnowledgePointsJson("[{\"id\":31,\"name\":\"栈\"}]");
+        wrong.setIsCorrect(0);
+        CourseStageAssessmentQuestion right = snapshot();
+        right.setId(62L);
+        right.setKnowledgePointsJson("[{\"id\":31,\"name\":\"栈\"},{\"id\":32,\"name\":\"队列\"}]");
+        right.setIsCorrect(1);
+        when(assessmentQuestionMapper.selectByAssessmentId(51L)).thenReturn(List.of(wrong, right));
+
+        CourseStageAssessmentVO detail = service.getCompleted(51L, 7L);
+
+        List<CourseStageAssessmentVO.KnowledgePointSummaryVO> summary = detail.getKnowledgePointSummary();
+        assertEquals(2, summary.size());
+        assertEquals(31L, summary.get(0).getId());
+        assertEquals("栈", summary.get(0).getName());
+        assertEquals(2, summary.get(0).getQuestionCount());
+        assertEquals(1, summary.get(0).getCorrectCount());
+        assertEquals(32L, summary.get(1).getId());
+        assertEquals(1, summary.get(1).getQuestionCount());
+        assertEquals(1, summary.get(1).getCorrectCount());
+    }
+
+    @Test
     void rejectsPartialSubmission() {
         CourseStageAssessment assessment = new CourseStageAssessment();
         assessment.setId(51L);

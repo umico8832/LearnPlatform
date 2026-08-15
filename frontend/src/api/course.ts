@@ -63,6 +63,7 @@ export interface CourseStageAssessmentVO {
   startTime: string
   completeTime: string | null
   sourceComposition: CourseStageAssessmentSourceCompositionVO
+  knowledgePointSummary?: CourseStageAssessmentKnowledgePointSummaryVO[]
   questions: CourseStageAssessmentQuestion[]
 }
 
@@ -76,6 +77,13 @@ export interface CourseStageAssessmentSourceCompositionVO {
 export interface CourseStageAssessmentKnowledgePointVO {
   id: number
   name: string
+}
+
+export interface CourseStageAssessmentKnowledgePointSummaryVO {
+  id: number
+  name: string
+  questionCount: number
+  correctCount: number
 }
 
 export interface CourseStageAssessmentQuestion {

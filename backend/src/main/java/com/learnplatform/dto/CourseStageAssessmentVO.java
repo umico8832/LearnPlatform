@@ -15,6 +15,7 @@ public class CourseStageAssessmentVO {
     private LocalDateTime startTime;
     private LocalDateTime completeTime;
     private CourseStageAssessmentSourceCompositionVO sourceComposition;
+    private List<KnowledgePointSummaryVO> knowledgePointSummary;
     private List<QuestionItem> questions;
 
     public Long getId() { return id; }
@@ -39,6 +40,8 @@ public class CourseStageAssessmentVO {
     public void setCompleteTime(LocalDateTime completeTime) { this.completeTime = completeTime; }
     public CourseStageAssessmentSourceCompositionVO getSourceComposition() { return sourceComposition; }
     public void setSourceComposition(CourseStageAssessmentSourceCompositionVO value) { this.sourceComposition = value; }
+    public List<KnowledgePointSummaryVO> getKnowledgePointSummary() { return knowledgePointSummary; }
+    public void setKnowledgePointSummary(List<KnowledgePointSummaryVO> knowledgePointSummary) { this.knowledgePointSummary = knowledgePointSummary; }
     public List<QuestionItem> getQuestions() { return questions; }
     public void setQuestions(List<QuestionItem> questions) { this.questions = questions; }
 
@@ -101,6 +104,22 @@ public class CourseStageAssessmentVO {
         public void setId(Long id) { this.id = id; }
         public String getName() { return name; }
         public void setName(String name) { this.name = name; }
+    }
+
+    public static class KnowledgePointSummaryVO {
+        private Long id;
+        private String name;
+        private Integer questionCount;
+        private Integer correctCount;
+
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        public Integer getQuestionCount() { return questionCount; }
+        public void setQuestionCount(Integer questionCount) { this.questionCount = questionCount; }
+        public Integer getCorrectCount() { return correctCount; }
+        public void setCorrectCount(Integer correctCount) { this.correctCount = correctCount; }
     }
 
     public static class OptionItem {

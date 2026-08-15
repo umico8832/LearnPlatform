@@ -206,6 +206,30 @@
         <p v-if="assessment.status === 'COMPLETED'" class="assessment-summary">
           答对 {{ assessment.correctCount }} / {{ assessment.questionCount }} 题
         </p>
+        <div
+          v-if="assessment.status === 'COMPLETED' && assessment.knowledgePointSummary?.length"
+          class="assessment-kp-summary"
+        >
+          <h4 class="assessment-kp-summary-heading">按知识点统计</h4>
+          <p class="assessment-kp-summary-note">仅统计本轮各知识点的题数与正误数，不推断掌握度或趋势。</p>
+          <ul class="assessment-kp-summary-list">
+            <li v-for="point in assessment.knowledgePointSummary" :key="point.id" class="assessment-kp-summary-item">
+              <span>知识点：{{ point.name }}</span>
+              <span class="assessment-kp-summary-count"
+                >答对 {{ point.correctCount }} / {{ point.questionCount }} 题</span
+              >
+              <el-button
+                v-if="isReviewedTutorKnowledgePoint(point.id)"
+                size="small"
+                text
+                type="primary"
+                @click="openKnowledgePointTutor(point.id)"
+              >
+                进入教学
+              </el-button>
+            </li>
+          </ul>
+        </div>
         <div class="assessment-list">
           <article v-for="question in assessment.questions" :key="question.id" class="assessment-question">
             <div class="assessment-question-header">
@@ -783,6 +807,40 @@ onMounted(fetchOverview)
   margin: 10px 0 16px;
   color: var(--lp-text-muted);
   font-size: 13px;
+}
+.assessment-kp-summary {
+  margin: 14px 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--lp-border);
+  border-radius: 8px;
+  background: var(--lp-surface-soft);
+}
+.assessment-kp-summary-heading {
+  margin: 0 0 4px;
+  font-size: 14px;
+  color: var(--lp-text);
+}
+.assessment-kp-summary-note {
+  margin: 0 0 8px;
+  color: var(--lp-text-muted);
+  font-size: 12px;
+}
+.assessment-kp-summary-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.assessment-kp-summary-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--lp-text);
+}
+.assessment-kp-summary-count {
+  color: var(--lp-text-secondary);
 }
 .assessment-options {
   display: grid;
