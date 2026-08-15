@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import sys
 import unittest
 from pathlib import Path
@@ -65,6 +67,53 @@ class CommitMessageValidationTest(unittest.TestCase):
             "必须在主题中使用 !",
             "BREAKING-CHANGE: 旧客户端不能继续使用。",
         )
+
+
+class CommitRangeCheckTest(unittest.TestCase):
+    """覆盖 run_check 对普通 push 与明确 force push 的范围校验行为。"""
+
+    UNREACHABLE = "f" * 40
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.head = checker.git("rev-parse", "HEAD").strip()
+        cls.parent = checker.git("rev-parse", "HEAD~1").strip()
+
+    def run_check(self, base: str, head: str, forced: bool = False) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = checker.run_check(base, head, forced=forced)
+        return code, out.getvalue(), err.getvalue()
+
+    def test_normal_push_with_reachable_base_passes(self) -> None:
+        code, _, _ = self.run_check(self.parent, self.head, forced=False)
+        self.assertEqual(0, code)
+
+    def test_normal_push_with_unreachable_base_fails(self) -> None:
+        code, _, err = self.run_check(self.UNREACHABLE, self.head, forced=False)
+        self.assertEqual(2, code)
+        self.assertIn("读取提交记录失败", err)
+
+    def test_forced_push_with_unreachable_base_validates_head(self) -> None:
+        code, _, err = self.run_check(self.UNREACHABLE, self.head, forced=True)
+        self.assertEqual(0, code)
+        self.assertIn("force push", err)
+
+    def test_forced_push_with_reachable_base_still_checks_range(self) -> None:
+        code, _, _ = self.run_check(self.parent, self.head, forced=True)
+        self.assertEqual(0, code)
+
+    def test_forced_push_with_invalid_head_message_fails(self) -> None:
+        original = checker.read_head_commit
+        checker.read_head_commit = lambda head: [
+            checker.CommitRecord("a" * 40, "release: 非法主题", "")
+        ]
+        try:
+            code, _, err = self.run_check(self.UNREACHABLE, self.head, forced=True)
+        finally:
+            checker.read_head_commit = original
+        self.assertEqual(1, code)
+        self.assertIn("不符合项目规范", err)
 
 
 if __name__ == "__main__":

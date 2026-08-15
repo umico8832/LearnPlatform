@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -61,13 +62,7 @@ def commit_range(base_sha: str, head_sha: str) -> str:
     return f"{base_sha}..{head_sha}"
 
 
-def read_commits(revision: str) -> list[CommitRecord]:
-    output = git(
-        "log",
-        "--no-merges",
-        "--format=%H%x09%s%x09%b%x00",
-        revision,
-    )
+def parse_log_output(output: str) -> list[CommitRecord]:
     records: list[CommitRecord] = []
     for raw_record in output.split("\x00"):
         normalized = raw_record.strip("\r\n")
@@ -79,6 +74,28 @@ def read_commits(revision: str) -> list[CommitRecord]:
             raise ValueError("无法解析 git log 输出") from error
         records.append(CommitRecord(sha=sha, subject=subject, body=body.rstrip()))
     return records
+
+
+def read_commits(revision: str) -> list[CommitRecord]:
+    output = git(
+        "log",
+        "--no-merges",
+        "--format=%H%x09%s%x09%b%x00",
+        revision,
+    )
+    return parse_log_output(output)
+
+
+def read_head_commit(head_sha: str) -> list[CommitRecord]:
+    """读取单个 HEAD 提交，不遍历整个仓库历史。"""
+    output = git(
+        "log",
+        "-1",
+        "--no-merges",
+        "--format=%H%x09%s%x09%b%x00",
+        head_sha,
+    )
+    return parse_log_output(output)
 
 
 def validate_commit(subject: str, body: str) -> list[str]:
@@ -111,18 +128,31 @@ def validate_commit(subject: str, body: str) -> list[str]:
     return failures
 
 
-def main() -> int:
-    if len(sys.argv) != 3:
-        print(
-            "usage: check-commit-messages.py <base-sha> <head-sha>",
-            file=sys.stderr,
-        )
-        return 2
+def run_check(base_sha: str, head_sha: str, forced: bool = False) -> int:
+    """校验新增非合并提交。
 
-    revision = commit_range(sys.argv[1], sys.argv[2])
+    forced 表示本次 push 被 GitHub 明确标记为 force push（授权历史重写）。
+    历史重写后旧 BASE_SHA 可能不再可达：此时不再因无法读取旧基线而失败，
+    只校验当前 HEAD 提交；无法可靠确定的新增范围不会被编造。
+    """
+    revision = commit_range(base_sha, head_sha)
     try:
         commits = read_commits(revision)
-    except (subprocess.CalledProcessError, ValueError) as error:
+    except subprocess.CalledProcessError as error:
+        if not forced:
+            print(f"读取提交记录失败：{error}", file=sys.stderr)
+            return 2
+        print(
+            "检测到明确的 force push 且旧 BASE_SHA 已不可达；"
+            "本轮只校验当前 HEAD 提交，不检查整个仓库历史。",
+            file=sys.stderr,
+        )
+        try:
+            commits = read_head_commit(head_sha)
+        except (subprocess.CalledProcessError, ValueError) as head_error:
+            print(f"读取 HEAD 提交失败：{head_error}", file=sys.stderr)
+            return 2
+    except ValueError as error:
         print(f"读取提交记录失败：{error}", file=sys.stderr)
         return 2
 
@@ -146,6 +176,18 @@ def main() -> int:
 
     print(f"Commit Message 校验通过：{len(commits)} 个非合并提交。")
     return 0
+
+
+def main() -> int:
+    if len(sys.argv) != 3:
+        print(
+            "usage: check-commit-messages.py <base-sha> <head-sha>",
+            file=sys.stderr,
+        )
+        return 2
+
+    forced = os.environ.get("FORCED_PUSH", "").strip().lower() in ("1", "true", "yes")
+    return run_check(sys.argv[1], sys.argv[2], forced=forced)
 
 
 if __name__ == "__main__":
