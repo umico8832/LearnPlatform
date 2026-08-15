@@ -475,6 +475,9 @@ test('用户可完成2026真题学习与限时考试并复盘可信来源', asyn
   await expect(assessmentDialog).toContainText(/答对 \d+ \/ \d+ 题/)
   await assessmentDialog.getByRole('button', { name: '关闭', exact: true }).click()
 
+  // 课程总览最近测评摘要直接展示各知识点题数与正误数
+  await expect(page.locator('.activity-panel')).toContainText('知识点：')
+
   // 限定已审查知识点范围发起新一轮测评，并确认范围随会话固化展示
   await page.getByRole('button', { name: '阶段测评' }).click()
   const scopedSetupDialog = page.getByRole('dialog', { name: '开始阶段测评' })

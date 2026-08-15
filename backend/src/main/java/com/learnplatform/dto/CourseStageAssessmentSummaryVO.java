@@ -1,6 +1,7 @@
 package com.learnplatform.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /** 本人课程阶段测评历史中的已完成事实摘要。 */
 public class CourseStageAssessmentSummaryVO {
@@ -13,6 +14,7 @@ public class CourseStageAssessmentSummaryVO {
     private LocalDateTime startTime;
     private LocalDateTime completeTime;
     private CourseStageAssessmentSourceCompositionVO sourceComposition;
+    private List<CourseStageAssessmentVO.KnowledgePointSummaryVO> knowledgePointSummary;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -32,4 +34,6 @@ public class CourseStageAssessmentSummaryVO {
     public void setCompleteTime(LocalDateTime completeTime) { this.completeTime = completeTime; }
     public CourseStageAssessmentSourceCompositionVO getSourceComposition() { return sourceComposition; }
     public void setSourceComposition(CourseStageAssessmentSourceCompositionVO value) { this.sourceComposition = value; }
+    public List<CourseStageAssessmentVO.KnowledgePointSummaryVO> getKnowledgePointSummary() { return knowledgePointSummary; }
+    public void setKnowledgePointSummary(List<CourseStageAssessmentVO.KnowledgePointSummaryVO> value) { this.knowledgePointSummary = value; }
 }

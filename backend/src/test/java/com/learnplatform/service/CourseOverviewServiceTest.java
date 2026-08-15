@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.CourseOverviewVO;
 import com.learnplatform.entity.Course;
@@ -65,7 +66,8 @@ class CourseOverviewServiceTest {
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new Configuration(), ""), KnowledgePoint.class);
         service = new CourseOverviewService(userCourseMapper, courseMapper, eventMapper,
                 wrongQuestionMapper, reviewScheduleMapper, questionMapper, knowledgePointMapper,
-                tutorContentMapper, tutorSessionMapper, stageAssessmentMapper, stageAssessmentQuestionMapper);
+                tutorContentMapper, tutorSessionMapper, stageAssessmentMapper, stageAssessmentQuestionMapper,
+                new ObjectMapper());
     }
 
     @Test
@@ -205,6 +207,8 @@ class CourseOverviewServiceTest {
         com.learnplatform.entity.CourseStageAssessmentQuestion snapshot =
                 new com.learnplatform.entity.CourseStageAssessmentQuestion();
         snapshot.setSourceCategorySnapshot("OFFICIAL_EXAM");
+        snapshot.setKnowledgePointsJson("[{\"id\":31,\"name\":\"栈\"}]");
+        snapshot.setIsCorrect(0);
         when(stageAssessmentQuestionMapper.selectByAssessmentId(51L)).thenReturn(List.of(snapshot));
 
         CourseOverviewVO overview = service.getOverview(7L, 10L);
@@ -213,6 +217,11 @@ class CourseOverviewServiceTest {
         assertEquals(3, overview.getLatestStageAssessment().getCorrectCount());
         assertEquals(5, overview.getLatestStageAssessment().getQuestionCount());
         assertEquals(1, overview.getLatestStageAssessment().getSourceComposition().getOfficialExamCount());
+        assertEquals(1, overview.getLatestStageAssessment().getKnowledgePointSummary().size());
+        assertEquals(31L, overview.getLatestStageAssessment().getKnowledgePointSummary().get(0).getId());
+        assertEquals("栈", overview.getLatestStageAssessment().getKnowledgePointSummary().get(0).getName());
+        assertEquals(1, overview.getLatestStageAssessment().getKnowledgePointSummary().get(0).getQuestionCount());
+        assertEquals(0, overview.getLatestStageAssessment().getKnowledgePointSummary().get(0).getCorrectCount());
     }
 
     private Course course() {

@@ -281,34 +281,11 @@ public class CourseStageAssessmentService {
         view.setCompleteTime(assessment.getCompleteTime());
         List<CourseStageAssessmentQuestion> items = assessmentQuestionMapper.selectByAssessmentId(assessment.getId());
         view.setSourceComposition(CourseStageAssessmentSourceComposition.from(items));
-        view.setKnowledgePointSummary(completed ? knowledgePointSummary(items) : null);
+        view.setKnowledgePointSummary(completed
+                ? CourseStageAssessmentKnowledgePointSummary.from(items, objectMapper) : null);
         view.setQuestions(items.stream().map(item -> toQuestionView(item, completed)).toList());
         return view;
     }
-
-    private List<CourseStageAssessmentVO.KnowledgePointSummaryVO> knowledgePointSummary(
-            List<CourseStageAssessmentQuestion> items) {
-        Map<KnowledgePointRef, int[]> counts = new LinkedHashMap<>();
-        for (CourseStageAssessmentQuestion item : items) {
-            for (CourseStageAssessmentVO.KnowledgePointVO point : readKnowledgePoints(item.getKnowledgePointsJson())) {
-                int[] counters = counts.computeIfAbsent(new KnowledgePointRef(point.getId(), point.getName()),
-                        key -> new int[2]);
-                counters[0]++;
-                if (Integer.valueOf(1).equals(item.getIsCorrect())) counters[1]++;
-            }
-        }
-        return counts.entrySet().stream().map(entry -> {
-            CourseStageAssessmentVO.KnowledgePointSummaryVO view =
-                    new CourseStageAssessmentVO.KnowledgePointSummaryVO();
-            view.setId(entry.getKey().id());
-            view.setName(entry.getKey().name());
-            view.setQuestionCount(entry.getValue()[0]);
-            view.setCorrectCount(entry.getValue()[1]);
-            return view;
-        }).toList();
-    }
-
-    private record KnowledgePointRef(Long id, String name) { }
 
     private CourseStageAssessmentVO.QuestionItem toQuestionView(
             CourseStageAssessmentQuestion item, boolean completed) {
@@ -340,12 +317,7 @@ public class CourseStageAssessmentService {
     }
 
     private List<CourseStageAssessmentVO.KnowledgePointVO> readKnowledgePoints(String json) {
-        if (json == null || json.isBlank()) return List.of();
-        try {
-            return objectMapper.readValue(json, new TypeReference<>() { });
-        } catch (JsonProcessingException exception) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR, "测评题目知识点快照损坏");
-        }
+        return CourseStageAssessmentKnowledgePointSummary.readKnowledgePoints(json, objectMapper);
     }
 
     String sourceCategory(Question question) {

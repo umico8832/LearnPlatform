@@ -378,6 +378,10 @@ describe('CourseOverviewView', () => {
             userPrivateCount: 0,
             aiGeneratedCount: 2,
           },
+          knowledgePointSummary: [
+            { id: 31, name: '栈', questionCount: 3, correctCount: 2 },
+            { id: 32, name: '队列', questionCount: 2, correctCount: 1 },
+          ],
           startTime: '2026-08-15T10:00:00',
           completeTime: '2026-08-15T10:05:00',
         },
@@ -441,6 +445,7 @@ describe('CourseOverviewView', () => {
     expect(wrapper.text()).toContain('最近阶段测评')
     expect(wrapper.text()).toContain('答对 3 / 5 题')
     expect(wrapper.text()).toContain('官方原题 3 · AI 生成题 2')
+    expect(wrapper.text()).toContain('知识点：栈 2/3 · 队列 1/2')
     const vm = wrapper.vm as unknown as {
       openAssessmentHistory: () => Promise<void>
       openAssessmentDetail: (id: number) => Promise<void>

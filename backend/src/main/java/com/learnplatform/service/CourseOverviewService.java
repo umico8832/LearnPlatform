@@ -1,6 +1,7 @@
 package com.learnplatform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.CourseOverviewVO;
@@ -8,6 +9,7 @@ import com.learnplatform.dto.CourseStageAssessmentSummaryVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.CourseLearningEvent;
 import com.learnplatform.entity.CourseStageAssessment;
+import com.learnplatform.entity.CourseStageAssessmentQuestion;
 import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionReviewSchedule;
@@ -51,6 +53,7 @@ public class CourseOverviewService {
     private final TutorSessionMapper tutorSessionMapper;
     private final CourseStageAssessmentMapper stageAssessmentMapper;
     private final CourseStageAssessmentQuestionMapper stageAssessmentQuestionMapper;
+    private final ObjectMapper objectMapper;
 
     public CourseOverviewService(UserCourseMapper userCourseMapper, CourseMapper courseMapper,
                                  CourseLearningEventMapper eventMapper, WrongQuestionMapper wrongQuestionMapper,
@@ -58,7 +61,8 @@ public class CourseOverviewService {
                                  KnowledgePointMapper knowledgePointMapper, TutorContentMapper tutorContentMapper,
                                  TutorSessionMapper tutorSessionMapper,
                                  CourseStageAssessmentMapper stageAssessmentMapper,
-                                 CourseStageAssessmentQuestionMapper stageAssessmentQuestionMapper) {
+                                 CourseStageAssessmentQuestionMapper stageAssessmentQuestionMapper,
+                                 ObjectMapper objectMapper) {
         this.userCourseMapper = userCourseMapper;
         this.courseMapper = courseMapper;
         this.eventMapper = eventMapper;
@@ -70,6 +74,7 @@ public class CourseOverviewService {
         this.tutorSessionMapper = tutorSessionMapper;
         this.stageAssessmentMapper = stageAssessmentMapper;
         this.stageAssessmentQuestionMapper = stageAssessmentQuestionMapper;
+        this.objectMapper = objectMapper;
     }
 
     public CourseOverviewVO getOverview(Long userId, Long courseId) {
@@ -234,8 +239,11 @@ public class CourseOverviewService {
         view.setCorrectCount(assessment.getCorrectCount());
         view.setStartTime(assessment.getStartTime());
         view.setCompleteTime(assessment.getCompleteTime());
-        view.setSourceComposition(CourseStageAssessmentSourceComposition.from(
-                stageAssessmentQuestionMapper.selectByAssessmentId(assessment.getId())));
+        List<CourseStageAssessmentQuestion> items =
+                stageAssessmentQuestionMapper.selectByAssessmentId(assessment.getId());
+        view.setSourceComposition(CourseStageAssessmentSourceComposition.from(items));
+        view.setKnowledgePointSummary(
+                CourseStageAssessmentKnowledgePointSummary.from(items, objectMapper));
         return view;
     }
 

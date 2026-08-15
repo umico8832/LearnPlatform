@@ -116,6 +116,9 @@
               </span>
               <small>范围：{{ overview.latestStageAssessment.targetKnowledgePointName || '课程整体' }}</small>
               <small>题源：{{ sourceCompositionText(overview.latestStageAssessment.sourceComposition) }}</small>
+              <small v-if="overview.latestStageAssessment.knowledgePointSummary?.length">
+                知识点：{{ knowledgePointSummaryText(overview.latestStageAssessment.knowledgePointSummary) }}
+              </small>
               <small>{{ formatDateTime(overview.latestStageAssessment.completeTime) }}</small>
               <el-button text @click="openAssessmentDetail(overview.latestStageAssessment.id)">查看逐题复盘</el-button>
             </div>
@@ -376,6 +379,10 @@ function sourceCompositionText(composition: CourseStageAssessmentSummaryVO['sour
     .filter(([, count]) => Number(count) > 0)
     .map(([label, count]) => `${label} ${count}`)
     .join(' · ')
+}
+
+function knowledgePointSummaryText(summary: CourseStageAssessmentKnowledgePointSummaryVO[]) {
+  return summary.map((item) => `${item.name} ${item.correctCount}/${item.questionCount}`).join(' · ')
 }
 
 async function fetchOverview() {

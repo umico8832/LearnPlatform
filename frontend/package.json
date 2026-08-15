@@ -21,7 +21,7 @@
     "@element-plus/icons-vue": "^2.3.1",
     "axios": "^1.6.8",
     "dompurify": "^3.4.10",
-    "echarts": "^5.5.0",
+    "echarts": "^6.1.0",
     "element-plus": "^2.6.3",
     "highlight.js": "^11.11.1",
     "marked": "^18.0.5",
@@ -31,11 +31,11 @@
     "vue-router": "^4.3.0"
   },
   "devDependencies": {
-    "@types/node": "^20.12.7",
     "@playwright/test": "^1.55.0",
+    "@types/node": "^20.12.7",
+    "@vitejs/plugin-vue": "^6.0.7",
     "@vitest/coverage-v8": "^4.1.8",
     "@vue/eslint-config-typescript": "^14.6.0",
-    "@vitejs/plugin-vue": "^6.0.7",
     "@vue/test-utils": "^2.4.11",
     "eslint": "^9.39.2",
     "eslint-plugin-vue": "^10.7.0",

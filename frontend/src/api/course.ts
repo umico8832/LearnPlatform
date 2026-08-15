@@ -112,6 +112,7 @@ export interface CourseStageAssessmentSummaryVO {
   questionCount: number
   correctCount: number
   sourceComposition: CourseStageAssessmentSourceCompositionVO
+  knowledgePointSummary?: CourseStageAssessmentKnowledgePointSummaryVO[]
   startTime: string
   completeTime: string
 }
