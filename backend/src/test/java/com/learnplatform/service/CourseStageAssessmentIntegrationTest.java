@@ -134,6 +134,11 @@ class CourseStageAssessmentIntegrationTest extends IntegrationTestBase {
                 .map(question -> question.getQuestionId()).toList();
         assertTrue(selectedIds.contains(qA) && selectedIds.contains(qB));
         assertTrue(!selectedIds.contains(qOutside));
+        started.getQuestions().forEach(question -> {
+            assertEquals(1, question.getKnowledgePoints().size());
+            assertEquals(kpId, question.getKnowledgePoints().get(0).getId());
+            assertEquals("测试限定知识点", question.getKnowledgePoints().get(0).getName());
+        });
 
         CourseStageAssessmentSubmitRequest submit = new CourseStageAssessmentSubmitRequest();
         submit.setAnswers(List.of(
@@ -144,6 +149,8 @@ class CourseStageAssessmentIntegrationTest extends IntegrationTestBase {
         CourseStageAssessmentVO detail = service.getCompleted(started.getId(), userId);
         assertEquals(kpId, detail.getTargetKnowledgePointId());
         assertEquals("测试限定知识点", detail.getTargetKnowledgePointName());
+        assertEquals(1, detail.getQuestions().get(0).getKnowledgePoints().size());
+        assertEquals("测试限定知识点", detail.getQuestions().get(0).getKnowledgePoints().get(0).getName());
         Page<CourseStageAssessmentSummaryVO> history = service.listCompleted(userId, 1L, 1, 10);
         assertEquals("测试限定知识点", history.getRecords().get(0).getTargetKnowledgePointName());
 

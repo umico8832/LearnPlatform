@@ -73,6 +73,11 @@ export interface CourseStageAssessmentSourceCompositionVO {
   aiGeneratedCount: number
 }
 
+export interface CourseStageAssessmentKnowledgePointVO {
+  id: number
+  name: string
+}
+
 export interface CourseStageAssessmentQuestion {
   id: number
   questionId: number
@@ -88,6 +93,7 @@ export interface CourseStageAssessmentQuestion {
   correct: boolean | null
   correctAnswer: string | null
   analysis: string | null
+  knowledgePoints?: CourseStageAssessmentKnowledgePointVO[]
 }
 
 export interface CourseStageAssessmentSummaryVO {

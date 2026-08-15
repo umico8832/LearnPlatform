@@ -183,6 +183,7 @@ describe('CourseOverviewView', () => {
           correct: null,
           correctAnswer: null,
           analysis: null,
+          knowledgePoints: [{ id: 31, name: '栈' }],
         },
       ],
     }
@@ -212,6 +213,7 @@ describe('CourseOverviewView', () => {
     expect(mockStartAssessment).toHaveBeenCalledWith(408, 5, null)
     expect(wrapper.text()).toContain('范围：课程整体')
     expect(wrapper.text()).toContain('确定性课程题序')
+    expect(wrapper.text()).toContain('知识点：栈')
     expect(wrapper.text()).toContain('AI 审查生成题 · 母题 #20')
     expect(wrapper.text()).not.toContain('栈顶元素先离开')
     vm.assessmentAnswers[61] = ['A']
@@ -248,6 +250,90 @@ describe('CourseOverviewView', () => {
 
     expect(mockStartAssessment).toHaveBeenCalledWith(408, 5, 32)
     expect(wrapper.text()).toContain('范围：ArrayStack 的容量调整')
+  })
+
+  it('复盘按知识点标注并提供错题复习与已审查教学内容入口', async () => {
+    const detail = {
+      id: 53,
+      courseId: 408,
+      status: 'COMPLETED',
+      selectionStrategy: 'COURSE_SEQUENCE_FALLBACK',
+      questionCount: 2,
+      correctCount: 1,
+      questions: [
+        {
+          id: 71,
+          questionId: 21,
+          sortOrder: 1,
+          questionType: 'SINGLE_CHOICE',
+          sourceType: 'AI_GENERATED',
+          originQuestionId: 20,
+          content: '栈的访问顺序是？',
+          options: [{ label: 'A', content: 'LIFO' }],
+          score: 2,
+          userAnswer: 'B',
+          correct: false,
+          correctAnswer: 'A',
+          analysis: '栈顶元素先离开',
+          knowledgePoints: [{ id: 31, name: '栈' }],
+        },
+        {
+          id: 72,
+          questionId: 22,
+          sortOrder: 2,
+          questionType: 'SINGLE_CHOICE',
+          sourceType: 'MANUAL',
+          originQuestionId: null,
+          content: '队列的访问顺序是？',
+          options: [{ label: 'A', content: 'FIFO' }],
+          score: 2,
+          userAnswer: 'A',
+          correct: true,
+          correctAnswer: 'A',
+          analysis: '先进先出',
+          knowledgePoints: [{ id: 999, name: '未审查目录节点' }],
+        },
+      ],
+    }
+    mockGetAssessmentDetail.mockResolvedValue({ data: detail })
+    mockGetAssessmentHistory.mockResolvedValue({
+      data: {
+        records: [
+          {
+            id: 53,
+            selectionStrategy: 'COURSE_SEQUENCE_FALLBACK',
+            questionCount: 2,
+            correctCount: 1,
+            sourceComposition: { officialExamCount: 0, manualCount: 2, userPrivateCount: 0, aiGeneratedCount: 0 },
+            completeTime: '2026-08-15T10:05:00',
+          },
+        ],
+        total: 1,
+        current: 1,
+        size: 10,
+      },
+    })
+    const wrapper = mount(CourseOverviewView, { global: { stubs } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as { openAssessmentHistory: () => Promise<void> }
+
+    await vm.openAssessmentHistory()
+    await findButton(wrapper, '查看复盘').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('知识点：栈')
+    expect(wrapper.text()).toContain('知识点：未审查目录节点')
+    await findButton(wrapper, '进入错题复习').trigger('click')
+    expect(mockPush).toHaveBeenCalledWith({
+      name: 'WrongQuestions',
+      query: { courseId: '408', questionId: '21' },
+    })
+    await findButton(wrapper, '知识点：栈').trigger('click')
+    expect(mockPush).toHaveBeenCalledWith({
+      name: 'TutorSession',
+      params: { id: 408 },
+      query: { knowledgePointId: '31' },
+    })
   })
 
   it('展示最近测评事实并可从本人历史打开逐题复盘', async () => {

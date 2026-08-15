@@ -57,6 +57,7 @@ public class CourseStageAssessmentVO {
         private Boolean correct;
         private String correctAnswer;
         private String analysis;
+        private List<KnowledgePointVO> knowledgePoints;
 
         public Long getId() { return id; }
         public void setId(Long id) { this.id = id; }
@@ -86,6 +87,20 @@ public class CourseStageAssessmentVO {
         public void setCorrectAnswer(String correctAnswer) { this.correctAnswer = correctAnswer; }
         public String getAnalysis() { return analysis; }
         public void setAnalysis(String analysis) { this.analysis = analysis; }
+        public List<KnowledgePointVO> getKnowledgePoints() { return knowledgePoints; }
+        public void setKnowledgePoints(List<KnowledgePointVO> knowledgePoints) { this.knowledgePoints = knowledgePoints; }
+    }
+
+    public static class KnowledgePointVO {
+        private Long id;
+        private String name;
+
+        public KnowledgePointVO() { }
+        public KnowledgePointVO(Long id, String name) { this.id = id; this.name = name; }
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
     }
 
     public static class OptionItem {

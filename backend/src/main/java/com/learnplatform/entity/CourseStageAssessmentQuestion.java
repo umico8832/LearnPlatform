@@ -17,6 +17,7 @@ public class CourseStageAssessmentQuestion {
     private String sourceTypeSnapshot;
     private String sourceCategorySnapshot;
     private Long originQuestionIdSnapshot;
+    private String knowledgePointsJson;
     private String contentSnapshot;
     private String optionsSnapshot;
     private String correctAnswerSnapshot;
@@ -43,6 +44,8 @@ public class CourseStageAssessmentQuestion {
     public void setSourceCategorySnapshot(String value) { this.sourceCategorySnapshot = value; }
     public Long getOriginQuestionIdSnapshot() { return originQuestionIdSnapshot; }
     public void setOriginQuestionIdSnapshot(Long value) { this.originQuestionIdSnapshot = value; }
+    public String getKnowledgePointsJson() { return knowledgePointsJson; }
+    public void setKnowledgePointsJson(String value) { this.knowledgePointsJson = value; }
     public String getContentSnapshot() { return contentSnapshot; }
     public void setContentSnapshot(String contentSnapshot) { this.contentSnapshot = contentSnapshot; }
     public String getOptionsSnapshot() { return optionsSnapshot; }

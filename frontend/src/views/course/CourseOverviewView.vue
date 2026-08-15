@@ -217,6 +217,19 @@
                 <el-tag v-if="question.correct != null" :type="question.correct ? 'success' : 'danger'">
                   {{ question.correct ? '正确' : '错误' }}
                 </el-tag>
+                <template v-for="point in question.knowledgePoints ?? []" :key="point.id">
+                  <el-button
+                    v-if="isReviewedTutorKnowledgePoint(point.id)"
+                    size="small"
+                    text
+                    type="primary"
+                    class="kp-entry"
+                    @click="openKnowledgePointTutor(point.id)"
+                  >
+                    知识点：{{ point.name }}
+                  </el-button>
+                  <el-tag v-else size="small" effect="plain">知识点：{{ point.name }}</el-tag>
+                </template>
               </div>
             </div>
             <el-checkbox-group
@@ -242,6 +255,15 @@
             <div v-if="assessment.status === 'COMPLETED'" class="assessment-result">
               <p>参考答案：{{ question.correctAnswer }}</p>
               <p>{{ question.analysis || '暂无解析' }}</p>
+              <el-button
+                v-if="question.correct === false"
+                size="small"
+                type="primary"
+                plain
+                @click="reviewWrongQuestion(question.questionId)"
+              >
+                进入错题复习
+              </el-button>
             </div>
           </article>
         </div>
@@ -437,6 +459,21 @@ function openTutor(knowledgePointId: number) {
     name: 'TutorSession',
     params: { id: courseId.value },
     query: { knowledgePointId: String(knowledgePointId) },
+  })
+}
+
+function isReviewedTutorKnowledgePoint(knowledgePointId: number) {
+  return (overview.value?.tutorProgress ?? []).some((item) => item.knowledgePointId === knowledgePointId)
+}
+
+function openKnowledgePointTutor(knowledgePointId: number) {
+  openTutor(knowledgePointId)
+}
+
+function reviewWrongQuestion(questionId: number) {
+  router.push({
+    name: 'WrongQuestions',
+    query: { courseId: String(courseId.value), questionId: String(questionId) },
   })
 }
 

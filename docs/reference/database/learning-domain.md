@@ -14,7 +14,7 @@
 | `tutor_content` | V24 | 已审查、版本化的 Tutor 教学内容和检查定义 | `(content_key, content_version)` 唯一；正确选项不返回客户端 |
 | `tutor_session` | V24，V80 扩展 | 用户课程 Tutor 会话、学习证据聚合快照及首次检查结果 | `session_key` 唯一；会话归属用户、课程与知识点 |
 | `course_stage_assessment` | V86，V89 扩展 | 用户课程阶段测评会话、选题策略、知识点范围与汇总结果 | `(user_id, course_id, active_session_key)` 限制一个进行中会话；完成时活动键清空 |
-| `course_stage_assessment_question` | V86，V87/V88 扩展 | 测评题目、答案、解析、来源快照及用户作答 | 会话内原题和排序均唯一；提交前不通过 API 暴露答案快照 |
+| `course_stage_assessment_question` | V86，V87/V88/V91 扩展 | 测评题目、答案、解析、来源与知识点快照及用户作答 | 会话内原题和排序均唯一；提交前不通过 API 暴露答案快照 |
 
 V21 为课程和知识点增加可空的 `content_key` 与 `content_source`。`content_key` 用于在
 AiStu、Web 后端和后续内容导入之间保持稳定引用；存量平台内容可以继续使用空键。
@@ -57,6 +57,9 @@ V89 为 `course_stage_assessment` 增加可空的 `target_knowledge_point_id` �
 V90 将 2026 真题中两道线性表客观题（顺序表表头插删移动、单链表结点遍历）追加关联到已审查的
 `cs408-sequential-list-insert-delete` 与 `cs408-singly-linked-list` 原子知识点，使课程总览中的
 已审查知识点能够发起限定范围的阶段测评；原顶级知识点关联保持不变，关联幂等且只追加不删除。
+
+V91 为 `course_stage_assessment_question` 增加 `knowledge_points_json` 知识点归属快照。创建测评时为
+每题固化其关联知识点的 ID 与名称列表，复盘按此展示；与原题后续知识点关联变更无关，不重写历史。
 
 V25 为 `ods-arraystack-insertion` 的 `tutor_content.lesson_json` 增加已审查的
 `ARRAY_STACK_INSERTION` v1 参数定义。它只包含容量、初始槽位和插入参数；课件动画状态由

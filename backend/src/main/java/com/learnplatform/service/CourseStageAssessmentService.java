@@ -243,6 +243,7 @@ public class CourseStageAssessmentService {
         item.setSourceTypeSnapshot(question.getSourceType() == null ? "MANUAL" : question.getSourceType());
         item.setSourceCategorySnapshot(sourceCategory(question));
         item.setOriginQuestionIdSnapshot(question.getOriginQuestionId());
+        item.setKnowledgePointsJson(snapshotKnowledgePoints(question.getId()));
         item.setContentSnapshot(question.getContent());
         item.setOptionsSnapshot(writeJson(optionSnapshot));
         item.setCorrectAnswerSnapshot(correctAnswer);
@@ -300,7 +301,25 @@ public class CourseStageAssessmentService {
         view.setCorrect(item.getIsCorrect() == null ? null : item.getIsCorrect() == 1);
         view.setCorrectAnswer(completed ? item.getCorrectAnswerSnapshot() : null);
         view.setAnalysis(completed ? item.getAnalysisSnapshot() : null);
+        view.setKnowledgePoints(readKnowledgePoints(item.getKnowledgePointsJson()));
         return view;
+    }
+
+    private String snapshotKnowledgePoints(Long questionId) {
+        List<KnowledgePoint> points = knowledgePointMapper.selectByQuestionId(questionId);
+        if (points.isEmpty()) return null;
+        return writeJson(points.stream()
+                .map(point -> new CourseStageAssessmentVO.KnowledgePointVO(point.getId(), point.getName()))
+                .toList());
+    }
+
+    private List<CourseStageAssessmentVO.KnowledgePointVO> readKnowledgePoints(String json) {
+        if (json == null || json.isBlank()) return List.of();
+        try {
+            return objectMapper.readValue(json, new TypeReference<>() { });
+        } catch (JsonProcessingException exception) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "测评题目知识点快照损坏");
+        }
     }
 
     String sourceCategory(Question question) {

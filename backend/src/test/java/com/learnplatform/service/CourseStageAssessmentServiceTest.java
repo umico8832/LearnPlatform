@@ -30,11 +30,13 @@ import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class CourseStageAssessmentServiceTest {
@@ -53,6 +55,7 @@ class CourseStageAssessmentServiceTest {
         service = new CourseStageAssessmentService(assessmentMapper, assessmentQuestionMapper,
                 questionMapper, optionMapper, knowledgePointMapper, new AnswerEvaluator(), new ObjectMapper(),
                 wrongQuestionService, repetitionService, eventService);
+        lenient().when(knowledgePointMapper.selectByQuestionId(any())).thenReturn(List.of());
     }
 
     @Test
@@ -176,6 +179,42 @@ class CourseStageAssessmentServiceTest {
         manualQuestion.setSourceType("MARKDOWN_IMPORT");
         when(assessmentMapper.countVerifiedOfficialPaperReferences(21L)).thenReturn(0L);
         assertEquals("MANUAL", service.sourceCategory(manualQuestion));
+    }
+
+    @Test
+    void snapshotsQuestionKnowledgePointsForReview() {
+        KnowledgePoint stack = new KnowledgePoint();
+        stack.setId(31L);
+        stack.setName("栈");
+        KnowledgePoint queue = new KnowledgePoint();
+        queue.setId(32L);
+        queue.setName("队列");
+        when(assessmentMapper.lockUserCourse(7L, 10L)).thenReturn(91L);
+        when(assessmentMapper.selectActive(7L, 10L)).thenReturn(null);
+        when(assessmentMapper.selectCandidateQuestions(7L, 10L, null, 5)).thenReturn(List.of(question()));
+        when(assessmentMapper.countPrioritySignals(7L, 10L, null)).thenReturn(0L);
+        when(knowledgePointMapper.selectByQuestionId(21L)).thenReturn(List.of(stack, queue));
+        when(optionMapper.selectList(any())).thenReturn(options());
+        doAnswer(invocation -> {
+            ((CourseStageAssessment) invocation.getArgument(0)).setId(51L);
+            return 1;
+        }).when(assessmentMapper).insert(any(CourseStageAssessment.class));
+        CourseStageAssessmentQuestion snapshotWithPoints = snapshot();
+        snapshotWithPoints.setKnowledgePointsJson(
+                "[{\"id\":31,\"name\":\"栈\"},{\"id\":32,\"name\":\"队列\"}]");
+        when(assessmentQuestionMapper.selectByAssessmentId(51L)).thenReturn(List.of(snapshotWithPoints));
+
+        CourseStageAssessmentVO created = service.start(7L, 10L, null);
+
+        List<CourseStageAssessmentVO.KnowledgePointVO> points =
+                created.getQuestions().get(0).getKnowledgePoints();
+        assertEquals(2, points.size());
+        assertEquals(31L, points.get(0).getId());
+        assertEquals("栈", points.get(0).getName());
+        ArgumentCaptor<CourseStageAssessmentQuestion> captor =
+                ArgumentCaptor.forClass(CourseStageAssessmentQuestion.class);
+        verify(assessmentQuestionMapper).insert(captor.capture());
+        assertTrue(captor.getValue().getKnowledgePointsJson().contains("\"name\":\"栈\""));
     }
 
     @Test
