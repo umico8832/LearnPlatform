@@ -29,7 +29,47 @@ LearnPlatform 是一个 Web 优先的 AI 课程学习平台。平台以用户在
   单个 Tutor 内容、单条迁移、单个页面细节或当前对话子任务完成不构成默认提交条件。
 - 每轮说明完成内容、修改文件、验证、遗留问题、下一步和 commit 状态。
 
-## 3. 默认读取
+## 3. 执行模式与完成状态
+
+### 执行模式：NORMAL / CONTINUOUS
+
+- NORMAL 是默认模式。完成用户当前明确任务或达到当前 Phase Exit Criteria 后停止，
+  输出总结，等待用户决定下一步；不得因为 status 还有“下一步”、roadmap 还有后续
+  Phase 或发现了其他有价值优化就自行继续编码。
+- CONTINUOUS 只在用户明确表达持续开发意图时进入（例如“持续开发”“一直开发直到我
+  叫停”“接下来你自主持续开发”“不用每阶段等我确认”），按明确语义判断，不要求固定
+  口令。Agent 不得自行从 NORMAL 切换到 CONTINUOUS，也不得因为一次回复结束、
+  context compact、一个 commit 完成或一个 Phase 完成而把 CONTINUOUS 改回 NORMAL。
+- 用户明确暂停（“暂停”“停一下”“先别继续”“退出持续开发模式”“等我确认再继续”等）
+  后回到 NORMAL。
+- 当前 Execution Mode 的持久化位置：`docs/project/status.md` 的“Agent 执行状态”。
+  只有用户明确改变模式时才能修改该字段。
+
+### 完成状态：IMPLEMENTED / LOCALLY_VERIFIED / DELIVERED
+
+- IMPLEMENTED：功能 / 修复已实现且聚焦测试通过；不得称为“完整完成”“已交付”或
+  “基线通过”。
+- LOCALLY_VERIFIED：达到模块或 commit boundary，相称的 L2 / L3 本地验证通过；若
+  远端 CI 未验证必须明确说明。
+- DELIVERED：达到预定提交边界、commit 已创建、若已授权 push 则已 push、远端 CI
+  成功。未授权 push 时最高状态只能是 LOCALLY_VERIFIED，不得自行获得 push 权限。
+- CI failure（在已授权 push 的前提下）自动成为最高优先级任务，恢复 Green 前不继续
+  新业务开发；确属仓库无关的外部故障时记录事实和证据。
+
+### Phase 边界
+
+每个当前 Phase 维护 Goal、Exit Criteria、Remaining Required、Backlog / Follow-up
+和 Stop Condition（当前内容以 `docs/project/status.md` 与 `docs/product/roadmap.md`
+为准）。Exit Criteria 满足后 Phase 必须结束；有价值但不阻止完成的增强进入 Backlog，
+不得升级为 Required。详细规则见 `docs/development/workflow.md`。
+
+### 测试与工程单位
+
+按 `docs/development/testing.md` 的 L1 / L2 / L3 选择相称验证；Round 是历史记录
+单位，不是提交或测试单位。工程单位是 Task → Module / Business Closure →
+Commit Boundary → Phase Exit。
+
+## 4. 默认读取
 
 新对话或新 Agent 接手时先读：
 
@@ -45,7 +85,7 @@ LearnPlatform 是一个 Web 优先的 AI 课程学习平台。平台以用户在
 
 不要默认全文读取所有历史日志。
 
-## 4. 按任务读取
+## 5. 按任务读取
 
 - 产品范围：`docs/product/prd.md`
 - 远期规划：`docs/product/future.md`
@@ -72,7 +112,7 @@ LearnPlatform 是一个 Web 优先的 AI 课程学习平台。平台以用户在
 
 临时浏览器流程验收读取 `.agents/skills/frontend-flow-test/SKILL.md`，并结合 `docs/development/testing.md`。
 
-## 5. 状态与文档权威来源
+## 6. 状态与文档权威来源
 
 | 内容 | 唯一权威来源 |
 |---|---|
@@ -98,7 +138,7 @@ README 和 ROADMAP 不复制 STATUS 中的动态细节。写入长期规则前�
 - 阶段、接口、数据库或架构变化时更新对应权威文档。
 - 简历和演示只能陈述真实能力。
 
-## 6. Skills 所有权
+## 7. Skills 所有权
 
 - `.agents/skills/` 是当前 Codex 仓库级标准目录，同时容纳 LearnPlatform 自有工作流和上游安装的通用 Skill。
 - `frontend-design`、`frontend-flow-test` 由 LearnPlatform 维护。
@@ -108,7 +148,7 @@ README 和 ROADMAP 不复制 STATUS 中的动态细节。写入长期规则前�
 - 第三方 Skill 引用的依赖不存在时必须说明，不得假装完成相关步骤。
 - Skill 与本文件或用户要求冲突时，以用户要求和本文件为准。
 
-## 7. 开发与测试底线
+## 8. 开发与测试底线
 
 禁止：
 
@@ -122,7 +162,7 @@ README 和 ROADMAP 不复制 STATUS 中的动态细节。写入长期规则前�
 
 涉及行为变化时遵循 `docs/development/workflow.md` 的发现、契约、Red、Green、Refactor、Verify 和 Deliver。纯文档与机械重命名无需制造 Red，但必须执行相称的链接、结构和一致性验证。
 
-## 8. 安全与 Git
+## 9. 安全与 Git
 
 - 禁止读取、输出或提交 `.env`、真实 API Key、Token、Cookie、数据库密码和隐私数据。
 - `.env.example` 只能包含示例值。

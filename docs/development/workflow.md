@@ -93,13 +93,19 @@
 
 ### 3.6 Verify
 
-根据改动风险执行从小到大的验证：
+按 `docs/development/testing.md` 的 L1 / L2 / L3 分层选择相称验证，而不是按 Round
+机械运行全量：
 
-1. 聚焦单元或组件测试。
-2. 受影响模块测试。
-3. 类型检查、静态分析和生产构建。
-4. 涉及数据库真实约束时运行 Testcontainers。
-5. 涉及跨层关键流程时运行 Playwright E2E 或最小浏览器验收。
+1. L1（开发循环）：聚焦单元或组件测试，快速反馈，通常几十秒到几分钟。
+2. L2（模块 / 业务闭环）：达到 commit boundary 或模块完成时，运行受影响模块测试、
+   必要静态检查、必要 build、相关 Testcontainers 和最小跨层流程。
+3. L3（项目级门禁）：Phase Exit、Release、演示、共享基础设施或用户明确要求时，
+   按风险运行 backend clean verify、frontend 全测试 / coverage、lint、typecheck、
+   build、Integration、Playwright 和 docs checks。
+
+同一工作区状态已通过某项昂贵验证且后续只修改无关内容时，不重复运行。Round 是历史
+记录单位，不是提交或测试单位；工程单位是 Task → Module / Business Closure →
+Commit Boundary → Phase Exit。
 
 覆盖率门槛用于防止整体基线倒退，不替代对新增行为的针对性断言。
 
@@ -139,14 +145,109 @@
 
 ---
 
-## 5. 完成定义
+## 5. 完成状态
 
-一项开发任务只有同时满足以下条件才算完成：
+任务的交付程度必须用以下三种状态之一明确表达，不能混用：
+
+### IMPLEMENTED
+
+满足：
+
+- 功能 / 修复已经实现；
+- 聚焦测试（L1）通过。
+
+此状态不得称为“完整完成”“完整验证通过”“已交付”或“项目基线通过”。
+
+### LOCALLY_VERIFIED
+
+满足：
+
+- 达到当前模块或 commit boundary；
+- 相称的 L2 / L3 本地验证通过。
+
+如果远端 CI 尚未验证，必须明确说“本地验证通过，远端 CI 尚未验证”。
+
+### DELIVERED
+
+只有同时满足：
+
+- 达到预定提交边界；
+- commit 已创建；
+- 如果用户授权 push，则已经 push；
+- 对应远端 CI 成功；
+
+才能称为“完整交付”“基线通过”或“本轮完成”。
+
+如果用户没有授权 push，最高状态只能是 LOCALLY_VERIFIED。不得为了达到 DELIVERED
+自行获得 push 权限。
+
+### CI failure 的处理
+
+如果用户已经授权 push，且 push 后 CI 失败，CI failure 自动成为最高优先级任务：
+定位 → 修复 → 聚焦验证 → 必要 commit → push → 检查 CI，恢复 Green 后才继续新的
+业务开发。不得在 CI 红的情况下把它写进遗留问题后继续开发下一 Feature，除非已可靠
+确认 CI failure 与仓库代码无关（外部基础设施故障且无法通过仓库修改解决），此时必须
+明确记录事实和证据。
+
+---
+
+## 6. 执行模式与阶段边界
+
+### NORMAL / CONTINUOUS
+
+- NORMAL 是默认模式：完成用户当前明确任务或达到当前 Phase Exit Criteria 后停止，
+  输出总结，等待用户决定下一步。不得因为 status 还有“下一步”、roadmap 还有后续
+  Phase 或发现了其他有价值优化就自行继续编码。
+- CONTINUOUS 只有在用户明确表达持续开发意图时进入（例如“持续开发”“一直开发直到
+  我叫停”“接下来你自主持续开发”）。Agent 不得自行从 NORMAL 切换到 CONTINUOUS，
+  也不得因为一次回复结束、context compact、一个 commit 完成或一个 Phase 完成而把
+  CONTINUOUS 改回 NORMAL。
+- 用户明确暂停（“暂停”“停一下”“等我确认再继续”等）后回到 NORMAL。
+
+当前 Execution Mode 以 `docs/project/status.md` 的“Agent 执行状态”为唯一权威来源。
+
+### CONTINUOUS 的推进路径
+
+项目目标 → 当前 Phase → Remaining Required → Exit Criteria → Phase Exit → 下一明确
+Phase → 继续开发。下一任务选择顺序：基线阻断问题（编译失败、必要测试失败、CI
+failure、迁移失败、关键 E2E 回归）→ 当前 Phase Remaining Required → 当前 Phase
+Exit → roadmap / PRD 已明确的下一 Phase。
+
+### Phase 必须保持有限边界
+
+每个当前 Phase 维护 Goal、Exit Criteria、Remaining Required、Backlog / Follow-up
+和 Stop Condition。Exit Criteria 必须数量有限、可客观判断、与阶段核心目标直接相关，
+不因为开发中发现的新优化而自动增加。只记录真正阻止 Phase Exit 的工作为 Required；
+有价值但不阻止完成的增强（更多筛选、更多统计、对称入口、UI 小优化、内容扩张、
+非必要重构）进入 Backlog。Exit Criteria 全部满足后当前 Phase 必须结束，不能因为
+还能继续优化就继续往当前 Phase 加 Required。
+
+### 硬停止条件
+
+即使处于 CONTINUOUS，以下情况也必须暂停询问用户：
+
+- 需要改变重大产品方向；
+- roadmap 没有明确下一阶段且存在多个本质不同的大方向；
+- PRD / roadmap / Exit Criteria 出现重大冲突；
+- 需要删除或不可逆修改用户数据；
+- 需要执行当前没有用户授权的 push、force push、rebase、reset、删除 branch / tag；
+- 需要引入明显改变项目架构的大型基础设施；
+- 需要制造破坏性公共 API / 数据兼容变化且没有既定迁移方案；
+- 用户要求暂停。
+
+局部重构、技术实现选择、必要测试、bug 修复、小型 API 内部调整和文档同步不属于硬停止条件。
+
+---
+
+## 7. 完成定义
+
+“完成”必须落到第 5 节三种状态之一（IMPLEMENTED / LOCALLY_VERIFIED / DELIVERED），
+不能混用措辞。一项开发任务达到对应状态还需同时满足：
 
 - 用户可观察结果已经落地，不是计划、伪代码或长期假数据；
 - 修改范围聚焦，未覆盖用户已有改动；
 - 必须测试先行的行为有有效 Red 和 Green 证据，或明确记录合理例外；
-- 相关测试、构建和质量门禁通过；
+- 相称的 L1 / L2 / L3 验证已按第 3.6 节执行并说明；
 - 前后端、数据库和文档契约保持一致；
 - 没有为了绿灯弱化业务规则；
 - 风险、未执行验证和遗留问题已诚实说明；
@@ -155,7 +256,7 @@
 
 ---
 
-## 6. 防止代码失控的审查问题
+## 8. 防止代码失控的审查问题
 
 提交前逐项判断：
 
