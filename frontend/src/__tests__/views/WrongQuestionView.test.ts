@@ -15,10 +15,12 @@ vi.mock('@/api/wrongQuestion', () => ({
 }))
 vi.mock('@/api/practice', () => ({ getWrongQuestionPractice: vi.fn() }))
 vi.mock('@/api/statistics', () => ({ getSimilarQuestions: vi.fn() }))
+let routeQuery: Record<string, string> = { courseId: '408', questionId: '22' }
+
 vi.mock('vue-router', async (importOriginal) => ({
-  ...await importOriginal<typeof import('vue-router')>(),
-  useRoute: () => ({ query: { courseId: '408', questionId: '22' } }),
-  useRouter: () => ({ push: mockPush }),
+  ...(await importOriginal<typeof import('vue-router')>()),
+  useRoute: () => ({ query: routeQuery }),
+  useRouter: () => ({ push: mockPush, replace: mockPush }),
 }))
 
 import WrongQuestionView from '@/views/practice/WrongQuestionView.vue'
@@ -26,6 +28,7 @@ import WrongQuestionView from '@/views/practice/WrongQuestionView.vue'
 describe('WrongQuestionView course target', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    routeQuery = { courseId: '408', questionId: '22' }
     mockGetWrongQuestionStats.mockResolvedValue({
       code: 0,
       data: { total: 1, unmastered: 1, partial: 0, mastered: 0, courseWrongCount: {} },
@@ -51,5 +54,24 @@ describe('WrongQuestionView course target', () => {
       courseId: 408,
       questionId: 22,
     })
+  })
+
+  it('从测评复盘进入时按知识点筛选并展示可清除的筛选标记', async () => {
+    routeQuery = { courseId: '408', knowledgePointId: '31', knowledgePointName: '栈' }
+    const wrapper = mount(WrongQuestionView, {
+      global: {
+        stubs: { AiQuestionAssistant: true, QuestionLearningAsset: true },
+        directives: { loading: () => undefined },
+      },
+    })
+    await flushPromises()
+
+    expect(mockGetWrongQuestions).toHaveBeenCalledWith({
+      pageNum: 1,
+      pageSize: 10,
+      courseId: 408,
+      knowledgePointId: 31,
+    })
+    expect(wrapper.text()).toContain('知识点：栈')
   })
 })

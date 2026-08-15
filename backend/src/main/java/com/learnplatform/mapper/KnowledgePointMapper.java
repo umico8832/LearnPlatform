@@ -18,4 +18,10 @@ public interface KnowledgePointMapper extends BaseMapper<KnowledgePoint> {
             ORDER BY kp.id
             """)
     List<KnowledgePoint> selectByQuestionId(@Param("questionId") Long questionId);
+
+    @Select("""
+            SELECT question_id FROM question_knowledge_point
+            WHERE knowledge_point_id = #{knowledgePointId}
+            """)
+    List<Long> selectQuestionIdsByKnowledgePointId(@Param("knowledgePointId") Long knowledgePointId);
 }

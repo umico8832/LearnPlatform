@@ -10,6 +10,7 @@ import com.learnplatform.IntegrationTestBase;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +44,10 @@ class WrongQuestionServiceIntegrationTest extends IntegrationTestBase {
     private UserMapper userMapper;
     @Autowired
     private CourseMapper courseMapper;
+    @Autowired
+    private KnowledgePointMapper knowledgePointMapper;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     private static Long userId;
     private static Long anotherUserId;
@@ -285,6 +290,41 @@ class WrongQuestionServiceIntegrationTest extends IntegrationTestBase {
                 userId, 1, 10, courseId1, questionId1, null);
         assertEquals(1, focused.getTotal(), "课程深链应只返回服务端选择的目标题目");
         assertEquals(questionId1, focused.getRecords().get(0).getQuestionId());
+    }
+
+    @Test
+    @Order(13)
+    @DisplayName("错题列表按知识点筛选")
+    void getWrongQuestions_filterByKnowledgePoint() {
+        KnowledgePoint kpA = new KnowledgePoint();
+        kpA.setName("错题知识点A");
+        kpA.setCourseId(courseId1);
+        knowledgePointMapper.insert(kpA);
+        KnowledgePoint kpB = new KnowledgePoint();
+        kpB.setName("错题知识点B");
+        kpB.setCourseId(courseId1);
+        knowledgePointMapper.insert(kpB);
+        jdbcTemplate.update("INSERT INTO question_knowledge_point (question_id, knowledge_point_id) VALUES (?, ?)",
+                questionId1, kpA.getId());
+        jdbcTemplate.update("INSERT INTO question_knowledge_point (question_id, knowledge_point_id) VALUES (?, ?)",
+                questionId2, kpB.getId());
+
+        wrongQuestionService.addWrongQuestion(userId, questionId1, "A");
+        wrongQuestionService.addWrongQuestion(userId, questionId2, "B");
+
+        Page<WrongQuestionVO> byKp = wrongQuestionService.getWrongQuestions(
+                userId, 1, 10, null, null, kpA.getId(), null);
+        assertEquals(1, byKp.getTotal(), "按知识点筛选应只返回关联该知识点的错题");
+        assertEquals(questionId1, byKp.getRecords().get(0).getQuestionId());
+
+        Page<WrongQuestionVO> combined = wrongQuestionService.getWrongQuestions(
+                userId, 1, 10, courseId1, null, kpB.getId(), null);
+        assertEquals(1, combined.getTotal(), "课程与知识点组合筛选应同时生效");
+        assertEquals(questionId2, combined.getRecords().get(0).getQuestionId());
+
+        Page<WrongQuestionVO> empty = wrongQuestionService.getWrongQuestions(
+                userId, 1, 10, null, null, 999999L, null);
+        assertEquals(0, empty.getTotal(), "无关联题目的知识点应返回空结果");
     }
 
     // ======================== updateMasteryLevel 测试 ========================

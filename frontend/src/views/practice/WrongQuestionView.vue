@@ -35,6 +35,11 @@
           <el-button type="primary" :icon="Search" @click="handleSearch">查询</el-button>
         </el-form-item>
       </el-form>
+      <div v-if="targetKnowledgePointName" class="kp-filter-chip">
+        <el-tag type="info" effect="plain" closable @close="clearKnowledgePointFilter">
+          知识点：{{ targetKnowledgePointName }}
+        </el-tag>
+      </div>
     </el-card>
 
     <!-- 错题列表 -->
@@ -73,7 +78,11 @@
         <div class="wrong-card-footer">
           <div class="mastery-controls">
             <span class="label">掌握程度：</span>
-            <el-radio-group v-model="item.masteryLevel" size="small" @change="(val: any) => handleMasteryChange(item.id, val as number)">
+            <el-radio-group
+              v-model="item.masteryLevel"
+              size="small"
+              @change="(val: any) => handleMasteryChange(item.id, val as number)"
+            >
               <el-radio-button :value="0">未掌握</el-radio-button>
               <el-radio-button :value="1">部分掌握</el-radio-button>
               <el-radio-button :value="2">已掌握</el-radio-button>
@@ -81,7 +90,13 @@
           </div>
           <div class="footer-right">
             <span class="time">{{ formatTime(item.updateTime) }}</span>
-            <el-button type="primary" text size="small" :icon="Search" @click="loadSimilarQuestions(item.questionId, item.questionContent)">
+            <el-button
+              type="primary"
+              text
+              size="small"
+              :icon="Search"
+              @click="loadSimilarQuestions(item.questionId, item.questionContent)"
+            >
               找相似题
             </el-button>
             <el-popconfirm title="确定从错题本移出？" @confirm="handleRemove(item.id)">
@@ -108,17 +123,10 @@
     </div>
 
     <!-- 相似题推荐弹窗 -->
-    <el-dialog
-      v-model="similarDialogVisible"
-      title="相似题推荐"
-      width="800px"
-      destroy-on-close
-    >
+    <el-dialog v-model="similarDialogVisible" title="相似题推荐" width="800px" destroy-on-close>
       <div v-if="similarLoading" v-loading="true" style="height: 200px"></div>
       <template v-else-if="similarData">
-        <div class="similar-source">
-          <strong>原题：</strong>{{ similarSourceContent }}
-        </div>
+        <div class="similar-source"><strong>原题：</strong>{{ similarSourceContent }}</div>
         <el-table :data="similarData.similarQuestions" stripe style="margin-top: 12px">
           <el-table-column label="题目内容" min-width="240" show-overflow-tooltip>
             <template #default="{ row }">
@@ -160,11 +168,7 @@
       <el-empty v-else description="暂无相似题目" />
       <template #footer>
         <el-button @click="similarDialogVisible = false">关闭</el-button>
-        <el-button
-          type="primary"
-          :disabled="!similarData?.similarQuestions?.length"
-          @click="startSimilarPractice"
-        >
+        <el-button type="primary" :disabled="!similarData?.similarQuestions?.length" @click="startSimilarPractice">
           开始练习相似题
         </el-button>
       </template>
@@ -222,7 +226,7 @@ async function loadSimilarQuestions(questionId: number, questionContent?: string
 
 function startSimilarPractice() {
   if (!similarData.value?.similarQuestions?.length) return
-  const qIds = similarData.value.similarQuestions.map(q => q.questionId).join(',')
+  const qIds = similarData.value.similarQuestions.map((q) => q.questionId).join(',')
   similarDialogVisible.value = false
   router.push({ path: '/practice/session', query: { questionIds: qIds } })
 }
@@ -234,12 +238,12 @@ function getSimilarityColor(score: number): string {
 }
 
 const filter = reactive({
-  masteryLevel: undefined as number | undefined
+  masteryLevel: undefined as number | undefined,
 })
 
 const pagination = reactive({
   pageNum: 1,
-  pageSize: 10
+  pageSize: 10,
 })
 
 function positiveQueryNumber(value: unknown) {
@@ -249,6 +253,18 @@ function positiveQueryNumber(value: unknown) {
 
 const targetCourseId = computed(() => positiveQueryNumber(route.query.courseId))
 const targetQuestionId = computed(() => positiveQueryNumber(route.query.questionId))
+const targetKnowledgePointId = computed(() => positiveQueryNumber(route.query.knowledgePointId))
+const targetKnowledgePointName = computed(() =>
+  typeof route.query.knowledgePointName === 'string' ? route.query.knowledgePointName : '',
+)
+
+async function clearKnowledgePointFilter() {
+  const query = { ...route.query }
+  delete query.knowledgePointId
+  delete query.knowledgePointName
+  await router.replace({ query })
+  await loadRecords()
+}
 
 onMounted(() => {
   loadRecords()
@@ -263,6 +279,7 @@ const loadRecords = async () => {
       pageSize: number
       courseId?: number
       questionId?: number
+      knowledgePointId?: number
       masteryLevel?: number
     } = {
       pageNum: pagination.pageNum,
@@ -270,6 +287,7 @@ const loadRecords = async () => {
       courseId: targetCourseId.value,
       questionId: targetQuestionId.value,
     }
+    if (targetKnowledgePointId.value !== undefined) params.knowledgePointId = targetKnowledgePointId.value
     if (filter.masteryLevel !== undefined) params.masteryLevel = filter.masteryLevel
 
     const res = await getWrongQuestions(params)
@@ -331,7 +349,7 @@ const getTypeLabel = (type: string) => {
     MULTIPLE_CHOICE: '多选',
     TRUE_FALSE: '判断',
     FILL_BLANK: '填空',
-    SHORT_ANSWER: '简答'
+    SHORT_ANSWER: '简答',
   }
   return map[type] || type
 }
@@ -342,7 +360,7 @@ const getTypeTag = (type: string) => {
     MULTIPLE_CHOICE: 'warning',
     TRUE_FALSE: 'success',
     FILL_BLANK: 'info',
-    SHORT_ANSWER: 'danger'
+    SHORT_ANSWER: 'danger',
   }
   return (map[type] || '') as any
 }
@@ -457,10 +475,18 @@ const handleStartWrongPractice = async () => {
   font-weight: 700;
 }
 
-.tone-primary { color: var(--lp-primary); }
-.tone-danger { color: var(--lp-danger); }
-.tone-warning { color: var(--lp-warning); }
-.tone-success { color: var(--lp-success); }
+.tone-primary {
+  color: var(--lp-primary);
+}
+.tone-danger {
+  color: var(--lp-danger);
+}
+.tone-warning {
+  color: var(--lp-warning);
+}
+.tone-success {
+  color: var(--lp-success);
+}
 
 .filter-card :deep(.el-card__body) {
   display: flex;
@@ -489,6 +515,10 @@ const handleStartWrongPractice = async () => {
   display: flex;
   align-items: flex-end;
   gap: 8px;
+}
+
+.kp-filter-chip {
+  margin-top: 12px;
 }
 
 .filter-form :deep(.el-form-item) {

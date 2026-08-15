@@ -3,6 +3,7 @@ package com.learnplatform.service;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.entity.WrongQuestion;
 import com.learnplatform.mapper.CourseMapper;
+import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,13 +26,15 @@ class WrongQuestionServiceTest {
     @Mock private WrongQuestionMapper wrongQuestionMapper;
     @Mock private QuestionMapper questionMapper;
     @Mock private CourseMapper courseMapper;
+    @Mock private KnowledgePointMapper knowledgePointMapper;
     @Mock private CacheEvictService cacheEvictService;
 
     private WrongQuestionService wrongQuestionService;
 
     @BeforeEach
     void setUp() {
-        wrongQuestionService = new WrongQuestionService(wrongQuestionMapper, questionMapper, courseMapper, cacheEvictService);
+        wrongQuestionService = new WrongQuestionService(
+                wrongQuestionMapper, questionMapper, courseMapper, knowledgePointMapper, cacheEvictService);
     }
 
     @Test

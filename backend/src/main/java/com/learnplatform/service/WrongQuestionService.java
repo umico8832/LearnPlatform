@@ -26,15 +26,18 @@ public class WrongQuestionService {
     private final WrongQuestionMapper wrongQuestionMapper;
     private final QuestionMapper questionMapper;
     private final CourseMapper courseMapper;
+    private final KnowledgePointMapper knowledgePointMapper;
     private final CacheEvictService cacheEvictService;
 
     public WrongQuestionService(WrongQuestionMapper wrongQuestionMapper,
                                 QuestionMapper questionMapper,
                                 CourseMapper courseMapper,
+                                KnowledgePointMapper knowledgePointMapper,
                                 CacheEvictService cacheEvictService) {
         this.wrongQuestionMapper = wrongQuestionMapper;
         this.questionMapper = questionMapper;
         this.courseMapper = courseMapper;
+        this.knowledgePointMapper = knowledgePointMapper;
         this.cacheEvictService = cacheEvictService;
     }
 
@@ -62,12 +65,19 @@ public class WrongQuestionService {
      */
     public Page<WrongQuestionVO> getWrongQuestions(Long userId, int pageNum, int pageSize,
                                                     Long courseId, Integer masteryLevel) {
-        return getWrongQuestions(userId, pageNum, pageSize, courseId, null, masteryLevel);
+        return getWrongQuestions(userId, pageNum, pageSize, courseId, null, null, masteryLevel);
     }
 
-    /** 分页查询当前用户错题，可在数据库分页前限定课程和目标题目。 */
+    /** 分页查询当前用户错题，可在数据库分页前限定课程、目标题目和知识点。 */
     public Page<WrongQuestionVO> getWrongQuestions(Long userId, int pageNum, int pageSize,
                                                     Long courseId, Long questionId, Integer masteryLevel) {
+        return getWrongQuestions(userId, pageNum, pageSize, courseId, questionId, null, masteryLevel);
+    }
+
+    /** 分页查询当前用户错题，可在数据库分页前限定课程、目标题目和知识点。 */
+    public Page<WrongQuestionVO> getWrongQuestions(Long userId, int pageNum, int pageSize,
+                                                    Long courseId, Long questionId,
+                                                    Long knowledgePointId, Integer masteryLevel) {
         Page<WrongQuestion> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<WrongQuestion> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(WrongQuestion::getUserId, userId);
@@ -82,6 +92,16 @@ public class WrongQuestionService {
                 return emptyPage;
             }
             wrapper.in(WrongQuestion::getQuestionId, courseQuestionIds);
+        }
+        if (knowledgePointId != null) {
+            Set<Long> kpQuestionIds = new HashSet<>(knowledgePointMapper
+                    .selectQuestionIdsByKnowledgePointId(knowledgePointId));
+            if (kpQuestionIds.isEmpty()) {
+                Page<WrongQuestionVO> emptyPage = new Page<>(pageNum, pageSize, 0);
+                emptyPage.setRecords(List.of());
+                return emptyPage;
+            }
+            wrapper.in(WrongQuestion::getQuestionId, kpQuestionIds);
         }
         if (questionId != null) {
             wrapper.eq(WrongQuestion::getQuestionId, questionId);

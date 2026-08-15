@@ -219,6 +219,15 @@
                 >答对 {{ point.correctCount }} / {{ point.questionCount }} 题</span
               >
               <el-button
+                v-if="point.correctCount < point.questionCount"
+                size="small"
+                text
+                type="danger"
+                @click="reviewWrongQuestionByKnowledgePoint(point)"
+              >
+                复习该知识点错题
+              </el-button>
+              <el-button
                 v-if="isReviewedTutorKnowledgePoint(point.id)"
                 size="small"
                 text
@@ -319,6 +328,7 @@ import {
   startCourseStageAssessment,
   submitCourseStageAssessment,
   type CourseOverviewVO,
+  type CourseStageAssessmentKnowledgePointSummaryVO,
   type CourseStageAssessmentVO,
   type CourseStageAssessmentSummaryVO,
   type LearningTargetVO,
@@ -498,6 +508,17 @@ function reviewWrongQuestion(questionId: number) {
   router.push({
     name: 'WrongQuestions',
     query: { courseId: String(courseId.value), questionId: String(questionId) },
+  })
+}
+
+function reviewWrongQuestionByKnowledgePoint(point: CourseStageAssessmentKnowledgePointSummaryVO) {
+  router.push({
+    name: 'WrongQuestions',
+    query: {
+      courseId: String(courseId.value),
+      knowledgePointId: String(point.id),
+      knowledgePointName: point.name,
+    },
   })
 }
 

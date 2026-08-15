@@ -338,6 +338,11 @@ describe('CourseOverviewView', () => {
       name: 'WrongQuestions',
       query: { courseId: '408', questionId: '21' },
     })
+    await findButton(wrapper, '复习该知识点错题').trigger('click')
+    expect(mockPush).toHaveBeenCalledWith({
+      name: 'WrongQuestions',
+      query: { courseId: '408', knowledgePointId: '31', knowledgePointName: '栈' },
+    })
     await findButton(wrapper, '知识点：栈').trigger('click')
     expect(mockPush).toHaveBeenCalledWith({
       name: 'TutorSession',

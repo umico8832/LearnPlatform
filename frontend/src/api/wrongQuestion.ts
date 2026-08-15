@@ -36,6 +36,7 @@ export function getWrongQuestions(params: {
   pageSize?: number
   courseId?: number
   questionId?: number
+  knowledgePointId?: number
   masteryLevel?: number
 }) {
   return request.get<unknown, ApiResponse<PageData<WrongQuestionVO>>>('/wrong-questions', { params })
@@ -49,7 +50,7 @@ export function getWrongQuestionStats() {
 /** 更新掌握程度 */
 export function updateMasteryLevel(id: number, masteryLevel: number) {
   return request.put<unknown, ApiResponse<null>>(`/wrong-questions/${id}/mastery`, null, {
-    params: { masteryLevel }
+    params: { masteryLevel },
   })
 }
 

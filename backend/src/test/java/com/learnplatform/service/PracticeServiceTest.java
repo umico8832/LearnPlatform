@@ -202,7 +202,7 @@ class PracticeServiceTest {
         private Long removedQuestionId;
 
         RecordingWrongQuestionService() {
-            super(null, null, null, null);
+            super(null, null, null, null, null);
         }
 
         @Override
