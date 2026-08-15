@@ -103,6 +103,11 @@
    按风险运行 backend clean verify、frontend 全测试 / coverage、lint、typecheck、
    build、Integration、Playwright 和 docs checks。
 
+Docker build、Compose 重建与完整 Docker E2E 属于 L2（改动 Dockerfile、Compose 或
+镜像打包路径时）或 L3（Phase Exit、Release、演示或共享基础设施），不作为默认 L1，
+也不因普通 Round 或普通 commit 触发；生命周期与磁盘治理见
+`docs/development/docker-disk-governance.md`。
+
 同一工作区状态已通过某项昂贵验证且后续只修改无关内容时，不重复运行。Round 是历史
 记录单位，不是提交或测试单位；工程单位是 Task → Module / Business Closure →
 Commit Boundary → Phase Exit。

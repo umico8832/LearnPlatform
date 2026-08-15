@@ -97,6 +97,7 @@ Commit Boundary → Phase Exit。
 - 新增功能、修复、重构：`docs/development/workflow.md`
 - 工程归属：`docs/development/engineering-rules.md`
 - 测试策略：`docs/development/testing.md`
+- Docker 磁盘治理与清理边界：`docs/development/docker-disk-governance.md`
 - Git 和提交：`docs/development/git-rules.md`
 - 审查：`docs/development/review-checklist.md`
 - Agent 与 Skills：`docs/development/agent-tooling.md`
@@ -157,6 +158,8 @@ README 和 ROADMAP 不复制 STATUS 中的动态细节。写入长期规则前�
 - 后端完成后长期不接前端真实接口；
 - 为测试通过弱化权限、判分、安全或一致性规则；
 - 引入无必要复杂架构；
+- 未经用户明确授权执行全局 `docker system prune`（尤其 `--volumes`）、`docker volume prune`、`docker image prune -a`，或清理其他项目资源；
+- 对开发 Compose 使用 `down -v`，或为普通局部修改反复完整重建 Docker 环境；
 - 在一次改动中混合无关任务；
 - 对 `docs/development/testing.md` 规定的高风险行为，在没有有效失败用例时直接实现且不说明例外。
 

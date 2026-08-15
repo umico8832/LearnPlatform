@@ -11,6 +11,7 @@
 - 查询契约：[API 参考](reference/api/index.md) 与 [数据库参考](reference/database/index.md)
 - 开始开发：[AI Agent 开发工作流](development/workflow.md) 与 [测试策略](development/testing.md)
 - 工程协作：[工程规则](development/engineering-rules.md)、[Git 规则](development/git-rules.md)与[审查清单](development/review-checklist.md)
+- Docker 磁盘治理：[Docker 磁盘增长治理](development/docker-disk-governance.md)
 - 查看当前状态：[项目状态](project/status.md)
 - 查看历史：[开发日志索引](project/changelog/index.md)
 - 查看历史体检：[工程审计归档](project/audits/index.md)

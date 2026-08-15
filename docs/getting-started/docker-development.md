@@ -26,12 +26,16 @@ FRONTEND_HOST_PORT=18000
 BACKEND_HOST_PORT=18080
 ```
 
-修改后端代码后如本机存在旧镜像，应重建后端：
+日常开发优先使用本机工具链（[本地开发](local-development.md)），不要为验证普通代码
+改动反复重建镜像。只有需要容器化运行，或改了 Dockerfile、`.dockerignore`、Compose 或
+Nginx 配置时才重建对应服务：
 
 ```bash
 docker compose build backend
 docker compose up -d backend
 ```
+
+启动与更新默认使用 `docker compose up -d`（不加 `--build`）。
 
 ## 停止
 
@@ -39,4 +43,7 @@ docker compose up -d backend
 docker compose down
 ```
 
-变量含义见[配置说明](configuration.md)，启动异常见[常见问题排查](troubleshooting.md)。浏览器 E2E 使用隔离的 `docker-compose.e2e.yml`，执行方式和安全边界见[测试策略](../development/testing.md)。
+`down` 保留数据卷，适合日常停止。`down -v` 会删除数据库等持久化数据卷，仅在需要
+完全重置开发数据时使用并需确认。浏览器 E2E 使用隔离的 `docker-compose.e2e.yml`，
+执行方式和安全边界见[测试策略](../development/testing.md)。磁盘占用诊断与安全回收见
+[Docker 磁盘增长治理](../development/docker-disk-governance.md)。

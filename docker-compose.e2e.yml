@@ -1,4 +1,8 @@
 # 仅用于本地和 CI 的端到端测试，叠加到 docker-compose.yml 使用。
+# 使用独立 Compose 项目名：E2E 拥有自己的容器、网络和数据卷，
+# `down -v` 只清理 E2E 数据，绝不误删开发环境的持久化数据。
+name: learnplatform-e2e
+
 services:
   ai-mock:
     image: nginx:1.27-alpine

@@ -48,7 +48,8 @@
 
 目标是快速反馈，通常控制在几十秒到几分钟。禁止每一个小修改都自动运行 backend 全量、
 frontend 全量、全部 Testcontainers、全部 Playwright 或 Docker 全环境，除非局部测试
-无法覆盖本轮高风险行为。
+无法覆盖本轮高风险行为。Docker build、Compose 重建和完整 Docker E2E 都不是默认 L1；
+普通局部修改不得为了验证而完整重建 Docker 环境。
 
 ### L2：模块 / 业务闭环验证
 
@@ -58,6 +59,8 @@ frontend 全量、全部 Testcontainers、全部 Playwright 或 Docker 全环境
 - 后端：受影响模块测试、必要静态检查和必要 build。
 - 前端：受影响 Vitest、vue-tsc、ESLint 和必要 build。
 - 数据库：相关的 Testcontainers。
+- Docker：仅当改动 Dockerfile、`.dockerignore`、Compose 或 Nginx 配置时运行对应的
+  `docker build` / `docker compose build`；普通业务代码变化不触发 Docker 重建。
 - 跨层关键流程：对应的最小 Playwright / 真实浏览器闭环。
 
 不是所有 L2 都运行所有测试。例如后端普通查询筛选逻辑变化，不应自动运行 frontend
@@ -132,20 +135,27 @@ E2E Compose 还提供 OpenAI 兼容的确定性上游响应，只替代不可重
 Prompt 构造、HTTP Provider、结构校验、调用审计、草稿状态和数据库事务仍使用真实实现。该响应不得在开发或
 生产 Compose 中启用，也不能替代 AI 解析与异常分支的单元测试。
 
+`docker-compose.e2e.yml` 使用独立 Compose 项目名 `learnplatform-e2e`，E2E 拥有自己的
+容器、网络和数据卷，与开发环境隔离。`down -v` 只清理 E2E 数据，不会误删开发数据。
+
 本地先启动隔离环境，再执行浏览器 E2E：
 
 ```bash
-# 若此前运行过普通开发 Profile，必须强制重建，使 backend 切换到 e2e Profile。
+# 首次进入 E2E 或前端源码/镜像配置变化时加 --build；重复运行省略 --build，
+# 用 --force-recreate 让 backend 切换到 e2e Profile 即可。
 docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --force-recreate --wait
 cd frontend
 npm run test:e2e
 ```
 
-结束后执行：
+结束后必须清理 E2E 自己的资源：
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v
+docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v --rmi local
 ```
+
+`--rmi local` 删除本次为 E2E 构建的镜像；E2E 遗留的构建缓存按
+[Docker 磁盘增长治理](docker-disk-governance.md)的预算由 `scripts/docker-disk.py` 回收。
 
 ## 9. Agent 临时浏览器流程验收
 
