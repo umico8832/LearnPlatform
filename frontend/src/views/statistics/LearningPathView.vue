@@ -11,9 +11,7 @@
           <el-option label="全部课程" :value="0" />
           <el-option v-for="c in courses" :key="c.id" :label="c.name" :value="c.id" />
         </el-select>
-        <el-button type="primary" :icon="Refresh" :loading="loading" @click="fetchData">
-          刷新
-        </el-button>
+        <el-button type="primary" :icon="Refresh" :loading="loading" @click="fetchData"> 刷新 </el-button>
       </div>
     </section>
 
@@ -55,19 +53,13 @@
               <span>错题 {{ focusStep.wrongCount }} 道</span>
             </div>
             <div class="focus-actions">
-              <el-button type="primary" :icon="Promotion" @click="startPractice(focusStep)">
-                针对练习
-              </el-button>
-              <el-button :icon="Guide" @click="goKnowledgeGraph(focusStep)">
-                看知识图谱
-              </el-button>
+              <el-button type="primary" :icon="Promotion" @click="startPractice(focusStep)"> 针对练习 </el-button>
+              <el-button :icon="Guide" @click="goKnowledgeGraph(focusStep)"> 看知识图谱 </el-button>
             </div>
           </template>
 
           <el-empty v-else description="暂无需要排序的知识点">
-            <el-button type="primary" :icon="Promotion" @click="router.push('/practice')">
-              去刷题积累数据
-            </el-button>
+            <el-button type="primary" :icon="Promotion" @click="router.push('/practice')"> 去刷题积累数据 </el-button>
           </el-empty>
         </el-card>
 
@@ -108,7 +100,11 @@
               <span class="course-name">{{ co.courseName }}</span>
               <span class="course-rate" :class="getRateClass(co.correctRate)">{{ co.correctRate }}%</span>
             </div>
-            <el-progress :percentage="clampPercent(co.correctRate)" :color="getProgressColor(co.correctRate)" :stroke-width="10" />
+            <el-progress
+              :percentage="clampPercent(co.correctRate)"
+              :color="getProgressColor(co.correctRate)"
+              :stroke-width="10"
+            />
             <div class="course-meta">
               <span>知识点 {{ co.masteredPointCount }}/{{ co.knowledgePointCount }} 已掌握</span>
               <span>练习 {{ co.totalAttempts }} 次</span>
@@ -126,7 +122,13 @@
           <span>当前显示 {{ filteredSteps.length }} / {{ data.steps.length }} 个知识点</span>
         </div>
 
-        <el-table class="desktop-path-table" :data="filteredSteps" stripe style="width: 100%" :row-class-name="getRowClass">
+        <el-table
+          class="desktop-path-table"
+          :data="filteredSteps"
+          stripe
+          style="width: 100%"
+          :row-class-name="getRowClass"
+        >
           <el-table-column label="#" width="64" align="center">
             <template #default="{ row }">
               <span class="order-badge" :class="getStatusBadgeClass(row.masteryStatus)">{{ row.order }}</span>
@@ -162,7 +164,7 @@
           </el-table-column>
           <el-table-column label="操作" width="104" align="center">
             <template #default="{ row }">
-              <el-button size="small" :icon="Promotion" @click="startPracticeFromTable(row)">
+              <el-button size="small" :icon="Promotion" @click="startPracticeFromTable(row as LearningPathStep)">
                 练习
               </el-button>
             </template>
@@ -190,9 +192,7 @@
               <span>练习 {{ row.totalAttempts }} 次</span>
               <span>错题 {{ row.wrongCount }} 道</span>
             </div>
-            <el-button type="primary" :icon="Promotion" @click="startPractice(row)">
-              针对练习
-            </el-button>
+            <el-button type="primary" :icon="Promotion" @click="startPractice(row)"> 针对练习 </el-button>
           </article>
           <el-empty v-if="filteredSteps.length === 0" description="当前筛选下暂无知识点" />
         </div>
@@ -205,6 +205,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { errorMessage } from '@/utils/errors'
 import { useRoute, useRouter } from 'vue-router'
 import { Guide, Loading, Promotion, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
@@ -292,8 +293,8 @@ async function fetchData() {
   try {
     const res = await getLearningPath(selectedCourseId.value || undefined)
     data.value = res.data
-  } catch (e: any) {
-    ElMessage.error(e.message || '获取学习路径失败')
+  } catch (e) {
+    ElMessage.error(errorMessage(e, '获取学习路径失败'))
   } finally {
     loading.value = false
   }
@@ -302,7 +303,7 @@ async function fetchData() {
 async function fetchCourses() {
   try {
     const res = await getAllCourses()
-    courses.value = (res as any).data || res || []
+    courses.value = res.data || []
   } catch {
     // 课程筛选加载失败不影响学习路径主体展示
   }
@@ -312,8 +313,8 @@ function startPractice(step: LearningPathStep) {
   router.push({ path: '/practice', query: { knowledgePointId: String(step.knowledgePointId) } })
 }
 
-function startPracticeFromTable(step: any) {
-  startPractice(step as LearningPathStep)
+function startPracticeFromTable(step: LearningPathStep) {
+  startPractice(step)
 }
 
 function goKnowledgeGraph(step: LearningPathStep) {
@@ -322,31 +323,46 @@ function goKnowledgeGraph(step: LearningPathStep) {
 
 function getStatusTagType(status: string) {
   switch (status) {
-    case 'MASTERED': return 'success'
-    case 'NEEDS_REVIEW': return 'warning'
-    case 'WEAK': return 'danger'
-    case 'NOT_STARTED': return 'info'
-    default: return 'info'
+    case 'MASTERED':
+      return 'success'
+    case 'NEEDS_REVIEW':
+      return 'warning'
+    case 'WEAK':
+      return 'danger'
+    case 'NOT_STARTED':
+      return 'info'
+    default:
+      return 'info'
   }
 }
 
 function getStatusLabel(status: string) {
   switch (status) {
-    case 'MASTERED': return '已掌握'
-    case 'NEEDS_REVIEW': return '需复习'
-    case 'WEAK': return '薄弱'
-    case 'NOT_STARTED': return '未开始'
-    default: return status
+    case 'MASTERED':
+      return '已掌握'
+    case 'NEEDS_REVIEW':
+      return '需复习'
+    case 'WEAK':
+      return '薄弱'
+    case 'NOT_STARTED':
+      return '未开始'
+    default:
+      return status
   }
 }
 
 function getStatusBadgeClass(status: string) {
   switch (status) {
-    case 'MASTERED': return 'badge-mastered'
-    case 'NEEDS_REVIEW': return 'badge-review'
-    case 'WEAK': return 'badge-weak'
-    case 'NOT_STARTED': return 'badge-not-started'
-    default: return ''
+    case 'MASTERED':
+      return 'badge-mastered'
+    case 'NEEDS_REVIEW':
+      return 'badge-review'
+    case 'WEAK':
+      return 'badge-weak'
+    case 'NOT_STARTED':
+      return 'badge-not-started'
+    default:
+      return ''
   }
 }
 
@@ -400,9 +416,7 @@ onMounted(() => {
   padding: 24px;
   border: 1px solid var(--lp-border);
   border-radius: var(--lp-radius);
-  background:
-    linear-gradient(135deg, rgba(23, 105, 170, 0.08), rgba(216, 168, 63, 0.11)),
-    var(--lp-surface);
+  background: linear-gradient(135deg, rgba(23, 105, 170, 0.08), rgba(216, 168, 63, 0.11)), var(--lp-surface);
 }
 
 .section-kicker {

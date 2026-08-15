@@ -16,12 +16,7 @@
     </div>
 
     <el-radio-group v-model="selectedAnswer" class="variant-options" :disabled="Boolean(training.answered)">
-      <el-radio
-        v-for="option in question.options"
-        :key="option.label"
-        :value="option.label"
-        class="variant-option"
-      >
+      <el-radio v-for="option in question.options" :key="option.label" :value="option.label" class="variant-option">
         <span class="variant-option__label">{{ option.label }}</span>
         <span class="variant-option__content">{{ option.content }}</span>
       </el-radio>
@@ -52,13 +47,10 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { errorMessage } from '@/utils/errors'
 import { ElMessage } from 'element-plus'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
-import {
-  submitVariantAnswer,
-  type AiVariantQuestion,
-  type AiVariantTrainingStatus,
-} from '@/api/ai'
+import { submitVariantAnswer, type AiVariantQuestion, type AiVariantTrainingStatus } from '@/api/ai'
 
 const props = defineProps<{
   questionId: number
@@ -78,13 +70,16 @@ const emit = defineEmits<{
 
 const selectedAnswer = ref(props.training.userAnswer || '')
 const submitting = ref(false)
-const resultClass = computed(() => props.training.answered
-  ? (props.training.correct ? 'has-correct-result' : 'has-wrong-result')
-  : '')
+const resultClass = computed(() =>
+  props.training.answered ? (props.training.correct ? 'has-correct-result' : 'has-wrong-result') : '',
+)
 
-watch(() => props.training.userAnswer, value => {
-  if (value) selectedAnswer.value = value
-})
+watch(
+  () => props.training.userAnswer,
+  (value) => {
+    if (value) selectedAnswer.value = value
+  },
+)
 
 async function submitAnswer() {
   if (!selectedAnswer.value || submitting.value) return
@@ -93,8 +88,8 @@ async function submitAnswer() {
     const response = await submitVariantAnswer(props.questionId, selectedAnswer.value)
     emit('answered', response.data)
     ElMessage.success(response.data.correct ? '回答正确' : '已完成判分，看看解析再巩固一次')
-  } catch (error: any) {
-    ElMessage.error(error?.message || '提交答案失败，请稍后重试')
+  } catch (error) {
+    ElMessage.error(errorMessage(error, '提交答案失败，请稍后重试'))
   } finally {
     submitting.value = false
   }
@@ -123,8 +118,12 @@ async function submitAnswer() {
   content: '';
 }
 
-.variant-card.has-correct-result { --variant-accent: #2b8a57; }
-.variant-card.has-wrong-result { --variant-accent: #c26b36; }
+.variant-card.has-correct-result {
+  --variant-accent: #2b8a57;
+}
+.variant-card.has-wrong-result {
+  --variant-accent: #c26b36;
+}
 
 .variant-card__header,
 .variant-card__actions,
@@ -140,7 +139,7 @@ async function submitAnswer() {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: .16em;
+  letter-spacing: 0.16em;
 }
 
 .variant-card h3 {
@@ -177,7 +176,10 @@ async function submitAnswer() {
   border: 1px solid #d8e3eb;
   border-radius: 10px;
   background: rgb(255 255 255 / 82%);
-  transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .variant-option:hover {
@@ -252,9 +254,17 @@ async function submitAnswer() {
   font-weight: 800;
 }
 
-.variant-result__headline strong { color: #244536; }
-.variant-result.is-wrong .variant-result__headline strong { color: #754329; }
-.variant-result__headline p { margin: 4px 0 0; color: #6f7e75; font-size: 12px; }
+.variant-result__headline strong {
+  color: #244536;
+}
+.variant-result.is-wrong .variant-result__headline strong {
+  color: #754329;
+}
+.variant-result__headline p {
+  margin: 4px 0 0;
+  color: #6f7e75;
+  font-size: 12px;
+}
 
 .variant-result__analysis {
   margin-top: 14px;
@@ -269,10 +279,19 @@ async function submitAnswer() {
 }
 
 @media (max-width: 720px) {
-  .variant-card { padding: 18px 15px; }
+  .variant-card {
+    padding: 18px 15px;
+  }
   .variant-card__header,
-  .variant-card__actions { align-items: stretch; flex-direction: column; }
-  .variant-card__meta { align-self: flex-start; }
-  .variant-card__actions :deep(.el-button) { width: 100%; }
+  .variant-card__actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .variant-card__meta {
+    align-self: flex-start;
+  }
+  .variant-card__actions :deep(.el-button) {
+    width: 100%;
+  }
 }
 </style>

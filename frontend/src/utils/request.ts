@@ -36,7 +36,7 @@ aiService.interceptors.request.use(
     }
     return config
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 )
 
 aiService.interceptors.response.use(
@@ -70,7 +70,7 @@ aiService.interceptors.response.use(
       ElMessage.error('网络异常，请检查网络连接')
     }
     return Promise.reject(error)
-  }
+  },
 )
 
 /**
@@ -86,7 +86,7 @@ service.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error)
-  }
+  },
 )
 
 /**
@@ -116,7 +116,7 @@ service.interceptors.response.use(
 
     // code === 0 表示成功
     if (res.code === 0) {
-      return response.data as any
+      return response.data as unknown as AxiosResponse
     }
 
     // 1002: 未登录 / Token 无效
@@ -158,7 +158,7 @@ service.interceptors.response.use(
       ElMessage.error('网络异常，请检查网络连接')
     }
     return Promise.reject(error)
-  }
+  },
 )
 
 export default service

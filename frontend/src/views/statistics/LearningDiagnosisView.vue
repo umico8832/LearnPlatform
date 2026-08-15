@@ -35,12 +35,8 @@
         <template #header>
           <div style="display: flex; justify-content: space-between; align-items: center">
             <span>🤖 AI 个性化学习建议</span>
-            <el-tag v-if="aiAdviceStreaming" type="success" size="small" effect="light">
-              生成中...
-            </el-tag>
-            <el-tag v-else-if="aiAdviceContent" type="info" size="small" effect="light">
-              AI 生成
-            </el-tag>
+            <el-tag v-if="aiAdviceStreaming" type="success" size="small" effect="light"> 生成中... </el-tag>
+            <el-tag v-else-if="aiAdviceContent" type="info" size="small" effect="light"> AI 生成 </el-tag>
           </div>
         </template>
         <div v-if="aiAdviceLoading && !aiAdviceContent" v-loading="true" style="height: 100px"></div>
@@ -123,10 +119,21 @@
           <el-col :xs="24" :sm="12">
             <el-descriptions :column="1" border>
               <el-descriptions-item label="日均刷题">{{ data.learningHabit.avgDailyPractice }} 道</el-descriptions-item>
-              <el-descriptions-item label="偏好题型">{{ data.learningHabit.preferredQuestionType }}</el-descriptions-item>
+              <el-descriptions-item label="偏好题型">{{
+                data.learningHabit.preferredQuestionType
+              }}</el-descriptions-item>
               <el-descriptions-item label="偏好课程">{{ data.learningHabit.preferredCourse }}</el-descriptions-item>
               <el-descriptions-item label="学习频次">
-                <el-tag :type="data.learningHabit.frequencyLevel === 'ACTIVE' ? 'success' : data.learningHabit.frequencyLevel === 'MODERATE' ? 'warning' : 'danger'" size="small">
+                <el-tag
+                  :type="
+                    data.learningHabit.frequencyLevel === 'ACTIVE'
+                      ? 'success'
+                      : data.learningHabit.frequencyLevel === 'MODERATE'
+                        ? 'warning'
+                        : 'danger'
+                  "
+                  size="small"
+                >
                   {{ data.learningHabit.frequencyDescription }}
                 </el-tag>
               </el-descriptions-item>
@@ -162,7 +169,7 @@
               <div v-for="(count, label) in data.errorPatterns.masteryDistribution" :key="label" class="mastery-item">
                 <span class="mastery-label">{{ label }}</span>
                 <el-progress
-                  :percentage="totalWrong > 0 ? Math.round(count / totalWrong * 100) : 0"
+                  :percentage="totalWrong > 0 ? Math.round((count / totalWrong) * 100) : 0"
                   :color="getMasteryColor(label as string)"
                   :stroke-width="20"
                   :text-inside="true"
@@ -171,8 +178,12 @@
               </div>
             </div>
             <el-descriptions :column="1" border style="margin-top: 16px">
-              <el-descriptions-item label="反复出错题目">{{ data.errorPatterns.repeatedErrorCount }} 道</el-descriptions-item>
-              <el-descriptions-item label="近7天新增错题">{{ data.errorPatterns.recentNewWrongCount }} 道</el-descriptions-item>
+              <el-descriptions-item label="反复出错题目"
+                >{{ data.errorPatterns.repeatedErrorCount }} 道</el-descriptions-item
+              >
+              <el-descriptions-item label="近7天新增错题"
+                >{{ data.errorPatterns.recentNewWrongCount }} 道</el-descriptions-item
+              >
             </el-descriptions>
           </el-col>
           <el-col :xs="24" :sm="12">
@@ -191,11 +202,20 @@
         <el-row :gutter="24" style="margin-top: 20px">
           <el-col :xs="24" :sm="12">
             <h4>📊 错题题型分布</h4>
-            <div v-if="data.errorPatterns.questionTypeDistribution && Object.keys(data.errorPatterns.questionTypeDistribution).length">
-              <div v-for="(count, typeName) in data.errorPatterns.questionTypeDistribution" :key="typeName" class="mastery-item">
+            <div
+              v-if="
+                data.errorPatterns.questionTypeDistribution &&
+                Object.keys(data.errorPatterns.questionTypeDistribution).length
+              "
+            >
+              <div
+                v-for="(count, typeName) in data.errorPatterns.questionTypeDistribution"
+                :key="typeName"
+                class="mastery-item"
+              >
                 <span class="mastery-label">{{ typeName }}</span>
                 <el-progress
-                  :percentage="totalWrong > 0 ? Math.round(count / totalWrong * 100) : 0"
+                  :percentage="totalWrong > 0 ? Math.round((count / totalWrong) * 100) : 0"
                   color="#409eff"
                   :stroke-width="18"
                   :text-inside="true"
@@ -207,11 +227,16 @@
           </el-col>
           <el-col :xs="24" :sm="12">
             <h4>⭐ 错题难度分布</h4>
-            <div v-if="data.errorPatterns.difficultyDistribution && Object.keys(data.errorPatterns.difficultyDistribution).length">
+            <div
+              v-if="
+                data.errorPatterns.difficultyDistribution &&
+                Object.keys(data.errorPatterns.difficultyDistribution).length
+              "
+            >
               <div v-for="(count, diff) in data.errorPatterns.difficultyDistribution" :key="diff" class="mastery-item">
                 <span class="mastery-label">{{ '⭐'.repeat(Number(diff)) }}</span>
                 <el-progress
-                  :percentage="totalWrong > 0 ? Math.round(count / totalWrong * 100) : 0"
+                  :percentage="totalWrong > 0 ? Math.round((count / totalWrong) * 100) : 0"
                   :color="getDifficultyColor(Number(diff))"
                   :stroke-width="18"
                   :text-inside="true"
@@ -224,7 +249,10 @@
         </el-row>
 
         <!-- 每周错题趋势 -->
-        <div v-if="data.errorPatterns.weeklyErrorTrend && data.errorPatterns.weeklyErrorTrend.length" style="margin-top: 20px">
+        <div
+          v-if="data.errorPatterns.weeklyErrorTrend && data.errorPatterns.weeklyErrorTrend.length"
+          style="margin-top: 20px"
+        >
           <h4>📈 近 4 周错题趋势</h4>
           <div class="mini-chart">
             <div v-for="(week, i) in data.errorPatterns.weeklyErrorTrend" :key="i" class="chart-bar-group">
@@ -238,7 +266,10 @@
         </div>
 
         <!-- 知识点错因排名 -->
-        <div v-if="data.errorPatterns.knowledgePointErrors && data.errorPatterns.knowledgePointErrors.length" style="margin-top: 20px">
+        <div
+          v-if="data.errorPatterns.knowledgePointErrors && data.errorPatterns.knowledgePointErrors.length"
+          style="margin-top: 20px"
+        >
           <h4>🎯 知识点错因排名</h4>
           <el-table :data="data.errorPatterns.knowledgePointErrors" stripe size="small">
             <el-table-column label="知识点" min-width="160">
@@ -269,7 +300,10 @@
         </div>
 
         <!-- 反复错题详情 -->
-        <div v-if="data.errorPatterns.repeatedErrors && data.errorPatterns.repeatedErrors.length" style="margin-top: 20px">
+        <div
+          v-if="data.errorPatterns.repeatedErrors && data.errorPatterns.repeatedErrors.length"
+          style="margin-top: 20px"
+        >
           <h4>🔄 反复错题详情</h4>
           <el-table :data="data.errorPatterns.repeatedErrors" stripe size="small">
             <el-table-column label="题目" min-width="240" show-overflow-tooltip>
@@ -306,12 +340,7 @@
                 >
                   找相似题
                 </el-button>
-                <el-button
-                  type="warning"
-                  link
-                  size="small"
-                  @click="loadQuestionErrorAnalysis(row.questionId)"
-                >
+                <el-button type="warning" link size="small" @click="loadQuestionErrorAnalysis(row.questionId)">
                   错因分析
                 </el-button>
               </template>
@@ -355,9 +384,7 @@
         <template #header>
           <div style="display: flex; justify-content: space-between; align-items: center">
             <span>🎯 今日推荐题目</span>
-            <el-button type="primary" size="small" @click="startRecommendPractice">
-              开始练习
-            </el-button>
+            <el-button type="primary" size="small" @click="startRecommendPractice"> 开始练习 </el-button>
           </div>
         </template>
         <el-table :data="data.dailyRecommendations" stripe>
@@ -396,12 +423,7 @@
     </template>
 
     <!-- 单题错因分析弹窗 -->
-    <el-dialog
-      v-model="errorAnalysisDialogVisible"
-      title="🔍 单题错因分析"
-      width="750px"
-      destroy-on-close
-    >
+    <el-dialog v-model="errorAnalysisDialogVisible" title="🔍 单题错因分析" width="750px" destroy-on-close>
       <div v-if="errorAnalysisLoading" v-loading="true" style="height: 200px"></div>
       <template v-else-if="errorAnalysisData">
         <!-- 题目信息 -->
@@ -412,8 +434,12 @@
             <el-tag v-if="errorAnalysisData.difficulty" size="small" type="warning">
               {{ '⭐'.repeat(errorAnalysisData.difficulty) }}
             </el-tag>
-            <el-tag v-if="errorAnalysisData.courseName" size="small" type="info">{{ errorAnalysisData.courseName }}</el-tag>
-            <el-tag v-if="errorAnalysisData.knowledgePointName" size="small" type="info">{{ errorAnalysisData.knowledgePointName }}</el-tag>
+            <el-tag v-if="errorAnalysisData.courseName" size="small" type="info">{{
+              errorAnalysisData.courseName
+            }}</el-tag>
+            <el-tag v-if="errorAnalysisData.knowledgePointName" size="small" type="info">{{
+              errorAnalysisData.knowledgePointName
+            }}</el-tag>
           </div>
         </div>
 
@@ -442,14 +468,23 @@
         <!-- 掌握趋势 -->
         <el-alert
           :title="errorAnalysisData.trendDescription"
-          :type="errorAnalysisData.masteryTrend === 'IMPROVING' ? 'success' : errorAnalysisData.masteryTrend === 'DECLINING' ? 'error' : 'info'"
+          :type="
+            errorAnalysisData.masteryTrend === 'IMPROVING'
+              ? 'success'
+              : errorAnalysisData.masteryTrend === 'DECLINING'
+                ? 'error'
+                : 'info'
+          "
           :closable="false"
           show-icon
           style="margin-top: 16px"
         />
 
         <!-- 掌握程度 -->
-        <div v-if="errorAnalysisData.currentMasteryLevel !== null && errorAnalysisData.currentMasteryLevel !== undefined" style="margin-top: 12px">
+        <div
+          v-if="errorAnalysisData.currentMasteryLevel !== null && errorAnalysisData.currentMasteryLevel !== undefined"
+          style="margin-top: 12px"
+        >
           <span style="font-size: 13px; color: #606266">当前掌握程度：</span>
           <el-tag :type="getMasteryLevelType(errorAnalysisData.currentMasteryLevel)" size="small">
             {{ getMasteryLevelLabel(errorAnalysisData.currentMasteryLevel) }}
@@ -459,12 +494,16 @@
         <!-- 错误模式描述 -->
         <div class="error-pattern-box" style="margin-top: 16px">
           <h4 style="margin: 0 0 8px; font-size: 14px; color: #303133">📋 错误模式分析</h4>
-          <p style="font-size: 14px; line-height: 1.8; color: #606266; margin: 0">{{ errorAnalysisData.errorPattern }}</p>
+          <p style="font-size: 14px; line-height: 1.8; color: #606266; margin: 0">
+            {{ errorAnalysisData.errorPattern }}
+          </p>
         </div>
 
         <!-- 作答历史 -->
         <div v-if="errorAnalysisData.attempts && errorAnalysisData.attempts.length" style="margin-top: 16px">
-          <h4 style="margin: 0 0 8px; font-size: 14px; color: #303133">📝 作答历史（共 {{ errorAnalysisData.attempts.length }} 次）</h4>
+          <h4 style="margin: 0 0 8px; font-size: 14px; color: #303133">
+            📝 作答历史（共 {{ errorAnalysisData.attempts.length }} 次）
+          </h4>
           <el-timeline>
             <el-timeline-item
               v-for="(attempt, i) in errorAnalysisData.attempts"
@@ -499,17 +538,10 @@
     </el-dialog>
 
     <!-- 相似题推荐弹窗 -->
-    <el-dialog
-      v-model="similarDialogVisible"
-      title="🔍 相似题推荐"
-      width="800px"
-      destroy-on-close
-    >
+    <el-dialog v-model="similarDialogVisible" title="🔍 相似题推荐" width="800px" destroy-on-close>
       <div v-if="similarLoading" v-loading="true" style="height: 200px"></div>
       <template v-else-if="similarData">
-        <div class="similar-source">
-          <strong>原题：</strong>{{ similarSourceContent }}
-        </div>
+        <div class="similar-source"><strong>原题：</strong>{{ similarSourceContent }}</div>
         <el-table :data="similarData.similarQuestions" stripe style="margin-top: 12px">
           <el-table-column label="题目内容" min-width="240" show-overflow-tooltip>
             <template #default="{ row }">
@@ -551,11 +583,7 @@
       <el-empty v-else description="暂无相似题目" />
       <template #footer>
         <el-button @click="similarDialogVisible = false">关闭</el-button>
-        <el-button
-          type="primary"
-          :disabled="!similarData?.similarQuestions?.length"
-          @click="startSimilarPractice"
-        >
+        <el-button type="primary" :disabled="!similarData?.similarQuestions?.length" @click="startSimilarPractice">
           开始练习相似题
         </el-button>
       </template>
@@ -565,8 +593,17 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { errorMessage, isAbortError } from '@/utils/errors'
 import { useRouter } from 'vue-router'
-import { getLearningDiagnosis, getAiAdviceStream, getSimilarQuestions, getQuestionErrorAnalysis, type LearningDiagnosis, type SimilarQuestions, type QuestionErrorAnalysis } from '@/api/statistics'
+import {
+  getLearningDiagnosis,
+  getAiAdviceStream,
+  getSimilarQuestions,
+  getQuestionErrorAnalysis,
+  type LearningDiagnosis,
+  type SimilarQuestions,
+  type QuestionErrorAnalysis,
+} from '@/api/statistics'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { ElMessage } from 'element-plus'
 
@@ -586,8 +623,8 @@ async function loadQuestionErrorAnalysis(questionId: number) {
   try {
     const res = await getQuestionErrorAnalysis(questionId)
     errorAnalysisData.value = res.data
-  } catch (e: any) {
-    ElMessage.error('加载错因分析失败: ' + (e.message || '未知错误'))
+  } catch (e) {
+    ElMessage.error('加载错因分析失败: ' + errorMessage(e, '未知错误'))
   } finally {
     errorAnalysisLoading.value = false
   }
@@ -607,8 +644,8 @@ async function loadSimilarQuestions(questionId: number, questionContent?: string
   try {
     const res = await getSimilarQuestions(questionId, 8)
     similarData.value = res.data
-  } catch (e: any) {
-    ElMessage.error('加载相似题失败: ' + (e.message || '未知错误'))
+  } catch (e) {
+    ElMessage.error('加载相似题失败: ' + errorMessage(e, '未知错误'))
   } finally {
     similarLoading.value = false
   }
@@ -616,7 +653,7 @@ async function loadSimilarQuestions(questionId: number, questionContent?: string
 
 function startSimilarPractice() {
   if (!similarData.value?.similarQuestions?.length) return
-  const qIds = similarData.value.similarQuestions.map(q => q.questionId).join(',')
+  const qIds = similarData.value.similarQuestions.map((q) => q.questionId).join(',')
   similarDialogVisible.value = false
   router.push({ path: '/practice/session', query: { questionIds: qIds } })
 }
@@ -674,9 +711,9 @@ async function generateAiAdvice() {
         }
       }
     }
-  } catch (e: any) {
-    if (e.name !== 'AbortError') {
-      ElMessage.error('AI 建议生成失败: ' + (e.message || '未知错误'))
+  } catch (e) {
+    if (!isAbortError(e)) {
+      ElMessage.error('AI 建议生成失败: ' + errorMessage(e, '未知错误'))
     }
   } finally {
     aiAdviceLoading.value = false
@@ -687,7 +724,7 @@ async function generateAiAdvice() {
 
 const adviceLines = computed(() => {
   if (!data.value?.dailyAdvice) return []
-  return data.value.dailyAdvice.split('\n').filter(l => l.trim())
+  return data.value.dailyAdvice.split('\n').filter((l) => l.trim())
 })
 
 const totalWrong = computed(() => {
@@ -698,7 +735,7 @@ const totalWrong = computed(() => {
 
 const maxBarValue = computed(() => {
   if (!data.value?.learningHabit?.weeklyTrend) return 1
-  const max = Math.max(...data.value.learningHabit.weeklyTrend.map(d => d.total))
+  const max = Math.max(...data.value.learningHabit.weeklyTrend.map((d) => d.total))
   return max || 1
 })
 
@@ -714,19 +751,27 @@ function getRateColor(rate: number): string {
 
 function getStatusType(status: string): 'danger' | 'warning' | 'info' | undefined {
   switch (status) {
-    case 'WEAK': return 'danger'
-    case 'NEEDS_REVIEW': return 'warning'
-    case 'NOT_STARTED': return 'info'
-    default: return undefined
+    case 'WEAK':
+      return 'danger'
+    case 'NEEDS_REVIEW':
+      return 'warning'
+    case 'NOT_STARTED':
+      return 'info'
+    default:
+      return undefined
   }
 }
 
 function getStatusLabel(status: string): string {
   switch (status) {
-    case 'WEAK': return '薄弱'
-    case 'NEEDS_REVIEW': return '需复习'
-    case 'NOT_STARTED': return '未开始'
-    default: return status
+    case 'WEAK':
+      return '薄弱'
+    case 'NEEDS_REVIEW':
+      return '需复习'
+    case 'NOT_STARTED':
+      return '未开始'
+    default:
+      return status
   }
 }
 
@@ -738,10 +783,14 @@ function getMasteryColor(label: string): string {
 
 function getReasonType(reason: string): 'danger' | 'warning' | 'info' | undefined {
   switch (reason) {
-    case 'ERROR_PRONE': return 'danger'
-    case 'WEAK_POINT_REINFORCE': return 'warning'
-    case 'SPACED_REVIEW': return undefined
-    default: return 'info'
+    case 'ERROR_PRONE':
+      return 'danger'
+    case 'WEAK_POINT_REINFORCE':
+      return 'warning'
+    case 'SPACED_REVIEW':
+      return undefined
+    default:
+      return 'info'
   }
 }
 
@@ -761,7 +810,7 @@ function getDifficultyColor(diff: number): string {
 
 const maxWeeklyBarValue = computed(() => {
   if (!data.value?.errorPatterns?.weeklyErrorTrend) return 1
-  const max = Math.max(...data.value.errorPatterns.weeklyErrorTrend.map(d => d.count))
+  const max = Math.max(...data.value.errorPatterns.weeklyErrorTrend.map((d) => d.count))
   return max || 1
 })
 
@@ -785,17 +834,16 @@ function getMasteryLevelLabel(level: number | null): string {
 
 function startRecommendPractice() {
   if (!data.value?.dailyRecommendations?.length) return
-  const qIds = data.value.dailyRecommendations.map(q => q.questionId).join(',')
+  const qIds = data.value.dailyRecommendations.map((q) => q.questionId).join(',')
   router.push({ path: '/practice/session', query: { questionIds: qIds } })
 }
-
 
 onMounted(async () => {
   try {
     const res = await getLearningDiagnosis()
     data.value = res.data
-  } catch (e: any) {
-    ElMessage.error('加载学习诊断失败: ' + (e.message || '未知错误'))
+  } catch (e) {
+    ElMessage.error('加载学习诊断失败: ' + errorMessage(e, '未知错误'))
   } finally {
     loading.value = false
   }

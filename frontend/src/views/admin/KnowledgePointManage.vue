@@ -4,7 +4,9 @@
       <div>
         <p class="admin-page-kicker">KNOWLEDGE MAP</p>
         <h2>知识点管理</h2>
-        <p class="admin-page-description">维护课程「{{ courseName }}」的知识结构，父子层级会影响题目归类、诊断和复习路径。</p>
+        <p class="admin-page-description">
+          维护课程「{{ courseName }}」的知识结构，父子层级会影响题目归类、诊断和复习路径。
+        </p>
       </div>
       <div class="admin-header-actions">
         <el-button :icon="ArrowLeft" @click="router.push({ name: 'AdminCourseManage' })">返回课程</el-button>
@@ -90,19 +92,8 @@
     </el-card>
 
     <!-- 新增/编辑弹窗 -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="editingKP ? '编辑知识点' : '新增知识点'"
-      width="500px"
-      destroy-on-close
-    >
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="100px"
-        @submit.prevent
-      >
+    <el-dialog v-model="dialogVisible" :title="editingKP ? '编辑知识点' : '新增知识点'" width="500px" destroy-on-close>
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" @submit.prevent>
         <el-form-item label="知识点名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入知识点名称" maxlength="100" />
         </el-form-item>
@@ -281,7 +272,7 @@ function filterTree(nodes: KnowledgePointVO[], searchText: string): KnowledgePoi
 }
 
 /** 不允许拖拽到叶子节点内部 */
-function allowDrop(_draggingNode: any, _dropNode: any, type: string) {
+function allowDrop(_draggingNode: unknown, _dropNode: unknown, type: string) {
   if (type === 'inner') {
     return true
   }

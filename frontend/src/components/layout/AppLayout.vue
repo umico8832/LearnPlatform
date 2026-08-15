@@ -132,6 +132,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { errorMessage } from '@/utils/errors'
 import type { Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
@@ -298,9 +299,9 @@ async function handleAcknowledgeOpenAlert(id: number) {
     await acknowledgeAiUsageAlert(id)
     openAlerts.value = openAlerts.value.filter((alert) => alert.id !== id)
     ElMessage.success('已确认 AI 运营提醒')
-  } catch (error: any) {
+  } catch (error) {
     console.error('Failed to acknowledge AI usage alert', error)
-    ElMessage.error(error?.message || '确认提醒失败')
+    ElMessage.error(errorMessage(error, '确认提醒失败'))
   } finally {
     acknowledgingAlertId.value = null
   }

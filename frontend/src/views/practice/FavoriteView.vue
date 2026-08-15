@@ -16,9 +16,7 @@
         >
           收藏题练习
         </el-button>
-        <el-button :icon="Search" @click="router.push('/questions')">
-          浏览题库
-        </el-button>
+        <el-button :icon="Search" @click="router.push('/questions')"> 浏览题库 </el-button>
       </div>
     </section>
 
@@ -37,12 +35,7 @@
       </div>
       <div class="practice-controls">
         <span class="control-label">题目数</span>
-        <el-input-number
-          v-model="practiceCount"
-          :min="1"
-          :max="50"
-          controls-position="right"
-        />
+        <el-input-number v-model="practiceCount" :min="1" :max="50" controls-position="right" />
         <el-button
           type="primary"
           :icon="VideoPlay"
@@ -64,12 +57,7 @@
         <el-button :icon="Refresh" :loading="loading" @click="loadFavorites">刷新</el-button>
       </div>
 
-      <el-table
-        v-loading="loading"
-        :data="favorites"
-        stripe
-        style="width: 100%"
-      >
+      <el-table v-loading="loading" :data="favorites" stripe style="width: 100%">
         <el-table-column label="题干" min-width="320" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="question-content">{{ row.questionContent }}</span>
@@ -124,9 +112,7 @@
         </el-table-column>
         <template #empty>
           <el-empty description="暂无收藏题目">
-            <el-button type="primary" :icon="Search" @click="router.push('/questions')">
-              去题库收藏
-            </el-button>
+            <el-button type="primary" :icon="Search" @click="router.push('/questions')"> 去题库收藏 </el-button>
           </el-empty>
         </template>
       </el-table>
@@ -148,6 +134,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
+import { errorMessage, SemanticTagType } from '@/utils/errors'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Delete, EditPen, Refresh, Search, VideoPlay } from '@element-plus/icons-vue'
@@ -180,7 +167,7 @@ const summaryCards = computed(() => [
   { label: '最近收藏', value: latestFavoriteTime.value, note: '优先回看新标记题', tone: 'tone-danger' },
 ])
 
-const questionTypeMap: Record<string, { label: string; tag: string }> = {
+const questionTypeMap: Record<string, { label: string; tag: SemanticTagType }> = {
   SINGLE_CHOICE: { label: '单选题', tag: 'primary' },
   MULTIPLE_CHOICE: { label: '多选题', tag: 'warning' },
   TRUE_FALSE: { label: '判断题', tag: 'success' },
@@ -193,7 +180,7 @@ function getQuestionTypeLabel(type: string) {
 }
 
 function getQuestionTypeTag(type: string) {
-  return (questionTypeMap[type]?.tag || '') as any
+  return questionTypeMap[type]?.tag
 }
 
 function formatTime(time: string) {
@@ -209,8 +196,8 @@ async function loadFavorites() {
       favorites.value = res.data.records || []
       total.value = res.data.total || 0
     }
-  } catch (e: any) {
-    ElMessage.error(e.message || '加载收藏列表失败')
+  } catch (e) {
+    ElMessage.error(errorMessage(e, '加载收藏列表失败'))
   } finally {
     loading.value = false
   }
@@ -229,8 +216,8 @@ async function handleRemoveFavorite(row: FavoriteQuestionVO) {
       pageNum.value -= 1
     }
     await loadFavorites()
-  } catch (e: any) {
-    ElMessage.error(e.message || '取消收藏失败')
+  } catch (e) {
+    ElMessage.error(errorMessage(e, '取消收藏失败'))
   }
 }
 
@@ -245,8 +232,8 @@ async function startFavoritePractice() {
     } else {
       ElMessage.warning('暂无可练习的收藏题目')
     }
-  } catch (e: any) {
-    ElMessage.error(e.message || '获取收藏练习题失败')
+  } catch (e) {
+    ElMessage.error(errorMessage(e, '获取收藏练习题失败'))
   } finally {
     practiceLoading.value = false
   }
@@ -263,8 +250,8 @@ async function startSingleFavoritePractice(row: FavoriteQuestionVO) {
     } else {
       ElMessage.warning('该收藏题暂不可练习')
     }
-  } catch (e: any) {
-    ElMessage.error(e.message || '获取收藏练习题失败')
+  } catch (e) {
+    ElMessage.error(errorMessage(e, '获取收藏练习题失败'))
   } finally {
     practiceLoading.value = false
   }
@@ -289,9 +276,7 @@ onMounted(() => {
   padding: 24px;
   border: 1px solid var(--lp-border);
   border-radius: var(--lp-radius);
-  background:
-    linear-gradient(135deg, rgba(20, 121, 102, 0.08), rgba(216, 168, 63, 0.1)),
-    var(--lp-surface);
+  background: linear-gradient(135deg, rgba(20, 121, 102, 0.08), rgba(216, 168, 63, 0.1)), var(--lp-surface);
 }
 
 .section-kicker {

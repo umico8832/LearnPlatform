@@ -54,11 +54,19 @@
           <el-button size="large" :icon="Download" :loading="syncing" @click="handleSyncWrongQuestions">
             同步错题到复习
           </el-button>
-          <el-button size="large" :icon="MagicStick" :loading="aiSuggestionLoading" :disabled="stats.totalCards === 0" @click="handleAiSuggestion">
+          <el-button
+            size="large"
+            :icon="MagicStick"
+            :loading="aiSuggestionLoading"
+            :disabled="stats.totalCards === 0"
+            @click="handleAiSuggestion"
+          >
             AI 复习建议
           </el-button>
         </div>
-        <el-text type="info" size="small">平均简易因子: {{ stats.avgEaseFactor?.toFixed(2) ?? '-' }} | 连续 {{ stats.streakDays }} 天</el-text>
+        <el-text type="info" size="small"
+          >平均简易因子: {{ stats.avgEaseFactor?.toFixed(2) ?? '-' }} | 连续 {{ stats.streakDays }} 天</el-text
+        >
       </div>
     </el-card>
 
@@ -88,11 +96,15 @@
       </template>
 
       <!-- 进度条 -->
-      <el-progress :percentage="Math.round(((currentIndex) / dueCards.length) * 100)" :show-text="false" style="margin-bottom: 16px" />
+      <el-progress
+        :percentage="Math.round((currentIndex / dueCards.length) * 100)"
+        :show-text="false"
+        style="margin-bottom: 16px"
+      />
 
       <!-- 题目信息 -->
       <div class="question-info">
-        <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+        <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap">
           <el-tag size="small">{{ currentCard.questionType }}</el-tag>
           <el-tag size="small" type="info">{{ currentCard.courseName || '未知课程' }}</el-tag>
           <el-tag size="small" :type="currentCard.overdue ? 'danger' : 'success'">
@@ -117,25 +129,32 @@
 
       <!-- 操作按钮 -->
       <div class="session-actions">
-        <el-button type="primary" @click="submitCurrentAnswer" :disabled="!userAnswer.trim() || answerSubmitted" :loading="submitting">
+        <el-button
+          type="primary"
+          @click="submitCurrentAnswer"
+          :disabled="!userAnswer.trim() || answerSubmitted"
+          :loading="submitting"
+        >
           提交答案
         </el-button>
         <el-button @click="skipCard" :disabled="answerSubmitted">跳过</el-button>
         <el-button type="danger" plain @click="stopReview">结束复习</el-button>
       </div>
 
-    <!-- 答题结果 -->
-    <el-alert
-      v-if="answerSubmitted"
-      :title="lastCorrect ? '✅ 回答正确！' : '❌ 回答错误'"
-      :type="lastCorrect ? 'success' : 'error'"
-      :description="lastCorrect
-        ? `下次复习: ${currentCard.intervalDays} 天后 | 新间隔: ${lastResult?.intervalDays} 天`
-        : `间隔已重置为 1 天，请继续加油！`"
-      show-icon
-      :closable="false"
-      class="result-alert"
-    />
+      <!-- 答题结果 -->
+      <el-alert
+        v-if="answerSubmitted"
+        :title="lastCorrect ? '✅ 回答正确！' : '❌ 回答错误'"
+        :type="lastCorrect ? 'success' : 'error'"
+        :description="
+          lastCorrect
+            ? `下次复习: ${currentCard.intervalDays} 天后 | 新间隔: ${lastResult?.intervalDays} 天`
+            : `间隔已重置为 1 天，请继续加油！`
+        "
+        show-icon
+        :closable="false"
+        class="result-alert"
+      />
 
       <div v-if="answerSubmitted" class="next-action">
         <el-button type="primary" @click="nextCard">
@@ -148,7 +167,7 @@
     <el-card v-if="reviewComplete" shadow="never" class="complete-card">
       <h3>今日复习完成！</h3>
       <p>共复习 {{ reviewedCount }} 题，正确 {{ correctCount }} 题</p>
-      <el-button type="primary" @click="reviewComplete = false; reviewing = false;">返回</el-button>
+      <el-button type="primary" @click="finishReview">返回</el-button>
     </el-card>
 
     <!-- 全部卡片列表 -->
@@ -160,7 +179,13 @@
         </div>
       </template>
 
-      <el-table :data="allCards" stripe style="width: 100%" v-loading="cardsLoading" empty-text="暂无复习卡片，刷题后自动加入">
+      <el-table
+        :data="allCards"
+        stripe
+        style="width: 100%"
+        v-loading="cardsLoading"
+        empty-text="暂无复习卡片，刷题后自动加入"
+      >
         <el-table-column label="题目" min-width="200" show-overflow-tooltip>
           <template #default="{ row }">
             <span>{{ row.questionContent }}</span>
@@ -197,6 +222,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { errorMessage, isAbortError } from '@/utils/errors'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, Loading, MagicStick, Reading, View } from '@element-plus/icons-vue'
@@ -227,13 +253,25 @@ const targetQuestionId = computed(() => positiveQueryNumber(route.query.question
 
 // 统计数据
 const stats = ref<ReviewStatsVO>({
-  totalCards: 0, dueToday: 0, overdue: 0, reviewedToday: 0,
-  newCards: 0, learningCards: 0, masteredCards: 0, difficultCards: 0,
-  streakDays: 0, avgEaseFactor: 2.5,
+  totalCards: 0,
+  dueToday: 0,
+  overdue: 0,
+  reviewedToday: 0,
+  newCards: 0,
+  learningCards: 0,
+  masteredCards: 0,
+  difficultCards: 0,
+  streakDays: 0,
+  avgEaseFactor: 2.5,
 })
 
 // 复习会话
 const reviewing = ref(false)
+
+function finishReview() {
+  reviewComplete.value = false
+  reviewing.value = false
+}
 const dueCards = ref<ReviewScheduleVO[]>([])
 const currentIndex = ref(0)
 const userAnswer = ref('')
@@ -264,11 +302,16 @@ const masteredPercent = computed(() => {
 
 function statusTagType(label: string) {
   switch (label) {
-    case '新卡片': return 'info'
-    case '学习中': return 'warning'
-    case '已掌握': return 'success'
-    case '困难': return 'danger'
-    default: return 'info'
+    case '新卡片':
+      return 'info'
+    case '学习中':
+      return 'warning'
+    case '已掌握':
+      return 'success'
+    case '困难':
+      return 'danger'
+    default:
+      return 'info'
   }
 }
 
@@ -337,8 +380,8 @@ async function submitCurrentAnswer() {
       correctCount.value++
     }
     await loadStats()
-  } catch (e: any) {
-    ElMessage.error(e?.message || '提交失败')
+  } catch (e) {
+    ElMessage.error(errorMessage(e, '提交失败'))
   } finally {
     submitting.value = false
   }
@@ -373,8 +416,8 @@ async function handleRemove(questionId: number) {
     ElMessage.success('已移出')
     await loadAllCards()
     await loadStats()
-  } catch (e: any) {
-    ElMessage.error(e?.message || '操作失败')
+  } catch (e) {
+    ElMessage.error(errorMessage(e, '操作失败'))
   }
 }
 
@@ -392,8 +435,8 @@ async function handleSyncWrongQuestions() {
     } else {
       ElMessage.info('暂无新的错题需要同步（已在复习计划中的会跳过）')
     }
-  } catch (e: any) {
-    ElMessage.error(e?.message || '同步失败')
+  } catch (e) {
+    ElMessage.error(errorMessage(e, '同步失败'))
   } finally {
     syncing.value = false
   }
@@ -405,8 +448,8 @@ async function handleReset(questionId: number) {
     await resetReviewProgress(questionId)
     ElMessage.success('已重置')
     await loadAllCards()
-  } catch (e: any) {
-    ElMessage.error(e?.message || '操作失败')
+  } catch (e) {
+    ElMessage.error(errorMessage(e, '操作失败'))
   }
 }
 
@@ -460,9 +503,9 @@ async function handleAiSuggestion() {
         }
       }
     }
-  } catch (e: any) {
-    if (e.name !== 'AbortError') {
-      ElMessage.error(e?.message || 'AI 复习建议获取失败')
+  } catch (e) {
+    if (!isAbortError(e)) {
+      ElMessage.error(errorMessage(e, 'AI 复习建议获取失败'))
     }
   } finally {
     aiSuggestionLoading.value = false
@@ -550,10 +593,18 @@ onMounted(async () => {
   margin-left: 2px;
 }
 
-.stat-due strong { color: var(--lp-primary); }
-.stat-reviewed strong { color: var(--lp-success); }
-.stat-mastered strong { color: var(--lp-warning); }
-.stat-streak strong { color: var(--lp-danger); }
+.stat-due strong {
+  color: var(--lp-primary);
+}
+.stat-reviewed strong {
+  color: var(--lp-success);
+}
+.stat-mastered strong {
+  color: var(--lp-warning);
+}
+.stat-streak strong {
+  color: var(--lp-danger);
+}
 
 .progress-card,
 .action-card,

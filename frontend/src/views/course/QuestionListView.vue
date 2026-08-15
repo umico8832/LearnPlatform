@@ -39,7 +39,13 @@
 
         <div class="filter-block">
           <span class="filter-label">所属课程</span>
-          <el-select v-model="filters.courseId" placeholder="全部课程" clearable filterable @change="handleFilterChange">
+          <el-select
+            v-model="filters.courseId"
+            placeholder="全部课程"
+            clearable
+            filterable
+            @change="handleFilterChange"
+          >
             <el-option v-for="c in courseList" :key="c.id" :label="c.name" :value="c.id" />
           </el-select>
         </div>
@@ -101,7 +107,12 @@
 
             <div class="question-side">
               <el-tooltip :content="favoriteSet.has(q.id) ? '取消收藏' : '收藏题目'" placement="top">
-                <button type="button" class="icon-action favorite-btn" :class="{ active: favoriteSet.has(q.id) }" @click.stop="toggleFavorite(q.id)">
+                <button
+                  type="button"
+                  class="icon-action favorite-btn"
+                  :class="{ active: favoriteSet.has(q.id) }"
+                  @click.stop="toggleFavorite(q.id)"
+                >
                   <el-icon :size="18">
                     <StarFilled v-if="favoriteSet.has(q.id)" />
                     <Star v-else />
@@ -183,6 +194,7 @@
 
 <script setup lang="ts">
 import { computed, ref, reactive, onMounted } from 'vue'
+import { errorMessage } from '@/utils/errors'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Star, StarFilled, ChatLineRound, Warning } from '@element-plus/icons-vue'
@@ -352,8 +364,8 @@ async function toggleFavorite(questionId: number) {
       ElMessage.success('已收藏')
     }
     favoriteSet.value = new Set(favoriteSet.value)
-  } catch (e: any) {
-    ElMessage.error(e.message || '操作失败')
+  } catch (e) {
+    ElMessage.error(errorMessage(e, '操作失败'))
   }
 }
 
@@ -603,7 +615,9 @@ onMounted(() => {
   background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
   border: 1px solid var(--lp-border);
   border-radius: var(--lp-radius);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .question-card:hover {

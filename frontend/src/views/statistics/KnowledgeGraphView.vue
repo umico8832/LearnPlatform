@@ -9,16 +9,9 @@
       <div class="hero-actions">
         <el-select v-model="selectedCourseId" placeholder="全部课程" clearable @change="fetchData">
           <el-option label="全部课程" :value="0" />
-          <el-option
-            v-for="c in courses"
-            :key="c.id"
-            :label="c.name"
-            :value="c.id"
-          />
+          <el-option v-for="c in courses" :key="c.id" :label="c.name" :value="c.id" />
         </el-select>
-        <el-button type="primary" :icon="Refresh" @click="fetchData" :loading="loading">
-          刷新
-        </el-button>
+        <el-button type="primary" :icon="Refresh" @click="fetchData" :loading="loading"> 刷新 </el-button>
       </div>
     </section>
 
@@ -50,7 +43,9 @@
               <i class="dot" :class="item.className"></i>{{ item.label }}
             </span>
           </div>
-          <div class="node-scale"><i class="dot large"></i> 大节点含有子知识点，<i class="dot small"></i> 小节点为末级知识点</div>
+          <div class="node-scale">
+            <i class="dot large"></i> 大节点含有子知识点，<i class="dot small"></i> 小节点为末级知识点
+          </div>
         </el-card>
 
         <el-card shadow="never" class="layout-card">
@@ -62,7 +57,9 @@
           </div>
           <div class="layout-switch" role="group" aria-label="图谱布局">
             <button type="button" :class="{ active: layout === 'force' }" @click="layout = 'force'">探索关系</button>
-            <button type="button" :class="{ active: layout === 'circular' }" @click="layout = 'circular'">环形总览</button>
+            <button type="button" :class="{ active: layout === 'circular' }" @click="layout = 'circular'">
+              环形总览
+            </button>
           </div>
           <small>可拖动节点，使用滚轮缩放查看细节。</small>
         </el-card>
@@ -95,23 +92,24 @@
           </div>
 
           <div class="mastery-meter">
-            <div><span>掌握进度</span><strong>{{ selectedNode.accuracy }}%</strong></div>
-            <el-progress :percentage="clampPercent(selectedNode.accuracy)" :color="masteryColors[selectedNode.masteryLevel]" :show-text="false" :stroke-width="10" />
+            <div>
+              <span>掌握进度</span><strong>{{ selectedNode.accuracy }}%</strong>
+            </div>
+            <el-progress
+              :percentage="clampPercent(selectedNode.accuracy)"
+              :color="masteryColors[selectedNode.masteryLevel]"
+              :show-text="false"
+              :stroke-width="10"
+            />
           </div>
 
           <el-descriptions :column="1" border class="detail-desc">
             <el-descriptions-item label="正确率">
-              <span :class="accuracyClass(selectedNode.accuracy)">
-                {{ selectedNode.accuracy }}%
-              </span>
+              <span :class="accuracyClass(selectedNode.accuracy)"> {{ selectedNode.accuracy }}% </span>
             </el-descriptions-item>
-            <el-descriptions-item label="练习次数">
-              {{ selectedNode.practiceCount }} 次
-            </el-descriptions-item>
+            <el-descriptions-item label="练习次数"> {{ selectedNode.practiceCount }} 次 </el-descriptions-item>
             <el-descriptions-item label="错题数量">
-              <span :class="selectedNode.wrongCount > 0 ? 'text-warn' : ''">
-                {{ selectedNode.wrongCount }} 题
-              </span>
+              <span :class="selectedNode.wrongCount > 0 ? 'text-warn' : ''"> {{ selectedNode.wrongCount }} 题 </span>
             </el-descriptions-item>
             <el-descriptions-item label="节点类型">
               {{ nodeTypeLabel(selectedNode.nodeType) }}
@@ -122,12 +120,8 @@
           </el-descriptions>
 
           <div class="detail-actions">
-            <el-button type="primary" @click="goToPractice(selectedNode)">
-              去刷题
-            </el-button>
-            <el-button @click="goToLearningPath(selectedNode)">
-              查看学习路径
-            </el-button>
+            <el-button type="primary" @click="goToPractice(selectedNode)"> 去刷题 </el-button>
+            <el-button @click="goToLearningPath(selectedNode)"> 查看学习路径 </el-button>
           </div>
         </div>
       </template>
@@ -186,11 +180,16 @@ const legendItems = [
 
 const summaryCards = computed(() => {
   const nodes = graphData.value?.nodes ?? []
-  const weakCount = nodes.filter(node => node.masteryLevel === 1).length
-  const reviewCount = nodes.filter(node => node.masteryLevel === 2).length
-  const masteredCount = nodes.filter(node => node.masteryLevel === 3).length
+  const weakCount = nodes.filter((node) => node.masteryLevel === 1).length
+  const reviewCount = nodes.filter((node) => node.masteryLevel === 2).length
+  const masteredCount = nodes.filter((node) => node.masteryLevel === 3).length
   return [
-    { label: '知识点总数', value: nodes.length, note: `覆盖 ${graphData.value?.courses.length ?? 0} 门课程`, tone: 'tone-primary' },
+    {
+      label: '知识点总数',
+      value: nodes.length,
+      note: `覆盖 ${graphData.value?.courses.length ?? 0} 门课程`,
+      tone: 'tone-primary',
+    },
     { label: '优先补强', value: weakCount, note: '薄弱知识点', tone: 'tone-danger' },
     { label: '等待复习', value: reviewCount, note: '建议安排复习', tone: 'tone-warning' },
     { label: '已掌握', value: masteredCount, note: '掌握状态稳定', tone: 'tone-success' },
@@ -199,7 +198,7 @@ const summaryCards = computed(() => {
 
 const courseScopeLabel = computed(() => {
   if (!selectedCourseId.value) return '全部课程知识结构'
-  return courses.value.find(course => course.id === selectedCourseId.value)?.name || '当前课程知识结构'
+  return courses.value.find((course) => course.id === selectedCourseId.value)?.name || '当前课程知识结构'
 })
 
 // 掌握程度标签
@@ -210,7 +209,10 @@ function masteryLabel(level: number): string {
 
 function masteryTagType(level: number): 'success' | 'warning' | 'danger' | 'info' {
   const types: Record<number, 'success' | 'warning' | 'danger' | 'info'> = {
-    0: 'info', 1: 'danger', 2: 'warning', 3: 'success'
+    0: 'info',
+    1: 'danger',
+    2: 'warning',
+    3: 'success',
   }
   return types[level] || 'info'
 }
@@ -227,7 +229,10 @@ function clampPercent(value: number) {
 }
 
 function escapeHtml(value: string): string {
-  return value.replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char] || char))
+  return value.replace(
+    /[&<>'"]/g,
+    (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char] || char,
+  )
 }
 
 function nodeTypeLabel(type: string): string {
@@ -272,10 +277,11 @@ function renderGraph() {
 
   if (!chart) {
     chart = echarts.init(chartRef.value)
-    chart.on('click', (params: any) => {
-      if (params.dataType === 'node') {
-        const nodeId = params.data.id as number
-        selectedNode.value = graphData.value?.nodes.find(n => n.id === nodeId) || null
+    chart.on('click', (params: unknown) => {
+      const event = params as { dataType?: string; data?: { id?: number } }
+      if (event.dataType === 'node' && event.data?.id != null) {
+        const nodeId = event.data.id
+        selectedNode.value = graphData.value?.nodes.find((n) => n.id === nodeId) || null
         drawerVisible.value = true
       }
     })
@@ -284,12 +290,12 @@ function renderGraph() {
   const data = graphData.value
 
   // 构建 ECharts graph 数据
-  const categories = data.courses.map(c => ({ name: c.name }))
+  const categories = data.courses.map((c) => ({ name: c.name }))
 
-  const nodes = data.nodes.map(node => ({
+  const nodes = data.nodes.map((node) => ({
     id: String(node.id),
     name: node.name,
-    category: categories.findIndex(c => c.name === node.category),
+    category: categories.findIndex((c) => c.name === node.category),
     symbolSize: node.nodeType === 'parent' ? 45 : 28,
     itemStyle: {
       color: masteryColors[node.masteryLevel],
@@ -307,7 +313,7 @@ function renderGraph() {
     rawData: node,
   }))
 
-  const edges = data.edges.map(edge => ({
+  const edges = data.edges.map((edge) => ({
     source: String(edge.source),
     target: String(edge.target),
     lineStyle: {
@@ -317,12 +323,13 @@ function renderGraph() {
     },
   }))
 
-    const option: echarts.EChartsCoreOption = {
+  const option: echarts.EChartsCoreOption = {
     tooltip: {
       trigger: 'item',
-      formatter: (params: any) => {
-        if (params.dataType === 'node' && params.data.rawData) {
-          const d = params.data.rawData as KnowledgeGraphNode
+      formatter: (params: unknown) => {
+        const item = params as { dataType?: string; data?: { rawData?: KnowledgeGraphNode } }
+        if (item.dataType === 'node' && item.data?.rawData) {
+          const d = item.data.rawData
           const color = masteryColors[d.masteryLevel]
           return `
             <div style="padding: 4px 0;">
@@ -339,42 +346,55 @@ function renderGraph() {
         return ''
       },
     },
-    legend: categories.length > 1 ? [{
-      data: categories.map(c => c.name),
-      bottom: 10,
-      textStyle: { fontSize: 12 },
-    }] : undefined,
-    series: [{
-      type: 'graph',
-      layout: layout.value,
-      roam: true,
-      draggable: true,
-      force: layout.value === 'force' ? {
-        repulsion: 300,
-        gravity: 0.1,
-        edgeLength: [80, 200],
-        layoutAnimation: true,
-      } : undefined,
-      circular: layout.value === 'circular' ? {
-        rotateLabel: true,
-      } : undefined,
-      data: nodes,
-      links: edges,
-      categories,
-      scaleLimit: { min: 0.4, max: 3 },
-      emphasis: {
-        focus: 'adjacency',
-        lineStyle: { width: 4, color: '#409EFF' },
-        itemStyle: {
-          borderWidth: 3,
-          borderColor: '#409EFF',
+    legend:
+      categories.length > 1
+        ? [
+            {
+              data: categories.map((c) => c.name),
+              bottom: 10,
+              textStyle: { fontSize: 12 },
+            },
+          ]
+        : undefined,
+    series: [
+      {
+        type: 'graph',
+        layout: layout.value,
+        roam: true,
+        draggable: true,
+        force:
+          layout.value === 'force'
+            ? {
+                repulsion: 300,
+                gravity: 0.1,
+                edgeLength: [80, 200],
+                layoutAnimation: true,
+              }
+            : undefined,
+        circular:
+          layout.value === 'circular'
+            ? {
+                rotateLabel: true,
+              }
+            : undefined,
+        data: nodes,
+        links: edges,
+        categories,
+        scaleLimit: { min: 0.4, max: 3 },
+        emphasis: {
+          focus: 'adjacency',
+          lineStyle: { width: 4, color: '#409EFF' },
+          itemStyle: {
+            borderWidth: 3,
+            borderColor: '#409EFF',
+          },
+        },
+        label: {
+          position: 'bottom',
+          distance: 5,
         },
       },
-      label: {
-        position: 'bottom',
-        distance: 5,
-      },
-    }],
+    ],
   }
 
   chart.setOption(option, true)
@@ -423,9 +443,7 @@ watch(layout, () => {
   padding: 24px;
   border: 1px solid var(--lp-border);
   border-radius: var(--lp-radius);
-  background:
-    linear-gradient(135deg, rgba(23, 105, 170, 0.09), rgba(47, 133, 90, 0.1)),
-    var(--lp-surface);
+  background: linear-gradient(135deg, rgba(23, 105, 170, 0.09), rgba(47, 133, 90, 0.1)), var(--lp-surface);
 }
 
 .section-kicker {
@@ -504,10 +522,18 @@ watch(layout, () => {
   line-height: 1.1;
 }
 
-.tone-primary { color: var(--lp-primary) !important; }
-.tone-danger { color: var(--lp-danger) !important; }
-.tone-warning { color: var(--lp-warning) !important; }
-.tone-success { color: var(--lp-success) !important; }
+.tone-primary {
+  color: var(--lp-primary) !important;
+}
+.tone-danger {
+  color: var(--lp-danger) !important;
+}
+.tone-warning {
+  color: var(--lp-warning) !important;
+}
+.tone-success {
+  color: var(--lp-success) !important;
+}
 
 .graph-layout {
   display: grid;
@@ -569,12 +595,29 @@ watch(layout, () => {
   border-radius: 50%;
 }
 
-.dot.mastered { background: var(--lp-success); }
-.dot.review { background: var(--lp-warning); }
-.dot.weak { background: var(--lp-danger); }
-.dot.not-practiced { background: var(--lp-text-muted); }
-.dot.large { width: 16px; height: 16px; margin-left: 4px; background: var(--lp-primary); }
-.dot.small { width: 8px; height: 8px; background: var(--lp-primary); }
+.dot.mastered {
+  background: var(--lp-success);
+}
+.dot.review {
+  background: var(--lp-warning);
+}
+.dot.weak {
+  background: var(--lp-danger);
+}
+.dot.not-practiced {
+  background: var(--lp-text-muted);
+}
+.dot.large {
+  width: 16px;
+  height: 16px;
+  margin-left: 4px;
+  background: var(--lp-primary);
+}
+.dot.small {
+  width: 8px;
+  height: 8px;
+  background: var(--lp-primary);
+}
 
 .layout-card small {
   display: block;
@@ -678,10 +721,21 @@ watch(layout, () => {
   gap: 12px;
 }
 
-.text-success { color: var(--lp-success); font-weight: 600; }
-.text-warning { color: var(--lp-warning); font-weight: 600; }
-.text-danger { color: var(--lp-danger); font-weight: 600; }
-.text-warn { color: var(--lp-danger); }
+.text-success {
+  color: var(--lp-success);
+  font-weight: 600;
+}
+.text-warning {
+  color: var(--lp-warning);
+  font-weight: 600;
+}
+.text-danger {
+  color: var(--lp-danger);
+  font-weight: 600;
+}
+.text-warn {
+  color: var(--lp-danger);
+}
 
 @media (max-width: 768px) {
   .knowledge-graph {

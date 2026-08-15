@@ -6,9 +6,7 @@
         <h2>刷题记录</h2>
         <p>按题型和结果回看最近练习，快速定位正确率波动和需要回炉的题目。</p>
       </div>
-      <el-button type="primary" :icon="EditPen" @click="$router.push('/practice')">
-        继续刷题
-      </el-button>
+      <el-button type="primary" :icon="EditPen" @click="$router.push('/practice')"> 继续刷题 </el-button>
     </section>
 
     <section class="record-summary-grid">
@@ -100,9 +98,7 @@
         </el-table-column>
         <template #empty>
           <el-empty description="暂无刷题记录">
-            <el-button type="primary" :icon="EditPen" @click="$router.push('/practice')">
-              去刷第一题
-            </el-button>
+            <el-button type="primary" :icon="EditPen" @click="$router.push('/practice')"> 去刷第一题 </el-button>
           </el-empty>
         </template>
       </el-table>
@@ -124,6 +120,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
+import { SemanticTagType } from '@/utils/errors'
 import { ElMessage } from 'element-plus'
 import { EditPen, RefreshLeft, Search } from '@element-plus/icons-vue'
 import { getPracticeRecords } from '@/api/practice'
@@ -135,12 +132,12 @@ const total = ref(0)
 
 const filter = reactive({
   questionType: '',
-  isCorrect: undefined as number | undefined
+  isCorrect: undefined as number | undefined,
 })
 
 const pagination = reactive({
   pageNum: 1,
-  pageSize: 10
+  pageSize: 10,
 })
 
 const pageCorrectCount = computed(() => records.value.filter((item) => item.isCorrect === 1).length)
@@ -156,7 +153,12 @@ const averageAnswerTime = computed(() => {
 })
 const summaryCards = computed(() => [
   { label: '当前页记录', value: records.value.length, note: `全部匹配 ${total.value} 条`, tone: 'tone-primary' },
-  { label: '当前页正确率', value: pageCorrectRate.value, note: `答对 ${pageCorrectCount.value} 题`, tone: 'tone-success' },
+  {
+    label: '当前页正确率',
+    value: pageCorrectRate.value,
+    note: `答对 ${pageCorrectCount.value} 题`,
+    tone: 'tone-success',
+  },
   { label: '当前页错题', value: pageWrongCount.value, note: '可前往错题本复盘', tone: 'tone-danger' },
   { label: '平均耗时', value: averageAnswerTime.value, note: '仅统计有耗时记录', tone: 'tone-warning' },
 ])
@@ -168,9 +170,9 @@ onMounted(() => {
 const loadRecords = async () => {
   loading.value = true
   try {
-    const params: any = {
+    const params: Parameters<typeof getPracticeRecords>[0] = {
       pageNum: pagination.pageNum,
-      pageSize: pagination.pageSize
+      pageSize: pagination.pageSize,
     }
     if (filter.questionType) params.questionType = filter.questionType
     if (filter.isCorrect !== undefined) params.isCorrect = filter.isCorrect
@@ -210,20 +212,20 @@ const getTypeLabel = (type: string) => {
     MULTIPLE_CHOICE: '多选',
     TRUE_FALSE: '判断',
     FILL_BLANK: '填空',
-    SHORT_ANSWER: '简答'
+    SHORT_ANSWER: '简答',
   }
   return map[type] || type
 }
 
 const getTypeTag = (type: string) => {
-  const map: Record<string, string> = {
-    SINGLE_CHOICE: '',
+  const map: Record<string, SemanticTagType> = {
+    SINGLE_CHOICE: undefined,
     MULTIPLE_CHOICE: 'warning',
     TRUE_FALSE: 'success',
     FILL_BLANK: 'info',
-    SHORT_ANSWER: 'danger'
+    SHORT_ANSWER: 'danger',
   }
-  return (map[type] || '') as any
+  return map[type]
 }
 
 const formatTime = (time: string) => {
@@ -246,9 +248,7 @@ const formatTime = (time: string) => {
   padding: 24px;
   border: 1px solid var(--lp-border);
   border-radius: var(--lp-radius);
-  background:
-    linear-gradient(135deg, rgba(23, 105, 170, 0.08), rgba(216, 168, 63, 0.1)),
-    var(--lp-surface);
+  background: linear-gradient(135deg, rgba(23, 105, 170, 0.08), rgba(216, 168, 63, 0.1)), var(--lp-surface);
 }
 
 .section-kicker {

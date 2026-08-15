@@ -60,10 +60,7 @@
           <p class="analysis-text">{{ currentResult.analysis }}</p>
         </div>
 
-        <AiQuestionAssistant
-          v-if="currentResult"
-          :question-id="currentResult.questionId"
-        />
+        <AiQuestionAssistant v-if="currentResult" :question-id="currentResult.questionId" />
 
         <!-- 答错后展示 AI 深度学习资产（答错后的 AI 讲解入口），折叠模式减少弹窗长度 -->
         <QuestionLearningAsset
@@ -99,7 +96,9 @@
             <div class="fs-label">答错</div>
           </div>
           <div class="finish-stat">
-            <div class="fs-value rate">{{ questions.length > 0 ? Math.round(correctCount / questions.length * 100) : 0 }}%</div>
+            <div class="fs-value rate">
+              {{ questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0 }}%
+            </div>
             <div class="fs-label">正确率</div>
           </div>
         </div>
@@ -129,7 +128,13 @@
         <div class="question-content">{{ currentQuestion.content }}</div>
 
         <div class="knowledge-points" v-if="currentQuestion.knowledgePointNames?.length">
-          <el-tag v-for="name in currentQuestion.knowledgePointNames" :key="name" size="small" type="info" effect="plain">
+          <el-tag
+            v-for="name in currentQuestion.knowledgePointNames"
+            :key="name"
+            size="small"
+            type="info"
+            effect="plain"
+          >
             {{ name }}
           </el-tag>
         </div>
@@ -157,7 +162,10 @@
               :class="['option-item', { selected: multiAnswers.has(opt.optionLabel) }]"
               @click="toggleMulti(opt.optionLabel)"
             >
-              <el-checkbox :model-value="multiAnswers.has(opt.optionLabel)" @click.stop="toggleMulti(opt.optionLabel)" />
+              <el-checkbox
+                :model-value="multiAnswers.has(opt.optionLabel)"
+                @click.stop="toggleMulti(opt.optionLabel)"
+              />
               <span class="option-label">{{ opt.optionLabel }}</span>
               <span class="option-content">{{ opt.content }}</span>
             </div>
@@ -165,16 +173,10 @@
 
           <!-- 判断题 -->
           <div v-else-if="currentQuestion.questionType === 'TRUE_FALSE'" class="option-list tf-options">
-            <div
-              :class="['option-item tf-item', { selected: userAnswer === 'TRUE' }]"
-              @click="userAnswer = 'TRUE'"
-            >
+            <div :class="['option-item tf-item', { selected: userAnswer === 'TRUE' }]" @click="userAnswer = 'TRUE'">
               <span class="option-content">✓ 正确</span>
             </div>
-            <div
-              :class="['option-item tf-item', { selected: userAnswer === 'FALSE' }]"
-              @click="userAnswer = 'FALSE'"
-            >
+            <div :class="['option-item tf-item', { selected: userAnswer === 'FALSE' }]" @click="userAnswer = 'FALSE'">
               <span class="option-content">✗ 错误</span>
             </div>
           </div>
@@ -192,13 +194,7 @@
 
         <!-- 提交按钮 -->
         <div class="submit-area">
-          <el-button
-            type="primary"
-            size="large"
-            @click="handleSubmit"
-            :loading="submitting"
-            :disabled="!canSubmit"
-          >
+          <el-button type="primary" size="large" @click="handleSubmit" :loading="submitting" :disabled="!canSubmit">
             提交答案
           </el-button>
         </div>
@@ -209,6 +205,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { SemanticTagType } from '@/utils/errors'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
@@ -283,16 +280,17 @@ const handleSubmit = async () => {
   if (!currentQuestion.value) return
   submitting.value = true
   try {
-    const answer = currentQuestion.value.questionType === 'MULTIPLE_CHOICE'
-      ? Array.from(multiAnswers.value).sort().join(',')
-      : userAnswer.value.trim()
+    const answer =
+      currentQuestion.value.questionType === 'MULTIPLE_CHOICE'
+        ? Array.from(multiAnswers.value).sort().join(',')
+        : userAnswer.value.trim()
 
     const elapsed = Math.round((Date.now() - startTime.value) / 1000)
 
     const res = await submitAnswer({
       questionId: currentQuestion.value.id,
       userAnswer: answer,
-      answerTime: elapsed
+      answerTime: elapsed,
     })
 
     if (res.code === 0 && res.data) {
@@ -366,20 +364,20 @@ const getQuestionTypeLabel = (type: string) => {
     MULTIPLE_CHOICE: '多选题',
     TRUE_FALSE: '判断题',
     FILL_BLANK: '填空题',
-    SHORT_ANSWER: '简答题'
+    SHORT_ANSWER: '简答题',
   }
   return map[type] || type
 }
 
 const getQuestionTypeTag = (type: string) => {
-  const map: Record<string, string> = {
-    SINGLE_CHOICE: '',
+  const map: Record<string, SemanticTagType> = {
+    SINGLE_CHOICE: undefined,
     MULTIPLE_CHOICE: 'warning',
     TRUE_FALSE: 'success',
     FILL_BLANK: 'info',
-    SHORT_ANSWER: 'danger'
+    SHORT_ANSWER: 'danger',
   }
-  return (map[type] || '') as any
+  return map[type]
 }
 </script>
 
@@ -417,8 +415,14 @@ const getQuestionTypeTag = (type: string) => {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .question-card {

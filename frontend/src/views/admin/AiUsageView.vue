@@ -4,7 +4,9 @@
       <div>
         <p class="admin-page-kicker">AI OPERATIONS</p>
         <h2>AI 调用分析</h2>
-        <p class="admin-page-description">同时跟踪 AI 调用成本与真实学习行为，用于排查异常、控制成本并观察学习资产价值。</p>
+        <p class="admin-page-description">
+          同时跟踪 AI 调用成本与真实学习行为，用于排查异常、控制成本并观察学习资产价值。
+        </p>
       </div>
       <div class="admin-header-actions">
         <el-select v-model="days" size="default" @change="fetchData" style="width: 140px">
@@ -49,25 +51,33 @@
           <el-col :xs="12" :sm="6">
             <div class="report-metric">
               <span>调用量环比</span>
-              <strong :class="changeClass(report.changes.callsPercent)">{{ formatChange(report.changes.callsPercent) }}</strong>
+              <strong :class="changeClass(report.changes.callsPercent)">{{
+                formatChange(report.changes.callsPercent)
+              }}</strong>
             </div>
           </el-col>
           <el-col :xs="12" :sm="6">
             <div class="report-metric">
               <span>Token 环比</span>
-              <strong :class="changeClass(report.changes.tokensPercent)">{{ formatChange(report.changes.tokensPercent) }}</strong>
+              <strong :class="changeClass(report.changes.tokensPercent)">{{
+                formatChange(report.changes.tokensPercent)
+              }}</strong>
             </div>
           </el-col>
           <el-col :xs="12" :sm="6">
             <div class="report-metric">
               <span>失败率变化</span>
-              <strong :class="changeClass(report.changes.failureRatePointChange, true)">{{ formatPointChange(report.changes.failureRatePointChange) }}</strong>
+              <strong :class="changeClass(report.changes.failureRatePointChange, true)">{{
+                formatPointChange(report.changes.failureRatePointChange)
+              }}</strong>
             </div>
           </el-col>
           <el-col :xs="12" :sm="6">
             <div class="report-metric">
               <span>平均耗时环比</span>
-              <strong :class="changeClass(report.changes.avgDurationPercent)">{{ formatChange(report.changes.avgDurationPercent) }}</strong>
+              <strong :class="changeClass(report.changes.avgDurationPercent)">{{
+                formatChange(report.changes.avgDurationPercent)
+              }}</strong>
             </div>
           </el-col>
         </el-row>
@@ -114,12 +124,20 @@
         <div class="effect-context">
           <div>
             <strong>{{ learningEffect.periodStart || '-' }} 至 {{ learningEffect.periodEnd || '-' }}</strong>
-            <p>只统计用户实际看到已缓存学习资产后的真实作答；方向判断同时要求作答量与独立学习者覆盖，避免少数高频用户主导结论。</p>
+            <p>
+              只统计用户实际看到已缓存学习资产后的真实作答；方向判断同时要求作答量与独立学习者覆盖，避免少数高频用户主导结论。
+            </p>
           </div>
           <div class="effect-coverage">
-            <span><b>{{ learningEffect.assetViewCount }}</b> 次查看</span>
-            <span><b>{{ learningEffect.engagedUserCount }}</b> 位用户</span>
-            <span><b>{{ learningEffect.viewedQuestionCount }}</b> 道题</span>
+            <span
+              ><b>{{ learningEffect.assetViewCount }}</b> 次查看</span
+            >
+            <span
+              ><b>{{ learningEffect.engagedUserCount }}</b> 位用户</span
+            >
+            <span
+              ><b>{{ learningEffect.viewedQuestionCount }}</b> 道题</span
+            >
           </div>
         </div>
 
@@ -130,7 +148,10 @@
             <div class="effect-rate-track">
               <i :style="{ width: rateWidth(learningEffect.afterViewCorrectRate) }"></i>
             </div>
-            <small>{{ learningEffect.afterViewPracticeCount }} 条作答 · {{ learningEffect.afterViewUserCount }} 位学习者</small>
+            <small
+              >{{ learningEffect.afterViewPracticeCount }} 条作答 ·
+              {{ learningEffect.afterViewUserCount }} 位学习者</small
+            >
           </div>
           <div class="effect-lift">
             <span>正确率差异</span>
@@ -143,7 +164,10 @@
             <div class="effect-rate-track">
               <i :style="{ width: rateWidth(learningEffect.baselineCorrectRate) }"></i>
             </div>
-            <small>{{ learningEffect.baselinePracticeCount }} 条作答 · {{ learningEffect.baselineUserCount }} 位学习者</small>
+            <small
+              >{{ learningEffect.baselinePracticeCount }} 条作答 ·
+              {{ learningEffect.baselineUserCount }} 位学习者</small
+            >
           </div>
         </div>
 
@@ -159,7 +183,11 @@
           <div class="transfer-header">
             <div>
               <strong>知识点跨题迁移</strong>
-              <p>排除原题重答，仅比较共享知识点的另一道题；前后组均限制在相关阅读前后 {{ learningEffect.crossQuestionWindowDays }} 天，对照组不含更早暴露，且每组至少覆盖 {{ learningEffect.minimumDistinctUsers }} 位学习者。</p>
+              <p>
+                排除原题重答，仅比较共享知识点的另一道题；前后组均限制在相关阅读前后
+                {{ learningEffect.crossQuestionWindowDays }} 天，对照组不含更早暴露，且每组至少覆盖
+                {{ learningEffect.minimumDistinctUsers }} 位学习者。
+              </p>
             </div>
             <el-tag :type="transferTagType" effect="plain">{{ transferTagLabel }}</el-tag>
           </div>
@@ -171,7 +199,10 @@
               <div class="effect-rate-track">
                 <i :style="{ width: rateWidth(learningEffect.crossQuestionAfterViewCorrectRate) }"></i>
               </div>
-              <small>{{ learningEffect.crossQuestionAfterViewPracticeCount }} 条作答 · {{ learningEffect.crossQuestionAfterViewUserCount }} 位学习者</small>
+              <small
+                >{{ learningEffect.crossQuestionAfterViewPracticeCount }} 条作答 ·
+                {{ learningEffect.crossQuestionAfterViewUserCount }} 位学习者</small
+              >
             </div>
             <div class="effect-lift">
               <span>正确率差异</span>
@@ -184,7 +215,10 @@
               <div class="effect-rate-track">
                 <i :style="{ width: rateWidth(learningEffect.crossQuestionBaselineCorrectRate) }"></i>
               </div>
-              <small>{{ learningEffect.crossQuestionBaselinePracticeCount }} 条作答 · {{ learningEffect.crossQuestionBaselineUserCount }} 位学习者</small>
+              <small
+                >{{ learningEffect.crossQuestionBaselinePracticeCount }} 条作答 ·
+                {{ learningEffect.crossQuestionBaselineUserCount }} 位学习者</small
+              >
             </div>
           </div>
 
@@ -206,13 +240,19 @@
           <div class="effect-feedback is-variant-training">
             <span>变式训练完成率</span>
             <strong>{{ formatRate(learningEffect.variantTrainingCompletionRate) }}</strong>
-            <small>{{ learningEffect.variantTrainingCompletedCount }} / {{ learningEffect.variantTrainingStartedCount }} 个周期内开始记录</small>
+            <small
+              >{{ learningEffect.variantTrainingCompletedCount }} /
+              {{ learningEffect.variantTrainingStartedCount }} 个周期内开始记录</small
+            >
             <em>兼容旧版手动确认与新版提交判分</em>
           </div>
           <div class="effect-feedback is-variant-accuracy">
             <span>结构化变式正确率</span>
             <strong>{{ formatRate(learningEffect.variantTrainingCorrectRate) }}</strong>
-            <small>{{ learningEffect.variantTrainingCorrectCount }} / {{ learningEffect.variantTrainingAnsweredCount }} 次首次判分</small>
+            <small
+              >{{ learningEffect.variantTrainingCorrectCount }} /
+              {{ learningEffect.variantTrainingAnsweredCount }} 次首次判分</small
+            >
             <em>只统计服务端真实判分</em>
           </div>
           <el-table :data="learningEffect.assetTypeStats" stripe size="small" class="effect-type-table">
@@ -233,7 +273,13 @@
           <div class="transfer-header">
             <div>
               <strong>按资产类型观察同题表现</strong>
-              <p>分别按每类资产的首次查看时间切分周期内作答；任一组少于 {{ learningEffect.minimumComparisonSample }} 条或 {{ learningEffect.minimumDistinctUsers }} 位学习者时不判断方向。多资产暴露样本可能重叠，因此不做资产排名或自动推荐。</p>
+              <p>
+                分别按每类资产的首次查看时间切分周期内作答；任一组少于 {{ learningEffect.minimumComparisonSample }} 条或
+                {{
+                  learningEffect.minimumDistinctUsers
+                }}
+                位学习者时不判断方向。多资产暴露样本可能重叠，因此不做资产排名或自动推荐。
+              </p>
             </div>
           </div>
           <el-table :data="learningEffect.assetTypeStats" stripe size="small" class="asset-type-effect-table">
@@ -278,15 +324,22 @@
           <div class="transfer-header">
             <div>
               <strong>结构化变式难度样本</strong>
-              <p>只按服务端首次判分归档；每档至少 {{ learningEffect.variantDifficultyMinimumSample }} 条且覆盖 {{ learningEffect.minimumDistinctUsers }} 位学习者，至少两个难度档达标后才提示可开始分层观察。</p>
+              <p>
+                只按服务端首次判分归档；每档至少 {{ learningEffect.variantDifficultyMinimumSample }} 条且覆盖
+                {{ learningEffect.minimumDistinctUsers }} 位学习者，至少两个难度档达标后才提示可开始分层观察。
+              </p>
             </div>
             <el-tag :type="variantDifficultyReady ? 'success' : 'info'" effect="plain">
               {{ variantDifficultyReady ? '可开始分层观察' : '样本积累中' }}
             </el-tag>
           </div>
           <div class="variant-sample-summary">
-            <span>已覆盖 <b>{{ learningEffect.variantDifficultyCoveredCount }}</b> / 5 个难度档</span>
-            <span>达标 <b>{{ learningEffect.variantDifficultySufficientCount }}</b> 个难度档</span>
+            <span
+              >已覆盖 <b>{{ learningEffect.variantDifficultyCoveredCount }}</b> / 5 个难度档</span
+            >
+            <span
+              >达标 <b>{{ learningEffect.variantDifficultySufficientCount }}</b> 个难度档</span
+            >
           </div>
           <el-table :data="learningEffect.variantDifficultyStats" stripe size="small" class="variant-difficulty-table">
             <el-table-column label="难度" min-width="120">
@@ -417,6 +470,7 @@
 
 <script setup lang="ts">
 import { computed, ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { errorMessage } from '@/utils/errors'
 import { Coin, DataLine, Money, Refresh, Timer, TrendCharts, Warning, SuccessFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import {
@@ -430,12 +484,7 @@ import {
 } from '@/api/aiUsage'
 import * as echarts from 'echarts/core'
 import { BarChart, PieChart, LineChart } from 'echarts/charts'
-import {
-  TitleComponent,
-  TooltipComponent,
-  LegendComponent,
-  GridComponent,
-} from 'echarts/components'
+import { TitleComponent, TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 
 echarts.use([
@@ -473,7 +522,13 @@ const report = reactive<AiUsageReport>({
   days: 7,
   current: { totalCalls: 0, failedCalls: 0, failureRate: 0, totalTokens: 0, avgDuration: 0, totalCostUsd: null },
   previous: { totalCalls: 0, failedCalls: 0, failureRate: 0, totalTokens: 0, avgDuration: 0, totalCostUsd: null },
-  changes: { callsPercent: null, tokensPercent: null, costPercent: null, failureRatePointChange: 0, avgDurationPercent: null },
+  changes: {
+    callsPercent: null,
+    tokensPercent: null,
+    costPercent: null,
+    failureRatePointChange: 0,
+    avgDurationPercent: null,
+  },
   alerts: [],
 })
 const learningEffect = reactive<AiLearningEffect>({
@@ -521,63 +576,132 @@ const learningEffect = reactive<AiLearningEffect>({
   assetTypeStats: [],
 })
 
-const effectTagLabel = computed(() => ({
-  INSUFFICIENT_DATA: '样本积累中',
-  POSITIVE_ASSOCIATION: '正向关联',
-  NO_CLEAR_DIFFERENCE: '差异不明确',
-  NEEDS_ATTENTION: '需要关注',
-}[learningEffect.conclusionLevel]))
+const effectTagLabel = computed(
+  () =>
+    ({
+      INSUFFICIENT_DATA: '样本积累中',
+      POSITIVE_ASSOCIATION: '正向关联',
+      NO_CLEAR_DIFFERENCE: '差异不明确',
+      NEEDS_ATTENTION: '需要关注',
+    })[learningEffect.conclusionLevel],
+)
 
-const effectTagType = computed(() => ({
-  INSUFFICIENT_DATA: 'info',
-  POSITIVE_ASSOCIATION: 'success',
-  NO_CLEAR_DIFFERENCE: 'info',
-  NEEDS_ATTENTION: 'warning',
-}[learningEffect.conclusionLevel] as 'info' | 'success' | 'warning'))
+const effectTagType = computed(
+  () =>
+    ({
+      INSUFFICIENT_DATA: 'info',
+      POSITIVE_ASSOCIATION: 'success',
+      NO_CLEAR_DIFFERENCE: 'info',
+      NEEDS_ATTENTION: 'warning',
+    })[learningEffect.conclusionLevel] as 'info' | 'success' | 'warning',
+)
 
-const effectAlertType = computed(() => learningEffect.conclusionLevel === 'NEEDS_ATTENTION'
-  ? 'warning'
-  : learningEffect.conclusionLevel === 'POSITIVE_ASSOCIATION' ? 'success' : 'info')
+const effectAlertType = computed(() =>
+  learningEffect.conclusionLevel === 'NEEDS_ATTENTION'
+    ? 'warning'
+    : learningEffect.conclusionLevel === 'POSITIVE_ASSOCIATION'
+      ? 'success'
+      : 'info',
+)
 
 const effectLiftClass = computed(() => {
   if (learningEffect.correctRateLift === null || learningEffect.correctRateLift === 0) return 'neutral'
   return learningEffect.correctRateLift > 0 ? 'positive' : 'negative'
 })
 
-const transferTagLabel = computed(() => ({
-  INSUFFICIENT_DATA: '跨题样本积累中',
-  POSITIVE_ASSOCIATION: '跨题正向关联',
-  NO_CLEAR_DIFFERENCE: '跨题差异不明确',
-  NEEDS_ATTENTION: '跨题效果需关注',
-}[learningEffect.crossQuestionConclusionLevel]))
+const transferTagLabel = computed(
+  () =>
+    ({
+      INSUFFICIENT_DATA: '跨题样本积累中',
+      POSITIVE_ASSOCIATION: '跨题正向关联',
+      NO_CLEAR_DIFFERENCE: '跨题差异不明确',
+      NEEDS_ATTENTION: '跨题效果需关注',
+    })[learningEffect.crossQuestionConclusionLevel],
+)
 
-const transferTagType = computed(() => ({
-  INSUFFICIENT_DATA: 'info',
-  POSITIVE_ASSOCIATION: 'success',
-  NO_CLEAR_DIFFERENCE: 'info',
-  NEEDS_ATTENTION: 'warning',
-}[learningEffect.crossQuestionConclusionLevel] as 'info' | 'success' | 'warning'))
+const transferTagType = computed(
+  () =>
+    ({
+      INSUFFICIENT_DATA: 'info',
+      POSITIVE_ASSOCIATION: 'success',
+      NO_CLEAR_DIFFERENCE: 'info',
+      NEEDS_ATTENTION: 'warning',
+    })[learningEffect.crossQuestionConclusionLevel] as 'info' | 'success' | 'warning',
+)
 
-const transferAlertType = computed(() => learningEffect.crossQuestionConclusionLevel === 'NEEDS_ATTENTION'
-  ? 'warning'
-  : learningEffect.crossQuestionConclusionLevel === 'POSITIVE_ASSOCIATION' ? 'success' : 'info')
+const transferAlertType = computed(() =>
+  learningEffect.crossQuestionConclusionLevel === 'NEEDS_ATTENTION'
+    ? 'warning'
+    : learningEffect.crossQuestionConclusionLevel === 'POSITIVE_ASSOCIATION'
+      ? 'success'
+      : 'info',
+)
 
 const transferLiftClass = computed(() => {
-  if (learningEffect.crossQuestionCorrectRateLift === null || learningEffect.crossQuestionCorrectRateLift === 0) return 'neutral'
+  if (learningEffect.crossQuestionCorrectRateLift === null || learningEffect.crossQuestionCorrectRateLift === 0)
+    return 'neutral'
   return learningEffect.crossQuestionCorrectRateLift > 0 ? 'positive' : 'negative'
 })
 
 const variantDifficultyReady = computed(() => learningEffect.variantDifficultyReadiness === 'READY')
 
 const usageStats = computed(() => [
-  { label: '总调用次数', value: overview.totalCalls?.toLocaleString() ?? '-', note: `今日 ${overview.todayCalls?.toLocaleString() ?? 0} 次`, icon: DataLine, className: 'is-primary' },
-  { label: '成功率', value: `${overview.successRate ?? '-'}%`, note: `成功 ${overview.successCalls?.toLocaleString() ?? 0} 次`, icon: SuccessFilled, className: 'is-success' },
-  { label: '失败调用', value: overview.failedCalls?.toLocaleString() ?? '-', note: report.alerts.length ? `${report.alerts.length} 项提醒` : '当前周期平稳', icon: Warning, className: 'is-danger' },
-  { label: '平均耗时', value: overview.avgDuration ? `${overview.avgDuration}ms` : '-', note: '同步与流式综合', icon: Timer, className: 'is-info' },
-  { label: '总 Tokens', value: formatTokens(overview.totalTokens), note: `今日 ${formatTokens(overview.todayTokens)}`, icon: Coin, className: 'is-warning' },
-  { label: '已计成本', value: formatCost(overview.totalCostUsd), note: `今日 ${formatCost(overview.todayCostUsd)}`, icon: Money, className: 'is-primary' },
-  { label: '功能类型', value: overview.functionStats?.length ?? 0, note: '有调用记录的功能', icon: TrendCharts, className: 'is-info' },
-  { label: '模型数量', value: overview.modelStats?.length ?? 0, note: '有调用记录的模型', icon: DataLine, className: 'is-success' },
+  {
+    label: '总调用次数',
+    value: overview.totalCalls?.toLocaleString() ?? '-',
+    note: `今日 ${overview.todayCalls?.toLocaleString() ?? 0} 次`,
+    icon: DataLine,
+    className: 'is-primary',
+  },
+  {
+    label: '成功率',
+    value: `${overview.successRate ?? '-'}%`,
+    note: `成功 ${overview.successCalls?.toLocaleString() ?? 0} 次`,
+    icon: SuccessFilled,
+    className: 'is-success',
+  },
+  {
+    label: '失败调用',
+    value: overview.failedCalls?.toLocaleString() ?? '-',
+    note: report.alerts.length ? `${report.alerts.length} 项提醒` : '当前周期平稳',
+    icon: Warning,
+    className: 'is-danger',
+  },
+  {
+    label: '平均耗时',
+    value: overview.avgDuration ? `${overview.avgDuration}ms` : '-',
+    note: '同步与流式综合',
+    icon: Timer,
+    className: 'is-info',
+  },
+  {
+    label: '总 Tokens',
+    value: formatTokens(overview.totalTokens),
+    note: `今日 ${formatTokens(overview.todayTokens)}`,
+    icon: Coin,
+    className: 'is-warning',
+  },
+  {
+    label: '已计成本',
+    value: formatCost(overview.totalCostUsd),
+    note: `今日 ${formatCost(overview.todayCostUsd)}`,
+    icon: Money,
+    className: 'is-primary',
+  },
+  {
+    label: '功能类型',
+    value: overview.functionStats?.length ?? 0,
+    note: '有调用记录的功能',
+    icon: TrendCharts,
+    className: 'is-info',
+  },
+  {
+    label: '模型数量',
+    value: overview.modelStats?.length ?? 0,
+    note: '有调用记录的模型',
+    icon: DataLine,
+    className: 'is-success',
+  },
 ])
 
 const trendChartRef = ref<HTMLElement>()
@@ -651,7 +775,7 @@ function assetTypeTagType(level: AiLearningEffect['conclusionLevel']): 'info' | 
 function changeClass(value: number | null | undefined, isRiskMetric = false): string {
   if (value === null || value === undefined || value === 0) return 'neutral'
   const isIncrease = value > 0
-  return isRiskMetric ? (isIncrease ? 'negative' : 'positive') : (isIncrease ? 'positive' : 'negative')
+  return isRiskMetric ? (isIncrease ? 'negative' : 'positive') : isIncrease ? 'positive' : 'negative'
 }
 
 async function fetchData() {
@@ -667,7 +791,7 @@ async function fetchData() {
     Object.assign(learningEffect, effectResponse.data)
     await nextTick()
     renderCharts()
-  } catch (e: any) {
+  } catch (e) {
     console.error('Failed to fetch AI usage overview', e)
   } finally {
     loading.value = false
@@ -680,9 +804,9 @@ async function handleAcknowledgeAlert(id: number) {
     await acknowledgeAiUsageAlert(id)
     ElMessage.success('已确认该提醒')
     await fetchData()
-  } catch (e: any) {
+  } catch (e) {
     console.error('Failed to acknowledge AI usage alert', e)
-    ElMessage.error(e?.message || '确认提醒失败')
+    ElMessage.error(errorMessage(e, '确认提醒失败'))
   } finally {
     acknowledgingId.value = null
   }
@@ -706,7 +830,7 @@ function renderTrendChart() {
     grid: { left: '3%', right: '4%', bottom: '12%', top: '8%', containLabel: true },
     xAxis: {
       type: 'category',
-      data: trends.map(t => t.date.slice(5)),
+      data: trends.map((t) => t.date.slice(5)),
       axisLabel: { rotate: trends.length > 15 ? 45 : 0 },
     },
     yAxis: [
@@ -718,21 +842,21 @@ function renderTrendChart() {
         name: '成功',
         type: 'bar',
         stack: 'calls',
-        data: trends.map(t => t.successCount),
+        data: trends.map((t) => t.successCount),
         itemStyle: { color: '#67C23A' },
       },
       {
         name: '失败',
         type: 'bar',
         stack: 'calls',
-        data: trends.map(t => t.failedCount),
+        data: trends.map((t) => t.failedCount),
         itemStyle: { color: '#F56C6C' },
       },
       {
         name: 'Tokens',
         type: 'line',
         yAxisIndex: 1,
-        data: trends.map(t => t.totalTokens),
+        data: trends.map((t) => t.totalTokens),
         itemStyle: { color: '#E6A23C' },
         smooth: true,
         lineStyle: { width: 2 },
@@ -757,7 +881,7 @@ function renderFunctionChart() {
         center: ['35%', '50%'],
         avoidLabelOverlap: true,
         label: { show: false },
-        data: funcs.map(f => ({ name: f.functionType, value: f.count })),
+        data: funcs.map((f) => ({ name: f.functionType, value: f.count })),
       },
     ],
   })
@@ -779,7 +903,7 @@ function renderModelChart() {
         center: ['35%', '50%'],
         avoidLabelOverlap: true,
         label: { show: false },
-        data: models.map(m => ({ name: m.model, value: m.count })),
+        data: models.map((m) => ({ name: m.model, value: m.count })),
       },
     ],
   })
@@ -808,11 +932,26 @@ onBeforeUnmount(() => {
 .usage-summary-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
-.admin-summary-icon.is-primary { color: var(--lp-primary); background: var(--lp-primary-soft); }
-.admin-summary-icon.is-success { color: var(--lp-success); background: #e9f8ef; }
-.admin-summary-icon.is-warning { color: var(--lp-warning); background: #fff7df; }
-.admin-summary-icon.is-danger { color: var(--lp-danger); background: #fff0ef; }
-.admin-summary-icon.is-info { color: var(--lp-text-secondary); background: #eef3f8; }
+.admin-summary-icon.is-primary {
+  color: var(--lp-primary);
+  background: var(--lp-primary-soft);
+}
+.admin-summary-icon.is-success {
+  color: var(--lp-success);
+  background: #e9f8ef;
+}
+.admin-summary-icon.is-warning {
+  color: var(--lp-warning);
+  background: #fff7df;
+}
+.admin-summary-icon.is-danger {
+  color: var(--lp-danger);
+  background: #fff0ef;
+}
+.admin-summary-icon.is-info {
+  color: var(--lp-text-secondary);
+  background: #eef3f8;
+}
 .chart-card {
   margin-bottom: 16px;
 }
@@ -1075,9 +1214,15 @@ onBeforeUnmount(() => {
 .report-metric strong {
   font-size: 18px;
 }
-.positive { color: #67c23a; }
-.negative { color: #f56c6c; }
-.neutral { color: #909399; }
+.positive {
+  color: #67c23a;
+}
+.negative {
+  color: #f56c6c;
+}
+.neutral {
+  color: #909399;
+}
 .usage-alert + .usage-alert {
   margin-top: 8px;
 }
@@ -1105,8 +1250,13 @@ onBeforeUnmount(() => {
   gap: 8px;
 }
 @media (max-width: 768px) {
-  .chart-container { height: 240px; }
-  .report-metric { border-left: none; padding: 8px 0; }
+  .chart-container {
+    height: 240px;
+  }
+  .report-metric {
+    border-left: none;
+    padding: 8px 0;
+  }
   .effect-card-header,
   .effect-context,
   .effect-comparison,
@@ -1115,9 +1265,15 @@ onBeforeUnmount(() => {
     align-items: stretch;
     flex-direction: column;
   }
-  .effect-coverage { flex-wrap: wrap; }
+  .effect-coverage {
+    flex-wrap: wrap;
+  }
   .effect-group,
-  .effect-feedback { width: auto; }
-  .effect-lift { min-width: 0; }
+  .effect-feedback {
+    width: auto;
+  }
+  .effect-lift {
+    min-width: 0;
+  }
 }
 </style>

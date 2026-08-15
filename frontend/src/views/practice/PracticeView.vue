@@ -29,128 +29,125 @@
     </section>
 
     <section class="practice-grid">
-      <el-card class="adaptive-card" shadow="never" v-loading="adaptiveLoading" element-loading-background="rgba(255,255,255,0.8)">
-      <template #header>
-        <div class="card-header">
-          <span>智能推荐</span>
-          <el-tag type="success" size="small" v-if="adaptiveSummary">自适应模式</el-tag>
-        </div>
-      </template>
+      <el-card
+        class="adaptive-card"
+        shadow="never"
+        v-loading="adaptiveLoading"
+        element-loading-background="rgba(255,255,255,0.8)"
+      >
+        <template #header>
+          <div class="card-header">
+            <span>智能推荐</span>
+            <el-tag type="success" size="small" v-if="adaptiveSummary">自适应模式</el-tag>
+          </div>
+        </template>
 
-      <div v-if="adaptiveSummary" class="adaptive-content">
-        <div class="adaptive-overview">
-          <div class="overview-item">
-            <span class="overview-label">总答题</span>
-            <span class="overview-value">{{ adaptiveSummary.totalAnswered }}</span>
-          </div>
-          <div class="overview-item">
-            <span class="overview-label">整体正确率</span>
-            <span class="overview-value">{{ adaptiveSummary.overallCorrectRate }}%</span>
-          </div>
-          <div class="overview-item">
-            <span class="overview-label">推荐难度</span>
-            <span class="overview-value recommend-diff">
-              {{ adaptiveSummary.recommendedDifficulty.toFixed(1) }}
-              <el-rate
-                :model-value="adaptiveSummary.recommendedDifficulty"
-                disabled
-                allow-half
-                :max="5"
-                size="small"
-              />
-            </span>
-          </div>
-        </div>
-
-        <div class="difficulty-bars">
-          <div
-            v-for="item in adaptiveSummary.difficultyDetails"
-            :key="item.difficulty"
-            class="diff-bar-row"
-          >
-            <span class="diff-label">{{ item.label }}</span>
-            <div class="diff-bar-wrapper">
-              <div class="diff-bar-bg">
-                <div
-                  class="diff-bar-fill"
-                  :style="{ width: item.weight * 100 + '%', backgroundColor: diffColors[item.difficulty - 1] }"
-                ></div>
-              </div>
+        <div v-if="adaptiveSummary" class="adaptive-content">
+          <div class="adaptive-overview">
+            <div class="overview-item">
+              <span class="overview-label">总答题</span>
+              <span class="overview-value">{{ adaptiveSummary.totalAnswered }}</span>
             </div>
-            <span class="diff-weight">{{ (item.weight * 100).toFixed(0) }}%</span>
-            <span class="diff-rate" v-if="item.total > 0">正确率 {{ item.correctRate }}%</span>
-            <span class="diff-rate" v-else>暂无数据</span>
+            <div class="overview-item">
+              <span class="overview-label">整体正确率</span>
+              <span class="overview-value">{{ adaptiveSummary.overallCorrectRate }}%</span>
+            </div>
+            <div class="overview-item">
+              <span class="overview-label">推荐难度</span>
+              <span class="overview-value recommend-diff">
+                {{ adaptiveSummary.recommendedDifficulty.toFixed(1) }}
+                <el-rate
+                  :model-value="adaptiveSummary.recommendedDifficulty"
+                  disabled
+                  allow-half
+                  :max="5"
+                  size="small"
+                />
+              </span>
+            </div>
+          </div>
+
+          <div class="difficulty-bars">
+            <div v-for="item in adaptiveSummary.difficultyDetails" :key="item.difficulty" class="diff-bar-row">
+              <span class="diff-label">{{ item.label }}</span>
+              <div class="diff-bar-wrapper">
+                <div class="diff-bar-bg">
+                  <div
+                    class="diff-bar-fill"
+                    :style="{ width: item.weight * 100 + '%', backgroundColor: diffColors[item.difficulty - 1] }"
+                  ></div>
+                </div>
+              </div>
+              <span class="diff-weight">{{ (item.weight * 100).toFixed(0) }}%</span>
+              <span class="diff-rate" v-if="item.total > 0">正确率 {{ item.correctRate }}%</span>
+              <span class="diff-rate" v-else>暂无数据</span>
+            </div>
+          </div>
+
+          <div class="adaptive-actions">
+            <el-button
+              type="primary"
+              size="large"
+              :icon="MagicStick"
+              @click="startAdaptivePractice"
+              :loading="adaptiveStartLoading"
+            >
+              开始智能推荐练习
+            </el-button>
+            <el-select v-model="adaptiveForm.courseId" placeholder="全部课程" clearable class="action-control">
+              <el-option v-for="course in courseList" :key="course.id" :label="course.name" :value="course.id" />
+            </el-select>
+            <el-input-number v-model="adaptiveForm.count" :min="5" :max="50" />
           </div>
         </div>
 
-        <div class="adaptive-actions">
-          <el-button type="primary" size="large" :icon="MagicStick" @click="startAdaptivePractice" :loading="adaptiveStartLoading">
-            开始智能推荐练习
-          </el-button>
-          <el-select v-model="adaptiveForm.courseId" placeholder="全部课程" clearable class="action-control">
-            <el-option
-              v-for="course in courseList"
-              :key="course.id"
-              :label="course.name"
-              :value="course.id"
-            />
-          </el-select>
-          <el-input-number v-model="adaptiveForm.count" :min="5" :max="50" />
+        <div v-else-if="!adaptiveLoading" class="adaptive-empty">
+          <el-empty description="暂无答题记录，开始刷题后将根据你的表现智能推荐题目">
+            <el-button type="primary" :icon="Promotion" @click="scrollToConfig">开始刷题</el-button>
+          </el-empty>
         </div>
-      </div>
-
-      <div v-else-if="!adaptiveLoading" class="adaptive-empty">
-        <el-empty description="暂无答题记录，开始刷题后将根据你的表现智能推荐题目">
-          <el-button type="primary" :icon="Promotion" @click="scrollToConfig">开始刷题</el-button>
-        </el-empty>
-      </div>
-    </el-card>
+      </el-card>
 
       <el-card class="config-card" ref="configCardRef" shadow="never">
-      <template #header>
-        <div class="card-header">
-          <span>自选模式</span>
-          <el-tag type="info" size="small">精准筛选</el-tag>
-        </div>
-      </template>
+        <template #header>
+          <div class="card-header">
+            <span>自选模式</span>
+            <el-tag type="info" size="small">精准筛选</el-tag>
+          </div>
+        </template>
 
-      <el-form :model="form" label-position="top">
-        <el-form-item label="选择课程">
-          <el-select v-model="form.courseId" placeholder="全部课程" clearable style="width: 100%">
-            <el-option
-              v-for="course in courseList"
-              :key="course.id"
-              :label="course.name"
-              :value="course.id"
-            />
-          </el-select>
-        </el-form-item>
+        <el-form :model="form" label-position="top">
+          <el-form-item label="选择课程">
+            <el-select v-model="form.courseId" placeholder="全部课程" clearable style="width: 100%">
+              <el-option v-for="course in courseList" :key="course.id" :label="course.name" :value="course.id" />
+            </el-select>
+          </el-form-item>
 
-        <el-form-item label="题型">
-          <el-select v-model="form.questionType" placeholder="全部题型" clearable style="width: 100%">
-            <el-option label="单选题" value="SINGLE_CHOICE" />
-            <el-option label="多选题" value="MULTIPLE_CHOICE" />
-            <el-option label="判断题" value="TRUE_FALSE" />
-            <el-option label="填空题" value="FILL_BLANK" />
-            <el-option label="简答题" value="SHORT_ANSWER" />
-          </el-select>
-        </el-form-item>
+          <el-form-item label="题型">
+            <el-select v-model="form.questionType" placeholder="全部题型" clearable style="width: 100%">
+              <el-option label="单选题" value="SINGLE_CHOICE" />
+              <el-option label="多选题" value="MULTIPLE_CHOICE" />
+              <el-option label="判断题" value="TRUE_FALSE" />
+              <el-option label="填空题" value="FILL_BLANK" />
+              <el-option label="简答题" value="SHORT_ANSWER" />
+            </el-select>
+          </el-form-item>
 
-        <el-form-item label="难度">
-          <el-rate v-model="form.difficulty" :max="5" allow-half />
-        </el-form-item>
+          <el-form-item label="难度">
+            <el-rate v-model="form.difficulty" :max="5" allow-half />
+          </el-form-item>
 
-        <el-form-item label="题目数量">
-          <el-input-number v-model="form.count" :min="1" :max="50" />
-        </el-form-item>
+          <el-form-item label="题目数量">
+            <el-input-number v-model="form.count" :min="1" :max="50" />
+          </el-form-item>
 
-        <el-form-item>
-          <el-button type="primary" size="large" :icon="Promotion" @click="startPractice" :loading="loading">
-            开始刷题
-          </el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+          <el-form-item>
+            <el-button type="primary" size="large" :icon="Promotion" @click="startPractice" :loading="loading">
+              开始刷题
+            </el-button>
+          </el-form-item>
+        </el-form>
+      </el-card>
     </section>
 
     <section class="mode-strip">
@@ -175,12 +172,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
+import { getCoursePage, type CourseVO } from '@/api/course'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Filter, List, MagicStick, Promotion, TrendCharts } from '@element-plus/icons-vue'
 import { getPracticeQuestions, getPracticeStats, getAdaptiveQuestions, getAdaptiveSummary } from '@/api/practice'
 import type { PracticeStatsVO, AdaptiveSummaryVO } from '@/api/practice'
-import request from '@/utils/request'
 
 const router = useRouter()
 const loading = ref(false)
@@ -189,8 +186,8 @@ const adaptiveLoading = ref(true)
 const adaptiveStartLoading = ref(false)
 const stats = ref<PracticeStatsVO | null>(null)
 const adaptiveSummary = ref<AdaptiveSummaryVO | null>(null)
-const courseList = ref<any[]>([])
-const configCardRef = ref<any>(null)
+const courseList = ref<CourseVO[]>([])
+const configCardRef = ref<{ $el: HTMLElement } | null>(null)
 
 const diffColors = ['#67c23a', '#409eff', '#e6a23c', '#f56c6c', '#909399']
 
@@ -198,12 +195,12 @@ const form = reactive({
   courseId: undefined as number | undefined,
   questionType: '' as string,
   difficulty: undefined as number | undefined,
-  count: 10
+  count: 10,
 })
 
 const adaptiveForm = reactive({
   courseId: undefined as number | undefined,
-  count: 10
+  count: 10,
 })
 
 const statCards = computed(() => [
@@ -234,10 +231,8 @@ const loadStats = async () => {
 
 const loadCourses = async () => {
   try {
-    const res = await request.get<any, any>('/courses', { params: { pageNum: 1, pageSize: 100 } })
-    if (res.code === 0) {
-      courseList.value = res.data?.records || []
-    }
+    const res = await getCoursePage({ pageNum: 1, pageSize: 100 })
+    courseList.value = res.data?.records ?? []
   } catch {
     // ignore
   }
@@ -259,7 +254,7 @@ const loadAdaptiveSummary = async () => {
 const startAdaptivePractice = async () => {
   adaptiveStartLoading.value = true
   try {
-    const params: any = { count: adaptiveForm.count }
+    const params: Parameters<typeof getAdaptiveQuestions>[0] = { count: adaptiveForm.count }
     if (adaptiveForm.courseId) params.courseId = adaptiveForm.courseId
 
     const res = await getAdaptiveQuestions(params)
@@ -280,7 +275,7 @@ const startAdaptivePractice = async () => {
 const startPractice = async () => {
   loading.value = true
   try {
-    const params: any = { count: form.count }
+    const params: Parameters<typeof getPracticeQuestions>[0] = { count: form.count }
     if (form.courseId) params.courseId = form.courseId
     if (form.questionType) params.questionType = form.questionType
     if (form.difficulty) params.difficulty = form.difficulty
@@ -375,10 +370,18 @@ const scrollToConfig = () => {
   font-weight: 700;
 }
 
-.tone-primary { color: var(--lp-primary); }
-.tone-success { color: var(--lp-success); }
-.tone-danger { color: var(--lp-danger); }
-.tone-warning { color: var(--lp-warning); }
+.tone-primary {
+  color: var(--lp-primary);
+}
+.tone-success {
+  color: var(--lp-success);
+}
+.tone-danger {
+  color: var(--lp-danger);
+}
+.tone-warning {
+  color: var(--lp-warning);
+}
 
 .practice-grid {
   display: grid;

@@ -51,7 +51,9 @@
 
       <!-- 用户表格 -->
       <div v-if="selectedUsers.length" class="admin-bulk-bar">
-        <span class="admin-bulk-copy">已选择 <strong>{{ selectedUsers.length }}</strong> 位用户</span>
+        <span class="admin-bulk-copy"
+          >已选择 <strong>{{ selectedUsers.length }}</strong> 位用户</span
+        >
         <div class="admin-bulk-actions">
           <el-button size="small" :icon="CircleCheck" @click="handleBulkStatus(1)">批量启用</el-button>
           <el-button size="small" :icon="CircleClose" @click="handleBulkStatus(0)">批量禁用</el-button>
@@ -100,22 +102,30 @@
         <el-table-column label="操作" width="210" fixed="right">
           <template #default="{ row }">
             <div class="admin-row-actions">
-              <el-button type="primary" link size="small" :icon="UserFilled" @click="openRoleDialog(row as AdminUserVO)">改角色</el-button>
+              <el-button type="primary" link size="small" :icon="UserFilled" @click="openRoleDialog(row as AdminUserVO)"
+                >改角色</el-button
+              >
               <el-button
                 :type="(row as AdminUserVO).status === 1 ? 'warning' : 'success'"
-                link size="small"
+                link
+                size="small"
                 :icon="SwitchButton"
                 @click="toggleStatus(row as AdminUserVO)"
               >
                 {{ (row as AdminUserVO).status === 1 ? '禁用' : '启用' }}
               </el-button>
-              <el-dropdown trigger="click" @command="command => handleUserRowCommand(command as string, row as AdminUserVO)">
+              <el-dropdown
+                trigger="click"
+                @command="(command) => handleUserRowCommand(command as string, row as AdminUserVO)"
+              >
                 <el-button link size="small" :icon="MoreFilled">更多</el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item command="reset" :icon="Key">重置密码</el-dropdown-item>
                     <el-dropdown-item command="quota" :icon="Cpu">AI 配额</el-dropdown-item>
-                    <el-dropdown-item command="delete" :icon="Delete" class="danger-dropdown-item">删除用户</el-dropdown-item>
+                    <el-dropdown-item command="delete" :icon="Delete" class="danger-dropdown-item"
+                      >删除用户</el-dropdown-item
+                    >
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -144,18 +154,19 @@
     </el-card>
 
     <!-- 新增用户弹窗 -->
-    <el-dialog
-      v-model="createDialogVisible"
-      title="新增用户"
-      width="500px"
-      destroy-on-close
-    >
+    <el-dialog v-model="createDialogVisible" title="新增用户" width="500px" destroy-on-close>
       <el-form ref="createFormRef" :model="createForm" :rules="createRules" label-width="80px" @submit.prevent>
         <el-form-item label="用户名" prop="username">
           <el-input v-model="createForm.username" placeholder="3-50个字符" maxlength="50" />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="createForm.password" type="password" placeholder="至少6个字符" show-password maxlength="100" />
+          <el-input
+            v-model="createForm.password"
+            type="password"
+            placeholder="至少6个字符"
+            show-password
+            maxlength="100"
+          />
         </el-form-item>
         <el-form-item label="昵称" prop="nickname">
           <el-input v-model="createForm.nickname" placeholder="可选，默认为用户名" maxlength="50" />
@@ -174,12 +185,7 @@
     </el-dialog>
 
     <!-- AI 配额弹窗 -->
-    <el-dialog
-      v-model="aiQuotaDialogVisible"
-      title="设置 AI 日配额"
-      width="400px"
-      destroy-on-close
-    >
+    <el-dialog v-model="aiQuotaDialogVisible" title="设置 AI 日配额" width="400px" destroy-on-close>
       <el-form label-width="100px">
         <el-form-item label="用户">
           <el-input :model-value="editingUser?.username" disabled />
@@ -195,7 +201,14 @@
           <div class="form-tip">0 表示不限次数</div>
         </el-form-item>
         <el-form-item label="调整原因" required>
-          <el-input v-model="aiQuotaReason" type="textarea" :rows="3" maxlength="500" show-word-limit placeholder="例如：按学习计划提升配额" />
+          <el-input
+            v-model="aiQuotaReason"
+            type="textarea"
+            :rows="3"
+            maxlength="500"
+            show-word-limit
+            placeholder="例如：按学习计划提升配额"
+          />
         </el-form-item>
         <el-form-item v-if="aiQuotaAudits.length" label="最近记录">
           <div class="quota-audit-list">
@@ -214,12 +227,7 @@
     </el-dialog>
 
     <!-- 修改角色弹窗 -->
-    <el-dialog
-      v-model="roleDialogVisible"
-      title="修改角色"
-      width="400px"
-      destroy-on-close
-    >
+    <el-dialog v-model="roleDialogVisible" title="修改角色" width="400px" destroy-on-close>
       <el-form label-width="80px">
         <el-form-item label="用户">
           <el-input :model-value="editingUser?.username" disabled />
@@ -238,12 +246,7 @@
     </el-dialog>
 
     <!-- 重置密码弹窗 -->
-    <el-dialog
-      v-model="resetPwdDialogVisible"
-      title="重置密码"
-      width="400px"
-      destroy-on-close
-    >
+    <el-dialog v-model="resetPwdDialogVisible" title="重置密码" width="400px" destroy-on-close>
       <el-form ref="resetPwdFormRef" :model="resetPwdForm" :rules="resetPwdRules" label-width="80px" @submit.prevent>
         <el-form-item label="用户">
           <el-input :model-value="editingUser?.username" disabled />
@@ -262,7 +265,19 @@
 
 <script setup lang="ts">
 import { computed, ref, reactive, onMounted } from 'vue'
-import { CircleClose, CircleCheck, Cpu, Delete, Key, MoreFilled, Plus, Search, SwitchButton, User, UserFilled } from '@element-plus/icons-vue'
+import {
+  CircleClose,
+  CircleCheck,
+  Cpu,
+  Delete,
+  Key,
+  MoreFilled,
+  Plus,
+  Search,
+  SwitchButton,
+  User,
+  UserFilled,
+} from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules, TableInstance } from 'element-plus'
 import {
@@ -369,9 +384,9 @@ const statCards = computed(() => [
   },
 ])
 
-const activationRate = computed(() => (
-  userStats.total > 0 ? Math.round((userStats.active / userStats.total) * 100) : 0
-))
+const activationRate = computed(() =>
+  userStats.total > 0 ? Math.round((userStats.active / userStats.total) * 100) : 0,
+)
 
 const handleUserRowCommand = async (command: string, user: AdminUserVO) => {
   if (command === 'reset') {
@@ -407,7 +422,7 @@ const clearUserSelection = () => {
 async function fetchUsers() {
   loading.value = true
   try {
-    const res: any = await getAdminUserList({
+    const res = await getAdminUserList({
       page: currentPage.value,
       size: pageSize.value,
       keyword: keyword.value || undefined,
@@ -427,7 +442,7 @@ async function fetchUsers() {
 
 async function fetchStats() {
   try {
-    const res: any = await getAdminUserStats()
+    const res = await getAdminUserStats()
     const data = res.data
     userStats.total = data.total
     userStats.active = data.active
@@ -514,15 +529,15 @@ async function handleBulkStatus(status: number) {
       confirmButtonText: action,
       cancelButtonText: '取消',
     })
-    const targets = selectedUsers.value.filter(user => user.status !== status)
+    const targets = selectedUsers.value.filter((user) => user.status !== status)
     if (!targets.length) {
       ElMessage.info(`选中用户已全部处于${action}状态`)
       clearUserSelection()
       return
     }
     loading.value = true
-    const results = await Promise.allSettled(targets.map(user => updateUserStatus(user.id, status)))
-    const failed = results.filter(result => result.status === 'rejected').length
+    const results = await Promise.allSettled(targets.map((user) => updateUserStatus(user.id, status)))
+    const failed = results.filter((result) => result.status === 'rejected').length
     if (failed > 0) {
       ElMessage.warning(`已${action} ${targets.length - failed} 位用户，${failed} 位处理失败`)
     } else {
@@ -569,7 +584,7 @@ async function openAiQuotaDialog(user: AdminUserVO) {
   aiQuotaAudits.value = []
   aiQuotaDialogVisible.value = true
   try {
-    const res: any = await getUserAiDailyQuotaAudits(user.id)
+    const res = await getUserAiDailyQuotaAudits(user.id)
     aiQuotaAudits.value = res.data.records
   } catch {
     // 不影响管理员继续调整配额；请求拦截器会提示错误。

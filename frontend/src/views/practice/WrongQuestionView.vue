@@ -178,6 +178,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
+import { errorMessage, SemanticTagType } from '@/utils/errors'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Delete, RefreshRight, Search } from '@element-plus/icons-vue'
@@ -217,8 +218,8 @@ async function loadSimilarQuestions(questionId: number, questionContent?: string
   try {
     const res = await getSimilarQuestions(questionId, 8)
     similarData.value = res.data
-  } catch (e: any) {
-    ElMessage.error('加载相似题失败: ' + (e.message || '未知错误'))
+  } catch (e) {
+    ElMessage.error('加载相似题失败: ' + errorMessage(e, '未知错误'))
   } finally {
     similarLoading.value = false
   }
@@ -355,14 +356,14 @@ const getTypeLabel = (type: string) => {
 }
 
 const getTypeTag = (type: string) => {
-  const map: Record<string, string> = {
-    SINGLE_CHOICE: '',
+  const map: Record<string, SemanticTagType> = {
+    SINGLE_CHOICE: undefined,
     MULTIPLE_CHOICE: 'warning',
     TRUE_FALSE: 'success',
     FILL_BLANK: 'info',
     SHORT_ANSWER: 'danger',
   }
-  return (map[type] || '') as any
+  return map[type]
 }
 
 const getMasteryLabel = (level: number) => {
@@ -371,8 +372,8 @@ const getMasteryLabel = (level: number) => {
 }
 
 const getMasteryTag = (level: number) => {
-  const map: Record<number, string> = { 0: 'danger', 1: 'warning', 2: 'success' }
-  return (map[level] || 'info') as any
+  const map: Record<number, SemanticTagType> = { 0: 'danger', 1: 'warning', 2: 'success' }
+  return map[level] || 'info'
 }
 
 const formatTime = (time: string) => {

@@ -29,8 +29,8 @@ describe('user store', () => {
   describe('setLoginInfo', () => {
     it('sets token, userInfo and persists token to localStorage', () => {
       const store = useUserStore()
-      const user = { id: 1, username: 'testuser', nickname: 'Test', role: 'USER' as const }
-      store.setLoginInfo('jwt-token-123', user as any)
+      const user = { id: 1, username: 'testuser', nickname: 'Test', avatar: null, role: 'USER' as const }
+      store.setLoginInfo('jwt-token-123', user)
 
       expect(store.token).toBe('jwt-token-123')
       expect(store.userInfo).toEqual(user)
@@ -41,7 +41,7 @@ describe('user store', () => {
   describe('clearLoginInfo', () => {
     it('clears token, userInfo and removes token from localStorage', () => {
       const store = useUserStore()
-      store.setLoginInfo('token', { id: 1, username: 'u', nickname: 'n', role: 'USER' } as any)
+      store.setLoginInfo('token', { id: 1, username: 'u', nickname: 'n', avatar: null, role: 'USER' })
       store.clearLoginInfo()
 
       expect(store.token).toBeNull()
@@ -58,13 +58,13 @@ describe('user store', () => {
 
     it('returns true after setLoginInfo', () => {
       const store = useUserStore()
-      store.setLoginInfo('token', { id: 1, username: 'u', nickname: 'n', role: 'USER' } as any)
+      store.setLoginInfo('token', { id: 1, username: 'u', nickname: 'n', avatar: null, role: 'USER' })
       expect(store.isLoggedIn()).toBe(true)
     })
 
     it('returns false after clearLoginInfo', () => {
       const store = useUserStore()
-      store.setLoginInfo('token', { id: 1, username: 'u', nickname: 'n', role: 'USER' } as any)
+      store.setLoginInfo('token', { id: 1, username: 'u', nickname: 'n', avatar: null, role: 'USER' })
       store.clearLoginInfo()
       expect(store.isLoggedIn()).toBe(false)
     })

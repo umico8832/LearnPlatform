@@ -35,9 +35,15 @@
             <el-radio-button :value="2">已拒绝</el-radio-button>
             <el-radio-button :value="3">已入库</el-radio-button>
           </el-radio-group>
-          <el-input v-model="keywordFilter" placeholder="搜索题干关键词" clearable
-            style="width: 220px" :prefix-icon="Search" @clear="loadSubmissions"
-            @keyup.enter="loadSubmissions" />
+          <el-input
+            v-model="keywordFilter"
+            placeholder="搜索题干关键词"
+            clearable
+            style="width: 220px"
+            :prefix-icon="Search"
+            @clear="loadSubmissions"
+            @keyup.enter="loadSubmissions"
+          />
           <el-button type="primary" :icon="Search" @click="loadSubmissions">搜索</el-button>
         </div>
         <span class="table-summary">当前筛选 {{ total }} 条投稿</span>
@@ -45,7 +51,9 @@
 
       <!-- 列表 -->
       <div v-if="selectedSubmissions.length" class="admin-bulk-bar">
-        <span class="admin-bulk-copy">已选择 <strong>{{ selectedSubmissions.length }}</strong> 条投稿</span>
+        <span class="admin-bulk-copy"
+          >已选择 <strong>{{ selectedSubmissions.length }}</strong> 条投稿</span
+        >
         <div class="admin-bulk-actions">
           <el-button size="small" type="success" :icon="Check" @click="handleBulkApprove">批量通过待审核</el-button>
           <el-button size="small" type="warning" :icon="FolderAdd" @click="handleBulkImport">批量入库已通过</el-button>
@@ -87,13 +95,29 @@
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <div class="admin-row-actions">
-              <el-button type="primary" link :icon="View" @click="viewDetail(row as QuestionSubmissionVO)">详情</el-button>
+              <el-button type="primary" link :icon="View" @click="viewDetail(row as QuestionSubmissionVO)"
+                >详情</el-button
+              >
               <template v-if="(row as QuestionSubmissionVO).status === 0">
-                <el-button type="success" link :icon="Check" @click="openReview(row as QuestionSubmissionVO, 1)">通过</el-button>
-                <el-button type="danger" link :icon="Close" @click="openReview(row as QuestionSubmissionVO, 2)">拒绝</el-button>
+                <el-button type="success" link :icon="Check" @click="openReview(row as QuestionSubmissionVO, 1)"
+                  >通过</el-button
+                >
+                <el-button type="danger" link :icon="Close" @click="openReview(row as QuestionSubmissionVO, 2)"
+                  >拒绝</el-button
+                >
               </template>
-              <el-button v-else-if="(row as QuestionSubmissionVO).status === 1" type="warning" link :icon="FolderAdd" @click="handleImport(row as QuestionSubmissionVO)">入库</el-button>
-              <el-dropdown trigger="click" @command="command => handleSubmissionRowCommand(command as string, row as QuestionSubmissionVO)">
+              <el-button
+                v-else-if="(row as QuestionSubmissionVO).status === 1"
+                type="warning"
+                link
+                :icon="FolderAdd"
+                @click="handleImport(row as QuestionSubmissionVO)"
+                >入库</el-button
+              >
+              <el-dropdown
+                trigger="click"
+                @command="(command) => handleSubmissionRowCommand(command as string, row as QuestionSubmissionVO)"
+              >
                 <el-button link :icon="MoreFilled">AI 工具</el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
@@ -126,18 +150,27 @@
     <el-dialog v-model="showReviewDialog" :title="reviewAction === 1 ? '通过投稿' : '拒绝投稿'" width="500px">
       <el-form label-width="80px">
         <el-form-item label="审核意见">
-          <el-input v-model="reviewComment" type="textarea" :rows="5"
-            :placeholder="reviewAction === 1 ? '审核通过意见（可选）' : '请输入拒绝原因'" />
-          <el-button type="primary" link size="small" style="margin-top: 4px"
-            @click="handleGenerateReviewComment" :loading="generatingComment">
+          <el-input
+            v-model="reviewComment"
+            type="textarea"
+            :rows="5"
+            :placeholder="reviewAction === 1 ? '审核通过意见（可选）' : '请输入拒绝原因'"
+          />
+          <el-button
+            type="primary"
+            link
+            size="small"
+            style="margin-top: 4px"
+            @click="handleGenerateReviewComment"
+            :loading="generatingComment"
+          >
             🤖 AI 一键填充审核意见
           </el-button>
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showReviewDialog = false">取消</el-button>
-        <el-button :type="reviewAction === 1 ? 'success' : 'danger'"
-          @click="handleReview" :loading="reviewing">
+        <el-button :type="reviewAction === 1 ? 'success' : 'danger'" @click="handleReview" :loading="reviewing">
           {{ reviewAction === 1 ? '确认通过' : '确认拒绝' }}
         </el-button>
       </template>
@@ -150,7 +183,9 @@
         <el-descriptions-item label="状态">
           <el-tag :type="statusTagType(currentDetail.status)">{{ statusLabel(currentDetail.status) }}</el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="投稿人">{{ currentDetail.nickname || currentDetail.username }}</el-descriptions-item>
+        <el-descriptions-item label="投稿人">{{
+          currentDetail.nickname || currentDetail.username
+        }}</el-descriptions-item>
         <el-descriptions-item label="投稿时间">{{ formatTime(currentDetail.createTime) }}</el-descriptions-item>
         <el-descriptions-item label="课程">{{ currentDetail.courseName }}</el-descriptions-item>
         <el-descriptions-item label="题型">{{ questionTypeLabel(currentDetail.questionType) }}</el-descriptions-item>
@@ -174,12 +209,18 @@
           <div class="detail-content">{{ currentDetail.analysis }}</div>
         </el-descriptions-item>
         <el-descriptions-item label="标签" v-if="currentDetail.tags">{{ currentDetail.tags }}</el-descriptions-item>
-        <el-descriptions-item label="知识点IDs" v-if="currentDetail.knowledgePointIds">{{ currentDetail.knowledgePointIds }}</el-descriptions-item>
+        <el-descriptions-item label="知识点IDs" v-if="currentDetail.knowledgePointIds">{{
+          currentDetail.knowledgePointIds
+        }}</el-descriptions-item>
         <el-descriptions-item label="审核意见" :span="2" v-if="currentDetail.reviewComment">
           <el-text type="info">{{ currentDetail.reviewComment }}</el-text>
         </el-descriptions-item>
-        <el-descriptions-item label="审核人" v-if="currentDetail.reviewedByName">{{ currentDetail.reviewedByName }}</el-descriptions-item>
-        <el-descriptions-item label="审核时间" v-if="currentDetail.reviewedTime">{{ formatTime(currentDetail.reviewedTime) }}</el-descriptions-item>
+        <el-descriptions-item label="审核人" v-if="currentDetail.reviewedByName">{{
+          currentDetail.reviewedByName
+        }}</el-descriptions-item>
+        <el-descriptions-item label="审核时间" v-if="currentDetail.reviewedTime">{{
+          formatTime(currentDetail.reviewedTime)
+        }}</el-descriptions-item>
         <el-descriptions-item label="入库题目ID" v-if="currentDetail.importedQuestionId">
           <el-button type="primary" link @click="goToQuestion(currentDetail.importedQuestionId!)">
             #{{ currentDetail.importedQuestionId }}
@@ -190,20 +231,35 @@
 
     <!-- AI 知识点标注对话框 -->
     <el-dialog v-model="showKPTaggingDialog" title="AI 知识点标注" width="720px">
-      <div v-if="kpTaggingLoading" v-loading="true" element-loading-text="AI 正在分析题目知识点归属，请稍候..." style="min-height: 120px" />
+      <div
+        v-if="kpTaggingLoading"
+        v-loading="true"
+        element-loading-text="AI 正在分析题目知识点归属，请稍候..."
+        style="min-height: 120px"
+      />
       <div v-else-if="kpTaggingResult">
         <!-- AI 分析说明 -->
-        <el-alert :title="kpTaggingResult.analysis" type="info" show-icon :closable="false" style="margin-bottom: 16px" />
+        <el-alert
+          :title="kpTaggingResult.analysis"
+          type="info"
+          show-icon
+          :closable="false"
+          style="margin-bottom: 16px"
+        />
 
         <!-- 推荐知识点列表 -->
         <div v-if="kpTaggingResult.recommendations.length > 0">
-          <div style="font-weight: 600; margin-bottom: 8px">推荐知识点（共 {{ kpTaggingResult.recommendations.length }} 个）</div>
+          <div style="font-weight: 600; margin-bottom: 8px">
+            推荐知识点（共 {{ kpTaggingResult.recommendations.length }} 个）
+          </div>
           <el-table :data="kpTaggingResult.recommendations" border size="small" style="margin-bottom: 16px">
             <el-table-column label="知识点" prop="name" min-width="120" />
             <el-table-column label="课程" prop="courseName" width="120" />
             <el-table-column label="置信度" width="100">
               <template #default="{ row }">
-                <el-tag :type="confidenceType(row.confidence)" size="small">{{ confidenceLabel(row.confidence) }}</el-tag>
+                <el-tag :type="confidenceType(row.confidence)" size="small">{{
+                  confidenceLabel(row.confidence)
+                }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column label="推荐理由" prop="reason" min-width="200" show-overflow-tooltip />
@@ -228,14 +284,25 @@
 
     <!-- AI 质检结果对话框 -->
     <el-dialog v-model="showQualityDialog" title="AI 质检报告" width="720px">
-      <div v-if="qualityLoading" v-loading="true" element-loading-text="AI 正在分析题目质量，请稍候..." style="min-height: 120px" />
+      <div
+        v-if="qualityLoading"
+        v-loading="true"
+        element-loading-text="AI 正在分析题目质量，请稍候..."
+        style="min-height: 120px"
+      />
       <div v-else-if="qualityResult">
         <!-- 总评 -->
         <el-card shadow="never" style="margin-bottom: 16px">
           <div style="display: flex; align-items: center; justify-content: space-between">
             <div>
               <span style="font-size: 16px; font-weight: 600">综合评分：</span>
-              <el-tag :type="qualityResult.qualityScore >= 80 ? 'success' : qualityResult.qualityScore >= 50 ? 'warning' : 'danger'" size="large" style="font-size: 18px; margin-left: 8px">
+              <el-tag
+                :type="
+                  qualityResult.qualityScore >= 80 ? 'success' : qualityResult.qualityScore >= 50 ? 'warning' : 'danger'
+                "
+                size="large"
+                style="font-size: 18px; margin-left: 8px"
+              >
                 {{ qualityResult.qualityScore }} 分
               </el-tag>
             </div>
@@ -249,8 +316,19 @@
         <!-- 五维检查 -->
         <el-row :gutter="12" style="margin-bottom: 16px">
           <el-col v-for="(item, idx) in qualityCheckItems" :key="idx" :span="12" style="margin-bottom: 8px">
-            <div style="display: flex; align-items: flex-start; gap: 8px; padding: 8px 12px; background: #f5f7fa; border-radius: 6px">
-              <el-tag :type="checkStatusType(item.status)" size="small" style="flex-shrink: 0">{{ checkStatusLabel(item.status) }}</el-tag>
+            <div
+              style="
+                display: flex;
+                align-items: flex-start;
+                gap: 8px;
+                padding: 8px 12px;
+                background: #f5f7fa;
+                border-radius: 6px;
+              "
+            >
+              <el-tag :type="checkStatusType(item.status)" size="small" style="flex-shrink: 0">{{
+                checkStatusLabel(item.status)
+              }}</el-tag>
               <div>
                 <div style="font-weight: 600; font-size: 13px">{{ item.label }}</div>
                 <div style="font-size: 12px; color: #909399; margin-top: 2px">{{ item.detail }}</div>
@@ -260,10 +338,16 @@
         </el-row>
 
         <!-- 风险点 -->
-        <el-card v-if="qualityResult.riskPoints && qualityResult.riskPoints.length > 0" shadow="never" style="margin-bottom: 12px">
+        <el-card
+          v-if="qualityResult.riskPoints && qualityResult.riskPoints.length > 0"
+          shadow="never"
+          style="margin-bottom: 12px"
+        >
           <template #header><span style="color: #e6a23c; font-weight: 600">⚠ 风险点</span></template>
           <ul style="margin: 0; padding-left: 20px">
-            <li v-for="(point, idx) in qualityResult.riskPoints" :key="idx" style="color: #e6a23c; margin-bottom: 4px">{{ point }}</li>
+            <li v-for="(point, idx) in qualityResult.riskPoints" :key="idx" style="color: #e6a23c; margin-bottom: 4px">
+              {{ point }}
+            </li>
           </ul>
         </el-card>
 
@@ -271,7 +355,9 @@
         <el-card v-if="qualityResult.suggestions && qualityResult.suggestions.length > 0" shadow="never">
           <template #header><span style="color: #409eff; font-weight: 600">💡 修改建议</span></template>
           <ul style="margin: 0; padding-left: 20px">
-            <li v-for="(sug, idx) in qualityResult.suggestions" :key="idx" style="color: #409eff; margin-bottom: 4px">{{ sug }}</li>
+            <li v-for="(sug, idx) in qualityResult.suggestions" :key="idx" style="color: #409eff; margin-bottom: 4px">
+              {{ sug }}
+            </li>
           </ul>
         </el-card>
       </div>
@@ -282,27 +368,50 @@
 
     <!-- AI 难度评估对话框 -->
     <el-dialog v-model="showDifficultyDialog" title="AI 难度评估报告" width="720px">
-      <div v-if="difficultyLoading" v-loading="true" element-loading-text="AI 正在评估题目难度，请稍候..." style="min-height: 120px" />
+      <div
+        v-if="difficultyLoading"
+        v-loading="true"
+        element-loading-text="AI 正在评估题目难度，请稍候..."
+        style="min-height: 120px"
+      />
       <div v-else-if="difficultyResult">
         <!-- 总评 -->
         <el-card shadow="never" style="margin-bottom: 16px">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px">
             <div>
               <span style="font-size: 16px; font-weight: 600">AI 评估难度：</span>
-              <el-rate :model-value="difficultyResult.suggestedDifficulty" disabled :max="5" style="display: inline-flex; margin-left: 8px" />
-              <el-tag :type="difficultyConfidenceType(difficultyResult.confidence)" size="small" style="margin-left: 8px">
+              <el-rate
+                :model-value="difficultyResult.suggestedDifficulty"
+                disabled
+                :max="5"
+                style="display: inline-flex; margin-left: 8px"
+              />
+              <el-tag
+                :type="difficultyConfidenceType(difficultyResult.confidence)"
+                size="small"
+                style="margin-left: 8px"
+              >
                 {{ difficultyConfidenceLabel(difficultyResult.confidence) }}
               </el-tag>
             </div>
             <div v-if="difficultyResult.originalDifficulty">
               <span style="font-size: 13px; color: #909399">投稿者标注：</span>
-              <el-rate :model-value="difficultyResult.originalDifficulty" disabled :max="5" style="display: inline-flex; margin-left: 4px" />
-              <el-tag v-if="difficultyResult.difficultyMatch" type="success" size="small" style="margin-left: 4px">一致</el-tag>
+              <el-rate
+                :model-value="difficultyResult.originalDifficulty"
+                disabled
+                :max="5"
+                style="display: inline-flex; margin-left: 4px"
+              />
+              <el-tag v-if="difficultyResult.difficultyMatch" type="success" size="small" style="margin-left: 4px"
+                >一致</el-tag
+              >
               <el-tag v-else type="warning" size="small" style="margin-left: 4px">不一致</el-tag>
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px">
-            <span style="font-size: 13px; color: #606266">认知层次：<el-tag size="small">{{ difficultyResult.cognitiveLevel }}</el-tag></span>
+            <span style="font-size: 13px; color: #606266"
+              >认知层次：<el-tag size="small">{{ difficultyResult.cognitiveLevel }}</el-tag></span
+            >
           </div>
           <p style="color: #606266; margin: 0">{{ difficultyResult.reason }}</p>
         </el-card>
@@ -323,9 +432,7 @@
 
         <!-- 总结 -->
         <el-card shadow="never" style="background: #f0f9ff">
-          <div style="font-size: 13px; color: #606266">
-            <strong>总结：</strong>{{ difficultyResult.summary }}
-          </div>
+          <div style="font-size: 13px; color: #606266"><strong>总结：</strong>{{ difficultyResult.summary }}</div>
         </el-card>
       </div>
       <template #footer>
@@ -337,10 +444,22 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { SemanticTagType } from '@/utils/errors'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { TableInstance } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { Check, Close, CollectionTag, FolderAdd, MagicStick, MoreFilled, Refresh, Search, TrendCharts, View } from '@element-plus/icons-vue'
+import {
+  Check,
+  Close,
+  CollectionTag,
+  FolderAdd,
+  MagicStick,
+  MoreFilled,
+  Refresh,
+  Search,
+  TrendCharts,
+  View,
+} from '@element-plus/icons-vue'
 import {
   getAdminSubmissions,
   reviewSubmission,
@@ -428,8 +547,11 @@ const applyingKP = ref(false)
 
 const questionTypeLabel = (type: string) => {
   const map: Record<string, string> = {
-    SINGLE_CHOICE: '单选题', MULTIPLE_CHOICE: '多选题',
-    TRUE_FALSE: '判断题', FILL_BLANK: '填空题', SHORT_ANSWER: '简答题',
+    SINGLE_CHOICE: '单选题',
+    MULTIPLE_CHOICE: '多选题',
+    TRUE_FALSE: '判断题',
+    FILL_BLANK: '填空题',
+    SHORT_ANSWER: '简答题',
   }
   return map[type] || type
 }
@@ -440,15 +562,19 @@ const statusLabel = (status: number) => {
 }
 
 const statusTagType = (status: number) => {
-  const map: Record<number, string> = { 0: 'warning', 1: 'success', 2: 'danger', 3: '' }
-  return (map[status] || 'info') as any
+  const map: Record<number, SemanticTagType> = { 0: 'warning', 1: 'success', 2: 'danger', 3: undefined }
+  return map[status] || 'info'
 }
 
-const formatTime = (t: string | null) => t ? t.replace('T', ' ').substring(0, 19) : ''
+const formatTime = (t: string | null) => (t ? t.replace('T', ' ').substring(0, 19) : '')
 
 const parseOptions = (json: string | null): Array<{ content: string; label: string; isCorrect: boolean }> => {
   if (!json) return []
-  try { return JSON.parse(json) } catch { return [] }
+  try {
+    return JSON.parse(json)
+  } catch {
+    return []
+  }
 }
 
 const loadSubmissions = async () => {
@@ -476,7 +602,9 @@ const loadStats = async () => {
     if (res.code === 0 && res.data) {
       stats.value = res.data
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 const refreshSubmissions = () => {
@@ -528,7 +656,7 @@ const handleReview = async () => {
 
 const handleBulkApprove = async () => {
   if (!selectedSubmissions.value.length) return
-  const targets = selectedSubmissions.value.filter(item => item.status === 0)
+  const targets = selectedSubmissions.value.filter((item) => item.status === 0)
   if (!targets.length) {
     ElMessage.info('选中的投稿中没有待审核记录')
     clearSubmissionSelection()
@@ -541,29 +669,33 @@ const handleBulkApprove = async () => {
       cancelButtonText: '取消',
     })
     loading.value = true
-    const results = await Promise.allSettled(targets.map(item => reviewSubmission(item.id, {
-      status: 1,
-      reviewComment: '批量审核通过',
-    })))
-    const failed = results.filter(result => result.status === 'rejected').length
+    const results = await Promise.allSettled(
+      targets.map((item) =>
+        reviewSubmission(item.id, {
+          status: 1,
+          reviewComment: '批量审核通过',
+        }),
+      ),
+    )
+    const failed = results.filter((result) => result.status === 'rejected').length
     if (failed > 0) {
       ElMessage.warning(`已通过 ${targets.length - failed} 条投稿，${failed} 条处理失败`)
     } else {
       ElMessage.success(`已通过 ${targets.length} 条投稿`)
     }
     await Promise.all([loadSubmissions(), loadStats()])
-  } catch { /* cancelled */ } finally {
+  } catch {
+    /* cancelled */
+  } finally {
     loading.value = false
   }
 }
 
 const handleImport = async (row: QuestionSubmissionVO) => {
   try {
-    await ElMessageBox.confirm(
-      `确认将投稿 #${row.id} 入库为正式题目？入库后投稿状态将变为"已入库"。`,
-      '确认入库',
-      { type: 'warning' }
-    )
+    await ElMessageBox.confirm(`确认将投稿 #${row.id} 入库为正式题目？入库后投稿状态将变为"已入库"。`, '确认入库', {
+      type: 'warning',
+    })
     const res = await importSubmission(row.id)
     if (res.code === 0 && res.data) {
       ElMessage.success('入库成功，题目ID: ' + res.data.importedQuestionId)
@@ -572,12 +704,14 @@ const handleImport = async (row: QuestionSubmissionVO) => {
     } else {
       ElMessage.error(res.message || '入库失败')
     }
-  } catch { /* cancelled */ }
+  } catch {
+    /* cancelled */
+  }
 }
 
 const handleBulkImport = async () => {
   if (!selectedSubmissions.value.length) return
-  const targets = selectedSubmissions.value.filter(item => item.status === 1)
+  const targets = selectedSubmissions.value.filter((item) => item.status === 1)
   if (!targets.length) {
     ElMessage.info('选中的投稿中没有已通过记录')
     clearSubmissionSelection()
@@ -590,15 +724,17 @@ const handleBulkImport = async () => {
       cancelButtonText: '取消',
     })
     loading.value = true
-    const results = await Promise.allSettled(targets.map(item => importSubmission(item.id)))
-    const failed = results.filter(result => result.status === 'rejected').length
+    const results = await Promise.allSettled(targets.map((item) => importSubmission(item.id)))
+    const failed = results.filter((result) => result.status === 'rejected').length
     if (failed > 0) {
       ElMessage.warning(`已入库 ${targets.length - failed} 条投稿，${failed} 条处理失败`)
     } else {
       ElMessage.success(`已入库 ${targets.length} 条投稿`)
     }
     await Promise.all([loadSubmissions(), loadStats()])
-  } catch { /* cancelled */ } finally {
+  } catch {
+    /* cancelled */
+  } finally {
     loading.value = false
   }
 }
@@ -636,8 +772,8 @@ const recommendationLabel = (rec: string) => {
 }
 
 const recommendationType = (rec: string) => {
-  const map: Record<string, string> = { APPROVE: 'success', REVISE: 'warning', REJECT: 'danger' }
-  return (map[rec] || 'info') as any
+  const map: Record<string, SemanticTagType> = { APPROVE: 'success', REVISE: 'warning', REJECT: 'danger' }
+  return map[rec] || 'info'
 }
 
 const checkStatusLabel = (status: string) => {
@@ -646,8 +782,8 @@ const checkStatusLabel = (status: string) => {
 }
 
 const checkStatusType = (status: string) => {
-  const map: Record<string, string> = { PASS: 'success', WARNING: 'warning', FAIL: 'danger' }
-  return (map[status] || 'info') as any
+  const map: Record<string, SemanticTagType> = { PASS: 'success', WARNING: 'warning', FAIL: 'danger' }
+  return map[status] || 'info'
 }
 
 const confidenceLabel = (c: string) => {
@@ -656,8 +792,8 @@ const confidenceLabel = (c: string) => {
 }
 
 const confidenceType = (c: string) => {
-  const map: Record<string, string> = { HIGH: 'success', MEDIUM: '', LOW: 'info' }
-  return (map[c] || 'info') as any
+  const map: Record<string, SemanticTagType> = { HIGH: 'success', MEDIUM: undefined, LOW: 'info' }
+  return map[c] || 'info'
 }
 
 const qualityCheckItems = computed(() => {
@@ -745,8 +881,8 @@ const difficultyConfidenceLabel = (c: string) => {
 }
 
 const difficultyConfidenceType = (c: string) => {
-  const map: Record<string, string> = { HIGH: 'success', MEDIUM: '', LOW: 'info' }
-  return (map[c] || 'info') as any
+  const map: Record<string, SemanticTagType> = { HIGH: 'success', MEDIUM: undefined, LOW: 'info' }
+  return map[c] || 'info'
 }
 
 const impactLabel = (impact: string) => {
@@ -755,8 +891,8 @@ const impactLabel = (impact: string) => {
 }
 
 const impactType = (impact: string) => {
-  const map: Record<string, string> = { INCREASE: 'danger', DECREASE: 'success', NEUTRAL: 'info' }
-  return (map[impact] || 'info') as any
+  const map: Record<string, SemanticTagType> = { INCREASE: 'danger', DECREASE: 'success', NEUTRAL: 'info' }
+  return map[impact] || 'info'
 }
 
 // ========== 一键填充审核意见 ==========

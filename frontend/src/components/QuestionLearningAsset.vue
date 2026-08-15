@@ -10,187 +10,162 @@
 
     <!-- 完整内容 -->
     <template v-if="!collapsible || expanded">
-    <div class="asset-header">
-      <div>
-        <div class="asset-title">📚 AI 深度学习</div>
-        <div class="asset-subtitle">选择不同维度，把这道题彻底学透。</div>
+      <div class="asset-header">
+        <div>
+          <div class="asset-title">📚 AI 深度学习</div>
+          <div class="asset-subtitle">选择不同维度，把这道题彻底学透。</div>
+        </div>
       </div>
-    </div>
 
-    <el-tabs v-model="activeTab" class="asset-tabs" @tab-change="onTabChange">
-      <el-tab-pane
-        v-for="tab in assetTabs"
-        :key="tab.type"
-        :label="tab.label"
-        :name="tab.type"
-      >
-        <template #label>
-          <span class="tab-label">
-            <span class="tab-icon">{{ tab.icon }}</span>
-            {{ tab.label }}
-          </span>
-        </template>
+      <el-tabs v-model="activeTab" class="asset-tabs" @tab-change="onTabChange">
+        <el-tab-pane v-for="tab in assetTabs" :key="tab.type" :label="tab.label" :name="tab.type">
+          <template #label>
+            <span class="tab-label">
+              <span class="tab-icon">{{ tab.icon }}</span>
+              {{ tab.label }}
+            </span>
+          </template>
 
-        <div class="asset-content">
-          <!-- 已有缓存内容 -->
-          <div v-if="tabContent[tab.type]" class="asset-result">
-            <div class="result-meta">
-              <el-tag size="small" effect="plain" type="success">已缓存</el-tag>
-              <span v-if="assetModel[tab.type]" class="model-tag">模型：{{ assetModel[tab.type] }}</span>
-            </div>
-            <QuestionVisualInteractive
-              v-if="tab.type === 'VISUAL_INTERACTIVE'"
-              :content="tabContent[tab.type]"
-            />
-            <AiVariantQuestionCard
-              v-else-if="tab.type === 'VARIANT' && variantQuestion"
-              :question-id="questionId"
-              :question="variantQuestion"
-              :training="variantTraining"
-              @answered="applyVariantTraining"
-            />
-            <MarkdownRenderer
-              v-else
-              :content="tabContent[tab.type]"
-            />
-
-            <div v-if="tab.type === 'VARIANT' && !variantQuestion" class="variant-training-panel">
-              <div>
-                <strong>{{ variantTraining.completed ? '本组变式训练已完成' : '完成这组变式训练了吗？' }}</strong>
-                <p>请先独立作答并核对解析，再确认完成。该记录是学习者自我确认，不代表系统自动判分。</p>
+          <div class="asset-content">
+            <!-- 已有缓存内容 -->
+            <div v-if="tabContent[tab.type]" class="asset-result">
+              <div class="result-meta">
+                <el-tag size="small" effect="plain" type="success">已缓存</el-tag>
+                <span v-if="assetModel[tab.type]" class="model-tag">模型：{{ assetModel[tab.type] }}</span>
               </div>
-              <el-button
-                type="primary"
-                :loading="variantTrainingSubmitting"
-                :disabled="variantTraining.completed"
-                @click="handleVariantTrainingComplete"
-              >
-                {{ variantTraining.completed ? '✓ 已标记完成' : '标记已完成' }}
+              <QuestionVisualInteractive v-if="tab.type === 'VISUAL_INTERACTIVE'" :content="tabContent[tab.type]" />
+              <AiVariantQuestionCard
+                v-else-if="tab.type === 'VARIANT' && variantQuestion"
+                :question-id="questionId"
+                :question="variantQuestion"
+                :training="variantTraining"
+                @answered="applyVariantTraining"
+              />
+              <MarkdownRenderer v-else :content="tabContent[tab.type]" />
+
+              <div v-if="tab.type === 'VARIANT' && !variantQuestion" class="variant-training-panel">
+                <div>
+                  <strong>{{ variantTraining.completed ? '本组变式训练已完成' : '完成这组变式训练了吗？' }}</strong>
+                  <p>请先独立作答并核对解析，再确认完成。该记录是学习者自我确认，不代表系统自动判分。</p>
+                </div>
+                <el-button
+                  type="primary"
+                  :loading="variantTrainingSubmitting"
+                  :disabled="variantTraining.completed"
+                  @click="handleVariantTrainingComplete"
+                >
+                  {{ variantTraining.completed ? '✓ 已标记完成' : '标记已完成' }}
+                </el-button>
+              </div>
+
+              <!-- 反馈区域 -->
+              <div class="feedback-area">
+                <div v-if="feedbackMap[tab.type]?.helpful === null" class="feedback-prompt">
+                  <span class="feedback-text">这个讲解对你有帮助吗？</span>
+                  <el-button
+                    size="small"
+                    :type="feedbackMap[tab.type]?.helpful === true ? 'success' : 'default'"
+                    :loading="feedbackSubmitting === tab.type"
+                    @click="handleFeedback(tab.type, true)"
+                  >
+                    👍 有帮助
+                  </el-button>
+                  <el-button
+                    size="small"
+                    :type="feedbackMap[tab.type]?.helpful === false ? 'danger' : 'default'"
+                    :loading="feedbackSubmitting === tab.type"
+                    @click="handleFeedback(tab.type, false)"
+                  >
+                    👎 没帮助
+                  </el-button>
+                </div>
+
+                <div v-else class="feedback-done">
+                  <el-tag :type="feedbackMap[tab.type]?.helpful ? 'success' : 'warning'" size="small" effect="plain">
+                    {{ feedbackMap[tab.type]?.helpful ? '👍 已反馈：有帮助' : '👎 已反馈：没帮助' }}
+                  </el-tag>
+                  <el-button
+                    v-if="
+                      feedbackMap[tab.type]?.helpful === false &&
+                      showCommentInput !== tab.type &&
+                      !feedbackMap[tab.type]?.comment
+                    "
+                    size="small"
+                    text
+                    type="primary"
+                    @click="showCommentInput = tab.type"
+                  >
+                    补充说明
+                  </el-button>
+                  <el-button size="small" text type="info" @click="feedbackMap[tab.type].helpful = null">
+                    重新反馈
+                  </el-button>
+                </div>
+
+                <div v-if="showCommentInput === tab.type" class="feedback-comment">
+                  <el-input
+                    v-model="feedbackMap[tab.type].comment"
+                    type="textarea"
+                    :rows="2"
+                    placeholder="请告诉我们哪里可以改进（可选）..."
+                    maxlength="500"
+                    show-word-limit
+                    size="small"
+                  />
+                  <el-button
+                    size="small"
+                    type="primary"
+                    :loading="feedbackSubmitting === tab.type"
+                    @click="submitFeedbackComment(tab.type)"
+                    style="margin-top: 8px"
+                  >
+                    提交
+                  </el-button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 加载中 -->
+            <div v-else-if="loadingType === tab.type" class="asset-loading">
+              <div class="stream-placeholder">
+                <el-icon class="is-loading"><Loading /></el-icon>
+                正在生成 {{ tab.label }}，请稍候...
+              </div>
+              <div v-if="streamBuffer" class="asset-result">
+                <QuestionVisualInteractive v-if="activeTab === 'VISUAL_INTERACTIVE'" :content="streamBuffer" />
+                <MarkdownRenderer v-else :content="streamBuffer" />
+              </div>
+            </div>
+
+            <!-- 空状态：未生成 -->
+            <div v-else class="asset-empty">
+              <div class="empty-icon">{{ tab.icon }}</div>
+              <div class="empty-text">{{ tab.description }}</div>
+              <el-button type="primary" :loading="loading" @click="generateTab(tab.type)">
+                <el-icon><MagicStick /></el-icon>
+                生成{{ tab.label }}
               </el-button>
             </div>
 
-            <!-- 反馈区域 -->
-            <div class="feedback-area">
-              <div v-if="feedbackMap[tab.type]?.helpful === null" class="feedback-prompt">
-                <span class="feedback-text">这个讲解对你有帮助吗？</span>
-                <el-button
-                  size="small"
-                  :type="feedbackMap[tab.type]?.helpful === true ? 'success' : 'default'"
-                  :loading="feedbackSubmitting === tab.type"
-                  @click="handleFeedback(tab.type, true)"
-                >
-                  👍 有帮助
-                </el-button>
-                <el-button
-                  size="small"
-                  :type="feedbackMap[tab.type]?.helpful === false ? 'danger' : 'default'"
-                  :loading="feedbackSubmitting === tab.type"
-                  @click="handleFeedback(tab.type, false)"
-                >
-                  👎 没帮助
-                </el-button>
-              </div>
-
-              <div v-else class="feedback-done">
-                <el-tag
-                  :type="feedbackMap[tab.type]?.helpful ? 'success' : 'warning'"
-                  size="small"
-                  effect="plain"
-                >
-                  {{ feedbackMap[tab.type]?.helpful ? '👍 已反馈：有帮助' : '👎 已反馈：没帮助' }}
-                </el-tag>
-                <el-button
-                  v-if="feedbackMap[tab.type]?.helpful === false && showCommentInput !== tab.type && !feedbackMap[tab.type]?.comment"
-                  size="small"
-                  text
-                  type="primary"
-                  @click="showCommentInput = tab.type"
-                >
-                  补充说明
-                </el-button>
-                <el-button
-                  size="small"
-                  text
-                  type="info"
-                  @click="feedbackMap[tab.type].helpful = null"
-                >
-                  重新反馈
-                </el-button>
-              </div>
-
-              <div v-if="showCommentInput === tab.type" class="feedback-comment">
-                <el-input
-                  v-model="feedbackMap[tab.type].comment"
-                  type="textarea"
-                  :rows="2"
-                  placeholder="请告诉我们哪里可以改进（可选）..."
-                  maxlength="500"
-                  show-word-limit
-                  size="small"
-                />
-                <el-button
-                  size="small"
-                  type="primary"
-                  :loading="feedbackSubmitting === tab.type"
-                  @click="submitFeedbackComment(tab.type)"
-                  style="margin-top: 8px"
-                >
-                  提交
-                </el-button>
-              </div>
-            </div>
+            <!-- 错误提示 -->
+            <el-alert
+              v-if="error && loadingType !== tab.type"
+              :title="error"
+              type="error"
+              show-icon
+              :closable="false"
+              style="margin-top: 12px"
+            />
           </div>
-
-          <!-- 加载中 -->
-          <div v-else-if="loadingType === tab.type" class="asset-loading">
-            <div class="stream-placeholder">
-              <el-icon class="is-loading"><Loading /></el-icon>
-              正在生成 {{ tab.label }}，请稍候...
-            </div>
-            <div v-if="streamBuffer" class="asset-result">
-              <QuestionVisualInteractive
-                v-if="activeTab === 'VISUAL_INTERACTIVE'"
-                :content="streamBuffer"
-              />
-              <MarkdownRenderer
-                v-else
-                :content="streamBuffer"
-              />
-            </div>
-          </div>
-
-          <!-- 空状态：未生成 -->
-          <div v-else class="asset-empty">
-            <div class="empty-icon">{{ tab.icon }}</div>
-            <div class="empty-text">{{ tab.description }}</div>
-            <el-button
-              type="primary"
-              :loading="loading"
-              @click="generateTab(tab.type)"
-            >
-              <el-icon><MagicStick /></el-icon>
-              生成{{ tab.label }}
-            </el-button>
-          </div>
-
-          <!-- 错误提示 -->
-          <el-alert
-            v-if="error && loadingType !== tab.type"
-            :title="error"
-            type="error"
-            show-icon
-            :closable="false"
-            style="margin-top: 12px"
-          />
-        </div>
-      </el-tab-pane>
-    </el-tabs>
+        </el-tab-pane>
+      </el-tabs>
     </template>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { errorMessage, isAbortError } from '@/utils/errors'
 import { Loading, MagicStick, ArrowRight } from '@element-plus/icons-vue'
 import {
   type AiAssetType,
@@ -210,12 +185,15 @@ import QuestionVisualInteractive from '@/components/QuestionVisualInteractive.vu
 import AiVariantQuestionCard from '@/components/AiVariantQuestionCard.vue'
 import { ElMessage } from 'element-plus'
 
-const props = withDefaults(defineProps<{
-  questionId: number
-  collapsible?: boolean
-}>(), {
-  collapsible: false,
-})
+const props = withDefaults(
+  defineProps<{
+    questionId: number
+    collapsible?: boolean
+  }>(),
+  {
+    collapsible: false,
+  },
+)
 
 const expanded = ref(false)
 const assetRoot = ref<HTMLElement | null>(null)
@@ -230,12 +208,27 @@ interface AssetTab {
 }
 
 const assetTabs: AssetTab[] = [
-  { type: 'FULL_EXPLANATION', label: '标准解析', icon: '📖', description: '包含知识点、正确答案分析、错误选项分析、关键思路和总结。' },
-  { type: 'BEGINNER_EXPLANATION', label: '小白版', icon: '🌱', description: '少术语、多铺垫，用最简单的方式一步一步讲解。' },
+  {
+    type: 'FULL_EXPLANATION',
+    label: '标准解析',
+    icon: '📖',
+    description: '包含知识点、正确答案分析、错误选项分析、关键思路和总结。',
+  },
+  {
+    type: 'BEGINNER_EXPLANATION',
+    label: '小白版',
+    icon: '🌱',
+    description: '少术语、多铺垫，用最简单的方式一步一步讲解。',
+  },
   { type: 'STEP_BY_STEP', label: '步骤拆解', icon: '🪜', description: '将解题过程拆成明确的、可执行的步骤。' },
   { type: 'WRONG_OPTION_ANALYSIS', label: '错误选项', icon: '🎯', description: '分析每个错误选项利用了什么思维陷阱。' },
   { type: 'COMMON_MISTAKES', label: '常见误区', icon: '🚫', description: '列出学生最容易犯的错误和正确的理解。' },
-  { type: 'VISUAL_INTERACTIVE', label: '可视化讲解', icon: '📊', description: '用图表、数组、树等可视化元素展示解题过程，适合算法和数据结构题目。' },
+  {
+    type: 'VISUAL_INTERACTIVE',
+    label: '可视化讲解',
+    icon: '📊',
+    description: '用图表、数组、树等可视化元素展示解题过程，适合算法和数据结构题目。',
+  },
   { type: 'VARIANT', label: '变式题', icon: '🔄', description: '生成 1 道可提交、可判分的单选变式题，检验知识迁移。' },
 ]
 
@@ -310,11 +303,14 @@ onMounted(() => {
   if (typeof IntersectionObserver === 'undefined') {
     isInViewport.value = true
   } else if (assetRoot.value) {
-    visibilityObserver = new IntersectionObserver((entries) => {
-      const entry = entries[0]
-      isInViewport.value = Boolean(entry?.isIntersecting)
-      if (isInViewport.value) trackVisibleAsset(activeTab.value)
-    }, { threshold: 0.1 })
+    visibilityObserver = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        isInViewport.value = Boolean(entry?.isIntersecting)
+        if (isInViewport.value) trackVisibleAsset(activeTab.value)
+      },
+      { threshold: 0.1 },
+    )
     visibilityObserver.observe(assetRoot.value)
   }
   if (!props.collapsible) {
@@ -326,12 +322,15 @@ onBeforeUnmount(() => {
   visibilityObserver?.disconnect()
 })
 
-watch(() => props.questionId, () => {
-  reset()
-  if (!props.collapsible || expanded.value) {
-    loadExistingAssets()
-  }
-})
+watch(
+  () => props.questionId,
+  () => {
+    reset()
+    if (!props.collapsible || expanded.value) {
+      loadExistingAssets()
+    }
+  },
+)
 
 function expandAndLoad() {
   expanded.value = true
@@ -486,8 +485,8 @@ async function handleVariantTrainingComplete() {
     const completedResponse = await completeVariantTraining(props.questionId)
     applyVariantTraining(completedResponse.data)
     ElMessage.success('已记录本组变式训练完成')
-  } catch (e: any) {
-    ElMessage.error(e?.message || '记录训练完成失败，请稍后重试')
+  } catch (e) {
+    ElMessage.error(errorMessage(e, '记录训练完成失败，请稍后重试'))
   } finally {
     variantTrainingSubmitting.value = false
   }
@@ -513,20 +512,25 @@ async function generateTab(type: AiAssetType) {
       trackVisibleAsset(type)
       return
     }
-    await streamAsset(props.questionId, type, {
-      onContent: (content) => {
-        streamBuffer.value += content
+    await streamAsset(
+      props.questionId,
+      type,
+      {
+        onContent: (content) => {
+          streamBuffer.value += content
+        },
+        onDone: () => {
+          // 流式完成，将 buffer 存入缓存内容
+          tabContent[type] = streamBuffer.value
+          streamBuffer.value = ''
+          trackVisibleAsset(type)
+        },
       },
-      onDone: () => {
-        // 流式完成，将 buffer 存入缓存内容
-        tabContent[type] = streamBuffer.value
-        streamBuffer.value = ''
-        trackVisibleAsset(type)
-      },
-    }, controller.signal)
-  } catch (e: any) {
-    if (e?.name !== 'AbortError') {
-      error.value = e?.message || 'AI 服务调用失败，请稍后重试'
+      controller.signal,
+    )
+  } catch (e) {
+    if (!isAbortError(e)) {
+      error.value = errorMessage(e, 'AI 服务调用失败，请稍后重试')
     }
   } finally {
     if (abortController === controller) {
@@ -732,8 +736,14 @@ async function generateTab(type: AiAssetType) {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 720px) {

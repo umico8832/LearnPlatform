@@ -54,26 +54,11 @@
               <strong>建议结果</strong>
               <span>{{ resultMeta }}</span>
             </div>
-            <el-button
-              v-if="result"
-              text
-              type="primary"
-              :icon="DocumentCopy"
-              @click="copyResult"
-            >
-              复制
-            </el-button>
+            <el-button v-if="result" text type="primary" :icon="DocumentCopy" @click="copyResult"> 复制 </el-button>
           </div>
         </template>
 
-        <el-alert
-          v-if="error"
-          :title="error"
-          type="error"
-          show-icon
-          :closable="false"
-          class="result-alert"
-        />
+        <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" class="result-alert" />
 
         <div v-if="loading && !result" class="stream-placeholder">
           <el-icon class="is-loading" :size="22"><Loading /></el-icon>
@@ -87,13 +72,8 @@
           <MarkdownRenderer :content="result" />
         </div>
 
-        <el-empty
-          v-else-if="!error"
-          description="选择范围后点击生成，AI 会给出今日复习优先级、薄弱点和行动建议"
-        >
-          <el-button type="primary" :icon="MagicStick" :loading="loading" @click="generate">
-            生成第一份建议
-          </el-button>
+        <el-empty v-else-if="!error" description="选择范围后点击生成，AI 会给出今日复习优先级、薄弱点和行动建议">
+          <el-button type="primary" :icon="MagicStick" :loading="loading" @click="generate"> 生成第一份建议 </el-button>
         </el-empty>
       </el-card>
     </section>
@@ -102,16 +82,9 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { errorMessage, isAbortError } from '@/utils/errors'
 import { ElMessage } from 'element-plus'
-import {
-  Aim,
-  CircleClose,
-  DataAnalysis,
-  DocumentCopy,
-  Loading,
-  MagicStick,
-  Timer,
-} from '@element-plus/icons-vue'
+import { Aim, CircleClose, DataAnalysis, DocumentCopy, Loading, MagicStick, Timer } from '@element-plus/icons-vue'
 import { streamReviewSuggestion } from '@/api/ai'
 import { getCoursePage } from '@/api/course'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
@@ -129,11 +102,9 @@ const selectedCourseName = computed(() => {
   return courseList.value.find((course) => course.id === courseId.value)?.name || '已选课程'
 })
 
-const scopeDescription = computed(() => (
-  courseId.value
-    ? '聚焦该课程下的错题、正确率和薄弱知识点。'
-    : '综合所有课程生成跨学科复盘建议。'
-))
+const scopeDescription = computed(() =>
+  courseId.value ? '聚焦该课程下的错题、正确率和薄弱知识点。' : '综合所有课程生成跨学科复盘建议。',
+)
 
 const resultMeta = computed(() => {
   if (loading.value) return result.value ? '生成中，内容持续更新' : '等待 AI 返回'
@@ -151,9 +122,7 @@ const guideItems = [
 onMounted(async () => {
   try {
     const res = await getCoursePage({ pageNum: 1, pageSize: 100 })
-    if ((res as any).code === 0 && (res as any).data) {
-      courseList.value = ((res as any).data.records || []).map((c: any) => ({ id: c.id, name: c.name }))
-    }
+    courseList.value = (res.data?.records ?? []).map((c) => ({ id: c.id, name: c.name }))
   } catch {}
 })
 
@@ -165,15 +134,19 @@ const generate = async () => {
   error.value = ''
   generatedAt.value = ''
   try {
-    await streamReviewSuggestion(courseId.value, {
-      onContent: (content) => {
-        result.value += content
+    await streamReviewSuggestion(
+      courseId.value,
+      {
+        onContent: (content) => {
+          result.value += content
+        },
       },
-    }, controller.value.signal)
+      controller.value.signal,
+    )
     generatedAt.value = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-  } catch (e: any) {
-    if (e?.name !== 'AbortError') {
-      error.value = e?.response?.data?.message || e?.message || 'AI 服务调用失败，请检查配置'
+  } catch (e) {
+    if (!isAbortError(e)) {
+      error.value = errorMessage(e, 'AI 服务调用失败，请检查配置')
     }
   } finally {
     loading.value = false
@@ -215,9 +188,7 @@ onBeforeUnmount(() => {
   padding: 24px;
   border: 1px solid var(--lp-border);
   border-radius: var(--lp-radius);
-  background:
-    linear-gradient(135deg, rgba(23, 105, 170, 0.09), rgba(47, 133, 90, 0.09)),
-    var(--lp-surface);
+  background: linear-gradient(135deg, rgba(23, 105, 170, 0.09), rgba(47, 133, 90, 0.09)), var(--lp-surface);
 }
 
 .section-kicker,

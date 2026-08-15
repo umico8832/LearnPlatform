@@ -94,9 +94,19 @@
         <template v-if="showOptions">
           <el-form-item label="选项">
             <div v-for="(opt, idx) in optionList" :key="idx" class="option-row">
-              <el-input v-model="opt.content" :placeholder="'选项 ' + String.fromCharCode(65 + idx)" style="width: 300px" />
+              <el-input
+                v-model="opt.content"
+                :placeholder="'选项 ' + String.fromCharCode(65 + idx)"
+                style="width: 300px"
+              />
               <el-checkbox v-model="opt.isCorrect" style="margin-left: 8px">正确答案</el-checkbox>
-              <el-button v-if="optionList.length > 2" type="danger" link @click="optionList.splice(idx, 1)" style="margin-left: 4px">
+              <el-button
+                v-if="optionList.length > 2"
+                type="danger"
+                link
+                @click="optionList.splice(idx, 1)"
+                style="margin-left: 4px"
+              >
                 <el-icon><Delete /></el-icon>
               </el-button>
             </div>
@@ -147,7 +157,9 @@
         </el-descriptions-item>
         <el-descriptions-item label="课程">{{ currentDetail.courseName }}</el-descriptions-item>
         <el-descriptions-item label="题型">{{ questionTypeLabel(currentDetail.questionType) }}</el-descriptions-item>
-        <el-descriptions-item label="难度"><el-rate v-model="currentDetail.difficulty" disabled :max="5" /></el-descriptions-item>
+        <el-descriptions-item label="难度"
+          ><el-rate v-model="currentDetail.difficulty" disabled :max="5"
+        /></el-descriptions-item>
         <el-descriptions-item label="投稿时间">{{ formatTime(currentDetail.createTime) }}</el-descriptions-item>
         <el-descriptions-item label="题干内容" :span="2">
           <div class="detail-content">{{ currentDetail.content }}</div>
@@ -169,8 +181,12 @@
         <el-descriptions-item label="审核意见" :span="2" v-if="currentDetail.reviewComment">
           <el-text type="info">{{ currentDetail.reviewComment }}</el-text>
         </el-descriptions-item>
-        <el-descriptions-item label="审核人" v-if="currentDetail.reviewedByName">{{ currentDetail.reviewedByName }}</el-descriptions-item>
-        <el-descriptions-item label="审核时间" v-if="currentDetail.reviewedTime">{{ formatTime(currentDetail.reviewedTime) }}</el-descriptions-item>
+        <el-descriptions-item label="审核人" v-if="currentDetail.reviewedByName">{{
+          currentDetail.reviewedByName
+        }}</el-descriptions-item>
+        <el-descriptions-item label="审核时间" v-if="currentDetail.reviewedTime">{{
+          formatTime(currentDetail.reviewedTime)
+        }}</el-descriptions-item>
       </el-descriptions>
     </el-dialog>
   </div>
@@ -178,6 +194,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
+import { SemanticTagType } from '@/utils/errors'
 import { ElMessage, type FormInstance } from 'element-plus'
 import { Plus, Delete } from '@element-plus/icons-vue'
 import { submitQuestion, getMySubmissions, type QuestionSubmissionVO, type SubmissionForm } from '@/api/submission'
@@ -227,9 +244,7 @@ const rules = {
   difficulty: [{ required: true, message: '请选择难度', trigger: 'change' }],
 }
 
-const showOptions = computed(() =>
-  form.questionType === 'SINGLE_CHOICE' || form.questionType === 'MULTIPLE_CHOICE'
-)
+const showOptions = computed(() => form.questionType === 'SINGLE_CHOICE' || form.questionType === 'MULTIPLE_CHOICE')
 
 const questionTypeLabel = (type: string) => {
   const map: Record<string, string> = {
@@ -248,15 +263,19 @@ const statusLabel = (status: number) => {
 }
 
 const statusTagType = (status: number) => {
-  const map: Record<number, string> = { 0: 'warning', 1: 'success', 2: 'danger', 3: '' }
-  return (map[status] || 'info') as any
+  const map: Record<number, SemanticTagType> = { 0: 'warning', 1: 'success', 2: 'danger', 3: undefined }
+  return map[status] || 'info'
 }
 
-const formatTime = (t: string | null) => t ? t.replace('T', ' ').substring(0, 19) : ''
+const formatTime = (t: string | null) => (t ? t.replace('T', ' ').substring(0, 19) : '')
 
 const parseOptions = (json: string | null): Array<{ content: string; label: string; isCorrect: boolean }> => {
   if (!json) return []
-  try { return JSON.parse(json) } catch { return [] }
+  try {
+    return JSON.parse(json)
+  } catch {
+    return []
+  }
 }
 
 const addOption = () => {
@@ -287,7 +306,9 @@ const loadCourses = async () => {
     if (res.code === 0 && res.data) {
       courses.value = res.data
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 const handlePageChange = (page: number) => {
@@ -313,24 +334,26 @@ const handleSubmit = async () => {
 
     // 组装选项 JSON
     if (showOptions.value) {
-      const filled = optionList.value.filter(o => o.content.trim())
+      const filled = optionList.value.filter((o) => o.content.trim())
       if (filled.length < 2) {
         ElMessage.warning('至少需要填写 2 个选项')
         return
       }
-      if (!filled.some(o => o.isCorrect)) {
+      if (!filled.some((o) => o.isCorrect)) {
         ElMessage.warning('请标记至少一个正确答案')
         return
       }
-      if (form.questionType === 'SINGLE_CHOICE' && filled.filter(o => o.isCorrect).length !== 1) {
+      if (form.questionType === 'SINGLE_CHOICE' && filled.filter((o) => o.isCorrect).length !== 1) {
         ElMessage.warning('单选题必须且只能标记 1 个正确答案')
         return
       }
-      payload.optionsJson = JSON.stringify(filled.map((o, i) => ({
-        content: o.content,
-        label: String.fromCharCode(65 + i),
-        isCorrect: o.isCorrect,
-      })))
+      payload.optionsJson = JSON.stringify(
+        filled.map((o, i) => ({
+          content: o.content,
+          label: String.fromCharCode(65 + i),
+          isCorrect: o.isCorrect,
+        })),
+      )
     }
 
     if (form.questionType === 'TRUE_FALSE') {

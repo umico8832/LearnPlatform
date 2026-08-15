@@ -42,8 +42,8 @@
         <el-table-column prop="title" label="试卷名称" min-width="200" />
         <el-table-column label="性质" width="100">
           <template #default="{ row }">
-            <el-tag :type="paperTypeTag((row as ExamPaperVO))" size="small">
-              {{ paperTypeLabel((row as ExamPaperVO)) }}
+            <el-tag :type="paperTypeTag(row as ExamPaperVO)" size="small">
+              {{ paperTypeLabel(row as ExamPaperVO) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -68,9 +68,21 @@
         </el-table-column>
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link size="small" :icon="Edit" @click="openDialog(row as ExamPaperVO)">编辑</el-button>
-            <el-button v-if="(row as ExamPaperVO).status === 0" type="success" link size="small" :icon="Promotion" @click="handlePublish(row as ExamPaperVO)">发布</el-button>
-            <el-button type="danger" link size="small" :icon="Delete" @click="handleDelete(row as ExamPaperVO)">删除</el-button>
+            <el-button type="primary" link size="small" :icon="Edit" @click="openDialog(row as ExamPaperVO)"
+              >编辑</el-button
+            >
+            <el-button
+              v-if="(row as ExamPaperVO).status === 0"
+              type="success"
+              link
+              size="small"
+              :icon="Promotion"
+              @click="handlePublish(row as ExamPaperVO)"
+              >发布</el-button
+            >
+            <el-button type="danger" link size="small" :icon="Delete" @click="handleDelete(row as ExamPaperVO)"
+              >删除</el-button
+            >
           </template>
         </el-table-column>
       </el-table>
@@ -87,7 +99,12 @@
     </el-card>
 
     <!-- 新增/编辑弹窗 -->
-    <el-dialog v-model="dialogVisible" :title="editingId ? '编辑试卷' : '新增试卷'" width="min(1120px, 94vw)" destroy-on-close>
+    <el-dialog
+      v-model="dialogVisible"
+      :title="editingId ? '编辑试卷' : '新增试卷'"
+      width="min(1120px, 94vw)"
+      destroy-on-close
+    >
       <el-form :model="form" label-width="80px">
         <el-form-item label="试卷名称" required>
           <el-input v-model="form.title" placeholder="请输入试卷名称" />
@@ -127,7 +144,12 @@
             </el-col>
           </el-row>
           <el-form-item label="来源引用" required>
-            <el-input v-model="form.sourceReference" type="textarea" :rows="2" placeholder="填写可复核的出版物、文件或页面引用" />
+            <el-input
+              v-model="form.sourceReference"
+              type="textarea"
+              :rows="2"
+              placeholder="填写可复核的出版物、文件或页面引用"
+            />
           </el-form-item>
           <el-form-item label="来源核验">
             <el-switch v-model="form.sourceVerified" active-text="已人工核验" inactive-text="尚未核验" />
@@ -184,12 +206,28 @@
             </el-table-column>
             <el-table-column label="分值" width="120">
               <template #default="{ row }">
-                <el-input-number :model-value="(row as FormQuestionItem).score" :min="1" size="small" @change="(val: number | undefined) => val !== undefined && updateQuestionScore((row as FormQuestionItem).questionId, val)" />
+                <el-input-number
+                  :model-value="(row as FormQuestionItem).score"
+                  :min="1"
+                  size="small"
+                  @change="
+                    (val: number | undefined) =>
+                      val !== undefined && updateQuestionScore((row as FormQuestionItem).questionId, val)
+                  "
+                />
               </template>
             </el-table-column>
             <el-table-column label="排序" width="100">
               <template #default="{ row }">
-                <el-input-number :model-value="(row as FormQuestionItem).sortOrder" :min="0" size="small" @change="(val: number | undefined) => val !== undefined && updateQuestionSort((row as FormQuestionItem).questionId, val)" />
+                <el-input-number
+                  :model-value="(row as FormQuestionItem).sortOrder"
+                  :min="0"
+                  size="small"
+                  @change="
+                    (val: number | undefined) =>
+                      val !== undefined && updateQuestionSort((row as FormQuestionItem).questionId, val)
+                  "
+                />
               </template>
             </el-table-column>
             <el-table-column label="操作" width="60">
@@ -211,8 +249,20 @@
     <!-- 题目选择弹窗 -->
     <el-dialog v-model="showQuestionPicker" title="选择题目" width="900px" destroy-on-close @open="loadPickerQuestions">
       <div class="q-picker-filter">
-        <el-input v-model="qPickerKeyword" placeholder="搜索题干关键词" clearable style="width: 200px" @keyup.enter="loadPickerQuestions" />
-        <el-select v-model="qPickerType" placeholder="题型" clearable style="width: 120px" @change="loadPickerQuestions">
+        <el-input
+          v-model="qPickerKeyword"
+          placeholder="搜索题干关键词"
+          clearable
+          style="width: 200px"
+          @keyup.enter="loadPickerQuestions"
+        />
+        <el-select
+          v-model="qPickerType"
+          placeholder="题型"
+          clearable
+          style="width: 120px"
+          @change="loadPickerQuestions"
+        >
           <el-option label="单选" value="SINGLE_CHOICE" />
           <el-option label="多选" value="MULTIPLE_CHOICE" />
           <el-option label="判断" value="TRUE_FALSE" />
@@ -224,7 +274,10 @@
       <el-table :data="pickerQuestions as any" v-loading="pickerLoading" size="small" max-height="400">
         <el-table-column width="50">
           <template #default="{ row }">
-            <el-checkbox :model-value="isQuestionSelected((row as QuestionVO).id)" @change="togglePickQuestion(row as QuestionVO)" />
+            <el-checkbox
+              :model-value="isQuestionSelected((row as QuestionVO).id)"
+              @change="togglePickQuestion(row as QuestionVO)"
+            />
           </template>
         </el-table-column>
         <el-table-column prop="id" label="ID" width="60" />
@@ -300,7 +353,13 @@
             <el-descriptions-item label="考试时长">{{ smartPreview.duration }} 分钟</el-descriptions-item>
           </el-descriptions>
 
-          <el-alert :title="smartPreview.recommendation" type="success" :closable="false" show-icon style="margin: 12px 0" />
+          <el-alert
+            :title="smartPreview.recommendation"
+            type="success"
+            :closable="false"
+            show-icon
+            style="margin: 12px 0"
+          />
 
           <el-row :gutter="16" style="margin-bottom: 12px">
             <el-col :span="12">
@@ -308,9 +367,17 @@
                 <h4>知识点覆盖</h4>
                 <div v-for="(count, name) in smartPreview.knowledgePointDistribution" :key="name" class="dist-item">
                   <span class="dist-label">{{ name }}</span>
-                  <el-progress :percentage="Math.round((count / smartPreview.questionCount) * 100)" :stroke-width="14" :text-inside="true" />
+                  <el-progress
+                    :percentage="Math.round((count / smartPreview.questionCount) * 100)"
+                    :stroke-width="14"
+                    :text-inside="true"
+                  />
                 </div>
-                <el-empty v-if="Object.keys(smartPreview.knowledgePointDistribution).length === 0" description="无知识点数据" :image-size="40" />
+                <el-empty
+                  v-if="Object.keys(smartPreview.knowledgePointDistribution).length === 0"
+                  description="无知识点数据"
+                  :image-size="40"
+                />
               </div>
             </el-col>
             <el-col :span="12">
@@ -318,9 +385,18 @@
                 <h4>难度分布</h4>
                 <div v-for="(count, level) in smartPreview.difficultyDistribution" :key="level" class="dist-item">
                   <span class="dist-label">{{ level }}</span>
-                  <el-progress :percentage="Math.round((count / smartPreview.questionCount) * 100)" :stroke-width="14" :text-inside="true" :color="getDifficultyColor(level as string)" />
+                  <el-progress
+                    :percentage="Math.round((count / smartPreview.questionCount) * 100)"
+                    :stroke-width="14"
+                    :text-inside="true"
+                    :color="getDifficultyColor(level as string)"
+                  />
                 </div>
-                <el-empty v-if="Object.keys(smartPreview.difficultyDistribution).length === 0" description="无难度数据" :image-size="40" />
+                <el-empty
+                  v-if="Object.keys(smartPreview.difficultyDistribution).length === 0"
+                  description="无难度数据"
+                  :image-size="40"
+                />
               </div>
             </el-col>
           </el-row>
@@ -345,10 +421,26 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { errorMessage } from '@/utils/errors'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Collection, Delete, Edit, MagicStick, Plus, Promotion, Refresh } from '@element-plus/icons-vue'
-import { getExamPaperList, getExamPaperDetail, createExamPaper, updateExamPaper, deleteExamPaper, publishExamPaper, smartExamPreview, smartExamCreate } from '@/api/exam'
-import type { ExamPaperVO, ExamPaperCreateRequest, PaperType, SmartExamRequest, SmartExamPreview as SmartExamPreviewType } from '@/api/exam'
+import {
+  getExamPaperList,
+  getExamPaperDetail,
+  createExamPaper,
+  updateExamPaper,
+  deleteExamPaper,
+  publishExamPaper,
+  smartExamPreview,
+  smartExamCreate,
+} from '@/api/exam'
+import type {
+  ExamPaperVO,
+  ExamPaperCreateRequest,
+  PaperType,
+  SmartExamRequest,
+  SmartExamPreview as SmartExamPreviewType,
+} from '@/api/exam'
 import { getAdminQuestionPage } from '@/api/question'
 import type { QuestionVO } from '@/api/question'
 import { getCoursePage } from '@/api/course'
@@ -390,7 +482,7 @@ const form = ref<{
   examYear: undefined,
   sourceReference: '',
   sourceVerified: false,
-  questions: []
+  questions: [],
 })
 
 interface FormQuestionItem {
@@ -421,8 +513,8 @@ const totalFormScore = computed(() => {
 })
 
 const paperStats = computed(() => {
-  const published = papers.value.filter(p => p.status === 1).length
-  const draft = papers.value.filter(p => p.status === 0).length
+  const published = papers.value.filter((p) => p.status === 1).length
+  const draft = papers.value.filter((p) => p.status === 0).length
   const totalQuestions = papers.value.reduce((sum, p) => sum + (p.questionCount || 0), 0)
   const avgDuration = papers.value.length
     ? Math.round(papers.value.reduce((sum, p) => sum + (p.duration || 0), 0) / papers.value.length)
@@ -458,9 +550,7 @@ const loadPapers = async () => {
 const loadCourses = async () => {
   try {
     const res = await getCoursePage({ pageNum: 1, pageSize: 100 })
-    if ((res as any).code === 0 && (res as any).data) {
-      courseList.value = ((res as any).data.records || []).map((c: any) => ({ id: c.id, name: c.name }))
-    }
+    courseList.value = (res.data?.records ?? []).map((c) => ({ id: c.id, name: c.name }))
   } catch {}
 }
 
@@ -491,16 +581,16 @@ const openDialog = async (paper?: ExamPaperVO) => {
             minorQuestionNumber: q.minorQuestionNumber || '',
             subquestionNumber: q.subquestionNumber || '',
             displayNumber: q.displayNumber || '',
-          }))
+          })),
         }
         // 预填充题目内容到 map
         pickedQuestionMap.value.clear()
-        for (const q of (d.questions || [])) {
+        for (const q of d.questions || []) {
           pickedQuestionMap.value.set(q.questionId, {
             id: q.questionId,
             content: q.content,
             questionType: q.questionType,
-            score: q.score
+            score: q.score,
           } as QuestionVO)
         }
       }
@@ -568,12 +658,10 @@ const handleSubmit = async () => {
       minorQuestionNumber: q.minorQuestionNumber || undefined,
       subquestionNumber: q.subquestionNumber || undefined,
       displayNumber: q.displayNumber || undefined,
-    }))
+    })),
   }
   try {
-    const res = editingId.value
-      ? await updateExamPaper(editingId.value, data)
-      : await createExamPaper(data)
+    const res = editingId.value ? await updateExamPaper(editingId.value, data) : await createExamPaper(data)
     if (res.code === 0) {
       ElMessage.success(editingId.value ? '更新成功' : '创建成功')
       dialogVisible.value = false
@@ -618,23 +706,22 @@ const loadPickerQuestions = async () => {
       pageNum: pickerPageNum.value,
       pageSize: 10,
       keyword: qPickerKeyword.value || undefined,
-      questionType: qPickerType.value || undefined
+      questionType: qPickerType.value || undefined,
     })
-    if ((res as any).code === 0 && (res as any).data) {
-      pickerQuestions.value = (res as any).data.records || []
-      pickerTotal.value = (res as any).data.total || 0
-    }
-  } catch {} finally {
+    pickerQuestions.value = res.data?.records ?? []
+    pickerTotal.value = res.data?.total ?? 0
+  } catch {
+  } finally {
     pickerLoading.value = false
   }
 }
 
 const isQuestionSelected = (id: number) => {
-  return form.value.questions.some(q => q.questionId === id)
+  return form.value.questions.some((q) => q.questionId === id)
 }
 
 const togglePickQuestion = (q: QuestionVO) => {
-  const idx = form.value.questions.findIndex(item => item.questionId === q.id)
+  const idx = form.value.questions.findIndex((item) => item.questionId === q.id)
   if (idx >= 0) {
     form.value.questions.splice(idx, 1)
   } else {
@@ -657,12 +744,12 @@ const removeQuestion = (index: number) => {
 }
 
 const updateQuestionScore = (questionId: number, val: number) => {
-  const q = form.value.questions.find(item => item.questionId === questionId)
+  const q = form.value.questions.find((item) => item.questionId === questionId)
   if (q) q.score = val
 }
 
 const updateQuestionSort = (questionId: number, val: number) => {
-  const q = form.value.questions.find(item => item.questionId === questionId)
+  const q = form.value.questions.find((item) => item.questionId === questionId)
   if (q) q.sortOrder = val
 }
 
@@ -672,7 +759,13 @@ const getQuestionContent = (questionId: number) => {
 }
 
 const getTypeLabel = (type: string) => {
-  const map: Record<string, string> = { SINGLE_CHOICE: '单选', MULTIPLE_CHOICE: '多选', TRUE_FALSE: '判断', FILL_BLANK: '填空', SHORT_ANSWER: '简答' }
+  const map: Record<string, string> = {
+    SINGLE_CHOICE: '单选',
+    MULTIPLE_CHOICE: '多选',
+    TRUE_FALSE: '判断',
+    FILL_BLANK: '填空',
+    SHORT_ANSWER: '简答',
+  }
   return map[type] || type
 }
 
@@ -704,7 +797,7 @@ const smartForm = ref<SmartExamRequest>({
   difficultyMode: 'ADAPTIVE',
   includeWrongQuestions: true,
   title: '',
-  duration: 60
+  duration: 60,
 })
 
 const openSmartDialog = () => {
@@ -715,7 +808,7 @@ const openSmartDialog = () => {
     difficultyMode: 'ADAPTIVE',
     includeWrongQuestions: true,
     title: '',
-    duration: 60
+    duration: 60,
   }
   smartDialogVisible.value = true
 }
@@ -729,8 +822,8 @@ const handleSmartPreview = async () => {
     } else {
       ElMessage.error(res.message || '智能组卷预览失败')
     }
-  } catch (e: any) {
-    ElMessage.error(e?.response?.data?.message || e?.message || '智能组卷预览失败，请确保题库中有足够题目')
+  } catch (e) {
+    ElMessage.error(errorMessage(e, '智能组卷预览失败，请确保题库中有足够题目'))
   } finally {
     smartLoading.value = false
   }
@@ -763,24 +856,80 @@ const getDifficultyColor = (level: string) => {
   if (level.includes('★★')) return '#67c23a'
   return '#909399'
 }
-
 </script>
 
 <style scoped>
-.table-summary { color: var(--lp-text-muted); font-size: 13px; }
-.pagination-wrapper { display: flex; justify-content: flex-end; margin-top: 16px; }
-.q-content-preview { font-size: 13px; color: #606266; }
-.question-picker { border: 1px solid #ebeef5; border-radius: 8px; padding: 16px; }
-.provenance-alert { margin-bottom: 16px; }
-.question-number-parts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
-.picker-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-.picker-info { font-size: 13px; color: #909399; }
-.q-picker-filter { display: flex; gap: 12px; margin-bottom: 16px; }
-.smart-preview { }
-.preview-card { border: 1px solid #ebeef5; border-radius: 8px; padding: 16px; }
-.preview-card h4 { margin: 0 0 12px 0; font-size: 14px; color: #303133; }
-.dist-item { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-.dist-label { min-width: 60px; font-size: 13px; color: #606266; white-space: nowrap; }
-.dist-item .el-progress { flex: 1; }
-.preview-desc { font-size: 13px; color: #909399; margin: 8px 0 0; }
+.table-summary {
+  color: var(--lp-text-muted);
+  font-size: 13px;
+}
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+.q-content-preview {
+  font-size: 13px;
+  color: #606266;
+}
+.question-picker {
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  padding: 16px;
+}
+.provenance-alert {
+  margin-bottom: 16px;
+}
+.question-number-parts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+.picker-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.picker-info {
+  font-size: 13px;
+  color: #909399;
+}
+.q-picker-filter {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.smart-preview {
+}
+.preview-card {
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  padding: 16px;
+}
+.preview-card h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #303133;
+}
+.dist-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.dist-label {
+  min-width: 60px;
+  font-size: 13px;
+  color: #606266;
+  white-space: nowrap;
+}
+.dist-item .el-progress {
+  flex: 1;
+}
+.preview-desc {
+  font-size: 13px;
+  color: #909399;
+  margin: 8px 0 0;
+}
 </style>

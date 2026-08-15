@@ -47,6 +47,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { errorMessage, isAbortError } from '@/utils/errors'
 import { MagicStick, Reading } from '@element-plus/icons-vue'
 import { streamExamLearningAi, streamQuestionAi } from '@/api/ai'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
@@ -109,9 +110,9 @@ async function generate(type: AssistantType) {
     } else {
       await streamQuestionAi(type, props.questionId, handlers, controller.signal)
     }
-  } catch (e: any) {
-    if (e?.name !== 'AbortError') {
-      error.value = e?.message || 'AI 服务调用失败，请稍后重试'
+  } catch (e) {
+    if (!isAbortError(e)) {
+      error.value = errorMessage(e, 'AI 服务调用失败，请稍后重试')
     }
   } finally {
     if (abortController === controller) {
