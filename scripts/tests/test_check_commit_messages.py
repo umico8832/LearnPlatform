@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -35,9 +36,20 @@ class CommitMessageValidationTest(unittest.TestCase):
     def test_accepts_exact_subject_length_limit(self) -> None:
         self.assert_valid("feat: " + "修" * 66)
 
+    def test_accepts_structured_body(self) -> None:
+        self.assert_valid(
+            "ci(git): 固定提交正文排版校验",
+            "- 禁止正文中的 Round 行和连续自然段\n"
+            "- 固定验证区块的空行与项目符号结构\n\n"
+            "验证：\n\n"
+            "- python3 -m unittest scripts/tests/test_check_commit_messages.py\n"
+            "- python3 scripts/check-docs.py",
+        )
+
     def test_accepts_explicit_breaking_change(self) -> None:
         self.assert_valid(
             "feat(learning)!: 统一课程学习状态契约",
+            "- 统一课程学习事件接口\n\n"
             "BREAKING CHANGE: 客户端必须改用新的学习事件接口。",
         )
 
@@ -68,16 +80,44 @@ class CommitMessageValidationTest(unittest.TestCase):
             "BREAKING-CHANGE: 旧客户端不能继续使用。",
         )
 
+    def test_rejects_round_line_in_body(self) -> None:
+        self.assert_invalid(
+            "docs(agent): 收紧提交正文规则",
+            "Round 只属于 changelog",
+            "Round 244：收紧提交正文规则\n- 固定正文排版",
+        )
+
+    def test_rejects_plain_paragraph_in_body(self) -> None:
+        self.assert_invalid(
+            "ci(git): 收紧正文校验",
+            "不得出现独立自然段",
+            "这里是一段连续自然段。\n\n验证：\n\n- python3 -m unittest",
+        )
+
+    def test_rejects_section_without_blank_lines(self) -> None:
+        self.assert_invalid(
+            "ci(git): 收紧正文校验",
+            "区块前必须保留一个空行",
+            "- 固定正文格式\n验证：\n- python3 -m unittest",
+        )
+        self.assert_invalid(
+            "ci(git): 收紧正文校验",
+            "区块后必须保留一个空行",
+            "- 固定正文格式\n\n验证：\n- python3 -m unittest",
+        )
+
 
 class CommitRangeCheckTest(unittest.TestCase):
     """覆盖 run_check 对普通 push 与明确 force push 的范围校验行为。"""
 
     UNREACHABLE = "f" * 40
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.head = checker.git("rev-parse", "HEAD").strip()
-        cls.parent = checker.git("rev-parse", "HEAD~1").strip()
+    HEAD = "b" * 40
+    BASE = "a" * 40
+    VALID = checker.CommitRecord(
+        "b" * 40,
+        "ci(git): 校验提交范围",
+        "- 校验当前提交范围\n\n验证：\n\n- python3 -m unittest",
+    )
 
     def run_check(self, base: str, head: str, forced: bool = False) -> tuple[int, str, str]:
         out, err = io.StringIO(), io.StringIO()
@@ -86,32 +126,64 @@ class CommitRangeCheckTest(unittest.TestCase):
         return code, out.getvalue(), err.getvalue()
 
     def test_normal_push_with_reachable_base_passes(self) -> None:
-        code, _, _ = self.run_check(self.parent, self.head, forced=False)
+        original = checker.read_commits
+        checker.read_commits = lambda revision: [self.VALID]
+        try:
+            code, _, _ = self.run_check(self.BASE, self.HEAD, forced=False)
+        finally:
+            checker.read_commits = original
         self.assertEqual(0, code)
 
     def test_normal_push_with_unreachable_base_fails(self) -> None:
-        code, _, err = self.run_check(self.UNREACHABLE, self.head, forced=False)
+        original = checker.read_commits
+        checker.read_commits = lambda revision: (_ for _ in ()).throw(
+            subprocess.CalledProcessError(128, ["git", "log"])
+        )
+        try:
+            code, _, err = self.run_check(self.UNREACHABLE, self.HEAD, forced=False)
+        finally:
+            checker.read_commits = original
         self.assertEqual(2, code)
         self.assertIn("读取提交记录失败", err)
 
     def test_forced_push_with_unreachable_base_validates_head(self) -> None:
-        code, _, err = self.run_check(self.UNREACHABLE, self.head, forced=True)
+        original_read = checker.read_commits
+        original_head = checker.read_head_commit
+        checker.read_commits = lambda revision: (_ for _ in ()).throw(
+            subprocess.CalledProcessError(128, ["git", "log"])
+        )
+        checker.read_head_commit = lambda head: [self.VALID]
+        try:
+            code, _, err = self.run_check(self.UNREACHABLE, self.HEAD, forced=True)
+        finally:
+            checker.read_commits = original_read
+            checker.read_head_commit = original_head
         self.assertEqual(0, code)
         self.assertIn("force push", err)
 
     def test_forced_push_with_reachable_base_still_checks_range(self) -> None:
-        code, _, _ = self.run_check(self.parent, self.head, forced=True)
+        original = checker.read_commits
+        checker.read_commits = lambda revision: [self.VALID]
+        try:
+            code, _, _ = self.run_check(self.BASE, self.HEAD, forced=True)
+        finally:
+            checker.read_commits = original
         self.assertEqual(0, code)
 
     def test_forced_push_with_invalid_head_message_fails(self) -> None:
-        original = checker.read_head_commit
+        original_read = checker.read_commits
+        original_head = checker.read_head_commit
+        checker.read_commits = lambda revision: (_ for _ in ()).throw(
+            subprocess.CalledProcessError(128, ["git", "log"])
+        )
         checker.read_head_commit = lambda head: [
             checker.CommitRecord("a" * 40, "release: 非法主题", "")
         ]
         try:
-            code, _, err = self.run_check(self.UNREACHABLE, self.head, forced=True)
+            code, _, err = self.run_check(self.UNREACHABLE, self.HEAD, forced=True)
         finally:
-            checker.read_head_commit = original
+            checker.read_commits = original_read
+            checker.read_head_commit = original_head
         self.assertEqual(1, code)
         self.assertIn("不符合项目规范", err)
 

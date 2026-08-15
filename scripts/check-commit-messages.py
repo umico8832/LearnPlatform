@@ -36,6 +36,16 @@ BREAKING_FOOTER = re.compile(
 )
 FORBIDDEN_ENDINGS = (".", "。", "!", "！", ";", "；")
 ZERO_SHA = re.compile(r"^0+$")
+ROUND_LINE = re.compile(r"^Round\s+\d+[：:].*$", re.IGNORECASE)
+SECTION_HEADERS = {"验证：", "兼容性：", "迁移：", "风险："}
+FOOTER_PREFIXES = (
+    "BREAKING CHANGE:",
+    "BREAKING-CHANGE:",
+    "Refs:",
+    "Reverts:",
+    "Closes:",
+    "Co-authored-by:",
+)
 
 
 @dataclass(frozen=True)
@@ -98,6 +108,45 @@ def read_head_commit(head_sha: str) -> list[CommitRecord]:
     return parse_log_output(output)
 
 
+def validate_body_layout(body: str) -> list[str]:
+    """校验正文的稳定排版，不尝试判断正文内容是否足够原子。"""
+    if not body.strip():
+        return []
+
+    failures: list[str] = []
+    lines = body.splitlines()
+
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if not stripped:
+            continue
+
+        if ROUND_LINE.fullmatch(stripped):
+            failures.append("Round 只属于 changelog，不得写入 Commit Message 正文")
+            continue
+
+        if stripped in SECTION_HEADERS:
+            if index == 0 or lines[index - 1].strip():
+                failures.append(f"{stripped} 区块前必须保留一个空行")
+            if index == len(lines) - 1 or lines[index + 1].strip():
+                failures.append(f"{stripped} 区块后必须保留一个空行")
+            continue
+
+        if line.startswith("- "):
+            continue
+
+        if any(stripped.startswith(prefix) for prefix in FOOTER_PREFIXES):
+            if index > 0 and lines[index - 1].strip():
+                failures.append("footer 前必须保留一个空行")
+            continue
+
+        failures.append(
+            "正文除 '- ' 项目符号、允许的区块标题和 footer 外，不得出现独立自然段"
+        )
+
+    return list(dict.fromkeys(failures))
+
+
 def validate_commit(subject: str, body: str) -> list[str]:
     failures: list[str] = []
     if len(subject) > MAX_SUBJECT_LENGTH:
@@ -125,6 +174,7 @@ def validate_commit(subject: str, body: str) -> list[str]:
     if has_footer and not has_marker:
         failures.append("提供 BREAKING CHANGE: footer 时必须在主题中使用 !")
 
+    failures.extend(validate_body_layout(body))
     return failures
 
 
