@@ -10,7 +10,7 @@
       <div class="hero-actions">
         <el-button :icon="Collection" @click="openCourseContent">查看课程目录</el-button>
         <el-button :icon="Document" @click="openCoursePapers">学习课程试卷</el-button>
-        <el-button :icon="DataAnalysis" :loading="assessmentStarting" @click="startAssessment">阶段测评</el-button>
+        <el-button :icon="DataAnalysis" @click="openAssessmentSetup">阶段测评</el-button>
         <el-button :icon="DataAnalysis" :loading="assessmentHistoryLoading" @click="openAssessmentHistory">
           测评历史
         </el-button>
@@ -114,6 +114,7 @@
                 答对 {{ overview.latestStageAssessment.correctCount }} /
                 {{ overview.latestStageAssessment.questionCount }} 题
               </span>
+              <small>范围：{{ overview.latestStageAssessment.targetKnowledgePointName || '课程整体' }}</small>
               <small>题源：{{ sourceCompositionText(overview.latestStageAssessment.sourceComposition) }}</small>
               <small>{{ formatDateTime(overview.latestStageAssessment.completeTime) }}</small>
               <el-button text @click="openAssessmentDetail(overview.latestStageAssessment.id)">查看逐题复盘</el-button>
@@ -150,6 +151,7 @@
             <strong>答对 {{ item.correctCount }} / {{ item.questionCount }} 题</strong>
             <p>{{ formatDateTime(item.completeTime) }}</p>
             <small>{{ assessmentStrategyText(item.selectionStrategy) }}</small>
+            <small>范围：{{ item.targetKnowledgePointName || '课程整体' }}</small>
             <small>题源：{{ sourceCompositionText(item.sourceComposition) }}</small>
           </div>
           <el-button @click="openAssessmentDetail(item.id)">查看复盘</el-button>
@@ -165,6 +167,29 @@
       />
     </el-dialog>
 
+    <el-dialog v-model="assessmentSetupVisible" title="开始阶段测评" width="min(480px, 94vw)">
+      <p class="assessment-setup-note">
+        默认从整门课程选题；也可以限定在单个已审查知识点内，只从该知识点关联的可见已发布客观题选题。
+      </p>
+      <el-form label-position="top" @submit.prevent>
+        <el-form-item label="知识点范围">
+          <el-select v-model="assessmentKnowledgePointId" placeholder="选择知识点范围" class="assessment-scope-select">
+            <el-option :value="0" label="课程整体测评" />
+            <el-option
+              v-for="item in overview?.tutorProgress ?? []"
+              :key="item.knowledgePointId"
+              :value="item.knowledgePointId"
+              :label="item.title"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="assessmentSetupVisible = false">取消</el-button>
+        <el-button type="primary" :loading="assessmentStarting" @click="startAssessment">开始测评</el-button>
+      </template>
+    </el-dialog>
+
     <el-dialog v-model="assessmentDialogVisible" title="课程阶段测评" width="min(780px, 94vw)">
       <template v-if="assessment">
         <el-alert
@@ -173,7 +198,11 @@
           :closable="false"
           show-icon
         />
-        <p class="assessment-source-composition">题源构成：{{ sourceCompositionText(assessment.sourceComposition) }}</p>
+        <p class="assessment-source-composition">
+          范围：{{ assessment.targetKnowledgePointName || '课程整体' }} · 题源构成：{{
+            sourceCompositionText(assessment.sourceComposition)
+          }}
+        </p>
         <p v-if="assessment.status === 'COMPLETED'" class="assessment-summary">
           答对 {{ assessment.correctCount }} / {{ assessment.questionCount }} 题
         </p>
@@ -257,6 +286,8 @@ const starting = ref(false)
 const loadFailed = ref(false)
 const assessmentStarting = ref(false)
 const assessmentSubmitting = ref(false)
+const assessmentSetupVisible = ref(false)
+const assessmentKnowledgePointId = ref<number>(0)
 const assessmentDialogVisible = ref(false)
 const assessment = ref<CourseStageAssessmentVO | null>(null)
 const assessmentAnswers = ref<Record<number, string[]>>({})
@@ -329,12 +360,22 @@ function syncAssessmentAnswers(value: CourseStageAssessmentVO) {
   )
 }
 
+function openAssessmentSetup() {
+  assessmentKnowledgePointId.value = 0
+  assessmentSetupVisible.value = true
+}
+
 async function startAssessment() {
   assessmentStarting.value = true
   try {
-    const response = await startCourseStageAssessment(courseId.value, 5)
+    const response = await startCourseStageAssessment(
+      courseId.value,
+      5,
+      assessmentKnowledgePointId.value === 0 ? null : assessmentKnowledgePointId.value,
+    )
     assessment.value = response.data
     syncAssessmentAnswers(response.data)
+    assessmentSetupVisible.value = false
     assessmentDialogVisible.value = true
   } finally {
     assessmentStarting.value = false

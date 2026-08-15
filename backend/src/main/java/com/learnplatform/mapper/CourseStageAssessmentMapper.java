@@ -74,6 +74,10 @@ public interface CourseStageAssessmentMapper extends BaseMapper<CourseStageAsses
             WHERE q.course_id = #{courseId} AND q.status = 1 AND q.deleted = 0
               AND q.question_type IN ('SINGLE_CHOICE','MULTIPLE_CHOICE','TRUE_FALSE')
               AND (q.visibility = 'PUBLIC' OR (q.visibility = 'PRIVATE' AND q.owner_user_id = #{userId}))
+              AND (#{knowledgePointId} IS NULL OR EXISTS (
+                SELECT 1 FROM question_knowledge_point qkp
+                WHERE qkp.question_id = q.id AND qkp.knowledge_point_id = #{knowledgePointId}
+              ))
             ORDER BY
               CASE
                 WHEN EXISTS (SELECT 1 FROM wrong_question w WHERE w.user_id = #{userId}
@@ -90,6 +94,7 @@ public interface CourseStageAssessmentMapper extends BaseMapper<CourseStageAsses
             """)
     List<Question> selectCandidateQuestions(@Param("userId") Long userId,
                                             @Param("courseId") Long courseId,
+                                            @Param("knowledgePointId") Long knowledgePointId,
                                             @Param("limit") int limit);
 
     @Select("""
@@ -97,6 +102,10 @@ public interface CourseStageAssessmentMapper extends BaseMapper<CourseStageAsses
             WHERE q.course_id = #{courseId} AND q.status = 1 AND q.deleted = 0
               AND q.question_type IN ('SINGLE_CHOICE','MULTIPLE_CHOICE','TRUE_FALSE')
               AND (q.visibility = 'PUBLIC' OR (q.visibility = 'PRIVATE' AND q.owner_user_id = #{userId}))
+              AND (#{knowledgePointId} IS NULL OR EXISTS (
+                SELECT 1 FROM question_knowledge_point qkp
+                WHERE qkp.question_id = q.id AND qkp.knowledge_point_id = #{knowledgePointId}
+              ))
               AND (
                 EXISTS (SELECT 1 FROM wrong_question w WHERE w.user_id = #{userId}
                   AND w.question_id = q.id AND w.mastery_level != 2 AND w.deleted = 0)
@@ -107,7 +116,9 @@ public interface CourseStageAssessmentMapper extends BaseMapper<CourseStageAsses
                   AND e.subject_id = q.id AND e.payload_json = '{"isCorrect":false}')
               )
             """)
-    Long countPrioritySignals(@Param("userId") Long userId, @Param("courseId") Long courseId);
+    Long countPrioritySignals(@Param("userId") Long userId,
+                              @Param("courseId") Long courseId,
+                              @Param("knowledgePointId") Long knowledgePointId);
 
     @Select("""
             SELECT COUNT(*) FROM exam_question eq

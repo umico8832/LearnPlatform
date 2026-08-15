@@ -14,6 +14,8 @@ public class CourseStageAssessment {
     private Long courseId;
     private String status;
     private String selectionStrategy;
+    private Long targetKnowledgePointId;
+    private String targetKnowledgePointNameSnapshot;
     private Integer questionCount;
     private Integer correctCount;
     private String activeSessionKey;
@@ -31,6 +33,10 @@ public class CourseStageAssessment {
     public void setStatus(String status) { this.status = status; }
     public String getSelectionStrategy() { return selectionStrategy; }
     public void setSelectionStrategy(String selectionStrategy) { this.selectionStrategy = selectionStrategy; }
+    public Long getTargetKnowledgePointId() { return targetKnowledgePointId; }
+    public void setTargetKnowledgePointId(Long targetKnowledgePointId) { this.targetKnowledgePointId = targetKnowledgePointId; }
+    public String getTargetKnowledgePointNameSnapshot() { return targetKnowledgePointNameSnapshot; }
+    public void setTargetKnowledgePointNameSnapshot(String value) { this.targetKnowledgePointNameSnapshot = value; }
     public Integer getQuestionCount() { return questionCount; }
     public void setQuestionCount(Integer questionCount) { this.questionCount = questionCount; }
     public Integer getCorrectCount() { return correctCount; }

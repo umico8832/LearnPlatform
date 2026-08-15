@@ -13,10 +13,12 @@ import com.learnplatform.dto.CourseStageAssessmentSummaryVO;
 import com.learnplatform.dto.CourseStageAssessmentVO;
 import com.learnplatform.entity.CourseStageAssessment;
 import com.learnplatform.entity.CourseStageAssessmentQuestion;
+import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionOption;
 import com.learnplatform.mapper.CourseStageAssessmentMapper;
 import com.learnplatform.mapper.CourseStageAssessmentQuestionMapper;
+import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,7 @@ public class CourseStageAssessmentService {
     private final CourseStageAssessmentQuestionMapper assessmentQuestionMapper;
     private final QuestionMapper questionMapper;
     private final QuestionOptionMapper optionMapper;
+    private final KnowledgePointMapper knowledgePointMapper;
     private final AnswerEvaluator answerEvaluator;
     private final ObjectMapper objectMapper;
     private final WrongQuestionService wrongQuestionService;
@@ -48,6 +51,7 @@ public class CourseStageAssessmentService {
             CourseStageAssessmentQuestionMapper assessmentQuestionMapper,
             QuestionMapper questionMapper,
             QuestionOptionMapper optionMapper,
+            KnowledgePointMapper knowledgePointMapper,
             AnswerEvaluator answerEvaluator,
             ObjectMapper objectMapper,
             WrongQuestionService wrongQuestionService,
@@ -57,6 +61,7 @@ public class CourseStageAssessmentService {
         this.assessmentQuestionMapper = assessmentQuestionMapper;
         this.questionMapper = questionMapper;
         this.optionMapper = optionMapper;
+        this.knowledgePointMapper = knowledgePointMapper;
         this.answerEvaluator = answerEvaluator;
         this.objectMapper = objectMapper;
         this.wrongQuestionService = wrongQuestionService;
@@ -77,17 +82,26 @@ public class CourseStageAssessmentService {
         if (requestedCount < 1 || requestedCount > 20) {
             throw validation("测评题数必须在1到20之间");
         }
-        List<Question> questions = assessmentMapper.selectCandidateQuestions(userId, courseId, requestedCount);
+        KnowledgePoint target = reviewedCourseKnowledgePoint(courseId,
+                request == null ? null : request.getKnowledgePointId());
+        Long targetId = target == null ? null : target.getId();
+        List<Question> questions = assessmentMapper.selectCandidateQuestions(userId, courseId, targetId, requestedCount);
         if (questions.isEmpty()) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "课程暂无可用于阶段测评的客观题");
+            throw new BusinessException(ResultCode.NOT_FOUND, target == null
+                    ? "课程暂无可用于阶段测评的客观题"
+                    : "该知识点暂无可用于阶段测评的客观题");
         }
 
         CourseStageAssessment assessment = new CourseStageAssessment();
         assessment.setUserId(userId);
         assessment.setCourseId(courseId);
         assessment.setStatus(IN_PROGRESS);
-        assessment.setSelectionStrategy(assessmentMapper.countPrioritySignals(userId, courseId) > 0
+        assessment.setSelectionStrategy(assessmentMapper.countPrioritySignals(userId, courseId, targetId) > 0
                 ? "LEARNING_STATE_PRIORITY" : "COURSE_SEQUENCE_FALLBACK");
+        if (target != null) {
+            assessment.setTargetKnowledgePointId(target.getId());
+            assessment.setTargetKnowledgePointNameSnapshot(target.getName());
+        }
         assessment.setQuestionCount(questions.size());
         assessment.setActiveSessionKey("ACTIVE");
         assessment.setStartTime(LocalDateTime.now());
@@ -180,11 +194,23 @@ public class CourseStageAssessmentService {
         }
     }
 
+    private KnowledgePoint reviewedCourseKnowledgePoint(Long courseId, Long knowledgePointId) {
+        if (knowledgePointId == null) return null;
+        KnowledgePoint target = knowledgePointMapper.selectById(knowledgePointId);
+        if (target == null || !courseId.equals(target.getCourseId())
+                || !"REVIEWED".equals(target.getContentReviewStatus())) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "知识点不属于当前课程或尚未通过内容审查");
+        }
+        return target;
+    }
+
     private CourseStageAssessmentSummaryVO toSummary(
             CourseStageAssessment assessment, List<CourseStageAssessmentQuestion> sourceItems) {
         CourseStageAssessmentSummaryVO view = new CourseStageAssessmentSummaryVO();
         view.setId(assessment.getId());
         view.setSelectionStrategy(assessment.getSelectionStrategy());
+        view.setTargetKnowledgePointId(assessment.getTargetKnowledgePointId());
+        view.setTargetKnowledgePointName(assessment.getTargetKnowledgePointNameSnapshot());
         view.setQuestionCount(assessment.getQuestionCount());
         view.setCorrectCount(assessment.getCorrectCount());
         view.setStartTime(assessment.getStartTime());
@@ -245,6 +271,8 @@ public class CourseStageAssessmentService {
         view.setCourseId(assessment.getCourseId());
         view.setStatus(assessment.getStatus());
         view.setSelectionStrategy(assessment.getSelectionStrategy());
+        view.setTargetKnowledgePointId(assessment.getTargetKnowledgePointId());
+        view.setTargetKnowledgePointName(assessment.getTargetKnowledgePointNameSnapshot());
         view.setQuestionCount(assessment.getQuestionCount());
         view.setCorrectCount(assessment.getCorrectCount());
         view.setStartTime(assessment.getStartTime());

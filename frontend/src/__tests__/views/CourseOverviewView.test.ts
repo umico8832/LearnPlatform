@@ -46,6 +46,10 @@ const stubs = {
   'el-checkbox-group': { template: '<div><slot /></div>' },
   'el-checkbox': { template: '<label><slot /></label>' },
   'el-pagination': { template: '<nav />' },
+  'el-form': { template: '<form><slot /></form>' },
+  'el-form-item': { template: '<div><slot /></div>' },
+  'el-select': { template: '<select><slot /></select>' },
+  'el-option': { template: '<option>{{ label }}</option>', props: ['label'] },
 }
 
 function findButton(wrapper: ReturnType<typeof mount>, text: string) {
@@ -196,13 +200,17 @@ describe('CourseOverviewView', () => {
     const wrapper = mount(CourseOverviewView, { global: { stubs } })
     await flushPromises()
     const vm = wrapper.vm as unknown as {
+      openAssessmentSetup: () => void
       startAssessment: () => Promise<void>
       submitAssessment: () => Promise<void>
       assessmentAnswers: Record<number, string[]>
     }
 
+    vm.openAssessmentSetup()
+    expect(wrapper.text()).toContain('课程整体测评')
     await vm.startAssessment()
-    expect(mockStartAssessment).toHaveBeenCalledWith(408, 5)
+    expect(mockStartAssessment).toHaveBeenCalledWith(408, 5, null)
+    expect(wrapper.text()).toContain('范围：课程整体')
     expect(wrapper.text()).toContain('确定性课程题序')
     expect(wrapper.text()).toContain('AI 审查生成题 · 母题 #20')
     expect(wrapper.text()).not.toContain('栈顶元素先离开')
@@ -212,6 +220,34 @@ describe('CourseOverviewView', () => {
     expect(mockSubmitAssessment).toHaveBeenCalledWith(51, [{ assessmentQuestionId: 61, userAnswer: 'A' }])
     expect(wrapper.text()).toContain('答对 1 / 1 题')
     expect(wrapper.text()).toContain('栈顶元素先离开')
+  })
+
+  it('限定已审查知识点开始测评并随会话展示固化范围', async () => {
+    mockStartAssessment.mockResolvedValue({
+      data: {
+        id: 52,
+        courseId: 408,
+        status: 'IN_PROGRESS',
+        selectionStrategy: 'COURSE_SEQUENCE_FALLBACK',
+        targetKnowledgePointId: 32,
+        targetKnowledgePointName: 'ArrayStack 的容量调整',
+        questionCount: 1,
+        correctCount: null,
+        questions: [],
+      },
+    })
+    const wrapper = mount(CourseOverviewView, { global: { stubs } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as {
+      assessmentKnowledgePointId: number | null
+      startAssessment: () => Promise<void>
+    }
+
+    vm.assessmentKnowledgePointId = 32
+    await vm.startAssessment()
+
+    expect(mockStartAssessment).toHaveBeenCalledWith(408, 5, 32)
+    expect(wrapper.text()).toContain('范围：ArrayStack 的容量调整')
   })
 
   it('展示最近测评事实并可从本人历史打开逐题复盘', async () => {

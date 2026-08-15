@@ -9,10 +9,12 @@ import com.learnplatform.dto.CourseStageAssessmentSummaryVO;
 import com.learnplatform.dto.CourseStageAssessmentVO;
 import com.learnplatform.entity.CourseStageAssessment;
 import com.learnplatform.entity.CourseStageAssessmentQuestion;
+import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionOption;
 import com.learnplatform.mapper.CourseStageAssessmentMapper;
 import com.learnplatform.mapper.CourseStageAssessmentQuestionMapper;
+import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +42,7 @@ class CourseStageAssessmentServiceTest {
     @Mock private CourseStageAssessmentQuestionMapper assessmentQuestionMapper;
     @Mock private QuestionMapper questionMapper;
     @Mock private QuestionOptionMapper optionMapper;
+    @Mock private KnowledgePointMapper knowledgePointMapper;
     @Mock private WrongQuestionService wrongQuestionService;
     @Mock private SpacedRepetitionService repetitionService;
     @Mock private CourseLearningEventService eventService;
@@ -48,7 +51,7 @@ class CourseStageAssessmentServiceTest {
     @BeforeEach
     void setUp() {
         service = new CourseStageAssessmentService(assessmentMapper, assessmentQuestionMapper,
-                questionMapper, optionMapper, new AnswerEvaluator(), new ObjectMapper(),
+                questionMapper, optionMapper, knowledgePointMapper, new AnswerEvaluator(), new ObjectMapper(),
                 wrongQuestionService, repetitionService, eventService);
     }
 
@@ -56,8 +59,8 @@ class CourseStageAssessmentServiceTest {
     void createsSnapshotWithoutLeakingAnswersAndReusesActiveAssessment() {
         when(assessmentMapper.lockUserCourse(7L, 10L)).thenReturn(91L);
         when(assessmentMapper.selectActive(7L, 10L)).thenReturn(null);
-        when(assessmentMapper.selectCandidateQuestions(7L, 10L, 5)).thenReturn(List.of(question()));
-        when(assessmentMapper.countPrioritySignals(7L, 10L)).thenReturn(0L);
+        when(assessmentMapper.selectCandidateQuestions(7L, 10L, null, 5)).thenReturn(List.of(question()));
+        when(assessmentMapper.countPrioritySignals(7L, 10L, null)).thenReturn(0L);
         when(optionMapper.selectList(any())).thenReturn(options());
         doAnswer(invocation -> {
             ((CourseStageAssessment) invocation.getArgument(0)).setId(51L);
@@ -89,8 +92,8 @@ class CourseStageAssessmentServiceTest {
         official.setOriginQuestionId(null);
         when(assessmentMapper.lockUserCourse(7L, 10L)).thenReturn(91L);
         when(assessmentMapper.selectActive(7L, 10L)).thenReturn(null);
-        when(assessmentMapper.selectCandidateQuestions(7L, 10L, 1)).thenReturn(List.of(official));
-        when(assessmentMapper.countPrioritySignals(7L, 10L)).thenReturn(0L);
+        when(assessmentMapper.selectCandidateQuestions(7L, 10L, null, 1)).thenReturn(List.of(official));
+        when(assessmentMapper.countPrioritySignals(7L, 10L, null)).thenReturn(0L);
         when(assessmentMapper.countVerifiedOfficialPaperReferences(21L)).thenReturn(1L);
         when(optionMapper.selectList(any())).thenReturn(options());
         doAnswer(invocation -> {
@@ -112,6 +115,53 @@ class CourseStageAssessmentServiceTest {
         verify(assessmentQuestionMapper).insert(captor.capture());
         assertEquals("OFFICIAL_EXAM", captor.getValue().getSourceCategorySnapshot());
         assertEquals(1, created.getSourceComposition().getOfficialExamCount());
+    }
+
+    @Test
+    void restrictsNewAssessmentToReviewedKnowledgePointAndSnapshotsTarget() {
+        KnowledgePoint target = new KnowledgePoint();
+        target.setId(31L);
+        target.setCourseId(10L);
+        target.setName("栈");
+        target.setContentReviewStatus("REVIEWED");
+        when(assessmentMapper.lockUserCourse(7L, 10L)).thenReturn(91L);
+        when(assessmentMapper.selectActive(7L, 10L)).thenReturn(null);
+        when(knowledgePointMapper.selectById(31L)).thenReturn(target);
+        when(assessmentMapper.selectCandidateQuestions(7L, 10L, 31L, 5)).thenReturn(List.of(question()));
+        when(assessmentMapper.countPrioritySignals(7L, 10L, 31L)).thenReturn(0L);
+        when(optionMapper.selectList(any())).thenReturn(options());
+        doAnswer(invocation -> {
+            ((CourseStageAssessment) invocation.getArgument(0)).setId(51L);
+            return 1;
+        }).when(assessmentMapper).insert(any(CourseStageAssessment.class));
+        when(assessmentQuestionMapper.selectByAssessmentId(51L)).thenReturn(List.of(snapshot()));
+        CourseStageAssessmentCreateRequest request = new CourseStageAssessmentCreateRequest();
+        request.setKnowledgePointId(31L);
+
+        CourseStageAssessmentVO created = service.start(7L, 10L, request);
+
+        ArgumentCaptor<CourseStageAssessment> captor = ArgumentCaptor.forClass(CourseStageAssessment.class);
+        verify(assessmentMapper).insert(captor.capture());
+        assertEquals(31L, captor.getValue().getTargetKnowledgePointId());
+        assertEquals("栈", created.getTargetKnowledgePointName());
+    }
+
+    @Test
+    void rejectsKnowledgePointOutsideCourseOrWithoutReview() {
+        KnowledgePoint target = new KnowledgePoint();
+        target.setId(31L);
+        target.setCourseId(11L);
+        target.setContentReviewStatus("REVIEWED");
+        when(assessmentMapper.lockUserCourse(7L, 10L)).thenReturn(91L);
+        when(assessmentMapper.selectActive(7L, 10L)).thenReturn(null);
+        when(knowledgePointMapper.selectById(31L)).thenReturn(target);
+        CourseStageAssessmentCreateRequest request = new CourseStageAssessmentCreateRequest();
+        request.setKnowledgePointId(31L);
+
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> service.start(7L, 10L, request));
+
+        assertEquals("知识点不属于当前课程或尚未通过内容审查", exception.getMessage());
     }
 
     @Test

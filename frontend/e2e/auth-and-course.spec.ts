@@ -449,8 +449,12 @@ test('用户可完成2026真题学习与限时考试并复盘可信来源', asyn
   }
 
   await page.getByRole('button', { name: '阶段测评' }).click()
+  const setupDialog = page.getByRole('dialog', { name: '开始阶段测评' })
+  await expect(setupDialog).toContainText('课程整体测评')
+  await setupDialog.getByRole('button', { name: '开始测评' }).click()
   const assessmentDialog = page.getByRole('dialog', { name: '课程阶段测评' })
   await expect(assessmentDialog).toContainText(/按当前错题|确定性课程题序/)
+  await expect(assessmentDialog).toContainText('范围：课程整体')
   await expect(assessmentDialog).toContainText('题源构成：')
   const assessmentQuestions = await assessmentDialog.locator('.assessment-question').all()
   expect(assessmentQuestions.length).toBeGreaterThan(0)
@@ -462,6 +466,25 @@ test('用户可完成2026真题学习与限时考试并复盘可信来源', asyn
   await assessmentDialog.getByRole('button', { name: '提交测评' }).click()
   await expect(assessmentDialog).toContainText(/答对 \d+ \/ \d+ 题/)
   await assessmentDialog.getByRole('button', { name: '关闭', exact: true }).click()
+
+  // 限定已审查知识点范围发起新一轮测评，并确认范围随会话固化展示
+  await page.getByRole('button', { name: '阶段测评' }).click()
+  const scopedSetupDialog = page.getByRole('dialog', { name: '开始阶段测评' })
+  await scopedSetupDialog.locator('.el-select').click()
+  await page.getByRole('option', { name: '顺序表的插入与删除' }).click()
+  await scopedSetupDialog.getByRole('button', { name: '开始测评' }).click()
+  await expect(assessmentDialog).toContainText('范围：顺序表的插入与删除')
+  const scopedQuestions = await assessmentDialog.locator('.assessment-question').all()
+  expect(scopedQuestions.length).toBeGreaterThan(0)
+  for (const question of scopedQuestions) {
+    const checkboxes = question.locator('.el-checkbox')
+    if ((await checkboxes.count()) > 0) await checkboxes.first().click()
+    else await question.locator('.el-radio').first().click()
+  }
+  await assessmentDialog.getByRole('button', { name: '提交测评' }).click()
+  await expect(assessmentDialog).toContainText(/答对 \d+ \/ \d+ 题/)
+  await assessmentDialog.getByRole('button', { name: '关闭', exact: true }).click()
+
   await page.getByRole('button', { name: '测评历史' }).click()
   const historyDialog = page.getByRole('dialog', { name: '阶段测评历史' })
   await expect(historyDialog).toContainText(/答对 \d+ \/ \d+ 题/)

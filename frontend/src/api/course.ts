@@ -56,6 +56,8 @@ export interface CourseStageAssessmentVO {
   courseId: number
   status: 'IN_PROGRESS' | 'COMPLETED'
   selectionStrategy: 'LEARNING_STATE_PRIORITY' | 'COURSE_SEQUENCE_FALLBACK'
+  targetKnowledgePointId: number | null
+  targetKnowledgePointName: string | null
   questionCount: number
   correctCount: number | null
   startTime: string
@@ -91,6 +93,8 @@ export interface CourseStageAssessmentQuestion {
 export interface CourseStageAssessmentSummaryVO {
   id: number
   selectionStrategy: 'LEARNING_STATE_PRIORITY' | 'COURSE_SEQUENCE_FALLBACK'
+  targetKnowledgePointId: number | null
+  targetKnowledgePointName: string | null
   questionCount: number
   correctCount: number
   sourceComposition: CourseStageAssessmentSourceCompositionVO
@@ -599,9 +603,10 @@ export function startCourseLearning(courseId: number) {
   return request.post<unknown, ApiResponse<LearningTargetVO>>(`/my-courses/${courseId}/start-learning`)
 }
 
-export function startCourseStageAssessment(courseId: number, questionCount = 5) {
+export function startCourseStageAssessment(courseId: number, questionCount = 5, knowledgePointId?: number | null) {
   return request.post<unknown, ApiResponse<CourseStageAssessmentVO>>(`/my-courses/${courseId}/stage-assessments`, {
     questionCount,
+    knowledgePointId: knowledgePointId ?? null,
   })
 }
 

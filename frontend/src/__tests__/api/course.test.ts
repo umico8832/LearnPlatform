@@ -234,11 +234,12 @@ describe('Course API', () => {
     it('应创建并提交课程阶段测评', async () => {
       mockedRequest.post.mockResolvedValue({ code: 0, data: { id: 51 }, message: 'success' })
 
-      await startCourseStageAssessment(408, 5)
+      await startCourseStageAssessment(408, 5, 31)
       await submitCourseStageAssessment(51, [{ assessmentQuestionId: 61, userAnswer: 'A' }])
 
       expect(mockedRequest.post).toHaveBeenNthCalledWith(1, '/my-courses/408/stage-assessments', {
         questionCount: 5,
+        knowledgePointId: 31,
       })
       expect(mockedRequest.post).toHaveBeenNthCalledWith(2, '/my-courses/stage-assessments/51/submit', {
         answers: [{ assessmentQuestionId: 61, userAnswer: 'A' }],

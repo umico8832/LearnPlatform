@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 public class CourseStageAssessmentSummaryVO {
     private Long id;
     private String selectionStrategy;
+    private Long targetKnowledgePointId;
+    private String targetKnowledgePointName;
     private Integer questionCount;
     private Integer correctCount;
     private LocalDateTime startTime;
@@ -16,6 +18,10 @@ public class CourseStageAssessmentSummaryVO {
     public void setId(Long id) { this.id = id; }
     public String getSelectionStrategy() { return selectionStrategy; }
     public void setSelectionStrategy(String selectionStrategy) { this.selectionStrategy = selectionStrategy; }
+    public Long getTargetKnowledgePointId() { return targetKnowledgePointId; }
+    public void setTargetKnowledgePointId(Long value) { this.targetKnowledgePointId = value; }
+    public String getTargetKnowledgePointName() { return targetKnowledgePointName; }
+    public void setTargetKnowledgePointName(String value) { this.targetKnowledgePointName = value; }
     public Integer getQuestionCount() { return questionCount; }
     public void setQuestionCount(Integer questionCount) { this.questionCount = questionCount; }
     public Integer getCorrectCount() { return correctCount; }

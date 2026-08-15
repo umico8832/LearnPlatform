@@ -228,6 +228,8 @@ public class CourseOverviewService {
         CourseStageAssessmentSummaryVO view = new CourseStageAssessmentSummaryVO();
         view.setId(assessment.getId());
         view.setSelectionStrategy(assessment.getSelectionStrategy());
+        view.setTargetKnowledgePointId(assessment.getTargetKnowledgePointId());
+        view.setTargetKnowledgePointName(assessment.getTargetKnowledgePointNameSnapshot());
         view.setQuestionCount(assessment.getQuestionCount());
         view.setCorrectCount(assessment.getCorrectCount());
         view.setStartTime(assessment.getStartTime());
