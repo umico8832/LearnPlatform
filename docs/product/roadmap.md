@@ -29,7 +29,7 @@
 | 20 | 演示验收与 AI 运营治理 | 已完成 |
 | 21 | 前端信息架构与视觉体验优化 | 已完成 |
 | 22 | AI 学习效果验证 | 阶段性完成 |
-| 23 | AI 课程学习平台转型 | Exit 条件已满足，待退出 |
+| 23 | AI 课程学习平台转型 | 已完成 |
 
 ## Phase 0–11：核心业务闭环
 
@@ -228,8 +228,8 @@ Phase 22 已经建立观察性事件、样本门槛和不足数据语义。真�
 - 学习端与管理端应用职责边界清晰，核心流程拥有真实自动化验证。
 
 Exit Criteria 是否已满足、Remaining Required 与 Backlog 的当前状态以
-[项目状态](../project/status.md) 为准（截至 2026-08：Exit Criteria 全部满足，
-Remaining Required 为空）。
+[项目状态](../project/status.md) 为准（截至 2026-08：Exit Criteria 全部满足、
+Remaining Required 为空，阶段已完成退出）。
 
 ### 执行顺序与完成情况
 

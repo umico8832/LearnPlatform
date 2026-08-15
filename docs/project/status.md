@@ -15,10 +15,14 @@ CONTINUOUS 需用户明确表达持续开发意图，暂停后回到 NORMAL）�
 - Phase 20“演示验收与 AI 运营治理”：已完成。
 - Phase 21“前端信息架构与视觉体验优化”：已完成。
 - Phase 22“AI 学习效果验证”：阶段性完成，现有观察能力继续维护。
-- Phase 23“AI 课程学习平台转型”：Exit Criteria 已全部满足，Remaining Required 为空，
-  等待阶段退出与下一阶段启动。
+- Phase 23“AI 课程学习平台转型”：已完成（2026-08 第 245 轮完成阶段退出，L3 门禁通过）。
+- 下一阶段：按 roadmap 扩展方向（更多课程与内容、学习画像、可视化升级、桌面端等）推进，
+  具体方向待用户决定（NORMAL 模式）。
 
 ### Phase 23：AI 课程学习平台转型
+
+> 状态：已完成。Exit Criteria 全部满足（截至 2026-08 第 245 轮），阶段已按 Stop / Transition
+> Condition 退出；后续进入 roadmap 扩展阶段，不再向本阶段追加 Required。
 
 #### Goal
 
@@ -178,6 +182,22 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+Phase 23 退出 L3 门禁（Round 245，2026-08-15）：
+
+- 后端 Java 21 `mvn clean verify -B`：550 个默认测试通过（较 Round 242 的 549 增加
+  Round 243 考试时间边界用例），Checkstyle 0 违规、SpotBugs 0 问题、JaCoCo 行/分支
+  覆盖率门槛通过。
+- 前端 `npm run lint`（0 错误、0 警告）、`npm run format:check`、`npm run coverage`
+  （57 个测试文件、300 个测试通过，覆盖率门槛通过）、`npm run build`（学习端与管理端
+  双生产构建）通过。
+- 仓库脚本 `python3 -m unittest discover -s scripts/tests -p 'test_*.py'`：23 个测试
+  通过；`python3 scripts/check-docs.py`：59 个 Markdown 文件与仓库 Skills 检查通过；
+  `docker compose config --quiet` 与 `git diff --check` 通过。
+- 本轮未重跑 Testcontainers 与 Playwright：自 Round 242 全量门禁后无数据库迁移或跨层
+  业务流程变化（Round 243 仅 ExamService 时钟注入、Round 244 仅脚本/Compose/文档），
+  按测试策略“昂贵验证重复执行规则”沿用 Round 242 的真实 MySQL 13 类 77 用例与 12 条
+  Playwright E2E 结果。
+
 工程配置基线（Round 210）：
 
 - 后端 Maven 编译目标、GitHub Actions 构建环境和 Docker 构建/运行镜像统一使用 Java 21。
@@ -234,7 +254,7 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
   清单窄屏展示、关联对象删除、私有草稿与零引用试卷删除、已有考试事实拒删、
   课程阶段测评创建、作答、判分、历史复盘与课程状态回写，以及 45 分分卷提交、两道综合题管理员批阅和最终成绩固化。
 - 管理端真实页面冒烟已覆盖 AI 变式题审查队列及其后端权限接口。
-- 前端 `npm run lint`：0 错误、70 条存量显式 `any` 警告；`npm run build` 通过。
+- 前端 `npm run lint`：0 错误、0 警告；`npm run build` 通过。
 
 文档与 Agent 工具基线：
 
@@ -262,11 +282,10 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 下一步
 
-1. 执行 Phase 23 阶段退出：按 L3 相称门禁确认基线健康、更新状态与 changelog，然后停止等待用户
-   决定下一步（NORMAL 模式）；若用户授权 CONTINUOUS，则按 roadmap 进入下一明确 Phase（扩展课程
-   与内容、画像、可视化升级、桌面端等）。
-2. Phase 23 Backlog 中的“课程总览按知识点学习事实面板”等增强项在阶段退出后按优先级评估，不阻止
-   当前阶段结束。
+1. Phase 23 已完成阶段退出（Round 245，L3 门禁通过）。当前为 NORMAL 模式，等待用户决定下一阶段
+   方向：继续进入 roadmap 扩展方向（更多课程与内容、学习画像、可视化升级、桌面端等），或评估
+   Phase 23 Backlog 中的增强项。
+2. Phase 23 Backlog 中的“课程总览按知识点学习事实面板”等增强项按优先级评估，不阻止阶段结束。
 
 ## 暂不优先
 
@@ -279,4 +298,4 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 - AiStu 桌面端同步改造。
 - 复杂向量推荐系统。
 
-最后整理日期：2026-08-16。
+最后整理日期：2026-08-15。
