@@ -1,38 +1,41 @@
-# LearnPlatform AI 课程学习平台
+# LearnPlatform · 课程学习平台
 
 [![CI](https://github.com/umico8832/LearnPlatform/actions/workflows/ci.yml/badge.svg)](https://github.com/umico8832/LearnPlatform/actions/workflows/ci.yml)
 
-LearnPlatform 是一个 Web 优先的 AI 课程学习平台。用户将课程加入个人课程库后，可以
-从 AI 教学或试卷学习进入同一条长期学习过程，持续使用知识讲解、互动课件、练习、
-错题、复习和测评。现有题库、判分、考试与内容治理能力是这条学习闭环的业务底座。
+LearnPlatform 是一个以**课程长期学习过程**为中心的 Web 学习平台。当前完整承载
+**408 数据结构**课程：知识讲解、互动课件、练习、错题、间隔复习、阶段测评与 2026
+官方真题考试共用同一条可追踪的学习闭环；其他 408 科目以结构完整的占位课程呈现。
 
-当前仓库已经具备成熟的刷题、考试和 AI 题目学习基础；Phase 23“AI 课程学习平台转型”
-的核心业务闭环已完成并通过真实自动化验证，阶段已退出；目标范围与真实进度分别见
-[产品需求](docs/product/prd.md)和[项目状态](docs/project/status.md)。
+界面遵循「安静的数字教材」原则：暖白纸面、克制的主色、以内容排版为核心，不制造
+指标轰炸或能力评分。所有判分、错题状态、复习调度与权限隔离都在服务端真实完成。
 
-## 产品结构
+## 产品定位
 
-- 课程商店与个人课程库，按课程保存学习位置、练习、错题、复习和测评记录。
-- AI 教学入口，根据课程状态组织讲解、前置补充、理解检查和后续学习。
-- 试卷学习入口，围绕权威考试原题与用户资料提供学习、考试和复盘流程。
-- 课程阶段测评从当前错题、到期复习和近期错误事实中优先选取客观题；数据不足时明确退回确定性课程题序，
-  服务端保存题目与来源快照、判分并回写错题、复习计划和课程学习事件；结果与历史按快照展示官方、
-  人工、私有和 AI 题源构成。
-- 用户可将有限结构化 Markdown/文本、文本型 PDF 或 DOCX 预览后导入私有试卷；缺少答案时先保存草稿，由 AI 给出受校验建议，
-  再经所有者逐题复核才启用；PDF/DOCX 原文件可由所有者下载并在发送前校验长度、类型和哈希，默认每位
-  用户累计最多保存 100MB；导入入口可查看用量并进入仅本人可见的分页原文件清单，按关联草稿或试卷
-  下载和执行受引用保护的删除。原始资料
-  全程可追溯且默认仅本人可见；未确认草稿和没有学习事实引用的
-  私有试卷可由所有者显式删除。
-- 互动课件与题目讲解，在适合交互的知识和题目中辅助建立过程理解。
-- AI 生成并经审查的针对性练习，用于教学检查、错题复盘和阶段测评。
-- 管理端提供 AI 变式题审查队列；批准后发布为保留母题来源的正式题，待审或驳回内容不会进入测评。
-- 独立的用户学习端与管理系统目标，共用 Spring Boot 后端、账号和业务数据。
+- **为谁设计**：正在自学并备考 408 数据结构的学生。
+- **不是什么**：不是课程商城，不是通用 AI 聊天工具，不是游戏化学习应用。
+- **核心体验**：登录后从「我的课程」继续；从上次停下的地方进入 AI 教学、练习、
+  复习或真题考试；系统只展示真实学习事实，不伪造掌握度。
 
-现有题库、真实判分、错题、间隔重复、模拟考试、内容治理和 AI 运营能力继续维护并
-逐步接入统一课程学习状态。尚未实现的目标能力不会在本文中冒充当前结果。
+## 核心能力
 
-当前阶段和最新验证见[项目状态](docs/project/status.md)。
+- **我的课程 / 课程库**：登录默认进入「我的课程」；课程库按 408 计算机统考组织，
+  Discover → Understand → Add 全流程。
+- **课程空间**：继续学习、课程目录、学习工具（练习/复习/错题/真题/题目）、
+  按知识点聚合的真实学习事实与最近测评摘要。
+- **AI 教学**：已审查的分步讲解、前置补充、受限互动课件（栈、队列、双端队列、
+  线性表等可视化）与服务端判分的理解检查；教学上下文会衔接你的真题、错题与
+  复习记录，但只呈现事实计数。
+- **练习与复习**：服务端判分、即时解析；错题进入统一课程状态；复习调度基于真实
+  到期时间，并给出可解释的复习依据。
+- **阶段测评**：从当前错题、到期复习与近期错误事实优先选题（数据不足时明确退回
+  确定性课程题序）；提交前隐藏答案，完成后固化题源构成与逐题复盘。
+- **真题考试**：2026 年 408 数据结构真题（官方来源可核验、原始题号分层）；学习
+  模式逐题理解，限时考试由服务端锁定时间与作答状态，主观题按评分点由管理员
+  人工批阅，客户端不能自行决定总分。
+- **私有试卷**：有限结构化 Markdown / 文本、文本型 PDF 与 DOCX 导入，所有者隔离、
+  原文件追溯、草稿—AI 建议—逐题人工复核—启用生命周期。
+- **内容治理**：AI 生成题须经管理端审查后进入正式学习流程；官方原题与 AI 增强
+  分层保存。
 
 ## 技术栈
 
@@ -43,6 +46,10 @@ LearnPlatform 是一个 Web 优先的 AI 课程学习平台。用户将课程加
 | 数据 | MySQL 8、Flyway |
 | 部署 | Docker、Docker Compose、Nginx |
 | 测试 | JUnit、Mockito、MockMvc、Testcontainers、Vitest、Playwright |
+
+工程特点：学习端与管理端为独立前端应用（独立 Router、布局与构建产物，共用后端）；
+Design Tokens 作为唯一视觉来源（`frontend/src/assets/styles/tokens.css`）；
+学习页面使用沉浸式 Focus Layout；大型页面按领域拆分为可复用组件。
 
 ## 快速开始
 
@@ -79,8 +86,6 @@ docker compose ps
 - 独立管理端：`http://localhost/admin/`
 - 后端：`http://localhost:8080`
 
-端口调整、镜像重建和停止方式见[Docker 开发指南](docs/getting-started/docker-development.md)。
-
 ## 演示账号
 
 | 角色 | 用户名 | 密码 |
@@ -88,9 +93,11 @@ docker compose ps
 | 管理员 | `admin` | `admin123` |
 | 普通用户 | `testuser` | `test123` |
 
-以上仅用于开发和演示环境。
+以上仅用于开发和演示环境。演示流程见[演示文档](docs/showcase/demo.md)。
 
-演示流程和真实截图见[演示文档](docs/showcase/demo.md)。
+> 仓库内 `docs/showcase/screenshots/` 为历史演示截图，可能与当前界面存在差异；
+> 需要最新截图时可运行 `frontend/scripts/capture-demo-screenshots.mjs`（需先启动完整
+> Docker 栈）重新生成。
 
 ## 质量检查
 
@@ -111,8 +118,8 @@ npm run build
 
 ```text
 LearnPlatform/
-├── frontend/            # Vue 3 前端
-├── backend/             # Spring Boot 后端
+├── frontend/            # Vue 3 前端（学习端 + 独立管理端）
+├── backend/             # Spring Boot 后端（Java 21）
 ├── docs/                # 正式项目文档
 ├── .agents/skills/      # 项目自有与上游安装的仓库级 Skills
 ├── scripts/             # 项目脚本
@@ -127,12 +134,12 @@ LearnPlatform/
 - [产品需求](docs/product/prd.md)
 - [产品路线图](docs/product/roadmap.md)
 - [系统架构](docs/architecture/overview.md)
+- [前端架构](docs/architecture/frontend.md)
 - [架构决策](docs/architecture/decisions/index.md)
 - [API 参考](docs/reference/api/index.md)
 - [数据库参考](docs/reference/database/index.md)
 - [开发工作流](docs/development/workflow.md)
 - [测试策略](docs/development/testing.md)
-- [Agent 与 Skills](docs/development/agent-tooling.md)
 - [项目状态](docs/project/status.md)
 - [开发日志](docs/project/changelog/index.md)
 - [演示流程](docs/showcase/demo.md)

@@ -30,6 +30,7 @@
 | 21 | 前端信息架构与视觉体验优化 | 已完成 |
 | 22 | AI 学习效果验证 | 阶段性完成 |
 | 23 | AI 课程学习平台转型 | 已完成 |
+| 24 | 最终展示版 UI/UX 重构 | 已完成 |
 
 ## Phase 0–11：核心业务闭环
 
@@ -201,7 +202,6 @@ Phase 22 已经建立观察性事件、样本门槛和不足数据语义。真�
 
 把以题库、错题和考试为中心的 Web 项目转型为以课程长期学习过程为中心的 AI 学习
 平台，同时复用现有鉴权、题库、判分、考试、复习、内容治理和 AI 运营能力。
-
 已接受的方向：
 
 - Web 是当前主开发端，桌面端等待核心协议稳定后再复用；
@@ -265,3 +265,23 @@ Remaining Required 为空，阶段已完成退出）。
 
 Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化而继续加 Required；
 后续按 roadmap / future 进入扩展课程与内容、画像、可视化升级和桌面端等方向。
+
+## Phase 24：最终展示版 UI/UX 重构
+
+### Goal
+
+在保留已验证核心业务能力的前提下，对学习端 UI/UX、信息架构和前端工程结构做系统性
+收口，使 LearnPlatform 达到作品集与开源展示质量，并停止主动功能扩展。
+
+### 完成情况
+
+- Quiet Digital Textbook 视觉语言与 Design Tokens（`frontend/src/assets/styles/tokens.css`）；
+- 一级导航收敛为「我的课程 + 课程库」，登录默认进入我的课程，旧 Dashboard 首页删除；
+- 课程空间 / Tutor / 练习 / 复习 / 考试页面统一视觉，学习页使用 FocusLayout；
+- 删除学习报告、学习路径、知识图谱、AI 复习建议四个旧页面及死代码；
+- README 与展示文档重写；真实 Docker Playwright E2E 12/12 通过（验证基线见项目状态）。
+
+### Stop / Transition Condition
+
+DoD 全部可验证条件满足后 Phase 24 结束，项目进入 Finished / Maintenance：只处理
+Bug、安全、依赖维护与文档修正，不启动新的主动功能开发。

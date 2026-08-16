@@ -6,19 +6,33 @@
 
 ### 简洁版
 
-> **LearnPlatform AI 题库与错题复习系统**：基于 Vue 3、TypeScript、Spring Boot 3 和 MySQL 的前后端分离学习平台，覆盖多题型题库、服务端判分、错题与间隔复习、模拟考试、AI 流式讲解、结构化变式训练、投稿审核和学习诊断。使用 Spring Security + JWT 保护权限，通过 Flyway、Docker Compose、Testcontainers、Vitest 和 Playwright 建立可迁移、可测试、可演示的工程基线。
+> **LearnPlatform 课程学习平台**：基于 Vue 3、TypeScript、Spring Boot 3 和 MySQL 的前后端分离
+> Web 学习平台，以 408 数据结构课程为完整内容，围绕 AI 教学与试卷学习两条入口连接知识讲解、
+> 互动课件、练习、错题、间隔复习、阶段测评与官方真题考试，形成同一条可追踪的学习闭环。
+> 服务端判分与考试状态机保证学习事实真实可信，官方来源与人工批阅可核验；使用 Spring Security
+> + JWT 保护权限，通过 Flyway、Docker Compose、Testcontainers、Vitest 和 Playwright 建立可迁移、
+> 可测试、可演示的工程基线。
 
 ### 详细版
 
-> 设计并实现一套 AI 辅助题目学习平台，形成“课程与题目—练习判分—错题复习—模拟考试—学习诊断”的完整业务闭环。后端使用 Spring Boot、Spring Security、MyBatis-Plus 和 Flyway，前端使用 Vue 3、Element Plus、Pinia 和 ECharts。
+> 设计并实现一套以课程长期学习过程为中心的学习平台，形成「我的课程—课程空间—AI 教学/练习/
+> 复习/测评—真题考试—复盘」的完整业务闭环。后端使用 Spring Boot、Spring Security、
+> MyBatis-Plus 和 Flyway，前端使用 Vue 3、Element Plus、Pinia 和 ECharts。
 >
-> 将 AI 输出从一次性文本扩展为可缓存、可反馈的题目学习资产，支持 JWT 鉴权的 SSE 流式生成、答案服务端隔离的结构化变式题和首次真实判分。实现投稿 AI 质检、知识点标注和难度评估，但保留管理员审核与显式入库。
+> 以 Design Tokens 统一学习端与管理端的视觉与信息架构：登录默认进入「我的课程」，练习、错题、
+> 复习、测评与真题进入课程内部；学习页面使用沉浸式 Focus 布局，考试模式完整展示时间与作答
+> 状态；删除与课程流程重复的旧统计页面，收敛产品复杂度。
+>
+> 将 AI 输出从一次性文本扩展为可缓存、可反馈的学习资产，支持 JWT 鉴权的 SSE 流式生成、答案
+> 服务端隔离的结构化变式题和首次真实判分；已审查的分步教学与受限互动课件（栈、队列、双端
+> 队列、线性表等）由服务端约束，理解检查由服务端判分。实现投稿 AI 质检、知识点标注和难度
+> 评估，但保留管理员审核与显式入库。
 >
 > 建立 AI Token、成本、用户配额、调整审计、trace、提醒和观察性学习效果分析；通过样本量与去重学习者双门槛避免把少数高频用户或调用次数解释成学习提升。使用 Docker Compose、Prometheus、Grafana、Loki、JUnit、Testcontainers、Vitest 和 Playwright 完成部署、监控和关键流程验证。
 
 ## English summary
 
-> **LearnPlatform** is a full-stack learning and question-practice platform built with Vue 3, TypeScript, Spring Boot 3, and MySQL. It provides server-side grading, wrong-answer review, spaced repetition, mock exams, AI streaming explanations, structured variant training, content submission workflows, and learning diagnostics. The system uses Spring Security with JWT, Flyway migrations, Docker Compose, Testcontainers, Vitest, and Playwright. AI usage is governed through token, cost, quota, audit, trace, and alert data, while learning-effect reports remain explicitly observational.
+> **LearnPlatform** is a full-stack course learning platform built with Vue 3, TypeScript, Spring Boot 3, and MySQL. It centers on long-term course learning: AI tutoring, interactive courseware, practice, wrong-answer review, spaced repetition, stage assessments, and official 408 Data Structures exams share one traceable learning loop. Server-side grading and an exam state machine keep learning facts trustworthy; official sources and manual grading are verifiable. The system uses Spring Security with JWT, Flyway migrations, Docker Compose, Testcontainers, Vitest, and Playwright. AI usage is governed through token, cost, quota, audit, trace, and alert data, while learning-effect reports remain explicitly observational.
 
 ## 可讲的工程亮点
 

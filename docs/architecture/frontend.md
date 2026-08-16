@@ -10,12 +10,12 @@
 frontend/src/
 ├── admin/        # 独立管理端入口、Router、布局与管理端专属页面
 ├── api/          # 按业务域封装请求和 TypeScript 契约
-├── assets/       # 全局样式与静态资源
-├── components/   # 可复用组件与布局
+├── assets/       # 全局样式与 Design Tokens
+├── components/   # 可复用组件（ui/ 基础组件、layout/ 布局、course/ 领域组件）
 ├── router/       # 路由、登录和角色守卫
 ├── stores/       # 用户等跨页面状态
 ├── types/        # 共享类型
-├── utils/        # 请求、格式化和领域辅助函数
+├── utils/        # 请求、格式化、学习目标导航等辅助函数
 └── views/        # 用户端与管理端页面
 frontend/admin/   # 独立管理端 HTML 入口
 ```
@@ -25,6 +25,27 @@ frontend/admin/   # 独立管理端 HTML 入口
 `npm run build` 先生成学习端 `dist/`，再由 `vite.admin.config.ts` 生成 `dist/admin/`；管理端可以用
 `npm run dev:admin` 在 5174 端口独立开发。学习端管理员通过外部链接进入 `/admin/`，普通学习路由与管理
 路由不再共享 Router 或布局。
+
+## 信息架构
+
+学习端以「我的课程 + 课程库」为一级入口，登录默认进入「我的课程」：
+
+- 一级导航：我的课程（`/my-courses`）、课程库（`/courses`）。
+- 练习、错题、复习、测评、真题等能力优先进入具体课程内部（课程空间 `CourseOverview`），
+  但保留全局路由（`/practice`、`/wrong-questions`、`/review`、`/exams`、`/questions` 等）。
+- 旧统计/诊断类页面（学习诊断）从一级导航隐藏但路由保留；学习报告、学习路径、知识图谱、
+  AI 复习建议等与课程学习流程重复的旧页面已删除。
+- 真正学习页面（Tutor、限时考试、试卷学习、考试结果）使用沉浸式 `FocusLayout`，弱化全局导航，
+  让学习内容成为界面中心；考试模式仍完整展示时间、进度与作答状态。
+
+## 视觉与设计系统
+
+- `assets/styles/tokens.css` 是唯一视觉来源：颜色、字体、间距、圆角、边框、阴影、动效、布局、
+  z-index 均以 CSS 变量定义（Quiet Digital Textbook 方向）。
+- `components/ui/` 提供全局注册的基础组件（`LpPageHeader`、`LpSectionHeading`、`LpStat`、
+  `LpEmptyState`、`LpSkeleton`、`LpDivider`、`LpSignal`、`LpProgress`、`LpKicker`），
+  页面与组件不得随手定义裸色值/裸尺寸。
+- 视觉与交互规范见项目 `frontend-design` Skill。
 
 ## 页面分层
 

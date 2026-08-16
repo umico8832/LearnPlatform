@@ -34,6 +34,6 @@
 
 ## 备用材料
 
-- [ ] `docs/showcase/screenshots/` 中截图与当前界面一致。
+- [ ] `docs/showcase/screenshots/` 中截图与当前界面一致（如引用截图做演示）。
 - [ ] README、简历表述与真实实现一致。
 - [ ] 准备本地录屏或截图，以应对网络或 AI 上游故障。

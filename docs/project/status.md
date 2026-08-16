@@ -4,7 +4,7 @@
 
 ## Agent 执行状态
 
-- Execution Mode: NORMAL
+- Execution Mode: CONTINUOUS（用户 2026-08-16 明确进入持续开发，执行最终展示版 UI/UX 重构）
 
 该字段是当前动态状态，不是长期产品规则。只有用户明确改变模式时才修改（进入
 CONTINUOUS 需用户明确表达持续开发意图，暂停后回到 NORMAL）；详细规则见
@@ -16,8 +16,37 @@ CONTINUOUS 需用户明确表达持续开发意图，暂停后回到 NORMAL）�
 - Phase 21“前端信息架构与视觉体验优化”：已完成。
 - Phase 22“AI 学习效果验证”：阶段性完成，现有观察能力继续维护。
 - Phase 23“AI 课程学习平台转型”：已完成（2026-08 第 245 轮完成阶段退出，L3 门禁通过）。
-- 下一阶段：按 roadmap 扩展方向（更多课程与内容、学习画像、可视化升级、桌面端等）推进，
-  具体方向待用户决定（NORMAL 模式）。
+- Phase 24“最终展示版 UI/UX 重构”：已完成（Round 248，真实 Docker E2E 12/12 通过，
+  进入 Finished / Maintenance）。
+
+### Phase 24：最终展示版 UI/UX 重构
+
+> 状态：已完成。DoD 全部可验证条件满足（2026-08-16 Round 248 真实 Docker E2E 12/12
+> 通过）；演示截图按用户指示跳过（截图脚本保留）。项目进入 Finished / Maintenance，
+> 此后仅处理 Bug、安全、依赖维护与文档修正。
+
+#### Goal
+
+在保留已验证核心业务能力（服务端判分、考试状态机、权限隔离、官方来源、人工批阅、
+学习事件真实性）的前提下，对学习端 UI/UX、信息架构和前端工程结构做系统性收口，
+使 LearnPlatform 达到作品集与开源展示质量，并停止主动功能扩展。
+
+#### Exit Criteria（Definition of Done 摘要）
+
+1. 我的课程 / 课程库 / 数据结构 Course Space / Tutor / Practice / Review /
+   Exam / Assessment 达到作品集级视觉与交互质量。
+2. 完整数据结构课程流程可真实跑通；其他 408 课程有合理占位。
+3. Sidebar 与整体 IA 明显简化（登录默认进入「我的课程」），旧 Dashboard 感消失。
+4. Design Tokens 成为统一视觉来源；大型 SFC 合理拆分；明显 dead code 清理。
+5. 管理端不再明显割裂；Production build 成功；核心测试与 Playwright E2E 通过。
+6. README 完整重写并有高质量截图；项目进入 Finished / Maintenance。
+
+#### 设计方向
+
+- 视觉：Quiet Digital Textbook（暖白背景 #F7F7F4、深蓝灰主色、克制的动效）。
+- 信息架构：一级导航仅「我的课程 / 课程库」；练习、错题、复习、测评、真题进入
+  课程内部；统计/诊断/图谱类页面从一级导航隐藏但路由保留。
+- 学习页使用 FocusLayout 沉浸式布局；考试模式保持完整状态展示。
 
 ### Phase 23：AI 课程学习平台转型
 
@@ -182,6 +211,23 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+Phase 24 退出门禁（Round 248，2026-08-16）：
+
+- 前端 `npx vue-tsc --noEmit` 通过；Vitest 57 个测试文件、297 个测试通过；ESLint
+  0 错误 0 警告；Prettier 全量通过；`npm run build` 学习端与管理端双生产构建通过。
+- 后端 Java 21 `mvn clean verify -B` 通过（默认测试 + Checkstyle + SpotBugs +
+  JaCoCo 门禁，无数据库或跨层业务变更）。
+- **真实 Docker Playwright E2E 12/12 通过**（Round 248，全新隔离 E2E 数据库）：
+  覆盖登录默认进入我的课程、课程库/课程详情/加入课程库、课程空间阶段测评与限定
+  测评、2026 真题学习模式与限时考试及可信来源复盘、主观题人工批阅固化总分、
+  私有试卷导入（Markdown/PDF/DOCX）、AI 草稿复核启用、考试刷新恢复与服务端判分、
+  错题掌握度与重练、投稿审核入库；E2E 第 2 条同时断言全程无 5xx 接口与
+  console.error。
+- 路由一致性审计通过：无指向未注册路由名/路径的引用。
+- 仓库脚本 `python3 -m unittest discover -s scripts/tests -p 'test_*.py'`：23 个测试
+  通过；`python3 scripts/check-docs.py`：59 个 Markdown 文件与仓库 Skills 检查通过；
+  `docker compose config --quiet` 与 `git diff --check` 通过。
+
 Phase 23 退出 L3 门禁（Round 245，2026-08-15）：
 
 - 后端 Java 21 `mvn clean verify -B`：550 个默认测试通过（较 Round 242 的 549 增加
@@ -279,16 +325,16 @@ Phase 23 退出 L3 门禁（Round 245，2026-08-15）：
   Phase 23 Backlog，不阻止阶段退出）。
 - 考试时间语义已统一为可注入 Clock：生产保持 Asia/Shanghai，测试使用固定 Clock，不再依赖机器
   系统时区（见 Round 243 修复）。
-- 代码工程化：后端星号导入展开（约 109 处 `import xxx.*`）保留为独立清理；巨型视图
-  （ExamListView / AiUsageView / QuestionManage 等）的对话框级组件拆分尚未进行，本轮
-  仅完成纯工具与提示词组件的初步抽取（见 Round 246）。
+- 代码工程化：后端星号导入展开（约 109 处 `import xxx.*`）保留为独立清理；后端 learning-plan
+  统计端点已无前端入口，保留为后续清理项（不破坏数据表）。这些属于 Finished / Maintenance
+  阶段的维护清单，不主动扩展处理。
 
 ## 下一步
 
-1. Phase 23 已完成阶段退出（Round 245，L3 门禁通过）。当前为 NORMAL 模式，等待用户决定下一阶段
-   方向：继续进入 roadmap 扩展方向（更多课程与内容、学习画像、可视化升级、桌面端等），或评估
-   Phase 23 Backlog 中的增强项。
-2. Phase 23 Backlog 中的“课程总览按知识点学习事实面板”等增强项按优先级评估，不阻止阶段结束。
+1. Phase 24 已完成阶段退出（Round 248，真实 Docker E2E 12/12 通过）。项目进入
+   Finished / Maintenance：仅处理 Bug、安全、依赖维护与文档修正，不启动新的主动功能开发。
+2. 本地演示可直接访问隔离 E2E 栈 `http://localhost:18000`（`testuser/test123`、
+   `admin/admin123`），或按[演示文档](../showcase/demo.md)自行启动开发/演示环境。
 
 ## 暂不优先
 
