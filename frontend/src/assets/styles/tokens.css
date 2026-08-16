@@ -1,0 +1,228 @@
+/**
+ * LearnPlatform Design Tokens
+ * ------------------------------------------------------------------
+ * 视觉方向：Quiet Digital Textbook（安静的数字教材）
+ * 单一视觉来源：所有颜色、字体、间距、圆角、阴影、动效都从这里取值，
+ * 页面与组件不得随手定义裸数值（如 17px / 13px / 22px / 9px）。
+ */
+
+:root {
+  /* ----------------------------------------------------------------
+   * Color · 原始色板（primitive）
+   * ---------------------------------------------------------------- */
+  --lp-ink-900: #1d1d1b;
+  --lp-ink-800: #2b2b28;
+  --lp-ink-700: #3f3f3a;
+  --lp-ink-600: #55554f;
+  --lp-ink-500: #6f6f67;
+  --lp-ink-400: #8a8a82;
+  --lp-ink-300: #a9a99f;
+  --lp-ink-200: #c9c9c0;
+  --lp-ink-100: #e6e6df;
+
+  --lp-paper-0: #ffffff;
+  --lp-paper-50: #fdfdfb;
+  --lp-paper-100: #f7f7f4;
+  --lp-paper-200: #f1f1ec;
+  --lp-paper-300: #e8e7e1;
+  --lp-paper-400: #d6d5cd;
+
+  --lp-blue-950: #1c2b40;
+  --lp-blue-900: #22344e;
+  --lp-blue-800: #2a4164;
+  --lp-blue-700: #33507a;
+  --lp-blue-600: #3d5f8f;
+  --lp-blue-500: #4d709f;
+  --lp-blue-400: #6d8cb4;
+  --lp-blue-300: #9db3cd;
+  --lp-blue-200: #c6d3e2;
+  --lp-blue-100: #e3e9f1;
+  --lp-blue-50: #eef1f7;
+
+  --lp-green-700: #3f6b4c;
+  --lp-green-600: #4a7c59;
+  --lp-green-500: #5c8f6a;
+  --lp-green-100: #e9f1ec;
+  --lp-green-50: #f2f7f3;
+
+  --lp-amber-700: #8a5e23;
+  --lp-amber-600: #9c6b2d;
+  --lp-amber-500: #b07e38;
+  --lp-amber-100: #f4ecdd;
+  --lp-amber-50: #f9f4ea;
+
+  --lp-red-700: #96392f;
+  --lp-red-600: #b04a3e;
+  --lp-red-500: #c25c50;
+  --lp-red-100: #f5e6e3;
+  --lp-red-50: #faf0ee;
+
+  --lp-slate-700: #4d5c6b;
+  --lp-slate-600: #5b6b7c;
+  --lp-slate-500: #6d7d8d;
+  --lp-slate-100: #e6ebef;
+  --lp-slate-50: #f0f3f5;
+
+  --lp-gold-600: #a97f2c;
+  --lp-gold-100: #f3ead3;
+  --lp-gold-50: #faf5e8;
+
+  /* ----------------------------------------------------------------
+   * Color · 语义（semantic）
+   * ---------------------------------------------------------------- */
+  --lp-bg: var(--lp-paper-100);
+  --lp-bg-strong: var(--lp-paper-200);
+  --lp-surface: var(--lp-paper-0);
+  --lp-surface-subtle: var(--lp-paper-50);
+  --lp-surface-soft: var(--lp-paper-100);
+  --lp-surface-inset: var(--lp-paper-200);
+
+  --lp-border: var(--lp-paper-300);
+  --lp-border-strong: var(--lp-paper-400);
+
+  --lp-text: var(--lp-ink-900);
+  --lp-text-secondary: var(--lp-ink-600);
+  --lp-text-muted: var(--lp-ink-400);
+
+  --lp-primary: var(--lp-blue-700);
+  --lp-primary-hover: var(--lp-blue-800);
+  --lp-primary-active: var(--lp-blue-900);
+  --lp-primary-soft: var(--lp-blue-50);
+  --lp-primary-softer: var(--lp-blue-100);
+
+  --lp-success: var(--lp-green-600);
+  --lp-success-soft: var(--lp-green-50);
+  --lp-warning: var(--lp-amber-600);
+  --lp-warning-soft: var(--lp-amber-50);
+  --lp-danger: var(--lp-red-600);
+  --lp-danger-soft: var(--lp-red-50);
+  --lp-info: var(--lp-slate-600);
+  --lp-info-soft: var(--lp-slate-50);
+
+  --lp-accent: var(--lp-gold-600);
+  --lp-accent-soft: var(--lp-gold-50);
+
+  --lp-link: var(--lp-blue-700);
+  --lp-link-hover: var(--lp-blue-800);
+
+  --lp-on-primary: var(--lp-paper-0);
+  --lp-on-danger: var(--lp-paper-0);
+
+  /* ----------------------------------------------------------------
+   * Typography
+   * ---------------------------------------------------------------- */
+  --lp-font-sans:
+    ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    '微软雅黑', 'Helvetica Neue', Arial, sans-serif;
+  --lp-font-display: 'Songti SC', 'Noto Serif SC', 'Source Han Serif SC', Georgia, 'Times New Roman', serif;
+  --lp-font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+
+  --lp-text-xs: 12px;
+  --lp-text-sm: 13px;
+  --lp-text-base: 14px;
+  --lp-text-md: 15px;
+  --lp-text-lg: 16px;
+  --lp-text-xl: 18px;
+  --lp-text-2xl: 20px;
+  --lp-text-3xl: 24px;
+  --lp-text-4xl: 28px;
+  --lp-text-5xl: 34px;
+
+  --lp-leading-tight: 1.25;
+  --lp-leading-snug: 1.4;
+  --lp-leading-body: 1.6;
+  --lp-leading-relaxed: 1.75;
+  --lp-leading-display: 1.15;
+
+  --lp-weight-normal: 400;
+  --lp-weight-medium: 500;
+  --lp-weight-semibold: 600;
+  --lp-weight-bold: 700;
+  --lp-weight-heavy: 800;
+
+  --lp-tracking-tight: -0.015em;
+  --lp-tracking-normal: 0;
+  --lp-tracking-wide: 0.08em;
+
+  /* ----------------------------------------------------------------
+   * Spacing · 4px 基准节奏
+   * ---------------------------------------------------------------- */
+  --lp-space-1: 4px;
+  --lp-space-2: 8px;
+  --lp-space-3: 12px;
+  --lp-space-4: 16px;
+  --lp-space-5: 20px;
+  --lp-space-6: 24px;
+  --lp-space-8: 32px;
+  --lp-space-10: 40px;
+  --lp-space-12: 48px;
+  --lp-space-16: 64px;
+  --lp-space-20: 80px;
+
+  /* ----------------------------------------------------------------
+   * Radius
+   * ---------------------------------------------------------------- */
+  --lp-radius-xs: 4px;
+  --lp-radius-sm: 6px;
+  --lp-radius-md: 10px;
+  --lp-radius-lg: 14px;
+  --lp-radius-xl: 18px;
+  --lp-radius-full: 999px;
+  /* 兼容旧变量 */
+  --lp-radius: var(--lp-radius-md);
+
+  /* ----------------------------------------------------------------
+   * Border
+   * ---------------------------------------------------------------- */
+  --lp-border-hairline: 1px solid var(--lp-border);
+  --lp-border-light: 1px solid var(--lp-border);
+  --lp-border-strong-line: 1px solid var(--lp-border-strong);
+
+  /* ----------------------------------------------------------------
+   * Shadow · 低对比、柔和
+   * ---------------------------------------------------------------- */
+  --lp-shadow-xs: 0 1px 2px rgba(29, 29, 27, 0.04);
+  --lp-shadow-sm: 0 1px 3px rgba(29, 29, 27, 0.05), 0 4px 12px rgba(29, 29, 27, 0.04);
+  --lp-shadow-md: 0 4px 10px rgba(29, 29, 27, 0.05), 0 14px 30px rgba(29, 29, 27, 0.07);
+  --lp-shadow-lg: 0 10px 20px rgba(29, 29, 27, 0.08), 0 28px 56px rgba(29, 29, 27, 0.1);
+  --lp-shadow-focus: 0 0 0 3px rgba(51, 80, 122, 0.18);
+  /* 兼容历史引用 */
+  --lp-shadow-card: var(--lp-shadow-sm);
+  --lp-shadow-card-hover: var(--lp-shadow-md);
+
+  /* ----------------------------------------------------------------
+   * Motion · 克制、有意义
+   * ---------------------------------------------------------------- */
+  --lp-duration-fast: 120ms;
+  --lp-duration-normal: 180ms;
+  --lp-duration-slow: 280ms;
+  --lp-ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --lp-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --lp-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ----------------------------------------------------------------
+   * Layout
+   * ---------------------------------------------------------------- */
+  --lp-container-max: 1200px;
+  --lp-container-narrow: 860px;
+  --lp-reading-measure: 68ch;
+  --lp-sidebar-width: 248px;
+  --lp-header-height: 64px;
+  --lp-content-gutter: 32px;
+
+  /* ----------------------------------------------------------------
+   * Z-index 层级
+   * ---------------------------------------------------------------- */
+  --lp-z-base: 0;
+  --lp-z-sticky: 10;
+  --lp-z-header: 20;
+  --lp-z-overlay: 200;
+  --lp-z-modal: 300;
+  --lp-z-toast: 400;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --lp-content-gutter: 16px;
+  }
+}

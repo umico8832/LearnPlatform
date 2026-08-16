@@ -1,17 +1,21 @@
+/* 认证页样式 · 浅色安静主题
+ * 保持类名与结构稳定（登录流程 E2E 依赖 .auth-primary 等），仅统一视觉。 */
+
 .auth-card-header {
   margin-bottom: 24px;
 }
 .auth-card-header h1 {
   margin: 0 0 8px;
-  color: #f8fafc;
-  font-size: 25px;
+  color: var(--lp-text);
+  font-size: var(--lp-text-3xl);
+  font-weight: var(--lp-weight-heavy);
   line-height: 1.25;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--lp-tracking-tight);
 }
 .auth-card-header p {
   margin: 0;
-  color: #8fa0b5;
-  font-size: 14px;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-base);
   line-height: 1.6;
 }
 .auth-form .el-form-item {
@@ -19,73 +23,74 @@
 }
 .auth-form .el-form-item__label {
   padding-bottom: 7px !important;
-  color: #cbd5e1 !important;
-  font-size: 13px;
-  font-weight: 650;
+  color: var(--lp-text-secondary) !important;
+  font-size: var(--lp-text-sm);
+  font-weight: var(--lp-weight-semibold);
   line-height: 1.2 !important;
 }
 .auth-form .el-input__wrapper {
   min-height: 46px;
   padding: 1px 13px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 9px;
-  background: rgba(15, 31, 51, 0.7);
-  box-shadow: none !important;
+  border-radius: var(--lp-radius-sm);
+  background: var(--lp-surface);
+  box-shadow: 0 0 0 1px var(--lp-border-strong) inset !important;
 }
 .auth-form .el-input__wrapper:hover {
-  border-color: rgba(125, 211, 252, 0.55);
+  box-shadow: 0 0 0 1px var(--lp-ink-300) inset !important;
 }
 .auth-form .el-input__wrapper.is-focus {
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.16) !important;
+  box-shadow:
+    0 0 0 1px var(--lp-primary) inset,
+    var(--lp-shadow-focus) !important;
 }
 .auth-form .el-input__inner {
-  color: #f8fafc;
-  font-size: 15px;
+  color: var(--lp-text);
+  font-size: var(--lp-text-md);
 }
 .auth-form .el-input__inner::placeholder {
-  color: #617188;
+  color: var(--lp-text-muted);
 }
 .auth-form .el-input__prefix,
 .auth-form .el-input__suffix {
-  color: #7f91a8;
+  color: var(--lp-text-muted);
 }
 .auth-form .el-form-item__error {
-  color: #fca5a5;
+  color: var(--lp-danger);
   padding-top: 5px;
 }
 .auth-primary {
   width: 100%;
   min-height: 46px;
-  border: 0 !important;
-  border-radius: 9px !important;
-  background: #1769aa !important;
-  font-size: 15px;
-  font-weight: 750;
+  border-radius: var(--lp-radius-sm) !important;
+  background: var(--lp-primary) !important;
+  border-color: var(--lp-primary) !important;
+  font-size: var(--lp-text-md);
+  font-weight: var(--lp-weight-semibold);
 }
 .auth-primary:hover:not(:disabled),
 .auth-primary:focus-visible {
-  background: #1d78bf !important;
-  box-shadow: 0 8px 24px rgba(23, 105, 170, 0.24);
+  background: var(--lp-primary-hover) !important;
+  border-color: var(--lp-primary-hover) !important;
+  box-shadow: var(--lp-shadow-sm);
 }
 .auth-secondary {
   min-height: 44px;
-  border-color: rgba(148, 163, 184, 0.28) !important;
-  color: #cbd5e1 !important;
-  background: rgba(15, 31, 51, 0.55) !important;
+  border-color: var(--lp-border-strong) !important;
+  color: var(--lp-text-secondary) !important;
+  background: var(--lp-surface) !important;
 }
 .auth-footer {
   margin-top: 22px;
   padding-top: 18px;
-  border-top: 1px solid rgba(148, 163, 184, 0.13);
-  color: #8393a8;
+  border-top: var(--lp-border-hairline);
+  color: var(--lp-text-muted);
   text-align: center;
-  font-size: 13px;
+  font-size: var(--lp-text-sm);
 }
 .auth-footer a,
 .auth-inline-link {
-  color: #7dd3fc;
-  font-weight: 650;
+  color: var(--lp-primary);
+  font-weight: var(--lp-weight-semibold);
 }
 .auth-footer a:hover,
 .auth-inline-link:hover {
@@ -97,16 +102,16 @@
   justify-content: space-between;
   gap: 12px;
   margin: -3px 0 16px;
-  color: #8292a7;
-  font-size: 13px;
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-sm);
 }
 .step-summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 18px;
-  color: #8292a7;
-  font-size: 12px;
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-xs);
 }
 .step-dots {
   display: flex;
@@ -116,10 +121,10 @@
   width: 24px;
   height: 3px;
   border-radius: 2px;
-  background: #28384c;
+  background: var(--lp-surface-inset);
 }
 .step-dots span.active {
-  background: #60a5fa;
+  background: var(--lp-primary);
 }
 .step-actions {
   display: grid;
@@ -130,11 +135,11 @@
 .verification-note {
   margin: 0 0 16px;
   padding: 12px 14px;
-  border: 1px solid rgba(125, 211, 252, 0.16);
-  border-radius: 8px;
-  background: rgba(23, 105, 170, 0.1);
-  color: #aebcd0;
-  font-size: 13px;
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-sm);
+  background: var(--lp-surface-subtle);
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
   line-height: 1.55;
   word-break: break-word;
 }
@@ -153,20 +158,20 @@
   gap: 9px;
   align-items: center;
   margin-top: 8px;
-  color: #8292a7;
+  color: var(--lp-text-muted);
   font-size: 11px;
 }
 .password-meter div {
   height: 3px;
   border-radius: 2px;
-  background: #29394c;
+  background: var(--lp-surface-inset);
   overflow: hidden;
 }
 .password-meter i {
   display: block;
   height: 100%;
-  background: #60a5fa;
-  transition: width 0.2s ease;
+  background: var(--lp-primary);
+  transition: width var(--lp-duration-normal) var(--lp-ease-out);
 }
 .status-panel {
   padding: 20px 0 4px;
@@ -174,20 +179,20 @@
 }
 .status-panel .el-icon {
   font-size: 48px;
-  color: #4ade80;
+  color: var(--lp-success);
 }
 .status-panel.error .el-icon {
-  color: #fca5a5;
+  color: var(--lp-danger);
 }
 .status-panel h2 {
   margin: 14px 0 8px;
-  color: #f8fafc;
-  font-size: 20px;
+  color: var(--lp-text);
+  font-size: var(--lp-text-xl);
 }
 .status-panel p {
   margin: 0;
-  color: #8fa0b5;
-  font-size: 14px;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-base);
   line-height: 1.65;
 }
 @media (max-width: 430px) {
