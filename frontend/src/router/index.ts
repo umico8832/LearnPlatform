@@ -29,20 +29,25 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/',
+    redirect: '/my-courses',
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/',
     component: () => import('@/components/layout/AppLayout.vue'),
     meta: { requiresAuth: true },
     children: [
       {
-        path: '',
-        name: 'Home',
-        component: () => import('@/views/home/HomeView.vue'),
-        meta: { title: '首页' },
+        path: 'my-courses',
+        name: 'MyCourses',
+        component: () => import('@/views/course/MyCoursesView.vue'),
+        meta: { title: '我的课程' },
       },
       {
         path: 'courses',
         name: 'CourseList',
         component: () => import('@/views/course/CourseListView.vue'),
-        meta: { title: '课程列表' },
+        meta: { title: '课程库' },
       },
       {
         path: 'courses/:id',
@@ -51,22 +56,10 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '课程详情' },
       },
       {
-        path: 'my-courses',
-        name: 'MyCourses',
-        component: () => import('@/views/course/MyCoursesView.vue'),
-        meta: { title: '我的课程库' },
-      },
-      {
         path: 'my-courses/:id',
         name: 'CourseOverview',
         component: () => import('@/views/course/CourseOverviewView.vue'),
-        meta: { title: '课程总览' },
-      },
-      {
-        path: 'my-courses/:id/tutor',
-        name: 'TutorSession',
-        component: () => import('@/views/course/TutorSessionView.vue'),
-        meta: { title: 'AI 教学' },
+        meta: { title: '课程空间' },
       },
       {
         path: 'questions',
@@ -78,7 +71,7 @@ const routes: RouteRecordRaw[] = [
         path: 'practice',
         name: 'Practice',
         component: () => import('@/views/practice/PracticeView.vue'),
-        meta: { title: '刷题练习' },
+        meta: { title: '练习' },
       },
       {
         path: 'practice/session',
@@ -90,13 +83,13 @@ const routes: RouteRecordRaw[] = [
         path: 'practice/records',
         name: 'PracticeRecords',
         component: () => import('@/views/practice/PracticeRecordView.vue'),
-        meta: { title: '刷题记录' },
+        meta: { title: '练习记录' },
       },
       {
         path: 'wrong-questions',
         name: 'WrongQuestions',
         component: () => import('@/views/practice/WrongQuestionView.vue'),
-        meta: { title: '错题本' },
+        meta: { title: '错题' },
       },
       {
         path: 'favorites',
@@ -108,7 +101,7 @@ const routes: RouteRecordRaw[] = [
         path: 'review',
         name: 'Review',
         component: () => import('@/views/practice/ReviewView.vue'),
-        meta: { title: '智能复习' },
+        meta: { title: '复习' },
       },
       {
         path: 'profile',
@@ -117,64 +110,53 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '个人中心' },
       },
       {
-        path: 'learning-report',
-        name: 'LearningReport',
-        component: () => import('@/views/statistics/LearningReportView.vue'),
-        meta: { title: '学习报告' },
-      },
-      {
-        path: 'learning-path',
-        name: 'LearningPath',
-        component: () => import('@/views/statistics/LearningPathView.vue'),
-        meta: { title: '学习路径' },
-      },
-      {
-        path: 'knowledge-graph',
-        name: 'KnowledgeGraph',
-        component: () => import('@/views/statistics/KnowledgeGraphView.vue'),
-        meta: { title: '知识图谱' },
-      },
-      {
         path: 'learning-diagnosis',
         name: 'LearningDiagnosis',
         component: () => import('@/views/statistics/LearningDiagnosisView.vue'),
-        meta: { title: '学习诊断' },
-      },
-      {
-        path: 'ai/review',
-        name: 'AiReview',
-        component: () => import('@/views/ai/ReviewSuggestionView.vue'),
-        meta: { title: 'AI 复习建议' },
+        meta: { title: '学习诊断', hidden: true },
       },
       {
         path: 'submit',
         name: 'QuestionSubmit',
         component: () => import('@/views/practice/QuestionSubmitView.vue'),
-        meta: { title: '题目投稿' },
+        meta: { title: '题目投稿', hidden: true },
       },
       {
         path: 'exams',
         name: 'ExamList',
         component: () => import('@/views/exam/ExamListView.vue'),
-        meta: { title: '考试' },
+        meta: { title: '考试与试卷' },
+      },
+    ],
+  },
+  {
+    path: '/',
+    component: () => import('@/components/layout/FocusLayout.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: 'my-courses/:id/tutor',
+        name: 'TutorSession',
+        component: () => import('@/views/course/TutorSessionView.vue'),
+        meta: { title: 'AI 教学', focusTitle: 'AI 教学', focusSubtitle: '按步骤理解，服务端判分' },
       },
       {
         path: 'exams/take/:recordId',
         name: 'ExamTake',
         component: () => import('@/views/exam/ExamTakeView.vue'),
-        meta: { title: '考试中' },
+        meta: { title: '考试中', focusTitle: '考试进行中' },
       },
       {
         path: 'exams/learn/:sessionId',
         name: 'ExamLearning',
         component: () => import('@/views/exam/ExamLearningView.vue'),
-        meta: { title: '试卷学习' },
+        meta: { title: '试卷学习', focusTitle: '试卷学习' },
       },
       {
         path: 'exams/result/:recordId',
         name: 'ExamResult',
         component: () => import('@/views/exam/ExamResultView.vue'),
-        meta: { title: '考试结果' },
+        meta: { title: '考试结果', focusTitle: '考试结果' },
       },
     ],
   },
@@ -198,14 +180,14 @@ router.beforeEach(async (to) => {
   // 设置页面标题
   const title = to.meta.title as string
   if (title) {
-    document.title = `${title} - AI 题库与错题复习系统`
+    document.title = `${title} · LearnPlatform`
   }
 
   const loggedIn = isAuthenticated()
 
-  // 已登录用户访问登录/注册页，跳转首页
+  // 已登录用户访问登录/注册页，跳转我的课程
   if (loggedIn && ['/login', '/register', '/forgot-password', '/reset-password'].includes(to.path)) {
-    return { path: '/' }
+    return { path: '/my-courses' }
   }
 
   // 未登录访问需认证页面，跳转登录页

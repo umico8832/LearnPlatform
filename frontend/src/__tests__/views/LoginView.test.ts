@@ -80,7 +80,7 @@ describe('LoginView', () => {
       turnstileToken: 'turnstile-ok',
     })
     expect(mockSetLoginInfo).toHaveBeenCalled()
-    expect(mockPush).toHaveBeenCalledWith('/')
+    expect(mockPush).toHaveBeenCalledWith('/my-courses')
   })
   it('preserves guarded redirect', async () => {
     mockRoute.query = { redirect: '/exams' }

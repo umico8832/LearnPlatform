@@ -1,56 +1,96 @@
 <template>
-  <el-container class="app-layout">
+  <div class="app-layout">
     <div v-if="isMobile && sidebarOpen" class="sidebar-overlay" @click="sidebarOpen = false" />
 
-    <el-aside :width="isMobile ? '0px' : '248px'" :class="['app-sidebar', { 'mobile-open': isMobile && sidebarOpen }]">
+    <aside class="app-sidebar" :class="{ 'mobile-open': isMobile && sidebarOpen }">
       <div class="sidebar-inner">
-        <div class="brand">
-          <div class="brand-mark">AI</div>
-          <div class="brand-copy">
-            <strong>学习工作台</strong>
-            <span>题库 · 复习 · 诊断</span>
-          </div>
+        <router-link to="/my-courses" class="brand" aria-label="LearnPlatform 首页">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+              <path
+                d="M4 19.5V5.5a1.5 1.5 0 0 1 1.5-1.5H18a1.5 1.5 0 0 1 1.5 1.5v11a1.5 1.5 0 0 1-1.5 1.5H7l-3 1.5Z"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linejoin="round"
+              />
+              <path d="M8 9h8M8 12.5h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+            </svg>
+          </span>
+          <span class="brand-copy">
+            <strong>LearnPlatform</strong>
+            <small>安静的数字教材</small>
+          </span>
+        </router-link>
+
+        <nav class="nav-primary" aria-label="主导航">
+          <router-link to="/my-courses" class="nav-item" :class="{ 'is-active': isActive('/my-courses') }">
+            <el-icon :size="17"><Collection /></el-icon>
+            <span>我的课程</span>
+          </router-link>
+          <router-link to="/courses" class="nav-item" :class="{ 'is-active': isActive('/courses') }">
+            <el-icon :size="17"><Reading /></el-icon>
+            <span>课程库</span>
+          </router-link>
+        </nav>
+
+        <div class="sidebar-divider" />
+
+        <button type="button" class="sidebar-search" @click="openSearch">
+          <el-icon :size="15"><Search /></el-icon>
+          <span>搜索内容</span>
+          <kbd>⌘K</kbd>
+        </button>
+
+        <div class="sidebar-bottom">
+          <a v-if="isAdmin" class="admin-entry" href="/admin/" aria-label="进入管理系统">
+            <el-icon :size="15"><DataAnalysis /></el-icon>
+            <span>进入管理系统</span>
+          </a>
+          <el-dropdown trigger="click" @command="handleCommand">
+            <button type="button" class="user-entry" aria-label="用户菜单">
+              <el-avatar :size="30" :src="userInfo?.avatar || undefined" class="user-avatar">
+                {{ avatarText }}
+              </el-avatar>
+              <span class="user-copy">
+                <strong>{{ userInfo?.nickname || userInfo?.username || '用户' }}</strong>
+                <small>{{ isAdmin ? '管理员' : '学习者' }}</small>
+              </span>
+              <el-icon :size="13" class="user-chevron"><ArrowDown /></el-icon>
+            </button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+                <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
-
-        <el-menu :default-active="activeMenu" router class="app-menu" @select="handleMenuSelect">
-          <template v-for="section in visibleSections" :key="section.label">
-            <div class="menu-section-label">{{ section.label }}</div>
-            <el-menu-item v-for="item in section.items" :key="item.path" :index="item.path">
-              <el-icon><component :is="item.icon" /></el-icon>
-              <span>{{ item.label }}</span>
-            </el-menu-item>
-          </template>
-        </el-menu>
-        <a v-if="isAdmin" class="admin-system-entry" href="/admin/">
-          <el-icon><DataAnalysis /></el-icon>
-          <span>进入管理系统</span>
-        </a>
       </div>
-    </el-aside>
+    </aside>
 
-    <el-container class="app-content-shell">
-      <el-header class="app-header">
+    <div class="app-content-shell">
+      <header class="app-header">
         <div class="header-left">
-          <el-button
+          <button
             v-if="isMobile"
+            type="button"
             class="hamburger"
-            text
-            :icon="sidebarOpen ? Fold : Expand"
+            :aria-label="sidebarOpen ? '关闭导航' : '打开导航'"
+            :aria-expanded="sidebarOpen"
             @click="sidebarOpen = !sidebarOpen"
-          />
+          >
+            <el-icon :size="18"><component :is="sidebarOpen ? Fold : Expand" /></el-icon>
+          </button>
           <div class="page-context">
             <h1>{{ pageTitle }}</h1>
-            <p v-if="!isMobile">{{ pageDescription }}</p>
           </div>
         </div>
-
         <div class="header-right">
           <button class="header-search-trigger" type="button" @click="openSearch">
-            <el-icon :size="18"><Search /></el-icon>
+            <el-icon :size="16"><Search /></el-icon>
             <span v-if="!isMobile" class="search-trigger-text">搜索题目、课程、知识点</span>
-            <kbd v-if="!isMobile" class="search-trigger-kbd">⌘K</kbd>
+            <kbd v-if="!isMobile">⌘K</kbd>
           </button>
-
           <el-dropdown
             v-if="isAdmin"
             trigger="click"
@@ -59,7 +99,7 @@
           >
             <button class="header-icon-button" type="button" aria-label="AI 运营提醒">
               <el-badge :value="openAlertCount" :hidden="openAlertCount === 0" :max="99" type="danger">
-                <el-icon :size="18"><Bell /></el-icon>
+                <el-icon :size="17"><Bell /></el-icon>
               </el-badge>
             </button>
             <template #dropdown>
@@ -100,32 +140,18 @@
               </div>
             </template>
           </el-dropdown>
-
-          <el-dropdown @command="handleCommand">
-            <span class="user-info">
-              <el-avatar :size="34" :src="userInfo?.avatar || undefined">
-                {{ avatarText }}
-              </el-avatar>
-              <span v-if="!isMobile" class="user-copy">
-                <strong>{{ userInfo?.nickname || userInfo?.username || '用户' }}</strong>
-                <small>{{ isAdmin ? '管理员' : '学习者' }}</small>
-              </span>
-            </span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="profile">个人中心</el-dropdown-item>
-                <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
         </div>
-      </el-header>
+      </header>
 
-      <el-main class="app-main">
-        <router-view />
-      </el-main>
-    </el-container>
-  </el-container>
+      <main class="app-main">
+        <router-view v-slot="{ Component }">
+          <transition name="page-fade" mode="out-in">
+            <component :is="Component" :key="route.fullPath" />
+          </transition>
+        </router-view>
+      </main>
+    </div>
+  </div>
 
   <GlobalSearchDialog ref="searchDialogRef" />
 </template>
@@ -133,47 +159,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { errorMessage } from '@/utils/errors'
-import type { Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { acknowledgeAiUsageAlert, getAiUsageAlerts, type AiUsageAlert } from '@/api/aiUsage'
 import { ElMessage } from 'element-plus'
-import {
-  Bell,
-  HomeFilled,
-  Reading,
-  Collection,
-  EditPen,
-  Promotion,
-  Clock,
-  WarningFilled,
-  Trophy,
-  MagicStick,
-  DataAnalysis,
-  StarFilled,
-  Fold,
-  Expand,
-  DataLine,
-  Guide,
-  Connection,
-  TrendCharts,
-  Upload,
-  Search,
-  Timer,
-} from '@element-plus/icons-vue'
+import { ArrowDown, Bell, Collection, DataAnalysis, Expand, Fold, Reading, Search } from '@element-plus/icons-vue'
 import GlobalSearchDialog from '@/components/GlobalSearchDialog.vue'
-
-interface NavItem {
-  path: string
-  label: string
-  icon: Component
-  adminOnly?: boolean
-}
-
-interface NavSection {
-  label: string
-  items: NavItem[]
-}
 
 const route = useRoute()
 const router = useRouter()
@@ -187,87 +178,15 @@ const alertsLoading = ref(false)
 const acknowledgingAlertId = ref<number | null>(null)
 const openAlertCount = computed(() => openAlerts.value.length)
 
-const navSections: NavSection[] = [
-  {
-    label: '学习中心',
-    items: [
-      { path: '/', label: '学习首页', icon: HomeFilled },
-      { path: '/my-courses', label: '我的课程库', icon: Collection },
-      { path: '/courses', label: '课程列表', icon: Reading },
-      { path: '/questions', label: '题库浏览', icon: EditPen },
-      { path: '/favorites', label: '我的收藏', icon: StarFilled },
-    ],
-  },
-  {
-    label: '练习复习',
-    items: [
-      { path: '/practice', label: '刷题练习', icon: Promotion },
-      { path: '/practice/records', label: '刷题记录', icon: Clock },
-      { path: '/wrong-questions', label: '错题本', icon: WarningFilled },
-      { path: '/review', label: '智能复习', icon: Timer },
-    ],
-  },
-  {
-    label: '考试测评',
-    items: [
-      { path: '/exams', label: '考试测评', icon: Trophy },
-      { path: '/learning-report', label: '学习报告', icon: DataLine },
-    ],
-  },
-  {
-    label: 'AI 与诊断',
-    items: [
-      { path: '/learning-diagnosis', label: '学习诊断', icon: TrendCharts },
-      { path: '/learning-path', label: '学习路径', icon: Guide },
-      { path: '/knowledge-graph', label: '知识图谱', icon: Connection },
-      { path: '/ai/review', label: 'AI 复习建议', icon: MagicStick },
-    ],
-  },
-  {
-    label: '内容共建',
-    items: [{ path: '/submit', label: '题目投稿', icon: Upload }],
-  },
-]
-
-const visibleSections = computed(() =>
-  navSections
-    .map((section) => ({
-      ...section,
-      items: section.items.filter((item) => !item.adminOnly || isAdmin.value),
-    }))
-    .filter((section) => section.items.length > 0),
-)
-
-const flatNavItems = computed(() => visibleSections.value.flatMap((section) => section.items))
-const activeMenu = computed(() => {
-  const exact = flatNavItems.value.find((item) => item.path === route.path)
-  if (exact) return exact.path
-  const matched = [...flatNavItems.value]
-    .filter((item) => item.path !== '/' && route.path.startsWith(item.path))
-    .sort((a, b) => b.path.length - a.path.length)[0]
-  return matched?.path || '/'
-})
-
-const pageTitle = computed(() => (route.meta.title as string) || '学习工作台')
-const pageDescriptions: Record<string, string> = {
-  '/': '查看今日计划、学习指标和下一步任务。',
-  '/courses': '按课程组织知识点，找到适合当前阶段的学习内容。',
-  '/my-courses': '集中查看已加入的课程，并进入课程内容继续规划学习。',
-  '/questions': '浏览题库并结合课程、知识点、题型快速筛选。',
-  '/practice': '选择练习任务，完成即时判分与解析复盘。',
-  '/practice/records': '回看练习历史，定位近期薄弱项。',
-  '/wrong-questions': '集中处理反复出错的题目，逐步提升掌握度。',
-  '/favorites': '沉淀值得反复查看的题目与解析。',
-  '/review': '按间隔重复计划安排今天的复习任务。',
-  '/exams': '用学习模式逐题理解试卷，或进入考试模式检验阶段性学习效果。',
-  '/learning-report': '用数据复盘近期学习表现。',
-  '/learning-diagnosis': '结合答题记录生成学习诊断与建议。',
-  '/learning-path': '查看个性化学习路径和推荐顺序。',
-  '/knowledge-graph': '从知识结构视角理解课程关联。',
-  '/ai/review': '让 AI 汇总复习重点与补强建议。',
-  '/submit': '提交高质量题目，参与题库共建。',
+/** 一级入口高亮：我的课程 与 课程库 精确匹配其子路由前缀。 */
+function isActive(prefix: string) {
+  if (prefix === '/my-courses') {
+    return route.path === '/my-courses' || route.path.startsWith('/my-courses/')
+  }
+  return route.path === '/courses' || route.path.startsWith('/courses/')
 }
-const pageDescription = computed(() => pageDescriptions[activeMenu.value] || '围绕当前任务继续推进学习。')
+
+const pageTitle = computed(() => (route.meta.title as string) || 'LearnPlatform')
 
 const searchDialogRef = ref<InstanceType<typeof GlobalSearchDialog>>()
 function openSearch() {
@@ -318,12 +237,6 @@ function checkMobile() {
   }
 }
 
-function handleMenuSelect() {
-  if (isMobile.value) {
-    sidebarOpen.value = false
-  }
-}
-
 onMounted(() => {
   checkMobile()
   fetchOpenAlerts()
@@ -354,158 +267,270 @@ function handleCommand(command: string) {
 
 <style scoped>
 .app-layout {
+  display: grid;
+  grid-template-columns: var(--lp-sidebar-width) minmax(0, 1fr);
   min-height: 100vh;
   background: var(--lp-bg);
   color: var(--lp-text);
 }
 
+/* ---------------- Sidebar ---------------- */
 .app-sidebar {
-  background: #101820;
-  overflow: hidden;
-  transition: width 0.25s ease;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  background: var(--lp-surface-subtle);
+  border-right: var(--lp-border-hairline);
 }
 
 .sidebar-inner {
-  width: 248px;
-  height: 100vh;
   display: flex;
   flex-direction: column;
+  height: 100%;
+  padding: var(--lp-space-4) var(--lp-space-3);
   overflow-y: auto;
   overflow-x: hidden;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.sidebar-inner::-webkit-scrollbar {
-  width: 4px;
-}
-
-.sidebar-inner::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.22);
-  border-radius: 999px;
 }
 
 .brand {
-  min-height: 76px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px 18px;
-  color: #fff;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: var(--lp-space-3);
+  padding: var(--lp-space-2) var(--lp-space-2) var(--lp-space-4);
 }
 
 .brand-mark {
-  width: 38px;
-  height: 38px;
   display: grid;
   place-items: center;
-  border-radius: 8px;
-  background: #f0c75e;
-  color: #14213d;
-  font-size: 15px;
-  font-weight: 800;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: var(--lp-radius-md);
+  background: var(--lp-primary);
+  color: var(--lp-paper-0);
 }
 
 .brand-copy {
   display: grid;
-  gap: 3px;
+  gap: 1px;
   min-width: 0;
-}
-
-.brand-copy strong {
-  font-size: 16px;
   line-height: 1.15;
 }
 
-.brand-copy span {
-  color: rgba(255, 255, 255, 0.58);
-  font-size: 12px;
+.brand-copy strong {
+  color: var(--lp-text);
+  font-size: var(--lp-text-md);
+  font-weight: var(--lp-weight-heavy);
+  letter-spacing: var(--lp-tracking-tight);
+  white-space: nowrap;
 }
 
-.app-menu {
-  flex: 1;
-  padding: 12px 10px 18px;
-  border-right: 0;
-  background: transparent;
+.brand-copy small {
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-xs);
+  white-space: nowrap;
 }
 
-.menu-section-label {
-  margin: 14px 10px 6px;
-  color: rgba(255, 255, 255, 0.42);
-  font-size: 12px;
-  font-weight: 700;
+.nav-primary {
+  display: grid;
+  gap: 2px;
+  margin-top: var(--lp-space-2);
 }
 
-.app-menu :deep(.el-menu-item) {
-  height: 40px;
-  margin: 2px 0;
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.74);
-  line-height: 40px;
-}
-
-.app-menu :deep(.el-menu-item:hover) {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-}
-
-.app-menu :deep(.el-menu-item.is-active) {
-  background: #e9f4ff;
-  color: #0f5ea8;
-  font-weight: 700;
-}
-
-.admin-system-entry {
+.nav-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 0 12px 16px;
-  padding: 11px 12px;
-  border: 1px solid rgba(240, 199, 94, 0.35);
-  border-radius: 8px;
-  color: #f7dda0;
-  text-decoration: none;
+  gap: var(--lp-space-3);
+  height: 38px;
+  padding: 0 var(--lp-space-3);
+  border-radius: var(--lp-radius-sm);
+  color: var(--lp-ink-600);
+  font-size: var(--lp-text-base);
+  font-weight: var(--lp-weight-medium);
+  transition:
+    background-color var(--lp-duration-fast) var(--lp-ease-out),
+    color var(--lp-duration-fast) var(--lp-ease-out);
 }
 
-.admin-system-entry:hover {
-  background: rgba(240, 199, 94, 0.1);
+.nav-item:hover {
+  background: var(--lp-surface-inset);
+  color: var(--lp-text);
 }
 
+.nav-item.is-active {
+  background: var(--lp-primary-soft);
+  color: var(--lp-primary);
+  font-weight: var(--lp-weight-semibold);
+}
+
+.sidebar-divider {
+  height: 1px;
+  margin: var(--lp-space-4) var(--lp-space-2);
+  background: var(--lp-border);
+}
+
+.sidebar-search {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-space-2);
+  height: 36px;
+  margin: 0 var(--lp-space-1);
+  padding: 0 var(--lp-space-3);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-sm);
+  background: var(--lp-surface);
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-sm);
+  cursor: pointer;
+  transition:
+    border-color var(--lp-duration-fast) var(--lp-ease-out),
+    color var(--lp-duration-fast) var(--lp-ease-out);
+}
+
+.sidebar-search:hover {
+  border-color: var(--lp-border-strong);
+  color: var(--lp-text-secondary);
+}
+
+.sidebar-search span {
+  flex: 1;
+  text-align: left;
+}
+
+.sidebar-search kbd,
+.header-search-trigger kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius-xs);
+  background: var(--lp-surface-subtle);
+  color: var(--lp-text-muted);
+  font-size: 11px;
+  font-family: inherit;
+}
+
+.sidebar-bottom {
+  display: grid;
+  gap: var(--lp-space-2);
+  margin-top: auto;
+  padding-top: var(--lp-space-4);
+}
+
+.admin-entry {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-space-2);
+  height: 34px;
+  padding: 0 var(--lp-space-3);
+  border-radius: var(--lp-radius-sm);
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  transition: background-color var(--lp-duration-fast) var(--lp-ease-out);
+}
+
+.admin-entry:hover {
+  background: var(--lp-surface-inset);
+  color: var(--lp-text);
+}
+
+.user-entry {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-space-2);
+  width: 100%;
+  padding: var(--lp-space-2) var(--lp-space-2);
+  border: 0;
+  border-radius: var(--lp-radius-sm);
+  background: transparent;
+  color: var(--lp-text);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color var(--lp-duration-fast) var(--lp-ease-out);
+}
+
+.user-entry:hover {
+  background: var(--lp-surface-inset);
+}
+
+.user-avatar {
+  flex: 0 0 auto;
+  background: var(--lp-primary-soft);
+  color: var(--lp-primary);
+  font-weight: var(--lp-weight-bold);
+}
+
+.user-copy {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+  line-height: 1.15;
+}
+
+.user-copy strong {
+  font-size: var(--lp-text-sm);
+  font-weight: var(--lp-weight-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-copy small {
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-xs);
+}
+
+.user-chevron {
+  color: var(--lp-text-muted);
+}
+
+/* ---------------- Header ---------------- */
 .app-content-shell {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .app-header {
-  height: 68px;
+  position: sticky;
+  top: 0;
+  z-index: var(--lp-z-header);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
-  padding: 0 28px;
-  background: rgba(255, 255, 255, 0.9);
-  border-bottom: 1px solid var(--lp-border);
-  backdrop-filter: blur(16px);
+  gap: var(--lp-space-4);
+  height: var(--lp-header-height);
+  padding: 0 var(--lp-content-gutter);
+  background: rgba(253, 253, 251, 0.86);
+  border-bottom: var(--lp-border-hairline);
+  backdrop-filter: blur(12px);
 }
 
 .header-left,
-.header-right,
-.user-info {
+.header-right {
   display: flex;
   align-items: center;
 }
 
 .header-left {
-  gap: 12px;
+  gap: var(--lp-space-3);
   min-width: 0;
 }
 
 .header-right {
-  gap: 14px;
+  gap: var(--lp-space-3);
   flex-shrink: 0;
 }
 
 .hamburger {
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-sm);
+  background: var(--lp-surface);
   color: var(--lp-text);
+  cursor: pointer;
 }
 
 .page-context {
@@ -514,46 +539,36 @@ function handleCommand(command: string) {
 
 .page-context h1 {
   margin: 0;
+  font-size: var(--lp-text-xl);
+  font-weight: var(--lp-weight-heavy);
+  letter-spacing: var(--lp-tracking-tight);
   color: var(--lp-text);
-  font-size: 18px;
-  font-weight: 800;
-  line-height: 1.25;
-}
-
-.page-context p {
-  margin: 3px 0 0;
-  color: var(--lp-text-muted);
-  font-size: 13px;
-  line-height: 1.35;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .header-search-trigger {
-  min-width: 256px;
-  height: 38px;
+  min-width: 236px;
+  height: 34px;
   display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 0 10px 0 13px;
-  border: 1px solid var(--lp-border);
-  border-radius: 8px;
-  background: #f8fafc;
+  gap: var(--lp-space-2);
+  padding: 0 var(--lp-space-3);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-sm);
+  background: var(--lp-surface);
   color: var(--lp-text-muted);
+  font-size: var(--lp-text-sm);
   cursor: pointer;
-  font-size: 13px;
   transition:
-    border-color 0.18s ease,
-    background-color 0.18s ease,
-    box-shadow 0.18s ease;
+    border-color var(--lp-duration-fast) var(--lp-ease-out),
+    box-shadow var(--lp-duration-fast) var(--lp-ease-out);
 }
 
 .header-search-trigger:hover {
-  background: #fff;
-  border-color: #9bb7d0;
-  box-shadow: 0 8px 22px rgba(34, 53, 74, 0.08);
+  border-color: var(--lp-border-strong);
+  box-shadow: var(--lp-shadow-xs);
 }
 
 .search-trigger-text {
@@ -561,69 +576,57 @@ function handleCommand(command: string) {
   text-align: left;
 }
 
-.search-trigger-kbd {
-  padding: 2px 6px;
-  border: 1px solid #d6dee8;
-  border-radius: 5px;
-  background: #fff;
-  color: #6b7c8f;
-  font-size: 11px;
-  font-family: inherit;
-}
-
 .header-icon-button {
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   display: inline-grid;
   place-items: center;
-  border: 1px solid var(--lp-border);
-  border-radius: 8px;
-  background: #fff;
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-sm);
+  background: var(--lp-surface);
   color: var(--lp-text-secondary);
   cursor: pointer;
   transition:
-    border-color 0.18s ease,
-    box-shadow 0.18s ease,
-    color 0.18s ease;
+    border-color var(--lp-duration-fast) var(--lp-ease-out),
+    color var(--lp-duration-fast) var(--lp-ease-out);
 }
 
 .header-icon-button:hover {
-  border-color: #d19a2c;
-  color: #9b6a09;
-  box-shadow: 0 8px 22px rgba(157, 111, 24, 0.1);
+  border-color: var(--lp-border-strong);
+  color: var(--lp-primary);
 }
 
 .ops-alert-panel {
   width: min(360px, calc(100vw - 24px));
-  padding: 12px;
+  padding: var(--lp-space-3);
 }
 
 .ops-alert-panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 2px 2px 10px;
-  border-bottom: 1px solid var(--lp-border);
+  gap: var(--lp-space-3);
+  padding: 2px 2px var(--lp-space-3);
+  border-bottom: var(--lp-border-hairline);
 }
 
 .ops-alert-panel-header strong {
   color: var(--lp-text);
-  font-size: 14px;
+  font-size: var(--lp-text-base);
 }
 
 .ops-alert-list {
   max-height: 360px;
   overflow-y: auto;
-  padding-top: 8px;
+  padding-top: var(--lp-space-2);
 }
 
 .ops-alert-item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
-  padding: 10px 2px;
-  border-bottom: 1px solid #eef1f5;
+  gap: var(--lp-space-3);
+  padding: var(--lp-space-3) 2px;
+  border-bottom: var(--lp-border-hairline);
 }
 
 .ops-alert-item:last-child {
@@ -633,102 +636,95 @@ function handleCommand(command: string) {
 .ops-alert-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--lp-space-2);
   color: var(--lp-text);
-  font-size: 13px;
-  font-weight: 700;
+  font-size: var(--lp-text-sm);
+  font-weight: var(--lp-weight-bold);
 }
 
 .ops-alert-item p {
   margin: 6px 0 5px;
   color: var(--lp-text-secondary);
-  font-size: 13px;
+  font-size: var(--lp-text-sm);
   line-height: 1.45;
 }
 
 .ops-alert-item small {
   color: var(--lp-text-muted);
-  font-size: 12px;
+  font-size: var(--lp-text-xs);
 }
 
-.user-info {
-  gap: 9px;
-  cursor: pointer;
-}
-
-.user-copy {
-  display: grid;
-  gap: 2px;
-  color: var(--lp-text);
-  line-height: 1.1;
-}
-
-.user-copy strong {
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.user-copy small {
-  color: var(--lp-text-muted);
-  font-size: 12px;
-}
-
+/* ---------------- Main ---------------- */
 .app-main {
+  flex: 1;
   min-width: 0;
-  padding: 24px;
-  overflow-y: auto;
-  background: linear-gradient(180deg, rgba(241, 246, 249, 0.86), rgba(246, 248, 251, 1) 320px), var(--lp-bg);
+  padding: var(--lp-space-6) var(--lp-content-gutter) var(--lp-space-12);
 }
 
+/* 页面切换过渡：克制淡入 */
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition:
+    opacity var(--lp-duration-normal) var(--lp-ease-out),
+    transform var(--lp-duration-normal) var(--lp-ease-out);
+}
+
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.page-fade-leave-to {
+  opacity: 0;
+}
+
+/* ---------------- Mobile ---------------- */
 @media (max-width: 767px) {
+  .app-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .app-sidebar {
-    position: fixed !important;
+    position: fixed;
     top: 0;
     left: 0;
-    z-index: 2000;
-    height: 100vh;
-    width: 0 !important;
+    z-index: var(--lp-z-modal);
+    width: 260px;
+    transform: translateX(-100%);
+    transition: transform var(--lp-duration-normal) var(--lp-ease-out);
+    box-shadow: var(--lp-shadow-lg);
   }
 
   .app-sidebar.mobile-open {
-    width: 248px !important;
+    transform: translateX(0);
   }
 
   .sidebar-overlay {
     position: fixed;
     inset: 0;
-    z-index: 1999;
-    background: rgba(9, 21, 34, 0.48);
+    z-index: calc(var(--lp-z-modal) - 1);
+    background: rgba(29, 29, 27, 0.42);
   }
 
   .app-header {
-    height: 58px;
-    padding: 0 12px;
-  }
-
-  .page-context h1 {
-    font-size: 16px;
-  }
-
-  .header-right {
-    gap: 10px;
+    height: 54px;
+    padding: 0 var(--lp-content-gutter);
   }
 
   .header-search-trigger {
-    min-width: 40px;
-    width: 40px;
-    height: 36px;
+    min-width: 36px;
+    width: 36px;
     justify-content: center;
     padding: 0;
   }
 
-  .header-icon-button {
-    width: 36px;
-    height: 36px;
+  .header-search-trigger span,
+  .header-search-trigger kbd {
+    display: none;
   }
 
   .app-main {
-    padding: 12px;
+    padding: var(--lp-space-4) var(--lp-content-gutter) var(--lp-space-10);
   }
 }
 </style>

@@ -76,7 +76,7 @@ async function handleLogin() {
     const res = await login(form)
     userStore.setLoginInfo(res.data.token, res.data.user)
     ElMessage.success('登录成功')
-    await router.push((route.query.redirect as string) || '/')
+    await router.push((route.query.redirect as string) || '/my-courses')
   } catch {
     turnstileRef.value?.reset()
   } finally {
