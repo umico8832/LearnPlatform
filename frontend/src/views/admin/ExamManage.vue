@@ -444,6 +444,7 @@ import type {
 import { getAdminQuestionPage } from '@/api/question'
 import type { QuestionVO } from '@/api/question'
 import { getCoursePage } from '@/api/course'
+import { formatTime } from '@/utils/format'
 
 // 试卷列表
 const loading = ref(false)
@@ -779,11 +780,6 @@ const paperTypeLabel = (paper: Pick<ExamPaperVO, 'paperType' | 'sourceVerified'>
 const paperTypeTag = (paper: Pick<ExamPaperVO, 'paperType' | 'sourceVerified'>) => {
   if (paper.paperType === 'OFFICIAL_EXAM') return paper.sourceVerified ? 'success' : 'warning'
   return 'info'
-}
-
-const formatTime = (time: string) => {
-  if (!time) return '-'
-  return time.replace('T', ' ').substring(0, 19)
 }
 
 // ======================== 智能组卷 ========================

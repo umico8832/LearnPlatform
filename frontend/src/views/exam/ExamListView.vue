@@ -504,6 +504,7 @@ import type {
 } from '@/api/exam'
 import { getAllCourses } from '@/api/course'
 import type { CourseVO } from '@/api/course'
+import { formatTime, formatStorage } from '@/utils/format'
 
 const router = useRouter()
 const route = useRoute()
@@ -636,11 +637,6 @@ const openImportDialog = async () => {
   }
   await loadPrivateDrafts()
   await loadStorageUsage()
-}
-
-const formatStorage = (bytes: number) => {
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(bytes % (1024 * 1024) === 0 ? 0 : 1)} MB`
 }
 
 const validateImportForm = () => {
@@ -1116,11 +1112,6 @@ const recordStatusTag = (status: ExamStatus): 'success' | 'warning' | 'danger' |
   if (status === 2) return 'danger'
   if (status === 3) return 'warning'
   return 'info'
-}
-
-const formatTime = (time: string) => {
-  if (!time) return '-'
-  return time.replace('T', ' ').substring(0, 19)
 }
 
 const isVerifiedOfficial = (paper: ExamPaperVO) => {
