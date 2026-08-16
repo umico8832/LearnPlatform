@@ -11,7 +11,8 @@ async function loginAs(page: Page, username: string, password: string) {
   await expect(loginButton).toBeEnabled({ timeout: 15_000 })
   await loginButton.click()
 
-  await expect(page).toHaveURL(/\/$/)
+  // 登录成功后默认进入「我的课程」
+  await expect(page).toHaveURL(/\/my-courses$/)
 }
 
 async function loginToAdminApp(page: Page, username: string, password: string) {
@@ -32,14 +33,14 @@ async function readCountdownSeconds(countdown: Locator) {
   return Number(match[1]) * 60 + Number(match[2])
 }
 
-test('用户可通过真实登录流程访问课程列表', async ({ page }) => {
+test('用户可通过真实登录流程访问课程库', async ({ page }) => {
   await loginAs(page, 'testuser', 'test123')
 
-  await expect(page.getByRole('main').getByText('今日学习工作台', { exact: true })).toBeVisible()
+  await expect(page.getByRole('main').getByText('我的课程', { exact: true }).first()).toBeVisible()
 
-  await page.getByRole('menuitem', { name: '课程列表' }).click()
+  await page.getByRole('navigation', { name: '主导航' }).getByRole('link', { name: '课程库' }).click()
   await expect(page).toHaveURL(/\/courses$/)
-  await expect(page.getByRole('main').getByRole('heading', { name: '课程列表' })).toBeVisible()
+  await expect(page.getByRole('main').getByRole('heading', { name: '课程库' })).toBeVisible()
   await expect(page.locator('.course-card').first()).toBeVisible()
 })
 
@@ -61,11 +62,11 @@ test('高频用户与管理页面可通过真实接口加载', async ({ page }) 
   await loginAs(page, 'testuser', 'test123')
 
   const learnerPages = [
-    ['/', '今日学习工作台'],
-    ['/practice', '刷题练习'],
-    ['/wrong-questions', '错题本'],
-    ['/review', '智能复习'],
-    ['/exams', '考试中心'],
+    ['/my-courses', '我的课程'],
+    ['/practice', '练习'],
+    ['/wrong-questions', '错题'],
+    ['/review', '复习'],
+    ['/exams', '考试与试卷'],
   ] as const
 
   for (const [path, heading] of learnerPages) {
@@ -117,7 +118,7 @@ test('高频用户与管理页面可通过真实接口加载', async ({ page }) 
 test('用户答错后可在错题本更新掌握程度并重练', async ({ page }) => {
   await loginAs(page, 'testuser', 'test123')
 
-  await page.getByRole('menuitem', { name: '刷题练习' }).click()
+  await page.goto('/practice')
   await expect(page).toHaveURL(/\/practice$/)
   const courseField = page.locator('.config-card .el-form-item').filter({ hasText: '选择课程' })
   await courseField.locator('.el-select').click()
@@ -137,7 +138,7 @@ test('用户答错后可在错题本更新掌握程度并重练', async ({ page 
   await resultDialog.getByRole('button', { name: '查看结果' }).click()
   await expect(page.getByText('练习完成！')).toBeVisible()
 
-  await page.getByRole('menuitem', { name: '错题本' }).click()
+  await page.goto('/wrong-questions')
   await expect(page).toHaveURL(/\/wrong-questions$/)
   const wrongCard = page.locator('.wrong-card').first()
   await expect(wrongCard).toBeVisible()
@@ -160,7 +161,7 @@ test('用户答错后可在错题本更新掌握程度并重练', async ({ page 
 test('用户刷新后可继续限时考试并查看自动判分结果', async ({ page }) => {
   await loginAs(page, 'testuser', 'test123')
 
-  await page.getByRole('menuitem', { name: '考试' }).click()
+  await page.goto('/exams')
   await expect(page).toHaveURL(/\/exams$/)
   const examCard = page.locator('.exam-card').filter({ hasText: 'Java 基础入门测验' })
   await expect(examCard).toBeVisible()
@@ -444,14 +445,17 @@ test('用户可完成2026真题学习与限时考试并复盘可信来源', asyn
   await page.goto('/courses')
   const courseCard = page.locator('.course-card').filter({ hasText: '408 数据结构' })
   await expect(courseCard).toBeVisible()
-  await courseCard.getByRole('button', { name: '课程详情' }).click()
-  await expect(page.getByRole('heading', { name: '408 数据结构' })).toBeVisible()
+  await courseCard.getByRole('button', { name: '查看课程' }).click()
+  // 页面切换过渡期间旧页面内容仍在 DOM（旧卡片标题会命中 heading 断言），
+  // 因此先等详情页独有的按钮出现，再判断「加入课程库 / 进入课程空间」分支。
+  await expect(page).toHaveURL(/\/courses\/\d+$/)
+  await expect(page.getByRole('button', { name: '查看题目' })).toBeVisible()
   const joinButton = page.getByRole('button', { name: '加入课程库' })
   if (await joinButton.isVisible()) {
     await joinButton.click()
     await expect(page).toHaveURL(/\/my-courses\/\d+$/)
   } else {
-    const overviewButton = page.getByRole('button', { name: '进入课程总览' })
+    const overviewButton = page.getByRole('button', { name: '进入课程空间' })
     await expect(overviewButton).toBeVisible()
     await overviewButton.click()
   }

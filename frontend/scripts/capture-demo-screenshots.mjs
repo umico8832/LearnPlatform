@@ -14,14 +14,15 @@ const users = {
   admin: { username: 'admin', password: 'admin123' },
 }
 
+/** 学习端核心展示页面：登录默认进入「我的课程」。 */
 const learnerPages = [
-  ['01-home-workbench', '/', '今日学习工作台'],
-  ['02-course-center', '/courses', '选择今天要推进的课程'],
-  ['03-question-bank', '/questions', '题库浏览'],
-  ['04-practice-center', '/practice', '刷题练习'],
-  ['05-wrong-questions', '/wrong-questions', '错题本'],
-  ['06-review-plan', '/review', '智能复习'],
-  ['07-exam-center', '/exams', '考试中心'],
+  ['01-my-courses', '/my-courses', '我的课程'],
+  ['02-course-library', '/courses', '课程库'],
+  ['03-course-detail', '/courses/1', '408 数据结构'],
+  ['04-course-space', '/my-courses/1', '408 数据结构'],
+  ['05-practice', '/practice', '练习'],
+  ['06-wrong-questions', '/wrong-questions', '错题'],
+  ['07-exam-center', '/exams', '考试与试卷'],
 ]
 
 const adminPages = [
@@ -39,7 +40,7 @@ async function loginAs(page, user) {
   await loginButton.waitFor({ state: 'visible' })
   await page.waitForFunction(() => !document.querySelector('button.auth-primary')?.disabled)
   await loginButton.click()
-  await page.waitForURL('**/')
+  await page.waitForURL('**/my-courses')
 }
 
 async function capturePage(page, browserName, [name, url, heading]) {
@@ -53,7 +54,12 @@ async function capturePage(page, browserName, [name, url, heading]) {
 
   page.on('response', responseHandler)
   await page.goto(url)
-  await page.getByRole('main').getByText(heading, { exact: true }).first().waitFor({ timeout: 15000 })
+  // 课程详情/课程空间标题可能以 h1 呈现；课程空间使用课程名作为标题。
+  await page
+    .getByRole('main')
+    .getByText(heading, { exact: true })
+    .first()
+    .waitFor({ timeout: 15000 })
   await page.waitForLoadState('networkidle').catch(() => undefined)
   await page.waitForTimeout(500)
   page.off('response', responseHandler)
