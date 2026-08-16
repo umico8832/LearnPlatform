@@ -17,13 +17,6 @@ export function getVariant(questionId: number) {
   return aiService.post<ApiResponse<AiResponse>>('/ai/variant', { questionId }).then((res) => res.data)
 }
 
-/** AI 生成复习建议 */
-export function getReviewSuggestion(courseId?: number) {
-  return aiService
-    .post<ApiResponse<AiResponse>>('/ai/review-suggestion', courseId ? { courseId } : {})
-    .then((res) => res.data)
-}
-
 /** AI 生成知识点总结 */
 export function getSummary(knowledgePointId: number) {
   return aiService.post<ApiResponse<AiResponse>>('/ai/summary', { knowledgePointId }).then((res) => res.data)
@@ -67,16 +60,6 @@ export async function streamExamLearningAi(
     handlers,
     signal,
   )
-}
-
-/** 流式生成复习建议。 */
-export async function streamReviewSuggestion(
-  courseId: number | undefined,
-  handlers: StreamHandlers,
-  signal?: AbortSignal,
-) {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
-  await streamAiResponse(`${baseUrl}/ai/review-suggestion/stream`, courseId ? { courseId } : {}, handlers, signal)
 }
 
 async function streamAiResponse(

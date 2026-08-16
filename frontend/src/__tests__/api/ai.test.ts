@@ -21,7 +21,6 @@ vi.stubEnv('VITE_API_BASE_URL', '/api')
 import {
   getExplanation,
   getVariant,
-  getReviewSuggestion,
   getSummary,
   getAiUsage,
   recordAssetView,
@@ -29,7 +28,6 @@ import {
   submitVariantAnswer,
   streamQuestionAi,
   streamExamLearningAi,
-  streamReviewSuggestion,
 } from '@/api/ai'
 
 describe('AI API', () => {
@@ -59,26 +57,6 @@ describe('AI API', () => {
 
       expect(mockAiPost).toHaveBeenCalledWith('/ai/variant', { questionId: 10 })
       expect(result).toEqual({ content: '变式题内容', source: 'ai' })
-    })
-  })
-
-  describe('getReviewSuggestion', () => {
-    it('应使用 POST 请求生成复习建议（无课程ID）', async () => {
-      const mockData = { code: 0, data: { content: '复习建议', source: 'ai' }, message: 'success' }
-      mockAiPost.mockResolvedValue(mockData)
-
-      const result = await getReviewSuggestion()
-
-      expect(mockAiPost).toHaveBeenCalledWith('/ai/review-suggestion', {})
-      expect(result).toEqual({ content: '复习建议', source: 'ai' })
-    })
-
-    it('应支持指定课程ID', async () => {
-      mockAiPost.mockResolvedValue({ code: 0, data: { content: '', source: 'ai' }, message: 'success' })
-
-      await getReviewSuggestion(3)
-
-      expect(mockAiPost).toHaveBeenCalledWith('/ai/review-suggestion', { courseId: 3 })
     })
   })
 
@@ -248,66 +226,6 @@ describe('AI API', () => {
       expect(fetch).toHaveBeenCalledWith(
         '/api/exam/learning-sessions/30/questions/10/ai/explanation/stream',
         expect.objectContaining({ method: 'POST', body: JSON.stringify({}) }),
-      )
-    })
-  })
-
-  describe('streamReviewSuggestion', () => {
-    it('应通过 fetch 发送 POST SSE 请求生成复习建议', async () => {
-      const encoder = new TextEncoder()
-      const stream = new ReadableStream({
-        start(controller) {
-          controller.enqueue(encoder.encode('event: content\ndata: {"content":"建议内容"}\n\n'))
-          controller.enqueue(encoder.encode('event: done\ndata: {"source":"ai"}\n\n'))
-          controller.close()
-        },
-      })
-
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({
-          ok: true,
-          body: stream,
-        }),
-      )
-
-      const onContent = vi.fn()
-      await streamReviewSuggestion(3, { onContent })
-
-      expect(fetch).toHaveBeenCalledWith(
-        '/api/ai/review-suggestion/stream',
-        expect.objectContaining({
-          method: 'POST',
-          body: JSON.stringify({ courseId: 3 }),
-        }),
-      )
-      expect(onContent).toHaveBeenCalledWith('建议内容')
-    })
-
-    it('无课程ID时应发送空对象', async () => {
-      const encoder = new TextEncoder()
-      const stream = new ReadableStream({
-        start(controller) {
-          controller.enqueue(encoder.encode('event: done\ndata: {"source":"ai"}\n\n'))
-          controller.close()
-        },
-      })
-
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({
-          ok: true,
-          body: stream,
-        }),
-      )
-
-      await streamReviewSuggestion(undefined, { onContent: vi.fn() })
-
-      expect(fetch).toHaveBeenCalledWith(
-        '/api/ai/review-suggestion/stream',
-        expect.objectContaining({
-          body: JSON.stringify({}),
-        }),
       )
     })
   })
