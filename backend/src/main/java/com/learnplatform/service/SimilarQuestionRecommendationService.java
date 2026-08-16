@@ -151,7 +151,7 @@ public class SimilarQuestionRecommendationService {
             }
 
             // 仅保留有一定相似度的题目
-            if (score < 30) continue;
+            if (score < 30) { continue; }
 
             // 构建结果项
             SimilarQuestionVO.SimilarItem item = new SimilarQuestionVO.SimilarItem();
@@ -210,7 +210,7 @@ public class SimilarQuestionRecommendationService {
 
 
     private String getQuestionTypeName(String questionType) {
-        if (questionType == null) return "未知";
+        if (questionType == null) { return "未知"; }
         switch (questionType) {
             case "SINGLE_CHOICE": return "单选题";
             case "MULTIPLE_CHOICE": return "多选题";
@@ -222,7 +222,7 @@ public class SimilarQuestionRecommendationService {
     }
 
     private String truncate(String text, int maxLen) {
-        if (text == null) return null;
+        if (text == null) { return null; }
         return text.length() > maxLen ? text.substring(0, maxLen) + "..." : text;
     }
 }

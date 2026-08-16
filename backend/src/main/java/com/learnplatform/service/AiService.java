@@ -84,7 +84,8 @@ public class AiService {
 
     public AiResponse generateExplanation(Long questionId, Long userId) {
         AiPrompt prompt = buildExplanationPrompt(questionId, userId);
-        return callWithLog("explanation", userId, prompt, () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
+        return callWithLog("explanation", userId, prompt,
+                () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
     }
 
     public void generateExplanationStream(Long questionId, Consumer<String> onContent) {
@@ -94,7 +95,8 @@ public class AiService {
 
     public void generateExplanationStream(Long questionId, Long userId, Consumer<String> onContent) {
         AiPrompt prompt = buildExplanationPrompt(questionId, userId);
-        callStreamWithLog("explanation_stream", userId, prompt, () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
+        callStreamWithLog("explanation_stream", userId, prompt,
+                () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
     }
 
     /**
@@ -108,7 +110,8 @@ public class AiService {
 
     public AiResponse generateVariant(Long questionId, Long userId) {
         AiPrompt prompt = buildVariantPrompt(questionId, userId);
-        return callWithLog("variant", userId, prompt, () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
+        return callWithLog("variant", userId, prompt,
+                () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
     }
 
     public void generateVariantStream(Long questionId, Consumer<String> onContent) {
@@ -118,7 +121,8 @@ public class AiService {
 
     public void generateVariantStream(Long questionId, Long userId, Consumer<String> onContent) {
         AiPrompt prompt = buildVariantPrompt(questionId, userId);
-        callStreamWithLog("variant_stream", userId, prompt, () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
+        callStreamWithLog("variant_stream", userId, prompt,
+                () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
     }
 
     /** 在已校验的试卷学习上下文中生成辅导，不接受客户端拼装的课程或作答事实。 */
@@ -201,12 +205,14 @@ public class AiService {
      */
     public AiResponse generateReviewSuggestion(Long userId, Long courseId) {
         AiPrompt prompt = buildReviewSuggestionPrompt(userId, courseId);
-        return callWithLog("review_suggestion", userId, prompt, () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
+        return callWithLog("review_suggestion", userId, prompt,
+                () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
     }
 
     public void generateReviewSuggestionStream(Long userId, Long courseId, Consumer<String> onContent) {
         AiPrompt prompt = buildReviewSuggestionPrompt(userId, courseId);
-        callStreamWithLog("review_suggestion_stream", userId, prompt, () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
+        callStreamWithLog("review_suggestion_stream", userId, prompt,
+                () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
     }
 
     private AiPrompt buildReviewSuggestionPrompt(Long userId, Long courseId) {
@@ -253,20 +259,22 @@ public class AiService {
 
     public AiResponse generateSummary(Long knowledgePointId, Long userId) {
         KnowledgePoint kp = knowledgePointMapper.selectById(knowledgePointId);
-        if (kp == null) throw new BusinessException(ResultCode.NOT_FOUND, "知识点不存在");
+        if (kp == null) { throw new BusinessException(ResultCode.NOT_FOUND, "知识点不存在"); }
 
         String courseName = "";
         if (kp.getCourseId() != null) {
             Course course = courseMapper.selectById(kp.getCourseId());
-            if (course != null) courseName = course.getName();
+            if (course != null) { courseName = course.getName(); }
         }
 
         String systemPrompt = "你是一位专业的教育内容创作者。请为以下知识点生成一份简洁的知识总结。"
                 + "要求：\n1. 清晰解释知识点的定义和概念\n2. 列出核心要点\n3. 提供实际例子\n"
                 + "4. 如果有相关公式或规则请列出\n5. 使用 Markdown 格式输出";
 
-        AiPrompt prompt = new AiPrompt(systemPrompt, String.format("请总结以下知识点：\n课程：%s\n知识点：%s", courseName, kp.getName()));
-        return callWithLog("summary", userId, prompt, () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
+        AiPrompt prompt = new AiPrompt(systemPrompt,
+                String.format("请总结以下知识点：\n课程：%s\n知识点：%s", courseName, kp.getName()));
+        return callWithLog("summary", userId, prompt,
+                () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
     }
 
     // ======================== 配额检查 ========================
@@ -276,7 +284,7 @@ public class AiService {
      */
     public void checkDailyQuota(Long userId) {
         int dailyQuota = resolveDailyQuota(userId);
-        if (dailyQuota <= 0) return; // 不限制
+        if (dailyQuota <= 0) { return; } // 不限制
 
         Long todayCount = countTodayCalls(userId);
         if (todayCount >= dailyQuota) {
@@ -370,7 +378,8 @@ public class AiService {
         }
     }
 
-    private void saveLog(Long userId, String functionType, boolean success, String errorMessage, int duration, AiPrompt prompt) {
+    private void saveLog(Long userId, String functionType, boolean success, String errorMessage,
+                        int duration, AiPrompt prompt) {
         try {
             AiCallLog callLog = new AiCallLog();
             callLog.setUserId(userId);
@@ -391,8 +400,10 @@ public class AiService {
                 callLog.setCostUsd(aiCostCalculator.calculate(callLog.getModel(), tokenUsage));
             }
             aiCallLogMapper.insert(callLog);
-            log.info("AI 调用日志已记录: type={}, userId={}, success={}, duration={}ms, tokens={}, costUsd={}, traceId={}, modelConfigVersion={}",
-                    functionType, userId, success, duration, callLog.getTokensUsed(), callLog.getCostUsd(), callLog.getTraceId(), callLog.getModelConfigVersion());
+            log.info("AI 调用日志已记录: type={}, userId={}, success={}, duration={}ms, tokens={}, "
+                    + "costUsd={}, traceId={}, modelConfigVersion={}",
+                    functionType, userId, success, duration, callLog.getTokensUsed(),
+                    callLog.getCostUsd(), callLog.getTraceId(), callLog.getModelConfigVersion());
         } catch (Exception e) {
             // 日志记录失败不应影响主流程
             log.warn("AI 调用日志记录失败: {}", e.getMessage());
@@ -428,10 +439,12 @@ public class AiService {
         kpWrapper.eq(QuestionKnowledgePoint::getQuestionId, question.getId());
         List<QuestionKnowledgePoint> kps = questionKnowledgePointMapper.selectList(kpWrapper);
         if (!kps.isEmpty()) {
-            List<Long> kpIds = kps.stream().map(QuestionKnowledgePoint::getKnowledgePointId).collect(Collectors.toList());
+            List<Long> kpIds = kps.stream().map(QuestionKnowledgePoint::getKnowledgePointId)
+                    .collect(Collectors.toList());
             List<KnowledgePoint> kpList = knowledgePointMapper.selectBatchIds(kpIds);
             if (!kpList.isEmpty()) {
-                sb.append("知识点：").append(kpList.stream().map(KnowledgePoint::getName).collect(Collectors.joining("、"))).append("\n");
+                sb.append("知识点：").append(kpList.stream().map(KnowledgePoint::getName)
+                        .collect(Collectors.joining("、"))).append("\n");
             }
         }
 
@@ -439,7 +452,7 @@ public class AiService {
     }
 
     private String getTypeLabel(String type) {
-        if (type == null) return "未知";
+        if (type == null) { return "未知"; }
         switch (type) {
             case "SINGLE_CHOICE": return "单选题";
             case "MULTIPLE_CHOICE": return "多选题";
@@ -535,8 +548,10 @@ public class AiService {
         if (ctx.getDifficultCards() != null && !ctx.getDifficultCards().isEmpty()) {
             sb.append("## 困难卡片（EF < 2.0）\n");
             for (ReviewScheduleVO card : ctx.getDifficultCards()) {
-                sb.append("- 「").append(card.getQuestionContent() != null ? card.getQuestionContent() : "题目" + card.getQuestionId())
-                  .append("」 EF=").append(card.getEaseFactor() != null ? String.format("%.2f", card.getEaseFactor()) : "-")
+                sb.append("- 「").append(card.getQuestionContent() != null
+                        ? card.getQuestionContent() : "题目" + card.getQuestionId())
+                  .append("」 EF=").append(card.getEaseFactor() != null
+                        ? String.format("%.2f", card.getEaseFactor()) : "-")
                   .append("，间隔=").append(card.getIntervalDays()).append("天")
                   .append("，已复习=").append(card.getTotalReviews()).append("次")
                   .append("，课程=").append(card.getCourseName() != null ? card.getCourseName() : "未知")
@@ -549,7 +564,8 @@ public class AiService {
         if (ctx.getOverdueCards() != null && !ctx.getOverdueCards().isEmpty()) {
             sb.append("## 逾期卡片\n");
             for (ReviewScheduleVO card : ctx.getOverdueCards()) {
-                sb.append("- 「").append(card.getQuestionContent() != null ? card.getQuestionContent() : "题目" + card.getQuestionId())
+                sb.append("- 「").append(card.getQuestionContent() != null
+                        ? card.getQuestionContent() : "题目" + card.getQuestionId())
                   .append("」 逾期 ").append(card.getOverdueDays()).append(" 天")
                   .append("，课程=").append(card.getCourseName() != null ? card.getCourseName() : "未知")
                   .append("\n");
@@ -572,7 +588,8 @@ public class AiService {
     /**
      * 基于完整复习上下文生成 AI 建议（流式 SSE，供 ReviewController 调用）
      */
-    public void generateReviewBasedSuggestionStreamWithContext(Long userId, ReviewContextVO ctx, Consumer<String> onContent) {
+    public void generateReviewBasedSuggestionStreamWithContext(Long userId, ReviewContextVO ctx,
+                                                                Consumer<String> onContent) {
         AiPrompt prompt = buildReviewSuggestionPromptWithContext(ctx);
         callStreamWithLog("review_based_suggestion_stream", userId, prompt,
                 () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));

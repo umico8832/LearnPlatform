@@ -190,7 +190,8 @@ public class OpenAiProvider implements AiProvider {
         if (!(usage instanceof Map<?, ?> usageMap)) {
             return null;
         }
-        return toTokenUsage(usageMap.get("prompt_tokens"), usageMap.get("completion_tokens"), usageMap.get("total_tokens"));
+        return toTokenUsage(usageMap.get("prompt_tokens"), usageMap.get("completion_tokens"),
+                usageMap.get("total_tokens"));
     }
 
     static AiTokenUsage parseTokenUsage(JsonNode response) {

@@ -39,7 +39,9 @@ public class AdminStatisticsVO {
     public long getTotalPracticeRecords() { return totalPracticeRecords; }
     public void setTotalPracticeRecords(long totalPracticeRecords) { this.totalPracticeRecords = totalPracticeRecords; }
     public Map<String, Long> getQuestionTypeDistribution() { return questionTypeDistribution; }
-    public void setQuestionTypeDistribution(Map<String, Long> questionTypeDistribution) { this.questionTypeDistribution = questionTypeDistribution; }
+    public void setQuestionTypeDistribution(Map<String, Long> questionTypeDistribution) {
+        this.questionTypeDistribution = questionTypeDistribution;
+    }
     public List<DailyActivity> getDailyActivity() { return dailyActivity; }
     public void setDailyActivity(List<DailyActivity> dailyActivity) { this.dailyActivity = dailyActivity; }
 

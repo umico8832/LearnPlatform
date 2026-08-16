@@ -66,11 +66,22 @@ public class CourseLearningEventService {
             return;
         }
         CourseLearningEvent event = new CourseLearningEvent();
-        event.setUserId(userId); event.setCourseId(courseId); event.setEventType("TUTOR_CHECK_ANSWERED");
-        event.setEventSource("AI_TUTOR"); event.setSubjectType("KNOWLEDGE_POINT"); event.setSubjectId(knowledgePointId);
-        event.setSourceRecordId(sessionId); event.setIdempotencyKey("AI_TUTOR:" + sessionId); event.setEventVersion(EVENT_VERSION);
-        event.setPayloadJson("{\"isCorrect\":" + correct + "}"); event.setOccurredTime(LocalDateTime.now());
-        try { courseLearningEventMapper.insert(event); } catch (DuplicateKeyException ignored) { }
+        event.setUserId(userId);
+        event.setCourseId(courseId);
+        event.setEventType("TUTOR_CHECK_ANSWERED");
+        event.setEventSource("AI_TUTOR");
+        event.setSubjectType("KNOWLEDGE_POINT");
+        event.setSubjectId(knowledgePointId);
+        event.setSourceRecordId(sessionId);
+        event.setIdempotencyKey("AI_TUTOR:" + sessionId);
+        event.setEventVersion(EVENT_VERSION);
+        event.setPayloadJson("{\"isCorrect\":" + correct + "}");
+        event.setOccurredTime(LocalDateTime.now());
+        try {
+            courseLearningEventMapper.insert(event);
+        } catch (DuplicateKeyException ignored) {
+            // 同一次已完成交互重放不能制造第二条课程事实。
+        }
     }
 
     public void recordPaperLearningAiAssistance(Long userId, Long courseId, Long questionId,

@@ -83,7 +83,7 @@ public class LearningPathService {
         // 4. 构建知识点 -> 练习记录映射
         Map<Long, List<PracticeRecord>> kpRecords = new HashMap<>();
         for (PracticeRecord r : allRecords) {
-            if (r.getQuestionId() == null) continue;
+            if (r.getQuestionId() == null) { continue; }
             Set<Long> kps = questionToKps.get(r.getQuestionId());
             if (kps != null) {
                 for (Long kpId : kps) {

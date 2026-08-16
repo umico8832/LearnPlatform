@@ -327,13 +327,13 @@ public class QuestionService {
         String snapshotBefore = questionVersionService.buildSnapshotJson(question);
 
         // 更新题目基本信息
-        if (request.getContent() != null) question.setContent(request.getContent());
-        if (request.getQuestionType() != null) question.setQuestionType(request.getQuestionType());
-        if (request.getCourseId() != null) question.setCourseId(request.getCourseId());
-        if (request.getDifficulty() != null) question.setDifficulty(request.getDifficulty());
-        if (request.getAnalysis() != null) question.setAnalysis(request.getAnalysis());
-        if (request.getTags() != null) question.setTags(request.getTags());
-        if (request.getScore() != null) question.setScore(request.getScore());
+        if (request.getContent() != null) { question.setContent(request.getContent()); }
+        if (request.getQuestionType() != null) { question.setQuestionType(request.getQuestionType()); }
+        if (request.getCourseId() != null) { question.setCourseId(request.getCourseId()); }
+        if (request.getDifficulty() != null) { question.setDifficulty(request.getDifficulty()); }
+        if (request.getAnalysis() != null) { question.setAnalysis(request.getAnalysis()); }
+        if (request.getTags() != null) { question.setTags(request.getTags()); }
+        if (request.getScore() != null) { question.setScore(request.getScore()); }
         questionMapper.updateById(question);
 
         // 更新选项：先删除旧选项，再插入新选项
@@ -463,7 +463,8 @@ public class QuestionService {
         for (int i = 0; i < sortedQuestions.size(); i++) {
             for (int j = i + 1; j < sortedQuestions.size(); j++) {
                 bestScore = Math.max(bestScore,
-                        pairScores.getOrDefault(pairKey(sortedQuestions.get(i).getId(), sortedQuestions.get(j).getId()), 0));
+                        pairScores.getOrDefault(pairKey(sortedQuestions.get(i).getId(),
+                                sortedQuestions.get(j).getId()), 0));
             }
         }
 

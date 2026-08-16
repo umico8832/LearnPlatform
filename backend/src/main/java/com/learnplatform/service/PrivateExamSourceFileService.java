@@ -72,7 +72,7 @@ public class PrivateExamSourceFileService {
     }
 
     private String expectedMediaType(String sourceFormat) {
-        if ("PDF".equals(sourceFormat)) return "application/pdf";
+        if ("PDF".equals(sourceFormat)) { return "application/pdf"; }
         if ("DOCX".equals(sourceFormat)) {
             return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
         }

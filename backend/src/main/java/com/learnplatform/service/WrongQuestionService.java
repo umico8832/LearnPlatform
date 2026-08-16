@@ -215,12 +215,14 @@ public class WrongQuestionService {
         List<WrongQuestion> list = wrongQuestionMapper.selectList(wrapper);
 
         int total = list.size();
-        int unmastered = (int) list.stream().filter(w -> w.getMasteryLevel() != null && w.getMasteryLevel() == 0).count();
+        int unmastered = (int) list.stream()
+                .filter(w -> w.getMasteryLevel() != null && w.getMasteryLevel() == 0).count();
         int partial = (int) list.stream().filter(w -> w.getMasteryLevel() != null && w.getMasteryLevel() == 1).count();
         int mastered = (int) list.stream().filter(w -> w.getMasteryLevel() != null && w.getMasteryLevel() == 2).count();
 
         // 批量加载 Question（避免 N+1）
-        List<Long> questionIds = list.stream().map(WrongQuestion::getQuestionId).distinct().collect(Collectors.toList());
+        List<Long> questionIds = list.stream().map(WrongQuestion::getQuestionId).distinct()
+                .collect(Collectors.toList());
         Map<Long, Question> questionMap = new HashMap<>();
         if (!questionIds.isEmpty()) {
             LambdaQueryWrapper<Question> qWrapper = new LambdaQueryWrapper<>();

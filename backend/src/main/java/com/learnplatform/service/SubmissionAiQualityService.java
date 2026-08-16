@@ -398,7 +398,7 @@ public class SubmissionAiQualityService {
     // ======================== 工具方法 ========================
 
     private String getTypeLabel(String type) {
-        if (type == null) return "未知";
+        if (type == null) { return "未知"; }
         switch (type) {
             case "SINGLE_CHOICE": return "单选题";
             case "MULTIPLE_CHOICE": return "多选题";

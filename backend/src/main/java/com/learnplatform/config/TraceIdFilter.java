@@ -78,7 +78,8 @@ public class TraceIdFilter extends OncePerRequestFilter {
      */
     private void tryExtractUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof com.learnplatform.security.CustomUserDetails userDetails) {
+        if (auth != null && auth.isAuthenticated()
+                && auth.getPrincipal() instanceof com.learnplatform.security.CustomUserDetails userDetails) {
             MDC.put(USER_ID_KEY, String.valueOf(userDetails.getUserId()));
         }
     }

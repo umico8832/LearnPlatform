@@ -32,7 +32,7 @@ public class PrivateExamSourceStorageService {
     @Transactional(propagation = Propagation.MANDATORY)
     public void attachFileWithinQuota(UserExamSource source, Long ownerUserId,
                                       byte[] sourceFile, String sourceMediaType) {
-        if (sourceFile == null) return;
+        if (sourceFile == null) { return; }
         if (sourceFile.length == 0 || sourceFile.length > MAX_FILE_SIZE
                 || !expectedMediaType(source.getSourceFormat()).equals(sourceMediaType)) {
             throw validation("原始文件无效");
@@ -66,7 +66,7 @@ public class PrivateExamSourceStorageService {
     }
 
     private String expectedMediaType(String sourceFormat) {
-        if ("PDF".equals(sourceFormat)) return "application/pdf";
+        if ("PDF".equals(sourceFormat)) { return "application/pdf"; }
         if ("DOCX".equals(sourceFormat)) {
             return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
         }

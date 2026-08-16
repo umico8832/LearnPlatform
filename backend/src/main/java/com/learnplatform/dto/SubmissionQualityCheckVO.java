@@ -59,7 +59,9 @@ public class SubmissionQualityCheckVO {
     public void setAnalysisCheck(CheckItem analysisCheck) { this.analysisCheck = analysisCheck; }
 
     public CheckItem getKnowledgePointCheck() { return knowledgePointCheck; }
-    public void setKnowledgePointCheck(CheckItem knowledgePointCheck) { this.knowledgePointCheck = knowledgePointCheck; }
+    public void setKnowledgePointCheck(CheckItem knowledgePointCheck) {
+        this.knowledgePointCheck = knowledgePointCheck;
+    }
 
     public List<String> getRiskPoints() { return riskPoints; }
     public void setRiskPoints(List<String> riskPoints) { this.riskPoints = riskPoints; }

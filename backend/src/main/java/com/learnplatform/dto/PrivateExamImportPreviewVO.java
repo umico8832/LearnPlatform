@@ -31,7 +31,9 @@ public class PrivateExamImportPreviewVO {
     public Integer getTotalScore() { return totalScore; }
     public void setTotalScore(Integer totalScore) { this.totalScore = totalScore; }
     public Boolean getRequiresAnswerReview() { return requiresAnswerReview; }
-    public void setRequiresAnswerReview(Boolean requiresAnswerReview) { this.requiresAnswerReview = requiresAnswerReview; }
+    public void setRequiresAnswerReview(Boolean requiresAnswerReview) {
+        this.requiresAnswerReview = requiresAnswerReview;
+    }
     public List<QuestionPreview> getQuestions() { return questions; }
     public void setQuestions(List<QuestionPreview> questions) { this.questions = questions; }
 

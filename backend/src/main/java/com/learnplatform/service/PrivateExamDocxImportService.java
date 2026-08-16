@@ -83,10 +83,10 @@ public class PrivateExamDocxImportService {
     }
 
     private byte[] readFile(MultipartFile file) {
-        if (file == null || file.isEmpty()) throw validation("请选择 DOCX 文件");
-        if (file.getSize() > MAX_FILE_SIZE) throw validation("DOCX 文件不能超过10MB");
+        if (file == null || file.isEmpty()) { throw validation("请选择 DOCX 文件"); }
+        if (file.getSize() > MAX_FILE_SIZE) { throw validation("DOCX 文件不能超过10MB"); }
         String filename = safeFilename(file.getOriginalFilename());
-        if (!filename.toLowerCase(Locale.ROOT).endsWith(".docx")) throw validation("仅支持 DOCX 文件");
+        if (!filename.toLowerCase(Locale.ROOT).endsWith(".docx")) { throw validation("仅支持 DOCX 文件"); }
         try {
             byte[] bytes = file.getBytes();
             if (bytes.length < 4 || bytes[0] != 'P' || bytes[1] != 'K') {
@@ -112,8 +112,8 @@ public class PrivateExamDocxImportService {
                 }
             }
             String text = String.join("\n", lines).trim();
-            if (text.isBlank()) throw validation("DOCX 未提取到普通段落或表格文本");
-            if (text.length() > MAX_TEXT_LENGTH) throw validation("DOCX 提取文本不能超过100000个字符");
+            if (text.isBlank()) { throw validation("DOCX 未提取到普通段落或表格文本"); }
+            if (text.length() > MAX_TEXT_LENGTH) { throw validation("DOCX 提取文本不能超过100000个字符"); }
             return text;
         } catch (BusinessException exception) {
             throw exception;
@@ -136,7 +136,7 @@ public class PrivateExamDocxImportService {
     private void addTable(List<String> lines, XWPFTable table) {
         for (XWPFTableRow row : table.getRows()) {
             for (XWPFTableCell cell : row.getTableCells()) {
-                if (!cell.getTables().isEmpty()) throw complexContent();
+                if (!cell.getTables().isEmpty()) { throw complexContent(); }
                 for (XWPFParagraph paragraph : cell.getParagraphs()) {
                     addLine(lines, paragraph.getText());
                 }
@@ -145,7 +145,7 @@ public class PrivateExamDocxImportService {
     }
 
     private void addLine(List<String> lines, String value) {
-        if (value != null && !value.isBlank()) lines.add(value.trim());
+        if (value != null && !value.isBlank()) { lines.add(value.trim()); }
     }
 
     private BusinessException complexContent() {
@@ -153,10 +153,10 @@ public class PrivateExamDocxImportService {
     }
 
     private String safeFilename(String originalFilename) {
-        if (originalFilename == null || originalFilename.isBlank()) throw validation("DOCX 文件名不能为空");
+        if (originalFilename == null || originalFilename.isBlank()) { throw validation("DOCX 文件名不能为空"); }
         String normalized = originalFilename.replace('\\', '/');
         String filename = normalized.substring(normalized.lastIndexOf('/') + 1).trim();
-        if (filename.isBlank()) throw validation("DOCX 文件名不能为空");
+        if (filename.isBlank()) { throw validation("DOCX 文件名不能为空"); }
         return filename;
     }
 

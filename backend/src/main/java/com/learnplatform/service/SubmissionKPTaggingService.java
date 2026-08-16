@@ -206,10 +206,12 @@ public class SubmissionKPTaggingService {
                         log.warn("AI 推荐了不存在的知识点 ID: {}", kpId);
                         continue;
                     }
-                    String confidence = recNode.has("confidence") ? recNode.get("confidence").asText("MEDIUM") : "MEDIUM";
+                    String confidence = recNode.has("confidence")
+                            ? recNode.get("confidence").asText("MEDIUM") : "MEDIUM";
                     String reason = recNode.has("reason") ? recNode.get("reason").asText("") : "";
                     String courseName = resolveCourseName(kp.getCourseId());
-                    recommendations.add(new SubmissionKPTaggingVO.TaggedKP(kpId, kp.getName(), courseName, confidence, reason));
+                    recommendations.add(new SubmissionKPTaggingVO.TaggedKP(kpId, kp.getName(),
+                            courseName, confidence, reason));
                 }
             }
 
@@ -238,7 +240,7 @@ public class SubmissionKPTaggingService {
 
         for (KnowledgePoint kp : kps) {
             String kpName = kp.getName().toLowerCase();
-            if (kpName.length() < 2) continue;
+            if (kpName.length() < 2) { continue; }
 
             // 简单关键词匹配：名称是否出现在题目内容中
             if (combined.contains(kpName)) {
@@ -266,7 +268,7 @@ public class SubmissionKPTaggingService {
     // ======================== 工具方法 ========================
 
     private String getTypeLabel(String type) {
-        if (type == null) return "未知";
+        if (type == null) { return "未知"; }
         switch (type) {
             case "SINGLE_CHOICE": return "单选题";
             case "MULTIPLE_CHOICE": return "多选题";

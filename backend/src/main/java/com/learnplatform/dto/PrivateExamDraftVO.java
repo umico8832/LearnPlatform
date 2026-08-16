@@ -35,9 +35,13 @@ public class PrivateExamDraftVO {
     public String getSourceFormat() { return sourceFormat; }
     public void setSourceFormat(String sourceFormat) { this.sourceFormat = sourceFormat; }
     public Boolean getOriginalFileAvailable() { return originalFileAvailable; }
-    public void setOriginalFileAvailable(Boolean originalFileAvailable) { this.originalFileAvailable = originalFileAvailable; }
+    public void setOriginalFileAvailable(Boolean originalFileAvailable) {
+        this.originalFileAvailable = originalFileAvailable;
+    }
     public Integer getReviewedQuestionCount() { return reviewedQuestionCount; }
-    public void setReviewedQuestionCount(Integer reviewedQuestionCount) { this.reviewedQuestionCount = reviewedQuestionCount; }
+    public void setReviewedQuestionCount(Integer reviewedQuestionCount) {
+        this.reviewedQuestionCount = reviewedQuestionCount;
+    }
     public Integer getQuestionCount() { return questionCount; }
     public void setQuestionCount(Integer questionCount) { this.questionCount = questionCount; }
     public LocalDateTime getCreateTime() { return createTime; }
@@ -74,7 +78,9 @@ public class PrivateExamDraftVO {
         public List<OptionItem> getOptions() { return options; }
         public void setOptions(List<OptionItem> options) { this.options = options; }
         public List<String> getOriginalAnswerLabels() { return originalAnswerLabels; }
-        public void setOriginalAnswerLabels(List<String> originalAnswerLabels) { this.originalAnswerLabels = originalAnswerLabels; }
+        public void setOriginalAnswerLabels(List<String> originalAnswerLabels) {
+            this.originalAnswerLabels = originalAnswerLabels;
+        }
         public String getOriginalAnalysis() { return originalAnalysis; }
         public void setOriginalAnalysis(String originalAnalysis) { this.originalAnalysis = originalAnalysis; }
         public List<String> getAiAnswerLabels() { return aiAnswerLabels; }

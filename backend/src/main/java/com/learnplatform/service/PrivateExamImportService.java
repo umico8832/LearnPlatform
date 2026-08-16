@@ -222,7 +222,7 @@ public class PrivateExamImportService {
         }
         long correctCount = question.getOptions().stream()
                 .filter(option -> Boolean.TRUE.equals(option.getCorrect())).count();
-        if (correctCount == 0) throw invalid(number, "答案必须匹配现有选项");
+        if (correctCount == 0) { throw invalid(number, "答案必须匹配现有选项"); }
         if (("SINGLE_CHOICE".equals(question.getQuestionType())
                 || "TRUE_FALSE".equals(question.getQuestionType())) && correctCount != 1) {
             throw invalid(number, "单选或判断题只能有一个正确答案");
@@ -277,7 +277,7 @@ public class PrivateExamImportService {
                 optionsBlock = false;
                 continue;
             }
-            if (line.isEmpty()) continue;
+            if (line.isEmpty()) { continue; }
             Matcher field = TEXT_FIELD.matcher(line);
             if (field.matches()) {
                 String name = field.group(1).toLowerCase(Locale.ROOT);
@@ -303,10 +303,12 @@ public class PrivateExamImportService {
     }
 
     private void addTextQuestion(List<ParsedQuestion> result, TextQuestion current) {
-        if (current.content == null && current.options.isEmpty()) return;
+        if (current.content == null && current.options.isEmpty()) { return; }
         String type = current.type != null ? current.type
-                : inferType(current.answer, current.options.size(), current.options.stream().map(RawOption::content).toList());
-        result.add(buildParsed(type, current.content, current.answer, current.analysis, current.score, current.options));
+                : inferType(current.answer, current.options.size(),
+                        current.options.stream().map(RawOption::content).toList());
+        result.add(buildParsed(type, current.content, current.answer, current.analysis, current.score,
+                current.options));
     }
 
     private ParsedQuestion buildParsed(String type, String content, String answer, String analysis,
@@ -366,9 +368,9 @@ public class PrivateExamImportService {
 
     private Set<String> answerSet(String answer) {
         Set<String> result = new HashSet<>();
-        if (answer == null) return result;
+        if (answer == null) { return result; }
         for (String value : answer.split("[,，、]")) {
-            if (!value.isBlank()) result.add(value.trim().toUpperCase(Locale.ROOT));
+            if (!value.isBlank()) { result.add(value.trim().toUpperCase(Locale.ROOT)); }
         }
         return result;
     }
@@ -432,8 +434,8 @@ public class PrivateExamImportService {
     }
 
     private String formatLabel(String format) {
-        if ("MARKDOWN".equals(format)) return "Markdown";
-        if ("PDF".equals(format)) return "PDF";
+        if ("MARKDOWN".equals(format)) { return "Markdown"; }
+        if ("PDF".equals(format)) { return "PDF"; }
         return "DOCX".equals(format) ? "DOCX" : "文本";
     }
 

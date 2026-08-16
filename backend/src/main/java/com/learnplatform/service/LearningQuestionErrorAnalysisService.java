@@ -223,9 +223,17 @@ public class LearningQuestionErrorAnalysisService {
         // 掌握程度
         if (wrongQuestion != null && wrongQuestion.getMasteryLevel() != null) {
             switch (wrongQuestion.getMasteryLevel()) {
-                case 0: sb.append(" 当前掌握程度：未掌握。"); break;
-                case 1: sb.append(" 当前掌握程度：部分掌握。"); break;
-                case 2: sb.append(" 当前掌握程度：已掌握。"); break;
+                case 0:
+                    sb.append(" 当前掌握程度：未掌握。");
+                    break;
+                case 1:
+                    sb.append(" 当前掌握程度：部分掌握。");
+                    break;
+                case 2:
+                    sb.append(" 当前掌握程度：已掌握。");
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -242,7 +250,7 @@ public class LearningQuestionErrorAnalysisService {
     }
 
     private String getQuestionTypeName(String questionType) {
-        if (questionType == null) return "未知";
+        if (questionType == null) { return "未知"; }
         switch (questionType) {
             case "SINGLE_CHOICE": return "单选题";
             case "MULTIPLE_CHOICE": return "多选题";

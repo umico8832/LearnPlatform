@@ -174,7 +174,8 @@ public class QuestionLearningAssetService {
             throw e;
         } finally {
             int duration = (int) (System.currentTimeMillis() - start);
-            aiService.logCall(userId, "asset_" + assetType.name().toLowerCase() + "_stream", success, errorMessage, duration);
+            aiService.logCall(userId, "asset_" + assetType.name().toLowerCase() + "_stream", success,
+                    errorMessage, duration);
         }
 
         // 生成完成后保存缓存
@@ -529,7 +530,7 @@ public class QuestionLearningAssetService {
      */
     private String buildQuestionContext(Long questionId) {
         Question question = questionMapper.selectById(questionId);
-        if (question == null) throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
+        if (question == null) { throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在"); }
 
         StringBuilder sb = new StringBuilder();
         sb.append("题型：").append(getTypeLabel(question.getQuestionType())).append("\n");
@@ -561,10 +562,12 @@ public class QuestionLearningAssetService {
         kpWrapper.eq(QuestionKnowledgePoint::getQuestionId, question.getId());
         List<QuestionKnowledgePoint> kps = questionKnowledgePointMapper.selectList(kpWrapper);
         if (!kps.isEmpty()) {
-            List<Long> kpIds = kps.stream().map(QuestionKnowledgePoint::getKnowledgePointId).collect(Collectors.toList());
+            List<Long> kpIds = kps.stream().map(QuestionKnowledgePoint::getKnowledgePointId)
+                    .collect(Collectors.toList());
             List<KnowledgePoint> kpList = knowledgePointMapper.selectBatchIds(kpIds);
             if (!kpList.isEmpty()) {
-                sb.append("知识点：").append(kpList.stream().map(KnowledgePoint::getName).collect(Collectors.joining("、"))).append("\n");
+                sb.append("知识点：").append(kpList.stream().map(KnowledgePoint::getName)
+                        .collect(Collectors.joining("、"))).append("\n");
             }
         }
 
@@ -580,7 +583,7 @@ public class QuestionLearningAssetService {
     }
 
     private String getTypeLabel(String type) {
-        if (type == null) return "未知";
+        if (type == null) { return "未知"; }
         switch (type) {
             case "SINGLE_CHOICE": return "单选题";
             case "MULTIPLE_CHOICE": return "多选题";

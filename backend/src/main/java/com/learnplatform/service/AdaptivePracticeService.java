@@ -90,7 +90,7 @@ public class AdaptivePracticeService {
         List<Question> selected = new ArrayList<>();
         for (int diff = 1; diff <= 5; diff++) {
             int needed = countsPerDifficulty[diff - 1];
-            if (needed <= 0) continue;
+            if (needed <= 0) { continue; }
 
             List<Question> candidates = queryQuestions(diff, courseId,
                     knowledgePointId, questionType, recentQuestionIds);
@@ -213,10 +213,10 @@ public class AdaptivePracticeService {
 
         for (PracticeRecord record : records) {
             Question question = questionMapper.selectById(record.getQuestionId());
-            if (question == null || question.getDifficulty() == null) continue;
+            if (question == null || question.getDifficulty() == null) { continue; }
 
             int diff = question.getDifficulty();
-            if (diff < 1 || diff > 5) continue;
+            if (diff < 1 || diff > 5) { continue; }
 
             DifficultyStats stats = statsMap.get(diff);
             stats.total++;
@@ -319,7 +319,7 @@ public class AdaptivePracticeService {
     private int[] allocateCounts(double[] weights, int total) {
         int[] counts = new int[5];
         double sum = 0;
-        for (double w : weights) sum += w;
+        for (double w : weights) { sum += w; }
 
         int allocated = 0;
         for (int i = 0; i < 5; i++) {
@@ -334,7 +334,7 @@ public class AdaptivePracticeService {
 
         // 确保每个至少 0
         for (int i = 0; i < 5; i++) {
-            if (counts[i] < 0) counts[i] = 0;
+            if (counts[i] < 0) { counts[i] = 0; }
         }
 
         return counts;

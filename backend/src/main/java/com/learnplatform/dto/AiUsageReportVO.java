@@ -51,7 +51,9 @@ public class AiUsageReportVO {
         public Double getCostPercent() { return costPercent; }
         public void setCostPercent(Double costPercent) { this.costPercent = costPercent; }
         public Double getFailureRatePointChange() { return failureRatePointChange; }
-        public void setFailureRatePointChange(Double failureRatePointChange) { this.failureRatePointChange = failureRatePointChange; }
+        public void setFailureRatePointChange(Double failureRatePointChange) {
+            this.failureRatePointChange = failureRatePointChange;
+        }
         public Double getAvgDurationPercent() { return avgDurationPercent; }
         public void setAvgDurationPercent(Double avgDurationPercent) { this.avgDurationPercent = avgDurationPercent; }
     }

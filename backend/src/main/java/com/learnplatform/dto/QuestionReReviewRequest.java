@@ -1,7 +1,6 @@
 package com.learnplatform.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 
 /**
  * 题目复审请求 DTO

@@ -29,7 +29,7 @@ final class CourseStageAssessmentKnowledgePointSummary {
                 int[] counters = counts.computeIfAbsent(new Key(point.getId(), point.getName()),
                         key -> new int[2]);
                 counters[0]++;
-                if (Integer.valueOf(1).equals(item.getIsCorrect())) counters[1]++;
+                if (Integer.valueOf(1).equals(item.getIsCorrect())) { counters[1]++; }
             }
         }
         List<CourseStageAssessmentVO.KnowledgePointSummaryVO> summary = new ArrayList<>();
@@ -47,7 +47,7 @@ final class CourseStageAssessmentKnowledgePointSummary {
 
     static List<CourseStageAssessmentVO.KnowledgePointVO> readKnowledgePoints(
             String json, ObjectMapper objectMapper) {
-        if (json == null || json.isBlank()) return List.of();
+        if (json == null || json.isBlank()) { return List.of(); }
         try {
             return objectMapper.readValue(json, new TypeReference<>() { });
         } catch (JsonProcessingException exception) {

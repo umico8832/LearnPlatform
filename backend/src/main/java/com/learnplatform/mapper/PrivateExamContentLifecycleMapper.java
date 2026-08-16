@@ -23,7 +23,8 @@ public interface PrivateExamContentLifecycleMapper {
             <script>
             SELECT
               (SELECT COUNT(*) FROM exam_question WHERE exam_paper_id != #{paperId}
-                 AND question_id IN <foreach collection='questionIds' item='id' open='(' separator=',' close=')'>#{id}</foreach>)
+                 AND question_id IN
+                 <foreach collection='questionIds' item='id' open='(' separator=',' close=')'>#{id}</foreach>)
               + (SELECT COUNT(*) FROM practice_record WHERE question_id IN
                  <foreach collection='questionIds' item='id' open='(' separator=',' close=')'>#{id}</foreach>)
               + (SELECT COUNT(*) FROM wrong_question WHERE question_id IN

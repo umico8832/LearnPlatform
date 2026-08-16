@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 /**
  * 统计控制器

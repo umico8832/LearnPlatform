@@ -131,7 +131,8 @@ public class KnowledgeGraphService {
             for (Long qId : entry.getValue()) {
                 List<PracticeRecord> records = questionRecords.getOrDefault(qId, Collections.emptyList());
                 totalPractice += records.size();
-                correctCount += (int) records.stream().filter(r -> r.getIsCorrect() != null && r.getIsCorrect() == 1).count();
+                correctCount += (int) records.stream()
+                        .filter(r -> r.getIsCorrect() != null && r.getIsCorrect() == 1).count();
                 if (wrongQuestionIds.contains(qId)) {
                     wrongCount++;
                 }

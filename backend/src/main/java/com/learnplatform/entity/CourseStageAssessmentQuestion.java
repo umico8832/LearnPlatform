@@ -51,7 +51,9 @@ public class CourseStageAssessmentQuestion {
     public String getOptionsSnapshot() { return optionsSnapshot; }
     public void setOptionsSnapshot(String optionsSnapshot) { this.optionsSnapshot = optionsSnapshot; }
     public String getCorrectAnswerSnapshot() { return correctAnswerSnapshot; }
-    public void setCorrectAnswerSnapshot(String correctAnswerSnapshot) { this.correctAnswerSnapshot = correctAnswerSnapshot; }
+    public void setCorrectAnswerSnapshot(String correctAnswerSnapshot) {
+        this.correctAnswerSnapshot = correctAnswerSnapshot;
+    }
     public String getAnalysisSnapshot() { return analysisSnapshot; }
     public void setAnalysisSnapshot(String analysisSnapshot) { this.analysisSnapshot = analysisSnapshot; }
     public Integer getScore() { return score; }

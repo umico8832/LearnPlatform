@@ -23,7 +23,7 @@ public class CourseVO {
         vo.setContentSource(c.getContentSource());
         vo.setSortOrder(c.getSortOrder());
         vo.setStatus(c.getStatus());
-        if (c.getCreateTime() != null) vo.setCreateTime(c.getCreateTime().toString());
+        if (c.getCreateTime() != null) { vo.setCreateTime(c.getCreateTime().toString()); }
         return vo;
     }
 

@@ -25,7 +25,8 @@ public class AdminCourseController {
 
     @PutMapping("/{id}")
     public R<CourseVO> updateCourse(@PathVariable Long id, @RequestBody CreateCourseRequest request) {
-        return R.ok(courseService.updateCourse(id, request.getName(), request.getDescription(), request.getSortOrder()));
+        return R.ok(courseService.updateCourse(id, request.getName(),
+                request.getDescription(), request.getSortOrder()));
     }
 
     @DeleteMapping("/{id}")

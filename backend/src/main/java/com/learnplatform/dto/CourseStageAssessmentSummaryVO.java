@@ -34,6 +34,10 @@ public class CourseStageAssessmentSummaryVO {
     public void setCompleteTime(LocalDateTime completeTime) { this.completeTime = completeTime; }
     public CourseStageAssessmentSourceCompositionVO getSourceComposition() { return sourceComposition; }
     public void setSourceComposition(CourseStageAssessmentSourceCompositionVO value) { this.sourceComposition = value; }
-    public List<CourseStageAssessmentVO.KnowledgePointSummaryVO> getKnowledgePointSummary() { return knowledgePointSummary; }
-    public void setKnowledgePointSummary(List<CourseStageAssessmentVO.KnowledgePointSummaryVO> value) { this.knowledgePointSummary = value; }
+    public List<CourseStageAssessmentVO.KnowledgePointSummaryVO> getKnowledgePointSummary() {
+        return knowledgePointSummary;
+    }
+    public void setKnowledgePointSummary(List<CourseStageAssessmentVO.KnowledgePointSummaryVO> value) {
+        this.knowledgePointSummary = value;
+    }
 }

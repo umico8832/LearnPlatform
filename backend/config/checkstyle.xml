@@ -4,16 +4,73 @@
         "https://checkstyle.org/dtds/configuration_1_3.dtd">
 <module name="Checker">
     <property name="charset" value="UTF-8"/>
+
+    <!-- 禁止 Tab 缩进。 -->
     <module name="FileTabCharacter"/>
+
+    <!-- 行长上限；import、package、注释、注解和字符串拼接续行豁免（长文案拆散会破坏可读性）。 -->
+    <module name="LineLength">
+        <property name="max" value="120"/>
+        <property name="ignorePattern" value="^import |^package |^\s*\*|^\s*//|@|^\s*\+ "/>
+    </module>
+
     <module name="TreeWalker">
+        <!-- 禁止直接打印到标准输出，统一使用日志框架。 -->
         <module name="RegexpSinglelineJava">
             <property name="format" value="System\.(out|err)\.print|printStackTrace\("/>
             <property name="message" value="请使用项目日志框架记录信息，不要直接打印到标准输出。"/>
         </module>
+
+        <!-- 基础正确性。 -->
         <module name="EmptyStatement"/>
         <module name="EqualsHashCode"/>
+        <module name="CovariantEquals"/>
         <module name="FallThrough"/>
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
+        <module name="DefaultComesLast"/>
+
+        <!-- import 卫生；星号导入展开作为后续独立清理，避免一次性大规模机械改动。 -->
+        <module name="RedundantImport"/>
+        <module name="UnusedImports"/>
+
+        <!-- 命名约定；允许 SLF4J 惯例的 log/logger 常量字段。 -->
+        <module name="ConstantName">
+            <property name="format" value="^(log|logger|LOG|LOGGER)$|^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"/>
+        </module>
+        <module name="LocalFinalVariableName"/>
+        <module name="LocalVariableName"/>
+        <module name="MemberName"/>
+        <module name="MethodName"/>
+        <module name="PackageName"/>
+        <module name="ParameterName"/>
+        <module name="StaticVariableName"/>
+        <module name="TypeName"/>
+
+        <!-- 控制流与块。 -->
+        <module name="NeedBraces"/>
+        <module name="MissingSwitchDefault"/>
+        <module name="OneStatementPerLine"/>
+        <module name="MultipleVariableDeclarations"/>
+        <module name="EmptyBlock"/>
+        <module name="NestedIfDepth">
+            <property name="max" value="3"/>
+        </module>
+        <module name="NestedTryDepth">
+            <property name="max" value="2"/>
+        </module>
+
+        <!-- 修饰符与空白；允许空构造器/空方法/空类型/空 lambda 的紧致空块。 -->
+        <module name="ModifierOrder"/>
+        <module name="RedundantModifier"/>
+        <module name="GenericWhitespace"/>
+        <module name="WhitespaceAround">
+            <property name="allowEmptyConstructors" value="true"/>
+            <property name="allowEmptyMethods" value="true"/>
+            <property name="allowEmptyTypes" value="true"/>
+            <property name="allowEmptyLambdas" value="true"/>
+        </module>
+        <module name="WhitespaceAfter"/>
+        <module name="NoWhitespaceBefore"/>
     </module>
 </module>

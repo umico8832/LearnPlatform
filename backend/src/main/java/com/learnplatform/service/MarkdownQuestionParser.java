@@ -301,11 +301,11 @@ public class MarkdownQuestionParser {
                 }
 
                 // 非题目标题，跳过
-                if (current == null) continue;
+                if (current == null) { continue; }
             }
 
             // 如果还没有题目，跳过
-            if (current == null) continue;
+            if (current == null) { continue; }
 
             // 分隔线
             if (DIVIDER_PATTERN.matcher(line).matches()) {
@@ -439,7 +439,7 @@ public class MarkdownQuestionParser {
      * 标准化题型
      */
     String normalizeQuestionType(String input) {
-        if (input == null) return null;
+        if (input == null) { return null; }
         String trimmed = input.trim();
         return switch (trimmed) {
             case "单选", "单选题", "SINGLE_CHOICE" -> "SINGLE_CHOICE";
@@ -522,7 +522,7 @@ public class MarkdownQuestionParser {
      */
     private Set<String> parseCorrectAnswers(String answer, String questionType) {
         Set<String> result = new HashSet<>();
-        if (answer == null || answer.trim().isEmpty()) return result;
+        if (answer == null || answer.trim().isEmpty()) { return result; }
 
         if ("TRUE_FALSE".equals(questionType)) {
             result.add(answer.trim());
@@ -558,11 +558,12 @@ public class MarkdownQuestionParser {
 
     private Map<String, Long> buildKnowledgePointNameToIdMap() {
         List<KnowledgePoint> kps = knowledgePointMapper.selectList(null);
-        return kps.stream().collect(java.util.stream.Collectors.toMap(KnowledgePoint::getName, KnowledgePoint::getId, (a, b) -> a));
+        return kps.stream().collect(java.util.stream.Collectors.toMap(KnowledgePoint::getName,
+                KnowledgePoint::getId, (a, b) -> a));
     }
 
     private void cleanupFailedImport(Long questionId) {
-        if (questionId == null) return;
+        if (questionId == null) { return; }
         LambdaQueryWrapper<QuestionOption> optionWrapper = new LambdaQueryWrapper<>();
         optionWrapper.eq(QuestionOption::getQuestionId, questionId);
         questionOptionMapper.delete(optionWrapper);

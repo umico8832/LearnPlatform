@@ -40,13 +40,13 @@ public class QuestionVO {
         vo.setTags(q.getTags());
         vo.setScore(q.getScore());
         vo.setStatus(q.getStatus());
-        if (q.getCreateTime() != null) vo.setCreateTime(q.getCreateTime().toString());
-        if (q.getSourceType() != null) vo.setSourceType(q.getSourceType());
+        if (q.getCreateTime() != null) { vo.setCreateTime(q.getCreateTime().toString()); }
+        if (q.getSourceType() != null) { vo.setSourceType(q.getSourceType()); }
         vo.setSourceReference(q.getSourceReference());
-        if (q.getLastReviewTime() != null) vo.setLastReviewTime(q.getLastReviewTime().toString());
-        if (q.getNextReviewTime() != null) vo.setNextReviewTime(q.getNextReviewTime().toString());
+        if (q.getLastReviewTime() != null) { vo.setLastReviewTime(q.getLastReviewTime().toString()); }
+        if (q.getNextReviewTime() != null) { vo.setNextReviewTime(q.getNextReviewTime().toString()); }
         vo.setReviewRounds(q.getReviewRounds());
-        if (q.getUpdateTime() != null) vo.setUpdateTime(q.getUpdateTime().toString());
+        if (q.getUpdateTime() != null) { vo.setUpdateTime(q.getUpdateTime().toString()); }
         return vo;
     }
 
@@ -89,5 +89,7 @@ public class QuestionVO {
     public List<Long> getKnowledgePointIds() { return knowledgePointIds; }
     public void setKnowledgePointIds(List<Long> knowledgePointIds) { this.knowledgePointIds = knowledgePointIds; }
     public List<String> getKnowledgePointNames() { return knowledgePointNames; }
-    public void setKnowledgePointNames(List<String> knowledgePointNames) { this.knowledgePointNames = knowledgePointNames; }
+    public void setKnowledgePointNames(List<String> knowledgePointNames) {
+        this.knowledgePointNames = knowledgePointNames;
+    }
 }

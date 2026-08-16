@@ -69,41 +69,73 @@ public class AiLearningEffectVO {
     public Double getHelpfulRate() { return helpfulRate; }
     public void setHelpfulRate(Double helpfulRate) { this.helpfulRate = helpfulRate; }
     public Long getMinimumComparisonSample() { return minimumComparisonSample; }
-    public void setMinimumComparisonSample(Long minimumComparisonSample) { this.minimumComparisonSample = minimumComparisonSample; }
+    public void setMinimumComparisonSample(Long minimumComparisonSample) {
+        this.minimumComparisonSample = minimumComparisonSample;
+    }
     public Long getMinimumDistinctUsers() { return minimumDistinctUsers; }
     public void setMinimumDistinctUsers(Long minimumDistinctUsers) { this.minimumDistinctUsers = minimumDistinctUsers; }
     public Long getVariantTrainingStartedCount() { return variantTrainingStartedCount; }
-    public void setVariantTrainingStartedCount(Long variantTrainingStartedCount) { this.variantTrainingStartedCount = variantTrainingStartedCount; }
+    public void setVariantTrainingStartedCount(Long variantTrainingStartedCount) {
+        this.variantTrainingStartedCount = variantTrainingStartedCount;
+    }
     public Long getVariantTrainingCompletedCount() { return variantTrainingCompletedCount; }
-    public void setVariantTrainingCompletedCount(Long variantTrainingCompletedCount) { this.variantTrainingCompletedCount = variantTrainingCompletedCount; }
+    public void setVariantTrainingCompletedCount(Long variantTrainingCompletedCount) {
+        this.variantTrainingCompletedCount = variantTrainingCompletedCount;
+    }
     public Double getVariantTrainingCompletionRate() { return variantTrainingCompletionRate; }
-    public void setVariantTrainingCompletionRate(Double variantTrainingCompletionRate) { this.variantTrainingCompletionRate = variantTrainingCompletionRate; }
+    public void setVariantTrainingCompletionRate(Double variantTrainingCompletionRate) {
+        this.variantTrainingCompletionRate = variantTrainingCompletionRate;
+    }
     public Long getVariantTrainingAnsweredCount() { return variantTrainingAnsweredCount; }
-    public void setVariantTrainingAnsweredCount(Long variantTrainingAnsweredCount) { this.variantTrainingAnsweredCount = variantTrainingAnsweredCount; }
+    public void setVariantTrainingAnsweredCount(Long variantTrainingAnsweredCount) {
+        this.variantTrainingAnsweredCount = variantTrainingAnsweredCount;
+    }
     public Long getVariantTrainingCorrectCount() { return variantTrainingCorrectCount; }
-    public void setVariantTrainingCorrectCount(Long variantTrainingCorrectCount) { this.variantTrainingCorrectCount = variantTrainingCorrectCount; }
+    public void setVariantTrainingCorrectCount(Long variantTrainingCorrectCount) {
+        this.variantTrainingCorrectCount = variantTrainingCorrectCount;
+    }
     public Double getVariantTrainingCorrectRate() { return variantTrainingCorrectRate; }
-    public void setVariantTrainingCorrectRate(Double variantTrainingCorrectRate) { this.variantTrainingCorrectRate = variantTrainingCorrectRate; }
+    public void setVariantTrainingCorrectRate(Double variantTrainingCorrectRate) {
+        this.variantTrainingCorrectRate = variantTrainingCorrectRate;
+    }
     public Long getVariantDifficultyMinimumSample() { return variantDifficultyMinimumSample; }
-    public void setVariantDifficultyMinimumSample(Long variantDifficultyMinimumSample) { this.variantDifficultyMinimumSample = variantDifficultyMinimumSample; }
+    public void setVariantDifficultyMinimumSample(Long variantDifficultyMinimumSample) {
+        this.variantDifficultyMinimumSample = variantDifficultyMinimumSample;
+    }
     public Long getVariantDifficultyCoveredCount() { return variantDifficultyCoveredCount; }
-    public void setVariantDifficultyCoveredCount(Long variantDifficultyCoveredCount) { this.variantDifficultyCoveredCount = variantDifficultyCoveredCount; }
+    public void setVariantDifficultyCoveredCount(Long variantDifficultyCoveredCount) {
+        this.variantDifficultyCoveredCount = variantDifficultyCoveredCount;
+    }
     public Long getVariantDifficultySufficientCount() { return variantDifficultySufficientCount; }
-    public void setVariantDifficultySufficientCount(Long variantDifficultySufficientCount) { this.variantDifficultySufficientCount = variantDifficultySufficientCount; }
+    public void setVariantDifficultySufficientCount(Long variantDifficultySufficientCount) {
+        this.variantDifficultySufficientCount = variantDifficultySufficientCount;
+    }
     public String getVariantDifficultyReadiness() { return variantDifficultyReadiness; }
-    public void setVariantDifficultyReadiness(String variantDifficultyReadiness) { this.variantDifficultyReadiness = variantDifficultyReadiness; }
+    public void setVariantDifficultyReadiness(String variantDifficultyReadiness) {
+        this.variantDifficultyReadiness = variantDifficultyReadiness;
+    }
     public String getVariantDifficultyConclusion() { return variantDifficultyConclusion; }
-    public void setVariantDifficultyConclusion(String variantDifficultyConclusion) { this.variantDifficultyConclusion = variantDifficultyConclusion; }
+    public void setVariantDifficultyConclusion(String variantDifficultyConclusion) {
+        this.variantDifficultyConclusion = variantDifficultyConclusion;
+    }
     public List<VariantDifficultyEffect> getVariantDifficultyStats() { return variantDifficultyStats; }
-    public void setVariantDifficultyStats(List<VariantDifficultyEffect> variantDifficultyStats) { this.variantDifficultyStats = variantDifficultyStats; }
+    public void setVariantDifficultyStats(List<VariantDifficultyEffect> variantDifficultyStats) {
+        this.variantDifficultyStats = variantDifficultyStats;
+    }
     public Long getAfterViewPracticeCount() { return afterViewPracticeCount; }
-    public void setAfterViewPracticeCount(Long afterViewPracticeCount) { this.afterViewPracticeCount = afterViewPracticeCount; }
+    public void setAfterViewPracticeCount(Long afterViewPracticeCount) {
+        this.afterViewPracticeCount = afterViewPracticeCount;
+    }
     public Long getAfterViewUserCount() { return afterViewUserCount; }
     public void setAfterViewUserCount(Long afterViewUserCount) { this.afterViewUserCount = afterViewUserCount; }
     public Double getAfterViewCorrectRate() { return afterViewCorrectRate; }
-    public void setAfterViewCorrectRate(Double afterViewCorrectRate) { this.afterViewCorrectRate = afterViewCorrectRate; }
+    public void setAfterViewCorrectRate(Double afterViewCorrectRate) {
+        this.afterViewCorrectRate = afterViewCorrectRate;
+    }
     public Long getBaselinePracticeCount() { return baselinePracticeCount; }
-    public void setBaselinePracticeCount(Long baselinePracticeCount) { this.baselinePracticeCount = baselinePracticeCount; }
+    public void setBaselinePracticeCount(Long baselinePracticeCount) {
+        this.baselinePracticeCount = baselinePracticeCount;
+    }
     public Long getBaselineUserCount() { return baselineUserCount; }
     public void setBaselineUserCount(Long baselineUserCount) { this.baselineUserCount = baselineUserCount; }
     public Double getBaselineCorrectRate() { return baselineCorrectRate; }
@@ -115,25 +147,45 @@ public class AiLearningEffectVO {
     public String getConclusion() { return conclusion; }
     public void setConclusion(String conclusion) { this.conclusion = conclusion; }
     public Integer getCrossQuestionWindowDays() { return crossQuestionWindowDays; }
-    public void setCrossQuestionWindowDays(Integer crossQuestionWindowDays) { this.crossQuestionWindowDays = crossQuestionWindowDays; }
+    public void setCrossQuestionWindowDays(Integer crossQuestionWindowDays) {
+        this.crossQuestionWindowDays = crossQuestionWindowDays;
+    }
     public Long getCrossQuestionAfterViewPracticeCount() { return crossQuestionAfterViewPracticeCount; }
-    public void setCrossQuestionAfterViewPracticeCount(Long crossQuestionAfterViewPracticeCount) { this.crossQuestionAfterViewPracticeCount = crossQuestionAfterViewPracticeCount; }
+    public void setCrossQuestionAfterViewPracticeCount(Long crossQuestionAfterViewPracticeCount) {
+        this.crossQuestionAfterViewPracticeCount = crossQuestionAfterViewPracticeCount;
+    }
     public Long getCrossQuestionAfterViewUserCount() { return crossQuestionAfterViewUserCount; }
-    public void setCrossQuestionAfterViewUserCount(Long crossQuestionAfterViewUserCount) { this.crossQuestionAfterViewUserCount = crossQuestionAfterViewUserCount; }
+    public void setCrossQuestionAfterViewUserCount(Long crossQuestionAfterViewUserCount) {
+        this.crossQuestionAfterViewUserCount = crossQuestionAfterViewUserCount;
+    }
     public Double getCrossQuestionAfterViewCorrectRate() { return crossQuestionAfterViewCorrectRate; }
-    public void setCrossQuestionAfterViewCorrectRate(Double crossQuestionAfterViewCorrectRate) { this.crossQuestionAfterViewCorrectRate = crossQuestionAfterViewCorrectRate; }
+    public void setCrossQuestionAfterViewCorrectRate(Double crossQuestionAfterViewCorrectRate) {
+        this.crossQuestionAfterViewCorrectRate = crossQuestionAfterViewCorrectRate;
+    }
     public Long getCrossQuestionBaselinePracticeCount() { return crossQuestionBaselinePracticeCount; }
-    public void setCrossQuestionBaselinePracticeCount(Long crossQuestionBaselinePracticeCount) { this.crossQuestionBaselinePracticeCount = crossQuestionBaselinePracticeCount; }
+    public void setCrossQuestionBaselinePracticeCount(Long crossQuestionBaselinePracticeCount) {
+        this.crossQuestionBaselinePracticeCount = crossQuestionBaselinePracticeCount;
+    }
     public Long getCrossQuestionBaselineUserCount() { return crossQuestionBaselineUserCount; }
-    public void setCrossQuestionBaselineUserCount(Long crossQuestionBaselineUserCount) { this.crossQuestionBaselineUserCount = crossQuestionBaselineUserCount; }
+    public void setCrossQuestionBaselineUserCount(Long crossQuestionBaselineUserCount) {
+        this.crossQuestionBaselineUserCount = crossQuestionBaselineUserCount;
+    }
     public Double getCrossQuestionBaselineCorrectRate() { return crossQuestionBaselineCorrectRate; }
-    public void setCrossQuestionBaselineCorrectRate(Double crossQuestionBaselineCorrectRate) { this.crossQuestionBaselineCorrectRate = crossQuestionBaselineCorrectRate; }
+    public void setCrossQuestionBaselineCorrectRate(Double crossQuestionBaselineCorrectRate) {
+        this.crossQuestionBaselineCorrectRate = crossQuestionBaselineCorrectRate;
+    }
     public Double getCrossQuestionCorrectRateLift() { return crossQuestionCorrectRateLift; }
-    public void setCrossQuestionCorrectRateLift(Double crossQuestionCorrectRateLift) { this.crossQuestionCorrectRateLift = crossQuestionCorrectRateLift; }
+    public void setCrossQuestionCorrectRateLift(Double crossQuestionCorrectRateLift) {
+        this.crossQuestionCorrectRateLift = crossQuestionCorrectRateLift;
+    }
     public String getCrossQuestionConclusionLevel() { return crossQuestionConclusionLevel; }
-    public void setCrossQuestionConclusionLevel(String crossQuestionConclusionLevel) { this.crossQuestionConclusionLevel = crossQuestionConclusionLevel; }
+    public void setCrossQuestionConclusionLevel(String crossQuestionConclusionLevel) {
+        this.crossQuestionConclusionLevel = crossQuestionConclusionLevel;
+    }
     public String getCrossQuestionConclusion() { return crossQuestionConclusion; }
-    public void setCrossQuestionConclusion(String crossQuestionConclusion) { this.crossQuestionConclusion = crossQuestionConclusion; }
+    public void setCrossQuestionConclusion(String crossQuestionConclusion) {
+        this.crossQuestionConclusion = crossQuestionConclusion;
+    }
     public List<AssetTypeEffect> getAssetTypeStats() { return assetTypeStats; }
     public void setAssetTypeStats(List<AssetTypeEffect> assetTypeStats) { this.assetTypeStats = assetTypeStats; }
 
@@ -168,17 +220,25 @@ public class AiLearningEffectVO {
         public Double getHelpfulRate() { return helpfulRate; }
         public void setHelpfulRate(Double helpfulRate) { this.helpfulRate = helpfulRate; }
         public Long getAfterViewPracticeCount() { return afterViewPracticeCount; }
-        public void setAfterViewPracticeCount(Long afterViewPracticeCount) { this.afterViewPracticeCount = afterViewPracticeCount; }
+        public void setAfterViewPracticeCount(Long afterViewPracticeCount) {
+            this.afterViewPracticeCount = afterViewPracticeCount;
+        }
         public Long getAfterViewUserCount() { return afterViewUserCount; }
         public void setAfterViewUserCount(Long afterViewUserCount) { this.afterViewUserCount = afterViewUserCount; }
         public Double getAfterViewCorrectRate() { return afterViewCorrectRate; }
-        public void setAfterViewCorrectRate(Double afterViewCorrectRate) { this.afterViewCorrectRate = afterViewCorrectRate; }
+        public void setAfterViewCorrectRate(Double afterViewCorrectRate) {
+            this.afterViewCorrectRate = afterViewCorrectRate;
+        }
         public Long getBaselinePracticeCount() { return baselinePracticeCount; }
-        public void setBaselinePracticeCount(Long baselinePracticeCount) { this.baselinePracticeCount = baselinePracticeCount; }
+        public void setBaselinePracticeCount(Long baselinePracticeCount) {
+            this.baselinePracticeCount = baselinePracticeCount;
+        }
         public Long getBaselineUserCount() { return baselineUserCount; }
         public void setBaselineUserCount(Long baselineUserCount) { this.baselineUserCount = baselineUserCount; }
         public Double getBaselineCorrectRate() { return baselineCorrectRate; }
-        public void setBaselineCorrectRate(Double baselineCorrectRate) { this.baselineCorrectRate = baselineCorrectRate; }
+        public void setBaselineCorrectRate(Double baselineCorrectRate) {
+            this.baselineCorrectRate = baselineCorrectRate;
+        }
         public Double getCorrectRateLift() { return correctRateLift; }
         public void setCorrectRateLift(Double correctRateLift) { this.correctRateLift = correctRateLift; }
         public Boolean getSampleSufficient() { return sampleSufficient; }

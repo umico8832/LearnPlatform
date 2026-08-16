@@ -52,7 +52,7 @@ public class QuestionSourceService {
      */
     public void setSource(Long questionId, String sourceType, String sourceReference) {
         Question question = questionMapper.selectById(questionId);
-        if (question == null) return;
+        if (question == null) { return; }
         question.setSourceType(sourceType);
         question.setSourceReference(sourceReference);
         // 新入库的题目默认 90 天后需要复审
@@ -99,7 +99,8 @@ public class QuestionSourceService {
                         Collectors.counting()));
 
         // 保证所有来源类型都有统计
-        List<String> allTypes = Arrays.asList("MANUAL", "SUBMISSION", "EXCEL_IMPORT", "MARKDOWN_IMPORT", "AI_GENERATED");
+        List<String> allTypes = Arrays.asList("MANUAL", "SUBMISSION", "EXCEL_IMPORT",
+                "MARKDOWN_IMPORT", "AI_GENERATED");
         return allTypes.stream()
                 .map(type -> new QuestionSourceStatsVO(type, grouped.getOrDefault(type, 0L)))
                 .collect(Collectors.toList());

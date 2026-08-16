@@ -71,7 +71,8 @@ public class StatisticsService {
 
         // 今日刷题
         LocalDateTime todayStart = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
-        long today = allRecords.stream().filter(r -> r.getCreateTime() != null && r.getCreateTime().isAfter(todayStart)).count();
+        long today = allRecords.stream()
+                .filter(r -> r.getCreateTime() != null && r.getCreateTime().isAfter(todayStart)).count();
         vo.setTodayPractice(today);
 
         // 连续刷题天数
@@ -82,7 +83,8 @@ public class StatisticsService {
         wqWrapper.eq(WrongQuestion::getUserId, userId).eq(WrongQuestion::getDeleted, 0);
         List<WrongQuestion> wrongQuestions = wrongQuestionMapper.selectList(wqWrapper);
         vo.setWrongQuestionCount(wrongQuestions.size());
-        vo.setMasteredCount(wrongQuestions.stream().filter(w -> w.getMasteryLevel() != null && w.getMasteryLevel() == 2).count());
+        vo.setMasteredCount(wrongQuestions.stream()
+                .filter(w -> w.getMasteryLevel() != null && w.getMasteryLevel() == 2).count());
 
         return vo;
     }
@@ -107,7 +109,8 @@ public class StatisticsService {
         for (int i = 6; i >= 0; i--) {
             String date = today.minusDays(i).toString();
             List<PracticeRecord> dayRecords = grouped.getOrDefault(date, Collections.emptyList());
-            long dayCorrect = dayRecords.stream().filter(r -> r.getIsCorrect() != null && r.getIsCorrect() == 1).count();
+            long dayCorrect = dayRecords.stream()
+                    .filter(r -> r.getIsCorrect() != null && r.getIsCorrect() == 1).count();
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("date", date);
             item.put("total", dayRecords.size());
@@ -140,13 +143,15 @@ public class StatisticsService {
         for (Map.Entry<Long, List<PracticeRecord>> entry : byCourse.entrySet()) {
             Course course = courseMapper.selectById(entry.getKey());
             List<PracticeRecord> courseRecords = entry.getValue();
-            long correct = courseRecords.stream().filter(r -> r.getIsCorrect() != null && r.getIsCorrect() == 1).count();
+            long correct = courseRecords.stream()
+                    .filter(r -> r.getIsCorrect() != null && r.getIsCorrect() == 1).count();
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("courseId", entry.getKey());
             item.put("courseName", course != null ? course.getName() : "未知课程");
             item.put("total", courseRecords.size());
             item.put("correct", correct);
-            item.put("correctRate", courseRecords.isEmpty() ? 0 : Math.round(correct * 1000.0 / courseRecords.size()) / 10.0);
+            item.put("correctRate", courseRecords.isEmpty() ? 0
+                    : Math.round(correct * 1000.0 / courseRecords.size()) / 10.0);
             result.add(item);
         }
         result.sort((a, b) -> Long.compare(numberValue(b.get("total")), numberValue(a.get("total"))));
@@ -494,7 +499,7 @@ public class StatisticsService {
     // ======================== 私有方法 ========================
 
     private int calculateStreak(List<PracticeRecord> records) {
-        if (records.isEmpty()) return 0;
+        if (records.isEmpty()) { return 0; }
         Set<String> dates = records.stream()
                 .filter(r -> r.getCreateTime() != null)
                 .map(r -> r.getCreateTime().toLocalDate().toString())
@@ -524,7 +529,7 @@ public class StatisticsService {
     }
 
     private String getQuestionTypeName(String questionType) {
-        if (questionType == null) return "未知";
+        if (questionType == null) { return "未知"; }
         switch (questionType) {
             case "SINGLE_CHOICE": return "单选题";
             case "MULTIPLE_CHOICE": return "多选题";

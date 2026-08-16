@@ -34,7 +34,9 @@ public class CourseStageAssessment {
     public String getSelectionStrategy() { return selectionStrategy; }
     public void setSelectionStrategy(String selectionStrategy) { this.selectionStrategy = selectionStrategy; }
     public Long getTargetKnowledgePointId() { return targetKnowledgePointId; }
-    public void setTargetKnowledgePointId(Long targetKnowledgePointId) { this.targetKnowledgePointId = targetKnowledgePointId; }
+    public void setTargetKnowledgePointId(Long targetKnowledgePointId) {
+        this.targetKnowledgePointId = targetKnowledgePointId;
+    }
     public String getTargetKnowledgePointNameSnapshot() { return targetKnowledgePointNameSnapshot; }
     public void setTargetKnowledgePointNameSnapshot(String value) { this.targetKnowledgePointNameSnapshot = value; }
     public Integer getQuestionCount() { return questionCount; }

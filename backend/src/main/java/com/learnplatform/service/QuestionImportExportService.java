@@ -4,8 +4,6 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.read.listener.ReadListener;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.learnplatform.common.exception.BusinessException;
-import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.QuestionCreateRequest;
 import com.learnplatform.dto.QuestionExcelDTO;
 import com.learnplatform.dto.QuestionImportResult;
@@ -270,7 +268,7 @@ public class QuestionImportExportService {
      * 标准化题型
      */
     private String normalizeQuestionType(String input) {
-        if (input == null) return null;
+        if (input == null) { return null; }
         String trimmed = input.trim();
         // 支持中文题型名
         return switch (trimmed) {
@@ -333,7 +331,7 @@ public class QuestionImportExportService {
      */
     private Set<String> parseCorrectAnswers(String answer, String questionType) {
         Set<String> result = new HashSet<>();
-        if (answer == null || answer.trim().isEmpty()) return result;
+        if (answer == null || answer.trim().isEmpty()) { return result; }
 
         if ("TRUE_FALSE".equals(questionType)) {
             result.add(answer.trim());
@@ -384,7 +382,7 @@ public class QuestionImportExportService {
             List<String> correctLabels = new ArrayList<>();
             for (int i = 0; i < options.size(); i++) {
                 QuestionOption opt = options.get(i);
-                if (i > 0) optStr.append("|");
+                if (i > 0) { optStr.append("|"); }
                 String label = opt.getOptionLabel() != null ? opt.getOptionLabel()
                         : String.valueOf((char) ('A' + i));
                 optStr.append(label).append(".").append(opt.getContent());
@@ -412,7 +410,7 @@ public class QuestionImportExportService {
     }
 
     private String displayQuestionType(String type) {
-        if (type == null) return "";
+        if (type == null) { return ""; }
         return switch (type) {
             case "SINGLE_CHOICE" -> "单选";
             case "MULTIPLE_CHOICE" -> "多选";

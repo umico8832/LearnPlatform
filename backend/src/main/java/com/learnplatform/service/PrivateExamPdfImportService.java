@@ -78,10 +78,10 @@ public class PrivateExamPdfImportService {
     }
 
     private byte[] readFile(MultipartFile file) {
-        if (file == null || file.isEmpty()) throw validation("请选择 PDF 文件");
-        if (file.getSize() > MAX_FILE_SIZE) throw validation("PDF 文件不能超过10MB");
+        if (file == null || file.isEmpty()) { throw validation("请选择 PDF 文件"); }
+        if (file.getSize() > MAX_FILE_SIZE) { throw validation("PDF 文件不能超过10MB"); }
         String filename = safeFilename(file.getOriginalFilename());
-        if (!filename.toLowerCase(Locale.ROOT).endsWith(".pdf")) throw validation("仅支持 PDF 文件");
+        if (!filename.toLowerCase(Locale.ROOT).endsWith(".pdf")) { throw validation("仅支持 PDF 文件"); }
         try {
             byte[] bytes = file.getBytes();
             if (bytes.length < 5 || bytes[0] != '%' || bytes[1] != 'P' || bytes[2] != 'D'
@@ -96,11 +96,11 @@ public class PrivateExamPdfImportService {
 
     private String extractText(byte[] bytes) {
         try (PDDocument document = Loader.loadPDF(bytes)) {
-            if (document.isEncrypted()) throw validation("加密 PDF 暂不支持");
-            if (document.getNumberOfPages() > MAX_PAGES) throw validation("PDF 不能超过200页");
+            if (document.isEncrypted()) { throw validation("加密 PDF 暂不支持"); }
+            if (document.getNumberOfPages() > MAX_PAGES) { throw validation("PDF 不能超过200页"); }
             String text = new PDFTextStripper().getText(document).replace("\r\n", "\n").replace('\r', '\n').trim();
-            if (text.isBlank()) throw validation("PDF 未提取到文本；扫描件暂不支持 OCR");
-            if (text.length() > MAX_TEXT_LENGTH) throw validation("PDF 提取文本不能超过100000个字符");
+            if (text.isBlank()) { throw validation("PDF 未提取到文本；扫描件暂不支持 OCR"); }
+            if (text.length() > MAX_TEXT_LENGTH) { throw validation("PDF 提取文本不能超过100000个字符"); }
             return text;
         } catch (InvalidPasswordException exception) {
             throw validation("加密 PDF 暂不支持");
@@ -112,10 +112,10 @@ public class PrivateExamPdfImportService {
     }
 
     private String safeFilename(String originalFilename) {
-        if (originalFilename == null || originalFilename.isBlank()) throw validation("PDF 文件名不能为空");
+        if (originalFilename == null || originalFilename.isBlank()) { throw validation("PDF 文件名不能为空"); }
         String normalized = originalFilename.replace('\\', '/');
         String filename = normalized.substring(normalized.lastIndexOf('/') + 1).trim();
-        if (filename.isBlank()) throw validation("PDF 文件名不能为空");
+        if (filename.isBlank()) { throw validation("PDF 文件名不能为空"); }
         return filename;
     }
 

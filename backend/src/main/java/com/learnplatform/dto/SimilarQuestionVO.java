@@ -19,7 +19,9 @@ public class SimilarQuestionVO {
     public Long getSourceQuestionId() { return sourceQuestionId; }
     public void setSourceQuestionId(Long sourceQuestionId) { this.sourceQuestionId = sourceQuestionId; }
     public String getSourceQuestionContent() { return sourceQuestionContent; }
-    public void setSourceQuestionContent(String sourceQuestionContent) { this.sourceQuestionContent = sourceQuestionContent; }
+    public void setSourceQuestionContent(String sourceQuestionContent) {
+        this.sourceQuestionContent = sourceQuestionContent;
+    }
     public List<SimilarItem> getSimilarQuestions() { return similarQuestions; }
     public void setSimilarQuestions(List<SimilarItem> similarQuestions) { this.similarQuestions = similarQuestions; }
 

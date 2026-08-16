@@ -47,25 +47,40 @@ public class RedisConfig {
                                           CacheTtlProperties cacheTtlProperties) {
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(cacheTtlProperties.getDefaultTtl())
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()))
+                .serializeKeysWith(RedisSerializationContext.SerializationPair
+                        .fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair
+                        .fromSerializer(new GenericJackson2JsonRedisSerializer()))
                 .disableCachingNullValues();
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
-                .withCacheConfiguration("statistics", cacheConfig(defaultConfig, cacheTtlProperties, "statistics", 5))
-                .withCacheConfiguration("adminStatistics", cacheConfig(defaultConfig, cacheTtlProperties, "adminStatistics", 3))
-                .withCacheConfiguration("dailyTrend", cacheConfig(defaultConfig, cacheTtlProperties, "dailyTrend", 5))
-                .withCacheConfiguration("courseStats", cacheConfig(defaultConfig, cacheTtlProperties, "courseStats", 5))
-                .withCacheConfiguration("learningReport", cacheConfig(defaultConfig, cacheTtlProperties, "learningReport", 10))
-                .withCacheConfiguration("learningPath", cacheConfig(defaultConfig, cacheTtlProperties, "learningPath", 10))
-                .withCacheConfiguration("knowledgeGraph", cacheConfig(defaultConfig, cacheTtlProperties, "knowledgeGraph", 10))
-                .withCacheConfiguration("learningDiagnosis", cacheConfig(defaultConfig, cacheTtlProperties, "learningDiagnosis", 10))
-                .withCacheConfiguration("submissionQuality", cacheConfig(defaultConfig, cacheTtlProperties, "submissionQuality", 30))
-                .withCacheConfiguration("submissionKPTagging", cacheConfig(defaultConfig, cacheTtlProperties, "submissionKPTagging", 30))
-                .withCacheConfiguration("submissionDifficulty", cacheConfig(defaultConfig, cacheTtlProperties, "submissionDifficulty", 30))
-                .withCacheConfiguration("questionReviewSuggestion", cacheConfig(defaultConfig, cacheTtlProperties, "questionReviewSuggestion", 30))
-                .withCacheConfiguration("globalSearch", cacheConfig(defaultConfig, cacheTtlProperties, "globalSearch", 5))
+                .withCacheConfiguration("statistics",
+                        cacheConfig(defaultConfig, cacheTtlProperties, "statistics", 5))
+                .withCacheConfiguration("adminStatistics",
+                        cacheConfig(defaultConfig, cacheTtlProperties, "adminStatistics", 3))
+                .withCacheConfiguration("dailyTrend",
+                        cacheConfig(defaultConfig, cacheTtlProperties, "dailyTrend", 5))
+                .withCacheConfiguration("courseStats",
+                        cacheConfig(defaultConfig, cacheTtlProperties, "courseStats", 5))
+                .withCacheConfiguration("learningReport",
+                        cacheConfig(defaultConfig, cacheTtlProperties, "learningReport", 10))
+                .withCacheConfiguration("learningPath",
+                        cacheConfig(defaultConfig, cacheTtlProperties, "learningPath", 10))
+                .withCacheConfiguration("knowledgeGraph",
+                        cacheConfig(defaultConfig, cacheTtlProperties, "knowledgeGraph", 10))
+                .withCacheConfiguration("learningDiagnosis",
+                        cacheConfig(defaultConfig, cacheTtlProperties, "learningDiagnosis", 10))
+                .withCacheConfiguration("submissionQuality",
+                        cacheConfig(defaultConfig, cacheTtlProperties, "submissionQuality", 30))
+                .withCacheConfiguration("submissionKPTagging",
+                        cacheConfig(defaultConfig, cacheTtlProperties, "submissionKPTagging", 30))
+                .withCacheConfiguration("submissionDifficulty",
+                        cacheConfig(defaultConfig, cacheTtlProperties, "submissionDifficulty", 30))
+                .withCacheConfiguration("questionReviewSuggestion",
+                        cacheConfig(defaultConfig, cacheTtlProperties, "questionReviewSuggestion", 30))
+                .withCacheConfiguration("globalSearch",
+                        cacheConfig(defaultConfig, cacheTtlProperties, "globalSearch", 5))
                 .build();
     }
 

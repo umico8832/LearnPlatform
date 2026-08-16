@@ -118,7 +118,8 @@ public class LearningDiagnosisService {
         vo.setLearningHabit(computeLearningHabit(allRecords));
 
         // 8. 每日推荐题目
-        vo.setDailyRecommendations(computeDailyRecommendations(userId, allRecords, allWrongs, allPoints, questionToKps));
+        vo.setDailyRecommendations(computeDailyRecommendations(userId, allRecords, allWrongs, allPoints,
+                questionToKps));
 
         // 9. 每日学习建议
         vo.setDailyAdvice(generateDailyAdvice(vo));
@@ -138,7 +139,7 @@ public class LearningDiagnosisService {
         // 按知识点统计练习记录
         Map<Long, List<PracticeRecord>> kpRecords = new HashMap<>();
         for (PracticeRecord r : allRecords) {
-            if (r.getQuestionId() == null) continue;
+            if (r.getQuestionId() == null) { continue; }
             Set<Long> kps = questionToKps.get(r.getQuestionId());
             if (kps != null) {
                 for (Long kpId : kps) {
@@ -245,7 +246,7 @@ public class LearningDiagnosisService {
         // 按课程统计练习
         Map<Long, List<PracticeRecord>> courseRecords = new HashMap<>();
         for (PracticeRecord r : allRecords) {
-            if (r.getQuestionId() == null) continue;
+            if (r.getQuestionId() == null) { continue; }
             Set<Long> kps = questionToKps.get(r.getQuestionId());
             if (kps != null) {
                 Set<Long> courseIds = new HashSet<>();
@@ -331,11 +332,11 @@ public class LearningDiagnosisService {
         int weakCount = 0;
         for (KnowledgePoint kp : coursePoints) {
             List<PracticeRecord> records = kpRecords.getOrDefault(kp.getId(), Collections.emptyList());
-            if (records.isEmpty()) continue;
+            if (records.isEmpty()) { continue; }
             long correct = records.stream()
                     .filter(r -> r.getIsCorrect() != null && r.getIsCorrect() == 1).count();
             double rate = correct * 100.0 / records.size();
-            if (rate < REVIEW_THRESHOLD) weakCount++;
+            if (rate < REVIEW_THRESHOLD) { weakCount++; }
         }
         return weakCount;
     }
@@ -350,9 +351,12 @@ public class LearningDiagnosisService {
 
         // 掌握程度分布
         Map<String, Integer> masteryDist = new LinkedHashMap<>();
-        masteryDist.put("未掌握", (int) allWrongs.stream().filter(w -> w.getMasteryLevel() != null && w.getMasteryLevel() == 0).count());
-        masteryDist.put("部分掌握", (int) allWrongs.stream().filter(w -> w.getMasteryLevel() != null && w.getMasteryLevel() == 1).count());
-        masteryDist.put("已掌握", (int) allWrongs.stream().filter(w -> w.getMasteryLevel() != null && w.getMasteryLevel() == 2).count());
+        masteryDist.put("未掌握", (int) allWrongs.stream()
+                .filter(w -> w.getMasteryLevel() != null && w.getMasteryLevel() == 0).count());
+        masteryDist.put("部分掌握", (int) allWrongs.stream()
+                .filter(w -> w.getMasteryLevel() != null && w.getMasteryLevel() == 1).count());
+        masteryDist.put("已掌握", (int) allWrongs.stream()
+                .filter(w -> w.getMasteryLevel() != null && w.getMasteryLevel() == 2).count());
         summary.setMasteryDistribution(masteryDist);
 
         // 反复出错题目数（wrongCount >= 3）
@@ -449,7 +453,7 @@ public class LearningDiagnosisService {
 
         // 统计练习记录中的知识点总量和正确数
         for (PracticeRecord r : allRecords) {
-            if (r.getQuestionId() == null) continue;
+            if (r.getQuestionId() == null) { continue; }
             Set<Long> kps = questionToKps.get(r.getQuestionId());
             if (kps != null) {
                 for (Long kpId : kps) {
@@ -467,7 +471,8 @@ public class LearningDiagnosisService {
 
         List<LearningDiagnosisVO.KnowledgePointErrorRank> kpErrors = kpWrongMap.entrySet().stream()
                 .map(e -> {
-                    LearningDiagnosisVO.KnowledgePointErrorRank rank = new LearningDiagnosisVO.KnowledgePointErrorRank();
+                    LearningDiagnosisVO.KnowledgePointErrorRank rank =
+                            new LearningDiagnosisVO.KnowledgePointErrorRank();
                     rank.setKnowledgePointId(e.getKey());
                     KnowledgePoint kp = kpMap.get(e.getKey());
                     rank.setKnowledgePointName(kp != null ? kp.getName() : "未知知识点");
@@ -476,7 +481,7 @@ public class LearningDiagnosisService {
                         Course c = courseMap.get(kp.getCourseId());
                         if (c == null && kp.getCourseId() != null) {
                             c = courseMapper.selectById(kp.getCourseId());
-                            if (c != null) courseMap.put(kp.getCourseId(), c);
+                            if (c != null) { courseMap.put(kp.getCourseId(), c); }
                         }
                         rank.setCourseName(c != null ? c.getName() : "未知课程");
                     }
@@ -671,9 +676,9 @@ public class LearningDiagnosisService {
 
         int count = 0;
         for (WrongQuestion wq : repeatedWrongs) {
-            if (count >= RECOMMEND_COUNT) break;
+            if (count >= RECOMMEND_COUNT) { break; }
             Question q = questionMapper.selectById(wq.getQuestionId());
-            if (q == null) continue;
+            if (q == null) { continue; }
 
             LearningDiagnosisVO.RecommendedQuestion rq = new LearningDiagnosisVO.RecommendedQuestion();
             rq.setQuestionId(q.getId());
@@ -709,7 +714,7 @@ public class LearningDiagnosisService {
                             Set<Long> kps = questionToKps.get(r.getQuestionId());
                             if (kps != null && kps.contains(kp.getId())) {
                                 kpTotal++;
-                                if (r.getIsCorrect() != null && r.getIsCorrect() == 1) kpCorrect++;
+                                if (r.getIsCorrect() != null && r.getIsCorrect() == 1) { kpCorrect++; }
                             }
                         }
                         return kpTotal > 0 && (kpCorrect * 100.0 / kpTotal) < 70;
@@ -746,9 +751,9 @@ public class LearningDiagnosisService {
 
             Collections.shuffle(wrongQIds);
             for (Long qId : wrongQIds) {
-                if (count >= RECOMMEND_COUNT) break;
+                if (count >= RECOMMEND_COUNT) { break; }
                 Question q = questionMapper.selectById(qId);
-                if (q == null) continue;
+                if (q == null) { continue; }
 
                 LearningDiagnosisVO.RecommendedQuestion rq = new LearningDiagnosisVO.RecommendedQuestion();
                 rq.setQuestionId(q.getId());
@@ -776,9 +781,9 @@ public class LearningDiagnosisService {
                     .collect(Collectors.toList());
             Collections.shuffle(untriedQIds);
             for (Long qId : untriedQIds) {
-                if (count >= RECOMMEND_COUNT) break;
+                if (count >= RECOMMEND_COUNT) { break; }
                 Question q = questionMapper.selectById(qId);
-                if (q == null) continue;
+                if (q == null) { continue; }
 
                 LearningDiagnosisVO.RecommendedQuestion rq = new LearningDiagnosisVO.RecommendedQuestion();
                 rq.setQuestionId(q.getId());
@@ -962,7 +967,8 @@ public class LearningDiagnosisService {
             }
             if (ep.getTopErrorCourses() != null && !ep.getTopErrorCourses().isEmpty()) {
                 sb.append("- 高频错题课程：");
-                ep.getTopErrorCourses().forEach(c -> sb.append(c.getCourseName()).append("(").append(c.getWrongCount()).append(") "));
+                ep.getTopErrorCourses().forEach(c -> sb.append(c.getCourseName()).append("(")
+                        .append(c.getWrongCount()).append(") "));
                 sb.append("\n");
             }
             if (ep.getQuestionTypeDistribution() != null && !ep.getQuestionTypeDistribution().isEmpty()) {
@@ -983,7 +989,8 @@ public class LearningDiagnosisService {
             }
             if (ep.getWeeklyErrorTrend() != null && !ep.getWeeklyErrorTrend().isEmpty()) {
                 sb.append("- 近 4 周错题趋势：");
-                ep.getWeeklyErrorTrend().forEach(w -> sb.append(w.get("label")).append("=").append(w.get("count")).append(" "));
+                ep.getWeeklyErrorTrend().forEach(w -> sb.append(w.get("label")).append("=")
+                        .append(w.get("count")).append(" "));
                 sb.append("\n");
             }
             sb.append("\n");
@@ -1000,7 +1007,8 @@ public class LearningDiagnosisService {
                     .append("（").append(habit.getFrequencyDescription()).append("）\n");
             if (habit.getWeeklyTrend() != null) {
                 sb.append("- 近 7 天趋势：");
-                habit.getWeeklyTrend().forEach(d -> sb.append(d.get("date")).append("=").append(d.get("total")).append(" "));
+                habit.getWeeklyTrend().forEach(d -> sb.append(d.get("date")).append("=")
+                        .append(d.get("total")).append(" "));
                 sb.append("\n");
             }
             sb.append("\n");
@@ -1034,7 +1042,7 @@ public class LearningDiagnosisService {
 
     private Map<Long, Set<Long>> buildQuestionToKps(List<KnowledgePoint> allPoints) {
         Set<Long> kpIds = allPoints.stream().map(KnowledgePoint::getId).collect(Collectors.toSet());
-        if (kpIds.isEmpty()) return Collections.emptyMap();
+        if (kpIds.isEmpty()) { return Collections.emptyMap(); }
 
         LambdaQueryWrapper<QuestionKnowledgePoint> qkpWrapper = new LambdaQueryWrapper<>();
         qkpWrapper.in(QuestionKnowledgePoint::getKnowledgePointId, kpIds);
@@ -1049,7 +1057,7 @@ public class LearningDiagnosisService {
     }
 
     private int calculateStreak(List<PracticeRecord> records) {
-        if (records.isEmpty()) return 0;
+        if (records.isEmpty()) { return 0; }
         Set<String> dates = records.stream()
                 .filter(r -> r.getCreateTime() != null)
                 .map(r -> r.getCreateTime().toLocalDate().toString())
@@ -1081,7 +1089,7 @@ public class LearningDiagnosisService {
     }
 
     private String getQuestionTypeName(String questionType) {
-        if (questionType == null) return "未知";
+        if (questionType == null) { return "未知"; }
         switch (questionType) {
             case "SINGLE_CHOICE": return "单选题";
             case "MULTIPLE_CHOICE": return "多选题";
@@ -1123,7 +1131,7 @@ public class LearningDiagnosisService {
     }
 
     private String truncate(String text, int maxLen) {
-        if (text == null) return null;
+        if (text == null) { return null; }
         return text.length() > maxLen ? text.substring(0, maxLen) + "..." : text;
     }
 }

@@ -26,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -77,7 +76,7 @@ public class CourseStageAssessmentService {
             throw new BusinessException(ResultCode.NOT_FOUND, "请先将课程加入个人课程库");
         }
         CourseStageAssessment active = assessmentMapper.selectActive(userId, courseId);
-        if (active != null) return toView(active);
+        if (active != null) { return toView(active); }
 
         int requestedCount = request == null || request.getQuestionCount() == null ? 5 : request.getQuestionCount();
         if (requestedCount < 1 || requestedCount > 20) {
@@ -86,7 +85,8 @@ public class CourseStageAssessmentService {
         KnowledgePoint target = reviewedCourseKnowledgePoint(courseId,
                 request == null ? null : request.getKnowledgePointId());
         Long targetId = target == null ? null : target.getId();
-        List<Question> questions = assessmentMapper.selectCandidateQuestions(userId, courseId, targetId, requestedCount);
+        List<Question> questions = assessmentMapper.selectCandidateQuestions(userId, courseId,
+                targetId, requestedCount);
         if (questions.isEmpty()) {
             throw new BusinessException(ResultCode.NOT_FOUND, target == null
                     ? "课程暂无可用于阶段测评的客观题"
@@ -122,7 +122,7 @@ public class CourseStageAssessmentService {
         if (assessment == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "阶段测评不存在");
         }
-        if (COMPLETED.equals(assessment.getStatus())) return toView(assessment);
+        if (COMPLETED.equals(assessment.getStatus())) { return toView(assessment); }
         List<CourseStageAssessmentQuestion> items = assessmentQuestionMapper.selectByAssessmentId(assessmentId);
         if (request == null || request.getAnswers() == null || request.getAnswers().size() != items.size()) {
             throw validation("必须提交完整测评答案");
@@ -145,7 +145,7 @@ public class CourseStageAssessmentService {
             String userAnswer = answers.get(item.getId());
             boolean correct = answerEvaluator.isCorrect(
                     item.getQuestionType(), userAnswer, item.getCorrectAnswerSnapshot());
-            if (correct) correctCount++;
+            if (correct) { correctCount++; }
             item.setUserAnswer(userAnswer);
             item.setIsCorrect(correct ? 1 : 0);
             item.setAnsweredTime(answeredTime);
@@ -174,7 +174,8 @@ public class CourseStageAssessmentService {
         }
         Page<CourseStageAssessment> source = assessmentMapper.selectCompletedPage(
                 new Page<>(pageNum, pageSize), userId, courseId, knowledgePointId);
-        Page<CourseStageAssessmentSummaryVO> result = new Page<>(source.getCurrent(), source.getSize(), source.getTotal());
+        Page<CourseStageAssessmentSummaryVO> result = new Page<>(source.getCurrent(), source.getSize(),
+                source.getTotal());
         List<Long> assessmentIds = source.getRecords().stream().map(CourseStageAssessment::getId).toList();
         Map<Long, List<CourseStageAssessmentQuestion>> sourcesByAssessment = assessmentIds.isEmpty()
                 ? Map.of()
@@ -202,7 +203,7 @@ public class CourseStageAssessmentService {
     }
 
     private KnowledgePoint reviewedCourseKnowledgePoint(Long courseId, Long knowledgePointId) {
-        if (knowledgePointId == null) return null;
+        if (knowledgePointId == null) { return null; }
         KnowledgePoint target = knowledgePointMapper.selectById(knowledgePointId);
         if (target == null || !courseId.equals(target.getCourseId())
                 || !"REVIEWED".equals(target.getContentReviewStatus())) {
@@ -265,8 +266,8 @@ public class CourseStageAssessmentService {
         if (question == null) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "测评原题已不存在");
         }
-        if (correct) wrongQuestionService.removeOnCorrect(userId, question.getId());
-        else wrongQuestionService.addWrongQuestion(userId, question.getId(), item.getUserAnswer());
+        if (correct) { wrongQuestionService.removeOnCorrect(userId, question.getId()); }
+        else { wrongQuestionService.addWrongQuestion(userId, question.getId(), item.getUserAnswer()); }
         repetitionService.addToReviewPlan(userId, question.getId());
         eventService.recordQuestionAnswer(userId, question, "STAGE_ASSESSMENT_ANSWERED",
                 "STAGE_ASSESSMENT", item.getId(), correct, answeredTime);
@@ -316,7 +317,7 @@ public class CourseStageAssessmentService {
 
     private String snapshotKnowledgePoints(Long questionId) {
         List<KnowledgePoint> points = knowledgePointMapper.selectByQuestionId(questionId);
-        if (points.isEmpty()) return null;
+        if (points.isEmpty()) { return null; }
         return writeJson(points.stream()
                 .map(point -> new CourseStageAssessmentVO.KnowledgePointVO(point.getId(), point.getName()))
                 .toList());
@@ -327,9 +328,11 @@ public class CourseStageAssessmentService {
     }
 
     String sourceCategory(Question question) {
-        if ("AI_GENERATED".equals(question.getSourceType())) return "AI_GENERATED";
+        if ("AI_GENERATED".equals(question.getSourceType())) { return "AI_GENERATED"; }
         if ("PRIVATE".equals(question.getVisibility())
-                || "USER_PRIVATE_IMPORT".equals(question.getSourceType())) return "USER_PRIVATE";
+                || "USER_PRIVATE_IMPORT".equals(question.getSourceType())) {
+            return "USER_PRIVATE";
+        }
         Long officialReferences = assessmentMapper.countVerifiedOfficialPaperReferences(question.getId());
         return officialReferences != null && officialReferences > 0 ? "OFFICIAL_EXAM" : "MANUAL";
     }

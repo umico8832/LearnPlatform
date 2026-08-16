@@ -131,7 +131,7 @@ public class LearningPlanService {
                 break;
             }
             // 防止死循环，最多查 365 天
-            if (streak >= 365) break;
+            if (streak >= 365) { break; }
         }
         return streak;
     }

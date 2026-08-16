@@ -92,9 +92,9 @@ public class AiVariantQuestionService {
     }
 
     public AiVariantQuestionVO getPublicQuestion(Long assetId) {
-        if (assetId == null) return null;
+        if (assetId == null) { return null; }
         AiVariantQuestion question = findByAssetId(assetId);
-        if (question == null) return null;
+        if (question == null) { return null; }
         try {
             AiVariantQuestionVO vo = new AiVariantQuestionVO();
             vo.setId(question.getId());
@@ -167,7 +167,7 @@ public class AiVariantQuestionService {
     public AiVariantTrainingVO enrichTrainingVO(AiVariantTraining training, AiVariantTrainingVO vo) {
         boolean answered = training != null && training.getAnsweredTime() != null;
         vo.setAnswered(answered);
-        if (!answered) return vo;
+        if (!answered) { return vo; }
 
         vo.setCorrect(Integer.valueOf(1).equals(training.getIsCorrect()));
         vo.setUserAnswer(training.getUserAnswer());
@@ -221,7 +221,7 @@ public class AiVariantQuestionService {
             for (JsonNode optionNode : optionNodes) {
                 String label = requiredText(optionNode, "label", "选项标签").toUpperCase(Locale.ROOT);
                 String content = requiredText(optionNode, "content", "选项内容");
-                if (!labels.add(label)) throw invalidFormat("选项标签不能重复");
+                if (!labels.add(label)) { throw invalidFormat("选项标签不能重复"); }
                 options.add(new AiVariantQuestionVO.Option(label, content));
             }
             if (!labels.contains(correctAnswer)) {
@@ -238,7 +238,7 @@ public class AiVariantQuestionService {
 
     private String requiredText(JsonNode node, String field, String label) {
         String value = node.path(field).asText("").trim();
-        if (value.isBlank()) throw invalidFormat(label + "不能为空");
+        if (value.isBlank()) { throw invalidFormat(label + "不能为空"); }
         return value;
     }
 
@@ -251,12 +251,12 @@ public class AiVariantQuestionService {
     }
 
     private String stripCodeFence(String content) {
-        if (content == null) return "";
+        if (content == null) { return ""; }
         String trimmed = content.trim();
-        if (!trimmed.startsWith("```")) return trimmed;
+        if (!trimmed.startsWith("```")) { return trimmed; }
         int firstLineEnd = trimmed.indexOf('\n');
         int lastFence = trimmed.lastIndexOf("```");
-        if (firstLineEnd < 0 || lastFence <= firstLineEnd) return trimmed;
+        if (firstLineEnd < 0 || lastFence <= firstLineEnd) { return trimmed; }
         return trimmed.substring(firstLineEnd + 1, lastFence).trim();
     }
 

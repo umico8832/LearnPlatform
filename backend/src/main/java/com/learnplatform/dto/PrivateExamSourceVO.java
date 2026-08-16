@@ -22,7 +22,9 @@ public class PrivateExamSourceVO {
     public String getOriginalContent() { return originalContent; }
     public void setOriginalContent(String originalContent) { this.originalContent = originalContent; }
     public Boolean getOriginalFileAvailable() { return originalFileAvailable; }
-    public void setOriginalFileAvailable(Boolean originalFileAvailable) { this.originalFileAvailable = originalFileAvailable; }
+    public void setOriginalFileAvailable(Boolean originalFileAvailable) {
+        this.originalFileAvailable = originalFileAvailable;
+    }
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
 }

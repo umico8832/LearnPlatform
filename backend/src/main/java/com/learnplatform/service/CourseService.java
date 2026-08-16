@@ -87,9 +87,9 @@ public class CourseService {
         if (course == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "课程不存在");
         }
-        if (name != null) course.setName(name);
-        if (description != null) course.setDescription(description);
-        if (sortOrder != null) course.setSortOrder(sortOrder);
+        if (name != null) { course.setName(name); }
+        if (description != null) { course.setDescription(description); }
+        if (sortOrder != null) { course.setSortOrder(sortOrder); }
         courseMapper.updateById(course);
         return CourseVO.fromEntity(course);
     }

@@ -24,7 +24,9 @@ public class CourseStageAssessmentSubmitRequest {
         private String userAnswer;
 
         public Long getAssessmentQuestionId() { return assessmentQuestionId; }
-        public void setAssessmentQuestionId(Long assessmentQuestionId) { this.assessmentQuestionId = assessmentQuestionId; }
+        public void setAssessmentQuestionId(Long assessmentQuestionId) {
+            this.assessmentQuestionId = assessmentQuestionId;
+        }
         public String getUserAnswer() { return userAnswer; }
         public void setUserAnswer(String userAnswer) { this.userAnswer = userAnswer; }
     }

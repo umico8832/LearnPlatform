@@ -128,7 +128,7 @@ public class ExamService {
     public ExamRecordVO startExam(Long examPaperId, Long userId) {
         log.info("开始考试: userId={}, examPaperId={}", userId, examPaperId);
         ExamPaper paper = examPaperMapper.selectById(examPaperId);
-        if (paper == null) throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
+        if (paper == null) { throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在"); }
         if (!canAccessPaper(paper, userId)) {
             throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
         }
@@ -179,12 +179,12 @@ public class ExamService {
     @Transactional
     public ExamRecordVO getExamSession(Long examRecordId, Long userId) {
         ExamRecord record = examRecordMapper.selectByIdForUpdate(examRecordId);
-        if (record == null) throw new BusinessException(ResultCode.NOT_FOUND, "考试记录不存在");
+        if (record == null) { throw new BusinessException(ResultCode.NOT_FOUND, "考试记录不存在"); }
         if (!record.getUserId().equals(userId)) {
             throw new BusinessException(ResultCode.FORBIDDEN, "无权操作");
         }
         ExamPaper paper = examPaperMapper.selectById(record.getExamPaperId());
-        if (paper == null) throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
+        if (paper == null) { throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在"); }
         LocalDateTime now = currentExamTime();
         if (record.getStatus() == ACTIVE && isExpired(record, paper, now)) {
             markTimedOut(record, now);
@@ -199,12 +199,12 @@ public class ExamService {
     public ExamRecordVO submitExam(ExamSubmitRequest request, Long userId) {
         log.info("提交考试: userId={}, examRecordId={}", userId, request.getExamRecordId());
         ExamRecord record = examRecordMapper.selectByIdForUpdate(request.getExamRecordId());
-        if (record == null) throw new BusinessException(ResultCode.NOT_FOUND, "考试记录不存在");
-        if (!record.getUserId().equals(userId)) throw new BusinessException(ResultCode.FORBIDDEN, "无权操作");
-        if (record.getStatus() != 0) throw new BusinessException(ResultCode.BUSINESS_ERROR, "考试已结束");
+        if (record == null) { throw new BusinessException(ResultCode.NOT_FOUND, "考试记录不存在"); }
+        if (!record.getUserId().equals(userId)) { throw new BusinessException(ResultCode.FORBIDDEN, "无权操作"); }
+        if (record.getStatus() != 0) { throw new BusinessException(ResultCode.BUSINESS_ERROR, "考试已结束"); }
 
         ExamPaper paper = examPaperMapper.selectById(record.getExamPaperId());
-        if (paper == null) throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
+        if (paper == null) { throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在"); }
 
         LocalDateTime now = currentExamTime();
         if (isExpired(record, paper, now)) {
@@ -262,8 +262,8 @@ public class ExamService {
                 boolean isCorrect = !manualGrading && answerEvaluator.isCorrect(question.getQuestionType(),
                         userAnswer != null ? userAnswer.trim() : "", correctAnswer);
 
-                if (isCorrect) earnedScore += questionScore;
-                if (manualGrading) hasPendingReview = true;
+                if (isCorrect) { earnedScore += questionScore; }
+                if (manualGrading) { hasPendingReview = true; }
 
                 // 保存答题详情
                 ExamAnswer examAnswer = new ExamAnswer();
@@ -315,8 +315,8 @@ public class ExamService {
      */
     public ExamRecordVO getExamResult(Long examRecordId, Long userId) {
         ExamRecord record = examRecordMapper.selectById(examRecordId);
-        if (record == null) throw new BusinessException(ResultCode.NOT_FOUND, "考试记录不存在");
-        if (!record.getUserId().equals(userId)) throw new BusinessException(ResultCode.FORBIDDEN, "无权操作");
+        if (record == null) { throw new BusinessException(ResultCode.NOT_FOUND, "考试记录不存在"); }
+        if (!record.getUserId().equals(userId)) { throw new BusinessException(ResultCode.FORBIDDEN, "无权操作"); }
         if (record.getStatus() == null
                 || (record.getStatus() != COMPLETED && record.getStatus() != PENDING_REVIEW)) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "考试尚未完成");

@@ -41,7 +41,9 @@ public class CourseStageAssessmentVO {
     public CourseStageAssessmentSourceCompositionVO getSourceComposition() { return sourceComposition; }
     public void setSourceComposition(CourseStageAssessmentSourceCompositionVO value) { this.sourceComposition = value; }
     public List<KnowledgePointSummaryVO> getKnowledgePointSummary() { return knowledgePointSummary; }
-    public void setKnowledgePointSummary(List<KnowledgePointSummaryVO> knowledgePointSummary) { this.knowledgePointSummary = knowledgePointSummary; }
+    public void setKnowledgePointSummary(List<KnowledgePointSummaryVO> knowledgePointSummary) {
+        this.knowledgePointSummary = knowledgePointSummary;
+    }
     public List<QuestionItem> getQuestions() { return questions; }
     public void setQuestions(List<QuestionItem> questions) { this.questions = questions; }
 
@@ -91,7 +93,9 @@ public class CourseStageAssessmentVO {
         public String getAnalysis() { return analysis; }
         public void setAnalysis(String analysis) { this.analysis = analysis; }
         public List<KnowledgePointVO> getKnowledgePoints() { return knowledgePoints; }
-        public void setKnowledgePoints(List<KnowledgePointVO> knowledgePoints) { this.knowledgePoints = knowledgePoints; }
+        public void setKnowledgePoints(List<KnowledgePointVO> knowledgePoints) {
+            this.knowledgePoints = knowledgePoints;
+        }
     }
 
     public static class KnowledgePointVO {
@@ -99,7 +103,10 @@ public class CourseStageAssessmentVO {
         private String name;
 
         public KnowledgePointVO() { }
-        public KnowledgePointVO(Long id, String name) { this.id = id; this.name = name; }
+        public KnowledgePointVO(Long id, String name) {
+            this.id = id;
+            this.name = name;
+        }
         public Long getId() { return id; }
         public void setId(Long id) { this.id = id; }
         public String getName() { return name; }
@@ -127,7 +134,10 @@ public class CourseStageAssessmentVO {
         private String content;
 
         public OptionItem() { }
-        public OptionItem(String label, String content) { this.label = label; this.content = content; }
+        public OptionItem(String label, String content) {
+            this.label = label;
+            this.content = content;
+        }
         public String getLabel() { return label; }
         public void setLabel(String label) { this.label = label; }
         public String getContent() { return content; }

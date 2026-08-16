@@ -32,7 +32,9 @@ public class CourseOverviewVO {
     public LocalDateTime getLastLearningTime() { return lastLearningTime; }
     public void setLastLearningTime(LocalDateTime lastLearningTime) { this.lastLearningTime = lastLearningTime; }
     public List<LearningTargetVO> getRecommendedTargets() { return recommendedTargets; }
-    public void setRecommendedTargets(List<LearningTargetVO> recommendedTargets) { this.recommendedTargets = recommendedTargets; }
+    public void setRecommendedTargets(List<LearningTargetVO> recommendedTargets) {
+        this.recommendedTargets = recommendedTargets;
+    }
     public List<TutorProgressVO> getTutorProgress() { return tutorProgress; }
     public void setTutorProgress(List<TutorProgressVO> tutorProgress) { this.tutorProgress = tutorProgress; }
     public CourseStageAssessmentSummaryVO getLatestStageAssessment() { return latestStageAssessment; }

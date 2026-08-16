@@ -138,7 +138,7 @@ public class GlobalSearchService {
             sb.append(mapQuestionType(q.getQuestionType()));
         }
         if (q.getDifficulty() != null) {
-            if (sb.length() > 0) sb.append(" · ");
+            if (sb.length() > 0) { sb.append(" · "); }
             sb.append("难度 ");
             sb.append("★".repeat(Math.max(0, q.getDifficulty())));
         }
@@ -146,7 +146,7 @@ public class GlobalSearchService {
     }
 
     private String mapQuestionType(String type) {
-        if (type == null) return "";
+        if (type == null) { return ""; }
         return switch (type.toUpperCase()) {
             case "SINGLE_CHOICE" -> "单选题";
             case "MULTIPLE_CHOICE" -> "多选题";
@@ -161,10 +161,10 @@ public class GlobalSearchService {
      * 截断文本，超过 maxLength 时添加省略号
      */
     private String truncate(String text, int maxLength) {
-        if (text == null) return "";
+        if (text == null) { return ""; }
         // 移除换行符，用空格替换
         String cleaned = text.replaceAll("\\s+", " ").trim();
-        if (cleaned.length() <= maxLength) return cleaned;
+        if (cleaned.length() <= maxLength) { return cleaned; }
         return cleaned.substring(0, maxLength) + "…";
     }
 }

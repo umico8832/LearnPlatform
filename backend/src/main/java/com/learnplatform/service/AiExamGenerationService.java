@@ -69,7 +69,9 @@ public class AiExamGenerationService {
         public String getDifficultyMode() { return difficultyMode; }
         public void setDifficultyMode(String difficultyMode) { this.difficultyMode = difficultyMode; }
         public boolean isIncludeWrongQuestions() { return includeWrongQuestions; }
-        public void setIncludeWrongQuestions(boolean includeWrongQuestions) { this.includeWrongQuestions = includeWrongQuestions; }
+        public void setIncludeWrongQuestions(boolean includeWrongQuestions) {
+            this.includeWrongQuestions = includeWrongQuestions;
+        }
         public String getTitle() { return title; }
         public void setTitle(String title) { this.title = title; }
         public Integer getDuration() { return duration; }
@@ -111,9 +113,13 @@ public class AiExamGenerationService {
         public Integer getDuration() { return duration; }
         public void setDuration(Integer duration) { this.duration = duration; }
         public Map<String, Integer> getKnowledgePointDistribution() { return knowledgePointDistribution; }
-        public void setKnowledgePointDistribution(Map<String, Integer> knowledgePointDistribution) { this.knowledgePointDistribution = knowledgePointDistribution; }
+        public void setKnowledgePointDistribution(Map<String, Integer> knowledgePointDistribution) {
+            this.knowledgePointDistribution = knowledgePointDistribution;
+        }
         public Map<String, Integer> getDifficultyDistribution() { return difficultyDistribution; }
-        public void setDifficultyDistribution(Map<String, Integer> difficultyDistribution) { this.difficultyDistribution = difficultyDistribution; }
+        public void setDifficultyDistribution(Map<String, Integer> difficultyDistribution) {
+            this.difficultyDistribution = difficultyDistribution;
+        }
         public List<Long> getQuestionIds() { return questionIds; }
         public void setQuestionIds(List<Long> questionIds) { this.questionIds = questionIds; }
         public String getRecommendation() { return recommendation; }
@@ -165,7 +171,8 @@ public class AiExamGenerationService {
         }
 
         // 6. 按照难度模式计算各难度目标数量
-        Map<Integer, Integer> difficultyTargets = calculateDifficultyTargets(questionCount, request.getDifficultyMode(), difficultyAccuracy);
+        Map<Integer, Integer> difficultyTargets = calculateDifficultyTargets(questionCount,
+                request.getDifficultyMode(), difficultyAccuracy);
 
         // 7. 知识点均衡选择
         List<Long> selectedIds = selectQuestionsBalanced(
@@ -269,7 +276,8 @@ public class AiExamGenerationService {
 
         // 难度适配加权
         if (question.getDifficulty() != null && !difficultyAccuracy.isEmpty()) {
-            score += calculateDifficultyWeight(question.getDifficulty(), difficultyAccuracy, request.getDifficultyMode());
+            score += calculateDifficultyWeight(question.getDifficulty(), difficultyAccuracy,
+                    request.getDifficultyMode());
         }
 
         // 有解析的题目优先（+5）
@@ -300,10 +308,10 @@ public class AiExamGenerationService {
                 return difficulty >= 4 ? 15.0 : (difficulty == 3 ? 5.0 : -5.0);
             case "ADAPTIVE":
                 Double userAcc = accuracy.get(difficulty);
-                if (userAcc == null) return 5.0; // 没做过该难度，给基础分
+                if (userAcc == null) { return 5.0; } // 没做过该难度，给基础分
                 // 正确率高的难度推荐更高难度，正确率低的推荐巩固
-                if (userAcc > 0.8 && difficulty < 5) return 15.0; // 太简单了，推荐更难
-                if (userAcc < 0.5) return 10.0; // 这个难度不够熟练，推荐练习
+                if (userAcc > 0.8 && difficulty < 5) { return 15.0; } // 太简单了，推荐更难
+                if (userAcc < 0.5) { return 10.0; } // 这个难度不够熟练，推荐练习
                 return 8.0; // 适中
             default: // BALANCED
                 return 8.0;
@@ -366,7 +374,8 @@ public class AiExamGenerationService {
                                                 int totalCount) {
         // 按分数降序排列
         List<Question> sorted = questions.stream()
-                .sorted((a, b) -> Double.compare(scores.getOrDefault(b.getId(), 0.0), scores.getOrDefault(a.getId(), 0.0)))
+                .sorted((a, b) -> Double.compare(scores.getOrDefault(b.getId(), 0.0),
+                        scores.getOrDefault(a.getId(), 0.0)))
                 .collect(Collectors.toList());
 
         Set<Long> selected = new LinkedHashSet<>();
@@ -378,7 +387,7 @@ public class AiExamGenerationService {
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
         for (Long kpId : allKps) {
-            if (selected.size() >= totalCount) break;
+            if (selected.size() >= totalCount) { break; }
             Question bestForKp = sorted.stream()
                     .filter(q -> !selected.contains(q.getId()))
                     .filter(q -> {
@@ -390,7 +399,8 @@ public class AiExamGenerationService {
             if (bestForKp != null) {
                 selected.add(bestForKp.getId());
                 coveredKps.add(kpId);
-                difficultyCount.merge(bestForKp.getDifficulty() != null ? bestForKp.getDifficulty() : 3, 1, Integer::sum);
+                difficultyCount.merge(bestForKp.getDifficulty() != null ? bestForKp.getDifficulty() : 3,
+                        1, Integer::sum);
             }
         }
 
@@ -405,7 +415,7 @@ public class AiExamGenerationService {
                         .filter(q -> Objects.equals(q.getDifficulty(), diff))
                         .findFirst()
                         .orElse(null);
-                if (candidate == null) break;
+                if (candidate == null) { break; }
                 selected.add(candidate.getId());
                 current++;
                 difficultyCount.put(diff, current);
@@ -414,7 +424,7 @@ public class AiExamGenerationService {
 
         // 第三轮：补充剩余题目
         for (Question q : sorted) {
-            if (selected.size() >= totalCount) break;
+            if (selected.size() >= totalCount) { break; }
             selected.add(q.getId());
         }
 
@@ -425,7 +435,7 @@ public class AiExamGenerationService {
      * 构建题目-知识点映射
      */
     private Map<Long, List<Long>> buildQuestionKnowledgePointMap(List<Question> questions) {
-        if (questions.isEmpty()) return Collections.emptyMap();
+        if (questions.isEmpty()) { return Collections.emptyMap(); }
 
         List<Long> qIds = questions.stream().map(Question::getId).collect(Collectors.toList());
         LambdaQueryWrapper<QuestionKnowledgePoint> wrapper = new LambdaQueryWrapper<>();
@@ -469,9 +479,9 @@ public class AiExamGenerationService {
 
         Map<Integer, int[]> stats = new HashMap<>(); // difficulty -> [correct, total]
         for (PracticeRecord record : records) {
-            if (record.getQuestionId() == null) continue;
+            if (record.getQuestionId() == null) { continue; }
             Question q = questionMapper.selectById(record.getQuestionId());
-            if (q == null || q.getDifficulty() == null) continue;
+            if (q == null || q.getDifficulty() == null) { continue; }
             int[] s = stats.computeIfAbsent(q.getDifficulty(), k -> new int[]{0, 0});
             s[1]++;
             if (record.getIsCorrect() != null && record.getIsCorrect() == 1) {
@@ -491,16 +501,6 @@ public class AiExamGenerationService {
 
     private String generateTitle(SmartExamRequest request) {
         StringBuilder sb = new StringBuilder("智能模拟试卷");
-        if (request.getCourseId() != null) {
-            // 尝试获取课程名
-            LambdaQueryWrapper<Question> qw = new LambdaQueryWrapper<>();
-            qw.eq(Question::getCourseId, request.getCourseId())
-                    .eq(Question::getVisibility, "PUBLIC").last("LIMIT 1");
-            Question sample = questionMapper.selectOne(qw);
-            if (sample != null) {
-                // courseName 不在 Question 表中，需要通过 courseId 查
-            }
-        }
         sb.append("（").append(request.getDifficultyMode()).append("）");
         return sb.toString();
     }
@@ -526,10 +526,17 @@ public class AiExamGenerationService {
 
         String modeDesc;
         switch (request.getDifficultyMode()) {
-            case "EASY": modeDesc = "偏基础"; break;
-            case "HARD": modeDesc = "偏进阶"; break;
-            case "ADAPTIVE": modeDesc = "自适应"; break;
-            default: modeDesc = "均衡";
+            case "EASY":
+                modeDesc = "偏基础";
+                break;
+            case "HARD":
+                modeDesc = "偏进阶";
+                break;
+            case "ADAPTIVE":
+                modeDesc = "自适应";
+                break;
+            default:
+                modeDesc = "均衡";
         }
         sb.append("难度模式：").append(modeDesc).append("。");
 

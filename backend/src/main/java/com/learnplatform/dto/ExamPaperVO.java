@@ -96,9 +96,13 @@ public class ExamPaperVO {
         public String getSectionTitle() { return sectionTitle; }
         public void setSectionTitle(String sectionTitle) { this.sectionTitle = sectionTitle; }
         public String getMajorQuestionNumber() { return majorQuestionNumber; }
-        public void setMajorQuestionNumber(String majorQuestionNumber) { this.majorQuestionNumber = majorQuestionNumber; }
+        public void setMajorQuestionNumber(String majorQuestionNumber) {
+            this.majorQuestionNumber = majorQuestionNumber;
+        }
         public String getMinorQuestionNumber() { return minorQuestionNumber; }
-        public void setMinorQuestionNumber(String minorQuestionNumber) { this.minorQuestionNumber = minorQuestionNumber; }
+        public void setMinorQuestionNumber(String minorQuestionNumber) {
+            this.minorQuestionNumber = minorQuestionNumber;
+        }
         public String getSubquestionNumber() { return subquestionNumber; }
         public void setSubquestionNumber(String subquestionNumber) { this.subquestionNumber = subquestionNumber; }
         public String getDisplayNumber() { return displayNumber; }

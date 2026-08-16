@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Year;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -59,8 +58,8 @@ public class ExamPaperService {
     public Page<ExamPaperVO> getExamPaperPage(int pageNum, int pageSize, Long courseId, Integer status) {
         Page<ExamPaper> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<ExamPaper> wrapper = new LambdaQueryWrapper<>();
-        if (courseId != null) wrapper.eq(ExamPaper::getCourseId, courseId);
-        if (status != null) wrapper.eq(ExamPaper::getStatus, status);
+        if (courseId != null) { wrapper.eq(ExamPaper::getCourseId, courseId); }
+        if (status != null) { wrapper.eq(ExamPaper::getStatus, status); }
         wrapper.eq(ExamPaper::getVisibility, "PUBLIC");
         wrapper.orderByDesc(ExamPaper::getCreateTime);
         Page<ExamPaper> result = examPaperMapper.selectPage(page, wrapper);
@@ -78,7 +77,7 @@ public class ExamPaperService {
                 .and(scope -> scope.eq(ExamPaper::getVisibility, "PUBLIC")
                         .or(privateScope -> privateScope.eq(ExamPaper::getVisibility, "PRIVATE")
                                 .eq(ExamPaper::getOwnerUserId, userId)));
-        if (courseId != null) wrapper.eq(ExamPaper::getCourseId, courseId);
+        if (courseId != null) { wrapper.eq(ExamPaper::getCourseId, courseId); }
         wrapper.orderByDesc(ExamPaper::getCreateTime);
         Page<ExamPaper> result = examPaperMapper.selectPage(page, wrapper);
         Page<ExamPaperVO> voPage = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
@@ -112,7 +111,7 @@ public class ExamPaperService {
 
     public boolean canAccess(ExamPaper paper, Long userId) {
         String visibility = paper.getVisibility();
-        if (visibility == null || "PUBLIC".equals(visibility)) return true;
+        if (visibility == null || "PUBLIC".equals(visibility)) { return true; }
         return "PRIVATE".equals(visibility) && userId != null && userId.equals(paper.getOwnerUserId());
     }
 
@@ -180,7 +179,7 @@ public class ExamPaperService {
     @Transactional
     public ExamPaperVO updateExamPaper(Long id, ExamPaperCreateRequest request) {
         ExamPaper paper = examPaperMapper.selectByIdForUpdate(id);
-        if (paper == null) throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
+        if (paper == null) { throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在"); }
         ensureDraft(paper, "已发布试卷不能修改");
         String paperType = request.getPaperType() != null
                 ? normalizePaperType(request.getPaperType()) : normalizePaperType(paper.getPaperType());
@@ -198,16 +197,16 @@ public class ExamPaperService {
                 sourceVerified, request.getQuestions(), id);
         ensureManualGradingReady(status, request.getQuestions(), id);
 
-        if (request.getTitle() != null) paper.setTitle(request.getTitle());
-        if (request.getDescription() != null) paper.setDescription(request.getDescription());
-        if (request.getCourseId() != null) paper.setCourseId(request.getCourseId());
-        if (request.getDuration() != null) paper.setDuration(request.getDuration());
-        if (request.getStatus() != null) paper.setStatus(request.getStatus());
+        if (request.getTitle() != null) { paper.setTitle(request.getTitle()); }
+        if (request.getDescription() != null) { paper.setDescription(request.getDescription()); }
+        if (request.getCourseId() != null) { paper.setCourseId(request.getCourseId()); }
+        if (request.getDuration() != null) { paper.setDuration(request.getDuration()); }
+        if (request.getStatus() != null) { paper.setStatus(request.getStatus()); }
         paper.setPaperType(paperType);
-        if (request.getExamName() != null) paper.setExamName(request.getExamName());
-        if (request.getExamYear() != null) paper.setExamYear(request.getExamYear());
-        if (request.getSourceReference() != null) paper.setSourceReference(request.getSourceReference());
-        if (request.getSourceVerified() != null) paper.setSourceVerified(request.getSourceVerified());
+        if (request.getExamName() != null) { paper.setExamName(request.getExamName()); }
+        if (request.getExamYear() != null) { paper.setExamYear(request.getExamYear()); }
+        if (request.getSourceReference() != null) { paper.setSourceReference(request.getSourceReference()); }
+        if (request.getSourceVerified() != null) { paper.setSourceVerified(request.getSourceVerified()); }
         examPaperMapper.updateById(paper);
 
         // 更新题目关联
@@ -241,7 +240,7 @@ public class ExamPaperService {
     @Transactional
     public void deleteExamPaper(Long id) {
         ExamPaper paper = examPaperMapper.selectByIdForUpdate(id);
-        if (paper == null) throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
+        if (paper == null) { throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在"); }
         ensureDraft(paper, "已发布试卷不能删除");
         examPaperMapper.deleteById(id);
         LambdaQueryWrapper<ExamQuestion> deleteWrapper = new LambdaQueryWrapper<>();
@@ -255,7 +254,7 @@ public class ExamPaperService {
     @Transactional
     public void publishExamPaper(Long id) {
         ExamPaper paper = examPaperMapper.selectByIdForUpdate(id);
-        if (paper == null) throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
+        if (paper == null) { throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在"); }
         if (paper.getQuestionCount() == null || paper.getQuestionCount() <= 0) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "空试卷不能发布");
         }
@@ -423,7 +422,7 @@ public class ExamPaperService {
         vo.setCreateTime(paper.getCreateTime());
         if (paper.getCourseId() != null) {
             Course course = courseMapper.selectById(paper.getCourseId());
-            if (course != null) vo.setCourseName(course.getName());
+            if (course != null) { vo.setCourseName(course.getName()); }
         }
         return vo;
     }

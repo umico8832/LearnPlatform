@@ -4,7 +4,6 @@ import com.learnplatform.entity.QuestionOption;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**

@@ -25,7 +25,7 @@ public class CacheEvictService {
      * 在刷题提交、错题变更、考试提交后调用
      */
     public void evictUserStatistics(Long userId) {
-        if (userId == null) return;
+        if (userId == null) { return; }
         log.debug("清除用户统计缓存: userId={}", userId);
 
         clearCache("statistics", userId.toString());

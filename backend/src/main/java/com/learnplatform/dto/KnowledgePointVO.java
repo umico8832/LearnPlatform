@@ -29,7 +29,7 @@ public class KnowledgePointVO {
         vo.setContentVersion(kp.getContentVersion());
         vo.setContentReviewStatus(kp.getContentReviewStatus());
         vo.setSortOrder(kp.getSortOrder());
-        if (kp.getCreateTime() != null) vo.setCreateTime(kp.getCreateTime().toString());
+        if (kp.getCreateTime() != null) { vo.setCreateTime(kp.getCreateTime().toString()); }
         return vo;
     }
 

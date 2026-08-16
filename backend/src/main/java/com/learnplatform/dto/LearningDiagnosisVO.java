@@ -49,7 +49,9 @@ public class LearningDiagnosisVO {
     public LearningHabit getLearningHabit() { return learningHabit; }
     public void setLearningHabit(LearningHabit learningHabit) { this.learningHabit = learningHabit; }
     public List<RecommendedQuestion> getDailyRecommendations() { return dailyRecommendations; }
-    public void setDailyRecommendations(List<RecommendedQuestion> dailyRecommendations) { this.dailyRecommendations = dailyRecommendations; }
+    public void setDailyRecommendations(List<RecommendedQuestion> dailyRecommendations) {
+        this.dailyRecommendations = dailyRecommendations;
+    }
     public String getDailyAdvice() { return dailyAdvice; }
     public void setDailyAdvice(String dailyAdvice) { this.dailyAdvice = dailyAdvice; }
 
@@ -148,23 +150,35 @@ public class LearningDiagnosisVO {
         private List<Map<String, Object>> weeklyErrorTrend;
 
         public List<CourseErrorCount> getTopErrorCourses() { return topErrorCourses; }
-        public void setTopErrorCourses(List<CourseErrorCount> topErrorCourses) { this.topErrorCourses = topErrorCourses; }
+        public void setTopErrorCourses(List<CourseErrorCount> topErrorCourses) {
+            this.topErrorCourses = topErrorCourses;
+        }
         public Map<String, Integer> getMasteryDistribution() { return masteryDistribution; }
-        public void setMasteryDistribution(Map<String, Integer> masteryDistribution) { this.masteryDistribution = masteryDistribution; }
+        public void setMasteryDistribution(Map<String, Integer> masteryDistribution) {
+            this.masteryDistribution = masteryDistribution;
+        }
         public int getRepeatedErrorCount() { return repeatedErrorCount; }
         public void setRepeatedErrorCount(int repeatedErrorCount) { this.repeatedErrorCount = repeatedErrorCount; }
         public int getRecentNewWrongCount() { return recentNewWrongCount; }
         public void setRecentNewWrongCount(int recentNewWrongCount) { this.recentNewWrongCount = recentNewWrongCount; }
         public Map<String, Integer> getQuestionTypeDistribution() { return questionTypeDistribution; }
-        public void setQuestionTypeDistribution(Map<String, Integer> questionTypeDistribution) { this.questionTypeDistribution = questionTypeDistribution; }
+        public void setQuestionTypeDistribution(Map<String, Integer> questionTypeDistribution) {
+            this.questionTypeDistribution = questionTypeDistribution;
+        }
         public Map<Integer, Integer> getDifficultyDistribution() { return difficultyDistribution; }
-        public void setDifficultyDistribution(Map<Integer, Integer> difficultyDistribution) { this.difficultyDistribution = difficultyDistribution; }
+        public void setDifficultyDistribution(Map<Integer, Integer> difficultyDistribution) {
+            this.difficultyDistribution = difficultyDistribution;
+        }
         public List<KnowledgePointErrorRank> getKnowledgePointErrors() { return knowledgePointErrors; }
-        public void setKnowledgePointErrors(List<KnowledgePointErrorRank> knowledgePointErrors) { this.knowledgePointErrors = knowledgePointErrors; }
+        public void setKnowledgePointErrors(List<KnowledgePointErrorRank> knowledgePointErrors) {
+            this.knowledgePointErrors = knowledgePointErrors;
+        }
         public List<RepeatedErrorItem> getRepeatedErrors() { return repeatedErrors; }
         public void setRepeatedErrors(List<RepeatedErrorItem> repeatedErrors) { this.repeatedErrors = repeatedErrors; }
         public List<Map<String, Object>> getWeeklyErrorTrend() { return weeklyErrorTrend; }
-        public void setWeeklyErrorTrend(List<Map<String, Object>> weeklyErrorTrend) { this.weeklyErrorTrend = weeklyErrorTrend; }
+        public void setWeeklyErrorTrend(List<Map<String, Object>> weeklyErrorTrend) {
+            this.weeklyErrorTrend = weeklyErrorTrend;
+        }
     }
 
     /**
@@ -273,7 +287,9 @@ public class LearningDiagnosisVO {
         public double getAvgDailyPractice() { return avgDailyPractice; }
         public void setAvgDailyPractice(double avgDailyPractice) { this.avgDailyPractice = avgDailyPractice; }
         public String getPreferredQuestionType() { return preferredQuestionType; }
-        public void setPreferredQuestionType(String preferredQuestionType) { this.preferredQuestionType = preferredQuestionType; }
+        public void setPreferredQuestionType(String preferredQuestionType) {
+            this.preferredQuestionType = preferredQuestionType;
+        }
         public String getPreferredCourse() { return preferredCourse; }
         public void setPreferredCourse(String preferredCourse) { this.preferredCourse = preferredCourse; }
         public List<Map<String, Object>> getWeeklyTrend() { return weeklyTrend; }
@@ -281,7 +297,9 @@ public class LearningDiagnosisVO {
         public String getFrequencyLevel() { return frequencyLevel; }
         public void setFrequencyLevel(String frequencyLevel) { this.frequencyLevel = frequencyLevel; }
         public String getFrequencyDescription() { return frequencyDescription; }
-        public void setFrequencyDescription(String frequencyDescription) { this.frequencyDescription = frequencyDescription; }
+        public void setFrequencyDescription(String frequencyDescription) {
+            this.frequencyDescription = frequencyDescription;
+        }
     }
 
     /**
@@ -336,7 +354,9 @@ public class LearningDiagnosisVO {
         public double getCorrectRate() { return correctRate; }
         public void setCorrectRate(double correctRate) { this.correctRate = correctRate; }
         public Integer getCurrentMasteryLevel() { return currentMasteryLevel; }
-        public void setCurrentMasteryLevel(Integer currentMasteryLevel) { this.currentMasteryLevel = currentMasteryLevel; }
+        public void setCurrentMasteryLevel(Integer currentMasteryLevel) {
+            this.currentMasteryLevel = currentMasteryLevel;
+        }
         public String getMasteryTrend() { return masteryTrend; }
         public void setMasteryTrend(String masteryTrend) { this.masteryTrend = masteryTrend; }
         public String getTrendDescription() { return trendDescription; }

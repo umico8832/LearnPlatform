@@ -51,9 +51,9 @@ public class SearchHistoryService {
      * @param keyword 搜索关键词
      */
     public void recordSearch(Long userId, String keyword) {
-        if (userId == null || keyword == null) return;
+        if (userId == null || keyword == null) { return; }
         String trimmed = keyword.trim();
-        if (trimmed.length() < MIN_KEYWORD_LENGTH) return;
+        if (trimmed.length() < MIN_KEYWORD_LENGTH) { return; }
 
         // 更新用户历史
         addToUserHistory(userId, trimmed);
@@ -71,10 +71,10 @@ public class SearchHistoryService {
      * @return 最近的搜索关键词列表（时间倒序）
      */
     public List<String> getUserHistory(Long userId) {
-        if (userId == null) return Collections.emptyList();
+        if (userId == null) { return Collections.emptyList(); }
 
         LinkedHashMap<String, Long> history = userHistories.get(userId);
-        if (history == null || history.isEmpty()) return Collections.emptyList();
+        if (history == null || history.isEmpty()) { return Collections.emptyList(); }
 
         synchronized (history) {
             return history.entrySet().stream()
@@ -91,7 +91,7 @@ public class SearchHistoryService {
      * @return 热门关键词列表（按搜索次数降序）
      */
     public List<String> getHotKeywords() {
-        if (globalHotKeywords.isEmpty()) return Collections.emptyList();
+        if (globalHotKeywords.isEmpty()) { return Collections.emptyList(); }
 
         return globalHotKeywords.entrySet().stream()
                 .sorted((a, b) -> Integer.compare(b.getValue().get(), a.getValue().get()))
@@ -106,7 +106,7 @@ public class SearchHistoryService {
      * @param userId 用户 ID
      */
     public void clearUserHistory(Long userId) {
-        if (userId == null) return;
+        if (userId == null) { return; }
         userHistories.remove(userId);
         log.info("清除用户搜索历史: userId={}", userId);
     }
@@ -118,9 +118,9 @@ public class SearchHistoryService {
      * @param keyword 要删除的关键词
      */
     public void removeUserHistoryItem(Long userId, String keyword) {
-        if (userId == null || keyword == null) return;
+        if (userId == null || keyword == null) { return; }
         LinkedHashMap<String, Long> history = userHistories.get(userId);
-        if (history == null) return;
+        if (history == null) { return; }
         synchronized (history) {
             history.remove(keyword.trim());
         }

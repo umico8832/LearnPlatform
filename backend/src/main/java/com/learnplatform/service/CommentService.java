@@ -69,7 +69,8 @@ public class CommentService {
             List<CommentLike> likes = commentLikeMapper.selectList(
                     new LambdaQueryWrapper<CommentLike>()
                             .eq(CommentLike::getUserId, currentUserId)
-                            .in(CommentLike::getCommentId, all.stream().map(QuestionComment::getId).collect(Collectors.toList()))
+                            .in(CommentLike::getCommentId,
+                                    all.stream().map(QuestionComment::getId).collect(Collectors.toList()))
             );
             likedCommentIds = likes.stream().map(CommentLike::getCommentId).collect(Collectors.toSet());
         }

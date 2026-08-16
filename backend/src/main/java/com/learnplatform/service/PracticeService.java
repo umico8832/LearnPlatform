@@ -181,7 +181,8 @@ public class PracticeService {
         String correctAnswer = answerEvaluator.buildCorrectAnswer(correctOptions, question.getQuestionType());
 
         // 判分
-        boolean isCorrect = answerEvaluator.isCorrect(question.getQuestionType(), request.getUserAnswer(), correctAnswer);
+        boolean isCorrect = answerEvaluator.isCorrect(question.getQuestionType(), request.getUserAnswer(),
+                correctAnswer);
 
         // 保存答题记录
         log.info("判分结果: userId={}, questionId={}, isCorrect={}", userId, request.getQuestionId(), isCorrect);
@@ -310,7 +311,8 @@ public class PracticeService {
         List<PracticeRecord> records = practiceRecordMapper.selectList(wrapper);
 
         int totalAnswered = records.size();
-        int correctCount = (int) records.stream().filter(r -> r.getIsCorrect() != null && r.getIsCorrect() == 1).count();
+        int correctCount = (int) records.stream()
+                .filter(r -> r.getIsCorrect() != null && r.getIsCorrect() == 1).count();
         int wrongCount = totalAnswered - correctCount;
         double correctRate = totalAnswered > 0 ? (double) correctCount / totalAnswered * 100 : 0;
 

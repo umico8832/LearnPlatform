@@ -46,7 +46,8 @@ public class KnowledgePointService {
                 .collect(Collectors.toList());
     }
 
-    public KnowledgePointVO createKnowledgePoint(Long courseId, Long parentId, String name, String description, Integer sortOrder) {
+    public KnowledgePointVO createKnowledgePoint(Long courseId, Long parentId, String name,
+                                                String description, Integer sortOrder) {
         KnowledgePoint kp = new KnowledgePoint();
         kp.setCourseId(courseId);
         kp.setParentId(parentId != null ? parentId : 0L);
@@ -61,17 +62,17 @@ public class KnowledgePointService {
 
     public KnowledgePointVO updateKnowledgePoint(Long id, String name, String description, Integer sortOrder) {
         KnowledgePoint kp = knowledgePointMapper.selectById(id);
-        if (kp == null) throw new BusinessException(ResultCode.NOT_FOUND, "知识点不存在");
-        if (name != null) kp.setName(name);
-        if (description != null) kp.setDescription(description);
-        if (sortOrder != null) kp.setSortOrder(sortOrder);
+        if (kp == null) { throw new BusinessException(ResultCode.NOT_FOUND, "知识点不存在"); }
+        if (name != null) { kp.setName(name); }
+        if (description != null) { kp.setDescription(description); }
+        if (sortOrder != null) { kp.setSortOrder(sortOrder); }
         knowledgePointMapper.updateById(kp);
         return KnowledgePointVO.fromEntity(kp);
     }
 
     public void deleteKnowledgePoint(Long id) {
         KnowledgePoint kp = knowledgePointMapper.selectById(id);
-        if (kp == null) throw new BusinessException(ResultCode.NOT_FOUND, "知识点不存在");
+        if (kp == null) { throw new BusinessException(ResultCode.NOT_FOUND, "知识点不存在"); }
         knowledgePointMapper.deleteById(id);
     }
 }

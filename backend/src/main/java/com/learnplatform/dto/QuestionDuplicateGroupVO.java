@@ -16,7 +16,9 @@ public class QuestionDuplicateGroupVO {
     public Integer getSimilarityScore() { return similarityScore; }
     public void setSimilarityScore(Integer similarityScore) { this.similarityScore = similarityScore; }
     public String getRepresentativeContent() { return representativeContent; }
-    public void setRepresentativeContent(String representativeContent) { this.representativeContent = representativeContent; }
+    public void setRepresentativeContent(String representativeContent) {
+        this.representativeContent = representativeContent;
+    }
     public List<QuestionVO> getQuestions() { return questions; }
     public void setQuestions(List<QuestionVO> questions) { this.questions = questions; }
 }

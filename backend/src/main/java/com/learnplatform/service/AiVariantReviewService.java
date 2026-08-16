@@ -75,7 +75,7 @@ public class AiVariantReviewService {
     @Transactional
     public AiVariantReviewVO review(Long variantId, AiVariantReviewRequest request, Long reviewerId) {
         AiVariantQuestion variant = variantMapper.selectForUpdate(variantId);
-        if (variant == null) throw notFound();
+        if (variant == null) { throw notFound(); }
         if (!"PENDING".equals(variant.getReviewStatus())) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "该变式题已完成审查");
         }
@@ -139,7 +139,7 @@ public class AiVariantReviewService {
     private AiVariantReviewVO toView(AiVariantQuestion variant) {
         QuestionAiAsset asset = assetMapper.selectById(variant.getAssetId());
         Question mother = asset == null ? null : questionMapper.selectById(asset.getQuestionId());
-        if (mother == null) throw notFound();
+        if (mother == null) { throw notFound(); }
         Course course = courseMapper.selectById(mother.getCourseId());
         AiVariantReviewVO view = new AiVariantReviewVO();
         view.setId(variant.getId());

@@ -10,6 +10,8 @@ import com.learnplatform.dto.SubmissionQualityCheckVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.QuestionSubmissionService;
 import com.learnplatform.service.SubmissionAiQualityService;
+import com.learnplatform.service.SubmissionDifficultyAssessmentService;
+import com.learnplatform.service.SubmissionKPTaggingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -26,13 +28,13 @@ public class AdminQuestionSubmissionController {
 
     private final QuestionSubmissionService submissionService;
     private final SubmissionAiQualityService qualityService;
-    private final com.learnplatform.service.SubmissionKPTaggingService kpTaggingService;
-    private final com.learnplatform.service.SubmissionDifficultyAssessmentService difficultyAssessmentService;
+    private final SubmissionKPTaggingService kpTaggingService;
+    private final SubmissionDifficultyAssessmentService difficultyAssessmentService;
 
     public AdminQuestionSubmissionController(QuestionSubmissionService submissionService,
                                               SubmissionAiQualityService qualityService,
-                                              com.learnplatform.service.SubmissionKPTaggingService kpTaggingService,
-                                              com.learnplatform.service.SubmissionDifficultyAssessmentService difficultyAssessmentService) {
+                                              SubmissionKPTaggingService kpTaggingService,
+                                              SubmissionDifficultyAssessmentService difficultyAssessmentService) {
         this.submissionService = submissionService;
         this.qualityService = qualityService;
         this.kpTaggingService = kpTaggingService;

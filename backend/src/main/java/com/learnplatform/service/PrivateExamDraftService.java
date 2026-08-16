@@ -281,12 +281,14 @@ public class PrivateExamDraftService {
             }
             List<String> labels = new ArrayList<>();
             answerNode.forEach(node -> {
-                if (!node.isTextual()) throw new IllegalArgumentException("invalid answer label");
+                if (!node.isTextual()) { throw new IllegalArgumentException("invalid answer label"); }
                 labels.add(node.asText());
             });
             List<String> normalized = normalizeAndValidateAnswers(labels, question);
             String analysis = analysisNode.asText().trim();
-            if (analysis.isBlank() || analysis.length() > 10000) throw new IllegalArgumentException("invalid analysis");
+            if (analysis.isBlank() || analysis.length() > 10000) {
+                throw new IllegalArgumentException("invalid analysis");
+            }
             return new AiSuggestion(normalized, analysis);
         } catch (Exception exception) {
             throw validation("AI 建议答案未通过结构校验，请重试");
@@ -299,10 +301,10 @@ public class PrivateExamDraftService {
         LinkedHashSet<String> normalized = new LinkedHashSet<>();
         for (String label : labels) {
             String value = label.trim().toUpperCase(Locale.ROOT);
-            if (!allowed.contains(value)) throw validation("答案必须匹配现有选项");
+            if (!allowed.contains(value)) { throw validation("答案必须匹配现有选项"); }
             normalized.add(value);
         }
-        if (normalized.isEmpty()) throw validation("答案不能为空");
+        if (normalized.isEmpty()) { throw validation("答案不能为空"); }
         if (("SINGLE_CHOICE".equals(question.getQuestionType())
                 || "TRUE_FALSE".equals(question.getQuestionType())) && normalized.size() != 1) {
             throw validation("单选或判断题只能选择一个答案");
@@ -394,7 +396,7 @@ public class PrivateExamDraftService {
     }
 
     private List<String> readStrings(String json) {
-        if (json == null || json.isBlank()) return List.of();
+        if (json == null || json.isBlank()) { return List.of(); }
         try {
             return objectMapper.readValue(json, STRING_LIST);
         } catch (Exception exception) {
@@ -420,7 +422,7 @@ public class PrivateExamDraftService {
         if (trimmed.startsWith("```")) {
             int firstLine = trimmed.indexOf('\n');
             int closing = trimmed.lastIndexOf("```");
-            if (firstLine >= 0 && closing > firstLine) return trimmed.substring(firstLine + 1, closing).trim();
+            if (firstLine >= 0 && closing > firstLine) { return trimmed.substring(firstLine + 1, closing).trim(); }
         }
         return trimmed;
     }

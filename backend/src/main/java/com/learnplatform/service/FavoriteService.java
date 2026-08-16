@@ -94,7 +94,7 @@ public class FavoriteService {
         List<FavoriteQuestionVO> voList = favoritePage.getRecords().stream()
                 .map(fav -> {
                     Question question = questionMapper.selectById(fav.getQuestionId());
-                    if (!QuestionAccessPolicy.canAccess(question, userId)) return null;
+                    if (!QuestionAccessPolicy.canAccess(question, userId)) { return null; }
                     FavoriteQuestionVO vo = new FavoriteQuestionVO();
                     vo.setId(fav.getId());
                     vo.setQuestionId(fav.getQuestionId());

@@ -178,24 +178,28 @@ public class CourseOverviewService {
         List<KnowledgePoint> points = knowledgePointMapper.selectList(new LambdaQueryWrapper<KnowledgePoint>()
                 .eq(KnowledgePoint::getCourseId, courseId)
                 .orderByAsc(KnowledgePoint::getSortOrder));
-        if (points.isEmpty()) return List.of();
+        if (points.isEmpty()) { return List.of(); }
         List<Long> pointIds = points.stream().map(KnowledgePoint::getId).toList();
         List<TutorContent> contents = tutorContentMapper.selectList(new LambdaQueryWrapper<TutorContent>()
                 .in(TutorContent::getKnowledgePointId, pointIds)
                 .eq(TutorContent::getReviewStatus, "REVIEWED"));
-        if (contents.isEmpty()) return List.of();
+        if (contents.isEmpty()) { return List.of(); }
         Set<Long> contentIds = contents.stream().map(TutorContent::getId).collect(Collectors.toSet());
         List<TutorSession> sessions = tutorSessionMapper.selectList(new LambdaQueryWrapper<TutorSession>()
                         .eq(TutorSession::getUserId, userId)
                         .eq(TutorSession::getCourseId, courseId)
                         .in(TutorSession::getTutorContentId, contentIds));
-        Set<Long> completedContentIds = sessions.stream().filter(session -> Boolean.TRUE.equals(session.getCheckCorrect()))
+        Set<Long> completedContentIds = sessions.stream()
+                .filter(session -> Boolean.TRUE.equals(session.getCheckCorrect()))
                 .map(TutorSession::getTutorContentId).collect(Collectors.toSet());
-        Set<Long> attemptedContentIds = sessions.stream().map(TutorSession::getTutorContentId).collect(Collectors.toSet());
+        Set<Long> attemptedContentIds = sessions.stream().map(TutorSession::getTutorContentId)
+                .collect(Collectors.toSet());
         Map<Long, Integer> pointOrder = points.stream().collect(Collectors.toMap(KnowledgePoint::getId,
-                point -> point.getSortOrder() == null ? Integer.MAX_VALUE : point.getSortOrder(), (left, right) -> left));
+                point -> point.getSortOrder() == null ? Integer.MAX_VALUE : point.getSortOrder(),
+                (left, right) -> left));
         return contents.stream()
-                .sorted(Comparator.comparing(content -> pointOrder.getOrDefault(content.getKnowledgePointId(), Integer.MAX_VALUE)))
+                .sorted(Comparator.comparing(content -> pointOrder
+                        .getOrDefault(content.getKnowledgePointId(), Integer.MAX_VALUE)))
                 .map(content -> new TutorProgress(content, completedContentIds.contains(content.getId()) ? "COMPLETED"
                         : attemptedContentIds.contains(content.getId()) ? "IN_PROGRESS" : "NOT_STARTED"))
                 .toList();
@@ -229,7 +233,7 @@ public class CourseOverviewService {
     }
 
     private CourseStageAssessmentSummaryVO toAssessmentSummary(CourseStageAssessment assessment) {
-        if (assessment == null) return null;
+        if (assessment == null) { return null; }
         CourseStageAssessmentSummaryVO view = new CourseStageAssessmentSummaryVO();
         view.setId(assessment.getId());
         view.setSelectionStrategy(assessment.getSelectionStrategy());

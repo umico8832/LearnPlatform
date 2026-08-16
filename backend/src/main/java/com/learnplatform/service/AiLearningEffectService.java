@@ -155,7 +155,7 @@ public class AiLearningEffectService {
 
         Map<UserQuestionKey, LocalDateTime> firstViewByUserQuestion = new HashMap<>();
         for (AiAssetView view : allRelevantViews) {
-            if (view.getFirstViewTime() == null) continue;
+            if (view.getFirstViewTime() == null) { continue; }
             UserQuestionKey key = new UserQuestionKey(view.getUserId(), view.getQuestionId());
             firstViewByUserQuestion.merge(key, view.getFirstViewTime(),
                     (left, right) -> left.isBefore(right) ? left : right);
@@ -174,12 +174,12 @@ public class AiLearningEffectService {
                     && !practice.getCreateTime().isBefore(firstView);
             if (afterView) {
                 afterViewPracticeCount++;
-                if (practice.getUserId() != null) afterViewUsers.add(practice.getUserId());
-                if (Integer.valueOf(1).equals(practice.getIsCorrect())) afterViewCorrectCount++;
+                if (practice.getUserId() != null) { afterViewUsers.add(practice.getUserId()); }
+                if (Integer.valueOf(1).equals(practice.getIsCorrect())) { afterViewCorrectCount++; }
             } else {
                 baselinePracticeCount++;
-                if (practice.getUserId() != null) baselineUsers.add(practice.getUserId());
-                if (Integer.valueOf(1).equals(practice.getIsCorrect())) baselineCorrectCount++;
+                if (practice.getUserId() != null) { baselineUsers.add(practice.getUserId()); }
+                if (Integer.valueOf(1).equals(practice.getIsCorrect())) { baselineCorrectCount++; }
             }
         }
 
@@ -198,7 +198,8 @@ public class AiLearningEffectService {
         vo.setEngagedUserCount(periodViews.stream().map(AiAssetView::getUserId).distinct().count());
         vo.setViewedQuestionCount(periodViews.stream().map(AiAssetView::getQuestionId).distinct().count());
         vo.setFeedbackCount((long) periodFeedback.size());
-        vo.setHelpfulRate(percentage(periodFeedback.stream().filter(item -> Boolean.TRUE.equals(item.getHelpful())).count(),
+        vo.setHelpfulRate(percentage(periodFeedback.stream()
+                .filter(item -> Boolean.TRUE.equals(item.getHelpful())).count(),
                 periodFeedback.size()));
         vo.setMinimumComparisonSample(MIN_COMPARISON_SAMPLE);
         vo.setMinimumDistinctUsers(MIN_DISTINCT_USERS);
@@ -281,8 +282,8 @@ public class AiLearningEffectService {
                     .count();
             boolean sampleSufficient = answeredCount >= MIN_COMPARISON_SAMPLE
                     && answeredUserCount >= MIN_DISTINCT_USERS;
-            if (answeredCount > 0) coveredCount++;
-            if (sampleSufficient) sufficientCount++;
+            if (answeredCount > 0) { coveredCount++; }
+            if (sampleSufficient) { sufficientCount++; }
 
             AiLearningEffectVO.VariantDifficultyEffect item = new AiLearningEffectVO.VariantDifficultyEffect();
             item.setDifficulty(difficulty);
@@ -324,14 +325,14 @@ public class AiLearningEffectService {
         Set<Long> questionIds = new HashSet<>();
         views.stream().map(AiAssetView::getQuestionId).filter(id -> id != null).forEach(questionIds::add);
         practices.stream().map(PracticeRecord::getQuestionId).filter(id -> id != null).forEach(questionIds::add);
-        if (questionIds.isEmpty()) return new CrossQuestionStats();
+        if (questionIds.isEmpty()) { return new CrossQuestionStats(); }
 
         List<QuestionKnowledgePoint> relations = questionKnowledgePointMapper.selectList(
                 new LambdaQueryWrapper<QuestionKnowledgePoint>()
                         .in(QuestionKnowledgePoint::getQuestionId, questionIds));
         Map<Long, Set<Long>> knowledgePointsByQuestion = new HashMap<>();
         for (QuestionKnowledgePoint relation : relations) {
-            if (relation.getQuestionId() == null || relation.getKnowledgePointId() == null) continue;
+            if (relation.getQuestionId() == null || relation.getKnowledgePointId() == null) { continue; }
             knowledgePointsByQuestion
                     .computeIfAbsent(relation.getQuestionId(), key -> new HashSet<>())
                     .add(relation.getKnowledgePointId());
@@ -339,8 +340,9 @@ public class AiLearningEffectService {
 
         Map<Long, List<SourceView>> viewsByUser = new HashMap<>();
         for (AiAssetView view : views) {
-            if (view.getUserId() == null || view.getQuestionId() == null || view.getFirstViewTime() == null) continue;
-            if (!knowledgePointsByQuestion.containsKey(view.getQuestionId())) continue;
+            if (view.getUserId() == null || view.getQuestionId() == null
+                    || view.getFirstViewTime() == null) { continue; }
+            if (!knowledgePointsByQuestion.containsKey(view.getQuestionId())) { continue; }
             viewsByUser.computeIfAbsent(view.getUserId(), key -> new ArrayList<>())
                     .add(new SourceView(view.getQuestionId(), view.getFirstViewTime()));
         }
@@ -351,15 +353,15 @@ public class AiLearningEffectService {
                 continue;
             }
             Set<Long> targetKnowledgePoints = knowledgePointsByQuestion.get(practice.getQuestionId());
-            if (targetKnowledgePoints == null || targetKnowledgePoints.isEmpty()) continue;
+            if (targetKnowledgePoints == null || targetKnowledgePoints.isEmpty()) { continue; }
 
             boolean hasPriorRelatedView = false;
             boolean hasRecentPriorRelatedView = false;
             boolean hasUpcomingRelatedView = false;
             for (SourceView sourceView : viewsByUser.getOrDefault(practice.getUserId(), List.of())) {
-                if (sourceView.questionId().equals(practice.getQuestionId())) continue;
+                if (sourceView.questionId().equals(practice.getQuestionId())) { continue; }
                 Set<Long> sourceKnowledgePoints = knowledgePointsByQuestion.get(sourceView.questionId());
-                if (!sharesKnowledgePoint(sourceKnowledgePoints, targetKnowledgePoints)) continue;
+                if (!sharesKnowledgePoint(sourceKnowledgePoints, targetKnowledgePoints)) { continue; }
 
                 if (!sourceView.viewTime().isAfter(practice.getCreateTime())) {
                     hasPriorRelatedView = true;
@@ -376,18 +378,18 @@ public class AiLearningEffectService {
             if (hasRecentPriorRelatedView) {
                 result.afterViewPracticeCount++;
                 result.afterViewUsers.add(practice.getUserId());
-                if (Integer.valueOf(1).equals(practice.getIsCorrect())) result.afterViewCorrectCount++;
+                if (Integer.valueOf(1).equals(practice.getIsCorrect())) { result.afterViewCorrectCount++; }
             } else if (!hasPriorRelatedView && hasUpcomingRelatedView) {
                 result.baselinePracticeCount++;
                 result.baselineUsers.add(practice.getUserId());
-                if (Integer.valueOf(1).equals(practice.getIsCorrect())) result.baselineCorrectCount++;
+                if (Integer.valueOf(1).equals(practice.getIsCorrect())) { result.baselineCorrectCount++; }
             }
         }
         return result;
     }
 
     private boolean sharesKnowledgePoint(Set<Long> left, Set<Long> right) {
-        if (left == null || left.isEmpty() || right == null || right.isEmpty()) return false;
+        if (left == null || left.isEmpty() || right == null || right.isEmpty()) { return false; }
         Set<Long> smaller = left.size() <= right.size() ? left : right;
         Set<Long> larger = smaller == left ? right : left;
         return smaller.stream().anyMatch(larger::contains);
@@ -444,7 +446,7 @@ public class AiLearningEffectService {
                     .filter(item -> assetType.equals(item.getAssetType())).toList();
             Map<UserQuestionKey, LocalDateTime> firstTypeViewByUserQuestion = new HashMap<>();
             for (AiAssetView view : allRelevantViews) {
-                if (!assetType.equals(view.getAssetType()) || view.getFirstViewTime() == null) continue;
+                if (!assetType.equals(view.getAssetType()) || view.getFirstViewTime() == null) { continue; }
                 UserQuestionKey key = new UserQuestionKey(view.getUserId(), view.getQuestionId());
                 firstTypeViewByUserQuestion.merge(key, view.getFirstViewTime(),
                         (left, right) -> left.isBefore(right) ? left : right);
@@ -468,11 +470,11 @@ public class AiLearningEffectService {
                 if (afterView) {
                     afterViewPracticeCount++;
                     afterViewUsers.add(practice.getUserId());
-                    if (Integer.valueOf(1).equals(practice.getIsCorrect())) afterViewCorrectCount++;
+                    if (Integer.valueOf(1).equals(practice.getIsCorrect())) { afterViewCorrectCount++; }
                 } else {
                     baselinePracticeCount++;
                     baselineUsers.add(practice.getUserId());
-                    if (Integer.valueOf(1).equals(practice.getIsCorrect())) baselineCorrectCount++;
+                    if (Integer.valueOf(1).equals(practice.getIsCorrect())) { baselineCorrectCount++; }
                 }
             }
 
@@ -548,12 +550,12 @@ public class AiLearningEffectService {
     }
 
     private int normalizeDays(Integer requestedDays) {
-        if (requestedDays == null) return DEFAULT_DAYS;
+        if (requestedDays == null) { return DEFAULT_DAYS; }
         return Math.max(1, Math.min(requestedDays, MAX_DAYS));
     }
 
     private Double percentage(long numerator, long denominator) {
-        if (denominator <= 0) return null;
+        if (denominator <= 0) { return null; }
         return roundOne(numerator * 100.0 / denominator);
     }
 
@@ -587,7 +589,7 @@ public class AiLearningEffectService {
     }
 
     private AiVariantTrainingVO toVariantTrainingVO(AiVariantTraining training) {
-        if (training == null) return null;
+        if (training == null) { return null; }
         AiVariantTrainingVO vo = new AiVariantTrainingVO();
         vo.setQuestionId(training.getQuestionId());
         vo.setAssetId(training.getAssetId());

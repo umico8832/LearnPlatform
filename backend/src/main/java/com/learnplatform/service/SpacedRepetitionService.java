@@ -291,7 +291,8 @@ public class SpacedRepetitionService {
                 .filter(o -> o.getIsCorrect() != null && o.getIsCorrect() == 1)
                 .collect(Collectors.toList());
         String correctAnswer = answerEvaluator.buildCorrectAnswer(correctOptions, question.getQuestionType());
-        boolean isCorrect = answerEvaluator.isCorrect(question.getQuestionType(), request.getUserAnswer(), correctAnswer);
+        boolean isCorrect = answerEvaluator.isCorrect(question.getQuestionType(), request.getUserAnswer(),
+                correctAnswer);
 
         // 保存答题记录
         PracticeRecord record = new PracticeRecord();
@@ -405,7 +406,10 @@ public class SpacedRepetitionService {
 
         // 获取所有卡片进行分类统计
         List<QuestionReviewSchedule> allCards = reviewScheduleMapper.selectList(allWrapper);
-        int newCards = 0, learning = 0, mastered = 0, difficult = 0;
+        int newCards = 0;
+        int learning = 0;
+        int mastered = 0;
+        int difficult = 0;
         BigDecimal totalEf = BigDecimal.ZERO;
 
         for (QuestionReviewSchedule card : allCards) {
@@ -427,7 +431,9 @@ public class SpacedRepetitionService {
         stats.setLearningCards(learning);
         stats.setMasteredCards(mastered);
         stats.setDifficultCards(difficult);
-        stats.setAvgEaseFactor(totalCards > 0 ? totalEf.divide(BigDecimal.valueOf(totalCards), 2, RoundingMode.HALF_UP).doubleValue() : 2.5);
+        stats.setAvgEaseFactor(totalCards > 0
+                ? totalEf.divide(BigDecimal.valueOf(totalCards), 2, RoundingMode.HALF_UP).doubleValue()
+                : 2.5);
 
         // 连续复习天数（从今天往回数，每天至少完成 1 题复习）
         int streak = 0;
@@ -624,7 +630,8 @@ public class SpacedRepetitionService {
                 boolean isOverdue = schedule.getNextReviewDate().isBefore(today);
                 vo.setOverdue(isOverdue);
                 if (isOverdue) {
-                    vo.setOverdueDays((int) java.time.temporal.ChronoUnit.DAYS.between(schedule.getNextReviewDate(), today));
+                    vo.setOverdueDays((int) java.time.temporal.ChronoUnit.DAYS
+                            .between(schedule.getNextReviewDate(), today));
                 }
             }
 
@@ -706,7 +713,7 @@ public class SpacedRepetitionService {
     }
 
     private String truncate(String text, int maxLen) {
-        if (text == null) return "";
+        if (text == null) { return ""; }
         // Remove markdown/HTML for preview
         String plain = text.replaceAll("<[^>]+>", "").replaceAll("\\s+", " ").trim();
         return plain.length() > maxLen ? plain.substring(0, maxLen) + "..." : plain;

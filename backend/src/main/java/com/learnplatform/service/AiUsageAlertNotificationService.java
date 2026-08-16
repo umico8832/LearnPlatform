@@ -61,10 +61,13 @@ public class AiUsageAlertNotificationService {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             String body = objectMapper.writeValueAsString(buildPayload(alert));
-            ResponseEntity<String> response = restOperations.postForEntity(webhookUrl, new HttpEntity<>(body, headers), String.class);
-            log.info("AI usage alert webhook sent: alertId={}, status={}", alert.getId(), response.getStatusCode().value());
+            ResponseEntity<String> response = restOperations.postForEntity(webhookUrl,
+                    new HttpEntity<>(body, headers), String.class);
+            log.info("AI usage alert webhook sent: alertId={}, status={}", alert.getId(),
+                    response.getStatusCode().value());
         } catch (Exception e) {
-            log.warn("Failed to send AI usage alert webhook: alertId={}, type={}", alert.getId(), alert.getAlertType(), e);
+            log.warn("Failed to send AI usage alert webhook: alertId={}, type={}", alert.getId(),
+                    alert.getAlertType(), e);
         }
     }
 

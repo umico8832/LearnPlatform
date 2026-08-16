@@ -244,8 +244,8 @@ public class QuestionReviewSuggestionService {
     }
 
     private String normalizeRecommendation(String value) {
-        if ("REVISE".equalsIgnoreCase(value)) return "REVISE";
-        if ("REJECT".equalsIgnoreCase(value)) return "REJECT";
+        if ("REVISE".equalsIgnoreCase(value)) { return "REVISE"; }
+        if ("REJECT".equalsIgnoreCase(value)) { return "REJECT"; }
         return "APPROVE";
     }
 
@@ -274,11 +274,11 @@ public class QuestionReviewSuggestionService {
     }
 
     private String typeLabel(String type) {
-        if ("SINGLE_CHOICE".equals(type)) return "单选题";
-        if ("MULTIPLE_CHOICE".equals(type)) return "多选题";
-        if ("TRUE_FALSE".equals(type)) return "判断题";
-        if ("FILL_BLANK".equals(type)) return "填空题";
-        if ("SHORT_ANSWER".equals(type)) return "简答题";
+        if ("SINGLE_CHOICE".equals(type)) { return "单选题"; }
+        if ("MULTIPLE_CHOICE".equals(type)) { return "多选题"; }
+        if ("TRUE_FALSE".equals(type)) { return "判断题"; }
+        if ("FILL_BLANK".equals(type)) { return "填空题"; }
+        if ("SHORT_ANSWER".equals(type)) { return "简答题"; }
         return type != null ? type : "未知题型";
     }
 }

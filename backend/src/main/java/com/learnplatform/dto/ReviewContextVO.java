@@ -29,5 +29,7 @@ public class ReviewContextVO {
     public void setOverdueCards(List<ReviewScheduleVO> overdueCards) { this.overdueCards = overdueCards; }
 
     public List<Integer> getRecentDailyReviews() { return recentDailyReviews; }
-    public void setRecentDailyReviews(List<Integer> recentDailyReviews) { this.recentDailyReviews = recentDailyReviews; }
+    public void setRecentDailyReviews(List<Integer> recentDailyReviews) {
+        this.recentDailyReviews = recentDailyReviews;
+    }
 }

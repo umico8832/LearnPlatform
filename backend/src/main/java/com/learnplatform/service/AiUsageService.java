@@ -127,9 +127,12 @@ public class AiUsageService {
             fs.setCount((long) logs.size());
             fs.setSuccessCount(logs.stream().filter(l -> l.getStatus() != null && l.getStatus() == 1).count());
             fs.setFailedCount(fs.getCount() - fs.getSuccessCount());
-            fs.setTotalTokens(logs.stream().filter(l -> l.getTokensUsed() != null).mapToLong(AiCallLog::getTokensUsed).sum());
+            fs.setTotalTokens(logs.stream().filter(l -> l.getTokensUsed() != null)
+                    .mapToLong(AiCallLog::getTokensUsed).sum());
             fs.setTotalCostUsd(sumCosts(logs));
-            fs.setAvgDuration(Math.round(logs.stream().filter(l -> l.getDuration() != null && l.getDuration() > 0).mapToInt(AiCallLog::getDuration).average().orElse(0) * 100.0) / 100.0);
+            fs.setAvgDuration(Math.round(logs.stream()
+                    .filter(l -> l.getDuration() != null && l.getDuration() > 0)
+                    .mapToInt(AiCallLog::getDuration).average().orElse(0) * 100.0) / 100.0);
             functionStats.add(fs);
         }
         functionStats.sort(Comparator.comparingLong(AiUsageOverviewVO.FunctionStats::getCount).reversed());
@@ -145,9 +148,12 @@ public class AiUsageService {
             ms.setModel(entry.getKey());
             List<AiCallLog> logs = entry.getValue();
             ms.setCount((long) logs.size());
-            ms.setTotalTokens(logs.stream().filter(l -> l.getTokensUsed() != null).mapToLong(AiCallLog::getTokensUsed).sum());
+            ms.setTotalTokens(logs.stream().filter(l -> l.getTokensUsed() != null)
+                    .mapToLong(AiCallLog::getTokensUsed).sum());
             ms.setTotalCostUsd(sumCosts(logs));
-            ms.setAvgDuration(Math.round(logs.stream().filter(l -> l.getDuration() != null && l.getDuration() > 0).mapToInt(AiCallLog::getDuration).average().orElse(0) * 100.0) / 100.0);
+            ms.setAvgDuration(Math.round(logs.stream()
+                    .filter(l -> l.getDuration() != null && l.getDuration() > 0)
+                    .mapToInt(AiCallLog::getDuration).average().orElse(0) * 100.0) / 100.0);
             modelStats.add(ms);
         }
         modelStats.sort(Comparator.comparingLong(AiUsageOverviewVO.ModelStats::getCount).reversed());
@@ -167,7 +173,8 @@ public class AiUsageService {
             dt.setTotalCount((long) dayLogs.size());
             dt.setSuccessCount(dayLogs.stream().filter(l -> l.getStatus() != null && l.getStatus() == 1).count());
             dt.setFailedCount(dt.getTotalCount() - dt.getSuccessCount());
-            dt.setTotalTokens(dayLogs.stream().filter(l -> l.getTokensUsed() != null).mapToLong(AiCallLog::getTokensUsed).sum());
+            dt.setTotalTokens(dayLogs.stream().filter(l -> l.getTokensUsed() != null)
+                    .mapToLong(AiCallLog::getTokensUsed).sum());
             dt.setTotalCostUsd(sumCosts(dayLogs));
             dailyTrends.add(dt);
         }
@@ -193,9 +200,12 @@ public class AiUsageService {
             tu.setUsername(usernameMap.getOrDefault(entry.getKey(), "未知用户"));
             List<AiCallLog> userLogs = entry.getValue();
             tu.setCallCount((long) userLogs.size());
-            tu.setTotalTokens(userLogs.stream().filter(l -> l.getTokensUsed() != null).mapToLong(AiCallLog::getTokensUsed).sum());
+            tu.setTotalTokens(userLogs.stream().filter(l -> l.getTokensUsed() != null)
+                    .mapToLong(AiCallLog::getTokensUsed).sum());
             tu.setTotalCostUsd(sumCosts(userLogs));
-            tu.setAvgDuration(Math.round(userLogs.stream().filter(l -> l.getDuration() != null && l.getDuration() > 0).mapToInt(AiCallLog::getDuration).average().orElse(0) * 100.0) / 100.0);
+            tu.setAvgDuration(Math.round(userLogs.stream()
+                    .filter(l -> l.getDuration() != null && l.getDuration() > 0)
+                    .mapToInt(AiCallLog::getDuration).average().orElse(0) * 100.0) / 100.0);
             topUsers.add(tu);
         }
         topUsers.sort(Comparator.comparingLong(AiUsageOverviewVO.TopUser::getCallCount).reversed());
@@ -219,7 +229,9 @@ public class AiUsageService {
                     rf.setPromptHash(l.getPromptHash());
                     rf.setModelConfigVersion(l.getModelConfigVersion());
                     rf.setErrorMessage(l.getErrorMessage());
-                    rf.setCreateTime(l.getCreateTime() != null ? l.getCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : null);
+                    rf.setCreateTime(l.getCreateTime() != null
+                            ? l.getCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                            : null);
                     return rf;
                 })
                 .collect(Collectors.toList());
@@ -261,7 +273,8 @@ public class AiUsageService {
         report.setCurrent(current);
         report.setPrevious(previous);
         report.setChanges(changes);
-        report.setAlerts(syncAlerts(buildAlerts(current, previous, changes), resolvedDays, currentStart, now, current, previous, changes));
+        report.setAlerts(syncAlerts(buildAlerts(current, previous, changes), resolvedDays, currentStart,
+                now, current, previous, changes));
         return report;
     }
 
@@ -307,7 +320,8 @@ public class AiUsageService {
         stats.setTotalCalls(totalCalls);
         stats.setFailedCalls(failedCalls);
         stats.setFailureRate(totalCalls == 0 ? 0.0 : round(failedCalls * 100.0 / totalCalls));
-        stats.setTotalTokens(logs.stream().filter(item -> item.getTokensUsed() != null).mapToLong(AiCallLog::getTokensUsed).sum());
+        stats.setTotalTokens(logs.stream().filter(item -> item.getTokensUsed() != null)
+                .mapToLong(AiCallLog::getTokensUsed).sum());
         stats.setAvgDuration(round(logs.stream().filter(item -> item.getDuration() != null && item.getDuration() > 0)
                 .mapToInt(AiCallLog::getDuration).average().orElse(0)));
         stats.setTotalCostUsd(sumCosts(logs));
@@ -331,7 +345,8 @@ public class AiUsageService {
         List<AiUsageReportVO.Alert> alerts = new ArrayList<>();
         if (current.getTotalCalls() >= MIN_ALERT_CALLS && current.getFailureRate() >= FAILURE_RATE_ALERT_THRESHOLD) {
             alerts.add(new AiUsageReportVO.Alert("WARNING", "HIGH_FAILURE_RATE",
-                    "当前周期失败率为 " + current.getFailureRate() + "%（" + current.getFailedCalls() + "/" + current.getTotalCalls() + "），请检查上游服务与错误日志。"));
+                    "当前周期失败率为 " + current.getFailureRate() + "%（" + current.getFailedCalls()
+                    + "/" + current.getTotalCalls() + "），请检查上游服务与错误日志。"));
         }
         if (current.getTotalCalls() >= MIN_ALERT_CALLS && previous.getFailureRate() > 0
                 && current.getFailureRate() >= previous.getFailureRate() * 2) {
@@ -346,7 +361,8 @@ public class AiUsageService {
         if (changes.getCallsPercent() != null && changes.getCallsPercent() >= 100
                 && current.getTotalCalls() - previous.getTotalCalls() >= USAGE_SPIKE_MIN_DELTA) {
             alerts.add(new AiUsageReportVO.Alert("INFO", "CALL_VOLUME_SPIKE",
-                    "调用量较前一周期增长 " + changes.getCallsPercent() + "%（+" + (current.getTotalCalls() - previous.getTotalCalls()) + " 次）。"));
+                    "调用量较前一周期增长 " + changes.getCallsPercent() + "%（+"
+                    + (current.getTotalCalls() - previous.getTotalCalls()) + " 次）。"));
         }
         return alerts;
     }
@@ -456,7 +472,8 @@ public class AiUsageService {
         if (current == null || previous == null || previous.signum() == 0) {
             return null;
         }
-        return round(current.subtract(previous).multiply(BigDecimal.valueOf(100)).divide(previous, 6, java.math.RoundingMode.HALF_UP).doubleValue());
+        return round(current.subtract(previous).multiply(BigDecimal.valueOf(100))
+                .divide(previous, 6, java.math.RoundingMode.HALF_UP).doubleValue());
     }
 
     private double round(double value) {
