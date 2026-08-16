@@ -17,9 +17,9 @@
 
       <section v-if="hasLearningContext" class="lesson-block evidence" aria-labelledby="learning-context-heading">
         <div class="block-heading">
-          <LpKicker>跨入口学习证据</LpKicker>
-          <h2 id="learning-context-heading">本节 Tutor 已衔接你的课程学习记录</h2>
-          <p>以下是目标知识点及其课程目录范围内的服务端记录，不代表已经掌握。</p>
+          <LpKicker>最近相关记录</LpKicker>
+          <h2 id="learning-context-heading">与本节内容相关的记录</h2>
+          <p>只统计真实作答、错题与复习记录，不推断掌握程度。</p>
         </div>
         <div class="evidence-grid">
           <div v-if="session.learningContext.paperAnswerCount" class="evidence-item">

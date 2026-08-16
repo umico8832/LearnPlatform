@@ -118,11 +118,11 @@ describe('TutorSessionView', () => {
     })
   })
 
-  it('展示Tutor会话启动时消费的跨入口学习证据', async () => {
+  it('展示Tutor会话启动时消费的最近相关记录', async () => {
     const wrapper = mount(TutorSessionView, { global: { stubs } })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('跨入口学习证据')
+    expect(wrapper.text()).toContain('最近相关记录')
     expect(wrapper.text()).toContain('3次真题学习作答')
     expect(wrapper.text()).toContain('其中 2 次答错')
     expect(wrapper.text()).toContain('1次试卷 AI 辅导')
@@ -154,6 +154,6 @@ describe('TutorSessionView', () => {
     const wrapper = mount(TutorSessionView, { global: { stubs } })
     await flushPromises()
 
-    expect(wrapper.text()).not.toContain('跨入口学习证据')
+    expect(wrapper.text()).not.toContain('最近相关记录')
   })
 })

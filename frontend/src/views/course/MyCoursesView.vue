@@ -1,10 +1,6 @@
 <template>
   <div class="my-courses page-container">
-    <LpPageHeader
-      kicker="个人课程库"
-      title="我的课程"
-      description="这里是你建立长期学习关系的课程。从上次停下的地方继续，不需要研究软件怎么用。"
-    >
+    <LpPageHeader kicker="个人课程库" title="我的课程" description="从上次停下的位置继续。">
       <template #actions>
         <el-button :icon="Plus" @click="router.push({ name: 'CourseList' })">浏览课程库</el-button>
       </template>

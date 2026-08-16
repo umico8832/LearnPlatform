@@ -27,24 +27,33 @@
         <div class="hero-copy">
           <LpKicker>课程空间</LpKicker>
           <h1 class="hero-title">{{ overview.courseName }}</h1>
-          <p class="hero-desc">这里呈现已经发生的作答、复习与错题事实；它们不会被浏览时长或自评替代。</p>
+          <p class="hero-desc">课程内的作答、错题与复习记录，都会真实汇总在这里。</p>
         </div>
         <div class="hero-actions">
-          <el-button :icon="Collection" @click="openCourseContent">课程目录</el-button>
-          <el-button :icon="Document" @click="openCoursePapers">课程试卷</el-button>
-          <el-button :icon="DataAnalysis" @click="openAssessmentSetup">阶段测评</el-button>
-          <el-button :icon="Clock" :loading="assessmentHistoryLoading" @click="openAssessmentHistory">
-            测评历史
-          </el-button>
           <el-button
             type="primary"
+            size="large"
             :icon="ArrowRight"
             :loading="starting"
-            aria-label="按统一课程状态开始学习"
-            @click="startLearning"
+            :aria-label="primaryActionLabel"
+            @click="handlePrimaryAction"
           >
-            开始学习
+            {{ primaryActionLabel }}
           </el-button>
+          <el-button size="large" :icon="Collection" @click="openCourseContent">课程目录</el-button>
+          <el-dropdown trigger="click" @command="handleMoreCommand">
+            <el-button size="large" :icon="MoreFilled">
+              更多
+              <el-icon class="more-caret"><ArrowDown /></el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="papers" :icon="Document">课程试卷</el-dropdown-item>
+                <el-dropdown-item command="assessment" :icon="DataAnalysis">阶段测评</el-dropdown-item>
+                <el-dropdown-item command="history" :icon="Clock">测评历史</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </section>
 
@@ -80,7 +89,13 @@
               description="练习、复习与考试都按本课程的范围进行。"
             />
             <div class="tool-list">
-              <button v-for="tool in tools" :key="tool.path" type="button" class="tool-row" @click="openTool(tool)">
+              <button
+                v-for="tool in tools"
+                :key="tool.routeName"
+                type="button"
+                class="tool-row"
+                @click="openTool(tool)"
+              >
                 <span class="tool-icon" aria-hidden="true">
                   <el-icon :size="17"><component :is="tool.icon" /></el-icon>
                 </span>
@@ -97,7 +112,7 @@
             <LpSectionHeading
               kicker="课程目录"
               title="教学内容"
-              description="状态只来自服务端保存的理解检查；其余目录内容尚未迁入时不会被推断为未完成。"
+              description="目录状态来自真实完成的理解检查；尚未迁入的内容不会显示进度。"
             >
               <template #aside>
                 <el-button text type="primary" :icon="Collection" @click="openCourseContent"> 完整知识结构 </el-button>
@@ -130,7 +145,7 @@
 
         <aside class="activity-panel" aria-labelledby="activity-heading">
           <LpKicker>学习情况</LpKicker>
-          <h2 id="activity-heading" class="activity-title">课程学习事实</h2>
+          <h2 id="activity-heading" class="activity-title">最近学习</h2>
           <div class="stats-grid">
             <LpStat label="已作答" :value="overview.answeredCount" note="来自课程内真实判分" />
             <LpStat label="答对" :value="overview.correctCount" tone="emphasis" note="不等同于掌握度" />
@@ -215,6 +230,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { Component } from 'vue'
 import {
+  ArrowDown,
   ArrowLeft,
   ArrowRight,
   Clock,
@@ -222,6 +238,7 @@ import {
   DataAnalysis,
   Document,
   EditPen,
+  MoreFilled,
   Promotion,
   Refresh,
   Timer,
@@ -248,7 +265,8 @@ import StageAssessmentDialog from '@/components/course/StageAssessmentDialog.vue
 import AssessmentHistoryDialog from '@/components/course/AssessmentHistoryDialog.vue'
 
 interface CourseTool {
-  path: string
+  /** 必须是 router 中已注册的路由名，不能是 URL path 或业务标识。 */
+  routeName: string
   title: string
   desc: string
   icon: Component
@@ -288,36 +306,57 @@ const reviewedKnowledgePointIds = computed(() =>
 
 const tools: CourseTool[] = [
   {
-    path: 'practice',
+    routeName: 'Practice',
     title: '练习',
     desc: '按课程范围随机练习，即时判分并复盘',
     icon: Promotion,
   },
   {
-    path: 'review',
+    routeName: 'Review',
     title: '复习',
     desc: '处理本课程到期的间隔复习',
     icon: Timer,
   },
   {
-    path: 'wrong-questions',
+    routeName: 'WrongQuestions',
     title: '错题',
     desc: '集中处理本课程尚未掌握的题目',
     icon: WarningFilled,
   },
   {
-    path: 'exams',
+    routeName: 'ExamList',
     title: '真题与试卷',
     desc: '学习模式逐题理解，考试模式检验阶段效果',
     icon: Trophy,
   },
   {
-    path: 'questions',
+    routeName: 'QuestionList',
     title: '题目',
     desc: '按课程、题型和难度浏览题库',
     icon: EditPen,
   },
 ]
+
+/** 存在推荐目标时，唯一最强主操作是「继续学习」；否则由服务端统一选择下一目标。 */
+const primaryActionLabel = computed(() => (overview.value?.recommendedTargets.length ? '继续学习' : '开始学习'))
+
+function handlePrimaryAction() {
+  if (overview.value?.recommendedTargets.length) {
+    openTarget(overview.value.recommendedTargets[0])
+  } else {
+    void startLearning()
+  }
+}
+
+function handleMoreCommand(command: string) {
+  if (command === 'papers') {
+    openCoursePapers()
+  } else if (command === 'assessment') {
+    openAssessmentSetup()
+  } else if (command === 'history') {
+    void openAssessmentHistory()
+  }
+}
 
 async function fetchOverview() {
   loading.value = true
@@ -343,7 +382,7 @@ function openCoursePapers() {
 
 function openTool(tool: CourseTool) {
   router.push({
-    name: tool.path === 'questions' ? 'QuestionList' : tool.path,
+    name: tool.routeName,
     query: { courseId: String(courseId.value) },
   })
 }
@@ -565,6 +604,10 @@ onMounted(fetchOverview)
   flex-shrink: 0;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.more-caret {
+  margin-left: 2px;
 }
 
 /* ---------------- Continue ---------------- */

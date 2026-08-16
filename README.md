@@ -95,10 +95,6 @@ docker compose ps
 
 以上仅用于开发和演示环境。演示流程见[演示文档](docs/showcase/demo.md)。
 
-> 仓库内 `docs/showcase/screenshots/` 为历史演示截图，可能与当前界面存在差异；
-> 需要最新截图时可运行 `frontend/scripts/capture-demo-screenshots.mjs`（需先启动完整
-> Docker 栈）重新生成。
-
 ## 质量检查
 
 ```bash

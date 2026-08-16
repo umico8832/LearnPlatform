@@ -3,7 +3,7 @@
     <section class="page-hero">
       <div>
         <span class="section-kicker">重点题库</span>
-        <h2>我的收藏</h2>
+        <h1>我的收藏</h1>
         <p>把标记过的题目集中回看，按收藏清单快速进入针对性练习。</p>
       </div>
       <div class="header-actions">
@@ -288,7 +288,7 @@ onMounted(() => {
   letter-spacing: var(--lp-tracking-wide);
 }
 
-.page-hero h2 {
+.page-hero h1 {
   margin: 0;
   color: var(--lp-text);
   font-size: var(--lp-text-3xl);
@@ -452,7 +452,7 @@ onMounted(() => {
     padding: var(--lp-space-4);
   }
 
-  .page-hero h2 {
+  .page-hero h1 {
     font-size: var(--lp-text-2xl);
   }
 

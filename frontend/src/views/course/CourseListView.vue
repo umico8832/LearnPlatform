@@ -66,7 +66,8 @@
         </div>
       </section>
 
-      <section v-if="filteredOthers.length > 0" class="category-section">
+      <!-- 历史课程仍保留数据，但默认不抢占 408 展示位：仅在搜索时出现。 -->
+      <section v-if="keyword.trim() !== '' && filteredOthers.length > 0" class="category-section">
         <LpSectionHeading kicker="其他课程" title="更多课程" :description="`共 ${filteredOthers.length} 门课程。`" />
         <div class="category-grid">
           <article v-for="course in filteredOthers" :key="course.id ?? course.name" class="course-card">

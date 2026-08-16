@@ -3,7 +3,7 @@
     <section class="profile-hero">
       <div class="hero-copy">
         <span class="section-kicker">账户与学习档案</span>
-        <h2>个人中心</h2>
+        <h1>个人中心</h1>
         <p>管理展示昵称与登录密码，同时快速回到刷题练习和收藏题复盘。</p>
       </div>
       <div class="hero-actions">
@@ -299,7 +299,7 @@ onMounted(() => {
   letter-spacing: var(--lp-tracking-wide);
 }
 
-.profile-hero h2 {
+.profile-hero h1 {
   margin: 0;
   color: var(--lp-text);
   font-size: var(--lp-text-3xl);
@@ -534,7 +534,7 @@ onMounted(() => {
     padding: var(--lp-space-4);
   }
 
-  .profile-hero h2 {
+  .profile-hero h1 {
     font-size: var(--lp-text-2xl);
   }
 

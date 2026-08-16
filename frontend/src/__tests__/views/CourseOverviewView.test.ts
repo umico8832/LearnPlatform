@@ -97,14 +97,35 @@ describe('CourseOverviewView', () => {
     })
   })
 
-  it('从课程中枢进入当前课程的试卷学习入口', async () => {
+  it('从课程中枢的更多入口进入当前课程的试卷学习', async () => {
     const wrapper = mount(CourseOverviewView, { global: { stubs } })
     await flushPromises()
+    const vm = wrapper.vm as unknown as { handleMoreCommand: (command: string) => void }
 
-    await findButton(wrapper, '课程试卷').trigger('click')
+    vm.handleMoreCommand('papers')
 
     expect(mockPush).toHaveBeenCalledWith({
       name: 'ExamList',
+      query: { courseId: '408' },
+    })
+  })
+
+  it.each([
+    ['练习', 'Practice'],
+    ['复习', 'Review'],
+    ['错题', 'WrongQuestions'],
+    ['真题与试卷', 'ExamList'],
+    ['题目', 'QuestionList'],
+  ] as const)('学习工具「%s」使用已注册路由名 %s 并携带课程参数', async (title, routeName) => {
+    const wrapper = mount(CourseOverviewView, { global: { stubs } })
+    await flushPromises()
+
+    const toolButton = wrapper.findAll('.tool-row').find((item) => item.find('strong').text() === title)
+    expect(toolButton, `tool button with title ${title}`).toBeTruthy()
+    await toolButton!.trigger('click')
+
+    expect(mockPush).toHaveBeenCalledWith({
+      name: routeName,
       query: { courseId: '408' },
     })
   })
@@ -122,7 +143,7 @@ describe('CourseOverviewView', () => {
     const wrapper = mount(CourseOverviewView, { global: { stubs } })
     await flushPromises()
 
-    const button = wrapper.find('button[aria-label="按统一课程状态开始学习"]')
+    const button = wrapper.find('button[aria-label="开始学习"]')
     expect(button.exists()).toBe(true)
     await button.trigger('click')
     await flushPromises()
@@ -151,7 +172,7 @@ describe('CourseOverviewView', () => {
     const wrapper = mount(CourseOverviewView, { global: { stubs } })
     await flushPromises()
 
-    await wrapper.find('button[aria-label="按统一课程状态开始学习"]').trigger('click')
+    await wrapper.find('button[aria-label="开始学习"]').trigger('click')
     await flushPromises()
 
     expect(mockPush).toHaveBeenCalledWith({

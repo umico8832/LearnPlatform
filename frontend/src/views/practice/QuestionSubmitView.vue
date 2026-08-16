@@ -3,7 +3,7 @@
     <section class="page-hero">
       <div class="hero-copy">
         <span class="section-kicker">投稿中心</span>
-        <h2>题目投稿</h2>
+        <h1>题目投稿</h1>
         <p>向题库贡献高质量题目，提交后由管理员审核入库。</p>
       </div>
       <div class="hero-actions">
@@ -438,7 +438,7 @@ onMounted(() => {
   letter-spacing: var(--lp-tracking-wide);
 }
 
-.page-hero h2 {
+.page-hero h1 {
   margin: 0;
   color: var(--lp-text);
   font-size: var(--lp-text-3xl);
@@ -484,7 +484,7 @@ onMounted(() => {
     padding: var(--lp-space-4);
   }
 
-  .page-hero h2 {
+  .page-hero h1 {
     font-size: var(--lp-text-2xl);
   }
 

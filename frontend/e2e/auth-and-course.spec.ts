@@ -33,6 +33,12 @@ async function readCountdownSeconds(countdown: Locator) {
   return Number(match[1]) * 60 + Number(match[2])
 }
 
+/** 课程空间 Hero 的「更多」下拉：阶段测评 / 测评历史 / 课程试卷 收纳在内。 */
+async function openCourseMore(page: Page, item: string) {
+  await page.getByRole('button', { name: '更多' }).click()
+  await page.locator('.el-dropdown-menu__item').filter({ hasText: item }).click()
+}
+
 test('用户可通过真实登录流程访问课程库', async ({ page }) => {
   await loginAs(page, 'testuser', 'test123')
 
@@ -460,7 +466,7 @@ test('用户可完成2026真题学习与限时考试并复盘可信来源', asyn
     await overviewButton.click()
   }
 
-  await page.getByRole('button', { name: '阶段测评' }).click()
+  await openCourseMore(page, '阶段测评')
   const setupDialog = page.getByRole('dialog', { name: '开始阶段测评' })
   await expect(setupDialog).toContainText('课程整体测评')
   await setupDialog.getByRole('button', { name: '开始测评' }).click()
@@ -483,7 +489,7 @@ test('用户可完成2026真题学习与限时考试并复盘可信来源', asyn
   await expect(page.locator('.activity-panel')).toContainText('知识点：')
 
   // 限定已审查知识点范围发起新一轮测评，并确认范围随会话固化展示
-  await page.getByRole('button', { name: '阶段测评' }).click()
+  await openCourseMore(page, '阶段测评')
   const scopedSetupDialog = page.getByRole('dialog', { name: '开始阶段测评' })
   await scopedSetupDialog.locator('.el-select').click()
   await page.getByRole('option', { name: '顺序表的插入与删除' }).click()
@@ -500,7 +506,7 @@ test('用户可完成2026真题学习与限时考试并复盘可信来源', asyn
   await expect(assessmentDialog).toContainText(/答对 \d+ \/ \d+ 题/)
   await assessmentDialog.getByRole('button', { name: '关闭', exact: true }).click()
 
-  await page.getByRole('button', { name: '测评历史' }).click()
+  await openCourseMore(page, '测评历史')
   const historyDialog = page.getByRole('dialog', { name: '阶段测评历史' })
   await expect(historyDialog.locator('.el-select').first()).toBeVisible()
   await expect(historyDialog).toContainText(/答对 \d+ \/ \d+ 题/)
@@ -671,4 +677,52 @@ test('用户投稿可由管理员审核并入库', async ({ page }) => {
   await importDialog.getByRole('button', { name: '确定' }).click()
   await expect(page.getByText('入库成功')).toBeVisible()
   await expect(submissionRow).toContainText('已入库')
+})
+
+test('课程空间学习工具可进入对应页面并携带课程参数', async ({ page }) => {
+  const consoleErrors: string[] = []
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text())
+  })
+
+  await loginAs(page, 'testuser', 'test123')
+
+  // 加入 408 数据结构并进入课程空间
+  await page.goto('/courses')
+  const courseCard = page.locator('.course-card').filter({ hasText: '408 数据结构' })
+  await courseCard.getByRole('button', { name: '查看课程' }).click()
+  await expect(page).toHaveURL(/\/courses\/\d+$/)
+  // 页面切换过渡期间旧页面内容仍在 DOM，先等详情页独有按钮再判断加入分支。
+  await expect(page.getByRole('button', { name: '查看题目' })).toBeVisible()
+  const courseId = new URL(page.url()).pathname.split('/').pop()!
+  const joinButton = page.getByRole('button', { name: '加入课程库' })
+  if (await joinButton.isVisible()) {
+    await joinButton.click()
+  } else {
+    await page.getByRole('button', { name: '进入课程空间' }).click()
+  }
+  await expect(page).toHaveURL(new RegExp(`/my-courses/${courseId}$`))
+  const overviewUrl = page.url()
+
+  const toolEntries = [
+    { tool: '练习', path: '/practice', heading: '练习' },
+    { tool: '复习', path: '/review', heading: '复习' },
+    { tool: '错题', path: '/wrong-questions', heading: '错题' },
+    { tool: '真题与试卷', path: '/exams', heading: '考试与试卷' },
+    { tool: '题目', path: '/questions', heading: '题库浏览' },
+  ] as const
+
+  for (const entry of toolEntries) {
+    await page.goto(overviewUrl)
+    await expect(page).toHaveURL(new RegExp(`/my-courses/${courseId}$`))
+    await page
+      .locator('.tool-row')
+      .filter({ has: page.getByText(entry.tool, { exact: true }) })
+      .click()
+    await expect(page).toHaveURL(new RegExp(`${entry.path}\\?courseId=${courseId}$`))
+    await expect(page.getByRole('main').getByRole('heading', { name: entry.heading, exact: true })).toBeVisible()
+    expect(new URL(page.url()).searchParams.get('courseId')).toBe(courseId)
+  }
+
+  expect(consoleErrors, `课程工具导航出现 console.error：\n${consoleErrors.join('\n')}`).toEqual([])
 })

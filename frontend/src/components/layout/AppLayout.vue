@@ -81,9 +81,6 @@
           >
             <el-icon :size="18"><component :is="sidebarOpen ? Fold : Expand" /></el-icon>
           </button>
-          <div class="page-context">
-            <h1>{{ pageTitle }}</h1>
-          </div>
         </div>
         <div class="header-right">
           <button class="header-search-trigger" type="button" @click="openSearch">
@@ -185,8 +182,6 @@ function isActive(prefix: string) {
   }
   return route.path === '/courses' || route.path.startsWith('/courses/')
 }
-
-const pageTitle = computed(() => (route.meta.title as string) || 'LearnPlatform')
 
 const searchDialogRef = ref<InstanceType<typeof GlobalSearchDialog>>()
 function openSearch() {
@@ -531,21 +526,6 @@ function handleCommand(command: string) {
   background: var(--lp-surface);
   color: var(--lp-text);
   cursor: pointer;
-}
-
-.page-context {
-  min-width: 0;
-}
-
-.page-context h1 {
-  margin: 0;
-  font-size: var(--lp-text-xl);
-  font-weight: var(--lp-weight-heavy);
-  letter-spacing: var(--lp-tracking-tight);
-  color: var(--lp-text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .header-search-trigger {

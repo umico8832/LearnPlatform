@@ -211,6 +211,16 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+Final Fix Pass（Round 249，2026-08-17）：
+
+- 课程空间学习工具路由修复（`routeName` 显式映射）已通过单测与路由解析测试；
+  真实 Docker Playwright E2E **13/13 通过**（12 条原有 + 新增课程空间工具导航，
+  全新隔离 E2E 数据库），新增测试验证练习/复习/错题/真题与试卷/题目五入口的
+  URL、页面标题与 `courseId` 携带且全程无 console.error。
+- 前端 `npx vue-tsc --noEmit` 通过；Vitest 58 个测试文件、307 个测试通过；ESLint
+  0 错误 0 警告；Prettier 全量通过；`npm run build` 学习端与管理端双生产构建通过。
+- 本轮无后端代码改动，后端 CI 不受影响。
+
 Phase 24 退出门禁（Round 248，2026-08-16）：
 
 - 前端 `npx vue-tsc --noEmit` 通过；Vitest 57 个测试文件、297 个测试通过；ESLint
@@ -347,4 +357,4 @@ Phase 23 退出 L3 门禁（Round 245，2026-08-15）：
 - AiStu 桌面端同步改造。
 - 复杂向量推荐系统。
 
-最后整理日期：2026-08-16。
+最后整理日期：2026-08-17。
