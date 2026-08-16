@@ -69,7 +69,6 @@ const globalStubs = {
   },
   User: { template: '<span />' },
   Clock: { template: '<span />' },
-  DataLine: { template: '<span />' },
 }
 
 import ProfileView from '@/views/auth/ProfileView.vue'
@@ -150,11 +149,6 @@ describe('ProfileView', () => {
     const disabledInput = wrapper.find('input[disabled]')
     expect(disabledInput.exists()).toBe(true)
     expect((disabledInput.element as HTMLInputElement).value).toBe('testuser')
-  })
-
-  it('should have a learning report button', () => {
-    const wrapper = mountProfile()
-    expect(wrapper.html()).toContain('查看学习报告')
   })
 
   it('should call updateProfile API on profile form submission', async () => {

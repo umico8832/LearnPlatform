@@ -1,30 +1,38 @@
 <template>
-  <div class="not-found">
-    <h1>404</h1>
-    <p>页面不存在</p>
+  <main class="not-found">
+    <h1 class="not-found-code">404</h1>
+    <p class="not-found-message">页面不存在</p>
     <el-button type="primary" @click="$router.push('/')">返回首页</el-button>
-  </div>
+  </main>
 </template>
 
 <style scoped>
 .not-found {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
-  background: #f0f2f5;
+  gap: var(--lp-space-4);
+  padding: var(--lp-space-6);
+  text-align: center;
+  background: var(--lp-bg);
 }
 
-.not-found h1 {
-  font-size: 80px;
-  color: #409eff;
+.not-found-code {
   margin: 0;
+  font-family: var(--lp-font-display);
+  font-size: var(--lp-text-5xl);
+  font-weight: var(--lp-weight-bold);
+  line-height: var(--lp-leading-display);
+  letter-spacing: var(--lp-tracking-tight);
+  color: var(--lp-text);
 }
 
-.not-found p {
-  font-size: 18px;
-  color: #909399;
-  margin: 16px 0 32px;
+.not-found-message {
+  margin: 0;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-md);
+  line-height: var(--lp-leading-body);
 }
 </style>

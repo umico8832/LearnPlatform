@@ -1,28 +1,28 @@
 <template>
   <div class="wrong-question-container page-container">
-    <section class="page-hero">
-      <div>
-        <span class="section-kicker">薄弱项复盘</span>
-        <h2>错题本</h2>
-        <p>先处理未掌握题，再用相似题扩展练习，避免反复错在同一类问题上。</p>
-      </div>
-      <el-button type="primary" :icon="RefreshRight" @click="handleStartWrongPractice" :loading="startPracticeLoading">
-        重练错题
-      </el-button>
-    </section>
+    <LpPageHeader
+      kicker="薄弱项复盘"
+      title="错题"
+      description="先处理未掌握题，再用相似题扩展练习，避免反复错在同一类问题上。"
+    >
+      <template #actions>
+        <el-button
+          type="primary"
+          :icon="RefreshRight"
+          @click="handleStartWrongPractice"
+          :loading="startPracticeLoading"
+        >
+          重练错题
+        </el-button>
+      </template>
+    </LpPageHeader>
 
     <section class="stats-grid" v-if="stats">
-      <el-card v-for="item in statCards" :key="item.label" shadow="never" class="stat-card">
-        <span>{{ item.label }}</span>
-        <strong :class="item.tone">{{ item.value }}</strong>
-      </el-card>
+      <LpStat v-for="item in statCards" :key="item.label" :label="item.label" :value="item.value" :tone="item.tone" />
     </section>
 
-    <el-card class="filter-card" shadow="never">
-      <div class="filter-title">
-        <strong>筛选错题</strong>
-        <span>当前筛选会同步影响“重练错题”范围</span>
-      </div>
+    <section class="filter-panel">
+      <LpSectionHeading kicker="筛选" title="筛选错题" description="当前筛选会同步影响「重练错题」范围。" />
       <el-form :inline="true" :model="filter" class="filter-form">
         <el-form-item label="掌握程度">
           <el-select v-model="filter.masteryLevel" placeholder="全部" clearable>
@@ -40,11 +40,17 @@
           知识点：{{ targetKnowledgePointName }}
         </el-tag>
       </div>
-    </el-card>
+    </section>
 
     <!-- 错题列表 -->
     <div class="wrong-list" v-loading="loading">
-      <el-empty v-if="!loading && records.length === 0" description="暂无错题" />
+      <section v-if="!loading && records.length === 0" class="state-panel">
+        <LpEmptyState title="暂无错题" description="这里会收集你答错的题目，标记掌握后可随时移出。">
+          <template #actions>
+            <el-button type="primary" :icon="RefreshRight" @click="$router.push('/practice')">去刷题</el-button>
+          </template>
+        </LpEmptyState>
+      </section>
 
       <el-card v-for="item in records" :key="item.id" class="wrong-card" shadow="never">
         <div class="wrong-card-header">
@@ -53,7 +59,7 @@
               {{ getTypeLabel(item.questionType) }}
             </el-tag>
             <el-tag v-if="item.courseName" type="info" size="small">{{ item.courseName }}</el-tag>
-            <el-rate v-model="item.difficulty" disabled :max="5" style="margin-left: 8px" />
+            <el-rate v-model="item.difficulty" disabled :max="5" />
             <span class="wrong-count">答错 {{ item.wrongCount }} 次</span>
           </div>
           <div class="wrong-actions">
@@ -186,6 +192,7 @@ import { getWrongQuestions, getWrongQuestionStats, updateMasteryLevel, removeWro
 import type { WrongQuestionVO, WrongQuestionStatsVO } from '@/api/wrongQuestion'
 import { getWrongQuestionPractice } from '@/api/practice'
 import { getSimilarQuestions, type SimilarQuestions } from '@/api/statistics'
+import { getQuestionById } from '@/api/question'
 import AiQuestionAssistant from '@/components/AiQuestionAssistant.vue'
 import QuestionLearningAsset from '@/components/QuestionLearningAsset.vue'
 
@@ -198,10 +205,10 @@ const total = ref(0)
 const stats = ref<WrongQuestionStatsVO | null>(null)
 
 const statCards = computed(() => [
-  { label: '总错题数', value: stats.value?.total ?? 0, tone: 'tone-primary' },
-  { label: '未掌握', value: stats.value?.unmastered ?? 0, tone: 'tone-danger' },
-  { label: '部分掌握', value: stats.value?.partial ?? 0, tone: 'tone-warning' },
-  { label: '已掌握', value: stats.value?.mastered ?? 0, tone: 'tone-success' },
+  { label: '总错题数', value: stats.value?.total ?? 0, tone: 'emphasis' as const },
+  { label: '未掌握', value: stats.value?.unmastered ?? 0, tone: 'danger' as const },
+  { label: '部分掌握', value: stats.value?.partial ?? 0, tone: 'warning' as const },
+  { label: '已掌握', value: stats.value?.mastered ?? 0, tone: 'default' as const },
 ])
 
 // 相似题推荐
@@ -227,15 +234,25 @@ async function loadSimilarQuestions(questionId: number, questionContent?: string
 
 function startSimilarPractice() {
   if (!similarData.value?.similarQuestions?.length) return
-  const qIds = similarData.value.similarQuestions.map((q) => q.questionId).join(',')
+  const similar = similarData.value.similarQuestions
   similarDialogVisible.value = false
-  router.push({ path: '/practice/session', query: { questionIds: qIds } })
+  // 相似题接口只返回摘要，这里按 ID 拉取完整题目后写入会话存储，
+  // 由答题页沿用既有 session 流程，避免 `?questionIds=` 断链。
+  Promise.all(similar.map((item) => getQuestionById(item.questionId).then((res) => res.data)))
+    .then((questions) => {
+      sessionStorage.setItem('practice_questions', JSON.stringify(questions))
+      sessionStorage.setItem('practice_mode', 'similar')
+      router.push({ path: '/practice/session' })
+    })
+    .catch(() => {
+      ElMessage.error('加载相似题失败，请重试')
+    })
 }
 
 function getSimilarityColor(score: number): string {
-  if (score >= 80) return '#67c23a'
-  if (score >= 60) return '#e6a23c'
-  return '#409eff'
+  if (score >= 80) return 'var(--lp-success)'
+  if (score >= 60) return 'var(--lp-warning)'
+  return 'var(--lp-primary)'
 }
 
 const filter = reactive({
@@ -417,109 +434,29 @@ const handleStartWrongPractice = async () => {
 .wrong-question-container {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.page-hero {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 22px;
-  background: var(--lp-surface);
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  box-shadow: var(--lp-shadow-sm);
-}
-
-.page-hero h2 {
-  margin: 4px 0 8px;
-  font-size: 24px;
-  color: var(--lp-text);
-}
-
-.page-hero p {
-  margin: 0;
-  color: var(--lp-text-secondary);
-  font-size: 14px;
-}
-
-.section-kicker {
-  color: var(--lp-primary);
-  font-size: 12px;
-  font-weight: 800;
+  gap: var(--lp-space-6);
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: var(--lp-space-3);
 }
 
-.stat-card {
-  min-height: 94px;
-}
-
-.stat-card :deep(.el-card__body) {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.stat-card span {
-  color: var(--lp-text-muted);
-  font-size: 13px;
-}
-
-.stat-card strong {
-  font-size: 28px;
-  font-weight: 700;
-}
-
-.tone-primary {
-  color: var(--lp-primary);
-}
-.tone-danger {
-  color: var(--lp-danger);
-}
-.tone-warning {
-  color: var(--lp-warning);
-}
-.tone-success {
-  color: var(--lp-success);
-}
-
-.filter-card :deep(.el-card__body) {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.filter-title {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.filter-title strong {
-  color: var(--lp-text);
-}
-
-.filter-title span {
-  color: var(--lp-text-muted);
-  font-size: 13px;
+.filter-panel {
+  display: grid;
+  gap: var(--lp-space-4);
+  padding: var(--lp-space-5);
+  background: var(--lp-surface);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
 
 .filter-form {
   display: flex;
   align-items: flex-end;
-  gap: 8px;
-}
-
-.kp-filter-chip {
-  margin-top: 12px;
+  gap: var(--lp-space-3);
 }
 
 .filter-form :deep(.el-form-item) {
@@ -527,41 +464,61 @@ const handleStartWrongPractice = async () => {
   margin-bottom: 0;
 }
 
+.kp-filter-chip {
+  margin-top: var(--lp-space-2);
+}
+
+.wrong-list {
+  display: grid;
+  gap: var(--lp-space-4);
+}
+
+.state-panel {
+  padding: var(--lp-space-6) 0;
+  background: var(--lp-surface);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
+}
+
 .wrong-card {
-  margin-bottom: 14px;
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
 
 .wrong-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  gap: var(--lp-space-3);
+  margin-bottom: var(--lp-space-3);
 }
 
 .wrong-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--lp-space-2);
   flex-wrap: wrap;
 }
 
 .wrong-count {
-  font-size: 13px;
+  font-size: var(--lp-text-sm);
   color: var(--lp-danger);
-  font-weight: 600;
+  font-weight: var(--lp-weight-semibold);
 }
 
 .wrong-content {
-  font-size: 15px;
-  line-height: 1.8;
+  font-size: var(--lp-text-lg);
+  line-height: var(--lp-leading-relaxed);
   color: var(--lp-text);
-  margin-bottom: 12px;
+  margin-bottom: var(--lp-space-3);
   white-space: pre-wrap;
 }
 
 .wrong-answer {
-  font-size: 13px;
-  margin-bottom: 12px;
+  font-size: var(--lp-text-sm);
+  margin-bottom: var(--lp-space-3);
 }
 
 .wrong-answer .label {
@@ -570,55 +527,54 @@ const handleStartWrongPractice = async () => {
 
 .answer-wrong {
   color: var(--lp-danger);
-  font-weight: 600;
+  font-weight: var(--lp-weight-semibold);
 }
 
 .wrong-card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid var(--lp-border);
-  gap: 12px;
+  gap: var(--lp-space-3);
+  margin-top: var(--lp-space-4);
+  padding-top: var(--lp-space-3);
+  border-top: var(--lp-border-hairline);
 }
 
 .mastery-controls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--lp-space-2);
 }
 
 .mastery-controls .label {
-  font-size: 13px;
+  font-size: var(--lp-text-sm);
   color: var(--lp-text-muted);
 }
 
 .footer-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--lp-space-3);
   flex-wrap: wrap;
 }
 
 .time {
-  font-size: 12px;
+  font-size: var(--lp-text-xs);
   color: var(--lp-text-muted);
 }
 
 .similar-source {
-  padding: 12px;
+  padding: var(--lp-space-3);
   background: var(--lp-surface-soft);
-  border-radius: 6px;
-  font-size: 13px;
+  border-radius: var(--lp-radius-sm);
+  font-size: var(--lp-text-sm);
   color: var(--lp-text-secondary);
-  line-height: 1.6;
+  line-height: var(--lp-leading-body);
 }
 
 .pagination-wrapper {
   display: flex;
   justify-content: flex-end;
-  margin-top: 16px;
 }
 
 @media (max-width: 900px) {
@@ -634,13 +590,10 @@ const handleStartWrongPractice = async () => {
 }
 
 @media (max-width: 640px) {
-  .page-hero {
-    align-items: stretch;
-    flex-direction: column;
-    padding: 16px;
+  .filter-panel {
+    padding: var(--lp-space-4);
   }
 
-  .page-hero .el-button,
   .filter-form,
   .filter-form :deep(.el-select) {
     width: 100%;

@@ -1,16 +1,17 @@
 <template>
   <div class="review-container page-container">
-    <section class="review-hero">
-      <div>
-        <span class="section-kicker">间隔重复</span>
-        <h2>智能复习</h2>
-        <p>按到期时间处理复习卡片，先清空今日任务，再查看全部复习计划。</p>
-      </div>
-      <el-button type="primary" size="large" :icon="Reading" :disabled="stats.dueToday === 0" @click="startReview">
-        开始复习
-        <el-badge v-if="stats.overdue > 0" :value="`${stats.overdue}逾期`" type="danger" class="button-badge" />
-      </el-button>
-    </section>
+    <LpPageHeader
+      kicker="间隔重复"
+      title="复习"
+      description="按到期时间处理复习卡片，先清空今日任务，再查看全部复习计划。"
+    >
+      <template #actions>
+        <el-button type="primary" size="large" :icon="Reading" :disabled="stats.dueToday === 0" @click="startReview">
+          开始复习
+          <el-badge v-if="stats.overdue > 0" :value="`${stats.overdue}逾期`" type="danger" class="button-badge" />
+        </el-button>
+      </template>
+    </LpPageHeader>
 
     <div v-if="targetKnowledgePointName" class="kp-filter-chip">
       <el-tag type="info" effect="plain" closable @close="clearKnowledgePointFilter">
@@ -19,41 +20,35 @@
     </div>
 
     <section class="stats-grid">
-      <el-card shadow="never" class="stat-card stat-due">
-        <span>今日待复习</span>
-        <strong>{{ stats.dueToday }}</strong>
-      </el-card>
-      <el-card shadow="never" class="stat-card stat-reviewed">
-        <span>今日已完成</span>
-        <strong>{{ stats.reviewedToday }}</strong>
-      </el-card>
-      <el-card shadow="never" class="stat-card stat-mastered">
-        <span>已掌握</span>
-        <strong>{{ stats.masteredCards }}</strong>
-      </el-card>
-      <el-card shadow="never" class="stat-card stat-streak">
-        <span>连续复习</span>
-        <strong>{{ stats.streakDays }}<small>天</small></strong>
-      </el-card>
+      <LpStat label="今日待复习" :value="stats.dueToday" tone="emphasis" />
+      <LpStat label="今日已完成" :value="stats.reviewedToday" />
+      <LpStat label="已掌握" :value="stats.masteredCards" tone="warning" />
+      <LpStat label="连续复习" :value="`${stats.streakDays} 天`" tone="danger" />
     </section>
 
-    <el-card shadow="never" v-if="stats.totalCards > 0" class="progress-card">
-      <div class="progress-header">
-        <span>掌握进度</span>
-        <small>{{ stats.totalCards }} 张卡片</small>
-      </div>
-      <el-progress :percentage="masteredPercent" :format="() => `${stats.masteredCards}/${stats.totalCards}`" />
+    <section v-if="stats.totalCards > 0" class="progress-panel">
+      <LpSectionHeading
+        kicker="掌握进度"
+        :title="`已掌握 ${stats.masteredCards} / ${stats.totalCards} 张卡片`"
+        description="新卡片、学习中与困难卡片会随着复习持续流转。"
+      />
+      <LpProgress
+        :percent="masteredPercent"
+        :label="`${stats.masteredCards}/${stats.totalCards}`"
+        tone="success"
+        show-label
+      />
       <div class="status-row">
         <span><el-tag type="info" size="small">新卡片</el-tag> {{ stats.newCards }}</span>
         <span><el-tag type="warning" size="small">学习中</el-tag> {{ stats.learningCards }}</span>
         <span><el-tag type="success" size="small">已掌握</el-tag> {{ stats.masteredCards }}</span>
         <span><el-tag type="danger" size="small">困难</el-tag> {{ stats.difficultCards }}</span>
       </div>
-    </el-card>
+    </section>
 
-    <el-card shadow="never" class="action-card">
+    <section class="action-panel">
       <div class="action-bar">
-        <div>
+        <div class="action-buttons">
           <el-button size="large" :icon="View" @click="showAllCards = !showAllCards">
             {{ showAllCards ? '收起卡片列表' : '查看全部卡片' }}
           </el-button>
@@ -70,27 +65,26 @@
             AI 复习建议
           </el-button>
         </div>
-        <el-text type="info" size="small"
-          >平均简易因子: {{ stats.avgEaseFactor?.toFixed(2) ?? '-' }} | 连续 {{ stats.streakDays }} 天</el-text
-        >
+        <el-text type="info" size="small">
+          平均简易因子: {{ stats.avgEaseFactor?.toFixed(2) ?? '-' }} | 连续 {{ stats.streakDays }} 天
+        </el-text>
       </div>
-    </el-card>
+    </section>
 
     <!-- AI 复习建议区域 -->
-    <el-card v-if="aiSuggestionContent" shadow="never" class="ai-card">
-      <template #header>
-        <div class="card-header">
-          <span>AI 复习建议</span>
+    <section v-if="aiSuggestionContent" class="ai-panel">
+      <LpSectionHeading kicker="AI 辅助" title="AI 复习建议">
+        <template #aside>
           <el-button size="small" text @click="aiSuggestionContent = ''">收起</el-button>
-        </div>
-      </template>
+        </template>
+      </LpSectionHeading>
       <div class="ai-suggestion-content">
         <MarkdownRenderer :content="aiSuggestionContent" />
         <div v-if="aiSuggestionLoading" class="streaming-tip">
           <el-icon class="is-loading"><Loading /></el-icon> AI 正在生成建议...
         </div>
       </div>
-    </el-card>
+    </section>
 
     <!-- 复习会话区域（当前待复习卡片） -->
     <el-card v-if="reviewing && currentCard" shadow="never" class="review-session">
@@ -102,15 +96,11 @@
       </template>
 
       <!-- 进度条 -->
-      <el-progress
-        :percentage="Math.round((currentIndex / dueCards.length) * 100)"
-        :show-text="false"
-        style="margin-bottom: 16px"
-      />
+      <LpProgress :percent="Math.round((currentIndex / dueCards.length) * 100)" />
 
       <!-- 题目信息 -->
       <div class="question-info">
-        <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap">
+        <div class="question-tags">
           <el-tag size="small">{{ currentCard.questionType }}</el-tag>
           <el-tag size="small" type="info">{{ currentCard.courseName || '未知课程' }}</el-tag>
           <el-tag size="small" :type="currentCard.overdue ? 'danger' : 'success'">
@@ -150,7 +140,7 @@
       <!-- 答题结果 -->
       <el-alert
         v-if="answerSubmitted"
-        :title="lastCorrect ? '✅ 回答正确！' : '❌ 回答错误'"
+        :title="lastCorrect ? '回答正确！' : '回答错误'"
         :type="lastCorrect ? 'success' : 'error'"
         :description="
           lastCorrect
@@ -170,14 +160,15 @@
     </el-card>
 
     <!-- 复习完成 -->
-    <el-card v-if="reviewComplete" shadow="never" class="complete-card">
+    <div v-if="reviewComplete" class="complete-card">
+      <div class="complete-icon" aria-hidden="true">✓</div>
       <h3>今日复习完成！</h3>
       <p>共复习 {{ reviewedCount }} 题，正确 {{ correctCount }} 题</p>
       <el-button type="primary" @click="finishReview">返回</el-button>
-    </el-card>
+    </div>
 
     <!-- 全部卡片列表 -->
-    <el-card v-if="showAllCards" shadow="never">
+    <el-card v-if="showAllCards" shadow="never" class="all-cards-card">
       <template #header>
         <div class="card-header">
           <span>复习计划卡片 ({{ allCards.length }})</span>
@@ -548,156 +539,109 @@ onMounted(async () => {
 .review-container {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--lp-space-6);
 }
 
 .kp-filter-chip {
-  margin-top: 14px;
-}
-
-.review-hero {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 22px;
-  background: var(--lp-surface);
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  box-shadow: var(--lp-shadow-sm);
-}
-
-.review-hero h2 {
-  margin: 4px 0 8px;
-  font-size: 24px;
-  color: var(--lp-text);
-}
-
-.review-hero p {
-  margin: 0;
-  color: var(--lp-text-secondary);
-  font-size: 14px;
-}
-
-.section-kicker {
-  color: var(--lp-primary);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.button-badge {
-  margin-left: 8px;
+  margin-top: calc(-1 * var(--lp-space-2));
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: var(--lp-space-3);
 }
 
-.stat-card {
-  min-height: 94px;
-}
-
-.stat-card :deep(.el-card__body) {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.stat-card span {
-  color: var(--lp-text-muted);
-  font-size: 13px;
-}
-
-.stat-card strong {
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.stat-card small {
-  font-size: 13px;
-  margin-left: 2px;
-}
-
-.stat-due strong {
-  color: var(--lp-primary);
-}
-.stat-reviewed strong {
-  color: var(--lp-success);
-}
-.stat-mastered strong {
-  color: var(--lp-warning);
-}
-.stat-streak strong {
-  color: var(--lp-danger);
-}
-
-.progress-card,
-.action-card,
-.ai-card,
-.review-session {
-  margin: 0;
-}
-
-.progress-header,
-.card-header,
-.action-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
-.progress-header {
-  margin-bottom: 8px;
-}
-
-.progress-header span,
-.card-header span {
-  font-weight: 700;
-  color: var(--lp-text);
-}
-
-.progress-header small {
-  color: var(--lp-text-muted);
-  font-size: 13px;
+.progress-panel,
+.action-panel,
+.ai-panel {
+  display: grid;
+  gap: var(--lp-space-4);
+  padding: var(--lp-space-5);
+  background: var(--lp-surface);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
 
 .status-row {
   display: flex;
-  gap: 18px;
-  margin-top: 12px;
+  gap: var(--lp-space-4);
   color: var(--lp-text-secondary);
-  font-size: 13px;
+  font-size: var(--lp-text-sm);
   flex-wrap: wrap;
+}
+
+.status-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lp-space-2);
 }
 
 .action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lp-space-4);
   flex-wrap: wrap;
 }
 
-.action-bar > div {
+.action-buttons {
   display: flex;
-  gap: 10px;
+  gap: var(--lp-space-3);
   flex-wrap: wrap;
+}
+
+.ai-suggestion-content {
+  line-height: var(--lp-leading-relaxed);
+  font-size: var(--lp-text-base);
+}
+
+.streaming-tip {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-space-2);
+  color: var(--lp-text-muted);
+  margin-top: var(--lp-space-2);
+  font-size: var(--lp-text-sm);
 }
 
 .review-session {
-  border-left: 4px solid var(--lp-primary);
+  border: var(--lp-border-hairline);
+  border-left: 3px solid var(--lp-primary);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--lp-space-3);
+}
+
+.card-header span {
+  font-weight: var(--lp-weight-semibold);
+  color: var(--lp-text);
 }
 
 .question-info {
-  margin-bottom: 8px;
+  margin-top: var(--lp-space-4);
+}
+
+.question-tags {
+  display: flex;
+  gap: var(--lp-space-2);
+  margin-bottom: var(--lp-space-3);
+  flex-wrap: wrap;
 }
 
 .question-content {
-  font-size: 16px;
-  line-height: 1.6;
-  padding: 12px;
+  font-size: var(--lp-text-lg);
+  line-height: var(--lp-leading-relaxed);
+  padding: var(--lp-space-4);
   background: var(--lp-surface-soft);
-  border-radius: 8px;
+  border-radius: var(--lp-radius-md);
   white-space: pre-wrap;
   color: var(--lp-text);
 }
@@ -705,42 +649,54 @@ onMounted(async () => {
 .answer-box,
 .result-alert,
 .next-action {
-  margin-top: 16px;
+  margin-top: var(--lp-space-4);
 }
 
 .session-actions {
   display: flex;
-  gap: 12px;
+  gap: var(--lp-space-3);
   flex-wrap: wrap;
-  margin-top: 12px;
+  margin-top: var(--lp-space-3);
 }
 
 .complete-card {
   text-align: center;
+  padding: var(--lp-space-8) var(--lp-space-6);
+  background: var(--lp-surface);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
+}
+
+.complete-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto var(--lp-space-4);
+  border-radius: var(--lp-radius-full);
+  background: var(--lp-success-soft);
+  color: var(--lp-success);
+  font-size: var(--lp-text-4xl);
+  font-weight: var(--lp-weight-bold);
 }
 
 .complete-card h3 {
-  margin: 0 0 10px;
+  margin: 0 0 var(--lp-space-2);
   color: var(--lp-text);
+  font-size: var(--lp-text-3xl);
 }
 
 .complete-card p {
-  margin: 0 0 14px;
+  margin: 0 0 var(--lp-space-4);
   color: var(--lp-text-secondary);
 }
 
-.ai-suggestion-content {
-  line-height: 1.8;
-  font-size: 14px;
-}
-
-.streaming-tip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--lp-text-muted);
-  margin-top: 8px;
-  font-size: 13px;
+.all-cards-card {
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
 
 @media (max-width: 900px) {
@@ -750,25 +706,29 @@ onMounted(async () => {
 }
 
 @media (max-width: 640px) {
-  .review-hero,
-  .progress-header,
-  .card-header,
-  .action-bar {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .progress-panel,
+  .action-panel,
+  .ai-panel {
+    padding: var(--lp-space-4);
+  }
+
+  .action-bar,
+  .card-header {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .review-hero {
-    padding: 16px;
-  }
-
-  .review-hero .el-button,
-  .action-bar .el-button {
+  .action-bar .el-button,
+  .action-buttons {
     width: 100%;
   }
 
-  .stats-grid {
-    grid-template-columns: 1fr;
+  .action-buttons {
+    flex-direction: column;
   }
 }
 </style>

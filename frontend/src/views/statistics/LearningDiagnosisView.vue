@@ -604,6 +604,7 @@ import {
   type SimilarQuestions,
   type QuestionErrorAnalysis,
 } from '@/api/statistics'
+import { getQuestionById } from '@/api/question'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { ElMessage } from 'element-plus'
 
@@ -653,9 +654,17 @@ async function loadSimilarQuestions(questionId: number, questionContent?: string
 
 function startSimilarPractice() {
   if (!similarData.value?.similarQuestions?.length) return
-  const qIds = similarData.value.similarQuestions.map((q) => q.questionId).join(',')
+  const similar = similarData.value.similarQuestions
   similarDialogVisible.value = false
-  router.push({ path: '/practice/session', query: { questionIds: qIds } })
+  Promise.all(similar.map((item) => getQuestionById(item.questionId).then((res) => res.data)))
+    .then((questions) => {
+      sessionStorage.setItem('practice_questions', JSON.stringify(questions))
+      sessionStorage.setItem('practice_mode', 'similar')
+      router.push({ path: '/practice/session' })
+    })
+    .catch(() => {
+      ElMessage.error('加载相似题失败，请重试')
+    })
 }
 
 // AI 个性化建议
@@ -834,8 +843,16 @@ function getMasteryLevelLabel(level: number | null): string {
 
 function startRecommendPractice() {
   if (!data.value?.dailyRecommendations?.length) return
-  const qIds = data.value.dailyRecommendations.map((q) => q.questionId).join(',')
-  router.push({ path: '/practice/session', query: { questionIds: qIds } })
+  const recommendations = data.value.dailyRecommendations
+  Promise.all(recommendations.map((item) => getQuestionById(item.questionId).then((res) => res.data)))
+    .then((questions) => {
+      sessionStorage.setItem('practice_questions', JSON.stringify(questions))
+      sessionStorage.setItem('practice_mode', 'recommended')
+      router.push({ path: '/practice/session' })
+    })
+    .catch(() => {
+      ElMessage.error('加载推荐练习失败，请重试')
+    })
 }
 
 onMounted(async () => {
@@ -852,57 +869,57 @@ onMounted(async () => {
 
 <style scoped>
 .learning-diagnosis {
-  padding: 0 0 24px;
+  padding: 0 0 var(--lp-space-6);
 }
 
 .page-title {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: var(--lp-text-2xl);
+  font-weight: var(--lp-weight-semibold);
 }
 
 .advice-card {
-  margin-top: 20px;
+  margin-top: var(--lp-space-5);
 }
 
 .advice-content {
-  font-size: 15px;
-  line-height: 1.8;
-  color: #303133;
+  font-size: var(--lp-text-md);
+  line-height: var(--lp-leading-relaxed);
+  color: var(--lp-text);
 }
 
 .advice-content p {
-  margin: 0 0 4px;
+  margin: 0 0 var(--lp-space-1);
 }
 
 .stat-row {
-  margin-top: 16px;
+  margin-top: var(--lp-space-4);
 }
 
 .stat-card {
   text-align: center;
-  margin-bottom: 8px;
+  margin-bottom: var(--lp-space-2);
 }
 
 .stat-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: #409eff;
+  font-size: var(--lp-text-4xl);
+  font-weight: var(--lp-weight-bold);
+  color: var(--lp-primary);
 }
 
 .stat-label {
-  font-size: 13px;
-  color: #909399;
-  margin-top: 4px;
+  font-size: var(--lp-text-sm);
+  color: var(--lp-text-muted);
+  margin-top: var(--lp-space-1);
 }
 
 .section-card {
-  margin-top: 16px;
+  margin-top: var(--lp-space-4);
 }
 
 .chart-container h4 {
-  margin: 0 0 12px;
-  font-size: 14px;
-  color: #606266;
+  margin: 0 0 var(--lp-space-3);
+  font-size: var(--lp-text-base);
+  color: var(--lp-text-secondary);
 }
 
 .mini-chart {
@@ -910,7 +927,7 @@ onMounted(async () => {
   align-items: flex-end;
   justify-content: space-around;
   height: 160px;
-  padding: 0 8px;
+  padding: 0 var(--lp-space-2);
 }
 
 .chart-bar-group {
@@ -930,58 +947,58 @@ onMounted(async () => {
 .chart-bar {
   width: 16px;
   min-height: 2px;
-  border-radius: 2px 2px 0 0;
-  transition: height 0.3s;
+  border-radius: var(--lp-radius-xs) var(--lp-radius-xs) 0 0;
+  transition: height var(--lp-duration-slow) var(--lp-ease-out);
 }
 
 .chart-bar.correct {
-  background: #67c23a;
+  background: var(--lp-success);
 }
 
 .chart-bar.wrong {
-  background: #f56c6c;
+  background: var(--lp-danger);
 }
 
 .chart-bar.error-trend {
-  background: #e6a23c;
+  background: var(--lp-warning);
 }
 
 .chart-date {
-  font-size: 11px;
-  color: #909399;
-  margin-top: 4px;
+  font-size: var(--lp-text-xs);
+  color: var(--lp-text-muted);
+  margin-top: var(--lp-space-1);
 }
 
 .chart-total {
-  font-size: 12px;
-  font-weight: 600;
-  color: #303133;
+  font-size: var(--lp-text-xs);
+  font-weight: var(--lp-weight-semibold);
+  color: var(--lp-text);
 }
 
 .mastery-bars {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--lp-space-3);
 }
 
 .mastery-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--lp-space-3);
 }
 
 .mastery-label {
   min-width: 60px;
-  font-size: 13px;
-  color: #606266;
+  font-size: var(--lp-text-sm);
+  color: var(--lp-text-secondary);
 }
 
 .error-course-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #f0f0f0;
+  padding: var(--lp-space-2) 0;
+  border-bottom: var(--lp-border-hairline);
 }
 
 .error-course-item:last-child {
@@ -989,82 +1006,82 @@ onMounted(async () => {
 }
 
 .course-name {
-  font-weight: 500;
+  font-weight: var(--lp-weight-medium);
 }
 
 .similar-source {
-  padding: 12px;
-  background: #f5f7fa;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #606266;
-  line-height: 1.6;
+  padding: var(--lp-space-3);
+  background: var(--lp-surface-soft);
+  border-radius: var(--lp-radius-sm);
+  font-size: var(--lp-text-sm);
+  color: var(--lp-text-secondary);
+  line-height: var(--lp-leading-body);
 }
 
 .error-analysis-header {
-  padding: 12px;
-  background: #f5f7fa;
-  border-radius: 6px;
+  padding: var(--lp-space-3);
+  background: var(--lp-surface-soft);
+  border-radius: var(--lp-radius-sm);
 }
 
 .error-analysis-question {
-  font-size: 14px;
-  line-height: 1.6;
-  color: #303133;
-  margin-bottom: 8px;
+  font-size: var(--lp-text-base);
+  line-height: var(--lp-leading-body);
+  color: var(--lp-text);
+  margin-bottom: var(--lp-space-2);
 }
 
 .error-analysis-tags {
   display: flex;
-  gap: 8px;
+  gap: var(--lp-space-2);
   flex-wrap: wrap;
 }
 
 .error-pattern-box {
-  padding: 12px 16px;
-  background: #fdf6ec;
-  border-radius: 6px;
-  border-left: 3px solid #e6a23c;
+  padding: var(--lp-space-3) var(--lp-space-4);
+  background: var(--lp-warning-soft);
+  border-radius: var(--lp-radius-sm);
+  border-left: 3px solid var(--lp-warning);
 }
 
 .ai-advice-card {
-  margin-top: 16px;
-  border-left: 3px solid #409eff;
+  margin-top: var(--lp-space-4);
+  border-left: 3px solid var(--lp-primary);
 }
 
 .ai-advice-content {
-  font-size: 14px;
-  line-height: 1.8;
-  color: #303133;
+  font-size: var(--lp-text-base);
+  line-height: var(--lp-leading-relaxed);
+  color: var(--lp-text);
 }
 
 .ai-advice-content :deep(h1),
 .ai-advice-content :deep(h2),
 .ai-advice-content :deep(h3) {
-  margin-top: 16px;
-  margin-bottom: 8px;
-  color: #1a1a1a;
+  margin-top: var(--lp-space-4);
+  margin-bottom: var(--lp-space-2);
+  color: var(--lp-text);
 }
 
 .ai-advice-content :deep(ul),
 .ai-advice-content :deep(ol) {
-  padding-left: 20px;
+  padding-left: var(--lp-space-5);
 }
 
 .ai-advice-content :deep(p) {
-  margin: 8px 0;
+  margin: var(--lp-space-2) 0;
 }
 
 .ai-advice-content :deep(code) {
-  background: #f5f7fa;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 13px;
+  background: var(--lp-surface-soft);
+  padding: var(--lp-space-1) var(--lp-space-2);
+  border-radius: var(--lp-radius-xs);
+  font-size: var(--lp-text-sm);
 }
 
 @media (max-width: 768px) {
   .stat-value {
-    font-size: 22px;
+    font-size: var(--lp-text-2xl);
   }
 
   .mini-chart {

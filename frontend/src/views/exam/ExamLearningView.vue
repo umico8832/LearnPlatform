@@ -1,16 +1,16 @@
 <template>
-  <div class="paper-learning page-container" v-loading="loading">
+  <div class="paper-learning" v-loading="loading">
     <template v-if="session && currentQuestion">
       <section class="learning-header">
-        <div>
+        <div class="learning-header-copy">
           <span class="section-kicker">试卷学习模式</span>
-          <h2>{{ session.paperTitle }}</h2>
+          <h2 class="learning-title">{{ session.paperTitle }}</h2>
           <p v-if="session.paperType === 'OFFICIAL_EXAM' && session.sourceVerified" class="paper-source">
             {{ session.examYear }} · {{ session.examName }} · 来源：{{ session.sourceReference }}
           </p>
         </div>
         <div class="header-actions">
-          <el-tag :type="session.status === 1 ? 'success' : 'primary'">
+          <el-tag :type="session.status === 1 ? 'success' : 'primary'" class="learning-status-tag">
             {{
               session.status === 1
                 ? '本轮已完成'
@@ -22,7 +22,7 @@
       </section>
 
       <section class="learning-layout">
-        <el-card shadow="never" class="question-card">
+        <article class="question-card">
           <div v-if="currentQuestion.sectionTitle" class="question-section">{{ currentQuestion.sectionTitle }}</div>
           <div class="question-meta">
             <strong>{{ currentQuestion.displayNumber || `第 ${currentIndex + 1} 题` }}</strong>
@@ -40,8 +40,8 @@
               :disabled="session.status === 1"
               @click="userAnswer = option.optionLabel"
             >
-              <span>{{ option.optionLabel }}</span
-              >{{ option.content }}
+              <span class="option-badge">{{ option.optionLabel }}</span>
+              <span class="option-content">{{ option.content }}</span>
             </button>
           </div>
           <div v-else-if="currentQuestion.questionType === 'MULTIPLE_CHOICE'" class="option-list">
@@ -53,8 +53,8 @@
               :disabled="session.status === 1"
               @click="toggleMulti(option.optionLabel)"
             >
-              <span>{{ option.optionLabel }}</span
-              >{{ option.content }}
+              <span class="option-badge">{{ option.optionLabel }}</span>
+              <span class="option-content">{{ option.content }}</span>
             </button>
           </div>
           <div v-else-if="currentQuestion.questionType === 'TRUE_FALSE'" class="option-list true-false-list">
@@ -123,9 +123,9 @@
             >
               {{ currentQuestion.latestAnswer ? '再次作答' : '提交答案' }}
             </el-button>
-            <el-button :disabled="currentIndex >= session.questions.length - 1" @click="goTo(currentIndex + 1)"
-              >下一题</el-button
-            >
+            <el-button :disabled="currentIndex >= session.questions.length - 1" @click="goTo(currentIndex + 1)">
+              下一题
+            </el-button>
           </div>
 
           <AiQuestionAssistant
@@ -134,10 +134,10 @@
             :disabled="!currentQuestion.latestAnswer"
             disabled-reason="先提交本题答案，再让 AI 结合本轮真实作答提供辅导。"
           />
-        </el-card>
+        </article>
 
         <aside class="answer-sheet">
-          <h3>本轮学习</h3>
+          <h3 class="sheet-title">本轮学习</h3>
           <div class="sheet-summary">
             <span>已答 {{ session.answeredQuestionCount }}</span>
             <span>当前答对 {{ session.correctQuestionCount }}</span>
@@ -180,9 +180,12 @@
         </aside>
       </section>
     </template>
-    <el-empty v-else-if="!loading" description="试卷学习会话不存在">
-      <el-button type="primary" @click="router.push('/exams')">返回试卷列表</el-button>
-    </el-empty>
+
+    <LpEmptyState v-else-if="!loading" title="试卷学习会话不存在" description="该学习会话可能已失效或被删除。">
+      <template #actions>
+        <el-button type="primary" @click="router.push('/exams')">返回试卷列表</el-button>
+      </template>
+    </LpEmptyState>
   </div>
 </template>
 
@@ -193,6 +196,7 @@ import { ElMessage } from 'element-plus'
 import { completeExamLearningSession, getExamLearningSession, submitExamLearningAnswer } from '@/api/exam'
 import type { ExamLearningSessionVO } from '@/api/exam'
 import AiQuestionAssistant from '@/components/AiQuestionAssistant.vue'
+import LpEmptyState from '@/components/ui/LpEmptyState.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -327,179 +331,246 @@ function questionTypeLabel(type: string) {
 .paper-learning {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--lp-space-5);
+  width: min(100%, var(--lp-container-narrow));
+  margin: 0 auto;
+  padding: var(--lp-space-4) 0;
 }
+
 .learning-header {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 20px;
-  padding: 22px;
+  gap: var(--lp-space-5);
+  padding: var(--lp-space-6);
   background: var(--lp-surface);
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  box-shadow: var(--lp-shadow-sm);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
-.section-kicker {
-  color: var(--lp-primary);
-  font-size: 12px;
-  font-weight: 800;
+
+.learning-header-copy {
+  min-width: 0;
 }
-.learning-header h2 {
-  margin: 4px 0 6px;
+
+.learning-title {
+  margin: var(--lp-space-1) 0 0;
   color: var(--lp-text);
-  font-size: 24px;
+  font-size: var(--lp-text-3xl);
+  line-height: var(--lp-leading-tight);
 }
+
 .paper-source {
-  margin: 0;
+  margin: var(--lp-space-2) 0 0;
   color: var(--lp-text-secondary);
-  font-size: 13px;
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-snug);
+  overflow-wrap: anywhere;
 }
+
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--lp-space-3);
+  flex-shrink: 0;
 }
+
 .learning-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 230px;
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  gap: var(--lp-space-4);
   align-items: start;
 }
+
 .question-card {
   min-width: 0;
+  padding: var(--lp-space-6);
+  background: var(--lp-surface);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
+
 .question-section {
-  margin-bottom: 8px;
+  margin-bottom: var(--lp-space-2);
   color: var(--lp-text-secondary);
-  font-size: 13px;
-  font-weight: 700;
+  font-size: var(--lp-text-sm);
+  font-weight: var(--lp-weight-bold);
 }
+
 .question-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--lp-space-2);
   color: var(--lp-text-secondary);
-  font-size: 13px;
+  font-size: var(--lp-text-sm);
 }
+
 .question-meta strong {
   color: var(--lp-text);
-  font-size: 16px;
+  font-size: var(--lp-text-lg);
 }
+
 .question-content {
-  margin: 18px 0;
+  margin: var(--lp-space-5) 0;
   color: var(--lp-text);
-  font-size: 16px;
-  line-height: 1.8;
+  font-size: var(--lp-text-lg);
+  line-height: var(--lp-leading-relaxed);
   white-space: pre-wrap;
 }
+
 .option-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--lp-space-3);
 }
+
 .option-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--lp-space-3);
   width: 100%;
-  padding: 12px 14px;
+  padding: var(--lp-space-3) var(--lp-space-4);
   color: var(--lp-text);
   text-align: left;
+  font: inherit;
   background: var(--lp-surface);
-  border: 1px solid var(--lp-border);
-  border-radius: 8px;
+  border: 1px solid var(--lp-border-strong);
+  border-radius: var(--lp-radius-md);
   cursor: pointer;
+  transition:
+    background-color var(--lp-duration-fast) var(--lp-ease-out),
+    border-color var(--lp-duration-fast) var(--lp-ease-out);
 }
-.option-item span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  color: var(--lp-primary);
-  background: var(--lp-primary-soft);
-  border-radius: 50%;
-  font-weight: 800;
+
+.option-item:hover {
+  border-color: var(--lp-primary);
+  background: var(--lp-surface-subtle);
 }
+
 .option-item.selected {
   border-color: var(--lp-primary);
   background: var(--lp-primary-soft);
 }
+
 .option-item:disabled {
   cursor: default;
   opacity: 0.72;
 }
+
+.option-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  color: var(--lp-primary);
+  background: var(--lp-primary-soft);
+  border-radius: var(--lp-radius-full);
+  font-weight: var(--lp-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.option-item.selected .option-badge {
+  color: var(--lp-on-primary);
+  background: var(--lp-primary);
+}
+
+.option-content {
+  min-width: 0;
+}
+
 .true-false-list {
   flex-direction: row;
 }
+
 .true-false-list .option-item {
   justify-content: center;
+  flex: 1;
+  font-weight: var(--lp-weight-semibold);
 }
+
 .answer-result {
-  margin-top: 18px;
-  padding: 14px;
-  border: 1px solid var(--lp-border);
+  margin-top: var(--lp-space-5);
+  padding: var(--lp-space-4);
+  border: var(--lp-border-hairline);
   border-left-width: 4px;
-  border-radius: 8px;
+  border-radius: var(--lp-radius-md);
 }
+
 .answer-result.is-correct {
   border-left-color: var(--lp-success);
-  background: #f0f9eb;
+  background: var(--lp-success-soft);
 }
+
 .answer-result.is-wrong {
   border-left-color: var(--lp-danger);
-  background: #fef0f0;
+  background: var(--lp-danger-soft);
 }
+
+.answer-result.is-review {
+  border-left-color: var(--lp-info);
+  background: var(--lp-info-soft);
+}
+
 .answer-result p {
-  margin: 8px 0 0;
+  margin: var(--lp-space-2) 0 0;
   color: var(--lp-text-secondary);
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-body);
 }
+
 .result-title {
   display: flex;
   justify-content: space-between;
   color: var(--lp-text);
-  font-weight: 800;
+  font-weight: var(--lp-weight-bold);
 }
+
 .result-title span {
   color: var(--lp-text-secondary);
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--lp-text-xs);
+  font-weight: var(--lp-weight-medium);
 }
+
 .question-actions {
   display: flex;
   justify-content: center;
-  gap: 10px;
-  margin-top: 20px;
+  gap: var(--lp-space-3);
+  margin-top: var(--lp-space-5);
 }
+
 .answer-sheet {
   position: sticky;
-  top: 16px;
-  padding: 16px;
+  top: var(--lp-space-4);
+  padding: var(--lp-space-4);
   background: var(--lp-surface);
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  box-shadow: var(--lp-shadow-sm);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
-.answer-sheet h3 {
-  margin: 0 0 8px;
+
+.sheet-title {
+  margin: 0 0 var(--lp-space-2);
   color: var(--lp-text);
-  font-size: 16px;
+  font-size: var(--lp-text-lg);
 }
+
 .sheet-summary {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: var(--lp-space-4);
   color: var(--lp-text-secondary);
-  font-size: 12px;
+  font-size: var(--lp-text-xs);
 }
+
 .sheet-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
+  gap: var(--lp-space-2);
 }
+
 .sheet-item {
   min-width: 0;
   height: 34px;
@@ -507,54 +578,76 @@ function questionTypeLabel(type: string) {
   color: var(--lp-text-secondary);
   background: var(--lp-surface-soft);
   border: 1px solid var(--lp-border);
-  border-radius: 6px;
-  font-size: 11px;
+  border-radius: var(--lp-radius-sm);
+  font-size: var(--lp-text-xs);
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
+  transition:
+    background-color var(--lp-duration-fast) var(--lp-ease-out),
+    color var(--lp-duration-fast) var(--lp-ease-out);
 }
+
 .sheet-item.answered {
-  color: #fff;
+  color: var(--lp-on-primary);
   background: var(--lp-warning);
   border-color: var(--lp-warning);
 }
+
 .sheet-item.correct {
   background: var(--lp-success);
   border-color: var(--lp-success);
 }
+
 .sheet-item.current {
   box-shadow: 0 0 0 2px var(--lp-primary);
 }
+
 .complete-button {
   width: 100%;
-  margin-top: 16px;
+  margin-top: var(--lp-space-4);
 }
+
 .complete-hint {
-  margin: 8px 0 0;
+  margin: var(--lp-space-2) 0 0;
   color: var(--lp-text-secondary);
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: var(--lp-text-xs);
+  line-height: var(--lp-leading-snug);
 }
+
 @media (max-width: 860px) {
   .learning-layout {
     grid-template-columns: 1fr;
   }
+
   .answer-sheet {
     position: static;
   }
 }
+
 @media (max-width: 640px) {
+  .paper-learning {
+    padding: 0;
+  }
+
   .learning-header {
     align-items: stretch;
     flex-direction: column;
-    padding: 16px;
+    padding: var(--lp-space-4);
   }
+
   .header-actions {
     justify-content: space-between;
   }
+
+  .question-card {
+    padding: var(--lp-space-4);
+  }
+
   .true-false-list {
     flex-direction: column;
   }
+
   .question-actions {
     flex-wrap: wrap;
   }

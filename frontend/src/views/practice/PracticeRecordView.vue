@@ -1,27 +1,28 @@
 <template>
   <div class="practice-record-container page-container">
-    <section class="page-hero">
-      <div>
-        <span class="section-kicker">练习复盘</span>
-        <h2>刷题记录</h2>
-        <p>按题型和结果回看最近练习，快速定位正确率波动和需要回炉的题目。</p>
-      </div>
-      <el-button type="primary" :icon="EditPen" @click="$router.push('/practice')"> 继续刷题 </el-button>
-    </section>
+    <LpPageHeader
+      kicker="练习复盘"
+      title="刷题记录"
+      description="按题型和结果回看最近练习，快速定位正确率波动和需要回炉的题目。"
+    >
+      <template #actions>
+        <el-button type="primary" :icon="EditPen" @click="$router.push('/practice')">继续刷题</el-button>
+      </template>
+    </LpPageHeader>
 
     <section class="record-summary-grid">
-      <el-card v-for="item in summaryCards" :key="item.label" shadow="never" class="record-summary-card">
-        <span>{{ item.label }}</span>
-        <strong :class="item.tone">{{ item.value }}</strong>
-        <small>{{ item.note }}</small>
-      </el-card>
+      <LpStat
+        v-for="item in summaryCards"
+        :key="item.label"
+        :label="item.label"
+        :value="item.value"
+        :note="item.note"
+        :tone="item.tone"
+      />
     </section>
 
-    <el-card class="filter-card" shadow="never">
-      <div class="filter-title">
-        <strong>筛选记录</strong>
-        <span>筛选仅影响当前记录列表，不会改变练习统计。</span>
-      </div>
+    <section class="filter-panel">
+      <LpSectionHeading kicker="筛选" title="筛选记录" description="筛选仅影响当前记录列表，不会改变练习统计。" />
       <el-form :inline="true" :model="filter" class="filter-form">
         <el-form-item label="题型">
           <el-select v-model="filter.questionType" placeholder="全部" clearable>
@@ -43,7 +44,7 @@
           <el-button :icon="RefreshLeft" @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
-    </el-card>
+    </section>
 
     <el-card class="record-table-card" shadow="never">
       <div class="record-toolbar">
@@ -98,7 +99,7 @@
         </el-table-column>
         <template #empty>
           <el-empty description="暂无刷题记录">
-            <el-button type="primary" :icon="EditPen" @click="$router.push('/practice')"> 去刷第一题 </el-button>
+            <el-button type="primary" :icon="EditPen" @click="$router.push('/practice')">去刷第一题</el-button>
           </el-empty>
         </template>
       </el-table>
@@ -152,15 +153,20 @@ const averageAnswerTime = computed(() => {
   return `${Math.round(times.reduce((sum, time) => sum + time, 0) / times.length)}s`
 })
 const summaryCards = computed(() => [
-  { label: '当前页记录', value: records.value.length, note: `全部匹配 ${total.value} 条`, tone: 'tone-primary' },
+  {
+    label: '当前页记录',
+    value: records.value.length,
+    note: `全部匹配 ${total.value} 条`,
+    tone: 'emphasis' as const,
+  },
   {
     label: '当前页正确率',
     value: pageCorrectRate.value,
     note: `答对 ${pageCorrectCount.value} 题`,
-    tone: 'tone-success',
+    tone: 'default' as const,
   },
-  { label: '当前页错题', value: pageWrongCount.value, note: '可前往错题本复盘', tone: 'tone-danger' },
-  { label: '平均耗时', value: averageAnswerTime.value, note: '仅统计有耗时记录', tone: 'tone-warning' },
+  { label: '当前页错题', value: pageWrongCount.value, note: '可前往错题本复盘', tone: 'danger' as const },
+  { label: '平均耗时', value: averageAnswerTime.value, note: '仅统计有耗时记录', tone: 'warning' as const },
 ])
 
 onMounted(() => {
@@ -236,116 +242,42 @@ const formatTime = (time: string) => {
 
 <style scoped>
 .practice-record-container {
-  padding: 24px;
-}
-
-.page-hero {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 18px;
-  margin-bottom: 18px;
-  padding: 24px;
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  background: linear-gradient(135deg, rgba(23, 105, 170, 0.08), rgba(216, 168, 63, 0.1)), var(--lp-surface);
-}
-
-.section-kicker {
-  display: inline-block;
-  margin-bottom: 8px;
-  color: var(--lp-primary);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-}
-
-.page-hero h2 {
-  margin: 0;
-  color: var(--lp-text);
-  font-size: 24px;
-  font-weight: 850;
-}
-
-.page-hero p {
-  margin: 8px 0 0;
-  max-width: 620px;
-  color: var(--lp-text-secondary);
-  font-size: 14px;
-  line-height: 1.7;
+  flex-direction: column;
+  gap: var(--lp-space-6);
 }
 
 .record-summary-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 16px;
+  gap: var(--lp-space-3);
 }
 
-.record-summary-card :deep(.el-card__body) {
-  min-height: 108px;
-}
-
-.record-summary-card span,
-.record-summary-card small {
-  display: block;
-  color: var(--lp-text-muted);
-  font-size: 12px;
-}
-
-.record-summary-card strong {
-  display: block;
-  margin: 8px 0 6px;
-  color: var(--lp-text);
-  font-size: 28px;
-  font-weight: 850;
-  line-height: 1.1;
-}
-
-.record-summary-card .tone-primary {
-  color: var(--lp-primary);
-}
-
-.record-summary-card .tone-success {
-  color: var(--lp-success);
-}
-
-.record-summary-card .tone-danger {
-  color: var(--lp-danger);
-}
-
-.record-summary-card .tone-warning {
-  color: var(--lp-warning);
-}
-
-.filter-card {
-  margin-bottom: 16px;
-}
-
-.filter-title {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.filter-title strong,
-.record-toolbar strong {
-  color: var(--lp-text);
-  font-size: 15px;
-}
-
-.filter-title span,
-.record-toolbar span {
-  color: var(--lp-text-muted);
-  font-size: 13px;
+.filter-panel {
+  display: grid;
+  gap: var(--lp-space-4);
+  padding: var(--lp-space-5);
+  background: var(--lp-surface);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
 
 .filter-form {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 10px;
+  gap: var(--lp-space-1) var(--lp-space-3);
+}
+
+.filter-form :deep(.el-form-item) {
+  margin-right: 0;
+  margin-bottom: 0;
+}
+
+.record-table-card {
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
 
 .record-table-card :deep(.el-card__body) {
@@ -356,39 +288,49 @@ const formatTime = (time: string) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 16px;
-  border-bottom: 1px solid var(--lp-border);
+  gap: var(--lp-space-3);
+  padding: var(--lp-space-4) var(--lp-space-5);
+  border-bottom: var(--lp-border-hairline);
   background: var(--lp-surface-soft);
 }
 
 .record-toolbar div {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--lp-space-3);
+}
+
+.record-toolbar strong {
+  color: var(--lp-text);
+  font-size: var(--lp-text-md);
+}
+
+.record-toolbar span {
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-sm);
 }
 
 .question-text {
-  font-size: 14px;
+  font-size: var(--lp-text-base);
   color: var(--lp-text);
-  line-height: 1.6;
+  line-height: var(--lp-leading-body);
 }
 
 .answer-correct {
   color: var(--lp-success);
-  font-weight: 700;
+  font-weight: var(--lp-weight-bold);
 }
 
 .answer-wrong {
   color: var(--lp-danger);
-  font-weight: 700;
+  font-weight: var(--lp-weight-bold);
 }
 
 .pagination-wrapper {
   display: flex;
   justify-content: flex-end;
-  padding: 14px 16px 16px;
-  border-top: 1px solid var(--lp-border);
+  padding: var(--lp-space-3) var(--lp-space-4) var(--lp-space-4);
+  border-top: var(--lp-border-hairline);
 }
 
 @media (max-width: 900px) {
@@ -398,31 +340,15 @@ const formatTime = (time: string) => {
 }
 
 @media (max-width: 767px) {
-  .practice-record-container {
-    padding: 16px;
+  .filter-panel {
+    padding: var(--lp-space-4);
   }
 
-  .page-hero {
-    align-items: stretch;
-    flex-direction: column;
-    padding: 18px;
-  }
-
-  .page-hero h2 {
-    font-size: 21px;
-  }
-
-  .page-hero .el-button,
   .filter-form,
   .filter-form :deep(.el-form-item),
   .filter-form :deep(.el-select),
   .filter-form :deep(.el-button) {
     width: 100%;
-  }
-
-  .filter-title {
-    align-items: flex-start;
-    flex-direction: column;
   }
 
   .pagination-wrapper {

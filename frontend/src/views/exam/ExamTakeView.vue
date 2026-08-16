@@ -1,26 +1,29 @@
 <template>
   <div class="exam-take-container">
-    <div class="take-header">
-      <div class="header-left">
-        <h3>考试进行中</h3>
+    <header class="take-header">
+      <div class="take-header-title">
+        <span class="section-kicker">限时考试</span>
+        <h1 class="take-heading">考试进行中</h1>
       </div>
-      <div class="header-center">
+      <div class="take-header-progress">
         <span class="progress-text">{{ currentIndex + 1 }} / {{ questions.length }}</span>
+        <LpProgress :percent="progressPercent" tone="primary" />
+        <span class="answered-text">已答 {{ answeredCount }} / {{ questions.length }}</span>
+      </div>
+      <div class="take-header-right">
         <span :class="['countdown', { 'countdown-warn': remainSeconds < 300 }]">
           <el-icon><Timer /></el-icon> {{ countdownText }}
         </span>
-      </div>
-      <div class="header-right">
         <el-button type="danger" size="small" :loading="submitted" :disabled="submitted" @click="handleSubmit">
           提交试卷
         </el-button>
       </div>
-    </div>
+    </header>
 
-    <div v-if="loading" v-loading="true" style="height: 300px"></div>
+    <div v-if="loading" v-loading="true" class="take-loading"></div>
 
     <div v-else-if="currentQuestion" class="question-area">
-      <el-card shadow="hover">
+      <article class="question-card">
         <div v-if="currentQuestion.sectionTitle" class="q-section">{{ currentQuestion.sectionTitle }}</div>
         <div class="q-meta">
           <strong class="q-number">{{ currentQuestion.displayNumber || `第 ${currentIndex + 1} 题` }}</strong>
@@ -91,17 +94,21 @@
 
         <div class="nav-btns">
           <el-button @click="currentIndex--" :disabled="currentIndex === 0">上一题</el-button>
-          <el-button v-if="currentIndex < questions.length - 1" type="primary" @click="currentIndex++"
-            >下一题</el-button
-          >
+          <el-button v-if="currentIndex < questions.length - 1" type="primary" @click="currentIndex++">
+            下一题
+          </el-button>
           <el-button v-else type="danger" :loading="submitted" :disabled="submitted" @click="handleSubmit">
             提交试卷
           </el-button>
         </div>
-      </el-card>
+      </article>
 
       <div class="answer-sheet">
-        <h4>答题卡</h4>
+        <h4 class="sheet-heading">答题卡</h4>
+        <div class="sheet-legend">
+          <span><i class="legend-dot is-current"></i>当前</span>
+          <span><i class="legend-dot is-answered"></i>已答</span>
+        </div>
         <div class="sheet-grid">
           <button
             v-for="(q, idx) in questions"
@@ -128,6 +135,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Timer } from '@element-plus/icons-vue'
 import { getExamSession, getPaperDetail, submitExam } from '@/api/exam'
 import type { ExamQuestionItem } from '@/api/exam'
+import LpProgress from '@/components/ui/LpProgress.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -144,6 +152,13 @@ let deadlineMs = 0
 let serverOffsetMs = 0
 
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
+
+const answeredCount = computed(() => Object.values(answers.value).filter(Boolean).length)
+
+const progressPercent = computed(() => {
+  if (!questions.value.length) return 0
+  return Math.round((answeredCount.value / questions.value.length) * 100)
+})
 
 const countdownText = computed(() => {
   const m = Math.floor(remainSeconds.value / 60)
@@ -294,107 +309,174 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .exam-take-container {
-  padding: 24px;
-  max-width: 900px;
+  padding: var(--lp-space-6) var(--lp-space-4);
+  max-width: var(--lp-container-narrow);
   margin: 0 auto;
 }
+
 .take-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 20px;
-  padding: 16px;
+  gap: var(--lp-space-5);
+  margin-bottom: var(--lp-space-5);
+  padding: var(--lp-space-4) var(--lp-space-5);
   background: var(--lp-surface);
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
   box-shadow: var(--lp-shadow-sm);
 }
-.take-header h3 {
-  margin: 0;
+
+.take-header-title {
+  min-width: 0;
+}
+
+.take-heading {
+  margin: var(--lp-space-1) 0 0;
   color: var(--lp-text);
-  font-size: 16px;
+  font-size: var(--lp-text-xl);
+  line-height: var(--lp-leading-tight);
 }
+
+.take-header-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lp-space-2);
+  flex: 1;
+  min-width: 140px;
+}
+
 .progress-text {
-  font-weight: 600;
-  font-size: 16px;
+  font-weight: var(--lp-weight-semibold);
+  font-size: var(--lp-text-base);
+  font-variant-numeric: tabular-nums;
 }
+
+.answered-text {
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.take-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-space-4);
+  flex-shrink: 0;
+}
+
+.take-loading {
+  height: 300px;
+}
+
 .question-area {
   display: flex;
-  gap: 20px;
+  gap: var(--lp-space-5);
+  align-items: flex-start;
 }
-.question-area > .el-card {
+
+.question-card {
   flex: 1;
+  min-width: 0;
+  padding: var(--lp-space-6);
+  background: var(--lp-surface);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
+
 .q-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: var(--lp-space-2);
+  margin-bottom: var(--lp-space-3);
 }
+
 .q-section {
-  margin-bottom: 8px;
+  margin-bottom: var(--lp-space-2);
   color: var(--lp-text-secondary);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--lp-text-sm);
+  font-weight: var(--lp-weight-semibold);
 }
+
 .q-number {
   color: var(--lp-text);
-  font-size: 15px;
+  font-size: var(--lp-text-md);
 }
+
 .q-score {
-  font-size: 13px;
+  font-size: var(--lp-text-sm);
   color: var(--lp-text-muted);
 }
+
 .q-content {
   color: var(--lp-text);
-  font-size: 16px;
-  line-height: 1.8;
-  margin-bottom: 20px;
+  font-size: var(--lp-text-lg);
+  line-height: var(--lp-leading-relaxed);
+  margin-bottom: var(--lp-space-5);
   white-space: pre-wrap;
 }
+
 .option-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: var(--lp-space-3);
+  margin-bottom: var(--lp-space-5);
 }
+
 .option-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--lp-space-3);
   width: 100%;
   min-height: 48px;
-  padding: 12px 16px;
+  padding: var(--lp-space-3) var(--lp-space-4);
   color: var(--lp-text);
   text-align: left;
   font: inherit;
   background: var(--lp-surface);
-  border: 2px solid var(--lp-border);
-  border-radius: var(--lp-radius);
+  border: 1px solid var(--lp-border-strong);
+  border-radius: var(--lp-radius-md);
   cursor: pointer;
   transition:
-    background-color 0.2s,
-    border-color 0.2s;
+    background-color var(--lp-duration-fast) var(--lp-ease-out),
+    border-color var(--lp-duration-fast) var(--lp-ease-out);
 }
+
 .option-item:hover {
-  border-color: var(--lp-border-strong);
-  background: var(--lp-surface-soft);
+  border-color: var(--lp-primary);
+  background: var(--lp-surface-subtle);
 }
+
 .option-item:focus-visible {
-  outline: 3px solid var(--lp-primary-soft);
+  outline: var(--lp-shadow-focus);
   outline-offset: 2px;
   border-color: var(--lp-primary);
 }
+
 .option-item.selected {
   border-color: var(--lp-primary);
   background: var(--lp-primary-soft);
 }
+
 .opt-label {
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  font-weight: var(--lp-weight-bold);
   color: var(--lp-primary);
-  min-width: 20px;
+  background: var(--lp-primary-soft);
+  border-radius: var(--lp-radius-full);
 }
+
+.option-item.selected .opt-label {
+  color: var(--lp-on-primary);
+  background: var(--lp-primary);
+}
+
 .multi-check {
   display: inline-flex;
   align-items: center;
@@ -405,97 +487,146 @@ onBeforeUnmount(() => {
   color: var(--lp-surface);
   background: var(--lp-surface);
   border: 1px solid var(--lp-border-strong);
-  border-radius: 4px;
+  border-radius: var(--lp-radius-xs);
 }
+
 .option-item.selected .multi-check {
   color: var(--lp-surface);
   background: var(--lp-primary);
   border-color: var(--lp-primary);
 }
+
 .tf-list {
   flex-direction: row;
-  gap: 20px;
+  gap: var(--lp-space-4);
 }
+
 .tf-list .option-item {
   flex: 1;
   justify-content: center;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: var(--lp-text-lg);
+  font-weight: var(--lp-weight-semibold);
 }
+
 .nav-btns {
   display: flex;
   justify-content: center;
-  gap: 12px;
-  margin-top: 20px;
+  gap: var(--lp-space-3);
+  margin-top: var(--lp-space-5);
 }
+
 .answer-sheet {
   width: 200px;
-  padding: 16px;
+  padding: var(--lp-space-4);
   background: var(--lp-surface);
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  box-shadow: var(--lp-shadow-sm);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
   height: fit-content;
   position: sticky;
-  top: 20px;
+  top: var(--lp-space-5);
 }
-.answer-sheet h4 {
-  margin: 0 0 12px;
-  font-size: 14px;
+
+.sheet-heading {
+  margin: 0 0 var(--lp-space-3);
+  font-size: var(--lp-text-base);
 }
+
+.sheet-legend {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--lp-space-3);
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-xs);
+}
+
+.sheet-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lp-space-1);
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--lp-radius-full);
+  background: var(--lp-surface-inset);
+  border: 1px solid var(--lp-border-strong);
+}
+
+.legend-dot.is-answered {
+  background: var(--lp-primary);
+  border-color: var(--lp-primary);
+}
+
+.legend-dot.is-current {
+  background: var(--lp-warning);
+  border-color: var(--lp-warning);
+}
+
 .sheet-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
+  gap: var(--lp-space-2);
 }
+
 .sheet-item {
   display: flex;
   align-items: center;
   justify-content: center;
   min-width: 44px;
   height: 44px;
-  padding: 0 4px;
+  padding: 0 var(--lp-space-1);
   overflow: hidden;
   color: var(--lp-text);
   background: var(--lp-surface);
   border: 1px solid var(--lp-border-strong);
-  border-radius: 4px;
+  border-radius: var(--lp-radius-xs);
   font: inherit;
-  font-size: 11px;
+  font-size: var(--lp-text-xs);
   white-space: nowrap;
   text-overflow: ellipsis;
   cursor: pointer;
+  transition:
+    background-color var(--lp-duration-fast) var(--lp-ease-out),
+    color var(--lp-duration-fast) var(--lp-ease-out);
 }
+
 .sheet-item:hover {
   background: var(--lp-surface-soft);
 }
+
 .sheet-item:focus-visible {
-  outline: 3px solid var(--lp-primary-soft);
+  outline: var(--lp-shadow-focus);
   outline-offset: 2px;
 }
+
 .sheet-item.answered {
   background: var(--lp-primary);
-  color: var(--lp-surface);
+  color: var(--lp-on-primary);
   border-color: var(--lp-primary);
 }
+
 .sheet-item.current {
   border-color: var(--lp-warning);
   box-shadow: 0 0 0 2px var(--lp-warning);
 }
+
 .countdown {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  margin-left: 16px;
-  font-size: 16px;
-  font-weight: 600;
+  gap: var(--lp-space-1);
+  font-size: var(--lp-text-lg);
+  font-weight: var(--lp-weight-semibold);
   font-variant-numeric: tabular-nums;
   color: var(--lp-primary);
 }
+
 .countdown-warn {
   color: var(--lp-danger);
   animation: blink 1s infinite;
 }
+
 @keyframes blink {
   50% {
     opacity: 0.5;
@@ -504,46 +635,50 @@ onBeforeUnmount(() => {
 
 @media (max-width: 720px) {
   .exam-take-container {
-    padding: 16px;
+    padding: var(--lp-space-4);
   }
+
   .take-header {
     align-items: stretch;
     flex-direction: column;
+    gap: var(--lp-space-3);
   }
-  .header-center {
-    display: flex;
-    align-items: center;
+
+  .take-header-progress {
+    order: 2;
+  }
+
+  .take-header-right {
     justify-content: space-between;
-    gap: 12px;
   }
-  .countdown {
-    margin-left: 0;
-  }
-  .header-right .el-button {
+
+  .take-header-right .el-button {
     width: 100%;
     min-height: 44px;
   }
+
   .question-area {
     flex-direction: column;
   }
+
   .answer-sheet {
     position: static;
     width: auto;
     order: -1;
   }
+
   .sheet-grid {
     grid-template-columns: repeat(5, minmax(44px, 1fr));
   }
-  .sheet-item {
-    min-width: 44px;
-    height: 44px;
-  }
+
   .tf-list {
-    gap: 10px;
+    gap: var(--lp-space-2);
   }
+
   .nav-btns {
     justify-content: stretch;
   }
+
   .nav-btns .el-button {
     flex: 1;
     min-height: 44px;
@@ -552,13 +687,19 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 420px) {
+  .question-card {
+    padding: var(--lp-space-4);
+  }
+
   .sheet-grid {
     grid-template-columns: repeat(4, minmax(44px, 1fr));
   }
+
   .q-meta {
     align-items: flex-start;
     flex-wrap: wrap;
   }
+
   .tf-list {
     flex-direction: column;
   }
@@ -568,6 +709,7 @@ onBeforeUnmount(() => {
   .countdown-warn {
     animation: none;
   }
+
   .option-item {
     transition: none;
   }

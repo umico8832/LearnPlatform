@@ -1,15 +1,17 @@
 <template>
-  <div class="question-submit-page">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>题目投稿</span>
-          <el-button type="primary" @click="showSubmitDialog = true">
-            <el-icon><Plus /></el-icon> 投稿新题目
-          </el-button>
-        </div>
-      </template>
+  <div class="question-submit-page page-container">
+    <section class="page-hero">
+      <div class="hero-copy">
+        <span class="section-kicker">投稿中心</span>
+        <h2>题目投稿</h2>
+        <p>向题库贡献高质量题目，提交后由管理员审核入库。</p>
+      </div>
+      <div class="hero-actions">
+        <el-button type="primary" :icon="Plus" @click="showSubmitDialog = true">投稿新题目</el-button>
+      </div>
+    </section>
 
+    <el-card shadow="never">
       <!-- 状态筛选 -->
       <div class="filter-bar">
         <el-radio-group v-model="statusFilter" @change="loadSubmissions">
@@ -415,25 +417,80 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.question-submit-page {
-  max-width: 1100px;
-  margin: 0 auto;
+.page-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--lp-space-5);
+  margin-bottom: var(--lp-space-5);
+  padding: var(--lp-space-6);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  background: linear-gradient(135deg, var(--lp-primary-soft) 0%, var(--lp-surface) 58%), var(--lp-surface);
 }
-.card-header {
+
+.section-kicker {
+  display: inline-block;
+  margin-bottom: var(--lp-space-2);
+  color: var(--lp-primary);
+  font-size: var(--lp-text-xs);
+  font-weight: var(--lp-weight-heavy);
+  letter-spacing: var(--lp-tracking-wide);
+}
+
+.page-hero h2 {
+  margin: 0;
+  color: var(--lp-text);
+  font-size: var(--lp-text-3xl);
+  font-weight: var(--lp-weight-heavy);
+  letter-spacing: var(--lp-tracking-tight);
+}
+
+.page-hero p {
+  margin: var(--lp-space-2) 0 0;
+  max-width: var(--lp-reading-measure);
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-base);
+  line-height: var(--lp-leading-relaxed);
+}
+
+.hero-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--lp-space-3);
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
+
 .filter-bar {
-  margin-bottom: 16px;
+  margin-bottom: var(--lp-space-4);
 }
+
 .option-row {
   display: flex;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: var(--lp-space-2);
 }
+
 .detail-content {
   white-space: pre-wrap;
-  line-height: 1.6;
+  line-height: var(--lp-leading-body);
+}
+
+@media (max-width: 768px) {
+  .page-hero {
+    align-items: stretch;
+    flex-direction: column;
+    padding: var(--lp-space-4);
+  }
+
+  .page-hero h2 {
+    font-size: var(--lp-text-2xl);
+  }
+
+  .hero-actions,
+  .hero-actions .el-button {
+    width: 100%;
+  }
 }
 </style>

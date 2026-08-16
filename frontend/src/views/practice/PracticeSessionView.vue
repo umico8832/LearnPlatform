@@ -6,20 +6,14 @@
         <el-button @click="handleBack" text>
           <el-icon><ArrowLeft /></el-icon> 退出练习
         </el-button>
-        <el-tag v-if="isWrongPractice" type="danger" size="small" effect="dark" style="margin-left: 8px">
-          错题重练
-        </el-tag>
-        <el-tag v-if="isFavoritePractice" type="warning" size="small" effect="dark" style="margin-left: 8px">
-          收藏练习
-        </el-tag>
+        <el-tag v-if="isWrongPractice" type="danger" size="small" effect="dark" class="mode-tag"> 错题重练 </el-tag>
+        <el-tag v-if="isFavoritePractice" type="warning" size="small" effect="dark" class="mode-tag"> 收藏练习 </el-tag>
       </div>
       <div class="header-center">
-        <span class="progress-text">{{ currentIndex + 1 }} / {{ questions.length }}</span>
-        <el-progress
-          :percentage="((currentIndex + 1) / questions.length) * 100"
-          :stroke-width="8"
-          :show-text="false"
-          style="width: 200px"
+        <LpProgress
+          :percent="((currentIndex + 1) / questions.length) * 100"
+          show-label
+          :label="`${currentIndex + 1} / ${questions.length}`"
         />
       </div>
       <div class="header-right">
@@ -32,7 +26,7 @@
     <!-- 答题结果弹窗 -->
     <el-dialog
       v-model="showResult"
-      :title="currentResult?.correct ? '🎉 答对了！' : '😢 答错了'"
+      :title="currentResult?.correct ? '答对了！' : '答错了！'"
       :width="isMobile ? '95%' : '680px'"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
@@ -41,9 +35,8 @@
       @closed="handleResultClosed"
     >
       <div class="result-content">
-        <div class="result-icon">
-          <span v-if="currentResult?.correct" class="icon-correct">✓</span>
-          <span v-else class="icon-wrong">✗</span>
+        <div class="result-icon" :class="currentResult?.correct ? 'is-correct' : 'is-wrong'">
+          <span>{{ currentResult?.correct ? '✓' : '✗' }}</span>
         </div>
 
         <div class="result-answer">
@@ -55,8 +48,8 @@
         </div>
 
         <div v-if="currentResult?.analysis" class="result-analysis">
-          <el-divider />
-          <p class="analysis-title">📝 解析</p>
+          <LpDivider />
+          <p class="analysis-title">解析</p>
           <p class="analysis-text">{{ currentResult.analysis }}</p>
         </div>
 
@@ -79,9 +72,10 @@
 
     <!-- 练习完成总结 -->
     <div v-if="finished" class="finish-container">
-      <el-card class="finish-card">
-        <div class="finish-icon">🏆</div>
+      <div class="finish-card">
+        <div class="finish-icon" aria-hidden="true">✓</div>
         <h2>练习完成！</h2>
+        <p class="finish-note">本轮练习已结束，可以返回或再练一次。</p>
         <div class="finish-stats">
           <div class="finish-stat">
             <div class="fs-value">{{ questions.length }}</div>
@@ -106,12 +100,12 @@
           <el-button @click="handleBack" size="large">返回</el-button>
           <el-button type="primary" @click="restartPractice" size="large">再练一次</el-button>
         </div>
-      </el-card>
+      </div>
     </div>
 
     <!-- 题目卡片 -->
     <div v-if="!finished && currentQuestion" class="question-card-wrapper">
-      <el-card class="question-card" shadow="hover">
+      <el-card class="question-card" shadow="never">
         <div class="question-meta">
           <el-tag :type="getQuestionTypeTag(currentQuestion.questionType)" size="small">
             {{ getQuestionTypeLabel(currentQuestion.questionType) }}
@@ -337,10 +331,12 @@ const handleResultClosed = () => {
 const handleBack = () => {
   sessionStorage.removeItem('practice_questions')
   sessionStorage.removeItem('practice_mode')
-  if (isWrongPractice.value) {
+  if (isWrongPractice.value || practiceMode.value === 'similar') {
     router.push({ name: 'WrongQuestions' })
   } else if (isFavoritePractice.value) {
     router.push({ name: 'Favorites' })
+  } else if (practiceMode.value === 'recommended') {
+    router.push({ name: 'LearningDiagnosis' })
   } else {
     router.push({ name: 'Practice' })
   }
@@ -349,10 +345,12 @@ const handleBack = () => {
 const restartPractice = () => {
   sessionStorage.removeItem('practice_questions')
   sessionStorage.removeItem('practice_mode')
-  if (isWrongPractice.value) {
+  if (isWrongPractice.value || practiceMode.value === 'similar') {
     router.push({ name: 'WrongQuestions' })
   } else if (isFavoritePractice.value) {
     router.push({ name: 'Favorites' })
+  } else if (practiceMode.value === 'recommended') {
+    router.push({ name: 'LearningDiagnosis' })
   } else {
     router.push({ name: 'Practice' })
   }
@@ -383,41 +381,57 @@ const getQuestionTypeTag = (type: string) => {
 
 <style scoped>
 .practice-session {
-  padding: 24px;
+  padding: var(--lp-space-6);
   max-width: 800px;
   margin: 0 auto;
 }
 
+/* 顶部进度栏 */
 .session-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
-  padding: 16px 20px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  gap: var(--lp-space-4);
+  margin-bottom: var(--lp-space-6);
+  padding: var(--lp-space-3) var(--lp-space-5);
+  background: var(--lp-surface);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
+}
+
+.header-left,
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-space-2);
 }
 
 .header-center {
   display: flex;
   align-items: center;
-  gap: 12px;
+  flex: 1;
+  min-width: 160px;
+  max-width: 320px;
 }
 
-.progress-text {
-  font-weight: 600;
-  color: #303133;
+.header-center :deep(.lp-progress) {
+  width: 100%;
 }
 
+.mode-tag {
+  margin-left: var(--lp-space-2);
+}
+
+/* 题目卡片 */
 .question-card-wrapper {
-  animation: fadeIn 0.3s ease;
+  animation: lp-fade-in var(--lp-duration-normal) var(--lp-ease-out);
 }
 
-@keyframes fadeIn {
+@keyframes lp-fade-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -426,14 +440,17 @@ const getQuestionTypeTag = (type: string) => {
 }
 
 .question-card {
-  margin-bottom: 24px;
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
 
 .question-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: var(--lp-space-2);
+  margin-bottom: var(--lp-space-4);
+  flex-wrap: wrap;
 }
 
 .difficulty-stars {
@@ -441,87 +458,105 @@ const getQuestionTypeTag = (type: string) => {
 }
 
 .score-tag {
-  font-size: 13px;
-  color: #909399;
+  font-size: var(--lp-text-sm);
+  color: var(--lp-text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .question-content {
-  font-size: 17px;
-  line-height: 1.8;
-  color: #303133;
-  margin-bottom: 16px;
+  font-size: var(--lp-text-xl);
+  line-height: var(--lp-leading-relaxed);
+  color: var(--lp-text);
+  margin-bottom: var(--lp-space-4);
   white-space: pre-wrap;
 }
 
 .knowledge-points {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 20px;
+  gap: var(--lp-space-2);
+  margin-bottom: var(--lp-space-5);
 }
 
 .answer-area {
-  margin: 20px 0;
+  margin: var(--lp-space-5) 0;
 }
 
 .option-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--lp-space-3);
 }
 
 .option-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 18px;
-  border: 2px solid #ebeef5;
-  border-radius: 8px;
+  gap: var(--lp-space-3);
+  padding: var(--lp-space-4) var(--lp-space-5);
+  background: var(--lp-surface);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-md);
   cursor: pointer;
-  transition: all 0.2s;
+  transition:
+    border-color var(--lp-duration-fast) var(--lp-ease-out),
+    background-color var(--lp-duration-fast) var(--lp-ease-out);
 }
 
 .option-item:hover {
-  border-color: #c0c4cc;
-  background: #f5f7fa;
+  border-color: var(--lp-border-strong);
+  background: var(--lp-surface-subtle);
 }
 
 .option-item.selected {
-  border-color: #409eff;
-  background: #ecf5ff;
+  border-color: var(--lp-primary);
+  background: var(--lp-primary-soft);
 }
 
 .option-label {
-  font-weight: 700;
-  color: #409eff;
-  min-width: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  border-radius: var(--lp-radius-full);
+  background: var(--lp-surface-inset);
+  color: var(--lp-text-secondary);
+  font-weight: var(--lp-weight-bold);
+  font-size: var(--lp-text-sm);
+  flex-shrink: 0;
+}
+
+.option-item.selected .option-label {
+  background: var(--lp-primary);
+  color: var(--lp-on-primary);
 }
 
 .option-content {
   flex: 1;
-  font-size: 15px;
-  color: #303133;
+  font-size: var(--lp-text-md);
+  color: var(--lp-text);
+  line-height: var(--lp-leading-snug);
 }
 
 .tf-options {
   flex-direction: row;
-  gap: 20px;
+  gap: var(--lp-space-4);
 }
 
 .tf-item {
   flex: 1;
   justify-content: center;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: var(--lp-text-lg);
+  font-weight: var(--lp-weight-semibold);
 }
 
 .text-answer {
-  margin-top: 8px;
+  margin-top: var(--lp-space-2);
 }
 
 .submit-area {
   text-align: center;
-  margin-top: 24px;
+  margin-top: var(--lp-space-6);
 }
 
 /* 结果弹窗 */
@@ -530,40 +565,54 @@ const getQuestionTypeTag = (type: string) => {
 }
 
 .result-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto var(--lp-space-4);
+  border-radius: var(--lp-radius-full);
+  font-size: var(--lp-text-3xl);
+  font-weight: var(--lp-weight-bold);
 }
 
-.icon-correct {
-  color: #67c23a;
-  font-weight: 700;
+.result-icon.is-correct {
+  background: var(--lp-success-soft);
+  color: var(--lp-success);
 }
 
-.icon-wrong {
-  color: #f56c6c;
-  font-weight: 700;
+.result-icon.is-wrong {
+  background: var(--lp-danger-soft);
+  color: var(--lp-danger);
 }
 
 .result-answer {
   text-align: left;
-  font-size: 15px;
-  line-height: 2;
+  font-size: var(--lp-text-md);
+  line-height: var(--lp-leading-relaxed);
+  color: var(--lp-text);
+}
+
+.result-answer strong {
+  color: var(--lp-text-secondary);
+  font-weight: var(--lp-weight-semibold);
 }
 
 .correct-answer {
-  color: #67c23a;
-  font-weight: 700;
+  color: var(--lp-success);
+  font-weight: var(--lp-weight-bold);
 }
 
 .analysis-title {
-  font-weight: 700;
-  margin-bottom: 8px;
+  font-weight: var(--lp-weight-bold);
+  margin-bottom: var(--lp-space-2);
+  color: var(--lp-text);
 }
 
 .analysis-text {
-  color: #606266;
-  font-size: 14px;
-  line-height: 1.8;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-base);
+  line-height: var(--lp-leading-relaxed);
   white-space: pre-wrap;
   text-align: left;
 }
@@ -572,78 +621,100 @@ const getQuestionTypeTag = (type: string) => {
 .finish-container {
   display: flex;
   justify-content: center;
-  padding-top: 60px;
+  padding-top: var(--lp-space-16);
 }
 
 .finish-card {
   width: 100%;
   max-width: 500px;
   text-align: center;
-  padding: 20px;
+  padding: var(--lp-space-8) var(--lp-space-6);
+  background: var(--lp-surface);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
 
 .finish-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto var(--lp-space-4);
+  border-radius: var(--lp-radius-full);
+  background: var(--lp-success-soft);
+  color: var(--lp-success);
+  font-size: var(--lp-text-4xl);
+  font-weight: var(--lp-weight-bold);
 }
 
 .finish-card h2 {
-  margin-bottom: 32px;
-  color: #303133;
+  margin-bottom: var(--lp-space-2);
+  color: var(--lp-text);
+  font-size: var(--lp-text-3xl);
+}
+
+.finish-note {
+  margin: 0 0 var(--lp-space-6);
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-base);
 }
 
 .finish-stats {
   display: flex;
   justify-content: center;
-  gap: 40px;
-  margin-bottom: 32px;
+  gap: var(--lp-space-8);
+  margin-bottom: var(--lp-space-8);
 }
 
 .fs-value {
-  font-size: 32px;
-  font-weight: 700;
-  color: #409eff;
+  font-size: var(--lp-text-4xl);
+  font-weight: var(--lp-weight-bold);
+  color: var(--lp-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .fs-value.correct {
-  color: #67c23a;
+  color: var(--lp-success);
 }
 
 .fs-value.wrong {
-  color: #f56c6c;
+  color: var(--lp-danger);
 }
 
 .fs-value.rate {
-  color: #e6a23c;
+  color: var(--lp-warning);
 }
 
 .fs-label {
-  font-size: 14px;
-  color: #909399;
-  margin-top: 4px;
+  font-size: var(--lp-text-sm);
+  color: var(--lp-text-muted);
+  margin-top: var(--lp-space-1);
 }
 
 .finish-actions {
   display: flex;
   justify-content: center;
-  gap: 16px;
+  gap: var(--lp-space-4);
 }
 
 /* 移动端适配 */
 @media (max-width: 767px) {
   .practice-session {
-    padding: 12px;
+    padding: var(--lp-space-3);
   }
 
   .session-header {
     flex-wrap: wrap;
-    gap: 8px;
-    padding: 12px;
+    gap: var(--lp-space-2);
+    padding: var(--lp-space-3);
   }
 
   .header-center {
     order: 3;
     width: 100%;
+    max-width: none;
     justify-content: center;
   }
 
@@ -651,48 +722,37 @@ const getQuestionTypeTag = (type: string) => {
     display: none;
   }
 
-  .question-meta {
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .difficulty-stars {
-    margin-left: 0;
-    width: 100%;
-    order: 5;
-  }
-
   .question-content {
-    font-size: 15px;
+    font-size: var(--lp-text-lg);
   }
 
   .option-item {
-    padding: 12px 14px;
-    gap: 8px;
+    padding: var(--lp-space-3) var(--lp-space-4);
+    gap: var(--lp-space-2);
     /* 触摸友好的最小高度 */
     min-height: 48px;
   }
 
   .tf-options {
     flex-direction: column;
-    gap: 10px;
+    gap: var(--lp-space-3);
   }
 
   .finish-stats {
-    gap: 20px;
+    gap: var(--lp-space-4);
     flex-wrap: wrap;
   }
 
   .fs-value {
-    font-size: 24px;
+    font-size: var(--lp-text-3xl);
   }
 
   .finish-container {
-    padding-top: 24px;
+    padding-top: var(--lp-space-6);
   }
 
   .el-dialog {
-    margin: 8px auto !important;
+    margin: var(--lp-space-2) auto !important;
   }
 }
 </style>

@@ -101,6 +101,7 @@ vi.mock('vue-router', async (importOriginal) => ({
 }))
 
 import ExamListView from '@/views/exam/ExamListView.vue'
+import PrivateExamImportDialog from '@/components/exam/PrivateExamImportDialog.vue'
 
 const stubs = {
   'el-tabs': { template: '<div><slot /></div>' },
@@ -267,7 +268,7 @@ describe('ExamListView paper provenance', () => {
     const wrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
     await flushPromises()
 
-    const vm = wrapper.vm as unknown as {
+    const vm = wrapper.findComponent(PrivateExamImportDialog).vm as unknown as {
       importForm: {
         title: string
         courseId: number
@@ -381,7 +382,7 @@ describe('ExamListView paper provenance', () => {
     mockConfirmPrivateExamDraft.mockResolvedValue({ code: 0, data: { id: 51 } })
     const wrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
     await flushPromises()
-    const vm = wrapper.vm as unknown as {
+    const vm = wrapper.findComponent(PrivateExamImportDialog).vm as unknown as {
       importForm: Record<string, unknown>
       previewImport: () => Promise<void>
       createAnswerDraft: () => Promise<void>
@@ -432,7 +433,7 @@ describe('ExamListView paper provenance', () => {
     const wrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
     await flushPromises()
     const file = new File(['%PDF-test'], 'paper.pdf', { type: 'application/pdf' })
-    const vm = wrapper.vm as unknown as {
+    const vm = wrapper.findComponent(PrivateExamImportDialog).vm as unknown as {
       importForm: Record<string, unknown>
       sourceFile: File | null
       previewImport: () => Promise<void>
@@ -480,7 +481,7 @@ describe('ExamListView paper provenance', () => {
     const file = new File(['PK-docx-test'], 'paper.docx', {
       type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     })
-    const vm = wrapper.vm as unknown as {
+    const vm = wrapper.findComponent(PrivateExamImportDialog).vm as unknown as {
       importForm: Record<string, unknown>
       sourceFile: File | null
       previewImport: () => Promise<void>
@@ -521,17 +522,19 @@ describe('ExamListView paper provenance', () => {
       questions: [],
     }
     const paperFixture = { id: 51, title: '待删除私有试卷', visibility: 'PRIVATE' as const }
-    const vm = wrapper.vm as unknown as {
+    const dialogVm = wrapper.findComponent(PrivateExamImportDialog).vm as unknown as {
       privateDrafts: (typeof draftFixture)[]
       deleteDraft: (draft: typeof draftFixture) => Promise<void>
+    }
+    const pageVm = wrapper.vm as unknown as {
       deletePaper: (paper: typeof paperFixture) => Promise<void>
     }
-    vm.privateDrafts = [draftFixture]
+    dialogVm.privateDrafts = [draftFixture]
 
-    await vm.deleteDraft(draftFixture)
+    await dialogVm.deleteDraft(draftFixture)
     expect(mockDeletePrivateExamDraft).toHaveBeenCalledWith(31)
-    expect(vm.privateDrafts).toEqual([])
-    await vm.deletePaper(paperFixture)
+    expect(dialogVm.privateDrafts).toEqual([])
+    await pageVm.deletePaper(paperFixture)
     expect(mockDeletePrivateExamPaper).toHaveBeenCalledWith(51)
     expect(mockConfirmDialog).toHaveBeenCalledTimes(2)
   })
@@ -541,26 +544,28 @@ describe('ExamListView paper provenance', () => {
     const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
     const wrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
     await flushPromises()
-    const vm = wrapper.vm as unknown as {
+    const pageVm = wrapper.vm as unknown as {
       privateSource: Record<string, unknown> | null
-      activeDraft: Record<string, unknown> | null
       downloadPaperSource: () => Promise<void>
+    }
+    const dialogVm = wrapper.findComponent(PrivateExamImportDialog).vm as unknown as {
+      activeDraft: Record<string, unknown> | null
       downloadDraftSource: () => Promise<void>
     }
-    vm.privateSource = {
+    pageVm.privateSource = {
       paperId: 51,
       sourceName: 'paper.pdf',
       sourceFormat: 'PDF',
       originalFileAvailable: true,
     }
-    vm.activeDraft = {
+    dialogVm.activeDraft = {
       id: 31,
       sourceName: 'paper.docx',
       originalFileAvailable: true,
     }
 
-    await vm.downloadPaperSource()
-    await vm.downloadDraftSource()
+    await pageVm.downloadPaperSource()
+    await dialogVm.downloadDraftSource()
 
     expect(mockDownloadPrivateExamSourceFile).toHaveBeenCalledWith(51)
     expect(mockDownloadPrivateExamDraftSourceFile).toHaveBeenCalledWith(31)

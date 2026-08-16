@@ -4,10 +4,9 @@
       <div class="hero-copy">
         <span class="section-kicker">账户与学习档案</span>
         <h2>个人中心</h2>
-        <p>管理展示昵称与登录密码，同时快速回到学习报告、刷题练习和收藏题复盘。</p>
+        <p>管理展示昵称与登录密码，同时快速回到刷题练习和收藏题复盘。</p>
       </div>
       <div class="hero-actions">
-        <el-button type="primary" :icon="DataLine" @click="router.push('/learning-report')"> 查看学习报告 </el-button>
         <el-button :icon="EditPen" @click="router.push('/practice')"> 继续刷题 </el-button>
       </div>
     </section>
@@ -166,18 +165,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import {
-  ArrowRight,
-  Clock,
-  DataLine,
-  EditPen,
-  Key,
-  Lock,
-  Reading,
-  Star,
-  TrendCharts,
-  User,
-} from '@element-plus/icons-vue'
+import { ArrowRight, Clock, EditPen, Key, Lock, Reading, Star, User } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { updateProfile, updatePassword } from '@/api/user'
 
@@ -193,7 +181,6 @@ const avatarText = computed(() => {
 })
 
 const shortcutItems = [
-  { label: '学习报告', path: '/learning-report', icon: TrendCharts },
   { label: '智能复习', path: '/review', icon: Reading },
   { label: '我的收藏', path: '/favorites', icon: Star },
 ]
@@ -288,105 +275,106 @@ onMounted(() => {
 
 <style scoped>
 .profile-container {
-  padding: 24px;
+  padding: var(--lp-space-6);
 }
 
 .profile-hero {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 18px;
-  margin-bottom: 18px;
-  padding: 24px;
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  background: linear-gradient(135deg, rgba(23, 105, 170, 0.09), rgba(47, 133, 90, 0.08)), var(--lp-surface);
+  gap: var(--lp-space-5);
+  margin-bottom: var(--lp-space-5);
+  padding: var(--lp-space-6);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  background: linear-gradient(135deg, var(--lp-primary-soft) 0%, var(--lp-surface) 58%), var(--lp-surface);
 }
 
 .section-kicker {
   display: inline-block;
-  margin-bottom: 8px;
+  margin-bottom: var(--lp-space-2);
   color: var(--lp-primary);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
+  font-size: var(--lp-text-xs);
+  font-weight: var(--lp-weight-heavy);
+  letter-spacing: var(--lp-tracking-wide);
 }
 
 .profile-hero h2 {
   margin: 0;
   color: var(--lp-text);
-  font-size: 24px;
-  font-weight: 850;
+  font-size: var(--lp-text-3xl);
+  font-weight: var(--lp-weight-heavy);
+  letter-spacing: var(--lp-tracking-tight);
 }
 
 .profile-hero p {
-  margin: 8px 0 0;
-  max-width: 640px;
+  margin: var(--lp-space-2) 0 0;
+  max-width: var(--lp-reading-measure);
   color: var(--lp-text-secondary);
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: var(--lp-text-base);
+  line-height: var(--lp-leading-relaxed);
 }
 
 .hero-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
+  gap: var(--lp-space-3);
   flex-wrap: wrap;
 }
 
 .profile-layout {
   display: grid;
   grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
-  gap: 18px;
+  gap: var(--lp-space-5);
   align-items: start;
 }
 
 .identity-panel,
 .settings-panel {
   display: grid;
-  gap: 16px;
+  gap: var(--lp-space-4);
 }
 
 .identity-card :deep(.el-card__body) {
-  padding: 22px !important;
+  padding: var(--lp-space-5) !important;
 }
 
 .user-card {
   text-align: center;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--lp-border);
+  padding-bottom: var(--lp-space-5);
+  border-bottom: var(--lp-border-hairline);
 }
 
 .user-avatar {
   background: linear-gradient(135deg, var(--lp-primary), var(--lp-success));
-  color: #fff;
-  font-size: 34px;
-  font-weight: 850;
+  color: var(--lp-on-primary);
+  font-size: var(--lp-text-5xl);
+  font-weight: var(--lp-weight-heavy);
 }
 
 .user-name {
-  margin: 16px 0 8px;
+  margin: var(--lp-space-4) 0 var(--lp-space-2);
   color: var(--lp-text);
-  font-size: 20px;
-  font-weight: 850;
-  line-height: 1.25;
+  font-size: var(--lp-text-2xl);
+  font-weight: var(--lp-weight-heavy);
+  line-height: var(--lp-leading-tight);
   overflow-wrap: anywhere;
 }
 
 .profile-meta-list {
   display: grid;
-  gap: 12px;
-  margin-top: 18px;
+  gap: var(--lp-space-3);
+  margin-top: var(--lp-space-5);
 }
 
 .profile-meta-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
+  gap: var(--lp-space-3);
+  padding: var(--lp-space-3);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-md);
   background: var(--lp-surface-soft);
 }
 
@@ -399,20 +387,20 @@ onMounted(() => {
   width: 38px;
   height: 38px;
   flex: 0 0 auto;
-  border-radius: 8px;
+  border-radius: var(--lp-radius-sm);
   color: var(--lp-primary);
   background: var(--lp-primary-soft);
-  font-size: 18px;
+  font-size: var(--lp-text-xl);
 }
 
 .meta-icon.accent {
   color: var(--lp-warning);
-  background: #fff7e6;
+  background: var(--lp-warning-soft);
 }
 
 .meta-icon.safe {
   color: var(--lp-success);
-  background: #edf8f2;
+  background: var(--lp-success-soft);
 }
 
 .profile-meta-item small,
@@ -420,52 +408,52 @@ onMounted(() => {
 .shortcut-title span {
   display: block;
   color: var(--lp-text-muted);
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: var(--lp-text-xs);
+  line-height: var(--lp-leading-snug);
 }
 
 .profile-meta-item strong {
   display: block;
-  margin-top: 3px;
+  margin-top: var(--lp-space-1);
   color: var(--lp-text);
-  font-size: 14px;
-  font-weight: 800;
+  font-size: var(--lp-text-base);
+  font-weight: var(--lp-weight-heavy);
   overflow-wrap: anywhere;
 }
 
 .shortcut-title {
-  margin-bottom: 12px;
+  margin-bottom: var(--lp-space-3);
 }
 
 .shortcut-title strong {
   display: block;
   color: var(--lp-text);
-  font-size: 15px;
-  font-weight: 850;
+  font-size: var(--lp-text-md);
+  font-weight: var(--lp-weight-heavy);
 }
 
 .shortcut-title span {
-  margin-top: 4px;
+  margin-top: var(--lp-space-1);
 }
 
 .shortcut-item {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
+  gap: var(--lp-space-3);
   width: 100%;
-  margin-top: 10px;
-  padding: 10px;
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
+  margin-top: var(--lp-space-3);
+  padding: var(--lp-space-3);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-md);
   background: var(--lp-surface);
   color: var(--lp-text);
   cursor: pointer;
   text-align: left;
   transition:
-    border-color 0.18s ease,
-    transform 0.18s ease,
-    box-shadow 0.18s ease;
+    border-color var(--lp-duration-normal) var(--lp-ease-out),
+    transform var(--lp-duration-normal) var(--lp-ease-out),
+    box-shadow var(--lp-duration-normal) var(--lp-ease-out);
 }
 
 .shortcut-item:hover {
@@ -475,8 +463,8 @@ onMounted(() => {
 }
 
 .shortcut-item span:nth-child(2) {
-  font-size: 14px;
-  font-weight: 750;
+  font-size: var(--lp-text-base);
+  font-weight: var(--lp-weight-bold);
 }
 
 .settings-card :deep(.el-card__header) {
@@ -486,24 +474,24 @@ onMounted(() => {
 .card-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--lp-space-3);
 }
 
 .card-header strong {
   display: block;
   color: var(--lp-text);
-  font-size: 16px;
-  font-weight: 850;
+  font-size: var(--lp-text-lg);
+  font-weight: var(--lp-weight-heavy);
 }
 
 .header-icon.warning {
   color: var(--lp-warning);
-  background: #fff7e6;
+  background: var(--lp-warning-soft);
 }
 
 .settings-card :deep(.el-form-item__label) {
   color: var(--lp-text-secondary);
-  font-weight: 750;
+  font-weight: var(--lp-weight-bold);
 }
 
 .form-actions {
@@ -513,15 +501,15 @@ onMounted(() => {
 .password-note {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  margin: 4px 0 18px;
-  padding: 11px 12px;
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  background: #fffdf5;
+  gap: var(--lp-space-2);
+  margin: var(--lp-space-1) 0 var(--lp-space-5);
+  padding: var(--lp-space-3);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-md);
+  background: var(--lp-warning-soft);
   color: var(--lp-text-secondary);
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-body);
 }
 
 .password-note .el-icon {
@@ -537,17 +525,17 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .profile-container {
-    padding: 16px;
+    padding: var(--lp-space-4);
   }
 
   .profile-hero {
     align-items: stretch;
     flex-direction: column;
-    padding: 18px;
+    padding: var(--lp-space-4);
   }
 
   .profile-hero h2 {
-    font-size: 21px;
+    font-size: var(--lp-text-2xl);
   }
 
   .hero-actions,

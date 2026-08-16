@@ -1,11 +1,11 @@
 <template>
-  <div class="exam-result-container page-container">
+  <div class="exam-result-container">
     <div v-loading="loading" class="result-loading-shell">
       <template v-if="result">
         <section class="result-header" aria-labelledby="result-title">
-          <el-card shadow="never" class="score-card">
+          <article class="score-card">
             <span class="section-kicker">考试复盘</span>
-            <h2 id="result-title">{{ result.examTitle }}</h2>
+            <h2 id="result-title" class="result-title">{{ result.examTitle }}</h2>
 
             <div class="score-main">
               <div class="score-circle" aria-label="考试得分">
@@ -58,20 +58,20 @@
               </el-button>
               <el-button v-if="result.courseId" type="primary" @click="goToCourseOverview"> 返回课程总览 </el-button>
             </div>
-          </el-card>
+          </article>
         </section>
 
         <section class="answers-section" aria-labelledby="answer-detail-title">
           <div class="answers-heading">
             <div>
               <span class="section-kicker">逐题核对</span>
-              <h2 id="answer-detail-title">答题详情</h2>
+              <h2 id="answer-detail-title" class="answers-title">答题详情</h2>
             </div>
             <span class="answers-summary">{{ answers.length }} 题 · {{ wrongAnswers.length }} 题需复习</span>
           </div>
 
           <article v-for="(answer, idx) in answers" :key="answer.questionId" class="answer-item">
-            <el-card shadow="never">
+            <div class="answer-card">
               <div v-if="answer.sectionTitle" class="answer-section-title">{{ answer.sectionTitle }}</div>
               <div class="answer-header">
                 <span class="q-index">{{ answer.displayNumber || `${idx + 1}.` }}</span>
@@ -120,14 +120,16 @@
               >
                 <el-button type="primary" plain @click="reviewWrongAnswer(answer.questionId)"> 复习此错题 </el-button>
               </div>
-            </el-card>
+            </div>
           </article>
         </section>
       </template>
 
-      <el-empty v-else-if="!loading" description="考试结果不存在">
-        <el-button type="primary" @click="router.push({ name: 'ExamList' })">返回考试列表</el-button>
-      </el-empty>
+      <LpEmptyState v-else-if="!loading" title="考试结果不存在" description="该考试记录可能已失效或被删除。">
+        <template #actions>
+          <el-button type="primary" @click="router.push({ name: 'ExamList' })">返回考试列表</el-button>
+        </template>
+      </LpEmptyState>
     </div>
   </div>
 </template>
@@ -138,6 +140,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getExamResult } from '@/api/exam'
 import type { ExamRecordVO } from '@/api/exam'
+import LpEmptyState from '@/components/ui/LpEmptyState.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -221,8 +224,9 @@ onMounted(async () => {
 
 <style scoped>
 .exam-result-container {
-  max-width: 960px;
+  width: min(100%, 960px);
   margin: 0 auto;
+  padding: var(--lp-space-4) 0;
 }
 
 .result-loading-shell {
@@ -230,33 +234,32 @@ onMounted(async () => {
 }
 
 .result-header {
-  margin-bottom: 24px;
+  margin-bottom: var(--lp-space-6);
 }
 
 .score-card {
+  padding: var(--lp-space-8) var(--lp-space-6) var(--lp-space-6);
   text-align: center;
+  background: var(--lp-surface);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
 
-.section-kicker {
-  color: var(--lp-primary);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.score-card h2,
-.answers-heading h2 {
-  margin: 4px 0 0;
+.result-title,
+.answers-title {
+  margin: var(--lp-space-1) 0 0;
   color: var(--lp-text);
-  font-size: 22px;
-  line-height: 1.4;
+  font-size: var(--lp-text-2xl);
+  line-height: var(--lp-leading-snug);
 }
 
 .score-main {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 40px;
-  margin: 28px 0 24px;
+  gap: var(--lp-space-10);
+  margin: var(--lp-space-8) 0 var(--lp-space-6);
 }
 
 .score-circle,
@@ -268,70 +271,75 @@ onMounted(async () => {
 
 .score-number {
   color: var(--lp-primary);
-  font-size: 48px;
-  font-weight: 700;
+  font-size: var(--lp-text-5xl);
+  font-weight: var(--lp-weight-bold);
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 
 .score-total,
 .rate-label {
-  margin-top: 4px;
+  margin-top: var(--lp-space-1);
   color: var(--lp-text-muted);
-  font-size: 14px;
+  font-size: var(--lp-text-base);
 }
 
 .rate-value {
   color: var(--lp-success);
-  font-size: 36px;
-  font-weight: 700;
+  font-size: var(--lp-text-4xl);
+  font-weight: var(--lp-weight-bold);
   font-variant-numeric: tabular-nums;
   line-height: 1;
+}
+
+.grading-alert {
+  margin: 0 auto var(--lp-space-4);
+  text-align: left;
 }
 
 .score-meta {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: var(--lp-space-4);
   margin: 0;
-  padding: 16px 0;
-  border-top: 1px solid var(--lp-border);
-  border-bottom: 1px solid var(--lp-border);
+  padding: var(--lp-space-4) 0;
+  border-top: var(--lp-border-hairline);
+  border-bottom: var(--lp-border-hairline);
 }
 
 .meta-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: var(--lp-space-1);
 }
 
 .meta-label {
   color: var(--lp-text-muted);
-  font-size: 12px;
+  font-size: var(--lp-text-xs);
 }
 
 .meta-value {
   margin: 0;
   color: var(--lp-text);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--lp-text-base);
+  font-weight: var(--lp-weight-semibold);
 }
 
 .source-panel {
-  margin-top: 16px;
-  padding: 12px 16px;
+  margin-top: var(--lp-space-4);
+  padding: var(--lp-space-3) var(--lp-space-4);
   color: var(--lp-text-secondary);
   text-align: left;
   background: var(--lp-surface-soft);
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-md);
 }
 
 .source-heading {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--lp-space-3);
   flex-wrap: wrap;
 }
 
@@ -340,61 +348,69 @@ onMounted(async () => {
 }
 
 .source-panel p {
-  margin: 8px 0 0;
+  margin: var(--lp-space-2) 0 0;
   overflow-wrap: anywhere;
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-body);
 }
 
 .score-actions {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: var(--lp-space-3);
   flex-wrap: wrap;
-  margin-top: 20px;
+  margin-top: var(--lp-space-5);
 }
 
 .answers-heading {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: var(--lp-space-4);
+  margin-bottom: var(--lp-space-4);
 }
 
 .answers-summary {
   color: var(--lp-text-secondary);
-  font-size: 13px;
+  font-size: var(--lp-text-sm);
 }
 
 .answer-item {
-  margin-bottom: 12px;
+  margin-bottom: var(--lp-space-3);
+}
+
+.answer-card {
+  padding: var(--lp-space-5);
+  background: var(--lp-surface);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
 
 .answer-section-title {
-  margin-bottom: 8px;
+  margin-bottom: var(--lp-space-2);
   color: var(--lp-text-secondary);
-  font-size: 13px;
-  font-weight: 700;
+  font-size: var(--lp-text-sm);
+  font-weight: var(--lp-weight-bold);
 }
 
 .answer-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--lp-space-2);
   flex-wrap: wrap;
-  margin-bottom: 12px;
+  margin-bottom: var(--lp-space-3);
 }
 
 .q-index {
   color: var(--lp-text);
-  font-size: 16px;
-  font-weight: 700;
+  font-size: var(--lp-text-lg);
+  font-weight: var(--lp-weight-bold);
 }
 
 .q-score-tag {
   color: var(--lp-text-muted);
-  font-size: 12px;
+  font-size: var(--lp-text-xs);
 }
 
 .result-tag {
@@ -403,51 +419,53 @@ onMounted(async () => {
 
 .earned-score {
   color: var(--lp-text-secondary);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--lp-text-sm);
+  font-weight: var(--lp-weight-semibold);
 }
 
 .answer-content {
-  margin-bottom: 16px;
+  margin-bottom: var(--lp-space-4);
   color: var(--lp-text);
-  font-size: 15px;
-  line-height: 1.8;
+  font-size: var(--lp-text-md);
+  line-height: var(--lp-leading-relaxed);
   white-space: pre-wrap;
 }
 
 .answer-detail {
   display: grid;
-  gap: 10px;
+  gap: var(--lp-space-3);
   margin: 0;
-  padding: 16px;
+  padding: var(--lp-space-4);
   background: var(--lp-surface-soft);
-  border-radius: var(--lp-radius);
+  border-radius: var(--lp-radius-md);
 }
 
 .detail-row {
   display: grid;
   grid-template-columns: 88px minmax(0, 1fr);
-  gap: 8px;
+  gap: var(--lp-space-2);
 }
 
 .detail-label {
   color: var(--lp-text-muted);
-  font-size: 13px;
+  font-size: var(--lp-text-sm);
 }
 
 .detail-value {
   margin: 0;
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: var(--lp-text-base);
+  line-height: var(--lp-leading-body);
   overflow-wrap: anywhere;
 }
 
 .detail-value.correct {
   color: var(--lp-success);
 }
+
 .detail-value.wrong {
   color: var(--lp-danger);
 }
+
 .detail-value.analysis {
   color: var(--lp-text-secondary);
 }
@@ -455,23 +473,28 @@ onMounted(async () => {
 .answer-actions {
   display: flex;
   justify-content: flex-end;
-  margin-top: 16px;
+  margin-top: var(--lp-space-4);
 }
 
 @media (max-width: 640px) {
   .exam-result-container {
-    padding: 16px;
+    padding: 0;
+  }
+
+  .score-card {
+    padding: var(--lp-space-6) var(--lp-space-4) var(--lp-space-5);
   }
 
   .score-main {
-    gap: 24px;
+    gap: var(--lp-space-6);
   }
 
   .score-number {
-    font-size: 40px;
+    font-size: var(--lp-text-4xl);
   }
+
   .rate-value {
-    font-size: 30px;
+    font-size: var(--lp-text-3xl);
   }
 
   .score-actions,
@@ -497,7 +520,7 @@ onMounted(async () => {
 
   .detail-row {
     grid-template-columns: 1fr;
-    gap: 2px;
+    gap: var(--lp-space-1);
   }
 }
 

@@ -1,405 +1,226 @@
 <template>
-  <div class="exam-list-container page-container">
-    <section class="exam-hero">
-      <div>
-        <span class="section-kicker">考试测评</span>
-        <h2>考试中心</h2>
-        <p>先参加已发布试卷，完成后在考试记录中查看得分和答题明细。</p>
-      </div>
-      <div class="hero-summary">
-        <span>{{ total }} 份可用试卷</span>
-        <span>{{ recordsTotal }} 条考试记录</span>
+  <div class="exam-list-page page-container">
+    <LpPageHeader
+      kicker="考试测评"
+      title="考试与试卷"
+      description="先参加已发布试卷，完成后在考试记录中查看得分和答题明细。"
+    >
+      <template #actions>
         <el-button type="primary" :icon="Upload" @click="openImportDialog">导入私有试卷</el-button>
-      </div>
-    </section>
+      </template>
+    </LpPageHeader>
 
-    <el-tabs v-model="activeTab" class="exam-tabs" @tab-change="handleTabChange">
-      <el-tab-pane label="可用试卷" name="papers">
-        <div v-loading="loading" class="paper-list">
-          <el-empty v-if="!loading && papers.length === 0" description="暂无可用试卷" />
+    <div class="exam-stat-row">
+      <LpStat label="可用试卷" :value="total" note="已发布试卷与已确认私有试卷" tone="emphasis" />
+      <LpStat label="考试记录" :value="recordsTotal" note="含进行中、已完成与待批阅" />
+    </div>
 
-          <el-card v-for="paper in papers" :key="paper.id" class="exam-card" shadow="never">
-            <div class="exam-card-header">
-              <div>
-                <div class="exam-title-line">
-                  <h3>{{ paper.title }}</h3>
+    <section class="exam-panel">
+      <el-tabs v-model="activeTab" class="exam-tabs" @tab-change="handleTabChange">
+        <el-tab-pane label="可用试卷" name="papers">
+          <div v-loading="loading" class="paper-list">
+            <LpEmptyState
+              v-if="!loading && papers.length === 0"
+              title="暂无可用试卷"
+              description="管理员发布试卷，或导入你自己的私有试卷后，就会出现在这里。"
+            />
+
+            <article v-for="paper in papers" :key="paper.id" class="exam-card">
+              <div class="exam-card-top">
+                <div class="exam-card-heading">
+                  <h3 class="exam-title">{{ paper.title }}</h3>
                   <el-tag :type="paperTypeTag(paper)" size="small">{{ paperTypeLabel(paper) }}</el-tag>
                 </div>
-                <p class="exam-desc" v-if="paper.description">{{ paper.description }}</p>
+                <el-tag type="success" size="small" class="exam-avail-tag">可参加</el-tag>
               </div>
-              <el-tag type="success" size="small">可参加</el-tag>
-            </div>
-            <div v-if="isVerifiedOfficial(paper)" class="official-source">
-              <strong>{{ paper.examYear }} · {{ paper.examName }}</strong>
-              <span>来源：{{ paper.sourceReference }}</span>
-            </div>
-            <div v-else-if="paper.visibility === 'PRIVATE'" class="private-source">
-              <strong>仅你可见 · 已确认导入</strong>
-              <el-button link type="primary" @click="showOriginalSource(paper.id)">查看原始资料</el-button>
-            </div>
-            <div class="exam-metrics">
-              <span v-if="paper.courseName"
-                ><el-icon><Reading /></el-icon>{{ paper.courseName }}</span
-              >
-              <span
-                ><el-icon><Document /></el-icon>{{ paper.questionCount }} 题</span
-              >
-              <span
-                ><el-icon><Timer /></el-icon>{{ paper.duration }} 分钟</span
-              >
-              <span
-                ><el-icon><Medal /></el-icon>{{ paper.totalScore }} 分</span
-              >
-            </div>
-            <div class="exam-actions">
-              <el-button
-                v-if="paper.visibility === 'PRIVATE'"
-                type="danger"
-                plain
-                :loading="deletingPaperId === paper.id"
-                @click="deletePaper(paper)"
-              >
-                删除试卷
-              </el-button>
-              <el-button
-                v-if="paper.courseId"
-                :icon="Reading"
-                @click="handleStartLearning(paper.id)"
-                :loading="learningId === paper.id"
-              >
-                学习模式
-              </el-button>
-              <el-button
-                type="primary"
-                :icon="EditPen"
-                @click="handleStartExam(paper.id)"
-                :loading="startingId === paper.id"
-              >
-                考试模式
-              </el-button>
-            </div>
-          </el-card>
-        </div>
 
-        <div class="pagination-wrapper" v-if="total > 0">
-          <el-pagination
-            v-model:current-page="pageNum"
-            :total="total"
-            :page-size="10"
-            layout="total, prev, pager, next"
-            @current-change="loadPapers"
-          />
-        </div>
-      </el-tab-pane>
+              <p v-if="paper.description" class="exam-desc">{{ paper.description }}</p>
 
-      <el-tab-pane label="考试记录" name="records">
-        <div v-loading="recordsLoading" class="record-panel">
-          <el-empty v-if="!recordsLoading && records.length === 0" description="暂无考试记录" />
+              <div v-if="isVerifiedOfficial(paper)" class="official-source">
+                <strong>{{ paper.examYear }} · {{ paper.examName }}</strong>
+                <span>来源：{{ paper.sourceReference }}</span>
+              </div>
+              <div v-else-if="paper.visibility === 'PRIVATE'" class="private-source">
+                <strong>仅你可见 · 已确认导入</strong>
+                <el-button link type="primary" @click="showOriginalSource(paper.id)">查看原始资料</el-button>
+              </div>
 
-          <el-table v-else :data="records as any" stripe>
-            <el-table-column prop="examTitle" label="试卷名称" min-width="200" />
-            <el-table-column label="得分" width="120">
-              <template #default="{ row }">
-                <span :class="['score-text', getScoreClass(row as ExamRecordVO)]">
-                  {{ formatScore(row as ExamRecordVO) }}
+              <div class="exam-metrics">
+                <span v-if="paper.courseName">
+                  <el-icon><Reading /></el-icon>{{ paper.courseName }}
                 </span>
-              </template>
-            </el-table-column>
-            <el-table-column label="状态" width="100">
-              <template #default="{ row }">
-                <el-tag :type="recordStatusTag((row as ExamRecordVO).status)" size="small">
-                  {{ recordStatusLabel((row as ExamRecordVO).status) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="开始时间" width="180">
-              <template #default="{ row }">{{ formatTime((row as ExamRecordVO).startTime) }}</template>
-            </el-table-column>
-            <el-table-column label="操作" width="120" fixed="right">
-              <template #default="{ row }">
-                <el-button
-                  v-if="[1, 3].includes((row as ExamRecordVO).status)"
-                  type="primary"
-                  link
-                  size="small"
-                  :icon="View"
-                  @click="viewResult((row as ExamRecordVO).id)"
+                <span
+                  ><el-icon><Document /></el-icon>{{ paper.questionCount }} 题</span
                 >
-                  查看结果
-                </el-button>
-                <el-button
-                  v-else-if="(row as ExamRecordVO).status === 0"
-                  type="warning"
-                  link
-                  size="small"
-                  :icon="EditPen"
-                  @click="continueExam(row as ExamRecordVO)"
+                <span
+                  ><el-icon><Timer /></el-icon>{{ paper.duration }} 分钟</span
                 >
-                  继续考试
-                </el-button>
-                <span v-else class="record-finished-hint">不可继续</span>
-              </template>
-            </el-table-column>
-          </el-table>
-
-          <div v-if="records.length > 0" class="record-mobile-list" aria-label="考试记录">
-            <article v-for="record in records" :key="record.id" class="record-mobile-card">
-              <div class="record-mobile-header">
-                <h3>{{ record.examTitle }}</h3>
-                <el-tag :type="recordStatusTag(record.status)" size="small">
-                  {{ recordStatusLabel(record.status) }}
-                </el-tag>
+                <span
+                  ><el-icon><Medal /></el-icon>{{ paper.totalScore }} 分</span
+                >
               </div>
-              <dl class="record-mobile-meta">
-                <div>
-                  <dt>得分</dt>
-                  <dd :class="['score-text', getScoreClass(record)]">{{ formatScore(record) }}</dd>
-                </div>
-                <div>
-                  <dt>开始时间</dt>
-                  <dd>{{ formatTime(record.startTime) }}</dd>
-                </div>
-              </dl>
-              <div class="record-mobile-action">
+
+              <div class="exam-actions">
                 <el-button
-                  v-if="[1, 3].includes(record.status)"
-                  type="primary"
-                  :icon="View"
-                  @click="viewResult(record.id)"
+                  v-if="paper.visibility === 'PRIVATE'"
+                  type="danger"
+                  plain
+                  :loading="deletingPaperId === paper.id"
+                  @click="deletePaper(paper)"
                 >
-                  查看结果
+                  删除试卷
                 </el-button>
-                <el-button v-else-if="record.status === 0" type="warning" :icon="EditPen" @click="continueExam(record)">
-                  继续考试
+                <el-button
+                  v-if="paper.courseId"
+                  :icon="Reading"
+                  :loading="learningId === paper.id"
+                  @click="handleStartLearning(paper.id)"
+                >
+                  学习模式
                 </el-button>
-                <span v-else class="record-finished-hint">考试已超时，不可继续</span>
+                <el-button
+                  type="primary"
+                  :icon="EditPen"
+                  :loading="startingId === paper.id"
+                  @click="handleStartExam(paper.id)"
+                >
+                  考试模式
+                </el-button>
               </div>
             </article>
           </div>
-        </div>
 
-        <div class="pagination-wrapper" v-if="recordsTotal > 0">
-          <el-pagination
-            v-model:current-page="recordsPageNum"
-            :total="recordsTotal"
-            :page-size="10"
-            layout="total, prev, pager, next"
-            @current-change="loadRecords"
-          />
-        </div>
-      </el-tab-pane>
-    </el-tabs>
-
-    <el-dialog v-model="importDialogVisible" title="导入私有试卷" width="min(760px, 92vw)" @closed="resetImport">
-      <el-alert
-        title="支持结构化 Markdown、文本、文本型 PDF 或有限 DOCX；无答案题目会先保存为草稿，AI 建议必须逐题人工复核后才能启用。"
-        type="info"
-        :closable="false"
-        show-icon
-      />
-      <div v-if="storageUsage" class="storage-summary">
-        <span>
-          原文件存储：{{ formatStorage(storageUsage.usedBytes) }} / {{ formatStorage(storageUsage.limitBytes) }} ·
-          {{ storageUsage.fileCount }} 个文件
-        </span>
-        <el-button type="primary" link @click="openStorageDialog">查看明细</el-button>
-      </div>
-      <el-form v-if="!importPreview && !activeDraft" label-position="top" class="import-form">
-        <section v-if="privateDrafts.length" class="draft-list">
-          <strong>待复核草稿</strong>
-          <div v-for="draft in privateDrafts" :key="draft.id" class="draft-list-item">
-            <el-button plain @click="openDraft(draft)">
-              {{ draft.title }} · {{ draft.reviewedQuestionCount }}/{{ draft.questionCount }} 已复核
-            </el-button>
-            <el-button type="danger" link :loading="deletingDraftId === draft.id" @click="deleteDraft(draft)">
-              删除草稿
-            </el-button>
-          </div>
-        </section>
-        <div class="import-grid">
-          <el-form-item label="试卷标题">
-            <el-input v-model="importForm.title" maxlength="200" />
-          </el-form-item>
-          <el-form-item label="所属课程">
-            <el-select v-model="importForm.courseId" filterable placeholder="选择课程">
-              <el-option v-for="course in courses" :key="course.id" :label="course.name" :value="course.id" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="原始资料名称">
-            <el-input
-              v-model="importForm.sourceName"
-              maxlength="255"
-              :disabled="isFileImport"
-              placeholder="例如：数据结构练习.md"
+          <div class="pagination-wrapper" v-if="total > 0">
+            <el-pagination
+              v-model:current-page="pageNum"
+              :total="total"
+              :page-size="10"
+              layout="total, prev, pager, next"
+              @current-change="loadPapers"
             />
-          </el-form-item>
-          <el-form-item label="格式">
-            <el-select v-model="importForm.sourceFormat" @change="changeSourceFormat">
-              <el-option label="Markdown" value="MARKDOWN" />
-              <el-option label="结构化文本" value="TEXT" />
-              <el-option label="文本型 PDF" value="PDF" />
-              <el-option label="有限 DOCX" value="DOCX" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="考试时长（分钟）">
-            <el-input-number v-model="importForm.duration" :min="1" :max="600" />
-          </el-form-item>
-        </div>
-        <el-form-item v-if="isFileImport" :label="`${importForm.sourceFormat} 文件`">
-          <el-upload
-            :accept="fileAccept"
-            :auto-upload="false"
-            :limit="1"
-            :on-change="selectSourceFile"
-            :on-remove="removeSourceFile"
-          >
-            <el-button plain>{{ importForm.sourceFormat === 'PDF' ? '选择文本型 PDF' : '选择 DOCX' }}</el-button>
-            <template #tip>
-              <span v-if="importForm.sourceFormat === 'PDF'" class="upload-tip">
-                最大 10MB、200 页；只提取已有文本，扫描件不做 OCR。
-              </span>
-              <span v-else class="upload-tip">最大 10MB；只提取普通段落和表格，图片、公式和复杂排版不支持。</span>
-            </template>
-          </el-upload>
-        </el-form-item>
-        <el-form-item v-else label="原始内容">
-          <el-input
-            v-model="importForm.content"
-            type="textarea"
-            :rows="14"
-            maxlength="100000"
-            show-word-limit
-            :placeholder="importPlaceholder"
-          />
-        </el-form-item>
-      </el-form>
-
-      <section v-else-if="importPreview" class="import-preview">
-        <div class="preview-summary">
-          <strong>{{ importPreview.title }}</strong>
-          <span
-            >{{ importPreview.questionCount }} 题 · {{ importPreview.totalScore }} 分 ·
-            {{ importPreview.duration }} 分钟</span
-          >
-        </div>
-        <article v-for="(question, index) in importPreview.questions" :key="index" class="preview-question">
-          <div>
-            <strong>{{ index + 1 }}. {{ question.content }}</strong
-            ><el-tag size="small">{{ question.score }} 分</el-tag>
           </div>
-          <ul>
-            <li v-for="option in question.options" :key="option.label" :class="{ correct: option.correct }">
-              {{ option.label }}. {{ option.content }}
-            </li>
-          </ul>
-          <p v-if="question.answerComplete">确认答案：{{ question.answer }}</p>
-          <el-alert v-else title="未提供可靠答案，将进入 AI 建议与人工逐题复核草稿" type="warning" :closable="false" />
-        </article>
-      </section>
+        </el-tab-pane>
 
-      <section v-else-if="activeDraft" class="draft-review">
-        <div class="preview-summary">
-          <strong>{{ activeDraft.title }}</strong>
-          <span>{{ activeDraft.reviewedQuestionCount }}/{{ activeDraft.questionCount }} 题已人工复核</span>
-        </div>
-        <el-button
-          v-if="activeDraft.originalFileAvailable"
-          plain
-          :loading="sourceDownloading"
-          @click="downloadDraftSource"
-        >
-          下载草稿原文件
-        </el-button>
-        <el-alert
-          title="AI 只提供建议，不会直接成为判分答案；每题必须由你选择答案并确认解析。"
-          type="warning"
-          :closable="false"
-        />
-        <article v-for="question in activeDraft.questions" :key="question.id" class="draft-question">
-          <div class="draft-question-title">
-            <strong>{{ question.sortOrder }}. {{ question.content }}</strong>
-            <el-tag :type="question.reviewStatus === 'REVIEWED' ? 'success' : 'warning'">
-              {{ question.reviewStatus === 'REVIEWED' ? '已复核' : '待复核' }}
-            </el-tag>
+        <el-tab-pane label="考试记录" name="records">
+          <div v-loading="recordsLoading" class="record-panel">
+            <LpEmptyState v-if="!recordsLoading && records.length === 0" title="暂无考试记录" />
+
+            <el-table v-else :data="records as any" stripe class="record-table">
+              <el-table-column prop="examTitle" label="试卷名称" min-width="200" />
+              <el-table-column label="得分" width="120">
+                <template #default="{ row }">
+                  <span :class="['score-text', getScoreClass(row as ExamRecordVO)]">
+                    {{ formatScore(row as ExamRecordVO) }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column label="状态" width="100">
+                <template #default="{ row }">
+                  <el-tag :type="recordStatusTag((row as ExamRecordVO).status)" size="small">
+                    {{ recordStatusLabel((row as ExamRecordVO).status) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="开始时间" width="180">
+                <template #default="{ row }">{{ formatTime((row as ExamRecordVO).startTime) }}</template>
+              </el-table-column>
+              <el-table-column label="操作" width="120" fixed="right">
+                <template #default="{ row }">
+                  <el-button
+                    v-if="[1, 3].includes((row as ExamRecordVO).status)"
+                    type="primary"
+                    link
+                    size="small"
+                    :icon="View"
+                    @click="viewResult((row as ExamRecordVO).id)"
+                  >
+                    查看结果
+                  </el-button>
+                  <el-button
+                    v-else-if="(row as ExamRecordVO).status === 0"
+                    type="warning"
+                    link
+                    size="small"
+                    :icon="EditPen"
+                    @click="continueExam(row as ExamRecordVO)"
+                  >
+                    继续考试
+                  </el-button>
+                  <span v-else class="record-finished-hint">不可继续</span>
+                </template>
+              </el-table-column>
+            </el-table>
+
+            <div v-if="records.length > 0" class="record-mobile-list" aria-label="考试记录">
+              <article v-for="record in records" :key="record.id" class="record-mobile-card">
+                <div class="record-mobile-header">
+                  <h3>{{ record.examTitle }}</h3>
+                  <el-tag :type="recordStatusTag(record.status)" size="small">
+                    {{ recordStatusLabel(record.status) }}
+                  </el-tag>
+                </div>
+                <dl class="record-mobile-meta">
+                  <div>
+                    <dt>得分</dt>
+                    <dd :class="['score-text', getScoreClass(record)]">{{ formatScore(record) }}</dd>
+                  </div>
+                  <div>
+                    <dt>开始时间</dt>
+                    <dd>{{ formatTime(record.startTime) }}</dd>
+                  </div>
+                </dl>
+                <div class="record-mobile-action">
+                  <el-button
+                    v-if="[1, 3].includes(record.status)"
+                    type="primary"
+                    :icon="View"
+                    @click="viewResult(record.id)"
+                  >
+                    查看结果
+                  </el-button>
+                  <el-button
+                    v-else-if="record.status === 0"
+                    type="warning"
+                    :icon="EditPen"
+                    @click="continueExam(record)"
+                  >
+                    继续考试
+                  </el-button>
+                  <span v-else class="record-finished-hint">考试已超时，不可继续</span>
+                </div>
+              </article>
+            </div>
           </div>
-          <ul>
-            <li v-for="option in question.options" :key="option.label">{{ option.label }}. {{ option.content }}</li>
-          </ul>
-          <el-button
-            v-if="question.generationStatus === 'PENDING'"
-            type="primary"
-            plain
-            :loading="generatingQuestionId === question.id"
-            @click="generateDraftAnswer(question.id)"
-          >
-            生成 AI 答案与解析
-          </el-button>
-          <template v-else>
-            <p v-if="question.generationStatus === 'GENERATED'" class="ai-suggestion">
-              AI 建议：{{ question.aiAnswerLabels.join('、') }} · {{ question.aiAnalysis }}
-            </p>
-            <p v-else class="ai-suggestion">原资料答案：{{ question.originalAnswerLabels.join('、') || '未提供' }}</p>
-            <el-form-item label="人工确认答案">
-              <el-checkbox-group v-model="draftAnswers[question.id]" :disabled="question.reviewStatus === 'REVIEWED'">
-                <el-checkbox v-for="option in question.options" :key="option.label" :value="option.label">
-                  {{ option.label }}
-                </el-checkbox>
-              </el-checkbox-group>
-            </el-form-item>
-            <el-form-item label="人工确认解析">
-              <el-input
-                v-model="draftAnalyses[question.id]"
-                type="textarea"
-                :rows="3"
-                maxlength="10000"
-                :disabled="question.reviewStatus === 'REVIEWED'"
-              />
-            </el-form-item>
-            <el-button
-              v-if="question.reviewStatus !== 'REVIEWED'"
-              type="success"
-              :loading="reviewingQuestionId === question.id"
-              @click="reviewDraftQuestion(question.id)"
-            >
-              确认本题
-            </el-button>
-          </template>
-        </article>
-      </section>
 
-      <template #footer>
-        <el-button v-if="importPreview" @click="importPreview = null">返回修改</el-button>
-        <el-button v-if="activeDraft" @click="activeDraft = null">返回导入</el-button>
-        <el-button @click="importDialogVisible = false">取消</el-button>
-        <el-button v-if="!importPreview && !activeDraft" type="primary" :loading="previewLoading" @click="previewImport"
-          >解析并预览</el-button
-        >
-        <el-button
-          v-else-if="importPreview?.requiresAnswerReview"
-          type="warning"
-          :loading="confirmLoading"
-          @click="createAnswerDraft"
-        >
-          创建 AI 补全草稿
-        </el-button>
-        <el-button v-else-if="importPreview" type="primary" :loading="confirmLoading" @click="confirmImport"
-          >确认导入</el-button
-        >
-        <el-button
-          v-else-if="activeDraft?.status === 'READY'"
-          type="primary"
-          :loading="confirmLoading"
-          @click="confirmDraft"
-        >
-          确认启用试卷
-        </el-button>
-      </template>
-    </el-dialog>
+          <div class="pagination-wrapper" v-if="recordsTotal > 0">
+            <el-pagination
+              v-model:current-page="recordsPageNum"
+              :total="recordsTotal"
+              :page-size="10"
+              layout="total, prev, pager, next"
+              @current-change="loadRecords"
+            />
+          </div>
+        </el-tab-pane>
+      </el-tabs>
+    </section>
+
+    <PrivateExamImportDialog
+      ref="importDialogRef"
+      v-model="importDialogVisible"
+      :default-course-id="Number.isFinite(courseId) && courseId > 0 ? courseId : 0"
+      @imported="onImported"
+      @open-storage="openStorageDialog"
+    />
 
     <el-dialog v-model="storageDialogVisible" title="我的原文件存储" width="min(760px, 92vw)" append-to-body>
       <p class="source-meta">这里只展示原文件元数据；下载和删除始终通过当前关联的草稿或私有试卷处理。</p>
       <div v-loading="storageFilesLoading" class="storage-list">
-        <el-empty v-if="!storageFilesLoading && !storageFiles.length" description="暂无已保存的 PDF 或 DOCX 原文件" />
+        <LpEmptyState
+          v-if="!storageFilesLoading && !storageFiles.length"
+          title="暂无已保存的 PDF 或 DOCX 原文件"
+          compact
+        />
         <article v-for="item in storageFiles" :key="item.id" class="storage-item">
           <div class="storage-item-main">
             <div class="storage-item-title">
@@ -415,16 +236,18 @@
               plain
               :loading="storageDownloadingId === item.id"
               @click="downloadStorageItem(item)"
-              >下载</el-button
             >
+              下载
+            </el-button>
             <el-button
               v-if="item.associationType !== 'UNREFERENCED'"
               type="danger"
               plain
               :loading="storageDeletingId === item.id"
               @click="deleteStorageItem(item)"
-              >删除关联内容</el-button
             >
+              删除关联内容
+            </el-button>
           </div>
         </article>
       </div>
@@ -460,51 +283,28 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { UploadFile } from 'element-plus'
 import { Document, EditPen, Medal, Reading, Timer, Upload, View } from '@element-plus/icons-vue'
 import {
-  confirmPrivateExamDraft,
-  confirmPrivateExamImport,
-  confirmPrivateExamPdf,
-  confirmPrivateExamDocx,
-  createPrivateExamDraft,
-  createPrivateExamPdfDraft,
-  createPrivateExamDocxDraft,
   deletePrivateExamDraft,
   deletePrivateExamPaper,
   downloadPrivateExamDraftSourceFile,
   downloadPrivateExamSourceFile,
-  generatePrivateExamDraftAnswer,
   getMyExamRecords,
-  getPrivateExamDrafts,
   getPrivateExamStorageFiles,
-  getPrivateExamStorageUsage,
   getPrivateExamSource,
   getPublishedPapers,
-  previewPrivateExamImport,
-  previewPrivateExamPdf,
-  previewPrivateExamDocx,
-  reviewPrivateExamDraftQuestion,
   startExam,
   startExamLearningSession,
 } from '@/api/exam'
-import type {
-  ExamPaperVO,
-  ExamRecordVO,
-  ExamStatus,
-  PrivateExamDraft,
-  PrivateExamImportPreview,
-  PrivateExamImportRequest,
-  PrivateExamSource,
-  PrivateExamSourceStorageItem,
-  PrivateExamStorageUsage,
-} from '@/api/exam'
-import { getAllCourses } from '@/api/course'
-import type { CourseVO } from '@/api/course'
+import type { ExamPaperVO, ExamRecordVO, ExamStatus, PrivateExamSource, PrivateExamSourceStorageItem } from '@/api/exam'
 import { formatTime, formatStorage } from '@/utils/format'
+import LpPageHeader from '@/components/ui/LpPageHeader.vue'
+import LpStat from '@/components/ui/LpStat.vue'
+import LpEmptyState from '@/components/ui/LpEmptyState.vue'
+import PrivateExamImportDialog from '@/components/exam/PrivateExamImportDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -518,22 +318,16 @@ const pageNum = ref(1)
 const startingId = ref<number | null>(null)
 const learningId = ref<number | null>(null)
 const courseId = Number(route.query.courseId)
-const courses = ref<CourseVO[]>([])
 const importDialogVisible = ref(false)
-const previewLoading = ref(false)
-const confirmLoading = ref(false)
-const importPreview = ref<PrivateExamImportPreview | null>(null)
-const privateDrafts = ref<PrivateExamDraft[]>([])
-const activeDraft = ref<PrivateExamDraft | null>(null)
-const generatingQuestionId = ref<number | null>(null)
-const reviewingQuestionId = ref<number | null>(null)
-const deletingDraftId = ref<number | null>(null)
+const importDialogRef = ref<InstanceType<typeof PrivateExamImportDialog> | null>(null)
 const deletingPaperId = ref<number | null>(null)
-const draftAnswers = ref<Record<number, string[]>>({})
-const draftAnalyses = ref<Record<number, string>>({})
+
+// 原始资料
 const sourceDialogVisible = ref(false)
 const privateSource = ref<PrivateExamSource | null>(null)
-const storageUsage = ref<PrivateExamStorageUsage | null>(null)
+const sourceDownloading = ref(false)
+
+// 原文件存储
 const storageDialogVisible = ref(false)
 const storageFilesLoading = ref(false)
 const storageFiles = ref<PrivateExamSourceStorageItem[]>([])
@@ -541,48 +335,6 @@ const storageFilesTotal = ref(0)
 const storageFilesPage = ref(1)
 const storageDownloadingId = ref<number | null>(null)
 const storageDeletingId = ref<number | null>(null)
-const sourceDownloading = ref(false)
-const sourceFile = ref<File | null>(null)
-const emptyImportForm = (): PrivateExamImportRequest => ({
-  title: '',
-  courseId: Number.isFinite(courseId) && courseId > 0 ? courseId : 0,
-  duration: 60,
-  sourceName: '',
-  sourceFormat: 'MARKDOWN',
-  content: '',
-})
-const importForm = ref<PrivateExamImportRequest>(emptyImportForm())
-const importPlaceholder = `## 1. 单选题\n**题干**: 栈遵循哪种访问顺序？\n**选项**:\n- A. 先进先出\n- B. 先进后出\n**答案**: B\n**解析**: 栈遵循 LIFO。\n**分值**: 2`
-
-const isFileImport = computed(() => ['PDF', 'DOCX'].includes(importForm.value.sourceFormat))
-const fileAccept = computed(() =>
-  importForm.value.sourceFormat === 'PDF'
-    ? 'application/pdf,.pdf'
-    : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx',
-)
-
-const selectSourceFile = (uploadFile: UploadFile) => {
-  sourceFile.value = uploadFile.raw || null
-  importForm.value.sourceName = uploadFile.name
-  importForm.value.content = ''
-}
-
-const removeSourceFile = () => {
-  sourceFile.value = null
-  importForm.value.sourceName = ''
-}
-
-const changeSourceFormat = () => {
-  sourceFile.value = null
-  importForm.value.sourceName = ''
-  importForm.value.content = ''
-}
-
-const fileMetadata = () => ({
-  title: importForm.value.title,
-  courseId: importForm.value.courseId,
-  duration: importForm.value.duration,
-})
 
 // 考试记录
 const recordsLoading = ref(false)
@@ -595,13 +347,19 @@ onMounted(() => {
   loadRecords()
 })
 
-async function loadStorageUsage() {
-  try {
-    const res = await getPrivateExamStorageUsage()
-    storageUsage.value = res.code === 0 && res.data ? res.data : null
-  } catch {
-    storageUsage.value = null
-  }
+const openImportDialog = () => {
+  importDialogVisible.value = true
+}
+
+const onImported = async () => {
+  pageNum.value = 1
+  await loadPapers()
+}
+
+const openStorageDialog = async () => {
+  storageFilesPage.value = 1
+  storageDialogVisible.value = true
+  await loadStorageFiles()
 }
 
 async function loadStorageFiles() {
@@ -616,133 +374,6 @@ async function loadStorageFiles() {
     ElMessage.error('获取原文件清单失败')
   } finally {
     storageFilesLoading.value = false
-  }
-}
-
-const openStorageDialog = async () => {
-  storageFilesPage.value = 1
-  storageDialogVisible.value = true
-  await loadStorageFiles()
-}
-
-const openImportDialog = async () => {
-  importDialogVisible.value = true
-  if (!courses.value.length) {
-    try {
-      const res = await getAllCourses()
-      if (res.code === 0 && res.data) courses.value = res.data
-    } catch {
-      ElMessage.error('获取课程列表失败')
-    }
-  }
-  await loadPrivateDrafts()
-  await loadStorageUsage()
-}
-
-const validateImportForm = () => {
-  if (isFileImport.value) {
-    if (!importForm.value.title.trim() || !importForm.value.courseId || !sourceFile.value) {
-      ElMessage.warning(`请完整填写标题、课程并选择 ${importForm.value.sourceFormat} 文件`)
-      return false
-    }
-    return true
-  }
-  if (
-    !importForm.value.title.trim() ||
-    !importForm.value.sourceName.trim() ||
-    !importForm.value.courseId ||
-    !importForm.value.content.trim()
-  ) {
-    ElMessage.warning('请完整填写标题、课程、资料名称和原始内容')
-    return false
-  }
-  return true
-}
-
-const previewImport = async () => {
-  if (!validateImportForm()) return
-  previewLoading.value = true
-  try {
-    let res
-    if (importForm.value.sourceFormat === 'PDF' && sourceFile.value) {
-      res = await previewPrivateExamPdf(fileMetadata(), sourceFile.value)
-    } else if (importForm.value.sourceFormat === 'DOCX' && sourceFile.value) {
-      res = await previewPrivateExamDocx(fileMetadata(), sourceFile.value)
-    } else {
-      res = await previewPrivateExamImport(importForm.value)
-    }
-    if (res.code === 0 && res.data) importPreview.value = res.data
-    else ElMessage.error(res.message || '解析失败')
-  } catch {
-    ElMessage.error('解析失败，请检查结构化格式')
-  } finally {
-    previewLoading.value = false
-  }
-}
-
-const confirmImport = async () => {
-  if (!importPreview.value) return
-  confirmLoading.value = true
-  try {
-    let res
-    const metadata = {
-      ...fileMetadata(),
-      expectedContentHash: importPreview.value.contentHash,
-      confirmed: true as const,
-    }
-    if (importForm.value.sourceFormat === 'PDF' && sourceFile.value) {
-      res = await confirmPrivateExamPdf(metadata, sourceFile.value)
-    } else if (importForm.value.sourceFormat === 'DOCX' && sourceFile.value) {
-      res = await confirmPrivateExamDocx(metadata, sourceFile.value)
-    } else {
-      res = await confirmPrivateExamImport({
-        ...importForm.value,
-        expectedContentHash: importPreview.value.contentHash,
-        confirmed: true,
-      })
-    }
-    if (res.code === 0 && res.data) {
-      ElMessage.success('私有试卷已导入')
-      importDialogVisible.value = false
-      pageNum.value = 1
-      await loadPapers()
-    } else ElMessage.error(res.message || '导入失败')
-  } catch {
-    ElMessage.error('导入失败')
-  } finally {
-    confirmLoading.value = false
-  }
-}
-
-const loadPrivateDrafts = async () => {
-  try {
-    const res = await getPrivateExamDrafts()
-    if (res.code === 0 && res.data) privateDrafts.value = res.data
-  } catch {
-    ElMessage.error('获取待复核草稿失败')
-  }
-}
-
-const deleteDraft = async (draft: PrivateExamDraft) => {
-  const confirmed = await ElMessageBox.confirm(
-    `删除草稿“${draft.title}”及其未引用原始资料？此操作不可恢复。`,
-    '删除私有试卷草稿',
-    { type: 'warning', confirmButtonText: '确认删除', cancelButtonText: '取消' },
-  )
-    .then(() => true)
-    .catch(() => false)
-  if (!confirmed) return
-  deletingDraftId.value = draft.id
-  try {
-    const res = await deletePrivateExamDraft(draft.id)
-    if (res.code === 0) {
-      privateDrafts.value = privateDrafts.value.filter((item) => item.id !== draft.id)
-      if (activeDraft.value?.id === draft.id) activeDraft.value = null
-      await loadStorageUsage()
-      ElMessage.success('私有试卷草稿已删除')
-    }
-  } finally {
-    deletingDraftId.value = null
   }
 }
 
@@ -764,129 +395,6 @@ const deletePaper = async (paper: ExamPaperVO) => {
     }
   } finally {
     deletingPaperId.value = null
-  }
-}
-
-const syncDraftForm = (draft: PrivateExamDraft) => {
-  draft.questions.forEach((question) => {
-    draftAnswers.value[question.id] = [
-      ...(question.finalAnswerLabels.length
-        ? question.finalAnswerLabels
-        : question.aiAnswerLabels.length
-          ? question.aiAnswerLabels
-          : question.originalAnswerLabels),
-    ]
-    draftAnalyses.value[question.id] = question.finalAnalysis || question.aiAnalysis || question.originalAnalysis || ''
-  })
-}
-
-const openDraft = (draft: PrivateExamDraft) => {
-  activeDraft.value = draft
-  importPreview.value = null
-  syncDraftForm(draft)
-}
-
-const replaceDraft = (draft: PrivateExamDraft) => {
-  activeDraft.value = draft
-  const index = privateDrafts.value.findIndex((item) => item.id === draft.id)
-  if (index >= 0) privateDrafts.value[index] = draft
-  else privateDrafts.value.unshift(draft)
-  syncDraftForm(draft)
-}
-
-const createAnswerDraft = async () => {
-  if (!importPreview.value) return
-  confirmLoading.value = true
-  try {
-    let res
-    const metadata = { ...fileMetadata(), expectedContentHash: importPreview.value.contentHash }
-    if (importForm.value.sourceFormat === 'PDF' && sourceFile.value) {
-      res = await createPrivateExamPdfDraft(metadata, sourceFile.value)
-    } else if (importForm.value.sourceFormat === 'DOCX' && sourceFile.value) {
-      res = await createPrivateExamDocxDraft(metadata, sourceFile.value)
-    } else {
-      res = await createPrivateExamDraft({
-        ...importForm.value,
-        expectedContentHash: importPreview.value.contentHash,
-      })
-    }
-    if (res.code === 0 && res.data) {
-      replaceDraft(res.data)
-      importPreview.value = null
-      ElMessage.success('草稿已保存，请逐题生成并复核答案')
-    } else ElMessage.error(res.message || '创建草稿失败')
-  } catch {
-    ElMessage.error('创建草稿失败')
-  } finally {
-    confirmLoading.value = false
-  }
-}
-
-const generateDraftAnswer = async (questionId: number) => {
-  if (!activeDraft.value) return
-  generatingQuestionId.value = questionId
-  try {
-    const res = await generatePrivateExamDraftAnswer(activeDraft.value.id, questionId)
-    if (res.code === 0 && res.data) {
-      replaceDraft(res.data)
-      ElMessage.success('AI 建议已生成，请人工核对')
-    } else ElMessage.error(res.message || 'AI 生成失败')
-  } catch {
-    ElMessage.error('AI 生成失败，请稍后重试')
-  } finally {
-    generatingQuestionId.value = null
-  }
-}
-
-const reviewDraftQuestion = async (questionId: number) => {
-  if (!activeDraft.value) return
-  const question = activeDraft.value.questions.find((item) => item.id === questionId)
-  const answers = draftAnswers.value[questionId] || []
-  const analysis = draftAnalyses.value[questionId]?.trim() || ''
-  if (!question || !answers.length || !analysis) {
-    ElMessage.warning('请选择答案并填写人工确认解析')
-    return
-  }
-  if (question.questionType !== 'MULTIPLE_CHOICE' && answers.length !== 1) {
-    ElMessage.warning('单选或判断题只能确认一个答案')
-    return
-  }
-  if (question.questionType === 'MULTIPLE_CHOICE' && answers.length < 2) {
-    ElMessage.warning('多选题至少确认两个答案')
-    return
-  }
-  reviewingQuestionId.value = questionId
-  try {
-    const res = await reviewPrivateExamDraftQuestion(activeDraft.value.id, questionId, {
-      answerLabels: answers,
-      analysis,
-    })
-    if (res.code === 0 && res.data) {
-      replaceDraft(res.data)
-      ElMessage.success('本题已人工复核')
-    } else ElMessage.error(res.message || '复核失败')
-  } catch {
-    ElMessage.error('复核失败')
-  } finally {
-    reviewingQuestionId.value = null
-  }
-}
-
-const confirmDraft = async () => {
-  if (!activeDraft.value) return
-  confirmLoading.value = true
-  try {
-    const res = await confirmPrivateExamDraft(activeDraft.value.id)
-    if (res.code === 0 && res.data) {
-      ElMessage.success('私有试卷已人工确认并启用')
-      importDialogVisible.value = false
-      pageNum.value = 1
-      await loadPapers()
-    } else ElMessage.error(res.message || '启用失败')
-  } catch {
-    ElMessage.error('启用失败')
-  } finally {
-    confirmLoading.value = false
   }
 }
 
@@ -956,7 +464,8 @@ const deleteStorageItem = async (item: PrivateExamSourceStorageItem) => {
         : await deletePrivateExamDraft(item.associationId)
     if (res.code === 0) {
       ElMessage.success(`${target}已删除`)
-      await Promise.all([loadStorageUsage(), loadStorageFiles(), loadPrivateDrafts(), loadPapers()])
+      void importDialogRef.value?.reload()
+      await Promise.all([loadStorageFiles(), loadPapers()])
     }
   } finally {
     storageDeletingId.value = null
@@ -978,32 +487,6 @@ const downloadPaperSource = async () => {
   } finally {
     sourceDownloading.value = false
   }
-}
-
-const downloadDraftSource = async () => {
-  if (!activeDraft.value?.sourceName) return
-  sourceDownloading.value = true
-  try {
-    const response = await downloadPrivateExamDraftSourceFile(activeDraft.value.id)
-    saveSourceFile(
-      response.data,
-      String(response.headers['content-type'] || 'application/octet-stream'),
-      activeDraft.value.sourceName,
-    )
-  } catch {
-    ElMessage.error('原文件下载失败')
-  } finally {
-    sourceDownloading.value = false
-  }
-}
-
-const resetImport = () => {
-  importPreview.value = null
-  activeDraft.value = null
-  draftAnswers.value = {}
-  draftAnalyses.value = {}
-  sourceFile.value = null
-  importForm.value = emptyImportForm()
 }
 
 const loadPapers = async () => {
@@ -1134,64 +617,28 @@ const paperTypeTag = (paper: ExamPaperVO) => {
 </script>
 
 <style scoped>
-.exam-list-container {
+.exam-list-page {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--lp-space-5);
 }
 
-.exam-hero {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 22px;
+.exam-stat-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--lp-space-4);
+}
+
+.exam-panel {
+  padding: var(--lp-space-2) var(--lp-space-5) var(--lp-space-5);
   background: var(--lp-surface);
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  box-shadow: var(--lp-shadow-sm);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
 
-.section-kicker {
-  color: var(--lp-primary);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.exam-hero h2 {
-  margin: 4px 0 8px;
-  font-size: 24px;
-  color: var(--lp-text);
-}
-
-.exam-hero p {
-  margin: 0;
-  color: var(--lp-text-secondary);
-  font-size: 14px;
-}
-
-.hero-summary {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.hero-summary span {
-  padding: 7px 10px;
-  color: var(--lp-text-secondary);
-  background: var(--lp-surface-soft);
-  border: 1px solid var(--lp-border);
-  border-radius: 999px;
-  font-size: 13px;
-}
-
-.exam-tabs {
-  padding: 6px 18px 18px;
-  background: var(--lp-surface);
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  box-shadow: var(--lp-shadow-sm);
+.exam-tabs :deep(.el-tabs__header) {
+  margin-bottom: var(--lp-space-4);
 }
 
 .paper-list,
@@ -1200,260 +647,201 @@ const paperTypeTag = (paper: ExamPaperVO) => {
 }
 
 .exam-card {
-  margin-bottom: 14px;
+  padding: var(--lp-space-5);
+  margin-bottom: var(--lp-space-3);
+  background: var(--lp-surface-subtle);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  transition:
+    border-color var(--lp-duration-fast) var(--lp-ease-out),
+    box-shadow var(--lp-duration-fast) var(--lp-ease-out);
 }
 
-.exam-card-header {
+.exam-card:hover {
+  border-color: var(--lp-border-strong);
+  box-shadow: var(--lp-shadow-sm);
+}
+
+.exam-card-top {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: var(--lp-space-3);
+  margin-bottom: var(--lp-space-3);
 }
 
-.exam-card-header h3 {
-  margin: 0;
-  font-size: 18px;
-  color: var(--lp-text);
-}
-
-.exam-title-line {
+.exam-card-heading {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--lp-space-3);
   flex-wrap: wrap;
+  min-width: 0;
+}
+
+.exam-title {
+  margin: 0;
+  color: var(--lp-text);
+  font-size: var(--lp-text-xl);
+  line-height: var(--lp-leading-snug);
+}
+
+.exam-avail-tag {
+  flex-shrink: 0;
+}
+
+.official-source,
+.private-source {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lp-space-1);
+  margin-bottom: var(--lp-space-4);
+  padding: var(--lp-space-3) var(--lp-space-4);
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  border-radius: var(--lp-radius-md);
 }
 
 .official-source {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin: -2px 0 14px;
-  padding: 10px 12px;
-  color: var(--lp-text-secondary);
-  background: var(--lp-success-soft, #f0f9eb);
-  border: 1px solid color-mix(in srgb, var(--lp-success) 28%, transparent);
-  border-radius: 7px;
-  font-size: 13px;
-}
-
-.official-source strong {
-  color: var(--lp-text);
-  font-weight: 700;
+  background: var(--lp-success-soft);
+  border: 1px solid color-mix(in srgb, var(--lp-success) 24%, transparent);
 }
 
 .private-source {
-  display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin: -2px 0 14px;
-  padding: 10px 12px;
-  color: var(--lp-text-secondary);
-  background: var(--lp-warning-soft, #fdf6ec);
-  border: 1px solid color-mix(in srgb, var(--lp-warning) 28%, transparent);
-  border-radius: 7px;
-  font-size: 13px;
+  gap: var(--lp-space-3);
+  background: var(--lp-warning-soft);
+  border: 1px solid color-mix(in srgb, var(--lp-warning) 24%, transparent);
 }
 
-.import-form {
-  margin-top: 18px;
-}
-.draft-list {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 16px;
-  padding: 12px;
-  background: var(--lp-warning-soft, #fdf6ec);
-  border: 1px solid color-mix(in srgb, var(--lp-warning) 28%, transparent);
-  border-radius: 8px;
-}
-.draft-list-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.import-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 16px;
-}
-.import-grid .el-select {
-  width: 100%;
-}
-.preview-summary {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 16px 0;
-}
-.preview-question {
-  padding: 14px;
-  margin-bottom: 10px;
-  border: 1px solid var(--lp-border);
-  border-radius: 8px;
-}
-.preview-question > div {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-.preview-question ul {
-  margin: 10px 0;
-  padding-left: 22px;
-  color: var(--lp-text-secondary);
-}
-.preview-question li.correct {
-  color: var(--lp-success);
-  font-weight: 700;
-}
-.preview-question p {
-  margin: 0;
-  color: var(--lp-text-secondary);
-  font-size: 13px;
-}
-.draft-review {
-  margin-top: 16px;
-}
-.draft-question {
-  margin-top: 12px;
-  padding: 14px;
-  border: 1px solid var(--lp-border);
-  border-radius: 8px;
-}
-.draft-question-title {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-.draft-question ul {
-  padding-left: 22px;
-  color: var(--lp-text-secondary);
-}
-.ai-suggestion {
-  padding: 10px 12px;
-  color: var(--lp-text-secondary);
-  background: var(--lp-surface-muted);
-  border-radius: 6px;
-  white-space: pre-wrap;
-}
-.source-meta {
-  overflow-wrap: anywhere;
-  color: var(--lp-text-secondary);
-  font-size: 13px;
-}
-.storage-summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 10px 0;
-  color: var(--lp-text-secondary);
-  font-size: 13px;
-}
-.storage-list {
-  min-height: 120px;
-}
-.storage-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--lp-border);
-}
-.storage-item:last-child {
-  border-bottom: 0;
-}
-.storage-item-main {
-  min-width: 0;
-}
-.storage-item-title,
-.storage-item-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.storage-item-title strong {
-  overflow-wrap: anywhere;
-}
-.storage-item p {
-  margin: 5px 0 0;
-  color: var(--lp-text-secondary);
-  font-size: 13px;
-}
-.source-content {
-  max-height: 56vh;
-  overflow: auto;
-  padding: 14px;
-  white-space: pre-wrap;
-  word-break: break-word;
-  background: var(--lp-surface-soft);
-  border: 1px solid var(--lp-border);
-  border-radius: 8px;
+.official-source strong,
+.private-source strong {
+  color: var(--lp-text);
+  font-weight: var(--lp-weight-semibold);
 }
 
 .exam-desc {
+  margin: 0 0 var(--lp-space-3);
   color: var(--lp-text-secondary);
-  font-size: 14px;
-  line-height: 1.6;
-  margin: 6px 0 0;
+  font-size: var(--lp-text-base);
+  line-height: var(--lp-leading-body);
 }
 
 .exam-metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: var(--lp-space-2);
+  margin-bottom: var(--lp-space-4);
   color: var(--lp-text-secondary);
-  font-size: 13px;
-  margin-bottom: 16px;
+  font-size: var(--lp-text-sm);
 }
 
 .exam-metrics span {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--lp-space-2);
   min-height: 36px;
-  padding: 8px 10px;
+  padding: var(--lp-space-2) var(--lp-space-3);
   background: var(--lp-surface-soft);
-  border: 1px solid var(--lp-border);
-  border-radius: 7px;
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-sm);
 }
 
 .exam-metrics .el-icon {
   color: var(--lp-primary);
+  flex-shrink: 0;
 }
 
 .exam-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--lp-space-2);
 }
 
 .pagination-wrapper {
   display: flex;
   justify-content: flex-end;
-  margin-top: 16px;
+  margin-top: var(--lp-space-4);
 }
+
 .score-text {
-  font-weight: 600;
+  font-weight: var(--lp-weight-semibold);
 }
+
 .score-high {
   color: var(--lp-success);
 }
+
 .score-mid {
   color: var(--lp-warning);
 }
+
 .score-low {
   color: var(--lp-danger);
 }
+
 .record-finished-hint {
   color: var(--lp-text-secondary);
-  font-size: 13px;
+  font-size: var(--lp-text-sm);
 }
+
+.source-meta {
+  overflow-wrap: anywhere;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+}
+
+.storage-list {
+  min-height: 120px;
+}
+
+.storage-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lp-space-4);
+  padding: var(--lp-space-4) 0;
+  border-bottom: var(--lp-border-hairline);
+}
+
+.storage-item:last-child {
+  border-bottom: 0;
+}
+
+.storage-item-main {
+  min-width: 0;
+}
+
+.storage-item-title,
+.storage-item-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-space-2);
+}
+
+.storage-item-title strong {
+  overflow-wrap: anywhere;
+}
+
+.storage-item p {
+  margin: var(--lp-space-1) 0 0;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+}
+
+.source-content {
+  max-height: 56vh;
+  overflow: auto;
+  padding: var(--lp-space-4);
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--lp-surface-soft);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-md);
+  margin-top: var(--lp-space-3);
+}
+
 .record-mobile-list {
   display: none;
 }
@@ -1465,18 +853,17 @@ const paperTypeTag = (paper: ExamPaperVO) => {
 }
 
 @media (max-width: 640px) {
-  .exam-hero,
-  .exam-card-header {
+  .exam-stat-row {
+    grid-template-columns: 1fr;
+  }
+
+  .exam-panel {
+    padding: var(--lp-space-3) var(--lp-space-4) var(--lp-space-4);
+  }
+
+  .exam-card-top {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .exam-hero {
-    padding: 16px;
-  }
-
-  .hero-summary {
-    justify-content: flex-start;
   }
 
   .exam-metrics {
@@ -1485,21 +872,16 @@ const paperTypeTag = (paper: ExamPaperVO) => {
 
   .exam-actions .el-button {
     width: 100%;
+    margin-left: 0;
   }
 
-  .import-grid {
-    grid-template-columns: 1fr;
-  }
-  .storage-summary,
   .storage-item {
     align-items: stretch;
     flex-direction: column;
   }
+
   .storage-item-actions .el-button {
     min-height: 44px;
-  }
-  .preview-summary {
-    flex-direction: column;
   }
 
   .record-panel > .el-table {
@@ -1508,36 +890,36 @@ const paperTypeTag = (paper: ExamPaperVO) => {
 
   .record-mobile-list {
     display: grid;
-    gap: 12px;
+    gap: var(--lp-space-3);
   }
 
   .record-mobile-card {
-    padding: 16px;
+    padding: var(--lp-space-4);
     background: var(--lp-surface);
-    border: 1px solid var(--lp-border);
-    border-radius: var(--lp-radius-sm, 8px);
+    border: var(--lp-border-hairline);
+    border-radius: var(--lp-radius-md);
   }
 
   .record-mobile-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 12px;
+    gap: var(--lp-space-3);
   }
 
   .record-mobile-header h3 {
     min-width: 0;
     margin: 0;
     color: var(--lp-text);
-    font-size: 16px;
-    line-height: 1.5;
+    font-size: var(--lp-text-lg);
+    line-height: var(--lp-leading-snug);
   }
 
   .record-mobile-meta {
     display: grid;
     grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-    gap: 12px;
-    margin: 16px 0;
+    gap: var(--lp-space-3);
+    margin: var(--lp-space-4) 0;
   }
 
   .record-mobile-meta div {
@@ -1545,16 +927,16 @@ const paperTypeTag = (paper: ExamPaperVO) => {
   }
 
   .record-mobile-meta dt {
-    margin-bottom: 4px;
+    margin-bottom: var(--lp-space-1);
     color: var(--lp-text-secondary);
-    font-size: 12px;
+    font-size: var(--lp-text-xs);
   }
 
   .record-mobile-meta dd {
     margin: 0;
     color: var(--lp-text);
-    font-size: 13px;
-    line-height: 1.5;
+    font-size: var(--lp-text-sm);
+    line-height: var(--lp-leading-snug);
     overflow-wrap: anywhere;
   }
 
