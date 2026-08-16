@@ -1,22 +1,23 @@
 <template>
   <div class="question-list page-container">
-    <section class="question-hero">
-      <div class="hero-copy">
-        <span class="section-kicker">学习中心</span>
-        <h2>题库浏览</h2>
-        <p>按课程、题型和难度快速定位题目，把值得回看的内容收藏起来，讨论区留给真实理解上的卡点。</p>
-      </div>
-      <div class="hero-metrics">
-        <div class="metric-item">
-          <span>当前结果</span>
-          <strong>{{ total }}</strong>
+    <LpPageHeader
+      kicker="题库"
+      title="题库浏览"
+      description="按课程、题型和难度快速定位题目，把值得回看的内容收藏起来。"
+    >
+      <template #actions>
+        <div class="hero-metrics">
+          <div class="metric-item">
+            <span>当前结果</span>
+            <strong>{{ total }}</strong>
+          </div>
+          <div class="metric-item">
+            <span>已收藏</span>
+            <strong>{{ favoriteSet.size }}</strong>
+          </div>
         </div>
-        <div class="metric-item">
-          <span>已收藏</span>
-          <strong>{{ favoriteSet.size }}</strong>
-        </div>
-      </div>
-    </section>
+      </template>
+    </LpPageHeader>
 
     <section class="question-workbench">
       <aside class="filter-panel">
@@ -409,48 +410,13 @@ onMounted(() => {
 .question-list {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-}
-
-.question-hero {
-  display: flex;
-  align-items: stretch;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 22px;
-  color: var(--lp-text);
-  background: var(--lp-surface);
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  box-shadow: var(--lp-shadow-sm);
-}
-
-.hero-copy {
-  max-width: 720px;
-}
-
-.section-kicker {
-  color: var(--lp-primary);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.question-hero h2 {
-  margin: 4px 0 8px;
-  font-size: 24px;
-}
-
-.question-hero p {
-  margin: 0;
-  color: var(--lp-text-secondary);
-  font-size: 14px;
-  line-height: 1.7;
+  gap: var(--lp-space-5);
 }
 
 .hero-metrics {
   display: grid;
   grid-template-columns: repeat(2, 118px);
-  gap: 10px;
+  gap: var(--lp-space-2);
   align-items: stretch;
 }
 
@@ -458,23 +424,24 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 86px;
-  padding: 14px;
+  min-height: 72px;
+  padding: var(--lp-space-3) var(--lp-space-4);
   background: var(--lp-surface-soft);
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-md);
 }
 
 .metric-item span {
   color: var(--lp-text-muted);
-  font-size: 13px;
+  font-size: var(--lp-text-sm);
 }
 
 .metric-item strong {
-  margin-top: 6px;
-  color: var(--lp-primary);
-  font-size: 26px;
+  margin-top: 4px;
+  color: var(--lp-text);
+  font-size: var(--lp-text-2xl);
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .question-workbench {
@@ -803,14 +770,9 @@ onMounted(() => {
 }
 
 @media (max-width: 720px) {
-  .question-hero,
   .panel-title,
   .result-toolbar {
     flex-direction: column;
-  }
-
-  .question-hero {
-    padding: 16px;
   }
 
   .hero-metrics {

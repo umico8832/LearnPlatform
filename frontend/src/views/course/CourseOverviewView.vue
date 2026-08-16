@@ -1,119 +1,158 @@
 <template>
   <div class="course-overview page-container">
-    <section class="overview-hero">
-      <div>
-        <el-button :icon="ArrowLeft" text @click="router.push({ name: 'MyCourses' })">返回课程库</el-button>
-        <span class="section-kicker">课程学习中枢</span>
-        <h2>{{ overview?.courseName || '课程总览' }}</h2>
-        <p>这里呈现已发生的作答、复习与错题事实；它们不会被浏览时长或自评替代。</p>
+    <template v-if="loading">
+      <LpSkeleton card :rows="3" />
+      <div class="overview-grid">
+        <LpSkeleton card :rows="8" />
+        <LpSkeleton card :rows="6" />
       </div>
-      <div class="hero-actions">
-        <el-button :icon="Collection" @click="openCourseContent">查看课程目录</el-button>
-        <el-button :icon="Document" @click="openCoursePapers">学习课程试卷</el-button>
-        <el-button :icon="DataAnalysis" @click="openAssessmentSetup">阶段测评</el-button>
-        <el-button :icon="DataAnalysis" :loading="assessmentHistoryLoading" @click="openAssessmentHistory">
-          测评历史
-        </el-button>
-        <el-button
-          type="primary"
-          :icon="ArrowRight"
-          :loading="starting"
-          aria-label="按统一课程状态开始学习"
-          @click="startLearning"
-        >
-          开始学习
-        </el-button>
-      </div>
-    </section>
+    </template>
 
-    <section v-loading="loading" class="overview-content" element-loading-text="正在汇总学习记录...">
-      <template v-if="overview">
-        <div class="stats-grid" aria-label="课程学习统计">
-          <article class="stat-card">
-            <span>已作答</span>
-            <strong>{{ overview.answeredCount }}</strong>
-            <small>来自课程内真实判分</small>
-          </article>
-          <article class="stat-card">
-            <span>答对</span>
-            <strong>{{ overview.correctCount }}</strong>
-            <small>不等同于课程掌握度</small>
-          </article>
-          <article class="stat-card emphasis">
-            <span>待复习</span>
-            <strong>{{ overview.dueReviewCount }}</strong>
-            <small>已到间隔复习时间</small>
-          </article>
-          <article class="stat-card warning">
-            <span>待处理错题</span>
-            <strong>{{ overview.unresolvedWrongCount }}</strong>
-            <small>尚未标记为已掌握</small>
-          </article>
+    <template v-else-if="loadFailed || !overview">
+      <section class="state-panel">
+        <LpEmptyState title="暂时无法读取课程空间" description="请刷新重试；如果课程尚未加入课程库，请先从课程库加入。">
+          <template #actions>
+            <el-button type="primary" @click="fetchOverview">重新加载</el-button>
+          </template>
+        </LpEmptyState>
+      </section>
+    </template>
+
+    <template v-else>
+      <div class="back-row">
+        <el-button text :icon="ArrowLeft" @click="router.push({ name: 'MyCourses' })">返回我的课程</el-button>
+      </div>
+
+      <section class="overview-hero">
+        <div class="hero-copy">
+          <LpKicker>课程空间</LpKicker>
+          <h1 class="hero-title">{{ overview.courseName }}</h1>
+          <p class="hero-desc">这里呈现已经发生的作答、复习与错题事实；它们不会被浏览时长或自评替代。</p>
         </div>
+        <div class="hero-actions">
+          <el-button :icon="Collection" @click="openCourseContent">课程目录</el-button>
+          <el-button :icon="Document" @click="openCoursePapers">课程试卷</el-button>
+          <el-button :icon="DataAnalysis" @click="openAssessmentSetup">阶段测评</el-button>
+          <el-button :icon="Clock" :loading="assessmentHistoryLoading" @click="openAssessmentHistory">
+            测评历史
+          </el-button>
+          <el-button
+            type="primary"
+            :icon="ArrowRight"
+            :loading="starting"
+            aria-label="按统一课程状态开始学习"
+            @click="startLearning"
+          >
+            开始学习
+          </el-button>
+        </div>
+      </section>
 
-        <section
-          v-if="overview.tutorProgress.length"
-          class="tutor-progress-panel"
-          aria-labelledby="tutor-progress-heading"
-        >
-          <div class="panel-header">
-            <div>
-              <span class="section-kicker">课程目录</span>
-              <h3 id="tutor-progress-heading">已迁入教学内容</h3>
-            </div>
-            <el-tag type="info" effect="plain">仅显示已审查内容</el-tag>
-          </div>
-          <p class="tutor-progress-note">状态仅来自服务端保存的理解检查；其余目录内容尚未迁入时不会被推断为未完成。</p>
-          <div class="tutor-progress-list">
-            <article v-for="item in overview.tutorProgress" :key="item.knowledgePointId" class="tutor-progress-item">
-              <div>
-                <h4>{{ item.title }}</h4>
-                <span class="progress-status">{{ tutorStatusLabel(item.status) }}</span>
-              </div>
-              <el-button
-                :type="item.status === 'IN_PROGRESS' ? 'primary' : 'default'"
-                @click="openTutor(item.knowledgePointId)"
-              >
-                {{ tutorActionLabel(item.status) }}
-              </el-button>
-            </article>
-          </div>
-        </section>
+      <section v-if="overview.recommendedTargets.length" class="continue-section">
+        <div class="continue-main">
+          <LpKicker>继续学习</LpKicker>
+          <h2 class="continue-title">{{ overview.recommendedTargets[0].title }}</h2>
+          <p class="continue-reason">{{ overview.recommendedTargets[0].reason }}</p>
+          <el-button type="primary" :icon="ArrowRight" @click="openTarget(overview.recommendedTargets[0])">
+            继续
+          </el-button>
+        </div>
+        <div v-if="overview.recommendedTargets.length > 1" class="continue-alternatives">
+          <button
+            v-for="target in overview.recommendedTargets.slice(1)"
+            :key="target.type + (target.knowledgePointId ?? target.questionId ?? '')"
+            type="button"
+            class="alternative-item"
+            @click="openTarget(target)"
+          >
+            <span class="alternative-title">{{ target.title }}</span>
+            <span class="alternative-reason">{{ target.reason }}</span>
+          </button>
+        </div>
+      </section>
 
-        <div class="overview-grid">
-          <section class="target-panel" aria-labelledby="next-target-heading">
-            <div class="panel-header">
-              <div>
-                <span class="section-kicker">开始学习</span>
-                <h3 id="next-target-heading">选择下一步</h3>
-              </div>
-              <el-tag type="info" effect="plain">按现有学习事实排序</el-tag>
-            </div>
-            <div class="target-list">
-              <article v-for="(target, index) in overview.recommendedTargets" :key="target.type" class="target-item">
-                <div class="target-index" aria-hidden="true">{{ index + 1 }}</div>
-                <div class="target-copy">
-                  <h4>{{ target.title }}</h4>
-                  <p>{{ target.reason }}</p>
-                </div>
-                <el-button :type="index === 0 ? 'primary' : 'default'" :icon="ArrowRight" @click="openTarget(target)">
-                  开始
-                </el-button>
-              </article>
+      <div class="overview-grid">
+        <div class="overview-main">
+          <section class="panel" aria-labelledby="tools-heading">
+            <LpSectionHeading
+              kicker="学习工具"
+              title="继续这一门课"
+              description="练习、复习与考试都按本课程的范围进行。"
+            />
+            <div class="tool-list">
+              <button v-for="tool in tools" :key="tool.path" type="button" class="tool-row" @click="openTool(tool)">
+                <span class="tool-icon" aria-hidden="true">
+                  <el-icon :size="17"><component :is="tool.icon" /></el-icon>
+                </span>
+                <span class="tool-copy">
+                  <strong>{{ tool.title }}</strong>
+                  <small>{{ tool.desc }}</small>
+                </span>
+                <el-icon class="tool-arrow" :size="15" aria-hidden="true"><ArrowRight /></el-icon>
+              </button>
             </div>
           </section>
 
-          <aside class="activity-panel" aria-labelledby="activity-heading">
-            <span class="section-kicker">最近学习</span>
-            <h3 id="activity-heading">学习记录</h3>
-            <p v-if="overview.lastLearningTime">最近一次课程内判分：{{ formatDateTime(overview.lastLearningTime) }}</p>
-            <p v-else>还没有课程内学习记录。可从课程目录或题目开始。</p>
+          <section class="panel" aria-labelledby="outline-heading">
+            <LpSectionHeading
+              kicker="课程目录"
+              title="教学内容"
+              description="状态只来自服务端保存的理解检查；其余目录内容尚未迁入时不会被推断为未完成。"
+            >
+              <template #aside>
+                <el-button text type="primary" :icon="Collection" @click="openCourseContent"> 完整知识结构 </el-button>
+              </template>
+            </LpSectionHeading>
+            <div v-if="overview.tutorProgress.length" class="outline-list">
+              <div v-for="item in overview.tutorProgress" :key="item.knowledgePointId" class="outline-item">
+                <span class="outline-status" :data-status="item.status" aria-hidden="true" />
+                <div class="outline-copy">
+                  <strong>{{ item.title }}</strong>
+                  <small>{{ tutorStatusLabel(item.status) }}</small>
+                </div>
+                <el-button
+                  :type="item.status === 'IN_PROGRESS' ? 'primary' : 'default'"
+                  size="small"
+                  @click="openTutor(item.knowledgePointId)"
+                >
+                  {{ tutorActionLabel(item.status) }}
+                </el-button>
+              </div>
+            </div>
+            <LpEmptyState
+              v-else
+              compact
+              title="暂无已迁入的教学内容"
+              description="课程内容还在制作中，可以从题目或试卷开始。"
+            />
+          </section>
+        </div>
+
+        <aside class="activity-panel" aria-labelledby="activity-heading">
+          <LpKicker>学习情况</LpKicker>
+          <h2 id="activity-heading" class="activity-title">课程学习事实</h2>
+          <div class="stats-grid">
+            <LpStat label="已作答" :value="overview.answeredCount" note="来自课程内真实判分" />
+            <LpStat label="答对" :value="overview.correctCount" tone="emphasis" note="不等同于掌握度" />
+            <LpStat label="待复习" :value="overview.dueReviewCount" tone="warning" note="已到间隔复习时间" />
+            <LpStat label="未处理错题" :value="overview.unresolvedWrongCount" tone="danger" note="尚未标记为已掌握" />
+          </div>
+
+          <LpDivider />
+
+          <div class="recent-block">
+            <h3 class="recent-heading">最近学习</h3>
+            <p v-if="overview.lastLearningTime" class="recent-time">
+              最近一次课程内判分：{{ formatDateTime(overview.lastLearningTime) }}
+            </p>
+            <p v-else class="recent-time">还没有课程内学习记录。可从「继续学习」或课程目录开始。</p>
+
             <div v-if="overview.latestStageAssessment" class="latest-assessment">
               <strong>最近阶段测评</strong>
-              <span>
-                答对 {{ overview.latestStageAssessment.correctCount }} /
-                {{ overview.latestStageAssessment.questionCount }} 题
-              </span>
+              <span
+                >答对 {{ overview.latestStageAssessment.correctCount }} /
+                {{ overview.latestStageAssessment.questionCount }} 题</span
+              >
               <small>范围：{{ overview.latestStageAssessment.targetKnowledgePointName || '课程整体' }}</small>
               <small>题源：{{ sourceCompositionText(overview.latestStageAssessment.sourceComposition) }}</small>
               <small v-if="overview.latestStageAssessment.knowledgePointSummary?.length">
@@ -122,215 +161,51 @@
               <small>{{ formatDateTime(overview.latestStageAssessment.completeTime) }}</small>
               <el-button text @click="openAssessmentDetail(overview.latestStageAssessment.id)">查看逐题复盘</el-button>
             </div>
-            <el-button text :icon="Refresh" :loading="loading" @click="fetchOverview">刷新记录</el-button>
-          </aside>
-        </div>
-      </template>
-
-      <el-result
-        v-else-if="!loading && loadFailed"
-        icon="error"
-        title="暂时无法读取课程总览"
-        sub-title="请刷新重试；如果课程尚未加入课程库，请先从课程中心加入。"
-      >
-        <template #extra><el-button type="primary" @click="fetchOverview">重新加载</el-button></template>
-      </el-result>
-    </section>
-
-    <el-dialog v-model="assessmentHistoryVisible" title="阶段测评历史" width="min(680px, 94vw)">
-      <div class="history-filter-row">
-        <el-select
-          v-model="assessmentHistoryKnowledgePointId"
-          placeholder="按知识点筛选"
-          clearable
-          @change="onHistoryKnowledgePointChange"
-        >
-          <el-option :value="0" label="全部知识点" />
-          <el-option
-            v-for="item in overview?.tutorProgress ?? []"
-            :key="item.knowledgePointId"
-            :value="item.knowledgePointId"
-            :label="item.title"
-          />
-        </el-select>
-      </div>
-      <el-result v-if="assessmentHistoryFailed" icon="error" title="暂时无法读取测评历史" sub-title="请稍后重试。">
-        <template #extra
-          ><el-button type="primary" @click="loadAssessmentHistory(assessmentHistoryPage)"
-            >重新加载</el-button
-          ></template
-        >
-      </el-result>
-      <p v-else-if="!assessmentHistoryLoading && !assessmentHistory.length" class="history-empty">
-        还没有已完成的阶段测评。
-      </p>
-      <div v-else v-loading="assessmentHistoryLoading" class="assessment-history-list">
-        <article v-for="item in assessmentHistory" :key="item.id" class="assessment-history-item">
-          <div>
-            <strong>答对 {{ item.correctCount }} / {{ item.questionCount }} 题</strong>
-            <p>{{ formatDateTime(item.completeTime) }}</p>
-            <small>{{ assessmentStrategyText(item.selectionStrategy) }}</small>
-            <small>范围：{{ item.targetKnowledgePointName || '课程整体' }}</small>
-            <small>题源：{{ sourceCompositionText(item.sourceComposition) }}</small>
           </div>
-          <el-button @click="openAssessmentDetail(item.id)">查看复盘</el-button>
-        </article>
+
+          <el-button text :icon="Refresh" :loading="loading" @click="fetchOverview">刷新记录</el-button>
+        </aside>
       </div>
-      <el-pagination
-        v-if="assessmentHistoryTotal > assessmentHistoryPageSize"
-        layout="prev, pager, next"
-        :current-page="assessmentHistoryPage"
-        :page-size="assessmentHistoryPageSize"
-        :total="assessmentHistoryTotal"
-        @current-change="loadAssessmentHistory"
-      />
-    </el-dialog>
+    </template>
 
-    <el-dialog v-model="assessmentSetupVisible" title="开始阶段测评" width="min(480px, 94vw)">
-      <p class="assessment-setup-note">
-        默认从整门课程选题；也可以限定在单个已审查知识点内，只从该知识点关联的可见已发布客观题选题。
-      </p>
-      <el-form label-position="top" @submit.prevent>
-        <el-form-item label="知识点范围">
-          <el-select v-model="assessmentKnowledgePointId" placeholder="选择知识点范围" class="assessment-scope-select">
-            <el-option :value="0" label="课程整体测评" />
-            <el-option
-              v-for="item in overview?.tutorProgress ?? []"
-              :key="item.knowledgePointId"
-              :value="item.knowledgePointId"
-              :label="item.title"
-            />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="assessmentSetupVisible = false">取消</el-button>
-        <el-button type="primary" :loading="assessmentStarting" @click="startAssessment">开始测评</el-button>
-      </template>
-    </el-dialog>
+    <AssessmentSetupDialog
+      v-model:visible="assessmentSetupVisible"
+      :starting="assessmentStarting"
+      :knowledge-points="setupKnowledgePointOptions"
+      @start="startAssessment"
+    />
 
-    <el-dialog v-model="assessmentDialogVisible" title="课程阶段测评" width="min(780px, 94vw)">
-      <template v-if="assessment">
-        <el-alert
-          :title="assessmentStrategyLabel"
-          :type="assessment.selectionStrategy === 'LEARNING_STATE_PRIORITY' ? 'info' : 'warning'"
-          :closable="false"
-          show-icon
-        />
-        <p class="assessment-source-composition">
-          范围：{{ assessment.targetKnowledgePointName || '课程整体' }} · 题源构成：{{
-            sourceCompositionText(assessment.sourceComposition)
-          }}
-        </p>
-        <p v-if="assessment.status === 'COMPLETED'" class="assessment-summary">
-          答对 {{ assessment.correctCount }} / {{ assessment.questionCount }} 题
-        </p>
-        <div
-          v-if="assessment.status === 'COMPLETED' && assessment.knowledgePointSummary?.length"
-          class="assessment-kp-summary"
-        >
-          <h4 class="assessment-kp-summary-heading">按知识点统计</h4>
-          <p class="assessment-kp-summary-note">仅统计本轮各知识点的题数与正误数，不推断掌握度或趋势。</p>
-          <ul class="assessment-kp-summary-list">
-            <li v-for="point in assessment.knowledgePointSummary" :key="point.id" class="assessment-kp-summary-item">
-              <span>知识点：{{ point.name }}</span>
-              <span class="assessment-kp-summary-count"
-                >答对 {{ point.correctCount }} / {{ point.questionCount }} 题</span
-              >
-              <el-button
-                v-if="point.correctCount < point.questionCount"
-                size="small"
-                text
-                type="danger"
-                @click="reviewWrongQuestionByKnowledgePoint(point)"
-              >
-                复习该知识点错题
-              </el-button>
-              <el-button
-                v-if="isReviewedTutorKnowledgePoint(point.id)"
-                size="small"
-                text
-                type="primary"
-                @click="openKnowledgePointTutor(point.id)"
-              >
-                进入教学
-              </el-button>
-            </li>
-          </ul>
-        </div>
-        <div class="assessment-list">
-          <article v-for="question in assessment.questions" :key="question.id" class="assessment-question">
-            <div class="assessment-question-header">
-              <strong>{{ question.sortOrder }}. {{ question.content }}</strong>
-              <div class="assessment-question-tags">
-                <el-tag v-if="question.sourceType === 'AI_GENERATED'" type="warning" effect="plain">
-                  AI 审查生成题<span v-if="question.originQuestionId"> · 母题 #{{ question.originQuestionId }}</span>
-                </el-tag>
-                <el-tag v-if="question.correct != null" :type="question.correct ? 'success' : 'danger'">
-                  {{ question.correct ? '正确' : '错误' }}
-                </el-tag>
-                <template v-for="point in question.knowledgePoints ?? []" :key="point.id">
-                  <el-button
-                    v-if="isReviewedTutorKnowledgePoint(point.id)"
-                    size="small"
-                    text
-                    type="primary"
-                    class="kp-entry"
-                    @click="openKnowledgePointTutor(point.id)"
-                  >
-                    知识点：{{ point.name }}
-                  </el-button>
-                  <el-tag v-else size="small" effect="plain">知识点：{{ point.name }}</el-tag>
-                </template>
-              </div>
-            </div>
-            <el-checkbox-group
-              v-if="question.questionType === 'MULTIPLE_CHOICE'"
-              v-model="assessmentAnswers[question.id]"
-              :disabled="assessment.status === 'COMPLETED'"
-              class="assessment-options"
-            >
-              <el-checkbox v-for="option in question.options" :key="option.label" :value="option.label">
-                {{ option.label }}. {{ option.content }}
-              </el-checkbox>
-            </el-checkbox-group>
-            <el-radio-group
-              v-else
-              v-model="assessmentAnswers[question.id][0]"
-              :disabled="assessment.status === 'COMPLETED'"
-              class="assessment-options"
-            >
-              <el-radio v-for="option in question.options" :key="option.label" :value="option.label">
-                {{ option.content }}
-              </el-radio>
-            </el-radio-group>
-            <div v-if="assessment.status === 'COMPLETED'" class="assessment-result">
-              <p>参考答案：{{ question.correctAnswer }}</p>
-              <p>{{ question.analysis || '暂无解析' }}</p>
-              <el-button
-                v-if="question.correct === false"
-                size="small"
-                type="primary"
-                plain
-                @click="reviewWrongQuestion(question.questionId)"
-              >
-                进入错题复习
-              </el-button>
-            </div>
-          </article>
-        </div>
-      </template>
-      <template #footer>
-        <el-button @click="assessmentDialogVisible = false">关闭</el-button>
-        <el-button
-          v-if="assessment?.status === 'IN_PROGRESS'"
-          type="primary"
-          :loading="assessmentSubmitting"
-          @click="submitAssessment"
-          >提交测评</el-button
-        >
-      </template>
-    </el-dialog>
+    <StageAssessmentDialog
+      v-model:visible="assessmentDialogVisible"
+      v-model:answers="assessmentAnswers"
+      :assessment="assessment"
+      :submitting="assessmentSubmitting"
+      :reviewed-knowledge-point-ids="reviewedKnowledgePointIds"
+      @submit="submitAssessment"
+      @review-wrong="reviewWrongQuestion"
+      @review-wrong-by-kp="reviewWrongQuestionByKnowledgePoint"
+      @open-kp-tutor="openKnowledgePointTutor"
+    />
+
+    <AssessmentHistoryDialog
+      v-model:visible="assessmentHistoryVisible"
+      :loading="assessmentHistoryLoading"
+      :failed="assessmentHistoryFailed"
+      :records="assessmentHistory"
+      :page="assessmentHistoryPage"
+      :page-size="assessmentHistoryPageSize"
+      :total="assessmentHistoryTotal"
+      :filter-knowledge-point-id="assessmentHistoryKnowledgePointId"
+      :knowledge-point-options="setupKnowledgePointOptions"
+      @filter-change="
+        (knowledgePointId: number) => {
+          assessmentHistoryKnowledgePointId = knowledgePointId
+          loadAssessmentHistory(1)
+        }
+      "
+      @load="loadAssessmentHistory"
+      @open-detail="openAssessmentDetail"
+    />
   </div>
 </template>
 
@@ -338,7 +213,21 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, ArrowRight, Collection, DataAnalysis, Document, Refresh } from '@element-plus/icons-vue'
+import type { Component } from 'vue'
+import {
+  ArrowLeft,
+  ArrowRight,
+  Clock,
+  Collection,
+  DataAnalysis,
+  Document,
+  EditPen,
+  Promotion,
+  Refresh,
+  Timer,
+  Trophy,
+  WarningFilled,
+} from '@element-plus/icons-vue'
 import {
   getCourseOverview,
   getCourseStageAssessmentDetail,
@@ -352,6 +241,18 @@ import {
   type CourseStageAssessmentSummaryVO,
   type LearningTargetVO,
 } from '@/api/course'
+import { openLearningTarget } from '@/utils/learningTarget'
+import { formatDateTime } from '@/utils/format'
+import AssessmentSetupDialog from '@/components/course/AssessmentSetupDialog.vue'
+import StageAssessmentDialog from '@/components/course/StageAssessmentDialog.vue'
+import AssessmentHistoryDialog from '@/components/course/AssessmentHistoryDialog.vue'
+
+interface CourseTool {
+  path: string
+  title: string
+  desc: string
+  icon: Component
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -374,33 +275,49 @@ const assessmentHistory = ref<CourseStageAssessmentSummaryVO[]>([])
 const assessmentHistoryPage = ref(1)
 const assessmentHistoryPageSize = 10
 const assessmentHistoryTotal = ref(0)
+
 const courseId = computed(() => Number(route.params.id))
-const assessmentStrategyLabel = computed(() =>
-  assessment.value?.selectionStrategy === 'LEARNING_STATE_PRIORITY'
-    ? '按当前错题、到期复习和近期错误记录优先选题'
-    : '学习数据不足，采用确定性课程题序；本次不标记为 AI 个性化',
+
+const setupKnowledgePointOptions = computed(() =>
+  (overview.value?.tutorProgress ?? []).map((item) => ({ id: item.knowledgePointId, title: item.title })),
 )
 
-function assessmentStrategyText(strategy: CourseStageAssessmentSummaryVO['selectionStrategy']) {
-  return strategy === 'LEARNING_STATE_PRIORITY' ? '按当前学习事实优先选题' : '确定性课程题序'
-}
+const reviewedKnowledgePointIds = computed(() =>
+  (overview.value?.tutorProgress ?? []).map((item) => item.knowledgePointId),
+)
 
-function sourceCompositionText(composition: CourseStageAssessmentSummaryVO['sourceComposition']) {
-  if (!composition) return '暂无题源快照'
-  return [
-    ['官方原题', composition.officialExamCount],
-    ['平台人工题', composition.manualCount],
-    ['用户私有题', composition.userPrivateCount],
-    ['AI 生成题', composition.aiGeneratedCount],
-  ]
-    .filter(([, count]) => Number(count) > 0)
-    .map(([label, count]) => `${label} ${count}`)
-    .join(' · ')
-}
-
-function knowledgePointSummaryText(summary: CourseStageAssessmentKnowledgePointSummaryVO[]) {
-  return summary.map((item) => `${item.name} ${item.correctCount}/${item.questionCount}`).join(' · ')
-}
+const tools: CourseTool[] = [
+  {
+    path: 'practice',
+    title: '练习',
+    desc: '按课程范围随机练习，即时判分并复盘',
+    icon: Promotion,
+  },
+  {
+    path: 'review',
+    title: '复习',
+    desc: '处理本课程到期的间隔复习',
+    icon: Timer,
+  },
+  {
+    path: 'wrong-questions',
+    title: '错题',
+    desc: '集中处理本课程尚未掌握的题目',
+    icon: WarningFilled,
+  },
+  {
+    path: 'exams',
+    title: '真题与试卷',
+    desc: '学习模式逐题理解，考试模式检验阶段效果',
+    icon: Trophy,
+  },
+  {
+    path: 'questions',
+    title: '题目',
+    desc: '按课程、题型和难度浏览题库',
+    icon: EditPen,
+  },
+]
 
 async function fetchOverview() {
   loading.value = true
@@ -424,6 +341,13 @@ function openCoursePapers() {
   router.push({ name: 'ExamList', query: { courseId: String(courseId.value) } })
 }
 
+function openTool(tool: CourseTool) {
+  router.push({
+    name: tool.path === 'questions' ? 'QuestionList' : tool.path,
+    query: { courseId: String(courseId.value) },
+  })
+}
+
 async function startLearning() {
   starting.value = true
   try {
@@ -432,6 +356,69 @@ async function startLearning() {
   } finally {
     starting.value = false
   }
+}
+
+function openTarget(target: LearningTargetVO) {
+  openLearningTarget(router, courseId.value, target)
+}
+
+function tutorStatusLabel(status: string) {
+  if (status === 'COMPLETED') return '已完成理解检查'
+  if (status === 'IN_PROGRESS') return '已尝试'
+  return '未开始'
+}
+
+function tutorActionLabel(status: string) {
+  if (status === 'IN_PROGRESS') return '继续学习'
+  if (status === 'COMPLETED') return '再次学习'
+  return '开始学习'
+}
+
+function openTutor(knowledgePointId: number) {
+  router.push({
+    name: 'TutorSession',
+    params: { id: courseId.value },
+    query: { knowledgePointId: String(knowledgePointId) },
+  })
+}
+
+function openKnowledgePointTutor(knowledgePointId: number) {
+  openTutor(knowledgePointId)
+}
+
+function reviewWrongQuestion(questionId: number) {
+  router.push({
+    name: 'WrongQuestions',
+    query: { courseId: String(courseId.value), questionId: String(questionId) },
+  })
+}
+
+function reviewWrongQuestionByKnowledgePoint(point: { id: number; name: string }) {
+  router.push({
+    name: 'WrongQuestions',
+    query: {
+      courseId: String(courseId.value),
+      knowledgePointId: String(point.id),
+      knowledgePointName: point.name,
+    },
+  })
+}
+
+function sourceCompositionText(composition: CourseStageAssessmentSummaryVO['sourceComposition']) {
+  if (!composition) return '暂无题源快照'
+  return [
+    ['官方原题', composition.officialExamCount],
+    ['平台人工题', composition.manualCount],
+    ['用户私有题', composition.userPrivateCount],
+    ['AI 生成题', composition.aiGeneratedCount],
+  ]
+    .filter(([, count]) => Number(count) > 0)
+    .map(([label, count]) => `${label} ${count}`)
+    .join(' · ')
+}
+
+function knowledgePointSummaryText(summary: CourseStageAssessmentKnowledgePointSummaryVO[]) {
+  return summary.map((item) => `${item.name} ${item.correctCount}/${item.questionCount}`).join(' · ')
 }
 
 function syncAssessmentAnswers(value: CourseStageAssessmentVO) {
@@ -445,14 +432,11 @@ function openAssessmentSetup() {
   assessmentSetupVisible.value = true
 }
 
-async function startAssessment() {
+async function startAssessment(knowledgePointId?: number) {
   assessmentStarting.value = true
   try {
-    const response = await startCourseStageAssessment(
-      courseId.value,
-      5,
-      assessmentKnowledgePointId.value === 0 ? null : assessmentKnowledgePointId.value,
-    )
+    const selected = knowledgePointId ?? assessmentKnowledgePointId.value
+    const response = await startCourseStageAssessment(courseId.value, 5, selected === 0 ? null : selected)
     assessment.value = response.data
     syncAssessmentAnswers(response.data)
     assessmentSetupVisible.value = false
@@ -460,10 +444,6 @@ async function startAssessment() {
   } finally {
     assessmentStarting.value = false
   }
-}
-
-function onHistoryKnowledgePointChange() {
-  loadAssessmentHistory(1)
 }
 
 async function loadAssessmentHistory(page = 1) {
@@ -521,82 +501,6 @@ async function submitAssessment() {
   }
 }
 
-function openTutor(knowledgePointId: number) {
-  router.push({
-    name: 'TutorSession',
-    params: { id: courseId.value },
-    query: { knowledgePointId: String(knowledgePointId) },
-  })
-}
-
-function isReviewedTutorKnowledgePoint(knowledgePointId: number) {
-  return (overview.value?.tutorProgress ?? []).some((item) => item.knowledgePointId === knowledgePointId)
-}
-
-function openKnowledgePointTutor(knowledgePointId: number) {
-  openTutor(knowledgePointId)
-}
-
-function reviewWrongQuestion(questionId: number) {
-  router.push({
-    name: 'WrongQuestions',
-    query: { courseId: String(courseId.value), questionId: String(questionId) },
-  })
-}
-
-function reviewWrongQuestionByKnowledgePoint(point: CourseStageAssessmentKnowledgePointSummaryVO) {
-  router.push({
-    name: 'WrongQuestions',
-    query: {
-      courseId: String(courseId.value),
-      knowledgePointId: String(point.id),
-      knowledgePointName: point.name,
-    },
-  })
-}
-
-function tutorStatusLabel(status: string) {
-  if (status === 'COMPLETED') return '已完成理解检查'
-  if (status === 'IN_PROGRESS') return '已尝试'
-  return '未开始'
-}
-
-function tutorActionLabel(status: string) {
-  if (status === 'IN_PROGRESS') return '继续学习'
-  if (status === 'COMPLETED') return '再次学习'
-  return '开始学习'
-}
-
-function openTarget(target: LearningTargetVO) {
-  if (target.type === 'TUTOR' && target.knowledgePointId) {
-    router.push({
-      name: 'TutorSession',
-      params: { id: courseId.value },
-      query: { knowledgePointId: String(target.knowledgePointId) },
-    })
-    return
-  }
-  const query = {
-    courseId: String(courseId.value),
-    ...(target.questionId ? { questionId: String(target.questionId) } : {}),
-    ...(target.knowledgePointId ? { knowledgePointId: String(target.knowledgePointId) } : {}),
-  }
-  if (target.type === 'DUE_REVIEW') {
-    router.push({ name: 'Review', query })
-    return
-  }
-  if (target.type === 'WRONG_QUESTION') {
-    router.push({ name: 'WrongQuestions', query })
-    return
-  }
-  router.push({ name: 'QuestionList', query })
-}
-
-function formatDateTime(value: string) {
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString('zh-CN')
-}
-
 onMounted(fetchOverview)
 </script>
 
@@ -604,375 +508,387 @@ onMounted(fetchOverview)
 .course-overview {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--lp-space-6);
 }
-.overview-hero,
-.overview-content,
-.target-panel,
-.activity-panel,
-.stat-card {
+
+.back-row {
+  display: flex;
+  align-items: center;
+}
+
+.state-panel {
+  padding: var(--lp-space-6) 0;
   background: var(--lp-surface);
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  box-shadow: var(--lp-shadow-sm);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
+
+/* ---------------- Hero ---------------- */
 .overview-hero {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 20px;
-  padding: 22px;
+  gap: var(--lp-space-6);
+  padding: var(--lp-space-6) var(--lp-space-8);
+  background: var(--lp-surface);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
+
+.hero-copy {
+  min-width: 0;
+}
+
+.hero-title {
+  margin-top: var(--lp-space-2);
+  font-family: var(--lp-font-display);
+  font-size: var(--lp-text-4xl);
+  font-weight: var(--lp-weight-bold);
+  line-height: var(--lp-leading-display);
+  color: var(--lp-text);
+}
+
+.hero-desc {
+  margin: var(--lp-space-2) 0 0;
+  max-width: 640px;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-md);
+  line-height: var(--lp-leading-body);
+}
+
 .hero-actions {
   display: flex;
-  flex: none;
-  gap: 10px;
+  align-items: center;
+  gap: var(--lp-space-2);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
-.overview-hero h2,
-.panel-header h3,
-.activity-panel h3,
-.target-copy h4 {
-  margin: 0;
+
+/* ---------------- Continue ---------------- */
+.continue-section {
+  display: flex;
+  align-items: stretch;
+  gap: var(--lp-space-5);
+  padding: var(--lp-space-6);
+  background: linear-gradient(120deg, var(--lp-primary-soft), var(--lp-surface) 60%);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+}
+
+.continue-main {
+  flex: 1.4;
+  min-width: 0;
+}
+
+.continue-title {
+  margin-top: var(--lp-space-2);
+  font-size: var(--lp-text-2xl);
+  font-weight: var(--lp-weight-bold);
   color: var(--lp-text);
 }
-.overview-hero h2 {
-  margin-top: 4px;
-  font-size: 24px;
-  line-height: 1.25;
-}
-.overview-hero p,
-.target-copy p,
-.activity-panel p {
-  max-width: 720px;
-  margin: 8px 0 0;
+
+.continue-reason {
+  margin: var(--lp-space-1) 0 var(--lp-space-4);
   color: var(--lp-text-secondary);
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: var(--lp-text-base);
+  line-height: var(--lp-leading-body);
 }
-.section-kicker {
-  display: block;
-  margin-top: 10px;
-  color: var(--lp-primary);
-  font-size: 12px;
-  font-weight: 800;
-}
-.overview-content {
-  min-height: 320px;
-  padding: 18px;
-}
-.stats-grid {
+
+.continue-alternatives {
+  flex: 1;
+  min-width: 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: var(--lp-space-2);
+  border-left: var(--lp-border-hairline);
+  padding-left: var(--lp-space-5);
 }
-.stat-card {
-  min-height: 122px;
-  padding: 16px;
-}
-.stat-card span,
-.stat-card small {
-  display: block;
-  color: var(--lp-text-muted);
-  font-size: 13px;
-  line-height: 1.5;
-}
-.stat-card strong {
-  display: block;
-  margin: 10px 0 5px;
-  color: var(--lp-primary);
-  font-size: 30px;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-.stat-card.warning strong {
-  color: var(--el-color-warning);
-}
-.stat-card.emphasis {
-  background: var(--lp-surface-soft);
-}
-.tutor-progress-panel {
-  margin-top: 16px;
-  padding: 18px;
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  background: var(--lp-surface-soft);
-}
-.tutor-progress-note {
-  margin: 8px 0 0;
-  color: var(--lp-text-secondary);
-  font-size: 14px;
-  line-height: 1.7;
-}
-.tutor-progress-list {
+
+.alternative-item {
   display: grid;
-  gap: 10px;
-  margin-top: 14px;
+  gap: 2px;
+  padding: var(--lp-space-3);
+  border: 0;
+  border-radius: var(--lp-radius-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--lp-duration-fast) var(--lp-ease-out);
 }
-.tutor-progress-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px;
-  border: 1px solid var(--lp-border);
-  border-radius: 8px;
+
+.alternative-item:hover {
   background: var(--lp-surface);
 }
-.tutor-progress-item h4 {
-  margin: 0;
+
+.alternative-title {
   color: var(--lp-text);
-  font-size: 15px;
+  font-size: var(--lp-text-base);
+  font-weight: var(--lp-weight-semibold);
 }
-.progress-status {
-  display: inline-block;
-  margin-top: 6px;
-  color: var(--lp-text-secondary);
-  font-size: 13px;
-  line-height: 1.5;
+
+.alternative-reason {
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-snug);
 }
+
+/* ---------------- Grid ---------------- */
 .overview-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.65fr) minmax(260px, 0.8fr);
-  gap: 14px;
-  margin-top: 16px;
+  grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.85fr);
+  gap: var(--lp-space-5);
+  align-items: start;
 }
-.target-panel,
-.activity-panel {
-  padding: 18px;
-}
-.panel-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-.panel-header .section-kicker,
-.activity-panel .section-kicker {
-  margin-top: 0;
-}
-.panel-header h3,
-.activity-panel h3 {
-  margin-top: 4px;
-  font-size: 18px;
-}
-.target-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.target-item {
+
+.overview-main {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  padding: 14px;
-  border: 1px solid var(--lp-border);
-  border-radius: 8px;
-  background: var(--lp-surface-soft);
+  gap: var(--lp-space-5);
+  min-width: 0;
 }
-.target-index {
+
+.panel {
+  display: grid;
+  gap: var(--lp-space-4);
+  padding: var(--lp-space-6);
+  background: var(--lp-surface);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
+}
+
+/* ---------------- Tools ---------------- */
+.tool-list {
+  display: grid;
+  gap: var(--lp-space-2);
+}
+
+.tool-row {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-space-3);
+  padding: var(--lp-space-3) var(--lp-space-4);
+  border: 0;
+  border-radius: var(--lp-radius-md);
+  background: var(--lp-surface-soft);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--lp-duration-fast) var(--lp-ease-out),
+    transform var(--lp-duration-fast) var(--lp-ease-out);
+}
+
+.tool-row:hover {
+  background: var(--lp-primary-soft);
+}
+
+.tool-row:hover .tool-arrow {
+  color: var(--lp-primary);
+  transform: translateX(2px);
+}
+
+.tool-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--lp-primary-soft);
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: var(--lp-radius-sm);
+  background: var(--lp-surface);
   color: var(--lp-primary);
-  font-size: 14px;
-  font-weight: 800;
 }
-.target-copy h4 {
-  font-size: 15px;
-  line-height: 1.45;
+
+.tool-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
 }
-.target-copy p {
-  margin-top: 3px;
+
+.tool-copy strong {
+  color: var(--lp-text);
+  font-size: var(--lp-text-base);
+  font-weight: var(--lp-weight-semibold);
 }
-.activity-panel .el-button {
-  margin-top: 10px;
+
+.tool-copy small {
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-sm);
 }
+
+.tool-arrow {
+  color: var(--lp-text-muted);
+  transition:
+    color var(--lp-duration-fast) var(--lp-ease-out),
+    transform var(--lp-duration-fast) var(--lp-ease-out);
+}
+
+/* ---------------- Outline ---------------- */
+.outline-list {
+  display: grid;
+  gap: var(--lp-space-1);
+}
+
+.outline-item {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-space-3);
+  padding: var(--lp-space-3) var(--lp-space-3);
+  border-radius: var(--lp-radius-sm);
+  transition: background-color var(--lp-duration-fast) var(--lp-ease-out);
+}
+
+.outline-item:hover {
+  background: var(--lp-surface-soft);
+}
+
+.outline-status {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: var(--lp-radius-full);
+  background: var(--lp-ink-200);
+}
+
+.outline-status[data-status='IN_PROGRESS'] {
+  background: var(--lp-primary);
+}
+
+.outline-status[data-status='COMPLETED'] {
+  background: var(--lp-success);
+}
+
+.outline-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.outline-copy strong {
+  color: var(--lp-text);
+  font-size: var(--lp-text-base);
+  font-weight: var(--lp-weight-medium);
+}
+
+.outline-copy small {
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-xs);
+}
+
+/* ---------------- Activity ---------------- */
+.activity-panel {
+  position: sticky;
+  top: calc(var(--lp-header-height) + var(--lp-space-4));
+  display: grid;
+  gap: var(--lp-space-4);
+  padding: var(--lp-space-6);
+  background: var(--lp-surface);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
+}
+
+.activity-title {
+  font-size: var(--lp-text-xl);
+  font-weight: var(--lp-weight-bold);
+  color: var(--lp-text);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--lp-space-2);
+}
+
+.recent-block {
+  display: grid;
+  gap: var(--lp-space-2);
+}
+
+.recent-heading {
+  font-size: var(--lp-text-base);
+  font-weight: var(--lp-weight-semibold);
+  color: var(--lp-text);
+}
+
+.recent-time {
+  margin: 0;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-body);
+}
+
 .latest-assessment {
   display: grid;
-  gap: 4px;
-  margin-top: 14px;
-  padding: 12px;
-  border: 1px solid var(--lp-border);
-  border-radius: 8px;
+  gap: 3px;
+  margin-top: var(--lp-space-2);
+  padding: var(--lp-space-3) var(--lp-space-4);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-md);
   background: var(--lp-surface-soft);
-}
-.latest-assessment small,
-.assessment-history-item small {
-  color: var(--lp-text-muted);
-}
-.assessment-history-list {
-  display: grid;
-  gap: 10px;
-  min-height: 80px;
-}
-.assessment-history-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px;
-  border: 1px solid var(--lp-border);
-  border-radius: 8px;
-  background: var(--lp-surface-soft);
-}
-.history-filter-row {
-  margin-bottom: 12px;
 }
 
-.history-filter-row :deep(.el-select) {
-  width: min(280px, 100%);
+.latest-assessment strong {
+  color: var(--lp-text);
+  font-size: var(--lp-text-base);
+  font-weight: var(--lp-weight-semibold);
 }
 
-.assessment-history-item p,
-.history-empty {
-  margin: 4px 0;
+.latest-assessment span {
   color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
 }
-.assessment-summary {
-  margin: 16px 0 0;
-  color: var(--lp-text);
-  font-size: 20px;
-  font-weight: 700;
-}
-.assessment-list {
-  display: grid;
-  gap: 14px;
-  margin-top: 16px;
-}
-.assessment-question {
-  padding: 16px;
-  border: 1px solid var(--lp-border);
-  border-radius: 8px;
-  background: var(--lp-surface-soft);
-}
-.assessment-question-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  color: var(--lp-text);
-  line-height: 1.6;
-}
-.assessment-question-tags {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 6px;
-}
-.assessment-source-composition {
-  margin: 10px 0 16px;
+
+.latest-assessment small {
   color: var(--lp-text-muted);
-  font-size: 13px;
+  font-size: var(--lp-text-xs);
+  line-height: var(--lp-leading-snug);
 }
-.assessment-kp-summary {
-  margin: 14px 0 16px;
-  padding: 12px 14px;
-  border: 1px solid var(--lp-border);
-  border-radius: 8px;
-  background: var(--lp-surface-soft);
-}
-.assessment-kp-summary-heading {
-  margin: 0 0 4px;
-  font-size: 14px;
-  color: var(--lp-text);
-}
-.assessment-kp-summary-note {
-  margin: 0 0 8px;
-  color: var(--lp-text-muted);
-  font-size: 12px;
-}
-.assessment-kp-summary-list {
-  display: grid;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.assessment-kp-summary-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  color: var(--lp-text);
-}
-.assessment-kp-summary-count {
-  color: var(--lp-text-secondary);
-}
-.assessment-options {
-  display: grid;
-  gap: 8px;
-  margin-top: 12px;
-}
-.assessment-result {
-  margin-top: 12px;
-  padding: 10px 12px;
-  border-radius: 6px;
-  background: var(--lp-surface);
-  color: var(--lp-text-secondary);
-}
-.assessment-result p {
-  margin: 0;
-  line-height: 1.6;
-}
-.assessment-result p + p {
-  margin-top: 4px;
-}
-@media (max-width: 900px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 1080px) {
   .overview-grid {
     grid-template-columns: 1fr;
   }
+  .activity-panel {
+    position: static;
+  }
 }
-@media (max-width: 767px) {
+
+@media (max-width: 900px) {
   .overview-hero {
     align-items: stretch;
     flex-direction: column;
   }
   .hero-actions {
-    align-items: stretch;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 767px) {
+  .overview-hero {
+    padding: var(--lp-space-5);
+  }
+  .hero-title {
+    font-size: var(--lp-text-3xl);
+  }
+  .continue-section {
     flex-direction: column;
   }
-  .hero-actions .el-button {
-    width: 100%;
-    margin-left: 0;
+  .continue-alternatives {
+    border-left: 0;
+    border-top: var(--lp-border-hairline);
+    padding-left: 0;
+    padding-top: var(--lp-space-3);
   }
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-  .target-item {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-  .target-item .el-button {
-    grid-column: 2;
-    justify-self: start;
-  }
-  .tutor-progress-panel {
-    padding: 16px;
-  }
-  .tutor-progress-item {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .tutor-progress-item .el-button {
-    width: 100%;
-  }
-  .assessment-question-header {
-    flex-direction: column;
-  }
-  .assessment-history-item {
-    align-items: stretch;
-    flex-direction: column;
-  }
-  .assessment-history-item .el-button {
-    width: 100%;
+  .panel,
+  .activity-panel {
+    padding: var(--lp-space-4);
   }
 }
 </style>

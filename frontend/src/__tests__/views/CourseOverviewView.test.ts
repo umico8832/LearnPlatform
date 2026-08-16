@@ -101,7 +101,7 @@ describe('CourseOverviewView', () => {
     const wrapper = mount(CourseOverviewView, { global: { stubs } })
     await flushPromises()
 
-    await findButton(wrapper, '学习课程试卷').trigger('click')
+    await findButton(wrapper, '课程试卷').trigger('click')
 
     expect(mockPush).toHaveBeenCalledWith({
       name: 'ExamList',

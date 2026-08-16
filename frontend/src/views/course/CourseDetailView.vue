@@ -1,108 +1,117 @@
 <template>
   <div class="course-detail page-container">
-    <section class="detail-hero">
-      <div class="hero-main">
-        <el-button :icon="ArrowLeft" text @click="router.back()">返回课程</el-button>
-        <div class="course-title-row">
-          <span class="course-icon">
-            <el-icon><Reading /></el-icon>
-          </span>
-          <div>
-            <span class="section-kicker">课程详情</span>
-            <h2>{{ course?.name || '课程详情' }}</h2>
+    <template v-if="loading">
+      <LpSkeleton card :rows="4" />
+      <LpSkeleton card :rows="6" />
+    </template>
+
+    <template v-else-if="loadFailed || !course">
+      <section class="state-panel">
+        <LpEmptyState title="无法读取课程详情" description="请刷新重试。">
+          <template #actions>
+            <el-button @click="router.back()">返回</el-button>
+            <el-button type="primary" @click="fetchDetail">重新加载</el-button>
+          </template>
+        </LpEmptyState>
+      </section>
+    </template>
+
+    <template v-else>
+      <div class="back-row">
+        <el-button text :icon="ArrowLeft" @click="router.back()">返回课程库</el-button>
+      </div>
+
+      <section class="detail-hero">
+        <div class="hero-main">
+          <LpKicker>课程详情</LpKicker>
+          <h1 class="detail-title">{{ course.name }}</h1>
+          <p class="detail-desc">{{ course.description || '暂无课程描述，可先查看知识点结构。' }}</p>
+          <div class="detail-meta">
+            <span>{{ totalKP }} 个知识点</span>
+            <span v-if="isInLibrary" class="in-library">
+              <el-icon :size="13"><CircleCheck /></el-icon> 已加入我的课程
+            </span>
           </div>
         </div>
-        <p>{{ course?.description || '暂无课程描述，可先从知识点树了解当前课程结构。' }}</p>
-      </div>
-      <div class="hero-actions">
-        <el-button :icon="Collection" @click="goToQuestions">查看题目</el-button>
-        <el-button v-if="isInLibrary" type="primary" :icon="Reading" @click="goToCourseOverview">
-          进入课程总览
-        </el-button>
-        <el-button
-          v-else
-          type="primary"
-          :icon="Collection"
-          :loading="addingToLibrary"
-          :disabled="loading"
-          @click="addToLibrary"
-        >
-          加入课程库
-        </el-button>
-      </div>
-    </section>
-
-    <section class="detail-summary">
-      <div class="summary-card">
-        <span>知识点总数</span>
-        <strong>{{ totalKP }}</strong>
-      </div>
-      <div class="summary-card">
-        <span>顶级节点</span>
-        <strong>{{ rootCount }}</strong>
-      </div>
-      <div class="summary-card">
-        <span>叶子节点</span>
-        <strong>{{ leafCount }}</strong>
-      </div>
-      <div class="summary-card">
-        <span>最大层级</span>
-        <strong>{{ maxDepth }}</strong>
-      </div>
-    </section>
-
-    <section class="knowledge-panel">
-      <div class="panel-header">
-        <div>
-          <span class="section-kicker">知识结构</span>
-          <h3>知识点树</h3>
+        <div class="hero-actions">
+          <el-button :icon="Collection" @click="goToQuestions">查看题目</el-button>
+          <el-button v-if="isInLibrary" type="primary" :icon="Reading" @click="goToCourseOverview">
+            进入课程空间
+          </el-button>
+          <el-button
+            v-else
+            type="primary"
+            :icon="Plus"
+            :loading="addingToLibrary"
+            :disabled="loading"
+            @click="addToLibrary"
+          >
+            加入课程库
+          </el-button>
         </div>
-        <el-tag type="info" effect="plain">{{ totalKP }} 个知识点</el-tag>
-      </div>
+      </section>
 
-      <div v-loading="loading" class="tree-wrap">
-        <el-tree
-          v-if="treeData.length > 0"
-          :data="treeData"
-          :props="{ children: 'children', label: 'name' }"
-          node-key="id"
-          default-expand-all
-          :expand-on-click-node="false"
+      <section class="knowledge-section" aria-labelledby="knowledge-heading">
+        <LpSectionHeading
+          kicker="知识结构"
+          title="课程目录"
+          :description="'共 ' + totalKP + ' 个知识点，按模块组织。已审查的教学内容可以直接开始学习。'"
         >
-          <template #default="{ data }">
-            <div class="tree-node">
-              <div class="node-left">
-                <span class="node-icon" :class="{ leaf: !data.children || data.children.length === 0 }">
-                  <el-icon v-if="data.children && data.children.length > 0"><Folder /></el-icon>
-                  <el-icon v-else><Document /></el-icon>
-                </span>
-                <span class="node-name">{{ data.name }}</span>
-              </div>
-              <div class="node-right">
-                <span v-if="data.description" class="node-desc">{{ data.description }}</span>
-                <el-tag v-if="data.children && data.children.length > 0" size="small" type="info" effect="plain">
-                  {{ data.children.length }} 子项
-                </el-tag>
-                <el-button
-                  v-if="isAvailableTutorContent(data.contentKey) && isInLibrary"
-                  size="small"
-                  type="primary"
-                  @click.stop="openTutor(data.id)"
-                  >开始 AI 教学</el-button
-                >
-                <el-tag v-else-if="isAvailableTutorContent(data.contentKey)" size="small" type="info" effect="plain">
-                  加入课程库后可学习
-                </el-tag>
-              </div>
-            </div>
+          <template #aside>
+            <span class="tree-hint">加入课程库后可开始已审查内容的 AI 教学</span>
           </template>
-        </el-tree>
+        </LpSectionHeading>
 
-        <el-empty v-else-if="!loading" description="暂无知识点">
-          <el-button type="primary" @click="goToQuestions">先看课程题目</el-button>
-        </el-empty>
-      </div>
-    </section>
+        <div class="tree-wrap">
+          <el-tree
+            v-if="treeData.length > 0"
+            :data="treeData"
+            :props="{ children: 'children', label: 'name' }"
+            node-key="id"
+            default-expand-all
+            :expand-on-click-node="false"
+          >
+            <template #default="{ data }">
+              <div class="tree-node">
+                <div class="node-left">
+                  <span
+                    class="node-icon"
+                    :class="{ leaf: !data.children || data.children.length === 0 }"
+                    aria-hidden="true"
+                  >
+                    <el-icon v-if="data.children && data.children.length > 0"><Folder /></el-icon>
+                    <el-icon v-else><Document /></el-icon>
+                  </span>
+                  <span class="node-name">{{ data.name }}</span>
+                </div>
+                <div class="node-right">
+                  <span v-if="data.description" class="node-desc">{{ data.description }}</span>
+                  <span v-if="data.children && data.children.length > 0" class="node-count">
+                    {{ data.children.length }} 项
+                  </span>
+                  <el-button
+                    v-if="isReviewedTutorContent(data) && isInLibrary"
+                    size="small"
+                    type="primary"
+                    plain
+                    @click.stop="openTutor(data.id)"
+                  >
+                    开始学习
+                  </el-button>
+                  <span v-else-if="isReviewedTutorContent(data)" class="join-hint">加入课程库后可学习</span>
+                </div>
+              </div>
+            </template>
+          </el-tree>
+
+          <LpEmptyState v-else title="暂无知识点" description="这门课程还没有录入知识结构。">
+            <template #actions>
+              <el-button type="primary" @click="goToQuestions">先看课程题目</el-button>
+            </template>
+          </LpEmptyState>
+        </div>
+      </section>
+    </template>
   </div>
 </template>
 
@@ -110,7 +119,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Collection, Document, Folder, Reading } from '@element-plus/icons-vue'
+import { ArrowLeft, CircleCheck, Collection, Document, Folder, Plus, Reading } from '@element-plus/icons-vue'
 import { addCourseToLibrary, getCourseById, getMyCourses, type CourseVO } from '@/api/course'
 import { getKnowledgeTree, type KnowledgePointVO } from '@/api/knowledgePoint'
 
@@ -120,52 +129,26 @@ const router = useRouter()
 const course = ref<CourseVO | null>(null)
 const treeData = ref<KnowledgePointVO[]>([])
 const loading = ref(false)
+const loadFailed = ref(false)
 const addingToLibrary = ref(false)
 const isInLibrary = ref(false)
 
 const courseId = computed(() => Number(route.params.id))
-const availableTutorContentKeys = new Set([
-  'ods-array-size-capacity',
-  'ods-arraystack-insertion',
-  'ods-arraystack-removal',
-  'ods-arraystack-resize',
-  'ods-arraystack-amortized-resize',
-  'ods-arraystack-performance',
-  'ods-fastarraystack-block-copy',
-  'ods-arrayqueue-representation',
-  'ods-arrayqueue-enqueue',
-  'ods-arrayqueue-dequeue',
-  'ods-arrayqueue-resize',
-  'ods-arrayqueue-performance',
-])
 
-function isAvailableTutorContent(contentKey?: string) {
-  return !!contentKey && availableTutorContentKeys.has(contentKey)
+/** 只有服务端标记为已审查的内容才能开始 AI 教学。 */
+function isReviewedTutorContent(node: KnowledgePointVO) {
+  return node.contentKey !== undefined && node.contentKey !== null && node.contentReviewStatus === 'REVIEWED'
 }
 
 function countNodes(nodes: KnowledgePointVO[]): number {
   return nodes.reduce((sum, node) => sum + 1 + countNodes(node.children || []), 0)
 }
 
-function countLeaves(nodes: KnowledgePointVO[]): number {
-  return nodes.reduce((sum, node) => {
-    if (!node.children || node.children.length === 0) return sum + 1
-    return sum + countLeaves(node.children)
-  }, 0)
-}
-
-function getMaxDepth(nodes: KnowledgePointVO[], depth = 1): number {
-  if (nodes.length === 0) return 0
-  return Math.max(...nodes.map((node) => getMaxDepth(node.children || [], depth + 1) || depth))
-}
-
 const totalKP = computed(() => countNodes(treeData.value))
-const rootCount = computed(() => treeData.value.length)
-const leafCount = computed(() => countLeaves(treeData.value))
-const maxDepth = computed(() => getMaxDepth(treeData.value))
 
 async function fetchDetail() {
   loading.value = true
+  loadFailed.value = false
   try {
     const [courseRes, treeRes, libraryRes] = await Promise.all([
       getCourseById(courseId.value),
@@ -176,7 +159,7 @@ async function fetchDetail() {
     treeData.value = treeRes.data || []
     isInLibrary.value = (libraryRes.data || []).some((item) => item.courseId === courseId.value)
   } catch {
-    // 错误已在拦截器中处理
+    loadFailed.value = true
   } finally {
     loading.value = false
   }
@@ -204,7 +187,7 @@ async function addToLibrary() {
   try {
     await addCourseToLibrary(courseId.value)
     isInLibrary.value = true
-    ElMessage.success('已加入课程库，正在进入课程总览。')
+    ElMessage.success('已加入课程库，正在进入课程空间。')
     await router.push({ name: 'CourseOverview', params: { id: courseId.value } })
   } catch {
     // 错误已在拦截器中处理
@@ -222,135 +205,111 @@ onMounted(() => {
 .course-detail {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--lp-space-6);
 }
 
-.detail-hero,
-.knowledge-panel {
+.back-row {
+  display: flex;
+  align-items: center;
+}
+
+.state-panel {
+  padding: var(--lp-space-6) 0;
   background: var(--lp-surface);
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  box-shadow: var(--lp-shadow-sm);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
 
 .detail-hero {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 20px;
-  padding: 22px;
+  gap: var(--lp-space-6);
+  padding: var(--lp-space-6) var(--lp-space-8);
+  background: var(--lp-surface);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
 
 .hero-main {
   min-width: 0;
 }
 
-.course-title-row {
+.detail-title {
+  margin-top: var(--lp-space-2);
+  font-family: var(--lp-font-display);
+  font-size: var(--lp-text-4xl);
+  font-weight: var(--lp-weight-bold);
+  line-height: var(--lp-leading-display);
+  color: var(--lp-text);
+}
+
+.detail-desc {
+  margin: var(--lp-space-3) 0 0;
+  max-width: 720px;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-md);
+  line-height: var(--lp-leading-relaxed);
+}
+
+.detail-meta {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-top: 14px;
+  flex-wrap: wrap;
+  gap: var(--lp-space-2) var(--lp-space-4);
+  margin-top: var(--lp-space-4);
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-sm);
 }
 
-.course-icon {
+.in-library {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 50px;
-  height: 50px;
-  color: var(--lp-primary);
-  background: var(--lp-primary-soft);
-  border-radius: 8px;
-  font-size: 25px;
-  flex: 0 0 auto;
-}
-
-.section-kicker {
-  color: var(--lp-primary);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.detail-hero h2 {
-  margin: 4px 0 0;
-  color: var(--lp-text);
-  font-size: 24px;
-  line-height: 1.25;
-}
-
-.detail-hero p {
-  max-width: 760px;
-  margin: 14px 0 0;
-  color: var(--lp-text-secondary);
-  font-size: 14px;
-  line-height: 1.7;
+  gap: 4px;
+  color: var(--lp-success);
+  font-weight: var(--lp-weight-medium);
 }
 
 .hero-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
+  gap: var(--lp-space-3);
+  flex-shrink: 0;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
-.detail-summary {
+.knowledge-section {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.summary-card {
-  min-height: 92px;
-  padding: 16px;
+  gap: var(--lp-space-4);
+  padding: var(--lp-space-6);
   background: var(--lp-surface);
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  box-shadow: var(--lp-shadow-sm);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
 
-.summary-card span {
-  display: block;
+.tree-hint {
   color: var(--lp-text-muted);
-  font-size: 13px;
-}
-
-.summary-card strong {
-  display: block;
-  margin-top: 8px;
-  color: var(--lp-primary);
-  font-size: 30px;
-  line-height: 1;
-}
-
-.knowledge-panel {
-  padding: 18px;
-}
-
-.panel-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.panel-header h3 {
-  margin: 4px 0 0;
-  color: var(--lp-text);
-  font-size: 18px;
+  font-size: var(--lp-text-sm);
 }
 
 .tree-wrap {
-  min-height: 260px;
+  min-height: 200px;
 }
 
 .tree-wrap :deep(.el-tree-node__content) {
-  min-height: 42px;
-  border-radius: 7px;
+  min-height: 44px;
+  border-radius: var(--lp-radius-sm);
 }
 
 .tree-wrap :deep(.el-tree-node__content:hover) {
+  background: var(--lp-surface-soft);
+}
+
+.tree-wrap :deep(.el-tree-node:focus > .el-tree-node__content) {
   background: var(--lp-surface-soft);
 }
 
@@ -360,7 +319,7 @@ onMounted(() => {
   justify-content: space-between;
   flex: 1;
   min-width: 0;
-  gap: 12px;
+  gap: var(--lp-space-3);
   padding: 4px 8px 4px 0;
 }
 
@@ -369,7 +328,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   min-width: 0;
-  gap: 8px;
+  gap: var(--lp-space-2);
 }
 
 .node-icon {
@@ -380,74 +339,73 @@ onMounted(() => {
   height: 28px;
   color: var(--lp-primary);
   background: var(--lp-primary-soft);
-  border-radius: 7px;
+  border-radius: var(--lp-radius-sm);
   flex: 0 0 auto;
 }
 
 .node-icon.leaf {
   color: var(--lp-success);
-  background: #edf7f1;
+  background: var(--lp-success-soft);
 }
 
 .node-name {
   color: var(--lp-text);
-  font-weight: 700;
+  font-weight: var(--lp-weight-semibold);
+  font-size: var(--lp-text-base);
 }
 
 .node-desc {
   overflow: hidden;
-  max-width: 360px;
+  max-width: 340px;
   color: var(--lp-text-muted);
-  font-size: 13px;
+  font-size: var(--lp-text-sm);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.node-count {
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-xs);
+}
+
+.join-hint {
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-xs);
+  white-space: nowrap;
+}
+
 @media (max-width: 900px) {
-  .detail-summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .detail-hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .hero-actions {
+    justify-content: flex-start;
   }
 }
 
 @media (max-width: 767px) {
-  .detail-hero,
-  .panel-header {
-    align-items: stretch;
-    flex-direction: column;
+  .detail-hero {
+    padding: var(--lp-space-5);
   }
-
-  .hero-actions,
-  .hero-actions .el-button {
-    width: 100%;
+  .detail-title {
+    font-size: var(--lp-text-3xl);
   }
-
-  .course-title-row {
-    align-items: flex-start;
+  .knowledge-section {
+    padding: var(--lp-space-4);
   }
-
-  .knowledge-panel {
-    padding: 14px;
-  }
-
   .tree-node {
     align-items: flex-start;
     flex-direction: column;
   }
-
   .node-right {
     width: 100%;
     padding-left: 36px;
+    flex-wrap: wrap;
   }
-
   .node-desc {
     max-width: 100%;
     white-space: normal;
-  }
-}
-
-@media (max-width: 480px) {
-  .detail-summary {
-    grid-template-columns: 1fr;
   }
 }
 </style>

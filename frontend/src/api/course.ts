@@ -7,6 +7,8 @@ export interface CourseVO {
   name: string
   description: string
   coverImage: string | null
+  contentKey: string | null
+  contentSource: string | null
   sortOrder: number
   status: number
   createTime: string
