@@ -66,7 +66,8 @@ class LearningDiagnosisServiceTest {
                 new LearningQuestionErrorAnalysisService(questionMapper, practiceRecordMapper,
                         wrongQuestionMapper, courseMapper, knowledgePointMapper, questionKnowledgePointMapper),
                 new SimilarQuestionRecommendationService(questionMapper, practiceRecordMapper,
-                        courseMapper, knowledgePointMapper, questionKnowledgePointMapper)
+                        courseMapper, knowledgePointMapper, questionKnowledgePointMapper),
+                new LearningDiagnosisPromptBuilder()
         );
     }
 
