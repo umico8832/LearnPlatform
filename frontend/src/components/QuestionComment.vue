@@ -84,7 +84,11 @@
                     <el-icon><ChatLineSquare /></el-icon>
                     回复
                   </span>
-                  <span v-if="isOwner(reply.userId)" class="action-item action-delete" @click="handleDelete(reply, comment)">
+                  <span
+                    v-if="isOwner(reply.userId)"
+                    class="action-item action-delete"
+                    @click="handleDelete(reply, comment)"
+                  >
                     <el-icon><Delete /></el-icon>
                     删除
                   </span>
@@ -177,7 +181,7 @@ async function submitComment() {
       comments.value.unshift(newC)
     } else {
       // 回复，找到父评论并添加到 replies
-      const parent = comments.value.find(c => c.id === replyParentId.value)
+      const parent = comments.value.find((c) => c.id === replyParentId.value)
       if (parent) {
         if (!parent.replies) parent.replies = []
         parent.replies.push(newC)
@@ -225,9 +229,9 @@ async function handleDelete(comment: CommentVO, parentComment?: CommentVO) {
     })
     await deleteComment(comment.id)
     if (parentComment && parentComment.replies) {
-      parentComment.replies = parentComment.replies.filter(r => r.id !== comment.id)
+      parentComment.replies = parentComment.replies.filter((r) => r.id !== comment.id)
     } else {
-      comments.value = comments.value.filter(c => c.id !== comment.id)
+      comments.value = comments.value.filter((c) => c.id !== comment.id)
     }
     ElMessage.success('已删除')
   } catch {

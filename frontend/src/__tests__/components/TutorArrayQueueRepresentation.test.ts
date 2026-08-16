@@ -11,7 +11,10 @@ const visualization = {
 }
 
 const stubs = {
-  'el-button': { emits: ['click'], template: '<button :disabled="$attrs.disabled" @click="$emit(\'click\')"><slot /></button>' },
+  'el-button': {
+    emits: ['click'],
+    template: '<button :disabled="$attrs.disabled" @click="$emit(\'click\')"><slot /></button>',
+  },
 }
 
 describe('TutorArrayQueueRepresentation', () => {

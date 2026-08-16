@@ -275,9 +275,7 @@
               <strong>按资产类型观察同题表现</strong>
               <p>
                 分别按每类资产的首次查看时间切分周期内作答；任一组少于 {{ learningEffect.minimumComparisonSample }} 条或
-                {{
-                  learningEffect.minimumDistinctUsers
-                }}
+                {{ learningEffect.minimumDistinctUsers }}
                 位学习者时不判断方向。多资产暴露样本可能重叠，因此不做资产排名或自动推荐。
               </p>
             </div>

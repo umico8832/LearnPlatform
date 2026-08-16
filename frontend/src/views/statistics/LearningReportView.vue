@@ -8,7 +8,7 @@
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" v-loading="loading" style="height: 200px;"></div>
+    <div v-if="loading" v-loading="loading" style="height: 200px"></div>
 
     <template v-else>
       <!-- 核心指标卡片 -->
@@ -38,32 +38,28 @@
               {{ report.correctRateChange >= 0 ? '+' : '' }}{{ report.correctRateChange }}
             </div>
             <div class="metric-label">正确率变化</div>
-            <div class="metric-sub text-muted">
-              pct · 上月 {{ report.lastMonthCorrectRate }}%
-            </div>
+            <div class="metric-sub text-muted">pct · 上月 {{ report.lastMonthCorrectRate }}%</div>
           </el-card>
         </el-col>
         <el-col :xs="12" :sm="8" :md="4">
           <el-card shadow="hover" class="metric-card">
             <div class="metric-value danger">{{ report.monthNewWrongCount }}</div>
             <div class="metric-label">本月新增错题</div>
-            <div class="metric-sub text-muted">
-              已掌握 {{ report.monthMasteredCount }} 题
-            </div>
+            <div class="metric-sub text-muted">已掌握 {{ report.monthMasteredCount }} 题</div>
           </el-card>
         </el-col>
         <el-col :xs="12" :sm="8" :md="4">
           <el-card shadow="hover" class="metric-card">
             <div class="metric-value primary">{{ report.monthExamCount }}</div>
             <div class="metric-label">本月考试</div>
-            <div class="metric-sub text-muted">
-              平均 {{ report.monthExamAvgScore }} 分
-            </div>
+            <div class="metric-sub text-muted">平均 {{ report.monthExamAvgScore }} 分</div>
           </el-card>
         </el-col>
         <el-col :xs="12" :sm="8" :md="4">
           <el-card shadow="hover" class="metric-card">
-            <div class="metric-value primary">{{ Object.values(report.questionTypeDistribution || {}).reduce((a, b) => a + b, 0) }}</div>
+            <div class="metric-value primary">
+              {{ Object.values(report.questionTypeDistribution || {}).reduce((a, b) => a + b, 0) }}
+            </div>
             <div class="metric-label">本月题型覆盖</div>
             <div class="metric-sub text-muted">
               {{ Object.keys(report.questionTypeDistribution || {}).length }} 种题型
@@ -85,12 +81,7 @@
               <span>综合分由正确率变化、错题转化、复习掌握和活跃天数共同构成</span>
             </div>
           </div>
-          <el-progress
-            type="dashboard"
-            :percentage="effectScorePercent"
-            :color="effectProgressColor"
-            :width="116"
-          />
+          <el-progress type="dashboard" :percentage="effectScorePercent" :color="effectProgressColor" :width="116" />
         </div>
         <div class="effect-grid">
           <div v-for="item in effectDimensions" :key="item.label" class="effect-item">
@@ -112,18 +103,14 @@
           <el-card shadow="hover" class="metric-card">
             <div class="metric-value primary">{{ report.totalReviewCards }}</div>
             <div class="metric-label">复习卡片总数</div>
-            <div class="metric-sub text-muted">
-              已掌握 {{ report.masteredReviewCards }} 张
-            </div>
+            <div class="metric-sub text-muted">已掌握 {{ report.masteredReviewCards }} 张</div>
           </el-card>
         </el-col>
         <el-col :xs="12" :sm="8" :md="4">
           <el-card shadow="hover" class="metric-card">
             <div class="metric-value success">{{ report.monthlyReviewedCount }}</div>
             <div class="metric-label">本月复习次数</div>
-            <div class="metric-sub text-muted">
-              间隔重复系统
-            </div>
+            <div class="metric-sub text-muted">间隔重复系统</div>
           </el-card>
         </el-col>
         <el-col :xs="12" :sm="8" :md="4">
@@ -132,9 +119,7 @@
               {{ report.reviewStreakDays }}
             </div>
             <div class="metric-label">连续复习天数</div>
-            <div class="metric-sub text-muted">
-              坚持就是胜利 💪
-            </div>
+            <div class="metric-sub text-muted">坚持就是胜利 💪</div>
           </el-card>
         </el-col>
         <el-col :xs="12" :sm="8" :md="4">
@@ -259,29 +244,37 @@ const report = reactive<LearningReport>({
   reviewStreakDays: 0,
   masteredReviewCards: 0,
   dueTodayCount: 0,
-  monthlyReviewTrend: []
+  monthlyReviewTrend: [],
 })
 
 const hasTypeData = computed(() => {
   const dist = report.questionTypeDistribution
-  return dist && Object.keys(dist).length > 0 && Object.values(dist).some(v => v > 0)
+  return dist && Object.keys(dist).length > 0 && Object.values(dist).some((v) => v > 0)
 })
 
 const effectTagType = computed(() => {
   switch (report.learningEffectLevel) {
-    case 'EXCELLENT': return 'success'
-    case 'IMPROVING': return 'primary'
-    case 'STABLE': return 'warning'
-    default: return 'danger'
+    case 'EXCELLENT':
+      return 'success'
+    case 'IMPROVING':
+      return 'primary'
+    case 'STABLE':
+      return 'warning'
+    default:
+      return 'danger'
   }
 })
 
 const effectProgressColor = computed(() => {
   switch (report.learningEffectLevel) {
-    case 'EXCELLENT': return '#67c23a'
-    case 'IMPROVING': return '#409eff'
-    case 'STABLE': return '#e6a23c'
-    default: return '#f56c6c'
+    case 'EXCELLENT':
+      return '#67c23a'
+    case 'IMPROVING':
+      return '#409eff'
+    case 'STABLE':
+      return '#e6a23c'
+    default:
+      return '#f56c6c'
   }
 })
 
@@ -296,7 +289,7 @@ const effectDimensions = computed(() => [
     description: report.correctRateChange >= 0 ? '本月答题质量高于上月基线' : '本月正确率低于上月，需要回看薄弱题型',
     progress: clampPercent(50 + report.correctRateChange * 2),
     color: report.correctRateChange >= 0 ? '#67c23a' : '#f56c6c',
-    className: report.correctRateChange >= 0 ? 'text-success' : 'text-danger'
+    className: report.correctRateChange >= 0 ? 'text-success' : 'text-danger',
   },
   {
     label: '错题转化率',
@@ -304,7 +297,7 @@ const effectDimensions = computed(() => [
     description: '衡量新增错题中已转化为掌握的比例',
     progress: clampPercent(report.wrongQuestionConversionRate),
     color: '#409eff',
-    className: ''
+    className: '',
   },
   {
     label: '复习掌握率',
@@ -312,7 +305,7 @@ const effectDimensions = computed(() => [
     description: '间隔重复卡片中已达到掌握状态的比例',
     progress: clampPercent(report.reviewMasteryRate),
     color: '#7c4dff',
-    className: ''
+    className: '',
   },
   {
     label: '活跃学习天数',
@@ -320,8 +313,8 @@ const effectDimensions = computed(() => [
     description: '本月产生真实学习记录的天数',
     progress: activeStudyProgress.value,
     color: '#e6a23c',
-    className: ''
-  }
+    className: '',
+  },
 ])
 
 const activeStudyProgress = computed(() => {
@@ -355,24 +348,24 @@ function handleResize() {
 function initDailyChart() {
   if (!dailyChartRef.value || !report.dailyTrend?.length) return
   dailyChart = init(dailyChartRef.value)
-  const dates = report.dailyTrend.map(d => {
+  const dates = report.dailyTrend.map((d) => {
     const parts = d.date.split('-')
     return `${parts[1]}/${parts[2]}`
   })
-  const corrects = report.dailyTrend.map(d => d.correct)
-  const wrongs = report.dailyTrend.map(d => d.wrong)
+  const corrects = report.dailyTrend.map((d) => d.correct)
+  const wrongs = report.dailyTrend.map((d) => d.wrong)
 
   dailyChart.setOption({
     tooltip: {
       trigger: 'axis',
-      axisPointer: { type: 'shadow' }
+      axisPointer: { type: 'shadow' },
     },
     legend: { data: ['答对', '答错'], top: 0, right: 0 },
     grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
     xAxis: {
       type: 'category',
       data: dates,
-      axisLabel: { rotate: dates.length > 15 ? 45 : 0, fontSize: 11 }
+      axisLabel: { rotate: dates.length > 15 ? 45 : 0, fontSize: 11 },
     },
     yAxis: { type: 'value', minInterval: 1 },
     series: [
@@ -382,7 +375,7 @@ function initDailyChart() {
         stack: 'total',
         data: corrects,
         itemStyle: { color: '#67c23a' },
-        barMaxWidth: 24
+        barMaxWidth: 24,
       },
       {
         name: '答错',
@@ -390,9 +383,9 @@ function initDailyChart() {
         stack: 'total',
         data: wrongs,
         itemStyle: { color: '#f56c6c' },
-        barMaxWidth: 24
-      }
-    ]
+        barMaxWidth: 24,
+      },
+    ],
   })
 }
 
@@ -408,17 +401,19 @@ function initTypeChart() {
     tooltip: { trigger: 'item', formatter: '{b}: {c} 题 ({d}%)' },
     legend: { orient: 'vertical', right: '5%', top: 'center' },
     color: colors,
-    series: [{
-      type: 'pie',
-      radius: ['40%', '70%'],
-      center: ['40%', '50%'],
-      avoidLabelOverlap: false,
-      label: { show: false },
-      emphasis: {
-        label: { show: true, fontSize: 14, fontWeight: 'bold' }
+    series: [
+      {
+        type: 'pie',
+        radius: ['40%', '70%'],
+        center: ['40%', '50%'],
+        avoidLabelOverlap: false,
+        label: { show: false },
+        emphasis: {
+          label: { show: true, fontSize: 14, fontWeight: 'bold' },
+        },
+        data,
       },
-      data
-    }]
+    ],
   })
 }
 
@@ -437,13 +432,13 @@ function initReviewChart() {
   reviewChart.setOption({
     tooltip: {
       trigger: 'axis',
-      axisPointer: { type: 'line' }
+      axisPointer: { type: 'line' },
     },
     grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
     xAxis: {
       type: 'category',
       data: dates,
-      axisLabel: { rotate: dates.length > 15 ? 45 : 0, fontSize: 11 }
+      axisLabel: { rotate: dates.length > 15 ? 45 : 0, fontSize: 11 },
     },
     yAxis: { type: 'value', minInterval: 1 },
     series: [
@@ -452,18 +447,18 @@ function initReviewChart() {
         type: 'bar',
         data: report.monthlyReviewTrend,
         itemStyle: { color: '#7c4dff' },
-        barMaxWidth: 20
-      }
-    ]
+        barMaxWidth: 20,
+      },
+    ],
   })
 }
 
 function initCourseChart() {
   if (!courseChartRef.value || !report.courseStats?.length) return
   courseChart = init(courseChartRef.value)
-  const names = report.courseStats.map(c => c.courseName)
-  const rates = report.courseStats.map(c => c.correctRate)
-  const totals = report.courseStats.map(c => c.total)
+  const names = report.courseStats.map((c) => c.courseName)
+  const rates = report.courseStats.map((c) => c.correctRate)
+  const totals = report.courseStats.map((c) => c.total)
 
   courseChart.setOption({
     tooltip: {
@@ -474,17 +469,17 @@ function initCourseChart() {
         if (!list.length) return ''
         const idx = list[0].dataIndex
         return `${names[idx]}<br/>正确率: ${rates[idx]}%<br/>刷题量: ${totals[idx]} 题`
-      }
+      },
     },
     grid: { left: '3%', right: '4%', bottom: '8%', containLabel: true },
     xAxis: {
       type: 'category',
       data: names,
-      axisLabel: { rotate: names.length > 5 ? 30 : 0, fontSize: 12 }
+      axisLabel: { rotate: names.length > 5 ? 30 : 0, fontSize: 12 },
     },
     yAxis: [
       { type: 'value', name: '正确率(%)', max: 100, minInterval: 1 },
-      { type: 'value', name: '刷题量', minInterval: 1 }
+      { type: 'value', name: '刷题量', minInterval: 1 },
     ],
     series: [
       {
@@ -494,10 +489,10 @@ function initCourseChart() {
         itemStyle: {
           color: (params: { value: number }) => {
             return params.value >= 80 ? '#67c23a' : params.value >= 60 ? '#e6a23c' : '#f56c6c'
-          }
+          },
         },
         barMaxWidth: 40,
-        label: { show: true, position: 'top', formatter: '{c}%', fontSize: 11 }
+        label: { show: true, position: 'top', formatter: '{c}%', fontSize: 11 },
       },
       {
         name: '刷题量',
@@ -505,9 +500,9 @@ function initCourseChart() {
         yAxisIndex: 1,
         data: totals,
         itemStyle: { color: '#409eff', opacity: 0.5 },
-        barMaxWidth: 40
-      }
-    ]
+        barMaxWidth: 40,
+      },
+    ],
   })
 }
 
@@ -592,10 +587,18 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.metric-value.primary { color: #409eff; }
-.metric-value.success { color: #67c23a; }
-.metric-value.warning { color: #e6a23c; }
-.metric-value.danger { color: #f56c6c; }
+.metric-value.primary {
+  color: #409eff;
+}
+.metric-value.success {
+  color: #67c23a;
+}
+.metric-value.warning {
+  color: #e6a23c;
+}
+.metric-value.danger {
+  color: #f56c6c;
+}
 
 .metric-label {
   font-size: 13px;
@@ -608,12 +611,22 @@ onBeforeUnmount(() => {
   line-height: 1.4;
 }
 
-.metric-sub.text-success { color: #67c23a; }
-.metric-sub.text-danger { color: #f56c6c; }
-.metric-sub.text-muted { color: #909399; }
+.metric-sub.text-success {
+  color: #67c23a;
+}
+.metric-sub.text-danger {
+  color: #f56c6c;
+}
+.metric-sub.text-muted {
+  color: #909399;
+}
 
-.text-success { color: #67c23a; }
-.text-danger { color: #f56c6c; }
+.text-success {
+  color: #67c23a;
+}
+.text-danger {
+  color: #f56c6c;
+}
 
 .vs-text {
   font-size: 11px;
@@ -625,8 +638,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   border: 1px solid #e6ebf2;
   background:
-    linear-gradient(135deg, rgba(64, 158, 255, 0.08), rgba(103, 194, 58, 0.05) 42%, rgba(255, 255, 255, 0) 72%),
-    #fff;
+    linear-gradient(135deg, rgba(64, 158, 255, 0.08), rgba(103, 194, 58, 0.05) 42%, rgba(255, 255, 255, 0) 72%), #fff;
 }
 
 .effect-card.is-excellent {

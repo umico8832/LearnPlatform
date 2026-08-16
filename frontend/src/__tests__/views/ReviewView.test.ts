@@ -46,19 +46,21 @@ describe('ReviewView course target', () => {
       },
     })
     mockGetDueReviewCards.mockResolvedValue({
-      data: [{
-        id: 1,
-        questionId: 21,
-        questionContent: '课程目标复习题',
-        questionType: 'SINGLE_CHOICE',
-        courseId: 408,
-        courseName: '408 数据结构',
-        intervalDays: 1,
-        repetitions: 0,
-        overdue: false,
-        overdueDays: 0,
-        statusLabel: '新卡片',
-      }],
+      data: [
+        {
+          id: 1,
+          questionId: 21,
+          questionContent: '课程目标复习题',
+          questionType: 'SINGLE_CHOICE',
+          courseId: 408,
+          courseName: '408 数据结构',
+          intervalDays: 1,
+          repetitions: 0,
+          overdue: false,
+          overdueDays: 0,
+          statusLabel: '新卡片',
+        },
+      ],
     })
   })
 

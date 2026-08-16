@@ -27,11 +27,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr
-                v-for="(item, ii) in step.state"
-                :key="ii"
-                :class="`opv-state-row--${item.state}`"
-              >
+              <tr v-for="(item, ii) in step.state" :key="ii" :class="`opv-state-row--${item.state}`">
                 <td class="opv-state-name">{{ item.name }}</td>
                 <td>
                   <span class="opv-state-badge" :class="`opv-state-badge--${item.state}`">
@@ -59,15 +55,12 @@
               :key="t"
               class="opv-gantt-tick"
               :style="{ left: getGanttPos(t - 1) + '%' }"
-            >{{ t - 1 }}</span>
+              >{{ t - 1 }}</span
+            >
           </div>
         </div>
         <!-- 甘特条 -->
-        <div
-          v-for="(item, gi) in element.ganttChart"
-          :key="gi"
-          class="opv-gantt-row"
-        >
+        <div v-for="(item, gi) in element.ganttChart" :key="gi" class="opv-gantt-row">
           <div class="opv-gantt-label-col">{{ item.label }}</div>
           <div class="opv-gantt-bars-col">
             <div
@@ -98,7 +91,7 @@ const currentStep = ref(0)
 
 const ganttMaxTime = computed(() => {
   if (!props.element.ganttChart || props.element.ganttChart.length === 0) return 20
-  return Math.max(...props.element.ganttChart.map(g => g.end), 10) + 2
+  return Math.max(...props.element.ganttChart.map((g) => g.end), 10) + 2
 })
 
 function getGanttPos(value: number): number {

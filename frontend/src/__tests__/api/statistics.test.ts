@@ -100,10 +100,14 @@ describe('Statistics API', () => {
         draftExamPapers: 2,
         todayActiveUsers: 15,
         totalPracticeRecords: 3000,
-        questionTypeDistribution: { SINGLE_CHOICE: 200, MULTI_CHOICE: 150, TRUE_FALSE: 100, FILL_BLANK: 30, SHORT_ANSWER: 20 },
-        dailyActivity: [
-          { date: '2026-06-08', practiceCount: 100, activeUsers: 10 },
-        ],
+        questionTypeDistribution: {
+          SINGLE_CHOICE: 200,
+          MULTI_CHOICE: 150,
+          TRUE_FALSE: 100,
+          FILL_BLANK: 30,
+          SHORT_ANSWER: 20,
+        },
+        dailyActivity: [{ date: '2026-06-08', practiceCount: 100, activeUsers: 10 }],
       }
       mockedRequest.get.mockResolvedValue({ code: 0, data: mockAdminOverview, message: 'success' })
 
@@ -161,7 +165,7 @@ describe('Statistics API', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer jwt-token',
+          Authorization: 'Bearer jwt-token',
         },
       })
     })

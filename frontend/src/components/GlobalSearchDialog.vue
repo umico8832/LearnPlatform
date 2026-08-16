@@ -169,8 +169,15 @@
 import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  Search, Loading, EditPen, Reading, Notebook, Promotion,
-  Clock, Close, TrendCharts
+  Search,
+  Loading,
+  EditPen,
+  Reading,
+  Notebook,
+  Promotion,
+  Clock,
+  Close,
+  TrendCharts,
 } from '@element-plus/icons-vue'
 import {
   globalSearch,
@@ -179,7 +186,7 @@ import {
   removeSearchHistoryItem,
   type SearchItem,
   type GlobalSearchResult,
-  type SearchSuggestions
+  type SearchSuggestions,
 } from '@/api/search'
 
 const router = useRouter()
@@ -216,9 +223,7 @@ function checkMobile() {
 
 // 总结果数
 const totalCount = computed(() => {
-  return results.value.questions.length
-    + results.value.courses.length
-    + results.value.knowledgePoints.length
+  return results.value.questions.length + results.value.courses.length + results.value.knowledgePoints.length
 })
 
 // 将分类+偏移映射为扁平 activeIndex
@@ -317,7 +322,7 @@ async function handleClearHistory() {
 async function handleRemoveHistory(kw: string) {
   try {
     await removeSearchHistoryItem(kw)
-    suggestions.value.history = suggestions.value.history.filter(h => h !== kw)
+    suggestions.value.history = suggestions.value.history.filter((h) => h !== kw)
   } catch {
     // ignore
   }
@@ -349,11 +354,7 @@ function scrollToActive() {
 
 // 获取所有项的扁平列表
 function getAllItems(): SearchItem[] {
-  return [
-    ...results.value.questions,
-    ...results.value.courses,
-    ...results.value.knowledgePoints,
-  ]
+  return [...results.value.questions, ...results.value.courses, ...results.value.knowledgePoints]
 }
 
 // 导航到选中项
@@ -371,11 +372,7 @@ function highlightMatch(text: string): string {
 }
 
 function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&')
-    .replace(/</g, '<')
-    .replace(/>/g, '>')
-    .replace(/"/g, '"')
+  return str.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/"/g, '"')
 }
 
 function escapeRegex(str: string): string {
@@ -639,7 +636,9 @@ defineExpose({ open })
   font-size: 14px;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.2s, color 0.2s;
+  transition:
+    opacity 0.2s,
+    color 0.2s;
   flex-shrink: 0;
 }
 

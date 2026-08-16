@@ -57,7 +57,8 @@ const globalStubs = {
   },
   'el-form-item': { template: '<div class="form-item"><slot /></div>', props: ['label', 'prop'] },
   'el-input': {
-    template: '<input :value="modelValue" :placeholder="placeholder" :disabled="disabled" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    template:
+      '<input :value="modelValue" :placeholder="placeholder" :disabled="disabled" @input="$emit(\'update:modelValue\', $event.target.value)" />',
     props: ['modelValue', 'type', 'placeholder', 'disabled', 'showPassword', 'showWordLimit', 'maxlength'],
     emits: ['update:modelValue'],
   },

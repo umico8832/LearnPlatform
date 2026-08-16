@@ -109,7 +109,17 @@ defineExpose({ reset })
 </script>
 
 <style scoped>
-.turnstile-box { width: 100%; }
-.turnstile-container { min-height: 65px; width: 100%; }
-.turnstile-error { margin: 7px 0 0; color: #fca5a5; font-size: 12px; line-height: 1.5; }
+.turnstile-box {
+  width: 100%;
+}
+.turnstile-container {
+  min-height: 65px;
+  width: 100%;
+}
+.turnstile-error {
+  margin: 7px 0 0;
+  color: #fca5a5;
+  font-size: 12px;
+  line-height: 1.5;
+}
 </style>

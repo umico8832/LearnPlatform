@@ -7,12 +7,8 @@
         <p>管理展示昵称与登录密码，同时快速回到学习报告、刷题练习和收藏题复盘。</p>
       </div>
       <div class="hero-actions">
-        <el-button type="primary" :icon="DataLine" @click="router.push('/learning-report')">
-          查看学习报告
-        </el-button>
-        <el-button :icon="EditPen" @click="router.push('/practice')">
-          继续刷题
-        </el-button>
+        <el-button type="primary" :icon="DataLine" @click="router.push('/learning-report')"> 查看学习报告 </el-button>
+        <el-button :icon="EditPen" @click="router.push('/practice')"> 继续刷题 </el-button>
       </div>
     </section>
 
@@ -31,21 +27,27 @@
 
           <div class="profile-meta-list">
             <div class="profile-meta-item">
-              <span class="meta-icon"><el-icon><User /></el-icon></span>
+              <span class="meta-icon"
+                ><el-icon><User /></el-icon
+              ></span>
               <div>
                 <small>登录账号</small>
                 <strong>{{ userStore.userInfo?.username || '-' }}</strong>
               </div>
             </div>
             <div class="profile-meta-item">
-              <span class="meta-icon accent"><el-icon><Clock /></el-icon></span>
+              <span class="meta-icon accent"
+                ><el-icon><Clock /></el-icon
+              ></span>
               <div>
                 <small>注册时间</small>
                 <strong>{{ registeredDate }}</strong>
               </div>
             </div>
             <div class="profile-meta-item">
-              <span class="meta-icon safe"><el-icon><Lock /></el-icon></span>
+              <span class="meta-icon safe"
+                ><el-icon><Lock /></el-icon
+              ></span>
               <div>
                 <small>账户安全</small>
                 <strong>密码可随时更新</strong>
@@ -66,7 +68,9 @@
             type="button"
             @click="router.push(item.path)"
           >
-            <span class="shortcut-icon"><el-icon><component :is="item.icon" /></el-icon></span>
+            <span class="shortcut-icon"
+              ><el-icon><component :is="item.icon" /></el-icon
+            ></span>
             <span>{{ item.label }}</span>
             <el-icon><ArrowRight /></el-icon>
           </button>
@@ -77,7 +81,9 @@
         <el-card shadow="never" class="settings-card">
           <template #header>
             <div class="card-header">
-              <span class="header-icon"><el-icon><EditPen /></el-icon></span>
+              <span class="header-icon"
+                ><el-icon><EditPen /></el-icon
+              ></span>
               <div>
                 <strong>个人信息</strong>
                 <small>昵称会显示在学习记录、评论和个人档案中。</small>
@@ -98,9 +104,7 @@
               <el-input v-model="profileForm.nickname" placeholder="请输入昵称" maxlength="30" show-word-limit />
             </el-form-item>
             <el-form-item class="form-actions">
-              <el-button type="primary" :loading="profileLoading" @click="handleUpdateProfile">
-                保存修改
-              </el-button>
+              <el-button type="primary" :loading="profileLoading" @click="handleUpdateProfile"> 保存修改 </el-button>
             </el-form-item>
           </el-form>
         </el-card>
@@ -108,7 +112,9 @@
         <el-card shadow="never" class="settings-card">
           <template #header>
             <div class="card-header">
-              <span class="header-icon warning"><el-icon><Key /></el-icon></span>
+              <span class="header-icon warning"
+                ><el-icon><Key /></el-icon
+              ></span>
               <div>
                 <strong>修改密码</strong>
                 <small>建议使用 6-50 位密码，并避免和其他网站重复。</small>
@@ -126,19 +132,27 @@
               <el-input v-model="passwordForm.oldPassword" type="password" show-password placeholder="请输入原密码" />
             </el-form-item>
             <el-form-item label="新密码" prop="newPassword">
-              <el-input v-model="passwordForm.newPassword" type="password" show-password placeholder="请输入新密码（6-50 位）" />
+              <el-input
+                v-model="passwordForm.newPassword"
+                type="password"
+                show-password
+                placeholder="请输入新密码（6-50 位）"
+              />
             </el-form-item>
             <el-form-item label="确认密码" prop="confirmPassword">
-              <el-input v-model="passwordForm.confirmPassword" type="password" show-password placeholder="请再次输入新密码" />
+              <el-input
+                v-model="passwordForm.confirmPassword"
+                type="password"
+                show-password
+                placeholder="请再次输入新密码"
+              />
             </el-form-item>
             <div class="password-note">
               <el-icon><Lock /></el-icon>
               修改成功后请使用新密码重新登录，当前表单不会保存原密码。
             </div>
             <el-form-item class="form-actions">
-              <el-button type="primary" :loading="passwordLoading" @click="handleUpdatePassword">
-                修改密码
-              </el-button>
+              <el-button type="primary" :loading="passwordLoading" @click="handleUpdatePassword"> 修改密码 </el-button>
             </el-form-item>
           </el-form>
         </el-card>
@@ -226,9 +240,7 @@ const passwordForm = reactive({
 })
 
 const passwordRules: FormRules = {
-  oldPassword: [
-    { required: true, message: '请输入原密码', trigger: 'blur' },
-  ],
+  oldPassword: [{ required: true, message: '请输入原密码', trigger: 'blur' }],
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
     { min: 6, max: 50, message: '密码长度为 6-50 个字符', trigger: 'blur' },
@@ -288,9 +300,7 @@ onMounted(() => {
   padding: 24px;
   border: 1px solid var(--lp-border);
   border-radius: var(--lp-radius);
-  background:
-    linear-gradient(135deg, rgba(23, 105, 170, 0.09), rgba(47, 133, 90, 0.08)),
-    var(--lp-surface);
+  background: linear-gradient(135deg, rgba(23, 105, 170, 0.09), rgba(47, 133, 90, 0.08)), var(--lp-surface);
 }
 
 .section-kicker {
@@ -452,7 +462,10 @@ onMounted(() => {
   color: var(--lp-text);
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .shortcut-item:hover {

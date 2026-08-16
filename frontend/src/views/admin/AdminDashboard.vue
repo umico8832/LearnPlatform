@@ -68,12 +68,7 @@
                 <strong>{{ stats.enabledUsers }} / {{ stats.totalUsers }}</strong>
                 <span>启用用户</span>
               </div>
-              <el-progress
-                type="dashboard"
-                :percentage="enabledUserRate"
-                :width="112"
-                color="#2f855a"
-              />
+              <el-progress type="dashboard" :percentage="enabledUserRate" :width="112" color="#2f855a" />
             </el-card>
           </el-col>
           <el-col :xs="24" :md="12">
@@ -83,12 +78,7 @@
                 <strong>{{ stats.publishedExamPapers }} / {{ stats.totalExamPapers }}</strong>
                 <span>{{ stats.draftExamPapers }} 份草稿待发布</span>
               </div>
-              <el-progress
-                type="dashboard"
-                :percentage="publishedPaperRate"
-                :width="112"
-                color="#b7791f"
-              />
+              <el-progress type="dashboard" :percentage="publishedPaperRate" :width="112" color="#b7791f" />
             </el-card>
           </el-col>
         </el-row>
@@ -122,7 +112,7 @@ const emptyStats: AdminStatisticsOverview = {
   todayActiveUsers: 0,
   totalPracticeRecords: 0,
   questionTypeDistribution: {},
-  dailyActivity: []
+  dailyActivity: [],
 }
 
 const loading = ref(true)
@@ -140,7 +130,7 @@ const metrics = computed(() => [
     note: `${stats.value.enabledUsers} 位用户正常启用`,
     icon: User,
     color: '#2563eb',
-    background: '#eff6ff'
+    background: '#eff6ff',
   },
   {
     label: '题库总量',
@@ -148,7 +138,7 @@ const metrics = computed(() => [
     note: `近 7 日新增 ${stats.value.weeklyNewQuestions} 道`,
     icon: Collection,
     color: '#0f766e',
-    background: '#f0fdfa'
+    background: '#f0fdfa',
   },
   {
     label: '试卷总量',
@@ -156,7 +146,7 @@ const metrics = computed(() => [
     note: `${stats.value.publishedExamPapers} 份已发布`,
     icon: Document,
     color: '#b45309',
-    background: '#fffbeb'
+    background: '#fffbeb',
   },
   {
     label: '今日活跃',
@@ -164,8 +154,8 @@ const metrics = computed(() => [
     note: '今日参与刷题的用户',
     icon: DataAnalysis,
     color: '#be123c',
-    background: '#fff1f2'
-  }
+    background: '#fff1f2',
+  },
 ])
 
 const enabledUserRate = computed(() => percentage(stats.value.enabledUsers, stats.value.totalUsers))
@@ -219,15 +209,15 @@ function renderActivityChart() {
     xAxis: {
       type: 'category',
       boundaryGap: false,
-      data: data.map(item => item.date.substring(5)),
+      data: data.map((item) => item.date.substring(5)),
       axisLine: { lineStyle: { color: '#d8dee8' } },
-      axisLabel: { color: '#7a8492' }
+      axisLabel: { color: '#7a8492' },
     },
     yAxis: {
       type: 'value',
       minInterval: 1,
       splitLine: { lineStyle: { color: '#eef1f5' } },
-      axisLabel: { color: '#7a8492' }
+      axisLabel: { color: '#7a8492' },
     },
     series: [
       {
@@ -235,21 +225,21 @@ function renderActivityChart() {
         type: 'line',
         smooth: true,
         symbolSize: 7,
-        data: data.map(item => item.practiceCount),
+        data: data.map((item) => item.practiceCount),
         lineStyle: { width: 3, color: '#2563eb' },
         itemStyle: { color: '#2563eb' },
-        areaStyle: { color: 'rgba(37, 99, 235, 0.08)' }
+        areaStyle: { color: 'rgba(37, 99, 235, 0.08)' },
       },
       {
         name: '活跃用户',
         type: 'line',
         smooth: true,
         symbolSize: 7,
-        data: data.map(item => item.activeUsers),
+        data: data.map((item) => item.activeUsers),
         lineStyle: { width: 2, color: '#0f766e' },
-        itemStyle: { color: '#0f766e' }
-      }
-    ]
+        itemStyle: { color: '#0f766e' },
+      },
+    ],
   })
 }
 
@@ -257,20 +247,21 @@ function renderQuestionChart() {
   if (!questionChartRef.value) return
   questionChart?.dispose()
   questionChart = init(questionChartRef.value)
-  const data = Object.entries(stats.value.questionTypeDistribution || {})
-    .map(([name, value]) => ({ name, value }))
+  const data = Object.entries(stats.value.questionTypeDistribution || {}).map(([name, value]) => ({ name, value }))
   questionChart.setOption({
     tooltip: { trigger: 'item', formatter: '{b}<br/>{c} 道（{d}%）' },
     legend: { orient: 'horizontal', bottom: 0, itemWidth: 10, itemHeight: 10 },
     color: ['#2563eb', '#0f766e', '#b45309', '#7c3aed', '#be123c'],
-    series: [{
-      type: 'pie',
-      radius: ['45%', '70%'],
-      center: ['50%', '44%'],
-      avoidLabelOverlap: true,
-      label: { show: false },
-      data
-    }]
+    series: [
+      {
+        type: 'pie',
+        radius: ['45%', '70%'],
+        center: ['50%', '44%'],
+        avoidLabelOverlap: true,
+        label: { show: false },
+        data,
+      },
+    ],
   })
 }
 
@@ -280,7 +271,7 @@ function resizeCharts() {
 }
 
 function percentage(value: number, total: number) {
-  return total > 0 ? Math.round(value * 100 / total) : 0
+  return total > 0 ? Math.round((value * 100) / total) : 0
 }
 </script>
 

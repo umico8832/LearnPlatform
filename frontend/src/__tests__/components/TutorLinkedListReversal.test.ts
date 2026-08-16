@@ -3,7 +3,12 @@ import { describe, expect, it } from 'vitest'
 import TutorLinkedListReversal from '@/components/TutorLinkedListReversal.vue'
 
 const visualization = { kind: 'LINKED_LIST_REVERSAL' as const, version: 1 as const, elements: ['A', 'B', 'C'] }
-const stubs = { 'el-button': { emits: ['click'], template: '<button :disabled="$attrs.disabled" @click="$emit(\'click\')"><slot /></button>' } }
+const stubs = {
+  'el-button': {
+    emits: ['click'],
+    template: '<button :disabled="$attrs.disabled" @click="$emit(\'click\')"><slot /></button>',
+  },
+}
 
 describe('TutorLinkedListReversal', () => {
   it('shows the saved successor and grows the reversed prefix one node at a time', async () => {

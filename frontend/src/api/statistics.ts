@@ -310,8 +310,8 @@ export function getAiAdviceStream(): Promise<Response> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   })
 }
 
@@ -338,7 +338,7 @@ export interface SimilarQuestions {
 /** 获取相似题推荐 */
 export function getSimilarQuestions(questionId: number, limit = 5) {
   return request.get<unknown, ApiResponse<SimilarQuestions>>('/statistics/similar-questions', {
-    params: { questionId, limit }
+    params: { questionId, limit },
   })
 }
 
@@ -373,6 +373,6 @@ export interface QuestionErrorAnalysis {
 /** 获取单题错因分析 */
 export function getQuestionErrorAnalysis(questionId: number) {
   return request.get<unknown, ApiResponse<QuestionErrorAnalysis>>('/statistics/question-error-analysis', {
-    params: { questionId }
+    params: { questionId },
   })
 }

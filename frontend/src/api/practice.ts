@@ -101,18 +101,12 @@ export function getPracticeStats() {
 }
 
 /** 获取错题重练题目 */
-export function getWrongQuestionPractice(params?: {
-  masteryLevel?: number
-  count?: number
-}) {
+export function getWrongQuestionPractice(params?: { masteryLevel?: number; count?: number }) {
   return request.get<unknown, ApiResponse<PracticeQuestionVO[]>>('/practice/wrong-questions', { params })
 }
 
 /** 获取收藏题练习题目 */
-export function getFavoritePractice(params?: {
-  count?: number
-  questionId?: number
-}) {
+export function getFavoritePractice(params?: { count?: number; questionId?: number }) {
   return request.get<unknown, ApiResponse<PracticeQuestionVO[]>>('/practice/favorites', { params })
 }
 

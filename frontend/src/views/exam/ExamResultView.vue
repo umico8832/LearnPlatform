@@ -56,13 +56,7 @@
               <el-button @click="router.push({ name: 'ExamList', query: { tab: 'records' } })">
                 返回考试列表
               </el-button>
-              <el-button
-                v-if="result.courseId"
-                type="primary"
-                @click="goToCourseOverview"
-              >
-                返回课程总览
-              </el-button>
+              <el-button v-if="result.courseId" type="primary" @click="goToCourseOverview"> 返回课程总览 </el-button>
             </div>
           </el-card>
         </section>
@@ -83,7 +77,11 @@
                 <span class="q-index">{{ answer.displayNumber || `${idx + 1}.` }}</span>
                 <el-tag size="small">{{ getTypeLabel(answer.questionType) }}</el-tag>
                 <span class="q-score-tag">满分 {{ answer.fullScore }} 分</span>
-                <el-tag :type="answer.gradingStatus === 'PENDING' ? 'warning' : answer.isCorrect === 1 ? 'success' : 'danger'" size="small" class="result-tag">
+                <el-tag
+                  :type="answer.gradingStatus === 'PENDING' ? 'warning' : answer.isCorrect === 1 ? 'success' : 'danger'"
+                  size="small"
+                  class="result-tag"
+                >
                   {{ answer.gradingStatus === 'PENDING' ? '待人工批阅' : answer.isCorrect === 1 ? '正确' : '错误' }}
                 </el-tag>
                 <span class="earned-score">{{ answer.score == null ? '待评分' : `得 ${answer.score} 分` }}</span>
@@ -93,7 +91,12 @@
               <dl class="answer-detail">
                 <div class="detail-row">
                   <dt class="detail-label">我的答案</dt>
-                  <dd :class="['detail-value', answer.isCorrect === 1 ? 'correct' : answer.gradingStatus === 'PENDING' ? '' : 'wrong']">
+                  <dd
+                    :class="[
+                      'detail-value',
+                      answer.isCorrect === 1 ? 'correct' : answer.gradingStatus === 'PENDING' ? '' : 'wrong',
+                    ]"
+                  >
                     {{ answer.userAnswer || '未作答' }}
                   </dd>
                 </div>
@@ -111,10 +114,11 @@
                 </div>
               </dl>
 
-              <div v-if="answer.gradingStatus !== 'PENDING' && answer.isCorrect !== 1 && result.courseId" class="answer-actions">
-                <el-button type="primary" plain @click="reviewWrongAnswer(answer.questionId)">
-                  复习此错题
-                </el-button>
+              <div
+                v-if="answer.gradingStatus !== 'PENDING' && answer.isCorrect !== 1 && result.courseId"
+                class="answer-actions"
+              >
+                <el-button type="primary" plain @click="reviewWrongAnswer(answer.questionId)"> 复习此错题 </el-button>
               </div>
             </el-card>
           </article>
@@ -146,7 +150,9 @@ const scoreRate = computed(() => {
 })
 
 const answers = computed(() => result.value?.answers || [])
-const wrongAnswers = computed(() => answers.value.filter(answer => answer.gradingStatus !== 'PENDING' && answer.isCorrect === 0))
+const wrongAnswers = computed(() =>
+  answers.value.filter((answer) => answer.gradingStatus !== 'PENDING' && answer.isCorrect === 0),
+)
 const isOfficialPaper = computed(() => result.value?.paperType === 'OFFICIAL_EXAM')
 const officialPaperTitle = computed(() => {
   if (!result.value) return ''
@@ -436,9 +442,15 @@ onMounted(async () => {
   overflow-wrap: anywhere;
 }
 
-.detail-value.correct { color: var(--lp-success); }
-.detail-value.wrong { color: var(--lp-danger); }
-.detail-value.analysis { color: var(--lp-text-secondary); }
+.detail-value.correct {
+  color: var(--lp-success);
+}
+.detail-value.wrong {
+  color: var(--lp-danger);
+}
+.detail-value.analysis {
+  color: var(--lp-text-secondary);
+}
 
 .answer-actions {
   display: flex;
@@ -455,8 +467,12 @@ onMounted(async () => {
     gap: 24px;
   }
 
-  .score-number { font-size: 40px; }
-  .rate-value { font-size: 30px; }
+  .score-number {
+    font-size: 40px;
+  }
+  .rate-value {
+    font-size: 30px;
+  }
 
   .score-actions,
   .answers-heading {

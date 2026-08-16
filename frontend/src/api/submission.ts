@@ -18,7 +18,7 @@ export interface QuestionSubmissionVO {
   knowledgePointIds: string | null
   tags: string | null
   source: string | null
-  status: number  // 0-待审核 1-已通过 2-已拒绝 3-已入库
+  status: number // 0-待审核 1-已通过 2-已拒绝 3-已入库
   reviewComment: string | null
   reviewedBy: number | null
   reviewedByName: string | null
@@ -44,7 +44,7 @@ export interface SubmissionForm {
 
 /** 审核请求 */
 export interface ReviewForm {
-  status: number  // 1-通过 2-拒绝
+  status: number // 1-通过 2-拒绝
   reviewComment?: string
 }
 
@@ -128,11 +128,7 @@ export function submitQuestion(data: SubmissionForm) {
 }
 
 /** 我的投稿列表 */
-export function getMySubmissions(params?: {
-  pageNum?: number
-  pageSize?: number
-  status?: number
-}) {
+export function getMySubmissions(params?: { pageNum?: number; pageSize?: number; status?: number }) {
   return request.get<unknown, ApiResponse<PageResult<QuestionSubmissionVO>>>('/submission/my', { params })
 }
 
@@ -193,7 +189,9 @@ export function applyKnowledgePoints(id: number, knowledgePointIds: string) {
 
 /** AI 难度评估 */
 export function assessDifficulty(id: number) {
-  return request.post<unknown, ApiResponse<SubmissionDifficultyAssessment>>(`/admin/submission/${id}/difficulty-assessment`)
+  return request.post<unknown, ApiResponse<SubmissionDifficultyAssessment>>(
+    `/admin/submission/${id}/difficulty-assessment`,
+  )
 }
 
 /** AI 生成审核意见（基于质检结果） */

@@ -106,9 +106,7 @@ describe('Question API', () => {
         status: 1,
         createTime: '2024-01-01',
         updateTime: '2024-01-01',
-        options: [
-          { id: 1, content: '选项A', optionLabel: 'A', isCorrect: 1, sortOrder: 1 },
-        ],
+        options: [{ id: 1, content: '选项A', optionLabel: 'A', isCorrect: 1, sortOrder: 1 }],
         knowledgePointIds: [1, 2],
         knowledgePointNames: ['知识点1', '知识点2'],
       }
@@ -280,7 +278,11 @@ describe('Question API', () => {
 
   describe('getQuestionVersions', () => {
     it('应使用 GET 请求获取题目版本记录', async () => {
-      mockedRequest.get.mockResolvedValue({ code: 0, data: [{ versionNo: 1, changeType: 'CREATE' }], message: 'success' })
+      mockedRequest.get.mockResolvedValue({
+        code: 0,
+        data: [{ versionNo: 1, changeType: 'CREATE' }],
+        message: 'success',
+      })
 
       await getQuestionVersions(7)
 
@@ -340,11 +342,9 @@ describe('Question API', () => {
       })
       const result = await importQuestions(file)
 
-      expect(mockedRequest.post).toHaveBeenCalledWith(
-        '/admin/questions/import',
-        expect.any(FormData),
-        { headers: { 'Content-Type': 'multipart/form-data' } },
-      )
+      expect(mockedRequest.post).toHaveBeenCalledWith('/admin/questions/import', expect.any(FormData), {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
       expect(result).toEqual({ code: 0, data: mockResult, message: 'success' })
     })
   })

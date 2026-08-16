@@ -6,9 +6,7 @@
         <h2>已加入的课程</h2>
         <p>从已加入课程进入学习总览，查看真实作答、复习与错题记录，并选择下一步。</p>
       </div>
-      <el-button type="primary" :icon="Plus" @click="router.push({ name: 'CourseList' })">
-        浏览课程
-      </el-button>
+      <el-button type="primary" :icon="Plus" @click="router.push({ name: 'CourseList' })"> 浏览课程 </el-button>
     </section>
 
     <section v-loading="loading" class="library-panel" element-loading-text="加载课程库中...">

@@ -34,7 +34,15 @@ describe('AdminUser API', () => {
     it('应使用 GET 请求获取用户分页列表', async () => {
       const mockData = {
         records: [
-          { id: 1, username: 'user1', nickname: '用户1', avatar: null, role: 'USER', status: 1, createTime: '2024-01-01' },
+          {
+            id: 1,
+            username: 'user1',
+            nickname: '用户1',
+            avatar: null,
+            role: 'USER',
+            status: 1,
+            createTime: '2024-01-01',
+          },
         ],
         total: 1,
         current: 1,
@@ -123,7 +131,10 @@ describe('AdminUser API', () => {
 
       await updateUserAiDailyQuota(3, 100, '学习计划调整')
 
-      expect(mockedRequest.put).toHaveBeenCalledWith('/admin/users/3/ai-daily-quota', { dailyQuota: 100, reason: '学习计划调整' })
+      expect(mockedRequest.put).toHaveBeenCalledWith('/admin/users/3/ai-daily-quota', {
+        dailyQuota: 100,
+        reason: '学习计划调整',
+      })
     })
 
     it('应支持清除覆盖值并继承全局配额', async () => {
@@ -131,7 +142,10 @@ describe('AdminUser API', () => {
 
       await updateUserAiDailyQuota(3, null, '恢复默认')
 
-      expect(mockedRequest.put).toHaveBeenCalledWith('/admin/users/3/ai-daily-quota', { dailyQuota: null, reason: '恢复默认' })
+      expect(mockedRequest.put).toHaveBeenCalledWith('/admin/users/3/ai-daily-quota', {
+        dailyQuota: null,
+        reason: '恢复默认',
+      })
     })
   })
 

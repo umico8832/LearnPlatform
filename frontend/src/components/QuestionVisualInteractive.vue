@@ -8,7 +8,13 @@
 
     <!-- 错误状态：JSON 解析失败，回退为 Markdown 显示 -->
     <div v-else-if="fallbackMode" class="vi-fallback">
-      <el-alert type="info" :closable="false" show-icon title="可视化数据解析失败，已切换为文本显示" style="margin-bottom: 12px;" />
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        title="可视化数据解析失败，已切换为文本显示"
+        style="margin-bottom: 12px"
+      />
       <MarkdownRenderer :content="rawContent" />
     </div>
 
@@ -32,12 +38,7 @@
         <div v-else-if="el.type === 'step_list'" class="vi-block">
           <div class="vi-block-label">{{ el.label }}</div>
           <div class="vi-steps">
-            <div
-              v-for="(step, si) in el.steps"
-              :key="si"
-              class="vi-step"
-              :class="`vi-step--${step.status}`"
-            >
+            <div v-for="(step, si) in el.steps" :key="si" class="vi-step" :class="`vi-step--${step.status}`">
               <div class="vi-step-icon">
                 <span v-if="step.status === 'done'">✅</span>
                 <span v-else-if="step.status === 'current'">🔵</span>
@@ -100,11 +101,7 @@
               </thead>
               <tbody>
                 <tr v-for="(row, ri) in el.rows" :key="ri">
-                  <td
-                    v-for="(cell, ci) in row"
-                    :key="ci"
-                    :class="getCellClass(cell)"
-                  >
+                  <td v-for="(cell, ci) in row" :key="ci" :class="getCellClass(cell)">
                     {{ getCellValue(cell) }}
                   </td>
                 </tr>
@@ -125,17 +122,10 @@
         <div v-else-if="el.type === 'bar_chart'" class="vi-block">
           <div class="vi-block-label">{{ el.label }}</div>
           <div class="vi-bar-chart">
-            <div
-              v-for="(item, bi) in el.items"
-              :key="bi"
-              class="vi-bar-row"
-            >
+            <div v-for="(item, bi) in el.items" :key="bi" class="vi-bar-row">
               <div class="vi-bar-label">{{ item.label }}</div>
               <div class="vi-bar-track">
-                <div
-                  class="vi-bar-fill"
-                  :style="{ width: getBarWidth(item.value) + '%' }"
-                />
+                <div class="vi-bar-fill" :style="{ width: getBarWidth(item.value) + '%' }" />
               </div>
               <div class="vi-bar-value">{{ item.value }}</div>
             </div>
@@ -158,10 +148,7 @@
                 <div class="vi-nl-marker-label">{{ marker.label }}</div>
               </div>
               <!-- 当前位置指针 -->
-              <div
-                class="vi-nl-current"
-                :style="{ left: getMarkerPos(el, el.current) + '%' }"
-              >
+              <div class="vi-nl-current" :style="{ left: getMarkerPos(el, el.current) + '%' }">
                 <div class="vi-nl-current-dot" />
               </div>
             </div>
@@ -199,10 +186,7 @@
         <!-- mermaid -->
         <div v-else-if="el.type === 'mermaid'" class="vi-block">
           <div class="vi-block-label">{{ el.label }}</div>
-          <div
-            :ref="(el2) => setMermaidRef(idx, el2 as HTMLElement)"
-            class="vi-mermaid-container"
-          />
+          <div :ref="(el2) => setMermaidRef(idx, el2 as HTMLElement)" class="vi-mermaid-container" />
           <div v-if="el.caption" class="vi-mermaid-caption">{{ el.caption }}</div>
         </div>
       </div>
@@ -245,15 +229,11 @@ const TreeNode = defineComponent({
       const stateClass = `vi-tree-node--${props.node.state || 'default'}`
       const children: VNode[] =
         props.node.children && props.node.children.length > 0
-          ? props.node.children.map((child, i) =>
-              h(TreeNode, { node: child, depth: props.depth + 1, key: i }),
-            )
+          ? props.node.children.map((child, i) => h(TreeNode, { node: child, depth: props.depth + 1, key: i }))
           : []
 
       return h('div', { class: 'vi-tree-node-wrapper' }, [
-        h('div', { class: `vi-tree-node ${stateClass}` }, [
-          h('span', { class: 'vi-tree-node-name' }, props.node.name),
-        ]),
+        h('div', { class: `vi-tree-node ${stateClass}` }, [h('span', { class: 'vi-tree-node-name' }, props.node.name)]),
         children.length > 0 ? h('div', { class: 'vi-tree-children' }, children) : null,
       ])
     }
@@ -337,9 +317,7 @@ function tryParseJson(text: string): VisualInteractiveData | null {
 // bar_chart 最大宽度计算
 function getBarWidth(value: number): number {
   // 找到所有 bar items 中的最大值
-  const chartEl = data.value?.elements.find(
-    (el): el is VisualBarChartElement => el.type === 'bar_chart',
-  )
+  const chartEl = data.value?.elements.find((el): el is VisualBarChartElement => el.type === 'bar_chart')
   if (!chartEl || chartEl.items.length === 0) return 0
   const max = Math.max(...chartEl.items.map((i) => i.value), 1)
   return Math.round((value / max) * 100)

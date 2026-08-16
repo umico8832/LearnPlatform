@@ -200,20 +200,24 @@ export function detectDuplicateQuestions(params?: {
 }
 
 /** 提交题目纠错反馈 */
-export function submitQuestionCorrectionReport(questionId: number, data: {
-  reportType: string
-  description: string
-}) {
-  return request.post<unknown, ApiResponse<QuestionCorrectionReportVO>>(`/questions/${questionId}/correction-reports`, data)
+export function submitQuestionCorrectionReport(
+  questionId: number,
+  data: {
+    reportType: string
+    description: string
+  },
+) {
+  return request.post<unknown, ApiResponse<QuestionCorrectionReportVO>>(
+    `/questions/${questionId}/correction-reports`,
+    data,
+  )
 }
 
 /** 我的题目纠错反馈 */
-export function getMyQuestionCorrectionReports(params?: {
-  pageNum?: number
-  pageSize?: number
-  status?: string
-}) {
-  return request.get<unknown, ApiResponse<PageResult<QuestionCorrectionReportVO>>>('/questions/correction-reports/my', { params })
+export function getMyQuestionCorrectionReports(params?: { pageNum?: number; pageSize?: number; status?: string }) {
+  return request.get<unknown, ApiResponse<PageResult<QuestionCorrectionReportVO>>>('/questions/correction-reports/my', {
+    params,
+  })
 }
 
 /** 管理端题目纠错反馈列表 */
@@ -223,15 +227,24 @@ export function getAdminQuestionCorrectionReports(params?: {
   status?: string
   questionId?: number
 }) {
-  return request.get<unknown, ApiResponse<PageResult<QuestionCorrectionReportVO>>>('/admin/questions/correction-reports', { params })
+  return request.get<unknown, ApiResponse<PageResult<QuestionCorrectionReportVO>>>(
+    '/admin/questions/correction-reports',
+    { params },
+  )
 }
 
 /** 管理端处理题目纠错反馈 */
-export function processQuestionCorrectionReport(reportId: number, data: {
-  status: string
-  handlerComment: string
-}) {
-  return request.post<unknown, ApiResponse<QuestionCorrectionReportVO>>(`/admin/questions/correction-reports/${reportId}/process`, data)
+export function processQuestionCorrectionReport(
+  reportId: number,
+  data: {
+    status: string
+    handlerComment: string
+  },
+) {
+  return request.post<unknown, ApiResponse<QuestionCorrectionReportVO>>(
+    `/admin/questions/correction-reports/${reportId}/process`,
+    data,
+  )
 }
 
 /** 管理端题目版本记录 */
@@ -248,21 +261,17 @@ export interface QuestionImportResult {
 }
 
 /** 导出题目（管理端）- 返回 Blob 下载 */
-export function exportQuestions(params?: {
-  questionType?: string
-  courseId?: number
-  difficulty?: number
-}) {
+export function exportQuestions(params?: { questionType?: string; courseId?: number; difficulty?: number }) {
   return request.get('/admin/questions/export', {
     params,
-    responseType: 'blob'
+    responseType: 'blob',
   })
 }
 
 /** 下载导入模板 */
 export function downloadTemplate() {
   return request.get('/admin/questions/template', {
-    responseType: 'blob'
+    responseType: 'blob',
   })
 }
 
@@ -271,7 +280,7 @@ export function importQuestions(file: File) {
   const formData = new FormData()
   formData.append('file', file)
   return request.post<unknown, ApiResponse<QuestionImportResult>>('/admin/questions/import', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+    headers: { 'Content-Type': 'multipart/form-data' },
   })
 }
 
@@ -280,14 +289,14 @@ export function importQuestionsMarkdown(file: File) {
   const formData = new FormData()
   formData.append('file', file)
   return request.post<unknown, ApiResponse<QuestionImportResult>>('/admin/questions/import-markdown', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+    headers: { 'Content-Type': 'multipart/form-data' },
   })
 }
 
 /** 下载 Markdown 导入模板 */
 export function downloadMarkdownTemplate() {
   return request.get('/admin/questions/template-markdown', {
-    responseType: 'blob'
+    responseType: 'blob',
   })
 }
 
@@ -308,15 +317,20 @@ export function getReviewRecords(questionId: number) {
 
 /** 获取 AI 复审建议 */
 export function getReviewSuggestion(questionId: number) {
-  return request.get<unknown, ApiResponse<QuestionReviewSuggestionVO>>(`/admin/questions/${questionId}/review-suggestion`)
+  return request.get<unknown, ApiResponse<QuestionReviewSuggestionVO>>(
+    `/admin/questions/${questionId}/review-suggestion`,
+  )
 }
 
 /** 执行复审 */
-export function performReReview(questionId: number, data: {
-  action: string
-  newContent?: string
-  newDifficulty?: number
-  comment: string
-}) {
+export function performReReview(
+  questionId: number,
+  data: {
+    action: string
+    newContent?: string
+    newDifficulty?: number
+    comment: string
+  },
+) {
   return request.post<unknown, ApiResponse<QuestionReviewRecordVO>>(`/admin/questions/${questionId}/re-review`, data)
 }

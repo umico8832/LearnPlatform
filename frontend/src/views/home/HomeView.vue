@@ -72,13 +72,7 @@
         </div>
       </div>
       <div class="quick-grid">
-        <button
-          v-for="link in quickLinks"
-          :key="link.path"
-          type="button"
-          class="quick-card"
-          @click="go(link.path)"
-        >
+        <button v-for="link in quickLinks" :key="link.path" type="button" class="quick-card" @click="go(link.path)">
           <span class="quick-icon">
             <el-icon><component :is="link.icon" /></el-icon>
           </span>
@@ -322,7 +316,7 @@ const loadTrendChart = async () => {
       grid: { left: 36, right: 18, top: 24, bottom: 44 },
       xAxis: {
         type: 'category',
-        data: data.map(d => d.date.substring(5)),
+        data: data.map((d) => d.date.substring(5)),
         axisLine: { lineStyle: { color: '#dfe7ef' } },
         axisTick: { show: false },
       },
@@ -337,7 +331,7 @@ const loadTrendChart = async () => {
           type: 'bar',
           stack: 'total',
           barWidth: 18,
-          data: data.map(d => d.correct),
+          data: data.map((d) => d.correct),
           itemStyle: { borderRadius: [5, 5, 0, 0] },
         },
         {
@@ -345,7 +339,7 @@ const loadTrendChart = async () => {
           type: 'bar',
           stack: 'total',
           barWidth: 18,
-          data: data.map(d => d.wrong),
+          data: data.map((d) => d.wrong),
           itemStyle: { borderRadius: [5, 5, 0, 0] },
         },
       ],
@@ -369,7 +363,7 @@ const loadCourseChart = async () => {
       color: ['#1769aa'],
       tooltip: { trigger: 'item', formatter: '{b}: {c}%' },
       radar: {
-        indicator: data.map(d => ({
+        indicator: data.map((d) => ({
           name: d.courseName.length > 6 ? `${d.courseName.substring(0, 6)}..` : d.courseName,
           max: 100,
         })),
@@ -378,16 +372,20 @@ const loadCourseChart = async () => {
         splitArea: { areaStyle: { color: ['#ffffff', '#f8fafc'] } },
         axisName: { color: '#536272' },
       },
-      series: [{
-        type: 'radar',
-        data: [{
-          value: data.map(d => d.correctRate),
-          name: '正确率',
-          areaStyle: { opacity: 0.18 },
-          lineStyle: { width: 2 },
-          symbolSize: 4,
-        }],
-      }],
+      series: [
+        {
+          type: 'radar',
+          data: [
+            {
+              value: data.map((d) => d.correctRate),
+              name: '正确率',
+              areaStyle: { opacity: 0.18 },
+              lineStyle: { width: 2 },
+              symbolSize: 4,
+            },
+          ],
+        },
+      ],
     })
   } catch {
     courseEmpty.value = true
@@ -410,9 +408,7 @@ const loadCourseChart = async () => {
   padding: 28px;
   border: 1px solid var(--lp-border);
   border-radius: var(--lp-radius);
-  background:
-    linear-gradient(135deg, rgba(23, 105, 170, 0.12), rgba(216, 168, 63, 0.12)),
-    #ffffff;
+  background: linear-gradient(135deg, rgba(23, 105, 170, 0.12), rgba(216, 168, 63, 0.12)), #ffffff;
   box-shadow: var(--lp-shadow-sm);
 }
 
@@ -588,7 +584,10 @@ const loadCourseChart = async () => {
   background: #ffffff;
   text-align: left;
   cursor: pointer;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
 }
 
 .quick-card:hover {

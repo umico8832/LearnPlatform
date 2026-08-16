@@ -12,7 +12,9 @@
           :key="li"
           class="sql-line"
           :class="{ 'sql-line--active': isLineInClause(line, currentStep) }"
-        >{{ line }}</div>
+        >
+          {{ line }}
+        </div>
       </div>
     </div>
 
@@ -70,15 +72,39 @@
     <div class="sql-controls">
       <div class="sql-controls-buttons">
         <el-button size="small" :icon="DArrowLeft" circle :disabled="currentStepIndex <= 0" @click="goToStep(0)" />
-        <el-button size="small" :icon="ArrowLeft" circle :disabled="currentStepIndex <= 0" @click="goToStep(currentStepIndex - 1)" />
-        <el-button size="small" :type="playing ? 'warning' : 'primary'" :icon="playing ? VideoPause : VideoPlay" circle @click="togglePlay" />
-        <el-button size="small" :icon="ArrowRight" circle :disabled="currentStepIndex >= element.steps.length - 1" @click="goToStep(currentStepIndex + 1)" />
-        <el-button size="small" :icon="DArrowRight" circle :disabled="currentStepIndex >= element.steps.length - 1" @click="goToStep(element.steps.length - 1)" />
+        <el-button
+          size="small"
+          :icon="ArrowLeft"
+          circle
+          :disabled="currentStepIndex <= 0"
+          @click="goToStep(currentStepIndex - 1)"
+        />
+        <el-button
+          size="small"
+          :type="playing ? 'warning' : 'primary'"
+          :icon="playing ? VideoPause : VideoPlay"
+          circle
+          @click="togglePlay"
+        />
+        <el-button
+          size="small"
+          :icon="ArrowRight"
+          circle
+          :disabled="currentStepIndex >= element.steps.length - 1"
+          @click="goToStep(currentStepIndex + 1)"
+        />
+        <el-button
+          size="small"
+          :icon="DArrowRight"
+          circle
+          :disabled="currentStepIndex >= element.steps.length - 1"
+          @click="goToStep(element.steps.length - 1)"
+        />
       </div>
       <!-- 速度调节 -->
       <div class="sql-speed-control">
         <span class="sql-speed-label">速度</span>
-        <el-slider v-model="speed" :min="300" :max="3000" :step="300" :show-tooltip="false" style="width: 100px;" />
+        <el-slider v-model="speed" :min="300" :max="3000" :step="300" :show-tooltip="false" style="width: 100px" />
       </div>
       <!-- 进度条 -->
       <div class="sql-progress-bar">
@@ -86,7 +112,10 @@
           v-for="(_step, si) in element.steps"
           :key="si"
           class="sql-progress-dot"
-          :class="{ 'sql-progress-dot--active': si === currentStepIndex, 'sql-progress-dot--done': si < currentStepIndex }"
+          :class="{
+            'sql-progress-dot--active': si === currentStepIndex,
+            'sql-progress-dot--done': si < currentStepIndex,
+          }"
           @click="goToStep(si)"
         />
       </div>
@@ -96,14 +125,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
-import {
-  ArrowLeft,
-  ArrowRight,
-  DArrowLeft,
-  DArrowRight,
-  VideoPause,
-  VideoPlay,
-} from '@element-plus/icons-vue'
+import { ArrowLeft, ArrowRight, DArrowLeft, DArrowRight, VideoPause, VideoPlay } from '@element-plus/icons-vue'
 import type { SqlExecutionElement } from '@/api/ai'
 
 const props = defineProps<{
@@ -127,7 +149,35 @@ function isLineInClause(line: string, step: typeof currentStep.value): boolean {
   const clause = step.clause.trim().toUpperCase()
   const lineUpper = line.trim().toUpperCase()
   // 匹配 SQL 子句关键字：SELECT, FROM, WHERE, JOIN, ON, GROUP BY, HAVING, ORDER BY, LIMIT 等
-  const clauseKeywords = ['SELECT', 'FROM', 'WHERE', 'JOIN', 'INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'CROSS JOIN', 'FULL JOIN', 'ON', 'GROUP BY', 'HAVING', 'ORDER BY', 'LIMIT', 'OFFSET', 'UNION', 'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 'CREATE', 'ALTER', 'DROP', 'INDEX', 'AS']
+  const clauseKeywords = [
+    'SELECT',
+    'FROM',
+    'WHERE',
+    'JOIN',
+    'INNER JOIN',
+    'LEFT JOIN',
+    'RIGHT JOIN',
+    'CROSS JOIN',
+    'FULL JOIN',
+    'ON',
+    'GROUP BY',
+    'HAVING',
+    'ORDER BY',
+    'LIMIT',
+    'OFFSET',
+    'UNION',
+    'INSERT',
+    'INTO',
+    'VALUES',
+    'UPDATE',
+    'SET',
+    'DELETE',
+    'CREATE',
+    'ALTER',
+    'DROP',
+    'INDEX',
+    'AS',
+  ]
   for (const kw of clauseKeywords) {
     if (clause.startsWith(kw) && lineUpper.startsWith(kw)) return true
   }
@@ -233,7 +283,9 @@ onBeforeUnmount(() => {
   color: #d4d4d4;
   padding: 1px 6px;
   border-radius: 3px;
-  transition: background 0.3s ease, color 0.3s ease;
+  transition:
+    background 0.3s ease,
+    color 0.3s ease;
   white-space: pre;
 }
 
@@ -392,7 +444,9 @@ onBeforeUnmount(() => {
   border-radius: 50%;
   background: #dcdfe6;
   cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
+  transition:
+    background 0.2s,
+    transform 0.2s;
 }
 
 .sql-progress-dot:hover {

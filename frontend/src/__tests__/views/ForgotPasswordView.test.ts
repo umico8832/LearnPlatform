@@ -17,7 +17,10 @@ const stubs = {
   'router-link': { template: '<a><slot /></a>' },
   'el-form': { template: '<form><slot /></form>', methods: { validate: () => mockValidate() } },
   'el-form-item': { template: '<label><slot /></label>' },
-  'el-input': { template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />', props: ['modelValue'] },
+  'el-input': {
+    template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    props: ['modelValue'],
+  },
   'el-button': { template: '<button :disabled="disabled"><slot /></button>', props: ['disabled'] },
   'el-icon': { template: '<span><slot /></span>' },
   TurnstileWidget: defineComponent({

@@ -8,7 +8,13 @@ vi.mock('@/utils/request', () => ({
 }))
 
 import request from '@/utils/request'
-import { acknowledgeAiUsageAlert, getAiLearningEffect, getAiUsageAlerts, getAiUsageOverview, getAiUsageReport } from '@/api/aiUsage'
+import {
+  acknowledgeAiUsageAlert,
+  getAiLearningEffect,
+  getAiUsageAlerts,
+  getAiUsageOverview,
+  getAiUsageReport,
+} from '@/api/aiUsage'
 
 const mockedRequest = vi.mocked(request)
 

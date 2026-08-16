@@ -11,12 +11,7 @@ vi.mock('@/utils/request', () => ({
 }))
 
 import request from '@/utils/request'
-import {
-  getWrongQuestions,
-  getWrongQuestionStats,
-  updateMasteryLevel,
-  removeWrongQuestion,
-} from '@/api/wrongQuestion'
+import { getWrongQuestions, getWrongQuestionStats, updateMasteryLevel, removeWrongQuestion } from '@/api/wrongQuestion'
 
 const mockedRequest = vi.mocked(request)
 
@@ -84,7 +79,7 @@ describe('WrongQuestion API', () => {
         unmastered: 20,
         partial: 15,
         mastered: 15,
-        courseWrongCount: { 'Java基础': 10, '数据结构': 8 },
+        courseWrongCount: { Java基础: 10, 数据结构: 8 },
       }
       mockedRequest.get.mockResolvedValue({ code: 0, data: mockStats, message: 'success' })
 

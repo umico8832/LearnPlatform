@@ -2,13 +2,15 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
-const { getQuestionAssets, getAssetFeedback, recordAssetView, completeVariantTraining, generateAsset } = vi.hoisted(() => ({
-  getQuestionAssets: vi.fn(),
-  getAssetFeedback: vi.fn(),
-  recordAssetView: vi.fn(),
-  completeVariantTraining: vi.fn(),
-  generateAsset: vi.fn(),
-}))
+const { getQuestionAssets, getAssetFeedback, recordAssetView, completeVariantTraining, generateAsset } = vi.hoisted(
+  () => ({
+    getQuestionAssets: vi.fn(),
+    getAssetFeedback: vi.fn(),
+    recordAssetView: vi.fn(),
+    completeVariantTraining: vi.fn(),
+    generateAsset: vi.fn(),
+  }),
+)
 
 vi.mock('@/api/ai', () => ({
   getQuestionAssets,
@@ -37,15 +39,17 @@ describe('QuestionLearningAsset view tracking', () => {
     vi.clearAllMocks()
     getQuestionAssets.mockResolvedValue({
       code: 0,
-      data: [{
-        id: 1,
-        questionId: 42,
-        assetType: 'FULL_EXPLANATION',
-        assetTypeLabel: '标准解析',
-        content: 'cached explanation',
-        model: 'test-model',
-        createTime: '2026-07-16T12:00:00',
-      }],
+      data: [
+        {
+          id: 1,
+          questionId: 42,
+          assetType: 'FULL_EXPLANATION',
+          assetTypeLabel: '标准解析',
+          content: 'cached explanation',
+          model: 'test-model',
+          createTime: '2026-07-16T12:00:00',
+        },
+      ],
     })
     getAssetFeedback.mockResolvedValue({ code: 0, data: null })
     recordAssetView.mockResolvedValue({ code: 0, data: null })
@@ -69,7 +73,9 @@ describe('QuestionLearningAsset view tracking', () => {
       observe() {}
       disconnect() {}
       unobserve() {}
-      takeRecords() { return [] }
+      takeRecords() {
+        return []
+      }
       root = null
       rootMargin = '0px'
       thresholds = [0.1]
@@ -110,15 +116,17 @@ describe('QuestionLearningAsset view tracking', () => {
   it('records variant completion only after explicit user confirmation', async () => {
     getQuestionAssets.mockResolvedValue({
       code: 0,
-      data: [{
-        id: 2,
-        questionId: 42,
-        assetType: 'VARIANT',
-        assetTypeLabel: '变式题',
-        content: 'variant exercises',
-        model: 'test-model',
-        createTime: '2026-07-16T12:00:00',
-      }],
+      data: [
+        {
+          id: 2,
+          questionId: 42,
+          assetType: 'VARIANT',
+          assetTypeLabel: '变式题',
+          content: 'variant exercises',
+          model: 'test-model',
+          createTime: '2026-07-16T12:00:00',
+        },
+      ],
     })
     recordAssetView.mockResolvedValue({
       code: 0,

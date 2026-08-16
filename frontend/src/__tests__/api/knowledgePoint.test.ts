@@ -28,7 +28,11 @@ describe('KnowledgePoint API', () => {
     it('应使用 GET 请求获取知识点树', async () => {
       const mockTree = [
         {
-          id: 1, name: 'Java基础', courseId: 1, parentId: 0, sortOrder: 1,
+          id: 1,
+          name: 'Java基础',
+          courseId: 1,
+          parentId: 0,
+          sortOrder: 1,
           children: [
             { id: 2, name: '变量与类型', courseId: 1, parentId: 1, sortOrder: 1 },
             { id: 3, name: '控制流', courseId: 1, parentId: 1, sortOrder: 2 },

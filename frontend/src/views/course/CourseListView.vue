@@ -33,13 +33,7 @@
           <h3>课程列表</h3>
           <p>{{ listSummary }}</p>
         </div>
-        <el-input
-          v-model="keyword"
-          class="course-search"
-          :prefix-icon="Search"
-          placeholder="搜索课程"
-          clearable
-        />
+        <el-input v-model="keyword" class="course-search" :prefix-icon="Search" placeholder="搜索课程" clearable />
       </div>
 
       <div v-loading="loading" class="course-grid" element-loading-text="加载课程中...">
@@ -242,7 +236,10 @@ onMounted(() => {
   background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
   border: 1px solid var(--lp-border);
   border-radius: var(--lp-radius);
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.2s;
 }
 
 .course-card:hover {

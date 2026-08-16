@@ -2,8 +2,20 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import TutorSequentialListStorage from '@/components/TutorSequentialListStorage.vue'
 
-const visualization = { kind: 'SEQUENTIAL_LIST_STORAGE' as const, version: 1 as const, baseAddress: 1000, elementWidth: 4, elements: ['A', 'B', 'C', 'D'], accessIndex: 2 }
-const stubs = { 'el-button': { emits: ['click'], template: '<button :disabled="$attrs.disabled" @click="$emit(\'click\')"><slot /></button>' } }
+const visualization = {
+  kind: 'SEQUENTIAL_LIST_STORAGE' as const,
+  version: 1 as const,
+  baseAddress: 1000,
+  elementWidth: 4,
+  elements: ['A', 'B', 'C', 'D'],
+  accessIndex: 2,
+}
+const stubs = {
+  'el-button': {
+    emits: ['click'],
+    template: '<button :disabled="$attrs.disabled" @click="$emit(\'click\')"><slot /></button>',
+  },
+}
 
 describe('TutorSequentialListStorage', () => {
   it('derives the target address from reviewed base address and element width', async () => {

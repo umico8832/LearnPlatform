@@ -11,13 +11,7 @@ vi.mock('@/utils/request', () => ({
 }))
 
 import request from '@/utils/request'
-import {
-  getComments,
-  addComment,
-  deleteComment,
-  toggleLike,
-  getCommentCount,
-} from '@/api/comment'
+import { getComments, addComment, deleteComment, toggleLike, getCommentCount } from '@/api/comment'
 
 const mockedRequest = vi.mocked(request)
 

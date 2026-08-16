@@ -7,22 +7,14 @@
     <div class="npv-diagram">
       <!-- 实体头部 -->
       <div class="npv-entities">
-        <div
-          v-for="(entity, ei) in element.entities"
-          :key="ei"
-          class="npv-entity"
-        >
+        <div v-for="(entity, ei) in element.entities" :key="ei" class="npv-entity">
           <div class="npv-entity-box">{{ entity }}</div>
         </div>
       </div>
 
       <!-- 竖线（生命线） -->
       <div class="npv-lifelines">
-        <div
-          v-for="(_, ei) in element.entities"
-          :key="ei"
-          class="npv-lifeline"
-        />
+        <div v-for="(_, ei) in element.entities" :key="ei" class="npv-lifeline" />
       </div>
 
       <!-- 消息 -->
@@ -31,7 +23,10 @@
           v-for="(msg, mi) in element.messages"
           :key="mi"
           class="npv-message"
-          :class="{ 'npv-message--current': msg.state === 'current', 'npv-message--highlight': msg.state === 'highlight' }"
+          :class="{
+            'npv-message--current': msg.state === 'current',
+            'npv-message--highlight': msg.state === 'highlight',
+          }"
         >
           <!-- 消息标签（中间） -->
           <div class="npv-message-label">{{ msg.content }}</div>
@@ -162,13 +157,7 @@ export default { name: 'NetworkProtocolViewer' }
   display: block;
   width: 2px;
   height: calc(100% + 8px);
-  background: repeating-linear-gradient(
-    to bottom,
-    #c0c4cc 0,
-    #c0c4cc 4px,
-    transparent 4px,
-    transparent 8px
-  );
+  background: repeating-linear-gradient(to bottom, #c0c4cc 0, #c0c4cc 4px, transparent 4px, transparent 8px);
 }
 
 /* 消息 */

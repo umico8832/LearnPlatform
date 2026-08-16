@@ -14,16 +14,16 @@
     <el-card shadow="never" class="admin-table-card">
       <div class="admin-toolbar">
         <div class="admin-filter-group">
-        <el-input
-          v-model="keyword"
-          placeholder="搜索课程名称"
-          :prefix-icon="Search"
-          clearable
-          style="width: 240px"
-          @clear="fetchCourses"
-          @keyup.enter="fetchCourses"
-        />
-        <el-button :icon="Search" @click="fetchCourses">查询</el-button>
+          <el-input
+            v-model="keyword"
+            placeholder="搜索课程名称"
+            :prefix-icon="Search"
+            clearable
+            style="width: 240px"
+            @clear="fetchCourses"
+            @keyup.enter="fetchCourses"
+          />
+          <el-button :icon="Search" @click="fetchCourses">查询</el-button>
         </div>
         <span class="table-summary">共 {{ courses.length }} 门课程</span>
       </div>
@@ -47,8 +47,12 @@
         <el-table-column prop="createTime" label="创建时间" width="170" />
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link size="small" :icon="Edit" @click="openDialog(row as CourseVO)">编辑</el-button>
-            <el-button type="primary" link size="small" :icon="Connection" @click="goToKP(row as CourseVO)">知识点</el-button>
+            <el-button type="primary" link size="small" :icon="Edit" @click="openDialog(row as CourseVO)"
+              >编辑</el-button
+            >
+            <el-button type="primary" link size="small" :icon="Connection" @click="goToKP(row as CourseVO)"
+              >知识点</el-button
+            >
             <el-popconfirm title="确定删除该课程？" @confirm="handleDelete((row as CourseVO).id)">
               <template #reference>
                 <el-button type="danger" link size="small" :icon="Delete">删除</el-button>
@@ -60,30 +64,13 @@
     </el-card>
 
     <!-- 新增/编辑弹窗 -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="editingCourse ? '编辑课程' : '新增课程'"
-      width="500px"
-      destroy-on-close
-    >
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="80px"
-        @submit.prevent
-      >
+    <el-dialog v-model="dialogVisible" :title="editingCourse ? '编辑课程' : '新增课程'" width="500px" destroy-on-close>
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px" @submit.prevent>
         <el-form-item label="课程名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入课程名称" maxlength="100" />
         </el-form-item>
         <el-form-item label="描述" prop="description">
-          <el-input
-            v-model="form.description"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入课程描述"
-            maxlength="500"
-          />
+          <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入课程描述" maxlength="500" />
         </el-form-item>
         <el-form-item label="排序" prop="sortOrder">
           <el-input-number v-model="form.sortOrder" :min="0" :max="9999" />

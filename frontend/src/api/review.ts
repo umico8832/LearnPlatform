@@ -49,12 +49,7 @@ export function getReviewStats() {
 }
 
 /** 获取今日待复习题目 */
-export function getDueReviewCards(
-  courseId?: number,
-  limit?: number,
-  questionId?: number,
-  knowledgePointId?: number,
-) {
+export function getDueReviewCards(courseId?: number, limit?: number, questionId?: number, knowledgePointId?: number) {
   return request.get<ReviewScheduleVO[]>('/review/due', {
     params: { courseId, questionId, knowledgePointId, limit },
   })
@@ -63,7 +58,7 @@ export function getDueReviewCards(
 /** 获取所有复习计划卡片 */
 export function getAllReviewCards(courseId?: number) {
   return request.get<ReviewScheduleVO[]>('/review/cards', {
-    params: { courseId }
+    params: { courseId },
   })
 }
 
@@ -103,8 +98,8 @@ export async function getAiReviewSuggestionStream(token: string): Promise<Respon
   return fetch(`${base}/review/ai-suggestion/stream`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'text/event-stream',
+      Authorization: `Bearer ${token}`,
+      Accept: 'text/event-stream',
     },
   })
 }

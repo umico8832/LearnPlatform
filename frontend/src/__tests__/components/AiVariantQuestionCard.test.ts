@@ -30,7 +30,8 @@ const global = {
     'el-radio-group': {
       props: ['modelValue'],
       emits: ['update:modelValue'],
-      template: '<div><button class="select-answer" @click="$emit(\'update:modelValue\', \'B\')">select B</button><slot /></div>',
+      template:
+        '<div><button class="select-answer" @click="$emit(\'update:modelValue\', \'B\')">select B</button><slot /></div>',
     },
     'el-radio': { props: ['value'], template: '<label><slot /></label>' },
     'el-button': { template: '<button :disabled="$attrs.disabled" @click="$emit(\'click\')"><slot /></button>' },

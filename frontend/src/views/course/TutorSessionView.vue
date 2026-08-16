@@ -19,22 +19,27 @@
         <p>以下是目标知识点及其课程目录范围内的服务端记录，不代表已经掌握。</p>
         <div class="evidence-grid">
           <div v-if="session.learningContext.paperAnswerCount" class="evidence-item">
-            <strong>{{ session.learningContext.paperAnswerCount }}</strong><span>次真题学习作答</span>
+            <strong>{{ session.learningContext.paperAnswerCount }}</strong
+            ><span>次真题学习作答</span>
             <small v-if="session.learningContext.paperIncorrectCount">
               其中 {{ session.learningContext.paperIncorrectCount }} 次答错
             </small>
           </div>
           <div v-if="session.learningContext.paperAiAssistanceCount" class="evidence-item">
-            <strong>{{ session.learningContext.paperAiAssistanceCount }}</strong><span>次试卷 AI 辅导</span>
+            <strong>{{ session.learningContext.paperAiAssistanceCount }}</strong
+            ><span>次试卷 AI 辅导</span>
           </div>
           <div v-if="session.learningContext.unresolvedWrongCount" class="evidence-item">
-            <strong>{{ session.learningContext.unresolvedWrongCount }}</strong><span>道未掌握错题</span>
+            <strong>{{ session.learningContext.unresolvedWrongCount }}</strong
+            ><span>道未掌握错题</span>
           </div>
           <div v-if="session.learningContext.dueReviewCount" class="evidence-item">
-            <strong>{{ session.learningContext.dueReviewCount }}</strong><span>道到期复习</span>
+            <strong>{{ session.learningContext.dueReviewCount }}</strong
+            ><span>道到期复习</span>
           </div>
           <div v-if="session.learningContext.reviewAnswerCount" class="evidence-item">
-            <strong>{{ session.learningContext.reviewAnswerCount }}</strong><span>次复习作答</span>
+            <strong>{{ session.learningContext.reviewAnswerCount }}</strong
+            ><span>次复习作答</span>
           </div>
         </div>
         <small v-if="session.learningContext.latestEvidenceAt" class="evidence-time">
@@ -222,13 +227,16 @@ const factorialCallStackCourseware = computed(() =>
 )
 const hasLearningContext = computed(() => {
   const context = session.value?.learningContext
-  return !!context && [
-    context.paperAnswerCount,
-    context.paperAiAssistanceCount,
-    context.unresolvedWrongCount,
-    context.dueReviewCount,
-    context.reviewAnswerCount,
-  ].some(count => count > 0)
+  return (
+    !!context &&
+    [
+      context.paperAnswerCount,
+      context.paperAiAssistanceCount,
+      context.unresolvedWrongCount,
+      context.dueReviewCount,
+      context.reviewAnswerCount,
+    ].some((count) => count > 0)
+  )
 })
 function formatEvidenceTime(value: string) {
   return value.replace('T', ' ').slice(0, 16)

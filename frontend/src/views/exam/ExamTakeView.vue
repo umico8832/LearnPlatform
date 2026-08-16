@@ -30,33 +30,53 @@
         <div class="q-content">{{ currentQuestion.content }}</div>
 
         <div v-if="currentQuestion.questionType === 'SINGLE_CHOICE'" class="option-list">
-          <button v-for="opt in currentQuestion.options" :key="opt.id" type="button"
+          <button
+            v-for="opt in currentQuestion.options"
+            :key="opt.id"
+            type="button"
             :class="['option-item', { selected: answers[currentQuestion.questionId] === opt.optionLabel }]"
             :aria-pressed="answers[currentQuestion.questionId] === opt.optionLabel"
-            @click="answers[currentQuestion.questionId] = opt.optionLabel">
-            <span class="opt-label">{{ opt.optionLabel }}</span><span>{{ opt.content }}</span>
+            @click="answers[currentQuestion.questionId] = opt.optionLabel"
+          >
+            <span class="opt-label">{{ opt.optionLabel }}</span
+            ><span>{{ opt.content }}</span>
           </button>
         </div>
 
         <div v-else-if="currentQuestion.questionType === 'MULTIPLE_CHOICE'" class="option-list">
-          <button v-for="opt in currentQuestion.options" :key="opt.id" type="button"
+          <button
+            v-for="opt in currentQuestion.options"
+            :key="opt.id"
+            type="button"
             :class="['option-item', { selected: isMultiSelected(currentQuestion.questionId, opt.optionLabel) }]"
             :aria-pressed="isMultiSelected(currentQuestion.questionId, opt.optionLabel)"
-            @click="toggleMulti(currentQuestion.questionId, opt.optionLabel)">
+            @click="toggleMulti(currentQuestion.questionId, opt.optionLabel)"
+          >
             <span aria-hidden="true" class="multi-check">
               {{ isMultiSelected(currentQuestion.questionId, opt.optionLabel) ? '✓' : '' }}
             </span>
-            <span class="opt-label">{{ opt.optionLabel }}</span><span>{{ opt.content }}</span>
+            <span class="opt-label">{{ opt.optionLabel }}</span
+            ><span>{{ opt.content }}</span>
           </button>
         </div>
 
         <div v-else-if="currentQuestion.questionType === 'TRUE_FALSE'" class="option-list tf-list">
-          <button type="button" :class="['option-item', { selected: answers[currentQuestion.questionId] === 'TRUE' }]"
+          <button
+            type="button"
+            :class="['option-item', { selected: answers[currentQuestion.questionId] === 'TRUE' }]"
             :aria-pressed="answers[currentQuestion.questionId] === 'TRUE'"
-            @click="answers[currentQuestion.questionId] = 'TRUE'">正确</button>
-          <button type="button" :class="['option-item', { selected: answers[currentQuestion.questionId] === 'FALSE' }]"
+            @click="answers[currentQuestion.questionId] = 'TRUE'"
+          >
+            正确
+          </button>
+          <button
+            type="button"
+            :class="['option-item', { selected: answers[currentQuestion.questionId] === 'FALSE' }]"
             :aria-pressed="answers[currentQuestion.questionId] === 'FALSE'"
-            @click="answers[currentQuestion.questionId] = 'FALSE'">错误</button>
+            @click="answers[currentQuestion.questionId] = 'FALSE'"
+          >
+            错误
+          </button>
         </div>
 
         <div v-else>
@@ -71,7 +91,9 @@
 
         <div class="nav-btns">
           <el-button @click="currentIndex--" :disabled="currentIndex === 0">上一题</el-button>
-          <el-button v-if="currentIndex < questions.length - 1" type="primary" @click="currentIndex++">下一题</el-button>
+          <el-button v-if="currentIndex < questions.length - 1" type="primary" @click="currentIndex++"
+            >下一题</el-button
+          >
           <el-button v-else type="danger" :loading="submitted" :disabled="submitted" @click="handleSubmit">
             提交试卷
           </el-button>
@@ -81,12 +103,18 @@
       <div class="answer-sheet">
         <h4>答题卡</h4>
         <div class="sheet-grid">
-          <button v-for="(q, idx) in questions" :key="q.questionId" type="button"
+          <button
+            v-for="(q, idx) in questions"
+            :key="q.questionId"
+            type="button"
             :class="['sheet-item', { answered: answers[q.questionId], current: idx === currentIndex }]"
             :title="q.displayNumber || `第 ${idx + 1} 题`"
             :aria-label="`前往${q.displayNumber || `第 ${idx + 1} 题`}${answers[q.questionId] ? '，已作答' : '，未作答'}`"
             :aria-current="idx === currentIndex ? 'step' : undefined"
-            @click="currentIndex = idx">{{ q.displayNumber || idx + 1 }}</button>
+            @click="currentIndex = idx"
+          >
+            {{ q.displayNumber || idx + 1 }}
+          </button>
         </div>
       </div>
     </div>
@@ -153,9 +181,9 @@ const updateRemainingTime = () => {
 const doSubmit = async () => {
   if (submitted.value) return
   submitted.value = true
-  const answerList = questions.value.map(q => ({
+  const answerList = questions.value.map((q) => ({
     questionId: q.questionId,
-    userAnswer: answers.value[q.questionId] || ''
+    userAnswer: answers.value[q.questionId] || '',
   }))
   try {
     const res = await submitExam({ examRecordId: recordId.value, answers: answerList })
@@ -182,7 +210,13 @@ const doSubmit = async () => {
 }
 
 const getTypeLabel = (type: string) => {
-  const map: Record<string, string> = { SINGLE_CHOICE: '单选', MULTIPLE_CHOICE: '多选', TRUE_FALSE: '判断', FILL_BLANK: '填空', SHORT_ANSWER: '简答' }
+  const map: Record<string, string> = {
+    SINGLE_CHOICE: '单选',
+    MULTIPLE_CHOICE: '多选',
+    TRUE_FALSE: '判断',
+    FILL_BLANK: '填空',
+    SHORT_ANSWER: '简答',
+  }
   return map[type] || type
 }
 
@@ -259,63 +293,283 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.exam-take-container { padding: 24px; max-width: 900px; margin: 0 auto; }
-.take-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; padding: 16px; background: var(--lp-surface); border: 1px solid var(--lp-border); border-radius: var(--lp-radius); box-shadow: var(--lp-shadow-sm); }
-.take-header h3 { margin: 0; color: var(--lp-text); font-size: 16px; }
-.progress-text { font-weight: 600; font-size: 16px; }
-.question-area { display: flex; gap: 20px; }
-.question-area > .el-card { flex: 1; }
-.q-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-.q-section { margin-bottom: 8px; color: var(--lp-text-secondary); font-size: 13px; font-weight: 600; }
-.q-number { color: var(--lp-text); font-size: 15px; }
-.q-score { font-size: 13px; color: var(--lp-text-muted); }
-.q-content { color: var(--lp-text); font-size: 16px; line-height: 1.8; margin-bottom: 20px; white-space: pre-wrap; }
-.option-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-.option-item { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 12px 16px; color: var(--lp-text); text-align: left; font: inherit; background: var(--lp-surface); border: 2px solid var(--lp-border); border-radius: var(--lp-radius); cursor: pointer; transition: background-color .2s, border-color .2s; }
-.option-item:hover { border-color: var(--lp-border-strong); background: var(--lp-surface-soft); }
-.option-item:focus-visible { outline: 3px solid var(--lp-primary-soft); outline-offset: 2px; border-color: var(--lp-primary); }
-.option-item.selected { border-color: var(--lp-primary); background: var(--lp-primary-soft); }
-.opt-label { font-weight: 700; color: var(--lp-primary); min-width: 20px; }
-.multi-check { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 20px; width: 20px; height: 20px; color: var(--lp-surface); background: var(--lp-surface); border: 1px solid var(--lp-border-strong); border-radius: 4px; }
-.option-item.selected .multi-check { color: var(--lp-surface); background: var(--lp-primary); border-color: var(--lp-primary); }
-.tf-list { flex-direction: row; gap: 20px; }
-.tf-list .option-item { flex: 1; justify-content: center; font-size: 16px; font-weight: 600; }
-.nav-btns { display: flex; justify-content: center; gap: 12px; margin-top: 20px; }
-.answer-sheet { width: 200px; padding: 16px; background: var(--lp-surface); border: 1px solid var(--lp-border); border-radius: var(--lp-radius); box-shadow: var(--lp-shadow-sm); height: fit-content; position: sticky; top: 20px; }
-.answer-sheet h4 { margin: 0 0 12px; font-size: 14px; }
-.sheet-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-.sheet-item { display: flex; align-items: center; justify-content: center; min-width: 44px; height: 44px; padding: 0 4px; overflow: hidden; color: var(--lp-text); background: var(--lp-surface); border: 1px solid var(--lp-border-strong); border-radius: 4px; font: inherit; font-size: 11px; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
-.sheet-item:hover { background: var(--lp-surface-soft); }
-.sheet-item:focus-visible { outline: 3px solid var(--lp-primary-soft); outline-offset: 2px; }
-.sheet-item.answered { background: var(--lp-primary); color: var(--lp-surface); border-color: var(--lp-primary); }
-.sheet-item.current { border-color: var(--lp-warning); box-shadow: 0 0 0 2px var(--lp-warning); }
-.countdown { display: inline-flex; align-items: center; gap: 4px; margin-left: 16px; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--lp-primary); }
-.countdown-warn { color: var(--lp-danger); animation: blink 1s infinite; }
-@keyframes blink { 50% { opacity: 0.5; } }
+.exam-take-container {
+  padding: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.take-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius);
+  box-shadow: var(--lp-shadow-sm);
+}
+.take-header h3 {
+  margin: 0;
+  color: var(--lp-text);
+  font-size: 16px;
+}
+.progress-text {
+  font-weight: 600;
+  font-size: 16px;
+}
+.question-area {
+  display: flex;
+  gap: 20px;
+}
+.question-area > .el-card {
+  flex: 1;
+}
+.q-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.q-section {
+  margin-bottom: 8px;
+  color: var(--lp-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+.q-number {
+  color: var(--lp-text);
+  font-size: 15px;
+}
+.q-score {
+  font-size: 13px;
+  color: var(--lp-text-muted);
+}
+.q-content {
+  color: var(--lp-text);
+  font-size: 16px;
+  line-height: 1.8;
+  margin-bottom: 20px;
+  white-space: pre-wrap;
+}
+.option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.option-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  color: var(--lp-text);
+  text-align: left;
+  font: inherit;
+  background: var(--lp-surface);
+  border: 2px solid var(--lp-border);
+  border-radius: var(--lp-radius);
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+}
+.option-item:hover {
+  border-color: var(--lp-border-strong);
+  background: var(--lp-surface-soft);
+}
+.option-item:focus-visible {
+  outline: 3px solid var(--lp-primary-soft);
+  outline-offset: 2px;
+  border-color: var(--lp-primary);
+}
+.option-item.selected {
+  border-color: var(--lp-primary);
+  background: var(--lp-primary-soft);
+}
+.opt-label {
+  font-weight: 700;
+  color: var(--lp-primary);
+  min-width: 20px;
+}
+.multi-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  color: var(--lp-surface);
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border-strong);
+  border-radius: 4px;
+}
+.option-item.selected .multi-check {
+  color: var(--lp-surface);
+  background: var(--lp-primary);
+  border-color: var(--lp-primary);
+}
+.tf-list {
+  flex-direction: row;
+  gap: 20px;
+}
+.tf-list .option-item {
+  flex: 1;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+}
+.nav-btns {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+.answer-sheet {
+  width: 200px;
+  padding: 16px;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius);
+  box-shadow: var(--lp-shadow-sm);
+  height: fit-content;
+  position: sticky;
+  top: 20px;
+}
+.answer-sheet h4 {
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+.sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+.sheet-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 4px;
+  overflow: hidden;
+  color: var(--lp-text);
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border-strong);
+  border-radius: 4px;
+  font: inherit;
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.sheet-item:hover {
+  background: var(--lp-surface-soft);
+}
+.sheet-item:focus-visible {
+  outline: 3px solid var(--lp-primary-soft);
+  outline-offset: 2px;
+}
+.sheet-item.answered {
+  background: var(--lp-primary);
+  color: var(--lp-surface);
+  border-color: var(--lp-primary);
+}
+.sheet-item.current {
+  border-color: var(--lp-warning);
+  box-shadow: 0 0 0 2px var(--lp-warning);
+}
+.countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-primary);
+}
+.countdown-warn {
+  color: var(--lp-danger);
+  animation: blink 1s infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0.5;
+  }
+}
 
 @media (max-width: 720px) {
-  .exam-take-container { padding: 16px; }
-  .take-header { align-items: stretch; flex-direction: column; }
-  .header-center { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .countdown { margin-left: 0; }
-  .header-right .el-button { width: 100%; min-height: 44px; }
-  .question-area { flex-direction: column; }
-  .answer-sheet { position: static; width: auto; order: -1; }
-  .sheet-grid { grid-template-columns: repeat(5, minmax(44px, 1fr)); }
-  .sheet-item { min-width: 44px; height: 44px; }
-  .tf-list { gap: 10px; }
-  .nav-btns { justify-content: stretch; }
-  .nav-btns .el-button { flex: 1; min-height: 44px; margin-left: 0; }
+  .exam-take-container {
+    padding: 16px;
+  }
+  .take-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .header-center {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .countdown {
+    margin-left: 0;
+  }
+  .header-right .el-button {
+    width: 100%;
+    min-height: 44px;
+  }
+  .question-area {
+    flex-direction: column;
+  }
+  .answer-sheet {
+    position: static;
+    width: auto;
+    order: -1;
+  }
+  .sheet-grid {
+    grid-template-columns: repeat(5, minmax(44px, 1fr));
+  }
+  .sheet-item {
+    min-width: 44px;
+    height: 44px;
+  }
+  .tf-list {
+    gap: 10px;
+  }
+  .nav-btns {
+    justify-content: stretch;
+  }
+  .nav-btns .el-button {
+    flex: 1;
+    min-height: 44px;
+    margin-left: 0;
+  }
 }
 
 @media (max-width: 420px) {
-  .sheet-grid { grid-template-columns: repeat(4, minmax(44px, 1fr)); }
-  .q-meta { align-items: flex-start; flex-wrap: wrap; }
-  .tf-list { flex-direction: column; }
+  .sheet-grid {
+    grid-template-columns: repeat(4, minmax(44px, 1fr));
+  }
+  .q-meta {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .tf-list {
+    flex-direction: column;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .countdown-warn { animation: none; }
-  .option-item { transition: none; }
+  .countdown-warn {
+    animation: none;
+  }
+  .option-item {
+    transition: none;
+  }
 }
 </style>

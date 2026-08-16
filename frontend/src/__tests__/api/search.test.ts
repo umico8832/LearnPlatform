@@ -8,12 +8,7 @@ vi.mock('@/utils/request', () => ({
 }))
 
 import request from '@/utils/request'
-import {
-  globalSearch,
-  getSearchSuggestions,
-  clearSearchHistory,
-  removeSearchHistoryItem,
-} from '@/api/search'
+import { globalSearch, getSearchSuggestions, clearSearchHistory, removeSearchHistoryItem } from '@/api/search'
 
 const mockedRequest = vi.mocked(request)
 

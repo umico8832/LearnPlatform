@@ -9,7 +9,10 @@ export function sendRegisterCode(email: string, turnstileToken: string) {
   return request.post<unknown, ApiResponse<void>>('/auth/email/register-code', { email, turnstileToken })
 }
 export function verifyRegisterCode(email: string, code: string) {
-  return request.post<unknown, ApiResponse<{ verificationTicket: string; expiresIn: number }>>('/auth/email/verify-register-code', { email, code })
+  return request.post<unknown, ApiResponse<{ verificationTicket: string; expiresIn: number }>>(
+    '/auth/email/verify-register-code',
+    { email, code },
+  )
 }
 export function register(data: RegisterRequest) {
   return request.post<unknown, ApiResponse<UserInfo>>('/auth/register', data)

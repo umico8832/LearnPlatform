@@ -87,10 +87,22 @@
           <div
             v-if="currentQuestion.latestAnswer"
             class="answer-result"
-            :class="currentQuestion.latestAnswer.correct === true ? 'is-correct' : currentQuestion.latestAnswer.correct === false ? 'is-wrong' : 'is-review'"
+            :class="
+              currentQuestion.latestAnswer.correct === true
+                ? 'is-correct'
+                : currentQuestion.latestAnswer.correct === false
+                  ? 'is-wrong'
+                  : 'is-review'
+            "
           >
             <div class="result-title">
-              {{ currentQuestion.latestAnswer.correct === null ? '已保存，按参考答案自评' : currentQuestion.latestAnswer.correct ? '回答正确' : '回答错误' }}
+              {{
+                currentQuestion.latestAnswer.correct === null
+                  ? '已保存，按参考答案自评'
+                  : currentQuestion.latestAnswer.correct
+                    ? '回答正确'
+                    : '回答错误'
+              }}
               <span>第 {{ currentQuestion.latestAnswer.attemptNo }} 次尝试</span>
             </div>
             <p>你的答案：{{ currentQuestion.latestAnswer.userAnswer }}</p>

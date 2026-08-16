@@ -3,7 +3,12 @@ import { describe, expect, it } from 'vitest'
 import TutorFactorialCallStack from '@/components/TutorFactorialCallStack.vue'
 
 const visualization = { kind: 'FACTORIAL_CALL_STACK' as const, version: 1 as const, startValue: 4 }
-const stubs = { 'el-button': { emits: ['click'], template: '<button :disabled="$attrs.disabled" @click="$emit(\'click\')"><slot /></button>' } }
+const stubs = {
+  'el-button': {
+    emits: ['click'],
+    template: '<button :disabled="$attrs.disabled" @click="$emit(\'click\')"><slot /></button>',
+  },
+}
 
 describe('TutorFactorialCallStack', () => {
   it('grows to the base case before unwinding the reviewed factorial frames', async () => {

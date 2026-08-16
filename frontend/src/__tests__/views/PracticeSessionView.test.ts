@@ -52,7 +52,11 @@ const DialogStub = defineComponent({
 
 const stubs = {
   'el-dialog': DialogStub,
-  'el-button': { template: '<button :disabled="disabled || loading" @click="$emit(\'click\')"><slot /></button>', props: ['disabled', 'loading'], emits: ['click'] },
+  'el-button': {
+    template: '<button :disabled="disabled || loading" @click="$emit(\'click\')"><slot /></button>',
+    props: ['disabled', 'loading'],
+    emits: ['click'],
+  },
   'el-card': { template: '<div><slot /></div>' },
   'el-tag': { template: '<span><slot /></span>' },
   'el-progress': { template: '<div />' },
@@ -60,14 +64,42 @@ const stubs = {
   'el-divider': { template: '<hr />' },
   'el-icon': { template: '<i><slot /></i>' },
   'el-checkbox': { template: '<input type="checkbox" />' },
-  'el-input': { template: '<textarea :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />', props: ['modelValue'], emits: ['update:modelValue'] },
+  'el-input': {
+    template: '<textarea :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+  },
   'ai-question-assistant': { template: '<div />' },
   'question-learning-asset': { template: '<div />' },
 }
 
 const questions = [
-  { id: 1, content: '第一题', questionType: 'TRUE_FALSE', courseId: 1, courseName: 'Java', difficulty: 1, score: 5, tags: '', options: [], knowledgePointIds: [], knowledgePointNames: [] },
-  { id: 2, content: '第二题', questionType: 'TRUE_FALSE', courseId: 1, courseName: 'Java', difficulty: 1, score: 5, tags: '', options: [], knowledgePointIds: [], knowledgePointNames: [] },
+  {
+    id: 1,
+    content: '第一题',
+    questionType: 'TRUE_FALSE',
+    courseId: 1,
+    courseName: 'Java',
+    difficulty: 1,
+    score: 5,
+    tags: '',
+    options: [],
+    knowledgePointIds: [],
+    knowledgePointNames: [],
+  },
+  {
+    id: 2,
+    content: '第二题',
+    questionType: 'TRUE_FALSE',
+    courseId: 1,
+    courseName: 'Java',
+    difficulty: 1,
+    score: 5,
+    tags: '',
+    options: [],
+    knowledgePointIds: [],
+    knowledgePointNames: [],
+  },
 ]
 
 describe('PracticeSessionView', () => {
@@ -77,7 +109,15 @@ describe('PracticeSessionView', () => {
     sessionStorage.setItem('practice_questions', JSON.stringify(questions))
     mockSubmitAnswer.mockResolvedValue({
       code: 0,
-      data: { recordId: 1, questionId: 1, userAnswer: 'TRUE', correct: true, correctAnswer: 'TRUE', analysis: '解析', score: 5 },
+      data: {
+        recordId: 1,
+        questionId: 1,
+        userAnswer: 'TRUE',
+        correct: true,
+        correctAnswer: 'TRUE',
+        analysis: '解析',
+        score: 5,
+      },
     })
   })
 
@@ -85,14 +125,14 @@ describe('PracticeSessionView', () => {
     const wrapper = mount(PracticeSessionView, { global: { stubs } })
     await flushPromises()
 
-    const correctOption = wrapper.findAll('.option-item').find(option => option.text().includes('正确'))
+    const correctOption = wrapper.findAll('.option-item').find((option) => option.text().includes('正确'))
     expect(correctOption).toBeDefined()
     await correctOption!.trigger('click')
-    const submitButton = wrapper.findAll('button').find(button => button.text().includes('提交答案'))
+    const submitButton = wrapper.findAll('button').find((button) => button.text().includes('提交答案'))
     await submitButton!.trigger('click')
     await flushPromises()
 
-    const nextButton = wrapper.findAll('button').find(button => button.text().includes('下一题'))
+    const nextButton = wrapper.findAll('button').find((button) => button.text().includes('下一题'))
     await nextButton!.trigger('click')
 
     expect(wrapper.text()).toContain('第一题')

@@ -1,23 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 
-const {
-  mockGetExamSession,
-  mockGetPaperDetail,
-  mockSubmitExam,
-  mockReplace,
-  mockConfirm,
-  mockWarning,
-  mockError,
-} = vi.hoisted(() => ({
-  mockGetExamSession: vi.fn(),
-  mockGetPaperDetail: vi.fn(),
-  mockSubmitExam: vi.fn(),
-  mockReplace: vi.fn(),
-  mockConfirm: vi.fn(),
-  mockWarning: vi.fn(),
-  mockError: vi.fn(),
-}))
+const { mockGetExamSession, mockGetPaperDetail, mockSubmitExam, mockReplace, mockConfirm, mockWarning, mockError } =
+  vi.hoisted(() => ({
+    mockGetExamSession: vi.fn(),
+    mockGetPaperDetail: vi.fn(),
+    mockSubmitExam: vi.fn(),
+    mockReplace: vi.fn(),
+    mockConfirm: vi.fn(),
+    mockWarning: vi.fn(),
+    mockError: vi.fn(),
+  }))
 
 vi.mock('@/api/exam', () => ({
   getExamSession: (...args: unknown[]) => mockGetExamSession(...args),
@@ -167,9 +160,12 @@ describe('ExamTakeView', () => {
   it('does not add paper loading time back to the server-authoritative deadline', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-08-13T02:00:00Z'))
-    mockGetPaperDetail.mockImplementation(() => new Promise(resolve => {
-      setTimeout(() => resolve({ code: 0, data: { id: 7, questions } }), 5_000)
-    }))
+    mockGetPaperDetail.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          setTimeout(() => resolve({ code: 0, data: { id: 7, questions } }), 5_000)
+        }),
+    )
 
     const wrapper = mount(ExamTakeView, {
       global: { stubs, directives: { loading: () => undefined } },
@@ -186,18 +182,25 @@ describe('ExamTakeView', () => {
   it('does not add a delayed session response back to the server-authoritative deadline', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-08-13T02:00:00Z'))
-    mockGetExamSession.mockImplementation(() => new Promise(resolve => {
-      setTimeout(() => resolve({
-        code: 0,
-        data: {
-          id: 101,
-          examPaperId: 7,
-          status: 0,
-          deadline: '2026-08-13T10:17:00',
-          serverTime: '2026-08-13T10:00:00',
-        },
-      }), 5_000)
-    }))
+    mockGetExamSession.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          setTimeout(
+            () =>
+              resolve({
+                code: 0,
+                data: {
+                  id: 101,
+                  examPaperId: 7,
+                  status: 0,
+                  deadline: '2026-08-13T10:17:00',
+                  serverTime: '2026-08-13T10:00:00',
+                },
+              }),
+            5_000,
+          )
+        }),
+    )
 
     const wrapper = mount(ExamTakeView, {
       global: { stubs, directives: { loading: () => undefined } },
@@ -216,15 +219,36 @@ describe('ExamTakeView', () => {
     })
     await flushPromises()
 
-    await wrapper.findAll('.option-item').find(item => item.text().includes('extends'))!.trigger('click')
-    await wrapper.findAll('button').find(button => button.text().includes('下一题'))!.trigger('click')
+    await wrapper
+      .findAll('.option-item')
+      .find((item) => item.text().includes('extends'))!
+      .trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('下一题'))!
+      .trigger('click')
 
-    await wrapper.findAll('.option-item').find(item => item.text().includes('int'))!.trigger('click')
-    await wrapper.findAll('.option-item').find(item => item.text().includes('boolean'))!.trigger('click')
-    await wrapper.findAll('button').find(button => button.text().includes('下一题'))!.trigger('click')
+    await wrapper
+      .findAll('.option-item')
+      .find((item) => item.text().includes('int'))!
+      .trigger('click')
+    await wrapper
+      .findAll('.option-item')
+      .find((item) => item.text().includes('boolean'))!
+      .trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('下一题'))!
+      .trigger('click')
 
-    await wrapper.findAll('.option-item').find(item => item.text().includes('正确'))!.trigger('click')
-    await wrapper.findAll('button').find(button => button.text().includes('提交试卷'))!.trigger('click')
+    await wrapper
+      .findAll('.option-item')
+      .find((item) => item.text().includes('正确'))!
+      .trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('提交试卷'))!
+      .trigger('click')
     await flushPromises()
 
     expect(mockConfirm).toHaveBeenCalledWith('确定提交试卷？提交后不可修改', '提交确认', { type: 'warning' })

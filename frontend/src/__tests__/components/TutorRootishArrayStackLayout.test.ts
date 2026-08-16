@@ -2,8 +2,17 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import TutorRootishArrayStackLayout from '@/components/TutorRootishArrayStackLayout.vue'
 
-const visualization = { kind: 'ROOTISH_ARRAY_STACK_LAYOUT' as const, version: 1 as const, blocks: [['A'], ['B', 'C'], ['D', 'E', 'F']] }
-const stubs = { 'el-button': { emits: ['click'], template: '<button :disabled="$attrs.disabled" @click="$emit(\'click\')"><slot /></button>' } }
+const visualization = {
+  kind: 'ROOTISH_ARRAY_STACK_LAYOUT' as const,
+  version: 1 as const,
+  blocks: [['A'], ['B', 'C'], ['D', 'E', 'F']],
+}
+const stubs = {
+  'el-button': {
+    emits: ['click'],
+    template: '<button :disabled="$attrs.disabled" @click="$emit(\'click\')"><slot /></button>',
+  },
+}
 
 describe('TutorRootishArrayStackLayout', () => {
   it('replays increasing blocks and retains the reviewed layout', async () => {

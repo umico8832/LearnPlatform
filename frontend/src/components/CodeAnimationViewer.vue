@@ -15,12 +15,10 @@
           下一步 <el-icon><DArrowRight /></el-icon>
         </el-button>
       </el-button-group>
-      <span class="ca-step-info">
-        步骤 {{ currentStep + 1 }} / {{ element.steps.length }}
-      </span>
+      <span class="ca-step-info"> 步骤 {{ currentStep + 1 }} / {{ element.steps.length }} </span>
       <div class="ca-speed">
         <span class="ca-speed-label">速度：</span>
-        <el-select v-model="speedMs" size="small" style="width: 90px;">
+        <el-select v-model="speedMs" size="small" style="width: 90px">
           <el-option :value="500" label="快" />
           <el-option :value="1000" label="正常" />
           <el-option :value="2000" label="慢" />
@@ -30,10 +28,7 @@
 
     <!-- 进度条 -->
     <div class="ca-progress-bar">
-      <div
-        class="ca-progress-fill"
-        :style="{ width: ((currentStep + 1) / element.steps.length * 100) + '%' }"
-      />
+      <div class="ca-progress-fill" :style="{ width: ((currentStep + 1) / element.steps.length) * 100 + '%' }" />
     </div>
 
     <!-- 主体：代码 + 变量面板 -->
@@ -53,9 +48,7 @@
       <!-- 变量面板 -->
       <div class="ca-var-panel">
         <div class="ca-var-title">📋 变量状态</div>
-        <div v-if="currentStepData.variables.length === 0" class="ca-var-empty">
-          暂无变量
-        </div>
+        <div v-if="currentStepData.variables.length === 0" class="ca-var-empty">暂无变量</div>
         <div v-else class="ca-var-list">
           <div
             v-for="(v, vi) in currentStepData.variables"
@@ -254,10 +247,13 @@ function scheduleNext() {
   }, speedMs.value)
 }
 
-watch(() => props.element, () => {
-  currentStep.value = 0
-  playing.value = false
-})
+watch(
+  () => props.element,
+  () => {
+    currentStep.value = 0
+    playing.value = false
+  },
+)
 
 onBeforeUnmount(() => {
   if (timer) clearTimeout(timer)
