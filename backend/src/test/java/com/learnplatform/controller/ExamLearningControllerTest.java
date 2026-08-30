@@ -6,7 +6,6 @@ import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.ExamLearningAnswerRequest;
 import com.learnplatform.dto.ExamLearningAnswerResultVO;
 import com.learnplatform.dto.ExamLearningSessionVO;
-import com.learnplatform.dto.ExamRecordVO;
 import com.learnplatform.dto.ExamPaperVO;
 import com.learnplatform.dto.PrivateExamImportConfirmRequest;
 import com.learnplatform.dto.PrivateExamImportPreviewVO;

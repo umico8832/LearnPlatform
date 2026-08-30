@@ -1,7 +1,10 @@
 package com.learnplatform.service;
 
-import com.learnplatform.entity.*;
-import com.learnplatform.mapper.*;
+import com.learnplatform.mapper.CourseMapper;
+import com.learnplatform.mapper.KnowledgePointMapper;
+import com.learnplatform.mapper.QuestionKnowledgePointMapper;
+import com.learnplatform.mapper.QuestionMapper;
+import com.learnplatform.mapper.QuestionOptionMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,7 +16,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**

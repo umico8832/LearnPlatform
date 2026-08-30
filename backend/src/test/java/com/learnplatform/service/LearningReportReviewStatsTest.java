@@ -2,8 +2,15 @@ package com.learnplatform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.LearningReportVO;
-import com.learnplatform.entity.*;
-import com.learnplatform.mapper.*;
+import com.learnplatform.entity.QuestionReviewSchedule;
+import com.learnplatform.mapper.CourseMapper;
+import com.learnplatform.mapper.ExamPaperMapper;
+import com.learnplatform.mapper.ExamRecordMapper;
+import com.learnplatform.mapper.PracticeRecordMapper;
+import com.learnplatform.mapper.QuestionMapper;
+import com.learnplatform.mapper.QuestionReviewScheduleMapper;
+import com.learnplatform.mapper.UserMapper;
+import com.learnplatform.mapper.WrongQuestionMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

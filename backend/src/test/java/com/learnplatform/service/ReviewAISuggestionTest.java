@@ -1,6 +1,9 @@
 package com.learnplatform.service;
 
-import com.learnplatform.dto.*;
+import com.learnplatform.dto.AiResponse;
+import com.learnplatform.dto.ReviewContextVO;
+import com.learnplatform.dto.ReviewScheduleVO;
+import com.learnplatform.dto.ReviewStatsVO;
 import com.learnplatform.service.ai.AiProvider;
 import com.learnplatform.service.ai.AiCostCalculator;
 import org.junit.jupiter.api.BeforeEach;
