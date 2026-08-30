@@ -117,70 +117,7 @@
       </article>
     </section>
 
-    <section v-else-if="activeDraft" class="draft-review">
-      <div class="preview-summary">
-        <strong>{{ activeDraft.title }}</strong>
-        <span>{{ activeDraft.reviewedQuestionCount }}/{{ activeDraft.questionCount }} 题已人工复核</span>
-      </div>
-      <div v-if="activeDraft.originalFileAvailable" class="draft-review-tools">
-        <el-button plain :loading="sourceDownloading" @click="downloadDraftSource">下载草稿原文件</el-button>
-      </div>
-      <el-alert
-        title="AI 只提供建议，不会直接成为判分答案；每题必须由你选择答案并确认解析。"
-        type="warning"
-        :closable="false"
-      />
-      <article v-for="question in activeDraft.questions" :key="question.id" class="draft-question">
-        <div class="draft-question-title">
-          <strong>{{ question.sortOrder }}. {{ question.content }}</strong>
-          <el-tag :type="question.reviewStatus === 'REVIEWED' ? 'success' : 'warning'">
-            {{ question.reviewStatus === 'REVIEWED' ? '已复核' : '待复核' }}
-          </el-tag>
-        </div>
-        <ul>
-          <li v-for="option in question.options" :key="option.label">{{ option.label }}. {{ option.content }}</li>
-        </ul>
-        <el-button
-          v-if="question.generationStatus === 'PENDING'"
-          type="primary"
-          plain
-          :loading="generatingQuestionId === question.id"
-          @click="generateDraftAnswer(question.id)"
-        >
-          生成 AI 答案与解析
-        </el-button>
-        <template v-else>
-          <p v-if="question.generationStatus === 'GENERATED'" class="ai-suggestion">
-            AI 建议：{{ question.aiAnswerLabels.join('、') }} · {{ question.aiAnalysis }}
-          </p>
-          <p v-else class="ai-suggestion">原资料答案：{{ question.originalAnswerLabels.join('、') || '未提供' }}</p>
-          <el-form-item label="人工确认答案">
-            <el-checkbox-group v-model="draftAnswers[question.id]" :disabled="question.reviewStatus === 'REVIEWED'">
-              <el-checkbox v-for="option in question.options" :key="option.label" :value="option.label">
-                {{ option.label }}
-              </el-checkbox>
-            </el-checkbox-group>
-          </el-form-item>
-          <el-form-item label="人工确认解析">
-            <el-input
-              v-model="draftAnalyses[question.id]"
-              type="textarea"
-              :rows="3"
-              maxlength="10000"
-              :disabled="question.reviewStatus === 'REVIEWED'"
-            />
-          </el-form-item>
-          <el-button
-            v-if="question.reviewStatus !== 'REVIEWED'"
-            type="success"
-            :loading="reviewingQuestionId === question.id"
-            @click="reviewDraftQuestion(question.id)"
-          >
-            确认本题
-          </el-button>
-        </template>
-      </article>
-    </section>
+    <PrivateExamDraftReview v-else-if="activeDraft" :draft="activeDraft" @updated="replaceDraft" />
 
     <template #footer>
       <el-button v-if="importPreview" @click="importPreview = null">返回修改</el-button>
@@ -225,14 +162,11 @@ import {
   createPrivateExamPdfDraft,
   createPrivateExamDocxDraft,
   deletePrivateExamDraft,
-  downloadPrivateExamDraftSourceFile,
-  generatePrivateExamDraftAnswer,
   getPrivateExamDrafts,
   getPrivateExamStorageUsage,
   previewPrivateExamImport,
   previewPrivateExamPdf,
   previewPrivateExamDocx,
-  reviewPrivateExamDraftQuestion,
 } from '@/api/exam'
 import type {
   PrivateExamDraft,
@@ -243,6 +177,7 @@ import type {
 import { getAllCourses } from '@/api/course'
 import type { CourseVO } from '@/api/course'
 import { formatStorage } from '@/utils/format'
+import PrivateExamDraftReview from '@/components/exam/PrivateExamDraftReview.vue'
 
 const props = defineProps<{
   modelValue: boolean
@@ -266,13 +201,8 @@ const confirmLoading = ref(false)
 const importPreview = ref<PrivateExamImportPreview | null>(null)
 const privateDrafts = ref<PrivateExamDraft[]>([])
 const activeDraft = ref<PrivateExamDraft | null>(null)
-const generatingQuestionId = ref<number | null>(null)
-const reviewingQuestionId = ref<number | null>(null)
 const deletingDraftId = ref<number | null>(null)
-const draftAnswers = ref<Record<number, string[]>>({})
-const draftAnalyses = ref<Record<number, string>>({})
 const storageUsage = ref<PrivateExamStorageUsage | null>(null)
-const sourceDownloading = ref(false)
 const sourceFile = ref<File | null>(null)
 
 const initialCourseId = computed(() => {
@@ -434,23 +364,9 @@ const confirmImport = async () => {
   }
 }
 
-const syncDraftForm = (draft: PrivateExamDraft) => {
-  draft.questions.forEach((question) => {
-    draftAnswers.value[question.id] = [
-      ...(question.finalAnswerLabels.length
-        ? question.finalAnswerLabels
-        : question.aiAnswerLabels.length
-          ? question.aiAnswerLabels
-          : question.originalAnswerLabels),
-    ]
-    draftAnalyses.value[question.id] = question.finalAnalysis || question.aiAnalysis || question.originalAnalysis || ''
-  })
-}
-
 const openDraft = (draft: PrivateExamDraft) => {
   activeDraft.value = draft
   importPreview.value = null
-  syncDraftForm(draft)
 }
 
 const replaceDraft = (draft: PrivateExamDraft) => {
@@ -458,7 +374,6 @@ const replaceDraft = (draft: PrivateExamDraft) => {
   const index = privateDrafts.value.findIndex((item) => item.id === draft.id)
   if (index >= 0) privateDrafts.value[index] = draft
   else privateDrafts.value.unshift(draft)
-  syncDraftForm(draft)
 }
 
 const deleteDraft = async (draft: PrivateExamDraft) => {
@@ -512,56 +427,6 @@ const createAnswerDraft = async () => {
   }
 }
 
-const generateDraftAnswer = async (questionId: number) => {
-  if (!activeDraft.value) return
-  generatingQuestionId.value = questionId
-  try {
-    const res = await generatePrivateExamDraftAnswer(activeDraft.value.id, questionId)
-    if (res.code === 0 && res.data) {
-      replaceDraft(res.data)
-      ElMessage.success('AI 建议已生成，请人工核对')
-    } else ElMessage.error(res.message || 'AI 生成失败')
-  } catch {
-    ElMessage.error('AI 生成失败，请稍后重试')
-  } finally {
-    generatingQuestionId.value = null
-  }
-}
-
-const reviewDraftQuestion = async (questionId: number) => {
-  if (!activeDraft.value) return
-  const question = activeDraft.value.questions.find((item) => item.id === questionId)
-  const answers = draftAnswers.value[questionId] || []
-  const analysis = draftAnalyses.value[questionId]?.trim() || ''
-  if (!question || !answers.length || !analysis) {
-    ElMessage.warning('请选择答案并填写人工确认解析')
-    return
-  }
-  if (question.questionType !== 'MULTIPLE_CHOICE' && answers.length !== 1) {
-    ElMessage.warning('单选或判断题只能确认一个答案')
-    return
-  }
-  if (question.questionType === 'MULTIPLE_CHOICE' && answers.length < 2) {
-    ElMessage.warning('多选题至少确认两个答案')
-    return
-  }
-  reviewingQuestionId.value = questionId
-  try {
-    const res = await reviewPrivateExamDraftQuestion(activeDraft.value.id, questionId, {
-      answerLabels: answers,
-      analysis,
-    })
-    if (res.code === 0 && res.data) {
-      replaceDraft(res.data)
-      ElMessage.success('本题已人工复核')
-    } else ElMessage.error(res.message || '复核失败')
-  } catch {
-    ElMessage.error('复核失败')
-  } finally {
-    reviewingQuestionId.value = null
-  }
-}
-
 const confirmDraft = async () => {
   if (!activeDraft.value) return
   confirmLoading.value = true
@@ -579,37 +444,9 @@ const confirmDraft = async () => {
   }
 }
 
-const saveSourceFile = (data: BlobPart, mediaType: string, filename: string) => {
-  const url = window.URL.createObjectURL(new Blob([data], { type: mediaType }))
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  link.click()
-  window.URL.revokeObjectURL(url)
-}
-
-const downloadDraftSource = async () => {
-  if (!activeDraft.value?.sourceName) return
-  sourceDownloading.value = true
-  try {
-    const response = await downloadPrivateExamDraftSourceFile(activeDraft.value.id)
-    saveSourceFile(
-      response.data,
-      String(response.headers['content-type'] || 'application/octet-stream'),
-      activeDraft.value.sourceName,
-    )
-  } catch {
-    ElMessage.error('原文件下载失败')
-  } finally {
-    sourceDownloading.value = false
-  }
-}
-
 const resetImport = () => {
   importPreview.value = null
   activeDraft.value = null
-  draftAnswers.value = {}
-  draftAnalyses.value = {}
   sourceFile.value = null
   importForm.value = emptyImportForm()
 }
@@ -713,8 +550,7 @@ defineExpose({ reload })
   font-size: var(--lp-text-sm);
 }
 
-.preview-question,
-.draft-question {
+.preview-question {
   padding: var(--lp-space-4);
   margin-bottom: var(--lp-space-3);
   background: var(--lp-surface);
@@ -722,16 +558,14 @@ defineExpose({ reload })
   border-radius: var(--lp-radius-md);
 }
 
-.preview-question-title,
-.draft-question-title {
+.preview-question-title {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--lp-space-3);
 }
 
-.preview-question ul,
-.draft-question ul {
+.preview-question ul {
   margin: var(--lp-space-3) 0;
   padding-left: var(--lp-space-6);
   color: var(--lp-text-secondary);
@@ -746,24 +580,6 @@ defineExpose({ reload })
   margin: 0;
   color: var(--lp-text-secondary);
   font-size: var(--lp-text-sm);
-}
-
-.draft-review {
-  margin-top: var(--lp-space-4);
-}
-
-.draft-review-tools {
-  display: flex;
-  justify-content: flex-end;
-  margin: 0 0 var(--lp-space-3);
-}
-
-.ai-suggestion {
-  padding: var(--lp-space-3) var(--lp-space-4);
-  color: var(--lp-text-secondary);
-  background: var(--lp-surface-inset);
-  border-radius: var(--lp-radius-sm);
-  white-space: pre-wrap;
 }
 
 @media (max-width: 640px) {

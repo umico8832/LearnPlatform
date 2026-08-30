@@ -101,6 +101,7 @@ vi.mock('vue-router', async (importOriginal) => ({
 }))
 
 import ExamListView from '@/views/exam/ExamListView.vue'
+import PrivateExamDraftReview from '@/components/exam/PrivateExamDraftReview.vue'
 import PrivateExamImportDialog from '@/components/exam/PrivateExamImportDialog.vue'
 import PrivateExamSourceManager from '@/components/exam/PrivateExamSourceManager.vue'
 
@@ -387,8 +388,6 @@ describe('ExamListView paper provenance', () => {
       importForm: Record<string, unknown>
       previewImport: () => Promise<void>
       createAnswerDraft: () => Promise<void>
-      generateDraftAnswer: (questionId: number) => Promise<void>
-      reviewDraftQuestion: (questionId: number) => Promise<void>
       confirmDraft: () => Promise<void>
     }
     vm.importForm = {
@@ -403,8 +402,12 @@ describe('ExamListView paper provenance', () => {
     await vm.previewImport()
     await vm.createAnswerDraft()
     expect(mockConfirmPrivateExamDraft).not.toHaveBeenCalled()
-    await vm.generateDraftAnswer(41)
-    await vm.reviewDraftQuestion(41)
+    const reviewVm = wrapper.findComponent(PrivateExamDraftReview).vm as unknown as {
+      generateDraftAnswer: (questionId: number) => Promise<void>
+      reviewDraftQuestion: (questionId: number) => Promise<void>
+    }
+    await reviewVm.generateDraftAnswer(41)
+    await reviewVm.reviewDraftQuestion(41)
     expect(mockReviewPrivateExamDraftQuestion).toHaveBeenCalledWith(31, 41, {
       answerLabels: ['A'],
       analysis: '栈遵循后进先出。',
@@ -551,6 +554,15 @@ describe('ExamListView paper provenance', () => {
     }
     const dialogVm = wrapper.findComponent(PrivateExamImportDialog).vm as unknown as {
       activeDraft: Record<string, unknown> | null
+    }
+    dialogVm.activeDraft = {
+      id: 31,
+      sourceName: 'paper.docx',
+      originalFileAvailable: true,
+      questions: [],
+    }
+    await flushPromises()
+    const draftReviewVm = wrapper.findComponent(PrivateExamDraftReview).vm as unknown as {
       downloadDraftSource: () => Promise<void>
     }
     sourceManagerVm.privateSource = {
@@ -559,14 +571,8 @@ describe('ExamListView paper provenance', () => {
       sourceFormat: 'PDF',
       originalFileAvailable: true,
     }
-    dialogVm.activeDraft = {
-      id: 31,
-      sourceName: 'paper.docx',
-      originalFileAvailable: true,
-    }
-
     await sourceManagerVm.downloadPaperSource()
-    await dialogVm.downloadDraftSource()
+    await draftReviewVm.downloadDraftSource()
 
     expect(mockDownloadPrivateExamSourceFile).toHaveBeenCalledWith(51)
     expect(mockDownloadPrivateExamDraftSourceFile).toHaveBeenCalledWith(31)
