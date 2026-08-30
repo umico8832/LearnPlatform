@@ -211,6 +211,15 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+练习 Service 拆分（Round 256，2026-08-30）：
+
+- `PracticeService` 已从 478 行、13 个直接依赖收敛为 58 行、3 个依赖的兼容门面；
+  题目查询与脱敏、历史统计、事务判分写入分别由独立服务承担，外部方法保持不变。
+- 后端 `mvn clean verify` 通过：564 个默认测试、Checkstyle 0 违规、SpotBugs 0 问题、
+  JaCoCo 门槛通过；练习 Service、Controller 与 ArchUnit 聚焦测试 21 个通过。
+- `PracticeServiceIntegrationTest` 因本机 Docker 未运行、Testcontainers 找不到容器环境
+  而未能启动，尚无本轮真实 MySQL 验证结果。
+
 学习诊断 Service 拆分（Round 255，2026-08-30）：
 
 - `LearningDiagnosisService` 已从 871 行、12 个直接依赖收敛为 100 行编排门面；基础数据

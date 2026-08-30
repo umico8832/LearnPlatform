@@ -82,6 +82,9 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
 - `LearningDiagnosisAiAdviceService` 负责提示词调用、流式输出和 AI 调用审计。
 - `LearningQuestionErrorAnalysisService` 负责单题错因分析。
 - `SimilarQuestionRecommendationService` 负责相似题候选与评分。
+- `PracticeService` 是练习接口兼容门面；题目查询与脱敏、历史统计查询和事务判分写入
+  分别由 `PracticeQuestionQueryService`、`PracticeHistoryService` 与
+  `PracticeAnswerService` 承担。
 - `QuestionLearningAssetService` 负责编排 AI 学习资产缓存和输出。
 - `AiVariantQuestionService` 负责结构化变式题私有答案与判分。
 - `AiLearningEffectService` 只输出观察性学习效果。

@@ -47,16 +47,23 @@ class PracticeServiceTest {
     @Mock private UserFavoriteQuestionMapper userFavoriteQuestionMapper;
     @Mock private CacheEvictService cacheEvictService;
     @Mock private SpacedRepetitionService spacedRepetitionService;
+    @Mock private CourseLearningEventService courseLearningEventService;
     private RecordingWrongQuestionService wrongQuestionService;
     private PracticeService practiceService;
 
     @BeforeEach
     void setUp() {
         wrongQuestionService = new RecordingWrongQuestionService();
-        practiceService = new PracticeService(questionMapper, questionOptionMapper,
-                questionKnowledgePointMapper, practiceRecordMapper, courseMapper,
-                knowledgePointMapper, wrongQuestionMapper, userFavoriteQuestionMapper, wrongQuestionService,
-                new AnswerEvaluator(), cacheEvictService, spacedRepetitionService);
+        PracticeQuestionQueryService questionQueryService = new PracticeQuestionQueryService(
+                questionMapper, questionOptionMapper, questionKnowledgePointMapper, courseMapper,
+                knowledgePointMapper, wrongQuestionMapper, userFavoriteQuestionMapper);
+        PracticeHistoryService historyService = new PracticeHistoryService(
+                practiceRecordMapper, questionMapper, courseMapper);
+        PracticeAnswerService answerService = new PracticeAnswerService(
+                questionMapper, questionOptionMapper, practiceRecordMapper, wrongQuestionService,
+                new AnswerEvaluator(), cacheEvictService, spacedRepetitionService,
+                courseLearningEventService);
+        practiceService = new PracticeService(questionQueryService, historyService, answerService);
     }
 
     @Test
