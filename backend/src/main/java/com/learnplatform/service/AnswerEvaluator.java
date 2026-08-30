@@ -3,7 +3,9 @@ package com.learnplatform.service;
 import com.learnplatform.entity.QuestionOption;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**

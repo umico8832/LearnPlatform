@@ -4,7 +4,17 @@ import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.R;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.security.LoginRateLimitService;
-import com.learnplatform.dto.*;
+import com.learnplatform.dto.ForgotPasswordRequest;
+import com.learnplatform.dto.LoginRequest;
+import com.learnplatform.dto.LoginResponse;
+import com.learnplatform.dto.RegisterRequest;
+import com.learnplatform.dto.ResetPasswordRequest;
+import com.learnplatform.dto.SendEmailCodeRequest;
+import com.learnplatform.dto.UpdatePasswordRequest;
+import com.learnplatform.dto.UpdateProfileRequest;
+import com.learnplatform.dto.UserVO;
+import com.learnplatform.dto.VerificationTicketResponse;
+import com.learnplatform.dto.VerifyEmailCodeRequest;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AuthService;
 import com.learnplatform.service.ClientIpResolver;
@@ -18,7 +28,13 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 认证控制器

@@ -25,6 +25,8 @@
 - DTO / VO 负责请求和响应数据结构；
 - Entity 映射数据库表；
 - Config / Security 负责配置、安全、过滤器等基础设施。
+- 生产 Java 源码必须显式导入实际使用的类型，不使用包级或静态星号导入；Checkstyle
+  `AvoidStarImport`、`RedundantImport` 和 `UnusedImports` 共同阻止规则回退。
 
 涉及判分、考试、权限、限流、AI 调用、缓存、文件上传、数据库一致性、事务或安全的改动时，需要更谨慎地确认业务约束，不能为了测试通过而弱化规则。
 

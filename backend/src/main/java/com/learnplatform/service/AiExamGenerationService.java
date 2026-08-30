@@ -5,13 +5,33 @@ import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.ExamPaperCreateRequest;
 import com.learnplatform.dto.ExamPaperVO;
-import com.learnplatform.entity.*;
-import com.learnplatform.mapper.*;
+import com.learnplatform.entity.Course;
+import com.learnplatform.entity.KnowledgePoint;
+import com.learnplatform.entity.PracticeRecord;
+import com.learnplatform.entity.Question;
+import com.learnplatform.entity.QuestionKnowledgePoint;
+import com.learnplatform.entity.WrongQuestion;
+import com.learnplatform.mapper.KnowledgePointMapper;
+import com.learnplatform.mapper.PracticeRecordMapper;
+import com.learnplatform.mapper.QuestionKnowledgePointMapper;
+import com.learnplatform.mapper.QuestionMapper;
+import com.learnplatform.mapper.QuestionOptionMapper;
+import com.learnplatform.mapper.WrongQuestionMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**

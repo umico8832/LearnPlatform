@@ -5,14 +5,24 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.WrongQuestionVO;
-import com.learnplatform.entity.*;
-import com.learnplatform.mapper.*;
+import com.learnplatform.entity.Course;
+import com.learnplatform.entity.Question;
+import com.learnplatform.entity.WrongQuestion;
+import com.learnplatform.mapper.CourseMapper;
+import com.learnplatform.mapper.KnowledgePointMapper;
+import com.learnplatform.mapper.QuestionMapper;
+import com.learnplatform.mapper.WrongQuestionMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**

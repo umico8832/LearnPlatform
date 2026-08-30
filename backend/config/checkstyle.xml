@@ -30,7 +30,8 @@
         <module name="SimplifyBooleanReturn"/>
         <module name="DefaultComesLast"/>
 
-        <!-- import 卫生；星号导入展开作为后续独立清理，避免一次性大规模机械改动。 -->
+        <!-- import 卫生；生产源码必须显式声明依赖，禁止星号导入。 -->
+        <module name="AvoidStarImport"/>
         <module name="RedundantImport"/>
         <module name="UnusedImports"/>
 
