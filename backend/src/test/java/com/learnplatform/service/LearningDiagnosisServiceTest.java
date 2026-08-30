@@ -67,7 +67,9 @@ class LearningDiagnosisServiceTest {
                         wrongQuestionMapper, courseMapper, knowledgePointMapper, questionKnowledgePointMapper),
                 new SimilarQuestionRecommendationService(questionMapper, practiceRecordMapper,
                         courseMapper, knowledgePointMapper, questionKnowledgePointMapper),
-                new LearningDiagnosisPromptBuilder()
+                new LearningDiagnosisPromptBuilder(),
+                new LearningDiagnosisRecommendationService(questionKnowledgePointMapper, questionMapper,
+                        courseMapper, knowledgePointMapper)
         );
     }
 
@@ -384,6 +386,8 @@ class LearningDiagnosisServiceTest {
         assertNotNull(vo.getWeakPoints());
         assertEquals(1, vo.getWeakPoints().size());
         assertEquals("NOT_STARTED", vo.getWeakPoints().get(0).getMasteryStatus());
+        assertFalse(vo.getDailyAdvice().contains("-1.0%"));
+        assertTrue(vo.getDailyAdvice().contains("尚未开始"));
     }
 
     // ======================== getDiagnosis — 每日推荐 ========================
@@ -457,6 +461,39 @@ class LearningDiagnosisServiceTest {
         LearningDiagnosisVO vo = service.getDiagnosis(USER_ID);
 
         // No recommendations from mastered wrongs
+        assertTrue(vo.getDailyRecommendations().isEmpty());
+    }
+
+    @Test
+    void getDiagnosisRecommendationsDoNotExposeAnotherUsersPrivateQuestion() {
+        KnowledgePoint kp = stubKnowledgePoint(1L, "KP-1", 10L);
+        when(knowledgePointMapper.selectList(any())).thenReturn(List.of(kp));
+
+        QuestionKnowledgePoint answeredLink = new QuestionKnowledgePoint();
+        answeredLink.setQuestionId(1L);
+        answeredLink.setKnowledgePointId(1L);
+        QuestionKnowledgePoint privateLink = new QuestionKnowledgePoint();
+        privateLink.setQuestionId(200L);
+        privateLink.setKnowledgePointId(1L);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(answeredLink, privateLink));
+
+        PracticeRecord wrongAttempt = stubRecord(USER_ID, 1L, 0, LocalDateTime.now());
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(wrongAttempt));
+        when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
+
+        Question answeredQuestion = stubQuestion(1L, "SINGLE_CHOICE", 10L);
+        answeredQuestion.setStatus(1);
+        answeredQuestion.setVisibility("PUBLIC");
+        when(questionMapper.selectById(1L)).thenReturn(answeredQuestion);
+        Question otherUsersPrivateQuestion = stubQuestion(200L, "SINGLE_CHOICE", 10L);
+        otherUsersPrivateQuestion.setStatus(1);
+        otherUsersPrivateQuestion.setVisibility("PRIVATE");
+        otherUsersPrivateQuestion.setOwnerUserId(2L);
+        otherUsersPrivateQuestion.setContent("private content");
+        when(questionMapper.selectById(200L)).thenReturn(otherUsersPrivateQuestion);
+
+        LearningDiagnosisVO vo = service.getDiagnosis(USER_ID);
+
         assertTrue(vo.getDailyRecommendations().isEmpty());
     }
 

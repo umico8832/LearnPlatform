@@ -32,8 +32,6 @@ public class LearningDiagnosisService {
     private static final double WEAK_THRESHOLD = 50.0;
     /** 需要复习阈值 */
     private static final double REVIEW_THRESHOLD = 70.0;
-    /** 推荐题目数量 */
-    private static final int RECOMMEND_COUNT = 5;
     /** 薄弱知识点 Top N */
     private static final int WEAK_TOP_N = 8;
 
@@ -48,6 +46,7 @@ public class LearningDiagnosisService {
     private final LearningQuestionErrorAnalysisService questionErrorAnalysisService;
     private final SimilarQuestionRecommendationService similarQuestionRecommendationService;
     private final LearningDiagnosisPromptBuilder promptBuilder;
+    private final LearningDiagnosisRecommendationService recommendationService;
 
     public LearningDiagnosisService(KnowledgePointMapper knowledgePointMapper,
                                      QuestionKnowledgePointMapper questionKnowledgePointMapper,
@@ -59,7 +58,8 @@ public class LearningDiagnosisService {
                                      AiService aiService,
                                      LearningQuestionErrorAnalysisService questionErrorAnalysisService,
                                      SimilarQuestionRecommendationService similarQuestionRecommendationService,
-                                     LearningDiagnosisPromptBuilder promptBuilder) {
+                                     LearningDiagnosisPromptBuilder promptBuilder,
+                                     LearningDiagnosisRecommendationService recommendationService) {
         this.knowledgePointMapper = knowledgePointMapper;
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
         this.questionMapper = questionMapper;
@@ -71,6 +71,7 @@ public class LearningDiagnosisService {
         this.questionErrorAnalysisService = questionErrorAnalysisService;
         this.similarQuestionRecommendationService = similarQuestionRecommendationService;
         this.promptBuilder = promptBuilder;
+        this.recommendationService = recommendationService;
     }
 
     /**
@@ -121,7 +122,7 @@ public class LearningDiagnosisService {
         vo.setLearningHabit(computeLearningHabit(allRecords));
 
         // 8. 每日推荐题目
-        vo.setDailyRecommendations(computeDailyRecommendations(userId, allRecords, allWrongs, allPoints,
+        vo.setDailyRecommendations(recommendationService.recommend(userId, allRecords, allWrongs, allPoints,
                 questionToKps));
 
         // 9. 每日学习建议
@@ -660,158 +661,6 @@ public class LearningDiagnosisService {
         return trend;
     }
 
-    // ======================== 每日推荐 ========================
-
-    private List<LearningDiagnosisVO.RecommendedQuestion> computeDailyRecommendations(
-            Long userId,
-            List<PracticeRecord> allRecords,
-            List<WrongQuestion> allWrongs,
-            List<KnowledgePoint> allPoints,
-            Map<Long, Set<Long>> questionToKps) {
-
-        List<LearningDiagnosisVO.RecommendedQuestion> recommendations = new ArrayList<>();
-
-        // 1. 从错题中找高频错题（间隔复习：wrongCount >= 2 且 masteryLevel != 2）
-        List<WrongQuestion> repeatedWrongs = allWrongs.stream()
-                .filter(w -> w.getWrongCount() >= 2 && (w.getMasteryLevel() == null || w.getMasteryLevel() != 2))
-                .sorted((a, b) -> Integer.compare(b.getWrongCount(), a.getWrongCount()))
-                .collect(Collectors.toList());
-
-        int count = 0;
-        for (WrongQuestion wq : repeatedWrongs) {
-            if (count >= RECOMMEND_COUNT) { break; }
-            Question q = questionMapper.selectById(wq.getQuestionId());
-            if (q == null) { continue; }
-
-            LearningDiagnosisVO.RecommendedQuestion rq = new LearningDiagnosisVO.RecommendedQuestion();
-            rq.setQuestionId(q.getId());
-            rq.setReason("ERROR_PRONE");
-            rq.setReasonDescription("反复出错 " + wq.getWrongCount() + " 次，建议重点复习");
-            rq.setQuestionContent(truncate(q.getContent(), 100));
-            rq.setQuestionType(getQuestionTypeName(q.getQuestionType()));
-            rq.setDifficulty(q.getDifficulty());
-            rq.setLastWrongAnswer(wq.getLastWrongAnswer());
-
-            // 获取课程名和知识点名
-            Course c = courseMapper.selectById(q.getCourseId());
-            rq.setCourseName(c != null ? c.getName() : null);
-            Set<Long> kps = questionToKps.get(q.getId());
-            if (kps != null && !kps.isEmpty()) {
-                KnowledgePoint kp = knowledgePointMapper.selectById(kps.iterator().next());
-                rq.setKnowledgePointName(kp != null ? kp.getName() : null);
-            }
-
-            recommendations.add(rq);
-            count++;
-        }
-
-        // 2. 如果不够，从薄弱知识点中随机挑题
-        if (count < RECOMMEND_COUNT) {
-            // 找到薄弱知识点
-            Set<Long> weakKpIds = allPoints.stream()
-                    .filter(kp -> {
-                        // 简单判断：该知识点下的正确率 < 70%
-                        int kpTotal = 0;
-                        int kpCorrect = 0;
-                        for (PracticeRecord r : allRecords) {
-                            Set<Long> kps = questionToKps.get(r.getQuestionId());
-                            if (kps != null && kps.contains(kp.getId())) {
-                                kpTotal++;
-                                if (r.getIsCorrect() != null && r.getIsCorrect() == 1) { kpCorrect++; }
-                            }
-                        }
-                        return kpTotal > 0 && (kpCorrect * 100.0 / kpTotal) < 70;
-                    })
-                    .map(KnowledgePoint::getId)
-                    .collect(Collectors.toSet());
-
-            // 从这些知识点的题目中找未做过或答错的
-            Set<Long> existingRecommendedIds = recommendations.stream()
-                    .map(LearningDiagnosisVO.RecommendedQuestion::getQuestionId)
-                    .collect(Collectors.toSet());
-
-            if (weakKpIds.isEmpty()) {
-                return recommendations;
-            }
-
-            LambdaQueryWrapper<QuestionKnowledgePoint> qkpWrapper = new LambdaQueryWrapper<>();
-            qkpWrapper.in(QuestionKnowledgePoint::getKnowledgePointId, weakKpIds);
-            List<QuestionKnowledgePoint> qkps = questionKnowledgePointMapper.selectList(qkpWrapper);
-
-            Set<Long> candidateQIds = qkps.stream()
-                    .map(QuestionKnowledgePoint::getQuestionId)
-                    .filter(id -> !existingRecommendedIds.contains(id))
-                    .collect(Collectors.toSet());
-
-            Set<Long> answeredQIds = allRecords.stream()
-                    .map(PracticeRecord::getQuestionId).collect(Collectors.toSet());
-
-            // 优先推荐答错的题
-            List<Long> wrongQIds = allWrongs.stream()
-                    .map(WrongQuestion::getQuestionId)
-                    .filter(candidateQIds::contains)
-                    .collect(Collectors.toList());
-
-            Collections.shuffle(wrongQIds);
-            for (Long qId : wrongQIds) {
-                if (count >= RECOMMEND_COUNT) { break; }
-                Question q = questionMapper.selectById(qId);
-                if (q == null) { continue; }
-
-                LearningDiagnosisVO.RecommendedQuestion rq = new LearningDiagnosisVO.RecommendedQuestion();
-                rq.setQuestionId(q.getId());
-                rq.setReason("WEAK_POINT_REINFORCE");
-                rq.setReasonDescription("薄弱知识点相关，建议强化练习");
-                rq.setQuestionContent(truncate(q.getContent(), 100));
-                rq.setQuestionType(getQuestionTypeName(q.getQuestionType()));
-                rq.setDifficulty(q.getDifficulty());
-
-                Course c = courseMapper.selectById(q.getCourseId());
-                rq.setCourseName(c != null ? c.getName() : null);
-                Set<Long> kps = questionToKps.get(q.getId());
-                if (kps != null && !kps.isEmpty()) {
-                    KnowledgePoint kp = knowledgePointMapper.selectById(kps.iterator().next());
-                    rq.setKnowledgePointName(kp != null ? kp.getName() : null);
-                }
-
-                recommendations.add(rq);
-                count++;
-            }
-
-            // 如果还不够，推荐未做过的题
-            List<Long> untriedQIds = candidateQIds.stream()
-                    .filter(id -> !answeredQIds.contains(id))
-                    .collect(Collectors.toList());
-            Collections.shuffle(untriedQIds);
-            for (Long qId : untriedQIds) {
-                if (count >= RECOMMEND_COUNT) { break; }
-                Question q = questionMapper.selectById(qId);
-                if (q == null) { continue; }
-
-                LearningDiagnosisVO.RecommendedQuestion rq = new LearningDiagnosisVO.RecommendedQuestion();
-                rq.setQuestionId(q.getId());
-                rq.setReason("WEAK_POINT_REINFORCE");
-                rq.setReasonDescription("薄弱知识点相关，尚未练习");
-                rq.setQuestionContent(truncate(q.getContent(), 100));
-                rq.setQuestionType(getQuestionTypeName(q.getQuestionType()));
-                rq.setDifficulty(q.getDifficulty());
-
-                Course c = courseMapper.selectById(q.getCourseId());
-                rq.setCourseName(c != null ? c.getName() : null);
-                Set<Long> kps = questionToKps.get(q.getId());
-                if (kps != null && !kps.isEmpty()) {
-                    KnowledgePoint kp = knowledgePointMapper.selectById(kps.iterator().next());
-                    rq.setKnowledgePointName(kp != null ? kp.getName() : null);
-                }
-
-                recommendations.add(rq);
-                count++;
-            }
-        }
-
-        return recommendations;
-    }
-
     // ======================== 每日建议 ========================
 
     private String generateDailyAdvice(LearningDiagnosisVO vo) {
@@ -830,8 +679,13 @@ public class LearningDiagnosisService {
         if (vo.getWeakPoints() != null && !vo.getWeakPoints().isEmpty()) {
             LearningDiagnosisVO.WeakPoint top = vo.getWeakPoints().get(0);
             advice.append("📚 重点关注：").append(top.getKnowledgePointName())
-                    .append("（").append(top.getCourseName()).append("），正确率仅 ")
-                    .append(String.format("%.1f%%", top.getCorrectRate())).append("。\n\n");
+                    .append("（").append(top.getCourseName()).append("）");
+            if ("NOT_STARTED".equals(top.getMasteryStatus())) {
+                advice.append("尚未开始练习，建议先学习核心概念。\n\n");
+            } else {
+                advice.append("，正确率仅 ")
+                        .append(String.format("%.1f%%", top.getCorrectRate())).append("。\n\n");
+            }
         }
 
         // 根据错题情况给建议
@@ -1009,8 +863,9 @@ public class LearningDiagnosisService {
         return trend;
     }
 
-    private String truncate(String text, int maxLen) {
+    private String truncate(String text, int maxLength) {
         if (text == null) { return null; }
-        return text.length() > maxLen ? text.substring(0, maxLen) + "..." : text;
+        return text.length() > maxLength ? text.substring(0, maxLength) + "..." : text;
     }
+
 }
