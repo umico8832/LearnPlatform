@@ -395,8 +395,8 @@ import {
   reviewActionLabel,
   sourceTypeLabel,
   sourceTypeTag,
-} from './questionManagePresentation'
-import QuestionGovernanceDrawers from './QuestionGovernanceDrawers.vue'
+} from './question/questionManagePresentation'
+import QuestionGovernanceDrawers from './question/QuestionGovernanceDrawers.vue'
 import QuestionEditorDialog from './question/QuestionEditorDialog.vue'
 import QuestionImportExport from './question/QuestionImportExport.vue'
 

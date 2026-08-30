@@ -24,6 +24,9 @@ FORBIDDEN_COMPONENTS = frozenset(
 FORBIDDEN_FILENAMES = frozenset({".DS_Store", "Thumbs.db"})
 FORBIDDEN_PATH_PREFIXES = {
     "frontend/src/views/admin/": "管理端页面必须归入 frontend/src/admin/views/",
+    "frontend/src/admin/views/QuestionGovernanceDrawers.vue": "题目领域组件必须归入 frontend/src/admin/views/question/",
+    "frontend/src/admin/views/questionManagePresentation.ts": "题目展示映射必须归入 frontend/src/admin/views/question/",
+    "frontend/src/admin/views/useQuestionImportExport.ts": "题目导入导出组合函数必须归入 frontend/src/admin/views/question/",
 }
 
 

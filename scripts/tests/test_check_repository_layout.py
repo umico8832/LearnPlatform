@@ -58,6 +58,17 @@ class RepositoryLayoutValidationTest(unittest.TestCase):
         self.assertEqual(1, len(errors))
         self.assertIn("frontend/src/admin/views/", errors[0])
 
+    def test_rejects_question_helpers_in_admin_view_root(self) -> None:
+        errors = checker.validate_paths(
+            [
+                "frontend/src/admin/views/QuestionGovernanceDrawers.vue",
+                "frontend/src/admin/views/questionManagePresentation.ts",
+                "frontend/src/admin/views/useQuestionImportExport.ts",
+            ]
+        )
+        self.assertEqual(3, len(errors))
+        self.assertTrue(all("frontend/src/admin/views/question/" in error for error in errors))
+
 
 if __name__ == "__main__":
     unittest.main()

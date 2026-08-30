@@ -75,7 +75,7 @@
 <script setup lang="ts">
 import { Upload } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { useQuestionImportExport } from '../useQuestionImportExport'
+import { useQuestionImportExport } from './useQuestionImportExport'
 
 const props = defineProps<{
   filters: {
