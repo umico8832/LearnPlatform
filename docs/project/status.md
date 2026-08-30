@@ -211,6 +211,13 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+管理端题目 Controller 拆分（Round 253，2026-08-30）：
+
+- `/api/admin/questions` 已按查询维护、治理和导入导出拆为三个 Controller，外部 API
+  保持兼容；Markdown 导入模板迁入 classpath 资源。
+- 后端 `mvn clean verify` 通过：562 个默认测试、Checkstyle 0 违规、SpotBugs 0 问题、
+  JaCoCo 门槛通过；无数据库行为变化，未重复执行 Testcontainers。
+
 仓库结构维护（Round 252，2026-08-30）：
 
 - 已删除不会被 Maven 编译的异常路径重复测试，正常 `CourseControllerTest.java` 保持不变。

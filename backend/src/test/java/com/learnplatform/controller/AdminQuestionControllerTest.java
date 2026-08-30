@@ -19,7 +19,6 @@ import com.learnplatform.service.QuestionVersionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
@@ -33,6 +32,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -71,12 +71,26 @@ class AdminQuestionControllerTest {
     @Mock
     private QuestionVersionService questionVersionService;
 
-    @InjectMocks
     private AdminQuestionController adminQuestionController;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(adminQuestionController)
+        adminQuestionController = new AdminQuestionController(questionService);
+        AdminQuestionGovernanceController governanceController =
+                new AdminQuestionGovernanceController(
+                        questionService,
+                        questionSourceService,
+                        questionReviewSuggestionService,
+                        correctionReportService,
+                        questionVersionService);
+        AdminQuestionImportExportController importExportController =
+                new AdminQuestionImportExportController(
+                        questionImportExportService,
+                        markdownQuestionParser);
+        mockMvc = MockMvcBuilders.standaloneSetup(
+                        adminQuestionController,
+                        governanceController,
+                        importExportController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
                 .build();
@@ -350,5 +364,15 @@ class AdminQuestionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(1005))
                 .andExpect(jsonPath("$.message").value("仅支持 .xlsx 或 .xls 文件"));
+    }
+
+    @Test
+    void downloadMarkdownTemplate_returnsClasspathTemplate() throws Exception {
+        mockMvc.perform(get("/api/admin/questions/template-markdown"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", containsString(".md")))
+                .andExpect(content().contentTypeCompatibleWith("text/markdown"))
+                .andExpect(content().string(containsString("# 题目导入模板")))
+                .andExpect(content().string(containsString("### 题型识别规则")));
     }
 }

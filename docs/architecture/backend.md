@@ -36,6 +36,8 @@ flowchart LR
 Controller 不承担复杂查询组合、判分、状态机或事务。Service 不依赖前端展示状态。
 Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一使用 DTO / VO，事务边界
 位于 Service。上述依赖方向由 `LayeredArchitectureTest` 在 Maven 测试阶段自动校验。
+同一稳定 URL 前缀可以由多个 Controller 按查询维护、治理和文件交换等职责分别承载，
+不为了维持单个类而聚合无关 Service；拆分类时必须保持既有路径、参数与响应契约兼容。
 
 ## 认证和授权
 
