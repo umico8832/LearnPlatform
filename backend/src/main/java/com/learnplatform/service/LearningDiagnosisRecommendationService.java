@@ -12,6 +12,7 @@ import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
+import com.learnplatform.service.question.QuestionAccessPolicy;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

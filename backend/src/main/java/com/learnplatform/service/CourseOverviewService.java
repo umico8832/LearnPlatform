@@ -28,6 +28,8 @@ import com.learnplatform.mapper.UserCourseMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
 import com.learnplatform.mapper.TutorContentMapper;
 import com.learnplatform.mapper.TutorSessionMapper;
+import com.learnplatform.service.assessment.CourseStageAssessmentKnowledgePointSummary;
+import com.learnplatform.service.assessment.CourseStageAssessmentSourceComposition;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;

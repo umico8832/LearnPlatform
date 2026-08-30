@@ -13,6 +13,7 @@ import com.learnplatform.entity.User;
 import com.learnplatform.mapper.QuestionCorrectionReportMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.UserMapper;
+import com.learnplatform.service.question.QuestionAccessPolicy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

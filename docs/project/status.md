@@ -211,6 +211,16 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+后端 Service 顶层包收口（Round 259，2026-08-30）：
+
+- 私有试卷原文件值对象迁入 `dto.exam`，阶段测评快照聚合器迁入
+  `service.assessment`，题目访问策略迁入 `service.question`；顶层 `service` 现只保留
+  Spring 业务组件，既有接口、事务与业务行为未变化。
+- ArchUnit 新增顶层 Service 组件门禁；Red 精确识别 4 个原有违规，迁移后 5 条架构规则
+  全部通过。
+- 后端 `mvn clean verify` 通过：565 个默认测试、Checkstyle 0 违规、SpotBugs 0 问题、
+  JaCoCo 门槛通过；本轮无数据库或业务行为变化，未重复执行 Testcontainers。
+
 管理端页面目录统一（Round 258，2026-08-30）：
 
 - 11 个管理端业务页面和 2 个同域辅助文件已从学习端的 `frontend/src/views/admin/`

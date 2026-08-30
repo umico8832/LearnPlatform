@@ -1,4 +1,4 @@
-package com.learnplatform.service;
+package com.learnplatform.service.assessment;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -17,10 +17,10 @@ import java.util.Map;
  * 从测评逐题快照聚合知识点事实。与 {@link CourseStageAssessmentSourceComposition} 一样只读取
  * 创建时固化的快照，不读取当前题目知识点关联；只统计题数与正误数，不表达掌握度。
  */
-final class CourseStageAssessmentKnowledgePointSummary {
+public final class CourseStageAssessmentKnowledgePointSummary {
     private CourseStageAssessmentKnowledgePointSummary() { }
 
-    static List<CourseStageAssessmentVO.KnowledgePointSummaryVO> from(
+    public static List<CourseStageAssessmentVO.KnowledgePointSummaryVO> from(
             List<CourseStageAssessmentQuestion> items, ObjectMapper objectMapper) {
         Map<Key, int[]> counts = new LinkedHashMap<>();
         for (CourseStageAssessmentQuestion item : items) {
@@ -45,7 +45,7 @@ final class CourseStageAssessmentKnowledgePointSummary {
         return summary;
     }
 
-    static List<CourseStageAssessmentVO.KnowledgePointVO> readKnowledgePoints(
+    public static List<CourseStageAssessmentVO.KnowledgePointVO> readKnowledgePoints(
             String json, ObjectMapper objectMapper) {
         if (json == null || json.isBlank()) { return List.of(); }
         try {

@@ -19,6 +19,8 @@
 
 - Controller 负责请求入口、权限边界、参数接收和响应封装；
 - Service 负责业务规则、事务边界和跨 Mapper 协作；
+- 顶层 `service` 包只放 Spring 业务组件；值对象、无状态策略和聚合器进入 DTO 或明确
+  业务子包，不用 `Service` 目录充当通用杂物目录；
 - Mapper 负责数据访问；
 - DTO / VO 负责请求和响应数据结构；
 - Entity 映射数据库表；

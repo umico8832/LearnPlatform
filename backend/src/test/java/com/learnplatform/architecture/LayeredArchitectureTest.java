@@ -4,9 +4,11 @@ import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
@@ -36,4 +38,12 @@ class LayeredArchitectureTest {
             .that().resideInAPackage("..config..")
             .should().beAnnotatedWith(Service.class)
             .because("config 只承载配置，业务与安全服务必须进入对应职责包");
+
+    @ArchTest
+    static final ArchRule top_level_service_package_must_only_contain_spring_components = classes()
+            .that().resideInAPackage("com.learnplatform.service")
+            .and().areTopLevelClasses()
+            .should().beAnnotatedWith(Service.class)
+            .orShould().beAnnotatedWith(Component.class)
+            .because("顶层 service 只承载业务组件，值对象、策略和聚合器必须进入明确领域包");
 }

@@ -2,6 +2,7 @@ package com.learnplatform.service;
 
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
+import com.learnplatform.dto.exam.PrivateExamSourceFile;
 import com.learnplatform.entity.ExamPaper;
 import com.learnplatform.entity.PrivateExamImportDraft;
 import com.learnplatform.entity.UserExamSource;

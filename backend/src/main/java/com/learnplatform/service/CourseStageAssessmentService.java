@@ -21,6 +21,8 @@ import com.learnplatform.mapper.CourseStageAssessmentQuestionMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
+import com.learnplatform.service.assessment.CourseStageAssessmentKnowledgePointSummary;
+import com.learnplatform.service.assessment.CourseStageAssessmentSourceComposition;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

@@ -9,7 +9,7 @@ backend/src/main/java/com/learnplatform/
 ├── common/       # 统一响应和异常
 ├── config/       # Security、缓存、AI、文档等配置
 ├── controller/   # HTTP、校验、角色与 DTO 边界
-├── dto/          # 请求、响应和领域投影
+├── dto/          # 请求、响应和领域投影；稳定业务域可使用子包
 ├── entity/       # MyBatis-Plus 持久化实体
 ├── mapper/       # 数据访问
 ├── security/     # JWT、认证上下文和登录安全策略
@@ -85,6 +85,9 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
 - `PracticeService` 是练习接口兼容门面；题目查询与脱敏、历史统计查询和事务判分写入
   分别由 `PracticeQuestionQueryService`、`PracticeHistoryService` 与
   `PracticeAnswerService` 承担。
+- `service/` 顶层只放 Spring 业务组件；无状态策略与聚合器进入明确领域子包。阶段测评
+  快照聚合位于 `service/assessment/`，题目访问策略位于 `service/question/`；跨 Service
+  与 Controller 传递的私有试卷原文件值对象位于 `dto/exam/`。
 - `QuestionLearningAssetService` 负责编排 AI 学习资产缓存和输出。
 - `AiVariantQuestionService` 负责结构化变式题私有答案与判分。
 - `AiLearningEffectService` 只输出观察性学习效果。
@@ -95,4 +98,5 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
 
 Maven `verify` 执行测试、Checkstyle、SpotBugs 和 JaCoCo。真实 MySQL 约束由 Testcontainers 分组测试覆盖，具体命令见[测试策略](../development/testing.md)。
 ArchUnit 同时校验 Controller、Service、Mapper、Entity 和 Config 的关键依赖方向，防止
-HTTP 层越过 Service 直接访问持久化层。
+HTTP 层越过 Service 直接访问持久化层；同时要求顶层 `service` 类均为 Spring 组件，
+避免值对象、策略和聚合器重新混入业务组件目录。

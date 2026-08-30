@@ -1,14 +1,14 @@
-package com.learnplatform.service;
+package com.learnplatform.service.assessment;
 
 import com.learnplatform.dto.CourseStageAssessmentSourceCompositionVO;
 import com.learnplatform.entity.CourseStageAssessmentQuestion;
 
 import java.util.List;
 
-final class CourseStageAssessmentSourceComposition {
+public final class CourseStageAssessmentSourceComposition {
     private CourseStageAssessmentSourceComposition() { }
 
-    static CourseStageAssessmentSourceCompositionVO from(List<CourseStageAssessmentQuestion> items) {
+    public static CourseStageAssessmentSourceCompositionVO from(List<CourseStageAssessmentQuestion> items) {
         CourseStageAssessmentSourceCompositionVO composition = new CourseStageAssessmentSourceCompositionVO();
         for (CourseStageAssessmentQuestion item : items) {
             switch (item.getSourceCategorySnapshot() == null ? "MANUAL" : item.getSourceCategorySnapshot()) {
