@@ -2,8 +2,10 @@ package com.learnplatform.controller;
 
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.ReviewScheduleVO;
+import com.learnplatform.dto.ReviewStatsVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AiService;
+import com.learnplatform.service.ReviewScheduleQueryService;
 import com.learnplatform.service.SpacedRepetitionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ReviewControllerTest {
 
     @Mock private SpacedRepetitionService spacedRepetitionService;
+    @Mock private ReviewScheduleQueryService reviewScheduleQueryService;
     @Mock private AiService aiService;
     @Mock private Executor aiTaskExecutor;
 
@@ -38,7 +41,8 @@ class ReviewControllerTest {
 
     @BeforeEach
     void setUp() {
-        ReviewController controller = new ReviewController(spacedRepetitionService, aiService, aiTaskExecutor);
+        ReviewController controller = new ReviewController(
+                spacedRepetitionService, reviewScheduleQueryService, aiService, aiTaskExecutor);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
@@ -49,7 +53,7 @@ class ReviewControllerTest {
     void dueCardsForwardCourseAndServerSelectedQuestion() throws Exception {
         ReviewScheduleVO card = new ReviewScheduleVO();
         card.setQuestionId(21L);
-        when(spacedRepetitionService.getDueReviewCards(7L, 10L, 21L, null, 30))
+        when(reviewScheduleQueryService.getDueReviewCards(7L, 10L, 21L, null, 30))
                 .thenReturn(List.of(card));
 
         mockMvc.perform(get("/api/review/due")
@@ -60,14 +64,14 @@ class ReviewControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].questionId").value(21));
 
-        verify(spacedRepetitionService).getDueReviewCards(7L, 10L, 21L, null, 30);
+        verify(reviewScheduleQueryService).getDueReviewCards(7L, 10L, 21L, null, 30);
     }
 
     @Test
     void dueCardsForwardKnowledgePointFilter() throws Exception {
         ReviewScheduleVO card = new ReviewScheduleVO();
         card.setQuestionId(101L);
-        when(spacedRepetitionService.getDueReviewCards(7L, 10L, null, 31L, 30))
+        when(reviewScheduleQueryService.getDueReviewCards(7L, 10L, null, 31L, 30))
                 .thenReturn(List.of(card));
 
         mockMvc.perform(get("/api/review/due")
@@ -78,7 +82,20 @@ class ReviewControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].questionId").value(101));
 
-        verify(spacedRepetitionService).getDueReviewCards(7L, 10L, null, 31L, 30);
+        verify(reviewScheduleQueryService).getDueReviewCards(7L, 10L, null, 31L, 30);
+    }
+
+    @Test
+    void statsAreDelegatedToReadOnlyQueryService() throws Exception {
+        ReviewStatsVO stats = new ReviewStatsVO();
+        stats.setTotalCards(4);
+        when(reviewScheduleQueryService.getReviewStats(7L)).thenReturn(stats);
+
+        mockMvc.perform(get("/api/review/stats").with(mockUser(7L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalCards").value(4));
+
+        verify(reviewScheduleQueryService).getReviewStats(7L);
     }
 
     private RequestPostProcessor mockUser(Long userId) {

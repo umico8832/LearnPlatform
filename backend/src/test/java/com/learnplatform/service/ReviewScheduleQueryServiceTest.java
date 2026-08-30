@@ -3,6 +3,7 @@ package com.learnplatform.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.learnplatform.dto.ReviewScheduleVO;
+import com.learnplatform.dto.ReviewStatsVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionReviewSchedule;
@@ -19,6 +20,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -29,21 +31,21 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class SpacedRepetitionQueryTest {
+class ReviewScheduleQueryServiceTest {
 
     @Mock private QuestionReviewScheduleMapper reviewScheduleMapper;
     @Mock private QuestionMapper questionMapper;
     @Mock private CourseMapper courseMapper;
     @Mock private KnowledgePointMapper knowledgePointMapper;
 
-    private SpacedRepetitionService service;
+    private ReviewScheduleQueryService service;
 
     @BeforeEach
     void setUp() {
         TableInfoHelper.initTableInfo(
                 new MapperBuilderAssistant(new Configuration(), ""), QuestionReviewSchedule.class);
-        service = new SpacedRepetitionService(reviewScheduleMapper, questionMapper, courseMapper,
-                null, null, null, null, null, knowledgePointMapper, null);
+        service = new ReviewScheduleQueryService(
+                reviewScheduleMapper, questionMapper, courseMapper, knowledgePointMapper);
     }
 
     @Test
@@ -89,6 +91,35 @@ class SpacedRepetitionQueryTest {
 
         assertEquals(List.of(101L), cards.stream().map(ReviewScheduleVO::getQuestionId).toList());
         verify(knowledgePointMapper).selectQuestionIdsByKnowledgePointId(31L);
+    }
+
+    @Test
+    void reviewStatsKeepExistingCategoryAndStreakSemantics() {
+        QuestionReviewSchedule newCard = schedule(101L);
+        newCard.setTotalReviews(0);
+        newCard.setIntervalDays(0);
+        newCard.setEaseFactor(new BigDecimal("2.50"));
+
+        QuestionReviewSchedule masteredDifficultCard = schedule(202L);
+        masteredDifficultCard.setTotalReviews(3);
+        masteredDifficultCard.setIntervalDays(21);
+        masteredDifficultCard.setEaseFactor(new BigDecimal("1.80"));
+
+        when(reviewScheduleMapper.selectCount(any()))
+                .thenReturn(2L, 1L, 1L, 1L, 1L, 0L);
+        when(reviewScheduleMapper.selectList(any()))
+                .thenReturn(List.of(newCard, masteredDifficultCard));
+
+        ReviewStatsVO stats = service.getReviewStats(7L);
+
+        assertEquals(2, stats.getTotalCards());
+        assertEquals(1, stats.getDueToday());
+        assertEquals(1, stats.getOverdue());
+        assertEquals(1, stats.getReviewedToday());
+        assertEquals(1, stats.getNewCards());
+        assertEquals(1, stats.getMasteredCards());
+        assertEquals(1, stats.getDifficultCards());
+        assertEquals(1, stats.getStreakDays());
     }
 
     private QuestionReviewSchedule schedule(Long questionId) {

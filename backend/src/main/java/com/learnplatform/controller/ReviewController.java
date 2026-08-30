@@ -8,6 +8,7 @@ import com.learnplatform.dto.ReviewStatsVO;
 import com.learnplatform.dto.ReviewSubmitRequest;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AiService;
+import com.learnplatform.service.ReviewScheduleQueryService;
 import com.learnplatform.service.SpacedRepetitionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -42,13 +43,16 @@ import java.util.concurrent.Executor;
 public class ReviewController {
 
     private final SpacedRepetitionService spacedRepetitionService;
+    private final ReviewScheduleQueryService reviewScheduleQueryService;
     private final AiService aiService;
     private final Executor aiTaskExecutor;
 
     public ReviewController(SpacedRepetitionService spacedRepetitionService,
+                            ReviewScheduleQueryService reviewScheduleQueryService,
                             AiService aiService,
                             @Qualifier("aiTaskExecutor") Executor aiTaskExecutor) {
         this.spacedRepetitionService = spacedRepetitionService;
+        this.reviewScheduleQueryService = reviewScheduleQueryService;
         this.aiService = aiService;
         this.aiTaskExecutor = aiTaskExecutor;
     }
@@ -57,7 +61,7 @@ public class ReviewController {
     @GetMapping("/stats")
     public R<ReviewStatsVO> getStats(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return R.ok(spacedRepetitionService.getReviewStats(userDetails.getUserId()));
+        return R.ok(reviewScheduleQueryService.getReviewStats(userDetails.getUserId()));
     }
 
     @Operation(summary = "获取今日待复习题目")
@@ -68,7 +72,7 @@ public class ReviewController {
             @Parameter(description = "知识点ID筛选") @RequestParam(required = false) Long knowledgePointId,
             @Parameter(description = "数量限制") @RequestParam(required = false, defaultValue = "20") Integer limit,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return R.ok(spacedRepetitionService.getDueReviewCards(
+        return R.ok(reviewScheduleQueryService.getDueReviewCards(
                 userDetails.getUserId(), courseId, questionId, knowledgePointId, limit));
     }
 
@@ -77,7 +81,7 @@ public class ReviewController {
     public R<List<ReviewScheduleVO>> getAllCards(
             @Parameter(description = "课程ID筛选") @RequestParam(required = false) Long courseId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return R.ok(spacedRepetitionService.getAllReviewCards(userDetails.getUserId(), courseId));
+        return R.ok(reviewScheduleQueryService.getAllReviewCards(userDetails.getUserId(), courseId));
     }
 
     @Operation(summary = "将题目加入复习计划")
@@ -133,7 +137,7 @@ public class ReviewController {
     public R<AiResponse> getAiSuggestion(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = userDetails.getUserId();
-        ReviewContextVO ctx = spacedRepetitionService.buildReviewContext(userId);
+        ReviewContextVO ctx = reviewScheduleQueryService.buildReviewContext(userId);
         return R.ok(aiService.generateReviewBasedSuggestionWithContext(userId, ctx));
     }
 
@@ -142,7 +146,7 @@ public class ReviewController {
     public ResponseEntity<SseEmitter> getAiSuggestionStream(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = userDetails.getUserId();
-        ReviewContextVO ctx = spacedRepetitionService.buildReviewContext(userId);
+        ReviewContextVO ctx = reviewScheduleQueryService.buildReviewContext(userId);
 
         SseEmitter emitter = new SseEmitter(120_000L);
         aiTaskExecutor.execute(() -> {

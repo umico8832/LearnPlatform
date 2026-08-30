@@ -31,8 +31,8 @@ class SpacedRepetitionSyncTest {
     @BeforeEach
     void setUp() {
         service = new SpacedRepetitionService(
-                reviewScheduleMapper, null, null, null, null,
-                wrongQuestionMapper, null, null
+                reviewScheduleMapper, null, null, null, wrongQuestionMapper,
+                null, null, null, null
         );
     }
 

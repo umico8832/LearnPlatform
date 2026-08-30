@@ -3,18 +3,13 @@ package com.learnplatform.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
-import com.learnplatform.dto.ReviewContextVO;
 import com.learnplatform.dto.ReviewScheduleVO;
-import com.learnplatform.dto.ReviewStatsVO;
 import com.learnplatform.dto.ReviewSubmitRequest;
-import com.learnplatform.entity.Course;
 import com.learnplatform.entity.PracticeRecord;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionOption;
 import com.learnplatform.entity.QuestionReviewSchedule;
 import com.learnplatform.entity.WrongQuestion;
-import com.learnplatform.mapper.CourseMapper;
-import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.PracticeRecordMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
@@ -22,19 +17,13 @@ import com.learnplatform.mapper.QuestionReviewScheduleMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -72,56 +61,34 @@ public class SpacedRepetitionService {
     /** 默认初始简易因子 */
     private static final BigDecimal DEFAULT_EASE_FACTOR = new BigDecimal("2.50");
 
-    /** 已掌握阈值（间隔天数 >= 21 视为已掌握） */
-    private static final int MASTERED_THRESHOLD_DAYS = 21;
-
-    /** 困难卡片简易因子阈值 */
-    private static final BigDecimal DIFFICULT_THRESHOLD = new BigDecimal("2.00");
-
     private final QuestionReviewScheduleMapper reviewScheduleMapper;
     private final QuestionMapper questionMapper;
-    private final CourseMapper courseMapper;
     private final QuestionOptionMapper questionOptionMapper;
     private final PracticeRecordMapper practiceRecordMapper;
     private final WrongQuestionMapper wrongQuestionMapper;
     private final AnswerEvaluator answerEvaluator;
     private final CacheEvictService cacheEvictService;
-    private final KnowledgePointMapper knowledgePointMapper;
     private final CourseLearningEventService courseLearningEventService;
+    private final ReviewScheduleQueryService reviewScheduleQueryService;
 
     public SpacedRepetitionService(QuestionReviewScheduleMapper reviewScheduleMapper,
                                     QuestionMapper questionMapper,
-                                    CourseMapper courseMapper,
-                                    QuestionOptionMapper questionOptionMapper,
-                                    PracticeRecordMapper practiceRecordMapper,
-                                    WrongQuestionMapper wrongQuestionMapper,
-                                    AnswerEvaluator answerEvaluator,
-                                    CacheEvictService cacheEvictService) {
-        this(reviewScheduleMapper, questionMapper, courseMapper, questionOptionMapper, practiceRecordMapper,
-                wrongQuestionMapper, answerEvaluator, cacheEvictService, null, null);
-    }
-
-    @Autowired
-    public SpacedRepetitionService(QuestionReviewScheduleMapper reviewScheduleMapper,
-                                    QuestionMapper questionMapper,
-                                    CourseMapper courseMapper,
                                     QuestionOptionMapper questionOptionMapper,
                                     PracticeRecordMapper practiceRecordMapper,
                                     WrongQuestionMapper wrongQuestionMapper,
                                     AnswerEvaluator answerEvaluator,
                                     CacheEvictService cacheEvictService,
-                                    KnowledgePointMapper knowledgePointMapper,
-                                    CourseLearningEventService courseLearningEventService) {
+                                    CourseLearningEventService courseLearningEventService,
+                                    ReviewScheduleQueryService reviewScheduleQueryService) {
         this.reviewScheduleMapper = reviewScheduleMapper;
         this.questionMapper = questionMapper;
-        this.courseMapper = courseMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.practiceRecordMapper = practiceRecordMapper;
         this.wrongQuestionMapper = wrongQuestionMapper;
         this.answerEvaluator = answerEvaluator;
         this.cacheEvictService = cacheEvictService;
-        this.knowledgePointMapper = knowledgePointMapper;
         this.courseLearningEventService = courseLearningEventService;
+        this.reviewScheduleQueryService = reviewScheduleQueryService;
     }
 
     /**
@@ -193,86 +160,6 @@ public class SpacedRepetitionService {
             log.info("同步错题到复习计划: userId={}, 新增 {} 道错题", userId, syncedCount);
         }
         return syncedCount;
-    }
-
-    /**
-     * 获取今日待复习题目（含逾期）
-     */
-    public List<ReviewScheduleVO> getDueReviewCards(Long userId, Long courseId, int limit) {
-        return getDueReviewCards(userId, courseId, null, null, limit);
-    }
-
-    /**
-     * 获取课程内今日待复习题目，可进一步定位到统一课程状态选择的目标题目。
-     */
-    public List<ReviewScheduleVO> getDueReviewCards(Long userId, Long courseId, Long questionId, int limit) {
-        return getDueReviewCards(userId, courseId, questionId, null, limit);
-    }
-
-    /**
-     * 获取课程内今日待复习题目，可限定课程、目标题目和知识点（数据库分页前筛选）。
-     */
-    public List<ReviewScheduleVO> getDueReviewCards(Long userId, Long courseId, Long questionId,
-                                                    Long knowledgePointId, int limit) {
-        if (limit <= 0 || limit > 50) {
-            limit = 20;
-        }
-
-        Set<Long> courseQuestionIds = null;
-        if (courseId != null) {
-            courseQuestionIds = questionMapper.selectList(new LambdaQueryWrapper<Question>()
-                            .eq(Question::getCourseId, courseId)).stream()
-                    .map(Question::getId)
-                    .collect(Collectors.toSet());
-            if (courseQuestionIds.isEmpty()) {
-                return List.of();
-            }
-        }
-        Set<Long> kpQuestionIds = null;
-        if (knowledgePointId != null) {
-            kpQuestionIds = new HashSet<>(knowledgePointMapper
-                    .selectQuestionIdsByKnowledgePointId(knowledgePointId));
-            if (kpQuestionIds.isEmpty()) {
-                return List.of();
-            }
-        }
-
-        LocalDate today = LocalDate.now();
-        LambdaQueryWrapper<QuestionReviewSchedule> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(QuestionReviewSchedule::getUserId, userId)
-                .le(QuestionReviewSchedule::getNextReviewDate, today);
-        if (courseQuestionIds != null) {
-            wrapper.in(QuestionReviewSchedule::getQuestionId, courseQuestionIds);
-        }
-        if (kpQuestionIds != null) {
-            wrapper.in(QuestionReviewSchedule::getQuestionId, kpQuestionIds);
-        }
-        if (questionId != null) {
-            wrapper.eq(QuestionReviewSchedule::getQuestionId, questionId);
-        }
-        wrapper.orderByAsc(QuestionReviewSchedule::getNextReviewDate) // 逾期最多的优先
-                .orderByDesc(QuestionReviewSchedule::getEaseFactor);  // 简单的排后面
-        wrapper.last("LIMIT " + limit);
-
-        List<QuestionReviewSchedule> schedules = reviewScheduleMapper.selectList(wrapper);
-        if (courseQuestionIds != null) {
-            Set<Long> allowedQuestionIds = courseQuestionIds;
-            schedules = schedules.stream()
-                    .filter(schedule -> allowedQuestionIds.contains(schedule.getQuestionId()))
-                    .toList();
-        }
-        if (kpQuestionIds != null) {
-            Set<Long> allowedQuestionIds = kpQuestionIds;
-            schedules = schedules.stream()
-                    .filter(schedule -> allowedQuestionIds.contains(schedule.getQuestionId()))
-                    .toList();
-        }
-        if (questionId != null) {
-            schedules = schedules.stream()
-                    .filter(schedule -> questionId.equals(schedule.getQuestionId()))
-                    .toList();
-        }
-        return fillScheduleVOs(schedules, today);
     }
 
     /**
@@ -381,97 +268,7 @@ public class SpacedRepetitionService {
         log.info("复习答题完成: userId={}, questionId={}, isCorrect={}, quality={}, newInterval={}d",
                 userId, questionId, isCorrect, quality, schedule.getIntervalDays());
 
-        // 构建返回 VO
-        List<ReviewScheduleVO> vos = fillScheduleVOs(List.of(schedule), LocalDate.now());
-        return vos.isEmpty() ? null : vos.get(0);
-    }
-
-    /**
-     * 获取复习统计概览
-     */
-    public ReviewStatsVO getReviewStats(Long userId) {
-        LocalDate today = LocalDate.now();
-        ReviewStatsVO stats = new ReviewStatsVO();
-
-        // 总卡片数
-        LambdaQueryWrapper<QuestionReviewSchedule> allWrapper = new LambdaQueryWrapper<>();
-        allWrapper.eq(QuestionReviewSchedule::getUserId, userId);
-        long totalCards = reviewScheduleMapper.selectCount(allWrapper);
-        stats.setTotalCards((int) totalCards);
-
-        if (totalCards == 0) {
-            return stats;
-        }
-
-        // 今日待复习（今天及之前，排除今天已复习的）
-        LambdaQueryWrapper<QuestionReviewSchedule> dueWrapper = new LambdaQueryWrapper<>();
-        dueWrapper.eq(QuestionReviewSchedule::getUserId, userId)
-                  .le(QuestionReviewSchedule::getNextReviewDate, today);
-        Long dueToday = reviewScheduleMapper.selectCount(dueWrapper);
-        stats.setDueToday(dueToday != null ? dueToday.intValue() : 0);
-
-        // 逾期（昨天及之前到期但未复习的）
-        LambdaQueryWrapper<QuestionReviewSchedule> overdueWrapper = new LambdaQueryWrapper<>();
-        overdueWrapper.eq(QuestionReviewSchedule::getUserId, userId)
-                      .lt(QuestionReviewSchedule::getNextReviewDate, today);
-        Long overdueCount = reviewScheduleMapper.selectCount(overdueWrapper);
-        stats.setOverdue(overdueCount != null ? overdueCount.intValue() : 0);
-
-        // 今日已完成（lastReviewDate == today）
-        LambdaQueryWrapper<QuestionReviewSchedule> doneWrapper = new LambdaQueryWrapper<>();
-        doneWrapper.eq(QuestionReviewSchedule::getUserId, userId)
-                   .eq(QuestionReviewSchedule::getLastReviewDate, today);
-        Long reviewedTodayCount = reviewScheduleMapper.selectCount(doneWrapper);
-        stats.setReviewedToday(reviewedTodayCount != null ? reviewedTodayCount.intValue() : 0);
-
-        // 获取所有卡片进行分类统计
-        List<QuestionReviewSchedule> allCards = reviewScheduleMapper.selectList(allWrapper);
-        int newCards = 0;
-        int learning = 0;
-        int mastered = 0;
-        int difficult = 0;
-        BigDecimal totalEf = BigDecimal.ZERO;
-
-        for (QuestionReviewSchedule card : allCards) {
-            if (card.getTotalReviews() == null || card.getTotalReviews() == 0) {
-                newCards++;
-            } else if (card.getIntervalDays() != null && card.getIntervalDays() >= MASTERED_THRESHOLD_DAYS) {
-                mastered++;
-            } else {
-                learning++;
-            }
-            if (card.getEaseFactor() != null && card.getEaseFactor().compareTo(DIFFICULT_THRESHOLD) < 0) {
-                difficult++;
-            }
-            if (card.getEaseFactor() != null) {
-                totalEf = totalEf.add(card.getEaseFactor());
-            }
-        }
-        stats.setNewCards(newCards);
-        stats.setLearningCards(learning);
-        stats.setMasteredCards(mastered);
-        stats.setDifficultCards(difficult);
-        stats.setAvgEaseFactor(totalCards > 0
-                ? totalEf.divide(BigDecimal.valueOf(totalCards), 2, RoundingMode.HALF_UP).doubleValue()
-                : 2.5);
-
-        // 连续复习天数（从今天往回数，每天至少完成 1 题复习）
-        int streak = 0;
-        LocalDate checkDate = today;
-        while (true) {
-            LambdaQueryWrapper<QuestionReviewSchedule> streakWrapper = new LambdaQueryWrapper<>();
-            streakWrapper.eq(QuestionReviewSchedule::getUserId, userId)
-                         .eq(QuestionReviewSchedule::getLastReviewDate, checkDate);
-            if (reviewScheduleMapper.selectCount(streakWrapper) > 0) {
-                streak++;
-                checkDate = checkDate.minusDays(1);
-            } else {
-                break;
-            }
-        }
-        stats.setStreakDays(streak);
-
-        return stats;
+        return reviewScheduleQueryService.buildScheduleView(schedule);
     }
 
     /**
@@ -508,26 +305,6 @@ public class SpacedRepetitionService {
         schedule.setLastQuality(null);
         schedule.setTotalReviews(0);
         reviewScheduleMapper.updateById(schedule);
-    }
-
-    /**
-     * 获取所有复习计划卡片（分页）
-     */
-    public List<ReviewScheduleVO> getAllReviewCards(Long userId, Long courseId) {
-        LambdaQueryWrapper<QuestionReviewSchedule> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(QuestionReviewSchedule::getUserId, userId)
-               .orderByAsc(QuestionReviewSchedule::getNextReviewDate);
-
-        List<QuestionReviewSchedule> schedules = reviewScheduleMapper.selectList(wrapper);
-        List<ReviewScheduleVO> vos = fillScheduleVOs(schedules, LocalDate.now());
-
-        // 如果指定了课程，过滤
-        if (courseId != null) {
-            vos = vos.stream()
-                    .filter(v -> courseId.equals(v.getCourseId()))
-                    .collect(Collectors.toList());
-        }
-        return vos;
     }
 
     // ========== SM-2 算法核心 ==========
@@ -600,142 +377,4 @@ public class SpacedRepetitionService {
         return isCorrect ? 4 : 1;
     }
 
-    // ========== 辅助方法 ==========
-
-    /**
-     * 将 schedule 实体列表转为 VO 列表（含题目信息和逾期信息）
-     */
-    private List<ReviewScheduleVO> fillScheduleVOs(List<QuestionReviewSchedule> schedules, LocalDate today) {
-        if (schedules.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        // 批量获取题目信息
-        List<Long> questionIds = schedules.stream()
-                .map(QuestionReviewSchedule::getQuestionId)
-                .collect(Collectors.toList());
-
-        Map<Long, Question> questionMap = new HashMap<>();
-        if (!questionIds.isEmpty()) {
-            List<Question> questions = questionMapper.selectBatchIds(questionIds);
-            questionMap = questions.stream().collect(Collectors.toMap(Question::getId, q -> q));
-        }
-
-        // 批量获取课程名
-        Set<Long> courseIds = questionMap.values().stream()
-                .map(Question::getCourseId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-        Map<Long, String> courseNameMap = new HashMap<>();
-        if (!courseIds.isEmpty()) {
-            List<Course> courses = courseMapper.selectBatchIds(courseIds);
-            courseNameMap = courses.stream().collect(Collectors.toMap(Course::getId, Course::getName));
-        }
-
-        List<ReviewScheduleVO> result = new ArrayList<>();
-        for (QuestionReviewSchedule schedule : schedules) {
-            ReviewScheduleVO vo = new ReviewScheduleVO();
-            vo.setId(schedule.getId());
-            vo.setQuestionId(schedule.getQuestionId());
-            vo.setEaseFactor(schedule.getEaseFactor());
-            vo.setIntervalDays(schedule.getIntervalDays());
-            vo.setRepetitions(schedule.getRepetitions());
-            vo.setNextReviewDate(schedule.getNextReviewDate());
-            vo.setLastReviewDate(schedule.getLastReviewDate());
-            vo.setLastQuality(schedule.getLastQuality());
-            vo.setTotalReviews(schedule.getTotalReviews());
-
-            // 逾期信息
-            if (schedule.getNextReviewDate() != null) {
-                boolean isOverdue = schedule.getNextReviewDate().isBefore(today);
-                vo.setOverdue(isOverdue);
-                if (isOverdue) {
-                    vo.setOverdueDays((int) java.time.temporal.ChronoUnit.DAYS
-                            .between(schedule.getNextReviewDate(), today));
-                }
-            }
-
-            // 状态标签
-            vo.setStatusLabel(buildStatusLabel(schedule));
-
-            // 填充题目信息
-            Question q = questionMap.get(schedule.getQuestionId());
-            if (q != null) {
-                vo.setQuestionContent(truncate(q.getContent(), 100));
-                vo.setQuestionType(q.getQuestionType());
-                vo.setDifficulty(q.getDifficulty());
-                vo.setCourseId(q.getCourseId());
-                vo.setCourseName(courseNameMap.get(q.getCourseId()));
-            }
-
-            result.add(vo);
-        }
-        return result;
-    }
-
-    private String buildStatusLabel(QuestionReviewSchedule schedule) {
-        if (schedule.getTotalReviews() == null || schedule.getTotalReviews() == 0) {
-            return "新卡片";
-        }
-        if (schedule.getEaseFactor() != null && schedule.getEaseFactor().compareTo(DIFFICULT_THRESHOLD) < 0) {
-            return "困难";
-        }
-        if (schedule.getIntervalDays() != null && schedule.getIntervalDays() >= MASTERED_THRESHOLD_DAYS) {
-            return "已掌握";
-        }
-        return "学习中";
-    }
-
-    // ========== AI 复习建议上下文 ==========
-
-    /**
-     * 收集复习上下文数据，用于构建 AI 复习建议 Prompt
-     */
-    public ReviewContextVO buildReviewContext(Long userId) {
-        ReviewContextVO ctx = new ReviewContextVO();
-
-        // 1. 复习统计概览
-        ctx.setStats(getReviewStats(userId));
-
-        LocalDate today = LocalDate.now();
-
-        // 2. 困难卡片（EF < 2.0，最多 10 条）
-        LambdaQueryWrapper<QuestionReviewSchedule> diffWrapper = new LambdaQueryWrapper<>();
-        diffWrapper.eq(QuestionReviewSchedule::getUserId, userId)
-                   .lt(QuestionReviewSchedule::getEaseFactor, DIFFICULT_THRESHOLD)
-                   .orderByAsc(QuestionReviewSchedule::getEaseFactor)
-                   .last("LIMIT 10");
-        List<QuestionReviewSchedule> diffCards = reviewScheduleMapper.selectList(diffWrapper);
-        ctx.setDifficultCards(fillScheduleVOs(diffCards, today));
-
-        // 3. 逾期卡片（最多 10 条）
-        LambdaQueryWrapper<QuestionReviewSchedule> overdueWrapper = new LambdaQueryWrapper<>();
-        overdueWrapper.eq(QuestionReviewSchedule::getUserId, userId)
-                      .lt(QuestionReviewSchedule::getNextReviewDate, today)
-                      .orderByAsc(QuestionReviewSchedule::getNextReviewDate)
-                      .last("LIMIT 10");
-        List<QuestionReviewSchedule> overdueCards = reviewScheduleMapper.selectList(overdueWrapper);
-        ctx.setOverdueCards(fillScheduleVOs(overdueCards, today));
-
-        // 4. 近 7 天每天复习量
-        java.util.List<Integer> dailyReviews = new java.util.ArrayList<>();
-        for (int i = 6; i >= 0; i--) {
-            LocalDate d = today.minusDays(i);
-            LambdaQueryWrapper<QuestionReviewSchedule> dayWrapper = new LambdaQueryWrapper<>();
-            dayWrapper.eq(QuestionReviewSchedule::getUserId, userId)
-                      .eq(QuestionReviewSchedule::getLastReviewDate, d);
-            Long count = reviewScheduleMapper.selectCount(dayWrapper);
-            dailyReviews.add(count != null ? count.intValue() : 0);
-        }
-        ctx.setRecentDailyReviews(dailyReviews);
-
-        return ctx;
-    }
-
-    private String truncate(String text, int maxLen) {
-        if (text == null) { return ""; }
-        // Remove markdown/HTML for preview
-        String plain = text.replaceAll("<[^>]+>", "").replaceAll("\\s+", " ").trim();
-        return plain.length() > maxLen ? plain.substring(0, maxLen) + "..." : plain;
-    }
 }

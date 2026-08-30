@@ -211,6 +211,16 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+复习计划查询与写事务拆分（Round 269，2026-08-31）：
+
+- 将待复习筛选、全部卡片查询、统计分类、连续天数、卡片 VO 组装和 AI 复习上下文迁入
+  `ReviewScheduleQueryService`；`SpacedRepetitionService` 只保留计划写入、答题事务和
+  SM-2 调度，从 741 行降至 380 行。
+- `ReviewController` 按读写职责分别调用两个 Service，既有 `/api/review/**` 路径、参数、
+  DTO 和鉴权不变；删除原先为测试保留的双构造器，生产依赖只保留一个显式构造器。
+- 复习域聚焦 23 个测试通过，新增统计分类 / 连续天数和 Controller 查询委派覆盖；完整
+  `mvn clean verify -B` 通过 567 个测试，双 Checkstyle 0、SpotBugs 0、JaCoCo 达标。
+
 移除无入口学习计划后端残留（Round 268，2026-08-31）：
 
 - 删除已无前端、产品范围、测试和其他服务调用的 `LearningPlanController`、Service、2 个
