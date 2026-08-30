@@ -467,7 +467,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { computed, ref, reactive, onMounted, nextTick } from 'vue'
 import { errorMessage } from '@/utils/errors'
 import { Coin, DataLine, Money, Refresh, Timer, TrendCharts, Warning, SuccessFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
@@ -480,21 +480,7 @@ import {
   type AiUsageOverview,
   type AiUsageReport,
 } from '@/api/aiUsage'
-import * as echarts from 'echarts/core'
-import { BarChart, PieChart, LineChart } from 'echarts/charts'
-import { TitleComponent, TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
-import { CanvasRenderer } from 'echarts/renderers'
-
-echarts.use([
-  BarChart,
-  PieChart,
-  LineChart,
-  TitleComponent,
-  TooltipComponent,
-  LegendComponent,
-  GridComponent,
-  CanvasRenderer,
-])
+import { useAiUsageCharts } from '@/composables/useAiUsageCharts'
 
 const days = ref(30)
 const loading = ref(false)
@@ -702,13 +688,7 @@ const usageStats = computed(() => [
   },
 ])
 
-const trendChartRef = ref<HTMLElement>()
-const functionChartRef = ref<HTMLElement>()
-const modelChartRef = ref<HTMLElement>()
-
-let trendChart: echarts.ECharts | null = null
-let functionChart: echarts.ECharts | null = null
-let modelChart: echarts.ECharts | null = null
+const { trendChartRef, functionChartRef, modelChartRef, renderCharts } = useAiUsageCharts(overview)
 
 function formatTokens(tokens: number | undefined): string {
   if (!tokens) return '0'
@@ -810,119 +790,8 @@ async function handleAcknowledgeAlert(id: number) {
   }
 }
 
-function renderCharts() {
-  renderTrendChart()
-  renderFunctionChart()
-  renderModelChart()
-}
-
-function renderTrendChart() {
-  if (!trendChartRef.value) return
-  if (!trendChart) {
-    trendChart = echarts.init(trendChartRef.value)
-  }
-  const trends = overview.dailyTrends || []
-  trendChart.setOption({
-    tooltip: { trigger: 'axis' },
-    legend: { data: ['成功', '失败', 'Tokens'], bottom: 0 },
-    grid: { left: '3%', right: '4%', bottom: '12%', top: '8%', containLabel: true },
-    xAxis: {
-      type: 'category',
-      data: trends.map((t) => t.date.slice(5)),
-      axisLabel: { rotate: trends.length > 15 ? 45 : 0 },
-    },
-    yAxis: [
-      { type: 'value', name: '调用次数', position: 'left' },
-      { type: 'value', name: 'Tokens', position: 'right' },
-    ],
-    series: [
-      {
-        name: '成功',
-        type: 'bar',
-        stack: 'calls',
-        data: trends.map((t) => t.successCount),
-        itemStyle: { color: '#67C23A' },
-      },
-      {
-        name: '失败',
-        type: 'bar',
-        stack: 'calls',
-        data: trends.map((t) => t.failedCount),
-        itemStyle: { color: '#F56C6C' },
-      },
-      {
-        name: 'Tokens',
-        type: 'line',
-        yAxisIndex: 1,
-        data: trends.map((t) => t.totalTokens),
-        itemStyle: { color: '#E6A23C' },
-        smooth: true,
-        lineStyle: { width: 2 },
-      },
-    ],
-  })
-}
-
-function renderFunctionChart() {
-  if (!functionChartRef.value) return
-  if (!functionChart) {
-    functionChart = echarts.init(functionChartRef.value)
-  }
-  const funcs = overview.functionStats || []
-  functionChart.setOption({
-    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-    legend: { orient: 'vertical', right: '5%', top: 'center', type: 'scroll' },
-    series: [
-      {
-        type: 'pie',
-        radius: ['40%', '70%'],
-        center: ['35%', '50%'],
-        avoidLabelOverlap: true,
-        label: { show: false },
-        data: funcs.map((f) => ({ name: f.functionType, value: f.count })),
-      },
-    ],
-  })
-}
-
-function renderModelChart() {
-  if (!modelChartRef.value) return
-  if (!modelChart) {
-    modelChart = echarts.init(modelChartRef.value)
-  }
-  const models = overview.modelStats || []
-  modelChart.setOption({
-    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-    legend: { orient: 'vertical', right: '5%', top: 'center', type: 'scroll' },
-    series: [
-      {
-        type: 'pie',
-        radius: ['40%', '70%'],
-        center: ['35%', '50%'],
-        avoidLabelOverlap: true,
-        label: { show: false },
-        data: models.map((m) => ({ name: m.model, value: m.count })),
-      },
-    ],
-  })
-}
-
-function handleResize() {
-  trendChart?.resize()
-  functionChart?.resize()
-  modelChart?.resize()
-}
-
 onMounted(() => {
   fetchData()
-  window.addEventListener('resize', handleResize)
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleResize)
-  trendChart?.dispose()
-  functionChart?.dispose()
-  modelChart?.dispose()
 })
 </script>
 
