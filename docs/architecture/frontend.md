@@ -55,9 +55,10 @@ frontend/admin/   # 独立管理端 HTML 入口
 - `components/` 负责可复用交互和展示，不直接复制页面级请求逻辑。
 - `components/statistics/` 承载学习诊断的概览、错因、推荐和详情弹窗；诊断 View 继续
   负责 API、SSE、路由与练习会话编排，展示组件只接收类型化数据并发出用户意图。
-- `components/exam/ExamRecordList.vue` 自包含考试记录查询、分页、状态 / 分数映射、桌面与
-  移动展示和继续考试 / 结果导航；`ExamListView` 只编排试卷列表、私有试卷导入与来源管理，
-  通过总数事件和显式刷新命令与记录组件协作。
+- `components/exam/` 承载学习端考试页的独立业务闭包：`ExamRecordList` 自包含记录查询、
+  分页、状态 / 分数映射、响应式展示和记录导航，`PrivateExamSourceManager` 自包含私有来源
+  查看、原文件分页、下载和关联删除；`ExamListView` 只编排试卷列表、私有导入和两个组件，
+  通过事件刷新跨组件数据。
 - `admin/views/ai-usage/` 承载 AI 运营报告、学习效果观察、样本结构和调用明细展示；
   `AiUsageView` 只编排周期、接口加载、提醒确认与图表生命周期。
 - `admin/views/exam/` 承载试卷管理中的独立业务对话框；智能组卷组件自行管理规则表单、

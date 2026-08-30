@@ -102,6 +102,7 @@ vi.mock('vue-router', async (importOriginal) => ({
 
 import ExamListView from '@/views/exam/ExamListView.vue'
 import PrivateExamImportDialog from '@/components/exam/PrivateExamImportDialog.vue'
+import PrivateExamSourceManager from '@/components/exam/PrivateExamSourceManager.vue'
 
 const stubs = {
   'el-tabs': { template: '<div><slot /></div>' },
@@ -219,13 +220,13 @@ describe('ExamListView paper provenance', () => {
   it('从累计用量进入仅含元数据和关联对象的原文件清单', async () => {
     const wrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
     await flushPromises()
-    const vm = wrapper.vm as unknown as {
-      openStorageDialog: () => Promise<void>
+    const pageVm = wrapper.vm as unknown as { openStorageDialog: () => void }
+    const sourceManagerVm = wrapper.findComponent(PrivateExamSourceManager).vm as unknown as {
       deleteStorageItem: (item: Record<string, unknown>) => Promise<void>
       storageFiles: Record<string, unknown>[]
     }
 
-    await vm.openStorageDialog()
+    pageVm.openStorageDialog()
     await flushPromises()
 
     expect(mockGetPrivateExamStorageFiles).toHaveBeenCalledWith({ pageNum: 1, pageSize: 10 })
@@ -233,7 +234,7 @@ describe('ExamListView paper provenance', () => {
     expect(wrapper.text()).toContain('关联草稿：待复核试卷')
     expect(wrapper.text()).not.toContain('application/pdf')
 
-    await vm.deleteStorageItem(vm.storageFiles[0])
+    await sourceManagerVm.deleteStorageItem(sourceManagerVm.storageFiles[0])
     expect(mockDeletePrivateExamDraft).toHaveBeenCalledWith(31)
     expect(mockGetPrivateExamStorageFiles).toHaveBeenCalledTimes(2)
   })
@@ -544,7 +545,7 @@ describe('ExamListView paper provenance', () => {
     const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
     const wrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
     await flushPromises()
-    const pageVm = wrapper.vm as unknown as {
+    const sourceManagerVm = wrapper.findComponent(PrivateExamSourceManager).vm as unknown as {
       privateSource: Record<string, unknown> | null
       downloadPaperSource: () => Promise<void>
     }
@@ -552,7 +553,7 @@ describe('ExamListView paper provenance', () => {
       activeDraft: Record<string, unknown> | null
       downloadDraftSource: () => Promise<void>
     }
-    pageVm.privateSource = {
+    sourceManagerVm.privateSource = {
       paperId: 51,
       sourceName: 'paper.pdf',
       sourceFormat: 'PDF',
@@ -564,7 +565,7 @@ describe('ExamListView paper provenance', () => {
       originalFileAvailable: true,
     }
 
-    await pageVm.downloadPaperSource()
+    await sourceManagerVm.downloadPaperSource()
     await dialogVm.downloadDraftSource()
 
     expect(mockDownloadPrivateExamSourceFile).toHaveBeenCalledWith(51)
