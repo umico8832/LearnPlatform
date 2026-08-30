@@ -23,7 +23,7 @@
         <el-button :icon="Upload" @click="importDialogVisible = true">导入题目</el-button>
         <el-button :icon="FolderOpened" @click="handleExport">导出题目</el-button>
         <el-button :icon="Warning" @click="openCorrectionDrawer">纠错记录</el-button>
-        <el-button type="primary" :icon="Plus" @click="openDialog()">新增题目</el-button>
+        <el-button type="primary" :icon="Plus" @click="openQuestionEditor()">新增题目</el-button>
       </div>
     </header>
 
@@ -159,7 +159,7 @@
               <el-button type="primary" link size="small" :icon="RefreshRight" @click="openReReview(row as QuestionVO)"
                 >复审</el-button
               >
-              <el-button type="primary" link size="small" :icon="Edit" @click="openDialog(row as QuestionVO)"
+              <el-button type="primary" link size="small" :icon="Edit" @click="openQuestionEditor(row as QuestionVO)"
                 >编辑</el-button
               >
               <el-dropdown
@@ -182,7 +182,7 @@
         </el-table-column>
         <template #empty>
           <el-empty class="admin-table-empty" description="没有匹配的题目">
-            <el-button type="primary" :icon="Plus" @click="openDialog()">新增题目</el-button>
+            <el-button type="primary" :icon="Plus" @click="openQuestionEditor()">新增题目</el-button>
           </el-empty>
         </template>
       </el-table>
@@ -403,106 +403,7 @@
       </template>
     </el-dialog>
 
-    <!-- 新增/编辑弹窗 -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="editingQuestion ? '编辑题目' : '新增题目'"
-      width="780px"
-      destroy-on-close
-      top="5vh"
-    >
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="90px" @submit.prevent>
-        <el-row :gutter="16">
-          <el-col :span="12">
-            <el-form-item label="所属课程" prop="courseId">
-              <el-select v-model="form.courseId" placeholder="选择课程" style="width: 100%">
-                <el-option v-for="c in courseList" :key="c.id" :label="c.name" :value="c.id" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="题型" prop="questionType">
-              <el-select v-model="form.questionType" placeholder="选择题型" style="width: 100%" @change="onTypeChange">
-                <el-option label="单选题" value="SINGLE_CHOICE" />
-                <el-option label="多选题" value="MULTIPLE_CHOICE" />
-                <el-option label="判断题" value="TRUE_FALSE" />
-                <el-option label="填空题" value="FILL_BLANK" />
-                <el-option label="简答题" value="SHORT_ANSWER" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-form-item label="题干内容" prop="content">
-          <el-input v-model="form.content" type="textarea" :rows="3" placeholder="请输入题干内容（支持 Markdown）" />
-        </el-form-item>
-
-        <!-- 选项区域（单选/多选/判断题） -->
-        <el-form-item v-if="showOptions" label="选项" prop="options">
-          <div class="options-area">
-            <div v-for="(opt, idx) in form.options" :key="idx" class="option-row">
-              <el-input v-model="opt.content" :placeholder="'选项 ' + opt.optionLabel" style="flex: 1" />
-              <el-checkbox v-model="opt.isCorrect" :true-value="1" :false-value="0" class="option-correct">
-                正确
-              </el-checkbox>
-              <el-button
-                :icon="Delete"
-                circle
-                size="small"
-                type="danger"
-                @click="removeOption(idx)"
-                :disabled="form.options.length <= 2"
-              />
-            </div>
-            <el-button type="primary" link @click="addOption" :disabled="form.options.length >= 8">
-              + 添加选项
-            </el-button>
-          </div>
-        </el-form-item>
-
-        <el-row :gutter="16">
-          <el-col :span="8">
-            <el-form-item label="难度" prop="difficulty">
-              <el-rate v-model="form.difficulty" :max="5" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="分值" prop="score">
-              <el-input-number v-model="form.score" :min="1" :max="100" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="标签" prop="tags">
-              <el-input v-model="form.tags" placeholder="逗号分隔" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-form-item label="题目解析">
-          <el-input v-model="form.analysis" type="textarea" :rows="3" placeholder="请输入题目解析（选填）" />
-        </el-form-item>
-
-        <el-form-item label="关联知识点">
-          <el-tree-select
-            v-model="form.knowledgePointIds"
-            :data="kpTreeData"
-            :props="{ label: 'name', value: 'id', children: 'children' } as any"
-            multiple
-            check-strictly
-            clearable
-            placeholder="选择关联知识点"
-            style="width: 100%"
-          />
-        </el-form-item>
-      </el-form>
-
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="handleSubmit">
-          {{ editingQuestion ? '更新' : '创建' }}
-        </el-button>
-      </template>
-    </el-dialog>
+    <QuestionEditorDialog ref="questionEditor" :courses="courseList" @saved="fetchQuestions" />
 
     <QuestionGovernanceDrawers
       v-model:duplicate-visible="duplicateDrawerVisible"
@@ -518,7 +419,7 @@
       :version-loading="versionLoading"
       :version-question="versionQuestion"
       :question-versions="questionVersions"
-      @edit="openDialog"
+      @edit="openQuestionEditor"
       @review="openReReview"
       @refresh-corrections="fetchCorrectionReports"
       @process-correction="handleProcessCorrection"
@@ -549,11 +450,9 @@ import {
   Clock,
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { FormInstance, FormRules, TableInstance } from 'element-plus'
+import type { TableInstance } from 'element-plus'
 import {
   getAdminQuestionPage,
-  createQuestion,
-  updateQuestion,
   deleteQuestion,
   getReviewRecords,
   getReviewSuggestion,
@@ -563,8 +462,6 @@ import {
   getAdminQuestionCorrectionReports,
   processQuestionCorrectionReport,
   type QuestionVO,
-  type QuestionForm,
-  type OptionItem,
   type QuestionReviewRecordVO,
   type QuestionReviewSuggestionVO,
   type QuestionDuplicateGroupVO,
@@ -573,7 +470,6 @@ import {
 } from '@/api/question'
 import { clearAssetCache } from '@/api/ai'
 import { getAllCourses, type CourseVO } from '@/api/course'
-import { getKnowledgeTree, type KnowledgePointVO } from '@/api/knowledgePoint'
 import {
   questionTypeLabel,
   questionTypeTag,
@@ -583,6 +479,7 @@ import {
 } from './questionManagePresentation'
 import { useQuestionImportExport } from './useQuestionImportExport'
 import QuestionGovernanceDrawers from './QuestionGovernanceDrawers.vue'
+import QuestionEditorDialog from './question/QuestionEditorDialog.vue'
 
 const questions = ref<QuestionVO[]>([])
 const questionTableRef = ref<TableInstance>()
@@ -602,9 +499,7 @@ const filters = reactive({
 
 // 课程列表
 const courseList = ref<CourseVO[]>([])
-
-// 知识点树
-const kpTreeData = ref<KnowledgePointVO[]>([])
+const questionEditor = ref<InstanceType<typeof QuestionEditorDialog>>()
 
 // 复审相关
 const reReviewVisible = ref(false)
@@ -635,30 +530,6 @@ const reReviewForm = reactive({
   newDifficulty: 3,
   comment: '',
 })
-
-// 弹窗相关
-const dialogVisible = ref(false)
-const editingQuestion = ref<QuestionVO | null>(null)
-const submitting = ref(false)
-const formRef = ref<FormInstance>()
-
-const form = reactive({
-  content: '',
-  questionType: '' as string,
-  courseId: null as number | null,
-  difficulty: 3,
-  analysis: '',
-  tags: '',
-  score: 1,
-  options: [] as OptionItem[],
-  knowledgePointIds: [] as number[],
-})
-
-const rules: FormRules = {
-  content: [{ required: true, message: '请输入题干内容', trigger: 'blur' }],
-  questionType: [{ required: true, message: '请选择题型', trigger: 'change' }],
-  courseId: [{ required: true, message: '请选择所属课程', trigger: 'change' }],
-}
 
 const {
   importDialogVisible,
@@ -730,10 +601,7 @@ const clearQuestionSelection = () => {
   questionTableRef.value?.clearSelection()
 }
 
-// 是否显示选项区域
-const showOptions = computed(() => {
-  return ['SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'TRUE_FALSE'].includes(form.questionType)
-})
+const openQuestionEditor = (question?: QuestionVO) => questionEditor.value?.open(question)
 
 // 打开复审弹窗
 async function openReReview(question: QuestionVO) {
@@ -804,51 +672,6 @@ async function handleReReview() {
   } finally {
     reReviewLoading.value = false
   }
-}
-
-// 获取选项标签 A/B/C/D...
-function getOptionLabel(index: number): string {
-  return String.fromCharCode(65 + index)
-}
-
-// 题型切换时重置选项
-function onTypeChange(type: string) {
-  if (type === 'TRUE_FALSE') {
-    form.options = [
-      { content: '正确', optionLabel: 'A', isCorrect: 1, sortOrder: 0 },
-      { content: '错误', optionLabel: 'B', isCorrect: 0, sortOrder: 1 },
-    ]
-  } else if (['SINGLE_CHOICE', 'MULTIPLE_CHOICE'].includes(type)) {
-    if (form.options.length < 2 || form.options[0].content === '正确') {
-      form.options = [
-        { content: '', optionLabel: 'A', isCorrect: 0, sortOrder: 0 },
-        { content: '', optionLabel: 'B', isCorrect: 0, sortOrder: 1 },
-        { content: '', optionLabel: 'C', isCorrect: 0, sortOrder: 2 },
-        { content: '', optionLabel: 'D', isCorrect: 0, sortOrder: 3 },
-      ]
-    }
-  } else {
-    form.options = []
-  }
-}
-
-function addOption() {
-  const idx = form.options.length
-  form.options.push({
-    content: '',
-    optionLabel: getOptionLabel(idx),
-    isCorrect: 0,
-    sortOrder: idx,
-  })
-}
-
-function removeOption(idx: number) {
-  form.options.splice(idx, 1)
-  // 重新分配标签
-  form.options.forEach((opt, i) => {
-    opt.optionLabel = getOptionLabel(i)
-    opt.sortOrder = i
-  })
 }
 
 async function fetchQuestions() {
@@ -969,98 +792,6 @@ async function fetchCourses() {
   }
 }
 
-async function fetchKPTree(courseId?: number) {
-  try {
-    if (!courseId) {
-      kpTreeData.value = []
-      return
-    }
-    const res = await getKnowledgeTree(courseId)
-    kpTreeData.value = res.data
-  } catch {
-    kpTreeData.value = []
-  }
-}
-
-function openDialog(question?: QuestionVO) {
-  editingQuestion.value = question || null
-  if (question) {
-    form.content = question.content
-    form.questionType = question.questionType
-    form.courseId = question.courseId
-    form.difficulty = question.difficulty
-    form.analysis = question.analysis || ''
-    form.tags = question.tags || ''
-    form.score = question.score
-    form.options = question.options.map((o) => ({ ...o }))
-    form.knowledgePointIds = [...(question.knowledgePointIds || [])]
-  } else {
-    form.content = ''
-    form.questionType = ''
-    form.courseId = null
-    form.difficulty = 3
-    form.analysis = ''
-    form.tags = ''
-    form.score = 1
-    form.options = []
-    form.knowledgePointIds = []
-  }
-  dialogVisible.value = true
-  // 加载知识点树
-  if (form.courseId) {
-    fetchKPTree(form.courseId)
-  }
-}
-
-async function handleSubmit() {
-  if (!formRef.value) return
-  const valid = await formRef.value.validate().catch(() => false)
-  if (!valid) return
-
-  // 校验选项
-  if (showOptions.value) {
-    const hasCorrect = form.options.some((o) => o.isCorrect === 1)
-    if (!hasCorrect) {
-      ElMessage.warning('请至少设置一个正确选项')
-      return
-    }
-    const hasEmpty = form.options.some((o) => !o.content.trim())
-    if (hasEmpty) {
-      ElMessage.warning('选项内容不能为空')
-      return
-    }
-  }
-
-  submitting.value = true
-  try {
-    const data: QuestionForm = {
-      content: form.content,
-      questionType: form.questionType,
-      courseId: form.courseId!,
-      difficulty: form.difficulty,
-      analysis: form.analysis || undefined,
-      tags: form.tags || undefined,
-      score: form.score,
-      options: showOptions.value ? form.options : undefined,
-      knowledgePointIds: form.knowledgePointIds.length > 0 ? form.knowledgePointIds : undefined,
-    }
-
-    if (editingQuestion.value) {
-      await updateQuestion(editingQuestion.value.id, data)
-      ElMessage.success('更新成功')
-    } else {
-      await createQuestion(data)
-      ElMessage.success('创建成功')
-    }
-    dialogVisible.value = false
-    fetchQuestions()
-  } catch {
-    // 错误已在拦截器中处理
-  } finally {
-    submitting.value = false
-  }
-}
-
 async function handleDelete(id: number) {
   try {
     await deleteQuestion(id)
@@ -1141,7 +872,6 @@ async function handleBulkClearAiCache() {
 onMounted(() => {
   fetchQuestions()
   fetchCourses()
-  fetchKPTree()
 })
 </script>
 
@@ -1149,21 +879,6 @@ onMounted(() => {
 .table-summary {
   color: var(--lp-text-muted);
   font-size: 13px;
-}
-
-.options-area {
-  width: 100%;
-}
-
-.option-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-.option-correct {
-  white-space: nowrap;
 }
 
 .review-suggestion-actions {
