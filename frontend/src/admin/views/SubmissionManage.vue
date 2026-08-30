@@ -229,216 +229,7 @@
       </el-descriptions>
     </el-dialog>
 
-    <!-- AI 知识点标注对话框 -->
-    <el-dialog v-model="showKPTaggingDialog" title="AI 知识点标注" width="720px">
-      <div
-        v-if="kpTaggingLoading"
-        v-loading="true"
-        element-loading-text="AI 正在分析题目知识点归属，请稍候..."
-        style="min-height: 120px"
-      />
-      <div v-else-if="kpTaggingResult">
-        <!-- AI 分析说明 -->
-        <el-alert
-          :title="kpTaggingResult.analysis"
-          type="info"
-          show-icon
-          :closable="false"
-          style="margin-bottom: 16px"
-        />
-
-        <!-- 推荐知识点列表 -->
-        <div v-if="kpTaggingResult.recommendations.length > 0">
-          <div style="font-weight: 600; margin-bottom: 8px">
-            推荐知识点（共 {{ kpTaggingResult.recommendations.length }} 个）
-          </div>
-          <el-table :data="kpTaggingResult.recommendations" border size="small" style="margin-bottom: 16px">
-            <el-table-column label="知识点" prop="name" min-width="120" />
-            <el-table-column label="课程" prop="courseName" width="120" />
-            <el-table-column label="置信度" width="100">
-              <template #default="{ row }">
-                <el-tag :type="confidenceType(row.confidence)" size="small">{{
-                  confidenceLabel(row.confidence)
-                }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="推荐理由" prop="reason" min-width="200" show-overflow-tooltip />
-          </el-table>
-
-          <el-card shadow="never" style="background: #f0f9ff">
-            <div style="font-size: 13px; color: #606266; margin-bottom: 8px">
-              <strong>一键应用：</strong>将以下知识点 ID 应用到投稿的「知识点IDs」字段
-            </div>
-            <div style="display: flex; align-items: center; gap: 12px">
-              <el-input v-model="kpTaggingSuggestedIds" readonly style="flex: 1" />
-              <el-button type="primary" @click="handleApplyKP" :loading="applyingKP">应用到投稿</el-button>
-            </div>
-          </el-card>
-        </div>
-        <el-empty v-else description="未找到匹配的知识点" />
-      </div>
-      <template #footer>
-        <el-button @click="showKPTaggingDialog = false">关闭</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- AI 质检结果对话框 -->
-    <el-dialog v-model="showQualityDialog" title="AI 质检报告" width="720px">
-      <div
-        v-if="qualityLoading"
-        v-loading="true"
-        element-loading-text="AI 正在分析题目质量，请稍候..."
-        style="min-height: 120px"
-      />
-      <div v-else-if="qualityResult">
-        <!-- 总评 -->
-        <el-card shadow="never" style="margin-bottom: 16px">
-          <div style="display: flex; align-items: center; justify-content: space-between">
-            <div>
-              <span style="font-size: 16px; font-weight: 600">综合评分：</span>
-              <el-tag
-                :type="
-                  qualityResult.qualityScore >= 80 ? 'success' : qualityResult.qualityScore >= 50 ? 'warning' : 'danger'
-                "
-                size="large"
-                style="font-size: 18px; margin-left: 8px"
-              >
-                {{ qualityResult.qualityScore }} 分
-              </el-tag>
-            </div>
-            <el-tag :type="recommendationType(qualityResult.recommendation)" size="large">
-              {{ recommendationLabel(qualityResult.recommendation) }}
-            </el-tag>
-          </div>
-          <p style="margin-top: 10px; color: #606266">{{ qualityResult.summary }}</p>
-        </el-card>
-
-        <!-- 五维检查 -->
-        <el-row :gutter="12" style="margin-bottom: 16px">
-          <el-col v-for="(item, idx) in qualityCheckItems" :key="idx" :span="12" style="margin-bottom: 8px">
-            <div
-              style="
-                display: flex;
-                align-items: flex-start;
-                gap: 8px;
-                padding: 8px 12px;
-                background: #f5f7fa;
-                border-radius: 6px;
-              "
-            >
-              <el-tag :type="checkStatusType(item.status)" size="small" style="flex-shrink: 0">{{
-                checkStatusLabel(item.status)
-              }}</el-tag>
-              <div>
-                <div style="font-weight: 600; font-size: 13px">{{ item.label }}</div>
-                <div style="font-size: 12px; color: #909399; margin-top: 2px">{{ item.detail }}</div>
-              </div>
-            </div>
-          </el-col>
-        </el-row>
-
-        <!-- 风险点 -->
-        <el-card
-          v-if="qualityResult.riskPoints && qualityResult.riskPoints.length > 0"
-          shadow="never"
-          style="margin-bottom: 12px"
-        >
-          <template #header><span style="color: #e6a23c; font-weight: 600">⚠ 风险点</span></template>
-          <ul style="margin: 0; padding-left: 20px">
-            <li v-for="(point, idx) in qualityResult.riskPoints" :key="idx" style="color: #e6a23c; margin-bottom: 4px">
-              {{ point }}
-            </li>
-          </ul>
-        </el-card>
-
-        <!-- 修改建议 -->
-        <el-card v-if="qualityResult.suggestions && qualityResult.suggestions.length > 0" shadow="never">
-          <template #header><span style="color: #409eff; font-weight: 600">💡 修改建议</span></template>
-          <ul style="margin: 0; padding-left: 20px">
-            <li v-for="(sug, idx) in qualityResult.suggestions" :key="idx" style="color: #409eff; margin-bottom: 4px">
-              {{ sug }}
-            </li>
-          </ul>
-        </el-card>
-      </div>
-      <template #footer>
-        <el-button @click="showQualityDialog = false">关闭</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- AI 难度评估对话框 -->
-    <el-dialog v-model="showDifficultyDialog" title="AI 难度评估报告" width="720px">
-      <div
-        v-if="difficultyLoading"
-        v-loading="true"
-        element-loading-text="AI 正在评估题目难度，请稍候..."
-        style="min-height: 120px"
-      />
-      <div v-else-if="difficultyResult">
-        <!-- 总评 -->
-        <el-card shadow="never" style="margin-bottom: 16px">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px">
-            <div>
-              <span style="font-size: 16px; font-weight: 600">AI 评估难度：</span>
-              <el-rate
-                :model-value="difficultyResult.suggestedDifficulty"
-                disabled
-                :max="5"
-                style="display: inline-flex; margin-left: 8px"
-              />
-              <el-tag
-                :type="difficultyConfidenceType(difficultyResult.confidence)"
-                size="small"
-                style="margin-left: 8px"
-              >
-                {{ difficultyConfidenceLabel(difficultyResult.confidence) }}
-              </el-tag>
-            </div>
-            <div v-if="difficultyResult.originalDifficulty">
-              <span style="font-size: 13px; color: #909399">投稿者标注：</span>
-              <el-rate
-                :model-value="difficultyResult.originalDifficulty"
-                disabled
-                :max="5"
-                style="display: inline-flex; margin-left: 4px"
-              />
-              <el-tag v-if="difficultyResult.difficultyMatch" type="success" size="small" style="margin-left: 4px"
-                >一致</el-tag
-              >
-              <el-tag v-else type="warning" size="small" style="margin-left: 4px">不一致</el-tag>
-            </div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px">
-            <span style="font-size: 13px; color: #606266"
-              >认知层次：<el-tag size="small">{{ difficultyResult.cognitiveLevel }}</el-tag></span
-            >
-          </div>
-          <p style="color: #606266; margin: 0">{{ difficultyResult.reason }}</p>
-        </el-card>
-
-        <!-- 难度影响因素 -->
-        <div v-if="difficultyResult.factors && difficultyResult.factors.length > 0" style="margin-bottom: 16px">
-          <div style="font-weight: 600; margin-bottom: 8px">影响难度的因素</div>
-          <el-table :data="difficultyResult.factors" border size="small">
-            <el-table-column label="因素" prop="name" width="120" />
-            <el-table-column label="说明" prop="description" min-width="200" show-overflow-tooltip />
-            <el-table-column label="影响" width="100">
-              <template #default="{ row }">
-                <el-tag :type="impactType(row.impact)" size="small">{{ impactLabel(row.impact) }}</el-tag>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-
-        <!-- 总结 -->
-        <el-card shadow="never" style="background: #f0f9ff">
-          <div style="font-size: 13px; color: #606266"><strong>总结：</strong>{{ difficultyResult.summary }}</div>
-        </el-card>
-      </div>
-      <template #footer>
-        <el-button @click="showDifficultyDialog = false">关闭</el-button>
-      </template>
-    </el-dialog>
+    <SubmissionAiTools ref="submissionAiTools" @updated="loadSubmissions" />
   </div>
 </template>
 
@@ -465,17 +256,11 @@ import {
   reviewSubmission,
   importSubmission,
   getSubmissionStats,
-  qualityCheckSubmission,
-  kpTaggingSubmission,
-  applyKnowledgePoints,
-  assessDifficulty,
   generateReviewComment,
   type QuestionSubmissionVO,
   type SubmissionStats,
-  type SubmissionQualityCheck,
-  type SubmissionKPTagging,
-  type SubmissionDifficultyAssessment,
 } from '@/api/submission'
+import SubmissionAiTools from './submission/SubmissionAiTools.vue'
 
 const router = useRouter()
 const loading = ref(false)
@@ -489,6 +274,7 @@ const pageNum = ref(1)
 const pageSize = 10
 const total = ref(0)
 const stats = ref<SubmissionStats>({ pending: 0, approved: 0, rejected: 0, imported: 0 })
+const submissionAiTools = ref<InstanceType<typeof SubmissionAiTools>>()
 
 const submissionStats = computed(() => [
   { label: '待审核', value: stats.value.pending, note: '需要管理员处理', icon: Search },
@@ -498,16 +284,8 @@ const submissionStats = computed(() => [
 ])
 
 const handleSubmissionRowCommand = (command: string, submission: QuestionSubmissionVO) => {
-  if (command === 'quality') {
-    handleQualityCheck(submission)
-    return
-  }
-  if (command === 'tagging') {
-    handleKPTagging(submission)
-    return
-  }
-  if (command === 'difficulty') {
-    handleDifficultyAssessment(submission)
+  if (command === 'quality' || command === 'tagging' || command === 'difficulty') {
+    submissionAiTools.value?.open(command, submission)
   }
 }
 
@@ -521,9 +299,6 @@ const clearSubmissionSelection = () => {
 
 const showReviewDialog = ref(false)
 const showDetailDialog = ref(false)
-const showQualityDialog = ref(false)
-const qualityLoading = ref(false)
-const qualityResult = ref<SubmissionQualityCheck | null>(null)
 const currentDetail = ref<QuestionSubmissionVO | null>(null)
 const reviewTarget = ref<QuestionSubmissionVO | null>(null)
 const reviewAction = ref(1) // 1=通过 2=拒绝
@@ -531,19 +306,6 @@ const reviewComment = ref('')
 
 // 一键填充审核意见
 const generatingComment = ref(false)
-
-// AI 难度评估
-const showDifficultyDialog = ref(false)
-const difficultyLoading = ref(false)
-const difficultyResult = ref<SubmissionDifficultyAssessment | null>(null)
-
-// AI 知识点标注
-const showKPTaggingDialog = ref(false)
-const kpTaggingLoading = ref(false)
-const kpTaggingResult = ref<SubmissionKPTagging | null>(null)
-const kpTaggingSuggestedIds = ref('')
-const kpTaggingTarget = ref<QuestionSubmissionVO | null>(null)
-const applyingKP = ref(false)
 
 const questionTypeLabel = (type: string) => {
   const map: Record<string, string> = {
@@ -742,157 +504,6 @@ const handleBulkImport = async () => {
 const goToQuestion = (id: number) => {
   showDetailDialog.value = false
   router.push({ name: 'AdminQuestionManage', query: { highlight: id } })
-}
-
-// ========== AI 质检 ==========
-
-const handleQualityCheck = async (row: QuestionSubmissionVO) => {
-  qualityResult.value = null
-  qualityLoading.value = true
-  showQualityDialog.value = true
-  try {
-    const res = await qualityCheckSubmission(row.id)
-    if (res.code === 0 && res.data) {
-      qualityResult.value = res.data
-    } else {
-      ElMessage.error(res.message || '质检失败')
-      showQualityDialog.value = false
-    }
-  } catch {
-    ElMessage.error('质检请求失败')
-    showQualityDialog.value = false
-  } finally {
-    qualityLoading.value = false
-  }
-}
-
-const recommendationLabel = (rec: string) => {
-  const map: Record<string, string> = { APPROVE: '推荐通过', REVISE: '建议修改', REJECT: '建议拒绝' }
-  return map[rec] || rec
-}
-
-const recommendationType = (rec: string) => {
-  const map: Record<string, SemanticTagType> = { APPROVE: 'success', REVISE: 'warning', REJECT: 'danger' }
-  return map[rec] || 'info'
-}
-
-const checkStatusLabel = (status: string) => {
-  const map: Record<string, string> = { PASS: '通过', WARNING: '警告', FAIL: '不通过' }
-  return map[status] || status
-}
-
-const checkStatusType = (status: string) => {
-  const map: Record<string, SemanticTagType> = { PASS: 'success', WARNING: 'warning', FAIL: 'danger' }
-  return map[status] || 'info'
-}
-
-const confidenceLabel = (c: string) => {
-  const map: Record<string, string> = { HIGH: '高度相关', MEDIUM: '中等相关', LOW: '可能相关' }
-  return map[c] || c
-}
-
-const confidenceType = (c: string) => {
-  const map: Record<string, SemanticTagType> = { HIGH: 'success', MEDIUM: undefined, LOW: 'info' }
-  return map[c] || 'info'
-}
-
-const qualityCheckItems = computed(() => {
-  if (!qualityResult.value) return []
-  const r = qualityResult.value
-  return [
-    { label: '格式规范', status: r.formatCheck.status, detail: r.formatCheck.detail },
-    { label: '内容完整性', status: r.completenessCheck.status, detail: r.completenessCheck.detail },
-    { label: '答案正确性', status: r.answerCheck.status, detail: r.answerCheck.detail },
-    { label: '解析质量', status: r.analysisCheck.status, detail: r.analysisCheck.detail },
-    { label: '知识点相关性', status: r.knowledgePointCheck.status, detail: r.knowledgePointCheck.detail },
-  ]
-})
-
-// ========== AI 知识点标注 ==========
-
-const handleKPTagging = async (row: QuestionSubmissionVO) => {
-  kpTaggingResult.value = null
-  kpTaggingSuggestedIds.value = ''
-  kpTaggingTarget.value = row
-  kpTaggingLoading.value = true
-  showKPTaggingDialog.value = true
-  try {
-    const res = await kpTaggingSubmission(row.id)
-    if (res.code === 0 && res.data) {
-      kpTaggingResult.value = res.data
-      kpTaggingSuggestedIds.value = res.data.suggestedIds
-    } else {
-      ElMessage.error(res.message || '知识点标注失败')
-      showKPTaggingDialog.value = false
-    }
-  } catch {
-    ElMessage.error('标注请求失败')
-    showKPTaggingDialog.value = false
-  } finally {
-    kpTaggingLoading.value = false
-  }
-}
-
-const handleApplyKP = async () => {
-  if (!kpTaggingTarget.value || !kpTaggingSuggestedIds.value) {
-    ElMessage.warning('没有可应用的知识点')
-    return
-  }
-  applyingKP.value = true
-  try {
-    const res = await applyKnowledgePoints(kpTaggingTarget.value.id, kpTaggingSuggestedIds.value)
-    if (res.code === 0) {
-      ElMessage.success('知识点已应用到投稿')
-      showKPTaggingDialog.value = false
-      loadSubmissions()
-    } else {
-      ElMessage.error(res.message || '应用失败')
-    }
-  } finally {
-    applyingKP.value = false
-  }
-}
-
-// ========== AI 难度评估 ==========
-
-const handleDifficultyAssessment = async (row: QuestionSubmissionVO) => {
-  difficultyResult.value = null
-  difficultyLoading.value = true
-  showDifficultyDialog.value = true
-  try {
-    const res = await assessDifficulty(row.id)
-    if (res.code === 0 && res.data) {
-      difficultyResult.value = res.data
-    } else {
-      ElMessage.error(res.message || '难度评估失败')
-      showDifficultyDialog.value = false
-    }
-  } catch {
-    ElMessage.error('难度评估请求失败')
-    showDifficultyDialog.value = false
-  } finally {
-    difficultyLoading.value = false
-  }
-}
-
-const difficultyConfidenceLabel = (c: string) => {
-  const map: Record<string, string> = { HIGH: '高度可信', MEDIUM: '较为可信', LOW: '仅供参考' }
-  return map[c] || c
-}
-
-const difficultyConfidenceType = (c: string) => {
-  const map: Record<string, SemanticTagType> = { HIGH: 'success', MEDIUM: undefined, LOW: 'info' }
-  return map[c] || 'info'
-}
-
-const impactLabel = (impact: string) => {
-  const map: Record<string, string> = { INCREASE: '↑ 增难', DECREASE: '↓ 降难', NEUTRAL: '— 中性' }
-  return map[impact] || impact
-}
-
-const impactType = (impact: string) => {
-  const map: Record<string, SemanticTagType> = { INCREASE: 'danger', DECREASE: 'success', NEUTRAL: 'info' }
-  return map[impact] || 'info'
 }
 
 // ========== 一键填充审核意见 ==========
