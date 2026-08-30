@@ -102,105 +102,7 @@
         </el-tab-pane>
 
         <el-tab-pane label="考试记录" name="records">
-          <div v-loading="recordsLoading" class="record-panel">
-            <LpEmptyState v-if="!recordsLoading && records.length === 0" title="暂无考试记录" />
-
-            <el-table v-else :data="records as any" stripe class="record-table">
-              <el-table-column prop="examTitle" label="试卷名称" min-width="200" />
-              <el-table-column label="得分" width="120">
-                <template #default="{ row }">
-                  <span :class="['score-text', getScoreClass(row as ExamRecordVO)]">
-                    {{ formatScore(row as ExamRecordVO) }}
-                  </span>
-                </template>
-              </el-table-column>
-              <el-table-column label="状态" width="100">
-                <template #default="{ row }">
-                  <el-tag :type="recordStatusTag((row as ExamRecordVO).status)" size="small">
-                    {{ recordStatusLabel((row as ExamRecordVO).status) }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="开始时间" width="180">
-                <template #default="{ row }">{{ formatTime((row as ExamRecordVO).startTime) }}</template>
-              </el-table-column>
-              <el-table-column label="操作" width="120" fixed="right">
-                <template #default="{ row }">
-                  <el-button
-                    v-if="[1, 3].includes((row as ExamRecordVO).status)"
-                    type="primary"
-                    link
-                    size="small"
-                    :icon="View"
-                    @click="viewResult((row as ExamRecordVO).id)"
-                  >
-                    查看结果
-                  </el-button>
-                  <el-button
-                    v-else-if="(row as ExamRecordVO).status === 0"
-                    type="warning"
-                    link
-                    size="small"
-                    :icon="EditPen"
-                    @click="continueExam(row as ExamRecordVO)"
-                  >
-                    继续考试
-                  </el-button>
-                  <span v-else class="record-finished-hint">不可继续</span>
-                </template>
-              </el-table-column>
-            </el-table>
-
-            <div v-if="records.length > 0" class="record-mobile-list" aria-label="考试记录">
-              <article v-for="record in records" :key="record.id" class="record-mobile-card">
-                <div class="record-mobile-header">
-                  <h3>{{ record.examTitle }}</h3>
-                  <el-tag :type="recordStatusTag(record.status)" size="small">
-                    {{ recordStatusLabel(record.status) }}
-                  </el-tag>
-                </div>
-                <dl class="record-mobile-meta">
-                  <div>
-                    <dt>得分</dt>
-                    <dd :class="['score-text', getScoreClass(record)]">{{ formatScore(record) }}</dd>
-                  </div>
-                  <div>
-                    <dt>开始时间</dt>
-                    <dd>{{ formatTime(record.startTime) }}</dd>
-                  </div>
-                </dl>
-                <div class="record-mobile-action">
-                  <el-button
-                    v-if="[1, 3].includes(record.status)"
-                    type="primary"
-                    :icon="View"
-                    @click="viewResult(record.id)"
-                  >
-                    查看结果
-                  </el-button>
-                  <el-button
-                    v-else-if="record.status === 0"
-                    type="warning"
-                    :icon="EditPen"
-                    @click="continueExam(record)"
-                  >
-                    继续考试
-                  </el-button>
-                  <span v-else class="record-finished-hint">考试已超时，不可继续</span>
-                </div>
-              </article>
-            </div>
-          </div>
-
-          <div class="pagination-wrapper" v-if="recordsTotal > 0">
-            <el-pagination
-              v-model:current-page="recordsPageNum"
-              :total="recordsTotal"
-              :page-size="10"
-              layout="total, prev, pager, next"
-              @current-change="loadRecords"
-            />
-          </div>
+          <ExamRecordList ref="examRecordListRef" @total-change="recordsTotal = $event" />
         </el-tab-pane>
       </el-tabs>
     </section>
@@ -286,24 +188,24 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Document, EditPen, Medal, Reading, Timer, Upload, View } from '@element-plus/icons-vue'
+import { Document, EditPen, Medal, Reading, Timer, Upload } from '@element-plus/icons-vue'
 import {
   deletePrivateExamDraft,
   deletePrivateExamPaper,
   downloadPrivateExamDraftSourceFile,
   downloadPrivateExamSourceFile,
-  getMyExamRecords,
   getPrivateExamStorageFiles,
   getPrivateExamSource,
   getPublishedPapers,
   startExam,
   startExamLearningSession,
 } from '@/api/exam'
-import type { ExamPaperVO, ExamRecordVO, ExamStatus, PrivateExamSource, PrivateExamSourceStorageItem } from '@/api/exam'
+import type { ExamPaperVO, PrivateExamSource, PrivateExamSourceStorageItem } from '@/api/exam'
 import { formatTime, formatStorage } from '@/utils/format'
 import LpPageHeader from '@/components/ui/LpPageHeader.vue'
 import LpStat from '@/components/ui/LpStat.vue'
 import LpEmptyState from '@/components/ui/LpEmptyState.vue'
+import ExamRecordList from '@/components/exam/ExamRecordList.vue'
 import PrivateExamImportDialog from '@/components/exam/PrivateExamImportDialog.vue'
 
 const router = useRouter()
@@ -337,14 +239,11 @@ const storageDownloadingId = ref<number | null>(null)
 const storageDeletingId = ref<number | null>(null)
 
 // 考试记录
-const recordsLoading = ref(false)
-const records = ref<ExamRecordVO[]>([])
 const recordsTotal = ref(0)
-const recordsPageNum = ref(1)
+const examRecordListRef = ref<InstanceType<typeof ExamRecordList> | null>(null)
 
 onMounted(() => {
   loadPapers()
-  loadRecords()
 })
 
 const openImportDialog = () => {
@@ -508,23 +407,8 @@ const loadPapers = async () => {
   }
 }
 
-const loadRecords = async () => {
-  recordsLoading.value = true
-  try {
-    const res = await getMyExamRecords({ pageNum: recordsPageNum.value, pageSize: 10 })
-    if (res.code === 0 && res.data) {
-      records.value = res.data.records || []
-      recordsTotal.value = res.data.total || 0
-    }
-  } catch {
-    ElMessage.error('获取考试记录失败')
-  } finally {
-    recordsLoading.value = false
-  }
-}
-
 const handleTabChange = (tab: string | number) => {
-  if (tab === 'records') loadRecords()
+  if (tab === 'records') void examRecordListRef.value?.reload()
 }
 
 const handleStartExam = async (paperId: number) => {
@@ -557,44 +441,6 @@ const handleStartLearning = async (paperId: number) => {
   } finally {
     learningId.value = null
   }
-}
-
-const viewResult = (recordId: number) => {
-  router.push({ name: 'ExamResult', params: { recordId: String(recordId) } })
-}
-
-const continueExam = (record: ExamRecordVO) => {
-  router.push({ name: 'ExamTake', params: { recordId: String(record.id) } })
-}
-
-const getScoreClass = (row: ExamRecordVO) => {
-  if (row.status !== 1 || row.score == null || !row.totalScore || row.totalScore === 0) return ''
-  const ratio = row.score / row.totalScore
-  if (ratio >= 0.8) return 'score-high'
-  if (ratio >= 0.6) return 'score-mid'
-  return 'score-low'
-}
-
-const formatScore = (row: ExamRecordVO) => {
-  if (row.status === 3) return `${row.score ?? 0} / ${row.totalScore}（暂定）`
-  if (row.status !== 1 || row.score == null) return `— / ${row.totalScore}`
-  return `${row.score} / ${row.totalScore}`
-}
-
-const recordStatusLabel = (status: ExamStatus) => {
-  if (status === 0) return '进行中'
-  if (status === 1) return '已完成'
-  if (status === 2) return '已超时'
-  if (status === 3) return '待人工批阅'
-  return '未知状态'
-}
-
-const recordStatusTag = (status: ExamStatus): 'success' | 'warning' | 'danger' | 'info' => {
-  if (status === 0) return 'warning'
-  if (status === 1) return 'success'
-  if (status === 2) return 'danger'
-  if (status === 3) return 'warning'
-  return 'info'
 }
 
 const isVerifiedOfficial = (paper: ExamPaperVO) => {
@@ -641,8 +487,7 @@ const paperTypeTag = (paper: ExamPaperVO) => {
   margin-bottom: var(--lp-space-4);
 }
 
-.paper-list,
-.record-panel {
+.paper-list {
   min-height: 180px;
 }
 
@@ -765,27 +610,6 @@ const paperTypeTag = (paper: ExamPaperVO) => {
   margin-top: var(--lp-space-4);
 }
 
-.score-text {
-  font-weight: var(--lp-weight-semibold);
-}
-
-.score-high {
-  color: var(--lp-success);
-}
-
-.score-mid {
-  color: var(--lp-warning);
-}
-
-.score-low {
-  color: var(--lp-danger);
-}
-
-.record-finished-hint {
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-}
-
 .source-meta {
   overflow-wrap: anywhere;
   color: var(--lp-text-secondary);
@@ -842,10 +666,6 @@ const paperTypeTag = (paper: ExamPaperVO) => {
   margin-top: var(--lp-space-3);
 }
 
-.record-mobile-list {
-  display: none;
-}
-
 @media (max-width: 860px) {
   .exam-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -881,73 +701,6 @@ const paperTypeTag = (paper: ExamPaperVO) => {
   }
 
   .storage-item-actions .el-button {
-    min-height: 44px;
-  }
-
-  .record-panel > .el-table {
-    display: none;
-  }
-
-  .record-mobile-list {
-    display: grid;
-    gap: var(--lp-space-3);
-  }
-
-  .record-mobile-card {
-    padding: var(--lp-space-4);
-    background: var(--lp-surface);
-    border: var(--lp-border-hairline);
-    border-radius: var(--lp-radius-md);
-  }
-
-  .record-mobile-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--lp-space-3);
-  }
-
-  .record-mobile-header h3 {
-    min-width: 0;
-    margin: 0;
-    color: var(--lp-text);
-    font-size: var(--lp-text-lg);
-    line-height: var(--lp-leading-snug);
-  }
-
-  .record-mobile-meta {
-    display: grid;
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-    gap: var(--lp-space-3);
-    margin: var(--lp-space-4) 0;
-  }
-
-  .record-mobile-meta div {
-    min-width: 0;
-  }
-
-  .record-mobile-meta dt {
-    margin-bottom: var(--lp-space-1);
-    color: var(--lp-text-secondary);
-    font-size: var(--lp-text-xs);
-  }
-
-  .record-mobile-meta dd {
-    margin: 0;
-    color: var(--lp-text);
-    font-size: var(--lp-text-sm);
-    line-height: var(--lp-leading-snug);
-    overflow-wrap: anywhere;
-  }
-
-  .record-mobile-action {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    min-height: 44px;
-  }
-
-  .record-mobile-action .el-button {
     min-height: 44px;
   }
 }
