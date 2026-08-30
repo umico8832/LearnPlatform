@@ -211,6 +211,26 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+后端分层收紧（Round 251，2026-08-30）：
+
+- 管理端用户、AI 调用日志、待复审题目和 AI 资产反馈已移除 Controller 到 Mapper /
+  Entity 的直接依赖；AI 配额事务边界已下沉 Service，登录限流归入 Security。
+- ArchUnit 自动门禁覆盖 Controller 持久化隔离、事务归属、底层反向依赖和 Config 包职责。
+- 后端 `mvn clean verify` 通过：561 个默认测试、Checkstyle 0 违规、SpotBugs 0 问题、
+  JaCoCo 门槛通过；真实 MySQL Testcontainers 13 类 77 个用例通过。
+- 仓库脚本 23 个测试、文档检查和 `git diff --check` 通过。
+
+Maintenance Audit（Round 250，2026-08-24）：
+
+- 修复学习诊断推荐可能返回其他用户私有题或停用题的权限缺口，并修正未开始知识点显示
+  负正确率的文案错误；`LearningDiagnosisServiceTest` 47 个测试通过。
+- `LearningDiagnosisService` 的推荐职责和 `AiUsageView` 的图表生命周期已分别抽成独立
+  服务 / composable；前端 ESLint、vue-tsc 与聚焦 Vitest 通过。
+- 最终门禁：后端 `mvn clean verify -B` 554 个默认测试、Checkstyle、SpotBugs 与 JaCoCo
+  门槛通过；前端 lint / format / coverage（58 个文件、307 个测试）/ 双生产构建通过；
+  仓库脚本 23 个测试、文档检查、Compose 配置与 `git diff --check` 通过；生产 npm 依赖
+  审计 0 漏洞。
+
 Final Fix Pass（Round 249，2026-08-17）：
 
 - 课程空间学习工具路由修复（`routeName` 显式映射）已通过单测与路由解析测试；
@@ -357,4 +377,4 @@ Phase 23 退出 L3 门禁（Round 245，2026-08-15）：
 - AiStu 桌面端同步改造。
 - 复杂向量推荐系统。
 
-最后整理日期：2026-08-17。
+最后整理日期：2026-08-24。
