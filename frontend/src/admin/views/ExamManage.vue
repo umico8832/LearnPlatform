@@ -7,7 +7,7 @@
         <p class="admin-page-description">管理普通练习与来源可核验的官方试卷，配置题目结构和发布状态。</p>
       </div>
       <div class="admin-header-actions">
-        <el-button type="warning" :icon="MagicStick" @click="openSmartDialog()">智能组卷</el-button>
+        <el-button type="warning" :icon="MagicStick" @click="smartExamDialog?.open()">智能组卷</el-button>
         <el-button type="primary" :icon="Plus" @click="openDialog()">新增试卷</el-button>
       </div>
     </header>
@@ -308,120 +308,12 @@
       </template>
     </el-dialog>
 
-    <!-- 智能组卷弹窗 -->
-    <el-dialog v-model="smartDialogVisible" title="智能组卷" width="750px" destroy-on-close>
-      <template v-if="!smartPreview">
-        <el-form :model="smartForm" label-width="100px">
-          <el-form-item label="课程">
-            <el-select v-model="smartForm.courseId" placeholder="全部课程" clearable style="width: 100%">
-              <el-option v-for="c in courseList" :key="c.id" :label="c.name" :value="c.id" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="题目数量">
-            <el-slider v-model="smartForm.questionCount" :min="5" :max="50" :step="5" show-stops show-input />
-          </el-form-item>
-          <el-form-item label="难度模式">
-            <el-radio-group v-model="smartForm.difficultyMode">
-              <el-radio-button value="ADAPTIVE">自适应</el-radio-button>
-              <el-radio-button value="BALANCED">均衡</el-radio-button>
-              <el-radio-button value="EASY">偏基础</el-radio-button>
-              <el-radio-button value="HARD">偏进阶</el-radio-button>
-            </el-radio-group>
-          </el-form-item>
-          <el-form-item label="考试时长">
-            <el-input-number v-model="smartForm.duration" :min="10" :max="300" :step="10" /> 分钟
-          </el-form-item>
-          <el-form-item label="包含错题">
-            <el-switch v-model="smartForm.includeWrongQuestions" active-text="是" inactive-text="否" />
-          </el-form-item>
-          <el-form-item label="试卷标题">
-            <el-input v-model="smartForm.title" placeholder="留空则自动生成" />
-          </el-form-item>
-        </el-form>
-        <el-alert type="info" :closable="false" show-icon style="margin-top: 8px">
-          <template #title>智能组卷将根据知识点覆盖度和难度分布自动选题，自适应模式会参考历史答题表现</template>
-        </el-alert>
-      </template>
-
-      <!-- 预览结果 -->
-      <template v-else>
-        <div class="smart-preview">
-          <el-descriptions :column="2" border size="small">
-            <el-descriptions-item label="试卷名称">{{ smartPreview.title }}</el-descriptions-item>
-            <el-descriptions-item label="题目数量">{{ smartPreview.questionCount }} 道</el-descriptions-item>
-            <el-descriptions-item label="总分">{{ smartPreview.totalScore }} 分</el-descriptions-item>
-            <el-descriptions-item label="考试时长">{{ smartPreview.duration }} 分钟</el-descriptions-item>
-          </el-descriptions>
-
-          <el-alert
-            :title="smartPreview.recommendation"
-            type="success"
-            :closable="false"
-            show-icon
-            style="margin: 12px 0"
-          />
-
-          <el-row :gutter="16" style="margin-bottom: 12px">
-            <el-col :span="12">
-              <div class="preview-card">
-                <h4>知识点覆盖</h4>
-                <div v-for="(count, name) in smartPreview.knowledgePointDistribution" :key="name" class="dist-item">
-                  <span class="dist-label">{{ name }}</span>
-                  <el-progress
-                    :percentage="Math.round((count / smartPreview.questionCount) * 100)"
-                    :stroke-width="14"
-                    :text-inside="true"
-                  />
-                </div>
-                <el-empty
-                  v-if="Object.keys(smartPreview.knowledgePointDistribution).length === 0"
-                  description="无知识点数据"
-                  :image-size="40"
-                />
-              </div>
-            </el-col>
-            <el-col :span="12">
-              <div class="preview-card">
-                <h4>难度分布</h4>
-                <div v-for="(count, level) in smartPreview.difficultyDistribution" :key="level" class="dist-item">
-                  <span class="dist-label">{{ level }}</span>
-                  <el-progress
-                    :percentage="Math.round((count / smartPreview.questionCount) * 100)"
-                    :stroke-width="14"
-                    :text-inside="true"
-                    :color="getDifficultyColor(level as string)"
-                  />
-                </div>
-                <el-empty
-                  v-if="Object.keys(smartPreview.difficultyDistribution).length === 0"
-                  description="无难度数据"
-                  :image-size="40"
-                />
-              </div>
-            </el-col>
-          </el-row>
-
-          <p class="preview-desc">{{ smartPreview.description }}</p>
-        </div>
-      </template>
-
-      <template #footer>
-        <el-button @click="smartDialogVisible = false">取消</el-button>
-        <template v-if="!smartPreview">
-          <el-button type="primary" @click="handleSmartPreview" :loading="smartLoading">生成预览</el-button>
-        </template>
-        <template v-else>
-          <el-button @click="smartPreview = null">返回调整</el-button>
-          <el-button type="primary" @click="handleSmartConfirm" :loading="smartLoading">确认创建</el-button>
-        </template>
-      </template>
-    </el-dialog>
+    <SmartExamDialog ref="smartExamDialog" :courses="courseList" @created="loadPapers" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { errorMessage } from '@/utils/errors'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Collection, Delete, Edit, MagicStick, Plus, Promotion, Refresh } from '@element-plus/icons-vue'
 import {
@@ -431,20 +323,13 @@ import {
   updateExamPaper,
   deleteExamPaper,
   publishExamPaper,
-  smartExamPreview,
-  smartExamCreate,
 } from '@/api/exam'
-import type {
-  ExamPaperVO,
-  ExamPaperCreateRequest,
-  PaperType,
-  SmartExamRequest,
-  SmartExamPreview as SmartExamPreviewType,
-} from '@/api/exam'
+import type { ExamPaperVO, ExamPaperCreateRequest, PaperType } from '@/api/exam'
 import { getAdminQuestionPage } from '@/api/question'
 import type { QuestionVO } from '@/api/question'
 import { getCoursePage } from '@/api/course'
 import { formatTime } from '@/utils/format'
+import SmartExamDialog from './exam/SmartExamDialog.vue'
 
 // 试卷列表
 const loading = ref(false)
@@ -455,6 +340,7 @@ const filterStatus = ref<number | undefined>(undefined)
 
 // 课程列表
 const courseList = ref<{ id: number; name: string }[]>([])
+const smartExamDialog = ref<InstanceType<typeof SmartExamDialog>>()
 
 // 弹窗
 const dialogVisible = ref(false)
@@ -781,77 +667,6 @@ const paperTypeTag = (paper: Pick<ExamPaperVO, 'paperType' | 'sourceVerified'>) 
   if (paper.paperType === 'OFFICIAL_EXAM') return paper.sourceVerified ? 'success' : 'warning'
   return 'info'
 }
-
-// ======================== 智能组卷 ========================
-
-const smartDialogVisible = ref(false)
-const smartLoading = ref(false)
-const smartPreview = ref<SmartExamPreviewType | null>(null)
-const smartForm = ref<SmartExamRequest>({
-  courseId: undefined,
-  questionCount: 20,
-  difficultyMode: 'ADAPTIVE',
-  includeWrongQuestions: true,
-  title: '',
-  duration: 60,
-})
-
-const openSmartDialog = () => {
-  smartPreview.value = null
-  smartForm.value = {
-    courseId: undefined,
-    questionCount: 20,
-    difficultyMode: 'ADAPTIVE',
-    includeWrongQuestions: true,
-    title: '',
-    duration: 60,
-  }
-  smartDialogVisible.value = true
-}
-
-const handleSmartPreview = async () => {
-  smartLoading.value = true
-  try {
-    const res = await smartExamPreview(smartForm.value)
-    if (res.code === 0 && res.data) {
-      smartPreview.value = res.data
-    } else {
-      ElMessage.error(res.message || '智能组卷预览失败')
-    }
-  } catch (e) {
-    ElMessage.error(errorMessage(e, '智能组卷预览失败，请确保题库中有足够题目'))
-  } finally {
-    smartLoading.value = false
-  }
-}
-
-const handleSmartConfirm = async () => {
-  if (!smartPreview.value) return
-  smartLoading.value = true
-  try {
-    const res = await smartExamCreate(smartPreview.value)
-    if (res.code === 0) {
-      ElMessage.success(`智能试卷「${res.data?.title}」已创建，共 ${res.data?.questionCount} 题`)
-      smartDialogVisible.value = false
-      smartPreview.value = null
-      loadPapers()
-    } else {
-      ElMessage.error(res.message || '创建失败')
-    }
-  } catch {
-    ElMessage.error('创建失败')
-  } finally {
-    smartLoading.value = false
-  }
-}
-
-const getDifficultyColor = (level: string) => {
-  if (level.includes('★★★★★')) return '#f56c6c'
-  if (level.includes('★★★★')) return '#e6a23c'
-  if (level.includes('★★★')) return '#409eff'
-  if (level.includes('★★')) return '#67c23a'
-  return '#909399'
-}
 </script>
 
 <style scoped>
@@ -895,37 +710,5 @@ const getDifficultyColor = (level: string) => {
   display: flex;
   gap: 12px;
   margin-bottom: 16px;
-}
-.smart-preview {
-}
-.preview-card {
-  border: 1px solid #ebeef5;
-  border-radius: 8px;
-  padding: 16px;
-}
-.preview-card h4 {
-  margin: 0 0 12px 0;
-  font-size: 14px;
-  color: #303133;
-}
-.dist-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-.dist-label {
-  min-width: 60px;
-  font-size: 13px;
-  color: #606266;
-  white-space: nowrap;
-}
-.dist-item .el-progress {
-  flex: 1;
-}
-.preview-desc {
-  font-size: 13px;
-  color: #909399;
-  margin: 8px 0 0;
 }
 </style>
