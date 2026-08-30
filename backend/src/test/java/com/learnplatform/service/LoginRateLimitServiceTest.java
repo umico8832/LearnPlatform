@@ -1,6 +1,6 @@
 package com.learnplatform.service;
 
-import com.learnplatform.config.LoginRateLimitService;
+import com.learnplatform.security.LoginRateLimitService;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

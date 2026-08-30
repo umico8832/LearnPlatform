@@ -109,7 +109,7 @@ public class QuestionSourceService {
     /**
      * 获取待复审题目列表（next_review_time <= now，或从未设置过 next_review_time 的老题目）
      */
-    public Page<Question> getOverdueReviews(int pageNum, int pageSize) {
+    public Page<QuestionVO> getOverdueReviews(int pageNum, int pageSize) {
         Page<Question> page = new Page<>(pageNum, pageSize);
         LocalDateTime now = LocalDateTime.now();
         LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<>();
@@ -120,7 +120,10 @@ public class QuestionSourceService {
                 .isNull(Question::getNextReviewTime));
         wrapper.eq(Question::getStatus, 1);
         wrapper.orderByAsc(Question::getNextReviewTime);
-        return questionMapper.selectPage(page, wrapper);
+        Page<Question> result = questionMapper.selectPage(page, wrapper);
+        Page<QuestionVO> response = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
+        response.setRecords(result.getRecords().stream().map(QuestionVO::fromEntity).toList());
+        return response;
     }
 
     /**

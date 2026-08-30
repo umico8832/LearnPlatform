@@ -12,7 +12,7 @@ backend/src/main/java/com/learnplatform/
 ├── dto/          # 请求、响应和领域投影
 ├── entity/       # MyBatis-Plus 持久化实体
 ├── mapper/       # 数据访问
-├── security/     # JWT 解析和认证上下文
+├── security/     # JWT、认证上下文和登录安全策略
 └── service/      # 业务规则、事务和外部 Provider 编排
 ```
 
@@ -34,6 +34,8 @@ flowchart LR
 ```
 
 Controller 不承担复杂查询组合、判分、状态机或事务。Service 不依赖前端展示状态。
+Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一使用 DTO / VO，事务边界
+位于 Service。上述依赖方向由 `LayeredArchitectureTest` 在 Maven 测试阶段自动校验。
 
 ## 认证和授权
 
@@ -82,3 +84,5 @@ Controller 不承担复杂查询组合、判分、状态机或事务。Service �
 ## 质量门禁
 
 Maven `verify` 执行测试、Checkstyle、SpotBugs 和 JaCoCo。真实 MySQL 约束由 Testcontainers 分组测试覆盖，具体命令见[测试策略](../development/testing.md)。
+ArchUnit 同时校验 Controller、Service、Mapper、Entity 和 Config 的关键依赖方向，防止
+HTTP 层越过 Service 直接访问持久化层。

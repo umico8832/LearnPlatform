@@ -3,7 +3,6 @@ package com.learnplatform.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.result.R;
 import com.learnplatform.dto.*;
-import com.learnplatform.entity.Question;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.MarkdownQuestionParser;
 import com.learnplatform.service.QuestionImportExportService;
@@ -191,7 +190,7 @@ public class AdminQuestionController {
      */
     @Operation(summary = "待复审题目", description = "获取超过复审周期的题目列表")
     @GetMapping("/review-overdue")
-    public R<Page<Question>> getReviewOverdue(
+    public R<Page<QuestionVO>> getReviewOverdue(
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize) {
         return R.ok(questionSourceService.getOverdueReviews(pageNum, pageSize));

@@ -5,6 +5,7 @@ import com.learnplatform.config.AiConfig;
 import com.learnplatform.dto.AiAssetType;
 import com.learnplatform.dto.QuestionLearningAssetVO;
 import com.learnplatform.entity.AiAssetFeedback;
+import com.learnplatform.dto.AiAssetFeedbackVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.Question;
@@ -737,7 +738,7 @@ class QuestionLearningAssetServiceTest {
     void getUserFeedbackReturnsNullWhenNoFeedback() {
         when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(null);
 
-        AiAssetFeedback result = service.getUserFeedback(1L, "FULL_EXPLANATION", 7L);
+        AiAssetFeedbackVO result = service.getUserFeedback(1L, "FULL_EXPLANATION", 7L);
 
         assertNull(result);
     }
@@ -753,10 +754,9 @@ class QuestionLearningAssetServiceTest {
         feedback.setComment("great");
         when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(feedback);
 
-        AiAssetFeedback result = service.getUserFeedback(1L, "FULL_EXPLANATION", 7L);
+        AiAssetFeedbackVO result = service.getUserFeedback(1L, "FULL_EXPLANATION", 7L);
 
         assertNotNull(result);
-        assertEquals(200L, result.getId());
         assertEquals(true, result.getHelpful());
         assertEquals("great", result.getComment());
     }
@@ -771,10 +771,9 @@ class QuestionLearningAssetServiceTest {
         beginnerFeedback.setHelpful(false);
         when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(beginnerFeedback);
 
-        AiAssetFeedback result = service.getUserFeedback(1L, "BEGINNER_EXPLANATION", 7L);
+        AiAssetFeedbackVO result = service.getUserFeedback(1L, "BEGINNER_EXPLANATION", 7L);
 
         assertNotNull(result);
-        assertEquals("BEGINNER_EXPLANATION", result.getAssetType());
         assertEquals(false, result.getHelpful());
     }
 

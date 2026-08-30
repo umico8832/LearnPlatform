@@ -3,6 +3,7 @@ package com.learnplatform.service;
 import com.learnplatform.dto.QuestionReReviewRequest;
 import com.learnplatform.dto.QuestionReviewRecordVO;
 import com.learnplatform.dto.QuestionSourceStatsVO;
+import com.learnplatform.dto.QuestionVO;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionReviewRecord;
 import com.learnplatform.entity.User;
@@ -20,6 +21,7 @@ import java.util.List;
 
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 
@@ -168,6 +170,22 @@ class QuestionSourceServiceTest {
         assertTrue(stats.stream().anyMatch(s -> "EXCEL_IMPORT".equals(s.getSourceType())));
         assertTrue(stats.stream().anyMatch(s -> "MARKDOWN_IMPORT".equals(s.getSourceType())));
         assertTrue(stats.stream().anyMatch(s -> "AI_GENERATED".equals(s.getSourceType())));
+    }
+
+    @Test
+    void getOverdueReviewsMapsPersistenceEntitiesToVo() {
+        Question question = new Question();
+        question.setId(10L);
+        question.setContent("待复审题目");
+        question.setOwnerUserId(99L);
+        Page<Question> page = new Page<>(1, 10, 1);
+        page.setRecords(List.of(question));
+        when(questionMapper.selectPage(any(IPage.class), any())).thenReturn(page);
+
+        Page<QuestionVO> result = service.getOverdueReviews(1, 10);
+
+        assertEquals(10L, result.getRecords().getFirst().getId());
+        assertEquals("待复审题目", result.getRecords().getFirst().getContent());
     }
 
     @Test

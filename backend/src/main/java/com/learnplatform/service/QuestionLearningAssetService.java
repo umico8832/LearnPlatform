@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.config.AiConfig;
+import com.learnplatform.dto.AiAssetFeedbackVO;
 import com.learnplatform.dto.AiAssetType;
 import com.learnplatform.dto.QuestionLearningAssetVO;
 import com.learnplatform.entity.*;
@@ -218,13 +219,13 @@ public class QuestionLearningAssetService {
     /**
      * 查询当前用户对某题某类型资产的反馈
      */
-    public AiAssetFeedback getUserFeedback(Long questionId, String assetType, Long userId) {
+    public AiAssetFeedbackVO getUserFeedback(Long questionId, String assetType, Long userId) {
         ensureAccessible(questionId, userId);
         LambdaQueryWrapper<AiAssetFeedback> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(AiAssetFeedback::getQuestionId, questionId)
                .eq(AiAssetFeedback::getAssetType, assetType)
                .eq(AiAssetFeedback::getUserId, userId);
-        return aiAssetFeedbackMapper.selectOne(wrapper);
+        return AiAssetFeedbackVO.fromEntity(aiAssetFeedbackMapper.selectOne(wrapper));
     }
 
     /**

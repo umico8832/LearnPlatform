@@ -1,214 +1,111 @@
 package com.learnplatform.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.exception.GlobalExceptionHandler;
+import com.learnplatform.dto.AdminUserPageVO;
+import com.learnplatform.dto.AdminUserStatsVO;
+import com.learnplatform.dto.AiQuotaAuditLogVO;
 import com.learnplatform.dto.UserVO;
-import com.learnplatform.entity.User;
-import com.learnplatform.entity.AiQuotaAuditLog;
-import com.learnplatform.mapper.AiQuotaAuditLogMapper;
-import com.learnplatform.mapper.UserMapper;
 import com.learnplatform.security.CustomUserDetails;
+import com.learnplatform.service.AdminUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * AdminUserController MockMvc 集成测试
- */
 @ExtendWith(MockitoExtension.class)
 class AdminUserControllerTest {
 
     private MockMvc mockMvc;
 
     @Mock
-    private UserMapper userMapper;
-
-    @Mock
-    private PasswordEncoder passwordEncoder;
-    @Mock
-    private AiQuotaAuditLogMapper aiQuotaAuditLogMapper;
-
-    @InjectMocks
-    private AdminUserController adminUserController;
+    private AdminUserService adminUserService;
 
     @BeforeEach
     void setUp() {
         SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(new CustomUserDetails(99L, "admin", "ADMIN"), null,
+                new UsernamePasswordAuthenticationToken(
+                        new CustomUserDetails(99L, "admin", "ADMIN"),
+                        null,
                         List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));
-        mockMvc = MockMvcBuilders.standaloneSetup(adminUserController)
+        AdminUserController controller = new AdminUserController(adminUserService);
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
 
-    private User buildUser(Long id, String username, String role, Integer status) {
-        User user = new User();
-        user.setId(id);
-        user.setUsername(username);
-        user.setNickname(username + "_nick");
-        user.setRole(role);
-        user.setStatus(status);
-        user.setCreateTime(LocalDateTime.now());
-        return user;
-    }
-
     @Test
-    void listUsers_defaultParams() throws Exception {
-        Page<User> page = new Page<>(1, 10);
-        User user = buildUser(1L, "testuser", "USER", 1);
-        page.setRecords(List.of(user));
-        page.setTotal(1);
-        when(userMapper.selectPage(any(Page.class), any(LambdaQueryWrapper.class))).thenReturn(page);
-
-        mockMvc.perform(get("/api/admin/users"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.records[0].username").value("testuser"))
-                .andExpect(jsonPath("$.data.total").value(1));
-    }
-
-    @Test
-    void listUsers_withFilters() throws Exception {
-        Page<User> page = new Page<>(1, 10);
-        page.setRecords(List.of());
-        page.setTotal(0);
-        when(userMapper.selectPage(any(Page.class), any(LambdaQueryWrapper.class))).thenReturn(page);
+    void listUsersDelegatesFiltersAndPreservesResponseShape() throws Exception {
+        UserVO user = new UserVO();
+        user.setId(1L);
+        user.setUsername("testuser");
+        when(adminUserService.listUsers(2, 20, "test", "ADMIN", 1))
+                .thenReturn(new AdminUserPageVO(List.of(user), 1, 2, 20));
 
         mockMvc.perform(get("/api/admin/users")
+                        .param("page", "2")
+                        .param("size", "20")
                         .param("keyword", "test")
                         .param("role", "ADMIN")
                         .param("status", "1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(0));
+                .andExpect(jsonPath("$.data.records[0].username").value("testuser"))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.current").value(2))
+                .andExpect(jsonPath("$.data.size").value(20));
     }
 
     @Test
-    void createUser_success() throws Exception {
-        when(userMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(0L);
-        when(passwordEncoder.encode("password123")).thenReturn("encoded_pwd");
-        when(userMapper.insert(any(User.class))).thenReturn(1);
-
-        mockMvc.perform(post("/api/admin/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"newuser\",\"password\":\"password123\",\"nickname\":\"New User\",\"role\":\"USER\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.username").value("newuser"));
-
-        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
-        verify(userMapper).insert(captor.capture());
-        User saved = captor.getValue();
-        assertEquals("encoded_pwd", saved.getPassword());
-        assertEquals("USER", saved.getRole());
-        assertEquals(1, saved.getStatus());
-    }
-
-    @Test
-    void createUser_defaultNicknameAndRole() throws Exception {
-        when(userMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(0L);
-        when(passwordEncoder.encode("password123")).thenReturn("encoded_pwd");
-        when(userMapper.insert(any(User.class))).thenReturn(1);
+    void createUserValidatesRequestAndDelegates() throws Exception {
+        UserVO user = new UserVO();
+        user.setUsername("newuser");
+        when(adminUserService.createUser(any())).thenReturn(user);
 
         mockMvc.perform(post("/api/admin/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"username\":\"newuser\",\"password\":\"password123\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(0));
-
-        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
-        verify(userMapper).insert(captor.capture());
-        User saved = captor.getValue();
-        assertEquals("newuser", saved.getNickname());
-        assertEquals("USER", saved.getRole());
-    }
-
-    @Test
-    void createUser_duplicateUsername() throws Exception {
-        when(userMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(1L);
+                .andExpect(jsonPath("$.data.username").value("newuser"));
 
         mockMvc.perform(post("/api/admin/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"existing\",\"password\":\"password123\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(1005))
-                .andExpect(jsonPath("$.message").value("用户名已存在"));
-
-        verify(userMapper, never()).insert(any());
-    }
-
-    @Test
-    void createUser_validation_blankUsername() throws Exception {
-        mockMvc.perform(post("/api/admin/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"\",\"password\":\"password123\"}"))
+                        .content("{\"username\":\"\",\"password\":\"123\"}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void createUser_validation_shortPassword() throws Exception {
-        mockMvc.perform(post("/api/admin/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"newuser\",\"password\":\"123\"}"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void updateRole_success() throws Exception {
-        User user = buildUser(1L, "testuser", "USER", 1);
-        when(userMapper.selectById(1L)).thenReturn(user);
-        when(userMapper.updateById(any(User.class))).thenReturn(1);
-
-        mockMvc.perform(put("/api/admin/users/{id}/role", 1L)
+    void updateRoleDelegatesAndPropagatesBusinessFailure() throws Exception {
+        mockMvc.perform(put("/api/admin/users/1/role")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"role\":\"ADMIN\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(0));
+                .andExpect(status().isOk());
+        verify(adminUserService).updateRole(1L, "ADMIN");
 
-        assertEquals("ADMIN", user.getRole());
-        verify(userMapper).updateById(user);
-    }
-
-    @Test
-    void updateRole_invalidRole() throws Exception {
-        User user = buildUser(1L, "testuser", "USER", 1);
-        when(userMapper.selectById(1L)).thenReturn(user);
-
-        mockMvc.perform(put("/api/admin/users/{id}/role", 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"role\":\"SUPERADMIN\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(1005))
-                .andExpect(jsonPath("$.message").value("角色只能为 USER 或 ADMIN"));
-    }
-
-    @Test
-    void updateRole_userNotFound() throws Exception {
-        when(userMapper.selectById(999L)).thenReturn(null);
-
-        mockMvc.perform(put("/api/admin/users/{id}/role", 999L)
+        doThrow(new BusinessException("用户不存在"))
+                .when(adminUserService).updateRole(999L, "ADMIN");
+        mockMvc.perform(put("/api/admin/users/999/role")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"role\":\"ADMIN\"}"))
                 .andExpect(status().isOk())
@@ -217,188 +114,72 @@ class AdminUserControllerTest {
     }
 
     @Test
-    void updateRole_validation_blankRole() throws Exception {
-        mockMvc.perform(put("/api/admin/users/{id}/role", 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"role\":\"\"}"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void updateStatus_enable() throws Exception {
-        User user = buildUser(1L, "testuser", "USER", 0);
-        when(userMapper.selectById(1L)).thenReturn(user);
-        when(userMapper.updateById(any(User.class))).thenReturn(1);
-
-        mockMvc.perform(put("/api/admin/users/{id}/status", 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"status\":1}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(0));
-
-        assertEquals(1, user.getStatus());
-    }
-
-    @Test
-    void updateStatus_disable() throws Exception {
-        User user = buildUser(1L, "testuser", "USER", 1);
-        when(userMapper.selectById(1L)).thenReturn(user);
-        when(userMapper.updateById(any(User.class))).thenReturn(1);
-
-        mockMvc.perform(put("/api/admin/users/{id}/status", 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"status\":0}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(0));
-
-        assertEquals(0, user.getStatus());
-    }
-
-    @Test
-    void updateStatus_invalidStatus() throws Exception {
-        // status=2 triggers @Max(1) validation → 400 before controller logic
-        mockMvc.perform(put("/api/admin/users/{id}/status", 1L)
+    void updateStatusRejectsInvalidValueBeforeService() throws Exception {
+        mockMvc.perform(put("/api/admin/users/1/status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"status\":2}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void updateStatus_userNotFound() throws Exception {
-        when(userMapper.selectById(999L)).thenReturn(null);
-
-        mockMvc.perform(put("/api/admin/users/{id}/status", 999L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"status\":0}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(1005))
-                .andExpect(jsonPath("$.message").value("用户不存在"));
-    }
-
-    @Test
-    void updateAiDailyQuota_setsCustomQuota() throws Exception {
-        User user = buildUser(1L, "testuser", "USER", 1);
-        when(userMapper.selectById(1L)).thenReturn(user);
-        when(userMapper.updateById(any(User.class))).thenReturn(1);
-
-        mockMvc.perform(put("/api/admin/users/{id}/ai-daily-quota", 1L)
+    void updateQuotaPassesAuthenticatedAdminId() throws Exception {
+        mockMvc.perform(put("/api/admin/users/1/ai-daily-quota")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"dailyQuota\":120,\"reason\":\"学习计划调整\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(0));
+                .andExpect(status().isOk());
 
-        assertEquals(120, user.getAiDailyQuota());
-        ArgumentCaptor<AiQuotaAuditLog> auditCaptor = ArgumentCaptor.forClass(AiQuotaAuditLog.class);
-        verify(aiQuotaAuditLogMapper).insert(auditCaptor.capture());
-        assertEquals(99L, auditCaptor.getValue().getAdminUserId());
-        assertEquals("学习计划调整", auditCaptor.getValue().getReason());
+        verify(adminUserService).updateAiDailyQuota(1L, 120, "学习计划调整", 99L);
     }
 
     @Test
-    void updateAiDailyQuota_nullRestoresGlobalDefault() throws Exception {
-        User user = buildUser(1L, "testuser", "USER", 1);
-        user.setAiDailyQuota(120);
-        when(userMapper.selectById(1L)).thenReturn(user);
-        when(userMapper.updateById(any(User.class))).thenReturn(1);
-
-        mockMvc.perform(put("/api/admin/users/{id}/ai-daily-quota", 1L)
+    void updateQuotaRejectsInvalidRequest() throws Exception {
+        mockMvc.perform(put("/api/admin/users/1/ai-daily-quota")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"dailyQuota\":null,\"reason\":\"恢复默认策略\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(0));
-
-        assertNull(user.getAiDailyQuota());
-    }
-
-    @Test
-    void updateAiDailyQuota_rejectsNegativeQuota() throws Exception {
-        mockMvc.perform(put("/api/admin/users/{id}/ai-daily-quota", 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"dailyQuota\":-1,\"reason\":\"无效值测试\"}"))
+                        .content("{\"dailyQuota\":-1,\"reason\":\" \"}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void updateAiDailyQuota_rejectsBlankReason() throws Exception {
-        mockMvc.perform(put("/api/admin/users/{id}/ai-daily-quota", 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"dailyQuota\":10,\"reason\":\" \"}"))
-                .andExpect(status().isBadRequest());
+    void listQuotaAuditsUsesVoPage() throws Exception {
+        Page<AiQuotaAuditLogVO> page = new Page<>(1, 10, 1);
+        page.setRecords(List.of(new AiQuotaAuditLogVO(1L, 2L, 99L, null, 120,
+                "学习计划调整", null)));
+        when(adminUserService.listAiDailyQuotaAudits(2L, 1, 10)).thenReturn(page);
+
+        mockMvc.perform(get("/api/admin/users/2/ai-daily-quota/audits"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.records[0].adminUserId").value(99))
+                .andExpect(jsonPath("$.data.records[0].reason").value("学习计划调整"));
     }
 
     @Test
-    void resetPassword_success() throws Exception {
-        User user = buildUser(1L, "testuser", "USER", 1);
-        when(userMapper.selectById(1L)).thenReturn(user);
-        when(passwordEncoder.encode("newpass123")).thenReturn("encoded_new");
-        when(userMapper.updateById(any(User.class))).thenReturn(1);
-
-        mockMvc.perform(put("/api/admin/users/{id}/reset-password", 1L)
+    void resetPasswordValidatesAndDelegates() throws Exception {
+        mockMvc.perform(put("/api/admin/users/1/reset-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"newPassword\":\"newpass123\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(0));
+                .andExpect(status().isOk());
+        verify(adminUserService).resetPassword(1L, "newpass123");
 
-        assertEquals("encoded_new", user.getPassword());
-        verify(userMapper).updateById(user);
-    }
-
-    @Test
-    void resetPassword_userNotFound() throws Exception {
-        when(userMapper.selectById(999L)).thenReturn(null);
-
-        mockMvc.perform(put("/api/admin/users/{id}/reset-password", 999L)
+        mockMvc.perform(put("/api/admin/users/1/reset-password")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"newPassword\":\"newpass123\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(1005))
-                .andExpect(jsonPath("$.message").value("用户不存在"));
-    }
-
-    @Test
-    void resetPassword_validation_blankPassword() throws Exception {
-        mockMvc.perform(put("/api/admin/users/{id}/reset-password", 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"newPassword\":\"\"}"))
+                        .content("{\"newPassword\":\"123\"}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void deleteUser_success() throws Exception {
-        User user = buildUser(1L, "testuser", "USER", 1);
-        when(userMapper.selectById(1L)).thenReturn(user);
-        when(userMapper.deleteById(1L)).thenReturn(1);
-
-        mockMvc.perform(delete("/api/admin/users/{id}", 1L))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(0));
-
-        verify(userMapper).deleteById(1L);
+    void deleteUserDelegates() throws Exception {
+        mockMvc.perform(delete("/api/admin/users/1"))
+                .andExpect(status().isOk());
+        verify(adminUserService).deleteUser(1L);
     }
 
     @Test
-    void deleteUser_notFound() throws Exception {
-        when(userMapper.selectById(999L)).thenReturn(null);
-
-        mockMvc.perform(delete("/api/admin/users/{id}", 999L))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(1005))
-                .andExpect(jsonPath("$.message").value("用户不存在"));
-    }
-
-    @Test
-    void getUserStats_success() throws Exception {
-        when(userMapper.selectCount(isNull())).thenReturn(10L);
-        when(userMapper.selectCount(any(LambdaQueryWrapper.class)))
-                .thenReturn(8L)   // active users
-                .thenReturn(2L);  // admin users
+    void getUserStatsReturnsTypedResponse() throws Exception {
+        when(adminUserService.getUserStats()).thenReturn(new AdminUserStatsVO(10, 8, 2, 1));
 
         mockMvc.perform(get("/api/admin/users/stats"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.total").value(10))
-                .andExpect(jsonPath("$.data.active").value(8))
-                .andExpect(jsonPath("$.data.disabled").value(2))
-                .andExpect(jsonPath("$.data.admins").value(2));
+                .andExpect(jsonPath("$.data.disabled").value(2));
     }
 }

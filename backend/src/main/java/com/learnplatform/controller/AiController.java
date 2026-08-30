@@ -1,5 +1,6 @@
 package com.learnplatform.controller;
 
+import com.learnplatform.dto.AiAssetFeedbackVO;
 import com.learnplatform.dto.AiAssetType;
 import com.learnplatform.dto.AiAssetViewRequest;
 import com.learnplatform.dto.AiVariantTrainingVO;
@@ -197,18 +198,11 @@ public class AiController {
      */
     @Operation(summary = "查询资产反馈", description = "查询当前用户对指定资产的反馈状态")
     @GetMapping("/asset/feedback/{questionId}/{assetType}")
-    public R<Map<String, Object>> getAssetFeedback(
+    public R<AiAssetFeedbackVO> getAssetFeedback(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long questionId,
             @PathVariable String assetType) {
-        var feedback = learningAssetService.getUserFeedback(questionId, assetType, userDetails.getUserId());
-        if (feedback == null) {
-            return R.ok(null);
-        }
-        return R.ok(Map.of(
-                "helpful", feedback.getHelpful(),
-                "comment", feedback.getComment() != null ? feedback.getComment() : ""
-        ));
+        return R.ok(learningAssetService.getUserFeedback(questionId, assetType, userDetails.getUserId()));
     }
 
     @Operation(summary = "记录资产查看", description = "记录当前用户实际看到某类已缓存 AI 学习资产，按日聚合重复查看")

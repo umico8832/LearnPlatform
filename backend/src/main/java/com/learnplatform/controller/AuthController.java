@@ -3,7 +3,7 @@ package com.learnplatform.controller;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.R;
 import com.learnplatform.common.result.ResultCode;
-import com.learnplatform.config.LoginRateLimitService;
+import com.learnplatform.security.LoginRateLimitService;
 import com.learnplatform.dto.*;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AuthService;
