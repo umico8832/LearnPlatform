@@ -58,18 +58,26 @@ class LearningDiagnosisServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new LearningDiagnosisService(
+        LearningDiagnosisDataLoader dataLoader = new LearningDiagnosisDataLoader(
                 knowledgePointMapper, questionKnowledgePointMapper,
-                questionMapper, practiceRecordMapper,
-                wrongQuestionMapper, courseMapper,
-                aiProvider, aiService,
+                practiceRecordMapper, wrongQuestionMapper);
+        LearningDiagnosisKnowledgeAnalyzer knowledgeAnalyzer =
+                new LearningDiagnosisKnowledgeAnalyzer(courseMapper);
+        LearningDiagnosisErrorPatternAnalyzer errorPatternAnalyzer =
+                new LearningDiagnosisErrorPatternAnalyzer(questionMapper, courseMapper);
+        LearningDiagnosisHabitAnalyzer habitAnalyzer =
+                new LearningDiagnosisHabitAnalyzer(questionMapper, courseMapper);
+        LearningDiagnosisAiAdviceService aiAdviceService = new LearningDiagnosisAiAdviceService(
+                aiProvider, aiService, new LearningDiagnosisPromptBuilder());
+        service = new LearningDiagnosisService(
+                dataLoader, knowledgeAnalyzer, errorPatternAnalyzer, habitAnalyzer,
+                new LearningDiagnosisRecommendationService(questionKnowledgePointMapper, questionMapper,
+                        courseMapper, knowledgePointMapper),
+                aiAdviceService,
                 new LearningQuestionErrorAnalysisService(questionMapper, practiceRecordMapper,
                         wrongQuestionMapper, courseMapper, knowledgePointMapper, questionKnowledgePointMapper),
                 new SimilarQuestionRecommendationService(questionMapper, practiceRecordMapper,
-                        courseMapper, knowledgePointMapper, questionKnowledgePointMapper),
-                new LearningDiagnosisPromptBuilder(),
-                new LearningDiagnosisRecommendationService(questionKnowledgePointMapper, questionMapper,
-                        courseMapper, knowledgePointMapper)
+                        courseMapper, knowledgePointMapper, questionKnowledgePointMapper)
         );
     }
 

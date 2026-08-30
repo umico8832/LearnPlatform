@@ -74,7 +74,12 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
 
 ## 模块边界
 
-- `LearningDiagnosisService` 负责综合诊断与建议编排。
+- `LearningDiagnosisService` 是学习诊断兼容门面，只编排数据快照、知识点与课程指标、
+  错因汇总、学习习惯、题目推荐和 AI 建议；各计算与外部调用由对应协作者承担。
+- `LearningDiagnosisDataLoader` 集中加载练习、错题、知识点及题目—知识点关联事实。
+- `LearningDiagnosisKnowledgeAnalyzer`、`LearningDiagnosisErrorPatternAnalyzer` 和
+  `LearningDiagnosisHabitAnalyzer` 分别负责知识掌握、错因模式与学习习惯计算。
+- `LearningDiagnosisAiAdviceService` 负责提示词调用、流式输出和 AI 调用审计。
 - `LearningQuestionErrorAnalysisService` 负责单题错因分析。
 - `SimilarQuestionRecommendationService` 负责相似题候选与评分。
 - `QuestionLearningAssetService` 负责编排 AI 学习资产缓存和输出。
