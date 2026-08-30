@@ -24,13 +24,6 @@
 | `PUT /api/wrong-questions/{id}/mastery` | 更新掌握状态 |
 | `DELETE /api/wrong-questions/{id}` | 移出错题本 |
 
-## 学习计划
-
-| 接口 | 说明 |
-|---|---|
-| `GET /api/learning-plan` | 获取当前学习计划 |
-| `PUT /api/learning-plan` | 创建或更新学习计划 |
-
 ## 间隔重复
 
 | 接口 | 说明 |

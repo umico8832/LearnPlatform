@@ -24,6 +24,9 @@ flowchart LR
 | 试卷与考试 | `exam_paper`、`exam_question`、`exam_record`、`exam_answer`、`subjective_grading_point`、`exam_learning_session`、`exam_learning_answer`、`exam_learning_ai_interaction`、`user_exam_source`、`private_exam_import_draft`、`private_exam_draft_question` |
 | AI 与运营 | `ai_call_log`、`ai_quota_audit_log`、`ai_usage_alert`、`question_ai_asset`、`ai_asset_feedback`、`ai_asset_view`、`ai_variant_training`、`ai_variant_question` |
 
+`learning_plan` 是旧首页学习目标功能留下的兼容表；当前运行时代码和 API 已移除，表仅为
+避免破坏既有数据而保留，不代表仍可使用的产品能力。
+
 ## 关系原则
 
 - `question` 是练习、错题、试卷、复习和 AI 资产共同引用的核心聚合。

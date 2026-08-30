@@ -211,6 +211,17 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+移除无入口学习计划后端残留（Round 268，2026-08-31）：
+
+- 删除已无前端、产品范围、测试和其他服务调用的 `LearningPlanController`、Service、2 个
+  DTO、Entity 与 Mapper，并从稳定 API 文档移除 `GET / PUT /api/learning-plan`。
+- 保留 `learning_plan` 表及 V1 / V3 历史迁移，不删除既有用户数据；当前运行时代码、前端
+  和 API 文档均不再暴露该旧功能。
+- 删除前确认旧前端已在 `a8095a4` 因 IA 收敛移除；残留实现还存在 GET 写库、连续天数最多
+  365 次查询和系统日期耦合，修补无入口功能的收益低于彻底收口。
+- `mvn clean verify -B` 通过：565 个测试、0 失败；生产与测试导入 Checkstyle 均为 0 条
+  违规，SpotBugs 0 个问题，JaCoCo 覆盖率门槛满足。
+
 后端测试源码导入规范收口（Round 267，2026-08-31）：
 
 - 展开测试源码中 22 条普通包级星号导入，并清理 8 条既有重复 / 无用导入；当前全部
@@ -501,8 +512,8 @@ Phase 23 退出 L3 门禁（Round 245，2026-08-15）：
 - 考试时间语义已统一为可注入 Clock：生产保持 Asia/Shanghai，测试使用固定 Clock，不再依赖机器
   系统时区（见 Round 243 修复）。
 - 代码工程化：生产与测试源码的普通星号导入均已清零并由 Checkstyle 阻止回退；测试中
-  71 条 JUnit / Mockito / MockMvc DSL 静态星号导入按可读性明确允许。后端 learning-plan
-  统计端点已无前端入口，保留为后续清理项（不破坏数据表）。
+  71 条 JUnit / Mockito / MockMvc DSL 静态星号导入按可读性明确允许。无入口的旧
+  learning-plan 运行时代码与 API 已删除，历史表和迁移保留以保护既有数据。
 - 管理端顶层页面已无 900 行以上文件；`QuestionManage.vue` 为 825 行，仍包含复审与治理
   编排，`ExamManage.vue` 为 714 行且新增 / 编辑试卷与题目选择器共享较多状态。继续拆分
   需以可独立测试的业务闭包为依据，不再单纯追求行数。
