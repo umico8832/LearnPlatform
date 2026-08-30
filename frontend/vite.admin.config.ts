@@ -17,7 +17,12 @@ export default defineConfig({
     }),
     Components({ resolvers: [ElementPlusResolver()], dts: false }),
   ],
-  resolve: { alias: { '@': resolve(__dirname, 'src') } },
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
+      '/src': resolve(__dirname, 'src'),
+    },
+  },
   server: {
     port: 5174,
     proxy: { '/api': { target: 'http://localhost:8080', changeOrigin: true } },

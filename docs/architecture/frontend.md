@@ -23,8 +23,9 @@ frontend/admin/   # 独立管理端 HTML 入口
 目录清单只描述稳定边界，不枚举每个页面文件；真实文件以源码为准。
 
 `npm run build` 先生成学习端 `dist/`，再由 `vite.admin.config.ts` 生成 `dist/admin/`；管理端可以用
-`npm run dev:admin` 在 5174 端口独立开发。学习端管理员通过外部链接进入 `/admin/`，普通学习路由与管理
-路由不再共享 Router 或布局。
+`npm run dev:admin` 在 5174 端口独立开发。管理端 HTML 使用 `/src/admin/main.ts` 入口，管理端 Vite
+配置把 `/src` 映射到项目真实源码目录，使 `admin/` root 下的开发服务器与生产构建使用同一入口。
+学习端管理员通过外部链接进入 `/admin/`，普通学习路由与管理路由不再共享 Router 或布局。
 
 ## 信息架构
 
@@ -54,6 +55,8 @@ frontend/admin/   # 独立管理端 HTML 入口
 - `components/` 负责可复用交互和展示，不直接复制页面级请求逻辑。
 - `components/statistics/` 承载学习诊断的概览、错因、推荐和详情弹窗；诊断 View 继续
   负责 API、SSE、路由与练习会话编排，展示组件只接收类型化数据并发出用户意图。
+- `admin/views/ai-usage/` 承载 AI 运营报告、学习效果观察、样本结构和调用明细展示；
+  `AiUsageView` 只编排周期、接口加载、提醒确认与图表生命周期。
 - `api/` 统一方法、路径和参数，页面不得散落 Axios URL。
 - `stores/` 只保存跨页面状态；局部表单和弹窗状态留在页面或组合函数中。
 - 大页面优先拆出领域组件、组合函数和纯展示映射，不建立无意义的包装层。
