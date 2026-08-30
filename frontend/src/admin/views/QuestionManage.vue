@@ -15,13 +15,17 @@
           ></el-button>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="handleDownloadTemplate">Excel 模板 (.xlsx)</el-dropdown-item>
-              <el-dropdown-item @click="handleDownloadMdTemplate">Markdown 模板 (.md)</el-dropdown-item>
+              <el-dropdown-item @click="questionImportExport?.downloadExcelTemplate()"
+                >Excel 模板 (.xlsx)</el-dropdown-item
+              >
+              <el-dropdown-item @click="questionImportExport?.downloadMarkdownTemplate()"
+                >Markdown 模板 (.md)</el-dropdown-item
+              >
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-        <el-button :icon="Upload" @click="importDialogVisible = true">导入题目</el-button>
-        <el-button :icon="FolderOpened" @click="handleExport">导出题目</el-button>
+        <el-button :icon="Upload" @click="questionImportExport?.openImport()">导入题目</el-button>
+        <el-button :icon="FolderOpened" @click="questionImportExport?.exportQuestions()">导出题目</el-button>
         <el-button :icon="Warning" @click="openCorrectionDrawer">纠错记录</el-button>
         <el-button type="primary" :icon="Plus" @click="openQuestionEditor()">新增题目</el-button>
       </div>
@@ -198,92 +202,6 @@
           @size-change="fetchQuestions"
         />
       </div>
-
-      <!-- 导入结果弹窗 -->
-      <el-dialog v-model="importResultVisible" title="导入结果" width="500px" destroy-on-close>
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="总行数">{{ importResult.totalRows }}</el-descriptions-item>
-          <el-descriptions-item label="成功数">
-            <el-tag type="success">{{ importResult.successCount }}</el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="失败数">
-            <el-tag :type="importResult.failCount > 0 ? 'danger' : 'success'">{{ importResult.failCount }}</el-tag>
-          </el-descriptions-item>
-        </el-descriptions>
-        <div v-if="importResult.errors.length > 0" style="margin-top: 12px">
-          <p style="color: #f56c6c; margin-bottom: 8px">错误详情：</p>
-          <el-scrollbar max-height="200px">
-            <p
-              v-for="(err, idx) in importResult.errors"
-              :key="idx"
-              style="font-size: 13px; color: #606266; margin: 4px 0"
-            >
-              {{ err }}
-            </p>
-          </el-scrollbar>
-        </div>
-        <template #footer>
-          <el-button type="primary" @click="importResultVisible = false">确定</el-button>
-        </template>
-      </el-dialog>
-
-      <!-- 导入弹窗 -->
-      <el-dialog v-model="importDialogVisible" title="导入题目" width="540px" destroy-on-close>
-        <el-tabs v-model="importTab">
-          <el-tab-pane label="Excel 导入" name="excel">
-            <el-upload
-              ref="uploadRef"
-              drag
-              accept=".xlsx,.xls"
-              :auto-upload="false"
-              :limit="1"
-              :on-change="onImportFileChange"
-              :on-exceed="() => ElMessage.warning('只能上传一个文件')"
-            >
-              <el-icon style="font-size: 40px; color: #c0c4cc; margin-bottom: 8px"><Upload /></el-icon>
-              <div>将 Excel 文件拖到此处，或<em>点击上传</em></div>
-              <template #tip>
-                <div style="color: #909399; font-size: 12px; margin-top: 4px">
-                  仅支持 .xlsx / .xls 文件，可先<a
-                    href="javascript:void(0)"
-                    @click.stop="handleDownloadTemplate"
-                    style="color: #409eff"
-                    >下载模板</a
-                  >
-                </div>
-              </template>
-            </el-upload>
-          </el-tab-pane>
-          <el-tab-pane label="Markdown 导入" name="markdown">
-            <el-upload
-              ref="mdUploadRef"
-              drag
-              accept=".md,.markdown"
-              :auto-upload="false"
-              :limit="1"
-              :on-change="onMdFileChange"
-              :on-exceed="() => ElMessage.warning('只能上传一个文件')"
-            >
-              <el-icon style="font-size: 40px; color: #c0c4cc; margin-bottom: 8px"><Upload /></el-icon>
-              <div>将 Markdown 文件拖到此处，或<em>点击上传</em></div>
-              <template #tip>
-                <div style="color: #909399; font-size: 12px; margin-top: 4px">
-                  仅支持 .md / .markdown 文件，可先<a
-                    href="javascript:void(0)"
-                    @click.stop="handleDownloadMdTemplate"
-                    style="color: #409eff"
-                    >下载模板</a
-                  >
-                </div>
-              </template>
-            </el-upload>
-          </el-tab-pane>
-        </el-tabs>
-        <template #footer>
-          <el-button @click="importDialogVisible = false">取消</el-button>
-          <el-button type="primary" :loading="importLoading" @click="handleImport">开始导入</el-button>
-        </template>
-      </el-dialog>
     </el-card>
 
     <!-- 复审弹窗 -->
@@ -404,6 +322,7 @@
     </el-dialog>
 
     <QuestionEditorDialog ref="questionEditor" :courses="courseList" @saved="fetchQuestions" />
+    <QuestionImportExport ref="questionImportExport" :filters="filters" @imported="fetchQuestions" />
 
     <QuestionGovernanceDrawers
       v-model:duplicate-visible="duplicateDrawerVisible"
@@ -477,9 +396,9 @@ import {
   sourceTypeLabel,
   sourceTypeTag,
 } from './questionManagePresentation'
-import { useQuestionImportExport } from './useQuestionImportExport'
 import QuestionGovernanceDrawers from './QuestionGovernanceDrawers.vue'
 import QuestionEditorDialog from './question/QuestionEditorDialog.vue'
+import QuestionImportExport from './question/QuestionImportExport.vue'
 
 const questions = ref<QuestionVO[]>([])
 const questionTableRef = ref<TableInstance>()
@@ -500,6 +419,7 @@ const filters = reactive({
 // 课程列表
 const courseList = ref<CourseVO[]>([])
 const questionEditor = ref<InstanceType<typeof QuestionEditorDialog>>()
+const questionImportExport = ref<InstanceType<typeof QuestionImportExport>>()
 
 // 复审相关
 const reReviewVisible = ref(false)
@@ -530,22 +450,6 @@ const reReviewForm = reactive({
   newDifficulty: 3,
   comment: '',
 })
-
-const {
-  importDialogVisible,
-  importResultVisible,
-  importLoading,
-  uploadRef,
-  mdUploadRef,
-  importTab,
-  importResult,
-  handleExport,
-  handleDownloadTemplate,
-  handleDownloadMdTemplate,
-  onImportFileChange,
-  onMdFileChange,
-  handleImport,
-} = useQuestionImportExport(filters, fetchQuestions)
 
 const questionStats = computed(() => {
   const enabled = questions.value.filter((q) => q.status === 1).length
