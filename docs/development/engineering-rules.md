@@ -32,7 +32,7 @@
 
 前端应尽量遵循项目现有分层：
 
-- `views/` 放页面级视图；
+- `views/` 放学习端页面级视图，`admin/views/` 放管理端页面级视图；
 - `components/` 放可复用组件；
 - `api/` 放接口请求封装；
 - `stores/` 放跨页面状态；
@@ -74,6 +74,8 @@
   不使用 `< > : " | ? *`，也不以空格或句点结尾。
 - `target`、`dist`、`node_modules`、测试报告、虚拟环境、缓存和系统垃圾文件不得提交。
 - `python3 scripts/check-repository-layout.py` 是上述规则的自动门禁，并在 CI 文档任务中执行。
+- 独立管理端的页面统一位于 `frontend/src/admin/views/`；门禁拒绝重新在
+  `frontend/src/views/admin/` 下提交页面，避免两个应用边界再次混杂。
 - 源文件必须使用构建工具能够识别的扩展名；禁止用异常路径保存一份不会被编译或测试发现的
   重复源码。
 

@@ -53,6 +53,11 @@ class RepositoryLayoutValidationTest(unittest.TestCase):
         self.assertEqual(2, len(errors))
         self.assertTrue(all("must not end with space or dot" in error for error in errors))
 
+    def test_rejects_admin_pages_in_learner_view_directory(self) -> None:
+        errors = checker.validate_paths(["frontend/src/views/admin/AdminDashboard.vue"])
+        self.assertEqual(1, len(errors))
+        self.assertIn("frontend/src/admin/views/", errors[0])
+
 
 if __name__ == "__main__":
     unittest.main()

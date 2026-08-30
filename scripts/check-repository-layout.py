@@ -22,6 +22,9 @@ FORBIDDEN_COMPONENTS = frozenset(
     }
 )
 FORBIDDEN_FILENAMES = frozenset({".DS_Store", "Thumbs.db"})
+FORBIDDEN_PATH_PREFIXES = {
+    "frontend/src/views/admin/": "管理端页面必须归入 frontend/src/admin/views/",
+}
 
 
 def git_paths(*arguments: str) -> set[str]:
@@ -44,6 +47,9 @@ def tracked_paths() -> list[str]:
 def validate_paths(paths: list[str]) -> list[str]:
     errors: list[str] = []
     for raw_path in sorted(paths):
+        for prefix, reason in FORBIDDEN_PATH_PREFIXES.items():
+            if raw_path.startswith(prefix):
+                errors.append(f"{raw_path}: {reason}")
         path = PurePosixPath(raw_path)
         for component in path.parts:
             illegal = sorted(FORBIDDEN_PATH_CHARACTERS.intersection(component))

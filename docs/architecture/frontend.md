@@ -8,7 +8,7 @@
 
 ```text
 frontend/src/
-├── admin/        # 独立管理端入口、Router、布局与管理端专属页面
+├── admin/        # 独立管理端入口、Router、布局与全部管理端页面
 ├── api/          # 按业务域封装请求和 TypeScript 契约
 ├── assets/       # 全局样式与 Design Tokens
 ├── components/   # 可复用组件（ui/ 基础组件、layout/ 布局、course/ 领域组件）
@@ -16,7 +16,7 @@ frontend/src/
 ├── stores/       # 用户等跨页面状态
 ├── types/        # 共享类型
 ├── utils/        # 请求、格式化、学习目标导航等辅助函数
-└── views/        # 用户端与管理端页面
+└── views/        # 学习端路由页面
 frontend/admin/   # 独立管理端 HTML 入口
 ```
 
@@ -49,7 +49,8 @@ frontend/admin/   # 独立管理端 HTML 入口
 
 ## 页面分层
 
-- `views/` 负责页面级数据编排、路由参数和业务状态。
+- `views/` 负责学习端页面级数据编排、路由参数和业务状态；管理端页面统一位于
+  `admin/views/`，不得回流到学习端页面目录。
 - `components/` 负责可复用交互和展示，不直接复制页面级请求逻辑。
 - `components/statistics/` 承载学习诊断的概览、错因、推荐和详情弹窗；诊断 View 继续
   负责 API、SSE、路由与练习会话编排，展示组件只接收类型化数据并发出用户意图。

@@ -16,7 +16,7 @@ vi.mock('element-plus', () => ({
   ElMessage: { success: mockSuccess, error: vi.fn() },
 }))
 
-import SubjectiveReviewView from '@/views/admin/SubjectiveReviewView.vue'
+import SubjectiveReviewView from '@/admin/views/SubjectiveReviewView.vue'
 
 const stubs = {
   'el-card': { template: '<section><slot /></section>' },

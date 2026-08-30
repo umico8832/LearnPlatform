@@ -17,7 +17,7 @@ vi.mock('element-plus', async (importOriginal) => {
   return { ...actual, ElMessageBox: { confirm: mockConfirm, prompt: vi.fn() }, ElMessage: { success: vi.fn() } }
 })
 
-import AiVariantReviewView from '@/views/admin/AiVariantReviewView.vue'
+import AiVariantReviewView from '@/admin/views/AiVariantReviewView.vue'
 
 const stubs = {
   'el-button': { template: '<button @click="$emit(\'click\')"><slot /></button>', emits: ['click'] },
