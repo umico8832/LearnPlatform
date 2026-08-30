@@ -211,6 +211,13 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+用户端考试 Controller 拆分（Round 254，2026-08-30）：
+
+- `/api/exam` 已按限时考试、试卷查询、试卷学习、私有导入、草稿复核和来源文件拆为
+  六个 Controller，外部 API 与权限上下文保持兼容；单类最大依赖从 10 降至 4。
+- 后端 `mvn clean verify` 通过：564 个默认测试、Checkstyle 0 违规、SpotBugs 0 问题、
+  JaCoCo 门槛通过；无持久化行为变化，未重复执行 Testcontainers。
+
 管理端题目 Controller 拆分（Round 253，2026-08-30）：
 
 - `/api/admin/questions` 已按查询维护、治理和导入导出拆为三个 Controller，外部 API

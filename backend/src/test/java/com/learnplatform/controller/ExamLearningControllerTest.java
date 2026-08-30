@@ -19,8 +19,6 @@ import com.learnplatform.dto.PrivateExamPdfRequest;
 import com.learnplatform.dto.PrivateExamDocxRequest;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.ExamPaperLearningService;
-import com.learnplatform.service.ExamPaperService;
-import com.learnplatform.service.ExamService;
 import com.learnplatform.service.PrivateExamImportService;
 import com.learnplatform.service.PrivateExamDraftService;
 import com.learnplatform.service.PrivateExamContentLifecycleService;
@@ -59,8 +57,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 class ExamLearningControllerTest {
 
-    @Mock private ExamService examService;
-    @Mock private ExamPaperService examPaperService;
     @Mock private ExamPaperLearningService learningService;
     @Mock private PrivateExamImportService privateExamImportService;
     @Mock private PrivateExamDraftService privateExamDraftService;
@@ -74,11 +70,26 @@ class ExamLearningControllerTest {
 
     @BeforeEach
     void setUp() {
-        ExamController controller = new ExamController(
-                examService, examPaperService, learningService, privateExamImportService, privateExamDraftService,
-                privateExamContentLifecycleService, privateExamPdfImportService, privateExamDocxImportService,
-                privateExamSourceFileService, privateExamSourceStorageService);
-        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+        ExamPaperLearningController learningController =
+                new ExamPaperLearningController(learningService);
+        PrivateExamImportController importController = new PrivateExamImportController(
+                privateExamImportService,
+                privateExamDraftService,
+                privateExamPdfImportService,
+                privateExamDocxImportService);
+        PrivateExamDraftController draftController = new PrivateExamDraftController(
+                privateExamDraftService,
+                privateExamContentLifecycleService);
+        PrivateExamSourceController sourceController = new PrivateExamSourceController(
+                privateExamImportService,
+                privateExamContentLifecycleService,
+                privateExamSourceFileService,
+                privateExamSourceStorageService);
+        mockMvc = MockMvcBuilders.standaloneSetup(
+                        learningController,
+                        importController,
+                        draftController,
+                        sourceController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
                 .build();
@@ -131,23 +142,6 @@ class ExamLearningControllerTest {
                 .andExpect(jsonPath("$.data.status").value(1));
 
         verify(learningService).completeSession(30L, 7L);
-    }
-
-    @Test
-    void readsAuthenticatedTimedExamSessionWithoutAnswerDetails() throws Exception {
-        ExamRecordVO session = new ExamRecordVO();
-        session.setId(40L);
-        session.setExamPaperId(2L);
-        session.setStatus(0);
-        when(examService.getExamSession(40L, 7L)).thenReturn(session);
-
-        mockMvc.perform(get("/api/exam/records/40/session").with(mockUser(7L)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value(40))
-                .andExpect(jsonPath("$.data.examPaperId").value(2))
-                .andExpect(jsonPath("$.data.answers").doesNotExist());
-
-        verify(examService).getExamSession(40L, 7L);
     }
 
     @Test
