@@ -52,6 +52,9 @@ class StatisticsServiceIntegrationTest extends IntegrationTestBase {
     private StatisticsService statisticsService;
 
     @Autowired
+    private LearningReportService learningReportService;
+
+    @Autowired
     private UserMapper userMapper;
     @Autowired
     private QuestionMapper questionMapper;
@@ -393,7 +396,7 @@ class StatisticsServiceIntegrationTest extends IntegrationTestBase {
     @Test
     @Order(9)
     void getLearningReport_returnsMonthlyReport() {
-        LearningReportVO vo = statisticsService.getLearningReport(userId);
+        LearningReportVO vo = learningReportService.getLearningReport(userId);
 
         // 本月刷题量
         assertEquals(3, vo.getMonthTotalPractice());
@@ -443,7 +446,7 @@ class StatisticsServiceIntegrationTest extends IntegrationTestBase {
     @Test
     @Order(10)
     void getLearningReport_emptyUser_returnsZeros() {
-        LearningReportVO vo = statisticsService.getLearningReport(999999L);
+        LearningReportVO vo = learningReportService.getLearningReport(999999L);
 
         assertEquals(0, vo.getMonthTotalPractice());
         assertEquals(0, vo.getMonthCorrectCount());

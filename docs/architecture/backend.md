@@ -86,6 +86,9 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
 - `PracticeService` 是练习接口兼容门面；题目查询与脱敏、历史统计查询和事务判分写入
   分别由 `PracticeQuestionQueryService`、`PracticeHistoryService` 与
   `PracticeAnswerService` 承担。
+- `StatisticsService` 负责用户概览、每日趋势、课程统计和管理端平台概览；月度练习、错题、
+  考试、复习与学习效果聚合由独立的 `LearningReportService` 承担，并继续使用
+  `learningReport` 缓存边界。
 - `SpacedRepetitionService` 负责复习计划写事务和 SM-2 调度；待复习筛选、统计聚合、
   卡片 VO 组装与 AI 复习上下文由只读的 `ReviewScheduleQueryService` 承担。
 - `service/` 顶层只放 Spring 业务组件；无状态策略与聚合器进入明确领域子包。阶段测评

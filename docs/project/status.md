@@ -211,6 +211,17 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+个人学习报告与通用统计拆分（Round 275，2026-08-31）：
+
+- 新增 350 行的 `LearningReportService`，完整承接月度练习 / 环比、错题转化、考试、课程、
+  题型、间隔复习和学习效果聚合；`StatisticsService` 从 584 行收敛为 277 行，只保留用户概览、
+  每日趋势、课程统计和管理端平台概览。
+- `StatisticsController` 的 `/learning-report` 直接依赖报告服务，其他统计端点继续依赖通用统计
+  服务；`learningReport` 缓存名与用户键、查询顺序、日期边界、公式、既有 N+1 和无事务语义不变。
+- 报告与控制器聚焦 2 个测试类 8 个测试、后端全量 572 个测试通过；ArchUnit、双 Checkstyle、
+  SpotBugs 和 JaCoCo 门禁通过。相关真实 MySQL 集成测试因本机 Docker socket 不存在而未完成，
+  未改变 URL、DTO、数据库或缓存清理契约。
+
 AI 学习资产交互与效果统计拆分（Round 274，2026-08-31）：
 
 - 新增 106 行的 `AiAssetEngagementService`，集中承担资产查看按日原子聚合、当前缓存版本的

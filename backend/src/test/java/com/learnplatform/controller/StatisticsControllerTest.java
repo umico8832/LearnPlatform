@@ -4,6 +4,7 @@ import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.LearningReportVO;
 import com.learnplatform.dto.StatisticsVO;
 import com.learnplatform.security.CustomUserDetails;
+import com.learnplatform.service.LearningReportService;
 import com.learnplatform.service.StatisticsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +39,9 @@ class StatisticsControllerTest {
 
     @Mock
     private StatisticsService statisticsService;
+
+    @Mock
+    private LearningReportService learningReportService;
 
     @InjectMocks
     private StatisticsController statisticsController;
@@ -127,7 +131,7 @@ class StatisticsControllerTest {
         report.setLearningEffectScore(76.5);
         report.setLearningEffectLevel("IMPROVING");
 
-        when(statisticsService.getLearningReport(eq(1L))).thenReturn(report);
+        when(learningReportService.getLearningReport(eq(1L))).thenReturn(report);
 
         mockMvc.perform(get("/api/statistics/learning-report").with(mockUser(1L)))
                 .andExpect(status().isOk())

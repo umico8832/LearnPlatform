@@ -11,6 +11,7 @@ import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.KnowledgeGraphService;
 import com.learnplatform.service.LearningDiagnosisService;
 import com.learnplatform.service.LearningPathService;
+import com.learnplatform.service.LearningReportService;
 import com.learnplatform.service.StatisticsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -41,17 +42,20 @@ import java.util.concurrent.Executor;
 public class StatisticsController {
 
     private final StatisticsService statisticsService;
+    private final LearningReportService learningReportService;
     private final LearningPathService learningPathService;
     private final KnowledgeGraphService knowledgeGraphService;
     private final LearningDiagnosisService learningDiagnosisService;
     private final Executor aiTaskExecutor;
 
     public StatisticsController(StatisticsService statisticsService,
+                                LearningReportService learningReportService,
                                 LearningPathService learningPathService,
                                 KnowledgeGraphService knowledgeGraphService,
                                 LearningDiagnosisService learningDiagnosisService,
                                 @Qualifier("aiTaskExecutor") Executor aiTaskExecutor) {
         this.statisticsService = statisticsService;
+        this.learningReportService = learningReportService;
         this.learningPathService = learningPathService;
         this.knowledgeGraphService = knowledgeGraphService;
         this.learningDiagnosisService = learningDiagnosisService;
@@ -79,7 +83,7 @@ public class StatisticsController {
     @Operation(summary = "个人学习报告", description = "获取当前用户的月度学习报告（本月刷题量、正确率趋势、错题变化、考试成绩等）")
     @GetMapping("/learning-report")
     public R<LearningReportVO> getLearningReport(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return R.ok(statisticsService.getLearningReport(userDetails.getUserId()));
+        return R.ok(learningReportService.getLearningReport(userDetails.getUserId()));
     }
 
     @Operation(summary = "学习路径推荐", description = "根据用户在各知识点的练习表现，生成个性化学习路径推荐（可按课程筛选）")

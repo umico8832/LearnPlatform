@@ -4,12 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.LearningReportVO;
 import com.learnplatform.entity.QuestionReviewSchedule;
 import com.learnplatform.mapper.CourseMapper;
-import com.learnplatform.mapper.ExamPaperMapper;
 import com.learnplatform.mapper.ExamRecordMapper;
 import com.learnplatform.mapper.PracticeRecordMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionReviewScheduleMapper;
-import com.learnplatform.mapper.UserMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,7 +29,7 @@ import static org.mockito.Mockito.*;
 /**
  * 学习报告复习统计集成单元测试
  *
- * 验证 StatisticsService.getLearningReport 正确整合间隔重复复习数据。
+ * 验证 LearningReportService.getLearningReport 正确整合间隔重复复习数据。
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -46,22 +44,17 @@ class LearningReportReviewStatsTest {
     @Mock
     private CourseMapper courseMapper;
     @Mock
-    private UserMapper userMapper;
-    @Mock
-    private ExamPaperMapper examPaperMapper;
-    @Mock
     private ExamRecordMapper examRecordMapper;
     @Mock
     private QuestionReviewScheduleMapper reviewScheduleMapper;
 
-    private StatisticsService statisticsService;
+    private LearningReportService learningReportService;
 
     @BeforeEach
     void setUp() {
-        statisticsService = new StatisticsService(
+        learningReportService = new LearningReportService(
                 practiceRecordMapper, wrongQuestionMapper, questionMapper,
-                courseMapper, userMapper, examPaperMapper, examRecordMapper,
-                reviewScheduleMapper
+                courseMapper, examRecordMapper, reviewScheduleMapper
         );
 
         // 默认 stub：无刷题/错题/考试数据
@@ -93,7 +86,7 @@ class LearningReportReviewStatsTest {
         when(reviewScheduleMapper.selectList(any(LambdaQueryWrapper.class)))
                 .thenReturn(Arrays.asList(card1, card2, card3));
 
-        LearningReportVO report = statisticsService.getLearningReport(userId);
+        LearningReportVO report = learningReportService.getLearningReport(userId);
 
         // 验证复习统计字段
         assertNotNull(report);
@@ -118,7 +111,7 @@ class LearningReportReviewStatsTest {
         when(reviewScheduleMapper.selectCount(any(LambdaQueryWrapper.class)))
                 .thenReturn(0L);
 
-        LearningReportVO report = statisticsService.getLearningReport(userId);
+        LearningReportVO report = learningReportService.getLearningReport(userId);
 
         assertNotNull(report);
         assertEquals(0, report.getTotalReviewCards());
@@ -146,7 +139,7 @@ class LearningReportReviewStatsTest {
         when(reviewScheduleMapper.selectList(any(LambdaQueryWrapper.class)))
                 .thenReturn(Collections.emptyList());
 
-        LearningReportVO report = statisticsService.getLearningReport(userId);
+        LearningReportVO report = learningReportService.getLearningReport(userId);
 
         assertNotNull(report);
         assertEquals(5, report.getTotalReviewCards());
@@ -169,7 +162,7 @@ class LearningReportReviewStatsTest {
         when(reviewScheduleMapper.selectList(any(LambdaQueryWrapper.class)))
                 .thenReturn(Arrays.asList(card1, card2, card3));
 
-        LearningReportVO report = statisticsService.getLearningReport(userId);
+        LearningReportVO report = learningReportService.getLearningReport(userId);
 
         assertNotNull(report);
         assertEquals(3, report.getTotalReviewCards());
