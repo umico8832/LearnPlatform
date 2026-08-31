@@ -35,20 +35,20 @@ public class SubmissionKPTaggingService {
     private static final Logger log = LoggerFactory.getLogger(SubmissionKPTaggingService.class);
 
     private final AiProvider aiProvider;
-    private final AiService aiService;
+    private final AiCallGovernanceService callGovernanceService;
     private final QuestionSubmissionMapper submissionMapper;
     private final CourseMapper courseMapper;
     private final KnowledgePointMapper knowledgePointMapper;
     private final ObjectMapper objectMapper;
 
     public SubmissionKPTaggingService(AiProvider aiProvider,
-                                       AiService aiService,
+                                       AiCallGovernanceService callGovernanceService,
                                        QuestionSubmissionMapper submissionMapper,
                                        CourseMapper courseMapper,
                                        KnowledgePointMapper knowledgePointMapper,
                                        ObjectMapper objectMapper) {
         this.aiProvider = aiProvider;
-        this.aiService = aiService;
+        this.callGovernanceService = callGovernanceService;
         this.submissionMapper = submissionMapper;
         this.courseMapper = courseMapper;
         this.knowledgePointMapper = knowledgePointMapper;
@@ -80,7 +80,7 @@ public class SubmissionKPTaggingService {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "该课程下没有知识点，请先添加知识点");
         }
 
-        aiService.checkDailyQuota(userId);
+        callGovernanceService.checkDailyQuota(userId);
 
         String courseName = resolveCourseName(courseId);
         String systemPrompt = buildSystemPrompt(kps, courseName);
@@ -100,7 +100,7 @@ public class SubmissionKPTaggingService {
             return buildFallbackResult(submission, kps, courseName);
         } finally {
             int duration = (int) (System.currentTimeMillis() - start);
-            aiService.logCall(userId, "submission_kp_tagging", success, errorMessage, duration);
+            callGovernanceService.logCall(userId, "submission_kp_tagging", success, errorMessage, duration);
         }
     }
 

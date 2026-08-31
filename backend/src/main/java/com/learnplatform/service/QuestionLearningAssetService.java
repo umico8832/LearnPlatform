@@ -43,7 +43,7 @@ public class QuestionLearningAssetService {
 
     private final AiProvider aiProvider;
     private final AiConfig aiConfig;
-    private final AiService aiService;
+    private final AiCallGovernanceService callGovernanceService;
     private final QuestionAiAssetMapper questionAiAssetMapper;
     private final AiAssetFeedbackMapper aiAssetFeedbackMapper;
     private final QuestionMapper questionMapper;
@@ -55,7 +55,7 @@ public class QuestionLearningAssetService {
 
     public QuestionLearningAssetService(AiProvider aiProvider,
                                          AiConfig aiConfig,
-                                         AiService aiService,
+                                         AiCallGovernanceService callGovernanceService,
                                          QuestionAiAssetMapper questionAiAssetMapper,
                                          AiAssetFeedbackMapper aiAssetFeedbackMapper,
                                          QuestionMapper questionMapper,
@@ -66,7 +66,7 @@ public class QuestionLearningAssetService {
                                          AiVariantQuestionService aiVariantQuestionService) {
         this.aiProvider = aiProvider;
         this.aiConfig = aiConfig;
-        this.aiService = aiService;
+        this.callGovernanceService = callGovernanceService;
         this.questionAiAssetMapper = questionAiAssetMapper;
         this.aiAssetFeedbackMapper = aiAssetFeedbackMapper;
         this.questionMapper = questionMapper;
@@ -121,7 +121,7 @@ public class QuestionLearningAssetService {
         }
 
         // 检查配额
-        aiService.checkDailyQuota(userId);
+        callGovernanceService.checkDailyQuota(userId);
 
         // 生成并记录调用日志
         long start = System.currentTimeMillis();
@@ -139,7 +139,8 @@ public class QuestionLearningAssetService {
             throw e;
         } finally {
             int duration = (int) (System.currentTimeMillis() - start);
-            aiService.logCall(userId, "asset_" + assetType.name().toLowerCase(), success, errorMessage, duration);
+            callGovernanceService.logCall(userId, "asset_" + assetType.name().toLowerCase(),
+                    success, errorMessage, duration);
         }
 
         log.info("AI 学习资产已生成并缓存: questionId={}, type={}", questionId, assetType);
@@ -169,7 +170,7 @@ public class QuestionLearningAssetService {
         }
 
         // 检查配额
-        aiService.checkDailyQuota(userId);
+        callGovernanceService.checkDailyQuota(userId);
 
         // 流式生成并收集完整内容，同时记录调用日志
         long start = System.currentTimeMillis();
@@ -188,7 +189,7 @@ public class QuestionLearningAssetService {
             throw e;
         } finally {
             int duration = (int) (System.currentTimeMillis() - start);
-            aiService.logCall(userId, "asset_" + assetType.name().toLowerCase() + "_stream", success,
+            callGovernanceService.logCall(userId, "asset_" + assetType.name().toLowerCase() + "_stream", success,
                     errorMessage, duration);
         }
 

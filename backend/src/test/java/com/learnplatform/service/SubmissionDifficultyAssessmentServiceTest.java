@@ -29,7 +29,7 @@ class SubmissionDifficultyAssessmentServiceTest {
     @Mock
     private AiProvider aiProvider;
     @Mock
-    private AiService aiService;
+    private AiCallGovernanceService callGovernanceService;
     @Mock
     private QuestionSubmissionMapper submissionMapper;
     @Mock
@@ -98,8 +98,8 @@ class SubmissionDifficultyAssessmentServiceTest {
         assertEquals(1, result.getFactors().size());
         assertEquals("DECREASE", result.getFactors().get(0).getImpact());
 
-        verify(aiService).checkDailyQuota(1L);
-        verify(aiService).logCall(eq(1L), eq("submission_difficulty_assessment"), eq(true), isNull(), anyInt());
+        verify(callGovernanceService).checkDailyQuota(1L);
+        verify(callGovernanceService).logCall(eq(1L), eq("submission_difficulty_assessment"), eq(true), isNull(), anyInt());
     }
 
     @Test
@@ -135,7 +135,7 @@ class SubmissionDifficultyAssessmentServiceTest {
         assertEquals("LOW", result.getConfidence());
         assertEquals(2, result.getOriginalDifficulty());
 
-        verify(aiService).logCall(eq(1L), eq("submission_difficulty_assessment"), eq(false), anyString(), anyInt());
+        verify(callGovernanceService).logCall(eq(1L), eq("submission_difficulty_assessment"), eq(false), anyString(), anyInt());
     }
 
     @Test

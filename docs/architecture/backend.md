@@ -79,7 +79,8 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
 - `LearningDiagnosisDataLoader` 集中加载练习、错题、知识点及题目—知识点关联事实。
 - `LearningDiagnosisKnowledgeAnalyzer`、`LearningDiagnosisErrorPatternAnalyzer` 和
   `LearningDiagnosisHabitAnalyzer` 分别负责知识掌握、错因模式与学习习惯计算。
-- `LearningDiagnosisAiAdviceService` 负责提示词调用、流式输出和 AI 调用审计。
+- `LearningDiagnosisAiAdviceService` 负责诊断提示词调用和流式输出；配额与调用审计委托
+  `AiCallGovernanceService`。
 - `LearningQuestionErrorAnalysisService` 负责单题错因分析。
 - `SimilarQuestionRecommendationService` 负责相似题候选与评分。
 - `PracticeService` 是练习接口兼容门面；题目查询与脱敏、历史统计查询和事务判分写入
@@ -91,6 +92,9 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
   快照聚合位于 `service/assessment/`，题目访问策略位于 `service/question/`；跨 Service
   与 Controller 传递的私有试卷原文件值对象位于 `dto/exam/`。
 - `QuestionLearningAssetService` 负责编排 AI 学习资产缓存和输出。
+- `AiCallGovernanceService` 统一负责用户每日配额、当日用量、调用审计、Token / 成本、
+  Trace ID 以及提示词和模型配置指纹；AI 业务服务只保留提示词与内容生成职责，并直接依赖
+  该治理边界，不通过宽泛的 `AiService` 间接复用。
 - `AiVariantQuestionService` 负责结构化变式题私有答案与判分。
 - `AiLearningEffectService` 只输出观察性学习效果。
 

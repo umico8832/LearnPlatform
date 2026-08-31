@@ -2,16 +2,9 @@ package com.learnplatform.service;
 
 import com.learnplatform.config.AiConfig;
 import com.learnplatform.entity.AiCallLog;
-import com.learnplatform.entity.KnowledgePoint;
-import com.learnplatform.mapper.AiCallLogMapper;
-import com.learnplatform.mapper.CourseMapper;
-import com.learnplatform.mapper.KnowledgePointMapper;
-import com.learnplatform.mapper.QuestionKnowledgePointMapper;
-import com.learnplatform.mapper.QuestionMapper;
-import com.learnplatform.mapper.QuestionOptionMapper;
-import com.learnplatform.mapper.UserMapper;
-import com.learnplatform.mapper.WrongQuestionMapper;
 import com.learnplatform.entity.User;
+import com.learnplatform.mapper.AiCallLogMapper;
+import com.learnplatform.mapper.UserMapper;
 import com.learnplatform.service.ai.AiProvider;
 import com.learnplatform.service.ai.AiCostCalculator;
 import com.learnplatform.service.ai.AiTokenUsage;
@@ -25,28 +18,22 @@ import org.slf4j.MDC;
 
 import java.util.Collections;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class AiServiceLoggingTest {
+class AiCallGovernanceServiceTest {
 
     @Mock private AiProvider aiProvider;
     @Mock private AiCostCalculator aiCostCalculator;
     @Mock private AiConfig aiConfig;
     @Mock private AiCallLogMapper aiCallLogMapper;
     @Mock private UserMapper userMapper;
-    @Mock private QuestionMapper questionMapper;
-    @Mock private QuestionOptionMapper questionOptionMapper;
-    @Mock private QuestionKnowledgePointMapper questionKnowledgePointMapper;
-    @Mock private KnowledgePointMapper knowledgePointMapper;
-    @Mock private CourseMapper courseMapper;
-    @Mock private WrongQuestionMapper wrongQuestionMapper;
-    @InjectMocks private AiService aiService;
+    @InjectMocks private AiCallGovernanceService callGovernanceService;
 
     @Test
     void recordsExactUpstreamTotalTokensForSuccessfulCall() {
@@ -54,7 +41,7 @@ class AiServiceLoggingTest {
         when(aiProvider.getLastTokenUsage()).thenReturn(new AiTokenUsage(12, 8, 20));
         when(aiCostCalculator.calculate(eq("gpt-4o-mini"), any())).thenReturn(new java.math.BigDecimal("0.00000660"));
 
-        aiService.logCall(7L, "explanation", true, null, 123);
+        callGovernanceService.logCall(7L, "explanation", true, null, 123);
 
         ArgumentCaptor<AiCallLog> captor = ArgumentCaptor.forClass(AiCallLog.class);
         verify(aiCallLogMapper).insert(captor.capture());
@@ -70,7 +57,7 @@ class AiServiceLoggingTest {
         when(aiConfig.getModel()).thenReturn("gpt-4o-mini");
         MDC.put("traceId", "a1b2c3d4");
         try {
-            aiService.logCall(7L, "explanation", true, null, 123);
+            callGovernanceService.logCall(7L, "explanation", true, null, 123);
         } finally {
             MDC.clear();
         }
@@ -82,37 +69,52 @@ class AiServiceLoggingTest {
 
     @Test
     void recordsPromptAndModelTraceMetadataWithoutRawPromptContent() {
-        KnowledgePoint kp = new KnowledgePoint();
-        kp.setId(3L);
-        kp.setName("二叉树遍历");
-        when(knowledgePointMapper.selectById(3L)).thenReturn(kp);
         when(aiConfig.getModel()).thenReturn("gpt-4o-mini");
         when(aiConfig.getMaxTokens()).thenReturn(2000);
         when(aiConfig.isStreamIncludeUsage()).thenReturn(true);
         when(aiConfig.getModelPrices()).thenReturn(Collections.emptyMap());
-        when(aiProvider.chat(anyString(), anyString())).thenReturn("summary");
-
-        aiService.generateSummary(3L, 7L);
+        callGovernanceService.logCallWithPrompt(7L, "summary", true, null, 123,
+                "system", "user");
 
         ArgumentCaptor<AiCallLog> captor = ArgumentCaptor.forClass(AiCallLog.class);
         verify(aiCallLogMapper).insert(captor.capture());
         AiCallLog log = captor.getValue();
         assertEquals("summary", log.getPromptTemplate());
-        assertNotNull(log.getPromptHash());
-        assertEquals(64, log.getPromptHash().length());
-        assertNotNull(log.getModelConfigVersion());
-        assertEquals(64, log.getModelConfigVersion().length());
-        assertFalse(log.getPromptHash().contains("二叉树遍历"));
+        assertEquals("7b5a886fdc40f9bfe8fae3663a19b14dd5c6f90c004b929fe75e428038106da0",
+                log.getPromptHash());
+        assertEquals("84aac6ab73e7f1455476a1d77eb1c7a4775b6ce130cbc69017916b8a822f20a9",
+                log.getModelConfigVersion());
+        assertFalse(log.getPromptHash().contains("system"));
+    }
+
+    @Test
+    void hashesPartiallyMissingPromptLikePreviousAiPromptBoundary() {
+        when(aiConfig.getModel()).thenReturn("gpt-4o-mini");
+
+        callGovernanceService.logCallWithPrompt(7L, "summary", true, null, 123, null, "user");
+
+        ArgumentCaptor<AiCallLog> captor = ArgumentCaptor.forClass(AiCallLog.class);
+        verify(aiCallLogMapper).insert(captor.capture());
+        assertEquals("ab0684db6102a3c5fe10451340e13d63cf7256fd308ff9d00c46f24c2dbfa72c",
+                captor.getValue().getPromptHash());
     }
 
     @Test
     void doesNotAssignTokensToFailedCall() {
-        aiService.logCall(7L, "explanation", false, "timeout", 123);
+        callGovernanceService.logCall(7L, "explanation", false, "timeout", 123);
 
         ArgumentCaptor<AiCallLog> captor = ArgumentCaptor.forClass(AiCallLog.class);
         verify(aiCallLogMapper).insert(captor.capture());
         assertNull(captor.getValue().getTokensUsed());
         verify(aiProvider, never()).getLastTokenUsage();
+    }
+
+    @Test
+    void auditWriteFailureDoesNotOverrideBusinessResult() {
+        when(aiConfig.getModel()).thenReturn("gpt-4o-mini");
+        doThrow(new IllegalStateException("database unavailable")).when(aiCallLogMapper).insert(any());
+
+        assertDoesNotThrow(() -> callGovernanceService.logCall(7L, "explanation", true, null, 123));
     }
 
     @Test
@@ -124,7 +126,7 @@ class AiServiceLoggingTest {
 
         com.learnplatform.common.exception.BusinessException exception = org.junit.jupiter.api.Assertions.assertThrows(
                 com.learnplatform.common.exception.BusinessException.class,
-                () -> aiService.checkDailyQuota(7L));
+                () -> callGovernanceService.checkDailyQuota(7L));
 
         assertEquals("今日 AI 调用次数已达上限（2 次），请明天再试", exception.getMessage());
         verify(aiConfig, never()).getDailyQuota();
@@ -138,7 +140,7 @@ class AiServiceLoggingTest {
         when(aiCallLogMapper.selectCount(any())).thenReturn(3L);
         when(aiConfig.getDailyQuota()).thenReturn(50);
 
-        assertEquals(3, aiService.getDailyUsage(7L)[0]);
-        assertEquals(50, aiService.getDailyUsage(7L)[1]);
+        assertEquals(3, callGovernanceService.getDailyUsage(7L)[0]);
+        assertEquals(50, callGovernanceService.getDailyUsage(7L)[1]);
     }
 }

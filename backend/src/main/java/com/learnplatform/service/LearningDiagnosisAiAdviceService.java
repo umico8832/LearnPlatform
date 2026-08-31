@@ -15,14 +15,14 @@ public class LearningDiagnosisAiAdviceService {
     private static final Logger log = LoggerFactory.getLogger(LearningDiagnosisAiAdviceService.class);
 
     private final AiProvider aiProvider;
-    private final AiService aiService;
+    private final AiCallGovernanceService callGovernanceService;
     private final LearningDiagnosisPromptBuilder promptBuilder;
 
     public LearningDiagnosisAiAdviceService(AiProvider aiProvider,
-                                            AiService aiService,
+                                            AiCallGovernanceService callGovernanceService,
                                             LearningDiagnosisPromptBuilder promptBuilder) {
         this.aiProvider = aiProvider;
-        this.aiService = aiService;
+        this.callGovernanceService = callGovernanceService;
         this.promptBuilder = promptBuilder;
     }
 
@@ -40,7 +40,7 @@ public class LearningDiagnosisAiAdviceService {
             throw exception;
         } finally {
             int duration = (int) (System.currentTimeMillis() - start);
-            aiService.logCall(
+            callGovernanceService.logCall(
                     userId, "learning_advice", success,
                     success ? null : "AI 学习建议生成失败", duration);
         }
@@ -59,7 +59,7 @@ public class LearningDiagnosisAiAdviceService {
             throw exception;
         } finally {
             int duration = (int) (System.currentTimeMillis() - start);
-            aiService.logCall(
+            callGovernanceService.logCall(
                     userId, "learning_advice_stream", success,
                     success ? null : "AI 学习建议流式生成失败", duration);
         }

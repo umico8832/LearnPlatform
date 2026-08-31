@@ -10,6 +10,7 @@ import com.learnplatform.dto.AiResponse;
 import com.learnplatform.dto.QuestionLearningAssetVO;
 import com.learnplatform.common.result.R;
 import com.learnplatform.security.CustomUserDetails;
+import com.learnplatform.service.AiCallGovernanceService;
 import com.learnplatform.service.AiService;
 import com.learnplatform.service.AiLearningEffectService;
 import com.learnplatform.service.QuestionLearningAssetService;
@@ -45,15 +46,18 @@ import java.util.function.Consumer;
 public class AiController {
 
     private final AiService aiService;
+    private final AiCallGovernanceService callGovernanceService;
     private final QuestionLearningAssetService learningAssetService;
     private final AiLearningEffectService learningEffectService;
     private final Executor aiTaskExecutor;
 
     public AiController(AiService aiService,
+                        AiCallGovernanceService callGovernanceService,
                         QuestionLearningAssetService learningAssetService,
                         AiLearningEffectService learningEffectService,
                         @Qualifier("aiTaskExecutor") Executor aiTaskExecutor) {
         this.aiService = aiService;
+        this.callGovernanceService = callGovernanceService;
         this.learningAssetService = learningAssetService;
         this.learningEffectService = learningEffectService;
         this.aiTaskExecutor = aiTaskExecutor;
@@ -128,7 +132,7 @@ public class AiController {
     @GetMapping("/usage")
     public R<Map<String, Object>> getUsage(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        int[] usage = aiService.getDailyUsage(userDetails.getUserId());
+        int[] usage = callGovernanceService.getDailyUsage(userDetails.getUserId());
         return R.ok(Map.of("todayCount", usage[0], "dailyQuota", usage[1]));
     }
 

@@ -52,7 +52,7 @@ class QuestionLearningAssetServiceTest {
 
     @Mock private AiProvider aiProvider;
     @Mock private AiConfig aiConfig;
-    @Mock private AiService aiService;
+    @Mock private AiCallGovernanceService callGovernanceService;
     @Mock private QuestionAiAssetMapper questionAiAssetMapper;
     @Mock private AiAssetFeedbackMapper aiAssetFeedbackMapper;
     @Mock private QuestionMapper questionMapper;
@@ -67,7 +67,7 @@ class QuestionLearningAssetServiceTest {
     @BeforeEach
     void setUp() {
         service = new QuestionLearningAssetService(
-                aiProvider, aiConfig, aiService,
+                aiProvider, aiConfig, callGovernanceService,
                 questionAiAssetMapper, aiAssetFeedbackMapper,
                 questionMapper, questionOptionMapper,
                 questionKnowledgePointMapper, knowledgePointMapper, courseMapper,
@@ -165,13 +165,13 @@ class QuestionLearningAssetServiceTest {
 
         assertEquals("cached content", result.getContent());
         verify(aiProvider, never()).chat(anyString(), anyString());
-        verify(aiService, never()).checkDailyQuota(any());
+        verify(callGovernanceService, never()).checkDailyQuota(any());
     }
 
     @Test
     void generateOrGetAssetCallsAiWhenNoCache() {
         when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
-        doNothing().when(aiService).checkDailyQuota(7L);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
         setupFullQuestionContext();
 
         when(aiConfig.getModel()).thenReturn("gpt-4");
@@ -185,7 +185,7 @@ class QuestionLearningAssetServiceTest {
         assertEquals("FULL_EXPLANATION", result.getAssetType());
         assertEquals("标准解析", result.getAssetTypeLabel());
 
-        verify(aiService).checkDailyQuota(7L);
+        verify(callGovernanceService).checkDailyQuota(7L);
         verify(aiProvider).chat(anyString(), anyString());
 
         ArgumentCaptor<QuestionAiAsset> captor = ArgumentCaptor.forClass(QuestionAiAsset.class);
@@ -200,7 +200,7 @@ class QuestionLearningAssetServiceTest {
     @Test
     void generateOrGetAssetLogsCallOnSuccess() {
         when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
-        doNothing().when(aiService).checkDailyQuota(7L);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
         setupFullQuestionContext();
         when(aiConfig.getModel()).thenReturn("gpt-4");
         when(aiProvider.chat(anyString(), anyString())).thenReturn("content");
@@ -209,14 +209,14 @@ class QuestionLearningAssetServiceTest {
         service.generateOrGetAsset(1L, AiAssetType.BEGINNER_EXPLANATION, 7L);
 
         ArgumentCaptor<String> typeCaptor = ArgumentCaptor.forClass(String.class);
-        verify(aiService).logCall(eq(7L), typeCaptor.capture(), eq(true), eq(null), any(Integer.class));
+        verify(callGovernanceService).logCall(eq(7L), typeCaptor.capture(), eq(true), eq(null), any(Integer.class));
         assertEquals("asset_beginner_explanation", typeCaptor.getValue());
     }
 
     @Test
     void generateOrGetAssetLogsCallOnFailure() {
         when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
-        doNothing().when(aiService).checkDailyQuota(7L);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
         setupFullQuestionContext();
         when(aiProvider.chat(anyString(), anyString())).thenThrow(new RuntimeException("API error"));
 
@@ -224,7 +224,7 @@ class QuestionLearningAssetServiceTest {
                 () -> service.generateOrGetAsset(1L, AiAssetType.FULL_EXPLANATION, 7L));
 
         ArgumentCaptor<String> errorCaptor = ArgumentCaptor.forClass(String.class);
-        verify(aiService).logCall(eq(7L), eq("asset_full_explanation"), eq(false), errorCaptor.capture(), any(Integer.class));
+        verify(callGovernanceService).logCall(eq(7L), eq("asset_full_explanation"), eq(false), errorCaptor.capture(), any(Integer.class));
         assertEquals("API error", errorCaptor.getValue());
     }
 
@@ -236,7 +236,7 @@ class QuestionLearningAssetServiceTest {
                     questionKnowledgePointMapper, knowledgePointMapper, courseMapper, aiProvider);
 
             when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
-            doNothing().when(aiService).checkDailyQuota(7L);
+            doNothing().when(callGovernanceService).checkDailyQuota(7L);
             setupFullQuestionContext();
             when(aiConfig.getModel()).thenReturn("gpt-4");
             when(aiProvider.chat(anyString(), anyString())).thenReturn("content for " + type);
@@ -272,7 +272,7 @@ class QuestionLearningAssetServiceTest {
     @Test
     void generateAssetStreamCallsAiStreamWhenNoCache() {
         when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
-        doNothing().when(aiService).checkDailyQuota(7L);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
         setupFullQuestionContext();
         when(aiConfig.getModel()).thenReturn("gpt-4");
 
@@ -295,7 +295,7 @@ class QuestionLearningAssetServiceTest {
         assertEquals("chunk2", receivedChunks.get(1));
         assertEquals("chunk3", receivedChunks.get(2));
 
-        verify(aiService).checkDailyQuota(7L);
+        verify(callGovernanceService).checkDailyQuota(7L);
         verify(aiProvider).chatStream(anyString(), anyString(), any(Consumer.class));
 
         // Verify full content was saved
@@ -307,7 +307,7 @@ class QuestionLearningAssetServiceTest {
     @Test
     void generateAssetStreamUsesSafeSynchronousPathForVariant() {
         when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
-        doNothing().when(aiService).checkDailyQuota(7L);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
         setupFullQuestionContext();
         when(aiConfig.getModel()).thenReturn("gpt-4");
         when(aiProvider.chat(anyString(), anyString())).thenReturn("private structured json");
@@ -318,7 +318,7 @@ class QuestionLearningAssetServiceTest {
         service.generateAssetStream(1L, AiAssetType.VARIANT, 7L, chunks::add);
 
         ArgumentCaptor<String> typeCaptor = ArgumentCaptor.forClass(String.class);
-        verify(aiService).logCall(eq(7L), typeCaptor.capture(), eq(true), eq(null), any(Integer.class));
+        verify(callGovernanceService).logCall(eq(7L), typeCaptor.capture(), eq(true), eq(null), any(Integer.class));
         assertEquals("asset_variant", typeCaptor.getValue());
         assertEquals(List.of("safe variant content"), chunks);
         verify(aiProvider, never()).chatStream(anyString(), anyString(), any());
@@ -327,7 +327,7 @@ class QuestionLearningAssetServiceTest {
     @Test
     void generateAssetStreamLogsCallOnFailure() {
         when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
-        doNothing().when(aiService).checkDailyQuota(7L);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
         setupFullQuestionContext();
         org.mockito.Mockito.doThrow(new RuntimeException("stream error"))
                 .when(aiProvider).chatStream(anyString(), anyString(), any(Consumer.class));
@@ -336,14 +336,14 @@ class QuestionLearningAssetServiceTest {
                 () -> service.generateAssetStream(1L, AiAssetType.COMMON_MISTAKES, 7L, chunk -> {}));
 
         ArgumentCaptor<String> errorCaptor = ArgumentCaptor.forClass(String.class);
-        verify(aiService).logCall(eq(7L), eq("asset_common_mistakes_stream"), eq(false), errorCaptor.capture(), any(Integer.class));
+        verify(callGovernanceService).logCall(eq(7L), eq("asset_common_mistakes_stream"), eq(false), errorCaptor.capture(), any(Integer.class));
         assertEquals("stream error", errorCaptor.getValue());
     }
 
     @Test
     void generateAssetStreamContinuesWhenCacheSaveFails() {
         when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
-        doNothing().when(aiService).checkDailyQuota(7L);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
         setupFullQuestionContext();
         when(aiConfig.getModel()).thenReturn("gpt-4");
         org.mockito.Mockito.doAnswer(invocation -> {
@@ -399,7 +399,7 @@ class QuestionLearningAssetServiceTest {
     @Test
     void visualInteractivePromptContainsMermaidInstructions() {
         when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
-        doNothing().when(aiService).checkDailyQuota(7L);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
         setupFullQuestionContext();
         when(aiConfig.getModel()).thenReturn("gpt-4");
         when(aiProvider.chat(anyString(), anyString())).thenReturn("{}");
@@ -424,7 +424,7 @@ class QuestionLearningAssetServiceTest {
     @Test
     void visualInteractivePromptContainsCodeAnimationInstructions() {
         when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
-        doNothing().when(aiService).checkDailyQuota(7L);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
         setupFullQuestionContext();
         when(aiConfig.getModel()).thenReturn("gpt-4");
         when(aiProvider.chat(anyString(), anyString())).thenReturn("{}");
@@ -450,7 +450,7 @@ class QuestionLearningAssetServiceTest {
     @Test
     void visualInteractivePromptContainsSqlExecutionInstructions() {
         when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
-        doNothing().when(aiService).checkDailyQuota(7L);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
         setupFullQuestionContext();
         when(aiConfig.getModel()).thenReturn("gpt-4");
         when(questionAiAssetMapper.insert(any())).thenReturn(1);
@@ -479,7 +479,7 @@ class QuestionLearningAssetServiceTest {
     @Test
     void visualInteractivePromptContainsNetworkProtocolInstructions() {
         when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
-        doNothing().when(aiService).checkDailyQuota(7L);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
         setupFullQuestionContext();
         when(aiConfig.getModel()).thenReturn("gpt-4");
         when(questionAiAssetMapper.insert(any())).thenReturn(1);
@@ -509,7 +509,7 @@ class QuestionLearningAssetServiceTest {
     @Test
     void visualInteractivePromptContainsOsProcessInstructions() {
         when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
-        doNothing().when(aiService).checkDailyQuota(7L);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
         setupFullQuestionContext();
         when(aiConfig.getModel()).thenReturn("gpt-4");
         when(questionAiAssetMapper.insert(any())).thenReturn(1);
@@ -544,7 +544,7 @@ class QuestionLearningAssetServiceTest {
     @Test
     void generateOrGetAssetBuildsCorrectQuestionContext() {
         when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
-        doNothing().when(aiService).checkDailyQuota(7L);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
 
         // Set up question with full context
         Question question = stubQuestion();
@@ -601,7 +601,7 @@ class QuestionLearningAssetServiceTest {
     @Test
     void generateOrGetAssetHandlesQuestionWithNoOptions() {
         when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
-        doNothing().when(aiService).checkDailyQuota(7L);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
 
         Question question = stubQuestion();
         question.setQuestionType("SHORT_ANSWER");

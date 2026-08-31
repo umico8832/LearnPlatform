@@ -37,7 +37,7 @@ public class QuestionReviewSuggestionService {
     private static final Logger log = LoggerFactory.getLogger(QuestionReviewSuggestionService.class);
 
     private final AiProvider aiProvider;
-    private final AiService aiService;
+    private final AiCallGovernanceService callGovernanceService;
     private final QuestionMapper questionMapper;
     private final QuestionOptionMapper questionOptionMapper;
     private final QuestionKnowledgePointMapper questionKnowledgePointMapper;
@@ -46,7 +46,7 @@ public class QuestionReviewSuggestionService {
     private final ObjectMapper objectMapper;
 
     public QuestionReviewSuggestionService(AiProvider aiProvider,
-                                           AiService aiService,
+                                           AiCallGovernanceService callGovernanceService,
                                            QuestionMapper questionMapper,
                                            QuestionOptionMapper questionOptionMapper,
                                            QuestionKnowledgePointMapper questionKnowledgePointMapper,
@@ -54,7 +54,7 @@ public class QuestionReviewSuggestionService {
                                            CourseMapper courseMapper,
                                            ObjectMapper objectMapper) {
         this.aiProvider = aiProvider;
-        this.aiService = aiService;
+        this.callGovernanceService = callGovernanceService;
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
@@ -70,7 +70,7 @@ public class QuestionReviewSuggestionService {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
 
-        aiService.checkDailyQuota(reviewerId);
+        callGovernanceService.checkDailyQuota(reviewerId);
 
         String systemPrompt = buildSystemPrompt();
         String userPrompt = buildUserPrompt(question);
@@ -89,7 +89,8 @@ public class QuestionReviewSuggestionService {
             return buildFallbackResult(question);
         } finally {
             int duration = (int) (System.currentTimeMillis() - start);
-            aiService.logCall(reviewerId, "question_re_review_suggestion", success, errorMessage, duration);
+            callGovernanceService.logCall(reviewerId, "question_re_review_suggestion", success,
+                    errorMessage, duration);
         }
     }
 

@@ -3,6 +3,7 @@ package com.learnplatform.controller;
 import com.learnplatform.dto.AiAssetFeedbackVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AiLearningEffectService;
+import com.learnplatform.service.AiCallGovernanceService;
 import com.learnplatform.service.AiService;
 import com.learnplatform.service.QuestionLearningAssetService;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +20,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 import java.util.concurrent.Executor;
 
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -29,6 +31,8 @@ class AiControllerTest {
 
     @Mock
     private AiService aiService;
+    @Mock
+    private AiCallGovernanceService callGovernanceService;
     @Mock
     private QuestionLearningAssetService learningAssetService;
     @Mock
@@ -46,7 +50,7 @@ class AiControllerTest {
                         null,
                         List.of(new SimpleGrantedAuthority("ROLE_USER"))));
         AiController controller = new AiController(
-                aiService, learningAssetService, learningEffectService, aiTaskExecutor);
+                aiService, callGovernanceService, learningAssetService, learningEffectService, aiTaskExecutor);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
                 .build();
@@ -61,5 +65,17 @@ class AiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.helpful").value(true))
                 .andExpect(jsonPath("$.data.comment").value("有帮助"));
+    }
+
+    @Test
+    void getUsageDelegatesToCallGovernanceForAuthenticatedUser() throws Exception {
+        when(callGovernanceService.getDailyUsage(7L)).thenReturn(new int[]{3, 50});
+
+        mockMvc.perform(get("/api/ai/usage"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.todayCount").value(3))
+                .andExpect(jsonPath("$.data.dailyQuota").value(50));
+
+        verify(callGovernanceService).getDailyUsage(7L);
     }
 }

@@ -39,7 +39,7 @@ public class PrivateExamDraftService {
     private final PrivateExamImportDraftMapper draftMapper;
     private final PrivateExamDraftQuestionMapper draftQuestionMapper;
     private final AiProvider aiProvider;
-    private final AiService aiService;
+    private final AiCallGovernanceService callGovernanceService;
     private final ObjectMapper objectMapper;
 
     public PrivateExamDraftService(PrivateExamImportService importService,
@@ -48,7 +48,7 @@ public class PrivateExamDraftService {
                                    PrivateExamImportDraftMapper draftMapper,
                                    PrivateExamDraftQuestionMapper draftQuestionMapper,
                                    AiProvider aiProvider,
-                                   AiService aiService,
+                                   AiCallGovernanceService callGovernanceService,
                                    ObjectMapper objectMapper) {
         this.importService = importService;
         this.sourceMapper = sourceMapper;
@@ -56,7 +56,7 @@ public class PrivateExamDraftService {
         this.draftMapper = draftMapper;
         this.draftQuestionMapper = draftQuestionMapper;
         this.aiProvider = aiProvider;
-        this.aiService = aiService;
+        this.callGovernanceService = callGovernanceService;
         this.objectMapper = objectMapper;
     }
 
@@ -151,7 +151,7 @@ public class PrivateExamDraftService {
             throw validation("该题已复核，不能覆盖复核结果");
         }
 
-        aiService.checkDailyQuota(userId);
+        callGovernanceService.checkDailyQuota(userId);
         long start = System.currentTimeMillis();
         boolean success = false;
         String error = null;
@@ -172,7 +172,7 @@ public class PrivateExamDraftService {
             error = exception.getMessage() != null ? exception.getMessage() : exception.getClass().getSimpleName();
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "AI 答案生成失败，请稍后重试");
         } finally {
-            aiService.logCall(userId, "private_exam_answer_generation", success, error,
+            callGovernanceService.logCall(userId, "private_exam_answer_generation", success, error,
                     (int) (System.currentTimeMillis() - start));
         }
     }

@@ -5,7 +5,6 @@ import com.learnplatform.dto.ReviewContextVO;
 import com.learnplatform.dto.ReviewScheduleVO;
 import com.learnplatform.dto.ReviewStatsVO;
 import com.learnplatform.service.ai.AiProvider;
-import com.learnplatform.service.ai.AiCostCalculator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,16 +36,7 @@ class ReviewAISuggestionTest {
     private AiProvider aiProvider;
 
     @Mock
-    private AiCostCalculator aiCostCalculator;
-
-    @Mock
-    private com.learnplatform.config.AiConfig aiConfig;
-
-    @Mock
-    private com.learnplatform.mapper.AiCallLogMapper aiCallLogMapper;
-
-    @Mock
-    private com.learnplatform.mapper.UserMapper userMapper;
+    private AiCallGovernanceService callGovernanceService;
 
     @Mock
     private com.learnplatform.mapper.QuestionMapper questionMapper;
@@ -71,7 +61,7 @@ class ReviewAISuggestionTest {
     @BeforeEach
     void setUp() {
         aiService = new AiService(
-                aiProvider, aiCostCalculator, aiConfig, aiCallLogMapper, userMapper,
+                aiProvider, callGovernanceService,
                 questionMapper, questionOptionMapper,
                 questionKnowledgePointMapper, knowledgePointMapper,
                 courseMapper, wrongQuestionMapper);
@@ -190,9 +180,7 @@ class ReviewAISuggestionTest {
 
         Long userId = 1L;
 
-        when(aiConfig.getDailyQuota()).thenReturn(50);
         when(aiProvider.chat(anyString(), anyString())).thenReturn("AI 复习建议内容");
-        when(aiCallLogMapper.insert(any())).thenReturn(1);
 
         // When
         AiResponse response = aiService.generateReviewBasedSuggestionWithContext(userId, ctx);
@@ -201,6 +189,9 @@ class ReviewAISuggestionTest {
         assertNotNull(response);
         assertEquals("AI 复习建议内容", response.getContent());
         verify(aiProvider).chat(anyString(), anyString());
+        verify(callGovernanceService).checkDailyQuota(userId);
+        verify(callGovernanceService).logCallWithPrompt(eq(userId), eq("review_based_suggestion"),
+                eq(true), isNull(), anyInt(), anyString(), anyString());
     }
 
     @Test
@@ -219,13 +210,11 @@ class ReviewAISuggestionTest {
         AtomicReference<String> captured = new AtomicReference<>("");
         Consumer<String> onContent = captured::set;
 
-        when(aiConfig.getDailyQuota()).thenReturn(50);
         doAnswer(invocation -> {
             Consumer<String> consumer = invocation.getArgument(2);
             consumer.accept("流式内容片段");
             return null;
         }).when(aiProvider).chatStream(anyString(), anyString(), any(Consumer.class));
-        when(aiCallLogMapper.insert(any())).thenReturn(1);
 
         // When
         aiService.generateReviewBasedSuggestionStreamWithContext(userId, ctx, onContent);
@@ -233,5 +222,8 @@ class ReviewAISuggestionTest {
         // Then
         assertEquals("流式内容片段", captured.get());
         verify(aiProvider).chatStream(anyString(), anyString(), any(Consumer.class));
+        verify(callGovernanceService).checkDailyQuota(userId);
+        verify(callGovernanceService).logCallWithPrompt(eq(userId), eq("review_based_suggestion_stream"),
+                eq(true), isNull(), anyInt(), anyString(), anyString());
     }
 }

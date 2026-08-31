@@ -30,18 +30,18 @@ public class SubmissionDifficultyAssessmentService {
     private static final Logger log = LoggerFactory.getLogger(SubmissionDifficultyAssessmentService.class);
 
     private final AiProvider aiProvider;
-    private final AiService aiService;
+    private final AiCallGovernanceService callGovernanceService;
     private final QuestionSubmissionMapper submissionMapper;
     private final CourseMapper courseMapper;
     private final ObjectMapper objectMapper;
 
     public SubmissionDifficultyAssessmentService(AiProvider aiProvider,
-                                                  AiService aiService,
+                                                  AiCallGovernanceService callGovernanceService,
                                                   QuestionSubmissionMapper submissionMapper,
                                                   CourseMapper courseMapper,
                                                   ObjectMapper objectMapper) {
         this.aiProvider = aiProvider;
-        this.aiService = aiService;
+        this.callGovernanceService = callGovernanceService;
         this.submissionMapper = submissionMapper;
         this.courseMapper = courseMapper;
         this.objectMapper = objectMapper;
@@ -61,7 +61,7 @@ public class SubmissionDifficultyAssessmentService {
             throw new BusinessException(ResultCode.NOT_FOUND, "投稿不存在");
         }
 
-        aiService.checkDailyQuota(userId);
+        callGovernanceService.checkDailyQuota(userId);
 
         String systemPrompt = buildSystemPrompt();
         String userPrompt = buildUserPrompt(submission);
@@ -80,7 +80,7 @@ public class SubmissionDifficultyAssessmentService {
             return buildFallbackResult(submission);
         } finally {
             int duration = (int) (System.currentTimeMillis() - start);
-            aiService.logCall(userId, "submission_difficulty_assessment", success, errorMessage, duration);
+            callGovernanceService.logCall(userId, "submission_difficulty_assessment", success, errorMessage, duration);
         }
     }
 

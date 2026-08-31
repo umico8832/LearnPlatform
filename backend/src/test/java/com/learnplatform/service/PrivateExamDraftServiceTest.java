@@ -40,14 +40,14 @@ class PrivateExamDraftServiceTest {
     @Mock private PrivateExamImportDraftMapper draftMapper;
     @Mock private PrivateExamDraftQuestionMapper questionMapper;
     @Mock private AiProvider aiProvider;
-    @Mock private AiService aiService;
+    @Mock private AiCallGovernanceService callGovernanceService;
     private PrivateExamDraftService service;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
         service = new PrivateExamDraftService(importService, sourceMapper, sourceStorageService, draftMapper,
-                questionMapper, aiProvider, aiService, objectMapper);
+                questionMapper, aiProvider, callGovernanceService, objectMapper);
     }
 
     @Test
@@ -113,8 +113,8 @@ class PrivateExamDraftServiceTest {
         assertEquals("[\"A\"]", captor.getValue().getAiAnswerJson());
         assertEquals("GENERATED", captor.getValue().getGenerationStatus());
         assertEquals("PENDING", captor.getValue().getReviewStatus());
-        verify(aiService).checkDailyQuota(7L);
-        verify(aiService).logCall(eq(7L), eq("private_exam_answer_generation"), eq(true), eq(null), any(Integer.class));
+        verify(callGovernanceService).checkDailyQuota(7L);
+        verify(callGovernanceService).logCall(eq(7L), eq("private_exam_answer_generation"), eq(true), eq(null), any(Integer.class));
     }
 
     @Test

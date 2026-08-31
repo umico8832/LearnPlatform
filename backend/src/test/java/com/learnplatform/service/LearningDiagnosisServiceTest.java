@@ -46,7 +46,7 @@ class LearningDiagnosisServiceTest {
     @Mock private WrongQuestionMapper wrongQuestionMapper;
     @Mock private CourseMapper courseMapper;
     @Mock private AiProvider aiProvider;
-    @Mock private AiService aiService;
+    @Mock private AiCallGovernanceService callGovernanceService;
 
     private LearningDiagnosisService service;
 
@@ -77,7 +77,7 @@ class LearningDiagnosisServiceTest {
         LearningDiagnosisHabitAnalyzer habitAnalyzer =
                 new LearningDiagnosisHabitAnalyzer(questionMapper, courseMapper);
         LearningDiagnosisAiAdviceService aiAdviceService = new LearningDiagnosisAiAdviceService(
-                aiProvider, aiService, new LearningDiagnosisPromptBuilder());
+                aiProvider, callGovernanceService, new LearningDiagnosisPromptBuilder());
         service = new LearningDiagnosisService(
                 dataLoader, knowledgeAnalyzer, errorPatternAnalyzer, habitAnalyzer,
                 new LearningDiagnosisRecommendationService(questionKnowledgePointMapper, questionMapper,
@@ -739,7 +739,7 @@ class LearningDiagnosisServiceTest {
 
         assertEquals("AI advice content", result);
         verify(aiProvider).chat(anyString(), anyString());
-        verify(aiService).logCall(eq(USER_ID), eq("learning_advice"), eq(true), eq(null), any(Integer.class));
+        verify(callGovernanceService).logCall(eq(USER_ID), eq("learning_advice"), eq(true), eq(null), any(Integer.class));
     }
 
     @Test
@@ -752,7 +752,7 @@ class LearningDiagnosisServiceTest {
 
         assertThrows(RuntimeException.class, () -> service.generateAiAdvice(USER_ID));
 
-        verify(aiService).logCall(eq(USER_ID), eq("learning_advice"), eq(false), anyString(), any(Integer.class));
+        verify(callGovernanceService).logCall(eq(USER_ID), eq("learning_advice"), eq(false), anyString(), any(Integer.class));
     }
 
     @Test
@@ -803,7 +803,7 @@ class LearningDiagnosisServiceTest {
         service.generateAiAdviceStream(USER_ID, received::append);
 
         assertEquals("chunk1chunk2", received.toString());
-        verify(aiService).logCall(eq(USER_ID), eq("learning_advice_stream"), eq(true), eq(null), any(Integer.class));
+        verify(callGovernanceService).logCall(eq(USER_ID), eq("learning_advice_stream"), eq(true), eq(null), any(Integer.class));
     }
 
     @Test
@@ -818,7 +818,7 @@ class LearningDiagnosisServiceTest {
         assertThrows(RuntimeException.class,
                 () -> service.generateAiAdviceStream(USER_ID, chunk -> {}));
 
-        verify(aiService).logCall(eq(USER_ID), eq("learning_advice_stream"), eq(false), anyString(), any(Integer.class));
+        verify(callGovernanceService).logCall(eq(USER_ID), eq("learning_advice_stream"), eq(false), anyString(), any(Integer.class));
     }
 
     // ======================== analyzeQuestionError — 单题错因分析 ========================

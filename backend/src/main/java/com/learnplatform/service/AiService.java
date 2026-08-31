@@ -3,44 +3,27 @@ package com.learnplatform.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
-import com.learnplatform.config.AiConfig;
 import com.learnplatform.dto.AiResponse;
 import com.learnplatform.dto.ReviewContextVO;
 import com.learnplatform.dto.ReviewScheduleVO;
 import com.learnplatform.dto.ReviewStatsVO;
-import com.learnplatform.entity.AiCallLog;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionKnowledgePoint;
 import com.learnplatform.entity.QuestionOption;
-import com.learnplatform.entity.User;
 import com.learnplatform.entity.WrongQuestion;
-import com.learnplatform.mapper.AiCallLogMapper;
 import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
-import com.learnplatform.mapper.UserMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
 import com.learnplatform.service.ai.AiProvider;
-import com.learnplatform.service.ai.AiCostCalculator;
-import com.learnplatform.service.ai.AiTokenUsage;
 import com.learnplatform.service.question.QuestionAccessPolicy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -50,13 +33,8 @@ import java.util.stream.Collectors;
 @Service
 public class AiService {
 
-    private static final Logger log = LoggerFactory.getLogger(AiService.class);
-
     private final AiProvider aiProvider;
-    private final AiCostCalculator aiCostCalculator;
-    private final AiConfig aiConfig;
-    private final AiCallLogMapper aiCallLogMapper;
-    private final UserMapper userMapper;
+    private final AiCallGovernanceService callGovernanceService;
     private final QuestionMapper questionMapper;
     private final QuestionOptionMapper questionOptionMapper;
     private final QuestionKnowledgePointMapper questionKnowledgePointMapper;
@@ -65,10 +43,7 @@ public class AiService {
     private final WrongQuestionMapper wrongQuestionMapper;
 
     public AiService(AiProvider aiProvider,
-                     AiCostCalculator aiCostCalculator,
-                     AiConfig aiConfig,
-                     AiCallLogMapper aiCallLogMapper,
-                     UserMapper userMapper,
+                     AiCallGovernanceService callGovernanceService,
                      QuestionMapper questionMapper,
                      QuestionOptionMapper questionOptionMapper,
                      QuestionKnowledgePointMapper questionKnowledgePointMapper,
@@ -76,10 +51,7 @@ public class AiService {
                      CourseMapper courseMapper,
                      WrongQuestionMapper wrongQuestionMapper) {
         this.aiProvider = aiProvider;
-        this.aiCostCalculator = aiCostCalculator;
-        this.aiConfig = aiConfig;
-        this.aiCallLogMapper = aiCallLogMapper;
-        this.userMapper = userMapper;
+        this.callGovernanceService = callGovernanceService;
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
@@ -292,70 +264,11 @@ public class AiService {
                 () -> aiProvider.chat(prompt.systemPrompt(), prompt.userPrompt()));
     }
 
-    // ======================== 配额检查 ========================
-
-    /**
-     * 检查用户每日 AI 调用配额，超限则抛出异常
-     */
-    public void checkDailyQuota(Long userId) {
-        int dailyQuota = resolveDailyQuota(userId);
-        if (dailyQuota <= 0) { return; } // 不限制
-
-        Long todayCount = countTodayCalls(userId);
-        if (todayCount >= dailyQuota) {
-            throw new BusinessException(ResultCode.QUOTA_EXCEEDED,
-                    "今日 AI 调用次数已达上限（" + dailyQuota + " 次），请明天再试");
-        }
-        log.debug("用户 {} 今日已调用 AI {} 次，配额 {} 次", userId, todayCount, dailyQuota);
-    }
-
-    /**
-     * 查询用户今日 AI 调用次数
-     */
-    public long countTodayCalls(Long userId) {
-        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
-        LambdaQueryWrapper<AiCallLog> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(AiCallLog::getUserId, userId)
-               .ge(AiCallLog::getCreateTime, todayStart);
-        Long count = aiCallLogMapper.selectCount(wrapper);
-        return count != null ? count : 0;
-    }
-
-    /**
-     * 获取用户今日 AI 调用用量信息（用于接口返回）
-     * @return int[] {todayCount, dailyQuota}
-     */
-    public int[] getDailyUsage(Long userId) {
-        int dailyQuota = resolveDailyQuota(userId);
-        long todayCount = countTodayCalls(userId);
-        return new int[]{(int) todayCount, dailyQuota};
-    }
-
-    /**
-     * 用户配置优先于全局默认值；空值表示继承，0 表示不限次数。
-     */
-    private int resolveDailyQuota(Long userId) {
-        User user = userMapper.selectById(userId);
-        if (user != null && user.getAiDailyQuota() != null) {
-            return user.getAiDailyQuota();
-        }
-        return aiConfig.getDailyQuota();
-    }
-
-    // ======================== 日志工具方法 ========================
-
-    /**
-     * 公开的 AI 调用日志记录方法（供其他 Service 调用）
-     */
-    public void logCall(Long userId, String functionType, boolean success, String errorMessage, int duration) {
-        saveLog(userId, functionType, success, errorMessage, duration, null);
-    }
-
     /**
      * 带日志记录的同步 AI 调用
      */
     private AiResponse callWithLog(String functionType, Long userId, AiPrompt prompt, AiCallable callable) {
-        checkDailyQuota(userId);
+        callGovernanceService.checkDailyQuota(userId);
         long start = System.currentTimeMillis();
         boolean success = false;
         String content = null;
@@ -369,7 +282,8 @@ public class AiService {
             throw e;
         } finally {
             int duration = (int) (System.currentTimeMillis() - start);
-            saveLog(userId, functionType, success, errorMessage, duration, prompt);
+            callGovernanceService.logCallWithPrompt(userId, functionType, success, errorMessage, duration,
+                    prompt.systemPrompt(), prompt.userPrompt());
         }
     }
 
@@ -377,7 +291,7 @@ public class AiService {
      * 带日志记录的流式 AI 调用
      */
     private void callStreamWithLog(String functionType, Long userId, AiPrompt prompt, Runnable runnable) {
-        checkDailyQuota(userId);
+        callGovernanceService.checkDailyQuota(userId);
         long start = System.currentTimeMillis();
         boolean success = false;
         String errorMessage = null;
@@ -389,39 +303,8 @@ public class AiService {
             throw e;
         } finally {
             int duration = (int) (System.currentTimeMillis() - start);
-            saveLog(userId, functionType, success, errorMessage, duration, prompt);
-        }
-    }
-
-    private void saveLog(Long userId, String functionType, boolean success, String errorMessage,
-                        int duration, AiPrompt prompt) {
-        try {
-            AiCallLog callLog = new AiCallLog();
-            callLog.setUserId(userId);
-            callLog.setFunctionType(functionType);
-            callLog.setModel(aiConfig.getModel());
-            callLog.setStatus(success ? 1 : 0);
-            callLog.setErrorMessage(errorMessage);
-            callLog.setDuration(duration);
-            callLog.setTraceId(MDC.get("traceId"));
-            callLog.setPromptTemplate(functionType);
-            callLog.setPromptHash(prompt == null ? null : promptHash(prompt));
-            callLog.setModelConfigVersion(modelConfigVersion());
-            AiTokenUsage tokenUsage = success ? aiProvider.getLastTokenUsage() : null;
-            if (tokenUsage != null) {
-                callLog.setTokensUsed(tokenUsage.totalTokens());
-                callLog.setPromptTokens(tokenUsage.promptTokens());
-                callLog.setCompletionTokens(tokenUsage.completionTokens());
-                callLog.setCostUsd(aiCostCalculator.calculate(callLog.getModel(), tokenUsage));
-            }
-            aiCallLogMapper.insert(callLog);
-            log.info("AI 调用日志已记录: type={}, userId={}, success={}, duration={}ms, tokens={}, "
-                    + "costUsd={}, traceId={}, modelConfigVersion={}",
-                    functionType, userId, success, duration, callLog.getTokensUsed(),
-                    callLog.getCostUsd(), callLog.getTraceId(), callLog.getModelConfigVersion());
-        } catch (Exception e) {
-            // 日志记录失败不应影响主流程
-            log.warn("AI 调用日志记录失败: {}", e.getMessage());
+            callGovernanceService.logCallWithPrompt(userId, functionType, success, errorMessage, duration,
+                    prompt.systemPrompt(), prompt.userPrompt());
         }
     }
 
@@ -608,43 +491,6 @@ public class AiService {
         AiPrompt prompt = buildReviewSuggestionPromptWithContext(ctx);
         callStreamWithLog("review_based_suggestion_stream", userId, prompt,
                 () -> aiProvider.chatStream(prompt.systemPrompt(), prompt.userPrompt(), onContent));
-    }
-
-    private String promptHash(AiPrompt prompt) {
-        return sha256("system:" + prompt.systemPrompt() + "\nuser:" + prompt.userPrompt());
-    }
-
-    private String modelConfigVersion() {
-        String model = aiConfig.getModel();
-        StringBuilder sb = new StringBuilder();
-        sb.append("model=").append(model)
-                .append(";maxTokens=").append(aiConfig.getMaxTokens())
-                .append(";streamIncludeUsage=").append(aiConfig.isStreamIncludeUsage());
-        Map<String, AiConfig.ModelPrice> prices = aiConfig.getModelPrices();
-        AiConfig.ModelPrice price = prices == null ? null : prices.get(model);
-        if (price != null) {
-            sb.append(";inputPerMillion=").append(toPlainString(price.getInputPerMillion()))
-                    .append(";outputPerMillion=").append(toPlainString(price.getOutputPerMillion()));
-        }
-        return sha256(sb.toString());
-    }
-
-    private String toPlainString(BigDecimal value) {
-        return value == null ? "" : value.stripTrailingZeros().toPlainString();
-    }
-
-    private String sha256(String value) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] bytes = digest.digest(value.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hex = new StringBuilder(bytes.length * 2);
-            for (byte b : bytes) {
-                hex.append(String.format("%02x", b));
-            }
-            return hex.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 algorithm is unavailable", e);
-        }
     }
 
     record AiPrompt(String systemPrompt, String userPrompt) {}

@@ -4,6 +4,7 @@ import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.AiAssetType;
 import com.learnplatform.dto.AiVariantTrainingVO;
 import com.learnplatform.security.CustomUserDetails;
+import com.learnplatform.service.AiCallGovernanceService;
 import com.learnplatform.service.AiLearningEffectService;
 import com.learnplatform.service.AiService;
 import com.learnplatform.service.QuestionLearningAssetService;
@@ -36,13 +37,14 @@ class AiAssetViewControllerTest {
     private MockMvc mockMvc;
 
     @Mock private AiService aiService;
+    @Mock private AiCallGovernanceService callGovernanceService;
     @Mock private QuestionLearningAssetService learningAssetService;
     @Mock private AiLearningEffectService learningEffectService;
 
     @BeforeEach
     void setUp() {
         AiController controller = new AiController(
-                aiService, learningAssetService, learningEffectService, Runnable::run);
+                aiService, callGovernanceService, learningAssetService, learningEffectService, Runnable::run);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())

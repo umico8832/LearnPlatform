@@ -29,7 +29,7 @@ class SubmissionAiQualityServiceTest {
     @Mock
     private AiProvider aiProvider;
     @Mock
-    private AiService aiService;
+    private AiCallGovernanceService callGovernanceService;
     @Mock
     private QuestionSubmissionMapper submissionMapper;
     @Mock
@@ -102,8 +102,8 @@ class SubmissionAiQualityServiceTest {
         assertEquals(1, result.getRiskPoints().size());
         assertEquals(1, result.getSuggestions().size());
 
-        verify(aiService).checkDailyQuota(1L);
-        verify(aiService).logCall(eq(1L), eq("submission_quality_check"), eq(true), isNull(), anyInt());
+        verify(callGovernanceService).checkDailyQuota(1L);
+        verify(callGovernanceService).logCall(eq(1L), eq("submission_quality_check"), eq(true), isNull(), anyInt());
     }
 
     @Test
@@ -119,7 +119,7 @@ class SubmissionAiQualityServiceTest {
         assertNotNull(result.getRecommendation());
         // 标准投稿应该通过基础规则检查
         assertTrue(result.getQualityScore() >= 70);
-        verify(aiService).logCall(eq(1L), eq("submission_quality_check"), eq(false), anyString(), anyInt());
+        verify(callGovernanceService).logCall(eq(1L), eq("submission_quality_check"), eq(false), anyString(), anyInt());
     }
 
     @Test

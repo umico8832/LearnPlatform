@@ -32,7 +32,7 @@ class SubmissionKPTaggingServiceTest {
     @Mock
     private AiProvider aiProvider;
     @Mock
-    private AiService aiService;
+    private AiCallGovernanceService callGovernanceService;
     @Mock
     private QuestionSubmissionMapper submissionMapper;
     @Mock
@@ -130,8 +130,8 @@ class SubmissionKPTaggingServiceTest {
         assertEquals("101,102", result.getSuggestedIds());
         assertTrue(result.getAnalysis().contains("排序算法"));
 
-        verify(aiService).checkDailyQuota(100L);
-        verify(aiService).logCall(eq(100L), eq("submission_kp_tagging"), eq(true), isNull(), anyInt());
+        verify(callGovernanceService).checkDailyQuota(100L);
+        verify(callGovernanceService).logCall(eq(100L), eq("submission_kp_tagging"), eq(true), isNull(), anyInt());
     }
 
     @Test
@@ -148,7 +148,7 @@ class SubmissionKPTaggingServiceTest {
         // "排序算法" and "时间复杂度" should be found via keyword match
         assertTrue(result.getRecommendations().size() >= 1);
         assertTrue(result.getAnalysis().contains("关键词匹配") || result.getAnalysis().contains("AI 服务暂不可用"));
-        verify(aiService).logCall(eq(100L), eq("submission_kp_tagging"), eq(false), anyString(), anyInt());
+        verify(callGovernanceService).logCall(eq(100L), eq("submission_kp_tagging"), eq(false), anyString(), anyInt());
     }
 
     @Test

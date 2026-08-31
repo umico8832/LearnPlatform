@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
 class QuestionReviewSuggestionServiceTest {
 
     @Mock private AiProvider aiProvider;
-    @Mock private AiService aiService;
+    @Mock private AiCallGovernanceService callGovernanceService;
     @Mock private QuestionMapper questionMapper;
     @Mock private QuestionOptionMapper questionOptionMapper;
     @Mock private QuestionKnowledgePointMapper questionKnowledgePointMapper;
@@ -47,7 +47,7 @@ class QuestionReviewSuggestionServiceTest {
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), QuestionOption.class);
         service = new QuestionReviewSuggestionService(
                 aiProvider,
-                aiService,
+                callGovernanceService,
                 questionMapper,
                 questionOptionMapper,
                 questionKnowledgePointMapper,
@@ -96,8 +96,8 @@ class QuestionReviewSuggestionServiceTest {
         assertEquals("答案正确", result.getAnswerAnalysis());
         assertEquals(List.of("解析略短"), result.getRiskPoints());
         assertEquals(List.of("补充错误选项说明"), result.getSuggestions());
-        verify(aiService).checkDailyQuota(7L);
-        verify(aiService).logCall(eq(7L), eq("question_re_review_suggestion"), eq(true), isNull(), anyInt());
+        verify(callGovernanceService).checkDailyQuota(7L);
+        verify(callGovernanceService).logCall(eq(7L), eq("question_re_review_suggestion"), eq(true), isNull(), anyInt());
     }
 
     @Test
@@ -114,7 +114,7 @@ class QuestionReviewSuggestionServiceTest {
         assertEquals("REVISE", result.getRecommendation());
         assertTrue(result.getRiskPoints().contains("解析缺失或过短"));
         assertTrue(result.getSuggestions().contains("补充解析，说明答案依据和易错点"));
-        verify(aiService).logCall(eq(7L), eq("question_re_review_suggestion"), eq(false), anyString(), anyInt());
+        verify(callGovernanceService).logCall(eq(7L), eq("question_re_review_suggestion"), eq(false), anyString(), anyInt());
     }
 
     private QuestionOption option(String label, String content, int isCorrect) {
