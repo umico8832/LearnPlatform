@@ -211,6 +211,16 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+AI 学习资产交互与效果统计拆分（Round 274，2026-08-31）：
+
+- 新增 106 行的 `AiAssetEngagementService`，集中承担资产查看按日原子聚合、当前缓存版本的
+  变式训练开始 / 幂等完成和结构化变式题答题委托；既有事务注解、异常语义和 URL / DTO 契约不变。
+- `AiLearningEffectService` 从 615 行收敛为 535 行，仅保留管理侧观察统计；`AiController`
+  直接依赖交互服务，`AdminAiUsageController` 继续只依赖统计服务，两条调用路径不再共享宽泛服务。
+- 交互、统计和控制器聚焦 4 个测试类 20 个测试、后端全量 572 个测试通过；ArchUnit、双
+  Checkstyle、SpotBugs 和 JaCoCo 门禁通过。相关 Testcontainers 集成测试因本机 Docker daemon
+  未运行而未完成，本轮没有将其记为通过，也未改变数据库结构或并发聚合实现。
+
 AI 调用治理职责拆分（Round 273，2026-08-31）：
 
 - 新增 166 行的 `AiCallGovernanceService`，统一承担每日配额、当日用量、调用审计、Token / 成本、

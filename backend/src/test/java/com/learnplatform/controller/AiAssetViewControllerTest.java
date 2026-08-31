@@ -5,7 +5,7 @@ import com.learnplatform.dto.AiAssetType;
 import com.learnplatform.dto.AiVariantTrainingVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AiCallGovernanceService;
-import com.learnplatform.service.AiLearningEffectService;
+import com.learnplatform.service.AiAssetEngagementService;
 import com.learnplatform.service.AiService;
 import com.learnplatform.service.QuestionLearningAssetService;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,12 +39,12 @@ class AiAssetViewControllerTest {
     @Mock private AiService aiService;
     @Mock private AiCallGovernanceService callGovernanceService;
     @Mock private QuestionLearningAssetService learningAssetService;
-    @Mock private AiLearningEffectService learningEffectService;
+    @Mock private AiAssetEngagementService assetEngagementService;
 
     @BeforeEach
     void setUp() {
         AiController controller = new AiController(
-                aiService, callGovernanceService, learningAssetService, learningEffectService, Runnable::run);
+                aiService, callGovernanceService, learningAssetService, assetEngagementService, Runnable::run);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
@@ -58,7 +58,7 @@ class AiAssetViewControllerTest {
         training.setAssetId(9L);
         training.setStatus("STARTED");
         training.setCompleted(false);
-        when(learningEffectService.recordAssetView(42L, AiAssetType.VARIANT, 7L)).thenReturn(training);
+        when(assetEngagementService.recordAssetView(42L, AiAssetType.VARIANT, 7L)).thenReturn(training);
 
         mockMvc.perform(post("/api/ai/asset/view")
                         .with(mockUser(7L))
@@ -69,7 +69,7 @@ class AiAssetViewControllerTest {
                 .andExpect(jsonPath("$.data.status").value("STARTED"))
                 .andExpect(jsonPath("$.data.completed").value(false));
 
-        verify(learningEffectService).recordAssetView(42L, AiAssetType.VARIANT, 7L);
+        verify(assetEngagementService).recordAssetView(42L, AiAssetType.VARIANT, 7L);
     }
 
     @Test
@@ -78,13 +78,13 @@ class AiAssetViewControllerTest {
         training.setQuestionId(42L);
         training.setStatus("COMPLETED");
         training.setCompleted(true);
-        when(learningEffectService.completeVariantTraining(42L, 7L)).thenReturn(training);
+        when(assetEngagementService.completeVariantTraining(42L, 7L)).thenReturn(training);
 
         mockMvc.perform(post("/api/ai/variant-training/42/complete").with(mockUser(7L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.completed").value(true));
 
-        verify(learningEffectService).completeVariantTraining(42L, 7L);
+        verify(assetEngagementService).completeVariantTraining(42L, 7L);
     }
 
     @Test
@@ -95,7 +95,7 @@ class AiAssetViewControllerTest {
         training.setCompleted(true);
         training.setAnswered(true);
         training.setCorrect(true);
-        when(learningEffectService.submitVariantAnswer(42L, 7L, "B")).thenReturn(training);
+        when(assetEngagementService.submitVariantAnswer(42L, 7L, "B")).thenReturn(training);
 
         mockMvc.perform(post("/api/ai/variant-training/42/answer")
                         .with(mockUser(7L))
@@ -105,7 +105,7 @@ class AiAssetViewControllerTest {
                 .andExpect(jsonPath("$.data.answered").value(true))
                 .andExpect(jsonPath("$.data.correct").value(true));
 
-        verify(learningEffectService).submitVariantAnswer(42L, 7L, "B");
+        verify(assetEngagementService).submitVariantAnswer(42L, 7L, "B");
     }
 
     @Test
@@ -116,7 +116,7 @@ class AiAssetViewControllerTest {
                         .content("{}"))
                 .andExpect(status().isBadRequest());
 
-        verifyNoInteractions(learningEffectService);
+        verifyNoInteractions(assetEngagementService);
     }
 
     private RequestPostProcessor mockUser(Long userId) {

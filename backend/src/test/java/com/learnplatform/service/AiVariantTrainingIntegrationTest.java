@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("integration")
 class AiVariantTrainingIntegrationTest extends IntegrationTestBase {
 
+    @Autowired private AiAssetEngagementService assetEngagementService;
     @Autowired private AiLearningEffectService learningEffectService;
     @Autowired private QuestionAiAssetMapper questionAiAssetMapper;
     @Autowired private AiVariantTrainingMapper aiVariantTrainingMapper;
@@ -43,8 +44,8 @@ class AiVariantTrainingIntegrationTest extends IntegrationTestBase {
         asset.setDeleted(0);
         questionAiAssetMapper.insert(asset);
 
-        var firstStart = learningEffectService.recordAssetView(990001L, AiAssetType.VARIANT, 880001L);
-        var secondStart = learningEffectService.recordAssetView(990001L, AiAssetType.VARIANT, 880001L);
+        var firstStart = assetEngagementService.recordAssetView(990001L, AiAssetType.VARIANT, 880001L);
+        var secondStart = assetEngagementService.recordAssetView(990001L, AiAssetType.VARIANT, 880001L);
 
         assertEquals("STARTED", firstStart.getStatus());
         assertEquals(firstStart.getAssetId(), secondStart.getAssetId());
@@ -52,8 +53,8 @@ class AiVariantTrainingIntegrationTest extends IntegrationTestBase {
                 .eq(AiVariantTraining::getUserId, 880001L)
                 .eq(AiVariantTraining::getAssetId, asset.getId())));
 
-        var completed = learningEffectService.completeVariantTraining(990001L, 880001L);
-        var repeated = learningEffectService.completeVariantTraining(990001L, 880001L);
+        var completed = assetEngagementService.completeVariantTraining(990001L, 880001L);
+        var repeated = assetEngagementService.completeVariantTraining(990001L, 880001L);
 
         assertTrue(completed.getCompleted());
         assertEquals("COMPLETED", repeated.getStatus());
@@ -85,8 +86,8 @@ class AiVariantTrainingIntegrationTest extends IntegrationTestBase {
         question.setDifficulty(3);
         aiVariantQuestionMapper.insert(question);
 
-        var started = learningEffectService.recordAssetView(990002L, AiAssetType.VARIANT, 880002L);
-        var graded = learningEffectService.submitVariantAnswer(990002L, 880002L, "b");
+        var started = assetEngagementService.recordAssetView(990002L, AiAssetType.VARIANT, 880002L);
+        var graded = assetEngagementService.submitVariantAnswer(990002L, 880002L, "b");
 
         assertFalse(Boolean.TRUE.equals(started.getAnswered()));
         assertTrue(graded.getAnswered());

@@ -1,21 +1,17 @@
 package com.learnplatform.service;
 
-import com.learnplatform.common.exception.BusinessException;
-import com.learnplatform.dto.AiAssetType;
 import com.learnplatform.dto.AiLearningEffectVO;
 import com.learnplatform.entity.AiAssetFeedback;
 import com.learnplatform.entity.AiAssetView;
 import com.learnplatform.entity.AiVariantQuestion;
 import com.learnplatform.entity.AiVariantTraining;
 import com.learnplatform.entity.PracticeRecord;
-import com.learnplatform.entity.QuestionAiAsset;
 import com.learnplatform.entity.QuestionKnowledgePoint;
 import com.learnplatform.mapper.AiAssetFeedbackMapper;
 import com.learnplatform.mapper.AiAssetViewMapper;
 import com.learnplatform.mapper.AiVariantQuestionMapper;
 import com.learnplatform.mapper.AiVariantTrainingMapper;
 import com.learnplatform.mapper.PracticeRecordMapper;
-import com.learnplatform.mapper.QuestionAiAssetMapper;
 import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,97 +26,23 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AiLearningEffectServiceTest {
 
     @Mock private AiAssetViewMapper aiAssetViewMapper;
-    @Mock private QuestionAiAssetMapper questionAiAssetMapper;
     @Mock private AiAssetFeedbackMapper aiAssetFeedbackMapper;
     @Mock private PracticeRecordMapper practiceRecordMapper;
     @Mock private AiVariantTrainingMapper aiVariantTrainingMapper;
     @Mock private AiVariantQuestionMapper aiVariantQuestionMapper;
     @Mock private QuestionKnowledgePointMapper questionKnowledgePointMapper;
-    @Mock private AiVariantQuestionService aiVariantQuestionService;
 
     private AiLearningEffectService service() {
-        return new AiLearningEffectService(aiAssetViewMapper, questionAiAssetMapper,
-                aiAssetFeedbackMapper, practiceRecordMapper, aiVariantTrainingMapper,
-                aiVariantQuestionMapper, questionKnowledgePointMapper, aiVariantQuestionService);
-    }
-
-    @Test
-    void recordAssetViewRequiresExistingAsset() {
-        when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
-
-        BusinessException exception = assertThrows(BusinessException.class,
-                () -> service().recordAssetView(8L, AiAssetType.FULL_EXPLANATION, 3L));
-
-        assertEquals("学习资产不存在", exception.getMessage());
-        verify(aiAssetViewMapper, never()).upsertDailyView(any(), any(), any());
-    }
-
-    @Test
-    void recordAssetViewUsesAtomicDailyUpsert() {
-        when(questionAiAssetMapper.selectOne(any())).thenReturn(new QuestionAiAsset());
-
-        service().recordAssetView(8L, AiAssetType.STEP_BY_STEP, 3L);
-
-        verify(aiAssetViewMapper).upsertDailyView(3L, 8L, "STEP_BY_STEP");
-        verify(aiVariantTrainingMapper, never()).upsertStarted(any(), any(), any());
-    }
-
-    @Test
-    void recordVariantViewStartsTrainingForCurrentAsset() {
-        QuestionAiAsset asset = new QuestionAiAsset();
-        asset.setId(15L);
-        when(questionAiAssetMapper.selectOne(any())).thenReturn(asset);
-        AiVariantTraining training = variantTraining(3L, 8L, 15L, "STARTED",
-                LocalDateTime.now(), null);
-        when(aiVariantTrainingMapper.selectOne(any())).thenReturn(training);
-
-        var result = service().recordAssetView(8L, AiAssetType.VARIANT, 3L);
-
-        verify(aiAssetViewMapper).upsertDailyView(3L, 8L, "VARIANT");
-        verify(aiVariantTrainingMapper).upsertStarted(3L, 8L, 15L);
-        assertEquals("STARTED", result.getStatus());
-        assertEquals(false, result.getCompleted());
-    }
-
-    @Test
-    void completeVariantTrainingRequiresStartedRecord() {
-        QuestionAiAsset asset = new QuestionAiAsset();
-        asset.setId(15L);
-        when(questionAiAssetMapper.selectOne(any())).thenReturn(asset);
-        when(aiVariantTrainingMapper.selectOne(any())).thenReturn(null);
-
-        BusinessException exception = assertThrows(BusinessException.class,
-                () -> service().completeVariantTraining(8L, 3L));
-
-        assertEquals("请先查看变式题，再标记训练完成", exception.getMessage());
-        verify(aiVariantTrainingMapper, never()).updateById(any());
-    }
-
-    @Test
-    void completeVariantTrainingMarksCurrentAssetAndReturnsStatus() {
-        QuestionAiAsset asset = new QuestionAiAsset();
-        asset.setId(15L);
-        when(questionAiAssetMapper.selectOne(any())).thenReturn(asset);
-        AiVariantTraining training = variantTraining(3L, 8L, 15L, "STARTED",
-                LocalDateTime.now().minusMinutes(5), null);
-        training.setId(20L);
-        when(aiVariantTrainingMapper.selectOne(any())).thenReturn(training);
-
-        var result = service().completeVariantTraining(8L, 3L);
-
-        verify(aiVariantTrainingMapper).updateById(training);
-        assertEquals("COMPLETED", result.getStatus());
-        assertEquals(true, result.getCompleted());
+        return new AiLearningEffectService(aiAssetViewMapper, aiAssetFeedbackMapper,
+                practiceRecordMapper, aiVariantTrainingMapper, aiVariantQuestionMapper,
+                questionKnowledgePointMapper);
     }
 
     @Test

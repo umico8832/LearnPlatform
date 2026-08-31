@@ -92,11 +92,13 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
   快照聚合位于 `service/assessment/`，题目访问策略位于 `service/question/`；跨 Service
   与 Controller 传递的私有试卷原文件值对象位于 `dto/exam/`。
 - `QuestionLearningAssetService` 负责编排 AI 学习资产缓存和输出。
+- `AiAssetEngagementService` 负责用户侧资产查看、当前缓存版本的变式训练状态，以及向
+  `AiVariantQuestionService` 委托结构化变式题判分。
 - `AiCallGovernanceService` 统一负责用户每日配额、当日用量、调用审计、Token / 成本、
   Trace ID 以及提示词和模型配置指纹；AI 业务服务只保留提示词与内容生成职责，并直接依赖
   该治理边界，不通过宽泛的 `AiService` 间接复用。
 - `AiVariantQuestionService` 负责结构化变式题私有答案与判分。
-- `AiLearningEffectService` 只输出观察性学习效果。
+- `AiLearningEffectService` 只读聚合观察性学习效果，不承担用户交互写事务。
 
 拆分以独立业务责任为依据，不为了行数机械增加接口和实现类。
 

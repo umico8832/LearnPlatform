@@ -10,9 +10,9 @@ import com.learnplatform.dto.AiResponse;
 import com.learnplatform.dto.QuestionLearningAssetVO;
 import com.learnplatform.common.result.R;
 import com.learnplatform.security.CustomUserDetails;
+import com.learnplatform.service.AiAssetEngagementService;
 import com.learnplatform.service.AiCallGovernanceService;
 import com.learnplatform.service.AiService;
-import com.learnplatform.service.AiLearningEffectService;
 import com.learnplatform.service.QuestionLearningAssetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -48,18 +48,18 @@ public class AiController {
     private final AiService aiService;
     private final AiCallGovernanceService callGovernanceService;
     private final QuestionLearningAssetService learningAssetService;
-    private final AiLearningEffectService learningEffectService;
+    private final AiAssetEngagementService assetEngagementService;
     private final Executor aiTaskExecutor;
 
     public AiController(AiService aiService,
                         AiCallGovernanceService callGovernanceService,
                         QuestionLearningAssetService learningAssetService,
-                        AiLearningEffectService learningEffectService,
+                        AiAssetEngagementService assetEngagementService,
                         @Qualifier("aiTaskExecutor") Executor aiTaskExecutor) {
         this.aiService = aiService;
         this.callGovernanceService = callGovernanceService;
         this.learningAssetService = learningAssetService;
-        this.learningEffectService = learningEffectService;
+        this.assetEngagementService = assetEngagementService;
         this.aiTaskExecutor = aiTaskExecutor;
     }
 
@@ -220,7 +220,7 @@ public class AiController {
     public R<AiVariantTrainingVO> recordAssetView(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody AiAssetViewRequest request) {
-        return R.ok(learningEffectService.recordAssetView(
+        return R.ok(assetEngagementService.recordAssetView(
                 request.getQuestionId(), request.getAssetType(), userDetails.getUserId()));
     }
 
@@ -229,7 +229,7 @@ public class AiController {
     public R<AiVariantTrainingVO> completeVariantTraining(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long questionId) {
-        return R.ok(learningEffectService.completeVariantTraining(questionId, userDetails.getUserId()));
+        return R.ok(assetEngagementService.completeVariantTraining(questionId, userDetails.getUserId()));
     }
 
     @Operation(summary = "提交结构化变式题答案", description = "服务端对当前缓存版本进行首次判分；重复提交返回首次结果，不覆盖学习样本")
@@ -238,7 +238,7 @@ public class AiController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long questionId,
             @Valid @RequestBody AiVariantAnswerRequest request) {
-        return R.ok(learningEffectService.submitVariantAnswer(
+        return R.ok(assetEngagementService.submitVariantAnswer(
                 questionId, userDetails.getUserId(), request.getUserAnswer()));
     }
 

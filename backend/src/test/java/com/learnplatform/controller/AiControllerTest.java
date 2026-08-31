@@ -2,7 +2,7 @@ package com.learnplatform.controller;
 
 import com.learnplatform.dto.AiAssetFeedbackVO;
 import com.learnplatform.security.CustomUserDetails;
-import com.learnplatform.service.AiLearningEffectService;
+import com.learnplatform.service.AiAssetEngagementService;
 import com.learnplatform.service.AiCallGovernanceService;
 import com.learnplatform.service.AiService;
 import com.learnplatform.service.QuestionLearningAssetService;
@@ -36,7 +36,7 @@ class AiControllerTest {
     @Mock
     private QuestionLearningAssetService learningAssetService;
     @Mock
-    private AiLearningEffectService learningEffectService;
+    private AiAssetEngagementService assetEngagementService;
     @Mock
     private Executor aiTaskExecutor;
 
@@ -50,7 +50,7 @@ class AiControllerTest {
                         null,
                         List.of(new SimpleGrantedAuthority("ROLE_USER"))));
         AiController controller = new AiController(
-                aiService, callGovernanceService, learningAssetService, learningEffectService, aiTaskExecutor);
+                aiService, callGovernanceService, learningAssetService, assetEngagementService, aiTaskExecutor);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
                 .build();
