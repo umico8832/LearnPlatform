@@ -98,7 +98,9 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
 - `QuestionService` 负责题目查询、维护与完整展示模型组装；无状态的
   `QuestionDuplicateDetector` 只负责文本归一化、相似度计算和重复题分组，不访问持久化层、
   不处理权限，也不作为 Spring 业务组件注册。
-- `QuestionLearningAssetService` 负责编排 AI 学习资产缓存和输出。
+- `QuestionLearningAssetService` 负责编排 AI 学习资产的题目上下文、同步 / 流式生成、缓存与输出；
+  `service/ai/QuestionAssetPromptFactory` 只维护七类无状态 Prompt 模板，不读取业务数据、不调用
+  AI Provider，也不注册为 Spring 组件。
 - `AiAssetEngagementService` 负责用户侧资产查看、当前缓存版本的变式训练状态，以及向
   `AiVariantQuestionService` 委托结构化变式题判分。
 - `AiCallGovernanceService` 统一负责用户每日配额、当日用量、调用审计、Token / 成本、

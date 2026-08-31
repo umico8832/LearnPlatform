@@ -211,6 +211,16 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+题目学习资产 Prompt 模板拆分（Round 277，2026-08-31）：
+
+- 新增 260 行的无状态 `QuestionAssetPromptFactory`，集中维护七类学习资产的 system / user
+  Prompt；`QuestionLearningAssetService` 从 635 行收敛为 393 行，继续负责题目上下文读取、
+  Provider 调用、配额与审计、缓存、访问控制和反馈。
+- 五组可视化模板断言迁为工厂直接测试，并新增七类 user Prompt 精确拼接与 system Prompt
+  SHA-256 快照回归；服务、工厂和两个控制器聚焦 4 个测试类 42 个测试通过。
+- 后端全量 578 个测试通过；ArchUnit、生产 / 测试双 Checkstyle、SpotBugs 和 JaCoCo 门禁通过。
+  Prompt 文本与换行、同步 / 流式调用、变式题私有答案、缓存失败降级、URL 和数据库契约不变。
+
 重复题检测算法拆分（Round 276，2026-08-31）：
 
 - 新增 186 行的无状态 `QuestionDuplicateDetector`，集中承担文本归一化、相似度计算、
