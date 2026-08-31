@@ -92,8 +92,12 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
 - `SpacedRepetitionService` 负责复习计划写事务和 SM-2 调度；待复习筛选、统计聚合、
   卡片 VO 组装与 AI 复习上下文由只读的 `ReviewScheduleQueryService` 承担。
 - `service/` 顶层只放 Spring 业务组件；无状态策略与聚合器进入明确领域子包。阶段测评
-  快照聚合位于 `service/assessment/`，题目访问策略位于 `service/question/`；跨 Service
-  与 Controller 传递的私有试卷原文件值对象位于 `dto/exam/`。
+  快照聚合位于 `service/assessment/`，题目访问策略与重复题文本检测算法位于
+  `service/question/`；跨 Service 与 Controller 传递的私有试卷原文件值对象位于
+  `dto/exam/`。
+- `QuestionService` 负责题目查询、维护与完整展示模型组装；无状态的
+  `QuestionDuplicateDetector` 只负责文本归一化、相似度计算和重复题分组，不访问持久化层、
+  不处理权限，也不作为 Spring 业务组件注册。
 - `QuestionLearningAssetService` 负责编排 AI 学习资产缓存和输出。
 - `AiAssetEngagementService` 负责用户侧资产查看、当前缓存版本的变式训练状态，以及向
   `AiVariantQuestionService` 委托结构化变式题判分。
