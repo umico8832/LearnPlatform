@@ -5,13 +5,11 @@ import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.CourseOverviewVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.CourseLearningEvent;
-import com.learnplatform.entity.CourseStageAssessment;
 import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionReviewSchedule;
 import com.learnplatform.entity.WrongQuestion;
 import com.learnplatform.entity.TutorContent;
-import com.learnplatform.entity.TutorSession;
 import com.learnplatform.mapper.CourseLearningEventMapper;
 import com.learnplatform.mapper.CourseStageAssessmentMapper;
 import com.learnplatform.mapper.CourseStageAssessmentQuestionMapper;
@@ -29,7 +27,6 @@ import org.apache.ibatis.session.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -39,9 +36,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -64,10 +59,12 @@ class CourseOverviewServiceTest {
     @BeforeEach
     void setUp() {
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new Configuration(), ""), KnowledgePoint.class);
+        CourseOverviewTargetService targetService = new CourseOverviewTargetService(
+                knowledgePointMapper, tutorContentMapper, tutorSessionMapper);
+        CourseOverviewAssessmentService assessmentService = new CourseOverviewAssessmentService(
+                stageAssessmentMapper, stageAssessmentQuestionMapper, new ObjectMapper());
         service = new CourseOverviewService(userCourseMapper, courseMapper, eventMapper,
-                wrongQuestionMapper, reviewScheduleMapper, questionMapper, knowledgePointMapper,
-                tutorContentMapper, tutorSessionMapper, stageAssessmentMapper, stageAssessmentQuestionMapper,
-                new ObjectMapper());
+                wrongQuestionMapper, reviewScheduleMapper, questionMapper, targetService, assessmentService);
     }
 
     @Test
@@ -121,107 +118,6 @@ class CourseOverviewServiceTest {
                 () -> service.getOverview(7L, 10L));
 
         assertEquals("请先将课程加入个人课程库", exception.getMessage());
-    }
-
-    @Test
-    void usesPlatformRootConventionWhenSelectingDefaultCourseTarget() {
-        when(userCourseMapper.selectCount(any())).thenReturn(1L);
-        when(courseMapper.selectById(10L)).thenReturn(course());
-        when(eventMapper.selectList(any())).thenReturn(List.of());
-        when(questionMapper.selectList(any())).thenReturn(List.of());
-        when(knowledgePointMapper.selectOne(any())).thenReturn(rootKnowledgePoint());
-
-        service.getOverview(7L, 10L);
-
-        ArgumentCaptor<com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<KnowledgePoint>> captor =
-                ArgumentCaptor.forClass(com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper.class);
-        verify(knowledgePointMapper).selectOne(captor.capture());
-        assertTrue(captor.getValue().getSqlSegment().contains("parentId ="),
-                captor.getValue().getSqlSegment());
-    }
-
-    @Test
-    void excludesTutorContentAfterItsFirstCorrectCheck() {
-        when(userCourseMapper.selectCount(any())).thenReturn(1L);
-        when(courseMapper.selectById(10L)).thenReturn(course());
-        when(eventMapper.selectList(any())).thenReturn(List.of());
-        when(questionMapper.selectList(any())).thenReturn(List.of());
-        when(knowledgePointMapper.selectOne(any())).thenReturn(rootKnowledgePoint());
-        when(knowledgePointMapper.selectList(any())).thenReturn(List.of(tutorKnowledgePoint(41L)));
-        when(tutorContentMapper.selectList(any())).thenReturn(List.of(tutorContent(41L, 81L)));
-        when(tutorSessionMapper.selectList(any())).thenReturn(List.of(completedTutorSession(81L)));
-
-        CourseOverviewVO overview = service.getOverview(7L, 10L);
-
-        assertEquals("COURSE_SEQUENCE", overview.getRecommendedTargets().get(0).getType());
-    }
-
-    @Test
-    void derivesTutorProgressFromServerSideCheckFacts() {
-        when(userCourseMapper.selectCount(any())).thenReturn(1L);
-        when(courseMapper.selectById(10L)).thenReturn(course());
-        when(eventMapper.selectList(any())).thenReturn(List.of());
-        when(questionMapper.selectList(any())).thenReturn(List.of());
-        when(knowledgePointMapper.selectOne(any())).thenReturn(rootKnowledgePoint());
-        KnowledgePoint first = tutorKnowledgePoint(41L);
-        first.setName("ArrayStack 的按位插入");
-        first.setSortOrder(20);
-        KnowledgePoint second = tutorKnowledgePoint(42L);
-        second.setName("ArrayStack 的容量调整");
-        second.setSortOrder(30);
-        KnowledgePoint third = tutorKnowledgePoint(43L);
-        third.setName("ArrayStack 的按位删除");
-        third.setSortOrder(40);
-        when(knowledgePointMapper.selectList(any())).thenReturn(List.of(third, second, first));
-        when(tutorContentMapper.selectList(any())).thenReturn(List.of(
-                tutorContent(42L, 82L), tutorContent(43L, 83L), tutorContent(41L, 81L)));
-        TutorSession attempted = new TutorSession();
-        attempted.setTutorContentId(82L);
-        attempted.setCheckCorrect(false);
-        when(tutorSessionMapper.selectList(any())).thenReturn(List.of(completedTutorSession(81L), attempted));
-
-        CourseOverviewVO overview = service.getOverview(7L, 10L);
-
-        assertEquals(3, overview.getTutorProgress().size());
-        assertEquals("COMPLETED", overview.getTutorProgress().get(0).getStatus());
-        assertEquals("IN_PROGRESS", overview.getTutorProgress().get(1).getStatus());
-        assertEquals("NOT_STARTED", overview.getTutorProgress().get(2).getStatus());
-        assertEquals(41L, overview.getTutorProgress().get(0).getKnowledgePointId());
-        assertEquals(42L, overview.getTutorProgress().get(1).getKnowledgePointId());
-        assertEquals(43L, overview.getTutorProgress().get(2).getKnowledgePointId());
-    }
-
-    @Test
-    void exposesLatestCompletedAssessmentAsFactWithoutInferringMastery() {
-        when(userCourseMapper.selectCount(any())).thenReturn(1L);
-        when(courseMapper.selectById(10L)).thenReturn(course());
-        when(eventMapper.selectList(any())).thenReturn(List.of());
-        when(questionMapper.selectList(any())).thenReturn(List.of());
-        when(knowledgePointMapper.selectOne(any())).thenReturn(rootKnowledgePoint());
-        CourseStageAssessment latest = new CourseStageAssessment();
-        latest.setId(51L);
-        latest.setQuestionCount(5);
-        latest.setCorrectCount(3);
-        latest.setCompleteTime(LocalDateTime.of(2026, 8, 15, 11, 0));
-        when(stageAssessmentMapper.selectLatestCompleted(7L, 10L)).thenReturn(latest);
-        com.learnplatform.entity.CourseStageAssessmentQuestion snapshot =
-                new com.learnplatform.entity.CourseStageAssessmentQuestion();
-        snapshot.setSourceCategorySnapshot("OFFICIAL_EXAM");
-        snapshot.setKnowledgePointsJson("[{\"id\":31,\"name\":\"栈\"}]");
-        snapshot.setIsCorrect(0);
-        when(stageAssessmentQuestionMapper.selectByAssessmentId(51L)).thenReturn(List.of(snapshot));
-
-        CourseOverviewVO overview = service.getOverview(7L, 10L);
-
-        assertEquals(51L, overview.getLatestStageAssessment().getId());
-        assertEquals(3, overview.getLatestStageAssessment().getCorrectCount());
-        assertEquals(5, overview.getLatestStageAssessment().getQuestionCount());
-        assertEquals(1, overview.getLatestStageAssessment().getSourceComposition().getOfficialExamCount());
-        assertEquals(1, overview.getLatestStageAssessment().getKnowledgePointSummary().size());
-        assertEquals(31L, overview.getLatestStageAssessment().getKnowledgePointSummary().get(0).getId());
-        assertEquals("栈", overview.getLatestStageAssessment().getKnowledgePointSummary().get(0).getName());
-        assertEquals(1, overview.getLatestStageAssessment().getKnowledgePointSummary().get(0).getQuestionCount());
-        assertEquals(0, overview.getLatestStageAssessment().getKnowledgePointSummary().get(0).getCorrectCount());
     }
 
     private Course course() {
@@ -282,10 +178,4 @@ class CourseOverviewServiceTest {
         return content;
     }
 
-    private TutorSession completedTutorSession(Long tutorContentId) {
-        TutorSession session = new TutorSession();
-        session.setTutorContentId(tutorContentId);
-        session.setCheckCorrect(true);
-        return session;
-    }
 }

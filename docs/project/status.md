@@ -211,6 +211,16 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+课程总览目标与测评摘要职责拆分（Round 281，2026-09-04）：
+
+- 新增 144 行的 `CourseOverviewTargetService`，集中计算 Tutor 服务端进度并按 Tutor、到期复习、
+  未掌握错题、课程顺序生成统一下一目标；新增 50 行的 `CourseOverviewAssessmentService`，只读取并
+  组装最近一次已完成阶段测评的题源与知识点事实摘要。
+- `CourseOverviewService` 从 257 行收敛为 122 行，直接依赖从 12 个降为 8 个，只编排课程库校验、
+  课程学习事件、可见题目、错题和到期复习等核心事实；相关 4 个测试类 13 个测试通过。
+- 后端全量 583 个测试通过；ArchUnit、生产 / 测试双 Checkstyle、SpotBugs 和 JaCoCo 门禁通过。
+  URL、DTO、数据库、查询顺序、目标优先级、服务端事实来源和不推断掌握度的语义不变。
+
 试卷学习上下文职责拆分（Round 280，2026-09-04）：
 
 - 新增 94 行的 `ExamPaperLearningContextService`，集中校验试卷可见性、发布状态、课程绑定、

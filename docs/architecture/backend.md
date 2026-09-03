@@ -83,6 +83,9 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
   `AiCallGovernanceService`。
 - `LearningQuestionErrorAnalysisService` 负责单题错因分析。
 - `SimilarQuestionRecommendationService` 负责相似题候选与评分。
+- `CourseOverviewService` 只编排课程学习事件、错题、到期复习等核心事实；
+  `CourseOverviewTargetService` 负责 Tutor 进度和统一下一目标排序，
+  `CourseOverviewAssessmentService` 负责最近一次已完成阶段测评的事实摘要。
 - `PracticeService` 是练习接口兼容门面；题目查询与脱敏、历史统计查询和事务判分写入
   分别由 `PracticeQuestionQueryService`、`PracticeHistoryService` 与
   `PracticeAnswerService` 承担。
