@@ -211,6 +211,16 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+题目学习资产上下文职责拆分（Round 278，2026-09-04）：
+
+- 新增 122 行的 `QuestionAssetContextService`，集中读取题目、排序选项、知识点和课程并按既有顺序
+  组装 AI 上下文；`QuestionLearningAssetService` 从 393 行收敛为 307 行，直接依赖从 11 个降为
+  8 个，不再直接依赖四个上下文专用 Mapper。
+- 上下文测试覆盖完整文本与换行顺序、全部题型标签、可选段落省略和缺题异常；上下文、Prompt、
+  生成服务及两个控制器聚焦 5 个测试类 43 个测试通过。
+- 后端全量 579 个测试通过；ArchUnit、生产 / 测试双 Checkstyle、SpotBugs 和 JaCoCo 门禁通过。
+  同步 / 流式调用、查询顺序、Prompt、访问控制、缓存、反馈、URL 和数据库契约不变。
+
 题目学习资产 Prompt 模板拆分（Round 277，2026-08-31）：
 
 - 新增 260 行的无状态 `QuestionAssetPromptFactory`，集中维护七类学习资产的 system / user
@@ -629,4 +639,4 @@ Phase 23 退出 L3 门禁（Round 245，2026-08-15）：
 - AiStu 桌面端同步改造。
 - 复杂向量推荐系统。
 
-最后整理日期：2026-08-31。
+最后整理日期：2026-09-04。

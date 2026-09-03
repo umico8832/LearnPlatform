@@ -6,19 +6,11 @@ import com.learnplatform.dto.AiAssetType;
 import com.learnplatform.dto.QuestionLearningAssetVO;
 import com.learnplatform.entity.AiAssetFeedback;
 import com.learnplatform.dto.AiAssetFeedbackVO;
-import com.learnplatform.entity.Course;
-import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionAiAsset;
-import com.learnplatform.entity.QuestionKnowledgePoint;
-import com.learnplatform.entity.QuestionOption;
-import com.learnplatform.mapper.CourseMapper;
-import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.AiAssetFeedbackMapper;
 import com.learnplatform.mapper.QuestionAiAssetMapper;
-import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
-import com.learnplatform.mapper.QuestionOptionMapper;
 import com.learnplatform.service.ai.AiProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,10 +48,7 @@ class QuestionLearningAssetServiceTest {
     @Mock private QuestionAiAssetMapper questionAiAssetMapper;
     @Mock private AiAssetFeedbackMapper aiAssetFeedbackMapper;
     @Mock private QuestionMapper questionMapper;
-    @Mock private QuestionOptionMapper questionOptionMapper;
-    @Mock private QuestionKnowledgePointMapper questionKnowledgePointMapper;
-    @Mock private KnowledgePointMapper knowledgePointMapper;
-    @Mock private CourseMapper courseMapper;
+    @Mock private QuestionAssetContextService questionAssetContextService;
     @Mock private AiVariantQuestionService aiVariantQuestionService;
 
     private QuestionLearningAssetService service;
@@ -69,8 +58,7 @@ class QuestionLearningAssetServiceTest {
         service = new QuestionLearningAssetService(
                 aiProvider, aiConfig, callGovernanceService,
                 questionAiAssetMapper, aiAssetFeedbackMapper,
-                questionMapper, questionOptionMapper,
-                questionKnowledgePointMapper, knowledgePointMapper, courseMapper,
+                questionMapper, questionAssetContextService,
                 aiVariantQuestionService
         );
         lenient().when(questionMapper.selectById(anyLong())).thenReturn(stubQuestion());
@@ -232,8 +220,8 @@ class QuestionLearningAssetServiceTest {
     void generateOrGetAssetGeneratesAllSixAssetTypes() {
         for (AiAssetType type : AiAssetType.values()) {
             // Reset mocks for each iteration
-            org.mockito.Mockito.reset(questionAiAssetMapper, questionMapper, questionOptionMapper,
-                    questionKnowledgePointMapper, knowledgePointMapper, courseMapper, aiProvider);
+            org.mockito.Mockito.reset(questionAiAssetMapper, questionMapper, questionAssetContextService,
+                    aiProvider);
 
             when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
             doNothing().when(callGovernanceService).checkDailyQuota(7L);
@@ -392,86 +380,6 @@ class QuestionLearningAssetServiceTest {
         service.clearAssets(1L);
 
         verify(questionAiAssetMapper, times(0)).deleteById(anyLong());
-    }
-
-    // ======================== Question context verification ========================
-
-    @Test
-    void generateOrGetAssetBuildsCorrectQuestionContext() {
-        when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
-        doNothing().when(callGovernanceService).checkDailyQuota(7L);
-
-        // Set up question with full context
-        Question question = stubQuestion();
-        question.setContent("What is polymorphism?");
-        question.setAnalysis("Polymorphism means many forms");
-        question.setCourseId(100L);
-        when(questionMapper.selectById(1L)).thenReturn(question);
-
-        QuestionOption optA = new QuestionOption();
-        optA.setOptionLabel("A");
-        optA.setContent("Many forms");
-        optA.setIsCorrect(1);
-        QuestionOption optB = new QuestionOption();
-        optB.setOptionLabel("B");
-        optB.setContent("Single form");
-        optB.setIsCorrect(0);
-        when(questionOptionMapper.selectList(any())).thenReturn(List.of(optA, optB));
-
-        QuestionKnowledgePoint kp = new QuestionKnowledgePoint();
-        kp.setKnowledgePointId(200L);
-        when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(kp));
-
-        KnowledgePoint kpEntity = new KnowledgePoint();
-        kpEntity.setName("OOP Basics");
-        when(knowledgePointMapper.selectBatchIds(any())).thenReturn(List.of(kpEntity));
-
-        Course course = new Course();
-        course.setName("Java Programming");
-        when(courseMapper.selectById(100L)).thenReturn(course);
-
-        when(aiConfig.getModel()).thenReturn("gpt-4");
-        when(aiProvider.chat(anyString(), anyString())).thenReturn("explanation");
-
-        // Capture the user prompt sent to AI
-        ArgumentCaptor<String> userPromptCaptor = ArgumentCaptor.forClass(String.class);
-        when(questionAiAssetMapper.insert(any())).thenReturn(1);
-
-        service.generateOrGetAsset(1L, AiAssetType.FULL_EXPLANATION, 7L);
-
-        verify(aiProvider).chat(anyString(), userPromptCaptor.capture());
-        String userPrompt = userPromptCaptor.getValue();
-
-        // Verify question context contains all expected info
-        assertContains(userPrompt, "题型：单选题");
-        assertContains(userPrompt, "难度：3/5");
-        assertContains(userPrompt, "题目：What is polymorphism?");
-        assertContains(userPrompt, "A. Many forms [正确答案]");
-        assertContains(userPrompt, "B. Single form");
-        assertContains(userPrompt, "原始解析：Polymorphism means many forms");
-        assertContains(userPrompt, "知识点：OOP Basics");
-        assertContains(userPrompt, "所属课程：Java Programming");
-    }
-
-    @Test
-    void generateOrGetAssetHandlesQuestionWithNoOptions() {
-        when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
-        doNothing().when(callGovernanceService).checkDailyQuota(7L);
-
-        Question question = stubQuestion();
-        question.setQuestionType("SHORT_ANSWER");
-        when(questionMapper.selectById(1L)).thenReturn(question);
-        when(questionOptionMapper.selectList(any())).thenReturn(Collections.emptyList());
-        when(questionKnowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
-
-        when(aiConfig.getModel()).thenReturn("gpt-4");
-        when(aiProvider.chat(anyString(), anyString())).thenReturn("answer");
-        when(questionAiAssetMapper.insert(any())).thenReturn(1);
-
-        QuestionLearningAssetVO result = service.generateOrGetAsset(1L, AiAssetType.STEP_BY_STEP, 7L);
-
-        assertNotNull(result);
-        assertEquals("STEP_BY_STEP", result.getAssetType());
     }
 
     // ======================== Type label verification ========================
@@ -657,13 +565,7 @@ class QuestionLearningAssetServiceTest {
     private void setupFullQuestionContext() {
         Question question = stubQuestion();
         when(questionMapper.selectById(1L)).thenReturn(question);
-        when(questionOptionMapper.selectList(any())).thenReturn(Collections.emptyList());
-        when(questionKnowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(questionAssetContextService.load(1L)).thenReturn("question-context");
     }
 
-    private void assertContains(String text, String expected) {
-        if (!text.contains(expected)) {
-            throw new AssertionError("Expected text to contain '" + expected + "' but was: " + text);
-        }
-    }
 }

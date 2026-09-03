@@ -8,19 +8,11 @@ import com.learnplatform.dto.AiAssetFeedbackVO;
 import com.learnplatform.dto.AiAssetType;
 import com.learnplatform.dto.QuestionLearningAssetVO;
 import com.learnplatform.entity.AiAssetFeedback;
-import com.learnplatform.entity.Course;
-import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionAiAsset;
-import com.learnplatform.entity.QuestionKnowledgePoint;
-import com.learnplatform.entity.QuestionOption;
 import com.learnplatform.mapper.AiAssetFeedbackMapper;
-import com.learnplatform.mapper.CourseMapper;
-import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionAiAssetMapper;
-import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
-import com.learnplatform.mapper.QuestionOptionMapper;
 import com.learnplatform.service.ai.AiProvider;
 import com.learnplatform.service.ai.QuestionAssetPromptFactory;
 import com.learnplatform.service.ai.QuestionAssetPromptFactory.Prompt;
@@ -49,10 +41,7 @@ public class QuestionLearningAssetService {
     private final QuestionAiAssetMapper questionAiAssetMapper;
     private final AiAssetFeedbackMapper aiAssetFeedbackMapper;
     private final QuestionMapper questionMapper;
-    private final QuestionOptionMapper questionOptionMapper;
-    private final QuestionKnowledgePointMapper questionKnowledgePointMapper;
-    private final KnowledgePointMapper knowledgePointMapper;
-    private final CourseMapper courseMapper;
+    private final QuestionAssetContextService questionAssetContextService;
     private final AiVariantQuestionService aiVariantQuestionService;
 
     public QuestionLearningAssetService(AiProvider aiProvider,
@@ -61,10 +50,7 @@ public class QuestionLearningAssetService {
                                          QuestionAiAssetMapper questionAiAssetMapper,
                                          AiAssetFeedbackMapper aiAssetFeedbackMapper,
                                          QuestionMapper questionMapper,
-                                         QuestionOptionMapper questionOptionMapper,
-                                         QuestionKnowledgePointMapper questionKnowledgePointMapper,
-                                         KnowledgePointMapper knowledgePointMapper,
-                                         CourseMapper courseMapper,
+                                         QuestionAssetContextService questionAssetContextService,
                                          AiVariantQuestionService aiVariantQuestionService) {
         this.aiProvider = aiProvider;
         this.aiConfig = aiConfig;
@@ -72,10 +58,7 @@ public class QuestionLearningAssetService {
         this.questionAiAssetMapper = questionAiAssetMapper;
         this.aiAssetFeedbackMapper = aiAssetFeedbackMapper;
         this.questionMapper = questionMapper;
-        this.questionOptionMapper = questionOptionMapper;
-        this.questionKnowledgePointMapper = questionKnowledgePointMapper;
-        this.knowledgePointMapper = knowledgePointMapper;
-        this.courseMapper = courseMapper;
+        this.questionAssetContextService = questionAssetContextService;
         this.aiVariantQuestionService = aiVariantQuestionService;
     }
 
@@ -296,76 +279,7 @@ public class QuestionLearningAssetService {
     }
 
     private Prompt buildAssetPrompt(Long questionId, AiAssetType assetType) {
-        return QuestionAssetPromptFactory.build(assetType, buildQuestionContext(questionId));
-    }
-
-    /**
-     * 构建题目上下文信息，包含题目、选项、知识点等
-     */
-    private String buildQuestionContext(Long questionId) {
-        Question question = questionMapper.selectById(questionId);
-        if (question == null) { throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在"); }
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("题型：").append(getTypeLabel(question.getQuestionType())).append("\n");
-        sb.append("难度：").append(question.getDifficulty()).append("/5\n");
-        sb.append("题目：").append(question.getContent()).append("\n");
-
-        // 选项
-        LambdaQueryWrapper<QuestionOption> optWrapper = new LambdaQueryWrapper<>();
-        optWrapper.eq(QuestionOption::getQuestionId, question.getId()).orderByAsc(QuestionOption::getSortOrder);
-        List<QuestionOption> options = questionOptionMapper.selectList(optWrapper);
-        if (!options.isEmpty()) {
-            sb.append("选项：\n");
-            for (QuestionOption opt : options) {
-                sb.append("  ").append(opt.getOptionLabel()).append(". ").append(opt.getContent());
-                if (opt.getIsCorrect() != null && opt.getIsCorrect() == 1) {
-                    sb.append(" [正确答案]");
-                }
-                sb.append("\n");
-            }
-        }
-
-        // 已有解析
-        if (question.getAnalysis() != null && !question.getAnalysis().isBlank()) {
-            sb.append("原始解析：").append(question.getAnalysis()).append("\n");
-        }
-
-        // 知识点
-        LambdaQueryWrapper<QuestionKnowledgePoint> kpWrapper = new LambdaQueryWrapper<>();
-        kpWrapper.eq(QuestionKnowledgePoint::getQuestionId, question.getId());
-        List<QuestionKnowledgePoint> kps = questionKnowledgePointMapper.selectList(kpWrapper);
-        if (!kps.isEmpty()) {
-            List<Long> kpIds = kps.stream().map(QuestionKnowledgePoint::getKnowledgePointId)
-                    .collect(Collectors.toList());
-            List<KnowledgePoint> kpList = knowledgePointMapper.selectBatchIds(kpIds);
-            if (!kpList.isEmpty()) {
-                sb.append("知识点：").append(kpList.stream().map(KnowledgePoint::getName)
-                        .collect(Collectors.joining("、"))).append("\n");
-            }
-        }
-
-        // 课程
-        if (question.getCourseId() != null) {
-            Course course = courseMapper.selectById(question.getCourseId());
-            if (course != null) {
-                sb.append("所属课程：").append(course.getName()).append("\n");
-            }
-        }
-
-        return sb.toString();
-    }
-
-    private String getTypeLabel(String type) {
-        if (type == null) { return "未知"; }
-        switch (type) {
-            case "SINGLE_CHOICE": return "单选题";
-            case "MULTIPLE_CHOICE": return "多选题";
-            case "TRUE_FALSE": return "判断题";
-            case "FILL_BLANK": return "填空题";
-            case "SHORT_ANSWER": return "简答题";
-            default: return type;
-        }
+        return QuestionAssetPromptFactory.build(assetType, questionAssetContextService.load(questionId));
     }
 
     private QuestionLearningAssetVO toVO(QuestionAiAsset asset) {
