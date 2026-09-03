@@ -211,6 +211,15 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+AI 用量总览与运营报告职责拆分（Round 279，2026-09-04）：
+
+- 新增 296 行的 `AiUsageReportService`，集中承担当前 / 前一等长周期对比、异常提醒推导与持久化、
+  新提醒通知、未确认提醒查询和管理员确认事务；`AiUsageService` 从 497 行收敛为 232 行，直接
+  依赖从 4 个降为 2 个，只保留管理端用量总览聚合。
+- `AdminAiUsageController` 按端点直接依赖总览、报告和学习效果三个服务；URL、DTO、数据库、报告
+  周期与提醒阈值、通知时机及事务语义不变。相关 3 个测试类 19 个测试通过。
+- 后端全量 580 个测试通过；ArchUnit、生产 / 测试双 Checkstyle、SpotBugs 和 JaCoCo 门禁通过。
+
 题目学习资产上下文职责拆分（Round 278，2026-09-04）：
 
 - 新增 122 行的 `QuestionAssetContextService`，集中读取题目、排序选项、知识点和课程并按既有顺序

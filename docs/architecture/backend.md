@@ -107,6 +107,8 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
 - `AiCallGovernanceService` 统一负责用户每日配额、当日用量、调用审计、Token / 成本、
   Trace ID 以及提示词和模型配置指纹；AI 业务服务只保留提示词与内容生成职责，并直接依赖
   该治理边界，不通过宽泛的 `AiService` 间接复用。
+- `AiUsageService` 只负责管理端 AI 用量总览，包括全局、功能、模型、每日、用户和失败调用聚合；
+  `AiUsageReportService` 负责等长周期对比、异常提醒推导与持久化、通知和确认事务。
 - `AiVariantQuestionService` 负责结构化变式题私有答案与判分。
 - `AiLearningEffectService` 只读聚合观察性学习效果，不承担用户交互写事务。
 

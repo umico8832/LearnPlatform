@@ -2,7 +2,9 @@ package com.learnplatform.controller;
 
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.AiLearningEffectVO;
+import com.learnplatform.dto.AiUsageReportVO;
 import com.learnplatform.service.AiLearningEffectService;
+import com.learnplatform.service.AiUsageReportService;
 import com.learnplatform.service.AiUsageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,14 +25,27 @@ class AdminAiUsageControllerTest {
     private MockMvc mockMvc;
 
     @Mock private AiUsageService aiUsageService;
+    @Mock private AiUsageReportService aiUsageReportService;
     @Mock private AiLearningEffectService learningEffectService;
 
     @BeforeEach
     void setUp() {
-        AdminAiUsageController controller = new AdminAiUsageController(aiUsageService, learningEffectService);
+        AdminAiUsageController controller = new AdminAiUsageController(
+                aiUsageService, aiUsageReportService, learningEffectService);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
+    }
+
+    @Test
+    void getReportUsesReportService() throws Exception {
+        AiUsageReportVO report = new AiUsageReportVO();
+        report.setDays(7);
+        when(aiUsageReportService.getReport(7)).thenReturn(report);
+
+        mockMvc.perform(get("/api/admin/ai-usage/report").param("days", "7"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.days").value(7));
     }
 
     @Test
