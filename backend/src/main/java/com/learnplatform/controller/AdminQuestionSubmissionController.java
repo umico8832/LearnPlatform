@@ -8,6 +8,7 @@ import com.learnplatform.dto.SubmissionKPTaggingVO;
 import com.learnplatform.dto.SubmissionDifficultyVO;
 import com.learnplatform.dto.SubmissionQualityCheckVO;
 import com.learnplatform.security.CustomUserDetails;
+import com.learnplatform.service.QuestionSubmissionImportService;
 import com.learnplatform.service.QuestionSubmissionService;
 import com.learnplatform.service.SubmissionAiQualityService;
 import com.learnplatform.service.SubmissionDifficultyAssessmentService;
@@ -33,15 +34,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminQuestionSubmissionController {
 
     private final QuestionSubmissionService submissionService;
+    private final QuestionSubmissionImportService submissionImportService;
     private final SubmissionAiQualityService qualityService;
     private final SubmissionKPTaggingService kpTaggingService;
     private final SubmissionDifficultyAssessmentService difficultyAssessmentService;
 
     public AdminQuestionSubmissionController(QuestionSubmissionService submissionService,
+                                              QuestionSubmissionImportService submissionImportService,
                                               SubmissionAiQualityService qualityService,
                                               SubmissionKPTaggingService kpTaggingService,
                                               SubmissionDifficultyAssessmentService difficultyAssessmentService) {
         this.submissionService = submissionService;
+        this.submissionImportService = submissionImportService;
         this.qualityService = qualityService;
         this.kpTaggingService = kpTaggingService;
         this.difficultyAssessmentService = difficultyAssessmentService;
@@ -120,7 +124,7 @@ public class AdminQuestionSubmissionController {
     @PostMapping("/{id}/import")
     public R<QuestionSubmissionVO> importToQuestionBank(@PathVariable Long id) {
         Long adminId = getCurrentUserId();
-        QuestionSubmissionVO vo = submissionService.importSubmission(id, adminId);
+        QuestionSubmissionVO vo = submissionImportService.importSubmission(id, adminId);
         return R.ok(vo);
     }
 

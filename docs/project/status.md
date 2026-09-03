@@ -211,6 +211,16 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+题目投稿正式入库职责拆分（Round 282，2026-09-04）：
+
+- 新增 138 行的 `QuestionSubmissionImportService`，独立承担已审核投稿创建正式题目、选项与知识点关联、
+  来源追踪、初审记录及投稿状态更新事务；新增 127 行的 `QuestionSubmissionOptionService` 和 89 行的
+  `QuestionSubmissionViewService`，分别复用选项 JSON 规则与投稿展示富化。
+- `QuestionSubmissionService` 从 475 行收敛为 190 行，直接依赖从 9 个降为 4 个，只保留用户投稿、
+  列表 / 详情、管理员审核、统计和知识点标注应用；管理端入库端点直接依赖入库服务。
+- 相关 4 个测试类 7 个测试、后端全量 586 个测试通过；ArchUnit、生产 / 测试双 Checkstyle、
+  SpotBugs 和 JaCoCo 门禁通过。URL、DTO、数据库、事务、选项规范化、来源追踪与分页集合语义不变。
+
 课程总览目标与测评摘要职责拆分（Round 281，2026-09-04）：
 
 - 新增 144 行的 `CourseOverviewTargetService`，集中计算 Tutor 服务端进度并按 Tutor、到期复习、
