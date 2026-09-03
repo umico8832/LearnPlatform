@@ -91,6 +91,9 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
   `learningReport` 缓存边界。
 - `SpacedRepetitionService` 负责复习计划写事务和 SM-2 调度；待复习筛选、统计聚合、
   卡片 VO 组装与 AI 复习上下文由只读的 `ReviewScheduleQueryService` 承担。
+- `ExamPaperLearningService` 负责试卷学习会话生命周期、逐题判分和学习事实写入；
+  `ExamPaperLearningContextService` 集中校验试卷可见性、发布状态、课程库关系与题目课程归属，
+  并按试卷顺序读取题目和选项。
 - `service/` 顶层只放 Spring 业务组件；无状态策略与聚合器进入明确领域子包。阶段测评
   快照聚合位于 `service/assessment/`，题目访问策略与重复题文本检测算法位于
   `service/question/`；跨 Service 与 Controller 传递的私有试卷原文件值对象位于

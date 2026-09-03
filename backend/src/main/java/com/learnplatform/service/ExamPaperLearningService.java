@@ -13,14 +13,8 @@ import com.learnplatform.entity.ExamPaper;
 import com.learnplatform.entity.ExamQuestion;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionOption;
-import com.learnplatform.entity.UserCourse;
 import com.learnplatform.mapper.ExamLearningAnswerMapper;
 import com.learnplatform.mapper.ExamLearningSessionMapper;
-import com.learnplatform.mapper.ExamPaperMapper;
-import com.learnplatform.mapper.ExamQuestionMapper;
-import com.learnplatform.mapper.QuestionMapper;
-import com.learnplatform.mapper.QuestionOptionMapper;
-import com.learnplatform.mapper.UserCourseMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
@@ -43,11 +37,7 @@ public class ExamPaperLearningService {
 
     private final ExamLearningSessionMapper sessionMapper;
     private final ExamLearningAnswerMapper learningAnswerMapper;
-    private final ExamPaperMapper examPaperMapper;
-    private final ExamQuestionMapper examQuestionMapper;
-    private final QuestionMapper questionMapper;
-    private final QuestionOptionMapper questionOptionMapper;
-    private final UserCourseMapper userCourseMapper;
+    private final ExamPaperLearningContextService contextService;
     private final AnswerEvaluator answerEvaluator;
     private final WrongQuestionService wrongQuestionService;
     private final SpacedRepetitionService spacedRepetitionService;
@@ -56,11 +46,7 @@ public class ExamPaperLearningService {
 
     public ExamPaperLearningService(ExamLearningSessionMapper sessionMapper,
                                     ExamLearningAnswerMapper learningAnswerMapper,
-                                    ExamPaperMapper examPaperMapper,
-                                    ExamQuestionMapper examQuestionMapper,
-                                    QuestionMapper questionMapper,
-                                    QuestionOptionMapper questionOptionMapper,
-                                    UserCourseMapper userCourseMapper,
+                                    ExamPaperLearningContextService contextService,
                                     AnswerEvaluator answerEvaluator,
                                     WrongQuestionService wrongQuestionService,
                                     SpacedRepetitionService spacedRepetitionService,
@@ -68,11 +54,7 @@ public class ExamPaperLearningService {
                                     CourseLearningEventService courseLearningEventService) {
         this.sessionMapper = sessionMapper;
         this.learningAnswerMapper = learningAnswerMapper;
-        this.examPaperMapper = examPaperMapper;
-        this.examQuestionMapper = examQuestionMapper;
-        this.questionMapper = questionMapper;
-        this.questionOptionMapper = questionOptionMapper;
-        this.userCourseMapper = userCourseMapper;
+        this.contextService = contextService;
         this.answerEvaluator = answerEvaluator;
         this.wrongQuestionService = wrongQuestionService;
         this.spacedRepetitionService = spacedRepetitionService;
@@ -82,8 +64,8 @@ public class ExamPaperLearningService {
 
     @Transactional
     public ExamLearningSessionVO startSession(Long paperId, Long userId) {
-        ExamPaper paper = loadEligiblePaper(paperId, userId);
-        List<ExamQuestion> paperQuestions = loadPaperQuestions(paper);
+        ExamPaper paper = contextService.loadEligiblePaper(paperId, userId);
+        List<ExamQuestion> paperQuestions = contextService.loadPaperQuestions(paper);
         String activeKey = activeKey(userId, paperId);
         ExamLearningSession existing = findActiveSession(activeKey);
         if (existing != null) {
@@ -111,8 +93,8 @@ public class ExamPaperLearningService {
 
     public ExamLearningSessionVO getSession(Long sessionId, Long userId) {
         ExamLearningSession session = loadOwnedSession(sessionId, userId, false);
-        ExamPaper paper = loadEligiblePaper(session.getExamPaperId(), userId);
-        List<ExamQuestion> paperQuestions = loadPaperQuestions(paper);
+        ExamPaper paper = contextService.loadEligiblePaper(session.getExamPaperId(), userId);
+        List<ExamQuestion> paperQuestions = contextService.loadPaperQuestions(paper);
         List<ExamLearningAnswer> answers = learningAnswerMapper.selectList(
                 new LambdaQueryWrapper<ExamLearningAnswer>()
                         .eq(ExamLearningAnswer::getSessionId, sessionId)
@@ -130,16 +112,16 @@ public class ExamPaperLearningService {
         }
         ExamLearningSession session = loadOwnedSession(sessionId, userId, true);
         ensureActive(session);
-        ExamPaper paper = loadEligiblePaper(session.getExamPaperId(), userId);
-        List<ExamQuestion> paperQuestions = loadPaperQuestions(paper);
+        ExamPaper paper = contextService.loadEligiblePaper(session.getExamPaperId(), userId);
+        List<ExamQuestion> paperQuestions = contextService.loadPaperQuestions(paper);
         ExamQuestion paperQuestion = paperQuestions.stream()
                 .filter(item -> request.getQuestionId().equals(item.getQuestionId()))
                 .findFirst()
                 .orElseThrow(() -> new BusinessException(ResultCode.VALIDATION_ERROR,
                         "提交内容包含非本试卷题目"));
 
-        Question question = loadPaperQuestion(paper, paperQuestion);
-        List<QuestionOption> options = loadOptions(question.getId());
+        Question question = contextService.loadPaperQuestion(paper, paperQuestion);
+        List<QuestionOption> options = contextService.loadOptions(question.getId());
         String correctAnswer = buildCorrectAnswer(question, options);
         String userAnswer = request.getUserAnswer().trim();
         boolean manualSelfReview = "SHORT_ANSWER".equals(question.getQuestionType());
@@ -177,8 +159,8 @@ public class ExamPaperLearningService {
     public ExamLearningSessionVO completeSession(Long sessionId, Long userId) {
         ExamLearningSession session = loadOwnedSession(sessionId, userId, true);
         ensureActive(session);
-        ExamPaper paper = loadEligiblePaper(session.getExamPaperId(), userId);
-        List<ExamQuestion> paperQuestions = loadPaperQuestions(paper);
+        ExamPaper paper = contextService.loadEligiblePaper(session.getExamPaperId(), userId);
+        List<ExamQuestion> paperQuestions = contextService.loadPaperQuestions(paper);
         List<ExamLearningAnswer> answers = learningAnswerMapper.selectList(
                 new LambdaQueryWrapper<ExamLearningAnswer>()
                         .eq(ExamLearningAnswer::getSessionId, sessionId));
@@ -191,54 +173,6 @@ public class ExamPaperLearningService {
         session.setCompleteTime(LocalDateTime.now());
         sessionMapper.updateById(session);
         return toSessionVO(session, paper, paperQuestions, answers);
-    }
-
-    private ExamPaper loadEligiblePaper(Long paperId, Long userId) {
-        ExamPaper paper = examPaperMapper.selectById(paperId);
-        if (paper == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
-        }
-        if (!(paper.getVisibility() == null || "PUBLIC".equals(paper.getVisibility())
-                || ("PRIVATE".equals(paper.getVisibility()) && userId.equals(paper.getOwnerUserId())))) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
-        }
-        if (!Integer.valueOf(1).equals(paper.getStatus())) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR, "试卷未发布");
-        }
-        if (paper.getCourseId() == null) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR, "试卷未关联课程，无法进入学习模式");
-        }
-        long relationshipCount = userCourseMapper.selectCount(new LambdaQueryWrapper<UserCourse>()
-                .eq(UserCourse::getUserId, userId)
-                .eq(UserCourse::getCourseId, paper.getCourseId()));
-        if (relationshipCount <= 0) {
-            throw new BusinessException(ResultCode.FORBIDDEN, "请先将课程加入课程库");
-        }
-        return paper;
-    }
-
-    private List<ExamQuestion> loadPaperQuestions(ExamPaper paper) {
-        List<ExamQuestion> questions = examQuestionMapper.selectList(new LambdaQueryWrapper<ExamQuestion>()
-                .eq(ExamQuestion::getExamPaperId, paper.getId())
-                .orderByAsc(ExamQuestion::getSortOrder));
-        if (questions.isEmpty()) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR, "空试卷不能开始学习");
-        }
-        for (ExamQuestion item : questions) {
-            loadPaperQuestion(paper, item);
-        }
-        return questions;
-    }
-
-    private Question loadPaperQuestion(ExamPaper paper, ExamQuestion item) {
-        Question question = questionMapper.selectById(item.getQuestionId());
-        if (question == null || !Integer.valueOf(1).equals(question.getStatus())) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "试卷题目不存在或未开放");
-        }
-        if (!paper.getCourseId().equals(question.getCourseId())) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR, "试卷题目不属于试卷课程");
-        }
-        return question;
     }
 
     private ExamLearningSession loadOwnedSession(Long sessionId, Long userId, boolean forUpdate) {
@@ -266,12 +200,6 @@ public class ExamPaperLearningService {
 
     private String activeKey(Long userId, Long paperId) {
         return "PAPER_LEARNING:" + userId + ":" + paperId;
-    }
-
-    private List<QuestionOption> loadOptions(Long questionId) {
-        return questionOptionMapper.selectList(new LambdaQueryWrapper<QuestionOption>()
-                .eq(QuestionOption::getQuestionId, questionId)
-                .orderByAsc(QuestionOption::getSortOrder));
     }
 
     private String buildCorrectAnswer(Question question, List<QuestionOption> options) {
@@ -340,8 +268,8 @@ public class ExamPaperLearningService {
 
         List<ExamLearningSessionVO.QuestionItem> items = new ArrayList<>();
         for (ExamQuestion paperQuestion : paperQuestions) {
-            Question question = loadPaperQuestion(paper, paperQuestion);
-            List<QuestionOption> options = loadOptions(question.getId());
+            Question question = contextService.loadPaperQuestion(paper, paperQuestion);
+            List<QuestionOption> options = contextService.loadOptions(question.getId());
             ExamLearningSessionVO.QuestionItem item = new ExamLearningSessionVO.QuestionItem();
             item.setQuestionId(question.getId());
             item.setSortOrder(paperQuestion.getSortOrder());

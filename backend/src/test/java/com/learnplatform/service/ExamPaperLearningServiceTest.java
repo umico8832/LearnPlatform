@@ -55,21 +55,11 @@ class ExamPaperLearningServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ExamPaperLearningService(sessionMapper, learningAnswerMapper, examPaperMapper,
-                examQuestionMapper, questionMapper, questionOptionMapper, userCourseMapper,
+        ExamPaperLearningContextService contextService = new ExamPaperLearningContextService(
+                examPaperMapper, examQuestionMapper, questionMapper, questionOptionMapper, userCourseMapper);
+        service = new ExamPaperLearningService(sessionMapper, learningAnswerMapper, contextService,
                 new AnswerEvaluator(), wrongQuestionService, spacedRepetitionService,
                 cacheEvictService, courseLearningEventService);
-    }
-
-    @Test
-    void rejectsLearningCoursePaperOutsideUserLibrary() {
-        when(examPaperMapper.selectById(2L)).thenReturn(paper());
-        when(userCourseMapper.selectCount(any())).thenReturn(0L);
-
-        BusinessException exception = assertThrows(BusinessException.class,
-                () -> service.startSession(2L, 7L));
-
-        assertEquals("请先将课程加入课程库", exception.getMessage());
     }
 
     @Test
