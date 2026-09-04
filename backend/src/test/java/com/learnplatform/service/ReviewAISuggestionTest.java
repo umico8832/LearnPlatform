@@ -60,11 +60,15 @@ class ReviewAISuggestionTest {
 
     @BeforeEach
     void setUp() {
-        aiService = new AiService(
-                aiProvider, callGovernanceService,
-                questionMapper, questionOptionMapper,
-                questionKnowledgePointMapper, knowledgePointMapper,
-                courseMapper, wrongQuestionMapper);
+        AiInvocationService invocationService = new AiInvocationService(aiProvider, callGovernanceService);
+        AiQuestionAssistanceService questionAssistanceService = new AiQuestionAssistanceService(
+                questionMapper, questionOptionMapper, questionKnowledgePointMapper,
+                knowledgePointMapper, invocationService);
+        AiReviewSuggestionService reviewSuggestionService = new AiReviewSuggestionService(
+                wrongQuestionMapper, questionMapper, courseMapper, invocationService);
+        AiKnowledgeSummaryService knowledgeSummaryService = new AiKnowledgeSummaryService(
+                knowledgePointMapper, courseMapper, invocationService);
+        aiService = new AiService(questionAssistanceService, reviewSuggestionService, knowledgeSummaryService);
     }
 
     @Test
