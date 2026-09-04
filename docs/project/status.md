@@ -211,6 +211,12 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+题目可视化渲染职责拆分（Round 289，2026-09-04）：
+
+- `QuestionVisualInteractive.vue` 从 831 行降为 70 行；解析、类型分派、Mermaid 和树结构渲染进入
+  `components/question-visual/`，单个新组件最高 482 行。
+- 可视化与学习资产 3 个测试文件、7 个测试、相关 ESLint 与 TypeScript 检查通过；属性与容错行为不变。
+
 自适应练习策略拆分（Round 288，2026-09-04）：
 
 - `AdaptivePracticeService` 从 452 行降为 294 行；权重、题量分配和推荐摘要进入无状态的
