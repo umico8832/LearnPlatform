@@ -53,6 +53,8 @@ frontend/admin/   # 独立管理端 HTML 入口
 - `views/` 负责学习端页面级数据编排、路由参数和业务状态；管理端页面统一位于
   `admin/views/`，不得回流到学习端页面目录。
 - `components/` 负责可复用交互和展示，不直接复制页面级请求逻辑。
+- `components/course/CourseOverviewContent` 自包含课程空间的加载、错误、空数据、目录、学习工具和学习事实
+  展示；`CourseOverviewView` 只负责路由、真实 API、学习入口与阶段测评状态机。
 - `components/statistics/` 承载学习诊断的概览、错因、推荐和详情弹窗；诊断 View 继续
   负责 API、SSE、路由与练习会话编排，展示组件只接收类型化数据并发出用户意图。
 - `components/exam/` 承载学习端考试页的独立业务闭包：`ExamRecordList` 自包含记录查询、

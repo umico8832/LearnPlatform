@@ -81,6 +81,19 @@ describe('CourseOverviewView', () => {
     })
   })
 
+  it('读取失败时保留重试入口，并在重试后恢复课程空间', async () => {
+    mockGetCourseOverview.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(CourseOverviewView, { global: { stubs } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('暂时无法读取课程空间')
+    await findButton(wrapper, '重新加载').trigger('click')
+    await flushPromises()
+
+    expect(mockGetCourseOverview).toHaveBeenCalledTimes(2)
+    expect(wrapper.text()).toContain('408 数据结构')
+  })
+
   it('显示已迁入 Tutor 内容的服务端学习状态并允许继续学习', async () => {
     const wrapper = mount(CourseOverviewView, { global: { stubs } })
     await flushPromises()
@@ -499,6 +512,10 @@ describe('CourseOverviewView', () => {
     expect(wrapper.text()).toContain('答对 3 / 5 题')
     expect(wrapper.text()).toContain('官方原题 3 · AI 生成题 2')
     expect(wrapper.text()).toContain('知识点：栈 2/3 · 队列 1/2')
+    await findButton(wrapper, '查看逐题复盘').trigger('click')
+    await flushPromises()
+    expect(mockGetAssessmentDetail).toHaveBeenCalledWith(51)
+    expect(wrapper.text()).toContain('栈顶元素先离开')
     const vm = wrapper.vm as unknown as {
       openAssessmentHistory: () => Promise<void>
       openAssessmentDetail: (id: number) => Promise<void>
@@ -508,8 +525,5 @@ describe('CourseOverviewView', () => {
     expect(mockGetAssessmentHistory).toHaveBeenCalledWith(408, 1, 10, null)
     expect(wrapper.text()).toContain('按当前学习事实优先选题')
     expect(wrapper.text()).toContain('官方原题 3 · AI 生成题 2')
-    await vm.openAssessmentDetail(51)
-    expect(mockGetAssessmentDetail).toHaveBeenCalledWith(51)
-    expect(wrapper.text()).toContain('栈顶元素先离开')
   })
 })
