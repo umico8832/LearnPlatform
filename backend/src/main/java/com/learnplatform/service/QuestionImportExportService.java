@@ -27,10 +27,8 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -46,17 +44,20 @@ public class QuestionImportExportService {
     private final QuestionKnowledgePointMapper questionKnowledgePointMapper;
     private final CourseMapper courseMapper;
     private final KnowledgePointMapper knowledgePointMapper;
+    private final QuestionExcelRowService rowService;
 
     public QuestionImportExportService(QuestionMapper questionMapper,
                                         QuestionOptionMapper questionOptionMapper,
                                         QuestionKnowledgePointMapper questionKnowledgePointMapper,
                                         CourseMapper courseMapper,
-                                        KnowledgePointMapper knowledgePointMapper) {
+                                        KnowledgePointMapper knowledgePointMapper,
+                                        QuestionExcelRowService rowService) {
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
         this.courseMapper = courseMapper;
         this.knowledgePointMapper = knowledgePointMapper;
+        this.rowService = rowService;
     }
 
     /**
@@ -90,7 +91,7 @@ public class QuestionImportExportService {
 
         // 转换为 DTO
         List<QuestionExcelDTO> dataList = questions.stream()
-                .map(q -> toExcelDTO(q, courseMap, kpMap))
+                .map(q -> rowService.toExcelRow(q, courseMap, kpMap))
                 .collect(Collectors.toList());
 
         EasyExcel.write(response.getOutputStream(), QuestionExcelDTO.class)
@@ -186,7 +187,7 @@ public class QuestionImportExportService {
                 }
 
                 // 验证题型
-                String questionType = normalizeQuestionType(row.getQuestionType());
+                String questionType = rowService.normalizeQuestionType(row.getQuestionType());
                 if (questionType == null) {
                     result.addError("第 " + rowNum + " 行：不支持的题型 '" + row.getQuestionType()
                             + "'，支持：单选/多选/判断/填空/简答 或 SINGLE_CHOICE/MULTIPLE_CHOICE/TRUE_FALSE/FILL_BLANK/SHORT_ANSWER");
@@ -230,7 +231,7 @@ public class QuestionImportExportService {
                 // 处理选项
                 if ("SINGLE_CHOICE".equals(questionType) || "MULTIPLE_CHOICE".equals(questionType)
                         || "TRUE_FALSE".equals(questionType)) {
-                    List<QuestionCreateRequest.OptionItem> optionItems = parseOptions(row.getOptions(),
+                    List<QuestionCreateRequest.OptionItem> optionItems = rowService.parseOptions(row.getOptions(),
                             row.getAnswer(), questionType);
                     for (QuestionCreateRequest.OptionItem item : optionItems) {
                         QuestionOption option = new QuestionOption();
@@ -275,164 +276,6 @@ public class QuestionImportExportService {
                 result.getSuccessCount(), result.getFailCount());
         return result;
     }
-
-    /**
-     * 标准化题型
-     */
-    private String normalizeQuestionType(String input) {
-        if (input == null) { return null; }
-        String trimmed = input.trim();
-        // 支持中文题型名
-        return switch (trimmed) {
-            case "单选", "单选题", "SINGLE_CHOICE" -> "SINGLE_CHOICE";
-            case "多选", "多选题", "MULTIPLE_CHOICE" -> "MULTIPLE_CHOICE";
-            case "判断", "判断题", "TRUE_FALSE", "JUDGMENT" -> "TRUE_FALSE";
-            case "填空", "填空题", "FILL_BLANK" -> "FILL_BLANK";
-            case "简答", "简答题", "SHORT_ANSWER" -> "SHORT_ANSWER";
-            default -> null;
-        };
-    }
-
-    /**
-     * 解析选项字符串为 OptionItem 列表
-     * 格式: "A.选项1|B.选项2|C.选项3" 或 "A.选项1,B.选项2" 或 "对|错"
-     * answer: "A" 或 "A,B" 或 "对"/"错"
-     */
-    private List<QuestionCreateRequest.OptionItem> parseOptions(String optionsStr, String answer,
-                                                                  String questionType) {
-        List<QuestionCreateRequest.OptionItem> result = new ArrayList<>();
-        if (optionsStr == null || optionsStr.trim().isEmpty()) {
-            // 判断题自动生成选项
-            if ("TRUE_FALSE".equals(questionType)) {
-                result.add(createOption("对", "A", answer != null && "对".equals(answer.trim()), 1));
-                result.add(createOption("错", "B", answer != null && "错".equals(answer.trim()), 2));
-            }
-            return result;
-        }
-
-        // 拆分选项
-        String[] parts = optionsStr.split("[|｜]");
-        Set<String> correctAnswers = parseCorrectAnswers(answer, questionType);
-
-        for (int i = 0; i < parts.length; i++) {
-            String part = parts[i].trim();
-            String label;
-            String content;
-
-            // 尝试提取选项标号 "A.xxx" → label="A", content="xxx"
-            if (part.length() >= 2 && part.charAt(1) == '.') {
-                label = String.valueOf(part.charAt(0)).toUpperCase();
-                content = part.substring(2).trim();
-            } else if (part.length() >= 2 && part.charAt(1) == '、') {
-                label = String.valueOf(part.charAt(0)).toUpperCase();
-                content = part.substring(2).trim();
-            } else {
-                label = String.valueOf((char) ('A' + i));
-                content = part;
-            }
-
-            boolean isCorrect = correctAnswers.contains(label) || correctAnswers.contains(content);
-            result.add(createOption(content, label, isCorrect, i + 1));
-        }
-
-        return result;
-    }
-
-    /**
-     * 解析正确答案为 Set
-     */
-    private Set<String> parseCorrectAnswers(String answer, String questionType) {
-        Set<String> result = new HashSet<>();
-        if (answer == null || answer.trim().isEmpty()) { return result; }
-
-        if ("TRUE_FALSE".equals(questionType)) {
-            result.add(answer.trim());
-            return result;
-        }
-
-        // 多选答案用逗号分隔: "A,B,C"
-        String[] parts = answer.split("[,，]");
-        for (String part : parts) {
-            result.add(part.trim().toUpperCase());
-        }
-        return result;
-    }
-
-    private QuestionCreateRequest.OptionItem createOption(String content, String label,
-                                                            boolean isCorrect, int sortOrder) {
-        QuestionCreateRequest.OptionItem item = new QuestionCreateRequest.OptionItem();
-        item.setContent(content);
-        item.setOptionLabel(label);
-        item.setIsCorrect(isCorrect ? 1 : 0);
-        item.setSortOrder(sortOrder);
-        return item;
-    }
-
-    /**
-     * Question → QuestionExcelDTO
-     */
-    private QuestionExcelDTO toExcelDTO(Question q, Map<Long, String> courseMap,
-                                          Map<Long, String> kpMap) {
-        QuestionExcelDTO dto = new QuestionExcelDTO();
-        dto.setContent(q.getContent());
-        dto.setQuestionType(displayQuestionType(q.getQuestionType()));
-        dto.setCourseName(courseMap.getOrDefault(q.getCourseId(), ""));
-        dto.setDifficulty(q.getDifficulty());
-        dto.setAnalysis(q.getAnalysis());
-        dto.setScore(q.getScore());
-        dto.setTags(q.getTags());
-
-        // 获取选项
-        LambdaQueryWrapper<QuestionOption> optWrapper = new LambdaQueryWrapper<>();
-        optWrapper.eq(QuestionOption::getQuestionId, q.getId())
-                  .orderByAsc(QuestionOption::getSortOrder);
-        List<QuestionOption> options = questionOptionMapper.selectList(optWrapper);
-
-        if (!options.isEmpty()) {
-            StringBuilder optStr = new StringBuilder();
-            String answerStr = "";
-            List<String> correctLabels = new ArrayList<>();
-            for (int i = 0; i < options.size(); i++) {
-                QuestionOption opt = options.get(i);
-                if (i > 0) { optStr.append("|"); }
-                String label = opt.getOptionLabel() != null ? opt.getOptionLabel()
-                        : String.valueOf((char) ('A' + i));
-                optStr.append(label).append(".").append(opt.getContent());
-                if (opt.getIsCorrect() != null && opt.getIsCorrect() == 1) {
-                    correctLabels.add(label);
-                }
-            }
-            dto.setOptions(optStr.toString());
-            dto.setAnswer(String.join(",", correctLabels));
-        }
-
-        // 获取知识点
-        LambdaQueryWrapper<QuestionKnowledgePoint> kpWrapper = new LambdaQueryWrapper<>();
-        kpWrapper.eq(QuestionKnowledgePoint::getQuestionId, q.getId());
-        List<QuestionKnowledgePoint> qkps = questionKnowledgePointMapper.selectList(kpWrapper);
-        if (!qkps.isEmpty()) {
-            String kpNames = qkps.stream()
-                    .map(qkp -> kpMap.getOrDefault(qkp.getKnowledgePointId(), ""))
-                    .filter(s -> !s.isEmpty())
-                    .collect(Collectors.joining(","));
-            dto.setKnowledgePoints(kpNames);
-        }
-
-        return dto;
-    }
-
-    private String displayQuestionType(String type) {
-        if (type == null) { return ""; }
-        return switch (type) {
-            case "SINGLE_CHOICE" -> "单选";
-            case "MULTIPLE_CHOICE" -> "多选";
-            case "TRUE_FALSE" -> "判断";
-            case "FILL_BLANK" -> "填空";
-            case "SHORT_ANSWER" -> "简答";
-            default -> type;
-        };
-    }
-
     private Map<Long, String> buildCourseMap() {
         List<Course> courses = courseMapper.selectList(null);
         return courses.stream().collect(Collectors.toMap(Course::getId, Course::getName, (a, b) -> a));

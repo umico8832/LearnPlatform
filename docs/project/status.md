@@ -211,6 +211,12 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+Excel 题目行转换职责拆分（Round 293，2026-09-04）：
+
+- `QuestionImportExportService` 从 469 行降为 312 行；题型、选项与导出行转换进入
+  `QuestionExcelRowService`。
+- 新增 3 个边界测试，连同管理端题目 Controller、ArchUnit 共 24 个测试通过；文件格式不变。
+
 Markdown 题目解析职责拆分（Round 292，2026-09-04）：
 
 - `MarkdownQuestionParser` 从 616 行降为 306 行；无持久化依赖的 `MarkdownQuestionContentParser`

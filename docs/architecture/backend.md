@@ -127,6 +127,8 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
   投稿展示富化分别由 `QuestionSubmissionOptionService`、`QuestionSubmissionViewService` 复用。
 - `MarkdownQuestionParser` 只编排 Markdown 题目导入事务与失败清理；文本语法解析、题型推断、
   选项和答案归一化由无持久化依赖的 `MarkdownQuestionContentParser` 承担。
+- `QuestionImportExportService` 负责 Excel 流读写、逐行入库和失败清理；题型与选项单元格解析、
+  题目导出行组装由 `QuestionExcelRowService` 统一处理。
 - `QuestionLearningAssetService` 负责编排 AI 学习资产的同步 / 流式生成、缓存与输出；
   `QuestionAssetContextService` 只读取题目、选项、知识点和课程并组装模型上下文；
   `service/ai/QuestionAssetPromptFactory` 只维护七类无状态 Prompt 模板，不读取业务数据、不调用
