@@ -69,7 +69,10 @@ frontend/admin/   # 独立管理端 HTML 入口
 - `admin/views/ai-usage/` 承载 AI 运营报告、学习效果观察、样本结构和调用明细展示；
   `AiUsageView` 只编排周期、接口加载、提醒确认与图表生命周期。
 - `admin/views/exam/` 承载试卷管理中的独立业务对话框；智能组卷组件自行管理规则表单、
-  预览和创建生命周期，`ExamManage` 只负责打开入口和创建后的列表刷新。
+  预览和创建生命周期，`ExamManage` 只负责打开入口和创建后的列表刷新；题型与试卷来源标签映射
+  位于纯展示模块 `examManagePresentation`。
+- `views/practice/reviewSuggestionStream` 负责 AI 复习建议 SSE 数据帧消费，`reviewPresentation`
+  负责路由数字归一化与状态标签映射，`ReviewView` 保留复习会话和页面级 API 编排。
 - `admin/views/submission/` 承载投稿管理的 AI 质检、知识点标注和难度评估工具；工具组件
   自行管理请求和结果状态，只有知识点应用成功时向 `SubmissionManage` 发出列表刷新事件。
 - `admin/views/question/` 承载正式题库的自包含编辑能力；题目编辑器拥有表单校验、选项

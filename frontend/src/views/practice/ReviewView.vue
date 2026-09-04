@@ -237,14 +237,11 @@ import {
   type ReviewStatsVO,
   type ReviewScheduleVO,
 } from '@/api/review'
+import { consumeReviewSuggestionStream } from './reviewSuggestionStream'
+import { positiveQueryNumber, reviewStatusTag as statusTagType } from './reviewPresentation'
 
 const route = useRoute()
 const router = useRouter()
-
-function positiveQueryNumber(value: unknown) {
-  const parsed = Number(value)
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined
-}
 
 const targetCourseId = computed(() => positiveQueryNumber(route.query.courseId))
 const targetQuestionId = computed(() => positiveQueryNumber(route.query.questionId))
@@ -309,21 +306,6 @@ const masteredPercent = computed(() => {
   if (stats.value.totalCards === 0) return 0
   return Math.round((stats.value.masteredCards / stats.value.totalCards) * 100)
 })
-
-function statusTagType(label: string) {
-  switch (label) {
-    case '新卡片':
-      return 'info'
-    case '学习中':
-      return 'warning'
-    case '已掌握':
-      return 'success'
-    case '困难':
-      return 'danger'
-    default:
-      return 'info'
-  }
-}
 
 async function loadStats() {
   try {
@@ -479,45 +461,10 @@ async function handleAiSuggestion() {
   }
   try {
     const response = await getAiReviewSuggestionStream(token)
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
-    }
-    const reader = response.body?.getReader()
-    if (!reader) {
-      throw new Error('无法读取响应流')
-    }
-    const decoder = new TextDecoder()
-    let buffer = ''
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
-      buffer = lines.pop() || ''
-      for (const line of lines) {
-        if (line.startsWith('event:')) {
-          // event type line
-        } else if (line.startsWith('data:')) {
-          const jsonStr = line.slice(5).trim()
-          if (!jsonStr) continue
-          try {
-            const data = JSON.parse(jsonStr)
-            // Check if this is a done or error event by looking at the previous event line
-            if (data.source === 'ai') {
-              // done event - handled by the loop ending
-            } else if (data.message) {
-              // error event
-              ElMessage.error(data.message)
-            } else if (data.content) {
-              aiSuggestionContent.value += data.content
-            }
-          } catch {
-            // skip non-JSON lines
-          }
-        }
-      }
-    }
+    await consumeReviewSuggestionStream(response, {
+      onContent: (content) => (aiSuggestionContent.value += content),
+      onError: (message) => ElMessage.error(message),
+    })
   } catch (e) {
     if (!isAbortError(e)) {
       ElMessage.error(errorMessage(e, 'AI 复习建议获取失败'))

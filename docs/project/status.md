@@ -211,6 +211,11 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+试卷管理与复习建议展示职责拆分（Round 297，2026-09-04）：
+
+- `ExamManage.vue`、`ReviewView.vue` 分别降为 697、681 行；标签映射与复习建议流解析独立。
+- 复习页 2 个测试、相关 ESLint 与 TypeScript 检查通过；展示和错误处理语义不变。
+
 布局与考试状态拆分（Round 296，2026-09-04）：
 
 - `AppLayout.vue`、`ExamTakeView.vue` 分别降为 695、690 行；响应式侧栏与服务端权威倒计时进入 composable。

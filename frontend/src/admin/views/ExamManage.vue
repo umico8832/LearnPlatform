@@ -330,6 +330,11 @@ import type { QuestionVO } from '@/api/question'
 import { getCoursePage } from '@/api/course'
 import { formatTime } from '@/utils/format'
 import SmartExamDialog from './exam/SmartExamDialog.vue'
+import {
+  paperTypeLabel,
+  paperTypeTag,
+  questionTypeLabel as getTypeLabel,
+} from './exam/examManagePresentation'
 
 // 试卷列表
 const loading = ref(false)
@@ -645,28 +650,6 @@ const getQuestionContent = (questionId: number) => {
   return q ? (q.content.length > 80 ? q.content.substring(0, 80) + '...' : q.content) : `题目 #${questionId}`
 }
 
-const getTypeLabel = (type: string) => {
-  const map: Record<string, string> = {
-    SINGLE_CHOICE: '单选',
-    MULTIPLE_CHOICE: '多选',
-    TRUE_FALSE: '判断',
-    FILL_BLANK: '填空',
-    SHORT_ANSWER: '简答',
-  }
-  return map[type] || type
-}
-
-const paperTypeLabel = (paper: Pick<ExamPaperVO, 'paperType' | 'sourceVerified'>) => {
-  if (paper.paperType === 'OFFICIAL_EXAM') {
-    return paper.sourceVerified ? '官方原题' : '官方待核验'
-  }
-  return '普通练习'
-}
-
-const paperTypeTag = (paper: Pick<ExamPaperVO, 'paperType' | 'sourceVerified'>) => {
-  if (paper.paperType === 'OFFICIAL_EXAM') return paper.sourceVerified ? 'success' : 'warning'
-  return 'info'
-}
 </script>
 
 <style scoped>
