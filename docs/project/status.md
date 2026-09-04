@@ -211,6 +211,12 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+AI 学习效果跨题统计职责拆分（Round 295，2026-09-04）：
+
+- `AiLearningEffectService` 从 535 行降为 388 行；跨题窗口和总体结论分别进入
+  `AiLearningCrossQuestionService`、`AiLearningEffectConclusionService`。
+- 学习效果、管理端 AI 用量 Controller 与 ArchUnit 共 14 个测试通过；统计口径和非因果语义不变。
+
 投稿 AI 质检职责拆分（Round 294，2026-09-04）：
 
 - `SubmissionAiQualityService` 从 411 行降为 223 行；响应解析和规则降级进入

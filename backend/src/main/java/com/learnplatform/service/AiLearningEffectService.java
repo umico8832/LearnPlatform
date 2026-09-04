@@ -1,5 +1,4 @@
 package com.learnplatform.service;
-
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.AiAssetType;
 import com.learnplatform.dto.AiLearningEffectVO;
@@ -8,13 +7,11 @@ import com.learnplatform.entity.AiAssetView;
 import com.learnplatform.entity.AiVariantQuestion;
 import com.learnplatform.entity.AiVariantTraining;
 import com.learnplatform.entity.PracticeRecord;
-import com.learnplatform.entity.QuestionKnowledgePoint;
 import com.learnplatform.mapper.AiAssetFeedbackMapper;
 import com.learnplatform.mapper.AiAssetViewMapper;
 import com.learnplatform.mapper.AiVariantQuestionMapper;
 import com.learnplatform.mapper.AiVariantTrainingMapper;
 import com.learnplatform.mapper.PracticeRecordMapper;
-import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -38,7 +35,6 @@ public class AiLearningEffectService {
 
     private static final int DEFAULT_DAYS = 30;
     private static final int MAX_DAYS = 90;
-    private static final int CROSS_QUESTION_WINDOW_DAYS = 30;
     private static final long MIN_COMPARISON_SAMPLE = 5L;
     private static final long MIN_DISTINCT_USERS = 3L;
 
@@ -47,20 +43,23 @@ public class AiLearningEffectService {
     private final PracticeRecordMapper practiceRecordMapper;
     private final AiVariantTrainingMapper aiVariantTrainingMapper;
     private final AiVariantQuestionMapper aiVariantQuestionMapper;
-    private final QuestionKnowledgePointMapper questionKnowledgePointMapper;
+    private final AiLearningCrossQuestionService crossQuestionService;
+    private final AiLearningEffectConclusionService conclusionService;
 
     public AiLearningEffectService(AiAssetViewMapper aiAssetViewMapper,
                                    AiAssetFeedbackMapper aiAssetFeedbackMapper,
                                    PracticeRecordMapper practiceRecordMapper,
                                    AiVariantTrainingMapper aiVariantTrainingMapper,
                                    AiVariantQuestionMapper aiVariantQuestionMapper,
-                                   QuestionKnowledgePointMapper questionKnowledgePointMapper) {
+                                   AiLearningCrossQuestionService crossQuestionService,
+                                   AiLearningEffectConclusionService conclusionService) {
         this.aiAssetViewMapper = aiAssetViewMapper;
         this.aiAssetFeedbackMapper = aiAssetFeedbackMapper;
         this.practiceRecordMapper = practiceRecordMapper;
         this.aiVariantTrainingMapper = aiVariantTrainingMapper;
         this.aiVariantQuestionMapper = aiVariantQuestionMapper;
-        this.questionKnowledgePointMapper = questionKnowledgePointMapper;
+        this.crossQuestionService = crossQuestionService;
+        this.conclusionService = conclusionService;
     }
 
     public AiLearningEffectVO getLearningEffect(Integer requestedDays) {
@@ -126,7 +125,6 @@ public class AiLearningEffectService {
         Double baselineRate = percentage(baselineCorrectCount, baselinePracticeCount);
         Double lift = afterViewRate == null || baselineRate == null
                 ? null : roundOne(afterViewRate - baselineRate);
-        CrossQuestionStats crossQuestionStats = buildCrossQuestionStats(allRelevantViews, practices);
 
         AiLearningEffectVO vo = new AiLearningEffectVO();
         vo.setDays(days);
@@ -169,8 +167,8 @@ public class AiLearningEffectService {
         vo.setBaselineUserCount((long) baselineUsers.size());
         vo.setBaselineCorrectRate(baselineRate);
         vo.setCorrectRateLift(lift);
-        applyConclusion(vo);
-        applyCrossQuestionStats(vo, crossQuestionStats);
+        conclusionService.apply(vo);
+        crossQuestionService.apply(vo, allRelevantViews, practices);
         vo.setAssetTypeStats(buildAssetTypeStats(
                 periodViews, periodFeedback, allRelevantViews, practices));
         return vo;
@@ -255,120 +253,6 @@ public class AiLearningEffectService {
                     + " 条、" + MIN_DISTINCT_USERS + " 位学习者门槛，继续积累后再进行难度分层。");
         }
     }
-
-    /**
-     * 观察用户阅读一题的 AI 资产后，是否能在共享知识点的另一道题上迁移。
-     * 原题重答不计入；前后组都限制在相关阅读前后 30 天内，且对照组不包含已有更早暴露的用户。
-     */
-    private CrossQuestionStats buildCrossQuestionStats(List<AiAssetView> views, List<PracticeRecord> practices) {
-        Set<Long> questionIds = new HashSet<>();
-        views.stream().map(AiAssetView::getQuestionId).filter(id -> id != null).forEach(questionIds::add);
-        practices.stream().map(PracticeRecord::getQuestionId).filter(id -> id != null).forEach(questionIds::add);
-        if (questionIds.isEmpty()) { return new CrossQuestionStats(); }
-
-        List<QuestionKnowledgePoint> relations = questionKnowledgePointMapper.selectList(
-                new LambdaQueryWrapper<QuestionKnowledgePoint>()
-                        .in(QuestionKnowledgePoint::getQuestionId, questionIds));
-        Map<Long, Set<Long>> knowledgePointsByQuestion = new HashMap<>();
-        for (QuestionKnowledgePoint relation : relations) {
-            if (relation.getQuestionId() == null || relation.getKnowledgePointId() == null) { continue; }
-            knowledgePointsByQuestion
-                    .computeIfAbsent(relation.getQuestionId(), key -> new HashSet<>())
-                    .add(relation.getKnowledgePointId());
-        }
-
-        Map<Long, List<SourceView>> viewsByUser = new HashMap<>();
-        for (AiAssetView view : views) {
-            if (view.getUserId() == null || view.getQuestionId() == null
-                    || view.getFirstViewTime() == null) { continue; }
-            if (!knowledgePointsByQuestion.containsKey(view.getQuestionId())) { continue; }
-            viewsByUser.computeIfAbsent(view.getUserId(), key -> new ArrayList<>())
-                    .add(new SourceView(view.getQuestionId(), view.getFirstViewTime()));
-        }
-
-        CrossQuestionStats result = new CrossQuestionStats();
-        for (PracticeRecord practice : practices) {
-            if (practice.getUserId() == null || practice.getQuestionId() == null || practice.getCreateTime() == null) {
-                continue;
-            }
-            Set<Long> targetKnowledgePoints = knowledgePointsByQuestion.get(practice.getQuestionId());
-            if (targetKnowledgePoints == null || targetKnowledgePoints.isEmpty()) { continue; }
-
-            boolean hasPriorRelatedView = false;
-            boolean hasRecentPriorRelatedView = false;
-            boolean hasUpcomingRelatedView = false;
-            for (SourceView sourceView : viewsByUser.getOrDefault(practice.getUserId(), List.of())) {
-                if (sourceView.questionId().equals(practice.getQuestionId())) { continue; }
-                Set<Long> sourceKnowledgePoints = knowledgePointsByQuestion.get(sourceView.questionId());
-                if (!sharesKnowledgePoint(sourceKnowledgePoints, targetKnowledgePoints)) { continue; }
-
-                if (!sourceView.viewTime().isAfter(practice.getCreateTime())) {
-                    hasPriorRelatedView = true;
-                    if (!practice.getCreateTime().isAfter(
-                            sourceView.viewTime().plusDays(CROSS_QUESTION_WINDOW_DAYS))) {
-                        hasRecentPriorRelatedView = true;
-                    }
-                } else if (!sourceView.viewTime().isAfter(
-                        practice.getCreateTime().plusDays(CROSS_QUESTION_WINDOW_DAYS))) {
-                    hasUpcomingRelatedView = true;
-                }
-            }
-
-            if (hasRecentPriorRelatedView) {
-                result.afterViewPracticeCount++;
-                result.afterViewUsers.add(practice.getUserId());
-                if (Integer.valueOf(1).equals(practice.getIsCorrect())) { result.afterViewCorrectCount++; }
-            } else if (!hasPriorRelatedView && hasUpcomingRelatedView) {
-                result.baselinePracticeCount++;
-                result.baselineUsers.add(practice.getUserId());
-                if (Integer.valueOf(1).equals(practice.getIsCorrect())) { result.baselineCorrectCount++; }
-            }
-        }
-        return result;
-    }
-
-    private boolean sharesKnowledgePoint(Set<Long> left, Set<Long> right) {
-        if (left == null || left.isEmpty() || right == null || right.isEmpty()) { return false; }
-        Set<Long> smaller = left.size() <= right.size() ? left : right;
-        Set<Long> larger = smaller == left ? right : left;
-        return smaller.stream().anyMatch(larger::contains);
-    }
-
-    private void applyCrossQuestionStats(AiLearningEffectVO vo, CrossQuestionStats stats) {
-        Double afterRate = percentage(stats.afterViewCorrectCount, stats.afterViewPracticeCount);
-        Double baselineRate = percentage(stats.baselineCorrectCount, stats.baselinePracticeCount);
-        Double lift = afterRate == null || baselineRate == null ? null : roundOne(afterRate - baselineRate);
-
-        vo.setCrossQuestionWindowDays(CROSS_QUESTION_WINDOW_DAYS);
-        vo.setCrossQuestionAfterViewPracticeCount(stats.afterViewPracticeCount);
-        vo.setCrossQuestionAfterViewUserCount((long) stats.afterViewUsers.size());
-        vo.setCrossQuestionAfterViewCorrectRate(afterRate);
-        vo.setCrossQuestionBaselinePracticeCount(stats.baselinePracticeCount);
-        vo.setCrossQuestionBaselineUserCount((long) stats.baselineUsers.size());
-        vo.setCrossQuestionBaselineCorrectRate(baselineRate);
-        vo.setCrossQuestionCorrectRateLift(lift);
-
-        if (stats.afterViewPracticeCount < MIN_COMPARISON_SAMPLE
-                || stats.baselinePracticeCount < MIN_COMPARISON_SAMPLE
-                || stats.afterViewUsers.size() < MIN_DISTINCT_USERS
-                || stats.baselineUsers.size() < MIN_DISTINCT_USERS
-                || lift == null) {
-            vo.setCrossQuestionConclusionLevel("INSUFFICIENT_DATA");
-            vo.setCrossQuestionConclusion("跨题任一对照组需至少 " + MIN_COMPARISON_SAMPLE
-                    + " 条作答且覆盖 " + MIN_DISTINCT_USERS
-                    + " 位学习者；当前代表性不足，暂不判断迁移效果。");
-        } else if (lift >= 5.0) {
-            vo.setCrossQuestionConclusionLevel("POSITIVE_ASSOCIATION");
-            vo.setCrossQuestionConclusion("30 天窗口内，共享知识点的跨题作答正确率更高，已观察到正向关联；该结果仍不代表因果提升。");
-        } else if (lift <= -5.0) {
-            vo.setCrossQuestionConclusionLevel("NEEDS_ATTENTION");
-            vo.setCrossQuestionConclusion("30 天窗口内的跨题作答未体现提升，建议结合知识点映射、题目难度和资产质量继续排查。");
-        } else {
-            vo.setCrossQuestionConclusionLevel("NO_CLEAR_DIFFERENCE");
-            vo.setCrossQuestionConclusion("30 天窗口内两组跨题正确率差异较小，尚未观察到明确的知识迁移关联。");
-        }
-    }
-
     private List<AiLearningEffectVO.AssetTypeEffect> buildAssetTypeStats(List<AiAssetView> periodViews,
                                                                           List<AiAssetFeedback> feedback,
                                                                           List<AiAssetView> allRelevantViews,
@@ -466,27 +350,6 @@ public class AiLearningEffectService {
         }
     }
 
-    private void applyConclusion(AiLearningEffectVO vo) {
-        if (vo.getAfterViewPracticeCount() < MIN_COMPARISON_SAMPLE
-                || vo.getBaselinePracticeCount() < MIN_COMPARISON_SAMPLE
-                || vo.getAfterViewUserCount() < MIN_DISTINCT_USERS
-                || vo.getBaselineUserCount() < MIN_DISTINCT_USERS
-                || vo.getCorrectRateLift() == null) {
-            vo.setConclusionLevel("INSUFFICIENT_DATA");
-            vo.setConclusion("任一同题对照组需至少 " + MIN_COMPARISON_SAMPLE
-                    + " 条作答且覆盖 " + MIN_DISTINCT_USERS
-                    + " 位学习者；当前代表性不足，暂不判断学习效果。");
-        } else if (vo.getCorrectRateLift() >= 5.0) {
-            vo.setConclusionLevel("POSITIVE_ASSOCIATION");
-            vo.setConclusion("阅读 AI 学习资产后的同题作答正确率更高，已观察到正向关联；仍需结合样本结构持续验证。");
-        } else if (vo.getCorrectRateLift() <= -5.0) {
-            vo.setConclusionLevel("NEEDS_ATTENTION");
-            vo.setConclusion("阅读后的同题作答正确率未体现提升，建议结合资产反馈和题目难度检查内容质量。");
-        } else {
-            vo.setConclusionLevel("NO_CLEAR_DIFFERENCE");
-            vo.setConclusion("两组正确率差异较小，当前尚未观察到明确关联，建议继续按资产类型跟踪。");
-        }
-    }
 
     private int normalizeDays(Integer requestedDays) {
         if (requestedDays == null) { return DEFAULT_DAYS; }
@@ -522,14 +385,4 @@ public class AiLearningEffectService {
     }
 
     private record UserQuestionKey(Long userId, Long questionId) {}
-    private record SourceView(Long questionId, LocalDateTime viewTime) {}
-
-    private static class CrossQuestionStats {
-        private long afterViewPracticeCount;
-        private long afterViewCorrectCount;
-        private long baselinePracticeCount;
-        private long baselineCorrectCount;
-        private final Set<Long> afterViewUsers = new HashSet<>();
-        private final Set<Long> baselineUsers = new HashSet<>();
-    }
 }

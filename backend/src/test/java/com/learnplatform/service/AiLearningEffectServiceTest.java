@@ -40,9 +40,11 @@ class AiLearningEffectServiceTest {
     @Mock private QuestionKnowledgePointMapper questionKnowledgePointMapper;
 
     private AiLearningEffectService service() {
+        AiLearningCrossQuestionService crossQuestionService =
+                new AiLearningCrossQuestionService(questionKnowledgePointMapper);
         return new AiLearningEffectService(aiAssetViewMapper, aiAssetFeedbackMapper,
                 practiceRecordMapper, aiVariantTrainingMapper, aiVariantQuestionMapper,
-                questionKnowledgePointMapper);
+                crossQuestionService, new AiLearningEffectConclusionService());
     }
 
     @Test

@@ -148,7 +148,9 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
 - `AiExamGenerationService` 只编排智能组卷预览与创建；候选事实加载、难度 / 知识点均衡选题、预览展示
   和试卷创建分别位于 `service/exam` 下的独立协作者。
 - `AiVariantQuestionService` 负责结构化变式题私有答案与判分。
-- `AiLearningEffectService` 只读聚合观察性学习效果，不承担用户交互写事务。
+- `AiLearningEffectService` 只读聚合同题、变式训练和资产类型观察事实，不承担用户交互写事务；
+  共享知识点跨题窗口统计与总体结论分别由 `AiLearningCrossQuestionService`、
+  `AiLearningEffectConclusionService` 承担。
 
 拆分以独立业务责任为依据，不为了行数机械增加接口和实现类。
 
