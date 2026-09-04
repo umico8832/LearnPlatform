@@ -211,6 +211,12 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+题目学习资产状态拆分（Round 299，2026-09-04）：
+
+- `QuestionLearningAsset.vue` 从 773 行降为 687 行；页签、内容、反馈与变式训练状态模型进入
+  `components/question-learning/assetState`。
+- 学习资产 2 个测试、相关 ESLint 与 TypeScript 检查通过；类型顺序、重置和训练状态语义不变。
+
 练习答案与全局搜索交互拆分（Round 298，2026-09-04）：
 
 - `PracticeSessionView.vue`、`GlobalSearchDialog.vue` 分别降为 687、699 行；答案、移动视口、快捷键、

@@ -184,6 +184,14 @@ import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import QuestionVisualInteractive from '@/components/QuestionVisualInteractive.vue'
 import AiVariantQuestionCard from '@/components/AiVariantQuestionCard.vue'
 import { ElMessage } from 'element-plus'
+import {
+  applyVariantTrainingState,
+  createAssetContent,
+  createFeedbackState,
+  createVariantTrainingState,
+  QUESTION_ASSET_TABS,
+  resetVariantTrainingState,
+} from './question-learning/assetState'
 
 const props = withDefaults(
   defineProps<{
@@ -200,98 +208,22 @@ const assetRoot = ref<HTMLElement | null>(null)
 const isInViewport = ref(false)
 let visibilityObserver: IntersectionObserver | null = null
 
-interface AssetTab {
-  type: AiAssetType
-  label: string
-  icon: string
-  description: string
-}
-
-const assetTabs: AssetTab[] = [
-  {
-    type: 'FULL_EXPLANATION',
-    label: '标准解析',
-    icon: '📖',
-    description: '包含知识点、正确答案分析、错误选项分析、关键思路和总结。',
-  },
-  {
-    type: 'BEGINNER_EXPLANATION',
-    label: '小白版',
-    icon: '🌱',
-    description: '少术语、多铺垫，用最简单的方式一步一步讲解。',
-  },
-  { type: 'STEP_BY_STEP', label: '步骤拆解', icon: '🪜', description: '将解题过程拆成明确的、可执行的步骤。' },
-  { type: 'WRONG_OPTION_ANALYSIS', label: '错误选项', icon: '🎯', description: '分析每个错误选项利用了什么思维陷阱。' },
-  { type: 'COMMON_MISTAKES', label: '常见误区', icon: '🚫', description: '列出学生最容易犯的错误和正确的理解。' },
-  {
-    type: 'VISUAL_INTERACTIVE',
-    label: '可视化讲解',
-    icon: '📊',
-    description: '用图表、数组、树等可视化元素展示解题过程，适合算法和数据结构题目。',
-  },
-  { type: 'VARIANT', label: '变式题', icon: '🔄', description: '生成 1 道可提交、可判分的单选变式题，检验知识迁移。' },
-]
+const assetTabs = QUESTION_ASSET_TABS
 
 const activeTab = ref<AiAssetType>('FULL_EXPLANATION')
 const loadingType = ref<AiAssetType | null>(null)
 const error = ref('')
 const streamBuffer = ref('')
-const tabContent = reactive<Record<AiAssetType, string>>({
-  FULL_EXPLANATION: '',
-  BEGINNER_EXPLANATION: '',
-  STEP_BY_STEP: '',
-  WRONG_OPTION_ANALYSIS: '',
-  COMMON_MISTAKES: '',
-  VARIANT: '',
-  VISUAL_INTERACTIVE: '',
-})
-const assetModel = reactive<Record<AiAssetType, string>>({
-  FULL_EXPLANATION: '',
-  BEGINNER_EXPLANATION: '',
-  STEP_BY_STEP: '',
-  WRONG_OPTION_ANALYSIS: '',
-  COMMON_MISTAKES: '',
-  VARIANT: '',
-  VISUAL_INTERACTIVE: '',
-})
+const tabContent = reactive(createAssetContent())
+const assetModel = reactive(createAssetContent())
 const variantQuestion = ref<AiVariantQuestion | null>(null)
 
 // 反馈状态
-const feedbackMap = reactive<Record<AiAssetType, { helpful: boolean | null; comment: string }>>({
-  FULL_EXPLANATION: { helpful: null, comment: '' },
-  BEGINNER_EXPLANATION: { helpful: null, comment: '' },
-  STEP_BY_STEP: { helpful: null, comment: '' },
-  WRONG_OPTION_ANALYSIS: { helpful: null, comment: '' },
-  COMMON_MISTAKES: { helpful: null, comment: '' },
-  VARIANT: { helpful: null, comment: '' },
-  VISUAL_INTERACTIVE: { helpful: null, comment: '' },
-})
+const feedbackMap = reactive(createFeedbackState())
 const feedbackSubmitting = ref<AiAssetType | null>(null)
 const showCommentInput = ref<AiAssetType | null>(null)
 const variantTrainingSubmitting = ref(false)
-const variantTraining = reactive<{
-  status: '' | 'STARTED' | 'COMPLETED'
-  completed: boolean
-  answered: boolean
-  correct: boolean | null
-  userAnswer: string
-  correctAnswer: string
-  analysis: string
-  startedTime: string
-  answeredTime: string
-  completedTime: string
-}>({
-  status: '',
-  completed: false,
-  answered: false,
-  correct: null,
-  userAnswer: '',
-  correctAnswer: '',
-  analysis: '',
-  startedTime: '',
-  answeredTime: '',
-  completedTime: '',
-})
+const variantTraining = reactive(createVariantTrainingState())
 
 let abortController: AbortController | null = null
 const trackedViews = new Set<string>()
@@ -346,16 +278,7 @@ function reset() {
   showCommentInput.value = null
   feedbackSubmitting.value = null
   variantTrainingSubmitting.value = false
-  variantTraining.status = ''
-  variantTraining.completed = false
-  variantTraining.answered = false
-  variantTraining.correct = null
-  variantTraining.userAnswer = ''
-  variantTraining.correctAnswer = ''
-  variantTraining.analysis = ''
-  variantTraining.startedTime = ''
-  variantTraining.answeredTime = ''
-  variantTraining.completedTime = ''
+  resetVariantTrainingState(variantTraining)
   variantQuestion.value = null
   for (const key of Object.keys(tabContent) as AiAssetType[]) {
     tabContent[key] = ''
@@ -462,16 +385,7 @@ function trackVisibleAsset(assetType: AiAssetType) {
 }
 
 function applyVariantTraining(training: AiVariantTrainingStatus) {
-  variantTraining.status = training.status
-  variantTraining.completed = training.completed
-  variantTraining.answered = Boolean(training.answered)
-  variantTraining.correct = training.correct ?? null
-  variantTraining.userAnswer = training.userAnswer || ''
-  variantTraining.correctAnswer = training.correctAnswer || ''
-  variantTraining.analysis = training.analysis || ''
-  variantTraining.startedTime = training.startedTime || ''
-  variantTraining.answeredTime = training.answeredTime || ''
-  variantTraining.completedTime = training.completedTime || ''
+  applyVariantTrainingState(variantTraining, training)
 }
 
 async function handleVariantTrainingComplete() {
