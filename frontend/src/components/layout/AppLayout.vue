@@ -154,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { errorMessage } from '@/utils/errors'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
@@ -162,6 +162,7 @@ import { acknowledgeAiUsageAlert, getAiUsageAlerts, type AiUsageAlert } from '@/
 import { ElMessage } from 'element-plus'
 import { ArrowDown, Bell, Collection, DataAnalysis, Expand, Fold, Reading, Search } from '@element-plus/icons-vue'
 import GlobalSearchDialog from '@/components/GlobalSearchDialog.vue'
+import { useResponsiveSidebar } from './useResponsiveSidebar'
 
 const route = useRoute()
 const router = useRouter()
@@ -174,6 +175,7 @@ const openAlerts = ref<AiUsageAlert[]>([])
 const alertsLoading = ref(false)
 const acknowledgingAlertId = ref<number | null>(null)
 const openAlertCount = computed(() => openAlerts.value.length)
+const { isMobile, sidebarOpen } = useResponsiveSidebar()
 
 /** 一级入口高亮：我的课程 与 课程库 精确匹配其子路由前缀。 */
 function isActive(prefix: string) {
@@ -221,21 +223,8 @@ async function handleAcknowledgeOpenAlert(id: number) {
   }
 }
 
-const MOBILE_BREAKPOINT = 768
-const isMobile = ref(false)
-const sidebarOpen = ref(false)
-
-function checkMobile() {
-  isMobile.value = window.innerWidth < MOBILE_BREAKPOINT
-  if (!isMobile.value) {
-    sidebarOpen.value = false
-  }
-}
-
 onMounted(() => {
-  checkMobile()
   fetchOpenAlerts()
-  window.addEventListener('resize', checkMobile)
 })
 
 watch(isAdmin, (value) => {
@@ -244,10 +233,6 @@ watch(isAdmin, (value) => {
   } else {
     openAlerts.value = []
   }
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', checkMobile)
 })
 
 function handleCommand(command: string) {

@@ -211,6 +211,11 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+布局与考试状态拆分（Round 296，2026-09-04）：
+
+- `AppLayout.vue`、`ExamTakeView.vue` 分别降为 695、690 行；响应式侧栏与服务端权威倒计时进入 composable。
+- 考试页 9 个测试、相关 ESLint 与 TypeScript 检查通过；断点、计时和超时语义不变。
+
 AI 学习效果跨题统计职责拆分（Round 295，2026-09-04）：
 
 - `AiLearningEffectService` 从 535 行降为 388 行；跨题窗口和总体结论分别进入

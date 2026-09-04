@@ -129,13 +129,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Timer } from '@element-plus/icons-vue'
 import { getExamSession, getPaperDetail, submitExam } from '@/api/exam'
 import type { ExamQuestionItem } from '@/api/exam'
 import LpProgress from '@/components/ui/LpProgress.vue'
+import { useExamCountdown } from './useExamCountdown'
 
 const route = useRoute()
 const router = useRouter()
@@ -146,10 +147,15 @@ const answers = ref<Record<number, string>>({})
 const multiAnswers = ref<Record<number, Set<string>>>({})
 const submitted = ref(false)
 const recordId = ref(0)
-const remainSeconds = ref(0)
-let countdownTimer: ReturnType<typeof setInterval> | null = null
-let deadlineMs = 0
-let serverOffsetMs = 0
+const { remainSeconds, countdownText, configure: configureCountdown, start: startCountdown } = useExamCountdown({
+  submitted,
+  hasQuestions: () => questions.value.length > 0,
+  onExpired: async () => {
+    submitted.value = true
+    ElMessage.warning('考试时间已结束，已返回考试列表')
+    await router.replace({ name: 'ExamList', query: { tab: 'records' } })
+  },
+})
 
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
 
@@ -158,12 +164,6 @@ const answeredCount = computed(() => Object.values(answers.value).filter(Boolean
 const progressPercent = computed(() => {
   if (!questions.value.length) return 0
   return Math.round((answeredCount.value / questions.value.length) * 100)
-})
-
-const countdownText = computed(() => {
-  const m = Math.floor(remainSeconds.value / 60)
-  const s = remainSeconds.value % 60
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 })
 
 const isMultiSelected = (qId: number, label: string) => multiAnswers.value[qId]?.has(label) || false
@@ -176,21 +176,6 @@ const toggleMulti = (qId: number, label: string) => {
     s.add(label)
   }
   answers.value[qId] = Array.from(s).sort().join(',')
-}
-
-const updateRemainingTime = () => {
-  const nextSeconds = Math.max(0, Math.ceil((deadlineMs - (Date.now() + serverOffsetMs)) / 1000))
-  remainSeconds.value = nextSeconds
-  if (nextSeconds > 0 || submitted.value) return
-
-  if (countdownTimer) {
-    clearInterval(countdownTimer)
-    countdownTimer = null
-  }
-  if (questions.value.length === 0) return
-  submitted.value = true
-  ElMessage.warning('考试时间已结束，已返回考试列表')
-  void router.replace({ name: 'ExamList', query: { tab: 'records' } })
 }
 
 const doSubmit = async () => {
@@ -270,19 +255,11 @@ onMounted(async () => {
       return
     }
 
-    const parsedDeadline = Date.parse(session.deadline || '')
-    const parsedServerTime = Date.parse(session.serverTime || '')
-    if (!Number.isFinite(parsedDeadline) || !Number.isFinite(parsedServerTime)) {
+    if (!configureCountdown(session.deadline || '', session.serverTime || '', sessionRequestStartedAt)) {
       ElMessage.error('考试时间信息无效，请返回列表重试')
       await router.replace({ name: 'ExamList', query: { tab: 'records' } })
       return
     }
-
-    deadlineMs = parsedDeadline
-    // Use the request start as a conservative lower bound. The server timestamp is
-    // captured while handling this request, so subtracting the receive time would
-    // incorrectly add response latency back to the remaining exam time.
-    serverOffsetMs = parsedServerTime - sessionRequestStartedAt
 
     const paperRes = await getPaperDetail(session.examPaperId)
     if (paperRes.code !== 0 || !paperRes.data) {
@@ -292,8 +269,7 @@ onMounted(async () => {
     }
 
     questions.value = paperRes.data.questions || []
-    updateRemainingTime()
-    if (remainSeconds.value > 0) countdownTimer = setInterval(updateRemainingTime, 1000)
+    startCountdown()
   } catch {
     ElMessage.error('恢复考试失败')
     await router.replace({ name: 'ExamList', query: { tab: 'records' } })
@@ -302,9 +278,6 @@ onMounted(async () => {
   }
 })
 
-onBeforeUnmount(() => {
-  if (countdownTimer) clearInterval(countdownTimer)
-})
 </script>
 
 <style scoped>
