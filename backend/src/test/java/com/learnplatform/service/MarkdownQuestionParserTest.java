@@ -41,7 +41,8 @@ class MarkdownQuestionParserTest {
     void setUp() {
         parser = new MarkdownQuestionParser(
                 questionMapper, questionOptionMapper,
-                questionKnowledgePointMapper, courseMapper, knowledgePointMapper);
+                questionKnowledgePointMapper, courseMapper, knowledgePointMapper,
+                new MarkdownQuestionContentParser());
     }
 
     @Test

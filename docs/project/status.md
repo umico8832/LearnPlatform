@@ -211,6 +211,12 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+Markdown 题目解析职责拆分（Round 292，2026-09-04）：
+
+- `MarkdownQuestionParser` 从 616 行降为 306 行；无持久化依赖的 `MarkdownQuestionContentParser`
+  负责文本语法、题型推断与选项答案归一化。
+- 解析、私有导入、管理端题目 Controller 与 ArchUnit 共 37 个测试通过；格式与逐题失败语义不变。
+
 私有试卷草稿职责拆分（Round 291，2026-09-04）：
 
 - `PrivateExamDraftService` 从 435 行、8 个依赖降为 127 行、3 个依赖；数据 / 展示与 AI 答案生成分别进入

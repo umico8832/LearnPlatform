@@ -48,7 +48,8 @@ class PrivateExamImportServiceTest {
     @BeforeEach
     void setUp() {
         MarkdownQuestionParser parser = new MarkdownQuestionParser(
-                questionMapper, optionMapper, questionKnowledgePointMapper, courseMapper, knowledgePointMapper);
+                questionMapper, optionMapper, questionKnowledgePointMapper, courseMapper, knowledgePointMapper,
+                new MarkdownQuestionContentParser());
         PrivateExamImportParserService parserService = new PrivateExamImportParserService(parser);
         PrivateExamConfirmedPaperService confirmedPaperService = new PrivateExamConfirmedPaperService(
                 paperMapper, examQuestionMapper, questionMapper, optionMapper, examPaperService, parserService);
