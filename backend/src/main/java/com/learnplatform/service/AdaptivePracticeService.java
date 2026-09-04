@@ -15,6 +15,7 @@ import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
 import com.learnplatform.dto.QuestionVO;
 import com.learnplatform.dto.QuestionOptionVO;
+import com.learnplatform.service.question.AdaptivePracticePolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -86,21 +86,22 @@ public class AdaptivePracticeService {
         }
 
         // 1. 查询用户各难度级别答题统计
-        Map<Integer, DifficultyStats> statsMap = calculateDifficultyStats(userId);
+        Map<Integer, AdaptivePracticePolicy.DifficultyStats> statsMap = calculateDifficultyStats(userId);
 
         // 2. 计算各难度级别的权重
-        double[] weights = calculateWeights(statsMap);
+        double[] weights = AdaptivePracticePolicy.calculateWeights(statsMap);
 
         log.info("自适应推荐: userId={}, weights=[{},{},{},{},{}]",
                 userId,
-                round(weights[0]), round(weights[1]), round(weights[2]),
-                round(weights[3]), round(weights[4]));
+                AdaptivePracticePolicy.round(weights[0]), AdaptivePracticePolicy.round(weights[1]),
+                AdaptivePracticePolicy.round(weights[2]), AdaptivePracticePolicy.round(weights[3]),
+                AdaptivePracticePolicy.round(weights[4]));
 
         // 3. 排除近期做过的题目（最近 20 道）
         Set<Long> recentQuestionIds = getRecentQuestionIds(userId, 20);
 
         // 4. 按权重分配各难度应抽取的题目数量
-        int[] countsPerDifficulty = allocateCounts(weights, count);
+        int[] countsPerDifficulty = AdaptivePracticePolicy.allocateCounts(weights, count);
 
         // 5. 从各难度级别选题
         List<Question> selected = new ArrayList<>();
@@ -161,70 +162,24 @@ public class AdaptivePracticeService {
      * 获取用户难度级别推荐摘要（供前端展示）
      */
     public Map<String, Object> getAdaptiveSummary(Long userId) {
-        Map<Integer, DifficultyStats> statsMap = calculateDifficultyStats(userId);
-        double[] weights = calculateWeights(statsMap);
-
-        Map<String, Object> summary = new LinkedHashMap<>();
-
-        // 整体信息
-        int totalAnswered = statsMap.values().stream().mapToInt(s -> s.total).sum();
-        double overallCorrectRate = totalAnswered > 0
-                ? statsMap.values().stream().mapToInt(s -> s.correct).sum() * 100.0 / totalAnswered
-                : 0;
-
-        summary.put("totalAnswered", totalAnswered);
-        summary.put("overallCorrectRate", round(overallCorrectRate));
-
-        // 各难度详情
-        List<Map<String, Object>> difficultyDetails = new ArrayList<>();
-        String[] diffLabels = {"入门", "简单", "中等", "困难", "专家"};
-        for (int diff = 1; diff <= 5; diff++) {
-            DifficultyStats stats = statsMap.getOrDefault(diff, new DifficultyStats());
-            Map<String, Object> detail = new LinkedHashMap<>();
-            detail.put("difficulty", diff);
-            detail.put("label", diffLabels[diff - 1]);
-            detail.put("total", stats.total);
-            detail.put("correct", stats.correct);
-            detail.put("correctRate", stats.total > 0 ? round(stats.correct * 100.0 / stats.total) : 0);
-            detail.put("weight", round(weights[diff - 1]));
-            difficultyDetails.add(detail);
-        }
-        summary.put("difficultyDetails", difficultyDetails);
-
-        // 推荐说明
-        double avgTarget = 0;
-        double weightSum = 0;
-        for (int i = 0; i < 5; i++) {
-            avgTarget += (i + 1) * weights[i];
-            weightSum += weights[i];
-        }
-        double targetDiff = weightSum > 0 ? avgTarget / weightSum : 3.0;
-        summary.put("recommendedDifficulty", round(targetDiff));
-
-        return summary;
+        Map<Integer, AdaptivePracticePolicy.DifficultyStats> statsMap = calculateDifficultyStats(userId);
+        double[] weights = AdaptivePracticePolicy.calculateWeights(statsMap);
+        return AdaptivePracticePolicy.buildSummary(statsMap, weights);
     }
 
     // ======================== 私有方法 ========================
 
     /**
-     * 各难度级别的统计信息
-     */
-    private static class DifficultyStats {
-        int total;
-        int correct;
-    }
-
-    /**
      * 计算用户各难度级别的答题统计
      */
-    private Map<Integer, DifficultyStats> calculateDifficultyStats(Long userId) {
+    private Map<Integer, AdaptivePracticePolicy.DifficultyStats> calculateDifficultyStats(Long userId) {
         LambdaQueryWrapper<PracticeRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(PracticeRecord::getUserId, userId);
         List<PracticeRecord> records = practiceRecordMapper.selectList(wrapper);
 
-        Map<Integer, DifficultyStats> statsMap = new HashMap<>();
+        Map<Integer, int[]> counts = new HashMap<>();
         for (int diff = 1; diff <= 5; diff++) {
-            statsMap.put(diff, new DifficultyStats());
+            counts.put(diff, new int[2]);
         }
 
         for (PracticeRecord record : records) {
@@ -234,126 +189,16 @@ public class AdaptivePracticeService {
             int diff = question.getDifficulty();
             if (diff < 1 || diff > 5) { continue; }
 
-            DifficultyStats stats = statsMap.get(diff);
-            stats.total++;
+            int[] stats = counts.get(diff);
+            stats[0]++;
             if (record.getIsCorrect() != null && record.getIsCorrect() == 1) {
-                stats.correct++;
+                stats[1]++;
             }
         }
-
+        Map<Integer, AdaptivePracticePolicy.DifficultyStats> statsMap = new HashMap<>();
+        counts.forEach((difficulty, values) -> statsMap.put(
+                difficulty, new AdaptivePracticePolicy.DifficultyStats(values[0], values[1])));
         return statsMap;
-    }
-
-    /**
-     * 根据答题表现计算各难度级别的选题权重
-     * 
-     * 核心策略：
-     * - 每个难度有基础权重（1.0）
-     * - 正确率 > 75%：该难度权重降低，更高难度权重增加（答得好→升级）
-     * - 正确率 < 50%：该难度权重增加，更低难度权重也增加（答得差→降级巩固）
-     * - 无答题记录的难度有适度权重（鼓励尝试新难度）
-     */
-    private double[] calculateWeights(Map<Integer, DifficultyStats> statsMap) {
-        double[] weights = new double[5];
-
-        // 基础权重
-        for (int i = 0; i < 5; i++) {
-            weights[i] = 1.0;
-        }
-
-        boolean hasAnyData = statsMap.values().stream().anyMatch(s -> s.total > 0);
-
-        if (!hasAnyData) {
-            // 新用户：偏好简单和中等难度
-            weights[0] = 2.5; // diff 1: 入门
-            weights[1] = 3.0; // diff 2: 简单
-            weights[2] = 2.5; // diff 3: 中等
-            weights[3] = 1.0; // diff 4: 困难
-            weights[4] = 0.5; // diff 5: 专家
-            return normalizeWeights(weights);
-        }
-
-        for (int diff = 1; diff <= 5; diff++) {
-            DifficultyStats stats = statsMap.get(diff);
-            if (stats.total == 0) {
-                // 未做过的难度，给予适度鼓励权重
-                weights[diff - 1] = 1.5;
-                continue;
-            }
-
-            double correctRate = (double) stats.correct / stats.total;
-
-            if (correctRate > 0.75) {
-                // 表现优秀：降低当前难度，提升更高难度
-                weights[diff - 1] = 0.5; // 降低当前
-                if (diff < 5) {
-                    weights[diff] += 2.0; // 提升更高一级难度
-                }
-                if (diff < 4) {
-                    weights[diff + 1] += 0.5; // 也稍微提升高两级
-                }
-            } else if (correctRate >= 0.5) {
-                // 表现适中：保持当前难度
-                weights[diff - 1] += 2.0;
-            } else {
-                // 表现较差：加强当前和更低难度
-                weights[diff - 1] += 2.5; // 当前难度巩固
-                if (diff > 1) {
-                    weights[diff - 2] += 1.5; // 降低一级巩固基础
-                }
-                if (diff > 2) {
-                    weights[diff - 3] += 0.5; // 再降一级
-                }
-            }
-
-            // 答题越多，权重数据越可信
-            double confidenceFactor = Math.min(stats.total / 10.0, 1.0);
-            weights[diff - 1] *= confidenceFactor + 0.3; // 最低保留 30% 权重
-        }
-
-        return normalizeWeights(weights);
-    }
-
-    /**
-     * 归一化权重（使总和 = 1.0）
-     */
-    private double[] normalizeWeights(double[] weights) {
-        double sum = 0;
-        for (double w : weights) {
-            sum += Math.max(w, 0.01); // 确保每个难度都有最小概率
-        }
-        double[] normalized = new double[5];
-        for (int i = 0; i < 5; i++) {
-            normalized[i] = Math.max(weights[i], 0.01) / sum;
-        }
-        return normalized;
-    }
-
-    /**
-     * 按权重分配各难度应抽取的题目数量
-     */
-    private int[] allocateCounts(double[] weights, int total) {
-        int[] counts = new int[5];
-        double sum = 0;
-        for (double w : weights) { sum += w; }
-
-        int allocated = 0;
-        for (int i = 0; i < 5; i++) {
-            if (i == 4) {
-                // 最后一个难度：分配剩余
-                counts[i] = total - allocated;
-            } else {
-                counts[i] = (int) Math.round(weights[i] / sum * total);
-                allocated += counts[i];
-            }
-        }
-
-        // 确保每个至少 0
-        for (int i = 0; i < 5; i++) {
-            if (counts[i] < 0) { counts[i] = 0; }
-        }
-
-        return counts;
     }
 
     /**
@@ -446,7 +291,4 @@ public class AdaptivePracticeService {
         vo.setKnowledgePointNames(kpNames);
     }
 
-    private double round(double val) {
-        return Math.round(val * 100.0) / 100.0;
-    }
 }

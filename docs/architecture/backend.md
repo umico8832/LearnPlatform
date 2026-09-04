@@ -110,6 +110,8 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
   快照聚合位于 `service/assessment/`，题目访问策略与重复题文本检测算法位于
   `service/question/`；跨 Service 与 Controller 传递的私有试卷原文件值对象位于
   `dto/exam/`。
+- `AdaptivePracticeService` 负责读取练习事实、候选题和组装题目展示；难度权重、数量分配和推荐摘要
+  由 `service/question/AdaptivePracticePolicy` 以无状态策略形式计算。
 - `QuestionService` 只保留公开题目查询和题目维护门面；展示模型富化与重复题视图组装由
   `QuestionViewService` 承担，创建、更新、删除、版本记录和已发布试卷保护由
   `QuestionMutationService` 承担。无状态的 `QuestionDuplicateDetector` 只负责文本归一化、

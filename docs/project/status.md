@@ -211,6 +211,12 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+自适应练习策略拆分（Round 288，2026-09-04）：
+
+- `AdaptivePracticeService` 从 452 行降为 294 行；权重、题量分配和推荐摘要进入无状态的
+  `AdaptivePracticePolicy`。
+- 策略边界、练习 Controller 与相关后端 57 个聚焦回归测试通过；推荐字段和算法语义不变。
+
 题目查询与写入职责拆分（Round 287，2026-09-04）：
 
 - `QuestionService` 从 427 行、7 个依赖降为 170 行、3 个依赖；展示富化和事务写入分别进入
