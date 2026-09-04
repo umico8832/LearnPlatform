@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -37,21 +36,14 @@ class SubmissionAiQualityServiceTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @InjectMocks
     private SubmissionAiQualityService qualityService;
 
     private QuestionSubmission sampleSubmission;
 
     @BeforeEach
     void setUp() {
-        // Use reflection to inject objectMapper since it's final-initialized
-        try {
-            var field = SubmissionAiQualityService.class.getDeclaredField("objectMapper");
-            field.setAccessible(true);
-            field.set(qualityService, objectMapper);
-        } catch (Exception e) {
-            fail("Failed to inject ObjectMapper: " + e.getMessage());
-        }
+        qualityService = new SubmissionAiQualityService(aiProvider, callGovernanceService,
+                submissionMapper, courseMapper, new SubmissionQualityResultService(objectMapper));
 
         sampleSubmission = new QuestionSubmission();
         sampleSubmission.setId(1L);

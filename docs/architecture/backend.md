@@ -125,6 +125,8 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
 - `QuestionSubmissionService` 负责投稿、查询、审核与知识点标注应用；
   `QuestionSubmissionImportService` 独立承担已审核投稿进入正式题库的事务，选项 JSON 规则和
   投稿展示富化分别由 `QuestionSubmissionOptionService`、`QuestionSubmissionViewService` 复用。
+- `SubmissionAiQualityService` 只负责投稿读取、Prompt、受治理 AI 调用和审核意见编排；结构化响应解析、
+  异常输出降级和无 AI 基础规则检查由 `SubmissionQualityResultService` 承担。
 - `MarkdownQuestionParser` 只编排 Markdown 题目导入事务与失败清理；文本语法解析、题型推断、
   选项和答案归一化由无持久化依赖的 `MarkdownQuestionContentParser` 承担。
 - `QuestionImportExportService` 负责 Excel 流读写、逐行入库和失败清理；题型与选项单元格解析、

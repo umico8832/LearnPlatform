@@ -211,6 +211,12 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+投稿 AI 质检职责拆分（Round 294，2026-09-04）：
+
+- `SubmissionAiQualityService` 从 411 行降为 223 行；响应解析和规则降级进入
+  `SubmissionQualityResultService`。
+- 质检与 ArchUnit 共 15 个测试通过；缓存、配额、审计、评分与审核意见格式不变。
+
 Excel 题目行转换职责拆分（Round 293，2026-09-04）：
 
 - `QuestionImportExportService` 从 469 行降为 312 行；题型、选项与导出行转换进入
