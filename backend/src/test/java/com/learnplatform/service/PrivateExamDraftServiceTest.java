@@ -46,8 +46,11 @@ class PrivateExamDraftServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new PrivateExamDraftService(importService, sourceMapper, sourceStorageService, draftMapper,
-                questionMapper, aiProvider, callGovernanceService, objectMapper);
+        PrivateExamDraftDataService dataService = new PrivateExamDraftDataService(
+                sourceMapper, sourceStorageService, draftMapper, questionMapper, objectMapper);
+        PrivateExamDraftAnswerService answerService = new PrivateExamDraftAnswerService(
+                aiProvider, callGovernanceService, dataService, objectMapper);
+        service = new PrivateExamDraftService(importService, dataService, answerService);
     }
 
     @Test

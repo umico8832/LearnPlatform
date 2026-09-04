@@ -211,6 +211,12 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+私有试卷草稿职责拆分（Round 291，2026-09-04）：
+
+- `PrivateExamDraftService` 从 435 行、8 个依赖降为 127 行、3 个依赖；数据 / 展示与 AI 答案生成分别进入
+  `PrivateExamDraftDataService`、`PrivateExamDraftAnswerService`。
+- 私有草稿、确认导入和 ArchUnit 共 17 个测试通过；所有者隔离、配额、复核与幂等确认语义不变。
+
 试卷展示与发布校验职责拆分（Round 290，2026-09-04）：
 
 - `ExamPaperService` 从 477 行、6 个依赖降为 226 行、4 个依赖；访问与详情展示、发布规则分别进入

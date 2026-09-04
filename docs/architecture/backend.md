@@ -109,6 +109,9 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
 - `PrivateExamImportService` 负责来源校验、所有者来源保存和确认事务；有限格式解析与客观题校验由
   `PrivateExamImportParserService` 承担，私有试卷、题目、选项和试卷关系持久化由
   `PrivateExamConfirmedPaperService` 承担。
+- `PrivateExamDraftService` 只编排答案不完整资料的草稿创建、逐题复核和确认事务；草稿来源、题目、
+  JSON 与展示模型由 `PrivateExamDraftDataService` 管理，受配额治理的 AI 答案建议由
+  `PrivateExamDraftAnswerService` 管理。
 - `service/` 顶层只放 Spring 业务组件；无状态策略与聚合器进入明确领域子包。阶段测评
   快照聚合位于 `service/assessment/`，题目访问策略与重复题文本检测算法位于
   `service/question/`；跨 Service 与 Controller 传递的私有试卷原文件值对象位于
