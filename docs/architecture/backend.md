@@ -110,9 +110,10 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
   快照聚合位于 `service/assessment/`，题目访问策略与重复题文本检测算法位于
   `service/question/`；跨 Service 与 Controller 传递的私有试卷原文件值对象位于
   `dto/exam/`。
-- `QuestionService` 负责题目查询、维护与完整展示模型组装；无状态的
-  `QuestionDuplicateDetector` 只负责文本归一化、相似度计算和重复题分组，不访问持久化层、
-  不处理权限，也不作为 Spring 业务组件注册。
+- `QuestionService` 只保留公开题目查询和题目维护门面；展示模型富化与重复题视图组装由
+  `QuestionViewService` 承担，创建、更新、删除、版本记录和已发布试卷保护由
+  `QuestionMutationService` 承担。无状态的 `QuestionDuplicateDetector` 只负责文本归一化、
+  相似度计算和重复题分组，不访问持久化层、不处理权限，也不作为 Spring 业务组件注册。
 - `QuestionSubmissionService` 负责投稿、查询、审核与知识点标注应用；
   `QuestionSubmissionImportService` 独立承担已审核投稿进入正式题库的事务，选项 JSON 规则和
   投稿展示富化分别由 `QuestionSubmissionOptionService`、`QuestionSubmissionViewService` 复用。

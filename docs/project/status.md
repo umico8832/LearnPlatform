@@ -211,6 +211,13 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+题目查询与写入职责拆分（Round 287，2026-09-04）：
+
+- `QuestionService` 从 427 行、7 个依赖降为 170 行、3 个依赖；展示富化和事务写入分别进入
+  `QuestionViewService`、`QuestionMutationService`。
+- 相关题目服务、管理端与用户端 Controller、AI 变式审核、ArchUnit 纳入后端 57 个聚焦回归测试并通过；
+  API、访问规则、版本记录和已发布试卷保护不变。
+
 智能组卷职责拆分（Round 286，2026-09-04）：
 
 - `AiExamGenerationService` 从 590 行、7 个依赖降为 150 行、4 个依赖；候选事实加载、均衡选题、

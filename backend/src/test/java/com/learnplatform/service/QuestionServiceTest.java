@@ -40,14 +40,12 @@ class QuestionServiceTest {
 
     @BeforeEach
     void setUp() {
-        questionService = new QuestionService(
-                questionMapper,
-                questionOptionMapper,
-                questionKnowledgePointMapper,
-                courseMapper,
-                knowledgePointMapper,
-                examQuestionMapper,
-                questionVersionService);
+        QuestionViewService viewService = new QuestionViewService(
+                questionOptionMapper, questionKnowledgePointMapper, courseMapper, knowledgePointMapper);
+        QuestionMutationService mutationService = new QuestionMutationService(
+                questionMapper, questionOptionMapper, questionKnowledgePointMapper, courseMapper,
+                knowledgePointMapper, examQuestionMapper, questionVersionService);
+        questionService = new QuestionService(questionMapper, viewService, mutationService);
     }
 
     @Test
