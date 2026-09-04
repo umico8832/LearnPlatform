@@ -6,29 +6,14 @@ import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.ExamPaperCreateRequest;
 import com.learnplatform.dto.ExamPaperVO;
-import com.learnplatform.dto.QuestionOptionVO;
-import com.learnplatform.entity.Course;
 import com.learnplatform.entity.ExamPaper;
 import com.learnplatform.entity.ExamQuestion;
-import com.learnplatform.entity.Question;
-import com.learnplatform.entity.QuestionOption;
-import com.learnplatform.entity.SubjectiveGradingPoint;
-import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.ExamPaperMapper;
 import com.learnplatform.mapper.ExamQuestionMapper;
-import com.learnplatform.mapper.QuestionMapper;
-import com.learnplatform.mapper.QuestionOptionMapper;
-import com.learnplatform.mapper.SubjectiveGradingPointMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Year;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * 试卷服务（管理端）
@@ -37,92 +22,46 @@ import java.util.stream.Collectors;
 public class ExamPaperService {
 
     private static final Logger log = LoggerFactory.getLogger(ExamPaperService.class);
-    private static final String DEFAULT_PAPER_TYPE = "PRACTICE";
-    private static final String OFFICIAL_PAPER_TYPE = "OFFICIAL_EXAM";
-    private static final Set<String> PAPER_TYPES = Set.of(DEFAULT_PAPER_TYPE, OFFICIAL_PAPER_TYPE);
-
     private final ExamPaperMapper examPaperMapper;
     private final ExamQuestionMapper examQuestionMapper;
-    private final QuestionMapper questionMapper;
-    private final QuestionOptionMapper questionOptionMapper;
-    private final CourseMapper courseMapper;
-    private final SubjectiveGradingPointMapper subjectiveGradingPointMapper;
+    private final ExamPaperViewService viewService;
+    private final ExamPaperValidationService validationService;
 
     public ExamPaperService(ExamPaperMapper examPaperMapper,
                             ExamQuestionMapper examQuestionMapper,
-                            QuestionMapper questionMapper,
-                            QuestionOptionMapper questionOptionMapper,
-                            CourseMapper courseMapper,
-                            SubjectiveGradingPointMapper subjectiveGradingPointMapper) {
+                            ExamPaperViewService viewService,
+                            ExamPaperValidationService validationService) {
         this.examPaperMapper = examPaperMapper;
         this.examQuestionMapper = examQuestionMapper;
-        this.questionMapper = questionMapper;
-        this.questionOptionMapper = questionOptionMapper;
-        this.courseMapper = courseMapper;
-        this.subjectiveGradingPointMapper = subjectiveGradingPointMapper;
+        this.viewService = viewService;
+        this.validationService = validationService;
     }
 
     /**
      * 分页查询试卷
      */
     public Page<ExamPaperVO> getExamPaperPage(int pageNum, int pageSize, Long courseId, Integer status) {
-        Page<ExamPaper> page = new Page<>(pageNum, pageSize);
-        LambdaQueryWrapper<ExamPaper> wrapper = new LambdaQueryWrapper<>();
-        if (courseId != null) { wrapper.eq(ExamPaper::getCourseId, courseId); }
-        if (status != null) { wrapper.eq(ExamPaper::getStatus, status); }
-        wrapper.eq(ExamPaper::getVisibility, "PUBLIC");
-        wrapper.orderByDesc(ExamPaper::getCreateTime);
-        Page<ExamPaper> result = examPaperMapper.selectPage(page, wrapper);
-
-        Page<ExamPaperVO> voPage = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
-        voPage.setRecords(result.getRecords().stream().map(this::toVO).collect(Collectors.toList()));
-        return voPage;
+        return viewService.getPublicPage(pageNum, pageSize, courseId, status);
     }
 
     public Page<ExamPaperVO> getAccessiblePublishedExamPaperPage(Long userId, int pageNum,
                                                                  int pageSize, Long courseId) {
-        Page<ExamPaper> page = new Page<>(pageNum, pageSize);
-        LambdaQueryWrapper<ExamPaper> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(ExamPaper::getStatus, 1)
-                .and(scope -> scope.eq(ExamPaper::getVisibility, "PUBLIC")
-                        .or(privateScope -> privateScope.eq(ExamPaper::getVisibility, "PRIVATE")
-                                .eq(ExamPaper::getOwnerUserId, userId)));
-        if (courseId != null) { wrapper.eq(ExamPaper::getCourseId, courseId); }
-        wrapper.orderByDesc(ExamPaper::getCreateTime);
-        Page<ExamPaper> result = examPaperMapper.selectPage(page, wrapper);
-        Page<ExamPaperVO> voPage = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
-        voPage.setRecords(result.getRecords().stream().map(this::toVO).toList());
-        return voPage;
+        return viewService.getAccessiblePublishedPage(userId, pageNum, pageSize, courseId);
     }
 
     /**
      * 获取试卷详情
      */
     public ExamPaperVO getExamPaperById(Long id) {
-        ExamPaper paper = examPaperMapper.selectById(id);
-        if (paper == null || "PRIVATE".equals(paper.getVisibility())) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
-        }
-        ExamPaperVO vo = toVO(paper);
-        fillQuestions(vo, true);
-        return vo;
+        return viewService.getPublicById(id);
     }
 
     public ExamPaperVO getAccessiblePublishedExamPaperById(Long id, Long userId) {
-        ExamPaper paper = examPaperMapper.selectById(id);
-        if (paper == null || paper.getStatus() == null || paper.getStatus() != 1
-                || !canAccess(paper, userId)) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
-        }
-        ExamPaperVO vo = toVO(paper);
-        fillQuestions(vo, false);
-        return vo;
+        return viewService.getAccessiblePublishedById(id, userId);
     }
 
     public boolean canAccess(ExamPaper paper, Long userId) {
-        String visibility = paper.getVisibility();
-        if (visibility == null || "PUBLIC".equals(visibility)) { return true; }
-        return "PRIVATE".equals(visibility) && userId != null && userId.equals(paper.getOwnerUserId());
+        return viewService.canAccess(paper, userId);
     }
 
     /**
@@ -130,13 +69,13 @@ public class ExamPaperService {
      */
     @Transactional
     public ExamPaperVO createExamPaper(ExamPaperCreateRequest request, Long createBy) {
-        String paperType = normalizePaperType(request.getPaperType());
-        ensurePaperTypeSupported(paperType);
-        ensurePublishable(request.getStatus(), request.getQuestions(), 0);
-        ensureOfficialRequestReady(request.getStatus(), paperType, request.getExamName(),
+        String paperType = ExamPaperValidationService.normalizePaperType(request.getPaperType());
+        validationService.ensurePaperTypeSupported(paperType);
+        validationService.ensurePublishable(request.getStatus(), request.getQuestions(), 0);
+        validationService.ensureOfficialRequestReady(request.getStatus(), paperType, request.getExamName(),
                 request.getExamYear(), request.getSourceReference(), request.getSourceVerified(),
                 request.getQuestions(), null);
-        ensureManualGradingReady(request.getStatus(), request.getQuestions(), null);
+        validationService.ensureManualGradingReady(request.getStatus(), request.getQuestions(), null);
 
         ExamPaper paper = new ExamPaper();
         paper.setTitle(request.getTitle());
@@ -190,11 +129,12 @@ public class ExamPaperService {
     public ExamPaperVO updateExamPaper(Long id, ExamPaperCreateRequest request) {
         ExamPaper paper = examPaperMapper.selectByIdForUpdate(id);
         if (paper == null) { throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在"); }
-        ensureDraft(paper, "已发布试卷不能修改");
+        validationService.ensureDraft(paper, "已发布试卷不能修改");
         String paperType = request.getPaperType() != null
-                ? normalizePaperType(request.getPaperType()) : normalizePaperType(paper.getPaperType());
-        ensurePaperTypeSupported(paperType);
-        ensurePublishable(request.getStatus(), request.getQuestions(), paper.getQuestionCount());
+                ? ExamPaperValidationService.normalizePaperType(request.getPaperType())
+                : ExamPaperValidationService.normalizePaperType(paper.getPaperType());
+        validationService.ensurePaperTypeSupported(paperType);
+        validationService.ensurePublishable(request.getStatus(), request.getQuestions(), paper.getQuestionCount());
 
         String examName = request.getExamName() != null ? request.getExamName() : paper.getExamName();
         Integer examYear = request.getExamYear() != null ? request.getExamYear() : paper.getExamYear();
@@ -203,9 +143,9 @@ public class ExamPaperService {
         Boolean sourceVerified = request.getSourceVerified() != null
                 ? request.getSourceVerified() : paper.getSourceVerified();
         Integer status = request.getStatus() != null ? request.getStatus() : paper.getStatus();
-        ensureOfficialRequestReady(status, paperType, examName, examYear, sourceReference,
+        validationService.ensureOfficialRequestReady(status, paperType, examName, examYear, sourceReference,
                 sourceVerified, request.getQuestions(), id);
-        ensureManualGradingReady(status, request.getQuestions(), id);
+        validationService.ensureManualGradingReady(status, request.getQuestions(), id);
 
         if (request.getTitle() != null) { paper.setTitle(request.getTitle()); }
         if (request.getDescription() != null) { paper.setDescription(request.getDescription()); }
@@ -251,7 +191,7 @@ public class ExamPaperService {
     public void deleteExamPaper(Long id) {
         ExamPaper paper = examPaperMapper.selectByIdForUpdate(id);
         if (paper == null) { throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在"); }
-        ensureDraft(paper, "已发布试卷不能删除");
+        validationService.ensureDraft(paper, "已发布试卷不能删除");
         examPaperMapper.deleteById(id);
         LambdaQueryWrapper<ExamQuestion> deleteWrapper = new LambdaQueryWrapper<>();
         deleteWrapper.eq(ExamQuestion::getExamPaperId, id);
@@ -268,138 +208,10 @@ public class ExamPaperService {
         if (paper.getQuestionCount() == null || paper.getQuestionCount() <= 0) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "空试卷不能发布");
         }
-        ensureOfficialPaperReady(paper);
-        ensureManualGradingReady(1, null, paper.getId());
+        validationService.ensureOfficialPaperReady(paper);
+        validationService.ensureManualGradingReady(1, null, paper.getId());
         paper.setStatus(1);
         examPaperMapper.updateById(paper);
-    }
-
-    // ======================== 私有方法 ========================
-
-    private void ensureDraft(ExamPaper paper, String message) {
-        if (paper.getStatus() != null && paper.getStatus() == 1) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR, message);
-        }
-    }
-
-    private void ensurePublishable(Integer requestedStatus,
-                                   List<ExamPaperCreateRequest.QuestionItem> questions,
-                                   Integer currentQuestionCount) {
-        if (requestedStatus == null || requestedStatus != 1) {
-            return;
-        }
-        int questionCount = questions != null
-                ? questions.size()
-                : (currentQuestionCount != null ? currentQuestionCount : 0);
-        if (questionCount <= 0) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR, "空试卷不能发布");
-        }
-    }
-
-    private void ensureOfficialRequestReady(Integer status, String paperType, String examName,
-                                            Integer examYear, String sourceReference, Boolean sourceVerified,
-                                            List<ExamPaperCreateRequest.QuestionItem> questions, Long paperId) {
-        if (status == null || status != 1 || !OFFICIAL_PAPER_TYPE.equals(paperType)) {
-            return;
-        }
-        ensureOfficialMetadata(examName, examYear, sourceReference, sourceVerified);
-        if (questions != null) {
-            if (questions.stream().anyMatch(item -> item == null || isBlank(item.getDisplayNumber()))) {
-                throw new BusinessException(ResultCode.BUSINESS_ERROR, "官方试卷每道题必须填写展示题号");
-            }
-            return;
-        }
-        if (paperId != null) {
-            ensureOfficialQuestionNumbers(findExamQuestions(paperId));
-        }
-    }
-
-    private void ensureOfficialPaperReady(ExamPaper paper) {
-        String paperType = normalizePaperType(paper.getPaperType());
-        ensurePaperTypeSupported(paperType);
-        if (!OFFICIAL_PAPER_TYPE.equals(paperType)) {
-            return;
-        }
-        ensureOfficialMetadata(paper.getExamName(), paper.getExamYear(), paper.getSourceReference(),
-                paper.getSourceVerified());
-        ensureOfficialQuestionNumbers(findExamQuestions(paper.getId()));
-    }
-
-    private void ensureOfficialMetadata(String examName, Integer examYear, String sourceReference,
-                                        Boolean sourceVerified) {
-        int currentYear = Year.now().getValue();
-        if (isBlank(examName) || examYear == null || examYear < 1900 || examYear > currentYear
-                || isBlank(sourceReference)) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR,
-                    "官方试卷发布前必须填写有效的考试名称、年份和来源");
-        }
-        if (!Boolean.TRUE.equals(sourceVerified)) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR, "官方试卷发布前必须确认来源已核验");
-        }
-    }
-
-    private void ensureOfficialQuestionNumbers(List<ExamQuestion> questions) {
-        if (questions.isEmpty() || questions.stream().anyMatch(item -> isBlank(item.getDisplayNumber()))) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR, "官方试卷每道题必须填写展示题号");
-        }
-    }
-
-    private void ensureManualGradingReady(Integer status,
-                                          List<ExamPaperCreateRequest.QuestionItem> requestedQuestions,
-                                          Long paperId) {
-        if (status == null || status != 1) {
-            return;
-        }
-        if (requestedQuestions != null) {
-            for (ExamPaperCreateRequest.QuestionItem item : requestedQuestions) {
-                ensureQuestionRubric(item.getQuestionId(), item.getScore() != null ? item.getScore() : 1);
-            }
-            return;
-        }
-        if (paperId != null) {
-            for (ExamQuestion relation : findExamQuestions(paperId)) {
-                ensureQuestionRubric(relation.getQuestionId(),
-                        relation.getScore() != null ? relation.getScore() : 1);
-            }
-        }
-    }
-
-    private void ensureQuestionRubric(Long questionId, int fullScore) {
-        Question question = questionMapper.selectById(questionId);
-        if (question == null || !"SHORT_ANSWER".equals(question.getQuestionType())) {
-            return;
-        }
-        List<SubjectiveGradingPoint> points = subjectiveGradingPointMapper.selectList(
-                new LambdaQueryWrapper<SubjectiveGradingPoint>()
-                        .eq(SubjectiveGradingPoint::getQuestionId, questionId));
-        int rubricScore = points.stream()
-                .map(SubjectiveGradingPoint::getMaxScore)
-                .filter(java.util.Objects::nonNull)
-                .mapToInt(Integer::intValue)
-                .sum();
-        if (points.isEmpty() || rubricScore != fullScore) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR,
-                    "主观题发布前必须配置与题目分值一致的评分点");
-        }
-    }
-
-    private List<ExamQuestion> findExamQuestions(Long paperId) {
-        return examQuestionMapper.selectList(new LambdaQueryWrapper<ExamQuestion>()
-                .eq(ExamQuestion::getExamPaperId, paperId));
-    }
-
-    private String normalizePaperType(String paperType) {
-        return isBlank(paperType) ? DEFAULT_PAPER_TYPE : paperType.trim();
-    }
-
-    private void ensurePaperTypeSupported(String paperType) {
-        if (!PAPER_TYPES.contains(paperType)) {
-            throw new BusinessException(ResultCode.VALIDATION_ERROR, "不支持的试卷类型");
-        }
-    }
-
-    private boolean isBlank(String value) {
-        return value == null || value.isBlank();
     }
 
     private void applyQuestionStructure(ExamQuestion examQuestion, ExamPaperCreateRequest.QuestionItem item) {
@@ -410,68 +222,4 @@ public class ExamPaperService {
         examQuestion.setDisplayNumber(item.getDisplayNumber());
     }
 
-    private ExamPaperVO toVO(ExamPaper paper) {
-        ExamPaperVO vo = new ExamPaperVO();
-        vo.setId(paper.getId());
-        vo.setTitle(paper.getTitle());
-        vo.setDescription(paper.getDescription());
-        vo.setCourseId(paper.getCourseId());
-        vo.setTotalScore(paper.getTotalScore());
-        vo.setDuration(paper.getDuration());
-        vo.setQuestionCount(paper.getQuestionCount());
-        vo.setStatus(paper.getStatus());
-        vo.setCreateBy(paper.getCreateBy());
-        vo.setOwnerUserId(paper.getOwnerUserId());
-        vo.setVisibility(paper.getVisibility() != null ? paper.getVisibility() : "PUBLIC");
-        vo.setPaperType(normalizePaperType(paper.getPaperType()));
-        vo.setExamName(paper.getExamName());
-        vo.setExamYear(paper.getExamYear());
-        vo.setSourceReference(paper.getSourceReference());
-        vo.setSourceVerified(Boolean.TRUE.equals(paper.getSourceVerified()));
-        vo.setImportStatus(paper.getImportStatus());
-        vo.setCreateTime(paper.getCreateTime());
-        if (paper.getCourseId() != null) {
-            Course course = courseMapper.selectById(paper.getCourseId());
-            if (course != null) { vo.setCourseName(course.getName()); }
-        }
-        return vo;
-    }
-
-    private void fillQuestions(ExamPaperVO vo, boolean includeCorrectAnswer) {
-        LambdaQueryWrapper<ExamQuestion> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(ExamQuestion::getExamPaperId, vo.getId()).orderByAsc(ExamQuestion::getSortOrder);
-        List<ExamQuestion> eqs = examQuestionMapper.selectList(wrapper);
-
-        List<ExamPaperVO.ExamQuestionItem> items = new ArrayList<>();
-        for (ExamQuestion eq : eqs) {
-            ExamPaperVO.ExamQuestionItem item = new ExamPaperVO.ExamQuestionItem();
-            item.setQuestionId(eq.getQuestionId());
-            item.setSortOrder(eq.getSortOrder());
-            item.setScore(eq.getScore());
-            item.setSectionTitle(eq.getSectionTitle());
-            item.setMajorQuestionNumber(eq.getMajorQuestionNumber());
-            item.setMinorQuestionNumber(eq.getMinorQuestionNumber());
-            item.setSubquestionNumber(eq.getSubquestionNumber());
-            item.setDisplayNumber(eq.getDisplayNumber());
-
-            Question q = questionMapper.selectById(eq.getQuestionId());
-            if (q != null) {
-                item.setContent(q.getContent());
-                item.setQuestionType(q.getQuestionType());
-
-                LambdaQueryWrapper<QuestionOption> optWrapper = new LambdaQueryWrapper<>();
-                optWrapper.eq(QuestionOption::getQuestionId, q.getId()).orderByAsc(QuestionOption::getSortOrder);
-                List<QuestionOption> options = questionOptionMapper.selectList(optWrapper);
-                item.setOptions(options.stream().map(option -> {
-                    QuestionOptionVO optionVO = QuestionOptionVO.fromEntity(option);
-                    if (!includeCorrectAnswer) {
-                        optionVO.setIsCorrect(null);
-                    }
-                    return optionVO;
-                }).collect(Collectors.toList()));
-            }
-            items.add(item);
-        }
-        vo.setQuestions(items);
-    }
 }

@@ -97,6 +97,9 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
 - `ExamPaperLearningService` 负责试卷学习会话生命周期、逐题判分和学习事实写入；
   `ExamPaperLearningContextService` 集中校验试卷可见性、发布状态、课程库关系与题目课程归属，
   并按试卷顺序读取题目和选项。
+- `ExamPaperService` 只编排管理端试卷创建、更新、删除和发布事务；列表、访问控制与详情展示由
+  `ExamPaperViewService` 承担，类型、来源、题号和主观题评分点发布校验由
+  `ExamPaperValidationService` 承担。
 - `ExamService` 是用户考试 API 的兼容门面；考试会话开始 / 恢复、提交锁定与超时、逐题判分和学习事实
   写入、结果展示分别由 `ExamSessionService`、`ExamSubmissionService`、
   `ExamAnswerSubmissionService` 与 `ExamRecordViewService` 承担。

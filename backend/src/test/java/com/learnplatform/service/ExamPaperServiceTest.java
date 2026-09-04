@@ -40,8 +40,12 @@ class ExamPaperServiceTest {
 
     @BeforeEach
     void setUp() {
-        examPaperService = new ExamPaperService(examPaperMapper, examQuestionMapper,
-                questionMapper, questionOptionMapper, courseMapper, subjectiveGradingPointMapper);
+        ExamPaperViewService viewService = new ExamPaperViewService(examPaperMapper, examQuestionMapper,
+                questionMapper, questionOptionMapper, courseMapper);
+        ExamPaperValidationService validationService = new ExamPaperValidationService(
+                examQuestionMapper, questionMapper, subjectiveGradingPointMapper);
+        examPaperService = new ExamPaperService(
+                examPaperMapper, examQuestionMapper, viewService, validationService);
     }
 
     @Test

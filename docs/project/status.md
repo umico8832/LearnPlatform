@@ -211,6 +211,12 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+试卷展示与发布校验职责拆分（Round 290，2026-09-04）：
+
+- `ExamPaperService` 从 477 行、6 个依赖降为 226 行、4 个依赖；访问与详情展示、发布规则分别进入
+  `ExamPaperViewService`、`ExamPaperValidationService`。
+- 试卷及相关 Controller、私有导入、智能组卷创建、ArchUnit 共 32 个测试通过；API 与校验语义不变。
+
 题目可视化渲染职责拆分（Round 289，2026-09-04）：
 
 - `QuestionVisualInteractive.vue` 从 831 行降为 70 行；解析、类型分派、Mermaid 和树结构渲染进入
