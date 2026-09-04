@@ -97,6 +97,15 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
 - `ExamPaperLearningService` 负责试卷学习会话生命周期、逐题判分和学习事实写入；
   `ExamPaperLearningContextService` 集中校验试卷可见性、发布状态、课程库关系与题目课程归属，
   并按试卷顺序读取题目和选项。
+- `ExamService` 是用户考试 API 的兼容门面；考试会话开始 / 恢复、提交锁定与超时、逐题判分和学习事实
+  写入、结果展示分别由 `ExamSessionService`、`ExamSubmissionService`、
+  `ExamAnswerSubmissionService` 与 `ExamRecordViewService` 承担。
+- `CourseStageAssessmentService` 只编排阶段测评开始、提交和历史查询；题目快照、错题 / 复习 / 课程事件
+  回写和展示模型分别由 `CourseStageAssessmentSnapshotService`、
+  `CourseStageAssessmentLearningFactService` 与 `CourseStageAssessmentViewService` 承担。
+- `PrivateExamImportService` 负责来源校验、所有者来源保存和确认事务；有限格式解析与客观题校验由
+  `PrivateExamImportParserService` 承担，私有试卷、题目、选项和试卷关系持久化由
+  `PrivateExamConfirmedPaperService` 承担。
 - `service/` 顶层只放 Spring 业务组件；无状态策略与聚合器进入明确领域子包。阶段测评
   快照聚合位于 `service/assessment/`，题目访问策略与重复题文本检测算法位于
   `service/question/`；跨 Service 与 Controller 传递的私有试卷原文件值对象位于

@@ -49,8 +49,11 @@ class PrivateExamImportServiceTest {
     void setUp() {
         MarkdownQuestionParser parser = new MarkdownQuestionParser(
                 questionMapper, optionMapper, questionKnowledgePointMapper, courseMapper, knowledgePointMapper);
-        service = new PrivateExamImportService(parser, courseMapper, sourceMapper, sourceStorageService, paperMapper,
-                examQuestionMapper, questionMapper, optionMapper, examPaperService);
+        PrivateExamImportParserService parserService = new PrivateExamImportParserService(parser);
+        PrivateExamConfirmedPaperService confirmedPaperService = new PrivateExamConfirmedPaperService(
+                paperMapper, examQuestionMapper, questionMapper, optionMapper, examPaperService, parserService);
+        service = new PrivateExamImportService(courseMapper, sourceMapper, sourceStorageService, paperMapper,
+                parserService, confirmedPaperService);
         Course course = new Course();
         course.setId(10L);
         when(courseMapper.selectById(10L)).thenReturn(course);

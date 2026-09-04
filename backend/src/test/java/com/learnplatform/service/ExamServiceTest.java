@@ -63,9 +63,17 @@ class ExamServiceTest {
 
     @BeforeEach
     void setUp() {
-        examService = new ExamService(examRecordMapper, examAnswerMapper, examPaperMapper,
-                examQuestionMapper, questionMapper, questionOptionMapper,
-                null, new AnswerEvaluator(), cacheEvictService, null, FIXED_CLOCK);
+        AnswerEvaluator answerEvaluator = new AnswerEvaluator();
+        ExamRecordViewService viewService = new ExamRecordViewService(examRecordMapper, examAnswerMapper,
+                examPaperMapper, examQuestionMapper, questionMapper, questionOptionMapper, answerEvaluator,
+                FIXED_CLOCK);
+        ExamAnswerSubmissionService answerSubmissionService = new ExamAnswerSubmissionService(examAnswerMapper,
+                examQuestionMapper, questionMapper, questionOptionMapper, null, answerEvaluator, null);
+        ExamSessionService sessionService = new ExamSessionService(examRecordMapper, examPaperMapper,
+                viewService, FIXED_CLOCK);
+        ExamSubmissionService submissionService = new ExamSubmissionService(examRecordMapper, examPaperMapper,
+                answerSubmissionService, cacheEvictService, FIXED_CLOCK);
+        examService = new ExamService(sessionService, submissionService, viewService);
     }
 
     @Test

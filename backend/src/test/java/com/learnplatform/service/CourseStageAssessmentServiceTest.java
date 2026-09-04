@@ -52,9 +52,18 @@ class CourseStageAssessmentServiceTest {
 
     @BeforeEach
     void setUp() {
+        AnswerEvaluator answerEvaluator = new AnswerEvaluator();
+        ObjectMapper objectMapper = new ObjectMapper();
+        CourseStageAssessmentSnapshotService snapshotService = new CourseStageAssessmentSnapshotService(
+                assessmentMapper, assessmentQuestionMapper, optionMapper, knowledgePointMapper,
+                answerEvaluator, objectMapper);
+        CourseStageAssessmentLearningFactService learningFactService =
+                new CourseStageAssessmentLearningFactService(questionMapper, wrongQuestionService,
+                        repetitionService, eventService);
+        CourseStageAssessmentViewService viewService =
+                new CourseStageAssessmentViewService(assessmentQuestionMapper, objectMapper);
         service = new CourseStageAssessmentService(assessmentMapper, assessmentQuestionMapper,
-                questionMapper, optionMapper, knowledgePointMapper, new AnswerEvaluator(), new ObjectMapper(),
-                wrongQuestionService, repetitionService, eventService);
+                knowledgePointMapper, answerEvaluator, snapshotService, learningFactService, viewService);
         lenient().when(knowledgePointMapper.selectByQuestionId(any())).thenReturn(List.of());
     }
 
