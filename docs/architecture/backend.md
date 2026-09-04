@@ -130,6 +130,8 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
   `AiReviewSuggestionService`、`AiKnowledgeSummaryService` 与 `AiInvocationService` 承担。
 - `AiUsageService` 只负责管理端 AI 用量总览，包括全局、功能、模型、每日、用户和失败调用聚合；
   `AiUsageReportService` 负责等长周期对比、异常提醒推导与持久化、通知和确认事务。
+- `AiExamGenerationService` 只编排智能组卷预览与创建；候选事实加载、难度 / 知识点均衡选题、预览展示
+  和试卷创建分别位于 `service/exam` 下的独立协作者。
 - `AiVariantQuestionService` 负责结构化变式题私有答案与判分。
 - `AiLearningEffectService` 只读聚合观察性学习效果，不承担用户交互写事务。
 
