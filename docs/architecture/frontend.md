@@ -73,6 +73,8 @@ frontend/admin/   # 独立管理端 HTML 入口
   位于纯展示模块 `examManagePresentation`。
 - `views/practice/reviewSuggestionStream` 负责 AI 复习建议 SSE 数据帧消费，`reviewPresentation`
   负责路由数字归一化与状态标签映射，`ReviewView` 保留复习会话和页面级 API 编排。
+- `views/practice/usePracticeAnswer` 管理练习答案、可提交状态与多选归一化，练习展示和退出路由映射保持为
+  纯函数；`components/search/` 管理全局搜索快捷键、结果扁平索引与文本高亮，搜索对话框保留 API 和焦点编排。
 - `admin/views/submission/` 承载投稿管理的 AI 质检、知识点标注和难度评估工具；工具组件
   自行管理请求和结果状态，只有知识点应用成功时向 `SubmissionManage` 发出列表刷新事件。
 - `admin/views/question/` 承载正式题库的自包含编辑能力；题目编辑器拥有表单校验、选项

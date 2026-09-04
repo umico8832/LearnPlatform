@@ -198,8 +198,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { SemanticTagType } from '@/utils/errors'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
@@ -207,13 +206,18 @@ import { submitAnswer } from '@/api/practice'
 import type { PracticeQuestionVO, PracticeResultVO } from '@/api/practice'
 import AiQuestionAssistant from '@/components/AiQuestionAssistant.vue'
 import QuestionLearningAsset from '@/components/QuestionLearningAsset.vue'
+import { useMobileViewport } from '@/composables/useMobileViewport'
+import { usePracticeAnswer } from './usePracticeAnswer'
+import {
+  practiceQuestionTypeLabel as getQuestionTypeLabel,
+  practiceQuestionTypeTag as getQuestionTypeTag,
+  practiceReturnRoute,
+} from './practiceSessionPresentation'
 
 const router = useRouter()
 
 const questions = ref<PracticeQuestionVO[]>([])
 const currentIndex = ref(0)
-const userAnswer = ref('')
-const multiAnswers = ref<Set<string>>(new Set())
 const submitting = ref(false)
 const showResult = ref(false)
 const currentResult = ref<PracticeResultVO | null>(null)
@@ -223,28 +227,14 @@ const correctCount = ref(0)
 const wrongCount = ref(0)
 const startTime = ref(Date.now())
 const practiceMode = ref<string>('')
-const isMobile = ref(false)
-
-function checkMobile() {
-  isMobile.value = window.innerWidth < 768
-}
+const isMobile = useMobileViewport()
 
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
+const { userAnswer, multiAnswers, canSubmit, toggleMulti, answer, reset } = usePracticeAnswer(currentQuestion)
 const isWrongPractice = computed(() => practiceMode.value === 'wrong_question')
 const isFavoritePractice = computed(() => practiceMode.value === 'favorite')
 
-const canSubmit = computed(() => {
-  if (!currentQuestion.value) return false
-  const q = currentQuestion.value
-  if (q.questionType === 'MULTIPLE_CHOICE') {
-    return multiAnswers.value.size > 0
-  }
-  return userAnswer.value.trim().length > 0
-})
-
 onMounted(() => {
-  checkMobile()
-  window.addEventListener('resize', checkMobile)
   const stored = sessionStorage.getItem('practice_questions')
   if (stored) {
     questions.value = JSON.parse(stored)
@@ -256,34 +246,15 @@ onMounted(() => {
   }
 })
 
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', checkMobile)
-})
-
-const toggleMulti = (label: string) => {
-  const s = new Set(multiAnswers.value)
-  if (s.has(label)) {
-    s.delete(label)
-  } else {
-    s.add(label)
-  }
-  multiAnswers.value = s
-}
-
 const handleSubmit = async () => {
   if (!currentQuestion.value) return
   submitting.value = true
   try {
-    const answer =
-      currentQuestion.value.questionType === 'MULTIPLE_CHOICE'
-        ? Array.from(multiAnswers.value).sort().join(',')
-        : userAnswer.value.trim()
-
     const elapsed = Math.round((Date.now() - startTime.value) / 1000)
 
     const res = await submitAnswer({
       questionId: currentQuestion.value.id,
-      userAnswer: answer,
+      userAnswer: answer(),
       answerTime: elapsed,
     })
 
@@ -320,63 +291,21 @@ const handleResultClosed = () => {
 
   if (currentIndex.value < questions.value.length - 1) {
     currentIndex.value++
-    userAnswer.value = ''
-    multiAnswers.value = new Set()
+    reset()
     startTime.value = Date.now()
   } else {
     finished.value = true
   }
 }
 
-const handleBack = () => {
+const leavePractice = () => {
   sessionStorage.removeItem('practice_questions')
   sessionStorage.removeItem('practice_mode')
-  if (isWrongPractice.value || practiceMode.value === 'similar') {
-    router.push({ name: 'WrongQuestions' })
-  } else if (isFavoritePractice.value) {
-    router.push({ name: 'Favorites' })
-  } else if (practiceMode.value === 'recommended') {
-    router.push({ name: 'LearningDiagnosis' })
-  } else {
-    router.push({ name: 'Practice' })
-  }
+  router.push(practiceReturnRoute(practiceMode.value))
 }
 
-const restartPractice = () => {
-  sessionStorage.removeItem('practice_questions')
-  sessionStorage.removeItem('practice_mode')
-  if (isWrongPractice.value || practiceMode.value === 'similar') {
-    router.push({ name: 'WrongQuestions' })
-  } else if (isFavoritePractice.value) {
-    router.push({ name: 'Favorites' })
-  } else if (practiceMode.value === 'recommended') {
-    router.push({ name: 'LearningDiagnosis' })
-  } else {
-    router.push({ name: 'Practice' })
-  }
-}
-
-const getQuestionTypeLabel = (type: string) => {
-  const map: Record<string, string> = {
-    SINGLE_CHOICE: '单选题',
-    MULTIPLE_CHOICE: '多选题',
-    TRUE_FALSE: '判断题',
-    FILL_BLANK: '填空题',
-    SHORT_ANSWER: '简答题',
-  }
-  return map[type] || type
-}
-
-const getQuestionTypeTag = (type: string) => {
-  const map: Record<string, SemanticTagType> = {
-    SINGLE_CHOICE: undefined,
-    MULTIPLE_CHOICE: 'warning',
-    TRUE_FALSE: 'success',
-    FILL_BLANK: 'info',
-    SHORT_ANSWER: 'danger',
-  }
-  return map[type]
-}
+const handleBack = leavePractice
+const restartPractice = leavePractice
 </script>
 
 <style scoped>

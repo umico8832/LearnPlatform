@@ -166,7 +166,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, nextTick, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Search,
@@ -188,22 +188,23 @@ import {
   type GlobalSearchResult,
   type SearchSuggestions,
 } from '@/api/search'
+import { useGlobalSearchShortcuts } from './search/useGlobalSearchShortcuts'
+import { highlightSearchMatch } from './search/searchText'
+import {
+  emptySearchResult,
+  flattenSearchResults,
+  searchResultCount,
+  searchResultIndex,
+} from './search/searchResultModel'
 
 const router = useRouter()
 
-// 对话框可见性
 const visible = ref(false)
 const keyword = ref('')
 const loading = ref(false)
-const results = ref<GlobalSearchResult>({
-  questions: [],
-  courses: [],
-  knowledgePoints: [],
-  totalCount: 0,
-})
+const results = ref<GlobalSearchResult>(emptySearchResult())
 const activeIndex = ref(0)
 
-// 搜索建议
 const suggestions = ref<SearchSuggestions>({
   history: [],
   hotKeywords: [],
@@ -212,33 +213,17 @@ const suggestions = ref<SearchSuggestions>({
 const inputRef = ref<HTMLInputElement>()
 const resultsRef = ref<HTMLDivElement>()
 
-// 防抖定时器
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
-// 移动端检测
-const isMobile = ref(window.innerWidth < 768)
-function checkMobile() {
-  isMobile.value = window.innerWidth < 768
-}
+const totalCount = computed(() => searchResultCount(results.value))
 
-// 总结果数
-const totalCount = computed(() => {
-  return results.value.questions.length + results.value.courses.length + results.value.knowledgePoints.length
-})
-
-// 将分类+偏移映射为扁平 activeIndex
-function flatIndex(group: 'q' | 'c' | 'kp', localIdx: number): number {
-  let base = 0
-  if (group === 'c') base = results.value.questions.length
-  if (group === 'kp') base = results.value.questions.length + results.value.courses.length
-  return base + localIdx
-}
+const flatIndex = (group: 'q' | 'c' | 'kp', index: number) => searchResultIndex(results.value, group, index)
 
 // 打开搜索
 function open() {
   visible.value = true
   keyword.value = ''
-  results.value = { questions: [], courses: [], knowledgePoints: [], totalCount: 0 }
+  results.value = emptySearchResult()
   activeIndex.value = 0
   nextTick(() => {
     inputRef.value?.focus()
@@ -268,7 +253,7 @@ function close() {
 // 关闭后清理
 function handleClosed() {
   keyword.value = ''
-  results.value = { questions: [], courses: [], knowledgePoints: [], totalCount: 0 }
+  results.value = emptySearchResult()
   activeIndex.value = 0
   suggestions.value = { history: [], hotKeywords: [] }
 }
@@ -286,7 +271,7 @@ function handleInput() {
   if (debounceTimer) clearTimeout(debounceTimer)
   const q = keyword.value.trim()
   if (!q) {
-    results.value = { questions: [], courses: [], knowledgePoints: [], totalCount: 0 }
+    results.value = emptySearchResult()
     return
   }
   debounceTimer = setTimeout(() => {
@@ -302,7 +287,7 @@ async function doSearch(q: string) {
     const res = await globalSearch(q, 5)
     results.value = res.data
   } catch {
-    results.value = { questions: [], courses: [], knowledgePoints: [], totalCount: 0 }
+    results.value = emptySearchResult()
   } finally {
     loading.value = false
   }
@@ -354,7 +339,7 @@ function scrollToActive() {
 
 // 获取所有项的扁平列表
 function getAllItems(): SearchItem[] {
-  return [...results.value.questions, ...results.value.courses, ...results.value.knowledgePoints]
+  return flattenSearchResults(results.value)
 }
 
 // 导航到选中项
@@ -365,52 +350,12 @@ function navigateTo(item: SearchItem) {
 
 // 高亮匹配文本
 function highlightMatch(text: string): string {
-  if (!keyword.value.trim()) return escapeHtml(text)
-  const escaped = escapeRegex(keyword.value.trim())
-  const regex = new RegExp(`(${escaped})`, 'gi')
-  return escapeHtml(text).replace(regex, '<mark>$1</mark>')
+  return highlightSearchMatch(text, keyword.value)
 }
 
-function escapeHtml(str: string): string {
-  return str.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/"/g, '"')
-}
-
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
-// 全局键盘事件
-function handleGlobalKeydown(e: KeyboardEvent) {
-  // Cmd+K / Ctrl+K
-  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-    e.preventDefault()
-    if (visible.value) {
-      close()
-    } else {
-      open()
-    }
-    return
-  }
-  // "/" 键（不在输入框内时）
-  if (e.key === '/' && !visible.value && !isInputFocused()) {
-    e.preventDefault()
-    open()
-  }
-}
-
-function isInputFocused(): boolean {
-  const tag = document.activeElement?.tagName?.toLowerCase()
-  return tag === 'input' || tag === 'textarea' || document.activeElement?.getAttribute('contenteditable') === 'true'
-}
-
-onMounted(() => {
-  window.addEventListener('keydown', handleGlobalKeydown)
-  window.addEventListener('resize', checkMobile)
-})
+const isMobile = useGlobalSearchShortcuts(visible, open, close)
 
 onBeforeUnmount(() => {
-  window.removeEventListener('keydown', handleGlobalKeydown)
-  window.removeEventListener('resize', checkMobile)
   if (debounceTimer) clearTimeout(debounceTimer)
 })
 
