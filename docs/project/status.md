@@ -211,6 +211,13 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+相似题练习闭包拆分（Round 312，2026-09-05）：
+
+- `WrongQuestionView.vue` 从 611 行降为 508 行、响应式状态从 11 处降为 8 处、API 模块从 5 组降为 3 组；
+  相似题检索、完整题目补全、会话写入和导航进入 `SimilarQuestionsDialog`。
+- 新增相似题组件测试，连同错题路由筛选共 3 个测试通过；相关 ESLint 与 TypeScript 检查通过，
+  既有 `similar` 会话协议不变。
+
 结构重构全量本地回归（Round 311，2026-09-05）：
 
 - 后端 `mvn clean verify -B` 共 607 个测试通过，Checkstyle、SpotBugs 与 JaCoCo 通过。

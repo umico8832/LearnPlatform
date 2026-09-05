@@ -101,7 +101,7 @@
               text
               size="small"
               :icon="Search"
-              @click="loadSimilarQuestions(item.questionId, item.questionContent)"
+              @click="similarQuestionsDialog?.open(item.questionId, item.questionContent)"
             >
               找相似题
             </el-button>
@@ -128,73 +128,22 @@
       />
     </div>
 
-    <!-- 相似题推荐弹窗 -->
-    <el-dialog v-model="similarDialogVisible" title="相似题推荐" width="800px" destroy-on-close>
-      <div v-if="similarLoading" v-loading="true" style="height: 200px"></div>
-      <template v-else-if="similarData">
-        <div class="similar-source"><strong>原题：</strong>{{ similarSourceContent }}</div>
-        <el-table :data="similarData.similarQuestions" stripe style="margin-top: 12px">
-          <el-table-column label="题目内容" min-width="240" show-overflow-tooltip>
-            <template #default="{ row }">
-              <span>{{ row.questionContent }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="相似度" width="100" align="center">
-            <template #default="{ row }">
-              <el-progress
-                :percentage="row.similarityScore"
-                :stroke-width="14"
-                :text-inside="true"
-                :color="getSimilarityColor(row.similarityScore)"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column label="相似原因" width="140">
-            <template #default="{ row }">
-              <el-tag size="small" type="info">{{ row.reason }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="题型" width="80" align="center">
-            <template #default="{ row }">{{ row.questionType }}</template>
-          </el-table-column>
-          <el-table-column label="难度" width="80" align="center">
-            <template #default="{ row }">
-              <span v-if="row.difficulty">{{ '⭐'.repeat(row.difficulty) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="已练过" width="80" align="center">
-            <template #default="{ row }">
-              <el-tag :type="row.alreadyAttempted ? 'success' : 'info'" size="small">
-                {{ row.alreadyAttempted ? '是' : '否' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-        </el-table>
-      </template>
-      <el-empty v-else description="暂无相似题目" />
-      <template #footer>
-        <el-button @click="similarDialogVisible = false">关闭</el-button>
-        <el-button type="primary" :disabled="!similarData?.similarQuestions?.length" @click="startSimilarPractice">
-          开始练习相似题
-        </el-button>
-      </template>
-    </el-dialog>
+    <SimilarQuestionsDialog ref="similarQuestionsDialog" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
-import { errorMessage, SemanticTagType } from '@/utils/errors'
+import { SemanticTagType } from '@/utils/errors'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Delete, RefreshRight, Search } from '@element-plus/icons-vue'
 import { getWrongQuestions, getWrongQuestionStats, updateMasteryLevel, removeWrongQuestion } from '@/api/wrongQuestion'
 import type { WrongQuestionVO, WrongQuestionStatsVO } from '@/api/wrongQuestion'
 import { getWrongQuestionPractice } from '@/api/practice'
-import { getSimilarQuestions, type SimilarQuestions } from '@/api/statistics'
-import { getQuestionById } from '@/api/question'
 import AiQuestionAssistant from '@/components/AiQuestionAssistant.vue'
 import QuestionLearningAsset from '@/components/QuestionLearningAsset.vue'
+import SimilarQuestionsDialog from '@/components/practice/SimilarQuestionsDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -203,6 +152,7 @@ const startPracticeLoading = ref(false)
 const records = ref<WrongQuestionVO[]>([])
 const total = ref(0)
 const stats = ref<WrongQuestionStatsVO | null>(null)
+const similarQuestionsDialog = ref<InstanceType<typeof SimilarQuestionsDialog>>()
 
 const statCards = computed(() => [
   { label: '总错题数', value: stats.value?.total ?? 0, tone: 'emphasis' as const },
@@ -210,50 +160,6 @@ const statCards = computed(() => [
   { label: '部分掌握', value: stats.value?.partial ?? 0, tone: 'warning' as const },
   { label: '已掌握', value: stats.value?.mastered ?? 0, tone: 'default' as const },
 ])
-
-// 相似题推荐
-const similarDialogVisible = ref(false)
-const similarLoading = ref(false)
-const similarData = ref<SimilarQuestions | null>(null)
-const similarSourceContent = ref('')
-
-async function loadSimilarQuestions(questionId: number, questionContent?: string) {
-  similarDialogVisible.value = true
-  similarLoading.value = true
-  similarData.value = null
-  similarSourceContent.value = questionContent || ''
-  try {
-    const res = await getSimilarQuestions(questionId, 8)
-    similarData.value = res.data
-  } catch (e) {
-    ElMessage.error('加载相似题失败: ' + errorMessage(e, '未知错误'))
-  } finally {
-    similarLoading.value = false
-  }
-}
-
-function startSimilarPractice() {
-  if (!similarData.value?.similarQuestions?.length) return
-  const similar = similarData.value.similarQuestions
-  similarDialogVisible.value = false
-  // 相似题接口只返回摘要，这里按 ID 拉取完整题目后写入会话存储，
-  // 由答题页沿用既有 session 流程，避免 `?questionIds=` 断链。
-  Promise.all(similar.map((item) => getQuestionById(item.questionId).then((res) => res.data)))
-    .then((questions) => {
-      sessionStorage.setItem('practice_questions', JSON.stringify(questions))
-      sessionStorage.setItem('practice_mode', 'similar')
-      router.push({ path: '/practice/session' })
-    })
-    .catch(() => {
-      ElMessage.error('加载相似题失败，请重试')
-    })
-}
-
-function getSimilarityColor(score: number): string {
-  if (score >= 80) return 'var(--lp-success)'
-  if (score >= 60) return 'var(--lp-warning)'
-  return 'var(--lp-primary)'
-}
 
 const filter = reactive({
   masteryLevel: undefined as number | undefined,
@@ -561,15 +467,6 @@ const handleStartWrongPractice = async () => {
 .time {
   font-size: var(--lp-text-xs);
   color: var(--lp-text-muted);
-}
-
-.similar-source {
-  padding: var(--lp-space-3);
-  background: var(--lp-surface-soft);
-  border-radius: var(--lp-radius-sm);
-  font-size: var(--lp-text-sm);
-  color: var(--lp-text-secondary);
-  line-height: var(--lp-leading-body);
 }
 
 .pagination-wrapper {

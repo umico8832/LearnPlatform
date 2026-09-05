@@ -67,6 +67,8 @@ frontend/admin/   # 独立管理端 HTML 入口
   负责 API、SSE、路由与练习会话编排，展示组件只接收类型化数据并发出用户意图。
 - `components/review/ReviewSessionPanel` 自包含逐卡答题、正确性判定、会话进度和完成状态；
   `ReviewView` 负责到期卡片装载、统计、计划维护与 AI 建议，并在答题事实产生后刷新统计。
+- `components/practice/SimilarQuestionsDialog` 自包含相似题检索、完整题目补全、练习会话写入和导航；
+  `WrongQuestionView` 只负责错题筛选、掌握度维护与错题重练入口。
 - `components/exam/` 承载学习端考试页的独立业务闭包：`ExamRecordList` 自包含记录查询、
   分页、状态 / 分数映射、响应式展示和记录导航，`PrivateExamSourceManager` 自包含私有来源
   查看、原文件分页、下载和关联删除，`PrivateExamDraftReview` 自包含 AI 答案建议、人工逐题
