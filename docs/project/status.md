@@ -211,6 +211,13 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+私有试卷导入逻辑密度收敛（Round 313，2026-09-05）：
+
+- `PrivateExamImportDialog.vue` 脚本从 307 行降为 263 行；文本 / PDF / DOCX 请求分派进入
+  `privateExamImportRequests`，导入状态机保留表单、预览与复核协调。
+- 结构门禁新增 Vue 脚本块不超过 300 行；导入 11 个测试、相关 ESLint、TypeScript 和门禁 5 个测试
+  通过，当前 Vue 脚本块最高 263 行。
+
 相似题练习闭包拆分（Round 312，2026-09-05）：
 
 - `WrongQuestionView.vue` 从 611 行降为 508 行、响应式状态从 11 处降为 8 处、API 模块从 5 组降为 3 组；

@@ -73,7 +73,8 @@ frontend/admin/   # 独立管理端 HTML 入口
   分页、状态 / 分数映射、响应式展示和记录导航，`PrivateExamSourceManager` 自包含私有来源
   查看、原文件分页、下载和关联删除，`PrivateExamDraftReview` 自包含 AI 答案建议、人工逐题
   复核和草稿原文件下载；`ExamListView` 与 `PrivateExamImportDialog` 分别保留列表和导入流程
-  编排，通过类型化属性、事件与少量公开命令连接这些闭包。
+  编排，`privateExamImportRequests` 隔离文本 / PDF / DOCX 的预览、确认和建草稿请求分派，通过类型化
+  属性、事件与少量公开命令连接这些闭包。
 - `admin/views/ai-usage/` 承载 AI 运营报告、学习效果观察、样本结构和调用明细展示；
   `AiUsageView` 只编排周期、接口加载、提醒确认与图表生命周期。
 - `admin/views/exam/` 承载试卷管理中的独立业务对话框；`ExamPaperEditorDialog` 自包含手工试卷表单、

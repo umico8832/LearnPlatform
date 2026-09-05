@@ -11,9 +11,11 @@ from pathlib import Path
 SERVICE_MAX_LINES = 400
 SERVICE_MAX_DIRECT_DEPENDENCIES = 8
 VUE_MAX_LINES = 699
+VUE_SCRIPT_MAX_LINES = 300
 
 SERVICE_ANNOTATION = re.compile(r"(?m)^\s*@Service(?:\s*\(|\s*$)")
 DIRECT_DEPENDENCY = re.compile(r"(?m)^\s*private\s+final\s+(?!static\b)")
+VUE_SCRIPT_BLOCK = re.compile(r"<script\b[^>]*>(.*?)</script>", re.IGNORECASE | re.DOTALL)
 
 
 def count_lines(content: str) -> int:
@@ -42,13 +44,23 @@ def validate_service(path: Path, content: str) -> list[str]:
 
 
 def validate_vue(path: Path, content: str) -> list[str]:
+    errors: list[str] = []
     line_count = count_lines(content)
     if line_count > VUE_MAX_LINES:
-        return [
+        errors.append(
             f"{path.as_posix()}: Vue SFC has {line_count} lines "
             f"(maximum {VUE_MAX_LINES})"
-        ]
-    return []
+        )
+
+    script_match = VUE_SCRIPT_BLOCK.search(content)
+    if script_match:
+        script_line_count = count_lines(script_match.group(1))
+        if script_line_count > VUE_SCRIPT_MAX_LINES:
+            errors.append(
+                f"{path.as_posix()}: Vue script block has {script_line_count} lines "
+                f"(maximum {VUE_SCRIPT_MAX_LINES})"
+            )
+    return errors
 
 
 def validate_repository(root: Path) -> list[str]:
@@ -76,7 +88,8 @@ def main() -> int:
         "Code structure validation passed: "
         f"Spring Service <= {SERVICE_MAX_LINES} lines and <= "
         f"{SERVICE_MAX_DIRECT_DEPENDENCIES} direct dependencies; "
-        f"Vue SFC <= {VUE_MAX_LINES} lines."
+        f"Vue SFC <= {VUE_MAX_LINES} lines and script block <= "
+        f"{VUE_SCRIPT_MAX_LINES} lines."
     )
     return 0
 

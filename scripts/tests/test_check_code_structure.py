@@ -48,6 +48,15 @@ class CodeStructureValidationTest(unittest.TestCase):
         self.assertEqual([], checker.validate_vue(Path("Accepted.vue"), accepted))
         self.assertEqual(1, len(checker.validate_vue(Path("Rejected.vue"), rejected)))
 
+    def test_rejects_dense_vue_script_below_total_file_limit(self) -> None:
+        script = "\n".join("const value = 1" for _ in range(checker.VUE_SCRIPT_MAX_LINES + 1))
+        content = f"<template><div /></template>\n<script setup>\n{script}\n</script>"
+
+        errors = checker.validate_vue(Path("DenseScript.vue"), content)
+
+        self.assertEqual(1, len(errors))
+        self.assertIn("script block", errors[0])
+
 
 if __name__ == "__main__":
     unittest.main()

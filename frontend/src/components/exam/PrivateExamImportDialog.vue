@@ -155,18 +155,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { UploadFile } from 'element-plus'
 import {
   confirmPrivateExamDraft,
-  confirmPrivateExamImport,
-  confirmPrivateExamPdf,
-  confirmPrivateExamDocx,
-  createPrivateExamDraft,
-  createPrivateExamPdfDraft,
-  createPrivateExamDocxDraft,
   deletePrivateExamDraft,
   getPrivateExamDrafts,
   getPrivateExamStorageUsage,
-  previewPrivateExamImport,
-  previewPrivateExamPdf,
-  previewPrivateExamDocx,
 } from '@/api/exam'
 import type {
   PrivateExamDraft,
@@ -178,6 +169,11 @@ import { getAllCourses } from '@/api/course'
 import type { CourseVO } from '@/api/course'
 import { formatStorage } from '@/utils/format'
 import PrivateExamDraftReview from '@/components/exam/PrivateExamDraftReview.vue'
+import {
+  confirmPrivateExamSource,
+  createPrivateExamAnswerDraft,
+  previewPrivateExamSource,
+} from './privateExamImportRequests'
 
 const props = defineProps<{
   modelValue: boolean
@@ -284,12 +280,6 @@ const changeSourceFormat = () => {
   importForm.value.content = ''
 }
 
-const fileMetadata = () => ({
-  title: importForm.value.title,
-  courseId: importForm.value.courseId,
-  duration: importForm.value.duration,
-})
-
 const validateImportForm = () => {
   if (isFileImport.value) {
     if (!importForm.value.title.trim() || !importForm.value.courseId || !sourceFile.value) {
@@ -314,14 +304,7 @@ const previewImport = async () => {
   if (!validateImportForm()) return
   previewLoading.value = true
   try {
-    let res
-    if (importForm.value.sourceFormat === 'PDF' && sourceFile.value) {
-      res = await previewPrivateExamPdf(fileMetadata(), sourceFile.value)
-    } else if (importForm.value.sourceFormat === 'DOCX' && sourceFile.value) {
-      res = await previewPrivateExamDocx(fileMetadata(), sourceFile.value)
-    } else {
-      res = await previewPrivateExamImport(importForm.value)
-    }
+    const res = await previewPrivateExamSource(importForm.value, sourceFile.value)
     if (res.code === 0 && res.data) importPreview.value = res.data
     else ElMessage.error(res.message || '解析失败')
   } catch {
@@ -335,23 +318,7 @@ const confirmImport = async () => {
   if (!importPreview.value) return
   confirmLoading.value = true
   try {
-    let res
-    const metadata = {
-      ...fileMetadata(),
-      expectedContentHash: importPreview.value.contentHash,
-      confirmed: true as const,
-    }
-    if (importForm.value.sourceFormat === 'PDF' && sourceFile.value) {
-      res = await confirmPrivateExamPdf(metadata, sourceFile.value)
-    } else if (importForm.value.sourceFormat === 'DOCX' && sourceFile.value) {
-      res = await confirmPrivateExamDocx(metadata, sourceFile.value)
-    } else {
-      res = await confirmPrivateExamImport({
-        ...importForm.value,
-        expectedContentHash: importPreview.value.contentHash,
-        confirmed: true,
-      })
-    }
+    const res = await confirmPrivateExamSource(importForm.value, importPreview.value, sourceFile.value)
     if (res.code === 0 && res.data) {
       ElMessage.success('私有试卷已导入')
       emit('update:modelValue', false)
@@ -403,18 +370,7 @@ const createAnswerDraft = async () => {
   if (!importPreview.value) return
   confirmLoading.value = true
   try {
-    let res
-    const metadata = { ...fileMetadata(), expectedContentHash: importPreview.value.contentHash }
-    if (importForm.value.sourceFormat === 'PDF' && sourceFile.value) {
-      res = await createPrivateExamPdfDraft(metadata, sourceFile.value)
-    } else if (importForm.value.sourceFormat === 'DOCX' && sourceFile.value) {
-      res = await createPrivateExamDocxDraft(metadata, sourceFile.value)
-    } else {
-      res = await createPrivateExamDraft({
-        ...importForm.value,
-        expectedContentHash: importPreview.value.contentHash,
-      })
-    }
+    const res = await createPrivateExamAnswerDraft(importForm.value, importPreview.value, sourceFile.value)
     if (res.code === 0 && res.data) {
       replaceDraft(res.data)
       importPreview.value = null
