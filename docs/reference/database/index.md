@@ -1,6 +1,6 @@
 # 数据库参考
 
-LearnPlatform 使用 MySQL 8，结构由 Flyway 迁移管理。运行时数据库结构以 `backend/src/main/resources/db/migration/` 中按版本执行的 SQL 为唯一事实来源；本目录解释领域归属、关键约束和演进规则。
+LearnPlatform 使用 MySQL 8，结构由 Flyway 迁移管理。运行时数据库结构以 [迁移目录](../../../backend/src/main/resources/db/migration/) 中按版本执行的 SQL 为唯一事实来源；本目录解释领域归属、关键约束和演进规则。
 
 ## 领域导航
 
@@ -12,17 +12,8 @@ LearnPlatform 使用 MySQL 8，结构由 Flyway 迁移管理。运行时数据�
 | [AI 与治理域](ai-and-governance.md) | AI 调用、资产、变式训练、配额和提醒 |
 | [迁移策略](migration-policy.md) | Flyway 规则、约束和验证方式 |
 
-## 当前基线
-
-- 数据库：MySQL 8。
-- 迁移：V1–V85。
-- 基线迁移：`V1__baseline.sql`。
-- 最新迁移：`V85__persist_private_exam_source_files.sql`。
-- 逻辑外键为主，跨聚合一致性由 Service 事务和数据库唯一约束共同保证。
-
 ## 维护规则
 
-1. 禁止通过修改历史迁移改变已发布结构。
-2. 表或索引变化必须新增 Flyway 迁移，并同步对应领域文档。
-3. 文档不复制完整 DDL，避免与迁移形成两份结构事实。
-4. `scripts/check-docs.py` 会核对迁移中创建的表是否进入数据库文档。
+迁移编写、存量兼容和外键取舍统一见[迁移策略](migration-policy.md)。表、索引或存储语义变化时，
+更新对应领域文档；迁移目录提供实际版本与 SQL，不另行维护最新版本或逐版本变化表。
+文档只说明约束与语义，不复制完整 DDL。`scripts/check-docs.py` 核对迁移创建的表是否已有文档入口。

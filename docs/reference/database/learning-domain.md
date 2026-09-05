@@ -2,199 +2,86 @@
 
 ## 用户与课程
 
-| 表 | 首次迁移 | 职责 | 关键约束 |
-|---|---|---|---|
-| `user` | V1，V20 扩展 | 用户名、验证邮箱、角色、状态、认证版本和 AI 日配额 | 用户名和非空邮箱唯一；密码只保存 BCrypt 哈希 |
-| `email_verification` | V20 | 注册邮箱验证码、验证票据与尝试状态 | 验证码和票据只保存 HMAC；票据只能消费一次 |
-| `password_reset_token` | V20 | 一次性密码重置令牌 | 只保存令牌 HMAC；过期或已使用令牌不可重复消费 |
-| `course` | V1 | 课程元数据和排序 | 删除前检查题目与知识点引用 |
-| `knowledge_point` | V1 | 树形知识点 | `parent_id` 表达同课程内父子关系 |
-| `user_course` | V21 | 用户加入个人课程库的关系 | 用户与课程组合唯一；加入课程不表示学习或掌握 |
-| `course_learning_event` | V22 | 跨 AI 教学与试卷入口的课程学习事实 | `(user_id, course_id, idempotency_key)` 唯一；事件追加且带版本、来源和发生时间 |
-| `tutor_content` | V24 | 已审查、版本化的 Tutor 教学内容和检查定义 | `(content_key, content_version)` 唯一；正确选项不返回客户端 |
-| `tutor_session` | V24，V80 扩展 | 用户课程 Tutor 会话、学习证据聚合快照及首次检查结果 | `session_key` 唯一；会话归属用户、课程与知识点 |
-| `course_stage_assessment` | V86，V89 扩展 | 用户课程阶段测评会话、选题策略、知识点范围与汇总结果 | `(user_id, course_id, active_session_key)` 限制一个进行中会话；完成时活动键清空 |
-| `course_stage_assessment_question` | V86，V87/V88/V91 扩展 | 测评题目、答案、解析、来源与知识点快照及用户作答 | 会话内原题和排序均唯一；提交前不通过 API 暴露答案快照 |
+| 表 | 职责 | 关键约束 |
+|---|---|---|
+| `user` | 用户名、验证邮箱、角色、状态、认证版本和 AI 日配额 | 用户名和非空邮箱唯一；密码只保存 BCrypt 哈希 |
+| `email_verification` | 注册邮箱验证码、验证票据与尝试状态 | 验证码和票据只保存 HMAC；票据只能消费一次 |
+| `password_reset_token` | 一次性密码重置令牌 | 只保存令牌 HMAC；过期或已使用令牌不可重复消费 |
+| `course` | 课程元数据和排序 | 删除前检查题目与知识点引用 |
+| `knowledge_point` | 树形知识点 | `parent_id` 表达同课程内父子关系 |
+| `user_course` | 用户加入个人课程库的关系 | 用户与课程组合唯一；加入课程不表示学习或掌握 |
+| `course_learning_event` | 跨 AI 教学与试卷入口的课程学习事实 | `(user_id, course_id, idempotency_key)` 唯一；事件追加且带版本、来源和发生时间 |
+| `tutor_content` | 已审查、版本化的 Tutor 教学内容和检查定义 | `(content_key, content_version)` 唯一；正确选项不返回客户端 |
+| `tutor_session` | 用户课程 Tutor 会话、学习证据聚合快照及首次检查结果 | `session_key` 唯一；会话归属用户、课程与知识点 |
+| `course_stage_assessment` | 用户课程阶段测评会话、选题策略、知识点范围与汇总结果 | `(user_id, course_id, active_session_key)` 限制一个进行中会话；完成时活动键清空 |
+| `course_stage_assessment_question` | 测评题目、答案、解析、来源与知识点快照及用户作答 | 会话内原题和排序均唯一；提交前不通过 API 暴露答案快照 |
 
-V21 为课程和知识点增加可空的 `content_key` 与 `content_source`。`content_key` 用于在
-AiStu、Web 后端和后续内容导入之间保持稳定引用；存量平台内容可以继续使用空键。
-`content_source` 记录内容来源，不代表审核结论或权威等级。V23 为需要分批迁入的原子
-知识增加可空的 `content_version` 和 `content_review_status`；后者只保存迁入时的审查
-事实，不能替代 Web 端的发布或权限状态。`ods-array-size-capacity`、
-`ods-arraystack-insertion`、`ods-arraystack-removal`、`ods-arraystack-resize`、
-`ods-arraystack-amortized-resize`、`ods-arraystack-performance` 与
-`ods-fastarraystack-block-copy`、`ods-arrayqueue-representation`、`ods-arrayqueue-enqueue` 与
-`ods-arrayqueue-dequeue`、`ods-arrayqueue-resize`、`ods-arrayqueue-performance` 均绑定父目录“栈、队列和数组”，
-版本为 1、迁入时状态为 `REVIEWED`。
+### 内容标识与教学存储
 
-`course_learning_event` 只记录已加入个人课程库后产生的课程内事实；普通题库练习不会
-被自动解释为课程进度。首版映射练习、复习、考试逐题作答与结构化 AI 变式题的首次判分，
-不保存用户原始答案或把事件直接折算为掌握度。
+课程和知识点的可空 `content_key` 提供跨端稳定引用，存量内容可以继续为空；`content_source` 记录来源，
+不代表审核结论。`content_version` 与 `content_review_status` 保存迁入时的版本和审查事实，
+不能替代 Web 发布或访问权限。
 
-V80 为 `tutor_session` 增加 `learning_context_json`。开始 Tutor 会话时，服务端从目标知识点及其
-同课程祖先目录所关联的题目中聚合试卷学习作答与错答、成功的试卷 AI 辅导、当前未掌握错题、到期
-复习和历史复习作答，并把计数与最近时间固化为会话快照。该字段不保存原始答案、正确答案或 AI 输出，
-也不替代 `course_learning_event`、错题和复习计划等原始事实。
+`tutor_content.check_json` 保存检查题的私有正确选项与对应解释；`lesson_json` 保存教学内容，
+其中的 `visualization` 只保存已注册课件的受限场景参数，不保存脚本、动态组件或用户运行态。
+路径用稳定 `contentKey` 引用内容，访问边界与参数
+定义见[课程与 Tutor API](../api/learning-content.md#tutor-会话)及[受限课件](../api/learning-content.md#受限课件)。
+教学批次与算法范围见既有[迁移历史](../../project/changelog/2026-09.md#aistu-资源迁移历史快照)，
+数据库文档不重复维护课程内容清单。
 
-V86 增加课程阶段测评会话和逐题快照。创建时仅从当前用户可见的课程客观题中选取题目，并固化题干、
-选项、正确答案和解析，避免测评期间原题变更破坏判分一致性。完成事务显式将活动键写为 `NULL`，再把
-逐题正误投影到错题、复习计划和课程学习事件；已完成会话按 `(user_id, course_id, complete_time)` 读取
-本人分页历史和最近摘要，题目快照保存判分与复盘依据，不替代原始题目或课程事件。
+### 课程事实与 Tutor 快照
 
-V87 为正式 `question` 增加可空母题引用，并为测评题快照固化来源类型和母题 ID。审查通过的变式题在
-首次创建及版本快照中即标记为 `AI_GENERATED`；阶段测评仍只查询当前课程已发布正式题，因此待审、
-驳回和其他课程的变式题不会越过发布边界。
+`course_learning_event` 以用户、课程和来源幂等键唯一标识一条可追加事实，保留事件版本、入口与业务时间。
+只有已加入课程库后的相关作答才投影为课程事件，不保存原始答案，也不存储由事件推断的掌握度。
+加入课程、推荐目标与前端显示进度均不直接创建作答事实。
 
-V88 为测评题增加 `source_category_snapshot`，按 `OFFICIAL_EXAM`、`MANUAL`、`USER_PRIVATE`、
-`AI_GENERATED` 固化展示类别。官方原题以创建时是否被已发布、来源核验的官方试卷引用为准；AI 和私有
-来源优先保持自身边界。迁移会对既有快照执行一次分类回填，之后历史统计不再读取当前正式题来源。
+`tutor_session.learning_context_json` 在会话开始时固化目标知识点及同课程祖先目录关联的试卷学习、
+试卷 AI、错题与复习计数及最近时间。它不保存原始答案、正确答案或 AI 输出，不替代原始业务记录。
+聚合快照只服务于该次教学上下文；接口字段和 Tutor 进度语义见[课程概览](../api/learning-content.md#课程概览)
+与[Tutor 会话](../api/learning-content.md#tutor-会话)。
 
-V89 为 `course_stage_assessment` 增加可空的 `target_knowledge_point_id` 和
-`target_knowledge_point_name_snapshot`。只有传入知识点范围创建时才会写入：服务端在选题前独立校验
-知识点属于当前课程且 `content_review_status = 'REVIEWED'`，候选 SQL 同时按课程、可见性、发布状态、
-客观题题型和知识点关联过滤；名称随会话固化，之后知识点改名不重写历史。
+### 阶段测评存储与事务
 
-V90 将 2026 真题中两道线性表客观题（顺序表表头插删移动、单链表结点遍历）追加关联到已审查的
-`cs408-sequential-list-insert-delete` 与 `cs408-singly-linked-list` 原子知识点，使课程总览中的
-已审查知识点能够发起限定范围的阶段测评；原顶级知识点关联保持不变，关联幂等且只追加不删除。
+- `course_stage_assessment` 按用户和课程隔离。创建事务锁定个人课程关系，通过 `active_session_key`
+  唯一约束保护单个进行中会话；完成时显式置 `NULL`，释放下一次创建所需的活动键。
+- `course_stage_assessment_question` 在创建时固化题干、选项、私有答案、解析、来源类型与可空母题 ID。
+  判分与复盘读取快照，避免原题后续变更重写既有结果。
+- `source_category_snapshot` 保存 `OFFICIAL_EXAM`、`MANUAL`、`USER_PRIVATE` 或 `AI_GENERATED`。
+  AI、私有来源优先保持自身类别；官方类别取决于创建时是否被已发布且来源核验的官方试卷引用。
+  历史统计不重新读取正式题来源；存量分类回填规则以相应迁移为准。
+- 会话可空的 `target_knowledge_point_id` 与 `target_knowledge_point_name_snapshot` 保存限定范围，
+  未限定时为空；逐题 `knowledge_points_json` 固化关联知识点 ID 和名称，改名或重新关联不重写历史。
+- 完成事务保存逐题结果、释放活动键并投影到错题、复习计划与课程事件；重复完成不重复写入。
+  已完成记录按 `(user_id, course_id, complete_time)` 提供本人历史与最近摘要。
 
-V91 为 `course_stage_assessment_question` 增加 `knowledge_points_json` 知识点归属快照。创建测评时为
-每题固化其关联知识点的 ID 与名称列表，复盘按此展示；与原题后续知识点关联变更无关，不重写历史。
-
-V25 为 `ods-arraystack-insertion` 的 `tutor_content.lesson_json` 增加已审查的
-`ARRAY_STACK_INSERTION` v1 参数定义。它只包含容量、初始槽位和插入参数；课件动画状态由
-前端固定渲染器从这些数据推导，不在数据库中存放脚本或用户运行态。
-
-V26 在同一已审查内容中增加前置与后续路径提示。它们只能在 Tutor 首次服务端判分后返回：
-答错提示“元素数量与数组容量”，答对提示“ArrayStack 的操作复杂度”。两者均不创建独立
-`tutor_content` 或可访问路由，避免把尚未迁入、尚未单独审查的知识误表示为已开放教学。
-
-V27 迁入 ArrayStack 按位删除的独立 Tutor 内容与理解检查。理解检查的正确选项和正误解释
-均保存在已审查的 `check_json` 中；服务端只在判分结果中返回对应解释，不能将某一内容的
-固定解释复用于其他内容。
-
-V28 迁入“元素数量与数组容量”的独立 Tutor 内容与理解检查。它以 `n`、`length(a)` 和
-`0 ≤ n ≤ length(a)` 为审查范围，不把空闲槽位解释为逻辑元素；插入与删除内容中的同名
-前置提示同时更新为可从课程目录进入的已迁入内容。
-
-V29 迁入“ArrayStack 的容量调整”的独立 Tutor 内容、理解检查和 `ARRAY_STACK_RESIZE` v1
-受限课件定义。课件只保存旧容量和有效元素；固定客户端渲染器推导 `max(1, 2n)` 的新容量与
-复制状态，不存储脚本、动态组件或用户运行态。内容只陈述单次 `resize` 的 `O(n)` 成本，摊还
-分析在后续 V30 作为独立知识迁入。
-
-V30 迁入“ArrayStack 调整容量的摊还成本”的独立 Tutor 内容和理解检查。该内容只陈述从空
-结构开始的 `m` 次 `add/remove` 中全部 `resize` 总成本为 `O(m)`，并明确单次触发仍可能为
-`O(n)`；它不创建可执行课件，也不将结论扩展为尚未迁入的完整操作复杂度教学。
-
-V31 迁入“ArrayStack 的操作复杂度”的独立 Tutor 内容和理解检查。它只汇总 `get/set` 的
-`O(1)` 最坏时间、忽略 `resize` 的按位 `add/remove` 成本 `O(1+n-i)`，以及尾端 push/pop 的
-`O(1)` 摊还时间；单次尾端更新仍可能因 resize 耗时 `O(n)`，不将摊还界写成最坏界。
-
-V32 迁入“FastArrayStack 的批量复制优化”的独立 Tutor 内容和理解检查。它只陈述批量复制
-可以替代连续区间的显式循环并降低常数开销；由于处理元素数不变，插入、删除和 `resize` 的
-渐近时间复杂度不变，且不承诺固定加速倍数。
-
-V33 迁入“ArrayQueue 的循环数组表示”的独立 Tutor 内容、理解检查与
-`ARRAY_QUEUE_REPRESENTATION` v1 受限课件定义。配置只包含容量、队首物理下标和逻辑元素序列；
-固定客户端渲染器据此回放 `a[(j+k) mod capacity]` 的回绕映射，不存储脚本、动态组件或用户运行态。
-内容不延伸至入队、出队、扩缩容或其复杂度结论。
-
-V34 迁入“ArrayQueue 的入队”的独立 Tutor 内容、理解检查与 `ARRAY_QUEUE_ENQUEUE` v1 受限课件
-定义。配置只包含容量、队首物理下标、既有逻辑元素和新元素；固定客户端渲染器据此回放容量充足时
-`a[(j+n) mod capacity]` 的队尾写入及 `n` 增加，不存储脚本、动态组件或用户运行态。内容不延伸至
-满队扩容、出队或其复杂度结论。
-
-V35 迁入“ArrayQueue 的出队”的独立 Tutor 内容、理解检查与 `ARRAY_QUEUE_DEQUEUE` v1 受限课件
-定义。配置只包含容量、队首物理下标和非空逻辑元素；固定客户端渲染器据此回放读出 `a[j]`、
-`j = (j+1) mod capacity` 与 `n` 减一，不存储脚本、动态组件或用户运行态。内容不延伸至空队列、
-缩容或其复杂度结论。
-
-V36 迁入“ArrayQueue 调整容量时的线性化复制”的独立 Tutor 内容、理解检查与
-`ARRAY_QUEUE_RESIZE` v1 受限课件定义。配置只包含旧数组容量、队首物理下标和跨界的非空逻辑元素；
-固定客户端渲染器据此回放 `b[k] = a[(j+k) mod oldCapacity]` 的 FIFO 复制与 `j = 0`，不存储脚本、
-动态组件或用户运行态。内容不陈述扩缩容触发条件、特定容量策略的合理性或摊还复杂度。
-
-V37 迁入“ArrayQueue 的操作复杂度”的独立 Tutor 内容和理解检查。它区分忽略 `resize` 的入队、出队
-`O(1)` 时间，与从空队列开始的 `m` 次更新中全部 `resize` 的 `O(m)` 总成本；因此更新为 `O(1)`
-摊还时间，但一次实际 `resize` 仍可能为 `O(n)`。本切片不创建课件，也不把摊还界误写成最坏界。
-
-V38 将五个已审查 ArrayQueue 内容收敛为模块级学习路径：正确理解后按循环数组表示、入队、出队、
-线性化复制和操作复杂度依次继续，相关内容答错时可回到已审查前置。路径只保存稳定 `contentKey`、
-标题和说明；服务端只有在目标属于当前课程且状态为 `REVIEWED` 时才返回可导航的知识点 ID。
-
-V39 迁入“ArrayDeque 的循环数组表示与访问”的独立 Tutor 内容、理解检查与
-`ARRAY_DEQUE_REPRESENTATION` v1 受限课件定义。配置只包含容量、逻辑起点物理下标、逻辑元素和一个
-范围内的访问下标；固定客户端渲染器回放 `a[(j+i) mod capacity]` 与 `get(i)` 的直接访问，不存储脚本、
-动态组件或用户运行态。内容明确不延伸到插入、删除时向较近端搬移、resize 或复杂度。
-
-V40 迁入“ArrayDeque 向较近端搬移”的独立 Tutor 内容、理解检查与
-`ARRAY_DEQUE_FRONT_SHIFT_INSERT` v1 受限课件定义。配置只表示插入点靠近逻辑前端的一条固定分支；
-固定客户端渲染器只回放 `j` 左移回绕、前缀搬移和写入，不保存脚本、动态组件或用户运行态。内容不将
-此分支误写为固定搬移后缀，也不延伸到尾端分支、删除、resize 或复杂度汇总。
-
-V41 迁入“ArrayDeque 的操作复杂度”的独立 Tutor 内容和理解检查，并将三个已审查内容收敛为模块级
-学习路径：循环数组表示与访问、向较近端搬移、操作复杂度。它区分 `get/set` 的 `O(1)`、忽略 resize 时
-`add/remove(i)` 的 `O(1 + min(i, n-i))`，以及从空结构开始的 `m` 次更新中 resize 的 `O(m)` 总成本；
-单次 resize 仍可能为 `O(n)`，不能被摊还结论覆盖。
-
-V42–V46 迁入 DualArrayDeque 的完整独立 Tutor 模块：双栈表示、按位更新、三倍失衡下的再平衡、
-再平衡摊还成本和操作复杂度。V42 的 `DUAL_ARRAY_DEQUE_REPRESENTATION` v1 只保存受限的 `front`、
-`back` 与访问下标，固定客户端回放前缀逆序和后缀正序映射；V44 的
-`DUAL_ARRAY_DEQUE_BALANCE` v1 只接受满足三倍失衡的两栈状态，并按逻辑序列回放重建。其余内容不创建
-可执行课件。五项内容形成已审查路径：表示、更新、再平衡、摊还成本、复杂度；服务端仍逐次验证目标
-属于课程且为 `REVIEWED`，正确选项只保留在服务端 `check_json`。
-
-V47–V52 迁入 RootishArrayStack 的完整独立 Tutor 模块：递增块布局、下标到块映射、按位插入删除、
-块增长与收缩、浪费空间界和时间空间复杂度。V47 的 `ROOTISH_ARRAY_STACK_LAYOUT` v1 只包含满足
-容量 1、2、…递增不变量的固定块数组，客户端仅回放布局和总容量；其他内容不创建可执行课件。六项内容
-形成受限学习路径，正确选项仍只保留在服务端，路径目标在服务端验证课程归属与 `REVIEWED` 状态。
-
-V53–V58 先收束数组式线性表的布局权衡，再迁入线性表基础模块：List ADT、顺序表连续存储、顺序表插删、
-单链表表示和链表结点插删。V55 的 `SEQUENTIAL_LIST_STORAGE` v1 只保存固定首地址、元素宽度、元素与访问
-下标，客户端固定回放连续地址计算；其余内容不创建可执行课件。线性表路径从抽象定义依次进入顺序存储、
-后缀搬移、单链表表示与安全指针改接，正确选项仍只存在服务端 `check_json`。
-
-V59–V63 迁入线性表进阶模块：双链表、循环链表、单链表逆置、有序链表归并以及顺序表与链表的取舍。
-V61 的 `LINKED_LIST_REVERSAL` v1 只保存 2–6 个固定元素，客户端逐步回放保存后继、改写当前边和推进
-`prev`/`cur`；不接收用户指针、脚本或通用操作。其余内容不创建可执行课件。路径分别明确双向成对不变量、
-循环终止条件、稳定归并与复杂度前提，正确选项仍只存在服务端 `check_json`。
-
-V64–V67 迁入栈基础模块：LIFO 语义、顺序栈、链栈和合法出栈序列。内容明确顺序栈 `top` 的两种可用
-约定不能混用，链栈以单链表表头保证常数时间操作，序列判断通过辅助栈模拟而不是排序猜测；本模块不新增
-可执行课件，正确选项仍只存在服务端 `check_json`。
-
-V68–V70 迁入栈应用模块：括号匹配、表达式转换与求值、递归与调用栈。V70 的
-`FACTORIAL_CALL_STACK` v1 只保存 2–6 的固定阶乘起点，客户端回放活动记录压栈、基例和逐层返回；不接收
-函数体、表达式或脚本。内容同时保留扫描结束判空、二元运算符先弹右操作数和最内层调用先返回的边界。
-
-V71–V74 迁入队列基础模块：FIFO 语义、循环队列数组表示、循环队列状态和链队列。V72/V73 复用既有
-`ARRAY_QUEUE_REPRESENTATION` v1 受限课件回放跨数组末端的逻辑顺序；内容明确 `rear` 语义需统一、
-牺牲槽位约定的判空判满公式，以及链队列删除最后结点后必须重置尾指针。
+创建范围、选题顺序、公开响应与提交条件由[阶段测评 API](../api/learning-content.md#阶段测评)维护。
+AI 生成题的批准发布行为见[管理 API](../api/admin-governance.md#ai-变式题审查)；正式题从创建和首个
+版本快照起即保留 `AI_GENERATED` 及母题来源，不能由测评写入绕过内容发布。
 
 ## 题目
 
-| 表 | 首次迁移 | 职责 | 关键约束 |
-|---|---|---|---|
-| `question` | V1，V8/V87 扩展 | 题干、题型、答案、解析、来源、可空母题和复审状态 | 正式题目受试卷引用和发布状态保护 |
-| `question_option` | V1 | 选择题选项及正确标记 | 用户端 DTO 不得暴露正确标记 |
-| `question_knowledge_point` | V1 | 题目与知识点多对多关联 | 题目和知识点组合不能重复 |
-| `question_version` | V16 | 正式题目修改前后的版本快照 | 版本只追加，不覆盖历史 |
-| `question_review_record` | V8 | 正式题目定期复审记录 | 记录审查人、结论和时间 |
-| `question_correction_report` | V15 | 用户纠错及管理员处理状态 | 状态变化需要记录处理人和结果 |
+| 表 | 职责 | 关键约束 |
+|---|---|---|
+| `question` | 题干、题型、答案、解析、来源、可空母题和复审状态 | 正式题目受试卷引用和发布状态保护 |
+| `question_option` | 选择题选项及正确标记 | 用户端 DTO 不得暴露正确标记 |
+| `question_knowledge_point` | 题目与知识点多对多关联 | 题目和知识点组合不能重复 |
+| `question_version` | 正式题目修改前后的版本快照 | 版本只追加，不覆盖历史 |
+| `question_review_record` | 正式题目定期复审记录 | 记录审查人、结论和时间 |
+| `question_correction_report` | 用户纠错及管理员处理状态 | 状态变化需要记录处理人和结果 |
 
 ## 收藏与评论
 
-| 表 | 首次迁移 | 职责 | 关键约束 |
-|---|---|---|---|
-| `user_favorite_question` | V1 | 用户收藏题目 | 用户与题目组合唯一 |
-| `question_comment` | V4 | 题目评论 | 删除和可见性受作者或管理员权限控制 |
-| `comment_like` | V4 | 评论点赞 | 用户与评论组合唯一 |
+| 表 | 职责 | 关键约束 |
+|---|---|---|
+| `user_favorite_question` | 用户收藏题目 | 用户与题目组合唯一 |
+| `question_comment` | 题目评论 | 删除和可见性受作者或管理员权限控制 |
+| `comment_like` | 评论点赞 | 用户与评论组合唯一 |
 
 ## 投稿
 
-| 表 | 首次迁移 | 职责 | 关键约束 |
-|---|---|---|---|
-| `question_submission` | V7 | 用户投稿、AI 辅助结果和审核状态 | 投稿与正式题目分离；入库必须显式确认 |
+| 表 | 职责 | 关键约束 |
+|---|---|---|
+| `question_submission` | 用户投稿、AI 辅助结果和审核状态 | 投稿与正式题目分离；入库必须显式确认 |
 
 投稿通过审核后，由业务事务创建正式 `question`、选项和知识点关系；原投稿继续保留来源和审核记录。
 

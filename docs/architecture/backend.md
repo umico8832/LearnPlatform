@@ -81,88 +81,18 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
 
 ## 模块边界
 
-- `LearningDiagnosisService` 是学习诊断兼容门面，只编排数据快照、知识点与课程指标、
-  错因汇总、学习习惯、题目推荐和 AI 建议；各计算与外部调用由对应协作者承担。
-- `LearningDiagnosisDataLoader` 集中加载练习、错题、知识点及题目—知识点关联事实。
-- `LearningDiagnosisKnowledgeAnalyzer`、`LearningDiagnosisErrorPatternAnalyzer` 和
-  `LearningDiagnosisHabitAnalyzer` 分别负责知识掌握、错因模式与学习习惯计算。
-- `LearningDiagnosisAiAdviceService` 负责诊断提示词调用和流式输出；配额与调用审计委托
-  `AiCallGovernanceService`。
-- `LearningQuestionErrorAnalysisService` 负责单题错因分析。
-- `SimilarQuestionRecommendationService` 负责相似题候选与评分。
-- `CourseOverviewService` 只编排课程学习事件、错题、到期复习等核心事实；
-  `CourseOverviewTargetService` 负责 Tutor 进度和统一下一目标排序，
-  `CourseOverviewAssessmentService` 负责最近一次已完成阶段测评的事实摘要。
-- `PracticeService` 是练习接口兼容门面；题目查询与脱敏、历史统计查询和事务判分写入
-  分别由 `PracticeQuestionQueryService`、`PracticeHistoryService` 与
-  `PracticeAnswerService` 承担。
-- `StatisticsService` 负责用户概览、每日趋势、课程统计和管理端平台概览；月度练习、错题、
-  考试、复习与学习效果聚合由独立的 `LearningReportService` 承担，并继续使用
-  `learningReport` 缓存边界。
-- `SpacedRepetitionService` 负责复习计划写事务和 SM-2 调度；答题判分、练习事实与错题同步由
-  `ReviewAnswerRecordingService` 承担，待复习筛选、统计聚合、卡片 VO 组装与 AI 复习上下文
-  由只读的 `ReviewScheduleQueryService` 编排。卡片题目 / 课程批量补全与展示组装位于
-  `ReviewScheduleCardViewService`，新卡片、困难和已掌握阈值由 `service/review/ReviewSchedulePolicy`
-  统一定义。
-- `ExamPaperLearningService` 负责试卷学习会话生命周期、逐题判分和学习事实写入；
-  `ExamPaperLearningContextService` 集中校验试卷可见性、发布状态、课程库关系与题目课程归属，
-  并按试卷顺序读取题目和选项。
-- `ExamPaperService` 只编排管理端试卷创建、更新、删除和发布事务；列表、访问控制与详情展示由
-  `ExamPaperViewService` 承担，类型、来源、题号和主观题评分点发布校验由
-  `ExamPaperValidationService` 承担。
-- `ExamService` 是用户考试 API 的兼容门面；考试会话开始 / 恢复、提交锁定与超时、逐题判分和学习事实
-  写入、结果展示分别由 `ExamSessionService`、`ExamSubmissionService`、
-  `ExamAnswerSubmissionService` 与 `ExamRecordViewService` 承担。
-- `CourseStageAssessmentService` 只编排阶段测评开始、提交和历史查询；题目快照、错题 / 复习 / 课程事件
-  回写和展示模型分别由 `CourseStageAssessmentSnapshotService`、
-  `CourseStageAssessmentLearningFactService` 与 `CourseStageAssessmentViewService` 承担。
-- `PrivateExamImportService` 负责来源校验、所有者来源保存和确认事务；有限格式解析与客观题校验由
-  `PrivateExamImportParserService` 承担，私有试卷、题目、选项和试卷关系持久化由
-  `PrivateExamConfirmedPaperService` 承担。
-- `PrivateExamDraftService` 只编排答案不完整资料的草稿创建、逐题复核和确认事务；草稿来源、题目、
-  JSON 与展示模型由 `PrivateExamDraftDataService` 管理，受配额治理的 AI 答案建议由
-  `PrivateExamDraftAnswerService` 管理。
-- `service/` 顶层只放 Spring 业务组件；无状态策略与聚合器进入明确领域子包。阶段测评
-  快照聚合位于 `service/assessment/`，题目访问策略与重复题文本检测算法位于
-  `service/question/`；跨 Service 与 Controller 传递的私有试卷原文件值对象位于
-  `dto/exam/`。
-- `AdaptivePracticeService` 负责读取练习事实、候选题和组装题目展示；难度权重、数量分配和推荐摘要
-  由 `service/question/AdaptivePracticePolicy` 以无状态策略形式计算。
-- `QuestionService` 只保留公开题目查询和题目维护门面；展示模型富化与重复题视图组装由
-  `QuestionViewService` 承担，创建、更新、删除、版本记录和已发布试卷保护由
-  `QuestionMutationService` 承担。无状态的 `QuestionDuplicateDetector` 只负责文本归一化、
-  相似度计算和重复题分组，不访问持久化层、不处理权限，也不作为 Spring 业务组件注册。
-- `QuestionSubmissionService` 负责投稿、查询、审核与知识点标注应用；
-  `QuestionSubmissionImportService` 独立承担已审核投稿进入正式题库的事务，选项 JSON 规则和
-  投稿展示富化分别由 `QuestionSubmissionOptionService`、`QuestionSubmissionViewService` 复用。
-- `SubmissionAiQualityService` 只负责投稿读取、Prompt、受治理 AI 调用和审核意见编排；结构化响应解析、
-  异常输出降级和无 AI 基础规则检查由 `SubmissionQualityResultService` 承担。
-- `MarkdownQuestionParser` 只编排 Markdown 题目导入事务与失败清理；文本语法解析、题型推断、
-  选项和答案归一化由无持久化依赖的 `MarkdownQuestionContentParser` 承担。
-- `QuestionImportExportService` 负责 Excel 流读写、逐行入库和失败清理；题型与选项单元格解析、
-  题目导出行组装由 `QuestionExcelRowService` 统一处理。
-- `QuestionLearningAssetService` 负责编排 AI 学习资产的同步 / 流式生成、缓存与输出；
-  `QuestionAssetContextService` 只读取题目、选项、知识点和课程并组装模型上下文；
-  `service/ai/QuestionAssetPromptFactory` 只维护七类无状态 Prompt 模板，不读取业务数据、不调用
-  AI Provider，也不注册为 Spring 组件。
-- `AiAssetEngagementService` 负责用户侧资产查看、当前缓存版本的变式训练状态，以及向
-  `AiVariantQuestionService` 委托结构化变式题判分。
-- `AiCallGovernanceService` 统一负责用户每日配额、当日用量、调用审计、Token / 成本、
-  Trace ID 以及提示词和模型配置指纹；AI 业务服务只保留提示词与内容生成职责，并直接依赖
-  该治理边界，不通过宽泛的 `AiService` 间接复用。
-- `AiService` 只作为既有 AI Controller 与试卷学习入口的兼容门面；题目辅导、复习建议、知识点总结
-  和带治理审计的同步 / 流式 Provider 调用分别由 `AiQuestionAssistanceService`、
-  `AiReviewSuggestionService`、`AiKnowledgeSummaryService` 与 `AiInvocationService` 承担。
-- `AiUsageService` 只负责管理端 AI 用量总览，包括全局、功能、模型、每日、用户和失败调用聚合；
-  `AiUsageReportService` 负责等长周期对比、异常提醒推导与持久化、通知和确认事务。
-- `AiExamGenerationService` 只编排智能组卷预览与创建；候选事实加载、难度 / 知识点均衡选题、预览展示
-  和试卷创建分别位于 `service/exam` 下的独立协作者。
-- `AiVariantQuestionService` 负责结构化变式题私有答案与判分。
-- `AiLearningEffectService` 只读聚合同题、变式训练和资产类型观察事实，不承担用户交互写事务；
-  共享知识点跨题窗口统计与总体结论分别由 `AiLearningCrossQuestionService`、
-  `AiLearningEffectConclusionService` 承担。
+| 业务域 | 主要入口 | 责任边界 |
+|---|---|---|
+| 课程与教学 | `CourseLibraryService`、`CourseStageAssessmentService` | 课程关系、教学状态与测评使用同一课程事实；概览读取事实，不制造掌握度 |
+| 练习与复习 | `PracticeService`、`SpacedRepetitionService` | 查询与展示组装同判分写事务分离，学习事实回写遵循[数据流](data-flow.md) |
+| 考试与试卷学习 | `ExamService`、`ExamPaperLearningService` | 独立会话状态机与提交语义，共享题源与学习事件；事务见[考试数据](../reference/database/assessment-domain.md) |
+| 私有导入与草稿 | `PrivateExamImportService`、`PrivateExamDraftService` | 解析、人工复核和确认持久化分离，所有者隔离贯穿来源文件与草稿 |
+| 内容与投稿 | `QuestionService`、`QuestionSubmissionService` | 查询富化与修改事务分离；审核和正式入库是独立业务动作 |
+| AI 与观察 | [AI 子系统](ai-system.md) | 生成调用统一治理；查看和真实判分负责写事实，效果统计只读聚合 |
 
-拆分以独立业务责任为依据，不为了行数机械增加接口和实现类。
+无状态解析、选题策略、聚合与展示转换放入明确领域子包；需要读取事实的协作者保留在业务层，
+访问校验和事务由业务服务执行。跨层值对象使用 DTO，不为拆分引入无意义的包装接口。
+组件内部协作关系以源码为准，架构只维护模块入口与不应越过的边界。
 
 ## 质量门禁
 

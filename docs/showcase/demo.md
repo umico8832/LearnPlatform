@@ -151,10 +151,10 @@
 
 ## 真实截图
 
-隔离 E2E 环境生成截图：
+按[测试策略的 E2E 生命周期](../development/testing.md#8-浏览器-e2e-环境)启动隔离环境，完成后按同节清理。
+截图专用命令：
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --force-recreate --wait
 cd frontend
 npm run screenshots:demo
 ```

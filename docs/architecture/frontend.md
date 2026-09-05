@@ -54,50 +54,11 @@ frontend/admin/   # 独立管理端 HTML 入口
 - `views/` 负责学习端页面级数据编排、路由参数和业务状态；管理端页面统一位于
   `admin/views/`，不得回流到学习端页面目录。
 - `components/` 负责可复用交互和展示，不直接复制页面级请求逻辑。
-- `components/course/CourseOverviewContent` 自包含课程空间的加载、错误、空数据、目录、学习工具和学习事实
-  展示；`CourseOverviewView` 只负责路由、真实 API、学习入口与阶段测评状态机。
-- `components/QuestionVisualInteractive` 只处理加载、解析失败回退与空状态；可视化类型分派、图表和
-  Mermaid 渲染、树结构递归展示分别位于 `components/question-visual/`，内容解析保持为纯函数。
-- `components/QuestionLearningAsset` 负责编排资产读取、生成和变式训练接口；
-  `components/question-learning/QuestionAssetFeedback` 自包含单类资产的反馈读取、评价和补充说明，
-  `useAssetViewTracking` 隔离 IntersectionObserver 生命周期、去重与可见性记录，资产页签元数据、内容与
-  变式训练状态应用 / 重置位于 `components/question-learning/assetState`。
-- `components/layout/useResponsiveSidebar` 管理学习端布局的视口监听与移动侧栏状态；
-  `views/exam/useExamCountdown` 管理服务端权威时间偏移、倒计时和卸载清理，页面只处理超时业务结果。
-- `components/statistics/` 承载学习诊断的概览、错因、推荐和详情弹窗；诊断 View 继续
-  负责 API、SSE、路由与练习会话编排，展示组件只接收类型化数据并发出用户意图。
-- `components/review/ReviewSessionPanel` 自包含逐卡答题、正确性判定、会话进度和完成状态；
-  `ReviewView` 负责到期卡片装载、统计、计划维护与 AI 建议，并在答题事实产生后刷新统计。
-- `components/practice/SimilarQuestionsDialog` 自包含相似题检索、完整题目补全、练习会话写入和导航；
-  `WrongQuestionView` 只负责错题筛选、掌握度维护与错题重练入口。
-- `components/exam/` 承载学习端考试页的独立业务闭包：`ExamRecordList` 自包含记录查询、
-  分页、状态 / 分数映射、响应式展示和记录导航，`PrivateExamSourceManager` 自包含私有来源
-  查看、原文件分页、下载和关联删除，`PrivateExamDraftReview` 自包含 AI 答案建议、人工逐题
-  复核和草稿原文件下载；`ExamListView` 与 `PrivateExamImportDialog` 分别保留列表和导入流程
-  编排，`privateExamImportRequests` 隔离文本 / PDF / DOCX 的预览、确认和建草稿请求分派，通过类型化
-  属性、事件与少量公开命令连接这些闭包。
-- `admin/views/ai-usage/` 承载 AI 运营报告、学习效果观察、样本结构和调用明细展示；
-  `AiUsageView` 只编排周期、接口加载、提醒确认与图表生命周期。
-- `admin/views/exam/` 承载试卷管理中的独立业务对话框；`ExamPaperEditorDialog` 自包含手工试卷表单、
-  题目选择和保存生命周期，表单映射与官方来源发布约束位于纯模型 `examPaperEditorModel`；智能组卷组件
-  自行管理规则表单、预览和创建生命周期。`ExamManage` 只负责列表命令、打开入口和保存后的刷新，题型与
-  试卷来源标签映射位于纯展示模块 `examManagePresentation`。
-- `views/practice/reviewSuggestionStream` 负责 AI 复习建议 SSE 数据帧消费，`reviewPresentation`
-  负责路由数字归一化与状态标签映射，`ReviewView` 保留复习会话和页面级 API 编排。
-- `views/practice/usePracticeAnswer` 管理练习答案、可提交状态与多选归一化，练习展示和退出路由映射保持为
-  纯函数；`components/search/` 管理全局搜索快捷键、结果扁平索引与文本高亮，搜索对话框保留 API 和焦点编排。
-- `admin/views/submission/` 承载投稿管理的审核、详情和 AI 工具闭包；审核组件自行管理审核表单、
-  AI 意见和提交生命周期，详情组件管理投稿展示与正式题库导航，AI 工具分别管理质检、知识点标注和
-  难度评估。`SubmissionManage` 保留列表、筛选与批处理协调，子业务完成后通过事件请求刷新。
-- `admin/views/question/` 承载正式题库的自包含编辑能力；题目编辑器拥有表单校验、选项
-  规则、课程知识点加载和创建 / 更新请求，导入导出组件拥有文件选择、结果展示和既有
-  composable 生命周期；`useQuestionAdminList` 管理分页筛选、选择、删除和学习资产缓存命令，
-  `QuestionReviewDialog` 自包含复审记录、AI 建议和复审提交，`QuestionManage` 保留重复题、纠错和
-  版本治理编排。
-- `admin/views/user/` 承载用户列表状态和账户维护对话框；`useAdminUserList` 统一分页、统计、选择、
-  状态与删除命令，`UserMaintenanceDialogs` 自包含创建、角色、密码和 AI 配额表单。
-- `views/course/useQuestionCatalog` 管理课程题库的路由筛选、分页、收藏、评论展开和纠错状态；
-  `QuestionListView` 只负责题目列表、筛选器和对话框展示。
+- 页面拥有路由参数、真实 API 和跨组件状态机；独立业务组件可以封装自己的表单、弹窗、分页与请求生命周期，
+  通过类型化属性和完成事件协调页面刷新，避免同一状态由两处维护。
+- 可视化类型分派、SSE 数据帧解析和展示转换与页面编排分离；解析与映射优先使用纯函数。
+- 视口监听、倒计时和可见性观察由组合函数管理生命周期并在卸载时释放；考试倒计时以服务端时间为准，
+  资产查看按真实可见性去重，组件挂载本身不表示学习事件。
 - `api/` 统一方法、路径和参数，页面不得散落 Axios URL。
 - `stores/` 只保存跨页面状态；局部表单和弹窗状态留在页面或组合函数中。
 - 大页面优先拆出领域组件、组合函数和纯展示映射，不建立无意义的包装层。

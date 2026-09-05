@@ -39,11 +39,12 @@
 | 尚未完成的候选方向与进入条件 | [product/future.md](product/future.md) |
 | 每轮修改和验证历史 | [project/changelog/](project/changelog/index.md) |
 | 产品范围与稳定验收标准 | [product/prd.md](product/prd.md) |
-| 架构边界 | [architecture/overview.md](architecture/overview.md) |
+| 模块入口、依赖方向与职责边界 | [architecture/overview.md](architecture/overview.md)及对应前后端文档 |
+| 跨模块处理过程 | [architecture/data-flow.md](architecture/data-flow.md) |
 | 重要架构决策 | [architecture/decisions/](architecture/decisions/index.md) |
-| API 契约 | [reference/api/index.md](reference/api/index.md) |
-| 数据库结构 | [reference/database/index.md](reference/database/index.md) |
-| 测试要求 | [development/testing.md](development/testing.md) |
+| 请求、响应、权限与调用者可见行为 | [reference/api/index.md](reference/api/index.md)及对应业务域 |
+| 存储语义、唯一约束与事务不变量 | [reference/database/index.md](reference/database/index.md)及对应业务域 |
+| 验证范围、命令与 E2E 生命周期 | [development/testing.md](development/testing.md) |
 | 开发循环、执行模式与完成状态 | [development/workflow.md](development/workflow.md) |
 | 提交边界、分支与远端操作 | [development/git-rules.md](development/git-rules.md) |
 | 项目 Skills 来源与升级 | 本页的[工具维护](#工具维护) |
@@ -52,6 +53,8 @@
 API 字段、数据库结构、权限和部署事实以各领域参考文档指向的代码、类型、迁移和配置为准。
 文档与实现不一致时，先区分需求约定和当前能力；不得根据一份过期文档直接改变业务行为。
 同一规则重复或冲突时在权威来源中核对并合并；重大产品方向或授权冲突无法消解时询问用户。
+跨文档可以保留理解所需的简短摘要，但完整细则只在所属位置维护：数据流引用契约，演示引用环境步骤，
+roadmap 引用有效候选。不能因为某个流程涉及多个领域，就在每处重写全部规则。
 
 ## 文档维护
 
@@ -67,6 +70,7 @@ API 字段、数据库结构、权限和部署事实以各领域参考文档指�
 写入长期规则前，必须确认它会反复影响后续任务、不是已有规则的重复，且缺失时确实可能导致错误决策。
 一次故障、工具版本、测试数量或临时兼容办法不升级为长期规则：当前事实写入 status，单次事实写入 changelog。
 能够由代码、配置或脚本强制的约束优先在对应工具中维护，文档只说明必要的使用边界与入口。
+迁移最新版本、完整类清单等机械信息直接查源码；文档保留重要语义、约束和取舍，不维护第二份手工清单。
 
 根 AGENTS.md 只保留必要底线和任务路由，领域流程由对应文档或项目 Skill 维护。路由应说明触发条件和
 读取目标；不重复维护 Skill 的触发清单，不为目录对称新增文件。修改规则时搜索并消除相邻重复和冲突，

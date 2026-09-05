@@ -8,26 +8,21 @@ AI 子系统提供解析、复习建议、知识总结、学习资产、变式�
 
 ```mermaid
 flowchart LR
-    Feature["业务 Service"] --> AiService
-    AiService --> Provider["AiProvider"]
+    Feature["领域生成 Service"] --> Invoke["AiInvocationService 或领域调用编排"]
+    Invoke --> Provider["AiProvider"]
     Provider --> OpenAI["OpenAiProvider"]
     OpenAI --> Upstream["OpenAI 兼容 API"]
-    AiService --> Log["ai_call_log"]
+    Invoke --> Governance["AiCallGovernanceService"]
+    Governance --> Log["ai_call_log"]
 ```
 
-业务 Service 依赖项目 Provider 契约，不读取特定上游响应结构。`OpenAiProvider` 负责同步和流式协议、usage 提取、超时和上游错误归一化。
+领域服务组织数据和 Prompt，依赖项目 Provider 契约；`OpenAiProvider` 负责上游同步/流式协议、usage、
+超时与错误归一化。配额、审计、成本和指纹统一通过 `AiCallGovernanceService`，不经宽泛的兼容门面复用。
+`AiService` 只兼容既有接口；带用户身份的通用调用由 `AiInvocationService` 编排，领域专用调用仍需接入治理。
 
 ## 配置
 
-主要环境变量包括：
-
-- `AI_ENABLED`
-- `AI_API_BASE_URL`
-- `AI_API_KEY`
-- `AI_MODEL`
-- `AI_TIMEOUT`
-- `AI_MAX_TOKENS`
-
+开关、上游地址、模型与超时等变量统一见[AI 配置](../getting-started/configuration.md#ai)。
 真实 Key 只能来自环境变量或本机秘密管理，不进入 Git、文档示例或日志。
 
 ## 流式链路
