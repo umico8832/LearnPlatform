@@ -4,50 +4,42 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.ReviewContextVO;
 import com.learnplatform.dto.ReviewScheduleVO;
 import com.learnplatform.dto.ReviewStatsVO;
-import com.learnplatform.entity.Course;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionReviewSchedule;
-import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionReviewScheduleMapper;
+import com.learnplatform.service.review.ReviewSchedulePolicy;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * 复习计划只读查询、统计和视图组装。
+ * 复习计划只读查询、统计和 AI 上下文组装。
  */
 @Service
 public class ReviewScheduleQueryService {
 
-    private static final int MASTERED_THRESHOLD_DAYS = 21;
-    private static final BigDecimal DIFFICULT_THRESHOLD = new BigDecimal("2.00");
-
     private final QuestionReviewScheduleMapper reviewScheduleMapper;
     private final QuestionMapper questionMapper;
-    private final CourseMapper courseMapper;
     private final KnowledgePointMapper knowledgePointMapper;
+    private final ReviewScheduleCardViewService cardViewService;
 
     public ReviewScheduleQueryService(QuestionReviewScheduleMapper reviewScheduleMapper,
                                       QuestionMapper questionMapper,
-                                      CourseMapper courseMapper,
-                                      KnowledgePointMapper knowledgePointMapper) {
+                                      KnowledgePointMapper knowledgePointMapper,
+                                      ReviewScheduleCardViewService cardViewService) {
         this.reviewScheduleMapper = reviewScheduleMapper;
         this.questionMapper = questionMapper;
-        this.courseMapper = courseMapper;
         this.knowledgePointMapper = knowledgePointMapper;
+        this.cardViewService = cardViewService;
     }
 
     public List<ReviewScheduleVO> getDueReviewCards(Long userId, Long courseId, int limit) {
@@ -105,7 +97,7 @@ public class ReviewScheduleQueryService {
                     .filter(schedule -> questionId.equals(schedule.getQuestionId()))
                     .toList();
         }
-        return fillScheduleVOs(schedules, today);
+        return cardViewService.toViews(schedules, today);
     }
 
     /**
@@ -144,7 +136,7 @@ public class ReviewScheduleQueryService {
         wrapper.eq(QuestionReviewSchedule::getUserId, userId)
                 .orderByAsc(QuestionReviewSchedule::getNextReviewDate);
 
-        List<ReviewScheduleVO> views = fillScheduleVOs(reviewScheduleMapper.selectList(wrapper), LocalDate.now());
+        List<ReviewScheduleVO> views = cardViewService.toViews(reviewScheduleMapper.selectList(wrapper), LocalDate.now());
         if (courseId == null) {
             return views;
         }
@@ -163,17 +155,17 @@ public class ReviewScheduleQueryService {
         LocalDate today = LocalDate.now();
         LambdaQueryWrapper<QuestionReviewSchedule> difficultWrapper = new LambdaQueryWrapper<>();
         difficultWrapper.eq(QuestionReviewSchedule::getUserId, userId)
-                .lt(QuestionReviewSchedule::getEaseFactor, DIFFICULT_THRESHOLD)
+                .lt(QuestionReviewSchedule::getEaseFactor, ReviewSchedulePolicy.DIFFICULT_THRESHOLD)
                 .orderByAsc(QuestionReviewSchedule::getEaseFactor)
                 .last("LIMIT 10");
-        context.setDifficultCards(fillScheduleVOs(reviewScheduleMapper.selectList(difficultWrapper), today));
+        context.setDifficultCards(cardViewService.toViews(reviewScheduleMapper.selectList(difficultWrapper), today));
 
         LambdaQueryWrapper<QuestionReviewSchedule> overdueWrapper = new LambdaQueryWrapper<>();
         overdueWrapper.eq(QuestionReviewSchedule::getUserId, userId)
                 .lt(QuestionReviewSchedule::getNextReviewDate, today)
                 .orderByAsc(QuestionReviewSchedule::getNextReviewDate)
                 .last("LIMIT 10");
-        context.setOverdueCards(fillScheduleVOs(reviewScheduleMapper.selectList(overdueWrapper), today));
+        context.setOverdueCards(cardViewService.toViews(reviewScheduleMapper.selectList(overdueWrapper), today));
 
         List<Integer> dailyReviews = new ArrayList<>();
         for (int i = 6; i >= 0; i--) {
@@ -187,8 +179,7 @@ public class ReviewScheduleQueryService {
     }
 
     ReviewScheduleVO buildScheduleView(QuestionReviewSchedule schedule) {
-        List<ReviewScheduleVO> views = fillScheduleVOs(List.of(schedule), LocalDate.now());
-        return views.isEmpty() ? null : views.get(0);
+        return cardViewService.toView(schedule);
     }
 
     private Set<Long> findCourseQuestionIds(Long courseId) {
@@ -239,14 +230,14 @@ public class ReviewScheduleQueryService {
         BigDecimal totalEaseFactor = BigDecimal.ZERO;
 
         for (QuestionReviewSchedule card : cards) {
-            if (card.getTotalReviews() == null || card.getTotalReviews() == 0) {
+            if (ReviewSchedulePolicy.isNew(card)) {
                 newCards++;
-            } else if (card.getIntervalDays() != null && card.getIntervalDays() >= MASTERED_THRESHOLD_DAYS) {
+            } else if (ReviewSchedulePolicy.isMastered(card)) {
                 mastered++;
             } else {
                 learning++;
             }
-            if (card.getEaseFactor() != null && card.getEaseFactor().compareTo(DIFFICULT_THRESHOLD) < 0) {
+            if (ReviewSchedulePolicy.isDifficult(card)) {
                 difficult++;
             }
             if (card.getEaseFactor() != null) {
@@ -274,90 +265,6 @@ public class ReviewScheduleQueryService {
             streak++;
             checkDate = checkDate.minusDays(1);
         }
-    }
-
-    private List<ReviewScheduleVO> fillScheduleVOs(List<QuestionReviewSchedule> schedules, LocalDate today) {
-        if (schedules.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        List<Long> questionIds = schedules.stream()
-                .map(QuestionReviewSchedule::getQuestionId)
-                .toList();
-        Map<Long, Question> questionMap = questionMapper.selectBatchIds(questionIds).stream()
-                .collect(Collectors.toMap(Question::getId, question -> question));
-
-        Set<Long> courseIds = questionMap.values().stream()
-                .map(Question::getCourseId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-        Map<Long, String> courseNameMap = new HashMap<>();
-        if (!courseIds.isEmpty()) {
-            courseNameMap = courseMapper.selectBatchIds(courseIds).stream()
-                    .collect(Collectors.toMap(Course::getId, Course::getName));
-        }
-
-        List<ReviewScheduleVO> result = new ArrayList<>();
-        for (QuestionReviewSchedule schedule : schedules) {
-            ReviewScheduleVO view = new ReviewScheduleVO();
-            view.setId(schedule.getId());
-            view.setQuestionId(schedule.getQuestionId());
-            view.setEaseFactor(schedule.getEaseFactor());
-            view.setIntervalDays(schedule.getIntervalDays());
-            view.setRepetitions(schedule.getRepetitions());
-            view.setNextReviewDate(schedule.getNextReviewDate());
-            view.setLastReviewDate(schedule.getLastReviewDate());
-            view.setLastQuality(schedule.getLastQuality());
-            view.setTotalReviews(schedule.getTotalReviews());
-            fillDueState(view, schedule, today);
-            view.setStatusLabel(buildStatusLabel(schedule));
-            fillQuestion(view, questionMap.get(schedule.getQuestionId()), courseNameMap);
-            result.add(view);
-        }
-        return result;
-    }
-
-    private void fillDueState(ReviewScheduleVO view, QuestionReviewSchedule schedule, LocalDate today) {
-        if (schedule.getNextReviewDate() == null) {
-            return;
-        }
-        boolean overdue = schedule.getNextReviewDate().isBefore(today);
-        view.setOverdue(overdue);
-        if (overdue) {
-            view.setOverdueDays((int) ChronoUnit.DAYS.between(schedule.getNextReviewDate(), today));
-        }
-    }
-
-    private String buildStatusLabel(QuestionReviewSchedule schedule) {
-        if (schedule.getTotalReviews() == null || schedule.getTotalReviews() == 0) {
-            return "新卡片";
-        }
-        if (schedule.getEaseFactor() != null && schedule.getEaseFactor().compareTo(DIFFICULT_THRESHOLD) < 0) {
-            return "困难";
-        }
-        if (schedule.getIntervalDays() != null && schedule.getIntervalDays() >= MASTERED_THRESHOLD_DAYS) {
-            return "已掌握";
-        }
-        return "学习中";
-    }
-
-    private void fillQuestion(ReviewScheduleVO view, Question question, Map<Long, String> courseNameMap) {
-        if (question == null) {
-            return;
-        }
-        view.setQuestionContent(truncate(question.getContent(), 100));
-        view.setQuestionType(question.getQuestionType());
-        view.setDifficulty(question.getDifficulty());
-        view.setCourseId(question.getCourseId());
-        view.setCourseName(courseNameMap.get(question.getCourseId()));
-    }
-
-    private String truncate(String text, int maxLength) {
-        if (text == null) {
-            return "";
-        }
-        String plain = text.replaceAll("<[^>]+>", "").replaceAll("\\s+", " ").trim();
-        return plain.length() > maxLength ? plain.substring(0, maxLength) + "..." : plain;
     }
 
     private int toInt(Long count) {

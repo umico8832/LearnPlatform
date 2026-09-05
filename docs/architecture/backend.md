@@ -94,7 +94,9 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
   `learningReport` 缓存边界。
 - `SpacedRepetitionService` 负责复习计划写事务和 SM-2 调度；答题判分、练习事实与错题同步由
   `ReviewAnswerRecordingService` 承担，待复习筛选、统计聚合、卡片 VO 组装与 AI 复习上下文
-  由只读的 `ReviewScheduleQueryService` 承担。
+  由只读的 `ReviewScheduleQueryService` 编排。卡片题目 / 课程批量补全与展示组装位于
+  `ReviewScheduleCardViewService`，新卡片、困难和已掌握阈值由 `service/review/ReviewSchedulePolicy`
+  统一定义。
 - `ExamPaperLearningService` 负责试卷学习会话生命周期、逐题判分和学习事实写入；
   `ExamPaperLearningContextService` 集中校验试卷可见性、发布状态、课程库关系与题目课程归属，
   并按试卷顺序读取题目和选项。

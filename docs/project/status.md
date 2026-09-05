@@ -211,6 +211,13 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+复习卡片展示与状态策略拆分（Round 304，2026-09-05）：
+
+- `ReviewScheduleQueryService` 从 366 行、18 个方法降为 274 行、13 个方法；卡片批量补全与展示进入
+  `ReviewScheduleCardViewService`，共享状态阈值进入无状态 `ReviewSchedulePolicy`。
+- 新增 3 个展示与策略测试，连同查询、Controller、SM-2 和 ArchUnit 共 27 个测试通过；公共入口、
+  SQL、DTO、状态标签和阈值不变。
+
 用户列表与账户维护职责拆分（Round 303，2026-09-05）：
 
 - `UserManage.vue` 从 687 行降为 291 行；列表、统计、选择与状态命令进入 `useAdminUserList`，

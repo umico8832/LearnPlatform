@@ -4,10 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.learnplatform.dto.ReviewScheduleVO;
 import com.learnplatform.dto.ReviewStatsVO;
-import com.learnplatform.entity.Course;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionReviewSchedule;
-import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionReviewScheduleMapper;
@@ -35,8 +33,8 @@ class ReviewScheduleQueryServiceTest {
 
     @Mock private QuestionReviewScheduleMapper reviewScheduleMapper;
     @Mock private QuestionMapper questionMapper;
-    @Mock private CourseMapper courseMapper;
     @Mock private KnowledgePointMapper knowledgePointMapper;
+    @Mock private ReviewScheduleCardViewService cardViewService;
 
     private ReviewScheduleQueryService service;
 
@@ -45,15 +43,14 @@ class ReviewScheduleQueryServiceTest {
         TableInfoHelper.initTableInfo(
                 new MapperBuilderAssistant(new Configuration(), ""), QuestionReviewSchedule.class);
         service = new ReviewScheduleQueryService(
-                reviewScheduleMapper, questionMapper, courseMapper, knowledgePointMapper);
+                reviewScheduleMapper, questionMapper, knowledgePointMapper, cardViewService);
     }
 
     @Test
     void dueCardsAreRestrictedToRequestedCourse() {
         when(reviewScheduleMapper.selectList(any())).thenReturn(List.of(schedule(101L), schedule(202L)));
         when(questionMapper.selectList(any())).thenReturn(List.of(question(101L, 10L)));
-        when(questionMapper.selectBatchIds(any())).thenReturn(List.of(question(101L, 10L), question(202L, 20L)));
-        when(courseMapper.selectBatchIds(any())).thenReturn(List.of(course(10L), course(20L)));
+        when(cardViewService.toViews(any(), any())).thenReturn(List.of(view(101L)));
 
         List<ReviewScheduleVO> cards = service.getDueReviewCards(7L, 10L, 30);
 
@@ -70,8 +67,7 @@ class ReviewScheduleQueryServiceTest {
     void dueCardsCanFocusTheServerSelectedQuestion() {
         when(reviewScheduleMapper.selectList(any())).thenReturn(List.of(schedule(101L), schedule(102L)));
         when(questionMapper.selectList(any())).thenReturn(List.of(question(101L, 10L), question(102L, 10L)));
-        when(questionMapper.selectBatchIds(any())).thenReturn(List.of(question(101L, 10L)));
-        when(courseMapper.selectBatchIds(any())).thenReturn(List.of(course(10L)));
+        when(cardViewService.toViews(any(), any())).thenReturn(List.of(view(101L)));
 
         List<ReviewScheduleVO> cards = service.getDueReviewCards(7L, 10L, 101L, 30);
 
@@ -83,9 +79,7 @@ class ReviewScheduleQueryServiceTest {
         when(knowledgePointMapper.selectQuestionIdsByKnowledgePointId(31L)).thenReturn(List.of(101L));
         when(reviewScheduleMapper.selectList(any())).thenReturn(List.of(schedule(101L), schedule(202L)));
         when(questionMapper.selectList(any())).thenReturn(List.of(question(101L, 10L)));
-        when(questionMapper.selectBatchIds(any()))
-                .thenReturn(List.of(question(101L, 10L), question(202L, 20L)));
-        when(courseMapper.selectBatchIds(any())).thenReturn(List.of(course(10L), course(20L)));
+        when(cardViewService.toViews(any(), any())).thenReturn(List.of(view(101L)));
 
         List<ReviewScheduleVO> cards = service.getDueReviewCards(7L, 10L, null, 31L, 30);
 
@@ -138,10 +132,9 @@ class ReviewScheduleQueryServiceTest {
         return question;
     }
 
-    private Course course(Long id) {
-        Course course = new Course();
-        course.setId(id);
-        course.setName("课程 " + id);
-        return course;
+    private ReviewScheduleVO view(Long questionId) {
+        ReviewScheduleVO view = new ReviewScheduleVO();
+        view.setQuestionId(questionId);
+        return view;
     }
 }
