@@ -58,71 +58,7 @@
                 </el-button>
               </div>
 
-              <!-- 反馈区域 -->
-              <div class="feedback-area">
-                <div v-if="feedbackMap[tab.type]?.helpful === null" class="feedback-prompt">
-                  <span class="feedback-text">这个讲解对你有帮助吗？</span>
-                  <el-button
-                    size="small"
-                    :type="feedbackMap[tab.type]?.helpful === true ? 'success' : 'default'"
-                    :loading="feedbackSubmitting === tab.type"
-                    @click="handleFeedback(tab.type, true)"
-                  >
-                    👍 有帮助
-                  </el-button>
-                  <el-button
-                    size="small"
-                    :type="feedbackMap[tab.type]?.helpful === false ? 'danger' : 'default'"
-                    :loading="feedbackSubmitting === tab.type"
-                    @click="handleFeedback(tab.type, false)"
-                  >
-                    👎 没帮助
-                  </el-button>
-                </div>
-
-                <div v-else class="feedback-done">
-                  <el-tag :type="feedbackMap[tab.type]?.helpful ? 'success' : 'warning'" size="small" effect="plain">
-                    {{ feedbackMap[tab.type]?.helpful ? '👍 已反馈：有帮助' : '👎 已反馈：没帮助' }}
-                  </el-tag>
-                  <el-button
-                    v-if="
-                      feedbackMap[tab.type]?.helpful === false &&
-                      showCommentInput !== tab.type &&
-                      !feedbackMap[tab.type]?.comment
-                    "
-                    size="small"
-                    text
-                    type="primary"
-                    @click="showCommentInput = tab.type"
-                  >
-                    补充说明
-                  </el-button>
-                  <el-button size="small" text type="info" @click="feedbackMap[tab.type].helpful = null">
-                    重新反馈
-                  </el-button>
-                </div>
-
-                <div v-if="showCommentInput === tab.type" class="feedback-comment">
-                  <el-input
-                    v-model="feedbackMap[tab.type].comment"
-                    type="textarea"
-                    :rows="2"
-                    placeholder="请告诉我们哪里可以改进（可选）..."
-                    maxlength="500"
-                    show-word-limit
-                    size="small"
-                  />
-                  <el-button
-                    size="small"
-                    type="primary"
-                    :loading="feedbackSubmitting === tab.type"
-                    @click="submitFeedbackComment(tab.type)"
-                    style="margin-top: 8px"
-                  >
-                    提交
-                  </el-button>
-                </div>
-              </div>
+              <QuestionAssetFeedback :question-id="questionId" :asset-type="tab.type" :available="true" />
             </div>
 
             <!-- 加载中 -->
@@ -173,8 +109,6 @@ import {
   getQuestionAssets,
   generateAsset,
   streamAsset,
-  submitAssetFeedback,
-  getAssetFeedback,
   recordAssetView,
   completeVariantTraining,
   type AiVariantTrainingStatus,
@@ -183,11 +117,11 @@ import {
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import QuestionVisualInteractive from '@/components/QuestionVisualInteractive.vue'
 import AiVariantQuestionCard from '@/components/AiVariantQuestionCard.vue'
+import QuestionAssetFeedback from './question-learning/QuestionAssetFeedback.vue'
 import { ElMessage } from 'element-plus'
 import {
   applyVariantTrainingState,
   createAssetContent,
-  createFeedbackState,
   createVariantTrainingState,
   QUESTION_ASSET_TABS,
   resetVariantTrainingState,
@@ -218,10 +152,6 @@ const tabContent = reactive(createAssetContent())
 const assetModel = reactive(createAssetContent())
 const variantQuestion = ref<AiVariantQuestion | null>(null)
 
-// 反馈状态
-const feedbackMap = reactive(createFeedbackState())
-const feedbackSubmitting = ref<AiAssetType | null>(null)
-const showCommentInput = ref<AiAssetType | null>(null)
 const variantTrainingSubmitting = ref(false)
 const variantTraining = reactive(createVariantTrainingState())
 
@@ -275,15 +205,12 @@ function reset() {
   loadingType.value = null
   error.value = ''
   streamBuffer.value = ''
-  showCommentInput.value = null
-  feedbackSubmitting.value = null
   variantTrainingSubmitting.value = false
   resetVariantTrainingState(variantTraining)
   variantQuestion.value = null
   for (const key of Object.keys(tabContent) as AiAssetType[]) {
     tabContent[key] = ''
     assetModel[key] = ''
-    feedbackMap[key] = { helpful: null, comment: '' }
   }
 }
 
@@ -298,63 +225,10 @@ async function loadExistingAssets() {
           variantQuestion.value = asset.variantQuestion || null
         }
       }
-      // 加载已有资产的反馈状态
-      for (const asset of data.data as QuestionLearningAsset[]) {
-        loadFeedback(asset.assetType)
-      }
       trackVisibleAsset(activeTab.value)
     }
   } catch {
     // 静默失败，用户可手动触发生成
-  }
-}
-
-async function loadFeedback(assetType: AiAssetType) {
-  try {
-    const res = await getAssetFeedback(props.questionId, assetType)
-    if (res?.code === 0 && res.data) {
-      feedbackMap[assetType].helpful = res.data.helpful
-      feedbackMap[assetType].comment = res.data.comment || ''
-    }
-  } catch {
-    // 静默失败
-  }
-}
-
-async function handleFeedback(assetType: AiAssetType, helpful: boolean) {
-  feedbackSubmitting.value = assetType
-  try {
-    const res = await submitAssetFeedback(props.questionId, assetType, helpful)
-    if (res?.code === 0) {
-      feedbackMap[assetType].helpful = helpful
-      if (helpful) {
-        showCommentInput.value = null
-      }
-    }
-  } catch {
-    // 静默失败
-  } finally {
-    feedbackSubmitting.value = null
-  }
-}
-
-async function submitFeedbackComment(assetType: AiAssetType) {
-  if (feedbackMap[assetType].helpful === null) return
-  feedbackSubmitting.value = assetType
-  try {
-    const res = await submitAssetFeedback(
-      props.questionId,
-      assetType,
-      feedbackMap[assetType].helpful!,
-      feedbackMap[assetType].comment || undefined,
-    )
-    if (res?.code === 0) {
-      showCommentInput.value = null
-    }
-  } catch {
-    // 静默失败
-  } finally {
-    feedbackSubmitting.value = null
   }
 }
 
@@ -594,13 +468,6 @@ async function generateTab(type: AiAssetType) {
   color: #909399;
 }
 
-/* 反馈区域 */
-.feedback-area {
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid #ebeef5;
-}
-
 .variant-training-panel {
   display: flex;
   align-items: center;
@@ -625,30 +492,6 @@ async function generateTab(type: AiAssetType) {
   line-height: 1.55;
 }
 
-.feedback-prompt {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.feedback-text {
-  font-size: 13px;
-  color: #606266;
-}
-
-.feedback-done {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.feedback-comment {
-  margin-top: 8px;
-  max-width: 400px;
-}
-
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -668,15 +511,6 @@ async function generateTab(type: AiAssetType) {
 
   .tab-icon {
     font-size: 12px;
-  }
-
-  .feedback-prompt,
-  .feedback-done {
-    gap: 6px;
-  }
-
-  .feedback-comment {
-    max-width: 100%;
   }
 
   .variant-training-panel {

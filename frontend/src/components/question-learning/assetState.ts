@@ -38,13 +38,6 @@ export function createAssetContent() {
   return Object.fromEntries(ASSET_TYPES.map((type) => [type, ''])) as Record<AiAssetType, string>
 }
 
-export function createFeedbackState() {
-  return Object.fromEntries(ASSET_TYPES.map((type) => [type, { helpful: null, comment: '' }])) as Record<
-    AiAssetType,
-    { helpful: boolean | null; comment: string }
-  >
-}
-
 export interface VariantTrainingState {
   status: '' | 'STARTED' | 'COMPLETED'
   completed: boolean

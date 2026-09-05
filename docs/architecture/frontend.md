@@ -57,8 +57,9 @@ frontend/admin/   # 独立管理端 HTML 入口
   展示；`CourseOverviewView` 只负责路由、真实 API、学习入口与阶段测评状态机。
 - `components/QuestionVisualInteractive` 只处理加载、解析失败回退与空状态；可视化类型分派、图表和
   Mermaid 渲染、树结构递归展示分别位于 `components/question-visual/`，内容解析保持为纯函数。
-- `components/QuestionLearningAsset` 负责编排资产读取、生成、反馈和训练接口；资产页签元数据、内容与
-  反馈初始结构、变式训练状态应用 / 重置位于 `components/question-learning/assetState`。
+- `components/QuestionLearningAsset` 负责编排资产读取、生成和变式训练接口；
+  `components/question-learning/QuestionAssetFeedback` 自包含单类资产的反馈读取、评价和补充说明，
+  资产页签元数据、内容与变式训练状态应用 / 重置位于 `components/question-learning/assetState`。
 - `components/layout/useResponsiveSidebar` 管理学习端布局的视口监听与移动侧栏状态；
   `views/exam/useExamCountdown` 管理服务端权威时间偏移、倒计时和卸载清理，页面只处理超时业务结果。
 - `components/statistics/` 承载学习诊断的概览、错因、推荐和详情弹窗；诊断 View 继续
