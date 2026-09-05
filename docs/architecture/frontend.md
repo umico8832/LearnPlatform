@@ -82,7 +82,8 @@ frontend/admin/   # 独立管理端 HTML 入口
 - `admin/views/question/` 承载正式题库的自包含编辑能力；题目编辑器拥有表单校验、选项
   规则、课程知识点加载和创建 / 更新请求，导入导出组件拥有文件选择、结果展示和既有
   composable 生命周期；`useQuestionAdminList` 管理分页筛选、选择、删除和学习资产缓存命令，
-  `QuestionManage` 保留复审、重复题、纠错和版本治理编排。
+  `QuestionReviewDialog` 自包含复审记录、AI 建议和复审提交，`QuestionManage` 保留重复题、纠错和
+  版本治理编排。
 - `admin/views/user/` 承载用户列表状态和账户维护对话框；`useAdminUserList` 统一分页、统计、选择、
   状态与删除命令，`UserMaintenanceDialogs` 自包含创建、角色、密码和 AI 配额表单。
 - `views/course/useQuestionCatalog` 管理课程题库的路由筛选、分页、收藏、评论展开和纠错状态；

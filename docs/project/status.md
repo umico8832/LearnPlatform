@@ -211,6 +211,13 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+题目复审业务闭包拆分（Round 305，2026-09-05）：
+
+- `QuestionManage.vue` 从 697 行降为 462 行；记录、AI 建议、建议应用和复审提交进入
+  `QuestionReviewDialog`，页面保留列表与题库治理协调。
+- 新增复审组件测试，连同管理列表共 3 个测试通过；相关 ESLint、TypeScript 与双生产构建通过，
+  API、校验、提示和刷新语义不变。
+
 复习卡片展示与状态策略拆分（Round 304，2026-09-05）：
 
 - `ReviewScheduleQueryService` 从 366 行、18 个方法降为 274 行、13 个方法；卡片批量补全与展示进入
