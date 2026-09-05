@@ -211,6 +211,13 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+学习资产可见性追踪拆分（Round 309，2026-09-05）：
+
+- `QuestionLearningAsset.vue` 从 521 行进一步降为 493 行、响应式状态从 12 处降为 10 处；
+  IntersectionObserver 生命周期、去重与可见性记录进入 `useAssetViewTracking`。
+- 资产可见性、变式训练和反馈共 4 个测试通过；相关 ESLint 与 TypeScript 检查通过，记录时机与失败重试
+  语义不变。
+
 学习资产反馈闭包拆分（Round 308，2026-09-05）：
 
 - `QuestionLearningAsset.vue` 从 687 行降为 521 行、响应式状态从 15 处降为 12 处；单类资产反馈读取、

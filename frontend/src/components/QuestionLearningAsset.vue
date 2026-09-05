@@ -100,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, toRef, watch } from 'vue'
 import { errorMessage, isAbortError } from '@/utils/errors'
 import { Loading, MagicStick, ArrowRight } from '@element-plus/icons-vue'
 import {
@@ -118,6 +118,7 @@ import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import QuestionVisualInteractive from '@/components/QuestionVisualInteractive.vue'
 import AiVariantQuestionCard from '@/components/AiVariantQuestionCard.vue'
 import QuestionAssetFeedback from './question-learning/QuestionAssetFeedback.vue'
+import { useAssetViewTracking } from './question-learning/useAssetViewTracking'
 import { ElMessage } from 'element-plus'
 import {
   applyVariantTrainingState,
@@ -138,10 +139,6 @@ const props = withDefaults(
 )
 
 const expanded = ref(false)
-const assetRoot = ref<HTMLElement | null>(null)
-const isInViewport = ref(false)
-let visibilityObserver: IntersectionObserver | null = null
-
 const assetTabs = QUESTION_ASSET_TABS
 
 const activeTab = ref<AiAssetType>('FULL_EXPLANATION')
@@ -156,32 +153,21 @@ const variantTrainingSubmitting = ref(false)
 const variantTraining = reactive(createVariantTrainingState())
 
 let abortController: AbortController | null = null
-const trackedViews = new Set<string>()
 
 const loading = computed(() => loadingType.value !== null)
 
+const { assetRoot, trackVisibleAsset } = useAssetViewTracking({
+  questionId: toRef(props, 'questionId'),
+  activeType: activeTab,
+  hasContent: (assetType) => Boolean(tabContent[assetType]),
+  onVariantTraining: applyVariantTraining,
+})
+
 // 加载已有缓存资产（非折叠模式立即加载，折叠模式展开时加载）
 onMounted(() => {
-  if (typeof IntersectionObserver === 'undefined') {
-    isInViewport.value = true
-  } else if (assetRoot.value) {
-    visibilityObserver = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0]
-        isInViewport.value = Boolean(entry?.isIntersecting)
-        if (isInViewport.value) trackVisibleAsset(activeTab.value)
-      },
-      { threshold: 0.1 },
-    )
-    visibilityObserver.observe(assetRoot.value)
-  }
   if (!props.collapsible) {
     loadExistingAssets()
   }
-})
-
-onBeforeUnmount(() => {
-  visibilityObserver?.disconnect()
 })
 
 watch(
@@ -242,20 +228,6 @@ function onTabChange() {
     streamBuffer.value = ''
   }
   trackVisibleAsset(activeTab.value)
-}
-
-function trackVisibleAsset(assetType: AiAssetType) {
-  if (!isInViewport.value || !tabContent[assetType]) return
-  const key = `${props.questionId}:${assetType}`
-  if (trackedViews.has(key)) return
-  trackedViews.add(key)
-  recordAssetView(props.questionId, assetType)
-    .then((response) => {
-      if (assetType === 'VARIANT' && response.data) applyVariantTraining(response.data)
-    })
-    .catch(() => {
-      trackedViews.delete(key)
-    })
 }
 
 function applyVariantTraining(training: AiVariantTrainingStatus) {
