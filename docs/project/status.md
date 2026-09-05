@@ -211,6 +211,13 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+用户列表与账户维护职责拆分（Round 303，2026-09-05）：
+
+- `UserManage.vue` 从 687 行降为 291 行；列表、统计、选择与状态命令进入 `useAdminUserList`，
+  创建、角色、密码和 AI 配额表单进入 `UserMaintenanceDialogs`。
+- 新增 2 个 composable 测试，相关 ESLint、TypeScript 和学习 / 管理双生产构建通过；API、校验、
+  审计与刷新语义不变。
+
 代码结构回归门禁与本地收口验证（Round 302，2026-09-05）：
 
 - 新增并接入 CI 的代码结构门禁：Spring Service 不超过 400 行和 8 个直接依赖，Vue SFC 不超过
