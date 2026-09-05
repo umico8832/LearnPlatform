@@ -164,11 +164,22 @@ public class MarkdownQuestionContentParser {
             }
             case "选项", "options" -> {
                 current.inOptionsBlock = true;
-                if (!value.isEmpty()) { parseInlineOptions(current, value); }
+                if (!value.isEmpty()) {
+                    parseInlineOptions(current, value);
+                }
             }
-            case "答案", "answer" -> { current.answer = value; current.inOptionsBlock = false; }
-            case "解析", "analysis" -> { current.analysis = value; current.inOptionsBlock = false; }
-            case "课程", "course" -> { current.course = value; current.inOptionsBlock = false; }
+            case "答案", "answer" -> {
+                current.answer = value;
+                current.inOptionsBlock = false;
+            }
+            case "解析", "analysis" -> {
+                current.analysis = value;
+                current.inOptionsBlock = false;
+            }
+            case "课程", "course" -> {
+                current.course = value;
+                current.inOptionsBlock = false;
+            }
             case "难度", "difficulty" -> {
                 current.difficulty = parseInteger(value);
                 current.inOptionsBlock = false;
@@ -177,8 +188,14 @@ public class MarkdownQuestionContentParser {
                 current.knowledgePoints = value;
                 current.inOptionsBlock = false;
             }
-            case "标签", "tags" -> { current.tags = value; current.inOptionsBlock = false; }
-            case "分值", "score" -> { current.score = parseInteger(value); current.inOptionsBlock = false; }
+            case "标签", "tags" -> {
+                current.tags = value;
+                current.inOptionsBlock = false;
+            }
+            case "分值", "score" -> {
+                current.score = parseInteger(value);
+                current.inOptionsBlock = false;
+            }
             case "题型", "type" -> {
                 current.questionType = normalizeQuestionType(value);
                 current.inOptionsBlock = false;

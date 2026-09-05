@@ -172,6 +172,7 @@ docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v --rmi loc
 
 ```bash
 python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+python3 scripts/check-code-structure.py
 python3 scripts/check-docs.py
 ```
 

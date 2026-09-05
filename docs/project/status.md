@@ -211,6 +211,16 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+代码结构回归门禁与本地收口验证（Round 302，2026-09-05）：
+
+- 新增并接入 CI 的代码结构门禁：Spring Service 不超过 400 行和 8 个直接依赖，Vue SFC 不超过
+  699 行；4 个边界测试纳入仓库脚本测试。
+- 后端 `mvn clean verify -B` 共 604 个测试通过，Checkstyle、SpotBugs 与 JaCoCo 通过；前端 73 个
+  测试文件、341 个测试、覆盖率门槛、ESLint、Prettier、TypeScript 和双生产构建通过。
+- 前端覆盖率为语句 44.56%、分支 37.70%、函数 35.93%、行 46.42%；仓库脚本 33 个测试、路径、
+  结构和文档门禁通过。
+- 本机 Docker daemon 未运行，本轮未重跑 Testcontainers 和 Playwright E2E，不将其记为通过。
+
 复习答题事实职责拆分（Round 301，2026-09-05）：
 
 - `SpacedRepetitionService` 从 380 行、9 个直接依赖降为 293 行、5 个直接依赖；题目判分、练习记录、
@@ -775,13 +785,15 @@ Phase 23 退出 L3 门禁（Round 245，2026-08-15）：
 - 代码工程化：生产与测试源码的普通星号导入均已清零并由 Checkstyle 阻止回退；测试中
   71 条 JUnit / Mockito / MockMvc DSL 静态星号导入按可读性明确允许。无入口的旧
   learning-plan 运行时代码与 API 已删除，历史表和迁移保留以保护既有数据。
-- 本轮结构治理目标中的 400 行以上 Service 与 700 行以上 Vue SFC 已清零；仍需用自动门禁防止
-  文件体量和直接依赖数量回退。行数只是风险信号，后续拆分继续以职责边界和独立测试价值为依据。
+- 本轮结构治理目标中的 400 行以上 Service、8 个以上直接依赖 Service 与 700 行以上 Vue SFC 已清零，
+  并由 CI 自动门禁阻止回退。行数只是风险信号，后续拆分继续以职责边界和独立测试价值为依据。
+- 本机 Docker daemon 当前未运行，Round 302 未重跑 Testcontainers 与 Playwright E2E；最近一次真实
+  Docker 验证基线仍以本节后续已记录结果为准。
 
 ## 下一步
 
-1. 为 Service 体量、直接依赖数量和 Vue SFC 体量增加自动结构门禁，并执行本轮完整 L3 验证。
-2. 后续继续处理管理端目录归属、后端业务域包边界和无入口端点；保持现有 API、数据库与业务行为兼容。
+1. 后续继续处理管理端目录归属、后端业务域包边界和无入口端点；保持现有 API、数据库与业务行为兼容。
+2. Docker daemon 恢复后，按需补跑 Testcontainers 和 Playwright E2E，更新真实环境验证基线。
 3. 每个结构重构边界执行相称的聚焦测试与完整门禁，不为了目录整齐引入无实际价值的接口层。
 4. 本地演示可直接访问隔离 E2E 栈 `http://localhost:18000`（`testuser/test123`、
    `admin/admin123`），或按[演示文档](../showcase/demo.md)自行启动开发/演示环境。

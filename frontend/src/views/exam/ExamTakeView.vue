@@ -147,7 +147,12 @@ const answers = ref<Record<number, string>>({})
 const multiAnswers = ref<Record<number, Set<string>>>({})
 const submitted = ref(false)
 const recordId = ref(0)
-const { remainSeconds, countdownText, configure: configureCountdown, start: startCountdown } = useExamCountdown({
+const {
+  remainSeconds,
+  countdownText,
+  configure: configureCountdown,
+  start: startCountdown,
+} = useExamCountdown({
   submitted,
   hasQuestions: () => questions.value.length > 0,
   onExpired: async () => {
@@ -277,7 +282,6 @@ onMounted(async () => {
     loading.value = false
   }
 })
-
 </script>
 
 <style scoped>

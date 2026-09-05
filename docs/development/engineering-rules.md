@@ -81,6 +81,8 @@
   不使用 `< > : " | ? *`，也不以空格或句点结尾。
 - `target`、`dist`、`node_modules`、测试报告、虚拟环境、缓存和系统垃圾文件不得提交。
 - `python3 scripts/check-repository-layout.py` 是上述规则的自动门禁，并在 CI 文档任务中执行。
+- `python3 scripts/check-code-structure.py` 阻止 Spring Service 超过 400 行或 8 个直接依赖，
+  以及 Vue SFC 达到 700 行；阈值用于触发职责审查，不代表低于阈值的文件天然合理。
 - 独立管理端的页面统一位于 `frontend/src/admin/views/`；门禁拒绝重新在
   `frontend/src/views/admin/` 下提交页面，避免两个应用边界再次混杂。
 - 源文件必须使用构建工具能够识别的扩展名；禁止用异常路径保存一份不会被编译或测试发现的

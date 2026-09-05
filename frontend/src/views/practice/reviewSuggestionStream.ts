@@ -3,10 +3,7 @@ interface ReviewSuggestionHandlers {
   onError: (message: string) => void
 }
 
-export async function consumeReviewSuggestionStream(
-  response: Response,
-  handlers: ReviewSuggestionHandlers,
-) {
+export async function consumeReviewSuggestionStream(response: Response, handlers: ReviewSuggestionHandlers) {
   if (!response.ok) throw new Error(`HTTP ${response.status}`)
   const reader = response.body?.getReader()
   if (!reader) throw new Error('无法读取响应流')

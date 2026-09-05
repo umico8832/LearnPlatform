@@ -330,11 +330,7 @@ import type { QuestionVO } from '@/api/question'
 import { getCoursePage } from '@/api/course'
 import { formatTime } from '@/utils/format'
 import SmartExamDialog from './exam/SmartExamDialog.vue'
-import {
-  paperTypeLabel,
-  paperTypeTag,
-  questionTypeLabel as getTypeLabel,
-} from './exam/examManagePresentation'
+import { paperTypeLabel, paperTypeTag, questionTypeLabel as getTypeLabel } from './exam/examManagePresentation'
 
 // 试卷列表
 const loading = ref(false)
@@ -649,7 +645,6 @@ const getQuestionContent = (questionId: number) => {
   const q = pickedQuestionMap.value.get(questionId)
   return q ? (q.content.length > 80 ? q.content.substring(0, 80) + '...' : q.content) : `题目 #${questionId}`
 }
-
 </script>
 
 <style scoped>

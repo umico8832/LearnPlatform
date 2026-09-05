@@ -35,6 +35,9 @@ jobs:
       - name: Validate tracked repository layout
         run: python3 scripts/check-repository-layout.py
 
+      - name: Validate code structure limits
+        run: python3 scripts/check-code-structure.py
+
       - name: Validate documentation and project Skills
         run: python3 scripts/check-docs.py
 
