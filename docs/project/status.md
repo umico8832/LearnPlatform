@@ -211,6 +211,13 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+复习答题事实职责拆分（Round 301，2026-09-05）：
+
+- `SpacedRepetitionService` 从 380 行、9 个直接依赖降为 293 行、5 个直接依赖；题目判分、练习记录、
+  课程学习事件和错题更新进入 `ReviewAnswerRecordingService`。
+- 新增 3 个专属测试，连同复习调度、错题同步、查询和 ArchUnit 共 28 个测试通过；接口、事务入口、
+  学习事实和 SM-2 算法不变，当前 Service 直接依赖最高值为 8。
+
 题目目录与管理列表状态拆分（Round 300，2026-09-05）：
 
 - `QuestionManage.vue`、`QuestionListView.vue` 分别从 825、819 行降为 697、644 行；分页筛选、选择、

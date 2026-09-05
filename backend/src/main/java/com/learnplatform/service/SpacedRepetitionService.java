@@ -5,14 +5,8 @@ import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.ReviewScheduleVO;
 import com.learnplatform.dto.ReviewSubmitRequest;
-import com.learnplatform.entity.PracticeRecord;
-import com.learnplatform.entity.Question;
-import com.learnplatform.entity.QuestionOption;
 import com.learnplatform.entity.QuestionReviewSchedule;
 import com.learnplatform.entity.WrongQuestion;
-import com.learnplatform.mapper.PracticeRecordMapper;
-import com.learnplatform.mapper.QuestionMapper;
-import com.learnplatform.mapper.QuestionOptionMapper;
 import com.learnplatform.mapper.QuestionReviewScheduleMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
 import org.slf4j.Logger;
@@ -62,32 +56,20 @@ public class SpacedRepetitionService {
     private static final BigDecimal DEFAULT_EASE_FACTOR = new BigDecimal("2.50");
 
     private final QuestionReviewScheduleMapper reviewScheduleMapper;
-    private final QuestionMapper questionMapper;
-    private final QuestionOptionMapper questionOptionMapper;
-    private final PracticeRecordMapper practiceRecordMapper;
     private final WrongQuestionMapper wrongQuestionMapper;
-    private final AnswerEvaluator answerEvaluator;
+    private final ReviewAnswerRecordingService reviewAnswerRecordingService;
     private final CacheEvictService cacheEvictService;
-    private final CourseLearningEventService courseLearningEventService;
     private final ReviewScheduleQueryService reviewScheduleQueryService;
 
     public SpacedRepetitionService(QuestionReviewScheduleMapper reviewScheduleMapper,
-                                    QuestionMapper questionMapper,
-                                    QuestionOptionMapper questionOptionMapper,
-                                    PracticeRecordMapper practiceRecordMapper,
                                     WrongQuestionMapper wrongQuestionMapper,
-                                    AnswerEvaluator answerEvaluator,
+                                    ReviewAnswerRecordingService reviewAnswerRecordingService,
                                     CacheEvictService cacheEvictService,
-                                    CourseLearningEventService courseLearningEventService,
                                     ReviewScheduleQueryService reviewScheduleQueryService) {
         this.reviewScheduleMapper = reviewScheduleMapper;
-        this.questionMapper = questionMapper;
-        this.questionOptionMapper = questionOptionMapper;
-        this.practiceRecordMapper = practiceRecordMapper;
         this.wrongQuestionMapper = wrongQuestionMapper;
-        this.answerEvaluator = answerEvaluator;
+        this.reviewAnswerRecordingService = reviewAnswerRecordingService;
         this.cacheEvictService = cacheEvictService;
-        this.courseLearningEventService = courseLearningEventService;
         this.reviewScheduleQueryService = reviewScheduleQueryService;
     }
 
@@ -184,76 +166,7 @@ public class SpacedRepetitionService {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不在复习计划中");
         }
 
-        // 获取题目并判分
-        Question question = questionMapper.selectById(questionId);
-        if (question == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
-        }
-
-        LambdaQueryWrapper<QuestionOption> optWrapper = new LambdaQueryWrapper<>();
-        optWrapper.eq(QuestionOption::getQuestionId, questionId)
-                  .orderByAsc(QuestionOption::getSortOrder);
-        List<QuestionOption> allOptions = questionOptionMapper.selectList(optWrapper);
-        List<QuestionOption> correctOptions = allOptions.stream()
-                .filter(o -> o.getIsCorrect() != null && o.getIsCorrect() == 1)
-                .collect(Collectors.toList());
-        String correctAnswer = answerEvaluator.buildCorrectAnswer(correctOptions, question.getQuestionType());
-        boolean isCorrect = answerEvaluator.isCorrect(question.getQuestionType(), request.getUserAnswer(),
-                correctAnswer);
-
-        // 保存答题记录
-        PracticeRecord record = new PracticeRecord();
-        record.setUserId(userId);
-        record.setQuestionId(questionId);
-        record.setUserAnswer(request.getUserAnswer().trim());
-        record.setIsCorrect(isCorrect ? 1 : 0);
-        record.setAnswerTime(request.getAnswerTime());
-        practiceRecordMapper.insert(record);
-        if (courseLearningEventService != null) {
-            courseLearningEventService.recordQuestionAnswer(userId, question, "REVIEW_ANSWERED", "REVIEW",
-                    record.getId(), isCorrect, record.getCreateTime());
-        }
-
-        // 处理错题本
-        if (isCorrect) {
-            try {
-                LambdaQueryWrapper<WrongQuestion> wqWrapper = new LambdaQueryWrapper<>();
-                wqWrapper.eq(WrongQuestion::getUserId, userId)
-                         .eq(WrongQuestion::getQuestionId, questionId);
-                WrongQuestion existing = wrongQuestionMapper.selectOne(wqWrapper);
-                if (existing != null) {
-                    wrongQuestionMapper.deleteById(existing.getId());
-                }
-            } catch (Exception e) {
-                log.warn("移出错题本失败: {}", e.getMessage());
-            }
-        } else {
-            try {
-                LambdaQueryWrapper<WrongQuestion> wqWrapper = new LambdaQueryWrapper<>();
-                wqWrapper.eq(WrongQuestion::getUserId, userId)
-                         .eq(WrongQuestion::getQuestionId, questionId);
-                WrongQuestion existing = wrongQuestionMapper.selectOne(wqWrapper);
-                if (existing != null) {
-                    existing.setWrongCount(existing.getWrongCount() + 1);
-                    existing.setLastWrongAnswer(request.getUserAnswer().trim());
-                    if (existing.getMasteryLevel() != null && existing.getMasteryLevel() == 2) {
-                        existing.setMasteryLevel(0);
-                    }
-                    wrongQuestionMapper.updateById(existing);
-                } else {
-                    WrongQuestion wq = new WrongQuestion();
-                    wq.setUserId(userId);
-                    wq.setQuestionId(questionId);
-                    wq.setWrongCount(1);
-                    wq.setMasteryLevel(0);
-                    wq.setLastWrongAnswer(request.getUserAnswer().trim());
-                    wq.setDeleted(0);
-                    wrongQuestionMapper.insert(wq);
-                }
-            } catch (Exception e) {
-                log.warn("加入错题本失败: {}", e.getMessage());
-            }
-        }
+        boolean isCorrect = reviewAnswerRecordingService.evaluateAndRecord(request, userId);
 
         // 计算 SM-2 质量评分
         int quality = calculateQuality(isCorrect, request.getSelfAssessedQuality());

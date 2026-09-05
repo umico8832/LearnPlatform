@@ -16,7 +16,7 @@ class SpacedRepetitionServiceTest {
     // 创建一个最小化的 SpacedRepetitionService 来测试 SM-2 算法
     // 由于 applySM2 和 calculateQuality 是 package-private，可以直接测试
     private final SpacedRepetitionService service = new SpacedRepetitionService(
-            null, null, null, null, null, null, null, null, null
+            null, null, null, null, null
     );
 
     @Test
