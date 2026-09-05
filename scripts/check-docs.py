@@ -13,6 +13,9 @@ from urllib.parse import unquote
 ROOT = Path(__file__).resolve().parents[1]
 DOCS_ROOT = ROOT / "docs"
 PROJECT_SKILLS_ROOT = ROOT / ".agents" / "skills"
+STATUS_MAX_LINES = 150
+STATUS_MAX_CHARACTERS = 10000
+NUMBERED_ROUND = re.compile(r"\bRound\s+\d+\b|第\s*[\d一二三四五六七八九十百千万零〇两]+\s*轮", re.IGNORECASE)
 PROJECT_SKILL_NAMES = frozenset(
     {"frontend-design", "frontend-flow-test"}
 )
@@ -270,6 +273,29 @@ def check_old_paths(files: list[Path], errors: list[str]) -> None:
                 )
 
 
+def check_status_snapshot(path: Path, text: str, errors: list[str]) -> None:
+    relative = path.relative_to(ROOT).as_posix()
+    if len(text.splitlines()) > STATUS_MAX_LINES:
+        errors.append(f"{relative}: current snapshot must not exceed {STATUS_MAX_LINES} lines; archive history")
+    if len(text) > STATUS_MAX_CHARACTERS:
+        errors.append(
+            f"{relative}: current snapshot must not exceed {STATUS_MAX_CHARACTERS} characters; archive history"
+        )
+
+    def omit_history_link(match: re.Match[str]) -> str:
+        link, _ = split_link(match.group(1))
+        target = (path.parent / link).resolve()
+        if target.suffix == ".md" and any(
+            target.is_relative_to((DOCS_ROOT / "project" / directory).resolve())
+            for directory in ("changelog", "audits")
+        ):
+            return ""
+        return match.group(0)
+
+    if NUMBERED_ROUND.search(MARKDOWN_LINK.sub(omit_history_link, text)):
+        errors.append(f"{relative}: numbered round records belong in history; use a history link for evidence")
+
+
 def check_document_ownership(files: list[Path], errors: list[str]) -> None:
     history_roots = (
         DOCS_ROOT / "project" / "changelog",
@@ -285,10 +311,12 @@ def check_document_ownership(files: list[Path], errors: list[str]) -> None:
                 f"{relative}: contains obsolete repository Skill path .codex/skills"
             )
 
-        if not is_history and path != DOCS_ROOT / "project" / "status.md":
+        if path == DOCS_ROOT / "project" / "status.md":
+            check_status_snapshot(path, text, errors)
+        elif not is_history:
             if re.search(r"\bRound\s+\d+\b", text, re.IGNORECASE):
                 errors.append(
-                    f"{relative}: numbered round facts belong in status or changelog"
+                    f"{relative}: numbered round facts belong in changelog or audits"
                 )
 
         for pattern, message in CONTENT_RULES.get(relative, ()):

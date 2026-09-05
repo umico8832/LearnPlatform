@@ -118,6 +118,7 @@ Commit Boundary → Phase Exit。
 
 1. 检查 diff 是否只包含本轮范围。
 2. 同步当前月份 changelog，以及本轮实际影响的接口、数据库、架构、测试、路线图或状态文档；不要机械更新无关文档。
+   状态更新遵循 [AGENTS.md 的文档更新原则](../../AGENTS.md#6-状态与文档权威来源)。
 3. 按 `docs/development/review-checklist.md` 自审。
 4. 对照任务契约中的模块/阶段验收边界判断是否允许提交。未达到边界时保留工作区改动，不因本轮
    对话或子任务结束而创建提交。
