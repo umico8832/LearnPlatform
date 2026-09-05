@@ -146,99 +146,16 @@
       </div>
     </el-card>
 
-    <!-- 审核对话框 -->
-    <el-dialog v-model="showReviewDialog" :title="reviewAction === 1 ? '通过投稿' : '拒绝投稿'" width="500px">
-      <el-form label-width="80px">
-        <el-form-item label="审核意见">
-          <el-input
-            v-model="reviewComment"
-            type="textarea"
-            :rows="5"
-            :placeholder="reviewAction === 1 ? '审核通过意见（可选）' : '请输入拒绝原因'"
-          />
-          <el-button
-            type="primary"
-            link
-            size="small"
-            style="margin-top: 4px"
-            @click="handleGenerateReviewComment"
-            :loading="generatingComment"
-          >
-            🤖 AI 一键填充审核意见
-          </el-button>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showReviewDialog = false">取消</el-button>
-        <el-button :type="reviewAction === 1 ? 'success' : 'danger'" @click="handleReview" :loading="reviewing">
-          {{ reviewAction === 1 ? '确认通过' : '确认拒绝' }}
-        </el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 详情对话框 -->
-    <el-dialog v-model="showDetailDialog" title="投稿详情" width="700px">
-      <el-descriptions :column="2" border v-if="currentDetail">
-        <el-descriptions-item label="ID">{{ currentDetail.id }}</el-descriptions-item>
-        <el-descriptions-item label="状态">
-          <el-tag :type="statusTagType(currentDetail.status)">{{ statusLabel(currentDetail.status) }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="投稿人">{{
-          currentDetail.nickname || currentDetail.username
-        }}</el-descriptions-item>
-        <el-descriptions-item label="投稿时间">{{ formatTime(currentDetail.createTime) }}</el-descriptions-item>
-        <el-descriptions-item label="课程">{{ currentDetail.courseName }}</el-descriptions-item>
-        <el-descriptions-item label="题型">{{ questionTypeLabel(currentDetail.questionType) }}</el-descriptions-item>
-        <el-descriptions-item label="难度">
-          <el-rate v-model="currentDetail.difficulty" disabled :max="5" />
-        </el-descriptions-item>
-        <el-descriptions-item label="来源" v-if="currentDetail.source">{{ currentDetail.source }}</el-descriptions-item>
-        <el-descriptions-item label="题干内容" :span="2">
-          <div class="detail-content">{{ currentDetail.content }}</div>
-        </el-descriptions-item>
-        <el-descriptions-item label="选项" :span="2" v-if="currentDetail.optionsJson">
-          <div v-for="(opt, idx) in parseOptions(currentDetail.optionsJson)" :key="idx">
-            <strong>{{ opt.label || String.fromCharCode(65 + idx) }}.</strong> {{ opt.content }}
-            <el-tag v-if="opt.isCorrect" type="success" size="small" style="margin-left: 4px">正确</el-tag>
-          </div>
-        </el-descriptions-item>
-        <el-descriptions-item label="参考答案" :span="2" v-if="currentDetail.correctAnswer">
-          {{ currentDetail.correctAnswer }}
-        </el-descriptions-item>
-        <el-descriptions-item label="解析" :span="2" v-if="currentDetail.analysis">
-          <div class="detail-content">{{ currentDetail.analysis }}</div>
-        </el-descriptions-item>
-        <el-descriptions-item label="标签" v-if="currentDetail.tags">{{ currentDetail.tags }}</el-descriptions-item>
-        <el-descriptions-item label="知识点IDs" v-if="currentDetail.knowledgePointIds">{{
-          currentDetail.knowledgePointIds
-        }}</el-descriptions-item>
-        <el-descriptions-item label="审核意见" :span="2" v-if="currentDetail.reviewComment">
-          <el-text type="info">{{ currentDetail.reviewComment }}</el-text>
-        </el-descriptions-item>
-        <el-descriptions-item label="审核人" v-if="currentDetail.reviewedByName">{{
-          currentDetail.reviewedByName
-        }}</el-descriptions-item>
-        <el-descriptions-item label="审核时间" v-if="currentDetail.reviewedTime">{{
-          formatTime(currentDetail.reviewedTime)
-        }}</el-descriptions-item>
-        <el-descriptions-item label="入库题目ID" v-if="currentDetail.importedQuestionId">
-          <el-button type="primary" link @click="goToQuestion(currentDetail.importedQuestionId!)">
-            #{{ currentDetail.importedQuestionId }}
-          </el-button>
-        </el-descriptions-item>
-      </el-descriptions>
-    </el-dialog>
-
+    <SubmissionReviewDialog ref="reviewDialog" @reviewed="refreshSubmissions" />
+    <SubmissionDetailDialog ref="detailDialog" />
     <SubmissionAiTools ref="submissionAiTools" @updated="loadSubmissions" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { SemanticTagType } from '@/utils/errors'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { TableInstance } from 'element-plus'
-import { useRouter } from 'vue-router'
 import {
   Check,
   Close,
@@ -256,15 +173,20 @@ import {
   reviewSubmission,
   importSubmission,
   getSubmissionStats,
-  generateReviewComment,
   type QuestionSubmissionVO,
   type SubmissionStats,
 } from '@/api/submission'
 import SubmissionAiTools from './submission/SubmissionAiTools.vue'
+import SubmissionDetailDialog from './submission/SubmissionDetailDialog.vue'
+import SubmissionReviewDialog from './submission/SubmissionReviewDialog.vue'
+import {
+  formatSubmissionTime as formatTime,
+  questionTypeLabel,
+  submissionStatusLabel as statusLabel,
+  submissionStatusTag as statusTagType,
+} from './submission/submissionPresentation'
 
-const router = useRouter()
 const loading = ref(false)
-const reviewing = ref(false)
 const submissions = ref<QuestionSubmissionVO[]>([])
 const submissionTableRef = ref<TableInstance>()
 const selectedSubmissions = ref<QuestionSubmissionVO[]>([])
@@ -275,6 +197,8 @@ const pageSize = 10
 const total = ref(0)
 const stats = ref<SubmissionStats>({ pending: 0, approved: 0, rejected: 0, imported: 0 })
 const submissionAiTools = ref<InstanceType<typeof SubmissionAiTools>>()
+const reviewDialog = ref<InstanceType<typeof SubmissionReviewDialog>>()
+const detailDialog = ref<InstanceType<typeof SubmissionDetailDialog>>()
 
 const submissionStats = computed(() => [
   { label: '待审核', value: stats.value.pending, note: '需要管理员处理', icon: Search },
@@ -295,48 +219,6 @@ const handleSubmissionSelectionChange = (selection: QuestionSubmissionVO[]) => {
 
 const clearSubmissionSelection = () => {
   submissionTableRef.value?.clearSelection()
-}
-
-const showReviewDialog = ref(false)
-const showDetailDialog = ref(false)
-const currentDetail = ref<QuestionSubmissionVO | null>(null)
-const reviewTarget = ref<QuestionSubmissionVO | null>(null)
-const reviewAction = ref(1) // 1=通过 2=拒绝
-const reviewComment = ref('')
-
-// 一键填充审核意见
-const generatingComment = ref(false)
-
-const questionTypeLabel = (type: string) => {
-  const map: Record<string, string> = {
-    SINGLE_CHOICE: '单选题',
-    MULTIPLE_CHOICE: '多选题',
-    TRUE_FALSE: '判断题',
-    FILL_BLANK: '填空题',
-    SHORT_ANSWER: '简答题',
-  }
-  return map[type] || type
-}
-
-const statusLabel = (status: number) => {
-  const map: Record<number, string> = { 0: '待审核', 1: '已通过', 2: '已拒绝', 3: '已入库' }
-  return map[status] || '未知'
-}
-
-const statusTagType = (status: number) => {
-  const map: Record<number, SemanticTagType> = { 0: 'warning', 1: 'success', 2: 'danger', 3: undefined }
-  return map[status] || 'info'
-}
-
-const formatTime = (t: string | null) => (t ? t.replace('T', ' ').substring(0, 19) : '')
-
-const parseOptions = (json: string | null): Array<{ content: string; label: string; isCorrect: boolean }> => {
-  if (!json) return []
-  try {
-    return JSON.parse(json)
-  } catch {
-    return []
-  }
 }
 
 const loadSubmissions = async () => {
@@ -380,40 +262,11 @@ const handlePageChange = (page: number) => {
 }
 
 const viewDetail = (row: QuestionSubmissionVO) => {
-  currentDetail.value = row
-  showDetailDialog.value = true
+  detailDialog.value?.open(row)
 }
 
 const openReview = (row: QuestionSubmissionVO, action: number) => {
-  reviewTarget.value = row
-  reviewAction.value = action
-  reviewComment.value = ''
-  showReviewDialog.value = true
-}
-
-const handleReview = async () => {
-  if (!reviewTarget.value) return
-  if (reviewAction.value === 2 && !reviewComment.value.trim()) {
-    ElMessage.warning('拒绝时请填写审核意见')
-    return
-  }
-  reviewing.value = true
-  try {
-    const res = await reviewSubmission(reviewTarget.value.id, {
-      status: reviewAction.value,
-      reviewComment: reviewComment.value || undefined,
-    })
-    if (res.code === 0) {
-      ElMessage.success(reviewAction.value === 1 ? '已通过' : '已拒绝')
-      showReviewDialog.value = false
-      loadSubmissions()
-      loadStats()
-    } else {
-      ElMessage.error(res.message || '操作失败')
-    }
-  } finally {
-    reviewing.value = false
-  }
+  reviewDialog.value?.open(row, action)
 }
 
 const handleBulkApprove = async () => {
@@ -501,31 +354,6 @@ const handleBulkImport = async () => {
   }
 }
 
-const goToQuestion = (id: number) => {
-  showDetailDialog.value = false
-  router.push({ name: 'AdminQuestionManage', query: { highlight: id } })
-}
-
-// ========== 一键填充审核意见 ==========
-
-const handleGenerateReviewComment = async () => {
-  if (!reviewTarget.value) return
-  generatingComment.value = true
-  try {
-    const res = await generateReviewComment(reviewTarget.value.id)
-    if (res.code === 0 && res.data) {
-      reviewComment.value = res.data
-      ElMessage.success('AI 审核意见已填充')
-    } else {
-      ElMessage.error(res.message || '生成审核意见失败')
-    }
-  } catch {
-    ElMessage.error('生成审核意见请求失败')
-  } finally {
-    generatingComment.value = false
-  }
-}
-
 onMounted(() => {
   loadSubmissions()
   loadStats()
@@ -536,9 +364,5 @@ onMounted(() => {
 .table-summary {
   color: var(--lp-text-muted);
   font-size: 13px;
-}
-.detail-content {
-  white-space: pre-wrap;
-  line-height: 1.6;
 }
 </style>

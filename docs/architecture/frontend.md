@@ -82,8 +82,9 @@ frontend/admin/   # 独立管理端 HTML 入口
   负责路由数字归一化与状态标签映射，`ReviewView` 保留复习会话和页面级 API 编排。
 - `views/practice/usePracticeAnswer` 管理练习答案、可提交状态与多选归一化，练习展示和退出路由映射保持为
   纯函数；`components/search/` 管理全局搜索快捷键、结果扁平索引与文本高亮，搜索对话框保留 API 和焦点编排。
-- `admin/views/submission/` 承载投稿管理的 AI 质检、知识点标注和难度评估工具；工具组件
-  自行管理请求和结果状态，只有知识点应用成功时向 `SubmissionManage` 发出列表刷新事件。
+- `admin/views/submission/` 承载投稿管理的审核、详情和 AI 工具闭包；审核组件自行管理审核表单、
+  AI 意见和提交生命周期，详情组件管理投稿展示与正式题库导航，AI 工具分别管理质检、知识点标注和
+  难度评估。`SubmissionManage` 保留列表、筛选与批处理协调，子业务完成后通过事件请求刷新。
 - `admin/views/question/` 承载正式题库的自包含编辑能力；题目编辑器拥有表单校验、选项
   规则、课程知识点加载和创建 / 更新请求，导入导出组件拥有文件选择、结果展示和既有
   composable 生命周期；`useQuestionAdminList` 管理分页筛选、选择、删除和学习资产缓存命令，

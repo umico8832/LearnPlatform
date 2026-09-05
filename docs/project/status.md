@@ -211,6 +211,12 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+投稿审核与详情闭包拆分（Round 310，2026-09-05）：
+
+- `SubmissionManage.vue` 从 544 行降为 368 行、响应式状态从 18 处降为 12 处；单条审核、AI 意见和
+  详情导航分别进入 `SubmissionReviewDialog`、`SubmissionDetailDialog`。
+- 新增 2 个审核组件测试；相关 ESLint 与 TypeScript 检查通过，批处理、提交和刷新语义不变。
+
 学习资产可见性追踪拆分（Round 309，2026-09-05）：
 
 - `QuestionLearningAsset.vue` 从 521 行进一步降为 493 行、响应式状态从 12 处降为 10 处；
