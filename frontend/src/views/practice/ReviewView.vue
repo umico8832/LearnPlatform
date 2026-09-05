@@ -86,86 +86,7 @@
       </div>
     </section>
 
-    <!-- 复习会话区域（当前待复习卡片） -->
-    <el-card v-if="reviewing && currentCard" shadow="never" class="review-session">
-      <template #header>
-        <div class="card-header">
-          <span>复习进度: {{ currentIndex + 1 }} / {{ dueCards.length }}</span>
-          <el-tag :type="statusTagType(currentCard.statusLabel)" size="small">{{ currentCard.statusLabel }}</el-tag>
-        </div>
-      </template>
-
-      <!-- 进度条 -->
-      <LpProgress :percent="Math.round((currentIndex / dueCards.length) * 100)" />
-
-      <!-- 题目信息 -->
-      <div class="question-info">
-        <div class="question-tags">
-          <el-tag size="small">{{ currentCard.questionType }}</el-tag>
-          <el-tag size="small" type="info">{{ currentCard.courseName || '未知课程' }}</el-tag>
-          <el-tag size="small" :type="currentCard.overdue ? 'danger' : 'success'">
-            {{ currentCard.overdue ? `逾期 ${currentCard.overdueDays} 天` : '今日到期' }}
-          </el-tag>
-          <el-tag size="small">间隔 {{ currentCard.intervalDays }} 天</el-tag>
-          <el-tag size="small">EF {{ currentCard.easeFactor?.toFixed(2) }}</el-tag>
-        </div>
-        <div class="question-content">{{ currentCard.questionContent }}</div>
-      </div>
-
-      <!-- 答题输入 -->
-      <div class="answer-box">
-        <el-input
-          v-model="userAnswer"
-          type="textarea"
-          :rows="3"
-          placeholder="输入你的答案..."
-          :disabled="answerSubmitted"
-        />
-      </div>
-
-      <!-- 操作按钮 -->
-      <div class="session-actions">
-        <el-button
-          type="primary"
-          @click="submitCurrentAnswer"
-          :disabled="!userAnswer.trim() || answerSubmitted"
-          :loading="submitting"
-        >
-          提交答案
-        </el-button>
-        <el-button @click="skipCard" :disabled="answerSubmitted">跳过</el-button>
-        <el-button type="danger" plain @click="stopReview">结束复习</el-button>
-      </div>
-
-      <!-- 答题结果 -->
-      <el-alert
-        v-if="answerSubmitted"
-        :title="lastCorrect ? '回答正确！' : '回答错误'"
-        :type="lastCorrect ? 'success' : 'error'"
-        :description="
-          lastCorrect
-            ? `下次复习: ${currentCard.intervalDays} 天后 | 新间隔: ${lastResult?.intervalDays} 天`
-            : `间隔已重置为 1 天，请继续加油！`
-        "
-        show-icon
-        :closable="false"
-        class="result-alert"
-      />
-
-      <div v-if="answerSubmitted" class="next-action">
-        <el-button type="primary" @click="nextCard">
-          {{ currentIndex < dueCards.length - 1 ? '下一题' : '完成复习' }}
-        </el-button>
-      </div>
-    </el-card>
-
-    <!-- 复习完成 -->
-    <div v-if="reviewComplete" class="complete-card">
-      <div class="complete-icon" aria-hidden="true">✓</div>
-      <h3>今日复习完成！</h3>
-      <p>共复习 {{ reviewedCount }} 题，正确 {{ correctCount }} 题</p>
-      <el-button type="primary" @click="finishReview">返回</el-button>
-    </div>
+    <ReviewSessionPanel ref="reviewSession" :cards="dueCards" @reviewed="loadStats" />
 
     <!-- 全部卡片列表 -->
     <el-card v-if="showAllCards" shadow="never" class="all-cards-card">
@@ -224,13 +145,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, Loading, MagicStick, Reading, View } from '@element-plus/icons-vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
+import ReviewSessionPanel from '@/components/review/ReviewSessionPanel.vue'
 import { getAiReviewSuggestionStream } from '@/api/review'
 import { getToken } from '@/utils/auth'
 import {
   getReviewStats,
   getDueReviewCards,
   getAllReviewCards,
-  submitReview,
   removeFromReviewPlan,
   resetReviewProgress,
   syncWrongQuestionsToReview,
@@ -238,7 +159,8 @@ import {
   type ReviewScheduleVO,
 } from '@/api/review'
 import { consumeReviewSuggestionStream } from './reviewSuggestionStream'
-import { positiveQueryNumber, reviewStatusTag as statusTagType } from './reviewPresentation'
+import { reviewStatusTag as statusTagType } from '@/components/review/reviewSessionPresentation'
+import { positiveQueryNumber } from './reviewPresentation'
 
 const route = useRoute()
 const router = useRouter()
@@ -272,23 +194,8 @@ const stats = ref<ReviewStatsVO>({
   avgEaseFactor: 2.5,
 })
 
-// 复习会话
-const reviewing = ref(false)
-
-function finishReview() {
-  reviewComplete.value = false
-  reviewing.value = false
-}
 const dueCards = ref<ReviewScheduleVO[]>([])
-const currentIndex = ref(0)
-const userAnswer = ref('')
-const answerSubmitted = ref(false)
-const submitting = ref(false)
-const lastResult = ref<ReviewScheduleVO | null>(null)
-const lastCorrect = ref(false)
-const reviewedCount = ref(0)
-const correctCount = ref(0)
-const reviewComplete = ref(false)
+const reviewSession = ref<InstanceType<typeof ReviewSessionPanel>>()
 
 // 卡片列表
 const showAllCards = ref(false)
@@ -299,8 +206,6 @@ const syncing = ref(false)
 // AI 复习建议
 const aiSuggestionLoading = ref(false)
 const aiSuggestionContent = ref('')
-
-const currentCard = computed(() => dueCards.value[currentIndex.value] || null)
 
 const masteredPercent = computed(() => {
   if (stats.value.totalCards === 0) return 0
@@ -348,62 +253,7 @@ async function startReview() {
     ElMessage.info('没有待复习的题目')
     return
   }
-  reviewing.value = true
-  reviewComplete.value = false
-  currentIndex.value = 0
-  reviewedCount.value = 0
-  correctCount.value = 0
-  userAnswer.value = ''
-  answerSubmitted.value = false
-  lastResult.value = null
-  lastCorrect.value = false
-}
-
-async function submitCurrentAnswer() {
-  if (!currentCard.value || !userAnswer.value.trim()) return
-  submitting.value = true
-  try {
-    const { data } = await submitReview({
-      questionId: currentCard.value.questionId,
-      userAnswer: userAnswer.value.trim(),
-    })
-    lastResult.value = data
-    // Determine correctness by checking if repetitions increased (SM-2: quality>=3 increments repetitions)
-    const prevReps = currentCard.value?.repetitions || 0
-    lastCorrect.value = (data?.repetitions ?? 0) > prevReps || (data?.intervalDays ?? 0) > 1
-    answerSubmitted.value = true
-    reviewedCount.value++
-    if (lastCorrect.value) {
-      correctCount.value++
-    }
-    await loadStats()
-  } catch (e) {
-    ElMessage.error(errorMessage(e, '提交失败'))
-  } finally {
-    submitting.value = false
-  }
-}
-
-function nextCard() {
-  if (currentIndex.value < dueCards.value.length - 1) {
-    currentIndex.value++
-    userAnswer.value = ''
-    answerSubmitted.value = false
-    lastResult.value = null
-    lastCorrect.value = false
-  } else {
-    reviewing.value = false
-    reviewComplete.value = true
-  }
-}
-
-function skipCard() {
-  nextCard()
-}
-
-function stopReview() {
-  reviewing.value = false
-  ElMessage.info(`已结束复习，本次复习 ${reviewedCount.value} 题`)
+  reviewSession.value?.start()
 }
 
 async function handleRemove(questionId: number) {
@@ -553,13 +403,6 @@ onMounted(async () => {
   font-size: var(--lp-text-sm);
 }
 
-.review-session {
-  border: var(--lp-border-hairline);
-  border-left: 3px solid var(--lp-primary);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
-}
-
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -570,74 +413,6 @@ onMounted(async () => {
 .card-header span {
   font-weight: var(--lp-weight-semibold);
   color: var(--lp-text);
-}
-
-.question-info {
-  margin-top: var(--lp-space-4);
-}
-
-.question-tags {
-  display: flex;
-  gap: var(--lp-space-2);
-  margin-bottom: var(--lp-space-3);
-  flex-wrap: wrap;
-}
-
-.question-content {
-  font-size: var(--lp-text-lg);
-  line-height: var(--lp-leading-relaxed);
-  padding: var(--lp-space-4);
-  background: var(--lp-surface-soft);
-  border-radius: var(--lp-radius-md);
-  white-space: pre-wrap;
-  color: var(--lp-text);
-}
-
-.answer-box,
-.result-alert,
-.next-action {
-  margin-top: var(--lp-space-4);
-}
-
-.session-actions {
-  display: flex;
-  gap: var(--lp-space-3);
-  flex-wrap: wrap;
-  margin-top: var(--lp-space-3);
-}
-
-.complete-card {
-  text-align: center;
-  padding: var(--lp-space-8) var(--lp-space-6);
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
-}
-
-.complete-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 60px;
-  height: 60px;
-  margin: 0 auto var(--lp-space-4);
-  border-radius: var(--lp-radius-full);
-  background: var(--lp-success-soft);
-  color: var(--lp-success);
-  font-size: var(--lp-text-4xl);
-  font-weight: var(--lp-weight-bold);
-}
-
-.complete-card h3 {
-  margin: 0 0 var(--lp-space-2);
-  color: var(--lp-text);
-  font-size: var(--lp-text-3xl);
-}
-
-.complete-card p {
-  margin: 0 0 var(--lp-space-4);
-  color: var(--lp-text-secondary);
 }
 
 .all-cards-card {
