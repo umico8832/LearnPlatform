@@ -10,8 +10,8 @@ Create usable, coherent learning and administration interfaces that fit the exis
 ## Read first
 
 1. Inspect the target Vue component and nearby shared styles.
-2. Read `docs/architecture/frontend.md` for frontend boundaries.
-3. Read `.agents/skills/ui-ux-pro-max/SKILL.md` when the task needs UX, accessibility, layout, interaction, typography, color, motion, or chart guidance.
+2. Read [frontend architecture](../../../docs/architecture/frontend.md) for frontend boundaries and current design tokens.
+3. Read [ui-ux-pro-max](../ui-ux-pro-max/SKILL.md) when the task needs UX, accessibility, layout, interaction, typography, color, motion, or chart guidance.
 4. Reuse existing global CSS variables, Element Plus components, ECharts patterns, icons, and page conventions.
 
 Do not use `.agents/skills/ui-styling/SKILL.md` as an implementation guide unless the user explicitly requests shadcn/ui, Radix UI, or Tailwind.
@@ -22,7 +22,7 @@ Do not use `.agents/skills/ui-styling/SKILL.md` as an implementation guide unles
 - Prefer clear hierarchy, predictable navigation, restrained decoration, readable data, and obvious next actions.
 - Keep learner pages supportive and task-oriented.
 - Keep administration pages dense enough for work without sacrificing scanability or accessibility.
-- Preserve visual continuity with completed Phase 21 pages unless the task explicitly changes the design system.
+- Preserve visual continuity with the current shared components and design tokens unless the task explicitly changes the design system.
 
 ## Implementation rules
 
@@ -37,7 +37,7 @@ Do not use `.agents/skills/ui-styling/SKILL.md` as an implementation guide unles
 
 ## Verification
 
-Follow `.agents/skills/frontend-flow-test/SKILL.md` for targeted browser checks and `docs/development/testing.md` for durable regression protection.
+Use [frontend-flow-test](../frontend-flow-test/SKILL.md) when browser verification is needed; choose durable regression checks using [testing policy](../../../docs/development/testing.md).
 
 At minimum verify:
 

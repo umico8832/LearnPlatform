@@ -18,6 +18,13 @@ backend/src/main/java/com/learnplatform/
 
 项目是模块化单体。业务模块通过 Java 类和数据库事务协作，不通过内部 HTTP 调用。
 
+## 工程归属
+
+- 顶层 `service` 包只放 Spring 业务组件，值对象、无状态策略和聚合器进入 DTO 或明确业务子包。
+- Java 类型使用显式导入。生产源码禁止包级及静态星号导入；测试可为 JUnit、Mockito、MockMvc DSL
+  保留静态星号导入，分别由生产与测试 Checkstyle 配置执行。
+- 业务字段与前端类型保持语义一致；数据库字段使用 `snake_case`，Java 类型沿用既有命名。
+
 ## 请求处理
 
 ```mermaid

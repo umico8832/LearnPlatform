@@ -75,5 +75,48 @@ class StatusOwnershipTest(unittest.TestCase):
         self.assertTrue(any("round" in error for error in errors), errors)
 
 
+class SkillDiscoveryTest(unittest.TestCase):
+    def check_skills(self, skills: dict[str, str]) -> list[str]:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            skills_root = root / ".agents" / "skills"
+            for name, content in skills.items():
+                path = skills_root / name / "SKILL.md"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content, encoding="utf-8")
+            errors: list[str] = []
+            with (
+                patch.object(checker, "ROOT", root),
+                patch.object(checker, "DOCS_ROOT", root / "docs"),
+                patch.object(checker, "PROJECT_SKILLS_ROOT", skills_root),
+            ):
+                checker.check_repository_skills(errors)
+                checker.check_links(checker.markdown_files(), errors)
+            return errors
+
+    def test_accepts_optional_installations_and_instruction_only_skills(self) -> None:
+        for skills in (
+            {},
+            {"release-review": "---\nname: release-review\ndescription: Review a release.\n---\n# Review\n"},
+            {"frontend-design": "---\nname: frontend-design\ndescription: Design a page.\n---\n# Design\n"},
+        ):
+            with self.subTest(skills=list(skills)):
+                self.assertEqual([], self.check_skills(skills))
+
+    def test_rejects_invalid_metadata_and_broken_references(self) -> None:
+        for content, expected in (
+            ("# Missing frontmatter\n", "frontmatter"),
+            ("---\nname: release-review\n---\n", "description"),
+            ("---\nname: another-name\ndescription: Review a release.\n---\n", "name must equal directory"),
+            (
+                "---\nname: release-review\ndescription: Review a release.\n---\n[Guide](missing.md)\n",
+                "missing link target",
+            ),
+        ):
+            with self.subTest(content=content):
+                errors = self.check_skills({"release-review": content})
+                self.assertTrue(any(expected in error for error in errors), errors)
+
+
 if __name__ == "__main__":
     unittest.main()

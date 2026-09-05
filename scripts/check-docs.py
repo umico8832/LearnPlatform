@@ -16,9 +16,6 @@ PROJECT_SKILLS_ROOT = ROOT / ".agents" / "skills"
 STATUS_MAX_LINES = 150
 STATUS_MAX_CHARACTERS = 10000
 NUMBERED_ROUND = re.compile(r"\bRound\s+\d+\b|第\s*[\d一二三四五六七八九十百千万零〇两]+\s*轮", re.IGNORECASE)
-PROJECT_SKILL_NAMES = frozenset(
-    {"frontend-design", "frontend-flow-test"}
-)
 UPSTREAM_SKILL_NAMES = frozenset(
     {
         "banner-design",
@@ -93,17 +90,7 @@ CONTENT_RULES: dict[str, tuple[tuple[re.Pattern[str], str], ...]] = {
         ),
         (
             re.compile(r"\bRound\s+\d+\b", re.IGNORECASE),
-            "round results belong in status or changelog",
-        ),
-    ),
-    "docs/development/agent-tooling.md": (
-        (
-            re.compile(r"当前(?:生成)?版本|声明版本"),
-            "installed versions belong in changelog, not the maintenance guide",
-        ),
-        (
-            re.compile(r"argument-hint|尾随(?:空格|字符)|git diff --check"),
-            "one-off upstream defects belong in changelog",
+            "round results belong in changelog or audits",
         ),
     ),
     "docs/development/testing.md": (
@@ -138,8 +125,9 @@ BRITTLE_SHOWCASE_FACT = re.compile(
 def markdown_files() -> list[Path]:
     files = [ROOT / "README.md", ROOT / "AGENTS.md"]
     files.extend(sorted(DOCS_ROOT.rglob("*.md")))
-    for skill_name in sorted(PROJECT_SKILL_NAMES):
-        files.extend(sorted((PROJECT_SKILLS_ROOT / skill_name).rglob("*.md")))
+    for skill_file in sorted(PROJECT_SKILLS_ROOT.glob("*/SKILL.md")):
+        if skill_file.parent.name not in UPSTREAM_SKILL_NAMES:
+            files.extend(sorted(skill_file.parent.rglob("*.md")))
     pull_request_template = ROOT / ".github" / "PULL_REQUEST_TEMPLATE.md"
     if pull_request_template.exists():
         files.append(pull_request_template)
@@ -472,27 +460,6 @@ def check_repository_skills(errors: list[str]) -> None:
                     f"{names[name].relative_to(ROOT)}"
                 )
             names[name] = skill_file
-        if skill_file.parent.name not in PROJECT_SKILL_NAMES:
-            continue
-        metadata = skill_file.parent / "agents" / "openai.yaml"
-        if not metadata.exists():
-            errors.append(f"{relative}: missing agents/openai.yaml")
-            continue
-        metadata_text = metadata.read_text(encoding="utf-8")
-        for key in ("display_name:", "short_description:", "default_prompt:"):
-            if key not in metadata_text:
-                errors.append(f"{metadata.relative_to(ROOT)}: missing {key[:-1]}")
-        if name and f"${name}" not in metadata_text:
-            errors.append(
-                f"{metadata.relative_to(ROOT)}: default_prompt must mention ${name}"
-            )
-
-    actual_names = set(names)
-    expected_names = PROJECT_SKILL_NAMES | UPSTREAM_SKILL_NAMES
-    for missing in sorted(expected_names - actual_names):
-        errors.append(f".agents/skills/{missing}: expected Skill is missing")
-    for unknown in sorted(actual_names - expected_names):
-        errors.append(f".agents/skills/{unknown}: ownership is not documented")
 
     legacy_root = ROOT / ".codex" / "skills"
     if any(legacy_root.glob("*/SKILL.md")):

@@ -6,11 +6,11 @@
 
 - 第一次运行项目：[本地开发](getting-started/local-development.md) 或 [Docker 开发](getting-started/docker-development.md)
 - 配置与排错：[配置说明](getting-started/configuration.md)和[常见问题排查](getting-started/troubleshooting.md)
-- 了解产品：[产品需求](product/prd.md)、[产品路线图](product/roadmap.md)、[后续扩展方向](product/future.md)与[AI 学习平台战略](product/ai-learning-platform-strategy.md)
+- 了解产品：[产品需求](product/prd.md)、[产品路线图](product/roadmap.md)、[后续扩展方向](product/future.md)
 - 了解系统：[系统架构](architecture/overview.md)
 - 查询契约：[API 参考](reference/api/index.md) 与 [数据库参考](reference/database/index.md)
 - 开始开发：[AI Agent 开发工作流](development/workflow.md) 与 [测试策略](development/testing.md)
-- 工程协作：[工程规则](development/engineering-rules.md)、[Git 规则](development/git-rules.md)与[审查清单](development/review-checklist.md)
+- 工程协作：[Git 规则](development/git-rules.md)与[审查标准](development/workflow.md#审查标准)
 - Docker 磁盘治理：[Docker 磁盘增长治理](development/docker-disk-governance.md)
 - 查看当前状态：[项目状态](project/status.md)
 - 查看历史：[开发日志索引](project/changelog/index.md)
@@ -46,7 +46,7 @@
 | 测试要求 | [development/testing.md](development/testing.md) |
 | 开发循环、执行模式与完成状态 | [development/workflow.md](development/workflow.md) |
 | 提交边界、分支与远端操作 | [development/git-rules.md](development/git-rules.md) |
-| Agent 与 Skills 使用边界 | [development/agent-tooling.md](development/agent-tooling.md) |
+| 项目 Skills 来源与升级 | 本页的[工具维护](#工具维护) |
 | 文档归属、更新与验证规则 | 本页的[文档维护](#文档维护) |
 
 API 字段、数据库结构、权限和部署事实以各领域参考文档指向的代码、类型、迁移和配置为准。
@@ -68,6 +68,10 @@ API 字段、数据库结构、权限和部署事实以各领域参考文档指�
 一次故障、工具版本、测试数量或临时兼容办法不升级为长期规则：当前事实写入 status，单次事实写入 changelog。
 能够由代码、配置或脚本强制的约束优先在对应工具中维护，文档只说明必要的使用边界与入口。
 
+根 AGENTS.md 只保留必要底线和任务路由，领域流程由对应文档或项目 Skill 维护。路由应说明触发条件和
+读取目标；不重复维护 Skill 的触发清单，不为目录对称新增文件。修改规则时搜索并消除相邻重复和冲突，
+优先删除失效内容，不通过压缩长行掩盖膨胀。
+
 ### 文档验证
 
 - 修改后运行 `python3 scripts/check-docs.py`，检查链接、导航、结构、职责、API、数据库清单与仓库 Skills。
@@ -75,3 +79,19 @@ API 字段、数据库结构、权限和部署事实以各领域参考文档指�
 - 纯文档与机械重命名无需制造失败测试，按影响核对链接、结构和语义一致性。
   仅调整规则措辞或路由时，用代表性任务检查读取路径、适用范围和规则归属，不为每句话增加测试。
 - 验证范围、未执行项与提交状态据实报告；验证脚本本身发生行为变化时，遵循[测试策略](development/testing.md)。
+
+## 工具维护
+
+- `frontend-design`、`frontend-flow-test` 是项目自有 Skill，工作流维护在各自 `SKILL.md`；项目事实通过链接引用 docs。
+- `banner-design`、`brand`、`design`、`design-system`、`slides`、`ui-styling`、`ui-ux-pro-max` 来自
+  [ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)，不直接修改、移动或格式化生成内容。
+  项目约束写入自有 Skill；上游目录名仅标记所有权，不代表项目必须安装全套技能。
+- 升级上游包前确认工作区可隔离，执行 `npm install -g ui-ux-pro-max-cli@latest` 和
+  `uipro init --ai codex --force`，检查生成差异及自有 Skill 是否被覆盖；不得将升级与无关任务混合。
+- 修改自有 Skill 后执行系统 `skill-creator` 的 `quick_validate.py`，核对描述、引用与适用范围；
+  安装或升级后运行 `python3 scripts/check-docs.py`。版本和单次验证记入 changelog。
+- 文档门禁检查已安装 Skill 的发现元数据及自有文档链接，不强制固定安装清单或 `agents/openai.yaml`。
+  新增上游包时注明来源，并在检查器的上游清单登记，以免按项目文档格式重写上游内容。
+
+Codex 的技能发现、按需加载和可选元数据以[官方 Skills 文档](https://learn.chatgpt.com/docs/build-skills)为准；
+指令发现以[官方 AGENTS.md 文档](https://learn.chatgpt.com/docs/agent-configuration/agents-md)为准。

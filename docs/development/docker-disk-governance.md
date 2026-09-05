@@ -1,6 +1,6 @@
 # Docker 磁盘增长治理
 
-本文档定义 Docker 磁盘占用的定位顺序、构建习惯、E2E 生命周期、磁盘预算和安全回收边界。
+本文档定义 Docker 磁盘占用的定位顺序、磁盘预算和安全回收边界。
 目标是让开发流程不长期积累几十 GB 的无价值镜像与构建缓存，同时保证持久化数据和
 其他项目资源不被误删。
 
@@ -9,15 +9,8 @@
 只治理 Docker 磁盘增长和由它引发的开发流程问题，不扩展产品功能，也不为了“绝对干净”
 引入守护进程、定时任务或额外服务。
 
-核心原则：
-
-- 普通开发循环优先使用本机工具链（`mvn spring-boot:run` / `npm run dev`），不通过
-  完整重建 Docker 环境来验证普通局部修改。
-- Docker build、Compose 重建与完整 Playwright E2E 属于 L2（改动 Dockerfile、Compose
-  或镜像打包路径时）或 L3（Phase Exit、Release、演示或共享基础设施），不作为默认 L1，
-  也不因一个 Round、普通局部修改或普通 commit 触发。
-- 回收只针对“可再生成、无持久价值”的资源（构建缓存超预算部分、悬空镜像），绝不触碰
-  数据卷、容器、带 tag 镜像或网络。
+构建习惯见[Docker 开发](../getting-started/docker-development.md)，验证范围见[测试策略](testing.md)。
+磁盘回收只处理可再生成的缓存与悬空镜像；环境停止和 E2E 清理按第 4 节单独核对范围。
 
 ## 2. 占用定位顺序
 
@@ -71,40 +64,11 @@ python3 scripts/docker-disk.py report
 | `docker image prune -a` / `docker container prune` / `docker volume prune` | 需授权 | 全局且可能波及持久化数据或其他项目 |
 | `docker system prune`（尤其是 `--volumes`） | 需授权 | 扩大范围的破坏性全局清理 |
 
-判断依据：只清理“无持久价值的可再生成资源”属于允许自动执行；凡是涉及数据卷、容器、
-带 tag 镜像、网络或跨项目资源，一律需要用户明确授权。
+缓存回收不授权删除数据卷、容器、带 tag 镜像或网络；表中项目停止和 E2E 清理仅适用于明确的项目范围。
+跨项目资源清理必须获得用户明确授权。
 
-## 5. Docker 构建习惯
-
-- 普通业务代码修改优先走本机开发（[本地开发](../getting-started/local-development.md)），
-  不要为了验证一个 Service、Controller 或 Vue 组件就重建 Docker 镜像。
-- 日常启动/更新容器用 `docker compose up -d`，不加 `--build`；只有改了 Dockerfile、
-  `.dockerignore`、`docker-compose*.yml`、Nginx 配置或镜像打包路径时才用
-  `docker compose build <service>`（或 `up -d --build <service>`）。
-- 不要用 `docker compose up -d --build --force-recreate` 作为普通验证手段。
-- 验证 Dockerfile 本身是否可构建属于 L2，交给改动 Dockerfile/Compose 的模块边界或 CI
-  的 Docker Build job，不在本地反复完整构建。
-
-## 6. E2E 生命周期
-
-E2E 使用独立 Compose 项目名 `learnplatform-e2e`（见 `docker-compose.e2e.yml` 的
-`name` 字段），因此它拥有自己的容器、网络和数据卷，与开发环境的 `learnplatform`
-项目完全隔离。执行方式见[测试策略](testing.md)的浏览器 E2E 一节。
-
-生命周期要求：
-
-- 首次进入 E2E 或前端源码/镜像配置变化时才加 `--build`；重复运行同一 E2E 环境时
-  省略 `--build`，用 `--force-recreate` 切换后端 `e2e` Profile 即可。
-- 测试结束后必须清理 E2E 自己的资源：
-
-  ```bash
-  docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v --rmi local
-  ```
-
-  `down -v` 删除 E2E 的容器、网络和卷，`--rmi local` 删除本次为 E2E 构建的镜像。
-  该命令因项目名隔离，不会误删开发环境数据。
-- E2E 遗留的构建缓存不在 `down` 范围内，按第 3 节预算由
-  `python3 scripts/docker-disk.py reclaim` 回收，不要求每次 E2E 后都执行。
+E2E 的启动、重建与结束清理由[测试策略](testing.md#8-浏览器-e2e-环境)统一维护。
+`down` 不清理构建缓存；仅在超过预算时使用 `scripts/docker-disk.py reclaim`，不要求每次测试后执行。
 
 ## 7. 持久化数据安全
 
@@ -113,8 +77,7 @@ E2E 使用独立 Compose 项目名 `learnplatform-e2e`（见 `docker-compose.e2e
 - 不得为了清理磁盘误删数据库或其他持久化 volume；不得默认执行扩大范围的破坏性 prune。
 - 其他项目（不以 `learnplatform` 前缀开头）的卷、容器、镜像和构建缓存属于共享环境，
   需要全局 Docker 清理时必须由用户明确授权。
-- 日志与监控（Loki、Prometheus）不是本项目磁盘增长的主要来源；除非真实诊断显示它们
-  占用异常，否则不修改其保留策略。
+- 日志与监控保留策略只按实际占用诊断调整，不根据历史结论推断当前磁盘来源。
 
 ## 8. 相关文档
 

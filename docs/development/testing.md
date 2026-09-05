@@ -88,20 +88,6 @@ L3 仍然是按风险选择，不是为了展示测试数量机械执行所有�
 不要形成“修改 → 全量测试 → 修改 → 全量测试”的循环。开发阶段大量使用 L1，模块边界
 使用 L2，Phase Exit 使用一次相称的 L3，最终完整门禁优先交给 CI。
 
-## 4. Round 不是工程提交或测试单位
-
-Round 是开发历史记录单位，不自动等于 commit boundary、模块 boundary、L3 boundary
-或 Phase boundary。不能因为“某个 Round 完成了”就自动运行所有测试、执行所有 E2E 或
-创建一个 commit。
-
-真正的工程单位是：
-
-```text
-Task → Module / Business Closure → Commit Boundary → Phase Exit
-```
-
-测试和提交只在对应的工程单位边界触发。
-
 ## 5. 必须新增测试的情况
 
 - 修改判分、考试提交、错题归集、权限或限流规则。
@@ -163,14 +149,9 @@ docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v --rmi loc
 
 ## 9. Agent 临时浏览器流程验收
 
-当用户要求“模拟用户试试”“打开浏览器跑一下流程”“看看这个页面能不能用”等临时验收时，先阅读 `.agents/skills/frontend-flow-test/SKILL.md`。该 Skill 用于约束 Agent 选择最小业务闭环，并用低 token 方式记录关键状态。
-
-临时浏览器验收不替代正式自动化测试：
-
-- 若只是验证页面是否能进入、按钮是否能点、结果弹窗是否出现，执行与当前任务相关的最小闭环即可。
-- 若发现真实缺陷，按风险决定是否补 Vitest、后端测试或 Playwright E2E 回归用例。
-- 若准备发布、演示或修改了鉴权、路由、请求封装、全局布局等共享能力，应优先运行既有自动化测试，再补少量浏览器冒烟检查。
-- 默认不要输出完整 DOM 或每步截图；失败时再逐级增加局部 DOM、截图、日志和后端容器日志。
+临时浏览器检查的流程、取证与失败排查由项目
+[frontend-flow-test](../../.agents/skills/frontend-flow-test/SKILL.md)维护。它不替代自动化回归；
+发现缺陷后按本页的风险标准补充测试，发布、演示或共享能力变化优先复用现有自动化验证。
 
 ## 10. 运行命令
 
@@ -210,3 +191,11 @@ GitHub Actions 将 Testcontainers 集成测试作为独立 job 执行，避免�
 新增高风险逻辑即使整体覆盖率仍高于门槛，也必须按业务风险补充针对性测试。提高门槛前应先确认本地和 CI 基线稳定，禁止通过排除未测试业务代码换取数字。
 
 若本地 Docker CLI 可用但 Testcontainers 报无法找到 Docker environment，先确认依赖版本、Docker context 和 socket 路径；不要把 0 tests 当作集成测试通过。
+
+## 仓库结构门禁
+
+- `python3 scripts/check-repository-layout.py` 检查跨平台路径及生成物：不提交 `target`、`dist`、
+  `node_modules`、报告、虚拟环境、缓存或系统垃圾；文件名不使用 `< > : " | ? *`，不以空格或句点结尾。
+- `python3 scripts/check-code-structure.py` 检查 Service 行数与依赖数、Vue 文件及脚本块大小，
+  阈值以脚本为准，用于触发职责审查，不代表低于阈值就合理。
+- 管理页面只能放入 `frontend/src/admin/views/`；不得用异常扩展名或路径保存不参与构建、测试的重复源码。

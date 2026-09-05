@@ -29,21 +29,16 @@ AI 教学、试卷学习、练习、错题、复习和测评。产品范围与�
 
 | 触发条件与读取时机 | 必读入口 |
 |---|---|
-| 修改代码、配置、检查工具或协作规则前 | [开发工作流](docs/development/workflow.md)；按改动风险读取[测试策略](docs/development/testing.md) |
-| 决定新增测试或选择验证范围前 | [测试策略](docs/development/testing.md) |
-| 持续开发、恢复维护任务或判断任务完成前 | [执行模式与阶段边界](docs/development/workflow.md#6-执行模式与阶段边界)、[完成状态](docs/development/workflow.md#5-完成状态) |
-| 判断功能范围、规划下一阶段前 | [产品需求](docs/product/prd.md)、[路线图](docs/product/roadmap.md)；候选方向从[文档中心](docs/index.md)进入 |
-| 调整模块、目录或职责边界前 | [工程规则](docs/development/engineering-rules.md)、[系统架构](docs/architecture/overview.md)；重大决策查阅[ADR](docs/architecture/decisions/index.md) |
-| 修改接口、鉴权或请求响应契约前 | [API 参考](docs/reference/api/index.md)及对应业务域文档；行为验证遵循测试策略 |
-| 修改数据库结构、约束或迁移前 | [数据库参考](docs/reference/database/index.md)、[迁移策略](docs/reference/database/migration-policy.md)和测试策略 |
-| 修改前端视觉、布局或交互前 | [前端任务路由](docs/development/agent-tooling.md#前端任务)，依次读取其指定的设计 Skills |
-| 打开浏览器做临时流程验收前 | [frontend-flow-test](.agents/skills/frontend-flow-test/SKILL.md)、[测试策略](docs/development/testing.md#9-agent-临时浏览器流程验收) |
-| 修改文档、状态或协作规范前 | [文档职责与更新规则](docs/index.md#文档维护)；修改 Agent 入口或 Skills 规则还需读[Agent 工具维护](docs/development/agent-tooling.md#维护) |
-| 采用、修改或升级 Skill 前 | [Agent 与 Skills](docs/development/agent-tooling.md)，完整阅读待使用的 SKILL.md |
-| 启动、重建、停止或清理 Docker 环境前 | [Docker 开发](docs/getting-started/docker-development.md)、[Docker 磁盘治理](docs/development/docker-disk-governance.md) |
-| 审查代码、文档或准备交付修改前 | [审查清单](docs/development/review-checklist.md)及实际涉及的领域文档 |
-| 创建提交、操作分支或进行远端操作前 | [Git 规则](docs/development/git-rules.md) |
-| 准备演示、截图或简历材料前 | [演示指南](docs/showcase/demo.md)或[简历材料](docs/showcase/resume.md)，并核对当前实现与验证证据 |
+| 开发、持续维护或判断完成前 | [开发工作流](docs/development/workflow.md)；选择验证范围时查[测试策略](docs/development/testing.md) |
+| 判断产品范围或下一阶段前 | [产品需求](docs/product/prd.md)、[路线图](docs/product/roadmap.md)；未承诺方向见[候选计划](docs/product/future.md) |
+| 调整模块、目录或职责边界前 | [系统架构](docs/architecture/overview.md)及对应前后端文档；重大决策查阅[ADR](docs/architecture/decisions/index.md) |
+| 修改接口、鉴权或数据契约前 | [API 参考](docs/reference/api/index.md)或[数据库参考](docs/reference/database/index.md)；迁移查[迁移策略](docs/reference/database/migration-policy.md) |
+| 修改前端视觉、布局或交互前 | 项目 [frontend-design](.agents/skills/frontend-design/SKILL.md)；辅助设计资料由该 Skill 按需选择 |
+| 打开浏览器做临时流程验收前 | 项目 [frontend-flow-test](.agents/skills/frontend-flow-test/SKILL.md) |
+| 修改文档、Agent 入口或 Skills 前 | [文档维护](docs/index.md#文档维护)；Skills 来源与升级见同页[工具维护](docs/index.md#工具维护) |
+| 操作 Docker 环境前 | [Docker 开发](docs/getting-started/docker-development.md)；诊断磁盘或清理资源前查[磁盘治理](docs/development/docker-disk-governance.md) |
+| 审查或提交修改前 | [审查标准](docs/development/workflow.md#审查标准)；提交、分支或远端操作查[Git 规则](docs/development/git-rules.md) |
+| 准备演示、截图或简历前 | [演示指南](docs/showcase/demo.md)或[简历材料](docs/showcase/resume.md)，核对真实实现与验证证据 |
 
 其他资料从[文档中心](docs/index.md)查找；找不到必要规则或发现实质冲突时，先核对权威来源和真实实现，
 仅在无法安全判断、需要新增授权或改变重大方向时询问用户。

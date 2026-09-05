@@ -173,7 +173,7 @@
 - 真实接口点击验收。
 - Element Plus 样式按需打包和构建体积收敛。
 
-视觉和交互的长期规范见项目 `frontend-design` Skill 与[Agent 工具边界](../development/agent-tooling.md)。
+视觉和交互的长期规范见项目 [frontend-design](../../.agents/skills/frontend-design/SKILL.md) 与[前端架构](../architecture/frontend.md)。
 
 ## Phase 22：AI 学习效果验证
 
@@ -209,7 +209,7 @@ Phase 22 已经建立观察性事件、样本门槛和不足数据语义。真�
 - AI 教学和试卷学习是两个并列入口；
 - 两个入口必须共享课程学习状态、错题、复习和测评记录；
 - 公共题库以权威考试原题试卷为主，用户可以学习自己的私有试卷和题库；
-- AI 可以参考母题、课程范围和用户状态生成新题，审查 Agent 通过后进入正式学习流程；
+- AI 可以参考母题、课程范围和用户状态生成新题，正式发布遵守审查与权限边界；自动审查目标见 PRD，当前由管理员批准发布；
 - 用户学习端与管理系统采用独立前端应用目标，共用后端、账号和业务数据；
 - 当前保留 Vue 3、Spring Boot 和模块化单体，不为转型立即重写技术栈。
 
@@ -264,7 +264,7 @@ Remaining Required 为空，阶段已完成退出）。
 ### Stop / Transition Condition
 
 Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化而继续加 Required；
-后续按 roadmap / future 进入扩展课程与内容、画像、可视化升级和桌面端等方向。
+后续扩展仅作为 future 候选，不自动授权开发；项目现已按 Phase 24 退出条件进入维护。
 
 ## Phase 24：最终展示版 UI/UX 重构
 
