@@ -194,216 +194,41 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, reactive, onMounted } from 'vue'
-import { errorMessage } from '@/utils/errors'
-import { useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import { Star, StarFilled, ChatLineRound, Warning } from '@element-plus/icons-vue'
-import { getQuestionPage, submitQuestionCorrectionReport, type QuestionVO } from '@/api/question'
-import { getAllCourses, type CourseVO } from '@/api/course'
-import { getFavoriteIds, addFavorite, removeFavorite } from '@/api/favorite'
 import QuestionComment from '@/components/QuestionComment.vue'
+import { useQuestionCatalog } from './useQuestionCatalog'
 
-const route = useRoute()
-const questions = ref<QuestionVO[]>([])
-const loading = ref(false)
-const pageNum = ref(1)
-const pageSize = ref(10)
-const total = ref(0)
-
-const filters = reactive({
-  questionType: '' as string,
-  courseId: null as number | null,
-  difficulty: null as number | null,
-})
-
-const questionTypes = [
-  { label: '全部题型', shortLabel: '全部', value: '' },
-  { label: '单选题', shortLabel: '单选', value: 'SINGLE_CHOICE' },
-  { label: '多选题', shortLabel: '多选', value: 'MULTIPLE_CHOICE' },
-  { label: '判断题', shortLabel: '判断', value: 'TRUE_FALSE' },
-  { label: '填空题', shortLabel: '填空', value: 'FILL_BLANK' },
-  { label: '简答题', shortLabel: '简答', value: 'SHORT_ANSWER' },
-]
-
-const difficultyOptions = [
-  { value: 1, label: '入门' },
-  { value: 2, label: '基础' },
-  { value: 3, label: '进阶' },
-  { value: 4, label: '挑战' },
-  { value: 5, label: '压轴' },
-]
-
-const courseList = ref<CourseVO[]>([])
-const favoriteSet = ref<Set<number>>(new Set())
-const expandedComments = ref<Set<number>>(new Set())
-const correctionDialogVisible = ref(false)
-const correctionSubmitting = ref(false)
-const correctionQuestion = ref<QuestionVO | null>(null)
-const correctionForm = reactive({
-  reportType: 'CONTENT',
-  description: '',
-})
-
-const activeFilterCount = computed(() => {
-  return [filters.questionType, filters.courseId, filters.difficulty].filter(Boolean).length
-})
-
-const resultSummary = computed(() => {
-  if (loading.value) return '正在加载题目...'
-  if (total.value === 0) return '当前筛选下没有题目，换个条件再试试。'
-  const start = (pageNum.value - 1) * pageSize.value + 1
-  const end = Math.min(pageNum.value * pageSize.value, total.value)
-  return `显示第 ${start}-${end} 题，共 ${total.value} 题。`
-})
-
-function toggleComment(questionId: number) {
-  if (expandedComments.value.has(questionId)) {
-    expandedComments.value.delete(questionId)
-  } else {
-    expandedComments.value.add(questionId)
-  }
-  expandedComments.value = new Set(expandedComments.value)
-}
-
-function questionTypeLabel(type: string) {
-  const match = questionTypes.find((item) => item.value === type)
-  return match?.shortLabel || type
-}
-
-function questionTypeTag(type: string): 'primary' | 'success' | 'warning' | 'info' | 'danger' {
-  const map: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
-    SINGLE_CHOICE: 'primary',
-    MULTIPLE_CHOICE: 'success',
-    TRUE_FALSE: 'warning',
-    FILL_BLANK: 'info',
-    SHORT_ANSWER: 'danger',
-  }
-  return map[type] || 'primary'
-}
-
-function difficultyLabel(difficulty: number) {
-  const match = difficultyOptions.find((item) => item.value === difficulty)
-  return match ? `${match.label}难度` : `${difficulty} 星难度`
-}
-
-function handleFilterChange() {
-  pageNum.value = 1
-  fetchQuestions()
-}
-
-function handleSizeChange() {
-  pageNum.value = 1
-  fetchQuestions()
-}
-
-function selectDifficulty(value: number) {
-  filters.difficulty = filters.difficulty === value ? null : value
-  handleFilterChange()
-}
-
-function resetFilters() {
-  filters.questionType = ''
-  filters.courseId = null
-  filters.difficulty = null
-  handleFilterChange()
-}
-
-function applyRouteFilters() {
-  const routeCourseId = Number(route.query.courseId)
-  filters.courseId = Number.isFinite(routeCourseId) && routeCourseId > 0 ? routeCourseId : null
-}
-
-async function fetchQuestions() {
-  loading.value = true
-  try {
-    const res = await getQuestionPage({
-      pageNum: pageNum.value,
-      pageSize: pageSize.value,
-      questionType: filters.questionType || undefined,
-      courseId: filters.courseId || undefined,
-      difficulty: filters.difficulty || undefined,
-    })
-    questions.value = res.data.records
-    total.value = res.data.total
-  } catch {
-    // 错误已在拦截器中处理
-  } finally {
-    loading.value = false
-  }
-}
-
-async function fetchCourses() {
-  try {
-    const res = await getAllCourses()
-    courseList.value = res.data
-  } catch {
-    // ignore
-  }
-}
-
-async function loadFavoriteIds() {
-  try {
-    const res = await getFavoriteIds()
-    if (res.code === 0 && res.data) {
-      favoriteSet.value = new Set(res.data)
-    }
-  } catch {
-    // ignore
-  }
-}
-
-async function toggleFavorite(questionId: number) {
-  try {
-    if (favoriteSet.value.has(questionId)) {
-      await removeFavorite(questionId)
-      favoriteSet.value.delete(questionId)
-      ElMessage.success('已取消收藏')
-    } else {
-      await addFavorite(questionId)
-      favoriteSet.value.add(questionId)
-      ElMessage.success('已收藏')
-    }
-    favoriteSet.value = new Set(favoriteSet.value)
-  } catch (e) {
-    ElMessage.error(errorMessage(e, '操作失败'))
-  }
-}
-
-function openCorrectionDialog(question: QuestionVO) {
-  correctionQuestion.value = question
-  correctionForm.reportType = 'CONTENT'
-  correctionForm.description = ''
-  correctionDialogVisible.value = true
-}
-
-async function submitCorrection() {
-  if (!correctionQuestion.value) return
-  if (!correctionForm.description.trim()) {
-    ElMessage.warning('请填写问题描述')
-    return
-  }
-  correctionSubmitting.value = true
-  try {
-    await submitQuestionCorrectionReport(correctionQuestion.value.id, {
-      reportType: correctionForm.reportType,
-      description: correctionForm.description.trim(),
-    })
-    ElMessage.success('纠错反馈已提交')
-    correctionDialogVisible.value = false
-  } catch {
-    // 错误已在拦截器中处理
-  } finally {
-    correctionSubmitting.value = false
-  }
-}
-
-onMounted(() => {
-  applyRouteFilters()
-  fetchQuestions()
-  fetchCourses()
-  loadFavoriteIds()
-})
+const {
+  questions,
+  loading,
+  pageNum,
+  pageSize,
+  total,
+  filters,
+  questionTypes,
+  difficultyOptions,
+  courseList,
+  favoriteSet,
+  expandedComments,
+  correctionDialogVisible,
+  correctionSubmitting,
+  correctionQuestion,
+  correctionForm,
+  activeFilterCount,
+  resultSummary,
+  toggleComment,
+  questionTypeLabel,
+  questionTypeTag,
+  difficultyLabel,
+  handleFilterChange,
+  handleSizeChange,
+  selectDifficulty,
+  resetFilters,
+  fetchQuestions,
+  toggleFavorite,
+  openCorrectionDialog,
+  submitCorrection,
+} = useQuestionCatalog()
 </script>
 
 <style scoped>

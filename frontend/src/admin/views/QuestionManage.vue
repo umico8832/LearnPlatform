@@ -348,7 +348,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import {
   Plus,
   Search,
@@ -369,10 +369,7 @@ import {
   Clock,
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { TableInstance } from 'element-plus'
 import {
-  getAdminQuestionPage,
-  deleteQuestion,
   getReviewRecords,
   getReviewSuggestion,
   performReReview,
@@ -387,8 +384,6 @@ import {
   type QuestionCorrectionReportVO,
   type QuestionVersionVO,
 } from '@/api/question'
-import { clearAssetCache } from '@/api/ai'
-import { getAllCourses, type CourseVO } from '@/api/course'
 import {
   questionTypeLabel,
   questionTypeTag,
@@ -399,29 +394,29 @@ import {
 import QuestionGovernanceDrawers from './question/QuestionGovernanceDrawers.vue'
 import QuestionEditorDialog from './question/QuestionEditorDialog.vue'
 import QuestionImportExport from './question/QuestionImportExport.vue'
+import { useQuestionAdminList } from './question/useQuestionAdminList'
 
-const questions = ref<QuestionVO[]>([])
-const questionTableRef = ref<TableInstance>()
-const selectedQuestions = ref<QuestionVO[]>([])
-const loading = ref(false)
-const pageNum = ref(1)
-const pageSize = ref(10)
-const total = ref(0)
-
-const filters = reactive({
-  keyword: '',
-  questionType: '' as string,
-  courseId: null as number | null,
-  difficulty: null as number | null,
-  sourceType: '' as string,
-})
-
-// 课程列表
-const courseList = ref<CourseVO[]>([])
+const {
+  questions,
+  questionTableRef,
+  selectedQuestions,
+  loading,
+  pageNum,
+  pageSize,
+  total,
+  filters,
+  courseList,
+  fetchQuestions,
+  handleQuestionSelectionChange,
+  clearQuestionSelection,
+  handleDelete,
+  handleBulkDelete,
+  handleClearAiCache,
+  handleBulkClearAiCache,
+} = useQuestionAdminList()
 const questionEditor = ref<InstanceType<typeof QuestionEditorDialog>>()
 const questionImportExport = ref<InstanceType<typeof QuestionImportExport>>()
 
-// 复审相关
 const reReviewVisible = ref(false)
 const reReviewQuestion = ref<QuestionVO | null>(null)
 const reReviewLoading = ref(false)
@@ -497,17 +492,8 @@ const handleQuestionRowCommand = async (command: string, question: QuestionVO) =
   }
 }
 
-const handleQuestionSelectionChange = (selection: QuestionVO[]) => {
-  selectedQuestions.value = selection
-}
-
-const clearQuestionSelection = () => {
-  questionTableRef.value?.clearSelection()
-}
-
 const openQuestionEditor = (question?: QuestionVO) => questionEditor.value?.open(question)
 
-// 打开复审弹窗
 async function openReReview(question: QuestionVO) {
   reReviewQuestion.value = question
   reReviewForm.action = 'APPROVE'
@@ -550,7 +536,6 @@ function applyReviewSuggestion() {
   ElMessage.success('已填入复审表单')
 }
 
-// 提交复审
 async function handleReReview() {
   if (!reReviewForm.comment.trim()) {
     ElMessage.warning('请输入复审意见')
@@ -575,28 +560,6 @@ async function handleReReview() {
     // error handled by interceptor
   } finally {
     reReviewLoading.value = false
-  }
-}
-
-async function fetchQuestions() {
-  loading.value = true
-  try {
-    const res = await getAdminQuestionPage({
-      pageNum: pageNum.value,
-      pageSize: pageSize.value,
-      keyword: filters.keyword || undefined,
-      questionType: filters.questionType || undefined,
-      courseId: filters.courseId || undefined,
-      difficulty: filters.difficulty || undefined,
-      sourceType: filters.sourceType || undefined,
-    })
-    questions.value = res.data.records
-    total.value = res.data.total
-    selectedQuestions.value = []
-  } catch {
-    // 错误已在拦截器中处理
-  } finally {
-    loading.value = false
   }
 }
 
@@ -686,97 +649,6 @@ async function fetchQuestionVersions() {
     versionLoading.value = false
   }
 }
-
-async function fetchCourses() {
-  try {
-    const res = await getAllCourses()
-    courseList.value = res.data
-  } catch {
-    // ignore
-  }
-}
-
-async function handleDelete(id: number) {
-  try {
-    await deleteQuestion(id)
-    ElMessage.success('删除成功')
-    fetchQuestions()
-  } catch {
-    // 错误已在拦截器中处理
-  }
-}
-
-async function handleBulkDelete() {
-  if (!selectedQuestions.value.length) return
-  try {
-    await ElMessageBox.confirm(
-      `确定删除选中的 ${selectedQuestions.value.length} 道题目？此操作不可恢复。`,
-      '批量删除题目',
-      {
-        type: 'warning',
-        confirmButtonText: '删除',
-        cancelButtonText: '取消',
-      },
-    )
-    loading.value = true
-    const targets = [...selectedQuestions.value]
-    const results = await Promise.allSettled(targets.map((question) => deleteQuestion(question.id)))
-    const failed = results.filter((result) => result.status === 'rejected').length
-    if (failed > 0) {
-      ElMessage.warning(`已删除 ${targets.length - failed} 道题，${failed} 道处理失败`)
-    } else {
-      ElMessage.success(`已删除 ${targets.length} 道题`)
-    }
-    await fetchQuestions()
-  } catch {
-    // 用户取消确认时不提示错误。
-  } finally {
-    loading.value = false
-  }
-}
-
-async function handleClearAiCache(questionId: number) {
-  try {
-    await clearAssetCache(questionId)
-    ElMessage.success('AI 学习资产缓存已清除')
-  } catch {
-    ElMessage.error('清除失败')
-  }
-}
-
-async function handleBulkClearAiCache() {
-  if (!selectedQuestions.value.length) return
-  try {
-    await ElMessageBox.confirm(
-      `确定清除选中 ${selectedQuestions.value.length} 道题目的 AI 学习资产缓存？`,
-      '批量清除缓存',
-      {
-        type: 'warning',
-        confirmButtonText: '清除',
-        cancelButtonText: '取消',
-      },
-    )
-    loading.value = true
-    const targets = [...selectedQuestions.value]
-    const results = await Promise.allSettled(targets.map((question) => clearAssetCache(question.id)))
-    const failed = results.filter((result) => result.status === 'rejected').length
-    if (failed > 0) {
-      ElMessage.warning(`已清除 ${targets.length - failed} 道题缓存，${failed} 道处理失败`)
-    } else {
-      ElMessage.success(`已清除 ${targets.length} 道题缓存`)
-    }
-    clearQuestionSelection()
-  } catch {
-    // 用户取消确认时不提示错误。
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(() => {
-  fetchQuestions()
-  fetchCourses()
-})
 </script>
 
 <style scoped>

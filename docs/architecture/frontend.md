@@ -81,7 +81,10 @@ frontend/admin/   # 独立管理端 HTML 入口
   自行管理请求和结果状态，只有知识点应用成功时向 `SubmissionManage` 发出列表刷新事件。
 - `admin/views/question/` 承载正式题库的自包含编辑能力；题目编辑器拥有表单校验、选项
   规则、课程知识点加载和创建 / 更新请求，导入导出组件拥有文件选择、结果展示和既有
-  composable 生命周期；`QuestionManage` 只转发命令并在保存或导入后刷新列表。
+  composable 生命周期；`useQuestionAdminList` 管理分页筛选、选择、删除和学习资产缓存命令，
+  `QuestionManage` 保留复审、重复题、纠错和版本治理编排。
+- `views/course/useQuestionCatalog` 管理课程题库的路由筛选、分页、收藏、评论展开和纠错状态；
+  `QuestionListView` 只负责题目列表、筛选器和对话框展示。
 - `api/` 统一方法、路径和参数，页面不得散落 Axios URL。
 - `stores/` 只保存跨页面状态；局部表单和弹窗状态留在页面或组合函数中。
 - 大页面优先拆出领域组件、组合函数和纯展示映射，不建立无意义的包装层。
