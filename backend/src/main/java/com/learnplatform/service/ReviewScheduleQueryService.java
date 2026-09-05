@@ -136,7 +136,9 @@ public class ReviewScheduleQueryService {
         wrapper.eq(QuestionReviewSchedule::getUserId, userId)
                 .orderByAsc(QuestionReviewSchedule::getNextReviewDate);
 
-        List<ReviewScheduleVO> views = cardViewService.toViews(reviewScheduleMapper.selectList(wrapper), LocalDate.now());
+        List<ReviewScheduleVO> views = cardViewService.toViews(
+                reviewScheduleMapper.selectList(wrapper),
+                LocalDate.now());
         if (courseId == null) {
             return views;
         }

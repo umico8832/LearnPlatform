@@ -211,6 +211,14 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 
 ## 最新验证基线
 
+结构重构全量本地回归（Round 311，2026-09-05）：
+
+- 后端 `mvn clean verify -B` 共 607 个测试通过，Checkstyle、SpotBugs 与 JaCoCo 通过。
+- 前端 79 个测试文件、351 个测试、覆盖率门槛、ESLint、Prettier 和学习 / 管理双生产构建通过；
+  覆盖率为语句 47.17%、分支 40.74%、函数 38.19%、行 49.29%。
+- 代码结构、文档和仓库布局门禁通过；本机 Docker daemon 未确认可用，本轮未重跑 Testcontainers 与
+  Playwright E2E，不将其记为通过。
+
 投稿审核与详情闭包拆分（Round 310，2026-09-05）：
 
 - `SubmissionManage.vue` 从 544 行降为 368 行、响应式状态从 18 处降为 12 处；单条审核、AI 意见和
