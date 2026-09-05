@@ -70,9 +70,10 @@ frontend/admin/   # 独立管理端 HTML 入口
   编排，通过类型化属性、事件与少量公开命令连接这些闭包。
 - `admin/views/ai-usage/` 承载 AI 运营报告、学习效果观察、样本结构和调用明细展示；
   `AiUsageView` 只编排周期、接口加载、提醒确认与图表生命周期。
-- `admin/views/exam/` 承载试卷管理中的独立业务对话框；智能组卷组件自行管理规则表单、
-  预览和创建生命周期，`ExamManage` 只负责打开入口和创建后的列表刷新；题型与试卷来源标签映射
-  位于纯展示模块 `examManagePresentation`。
+- `admin/views/exam/` 承载试卷管理中的独立业务对话框；`ExamPaperEditorDialog` 自包含手工试卷表单、
+  题目选择和保存生命周期，表单映射与官方来源发布约束位于纯模型 `examPaperEditorModel`；智能组卷组件
+  自行管理规则表单、预览和创建生命周期。`ExamManage` 只负责列表命令、打开入口和保存后的刷新，题型与
+  试卷来源标签映射位于纯展示模块 `examManagePresentation`。
 - `views/practice/reviewSuggestionStream` 负责 AI 复习建议 SSE 数据帧消费，`reviewPresentation`
   负责路由数字归一化与状态标签映射，`ReviewView` 保留复习会话和页面级 API 编排。
 - `views/practice/usePracticeAnswer` 管理练习答案、可提交状态与多选归一化，练习展示和退出路由映射保持为
