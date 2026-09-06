@@ -12,7 +12,7 @@
 - 删除容器、数据卷或网络；
 - 删除带 tag 的镜像（等价于 `docker image prune -a`）；
 - 全局 `docker system prune`（尤其是 `--volumes`）；
-- 清理其他项目（不以 `learnplatform` 前缀开头的卷或容器）。
+- 清理其他项目（不以 `learnplatform` 或 `learn-platform` 前缀开头的卷或容器）。
 
 诊断必须先按 images → build cache → containers → volumes 定位，再决定处理方式；
 详细规则见 `docs/development/docker-disk-governance.md`。
@@ -33,7 +33,7 @@ DEFAULT_KEEP_STORAGE = "4g"
 
 # 本项目 Compose 管理的资源都以项目名前缀开头（默认项目名 learnplatform，
 # E2E 项目名 learnplatform-e2e）；其余前缀视为其他项目或手工资源，只报告不清理。
-PROJECT_PREFIX = "learnplatform"
+PROJECT_PREFIXES = ("learnplatform", "learn-platform")
 
 
 def run(*args: str) -> subprocess.CompletedProcess[str]:
@@ -51,7 +51,7 @@ def require_docker() -> None:
 
 def is_project_managed(name: str) -> bool:
     """判断资源名是否属于本项目 Compose 管理。"""
-    return name.startswith(PROJECT_PREFIX)
+    return name.startswith(PROJECT_PREFIXES)
 
 
 def classify_volume(name: str) -> str:
@@ -149,6 +149,7 @@ def cmd_reclaim(args: argparse.Namespace) -> int:
         print("[dry-run] 只打印将执行的命令，不实际清理。\n")
 
     flag = builder_prune_flag(run("builder", "prune", "--help").stdout)
+    exit_code = 0
 
     build_cmd = ("builder", "prune", flag, keep, "-f")
     print("1) 回收超出预算的 BuildKit 构建缓存：")
@@ -156,6 +157,8 @@ def cmd_reclaim(args: argparse.Namespace) -> int:
     if not dry:
         proc = run(*build_cmd)
         print("   " + (proc.stdout.strip() or proc.stderr.strip()))
+        if proc.returncode != 0:
+            exit_code = proc.returncode
 
     image_cmd = ("image", "prune", "--filter", "dangling=true", "-f")
     print("2) 回收悬空镜像：")
@@ -163,13 +166,15 @@ def cmd_reclaim(args: argparse.Namespace) -> int:
     if not dry:
         proc = run(*image_cmd)
         print("   " + (proc.stdout.strip() or proc.stderr.strip()))
+        if proc.returncode != 0 and exit_code == 0:
+            exit_code = proc.returncode
 
     print("\n未执行（需要用户授权或按正常生命周期处理）：")
     print("- 容器、数据卷、网络清理")
     print("- 带 tag 的镜像清理（docker image prune -a）")
     print("- 全局 docker system prune（尤其是 --volumes）")
     print("- 其他项目（非 learnplatform 前缀）的资源")
-    return 0
+    return exit_code
 
 
 def main() -> int:

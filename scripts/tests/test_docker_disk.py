@@ -4,6 +4,8 @@ import importlib.util
 import sys
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "docker-disk.py"
 SPEC = importlib.util.spec_from_file_location("docker_disk", SCRIPT_PATH)
@@ -31,12 +33,30 @@ class VolumeOwnershipTest(unittest.TestCase):
         self.assertEqual("project", disk.classify_volume("learnplatform_mysql-data"))
         self.assertEqual("project", disk.classify_volume("learnplatform-e2e_mysql-data"))
         self.assertTrue(disk.is_project_managed("learnplatform-e2e_mysql-data"))
+        self.assertTrue(disk.is_project_managed("learn-platform-backend"))
 
     def test_foreign_volumes(self) -> None:
         self.assertEqual("foreign", disk.classify_volume("lifepilot_mysql-data"))
         self.assertEqual("foreign", disk.classify_volume("docker_postgres_data"))
         self.assertEqual("foreign", disk.classify_volume("vscode"))
         self.assertFalse(disk.is_project_managed("gapi-postgres"))
+
+
+class ReclaimResultTest(unittest.TestCase):
+    @patch.object(disk, "require_docker")
+    @patch.object(disk, "run")
+    def test_prune_failure_is_reported_to_the_lifecycle_caller(
+        self, run: Mock, require_docker: Mock
+    ) -> None:
+        run.side_effect = [
+            SimpleNamespace(stdout="--max-used-space bytes", stderr="", returncode=0),
+            SimpleNamespace(stdout="", stderr="builder failed", returncode=7),
+            SimpleNamespace(stdout="Total reclaimed space: 0B", stderr="", returncode=0),
+        ]
+
+        result = disk.cmd_reclaim(SimpleNamespace(keep_storage="4g", dry_run=False))
+
+        self.assertEqual(7, result)
 
 
 if __name__ == "__main__":

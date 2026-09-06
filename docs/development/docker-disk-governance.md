@@ -10,7 +10,8 @@
 引入守护进程、定时任务或额外服务。
 
 构建习惯见[Docker 开发](../getting-started/docker-development.md)，验证范围见[测试策略](testing.md)。
-磁盘回收只处理可再生成的缓存与悬空镜像；环境停止和 E2E 清理按第 4 节单独核对范围。
+磁盘回收只处理可再生成的缓存与悬空镜像；日常应用和 E2E 的镜像生命周期由
+`scripts/docker-lifecycle.py` 管理，环境停止和 E2E 清理按第 4 节核对范围。
 
 ## 2. 占用定位顺序
 
@@ -52,14 +53,26 @@ python3 scripts/docker-disk.py report
 
 - 不设自动预算、不自动回收。删除带 tag 的未使用镜像（`docker image prune -a`）需要
   用户明确授权，因为它可能包含其他项目或有意保留的镜像。
+- 生命周期脚本只删除自己刚完成生命周期管理的两个 `learnplatform-e2e-*` 精确标签；这不
+  授权删除其他带 tag 镜像。
+
+### 应用镜像保留状态
+
+- 日常环境保留运行中的 `learnplatform-backend:latest` 和 `learnplatform-frontend:latest`；
+  新版本通过健康与 HTTP 检查后，旧版本失去标签并由安全回收删除。
+- E2E 环境只在测试期间保留 `learnplatform-e2e-*` 应用镜像，测试结束后按精确标签删除。
+- 镜像记录 Git revision、对应构建上下文的 clean/dirty 状态和源码指纹；检查入口为
+  `python3 scripts/docker-lifecycle.py app-status`。源码是否最新以生命周期脚本实际构建为准，
+  不能只根据 `latest` 名称或容器 `healthy` 状态判断。
 
 ## 4. 安全回收 vs 需授权清理
 
 | 操作 | 分类 | 说明 |
 |---|---|---|
 | `scripts/docker-disk.py reclaim` | 允许自动执行 | 仅回收构建缓存超预算部分和悬空镜像 |
+| `scripts/docker-lifecycle.py app-up` | 允许 | 构建并验证日常应用，成功后调用安全回收 |
+| `npm run test:e2e` | 允许 | 管理隔离 E2E 的构建、测试、精确清理与安全回收 |
 | `docker compose down`（本项目） | 允许 | 停止本项目容器并移除其网络，保留数据卷 |
-| `docker compose ... down -v --rmi local`（E2E 项目） | 允许 | 清理 E2E 自己的容器、网络、卷与构建镜像 |
 | `docker compose down -v`（开发项目） | 需确认 | 会删除开发数据库等数据卷，仅用于明确的全量重置 |
 | `docker image prune -a` / `docker container prune` / `docker volume prune` | 需授权 | 全局且可能波及持久化数据或其他项目 |
 | `docker system prune`（尤其是 `--volumes`） | 需授权 | 扩大范围的破坏性全局清理 |
@@ -68,14 +81,15 @@ python3 scripts/docker-disk.py report
 跨项目资源清理必须获得用户明确授权。
 
 E2E 的启动、重建与结束清理由[测试策略](testing.md#8-浏览器-e2e-环境)统一维护。
-`down` 不清理构建缓存；仅在超过预算时使用 `scripts/docker-disk.py reclaim`，不要求每次测试后执行。
+`down` 本身不清理构建缓存；日常应用成功更新和每次隔离 E2E 收尾会调用安全回收，其他测试
+不要求额外执行。
 
 ## 7. 持久化数据安全
 
 - 开发环境持久化数据保存在 `learnplatform_*` 数据卷中；E2E 数据保存在
   `learnplatform-e2e_*` 数据卷中。两者互不影响。
 - 不得为了清理磁盘误删数据库或其他持久化 volume；不得默认执行扩大范围的破坏性 prune。
-- 其他项目（不以 `learnplatform` 前缀开头）的卷、容器、镜像和构建缓存属于共享环境，
+- 其他项目（不以 `learnplatform` 或 `learn-platform` 前缀开头）的卷、容器和镜像属于共享环境，
   需要全局 Docker 清理时必须由用户明确授权。
 - 日志与监控保留策略只按实际占用诊断调整，不根据历史结论推断当前磁盘来源。
 

@@ -15,7 +15,8 @@
     "preview:admin": "vite preview --config vite.admin.config.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "python3 ../scripts/docker-lifecycle.py e2e",
+    "test:e2e:playwright": "playwright test",
     "screenshots:demo": "node scripts/capture-demo-screenshots.mjs"
   },
   "dependencies": {

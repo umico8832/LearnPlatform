@@ -54,7 +54,13 @@ services:
       - learn-platform
 
   backend:
-    build: ./backend
+    image: learnplatform-backend:latest
+    build:
+      context: ./backend
+      args:
+        APP_REVISION: ${APP_REVISION:-unknown}
+        APP_WORKTREE_STATE: ${APP_BACKEND_WORKTREE_STATE:-unknown}
+        APP_SOURCE_FINGERPRINT: ${APP_BACKEND_SOURCE_FINGERPRINT:-unknown}
     container_name: learn-platform-backend
     ports:
       - "${BACKEND_HOST_PORT:-8080}:8080"
@@ -112,10 +118,14 @@ services:
       - learn-platform
 
   frontend:
+    image: learnplatform-frontend:latest
     build:
       context: ./frontend
       args:
         VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY:-}
+        APP_REVISION: ${APP_REVISION:-unknown}
+        APP_WORKTREE_STATE: ${APP_FRONTEND_WORKTREE_STATE:-unknown}
+        APP_SOURCE_FINGERPRINT: ${APP_FRONTEND_SOURCE_FINGERPRINT:-unknown}
     container_name: learn-platform-frontend
     ports:
       - "${FRONTEND_HOST_PORT:-80}:80"

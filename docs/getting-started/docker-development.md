@@ -8,9 +8,16 @@
 ## 启动
 
 ```bash
-cp .env.example .env
-docker compose up -d
-docker compose ps
+test -f .env || cp .env.example .env
+python3 scripts/docker-lifecycle.py app-up
+```
+
+`app-up` 始终让 BuildKit 检查当前前后端构建上下文；没有源码变化时复用缓存，有变化时构建
+新镜像。脚本保留旧应用镜像到新容器通过健康与 HTTP 检查，成功后安全回收悬空旧镜像及
+超过 4GB 预算的构建缓存。检查运行容器与当前源码是否一致：
+
+```bash
+python3 scripts/docker-lifecycle.py app-status
 ```
 
 默认访问地址：
@@ -26,16 +33,10 @@ FRONTEND_HOST_PORT=18000
 BACKEND_HOST_PORT=18080
 ```
 
-日常开发优先使用本机工具链（[本地开发](local-development.md)），不要为验证普通代码
-改动反复重建镜像。只有需要容器化运行，或改了 Dockerfile、`.dockerignore`、Compose 或
-Nginx 配置时才重建对应服务：
-
-```bash
-docker compose build backend
-docker compose up -d backend
-```
-
-启动与更新默认使用 `docker compose up -d`（不加 `--build`）。
+日常编码和单元测试优先使用本机工具链（[本地开发](local-development.md)），不要求每次保存
+源码都重建镜像。准备通过 Docker 做浏览器检查、联调或演示时必须使用 `app-up`，不能把
+`docker compose up -d` 复用的旧镜像当作当前工作区验证。单纯重启已经核对过的同一镜像时
+才直接使用 `docker compose up -d`。
 
 ## 停止
 

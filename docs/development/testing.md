@@ -128,24 +128,27 @@ Prompt 构造、HTTP Provider、结构校验、调用审计、草稿状态和数
 `docker-compose.e2e.yml` 使用独立 Compose 项目名 `learnplatform-e2e`，E2E 拥有自己的
 容器、网络和数据卷，与开发环境隔离。`down -v` 只清理 E2E 数据，不会误删开发数据。
 
-本地先启动隔离环境，再执行浏览器 E2E：
+本地通过单一入口执行浏览器 E2E：
 
 ```bash
-# 首次进入 E2E 或前端源码/镜像配置变化时加 --build；重复运行省略 --build，
-# 用 --force-recreate 让 backend 切换到 e2e Profile 即可。
-docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --force-recreate --wait
 cd frontend
 npm run test:e2e
 ```
 
-结束后必须清理 E2E 自己的资源：
+聚焦运行现有用例时把 Playwright 参数传给同一入口：
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v --rmi local
+npm run test:e2e -- --grep '用户可完成考试'
 ```
 
-`--rmi local` 删除本次为 E2E 构建的镜像；E2E 遗留的构建缓存按
-[Docker 磁盘增长治理](docker-disk-governance.md)的预算由 `scripts/docker-disk.py` 回收。
+该命令由 `scripts/docker-lifecycle.py` 使用当前前后端源码构建隔离镜像、强制重建并等待
+服务健康，然后运行 Playwright。成功、测试失败或启动异常都会进入 `finally`，按明确的
+`learnplatform-e2e` 范围删除 E2E 容器、数据卷和两份应用镜像，再按
+[Docker 磁盘增长治理](docker-disk-governance.md)回收悬空镜像与超预算缓存。若默认 18000
+端口已被日常环境占用，脚本为本轮选择空闲端口并同步设置 Playwright Base URL。
+
+`npm run test:e2e:playwright` 只是生命周期脚本内部使用的 Playwright 命令；Agent 不得单独
+执行它并把已有容器的结果记作当前源码 E2E。
 
 ## 9. Agent 临时浏览器流程验收
 

@@ -77,14 +77,17 @@ npm run dev
 ### Docker
 
 ```bash
-cp .env.example .env
-docker compose up -d
-docker compose ps
+test -f .env || cp .env.example .env
+python3 scripts/docker-lifecycle.py app-up
 ```
 
 - 前端：`http://localhost`
 - 独立管理端：`http://localhost/admin/`
 - 后端：`http://localhost:8080`
+
+脚本使用当前工作区构建前后端，验证新容器健康后替换旧版本并安全回收悬空镜像；实际端口以
+`.env` 和命令输出为准。镜像与源码状态可用 `python3 scripts/docker-lifecycle.py app-status`
+检查。完整规则见[Docker 开发指南](docs/getting-started/docker-development.md)。
 
 ## 演示账号
 

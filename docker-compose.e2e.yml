@@ -17,10 +17,24 @@ services:
       - learn-platform
 
   redis:
+    container_name: learnplatform-e2e-redis
     # 浏览器测试只使用容器网络；避免占用开发机已有的 6379 端口。
     ports: !reset []
 
+  loki:
+    container_name: learnplatform-e2e-loki
+    ports: !reset []
+
+  mailpit:
+    container_name: learnplatform-e2e-mailpit
+    ports: !reset []
+
+  mysql:
+    container_name: learnplatform-e2e-mysql
+
   frontend:
+    image: learnplatform-e2e-frontend:latest
+    container_name: learnplatform-e2e-frontend
     # 触发前端重建容器，确保 Nginx 重新解析 e2e 后端容器地址。
     labels:
       com.learnplatform.e2e: "true"
@@ -30,6 +44,9 @@ services:
         VITE_TURNSTILE_SITE_KEY: "1x00000000000000000000AA"
 
   backend:
+    image: learnplatform-e2e-backend:latest
+    container_name: learnplatform-e2e-backend
+    ports: !reset []
     environment:
       SPRING_PROFILES_ACTIVE: e2e,docker
       CACHE_TYPE: simple
@@ -44,3 +61,9 @@ services:
     depends_on:
       ai-mock:
         condition: service_healthy
+
+  prometheus:
+    container_name: learnplatform-e2e-prometheus
+
+  grafana:
+    container_name: learnplatform-e2e-grafana

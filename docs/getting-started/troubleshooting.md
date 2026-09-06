@@ -19,8 +19,11 @@ docker compose logs mysql
 优先解决最先失败的依赖。修改环境变量或镜像内容后使用：
 
 ```bash
-docker compose up -d --build --force-recreate
+python3 scripts/docker-lifecycle.py app-up
 ```
+
+该入口会重新构建当前源码，并在替换后核对容器镜像、健康状态和 HTTP 响应。仅查看运行环境
+是否仍对应当前工作区时，执行 `python3 scripts/docker-lifecycle.py app-status`。
 
 不要通过删除数据卷绕过迁移问题，除非明确接受丢失本地数据。
 
