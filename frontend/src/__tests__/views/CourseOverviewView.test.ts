@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { defineComponent, h, nextTick, ref, Transition } from 'vue'
 
 const {
   mockGetCourseOverview,
@@ -79,6 +80,33 @@ describe('CourseOverviewView', () => {
         ],
       },
     })
+  })
+
+  it('课程空间离场后渲染学习工具目标页面', async () => {
+    const showOverview = ref(true)
+    const host = defineComponent({
+      setup: () => () =>
+        h(
+          Transition,
+          { mode: 'out-in', css: false, onLeave: (_element: Element, done: () => void) => void nextTick(done) },
+          () => (showOverview.value ? h(CourseOverviewView) : h('h1', '练习')),
+        ),
+    })
+    const wrapper = mount(host, { attachTo: document.body, global: { stubs: { ...stubs, transition: false } } })
+    try {
+      await flushPromises()
+      expect(wrapper.text()).toContain('408 数据结构')
+      mockPush.mockImplementationOnce(() => {
+        showOverview.value = false
+      })
+      const tool = wrapper.findAll('.tool-row').find((item) => item.find('strong').text() === '练习')
+      await tool!.trigger('click')
+      await flushPromises()
+      expect(wrapper.find('h1').text()).toBe('练习')
+      expect(wrapper.findComponent(CourseOverviewView).exists()).toBe(false)
+    } finally {
+      wrapper.unmount()
+    }
   })
 
   it('读取失败时保留重试入口，并在重试后恢复课程空间', async () => {
