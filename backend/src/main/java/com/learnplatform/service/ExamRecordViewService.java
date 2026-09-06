@@ -16,6 +16,7 @@ import com.learnplatform.mapper.ExamQuestionMapper;
 import com.learnplatform.mapper.ExamRecordMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -43,6 +44,7 @@ public class ExamRecordViewService {
     private final AnswerEvaluator answerEvaluator;
     private final Clock clock;
 
+    @Autowired
     public ExamRecordViewService(ExamRecordMapper examRecordMapper,
                                  ExamAnswerMapper examAnswerMapper,
                                  ExamPaperMapper examPaperMapper,

@@ -11,6 +11,7 @@ import com.learnplatform.mapper.ExamPaperMapper;
 import com.learnplatform.mapper.ExamRecordMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
@@ -33,6 +34,7 @@ public class ExamSessionService {
     private final ExamRecordViewService examRecordViewService;
     private final Clock clock;
 
+    @Autowired
     public ExamSessionService(ExamRecordMapper examRecordMapper,
                               ExamPaperMapper examPaperMapper,
                               ExamRecordViewService examRecordViewService) {
