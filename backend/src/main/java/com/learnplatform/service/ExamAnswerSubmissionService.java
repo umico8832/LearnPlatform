@@ -115,9 +115,10 @@ public class ExamAnswerSubmissionService {
             if (questionId == null || !questionScoreMap.containsKey(questionId)) {
                 throw new BusinessException(ResultCode.VALIDATION_ERROR, "提交内容包含非本试卷题目");
             }
-            if (submittedAnswers.put(questionId, answerItem.getUserAnswer()) != null) {
+            if (submittedAnswers.containsKey(questionId)) {
                 throw new BusinessException(ResultCode.VALIDATION_ERROR, "同一道题不能重复提交");
             }
+            submittedAnswers.put(questionId, answerItem.getUserAnswer());
         }
         return submittedAnswers;
     }
