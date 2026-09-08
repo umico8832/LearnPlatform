@@ -40,6 +40,26 @@ export interface CourseOverviewVO {
   tutorProgress: TutorProgressVO[]
 }
 
+/** 课程知识点的可审计学习事实，不推断掌握度或学习趋势。 */
+export interface CourseKnowledgePointFactVO {
+  knowledgePointId: number | null
+  knowledgePointName: string
+  available: boolean
+  tutorAvailable: boolean
+  answeredCount: number
+  correctCount: number
+  unresolvedWrongCount: number
+  dueReviewCount: number
+}
+
+/** 课程知识点学习事实接口的分页结构。 */
+export interface CourseKnowledgePointFactsPage {
+  records: CourseKnowledgePointFactVO[]
+  total: number
+  current: number
+  size: number
+}
+
 export interface LearningTargetVO {
   type: 'TUTOR' | 'DUE_REVIEW' | 'WRONG_QUESTION' | 'COURSE_SEQUENCE'
   title: string
@@ -613,6 +633,14 @@ export function addCourseToLibrary(courseId: number) {
 /** 获取当前用户已加入课程的学习总览。 */
 export function getCourseOverview(courseId: number) {
   return request.get<unknown, ApiResponse<CourseOverviewVO>>(`/my-courses/${courseId}/overview`)
+}
+
+/** 获取当前用户课程内按知识点归集的学习事实。 */
+export function getCourseKnowledgePointFacts(courseId: number, pageNum = 1, pageSize = 10) {
+  return request.get<unknown, ApiResponse<CourseKnowledgePointFactsPage>>(
+    `/my-courses/${courseId}/knowledge-point-facts`,
+    { params: { pageNum, pageSize } },
+  )
 }
 
 /** 不由客户端预选知识点，按当前统一课程状态取得下一学习目标。 */

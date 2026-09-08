@@ -4,6 +4,7 @@ import { defineComponent, h, nextTick, ref, Transition } from 'vue'
 
 const {
   mockGetCourseOverview,
+  mockGetKnowledgePointFacts,
   mockStartCourseLearning,
   mockStartAssessment,
   mockSubmitAssessment,
@@ -12,6 +13,7 @@ const {
   mockPush,
 } = vi.hoisted(() => ({
   mockGetCourseOverview: vi.fn(),
+  mockGetKnowledgePointFacts: vi.fn(),
   mockStartCourseLearning: vi.fn(),
   mockStartAssessment: vi.fn(),
   mockSubmitAssessment: vi.fn(),
@@ -22,6 +24,7 @@ const {
 
 vi.mock('@/api/course', () => ({
   getCourseOverview: (...args: unknown[]) => mockGetCourseOverview(...args),
+  getCourseKnowledgePointFacts: (...args: unknown[]) => mockGetKnowledgePointFacts(...args),
   startCourseLearning: (...args: unknown[]) => mockStartCourseLearning(...args),
   startCourseStageAssessment: (...args: unknown[]) => mockStartAssessment(...args),
   submitCourseStageAssessment: (...args: unknown[]) => mockSubmitAssessment(...args),
@@ -80,6 +83,7 @@ describe('CourseOverviewView', () => {
         ],
       },
     })
+    mockGetKnowledgePointFacts.mockResolvedValue({ data: { records: [], total: 0, current: 1, size: 10 } })
   })
 
   it('课程空间离场后渲染学习工具目标页面', async () => {
@@ -168,6 +172,47 @@ describe('CourseOverviewView', () => {
     expect(mockPush).toHaveBeenCalledWith({
       name: routeName,
       query: { courseId: '408' },
+    })
+  })
+
+  it('知识点事实面板沿用复习与错题的知识点深链', async () => {
+    mockGetKnowledgePointFacts.mockResolvedValue({
+      data: {
+        records: [
+          {
+            knowledgePointId: 31,
+            knowledgePointName: '栈',
+            available: true,
+            tutorAvailable: true,
+            answeredCount: 2,
+            correctCount: 1,
+            unresolvedWrongCount: 1,
+            dueReviewCount: 1,
+          },
+        ],
+        total: 1,
+        current: 1,
+        size: 10,
+      },
+    })
+    const wrapper = mount(CourseOverviewView, { global: { stubs } })
+    await flushPromises()
+
+    await wrapper
+      .findAll('button')
+      .find((item) => item.text() === '复习')!
+      .trigger('click')
+    expect(mockPush).toHaveBeenCalledWith({
+      name: 'Review',
+      query: { courseId: '408', knowledgePointId: '31', knowledgePointName: '栈' },
+    })
+    await wrapper
+      .findAll('button')
+      .find((item) => item.text() === '错题')!
+      .trigger('click')
+    expect(mockPush).toHaveBeenCalledWith({
+      name: 'WrongQuestions',
+      query: { courseId: '408', knowledgePointId: '31', knowledgePointName: '栈' },
     })
   })
 

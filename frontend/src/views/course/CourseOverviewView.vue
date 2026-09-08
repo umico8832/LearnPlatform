@@ -6,6 +6,8 @@
       :failed="loadFailed"
       :starting="starting"
       :primary-action-label="primaryActionLabel"
+      :course-id="courseId"
+      :facts-refresh-key="factsRefreshKey"
       @back="router.push({ name: 'MyCourses' })"
       @retry="fetchOverview"
       @primary-action="handlePrimaryAction"
@@ -14,6 +16,8 @@
       @open-target="openTarget"
       @open-tool="openTool"
       @open-tutor="openTutor"
+      @open-knowledge-point-review="openKnowledgePointReview"
+      @open-knowledge-point-wrong-questions="openKnowledgePointWrongQuestions"
       @open-assessment-detail="openAssessmentDetail"
       @refresh="fetchOverview"
     />
@@ -53,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
@@ -95,6 +99,8 @@ const assessmentHistory = ref<CourseStageAssessmentSummaryVO[]>([])
 const assessmentHistoryPage = ref(1)
 const assessmentHistoryPageSize = 10
 const assessmentHistoryTotal = ref(0)
+const factsRefreshKey = ref(0)
+let overviewRequestVersion = 0
 
 const courseId = computed(() => Number(route.params.id))
 const setupKnowledgePointOptions = computed(() =>
@@ -117,16 +123,21 @@ function handleMoreCommand(command: string) {
 }
 
 async function fetchOverview() {
+  const requestedCourseId = courseId.value
+  const version = ++overviewRequestVersion
   loading.value = true
   loadFailed.value = false
   try {
-    const response = await getCourseOverview(courseId.value)
+    const response = await getCourseOverview(requestedCourseId)
+    if (version !== overviewRequestVersion || requestedCourseId !== courseId.value) return
     overview.value = response.data
+    factsRefreshKey.value += 1
   } catch {
+    if (version !== overviewRequestVersion || requestedCourseId !== courseId.value) return
     overview.value = null
     loadFailed.value = true
   } finally {
-    loading.value = false
+    if (version === overviewRequestVersion && requestedCourseId === courseId.value) loading.value = false
   }
 }
 
@@ -171,6 +182,15 @@ function reviewWrongQuestionByKnowledgePoint(point: { id: number; name: string }
     name: 'WrongQuestions',
     query: { courseId: String(courseId.value), knowledgePointId: String(point.id), knowledgePointName: point.name },
   })
+}
+function openKnowledgePointReview(knowledgePointId: number, knowledgePointName: string) {
+  router.push({
+    name: 'Review',
+    query: { courseId: String(courseId.value), knowledgePointId: String(knowledgePointId), knowledgePointName },
+  })
+}
+function openKnowledgePointWrongQuestions(knowledgePointId: number, knowledgePointName: string) {
+  reviewWrongQuestionByKnowledgePoint({ id: knowledgePointId, name: knowledgePointName })
 }
 
 function syncAssessmentAnswers(value: CourseStageAssessmentVO) {
@@ -258,5 +278,5 @@ async function submitAssessment() {
   }
 }
 
-onMounted(fetchOverview)
+watch(courseId, () => void fetchOverview(), { immediate: true })
 </script>

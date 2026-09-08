@@ -124,6 +124,20 @@
               description="课程内容还在制作中，可以从题目或试卷开始。"
             />
           </section>
+          <KnowledgePointFactsPanel
+            :course-id="courseId"
+            :refresh-key="factsRefreshKey"
+            @open-question-bank="emit('openTool', 'QuestionList')"
+            @open-review="
+              (knowledgePointId, knowledgePointName) =>
+                emit('openKnowledgePointReview', knowledgePointId, knowledgePointName)
+            "
+            @open-tutor="(knowledgePointId) => emit('openTutor', knowledgePointId)"
+            @open-wrong-questions="
+              (knowledgePointId, knowledgePointName) =>
+                emit('openKnowledgePointWrongQuestions', knowledgePointId, knowledgePointName)
+            "
+          />
         </div>
         <aside class="activity-panel" aria-labelledby="activity-heading">
           <LpKicker>学习情况</LpKicker>
@@ -145,7 +159,7 @@
           <div class="recent-block">
             <h3 class="recent-heading">最近学习</h3>
             <p v-if="overview.lastLearningTime" class="recent-time">
-              最近一次课程内判分：{{ formatDateTime(overview.lastLearningTime) }}
+              最近课程学习活动：{{ formatDateTime(overview.lastLearningTime) }}
             </p>
             <p v-else class="recent-time">还没有课程内学习记录。可从「继续学习」或课程目录开始。</p>
             <div v-if="overview.latestStageAssessment" class="latest-assessment">
@@ -190,6 +204,7 @@ import {
 } from '@element-plus/icons-vue'
 import type { CourseOverviewVO, CourseStageAssessmentKnowledgePointSummaryVO, LearningTargetVO } from '@/api/course'
 import { formatDateTime } from '@/utils/format'
+import KnowledgePointFactsPanel from './KnowledgePointFactsPanel.vue'
 
 interface CourseTool {
   routeName: string
@@ -204,6 +219,8 @@ defineProps<{
   failed: boolean
   starting: boolean
   primaryActionLabel: string
+  courseId: number
+  factsRefreshKey: number
 }>()
 const emit = defineEmits<{
   back: []
@@ -215,6 +232,8 @@ const emit = defineEmits<{
   openTool: [routeName: string]
   openTutor: [knowledgePointId: number]
   openAssessmentDetail: [assessmentId: number]
+  openKnowledgePointReview: [knowledgePointId: number, knowledgePointName: string]
+  openKnowledgePointWrongQuestions: [knowledgePointId: number, knowledgePointName: string]
   refresh: []
 }>()
 const tools: CourseTool[] = [

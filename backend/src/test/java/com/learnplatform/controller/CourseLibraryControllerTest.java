@@ -4,6 +4,7 @@ import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.dto.UserCourseVO;
 import com.learnplatform.dto.CourseOverviewVO;
+import com.learnplatform.dto.CourseKnowledgePointFactVO;
 import com.learnplatform.dto.CourseStageAssessmentCreateRequest;
 import com.learnplatform.dto.CourseStageAssessmentSubmitRequest;
 import com.learnplatform.dto.CourseStageAssessmentVO;
@@ -93,6 +94,21 @@ class CourseLibraryControllerTest {
                 .andExpect(jsonPath("$.data.answeredCount").value(3));
 
         verify(courseOverviewService).getOverview(7L, 10L);
+    }
+
+    @Test
+    void getKnowledgePointFactsUsesAuthenticatedUserAndPagination() throws Exception {
+        Page<CourseKnowledgePointFactVO> page = new Page<>(2, 5, 6);
+        when(courseOverviewService.getKnowledgePointFacts(7L, 10L, 2, 5)).thenReturn(page);
+
+        mockMvc.perform(get("/api/my-courses/10/knowledge-point-facts")
+                        .param("pageNum", "2").param("pageSize", "5").with(mockUser(7L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.current").value(2))
+                .andExpect(jsonPath("$.data.size").value(5))
+                .andExpect(jsonPath("$.data.total").value(6));
+
+        verify(courseOverviewService).getKnowledgePointFacts(7L, 10L, 2, 5);
     }
 
     @Test

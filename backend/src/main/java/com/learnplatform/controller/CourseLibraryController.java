@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.result.R;
 import com.learnplatform.dto.UserCourseVO;
 import com.learnplatform.dto.CourseOverviewVO;
+import com.learnplatform.dto.CourseKnowledgePointFactVO;
 import com.learnplatform.dto.CourseStageAssessmentCreateRequest;
 import com.learnplatform.dto.CourseStageAssessmentSubmitRequest;
 import com.learnplatform.dto.CourseStageAssessmentSummaryVO;
@@ -64,6 +65,16 @@ public class CourseLibraryController {
             @PathVariable Long courseId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return R.ok(courseOverviewService.getOverview(userDetails.getUserId(), courseId));
+    }
+
+    @Operation(summary = "分页查询课程知识点学习事实")
+    @GetMapping("/{courseId}/knowledge-point-facts")
+    public R<Page<CourseKnowledgePointFactVO>> getKnowledgePointFacts(
+            @PathVariable Long courseId,
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return R.ok(courseOverviewService.getKnowledgePointFacts(userDetails.getUserId(), courseId, pageNum, pageSize));
     }
 
     @Operation(summary = "按统一课程状态选择下一学习目标")

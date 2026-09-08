@@ -1,51 +1,39 @@
 package com.learnplatform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
+import com.learnplatform.dto.CourseKnowledgePointFactVO;
 import com.learnplatform.dto.CourseOverviewVO;
 import com.learnplatform.entity.Course;
-import com.learnplatform.entity.CourseLearningEvent;
-import com.learnplatform.entity.Question;
-import com.learnplatform.entity.QuestionReviewSchedule;
 import com.learnplatform.entity.UserCourse;
-import com.learnplatform.entity.WrongQuestion;
-import com.learnplatform.mapper.CourseLearningEventMapper;
+import com.learnplatform.mapper.CourseLearningFactMapper;
 import com.learnplatform.mapper.CourseMapper;
-import com.learnplatform.mapper.QuestionMapper;
-import com.learnplatform.mapper.QuestionReviewScheduleMapper;
 import com.learnplatform.mapper.UserCourseMapper;
-import com.learnplatform.mapper.WrongQuestionMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.Comparator;
 import java.util.List;
 
 /** 从已有的课程学习事实、错题与复习计划构建课程页概览，不另存进度副本。 */
 @Service
+@Transactional(readOnly = true)
 public class CourseOverviewService {
 
     private final UserCourseMapper userCourseMapper;
     private final CourseMapper courseMapper;
-    private final CourseLearningEventMapper eventMapper;
-    private final WrongQuestionMapper wrongQuestionMapper;
-    private final QuestionReviewScheduleMapper reviewScheduleMapper;
-    private final QuestionMapper questionMapper;
+    private final CourseLearningFactMapper factMapper;
     private final CourseOverviewTargetService targetService;
     private final CourseOverviewAssessmentService assessmentService;
 
     public CourseOverviewService(UserCourseMapper userCourseMapper, CourseMapper courseMapper,
-                                 CourseLearningEventMapper eventMapper, WrongQuestionMapper wrongQuestionMapper,
-                                 QuestionReviewScheduleMapper reviewScheduleMapper, QuestionMapper questionMapper,
-                                 CourseOverviewTargetService targetService,
+                                 CourseLearningFactMapper factMapper, CourseOverviewTargetService targetService,
                                  CourseOverviewAssessmentService assessmentService) {
         this.userCourseMapper = userCourseMapper;
         this.courseMapper = courseMapper;
-        this.eventMapper = eventMapper;
-        this.wrongQuestionMapper = wrongQuestionMapper;
-        this.reviewScheduleMapper = reviewScheduleMapper;
-        this.questionMapper = questionMapper;
+        this.factMapper = factMapper;
         this.targetService = targetService;
         this.assessmentService = assessmentService;
     }
@@ -57,48 +45,38 @@ public class CourseOverviewService {
             throw new BusinessException(ResultCode.NOT_FOUND, "课程不存在");
         }
 
-        List<CourseLearningEvent> events = eventMapper.selectList(new LambdaQueryWrapper<CourseLearningEvent>()
-                .eq(CourseLearningEvent::getUserId, userId)
-                .eq(CourseLearningEvent::getCourseId, courseId)
-                .orderByDesc(CourseLearningEvent::getOccurredTime));
-        List<Question> courseQuestions = questionMapper.selectList(new LambdaQueryWrapper<Question>()
-                .eq(Question::getCourseId, courseId)
-                .and(scope -> scope.eq(Question::getVisibility, "PUBLIC")
-                        .or(privateScope -> privateScope.eq(Question::getVisibility, "PRIVATE")
-                                .eq(Question::getOwnerUserId, userId))));
-        List<Long> questionIds = courseQuestions.stream().map(Question::getId).toList();
-        List<WrongQuestion> unresolvedWrongQuestions = questionIds.isEmpty() ? List.of()
-                : wrongQuestionMapper.selectList(new LambdaQueryWrapper<WrongQuestion>()
-                        .eq(WrongQuestion::getUserId, userId)
-                        .in(WrongQuestion::getQuestionId, questionIds)
-                        .ne(WrongQuestion::getMasteryLevel, 2)).stream()
-                .sorted(Comparator.comparing(WrongQuestion::getWrongCount,
-                        Comparator.nullsLast(Comparator.reverseOrder())))
-                .toList();
-        List<QuestionReviewSchedule> dueSchedules = questionIds.isEmpty() ? List.of()
-                : reviewScheduleMapper.selectList(new LambdaQueryWrapper<QuestionReviewSchedule>()
-                        .eq(QuestionReviewSchedule::getUserId, userId)
-                        .in(QuestionReviewSchedule::getQuestionId, questionIds)
-                        .le(QuestionReviewSchedule::getNextReviewDate, LocalDate.now())).stream()
-                .sorted(Comparator.comparing(QuestionReviewSchedule::getNextReviewDate,
-                        Comparator.nullsLast(Comparator.naturalOrder())))
-                .toList();
-
-        CourseOverviewVO overview = new CourseOverviewVO();
+        LocalDate today = LocalDate.now();
+        CourseOverviewVO overview = factMapper.selectTotals(userId, courseId, today);
         overview.setCourseId(courseId);
         overview.setCourseName(course.getName());
-        overview.setAnsweredCount(events.size());
-        overview.setCorrectCount((int) events.stream()
-                .filter(event -> "{\"isCorrect\":true}".equals(event.getPayloadJson())).count());
-        overview.setDueReviewCount(dueSchedules.size());
-        overview.setUnresolvedWrongCount(unresolvedWrongQuestions.size());
-        overview.setLastLearningTime(events.isEmpty() ? null : events.get(0).getOccurredTime());
+        Long dueQuestionId = overview.getDueReviewCount() == 0 ? null
+                : factMapper.selectFirstDueQuestion(userId, courseId, today);
+        Long wrongQuestionId = overview.getUnresolvedWrongCount() == 0 ? null
+                : factMapper.selectFirstWrongQuestion(userId, courseId);
         CourseOverviewTargetService.TargetSnapshot targets =
-                targetService.build(userId, courseId, dueSchedules, unresolvedWrongQuestions);
+                targetService.build(userId, courseId, overview, dueQuestionId, wrongQuestionId);
         overview.setTutorProgress(targets.tutorProgress());
         overview.setRecommendedTargets(targets.recommendedTargets());
         overview.setLatestStageAssessment(assessmentService.getLatest(userId, courseId));
         return overview;
+    }
+
+    public Page<CourseKnowledgePointFactVO> getKnowledgePointFacts(
+            Long userId, Long courseId, int pageNum, int pageSize) {
+        requireInLibrary(userId, courseId);
+        if (courseMapper.selectById(courseId) == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "课程不存在");
+        }
+        if (pageNum < 1 || pageSize < 1 || pageSize > 50) {
+            throw new BusinessException(ResultCode.VALIDATION_ERROR, "页码必须大于 0，每页数量须为 1–50");
+        }
+        LocalDate today = LocalDate.now();
+        long total = factMapper.countKnowledgePoints(userId, courseId, today);
+        Page<CourseKnowledgePointFactVO> page = new Page<>(pageNum, pageSize, total);
+        long offset = ((long) pageNum - 1) * pageSize;
+        page.setRecords(offset >= total ? List.of()
+                : factMapper.selectKnowledgePoints(userId, courseId, today, offset, pageSize));
+        return page;
     }
 
     /** 复用课程总览的统一排序，为未显式指定目标的“开始学习”选择首个可解释目标。 */

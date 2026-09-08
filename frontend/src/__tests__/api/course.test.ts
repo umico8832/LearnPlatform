@@ -17,6 +17,7 @@ import {
   getMyCourses,
   addCourseToLibrary,
   getCourseOverview,
+  getCourseKnowledgePointFacts,
   startCourseLearning,
   startCourseStageAssessment,
   submitCourseStageAssessment,
@@ -209,6 +210,20 @@ describe('Course API', () => {
       await getCourseOverview(408)
 
       expect(mockedRequest.get).toHaveBeenCalledWith('/my-courses/408/overview')
+    })
+
+    it('应分页读取课程知识点学习事实', async () => {
+      mockedRequest.get.mockResolvedValue({
+        code: 0,
+        data: { records: [], total: 0, current: 2, size: 10 },
+        message: 'success',
+      })
+
+      await getCourseKnowledgePointFacts(408, 2, 10)
+
+      expect(mockedRequest.get).toHaveBeenCalledWith('/my-courses/408/knowledge-point-facts', {
+        params: { pageNum: 2, pageSize: 10 },
+      })
     })
 
     it('应读取本人课程阶段测评历史与已完成详情', async () => {

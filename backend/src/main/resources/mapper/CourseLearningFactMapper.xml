@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.learnplatform.mapper.CourseLearningFactMapper">
+    <sql id="visibleQuestions">
+        SELECT id FROM question
+        WHERE course_id = #{courseId} AND deleted = 0
+          AND (visibility = 'PUBLIC' OR (visibility = 'PRIVATE' AND owner_user_id = #{userId}))
+    </sql>
+
+    <!-- 来源表的主键就是一次作答；练习与复习共用 practice_record，不能再叠加事件计数。 -->
+    <sql id="facts">
+        WITH visible_questions AS (<include refid="visibleQuestions"/>),
+        library AS (
+            SELECT create_time FROM user_course WHERE user_id = #{userId} AND course_id = #{courseId}
+        ), answer_facts AS (
+            SELECT 'PRACTICE' AS source, p.id, p.question_id, NULL AS knowledge_point_id,
+                   NULL AS knowledge_points_json, p.is_correct, p.create_time AS occurred_time
+            FROM practice_record p JOIN visible_questions q ON q.id = p.question_id CROSS JOIN library l
+            WHERE p.user_id = #{userId} AND p.create_time >= l.create_time
+              AND p.is_correct IN (0, 1) AND REGEXP_LIKE(p.user_answer, '[^[:space:]]')
+            UNION ALL
+            SELECT 'PAPER_LEARNING', a.id, a.question_id, NULL, NULL, a.is_correct, a.create_time
+            FROM exam_learning_session s JOIN exam_learning_answer a ON a.session_id = s.id
+            JOIN visible_questions q ON q.id = a.question_id CROSS JOIN library l
+            WHERE s.user_id = #{userId} AND a.create_time >= l.create_time
+              AND a.is_correct IN (0, 1) AND REGEXP_LIKE(a.user_answer, '[^[:space:]]')
+            UNION ALL
+            SELECT 'EXAM', a.id, a.question_id, NULL, NULL, a.is_correct, COALESCE(a.reviewed_at, a.create_time)
+            FROM exam_record r JOIN exam_answer a ON a.exam_record_id = r.id
+            JOIN visible_questions q ON q.id = a.question_id CROSS JOIN library l
+            WHERE r.user_id = #{userId} AND r.status != 0 AND a.create_time >= l.create_time
+              AND a.grading_status IN ('AUTO_GRADED', 'REVIEWED')
+              AND a.is_correct IN (0, 1) AND REGEXP_LIKE(a.user_answer, '[^[:space:]]')
+            UNION ALL
+            SELECT 'TUTOR_CHECK', s.id, NULL, s.knowledge_point_id, NULL, s.check_correct, s.check_answered_at
+            FROM tutor_session s CROSS JOIN library l
+            WHERE s.user_id = #{userId} AND s.course_id = #{courseId}
+              AND s.check_answered_at >= l.create_time AND s.check_correct IN (0, 1)
+              AND REGEXP_LIKE(s.check_answer, '[^[:space:]]')
+            UNION ALL
+            SELECT 'AI_VARIANT', t.id, t.question_id, NULL, NULL, t.is_correct, t.answered_time
+            FROM ai_variant_training t JOIN visible_questions q ON q.id = t.question_id CROSS JOIN library l
+            WHERE t.user_id = #{userId} AND t.status = 'COMPLETED' AND t.answered_time >= l.create_time
+              AND t.is_correct IN (0, 1) AND REGEXP_LIKE(t.user_answer, '[^[:space:]]')
+            UNION ALL
+            SELECT 'STAGE_ASSESSMENT', q.id, q.question_id, NULL, q.knowledge_points_json,
+                   q.is_correct, q.answered_time
+            FROM course_stage_assessment a JOIN course_stage_assessment_question q ON q.assessment_id = a.id
+            CROSS JOIN library l
+            WHERE a.user_id = #{userId} AND a.course_id = #{courseId} AND a.status = 'COMPLETED'
+              AND q.answered_time >= l.create_time AND q.is_correct IN (0, 1) AND REGEXP_LIKE(q.user_answer, '[^[:space:]]')
+        ), wrong_facts AS (
+            SELECT w.* FROM wrong_question w JOIN visible_questions q ON q.id = w.question_id
+            WHERE w.user_id = #{userId} AND w.deleted = 0 AND w.mastery_level != 2
+        ), due_facts AS (
+            SELECT s.* FROM question_review_schedule s JOIN visible_questions q ON q.id = s.question_id
+            WHERE s.user_id = #{userId} AND s.deleted = 0 AND s.next_review_date &lt;= #{today}
+        )
+    </sql>
+
+    <select id="selectTotals" resultType="com.learnplatform.dto.CourseOverviewVO">
+        <include refid="facts"/>
+        SELECT (SELECT COUNT(*) FROM answer_facts) AS answered_count,
+               (SELECT COUNT(*) FROM answer_facts WHERE is_correct = 1) AS correct_count,
+               (SELECT COUNT(*) FROM wrong_facts) AS unresolved_wrong_count,
+               (SELECT COUNT(*) FROM due_facts) AS due_review_count,
+               (SELECT MAX(occurred_time) FROM (
+                   SELECT occurred_time FROM answer_facts
+                   UNION ALL
+                   SELECT e.occurred_time FROM course_learning_event e CROSS JOIN library l
+                   WHERE e.user_id = #{userId} AND e.course_id = #{courseId}
+                     AND e.occurred_time >= l.create_time
+               ) activity) AS last_learning_time
+    </select>
+
+    <sql id="knowledgeFacts">
+        <include refid="facts"/>, current_points AS (
+            SELECT id, name, sort_order FROM knowledge_point WHERE course_id = #{courseId} AND deleted = 0
+        ), question_points AS (
+            SELECT rel.question_id, kp.id FROM question_knowledge_point rel
+            JOIN current_points kp ON kp.id = rel.knowledge_point_id
+        ), attributed_answers AS (
+            SELECT f.source, f.id, p.id AS knowledge_point_id, NULL AS snapshot_name,
+                   f.is_correct, f.occurred_time
+            FROM answer_facts f LEFT JOIN question_points p ON p.question_id = f.question_id
+            WHERE f.source NOT IN ('TUTOR_CHECK', 'STAGE_ASSESSMENT')
+            UNION ALL
+            SELECT source, id, knowledge_point_id, NULL, is_correct, occurred_time
+            FROM answer_facts WHERE source = 'TUTOR_CHECK'
+            UNION ALL
+            SELECT DISTINCT f.source, f.id, IF(j.id > 0, j.id, NULL), j.name, f.is_correct, f.occurred_time
+            FROM answer_facts f
+            LEFT JOIN JSON_TABLE(
+                CASE WHEN JSON_VALID(f.knowledge_points_json)
+                     THEN CASE WHEN JSON_TYPE(f.knowledge_points_json) = 'ARRAY'
+                               THEN f.knowledge_points_json ELSE '[]' END ELSE '[]' END,
+                '$[*]' COLUMNS (id BIGINT PATH '$.id' NULL ON ERROR,
+                               name VARCHAR(100) PATH '$.name' NULL ON ERROR)
+            ) j ON TRUE
+            WHERE f.source = 'STAGE_ASSESSMENT'
+        ), snapshot_names AS (
+            SELECT knowledge_point_id, snapshot_name,
+                   ROW_NUMBER() OVER (PARTITION BY knowledge_point_id
+                       ORDER BY occurred_time DESC, id DESC, snapshot_name DESC) AS name_order
+            FROM attributed_answers WHERE snapshot_name IS NOT NULL
+        ), answer_counts AS (
+            SELECT knowledge_point_id,
+                   COUNT(DISTINCT source, id) AS answered_count,
+                   COUNT(DISTINCT IF(is_correct = 1, source, NULL), IF(is_correct = 1, id, NULL)) AS correct_count
+            FROM attributed_answers GROUP BY knowledge_point_id
+        ), wrong_counts AS (
+            SELECT p.id AS knowledge_point_id, COUNT(DISTINCT w.question_id) AS unresolved_wrong_count
+            FROM wrong_facts w LEFT JOIN question_points p ON p.question_id = w.question_id GROUP BY p.id
+        ), due_counts AS (
+            SELECT p.id AS knowledge_point_id, COUNT(DISTINCT d.question_id) AS due_review_count
+            FROM due_facts d LEFT JOIN question_points p ON p.question_id = d.question_id GROUP BY p.id
+        ), point_ids AS (
+            SELECT id FROM current_points
+            UNION SELECT knowledge_point_id FROM answer_counts
+            UNION SELECT knowledge_point_id FROM wrong_counts
+            UNION SELECT knowledge_point_id FROM due_counts
+        )
+    </sql>
+
+    <select id="countKnowledgePoints" resultType="long">
+        <include refid="knowledgeFacts"/>
+        SELECT COUNT(*) FROM point_ids
+    </select>
+
+    <select id="selectKnowledgePoints" resultType="com.learnplatform.dto.CourseKnowledgePointFactVO">
+        <include refid="knowledgeFacts"/>
+        SELECT p.id AS knowledge_point_id,
+               CASE WHEN p.id IS NULL THEN '未关联知识点'
+                    ELSE COALESCE(k.name, n.snapshot_name, CONCAT('知识点 #', p.id)) END AS knowledge_point_name,
+               k.id IS NOT NULL AS available,
+               EXISTS(SELECT 1 FROM tutor_content t WHERE t.knowledge_point_id = k.id
+                      AND t.review_status = 'REVIEWED') AS tutor_available,
+               COALESCE(a.answered_count, 0) AS answered_count, COALESCE(a.correct_count, 0) AS correct_count,
+               COALESCE(w.unresolved_wrong_count, 0) AS unresolved_wrong_count,
+               COALESCE(d.due_review_count, 0) AS due_review_count
+        FROM point_ids p LEFT JOIN current_points k ON k.id = p.id
+        LEFT JOIN snapshot_names n ON n.knowledge_point_id = p.id AND n.name_order = 1
+        LEFT JOIN answer_counts a ON a.knowledge_point_id &lt;=> p.id
+        LEFT JOIN wrong_counts w ON w.knowledge_point_id &lt;=> p.id
+        LEFT JOIN due_counts d ON d.knowledge_point_id &lt;=> p.id
+        ORDER BY k.id IS NULL, k.sort_order, p.id IS NULL, p.id
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectFirstDueQuestion" resultType="long">
+        SELECT s.question_id FROM question_review_schedule s
+        JOIN (<include refid="visibleQuestions"/>) q ON q.id = s.question_id
+        WHERE s.user_id = #{userId} AND s.deleted = 0 AND s.next_review_date &lt;= #{today}
+        ORDER BY s.next_review_date, s.id LIMIT 1
+    </select>
+
+    <select id="selectFirstWrongQuestion" resultType="long">
+        SELECT w.question_id FROM wrong_question w JOIN (<include refid="visibleQuestions"/>) q ON q.id = w.question_id
+        WHERE w.user_id = #{userId} AND w.deleted = 0 AND w.mastery_level != 2
+        ORDER BY w.wrong_count DESC, w.id LIMIT 1
+    </select>
+
+    <select id="selectTutorProgress" resultType="com.learnplatform.dto.CourseOverviewVO$TutorProgressVO">
+        SELECT t.knowledge_point_id, t.title,
+               CASE WHEN MAX(s.check_correct) = 1 THEN 'COMPLETED'
+                    WHEN COUNT(s.id) > 0 THEN 'IN_PROGRESS' ELSE 'NOT_STARTED' END AS status
+        FROM knowledge_point k JOIN tutor_content t ON t.knowledge_point_id = k.id AND t.review_status = 'REVIEWED'
+        LEFT JOIN tutor_session s ON s.tutor_content_id = t.id AND s.user_id = #{userId} AND s.course_id = #{courseId}
+        WHERE k.course_id = #{courseId} AND k.deleted = 0
+        GROUP BY k.id, k.sort_order, t.id, t.knowledge_point_id, t.title
+        ORDER BY k.sort_order, k.id, t.id
+    </select>
+</mapper>
