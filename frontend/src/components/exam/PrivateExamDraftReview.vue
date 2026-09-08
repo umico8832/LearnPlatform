@@ -22,57 +22,84 @@
       <ul>
         <li v-for="option in question.options" :key="option.label">{{ option.label }}. {{ option.content }}</li>
       </ul>
+      <p v-if="question.generationStatus === 'GENERATED'" class="ai-suggestion">
+        AI 建议：{{ question.aiAnswerLabels.join('、') }} · {{ question.aiAnalysis }}
+      </p>
+      <p v-else-if="question.generationStatus === 'NOT_REQUIRED'" class="ai-suggestion">
+        原资料答案：{{ question.originalAnswerLabels.join('、') || '未提供' }}
+      </p>
       <el-button
         v-if="question.generationStatus === 'PENDING'"
         type="primary"
         plain
-        :loading="generatingQuestionId === question.id"
+        :loading="
+          questionStates[question.id]?.operation === 'generate' && questionStates[question.id]?.phase === 'running'
+        "
+        :disabled="!!questionStates[question.id]?.operation"
         @click="generateDraftAnswer(question.id)"
       >
         生成 AI 答案与解析
       </el-button>
-      <template v-else>
-        <p v-if="question.generationStatus === 'GENERATED'" class="ai-suggestion">
-          AI 建议：{{ question.aiAnswerLabels.join('、') }} · {{ question.aiAnalysis }}
-        </p>
-        <p v-else class="ai-suggestion">原资料答案：{{ question.originalAnswerLabels.join('、') || '未提供' }}</p>
-        <el-form-item label="人工确认答案">
-          <el-checkbox-group v-model="draftAnswers[question.id]" :disabled="question.reviewStatus === 'REVIEWED'">
-            <el-checkbox v-for="option in question.options" :key="option.label" :value="option.label">
-              {{ option.label }}
-            </el-checkbox>
-          </el-checkbox-group>
-        </el-form-item>
-        <el-form-item label="人工确认解析">
-          <el-input
-            v-model="draftAnalyses[question.id]"
-            type="textarea"
-            :rows="3"
-            maxlength="10000"
-            :disabled="question.reviewStatus === 'REVIEWED'"
-          />
-        </el-form-item>
-        <el-button
-          v-if="question.reviewStatus !== 'REVIEWED'"
-          type="success"
-          :loading="reviewingQuestionId === question.id"
-          @click="reviewDraftQuestion(question.id)"
+      <el-form-item label="人工确认答案">
+        <el-checkbox-group
+          v-model="draftAnswers[question.id]"
+          :aria-label="`第${question.sortOrder}题人工确认答案`"
+          :disabled="question.reviewStatus === 'REVIEWED' || questionStates[question.id]?.operation === 'review'"
+          @update:model-value="questionStates[question.id]!.answerEdited = true"
         >
-          确认本题
-        </el-button>
-      </template>
+          <el-checkbox v-for="option in question.options" :key="option.label" :value="option.label">
+            {{ option.label }}
+          </el-checkbox>
+        </el-checkbox-group>
+      </el-form-item>
+      <el-form-item label="人工确认解析">
+        <el-input
+          v-model="draftAnalyses[question.id]"
+          :aria-label="`第${question.sortOrder}题人工确认解析`"
+          type="textarea"
+          :rows="3"
+          maxlength="10000"
+          :disabled="question.reviewStatus === 'REVIEWED' || questionStates[question.id]?.operation === 'review'"
+          @update:model-value="questionStates[question.id]!.analysisEdited = true"
+        />
+      </el-form-item>
+      <p v-if="questionStates[question.id]?.phase" role="status" class="question-progress">
+        {{
+          questionStates[question.id]?.phase === 'waiting'
+            ? '等待前一题处理完成'
+            : questionStates[question.id]?.operation === 'generate'
+              ? '正在生成 AI 建议…'
+              : '正在保存复核结果…'
+        }}
+      </p>
+      <el-alert
+        v-if="questionStates[question.id]?.error"
+        :title="questionStates[question.id]!.error"
+        type="error"
+        :closable="false"
+        show-icon
+        class="question-error"
+      />
+      <el-button
+        v-if="question.reviewStatus !== 'REVIEWED'"
+        type="success"
+        :loading="
+          questionStates[question.id]?.operation === 'review' && questionStates[question.id]?.phase === 'running'
+        "
+        :disabled="question.generationStatus === 'PENDING' || !!questionStates[question.id]?.operation"
+        @click="reviewDraftQuestion(question.id)"
+      >
+        确认本题
+      </el-button>
     </article>
   </section>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { onBeforeUnmount, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import {
-  downloadPrivateExamDraftSourceFile,
-  generatePrivateExamDraftAnswer,
-  reviewPrivateExamDraftQuestion,
-} from '@/api/exam'
+import { downloadPrivateExamDraftSourceFile } from '@/api/exam'
+import { usePrivateExamDraftReview } from './usePrivateExamDraftReview'
 import type { PrivateExamDraft } from '@/api/exam'
 
 const props = defineProps<{
@@ -83,79 +110,24 @@ const emit = defineEmits<{
   updated: [draft: PrivateExamDraft]
 }>()
 
-const generatingQuestionId = ref<number | null>(null)
-const reviewingQuestionId = ref<number | null>(null)
-const draftAnswers = ref<Record<number, string[]>>({})
-const draftAnalyses = ref<Record<number, string>>({})
+const { draftAnswers, draftAnalyses, questionStates, generateDraftAnswer, reviewDraftQuestion } =
+  usePrivateExamDraftReview(
+    () => props.draft,
+    (draft) => emit('updated', draft),
+  )
 const sourceDownloading = ref(false)
-
+let downloadVersion = 0
 watch(
-  () => props.draft,
-  (draft) => {
-    draftAnswers.value = {}
-    draftAnalyses.value = {}
-    draft.questions.forEach((question) => {
-      draftAnswers.value[question.id] = [
-        ...(question.finalAnswerLabels.length
-          ? question.finalAnswerLabels
-          : question.aiAnswerLabels.length
-            ? question.aiAnswerLabels
-            : question.originalAnswerLabels),
-      ]
-      draftAnalyses.value[question.id] =
-        question.finalAnalysis || question.aiAnalysis || question.originalAnalysis || ''
-    })
+  () => props.draft.id,
+  () => {
+    downloadVersion++
+    sourceDownloading.value = false
   },
-  { immediate: true },
+  { flush: 'sync' },
 )
-
-async function generateDraftAnswer(questionId: number) {
-  generatingQuestionId.value = questionId
-  try {
-    const res = await generatePrivateExamDraftAnswer(props.draft.id, questionId)
-    if (res.code === 0 && res.data) {
-      emit('updated', res.data)
-      ElMessage.success('AI 建议已生成，请人工核对')
-    } else ElMessage.error(res.message || 'AI 生成失败')
-  } catch {
-    ElMessage.error('AI 生成失败，请稍后重试')
-  } finally {
-    generatingQuestionId.value = null
-  }
-}
-
-async function reviewDraftQuestion(questionId: number) {
-  const question = props.draft.questions.find((item) => item.id === questionId)
-  const answers = draftAnswers.value[questionId] || []
-  const analysis = draftAnalyses.value[questionId]?.trim() || ''
-  if (!question || !answers.length || !analysis) {
-    ElMessage.warning('请选择答案并填写人工确认解析')
-    return
-  }
-  if (question.questionType !== 'MULTIPLE_CHOICE' && answers.length !== 1) {
-    ElMessage.warning('单选或判断题只能确认一个答案')
-    return
-  }
-  if (question.questionType === 'MULTIPLE_CHOICE' && answers.length < 2) {
-    ElMessage.warning('多选题至少确认两个答案')
-    return
-  }
-  reviewingQuestionId.value = questionId
-  try {
-    const res = await reviewPrivateExamDraftQuestion(props.draft.id, questionId, {
-      answerLabels: answers,
-      analysis,
-    })
-    if (res.code === 0 && res.data) {
-      emit('updated', res.data)
-      ElMessage.success('本题已人工复核')
-    } else ElMessage.error(res.message || '复核失败')
-  } catch {
-    ElMessage.error('复核失败')
-  } finally {
-    reviewingQuestionId.value = null
-  }
-}
+onBeforeUnmount(() => {
+  downloadVersion++
+})
 
 function saveSourceFile(data: BlobPart, mediaType: string, filename: string) {
   const url = window.URL.createObjectURL(new Blob([data], { type: mediaType }))
@@ -167,19 +139,22 @@ function saveSourceFile(data: BlobPart, mediaType: string, filename: string) {
 }
 
 async function downloadDraftSource() {
-  if (!props.draft.sourceName) return
+  if (!props.draft.sourceName || sourceDownloading.value) return
+  const draft = props.draft
+  const version = ++downloadVersion
   sourceDownloading.value = true
   try {
-    const response = await downloadPrivateExamDraftSourceFile(props.draft.id)
+    const response = await downloadPrivateExamDraftSourceFile(draft.id)
+    if (version !== downloadVersion) return
     saveSourceFile(
       response.data,
       String(response.headers['content-type'] || 'application/octet-stream'),
-      props.draft.sourceName,
+      draft.sourceName!,
     )
   } catch {
-    ElMessage.error('原文件下载失败')
+    if (version === downloadVersion) ElMessage.error('原文件下载失败')
   } finally {
-    sourceDownloading.value = false
+    if (version === downloadVersion) sourceDownloading.value = false
   }
 }
 </script>
@@ -234,6 +209,15 @@ async function downloadDraftSource() {
   margin: var(--lp-space-3) 0;
   padding-left: var(--lp-space-6);
   color: var(--lp-text-secondary);
+}
+
+.question-progress {
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+}
+
+.question-error {
+  margin-bottom: var(--lp-space-3);
 }
 
 .ai-suggestion {

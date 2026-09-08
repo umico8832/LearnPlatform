@@ -383,6 +383,7 @@ describe('ExamListView paper provenance', () => {
     })
     mockConfirmPrivateExamDraft.mockResolvedValue({ code: 0, data: { id: 51 } })
     const wrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
+    ;(wrapper.vm as unknown as { openImportDialog: () => void }).openImportDialog()
     await flushPromises()
     const vm = wrapper.findComponent(PrivateExamImportDialog).vm as unknown as {
       importForm: Record<string, unknown>
@@ -547,6 +548,7 @@ describe('ExamListView paper provenance', () => {
     const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test')
     const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
     const wrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
+    ;(wrapper.vm as unknown as { openImportDialog: () => void }).openImportDialog()
     await flushPromises()
     const sourceManagerVm = wrapper.findComponent(PrivateExamSourceManager).vm as unknown as {
       privateSource: Record<string, unknown> | null

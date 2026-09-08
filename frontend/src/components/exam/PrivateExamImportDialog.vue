@@ -1,11 +1,5 @@
 <template>
-  <el-dialog
-    v-model="dialogVisible"
-    title="导入私有试卷"
-    width="min(760px, 92vw)"
-    class="private-import-dialog"
-    @closed="resetImport"
-  >
+  <el-dialog v-model="dialogVisible" title="导入私有试卷" width="min(760px, 92vw)" class="private-import-dialog">
     <el-alert
       title="支持结构化 Markdown、文本、文本型 PDF 或有限 DOCX；无答案题目会先保存为草稿，AI 建议必须逐题人工复核后才能启用。"
       type="info"
@@ -117,11 +111,16 @@
       </article>
     </section>
 
-    <PrivateExamDraftReview v-else-if="activeDraft" :draft="activeDraft" @updated="replaceDraft" />
+    <PrivateExamDraftReview
+      v-else-if="activeDraft && dialogVisible"
+      :key="activeDraft.id"
+      :draft="activeDraft"
+      @updated="replaceDraft"
+    />
 
     <template #footer>
       <el-button v-if="importPreview" @click="importPreview = null">返回修改</el-button>
-      <el-button v-if="activeDraft" @click="activeDraft = null">返回导入</el-button>
+      <el-button v-if="activeDraft" @click="openDraft(null)">返回导入</el-button>
       <el-button @click="dialogVisible = false">取消</el-button>
       <el-button v-if="!importPreview && !activeDraft" type="primary" :loading="previewLoading" @click="previewImport">
         解析并预览
@@ -150,7 +149,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { UploadFile } from 'element-plus'
 import {
@@ -225,14 +224,34 @@ const fileAccept = computed(() =>
     : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx',
 )
 
+let dialogVersion = 0
+let draftListVersion = 0
+
+function invalidateDialogRequests() {
+  dialogVersion++
+  previewLoading.value = false
+  confirmLoading.value = false
+}
+
+onBeforeUnmount(() => {
+  invalidateDialogRequests()
+  draftListVersion++
+})
+
 watch(
   () => props.modelValue,
   (open) => {
-    if (!open) return
+    invalidateDialogRequests()
+    draftListVersion++
+    if (!open) {
+      resetImport()
+      return
+    }
     void loadCourses()
     void loadPrivateDrafts()
     void loadStorageUsage()
   },
+  { flush: 'sync' },
 )
 
 async function loadStorageUsage() {
@@ -255,11 +274,12 @@ async function loadCourses() {
 }
 
 async function loadPrivateDrafts() {
+  const version = ++draftListVersion
   try {
     const res = await getPrivateExamDrafts()
-    if (res.code === 0 && res.data) privateDrafts.value = res.data
+    if (version === draftListVersion && res.code === 0 && res.data) privateDrafts.value = res.data
   } catch {
-    ElMessage.error('获取待复核草稿失败')
+    if (version === draftListVersion) ElMessage.error('获取待复核草稿失败')
   }
 }
 
@@ -301,46 +321,57 @@ const validateImportForm = () => {
 }
 
 const previewImport = async () => {
-  if (!validateImportForm()) return
+  if (previewLoading.value || !validateImportForm()) return
+  const version = dialogVersion
   previewLoading.value = true
   try {
     const res = await previewPrivateExamSource(importForm.value, sourceFile.value)
+    if (version !== dialogVersion) return
     if (res.code === 0 && res.data) importPreview.value = res.data
     else ElMessage.error(res.message || '解析失败')
   } catch {
-    ElMessage.error('解析失败，请检查结构化格式')
+    if (version === dialogVersion) ElMessage.error('解析失败，请检查结构化格式')
   } finally {
-    previewLoading.value = false
+    if (version === dialogVersion) previewLoading.value = false
   }
 }
 
 const confirmImport = async () => {
-  if (!importPreview.value) return
+  if (confirmLoading.value || !importPreview.value) return
+  const version = dialogVersion
   confirmLoading.value = true
   try {
     const res = await confirmPrivateExamSource(importForm.value, importPreview.value, sourceFile.value)
+    if (version !== dialogVersion) return
     if (res.code === 0 && res.data) {
       ElMessage.success('私有试卷已导入')
       emit('update:modelValue', false)
       emit('imported')
     } else ElMessage.error(res.message || '导入失败')
   } catch {
-    ElMessage.error('导入失败')
+    if (version === dialogVersion) ElMessage.error('导入失败')
   } finally {
-    confirmLoading.value = false
+    if (version === dialogVersion) confirmLoading.value = false
   }
 }
 
-const openDraft = (draft: PrivateExamDraft) => {
+const openDraft = (draft: PrivateExamDraft | null) => {
+  invalidateDialogRequests()
   activeDraft.value = draft
   importPreview.value = null
 }
 
-const replaceDraft = (draft: PrivateExamDraft) => {
-  activeDraft.value = draft
+const updateDraftList = (draft: PrivateExamDraft) => {
+  draftListVersion++
   const index = privateDrafts.value.findIndex((item) => item.id === draft.id)
   if (index >= 0) privateDrafts.value[index] = draft
   else privateDrafts.value.unshift(draft)
+}
+
+const replaceDraft = (draft: PrivateExamDraft) => {
+  if (!dialogVisible.value || activeDraft.value?.id !== draft.id) return
+  activeDraft.value = draft
+  updateDraftList(draft)
 }
 
 const deleteDraft = async (draft: PrivateExamDraft) => {
@@ -356,6 +387,7 @@ const deleteDraft = async (draft: PrivateExamDraft) => {
   try {
     const res = await deletePrivateExamDraft(draft.id)
     if (res.code === 0) {
+      draftListVersion++
       privateDrafts.value = privateDrafts.value.filter((item) => item.id !== draft.id)
       if (activeDraft.value?.id === draft.id) activeDraft.value = null
       await loadStorageUsage()
@@ -367,36 +399,40 @@ const deleteDraft = async (draft: PrivateExamDraft) => {
 }
 
 const createAnswerDraft = async () => {
-  if (!importPreview.value) return
+  if (confirmLoading.value || !importPreview.value) return
+  const version = dialogVersion
   confirmLoading.value = true
   try {
     const res = await createPrivateExamAnswerDraft(importForm.value, importPreview.value, sourceFile.value)
+    if (version !== dialogVersion) return
     if (res.code === 0 && res.data) {
-      replaceDraft(res.data)
-      importPreview.value = null
+      updateDraftList(res.data)
+      openDraft(res.data)
       ElMessage.success('草稿已保存，请逐题生成并复核答案')
     } else ElMessage.error(res.message || '创建草稿失败')
   } catch {
-    ElMessage.error('创建草稿失败')
+    if (version === dialogVersion) ElMessage.error('创建草稿失败')
   } finally {
-    confirmLoading.value = false
+    if (version === dialogVersion) confirmLoading.value = false
   }
 }
 
 const confirmDraft = async () => {
-  if (!activeDraft.value) return
+  if (confirmLoading.value || !activeDraft.value) return
+  const version = dialogVersion
   confirmLoading.value = true
   try {
     const res = await confirmPrivateExamDraft(activeDraft.value.id)
+    if (version !== dialogVersion) return
     if (res.code === 0 && res.data) {
       ElMessage.success('私有试卷已人工确认并启用')
       emit('update:modelValue', false)
       emit('imported')
     } else ElMessage.error(res.message || '启用失败')
   } catch {
-    ElMessage.error('启用失败')
+    if (version === dialogVersion) ElMessage.error('启用失败')
   } finally {
-    confirmLoading.value = false
+    if (version === dialogVersion) confirmLoading.value = false
   }
 }
 
