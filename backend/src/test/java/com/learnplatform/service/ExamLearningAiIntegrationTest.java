@@ -110,4 +110,84 @@ class ExamLearningAiIntegrationTest extends IntegrationTestBase {
                 """, Integer.class, tutor.getSessionKey());
         assertEquals(1, snapshotPaperAnswers);
     }
+
+    @Test
+    void subjectiveLearningAnswerKeepsAiAssistanceSnapshotUngraded() {
+        Long userId = jdbcTemplate.queryForObject(
+                "SELECT id FROM user WHERE username = 'testuser'", Long.class);
+        Long courseId = jdbcTemplate.queryForObject(
+                "SELECT id FROM course WHERE content_key = 'cs408-data-structures'", Long.class);
+        Long paperId = jdbcTemplate.queryForObject("""
+                SELECT id FROM exam_paper WHERE title = '2026 年 408 真题·数据结构部分'
+                """, Long.class);
+        Long questionId = jdbcTemplate.queryForObject("""
+                SELECT eq.question_id FROM exam_question eq
+                JOIN question q ON q.id = eq.question_id
+                WHERE eq.exam_paper_id = ? AND q.question_type = 'SHORT_ANSWER'
+                ORDER BY eq.sort_order LIMIT 1
+                """, Long.class, paperId);
+        jdbcTemplate.update("INSERT IGNORE INTO user_course (user_id, course_id) VALUES (?, ?)", userId, courseId);
+
+        ExamLearningSessionVO session = learningService.startSession(paperId, userId);
+        ExamLearningAnswerRequest answer = new ExamLearningAnswerRequest();
+        answer.setQuestionId(questionId);
+        answer.setUserAnswer("使用中序遍历维护最小差值");
+        learningService.submitAnswer(session.getId(), answer, userId);
+
+        StringBuilder upstreamContext = new StringBuilder();
+        stubStreamResponse(upstreamContext, "主观题辅导");
+        learningAiService.streamAssistance(session.getId(), questionId, "explanation", userId, ignored -> { });
+
+        assertTrue(upstreamContext.toString().contains("结果：未判分"));
+        Integer interactionCount = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM exam_learning_ai_interaction
+                WHERE learning_session_id = ? AND question_id = ?
+                  AND answer_correct IS NULL AND interaction_type = 'EXPLANATION' AND status = 1
+                """, Integer.class, session.getId(), questionId);
+        assertEquals(1, interactionCount);
+    }
+
+    @Test
+    void correctObjectiveLearningAnswerKeepsAiAssistanceSnapshotCorrect() {
+        Long userId = jdbcTemplate.queryForObject(
+                "SELECT id FROM user WHERE username = 'testuser'", Long.class);
+        Long courseId = jdbcTemplate.queryForObject(
+                "SELECT id FROM course WHERE content_key = 'cs408-data-structures'", Long.class);
+        Long paperId = jdbcTemplate.queryForObject(
+                "SELECT id FROM exam_paper WHERE title = '2026 年 408 真题·数据结构选择题'", Long.class);
+        jdbcTemplate.update("INSERT IGNORE INTO user_course (user_id, course_id) VALUES (?, ?)", userId, courseId);
+
+        ExamLearningSessionVO session = learningService.startSession(paperId, userId);
+        Long questionId = session.getQuestions().get(0).getQuestionId();
+        String correctAnswer = jdbcTemplate.queryForObject("""
+                SELECT option_label FROM question_option
+                WHERE question_id = ? AND is_correct = 1
+                ORDER BY sort_order LIMIT 1
+                """, String.class, questionId);
+        ExamLearningAnswerRequest answer = new ExamLearningAnswerRequest();
+        answer.setQuestionId(questionId);
+        answer.setUserAnswer(correctAnswer);
+        learningService.submitAnswer(session.getId(), answer, userId);
+
+        StringBuilder upstreamContext = new StringBuilder();
+        stubStreamResponse(upstreamContext, "客观题辅导");
+        learningAiService.streamAssistance(session.getId(), questionId, "explanation", userId, ignored -> { });
+
+        assertTrue(upstreamContext.toString().contains("结果：正确"));
+        Integer interactionCount = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM exam_learning_ai_interaction
+                WHERE learning_session_id = ? AND question_id = ?
+                  AND answer_correct = 1 AND interaction_type = 'EXPLANATION' AND status = 1
+                """, Integer.class, session.getId(), questionId);
+        assertEquals(1, interactionCount);
+    }
+
+    private void stubStreamResponse(StringBuilder upstreamContext, String response) {
+        doAnswer(invocation -> {
+            upstreamContext.append(invocation.getArgument(1, String.class));
+            Consumer<String> consumer = invocation.getArgument(2);
+            consumer.accept(response);
+            return null;
+        }).when(aiProvider).chatStream(any(), any(), any());
+    }
 }

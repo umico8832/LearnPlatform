@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -94,6 +95,30 @@ class ExamLearningAiServiceTest {
 
         verify(courseLearningEventService).recordPaperLearningAiAssistance(
                 7L, 20L, 10L, 90L, 30L, 2L, "EXPLANATION", 81L, interaction.getCompleteTime());
+    }
+
+    @Test
+    void doesNotDescribeUngradedSelfReviewAsWrong() {
+        ExamLearningSessionVO session = answeredSession();
+        session.getQuestions().get(0).getLatestAnswer().setCorrect(null);
+        session.getQuestions().get(0).getLatestAnswer().setGradingStatus("SELF_REVIEW");
+        when(learningService.getSession(30L, 7L)).thenReturn(session);
+        doAnswer(invocation -> {
+            Consumer<String> consumer = invocation.getArgument(4);
+            consumer.accept("请对照参考解析复核");
+            return null;
+        }).when(aiService).generatePaperLearningAssistanceStream(any(), any(), any(), any(), any());
+
+        service.streamAssistance(30L, 10L, "EXPLANATION", 7L, ignored -> { });
+
+        ArgumentCaptor<String> context = ArgumentCaptor.forClass(String.class);
+        verify(aiService).generatePaperLearningAssistanceStream(eq(10L), eq("EXPLANATION"),
+                context.capture(), eq(7L), any());
+        assertTrue(context.getValue().contains("结果：未判分"));
+        ArgumentCaptor<ExamLearningAiInteraction> interaction =
+                ArgumentCaptor.forClass(ExamLearningAiInteraction.class);
+        verify(interactionMapper).insert(interaction.capture());
+        assertNull(interaction.getValue().getAnswerCorrect());
     }
 
     @Test

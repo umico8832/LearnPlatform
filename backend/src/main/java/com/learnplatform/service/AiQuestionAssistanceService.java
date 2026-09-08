@@ -13,6 +13,7 @@ import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
 import com.learnplatform.service.question.QuestionAccessPolicy;
+import com.learnplatform.service.ai.QuestionAssetPromptFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -86,7 +87,8 @@ public class AiQuestionAssistanceService {
                 + "明确说明它是 AI 生成练习而非官方原题，给出答案与解析，并使用 Markdown。"
                 : "你是一位试卷学习辅导老师。请结合原试卷位置和用户最近一次真实作答，"
                 + "针对错误或不完整理解给出清晰讲解，分析关键步骤与选项，并使用 Markdown。";
-        AiService.AiPrompt prompt = new AiService.AiPrompt(systemPrompt,
+        AiService.AiPrompt prompt = new AiService.AiPrompt(
+                QuestionAssetPromptFactory.TEACHING_MATERIAL_POLICY + systemPrompt,
                 "## 试卷学习上下文\n" + learningContext + "\n\n## 当前原题\n" + buildQuestionContext(question));
         invocationService.stream(variant
                 ? "paper_learning_variant_stream" : "paper_learning_explanation_stream",

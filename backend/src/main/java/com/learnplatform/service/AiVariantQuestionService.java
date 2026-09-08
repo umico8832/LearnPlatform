@@ -2,7 +2,9 @@ package com.learnplatform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
@@ -34,6 +36,7 @@ public class AiVariantQuestionService {
 
     private static final Logger log = LoggerFactory.getLogger(AiVariantQuestionService.class);
     private static final String SAFE_ASSET_CONTENT = "结构化变式题已生成，请在下方独立作答后提交判分。";
+    private static final Set<String> EXPECTED_OPTION_LABELS = Set.of("A", "B", "C", "D");
 
     private final ObjectMapper objectMapper;
     private final QuestionAiAssetMapper questionAiAssetMapper;
@@ -198,7 +201,13 @@ public class AiVariantQuestionService {
 
     private ParsedVariant parseAndValidate(String rawContent) {
         try {
-            JsonNode root = objectMapper.readTree(stripCodeFence(rawContent));
+            JsonNode root = objectMapper.reader()
+                    .with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+                    .with(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
+                    .readTree(stripCodeFence(rawContent));
+            if (root == null || !root.isObject()) {
+                throw invalidFormat("根节点必须是对象");
+            }
             String questionType = requiredText(root, "questionType", "题型");
             if (!"SINGLE_CHOICE".equals(questionType)) {
                 throw invalidFormat("首版只支持 SINGLE_CHOICE");
@@ -207,22 +216,30 @@ public class AiVariantQuestionService {
             String correctAnswer = requiredText(root, "correctAnswer", "正确答案")
                     .toUpperCase(Locale.ROOT);
             String analysis = requiredText(root, "analysis", "解析");
-            int difficulty = root.path("difficulty").asInt(3);
+            int difficulty = requiredDifficulty(root);
             if (difficulty < 1 || difficulty > 5) {
                 throw invalidFormat("难度必须在1到5之间");
             }
 
             JsonNode optionNodes = root.path("options");
-            if (!optionNodes.isArray() || optionNodes.size() < 2 || optionNodes.size() > 6) {
-                throw invalidFormat("选项数量必须在2到6之间");
+            if (!optionNodes.isArray() || optionNodes.size() != EXPECTED_OPTION_LABELS.size()) {
+                throw invalidFormat("选项必须为A到D共4项");
             }
             List<AiVariantQuestionVO.Option> options = new ArrayList<>();
             Set<String> labels = new HashSet<>();
+            Set<String> contents = new HashSet<>();
             for (JsonNode optionNode : optionNodes) {
                 String label = requiredText(optionNode, "label", "选项标签").toUpperCase(Locale.ROOT);
                 String content = requiredText(optionNode, "content", "选项内容");
+                if (!EXPECTED_OPTION_LABELS.contains(label)) {
+                    throw invalidFormat("选项标签必须为A到D");
+                }
                 if (!labels.add(label)) { throw invalidFormat("选项标签不能重复"); }
+                if (!contents.add(content)) { throw invalidFormat("选项内容不能重复"); }
                 options.add(new AiVariantQuestionVO.Option(label, content));
+            }
+            if (!labels.equals(EXPECTED_OPTION_LABELS)) {
+                throw invalidFormat("选项标签必须完整覆盖A到D");
             }
             if (!labels.contains(correctAnswer)) {
                 throw invalidFormat("正确答案必须对应一个选项标签");
@@ -237,9 +254,21 @@ public class AiVariantQuestionService {
     }
 
     private String requiredText(JsonNode node, String field, String label) {
-        String value = node.path(field).asText("").trim();
+        JsonNode valueNode = node == null ? null : node.get(field);
+        if (valueNode == null || !valueNode.isTextual()) {
+            throw invalidFormat(label + "必须为文本");
+        }
+        String value = valueNode.textValue().trim();
         if (value.isBlank()) { throw invalidFormat(label + "不能为空"); }
         return value;
+    }
+
+    private int requiredDifficulty(JsonNode root) {
+        JsonNode difficultyNode = root.get("difficulty");
+        if (difficultyNode == null || !difficultyNode.isInt()) {
+            throw invalidFormat("难度必须为整数");
+        }
+        return difficultyNode.intValue();
     }
 
     private String writeOptions(List<AiVariantQuestionVO.Option> options) {
@@ -257,6 +286,9 @@ public class AiVariantQuestionService {
         int firstLineEnd = trimmed.indexOf('\n');
         int lastFence = trimmed.lastIndexOf("```");
         if (firstLineEnd < 0 || lastFence <= firstLineEnd) { return trimmed; }
+        if (!trimmed.substring(lastFence + 3).trim().isEmpty()) {
+            throw invalidFormat("代码块后不能包含其他内容");
+        }
         return trimmed.substring(firstLineEnd + 1, lastFence).trim();
     }
 

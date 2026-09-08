@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 /** 将 AI 辅导调用绑定到试卷学习会话和最近一次真实作答。 */
@@ -65,15 +66,25 @@ public class ExamLearningAiService {
         interaction.setQuestionId(questionId);
         interaction.setAnswerId(latestAnswer.getAnswerId());
         interaction.setAnswerAttemptNo(latestAnswer.getAttemptNo());
-        interaction.setAnswerCorrect(Boolean.TRUE.equals(latestAnswer.getCorrect()) ? 1 : 0);
+        interaction.setAnswerCorrect(latestAnswer.getCorrect() == null
+                ? null : latestAnswer.getCorrect() ? 1 : 0);
         interaction.setInteractionType(normalizedType);
         interaction.setStatus(PROCESSING);
         interaction.setStartTime(LocalDateTime.now());
         interactionMapper.insert(interaction);
 
         try {
+            AtomicBoolean receivedContent = new AtomicBoolean();
             aiService.generatePaperLearningAssistanceStream(
-                    questionId, normalizedType, buildContext(session, question, latestAnswer), userId, onContent);
+                    questionId, normalizedType, buildContext(session, question, latestAnswer), userId, chunk -> {
+                        if (chunk != null) {
+                            if (!chunk.isBlank()) { receivedContent.set(true); }
+                            onContent.accept(chunk);
+                        }
+                    });
+            if (!receivedContent.get()) {
+                throw new BusinessException(ResultCode.BUSINESS_ERROR, "AI 服务未返回有效辅导内容，请稍后重试");
+            }
             interaction.setStatus(SUCCEEDED);
             interaction.setCompleteTime(LocalDateTime.now());
             interactionMapper.updateById(interaction);
@@ -104,7 +115,8 @@ public class ExamLearningAiService {
         Course course = courseMapper.selectById(session.getCourseId());
         String courseName = course != null && course.getName() != null
                 ? course.getName() : "课程 " + session.getCourseId();
-        String result = Boolean.TRUE.equals(latestAnswer.getCorrect()) ? "正确" : "错误";
+        String result = latestAnswer.getCorrect() == null ? "未判分（请对照解析自行复核）"
+                : latestAnswer.getCorrect() ? "正确" : "错误";
         return "课程：" + courseName + "\n"
                 + "试卷：" + session.getPaperTitle() + "\n"
                 + "试卷学习会话：" + session.getId() + "（"

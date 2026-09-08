@@ -97,6 +97,36 @@ class AiVariantQuestionServiceTest {
     }
 
     @Test
+    void saveGeneratedAssetRejectsNonTextFieldsAndNonIntegerDifficulty() {
+        assertInvalidVariant(validJson().replace("\"questionContent\":\"以下哪个描述正确？\"",
+                "\"questionContent\":false"));
+        assertInvalidVariant(validJson().replace("\"analysis\":\"B 对应核心概念。\"",
+                "\"analysis\":true"));
+        assertInvalidVariant(validJson().replace("\"content\":\"选项一\"", "\"content\":1"));
+        assertInvalidVariant(validJson().replace("\"difficulty\":3", "\"difficulty\":\"3\""));
+        assertInvalidVariant(validJson().replace(",\"difficulty\":3", ""));
+    }
+
+    @Test
+    void saveGeneratedAssetRejectsUnexpectedLabelsAndDuplicateOptionContent() {
+        assertInvalidVariant(validJson().replace("\"label\":\"D\"", "\"label\":\"E\""));
+        assertInvalidVariant(validJson().replace("\"label\":\"A\"", "\"label\":\"Ａ\""));
+        assertInvalidVariant(validJson().replace("\"content\":\"选项二\"", "\"content\":\"选项一\""));
+    }
+
+    @Test
+    void saveGeneratedAssetRejectsTrailingJsonValue() {
+        assertInvalidVariant(validJson() + "\n{\"ignored\":true}");
+        assertInvalidVariant("```json\n" + validJson() + "\n```\n{\"ignored\":true}");
+    }
+
+    @Test
+    void saveGeneratedAssetRejectsDuplicateJsonField() {
+        assertInvalidVariant(validJson().replace("\"correctAnswer\":\"B\"",
+                "\"correctAnswer\":\"A\",\"correctAnswer\":\"B\""));
+    }
+
+    @Test
     void submitAnswerGradesAndCompletesFirstAttempt() {
         QuestionAiAsset asset = new QuestionAiAsset();
         asset.setId(21L);
@@ -147,6 +177,11 @@ class AiVariantQuestionServiceTest {
         training.setStatus("STARTED");
         training.setStartedTime(LocalDateTime.now().minusMinutes(5));
         return training;
+    }
+
+    private void assertInvalidVariant(String content) {
+        assertThrows(BusinessException.class, () -> service.saveGeneratedAsset(7L, "test-model", content));
+        verify(questionAiAssetMapper, never()).insert(any());
     }
 
     private AiVariantQuestion structuredQuestion() {
