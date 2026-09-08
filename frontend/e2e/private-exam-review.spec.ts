@@ -24,8 +24,14 @@ async function loginAs(page: Page, username: string, password: string) {
   await page.getByPlaceholder('请输入密码').fill(password)
   const loginButton = page.getByRole('button', { name: '登录' })
   await expect(loginButton).toBeEnabled({ timeout: 15_000 })
+  const loginResponse = page.waitForResponse(
+    (response) => response.request().method() === 'POST' && response.url().endsWith('/api/auth/login'),
+  )
   await loginButton.click()
-  await expect(page).toHaveURL(/\/my-courses$/)
+  const response = await loginResponse
+  expect(response.status()).toBe(200)
+  expect((await response.json()) as { code: number }).toMatchObject({ code: 0 })
+  await expect(page).toHaveURL(/\/my-courses$/, { timeout: 15_000 })
 }
 
 async function reviewResponse(response: Response): Promise<PrivateExamDraftResponse> {
