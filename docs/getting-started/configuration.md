@@ -2,19 +2,44 @@
 
 项目通过根目录 `.env` 向本地脚本和 Docker Compose 提供配置。仓库只保存 `.env.example`；真实密码、Token 和 API Key 不得提交。
 
+日常开发使用 [dev.py 入口](local-development.md)，由 Compose 解析 `.env` 并覆盖本地连接地址。
+完整 Docker 环境仍读取基础 Compose；不要在终端长期导出旧配置，以免覆盖 `.env` 的新值。
+
 ## 初始化
 
 ```bash
-cp .env.example .env
+test -f .env || cp .env.example .env
 ```
 
 至少修改：
 
 - `DB_PASSWORD`
 - `JWT_SECRET`
+- `AUTH_TOKEN_SECRET`（与 JWT 独立的随机密钥）
 - `GRAFANA_ADMIN_PASSWORD`（启用监控时）
 
 只有启用 AI 时才填写 `AI_API_KEY`。
+
+登录需要配置 `VITE_TURNSTILE_SITE_KEY`、`TURNSTILE_ENABLED=true` 和 `TURNSTILE_SECRET_KEY`；
+前者是公开站点密钥，后者只给后端。开发入口保留真实验证，不自动注入测试密钥。
+已有 MySQL 卷的密码必须在数据库内同步修改，单改 `.env` 不会修改已有账号密码。
+
+## 日常开发覆盖
+
+`docker-compose.dev.yml` 仅由 `dev.py` 加载，固定本地后端端口 8080、`dev` Profile、前端地址
+`http://localhost:5173` 和 Mailpit 发信配置；数据库与 Redis 连接对应 Docker 映射端口。
+数据库密码、JWT、Turnstile 与 AI 参数仍来自根 `.env`。
+
+| 可选变量 | 默认值 | 用途 |
+|---|---|---|
+| `DEV_MYSQL_PORT` | `13306` | Docker MySQL 映射到本机 |
+| `DEV_SMTP_PORT` | `11025` | Docker Mailpit 发信端口 |
+| `REDIS_HOST_PORT` | `6379` | 本地后端连接 Redis 的映射端口 |
+| `MAILPIT_HOST_PORT` | `8025` | 浏览器查看开发邮件 |
+
+完整 Docker 环境应使用 `SMTP_HOST=mailpit`、`SMTP_PORT=1025`（真实 SMTP 按服务商填写），
+`FRONTEND_URL` 设置为实际 Docker 页面地址，`SPRING_PROFILES_ACTIVE=docker`。
+本地开发入口会覆盖这些地址，因此无需切换时反复编辑。已有 `.env` 不会被入口重写。
 
 ## 数据库与应用
 
@@ -28,7 +53,7 @@ cp .env.example .env
 | `SERVER_PORT` | 容器内后端端口 | `8080` |
 | `BACKEND_HOST_PORT` | 后端宿主端口 | `8080` |
 | `FRONTEND_HOST_PORT` | 前端宿主端口 | `80` |
-| `SPRING_PROFILES_ACTIVE` | Spring Profile | 本地 `dev`，Compose 默认覆盖为 `docker` |
+| `SPRING_PROFILES_ACTIVE` | Spring Profile | 开发入口固定 `dev`；基础 Compose 未设置时默认 `docker` |
 | `PRIVATE_EXAM_SOURCE_STORAGE_LIMIT_BYTES` | 每位用户的私有试卷原文件累计配额 | `104857600`（100MB） |
 
 ## Redis

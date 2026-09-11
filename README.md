@@ -56,19 +56,18 @@ Design Tokens 作为唯一视觉来源（`frontend/src/assets/styles/tokens.css`
 ### 本地开发
 
 ```bash
-cp .env.example .env
-source scripts/load-env.sh .env
-
-cd backend
-mvn spring-boot:run
-
-cd ../frontend
-npm ci
-npm run dev
+test -f .env || cp .env.example .env
+# 在本机填写 .env 后，启动 Docker 基础服务
+python3 scripts/dev.py infra-up
+# 终端一：本地后端
+python3 scripts/dev.py backend
+# 终端二：本地前端（npm ci 仅首次安装或依赖改变时需要）
+npm --prefix frontend ci
+python3 scripts/dev.py frontend
 ```
 
 - 前端：`http://localhost:5173`
-- 独立管理端：另运行 `npm run dev:admin` 后访问 `http://localhost:5174/admin/`
+- 独立管理端：另运行 `python3 scripts/dev.py admin` 后访问 `http://localhost:5174/admin/`
 - 后端：`http://localhost:8080`
 - Knife4j：`http://localhost:8080/doc.html`
 

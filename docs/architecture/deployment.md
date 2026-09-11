@@ -50,6 +50,8 @@ Compose 通过健康条件控制后端、前端和监控依赖启动顺序。
 
 ## 环境边界
 
+- 日常开发使用 `docker-compose.dev.yml` 覆盖：MySQL、Redis、Mailpit 在 Docker，前后端在本机。
+  MySQL 与 SMTP 端口只绑定回环地址，复用完整 Docker 环境的数据卷。启动步骤见[本地开发](../getting-started/local-development.md)。
 - 本地开发、Docker 和 E2E 使用不同 Spring Profile 或 Compose 覆盖。
 - E2E 环境使用隔离端口和数据，避免污染日常开发库。
 - 生产部署至少需要更换数据库密码、JWT Secret、Grafana 密码和可选 AI Key。

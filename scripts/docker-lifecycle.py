@@ -399,6 +399,7 @@ def reclaim() -> None:
 
 def app_up() -> int:
     require_docker()
+    run_command((sys.executable, str(ROOT / "scripts" / "dev.py"), "check-docker"))
     env, metadata = lifecycle_environment()
     run_command(compose_command("config", "--quiet"), env=env)
     old_images = {

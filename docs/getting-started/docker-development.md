@@ -7,6 +7,9 @@
 
 ## 启动
 
+日常修改代码使用[本地开发](local-development.md)入口。完整 Docker 联调前，先在本地
+前后端终端按 `Ctrl+C`；`app-up` 会在构建前拒绝非本项目容器占用的应用端口。
+
 ```bash
 test -f .env || cp .env.example .env
 python3 scripts/docker-lifecycle.py app-up
