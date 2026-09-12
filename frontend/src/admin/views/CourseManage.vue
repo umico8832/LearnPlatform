@@ -2,9 +2,7 @@
   <div class="course-manage admin-page">
     <header class="admin-page-header">
       <div>
-        <p class="admin-page-kicker">CONTENT SYSTEM</p>
-        <h2>课程管理</h2>
-        <p class="admin-page-description">维护学习内容的一级目录，课程排序会影响用户端列表展示。</p>
+        <h1>课程管理</h1>
       </div>
       <div class="admin-header-actions">
         <el-button type="primary" :icon="Plus" @click="openDialog()">新增课程</el-button>

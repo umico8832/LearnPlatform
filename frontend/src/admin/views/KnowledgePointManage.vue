@@ -2,11 +2,7 @@
   <div class="kp-manage admin-page">
     <header class="admin-page-header">
       <div>
-        <p class="admin-page-kicker">KNOWLEDGE MAP</p>
-        <h2>知识点管理</h2>
-        <p class="admin-page-description">
-          维护课程「{{ courseName }}」的知识结构，父子层级会影响题目归类、诊断和复习路径。
-        </p>
+        <h1>知识点管理</h1>
       </div>
       <div class="admin-header-actions">
         <el-button :icon="ArrowLeft" @click="router.push({ name: 'AdminCourseManage' })">返回课程</el-button>
@@ -22,7 +18,6 @@
         <div class="admin-summary-copy">
           <p class="admin-summary-label">{{ item.label }}</p>
           <div class="admin-summary-value">{{ item.value }}</div>
-          <div class="admin-summary-note">{{ item.note }}</div>
         </div>
       </el-card>
     </section>
@@ -163,7 +158,6 @@ const route = useRoute()
 const router = useRouter()
 
 const courseId = computed(() => Number(route.query.courseId))
-const courseName = computed(() => (route.query.courseName as string) || '课程')
 
 const treeData = ref<KnowledgePointVO[]>([])
 const loading = ref(false)
@@ -198,28 +192,24 @@ const knowledgeStats = computed(() => [
   {
     label: '知识点总数',
     value: totalNodeCount.value,
-    note: '当前课程结构规模',
     icon: Collection,
     className: 'is-primary',
   },
   {
     label: '顶级节点',
     value: rootNodeCount.value,
-    note: '课程主干目录',
     icon: FolderOpened,
     className: 'is-success',
   },
   {
     label: '叶子节点',
     value: leafNodeCount.value,
-    note: '适合绑定题目',
     icon: Document,
     className: 'is-warning',
   },
   {
     label: '最大层级',
     value: maxTreeDepth.value,
-    note: '层级过深需拆分',
     icon: Files,
     className: 'is-info',
   },

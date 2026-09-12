@@ -1,10 +1,6 @@
 <template>
   <div class="question-list page-container">
-    <LpPageHeader
-      kicker="题库"
-      title="题库浏览"
-      description="按课程、题型和难度快速定位题目，把值得回看的内容收藏起来。"
-    >
+    <LpPageHeader title="题库">
       <template #actions>
         <div class="hero-metrics">
           <div class="metric-item">
@@ -23,8 +19,7 @@
       <aside class="filter-panel">
         <div class="panel-title">
           <div>
-            <span class="section-kicker">筛选</span>
-            <h3>缩小题目范围</h3>
+            <h3>筛选</h3>
           </div>
           <el-button v-if="activeFilterCount > 0" link type="primary" @click="resetFilters">清空</el-button>
         </div>

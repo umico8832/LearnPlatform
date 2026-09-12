@@ -23,9 +23,8 @@
 
       <section class="detail-hero">
         <div class="hero-main">
-          <LpKicker>课程详情</LpKicker>
           <h1 class="detail-title">{{ course.name }}</h1>
-          <p class="detail-desc">{{ course.description || '暂无课程描述，可先查看知识点结构。' }}</p>
+          <p class="detail-desc">{{ course.description || '暂无课程描述' }}</p>
           <div class="detail-meta">
             <span>{{ totalKP }} 个知识点</span>
             <span v-if="isInLibrary" class="in-library">
@@ -52,15 +51,7 @@
       </section>
 
       <section class="knowledge-section" aria-labelledby="knowledge-heading">
-        <LpSectionHeading
-          kicker="知识结构"
-          title="课程目录"
-          :description="'共 ' + totalKP + ' 个知识点，按模块组织。已审查的教学内容可以直接开始学习。'"
-        >
-          <template #aside>
-            <span class="tree-hint">加入课程库后可开始已审查内容的 AI 教学</span>
-          </template>
-        </LpSectionHeading>
+        <LpSectionHeading title="课程目录" />
 
         <div class="tree-wrap">
           <el-tree
@@ -98,7 +89,6 @@
                   >
                     开始学习
                   </el-button>
-                  <span v-else-if="isReviewedTutorContent(data)" class="join-hint">加入课程库后可学习</span>
                 </div>
               </div>
             </template>
@@ -291,11 +281,6 @@ onMounted(() => {
   box-shadow: var(--lp-shadow-xs);
 }
 
-.tree-hint {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
-}
-
 .tree-wrap {
   min-height: 200px;
 }
@@ -366,12 +351,6 @@ onMounted(() => {
 .node-count {
   color: var(--lp-text-muted);
   font-size: var(--lp-text-xs);
-}
-
-.join-hint {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
-  white-space: nowrap;
 }
 
 @media (max-width: 900px) {

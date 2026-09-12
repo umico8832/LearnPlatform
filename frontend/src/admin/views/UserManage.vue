@@ -2,9 +2,7 @@
   <div class="user-manage admin-page">
     <header class="admin-page-header">
       <div>
-        <p class="admin-page-kicker">ACCESS CONTROL</p>
-        <h2>用户管理</h2>
-        <p class="admin-page-description">统一维护账号状态、角色权限与 AI 日配额，所有配额调整都会留下审计记录。</p>
+        <h1>用户管理</h1>
       </div>
       <div class="admin-header-actions">
         <el-button type="primary" :icon="Plus" @click="openCreateDialog()">新增用户</el-button>
@@ -19,7 +17,6 @@
         <div class="admin-summary-copy">
           <p class="admin-summary-label">{{ item.label }}</p>
           <div class="admin-summary-value">{{ item.value }}</div>
-          <div class="admin-summary-note">{{ item.note }}</div>
         </div>
       </el-card>
     </section>
@@ -189,7 +186,6 @@ const {
   pageSize,
   total,
   userStats,
-  activationRate,
   fetchUsers,
   fetchStats,
   handleUserSelectionChange,
@@ -204,28 +200,24 @@ const statCards = computed(() => [
   {
     label: '用户总数',
     value: userStats.total,
-    note: '平台注册账号',
     icon: User,
     className: 'summary-total',
   },
   {
     label: '已启用',
     value: userStats.active,
-    note: `${activationRate.value}% 账号可登录`,
     icon: CircleCheck,
     className: 'summary-active',
   },
   {
     label: '已禁用',
     value: userStats.disabled,
-    note: '需管理员重新启用',
     icon: CircleClose,
     className: 'summary-disabled',
   },
   {
     label: '管理员',
     value: userStats.admins,
-    note: '拥有后台权限',
     icon: UserFilled,
     className: 'summary-admin',
   },

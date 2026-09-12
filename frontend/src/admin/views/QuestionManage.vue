@@ -2,11 +2,7 @@
   <div class="question-manage admin-page">
     <header class="admin-page-header">
       <div>
-        <p class="admin-page-kicker">QUESTION BANK</p>
-        <h2>题目管理</h2>
-        <p class="admin-page-description">
-          维护正式题库、导入导出和内容复审，重点关注题目来源、状态与 AI 学习资产缓存。
-        </p>
+        <h1>题目管理</h1>
       </div>
       <div class="admin-header-actions">
         <el-dropdown trigger="click">
@@ -39,7 +35,6 @@
         <div class="admin-summary-copy">
           <p class="admin-summary-label">{{ item.label }}</p>
           <div class="admin-summary-value">{{ item.value }}</div>
-          <div class="admin-summary-note">{{ item.note }}</div>
         </div>
       </el-card>
     </section>
@@ -321,10 +316,10 @@ const questionStats = computed(() => {
     ? Math.round(questions.value.reduce((sum, q) => sum + (q.score || 0), 0) / questions.value.length)
     : 0
   return [
-    { label: '筛选总量', value: total.value, note: `当前页 ${questions.value.length} 道`, icon: Collection },
-    { label: '当前页启用', value: enabled, note: `${questions.value.length - enabled} 道禁用`, icon: DocumentChecked },
-    { label: '来源追踪', value: reviewable, note: '当前页非手动来源', icon: RefreshRight },
-    { label: '平均分值', value: avgScore || '-', note: '当前页题目均分', icon: DataAnalysis },
+    { label: '筛选总量', value: total.value, icon: Collection },
+    { label: '当前页启用', value: enabled, icon: DocumentChecked },
+    { label: '当前页非手动来源', value: reviewable, icon: RefreshRight },
+    { label: '当前页平均分值', value: avgScore || '-', icon: DataAnalysis },
   ]
 })
 

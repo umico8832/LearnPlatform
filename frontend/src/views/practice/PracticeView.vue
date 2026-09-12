@@ -1,10 +1,6 @@
 <template>
   <div class="practice-container page-container">
-    <LpPageHeader
-      kicker="课程内学习活动"
-      title="练习"
-      description="优先用智能推荐保持节奏，也可以按课程、题型和难度自选一组题。"
-    >
+    <LpPageHeader title="练习">
       <template #actions>
         <el-button type="primary" :icon="Promotion" @click="startAdaptivePractice" :loading="adaptiveStartLoading">
           智能推荐
@@ -14,11 +10,7 @@
     </LpPageHeader>
 
     <section class="stats-section" aria-label="练习统计">
-      <LpSectionHeading
-        kicker="学习概览"
-        title="练习统计"
-        description="累计答题情况，帮助你判断最近练习的节奏与短板。"
-      />
+      <LpSectionHeading title="练习统计" />
       <div v-if="statsLoading" class="stats-grid">
         <LpSkeleton v-for="n in 4" :key="n" card :rows="2" />
       </div>
@@ -29,11 +21,7 @@
 
     <div class="practice-grid">
       <section class="adaptive-section">
-        <LpSectionHeading kicker="自适应模式" title="智能推荐" description="根据历史正确率动态调整难度，减少盲目刷题。">
-          <template #aside>
-            <el-tag v-if="adaptiveSummary" type="success" size="small" effect="plain">自适应模式</el-tag>
-          </template>
-        </LpSectionHeading>
+        <LpSectionHeading title="智能推荐" />
 
         <div class="adaptive-panel" v-loading="adaptiveLoading">
           <div v-if="adaptiveSummary" class="adaptive-content">
@@ -106,11 +94,7 @@
       </section>
 
       <section class="config-section">
-        <LpSectionHeading kicker="自选模式" title="自选练习" description="按课程、题型和难度筛选一组题。">
-          <template #aside>
-            <el-tag type="info" size="small" effect="plain">精准筛选</el-tag>
-          </template>
-        </LpSectionHeading>
+        <LpSectionHeading title="自选练习" />
 
         <el-card class="config-card" ref="configCardRef" shadow="never">
           <el-form :model="form" label-position="top">
@@ -147,43 +131,6 @@
         </el-card>
       </section>
     </div>
-
-    <section class="mode-section">
-      <LpSectionHeading
-        kicker="怎么开始"
-        title="三种练习方式"
-        description="每种方式适合不同的目标，选择一个开始即可。"
-      />
-      <div class="mode-strip">
-        <button type="button" class="mode-item" @click="scrollToConfig">
-          <span class="mode-icon" aria-hidden="true"
-            ><el-icon><List /></el-icon
-          ></span>
-          <span class="mode-copy">
-            <strong>按课程整理</strong>
-            <span>适合课后巩固，先选课程再控制题型和数量。</span>
-          </span>
-        </button>
-        <button type="button" class="mode-item" @click="scrollToConfig">
-          <span class="mode-icon" aria-hidden="true"
-            ><el-icon><Filter /></el-icon
-          ></span>
-          <span class="mode-copy">
-            <strong>按题型训练</strong>
-            <span>集中练选择、判断、填空或简答，便于查漏补缺。</span>
-          </span>
-        </button>
-        <button type="button" class="mode-item" @click="startAdaptivePractice">
-          <span class="mode-icon" aria-hidden="true"
-            ><el-icon><TrendCharts /></el-icon
-          ></span>
-          <span class="mode-copy">
-            <strong>按表现推荐</strong>
-            <span>根据历史正确率动态调整难度，减少盲目刷题。</span>
-          </span>
-        </button>
-      </div>
-    </section>
   </div>
 </template>
 
@@ -192,7 +139,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { getCoursePage, type CourseVO } from '@/api/course'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Filter, List, MagicStick, Promotion, TrendCharts } from '@element-plus/icons-vue'
+import { Filter, MagicStick, Promotion } from '@element-plus/icons-vue'
 import { getPracticeQuestions, getPracticeStats, getAdaptiveQuestions, getAdaptiveSummary } from '@/api/practice'
 import type { PracticeStatsVO, AdaptiveSummaryVO } from '@/api/practice'
 
@@ -336,8 +283,7 @@ const scrollToConfig = () => {
 
 .stats-section,
 .adaptive-section,
-.config-section,
-.mode-section {
+.config-section {
   display: grid;
   gap: var(--lp-space-4);
 }
@@ -483,66 +429,8 @@ const scrollToConfig = () => {
   min-height: 120px;
 }
 
-/* 三种练习方式：说明性引导，不使用卡片，仅靠图标与留白分区 */
-.mode-strip {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--lp-space-3);
-}
-
-.mode-item {
-  display: flex;
-  gap: var(--lp-space-3);
-  align-items: flex-start;
-  padding: var(--lp-space-3) var(--lp-space-2);
-  text-align: left;
-  color: var(--lp-text);
-  background: transparent;
-  border: 0;
-  border-radius: var(--lp-radius-md);
-  cursor: pointer;
-  transition: background-color var(--lp-duration-fast) var(--lp-ease-out);
-}
-
-.mode-item:hover {
-  background: var(--lp-surface-subtle);
-}
-
-.mode-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  flex: 0 0 auto;
-  border-radius: var(--lp-radius-md);
-  background: var(--lp-primary-soft);
-  color: var(--lp-primary);
-  font-size: var(--lp-text-lg);
-}
-
-.mode-copy {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lp-space-1);
-  min-width: 0;
-}
-
-.mode-copy strong {
-  font-size: var(--lp-text-md);
-  font-weight: var(--lp-weight-semibold);
-  color: var(--lp-text);
-}
-
-.mode-copy span {
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  line-height: var(--lp-leading-body);
-}
-
 @media (max-width: 960px) {
-  .practice-grid,
-  .mode-strip {
+  .practice-grid {
     grid-template-columns: 1fr;
   }
 

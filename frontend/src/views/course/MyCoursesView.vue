@@ -1,6 +1,6 @@
 <template>
   <div class="my-courses page-container">
-    <LpPageHeader kicker="个人课程库" title="我的课程" description="从上次停下的位置继续。">
+    <LpPageHeader title="我的课程">
       <template #actions>
         <el-button :icon="Plus" @click="router.push({ name: 'CourseList' })">浏览课程库</el-button>
       </template>
@@ -15,7 +15,7 @@
 
     <template v-else-if="loadFailed">
       <section class="state-panel">
-        <LpEmptyState title="暂时无法读取课程库" description="请刷新重试；如果网络恢复正常，课程会重新出现。">
+        <LpEmptyState title="暂时无法读取课程库" description="请刷新重试。">
           <template #actions>
             <el-button type="primary" @click="fetchCourses">重新加载</el-button>
           </template>
@@ -25,10 +25,7 @@
 
     <template v-else-if="courses.length === 0">
       <section class="state-panel">
-        <LpEmptyState
-          title="课程库还是空的"
-          description="从课程库加入一门课程（例如 408 数据结构），就可以从这里持续学习。"
-        >
+        <LpEmptyState title="课程库还是空的" description="从课程库加入课程后，会显示在这里。">
           <template #actions>
             <el-button type="primary" :icon="Plus" @click="router.push({ name: 'CourseList' })">浏览课程库</el-button>
           </template>
@@ -42,7 +39,6 @@
           <LpKicker>继续学习</LpKicker>
           <h2 id="continue-heading">{{ continueCourse.name }}</h2>
           <p v-if="continueTarget" class="continue-target">{{ continueTarget.title }} · {{ continueTarget.reason }}</p>
-          <p v-else class="continue-target">从课程空间选择下一步。</p>
           <span v-if="continueCourse.overview?.lastLearningTime" class="continue-time">
             上次学习：{{ formatRelativeTime(continueCourse.overview?.lastLearningTime) }}
           </span>
@@ -62,7 +58,7 @@
       </section>
 
       <section class="course-list-section" aria-labelledby="course-list-heading">
-        <LpSectionHeading kicker="全部课程" title="我的课程" :description="`共 ${courses.length} 门已加入课程。`" />
+        <LpSectionHeading title="全部课程" :description="`共 ${courses.length} 门`" />
         <div class="course-list">
           <article v-for="course in courses" :key="course.courseId" class="course-card">
             <div class="course-icon" aria-hidden="true">
@@ -71,7 +67,7 @@
 
             <div class="course-copy">
               <h3 class="course-name">{{ course.name }}</h3>
-              <p class="course-desc">{{ course.description || '暂无课程描述，进入后可从目录开始。' }}</p>
+              <p class="course-desc">{{ course.description || '暂无课程描述' }}</p>
               <div class="course-meta">
                 <span>加入于 {{ formatDate(course.addedAt) }}</span>
                 <span v-if="course.overview?.lastLearningTime"

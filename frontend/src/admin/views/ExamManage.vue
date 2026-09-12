@@ -2,9 +2,7 @@
   <div class="exam-manage-container admin-page">
     <header class="admin-page-header">
       <div>
-        <p class="admin-page-kicker">EXAM CENTER</p>
-        <h2>试卷管理</h2>
-        <p class="admin-page-description">管理普通练习与来源可核验的官方试卷，配置题目结构和发布状态。</p>
+        <h1>试卷管理</h1>
       </div>
       <div class="admin-header-actions">
         <el-button type="warning" :icon="MagicStick" @click="smartExamDialog?.open()">智能组卷</el-button>
@@ -20,7 +18,6 @@
         <div class="admin-summary-copy">
           <p class="admin-summary-label">{{ item.label }}</p>
           <div class="admin-summary-value">{{ item.value }}</div>
-          <div class="admin-summary-note">{{ item.note }}</div>
         </div>
       </el-card>
     </section>
@@ -129,16 +126,15 @@ const paperEditorDialog = ref<InstanceType<typeof ExamPaperEditorDialog>>()
 
 const paperStats = computed(() => {
   const published = papers.value.filter((p) => p.status === 1).length
-  const draft = papers.value.filter((p) => p.status === 0).length
   const totalQuestions = papers.value.reduce((sum, p) => sum + (p.questionCount || 0), 0)
   const avgDuration = papers.value.length
     ? Math.round(papers.value.reduce((sum, p) => sum + (p.duration || 0), 0) / papers.value.length)
     : 0
   return [
-    { label: '当前页试卷', value: papers.value.length, note: `筛选共 ${total.value} 份`, icon: Collection },
-    { label: '已发布', value: published, note: `草稿 ${draft} 份`, icon: Promotion },
-    { label: '题目总量', value: totalQuestions, note: '当前页题目合计', icon: Collection },
-    { label: '平均时长', value: avgDuration ? `${avgDuration}` : '-', note: '分钟 / 当前页', icon: Refresh },
+    { label: '当前页试卷', value: papers.value.length, icon: Collection },
+    { label: '当前页已发布', value: published, icon: Promotion },
+    { label: '当前页题目总量', value: totalQuestions, icon: Collection },
+    { label: '当前页平均时长（分钟）', value: avgDuration || '-', icon: Refresh },
   ]
 })
 

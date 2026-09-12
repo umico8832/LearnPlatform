@@ -1,10 +1,6 @@
 <template>
   <div class="exam-list-page page-container">
-    <LpPageHeader
-      kicker="考试测评"
-      title="考试与试卷"
-      description="先参加已发布试卷，完成后在考试记录中查看得分和答题明细。"
-    >
+    <LpPageHeader title="考试与试卷">
       <template #actions>
         <el-button type="primary" :icon="Upload" @click="openImportDialog">导入私有试卷</el-button>
       </template>
@@ -19,11 +15,7 @@
       <el-tabs v-model="activeTab" class="exam-tabs" @tab-change="handleTabChange">
         <el-tab-pane label="可用试卷" name="papers">
           <div v-loading="loading" class="paper-list">
-            <LpEmptyState
-              v-if="!loading && papers.length === 0"
-              title="暂无可用试卷"
-              description="管理员发布试卷，或导入你自己的私有试卷后，就会出现在这里。"
-            />
+            <LpEmptyState v-if="!loading && papers.length === 0" title="暂无可用试卷" />
 
             <article v-for="paper in papers" :key="paper.id" class="exam-card">
               <div class="exam-card-top">

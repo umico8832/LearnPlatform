@@ -27,7 +27,7 @@
     <!-- 评论列表 -->
     <div v-loading="loading" class="comment-list">
       <div v-if="comments.length === 0 && !loading" class="comment-empty">
-        <el-empty description="暂无讨论，快来发表第一条评论吧" :image-size="80" />
+        <el-empty description="暂无讨论" :image-size="80" />
       </div>
 
       <div v-for="comment in comments" :key="comment.id" class="comment-item">

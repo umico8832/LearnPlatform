@@ -4,7 +4,6 @@
       <template v-if="result">
         <section class="result-header" aria-labelledby="result-title">
           <article class="score-card">
-            <span class="section-kicker">考试复盘</span>
             <h2 id="result-title" class="result-title">{{ result.examTitle }}</h2>
 
             <div class="score-main">
@@ -64,7 +63,6 @@
         <section class="answers-section" aria-labelledby="answer-detail-title">
           <div class="answers-heading">
             <div>
-              <span class="section-kicker">逐题核对</span>
               <h2 id="answer-detail-title" class="answers-title">答题详情</h2>
             </div>
             <span class="answers-summary">{{ answers.length }} 题 · {{ wrongAnswers.length }} 题需复习</span>

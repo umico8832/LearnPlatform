@@ -10,6 +10,11 @@ vi.mock('@/api/course', () => ({
 
 const stubs = {
   'el-button': { template: '<button @click="$emit(\'click\')"><slot /></button>', emits: ['click'] },
+  'el-icon': { template: '<span><slot /></span>' },
+  'el-tooltip': {
+    props: ['content'],
+    template: '<span data-test="facts-help" :data-content="content"><slot /></span>',
+  },
   'el-tag': { template: '<span><slot /></span>' },
   'el-pagination': {
     template: '<nav><button @click="$emit(\'current-change\', 2)">下一页</button></nav>',
@@ -40,8 +45,8 @@ describe('KnowledgePointFactsPanel', () => {
 
     expect(mockGetFacts).toHaveBeenCalledWith(408, 1, 10)
     expect(wrapper.text()).toContain('作答次数')
-    expect(wrapper.text()).toContain('已判定、非空作答')
-    expect(wrapper.text()).toContain('未处理错题、到期复习按题目计')
+    expect(wrapper.get('[data-test="facts-help"]').attributes('data-content')).toContain('作答与答对按次数统计')
+    expect(wrapper.get('[data-test="facts-help"]').attributes('data-content')).toContain('错题与复习按题目统计')
     expect(wrapper.text()).toContain('6')
     await wrapper
       .findAll('button')

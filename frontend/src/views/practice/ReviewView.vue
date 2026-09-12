@@ -1,10 +1,6 @@
 <template>
   <div class="review-container page-container">
-    <LpPageHeader
-      kicker="间隔重复"
-      title="复习"
-      description="按到期时间处理复习卡片，先清空今日任务，再查看全部复习计划。"
-    >
+    <LpPageHeader title="复习">
       <template #actions>
         <el-button type="primary" size="large" :icon="Reading" :disabled="stats.dueToday === 0" @click="startReview">
           开始复习
@@ -27,11 +23,7 @@
     </section>
 
     <section v-if="stats.totalCards > 0" class="progress-panel">
-      <LpSectionHeading
-        kicker="掌握进度"
-        :title="`已掌握 ${stats.masteredCards} / ${stats.totalCards} 张卡片`"
-        description="新卡片、学习中与困难卡片会随着复习持续流转。"
-      />
+      <LpSectionHeading :title="`已掌握 ${stats.masteredCards} / ${stats.totalCards} 张卡片`" />
       <LpProgress
         :percent="masteredPercent"
         :label="`${stats.masteredCards}/${stats.totalCards}`"
@@ -65,15 +57,12 @@
             AI 复习建议
           </el-button>
         </div>
-        <el-text type="info" size="small">
-          平均简易因子: {{ stats.avgEaseFactor?.toFixed(2) ?? '-' }} | 连续 {{ stats.streakDays }} 天
-        </el-text>
       </div>
     </section>
 
     <!-- AI 复习建议区域 -->
     <section v-if="aiSuggestionContent" class="ai-panel">
-      <LpSectionHeading kicker="AI 辅助" title="AI 复习建议">
+      <LpSectionHeading title="AI 复习建议">
         <template #aside>
           <el-button size="small" text @click="aiSuggestionContent = ''">收起</el-button>
         </template>
@@ -121,11 +110,6 @@
           </template>
         </el-table-column>
         <el-table-column label="间隔" width="80" prop="intervalDays" />
-        <el-table-column label="EF" width="70">
-          <template #default="{ row }">
-            {{ row.easeFactor?.toFixed(2) }}
-          </template>
-        </el-table-column>
         <el-table-column label="下次复习" width="120" prop="nextReviewDate" />
         <el-table-column label="操作" width="160">
           <template #default="{ row }">

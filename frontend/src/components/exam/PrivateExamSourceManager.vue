@@ -1,6 +1,5 @@
 <template>
   <el-dialog v-model="storageDialogVisible" title="我的原文件存储" width="min(760px, 92vw)" append-to-body>
-    <p class="source-meta">这里只展示原文件元数据；下载和删除始终通过当前关联的草稿或私有试卷处理。</p>
     <div v-loading="storageFilesLoading" class="storage-list">
       <LpEmptyState
         v-if="!storageFilesLoading && !storageFiles.length"
@@ -50,9 +49,7 @@
 
   <el-dialog v-model="sourceDialogVisible" title="私有试卷原始资料" width="min(760px, 92vw)">
     <template v-if="privateSource">
-      <p class="source-meta">
-        {{ privateSource.sourceName }} · {{ privateSource.sourceFormat }} · {{ privateSource.contentHash }}
-      </p>
+      <p class="source-meta">{{ privateSource.sourceName }} · {{ privateSource.sourceFormat }}</p>
       <el-button
         v-if="privateSource.originalFileAvailable"
         type="primary"

@@ -2,9 +2,7 @@
   <div class="dashboard-container admin-page">
     <header class="dashboard-header admin-page-header">
       <div>
-        <p class="admin-page-kicker">PLATFORM OVERVIEW</p>
-        <h2>平台数据总览</h2>
-        <p class="admin-page-description">掌握内容供给、用户活跃与练习趋势，优先发现题库增长、试卷发布和活跃波动。</p>
+        <h1>平台数据总览</h1>
       </div>
       <div class="update-time">
         <el-icon><Refresh /></el-icon>

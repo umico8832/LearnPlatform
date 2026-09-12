@@ -1,10 +1,6 @@
 <template>
   <div class="wrong-question-container page-container">
-    <LpPageHeader
-      kicker="薄弱项复盘"
-      title="错题"
-      description="先处理未掌握题，再用相似题扩展练习，避免反复错在同一类问题上。"
-    >
+    <LpPageHeader title="错题">
       <template #actions>
         <el-button
           type="primary"
@@ -22,7 +18,7 @@
     </section>
 
     <section class="filter-panel">
-      <LpSectionHeading kicker="筛选" title="筛选错题" description="当前筛选会同步影响「重练错题」范围。" />
+      <LpSectionHeading title="筛选错题" description="当前筛选会同步影响「重练错题」范围。" />
       <el-form :inline="true" :model="filter" class="filter-form">
         <el-form-item label="掌握程度">
           <el-select v-model="filter.masteryLevel" placeholder="全部" clearable>

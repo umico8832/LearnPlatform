@@ -3,11 +3,6 @@
     <div class="ai-toolbar">
       <div>
         <div class="ai-title">AI 学习助手</div>
-        <div class="ai-subtitle">
-          {{
-            learningSessionId ? '结合本轮试卷位置和最近作答提供辅导。' : '针对当前题目补充思路，或生成一道同类练习。'
-          }}
-        </div>
       </div>
       <div class="ai-actions">
         <el-button
@@ -144,13 +139,6 @@ async function generate(type: AssistantType) {
   color: #1f2d3d;
   font-size: 15px;
   font-weight: 700;
-}
-
-.ai-subtitle {
-  margin-top: 4px;
-  color: #7a8797;
-  font-size: 12px;
-  line-height: 1.5;
 }
 
 .ai-actions {

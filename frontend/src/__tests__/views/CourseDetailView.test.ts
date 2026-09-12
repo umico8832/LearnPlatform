@@ -88,7 +88,6 @@ describe('CourseDetailView', () => {
     const wrapper = mount(CourseDetailView, { global: { stubs } })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('加入课程库后可学习')
     const tutorButtons = wrapper.findAll('button').filter((item) => item.text().trim() === '开始学习')
     expect(tutorButtons).toHaveLength(0)
     expect(findButton(wrapper, '加入课程库').exists()).toBe(true)

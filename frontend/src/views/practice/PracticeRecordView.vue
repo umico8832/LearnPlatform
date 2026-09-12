@@ -1,10 +1,6 @@
 <template>
   <div class="practice-record-container page-container">
-    <LpPageHeader
-      kicker="练习复盘"
-      title="刷题记录"
-      description="按题型和结果回看最近练习，快速定位正确率波动和需要回炉的题目。"
-    >
+    <LpPageHeader title="刷题记录">
       <template #actions>
         <el-button type="primary" :icon="EditPen" @click="$router.push('/practice')">继续刷题</el-button>
       </template>
@@ -22,7 +18,7 @@
     </section>
 
     <section class="filter-panel">
-      <LpSectionHeading kicker="筛选" title="筛选记录" description="筛选仅影响当前记录列表，不会改变练习统计。" />
+      <LpSectionHeading title="筛选记录" />
       <el-form :inline="true" :model="filter" class="filter-form">
         <el-form-item label="题型">
           <el-select v-model="filter.questionType" placeholder="全部" clearable>
@@ -165,7 +161,7 @@ const summaryCards = computed(() => [
     note: `答对 ${pageCorrectCount.value} 题`,
     tone: 'default' as const,
   },
-  { label: '当前页错题', value: pageWrongCount.value, note: '可前往错题本复盘', tone: 'danger' as const },
+  { label: '当前页错题', value: pageWrongCount.value, tone: 'danger' as const },
   { label: '平均耗时', value: averageAnswerTime.value, note: '仅统计有耗时记录', tone: 'warning' as const },
 ])
 

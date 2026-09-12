@@ -41,9 +41,6 @@ function handleStart() {
 
 <template>
   <el-dialog v-model="dialogVisible" title="开始阶段测评" width="min(480px, 94vw)" :close-on-click-modal="false">
-    <p class="assessment-setup-note">
-      默认从整门课程选题；也可以限定在单个已审查知识点内，只从该知识点关联的可见已发布客观题选题。
-    </p>
     <el-form label-position="top" @submit.prevent>
       <el-form-item label="知识点范围">
         <el-select v-model="knowledgePointId" placeholder="选择知识点范围" class="assessment-scope-select">
@@ -60,12 +57,6 @@ function handleStart() {
 </template>
 
 <style scoped>
-.assessment-setup-note {
-  margin: 0 0 var(--lp-space-4);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  line-height: var(--lp-leading-body);
-}
 .assessment-scope-select {
   width: 100%;
 }

@@ -75,7 +75,6 @@
       <div class="finish-card">
         <div class="finish-icon" aria-hidden="true">✓</div>
         <h2>练习完成！</h2>
-        <p class="finish-note">本轮练习已结束，可以返回或再练一次。</p>
         <div class="finish-stats">
           <div class="finish-stat">
             <div class="fs-value">{{ questions.length }}</div>
@@ -582,12 +581,6 @@ const restartPractice = leavePractice
   margin-bottom: var(--lp-space-2);
   color: var(--lp-text);
   font-size: var(--lp-text-3xl);
-}
-
-.finish-note {
-  margin: 0 0 var(--lp-space-6);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-base);
 }
 
 .finish-stats {

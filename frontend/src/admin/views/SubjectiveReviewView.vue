@@ -2,9 +2,7 @@
   <div class="admin-page subjective-review-page">
     <header class="admin-page-header">
       <div>
-        <p class="admin-page-kicker">MANUAL GRADING</p>
-        <h2>主观题批阅</h2>
-        <p class="admin-page-description">逐项核对评分点后给分；全部主观题完成批阅时，系统自动固化考试总分。</p>
+        <h1>主观题批阅</h1>
       </div>
       <el-button :icon="Refresh" :loading="loading" @click="loadPending">刷新队列</el-button>
     </header>
@@ -17,7 +15,6 @@
         <div class="admin-summary-copy">
           <p class="admin-summary-label">待批阅答案</p>
           <div class="admin-summary-value">{{ pending.length }}</div>
-          <div class="admin-summary-note">仅展示尚未评分的主观题答案</div>
         </div>
       </el-card>
     </section>

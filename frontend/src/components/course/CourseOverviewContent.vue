@@ -15,9 +15,7 @@
       <div class="back-row"><el-button text :icon="ArrowLeft" @click="emit('back')">返回我的课程</el-button></div>
       <section class="overview-hero">
         <div class="hero-copy">
-          <LpKicker>课程空间</LpKicker>
           <h1 class="hero-title">{{ overview.courseName }}</h1>
-          <p class="hero-desc">课程内的作答、错题与复习记录，都会真实汇总在这里。</p>
         </div>
         <div class="hero-actions">
           <el-button
@@ -69,11 +67,7 @@
       <div class="overview-grid">
         <div class="overview-main">
           <section class="panel" aria-labelledby="tools-heading">
-            <LpSectionHeading
-              kicker="学习工具"
-              title="继续这一门课"
-              description="练习、复习与考试都按本课程的范围进行。"
-            />
+            <LpSectionHeading title="学习工具" />
             <div class="tool-list">
               <button
                 v-for="tool in tools"
@@ -92,13 +86,10 @@
             </div>
           </section>
           <section class="panel" aria-labelledby="outline-heading">
-            <LpSectionHeading
-              kicker="课程目录"
-              title="教学内容"
-              description="目录状态来自真实完成的理解检查；尚未迁入的内容不会显示进度。"
+            <LpSectionHeading title="教学内容"
               ><template #aside
                 ><el-button text type="primary" :icon="Collection" @click="emit('openContent')"
-                  >完整知识结构</el-button
+                  >课程目录</el-button
                 ></template
               ></LpSectionHeading
             >
@@ -117,12 +108,7 @@
                 >
               </div>
             </div>
-            <LpEmptyState
-              v-else
-              compact
-              title="暂无已迁入的教学内容"
-              description="课程内容还在制作中，可以从题目或试卷开始。"
-            />
+            <LpEmptyState v-else compact title="暂无教学内容" description="可以从题目或试卷开始。" />
           </section>
           <KnowledgePointFactsPanel
             :course-id="courseId"
@@ -140,28 +126,25 @@
           />
         </div>
         <aside class="activity-panel" aria-labelledby="activity-heading">
-          <LpKicker>学习情况</LpKicker>
-          <h2 id="activity-heading" class="activity-title">最近学习</h2>
+          <h2 id="activity-heading" class="activity-title">学习情况</h2>
           <div class="stats-grid">
-            <LpStat label="已作答" :value="overview.answeredCount" note="来自课程内真实判分" /><LpStat
+            <LpStat label="已作答" :value="overview.answeredCount" /><LpStat
               label="答对"
               :value="overview.correctCount"
               tone="emphasis"
-              note="不等同于掌握度"
-            /><LpStat label="待复习" :value="overview.dueReviewCount" tone="warning" note="已到间隔复习时间" /><LpStat
+            /><LpStat label="待复习" :value="overview.dueReviewCount" tone="warning" /><LpStat
               label="未处理错题"
               :value="overview.unresolvedWrongCount"
               tone="danger"
-              note="尚未标记为已掌握"
             />
           </div>
           <LpDivider />
           <div class="recent-block">
-            <h3 class="recent-heading">最近学习</h3>
+            <h3 class="recent-heading">最近活动</h3>
             <p v-if="overview.lastLearningTime" class="recent-time">
-              最近课程学习活动：{{ formatDateTime(overview.lastLearningTime) }}
+              {{ formatDateTime(overview.lastLearningTime) }}
             </p>
-            <p v-else class="recent-time">还没有课程内学习记录。可从「继续学习」或课程目录开始。</p>
+            <p v-else class="recent-time">暂无课程内学习记录</p>
             <div v-if="overview.latestStageAssessment" class="latest-assessment">
               <strong>最近阶段测评</strong
               ><span
@@ -313,13 +296,6 @@ function knowledgePointSummaryText(summary: CourseStageAssessmentKnowledgePointS
   font-weight: var(--lp-weight-bold);
   line-height: var(--lp-leading-display);
   color: var(--lp-text);
-}
-.hero-desc {
-  margin: var(--lp-space-2) 0 0;
-  max-width: 640px;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-md);
-  line-height: var(--lp-leading-body);
 }
 .hero-actions {
   display: flex;

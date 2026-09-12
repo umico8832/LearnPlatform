@@ -2,8 +2,7 @@
   <article class="variant-card" :class="resultClass">
     <header class="variant-card__header">
       <div>
-        <span class="variant-card__eyebrow">TRANSFER CHECK</span>
-        <h3>独立作答 · 变式检验</h3>
+        <h3>变式检验</h3>
       </div>
       <div class="variant-card__meta">
         <el-tag effect="plain">单选题</el-tag>
@@ -23,9 +22,8 @@
     </el-radio-group>
 
     <div v-if="!training.answered" class="variant-card__actions">
-      <p>答案提交后立即判分，并保留首次结果用于学习效果统计。</p>
       <el-button type="primary" :loading="submitting" :disabled="!selectedAnswer" @click="submitAnswer">
-        提交答案并判分
+        提交答案
       </el-button>
     </div>
 
@@ -33,7 +31,7 @@
       <div class="variant-result__headline">
         <span>{{ training.correct ? '✓' : '!' }}</span>
         <div>
-          <strong>{{ training.correct ? '回答正确，迁移成功' : '这次未答对，先看清差异' }}</strong>
+          <strong>{{ training.correct ? '回答正确' : '这次未答对' }}</strong>
           <p>你的答案：{{ training.userAnswer || '-' }} · 正确答案：{{ training.correctAnswer || '-' }}</p>
         </div>
       </div>
@@ -134,16 +132,8 @@ async function submitAnswer() {
   gap: 16px;
 }
 
-.variant-card__eyebrow {
-  color: var(--variant-accent);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-}
-
 .variant-card h3 {
-  margin: 5px 0 0;
+  margin: 0;
   color: #1c3444;
   font-size: 18px;
 }
@@ -211,17 +201,10 @@ async function submitAnswer() {
 
 .variant-card__actions {
   align-items: flex-end;
+  justify-content: flex-end;
   margin-top: 18px;
   padding-top: 16px;
   border-top: 1px dashed #cbdbe5;
-}
-
-.variant-card__actions p {
-  max-width: 520px;
-  margin: 0;
-  color: #6f8190;
-  font-size: 12px;
-  line-height: 1.55;
 }
 
 .variant-result {

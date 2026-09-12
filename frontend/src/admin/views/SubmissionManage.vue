@@ -2,9 +2,7 @@
   <div class="submission-manage-page admin-page">
     <header class="admin-page-header">
       <div>
-        <p class="admin-page-kicker">CONTENT REVIEW</p>
-        <h2>投稿管理</h2>
-        <p class="admin-page-description">处理用户投稿、AI 质检、知识点标注和正式入库，确保题库生产流程可追踪。</p>
+        <h1>投稿管理</h1>
       </div>
       <div class="admin-header-actions">
         <el-button :icon="Refresh" @click="refreshSubmissions" :loading="loading">刷新</el-button>
@@ -19,7 +17,6 @@
         <div class="admin-summary-copy">
           <p class="admin-summary-label">{{ item.label }}</p>
           <div class="admin-summary-value">{{ item.value }}</div>
-          <div class="admin-summary-note">{{ item.note }}</div>
         </div>
       </el-card>
     </section>
@@ -201,10 +198,10 @@ const reviewDialog = ref<InstanceType<typeof SubmissionReviewDialog>>()
 const detailDialog = ref<InstanceType<typeof SubmissionDetailDialog>>()
 
 const submissionStats = computed(() => [
-  { label: '待审核', value: stats.value.pending, note: '需要管理员处理', icon: Search },
-  { label: '已通过', value: stats.value.approved, note: '可继续入库', icon: Check },
-  { label: '已拒绝', value: stats.value.rejected, note: '保留审核记录', icon: Close },
-  { label: '已入库', value: stats.value.imported, note: '进入正式题库', icon: FolderAdd },
+  { label: '待审核', value: stats.value.pending, icon: Search },
+  { label: '已通过', value: stats.value.approved, icon: Check },
+  { label: '已拒绝', value: stats.value.rejected, icon: Close },
+  { label: '已入库', value: stats.value.imported, icon: FolderAdd },
 ])
 
 const handleSubmissionRowCommand = (command: string, submission: QuestionSubmissionVO) => {

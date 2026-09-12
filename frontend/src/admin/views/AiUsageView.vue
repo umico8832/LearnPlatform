@@ -2,11 +2,7 @@
   <div class="ai-usage-container admin-page">
     <header class="admin-page-header">
       <div>
-        <p class="admin-page-kicker">AI OPERATIONS</p>
-        <h2>AI 调用分析</h2>
-        <p class="admin-page-description">
-          同时跟踪 AI 调用成本与真实学习行为，用于排查异常、控制成本并观察学习资产价值。
-        </p>
+        <h1>AI 调用分析</h1>
       </div>
       <div class="admin-header-actions">
         <el-select v-model="days" size="default" style="width: 140px" @change="fetchData">

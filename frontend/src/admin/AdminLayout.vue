@@ -19,11 +19,7 @@
       <a class="admin-shell-legacy" href="/">进入学习端</a>
     </aside>
     <section class="admin-shell-content">
-      <header>
-        <div>
-          <h1>{{ route.meta.title }}</h1>
-          <p>按明确权限和可追溯业务事实执行内容运营。</p>
-        </div>
+      <header class="admin-shell-toolbar">
         <el-button @click="logout">退出登录</el-button>
       </header>
       <main><router-view /></main>
@@ -32,10 +28,9 @@
 </template>
 
 <script setup lang="ts">
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 
-const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 

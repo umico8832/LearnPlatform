@@ -73,7 +73,6 @@ function sourceCompositionText(composition: CourseStageAssessmentVO['sourceCompo
         class="assessment-kp-summary"
       >
         <h4 class="assessment-kp-summary-heading">按知识点统计</h4>
-        <p class="assessment-kp-summary-note">仅统计本轮各知识点的题数与正误数，不推断掌握度或趋势。</p>
         <ul class="assessment-kp-summary-list">
           <li v-for="point in assessment.knowledgePointSummary" :key="point.id" class="assessment-kp-summary-item">
             <span>知识点：{{ point.name }}</span>
@@ -199,11 +198,6 @@ function sourceCompositionText(composition: CourseStageAssessmentVO['sourceCompo
   margin: 0 0 4px;
   font-size: var(--lp-text-base);
   color: var(--lp-text);
-}
-.assessment-kp-summary-note {
-  margin: 0 0 var(--lp-space-2);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
 }
 .assessment-kp-summary-list {
   display: grid;

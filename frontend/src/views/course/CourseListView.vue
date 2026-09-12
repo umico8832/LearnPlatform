@@ -1,10 +1,6 @@
 <template>
   <div class="course-list page-container">
-    <LpPageHeader
-      kicker="课程库"
-      title="课程库"
-      description="先找到适合的课程，了解它的结构，再加入你的个人课程库持续学习。"
-    >
+    <LpPageHeader title="课程库">
       <template #actions>
         <el-input v-model="keyword" class="course-search" :prefix-icon="Search" placeholder="搜索课程" clearable />
       </template>
@@ -26,61 +22,39 @@
     </template>
 
     <template v-else>
-      <section v-if="filtered408.length > 0 || keyword.trim() === ''" class="category-section">
-        <LpSectionHeading
-          kicker="408 计算机统考"
-          title="408 计算机学科专业基础"
-          description="面向全国硕士研究生招生考试计算机学科专业基础综合的课程。数据结构为完整可学习课程，其余科目在规划中。"
-        />
+      <section v-if="filtered408.length > 0" class="category-section">
+        <LpSectionHeading title="408 计算机学科专业基础" />
         <div class="category-grid">
-          <article
-            v-for="course in filtered408"
-            :key="course.id || course.name"
-            class="course-card"
-            :class="{ 'is-placeholder': course.placeholder }"
-          >
+          <article v-for="course in filtered408" :key="course.id" class="course-card">
             <div class="course-card-top">
-              <span class="course-icon" :class="{ 'is-planned': course.placeholder }" aria-hidden="true">
-                <el-icon :size="course.placeholder ? 18 : 21">
-                  <component :is="course.placeholder ? Tools : Reading" />
-                </el-icon>
+              <span class="course-icon" aria-hidden="true">
+                <el-icon :size="21"><Reading /></el-icon>
               </span>
-              <el-tag v-if="course.placeholder" size="small" type="info" effect="plain">规划中</el-tag>
-              <el-tag v-else-if="course.complete" size="small" type="success" effect="plain">完整可学习</el-tag>
+              <el-tag size="small" type="success" effect="plain">可学习</el-tag>
             </div>
             <h3 class="course-name">{{ course.name }}</h3>
             <p class="course-desc">{{ course.description }}</p>
             <div class="course-card-footer">
-              <el-button
-                v-if="!course.placeholder"
-                type="primary"
-                plain
-                :icon="ArrowRight"
-                @click="goToDetail(course.id!)"
-              >
-                查看课程
-              </el-button>
-              <span v-else class="planned-note">课程内容正在制作中</span>
+              <el-button type="primary" plain :icon="ArrowRight" @click="goToDetail(course.id)"> 查看课程 </el-button>
             </div>
           </article>
         </div>
       </section>
 
-      <!-- 历史课程仍保留数据，但默认不抢占 408 展示位：仅在搜索时出现。 -->
-      <section v-if="keyword.trim() !== '' && filteredOthers.length > 0" class="category-section">
-        <LpSectionHeading kicker="其他课程" title="更多课程" :description="`共 ${filteredOthers.length} 门课程。`" />
+      <section v-if="filteredOthers.length > 0" class="category-section">
+        <LpSectionHeading title="更多课程" />
         <div class="category-grid">
           <article v-for="course in filteredOthers" :key="course.id ?? course.name" class="course-card">
             <div class="course-card-top">
               <span class="course-icon" aria-hidden="true">
                 <el-icon :size="21"><Reading /></el-icon>
               </span>
-              <el-tag v-if="course.complete" size="small" type="success" effect="plain">可学习</el-tag>
+              <el-tag size="small" type="success" effect="plain">可学习</el-tag>
             </div>
             <h3 class="course-name">{{ course.name }}</h3>
             <p class="course-desc">{{ course.description }}</p>
             <div class="course-card-footer">
-              <el-button type="primary" plain :icon="ArrowRight" @click="goToDetail(course.id!)"> 查看课程 </el-button>
+              <el-button type="primary" plain :icon="ArrowRight" @click="goToDetail(course.id)"> 查看课程 </el-button>
             </div>
           </article>
         </div>
@@ -100,38 +74,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowRight, Reading, Search, Tools } from '@element-plus/icons-vue'
+import { ArrowRight, Reading, Search } from '@element-plus/icons-vue'
 import { getAllCourses, type CourseVO } from '@/api/course'
 
 interface LibraryCourse {
-  id: number | null
+  id: number
   name: string
   description: string
-  placeholder?: boolean
-  complete?: boolean
 }
-
-/** 规划中的 408 占位课程：视觉合理的占位，不进入可加入流程。 */
-const PLACEHOLDER_408: LibraryCourse[] = [
-  {
-    id: null,
-    name: '操作系统',
-    description: '进程与线程、内存管理、文件系统、输入输出与死锁。',
-    placeholder: true,
-  },
-  {
-    id: null,
-    name: '计算机组成原理',
-    description: '数据的表示与运算、存储系统、指令系统与中央处理器。',
-    placeholder: true,
-  },
-  {
-    id: null,
-    name: '计算机网络',
-    description: '分层体系结构、TCP/IP 协议族、应用层协议与网络安全基础。',
-    placeholder: true,
-  },
-]
 
 const router = useRouter()
 const courses = ref<CourseVO[]>([])
@@ -149,7 +99,6 @@ const real408 = computed<LibraryCourse[]>(() =>
       id: course.id,
       name: course.name,
       description: course.description,
-      complete: course.name.includes('数据结构'),
     })),
 )
 
@@ -161,16 +110,9 @@ const realOthers = computed<LibraryCourse[]>(() =>
       id: course.id,
       name: course.name,
       description: course.description,
-      complete: true,
     })),
 )
-
-const all408 = computed<LibraryCourse[]>(() => {
-  const names = new Set(real408.value.map((course) => course.name))
-  return [...real408.value, ...PLACEHOLDER_408.filter((course) => !names.has(course.name))]
-})
-
-const filtered408 = computed(() => filterByKeyword(all408.value))
+const filtered408 = computed(() => filterByKeyword(real408.value))
 const filteredOthers = computed(() => filterByKeyword(realOthers.value))
 
 function filterByKeyword(list: LibraryCourse[]) {
@@ -243,15 +185,6 @@ onMounted(fetchCourses)
   box-shadow: var(--lp-shadow-sm);
 }
 
-.course-card.is-placeholder {
-  background: var(--lp-surface-subtle);
-}
-
-.course-card.is-placeholder:hover {
-  border-color: var(--lp-border);
-  box-shadow: var(--lp-shadow-xs);
-}
-
 .course-card-top {
   display: flex;
   align-items: center;
@@ -268,11 +201,6 @@ onMounted(fetchCourses)
   border-radius: var(--lp-radius-md);
   background: var(--lp-primary-soft);
   color: var(--lp-primary);
-}
-
-.course-icon.is-planned {
-  background: var(--lp-surface-inset);
-  color: var(--lp-text-muted);
 }
 
 .course-name {
@@ -295,11 +223,6 @@ onMounted(fetchCourses)
   align-items: center;
   justify-content: flex-start;
   min-height: 36px;
-}
-
-.planned-note {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
 }
 
 .state-panel {

@@ -1,10 +1,14 @@
 <template>
   <section class="panel knowledge-facts-panel" aria-label="知识点学习事实">
-    <LpSectionHeading
-      kicker="知识点事实"
-      title="按知识点查看学习记录"
-      description="作答、答对只统计加入课程后的已判定、非空作答，按次数计；未处理错题、到期复习按题目计。一题关联多个知识点时会分别计入对应行，因此各行不可相加。"
-    />
+    <LpSectionHeading title="知识点学习记录">
+      <template #aside>
+        <el-tooltip content="作答与答对按次数统计，错题与复习按题目统计；一道题可能计入多个知识点。" placement="top">
+          <el-button text circle aria-label="查看统计口径"
+            ><el-icon><InfoFilled /></el-icon
+          ></el-button>
+        </el-tooltip>
+      </template>
+    </LpSectionHeading>
 
     <div v-if="loading" class="facts-skeleton" aria-label="正在加载知识点学习事实">
       <LpSkeleton :rows="5" />
@@ -16,7 +20,7 @@
     <LpEmptyState
       v-else-if="!records.length"
       compact
-      title="暂无知识点学习事实"
+      title="暂无知识点学习记录"
       description="完成课程内作答后，这里会按知识点展示对应记录。"
     />
     <template v-else>
@@ -97,6 +101,7 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, ref, watch } from 'vue'
+import { InfoFilled } from '@element-plus/icons-vue'
 import { getCourseKnowledgePointFacts, type CourseKnowledgePointFactVO } from '@/api/course'
 
 const props = defineProps<{

@@ -18,7 +18,6 @@
           </span>
           <span class="brand-copy">
             <strong>LearnPlatform</strong>
-            <small>安静的数字教材</small>
           </span>
         </router-link>
 
@@ -32,14 +31,6 @@
             <span>课程库</span>
           </router-link>
         </nav>
-
-        <div class="sidebar-divider" />
-
-        <button type="button" class="sidebar-search" @click="openSearch">
-          <el-icon :size="15"><Search /></el-icon>
-          <span>搜索内容</span>
-          <kbd>⌘K</kbd>
-        </button>
 
         <div class="sidebar-bottom">
           <a v-if="isAdmin" class="admin-entry" href="/admin/" aria-label="进入管理系统">
@@ -304,12 +295,6 @@ function handleCommand(command: string) {
   white-space: nowrap;
 }
 
-.brand-copy small {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
-  white-space: nowrap;
-}
-
 .nav-primary {
   display: grid;
   gap: 2px;
@@ -342,41 +327,6 @@ function handleCommand(command: string) {
   font-weight: var(--lp-weight-semibold);
 }
 
-.sidebar-divider {
-  height: 1px;
-  margin: var(--lp-space-4) var(--lp-space-2);
-  background: var(--lp-border);
-}
-
-.sidebar-search {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-2);
-  height: 36px;
-  margin: 0 var(--lp-space-1);
-  padding: 0 var(--lp-space-3);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-sm);
-  background: var(--lp-surface);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
-  cursor: pointer;
-  transition:
-    border-color var(--lp-duration-fast) var(--lp-ease-out),
-    color var(--lp-duration-fast) var(--lp-ease-out);
-}
-
-.sidebar-search:hover {
-  border-color: var(--lp-border-strong);
-  color: var(--lp-text-secondary);
-}
-
-.sidebar-search span {
-  flex: 1;
-  text-align: left;
-}
-
-.sidebar-search kbd,
 .header-search-trigger kbd {
   padding: 1px 5px;
   border: 1px solid var(--lp-border);

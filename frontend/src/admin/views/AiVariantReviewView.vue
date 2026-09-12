@@ -2,11 +2,7 @@
   <div class="admin-page ai-variant-review-page">
     <header class="admin-page-header">
       <div>
-        <p class="admin-page-kicker">AI CONTENT REVIEW</p>
-        <h2>AI 变式题审查</h2>
-        <p class="admin-page-description">
-          核对母题范围、题干、选项、答案和解析。只有管理员批准后才发布为可进入阶段测评的正式题目。
-        </p>
+        <h1>AI 变式题审查</h1>
       </div>
       <el-select v-model="reviewStatus" aria-label="审查状态" style="width: 140px" @change="load(1)">
         <el-option label="待审查" value="PENDING" />

@@ -2,7 +2,7 @@
   <main class="tutor" v-loading="loading">
     <template v-if="failed">
       <section class="state-panel">
-        <el-result icon="error" title="无法开始教学" sub-title="请确认已将课程加入课程库，并从已审查知识点进入。">
+        <el-result icon="error" title="无法开始教学" sub-title="请确认已加入课程，并从可学习的知识点进入。">
           <template #extra><el-button @click="router.back()">返回</el-button></template>
         </el-result>
       </section>
@@ -10,7 +10,6 @@
 
     <template v-else-if="session">
       <header class="tutor-heading">
-        <LpKicker>AI 教学 · 已审查内容</LpKicker>
         <h1 class="tutor-title">{{ session.title }}</h1>
         <p class="tutor-summary">{{ session.lesson.summary }}</p>
       </header>
@@ -19,7 +18,6 @@
         <div class="block-heading">
           <LpKicker>最近相关记录</LpKicker>
           <h2 id="learning-context-heading">与本节内容相关的记录</h2>
-          <p>只统计真实作答、错题与复习记录，不推断掌握程度。</p>
         </div>
         <div class="evidence-grid">
           <div v-if="session.learningContext.paperAnswerCount" class="evidence-item">

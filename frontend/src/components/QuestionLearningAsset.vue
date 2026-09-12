@@ -2,19 +2,14 @@
   <section ref="assetRoot" class="learning-asset">
     <!-- 可折叠模式：仅显示标题栏，点击展开 -->
     <div v-if="collapsible && !expanded" class="asset-collapsed" @click="expandAndLoad">
-      <span class="collapsed-icon">📚</span>
       <span class="collapsed-text">AI 深度学习</span>
-      <span class="collapsed-hint">点击展开，获取 AI 讲解、步骤拆解、变式题等</span>
       <el-icon class="collapsed-arrow"><ArrowRight /></el-icon>
     </div>
 
     <!-- 完整内容 -->
     <template v-if="!collapsible || expanded">
       <div class="asset-header">
-        <div>
-          <div class="asset-title">📚 AI 深度学习</div>
-          <div class="asset-subtitle">选择不同维度，把这道题彻底学透。</div>
-        </div>
+        <div class="asset-title">AI 深度学习</div>
       </div>
 
       <el-tabs v-model="activeTab" class="asset-tabs" @tab-change="onTabChange">
@@ -29,10 +24,6 @@
           <div class="asset-content">
             <!-- 已有缓存内容 -->
             <div v-if="tabContent[tab.type]" class="asset-result">
-              <div class="result-meta">
-                <el-tag size="small" effect="plain" type="success">已缓存</el-tag>
-                <span v-if="assetModel[tab.type]" class="model-tag">模型：{{ assetModel[tab.type] }}</span>
-              </div>
               <QuestionVisualInteractive v-if="tab.type === 'VISUAL_INTERACTIVE'" :content="tabContent[tab.type]" />
               <AiVariantQuestionCard
                 v-else-if="tab.type === 'VARIANT' && variantQuestion"
@@ -146,7 +137,6 @@ const loadingType = ref<AiAssetType | null>(null)
 const error = ref('')
 const streamBuffer = ref('')
 const tabContent = reactive(createAssetContent())
-const assetModel = reactive(createAssetContent())
 const variantQuestion = ref<AiVariantQuestion | null>(null)
 
 const variantTrainingSubmitting = ref(false)
@@ -196,7 +186,6 @@ function reset() {
   variantQuestion.value = null
   for (const key of Object.keys(tabContent) as AiAssetType[]) {
     tabContent[key] = ''
-    assetModel[key] = ''
   }
 }
 
@@ -206,7 +195,6 @@ async function loadExistingAssets() {
     if (data?.code === 0 && data.data) {
       for (const asset of data.data as QuestionLearningAsset[]) {
         tabContent[asset.assetType] = asset.content
-        assetModel[asset.assetType] = asset.model || ''
         if (asset.assetType === 'VARIANT') {
           variantQuestion.value = asset.variantQuestion || null
         }
@@ -267,7 +255,6 @@ async function generateTab(type: AiAssetType) {
       const response = await generateAsset(props.questionId, type)
       const asset = response.data
       tabContent[type] = asset.content
-      assetModel[type] = asset.model || ''
       variantQuestion.value = asset.variantQuestion || null
       trackVisibleAsset(type)
       return
@@ -321,13 +308,6 @@ async function generateTab(type: AiAssetType) {
   font-weight: 700;
 }
 
-.asset-subtitle {
-  margin-top: 4px;
-  color: #7a8797;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
 .asset-tabs :deep(.el-tabs__header) {
   margin-bottom: 0;
 }
@@ -353,18 +333,6 @@ async function generateTab(type: AiAssetType) {
 
 .asset-result {
   animation: fadeIn 0.3s ease;
-}
-
-.result-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.model-tag {
-  color: #7a8797;
-  font-size: 12px;
 }
 
 .asset-loading {
@@ -419,20 +387,10 @@ async function generateTab(type: AiAssetType) {
   border-color: #a0c0e0;
 }
 
-.collapsed-icon {
-  font-size: 18px;
-}
-
 .collapsed-text {
   font-size: 14px;
   font-weight: 600;
   color: #303133;
-}
-
-.collapsed-hint {
-  font-size: 12px;
-  color: #909399;
-  margin-left: 4px;
 }
 
 .collapsed-arrow {

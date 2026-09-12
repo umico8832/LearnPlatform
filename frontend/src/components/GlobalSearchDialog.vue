@@ -149,17 +149,6 @@
             </span>
           </div>
         </div>
-
-        <!-- 无历史也无热门时的默认提示 -->
-        <div v-if="suggestions.history.length === 0 && suggestions.hotKeywords.length === 0" class="search-hints">
-          <div class="hint-item">
-            <el-icon><Promotion /></el-icon>
-            <span>输入关键词搜索题目、课程和知识点</span>
-          </div>
-          <div class="hint-item hint-shortcut">
-            <span>按 <kbd>/</kbd> 或 <kbd>⌘K</kbd> 快速打开搜索</span>
-          </div>
-        </div>
       </div>
     </div>
   </el-dialog>
@@ -168,17 +157,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import {
-  Search,
-  Loading,
-  EditPen,
-  Reading,
-  Notebook,
-  Promotion,
-  Clock,
-  Close,
-  TrendCharts,
-} from '@element-plus/icons-vue'
+import { Search, Loading, EditPen, Reading, Notebook, Clock, Close, TrendCharts } from '@element-plus/icons-vue'
 import {
   globalSearch,
   getSearchSuggestions,
@@ -636,36 +615,6 @@ defineExpose({ open })
 
 .hot-rank.top-3 {
   color: var(--lp-warning);
-}
-
-/* 默认提示区 */
-.search-hints {
-  padding: var(--lp-space-8) var(--lp-space-4);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--lp-space-3);
-}
-
-.hint-item {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-2);
-  color: var(--lp-ink-300);
-  font-size: var(--lp-text-sm);
-}
-
-.hint-shortcut kbd {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--lp-space-1) var(--lp-space-2);
-  font-size: var(--lp-text-xs);
-  color: var(--lp-text-muted);
-  background: var(--lp-surface-soft);
-  border: 1px solid var(--lp-border-strong);
-  border-radius: var(--lp-radius-xs);
-  font-family: inherit;
 }
 
 /* 移动端适配 */

@@ -2,20 +2,9 @@
   <div class="favorite-container page-container">
     <section class="page-hero">
       <div>
-        <span class="section-kicker">重点题库</span>
         <h1>我的收藏</h1>
-        <p>把标记过的题目集中回看，按收藏清单快速进入针对性练习。</p>
       </div>
       <div class="header-actions">
-        <el-button
-          type="primary"
-          :icon="EditPen"
-          :loading="practiceLoading"
-          :disabled="total === 0"
-          @click="startFavoritePractice"
-        >
-          收藏题练习
-        </el-button>
         <el-button :icon="Search" @click="router.push('/questions')"> 浏览题库 </el-button>
       </div>
     </section>
@@ -24,14 +13,12 @@
       <el-card v-for="item in summaryCards" :key="item.label" shadow="never" class="favorite-summary-card">
         <span>{{ item.label }}</span>
         <strong :class="item.tone">{{ item.value }}</strong>
-        <small>{{ item.note }}</small>
       </el-card>
     </section>
 
     <el-card class="practice-card" shadow="never">
       <div class="practice-card-copy">
         <strong>生成收藏题练习</strong>
-        <span>从收藏清单中抽取指定数量题目，适合考前复盘或专项回炉。</span>
       </div>
       <div class="practice-controls">
         <span class="control-label">题目数</span>
@@ -161,10 +148,10 @@ const latestFavoriteTime = computed(() => {
   return formatTime(favorites.value[0].createTime).slice(0, 10)
 })
 const summaryCards = computed(() => [
-  { label: '收藏总数', value: total.value, note: '全部收藏题目', tone: 'tone-primary' },
-  { label: '当前页课程', value: courseCount.value, note: '按课程分布复盘', tone: 'tone-success' },
-  { label: '平均难度', value: averageDifficulty.value, note: '当前页收藏估算', tone: 'tone-warning' },
-  { label: '最近收藏', value: latestFavoriteTime.value, note: '优先回看新标记题', tone: 'tone-danger' },
+  { label: '收藏总数', value: total.value, tone: 'tone-primary' },
+  { label: '当前页课程', value: courseCount.value, tone: 'tone-success' },
+  { label: '当前页平均难度', value: averageDifficulty.value, tone: 'tone-warning' },
+  { label: '当前页最近收藏', value: latestFavoriteTime.value, tone: 'tone-danger' },
 ])
 
 const questionTypeMap: Record<string, { label: string; tag: SemanticTagType }> = {
@@ -279,29 +266,12 @@ onMounted(() => {
   background: linear-gradient(135deg, var(--lp-primary-soft) 0%, var(--lp-surface) 58%), var(--lp-surface);
 }
 
-.section-kicker {
-  display: inline-block;
-  margin-bottom: var(--lp-space-2);
-  color: var(--lp-primary);
-  font-size: var(--lp-text-xs);
-  font-weight: var(--lp-weight-heavy);
-  letter-spacing: var(--lp-tracking-wide);
-}
-
 .page-hero h1 {
   margin: 0;
   color: var(--lp-text);
   font-size: var(--lp-text-3xl);
   font-weight: var(--lp-weight-heavy);
   letter-spacing: var(--lp-tracking-tight);
-}
-
-.page-hero p {
-  margin: var(--lp-space-2) 0 0;
-  max-width: var(--lp-reading-measure);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-base);
-  line-height: var(--lp-leading-relaxed);
 }
 
 .header-actions {
@@ -323,8 +293,7 @@ onMounted(() => {
   min-height: 108px;
 }
 
-.favorite-summary-card span,
-.favorite-summary-card small {
+.favorite-summary-card span {
   display: block;
   color: var(--lp-text-muted);
   font-size: var(--lp-text-xs);
@@ -373,17 +342,10 @@ onMounted(() => {
   font-size: var(--lp-text-md);
 }
 
-.practice-card-copy span,
 .table-toolbar span,
 .control-label {
   color: var(--lp-text-muted);
   font-size: var(--lp-text-sm);
-}
-
-.practice-card-copy span {
-  display: block;
-  margin-top: var(--lp-space-1);
-  line-height: var(--lp-leading-body);
 }
 
 .practice-controls {

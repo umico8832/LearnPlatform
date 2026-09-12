@@ -2,9 +2,7 @@
   <div class="question-submit-page page-container">
     <section class="page-hero">
       <div class="hero-copy">
-        <span class="section-kicker">投稿中心</span>
         <h1>题目投稿</h1>
-        <p>向题库贡献高质量题目，提交后由管理员审核入库。</p>
       </div>
       <div class="hero-actions">
         <el-button type="primary" :icon="Plus" @click="showSubmitDialog = true">投稿新题目</el-button>
@@ -429,29 +427,12 @@ onMounted(() => {
   background: linear-gradient(135deg, var(--lp-primary-soft) 0%, var(--lp-surface) 58%), var(--lp-surface);
 }
 
-.section-kicker {
-  display: inline-block;
-  margin-bottom: var(--lp-space-2);
-  color: var(--lp-primary);
-  font-size: var(--lp-text-xs);
-  font-weight: var(--lp-weight-heavy);
-  letter-spacing: var(--lp-tracking-wide);
-}
-
 .page-hero h1 {
   margin: 0;
   color: var(--lp-text);
   font-size: var(--lp-text-3xl);
   font-weight: var(--lp-weight-heavy);
   letter-spacing: var(--lp-tracking-tight);
-}
-
-.page-hero p {
-  margin: var(--lp-space-2) 0 0;
-  max-width: var(--lp-reading-measure);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-base);
-  line-height: var(--lp-leading-relaxed);
 }
 
 .hero-actions {
