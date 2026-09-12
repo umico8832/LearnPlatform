@@ -1,7 +1,7 @@
 # AI 固定评测
 
 评测覆盖试卷 AI 辅导、题目学习资产和结构化变式题，使用
-[固定案例](../../backend/src/test/resources/ai-evaluation/cases.json)与现有 JUnit/Maven 测试体系。
+[固定案例](../../backend/app/src/test/resources/ai-evaluation/cases.json)与现有 JUnit/Maven 测试体系。
 题目为人工编写的非隐私数据结构小样本，可根据题干逐步复算。测试中的模拟响应仅用于检查程序约束。
 
 ## 离线回归
@@ -14,14 +14,14 @@ cd backend
 mvn -Dtest=AiEvaluationRegressionTest,AiEvaluationRunnerTest test
 ```
 
-Maven 依赖已缓存时可增加 `-o`，完全离线运行。报告输出至 `backend/target/ai-evaluation/offline.json`，
+Maven 依赖已缓存时可增加 `-o`，完全离线运行。报告输出至 `backend/app/target/ai-evaluation/offline.json`，
 每次运行覆盖同名报告，构建产物不提交。
 
 离线案例调用真实 `ExamLearningAiService`、`AiQuestionAssistanceService`、
 `QuestionLearningAssetService`、`QuestionAssetContextService`、`QuestionAssetPromptFactory`、
 `AiVariantQuestionService` 和调用治理；Mapper、会话数据与上游响应使用夹具。
 断言覆盖 Prompt 的材料边界及课程/最近作答事实、权限拒绝后的副作用、配额、变式题输出校验、
-公开答案隔离、待审核状态、失败记录及完成事件。运行器测试另用内存 HTTP 响应验证真实
+公开答案隔离、待审核状态、失败记录及完成事件。运行器测试另用隔离 HTTP 服务验证真实
 `OpenAiProvider` 的同步/流式调用、配置绑定、Prompt 指纹和 usage 传递。
 
 ## 真实模型评测
@@ -47,7 +47,7 @@ AI_EVAL_ONLINE=true AI_EVAL_CASES=asset-stack-explanation,paper-wrong-attempt \
 
 默认在线只执行 `online: true` 的生成案例，每案一次调用；故障注入、权限和畸形响应案例属于离线回归。
 未选择案例与离线专用案例在在线报告中显示 `SKIPPED`。缺少显式应用配置会使测试失败，
-不会退回模拟响应。报告输出至 `backend/target/ai-evaluation/online.json`。
+不会退回模拟响应。报告输出至 `backend/app/target/ai-evaluation/online.json`。
 
 在线入口使用相同业务服务和调用治理，以及真实 Provider，但持久化与会话仍是隔离夹具，
 不会发布题目或写入应用数据库。运行器关闭该次运行的应用日志，并仅报告异常类型和业务码，
@@ -58,10 +58,10 @@ AI_EVAL_ONLINE=true AI_EVAL_CASES=asset-stack-explanation,paper-wrong-attempt \
 - `contractStatus`：自动约束的 `PASS` / `FAIL` / `SKIPPED`，`failures` 列出未满足的约束。
 - `responseOrigin`：`SCRIPTED_FIXTURE` 或 `REAL_PROVIDER`。离线始终标记 `teachingQuality: NOT_EVALUATED`；
   在线始终标记 `NOT_REVIEWED`，不自动生成教学正确率。
-- `promptHash`：实际发送的 system/user Prompt 的 SHA-256，与调用治理采用相同拼接规则。
+- `promptHash`：消息列表序列化后的 SHA-256，直接读取本次调用审计中的指纹。
   被权限阻断而没有发送 Prompt 时为 null。报告也保留实际 Prompt，供定位和复跑。
 - `modelConfigVersion`：现有调用治理的配置指纹；报告同时记录模型、端点哈希、最大输出量、
-  当前 Provider 固定温度、超时与流式 usage 开关。端点原文和密钥不写入报告。
+  当前配置温度、超时与流式 usage 开关。端点原文和密钥不写入报告。
 - `usage`：Provider 实际返回的用量；模拟、缺失或未调用时为 null，不以字符数估算。
   `costUsd` 仅在现有成本计算器获得必要 usage 和配置价格时有值，否则为 null。
 - `corpusHash`、`corpusVersion`、`generatedAt`：用于确认案例版本和运行时间。
@@ -77,7 +77,7 @@ AI_EVAL_ONLINE=true AI_EVAL_CASES=asset-stack-explanation,paper-wrong-attempt \
 在 `cases` 中用 `question` 引用必要上下文，并增加唯一 `id`、实际业务 `route/type`、
 场景、模拟响应、预期业务码、系统 Prompt 约束、输出约束和人工标准。
 `PAPER` 使用服务端会话夹具；特定 `scenario` 的作答或权限条件由
-[AiEvaluationFixture](../../backend/src/test/java/com/learnplatform/service/evaluation/AiEvaluationFixture.java)实现。
+[AiEvaluationFixture](../../backend/app/src/test/java/com/learnplatform/service/evaluation/AiEvaluationFixture.java)实现。
 新增场景时应补充对应副作用断言，不能仅添加名称与文案。
 
 优先加入已发现的失败及未覆盖边界，避免重复改写等价题目。修复缺陷先确认该案例因目标行为失败，

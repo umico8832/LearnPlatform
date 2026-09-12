@@ -18,5 +18,6 @@
 | [0004](0004-observational-learning-effect.md) | Accepted | 学习效果统计只表达观察性关联 |
 | [0005](0005-course-learning-state.md) | Accepted | AI 教学与试卷学习共享课程学习状态 |
 | [0006](0006-separate-learner-admin-frontends.md) | Accepted | 用户学习端与管理系统采用独立前端应用目标 |
+| [0007](0007-tutor-model-foundation.md) | Accepted | Tutor 模型契约、独立 AI 核心与原子调用准入 |
 
 ADR 采用追加式维护。决策变化时新增记录并标记替代关系，不重写旧决策的历史背景。

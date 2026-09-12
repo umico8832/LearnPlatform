@@ -1,0 +1,139 @@
+package com.learnplatform.entity;
+
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+/**
+ * AI 调用日志实体
+ */
+@TableName("ai_call_log")
+public class AiCallLog {
+
+    @TableId(type = IdType.AUTO)
+    private Long id;
+
+    private Long userId;
+    private String callId;
+    private String runId;
+    private String callKind;
+    private String outcome;
+    private String requestedModel;
+    private String finishReason;
+    private String responseId;
+
+    private String functionType;
+
+    private String model;
+
+    private Integer tokensUsed;
+
+    private Integer promptTokens;
+
+    private Integer completionTokens;
+
+    /** 按调用时模型单价计算的 USD 成本；缺少真实 usage 或价格配置时为 null。 */
+    private BigDecimal costUsd;
+
+    /** 状态：0-失败 1-成功 */
+    private Integer status;
+
+    private String errorMessage;
+
+    /** 调用耗时（毫秒） */
+    private Integer duration;
+
+    /** 关联本次 HTTP 请求的 traceId；异步或非 HTTP 调用可为空。 */
+    private String traceId;
+
+    /** Prompt 模板或功能标识；不保存原始 prompt 内容。 */
+    private String promptTemplate;
+
+    /** system/user prompt 的 SHA-256 指纹，用于版本比对但不可还原原文。 */
+    private String promptHash;
+
+    /** 调用时模型相关配置的 SHA-256 指纹。 */
+    private String modelConfigVersion;
+
+    private LocalDateTime createTime;
+
+    // ======================== getter / setter ========================
+
+    public String getCallId() { return callId; }
+    public void setCallId(String value) { this.callId = value; }
+    public String getRunId() { return runId; }
+    public void setRunId(String value) { this.runId = value; }
+    public String getCallKind() { return callKind; }
+    public void setCallKind(String value) { this.callKind = value; }
+    public String getOutcome() { return outcome; }
+    public void setOutcome(String value) { this.outcome = value; }
+    public String getRequestedModel() { return requestedModel; }
+    public void setRequestedModel(String value) { this.requestedModel = value; }
+    public String getFinishReason() { return finishReason; }
+    public void setFinishReason(String value) { this.finishReason = value; }
+    public String getResponseId() { return responseId; }
+    public void setResponseId(String value) { this.responseId = value; }
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
+
+    public String getFunctionType() { return functionType; }
+    public void setFunctionType(String functionType) { this.functionType = functionType; }
+
+    public String getModel() { return model; }
+    public void setModel(String model) { this.model = model; }
+
+    public Integer getTokensUsed() { return tokensUsed; }
+    public void setTokensUsed(Integer tokensUsed) { this.tokensUsed = tokensUsed; }
+
+    public Integer getPromptTokens() { return promptTokens; }
+    public void setPromptTokens(Integer promptTokens) { this.promptTokens = promptTokens; }
+
+    public Integer getCompletionTokens() { return completionTokens; }
+    public void setCompletionTokens(Integer completionTokens) { this.completionTokens = completionTokens; }
+
+    public BigDecimal getCostUsd() { return costUsd; }
+    public void setCostUsd(BigDecimal costUsd) { this.costUsd = costUsd; }
+
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
+
+    public String getErrorMessage() { return errorMessage; }
+    public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
+
+    public Integer getDuration() { return duration; }
+    public void setDuration(Integer duration) { this.duration = duration; }
+
+    public String getTraceId() { return traceId; }
+    public void setTraceId(String traceId) { this.traceId = traceId; }
+
+    public String getPromptTemplate() { return promptTemplate; }
+    public void setPromptTemplate(String promptTemplate) { this.promptTemplate = promptTemplate; }
+
+    public String getPromptHash() { return promptHash; }
+    public void setPromptHash(String promptHash) { this.promptHash = promptHash; }
+
+    public String getModelConfigVersion() { return modelConfigVersion; }
+    public void setModelConfigVersion(String modelConfigVersion) { this.modelConfigVersion = modelConfigVersion; }
+
+    public LocalDateTime getCreateTime() { return createTime; }
+    public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
+
+    @Override
+    public String toString() {
+        return "AiCallLog{" +
+                "id=" + id +
+                ", userId=" + userId +
+                ", functionType='" + functionType + '\'' +
+                ", model='" + model + '\'' +
+                ", promptTemplate='" + promptTemplate + '\'' +
+                ", status=" + status +
+                ", duration=" + duration +
+                '}';
+    }
+}

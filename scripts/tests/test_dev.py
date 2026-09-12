@@ -138,18 +138,22 @@ class DevelopmentTest(unittest.TestCase):
         dev.check_docker_ports()
         available.assert_not_called()
 
+    @patch.object(dev.subprocess, "run")
     @patch.object(dev.os, "execvpe")
     @patch.object(dev.os, "chdir")
     @patch.object(dev.shutil, "which", return_value="/example/mvn")
     @patch.object(dev, "require_infra")
     @patch.object(dev, "ensure_free")
     @patch.object(dev, "config")
-    def test_backend_launches_foreground_with_local_configuration(self, settings, available, ready, executable, chdir, launch):
+    def test_backend_launches_foreground_with_local_configuration(self, settings, available, ready, executable, chdir, launch, build):
         settings.return_value = self.settings()
         dev.launch("backend")
+        build.assert_called_once_with(
+            ["/example/mvn", "-pl", "ai-core", "-am", "install", "-DskipTests", "-q"],
+            cwd=dev.ROOT / "backend", check=True)
         ready.assert_called_once_with(settings.return_value)
         available.assert_called_once_with(8080)
-        self.assertEqual(["/example/mvn", "spring-boot:run"], launch.call_args.args[1])
+        self.assertEqual(["/example/mvn", "-pl", "app", "spring-boot:run"], launch.call_args.args[1])
         self.assertEqual("8080", launch.call_args.args[2]["SERVER_PORT"])
 
 

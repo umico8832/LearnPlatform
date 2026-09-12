@@ -65,7 +65,7 @@ def validate_vue(path: Path, content: str) -> list[str]:
 
 def validate_repository(root: Path) -> list[str]:
     errors: list[str] = []
-    service_root = root / "backend/src/main/java/com/learnplatform/service"
+    service_root = root / "backend/app/src/main/java/com/learnplatform/service"
     frontend_root = root / "frontend/src"
 
     for path in sorted(service_root.rglob("*.java")):

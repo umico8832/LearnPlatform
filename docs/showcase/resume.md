@@ -85,7 +85,7 @@
 
 ### AI Provider 如何设计？
 
-业务 Service 依赖 `AiProvider` 契约，`OpenAiProvider` 负责上游请求、SSE、usage 和错误归一化。配额、日志、成本和业务缓存位于统一业务层，避免每个 AI 功能重复实现治理逻辑。
+业务 Service 通过 `AiInvocationService` 接入配额与审计，再由 `AiProvider` 调用独立 AI 核心的云适配。模型契约、工具消息与流式终止校验见 [AI 子系统](../architecture/ai-system.md)，缓存和业务校验仍由领域服务维护。
 
 ### 如何防止 AI 泄露变式题答案？
 

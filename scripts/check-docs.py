@@ -370,7 +370,7 @@ def check_json_examples(files: list[Path], errors: list[str]) -> None:
 def controller_endpoints() -> set[str]:
     endpoints: set[str] = set()
     controller_root = (
-        ROOT / "backend" / "src" / "main" / "java" / "com"
+        ROOT / "backend" / "app" / "src" / "main" / "java" / "com"
         / "learnplatform" / "controller"
     )
     for path in controller_root.glob("*Controller.java"):
@@ -400,7 +400,7 @@ def check_api_inventory(errors: list[str]) -> None:
 
 def migration_tables() -> set[str]:
     migration_root = (
-        ROOT / "backend" / "src" / "main" / "resources" / "db" / "migration"
+        ROOT / "backend" / "app" / "src" / "main" / "resources" / "db" / "migration"
     )
     tables: set[str] = set()
     for path in migration_root.glob("V*.sql"):

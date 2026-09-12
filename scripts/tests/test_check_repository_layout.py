@@ -21,8 +21,8 @@ class RepositoryLayoutValidationTest(unittest.TestCase):
             [],
             checker.validate_paths(
                 [
-                    "backend/src/main/java/com/learnplatform/service/CourseService.java",
-                    "backend/src/main/resources/db/migration/V91__snapshot.sql",
+                    "backend/app/src/main/java/com/learnplatform/service/CourseService.java",
+                    "backend/app/src/main/resources/db/migration/V91__snapshot.sql",
                     "frontend/src/views/course/CourseOverviewView.vue",
                 ]
             ),
@@ -30,7 +30,7 @@ class RepositoryLayoutValidationTest(unittest.TestCase):
 
     def test_rejects_cross_platform_invalid_characters(self) -> None:
         errors = checker.validate_paths(
-            ["backend/src/test/java/com/learnplatform/controller/CourseControllerTest.java</path"]
+            ["backend/app/src/test/java/com/learnplatform/controller/CourseControllerTest.java</path"]
         )
         self.assertEqual(1, len(errors))
         self.assertIn("forbidden character", errors[0])
@@ -38,7 +38,7 @@ class RepositoryLayoutValidationTest(unittest.TestCase):
     def test_rejects_generated_directories_and_system_files(self) -> None:
         errors = checker.validate_paths(
             [
-                "backend/target/classes/Application.class",
+                "backend/app/target/classes/Application.class",
                 "frontend/node_modules/vue/index.js",
                 "scripts/.DS_Store",
             ]

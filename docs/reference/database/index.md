@@ -1,6 +1,6 @@
 # 数据库参考
 
-LearnPlatform 使用 MySQL 8，结构由 Flyway 迁移管理。运行时数据库结构以 [迁移目录](../../../backend/src/main/resources/db/migration/) 中按版本执行的 SQL 为唯一事实来源；本目录解释领域归属、关键约束和演进规则。
+LearnPlatform 使用 MySQL 8，结构由 Flyway 迁移管理。运行时数据库结构以 [迁移目录](../../../backend/app/src/main/resources/db/migration/) 中按版本执行的 SQL 为唯一事实来源；本目录解释领域归属、关键约束和演进规则。
 
 ## 领域导航
 

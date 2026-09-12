@@ -5,7 +5,7 @@
 后端使用 Java 21、Spring Boot、Spring Security、MyBatis-Plus、Validation、Flyway、Redis 和 Knife4j。
 
 ```text
-backend/src/main/java/com/learnplatform/
+backend/app/src/main/java/com/learnplatform/
 ├── common/       # 统一响应和异常
 ├── config/       # Security、缓存、AI、文档等配置
 ├── controller/   # HTTP、校验、角色与 DTO 边界
@@ -16,7 +16,9 @@ backend/src/main/java/com/learnplatform/
 └── service/      # 业务规则、事务和外部 Provider 编排
 ```
 
-项目是模块化单体。业务模块通过 Java 类和数据库事务协作，不通过内部 HTTP 调用。
+后端根 POM 聚合 `ai-core` 和 `app`。上面的应用源码位于 `app`，可执行 JAR 输出到 `backend/app/target/`。
+`ai-core` 仅维护通用 AI 契约、校验与云适配，通过普通 Java 依赖接入应用；[AI 子系统](ai-system.md)维护详细边界。
+项目仍是一个 Spring Boot 进程，业务模块通过 Java 类和数据库事务协作，不通过内部 HTTP 调用。
 
 ## 工程归属
 

@@ -125,12 +125,15 @@ def launch(service: str) -> None:
         require_infra(settings)
         executable = shutil.which("mvn")
         if executable:
-            command = [executable, "spring-boot:run"]
+            command = [executable]
         elif (ROOT / "backend/mvnw").is_file() and os.name != "nt":
-            command = ["sh", "./mvnw", "spring-boot:run"]
+            command = ["sh", "./mvnw"]
         else:
             raise DevError("需要 Maven 3.8+（或仓库中的 Maven Wrapper）和 JDK 21。")
         directory = ROOT / "backend"
+        subprocess.run([*command, "-pl", "ai-core", "-am", "install", "-DskipTests", "-q"],
+                       cwd=directory, check=True)
+        command += ["-pl", "app", "spring-boot:run"]
     else:
         executable = shutil.which("npm")
         if not executable:

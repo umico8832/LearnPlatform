@@ -70,6 +70,10 @@ test -f .env || cp .env.example .env
 | `AI_MODEL` | 上游模型名称 |
 | `AI_TIMEOUT` | 后端请求超时，毫秒 |
 | `AI_MAX_TOKENS` | 最大输出 Token |
+| `AI_TEMPERATURE` | 生成温度，默认 0.7 |
+| `AI_TOOLS_SUPPORTED` | 当前云模型是否支持工具调用，默认 false |
+| `AI_STRUCTURED_OUTPUT_SUPPORTED` | 当前云模型是否支持原生 JSON Schema，默认 false |
+| `AI_STREAM_INCLUDE_USAGE` | 请求流式最终用量，默认 true；不兼容端点可关闭 |
 | `AI_DAILY_QUOTA` | 默认用户日配额，`0` 表示不限 |
 | `AI_ALERT_WEBHOOK_ENABLED` | 是否启用提醒 webhook |
 | `AI_ALERT_WEBHOOK_URL` | 提醒地址 |

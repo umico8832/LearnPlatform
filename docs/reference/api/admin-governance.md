@@ -98,3 +98,9 @@ AI 结果只作为审核辅助，不能绕过管理员确认自动发布。
 | 接口 | 说明 |
 |---|---|
 | `GET /api/admin/statistics/overview` | 管理工作台总览 |
+
+## AI 调用生命周期
+
+AI 完成日志列表及成功/失败统计排除 `RUNNING` 预登记记录，用户日配额仍计入这些记录。
+日志响应额外提供 callId、runId、callKind、outcome、requestedModel、finishReason 和 responseId；
+旧数据允许为空。字段语义见[AI 与治理数据](../database/ai-and-governance.md)。

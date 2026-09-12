@@ -1,0 +1,565 @@
+package com.learnplatform.service;
+
+import com.learnplatform.common.exception.BusinessException;
+import com.learnplatform.config.AiConfig;
+import com.learnplatform.dto.AiAssetType;
+import com.learnplatform.dto.QuestionLearningAssetVO;
+import com.learnplatform.entity.AiAssetFeedback;
+import com.learnplatform.dto.AiAssetFeedbackVO;
+import com.learnplatform.entity.Question;
+import com.learnplatform.entity.QuestionAiAsset;
+import com.learnplatform.mapper.AiAssetFeedbackMapper;
+import com.learnplatform.mapper.QuestionAiAssetMapper;
+import com.learnplatform.mapper.QuestionMapper;
+import com.learnplatform.service.ai.AiProvider;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Consumer;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class QuestionLearningAssetServiceTest {
+
+    @Mock private AiProvider aiProvider;
+    @Mock private AiConfig aiConfig;
+    @Mock private AiCallGovernanceService callGovernanceService;
+    @Mock private QuestionAiAssetMapper questionAiAssetMapper;
+    @Mock private AiAssetFeedbackMapper aiAssetFeedbackMapper;
+    @Mock private QuestionMapper questionMapper;
+    @Mock private QuestionAssetContextService questionAssetContextService;
+    @Mock private AiVariantQuestionService aiVariantQuestionService;
+
+    private QuestionLearningAssetService service;
+
+    @BeforeEach
+    void setUp() {
+        AiTestSupport.wire(aiProvider, callGovernanceService);
+        service = new QuestionLearningAssetService(
+                new AiInvocationService(aiProvider, callGovernanceService), aiConfig, callGovernanceService,
+                questionAiAssetMapper, aiAssetFeedbackMapper,
+                questionMapper, questionAssetContextService,
+                aiVariantQuestionService
+        );
+        lenient().when(questionMapper.selectById(anyLong())).thenReturn(stubQuestion());
+    }
+
+    // ======================== getAssets ========================
+
+    @Test
+    void getAssetsThrowsWhenQuestionNotFound() {
+        when(questionMapper.selectById(999L)).thenReturn(null);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.getAssets(999L));
+        assertEquals("题目不存在", ex.getMessage());
+    }
+
+    @Test
+    void getAssetsReturnsEmptyListWhenNoCachedAssets() {
+        when(questionMapper.selectById(1L)).thenReturn(stubQuestion());
+        when(questionAiAssetMapper.selectList(any())).thenReturn(Collections.emptyList());
+
+        List<QuestionLearningAssetVO> result = service.getAssets(1L);
+
+        assertNotNull(result);
+        assertEquals(0, result.size());
+    }
+
+    @Test
+    void getAssetsReturnsCachedAssets() {
+        when(questionMapper.selectById(1L)).thenReturn(stubQuestion());
+        QuestionAiAsset asset = stubAsset(1L, "FULL_EXPLANATION", "explanation content");
+        when(questionAiAssetMapper.selectList(any())).thenReturn(List.of(asset));
+
+        List<QuestionLearningAssetVO> result = service.getAssets(1L);
+
+        assertEquals(1, result.size());
+        QuestionLearningAssetVO vo = result.get(0);
+        assertEquals(1L, vo.getQuestionId());
+        assertEquals("FULL_EXPLANATION", vo.getAssetType());
+        assertEquals("标准解析", vo.getAssetTypeLabel());
+        assertEquals("explanation content", vo.getContent());
+    }
+
+    @Test
+    void getAssetsReturnsMultipleCachedAssets() {
+        when(questionMapper.selectById(1L)).thenReturn(stubQuestion());
+        when(questionAiAssetMapper.selectList(any())).thenReturn(List.of(
+                stubAsset(1L, "FULL_EXPLANATION", "full"),
+                stubAsset(1L, "BEGINNER_EXPLANATION", "beginner"),
+                stubAsset(1L, "VARIANT", "variant")
+        ));
+
+        List<QuestionLearningAssetVO> result = service.getAssets(1L);
+
+        assertEquals(3, result.size());
+        assertEquals("FULL_EXPLANATION", result.get(0).getAssetType());
+        assertEquals("BEGINNER_EXPLANATION", result.get(1).getAssetType());
+        assertEquals("VARIANT", result.get(2).getAssetType());
+    }
+
+    // ======================== getAsset ========================
+
+    @Test
+    void getAssetReturnsNullWhenNotCached() {
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
+
+        QuestionLearningAssetVO result = service.getAsset(1L, AiAssetType.FULL_EXPLANATION);
+
+        assertNull(result);
+    }
+
+    @Test
+    void getAssetReturnsCachedAsset() {
+        QuestionAiAsset asset = stubAsset(1L, "FULL_EXPLANATION", "content");
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(asset);
+
+        QuestionLearningAssetVO result = service.getAsset(1L, AiAssetType.FULL_EXPLANATION);
+
+        assertNotNull(result);
+        assertEquals("FULL_EXPLANATION", result.getAssetType());
+        assertEquals("content", result.getContent());
+    }
+
+    // ======================== generateOrGetAsset ========================
+
+    @Test
+    void generateOrGetAssetReturnsCachedContentWithoutCallingAi() {
+        QuestionAiAsset cached = stubAsset(1L, "FULL_EXPLANATION", "cached content");
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(cached);
+
+        QuestionLearningAssetVO result = service.generateOrGetAsset(1L, AiAssetType.FULL_EXPLANATION, 7L);
+
+        assertEquals("cached content", result.getContent());
+        verify(aiProvider, never()).chat(anyString(), anyString());
+        verify(callGovernanceService, never()).checkDailyQuota(any());
+    }
+
+    @Test
+    void generateOrGetAssetCallsAiWhenNoCache() {
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
+        setupFullQuestionContext();
+
+        when(aiConfig.getModel()).thenReturn("gpt-4");
+        when(aiProvider.chat(anyString(), anyString())).thenReturn("AI generated content");
+        when(questionAiAssetMapper.insert(any())).thenReturn(1);
+
+        QuestionLearningAssetVO result = service.generateOrGetAsset(1L, AiAssetType.FULL_EXPLANATION, 7L);
+
+        assertNotNull(result);
+        assertEquals("AI generated content", result.getContent());
+        assertEquals("FULL_EXPLANATION", result.getAssetType());
+        assertEquals("标准解析", result.getAssetTypeLabel());
+
+        verify(callGovernanceService).checkDailyQuota(7L);
+        verify(aiProvider).chat(anyString(), anyString());
+
+        ArgumentCaptor<QuestionAiAsset> captor = ArgumentCaptor.forClass(QuestionAiAsset.class);
+        verify(questionAiAssetMapper).insert(captor.capture());
+        QuestionAiAsset saved = captor.getValue();
+        assertEquals(1L, saved.getQuestionId());
+        assertEquals("FULL_EXPLANATION", saved.getAssetType());
+        assertEquals("AI generated content", saved.getContent());
+        assertEquals("gpt-4", saved.getModel());
+    }
+
+    @Test
+    void generateOrGetAssetLogsCallOnSuccess() {
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
+        setupFullQuestionContext();
+        when(aiConfig.getModel()).thenReturn("gpt-4");
+        when(aiProvider.chat(anyString(), anyString())).thenReturn("content");
+        when(questionAiAssetMapper.insert(any())).thenReturn(1);
+
+        service.generateOrGetAsset(1L, AiAssetType.BEGINNER_EXPLANATION, 7L);
+
+        AiTestSupport.assertCall(callGovernanceService, 7L, "asset_beginner_explanation", "SUCCEEDED");
+    }
+
+    @Test
+    void generateOrGetAssetLogsCallOnFailure() {
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
+        setupFullQuestionContext();
+        when(aiProvider.chat(anyString(), anyString())).thenThrow(new RuntimeException("API error"));
+
+        assertThrows(RuntimeException.class,
+                () -> service.generateOrGetAsset(1L, AiAssetType.FULL_EXPLANATION, 7L));
+
+        AiTestSupport.assertCall(callGovernanceService, 7L, "asset_full_explanation", "FAILED");
+    }
+
+    @Test
+    void generateOrGetAssetGeneratesAllSixAssetTypes() {
+        for (AiAssetType type : AiAssetType.values()) {
+            // Reset mocks for each iteration
+            org.mockito.Mockito.reset(questionAiAssetMapper, questionMapper, questionAssetContextService,
+                    aiProvider);
+            AiTestSupport.wire(aiProvider, callGovernanceService);
+
+            when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
+            doNothing().when(callGovernanceService).checkDailyQuota(7L);
+            setupFullQuestionContext();
+            when(aiConfig.getModel()).thenReturn("gpt-4");
+            when(aiProvider.chat(anyString(), anyString())).thenReturn("content for " + type);
+            when(questionAiAssetMapper.insert(any())).thenReturn(1);
+            if (type == AiAssetType.VARIANT) {
+                when(aiVariantQuestionService.saveGeneratedAsset(eq(1L), eq("gpt-4"), anyString()))
+                        .thenReturn(stubAsset(1L, "VARIANT", "structured variant"));
+            }
+
+            QuestionLearningAssetVO result = service.generateOrGetAsset(1L, type, 7L);
+
+            assertNotNull(result);
+            assertEquals(type.name(), result.getAssetType());
+            assertEquals(type.getLabel(), result.getAssetTypeLabel());
+        }
+    }
+
+    // ======================== generateAssetStream ========================
+
+    @Test
+    void generateAssetStreamReturnsCachedContentDirectly() {
+        QuestionAiAsset cached = stubAsset(1L, "FULL_EXPLANATION", "cached stream");
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(cached);
+
+        List<String> receivedChunks = new ArrayList<>();
+        service.generateAssetStream(1L, AiAssetType.FULL_EXPLANATION, 7L, receivedChunks::add);
+
+        assertEquals(1, receivedChunks.size());
+        assertEquals("cached stream", receivedChunks.get(0));
+        verify(aiProvider, never()).chatStream(anyString(), anyString(), any());
+    }
+
+    @Test
+    void generateAssetStreamCallsAiStreamWhenNoCache() {
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
+        setupFullQuestionContext();
+        when(aiConfig.getModel()).thenReturn("gpt-4");
+
+        // Simulate streaming chunks
+        org.mockito.Mockito.doAnswer(invocation -> {
+            Consumer<String> callback = invocation.getArgument(2);
+            callback.accept("chunk1");
+            callback.accept("chunk2");
+            callback.accept("chunk3");
+            return null;
+        }).when(aiProvider).chatStream(anyString(), anyString(), any(Consumer.class));
+
+        when(questionAiAssetMapper.insert(any())).thenReturn(1);
+
+        List<String> receivedChunks = new ArrayList<>();
+        service.generateAssetStream(1L, AiAssetType.STEP_BY_STEP, 7L, receivedChunks::add);
+
+        assertEquals(3, receivedChunks.size());
+        assertEquals("chunk1", receivedChunks.get(0));
+        assertEquals("chunk2", receivedChunks.get(1));
+        assertEquals("chunk3", receivedChunks.get(2));
+
+        verify(callGovernanceService).checkDailyQuota(7L);
+        verify(aiProvider).chatStream(anyString(), anyString(), any(Consumer.class));
+
+        // Verify full content was saved
+        ArgumentCaptor<QuestionAiAsset> captor = ArgumentCaptor.forClass(QuestionAiAsset.class);
+        verify(questionAiAssetMapper).insert(captor.capture());
+        assertEquals("chunk1chunk2chunk3", captor.getValue().getContent());
+    }
+
+    @Test
+    void generateAssetStreamUsesSafeSynchronousPathForVariant() {
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
+        setupFullQuestionContext();
+        when(aiConfig.getModel()).thenReturn("gpt-4");
+        when(aiProvider.chat(anyString(), anyString())).thenReturn("private structured json");
+        when(aiVariantQuestionService.saveGeneratedAsset(1L, "gpt-4", "private structured json"))
+                .thenReturn(stubAsset(1L, "VARIANT", "safe variant content"));
+
+        List<String> chunks = new ArrayList<>();
+        service.generateAssetStream(1L, AiAssetType.VARIANT, 7L, chunks::add);
+
+        AiTestSupport.assertCall(callGovernanceService, 7L, "asset_variant", "SUCCEEDED");
+        assertEquals(List.of("safe variant content"), chunks);
+        verify(aiProvider, never()).chatStream(anyString(), anyString(), any());
+    }
+
+    @Test
+    void generateAssetStreamLogsCallOnFailure() {
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
+        setupFullQuestionContext();
+        org.mockito.Mockito.doThrow(new RuntimeException("stream error"))
+                .when(aiProvider).chatStream(anyString(), anyString(), any(Consumer.class));
+
+        assertThrows(RuntimeException.class,
+                () -> service.generateAssetStream(1L, AiAssetType.COMMON_MISTAKES, 7L, chunk -> {}));
+
+        AiTestSupport.assertCall(callGovernanceService, 7L, "asset_common_mistakes_stream", "FAILED");
+    }
+
+    @Test
+    void generateAssetStreamContinuesWhenCacheSaveFails() {
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(null);
+        doNothing().when(callGovernanceService).checkDailyQuota(7L);
+        setupFullQuestionContext();
+        when(aiConfig.getModel()).thenReturn("gpt-4");
+        org.mockito.Mockito.doAnswer(invocation -> {
+            Consumer<String> callback = invocation.getArgument(2);
+            callback.accept("content");
+            return null;
+        }).when(aiProvider).chatStream(anyString(), anyString(), any(Consumer.class));
+        when(questionAiAssetMapper.insert(any())).thenThrow(new RuntimeException("db error"));
+
+        // Should not throw - cache save failure is swallowed
+        List<String> receivedChunks = new ArrayList<>();
+        service.generateAssetStream(1L, AiAssetType.FULL_EXPLANATION, 7L, receivedChunks::add);
+
+        assertEquals(1, receivedChunks.size());
+        assertEquals("content", receivedChunks.get(0));
+    }
+
+    // ======================== clearAssets ========================
+
+    @Test
+    void clearAssetsDeletesAllAssetsForQuestion() {
+        QuestionAiAsset asset1 = stubAsset(1L, "FULL_EXPLANATION", "c1");
+        asset1.setId(10L);
+        QuestionAiAsset asset2 = stubAsset(1L, "BEGINNER_EXPLANATION", "c2");
+        asset2.setId(11L);
+        when(questionAiAssetMapper.selectList(any())).thenReturn(List.of(asset1, asset2));
+
+        // Track deleteById calls via doAnswer since deleteById has ambiguous overloads
+        List<Long> deletedIds = new ArrayList<>();
+        org.mockito.Mockito.doAnswer(invocation -> {
+            deletedIds.add(invocation.getArgument(0));
+            return 1;
+        }).when(questionAiAssetMapper).deleteById(anyLong());
+
+        service.clearAssets(1L);
+
+        assertEquals(2, deletedIds.size());
+        assertEquals(10L, deletedIds.get(0));
+        assertEquals(11L, deletedIds.get(1));
+    }
+
+    @Test
+    void clearAssetsHandlesNoAssets() {
+        when(questionAiAssetMapper.selectList(any())).thenReturn(Collections.emptyList());
+
+        service.clearAssets(1L);
+
+        verify(questionAiAssetMapper, times(0)).deleteById(anyLong());
+    }
+
+    // ======================== Type label verification ========================
+
+    @Test
+    void toVOMapsKnownAssetTypeLabels() {
+        QuestionAiAsset asset = stubAsset(1L, "STEP_BY_STEP", "steps");
+        when(questionAiAssetMapper.selectOne(any())).thenReturn(asset);
+
+        QuestionLearningAssetVO result = service.getAsset(1L, AiAssetType.STEP_BY_STEP);
+
+        assertEquals("步骤拆解", result.getAssetTypeLabel());
+    }
+
+    @Test
+    void toVOHandlesUnknownAssetTypeLabel() {
+        QuestionAiAsset asset = new QuestionAiAsset();
+        asset.setId(1L);
+        asset.setQuestionId(1L);
+        asset.setAssetType("UNKNOWN_TYPE");
+        asset.setContent("content");
+        asset.setModel("gpt-4");
+
+        // Use getAssets since getAsset requires AiAssetType enum
+        when(questionMapper.selectById(1L)).thenReturn(stubQuestion());
+        when(questionAiAssetMapper.selectList(any())).thenReturn(List.of(asset));
+
+        List<QuestionLearningAssetVO> result = service.getAssets(1L);
+
+        assertEquals(1, result.size());
+        assertEquals("UNKNOWN_TYPE", result.get(0).getAssetTypeLabel());
+    }
+
+    // ======================== submitFeedback ========================
+
+    @Test
+    void submitFeedbackCreatesNewFeedbackWhenNoneExists() {
+        when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(null);
+        when(aiAssetFeedbackMapper.insert(any())).thenReturn(1);
+
+        service.submitFeedback(1L, "FULL_EXPLANATION", 7L, true, "very helpful");
+
+        verify(aiAssetFeedbackMapper).selectOne(any());
+        verify(aiAssetFeedbackMapper).insert(any());
+        verify(aiAssetFeedbackMapper, never()).updateById(any());
+
+        ArgumentCaptor<AiAssetFeedback> captor = ArgumentCaptor.forClass(AiAssetFeedback.class);
+        verify(aiAssetFeedbackMapper).insert(captor.capture());
+        AiAssetFeedback saved = captor.getValue();
+        assertEquals(1L, saved.getQuestionId());
+        assertEquals("FULL_EXPLANATION", saved.getAssetType());
+        assertEquals(7L, saved.getUserId());
+        assertEquals(true, saved.getHelpful());
+        assertEquals("very helpful", saved.getComment());
+    }
+
+    @Test
+    void submitFeedbackCreatesFeedbackWithNullComment() {
+        when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(null);
+        when(aiAssetFeedbackMapper.insert(any())).thenReturn(1);
+
+        service.submitFeedback(1L, "BEGINNER_EXPLANATION", 7L, false, null);
+
+        ArgumentCaptor<AiAssetFeedback> captor = ArgumentCaptor.forClass(AiAssetFeedback.class);
+        verify(aiAssetFeedbackMapper).insert(captor.capture());
+        AiAssetFeedback saved = captor.getValue();
+        assertEquals(false, saved.getHelpful());
+        assertNull(saved.getComment());
+    }
+
+    @Test
+    void submitFeedbackUpdatesExistingFeedback() {
+        AiAssetFeedback existing = new AiAssetFeedback();
+        existing.setId(100L);
+        existing.setQuestionId(1L);
+        existing.setAssetType("FULL_EXPLANATION");
+        existing.setUserId(7L);
+        existing.setHelpful(false);
+        existing.setComment("old comment");
+        when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(existing);
+        when(aiAssetFeedbackMapper.updateById(any())).thenReturn(1);
+
+        service.submitFeedback(1L, "FULL_EXPLANATION", 7L, true, "changed my mind");
+
+        verify(aiAssetFeedbackMapper, never()).insert(any());
+        verify(aiAssetFeedbackMapper).updateById(any());
+
+        ArgumentCaptor<AiAssetFeedback> captor = ArgumentCaptor.forClass(AiAssetFeedback.class);
+        verify(aiAssetFeedbackMapper).updateById(captor.capture());
+        AiAssetFeedback updated = captor.getValue();
+        assertEquals(100L, updated.getId());
+        assertEquals(true, updated.getHelpful());
+        assertEquals("changed my mind", updated.getComment());
+    }
+
+    @Test
+    void submitFeedbackUpdatesToNullComment() {
+        AiAssetFeedback existing = new AiAssetFeedback();
+        existing.setId(101L);
+        existing.setQuestionId(1L);
+        existing.setAssetType("VARIANT");
+        existing.setUserId(7L);
+        existing.setHelpful(true);
+        existing.setComment("was good");
+        when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(existing);
+        when(aiAssetFeedbackMapper.updateById(any())).thenReturn(1);
+
+        service.submitFeedback(1L, "VARIANT", 7L, false, null);
+
+        ArgumentCaptor<AiAssetFeedback> captor = ArgumentCaptor.forClass(AiAssetFeedback.class);
+        verify(aiAssetFeedbackMapper).updateById(captor.capture());
+        assertEquals(false, captor.getValue().getHelpful());
+        assertNull(captor.getValue().getComment());
+    }
+
+    // ======================== getUserFeedback ========================
+
+    @Test
+    void getUserFeedbackReturnsNullWhenNoFeedback() {
+        when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(null);
+
+        AiAssetFeedbackVO result = service.getUserFeedback(1L, "FULL_EXPLANATION", 7L);
+
+        assertNull(result);
+    }
+
+    @Test
+    void getUserFeedbackReturnsExistingFeedback() {
+        AiAssetFeedback feedback = new AiAssetFeedback();
+        feedback.setId(200L);
+        feedback.setQuestionId(1L);
+        feedback.setAssetType("FULL_EXPLANATION");
+        feedback.setUserId(7L);
+        feedback.setHelpful(true);
+        feedback.setComment("great");
+        when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(feedback);
+
+        AiAssetFeedbackVO result = service.getUserFeedback(1L, "FULL_EXPLANATION", 7L);
+
+        assertNotNull(result);
+        assertEquals(true, result.getHelpful());
+        assertEquals("great", result.getComment());
+    }
+
+    @Test
+    void getUserFeedbackReturnsDifferentFeedbackPerAssetType() {
+        AiAssetFeedback beginnerFeedback = new AiAssetFeedback();
+        beginnerFeedback.setId(201L);
+        beginnerFeedback.setQuestionId(1L);
+        beginnerFeedback.setAssetType("BEGINNER_EXPLANATION");
+        beginnerFeedback.setUserId(7L);
+        beginnerFeedback.setHelpful(false);
+        when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(beginnerFeedback);
+
+        AiAssetFeedbackVO result = service.getUserFeedback(1L, "BEGINNER_EXPLANATION", 7L);
+
+        assertNotNull(result);
+        assertEquals(false, result.getHelpful());
+    }
+
+    // ======================== Helpers ========================
+
+    private Question stubQuestion() {
+        Question question = new Question();
+        question.setId(1L);
+        question.setContent("Test question content");
+        question.setQuestionType("SINGLE_CHOICE");
+        question.setDifficulty(3);
+        question.setCourseId(1L);
+        return question;
+    }
+
+    private QuestionAiAsset stubAsset(Long questionId, String assetType, String content) {
+        QuestionAiAsset asset = new QuestionAiAsset();
+        asset.setId(questionId * 100 + assetType.hashCode() % 100);
+        asset.setQuestionId(questionId);
+        asset.setAssetType(assetType);
+        asset.setContent(content);
+        asset.setModel("gpt-4");
+        return asset;
+    }
+
+    private void setupFullQuestionContext() {
+        Question question = stubQuestion();
+        when(questionMapper.selectById(1L)).thenReturn(question);
+        when(questionAssetContextService.load(1L)).thenReturn("question-context");
+    }
+
+}
