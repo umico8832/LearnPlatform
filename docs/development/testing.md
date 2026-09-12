@@ -51,6 +51,9 @@ frontend 全量、全部 Testcontainers、全部 Playwright 或 Docker 全环境
 无法覆盖本轮高风险行为。Docker build、Compose 重建和完整 Docker E2E 都不是默认 L1；
 普通局部修改不得为了验证而完整重建 Docker 环境。
 
+临时浏览器检查复用[工作流中已核对的开发服务](workflow.md#运行环境与服务复用)，按页面影响选择
+学习端或管理端地址；不因基础服务在 Docker 中就自动运行 `app-up` 或正式 E2E。
+
 ### L2：模块 / 业务闭环验证
 
 适用于达到预先定义的 commit boundary、完成一个完整模块或完整业务闭环、准备创建
@@ -59,8 +62,9 @@ frontend 全量、全部 Testcontainers、全部 Playwright 或 Docker 全环境
 - 后端：受影响模块测试、必要静态检查和必要 build。
 - 前端：受影响 Vitest、vue-tsc、ESLint 和必要 build。
 - 数据库：相关的 Testcontainers。
-- Docker：仅当改动 Dockerfile、`.dockerignore`、Compose 或 Nginx 配置时运行对应的
-  `docker build` / `docker compose build`；普通业务代码变化不触发 Docker 重建。
+- Docker：涉及 Dockerfile、`.dockerignore`、Compose 或 Nginx 时，按影响验证配置解析、构建或
+  容器行为；仅运行时配置变化不必重新编译镜像。需要将当前源码更新到完整 Docker 环境时使用
+  `app-up`。普通业务代码的模块验收优先使用本地服务，不自动触发 Docker 重建。
 - 跨层关键流程：对应的最小 Playwright / 真实浏览器闭环。
 
 不是所有 L2 都运行所有测试。例如后端普通查询筛选逻辑变化，不应自动运行 frontend
@@ -120,7 +124,9 @@ L3 仍然是按风险选择，不是为了展示测试数量机械执行所有�
 
 ## 8. 浏览器 E2E 环境
 
-浏览器测试使用独立的 Spring `e2e` Profile（`docker-compose.e2e.yml`），仅在该 Profile 下将验证码答案固定为 `42`；它不会绕过账号密码、JWT、权限或路由守卫。开发和生产 Profile 仍使用随机一次性数学验证码。
+浏览器测试使用独立的 Spring `e2e` Profile（`docker-compose.e2e.yml`），前端站点密钥与后端
+校验密钥使用 Cloudflare Turnstile 测试配置；账号密码、JWT、权限和路由守卫仍执行真实逻辑。
+测试密钥只用于隔离 E2E，不写入日常开发或生产配置；这些环境按自己的 Turnstile 配置完成验证。
 E2E Compose 还提供 OpenAI 兼容的确定性上游响应，只替代不可重复且需要密钥的外部模型调用；后端的配额、
 Prompt 构造、HTTP Provider、结构校验、调用审计、草稿状态和数据库事务仍使用真实实现。该响应不得在开发或
 生产 Compose 中启用，也不能替代 AI 解析与异常分支的单元测试。

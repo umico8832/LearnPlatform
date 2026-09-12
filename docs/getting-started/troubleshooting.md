@@ -2,11 +2,21 @@
 
 ## 后端无法连接 MySQL
 
-1. 确认 MySQL 8 正在运行。
-2. 检查数据库名为 `learn_platform`。
-3. 核对 `DB_URL`、`DB_USERNAME` 和 `DB_PASSWORD`。
-4. 检查 URL 是否包含时区和 `allowPublicKeyRetrieval=true`。
-5. 查看后端启动日志中的 Flyway 版本，不要手工跳过迁移。
+1. 日常开发先执行 `python3 scripts/dev.py status`，确认 Docker MySQL 健康且已映射到
+   `127.0.0.1:13306`（或配置的 `DEV_MYSQL_PORT`），无需启动本机 MySQL。
+2. 通过 `dev.py backend` 启动本地后端；其数据库地址由开发入口生成，基础 Docker 后端则使用
+   `mysql:3306`。映射端口改变后按[本地开发](local-development.md#1-配置环境变量)应用配置。
+3. 检查数据库名 `learn_platform` 和账号配置。已有卷的数据库密码不会随 `.env` 自动更新，
+   不要通过删除数据卷解决密码不匹配。
+4. 查看本地后端终端或对应容器的连接与 Flyway 错误，不输出凭证，不手工跳过迁移。
+
+## 页面改动没有出现
+
+- 先确认实际地址：本地学习端通常为 `5173`，管理端为 `5174/admin/`；完整 Docker 页面通常为 `80`。
+- 确认开发服务器属于当前工作目录。Vue/CSS 保存后应热更新，后端代码变化需要重启本地后端。
+- `.env` 中前端变量变化需要重启相应 Vite 进程；配置生效步骤见[本地开发](local-development.md#1-配置环境变量)。
+- 如果打开的是 Docker 镜像提供的页面，本地热更新不会改变该页面。需要查看日常改动时打开开发地址，
+  需要验证更新后的 Docker 版本时按 [Docker 开发](docker-development.md)操作。
 
 ## Docker 服务无法变为健康
 
@@ -16,7 +26,8 @@ docker compose logs backend
 docker compose logs mysql
 ```
 
-优先解决最先失败的依赖。修改环境变量或镜像内容后使用：
+优先解决最先失败的依赖。仅日常开发的基础服务出错时检查 `dev.py status` 和对应容器日志；
+本地 Java 错误看后端终端，不运行 `app-up` 代替诊断。需要更新完整 Docker 应用时使用：
 
 ```bash
 python3 scripts/docker-lifecycle.py app-up
@@ -36,7 +47,7 @@ python3 scripts/docker-lifecycle.py app-up
 - 检查请求头是否为 `Authorization: Bearer <token>`。
 - 确认 Token 未过期且由当前 `JWT_SECRET` 签发。
 - 清理旧站点 localStorage 后重新登录。
-- Docker 重建后如果 JWT Secret 变化，旧 Token 必然失效。
+- 后端应用新的 JWT Secret 后，旧 Token 失效；这与是否重建 Docker 镜像无关。
 
 ## 普通用户访问管理端返回 403
 

@@ -29,7 +29,7 @@ AI 教学、试卷学习、练习、错题、复习和测评。产品范围与�
 
 | 触发条件与读取时机 | 必读入口 |
 |---|---|
-| 开发、持续维护或判断完成前 | [开发工作流](docs/development/workflow.md)；选择验证范围时查[测试策略](docs/development/testing.md) |
+| 开发、持续维护或判断完成前 | [开发工作流](docs/development/workflow.md)，先按其中的运行环境规则确认已有服务；选择验证范围时查[测试策略](docs/development/testing.md) |
 | 判断产品范围或下一阶段前 | [产品需求](docs/product/prd.md)、[路线图](docs/product/roadmap.md)；未承诺方向见[候选计划](docs/product/future.md) |
 | 调整模块、目录或职责边界前 | [系统架构](docs/architecture/overview.md)及对应前后端文档；重大决策查阅[ADR](docs/architecture/decisions/index.md) |
 | 修改接口、鉴权或数据契约前 | [API 参考](docs/reference/api/index.md)或[数据库参考](docs/reference/database/index.md)；迁移查[迁移策略](docs/reference/database/migration-policy.md) |

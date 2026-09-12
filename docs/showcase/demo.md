@@ -23,7 +23,7 @@
 
 #### 环境
 
-- [ ] `.env` 使用本地示例配置，没有准备展示真实秘密。
+- [ ] 演示所需的认证与可选 AI 配置已就绪，真实密钥不进入截图或录屏。
 - [ ] `docker compose ps` 或本地前后端状态正常。
 - [ ] `/api/public/health` 返回成功。
 - [ ] Knife4j 可以打开。
@@ -151,18 +151,21 @@
 
 ## 真实截图
 
-按[测试策略的 E2E 生命周期](../development/testing.md#8-浏览器-e2e-环境)启动隔离环境，完成后按同节清理。
-截图专用命令：
+单页截图优先复用已核对的本地开发页面；学习端与管理端使用各自的开发地址，按
+[浏览器验收 Skill](../../.agents/skills/frontend-flow-test/SKILL.md)验证内容后取图。
+截图完成后保留用户原本启动的服务。
+
+批量截图脚本使用同一个 `DEMO_BASE_URL` 访问学习端和管理端，因此需要两端同域的运行环境，
+不能直接用本地学习端 `5173` 覆盖包含管理端页面的整套截图。需要使用该脚本时，先按
+[Docker 开发](../getting-started/docker-development.md)准备完整环境，再显式指定实际地址：
 
 ```bash
 cd frontend
-npm run screenshots:demo
+DEMO_BASE_URL=http://localhost npm run screenshots:demo
 ```
 
-默认访问 `http://localhost:18000`，输出到 `docs/showcase/screenshots/`。自定义地址：
-
-```bash
-DEMO_BASE_URL=http://localhost:5173 npm run screenshots:demo
-```
-
-脚本遇到页面加载阶段的 4xx/5xx API 响应会失败，避免生成不可信截图。
+脚本输出到 `docs/showcase/screenshots/`，省略地址时默认访问 `18000`，但该端口不代表环境已经
+启动。[正式 E2E 命令](../development/testing.md#8-浏览器-e2e-环境)结束后会清理隔离环境，
+不能在它退出后假定该环境仍供截图使用。
+批量脚本自行登录并等待验证码令牌，需先核对认证配置、管理端登录路径与当前页面定位是否适配；
+脚本失败不能作为截图验收通过。它会在页面加载阶段出现 4xx/5xx API 响应时报错。

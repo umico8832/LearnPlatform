@@ -20,6 +20,17 @@ test -f .env || cp .env.example .env
 `source` 环境文件；如果旧终端已导出同名变量，它们会优先于 `.env`，请使用新终端。
 不得读取、输出或提交真实密钥。
 
+修改 `.env` 后，按实际影响应用配置：
+
+| 修改内容 | 本地开发操作 |
+|---|---|
+| 前端 `VITE_*` 配置 | 停止并重新运行对应的 `dev.py frontend` 或 `dev.py admin` |
+| 后端 JWT、Turnstile、AI 等运行参数 | 停止并重新运行 `dev.py backend` |
+| MySQL、Redis、Mailpit 的映射端口或容器配置 | 先停止本地后端，执行 `dev.py infra-up`，再启动后端 |
+
+开发入口固定覆盖本地服务地址、Profile 和 Mailpit 发信设置，具体覆盖项见[配置说明](configuration.md#日常开发覆盖)。
+已有数据库账号密码需要在数据库内同步修改，不能仅修改 `.env`。以上操作不需要运行 `app-up`。
+
 ## 2. 启动基础服务
 
 ```bash
@@ -46,7 +57,7 @@ python3 scripts/dev.py backend
 - API：`http://localhost:8080`
 - Knife4j：`http://localhost:8080/doc.html`
 
-入口使用本机 Maven，未安装时尝试已有的 Maven Wrapper。日志保留在当前终端，使用
+入口先构建并安装 `ai-core` 及父 POM，再运行 `app` 的 Spring Boot 插件；使用本机 Maven，未安装时尝试已有的 Maven Wrapper。日志保留在当前终端，使用
 `Ctrl+C` 停止；修改 Java 代码后再次执行同一命令。默认没有后端自动热重载。
 
 ## 4. 启动前端
@@ -69,6 +80,9 @@ python3 scripts/dev.py admin
 不会将后端密钥交给前端进程；Turnstile 未配置时会提示，登录仍要求真实验证。
 
 ## 5. 基础验证
+
+开发中优先运行本次改动直接涉及的测试，页面验收使用当前本地前后端；下列是按影响范围选择的
+模块级命令，不要求每次保存文件全部执行。缺少本机 Maven 时，在 `backend` 目录用 `./mvnw` 替代 `mvn`。
 
 ```bash
 cd backend
