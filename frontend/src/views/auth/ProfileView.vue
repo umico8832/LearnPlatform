@@ -2,9 +2,7 @@
   <div class="profile-container page-container">
     <section class="profile-hero">
       <div class="hero-copy">
-        <span class="section-kicker">账户与学习档案</span>
         <h1>个人中心</h1>
-        <p>管理展示昵称与登录密码，同时快速回到刷题练习和收藏题复盘。</p>
       </div>
       <div class="hero-actions">
         <el-button :icon="EditPen" @click="router.push('/practice')"> 继续刷题 </el-button>
@@ -43,22 +41,12 @@
                 <strong>{{ registeredDate }}</strong>
               </div>
             </div>
-            <div class="profile-meta-item">
-              <span class="meta-icon safe"
-                ><el-icon><Lock /></el-icon
-              ></span>
-              <div>
-                <small>账户安全</small>
-                <strong>密码可随时更新</strong>
-              </div>
-            </div>
           </div>
         </el-card>
 
         <el-card shadow="never" class="shortcut-card">
           <div class="shortcut-title">
             <strong>常用入口</strong>
-            <span>继续最近的学习动作</span>
           </div>
           <button
             v-for="item in shortcutItems"
@@ -85,7 +73,6 @@
               ></span>
               <div>
                 <strong>个人信息</strong>
-                <small>昵称会显示在学习记录、评论和个人档案中。</small>
               </div>
             </div>
           </template>
@@ -116,7 +103,6 @@
               ></span>
               <div>
                 <strong>修改密码</strong>
-                <small>建议使用 6-50 位密码，并避免和其他网站重复。</small>
               </div>
             </div>
           </template>
@@ -148,7 +134,7 @@
             </el-form-item>
             <div class="password-note">
               <el-icon><Lock /></el-icon>
-              修改成功后请使用新密码重新登录，当前表单不会保存原密码。
+              修改后需要重新登录。
             </div>
             <el-form-item class="form-actions">
               <el-button type="primary" :loading="passwordLoading" @click="handleUpdatePassword"> 修改密码 </el-button>
@@ -290,29 +276,12 @@ onMounted(() => {
   background: linear-gradient(135deg, var(--lp-primary-soft) 0%, var(--lp-surface) 58%), var(--lp-surface);
 }
 
-.section-kicker {
-  display: inline-block;
-  margin-bottom: var(--lp-space-2);
-  color: var(--lp-primary);
-  font-size: var(--lp-text-xs);
-  font-weight: var(--lp-weight-heavy);
-  letter-spacing: var(--lp-tracking-wide);
-}
-
 .profile-hero h1 {
   margin: 0;
   color: var(--lp-text);
   font-size: var(--lp-text-3xl);
   font-weight: var(--lp-weight-heavy);
   letter-spacing: var(--lp-tracking-tight);
-}
-
-.profile-hero p {
-  margin: var(--lp-space-2) 0 0;
-  max-width: var(--lp-reading-measure);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-base);
-  line-height: var(--lp-leading-relaxed);
 }
 
 .hero-actions {
@@ -398,14 +367,7 @@ onMounted(() => {
   background: var(--lp-warning-soft);
 }
 
-.meta-icon.safe {
-  color: var(--lp-success);
-  background: var(--lp-success-soft);
-}
-
-.profile-meta-item small,
-.card-header small,
-.shortcut-title span {
+.profile-meta-item small {
   display: block;
   color: var(--lp-text-muted);
   font-size: var(--lp-text-xs);
@@ -430,10 +392,6 @@ onMounted(() => {
   color: var(--lp-text);
   font-size: var(--lp-text-md);
   font-weight: var(--lp-weight-heavy);
-}
-
-.shortcut-title span {
-  margin-top: var(--lp-space-1);
 }
 
 .shortcut-item {

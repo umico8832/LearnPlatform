@@ -1,5 +1,6 @@
 <template>
   <div class="turnstile-box">
+    <p v-if="loading" class="turnstile-loading" role="status">正在加载验证…</p>
     <div ref="containerRef" class="turnstile-container" aria-label="人机验证"></div>
     <p v-if="errorMessage" class="turnstile-error" role="alert">{{ errorMessage }}</p>
   </div>
@@ -23,6 +24,7 @@ let scriptPromise: Promise<void> | null = null
 const containerRef = ref<HTMLElement>()
 const widgetId = ref('')
 const errorMessage = ref('')
+const loading = ref(true)
 let disposed = false
 
 function loadScript() {
@@ -58,6 +60,7 @@ function clearToken() {
 async function renderWidget() {
   const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY
   if (!siteKey) {
+    loading.value = false
     errorMessage.value = '人机验证尚未配置，请联系管理员'
     clearToken()
     emit('error')
@@ -72,24 +75,30 @@ async function renderWidget() {
       theme: props.theme,
       size: 'flexible',
       callback: (token: string) => {
+        if (disposed) return
         errorMessage.value = ''
         emit('update:modelValue', token)
       },
       'expired-callback': () => {
+        if (disposed) return
         clearToken()
         errorMessage.value = '验证已过期，请重新验证'
         emit('expired')
       },
       'error-callback': () => {
+        if (disposed) return
         clearToken()
         errorMessage.value = '验证失败，请刷新后重试'
         emit('error')
       },
     })
   } catch {
+    if (disposed) return
     errorMessage.value = '人机验证加载失败，请检查网络后重试'
     clearToken()
     emit('error')
+  } finally {
+    loading.value = false
   }
 }
 
@@ -110,7 +119,17 @@ defineExpose({ reset })
 
 <style scoped>
 .turnstile-box {
+  position: relative;
   width: 100%;
+}
+.turnstile-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
 }
 .turnstile-container {
   min-height: 65px;
@@ -118,8 +137,8 @@ defineExpose({ reset })
 }
 .turnstile-error {
   margin: 7px 0 0;
-  color: #fca5a5;
-  font-size: 12px;
+  color: var(--lp-danger);
+  font-size: var(--lp-text-xs);
   line-height: 1.5;
 }
 </style>

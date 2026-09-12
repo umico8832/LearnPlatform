@@ -47,6 +47,8 @@ frontend/admin/   # 独立管理端 HTML 入口
   `LpEmptyState`、`LpSkeleton`、`LpDivider`、`LpSignal`、`LpProgress`、`LpKicker`），
   页面与组件不得随手定义裸色值/裸尺寸。
 - 视觉与交互规范见项目 `frontend-design` Skill。
+- 学习端认证页面采用居中浅渐变卡片，仅承载账户操作；Google 登录入口按后端提供方状态启用，
+  Facebook 与 Apple 保持禁用并明确标注暂未开放。
 
 ## 页面分层
 
@@ -86,6 +88,8 @@ sequenceDiagram
 - 路由守卫根据登录状态和用户角色控制导航。
 - 管理页面隐藏只是体验优化，真正权限由后端 `/api/admin/**` 校验。
 - 页面不得通过修改 Pinia 或 localStorage 获得管理权限。
+- 登录（含管理端）、发送注册验证码和找回密码采用按需验证弹窗：表单校验通过后发起验证，
+  获得凭证后自动继续原请求；验证期间取消或离开页面不发起后续请求，重试重新获取凭证，后端仍执行 Turnstile 校验。
 - 登录失效由统一请求层清理本地状态并引导重新认证。
 - 请求层不直接依赖任一 Router；两个入口分别注册登录跳转处理器。独立管理端会在路由进入和登录成功时
   双重检查 `ADMIN` 角色，但安全边界仍是后端 `/api/admin/**` 权限校验。

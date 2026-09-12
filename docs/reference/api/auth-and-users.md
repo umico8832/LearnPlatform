@@ -12,6 +12,10 @@
 | `POST /api/auth/password/forgot` | 发送密码重置邮件，需 Turnstile |
 | `GET /api/auth/password/reset/validate` | 验证一次性重置令牌 |
 | `POST /api/auth/password/reset` | 消费重置令牌并设置新密码 |
+| `GET /api/auth/oauth/providers` | 查询当前启用的第三方登录入口 |
+| `GET /api/auth/oauth/authorization/google` | 发起 Google OIDC 登录 |
+| `GET /api/auth/oauth/callback/google` | Google 回调地址，由认证服务调用 |
+| `POST /api/auth/oauth/exchange` | 消费两分钟有效的一次性票据并签发 JWT |
 
 登录请求使用统一账号字段：
 
@@ -35,6 +39,10 @@
 
 忘记密码接口无论邮箱是否存在均返回中性成功响应。邮件链接携带高熵一次性令牌，数据库只保存令牌 HMAC；成功重置后令牌作废、用户认证版本递增，旧 JWT 随即失效。
 
+Google 登录只请求 `openid`、`profile` 和 `email`。服务端验证 OIDC 身份及邮箱验证状态，按 Google
+稳定主体标识关联 `user_identity`，再通过 URL Fragment 向前端传递一次性票据；长期 JWT 不进入 OAuth
+回调 URL。若邮箱已属于未关联的本地账号，服务端拒绝静默合并，用户继续使用原登录方式。
+
 ## 认证接口
 
 | 接口 | 说明 |
@@ -56,4 +64,6 @@ Authorization: Bearer <token>
 - `VITE_TURNSTILE_SITE_KEY` 只用于前端控件，可公开。
 - `TURNSTILE_SECRET_KEY` 只由后端读取。
 - SMTP 密码、认证令牌 HMAC Secret 和 JWT Secret 不进入仓库或日志。
+- `GOOGLE_OAUTH_CLIENT_SECRET` 只由后端读取；未完整配置时保持 Google 登录关闭。
+- Google 控制台的授权回调 URI 必须与 `GOOGLE_OAUTH_REDIRECT_URI` 完全一致。
 - 本地 Docker 使用 Mailpit 接收开发邮件；生产环境通过 SMTP 环境变量切换真实邮件服务。

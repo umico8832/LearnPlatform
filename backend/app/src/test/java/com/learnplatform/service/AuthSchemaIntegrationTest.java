@@ -38,5 +38,12 @@ class AuthSchemaIntegrationTest extends IntegrationTestBase {
                   AND table_name IN ('email_verification', 'password_reset_token')
                 """, Integer.class);
         assertEquals(2, verificationTables);
+
+        Integer oauthTables = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.tables
+                WHERE table_schema = DATABASE()
+                  AND table_name IN ('user_identity', 'oauth_login_ticket')
+                """, Integer.class);
+        assertEquals(2, oauthTables);
     }
 }

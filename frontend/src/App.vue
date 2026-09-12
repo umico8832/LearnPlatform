@@ -1,6 +1,10 @@
 <template>
   <el-config-provider :locale="zhCn">
-    <router-view />
+    <router-view v-slot="{ Component }">
+      <Transition name="auth-motion" mode="out-in" appear>
+        <component :is="Component" />
+      </Transition>
+    </router-view>
   </el-config-provider>
 </template>
 

@@ -148,9 +148,8 @@
         </router-view>
       </main>
     </div>
+    <GlobalSearchDialog ref="searchDialogRef" />
   </div>
-
-  <GlobalSearchDialog ref="searchDialogRef" />
 </template>
 
 <script setup lang="ts">

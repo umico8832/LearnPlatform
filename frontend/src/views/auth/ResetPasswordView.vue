@@ -1,5 +1,5 @@
 <template>
-  <AuthLayout alternate-to="/login" alternate-text="返回登录">
+  <AuthLayout>
     <div v-if="checking" class="status-panel">
       <el-icon class="is-loading"><Loading /></el-icon>
       <h2 id="auth-title">正在验证链接</h2>

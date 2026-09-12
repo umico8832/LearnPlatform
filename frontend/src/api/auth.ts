@@ -26,3 +26,9 @@ export function validateResetToken(token: string) {
 export function resetPassword(token: string, password: string) {
   return request.post<unknown, ApiResponse<void>>('/auth/password/reset', { token, password })
 }
+export function getOAuthProviders() {
+  return request.get<unknown, ApiResponse<{ google: boolean }>>('/auth/oauth/providers')
+}
+export function exchangeOAuthTicket(ticket: string) {
+  return request.post<unknown, ApiResponse<LoginResponse>>('/auth/oauth/exchange', { ticket })
+}

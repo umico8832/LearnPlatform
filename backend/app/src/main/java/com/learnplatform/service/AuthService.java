@@ -109,18 +109,15 @@ public class AuthService {
             throw new BusinessException(ResultCode.FORBIDDEN, "账号已被禁用");
         }
 
-        // 生成 Token
+        log.info("用户登录成功: userId={}, username={}, role={}",
+                user.getId(), user.getUsername(), user.getRole());
+        return createLoginResponse(user);
+    }
+
+    public LoginResponse createLoginResponse(User user) {
         String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername(), user.getRole(),
                 user.getAuthVersion() == null ? 0 : user.getAuthVersion());
-        log.info("用户登录成功: userId={}, username={}, role={}", user.getId(), user.getUsername(), user.getRole());
-
-        // 构建响应
-        LoginResponse response = new LoginResponse();
-        response.setToken(token);
-        response.setExpiresIn(jwtTokenProvider.getExpirationSeconds());
-        response.setUser(UserVO.fromUser(user));
-
-        return response;
+        return new LoginResponse(token, jwtTokenProvider.getExpirationSeconds(), UserVO.fromUser(user));
     }
 
     /**

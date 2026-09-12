@@ -196,9 +196,25 @@
   --lp-duration-fast: 120ms;
   --lp-duration-normal: 180ms;
   --lp-duration-slow: 280ms;
+  --lp-auth-duration-enter: 500ms;
+  --lp-auth-duration-leave: 300ms;
   --lp-ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
   --lp-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   --lp-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ----------------------------------------------------------------
+   * Auth · 认证页面
+   * ---------------------------------------------------------------- */
+  --lp-auth-card-width: 448px;
+  --lp-auth-card-radius: 24px;
+  --lp-auth-symbol-size: 64px;
+  --lp-auth-surface-start: #f6fbff;
+  --lp-auth-border: #dbeafe;
+  --lp-auth-input-bg: #f8f9fb;
+  --lp-auth-input-border: #e0e4ea;
+  --lp-auth-button-start: #374151;
+  --lp-auth-button-end: #111827;
+  --lp-auth-shadow: 0 4px 8px rgba(17, 24, 39, 0.025), 0 20px 32px -12px rgba(17, 24, 39, 0.22);
 
   /* ----------------------------------------------------------------
    * Layout

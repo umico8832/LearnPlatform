@@ -3,18 +3,20 @@ package com.learnplatform.config;
 import com.learnplatform.common.result.R;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.security.JwtAuthenticationFilter;
+import com.learnplatform.security.GoogleOAuthFailureHandler;
+import com.learnplatform.security.GoogleOAuthSuccessHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -27,9 +29,18 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final ObjectProvider<ClientRegistrationRepository> clientRegistrationRepository;
+    private final GoogleOAuthSuccessHandler googleOAuthSuccessHandler;
+    private final GoogleOAuthFailureHandler googleOAuthFailureHandler;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          ObjectProvider<ClientRegistrationRepository> clientRegistrationRepository,
+                          GoogleOAuthSuccessHandler googleOAuthSuccessHandler,
+                          GoogleOAuthFailureHandler googleOAuthFailureHandler) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.clientRegistrationRepository = clientRegistrationRepository;
+        this.googleOAuthSuccessHandler = googleOAuthSuccessHandler;
+        this.googleOAuthFailureHandler = googleOAuthFailureHandler;
     }
 
     @Bean
@@ -68,7 +79,8 @@ public class SecurityConfig {
                         // 公开接口
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/email/**",
-                                "/api/auth/password/forgot", "/api/auth/password/reset/**").permitAll()
+                                "/api/auth/password/forgot", "/api/auth/password/reset/**",
+                                "/api/auth/oauth/**").permitAll()
                         // Knife4j / Swagger 文档
                         .requestMatchers("/doc.html", "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
                         // Actuator 仅开放健康检查和 Prometheus 指标；其他管理端点仍需认证。
@@ -81,11 +93,16 @@ public class SecurityConfig {
                 // 添加 JWT 过滤器
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return http.build();
-    }
+        if (clientRegistrationRepository.getIfAvailable() != null) {
+            http.oauth2Login(oauth -> oauth
+                    .authorizationEndpoint(endpoint -> endpoint
+                            .baseUri("/api/auth/oauth/authorization"))
+                    .redirectionEndpoint(endpoint -> endpoint
+                            .baseUri("/api/auth/oauth/callback/*"))
+                    .successHandler(googleOAuthSuccessHandler)
+                    .failureHandler(googleOAuthFailureHandler));
+        }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return http.build();
     }
 }

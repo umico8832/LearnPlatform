@@ -28,6 +28,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: false, title: '重置密码' },
   },
   {
+    path: '/oauth/callback',
+    name: 'OAuthCallback',
+    component: () => import('@/views/auth/OAuthCallbackView.vue'),
+    meta: { requiresAuth: false, title: '登录' },
+  },
+  {
     path: '/',
     redirect: '/my-courses',
     meta: { requiresAuth: true },
