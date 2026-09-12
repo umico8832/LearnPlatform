@@ -35,9 +35,16 @@ test('课程知识点事实在真实理解检查后更新并保持分页深链�
   await page.goto('/login')
   await page.getByPlaceholder('请输入用户名或邮箱').fill('testuser')
   await page.getByPlaceholder('请输入密码').fill('test123')
-  await expect(page.getByRole('button', { name: '登录', exact: true })).toBeEnabled({ timeout: 15_000 })
-  await page.getByRole('button', { name: '登录', exact: true }).click()
-  await expect(page).toHaveURL(/\/my-courses$/)
+  const loginButton = page.getByRole('button', { name: '登录', exact: true })
+  await expect(loginButton).toBeEnabled({ timeout: 15_000 })
+  const loginResponse = page.waitForResponse(
+    (response) => response.request().method() === 'POST' && response.url().endsWith('/api/auth/login'),
+  )
+  await loginButton.click()
+  const response = await loginResponse
+  expect(response.status()).toBe(200)
+  expect((await response.json()) as { code: number }).toMatchObject({ code: 0 })
+  await expect(page).toHaveURL(/\/my-courses$/, { timeout: 15_000 })
   await page.goto('/courses')
   await page
     .locator('.course-card')

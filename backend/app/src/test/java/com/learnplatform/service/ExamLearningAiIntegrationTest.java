@@ -192,10 +192,12 @@ class ExamLearningAiIntegrationTest extends IntegrationTestBase {
 
     private void stubStreamResponse(StringBuilder upstreamContext, String response) {
         doAnswer(invocation -> {
-            upstreamContext.append(invocation.getArgument(1, String.class));
-            Consumer<String> consumer = invocation.getArgument(2);
-            consumer.accept(response);
-            return null;
+            com.learnplatform.ai.model.ModelRequest request = invocation.getArgument(0);
+            upstreamContext.append(request.messages().get(1).content());
+            Consumer<com.learnplatform.ai.model.ModelEvent> consumer = invocation.getArgument(1);
+            consumer.accept(new com.learnplatform.ai.model.ModelEvent.TextDelta(response));
+            return new com.learnplatform.ai.model.ModelResult(response, java.util.List.of(),
+                    "test-model", null, com.learnplatform.ai.model.ModelResult.Finish.STOP, null);
         }).when(aiProvider).stream(any(), any(), any());
     }
 }

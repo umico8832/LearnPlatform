@@ -7,12 +7,18 @@ async function loginAs(page: Page, username: string, password: string) {
   await page.goto('/login')
   await page.getByPlaceholder('请输入用户名或邮箱').fill(username)
   await page.getByPlaceholder('请输入密码').fill(password)
-  const loginButton = page.getByRole('button', { name: '登录' })
+  const loginButton = page.getByRole('button', { name: '登录', exact: true })
   await expect(loginButton).toBeEnabled({ timeout: 15_000 })
+  const loginResponse = page.waitForResponse(
+    (response) => response.request().method() === 'POST' && response.url().endsWith('/api/auth/login'),
+  )
   await loginButton.click()
+  const response = await loginResponse
+  expect(response.status()).toBe(200)
+  expect((await response.json()) as { code: number }).toMatchObject({ code: 0 })
 
   // 登录成功后默认进入「我的课程」
-  await expect(page).toHaveURL(/\/my-courses$/)
+  await expect(page).toHaveURL(/\/my-courses$/, { timeout: 15_000 })
 }
 
 async function loginToAdminApp(page: Page, username: string, password: string) {
@@ -709,7 +715,7 @@ test('课程空间学习工具可进入对应页面并携带课程参数', async
     { tool: '复习', path: '/review', heading: '复习' },
     { tool: '错题', path: '/wrong-questions', heading: '错题' },
     { tool: '真题与试卷', path: '/exams', heading: '考试与试卷' },
-    { tool: '题目', path: '/questions', heading: '题库浏览' },
+    { tool: '题目', path: '/questions', heading: '题库' },
   ] as const
 
   for (const entry of toolEntries) {

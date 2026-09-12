@@ -22,7 +22,7 @@ async function loginAs(page: Page, username: string, password: string) {
   await page.goto('/login')
   await page.getByPlaceholder('请输入用户名或邮箱').fill(username)
   await page.getByPlaceholder('请输入密码').fill(password)
-  const loginButton = page.getByRole('button', { name: '登录' })
+  const loginButton = page.getByRole('button', { name: '登录', exact: true })
   await expect(loginButton).toBeEnabled({ timeout: 15_000 })
   const loginResponse = page.waitForResponse(
     (response) => response.request().method() === 'POST' && response.url().endsWith('/api/auth/login'),
