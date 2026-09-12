@@ -45,6 +45,7 @@ CREATE_TABLE = re.compile(
 )
 
 OLD_PATHS = (
+    "project/changelog",
     "docs/PRD.md",
     "docs/ROADMAP.md",
     "docs/FUTURE.md",
@@ -88,10 +89,6 @@ CONTENT_RULES: dict[str, tuple[tuple[re.Pattern[str], str], ...]] = {
             re.compile(r"\b20\d{2}-\d{2}-\d{2}\b"),
             "stable rules must not contain a dated project fact",
         ),
-        (
-            re.compile(r"\bRound\s+\d+\b", re.IGNORECASE),
-            "round results belong in changelog or audits",
-        ),
     ),
     "docs/development/testing.md": (
         (
@@ -100,7 +97,7 @@ CONTENT_RULES: dict[str, tuple[tuple[re.Pattern[str], str], ...]] = {
         ),
         (
             re.compile(r"现有\s*\d+\s*个.*(?:测试|用例)|真实基线为"),
-            "test counts and measured baselines belong in status or changelog",
+            "current test counts and measured baselines belong in project status",
         ),
     ),
     "docs/product/prd.md": (
@@ -234,10 +231,7 @@ def check_docs_navigation(errors: list[str]) -> None:
 
 
 def check_old_paths(files: list[Path], errors: list[str]) -> None:
-    changelog_root = DOCS_ROOT / "project" / "changelog"
     for path in files:
-        if path.is_relative_to(changelog_root):
-            continue
         text = path.read_text(encoding="utf-8")
         for old_path in OLD_PATHS:
             if old_path in text:
@@ -270,42 +264,35 @@ def check_status_snapshot(path: Path, text: str, errors: list[str]) -> None:
             f"{relative}: current snapshot must not exceed {STATUS_MAX_CHARACTERS} characters; archive history"
         )
 
-    def omit_history_link(match: re.Match[str]) -> str:
-        link, _ = split_link(match.group(1))
-        target = (path.parent / link).resolve()
-        if target.suffix == ".md" and any(
-            target.is_relative_to((DOCS_ROOT / "project" / directory).resolve())
-            for directory in ("changelog", "audits")
-        ):
-            return ""
-        return match.group(0)
 
-    if NUMBERED_ROUND.search(MARKDOWN_LINK.sub(omit_history_link, text)):
-        errors.append(f"{relative}: numbered round records belong in history; use a history link for evidence")
+def check_retired_changelog(errors: list[str]) -> None:
+    retired_root = DOCS_ROOT / "project" / "changelog"
+    if retired_root.exists():
+        errors.append(
+            "docs/project/changelog: numbered development logs are retired; "
+            "use Git history and docs/project/history.md"
+        )
 
 
 def check_document_ownership(files: list[Path], errors: list[str]) -> None:
-    history_roots = (
-        DOCS_ROOT / "project" / "changelog",
-        DOCS_ROOT / "project" / "audits",
-    )
+    audit_root = DOCS_ROOT / "project" / "audits"
     for path in files:
         relative = path.relative_to(ROOT).as_posix()
         text = path.read_text(encoding="utf-8")
-        is_history = any(path.is_relative_to(root) for root in history_roots)
+        is_audit = path.is_relative_to(audit_root)
 
-        if not is_history and ".codex/skills" in text:
+        if not is_audit and ".codex/skills" in text:
             errors.append(
                 f"{relative}: contains obsolete repository Skill path .codex/skills"
             )
 
         if path == DOCS_ROOT / "project" / "status.md":
             check_status_snapshot(path, text, errors)
-        elif not is_history:
-            if re.search(r"\bRound\s+\d+\b", text, re.IGNORECASE):
-                errors.append(
-                    f"{relative}: numbered round facts belong in changelog or audits"
-                )
+        if not is_audit and NUMBERED_ROUND.search(text):
+            errors.append(
+                f"{relative}: numbered development rounds are retired; "
+                "use Git history or project milestones"
+            )
 
         for pattern, message in CONTENT_RULES.get(relative, ()):
             match = pattern.search(text)
@@ -386,6 +373,17 @@ def controller_endpoints() -> set[str]:
 
 
 def check_api_inventory(errors: list[str]) -> None:
+    controller_root = (
+        ROOT / "backend" / "app" / "src" / "main" / "java" / "com"
+        / "learnplatform" / "controller"
+    )
+    controller_files = list(controller_root.glob("*Controller.java"))
+    if not controller_root.is_dir() or not controller_files:
+        errors.append(
+            "backend/app controller inventory source is missing or empty: "
+            f"{controller_root.relative_to(ROOT)}"
+        )
+        return
     api_root = DOCS_ROOT / "reference" / "api"
     if not api_root.exists():
         errors.append("docs/reference/api: API documentation directory is missing")
@@ -409,6 +407,16 @@ def migration_tables() -> set[str]:
 
 
 def check_database_inventory(errors: list[str]) -> None:
+    migration_root = (
+        ROOT / "backend" / "app" / "src" / "main" / "resources" / "db" / "migration"
+    )
+    migration_files = list(migration_root.glob("V*.sql"))
+    if not migration_root.is_dir() or not migration_files:
+        errors.append(
+            "backend/app migration inventory source is missing or empty: "
+            f"{migration_root.relative_to(ROOT)}"
+        )
+        return
     database_root = DOCS_ROOT / "reference" / "database"
     if not database_root.exists():
         errors.append(
@@ -471,6 +479,7 @@ def main() -> int:
     files = markdown_files()
     check_links(files, errors)
     check_docs_navigation(errors)
+    check_retired_changelog(errors)
     check_old_paths(files, errors)
     check_document_ownership(files, errors)
     check_markdown_structure(files, errors)

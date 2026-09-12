@@ -83,7 +83,7 @@ class CommitMessageValidationTest(unittest.TestCase):
     def test_rejects_round_line_in_body(self) -> None:
         self.assert_invalid(
             "docs(agent): 收紧提交正文规则",
-            "Round 只属于 changelog",
+            "Round 编号不得写入",
             "Round 244：收紧提交正文规则\n- 固定正文排版",
         )
 

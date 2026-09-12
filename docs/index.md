@@ -13,7 +13,7 @@
 - 工程协作：[Git 规则](development/git-rules.md)与[审查标准](development/workflow.md#审查标准)
 - Docker 磁盘治理：[Docker 磁盘增长治理](development/docker-disk-governance.md)
 - 查看当前状态：[项目状态](project/status.md)
-- 查看历史：[开发日志索引](project/changelog/index.md)
+- 查看里程碑：[项目里程碑](project/history.md)
 - 查看历史体检：[工程审计归档](project/audits/index.md)
 - 准备演示：[演示流程](showcase/demo.md)
 - 准备项目介绍：[简历材料](showcase/resume.md)
@@ -27,7 +27,7 @@
 | `architecture/` | 系统结构和关键决策 | 记录稳定边界与重要取舍 |
 | `development/` | 开发、测试、Git、Agent 工作流 | 记录团队执行方式 |
 | `reference/` | API、数据库等精确契约 | 与真实代码和迁移保持一致 |
-| `project/` | 当前状态和历史日志 | 当前事实与历史记录严格分离 |
+| `project/` | 当前状态、项目里程碑和审计归档 | 当前事实与长期历史严格分离 |
 | `showcase/` | 演示、简历和截图 | 只能陈述真实已实现能力 |
 
 ## 权威来源
@@ -37,7 +37,7 @@
 | 当前阶段、最新验证、遗留问题、下一步 | [project/status.md](project/status.md) |
 | 长期阶段规划 | [product/roadmap.md](product/roadmap.md) |
 | 尚未完成的候选方向与进入条件 | [product/future.md](product/future.md) |
-| 每轮修改和验证历史 | [project/changelog/](project/changelog/index.md) |
+| 重大阶段与长期结果 | [project/history.md](project/history.md) |
 | 产品范围与稳定验收标准 | [product/prd.md](product/prd.md) |
 | 模块入口、依赖方向与职责边界 | [architecture/overview.md](architecture/overview.md)及对应前后端文档 |
 | 跨模块处理过程 | [architecture/data-flow.md](architecture/data-flow.md) |
@@ -61,14 +61,15 @@ roadmap 引用有效候选。不能因为某个流程涉及多个领域，就在
 修改文档、状态或协作规范前，先确定本次事实归属；仅更新事实变化的权威文档，其他位置通过链接引用。
 
 - README 承担项目入口；README 和 roadmap 不复制 status 中的动态验证与当前待办。
-- 功能或规则完成后更新当前月份 changelog；阶段、接口、数据库或架构变化时更新对应权威文档。
-  动态状态变化时才更新 status，不机械同步所有文档；只读问答、审查和调研不强行产生记录。
+- 功能或规则变化时只更新受影响的接口、数据库、架构、使用或协作文档；普通实现过程由 Git 与 CI 保存。
+  重大阶段或长期产品结果才更新里程碑；动态状态变化时更新 status，不机械同步所有文档。
 - status 保持当前快照：验证按类别替换为最近结果，注明适用范围与后续未重验改动；不按轮次追加实现摘要。
-  已解决问题和已退出阶段的过程留在 changelog，status 仅通过历史链接保留必要证据。
+  已解决问题不继续留在 status；只有仍影响判断的阶段结果进入里程碑，重要取舍进入 ADR。
 - 简历、演示与能力介绍只能陈述真实实现及其限制；候选方向实现后从 future 移出，当前状态与历史分开记录。
 
 写入长期规则前，必须确认它会反复影响后续任务、不是已有规则的重复，且缺失时确实可能导致错误决策。
-一次故障、工具版本、测试数量或临时兼容办法不升级为长期规则：当前事实写入 status，单次事实写入 changelog。
+一次故障、工具版本、测试数量或临时兼容办法不升级为长期规则：仍影响当前判断的事实写入 status，
+单次过程与验证留在提交、CI 或任务记录中。
 能够由代码、配置或脚本强制的约束优先在对应工具中维护，文档只说明必要的使用边界与入口。
 迁移最新版本、完整类清单等机械信息直接查源码；文档保留重要语义、约束和取舍，不维护第二份手工清单。
 
@@ -79,7 +80,8 @@ roadmap 引用有效候选。不能因为某个流程涉及多个领域，就在
 ### 文档验证
 
 - 修改后运行 `python3 scripts/check-docs.py`，检查链接、导航、结构、职责、API、数据库清单与仓库 Skills。
-- 检查器还限制 status 的内容预算和轮次记录；通过检查不代表历史验证仍适用于当前代码。
+- 检查器还限制 status 的内容预算，禁止恢复逐轮开发日志，并拒绝 API 或数据库来源目录空扫描；
+  通过检查不代表历史验证仍适用于当前代码。
 - 纯文档与机械重命名无需制造失败测试，按影响核对链接、结构和语义一致性。
   仅调整规则措辞或路由时，用代表性任务检查读取路径、适用范围和规则归属，不为每句话增加测试。
 - 验证范围、未执行项与提交状态据实报告；验证脚本本身发生行为变化时，遵循[测试策略](development/testing.md)。
@@ -93,7 +95,7 @@ roadmap 引用有效候选。不能因为某个流程涉及多个领域，就在
 - 升级上游包前确认工作区可隔离，执行 `npm install -g ui-ux-pro-max-cli@latest` 和
   `uipro init --ai codex --force`，检查生成差异及自有 Skill 是否被覆盖；不得将升级与无关任务混合。
 - 修改自有 Skill 后执行系统 `skill-creator` 的 `quick_validate.py`，核对描述、引用与适用范围；
-  安装或升级后运行 `python3 scripts/check-docs.py`。版本和单次验证记入 changelog。
+  安装或升级后运行 `python3 scripts/check-docs.py`。长期来源与升级边界保留在本节，单次版本和验证由 Git 与 CI 保存。
 - 文档门禁检查已安装 Skill 的发现元数据及自有文档链接，不强制固定安装清单或 `agents/openai.yaml`。
   新增上游包时注明来源，并在检查器的上游清单登记，以免按项目文档格式重写上游内容。
 

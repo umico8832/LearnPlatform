@@ -85,4 +85,4 @@ proxy_cache off;
 python3 scripts/check-docs.py
 ```
 
-检查器会报告坏链接、旧路径、标题层级、无效 JSON、未记录 Controller 端点、未记录数据库表和 Skill 配置问题。历史 changelog 中的旧文件名是明确例外。
+检查器会报告坏链接、旧路径、标题层级、无效 JSON、未记录 Controller 端点、未记录数据库表和 Skill 配置问题。

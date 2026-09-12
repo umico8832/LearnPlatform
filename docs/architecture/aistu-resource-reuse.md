@@ -35,6 +35,5 @@ LearnPlatform 的 Phase 23 使用 AiStu 已有的 408 数据结构知识、Tutor
 
 ## 迁移证据
 
-当前内容与课件以[数据库迁移](../../backend/app/src/main/resources/db/migration/)和
-[前端架构](frontend.md)为准；已有批次范围与受限课件说明保留在
-[资源迁移历史](../project/changelog/2026-09.md#aistu-资源迁移历史快照)，不作为下一批开发任务。
+当前内容与课件以[数据库迁移](../../backend/app/src/main/resources/db/migration/)、
+[前端架构](frontend.md)和运行时审查状态为准；迁移文件中的内容清单不构成下一批开发任务。

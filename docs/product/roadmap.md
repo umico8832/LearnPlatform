@@ -1,6 +1,7 @@
 # 产品路线图
 
-本文件记录长期阶段、目标、状态和未完成事项。当前阶段、最新验证和下一步执行以[项目状态](../project/status.md)为准；每轮实现历史见[开发日志](../project/changelog/index.md)。
+本文件记录长期阶段、目标、状态和未完成事项。当前阶段、最新验证和下一步执行以
+[项目状态](../project/status.md)为准；重大阶段结果见[项目里程碑](../project/history.md)。
 
 ## 阶段总览
 
@@ -269,7 +270,7 @@ Exit Criteria 全部满足后 Phase 23 必须结束，不因仍可继续优化�
 - 一级导航收敛为「我的课程 + 课程库」，登录默认进入我的课程，旧 Dashboard 首页删除；
 - 课程空间 / Tutor / 练习 / 复习 / 考试页面统一视觉，学习页使用 FocusLayout；
 - 删除学习报告、学习路径、知识图谱、AI 复习建议四个旧页面及死代码；
-- README 与展示文档重写，完成真实环境验收；证据见[阶段退出记录](../project/changelog/2026-08.md#round-248phase-24-阶段退出真实-e2e-全量回归)。
+- README 与展示文档重写，并完成当时范围内的真实环境验收；当前验证适用范围见[项目状态](../project/status.md)。
 
 ### Stop / Transition Condition
 

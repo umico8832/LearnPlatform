@@ -139,7 +139,7 @@ LearnPlatform/
 - [开发工作流](docs/development/workflow.md)
 - [测试策略](docs/development/testing.md)
 - [项目状态](docs/project/status.md)
-- [开发日志](docs/project/changelog/index.md)
+- [项目里程碑](docs/project/history.md)
 - [演示流程](docs/showcase/demo.md)
 - [简历材料](docs/showcase/resume.md)
 

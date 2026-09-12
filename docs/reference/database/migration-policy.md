@@ -1,7 +1,8 @@
 # Flyway 迁移策略
 
 迁移文件与版本顺序以[迁移目录](../../../backend/app/src/main/resources/db/migration/)为准。
-新增迁移前核对该目录及目标表的既有 SQL；变更背景按需查阅[开发日志](../../project/changelog/index.md)。
+新增迁移前核对该目录及目标表的既有 SQL；重大取舍按需查阅[架构决策](../../architecture/decisions/index.md)，
+具体变更背景由 Git 历史保存。
 
 ## 编写规则
 

@@ -6,4 +6,4 @@
 
 - [2026-06-25 工程体检](2026-06-25-engineering-review.md)
 
-当前状态见[项目状态](../status.md)，每轮变更见[开发日志](../changelog/index.md)。
+当前状态见[项目状态](../status.md)，重大阶段结果见[项目里程碑](../history.md)。

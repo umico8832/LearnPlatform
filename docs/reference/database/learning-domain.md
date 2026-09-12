@@ -28,8 +28,8 @@
 其中的 `visualization` 只保存已注册课件的受限场景参数，不保存脚本、动态组件或用户运行态。
 路径用稳定 `contentKey` 引用内容，访问边界与参数
 定义见[课程与 Tutor API](../api/learning-content.md#tutor-会话)及[受限课件](../api/learning-content.md#受限课件)。
-教学批次与算法范围见既有[迁移历史](../../project/changelog/2026-09.md#aistu-资源迁移历史快照)，
-数据库文档不重复维护课程内容清单。
+实际迁入的教学内容与算法范围以[数据库迁移](../../../backend/app/src/main/resources/db/migration/)和
+当前 `tutor_content` 数据为准，数据库文档不重复维护课程内容清单。
 
 ### 课程事实与 Tutor 快照
 

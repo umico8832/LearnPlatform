@@ -122,7 +122,7 @@ def validate_body_layout(body: str) -> list[str]:
             continue
 
         if ROUND_LINE.fullmatch(stripped):
-            failures.append("Round 只属于 changelog，不得写入 Commit Message 正文")
+            failures.append("已废弃的 Round 编号不得写入 Commit Message 正文")
             continue
 
         if stripped in SECTION_HEADERS:
