@@ -4,7 +4,7 @@
  * 1. 页面标题设置
  * 2. 已登录用户访问登录/注册页时重定向到「我的课程」
  * 3. 未登录用户访问需认证页面时重定向到登录页
- * 4. 未登录用户访问公开页面（登录/注册）不重定向
+ * 4. 首页与认证页保持公开
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
@@ -42,7 +42,12 @@ async function createTestRouter() {
         component: { template: '<div/>' },
         meta: { requiresAuth: false, title: '注册' },
       },
-      { path: '/', redirect: '/my-courses', meta: { requiresAuth: true } },
+      {
+        path: '/',
+        name: 'Home',
+        component: { template: '<div/>' },
+        meta: { requiresAuth: false, title: '首页' },
+      },
       {
         path: '/my-courses',
         name: 'MyCourses',
@@ -110,15 +115,23 @@ describe('路由守卫', () => {
       expect(router.currentRoute.value.path).toBe('/login')
       expect(router.currentRoute.value.query.redirect).toBe('/practice')
     })
+  })
 
-    it('访问根路径也应重定向到登录页', async () => {
+  describe('首页', () => {
+    it('未登录用户可以访问根路径', async () => {
       mockIsAuth = false
       const router = await createTestRouter()
       await router.push('/')
       await router.isReady()
-      expect(router.currentRoute.value.path).toBe('/login')
-      // 根路径重定向到 /my-courses 后再被守卫拦截，携带的 redirect 为最终目标
-      expect(router.currentRoute.value.query.redirect).toBe('/my-courses')
+      expect(router.currentRoute.value.path).toBe('/')
+    })
+
+    it('已登录用户也可以停留在根路径', async () => {
+      mockIsAuth = true
+      const router = await createTestRouter()
+      await router.push('/')
+      await router.isReady()
+      expect(router.currentRoute.value.path).toBe('/')
     })
   })
 

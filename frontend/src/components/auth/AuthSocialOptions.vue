@@ -26,8 +26,11 @@ import googleIcon from '@/assets/auth/google.png'
 import facebookIcon from '@/assets/auth/facebook.svg'
 import appleIcon from '@/assets/auth/apple.svg'
 
+const props = withDefaults(defineProps<{ preview?: boolean }>(), {
+  preview: false,
+})
 const route = useRoute()
-const googleEnabled = ref(false)
+const googleEnabled = ref(props.preview)
 const providers = computed(() => [
   { id: 'google', name: 'Google', icon: googleIcon, enabled: googleEnabled.value },
   { id: 'facebook', name: 'Facebook', icon: facebookIcon, enabled: false },
@@ -35,6 +38,7 @@ const providers = computed(() => [
 ])
 
 onMounted(async () => {
+  if (props.preview) return
   try {
     const response = await getOAuthProviders()
     googleEnabled.value = response.data.google
@@ -82,7 +86,7 @@ function startGoogleLogin() {
 .auth-social-buttons button {
   display: grid;
   place-items: center;
-  height: var(--lp-space-12);
+  height: calc(var(--lp-space-12) + var(--lp-space-2));
   padding: var(--lp-space-3);
   border: 1px solid var(--lp-ink-600);
   border-radius: var(--lp-radius-lg);
@@ -99,17 +103,22 @@ function startGoogleLogin() {
     transform 160ms ease;
 }
 .auth-social-buttons button.is-enabled:hover {
-  border-color: var(--lp-brand-500);
+  border-color: var(--lp-primary);
   box-shadow: var(--lp-shadow-sm);
   transform: translateY(-1px);
 }
 .auth-social-buttons button.is-enabled:focus-visible {
-  outline: 2px solid var(--lp-brand-500);
+  outline: 2px solid var(--lp-primary);
   outline-offset: 2px;
 }
 .auth-social-buttons img {
   display: block;
-  width: var(--lp-space-6);
-  height: var(--lp-space-6);
+  width: calc(var(--lp-space-6) + var(--lp-space-1));
+  height: calc(var(--lp-space-6) + var(--lp-space-1));
+}
+@media (min-width: 1280px) {
+  .auth-social-divider {
+    font-size: var(--lp-text-base);
+  }
 }
 </style>

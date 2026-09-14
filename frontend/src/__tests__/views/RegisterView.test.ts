@@ -97,6 +97,7 @@ describe('RegisterView', () => {
     expect(w.text()).toContain('账户信息 · 1/3')
     expect(w.html()).toContain('3-50 个字符')
     expect(w.html()).toContain('placeholder="邮箱"')
+    expect(w.text()).toContain('其他登录方式')
   })
   it('requires Turnstile before sending registration email', async () => {
     const w = mountRegister()
@@ -106,6 +107,9 @@ describe('RegisterView', () => {
     await w.find('form').trigger('submit')
     await flushPromises()
     expect(mockVerify).not.toHaveBeenCalled()
+    expect(w.text()).toContain('验证码将发送至 learner@example.com')
+    expect(w.text()).not.toContain('其他登录方式')
+    expect(w.text()).not.toContain('已有账号？')
     const send = w.findAll('button').find((b) => b.text().includes('获取验证码'))
     await send?.trigger('click')
     await flushPromises()
@@ -133,16 +137,15 @@ describe('RegisterView', () => {
     await advanceToPassword(w)
     expect(w.text()).toContain('设置密码 · 3/3')
     const inputs = w.findAll('input')
+    expect(inputs).toHaveLength(2)
     await inputs[0].setValue('Password1!')
     await inputs[1].setValue('Password1!')
-    await inputs[2].setValue('学习者')
     await w.find('form').trigger('submit')
     await flushPromises()
     expect(mockRegister).toHaveBeenCalledWith({
       username: 'newlearner',
       email: 'learner@example.com',
       password: 'Password1!',
-      nickname: '学习者',
       verificationTicket: 'ticket-1',
     })
     expect(mockPush).toHaveBeenCalledWith('/login')

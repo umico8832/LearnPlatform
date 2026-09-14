@@ -1,13 +1,17 @@
 <template>
-  <AuthLayout class="auth-enter">
-    <div class="oauth-result" role="status" aria-live="polite">
-      <el-icon v-if="loading" class="is-loading" :size="32"><Loading /></el-icon>
-      <el-icon v-else :size="32"><WarningFilled /></el-icon>
+  <AuthLayout class="auth-enter" :show-symbol="false">
+    <div class="status-panel oauth-result" role="status" aria-live="polite">
+      <div
+        class="status-panel__icon"
+        :class="loading ? 'status-panel__icon--loading' : 'status-panel__icon--error'"
+        aria-hidden="true"
+      >
+        <el-icon v-if="loading" class="is-loading"><Loading /></el-icon>
+        <el-icon v-else><WarningFilled /></el-icon>
+      </div>
       <h1 id="auth-title">{{ loading ? '正在登录' : '登录未完成' }}</h1>
       <p>{{ message }}</p>
-      <el-button v-if="!loading" type="primary" class="auth-primary" @click="router.replace('/login')">
-        返回登录
-      </el-button>
+      <el-button v-if="!loading" class="auth-secondary" @click="router.replace('/login')"> 返回登录 </el-button>
     </div>
   </AuthLayout>
 </template>
@@ -19,13 +23,15 @@ import { Loading, WarningFilled } from '@element-plus/icons-vue'
 import { exchangeOAuthTicket } from '@/api/auth'
 import AuthLayout from '@/components/auth/AuthLayout.vue'
 import { useUserStore } from '@/stores/user'
+import { getAuthPreviewState } from '@/utils/authPreview'
 import '@/assets/styles/auth.css'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
-const loading = ref(true)
-const message = ref('正在确认 Google 账号…')
+const previewState = getAuthPreviewState(route.query['auth-preview'], ['loading', 'error'])
+const loading = ref(previewState === undefined || previewState === 'loading')
+const message = ref(previewState === 'error' ? 'Google 登录未完成，请重新尝试。' : '正在确认 Google 账号…')
 
 const errorMessages: Record<string, string> = {
   access_denied: '你取消了 Google 授权。',
@@ -38,6 +44,7 @@ const errorMessages: Record<string, string> = {
 }
 
 onMounted(async () => {
+  if (previewState) return
   const error = typeof route.query.error === 'string' ? route.query.error : ''
   const ticket = new URLSearchParams(route.hash.replace(/^#/, '')).get('ticket')
   window.history.replaceState(window.history.state, '', route.path)
@@ -65,20 +72,6 @@ onMounted(async () => {
 
 <style scoped>
 .oauth-result {
-  display: grid;
-  justify-items: center;
-  gap: var(--lp-space-4);
-  padding: var(--lp-space-8) 0 var(--lp-space-4);
-  text-align: center;
-}
-.oauth-result h1,
-.oauth-result p {
-  margin: 0;
-}
-.oauth-result p {
-  color: var(--lp-text-secondary);
-}
-.oauth-result .auth-primary {
-  margin-top: var(--lp-space-4);
+  padding-bottom: var(--lp-space-1);
 }
 </style>

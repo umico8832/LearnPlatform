@@ -3,6 +3,16 @@ import type { RouteRecordRaw } from 'vue-router'
 import { isAuthenticated } from '@/utils/auth'
 
 const routes: RouteRecordRaw[] = [
+  ...(import.meta.env.DEV
+    ? [
+        {
+          path: '/dev/auth-preview',
+          name: 'AuthPreview',
+          component: () => import('@/views/dev/AuthPreviewView.vue'),
+          meta: { requiresAuth: false, title: '认证页面预览' },
+        },
+      ]
+    : []),
   {
     path: '/login',
     name: 'Login',
@@ -35,8 +45,9 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/',
-    redirect: '/my-courses',
-    meta: { requiresAuth: true },
+    name: 'Home',
+    component: () => import('@/views/home/HomeView.vue'),
+    meta: { requiresAuth: false, title: '难懂的知识，也可以轻松学会' },
   },
   {
     path: '/',
@@ -190,9 +201,10 @@ router.beforeEach(async (to) => {
   }
 
   const loggedIn = isAuthenticated()
+  const isAuthPreview = import.meta.env.DEV && typeof to.query['auth-preview'] === 'string'
 
   // 已登录用户访问登录/注册页，跳转我的课程
-  if (loggedIn && ['/login', '/register', '/forgot-password', '/reset-password'].includes(to.path)) {
+  if (loggedIn && !isAuthPreview && ['/login', '/register', '/forgot-password', '/reset-password'].includes(to.path)) {
     return { path: '/my-courses' }
   }
 

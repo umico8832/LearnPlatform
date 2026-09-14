@@ -102,6 +102,23 @@
   --lp-accent: var(--lp-gold-600);
   --lp-accent-soft: var(--lp-gold-50);
 
+  /* Homepage · editorial learning */
+  --lp-home-ink: #181817;
+  --lp-home-paper: #f4f1ea;
+  --lp-home-surface: #fbfaf7;
+  --lp-home-sand: #e9e4db;
+  --lp-home-blue: #3154d8;
+  --lp-home-blue-deep: #263f9e;
+  --lp-home-blue-soft: #dce3fa;
+  --lp-home-blue-wash: rgba(49, 84, 216, 0.06);
+  --lp-home-ink-muted: rgba(24, 24, 23, 0.66);
+  --lp-home-ink-faint: rgba(24, 24, 23, 0.38);
+  --lp-home-line: rgba(24, 24, 23, 0.14);
+  --lp-home-line-strong: rgba(24, 24, 23, 0.3);
+  --lp-home-grid-line: rgba(24, 24, 23, 0.035);
+  --lp-home-dark-muted: rgba(244, 241, 234, 0.66);
+  --lp-home-dark-line: rgba(244, 241, 234, 0.18);
+
   --lp-link: var(--lp-blue-700);
   --lp-link-hover: var(--lp-blue-800);
 
@@ -127,6 +144,10 @@
   --lp-text-3xl: 24px;
   --lp-text-4xl: 28px;
   --lp-text-5xl: 34px;
+  --lp-text-display: 50px;
+  --lp-text-hero: 64px;
+  --lp-text-index: 96px;
+  --lp-text-closing: 58px;
 
   --lp-leading-tight: 1.25;
   --lp-leading-snug: 1.4;
@@ -158,6 +179,7 @@
   --lp-space-12: 48px;
   --lp-space-16: 64px;
   --lp-space-20: 80px;
+  --lp-section-space: 120px;
 
   /* ----------------------------------------------------------------
    * Radius
@@ -205,9 +227,9 @@
   /* ----------------------------------------------------------------
    * Auth · 认证页面
    * ---------------------------------------------------------------- */
-  --lp-auth-card-width: 448px;
+  --lp-auth-card-width: 540px;
   --lp-auth-card-radius: 24px;
-  --lp-auth-symbol-size: 64px;
+  --lp-auth-symbol-size: 72px;
   --lp-auth-surface-start: #f6fbff;
   --lp-auth-border: #dbeafe;
   --lp-auth-input-bg: #f8f9fb;
@@ -220,11 +242,42 @@
    * Layout
    * ---------------------------------------------------------------- */
   --lp-container-max: 1200px;
+  --lp-container-wide: 1320px;
   --lp-container-narrow: 860px;
   --lp-reading-measure: 68ch;
   --lp-sidebar-width: 248px;
   --lp-header-height: 64px;
   --lp-content-gutter: 32px;
+  --lp-home-header-height: 56px;
+  --lp-home-button-height: 48px;
+  --lp-home-hero-height-refined: 900px;
+  --lp-home-studio-height: 820px;
+  --lp-home-closing-height-refined: 620px;
+  --lp-home-principle-row: 190px;
+  --lp-home-principle-number: 88px;
+  --lp-home-principle-visual: 180px;
+  --lp-home-studio-copy: 360px;
+  --lp-home-option-height: 72px;
+  --lp-home-lesson-response: 360px;
+  --lp-home-venn-column: 260px;
+  --lp-home-venn-height-refined: 240px;
+  --lp-home-venn-size-refined: 176px;
+  --lp-home-venn-mobile: 280px;
+  --lp-home-loop-row: 118px;
+  --lp-home-loop-number: 88px;
+  --lp-home-demo-mark: 360px;
+  --lp-home-map-size: 760px;
+  --lp-home-map-size-tablet: 620px;
+  --lp-home-grid-size-refined: 64px;
+  --lp-radius-home-refined: 20px;
+  --lp-home-hero-display-refined: clamp(88px, 10vw, 150px);
+  --lp-home-hero-display-tablet: clamp(78px, 12vw, 116px);
+  --lp-home-hero-display-mobile-refined: clamp(52px, 15vw, 78px);
+  --lp-home-section-display-refined: clamp(50px, 5.5vw, 76px);
+  --lp-home-closing-display-refined: clamp(58px, 7vw, 96px);
+  --lp-home-title-measure-refined: 8.5em;
+  --lp-home-display-leading-refined: 0.96;
+  --lp-home-display-tracking-refined: -0.04em;
 
   /* ----------------------------------------------------------------
    * Z-index 层级

@@ -14,6 +14,8 @@ const users = {
   admin: { username: 'admin', password: 'admin123' },
 }
 
+const publicPages = [['00-home', '/', '难懂的知识', false]]
+
 /** 学习端核心展示页面：登录默认进入「我的课程」。 */
 const learnerPages = [
   ['01-my-courses', '/my-courses', '我的课程'],
@@ -43,7 +45,7 @@ async function loginAs(page, user) {
   await page.waitForURL('**/my-courses')
 }
 
-async function capturePage(page, browserName, [name, url, heading]) {
+async function capturePage(page, browserName, [name, url, heading, exactHeading = true]) {
   const failedApiResponses = []
   const responseHandler = (response) => {
     const responseUrl = response.url()
@@ -55,11 +57,7 @@ async function capturePage(page, browserName, [name, url, heading]) {
   page.on('response', responseHandler)
   await page.goto(url)
   // 课程详情/课程空间标题可能以 h1 呈现；课程空间使用课程名作为标题。
-  await page
-    .getByRole('main')
-    .getByText(heading, { exact: true })
-    .first()
-    .waitFor({ timeout: 15000 })
+  await page.getByRole('main').getByText(heading, { exact: exactHeading }).first().waitFor({ timeout: 15000 })
   await page.waitForLoadState('networkidle').catch(() => undefined)
   await page.waitForTimeout(500)
   page.off('response', responseHandler)
@@ -84,7 +82,9 @@ async function captureGroup(browser, browserName, pages, user) {
     deviceScaleFactor: 1,
   })
   const page = await context.newPage()
-  await loginAs(page, user)
+  if (user) {
+    await loginAs(page, user)
+  }
 
   for (const item of pages) {
     await capturePage(page, browserName, item)
@@ -98,6 +98,7 @@ async function main() {
 
   const browser = await chromium.launch()
   try {
+    await captureGroup(browser, 'desktop', publicPages)
     await captureGroup(browser, 'desktop', learnerPages, users.learner)
     await captureGroup(browser, 'desktop', adminPages, users.admin)
   } finally {

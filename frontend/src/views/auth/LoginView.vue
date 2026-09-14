@@ -2,7 +2,6 @@
   <AuthLayout class="auth-enter">
     <div class="auth-card-header">
       <h1 id="auth-title">欢迎回来</h1>
-      <p>使用用户名或邮箱登录你的账号</p>
     </div>
     <el-form
       ref="formRef"
@@ -33,7 +32,7 @@
         ></el-form-item
       >
     </el-form>
-    <AuthSocialOptions />
+    <AuthSocialOptions :preview="previewMode" />
     <template #footer>
       <div class="auth-footer">还没有账号？ <router-link to="/register">免费注册</router-link></div>
     </template>
@@ -52,18 +51,20 @@ import AuthSocialOptions from '@/components/auth/AuthSocialOptions.vue'
 import TurnstileDialog from '@/components/auth/TurnstileDialog.vue'
 import { login } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
+import { getAuthPreviewState } from '@/utils/authPreview'
 import '@/assets/styles/auth.css'
 
 const router = useRouter(),
   route = useRoute(),
   userStore = useUserStore()
+const previewMode = getAuthPreviewState(route.query['auth-preview'], ['default']) !== undefined
 const formRef = ref<FormInstance>(),
   verificationRef = ref<InstanceType<typeof TurnstileDialog>>(),
   loading = ref(false)
 const form = reactive({ account: '', password: '' })
 const rules: FormRules = {
-  account: [{ required: true, message: '请输入用户名或邮箱', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  account: [{ required: true, message: '用户名或邮箱不能为空', trigger: 'blur' }],
+  password: [{ required: true, message: '密码不能为空', trigger: 'blur' }],
 }
 async function handleLogin() {
   if (loading.value) return

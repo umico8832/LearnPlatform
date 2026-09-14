@@ -8,6 +8,12 @@ import router from '@/router'
 const TOOL_ROUTE_NAMES = ['Practice', 'Review', 'WrongQuestions', 'ExamList', 'QuestionList'] as const
 
 describe('课程空间学习工具路由名', () => {
+  it('Home 是公开的首页路由', () => {
+    const resolved = router.resolve({ name: 'Home' })
+    expect(resolved.path).toBe('/')
+    expect(resolved.meta.requiresAuth).toBe(false)
+  })
+
   it.each(TOOL_ROUTE_NAMES)('%s 是已注册的命名路由', (name) => {
     const resolved = router.resolve({ name })
     expect(resolved.name).toBe(name)

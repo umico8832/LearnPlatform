@@ -4,7 +4,7 @@
 
     <aside class="app-sidebar" :class="{ 'mobile-open': isMobile && sidebarOpen }">
       <div class="sidebar-inner">
-        <router-link to="/my-courses" class="brand" aria-label="LearnPlatform 首页">
+        <router-link to="/my-courses" class="brand" aria-label="LearnPlatform 我的课程">
           <span class="brand-mark" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
               <path

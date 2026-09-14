@@ -29,8 +29,10 @@ frontend/admin/   # 独立管理端 HTML 入口
 
 ## 信息架构
 
-学习端以「我的课程 + 课程库」为一级入口，登录默认进入「我的课程」：
+学习端公开首页（`/`）负责产品定位与真实教学示例，不依赖受保护业务接口。登录后的学习工作台
+仍以「我的课程 + 课程库」为一级入口，认证成功默认进入「我的课程」：
 
+- 公开入口：首页（`/`）、登录、注册与账户恢复页面；已登录用户也可停留在首页，再由主要操作返回课程。
 - 一级导航：我的课程（`/my-courses`）、课程库（`/courses`）。
 - 练习、错题、复习、测评、真题等能力优先进入具体课程内部（课程空间 `CourseOverview`），
   但保留全局路由（`/practice`、`/wrong-questions`、`/review`、`/exams`、`/questions` 等）。
@@ -42,7 +44,8 @@ frontend/admin/   # 独立管理端 HTML 入口
 ## 视觉与设计系统
 
 - `assets/styles/tokens.css` 是唯一视觉来源：颜色、字体、间距、圆角、边框、阴影、动效、布局、
-  z-index 均以 CSS 变量定义（Quiet Digital Textbook 方向）。
+  z-index 均以 CSS 变量定义。应用工作区采用 Quiet Digital Textbook，公开首页使用高对比的编辑式视觉子集，
+  两者继续共享语义变量、交互状态与无障碍约束。
 - `components/ui/` 提供全局注册的基础组件（`LpPageHeader`、`LpSectionHeading`、`LpStat`、
   `LpEmptyState`、`LpSkeleton`、`LpDivider`、`LpSignal`、`LpProgress`、`LpKicker`），
   页面与组件不得随手定义裸色值/裸尺寸。

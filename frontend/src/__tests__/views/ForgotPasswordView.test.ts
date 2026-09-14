@@ -13,9 +13,13 @@ vi.mock('@/api/auth', () => ({
   forgotPassword: (...args: unknown[]) => mockForgotPassword(...args),
 }))
 
+vi.mock('vue-router', () => ({
+  useRoute: () => ({ query: {} }),
+}))
+
 const stubs = {
   AuthLayout: { template: '<main><slot /></main>' },
-  'router-link': { template: '<a><slot /></a>' },
+  'router-link': { template: '<a :href="to"><slot /></a>', props: ['to'] },
   'el-form': { template: '<form><slot /></form>', methods: { validate: () => mockValidate() } },
   'el-form-item': { template: '<label><slot /></label>' },
   'el-input': {
@@ -47,7 +51,21 @@ describe('ForgotPasswordView', () => {
     await flushPromises()
 
     expect(mockForgotPassword).toHaveBeenCalledWith('learner@example.com', 'turnstile-ok')
-    expect(wrapper.text()).toContain('如果该邮箱已注册')
+    expect(wrapper.text()).toContain('重置链接 30 分钟内有效。没有收到邮件？')
+    expect(wrapper.get('.recovery-resend-link').text()).toBe('重新发送')
+
+    await wrapper.get('.recovery-resend-link').trigger('click')
+    await flushPromises()
+    expect(mockForgotPassword).toHaveBeenCalledTimes(2)
+    expect(mockForgotPassword).toHaveBeenLastCalledWith('learner@example.com', 'turnstile-ok')
+    expect(wrapper.get('.recovery-resend-link').text()).toBe('再次发送')
+
+    await wrapper.get('.recovery-resend-link').trigger('click')
+    await flushPromises()
+    expect(mockForgotPassword).toHaveBeenCalledTimes(3)
+    expect(wrapper.find('.recovery-resend-link').exists()).toBe(false)
+    expect(wrapper.get('.recovery-support-link').text()).toBe('联系支持')
+    expect(wrapper.get('.recovery-support-link').attributes('href')).toBe('/')
   })
 
   it('does not call the API when validation fails', async () => {
