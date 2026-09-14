@@ -10,9 +10,10 @@ Create usable, coherent learning and administration interfaces that fit the exis
 ## Read first
 
 1. Inspect the target Vue component and nearby shared styles.
-2. Read [frontend architecture](../../../docs/architecture/frontend.md) for frontend boundaries and current design tokens.
-3. Read [ui-ux-pro-max](../ui-ux-pro-max/SKILL.md) when the task needs UX, accessibility, layout, interaction, typography, color, motion, or chart guidance.
-4. Reuse existing global CSS variables, Element Plus components, ECharts patterns, icons, and page conventions.
+2. Read [current project status](../../../docs/project/status.md) for the active viewport and validation scope.
+3. Read [frontend architecture](../../../docs/architecture/frontend.md) for frontend boundaries and current design tokens.
+4. Read [ui-ux-pro-max](../ui-ux-pro-max/SKILL.md) when the task needs UX, accessibility, layout, interaction, typography, color, motion, or chart guidance.
+5. Reuse existing global CSS variables, Element Plus components, ECharts patterns, icons, and page conventions.
 
 Do not use `.agents/skills/ui-styling/SKILL.md` as an implementation guide unless the user explicitly requests shadcn/ui, Radix UI, or Tailwind.
 
@@ -30,7 +31,7 @@ Do not use `.agents/skills/ui-styling/SKILL.md` as an implementation guide unles
 - Prefer existing tokens and semantic variables over new raw colors.
 - Reuse established spacing, radius, surface, typography, table, form, dialog, empty-state, and responsive patterns.
 - Keep one clear primary action per page or section.
-- Add loading, empty, error, disabled, hover, focus, and mobile states when relevant.
+- Add loading, empty, error, disabled, hover, and focus states when relevant. Add mobile states only when the active viewport scope includes them or the user explicitly requests them.
 - Do not replace working real-data flows with mocks.
 - Do not change API contracts or business rules for visual convenience.
 - Avoid decorative motion that delays or obscures learning tasks.
@@ -41,7 +42,7 @@ Use [frontend-flow-test](../frontend-flow-test/SKILL.md) when browser verificati
 
 At minimum verify:
 
-- desktop and mobile layout;
+- the viewport range declared in the current project status, without broadening verification to excluded device classes;
 - keyboard-visible focus for changed interactive controls;
 - loading, empty, error, and populated states that the change touches;
 - no horizontal overflow or obscured fixed content;
