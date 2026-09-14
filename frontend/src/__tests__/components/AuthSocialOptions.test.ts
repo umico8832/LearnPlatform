@@ -39,4 +39,15 @@ describe('AuthSocialOptions', () => {
 
     expect(wrapper.findAll('button').every((button) => button.attributes('disabled') !== undefined)).toBe(true)
   })
+
+  it('keeps provider buttons disabled when discovery fails', async () => {
+    mockGetOAuthProviders.mockRejectedValue(new Error('Unavailable'))
+    const wrapper = mount(AuthSocialOptions)
+
+    await flushPromises()
+
+    expect(wrapper.findAll('button')).toHaveLength(3)
+    expect(wrapper.findAll('button').every((button) => button.attributes('disabled') !== undefined)).toBe(true)
+    wrapper.unmount()
+  })
 })
