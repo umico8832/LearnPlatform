@@ -9,11 +9,13 @@ import com.learnplatform.mapper.UserMapper;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -48,6 +50,24 @@ class PasswordResetServiceTest {
 
         verify(resetMapper, never()).insert(any());
         verify(mailService, never()).sendPasswordResetLink(any(), any());
+    }
+
+    @Test
+    void resetLinkExpiresAfterThirtyMinutes() {
+        User user = new User();
+        user.setId(7L);
+        user.setEmail("learner@example.com");
+        when(userMapper.selectOne(any())).thenReturn(user);
+        when(resetMapper.selectCount(any())).thenReturn(0L);
+        LocalDateTime beforeRequest = LocalDateTime.now();
+
+        service.requestReset("learner@example.com", "127.0.0.1");
+
+        ArgumentCaptor<PasswordResetToken> tokenCaptor = ArgumentCaptor.forClass(PasswordResetToken.class);
+        verify(resetMapper).insert(tokenCaptor.capture());
+        LocalDateTime expiresAt = tokenCaptor.getValue().getExpiresAt();
+        assertTrue(!expiresAt.isBefore(beforeRequest.plusMinutes(30)));
+        assertTrue(!expiresAt.isAfter(LocalDateTime.now().plusMinutes(30)));
     }
 
     @Test
