@@ -12,8 +12,6 @@ import com.learnplatform.mapper.PracticeRecordMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,8 +19,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class ReviewAnswerRecordingService {
-
-    private static final Logger log = LoggerFactory.getLogger(ReviewAnswerRecordingService.class);
 
     private final QuestionMapper questionMapper;
     private final QuestionOptionMapper questionOptionMapper;
@@ -80,36 +76,32 @@ public class ReviewAnswerRecordingService {
     }
 
     private void updateWrongQuestion(Long userId, Long questionId, String userAnswer, boolean correct) {
-        try {
-            LambdaQueryWrapper<WrongQuestion> query = new LambdaQueryWrapper<>();
-            query.eq(WrongQuestion::getUserId, userId)
-                    .eq(WrongQuestion::getQuestionId, questionId);
-            WrongQuestion existing = wrongQuestionMapper.selectOne(query);
-            if (correct) {
-                if (existing != null) {
-                    wrongQuestionMapper.deleteById(existing.getId());
-                }
-                return;
-            }
+        LambdaQueryWrapper<WrongQuestion> query = new LambdaQueryWrapper<>();
+        query.eq(WrongQuestion::getUserId, userId)
+                .eq(WrongQuestion::getQuestionId, questionId);
+        WrongQuestion existing = wrongQuestionMapper.selectOne(query);
+        if (correct) {
             if (existing != null) {
-                existing.setWrongCount(existing.getWrongCount() + 1);
-                existing.setLastWrongAnswer(userAnswer);
-                if (existing.getMasteryLevel() != null && existing.getMasteryLevel() == 2) {
-                    existing.setMasteryLevel(0);
-                }
-                wrongQuestionMapper.updateById(existing);
-                return;
+                wrongQuestionMapper.deleteById(existing.getId());
             }
-            WrongQuestion wrongQuestion = new WrongQuestion();
-            wrongQuestion.setUserId(userId);
-            wrongQuestion.setQuestionId(questionId);
-            wrongQuestion.setWrongCount(1);
-            wrongQuestion.setMasteryLevel(0);
-            wrongQuestion.setLastWrongAnswer(userAnswer);
-            wrongQuestion.setDeleted(0);
-            wrongQuestionMapper.insert(wrongQuestion);
-        } catch (Exception exception) {
-            log.warn("更新复习错题记录失败: {}", exception.getMessage());
+            return;
         }
+        if (existing != null) {
+            existing.setWrongCount(existing.getWrongCount() + 1);
+            existing.setLastWrongAnswer(userAnswer);
+            if (existing.getMasteryLevel() != null && existing.getMasteryLevel() == 2) {
+                existing.setMasteryLevel(0);
+            }
+            wrongQuestionMapper.updateById(existing);
+            return;
+        }
+        WrongQuestion wrongQuestion = new WrongQuestion();
+        wrongQuestion.setUserId(userId);
+        wrongQuestion.setQuestionId(questionId);
+        wrongQuestion.setWrongCount(1);
+        wrongQuestion.setMasteryLevel(0);
+        wrongQuestion.setLastWrongAnswer(userAnswer);
+        wrongQuestion.setDeleted(0);
+        wrongQuestionMapper.insert(wrongQuestion);
     }
 }

@@ -110,23 +110,15 @@ public class PracticeAnswerService {
     }
 
     private void updateWrongQuestion(Long userId, Long questionId, String userAnswer, boolean correct) {
-        try {
-            if (correct) {
-                wrongQuestionService.removeOnCorrect(userId, questionId);
-            } else {
-                wrongQuestionService.addWrongQuestion(userId, questionId, userAnswer);
-            }
-        } catch (Exception exception) {
-            log.warn(correct ? "移出错题本失败: {}" : "加入错题本失败: {}", exception.getMessage());
+        if (correct) {
+            wrongQuestionService.removeOnCorrect(userId, questionId);
+        } else {
+            wrongQuestionService.addWrongQuestion(userId, questionId, userAnswer);
         }
     }
 
     private void addReviewPlan(Long userId, Long questionId) {
-        try {
-            spacedRepetitionService.addToReviewPlan(userId, questionId);
-        } catch (Exception exception) {
-            log.warn("加入复习计划失败: {}", exception.getMessage());
-        }
+        spacedRepetitionService.addToReviewPlan(userId, questionId);
     }
 
     private PracticeResultVO buildResult(Question question, PracticeRecord record,
