@@ -24,7 +24,7 @@
     "axios": "^1.6.8",
     "dompurify": "^3.4.10",
     "echarts": "^6.1.0",
-    "element-plus": "^2.6.3",
+    "element-plus": "^2.14.5",
     "highlight.js": "^11.11.1",
     "marked": "^18.0.5",
     "mermaid": "^11.15.0",
