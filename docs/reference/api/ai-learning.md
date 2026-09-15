@@ -23,9 +23,10 @@
 | `POST /api/ai/asset/feedback` | 提交资产反馈 |
 | `GET /api/ai/asset/feedback/{questionId}/{assetType}` | 查询本人反馈 |
 | `POST /api/ai/asset/view` | 记录用户真实查看 |
-| `DELETE /api/ai/assets/{questionId}` | 清除当前题目的资产缓存 |
+| `DELETE /api/ai/assets/{questionId}` | 管理员清除当前题目的共享资产缓存 |
 
 记录查看必须发生在资产实际向用户展示之后，不能把预加载或接口请求直接当成阅读。
+共享资产会被所有学习者复用，清除操作仅允许管理员执行；普通用户仍可查询、生成和反馈本人可访问题目的资产。
 
 ## 变式训练
 

@@ -1,16 +1,17 @@
 package com.learnplatform.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.common.result.R;
 import com.learnplatform.common.result.ResultCode;
-import com.learnplatform.security.JwtAuthenticationFilter;
 import com.learnplatform.security.GoogleOAuthFailureHandler;
 import com.learnplatform.security.GoogleOAuthSuccessHandler;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.learnplatform.security.JwtAuthenticationFilter;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -87,6 +88,8 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/prometheus").permitAll()
                         // 管理端接口需要 ADMIN 角色
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // 清除共享 AI 资产会影响所有学习者，只允许管理员操作。
+                        .requestMatchers(HttpMethod.DELETE, "/api/ai/assets/**").hasRole("ADMIN")
                         // 其他接口需要认证（包括 /api/auth/me）
                         .anyRequest().authenticated()
                 )
