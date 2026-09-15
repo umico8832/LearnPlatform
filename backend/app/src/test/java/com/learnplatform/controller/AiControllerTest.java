@@ -1,6 +1,7 @@
 package com.learnplatform.controller;
 
 import com.learnplatform.dto.AiAssetFeedbackVO;
+import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AiAssetEngagementService;
 import com.learnplatform.service.AiCallGovernanceService;
@@ -23,6 +24,7 @@ import java.util.concurrent.Executor;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -52,6 +54,7 @@ class AiControllerTest {
         AiController controller = new AiController(
                 aiService, callGovernanceService, learningAssetService, assetEngagementService, aiTaskExecutor);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
                 .build();
     }
@@ -77,5 +80,13 @@ class AiControllerTest {
                 .andExpect(jsonPath("$.data.dailyQuota").value(50));
 
         verify(callGovernanceService).getDailyUsage(7L);
+    }
+
+    @Test
+    void generateAssetRejectsMissingRequiredFields() throws Exception {
+        mockMvc.perform(post("/api/ai/asset/generate")
+                        .contentType("application/json")
+                        .content("{\"assetType\":\"FULL_EXPLANATION\"}"))
+                .andExpect(status().isBadRequest());
     }
 }

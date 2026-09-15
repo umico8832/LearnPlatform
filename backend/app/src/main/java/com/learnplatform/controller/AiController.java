@@ -1,6 +1,8 @@
 package com.learnplatform.controller;
 
 import com.learnplatform.dto.AiAssetFeedbackVO;
+import com.learnplatform.dto.AiAssetFeedbackRequest;
+import com.learnplatform.dto.AiAssetGenerateRequest;
 import com.learnplatform.dto.AiAssetType;
 import com.learnplatform.dto.AiAssetViewRequest;
 import com.learnplatform.dto.AiVariantTrainingVO;
@@ -167,10 +169,9 @@ public class AiController {
     @PostMapping("/asset/generate")
     public R<QuestionLearningAssetVO> generateAsset(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody Map<String, Object> request) {
-        Long questionId = Long.valueOf(request.get("questionId").toString());
-        AiAssetType assetType = AiAssetType.valueOf(request.get("assetType").toString());
-        return R.ok(learningAssetService.generateOrGetAsset(questionId, assetType, userDetails.getUserId()));
+            @Valid @RequestBody AiAssetGenerateRequest request) {
+        return R.ok(learningAssetService.generateOrGetAsset(
+                request.getQuestionId(), request.getAssetType(), userDetails.getUserId()));
     }
 
     /**
@@ -180,9 +181,9 @@ public class AiController {
     @PostMapping(value = "/asset/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<SseEmitter> generateAssetStream(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody Map<String, Object> request) {
-        Long questionId = Long.valueOf(request.get("questionId").toString());
-        AiAssetType assetType = AiAssetType.valueOf(request.get("assetType").toString());
+            @Valid @RequestBody AiAssetGenerateRequest request) {
+        Long questionId = request.getQuestionId();
+        AiAssetType assetType = request.getAssetType();
         Long userId = userDetails.getUserId();
         return stream(onContent -> learningAssetService.generateAssetStream(questionId, assetType, userId, onContent));
     }
@@ -194,12 +195,9 @@ public class AiController {
     @PostMapping("/asset/feedback")
     public R<Void> submitAssetFeedback(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody Map<String, Object> request) {
-        Long questionId = Long.valueOf(request.get("questionId").toString());
-        String assetType = request.get("assetType").toString();
-        Boolean helpful = Boolean.valueOf(request.get("helpful").toString());
-        String comment = request.get("comment") != null ? request.get("comment").toString() : null;
-        learningAssetService.submitFeedback(questionId, assetType, userDetails.getUserId(), helpful, comment);
+            @Valid @RequestBody AiAssetFeedbackRequest request) {
+        learningAssetService.submitFeedback(request.getQuestionId(), request.getAssetType().name(),
+                userDetails.getUserId(), request.getHelpful(), request.getComment());
         return R.ok(null);
     }
 
