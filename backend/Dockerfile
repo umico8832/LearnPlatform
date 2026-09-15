@@ -7,7 +7,7 @@ COPY ai-core ./ai-core
 COPY app ./app
 RUN mvn package -DskipTests -B
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 ARG APP_REVISION=unknown
 ARG APP_WORKTREE_STATE=unknown
 ARG APP_SOURCE_FINGERPRINT=unknown
