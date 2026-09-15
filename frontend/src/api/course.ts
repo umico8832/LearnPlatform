@@ -615,9 +615,19 @@ export function getCoursePage(params: { pageNum?: number; pageSize?: number; key
   return request.get<unknown, ApiResponse<PageResult<CourseVO>>>('/courses', { params })
 }
 
+/** 获取管理端课程分页，包含禁用课程。 */
+export function getAdminCoursePage(params: { pageNum?: number; pageSize?: number; keyword?: string }) {
+  return request.get<unknown, ApiResponse<PageResult<CourseVO>>>('/admin/courses', { params })
+}
+
 /** 获取课程详情 */
 export function getCourseById(id: number) {
   return request.get<unknown, ApiResponse<CourseVO>>(`/courses/${id}`)
+}
+
+/** 获取管理端课程详情，包含禁用课程。 */
+export function getAdminCourseById(id: number) {
+  return request.get<unknown, ApiResponse<CourseVO>>(`/admin/courses/${id}`)
 }
 
 /** 获取当前用户的个人课程库 */

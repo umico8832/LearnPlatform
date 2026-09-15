@@ -13,6 +13,7 @@ import request from '@/utils/request'
 import {
   getAllCourses,
   getCoursePage,
+  getAdminCoursePage,
   getCourseById,
   getMyCourses,
   addCourseToLibrary,
@@ -171,6 +172,18 @@ describe('Course API', () => {
 
       expect(mockedRequest.get).toHaveBeenCalledWith('/courses', {
         params: { pageNum: 1, pageSize: 10, keyword: 'Java' },
+      })
+    })
+  })
+
+  describe('getAdminCoursePage', () => {
+    it('管理端应从管理接口读取包含禁用状态的课程', async () => {
+      mockedRequest.get.mockResolvedValue({ code: 0, data: { records: [], total: 0 }, message: 'success' })
+
+      await getAdminCoursePage({ pageNum: 1, pageSize: 100 })
+
+      expect(mockedRequest.get).toHaveBeenCalledWith('/admin/courses', {
+        params: { pageNum: 1, pageSize: 100 },
       })
     })
   })

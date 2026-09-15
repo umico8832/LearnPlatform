@@ -70,6 +70,7 @@ public class CourseLibraryService {
                 .map(UserCourse::getCourseId)
                 .toList();
         Map<Long, Course> courses = courseMapper.selectBatchIds(courseIds).stream()
+                .filter(course -> Integer.valueOf(1).equals(course.getStatus()))
                 .collect(Collectors.toMap(
                         Course::getId,
                         Function.identity(),

@@ -106,7 +106,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Collection, Delete, Edit, MagicStick, Plus, Promotion, Refresh } from '@element-plus/icons-vue'
 import { deleteExamPaper, getExamPaperList, publishExamPaper } from '@/api/exam'
 import type { ExamPaperVO } from '@/api/exam'
-import { getCoursePage } from '@/api/course'
+import { getAdminCoursePage } from '@/api/course'
 import { formatTime } from '@/utils/format'
 import ExamPaperEditorDialog from './exam/ExamPaperEditorDialog.vue'
 import SmartExamDialog from './exam/SmartExamDialog.vue'
@@ -160,7 +160,7 @@ const loadPapers = async () => {
 
 const loadCourses = async () => {
   try {
-    const res = await getCoursePage({ pageNum: 1, pageSize: 100 })
+    const res = await getAdminCoursePage({ pageNum: 1, pageSize: 100 })
     courseList.value = (res.data?.records ?? []).map((c) => ({ id: c.id, name: c.name }))
   } catch {}
 }
