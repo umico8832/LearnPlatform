@@ -8,6 +8,7 @@ import com.learnplatform.dto.CourseVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.mapper.CourseMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,8 +26,19 @@ public class CourseService {
      * 获取课程列表（分页）
      */
     public Page<CourseVO> getCoursePage(int pageNum, int pageSize, String keyword) {
+        return getCoursePage(pageNum, pageSize, keyword, true);
+    }
+
+    public Page<CourseVO> getAdminCoursePage(int pageNum, int pageSize, String keyword) {
+        return getCoursePage(pageNum, pageSize, keyword, false);
+    }
+
+    private Page<CourseVO> getCoursePage(int pageNum, int pageSize, String keyword, boolean enabledOnly) {
         Page<Course> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Course> wrapper = new LambdaQueryWrapper<>();
+        if (enabledOnly) {
+            wrapper.eq(Course::getStatus, 1);
+        }
         if (keyword != null && !keyword.isEmpty()) {
             wrapper.like(Course::getName, keyword);
         }
@@ -57,6 +69,14 @@ public class CourseService {
      * 获取课程详情
      */
     public CourseVO getCourseById(Long id) {
+        CourseVO course = getAdminCourseById(id);
+        if (!Integer.valueOf(1).equals(course.getStatus())) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "课程不存在");
+        }
+        return course;
+    }
+
+    public CourseVO getAdminCourseById(Long id) {
         Course course = courseMapper.selectById(id);
         if (course == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "课程不存在");
@@ -97,10 +117,14 @@ public class CourseService {
     /**
      * 删除课程
      */
+    @Transactional
     public void deleteCourse(Long id) {
         Course course = courseMapper.selectById(id);
         if (course == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "课程不存在");
+        }
+        if (courseMapper.countReferences(id) > 0) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "课程仍被下游内容引用，无法删除");
         }
         courseMapper.deleteById(id);
     }

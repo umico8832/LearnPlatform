@@ -109,6 +109,15 @@ class CourseLibraryServiceTest {
         assertEquals("408 数据结构", result.get(0).getCourseName());
     }
 
+    @Test
+    void getMyCoursesDoesNotExposeDisabledCourses() {
+        UserCourse relation = relation(3L, 7L, 10L);
+        when(userCourseMapper.selectList(any())).thenReturn(List.of(relation));
+        when(courseMapper.selectBatchIds(List.of(10L))).thenReturn(List.of(course(10L, 0)));
+
+        assertTrue(service.getMyCourses(7L).isEmpty());
+    }
+
     private Course course(Long id, Integer status) {
         Course course = new Course();
         course.setId(id);

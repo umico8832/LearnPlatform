@@ -90,7 +90,7 @@ import { useRouter } from 'vue-router'
 import { Connection, Delete, Edit, Plus, Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { getCoursePage, createCourse, updateCourse, deleteCourse, type CourseVO } from '@/api/course'
+import { getAdminCoursePage, createCourse, updateCourse, deleteCourse, type CourseVO } from '@/api/course'
 
 const router = useRouter()
 
@@ -117,7 +117,7 @@ const rules: FormRules = {
 async function fetchCourses() {
   loading.value = true
   try {
-    const res = await getCoursePage({ pageNum: 1, pageSize: 100, keyword: keyword.value || undefined })
+    const res = await getAdminCoursePage({ pageNum: 1, pageSize: 100, keyword: keyword.value || undefined })
     courses.value = res.data.records
   } catch {
     // 错误已在拦截器中处理

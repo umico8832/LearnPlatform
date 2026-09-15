@@ -1,5 +1,6 @@
 package com.learnplatform.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.CourseVO;
@@ -68,6 +69,20 @@ class AdminCourseControllerTest {
                 .andExpect(jsonPath("$.data.id").value(1));
 
         verify(courseService).createCourse(eq("Java 基础"), eq("Java 基础描述"), eq(0));
+    }
+
+    @Test
+    void listCourses_includesAdministrativeCourseStates() throws Exception {
+        Page<CourseVO> page = new Page<>(1, 10);
+        CourseVO disabled = buildCourseVO(2L, "已停用课程");
+        disabled.setStatus(0);
+        page.setRecords(java.util.List.of(disabled));
+        page.setTotal(1);
+        when(courseService.getAdminCoursePage(1, 10, null)).thenReturn(page);
+
+        mockMvc.perform(get("/api/admin/courses"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.records[0].status").value(0));
     }
 
     @Test

@@ -20,12 +20,17 @@
 
 | 接口 | 说明 |
 |---|---|
+| `GET /api/admin/courses` | 分页查询课程，包含禁用课程 |
+| `GET /api/admin/courses/{id}` | 查询课程详情，包含禁用课程 |
 | `POST /api/admin/courses` | 创建课程 |
 | `PUT /api/admin/courses/{id}` | 修改课程 |
-| `DELETE /api/admin/courses/{id}` | 删除课程 |
+| `DELETE /api/admin/courses/{id}` | 删除没有下游引用的课程 |
 | `POST /api/admin/knowledge-points` | 创建知识点 |
 | `PUT /api/admin/knowledge-points/{id}` | 修改知识点 |
-| `DELETE /api/admin/knowledge-points/{id}` | 删除知识点 |
+| `DELETE /api/admin/knowledge-points/{id}` | 删除没有子节点或下游引用的知识点 |
+
+学习端课程列表和详情只暴露启用课程；管理端使用独立查询接口维护禁用课程。课程或知识点存在题目、
+学习状态、测评、Tutor 内容等下游引用时拒绝删除。
 
 ## 正式题目治理
 
