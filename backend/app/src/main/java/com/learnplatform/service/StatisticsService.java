@@ -140,16 +140,24 @@ public class StatisticsService {
 
         // 按题目 -> 课程分组
         Map<Long, List<PracticeRecord>> byCourse = new HashMap<>();
+        List<Long> questionIds = records.stream().map(PracticeRecord::getQuestionId)
+                .filter(Objects::nonNull).distinct().toList();
+        Map<Long, Question> questionsById = questionIds.isEmpty() ? Map.of()
+                : questionMapper.selectBatchIds(questionIds).stream()
+                .collect(Collectors.toMap(Question::getId, question -> question));
         for (PracticeRecord r : records) {
-            Question q = questionMapper.selectById(r.getQuestionId());
+            Question q = questionsById.get(r.getQuestionId());
             if (q != null && q.getCourseId() != null) {
                 byCourse.computeIfAbsent(q.getCourseId(), k -> new ArrayList<>()).add(r);
             }
         }
 
+        Map<Long, Course> coursesById = byCourse.isEmpty() ? Map.of()
+                : courseMapper.selectBatchIds(byCourse.keySet()).stream()
+                .collect(Collectors.toMap(Course::getId, course -> course));
         List<Map<String, Object>> result = new ArrayList<>();
         for (Map.Entry<Long, List<PracticeRecord>> entry : byCourse.entrySet()) {
-            Course course = courseMapper.selectById(entry.getKey());
+            Course course = coursesById.get(entry.getKey());
             List<PracticeRecord> courseRecords = entry.getValue();
             long correct = courseRecords.stream()
                     .filter(r -> r.getIsCorrect() != null && r.getIsCorrect() == 1).count();

@@ -35,6 +35,7 @@ public class CourseStageAssessmentService {
     private final CourseStageAssessmentSnapshotService snapshotService;
     private final CourseStageAssessmentLearningFactService learningFactService;
     private final CourseStageAssessmentViewService viewService;
+    private final CacheEvictService cacheEvictService;
 
     public CourseStageAssessmentService(
             CourseStageAssessmentMapper assessmentMapper,
@@ -43,7 +44,8 @@ public class CourseStageAssessmentService {
             AnswerEvaluator answerEvaluator,
             CourseStageAssessmentSnapshotService snapshotService,
             CourseStageAssessmentLearningFactService learningFactService,
-            CourseStageAssessmentViewService viewService) {
+            CourseStageAssessmentViewService viewService,
+            CacheEvictService cacheEvictService) {
         this.assessmentMapper = assessmentMapper;
         this.assessmentQuestionMapper = assessmentQuestionMapper;
         this.knowledgePointMapper = knowledgePointMapper;
@@ -51,6 +53,7 @@ public class CourseStageAssessmentService {
         this.snapshotService = snapshotService;
         this.learningFactService = learningFactService;
         this.viewService = viewService;
+        this.cacheEvictService = cacheEvictService;
     }
 
     @Transactional
@@ -141,6 +144,7 @@ public class CourseStageAssessmentService {
         assessment.setActiveSessionKey(null);
         assessment.setCompleteTime(answeredTime);
         assessmentMapper.complete(assessmentId, userId, correctCount, answeredTime);
+        cacheEvictService.evictUserStatistics(userId);
         return viewService.toView(assessment);
     }
 
