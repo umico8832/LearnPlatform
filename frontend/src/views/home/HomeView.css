@@ -247,7 +247,6 @@
 .hero-copy h1,
 .section-heading h2,
 .story-copy h2,
-.metrics-heading h2,
 .course-copy h2,
 .closing h2 {
   font-family: var(--lp-font-display);
@@ -556,8 +555,7 @@
   color: var(--lp-home-blue-deep);
 }
 
-.section-heading h2,
-.metrics-heading h2 {
+.section-heading h2 {
   margin: var(--lp-space-5) 0;
   font-size: clamp(var(--lp-text-display), 4.8vw, 70px);
   line-height: 1.02;
@@ -938,57 +936,6 @@
   line-height: var(--lp-leading-body);
 }
 
-.metrics-section {
-  display: grid;
-  grid-template-columns: 0.8fr 1.2fr;
-  align-items: end;
-  gap: var(--lp-space-16);
-  padding-top: var(--lp-section-space);
-  padding-bottom: var(--lp-section-space);
-}
-
-.metrics-heading > span {
-  display: inline-flex;
-  margin-top: var(--lp-space-3);
-  padding: var(--lp-space-2) var(--lp-space-3);
-  border: 1px dashed var(--lp-home-line-strong);
-  border-radius: var(--lp-radius-full);
-  color: var(--lp-home-ink-muted);
-  font-size: var(--lp-text-xs);
-}
-
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  margin: 0;
-  border-top: 1px solid var(--lp-home-line-strong);
-}
-
-.metrics-grid div {
-  display: flex;
-  min-height: 180px;
-  flex-direction: column-reverse;
-  justify-content: space-between;
-  padding: var(--lp-space-6) var(--lp-space-5);
-  border-right: 1px solid var(--lp-home-line);
-}
-
-.metrics-grid div:last-child {
-  border-right: 0;
-}
-
-.metrics-grid dt {
-  color: var(--lp-home-ink-muted);
-  font-size: var(--lp-text-sm);
-}
-
-.metrics-grid dd {
-  margin: 0;
-  font-family: var(--lp-font-display);
-  font-size: clamp(var(--lp-text-5xl), 4vw, var(--lp-text-closing));
-  letter-spacing: var(--lp-tracking-tight);
-}
-
 .course-section {
   position: relative;
   overflow: hidden;
@@ -1294,7 +1241,6 @@
 
   .section-heading h2,
   .story-copy h2,
-  .metrics-heading h2,
   .course-copy h2 {
     font-size: var(--lp-text-display);
   }
@@ -1306,7 +1252,6 @@
 
   .scenario-track,
   .story-panel,
-  .metrics-section,
   .course-section__inner,
   .closing__inner,
   .site-footer__inner {
@@ -1340,16 +1285,6 @@
 
   .continuity-path li:nth-child(even) {
     margin-left: 0;
-  }
-
-  .metrics-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .metrics-grid div {
-    min-height: 120px;
-    border-right: 0;
-    border-bottom: 1px solid var(--lp-home-line);
   }
 
   .course-mark {

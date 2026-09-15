@@ -31,7 +31,8 @@ describe('HomeView', () => {
     expect(wrapper.get('h1').text()).toContain('难懂的知识')
     expect(wrapper.text()).toContain('AI 相伴的学习空间')
     expect(wrapper.text()).toContain('408 数据结构课程已经连接 AI 教学')
-    expect(wrapper.text()).toContain('以下为开发阶段占位数据')
+    expect(wrapper.text()).not.toContain('Placeholder metrics')
+    expect(wrapper.text()).not.toContain('以下为开发阶段占位数据')
     expect(wrapper.findAll('[data-to="/register"]').length).toBeGreaterThan(0)
   })
 
