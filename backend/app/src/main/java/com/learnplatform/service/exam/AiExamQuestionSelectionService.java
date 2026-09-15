@@ -1,7 +1,7 @@
 package com.learnplatform.service.exam;
 
 import com.learnplatform.entity.Question;
-import com.learnplatform.service.AiExamGenerationService.SmartExamRequest;
+import com.learnplatform.dto.exam.SmartExamRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

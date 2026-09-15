@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.result.R;
 import com.learnplatform.dto.ExamPaperCreateRequest;
 import com.learnplatform.dto.ExamPaperVO;
+import com.learnplatform.dto.exam.SmartExamPreview;
+import com.learnplatform.dto.exam.SmartExamRequest;
 import com.learnplatform.dto.SubjectiveAnswerReviewVO;
 import com.learnplatform.dto.SubjectiveGradingRequest;
 import com.learnplatform.security.CustomUserDetails;
@@ -90,9 +92,9 @@ public class AdminExamController {
 
     @Operation(summary = "智能组卷预览", description = "根据知识点覆盖和难度分布智能推荐题目组合")
     @PostMapping("/smart-preview")
-    public R<AiExamGenerationService.SmartExamPreview> smartPreview(
+    public R<SmartExamPreview> smartPreview(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody AiExamGenerationService.SmartExamRequest request) {
+            @Valid @RequestBody SmartExamRequest request) {
         return R.ok(aiExamGenerationService.preview(request, userDetails.getUserId()));
     }
 
@@ -100,7 +102,7 @@ public class AdminExamController {
     @PostMapping("/smart-create")
     public R<ExamPaperVO> smartCreate(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody AiExamGenerationService.SmartExamPreview preview) {
+            @Valid @RequestBody SmartExamPreview preview) {
         return R.ok(aiExamGenerationService.createSmartExam(preview, userDetails.getUserId()));
     }
 

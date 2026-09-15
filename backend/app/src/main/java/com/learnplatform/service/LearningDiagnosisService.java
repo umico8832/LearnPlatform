@@ -2,6 +2,7 @@ package com.learnplatform.service;
 
 import com.learnplatform.dto.LearningDiagnosisVO;
 import com.learnplatform.dto.SimilarQuestionVO;
+import com.learnplatform.dto.diagnosis.LearningDiagnosisData;
 import com.learnplatform.entity.PracticeRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +52,7 @@ public class LearningDiagnosisService {
     @Cacheable(value = "learningDiagnosis", key = "#userId")
     public LearningDiagnosisVO getDiagnosis(Long userId) {
         log.info("生成学习诊断: userId={}", userId);
-        LearningDiagnosisDataLoader.DiagnosisData data = dataLoader.load(userId);
+        LearningDiagnosisData data = dataLoader.load(userId);
         List<PracticeRecord> records = data.records();
 
         LearningDiagnosisVO diagnosis = new LearningDiagnosisVO();

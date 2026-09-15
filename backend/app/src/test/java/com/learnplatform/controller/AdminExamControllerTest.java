@@ -7,6 +7,7 @@ import com.learnplatform.dto.ExamPaperVO;
 import com.learnplatform.dto.SubjectiveAnswerReviewVO;
 import com.learnplatform.dto.SubjectiveGradingRequest;
 import com.learnplatform.security.CustomUserDetails;
+import com.learnplatform.service.AiExamGenerationService;
 import com.learnplatform.service.ExamPaperService;
 import com.learnplatform.service.SubjectiveExamGradingService;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,6 +49,9 @@ class AdminExamControllerTest {
 
     @Mock
     private SubjectiveExamGradingService subjectiveExamGradingService;
+
+    @Mock
+    private AiExamGenerationService aiExamGenerationService;
 
     @InjectMocks
     private AdminExamController adminExamController;
@@ -177,6 +181,26 @@ class AdminExamControllerTest {
                 .andExpect(jsonPath("$.code").value(0));
 
         verify(examPaperService).publishExamPaper(eq(1L));
+    }
+
+    @Test
+    void smartPreview_rejectsInvalidRequestBeforeCallingService() throws Exception {
+        mockMvc.perform(post("/api/admin/exam-papers/smart-preview")
+                        .with(mockAdmin(1L))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"courseId\":1,\"questionCount\":0,\"difficultyMode\":\"UNKNOWN\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(1001));
+    }
+
+    @Test
+    void smartCreate_rejectsEmptyQuestionSelection() throws Exception {
+        mockMvc.perform(post("/api/admin/exam-papers/smart-create")
+                        .with(mockAdmin(1L))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"测试试卷\",\"courseId\":1,\"duration\":60,\"questionIds\":[]}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(1001));
     }
 
     @Test
