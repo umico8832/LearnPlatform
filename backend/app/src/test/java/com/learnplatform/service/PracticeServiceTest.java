@@ -121,6 +121,19 @@ class PracticeServiceTest {
     }
 
     @Test
+    void submitAnswerPropagatesWrongQuestionFailureSoTransactionCanRollBack() {
+        when(questionMapper.selectById(10L)).thenReturn(singleChoiceQuestion());
+        when(questionOptionMapper.selectList(any())).thenReturn(List.of(option("A", "正确选项", 1)));
+        wrongQuestionService.failure = new IllegalStateException("wrong-question write failed");
+
+        assertThrows(IllegalStateException.class,
+                () -> practiceService.submitAnswer(request(10L, "B", 21), 7L));
+
+        verify(cacheEvictService, never()).evictUserStatistics(7L);
+        verify(spacedRepetitionService, never()).addToReviewPlan(7L, 10L);
+    }
+
+    @Test
     void submitAnswerRejectsMissingQuestionId() {
         BusinessException exception = assertThrows(BusinessException.class,
                 () -> practiceService.submitAnswer(request(null, "A", 10), 7L));
@@ -207,6 +220,7 @@ class PracticeServiceTest {
         private int removeOnCorrectCalls;
         private Long removedUserId;
         private Long removedQuestionId;
+        private RuntimeException failure;
 
         RecordingWrongQuestionService() {
             super(null, null, null, null, null);
@@ -214,6 +228,9 @@ class PracticeServiceTest {
 
         @Override
         public void addWrongQuestion(Long userId, Long questionId, String userAnswer) {
+            if (failure != null) {
+                throw failure;
+            }
             addWrongQuestionCalls++;
             addedUserId = userId;
             addedQuestionId = questionId;

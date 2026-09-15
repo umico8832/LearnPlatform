@@ -96,6 +96,20 @@ class ReviewAnswerRecordingServiceTest {
     }
 
     @Test
+    void evaluateAndRecordPropagatesWrongQuestionFailureToOwningTransaction() {
+        ReviewSubmitRequest request = request("B");
+        QuestionOption option = correctOption();
+        when(questionMapper.selectById(12L)).thenReturn(question());
+        when(questionOptionMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(option));
+        when(answerEvaluator.buildCorrectAnswer(List.of(option), "SINGLE_CHOICE")).thenReturn("A");
+        when(answerEvaluator.isCorrect("SINGLE_CHOICE", "B", "A")).thenReturn(false);
+        when(wrongQuestionMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(wrongQuestionMapper.insert(any())).thenThrow(new IllegalStateException("wrong-question write failed"));
+
+        assertThrows(IllegalStateException.class, () -> service.evaluateAndRecord(request, 7L));
+    }
+
+    @Test
     void evaluateAndRecordRejectsMissingQuestionBeforeWritingFacts() {
         ReviewSubmitRequest request = request("A");
         when(questionMapper.selectById(12L)).thenReturn(null);

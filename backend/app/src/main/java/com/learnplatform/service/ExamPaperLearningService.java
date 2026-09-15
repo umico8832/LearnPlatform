@@ -223,20 +223,12 @@ public class ExamPaperLearningService {
     }
 
     private void updateWrongQuestionAndReview(Long userId, Long questionId, String userAnswer, boolean correct) {
-        try {
-            if (correct) {
-                wrongQuestionService.removeOnCorrect(userId, questionId);
-            } else {
-                wrongQuestionService.addWrongQuestion(userId, questionId, userAnswer);
-            }
-        } catch (Exception exception) {
-            log.warn("试卷学习错题本处理失败: {}", exception.getMessage());
+        if (correct) {
+            wrongQuestionService.removeOnCorrect(userId, questionId);
+        } else {
+            wrongQuestionService.addWrongQuestion(userId, questionId, userAnswer);
         }
-        try {
-            spacedRepetitionService.addToReviewPlan(userId, questionId);
-        } catch (Exception exception) {
-            log.warn("试卷学习加入复习计划失败: {}", exception.getMessage());
-        }
+        spacedRepetitionService.addToReviewPlan(userId, questionId);
     }
 
     private ExamLearningSessionVO toSessionVO(ExamLearningSession session, ExamPaper paper,

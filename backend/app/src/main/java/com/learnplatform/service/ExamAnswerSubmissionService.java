@@ -14,8 +14,6 @@ import com.learnplatform.mapper.ExamAnswerMapper;
 import com.learnplatform.mapper.ExamQuestionMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -26,8 +24,6 @@ import java.util.stream.Collectors;
 /** Applies per-question automatic grading and its learning side effects. */
 @Service
 public class ExamAnswerSubmissionService {
-
-    private static final Logger log = LoggerFactory.getLogger(ExamAnswerSubmissionService.class);
 
     private final ExamAnswerMapper examAnswerMapper;
     private final ExamQuestionMapper examQuestionMapper;
@@ -125,17 +121,13 @@ public class ExamAnswerSubmissionService {
 
     private void updateWrongQuestion(Long userId, Long questionId, String userAnswer,
                                      boolean manualGrading, boolean correct) {
-        try {
-            if (manualGrading) {
-                return;
-            }
-            if (correct) {
-                wrongQuestionService.removeOnCorrect(userId, questionId);
-            } else {
-                wrongQuestionService.addWrongQuestion(userId, questionId, userAnswer);
-            }
-        } catch (Exception exception) {
-            log.warn("考试错题本处理失败: {}", exception.getMessage());
+        if (manualGrading) {
+            return;
+        }
+        if (correct) {
+            wrongQuestionService.removeOnCorrect(userId, questionId);
+        } else {
+            wrongQuestionService.addWrongQuestion(userId, questionId, userAnswer);
         }
     }
 

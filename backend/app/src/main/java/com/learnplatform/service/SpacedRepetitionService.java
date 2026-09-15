@@ -77,24 +77,11 @@ public class SpacedRepetitionService {
      * 将题目加入复习计划（如果已存在则忽略）
      */
     public void addToReviewPlan(Long userId, Long questionId) {
-        LambdaQueryWrapper<QuestionReviewSchedule> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(QuestionReviewSchedule::getUserId, userId)
-               .eq(QuestionReviewSchedule::getQuestionId, questionId);
-        if (reviewScheduleMapper.selectCount(wrapper) > 0) {
-            return; // 已在复习计划中
+        int changed = reviewScheduleMapper.insertOrRestore(
+                userId, questionId, DEFAULT_EASE_FACTOR, LocalDate.now());
+        if (changed > 0) {
+            log.info("题目加入复习计划: userId={}, questionId={}", userId, questionId);
         }
-
-        QuestionReviewSchedule schedule = new QuestionReviewSchedule();
-        schedule.setUserId(userId);
-        schedule.setQuestionId(questionId);
-        schedule.setEaseFactor(DEFAULT_EASE_FACTOR);
-        schedule.setIntervalDays(0);
-        schedule.setRepetitions(0);
-        schedule.setNextReviewDate(LocalDate.now()); // 新卡片今天就可以复习
-        schedule.setTotalReviews(0);
-        reviewScheduleMapper.insert(schedule);
-
-        log.info("题目加入复习计划: userId={}, questionId={}", userId, questionId);
     }
 
     /**
@@ -125,16 +112,11 @@ public class SpacedRepetitionService {
         int syncedCount = 0;
         for (WrongQuestion wq : wrongQuestions) {
             if (!existingQuestionIds.contains(wq.getQuestionId())) {
-                QuestionReviewSchedule schedule = new QuestionReviewSchedule();
-                schedule.setUserId(userId);
-                schedule.setQuestionId(wq.getQuestionId());
-                schedule.setEaseFactor(DEFAULT_EASE_FACTOR);
-                schedule.setIntervalDays(0);
-                schedule.setRepetitions(0);
-                schedule.setNextReviewDate(LocalDate.now());
-                schedule.setTotalReviews(0);
-                reviewScheduleMapper.insert(schedule);
-                syncedCount++;
+                int changed = reviewScheduleMapper.insertOrRestore(
+                        userId, wq.getQuestionId(), DEFAULT_EASE_FACTOR, LocalDate.now());
+                if (changed > 0) {
+                    syncedCount++;
+                }
             }
         }
 
@@ -158,10 +140,7 @@ public class SpacedRepetitionService {
         }
 
         // 查找复习计划
-        LambdaQueryWrapper<QuestionReviewSchedule> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(QuestionReviewSchedule::getUserId, userId)
-               .eq(QuestionReviewSchedule::getQuestionId, questionId);
-        QuestionReviewSchedule schedule = reviewScheduleMapper.selectOne(wrapper);
+        QuestionReviewSchedule schedule = reviewScheduleMapper.selectByUserAndQuestionForUpdate(userId, questionId);
         if (schedule == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不在复习计划中");
         }

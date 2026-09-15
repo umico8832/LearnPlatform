@@ -11,6 +11,7 @@ import com.learnplatform.entity.ExamPaper;
 import com.learnplatform.entity.ExamQuestion;
 import com.learnplatform.entity.ExamRecord;
 import com.learnplatform.entity.Question;
+import com.learnplatform.entity.QuestionOption;
 import com.learnplatform.mapper.ExamAnswerMapper;
 import com.learnplatform.mapper.ExamPaperMapper;
 import com.learnplatform.mapper.ExamQuestionMapper;
@@ -51,6 +52,7 @@ class ExamServiceTest {
     @Mock private ExamQuestionMapper examQuestionMapper;
     @Mock private QuestionMapper questionMapper;
     @Mock private QuestionOptionMapper questionOptionMapper;
+    @Mock private WrongQuestionService wrongQuestionService;
     @Mock private CacheEvictService cacheEvictService;
     private ExamService examService;
 
@@ -68,7 +70,7 @@ class ExamServiceTest {
                 examPaperMapper, examQuestionMapper, questionMapper, questionOptionMapper, answerEvaluator,
                 FIXED_CLOCK);
         ExamAnswerSubmissionService answerSubmissionService = new ExamAnswerSubmissionService(examAnswerMapper,
-                examQuestionMapper, questionMapper, questionOptionMapper, null, answerEvaluator, null);
+                examQuestionMapper, questionMapper, questionOptionMapper, wrongQuestionService, answerEvaluator, null);
         ExamSessionService sessionService = new ExamSessionService(examRecordMapper, examPaperMapper,
                 viewService, FIXED_CLOCK);
         ExamSubmissionService submissionService = new ExamSubmissionService(examRecordMapper, examPaperMapper,
@@ -96,6 +98,27 @@ class ExamServiceTest {
                 () -> examService.submitExam(request(answer(10L, "A"), answer(10L, "A")), 7L));
 
         assertEquals("同一道题不能重复提交", exception.getMessage());
+    }
+
+    @Test
+    void wrongQuestionFailureAbortsExamSubmission() {
+        stubActiveExam();
+        when(examQuestionMapper.selectList(any())).thenReturn(List.of(examQuestion(10L, 5)));
+        Question question = new Question();
+        question.setId(10L);
+        question.setQuestionType("SINGLE_CHOICE");
+        when(questionMapper.selectById(10L)).thenReturn(question);
+        QuestionOption option = new QuestionOption();
+        option.setOptionLabel("A");
+        option.setIsCorrect(1);
+        when(questionOptionMapper.selectList(any())).thenReturn(List.of(option));
+        doThrow(new IllegalStateException("wrong-question write failed"))
+                .when(wrongQuestionService).addWrongQuestion(7L, 10L, "B");
+
+        assertThrows(IllegalStateException.class,
+                () -> examService.submitExam(request(answer(10L, "B")), 7L));
+
+        verify(cacheEvictService, never()).evictUserStatistics(7L);
     }
 
     @Test

@@ -34,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -120,6 +121,20 @@ class ExamPaperLearningServiceTest {
                 eq(captor.getValue().getCreateTime()));
         verify(wrongQuestionService).removeOnCorrect(7L, 10L);
         verify(spacedRepetitionService).addToReviewPlan(7L, 10L);
+    }
+
+    @Test
+    void answerPropagatesLearningFactFailureSoTransactionCanRollBack() {
+        stubActiveSession();
+        stubEligiblePaper();
+        when(learningAnswerMapper.selectCount(any())).thenReturn(0L);
+        doThrow(new IllegalStateException("wrong-question write failed"))
+                .when(wrongQuestionService).removeOnCorrect(7L, 10L);
+
+        assertThrows(IllegalStateException.class,
+                () -> service.submitAnswer(30L, request(10L, "A"), 7L));
+
+        verify(spacedRepetitionService, org.mockito.Mockito.never()).addToReviewPlan(7L, 10L);
     }
 
     @Test

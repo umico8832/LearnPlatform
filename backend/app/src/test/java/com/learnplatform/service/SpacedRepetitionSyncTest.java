@@ -42,7 +42,7 @@ class SpacedRepetitionSyncTest {
 
         int result = service.syncWrongQuestionsToReviewPlan(1L);
         assertEquals(0, result);
-        verify(reviewScheduleMapper, never()).insert(any());
+        verify(reviewScheduleMapper, never()).insertOrRestore(any(), any(), any(), any());
     }
 
     @Test
@@ -58,7 +58,7 @@ class SpacedRepetitionSyncTest {
 
         int result = service.syncWrongQuestionsToReviewPlan(1L);
         assertEquals(0, result);
-        verify(reviewScheduleMapper, never()).insert(any());
+        verify(reviewScheduleMapper, never()).insertOrRestore(any(), any(), any(), any());
     }
 
     @Test
@@ -71,12 +71,12 @@ class SpacedRepetitionSyncTest {
         // 复习计划为空
         when(reviewScheduleMapper.selectList(any(LambdaQueryWrapper.class)))
                 .thenReturn(Collections.emptyList());
-        when(reviewScheduleMapper.insert(any(QuestionReviewSchedule.class)))
+        when(reviewScheduleMapper.insertOrRestore(any(), any(), any(), any()))
                 .thenReturn(1);
 
         int result = service.syncWrongQuestionsToReviewPlan(1L);
         assertEquals(2, result);
-        verify(reviewScheduleMapper, times(2)).insert(any(QuestionReviewSchedule.class));
+        verify(reviewScheduleMapper, times(2)).insertOrRestore(any(), any(), any(), any());
     }
 
     @Test
@@ -91,12 +91,12 @@ class SpacedRepetitionSyncTest {
         existing.setQuestionId(100L);
         when(reviewScheduleMapper.selectList(any(LambdaQueryWrapper.class)))
                 .thenReturn(List.of(existing));
-        when(reviewScheduleMapper.insert(any(QuestionReviewSchedule.class)))
+        when(reviewScheduleMapper.insertOrRestore(any(), any(), any(), any()))
                 .thenReturn(1);
 
         int result = service.syncWrongQuestionsToReviewPlan(1L);
         assertEquals(1, result);
-        verify(reviewScheduleMapper, times(1)).insert(any(QuestionReviewSchedule.class));
+        verify(reviewScheduleMapper, times(1)).insertOrRestore(any(), any(), any(), any());
     }
 
     private WrongQuestion wrongQuestion(Long userId, Long questionId, int masteryLevel) {
