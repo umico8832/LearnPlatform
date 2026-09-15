@@ -11,6 +11,7 @@ vi.mock('@/utils/request', () => ({
 
 import request from '@/utils/request'
 import { getAdminStatisticsOverview, getAiAdviceStream } from '@/api/statistics'
+import { setToken } from '@/utils/auth'
 
 const mockedRequest = vi.mocked(request)
 
@@ -55,7 +56,7 @@ describe('Statistics API', () => {
   describe('getAiAdviceStream', () => {
     it('应使用配置的 API Base URL 发起流式请求', async () => {
       vi.stubEnv('VITE_API_BASE_URL', '/custom-api')
-      localStorage.setItem('token', 'jwt-token')
+      setToken('jwt-token')
       const fetchMock = vi.fn().mockResolvedValue(new Response())
       vi.stubGlobal('fetch', fetchMock)
 
