@@ -110,6 +110,12 @@
   --lp-home-blue: #3154d8;
   --lp-home-blue-deep: #263f9e;
   --lp-home-blue-soft: #dce3fa;
+  --lp-home-sky: #b9dff0;
+  --lp-home-sky-deep: #8ec8e5;
+  --lp-home-mint: #b9dfc1;
+  --lp-home-yellow: #f2d96f;
+  --lp-home-lilac: #c9d1f5;
+  --lp-home-glass: rgba(255, 255, 255, 0.72);
   --lp-home-blue-wash: rgba(49, 84, 216, 0.06);
   --lp-home-ink-muted: rgba(24, 24, 23, 0.66);
   --lp-home-ink-faint: rgba(24, 24, 23, 0.38);

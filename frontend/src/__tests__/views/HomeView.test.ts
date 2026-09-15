@@ -30,8 +30,22 @@ describe('HomeView', () => {
 
     expect(wrapper.get('h1').text()).toContain('难懂的知识')
     expect(wrapper.text()).toContain('AI 相伴的学习空间')
-    expect(wrapper.text()).toContain('当前可体验的完整课程是 408 数据结构')
+    expect(wrapper.text()).toContain('408 数据结构课程已经连接 AI 教学')
+    expect(wrapper.text()).toContain('以下为开发阶段占位数据')
     expect(wrapper.findAll('[data-to="/register"]').length).toBeGreaterThan(0)
+  })
+
+  it('根据学习者选择的困难切换讲法', async () => {
+    const wrapper = mountHome()
+    const exampleButton = wrapper.findAll('button').find((button) => button.text().includes('给我一个例子'))
+
+    expect(wrapper.get('[data-testid="teaching-response"]').text()).toContain('拖动右边的圆')
+    expect(exampleButton).toBeDefined()
+
+    await exampleButton!.trigger('click')
+
+    expect(exampleButton!.attributes('aria-pressed')).toBe('true')
+    expect(wrapper.get('[data-testid="teaching-response"]').text()).toContain('两个社团的报名表')
   })
 
   it('允许学习者通过调整重叠数量理解并集计数', async () => {
@@ -43,14 +57,15 @@ describe('HomeView', () => {
     await overlapInput.setValue('2')
 
     expect(wrapper.get('[data-testid="union-formula"]').text()).toContain('18 + 14 − 2 = 30')
-    expect(wrapper.text()).toContain('重叠的 2 人被数了两次')
+    expect(overlapInput.attributes('aria-valuetext')).toContain('重复 2 人，合并后 30 人')
   })
 
   it('已登录时把主要操作指向我的课程', () => {
     mockIsAuthenticated.mockReturnValue(true)
     const wrapper = mountHome()
 
-    expect(wrapper.text()).toContain('回到我的课程')
+    expect(wrapper.text()).toContain('回到课程')
+    expect(wrapper.text()).toContain('继续我的学习')
     expect(wrapper.findAll('[data-to="/my-courses"]').length).toBeGreaterThan(0)
   })
 })

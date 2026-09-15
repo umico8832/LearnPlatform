@@ -12,6 +12,7 @@ const {
   mockValidate,
   mockValidateField,
   mockVerify,
+  mockRoute,
 } = vi.hoisted(() => ({
   mockRegister: vi.fn(),
   mockSendCode: vi.fn(),
@@ -21,6 +22,7 @@ const {
   mockVerify: vi.fn(),
   mockValidate: vi.fn().mockResolvedValue(true),
   mockValidateField: vi.fn().mockResolvedValue(undefined),
+  mockRoute: { query: {} as Record<string, string> },
 }))
 vi.mock('@/api/auth', () => ({
   register: (...a: unknown[]) => mockRegister(...a),
@@ -30,7 +32,7 @@ vi.mock('@/api/auth', () => ({
 }))
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: mockPush }),
-  useRoute: () => ({ query: {} }),
+  useRoute: () => mockRoute,
   RouterLink: { template: '<a><slot /></a>' },
 }))
 vi.mock('element-plus', async (importOriginal) => {
@@ -84,6 +86,7 @@ async function advanceToPassword(w: ReturnType<typeof mountRegister>) {
 describe('RegisterView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockRoute.query = {}
     mockValidate.mockResolvedValue(true)
     mockVerify.mockResolvedValue('turnstile-ok')
     mockValidateField.mockResolvedValue(undefined)
@@ -94,10 +97,24 @@ describe('RegisterView', () => {
   it('renders three-step registration beginning with username and email', () => {
     const w = mountRegister()
     expect(w.text()).toContain('创建学习账号')
-    expect(w.text()).toContain('账户信息 · 1/3')
+    expect(w.text()).toContain('步骤 1/3')
+    expect(w.text()).not.toContain('填写用户名和邮箱')
     expect(w.html()).toContain('3-50 个字符')
     expect(w.html()).toContain('placeholder="邮箱"')
     expect(w.text()).toContain('其他登录方式')
+  })
+  it('keeps the first-step preview form empty', () => {
+    mockRoute.query = { 'auth-preview': 'step-1' }
+    const w = mountRegister()
+    const inputs = w.findAll('input')
+    expect(inputs[0].element.value).toBe('')
+    expect(inputs[1].element.value).toBe('')
+  })
+  it('does not inject a sample account into the second-step preview', () => {
+    mockRoute.query = { 'auth-preview': 'step-2' }
+    const w = mountRegister()
+    expect(w.text()).toContain('验证码将发送至注册邮箱')
+    expect(w.text()).not.toContain('example.com')
   })
   it('requires Turnstile before sending registration email', async () => {
     const w = mountRegister()
@@ -135,7 +152,8 @@ describe('RegisterView', () => {
   it('uses verified ticket when creating account', async () => {
     const w = mountRegister()
     await advanceToPassword(w)
-    expect(w.text()).toContain('设置密码 · 3/3')
+    expect(w.text()).toContain('步骤 3/3')
+    expect(w.text()).not.toContain('设置用于登录的密码')
     const inputs = w.findAll('input')
     expect(inputs).toHaveLength(2)
     await inputs[0].setValue('Password1!')

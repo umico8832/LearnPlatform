@@ -6,6 +6,13 @@ import { describe, expect, it } from 'vitest'
 import router from '@/router'
 
 const TOOL_ROUTE_NAMES = ['Practice', 'Review', 'WrongQuestions', 'ExamList', 'QuestionList'] as const
+const PUBLIC_PLACEHOLDER_ROUTES = [
+  ['Product', '/product'],
+  ['Learning', '/learning'],
+  ['Resources', '/resources'],
+  ['Roadmap', '/roadmap'],
+  ['About', '/about'],
+] as const
 
 describe('课程空间学习工具路由名', () => {
   it('Home 是公开的首页路由', () => {
@@ -18,6 +25,18 @@ describe('课程空间学习工具路由名', () => {
     const resolved = router.resolve({ name })
     expect(resolved.name).toBe(name)
     expect(resolved.matched.length).toBeGreaterThan(0)
+    expect(resolved.meta.requiresAuth).not.toBe(false)
+  })
+
+  it.each(PUBLIC_PLACEHOLDER_ROUTES)('%s 是公开的占位页面路由', (name, path) => {
+    const resolved = router.resolve({ name })
+    expect(resolved.path).toBe(path)
+    expect(resolved.meta.requiresAuth).toBe(false)
+  })
+
+  it('课程库 /courses 仍是需要登录的原有路由', () => {
+    const resolved = router.resolve({ name: 'CourseList' })
+    expect(resolved.path).toBe('/courses')
     expect(resolved.meta.requiresAuth).not.toBe(false)
   })
 })

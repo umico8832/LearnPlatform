@@ -13,238 +13,283 @@
         </RouterLink>
 
         <nav class="site-nav" aria-label="首页导航">
-          <a href="#how-it-teaches">它如何教</a>
-          <a href="#learning-space">学习空间</a>
-          <a href="#current-course">当前可体验</a>
+          <RouterLink to="/product">产品</RouterLink>
+          <RouterLink to="/learning">学习</RouterLink>
+          <RouterLink to="/courses">课程</RouterLink>
+          <RouterLink to="/resources">资源</RouterLink>
+          <RouterLink to="/roadmap">路线图</RouterLink>
         </nav>
 
         <div class="site-actions">
           <RouterLink v-if="!loggedIn" class="text-link" to="/login">登录</RouterLink>
           <RouterLink class="button button--compact" :to="primaryDestination">
-            {{ loggedIn ? '回到我的课程' : '开始学习' }}
-            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M3.5 8h9M9 4.5 12.5 8 9 11.5" />
-            </svg>
+            {{ loggedIn ? '回到课程' : '开始学习' }}
           </RouterLink>
         </div>
       </div>
     </header>
 
     <main>
-      <section class="hero section-shell" aria-labelledby="home-title">
-        <div class="hero__copy">
-          <p class="eyebrow">AI 相伴的学习空间</p>
-          <h1 id="home-title">难懂的知识，<br /><em>也可以轻松学会。</em></h1>
-          <p class="hero__lead">
-            和教学 Agent 一起学。它会听你卡在哪里，换一种讲法、画出过程， 再用一个小问题确认你真的理解。
-          </p>
-          <div class="hero__actions">
-            <RouterLink class="button button--hero" :to="primaryDestination">
-              {{ loggedIn ? '继续我的学习' : '创建学习空间' }}
-              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <path d="M3.5 8h9M9 4.5 12.5 8 9 11.5" />
-              </svg>
-            </RouterLink>
-            <a class="secondary-link" href="#how-it-teaches">看看它怎么讲</a>
-          </div>
-          <p class="hero__note">
-            <svg viewBox="0 0 18 18" fill="none" aria-hidden="true">
-              <path d="m3 9 3.4 3.4L15 4.8" />
-            </svg>
-            不是更长的答案，是更适合你的讲法
-          </p>
-        </div>
+      <section class="hero-wrap" aria-labelledby="home-title">
+        <div class="hero-stage">
+          <div class="hero-stage__texture" aria-hidden="true"></div>
+          <img
+            class="hero-landscape"
+            :src="learningLandscape"
+            width="1600"
+            height="800"
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+            fetchpriority="high"
+          />
 
-        <div class="hero-demo" aria-label="并集计数互动讲解">
-          <div class="demo-window">
-            <div class="demo-window__bar">
-              <span class="demo-window__status"><i></i> Agent 正在换一种讲法</span>
+          <div class="hero-copy">
+            <p class="hero-kicker">AI 相伴的学习空间</p>
+            <h1 id="home-title">把难懂的知识，<br />真正学会。</h1>
+            <p>它会根据你卡住的地方改变讲法，并把讲解、作答、错题与复习连接成一段连续的学习过程。</p>
+            <div class="hero-actions">
+              <RouterLink class="button button--hero" :to="primaryDestination">
+                {{ loggedIn ? '继续我的学习' : '开始学习' }}
+              </RouterLink>
+              <a class="button button--ghost" href="#teaching-demo">看看它怎么教</a>
+            </div>
+          </div>
+
+          <div id="teaching-demo" class="lesson-window" aria-label="自适应教学互动演示">
+            <div class="lesson-window__bar">
+              <span class="lesson-window__brand"><i></i> Tutor 正在调整讲法</span>
               <span>集合与概率</span>
             </div>
 
-            <div class="agent-prompt">
-              <span class="agent-prompt__mark" aria-hidden="true">A</span>
-              <p>先别记公式。拖动蓝色圆，看看两份名单出现重复时，总人数会怎么变。</p>
-            </div>
+            <div class="lesson-window__body">
+              <div class="lesson-dialogue">
+                <div class="learner-message">
+                  <span>你</span>
+                  <p>公式我记住了，但我还是不明白为什么要减去重复的人。</p>
+                </div>
 
-            <div class="venn-stage" :style="vennStyle" aria-hidden="true">
-              <div class="venn-circle venn-circle--left"><strong>18</strong><span>A 组</span></div>
-              <div class="venn-circle venn-circle--right"><strong>14</strong><span>B 组</span></div>
-              <span v-if="overlap > 0" class="overlap-badge">重复 {{ overlap }}</span>
-            </div>
+                <div class="teaching-options" aria-label="选择当前的困难">
+                  <button
+                    v-for="option in teachingOptions"
+                    :key="option.id"
+                    type="button"
+                    :class="{ 'is-active': teachingMode === option.id }"
+                    :aria-pressed="teachingMode === option.id"
+                    @click="teachingMode = option.id"
+                  >
+                    {{ option.label }}
+                  </button>
+                </div>
 
-            <label class="overlap-control">
-              <span>拖动，让两组出现重复</span>
-              <input
-                v-model.number="overlap"
-                data-testid="overlap-input"
-                type="range"
-                min="0"
-                max="8"
-                step="1"
-                :aria-valuetext="`重复 ${overlap} 人，合并后 ${unionTotal} 人`"
-              />
-            </label>
-
-            <div class="formula-card" aria-live="polite">
-              <div>
-                <small>合并后的人数</small>
-                <strong data-testid="union-formula">18 + 14 − {{ overlap }} = {{ unionTotal }}</strong>
+                <div class="tutor-response" aria-live="polite">
+                  <span class="tutor-response__mark" aria-hidden="true">A</span>
+                  <div>
+                    <small>{{ activeTeaching.eyebrow }}</small>
+                    <p data-testid="teaching-response">{{ activeTeaching.response }}</p>
+                  </div>
+                </div>
               </div>
-              <p>{{ overlapExplanation }}</p>
-            </div>
-          </div>
-          <span class="hero-demo__scribble" aria-hidden="true">
-            <svg viewBox="0 0 120 72" fill="none">
-              <path d="M111 7C82 13 52 30 25 58" />
-              <path d="m34 42-12 19 21-5" />
-            </svg>
-            动手一下，直觉就来了
-          </span>
-        </div>
-      </section>
 
-      <section id="how-it-teaches" class="teaching-section" aria-labelledby="teaching-title">
-        <div class="teaching-section__inner section-shell">
-          <div class="section-copy section-copy--light">
-            <p class="eyebrow eyebrow--light">不懂不是你的问题</p>
-            <h2 id="teaching-title">同一个知识，<br />总有另一种讲法。</h2>
-            <p>当你说“我还是没懂”，Agent 不会把原答案再说一遍。</p>
-          </div>
-
-          <div class="teaching-path" aria-label="Agent 根据理解情况调整讲解路径">
-            <div class="learner-question">
-              <span>你</span>
-              <p>“我知道公式，但还是不知道为什么。”</p>
-            </div>
-
-            <svg class="path-lines" viewBox="0 0 640 420" fill="none" aria-hidden="true">
-              <path d="M320 18v68c0 38-114 34-114 84v38" />
-              <path d="M320 86c0 38 0 34 0 84v38" />
-              <path d="M320 86c0 38 114 34 114 84v38" />
-              <circle cx="320" cy="86" r="6" />
-            </svg>
-
-            <div class="path-options">
-              <article>
-                <span>01</span>
-                <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-                  <circle cx="18" cy="32" r="9" />
-                  <circle cx="46" cy="32" r="9" />
-                  <path d="M27 32h10" />
-                </svg>
-                <h3>补上前置</h3>
-                <p>先找到断掉的那一步</p>
-              </article>
-              <article>
-                <span>02</span>
-                <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-                  <path d="M10 46 26 18l12 20 7-10 9 18H10Z" />
-                  <circle cx="45" cy="16" r="5" />
-                </svg>
-                <h3>换个例子</h3>
-                <p>把抽象概念放进熟悉场景</p>
-              </article>
-              <article>
-                <span>03</span>
-                <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-                  <path d="M10 48c8-24 20-30 42-32" />
-                  <path d="m43 10 10 6-7 10" />
-                  <circle cx="21" cy="31" r="4" />
-                </svg>
-                <h3>画出过程</h3>
-                <p>让看不见的变化真正发生</p>
-              </article>
-            </div>
-
-            <div class="understanding-check">
-              <span class="understanding-check__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 7" /></svg>
-              </span>
-              <div><small>然后再确认</small><strong>你能不能用自己的话，说出关键那一步？</strong></div>
+              <div class="venn-demo">
+                <div class="venn-stage" :style="vennStyle" aria-hidden="true">
+                  <div class="venn-circle venn-circle--left"><strong>18</strong><span>A 组</span></div>
+                  <div class="venn-circle venn-circle--right"><strong>14</strong><span>B 组</span></div>
+                  <span v-if="overlap > 0" class="overlap-badge">重复 {{ overlap }}</span>
+                </div>
+                <label class="overlap-control">
+                  <span>拖动蓝色圆，观察合并人数</span>
+                  <input
+                    v-model.number="overlap"
+                    data-testid="overlap-input"
+                    type="range"
+                    min="0"
+                    max="8"
+                    step="1"
+                    :aria-valuetext="`重复 ${overlap} 人，合并后 ${unionTotal} 人`"
+                  />
+                </label>
+                <div class="formula-card">
+                  <small>合并后的人数</small>
+                  <strong data-testid="union-formula">18 + 14 − {{ overlap }} = {{ unionTotal }}</strong>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="learning-space" class="learning-space section-shell" aria-labelledby="space-title">
-        <div class="section-copy">
-          <p class="eyebrow">不只是一次对话</p>
-          <h2 id="space-title">学过的每一步，<br />都在同一个空间里继续。</h2>
-          <p>讲解、作答、错题和复习不再是四个断开的工具，而是一段连续的学习过程。</p>
+      <section class="one-space section-shell" aria-labelledby="one-space-title">
+        <div class="section-heading section-heading--center">
+          <p class="section-kicker">不只是一次回答</p>
+          <h2 id="one-space-title">学习发生在同一个空间里。</h2>
+          <p>从第一次讲解到下一次复习，每个动作都为真正重要的下一步留下线索。</p>
         </div>
 
-        <div class="learning-track">
-          <svg class="learning-track__line" viewBox="0 0 1100 170" fill="none" aria-hidden="true">
-            <path d="M42 95C180 8 283 155 420 76s247-3 342 38 188 7 296-61" />
-          </svg>
-          <ol>
-            <li><span>01</span><strong>问出卡住的地方</strong><small>Agent 先定位问题</small></li>
-            <li><span>02</span><strong>跟着讲解动手</strong><small>把抽象过程看见</small></li>
-            <li><span>03</span><strong>用一次作答确认</strong><small>知道是继续还是回头</small></li>
-            <li><span>04</span><strong>在该复习时再遇见</strong><small>让理解慢慢留下来</small></li>
+        <ul class="capability-line" aria-label="连续学习能力">
+          <li v-for="capability in capabilities" :key="capability.label">
+            <span aria-hidden="true">
+              <svg viewBox="0 0 28 28" fill="none">
+                <path v-for="path in capability.paths" :key="path" :d="path" />
+              </svg>
+            </span>
+            <strong>{{ capability.label }}</strong>
+          </li>
+        </ul>
+      </section>
+
+      <section class="people-section" aria-labelledby="people-title">
+        <div class="section-shell">
+          <div class="section-heading section-heading--center">
+            <h2 id="people-title">从你正在面对的问题开始。</h2>
+          </div>
+          <div class="scenario-track">
+            <article v-for="scenario in scenarios" :key="scenario.title" :class="`scenario-card--${scenario.tone}`">
+              <span class="scenario-card__number" aria-hidden="true">{{ scenario.number }}</span>
+              <div>
+                <p>{{ scenario.meta }}</p>
+                <h3>{{ scenario.title }}</h3>
+                <span>{{ scenario.detail }}</span>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="story-section section-shell" aria-labelledby="adaptive-title">
+        <div class="story-panel story-panel--blue">
+          <div class="story-copy">
+            <p class="section-kicker">教学会转弯</p>
+            <h2 id="adaptive-title">不是把原答案，再说一遍。</h2>
+            <p>当公式没有帮助时，就补上前置、换一个例子，或者把看不见的过程画出来。</p>
+            <RouterLink class="story-link" to="/learning">了解学习方式 <span>→</span></RouterLink>
+          </div>
+          <div class="route-visual" aria-label="教学路径根据困难变化">
+            <div class="route-visual__question">“我知道公式，但还是不知道为什么。”</div>
+            <svg viewBox="0 0 620 320" fill="none" aria-hidden="true">
+              <path d="M310 34v56c0 48-196 24-196 112" />
+              <path d="M310 90v112" />
+              <path d="M310 90c0 48 196 24 196 112" />
+              <circle cx="310" cy="90" r="6" />
+            </svg>
+            <div class="route-visual__steps"><span>补上前置</span><span>换个例子</span><span>画出过程</span></div>
+            <div class="route-visual__check">然后只确认一件事：你能说出关键那一步吗？</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="story-section section-shell" aria-labelledby="continuity-title">
+        <div class="story-panel story-panel--green">
+          <div class="story-copy">
+            <p class="section-kicker">每一步都有下文</p>
+            <h2 id="continuity-title">这次学过的，会成为下次的起点。</h2>
+            <p>真实作答留下学习证据，错题进入复盘，到期内容回到下一次学习。</p>
+          </div>
+          <ol class="continuity-path">
+            <li v-for="(step, index) in continuitySteps" :key="step.title">
+              <span>0{{ index + 1 }}</span>
+              <div>
+                <strong>{{ step.title }}</strong
+                ><small>{{ step.detail }}</small>
+              </div>
+            </li>
           </ol>
         </div>
       </section>
 
-      <section id="current-course" class="current-course" aria-labelledby="course-title">
-        <div class="current-course__inner section-shell">
-          <div class="course-visual" aria-hidden="true">
-            <span class="course-visual__orbit course-visual__orbit--one"></span>
-            <span class="course-visual__orbit course-visual__orbit--two"></span>
-            <span class="course-visual__node course-visual__node--one">A</span>
-            <span class="course-visual__node course-visual__node--two">B</span>
-            <span class="course-visual__node course-visual__node--three">C</span>
-            <svg viewBox="0 0 440 320" fill="none">
-              <path d="M82 207c62-105 146 38 208-70 28-49 55-66 80-72" />
-              <path d="m349 55 23 9-14 21" />
-            </svg>
-            <strong>学会，<br />不止做完。</strong>
+      <section class="story-section section-shell" aria-labelledby="exam-title">
+        <div class="story-panel story-panel--yellow">
+          <div class="story-copy">
+            <p class="section-kicker">一张真题，三段旅程</p>
+            <h2 id="exam-title">先理解，再作答，然后回来复盘。</h2>
+            <p>同一份试卷保留原题结构，同时支持逐题学习、限时考试和提交后的可信复盘。</p>
+            <RouterLink class="story-link" :to="primaryDestination">查看当前课程 <span>→</span></RouterLink>
           </div>
+          <div class="paper-modes">
+            <article>
+              <small>01</small><strong>学习模式</strong>
+              <p>逐题作答，必要时获得针对性讲解。</p>
+            </article>
+            <article>
+              <small>02</small><strong>考试模式</strong>
+              <p>保留时限、试卷结构和服务端判分。</p>
+            </article>
+            <article>
+              <small>03</small><strong>复盘模式</strong>
+              <p>围绕错题、用时和后续练习继续。</p>
+            </article>
+          </div>
+        </div>
+      </section>
 
+      <section class="metrics-section section-shell" aria-labelledby="metrics-title">
+        <div class="metrics-heading">
+          <p class="section-kicker">Placeholder metrics</p>
+          <h2 id="metrics-title">学习正在发生。</h2>
+          <span>以下为开发阶段占位数据</span>
+        </div>
+        <dl class="metrics-grid">
+          <div v-for="metric in placeholderMetrics" :key="metric.label">
+            <dt>{{ metric.label }}</dt>
+            <dd>{{ metric.value }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="course-section" aria-labelledby="course-title">
+        <div class="course-section__ambient" aria-hidden="true"></div>
+        <div class="course-section__inner section-shell">
+          <div class="course-mark" aria-hidden="true">
+            <span>408</span>
+            <svg viewBox="0 0 280 190" fill="none">
+              <path d="M24 146c58-92 116 24 166-54 22-34 42-48 66-57" />
+              <path d="m238 27 20 8-12 18" />
+            </svg>
+          </div>
           <div class="course-copy">
-            <p class="eyebrow">当前可体验</p>
+            <p class="section-kicker">当前可体验</p>
             <h2 id="course-title">先把一门课的学习过程，真正连起来。</h2>
-            <p>
-              当前可体验的完整课程是 408 数据结构，已连接分步讲解、互动课件、练习、错题、
-              间隔复习、阶段测评与真题考试。它是第一个课程案例，不是平台的知识边界。
-            </p>
+            <p>408 数据结构课程已经连接 AI 教学、互动课件、练习、错题、间隔复习、阶段测评与真题考试。</p>
             <RouterLink class="button" :to="primaryDestination">
               {{ loggedIn ? '进入我的课程' : '从一个问题开始' }}
-              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <path d="M3.5 8h9M9 4.5 12.5 8 9 11.5" />
-              </svg>
             </RouterLink>
           </div>
         </div>
       </section>
 
-      <section class="closing" aria-labelledby="closing-title">
-        <div class="closing__inner section-shell">
-          <p class="eyebrow eyebrow--light">LearnPlatform</p>
-          <h2 id="closing-title">把“不明白”说出来。<br /><em>剩下的，一起慢慢弄懂。</em></h2>
-          <RouterLink class="button button--light" :to="primaryDestination">
-            {{ loggedIn ? '继续学习' : '开始轻松学习' }}
-            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M3.5 8h9M9 4.5 12.5 8 9 11.5" />
-            </svg>
+      <section class="closing section-shell" aria-labelledby="closing-title">
+        <div class="closing__inner">
+          <div>
+            <p class="section-kicker">LearnPlatform</p>
+            <h2 id="closing-title">一个安静、专注，并会随着你的理解而改变的学习空间。</h2>
+          </div>
+          <RouterLink class="button button--closing" :to="primaryDestination">
+            {{ loggedIn ? '继续学习' : '开始学习' }}
           </RouterLink>
         </div>
       </section>
     </main>
 
-    <footer class="site-footer section-shell">
-      <RouterLink class="brand" to="/">
-        <span class="brand__mark" aria-hidden="true">
-          <svg viewBox="0 0 32 32" fill="none">
-            <path d="M7 8.5c3.7 0 6.7 1.2 9 3.5v14c-2.3-2.3-5.3-3.5-9-3.5v-14Z" />
-            <path d="M25 8.5c-3.7 0-6.7 1.2-9 3.5v14c2.3-2.3 5.3-3.5 9-3.5v-14Z" />
-          </svg>
-        </span>
-        <span>LearnPlatform</span>
-      </RouterLink>
-      <p>一个 AI 相伴的学习空间。</p>
-      <div><RouterLink to="/login">登录</RouterLink><a href="#home-title">回到顶部</a></div>
+    <footer class="site-footer">
+      <div class="site-footer__inner section-shell">
+        <RouterLink class="brand brand--footer" to="/">
+          <span class="brand__mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none">
+              <path d="M7 8.5c3.7 0 6.7 1.2 9 3.5v14c-2.3-2.3-5.3-3.5-9-3.5v-14Z" />
+              <path d="M25 8.5c-3.7 0-6.7 1.2-9 3.5v14c2.3-2.3 5.3-3.5 9-3.5v-14Z" />
+            </svg>
+          </span>
+          <span>LearnPlatform</span>
+        </RouterLink>
+        <nav aria-label="页脚导航">
+          <RouterLink to="/product">产品</RouterLink>
+          <RouterLink to="/learning">学习</RouterLink>
+          <RouterLink to="/resources">资源</RouterLink>
+          <RouterLink to="/roadmap">路线图</RouterLink>
+          <RouterLink to="/about">关于我们</RouterLink>
+        </nav>
+        <p>© 2026 LearnPlatform</p>
+      </div>
     </footer>
   </div>
 </template>
@@ -252,17 +297,100 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import learningLandscape from '@/assets/images/home/learning-landscape.webp'
 import { isAuthenticated } from '@/utils/auth'
 
-const overlap = ref(6)
-const unionTotal = computed(() => 18 + 14 - overlap.value)
-const overlapExplanation = computed(() =>
-  overlap.value === 0 ? '没有人重复，两组可以直接相加。' : `重叠的 ${overlap.value} 人被数了两次，所以要减回一次。`,
-)
-const vennStyle = computed(() => ({ '--venn-shift': `${176 - overlap.value * 12}px` }))
+type TeachingMode = 'formula' | 'process' | 'example'
 
+const teachingMode = ref<TeachingMode>('process')
+const overlap = ref(6)
 const loggedIn = isAuthenticated()
 const primaryDestination = computed(() => (loggedIn ? '/my-courses' : '/register'))
+const unionTotal = computed(() => 18 + 14 - overlap.value)
+const vennStyle = computed(() => ({ '--venn-shift': `${164 - overlap.value * 11}px` }))
+
+const teachingOptions: Array<{ id: TeachingMode; label: string }> = [
+  { id: 'formula', label: '我看不懂公式' },
+  { id: 'process', label: '我想看见过程' },
+  { id: 'example', label: '给我一个例子' },
+]
+
+const teachingContent: Record<TeachingMode, { eyebrow: string; response: string }> = {
+  formula: {
+    eyebrow: '先补上前置',
+    response: '先不算数字。两份名单里如果有同一个人，直接相加时，他是不是被数了两次？',
+  },
+  process: {
+    eyebrow: '把过程画出来',
+    response: '拖动右边的圆。两个圆重叠得越多，被重复计算的人就越多，所以要减回一次。',
+  },
+  example: {
+    eyebrow: '换一个熟悉的例子',
+    response: '把它想成两个社团的报名表。小林同时报名两个社团，但学校总人数里只能算一个小林。',
+  },
+}
+
+const activeTeaching = computed(() => teachingContent[teachingMode.value])
+
+const capabilities = [
+  {
+    label: 'AI 教学',
+    paths: ['M5 7.5h18v13H10l-5 4v-17Z', 'M9 12h10M9 16h6'],
+  },
+  {
+    label: '真题学习',
+    paths: ['M7 4h11l4 4v16H7V4Z', 'M18 4v5h4M11 14h7M11 18h7'],
+  },
+  {
+    label: '练习',
+    paths: ['M14 4a10 10 0 1 1 0 20 10 10 0 0 1 0-20Z', 'm10 14 3 3 6-7'],
+  },
+  {
+    label: '错题',
+    paths: ['M6 5h16v18H6V5Z', 'm10 10 8 8M18 10l-8 8'],
+  },
+  {
+    label: '复习',
+    paths: ['M6 10a9 9 0 1 1 0 8', 'M6 5v5h5'],
+  },
+]
+
+const scenarios = [
+  {
+    number: '01',
+    meta: '系统学习',
+    title: '把一门课程从头学懂',
+    detail: '课程目录、教学位置与复习任务保持连续',
+    tone: 'blue',
+  },
+  {
+    number: '02',
+    meta: '真题备考',
+    title: '在原题里发现真正的卡点',
+    detail: '学习、考试与复盘使用同一份可信题目',
+    tone: 'yellow',
+  },
+  {
+    number: '03',
+    meta: '资料学习',
+    title: '把自己的资料变成学习入口',
+    detail: '导入、确认，再进入可练习的私有内容',
+    tone: 'green',
+  },
+]
+
+const continuitySteps = [
+  { title: '讲解', detail: '围绕当前卡点，只展开必要内容' },
+  { title: '作答', detail: '用一次真实回答确认理解' },
+  { title: '错题', detail: '保留误解，而不是覆盖历史' },
+  { title: '复习', detail: '在合适的时候重新遇见' },
+]
+
+const placeholderMetrics = [
+  { value: '00,000+', label: '学习片段' },
+  { value: '000', label: '课程空间' },
+  { value: '00%', label: '持续学习率' },
+]
 </script>
 
 <style scoped src="./HomeView.css"></style>

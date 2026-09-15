@@ -6,7 +6,6 @@
       </div>
       <div class="auth-card-header recovery-header">
         <h1 id="auth-title">重置密码</h1>
-        <p>输入注册邮箱，我们会发送重置链接。</p>
       </div>
       <el-form
         ref="formRef"
@@ -68,7 +67,7 @@ const formRef = ref<FormInstance>(),
   submitted = ref(previewState === 'sent' || previewState === 'resent' || previewState === 'support'),
   resendCount = ref(previewState === 'support' ? 2 : previewState === 'resent' ? 1 : 0)
 const maxResendAttempts = 2
-const form = reactive({ email: previewState ? 'learner@example.com' : '' })
+const form = reactive({ email: '' })
 const rules: FormRules = {
   email: [
     { required: true, message: '请输入注册邮箱', trigger: 'blur' },

@@ -5,7 +5,6 @@
         <el-icon class="is-loading"><Loading /></el-icon>
       </div>
       <h2 id="auth-title">正在验证链接</h2>
-      <p>正在确认重置链接是否有效。</p>
     </div>
     <template v-else-if="valid && !completed">
       <div class="auth-feature-symbol" aria-hidden="true">
@@ -13,7 +12,7 @@
       </div>
       <div class="auth-card-header">
         <h1 id="auth-title">设置新密码</h1>
-        <p>为 {{ maskedEmail }} 设置新密码</p>
+        <p v-if="email">账号：{{ maskedEmail }}</p>
       </div>
       <el-form
         ref="formRef"
@@ -53,7 +52,6 @@
         <el-icon><CircleCheckFilled /></el-icon>
       </div>
       <h2 id="auth-title">密码已重置</h2>
-      <p>现在可以使用新密码登录。</p>
       <el-button class="auth-secondary" @click="$router.push('/login')">前往登录</el-button>
     </div>
     <div v-else class="status-panel">
@@ -61,7 +59,6 @@
         <el-icon><CircleCloseFilled /></el-icon>
       </div>
       <h2 id="auth-title">链接无效或已过期</h2>
-      <p>请重新申请密码重置链接。</p>
       <el-button class="auth-secondary" @click="$router.push('/forgot-password')">重新申请</el-button>
     </div>
   </AuthLayout>
@@ -89,7 +86,7 @@ const formRef = ref<FormInstance>(),
   valid = ref(routeState.valid),
   completed = ref(routeState.completed),
   submitting = ref(false),
-  email = ref(previewState ? 'learner@example.com' : '')
+  email = ref('')
 const form = reactive({ password: '', confirmPassword: '' })
 const rules: FormRules = {
   password: [

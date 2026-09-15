@@ -10,7 +10,7 @@
         <el-icon v-else><WarningFilled /></el-icon>
       </div>
       <h1 id="auth-title">{{ loading ? '正在登录' : '登录未完成' }}</h1>
-      <p>{{ message }}</p>
+      <p v-if="!loading">{{ message }}</p>
       <el-button v-if="!loading" class="auth-secondary" @click="router.replace('/login')"> 返回登录 </el-button>
     </div>
   </AuthLayout>

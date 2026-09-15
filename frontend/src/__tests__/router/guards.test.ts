@@ -48,6 +48,18 @@ async function createTestRouter() {
         component: { template: '<div/>' },
         meta: { requiresAuth: false, title: '首页' },
       },
+      ...[
+        ['/product', 'Product'],
+        ['/learning', 'Learning'],
+        ['/resources', 'Resources'],
+        ['/roadmap', 'Roadmap'],
+        ['/about', 'About'],
+      ].map(([path, name]) => ({
+        path,
+        name,
+        component: { template: '<div/>' },
+        meta: { requiresAuth: false, title: name },
+      })),
       {
         path: '/my-courses',
         name: 'MyCourses',
@@ -150,6 +162,13 @@ describe('路由守卫', () => {
       await router.push('/register')
       await router.isReady()
       expect(router.currentRoute.value.path).toBe('/register')
+    })
+
+    it.each(['/product', '/learning', '/resources', '/roadmap', '/about'])('应允许匿名访问占位页 %s', async (path) => {
+      const router = await createTestRouter()
+      await router.push(path)
+      await router.isReady()
+      expect(router.currentRoute.value.path).toBe(path)
     })
   })
 

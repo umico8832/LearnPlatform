@@ -1,21 +1,19 @@
 <template>
-  <AuthLayout
-    :class="['auth-enter', 'registration-page', step === 1 ? 'registration-page--entry' : 'registration-page--flow']"
-    :show-symbol="false"
-  >
+  <AuthLayout :class="['auth-enter', 'registration-page', `registration-page--step-${step}`]" :show-symbol="false">
     <div class="auth-feature-symbol" aria-hidden="true">
       <el-icon><UserFilled /></el-icon>
     </div>
     <div class="auth-card-header">
       <h1 id="auth-title">创建学习账号</h1>
-      <p v-if="step === 1">填写用户名和邮箱</p>
-      <p v-else-if="step === 2">
-        验证码将发送至 <strong>{{ form.email }}</strong>
+      <p v-if="step === 2">
+        <template v-if="form.email"
+          >验证码将发送至 <strong>{{ form.email }}</strong></template
+        >
+        <template v-else>验证码将发送至注册邮箱</template>
       </p>
-      <p v-else>设置用于登录的密码</p>
     </div>
     <div class="registration-progress" role="status" aria-live="polite">
-      <span>{{ stepLabels[step - 1] }} · {{ step }}/3</span>
+      <span>步骤 {{ step }}/3</span>
       <div class="registration-progress__bars" aria-hidden="true">
         <i v-for="index in 3" :key="index" :class="{ 'is-active': index <= step }"></i>
       </div>
@@ -148,10 +146,9 @@ const step = ref(previewState ? Number(previewState.at(-1)) : 1),
   code = ref(''),
   countdown = ref(0)
 let timer: number | undefined
-const stepLabels = ['账户信息', '邮箱验证', '设置密码']
 const form = reactive({
-  username: previewMode ? 'learner' : '',
-  email: previewMode ? 'learner@example.com' : '',
+  username: '',
+  email: '',
   password: '',
   confirmPassword: '',
   verificationTicket: '',
@@ -298,16 +295,22 @@ onBeforeUnmount(() => {
   font-weight: var(--lp-weight-semibold);
 }
 @media (min-width: 1280px) {
-  .registration-page--entry :deep(.auth-card) {
-    height: 656px;
+  .registration-page--step-1 :deep(.auth-card) {
+    height: 620px;
   }
-  .registration-page--entry .registration-body {
+  .registration-page--step-1 .registration-body {
     height: 312px;
   }
-  .registration-page--flow :deep(.auth-card) {
-    height: 536px;
+  .registration-page--step-2 :deep(.auth-card) {
+    height: 464px;
   }
-  .registration-page--flow .registration-body {
+  .registration-page--step-2 .registration-body {
+    height: 120px;
+  }
+  .registration-page--step-3 :deep(.auth-card) {
+    height: 500px;
+  }
+  .registration-page--step-3 .registration-body {
     height: 192px;
   }
   .registration-progress {
