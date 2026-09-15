@@ -33,7 +33,8 @@ AI 教学、试卷学习、练习、错题、复习和测评。产品范围与�
 | 判断产品范围或下一阶段前 | [产品需求](docs/product/prd.md)、[路线图](docs/product/roadmap.md)；未承诺方向见[候选计划](docs/product/future.md) |
 | 调整模块、目录或职责边界前 | [系统架构](docs/architecture/overview.md)及对应前后端文档；重大决策查阅[ADR](docs/architecture/decisions/index.md) |
 | 修改接口、鉴权或数据契约前 | [API 参考](docs/reference/api/index.md)或[数据库参考](docs/reference/database/index.md)；迁移查[迁移策略](docs/reference/database/migration-policy.md) |
-| 修改前端视觉、布局或交互前 | 项目 [frontend-design](.agents/skills/frontend-design/SKILL.md)；辅助设计资料由该 Skill 按需选择 |
+| 修改前端视觉、布局或交互前 | 项目 [frontend-design](.agents/skills/frontend-design/SKILL.md)；官网、营销页与作品展示按其路由读取 `marketing-showcase`，动效专项读取 `interaction-motion` |
+| 审查前端视觉、交互、可访问性或响应式质量前 | 项目 [frontend-quality-review](.agents/skills/frontend-quality-review/SKILL.md)；自动 detector 与专项命令由其按需路由至 Impeccable |
 | 打开浏览器做临时流程验收前 | 项目 [frontend-flow-test](.agents/skills/frontend-flow-test/SKILL.md) |
 | 修改文档、Agent 入口或 Skills 前 | [文档维护](docs/index.md#文档维护)；Skills 来源与升级见同页[工具维护](docs/index.md#工具维护) |
 | 操作 Docker 环境前 | [Docker 开发](docs/getting-started/docker-development.md)；诊断磁盘或清理资源前查[磁盘治理](docs/development/docker-disk-governance.md) |

@@ -109,6 +109,41 @@ class SkillDiscoveryTest(unittest.TestCase):
                 errors = self.check_skills({"release-review": content})
                 self.assertTrue(any(expected in error for error in errors), errors)
 
+    def test_skips_vendored_skill_docs_but_checks_project_references(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            skills_root = root / ".agents" / "skills"
+            impeccable_root = skills_root / "impeccable"
+            project_root = skills_root / "frontend-design"
+            (impeccable_root / "reference").mkdir(parents=True)
+            (project_root / "references").mkdir(parents=True)
+            impeccable_skill = impeccable_root / "SKILL.md"
+            impeccable_reference = impeccable_root / "reference" / "upstream.md"
+            project_skill = project_root / "SKILL.md"
+            project_reference = project_root / "references" / "project.md"
+            impeccable_skill.write_text(
+                "---\nname: impeccable\ndescription: Review UI.\n---\n# Impeccable\n",
+                encoding="utf-8",
+            )
+            impeccable_reference.write_text("upstream format", encoding="utf-8")
+            project_skill.write_text(
+                "---\nname: frontend-design\ndescription: Design UI.\n---\n# Design\n",
+                encoding="utf-8",
+            )
+            project_reference.write_text("# Project reference\n", encoding="utf-8")
+
+            with (
+                patch.object(checker, "ROOT", root),
+                patch.object(checker, "DOCS_ROOT", root / "docs"),
+                patch.object(checker, "PROJECT_SKILLS_ROOT", skills_root),
+            ):
+                files = checker.markdown_files()
+
+            self.assertNotIn(impeccable_skill, files)
+            self.assertNotIn(impeccable_reference, files)
+            self.assertIn(project_skill, files)
+            self.assertIn(project_reference, files)
+
 
 class RetiredChangelogTest(unittest.TestCase):
     def test_rejects_recreated_numbered_log_directory(self) -> None:

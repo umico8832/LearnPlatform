@@ -88,12 +88,23 @@ roadmap 引用有效候选。不能因为某个流程涉及多个领域，就在
 
 ## 工具维护
 
-- `frontend-design`、`frontend-flow-test` 是项目自有 Skill，工作流维护在各自 `SKILL.md`；项目事实通过链接引用 docs。
+- `frontend-design`、`marketing-showcase`、`interaction-motion`、`frontend-quality-review`、`frontend-flow-test`
+  是项目自有 Skill，工作流维护在各自 `SKILL.md`；项目事实通过链接引用 docs。前三个设计 Skill 分别承担总路由、
+  对外展示场景和动效专项，质量审查保持只读审查语义；现有视觉规则是可审查基线，不因已存在而自动优先于证据。
 - `banner-design`、`brand`、`design`、`design-system`、`slides`、`ui-styling`、`ui-ux-pro-max` 来自
   [ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)，不直接修改、移动或格式化生成内容。
   项目约束写入自有 Skill；上游目录名仅标记所有权，不代表项目必须安装全套技能。
+- `impeccable` 来自 [pbakaus/impeccable](https://github.com/pbakaus/impeccable)，按其目录内 `SOURCE.md` 固定到已审计提交，
+  保留官方 Skill、命令、detector、CLI 与 live-browser 参考。默认不安装或启用项目 Hook；`PRODUCT.md`、`DESIGN.md`
+  和 surface brief 仅在对应命令和用户授权范围内创建或修改，不替代 PRD、架构和项目状态等权威来源。项目仅收窄
+  其发现描述，避免普通前端任务绕过项目路由或隐式触发首次 runtime 下载；显式调用仍保留全部上游命令。
+- 项目自有设计 Skill 对 Anthropic `frontend-design`、Taste Skill、Emil Design Engineering 与 Vercel
+  `web-design-guidelines` 的吸收边界、提交和许可证记录在各 Skill 的来源说明中；升级时重新审查并转写，
+  不把 React、Next.js、Tailwind、shadcn/ui 或品牌专属规则直接移植到当前 Vue 技术栈。
 - 升级上游包前确认工作区可隔离，执行 `npm install -g ui-ux-pro-max-cli@latest` 和
   `uipro init --ai codex --force`，检查生成差异及自有 Skill 是否被覆盖；不得将升级与无关任务混合。
+- 升级 Impeccable 时先核对目标提交与许可证，在隔离目录生成 Codex/agents 分发并与当前 vendored 目录比较；
+  未经用户明确要求不得安装 Hook，不能把首次 CLI 下载或 live-browser 成功当作静态安装验证。
 - 修改自有 Skill 后执行系统 `skill-creator` 的 `quick_validate.py`，核对描述、引用与适用范围；
   安装或升级后运行 `python3 scripts/check-docs.py`。长期来源与升级边界保留在本节，单次版本和验证由 Git 与 CI 保存。
 - 文档门禁检查已安装 Skill 的发现元数据及自有文档链接，不强制固定安装清单或 `agents/openai.yaml`。

@@ -22,6 +22,7 @@ UPSTREAM_SKILL_NAMES = frozenset(
         "brand",
         "design",
         "design-system",
+        "impeccable",
         "slides",
         "ui-styling",
         "ui-ux-pro-max",
