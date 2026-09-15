@@ -29,8 +29,8 @@ describe('QuestionVisualMermaid', () => {
     expect(initialize).toHaveBeenCalledWith({
       startOnLoad: false,
       theme: 'default',
-      securityLevel: 'loose',
-      flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' },
+      securityLevel: 'strict',
+      flowchart: { useMaxWidth: true, htmlLabels: false, curve: 'basis' },
     })
     expect(render).toHaveBeenCalledWith(expect.stringMatching(/^mermaid-\d+-\d+$/), 'flowchart TD\nA-->B')
     expect(wrapper.find('svg').text()).toContain('初始图')
@@ -42,5 +42,19 @@ describe('QuestionVisualMermaid', () => {
     await flushPromises()
 
     expect(wrapper.find('.vi-mermaid-error').text()).toBe('invalid diagram')
+  })
+
+  it('sanitizes executable content from rendered SVG', async () => {
+    render.mockResolvedValue({
+      svg: '<svg xmlns="http://www.w3.org/2000/svg"><text>safe</text><script>window.__xss = true</script><a href="javascript:alert(1)"><text>unsafe</text></a></svg>',
+    })
+    const wrapper = mount(QuestionVisualMermaid, {
+      props: { element: { type: 'mermaid', label: '流程', code: 'flowchart TD\nA-->B' } },
+    })
+    await flushPromises()
+
+    expect(wrapper.html()).not.toContain('<script>')
+    expect(wrapper.html()).not.toContain('javascript:')
+    expect(wrapper.find('svg').text()).toContain('safe')
   })
 })
