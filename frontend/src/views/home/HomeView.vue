@@ -222,20 +222,6 @@
         </div>
       </section>
 
-      <section class="metrics-section section-shell" aria-labelledby="metrics-title">
-        <div class="metrics-heading">
-          <p class="section-kicker">Placeholder metrics</p>
-          <h2 id="metrics-title">学习正在发生。</h2>
-          <span>以下为开发阶段占位数据</span>
-        </div>
-        <dl class="metrics-grid">
-          <div v-for="metric in placeholderMetrics" :key="metric.label">
-            <dt>{{ metric.label }}</dt>
-            <dd>{{ metric.value }}</dd>
-          </div>
-        </dl>
-      </section>
-
       <section class="course-section" aria-labelledby="course-title">
         <div class="course-section__ambient" aria-hidden="true"></div>
         <div class="course-section__inner section-shell">
@@ -384,12 +370,6 @@ const continuitySteps = [
   { title: '作答', detail: '用一次真实回答确认理解' },
   { title: '错题', detail: '保留误解，而不是覆盖历史' },
   { title: '复习', detail: '在合适的时候重新遇见' },
-]
-
-const placeholderMetrics = [
-  { value: '00,000+', label: '学习片段' },
-  { value: '000', label: '课程空间' },
-  { value: '00%', label: '持续学习率' },
 ]
 </script>
 

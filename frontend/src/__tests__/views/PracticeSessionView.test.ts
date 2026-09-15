@@ -125,9 +125,9 @@ describe('PracticeSessionView', () => {
     const wrapper = mount(PracticeSessionView, { global: { stubs } })
     await flushPromises()
 
-    const correctOption = wrapper.findAll('.option-item').find((option) => option.text().includes('正确'))
+    const correctOption = wrapper.findAll('input[type="radio"]').find((option) => option.attributes('value') === 'TRUE')
     expect(correctOption).toBeDefined()
-    await correctOption!.trigger('click')
+    await correctOption!.setValue()
     const submitButton = wrapper.findAll('button').find((button) => button.text().includes('提交答案'))
     await submitButton!.trigger('click')
     await flushPromises()
@@ -143,5 +143,15 @@ describe('PracticeSessionView', () => {
 
     expect(wrapper.text()).toContain('第二题')
     expect(wrapper.find('[data-testid="result-dialog"]').exists()).toBe(false)
+  })
+
+  it('uses native radio controls for true-or-false answers', async () => {
+    const wrapper = mount(PracticeSessionView, { global: { stubs } })
+    await flushPromises()
+
+    const radios = wrapper.findAll('input[type="radio"]')
+    expect(radios).toHaveLength(2)
+    await radios[0].setValue()
+    expect((radios[0].element as HTMLInputElement).checked).toBe(true)
   })
 })

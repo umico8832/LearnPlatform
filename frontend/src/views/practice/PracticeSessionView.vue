@@ -132,49 +132,53 @@
           </el-tag>
         </div>
 
-        <!-- 选项区域 -->
         <div class="answer-area">
-          <!-- 单选题 -->
           <div v-if="currentQuestion.questionType === 'SINGLE_CHOICE'" class="option-list">
-            <div
+            <label
               v-for="opt in currentQuestion.options"
               :key="opt.id"
               :class="['option-item', { selected: userAnswer === opt.optionLabel }]"
-              @click="userAnswer = opt.optionLabel"
             >
-              <span class="option-label">{{ opt.optionLabel }}</span>
-              <span class="option-content">{{ opt.content }}</span>
-            </div>
-          </div>
-
-          <!-- 多选题 -->
-          <div v-else-if="currentQuestion.questionType === 'MULTIPLE_CHOICE'" class="option-list">
-            <div
-              v-for="opt in currentQuestion.options"
-              :key="opt.id"
-              :class="['option-item', { selected: multiAnswers.has(opt.optionLabel) }]"
-              @click="toggleMulti(opt.optionLabel)"
-            >
-              <el-checkbox
-                :model-value="multiAnswers.has(opt.optionLabel)"
-                @click.stop="toggleMulti(opt.optionLabel)"
+              <input
+                v-model="userAnswer"
+                class="option-input"
+                type="radio"
+                name="practice-answer"
+                :value="opt.optionLabel"
               />
               <span class="option-label">{{ opt.optionLabel }}</span>
               <span class="option-content">{{ opt.content }}</span>
-            </div>
+            </label>
           </div>
 
-          <!-- 判断题 -->
+          <div v-else-if="currentQuestion.questionType === 'MULTIPLE_CHOICE'" class="option-list">
+            <label
+              v-for="opt in currentQuestion.options"
+              :key="opt.id"
+              :class="['option-item', { selected: multiAnswers.has(opt.optionLabel) }]"
+            >
+              <input
+                class="option-input"
+                type="checkbox"
+                :checked="multiAnswers.has(opt.optionLabel)"
+                @change="toggleMulti(opt.optionLabel)"
+              />
+              <span class="option-label">{{ opt.optionLabel }}</span>
+              <span class="option-content">{{ opt.content }}</span>
+            </label>
+          </div>
+
           <div v-else-if="currentQuestion.questionType === 'TRUE_FALSE'" class="option-list tf-options">
-            <div :class="['option-item tf-item', { selected: userAnswer === 'TRUE' }]" @click="userAnswer = 'TRUE'">
+            <label :class="['option-item tf-item', { selected: userAnswer === 'TRUE' }]">
+              <input v-model="userAnswer" class="option-input" type="radio" name="practice-answer" value="TRUE" />
               <span class="option-content">✓ 正确</span>
-            </div>
-            <div :class="['option-item tf-item', { selected: userAnswer === 'FALSE' }]" @click="userAnswer = 'FALSE'">
+            </label>
+            <label :class="['option-item tf-item', { selected: userAnswer === 'FALSE' }]">
+              <input v-model="userAnswer" class="option-input" type="radio" name="practice-answer" value="FALSE" />
               <span class="option-content">✗ 错误</span>
-            </div>
+            </label>
           </div>
 
-          <!-- 填空题 / 简答题 -->
           <div v-else class="text-answer">
             <el-input
               v-model="userAnswer"
@@ -428,6 +432,19 @@ const restartPractice = leavePractice
   transition:
     border-color var(--lp-duration-fast) var(--lp-ease-out),
     background-color var(--lp-duration-fast) var(--lp-ease-out);
+}
+
+.option-input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--lp-primary);
+  flex-shrink: 0;
+}
+
+.option-item:has(.option-input:focus-visible) {
+  outline: 2px solid var(--lp-primary);
+  outline-offset: 2px;
 }
 
 .option-item:hover {

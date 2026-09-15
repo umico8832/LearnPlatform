@@ -1,10 +1,10 @@
 <template>
   <section ref="assetRoot" class="learning-asset">
     <!-- 可折叠模式：仅显示标题栏，点击展开 -->
-    <div v-if="collapsible && !expanded" class="asset-collapsed" @click="expandAndLoad">
+    <button v-if="collapsible && !expanded" type="button" class="asset-collapsed" @click="expandAndLoad">
       <span class="collapsed-text">AI 深度学习</span>
       <el-icon class="collapsed-arrow"><ArrowRight /></el-icon>
-    </div>
+    </button>
 
     <!-- 完整内容 -->
     <template v-if="!collapsible || expanded">
@@ -380,11 +380,19 @@ async function generateTab(type: AiAssetType) {
   cursor: pointer;
   transition: all 0.2s;
   user-select: none;
+  width: 100%;
+  text-align: left;
+  font: inherit;
 }
 
 .asset-collapsed:hover {
   background: #e4efff;
   border-color: #a0c0e0;
+}
+
+.asset-collapsed:focus-visible {
+  outline: 2px solid var(--lp-primary);
+  outline-offset: 2px;
 }
 
 .collapsed-text {
