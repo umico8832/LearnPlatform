@@ -29,7 +29,7 @@
         <knife4j.version>4.4.0</knife4j.version>
         <testcontainers.version>1.21.4</testcontainers.version>
         <jacoco.version>0.8.15</jacoco.version>
-        <archunit.version>1.4.2</archunit.version>
+        <archunit.version>1.5.0</archunit.version>
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <spotbugs.plugin.version>4.10.2.0</spotbugs.plugin.version>
         <pdfbox.version>3.0.8</pdfbox.version>
