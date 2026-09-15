@@ -17,6 +17,7 @@
         <el-icon class="search-icon"><Search /></el-icon>
         <input
           ref="inputRef"
+          aria-label="搜索题目、课程或知识点"
           v-model="keyword"
           class="search-input"
           placeholder="搜索题目、课程、知识点…"
@@ -52,16 +53,22 @@
               <span>题目</span>
               <span class="group-count">{{ results.questions.length }}</span>
             </div>
-            <div
+            <button
               v-for="(item, idx) in results.questions"
               :key="'q-' + item.id"
+              type="button"
               :class="['result-item', { active: flatIndex('q', idx) === activeIndex }]"
               @click="navigateTo(item)"
               @mouseenter="activeIndex = flatIndex('q', idx)"
             >
-              <div class="item-title" v-html="highlightMatch(item.title)"></div>
+              <div class="item-title">
+                <template v-for="(segment, segmentIndex) in splitMatch(item.title)" :key="segmentIndex"
+                  ><mark v-if="segment.match">{{ segment.text }}</mark
+                  ><template v-else>{{ segment.text }}</template></template
+                >
+              </div>
               <div class="item-subtitle">{{ item.subtitle }}</div>
-            </div>
+            </button>
           </div>
 
           <!-- 课程 -->
@@ -71,16 +78,22 @@
               <span>课程</span>
               <span class="group-count">{{ results.courses.length }}</span>
             </div>
-            <div
+            <button
               v-for="(item, idx) in results.courses"
               :key="'c-' + item.id"
+              type="button"
               :class="['result-item', { active: flatIndex('c', idx) === activeIndex }]"
               @click="navigateTo(item)"
               @mouseenter="activeIndex = flatIndex('c', idx)"
             >
-              <div class="item-title" v-html="highlightMatch(item.title)"></div>
+              <div class="item-title">
+                <template v-for="(segment, segmentIndex) in splitMatch(item.title)" :key="segmentIndex"
+                  ><mark v-if="segment.match">{{ segment.text }}</mark
+                  ><template v-else>{{ segment.text }}</template></template
+                >
+              </div>
               <div class="item-subtitle">{{ item.subtitle }}</div>
-            </div>
+            </button>
           </div>
 
           <!-- 知识点 -->
@@ -90,16 +103,22 @@
               <span>知识点</span>
               <span class="group-count">{{ results.knowledgePoints.length }}</span>
             </div>
-            <div
+            <button
               v-for="(item, idx) in results.knowledgePoints"
               :key="'kp-' + item.id"
+              type="button"
               :class="['result-item', { active: flatIndex('kp', idx) === activeIndex }]"
               @click="navigateTo(item)"
               @mouseenter="activeIndex = flatIndex('kp', idx)"
             >
-              <div class="item-title" v-html="highlightMatch(item.title)"></div>
+              <div class="item-title">
+                <template v-for="(segment, segmentIndex) in splitMatch(item.title)" :key="segmentIndex"
+                  ><mark v-if="segment.match">{{ segment.text }}</mark
+                  ><template v-else>{{ segment.text }}</template></template
+                >
+              </div>
               <div class="item-subtitle">{{ item.subtitle }}</div>
-            </div>
+            </button>
           </div>
         </template>
       </div>
@@ -113,18 +132,20 @@
               <el-icon><Clock /></el-icon>
               搜索历史
             </span>
-            <span class="section-action" @click.stop="handleClearHistory">清除</span>
+            <button type="button" class="section-action" @click="handleClearHistory">清除</button>
           </div>
           <div class="history-list">
-            <div
-              v-for="(item, idx) in suggestions.history"
-              :key="'h-' + idx"
-              class="history-item"
-              @click="fillKeyword(item)"
-            >
+            <div v-for="(item, idx) in suggestions.history" :key="'h-' + idx" class="history-item">
               <el-icon class="history-icon"><Clock /></el-icon>
-              <span class="history-text">{{ item }}</span>
-              <el-icon class="history-delete" @click.stop="handleRemoveHistory(item)"><Close /></el-icon>
+              <button type="button" class="history-text" @click="fillKeyword(item)">{{ item }}</button>
+              <button
+                type="button"
+                class="history-delete"
+                :aria-label="`删除搜索历史：${item}`"
+                @click="handleRemoveHistory(item)"
+              >
+                <el-icon><Close /></el-icon>
+              </button>
             </div>
           </div>
         </div>
@@ -138,15 +159,16 @@
             </span>
           </div>
           <div class="hot-keyword-list">
-            <span
+            <button
               v-for="(item, idx) in suggestions.hotKeywords"
               :key="'hot-' + idx"
+              type="button"
               class="hot-keyword-tag"
               @click="fillKeyword(item)"
             >
               <span class="hot-rank" :class="{ 'top-3': idx < 3 }">{{ idx + 1 }}</span>
               {{ item }}
-            </span>
+            </button>
           </div>
         </div>
       </div>
@@ -168,7 +190,7 @@ import {
   type SearchSuggestions,
 } from '@/api/search'
 import { useGlobalSearchShortcuts } from './search/useGlobalSearchShortcuts'
-import { highlightSearchMatch } from './search/searchText'
+import { splitSearchMatch } from './search/searchText'
 import {
   emptySearchResult,
   flattenSearchResults,
@@ -328,8 +350,8 @@ function navigateTo(item: SearchItem) {
 }
 
 // 高亮匹配文本
-function highlightMatch(text: string): string {
-  return highlightSearchMatch(text, keyword.value)
+function splitMatch(text: string) {
+  return splitSearchMatch(text, keyword.value)
 }
 
 const isMobile = useGlobalSearchShortcuts(visible, open, close)
@@ -453,11 +475,24 @@ defineExpose({ open })
   cursor: pointer;
   transition: background-color var(--lp-duration-fast) var(--lp-ease-out);
   border-radius: 0;
+  width: 100%;
+  border: 0;
+  text-align: left;
+  font: inherit;
 }
 
 .result-item:hover,
 .result-item.active {
   background-color: var(--lp-primary-soft);
+}
+
+.result-item:focus-visible,
+.section-action:focus-visible,
+.history-text:focus-visible,
+.history-delete:focus-visible,
+.hot-keyword-tag:focus-visible {
+  outline: 2px solid var(--lp-primary);
+  outline-offset: -2px;
 }
 
 .item-title {
@@ -467,7 +502,7 @@ defineExpose({ open })
   word-break: break-word;
 }
 
-.item-title :deep(mark) {
+.item-title mark {
   background: var(--lp-warning-soft);
   color: var(--lp-warning);
   padding: 0 var(--lp-space-1);
@@ -514,6 +549,8 @@ defineExpose({ open })
   font-size: var(--lp-text-xs);
   color: var(--lp-ink-300);
   cursor: pointer;
+  border: 0;
+  background: transparent;
   transition: color var(--lp-duration-normal) var(--lp-ease-out);
 }
 
@@ -532,7 +569,6 @@ defineExpose({ open })
   align-items: center;
   gap: var(--lp-space-3);
   padding: var(--lp-space-2) var(--lp-space-4);
-  cursor: pointer;
   transition: background-color var(--lp-duration-fast) var(--lp-ease-out);
 }
 
@@ -553,12 +589,20 @@ defineExpose({ open })
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
 }
 
 .history-delete {
   color: var(--lp-ink-300);
   font-size: var(--lp-text-base);
   cursor: pointer;
+  padding: 0;
+  border: 0;
+  background: transparent;
   opacity: 0;
   transition:
     opacity var(--lp-duration-normal) var(--lp-ease-out),
@@ -597,6 +641,7 @@ defineExpose({ open })
     color var(--lp-duration-normal) var(--lp-ease-out),
     border-color var(--lp-duration-normal) var(--lp-ease-out);
   border: 1px solid transparent;
+  cursor: pointer;
 }
 
 .hot-keyword-tag:hover {

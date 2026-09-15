@@ -17,8 +17,8 @@ async function ensureMermaid(): Promise<typeof import('mermaid').default> {
     mermaidInstance.initialize({
       startOnLoad: false,
       theme: 'default',
-      securityLevel: 'loose',
-      flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' },
+      securityLevel: 'strict',
+      flowchart: { useMaxWidth: true, htmlLabels: false, curve: 'basis' },
     })
   }
   return mermaidInstance
@@ -27,6 +27,7 @@ async function ensureMermaid(): Promise<typeof import('mermaid').default> {
 
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import DOMPurify from 'dompurify'
 import type { VisualMermaidElement } from '@/api/ai'
 
 const props = defineProps<{
@@ -50,7 +51,14 @@ async function renderMermaid(code: string) {
     const id = `mermaid-${++mermaidIdCounter}-${Date.now()}`
     const { svg } = await mermaid.render(id, code)
     if (currentVersion === renderVersion) {
-      target.innerHTML = svg
+      const sanitizedHost = document.createElement('div')
+      sanitizedHost.innerHTML = DOMPurify.sanitize(`<div>${svg}</div>`, {
+        USE_PROFILES: { html: true, svg: true, svgFilters: true },
+        FORBID_TAGS: ['foreignObject', 'script'],
+      })
+      const sanitizedSvg = sanitizedHost.querySelector('svg')
+      if (!sanitizedSvg) throw new Error('Mermaid 未生成可展示的图形')
+      target.replaceChildren(sanitizedSvg)
     }
   } catch {
     if (currentVersion !== renderVersion) return
