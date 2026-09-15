@@ -5,6 +5,10 @@
     </el-page-header>
 
     <div v-if="loading" v-loading="true" class="page-loading"></div>
+    <div v-else-if="loadError" class="page-error" role="alert">
+      <p>加载学习诊断失败：{{ loadError }}</p>
+      <button type="button" class="retry-button" @click="loadDiagnosis">重试</button>
+    </div>
     <template v-else-if="data">
       <LearningDiagnosisSummary
         :data="data"
@@ -65,6 +69,7 @@ import { errorMessage, isAbortError } from '@/utils/errors'
 const router = useRouter()
 const loading = ref(true)
 const data = ref<LearningDiagnosis | null>(null)
+const loadError = ref('')
 
 const errorAnalysisDialogVisible = ref(false)
 const errorAnalysisLoading = ref(false)
@@ -179,15 +184,21 @@ function startRecommendPractice() {
     .catch(() => ElMessage.error('加载推荐练习失败，请重试'))
 }
 
-onMounted(async () => {
+async function loadDiagnosis() {
+  loading.value = true
+  loadError.value = ''
   try {
     const response = await getLearningDiagnosis()
     data.value = response.data
   } catch (error) {
-    ElMessage.error('加载学习诊断失败: ' + errorMessage(error, '未知错误'))
+    loadError.value = errorMessage(error, '未知错误')
   } finally {
     loading.value = false
   }
+}
+
+onMounted(() => {
+  void loadDiagnosis()
 })
 </script>
 
@@ -203,5 +214,29 @@ onMounted(async () => {
 
 .page-loading {
   height: 400px;
+}
+
+.page-error {
+  display: grid;
+  justify-items: start;
+  gap: var(--lp-space-3);
+  min-height: 240px;
+  padding: var(--lp-space-6);
+  color: var(--lp-danger);
+}
+
+.retry-button {
+  padding: var(--lp-space-2) var(--lp-space-4);
+  border: 1px solid var(--lp-primary);
+  border-radius: var(--lp-radius-sm);
+  color: var(--lp-on-primary);
+  background: var(--lp-primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.retry-button:focus-visible {
+  outline: 2px solid var(--lp-primary);
+  outline-offset: 2px;
 }
 </style>

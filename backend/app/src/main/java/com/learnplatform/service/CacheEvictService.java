@@ -28,10 +28,11 @@ public class CacheEvictService {
         if (userId == null) { return; }
         log.debug("清除用户统计缓存: userId={}", userId);
 
-        clearCache("statistics", userId.toString());
-        clearCache("dailyTrend", userId.toString());
-        clearCache("courseStats", userId.toString());
-        clearCache("learningReport", userId.toString());
+        clearCache("statistics", userId);
+        clearCache("dailyTrend", userId);
+        clearCache("courseStats", userId);
+        clearCache("learningReport", userId);
+        clearCache("learningDiagnosis", userId);
 
         // learningPath 和 knowledgeGraph 的 key 包含 courseId，需要清除整个缓存区域
         evictAll("learningPath");
@@ -49,7 +50,7 @@ public class CacheEvictService {
         evictAll("adminStatistics");
     }
 
-    private void clearCache(String cacheName, String key) {
+    private void clearCache(String cacheName, Object key) {
         try {
             var cache = cacheManager.getCache(cacheName);
             if (cache != null) {

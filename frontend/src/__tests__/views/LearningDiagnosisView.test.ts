@@ -113,6 +113,24 @@ describe('LearningDiagnosisView', () => {
     )
   })
 
+  it('shows a recoverable error state and retries loading the diagnosis', async () => {
+    mockGetLearningDiagnosis
+      .mockRejectedValueOnce(new Error('network unavailable'))
+      .mockResolvedValueOnce({ data: diagnosis })
+    const wrapper = mountView()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('加载学习诊断失败')
+    const retryButton = wrapper.findAll('button').find((button) => button.text().includes('重试'))
+    expect(retryButton).toBeDefined()
+
+    await retryButton!.trigger('click')
+    await flushPromises()
+
+    expect(mockGetLearningDiagnosis).toHaveBeenCalledTimes(2)
+    expect(wrapper.findComponent(LearningDiagnosisSummary).props('data')).toEqual(diagnosis)
+  })
+
   it('keeps question error analysis requests in the page orchestrator', async () => {
     const analysis = {
       questionId: 10,

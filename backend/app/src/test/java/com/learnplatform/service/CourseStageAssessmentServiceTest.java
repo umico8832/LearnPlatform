@@ -48,6 +48,7 @@ class CourseStageAssessmentServiceTest {
     @Mock private WrongQuestionService wrongQuestionService;
     @Mock private SpacedRepetitionService repetitionService;
     @Mock private CourseLearningEventService eventService;
+    @Mock private CacheEvictService cacheEvictService;
     private CourseStageAssessmentService service;
 
     @BeforeEach
@@ -63,7 +64,8 @@ class CourseStageAssessmentServiceTest {
         CourseStageAssessmentViewService viewService =
                 new CourseStageAssessmentViewService(assessmentQuestionMapper, objectMapper);
         service = new CourseStageAssessmentService(assessmentMapper, assessmentQuestionMapper,
-                knowledgePointMapper, answerEvaluator, snapshotService, learningFactService, viewService);
+                knowledgePointMapper, answerEvaluator, snapshotService, learningFactService, viewService,
+                cacheEvictService);
         lenient().when(knowledgePointMapper.selectByQuestionId(any())).thenReturn(List.of());
     }
 
@@ -299,6 +301,7 @@ class CourseStageAssessmentServiceTest {
                 org.mockito.ArgumentMatchers.eq("STAGE_ASSESSMENT_ANSWERED"),
                 org.mockito.ArgumentMatchers.eq("STAGE_ASSESSMENT"), anyLong(),
                 org.mockito.ArgumentMatchers.eq(true), any());
+        verify(cacheEvictService).evictUserStatistics(7L);
     }
 
     @Test

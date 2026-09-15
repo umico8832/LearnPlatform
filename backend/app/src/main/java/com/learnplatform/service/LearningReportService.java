@@ -164,16 +164,24 @@ public class LearningReportService {
         vo.setDailyTrend(dailyTrend);
 
         // ========== 本月各课程正确率 ==========
+        List<Long> questionIds = monthRecords.stream().map(PracticeRecord::getQuestionId)
+                .filter(java.util.Objects::nonNull).distinct().toList();
+        Map<Long, Question> questionsById = questionIds.isEmpty() ? Map.of()
+                : questionMapper.selectBatchIds(questionIds).stream()
+                .collect(Collectors.toMap(Question::getId, question -> question));
         Map<Long, List<PracticeRecord>> byCourse = new HashMap<>();
         for (PracticeRecord r : monthRecords) {
-            Question q = questionMapper.selectById(r.getQuestionId());
+            Question q = questionsById.get(r.getQuestionId());
             if (q != null && q.getCourseId() != null) {
                 byCourse.computeIfAbsent(q.getCourseId(), k -> new ArrayList<>()).add(r);
             }
         }
+        Map<Long, Course> coursesById = byCourse.isEmpty() ? Map.of()
+                : courseMapper.selectBatchIds(byCourse.keySet()).stream()
+                .collect(Collectors.toMap(Course::getId, course -> course));
         List<Map<String, Object>> courseStats = new ArrayList<>();
         for (Map.Entry<Long, List<PracticeRecord>> entry : byCourse.entrySet()) {
-            Course course = courseMapper.selectById(entry.getKey());
+            Course course = coursesById.get(entry.getKey());
             List<PracticeRecord> records = entry.getValue();
             long correct = records.stream()
                     .filter(r -> r.getIsCorrect() != null && r.getIsCorrect() == 1).count();
@@ -192,7 +200,7 @@ public class LearningReportService {
         // ========== 本月各题型刷题分布 ==========
         Map<String, Integer> typeDist = new LinkedHashMap<>();
         for (PracticeRecord r : monthRecords) {
-            Question q = questionMapper.selectById(r.getQuestionId());
+            Question q = questionsById.get(r.getQuestionId());
             if (q != null && q.getQuestionType() != null) {
                 String typeName = getQuestionTypeName(q.getQuestionType());
                 typeDist.merge(typeName, 1, Integer::sum);
