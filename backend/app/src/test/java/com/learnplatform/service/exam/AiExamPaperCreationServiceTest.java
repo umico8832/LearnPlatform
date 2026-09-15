@@ -2,7 +2,7 @@ package com.learnplatform.service.exam;
 
 import com.learnplatform.dto.ExamPaperCreateRequest;
 import com.learnplatform.dto.ExamPaperVO;
-import com.learnplatform.service.AiExamGenerationService.SmartExamPreview;
+import com.learnplatform.dto.exam.SmartExamPreview;
 import com.learnplatform.service.ExamPaperService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -3,6 +3,8 @@ package com.learnplatform.service;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.ExamPaperVO;
+import com.learnplatform.dto.exam.SmartExamPreview;
+import com.learnplatform.dto.exam.SmartExamRequest;
 import com.learnplatform.entity.Question;
 import com.learnplatform.service.exam.AiExamCandidateLoader;
 import com.learnplatform.service.exam.AiExamPaperCreationService;
@@ -73,78 +75,4 @@ public class AiExamGenerationService {
         return paper;
     }
 
-    /** 智能组卷请求参数。 */
-    public static class SmartExamRequest {
-        private Long courseId;
-        private Integer questionCount = 20;
-        /** 难度分布偏好：EASY/BALANCED/HARD/ADAPTIVE，默认 ADAPTIVE */
-        private String difficultyMode = "ADAPTIVE";
-        /** 是否优先包含用户的错题 */
-        private boolean includeWrongQuestions = true;
-        /** 试卷标题（可选，为空则自动生成） */
-        private String title;
-        /** 考试时长（分钟） */
-        private Integer duration = 60;
-
-        public Long getCourseId() { return courseId; }
-        public void setCourseId(Long courseId) { this.courseId = courseId; }
-        public Integer getQuestionCount() { return questionCount; }
-        public void setQuestionCount(Integer questionCount) { this.questionCount = questionCount; }
-        public String getDifficultyMode() { return difficultyMode; }
-        public void setDifficultyMode(String difficultyMode) { this.difficultyMode = difficultyMode; }
-        public boolean isIncludeWrongQuestions() { return includeWrongQuestions; }
-        public void setIncludeWrongQuestions(boolean includeWrongQuestions) {
-            this.includeWrongQuestions = includeWrongQuestions;
-        }
-        public String getTitle() { return title; }
-        public void setTitle(String title) { this.title = title; }
-        public Integer getDuration() { return duration; }
-        public void setDuration(Integer duration) { this.duration = duration; }
-    }
-
-    /** 智能组卷结果预览（不含实际创建试卷）。 */
-    public static class SmartExamPreview {
-        private String title;
-        private String description;
-        private Long courseId;
-        private String courseName;
-        private Integer questionCount;
-        private Integer totalScore;
-        private Integer duration;
-        /** 各知识点题目数分布 */
-        private Map<String, Integer> knowledgePointDistribution;
-        /** 各难度题目数分布 */
-        private Map<String, Integer> difficultyDistribution;
-        /** 选中的题目 ID 列表 */
-        private List<Long> questionIds;
-        /** 推荐理由 */
-        private String recommendation;
-
-        public String getTitle() { return title; }
-        public void setTitle(String title) { this.title = title; }
-        public String getDescription() { return description; }
-        public void setDescription(String description) { this.description = description; }
-        public Long getCourseId() { return courseId; }
-        public void setCourseId(Long courseId) { this.courseId = courseId; }
-        public String getCourseName() { return courseName; }
-        public void setCourseName(String courseName) { this.courseName = courseName; }
-        public Integer getQuestionCount() { return questionCount; }
-        public void setQuestionCount(Integer questionCount) { this.questionCount = questionCount; }
-        public Integer getTotalScore() { return totalScore; }
-        public void setTotalScore(Integer totalScore) { this.totalScore = totalScore; }
-        public Integer getDuration() { return duration; }
-        public void setDuration(Integer duration) { this.duration = duration; }
-        public Map<String, Integer> getKnowledgePointDistribution() { return knowledgePointDistribution; }
-        public void setKnowledgePointDistribution(Map<String, Integer> knowledgePointDistribution) {
-            this.knowledgePointDistribution = knowledgePointDistribution;
-        }
-        public Map<String, Integer> getDifficultyDistribution() { return difficultyDistribution; }
-        public void setDifficultyDistribution(Map<String, Integer> difficultyDistribution) {
-            this.difficultyDistribution = difficultyDistribution;
-        }
-        public List<Long> getQuestionIds() { return questionIds; }
-        public void setQuestionIds(List<Long> questionIds) { this.questionIds = questionIds; }
-        public String getRecommendation() { return recommendation; }
-        public void setRecommendation(String recommendation) { this.recommendation = recommendation; }
-    }
 }

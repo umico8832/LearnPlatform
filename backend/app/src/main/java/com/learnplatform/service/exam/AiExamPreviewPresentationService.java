@@ -1,8 +1,8 @@
 package com.learnplatform.service.exam;
 
+import com.learnplatform.dto.exam.SmartExamPreview;
+import com.learnplatform.dto.exam.SmartExamRequest;
 import com.learnplatform.entity.Question;
-import com.learnplatform.service.AiExamGenerationService.SmartExamPreview;
-import com.learnplatform.service.AiExamGenerationService.SmartExamRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;

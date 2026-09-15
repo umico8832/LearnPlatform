@@ -1,6 +1,7 @@
 package com.learnplatform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.learnplatform.dto.diagnosis.LearningDiagnosisData;
 import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.PracticeRecord;
 import com.learnplatform.entity.QuestionKnowledgePoint;
@@ -41,7 +42,7 @@ public class LearningDiagnosisDataLoader {
     }
 
     /** 加载一次诊断计算共享的数据快照。 */
-    public DiagnosisData load(Long userId) {
+    public LearningDiagnosisData load(Long userId) {
         LambdaQueryWrapper<PracticeRecord> practiceWrapper = new LambdaQueryWrapper<>();
         practiceWrapper.eq(PracticeRecord::getUserId, userId);
         List<PracticeRecord> records = practiceRecordMapper.selectList(practiceWrapper);
@@ -51,7 +52,7 @@ public class LearningDiagnosisDataLoader {
         List<WrongQuestion> wrongs = wrongQuestionMapper.selectList(wrongWrapper);
 
         List<KnowledgePoint> points = knowledgePointMapper.selectList(new LambdaQueryWrapper<>());
-        return new DiagnosisData(records, wrongs, points, buildQuestionToKnowledgePoints(points));
+        return new LearningDiagnosisData(records, wrongs, points, buildQuestionToKnowledgePoints(points));
     }
 
     private Map<Long, Set<Long>> buildQuestionToKnowledgePoints(List<KnowledgePoint> points) {
@@ -73,13 +74,5 @@ public class LearningDiagnosisDataLoader {
                     .add(relation.getKnowledgePointId());
         }
         return questionToKnowledgePoints;
-    }
-
-    /** 学习诊断计算期间共享的基础数据。 */
-    public record DiagnosisData(
-            List<PracticeRecord> records,
-            List<WrongQuestion> wrongs,
-            List<KnowledgePoint> knowledgePoints,
-            Map<Long, Set<Long>> questionToKnowledgePoints) {
     }
 }

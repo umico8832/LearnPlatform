@@ -59,4 +59,11 @@ class LayeredArchitectureTest {
             .should().beAnnotatedWith(Service.class)
             .orShould().beAnnotatedWith(Component.class)
             .because("顶层 service 只承载业务组件，值对象、策略和聚合器必须进入明确领域包");
+
+    @ArchTest
+    static final ArchRule top_level_services_must_not_publish_nested_contract_types = noClasses()
+            .that().resideInAPackage("com.learnplatform.service")
+            .and().areNestedClasses()
+            .should().bePublic()
+            .because("跨组件请求、响应和值对象必须进入 DTO 或明确业务子包，不能嵌套在 Service 中");
 }
