@@ -43,18 +43,28 @@
           </div>
           <div class="comment-text">{{ comment.content }}</div>
           <div class="comment-actions">
-            <span class="action-item" :class="{ liked: comment.likedByMe }" @click="handleLike(comment)">
+            <button
+              type="button"
+              class="action-item"
+              :class="{ liked: comment.likedByMe }"
+              @click="handleLike(comment)"
+            >
               <el-icon><Star /></el-icon>
               {{ comment.likeCount > 0 ? comment.likeCount : '点赞' }}
-            </span>
-            <span class="action-item" @click="startReply(comment)">
+            </button>
+            <button type="button" class="action-item" @click="startReply(comment)">
               <el-icon><ChatLineSquare /></el-icon>
               回复
-            </span>
-            <span v-if="isOwner(comment.userId)" class="action-item action-delete" @click="handleDelete(comment)">
+            </button>
+            <button
+              v-if="isOwner(comment.userId)"
+              type="button"
+              class="action-item action-delete"
+              @click="handleDelete(comment)"
+            >
               <el-icon><Delete /></el-icon>
               删除
-            </span>
+            </button>
           </div>
 
           <!-- 子回复 -->
@@ -76,22 +86,28 @@
                 </div>
                 <div class="comment-text">{{ reply.content }}</div>
                 <div class="comment-actions">
-                  <span class="action-item" :class="{ liked: reply.likedByMe }" @click="handleLike(reply)">
+                  <button
+                    type="button"
+                    class="action-item"
+                    :class="{ liked: reply.likedByMe }"
+                    @click="handleLike(reply)"
+                  >
                     <el-icon><Star /></el-icon>
                     {{ reply.likeCount > 0 ? reply.likeCount : '点赞' }}
-                  </span>
-                  <span class="action-item" @click="startReply(reply, comment)">
+                  </button>
+                  <button type="button" class="action-item" @click="startReply(reply, comment)">
                     <el-icon><ChatLineSquare /></el-icon>
                     回复
-                  </span>
-                  <span
+                  </button>
+                  <button
                     v-if="isOwner(reply.userId)"
+                    type="button"
                     class="action-item action-delete"
                     @click="handleDelete(reply, comment)"
                   >
                     <el-icon><Delete /></el-icon>
                     删除
-                  </span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -350,6 +366,10 @@ onMounted(() => {
   gap: 3px;
   cursor: pointer;
   transition: color 0.2s;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
 }
 
 .action-item:hover {
@@ -362,6 +382,11 @@ onMounted(() => {
 
 .action-item.action-delete:hover {
   color: #f56c6c;
+}
+
+.action-item:focus-visible {
+  outline: 2px solid var(--lp-primary);
+  outline-offset: 2px;
 }
 
 .replies-list {
