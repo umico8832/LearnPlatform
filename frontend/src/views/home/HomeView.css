@@ -211,7 +211,6 @@
 
 .hero-landscape {
   position: absolute;
-  z-index: 0;
   right: -2%;
   bottom: -2%;
   left: -2%;
@@ -219,6 +218,18 @@
   max-width: none;
   pointer-events: none;
   user-select: none;
+}
+
+.hero-landscape--back {
+  z-index: 0;
+}
+
+.hero-landscape--foreground {
+  z-index: 4;
+  filter: drop-shadow(
+    0 calc(var(--lp-space-2) * -1) var(--lp-space-4) color-mix(in srgb, var(--lp-home-ink) 16%, transparent)
+  );
+  transform: translateY(var(--lp-space-2));
 }
 
 .hero-copy {
@@ -298,7 +309,7 @@
   position: absolute;
   z-index: 3;
   right: 50%;
-  bottom: calc(var(--lp-space-10) * -1);
+  bottom: var(--lp-space-16);
   width: min(calc(100% - (var(--lp-space-12) * 2)), 920px);
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--lp-home-surface) 76%, var(--lp-home-line));
@@ -1218,8 +1229,12 @@
     width: 190%;
   }
 
+  .hero-landscape--foreground {
+    transform: translateY(var(--lp-space-12));
+  }
+
   .lesson-window {
-    bottom: var(--lp-space-5);
+    bottom: calc(var(--lp-space-5) + var(--lp-space-20));
     width: calc(100% - var(--lp-space-6));
   }
 

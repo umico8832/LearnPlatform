@@ -34,7 +34,7 @@
         <div class="hero-stage">
           <div class="hero-stage__texture" aria-hidden="true"></div>
           <img
-            class="hero-landscape"
+            class="hero-landscape hero-landscape--back"
             :src="learningLandscape"
             width="1600"
             height="800"
@@ -116,6 +116,16 @@
               </div>
             </div>
           </div>
+
+          <img
+            class="hero-landscape hero-landscape--foreground"
+            :src="learningLandscapeForeground"
+            width="1600"
+            height="800"
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+          />
         </div>
       </section>
 
@@ -283,6 +293,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import learningLandscapeForeground from '@/assets/images/home/learning-landscape-foreground.webp'
 import learningLandscape from '@/assets/images/home/learning-landscape.webp'
 import { isAuthenticated } from '@/utils/auth'
 

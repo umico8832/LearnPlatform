@@ -36,6 +36,14 @@ describe('HomeView', () => {
     expect(wrapper.findAll('[data-to="/register"]').length).toBeGreaterThan(0)
   })
 
+  it('把教学窗口放在远景与前景纸层之间形成景深', () => {
+    const wrapper = mountHome()
+
+    expect(wrapper.find('.hero-landscape--back').exists()).toBe(true)
+    expect(wrapper.find('.lesson-window').exists()).toBe(true)
+    expect(wrapper.find('.hero-landscape--foreground').exists()).toBe(true)
+  })
+
   it('根据学习者选择的困难切换讲法', async () => {
     const wrapper = mountHome()
     const exampleButton = wrapper.findAll('button').find((button) => button.text().includes('给我一个例子'))
