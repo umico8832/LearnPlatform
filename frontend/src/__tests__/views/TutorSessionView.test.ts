@@ -1,13 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 
-const { mockStartTutorSession, mockSubmitTutorCheck, mockPush } = vi.hoisted(() => ({
+const { mockGetTutorSession, mockStartTutorSession, mockSubmitTutorCheck, mockPush } = vi.hoisted(() => ({
+  mockGetTutorSession: vi.fn(),
   mockStartTutorSession: vi.fn(),
   mockSubmitTutorCheck: vi.fn(),
   mockPush: vi.fn(),
 }))
 
 vi.mock('@/api/course', () => ({
+  getTutorSession: (...args: unknown[]) => mockGetTutorSession(...args),
   startTutorSession: (...args: unknown[]) => mockStartTutorSession(...args),
   submitTutorCheck: (...args: unknown[]) => mockSubmitTutorCheck(...args),
   isArrayStackInsertionCourseware: () => false,
@@ -62,6 +64,11 @@ const stubs = {
   TutorSequentialListStorage: true,
   TutorLinkedListReversal: true,
   TutorFactorialCallStack: true,
+  TutorAgentConversation: {
+    template:
+      '<section data-testid="tutor-agent" :data-course-id="courseId" :data-session-key="sessionKey">Agent</section>',
+    props: ['courseId', 'sessionKey'],
+  },
 }
 
 function findButton(wrapper: ReturnType<typeof mount>, text: string) {
@@ -73,9 +80,11 @@ function findButton(wrapper: ReturnType<typeof mount>, text: string) {
 describe('TutorSessionView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    sessionStorage.clear()
     mockStartTutorSession.mockResolvedValue({
       data: {
         sessionKey: 'session-key',
+        agentAvailable: true,
         title: 'ArrayQueue 的循环数组表示',
         lesson: { summary: 'summary', steps: ['step'] },
         check: { id: 'check', prompt: 'prompt', options: [{ id: 'RIGHT', text: '正确选项' }] },
@@ -132,10 +141,32 @@ describe('TutorSessionView', () => {
     expect(wrapper.text()).toContain('2026-08-15 09:30')
   })
 
+  it('只在服务端确认模型与工具能力可用时展示 Agent 追问入口', async () => {
+    const wrapper = mount(TutorSessionView, { global: { stubs } })
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="tutor-agent"]').attributes('data-course-id')).toBe('408')
+    expect(wrapper.get('[data-testid="tutor-agent"]').attributes('data-session-key')).toBe('session-key')
+  })
+
+  it('刷新页面时恢复同一 Tutor 会话而不重复创建', async () => {
+    const restored = await mockStartTutorSession()
+    mockStartTutorSession.mockClear()
+    sessionStorage.setItem('lp:tutor-session:408:37', 'session-key')
+    mockGetTutorSession.mockResolvedValue(restored)
+
+    mount(TutorSessionView, { global: { stubs } })
+    await flushPromises()
+
+    expect(mockGetTutorSession).toHaveBeenCalledWith(408, 'session-key')
+    expect(mockStartTutorSession).not.toHaveBeenCalled()
+  })
+
   it('没有相关证据时不制造学习进度卡片', async () => {
     mockStartTutorSession.mockResolvedValueOnce({
       data: {
         sessionKey: 'empty-context-session',
+        agentAvailable: false,
         title: 'ArrayQueue 的循环数组表示',
         lesson: { summary: 'summary', steps: ['step'] },
         check: { id: 'check', prompt: 'prompt', options: [] },
@@ -155,5 +186,6 @@ describe('TutorSessionView', () => {
     await flushPromises()
 
     expect(wrapper.text()).not.toContain('最近相关记录')
+    expect(wrapper.find('[data-testid="tutor-agent"]').exists()).toBe(false)
   })
 })

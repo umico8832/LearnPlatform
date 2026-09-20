@@ -54,6 +54,15 @@ public class AiInvocationService {
         return invoke(context, request, null, cancellation, Function.identity());
     }
 
+    public <T> T generate(AiCallContext context, ModelRequest request, Cancellation cancellation,
+                          Function<ModelResult, T> consume) {
+        return invoke(context, request, null, cancellation, consume);
+    }
+
+    public ModelRequest.Options defaultOptions() {
+        return provider.defaultOptions();
+    }
+
     public ModelResult generateStream(AiCallContext context, ModelRequest request,
                                       Consumer<ModelEvent> consumer, Cancellation cancellation) {
         return invoke(context, request, consumer, cancellation, Function.identity());

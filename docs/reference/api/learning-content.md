@@ -18,7 +18,11 @@
 | `GET /api/my-courses/stage-assessments/{assessmentId}` | 查询本人已完成测评的逐题复盘 |
 | `POST /api/my-courses/stage-assessments/{assessmentId}/submit` | 完整提交本人阶段测评并由服务端判分 |
 | `POST /api/my-courses/{courseId}/tutor-sessions` | 以已审查的课程知识点开始 Tutor 会话（必填查询参数 `knowledgePointId`） |
+| `GET /api/my-courses/{courseId}/tutor-sessions/{sessionKey}` | 恢复本人在该课程中的 Tutor 会话 |
 | `POST /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/check` | 提交该会话的理解检查 `{ "optionId": "..." }` |
+| `POST /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs` | 以 `{ "message": "..." }` 创建 Tutor Agent 运行并提问 |
+| `POST /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/{runKey}/messages` | 恢复运行并继续提问 |
+| `GET /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/{runKey}` | 读取本人运行状态与可见消息 |
 
 课程和知识点的写接口位于[管理与治理 API](admin-governance.md#课程与知识点管理)。
 个人课程库关系以服务端认证用户为准，客户端不能指定或查询其他用户的 `userId`。
@@ -126,6 +130,14 @@ Tutor 仅可打开已加入课程、属于该课程且审查状态为 `REVIEWED`
 （`PREREQUISITE`），答对时为后续目标（`NEXT_TARGET`）。前三项只表达路径建议；服务端仅在目标
 属于当前课程且知识点状态为 `REVIEWED` 时返回可导航 ID，客户端不能用内容中的任意标识绕过课程
 与审查边界。
+
+会话响应的 `agentAvailable` 只在 AI 与模型工具能力都显式开启时为 `true`；否则学习页不展示追问入口，
+原有教学和理解检查不受影响。Agent 每个问题必须先通过服务端工具读取该会话的已审查教学内容，可按需读取
+启动会话时固化的学习证据；工具不接受用户、课程或知识点 ID，也不返回正确选项和对应解释。
+
+运行状态为 `RUNNING`、`WAITING_USER` 或 `FAILED`。成功回答后停在 `WAITING_USER`，下一条消息领取同一运行；
+同一运行并发提问会被拒绝，失败运行可以重试。响应只返回已成功保存的 USER / ASSISTANT 消息；内部工具消息
+不作为对话正文公开。一次提问中的每次云模型调用分别消耗配额并写调用审计，但共享同一 Agent `runId`。
 
 ### 受限课件
 

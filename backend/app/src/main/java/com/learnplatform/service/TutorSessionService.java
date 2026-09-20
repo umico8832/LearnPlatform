@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
+import com.learnplatform.config.AiConfig;
 import com.learnplatform.dto.TutorCheckAnswerRequest;
 import com.learnplatform.dto.TutorCheckResultVO;
 import com.learnplatform.dto.TutorLearningContextVO;
@@ -34,11 +35,12 @@ public class TutorSessionService {
     private final ObjectMapper objectMapper;
     private final CourseLearningEventService events;
     private final TutorLearningContextService learningContextService;
+    private final AiConfig aiConfig;
 
     public TutorSessionService(UserCourseMapper users, KnowledgePointMapper points, TutorContentMapper contents,
                                TutorSessionMapper sessions, ObjectMapper json,
                                CourseLearningEventService learningEvents,
-                               TutorLearningContextService contextService) {
+                               TutorLearningContextService contextService, AiConfig config) {
         userCourseMapper = users;
         knowledgePointMapper = points;
         contentMapper = contents;
@@ -46,6 +48,7 @@ public class TutorSessionService {
         objectMapper = json;
         events = learningEvents;
         learningContextService = contextService;
+        aiConfig = config;
     }
 
     @Transactional
@@ -102,12 +105,28 @@ public class TutorSessionService {
         return result(correct, content, session.getCourseId());
     }
 
+    public TutorSessionVO get(Long userId, Long courseId, String sessionKey) {
+        TutorSession session = sessionMapper.selectOne(new LambdaQueryWrapper<TutorSession>()
+                .eq(TutorSession::getSessionKey, sessionKey)
+                .eq(TutorSession::getUserId, userId)
+                .eq(TutorSession::getCourseId, courseId));
+        if (session == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "Tutor 会话不存在");
+        }
+        TutorContent content = contentMapper.selectById(session.getTutorContentId());
+        if (content == null || !"REVIEWED".equals(content.getReviewStatus())) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "Tutor 教学内容不存在或已停止发布");
+        }
+        return view(session, content);
+    }
+
     private TutorSessionVO view(TutorSession session, TutorContent content) {
         TutorSessionVO view = new TutorSessionVO();
         view.setSessionKey(session.getSessionKey());
         view.setTitle(content.getTitle());
         view.setLesson(parse(content.getLessonJson()));
         view.setLearningContext(readContext(session.getLearningContextJson()));
+        view.setAgentAvailable(aiConfig.isEnabled() && aiConfig.isToolsSupported());
         JsonNode check = parse(content.getCheckJson()).deepCopy();
         ((ObjectNode) check).remove("correctOptionId");
         view.setCheck(check);

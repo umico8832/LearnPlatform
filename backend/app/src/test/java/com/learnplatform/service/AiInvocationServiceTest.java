@@ -105,4 +105,18 @@ class AiInvocationServiceTest {
         verify(governance, never()).begin(any(), any());
         verify(provider, never()).complete(any(), any());
     }
+
+    @Test void structuredBusinessValidationFailureIsAuditedWithItsKnownUsage() {
+        var result = new ModelResult("answer", List.of(), "actual", "r1", ModelResult.Finish.STOP,
+                new ModelResult.Usage(3, 2, 5));
+        when(provider.complete(any(), any())).thenReturn(result);
+
+        ModelException exception = assertThrows(ModelException.class, () -> invocation.generate(
+                context, request, new Cancellation(), candidate -> {
+                    throw new ModelException(ModelException.Code.PROTOCOL, candidate);
+                }));
+
+        assertEquals(ModelException.Code.PROTOCOL, exception.code());
+        verify(governance).finish(eq(ticket), same(result), eq("PROTOCOL"), anyLong());
+    }
 }

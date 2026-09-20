@@ -9,7 +9,10 @@ AI 提供解析、复习建议、知识总结、学习资产、变式训练、�
 
 ```mermaid
 flowchart LR
-    Domain[领域 Service] --> Gateway[AiInvocationService]
+    Domain[领域 Service] --> Agent[Tutor Agent 显式循环]
+    Domain --> Gateway[AiInvocationService]
+    Agent --> Tools[课程范围内只读工具]
+    Agent --> Gateway
     Gateway --> Governance[准入与审计]
     Governance --> DB[(MySQL)]
     Gateway --> Provider[AiProvider / OpenAiProvider]
@@ -22,6 +25,18 @@ flowchart LR
 - `backend/app`：Spring Boot 应用、鉴权、领域 Service、配额事务、审计与数据库。
 - `AiInvocationService` 是领域生成的唯一调用入口，依赖方向由 ArchUnit 校验。
 - `AiProvider` 保留文本便捷方法；没有用户身份的旧领域生成方法拒绝调用。
+
+## Tutor Agent 执行循环
+
+Tutor Agent 在应用层显式维护模型消息与工具结果，不使用 SDK 自动循环。一次用户提问可触发多次云调用，
+每次调用都通过统一准入与审计并共享同一 `run_id`；工具回填最多三轮，跳过必需工具、未知工具、非法参数
+或超出上限均不会保存为可见回答。首批 `read_tutor_lesson` 与 `read_learning_evidence` 工具只读取当前用户、
+课程和 Tutor 会话已经绑定的服务端事实，参数不能指定其他资源，教学工具也不会返回理解检查答案。
+
+成功的一轮用户消息与最终回答原子追加到持久对话，运行停在 `WAITING_USER`；下一问题通过条件更新领取为
+`RUNNING`，避免同一运行并发推进。模型调用不占用数据库长事务，失败状态可由原会话继续恢复。浏览器刷新
+恢复只保存会话标识，所有权和审查状态仍由后端重新校验。详细取舍见
+[ADR-0008](decisions/0008-tutor-agent-execution-loop.md)。
 
 选择和取舍见 [ADR-0007](decisions/0007-tutor-model-foundation.md)。
 

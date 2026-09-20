@@ -80,6 +80,8 @@ test -f .env || cp .env.example .env
 | `AI_ALERT_WEBHOOK_TIMEOUT` | webhook 超时 |
 
 模型价格由后端配置决定。未配置价格或上游未返回 usage 时，成本保持未知。
+Tutor Agent 追问入口要求 `AI_ENABLED=true` 且 `AI_TOOLS_SUPPORTED=true`；每次问题可能包含多次
+受治理的模型调用，因此每次调用分别计入日配额。只启用普通文本生成不会开放 Agent 工具循环。
 
 ## 前端
 

@@ -2,6 +2,7 @@ package com.learnplatform.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
+import com.learnplatform.config.AiConfig;
 import com.learnplatform.dto.TutorCheckAnswerRequest;
 import com.learnplatform.dto.TutorCheckResultVO;
 import com.learnplatform.dto.TutorLearningContextVO;
@@ -39,9 +40,11 @@ class TutorSessionServiceTest {
         learningContext.setPaperAnswerCount(3); learningContext.setUnresolvedWrongCount(2);
         when(contexts.summarize(7L, 10L, 3L)).thenReturn(learningContext);
         doAnswer(i -> { ((TutorSession) i.getArgument(0)).setId(9L); return 1; }).when(sessions).insert(any());
+        AiConfig config = new AiConfig(); config.setEnabled(true); config.setToolsSupported(true);
         TutorSessionVO result = new TutorSessionService(
-                users, points, contents, sessions, new ObjectMapper(), events, contexts).start(7L, 10L, 3L);
+                users, points, contents, sessions, new ObjectMapper(), events, contexts, config).start(7L, 10L, 3L);
         assertFalse(result.getCheck().has("correctOptionId")); assertNotNull(result.getSessionKey());
+        assertTrue(result.isAgentAvailable());
         assertEquals(3, result.getLearningContext().getPaperAnswerCount());
         assertEquals(2, result.getLearningContext().getUnresolvedWrongCount());
         verify(sessions).insert(argThat(session -> session.getLearningContextJson().contains("\"paperAnswerCount\":3")));
@@ -50,7 +53,7 @@ class TutorSessionServiceTest {
         UserCourseMapper users = mock(UserCourseMapper.class); when(users.selectCount(any())).thenReturn(0L);
         TutorSessionService service = new TutorSessionService(users, mock(KnowledgePointMapper.class),
                 mock(TutorContentMapper.class), mock(TutorSessionMapper.class), new ObjectMapper(),
-                mock(CourseLearningEventService.class), mock(TutorLearningContextService.class));
+                mock(CourseLearningEventService.class), mock(TutorLearningContextService.class), new AiConfig());
         assertThrows(BusinessException.class, () -> service.start(7L, 10L, 3L));
     }
 
@@ -69,7 +72,7 @@ class TutorSessionServiceTest {
         KnowledgePoint nextTarget = new KnowledgePoint(); nextTarget.setId(35L);
         when(points.selectOne(any())).thenReturn(prerequisite, nextTarget);
         TutorSessionService service = new TutorSessionService(users, points, contents, sessions,
-                new ObjectMapper(), events, mock(TutorLearningContextService.class));
+                new ObjectMapper(), events, mock(TutorLearningContextService.class), new AiConfig());
 
         TutorCheckAnswerRequest incorrect = new TutorCheckAnswerRequest(); incorrect.setOptionId("LEFT_TO_RIGHT");
         TutorCheckResultVO incorrectResult = service.answer(7L, "session", incorrect);
@@ -98,9 +101,27 @@ class TutorSessionServiceTest {
         when(contents.selectById(8L)).thenReturn(content);
         when(sessions.update(any(), any())).thenReturn(1);
         TutorSessionService service = new TutorSessionService(users, points, contents, sessions,
-                new ObjectMapper(), events, mock(TutorLearningContextService.class));
+                new ObjectMapper(), events, mock(TutorLearningContextService.class), new AiConfig());
 
         TutorCheckAnswerRequest answer = new TutorCheckAnswerRequest(); answer.setOptionId("LEFT_TO_RIGHT");
         assertEquals("正确：删除后从左向右搬移后缀，填补空位。", service.answer(7L, "session", answer).getExplanation());
+    }
+
+    @Test void restoresOnlyAnOwnedSessionWhoseContentRemainsReviewed() {
+        UserCourseMapper users = mock(UserCourseMapper.class); KnowledgePointMapper points = mock(KnowledgePointMapper.class);
+        TutorContentMapper contents = mock(TutorContentMapper.class); TutorSessionMapper sessions = mock(TutorSessionMapper.class);
+        TutorSession session = new TutorSession(); session.setUserId(7L); session.setCourseId(10L);
+        session.setTutorContentId(8L); session.setSessionKey("session"); session.setLearningContextJson("{}");
+        TutorContent content = new TutorContent(); content.setId(8L); content.setReviewStatus("REVIEWED");
+        content.setLessonJson("{\"summary\":\"x\"}"); content.setCheckJson("{\"correctOptionId\":\"A\"}");
+        when(sessions.selectOne(any())).thenReturn(session);
+        when(contents.selectById(8L)).thenReturn(content);
+        TutorSessionService service = new TutorSessionService(users, points, contents, sessions,
+                new ObjectMapper(), mock(CourseLearningEventService.class),
+                mock(TutorLearningContextService.class), new AiConfig());
+
+        assertFalse(service.get(7L, 10L, "session").getCheck().has("correctOptionId"));
+        content.setReviewStatus("REVIEW_PENDING");
+        assertThrows(BusinessException.class, () -> service.get(7L, 10L, "session"));
     }
 }

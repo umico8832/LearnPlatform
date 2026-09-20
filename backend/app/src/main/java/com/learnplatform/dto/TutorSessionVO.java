@@ -8,6 +8,7 @@ public class TutorSessionVO {
     private JsonNode lesson;
     private JsonNode check;
     private TutorLearningContextVO learningContext;
+    private boolean agentAvailable;
 
     public String getSessionKey() { return sessionKey; }
     public void setSessionKey(String value) { sessionKey = value; }
@@ -19,4 +20,6 @@ public class TutorSessionVO {
     public void setCheck(JsonNode value) { check = value; }
     public TutorLearningContextVO getLearningContext() { return learningContext; }
     public void setLearningContext(TutorLearningContextVO value) { learningContext = value; }
+    public boolean isAgentAvailable() { return agentAvailable; }
+    public void setAgentAvailable(boolean value) { agentAvailable = value; }
 }

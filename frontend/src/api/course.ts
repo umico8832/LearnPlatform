@@ -250,6 +250,7 @@ export interface TutorLearningContextVO {
 }
 export interface TutorSessionVO {
   sessionKey: string
+  agentAvailable: boolean
   title: string
   lesson: {
     summary: string
@@ -695,6 +696,9 @@ export function startTutorSession(courseId: number, knowledgePointId: number) {
   return request.post<unknown, ApiResponse<TutorSessionVO>>(`/my-courses/${courseId}/tutor-sessions`, undefined, {
     params: { knowledgePointId },
   })
+}
+export function getTutorSession(courseId: number, sessionKey: string) {
+  return request.get<unknown, ApiResponse<TutorSessionVO>>(`/my-courses/${courseId}/tutor-sessions/${sessionKey}`)
 }
 export function submitTutorCheck(courseId: number, sessionKey: string, optionId: string) {
   return request.post<unknown, ApiResponse<TutorCheckResultVO>>(

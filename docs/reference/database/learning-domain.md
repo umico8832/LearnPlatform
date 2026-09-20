@@ -15,6 +15,8 @@
 | `course_learning_event` | 跨 AI 教学与试卷入口的课程学习事实 | `(user_id, course_id, idempotency_key)` 唯一；事件追加且带版本、来源和发生时间 |
 | `tutor_content` | 已审查、版本化的 Tutor 教学内容和检查定义 | `(content_key, content_version)` 唯一；正确选项不返回客户端 |
 | `tutor_session` | 用户课程 Tutor 会话、学习证据聚合快照及首次检查结果 | `session_key` 唯一；会话归属用户、课程与知识点 |
+| `tutor_agent_run` | 可恢复的 Tutor Agent 运行与等待状态 | `run_key` 唯一；运行绑定用户与原 Tutor 会话 |
+| `tutor_agent_message` | Agent 成功轮次中的用户可见消息 | `(run_id, sequence_no)` 唯一；只保存 USER / ASSISTANT 正文 |
 | `course_stage_assessment` | 用户课程阶段测评会话、选题策略、知识点范围与汇总结果 | `(user_id, course_id, active_session_key)` 限制一个进行中会话；完成时活动键清空 |
 | `course_stage_assessment_question` | 测评题目、答案、解析、来源与知识点快照及用户作答 | 会话内原题和排序均唯一；提交前不通过 API 暴露答案快照 |
 
@@ -41,6 +43,10 @@
 试卷 AI、错题与复习计数及最近时间。它不保存原始答案、正确答案或 AI 输出，不替代原始业务记录。
 聚合快照只服务于该次教学上下文；接口字段和 Tutor 进度语义见[课程概览](../api/learning-content.md#课程概览)
 与[Tutor 会话](../api/learning-content.md#tutor-会话)。
+
+Tutor Agent 状态领取与成功消息追加使用短事务。云模型调用发生在事务外；成功时用户问题与最终回答作为一对
+消息原子追加并进入 `WAITING_USER`，失败时不保存不完整轮次并进入 `FAILED`。消息表不保存内部工具调用，
+调用用量和终止事实由 `ai_call_log` 按相同 `run_id` 独立记录。
 
 ### 阶段测评存储与事务
 

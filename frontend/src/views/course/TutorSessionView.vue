@@ -85,6 +85,13 @@
       <TutorLinkedListReversal v-if="linkedListReversalCourseware" :visualization="linkedListReversalCourseware" />
       <TutorFactorialCallStack v-if="factorialCallStackCourseware" :visualization="factorialCallStackCourseware" />
 
+      <TutorAgentConversation
+        v-if="session.agentAvailable"
+        :key="session.sessionKey"
+        :course-id="courseId"
+        :session-key="session.sessionKey"
+      />
+
       <section class="lesson-block check" aria-labelledby="check-heading">
         <LpKicker>理解检查</LpKicker>
         <h2 id="check-heading">确认一下理解</h2>
@@ -154,6 +161,7 @@ import TutorRootishArrayStackLayout from '@/components/TutorRootishArrayStackLay
 import TutorSequentialListStorage from '@/components/TutorSequentialListStorage.vue'
 import TutorLinkedListReversal from '@/components/TutorLinkedListReversal.vue'
 import TutorFactorialCallStack from '@/components/TutorFactorialCallStack.vue'
+import TutorAgentConversation from '@/components/course/TutorAgentConversation.vue'
 import {
   isArrayStackInsertionCourseware,
   isArrayStackResizeCourseware,
@@ -169,6 +177,7 @@ import {
   isSequentialListStorageCourseware,
   isLinkedListReversalCourseware,
   isFactorialCallStackCourseware,
+  getTutorSession,
   startTutorSession,
   submitTutorCheck,
   type TutorCheckResultVO,
@@ -276,8 +285,19 @@ async function load() {
   session.value = undefined
   optionId.value = ''
   result.value = undefined
+  const storageKey = `lp:tutor-session:${courseId.value}:${pointId.value}`
   try {
+    const storedSessionKey = sessionStorage.getItem(storageKey)
+    if (storedSessionKey) {
+      try {
+        session.value = (await getTutorSession(courseId.value, storedSessionKey)).data
+        return
+      } catch {
+        sessionStorage.removeItem(storageKey)
+      }
+    }
     session.value = (await startTutorSession(courseId.value, pointId.value)).data
+    sessionStorage.setItem(storageKey, session.value.sessionKey)
   } catch {
     failed.value = true
   } finally {
