@@ -3,6 +3,7 @@ package com.learnplatform.service.evaluation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.config.AiConfig;
 import com.learnplatform.dto.AiAssetType;
@@ -41,10 +42,13 @@ import com.learnplatform.service.ExamPaperLearningService;
 import com.learnplatform.service.QuestionAssetContextService;
 import com.learnplatform.service.QuestionLearningAssetService;
 import com.learnplatform.service.ai.AiProvider;
+import com.learnplatform.service.tutor.TutorAgentRuntime;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -58,12 +62,14 @@ final class AiEvaluationFixture {
     final List<AiVariantQuestion> variants = new ArrayList<>();
     final List<AiCallLog> logs = new ArrayList<>();
     final List<ExamLearningAiInteraction> interactions = new ArrayList<>();
+    final List<String> agentTools = new ArrayList<>();
     final CourseLearningEventService events = mock(CourseLearningEventService.class);
     private final ObjectMapper json = new ObjectMapper();
     private final AiEvaluationCorpus.Case sample;
     private final AiEvaluationCorpus.QuestionData data;
     private final QuestionLearningAssetService assetService;
     private final ExamLearningAiService paperService;
+    private final TutorAgentRuntime agentRuntime;
     String publicOutput = "";
     int actualCode;
     String errorType;
@@ -137,17 +143,19 @@ final class AiEvaluationFixture {
         when(logMapper.updateById(any())).thenReturn(1);
         AiCallGovernanceService governance = new AiCallGovernanceService(config, logMapper, users,
                 new com.learnplatform.service.AiCallReservationService(users, logMapper, config), json);
+        AiInvocationService invocation = new AiInvocationService(provider, governance);
         AiVariantQuestionService variantService = new AiVariantQuestionService(json, assetMapper,
                 variantMapper, mock(AiVariantTrainingMapper.class), new AnswerEvaluator());
-        assetService = new QuestionLearningAssetService(new AiInvocationService(provider, governance), config, governance, assetMapper,
+        assetService = new QuestionLearningAssetService(invocation, config, governance, assetMapper,
                 mock(AiAssetFeedbackMapper.class), questions,
                 new QuestionAssetContextService(questions, options, relations, knowledge, courses), variantService);
         var assistance = new AiQuestionAssistanceService(questions, options, relations, knowledge,
-                new AiInvocationService(provider, governance));
+                invocation);
         ExamPaperLearningService learning = mock(ExamPaperLearningService.class);
         when(learning.getSession(30L, 7L)).thenReturn(session(data));
         paperService = new ExamLearningAiService(learning, interactionMapper, courses,
                 new AiService(assistance, null, null), events);
+        agentRuntime = new TutorAgentRuntime(invocation, this::executeAgentTool);
     }
 
     void execute() {
@@ -155,10 +163,14 @@ final class AiEvaluationFixture {
             if ("ASSET".equals(sample.route())) {
                 publicOutput = json.writeValueAsString(
                         assetService.generateOrGetAsset(10L, AiAssetType.valueOf(sample.type()), 7L));
-            } else {
+            } else if ("PAPER".equals(sample.route())) {
                 StringBuilder output = new StringBuilder();
                 paperService.streamAssistance(30L, 10L, sample.type(), 7L, output::append);
                 publicOutput = output.toString();
+            } else {
+                publicOutput = agentRuntime.respond(7L, 20L, "evaluation-session",
+                        UUID.nameUUIDFromBytes(sample.id().getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                        List.of(), data.content());
             }
         } catch (BusinessException exception) {
             actualCode = exception.getCode();
@@ -173,15 +185,23 @@ final class AiEvaluationFixture {
         List<String> failures = new ArrayList<>();
         check(failures, actualCode == sample.expectedCode(), "business-result");
         boolean denied = "permission".equals(sample.category());
-        check(failures, provider.calls == (denied ? 0 : 1), "provider-call-count");
+        if ("AGENT".equals(sample.route()) && !denied) {
+            check(failures, provider.calls >= 2 && provider.calls <= 4, "provider-call-count");
+        } else {
+            check(failures, provider.calls == (denied ? 0 : 1), "provider-call-count");
+        }
         if (provider.calls > 0) {
             sample.promptContains().forEach(text -> check(failures,
                     provider.systemPrompt.contains(text), "system-policy:" + text));
-            check(failures, provider.userPrompt.contains(data.content())
-                    && provider.userPrompt.contains(data.analysis())
-                    && provider.userPrompt.contains(data.knowledge()), "question-context");
+            if ("AGENT".equals(sample.route())) {
+                check(failures, provider.userPrompt.contains(data.content()), "question-context");
+            } else {
+                check(failures, provider.userPrompt.contains(data.content())
+                        && provider.userPrompt.contains(data.analysis())
+                        && provider.userPrompt.contains(data.knowledge()), "question-context");
+            }
             check(failures, !provider.systemPrompt.contains("EVAL_INJECTION_CANARY"), "untrusted-text-not-in-system");
-            if (!data.options().isEmpty()) {
+            if (!"AGENT".equals(sample.route()) && !data.options().isEmpty()) {
                 int correctIndex = data.answer().charAt(0) - 'A';
                 check(failures, provider.userPrompt.contains(data.answer() + ". "
                         + data.options().get(correctIndex) + " [正确答案]"), "reference-answer-context");
@@ -228,14 +248,32 @@ final class AiEvaluationFixture {
                     check(failures, variants.stream().allMatch(v -> "PENDING".equals(v.getReviewStatus())),
                             "admin-review-still-required");
                 }
-            } else {
+            } else if ("PAPER".equals(sample.route())) {
                 check(failures, interactions.size() == 1 && interactions.get(0).getStatus() == 1,
                         "successful-interaction-state");
                 check(failures, mockingDetails(events).getInvocations().size() == 1, "one-success-event");
+            } else {
+                check(failures, agentTools.contains("read_tutor_lesson"), "agent-read-reviewed-lesson");
+                if ("LEARNING_EVIDENCE".equals(sample.scenario())) {
+                    check(failures, agentTools.contains("read_learning_evidence"),
+                            "agent-read-learning-evidence");
+                }
+                Set<String> declaredTools = Set.of("read_tutor_lesson", "read_learning_evidence");
+                check(failures, provider.requests.stream().allMatch(request -> request.tools().stream()
+                        .map(ModelRequest.Tool::name).collect(java.util.stream.Collectors.toSet())
+                        .equals(declaredTools)), "agent-tool-contract");
+                long toolResults = provider.requests.get(provider.requests.size() - 1).messages().stream()
+                        .filter(message -> message.role() == ModelRequest.Role.TOOL).count();
+                check(failures, toolResults == agentTools.size(), "agent-tool-result-history");
+                check(failures, assets.isEmpty() && interactions.isEmpty(), "agent-no-unrelated-write");
             }
         }
         if (provider.calls > 0) {
-            check(failures, logs.size() == 1, "one-governance-audit");
+            check(failures, logs.size() == provider.calls, "governance-audit-per-call");
+            if ("AGENT".equals(sample.route())) {
+                check(failures, logs.stream().map(AiCallLog::getRunId).distinct().count() == 1
+                        && logs.get(0).getRunId() != null, "agent-stable-run-id");
+            }
             if (!"EMPTY_STREAM".equals(sample.scenario())) {
                 check(failures, logs.stream().allMatch(log -> log.getStatus() == (actualCode == 0 ? 1 : 0)),
                         "governance-outcome");
@@ -245,6 +283,29 @@ final class AiEvaluationFixture {
             check(failures, provider.usage() == null, "fixture-usage-unknown");
         }
         return failures;
+    }
+
+    private String executeAgentTool(Long userId, Long courseId, String sessionKey,
+                                    com.learnplatform.ai.model.ModelRequest.ToolCall call) {
+        try {
+            JsonNode arguments = json.readTree(call.arguments());
+            if (!arguments.isObject() || !arguments.isEmpty()) {
+                throw new IllegalArgumentException("Agent evaluation only accepts empty tool arguments");
+            }
+            agentTools.add(call.name());
+            return switch (call.name()) {
+                case "read_tutor_lesson" -> json.writeValueAsString(Map.of(
+                        "title", data.knowledge(),
+                        "lesson", Map.of("summary", data.analysis(), "course", data.course()),
+                        "check", Map.of("prompt", "请用自己的话说明核心规则。")));
+                case "read_learning_evidence" -> json.writeValueAsString(Map.of(
+                        "attemptCount", 3, "correctCount", 2,
+                        "lastAttemptAt", "2026-09-20T10:00:00+08:00"));
+                default -> throw new IllegalArgumentException("Unknown Agent evaluation tool");
+            };
+        } catch (com.fasterxml.jackson.core.JsonProcessingException exception) {
+            throw new IllegalArgumentException("Invalid Agent evaluation tool payload", exception);
+        }
     }
 
     private ExamLearningSessionVO session(AiEvaluationCorpus.QuestionData data) {

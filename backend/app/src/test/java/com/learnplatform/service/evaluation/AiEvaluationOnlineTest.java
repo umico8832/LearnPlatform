@@ -35,6 +35,10 @@ class AiEvaluationOnlineTest {
         Set<String> eligible = corpus.cases().stream().filter(AiEvaluationCorpus.Case::online)
                 .map(AiEvaluationCorpus.Case::id).collect(Collectors.toSet());
         assertTrue(eligible.containsAll(selected), "AI_EVAL_CASES must contain eligible corpus IDs");
+        boolean evaluatesAgent = corpus.cases().stream().anyMatch(sample -> sample.online()
+                && "AGENT".equals(sample.route()) && (selected.isEmpty() || selected.contains(sample.id())));
+        assertTrue(!evaluatesAgent || config.isToolsSupported(),
+                "Set AI_TOOLS_SUPPORTED=true when evaluating Tutor Agent cases");
         List<Map<String, Object>> results = new ArrayList<>();
         List<String> failures = new ArrayList<>();
         Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);

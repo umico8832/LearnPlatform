@@ -1,6 +1,6 @@
 # AI 固定评测
 
-评测覆盖试卷 AI 辅导、题目学习资产和结构化变式题，使用
+评测覆盖试卷 AI 辅导、题目学习资产、结构化变式题和 Tutor Agent 工具循环，使用
 [固定案例](../../backend/app/src/test/resources/ai-evaluation/cases.json)与现有 JUnit/Maven 测试体系。
 题目为人工编写的非隐私数据结构小样本，可根据题干逐步复算。测试中的模拟响应仅用于检查程序约束。
 
@@ -19,15 +19,19 @@ Maven 依赖已缓存时可增加 `-o`，完全离线运行。报告输出至 `b
 
 离线案例调用真实 `ExamLearningAiService`、`AiQuestionAssistanceService`、
 `QuestionLearningAssetService`、`QuestionAssetContextService`、`QuestionAssetPromptFactory`、
-`AiVariantQuestionService` 和调用治理；Mapper、会话数据与上游响应使用夹具。
+`AiVariantQuestionService`、`TutorAgentRuntime` 和调用治理；Mapper、会话数据、Agent 工具结果与
+上游响应使用夹具。
 断言覆盖 Prompt 的材料边界及课程/最近作答事实、权限拒绝后的副作用、配额、变式题输出校验、
-公开答案隔离、待审核状态、失败记录及完成事件。运行器测试另用隔离 HTTP 服务验证真实
+公开答案隔离、Agent 必选课程工具与按需学习证据工具、稳定 run ID、逐调用审计、待审核状态、
+失败记录及完成事件。运行器测试另用隔离 HTTP 服务验证真实
 `OpenAiProvider` 的同步/流式调用、配置绑定、Prompt 指纹和 usage 传递。
 
 ## 真实模型评测
 
 先通过正常环境注入应用配置：`AI_ENABLED=true`、`AI_API_KEY`、`AI_MODEL`，
 可选 `AI_API_BASE_URL`、`AI_TIMEOUT`、`AI_MAX_TOKENS`、`AI_STREAM_INCLUDE_USAGE`。
+运行包含 Tutor Agent 的默认案例或指定 Agent 案例时还必须设置 `AI_TOOLS_SUPPORTED=true`；
+只选择非 Agent 案例时不要求工具能力。
 模型和兼容服务可替换，配置沿用 `AiConfig`。密钥由外部安全注入；不要写进命令参数、案例或报告，
 也不要为评测读取 `.env`。Codex 账号使用额度不能代替应用模型 API 凭据或额度。
 
@@ -45,7 +49,16 @@ AI_EVAL_ONLINE=true AI_EVAL_CASES=asset-stack-explanation,paper-wrong-attempt \
   mvn -Dtest=AiEvaluationOnlineTest test
 ```
 
-默认在线只执行 `online: true` 的生成案例，每案一次调用；故障注入、权限和畸形响应案例属于离线回归。
+只验证 Tutor Agent 的最小真实模型集合：
+
+```bash
+AI_EVAL_ONLINE=true AI_TOOLS_SUPPORTED=true \
+  AI_EVAL_CASES=agent-reviewed-lesson,agent-injection-defense,agent-learning-evidence \
+  mvn -Dtest=AiEvaluationOnlineTest test
+```
+
+默认在线只执行 `online: true` 的生成案例；普通案例每案一次调用，Agent 案例通常包含一次工具请求和
+一次最终回答，因此至少调用两次，受运行时最多四次的硬上限约束。故障注入、权限和畸形响应案例属于离线回归。
 未选择案例与离线专用案例在在线报告中显示 `SKIPPED`。缺少显式应用配置会使测试失败，
 不会退回模拟响应。报告输出至 `backend/app/target/ai-evaluation/online.json`。
 
@@ -62,8 +75,10 @@ AI_EVAL_ONLINE=true AI_EVAL_CASES=asset-stack-explanation,paper-wrong-attempt \
   被权限阻断而没有发送 Prompt 时为 null。报告也保留实际 Prompt，供定位和复跑。
 - `modelConfigVersion`：现有调用治理的配置指纹；报告同时记录模型、端点哈希、最大输出量、
   当前配置温度、超时与流式 usage 开关。端点原文和密钥不写入报告。
-- `usage`：Provider 实际返回的用量；模拟、缺失或未调用时为 null，不以字符数估算。
-  `costUsd` 仅在现有成本计算器获得必要 usage 和配置价格时有值，否则为 null。
+- `modelCalls`、`callMetrics`：模型调用次数，以及每次调用的 run ID、结束原因、Prompt 指纹、耗时、usage
+  和成本；Agent 的工具请求与最终回答分别记录，并应共享同一 run ID。
+- `usage`：整个案例所有已审计调用的实际用量之和；任一调用缺失 usage 时为 null，不以字符数估算。
+  `costUsd` 同样聚合整个案例，只有每次调用都能按配置价格计算时才有值。
 - `corpusHash`、`corpusVersion`、`generatedAt`：用于确认案例版本和运行时间。
 
 逐案对照 `manualCriteria` 和实际回复，人工记录通过/失败/无法判断及具体证据。
@@ -92,7 +107,8 @@ AI_EVAL_ONLINE=true AI_EVAL_CASES=asset-stack-explanation,paper-wrong-attempt \
 
 变式题使用生产校验器；可视化案例额外检查 JSON 外层及元素类型，这只是评测断言，
 不代表生产资产服务已具备完整可视化 schema 校验、前端安全渲染或教学状态转移证明。
-权限案例验证服务级拒绝及调用顺序。资产请求在权限拒绝前不建立交互；试卷学习会话已通过校验、
+权限案例验证服务级拒绝及调用顺序。Tutor Agent 案例执行真实受限循环，但课程内容和学习证据由固定
+工具夹具提供，不验证数据库所有权查询或内容审查表。资产请求在权限拒绝前不建立交互；试卷学习会话已通过校验、
 但后续题目内容访问被拒绝时保留失败交互，且不调用 Provider、不写调用日志或成功事件。
 会话所有权查询、数据库事务、HTTP 鉴权、浏览器和真实持久化
 需由已有集成/E2E 测试验证。本入口不替代这些测试，也不评价确定性 Tutor、考试判分或学习效果。

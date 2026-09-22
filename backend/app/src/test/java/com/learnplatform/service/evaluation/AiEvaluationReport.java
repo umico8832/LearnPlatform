@@ -2,8 +2,11 @@ package com.learnplatform.service.evaluation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.config.AiConfig;
+import com.learnplatform.entity.AiCallLog;
+import com.learnplatform.service.ai.AiTokenUsage;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,17 +40,51 @@ final class AiEvaluationReport {
         result.put("userPrompt", user);
         result.put("modelConfigVersion", fixture.logs.isEmpty() ? null : fixture.logs.get(0).getModelConfigVersion());
         result.put("response", fixture.provider.response);
-        result.put("usage", fixture.provider.calls == 0 ? null : fixture.provider.usage());
-        result.put("costUsd", fixture.logs.isEmpty() ? null : fixture.logs.get(0).getCostUsd());
+        result.put("usage", totalUsage(fixture.logs));
+        result.put("costUsd", totalCost(fixture.logs));
+        result.put("modelCalls", fixture.logs.size());
+        result.put("callMetrics", fixture.logs.stream().map(AiEvaluationReport::callMetric).toList());
         result.put("teachingQuality", online ? "NOT_REVIEWED" : "NOT_EVALUATED");
         result.put("manualCriteria", sample.manualCriteria());
         return result;
     }
 
+    private static Map<String, Object> callMetric(AiCallLog log) {
+        Map<String, Object> metric = new LinkedHashMap<>();
+        metric.put("outcome", log.getOutcome());
+        metric.put("model", log.getModel());
+        metric.put("finishReason", log.getFinishReason());
+        metric.put("runId", log.getRunId());
+        metric.put("promptHash", log.getPromptHash());
+        metric.put("durationMs", log.getDuration());
+        metric.put("inputTokens", log.getPromptTokens());
+        metric.put("outputTokens", log.getCompletionTokens());
+        metric.put("totalTokens", log.getTokensUsed());
+        metric.put("costUsd", log.getCostUsd());
+        return metric;
+    }
+
+    private static AiTokenUsage totalUsage(List<AiCallLog> logs) {
+        if (logs.isEmpty() || logs.stream().anyMatch(log -> log.getPromptTokens() == null
+                || log.getCompletionTokens() == null || log.getTokensUsed() == null)) {
+            return null;
+        }
+        return new AiTokenUsage(logs.stream().mapToInt(AiCallLog::getPromptTokens).sum(),
+                logs.stream().mapToInt(AiCallLog::getCompletionTokens).sum(),
+                logs.stream().mapToInt(AiCallLog::getTokensUsed).sum());
+    }
+
+    private static BigDecimal totalCost(List<AiCallLog> logs) {
+        if (logs.isEmpty() || logs.stream().anyMatch(log -> log.getCostUsd() == null)) {
+            return null;
+        }
+        return logs.stream().map(AiCallLog::getCostUsd).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
     static void write(AiEvaluationCorpus corpus, AiConfig config, boolean online,
                       List<Map<String, Object>> results) throws IOException {
         Map<String, Object> report = new LinkedHashMap<>();
-        report.put("schemaVersion", 1);
+        report.put("schemaVersion", 2);
         report.put("corpusVersion", corpus.version());
         try (var input = AiEvaluationCorpus.class.getResourceAsStream("/ai-evaluation/cases.json")) {
             if (input == null) { throw new IOException("Missing evaluation corpus"); }
@@ -61,7 +98,9 @@ final class AiEvaluationReport {
         report.put("temperature", config.getTemperature());
         report.put("timeoutMs", config.getTimeout());
         report.put("streamIncludeUsage", config.isStreamIncludeUsage());
-        report.put("scope", "Real business services and governance; synthetic mapper/session fixtures; no database or HTTP authorization integration.");
+        report.put("toolsSupported", config.isToolsSupported());
+        report.put("scope", "Real business services, Agent runtime, and governance; "
+                + "synthetic mapper/session/tool fixtures; no database or HTTP authorization integration.");
         report.put("teachingQuality", online ? "NOT_REVIEWED" : "NOT_EVALUATED");
         report.put("results", results);
         Path output = Path.of("target", "ai-evaluation", online ? "online.json" : "offline.json");

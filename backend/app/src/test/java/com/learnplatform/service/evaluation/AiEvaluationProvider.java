@@ -10,6 +10,7 @@ import com.learnplatform.config.AiConfig;
 import com.learnplatform.service.ai.AiProvider;
 import com.learnplatform.service.ai.AiTokenUsage;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -18,6 +19,7 @@ final class AiEvaluationProvider implements AiProvider {
     private final AiEvaluationCorpus.Case sample;
     private final AiConfig config;
     private ModelResult lastResult;
+    final ArrayList<ModelRequest> requests = new ArrayList<>();
     String systemPrompt;
     String userPrompt;
     String response = "";
@@ -38,12 +40,11 @@ final class AiEvaluationProvider implements AiProvider {
         capture(request);
         if (delegate != null) {
             lastResult = delegate.complete(request, cancellation);
-            response = lastResult.text();
         } else {
             failIfRequested();
-            response = sample.response();
             lastResult = scripted();
         }
+        response = lastResult.text();
         return lastResult;
     }
     @Override public ModelResult stream(ModelRequest request, Consumer<ModelEvent> events, Cancellation cancellation) {
@@ -67,10 +68,21 @@ final class AiEvaluationProvider implements AiProvider {
         return new AiTokenUsage(usage.inputTokens(), usage.outputTokens(), usage.totalTokens());
     }
     private ModelResult scripted() {
-        return new ModelResult(response, List.of(), config.getModel(), null, ModelResult.Finish.STOP, null);
+        if ("AGENT".equals(sample.route()) && calls == 1) {
+            var toolCalls = new ArrayList<ModelRequest.ToolCall>();
+            toolCalls.add(new ModelRequest.ToolCall("lesson-1", "read_tutor_lesson", "{}"));
+            if ("LEARNING_EVIDENCE".equals(sample.scenario())) {
+                toolCalls.add(new ModelRequest.ToolCall("evidence-1", "read_learning_evidence", "{}"));
+            }
+            return new ModelResult("", toolCalls, config.getModel(), null,
+                    ModelResult.Finish.TOOL_CALLS, null);
+        }
+        return new ModelResult(sample.response(), List.of(), config.getModel(), null,
+                ModelResult.Finish.STOP, null);
     }
     private void capture(ModelRequest request) {
         calls++;
+        requests.add(request);
         lastResult = null;
         response = "";
         systemPrompt = request.messages().get(0).content();
