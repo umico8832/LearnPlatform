@@ -78,6 +78,36 @@ AI_EVAL_ONLINE=true AI_TOOLS_SUPPORTED=true \
 不会发布题目或写入应用数据库。运行器关闭该次运行的应用日志，并仅报告异常类型和业务码，
 避免上游异常体或连接地址泄露凭据。保留的输入和模型回复均来自固定案例，人工复核时按报告内容判断。
 
+## 独立检索评测
+
+[检索微语料](../../backend/app/src/test/resources/ai-evaluation/retrieval-cases.json)提供人工原创的中文片段、
+查询和相关片段标注。独立入口调用真实 Embedding 与生产 Qdrant 适配器，在 Testcontainers 临时向量库中
+建立索引、逐条查询并计算 Recall@3、倒数排名与命中率。它不连接应用数据库或日常 Qdrant，容器结束后回收。
+审计 Mapper 使用隔离夹具；Embedding 协议、调用治理、usage 和成本计算仍走实际实现。
+
+需要 Docker，并通过环境安全注入 `AI_EMBEDDING_ENABLED=true`、`AI_EMBEDDING_API_BASE_URL`、
+`AI_EMBEDDING_API_KEY`、`AI_EMBEDDING_MODEL`、`AI_EMBEDDING_DIMENSIONS`；可选
+`AI_EMBEDDING_TIMEOUT_SECONDS`（1–60）。不要求启用对话模型或应用的知识检索开关。
+可按实际供应商价格提供 `AI_RAG_EVAL_INPUT_PRICE_PER_MILLION`（USD / 百万输入 token，非负）；
+缺少模型价格或上游 usage 时成本为 null，不推测价格或用量。
+
+```bash
+cd backend
+AI_RAG_EVAL_ONLINE=true ./mvnw -pl app -am \
+  -Dtest=KnowledgeRetrievalEvaluationOnlineTest -DexcludedGroups= test
+```
+
+外部调用默认关闭，缺少配置会失败且不会改用模拟向量。一次完整运行调用一次批量文档 Embedding，
+再为每个查询调用一次 Embedding。报告为 `backend/app/target/ai-evaluation/retrieval-online.json`，
+记录语料哈希、模型/维度、端点哈希、逐查询排名与指标、向量查询耗时、逐调用审计和总 usage/成本。
+上游失败保留审计和已完成查询，但标记 `executionStatus: FAILED`、`retrievalQuality: INCOMPLETE`，
+不输出全量均值。真实云评测的 `SUCCEEDED` 仅表示流水线完成，不表示已达到检索质量门槛。
+
+该微语料只用于可复跑的小样本比较；即使 Recall@3 为 1，也不能推断真实课程召回率、
+生成答案忠实度或学习效果。需要人工复核标注，并在首批正式知识内容完成审核后另行验收课程检索。
+不调用云的 `KnowledgeRetrievalEvaluationIntegrationTest` 使用脚本向量与真实临时 Qdrant 验证流水线，
+其 `embeddingOrigin` 始终为 `SCRIPTED_FIXTURE`，检索质量和教学质量均为 `NOT_EVALUATED`。
+
 ## 阅读结果
 
 - `contractStatus`：自动约束的 `PASS` / `FAIL` / `SKIPPED`，`failures` 列出未满足的约束。

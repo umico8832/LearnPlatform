@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "provenance": "人工编写的非隐私中文检索微语料；不是导入课程材料，也不作为教学质量基准。",
+  "chunks": [
+    {
+      "id": "stack-lifo",
+      "text": "栈遵循后进先出：最后压入栈的元素会最先弹出。"
+    },
+    {
+      "id": "stack-operations",
+      "text": "入栈 push 把新元素放到栈顶，出栈 pop 移除当前栈顶元素。"
+    },
+    {
+      "id": "queue-fifo",
+      "text": "队列遵循先进先出：先入队的元素先出队；入队从队尾加入，出队从队首移除。"
+    },
+    {
+      "id": "queue-operations",
+      "text": "队列在队尾插入元素，在队首删除元素；队首和队尾可以指向不同节点。"
+    },
+    {
+      "id": "binary-search-sorted",
+      "text": "二分查找要求输入序列有序，才能根据中间元素与目标的比较结果排除不可能包含目标的一半。"
+    },
+    {
+      "id": "linear-search-unsorted",
+      "text": "顺序查找逐个比较元素，不要求输入序列已经排序。"
+    },
+    {
+      "id": "bst-order",
+      "text": "在键不重复的二叉搜索树中，左子树所有键小于当前节点的键，右子树所有键大于当前节点的键。"
+    },
+    {
+      "id": "bst-inorder",
+      "text": "对键不重复的二叉搜索树进行中序遍历，依次访问左子树、当前节点、右子树，得到键的递增序列。"
+    }
+  ],
+  "queries": [
+    {
+      "id": "stack-last-pushed",
+      "text": "哪条栈规则决定最后放进去的值最先取出？",
+      "relevantIds": [
+        "stack-lifo"
+      ]
+    },
+    {
+      "id": "queue-order",
+      "text": "排队的数据先后进入队列后，会以什么顺序离开？",
+      "relevantIds": [
+        "queue-fifo"
+      ]
+    },
+    {
+      "id": "binary-search-precondition",
+      "text": "为什么对半缩小查找范围之前，序列需要先排好序？",
+      "relevantIds": [
+        "binary-search-sorted"
+      ]
+    },
+    {
+      "id": "bst-child-order",
+      "text": "没有重复键的二叉搜索树中，比根小或比根大的键各放在哪边？",
+      "relevantIds": [
+        "bst-order"
+      ]
+    },
+    {
+      "id": "bst-inorder-result",
+      "text": "没有重复键的二叉搜索树按左、根、右访问后，结果有什么顺序？",
+      "relevantIds": [
+        "bst-inorder"
+      ]
+    }
+  ]
+}

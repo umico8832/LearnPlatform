@@ -53,9 +53,10 @@ final class AiEvaluationReport {
         return result;
     }
 
-    private static Map<String, Object> callMetric(AiCallLog log) {
+    static Map<String, Object> callMetric(AiCallLog log) {
         Map<String, Object> metric = new LinkedHashMap<>();
         metric.put("outcome", log.getOutcome());
+        metric.put("function", log.getFunctionType());
         metric.put("model", log.getModel());
         metric.put("finishReason", log.getFinishReason());
         metric.put("runId", log.getRunId());
@@ -68,7 +69,7 @@ final class AiEvaluationReport {
         return metric;
     }
 
-    private static AiTokenUsage totalUsage(List<AiCallLog> logs) {
+    static AiTokenUsage totalUsage(List<AiCallLog> logs) {
         if (logs.isEmpty() || logs.stream().anyMatch(log -> log.getPromptTokens() == null
                 || log.getCompletionTokens() == null || log.getTokensUsed() == null)) {
             return null;
@@ -78,7 +79,7 @@ final class AiEvaluationReport {
                 logs.stream().mapToInt(AiCallLog::getTokensUsed).sum());
     }
 
-    private static BigDecimal totalCost(List<AiCallLog> logs) {
+    static BigDecimal totalCost(List<AiCallLog> logs) {
         if (logs.isEmpty() || logs.stream().anyMatch(log -> log.getCostUsd() == null)) {
             return null;
         }
