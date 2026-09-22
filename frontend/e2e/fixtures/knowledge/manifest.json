@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "course_id": "e2e-knowledge-review",
+  "bundle_version": "e2e-v1",
+  "source_revision": "synthetic-review-fixture",
+  "quality_status": "review_pending",
+  "counts": {
+    "concepts": 1,
+    "chunks": 2,
+    "coverage_items": 0,
+    "relations": 0
+  },
+  "files": {
+    "concepts/published/concepts.jsonl": "18197129960dcc66b57113fe80cc7780ab0bf0542a55bf22933438c1533bf1b5",
+    "coverage.json": "9600006095f6c40009e685a6fcbed4c7db9ef3b8097fca345c235fe38bbab9c0",
+    "rag/chunks.jsonl": "745a041e7330799aa3c3808c4a388235b07a275c8e44332c44884963ffa24663",
+    "relations/relations.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "taxonomy.json": "64417ef6a62f18835e0228b1ac0a0c811fc5463ac3ae6066a2c2029f0bbe0dbd"
+  }
+}

@@ -36,12 +36,23 @@
 
 | 接口 | 说明 |
 |---|---|
+| `GET /api/admin/knowledge` | 分页查看知识版本，可按 `courseKey` 和 `reviewStatus` 精确筛选 |
+| `GET /api/admin/knowledge/{bundleId}` | 查看导入信息、内容指纹和平台审核记录 |
+| `GET /api/admin/knowledge/{bundleId}/chunks` | 分页查看该版本的片段原文、来源元数据和哈希，可按 `conceptId` 精确筛选 |
+| `GET /api/admin/knowledge/{bundleId}/indexes` | 分页查看该版本索引的模型、维度、状态、已处理片段数和租约时间 |
 | `POST /api/admin/knowledge/import` | 导入服务端 `KNOWLEDGE_SNAPSHOT_PATH` 指定的知识版本，无请求体 |
 | `POST /api/admin/knowledge/{bundleId}/review` | 提交 `decision=REVIEWED` 或 `WITHDRAWN` 与必填 `note`（最多 1000 字符） |
 | `POST /api/admin/knowledge/{bundleId}/index` | 为已审核版本显式构建配置指定的向量索引；每个 Embedding 批次消耗操作者的 AI 配额 |
 | `POST /api/admin/knowledge/{bundleId}/withdraw` | 撤回版本并尝试清理向量索引；可重复调用以完成外部清理 |
 
-仅管理员可执行，返回版本 ID、课程内容键、版本号、清单哈希、片段数量、审核状态与是否已导入，
+查询在 HTTP 角色门禁之外复核数据库中的管理员身份，允许管理员查看待审和撤回版本。
+分页参数为 `pageNum`（默认 1、至少 1）和 `pageSize`（默认 20、1–50），返回 `records/total/current/size`；
+版本与索引按 ID 倒序，片段按 ID 正序；筛选在数据库分页前执行，越界页返回空列表。
+缺失版本返回业务码 `1004`，非法分页或筛选返回 `1001`。索引查询不返回执行令牌或向量服务地址。
+管理端 `/admin/knowledge` 提供版本查询、原文核验、人工批准和撤回，原文与来源元数据均以文本显示。
+页面的撤回审核停止该版本检索；需要删除向量时使用下述显式撤回清理接口。
+
+导入仅管理员可执行，返回版本 ID、课程内容键、版本号、清单哈希、片段数量、审核状态与是否已导入，
 不返回本地路径或内容正文。同课程同版本同清单重复导入返回原记录；清单变化拒绝覆盖，须创建新版本。
 清单或内容不合法时整包拒绝，片段落库失败回滚整个版本。导入始终进入 `PENDING`，
 来源文件的 `reviewed` 也不能替代平台审核。审核只允许 `PENDING → REVIEWED`，撤回后不恢复原版本，

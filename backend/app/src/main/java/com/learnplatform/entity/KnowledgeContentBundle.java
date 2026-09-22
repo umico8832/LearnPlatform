@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
+import java.time.LocalDateTime;
+
 @TableName("knowledge_content_bundle")
 public class KnowledgeContentBundle {
     @TableId(type = IdType.AUTO)
@@ -16,6 +18,10 @@ public class KnowledgeContentBundle {
     private String reviewStatus;
     private Integer chunkCount;
     private Long importedBy;
+    private LocalDateTime importedAt;
+    private Long reviewedBy;
+    private LocalDateTime reviewedAt;
+    private String reviewNote;
 
     public Long getId() { return id; }
     public void setId(Long value) { id = value; }
@@ -35,4 +41,12 @@ public class KnowledgeContentBundle {
     public void setChunkCount(Integer value) { chunkCount = value; }
     public Long getImportedBy() { return importedBy; }
     public void setImportedBy(Long value) { importedBy = value; }
+    public LocalDateTime getImportedAt() { return importedAt; }
+    public void setImportedAt(LocalDateTime value) { importedAt = value; }
+    public Long getReviewedBy() { return reviewedBy; }
+    public void setReviewedBy(Long value) { reviewedBy = value; }
+    public LocalDateTime getReviewedAt() { return reviewedAt; }
+    public void setReviewedAt(LocalDateTime value) { reviewedAt = value; }
+    public String getReviewNote() { return reviewNote; }
+    public void setReviewNote(String value) { reviewNote = value; }
 }

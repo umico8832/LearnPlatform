@@ -9,6 +9,7 @@
         <router-link to="/">平台总览</router-link>
         <router-link to="/courses">课程管理</router-link>
         <router-link to="/questions">题目管理</router-link>
+        <router-link to="/knowledge">知识快照审核</router-link>
         <router-link to="/exams">试卷管理</router-link>
         <router-link to="/subjective-reviews">主观题批阅</router-link>
         <router-link to="/users">用户管理</router-link>

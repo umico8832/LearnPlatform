@@ -47,6 +47,8 @@ services:
     image: learnplatform-e2e-backend:latest
     container_name: learnplatform-e2e-backend
     ports: !reset []
+    volumes:
+      - ./frontend/e2e/fixtures/knowledge:/e2e/knowledge:ro
     environment:
       SPRING_PROFILES_ACTIVE: e2e,docker
       CACHE_TYPE: simple
@@ -58,6 +60,7 @@ services:
       AI_API_KEY: "e2e-test-key"
       AI_API_BASE_URL: "http://ai-mock/v1"
       AI_MODEL: "e2e-deterministic"
+      KNOWLEDGE_SNAPSHOT_PATH: "/e2e/knowledge"
     depends_on:
       ai-mock:
         condition: service_healthy

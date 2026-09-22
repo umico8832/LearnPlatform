@@ -15,6 +15,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class KnowledgeSnapshotLoaderTest {
+    @Test void loadsTheIsolatedBrowserReviewFixture() {
+        var snapshot = new KnowledgeSnapshotLoader().load(repositoryRoot().resolve("frontend/e2e/fixtures/knowledge"));
+        assertEquals("e2e-knowledge-review", snapshot.courseKey());
+        assertEquals("review_pending", snapshot.qualityStatus());
+        assertEquals(2, snapshot.chunks().size());
+    }
+
     @Test
     void loadsTheCommittedKnowledgeSnapshot() {
         KnowledgeSnapshot snapshot = new KnowledgeSnapshotLoader().load(repositoryRoot()

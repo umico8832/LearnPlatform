@@ -42,6 +42,12 @@ export function createAdminRouter(history: RouterHistory = createWebHistory(impo
             meta: { title: '知识点管理' },
           },
           {
+            path: 'knowledge',
+            name: 'AdminKnowledgeManage',
+            component: () => import('./views/KnowledgeManage.vue'),
+            meta: { title: '知识快照审核' },
+          },
+          {
             path: 'questions',
             name: 'AdminQuestionManage',
             component: () => import('./views/QuestionManage.vue'),
