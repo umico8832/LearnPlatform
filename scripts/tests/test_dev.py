@@ -149,7 +149,8 @@ class DevelopmentTest(unittest.TestCase):
         settings.return_value = self.settings()
         dev.launch("backend")
         build.assert_called_once_with(
-            ["/example/mvn", "-pl", "ai-core", "-am", "install", "-DskipTests", "-q"],
+            ["/example/mvn", "-pl", "ai-core", "-am", "install", "-DskipTests",
+             "-Djacoco.skip=true", "-q"],
             cwd=dev.ROOT / "backend", check=True)
         ready.assert_called_once_with(settings.return_value)
         available.assert_called_once_with(8080)

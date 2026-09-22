@@ -131,7 +131,8 @@ def launch(service: str) -> None:
         else:
             raise DevError("需要 Maven 3.8+（或仓库中的 Maven Wrapper）和 JDK 21。")
         directory = ROOT / "backend"
-        subprocess.run([*command, "-pl", "ai-core", "-am", "install", "-DskipTests", "-q"],
+        subprocess.run([*command, "-pl", "ai-core", "-am", "install", "-DskipTests",
+                        "-Djacoco.skip=true", "-q"],
                        cwd=directory, check=True)
         command += ["-pl", "app", "spring-boot:run"]
     else:
