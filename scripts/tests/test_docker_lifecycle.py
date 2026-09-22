@@ -211,5 +211,47 @@ class E2ELifecycleTest(unittest.TestCase):
         )
 
 
+class LifecycleCliTest(unittest.TestCase):
+    def test_e2e_forwards_documented_grep_arguments(self) -> None:
+        with patch.object(sys, "argv", [str(SCRIPT_PATH), "e2e", "--grep", "用户可完成考试"]), \
+                patch.object(lifecycle, "e2e", return_value=0) as e2e:
+            self.assertEqual(0, lifecycle.main())
+
+        e2e.assert_called_once_with(["--grep", "用户可完成考试"])
+
+    def test_e2e_forwards_arguments_after_separator(self) -> None:
+        with patch.object(sys, "argv", [str(SCRIPT_PATH), "e2e", "--", "--grep", "用户可完成考试"]), \
+                patch.object(lifecycle, "e2e", return_value=0) as e2e:
+            self.assertEqual(0, lifecycle.main())
+
+        e2e.assert_called_once_with(["--grep", "用户可完成考试"])
+
+    def test_e2e_forwards_a_spec_filename(self) -> None:
+        with patch.object(sys, "argv", [str(SCRIPT_PATH), "e2e", "e2e/knowledge-review.spec.ts"]), \
+                patch.object(lifecycle, "e2e", return_value=0) as e2e:
+            self.assertEqual(0, lifecycle.main())
+
+        e2e.assert_called_once_with(["e2e/knowledge-review.spec.ts"])
+
+    def test_e2e_help_does_not_start_the_lifecycle(self) -> None:
+        for option in ("-h", "--help"):
+            with self.subTest(option=option), patch.object(sys, "argv", [str(SCRIPT_PATH), "e2e", option]), \
+                    patch.object(lifecycle, "e2e") as e2e:
+                with self.assertRaises(SystemExit) as error:
+                    lifecycle.main()
+
+                self.assertEqual(0, error.exception.code)
+                e2e.assert_not_called()
+
+    def test_app_commands_still_reject_unknown_arguments(self) -> None:
+        for command in ("app-status", "app-up"):
+            with self.subTest(command=command), patch.object(
+                    sys, "argv", [str(SCRIPT_PATH), command, "--unexpected"]):
+                with self.assertRaises(SystemExit) as error:
+                    lifecycle.main()
+
+                self.assertEqual(2, error.exception.code)
+
+
 if __name__ == "__main__":
     unittest.main()

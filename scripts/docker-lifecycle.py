@@ -531,14 +531,20 @@ def main() -> int:
     subparsers.add_parser("app-up", help="构建当前源码、替换日常应用并安全回收旧镜像")
     e2e_parser = subparsers.add_parser("e2e", help="构建、运行并清理隔离浏览器 E2E 环境")
     e2e_parser.add_argument("playwright_args", nargs=argparse.REMAINDER)
-    args = parser.parse_args()
+    command_args = sys.argv[1:]
+    if command_args[:1] == ["e2e"] and command_args[1:2] not in (["-h"], ["--help"]):
+        args = parser.parse_args(["e2e"])
+        passthrough = command_args[1:]
+    else:
+        args = parser.parse_args()
+        passthrough = []
 
     try:
         if args.command == "app-status":
             return app_status()
         if args.command == "app-up":
             return app_up()
-        playwright_args = list(args.playwright_args)
+        playwright_args = [*args.playwright_args, *passthrough]
         if playwright_args[:1] == ["--"]:
             playwright_args = playwright_args[1:]
         return e2e(playwright_args)
