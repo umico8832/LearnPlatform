@@ -1,6 +1,7 @@
 package com.learnplatform.service.evaluation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.learnplatform.service.knowledge.KnowledgeSearchResult;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,5 +23,11 @@ record AiEvaluationCorpus(int version, String provenance, Map<String, QuestionDa
     record Case(String id, String route, String type, String question, String category,
                 String scenario, boolean online, String response, int expectedCode,
                 List<String> promptContains, List<String> outputContains, List<String> outputAbsent,
-                List<String> manualCriteria) { }
+                List<String> manualCriteria, List<KnowledgeSearchResult.Citation> retrieval) {
+        Case {
+            retrieval = retrieval == null ? List.of() : List.copyOf(retrieval);
+        }
+
+        boolean usesRetrieval() { return scenario.startsWith("RAG_"); }
+    }
 }

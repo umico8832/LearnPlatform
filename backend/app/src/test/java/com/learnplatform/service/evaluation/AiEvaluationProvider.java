@@ -74,6 +74,10 @@ final class AiEvaluationProvider implements AiProvider {
             if ("LEARNING_EVIDENCE".equals(sample.scenario())) {
                 toolCalls.add(new ModelRequest.ToolCall("evidence-1", "read_learning_evidence", "{}"));
             }
+            if (sample.usesRetrieval()) {
+                toolCalls.add(new ModelRequest.ToolCall("knowledge-1", "search_course_knowledge",
+                        "{\"query\":\"栈的后进先出\"}"));
+            }
             return new ModelResult("", toolCalls, config.getModel(), null,
                     ModelResult.Finish.TOOL_CALLS, null);
         }

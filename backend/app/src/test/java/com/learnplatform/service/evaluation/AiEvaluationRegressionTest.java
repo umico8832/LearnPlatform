@@ -1,6 +1,9 @@
 package com.learnplatform.service.evaluation;
 
 import com.learnplatform.config.AiConfig;
+import com.learnplatform.ai.model.ModelRequest;
+import com.learnplatform.ai.model.ModelResult;
+import com.learnplatform.service.ai.AiProvider;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
@@ -16,6 +19,9 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class AiEvaluationRegressionTest {
     private static final List<Map<String, Object>> RESULTS = new ArrayList<>();
@@ -46,7 +52,14 @@ class AiEvaluationRegressionTest {
             assertFalse(sample.online() && sample.expectedCode() != 0, sample.id());
             assertTrue(Set.of("NORMAL", "CORRECT_ANSWER", "ANSWER_INJECTION", "UNANSWERED",
                     "OUTSIDE_SESSION", "FOREIGN_OWNER", "QUOTA", "UPSTREAM_ERROR", "EMPTY_STREAM",
-                    "SELF_REVIEW", "LEARNING_EVIDENCE").contains(sample.scenario()), sample.id());
+                    "SELF_REVIEW", "LEARNING_EVIDENCE", "RAG_FOUND", "RAG_EMPTY", "RAG_INJECTION")
+                    .contains(sample.scenario()), sample.id());
+            if (sample.usesRetrieval()) {
+                assertEquals("AGENT", sample.route());
+                assertEquals("RAG_EMPTY".equals(sample.scenario()), sample.retrieval().isEmpty());
+                sample.retrieval().forEach(citation -> assertEquals(
+                        AiEvaluationReport.sha256(citation.text()), citation.contentHash()));
+            }
             categories.add(sample.category());
         }
         assertEquals(Set.of("knowledge", "structured", "answer-boundary", "course-scope",
@@ -69,6 +82,80 @@ class AiEvaluationRegressionTest {
         assertTrue(fixture.check(false).contains("output-forbidden:EVAL_INJECTION_CANARY"));
         fixture.provider.response = null;
         assertTrue(fixture.check(false).contains("nonempty-response"));
+    }
+
+    @Test
+    void corpusIncludesRetrievalSuccessEmptyAndInjectionCases() throws Exception {
+        var corpus = AiEvaluationCorpus.load();
+        for (String scenario : List.of("RAG_FOUND", "RAG_EMPTY", "RAG_INJECTION")) {
+            var sample = corpus.cases().stream().filter(item -> scenario.equals(item.scenario()))
+                    .findFirst().orElseThrow(() -> new AssertionError("Missing " + scenario));
+            var fixture = new AiEvaluationFixture(corpus, sample, CONFIG, null);
+            fixture.execute();
+            assertTrue(fixture.check(false).isEmpty(), () -> fixture.check(false).toString());
+            assertTrue(fixture.agentTools.contains("search_course_knowledge"));
+            assertEquals(!"RAG_EMPTY".equals(scenario), fixture.publicOutput.contains("本轮检索资料："));
+        }
+    }
+
+    @Test
+    void retrievalChecksDetectMissingSourcesContextAndRunIdentity() throws Exception {
+        var corpus = AiEvaluationCorpus.load();
+        var sample = corpus.cases().stream().filter(item -> "RAG_FOUND".equals(item.scenario()))
+                .findFirst().orElseThrow();
+        var fixture = new AiEvaluationFixture(corpus, sample, CONFIG, null);
+        fixture.execute();
+        fixture.publicOutput = fixture.provider.response;
+        assertTrue(fixture.check(false).contains("retrieval-server-source-suffix"));
+        fixture.publicOutput = "EVAL_INJECTION_CANARY";
+        assertTrue(fixture.check(false).contains("retrieval-public-injection"));
+        int position = fixture.toolTrace.size() - 1;
+        var trace = fixture.toolTrace.get(position);
+        fixture.toolTrace.set(position, new AiEvaluationFixture.ToolObservation(
+                trace.name(), trace.arguments(), "unseen-tool-output", java.util.UUID.randomUUID()));
+        assertTrue(fixture.check(false).contains("retrieval-stable-run-id"));
+        assertTrue(fixture.check(false).contains("retrieval-tool-context"));
+        fixture.agentTools.remove("search_course_knowledge");
+        assertTrue(fixture.check(false).contains("agent-search-course-knowledge"));
+    }
+
+    @Test
+    void prematureRetrievalIsAuditedAsProtocolFailureWithoutToolExecution() throws Exception {
+        var corpus = AiEvaluationCorpus.load();
+        var sample = corpus.cases().stream().filter(item -> "RAG_FOUND".equals(item.scenario()))
+                .findFirst().orElseThrow();
+        var delegate = mock(AiProvider.class);
+        when(delegate.complete(any(), any())).thenReturn(new ModelResult("", List.of(
+                new ModelRequest.ToolCall("search-first", "search_course_knowledge", "{\"query\":\"栈\"}")),
+                "test-model", null, ModelResult.Finish.TOOL_CALLS, new ModelResult.Usage(12, 8, 20)));
+        var fixture = new AiEvaluationFixture(corpus, sample, CONFIG, delegate);
+        fixture.execute();
+        assertEquals(-1, fixture.actualCode);
+        assertEquals("ModelException", fixture.errorType);
+        assertTrue(fixture.toolTrace.isEmpty());
+        assertEquals("", fixture.publicOutput);
+        assertEquals(1, fixture.logs.size());
+        assertEquals("PROTOCOL", fixture.logs.getFirst().getOutcome());
+        assertEquals(0, fixture.logs.getFirst().getStatus());
+        assertEquals(20, fixture.logs.getFirst().getTokensUsed());
+    }
+
+    @Test
+    void retrievalReportsDiscloseSyntheticSourcesEvenWithRealProviderMode() throws Exception {
+        var corpus = AiEvaluationCorpus.load();
+        var sample = corpus.cases().stream().filter(item -> "RAG_INJECTION".equals(item.scenario()))
+                .findFirst().orElseThrow();
+        var fixture = new AiEvaluationFixture(corpus, sample, CONFIG, null);
+        fixture.execute();
+        for (boolean online : List.of(false, true)) {
+            var report = AiEvaluationReport.result(sample, fixture, CONFIG, online, fixture.check(online));
+            assertEquals("SYNTHETIC_TOOL_FIXTURE", report.get("retrievalOrigin"));
+            assertEquals("NOT_EVALUATED", report.get("retrievalQuality"));
+            assertEquals(fixture.publicOutput, report.get("publicOutput"));
+            assertEquals(fixture.toolTrace, report.get("toolTrace"));
+            assertTrue(fixture.toolTrace.stream().anyMatch(trace ->
+                    trace.output().contains("EVAL_INJECTION_CANARY")));
+        }
     }
 
     @Test

@@ -40,6 +40,10 @@ final class AiEvaluationReport {
         result.put("userPrompt", user);
         result.put("modelConfigVersion", fixture.logs.isEmpty() ? null : fixture.logs.get(0).getModelConfigVersion());
         result.put("response", fixture.provider.response);
+        result.put("publicOutput", fixture.publicOutput);
+        result.put("toolTrace", fixture.toolTrace);
+        result.put("retrievalOrigin", sample.usesRetrieval() ? "SYNTHETIC_TOOL_FIXTURE" : "NOT_USED");
+        result.put("retrievalQuality", "NOT_EVALUATED");
         result.put("usage", totalUsage(fixture.logs));
         result.put("costUsd", totalCost(fixture.logs));
         result.put("modelCalls", fixture.logs.size());
@@ -84,7 +88,7 @@ final class AiEvaluationReport {
     static void write(AiEvaluationCorpus corpus, AiConfig config, boolean online,
                       List<Map<String, Object>> results) throws IOException {
         Map<String, Object> report = new LinkedHashMap<>();
-        report.put("schemaVersion", 2);
+        report.put("schemaVersion", 3);
         report.put("corpusVersion", corpus.version());
         try (var input = AiEvaluationCorpus.class.getResourceAsStream("/ai-evaluation/cases.json")) {
             if (input == null) { throw new IOException("Missing evaluation corpus"); }
@@ -100,7 +104,8 @@ final class AiEvaluationReport {
         report.put("streamIncludeUsage", config.isStreamIncludeUsage());
         report.put("toolsSupported", config.isToolsSupported());
         report.put("scope", "Real business services, Agent runtime, and governance; "
-                + "synthetic mapper/session/tool fixtures; no database or HTTP authorization integration.");
+                + "synthetic mapper/session/tool fixtures; no database or HTTP authorization integration; "
+                + "no real embedding, vector retrieval, or retrieval quality measurement.");
         report.put("teachingQuality", online ? "NOT_REVIEWED" : "NOT_EVALUATED");
         report.put("results", results);
         Path output = Path.of("target", "ai-evaluation", online ? "online.json" : "offline.json");

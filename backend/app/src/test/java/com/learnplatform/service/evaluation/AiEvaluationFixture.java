@@ -43,6 +43,8 @@ import com.learnplatform.service.QuestionAssetContextService;
 import com.learnplatform.service.QuestionLearningAssetService;
 import com.learnplatform.service.ai.AiProvider;
 import com.learnplatform.service.tutor.TutorAgentRuntime;
+import com.learnplatform.service.tutor.TutorAgentToolExecutor;
+import com.learnplatform.service.knowledge.KnowledgeSearchResult;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +65,7 @@ final class AiEvaluationFixture {
     final List<AiCallLog> logs = new ArrayList<>();
     final List<ExamLearningAiInteraction> interactions = new ArrayList<>();
     final List<String> agentTools = new ArrayList<>();
+    final List<ToolObservation> toolTrace = new ArrayList<>();
     final CourseLearningEventService events = mock(CourseLearningEventService.class);
     private final ObjectMapper json = new ObjectMapper();
     private final AiEvaluationCorpus.Case sample;
@@ -155,7 +158,16 @@ final class AiEvaluationFixture {
         when(learning.getSession(30L, 7L)).thenReturn(session(data));
         paperService = new ExamLearningAiService(learning, interactionMapper, courses,
                 new AiService(assistance, null, null), events);
-        agentRuntime = new TutorAgentRuntime(invocation, this::executeAgentTool);
+        agentRuntime = new TutorAgentRuntime(invocation, new TutorAgentToolExecutor() {
+            @Override public boolean supportsKnowledgeSearch() { return sample.usesRetrieval(); }
+            @Override public String execute(Long userId, Long courseId, String sessionKey, ModelRequest.ToolCall call) {
+                return executeAgentTool(userId, courseId, sessionKey, call, null);
+            }
+            @Override public String execute(Long userId, Long courseId, String sessionKey,
+                                            ModelRequest.ToolCall call, UUID runId) {
+                return executeAgentTool(userId, courseId, sessionKey, call, runId);
+            }
+        });
     }
 
     void execute() {
@@ -258,7 +270,9 @@ final class AiEvaluationFixture {
                     check(failures, agentTools.contains("read_learning_evidence"),
                             "agent-read-learning-evidence");
                 }
-                Set<String> declaredTools = Set.of("read_tutor_lesson", "read_learning_evidence");
+                Set<String> declaredTools = sample.usesRetrieval()
+                        ? Set.of("read_tutor_lesson", "read_learning_evidence", "search_course_knowledge")
+                        : Set.of("read_tutor_lesson", "read_learning_evidence");
                 check(failures, provider.requests.stream().allMatch(request -> request.tools().stream()
                         .map(ModelRequest.Tool::name).collect(java.util.stream.Collectors.toSet())
                         .equals(declaredTools)), "agent-tool-contract");
@@ -266,6 +280,7 @@ final class AiEvaluationFixture {
                         .filter(message -> message.role() == ModelRequest.Role.TOOL).count();
                 check(failures, toolResults == agentTools.size(), "agent-tool-result-history");
                 check(failures, assets.isEmpty() && interactions.isEmpty(), "agent-no-unrelated-write");
+                if (sample.usesRetrieval()) { checkRetrieval(failures); }
             }
         }
         if (provider.calls > 0) {
@@ -285,15 +300,58 @@ final class AiEvaluationFixture {
         return failures;
     }
 
+    record ToolObservation(String name, String arguments, String output, UUID runId) { }
+
+    private void checkRetrieval(List<String> failures) {
+        check(failures, agentTools.contains("search_course_knowledge"), "agent-search-course-knowledge");
+        var retrievalCalls = toolTrace.stream()
+                .filter(trace -> "search_course_knowledge".equals(trace.name())).toList();
+        check(failures, !retrievalCalls.isEmpty() && retrievalCalls.stream().allMatch(trace ->
+                trace.runId() != null && logs.stream().allMatch(log -> trace.runId().toString().equals(log.getRunId()))),
+                "retrieval-stable-run-id");
+        check(failures, !publicOutput.contains("EVAL_INJECTION_CANARY"), "retrieval-public-injection");
+        check(failures, publicOutput.contains("本轮检索资料：") == !sample.retrieval().isEmpty(),
+                "retrieval-source-presence");
+        for (var citation : sample.retrieval()) {
+            check(failures, publicOutput.contains(citation.version()) && publicOutput.contains(citation.chunkId()),
+                    "retrieval-source-identity");
+        }
+        String expectedSuffix = sample.retrieval().isEmpty() ? "" : "\n\n本轮检索资料：\n"
+                + sample.retrieval().stream().map(citation -> "- " + citation.title() + "（版本 "
+                + citation.version() + "，片段 " + citation.chunkId() + "）")
+                .distinct().collect(java.util.stream.Collectors.joining("\n"));
+        check(failures, publicOutput.equals(provider.response + expectedSuffix), "retrieval-server-source-suffix");
+        check(failures, provider.requests.stream().flatMap(request -> request.messages().stream())
+                .filter(message -> message.role() == ModelRequest.Role.SYSTEM)
+                .noneMatch(message -> message.content().contains("EVAL_INJECTION_CANARY")),
+                "retrieval-untrusted-text-not-in-system");
+        var lastMessages = provider.requests.get(provider.requests.size() - 1).messages();
+        check(failures, retrievalCalls.stream().allMatch(trace -> lastMessages.stream().anyMatch(message ->
+                message.role() == ModelRequest.Role.TOOL && trace.output().equals(message.content()))),
+                "retrieval-tool-context");
+    }
+
     private String executeAgentTool(Long userId, Long courseId, String sessionKey,
-                                    com.learnplatform.ai.model.ModelRequest.ToolCall call) {
+                                    ModelRequest.ToolCall call, UUID runId) {
         try {
+            if (!Long.valueOf(7L).equals(userId) || !Long.valueOf(20L).equals(courseId)
+                    || !"evaluation-session".equals(sessionKey)) {
+                throw new IllegalArgumentException("Agent evaluation scope mismatch");
+            }
             JsonNode arguments = json.readTree(call.arguments());
-            if (!arguments.isObject() || !arguments.isEmpty()) {
+            boolean search = "search_course_knowledge".equals(call.name());
+            if (search) {
+                if (!sample.usesRetrieval() || !arguments.isObject() || arguments.size() != 1
+                        || !arguments.path("query").isTextual() || arguments.path("query").asText().isBlank()
+                        || arguments.path("query").asText().length() > 1000 || runId == null) {
+                    throw new IllegalArgumentException("Invalid retrieval evaluation arguments");
+                }
+            } else if (!arguments.isObject() || !arguments.isEmpty()) {
                 throw new IllegalArgumentException("Agent evaluation only accepts empty tool arguments");
             }
             agentTools.add(call.name());
-            return switch (call.name()) {
+            String output = switch (call.name()) {
+                case "search_course_knowledge" -> json.writeValueAsString(new KnowledgeSearchResult(sample.retrieval()));
                 case "read_tutor_lesson" -> json.writeValueAsString(Map.of(
                         "title", data.knowledge(),
                         "lesson", Map.of("summary", data.analysis(), "course", data.course()),
@@ -303,6 +361,8 @@ final class AiEvaluationFixture {
                         "lastAttemptAt", "2026-09-20T10:00:00+08:00"));
                 default -> throw new IllegalArgumentException("Unknown Agent evaluation tool");
             };
+            toolTrace.add(new ToolObservation(call.name(), call.arguments(), output, runId));
+            return output;
         } catch (com.fasterxml.jackson.core.JsonProcessingException exception) {
             throw new IllegalArgumentException("Invalid Agent evaluation tool payload", exception);
         }

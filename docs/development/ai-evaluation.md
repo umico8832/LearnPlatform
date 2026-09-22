@@ -22,9 +22,9 @@ Maven 依赖已缓存时可增加 `-o`，完全离线运行。报告输出至 `b
 `AiVariantQuestionService`、`TutorAgentRuntime` 和调用治理；Mapper、会话数据、Agent 工具结果与
 上游响应使用夹具。
 断言覆盖 Prompt 的材料边界及课程/最近作答事实、权限拒绝后的副作用、配额、变式题输出校验、
-公开答案隔离、Agent 必选课程工具与按需学习证据工具、稳定 run ID、逐调用审计、待审核状态、
+公开答案隔离、Agent 必选课程工具与按需学习证据工具、RAG 有结果/空结果/资料注入、稳定 run ID、逐调用审计、待审核状态、
 失败记录及完成事件。运行器测试另用隔离 HTTP 服务验证真实
-`OpenAiProvider` 的同步/流式调用、配置绑定、Prompt 指纹和 usage 传递。
+`OpenAiProvider` 的同步/流式调用、RAG 多轮工具消息、配置绑定、Prompt 指纹和 usage 聚合。
 
 ## 真实模型评测
 
@@ -62,6 +62,18 @@ AI_EVAL_ONLINE=true AI_TOOLS_SUPPORTED=true \
 未选择案例与离线专用案例在在线报告中显示 `SKIPPED`。缺少显式应用配置会使测试失败，
 不会退回模拟响应。报告输出至 `backend/app/target/ai-evaluation/online.json`。
 
+RAG 的最小真实生成模型集合：
+
+```bash
+AI_EVAL_ONLINE=true AI_TOOLS_SUPPORTED=true \
+  AI_EVAL_CASES=agent-rag-found,agent-rag-empty,agent-rag-injection \
+  mvn -Dtest=AiEvaluationOnlineTest test
+```
+
+这三个案例验证模型对检索工具、空结果和资料注入的处理，以及 Runtime 追加的来源标识。
+检索内容始终来自固定的人工小样本，不调用 Embedding 或 Qdrant，也不要求启用应用检索配置。
+因此在线通过只提供生成模型遵循工具与利用给定资料的验收输入，不能证明真实召回率或知识版本已获审核。
+
 在线入口使用相同业务服务和调用治理，以及真实 Provider，但持久化与会话仍是隔离夹具，
 不会发布题目或写入应用数据库。运行器关闭该次运行的应用日志，并仅报告异常类型和业务码，
 避免上游异常体或连接地址泄露凭据。保留的输入和模型回复均来自固定案例，人工复核时按报告内容判断。
@@ -71,6 +83,11 @@ AI_EVAL_ONLINE=true AI_TOOLS_SUPPORTED=true \
 - `contractStatus`：自动约束的 `PASS` / `FAIL` / `SKIPPED`，`failures` 列出未满足的约束。
 - `responseOrigin`：`SCRIPTED_FIXTURE` 或 `REAL_PROVIDER`。离线始终标记 `teachingQuality: NOT_EVALUATED`；
   在线始终标记 `NOT_REVIEWED`，不自动生成教学正确率。
+- `response` 保留模型原文，`publicOutput` 保留业务服务最终输出；Agent 的来源附录由 Runtime 生成，
+  应与实际工具返回的版本和片段一致。附录表示本轮读取的资料，不保证回答每个结论都有证据支持。
+- `toolTrace` 保留固定案例中的实际工具名、参数、返回内容及检索 run ID，供核对教学结论和来源忠实度。
+  `retrievalOrigin: SYNTHETIC_TOOL_FIXTURE` 表明检索资料是夹具，在线也保持该标记；
+  `retrievalQuality: NOT_EVALUATED` 表明没有测量真实向量召回质量。新增字段使用报告 schemaVersion 3。
 - `promptHash`：消息列表序列化后的 SHA-256，直接读取本次调用审计中的指纹。
   被权限阻断而没有发送 Prompt 时为 null。报告也保留实际 Prompt，供定位和复跑。
 - `modelConfigVersion`：现有调用治理的配置指纹；报告同时记录模型、端点哈希、最大输出量、
@@ -91,6 +108,8 @@ AI_EVAL_ONLINE=true AI_TOOLS_SUPPORTED=true \
 在 `questions` 中维护可复算的题干、选项、参考答案、解析、知识点与课程，
 在 `cases` 中用 `question` 引用必要上下文，并增加唯一 `id`、实际业务 `route/type`、
 场景、模拟响应、预期业务码、系统 Prompt 约束、输出约束和人工标准。
+RAG 案例的 `retrieval` 保存完整引用原文和内容哈希；`RAG_EMPTY` 使用空列表，
+`RAG_INJECTION` 将注入内容放在检索片段正文中，避免仅测试用户输入注入。
 `PAPER` 使用服务端会话夹具；特定 `scenario` 的作答或权限条件由
 [AiEvaluationFixture](../../backend/app/src/test/java/com/learnplatform/service/evaluation/AiEvaluationFixture.java)实现。
 新增场景时应补充对应副作用断言，不能仅添加名称与文案。

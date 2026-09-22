@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -110,6 +111,37 @@ class TutorAgentRuntimeTest {
         verify(invocation, times(2)).generate(any(), requests.capture(), any(), any());
         assertEquals(3, requests.getValue().tools().size());
         verify(tools).execute(7L, 10L, "session", search, runId);
+    }
+
+    @Test void rejectsAnInitialSearchToolCallBeforeExecutingIt() {
+        when(tools.supportsKnowledgeSearch()).thenReturn(true);
+        var search = new ModelRequest.ToolCall("search", "search_course_knowledge", "{\"query\":\"栈\"}");
+        when(invocation.generate(any(), any(), any(Cancellation.class), any())).thenAnswer(call ->
+                call.getArgument(3, java.util.function.Function.class).apply(
+                        new ModelResult(null, List.of(search), "test", "r1", ModelResult.Finish.TOOL_CALLS, null)));
+
+        ModelException exception = assertThrows(ModelException.class, () -> runtime.respond(
+                7L, 10L, "session", UUID.randomUUID(), List.of(), "解释栈"));
+
+        assertEquals(ModelException.Code.PROTOCOL, exception.code());
+        verify(tools, never()).execute(eq(7L), eq(10L), eq("session"), any(ModelRequest.ToolCall.class));
+        verify(tools, never()).execute(eq(7L), eq(10L), eq("session"), any(ModelRequest.ToolCall.class), any(UUID.class));
+    }
+
+    @Test void rejectsAnInitialBatchWhoseFirstToolIsSearchBeforeExecutingIt() {
+        when(tools.supportsKnowledgeSearch()).thenReturn(true);
+        var search = new ModelRequest.ToolCall("search", "search_course_knowledge", "{\"query\":\"栈\"}");
+        var lesson = new ModelRequest.ToolCall("lesson", "read_tutor_lesson", "{}");
+        when(invocation.generate(any(), any(), any(Cancellation.class), any())).thenAnswer(call ->
+                call.getArgument(3, java.util.function.Function.class).apply(
+                        new ModelResult(null, List.of(search, lesson), "test", "r1", ModelResult.Finish.TOOL_CALLS, null)));
+
+        ModelException exception = assertThrows(ModelException.class, () -> runtime.respond(
+                7L, 10L, "session", UUID.randomUUID(), List.of(), "解释栈"));
+
+        assertEquals(ModelException.Code.PROTOCOL, exception.code());
+        verify(tools, never()).execute(eq(7L), eq(10L), eq("session"), any(ModelRequest.ToolCall.class));
+        verify(tools, never()).execute(eq(7L), eq(10L), eq("session"), any(ModelRequest.ToolCall.class), any(UUID.class));
     }
 
     private ModelResult toolCallResult(String id) {

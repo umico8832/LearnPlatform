@@ -104,7 +104,9 @@ public class TutorAgentRuntime {
     }
 
     private ModelResult validate(ModelResult result, boolean readLesson, boolean finalToolRound) {
-        if ((result.finish() == ModelResult.Finish.TOOL_CALLS && finalToolRound)
+        if ((result.finish() == ModelResult.Finish.TOOL_CALLS && (finalToolRound
+                || (!readLesson && (result.toolCalls().isEmpty()
+                || !"read_tutor_lesson".equals(result.toolCalls().getFirst().name())))))
                 || (result.finish() != ModelResult.Finish.TOOL_CALLS && !readLesson)) {
             throw new ModelException(ModelException.Code.PROTOCOL, result);
         }
