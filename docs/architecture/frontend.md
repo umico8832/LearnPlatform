@@ -12,7 +12,7 @@ frontend/src/
 ├── api/          # 按业务域封装请求和 TypeScript 契约
 ├── assets/       # 全局样式与 Design Tokens
 ├── components/   # 可复用组件（ui/ 基础组件、layout/ 布局、course/ 领域组件）
-├── router/       # 路由、登录和角色守卫
+├── router/       # 学习端路由记录、Router 与登录守卫
 ├── stores/       # 用户等跨页面状态
 ├── types/        # 共享类型
 ├── utils/        # 请求、格式化、学习目标导航等辅助函数
@@ -26,6 +26,10 @@ frontend/admin/   # 独立管理端 HTML 入口
 `npm run dev:admin` 在 5174 端口独立开发。管理端 HTML 使用 `/src/admin/main.ts` 入口，管理端 Vite
 配置把 `/src` 映射到项目真实源码目录，使 `admin/` root 下的开发服务器与生产构建使用同一入口。
 学习端管理员通过外部链接进入 `/admin/`，普通学习路由与管理路由不再共享 Router 或布局。
+
+学习端 `router/routes.ts` 与管理端 `admin/routes.ts` 分别维护各自的业务路由记录，Router 模块负责实例与守卫。
+开发工具 `/dev/pages` 只读取这两份路由记录生成页面目录，不创建管理端 Router，也不提前加载业务页面。
+该工具通过学习端的开发环境条件路由加载；使用方式与真实操作边界见[本地开发](../getting-started/local-development.md#全局页面预览)。
 
 ## 信息架构
 

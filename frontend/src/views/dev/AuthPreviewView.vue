@@ -6,7 +6,10 @@
         <h1>认证页面预览</h1>
         <p>直接查看页面与流程状态，不请求接口或触发人机验证。</p>
       </div>
-      <a :href="frameSrc" target="_blank" rel="noopener noreferrer">在新标签打开</a>
+      <nav class="auth-preview-links" aria-label="预览工具">
+        <a href="/dev/pages">全部页面</a>
+        <a :href="frameSrc" target="_blank" rel="noopener noreferrer">在新标签打开</a>
+      </nav>
     </header>
 
     <div class="auth-preview-workspace">
@@ -196,6 +199,12 @@ onBeforeUnmount(() => canvasObserver?.disconnect())
   font-weight: var(--lp-weight-semibold);
   line-height: var(--lp-space-6);
   text-decoration: none;
+}
+
+.auth-preview-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lp-space-3);
 }
 .auth-preview-badge {
   display: inline-flex;

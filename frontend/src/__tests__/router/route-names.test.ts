@@ -3,7 +3,7 @@
  * 这里直接解析真实路由表，保证「route name 写错」时测试立即失败。
  */
 import { describe, expect, it } from 'vitest'
-import router from '@/router'
+import router, { createLearnerRoutes } from '@/router'
 
 const TOOL_ROUTE_NAMES = ['Practice', 'Review', 'WrongQuestions', 'ExamList', 'QuestionList'] as const
 const PUBLIC_PLACEHOLDER_ROUTES = [
@@ -15,6 +15,15 @@ const PUBLIC_PLACEHOLDER_ROUTES = [
 ] as const
 
 describe('课程空间学习工具路由名', () => {
+  it('开发页仅在开发路由表注册，生产路由表只包含业务页面', () => {
+    expect(createLearnerRoutes(true).map((route) => route.name)).toEqual(
+      expect.arrayContaining(['AuthPreview', 'DevPages']),
+    )
+    const productionNames = createLearnerRoutes(false).map((route) => route.name)
+    expect(productionNames).not.toContain('AuthPreview')
+    expect(productionNames).not.toContain('DevPages')
+  })
+
   it('Home 是公开的首页路由', () => {
     const resolved = router.resolve({ name: 'Home' })
     expect(resolved.path).toBe('/')
