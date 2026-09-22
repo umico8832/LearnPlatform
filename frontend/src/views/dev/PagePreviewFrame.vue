@@ -3,23 +3,24 @@
     <header class="preview-toolbar">
       <span role="status">{{ loading ? '正在载入…' : '页面预览' }}</span>
       <div class="preview-controls">
-        <label for="preview-width">桌面宽度</label>
+        <label for="preview-width">预览尺寸</label>
         <select id="preview-width" v-model.number="width">
           <option :value="1280">1280 px</option>
           <option :value="1440">1440 px</option>
           <option :value="1920">1920 px</option>
+          <option :value="768">平板 · 768 × 900</option>
+          <option :value="390">手机 · 390 × 844</option>
         </select>
         <button type="button" @click="refresh">刷新</button>
-        <button type="button" @click="$emit('stop')">停止预览</button>
       </div>
     </header>
     <div ref="canvas" class="preview-canvas">
-      <div class="preview-shell" :style="{ width: `${width * scale}px`, height: `${900 * scale}px` }">
+      <div class="preview-shell" :style="{ width: `${width * scale}px`, height: `${height * scale}px` }">
         <iframe
-          :key="revision"
+          :key="`${url}-${revision}`"
           :src="url"
           :title="`${title}预览`"
-          :style="{ width: `${width}px`, height: '900px', transform: `scale(${scale})` }"
+          :style="{ width: `${width}px`, height: `${height}px`, transform: `scale(${scale})` }"
           @load="loading = false"
         />
       </div>
@@ -31,17 +32,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
-defineProps<{ url: string; title: string }>()
-defineEmits<{ stop: [] }>()
+const props = defineProps<{ url: string; title: string }>()
 const width = ref(1440)
+const height = computed(() => (width.value === 390 ? 844 : 900))
 const canvas = ref<HTMLElement>()
 const availableWidth = ref(0)
 const scale = computed(() => (availableWidth.value ? Math.min(1, availableWidth.value / width.value) : 1))
 const loading = ref(true)
 const revision = ref(0)
 let observer: ResizeObserver | undefined
+
+watch(
+  () => props.url,
+  () => {
+    loading.value = true
+  },
+)
 
 function refresh() {
   loading.value = true

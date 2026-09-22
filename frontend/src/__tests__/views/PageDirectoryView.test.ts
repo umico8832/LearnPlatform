@@ -25,43 +25,113 @@ afterEach(() => {
 })
 
 describe('全局页面预览', () => {
-  it('选择页面不挂载真实页面，开始预览后切换页面会卸载', async () => {
+  it('初始首页自动预览，选择普通页面会立即替换预览', async () => {
     const wrapper = renderDirectory()
-    expect(wrapper.find('iframe').exists()).toBe(false)
+    expect(wrapper.get('iframe').attributes('src')).toBe(`${window.location.origin}/`)
+    expect(wrapper.find('.primary-action').exists()).toBe(false)
+
+    await wrapper.get('[data-page="learner:LearningDiagnosis"]').trigger('click')
+    expect(wrapper.get('iframe').attributes('src')).toBe(`${window.location.origin}/learning-diagnosis`)
+    expect(wrapper.find('#auth-preview-state').exists()).toBe(false)
+  })
+
+  it('动态参数改变时卸载旧预览，只在按 Enter 后加载有效地址', async () => {
+    const wrapper = renderDirectory()
     await wrapper.get('[data-page="learner:TutorSession"]').trigger('click')
     expect(wrapper.find('iframe').exists()).toBe(false)
-    expect(wrapper.get('.primary-action').attributes('disabled')).toBeDefined()
-    await wrapper.get('#param-id').setValue('21')
+
+    const idInput = wrapper.get('#param-id')
+    await idInput.setValue('21')
     expect(wrapper.find('iframe').exists()).toBe(false)
-    await wrapper.get('.primary-action').trigger('click')
-    expect(wrapper.get('iframe').attributes('src')).toMatch(/\/my-courses\/21\/tutor$/)
-    await wrapper.get('[data-page="learner:Home"]').trigger('click')
+    await idInput.trigger('keydown.enter')
+    expect(wrapper.get('iframe').attributes('src')).toBe(`${window.location.origin}/my-courses/21/tutor`)
+
+    await idInput.setValue('0')
+    expect(wrapper.find('iframe').exists()).toBe(false)
+    await idInput.trigger('keydown.enter')
     expect(wrapper.find('iframe').exists()).toBe(false)
   })
 
-  it('参数变化停止旧会话预览，无效参数不能打开业务页', async () => {
-    const wrapper = renderDirectory()
-    await wrapper.get('[data-page="learner:ExamTake"]').trigger('click')
-    await wrapper.get('#param-recordId').setValue('7')
-    await wrapper.get('.primary-action').trigger('click')
-    expect(wrapper.find('iframe').exists()).toBe(true)
-    await wrapper.get('#param-recordId').setValue('0')
-    expect(wrapper.find('iframe').exists()).toBe(false)
-    expect(wrapper.get('.primary-action').attributes('disabled')).toBeDefined()
-    expect(wrapper.find('.secondary-action').exists()).toBe(false)
-    expect(wrapper.get('.page-actions a').attributes('href')).toMatch(/\/exams$/)
-  })
-
-  it('管理端使用独立地址且地址变更不会自动加载页面', async () => {
+  it('管理端选择后立即预览，编辑地址只在按 Enter 的有效地址后应用', async () => {
     const wrapper = renderDirectory()
     await wrapper.get('[data-page="admin:AdminQuestionManage"]').trigger('click')
-    expect(wrapper.get('.secondary-action').attributes('href')).toContain(':5174/admin/questions')
-    await wrapper.get('#admin-base').setValue('http://localhost:6274/admin/')
-    expect(wrapper.get('.secondary-action').attributes('href')).toBe('http://localhost:6274/admin/questions')
+    expect(wrapper.get('iframe').attributes('src')).toBe('http://localhost:5174/admin/questions')
+
+    const baseInput = wrapper.get('#admin-base')
+    await baseInput.setValue('http://localhost:6274/admin/')
     expect(wrapper.find('iframe').exists()).toBe(false)
-    await wrapper.get('#admin-base').setValue('javascript:alert(1)')
-    expect(wrapper.get('.primary-action').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('.secondary-action').attributes('href')).toBe('http://localhost:6274/admin/questions')
+    await baseInput.trigger('keydown.enter')
+    expect(wrapper.get('iframe').attributes('src')).toBe('http://localhost:6274/admin/questions')
+    expect(wrapper.get('.secondary-action').attributes('href')).toBe('http://localhost:6274/admin/questions')
+
+    await baseInput.setValue('javascript:alert(1)')
+    expect(wrapper.find('iframe').exists()).toBe(false)
+    await baseInput.trigger('keydown.enter')
+    expect(wrapper.find('iframe').exists()).toBe(false)
     expect(wrapper.find('[role="alert"]').exists()).toBe(true)
+  })
+
+  it('认证状态选项只在认证页面出现，普通及管理页面不会携带认证预览参数', async () => {
+    const wrapper = renderDirectory()
+    await wrapper.get('[data-page="learner:Login"]').trigger('click')
+    expect(wrapper.get('#auth-preview-state').element).toBeInstanceOf(HTMLSelectElement)
+    expect(wrapper.get('iframe').attributes('src')).toBe(`${window.location.origin}/login?auth-preview=default`)
+
+    await wrapper.get('[data-page="admin:AdminLogin"]').trigger('click')
+    expect(wrapper.find('#auth-preview-state').exists()).toBe(false)
+    expect(wrapper.get('iframe').attributes('src')).toBe('http://localhost:5174/admin/login')
+    expect(wrapper.get('iframe').attributes('src')).not.toContain('auth-preview')
+  })
+
+  it('真实认证流程会移除状态参数，并在切换页面时恢复该页的默认状态', async () => {
+    const wrapper = renderDirectory()
+    await wrapper.get('[data-page="learner:Register"]').trigger('click')
+    const state = wrapper.get('#auth-preview-state')
+    expect(wrapper.get('iframe').attributes('src')).toBe(`${window.location.origin}/register?auth-preview=step-1`)
+
+    await wrapper.get('#preview-width').setValue('390')
+    await state.setValue('step-3')
+    expect(wrapper.get('iframe').attributes('src')).toBe(`${window.location.origin}/register?auth-preview=step-3`)
+    expect(wrapper.get<HTMLSelectElement>('#preview-width').element.value).toBe('390')
+    expect(wrapper.get('iframe').attributes('style')).toContain('height: 844px')
+    expect(wrapper.get('.secondary-action').attributes('href')).toBe(
+      `${window.location.origin}/register?auth-preview=step-3`,
+    )
+
+    await state.setValue('')
+    expect(wrapper.get('iframe').attributes('src')).toBe(`${window.location.origin}/register`)
+    expect(wrapper.get('.secondary-action').attributes('href')).toBe(`${window.location.origin}/register`)
+
+    await wrapper.get('[data-page="learner:Login"]').trigger('click')
+    await wrapper.get('[data-page="learner:Register"]').trigger('click')
+    expect(wrapper.get<HTMLSelectElement>('#auth-preview-state').element.value).toBe('step-1')
+    expect(wrapper.get('iframe').attributes('src')).toBe(`${window.location.origin}/register?auth-preview=step-1`)
+  })
+
+  it.each([
+    ['Login', 'default', '/login?auth-preview=default'],
+    ['Register', 'step-1', '/register?auth-preview=step-1'],
+    ['Register', 'step-2', '/register?auth-preview=step-2'],
+    ['Register', 'step-3', '/register?auth-preview=step-3'],
+    ['ForgotPassword', 'form', '/forgot-password?auth-preview=form'],
+    ['ForgotPassword', 'sent', '/forgot-password?auth-preview=sent'],
+    ['ForgotPassword', 'resent', '/forgot-password?auth-preview=resent'],
+    ['ForgotPassword', 'support', '/forgot-password?auth-preview=support'],
+    ['ResetPassword', 'checking', '/reset-password?auth-preview=checking'],
+    ['ResetPassword', 'form', '/reset-password?auth-preview=form'],
+    ['ResetPassword', 'success', '/reset-password?auth-preview=success'],
+    ['ResetPassword', 'error', '/reset-password?auth-preview=error'],
+    ['OAuthCallback', 'loading', '/oauth/callback?auth-preview=loading'],
+    ['OAuthCallback', 'error', '/oauth/callback?auth-preview=error'],
+  ])('认证状态 %s / %s 会立即更新 iframe 与新标签地址', async (pageName, state, expectedPath) => {
+    const wrapper = renderDirectory()
+    await wrapper.get(`[data-page="learner:${pageName}"]`).trigger('click')
+    await wrapper.get('#auth-preview-state').setValue(state)
+
+    const expectedUrl = `${window.location.origin}${expectedPath}`
+    expect(wrapper.get('iframe').attributes('src')).toBe(expectedUrl)
+    expect(wrapper.get('.secondary-action').attributes('href')).toBe(expectedUrl)
   })
 
   it('按隐藏页面名称、路由名或路径查找，空结果保留恢复入口', async () => {
@@ -75,7 +145,7 @@ describe('全局页面预览', () => {
     expect(wrapper.find('.search-empty').exists()).toBe(true)
     await wrapper.get('#page-search').setValue('')
     expect(wrapper.findAll('[data-page]')).toHaveLength(pages.length)
-    expect(wrapper.get('a[href="/dev/auth-preview"]').attributes('target')).toBe('_blank')
+    expect(wrapper.find('a[href="/dev/auth-preview"]').exists()).toBe(false)
   })
 })
 

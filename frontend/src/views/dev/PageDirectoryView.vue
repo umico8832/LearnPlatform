@@ -6,10 +6,9 @@
           <h1>全局页面预览</h1>
           <span class="dev-label">仅开发环境</span>
         </div>
-        <p>查找页面、填写访问参数，按需打开真实页面。</p>
+        <p>选择页面即可预览，认证页面可直接切换步骤与结果。</p>
       </div>
       <div class="header-links">
-        <a href="/dev/auth-preview" target="_blank" rel="noopener noreferrer">认证状态预览 ↗</a>
         <a href="/" target="_blank" rel="noopener noreferrer">网站首页 ↗</a>
       </div>
     </header>
@@ -24,20 +23,50 @@
         <nav class="page-list" aria-label="全部页面">
           <section v-for="group in visibleGroups" :key="group.id">
             <h2>
-              {{ group.label }} <span>{{ group.items.length }}</span>
+              <button
+                type="button"
+                class="page-group-toggle"
+                :class="{ 'has-selection': selected.group === group.id }"
+                :aria-expanded="isGroupExpanded(group.id)"
+                :aria-controls="`page-group-${group.id}`"
+                @click="toggleGroup(group.id)"
+              >
+                <svg
+                  class="group-chevron"
+                  :class="{ 'is-expanded': isGroupExpanded(group.id) }"
+                  viewBox="0 0 16 16"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="m6 3 5 5-5 5"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                <span class="group-label">{{ group.label }}</span>
+                <span class="group-count">{{ group.items.length }}</span>
+              </button>
             </h2>
-            <button
-              v-for="page in group.items"
-              :key="page.id"
-              type="button"
-              :data-page="page.id"
-              :class="{ 'is-selected': selected.id === page.id }"
-              :aria-current="selected.id === page.id ? 'true' : undefined"
-              @click="selectPage(page)"
-            >
-              <span>{{ page.title }}</span>
-              <small>{{ displayPath(page) }}</small>
-            </button>
+            <div v-show="isGroupExpanded(group.id)" :id="`page-group-${group.id}`">
+              <button
+                v-for="page in group.items"
+                :key="page.id"
+                type="button"
+                class="page-entry"
+                :data-page="page.id"
+                :class="{ 'is-selected': selected.id === page.id }"
+                :aria-current="selected.id === page.id ? 'true' : undefined"
+                @click="selectPage(page)"
+              >
+                <span>{{ page.title }}</span>
+                <small>{{ displayPath(page) }}</small>
+              </button>
+            </div>
           </section>
           <p v-if="!filteredPages.length" class="search-empty">没有匹配的页面，请尝试名称或路径关键词。</p>
         </nav>
@@ -56,18 +85,23 @@
           <p class="route-path">{{ displayPath(selected) }}</p>
           <p class="route-name">{{ selected.name }}</p>
 
-          <p v-if="selected.notice" class="page-notice">{{ selected.notice }}</p>
-          <p v-if="selected.group === 'auth'" class="page-notice">
-            此处打开真实认证流程；查看不同步骤与结果，请使用上方“认证状态预览”。
-          </p>
+          <p v-if="selected.notice && !authState" class="page-notice">{{ selected.notice }}</p>
 
           <div v-if="selected.app === 'admin'" class="admin-settings">
             <label for="admin-base">管理端开发地址</label>
-            <input id="admin-base" v-model="adminBase" type="url" spellcheck="false" :aria-invalid="!validAdminBase" />
+            <input
+              id="admin-base"
+              v-model="adminBase"
+              type="url"
+              spellcheck="false"
+              :aria-invalid="!validAdminBase"
+              @input="clearPreview"
+              @keydown.enter.prevent="loadPreview"
+            />
             <p v-if="!validAdminBase" class="field-error" role="alert">
               请输入有效的 HTTP 或 HTTPS 地址，不含账号、查询参数或片段。
             </p>
-            <p v-else class="field-help">管理端需单独启动：<code>npm run dev:admin</code>，并在管理端登录。</p>
+            <p v-else class="field-help">管理端需单独启动：<code>npm run dev:admin</code>。修改地址后按回车应用。</p>
           </div>
 
           <div v-if="selected.params.length" class="route-params">
@@ -80,35 +114,39 @@
                 inputmode="numeric"
                 placeholder="填写已有记录的正整数 ID"
                 autocomplete="off"
+                :aria-invalid="invalidParams"
+                aria-describedby="params-help"
+                @input="clearPreview"
+                @keydown.enter.prevent="loadPreview"
               />
             </label>
-            <p class="field-help">使用当前账号有权访问的真实记录 ID；不确定时可先从业务入口进入。</p>
+            <p id="params-help" class="field-help">填写真实记录 ID 后按回车预览；不确定时可先从业务入口进入。</p>
+            <p v-if="invalidParams" class="field-error" role="alert">请输入有效的正整数记录 ID。</p>
           </div>
 
-          <div class="page-actions">
-            <button type="button" class="primary-action" :disabled="!targetUrl" @click="startPreview">开始预览</button>
-            <a v-if="targetUrl" class="secondary-action" :href="targetUrl" target="_blank" rel="noopener noreferrer"
-              >在新标签打开 ↗</a
-            >
-            <a v-if="entryUrl" :href="entryUrl" target="_blank" rel="noopener noreferrer">从业务入口进入 ↗</a>
+          <div class="page-tools">
+            <label v-if="authOptions.length" class="auth-preview-options" for="auth-preview-state">
+              预览状态
+              <select id="auth-preview-state" :key="selected.id" v-model="authState" @change="loadPreview">
+                <option v-for="option in authOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </option>
+                <option value="">真实流程</option>
+              </select>
+            </label>
+            <div class="page-actions">
+              <a v-if="targetUrl" class="secondary-action" :href="targetUrl" target="_blank" rel="noopener noreferrer"
+                >在新标签打开 ↗</a
+              >
+              <a v-if="entryUrl" :href="entryUrl" target="_blank" rel="noopener noreferrer">从业务入口进入 ↗</a>
+            </div>
           </div>
-          <p class="field-help">
-            {{ targetUrl ? '预览中的登录、计时和业务操作会实际生效。' : '填写有效的地址与页面参数后即可打开。' }}
-          </p>
         </div>
 
-        <PagePreviewFrame
-          v-if="previewUrl"
-          :key="previewUrl"
-          :url="previewUrl"
-          :title="selected.title"
-          @stop="previewUrl = ''"
-        />
-        <div v-else class="preview-empty">
-          <span class="preview-symbol" aria-hidden="true">↗</span>
-          <h3>准备好后，开始预览</h3>
-          <p>选择目录中的页面不会自动加载。点击“开始预览”，或在新标签中调试完整页面。</p>
-        </div>
+        <PagePreviewFrame v-if="previewUrl" :url="previewUrl" :title="selected.title" />
+        <p v-else class="preview-pending" role="status">
+          {{ selected.params.length ? '填写真实记录 ID，按回车预览。' : '填写有效的管理端地址，按回车预览。' }}
+        </p>
       </section>
     </div>
   </main>
@@ -118,6 +156,7 @@
 import { computed, ref, watch } from 'vue'
 import { pageGroups, pages, type PageEntry } from './pageCatalog'
 import { normalizeAdminBase, resolvePageUrl } from './pageDirectoryUrl'
+import { getAuthPreviewOptions } from './authPreviewOptions'
 import PagePreviewFrame from './PagePreviewFrame.vue'
 
 const learnerOrigin = window.location.origin
@@ -127,8 +166,12 @@ const adminBase = ref(defaultAdminBase.href)
 const validAdminBase = computed(() => normalizeAdminBase(adminBase.value))
 const search = ref('')
 const selected = ref(pages.find((page) => page.name === 'Home') ?? pages[0])
+const expandedGroups = ref(new Set<PageEntry['group']>([selected.value.group]))
+const searchCollapsedGroups = ref(new Set<PageEntry['group']>())
 const params = ref<Record<string, string>>({})
-const previewUrl = ref('')
+const authOptions = computed(() => getAuthPreviewOptions(selected.value.name))
+const authState = ref(authOptions.value[0]?.value ?? '')
+const attempted = ref(false)
 const accessLabels = { public: '公开访问', login: '需要登录', admin: '需要管理员' }
 const filteredPages = computed(() => {
   const query = search.value.trim().toLowerCase()
@@ -139,7 +182,17 @@ const visibleGroups = computed(() =>
     .map((group) => ({ ...group, items: filteredPages.value.filter((page) => page.group === group.id) }))
     .filter((group) => group.items.length),
 )
-const targetUrl = computed(() => resolvePageUrl(selected.value, params.value, learnerOrigin, adminBase.value))
+const targetUrl = computed(() => {
+  const resolved = resolvePageUrl(selected.value, params.value, learnerOrigin, adminBase.value)
+  if (!resolved) return undefined
+  const url = new URL(resolved)
+  if (authOptions.value.some((option) => option.value === authState.value)) {
+    url.searchParams.set('auth-preview', authState.value)
+  }
+  return url.href
+})
+const previewUrl = ref(targetUrl.value ?? '')
+const invalidParams = computed(() => attempted.value && selected.value.params.length > 0 && !targetUrl.value)
 const entryUrl = computed(() => {
   if (!selected.value.entryPath) return undefined
   return resolvePageUrl(
@@ -158,24 +211,38 @@ function parameterLabel(param: string) {
   return { id: '课程 ID', recordId: '考试记录 ID', sessionId: '试卷学习会话 ID' }[param] ?? param
 }
 
+function isGroupExpanded(group: PageEntry['group']) {
+  return search.value.trim() ? !searchCollapsedGroups.value.has(group) : expandedGroups.value.has(group)
+}
+
+function toggleGroup(group: PageEntry['group']) {
+  const groups = search.value.trim() ? searchCollapsedGroups.value : expandedGroups.value
+  if (groups.has(group)) groups.delete(group)
+  else groups.add(group)
+}
+
+watch(search, () => searchCollapsedGroups.value.clear())
+
 function selectPage(page: PageEntry) {
+  expandedGroups.value.add(page.group)
   if (selected.value.id === page.id) return
   previewUrl.value = ''
   params.value = {}
   selected.value = page
+  authState.value = getAuthPreviewOptions(page.name)[0]?.value ?? ''
+  attempted.value = false
+  previewUrl.value = targetUrl.value ?? ''
 }
 
-function startPreview() {
-  if (targetUrl.value) previewUrl.value = targetUrl.value
+function loadPreview() {
+  attempted.value = true
+  previewUrl.value = targetUrl.value ?? ''
 }
 
-watch(
-  [params, adminBase],
-  () => {
-    previewUrl.value = ''
-  },
-  { deep: true },
-)
+function clearPreview() {
+  previewUrl.value = ''
+  attempted.value = false
+}
 </script>
 
 <style scoped src="./pageDirectory.css"></style>

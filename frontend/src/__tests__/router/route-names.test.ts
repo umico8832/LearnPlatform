@@ -16,9 +16,11 @@ const PUBLIC_PLACEHOLDER_ROUTES = [
 
 describe('课程空间学习工具路由名', () => {
   it('开发页仅在开发路由表注册，生产路由表只包含业务页面', () => {
-    expect(createLearnerRoutes(true).map((route) => route.name)).toEqual(
-      expect.arrayContaining(['AuthPreview', 'DevPages']),
-    )
+    expect(
+      createLearnerRoutes(true)
+        .filter((route) => route.path.startsWith('/dev/'))
+        .map((route) => route.name),
+    ).toEqual(['DevPages'])
     const productionNames = createLearnerRoutes(false).map((route) => route.name)
     expect(productionNames).not.toContain('AuthPreview')
     expect(productionNames).not.toContain('DevPages')

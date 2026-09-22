@@ -76,7 +76,12 @@ function appendPages(
       app,
       group,
       name: record.name,
-      title: record.name === 'Home' ? '首页' : String(meta.title ?? record.name),
+      title:
+        record.name === 'Home'
+          ? '首页'
+          : record.name === 'OAuthCallback'
+            ? '第三方登录'
+            : String(meta.title ?? record.name),
       path,
       access,
       params: isNotFound ? [] : pathParams(path),
