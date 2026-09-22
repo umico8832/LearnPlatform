@@ -1,0 +1,296 @@
+{"source_id":"cs408-exam-purpose","type":"leads_to","target_id":"cs408-exam-structure","description":"理解考试定位后才能正确解释试卷分值、时长与题型结构。"}
+{"source_id":"cs408-exam-structure","type":"prerequisite","target_id":"cs408-exam-purpose","description":"《408 计算机学科专业基础考试定位》提供理解《408 试卷结构与数据结构分值》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-exam-structure","type":"related","target_id":"cs408-data-structure-objectives","description":"分值与题型决定复习投入，但作答要求仍由数据结构考查目标界定。"}
+{"source_id":"cs408-data-structure-objectives","type":"leads_to","target_id":"cs408-three-layer-mastery","description":"考查目标可转化为概念、过程与实现三层复习验收标准。"}
+{"source_id":"cs408-frequency-evidence-boundary","type":"related","target_id":"cs408-review-priority-path","description":"优先复习路径属于报告建议，必须服从官方范围并保留非官方标签。"}
+{"source_id":"cs408-data-structure-syllabus-map","type":"leads_to","target_id":"cs408-syllabus-basic-concepts","description":"七大模块总览可继续展开为各模块的明确考查范围。"}
+{"source_id":"cs408-syllabus-basic-concepts","type":"part_of","target_id":"cs408-data-structure-syllabus-map","description":"该知识点描述七大考纲模块中的基本概念部分。"}
+{"source_id":"cs408-syllabus-linear-lists","type":"part_of","target_id":"cs408-data-structure-syllabus-map","description":"该知识点描述七大考纲模块中的线性表部分。"}
+{"source_id":"cs408-syllabus-stacks-queues-arrays","type":"part_of","target_id":"cs408-data-structure-syllabus-map","description":"该知识点描述七大考纲模块中的栈、队列和数组部分。"}
+{"source_id":"cs408-syllabus-trees","type":"part_of","target_id":"cs408-data-structure-syllabus-map","description":"该知识点描述七大考纲模块中的树和二叉树部分。"}
+{"source_id":"cs408-syllabus-graphs","type":"part_of","target_id":"cs408-data-structure-syllabus-map","description":"该知识点描述七大考纲模块中的图部分。"}
+{"source_id":"cs408-syllabus-searching","type":"part_of","target_id":"cs408-data-structure-syllabus-map","description":"该知识点描述七大考纲模块中的查找部分。"}
+{"source_id":"cs408-syllabus-sorting","type":"part_of","target_id":"cs408-data-structure-syllabus-map","description":"该知识点描述七大考纲模块中的排序部分。"}
+{"source_id":"cs408-core-extension-boundary","type":"prerequisite","target_id":"cs408-data-structure-syllabus-map","description":"《408 数据结构七大考纲模块》提供理解《408 正式范围与扩展结构边界》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-core-extension-boundary","type":"related","target_id":"cs408-review-priority-path","description":"优先路径应先覆盖正式范围，再按目标决定是否追加扩展结构。"}
+{"source_id":"cs408-review-priority-path","type":"prerequisite","target_id":"cs408-data-structure-syllabus-map","description":"《408 数据结构七大考纲模块》提供理解《408 数据结构建议复习主线》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-review-priority-path","type":"prerequisite","target_id":"cs408-frequency-evidence-boundary","description":"《408 知识点频率的证据边界》提供理解《408 数据结构建议复习主线》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-review-priority-path","type":"leads_to","target_id":"cs408-eight-week-review-plan","description":"主线可以进一步映射为分阶段的八周复习安排。"}
+{"source_id":"cs408-three-layer-mastery","type":"prerequisite","target_id":"cs408-data-structure-objectives","description":"《408 数据结构考查目标》提供理解《408 数据结构三层掌握标准》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-three-layer-mastery","type":"leads_to","target_id":"cs408-study-closed-loop","description":"三层标准需要通过反复输入、推导、实现和复盘形成学习闭环。"}
+{"source_id":"cs408-study-closed-loop","type":"prerequisite","target_id":"cs408-three-layer-mastery","description":"《408 数据结构三层掌握标准》提供理解《408 数据结构学习闭环》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-study-closed-loop","type":"leads_to","target_id":"cs408-eight-week-review-plan","description":"学习闭环可以作为八周计划中每周和每日任务的统一执行模板。"}
+{"source_id":"cs408-eight-week-review-plan","type":"prerequisite","target_id":"cs408-review-priority-path","description":"《408 数据结构建议复习主线》提供理解《408 数据结构八周复习阶段》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-eight-week-review-plan","type":"prerequisite","target_id":"cs408-study-closed-loop","description":"《408 数据结构学习闭环》提供理解《408 数据结构八周复习阶段》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-data-terms","type":"part_of","target_id":"cs408-syllabus-basic-concepts","description":"数据、数据元素、数据对象与数据类型是基本概念考纲模块中的原子知识点。"}
+{"source_id":"cs408-logical-storage-operations","type":"prerequisite","target_id":"cs408-data-terms","description":"《数据、数据元素、数据对象与数据类型》提供理解《数据结构的逻辑结构、存储结构与运算》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-logical-storage-operations","type":"part_of","target_id":"cs408-syllabus-basic-concepts","description":"数据结构的逻辑结构、存储结构与运算是基本概念考纲模块中的原子知识点。"}
+{"source_id":"cs408-abstract-data-type","type":"prerequisite","target_id":"cs408-logical-storage-operations","description":"《数据结构的逻辑结构、存储结构与运算》提供理解《抽象数据类型》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-abstract-data-type","type":"part_of","target_id":"cs408-syllabus-basic-concepts","description":"抽象数据类型是基本概念考纲模块中的原子知识点。"}
+{"source_id":"cs408-algorithm-characteristics","type":"part_of","target_id":"cs408-syllabus-basic-concepts","description":"算法的定义与基本特性是基本概念考纲模块中的原子知识点。"}
+{"source_id":"cs408-algorithm-correctness","type":"prerequisite","target_id":"cs408-algorithm-characteristics","description":"《算法的定义与基本特性》提供理解《算法正确性与边界条件》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-algorithm-correctness","type":"part_of","target_id":"cs408-syllabus-basic-concepts","description":"算法正确性与边界条件是基本概念考纲模块中的原子知识点。"}
+{"source_id":"cs408-time-complexity","type":"prerequisite","target_id":"cs408-algorithm-characteristics","description":"《算法的定义与基本特性》提供理解《时间复杂度》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-time-complexity","type":"part_of","target_id":"cs408-syllabus-basic-concepts","description":"时间复杂度是基本概念考纲模块中的原子知识点。"}
+{"source_id":"cs408-space-complexity","type":"prerequisite","target_id":"cs408-algorithm-characteristics","description":"《算法的定义与基本特性》提供理解《空间复杂度》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-space-complexity","type":"part_of","target_id":"cs408-syllabus-basic-concepts","description":"空间复杂度是基本概念考纲模块中的原子知识点。"}
+{"source_id":"cs408-asymptotic-notation","type":"prerequisite","target_id":"cs408-time-complexity","description":"《时间复杂度》提供理解《O、Ω 与 Θ 渐进记号》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-asymptotic-notation","type":"part_of","target_id":"cs408-syllabus-basic-concepts","description":"O、Ω 与 Θ 渐进记号是基本概念考纲模块中的原子知识点。"}
+{"source_id":"cs408-complexity-estimation","type":"prerequisite","target_id":"cs408-asymptotic-notation","description":"《O、Ω 与 Θ 渐进记号》提供理解《循环与递归的复杂度估算》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-complexity-estimation","type":"part_of","target_id":"cs408-syllabus-basic-concepts","description":"循环与递归的复杂度估算是基本概念考纲模块中的原子知识点。"}
+{"source_id":"cs408-stack-lifo","type":"prerequisite","target_id":"cs408-linear-list-definition-operations","description":"《线性表的定义与基本操作》提供理解《栈的 LIFO 语义与基本操作》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-stack-lifo","type":"part_of","target_id":"cs408-syllabus-stacks-queues-arrays","description":"栈的 LIFO 语义与基本操作是栈、队列和数组考纲模块中的原子知识点。"}
+{"source_id":"cs408-sequential-stack","type":"prerequisite","target_id":"cs408-stack-lifo","description":"《栈的 LIFO 语义与基本操作》提供理解《顺序栈》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-sequential-stack","type":"part_of","target_id":"cs408-syllabus-stacks-queues-arrays","description":"顺序栈是栈、队列和数组考纲模块中的原子知识点。"}
+{"source_id":"cs408-linked-stack","type":"prerequisite","target_id":"cs408-stack-lifo","description":"《栈的 LIFO 语义与基本操作》提供理解《链栈》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-linked-stack","type":"prerequisite","target_id":"cs408-singly-linked-list","description":"《单链表的结点与表示》提供理解《链栈》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-linked-stack","type":"part_of","target_id":"cs408-syllabus-stacks-queues-arrays","description":"链栈是栈、队列和数组考纲模块中的原子知识点。"}
+{"source_id":"cs408-stack-pop-sequences","type":"prerequisite","target_id":"cs408-stack-lifo","description":"《栈的 LIFO 语义与基本操作》提供理解《合法出栈序列》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-stack-pop-sequences","type":"part_of","target_id":"cs408-syllabus-stacks-queues-arrays","description":"合法出栈序列是栈、队列和数组考纲模块中的原子知识点。"}
+{"source_id":"cs408-parentheses-matching","type":"prerequisite","target_id":"cs408-stack-lifo","description":"《栈的 LIFO 语义与基本操作》提供理解《括号匹配》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-parentheses-matching","type":"part_of","target_id":"cs408-syllabus-stacks-queues-arrays","description":"括号匹配是栈、队列和数组考纲模块中的原子知识点。"}
+{"source_id":"cs408-expression-evaluation","type":"prerequisite","target_id":"cs408-stack-lifo","description":"《栈的 LIFO 语义与基本操作》提供理解《表达式转换与求值》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-expression-evaluation","type":"part_of","target_id":"cs408-syllabus-stacks-queues-arrays","description":"表达式转换与求值是栈、队列和数组考纲模块中的原子知识点。"}
+{"source_id":"cs408-recursion-call-stack","type":"prerequisite","target_id":"cs408-stack-lifo","description":"《栈的 LIFO 语义与基本操作》提供理解《递归与调用栈》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-recursion-call-stack","type":"part_of","target_id":"cs408-syllabus-stacks-queues-arrays","description":"递归与调用栈是栈、队列和数组考纲模块中的原子知识点。"}
+{"source_id":"cs408-queue-fifo","type":"prerequisite","target_id":"cs408-linear-list-definition-operations","description":"《线性表的定义与基本操作》提供理解《队列的 FIFO 语义与基本操作》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-queue-fifo","type":"part_of","target_id":"cs408-syllabus-stacks-queues-arrays","description":"队列的 FIFO 语义与基本操作是栈、队列和数组考纲模块中的原子知识点。"}
+{"source_id":"cs408-circular-queue-representation","type":"prerequisite","target_id":"cs408-queue-fifo","description":"《队列的 FIFO 语义与基本操作》提供理解《循环队列的数组表示》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-circular-queue-representation","type":"part_of","target_id":"cs408-syllabus-stacks-queues-arrays","description":"循环队列的数组表示是栈、队列和数组考纲模块中的原子知识点。"}
+{"source_id":"cs408-circular-queue-state","type":"prerequisite","target_id":"cs408-circular-queue-representation","description":"《循环队列的数组表示》提供理解《循环队列判空、判满与长度》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-circular-queue-state","type":"part_of","target_id":"cs408-syllabus-stacks-queues-arrays","description":"循环队列判空、判满与长度是栈、队列和数组考纲模块中的原子知识点。"}
+{"source_id":"cs408-linked-queue","type":"prerequisite","target_id":"cs408-queue-fifo","description":"《队列的 FIFO 语义与基本操作》提供理解《链队列》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-linked-queue","type":"prerequisite","target_id":"cs408-singly-linked-list","description":"《单链表的结点与表示》提供理解《链队列》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-linked-queue","type":"part_of","target_id":"cs408-syllabus-stacks-queues-arrays","description":"链队列是栈、队列和数组考纲模块中的原子知识点。"}
+{"source_id":"cs408-multidimensional-array-address","type":"prerequisite","target_id":"cs408-sequential-list-storage","description":"《顺序表的存储表示》提供理解《多维数组的行优先与列优先地址》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-multidimensional-array-address","type":"part_of","target_id":"cs408-syllabus-stacks-queues-arrays","description":"多维数组的行优先与列优先地址是栈、队列和数组考纲模块中的原子知识点。"}
+{"source_id":"cs408-symmetric-matrix-compression","type":"prerequisite","target_id":"cs408-multidimensional-array-address","description":"《多维数组的行优先与列优先地址》提供理解《对称矩阵压缩存储》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-symmetric-matrix-compression","type":"part_of","target_id":"cs408-syllabus-stacks-queues-arrays","description":"对称矩阵压缩存储是栈、队列和数组考纲模块中的原子知识点。"}
+{"source_id":"cs408-triangular-diagonal-matrix-compression","type":"prerequisite","target_id":"cs408-multidimensional-array-address","description":"《多维数组的行优先与列优先地址》提供理解《三角矩阵与带状矩阵压缩》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-triangular-diagonal-matrix-compression","type":"part_of","target_id":"cs408-syllabus-stacks-queues-arrays","description":"三角矩阵与带状矩阵压缩是栈、队列和数组考纲模块中的原子知识点。"}
+{"source_id":"cs408-sparse-matrix-triples","type":"prerequisite","target_id":"cs408-multidimensional-array-address","description":"《多维数组的行优先与列优先地址》提供理解《稀疏矩阵三元组表示》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-sparse-matrix-triples","type":"part_of","target_id":"cs408-syllabus-stacks-queues-arrays","description":"稀疏矩阵三元组表示是栈、队列和数组考纲模块中的原子知识点。"}
+{"source_id":"cs408-queue-applications","type":"prerequisite","target_id":"cs408-queue-fifo","description":"《队列的 FIFO 语义与基本操作》提供理解《队列在层次处理与缓冲中的应用》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-queue-applications","type":"part_of","target_id":"cs408-syllabus-stacks-queues-arrays","description":"队列在层次处理与缓冲中的应用是栈、队列和数组考纲模块中的原子知识点。"}
+{"source_id":"cs408-tree-terms","type":"prerequisite","target_id":"cs408-logical-storage-operations","description":"《数据结构的逻辑结构、存储结构与运算》提供理解《树的结点、度、层次与路径》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-tree-terms","type":"part_of","target_id":"cs408-syllabus-trees","description":"树的结点、度、层次与路径是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-tree-edge-node-properties","type":"prerequisite","target_id":"cs408-tree-terms","description":"《树的结点、度、层次与路径》提供理解《树的结点数与边数性质》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-tree-edge-node-properties","type":"part_of","target_id":"cs408-syllabus-trees","description":"树的结点数与边数性质是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-binary-tree-properties","type":"prerequisite","target_id":"cs408-tree-terms","description":"《树的结点、度、层次与路径》提供理解《二叉树定义与结点数性质》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-binary-tree-properties","type":"part_of","target_id":"cs408-syllabus-trees","description":"二叉树定义与结点数性质是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-full-complete-binary-tree","type":"prerequisite","target_id":"cs408-binary-tree-properties","description":"《二叉树定义与结点数性质》提供理解《满二叉树与完全二叉树》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-full-complete-binary-tree","type":"part_of","target_id":"cs408-syllabus-trees","description":"满二叉树与完全二叉树是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-binary-tree-sequential-storage","type":"prerequisite","target_id":"cs408-full-complete-binary-tree","description":"《满二叉树与完全二叉树》提供理解《二叉树的顺序存储》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-binary-tree-sequential-storage","type":"part_of","target_id":"cs408-syllabus-trees","description":"二叉树的顺序存储是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-binary-tree-linked-storage","type":"prerequisite","target_id":"cs408-binary-tree-properties","description":"《二叉树定义与结点数性质》提供理解《二叉链表与三叉链表》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-binary-tree-linked-storage","type":"part_of","target_id":"cs408-syllabus-trees","description":"二叉链表与三叉链表是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-binary-tree-depth-traversals","type":"prerequisite","target_id":"cs408-binary-tree-linked-storage","description":"《二叉链表与三叉链表》提供理解《二叉树先序、中序与后序遍历》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-binary-tree-depth-traversals","type":"prerequisite","target_id":"cs408-stack-lifo","description":"《栈的 LIFO 语义与基本操作》提供理解《二叉树先序、中序与后序遍历》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-binary-tree-depth-traversals","type":"part_of","target_id":"cs408-syllabus-trees","description":"二叉树先序、中序与后序遍历是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-binary-tree-level-order","type":"prerequisite","target_id":"cs408-binary-tree-linked-storage","description":"《二叉链表与三叉链表》提供理解《二叉树层序遍历》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-binary-tree-level-order","type":"prerequisite","target_id":"cs408-queue-fifo","description":"《队列的 FIFO 语义与基本操作》提供理解《二叉树层序遍历》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-binary-tree-level-order","type":"part_of","target_id":"cs408-syllabus-trees","description":"二叉树层序遍历是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-binary-tree-reconstruction","type":"prerequisite","target_id":"cs408-binary-tree-depth-traversals","description":"《二叉树先序、中序与后序遍历》提供理解《由遍历序列重建二叉树》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-binary-tree-reconstruction","type":"part_of","target_id":"cs408-syllabus-trees","description":"由遍历序列重建二叉树是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-threaded-binary-tree","type":"prerequisite","target_id":"cs408-binary-tree-linked-storage","description":"《二叉链表与三叉链表》提供理解《线索二叉树的线索化思想》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-threaded-binary-tree","type":"prerequisite","target_id":"cs408-binary-tree-depth-traversals","description":"《二叉树先序、中序与后序遍历》提供理解《线索二叉树的线索化思想》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-threaded-binary-tree","type":"part_of","target_id":"cs408-syllabus-trees","description":"线索二叉树的线索化思想是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-threaded-predecessor-successor","type":"prerequisite","target_id":"cs408-threaded-binary-tree","description":"《线索二叉树的线索化思想》提供理解《中序线索树的前驱与后继》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-threaded-predecessor-successor","type":"part_of","target_id":"cs408-syllabus-trees","description":"中序线索树的前驱与后继是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-tree-storage-representations","type":"prerequisite","target_id":"cs408-tree-terms","description":"《树的结点、度、层次与路径》提供理解《树的双亲、孩子与孩子兄弟表示》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-tree-storage-representations","type":"part_of","target_id":"cs408-syllabus-trees","description":"树的双亲、孩子与孩子兄弟表示是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-tree-forest-binary-conversion","type":"prerequisite","target_id":"cs408-tree-storage-representations","description":"《树的双亲、孩子与孩子兄弟表示》提供理解《树、森林与二叉树转换》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-tree-forest-binary-conversion","type":"part_of","target_id":"cs408-syllabus-trees","description":"树、森林与二叉树转换是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-tree-forest-traversal","type":"prerequisite","target_id":"cs408-tree-forest-binary-conversion","description":"《树、森林与二叉树转换》提供理解《树和森林的遍历》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-tree-forest-traversal","type":"part_of","target_id":"cs408-syllabus-trees","description":"树和森林的遍历是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-huffman-tree","type":"prerequisite","target_id":"cs408-tree-terms","description":"《树的结点、度、层次与路径》提供理解《Huffman 树与带权路径长度》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-huffman-tree","type":"prerequisite","target_id":"cs408-binary-heap","description":"《二叉堆的结构与堆序性》提供理解《Huffman 树与带权路径长度》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-huffman-tree","type":"part_of","target_id":"cs408-syllabus-trees","description":"Huffman 树与带权路径长度是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-huffman-coding","type":"prerequisite","target_id":"cs408-huffman-tree","description":"《Huffman 树与带权路径长度》提供理解《Huffman 编码与前缀码》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-huffman-coding","type":"part_of","target_id":"cs408-syllabus-trees","description":"Huffman 编码与前缀码是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-disjoint-set","type":"prerequisite","target_id":"cs408-tree-terms","description":"《树的结点、度、层次与路径》提供理解《并查集的集合表示与操作》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-disjoint-set","type":"part_of","target_id":"cs408-syllabus-trees","description":"并查集的集合表示与操作是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-disjoint-set-optimization","type":"prerequisite","target_id":"cs408-disjoint-set","description":"《并查集的集合表示与操作》提供理解《并查集的路径压缩与按秩合并》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-disjoint-set-optimization","type":"part_of","target_id":"cs408-syllabus-trees","description":"并查集的路径压缩与按秩合并是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-binary-heap","type":"prerequisite","target_id":"cs408-full-complete-binary-tree","description":"《满二叉树与完全二叉树》提供理解《二叉堆的结构与堆序性》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-binary-heap","type":"part_of","target_id":"cs408-syllabus-trees","description":"二叉堆的结构与堆序性是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-heap-operations","type":"prerequisite","target_id":"cs408-binary-heap","description":"《二叉堆的结构与堆序性》提供理解《堆的插入、删除与建堆》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-heap-operations","type":"part_of","target_id":"cs408-syllabus-trees","description":"堆的插入、删除与建堆是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-heap-applications","type":"prerequisite","target_id":"cs408-heap-operations","description":"《堆的插入、删除与建堆》提供理解《堆与优先队列、Top-K》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-heap-applications","type":"part_of","target_id":"cs408-syllabus-trees","description":"堆与优先队列、Top-K是树和二叉树考纲模块中的原子知识点。"}
+{"source_id":"cs408-graph-definition","type":"prerequisite","target_id":"cs408-logical-storage-operations","description":"《数据结构的逻辑结构、存储结构与运算》提供理解《图、顶点与边》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-graph-definition","type":"part_of","target_id":"cs408-syllabus-graphs","description":"图、顶点与边是图考纲模块中的原子知识点。"}
+{"source_id":"cs408-graph-degree-path-connectivity","type":"prerequisite","target_id":"cs408-graph-definition","description":"《图、顶点与边》提供理解《图的度、路径与连通性》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-graph-degree-path-connectivity","type":"part_of","target_id":"cs408-syllabus-graphs","description":"图的度、路径与连通性是图考纲模块中的原子知识点。"}
+{"source_id":"cs408-adjacency-matrix","type":"prerequisite","target_id":"cs408-graph-definition","description":"《图、顶点与边》提供理解《图的邻接矩阵》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-adjacency-matrix","type":"part_of","target_id":"cs408-syllabus-graphs","description":"图的邻接矩阵是图考纲模块中的原子知识点。"}
+{"source_id":"cs408-adjacency-list","type":"prerequisite","target_id":"cs408-graph-definition","description":"《图、顶点与边》提供理解《图的邻接表》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-adjacency-list","type":"part_of","target_id":"cs408-syllabus-graphs","description":"图的邻接表是图考纲模块中的原子知识点。"}
+{"source_id":"cs408-orthogonal-list","type":"prerequisite","target_id":"cs408-graph-definition","description":"《图、顶点与边》提供理解《有向图的十字链表》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-orthogonal-list","type":"part_of","target_id":"cs408-syllabus-graphs","description":"有向图的十字链表是图考纲模块中的原子知识点。"}
+{"source_id":"cs408-adjacency-multilist","type":"prerequisite","target_id":"cs408-graph-definition","description":"《图、顶点与边》提供理解《无向图的邻接多重表》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-adjacency-multilist","type":"part_of","target_id":"cs408-syllabus-graphs","description":"无向图的邻接多重表是图考纲模块中的原子知识点。"}
+{"source_id":"cs408-graph-storage-comparison","type":"prerequisite","target_id":"cs408-adjacency-matrix","description":"《图的邻接矩阵》提供理解《图存储结构与基本操作比较》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-graph-storage-comparison","type":"prerequisite","target_id":"cs408-adjacency-list","description":"《图的邻接表》提供理解《图存储结构与基本操作比较》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-graph-storage-comparison","type":"part_of","target_id":"cs408-syllabus-graphs","description":"图存储结构与基本操作比较是图考纲模块中的原子知识点。"}
+{"source_id":"cs408-depth-first-search","type":"prerequisite","target_id":"cs408-adjacency-list","description":"《图的邻接表》提供理解《深度优先搜索》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-depth-first-search","type":"prerequisite","target_id":"cs408-stack-lifo","description":"《栈的 LIFO 语义与基本操作》提供理解《深度优先搜索》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-depth-first-search","type":"part_of","target_id":"cs408-syllabus-graphs","description":"深度优先搜索是图考纲模块中的原子知识点。"}
+{"source_id":"cs408-breadth-first-search","type":"prerequisite","target_id":"cs408-adjacency-list","description":"《图的邻接表》提供理解《广度优先搜索》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-breadth-first-search","type":"prerequisite","target_id":"cs408-queue-fifo","description":"《队列的 FIFO 语义与基本操作》提供理解《广度优先搜索》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-breadth-first-search","type":"part_of","target_id":"cs408-syllabus-graphs","description":"广度优先搜索是图考纲模块中的原子知识点。"}
+{"source_id":"cs408-graph-traversal-complexity","type":"prerequisite","target_id":"cs408-depth-first-search","description":"《深度优先搜索》提供理解《图遍历复杂度与生成森林》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-graph-traversal-complexity","type":"prerequisite","target_id":"cs408-breadth-first-search","description":"《广度优先搜索》提供理解《图遍历复杂度与生成森林》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-graph-traversal-complexity","type":"part_of","target_id":"cs408-syllabus-graphs","description":"图遍历复杂度与生成森林是图考纲模块中的原子知识点。"}
+{"source_id":"cs408-minimum-spanning-tree","type":"prerequisite","target_id":"cs408-graph-degree-path-connectivity","description":"《图的度、路径与连通性》提供理解《最小生成树问题》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-minimum-spanning-tree","type":"part_of","target_id":"cs408-syllabus-graphs","description":"最小生成树问题是图考纲模块中的原子知识点。"}
+{"source_id":"cs408-prim-algorithm","type":"prerequisite","target_id":"cs408-minimum-spanning-tree","description":"《最小生成树问题》提供理解《Prim 最小生成树算法》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-prim-algorithm","type":"part_of","target_id":"cs408-syllabus-graphs","description":"Prim 最小生成树算法是图考纲模块中的原子知识点。"}
+{"source_id":"cs408-kruskal-algorithm","type":"prerequisite","target_id":"cs408-minimum-spanning-tree","description":"《最小生成树问题》提供理解《Kruskal 最小生成树算法》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-kruskal-algorithm","type":"prerequisite","target_id":"cs408-disjoint-set","description":"《并查集的集合表示与操作》提供理解《Kruskal 最小生成树算法》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-kruskal-algorithm","type":"part_of","target_id":"cs408-syllabus-graphs","description":"Kruskal 最小生成树算法是图考纲模块中的原子知识点。"}
+{"source_id":"cs408-shortest-path-problem","type":"prerequisite","target_id":"cs408-graph-degree-path-connectivity","description":"《图的度、路径与连通性》提供理解《最短路径问题与松弛》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-shortest-path-problem","type":"part_of","target_id":"cs408-syllabus-graphs","description":"最短路径问题与松弛是图考纲模块中的原子知识点。"}
+{"source_id":"cs408-dijkstra-algorithm","type":"prerequisite","target_id":"cs408-shortest-path-problem","description":"《最短路径问题与松弛》提供理解《Dijkstra 单源最短路径》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-dijkstra-algorithm","type":"prerequisite","target_id":"cs408-binary-heap","description":"《二叉堆的结构与堆序性》提供理解《Dijkstra 单源最短路径》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-dijkstra-algorithm","type":"part_of","target_id":"cs408-syllabus-graphs","description":"Dijkstra 单源最短路径是图考纲模块中的原子知识点。"}
+{"source_id":"cs408-floyd-warshall","type":"prerequisite","target_id":"cs408-shortest-path-problem","description":"《最短路径问题与松弛》提供理解《Floyd 全源最短路径》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-floyd-warshall","type":"prerequisite","target_id":"cs408-adjacency-matrix","description":"《图的邻接矩阵》提供理解《Floyd 全源最短路径》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-floyd-warshall","type":"part_of","target_id":"cs408-syllabus-graphs","description":"Floyd 全源最短路径是图考纲模块中的原子知识点。"}
+{"source_id":"cs408-topological-sort","type":"prerequisite","target_id":"cs408-adjacency-list","description":"《图的邻接表》提供理解《拓扑排序与有向无环图》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-topological-sort","type":"prerequisite","target_id":"cs408-queue-fifo","description":"《队列的 FIFO 语义与基本操作》提供理解《拓扑排序与有向无环图》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-topological-sort","type":"part_of","target_id":"cs408-syllabus-graphs","description":"拓扑排序与有向无环图是图考纲模块中的原子知识点。"}
+{"source_id":"cs408-critical-path","type":"prerequisite","target_id":"cs408-topological-sort","description":"《拓扑排序与有向无环图》提供理解《AOE 网与关键路径》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-critical-path","type":"part_of","target_id":"cs408-syllabus-graphs","description":"AOE 网与关键路径是图考纲模块中的原子知识点。"}
+{"source_id":"cs408-search-concepts","type":"prerequisite","target_id":"cs408-abstract-data-type","description":"《抽象数据类型》提供理解《查找表、关键字与查找结果》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-search-concepts","type":"part_of","target_id":"cs408-syllabus-searching","description":"查找表、关键字与查找结果是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-average-search-length","type":"prerequisite","target_id":"cs408-search-concepts","description":"《查找表、关键字与查找结果》提供理解《平均查找长度》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-average-search-length","type":"part_of","target_id":"cs408-syllabus-searching","description":"平均查找长度是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-sequential-search","type":"prerequisite","target_id":"cs408-search-concepts","description":"《查找表、关键字与查找结果》提供理解《顺序查找》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-sequential-search","type":"part_of","target_id":"cs408-syllabus-searching","description":"顺序查找是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-sequential-search-sentinel","type":"prerequisite","target_id":"cs408-sequential-search","description":"《顺序查找》提供理解《带哨兵的顺序查找》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-sequential-search-sentinel","type":"part_of","target_id":"cs408-syllabus-searching","description":"带哨兵的顺序查找是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-block-search","type":"prerequisite","target_id":"cs408-sequential-search","description":"《顺序查找》提供理解《分块查找》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-block-search","type":"part_of","target_id":"cs408-syllabus-searching","description":"分块查找是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-binary-search","type":"prerequisite","target_id":"cs408-search-concepts","description":"《查找表、关键字与查找结果》提供理解《折半查找》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-binary-search","type":"prerequisite","target_id":"cs408-sequential-list-storage","description":"《顺序表的存储表示》提供理解《折半查找》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-binary-search","type":"part_of","target_id":"cs408-syllabus-searching","description":"折半查找是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-binary-search-decision-tree","type":"prerequisite","target_id":"cs408-binary-search","description":"《折半查找》提供理解《折半查找判定树与 ASL》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-binary-search-decision-tree","type":"prerequisite","target_id":"cs408-average-search-length","description":"《平均查找长度》提供理解《折半查找判定树与 ASL》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-binary-search-decision-tree","type":"part_of","target_id":"cs408-syllabus-searching","description":"折半查找判定树与 ASL是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-bst-property-search","type":"prerequisite","target_id":"cs408-binary-tree-linked-storage","description":"《二叉链表与三叉链表》提供理解《二叉搜索树性质与查找》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-bst-property-search","type":"prerequisite","target_id":"cs408-search-concepts","description":"《查找表、关键字与查找结果》提供理解《二叉搜索树性质与查找》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-bst-property-search","type":"part_of","target_id":"cs408-syllabus-searching","description":"二叉搜索树性质与查找是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-bst-insert-delete","type":"prerequisite","target_id":"cs408-bst-property-search","description":"《二叉搜索树性质与查找》提供理解《二叉搜索树插入与删除》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-bst-insert-delete","type":"part_of","target_id":"cs408-syllabus-searching","description":"二叉搜索树插入与删除是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-avl-balance","type":"prerequisite","target_id":"cs408-bst-property-search","description":"《二叉搜索树性质与查找》提供理解《AVL 树的平衡条件与高度》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-avl-balance","type":"part_of","target_id":"cs408-syllabus-searching","description":"AVL 树的平衡条件与高度是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-avl-rotations","type":"prerequisite","target_id":"cs408-avl-balance","description":"《AVL 树的平衡条件与高度》提供理解《AVL 的 LL、RR、LR、RL 旋转》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-avl-rotations","type":"part_of","target_id":"cs408-syllabus-searching","description":"AVL 的 LL、RR、LR、RL 旋转是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-avl-updates","type":"prerequisite","target_id":"cs408-avl-rotations","description":"《AVL 的 LL、RR、LR、RL 旋转》提供理解《AVL 插入与删除后的调整》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-avl-updates","type":"part_of","target_id":"cs408-syllabus-searching","description":"AVL 插入与删除后的调整是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-red-black-properties","type":"prerequisite","target_id":"cs408-bst-property-search","description":"《二叉搜索树性质与查找》提供理解《红黑树的五条性质与黑高》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-red-black-properties","type":"part_of","target_id":"cs408-syllabus-searching","description":"红黑树的五条性质与黑高是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-red-black-adjustment","type":"prerequisite","target_id":"cs408-red-black-properties","description":"《红黑树的五条性质与黑高》提供理解《红黑树插入与删除调整》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-red-black-adjustment","type":"prerequisite","target_id":"cs408-bst-insert-delete","description":"《二叉搜索树插入与删除》提供理解《红黑树插入与删除调整》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-red-black-adjustment","type":"part_of","target_id":"cs408-syllabus-searching","description":"红黑树插入与删除调整是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-b-tree-properties","type":"prerequisite","target_id":"cs408-search-concepts","description":"《查找表、关键字与查找结果》提供理解《B 树的阶、关键字数与平衡》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-b-tree-properties","type":"part_of","target_id":"cs408-syllabus-searching","description":"B 树的阶、关键字数与平衡是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-b-tree-search","type":"prerequisite","target_id":"cs408-b-tree-properties","description":"《B 树的阶、关键字数与平衡》提供理解《B 树查找》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-b-tree-search","type":"part_of","target_id":"cs408-syllabus-searching","description":"B 树查找是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-b-tree-insertion","type":"prerequisite","target_id":"cs408-b-tree-search","description":"《B 树查找》提供理解《B 树插入与分裂》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-b-tree-insertion","type":"part_of","target_id":"cs408-syllabus-searching","description":"B 树插入与分裂是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-b-tree-deletion","type":"prerequisite","target_id":"cs408-b-tree-properties","description":"《B 树的阶、关键字数与平衡》提供理解《B 树删除、借位与合并》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-b-tree-deletion","type":"part_of","target_id":"cs408-syllabus-searching","description":"B 树删除、借位与合并是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-b-plus-tree","type":"prerequisite","target_id":"cs408-b-tree-properties","description":"《B 树的阶、关键字数与平衡》提供理解《B+ 树的索引与叶链》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-b-plus-tree","type":"part_of","target_id":"cs408-syllabus-searching","description":"B+ 树的索引与叶链是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-b-tree-vs-b-plus","type":"prerequisite","target_id":"cs408-b-tree-properties","description":"《B 树的阶、关键字数与平衡》提供理解《B 树与 B+ 树比较》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-b-tree-vs-b-plus","type":"prerequisite","target_id":"cs408-b-plus-tree","description":"《B+ 树的索引与叶链》提供理解《B 树与 B+ 树比较》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-b-tree-vs-b-plus","type":"part_of","target_id":"cs408-syllabus-searching","description":"B 树与 B+ 树比较是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-hash-table","type":"prerequisite","target_id":"cs408-search-concepts","description":"《查找表、关键字与查找结果》提供理解《散列表与直接地址思想》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-hash-table","type":"part_of","target_id":"cs408-syllabus-searching","description":"散列表与直接地址思想是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-hash-functions","type":"prerequisite","target_id":"cs408-hash-table","description":"《散列表与直接地址思想》提供理解《散列函数设计》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-hash-functions","type":"part_of","target_id":"cs408-syllabus-searching","description":"散列函数设计是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-separate-chaining","type":"prerequisite","target_id":"cs408-hash-functions","description":"《散列函数设计》提供理解《链地址法处理散列冲突》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-separate-chaining","type":"prerequisite","target_id":"cs408-singly-linked-list","description":"《单链表的结点与表示》提供理解《链地址法处理散列冲突》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-separate-chaining","type":"part_of","target_id":"cs408-syllabus-searching","description":"链地址法处理散列冲突是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-open-addressing","type":"prerequisite","target_id":"cs408-hash-functions","description":"《散列函数设计》提供理解《开放定址法与探测序列》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-open-addressing","type":"part_of","target_id":"cs408-syllabus-searching","description":"开放定址法与探测序列是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-hash-load-factor-asl","type":"prerequisite","target_id":"cs408-average-search-length","description":"《平均查找长度》提供理解《散列表装填因子与查找性能》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-hash-load-factor-asl","type":"prerequisite","target_id":"cs408-open-addressing","description":"《开放定址法与探测序列》提供理解《散列表装填因子与查找性能》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-hash-load-factor-asl","type":"part_of","target_id":"cs408-syllabus-searching","description":"散列表装填因子与查找性能是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-brute-force-string-matching","type":"prerequisite","target_id":"cs408-search-concepts","description":"《查找表、关键字与查找结果》提供理解《朴素字符串模式匹配》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-brute-force-string-matching","type":"part_of","target_id":"cs408-syllabus-searching","description":"朴素字符串模式匹配是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-kmp-prefix-function","type":"prerequisite","target_id":"cs408-brute-force-string-matching","description":"《朴素字符串模式匹配》提供理解《KMP 的最长相等前后缀》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-kmp-prefix-function","type":"part_of","target_id":"cs408-syllabus-searching","description":"KMP 的最长相等前后缀是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-kmp-matching","type":"prerequisite","target_id":"cs408-kmp-prefix-function","description":"《KMP 的最长相等前后缀》提供理解《KMP 模式匹配》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-kmp-matching","type":"part_of","target_id":"cs408-syllabus-searching","description":"KMP 模式匹配是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-next-nextval","type":"prerequisite","target_id":"cs408-kmp-prefix-function","description":"《KMP 的最长相等前后缀》提供理解《KMP 的 next 与 nextval 数组》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-next-nextval","type":"part_of","target_id":"cs408-syllabus-searching","description":"KMP 的 next 与 nextval 数组是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-search-method-selection","type":"prerequisite","target_id":"cs408-average-search-length","description":"《平均查找长度》提供理解《查找方法的分析与选择》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-search-method-selection","type":"prerequisite","target_id":"cs408-b-tree-vs-b-plus","description":"《B 树与 B+ 树比较》提供理解《查找方法的分析与选择》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-search-method-selection","type":"prerequisite","target_id":"cs408-hash-load-factor-asl","description":"《散列表装填因子与查找性能》提供理解《查找方法的分析与选择》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-search-method-selection","type":"part_of","target_id":"cs408-syllabus-searching","description":"查找方法的分析与选择是查找考纲模块中的原子知识点。"}
+{"source_id":"cs408-sorting-concepts","type":"part_of","target_id":"cs408-syllabus-sorting","description":"排序、稳定性与内部外部排序是排序考纲模块中的原子知识点。"}
+{"source_id":"cs408-direct-insertion-sort","type":"prerequisite","target_id":"cs408-sorting-concepts","description":"《排序、稳定性与内部外部排序》提供理解《直接插入排序》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-direct-insertion-sort","type":"part_of","target_id":"cs408-syllabus-sorting","description":"直接插入排序是排序考纲模块中的原子知识点。"}
+{"source_id":"cs408-binary-insertion-sort","type":"prerequisite","target_id":"cs408-direct-insertion-sort","description":"《直接插入排序》提供理解《折半插入排序》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-binary-insertion-sort","type":"prerequisite","target_id":"cs408-binary-search","description":"《折半查找》提供理解《折半插入排序》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-binary-insertion-sort","type":"part_of","target_id":"cs408-syllabus-sorting","description":"折半插入排序是排序考纲模块中的原子知识点。"}
+{"source_id":"cs408-bubble-sort","type":"prerequisite","target_id":"cs408-sorting-concepts","description":"《排序、稳定性与内部外部排序》提供理解《冒泡排序》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-bubble-sort","type":"part_of","target_id":"cs408-syllabus-sorting","description":"冒泡排序是排序考纲模块中的原子知识点。"}
+{"source_id":"cs408-selection-sort","type":"prerequisite","target_id":"cs408-sorting-concepts","description":"《排序、稳定性与内部外部排序》提供理解《简单选择排序》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-selection-sort","type":"part_of","target_id":"cs408-syllabus-sorting","description":"简单选择排序是排序考纲模块中的原子知识点。"}
+{"source_id":"cs408-shell-sort","type":"prerequisite","target_id":"cs408-direct-insertion-sort","description":"《直接插入排序》提供理解《希尔排序》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-shell-sort","type":"part_of","target_id":"cs408-syllabus-sorting","description":"希尔排序是排序考纲模块中的原子知识点。"}
+{"source_id":"cs408-quick-partition","type":"prerequisite","target_id":"cs408-sorting-concepts","description":"《排序、稳定性与内部外部排序》提供理解《快速排序的划分》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-quick-partition","type":"part_of","target_id":"cs408-syllabus-sorting","description":"快速排序的划分是排序考纲模块中的原子知识点。"}
+{"source_id":"cs408-quick-sort-analysis","type":"prerequisite","target_id":"cs408-quick-partition","description":"《快速排序的划分》提供理解《快速排序与复杂度分析》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-quick-sort-analysis","type":"prerequisite","target_id":"cs408-complexity-estimation","description":"《循环与递归的复杂度估算》提供理解《快速排序与复杂度分析》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-quick-sort-analysis","type":"part_of","target_id":"cs408-syllabus-sorting","description":"快速排序与复杂度分析是排序考纲模块中的原子知识点。"}
+{"source_id":"cs408-heap-sort","type":"prerequisite","target_id":"cs408-heap-operations","description":"《堆的插入、删除与建堆》提供理解《堆排序》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-heap-sort","type":"part_of","target_id":"cs408-syllabus-sorting","description":"堆排序是排序考纲模块中的原子知识点。"}
+{"source_id":"cs408-merge-sort","type":"prerequisite","target_id":"cs408-sorting-concepts","description":"《排序、稳定性与内部外部排序》提供理解《二路归并排序》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-merge-sort","type":"part_of","target_id":"cs408-syllabus-sorting","description":"二路归并排序是排序考纲模块中的原子知识点。"}
+{"source_id":"cs408-radix-sort","type":"prerequisite","target_id":"cs408-sorting-concepts","description":"《排序、稳定性与内部外部排序》提供理解《基数排序》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-radix-sort","type":"part_of","target_id":"cs408-syllabus-sorting","description":"基数排序是排序考纲模块中的原子知识点。"}
+{"source_id":"cs408-comparison-sorting-lower-bound","type":"prerequisite","target_id":"cs408-asymptotic-notation","description":"《O、Ω 与 Θ 渐进记号》提供理解《比较排序的下界》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-comparison-sorting-lower-bound","type":"prerequisite","target_id":"cs408-sorting-concepts","description":"《排序、稳定性与内部外部排序》提供理解《比较排序的下界》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-comparison-sorting-lower-bound","type":"part_of","target_id":"cs408-syllabus-sorting","description":"比较排序的下界是排序考纲模块中的原子知识点。"}
+{"source_id":"cs408-sorting-method-selection","type":"prerequisite","target_id":"cs408-direct-insertion-sort","description":"《直接插入排序》提供理解《内部排序算法的比较与选择》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-sorting-method-selection","type":"prerequisite","target_id":"cs408-quick-sort-analysis","description":"《快速排序与复杂度分析》提供理解《内部排序算法的比较与选择》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-sorting-method-selection","type":"prerequisite","target_id":"cs408-heap-sort","description":"《堆排序》提供理解《内部排序算法的比较与选择》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-sorting-method-selection","type":"prerequisite","target_id":"cs408-merge-sort","description":"《二路归并排序》提供理解《内部排序算法的比较与选择》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-sorting-method-selection","type":"part_of","target_id":"cs408-syllabus-sorting","description":"内部排序算法的比较与选择是排序考纲模块中的原子知识点。"}
+{"source_id":"cs408-external-sorting-runs","type":"prerequisite","target_id":"cs408-merge-sort","description":"《二路归并排序》提供理解《外部排序与初始归并段》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-external-sorting-runs","type":"part_of","target_id":"cs408-syllabus-sorting","description":"外部排序与初始归并段是排序考纲模块中的原子知识点。"}
+{"source_id":"cs408-k-way-external-merge","type":"prerequisite","target_id":"cs408-external-sorting-runs","description":"《外部排序与初始归并段》提供理解《多路平衡归并》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-k-way-external-merge","type":"part_of","target_id":"cs408-syllabus-sorting","description":"多路平衡归并是排序考纲模块中的原子知识点。"}
+{"source_id":"cs408-loser-tree","type":"prerequisite","target_id":"cs408-k-way-external-merge","description":"《多路平衡归并》提供理解《败者树》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-loser-tree","type":"part_of","target_id":"cs408-syllabus-sorting","description":"败者树是排序考纲模块中的原子知识点。"}
+{"source_id":"cs408-replacement-selection","type":"prerequisite","target_id":"cs408-loser-tree","description":"《败者树》提供理解《置换选择生成初始归并段》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-replacement-selection","type":"part_of","target_id":"cs408-syllabus-sorting","description":"置换选择生成初始归并段是排序考纲模块中的原子知识点。"}
+{"source_id":"cs408-optimal-merge-tree","type":"prerequisite","target_id":"cs408-huffman-tree","description":"《Huffman 树与带权路径长度》提供理解《最佳归并树》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-optimal-merge-tree","type":"prerequisite","target_id":"cs408-external-sorting-runs","description":"《外部排序与初始归并段》提供理解《最佳归并树》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-optimal-merge-tree","type":"part_of","target_id":"cs408-syllabus-sorting","description":"最佳归并树是排序考纲模块中的原子知识点。"}
+{"source_id":"cs408-linear-list-definition-operations","type":"prerequisite","target_id":"cs408-abstract-data-type","description":"《抽象数据类型》提供理解《线性表的定义与基本操作》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-linear-list-definition-operations","type":"part_of","target_id":"cs408-syllabus-linear-lists","description":"线性表的定义与基本操作是线性表考纲模块中的原子知识点。"}
+{"source_id":"cs408-sequential-list-storage","type":"prerequisite","target_id":"cs408-linear-list-definition-operations","description":"《线性表的定义与基本操作》提供理解《顺序表的存储表示》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-sequential-list-storage","type":"part_of","target_id":"cs408-syllabus-linear-lists","description":"顺序表的存储表示是线性表考纲模块中的原子知识点。"}
+{"source_id":"cs408-sequential-list-insert-delete","type":"prerequisite","target_id":"cs408-sequential-list-storage","description":"《顺序表的存储表示》提供理解《顺序表的插入与删除》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-sequential-list-insert-delete","type":"part_of","target_id":"cs408-syllabus-linear-lists","description":"顺序表的插入与删除是线性表考纲模块中的原子知识点。"}
+{"source_id":"cs408-singly-linked-list","type":"prerequisite","target_id":"cs408-linear-list-definition-operations","description":"《线性表的定义与基本操作》提供理解《单链表的结点与表示》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-singly-linked-list","type":"part_of","target_id":"cs408-syllabus-linear-lists","description":"单链表的结点与表示是线性表考纲模块中的原子知识点。"}
+{"source_id":"cs408-linked-list-insert-delete","type":"prerequisite","target_id":"cs408-singly-linked-list","description":"《单链表的结点与表示》提供理解《链表结点的插入与删除》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-linked-list-insert-delete","type":"part_of","target_id":"cs408-syllabus-linear-lists","description":"链表结点的插入与删除是线性表考纲模块中的原子知识点。"}
+{"source_id":"cs408-doubly-linked-list","type":"prerequisite","target_id":"cs408-linked-list-insert-delete","description":"《链表结点的插入与删除》提供理解《双链表》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-doubly-linked-list","type":"part_of","target_id":"cs408-syllabus-linear-lists","description":"双链表是线性表考纲模块中的原子知识点。"}
+{"source_id":"cs408-circular-linked-list","type":"prerequisite","target_id":"cs408-singly-linked-list","description":"《单链表的结点与表示》提供理解《循环链表》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-circular-linked-list","type":"part_of","target_id":"cs408-syllabus-linear-lists","description":"循环链表是线性表考纲模块中的原子知识点。"}
+{"source_id":"cs408-linked-list-reversal","type":"prerequisite","target_id":"cs408-singly-linked-list","description":"《单链表的结点与表示》提供理解《单链表原地逆置》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-linked-list-reversal","type":"part_of","target_id":"cs408-syllabus-linear-lists","description":"单链表原地逆置是线性表考纲模块中的原子知识点。"}
+{"source_id":"cs408-linked-list-merge","type":"prerequisite","target_id":"cs408-singly-linked-list","description":"《单链表的结点与表示》提供理解《有序链表合并》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-linked-list-merge","type":"part_of","target_id":"cs408-syllabus-linear-lists","description":"有序链表合并是线性表考纲模块中的原子知识点。"}
+{"source_id":"cs408-sequential-vs-linked","type":"prerequisite","target_id":"cs408-sequential-list-storage","description":"《顺序表的存储表示》提供理解《顺序表与链表的选择》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-sequential-vs-linked","type":"prerequisite","target_id":"cs408-singly-linked-list","description":"《单链表的结点与表示》提供理解《顺序表与链表的选择》所需的直接概念、表示或操作基础。"}
+{"source_id":"cs408-sequential-vs-linked","type":"part_of","target_id":"cs408-syllabus-linear-lists","description":"顺序表与链表的选择是线性表考纲模块中的原子知识点。"}

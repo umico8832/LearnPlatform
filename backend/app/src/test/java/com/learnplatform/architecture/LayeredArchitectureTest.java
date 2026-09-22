@@ -22,6 +22,12 @@ class LayeredArchitectureTest {
             .should().dependOnClassesThat().haveFullyQualifiedName("com.learnplatform.service.ai.AiProvider");
 
     @ArchTest
+    static final ArchRule domain_embedding_calls_must_use_governed_gateway = noClasses()
+            .that().resideInAPackage("com.learnplatform.service")
+            .and().doNotHaveSimpleName("AiInvocationService")
+            .should().dependOnClassesThat().haveFullyQualifiedName("com.learnplatform.service.ai.EmbeddingProvider");
+
+    @ArchTest
     static final ArchRule ai_core_must_not_depend_on_application = noClasses()
             .that().resideInAPackage("com.learnplatform.ai..")
             .should().dependOnClassesThat().resideInAnyPackage("com.learnplatform.service..",

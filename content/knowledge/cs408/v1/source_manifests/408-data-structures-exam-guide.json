@@ -1,0 +1,14 @@
+{
+  "source_id": "deep-research-report-408-data-structures",
+  "source_filename": "deep-research-report.md",
+  "sha256": "566c0b77294c128fa963dabbc08516e002f8feab92858c9c99d2c1c15b67bdcc",
+  "imported_at": "2026-07-25",
+  "scope": "408 数据结构考试定位、公开考纲范围与报告复习建议",
+  "verification_urls": [
+    "https://www.moe.gov.cn/s78/A15/s8355/moe_782/tnull_21964.html",
+    "https://www.kmxwd.com/uploads/images/20251015/68eef5daf0564.pdf",
+    "https://www.tup.com.cn/bookscenter/book_09892801.html"
+  ],
+  "provenance_note": "用户提供报告位于知识库外部；本文件记录内容指纹，不保存本机绝对路径。报告中的临时检索标记未作为可验证 URL 使用。",
+  "review_status": "review_pending"
+}

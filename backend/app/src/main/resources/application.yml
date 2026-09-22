@@ -125,6 +125,13 @@ ai:
   temperature: ${AI_TEMPERATURE:0.7}
   tools-supported: ${AI_TOOLS_SUPPORTED:false}
   structured-output-supported: ${AI_STRUCTURED_OUTPUT_SUPPORTED:false}
+  embedding:
+    enabled: ${AI_EMBEDDING_ENABLED:false}
+    api-base-url: ${AI_EMBEDDING_API_BASE_URL:}
+    api-key: ${AI_EMBEDDING_API_KEY:}
+    model: ${AI_EMBEDDING_MODEL:}
+    dimensions: ${AI_EMBEDDING_DIMENSIONS:}
+    timeout-seconds: ${AI_EMBEDDING_TIMEOUT_SECONDS:30}
   # OpenAI 的 stream_options.include_usage；不兼容的上游可设为 false
   stream-include-usage: ${AI_STREAM_INCLUDE_USAGE:true}
   daily-quota: ${AI_DAILY_QUOTA:50}
@@ -170,3 +177,14 @@ springdoc:
     - group: default
       display-name: API 接口文档
       paths-to-match: /api/**
+
+knowledge:
+  snapshot-path: ${KNOWLEDGE_SNAPSHOT_PATH:}
+  vector-enabled: ${KNOWLEDGE_VECTOR_ENABLED:false}
+  vector-url: ${KNOWLEDGE_VECTOR_URL:}
+  vector-api-key: ${KNOWLEDGE_VECTOR_API_KEY:}
+  vector-collection: ${KNOWLEDGE_VECTOR_COLLECTION:}
+  vector-timeout-seconds: ${KNOWLEDGE_VECTOR_TIMEOUT_SECONDS:20}
+  embedding-batch-size: ${KNOWLEDGE_EMBEDDING_BATCH_SIZE:16}
+  retrieval-enabled: ${KNOWLEDGE_RETRIEVAL_ENABLED:false}
+  top-k: ${KNOWLEDGE_TOP_K:4}

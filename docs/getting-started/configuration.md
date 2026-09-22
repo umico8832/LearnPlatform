@@ -74,6 +74,11 @@ test -f .env || cp .env.example .env
 | `AI_TOOLS_SUPPORTED` | 当前云模型是否支持工具调用，默认 false |
 | `AI_STRUCTURED_OUTPUT_SUPPORTED` | 当前云模型是否支持原生 JSON Schema，默认 false |
 | `AI_STREAM_INCLUDE_USAGE` | 请求流式最终用量，默认 true；不兼容端点可关闭 |
+| `AI_EMBEDDING_ENABLED` | 独立启用云 Embedding，默认 false |
+| `AI_EMBEDDING_API_BASE_URL`、`AI_EMBEDDING_API_KEY` | 独立配置 Embedding 端点与凭据，不回退到聊天配置 |
+| `AI_EMBEDDING_MODEL` | Embedding 模型名称，默认空；启用前必须配置 |
+| `AI_EMBEDDING_DIMENSIONS` | 可选向量维度；留空使用模型原生维度，配置时必须为正整数 |
+| `AI_EMBEDDING_TIMEOUT_SECONDS` | Embedding 请求超时，默认 30 秒 |
 | `AI_DAILY_QUOTA` | 默认用户日配额，`0` 表示不限 |
 | `AI_ALERT_WEBHOOK_ENABLED` | 是否启用提醒 webhook |
 | `AI_ALERT_WEBHOOK_URL` | 提醒地址 |
@@ -82,6 +87,31 @@ test -f .env || cp .env.example .env
 模型价格由后端配置决定。未配置价格或上游未返回 usage 时，成本保持未知。
 Tutor Agent 追问入口要求 `AI_ENABLED=true` 且 `AI_TOOLS_SUPPORTED=true`；每次问题可能包含多次
 受治理的模型调用，因此每次调用分别计入日配额。只启用普通文本生成不会开放 Agent 工具循环。
+
+Embedding 批次同样通过用户日配额与逐调用审计；价格复用 `ai.model-prices` 中对应模型的
+`input-per-million`，不要求输出价格。缺少 usage 或输入价格时不估算成本。
+
+## 知识快照
+
+`KNOWLEDGE_SNAPSHOT_PATH` 指向服务端可读的版本目录，例如仓库内 `content/knowledge/cs408/v1`
+的绝对路径，默认空。管理员显式调用[导入接口](../reference/api/admin-governance.md#知识快照导入)
+才读取并导入，不在启动时自动写入数据库。容器部署需单独挂载该目录；客户端不能传入文件路径。
+快照须通过清单哈希、课程、知识点引用与计数校验，导入后仍为待审核，不会自动触发云调用。
+
+| 变量 | 用途 |
+|---|---|
+| `KNOWLEDGE_VECTOR_ENABLED` | 启用向量服务配置，默认 false |
+| `KNOWLEDGE_VECTOR_URL`、`KNOWLEDGE_VECTOR_API_KEY` | Qdrant 端点与可选凭据，默认空 |
+| `KNOWLEDGE_VECTOR_COLLECTION` | 专用集合名，默认空；构建时校验 Cosine 与维度 |
+| `KNOWLEDGE_VECTOR_TIMEOUT_SECONDS` | 向量请求超时，默认 20 秒，允许 1–60 秒 |
+| `KNOWLEDGE_EMBEDDING_BATCH_SIZE` | 每批片段数，默认 16，允许 1–32；索引拒绝超过 6000 字符的片段 |
+| `KNOWLEDGE_RETRIEVAL_ENABLED` | 向 Tutor 注册课程知识检索工具，默认 false |
+| `KNOWLEDGE_TOP_K` | 单次返回片段上限，默认 4，允许 1–10 |
+
+索引与检索要求显式配置正整数 `AI_EMBEDDING_DIMENSIONS`，不能混用不同模型或端点产生的向量。
+字符限制只是批次大小保护，不估算实际 token；云端模型的输入限制仍适用。
+启用检索前应完成真实模型评测和知识审核。未审核或尚未就绪的版本返回空资料，不自动发布或构建索引。
+普通数据导入、应用启动和工具关闭时不会因此发起 Embedding 调用。
 
 ## 前端
 

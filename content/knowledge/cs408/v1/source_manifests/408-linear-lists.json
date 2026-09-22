@@ -1,0 +1,20 @@
+{
+  "source_id": "cs408-2026-syllabus-408-linear-lists",
+  "source_filename": "deep-research-report.md",
+  "sha256": "566c0b77294c128fa963dabbc08516e002f8feab92858c9c99d2c1c15b67bdcc",
+  "imported_at": "2026-07-25",
+  "scope": "2026 408 数据结构考纲之“线性表”全部叶子条目",
+  "verification_urls": [
+    "https://www.moe.gov.cn/s78/A15/s8355/moe_782/tnull_21964.html",
+    "https://www.kmxwd.com/uploads/images/20251015/68eef5daf0564.pdf",
+    "https://www.tup.com.cn/bookscenter/book_09892801.html"
+  ],
+  "covered_official_item_ids": [
+    "linear-list-applications",
+    "linear-list-concept",
+    "linear-list-linked",
+    "linear-list-sequential"
+  ],
+  "provenance_note": "用户报告提供范围和学习建议；公开 2026 考纲 PDF 用于逐条复核目录。本脚本据标准教材口径写成原子知识内容，等待内容审查。",
+  "review_status": "review_pending"
+}

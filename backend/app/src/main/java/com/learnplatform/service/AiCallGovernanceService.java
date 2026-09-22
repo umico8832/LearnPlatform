@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.ai.model.ModelResult;
+import com.learnplatform.ai.model.EmbeddingRequest;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.config.AiConfig;
@@ -49,28 +50,51 @@ public class AiCallGovernanceService {
     }
 
     public AiCallTicket begin(AiCallContext context, ModelRequest request) {
+        Map<String, AiCallTicket.Price> prices = prices();
+        var entry = start(context, request.options().model(), "CHAT", hash(serialize(request.messages())),
+                hash(serialize(request.options()) + serialize(request.tools()) + serialize(request.outputSchema())
+                        + serialize(new java.util.TreeMap<>(prices)) + config.getApiBaseUrl()
+                        + config.isStreamIncludeUsage() + config.isToolsSupported()
+                        + config.isStructuredOutputSupported()));
+        reservations.reserve(entry);
+        return new AiCallTicket(entry, prices);
+    }
+
+    public AiCallTicket beginEmbedding(AiCallContext context, EmbeddingRequest request) {
+        Map<String, AiCallTicket.Price> prices = prices();
+        AiConfig.EmbeddingConfig embedding = config.getEmbedding();
+        var entry = start(context, request.model(), "EMBEDDING", hash(serialize(request.inputs())),
+                hash(serialize(new EmbeddingConfigVersion(request.model(), request.dimensions(),
+                        embedding.getApiBaseUrl(), embedding.getTimeoutSeconds(),
+                        new java.util.TreeMap<>(prices)))));
+        reservations.reserve(entry);
+        return new AiCallTicket(entry, prices);
+    }
+
+    private AiCallLog start(AiCallContext context, String requestedModel, String callKind, String requestHash,
+                            String configVersion) {
         var entry = new AiCallLog();
         entry.setUserId(context.userId());
         entry.setFunctionType(context.function());
         entry.setCallId(UUID.randomUUID().toString());
         entry.setRunId(context.runId() == null ? null : context.runId().toString());
-        entry.setCallKind("CHAT");
-        entry.setRequestedModel(request.options().model());
-        entry.setModel(request.options().model());
+        entry.setCallKind(callKind);
+        entry.setRequestedModel(requestedModel);
+        entry.setModel(requestedModel);
         entry.setOutcome("RUNNING");
         entry.setStatus(0);
         entry.setTraceId(MDC.get("traceId"));
         entry.setPromptTemplate(context.function());
+        entry.setPromptHash(requestHash);
+        entry.setModelConfigVersion(configVersion);
+        return entry;
+    }
+
+    private Map<String, AiCallTicket.Price> prices() {
         Map<String, AiCallTicket.Price> prices = new HashMap<>();
         config.getModelPrices().forEach((model, price) -> prices.put(model,
                 new AiCallTicket.Price(price.getInputPerMillion(), price.getOutputPerMillion())));
-        entry.setPromptHash(hash(serialize(request.messages())));
-        entry.setModelConfigVersion(hash(serialize(request.options()) + serialize(request.tools())
-                + serialize(request.outputSchema()) + serialize(new java.util.TreeMap<>(prices))
-                + config.getApiBaseUrl() + config.isStreamIncludeUsage()
-                + config.isToolsSupported() + config.isStructuredOutputSupported()));
-        reservations.reserve(entry);
-        return new AiCallTicket(entry, prices);
+        return prices;
     }
 
     public void finish(AiCallTicket ticket, ModelResult result, String outcome, long duration) {
@@ -90,7 +114,8 @@ public class AiCallGovernanceService {
                 entry.setCompletionTokens(result.usage().outputTokens());
                 entry.setTokensUsed(result.usage().totalTokens());
                 entry.setCostUsd(AiCostCalculator.calculate(
-                        ticket.prices().get(entry.getModel()), result.usage(), false));
+                        ticket.prices().get(entry.getModel()), result.usage(),
+                        "EMBEDDING".equals(entry.getCallKind())));
             }
         }
         try {
@@ -141,4 +166,7 @@ public class AiCallGovernanceService {
             throw new IllegalStateException("SHA-256 is unavailable", exception);
         }
     }
+
+    private record EmbeddingConfigVersion(String model, Integer dimensions, String apiBaseUrl,
+                                          int timeoutSeconds, Map<String, AiCallTicket.Price> prices) { }
 }

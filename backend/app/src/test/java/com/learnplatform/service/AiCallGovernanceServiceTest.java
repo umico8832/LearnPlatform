@@ -1,6 +1,7 @@
 package com.learnplatform.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.learnplatform.ai.model.EmbeddingRequest;
 import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.ai.model.ModelResult;
 import com.learnplatform.config.AiConfig;
@@ -98,5 +99,35 @@ class AiCallGovernanceServiceTest {
         when(users.selectById(7L)).thenReturn(new User());
         when(logs.selectCount(any())).thenReturn(3L);
         assertArrayEquals(new int[]{3, 50}, governance.getDailyUsage(7L));
+    }
+
+    @Test void embeddingAuditHashesInputsAndOnlyBillsInputTokens() {
+        var price = new AiConfig.ModelPrice();
+        price.setInputPerMillion(BigDecimal.ONE);
+        config.getModelPrices().put("embedding-model", price);
+        var request = new EmbeddingRequest("embedding-model", List.of("private chunk"), 3);
+
+        var ticket = governance.beginEmbedding(context, request);
+        var entry = ticket.entry();
+        governance.finish(ticket, new ModelResult(null, List.of(), "embedding-model", "e1",
+                ModelResult.Finish.STOP, new ModelResult.Usage(12, null, 12)), "SUCCEEDED", 100);
+
+        assertEquals("EMBEDDING", entry.getCallKind());
+        assertEquals("embedding-model", entry.getRequestedModel());
+        assertEquals(64, entry.getPromptHash().length());
+        assertFalse(entry.getPromptHash().contains("private"));
+        assertEquals(new BigDecimal("0.00001200"), entry.getCostUsd());
+        verify(reservations).reserve(entry);
+        verify(reservations).finish(entry);
+    }
+
+    @Test void embeddingConfigFingerprintDoesNotChangeWithInputText() {
+        var first = governance.beginEmbedding(context,
+                new EmbeddingRequest("embedding-model", List.of("first text"), 3)).entry();
+        var second = governance.beginEmbedding(context,
+                new EmbeddingRequest("embedding-model", List.of("second text"), 3)).entry();
+
+        assertEquals(first.getModelConfigVersion(), second.getModelConfigVersion());
+        assertNotEquals(first.getPromptHash(), second.getPromptHash());
     }
 }

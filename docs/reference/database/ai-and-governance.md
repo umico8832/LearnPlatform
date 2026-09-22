@@ -9,7 +9,7 @@
 | `ai_usage_alert` | V14 | 用量异常和运营提醒 | 确认操作保留确认人和时间 |
 
 调用准入在独立短事务内锁定用户并插入 `RUNNING` 日志，结束后更新原记录。`call_id` 唯一，
-`run_id` 对普通调用为空；`call_kind` 区分聊天与后续 Embedding。`requested_model` 保存请求模型，
+`run_id` 对普通调用为空；`call_kind` 区分聊天与 Embedding。`requested_model` 保存请求模型，
 `model` 使用上游返回名称（若提供），价格在准入时快照。`finish_reason` 与 `outcome` 区分生成结束与处理结果。
 
 `status` 保留旧的成功标识，未确认记录依靠 `outcome=RUNNING` 识别。配额计入全部已登记调用，
@@ -17,6 +17,26 @@
 
 上游失败或后端结构校验失败仍可能有真实用量；缺失字段保持空值。进程退出或审计更新失败时，
 已提交登记不随领域事务回滚；需核对上游及运行记录后处理未确认状态，不自动返还配额。
+
+Embedding 每个批次记录 `call_kind=EMBEDDING`，只按实际输入用量计费；输出 Token 与结束原因保持为空。
+请求指纹覆盖输入文本，模型配置指纹覆盖模型、维度、端点、超时与价格，不包含输入文本或凭据。
+
+## 版本化知识内容
+
+| 表 | 首次迁移 | 职责 | 关键约束 |
+|---|---|---|---|
+| `knowledge_content_bundle` | V96 | 课程内容键、版本、清单哈希、来源修订、导入者和平台审核状态 | `(course_key, bundle_version)` 唯一；版本内容不可覆盖 |
+| `knowledge_content_chunk` | V96 | 版本下的片段正文、稳定 ID、知识点、哈希与来源元数据 | `(bundle_id, chunk_key)` 唯一；整包与片段同事务导入 |
+| `knowledge_content_index` | V97 | 向量配置指纹、维度、集合、端点哈希、任务租约和索引状态 | `(bundle_id, index_key)` 唯一；run_key 防止旧任务更新新任务状态 |
+
+`source_quality_status` 保留来源审查状态，`review_status` 为独立平台状态，导入固定为 `PENDING`。
+快照属于课程内容库，按稳定内容键关联课程，不包含用户私有资料，也不自动写入现有教学内容表。
+并发导入通过版本唯一索引和行锁串行化，事务采用 READ COMMITTED，避免等待锁后继续读取旧片段快照。
+数据库导入不代表向量索引已创建或内容已向学习者开放。V97 增加平台审核者、时间和说明，审核与来源质量分离。
+索引状态为 `INDEXING`、`READY`、`FAILED`、`DELETED`、`PURGED`；120 秒租约支持中断恢复，
+续租、完成和失败更新绑定当前运行标识。只有完整片段数且版本仍 `REVIEWED` 时允许 `READY`。
+撤回将非 `PURGED` 索引标记为 `DELETED`，保留未到期写入租约；删除确认后标为 `PURGED`，
+后续重试只处理仍未清理的记录。端点哈希和集合名用于恢复原外部存储的清理范围。
 
 ## Tutor Agent 运行
 

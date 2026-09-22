@@ -73,7 +73,7 @@ Schema 约束。外部引用与动态方言不允许加载，业务约束仍须�
 
 价格在准入时快照，优先按上游实际模型名称匹配；未提供模型时保留请求模型。未知价格或缺失
 必要 usage 时成本为空。输入、输出、总量分别保留上游值，不通过字符数或相减补齐。
-失败结果也可能包含真实用量。成本计算支持 Embedding 的输入计费语义，Embedding 调用尚未接入。
+失败结果也可能包含真实用量。成本计算支持 Embedding 的输入计费语义，Embedding 已通过独立 Provider 接入同一调用入口与审计。
 
 日志保留请求模型、可选 run ID、Prompt 指纹和完整模型配置指纹，不保存原始 Prompt、响应正文或
 凭据。记录语义见[AI 与治理数据](../reference/database/ai-and-governance.md)。
@@ -86,10 +86,37 @@ Schema 约束。外部引用与动态方言不允许加载，业务约束仍须�
 旧 Markdown 资产保留显式完成接口，但不冒充结构化首次判分样本。
 学习效果统计只表达观察性关联，样本不足返回 `INSUFFICIENT_DATA`。
 
+## 知识内容快照
+
+首版 408 [知识快照](../../content/knowledge/cs408/README.md)已从 AiStu 复制到本仓库，
+保留稳定知识点 ID、检索片段、考纲映射、内部来源记录、上游提交和文件哈希。
+快照内容仍为 `review_pending`，不能标为已审核课程内容。管理员可显式导入服务端配置的版本目录，
+后端校验清单、哈希、课程归属与引用后，原子保存版本和片段。同版本不能覆盖，导入独立平台状态为
+`PENDING`；来源审核字段不构成发布授权。数据库语义见[AI 与治理数据](../reference/database/ai-and-governance.md#版本化知识内容)。
+
+云 Embedding 已具备独立配置、取消/超时、严格向量索引/维度校验及逐批次配额审计，使用 JDK HTTP
+调用 OpenAI 兼容 `/embeddings`，禁止自动重试与重定向。返回顺序按输入索引恢复，未知用量不推算，
+协议校验失败仍保留已获得的计费元数据。协议依据 [OpenAI Embeddings API](https://developers.openai.com/api/reference/resources/embeddings/methods/create)。
+
+管理员逐条审查后可将版本从 `PENDING` 标记为 `REVIEWED` 并显式构建 Qdrant 索引。
+每批 Embedding 单独计配额与用量，共享本次索引任务的 run ID；网络调用不占数据库长事务。
+索引键绑定模型、维度、云端点、向量端点和集合，任务租约允许超时后重新领取，旧运行不能提交成功。
+索引只有在全部片段写入成功且版本仍已审核时才进入 `READY`。
+
+`search_course_knowledge` 默认不注册；显式启用后，只能接收 query。会话、课程和用户范围由服务端绑定，
+检索前检查用户课程归属和平台审核状态，Qdrant 按版本与索引键过滤并回检 payload。向量库只返回片段标识，
+正文与版本引用从 MySQL 读取，返回前再次检查访问范围和撤回状态。实际检索的资料列表由服务端追加到回答，
+随原有成功轮次持久化；它表示本轮查阅的资料，不宣称每条资料都支持模型回答中的每个结论。
+
+撤回先在 MySQL 关闭版本可见性，再删除对应向量点。尚有运行中写入租约或旧端点不可用时保留待清理状态，
+允许恢复对应端点后重试；只有外部删除确认后才标记 `PURGED`。向量删除失败不恢复学习端可见性。
+Qdrant 协议依据 [官方 Points API](https://qdrant.tech/documentation/manage-data/points/)。
+
 ## 配置与验证
 
 云配置见[配置说明](../getting-started/configuration.md#ai)。工具和结构化输出默认关闭，须先确认
-云模型能力再启用。LLM 与后续 Embedding 均使用云 API，隔离测试使用确定性 HTTP 上游。
+云模型能力再启用。LLM 与 Embedding 均使用云 API，隔离测试使用确定性 HTTP 上游。
 
-核心协议测试、领域回归、固定 AI Evaluation 和真实 MySQL 集成验证各自的边界；真实云模型
+核心协议测试、领域回归、固定 AI Evaluation 和真实 MySQL 集成验证各自的边界。固定评测已纳入
+Tutor Agent 的课程工具、学习证据工具、注入边界、稳定 run ID 与逐调用成本/延迟报告；真实云模型
 评测仍需明确配置并独立运行。当前验证结果见[项目状态](../project/status.md)。

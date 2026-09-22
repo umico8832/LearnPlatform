@@ -23,6 +23,8 @@ public class AiConfig {
     private Double temperature = 0.7;
     private boolean toolsSupported = false;
     private boolean structuredOutputSupported = false;
+    /** Embedding 配置与对话模型隔离，避免未配置时意外复用对话凭据。 */
+    private EmbeddingConfig embedding = new EmbeddingConfig();
     /** 是否在流式请求中请求上游返回最终 usage（部分兼容服务可能不支持） */
     private boolean streamIncludeUsage = true;
     /** 每用户每日 AI 调用次数上限，0 或负数表示不限制 */
@@ -42,6 +44,10 @@ public class AiConfig {
     public void setToolsSupported(boolean supported) { this.toolsSupported = supported; }
     public boolean isStructuredOutputSupported() { return structuredOutputSupported; }
     public void setStructuredOutputSupported(boolean supported) { this.structuredOutputSupported = supported; }
+    public EmbeddingConfig getEmbedding() { return embedding; }
+    public void setEmbedding(EmbeddingConfig value) {
+        embedding = value == null ? new EmbeddingConfig() : value;
+    }
 
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
@@ -90,5 +96,27 @@ public class AiConfig {
 
         public BigDecimal getOutputPerMillion() { return outputPerMillion; }
         public void setOutputPerMillion(BigDecimal outputPerMillion) { this.outputPerMillion = outputPerMillion; }
+    }
+
+    public static class EmbeddingConfig {
+        private boolean enabled = false;
+        private String apiBaseUrl = "";
+        private String apiKey = "";
+        private String model = "";
+        private Integer dimensions;
+        private int timeoutSeconds = 30;
+
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean value) { enabled = value; }
+        public String getApiBaseUrl() { return apiBaseUrl; }
+        public void setApiBaseUrl(String value) { apiBaseUrl = value; }
+        public String getApiKey() { return apiKey; }
+        public void setApiKey(String value) { apiKey = value; }
+        public String getModel() { return model; }
+        public void setModel(String value) { model = value; }
+        public Integer getDimensions() { return dimensions; }
+        public void setDimensions(Integer value) { dimensions = value; }
+        public int getTimeoutSeconds() { return timeoutSeconds; }
+        public void setTimeoutSeconds(int value) { timeoutSeconds = value; }
     }
 }

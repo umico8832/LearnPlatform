@@ -1,6 +1,8 @@
 package com.learnplatform.service;
 
 import com.learnplatform.ai.model.Cancellation;
+import com.learnplatform.ai.model.EmbeddingRequest;
+import com.learnplatform.ai.model.EmbeddingResult;
 import com.learnplatform.ai.model.ModelEvent;
 import com.learnplatform.ai.model.ModelException;
 import com.learnplatform.ai.model.ModelRequest;
@@ -11,6 +13,7 @@ import com.learnplatform.entity.AiCallLog;
 import com.learnplatform.service.ai.AiCallContext;
 import com.learnplatform.service.ai.AiCallTicket;
 import com.learnplatform.service.ai.AiProvider;
+import com.learnplatform.service.ai.EmbeddingProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,17 +32,20 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class AiInvocationServiceTest {
     @Mock private AiProvider provider;
+    @Mock private EmbeddingProvider embeddingProvider;
     @Mock private AiCallGovernanceService governance;
     private AiInvocationService invocation;
     private final ModelRequest.Options options = new ModelRequest.Options("test", 200, 0.7);
     private final ModelRequest request = ModelRequest.text("system", "user", options);
     private final AiCallContext context = new AiCallContext(7L, "test", null);
     private final AiCallTicket ticket = new AiCallTicket(new AiCallLog(), Map.of());
+    private final EmbeddingRequest embeddingRequest = new EmbeddingRequest("embed-model", List.of("chunk"), 3);
 
     @BeforeEach void setUp() {
-        invocation = new AiInvocationService(provider, governance);
+        invocation = new AiInvocationService(provider, embeddingProvider, governance);
         lenient().when(provider.defaultOptions()).thenReturn(options);
         lenient().when(governance.begin(any(), any())).thenReturn(ticket);
+        lenient().when(governance.beginEmbedding(any(), any())).thenReturn(ticket);
     }
 
     @Test void quotaAdmissionHappensBeforeCloudAndFailurePreventsAnyCall() {
@@ -118,5 +124,35 @@ class AiInvocationServiceTest {
 
         assertEquals(ModelException.Code.PROTOCOL, exception.code());
         verify(governance).finish(eq(ticket), same(result), eq("PROTOCOL"), anyLong());
+    }
+
+    @Test void embeddingUsesSeparateAdmissionAndAuditsInputOnlyMetadata() {
+        var usage = new ModelResult.Usage(3, null, 3);
+        var embedded = new EmbeddingResult(List.of(List.of(0.2, 0.3, 0.4)), "embed-actual", usage);
+        when(embeddingProvider.embed(any(), any())).thenReturn(embedded);
+
+        assertSame(embedded, invocation.embed(context, embeddingRequest, new Cancellation()));
+
+        verify(embeddingProvider).validate(embeddingRequest);
+        verify(governance).beginEmbedding(context, embeddingRequest);
+        verify(governance).finish(eq(ticket), argThat(audit -> audit != null
+                && "embed-actual".equals(audit.model()) && usage.equals(audit.usage())), eq("SUCCEEDED"), anyLong());
+        verify(provider, never()).complete(any(), any());
+    }
+
+    @Test void embeddingAdmissionFailureCannotReachCloud() {
+        when(governance.beginEmbedding(any(), any())).thenThrow(new BusinessException(ResultCode.QUOTA_EXCEEDED));
+
+        assertThrows(BusinessException.class, () -> invocation.embed(context, embeddingRequest, new Cancellation()));
+
+        verify(embeddingProvider, never()).embed(any(), any());
+        verify(governance, never()).finish(any(), any(), any(), anyLong());
+    }
+
+    @Test void legacyConstructionLeavesEmbeddingExplicitlyUnavailable() {
+        var legacy = new AiInvocationService(provider, governance);
+        assertEquals(ModelException.Code.CONFIGURATION, assertThrows(ModelException.class,
+                () -> legacy.embed(context, embeddingRequest, new Cancellation())).code());
+        verify(governance, never()).beginEmbedding(any(), any());
     }
 }

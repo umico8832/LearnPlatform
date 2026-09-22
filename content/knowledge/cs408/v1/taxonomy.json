@@ -1,0 +1,350 @@
+{
+  "course_id": "cs408-data-structures",
+  "title": "408 Data Structures Exam Guide",
+  "title_zh": "408 数据结构考纲与复习指南",
+  "source_edition": "2026 report, verified 2026-07-25",
+  "chapters": [
+    {
+      "id": "408-data-structures-exam-guide",
+      "title": "408 Data Structures Exam Guide",
+      "title_zh": "408 数据结构考纲与复习指南",
+      "order": 1,
+      "source_chapter_number": null,
+      "sections": [
+        {
+          "id": "cs408-exam-positioning",
+          "title": "Exam positioning and evidence",
+          "title_zh": "考试定位与证据边界",
+          "order": 1,
+          "source_section_number": "1",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-official-syllabus",
+          "title": "Official data-structure syllabus",
+          "title_zh": "数据结构考纲范围",
+          "order": 2,
+          "source_section_number": "2",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-study-strategy",
+          "title": "Study strategy",
+          "title_zh": "复习策略与训练闭环",
+          "order": 3,
+          "source_section_number": "3",
+          "subsections": [],
+          "concept_ids": []
+        }
+      ]
+    },
+    {
+      "id": "408-basic-concepts",
+      "title": "Basic Concepts",
+      "title_zh": "基本概念",
+      "order": 2,
+      "source_chapter_number": 1,
+      "sections": [
+        {
+          "id": "cs408-basic-data-structure",
+          "title": "Data structures",
+          "title_zh": "数据结构基本概念",
+          "order": 1,
+          "source_section_number": "1.1",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-basic-algorithm",
+          "title": "Algorithms and complexity",
+          "title_zh": "算法与复杂度",
+          "order": 2,
+          "source_section_number": "1.2",
+          "subsections": [],
+          "concept_ids": []
+        }
+      ]
+    },
+    {
+      "id": "408-linear-lists",
+      "title": "Linear Lists",
+      "title_zh": "线性表",
+      "order": 3,
+      "source_chapter_number": 2,
+      "sections": [
+        {
+          "id": "cs408-linear-list-basics",
+          "title": "Linear-list basics",
+          "title_zh": "线性表基本概念",
+          "order": 1,
+          "source_section_number": "2.1",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-linear-list-sequential",
+          "title": "Sequential representation",
+          "title_zh": "顺序存储",
+          "order": 2,
+          "source_section_number": "2.2",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-linear-list-linked",
+          "title": "Linked representation",
+          "title_zh": "链式存储",
+          "order": 3,
+          "source_section_number": "2.3",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-linear-list-applications",
+          "title": "Applications",
+          "title_zh": "线性表应用",
+          "order": 4,
+          "source_section_number": "2.4",
+          "subsections": [],
+          "concept_ids": []
+        }
+      ]
+    },
+    {
+      "id": "408-stacks-queues-arrays",
+      "title": "Stacks, Queues and Arrays",
+      "title_zh": "栈、队列和数组",
+      "order": 4,
+      "source_chapter_number": 3,
+      "sections": [
+        {
+          "id": "cs408-stack-basics",
+          "title": "Stacks",
+          "title_zh": "栈",
+          "order": 1,
+          "source_section_number": "3.1",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-queue-basics",
+          "title": "Queues",
+          "title_zh": "队列",
+          "order": 2,
+          "source_section_number": "3.2",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-array-storage",
+          "title": "Array storage",
+          "title_zh": "数组与压缩存储",
+          "order": 3,
+          "source_section_number": "3.3",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-stack-queue-applications",
+          "title": "Applications",
+          "title_zh": "栈和队列应用",
+          "order": 4,
+          "source_section_number": "3.4",
+          "subsections": [],
+          "concept_ids": []
+        }
+      ]
+    },
+    {
+      "id": "408-trees",
+      "title": "Trees and Binary Trees",
+      "title_zh": "树和二叉树",
+      "order": 5,
+      "source_chapter_number": 4,
+      "sections": [
+        {
+          "id": "cs408-tree-basics",
+          "title": "Tree basics",
+          "title_zh": "树的基本概念",
+          "order": 1,
+          "source_section_number": "4.1",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-binary-tree",
+          "title": "Binary trees",
+          "title_zh": "二叉树",
+          "order": 2,
+          "source_section_number": "4.2",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-tree-forest",
+          "title": "Trees and forests",
+          "title_zh": "树与森林",
+          "order": 3,
+          "source_section_number": "4.3",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-tree-applications",
+          "title": "Applications",
+          "title_zh": "树和二叉树应用",
+          "order": 4,
+          "source_section_number": "4.4",
+          "subsections": [],
+          "concept_ids": []
+        }
+      ]
+    },
+    {
+      "id": "408-graphs",
+      "title": "Graphs",
+      "title_zh": "图",
+      "order": 6,
+      "source_chapter_number": 5,
+      "sections": [
+        {
+          "id": "cs408-graph-basics",
+          "title": "Graph basics",
+          "title_zh": "图的基本概念",
+          "order": 1,
+          "source_section_number": "5.1",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-graph-storage",
+          "title": "Storage",
+          "title_zh": "图的存储与操作",
+          "order": 2,
+          "source_section_number": "5.2",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-graph-traversal",
+          "title": "Traversal",
+          "title_zh": "图的遍历",
+          "order": 3,
+          "source_section_number": "5.3",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-graph-applications",
+          "title": "Applications",
+          "title_zh": "图的应用",
+          "order": 4,
+          "source_section_number": "5.4",
+          "subsections": [],
+          "concept_ids": []
+        }
+      ]
+    },
+    {
+      "id": "408-searching",
+      "title": "Searching",
+      "title_zh": "查找",
+      "order": 7,
+      "source_chapter_number": 6,
+      "sections": [
+        {
+          "id": "cs408-search-basics",
+          "title": "Search basics",
+          "title_zh": "查找基本概念",
+          "order": 1,
+          "source_section_number": "6.1",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-linear-search",
+          "title": "Linear and indexed search",
+          "title_zh": "线性与索引查找",
+          "order": 2,
+          "source_section_number": "6.2",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-tree-search",
+          "title": "Tree search",
+          "title_zh": "树型查找",
+          "order": 3,
+          "source_section_number": "6.3",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-hash-search",
+          "title": "Hashing",
+          "title_zh": "散列查找",
+          "order": 4,
+          "source_section_number": "6.4",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-string-search",
+          "title": "String matching",
+          "title_zh": "字符串模式匹配",
+          "order": 5,
+          "source_section_number": "6.5",
+          "subsections": [],
+          "concept_ids": []
+        }
+      ]
+    },
+    {
+      "id": "408-sorting",
+      "title": "Sorting",
+      "title_zh": "排序",
+      "order": 8,
+      "source_chapter_number": 7,
+      "sections": [
+        {
+          "id": "cs408-sorting-basics",
+          "title": "Sorting foundations",
+          "title_zh": "排序基础",
+          "order": 1,
+          "source_section_number": "7.1",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-internal-sorting",
+          "title": "Internal sorting",
+          "title_zh": "内部排序",
+          "order": 2,
+          "source_section_number": "7.2",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-external-sorting",
+          "title": "External sorting",
+          "title_zh": "外部排序",
+          "order": 3,
+          "source_section_number": "7.3",
+          "subsections": [],
+          "concept_ids": []
+        },
+        {
+          "id": "cs408-sorting-analysis",
+          "title": "Analysis and selection",
+          "title_zh": "排序分析与选择",
+          "order": 4,
+          "source_section_number": "7.4",
+          "subsections": [],
+          "concept_ids": []
+        }
+      ]
+    }
+  ]
+}

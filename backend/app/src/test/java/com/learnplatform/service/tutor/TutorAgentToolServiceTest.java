@@ -9,6 +9,11 @@ import com.learnplatform.entity.TutorContent;
 import com.learnplatform.entity.TutorSession;
 import com.learnplatform.mapper.TutorContentMapper;
 import com.learnplatform.mapper.TutorSessionMapper;
+import com.learnplatform.service.KnowledgeSearchService;
+import com.learnplatform.service.knowledge.KnowledgeSearchResult;
+
+import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -75,6 +80,19 @@ class TutorAgentToolServiceTest {
         assertEquals(ModelException.Code.SCHEMA, assertThrows(ModelException.class,
                 () -> tools.execute(7L, 10L, "session",
                         new ModelRequest.ToolCall("call", "read_tutor_lesson", "{\"courseId\":10}"))).code());
+    }
+
+    @Test void searchUsesBoundCourseAndRunAndRejectsResourceOverrides() {
+        var knowledge = mock(KnowledgeSearchService.class);
+        tools = new TutorAgentToolService(sessions, contents, json, knowledge);
+        when(knowledge.enabled()).thenReturn(true);
+        when(sessions.selectOne(any())).thenReturn(session());
+        UUID run = UUID.randomUUID();
+        when(knowledge.search(7L, 10L, "栈", run)).thenReturn(new KnowledgeSearchResult(List.of()));
+        assertEquals("{\"citations\":[]}", tools.execute(7L, 10L, "session", new ModelRequest.ToolCall(
+                "search", "search_course_knowledge", "{\"query\":\"栈\"}"), run));
+        assertThrows(ModelException.class, () -> tools.execute(7L, 10L, "session", new ModelRequest.ToolCall(
+                "search", "search_course_knowledge", "{\"query\":\"栈\",\"courseId\":20}"), run));
     }
 
     private TutorSession session() {

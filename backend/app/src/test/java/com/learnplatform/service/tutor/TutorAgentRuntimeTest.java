@@ -91,6 +91,27 @@ class TutorAgentRuntimeTest {
         verify(invocation, times(4)).generate(any(), any(), any(Cancellation.class), any());
     }
 
+    @Test void registersOptionalSearchAndAppendsOnlyReturnedSourceReferences() {
+        UUID runId = UUID.randomUUID();
+        when(tools.supportsKnowledgeSearch()).thenReturn(true);
+        var lesson = new ModelRequest.ToolCall("lesson", "read_tutor_lesson", "{}");
+        var search = new ModelRequest.ToolCall("search", "search_course_knowledge", "{\"query\":\"栈\"}");
+        when(invocation.generate(any(), any(), any(Cancellation.class), any()))
+                .thenReturn(new ModelResult(null, List.of(lesson, search), "test", "r1",
+                        ModelResult.Finish.TOOL_CALLS, null))
+                .thenReturn(new ModelResult("解释", List.of(), "test", "r2", ModelResult.Finish.STOP, null));
+        when(tools.execute(7L, 10L, "session", lesson)).thenReturn("{}");
+        when(tools.execute(7L, 10L, "session", search, runId)).thenReturn("""
+                {"citations":[{"bundleId":3,"chunkId":"stack-core","title":"栈","version":"v1","text":"后进先出"}]}
+                """);
+        String answer = runtime.respond(7L, 10L, "session", runId, List.of(), "解释栈");
+        assertEquals("解释\n\n本轮检索资料：\n- 栈（版本 v1，片段 stack-core）", answer);
+        ArgumentCaptor<ModelRequest> requests = ArgumentCaptor.forClass(ModelRequest.class);
+        verify(invocation, times(2)).generate(any(), requests.capture(), any(), any());
+        assertEquals(3, requests.getValue().tools().size());
+        verify(tools).execute(7L, 10L, "session", search, runId);
+    }
+
     private ModelResult toolCallResult(String id) {
         return new ModelResult(null,
                 List.of(new ModelRequest.ToolCall(id, "read_tutor_lesson", "{}")),

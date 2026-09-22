@@ -14,22 +14,46 @@ import com.learnplatform.entity.TutorSession;
 import com.learnplatform.mapper.TutorContentMapper;
 import com.learnplatform.mapper.TutorSessionMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.learnplatform.service.KnowledgeSearchService;
+
+import java.util.UUID;
 
 @Service
 public class TutorAgentToolService implements TutorAgentToolExecutor {
     private final TutorSessionMapper sessions;
     private final TutorContentMapper contents;
     private final ObjectMapper json;
+    private final KnowledgeSearchService knowledge;
 
-    public TutorAgentToolService(TutorSessionMapper sessions, TutorContentMapper contents, ObjectMapper json) {
+    @Autowired
+    public TutorAgentToolService(TutorSessionMapper sessions, TutorContentMapper contents, ObjectMapper json,
+                                 KnowledgeSearchService knowledge) {
+        this.knowledge = knowledge;
         this.sessions = sessions;
         this.contents = contents;
         this.json = json;
     }
 
+    public TutorAgentToolService(TutorSessionMapper sessions, TutorContentMapper contents, ObjectMapper json) {
+        this(sessions, contents, json, null);
+    }
+
+    @Override
+    public boolean supportsKnowledgeSearch() {
+        return knowledge != null && knowledge.enabled();
+    }
+
     @Override
     public String execute(Long userId, Long courseId, String sessionKey, ModelRequest.ToolCall call) {
-        requireEmptyArguments(call.arguments());
+        return execute(userId, courseId, sessionKey, call, null);
+    }
+
+    @Override
+    public String execute(Long userId, Long courseId, String sessionKey, ModelRequest.ToolCall call, UUID runId) {
+        if (!"search_course_knowledge".equals(call.name())) {
+            requireEmptyArguments(call.arguments());
+        }
         TutorSession session = sessions.selectOne(new QueryWrapper<TutorSession>()
                 .eq("session_key", sessionKey).eq("user_id", userId).eq("course_id", courseId));
         if (session == null) {
@@ -38,8 +62,18 @@ public class TutorAgentToolService implements TutorAgentToolExecutor {
         return switch (call.name()) {
             case "read_tutor_lesson" -> lesson(session);
             case "read_learning_evidence" -> learningEvidence(session);
+            case "search_course_knowledge" -> search(userId, courseId, call.arguments(), runId);
             default -> throw new ModelException(ModelException.Code.PROTOCOL);
         };
+    }
+
+    private String search(Long userId, Long courseId, String arguments, UUID runId) {
+        if (!supportsKnowledgeSearch()) {
+            throw new ModelException(ModelException.Code.UNSUPPORTED);
+        }
+        JsonContract.validate(arguments, TutorAgentRuntime.KNOWLEDGE_SEARCH_SCHEMA);
+        String query = JsonContract.parse(arguments).path("query").textValue();
+        return write(json.valueToTree(knowledge.search(userId, courseId, query, runId)));
     }
 
     private String lesson(TutorSession session) {

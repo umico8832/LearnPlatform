@@ -1,0 +1,502 @@
+{
+  "version": 1,
+  "course_id": "cs408-data-structures",
+  "syllabus": "2026 全国硕士研究生招生考试计算机学科专业基础考试大纲：数据结构",
+  "verified_at": "2026-07-25",
+  "official_leaf_count": 56,
+  "content_concept_count": 122,
+  "chapter_ids": [
+    "408-basic-concepts",
+    "408-linear-lists",
+    "408-stacks-queues-arrays",
+    "408-trees",
+    "408-graphs",
+    "408-searching",
+    "408-sorting"
+  ],
+  "items": [
+    {
+      "item_id": "basic-data-structure",
+      "title": "数据结构的基本概念",
+      "concept_ids": [
+        "cs408-data-terms",
+        "cs408-logical-storage-operations",
+        "cs408-abstract-data-type"
+      ]
+    },
+    {
+      "item_id": "basic-algorithm",
+      "title": "算法的基本概念",
+      "concept_ids": [
+        "cs408-algorithm-characteristics",
+        "cs408-algorithm-correctness",
+        "cs408-time-complexity",
+        "cs408-space-complexity",
+        "cs408-asymptotic-notation",
+        "cs408-complexity-estimation"
+      ]
+    },
+    {
+      "item_id": "linear-list-concept",
+      "title": "线性表的基本概念",
+      "concept_ids": [
+        "cs408-linear-list-definition-operations"
+      ]
+    },
+    {
+      "item_id": "linear-list-sequential",
+      "title": "线性表的顺序存储",
+      "concept_ids": [
+        "cs408-sequential-list-storage",
+        "cs408-sequential-list-insert-delete"
+      ]
+    },
+    {
+      "item_id": "linear-list-linked",
+      "title": "线性表的链式存储",
+      "concept_ids": [
+        "cs408-singly-linked-list",
+        "cs408-linked-list-insert-delete",
+        "cs408-doubly-linked-list",
+        "cs408-circular-linked-list"
+      ]
+    },
+    {
+      "item_id": "linear-list-applications",
+      "title": "线性表的应用",
+      "concept_ids": [
+        "cs408-linked-list-reversal",
+        "cs408-linked-list-merge",
+        "cs408-sequential-vs-linked"
+      ]
+    },
+    {
+      "item_id": "stack-queue-concept",
+      "title": "栈和队列的基本概念",
+      "concept_ids": [
+        "cs408-stack-lifo",
+        "cs408-queue-fifo"
+      ]
+    },
+    {
+      "item_id": "stack-queue-sequential",
+      "title": "栈和队列的顺序存储结构",
+      "concept_ids": [
+        "cs408-sequential-stack",
+        "cs408-circular-queue-representation",
+        "cs408-circular-queue-state"
+      ]
+    },
+    {
+      "item_id": "stack-queue-linked",
+      "title": "栈和队列的链式存储结构",
+      "concept_ids": [
+        "cs408-linked-stack",
+        "cs408-linked-queue"
+      ]
+    },
+    {
+      "item_id": "multidimensional-array-storage",
+      "title": "多维数组的存储",
+      "concept_ids": [
+        "cs408-multidimensional-array-address"
+      ]
+    },
+    {
+      "item_id": "special-matrix-compression",
+      "title": "特殊矩阵的压缩存储",
+      "concept_ids": [
+        "cs408-symmetric-matrix-compression",
+        "cs408-triangular-diagonal-matrix-compression",
+        "cs408-sparse-matrix-triples"
+      ]
+    },
+    {
+      "item_id": "stack-queue-array-applications",
+      "title": "栈、队列和数组的应用",
+      "concept_ids": [
+        "cs408-stack-pop-sequences",
+        "cs408-parentheses-matching",
+        "cs408-expression-evaluation",
+        "cs408-recursion-call-stack",
+        "cs408-queue-applications"
+      ]
+    },
+    {
+      "item_id": "tree-concept",
+      "title": "树的基本概念",
+      "concept_ids": [
+        "cs408-tree-terms",
+        "cs408-tree-edge-node-properties"
+      ]
+    },
+    {
+      "item_id": "binary-tree-properties",
+      "title": "二叉树的定义及主要特性",
+      "concept_ids": [
+        "cs408-binary-tree-properties",
+        "cs408-full-complete-binary-tree"
+      ]
+    },
+    {
+      "item_id": "binary-tree-storage",
+      "title": "二叉树的顺序存储和链式存储",
+      "concept_ids": [
+        "cs408-binary-tree-sequential-storage",
+        "cs408-binary-tree-linked-storage"
+      ]
+    },
+    {
+      "item_id": "binary-tree-traversal",
+      "title": "二叉树的遍历",
+      "concept_ids": [
+        "cs408-binary-tree-depth-traversals",
+        "cs408-binary-tree-level-order",
+        "cs408-binary-tree-reconstruction"
+      ]
+    },
+    {
+      "item_id": "threaded-binary-tree",
+      "title": "线索二叉树的基本概念和构造",
+      "concept_ids": [
+        "cs408-threaded-binary-tree",
+        "cs408-threaded-predecessor-successor"
+      ]
+    },
+    {
+      "item_id": "tree-storage",
+      "title": "树的存储结构",
+      "concept_ids": [
+        "cs408-tree-storage-representations"
+      ]
+    },
+    {
+      "item_id": "forest-conversion",
+      "title": "森林与二叉树的转换",
+      "concept_ids": [
+        "cs408-tree-forest-binary-conversion"
+      ]
+    },
+    {
+      "item_id": "tree-forest-traversal",
+      "title": "树和森林的遍历",
+      "concept_ids": [
+        "cs408-tree-forest-traversal"
+      ]
+    },
+    {
+      "item_id": "huffman",
+      "title": "Huffman 树和 Huffman 编码",
+      "concept_ids": [
+        "cs408-huffman-tree",
+        "cs408-huffman-coding"
+      ]
+    },
+    {
+      "item_id": "disjoint-set",
+      "title": "并查集及其应用",
+      "concept_ids": [
+        "cs408-disjoint-set",
+        "cs408-disjoint-set-optimization"
+      ]
+    },
+    {
+      "item_id": "heap",
+      "title": "堆及其应用",
+      "concept_ids": [
+        "cs408-binary-heap",
+        "cs408-heap-operations",
+        "cs408-heap-applications"
+      ]
+    },
+    {
+      "item_id": "graph-concept",
+      "title": "图的基本概念",
+      "concept_ids": [
+        "cs408-graph-definition",
+        "cs408-graph-degree-path-connectivity"
+      ]
+    },
+    {
+      "item_id": "graph-adjacency-matrix",
+      "title": "邻接矩阵",
+      "concept_ids": [
+        "cs408-adjacency-matrix",
+        "cs408-graph-storage-comparison"
+      ]
+    },
+    {
+      "item_id": "graph-adjacency-list",
+      "title": "邻接表",
+      "concept_ids": [
+        "cs408-adjacency-list",
+        "cs408-graph-storage-comparison"
+      ]
+    },
+    {
+      "item_id": "graph-multilist-orthogonal",
+      "title": "邻接多重表和十字链表",
+      "concept_ids": [
+        "cs408-orthogonal-list",
+        "cs408-adjacency-multilist",
+        "cs408-graph-storage-comparison"
+      ]
+    },
+    {
+      "item_id": "graph-dfs",
+      "title": "深度优先搜索",
+      "concept_ids": [
+        "cs408-depth-first-search",
+        "cs408-graph-traversal-complexity"
+      ]
+    },
+    {
+      "item_id": "graph-bfs",
+      "title": "广度优先搜索",
+      "concept_ids": [
+        "cs408-breadth-first-search",
+        "cs408-graph-traversal-complexity"
+      ]
+    },
+    {
+      "item_id": "minimum-spanning-tree",
+      "title": "最小生成树",
+      "concept_ids": [
+        "cs408-minimum-spanning-tree",
+        "cs408-prim-algorithm",
+        "cs408-kruskal-algorithm"
+      ]
+    },
+    {
+      "item_id": "shortest-path",
+      "title": "最短路径",
+      "concept_ids": [
+        "cs408-shortest-path-problem",
+        "cs408-dijkstra-algorithm",
+        "cs408-floyd-warshall"
+      ]
+    },
+    {
+      "item_id": "topological-sort",
+      "title": "拓扑排序",
+      "concept_ids": [
+        "cs408-topological-sort"
+      ]
+    },
+    {
+      "item_id": "critical-path",
+      "title": "关键路径",
+      "concept_ids": [
+        "cs408-critical-path"
+      ]
+    },
+    {
+      "item_id": "search-concept",
+      "title": "查找的基本概念",
+      "concept_ids": [
+        "cs408-search-concepts",
+        "cs408-average-search-length"
+      ]
+    },
+    {
+      "item_id": "sequential-search",
+      "title": "顺序查找法",
+      "concept_ids": [
+        "cs408-sequential-search",
+        "cs408-sequential-search-sentinel"
+      ]
+    },
+    {
+      "item_id": "block-search",
+      "title": "分块查找法",
+      "concept_ids": [
+        "cs408-block-search"
+      ]
+    },
+    {
+      "item_id": "binary-search",
+      "title": "折半查找法",
+      "concept_ids": [
+        "cs408-binary-search",
+        "cs408-binary-search-decision-tree"
+      ]
+    },
+    {
+      "item_id": "binary-search-tree",
+      "title": "二叉搜索树",
+      "concept_ids": [
+        "cs408-bst-property-search",
+        "cs408-bst-insert-delete"
+      ]
+    },
+    {
+      "item_id": "avl-tree",
+      "title": "平衡二叉树",
+      "concept_ids": [
+        "cs408-avl-balance",
+        "cs408-avl-rotations",
+        "cs408-avl-updates"
+      ]
+    },
+    {
+      "item_id": "red-black-tree",
+      "title": "红黑树",
+      "concept_ids": [
+        "cs408-red-black-properties",
+        "cs408-red-black-adjustment"
+      ]
+    },
+    {
+      "item_id": "b-tree-b-plus-tree",
+      "title": "B 树及其基本操作、B+ 树的基本概念",
+      "concept_ids": [
+        "cs408-b-tree-properties",
+        "cs408-b-tree-search",
+        "cs408-b-tree-insertion",
+        "cs408-b-tree-deletion",
+        "cs408-b-plus-tree",
+        "cs408-b-tree-vs-b-plus"
+      ]
+    },
+    {
+      "item_id": "hash-table",
+      "title": "散列表",
+      "concept_ids": [
+        "cs408-hash-table",
+        "cs408-hash-functions",
+        "cs408-separate-chaining",
+        "cs408-open-addressing",
+        "cs408-hash-load-factor-asl"
+      ]
+    },
+    {
+      "item_id": "string-pattern-matching",
+      "title": "字符串模式匹配",
+      "concept_ids": [
+        "cs408-brute-force-string-matching",
+        "cs408-kmp-prefix-function",
+        "cs408-kmp-matching",
+        "cs408-next-nextval"
+      ]
+    },
+    {
+      "item_id": "search-analysis-applications",
+      "title": "查找算法的分析及应用",
+      "concept_ids": [
+        "cs408-average-search-length",
+        "cs408-binary-search-decision-tree",
+        "cs408-b-tree-vs-b-plus",
+        "cs408-hash-load-factor-asl",
+        "cs408-next-nextval",
+        "cs408-search-method-selection"
+      ]
+    },
+    {
+      "item_id": "sorting-concept",
+      "title": "排序的基本概念",
+      "concept_ids": [
+        "cs408-sorting-concepts"
+      ]
+    },
+    {
+      "item_id": "direct-insertion-sort",
+      "title": "直接插入排序",
+      "concept_ids": [
+        "cs408-direct-insertion-sort"
+      ]
+    },
+    {
+      "item_id": "binary-insertion-sort",
+      "title": "折半插入排序",
+      "concept_ids": [
+        "cs408-binary-insertion-sort"
+      ]
+    },
+    {
+      "item_id": "bubble-sort",
+      "title": "起泡排序",
+      "concept_ids": [
+        "cs408-bubble-sort"
+      ]
+    },
+    {
+      "item_id": "selection-sort",
+      "title": "简单选择排序",
+      "concept_ids": [
+        "cs408-selection-sort"
+      ]
+    },
+    {
+      "item_id": "shell-sort",
+      "title": "希尔排序",
+      "concept_ids": [
+        "cs408-shell-sort"
+      ]
+    },
+    {
+      "item_id": "quick-sort",
+      "title": "快速排序",
+      "concept_ids": [
+        "cs408-quick-partition",
+        "cs408-quick-sort-analysis"
+      ]
+    },
+    {
+      "item_id": "heap-sort",
+      "title": "堆排序",
+      "concept_ids": [
+        "cs408-heap-sort"
+      ]
+    },
+    {
+      "item_id": "merge-sort",
+      "title": "二路归并排序",
+      "concept_ids": [
+        "cs408-merge-sort"
+      ]
+    },
+    {
+      "item_id": "radix-sort",
+      "title": "基数排序",
+      "concept_ids": [
+        "cs408-radix-sort"
+      ]
+    },
+    {
+      "item_id": "external-sort",
+      "title": "外部排序",
+      "concept_ids": [
+        "cs408-external-sorting-runs",
+        "cs408-k-way-external-merge",
+        "cs408-loser-tree",
+        "cs408-replacement-selection",
+        "cs408-optimal-merge-tree"
+      ]
+    },
+    {
+      "item_id": "sorting-analysis-applications",
+      "title": "排序算法的分析及应用",
+      "concept_ids": [
+        "cs408-direct-insertion-sort",
+        "cs408-binary-insertion-sort",
+        "cs408-bubble-sort",
+        "cs408-selection-sort",
+        "cs408-shell-sort",
+        "cs408-quick-sort-analysis",
+        "cs408-heap-sort",
+        "cs408-merge-sort",
+        "cs408-radix-sort",
+        "cs408-comparison-sorting-lower-bound",
+        "cs408-sorting-method-selection",
+        "cs408-optimal-merge-tree"
+      ]
+    }
+  ],
+  "uncovered_item_ids": [],
+  "source_urls": [
+    "https://www.moe.gov.cn/s78/A15/s8355/moe_782/tnull_21964.html",
+    "https://www.kmxwd.com/uploads/images/20251015/68eef5daf0564.pdf",
+    "https://www.tup.com.cn/bookscenter/book_09892801.html"
+  ],
+  "review_status": "review_pending"
+}
