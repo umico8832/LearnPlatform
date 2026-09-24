@@ -56,6 +56,18 @@ export const learnerRoutes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
     children: [
       {
+        path: 'community',
+        name: 'Community',
+        component: () => import('@/views/community/CommunityView.vue'),
+        meta: { title: '社区共建' },
+      },
+      {
+        path: 'community/:id',
+        name: 'CommunityDetail',
+        component: () => import('@/views/community/CommunityDetailView.vue'),
+        meta: { title: '社区详情', hidden: true },
+      },
+      {
         path: 'my-courses',
         name: 'MyCourses',
         component: () => import('@/views/course/MyCoursesView.vue'),

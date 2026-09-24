@@ -12,6 +12,12 @@ export const adminRoutes: RouteRecordRaw[] = [
     component: () => import('./AdminLayout.vue'),
     children: [
       {
+        path: 'community',
+        name: 'AdminCommunity',
+        component: () => import('./views/CommunityManage.vue'),
+        meta: { title: '社区管理' },
+      },
+      {
         path: '',
         name: 'AdminDashboard',
         component: () => import('./views/AdminDashboard.vue'),

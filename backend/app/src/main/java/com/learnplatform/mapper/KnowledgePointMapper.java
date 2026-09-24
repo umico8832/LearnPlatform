@@ -43,6 +43,8 @@ public interface KnowledgePointMapper extends BaseMapper<KnowledgePoint> {
                     CAST(#{knowledgePointId} AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci,
                     knowledge_point_ids COLLATE utf8mb4_unicode_ci
                 ) > 0
+                UNION ALL SELECT COUNT(*) FROM community_post
+                WHERE knowledge_point_id = #{knowledgePointId} AND deleted = 0
             ) AS knowledge_point_references
             """)
     Long countReferences(@Param("knowledgePointId") Long knowledgePointId);

@@ -59,3 +59,26 @@ describe('application route transitions', () => {
     }
   })
 })
+
+it('keeps community and course navigation highlights independent', async () => {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/my-courses', component: { template: '<h1>我的课程</h1>' } },
+      { path: '/courses', component: { template: '<h1>课程库</h1>' } },
+      { path: '/community/:id?', component: { template: '<h1>社区</h1>' } },
+    ],
+  })
+  await router.push('/community/7')
+  await router.isReady()
+  wrapper = mount(AppLayout, {
+    global: { plugins: [createPinia(), router, ElementPlus], stubs: { GlobalSearchDialog: true } },
+  })
+  await flushPromises()
+  expect(wrapper.get('a[href="/community"]').classes()).toContain('is-active')
+  expect(wrapper.get('a[href="/courses"]').classes()).not.toContain('is-active')
+  await router.push('/courses')
+  await flushPromises()
+  expect(wrapper.get('a[href="/community"]').classes()).not.toContain('is-active')
+  expect(wrapper.get('a[href="/courses"]').classes()).toContain('is-active')
+})

@@ -18,6 +18,7 @@ public interface CourseMapper extends BaseMapper<Course> {
                 UNION ALL SELECT COUNT(*) FROM tutor_session WHERE course_id = #{courseId}
                 UNION ALL SELECT COUNT(*) FROM course_stage_assessment WHERE course_id = #{courseId}
                 UNION ALL SELECT COUNT(*) FROM question_submission WHERE course_id = #{courseId}
+                UNION ALL SELECT COUNT(*) FROM community_post WHERE course_id = #{courseId} AND deleted = 0
             ) AS course_references
             """)
     Long countReferences(@Param("courseId") Long courseId);

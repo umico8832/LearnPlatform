@@ -30,6 +30,9 @@
             <el-icon :size="17"><Reading /></el-icon>
             <span>课程库</span>
           </router-link>
+          <router-link to="/community" class="nav-item" :class="{ 'is-active': isActive('/community') }">
+            <el-icon :size="17"><ChatDotRound /></el-icon><span>社区共建</span>
+          </router-link>
         </nav>
 
         <div class="sidebar-bottom">
@@ -150,7 +153,17 @@ import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { acknowledgeAiUsageAlert, getAiUsageAlerts, type AiUsageAlert } from '@/api/aiUsage'
 import { ElMessage } from 'element-plus'
-import { ArrowDown, Bell, Collection, DataAnalysis, Expand, Fold, Reading, Search } from '@element-plus/icons-vue'
+import {
+  ChatDotRound,
+  ArrowDown,
+  Bell,
+  Collection,
+  DataAnalysis,
+  Expand,
+  Fold,
+  Reading,
+  Search,
+} from '@element-plus/icons-vue'
 import GlobalSearchDialog from '@/components/GlobalSearchDialog.vue'
 import { useResponsiveSidebar } from './useResponsiveSidebar'
 
@@ -167,12 +180,8 @@ const acknowledgingAlertId = ref<number | null>(null)
 const openAlertCount = computed(() => openAlerts.value.length)
 const { isMobile, sidebarOpen } = useResponsiveSidebar()
 
-/** 一级入口高亮：我的课程 与 课程库 精确匹配其子路由前缀。 */
 function isActive(prefix: string) {
-  if (prefix === '/my-courses') {
-    return route.path === '/my-courses' || route.path.startsWith('/my-courses/')
-  }
-  return route.path === '/courses' || route.path.startsWith('/courses/')
+  return route.path === prefix || route.path.startsWith(`${prefix}/`)
 }
 
 const searchDialogRef = ref<InstanceType<typeof GlobalSearchDialog>>()

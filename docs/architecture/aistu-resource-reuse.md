@@ -14,6 +14,13 @@ LearnPlatform 的 Phase 23 使用 AiStu 已有的 408 数据结构知识、Tutor
 | `packages/lessons` | 已注册 React 互动课件及专属 Schema | 保留教学目标、步骤、预测和算法模型，Web 展示层适配 Vue |
 | `courseLearningStore` | 本地知识接触、课件完成、预测错误、误解和复盘原型 | 只参考事件语义；服务端统一学习状态不能由 Zustand 快照充当 |
 
+## 社区共建迁移
+
+AiStu 的考试目录、讨论与资料投稿语义由 Vue 页面、Spring 业务服务和 MySQL 重建；不复制 React、
+Zustand 本地快照、示例帖子或示例学校。原型只记录附件元数据的行为升级为真实文件保存和权限下载，
+回复与点赞由真实关系表维护。学校分区由管理员创建；已有单题投稿审核与入库作为正式题目的唯一通道。
+精确边界见[社区 API](../reference/api/community.md)。
+
 ## 稳定标识与来源
 
 - AiStu 的 `cs408-data-structures`、`408-*` 和 `cs408-*` 标识进入 LearnPlatform

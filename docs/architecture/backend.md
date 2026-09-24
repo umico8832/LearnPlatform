@@ -90,6 +90,7 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
 | 考试与试卷学习 | `ExamService`、`ExamPaperLearningService` | 独立会话状态机与提交语义，共享题源与学习事件；事务见[考试数据](../reference/database/assessment-domain.md) |
 | 私有导入与草稿 | `PrivateExamImportService`、`PrivateExamDraftService` | 解析、人工复核和确认持久化分离，所有者隔离贯穿来源文件与草稿 |
 | 内容与投稿 | `QuestionService`、`QuestionSubmissionService` | 查询富化与修改事务分离；审核和正式入库是独立业务动作 |
+| 社区共建 | `CommunityService` | JDBC Mapper 保存社区内容及附件；独立内容审核，整理题目复用已有投稿服务，不自动入库 |
 | AI 与观察 | [AI 子系统](ai-system.md) | 生成调用统一治理；查看和真实判分负责写事实，效果统计只读聚合 |
 
 无状态解析、选题策略、聚合与展示转换放入明确领域子包；需要读取事实的协作者保留在业务层，

@@ -16,6 +16,7 @@
 | [通用约定](conventions.md) | 响应、认证、分页、错误和 SSE | 全部 Controller |
 | [认证与用户](auth-and-users.md) | 注册、登录、验证码、资料、用户管理 | `AuthController`、`CaptchaController`、`AdminUserController` |
 | [学习内容](learning-content.md) | 课程、知识点、题目、收藏、评论、投稿、搜索 | 内容相关 Controller |
+| [社区共建](community.md) | 共享讨论、附件、互动与社区审核 | `CommunityController`、`AdminCommunityController` |
 | [练习与复习](practice-and-review.md) | 练习、错题、间隔重复、统计诊断 | 学习闭环 Controller |
 | [考试](exams.md) | 试卷、考试、判分、智能组卷 | `ExamController`、`AdminExamController` |
 | [AI 学习](ai-learning.md) | AI 解析、资产、变式训练和结构化判分 | `AiController` |

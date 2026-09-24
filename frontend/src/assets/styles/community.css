@@ -1,0 +1,168 @@
+.community-layout {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(0, 4fr);
+  gap: var(--lp-space-8);
+  align-items: start;
+}
+.community-filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lp-space-3);
+  padding: var(--lp-space-5);
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius-md);
+}
+.community-filters label {
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+}
+.community-search,
+.community-actions,
+.community-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lp-space-3);
+}
+.community-search {
+  flex-wrap: nowrap;
+  margin-bottom: var(--lp-space-5);
+}
+.community-meta {
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-relaxed);
+}
+.community-post-row {
+  padding: var(--lp-space-6) 0;
+  border-bottom: 1px solid var(--lp-border);
+}
+.community-post-row:first-of-type {
+  padding-top: var(--lp-space-3);
+}
+.community-post-row h2 {
+  margin: var(--lp-space-3) 0;
+  font-size: var(--lp-text-xl);
+  font-weight: var(--lp-weight-semibold);
+  overflow-wrap: anywhere;
+}
+.community-post-row h2 a,
+.community-secondary-link,
+.community-back {
+  color: var(--lp-primary);
+  text-decoration: none;
+}
+.community-post-row h2 a:hover,
+.community-back:hover {
+  text-decoration: underline;
+}
+.community-post-row a:focus-visible,
+.community-back:focus-visible {
+  outline: 2px solid var(--lp-primary);
+  outline-offset: var(--lp-space-1);
+}
+.community-excerpt {
+  color: var(--lp-text-secondary);
+  line-height: var(--lp-leading-relaxed);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.community-muted {
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-relaxed);
+}
+.community-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: var(--lp-leading-relaxed);
+}
+.community-thread {
+  padding: var(--lp-space-8);
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius-lg);
+  margin-top: var(--lp-space-5);
+}
+.community-thread h1 {
+  font-size: var(--lp-text-2xl);
+  line-height: var(--lp-leading-snug);
+  overflow-wrap: anywhere;
+  margin: var(--lp-space-4) 0;
+}
+.community-thread h2 {
+  font-size: var(--lp-text-lg);
+  margin: var(--lp-space-4) 0;
+}
+.community-thread > .community-body {
+  margin: var(--lp-space-8) 0;
+}
+.community-source,
+.community-files {
+  background: var(--lp-surface-soft);
+  padding: var(--lp-space-4);
+  margin: var(--lp-space-5) 0;
+  border-radius: var(--lp-radius-md);
+  overflow-wrap: anywhere;
+}
+.community-source h2,
+.community-files h2 {
+  margin-top: 0;
+}
+.community-files ul {
+  list-style: none;
+  padding: 0;
+}
+.community-files li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lp-space-4);
+  padding: var(--lp-space-2) 0;
+}
+.community-files li span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.community-actions {
+  margin: var(--lp-space-4) 0;
+}
+.community-comments {
+  margin-top: var(--lp-space-8);
+  border-top: 1px solid var(--lp-border);
+}
+.community-comment {
+  padding: var(--lp-space-5) 0;
+  border-bottom: 1px solid var(--lp-border);
+}
+.community-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--lp-space-5);
+}
+.community-form-grid .el-select,
+.community-form-grid .el-tree-select {
+  width: 100%;
+}
+.community-page .el-pagination,
+.community-thread .el-pagination {
+  margin-top: var(--lp-space-6);
+}
+.community-moderation {
+  margin: var(--lp-space-5) 0;
+  padding: var(--lp-space-5);
+  border: 1px solid var(--lp-border-strong);
+  border-radius: var(--lp-radius-md);
+}
+@media (max-width: 900px) {
+  .community-layout {
+    grid-template-columns: 1fr;
+  }
+  .community-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

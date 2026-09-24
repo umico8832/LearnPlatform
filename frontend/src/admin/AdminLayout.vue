@@ -12,6 +12,7 @@
         <router-link to="/knowledge">知识快照审核</router-link>
         <router-link to="/exams">试卷管理</router-link>
         <router-link to="/subjective-reviews">主观题批阅</router-link>
+        <router-link to="/community">社区管理</router-link>
         <router-link to="/users">用户管理</router-link>
         <router-link to="/submissions">投稿管理</router-link>
         <router-link to="/ai-variant-reviews">AI 变式题审查</router-link>
