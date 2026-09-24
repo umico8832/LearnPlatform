@@ -166,8 +166,8 @@ const adminBase = ref(defaultAdminBase.href)
 const validAdminBase = computed(() => normalizeAdminBase(adminBase.value))
 const search = ref('')
 const selected = ref(pages.find((page) => page.name === 'Home') ?? pages[0])
-const expandedGroups = ref(new Set<PageEntry['group']>([selected.value.group]))
-const searchCollapsedGroups = ref(new Set<PageEntry['group']>())
+const expandedGroup = ref<PageEntry['group'] | null>(selected.value.group)
+const searchExpandedGroup = ref<PageEntry['group'] | null>(null)
 const params = ref<Record<string, string>>({})
 const authOptions = computed(() => getAuthPreviewOptions(selected.value.name))
 const authState = ref(authOptions.value[0]?.value ?? '')
@@ -212,19 +212,21 @@ function parameterLabel(param: string) {
 }
 
 function isGroupExpanded(group: PageEntry['group']) {
-  return search.value.trim() ? !searchCollapsedGroups.value.has(group) : expandedGroups.value.has(group)
+  return (search.value.trim() ? searchExpandedGroup.value : expandedGroup.value) === group
 }
 
 function toggleGroup(group: PageEntry['group']) {
-  const groups = search.value.trim() ? searchCollapsedGroups.value : expandedGroups.value
-  if (groups.has(group)) groups.delete(group)
-  else groups.add(group)
+  const activeGroup = search.value.trim() ? searchExpandedGroup : expandedGroup
+  activeGroup.value = activeGroup.value === group ? null : group
 }
 
-watch(search, () => searchCollapsedGroups.value.clear())
+watch(search, () => {
+  searchExpandedGroup.value =
+    visibleGroups.value.find((group) => group.id === selected.value.group)?.id ?? visibleGroups.value[0]?.id ?? null
+})
 
 function selectPage(page: PageEntry) {
-  expandedGroups.value.add(page.group)
+  expandedGroup.value = page.group
   if (selected.value.id === page.id) return
   previewUrl.value = ''
   params.value = {}
