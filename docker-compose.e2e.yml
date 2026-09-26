@@ -5,11 +5,12 @@ name: learnplatform-e2e
 
 services:
   ai-mock:
-    image: nginx:1.27-alpine
+    image: python:3.12-alpine
     volumes:
-      - ./frontend/e2e/ai-mock.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend/e2e/ai-mock.py:/app/ai-mock.py:ro
+    command: ["python", "/app/ai-mock.py"]
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1/health', timeout=2)"]
       interval: 2s
       timeout: 2s
       retries: 10
@@ -60,6 +61,7 @@ services:
       AI_API_KEY: "e2e-test-key"
       AI_API_BASE_URL: "http://ai-mock/v1"
       AI_MODEL: "e2e-deterministic"
+      AI_TOOLS_SUPPORTED: "true"
       KNOWLEDGE_SNAPSHOT_PATH: "/e2e/knowledge"
     depends_on:
       ai-mock:

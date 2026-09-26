@@ -5,7 +5,7 @@
         <LpKicker>按需追问</LpKicker>
         <h2 id="tutor-agent-heading">继续问 Tutor</h2>
       </div>
-      <span v-if="run" class="agent-status">等待你的问题</span>
+      <span v-if="statusLabel" class="agent-status" role="status">{{ statusLabel }}</span>
     </header>
     <p class="agent-intro">回答只依据本节已审查内容；理解检查仍由服务端判分。</p>
 
@@ -23,6 +23,17 @@
 
     <p v-if="submitting" class="agent-thinking" role="status">Tutor 正在核对本节内容…</p>
     <el-alert v-if="failure" :title="failure" type="error" :closable="false" show-icon />
+
+    <el-button
+      v-if="run?.status === 'RUNNING' || restoreFailed"
+      data-testid="agent-refresh"
+      :loading="restoring"
+      :disabled="restoring || submitting"
+      @click="restore()"
+    >
+      {{ restoreFailed ? '重试恢复对话' : '刷新状态' }}
+    </el-button>
+    <p v-if="run?.status === 'FAILED'" class="agent-thinking">上次回答未完成，可重新发送问题；历史对话已保留。</p>
 
     <div class="agent-composer">
       <label for="tutor-agent-question">你的问题</label>
@@ -50,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { getTutorAgentRun, resumeTutorAgentRun, startTutorAgentRun, type TutorAgentRunVO } from '@/api/tutor'
 import { errorMessage } from '@/utils/errors'
 
@@ -59,36 +70,96 @@ const question = ref('')
 const submitting = ref(false)
 const failure = ref('')
 const run = ref<TutorAgentRunVO>()
-const canSend = computed(() => !submitting.value && question.value.trim().length > 0)
-const storageKey = `lp:tutor-agent-run:${props.courseId}:${props.sessionKey}`
+const restoring = ref(false)
+const restoreFailed = ref(false)
+const storedRunKey = ref<string | null>(null)
+const canSend = computed(
+  () =>
+    !submitting.value &&
+    !restoring.value &&
+    !restoreFailed.value &&
+    run.value?.status !== 'RUNNING' &&
+    question.value.trim().length > 0,
+)
+const storageKey = computed(() => `lp:tutor-agent-run:${props.courseId}:${props.sessionKey}`)
+const statusLabel = computed(() => {
+  if (restoring.value) return '正在恢复对话'
+  if (submitting.value || run.value?.status === 'RUNNING') return '正在处理'
+  if (restoreFailed.value) return '对话恢复失败'
+  if (run.value?.status === 'FAILED') return '回答未完成，可重试'
+  return run.value ? '等待你的问题' : ''
+})
+let generation = 0
 
 async function send() {
+  if (!canSend.value) return
   const message = question.value.trim()
-  if (!message || submitting.value) return
+  const current = generation
   submitting.value = true
   failure.value = ''
   try {
     const response = run.value
       ? await resumeTutorAgentRun(props.courseId, props.sessionKey, run.value.runKey, message)
       : await startTutorAgentRun(props.courseId, props.sessionKey, message)
+    if (current !== generation) return
     run.value = response.data
-    sessionStorage.setItem(storageKey, run.value.runKey)
+    storedRunKey.value = run.value.runKey
+    try {
+      sessionStorage.setItem(storageKey.value, run.value.runKey)
+    } catch {
+      // 存储不可用不改变已成功保存到服务端的回答。
+    }
     question.value = ''
   } catch (error) {
+    if (current !== generation) return
     failure.value = errorMessage(error, 'Tutor 暂时无法回答，请稍后重试')
+    if (storedRunKey.value) await restore(true)
   } finally {
-    submitting.value = false
+    if (current === generation) submitting.value = false
   }
 }
 
-onMounted(async () => {
-  const storedRunKey = sessionStorage.getItem(storageKey)
-  if (!storedRunKey) return
+async function restore(preserveFailure = false) {
+  if (!storedRunKey.value || restoring.value) return
+  const current = generation
+  restoring.value = true
+  restoreFailed.value = false
+  if (!preserveFailure) failure.value = ''
   try {
-    run.value = (await getTutorAgentRun(props.courseId, props.sessionKey, storedRunKey)).data
-  } catch {
-    sessionStorage.removeItem(storageKey)
+    const response = await getTutorAgentRun(props.courseId, props.sessionKey, storedRunKey.value)
+    if (current !== generation) return
+    run.value = response.data
+  } catch (error) {
+    if (current !== generation) return
+    restoreFailed.value = true
+    failure.value = errorMessage(error, '暂时无法恢复对话，请重试')
+  } finally {
+    if (current === generation) restoring.value = false
   }
+}
+
+watch(
+  () => [props.courseId, props.sessionKey],
+  () => {
+    generation++
+    run.value = undefined
+    question.value = ''
+    failure.value = ''
+    submitting.value = false
+    restoring.value = false
+    restoreFailed.value = false
+    try {
+      storedRunKey.value = sessionStorage.getItem(storageKey.value)
+    } catch {
+      storedRunKey.value = null
+    }
+    void restore()
+  },
+  { immediate: true },
+)
+
+onBeforeUnmount(() => {
+  generation++
 })
 </script>
 

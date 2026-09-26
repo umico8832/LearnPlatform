@@ -112,4 +112,103 @@ describe('TutorAgentConversation', () => {
     expect(mockGet).toHaveBeenCalledWith(10, 'session', 'run')
     expect(wrapper.text()).toContain('上次回答')
   })
+
+  it('blocks sending until the saved conversation is restored', async () => {
+    sessionStorage.setItem('lp:tutor-agent-run:10:session', 'run')
+    let resolve!: (value: unknown) => void
+    mockGet.mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done
+      }),
+    )
+    const wrapper = mountAgent()
+    await wrapper.get('[data-testid="agent-input"]').setValue('继续')
+    expect(wrapper.get('[data-testid="agent-submit"]').attributes('disabled')).toBeDefined()
+    await wrapper.get('[data-testid="agent-input"]').trigger('keydown', { key: 'Enter', ctrlKey: true })
+    expect(mockStart).not.toHaveBeenCalled()
+    resolve({ data: { runKey: 'run', status: 'WAITING_USER', messages: [] } })
+    await flushPromises()
+    expect(wrapper.get('[data-testid="agent-submit"]').attributes('disabled')).toBeUndefined()
+  })
+
+  it('keeps the saved run after a network failure and allows restoring it again', async () => {
+    sessionStorage.setItem('lp:tutor-agent-run:10:session', 'run')
+    mockGet.mockRejectedValueOnce(new Error('网络暂不可用'))
+    const wrapper = mountAgent()
+    await flushPromises()
+    expect(sessionStorage.getItem('lp:tutor-agent-run:10:session')).toBe('run')
+    await wrapper.get('[data-testid="agent-input"]').setValue('继续')
+    expect(wrapper.get('[data-testid="agent-submit"]').attributes('disabled')).toBeDefined()
+    mockGet.mockResolvedValueOnce({ data: { runKey: 'run', status: 'WAITING_USER', messages: [] } })
+    await wrapper.get('[data-testid="agent-refresh"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('[data-testid="agent-submit"]').attributes('disabled')).toBeUndefined()
+  })
+
+  it('shows running state and refreshes it before another question can be sent', async () => {
+    sessionStorage.setItem('lp:tutor-agent-run:10:session', 'run')
+    mockGet.mockResolvedValueOnce({ data: { runKey: 'run', status: 'RUNNING', messages: [] } })
+    const wrapper = mountAgent()
+    await flushPromises()
+    await wrapper.get('[data-testid="agent-input"]').setValue('继续')
+    expect(wrapper.get('[data-testid="agent-submit"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.text()).toContain('正在处理')
+    mockGet.mockResolvedValueOnce({ data: { runKey: 'run', status: 'FAILED', messages: [] } })
+    await wrapper.get('[data-testid="agent-refresh"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('可重试')
+    await wrapper.get('[data-testid="agent-submit"]').trigger('click')
+    await flushPromises()
+    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'run', '继续')
+  })
+
+  it('ignores restored messages after switching to another Tutor session', async () => {
+    sessionStorage.setItem('lp:tutor-agent-run:10:session', 'old-run')
+    let resolve!: (value: unknown) => void
+    mockGet.mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done
+      }),
+    )
+    const wrapper = mountAgent()
+    await wrapper.setProps({ sessionKey: 'next-session' })
+    resolve({
+      data: {
+        runKey: 'old-run',
+        status: 'WAITING_USER',
+        messages: [{ sequence: 2, role: 'ASSISTANT', content: '旧会话的回答', createTime: null }],
+      },
+    })
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('旧会话的回答')
+    await wrapper.get('[data-testid="agent-input"]').setValue('新的问题')
+    await wrapper.get('[data-testid="agent-submit"]').trigger('click')
+    await flushPromises()
+    expect(mockStart).toHaveBeenCalledWith(10, 'next-session', '新的问题')
+  })
+
+  it('ignores a late send response after the session changes', async () => {
+    let resolve!: (value: unknown) => void
+    mockStart.mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done
+      }),
+    )
+    const wrapper = mountAgent()
+    await wrapper.get('[data-testid="agent-input"]').setValue('旧问题')
+    await wrapper.get('[data-testid="agent-submit"]').trigger('click')
+    await wrapper.setProps({ sessionKey: 'next-session' })
+    await wrapper.get('[data-testid="agent-input"]').setValue('新问题草稿')
+    resolve({
+      data: {
+        runKey: 'old-run',
+        status: 'WAITING_USER',
+        messages: [{ sequence: 2, role: 'ASSISTANT', content: '迟到的旧回答', createTime: null }],
+      },
+    })
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('迟到的旧回答')
+    expect((wrapper.get('[data-testid="agent-input"]').element as HTMLTextAreaElement).value).toBe('新问题草稿')
+    expect(sessionStorage.getItem('lp:tutor-agent-run:10:next-session')).toBeNull()
+  })
 })
