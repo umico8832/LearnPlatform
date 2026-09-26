@@ -1,6 +1,7 @@
 package com.learnplatform.dto;
 
 import com.learnplatform.entity.QuestionOption;
+import java.util.List;
 
 /**
  * 题目选项 VO
@@ -20,6 +21,18 @@ public class QuestionOptionVO {
         vo.setIsCorrect(o.getIsCorrect());
         vo.setSortOrder(o.getSortOrder());
         return vo;
+    }
+
+    public static List<QuestionOptionVO> forLearner(String questionType, List<QuestionOption> options) {
+        if (!"SINGLE_CHOICE".equals(questionType) && !"MULTIPLE_CHOICE".equals(questionType)
+                && !"TRUE_FALSE".equals(questionType)) {
+            return List.of();
+        }
+        return options.stream().map(option -> {
+            QuestionOptionVO view = fromEntity(option);
+            view.setIsCorrect(null);
+            return view;
+        }).toList();
     }
 
     public Long getId() { return id; }

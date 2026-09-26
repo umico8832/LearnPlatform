@@ -148,11 +148,9 @@ public class ExamPaperViewService {
                         new LambdaQueryWrapper<QuestionOption>()
                                 .eq(QuestionOption::getQuestionId, question.getId())
                                 .orderByAsc(QuestionOption::getSortOrder));
-                item.setOptions(options.stream().map(option -> {
-                    QuestionOptionVO optionView = QuestionOptionVO.fromEntity(option);
-                    if (!includeCorrectAnswer) { optionView.setIsCorrect(null); }
-                    return optionView;
-                }).toList());
+                item.setOptions(includeCorrectAnswer
+                        ? options.stream().map(QuestionOptionVO::fromEntity).toList()
+                        : QuestionOptionVO.forLearner(question.getQuestionType(), options));
             }
             items.add(item);
         }

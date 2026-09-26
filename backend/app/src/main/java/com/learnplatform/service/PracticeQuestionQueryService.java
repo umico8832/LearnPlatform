@@ -177,14 +177,8 @@ public class PracticeQuestionQueryService {
         LambdaQueryWrapper<QuestionOption> optionWrapper = new LambdaQueryWrapper<>();
         optionWrapper.eq(QuestionOption::getQuestionId, view.getId())
                 .orderByAsc(QuestionOption::getSortOrder);
-        List<QuestionOptionVO> options = questionOptionMapper.selectList(optionWrapper).stream()
-                .map(option -> {
-                    QuestionOptionVO optionView = QuestionOptionVO.fromEntity(option);
-                    optionView.setIsCorrect(0);
-                    return optionView;
-                })
-                .collect(Collectors.toList());
-        view.setOptions(options);
+        view.setOptions(QuestionOptionVO.forLearner(view.getQuestionType(),
+                questionOptionMapper.selectList(optionWrapper)));
 
         LambdaQueryWrapper<QuestionKnowledgePoint> knowledgePointWrapper = new LambdaQueryWrapper<>();
         knowledgePointWrapper.eq(QuestionKnowledgePoint::getQuestionId, view.getId());

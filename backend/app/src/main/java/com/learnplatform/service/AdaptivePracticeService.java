@@ -267,11 +267,7 @@ public class AdaptivePracticeService {
         optionWrapper.eq(QuestionOption::getQuestionId, vo.getId())
                      .orderByAsc(QuestionOption::getSortOrder);
         List<QuestionOption> options = questionOptionMapper.selectList(optionWrapper);
-        vo.setOptions(options.stream().map(o -> {
-            QuestionOptionVO optVo = QuestionOptionVO.fromEntity(o);
-            optVo.setIsCorrect(0);
-            return optVo;
-        }).collect(Collectors.toList()));
+        vo.setOptions(QuestionOptionVO.forLearner(vo.getQuestionType(), options));
 
         LambdaQueryWrapper<QuestionKnowledgePoint> kpWrapper = new LambdaQueryWrapper<>();
         kpWrapper.eq(QuestionKnowledgePoint::getQuestionId, vo.getId());

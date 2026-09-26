@@ -85,6 +85,25 @@ class ExamPaperLearningServiceTest {
         assertEquals(null, result.getQuestions().get(0).getOptions().get(0).getIsCorrect());
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"FILL_BLANK", "SHORT_ANSWER"})
+    void learningSessionHidesReferenceAnswerOptions(String type) {
+        ExamLearningSession session = new ExamLearningSession();
+        session.setId(30L);
+        session.setUserId(7L);
+        session.setExamPaperId(2L);
+        session.setStatus(0);
+        when(sessionMapper.selectById(30L)).thenReturn(session);
+        stubEligiblePaper();
+        Question textQuestion = question();
+        textQuestion.setQuestionType(type);
+        when(questionMapper.selectById(10L)).thenReturn(textQuestion);
+
+        ExamLearningSessionVO result = service.getSession(30L, 7L);
+
+        assertTrue(result.getQuestions().getFirst().getOptions().isEmpty());
+    }
+
     @Test
     void rejectsAnswerOutsideLearningPaper() {
         stubActiveSession();

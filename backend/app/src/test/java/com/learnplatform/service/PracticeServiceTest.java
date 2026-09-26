@@ -183,8 +183,8 @@ class PracticeServiceTest {
         assertEquals("SINGLE_CHOICE", question.getQuestionType());
         assertEquals(null, question.getAnalysis());
         assertEquals(2, question.getOptions().size());
-        assertEquals(0, question.getOptions().get(0).getIsCorrect());
-        assertEquals(0, question.getOptions().get(1).getIsCorrect());
+        assertEquals(null, question.getOptions().get(0).getIsCorrect());
+        assertEquals(null, question.getOptions().get(1).getIsCorrect());
     }
 
     private PracticeSubmitRequest request(Long questionId, String userAnswer, Integer answerTime) {

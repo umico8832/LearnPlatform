@@ -36,6 +36,10 @@ public class QuestionViewService {
     }
 
     public void enrich(QuestionVO view) {
+        enrich(view, false);
+    }
+
+    private void enrich(QuestionVO view, boolean learner) {
         Course course = courseMapper.selectById(view.getCourseId());
         if (course != null) {
             view.setCourseName(course.getName());
@@ -44,7 +48,8 @@ public class QuestionViewService {
                 new LambdaQueryWrapper<QuestionOption>()
                         .eq(QuestionOption::getQuestionId, view.getId())
                         .orderByAsc(QuestionOption::getSortOrder));
-        view.setOptions(options.stream().map(QuestionOptionVO::fromEntity).toList());
+        view.setOptions(learner ? QuestionOptionVO.forLearner(view.getQuestionType(), options)
+                : options.stream().map(QuestionOptionVO::fromEntity).toList());
 
         List<Long> knowledgePointIds = questionKnowledgePointMapper.selectList(
                         new LambdaQueryWrapper<QuestionKnowledgePoint>()
@@ -59,10 +64,7 @@ public class QuestionViewService {
     }
 
     public void enrichForUser(QuestionVO view) {
-        enrich(view);
-        if (view.getOptions() != null) {
-            view.getOptions().forEach(option -> option.setIsCorrect(null));
-        }
+        enrich(view, true);
     }
 
     public QuestionDuplicateGroupVO toDuplicateGroup(QuestionDuplicateDetector.DuplicateGroup group) {

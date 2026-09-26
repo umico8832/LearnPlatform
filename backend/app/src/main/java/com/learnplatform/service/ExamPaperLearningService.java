@@ -273,11 +273,7 @@ public class ExamPaperLearningService {
             item.setMinorQuestionNumber(paperQuestion.getMinorQuestionNumber());
             item.setSubquestionNumber(paperQuestion.getSubquestionNumber());
             item.setDisplayNumber(paperQuestion.getDisplayNumber());
-            item.setOptions(options.stream().map(option -> {
-                QuestionOptionVO optionVO = QuestionOptionVO.fromEntity(option);
-                optionVO.setIsCorrect(null);
-                return optionVO;
-            }).toList());
+            item.setOptions(QuestionOptionVO.forLearner(question.getQuestionType(), options));
             ExamLearningAnswer latest = latestAnswers.get(question.getId());
             if (latest != null) {
                 item.setLatestAnswer(toAnswerResult(latest, paperQuestion, question,
