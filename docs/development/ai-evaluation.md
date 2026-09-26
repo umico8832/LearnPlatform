@@ -119,8 +119,9 @@ AI_RAG_EVAL_ONLINE=true ./mvnw -pl app -am \
 - `toolTrace` 保留固定案例中的 call ID、实际工具名、参数、返回内容及检索 run ID，供核对教学结论和来源忠实度。
   提示工具包含运行时补入的服务端等级及引导，与送入模型的 TOOL 消息一致；未进入后续模型调用的工具保留原始结果。
   `retrievalOrigin: SYNTHETIC_TOOL_FIXTURE` 表明检索资料是夹具，在线也保持该标记；
-  `retrievalQuality: NOT_EVALUATED` 表明没有测量真实向量召回质量。当前报告 schemaVersion 为 7。
+  `retrievalQuality: NOT_EVALUATED` 表明没有测量真实向量召回质量。当前报告 schemaVersion 为 8。
 - Agent 的 `memoryOrigin: SYNTHETIC_USER_FIXTURE` 表明用户目标和偏好是固定夹具，在线也不读取真实用户记忆；其他路径为 `NOT_USED`。
+- `sessionEvidenceOrigin: SYNTHETIC_SESSION_FIXTURE` 标记 Agent 复盘所关联的会话与检查事实也是固定夹具；其他路径为 `NOT_USED`。
 - `promptHash`：消息列表序列化后的 SHA-256，直接读取本次调用审计中的指纹。
   被权限阻断而没有发送 Prompt 时为 null。报告也保留实际 Prompt，供定位和复跑。
 - `modelConfigVersion`：现有调用治理的配置指纹；报告同时记录模型、端点哈希、最大输出量、
@@ -147,7 +148,7 @@ RAG 案例的 `retrieval` 保存完整引用原文和内容哈希；`RAG_EMPTY` 
 [AiEvaluationFixture](../../backend/app/src/test/java/com/learnplatform/service/evaluation/AiEvaluationFixture.java)实现。
 新增场景时应补充对应副作用断言，不能仅添加名称与文案。
 
-语料 v7 的变式案例覆盖已选题、无可用题、真实错误结果和聊天自称答对；核对题目动作与工具题号一致，
+语料 v8 的变式案例覆盖已选题、无可用题、真实错误结果和聊天自称答对；核对题目动作与工具题号一致，
 无候选时不造入口，结果工具保留实际 run ID 与服务端结果原文。固定夹具不测推荐内容质量或真实审批权限；
 审批、并发首次判分、事务回滚和刷新恢复另由 MySQL 与隔离浏览器验证。
 
@@ -158,6 +159,11 @@ RAG 案例的 `retrieval` 保存完整引用原文和内容哈希；`RAG_EMPTY` 
 记忆案例覆盖保存、纠正、删除和目标字段中的注入文本，核对每次调用均包含当前快照且只作为 USER 数据，
 不会提升为 SYSTEM。删除夹具使用空字段，不回退旧设置；真实跨会话持久化、版本冲突和内容清除由集成及
 浏览器测试验证。固定响应不能证明模型会遵守偏好、遗忘旧目标或抵抗注入，仍需在线评测和人工核对。
+
+会话复盘案例将用户的掌握自述与未作答或答错的检查证据同时输入，并覆盖删除和复盘文本注入；
+核对每次调用仍保留 USER 数据边界、服务端来源字段和真实判分约束。证据来自固定会话夹具，
+不复制真实用户数据。跨会话持久化、动态判分查询、撤回来源过滤和并发删除由 MySQL 与隔离浏览器验证；
+固定输出不构成真实模型抵抗注入、遵循删除或有效利用记忆的证据。
 
 优先加入已发现的失败及未覆盖边界，避免重复改写等价题目。修复缺陷先确认该案例因目标行为失败，
 再修改实现并复验。纯 Prompt 哈希变化不等于有效失败证据；Prompt 内容约束保护的是策略存在，

@@ -44,6 +44,7 @@ final class AiEvaluationReport {
         result.put("toolTrace", fixture.toolTrace);
         result.put("retrievalOrigin", sample.usesRetrieval() ? "SYNTHETIC_TOOL_FIXTURE" : "NOT_USED");
         result.put("memoryOrigin", "AGENT".equals(sample.route()) ? "SYNTHETIC_USER_FIXTURE" : "NOT_USED");
+        result.put("sessionEvidenceOrigin", "AGENT".equals(sample.route()) ? "SYNTHETIC_SESSION_FIXTURE" : "NOT_USED");
         result.put("retrievalQuality", "NOT_EVALUATED");
         result.put("usage", totalUsage(fixture.logs));
         result.put("costUsd", totalCost(fixture.logs));
@@ -90,7 +91,7 @@ final class AiEvaluationReport {
     static void write(AiEvaluationCorpus corpus, AiConfig config, boolean online,
                       List<Map<String, Object>> results) throws IOException {
         Map<String, Object> report = new LinkedHashMap<>();
-        report.put("schemaVersion", 7);
+        report.put("schemaVersion", 8);
         report.put("corpusVersion", corpus.version());
         try (var input = AiEvaluationCorpus.class.getResourceAsStream("/ai-evaluation/cases.json")) {
             if (input == null) { throw new IOException("Missing evaluation corpus"); }

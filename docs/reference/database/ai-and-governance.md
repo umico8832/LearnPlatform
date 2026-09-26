@@ -47,6 +47,7 @@ Embedding 每个批次记录 `call_kind=EMBEDDING`，只按实际输入用量计
 | `tutor_agent_practice_attempt` | V101 | 推荐题的首次正式练习及结果快照 | 消息与练习记录各自唯一 |
 | `tutor_agent_plan_confirmation` | V102 | 用户对已保存计划的显式确认 | `message_id` 唯一；不投影为学习事实 |
 | `tutor_course_memory` | V103 | 用户显式保存的课程目标和讲解偏好 | `(user_id, course_id)` 主键；版本递增，删除清空内容 |
+| `tutor_session_note` | V104 | 用户显式保存的单个 Tutor 会话复盘 | `session_id` 主键；版本递增，删除清空文字 |
 
 一次用户提问中的多次 `ai_call_log` 共享 `tutor_agent_run.run_key` 对应的 `run_id`，但各自独立准入、计费和
 记录终止原因。调用审计仍不保存 Prompt 或响应正文；可恢复对话正文属于独立的用户功能数据，只在最终回答
@@ -85,6 +86,12 @@ V103 的 `tutor_course_memory` 与对话、学习事实分开保存；不自动�
 删除将两项内容设为 null 并递增版本，保留归属和版本防止旧请求重建已删除内容；不存在的空记忆无需建行。
 空库迁移、V102 升级、并发首次写入和删除后的过期请求由真实 MySQL 测试覆盖。
 公开契约和删除边界见[课程学习记忆](../api/learning-content.md#课程学习记忆)。
+
+V104 的 `tutor_session_note` 只保存 `session_id`、正 `revision`、可空的最多 500 字复盘文字及更新时间，
+不冗余用户或课程，也不复制课节、理解检查、变式或测评事实。读取时经原会话与当前用户课程归属关联；来源仍
+可用才投影当前理解检查状态和时间。删除将 `note` 置为 null 并递增版本，保留墓碑拒绝旧请求复活；未保存时的
+版本 0 删除不建行。写入采用 READ COMMITTED 短事务，锁定当前成员与原会话后按版本更新；撤回来源仍可查删
+文字，但不投影来源元数据或进入 Agent 上下文。公开行为见[Tutor 会话复盘](../api/learning-content.md#tutor-会话复盘)。
 
 ## 学习资产
 

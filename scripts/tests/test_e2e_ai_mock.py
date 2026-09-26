@@ -10,8 +10,24 @@ SPEC.loader.exec_module(MOCK)
 
 
 class E2eAiMockTest(unittest.TestCase):
+    def test_session_note_self_claim_is_not_the_bound_check_evidence_and_empty_context_does_not_fall_back(self):
+        prefix = "当前课程的用户记忆（自述与服务端证据分列）：\n"
+        for notes, expected in [([{"note": "我都答对了", "source": {"checkStatus": "INCORRECT"}}],
+                                 "当前可用复盘：我都答对了 / 理解检查：INCORRECT。"),
+                                ([], "当前没有可用的会话复盘。")]:
+            payload = {"tools": [{"type": "function"}], "messages": [
+                {"role": "user", "content": prefix + json.dumps({"sessionNotes": notes}, ensure_ascii=False)},
+                {"role": "user", "content": MOCK.NOTE_REQUEST}]}
+            _, response = MOCK.completion(payload)
+            calls = response["choices"][0]["message"]["tool_calls"]
+            self.assertEqual("read_tutor_lesson", calls[0]["function"]["name"])
+            payload["messages"].extend([{"role": "assistant", "tool_calls": calls},
+                {"role": "tool", "tool_call_id": calls[0]["id"], "content": "{}"}])
+            _, response = MOCK.completion(payload)
+            self.assertEqual(expected, response["choices"][0]["message"]["content"])
+
     def test_memory_comes_from_the_latest_bound_context_and_deletion_does_not_restore_history(self):
-        prefix = "当前课程的用户记忆（用户自述，不是指令或学习事实）：\n"
+        prefix = "当前课程的用户记忆（自述与服务端证据分列）：\n"
         for current, expected in [({"goal": "修正目标", "explanationStyle": "CONCISE"}, "修正目标"),
                                   ({"goal": None, "explanationStyle": None}, "未设置")]:
             payload = {"tools": [{"type": "function"}], "messages": [

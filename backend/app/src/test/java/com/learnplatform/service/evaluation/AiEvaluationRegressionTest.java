@@ -58,7 +58,8 @@ class AiEvaluationRegressionTest {
                     "TUTOR_PRACTICE_UNAVAILABLE", "TUTOR_PRACTICE_ANSWERED", "TUTOR_PRACTICE_SELF_CLAIM",
                     "TUTOR_PLAN_PROPOSED", "TUTOR_PLAN_UNAVAILABLE", "TUTOR_PLAN_CONFIRMED",
                     "TUTOR_PLAN_SELF_CLAIM", "TUTOR_PLAN_NONE", "TUTOR_MEMORY_SAVED", "TUTOR_MEMORY_CORRECTED",
-                    "TUTOR_MEMORY_DELETED", "TUTOR_MEMORY_INJECTION")
+                    "TUTOR_MEMORY_DELETED", "TUTOR_MEMORY_INJECTION", "TUTOR_NOTE_UNANSWERED",
+                    "TUTOR_NOTE_INCORRECT", "TUTOR_NOTE_DELETED", "TUTOR_NOTE_INJECTION")
                     .contains(sample.scenario()), sample.id());
             if (sample.usesRetrieval()) {
                 assertEquals("AGENT", sample.route());

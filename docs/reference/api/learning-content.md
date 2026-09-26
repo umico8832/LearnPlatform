@@ -23,6 +23,10 @@
 | `POST /api/my-courses/{courseId}/tutor-sessions` | 以已审查的课程知识点开始 Tutor 会话（必填查询参数 `knowledgePointId`） |
 | `GET /api/my-courses/{courseId}/tutor-sessions/{sessionKey}` | 恢复本人在该课程中的 Tutor 会话 |
 | `POST /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/check` | 提交该会话的理解检查 `{ "optionId": "..." }` |
+| `GET /api/my-courses/{courseId}/tutor-notes` | 分页读取本人已保存的会话复盘（查询参数 `page`，从 1 开始） |
+| `GET /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/note` | 读取本人该 Tutor 会话的复盘及可用的检查来源 |
+| `PUT /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/note` | 以 `{ "revision": 1, "note": "..." }` 显式保存或纠正复盘 |
+| `DELETE /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/note` | 必填查询参数 `revision`；删除本人该会话的复盘 |
 | `POST /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs` | 以 `{ "message": "..." }` 创建 Tutor Agent 运行并提问 |
 | `POST /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/{runKey}/messages` | 恢复运行并继续提问 |
 | `GET /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/{runKey}` | 读取本人运行状态与可见消息 |
@@ -230,6 +234,26 @@ PUT 请求同样包含三个字段：必填非负 `revision`，可空 `explanati
 每次新提问开始时重新读取一次，作为独立的用户数据消息提供给模型，与真实学习证据区分。
 纠正或删除影响后续开始的提问；已在运行的提问仍使用开始时的快照。删除记忆不会清除历史对话、学习记录，
 也不会撤回已发送给模型的请求。系统策略要求模型不从旧对话恢复已删除设置；真实模型遵循情况仍需在线评测。
+
+### Tutor 会话复盘
+
+会话复盘只接受认证用户本人已加入且仍启用、未删除的课程；会话键还必须属于该用户和路径课程。`PUT` 请求的
+`revision` 必须非负，`note` 为去除首尾空白后的非空文本，最多 500 字符。首次保存版本为 1；后续纠正和删除
+递增版本。版本过期返回业务错误 `1005`，客户端必须先重新读取，不能用旧页面覆盖纠正或已删除的文字。
+
+`GET /tutor-notes?page=1` 固定每页 5 条，返回 `{ "records", "total", "current", "size": 5 }`；列表排除
+内容已删除的墓碑。单会话 GET 在尚无复盘时返回 `revision: 0`、`note: null`，删除后保留递增版本且
+`note: null`，使旧版本不能复活。删除不会清理 Tutor 对话、理解检查或其他学习记录。
+
+每条响应还带有 `source`：已审查课节和知识点仍可用时，才返回会话键关联的 `knowledgePointId`、课节标题、
+会话开始时间，以及该会话当前真实理解检查的 `UNANSWERED`、`CORRECT` 或 `INCORRECT` 和作答时间。它不返回
+选项或答案，也不复制判分为复盘快照。课节或知识点撤回后，仍可读取和删除本人文字，但不能再纠正；`source.available`
+为 `false`，其余来源元数据均为 `null`。
+
+每个新的 Agent 提问开始时，运行时只读取本课程最近 5 条仍可用、未删除的复盘。`note` 始终是用户自述，
+`source` 才是服务端关联的本次理解检查事实；两者不能互相推断正确、完成或掌握。复盘当前只关联理解检查，
+不包含变式练习或测评证据，也不是自动生成的摘要或完整学习历史。纠正、删除或撤回仅影响之后开始的提问，
+不清理历史对话或撤回正在进行请求已经取得的快照。
 
 ### 受限课件
 

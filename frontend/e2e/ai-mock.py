@@ -13,6 +13,7 @@ HINT_REQUEST = "请给我本节理解检查的下一步提示，不要直接告�
 PLAN_REQUEST = "请建议本课程接下来的学习安排，由我确认是否采用。"
 PLAN_STATE_REQUEST = "E2E_READ_PLAN_STATE"
 MEMORY_REQUEST = "E2E_READ_MEMORY"
+NOTE_REQUEST = "E2E_READ_SESSION_NOTES"
 
 
 def current_memory(messages):
@@ -116,6 +117,11 @@ def completion(payload):
         memory = current_memory(messages)
         message["content"] = (f"当前保存的目标：{memory.get('goal') or '未设置'}；"
                               f"讲解偏好：{memory.get('explanationStyle') or '未设置'}。")
+    elif question == NOTE_REQUEST:
+        notes = current_memory(messages).get("sessionNotes", [])
+        message["content"] = ("当前可用复盘：" + "；".join(
+            f"{note['note']} / 理解检查：{note['source']['checkStatus']}" for note in notes
+        ) + "。") if notes else "当前没有可用的会话复盘。"
     elif question == PRACTICE_FOLLOW_UP:
         correct = result_from_current_turn(turn, "read_tutor_practice_result").get("correct")
         message["content"] = (f"服务端变式练习结果：{'回答正确' if correct else '回答不正确'}。"

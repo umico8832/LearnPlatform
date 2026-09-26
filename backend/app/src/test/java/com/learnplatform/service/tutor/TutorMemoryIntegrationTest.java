@@ -123,4 +123,8 @@ class TutorMemoryIntegrationTest extends IntegrationTestBase {
         assertEquals(new TutorMemoryVO(0, null, null), service.get(USER, COURSE));
         assertEquals(new TutorMemoryVO(0, null, null), service.delete(USER, COURSE, 0L));
     }
+
+    @Test void newQuestionsIncludeAnExplicitSessionNotesCollectionEvenWhenEmpty() {
+        assertTrue(service.promptContext(USER, COURSE).contains("\"sessionNotes\":[]"));
+    }
 }

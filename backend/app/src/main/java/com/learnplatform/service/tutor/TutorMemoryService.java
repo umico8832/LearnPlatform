@@ -2,6 +2,7 @@ package com.learnplatform.service.tutor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.TutorMemoryUpdateRequest;
@@ -19,10 +20,12 @@ public class TutorMemoryService {
     private static final Set<String> STYLES = Set.of("STEP_BY_STEP", "CONCISE", "EXAMPLES");
     private final TutorMemoryMapper memories;
     private final ObjectMapper json;
+    private final TutorSessionNoteService notes;
 
-    public TutorMemoryService(TutorMemoryMapper memories, ObjectMapper json) {
+    public TutorMemoryService(TutorMemoryMapper memories, ObjectMapper json, TutorSessionNoteService notes) {
         this.memories = memories;
         this.json = json;
+        this.notes = notes;
     }
 
     public TutorMemoryVO get(Long userId, Long courseId) {
@@ -32,7 +35,9 @@ public class TutorMemoryService {
 
     public String promptContext(Long userId, Long courseId) {
         try {
-            return json.writeValueAsString(get(userId, courseId));
+            ObjectNode context = json.valueToTree(get(userId, courseId));
+            context.set("sessionNotes", json.valueToTree(notes.forPrompt(userId, courseId)));
+            return json.writeValueAsString(context);
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Cannot serialize Tutor memory", exception);
         }
