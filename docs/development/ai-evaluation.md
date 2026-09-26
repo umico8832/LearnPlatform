@@ -73,10 +73,40 @@ AI_MEMORY_EVAL_ONLINE=true AI_TOOLS_SUPPORTED=true \
 token 和成本差值只是 `OBSERVED_ONLY`，不构成质量、个性化收益或成本优化结论；契约失败时差值为不完整。离线结果始终
 是 `NOT_EVALUATED`，在线结果初始为 `NOT_REVIEWED`。
 
-人工复核应逐个 `pairId` 阅读原文并记录结论：对比 `FULL_MEMORY/NO_MEMORY`、`FULL_MEMORY/PROFILE_ONLY` 和
-`FULL_MEMORY/NOTES_ONLY`，检查回答是否只在给定记忆可支持的范围内调整表达，是否尊重未作答或错误的真实检查来源，
-以及是否拒绝复盘中的注入。无记忆组不知道私人偏好或复盘不能被扣分。此复核不是盲审，应允许“平局”或“无法判断”；
-即使得到偏好差异，也不能声称真实学习效果、长期记忆质量或模型已遗忘历史对话。
+### 人工复核记录
+
+在仓库根目录为一次既有报告创建独立复核记录。`report`、`review` 和 `summary` 必须是三个不同路径；所有写入
+均拒绝覆盖已有文件。
+
+```bash
+report='backend/app/target/ai-evaluation/memory-ablation/offline/<experimentId>/report.json'
+review='backend/app/target/ai-evaluation/memory-ablation/offline/<experimentId>/review.json'
+summary='backend/app/target/ai-evaluation/memory-ablation/offline/<experimentId>/review-summary.json'
+
+python3 scripts/review-memory-evaluation.py init "$report" "$review" --reviewer 'reviewer-alias'
+# 人工填写 review.json 后：
+python3 scripts/review-memory-evaluation.py summarize "$report" "$review" --output "$summary"
+# 只接受所有需要人工判断的项目都已完成的记录：
+python3 scripts/review-memory-evaluation.py summarize "$report" "$review" --require-complete
+```
+
+将路径中的 `<experimentId>` 和示例审阅者别名替换为实际值；最后一个命令输出到终端，遇到未完成项目会以退出码 2 失败。
+模板初始所有结论为 `PENDING`，完成任一结论时填写带时区的
+ISO `reviewedAt`。模板绑定报告原始 bytes 的 SHA-256，以及实验、语料和夹具哈希；因此改写原始 `report` 后不能继续使用旧
+`review`。这些哈希只用于版本绑定，不证明报告内容真实或审阅者身份已签署。
+
+对每个 `pairId`，逐条 `manualCriteria` 索引填写 `criteria` 的结论、`rationale` 和
+`evidence: [{condition, pointer}]` 引用列表。可选结论为 `SATISFIED`、`NOT_SATISFIED` 或 `UNABLE_TO_JUDGE`。在线且成功的有效
+比较才有 `contrasts`：以 `FAVORS_FULL_MEMORY`、`FAVORS_COMPARATOR`、`NO_CLEAR_DIFFERENCE` 或
+`UNABLE_TO_JUDGE` 记录结论和理由，并同时引用 `FULL_MEMORY` 及其比较组的 `response` 或 `publicOutput`。
+证据指针必须按报告中实际的 pair/trial 数组索引写入；四组条件顺序会轮换。它只能指向同一 pair 内对应条件的
+`response`、`publicOutput`、`toolTrace` 或 `memoryContext`，不得跨 pair。
+
+离线报告、失败 pair、合成响应或 `EMPTY_MEMORY_CONTROL` 只保留 `criteria`，其 `contrasts` 为空且不可强填。
+汇总输出 `excludedPairs`、`failedCriteria`、待审计数，以及每种比较的 `eligible`、`reviewed` 和 `verdictCounts`；
+工具不替人评分。复核应检查回答是否仅在给定记忆支持的范围内调整表达、尊重未作答或错误的检查来源并拒绝复盘注入；
+无记忆组不知道私人偏好或复盘不能被扣分。它不是盲审，应允许平局或无法判断。重复 trial 不能算作独立学习者，
+`COMPLETE` 或 `HUMAN_REVIEWED` 也不表示教学改善、长期记忆质量或模型已经遗忘历史。
 
 ## 真实模型评测
 
