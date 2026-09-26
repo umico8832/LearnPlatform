@@ -17,6 +17,7 @@
 | `tutor_session` | 用户课程 Tutor 会话、学习证据聚合快照及首次检查结果 | `session_key` 唯一；会话归属用户、课程与知识点 |
 | `tutor_agent_run` | 可恢复的 Tutor Agent 运行与等待状态 | `run_key` 唯一；运行绑定用户与原 Tutor 会话 |
 | `tutor_agent_message` | Agent 成功轮次中的用户可见消息 | `(run_id, sequence_no)` 唯一；只保存 USER / ASSISTANT 正文 |
+| `tutor_agent_practice_attempt` | Agent 推荐题的首次正式练习与结果快照 | 消息与练习记录各自唯一；事务见[AI 数据](ai-and-governance.md) |
 | `course_stage_assessment` | 用户课程阶段测评会话、选题策略、知识点范围与汇总结果 | `(user_id, course_id, active_session_key)` 限制一个进行中会话；完成时活动键清空 |
 | `course_stage_assessment_question` | 测评题目、答案、解析、来源与知识点快照及用户作答 | 会话内原题和排序均唯一；提交前不通过 API 暴露答案快照 |
 

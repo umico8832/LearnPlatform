@@ -35,6 +35,19 @@
         >
           {{ checkResult ? '查看检查结果' : '开始理解检查' }}
         </el-button>
+        <TutorAgentPractice
+          v-for="action in (item.actions ?? []).filter(
+            (candidate) => item.role === 'ASSISTANT' && candidate.type === 'PRACTICE',
+          )"
+          :key="`practice-${item.sequence}-${action.type}`"
+          :course-id="courseId"
+          :session-key="sessionKey"
+          :run-key="run!.runKey"
+          :sequence="item.sequence"
+          :busy="!canContinueFromCheck"
+          :allow-follow-up="item.sequence === latestPracticeSequence"
+          @continue-practice="continueFromPractice"
+        />
       </article>
     </div>
 
@@ -50,27 +63,34 @@
     >
       {{ restoreFailed ? '重试恢复对话' : '刷新状态' }}
     </el-button>
+
     <p v-if="run?.status === 'FAILED'" class="agent-thinking">上次回答未完成，可重新发送问题；历史对话已保留。</p>
 
-    <el-button
-      v-if="!checkResult"
-      data-testid="agent-request-hint"
-      :loading="submitting"
-      :disabled="!canRequestHint"
-      @click="requestHint"
-    >
-      {{ hintLevel ? '再提示一步' : '给我一点提示' }}
-    </el-button>
+    <div class="agent-quick-actions">
+      <el-button data-testid="agent-request-practice" :disabled="!canContinueFromCheck" @click="requestPractice"
+        >练一道变式题</el-button
+      >
 
-    <el-button
-      v-if="checkResult"
-      data-testid="agent-follow-up-check"
-      :loading="submitting"
-      :disabled="!canContinueFromCheck"
-      @click="continueFromCheck"
-    >
-      请 Tutor 根据作答继续指导
-    </el-button>
+      <el-button
+        v-if="!checkResult"
+        data-testid="agent-request-hint"
+        :loading="submitting"
+        :disabled="!canRequestHint"
+        @click="requestHint"
+      >
+        {{ hintLevel ? '再提示一步' : '给我一点提示' }}
+      </el-button>
+
+      <el-button
+        v-if="checkResult"
+        data-testid="agent-follow-up-check"
+        :loading="submitting"
+        :disabled="!canContinueFromCheck"
+        @click="continueFromCheck"
+      >
+        请 Tutor 根据作答继续指导
+      </el-button>
+    </div>
 
     <div class="agent-composer">
       <label for="tutor-agent-question">你的问题</label>
@@ -107,6 +127,7 @@ import {
   type TutorAgentRunVO,
 } from '@/api/tutor'
 import { errorMessage } from '@/utils/errors'
+import TutorAgentPractice from './TutorAgentPractice.vue'
 
 const props = defineProps<{
   courseId: number
@@ -143,6 +164,16 @@ const hintLevel = computed(() => {
   return highest
 })
 const canRequestHint = computed(() => !props.checkResult && canContinueFromCheck.value && hintLevel.value < 3)
+const latestPracticeSequence = computed(() =>
+  Math.max(
+    0,
+    ...(run.value?.messages ?? [])
+      .filter(
+        (message) => message.role === 'ASSISTANT' && message.actions?.some((action) => action.type === 'PRACTICE'),
+      )
+      .map((message) => message.sequence),
+  ),
+)
 const storageKey = computed(() => `lp:tutor-agent-run:${props.courseId}:${props.sessionKey}`)
 const statusLabel = computed(() => {
   if (restoring.value) return '正在恢复对话'
@@ -166,6 +197,14 @@ async function continueFromCheck() {
 async function requestHint() {
   if (!canRequestHint.value) return
   await sendMessage('请给我本节理解检查的下一步提示，不要直接告诉我答案。', false)
+}
+async function requestPractice() {
+  if (!canContinueFromCheck.value) return
+  await sendMessage('请推荐一道本节已审查的变式题，让我自己作答。', false)
+}
+async function continueFromPractice() {
+  if (!canContinueFromCheck.value) return
+  await sendMessage('请根据我刚才变式练习的服务端结果，继续指导我。', false)
 }
 
 async function sendMessage(message: string, clearQuestion: boolean) {
@@ -346,6 +385,17 @@ onBeforeUnmount(() => {
   margin: var(--lp-space-3) 0 0;
   color: var(--lp-text-secondary);
   font-size: var(--lp-text-sm);
+}
+
+.agent-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lp-space-2);
+  margin-top: var(--lp-space-3);
+}
+
+.agent-quick-actions :deep(.el-button) {
+  margin: 0;
 }
 
 .agent-composer {

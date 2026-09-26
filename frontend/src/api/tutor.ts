@@ -1,5 +1,6 @@
 import { aiService } from '@/utils/request'
 import type { ApiResponse } from '@/types/api'
+import type { PracticeResultVO } from '@/api/practice'
 
 export interface TutorAgentMessageVO {
   sequence: number
@@ -9,7 +10,17 @@ export interface TutorAgentMessageVO {
   actions: TutorAgentActionVO[]
 }
 
-export type TutorAgentActionVO = { type: 'CHECK' } | { type: 'HINT'; level: 1 | 2 | 3 }
+export type TutorAgentActionVO =
+  { type: 'CHECK' } | { type: 'HINT'; level: 1 | 2 | 3 } | { type: 'PRACTICE'; questionId: number }
+export interface TutorAgentPracticeVO {
+  question: {
+    id: number
+    content: string
+    questionType: 'SINGLE_CHOICE'
+    options: { label: string; content: string }[]
+  }
+  result: PracticeResultVO | null
+}
 
 export interface TutorAgentRunVO {
   runKey: string
@@ -19,6 +30,29 @@ export interface TutorAgentRunVO {
 
 function agentPath(courseId: number, sessionKey: string) {
   return `/my-courses/${courseId}/tutor-sessions/${sessionKey}/agent-runs`
+}
+function practicePath(courseId: number, sessionKey: string, runKey: string, sequence: number) {
+  return `${agentPath(courseId, sessionKey)}/${runKey}/messages/${sequence}/practice`
+}
+export function getTutorAgentPractice(courseId: number, sessionKey: string, runKey: string, sequence: number) {
+  return aiService
+    .get<ApiResponse<TutorAgentPracticeVO>>(practicePath(courseId, sessionKey, runKey, sequence))
+    .then((response) => response.data)
+}
+export function submitTutorAgentPractice(
+  courseId: number,
+  sessionKey: string,
+  runKey: string,
+  sequence: number,
+  userAnswer: string,
+  answerTime?: number,
+) {
+  return aiService
+    .post<ApiResponse<TutorAgentPracticeVO>>(practicePath(courseId, sessionKey, runKey, sequence) + '/answer', {
+      userAnswer,
+      ...(answerTime === undefined ? {} : { answerTime }),
+    })
+    .then((response) => response.data)
 }
 
 export function startTutorAgentRun(courseId: number, sessionKey: string, message: string) {

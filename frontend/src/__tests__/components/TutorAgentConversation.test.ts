@@ -30,6 +30,12 @@ const stubs = {
     emits: ['update:modelValue'],
   },
   'el-alert': { template: '<div>{{ title }}</div>', props: ['title', 'type', 'closable', 'showIcon'] },
+  TutorAgentPractice: {
+    template:
+      '<button data-testid="practice-child" :data-sequence="sequence" :disabled="busy || !allowFollowUp" @click="$emit(\'continue-practice\')">练习后续指导</button>',
+    props: ['courseId', 'sessionKey', 'runKey', 'sequence', 'busy', 'allowFollowUp'],
+    emits: ['continue-practice'],
+  },
 }
 
 function mountAgent() {
@@ -155,6 +161,52 @@ describe('TutorAgentConversation', () => {
     await wrapper.get('[data-testid="agent-follow-up-check"]').trigger('click')
     await flushPromises()
     expect(mockStart).toHaveBeenCalledWith(10, 'session', '请根据我本节理解检查的实际作答，继续指导我。')
+  })
+
+  it('requests a reviewed variant exercise without accepting a client-selected question', async () => {
+    mockLatest.mockResolvedValueOnce({ data: { runKey: 'run', status: 'WAITING_USER', messages: [] } })
+    const wrapper = mountAgent()
+    await flushPromises()
+    await wrapper.get('[data-testid="agent-request-practice"]').trigger('click')
+    await flushPromises()
+    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'run', '请推荐一道本节已审查的变式题，让我自己作答。')
+  })
+
+  it('only lets the latest saved practice action request server-result follow-up', async () => {
+    mockLatest.mockResolvedValueOnce({
+      data: {
+        runKey: 'run',
+        status: 'WAITING_USER',
+        messages: [
+          {
+            sequence: 2,
+            role: 'ASSISTANT',
+            content: '先做第一题。',
+            createTime: null,
+            actions: [{ type: 'PRACTICE', questionId: 7 }],
+          },
+          {
+            sequence: 4,
+            role: 'ASSISTANT',
+            content: '再做第二题。',
+            createTime: null,
+            actions: [{ type: 'PRACTICE', questionId: 9 }],
+          },
+        ],
+      },
+    })
+    const wrapper = mountAgent()
+    await flushPromises()
+    const practices = wrapper.findAll('[data-testid="practice-child"]')
+    expect(practices).toHaveLength(2)
+    expect(practices[0].attributes('disabled')).toBeDefined()
+    expect(practices[1].attributes('disabled')).toBeUndefined()
+    await practices[0].trigger('click')
+    expect(mockResume).not.toHaveBeenCalled()
+    await practices[1].trigger('click')
+    await flushPromises()
+    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'run', '请根据我刚才变式练习的服务端结果，继续指导我。')
+    expect(mockResume).not.toHaveBeenCalledWith(10, 'session', 'run', expect.stringContaining('questionId'))
   })
 
   it('renders saved hint levels with CHECK, caps explicit requests at level three, and hides them after answering', async () => {

@@ -1,6 +1,6 @@
 # AI 固定评测
 
-评测覆盖试卷 AI 辅导、题目学习资产、结构化变式题和 Tutor Agent 工具循环、理解检查与分级提示动作，使用
+评测覆盖试卷 AI 辅导、题目学习资产、结构化变式题和 Tutor Agent 工具循环、理解检查、分级提示与已审查变式训练动作，使用
 [固定案例](../../backend/app/src/test/resources/ai-evaluation/cases.json)与现有 JUnit/Maven 测试体系。
 题目为人工编写的非隐私数据结构小样本，可根据题干逐步复算。测试中的模拟响应仅用于检查程序约束。
 
@@ -114,7 +114,7 @@ AI_RAG_EVAL_ONLINE=true ./mvnw -pl app -am \
 - `responseOrigin`：`SCRIPTED_FIXTURE` 或 `REAL_PROVIDER`。离线始终标记 `teachingQuality: NOT_EVALUATED`；
   在线始终标记 `NOT_REVIEWED`，不自动生成教学正确率。
 - `response` 保留模型原文，`publicOutput` 保留业务服务最终输出；Agent 输出为序列化的
-  `{ "content": "...", "actions": [...] }`，保留检查操作及提示等级，不从回复文本推断动作。来源附录由 Runtime 生成，
+  `{ "content": "...", "actions": [...] }`，保留检查操作、提示等级及变式题标识，不从回复文本推断动作。来源附录由 Runtime 生成，
   应与实际工具返回的版本和片段一致。附录表示本轮读取的资料，不保证回答每个结论都有证据支持。
 - `toolTrace` 保留固定案例中的 call ID、实际工具名、参数、返回内容及检索 run ID，供核对教学结论和来源忠实度。
   提示工具包含运行时补入的服务端等级及引导，与送入模型的 TOOL 消息一致；未进入后续模型调用的工具保留原始结果。
@@ -145,6 +145,10 @@ RAG 案例的 `retrieval` 保存完整引用原文和内容哈希；`RAG_EMPTY` 
 `PAPER` 使用服务端会话夹具；特定 `scenario` 的作答或权限条件由
 [AiEvaluationFixture](../../backend/app/src/test/java/com/learnplatform/service/evaluation/AiEvaluationFixture.java)实现。
 新增场景时应补充对应副作用断言，不能仅添加名称与文案。
+
+语料 v5 的变式案例覆盖已选题、无可用题、真实错误结果和聊天自称答对；核对题目动作与工具题号一致，
+无候选时不造入口，结果工具保留实际 run ID 与服务端结果原文。固定夹具不测推荐内容质量或真实审批权限；
+审批、并发首次判分、事务回滚和刷新恢复另由 MySQL 与隔离浏览器验证。
 
 优先加入已发现的失败及未覆盖边界，避免重复改写等价题目。修复缺陷先确认该案例因目标行为失败，
 再修改实现并复验。纯 Prompt 哈希变化不等于有效失败证据；Prompt 内容约束保护的是策略存在，

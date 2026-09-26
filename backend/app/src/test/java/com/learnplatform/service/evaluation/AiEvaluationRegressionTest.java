@@ -54,7 +54,8 @@ class AiEvaluationRegressionTest {
                     "OUTSIDE_SESSION", "FOREIGN_OWNER", "QUOTA", "UPSTREAM_ERROR", "EMPTY_STREAM",
                     "SELF_REVIEW", "LEARNING_EVIDENCE", "RAG_FOUND", "RAG_EMPTY", "RAG_INJECTION",
                     "TUTOR_CHECK_UNANSWERED", "TUTOR_CHECK_ANSWERED", "TUTOR_CHECK_SELF_CLAIM",
-                    "TUTOR_HINT_FIRST", "TUTOR_HINT_ANSWERED")
+                    "TUTOR_HINT_FIRST", "TUTOR_HINT_ANSWERED", "TUTOR_PRACTICE_FOUND",
+                    "TUTOR_PRACTICE_UNAVAILABLE", "TUTOR_PRACTICE_ANSWERED", "TUTOR_PRACTICE_SELF_CLAIM")
                     .contains(sample.scenario()), sample.id());
             if (sample.usesRetrieval()) {
                 assertEquals("AGENT", sample.route());
@@ -208,6 +209,28 @@ class AiEvaluationRegressionTest {
                         && hint.output().equals(message.content())));
         fixture.publicOutput = "{\"content\":\"wrong level\",\"actions\":[{\"type\":\"HINT\",\"level\":3}]}";
         assertTrue(fixture.check(false).contains("agent-hint-level"));
+    }
+
+    @Test
+    void practiceEvaluationRejectsForgedPublicQuestionAndUntrustedResultTrace() throws Exception {
+        var corpus = AiEvaluationCorpus.load();
+        var found = corpus.cases().stream().filter(item -> "TUTOR_PRACTICE_FOUND".equals(item.scenario()))
+                .findFirst().orElseThrow();
+        var fixture = new AiEvaluationFixture(corpus, found, CONFIG, null);
+        fixture.execute();
+        assertTrue(fixture.check(false).isEmpty(), () -> fixture.check(false).toString());
+        fixture.publicOutput = "{\"content\":\"练习\",\"actions\":[{\"type\":\"PRACTICE\",\"questionId\":52}]}";
+        assertTrue(fixture.check(false).contains("agent-practice-public-question-id"));
+
+        var answered = corpus.cases().stream().filter(item -> "TUTOR_PRACTICE_ANSWERED".equals(item.scenario()))
+                .findFirst().orElseThrow();
+        var answeredFixture = new AiEvaluationFixture(corpus, answered, CONFIG, null);
+        answeredFixture.execute();
+        var trace = answeredFixture.toolTrace.stream()
+                .filter(item -> "read_tutor_practice_result".equals(item.name())).findFirst().orElseThrow();
+        answeredFixture.toolTrace.set(answeredFixture.toolTrace.indexOf(trace), new AiEvaluationFixture.ToolObservation(
+                trace.callId(), trace.name(), trace.arguments(), trace.output(), java.util.UUID.randomUUID()));
+        assertTrue(answeredFixture.check(false).contains("agent-practice-result-trusted-run"));
     }
 
     @AfterAll

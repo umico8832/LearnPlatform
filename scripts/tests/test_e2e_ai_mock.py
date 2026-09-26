@@ -88,3 +88,32 @@ class E2eAiMockTest(unittest.TestCase):
         payload = {"tools": [{"type": "function"}], "messages": [{"role": "user", "content": MOCK.HINT_REQUEST}, {"role": "assistant", "tool_calls": [{"id": "lesson", "function": {"name": "read_tutor_lesson"}}]}, {"role": "tool", "tool_call_id": "lesson", "content": "{}"}, {"role": "assistant", "tool_calls": [{"id": "hint", "function": {"name": "request_tutor_hint"}}]}, {"role": "tool", "tool_call_id": "hint", "content": "{}"}]}
         _, response = MOCK.completion(payload)
         self.assertEqual("当前无法提供下一步提示。", response["choices"][0]["message"]["content"])
+
+    def test_variant_fixture_is_limited_to_the_named_generation_request(self):
+        _, response = MOCK.completion({"messages": [{"role": "system", "content": "questionContent"},
+                                                     {"role": "user", "content": MOCK.VARIANT_MARKER}]})
+        result = json.loads(response["choices"][0]["message"]["content"])
+        self.assertEqual("SINGLE_CHOICE", result["questionType"])
+        self.assertEqual("A", result["correctAnswer"])
+        self.assertEqual(4, len(result["options"]))
+
+    def test_practice_follow_up_requires_an_actual_current_result(self):
+        for outcome, expected in [({}, "服务端尚未记录"), ({"correct": False}, "服务端变式练习结果：回答不正确。")]:
+            payload = {"tools": [{"type": "function"}], "messages": [{"role": "user", "content": MOCK.PRACTICE_FOLLOW_UP}]}
+            for name, result in [("read_tutor_lesson", {}), ("read_tutor_practice_result", {"result": outcome})]:
+                _, response = MOCK.completion(payload)
+                calls = response["choices"][0]["message"]["tool_calls"]
+                self.assertEqual(name, calls[0]["function"]["name"])
+                payload["messages"].extend([{"role": "assistant", "tool_calls": calls},
+                    {"role": "tool", "tool_call_id": calls[0]["id"], "content": json.dumps(result)}])
+            _, response = MOCK.completion(payload)
+            self.assertIn(expected, response["choices"][0]["message"]["content"])
+
+    def test_practice_request_reads_lesson_before_recommendation(self):
+        payload = {"tools": [{"type": "function"}], "messages": [{"role": "user", "content": MOCK.PRACTICE_REQUEST}]}
+        _, response = MOCK.completion(payload)
+        calls = response["choices"][0]["message"]["tool_calls"]
+        self.assertEqual("read_tutor_lesson", calls[0]["function"]["name"])
+        payload["messages"].extend([{"role": "assistant", "tool_calls": calls}, {"role": "tool", "tool_call_id": calls[0]["id"], "content": "{}"}])
+        _, response = MOCK.completion(payload)
+        self.assertEqual("recommend_tutor_practice", response["choices"][0]["message"]["tool_calls"][0]["function"]["name"])

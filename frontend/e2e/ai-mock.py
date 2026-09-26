@@ -6,6 +6,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 CHECK_REQUEST = "E2E_REQUEST_CHECK"
 CHECK_FOLLOW_UP = "请根据我本节理解检查的实际作答，继续指导我。"
+PRACTICE_REQUEST = "请推荐一道本节已审查的变式题，让我自己作答。"
+PRACTICE_FOLLOW_UP = "请根据我刚才变式练习的服务端结果，继续指导我。"
+VARIANT_MARKER = "E2E_TUTOR_VARIANT"
 HINT_REQUEST = "请给我本节理解检查的下一步提示，不要直接告诉我答案。"
 
 
@@ -29,7 +32,7 @@ def tool_call(identifier, name):
     return {"id": identifier, "type": "function", "function": {"name": name, "arguments": "{}"}}
 
 
-def result_from_current_turn(messages):
+def result_from_current_turn(messages, tool_name="read_tutor_check_result"):
     calls = {
         call.get("id"): call.get("function", {}).get("name")
         for message in messages
@@ -37,7 +40,7 @@ def result_from_current_turn(messages):
         for call in message.get("tool_calls", [])
     }
     for message in reversed(messages):
-        if message.get("role") == "tool" and calls.get(message.get("tool_call_id")) == "read_tutor_check_result":
+        if message.get("role") == "tool" and calls.get(message.get("tool_call_id")) == tool_name:
             try:
                 return json.loads(message.get("content", "{}")).get("result", {})
             except (TypeError, ValueError):
@@ -77,6 +80,16 @@ def completion(payload):
     elif payload.get("tools") and question == HINT_REQUEST and "request_tutor_hint" not in calls:
         finish = "tool_calls"
         message["tool_calls"] = [tool_call("e2e-hint", "request_tutor_hint")]
+    elif payload.get("tools") and question == PRACTICE_REQUEST and "recommend_tutor_practice" not in calls:
+        finish = "tool_calls"
+        message["tool_calls"] = [tool_call("e2e-practice", "recommend_tutor_practice")]
+    elif payload.get("tools") and question == PRACTICE_FOLLOW_UP and "read_tutor_practice_result" not in calls:
+        finish = "tool_calls"
+        message["tool_calls"] = [tool_call("e2e-practice-result", "read_tutor_practice_result")]
+    elif question == PRACTICE_FOLLOW_UP:
+        correct = result_from_current_turn(turn, "read_tutor_practice_result").get("correct")
+        message["content"] = (f"服务端变式练习结果：{'回答正确' if correct else '回答不正确'}。"
+                              if isinstance(correct, bool) else "服务端尚未记录变式练习结果，请先自行作答。")
     elif question == HINT_REQUEST:
         level = hint_level_from_current_turn(turn)
         message["content"] = f"第 {level} 级提示已提供。" if level else "当前无法提供下一步提示。"
@@ -85,6 +98,14 @@ def completion(payload):
         message["content"] = f"服务端判分结果：{'回答正确' if correct else '回答不正确'}。"
     elif payload.get("tools"):
         message["content"] = "本节教学内容已读取。你可以结合步骤继续提问。"
+    elif VARIANT_MARKER in question and "questionContent" in messages[0].get("content", ""):
+        message["content"] = json.dumps({
+            "questionType": "SINGLE_CHOICE", "questionContent": "线性表中除首尾外，每个元素的直接前驱和后继有几个？",
+            "options": [{"label": "A", "content": "各一个"}, {"label": "B", "content": "可以有多个"},
+                        {"label": "C", "content": "都没有"}, {"label": "D", "content": "无法确定"}],
+            "correctAnswer": "A", "analysis": "线性表具有一对一的逻辑关系，中间元素各有一个直接前驱和后继。",
+            "difficulty": 1,
+        }, ensure_ascii=False)
     else:
         message["content"] = json.dumps({"answerLabels": ["A"], "analysis": "栈遵循后进先出的访问顺序。"}, ensure_ascii=False)
     return 200, {"choices": [{"finish_reason": finish, "message": message}],

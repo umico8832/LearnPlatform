@@ -11,13 +11,16 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag("integration")
 @Testcontainers
 class TutorAgentMigrationIntegrationTest {
     @Container private static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.0")
+            .withDatabaseName("learn_platform").withUsername("test").withPassword("test")
+            .withCommand("--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci");
+    @Container private static final MySQLContainer<?> V101_MYSQL = new MySQLContainer<>("mysql:8.0")
             .withDatabaseName("learn_platform").withUsername("test").withPassword("test")
             .withCommand("--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci");
 
@@ -58,6 +61,42 @@ class TutorAgentMigrationIntegrationTest {
         assertThrows(DataAccessException.class, () -> jdbc.update("""
                 INSERT INTO tutor_agent_message (run_id, sequence_no, role, content)
                 VALUES (1, 1, 'ASSISTANT', '重复序号')
+                """));
+    }
+
+    @Test void upgradesV100ToV101AndEnforcesAttemptUniqueness() {
+        Flyway.configure().dataSource(V101_MYSQL.getJdbcUrl(), "root", V101_MYSQL.getPassword())
+                .target("100").load().migrate();
+        JdbcTemplate jdbc = new JdbcTemplate(new DriverManagerDataSource(
+                V101_MYSQL.getJdbcUrl(), "root", V101_MYSQL.getPassword()));
+        jdbc.update("""
+                INSERT INTO tutor_agent_run (id,run_key,tutor_session_id,user_id,status,next_sequence)
+                VALUES (1,'69af726c-2a51-443f-a475-bab94530748a',30,7,'WAITING_USER',3)
+                """);
+        jdbc.update("""
+                INSERT INTO tutor_agent_message (id,run_id,sequence_no,role,content,actions_json)
+                VALUES (1,1,1,'ASSISTANT','已存动作','[{"type":"CHECK"}]'),
+                       (2,1,2,'ASSISTANT','旧消息',NULL)
+                """);
+
+        Flyway.configure().dataSource(V101_MYSQL.getJdbcUrl(), "root", V101_MYSQL.getPassword()).load().migrate();
+        assertEquals(1, tableCount(jdbc, "tutor_agent_practice_attempt"));
+        assertEquals(1, jdbc.queryForObject("""
+                SELECT JSON_CONTAINS(actions_json, JSON_OBJECT('type', 'CHECK'))
+                FROM tutor_agent_message WHERE id=1
+                """, Integer.class));
+        assertNull(jdbc.queryForObject("SELECT actions_json FROM tutor_agent_message WHERE id=2", String.class));
+        jdbc.update("""
+                INSERT INTO tutor_agent_practice_attempt (message_id, question_id, practice_record_id, question_json, result_json)
+                VALUES (1, 9, 10, '{"id":9,"content":"题干","questionType":"SINGLE_CHOICE","options":[]}', '{"recordId":10}')
+                """);
+        assertThrows(DataAccessException.class, () -> jdbc.update("""
+                INSERT INTO tutor_agent_practice_attempt (message_id, question_id, practice_record_id, question_json, result_json)
+                VALUES (1, 9, 11, '{"id":9,"content":"题干","questionType":"SINGLE_CHOICE","options":[]}', '{"recordId":11}')
+                """));
+        assertThrows(DataAccessException.class, () -> jdbc.update("""
+                INSERT INTO tutor_agent_practice_attempt (message_id, question_id, practice_record_id, question_json, result_json)
+                VALUES (2, 9, 10, '{"id":9,"content":"题干","questionType":"SINGLE_CHOICE","options":[]}', '{"recordId":10}')
                 """));
     }
 

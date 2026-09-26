@@ -18,11 +18,14 @@ public class TutorAgentToolService implements TutorAgentToolExecutor {
     private final TutorSessionService sessions;
     private final ObjectMapper json;
     private final KnowledgeSearchService knowledge;
+    private final TutorAgentPracticeService practice;
 
-    public TutorAgentToolService(TutorSessionService sessions, ObjectMapper json, KnowledgeSearchService knowledge) {
+    public TutorAgentToolService(TutorSessionService sessions, ObjectMapper json, KnowledgeSearchService knowledge,
+                                 TutorAgentPracticeService practice) {
         this.sessions = sessions;
         this.json = json;
         this.knowledge = knowledge;
+        this.practice = practice;
     }
 
     @Override
@@ -47,6 +50,8 @@ public class TutorAgentToolService implements TutorAgentToolExecutor {
             case "present_tutor_check" -> check(session, true);
             case "read_tutor_check_result" -> check(session, false);
             case "request_tutor_hint" -> hintAvailability(session);
+            case "recommend_tutor_practice" -> recommendPractice(userId, courseId, sessionKey);
+            case "read_tutor_practice_result" -> practiceResult(userId, courseId, sessionKey, runId);
             case "search_course_knowledge" -> search(userId, courseId, call.arguments(), runId);
             default -> throw new ModelException(ModelException.Code.PROTOCOL);
         };
@@ -90,6 +95,28 @@ public class TutorAgentToolService implements TutorAgentToolExecutor {
         } else {
             result.put("status", "ANSWERED");
             result.set("result", json.valueToTree(session.getCheckResult()));
+        }
+        return write(result);
+    }
+
+    private String recommendPractice(Long userId, Long courseId, String sessionKey) {
+        Long questionId = practice.recommend(userId, courseId, sessionKey);
+        ObjectNode result = json.createObjectNode();
+        result.put("status", questionId == null ? "UNAVAILABLE" : "AVAILABLE");
+        if (questionId != null) {
+            result.putObject("action").put("type", "PRACTICE").put("questionId", questionId);
+        }
+        return write(result);
+    }
+
+    private String practiceResult(Long userId, Long courseId, String sessionKey, UUID runId) {
+        if (runId == null) { throw new ModelException(ModelException.Code.PROTOCOL); }
+        var outcome = practice.latestResult(userId, courseId, sessionKey, runId.toString());
+        ObjectNode result = json.createObjectNode();
+        result.put("status", outcome == null ? "UNANSWERED" : "ANSWERED");
+        if (outcome != null) {
+            result.putObject("result").put("correct", outcome.getCorrect())
+                    .put("explanation", outcome.getAnalysis());
         }
         return write(result);
     }

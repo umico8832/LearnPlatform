@@ -33,6 +33,10 @@ public class TutorAgentRuntime {
             分配的提示等级与引导；只能依据公开 lesson/check 写提示，不得判断、排除选项或给出答案。
             若工具返回 ANSWERED，改用 read_tutor_check_result 核对真实反馈；若返回 LIMIT_REACHED，停止新增提示，
             建议用户回看本节材料或自行作答。提示等级只是展示进度，不代表用户学习或掌握了内容。
+            用户希望练习时调用 recommend_tutor_practice，只能推荐工具返回的已审查正式题；无可用题时
+            明确说明，不生成或捏造题目。推荐入口不代表开始或完成训练，必须由用户自己打开并提交答案。
+            用户请求变式练习反馈时调用 read_tutor_practice_result，依据当前对话实际保存的结果指导，
+            不把聊天中的答案、自评或推荐记录当作练习事实。这两个工具的参数也必须是空对象。
             回答应直接、简洁，并在回答后等待用户继续提问。
             """;
     private static final String EMPTY_OBJECT_SCHEMA = """
@@ -54,6 +58,10 @@ public class TutorAgentRuntime {
             new ModelRequest.Tool("read_tutor_check_result", "读取本节服务端首次判分结果；未作答时不返回解释。",
                     EMPTY_OBJECT_SCHEMA),
             new ModelRequest.Tool("request_tutor_hint", "请求本节下一层服务端控制的学习提示；只接受空对象。",
+                    EMPTY_OBJECT_SCHEMA),
+            new ModelRequest.Tool("recommend_tutor_practice", "推荐本节已审查的正式变式题，用户显式打开并作答。",
+                    EMPTY_OBJECT_SCHEMA),
+            new ModelRequest.Tool("read_tutor_practice_result", "读取当前对话最近变式练习的真实首次结果；未答不判分。",
                     EMPTY_OBJECT_SCHEMA));
 
     private final AiInvocationService invocation;
@@ -90,7 +98,8 @@ public class TutorAgentRuntime {
             messages.add(new ModelRequest.Message(ModelRequest.Role.ASSISTANT, result.text(),
                     result.toolCalls(), null));
             for (ModelRequest.ToolCall call : result.toolCalls()) {
-                String output = "search_course_knowledge".equals(call.name())
+                String output = ("search_course_knowledge".equals(call.name())
+                        || "read_tutor_practice_result".equals(call.name()))
                         ? tools.execute(userId, courseId, sessionKey, call, runId)
                         : tools.execute(userId, courseId, sessionKey, call);
                 if ("search_course_knowledge".equals(call.name())) {
@@ -101,6 +110,9 @@ public class TutorAgentRuntime {
                 }
                 if ("request_tutor_hint".equals(call.name())) {
                     output = hintOutput(output, nextHintLevel, actions);
+                }
+                if ("recommend_tutor_practice".equals(call.name())) {
+                    collectPracticeAction(output, actions);
                 }
                 messages.add(new ModelRequest.Message(ModelRequest.Role.TOOL, output, List.of(), call.id()));
                 readLesson |= "read_tutor_lesson".equals(call.name());
@@ -147,6 +159,25 @@ public class TutorAgentRuntime {
         return "{\"status\":\"AVAILABLE\",\"level\":" + nextHintLevel
                 + ",\"action\":{\"type\":\"HINT\",\"level\":" + nextHintLevel
                 + "},\"guidance\":\"" + TutorAgentHintPolicy.guidance(nextHintLevel) + "\"}";
+    }
+
+    private void collectPracticeAction(String output, List<TutorAgentActionVO> actions) {
+        var result = JsonContract.parse(output);
+        if (result.isObject() && result.size() == 1
+                && "UNAVAILABLE".equals(result.path("status").asText())) { return; }
+        var action = result.path("action");
+        var questionId = action.path("questionId");
+        if (!result.isObject() || result.size() != 2 || !"AVAILABLE".equals(result.path("status").asText())
+                || !action.isObject() || action.size() != 2 || !"PRACTICE".equals(action.path("type").asText())
+                || !questionId.isIntegralNumber() || !questionId.canConvertToLong() || questionId.asLong() <= 0) {
+            throw new ModelException(ModelException.Code.PROTOCOL);
+        }
+        TutorAgentActionVO practice = new TutorAgentActionVO("PRACTICE", null, questionId.asLong());
+        var existing = actions.stream().filter(item -> "PRACTICE".equals(item.type())).findFirst();
+        if (existing.isPresent() && !existing.get().equals(practice)) {
+            throw new ModelException(ModelException.Code.PROTOCOL);
+        }
+        if (existing.isEmpty()) { actions.add(practice); }
     }
 
     private void collectSources(String output, Map<String, String> sources) {
@@ -208,6 +239,9 @@ public class TutorAgentRuntime {
         if (hintLevel > 0) {
             note.append("\n本轮已提供第").append(hintLevel)
                     .append("层服务端控制提示；展示不代表用户已作答、学习或掌握。");
+        }
+        if (actions.stream().anyMatch(action -> "PRACTICE".equals(action.type()))) {
+            note.append("\n本轮已提供变式练习入口；推荐不代表用户开始或完成练习，结果以服务端记录为准。");
         }
         return note.toString();
     }

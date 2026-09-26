@@ -88,6 +88,14 @@ final class AiEvaluationProvider implements AiProvider {
             if (sample.scenario().startsWith("TUTOR_HINT_")) {
                 toolCalls.add(new ModelRequest.ToolCall("hint-1", "request_tutor_hint", "{}"));
             }
+            if ("TUTOR_PRACTICE_FOUND".equals(sample.scenario())
+                    || "TUTOR_PRACTICE_UNAVAILABLE".equals(sample.scenario())) {
+                toolCalls.add(new ModelRequest.ToolCall("practice-1", "recommend_tutor_practice", "{}"));
+            }
+            if ("TUTOR_PRACTICE_ANSWERED".equals(sample.scenario())
+                    || "TUTOR_PRACTICE_SELF_CLAIM".equals(sample.scenario())) {
+                toolCalls.add(new ModelRequest.ToolCall("practice-result-1", "read_tutor_practice_result", "{}"));
+            }
             return new ModelResult("", toolCalls, config.getModel(), null,
                     ModelResult.Finish.TOOL_CALLS, null);
         }

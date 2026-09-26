@@ -24,6 +24,8 @@
 | `POST /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/{runKey}/messages` | 恢复运行并继续提问 |
 | `GET /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/{runKey}` | 读取本人运行状态与可见消息 |
 | `GET /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/latest` | 找回本人该会话最近创建的运行；尚无运行时返回成功及空 data |
+| `GET /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/{runKey}/messages/{sequence}/practice` | 显式打开已保存推荐的变式练习，恢复本人首次结果 |
+| `POST /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/{runKey}/messages/{sequence}/practice/answer` | 提交 `{ "userAnswer": "B", "answerTime": 12 }`；返回首次判分，耗时秒数可省略 |
 
 课程和知识点的写接口位于[管理与治理 API](admin-governance.md#课程与知识点管理)。
 个人课程库关系以服务端认证用户为准，客户端不能指定或查询其他用户的 `userId`。
@@ -151,10 +153,26 @@ Agent 可以调用无参数的 `present_tutor_check`。未作答时，由服务�
 分配下一级：第 1 级提供概念方向，第 2 级引导推理步骤，第 3 级使用课内相似情境。提示正文由模型依据公开
 课节生成，不能选择或排除检查选项；真实提示质量仍需在线人工验收。
 成功回复保存 `actions: [{ "type": "HINT", "level": 1 }]`（级别范围 1–3），表示该回复提供了提示，
-不表示用户阅读、掌握或作答。每轮最多一个 HINT，可与 CHECK 共存；同轮重复调用不升级，失败不消费级别。
+不表示用户阅读、掌握或作答。每轮最多一个 HINT，可与 CHECK、PRACTICE 共存；同轮重复调用不升级，失败不消费级别。
 已达第 3 级返回 `LIMIT_REACHED`，已作答返回 `ANSWERED`，两者均不产生新的 HINT。
 页面从保存的动作恢复进度，逐次点击才请求提示；新运行重新计算其提示进度。模型和客户端均不能指定级别。
 生成提示期间用户在另一请求中完成作答时，完成写回前会再次校验，拒绝保存已过时的提示回复。
+
+用户请求变式练习时，`recommend_tutor_practice` 只从本节知识点关联、管理员已批准的正式单选题中选取，
+母题与发布题都必须公开、启用、未删除且同属本课程及当前知识点。按变式 ID 确定性选取首题，排除本人本会话
+已经完成的题；没有候选返回 `UNAVAILABLE`，不临时生成或跳过审核。成功回复保存
+`{ "type": "PRACTICE", "questionId": 51 }`，与 CHECK / HINT 各至多一个；推荐不写练习或学习事实。
+
+用户点击“开始变式练习”才调用上述 GET。题目由服务端根据本人原会话、运行及 ASSISTANT 消息定位，
+请求体不能指定题号。响应为 `{ "question": { "id", "content", "questionType", "options": [{ "label", "content" }] },
+"result": null }`；作答前不返回正确标记、答案或解析。POST 验证真实选项，复用正式练习判分，返回
+`result` 的 `recordId/questionId/userAnswer/correct/correctAnswer/analysis/score`；重复提交及刷新恢复首次题面、选项和结果；后续改题不重写本次作答快照。
+推荐、读取与提交都重新核对成员关系、课节审核以及母题和发布题的可用性；权限或审核撤回后拒绝访问。
+
+前端提交响应丢失时查询已保存结果，同步失败则阻止再次提交并提供同步入口；切换会话后丢弃迟到响应。
+只有用户再次点击指导才调用模型。无参数 `read_tutor_practice_result` 使用服务端绑定的 run ID，读取当前运行
+最新 PRACTICE 消息的首次结果（后面的普通聊天不影响选择）；尚无作答返回 `UNANSWERED`，不会回退到旧题结果。
+已答仅向模型提供真实正误及解析，不采信聊天自述。页面只为最新推荐提供该指导入口。
 
 运行状态为 `RUNNING`、`WAITING_USER` 或 `FAILED`。成功回答后停在 `WAITING_USER`，下一条消息领取同一运行；
 同一运行并发提问会被拒绝，失败运行可以重试。每次执行最多保留 10 分钟的领取租约；

@@ -7,6 +7,7 @@ import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.TutorSessionVO;
+import com.learnplatform.dto.PracticeResultVO;
 import com.learnplatform.dto.TutorCheckResultVO;
 import com.learnplatform.dto.TutorLearningContextVO;
 import com.learnplatform.service.KnowledgeSearchService;
@@ -30,11 +31,12 @@ import static org.mockito.Mockito.when;
 class TutorAgentToolServiceTest {
     private final TutorSessionService sessions = mock(TutorSessionService.class);
     private final KnowledgeSearchService knowledge = mock(KnowledgeSearchService.class);
+    private final TutorAgentPracticeService practice = mock(TutorAgentPracticeService.class);
     private final ObjectMapper json = new ObjectMapper();
     private TutorAgentToolService tools;
 
     @BeforeEach void setUp() {
-        tools = new TutorAgentToolService(sessions, json, knowledge);
+        tools = new TutorAgentToolService(sessions, json, knowledge, practice);
     }
 
     @Test void returnsOnlyReviewedPublicLessonFields() throws Exception {
@@ -140,11 +142,43 @@ class TutorAgentToolServiceTest {
     }
 
     @Test void rejectsFabricatedAnswersAndResourceArgumentsForTeachingTools() {
-        for (String name : List.of("present_tutor_check", "read_tutor_check_result", "request_tutor_hint")) {
+        for (String name : List.of("present_tutor_check", "read_tutor_check_result", "request_tutor_hint",
+                "recommend_tutor_practice", "read_tutor_practice_result")) {
             assertEquals(ModelException.Code.SCHEMA, assertThrows(ModelException.class,
                     () -> tools.execute(7L, 10L, "session", new ModelRequest.ToolCall("action", name,
                             "{\"optionId\":\"RIGHT\",\"correct\":true}"))).code());
         }
+    }
+
+    @Test void returnsOnlyAServerSelectedPracticeActionOrExplicitUnavailability() throws Exception {
+        when(sessions.get(7L, 10L, "session")).thenReturn(session());
+        var call = new ModelRequest.ToolCall("practice", "recommend_tutor_practice", "{}");
+        when(practice.recommend(7L, 10L, "session")).thenReturn(null);
+        assertEquals("{\"status\":\"UNAVAILABLE\"}", tools.execute(7L, 10L, "session", call));
+        when(practice.recommend(7L, 10L, "session")).thenReturn(51L);
+        var result = json.readTree(tools.execute(7L, 10L, "session", call));
+        assertEquals(51, result.path("action").path("questionId").asLong());
+        assertEquals("PRACTICE", result.path("action").path("type").asText());
+        assertEquals(2, result.size());
+    }
+
+    @Test void bindsPracticeFeedbackToRunAndOnlyExposesTheSavedOutcome() throws Exception {
+        when(sessions.get(7L, 10L, "session")).thenReturn(session());
+        UUID runId = UUID.randomUUID();
+        var call = new ModelRequest.ToolCall("outcome", "read_tutor_practice_result", "{}");
+        assertThrows(ModelException.class, () -> tools.execute(7L, 10L, "session", call));
+        assertEquals("{\"status\":\"UNANSWERED\"}", tools.execute(7L, 10L, "session", call, runId));
+        var outcome = new PracticeResultVO();
+        outcome.setCorrect(false);
+        outcome.setAnalysis("服务端解析");
+        outcome.setUserAnswer("B");
+        outcome.setCorrectAnswer("A");
+        when(practice.latestResult(7L, 10L, "session", runId.toString())).thenReturn(outcome);
+        var result = json.readTree(tools.execute(7L, 10L, "session", call, runId));
+        assertEquals("ANSWERED", result.path("status").asText());
+        assertFalse(result.path("result").path("correct").asBoolean());
+        assertEquals("服务端解析", result.path("result").path("explanation").asText());
+        assertEquals(2, result.path("result").size());
     }
 
     private TutorSessionVO session() {

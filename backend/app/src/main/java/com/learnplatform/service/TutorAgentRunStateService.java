@@ -208,7 +208,7 @@ public class TutorAgentRunStateService {
     }
 
     private void validateActions(String role, List<TutorAgentActionVO> actions) {
-        if ((!"ASSISTANT".equals(role) && !actions.isEmpty()) || actions.size() > 2
+        if ((!"ASSISTANT".equals(role) && !actions.isEmpty()) || actions.size() > 3
                 || actions.stream().map(TutorAgentActionVO::type).distinct().count() != actions.size()) {
             throw new IllegalStateException("Tutor 教学动作与消息不匹配");
         }

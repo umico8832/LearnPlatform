@@ -64,7 +64,8 @@ class TutorAgentRuntimeTest {
         assertEquals("tutor_agent", contexts.getValue().function());
         ModelRequest resumed = requests.getAllValues().get(1);
         assertEquals(List.of("read_tutor_lesson", "read_learning_evidence",
-                        "present_tutor_check", "read_tutor_check_result", "request_tutor_hint"),
+                        "present_tutor_check", "read_tutor_check_result", "request_tutor_hint",
+                        "recommend_tutor_practice", "read_tutor_practice_result"),
                 resumed.tools().stream().map(ModelRequest.Tool::name).toList());
         assertEquals(ModelRequest.Role.TOOL, resumed.messages().get(resumed.messages().size() - 1).role());
         assertEquals("call-1", resumed.messages().get(resumed.messages().size() - 1).toolCallId());
@@ -115,7 +116,7 @@ class TutorAgentRuntimeTest {
         assertEquals("解释\n\n本轮检索资料：\n- 栈（版本 v1，片段 stack-core）", answer.content());
         ArgumentCaptor<ModelRequest> requests = ArgumentCaptor.forClass(ModelRequest.class);
         verify(invocation, times(2)).generate(any(), requests.capture(), any(), any());
-        assertEquals(6, requests.getValue().tools().size());
+        assertEquals(8, requests.getValue().tools().size());
         verify(tools).execute(7L, 10L, "session", search, runId);
     }
 
@@ -249,6 +250,62 @@ class TutorAgentRuntimeTest {
                         ModelResult.Finish.STOP, null));
         when(tools.execute(7L, 10L, "session", lesson)).thenReturn("{}");
         assertEquals(List.of(), runtime.respond(7L, 10L, "session", UUID.randomUUID(), List.of(), "检查").actions());
+    }
+
+    @Test void offersOnlyThePracticeQuestionSelectedByTheServer() {
+        var lesson = new ModelRequest.ToolCall("lesson", "read_tutor_lesson", "{}");
+        var practice = new ModelRequest.ToolCall("practice", "recommend_tutor_practice", "{}");
+        when(invocation.generate(any(), any(), any(), any()))
+                .thenReturn(new ModelResult(null, List.of(lesson, practice), "test", "r1",
+                        ModelResult.Finish.TOOL_CALLS, null))
+                .thenReturn(new ModelResult("请打开练习并自行作答。", List.of(), "test", "r2",
+                        ModelResult.Finish.STOP, null));
+        when(tools.execute(7L, 10L, "session", lesson)).thenReturn("{}");
+        when(tools.execute(7L, 10L, "session", practice))
+                .thenReturn("{\"status\":\"AVAILABLE\",\"action\":{\"type\":\"PRACTICE\",\"questionId\":51}}");
+        var answer = runtime.respond(7L, 10L, "session", UUID.randomUUID(), List.of(), "想练一题");
+        assertEquals(List.of(new TutorAgentActionVO("PRACTICE", null, 51L)), answer.actions());
+    }
+
+    @Test void unavailablePracticeDoesNotCreateAnAction() {
+        practiceResponse("{\"status\":\"UNAVAILABLE\"}");
+        assertEquals(List.of(), runtime.respond(7L, 10L, "session", UUID.randomUUID(), List.of(), "练习").actions());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "{\"status\":\"AVAILABLE\",\"action\":{\"type\":\"PRACTICE\",\"questionId\":0}}",
+        "{\"status\":\"AVAILABLE\",\"action\":{\"type\":\"PRACTICE\",\"questionId\":1.5}}",
+        "{\"status\":\"AVAILABLE\",\"action\":{\"type\":\"PRACTICE\",\"questionId\":\"51\"}}",
+        "{\"status\":\"UNAVAILABLE\",\"action\":{\"type\":\"PRACTICE\",\"questionId\":51}}"
+    })
+    void rejectsMalformedPracticeSelection(String output) {
+        practiceResponse(output);
+        assertEquals(ModelException.Code.PROTOCOL, assertThrows(ModelException.class,
+                () -> runtime.respond(7L, 10L, "session", UUID.randomUUID(), List.of(), "练习")).code());
+    }
+
+    @Test void readsPracticeOutcomeWithTheTrustedRunId() {
+        UUID runId = UUID.randomUUID();
+        var lesson = new ModelRequest.ToolCall("lesson", "read_tutor_lesson", "{}");
+        var outcome = new ModelRequest.ToolCall("result", "read_tutor_practice_result", "{}");
+        when(invocation.generate(any(), any(), any(), any()))
+                .thenReturn(new ModelResult(null, List.of(lesson, outcome), "test", "r1", ModelResult.Finish.TOOL_CALLS, null))
+                .thenReturn(new ModelResult("请复习这一概念。", List.of(), "test", "r2", ModelResult.Finish.STOP, null));
+        when(tools.execute(7L, 10L, "session", lesson)).thenReturn("{}");
+        when(tools.execute(7L, 10L, "session", outcome, runId)).thenReturn("{\"status\":\"ANSWERED\",\"result\":{\"correct\":false}}");
+        assertEquals(List.of(), runtime.respond(7L, 10L, "session", runId, List.of(), "继续").actions());
+        verify(tools).execute(7L, 10L, "session", outcome, runId);
+    }
+
+    private void practiceResponse(String output) {
+        var lesson = new ModelRequest.ToolCall("lesson", "read_tutor_lesson", "{}");
+        var practice = new ModelRequest.ToolCall("practice", "recommend_tutor_practice", "{}");
+        when(invocation.generate(any(), any(), any(), any()))
+                .thenReturn(new ModelResult(null, List.of(lesson, practice), "test", "r1", ModelResult.Finish.TOOL_CALLS, null))
+                .thenReturn(new ModelResult("请自行练习。", List.of(), "test", "r2", ModelResult.Finish.STOP, null));
+        when(tools.execute(7L, 10L, "session", lesson)).thenReturn("{}");
+        when(tools.execute(7L, 10L, "session", practice)).thenReturn(output);
     }
 
     @Test void restoresTheActionBoundaryInHistoryWithoutClaimingTheUserAnswered() {
