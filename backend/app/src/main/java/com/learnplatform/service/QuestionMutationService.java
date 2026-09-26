@@ -18,6 +18,7 @@ import com.learnplatform.mapper.QuestionOptionMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class QuestionMutationService {
@@ -48,10 +49,7 @@ public class QuestionMutationService {
 
     public Long create(QuestionCreateRequest request, Long createBy,
                        String sourceType, String sourceReference, Long originQuestionId) {
-        Course course = courseMapper.selectById(request.getCourseId());
-        if (course == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "课程不存在");
-        }
+        validateReferences(request.getCourseId(), request.getKnowledgePointIds());
         Question question = new Question();
         question.setContent(request.getContent());
         question.setQuestionType(request.getQuestionType());
@@ -80,6 +78,12 @@ public class QuestionMutationService {
     public void update(Long id, QuestionCreateRequest request, Long operatorId) {
         Question question = findPublicQuestion(id);
         ensureNotUsedByPublishedPaper(id);
+        Long courseId = request.getCourseId() != null ? request.getCourseId() : question.getCourseId();
+        List<Long> pointIds = request.getKnowledgePointIds() != null ? request.getKnowledgePointIds()
+                : questionKnowledgePointMapper.selectList(new LambdaQueryWrapper<QuestionKnowledgePoint>()
+                        .eq(QuestionKnowledgePoint::getQuestionId, id)).stream()
+                        .map(QuestionKnowledgePoint::getKnowledgePointId).toList();
+        validateReferences(courseId, pointIds);
         String snapshotBefore = questionVersionService.buildSnapshotJson(question);
         if (request.getContent() != null) {
             question.setContent(request.getContent());
@@ -153,14 +157,26 @@ public class QuestionMutationService {
                     .eq(QuestionKnowledgePoint::getQuestionId, questionId));
         }
         for (Long knowledgePointId : request.getKnowledgePointIds()) {
-            KnowledgePoint knowledgePoint = knowledgePointMapper.selectById(knowledgePointId);
-            if (knowledgePoint == null) {
-                throw new BusinessException(ResultCode.NOT_FOUND, "知识点不存在: " + knowledgePointId);
-            }
             QuestionKnowledgePoint relation = new QuestionKnowledgePoint();
             relation.setQuestionId(questionId);
             relation.setKnowledgePointId(knowledgePointId);
             questionKnowledgePointMapper.insert(relation);
+        }
+    }
+
+    private void validateReferences(Long courseId, List<Long> pointIds) {
+        Course course = courseId == null ? null : courseMapper.selectById(courseId);
+        if (course == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "课程不存在");
+        }
+        if (pointIds == null) {
+            return;
+        }
+        for (Long pointId : pointIds) {
+            KnowledgePoint point = pointId == null ? null : knowledgePointMapper.selectById(pointId);
+            if (point == null || !courseId.equals(point.getCourseId())) {
+                throw new BusinessException(ResultCode.VALIDATION_ERROR, "知识点不存在或不属于题目课程");
+            }
         }
     }
 

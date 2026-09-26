@@ -88,6 +88,9 @@
 | `POST /api/admin/questions/import-markdown` | 导入 Markdown 题目 |
 | `GET /api/admin/questions/template-markdown` | 下载 Markdown 模板 |
 
+创建和修改正式题目时，所属课程必须存在，全部知识点必须属于该课程。更新未提供知识点列表时保留
+原关联并重新校验；换课程时须同时替换或明确清空不再属于该课程的关联，非法引用在写入前拒绝。
+
 ## 投稿审核
 
 | 接口 | 说明 |
