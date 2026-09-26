@@ -85,6 +85,9 @@ final class AiEvaluationProvider implements AiProvider {
                     || "TUTOR_CHECK_SELF_CLAIM".equals(sample.scenario())) {
                 toolCalls.add(new ModelRequest.ToolCall("check-result-1", "read_tutor_check_result", "{}"));
             }
+            if (sample.scenario().startsWith("TUTOR_HINT_")) {
+                toolCalls.add(new ModelRequest.ToolCall("hint-1", "request_tutor_hint", "{}"));
+            }
             return new ModelResult("", toolCalls, config.getModel(), null,
                     ModelResult.Finish.TOOL_CALLS, null);
         }

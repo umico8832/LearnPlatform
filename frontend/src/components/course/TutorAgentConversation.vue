@@ -18,6 +18,15 @@
       >
         <span>{{ item.role === 'USER' ? '你' : 'Tutor' }}</span>
         <p>{{ item.content }}</p>
+        <span
+          v-for="action in (item.role === 'ASSISTANT' ? (item.actions ?? []) : []).filter(
+            (candidate) => candidate.type === 'HINT',
+          )"
+          :key="action.type + action.level"
+          class="agent-action-marker"
+        >
+          第 {{ action.level }} 级提示
+        </span>
         <el-button
           v-if="item.role === 'ASSISTANT' && (item.actions ?? []).some((action) => action.type === 'CHECK')"
           data-testid="agent-request-check"
@@ -42,6 +51,16 @@
       {{ restoreFailed ? '重试恢复对话' : '刷新状态' }}
     </el-button>
     <p v-if="run?.status === 'FAILED'" class="agent-thinking">上次回答未完成，可重新发送问题；历史对话已保留。</p>
+
+    <el-button
+      v-if="!checkResult"
+      data-testid="agent-request-hint"
+      :loading="submitting"
+      :disabled="!canRequestHint"
+      @click="requestHint"
+    >
+      {{ hintLevel ? '再提示一步' : '给我一点提示' }}
+    </el-button>
 
     <el-button
       v-if="checkResult"
@@ -113,6 +132,17 @@ const canSend = computed(
 const canContinueFromCheck = computed(
   () => !submitting.value && !restoring.value && !restoreFailed.value && run.value?.status !== 'RUNNING',
 )
+const hintLevel = computed(() => {
+  let highest = 0
+  for (const message of run.value?.messages ?? []) {
+    if (message.role !== 'ASSISTANT') continue
+    for (const action of message.actions ?? []) {
+      if (action.type === 'HINT') highest = Math.max(highest, action.level)
+    }
+  }
+  return highest
+})
+const canRequestHint = computed(() => !props.checkResult && canContinueFromCheck.value && hintLevel.value < 3)
 const storageKey = computed(() => `lp:tutor-agent-run:${props.courseId}:${props.sessionKey}`)
 const statusLabel = computed(() => {
   if (restoring.value) return '正在恢复对话'
@@ -131,6 +161,11 @@ async function send() {
 async function continueFromCheck() {
   if (!canContinueFromCheck.value) return
   await sendMessage('请根据我本节理解检查的实际作答，继续指导我。', false)
+}
+
+async function requestHint() {
+  if (!canRequestHint.value) return
+  await sendMessage('请给我本节理解检查的下一步提示，不要直接告诉我答案。', false)
 }
 
 async function sendMessage(message: string, clearQuestion: boolean) {
@@ -297,6 +332,14 @@ onBeforeUnmount(() => {
 
 .agent-check-action {
   margin-top: var(--lp-space-2);
+}
+
+.agent-action-marker {
+  display: inline-block;
+  margin-top: var(--lp-space-2);
+  color: var(--lp-primary);
+  font-size: var(--lp-text-xs);
+  font-weight: var(--lp-weight-semibold);
 }
 
 .agent-thinking {

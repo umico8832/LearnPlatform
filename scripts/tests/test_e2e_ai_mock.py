@@ -72,3 +72,19 @@ class E2eAiMockTest(unittest.TestCase):
         ])
         _, response = MOCK.completion(payload)
         self.assertEqual("服务端判分结果：回答不正确。", response["choices"][0]["message"]["content"])
+
+    def test_hint_uses_the_tool_returned_level(self):
+        payload = {"tools": [{"type": "function"}], "messages": [{"role": "user", "content": MOCK.HINT_REQUEST}]}
+        _, response = MOCK.completion(payload)
+        self.assertEqual("read_tutor_lesson", response["choices"][0]["message"]["tool_calls"][0]["function"]["name"])
+        payload["messages"].extend([{"role": "assistant", "tool_calls": response["choices"][0]["message"]["tool_calls"]}, {"role": "tool", "tool_call_id": "e2e-lesson", "content": "{}"}])
+        _, response = MOCK.completion(payload)
+        self.assertEqual("request_tutor_hint", response["choices"][0]["message"]["tool_calls"][0]["function"]["name"])
+        payload["messages"].extend([{"role": "assistant", "tool_calls": response["choices"][0]["message"]["tool_calls"]}, {"role": "tool", "tool_call_id": "e2e-hint", "content": '{"level":2}'}])
+        _, response = MOCK.completion(payload)
+        self.assertEqual("第 2 级提示已提供。", response["choices"][0]["message"]["content"])
+
+    def test_hint_without_a_tool_level_does_not_claim_a_level(self):
+        payload = {"tools": [{"type": "function"}], "messages": [{"role": "user", "content": MOCK.HINT_REQUEST}, {"role": "assistant", "tool_calls": [{"id": "lesson", "function": {"name": "read_tutor_lesson"}}]}, {"role": "tool", "tool_call_id": "lesson", "content": "{}"}, {"role": "assistant", "tool_calls": [{"id": "hint", "function": {"name": "request_tutor_hint"}}]}, {"role": "tool", "tool_call_id": "hint", "content": "{}"}]}
+        _, response = MOCK.completion(payload)
+        self.assertEqual("当前无法提供下一步提示。", response["choices"][0]["message"]["content"])

@@ -53,7 +53,8 @@ class AiEvaluationRegressionTest {
             assertTrue(Set.of("NORMAL", "CORRECT_ANSWER", "ANSWER_INJECTION", "UNANSWERED",
                     "OUTSIDE_SESSION", "FOREIGN_OWNER", "QUOTA", "UPSTREAM_ERROR", "EMPTY_STREAM",
                     "SELF_REVIEW", "LEARNING_EVIDENCE", "RAG_FOUND", "RAG_EMPTY", "RAG_INJECTION",
-                    "TUTOR_CHECK_UNANSWERED", "TUTOR_CHECK_ANSWERED", "TUTOR_CHECK_SELF_CLAIM")
+                    "TUTOR_CHECK_UNANSWERED", "TUTOR_CHECK_ANSWERED", "TUTOR_CHECK_SELF_CLAIM",
+                    "TUTOR_HINT_FIRST", "TUTOR_HINT_ANSWERED")
                     .contains(sample.scenario()), sample.id());
             if (sample.usesRetrieval()) {
                 assertEquals("AGENT", sample.route());
@@ -113,7 +114,7 @@ class AiEvaluationRegressionTest {
         int position = fixture.toolTrace.size() - 1;
         var trace = fixture.toolTrace.get(position);
         fixture.toolTrace.set(position, new AiEvaluationFixture.ToolObservation(
-                trace.name(), trace.arguments(), "unseen-tool-output", java.util.UUID.randomUUID()));
+                trace.callId(), trace.name(), trace.arguments(), "unseen-tool-output", java.util.UUID.randomUUID()));
         assertTrue(fixture.check(false).contains("retrieval-stable-run-id"));
         assertTrue(fixture.check(false).contains("retrieval-tool-context"));
         fixture.agentTools.remove("search_course_knowledge");
@@ -188,6 +189,25 @@ class AiEvaluationRegressionTest {
             assertTrue(fixture.check(false).isEmpty(), () -> fixture.check(false).toString());
             assertTrue(fixture.publicOutput.contains("\"content\"") && fixture.publicOutput.contains("\"actions\""));
         }
+    }
+
+    @Test
+    void hintEvaluationChecksTheServerLevelAndKeepsTheEffectiveToolOutput() throws Exception {
+        var corpus = AiEvaluationCorpus.load();
+        var sample = corpus.cases().stream().filter(item -> "TUTOR_HINT_FIRST".equals(item.scenario()))
+                .findFirst().orElseThrow();
+        var fixture = new AiEvaluationFixture(corpus, sample, CONFIG, null);
+        fixture.execute();
+        assertTrue(fixture.check(false).isEmpty(), () -> fixture.check(false).toString());
+        var hint = fixture.toolTrace.stream().filter(trace -> "request_tutor_hint".equals(trace.name()))
+                .findFirst().orElseThrow();
+        assertEquals("hint-1", hint.callId());
+        assertTrue(hint.output().contains("\"level\":1"));
+        assertTrue(fixture.provider.requests.stream().flatMap(request -> request.messages().stream())
+                .anyMatch(message -> hint.callId().equals(message.toolCallId())
+                        && hint.output().equals(message.content())));
+        fixture.publicOutput = "{\"content\":\"wrong level\",\"actions\":[{\"type\":\"HINT\",\"level\":3}]}";
+        assertTrue(fixture.check(false).contains("agent-hint-level"));
     }
 
     @AfterAll

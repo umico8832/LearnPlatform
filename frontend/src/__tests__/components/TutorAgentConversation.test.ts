@@ -93,7 +93,13 @@ describe('TutorAgentConversation', () => {
         runKey: 'run',
         status: 'WAITING_USER',
         messages: [
-          { sequence: 1, role: 'USER', content: '我准备好了', createTime: null, actions: [{ type: 'CHECK' }] },
+          {
+            sequence: 1,
+            role: 'USER',
+            content: '我准备好了',
+            createTime: null,
+            actions: [{ type: 'CHECK' }, { type: 'HINT', level: 1 }],
+          },
           {
             sequence: 2,
             role: 'ASSISTANT',
@@ -108,6 +114,7 @@ describe('TutorAgentConversation', () => {
     await flushPromises()
 
     expect(wrapper.findAll('[data-testid="agent-request-check"]')).toHaveLength(1)
+    expect(wrapper.text()).not.toContain('第 1 级提示')
     await wrapper.get('[data-testid="agent-request-check"]').trigger('click')
     expect(wrapper.emitted('request-check')).toEqual([[]])
   })
@@ -148,6 +155,121 @@ describe('TutorAgentConversation', () => {
     await wrapper.get('[data-testid="agent-follow-up-check"]').trigger('click')
     await flushPromises()
     expect(mockStart).toHaveBeenCalledWith(10, 'session', '请根据我本节理解检查的实际作答，继续指导我。')
+  })
+
+  it('renders saved hint levels with CHECK, caps explicit requests at level three, and hides them after answering', async () => {
+    mockLatest.mockResolvedValueOnce({
+      data: {
+        runKey: 'run',
+        status: 'WAITING_USER',
+        messages: [
+          {
+            sequence: 1,
+            role: 'ASSISTANT',
+            content: '提示',
+            createTime: null,
+            actions: [{ type: 'CHECK' }, { type: 'HINT', level: 2 }],
+          },
+        ],
+      },
+    })
+    const wrapper = mountAgent()
+    await flushPromises()
+    expect(wrapper.text()).toContain('第 2 级提示')
+    expect(wrapper.findAll('[data-testid="agent-request-check"]')).toHaveLength(1)
+    await wrapper.get('[data-testid="agent-request-hint"]').trigger('click')
+    await flushPromises()
+    expect(mockResume).toHaveBeenCalledWith(
+      10,
+      'session',
+      'run',
+      '请给我本节理解检查的下一步提示，不要直接告诉我答案。',
+    )
+
+    await wrapper.setProps({ checkResult: { correct: true } })
+    expect(wrapper.findAll('[data-testid="agent-request-hint"]')).toHaveLength(0)
+  })
+
+  it('starts a first hint request and only caps after the saved third-level response', async () => {
+    mockLatest.mockResolvedValueOnce({ data: null })
+    mockStart.mockResolvedValueOnce({
+      data: {
+        runKey: 'hint',
+        status: 'WAITING_USER',
+        messages: [
+          { sequence: 2, role: 'ASSISTANT', content: '提示', createTime: null, actions: [{ type: 'HINT', level: 1 }] },
+        ],
+      },
+    })
+    const wrapper = mountAgent()
+    await flushPromises()
+    await wrapper.get('[data-testid="agent-request-hint"]').trigger('click')
+    await flushPromises()
+    expect(mockStart).toHaveBeenCalledWith(10, 'session', '请给我本节理解检查的下一步提示，不要直接告诉我答案。')
+  })
+
+  it('does not advance locally after a failed hint and allows an explicit retry', async () => {
+    mockLatest.mockResolvedValueOnce({
+      data: {
+        runKey: 'run',
+        status: 'WAITING_USER',
+        messages: [
+          { sequence: 2, role: 'ASSISTANT', content: '二级', createTime: null, actions: [{ type: 'HINT', level: 2 }] },
+        ],
+      },
+    })
+    mockGet.mockResolvedValueOnce({
+      data: {
+        runKey: 'run',
+        status: 'WAITING_USER',
+        messages: [
+          { sequence: 2, role: 'ASSISTANT', content: '二级', createTime: null, actions: [{ type: 'HINT', level: 2 }] },
+        ],
+      },
+    })
+    mockResume.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({
+      data: {
+        runKey: 'run',
+        status: 'WAITING_USER',
+        messages: [
+          {
+            sequence: 4,
+            role: 'ASSISTANT',
+            content: '三级',
+            createTime: null,
+            actions: [{ type: 'HINT', level: 3 }],
+          },
+        ],
+      },
+    })
+    const wrapper = mountAgent()
+    await flushPromises()
+    await wrapper.get('[data-testid="agent-request-hint"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('第 2 级提示')
+    await wrapper.get('[data-testid="agent-request-hint"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('[data-testid="agent-request-hint"]').attributes('disabled')).toBeDefined()
+    expect(mockResume).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not send a hint while restoring or when the run is running', async () => {
+    sessionStorage.setItem('lp:tutor-agent-run:10:session', 'run')
+    let resolve!: (value: unknown) => void
+    mockGet.mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done
+      }),
+    )
+    const restoring = mountAgent()
+    expect(restoring.get('[data-testid="agent-request-hint"]').attributes('disabled')).toBeDefined()
+    await restoring.get('[data-testid="agent-request-hint"]').trigger('click')
+    expect(mockStart).not.toHaveBeenCalled()
+    resolve({ data: { runKey: 'run', status: 'RUNNING', messages: [] } })
+    await flushPromises()
+    expect(restoring.get('[data-testid="agent-request-hint"]').attributes('disabled')).toBeDefined()
+    await restoring.get('[data-testid="agent-request-hint"]').trigger('click')
+    expect(mockResume).not.toHaveBeenCalled()
   })
 
   it('keeps the question available when the request fails', async () => {

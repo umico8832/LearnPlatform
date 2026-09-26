@@ -47,6 +47,7 @@ class TutorAgentRunStateIntegrationTest extends IntegrationTestBase {
     @Autowired private TutorAgentRunStateService states;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private MockMvc mvc;
+    @Autowired private org.springframework.transaction.PlatformTransactionManager transactions;
     private String sessionKey;
 
     @BeforeEach void prepare() {
@@ -151,6 +152,86 @@ class TutorAgentRunStateIntegrationTest extends IntegrationTestBase {
                         COURSE, sessionKey, execution.runId()).with(authentication(learner(USER))))
                 .andExpect(jsonPath("$.data.messages[1].actions[0].type").value("CHECK"))
                 .andExpect(jsonPath("$.data.messages[0].actions").isEmpty());
+    }
+
+    @Test void hintLevelAndCheckActionRecoverTogetherWithoutAdvancingOnFailure() throws Exception {
+        var execution = states.begin(USER, COURSE, sessionKey);
+        var hint = new com.fasterxml.jackson.databind.ObjectMapper()
+                .readValue("{\"type\":\"HINT\",\"level\":1}", TutorAgentActionVO.class);
+        var actions = List.of(new TutorAgentActionVO("CHECK"), hint);
+        states.complete(execution, "提示一步", new TutorAgentReply("先回看概念", actions));
+        var next = resume(execution);
+        states.fail(next);
+        var retried = resume(execution);
+        assertEquals(actions, retried.history().get(1).actions());
+        assertEquals(2, messageCount(execution));
+        mvc.perform(get("/api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/{runKey}",
+                        COURSE, sessionKey, execution.runId()).with(authentication(learner(USER))))
+                .andExpect(jsonPath("$.data.messages[1].actions[0].type").value("CHECK"))
+                .andExpect(jsonPath("$.data.messages[1].actions[0].level").doesNotExist())
+                .andExpect(jsonPath("$.data.messages[1].actions[1].type").value("HINT"))
+                .andExpect(jsonPath("$.data.messages[1].actions[1].level").value(1));
+    }
+
+    @Test void duplicateActionsRollBackTheEntireCompletedTurn() {
+        var execution = states.begin(USER, COURSE, sessionKey);
+        var check = new TutorAgentActionVO("CHECK");
+        assertThrows(IllegalStateException.class, () -> states.complete(execution,
+                "重复动作", new TutorAgentReply("不应保存", List.of(check, check))));
+        assertEquals("RUNNING", viewStatus(execution));
+        assertEquals(0, messageCount(execution));
+    }
+
+    @Test void answerSubmittedDuringHintGenerationPreventsSavingANewHint() throws Exception {
+        var execution = states.begin(USER, COURSE, sessionKey);
+        var hint = new com.fasterxml.jackson.databind.ObjectMapper()
+                .readValue("{\"type\":\"HINT\",\"level\":1}", TutorAgentActionVO.class);
+        jdbc.update("UPDATE tutor_session SET check_answer='A',check_correct=1 WHERE session_key=?", sessionKey);
+        assertThrows(BusinessException.class, () -> states.complete(execution,
+                "提示一步", new TutorAgentReply("迟到的提示", List.of(hint))));
+        assertEquals(0, messageCount(execution));
+    }
+
+    @Test void hintCompletionWaitsForAnInFlightAnswerAndRechecksItsCommittedResult() throws Exception {
+        var execution = states.begin(USER, COURSE, sessionKey);
+        var hint = new TutorAgentActionVO("HINT", 1);
+        CountDownLatch answerWritten = new CountDownLatch(1);
+        CountDownLatch releaseAnswer = new CountDownLatch(1);
+        var answering = CompletableFuture.runAsync(() ->
+                new org.springframework.transaction.support.TransactionTemplate(transactions).executeWithoutResult(status -> {
+                    jdbc.update("UPDATE tutor_session SET check_answer='A',check_correct=1 WHERE session_key=?", sessionKey);
+                    answerWritten.countDown();
+                    try {
+                        if (!releaseAnswer.await(5, TimeUnit.SECONDS)) {
+                            throw new IllegalStateException("Answer transaction was not released");
+                        }
+                    } catch (InterruptedException exception) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException(exception);
+                    }
+                }));
+        try {
+            assertTrue(answerWritten.await(5, TimeUnit.SECONDS));
+            CountDownLatch completionStarted = new CountDownLatch(1);
+            var completion = CompletableFuture.supplyAsync(() -> {
+                completionStarted.countDown();
+                try {
+                    states.complete(execution, "再提示", new TutorAgentReply("迟到的提示", List.of(hint)));
+                    return true;
+                } catch (BusinessException exception) {
+                    return false;
+                }
+            });
+            assertTrue(completionStarted.await(5, TimeUnit.SECONDS));
+            assertThrows(java.util.concurrent.TimeoutException.class, () -> completion.get(250, TimeUnit.MILLISECONDS));
+            releaseAnswer.countDown();
+            answering.get(5, TimeUnit.SECONDS);
+            assertFalse(completion.get(5, TimeUnit.SECONDS));
+            assertEquals(0, messageCount(execution));
+        } finally {
+            releaseAnswer.countDown();
+            answering.get(5, TimeUnit.SECONDS);
+        }
     }
 
     @Test void recoveryStillRequiresTheOriginalOwnerAndSession() {

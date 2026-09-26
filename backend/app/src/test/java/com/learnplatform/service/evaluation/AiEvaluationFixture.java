@@ -190,6 +190,8 @@ final class AiEvaluationFixture {
         } catch (Exception exception) {
             actualCode = -1;
             errorType = exception.getClass().getSimpleName();
+        } finally {
+            captureModelToolOutputs();
         }
     }
 
@@ -272,9 +274,9 @@ final class AiEvaluationFixture {
                 }
                 Set<String> declaredTools = sample.usesRetrieval()
                         ? Set.of("read_tutor_lesson", "read_learning_evidence", "present_tutor_check",
-                        "read_tutor_check_result", "search_course_knowledge")
+                        "read_tutor_check_result", "request_tutor_hint", "search_course_knowledge")
                         : Set.of("read_tutor_lesson", "read_learning_evidence", "present_tutor_check",
-                        "read_tutor_check_result");
+                        "read_tutor_check_result", "request_tutor_hint");
                 check(failures, provider.requests.stream().allMatch(request -> request.tools().stream()
                         .map(ModelRequest.Tool::name).collect(java.util.stream.Collectors.toSet())
                         .equals(declaredTools)), "agent-tool-contract");
@@ -283,6 +285,7 @@ final class AiEvaluationFixture {
                 check(failures, toolResults == agentTools.size(), "agent-tool-result-history");
                 check(failures, assets.isEmpty() && interactions.isEmpty(), "agent-no-unrelated-write");
                 checkTutorCheckActions(failures);
+                AiTutorHintEvaluation.check(sample.scenario(), publicOutput, toolTrace, failures);
                 if (sample.usesRetrieval()) { checkRetrieval(failures); }
             }
         }
@@ -303,7 +306,16 @@ final class AiEvaluationFixture {
         return failures;
     }
 
-    record ToolObservation(String name, String arguments, String output, UUID runId) { }
+    record ToolObservation(String callId, String name, String arguments, String output, UUID runId) { }
+
+    private void captureModelToolOutputs() {
+        Map<String, String> outputs = provider.requests.stream().flatMap(request -> request.messages().stream())
+                .filter(message -> message.role() == ModelRequest.Role.TOOL)
+                .collect(java.util.stream.Collectors.toMap(ModelRequest.Message::toolCallId,
+                        ModelRequest.Message::content, (earlier, later) -> later));
+        toolTrace.replaceAll(trace -> new ToolObservation(trace.callId(), trace.name(), trace.arguments(),
+                outputs.getOrDefault(trace.callId(), trace.output()), trace.runId()));
+    }
 
     private void checkRetrieval(List<String> failures) {
         check(failures, agentTools.contains("search_course_knowledge"), "agent-search-course-knowledge");
@@ -410,9 +422,10 @@ final class AiEvaluationFixture {
                         "lastAttemptAt", "2026-09-20T10:00:00+08:00"));
                 case "present_tutor_check" -> checkToolOutput(true);
                 case "read_tutor_check_result" -> checkToolOutput(false);
+                case "request_tutor_hint" -> AiTutorHintEvaluation.toolOutput(sample.scenario());
                 default -> throw new IllegalArgumentException("Unknown Agent evaluation tool");
             };
-            toolTrace.add(new ToolObservation(call.name(), call.arguments(), output, runId));
+            toolTrace.add(new ToolObservation(call.id(), call.name(), call.arguments(), output, runId));
             return output;
         } catch (com.fasterxml.jackson.core.JsonProcessingException exception) {
             throw new IllegalArgumentException("Invalid Agent evaluation tool payload", exception);

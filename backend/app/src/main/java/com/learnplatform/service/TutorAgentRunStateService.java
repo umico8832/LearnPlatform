@@ -9,6 +9,7 @@ import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.TutorAgentMessageVO;
 import com.learnplatform.dto.TutorAgentActionVO;
 import com.learnplatform.dto.TutorAgentRunVO;
+import com.learnplatform.dto.TutorSessionVO;
 import com.learnplatform.entity.TutorAgentMessage;
 import com.learnplatform.entity.TutorAgentRun;
 import com.learnplatform.entity.TutorSession;
@@ -72,7 +73,11 @@ public class TutorAgentRunStateService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public TutorAgentRunVO complete(TutorAgentExecutionState state, String question, TutorAgentReply answer) {
-        requireCurrentSession(state.id());
+        boolean providesHint = answer.actions().stream().anyMatch(action -> "HINT".equals(action.type()));
+        TutorSessionVO session = requireCurrentSession(state.id(), providesHint);
+        if (providesHint && session.getCheckResult() != null) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "理解检查已作答，请根据作答结果继续指导");
+        }
         if (runs.complete(state.id(), state.executionKey(), state.nextSequence()) != 1) {
             throw new BusinessException(ResultCode.RATE_LIMITED, "Tutor Agent 运行状态已变化");
         }
@@ -119,13 +124,17 @@ public class TutorAgentRunStateService {
         return session;
     }
 
-    private void requireCurrentSession(Long runId) {
+    private TutorSessionVO requireCurrentSession(Long runId, boolean providesHint) {
         TutorAgentRun run = runs.selectById(runId);
-        TutorSession session = run == null ? null : sessions.selectById(run.getTutorSessionId());
+        // 提示写回与首次作答共用会话行锁，避免判分后追加作答前提示；锁只覆盖本地短事务。
+        TutorSession session = run == null ? null : providesHint
+                ? sessions.selectOne(new QueryWrapper<TutorSession>()
+                        .eq("id", run.getTutorSessionId()).last("FOR UPDATE"))
+                : sessions.selectById(run.getTutorSessionId());
         if (session == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "Tutor 会话不存在");
         }
-        tutorSessions.get(session.getUserId(), session.getCourseId(), session.getSessionKey());
+        return tutorSessions.get(session.getUserId(), session.getCourseId(), session.getSessionKey());
     }
 
     private TutorAgentRun requireRun(Long userId, Long tutorSessionId, String runKey) {
@@ -151,6 +160,7 @@ public class TutorAgentRunStateService {
 
     private void insertMessage(Long runId, int sequence, String role, String content,
                                List<TutorAgentActionVO> actions) {
+        validateActions(role, actions);
         TutorAgentMessage message = new TutorAgentMessage();
         message.setRunId(runId);
         message.setSequenceNo(sequence);
@@ -190,12 +200,17 @@ public class TutorAgentRunStateService {
         }
         try {
             List<TutorAgentActionVO> actions = json.readValue(value, new TypeReference<>() { });
-            if (!"ASSISTANT".equals(message.getRole()) || actions.size() > 1) {
-                throw new IllegalStateException("Tutor 教学动作与消息不匹配");
-            }
+            validateActions(message.getRole(), actions);
             return List.copyOf(actions);
         } catch (Exception exception) {
             throw new IllegalStateException("Tutor 教学动作格式无效", exception);
+        }
+    }
+
+    private void validateActions(String role, List<TutorAgentActionVO> actions) {
+        if ((!"ASSISTANT".equals(role) && !actions.isEmpty()) || actions.size() > 2
+                || actions.stream().map(TutorAgentActionVO::type).distinct().count() != actions.size()) {
+            throw new IllegalStateException("Tutor 教学动作与消息不匹配");
         }
     }
 }

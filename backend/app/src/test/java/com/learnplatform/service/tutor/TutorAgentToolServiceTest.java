@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.mock;
@@ -118,8 +119,28 @@ class TutorAgentToolServiceTest {
         }
     }
 
+    @Test void reportsHintAvailabilityWithoutGradingOrLeakingTheSubmittedOption() throws Exception {
+        when(sessions.get(7L, 10L, "session")).thenReturn(session());
+        JsonNode available = json.readTree(tools.execute(7L, 10L, "session",
+                new ModelRequest.ToolCall("hint", "request_tutor_hint", "{}")));
+        assertEquals("AVAILABLE", available.path("status").asText());
+        assertEquals(1, available.size());
+
+        TutorSessionVO answered = session();
+        answered.setCheckAnswer("LEFT");
+        TutorCheckResultVO outcome = new TutorCheckResultVO();
+        outcome.setCorrect(true);
+        answered.setCheckResult(outcome);
+        when(sessions.get(7L, 10L, "session")).thenReturn(answered);
+        JsonNode result = json.readTree(tools.execute(7L, 10L, "session",
+                new ModelRequest.ToolCall("hint", "request_tutor_hint", "{}")));
+        assertEquals("ANSWERED", result.path("status").asText());
+        assertTrue(result.has("result"));
+        assertFalse(result.toString().contains("LEFT"));
+    }
+
     @Test void rejectsFabricatedAnswersAndResourceArgumentsForTeachingTools() {
-        for (String name : List.of("present_tutor_check", "read_tutor_check_result")) {
+        for (String name : List.of("present_tutor_check", "read_tutor_check_result", "request_tutor_hint")) {
             assertEquals(ModelException.Code.SCHEMA, assertThrows(ModelException.class,
                     () -> tools.execute(7L, 10L, "session", new ModelRequest.ToolCall("action", name,
                             "{\"optionId\":\"RIGHT\",\"correct\":true}"))).code());

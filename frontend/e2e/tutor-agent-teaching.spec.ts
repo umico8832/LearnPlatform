@@ -29,9 +29,24 @@ test('Tutor Agent 将理解检查交给学习者，并依据服务端结果继�
   const panel = page.locator('.agent-panel')
   const check = page.getByTestId('tutor-check')
   await expect(panel).toBeVisible()
+  for (const level of [1, 2, 3]) {
+    const hintResponse = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' && /\/agent-runs(?:\/[^/]+\/messages)?$/.test(response.url()),
+    )
+    await panel.getByTestId('agent-request-hint').click()
+    const hinted: TutorAgentRunVO = (await (await hintResponse).json()).data
+    expect(hinted.messages.at(-1)?.actions).toEqual([{ type: 'HINT', level }])
+    await expect(panel).toContainText(`第 ${level} 级提示`)
+  }
+  await page.reload()
+  await expect(panel).toContainText('第 3 级提示')
+  await expect(panel.getByTestId('agent-request-hint')).toBeDisabled()
+  await panel.screenshot({ path: testInfo.outputPath('tutor-agent-hints-desktop.png') })
   await panel.getByTestId('agent-input').fill('E2E_REQUEST_CHECK')
   const requestCheckResponse = page.waitForResponse(
-    (response) => response.request().method() === 'POST' && /\/agent-runs$/.test(response.url()),
+    (response) => response.request().method() === 'POST' && /\/agent-runs\/[^/]+\/messages$/.test(response.url()),
+    { timeout: 15_000 },
   )
   await panel.getByTestId('agent-submit').click()
   const requestedRun: TutorAgentRunVO = (await (await requestCheckResponse).json()).data

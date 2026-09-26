@@ -15,6 +15,8 @@ import org.apache.ibatis.builder.MapperBuilderAssistant;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
@@ -110,6 +112,25 @@ class TutorAgentRunStateServiceTest {
 
         assertThrows(BusinessException.class, () -> service.complete(earlier, "迟到的问题", new TutorAgentReply("迟到的回答", List.of())));
         verify(messages, never()).insert(any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "[{\"type\":\"HINT\",\"level\":0}]",
+            "[{\"type\":\"HINT\",\"level\":4}]",
+            "[{\"type\":\"HINT\"}]",
+            "[{\"type\":\"CHECK\",\"level\":1}]",
+            "[{\"type\":\"HINT\",\"level\":1},{\"type\":\"HINT\",\"level\":2}]",
+            "[{\"type\":\"UNSUPPORTED\"}]"
+    })
+    void refusesMalformedOrDuplicatedStoredTeachingActions(String value) {
+        allowSession();
+        when(sessions.selectOne(any())).thenReturn(session());
+        when(runs.selectOne(any())).thenReturn(run());
+        TutorAgentMessage assistant = message(2, "ASSISTANT", "提示");
+        assistant.setActionsJson(value);
+        when(messages.selectList(any())).thenReturn(List.of(assistant));
+        assertThrows(IllegalStateException.class, () -> service.get(7L, 10L, "session", "run"));
     }
 
     private TutorSession session() {

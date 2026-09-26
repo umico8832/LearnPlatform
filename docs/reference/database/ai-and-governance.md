@@ -57,7 +57,8 @@ V99 增加可空的 `execution_key` 和 `lease_until`。每次创建或继续提
 过期恢复不自动重发模型请求或返还已消耗配额。
 
 V100 在 `tutor_agent_message` 增加可空 JSON 字段 `actions_json`，存量消息的空值按无动作读取。
-当前只存放服务端确认的 `CHECK` 展示动作，与 ASSISTANT 正文、用户问题及运行状态在同一事务中提交。
+存放服务端确认的 `CHECK` 展示动作与 `HINT` 提示等级（1–3），与 ASSISTANT 正文、用户问题及运行状态
+在同一事务中提交。每种动作单轮最多一个，CHECK 与 HINT 可同时存在；旧 CHECK JSON 不需要 level 字段。
 重复工具请求在单轮内去重；失败、过期执行和无效动作不能单独留下可操作消息。
 动作不包含答案、判分或客户端目标标识，检查结果仍以 `tutor_session` 的首次事实为准。
 

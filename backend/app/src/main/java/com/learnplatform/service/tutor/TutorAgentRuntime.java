@@ -29,6 +29,10 @@ public class TutorAgentRuntime {
             用户提到已作答或需要作答反馈时，先调用 read_tutor_check_result 核对本节真实结果，
             未作答时不得判分或把聊天中的答案当作学习事实；已作答时根据服务端结果指导复习或后续学习。
             这两个教学工具同样只接受空对象。展示检查不会自动作答或改变学习状态。
+            用户请求提示时，必须先调用 read_tutor_lesson，再调用 request_tutor_hint。工具会返回服务端
+            分配的提示等级与引导；只能依据公开 lesson/check 写提示，不得判断、排除选项或给出答案。
+            若工具返回 ANSWERED，改用 read_tutor_check_result 核对真实反馈；若返回 LIMIT_REACHED，停止新增提示，
+            建议用户回看本节材料或自行作答。提示等级只是展示进度，不代表用户学习或掌握了内容。
             回答应直接、简洁，并在回答后等待用户继续提问。
             """;
     private static final String EMPTY_OBJECT_SCHEMA = """
@@ -48,6 +52,8 @@ public class TutorAgentRuntime {
             new ModelRequest.Tool("present_tutor_check", "提供本节理解检查操作，等待用户真实作答；已作答时返回结果。",
                     EMPTY_OBJECT_SCHEMA),
             new ModelRequest.Tool("read_tutor_check_result", "读取本节服务端首次判分结果；未作答时不返回解释。",
+                    EMPTY_OBJECT_SCHEMA),
+            new ModelRequest.Tool("request_tutor_hint", "请求本节下一层服务端控制的学习提示；只接受空对象。",
                     EMPTY_OBJECT_SCHEMA));
 
     private final AiInvocationService invocation;
@@ -64,6 +70,7 @@ public class TutorAgentRuntime {
         boolean readLesson = false;
         Map<String, String> sources = new LinkedHashMap<>();
         List<TutorAgentActionVO> actions = new ArrayList<>();
+        int nextHintLevel = TutorAgentHintPolicy.nextLevel(history).orElse(0);
         List<ModelRequest.Tool> availableTools = new ArrayList<>(TOOLS);
         if (tools.supportsKnowledgeSearch()) {
             availableTools.add(KNOWLEDGE_SEARCH);
@@ -92,6 +99,9 @@ public class TutorAgentRuntime {
                 if ("present_tutor_check".equals(call.name())) {
                     collectCheckAction(output, actions);
                 }
+                if ("request_tutor_hint".equals(call.name())) {
+                    output = hintOutput(output, nextHintLevel, actions);
+                }
                 messages.add(new ModelRequest.Message(ModelRequest.Role.TOOL, output, List.of(), call.id()));
                 readLesson |= "read_tutor_lesson".equals(call.name());
             }
@@ -111,6 +121,32 @@ public class TutorAgentRuntime {
         if (!actions.contains(check)) {
             actions.add(check);
         }
+    }
+
+    private String hintOutput(String output, int nextHintLevel, List<TutorAgentActionVO> actions) {
+        var result = JsonContract.parse(output);
+        if (!result.isObject() || !result.path("status").isTextual()) {
+            throw new ModelException(ModelException.Code.PROTOCOL);
+        }
+        if ("ANSWERED".equals(result.path("status").asText())) {
+            if (result.size() != 2 || !result.path("result").isObject()) {
+                throw new ModelException(ModelException.Code.PROTOCOL);
+            }
+            return output;
+        }
+        if (!"AVAILABLE".equals(result.path("status").asText()) || result.size() != 1) {
+            throw new ModelException(ModelException.Code.PROTOCOL);
+        }
+        if (nextHintLevel == 0) {
+            return "{\"status\":\"LIMIT_REACHED\"}";
+        }
+        TutorAgentActionVO hint = new TutorAgentActionVO("HINT", nextHintLevel);
+        if (!actions.contains(hint)) {
+            actions.add(hint);
+        }
+        return "{\"status\":\"AVAILABLE\",\"level\":" + nextHintLevel
+                + ",\"action\":{\"type\":\"HINT\",\"level\":" + nextHintLevel
+                + "},\"guidance\":\"" + TutorAgentHintPolicy.guidance(nextHintLevel) + "\"}";
     }
 
     private void collectSources(String output, Map<String, String> sources) {
@@ -156,9 +192,23 @@ public class TutorAgentRuntime {
         messages.add(ModelRequest.Message.text(ModelRequest.Role.SYSTEM, instructions));
         int from = Math.max(0, history.size() - HISTORY_LIMIT);
         history.subList(from, history.size()).forEach(message -> messages.add(
-                ModelRequest.Message.text(message.role(), message.content()
-                        + (message.actions().isEmpty() ? "" : "\n本轮已提供理解检查入口；展示不代表用户已作答。"))));
+                ModelRequest.Message.text(message.role(), message.content() + historyNote(message.actions()))));
         messages.add(ModelRequest.Message.text(ModelRequest.Role.USER, question));
         return messages;
+    }
+
+    private String historyNote(List<TutorAgentActionVO> actions) {
+        StringBuilder note = new StringBuilder();
+        if (actions.stream().anyMatch(action -> "CHECK".equals(action.type()))) {
+            note.append("\n本轮已提供理解检查入口；展示不代表用户已作答。");
+        }
+        int hintLevel = actions.stream().filter(action -> "HINT".equals(action.type()))
+                .map(TutorAgentActionVO::level).filter(java.util.Objects::nonNull)
+                .mapToInt(Integer::intValue).max().orElse(0);
+        if (hintLevel > 0) {
+            note.append("\n本轮已提供第").append(hintLevel)
+                    .append("层服务端控制提示；展示不代表用户已作答、学习或掌握。");
+        }
+        return note.toString();
     }
 }

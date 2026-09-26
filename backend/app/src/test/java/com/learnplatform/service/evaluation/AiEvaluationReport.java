@@ -89,7 +89,7 @@ final class AiEvaluationReport {
     static void write(AiEvaluationCorpus corpus, AiConfig config, boolean online,
                       List<Map<String, Object>> results) throws IOException {
         Map<String, Object> report = new LinkedHashMap<>();
-        report.put("schemaVersion", 4);
+        report.put("schemaVersion", 5);
         report.put("corpusVersion", corpus.version());
         try (var input = AiEvaluationCorpus.class.getResourceAsStream("/ai-evaluation/cases.json")) {
             if (input == null) { throw new IOException("Missing evaluation corpus"); }

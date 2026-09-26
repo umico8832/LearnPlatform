@@ -46,6 +46,7 @@ public class TutorAgentToolService implements TutorAgentToolExecutor {
             case "read_learning_evidence" -> write(json.valueToTree(session.getLearningContext()));
             case "present_tutor_check" -> check(session, true);
             case "read_tutor_check_result" -> check(session, false);
+            case "request_tutor_hint" -> hintAvailability(session);
             case "search_course_knowledge" -> search(userId, courseId, call.arguments(), runId);
             default -> throw new ModelException(ModelException.Code.PROTOCOL);
         };
@@ -75,6 +76,17 @@ public class TutorAgentToolService implements TutorAgentToolExecutor {
             if (present) {
                 result.putObject("action").put("type", "CHECK");
             }
+        } else {
+            result.put("status", "ANSWERED");
+            result.set("result", json.valueToTree(session.getCheckResult()));
+        }
+        return write(result);
+    }
+
+    private String hintAvailability(TutorSessionVO session) {
+        ObjectNode result = json.createObjectNode();
+        if (session.getCheckResult() == null) {
+            result.put("status", "AVAILABLE");
         } else {
             result.put("status", "ANSWERED");
             result.set("result", json.valueToTree(session.getCheckResult()));

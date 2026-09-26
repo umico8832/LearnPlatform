@@ -9,9 +9,7 @@ export interface TutorAgentMessageVO {
   actions: TutorAgentActionVO[]
 }
 
-export interface TutorAgentActionVO {
-  type: 'CHECK'
-}
+export type TutorAgentActionVO = { type: 'CHECK' } | { type: 'HINT'; level: 1 | 2 | 3 }
 
 export interface TutorAgentRunVO {
   runKey: string

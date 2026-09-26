@@ -6,6 +6,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 CHECK_REQUEST = "E2E_REQUEST_CHECK"
 CHECK_FOLLOW_UP = "请根据我本节理解检查的实际作答，继续指导我。"
+HINT_REQUEST = "请给我本节理解检查的下一步提示，不要直接告诉我答案。"
 
 
 def current_turn(messages):
@@ -44,6 +45,17 @@ def result_from_current_turn(messages):
     return {}
 
 
+def hint_level_from_current_turn(messages):
+    calls = {call.get("id"): call.get("function", {}).get("name") for message in messages if message.get("role") == "assistant" for call in message.get("tool_calls", [])}
+    for message in reversed(messages):
+        if message.get("role") == "tool" and calls.get(message.get("tool_call_id")) == "request_tutor_hint":
+            try:
+                return json.loads(message.get("content", "{}")).get("level")
+            except (TypeError, ValueError):
+                return None
+    return None
+
+
 def completion(payload):
     messages = payload.get("messages", [])
     turn = current_turn(messages)
@@ -62,6 +74,12 @@ def completion(payload):
     elif payload.get("tools") and question == CHECK_FOLLOW_UP and "read_tutor_check_result" not in calls:
         finish = "tool_calls"
         message["tool_calls"] = [tool_call("e2e-result", "read_tutor_check_result")]
+    elif payload.get("tools") and question == HINT_REQUEST and "request_tutor_hint" not in calls:
+        finish = "tool_calls"
+        message["tool_calls"] = [tool_call("e2e-hint", "request_tutor_hint")]
+    elif question == HINT_REQUEST:
+        level = hint_level_from_current_turn(turn)
+        message["content"] = f"第 {level} 级提示已提供。" if level else "当前无法提供下一步提示。"
     elif question == CHECK_FOLLOW_UP:
         correct = result_from_current_turn(turn).get("correct")
         message["content"] = f"服务端判分结果：{'回答正确' if correct else '回答不正确'}。"
