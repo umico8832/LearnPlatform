@@ -123,9 +123,10 @@ public class AdminUserService {
     }
 
     public void resetPassword(Long id, String newPassword) {
-        User user = requireUser(id);
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userMapper.updateById(user);
+        requireUser(id);
+        if (userMapper.resetPasswordAndRevokeTokens(id, passwordEncoder.encode(newPassword)) != 1) {
+            throw new BusinessException("用户不存在");
+        }
         log.info("管理员重置用户密码: userId={}", id);
     }
 

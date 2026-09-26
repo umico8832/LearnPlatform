@@ -174,11 +174,12 @@ class AdminUserServiceTest {
         User user = user(1L, "testuser");
         when(userMapper.selectById(1L)).thenReturn(user);
         when(passwordEncoder.encode("newpass123")).thenReturn("encoded-new");
+        when(userMapper.resetPasswordAndRevokeTokens(1L, "encoded-new")).thenReturn(1);
 
         service.resetPassword(1L, "newpass123");
 
-        assertEquals("encoded-new", user.getPassword());
-        verify(userMapper).updateById(user);
+        verify(userMapper).resetPasswordAndRevokeTokens(1L, "encoded-new");
+        verify(userMapper, never()).updateById(any(User.class));
     }
 
     @Test
