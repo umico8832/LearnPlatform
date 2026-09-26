@@ -76,4 +76,11 @@ public class TutorSessionController {
                                        @AuthenticationPrincipal CustomUserDetails user) {
         return R.ok(agentService.get(user.getUserId(), courseId, sessionKey, runKey));
     }
+
+    @Operation(summary = "恢复本人 Tutor 会话最近创建的 Agent 运行")
+    @GetMapping("/{sessionKey}/agent-runs/latest")
+    public R<TutorAgentRunVO> latestAgent(@PathVariable Long courseId, @PathVariable String sessionKey,
+                                          @AuthenticationPrincipal CustomUserDetails user) {
+        return R.ok(agentService.latest(user.getUserId(), courseId, sessionKey));
+    }
 }

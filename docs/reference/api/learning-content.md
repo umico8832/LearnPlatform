@@ -23,6 +23,7 @@
 | `POST /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs` | 以 `{ "message": "..." }` 创建 Tutor Agent 运行并提问 |
 | `POST /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/{runKey}/messages` | 恢复运行并继续提问 |
 | `GET /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/{runKey}` | 读取本人运行状态与可见消息 |
+| `GET /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/latest` | 找回本人该会话最近创建的运行；尚无运行时返回成功及空 data |
 
 课程和知识点的写接口位于[管理与治理 API](admin-governance.md#课程与知识点管理)。
 个人课程库关系以服务端认证用户为准，客户端不能指定或查询其他用户的 `userId`。
@@ -140,7 +141,11 @@ Tutor 仅可打开已加入课程、属于该课程且审查状态为 `REVIEWED`
 进程中断后需等待租约到期；到期时读取状态显示为 `FAILED`，用户可通过继续提问接口重试，历史成功消息保留。
 迟到的旧请求不能覆盖新执行的状态或追加回答；重试仍按新的实际调用消耗配额。
 学习页恢复期间暂停发送，网络失败保留对话标识并提供重试；运行中可手动刷新状态，
-切换 Tutor 会话后忽略旧请求的迟到响应。响应只返回已成功保存的 USER / ASSISTANT 消息；内部工具消息
+切换 Tutor 会话后忽略旧请求的迟到响应。
+本地缺少运行标识或首次提问响应丢失时，通过 `latest` 查询该用户该会话最近创建的运行，
+按运行 ID 倒序取一条，不跨用户、课程或会话查询；本地已有运行标识时仍优先恢复指定对话。
+查询不发起模型调用、不自动重试提问；尚无运行返回成功和空结果，归属不匹配返回不存在。
+响应只返回已成功保存的 USER / ASSISTANT 消息；内部工具消息
 不作为对话正文公开。一次提问中的每次云模型调用分别消耗配额并写调用审计，但共享同一 Agent `runId`。
 
 显式启用课程知识检索后，Agent 可调用 `search_course_knowledge`，只接受 `query`，不能指定其他用户、

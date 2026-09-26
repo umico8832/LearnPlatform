@@ -8,6 +8,12 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.test.web.servlet.MockMvc;
+import com.learnplatform.security.CustomUserDetails;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import java.util.List;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -16,6 +22,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -25,10 +35,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("integration")
 @SpringBootTest
+@AutoConfigureMockMvc
 @ActiveProfiles("integration")
 class TutorAgentRunStateIntegrationTest extends IntegrationTestBase {
     @Autowired private TutorAgentRunStateService states;
     @Autowired private JdbcTemplate jdbc;
+    @Autowired private MockMvc mvc;
     private String sessionKey;
 
     @BeforeEach void prepare() {
@@ -126,6 +138,43 @@ class TutorAgentRunStateIntegrationTest extends IntegrationTestBase {
         var recovered = resume(execution);
         assertFalse(recovered.executionKey().isBlank());
         assertEquals("RUNNING", viewStatus(recovered));
+    }
+
+    @Test void latestEndpointRecoversTheNewestRunWithoutAClientSideIdentifier() throws Exception {
+        var older = states.begin(7L, 10L, sessionKey);
+        states.complete(older, "旧问题", "旧回答");
+        var latest = states.begin(7L, 10L, sessionKey);
+        mvc.perform(get("/api/my-courses/10/tutor-sessions/{sessionKey}/agent-runs/latest", sessionKey)
+                        .with(authentication(learner(7L))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.runKey").value(latest.runId().toString()))
+                .andExpect(jsonPath("$.data.status").value("RUNNING"))
+                .andExpect(jsonPath("$.data.messages").isEmpty())
+                .andExpect(jsonPath("$.data.executionKey").doesNotExist());
+    }
+
+    @Test void latestEndpointReturnsAnEmptyResultForAnOwnedSessionWithoutRuns() throws Exception {
+        mvc.perform(get("/api/my-courses/10/tutor-sessions/{sessionKey}/agent-runs/latest", sessionKey)
+                        .with(authentication(learner(7L))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    @Test void latestEndpointRejectsOtherOwnersCoursesAndAnonymousAccess() throws Exception {
+        states.begin(7L, 10L, sessionKey);
+        String endpoint = "/api/my-courses/10/tutor-sessions/{sessionKey}/agent-runs/latest";
+        mvc.perform(get(endpoint, sessionKey)).andExpect(status().isUnauthorized());
+        mvc.perform(get(endpoint, sessionKey).with(authentication(learner(8L))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.code").value(1004));
+        mvc.perform(get("/api/my-courses/11/tutor-sessions/{sessionKey}/agent-runs/latest", sessionKey)
+                        .with(authentication(learner(7L))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.code").value(1004));
+    }
+
+    private UsernamePasswordAuthenticationToken learner(Long userId) {
+        return new UsernamePasswordAuthenticationToken(new CustomUserDetails(userId, "learner", "USER"), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
     }
 
     private boolean tryResume(TutorAgentExecutionState old, CountDownLatch ready, CountDownLatch start) {

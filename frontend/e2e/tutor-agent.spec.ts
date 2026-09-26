@@ -28,10 +28,20 @@ test('Tutor Agent 可追问、刷新恢复，并在上游失败后继续同一�
   const panel = page.locator('.agent-panel')
   await expect(panel).toBeVisible()
 
-  const firstResponse = page.waitForResponse(
-    (response) => response.request().method() === 'POST' && response.url().endsWith('/agent-runs'),
-  )
   await panel.getByTestId('agent-input').fill('请解释一下本节内容')
+  await expect(panel.getByTestId('agent-submit')).toBeEnabled()
+  await page.route(
+    '**/agent-runs',
+    async (route) => {
+      const response = await route.fetch()
+      expect((await response.json()).code).toBe(0)
+      await route.abort('connectionreset')
+    },
+    { times: 1 },
+  )
+  const firstResponse = page.waitForResponse(
+    (response) => response.request().method() === 'GET' && response.url().endsWith('/agent-runs/latest'),
+  )
   await panel.getByTestId('agent-submit').click()
   const first: TutorAgentRunVO = (await (await firstResponse).json()).data
   expect(first.status).toBe('WAITING_USER')
@@ -61,6 +71,11 @@ test('Tutor Agent 可追问、刷新恢复，并在上游失败后继续同一�
   await panel.getByTestId('agent-input').fill('重新说明本节内容')
   await panel.getByTestId('agent-submit').click()
   await expect(panel.locator('.agent-message')).toHaveCount(6)
+  await page.evaluate(() => {
+    for (const key of Object.keys(sessionStorage)) {
+      if (key.startsWith('lp:tutor-agent-run:')) sessionStorage.removeItem(key)
+    }
+  })
   await page.reload()
   await expect(panel.locator('.agent-message')).toHaveCount(6)
   await panel.screenshot({ path: testInfo.outputPath('tutor-agent-desktop.png') })

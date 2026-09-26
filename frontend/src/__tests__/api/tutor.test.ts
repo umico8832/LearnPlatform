@@ -8,7 +8,7 @@ vi.mock('@/utils/request', () => ({
 }))
 
 import { aiService } from '@/utils/request'
-import { getTutorAgentRun, resumeTutorAgentRun, startTutorAgentRun } from '@/api/tutor'
+import { getTutorAgentRun, getLatestTutorAgentRun, resumeTutorAgentRun, startTutorAgentRun } from '@/api/tutor'
 
 const mockedAiService = vi.mocked(aiService)
 
@@ -23,6 +23,7 @@ describe('Tutor Agent API', () => {
     await startTutorAgentRun(10, 'session', '解释一下')
     await resumeTutorAgentRun(10, 'session', 'run', '换个例子')
     await getTutorAgentRun(10, 'session', 'run')
+    await getLatestTutorAgentRun(10, 'session')
 
     expect(mockedAiService.post).toHaveBeenNthCalledWith(1, '/my-courses/10/tutor-sessions/session/agent-runs', {
       message: '解释一下',
@@ -33,5 +34,6 @@ describe('Tutor Agent API', () => {
       { message: '换个例子' },
     )
     expect(mockedAiService.get).toHaveBeenCalledWith('/my-courses/10/tutor-sessions/session/agent-runs/run')
+    expect(mockedAiService.get).toHaveBeenCalledWith('/my-courses/10/tutor-sessions/session/agent-runs/latest')
   })
 })

@@ -35,3 +35,9 @@ export function getTutorAgentRun(courseId: number, sessionKey: string, runKey: s
     .get<ApiResponse<TutorAgentRunVO>>(`${agentPath(courseId, sessionKey)}/${runKey}`)
     .then((response) => response.data)
 }
+
+export function getLatestTutorAgentRun(courseId: number, sessionKey: string) {
+  return aiService
+    .get<ApiResponse<TutorAgentRunVO | null>>(`${agentPath(courseId, sessionKey)}/latest`)
+    .then((response) => response.data)
+}

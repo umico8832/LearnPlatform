@@ -1,13 +1,15 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockGet, mockStart, mockResume } = vi.hoisted(() => ({
+const { mockGet, mockStart, mockResume, mockLatest } = vi.hoisted(() => ({
   mockGet: vi.fn(),
+  mockLatest: vi.fn(),
   mockStart: vi.fn(),
   mockResume: vi.fn(),
 }))
 
 vi.mock('@/api/tutor', () => ({
+  getLatestTutorAgentRun: (...args: unknown[]) => mockLatest(...args),
   getTutorAgentRun: (...args: unknown[]) => mockGet(...args),
   startTutorAgentRun: (...args: unknown[]) => mockStart(...args),
   resumeTutorAgentRun: (...args: unknown[]) => mockResume(...args),
@@ -41,6 +43,7 @@ describe('TutorAgentConversation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     sessionStorage.clear()
+    mockLatest.mockResolvedValue({ data: null })
     mockStart.mockResolvedValue({
       data: {
         runKey: 'run',
@@ -210,5 +213,52 @@ describe('TutorAgentConversation', () => {
     expect(wrapper.text()).not.toContain('迟到的旧回答')
     expect((wrapper.get('[data-testid="agent-input"]').element as HTMLTextAreaElement).value).toBe('新问题草稿')
     expect(sessionStorage.getItem('lp:tutor-agent-run:10:next-session')).toBeNull()
+  })
+
+  it('discovers the latest server run when the first response identifier was lost', async () => {
+    mockLatest.mockResolvedValueOnce({
+      data: {
+        runKey: 'recovered',
+        status: 'WAITING_USER',
+        messages: [{ sequence: 2, role: 'ASSISTANT', content: '服务端已保存的回答', createTime: null }],
+      },
+    })
+    const wrapper = mountAgent()
+    await flushPromises()
+    expect(mockLatest).toHaveBeenCalledWith(10, 'session')
+    expect(wrapper.text()).toContain('服务端已保存的回答')
+    expect(sessionStorage.getItem('lp:tutor-agent-run:10:session')).toBe('recovered')
+    await wrapper.get('[data-testid="agent-input"]').setValue('继续')
+    await wrapper.get('[data-testid="agent-submit"]').trigger('click')
+    await flushPromises()
+    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'recovered', '继续')
+    expect(mockStart).not.toHaveBeenCalled()
+  })
+
+  it('recovers a created run after the first send loses its response', async () => {
+    const wrapper = mountAgent()
+    await flushPromises()
+    mockStart.mockRejectedValueOnce(new Error('连接中断'))
+    mockLatest.mockResolvedValueOnce({ data: { runKey: 'created', status: 'FAILED', messages: [] } })
+    await wrapper.get('[data-testid="agent-input"]').setValue('原问题')
+    await wrapper.get('[data-testid="agent-submit"]').trigger('click')
+    await flushPromises()
+    expect(sessionStorage.getItem('lp:tutor-agent-run:10:session')).toBe('created')
+    await wrapper.get('[data-testid="agent-submit"]').trigger('click')
+    await flushPromises()
+    expect(mockStart).toHaveBeenCalledTimes(1)
+    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'created', '原问题')
+  })
+
+  it('does not create a new run while server discovery is unavailable', async () => {
+    mockLatest.mockRejectedValueOnce(new Error('网络不可用'))
+    const wrapper = mountAgent()
+    await flushPromises()
+    await wrapper.get('[data-testid="agent-input"]').setValue('新问题')
+    expect(wrapper.get('[data-testid="agent-submit"]').attributes('disabled')).toBeDefined()
+    mockLatest.mockResolvedValueOnce({ data: null })
+    await wrapper.get('[data-testid="agent-refresh"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('[data-testid="agent-submit"]').attributes('disabled')).toBeUndefined()
   })
 })

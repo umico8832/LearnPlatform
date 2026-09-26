@@ -62,7 +62,13 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { getTutorAgentRun, resumeTutorAgentRun, startTutorAgentRun, type TutorAgentRunVO } from '@/api/tutor'
+import {
+  getTutorAgentRun,
+  getLatestTutorAgentRun,
+  resumeTutorAgentRun,
+  startTutorAgentRun,
+  type TutorAgentRunVO,
+} from '@/api/tutor'
 import { errorMessage } from '@/utils/errors'
 
 const props = defineProps<{ courseId: number; sessionKey: string }>()
@@ -102,33 +108,40 @@ async function send() {
       ? await resumeTutorAgentRun(props.courseId, props.sessionKey, run.value.runKey, message)
       : await startTutorAgentRun(props.courseId, props.sessionKey, message)
     if (current !== generation) return
-    run.value = response.data
-    storedRunKey.value = run.value.runKey
-    try {
-      sessionStorage.setItem(storageKey.value, run.value.runKey)
-    } catch {
-      // 存储不可用不改变已成功保存到服务端的回答。
-    }
+    rememberRun(response.data)
     question.value = ''
   } catch (error) {
     if (current !== generation) return
     failure.value = errorMessage(error, 'Tutor 暂时无法回答，请稍后重试')
-    if (storedRunKey.value) await restore(true)
+    await restore(true)
   } finally {
     if (current === generation) submitting.value = false
   }
 }
 
+function rememberRun(value: TutorAgentRunVO | null) {
+  run.value = value ?? undefined
+  storedRunKey.value = value?.runKey ?? null
+  if (!value) return
+  try {
+    sessionStorage.setItem(storageKey.value, value.runKey)
+  } catch {
+    // 存储不可用时仍可通过本人会话恢复服务端已保存的运行。
+  }
+}
+
 async function restore(preserveFailure = false) {
-  if (!storedRunKey.value || restoring.value) return
+  if (restoring.value) return
   const current = generation
   restoring.value = true
   restoreFailed.value = false
   if (!preserveFailure) failure.value = ''
   try {
-    const response = await getTutorAgentRun(props.courseId, props.sessionKey, storedRunKey.value)
+    const response = storedRunKey.value
+      ? await getTutorAgentRun(props.courseId, props.sessionKey, storedRunKey.value)
+      : await getLatestTutorAgentRun(props.courseId, props.sessionKey)
     if (current !== generation) return
-    run.value = response.data
+    rememberRun(response.data)
   } catch (error) {
     if (current !== generation) return
     restoreFailed.value = true

@@ -36,6 +36,10 @@ public class TutorAgentService {
         return states.get(userId, courseId, sessionKey, runKey);
     }
 
+    public TutorAgentRunVO latest(Long userId, Long courseId, String sessionKey) {
+        return states.latest(userId, courseId, sessionKey);
+    }
+
     private TutorAgentRunVO execute(Long userId, Long courseId, String sessionKey,
                                     TutorAgentExecutionState state, String question) {
         try {

@@ -91,6 +91,14 @@ public class TutorAgentRunStateService {
         return view(run, listMessages(run.getId()));
     }
 
+    public TutorAgentRunVO latest(Long userId, Long courseId, String sessionKey) {
+        TutorSession session = requireSession(userId, courseId, sessionKey);
+        TutorAgentRun run = runs.selectOne(new QueryWrapper<TutorAgentRun>()
+                .eq("user_id", userId).eq("tutor_session_id", session.getId())
+                .orderByDesc("id").last("LIMIT 1"));
+        return run == null ? null : view(run, listMessages(run.getId()));
+    }
+
     private TutorSession requireSession(Long userId, Long courseId, String sessionKey) {
         TutorSession session = sessions.selectOne(new QueryWrapper<TutorSession>()
                 .eq("session_key", sessionKey).eq("user_id", userId).eq("course_id", courseId));
