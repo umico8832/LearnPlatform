@@ -27,7 +27,7 @@ class TutorAgentServiceTest {
 
     @BeforeEach void setUp() {
         service = new TutorAgentService(states, runtime);
-        state = new TutorAgentExecutionState(5L, UUID.randomUUID(), List.of());
+        state = new TutorAgentExecutionState(5L, UUID.randomUUID(), UUID.randomUUID().toString(), 1, List.of());
     }
 
     @Test void startsAndPersistsAWaitingUserTurn() {
@@ -52,7 +52,7 @@ class TutorAgentServiceTest {
                 () -> service.resume(7L, 10L, "session", "run", request("继续")));
 
         assertEquals("Tutor Agent 未能生成可验证的回答，请重试", exception.getMessage());
-        verify(states).fail(5L);
+        verify(states).fail(state);
     }
 
     @Test void loadsOnlyThroughTheBoundSessionAndOwnerStateService() {

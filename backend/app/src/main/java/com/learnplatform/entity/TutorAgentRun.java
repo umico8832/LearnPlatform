@@ -15,6 +15,8 @@ public class TutorAgentRun {
     private Long userId;
     private String status;
     private Integer nextSequence;
+    private String executionKey;
+    private LocalDateTime leaseUntil;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 
@@ -30,6 +32,10 @@ public class TutorAgentRun {
     public void setStatus(String value) { status = value; }
     public Integer getNextSequence() { return nextSequence; }
     public void setNextSequence(Integer value) { nextSequence = value; }
+    public String getExecutionKey() { return executionKey; }
+    public void setExecutionKey(String value) { executionKey = value; }
+    public LocalDateTime getLeaseUntil() { return leaseUntil; }
+    public void setLeaseUntil(LocalDateTime value) { leaseUntil = value; }
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime value) { createTime = value; }
     public LocalDateTime getUpdateTime() { return updateTime; }

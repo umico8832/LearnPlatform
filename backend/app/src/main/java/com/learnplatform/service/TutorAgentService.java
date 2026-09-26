@@ -43,7 +43,7 @@ public class TutorAgentService {
                     state.history(), question);
             return states.complete(state, question, answer);
         } catch (RuntimeException exception) {
-            states.fail(state.id());
+            states.fail(state);
             if (exception instanceof ModelException modelException) {
                 throw modelFailure(modelException);
             }

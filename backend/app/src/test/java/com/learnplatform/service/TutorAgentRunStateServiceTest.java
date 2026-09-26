@@ -21,6 +21,8 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -40,6 +42,7 @@ class TutorAgentRunStateServiceTest {
 
     @Test void createsARunningRunBoundToTheOwnedTutorSession() {
         when(sessions.selectOne(any())).thenReturn(session());
+        when(runs.claim(eq(5L), any())).thenReturn(1);
         doAnswer(call -> {
             ((TutorAgentRun) call.getArgument(0)).setId(5L);
             return 1;
@@ -58,20 +61,21 @@ class TutorAgentRunStateServiceTest {
     @Test void refusesToClaimARunThatIsAlreadyProcessing() {
         when(sessions.selectOne(any())).thenReturn(session());
         when(runs.selectOne(any())).thenReturn(run());
-        when(runs.update(any(), any())).thenReturn(0);
+        when(runs.claim(eq(5L), any())).thenReturn(0);
 
         assertThrows(BusinessException.class, () -> service.resume(7L, 10L, "session", "run"));
     }
 
     @Test void appendsAUserAssistantPairAndPausesAtTheUserBoundary() {
         TutorAgentRun run = run();
+        run.setStatus("WAITING_USER");
         when(runs.selectById(5L)).thenReturn(run);
-        when(runs.update(any(), any())).thenReturn(1);
+        when(runs.complete(5L, "execution", 1)).thenReturn(1);
         TutorAgentMessage user = message(1, "USER", "问题");
         TutorAgentMessage assistant = message(2, "ASSISTANT", "回答");
         when(messages.selectList(any())).thenReturn(List.of(user, assistant));
         TutorAgentExecutionState state = new TutorAgentExecutionState(5L,
-                java.util.UUID.fromString(run.getRunKey()), List.of());
+                java.util.UUID.fromString(run.getRunKey()), "execution", 1, List.of());
 
         TutorAgentRunVO result = service.complete(state, "问题", "回答");
 
@@ -86,6 +90,18 @@ class TutorAgentRunStateServiceTest {
     @Test void hidesRunsWhenTheTutorSessionDoesNotBelongToTheRequester() {
         when(sessions.selectOne(any())).thenReturn(null);
         assertThrows(BusinessException.class, () -> service.get(8L, 10L, "session", "run"));
+    }
+
+    @Test void rejectsLateCompletionFromAnEarlierExecution() {
+        TutorAgentRun current = run();
+        current.setNextSequence(3);
+        when(runs.selectById(5L)).thenReturn(current);
+        when(messages.selectList(any())).thenReturn(List.of());
+        TutorAgentExecutionState earlier = new TutorAgentExecutionState(5L,
+                java.util.UUID.fromString(current.getRunKey()), "earlier-execution", 1, List.of());
+
+        assertThrows(BusinessException.class, () -> service.complete(earlier, "迟到的问题", "迟到的回答"));
+        verify(messages, never()).insert(any());
     }
 
     private TutorSession session() {

@@ -1,7 +1,6 @@
 package com.learnplatform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
@@ -17,6 +16,7 @@ import com.learnplatform.service.tutor.TutorAgentExecutionState;
 import com.learnplatform.service.tutor.TutorAgentHistoryMessage;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 
 import java.util.List;
 import java.util.UUID;
@@ -38,61 +38,51 @@ public class TutorAgentRunStateService {
         this.messages = messages;
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public TutorAgentExecutionState begin(Long userId, Long courseId, String sessionKey) {
         TutorSession session = requireSession(userId, courseId, sessionKey);
         TutorAgentRun run = new TutorAgentRun();
         run.setRunKey(UUID.randomUUID().toString());
         run.setTutorSessionId(session.getId());
         run.setUserId(userId);
-        run.setStatus(RUNNING);
+        run.setStatus(WAITING_USER);
         run.setNextSequence(1);
         runs.insert(run);
+        claim(run);
         return state(run, List.of());
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public TutorAgentExecutionState resume(Long userId, Long courseId, String sessionKey, String runKey) {
         TutorSession session = requireSession(userId, courseId, sessionKey);
         TutorAgentRun run = requireRun(userId, session.getId(), runKey);
-        int updated = runs.update(null, new LambdaUpdateWrapper<TutorAgentRun>()
-                .eq(TutorAgentRun::getId, run.getId())
-                .in(TutorAgentRun::getStatus, List.of(WAITING_USER, FAILED))
-                .set(TutorAgentRun::getStatus, RUNNING));
-        if (updated == 0) {
-            throw new BusinessException(ResultCode.RATE_LIMITED, "Tutor Agent 正在处理上一条消息");
-        }
-        run.setStatus(RUNNING);
+        claim(run);
+        run = runs.selectById(run.getId());
         return state(run, listMessages(run.getId()));
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public TutorAgentRunVO complete(TutorAgentExecutionState state, String question, String answer) {
+        if (runs.complete(state.id(), state.executionKey(), state.nextSequence()) != 1) {
+            throw new BusinessException(ResultCode.RATE_LIMITED, "Tutor Agent 运行状态已变化");
+        }
+        insertMessage(state.id(), state.nextSequence(), "USER", question);
+        insertMessage(state.id(), state.nextSequence() + 1, "ASSISTANT", answer);
         TutorAgentRun run = runs.selectById(state.id());
-        if (run == null || !RUNNING.equals(run.getStatus())) {
-            throw new BusinessException(ResultCode.RATE_LIMITED, "Tutor Agent 运行状态已变化");
-        }
-        int sequence = run.getNextSequence();
-        insertMessage(run.getId(), sequence, "USER", question);
-        insertMessage(run.getId(), sequence + 1, "ASSISTANT", answer);
-        int updated = runs.update(null, new LambdaUpdateWrapper<TutorAgentRun>()
-                .eq(TutorAgentRun::getId, run.getId())
-                .eq(TutorAgentRun::getStatus, RUNNING)
-                .eq(TutorAgentRun::getNextSequence, sequence)
-                .set(TutorAgentRun::getNextSequence, sequence + 2)
-                .set(TutorAgentRun::getStatus, WAITING_USER));
-        if (updated == 0) {
-            throw new BusinessException(ResultCode.RATE_LIMITED, "Tutor Agent 运行状态已变化");
-        }
-        run.setStatus(WAITING_USER);
-        run.setNextSequence(sequence + 2);
         return view(run, listMessages(run.getId()));
     }
 
-    public void fail(Long runId) {
-        runs.update(null, new LambdaUpdateWrapper<TutorAgentRun>()
-                .eq(TutorAgentRun::getId, runId).eq(TutorAgentRun::getStatus, RUNNING)
-                .set(TutorAgentRun::getStatus, FAILED));
+    public void fail(TutorAgentExecutionState state) {
+        runs.fail(state.id(), state.executionKey());
+    }
+
+    private void claim(TutorAgentRun run) {
+        String executionKey = UUID.randomUUID().toString();
+        if (runs.claim(run.getId(), executionKey) != 1) {
+            throw new BusinessException(ResultCode.RATE_LIMITED, "Tutor Agent 正在处理上一条消息");
+        }
+        run.setStatus(RUNNING);
+        run.setExecutionKey(executionKey);
     }
 
     public TutorAgentRunVO get(Long userId, Long courseId, String sessionKey, String runKey) {
@@ -127,7 +117,8 @@ public class TutorAgentRunStateService {
     private TutorAgentExecutionState state(TutorAgentRun run, List<TutorAgentMessage> stored) {
         List<TutorAgentHistoryMessage> history = stored.stream().map(message -> new TutorAgentHistoryMessage(
                 ModelRequest.Role.valueOf(message.getRole()), message.getContent())).toList();
-        return new TutorAgentExecutionState(run.getId(), UUID.fromString(run.getRunKey()), history);
+        return new TutorAgentExecutionState(run.getId(), UUID.fromString(run.getRunKey()),
+                run.getExecutionKey(), run.getNextSequence(), history);
     }
 
     private void insertMessage(Long runId, int sequence, String role, String content) {
@@ -142,7 +133,8 @@ public class TutorAgentRunStateService {
     private TutorAgentRunVO view(TutorAgentRun run, List<TutorAgentMessage> stored) {
         TutorAgentRunVO result = new TutorAgentRunVO();
         result.setRunKey(run.getRunKey());
-        result.setStatus(run.getStatus());
+        result.setStatus(RUNNING.equals(run.getStatus()) && !runs.hasActiveLease(run.getId())
+                ? FAILED : run.getStatus());
         result.setMessages(stored.stream().map(message -> {
             TutorAgentMessageVO item = new TutorAgentMessageVO();
             item.setSequence(message.getSequenceNo());
