@@ -38,6 +38,7 @@ final class AiEvaluationReport {
         result.put("promptHash", fixture.logs.isEmpty() ? null : fixture.logs.get(0).getPromptHash());
         result.put("systemPrompt", system);
         result.put("userPrompt", user);
+        result.put("modelRequests", List.copyOf(fixture.provider.requests));
         result.put("modelConfigVersion", fixture.logs.isEmpty() ? null : fixture.logs.get(0).getModelConfigVersion());
         result.put("response", fixture.provider.response);
         result.put("publicOutput", fixture.publicOutput);
@@ -91,7 +92,7 @@ final class AiEvaluationReport {
     static void write(AiEvaluationCorpus corpus, AiConfig config, boolean online,
                       List<Map<String, Object>> results) throws IOException {
         Map<String, Object> report = new LinkedHashMap<>();
-        report.put("schemaVersion", 8);
+        report.put("schemaVersion", 9);
         report.put("corpusVersion", corpus.version());
         try (var input = AiEvaluationCorpus.class.getResourceAsStream("/ai-evaluation/cases.json")) {
             if (input == null) { throw new IOException("Missing evaluation corpus"); }

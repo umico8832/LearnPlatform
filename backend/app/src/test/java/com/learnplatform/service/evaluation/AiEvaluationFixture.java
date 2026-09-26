@@ -70,6 +70,7 @@ final class AiEvaluationFixture {
     private final ObjectMapper json = new ObjectMapper();
     private final AiEvaluationCorpus.Case sample;
     private final AiEvaluationCorpus.QuestionData data;
+    private final String memoryContext;
     private final QuestionLearningAssetService assetService;
     private final ExamLearningAiService paperService;
     private final TutorAgentRuntime agentRuntime;
@@ -79,7 +80,13 @@ final class AiEvaluationFixture {
 
     AiEvaluationFixture(AiEvaluationCorpus corpus, AiEvaluationCorpus.Case sample,
                         AiConfig config, AiProvider delegate) {
+        this(corpus, sample, config, delegate, AiTutorMemoryEvaluation.context(sample.scenario()));
+    }
+
+    AiEvaluationFixture(AiEvaluationCorpus corpus, AiEvaluationCorpus.Case sample,
+                        AiConfig config, AiProvider delegate, String memoryContext) {
         this.sample = sample;
+        this.memoryContext = memoryContext;
         provider = new AiEvaluationProvider(delegate, sample, config);
         data = corpus.questions().get(sample.question());
         QuestionMapper questions = mock(QuestionMapper.class);
@@ -159,7 +166,7 @@ final class AiEvaluationFixture {
         paperService = new ExamLearningAiService(learning, interactionMapper, courses,
                 new AiService(assistance, null, null), events);
         var memory = mock(com.learnplatform.service.tutor.TutorMemoryService.class);
-        when(memory.promptContext(7L, 20L)).thenReturn(AiTutorMemoryEvaluation.context(sample.scenario()));
+        when(memory.promptContext(7L, 20L)).thenReturn(memoryContext);
         agentRuntime = new TutorAgentRuntime(invocation, new TutorAgentToolExecutor() {
             @Override public boolean supportsKnowledgeSearch() { return sample.usesRetrieval(); }
             @Override public String execute(Long userId, Long courseId, String sessionKey, ModelRequest.ToolCall call) {
@@ -293,7 +300,7 @@ final class AiEvaluationFixture {
                 AiTutorHintEvaluation.check(sample.scenario(), publicOutput, toolTrace, failures);
                 AiTutorPracticeEvaluation.check(sample.scenario(), publicOutput, toolTrace, logs, failures);
                 AiTutorPlanEvaluation.check(sample.scenario(), publicOutput, toolTrace, logs, failures);
-                AiTutorMemoryEvaluation.check(sample.scenario(), provider.requests, failures);
+                AiTutorMemoryEvaluation.checkContext(memoryContext, provider.requests, failures);
                 if (sample.usesRetrieval()) { checkRetrieval(failures); }
             }
         }

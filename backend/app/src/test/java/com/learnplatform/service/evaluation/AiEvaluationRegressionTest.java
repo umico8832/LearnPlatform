@@ -114,6 +114,19 @@ class AiEvaluationRegressionTest {
     }
 
     @Test
+    void reportPreservesEveryRequestIncludingMemoryForReproducibleComparisons() throws Exception {
+        var corpus = AiEvaluationCorpus.load();
+        var sample = corpus.cases().stream().filter(item -> "TUTOR_NOTE_INCORRECT".equals(item.scenario()))
+                .findFirst().orElseThrow();
+        var fixture = new AiEvaluationFixture(corpus, sample, CONFIG, null);
+        fixture.execute();
+        var report = AiEvaluationReport.result(sample, fixture, CONFIG, false, fixture.check(false));
+        assertEquals(fixture.provider.requests, report.get("modelRequests"));
+        assertTrue(fixture.provider.requests.getFirst().messages().stream()
+                .anyMatch(message -> message.content().contains("INCORRECT")));
+    }
+
+    @Test
     void corpusIncludesRetrievalSuccessEmptyAndInjectionCases() throws Exception {
         var corpus = AiEvaluationCorpus.load();
         for (String scenario : List.of("RAG_FOUND", "RAG_EMPTY", "RAG_INJECTION")) {

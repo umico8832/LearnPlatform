@@ -35,7 +35,11 @@ final class AiTutorMemoryEvaluation {
     }
 
     static void check(String scenario, List<ModelRequest> requests, List<String> failures) {
-        String expected = "当前课程的用户记忆（自述与服务端证据分列）：\n" + context(scenario);
+        checkContext(context(scenario), requests, failures);
+    }
+
+    static void checkContext(String context, List<ModelRequest> requests, List<String> failures) {
+        String expected = "当前课程的用户记忆（自述与服务端证据分列）：\n" + context;
         if (requests.isEmpty() || requests.stream().anyMatch(request -> request.messages().stream()
                 .filter(message -> message.role() == ModelRequest.Role.USER && expected.equals(message.content()))
                 .count() != 1)) {
@@ -43,7 +47,7 @@ final class AiTutorMemoryEvaluation {
         }
         if (requests.stream().anyMatch(request -> request.messages().stream()
                 .filter(message -> message.role() == ModelRequest.Role.SYSTEM)
-                .anyMatch(message -> message.content().contains(context(scenario))
+                .anyMatch(message -> message.content().contains(context)
                         || message.content().contains("EVAL_INJECTION_CANARY")))) {
             failures.add("agent-memory-not-system-instruction");
         }

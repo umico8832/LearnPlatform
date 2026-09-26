@@ -26,6 +26,58 @@ Maven 依赖已缓存时可增加 `-o`，完全离线运行。报告输出至 `b
 失败记录及完成事件。运行器测试另用隔离 HTTP 服务验证真实
 `OpenAiProvider` 的同步/流式调用、RAG 多轮工具消息、配置绑定、Prompt 指纹和 usage 聚合。
 
+## 记忆消融配对评测
+
+记忆消融是独立于固定案例报告的可复现比较入口。语料位于
+[memory-cases.json](../../backend/app/src/test/resources/ai-evaluation/memory-cases.json)，包含 6 个原创、非隐私的
+固定栈教学样本：偏好与难点、错误证据与自称掌握冲突、未作答、自述注入、纠正后偏好，以及已删除的空记忆负向控制。
+每个非删除样本都从同一完整记忆派生四组条件：`NO_MEMORY`、`PROFILE_ONLY`、`NOTES_ONLY` 和 `FULL_MEMORY`；
+复盘始终连同其 `source` 理解检查事实保留或移除，不单独剥离证据。删除样本是
+`EMPTY_MEMORY_CONTROL`，只检查墓碑/空上下文边界，不作为偏好或复盘效果比较。
+
+同一配对内的问题、空历史、固定课节和工具夹具、模型配置均相同，首个模型请求移除记忆 USER 数据后必须完全相等。
+模型在首轮之后可自行选择不同工具路径，因此后续请求不要求字节相同。语料和夹具不含真实用户、课程、会话或学习记录；
+固定响应只验证程序约束，不是教学质量标签。
+
+默认离线运行不调用外部模型：
+
+```bash
+cd backend
+./mvnw -Dtest=AiMemoryAblationTest -Dsurefire.failIfNoSpecifiedTests=false test
+```
+
+报告保留每次实验，不覆盖旧结果，路径为
+`backend/app/target/ai-evaluation/memory-ablation/offline/<experimentId>/report.json`。可用以下命令查看最新的
+离线报告（在仓库根目录执行，按修改时间选择一个结果）：
+
+```bash
+latest=$(find backend/app/target/ai-evaluation/memory-ablation/offline -name report.json -print0 | xargs -0 ls -t | head -n 1)
+jq '.pairs[] | {pairId, comparisonStatus, contractStatus, trials: [.trials[] | {condition, response, failures}]}' "$latest"
+```
+
+在线比较需要与其他真实模型评测相同的安全环境注入，并单独显式开启：
+
+```bash
+cd backend
+AI_MEMORY_EVAL_ONLINE=true AI_TOOLS_SUPPORTED=true \
+  ./mvnw -Dtest=AiMemoryAblationOnlineTest -Dsurefire.failIfNoSpecifiedTests=false test
+```
+
+该入口继续要求既有的 `AI_ENABLED=true`、`AI_API_KEY` 和 `AI_MODEL` 等配置；密钥不写入命令、语料或报告。
+`AI_MEMORY_EVAL_CASES` 可选择逗号分隔的语料 ID，`AI_MEMORY_EVAL_REPETITIONS` 取 1–4，默认 1。每个条件最多四次
+模型调用；默认 6 个样本、4 条件为 24 个 trial，最多 96 次调用。条件顺序按案例索引与重复次数轮换，重复 4 次时每个
+条件在每个位置各出现一次。
+
+消融报告使用独立 `schemaVersion: 1`，记录 `pairId`、语料哈希、夹具实现哈希、去记忆后的输入不变量哈希、每个
+条件的完整请求、模型原文、工具轨迹与真实 usage。上游 usage 或配置单价缺失时成本为 null。在线相对 `NO_MEMORY` 的时延、调用数、
+token 和成本差值只是 `OBSERVED_ONLY`，不构成质量、个性化收益或成本优化结论；契约失败时差值为不完整。离线结果始终
+是 `NOT_EVALUATED`，在线结果初始为 `NOT_REVIEWED`。
+
+人工复核应逐个 `pairId` 阅读原文并记录结论：对比 `FULL_MEMORY/NO_MEMORY`、`FULL_MEMORY/PROFILE_ONLY` 和
+`FULL_MEMORY/NOTES_ONLY`，检查回答是否只在给定记忆可支持的范围内调整表达，是否尊重未作答或错误的真实检查来源，
+以及是否拒绝复盘中的注入。无记忆组不知道私人偏好或复盘不能被扣分。此复核不是盲审，应允许“平局”或“无法判断”；
+即使得到偏好差异，也不能声称真实学习效果、长期记忆质量或模型已遗忘历史对话。
+
 ## 真实模型评测
 
 先通过正常环境注入应用配置：`AI_ENABLED=true`、`AI_API_KEY`、`AI_MODEL`，
@@ -119,7 +171,8 @@ AI_RAG_EVAL_ONLINE=true ./mvnw -pl app -am \
 - `toolTrace` 保留固定案例中的 call ID、实际工具名、参数、返回内容及检索 run ID，供核对教学结论和来源忠实度。
   提示工具包含运行时补入的服务端等级及引导，与送入模型的 TOOL 消息一致；未进入后续模型调用的工具保留原始结果。
   `retrievalOrigin: SYNTHETIC_TOOL_FIXTURE` 表明检索资料是夹具，在线也保持该标记；
-  `retrievalQuality: NOT_EVALUATED` 表明没有测量真实向量召回质量。当前报告 schemaVersion 为 8。
+  `retrievalQuality: NOT_EVALUATED` 表明没有测量真实向量召回质量。当前公共固定案例报告 schemaVersion 为 9，
+  新增 `modelRequests` 以保留每轮完整请求；记忆消融报告使用独立 schemaVersion 1。
 - Agent 的 `memoryOrigin: SYNTHETIC_USER_FIXTURE` 表明用户目标和偏好是固定夹具，在线也不读取真实用户记忆；其他路径为 `NOT_USED`。
 - `sessionEvidenceOrigin: SYNTHETIC_SESSION_FIXTURE` 标记 Agent 复盘所关联的会话与检查事实也是固定夹具；其他路径为 `NOT_USED`。
 - `promptHash`：消息列表序列化后的 SHA-256，直接读取本次调用审计中的指纹。
