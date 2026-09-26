@@ -205,12 +205,13 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
-import { submitAnswer } from '@/api/practice'
-import type { PracticeQuestionVO, PracticeResultVO } from '@/api/practice'
+import { submitAnswer, type PracticeQuestionVO, type PracticeResultVO } from '@/api/practice'
 import AiQuestionAssistant from '@/components/AiQuestionAssistant.vue'
 import QuestionLearningAsset from '@/components/QuestionLearningAsset.vue'
 import { useMobileViewport } from '@/composables/useMobileViewport'
 import { usePracticeAnswer } from './usePracticeAnswer'
+import { useUserStore } from '@/stores/user'
+import { clearPracticeSession, loadPracticeSession } from '@/utils/practiceSession'
 import {
   practiceQuestionTypeLabel as getQuestionTypeLabel,
   practiceQuestionTypeTag as getQuestionTypeTag,
@@ -237,12 +238,14 @@ const { userAnswer, multiAnswers, canSubmit, toggleMulti, answer, reset } = useP
 const isWrongPractice = computed(() => practiceMode.value === 'wrong_question')
 const isFavoritePractice = computed(() => practiceMode.value === 'favorite')
 
-onMounted(() => {
-  const stored = sessionStorage.getItem('practice_questions')
+onMounted(async () => {
+  const userStore = useUserStore()
+  if (!userStore.userInfo) await userStore.fetchUserInfo()
+  const stored = loadPracticeSession(userStore.userInfo?.id)
   if (stored) {
-    questions.value = JSON.parse(stored)
+    questions.value = stored.questions
     startTime.value = Date.now()
-    practiceMode.value = sessionStorage.getItem('practice_mode') || ''
+    practiceMode.value = stored.mode
   } else {
     ElMessage.warning('没有练习题目，请先选择刷题模式')
     router.replace({ name: 'Practice' })
@@ -302,8 +305,7 @@ const handleResultClosed = () => {
 }
 
 const leavePractice = () => {
-  sessionStorage.removeItem('practice_questions')
-  sessionStorage.removeItem('practice_mode')
+  clearPracticeSession()
   router.push(practiceReturnRoute(practiceMode.value))
 }
 

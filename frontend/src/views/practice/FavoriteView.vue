@@ -120,6 +120,8 @@
 </template>
 
 <script setup lang="ts">
+import { useUserStore } from '@/stores/user'
+import { savePracticeSession } from '@/utils/practiceSession'
 import { computed, ref, onMounted } from 'vue'
 import { errorMessage, SemanticTagType } from '@/utils/errors'
 import { useRouter } from 'vue-router'
@@ -209,12 +211,12 @@ async function handleRemoveFavorite(row: FavoriteQuestionVO) {
 }
 
 async function startFavoritePractice() {
+  const userId = useUserStore().userInfo?.id
   practiceLoading.value = true
   try {
     const res = await getFavoritePractice({ count: practiceCount.value })
     if (res.code === 0 && res.data && res.data.length > 0) {
-      sessionStorage.setItem('practice_questions', JSON.stringify(res.data))
-      sessionStorage.setItem('practice_mode', 'favorite')
+      if (userId !== useUserStore().userInfo?.id || !savePracticeSession(userId, res.data, 'favorite')) return
       router.push({ name: 'PracticeSession' })
     } else {
       ElMessage.warning('暂无可练习的收藏题目')
@@ -227,12 +229,12 @@ async function startFavoritePractice() {
 }
 
 async function startSingleFavoritePractice(row: FavoriteQuestionVO) {
+  const userId = useUserStore().userInfo?.id
   practiceLoading.value = true
   try {
     const res = await getFavoritePractice({ questionId: row.questionId, count: 1 })
     if (res.code === 0 && res.data && res.data.length > 0) {
-      sessionStorage.setItem('practice_questions', JSON.stringify(res.data))
-      sessionStorage.setItem('practice_mode', 'favorite')
+      if (userId !== useUserStore().userInfo?.id || !savePracticeSession(userId, res.data, 'favorite')) return
       router.push({ name: 'PracticeSession' })
     } else {
       ElMessage.warning('该收藏题暂不可练习')

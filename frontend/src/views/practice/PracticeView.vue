@@ -135,6 +135,8 @@
 </template>
 
 <script setup lang="ts">
+import { useUserStore } from '@/stores/user'
+import { savePracticeSession } from '@/utils/practiceSession'
 import { ref, reactive, onMounted, computed } from 'vue'
 import { getCoursePage, type CourseVO } from '@/api/course'
 import { useRoute, useRouter } from 'vue-router'
@@ -226,6 +228,7 @@ const loadAdaptiveSummary = async () => {
 }
 
 const startAdaptivePractice = async () => {
+  const userId = useUserStore().userInfo?.id
   adaptiveStartLoading.value = true
   try {
     const params: Parameters<typeof getAdaptiveQuestions>[0] = { count: adaptiveForm.count }
@@ -233,8 +236,7 @@ const startAdaptivePractice = async () => {
 
     const res = await getAdaptiveQuestions(params)
     if (res.code === 0 && res.data && res.data.length > 0) {
-      sessionStorage.setItem('practice_questions', JSON.stringify(res.data))
-      sessionStorage.setItem('practice_mode', 'adaptive')
+      if (userId !== useUserStore().userInfo?.id || !savePracticeSession(userId, res.data, 'adaptive')) return
       router.push({ name: 'PracticeSession' })
     } else {
       ElMessage.warning('暂无可推荐的题目，请先添加题目或调整筛选条件')
@@ -247,6 +249,7 @@ const startAdaptivePractice = async () => {
 }
 
 const startPractice = async () => {
+  const userId = useUserStore().userInfo?.id
   loading.value = true
   try {
     const params: Parameters<typeof getPracticeQuestions>[0] = { count: form.count }
@@ -256,8 +259,7 @@ const startPractice = async () => {
 
     const res = await getPracticeQuestions(params)
     if (res.code === 0 && res.data && res.data.length > 0) {
-      sessionStorage.setItem('practice_questions', JSON.stringify(res.data))
-      sessionStorage.removeItem('practice_mode')
+      if (userId !== useUserStore().userInfo?.id || !savePracticeSession(userId, res.data)) return
       router.push({ name: 'PracticeSession' })
     } else {
       ElMessage.warning('未找到符合条件的题目，请调整筛选条件')

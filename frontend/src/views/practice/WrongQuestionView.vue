@@ -129,6 +129,8 @@
 </template>
 
 <script setup lang="ts">
+import { useUserStore } from '@/stores/user'
+import { savePracticeSession } from '@/utils/practiceSession'
 import { ref, reactive, onMounted, computed } from 'vue'
 import { SemanticTagType } from '@/utils/errors'
 import { useRoute, useRouter } from 'vue-router'
@@ -301,6 +303,7 @@ const formatTime = (time: string) => {
 }
 
 const handleStartWrongPractice = async () => {
+  const userId = useUserStore().userInfo?.id
   if (stats.value && stats.value.total === 0) {
     ElMessage.warning('错题本为空，暂无错题可重练')
     return
@@ -318,8 +321,7 @@ const handleStartWrongPractice = async () => {
         ElMessage.warning('当前筛选条件下暂无错题可重练')
         return
       }
-      sessionStorage.setItem('practice_questions', JSON.stringify(res.data))
-      sessionStorage.setItem('practice_mode', 'wrong_question')
+      if (userId !== useUserStore().userInfo?.id || !savePracticeSession(userId, res.data, 'wrong_question')) return
       router.push({ name: 'PracticeSession' })
     } else {
       ElMessage.error(res.message || '获取错题失败')

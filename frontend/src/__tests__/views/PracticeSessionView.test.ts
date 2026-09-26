@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent } from 'vue'
+import { createPinia, setActivePinia } from 'pinia'
+import { useUserStore } from '@/stores/user'
 
 const { mockSubmitAnswer, mockPush, mockReplace } = vi.hoisted(() => ({
   mockSubmitAnswer: vi.fn(),
@@ -105,7 +107,16 @@ const questions = [
 describe('PracticeSessionView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    setActivePinia(createPinia())
+    useUserStore().setLoginInfo('test-token', {
+      id: 7,
+      username: 'learner',
+      nickname: 'Learner',
+      avatar: null,
+      role: 'USER',
+    })
     sessionStorage.clear()
+    sessionStorage.setItem('practice_user_id', '7')
     sessionStorage.setItem('practice_questions', JSON.stringify(questions))
     mockSubmitAnswer.mockResolvedValue({
       code: 0,
@@ -119,6 +130,30 @@ describe('PracticeSessionView', () => {
         score: 5,
       },
     })
+  })
+
+  it('waits for the authenticated user to restore before reading a refresh cache', async () => {
+    const store = useUserStore()
+    const user = store.userInfo
+    store.userInfo = null
+    vi.spyOn(store, 'fetchUserInfo').mockImplementation(async () => {
+      store.userInfo = user
+    })
+    const wrapper = mount(PracticeSessionView, { global: { stubs } })
+    await flushPromises()
+    expect(store.fetchUserInfo).toHaveBeenCalledOnce()
+    expect(wrapper.text()).toContain('第一题')
+    expect(mockReplace).not.toHaveBeenCalled()
+  })
+
+  it.each(['other account', 'legacy cache'])('does not render private questions from %s', async (kind) => {
+    if (kind === 'other account') sessionStorage.setItem('practice_user_id', '8')
+    else sessionStorage.removeItem('practice_user_id')
+    const wrapper = mount(PracticeSessionView, { global: { stubs } })
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('第一题')
+    expect(mockReplace).toHaveBeenCalledWith({ name: 'Practice' })
+    expect(sessionStorage.getItem('practice_questions')).toBeNull()
   })
 
   it('keeps the result intact until the closing transition finishes before moving to the next question', async () => {

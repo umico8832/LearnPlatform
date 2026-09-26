@@ -12,7 +12,7 @@ export interface PracticeQuestionVO {
   courseName: string
   difficulty: number
   score: number
-  tags: string
+  tags: string | null
   options: PracticeOptionVO[]
   knowledgePointIds: number[]
   knowledgePointNames: string[]

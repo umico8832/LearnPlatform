@@ -1,3 +1,5 @@
+import { createPinia, setActivePinia } from 'pinia'
+import { useUserStore } from '@/stores/user'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, shallowMount } from '@vue/test-utils'
 import type { LearningDiagnosis } from '@/api/statistics'
@@ -90,6 +92,14 @@ const diagnosis: LearningDiagnosis = {
 
 describe('LearningDiagnosisView', () => {
   beforeEach(() => {
+    setActivePinia(createPinia())
+    useUserStore().setLoginInfo('test-token', {
+      id: 7,
+      username: 'learner',
+      nickname: 'Learner',
+      avatar: null,
+      role: 'USER',
+    })
     vi.clearAllMocks()
     sessionStorage.clear()
     mockGetLearningDiagnosis.mockResolvedValue({ data: diagnosis })

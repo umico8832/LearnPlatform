@@ -50,6 +50,8 @@
 </template>
 
 <script setup lang="ts">
+import { useUserStore } from '@/stores/user'
+import { savePracticeSession } from '@/utils/practiceSession'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -80,14 +82,14 @@ async function open(questionId: number, questionContent?: string) {
 }
 
 async function startPractice() {
+  const userId = useUserStore().userInfo?.id
   const summaries = data.value?.similarQuestions
   if (!summaries?.length) return
   try {
     const questions = await Promise.all(
       summaries.map((item) => getQuestionById(item.questionId).then((response) => response.data)),
     )
-    sessionStorage.setItem('practice_questions', JSON.stringify(questions))
-    sessionStorage.setItem('practice_mode', 'similar')
+    if (userId !== useUserStore().userInfo?.id || !savePracticeSession(userId, questions, 'similar')) return
     visible.value = false
     await router.push({ path: '/practice/session' })
   } catch {

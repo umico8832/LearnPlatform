@@ -46,6 +46,8 @@
 </template>
 
 <script setup lang="ts">
+import { useUserStore } from '@/stores/user'
+import { savePracticeSession } from '@/utils/practiceSession'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -110,13 +112,13 @@ async function loadSimilarQuestions(questionId: number, questionContent?: string
 }
 
 function startSimilarPractice() {
+  const userId = useUserStore().userInfo?.id
   if (!similarData.value?.similarQuestions?.length) return
   const similarQuestions = similarData.value.similarQuestions
   similarDialogVisible.value = false
   Promise.all(similarQuestions.map((item) => getQuestionById(item.questionId).then((response) => response.data)))
     .then((questions) => {
-      sessionStorage.setItem('practice_questions', JSON.stringify(questions))
-      sessionStorage.setItem('practice_mode', 'similar')
+      if (userId !== useUserStore().userInfo?.id || !savePracticeSession(userId, questions, 'similar')) return
       router.push({ path: '/practice/session' })
     })
     .catch(() => ElMessage.error('加载相似题失败，请重试'))
@@ -172,13 +174,13 @@ async function generateAiAdvice() {
 }
 
 function startRecommendPractice() {
+  const userId = useUserStore().userInfo?.id
   if (!data.value?.dailyRecommendations?.length) return
   Promise.all(
     data.value.dailyRecommendations.map((item) => getQuestionById(item.questionId).then((response) => response.data)),
   )
     .then((questions) => {
-      sessionStorage.setItem('practice_questions', JSON.stringify(questions))
-      sessionStorage.setItem('practice_mode', 'recommended')
+      if (userId !== useUserStore().userInfo?.id || !savePracticeSession(userId, questions, 'recommended')) return
       router.push({ path: '/practice/session' })
     })
     .catch(() => ElMessage.error('加载推荐练习失败，请重试'))

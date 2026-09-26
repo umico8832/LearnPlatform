@@ -1,3 +1,5 @@
+import { createPinia, setActivePinia } from 'pinia'
+import { useUserStore } from '@/stores/user'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 
@@ -27,6 +29,14 @@ import WrongQuestionView from '@/views/practice/WrongQuestionView.vue'
 
 describe('WrongQuestionView course target', () => {
   beforeEach(() => {
+    setActivePinia(createPinia())
+    useUserStore().setLoginInfo('test-token', {
+      id: 7,
+      username: 'learner',
+      nickname: 'Learner',
+      avatar: null,
+      role: 'USER',
+    })
     vi.clearAllMocks()
     routeQuery = { courseId: '408', questionId: '22' }
     mockGetWrongQuestionStats.mockResolvedValue({

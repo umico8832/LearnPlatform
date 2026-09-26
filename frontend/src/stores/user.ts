@@ -31,12 +31,13 @@ export const useUserStore = defineStore('user', () => {
    * 获取当前用户信息（页面刷新后调用）
    */
   async function fetchUserInfo() {
-    if (!token.value) return
+    const requestedToken = token.value
+    if (!requestedToken) return
     try {
       const res = await request.get<unknown, ApiResponse<UserInfo>>('/auth/me')
-      userInfo.value = res.data
+      if (token.value === requestedToken && getToken() === requestedToken) userInfo.value = res.data
     } catch {
-      clearLoginInfo()
+      if (token.value === requestedToken && getToken() === requestedToken) clearLoginInfo()
     }
   }
 

@@ -1,3 +1,5 @@
+import { clearPracticeSession } from './practiceSession'
+
 const TOKEN_KEY = 'learn_platform_token'
 
 /**
@@ -11,6 +13,7 @@ export function getToken(): string | null {
  * 设置 Token
  */
 export function setToken(token: string): void {
+  if (getToken() !== token) clearPracticeSession()
   localStorage.setItem(TOKEN_KEY, token)
 }
 
@@ -18,6 +21,7 @@ export function setToken(token: string): void {
  * 清除 Token
  */
 export function removeToken(): void {
+  clearPracticeSession()
   localStorage.removeItem(TOKEN_KEY)
 }
 
