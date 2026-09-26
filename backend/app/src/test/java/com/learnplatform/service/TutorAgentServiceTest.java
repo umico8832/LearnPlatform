@@ -16,6 +16,8 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,7 +38,8 @@ class TutorAgentServiceTest {
         TutorAgentRunVO expected = new TutorAgentRunVO();
         expected.setStatus("WAITING_USER");
         when(states.begin(7L, 10L, "session")).thenReturn(state);
-        when(runtime.respond(7L, 10L, "session", state.runId(), List.of(), "为什么从右向左搬移？"))
+        when(runtime.respond(eq(7L), eq(10L), eq("session"), eq(state.runId()), eq(List.of()),
+                eq("为什么从右向左搬移？"), any(Runnable.class)))
                 .thenReturn(new TutorAgentReply("为了避免覆盖尚未读取的元素。", List.of()));
         when(states.complete(state, "为什么从右向左搬移？", new TutorAgentReply("为了避免覆盖尚未读取的元素。", List.of())))
                 .thenReturn(expected);
@@ -46,7 +49,8 @@ class TutorAgentServiceTest {
 
     @Test void releasesFailedRunsAndReturnsAStableBusinessError() {
         when(states.resume(7L, 10L, "session", "run")).thenReturn(state);
-        when(runtime.respond(7L, 10L, "session", state.runId(), List.of(), "继续"))
+        when(runtime.respond(eq(7L), eq(10L), eq("session"), eq(state.runId()), eq(List.of()),
+                eq("继续"), any(Runnable.class)))
                 .thenThrow(new ModelException(ModelException.Code.PROTOCOL));
 
         BusinessException exception = assertThrows(BusinessException.class,

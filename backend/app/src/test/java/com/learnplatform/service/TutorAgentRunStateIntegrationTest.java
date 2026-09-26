@@ -1,9 +1,17 @@
 package com.learnplatform.service;
 
 import com.learnplatform.IntegrationTestBase;
+import com.learnplatform.ai.model.Cancellation;
+import com.learnplatform.ai.model.ModelRequest;
+import com.learnplatform.ai.model.ModelResult;
 import com.learnplatform.common.exception.BusinessException;
+import com.learnplatform.dto.TutorAgentMessageRequest;
+import com.learnplatform.service.ai.AiProvider;
 import com.learnplatform.service.tutor.TutorAgentExecutionState;
 import com.learnplatform.service.tutor.TutorAgentReply;
+import com.learnplatform.service.tutor.TutorAgentRuntime;
+import com.learnplatform.service.tutor.TutorAgentToolExecutor;
+import com.learnplatform.service.tutor.TutorMemoryService;
 import com.learnplatform.dto.TutorAgentActionVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
@@ -21,6 +29,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -30,11 +39,17 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @Tag("integration")
 @SpringBootTest
@@ -48,6 +63,7 @@ class TutorAgentRunStateIntegrationTest extends IntegrationTestBase {
     @Autowired private JdbcTemplate jdbc;
     @Autowired private MockMvc mvc;
     @Autowired private org.springframework.transaction.PlatformTransactionManager transactions;
+    @Autowired private AiCallGovernanceService governance;
     private String sessionKey;
 
     @BeforeEach void prepare() {
@@ -85,16 +101,76 @@ class TutorAgentRunStateIntegrationTest extends IntegrationTestBase {
 
     @Test void expiredExecutionCanBeReclaimedWithoutAcceptingOldSuccessOrFailure() {
         var old = states.begin(USER, COURSE, sessionKey);
+        assertDoesNotThrow(() -> states.requireActiveExecution(old));
         expire(old);
+        assertThrows(BusinessException.class, () -> states.requireActiveExecution(old));
         assertEquals("FAILED", viewStatus(old));
         var current = resume(old);
         assertEquals(old.runId(), current.runId());
         assertNotEquals(old.executionKey(), current.executionKey());
+        assertThrows(BusinessException.class, () -> states.requireActiveExecution(old));
+        assertDoesNotThrow(() -> states.requireActiveExecution(current));
+        assertThrows(BusinessException.class, () -> states.requireActiveExecution(new TutorAgentExecutionState(
+                current.id(), current.runId(), current.executionKey(), current.nextSequence() + 2, current.history())));
         assertThrows(BusinessException.class, () -> states.complete(old, "旧问题", new TutorAgentReply("旧回答", List.of())));
         states.fail(old);
         assertEquals("RUNNING", viewStatus(current));
         assertEquals(0, messageCount(current));
         assertEquals("新回答", states.complete(current, "新问题", new TutorAgentReply("新回答", List.of())).getMessages().get(1).getContent());
+        assertThrows(BusinessException.class, () -> states.requireActiveExecution(current));
+    }
+
+    @Test void expiredExecutionCannotRunToolsAfterAnotherWorkerClaimsIt() {
+        AiProvider provider = provider();
+        TutorAgentToolExecutor tools = mock(TutorAgentToolExecutor.class);
+        TutorMemoryService memory = memory();
+        TutorAgentService agent = agent(provider, tools, memory);
+        AtomicReference<TutorAgentExecutionState> successor = new AtomicReference<>();
+
+        when(provider.complete(any(), any())).thenAnswer(call -> {
+            String runKey = states.latest(USER, COURSE, sessionKey).getRunKey();
+            expireRun(runKey);
+            successor.set(states.resume(USER, COURSE, sessionKey, runKey));
+            return toolCall("read_tutor_lesson", "lesson");
+        });
+
+        assertThrows(BusinessException.class, () -> agent.start(USER, COURSE, sessionKey, request("读取本节")));
+
+        verify(provider, times(1)).complete(any(), any(Cancellation.class));
+        verify(tools, times(0)).execute(any(), any(), any(), any(ModelRequest.ToolCall.class));
+        assertEquals(0, messageCount(successor.get()));
+        assertEquals("RUNNING", viewStatus(successor.get()));
+        assertEquals("FAILED", callOutcome(successor.get().runId()));
+        assertEquals(5, callTokens(successor.get().runId()));
+        assertEquals("新回答", states.complete(successor.get(), "重新提问",
+                new TutorAgentReply("新回答", List.of())).getMessages().get(1).getContent());
+    }
+
+    @Test void expiryDuringFirstToolStopsLaterToolsAndTheNextModelRound() {
+        AiProvider provider = provider();
+        TutorAgentToolExecutor tools = mock(TutorAgentToolExecutor.class);
+        TutorAgentService agent = agent(provider, tools, memory());
+        AtomicReference<String> runKey = new AtomicReference<>();
+        when(provider.complete(any(), any())).thenAnswer(call -> {
+            runKey.set(states.latest(USER, COURSE, sessionKey).getRunKey());
+            return new ModelResult(null, List.of(
+                    new ModelRequest.ToolCall("lesson", "read_tutor_lesson", "{}"),
+                    new ModelRequest.ToolCall("evidence", "read_learning_evidence", "{}")),
+                    "test-model", "first", ModelResult.Finish.TOOL_CALLS, new ModelResult.Usage(3, 2, 5));
+        });
+        when(tools.execute(any(), any(), any(), any(ModelRequest.ToolCall.class))).thenAnswer(call -> {
+            expireRun(runKey.get());
+            return "{}";
+        });
+
+        assertThrows(BusinessException.class, () -> agent.start(USER, COURSE, sessionKey, request("读取本节")));
+
+        verify(provider, times(1)).complete(any(), any(Cancellation.class));
+        verify(tools, times(1)).execute(any(), any(), any(), any(ModelRequest.ToolCall.class));
+        assertEquals(0, messageCount(UUID.fromString(runKey.get())));
+        assertEquals("FAILED", runStatus(runKey.get()));
+        assertEquals("SUCCEEDED", callOutcome(UUID.fromString(runKey.get())));
+        assertEquals(5, callTokens(UUID.fromString(runKey.get())));
     }
 
     @Test void expiryRejectsCompletionEvenBeforeAnotherWorkerClaimsTheRun() {
@@ -102,6 +178,12 @@ class TutorAgentRunStateIntegrationTest extends IntegrationTestBase {
         expire(execution);
         assertThrows(BusinessException.class, () -> states.complete(execution, "问题", new TutorAgentReply("回答", List.of())));
         assertEquals(0, messageCount(execution));
+    }
+
+    @Test void activeExecutionRejectsAMissingLease() {
+        var execution = states.begin(USER, COURSE, sessionKey);
+        jdbc.update("UPDATE tutor_agent_run SET lease_until=NULL WHERE id=?", execution.id());
+        assertThrows(BusinessException.class, () -> states.requireActiveExecution(execution));
     }
 
     @Test void failedExecutionResumesWithHistoryAndAFreshIdentity() {
@@ -301,6 +383,49 @@ class TutorAgentRunStateIntegrationTest extends IntegrationTestBase {
         assertThrows(BusinessException.class, () -> states.latest(USER, COURSE, sessionKey));
     }
 
+    private TutorAgentService agent(AiProvider provider, TutorAgentToolExecutor tools, TutorMemoryService memory) {
+        return new TutorAgentService(states, new TutorAgentRuntime(
+                new AiInvocationService(provider, null, governance), tools, memory));
+    }
+
+    private AiProvider provider() {
+        AiProvider provider = mock(AiProvider.class);
+        when(provider.defaultOptions()).thenReturn(new ModelRequest.Options("test-model", 200, 0.2));
+        return provider;
+    }
+
+    private TutorMemoryService memory() {
+        TutorMemoryService memory = mock(TutorMemoryService.class);
+        when(memory.promptContext(USER, COURSE)).thenReturn(
+                "{\"revision\":0,\"explanationStyle\":null,\"goal\":null,\"sessionNotes\":[]}");
+        return memory;
+    }
+
+    private ModelResult toolCall(String name, String id) {
+        return new ModelResult(null, List.of(new ModelRequest.ToolCall(id, name, "{}")), "test-model", "first",
+                ModelResult.Finish.TOOL_CALLS, new ModelResult.Usage(3, 2, 5));
+    }
+
+    private TutorAgentMessageRequest request(String message) {
+        TutorAgentMessageRequest request = new TutorAgentMessageRequest();
+        request.setMessage(message);
+        return request;
+    }
+
+    private String callOutcome(UUID runId) {
+        return jdbc.queryForObject("SELECT outcome FROM ai_call_log WHERE run_id=? ORDER BY id DESC LIMIT 1",
+                String.class, runId.toString());
+    }
+
+    private Integer callTokens(UUID runId) {
+        return jdbc.queryForObject("SELECT tokens_used FROM ai_call_log WHERE run_id=? ORDER BY id DESC LIMIT 1",
+                Integer.class, runId.toString());
+    }
+
+    private String runStatus(String runKey) {
+        return jdbc.queryForObject("SELECT status FROM tutor_agent_run WHERE run_key=?", String.class, runKey);
+    }
+
     private UsernamePasswordAuthenticationToken learner(Long userId) {
         return new UsernamePasswordAuthenticationToken(new CustomUserDetails(userId, "learner", "USER"), null,
                 List.of(new SimpleGrantedAuthority("ROLE_USER")));
@@ -333,8 +458,18 @@ class TutorAgentRunStateIntegrationTest extends IntegrationTestBase {
                 execution.id());
     }
 
+    private void expireRun(String runKey) {
+        jdbc.update("UPDATE tutor_agent_run SET lease_until=DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 SECOND) WHERE run_key=?",
+                runKey);
+    }
+
     private int messageCount(TutorAgentExecutionState execution) {
         return jdbc.queryForObject("SELECT COUNT(*) FROM tutor_agent_message WHERE run_id=?", Integer.class, execution.id());
+    }
+
+    private int messageCount(UUID runId) {
+        return jdbc.queryForObject("SELECT COUNT(*) FROM tutor_agent_message WHERE run_id="
+                + "(SELECT id FROM tutor_agent_run WHERE run_key=?)", Integer.class, runId.toString());
     }
 
     private void cleanUp() {
@@ -342,6 +477,7 @@ class TutorAgentRunStateIntegrationTest extends IntegrationTestBase {
         jdbc.update("DELETE FROM tutor_agent_message WHERE run_id IN (SELECT id FROM tutor_agent_run WHERE tutor_session_id IN (SELECT id FROM tutor_session WHERE user_id=?))", USER);
         jdbc.update("DELETE FROM tutor_agent_run WHERE tutor_session_id IN (SELECT id FROM tutor_session WHERE user_id=?)", USER);
         jdbc.update("DELETE FROM tutor_session WHERE user_id=?", USER);
+        jdbc.update("DELETE FROM ai_call_log WHERE user_id=?", USER);
         jdbc.update("DELETE FROM tutor_content WHERE id=?", CONTENT);
         jdbc.update("DELETE FROM user_course WHERE user_id=?", USER);
         jdbc.update("DELETE FROM course WHERE id=?", COURSE);

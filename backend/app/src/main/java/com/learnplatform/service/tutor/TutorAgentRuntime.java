@@ -96,6 +96,17 @@ public class TutorAgentRuntime {
 
     public TutorAgentReply respond(Long userId, Long courseId, String sessionKey, UUID runId,
                           List<TutorAgentHistoryMessage> history, String question) {
+        return respond(userId, courseId, sessionKey, runId, history, question, () -> { });
+    }
+
+    public TutorAgentReply respond(Long userId, Long courseId, String sessionKey, UUID runId,
+                          List<TutorAgentHistoryMessage> history, String question, Runnable checkExecution) {
+        Cancellation cancellation = new Cancellation();
+        Runnable checkpoint = () -> {
+            cancellation.check();
+            checkExecution.run();
+        };
+        checkpoint.run();
         List<ModelRequest.Message> messages = initialMessages(history, question,
                 memories.promptContext(userId, courseId));
         boolean readLesson = false;
@@ -107,11 +118,15 @@ public class TutorAgentRuntime {
             availableTools.add(KNOWLEDGE_SEARCH);
         }
         for (int round = 0; round <= MAX_TOOL_ROUNDS; round++) {
+            checkpoint.run();
             ModelRequest request = new ModelRequest(messages, invocation.defaultOptions(), availableTools, null);
             boolean lessonWasRead = readLesson;
             boolean finalToolRound = round == MAX_TOOL_ROUNDS;
             ModelResult result = invocation.generate(new AiCallContext(userId, "tutor_agent", runId),
-                    request, new Cancellation(), candidate -> validate(candidate, lessonWasRead, finalToolRound));
+                    request, cancellation, candidate -> {
+                        checkpoint.run();
+                        return validate(candidate, lessonWasRead, finalToolRound);
+                    });
             if (result.finish() != ModelResult.Finish.TOOL_CALLS) {
                 String answer = result.requireCompleteText();
                 String content = sources.isEmpty() ? answer
@@ -121,6 +136,7 @@ public class TutorAgentRuntime {
             messages.add(new ModelRequest.Message(ModelRequest.Role.ASSISTANT, result.text(),
                     result.toolCalls(), null));
             for (ModelRequest.ToolCall call : result.toolCalls()) {
+                checkpoint.run();
                 String output = ("search_course_knowledge".equals(call.name())
                         || "read_tutor_practice_result".equals(call.name())
                         || "read_tutor_plan_state".equals(call.name()))

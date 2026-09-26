@@ -38,4 +38,12 @@ public interface TutorAgentRunMapper extends BaseMapper<TutorAgentRun> {
             WHERE id=#{id} AND status='RUNNING' AND lease_until > CURRENT_TIMESTAMP
             """)
     boolean hasActiveLease(@Param("id") Long id);
+
+    @Select("""
+            SELECT COUNT(*) FROM tutor_agent_run
+            WHERE id=#{id} AND status='RUNNING' AND execution_key=#{executionKey}
+                AND next_sequence=#{sequence} AND lease_until > CURRENT_TIMESTAMP
+            """)
+    boolean hasActiveExecution(@Param("id") Long id, @Param("executionKey") String executionKey,
+                               @Param("sequence") int sequence);
 }

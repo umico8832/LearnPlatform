@@ -45,7 +45,7 @@ public class TutorAgentService {
                                     TutorAgentExecutionState state, String question) {
         try {
             TutorAgentReply answer = runtime.respond(userId, courseId, sessionKey, state.runId(),
-                    state.history(), question);
+                    state.history(), question, () -> states.requireActiveExecution(state));
             return states.complete(state, question, answer);
         } catch (RuntimeException exception) {
             states.fail(state);

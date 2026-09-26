@@ -91,6 +91,12 @@ public class TutorAgentRunStateService {
         runs.fail(state.id(), state.executionKey());
     }
 
+    public void requireActiveExecution(TutorAgentExecutionState state) {
+        if (!runs.hasActiveExecution(state.id(), state.executionKey(), state.nextSequence())) {
+            throw new BusinessException(ResultCode.RATE_LIMITED, "Tutor Agent 运行已过期或状态已变化，请刷新后重试");
+        }
+    }
+
     private void claim(TutorAgentRun run) {
         String executionKey = UUID.randomUUID().toString();
         if (runs.claim(run.getId(), executionKey) != 1) {
