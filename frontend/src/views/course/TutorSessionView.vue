@@ -3,7 +3,11 @@
     <template v-if="failed">
       <section class="state-panel">
         <el-result icon="error" title="无法开始教学" sub-title="请确认已加入课程，并从可学习的知识点进入。">
-          <template #extra><el-button @click="router.back()">返回</el-button></template>
+          <template #extra>
+            <el-button type="primary" @click="load()">重新尝试</el-button>
+            <el-button @click="load(true)">重新开始教学</el-button>
+            <el-button @click="router.back()">返回</el-button>
+          </template>
         </el-result>
       </section>
     </template>
@@ -90,13 +94,21 @@
         :key="session.sessionKey"
         :course-id="courseId"
         :session-key="session.sessionKey"
+        :check-result="result"
+        @request-check="focusCheck"
       />
 
-      <section class="lesson-block check" aria-labelledby="check-heading">
+      <section
+        ref="checkSection"
+        class="lesson-block check"
+        aria-labelledby="check-heading"
+        tabindex="-1"
+        data-testid="tutor-check"
+      >
         <LpKicker>理解检查</LpKicker>
         <h2 id="check-heading">确认一下理解</h2>
         <p class="check-prompt">{{ session.check.prompt }}</p>
-        <el-radio-group v-model="optionId" :disabled="!!result" class="check-options">
+        <el-radio-group v-model="optionId" :disabled="!!result || submitting" class="check-options">
           <el-radio v-for="option in session.check.options" :key="option.id" :value="option.id" class="check-option">
             {{ option.text }}
           </el-radio>
@@ -104,6 +116,7 @@
         <el-button type="primary" :disabled="!optionId || !!result" :loading="submitting" @click="submit">
           提交检查
         </el-button>
+        <el-alert v-if="checkFailure" :title="checkFailure" type="error" :closable="false" show-icon />
 
         <transition name="result" mode="out-in">
           <div v-if="result" class="check-result" :class="result.correct ? 'is-correct' : 'is-wrong'">
@@ -144,7 +157,7 @@
   </main>
 </template>
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { CircleCheckFilled, WarningFilled } from '@element-plus/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 import TutorArrayStackInsertion from '@/components/TutorArrayStackInsertion.vue'
@@ -177,22 +190,15 @@ import {
   isSequentialListStorageCourseware,
   isLinkedListReversalCourseware,
   isFactorialCallStackCourseware,
-  getTutorSession,
-  startTutorSession,
-  submitTutorCheck,
-  type TutorCheckResultVO,
-  type TutorSessionVO,
 } from '@/api/course'
+import { useTutorSessionCheck } from '@/composables/useTutorSessionCheck'
 const route = useRoute()
 const router = useRouter()
-const loading = ref(false)
-const failed = ref(false)
-const submitting = ref(false)
-const session = ref<TutorSessionVO>()
-const optionId = ref('')
-const result = ref<TutorCheckResultVO>()
+const checkSection = ref<HTMLElement>()
 const courseId = computed(() => Number(route.params.id))
 const pointId = computed(() => Number(route.query.knowledgePointId))
+const { loading, failed, submitting, session, optionId, result, checkFailure, load, submit, dispose } =
+  useTutorSessionCheck(courseId, pointId)
 const courseware = computed(() =>
   session.value && isArrayStackInsertionCourseware(session.value.lesson.visualization)
     ? session.value.lesson.visualization
@@ -279,31 +285,6 @@ const hasLearningContext = computed(() => {
 function formatEvidenceTime(value: string) {
   return value.replace('T', ' ').slice(0, 16)
 }
-async function load() {
-  loading.value = true
-  failed.value = false
-  session.value = undefined
-  optionId.value = ''
-  result.value = undefined
-  const storageKey = `lp:tutor-session:${courseId.value}:${pointId.value}`
-  try {
-    const storedSessionKey = sessionStorage.getItem(storageKey)
-    if (storedSessionKey) {
-      try {
-        session.value = (await getTutorSession(courseId.value, storedSessionKey)).data
-        return
-      } catch {
-        sessionStorage.removeItem(storageKey)
-      }
-    }
-    session.value = (await startTutorSession(courseId.value, pointId.value)).data
-    sessionStorage.setItem(storageKey, session.value.sessionKey)
-  } catch {
-    failed.value = true
-  } finally {
-    loading.value = false
-  }
-}
 function openGuidance(knowledgePointId: number) {
   router.push({
     name: 'TutorSession',
@@ -311,18 +292,18 @@ function openGuidance(knowledgePointId: number) {
     query: { knowledgePointId: String(knowledgePointId) },
   })
 }
-async function submit() {
-  if (!session.value) return
-  submitting.value = true
-  try {
-    result.value = (await submitTutorCheck(courseId.value, session.value.sessionKey, optionId.value)).data
-  } finally {
-    submitting.value = false
-  }
+async function focusCheck() {
+  await nextTick()
+  const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+  checkSection.value?.scrollIntoView({ behavior, block: 'start' })
+  checkSection.value?.focus({ preventScroll: true })
 }
 onMounted(load)
-watch(pointId, (value, previous) => {
-  if (value !== previous) load()
+watch([courseId, pointId], (value, previous) => {
+  if (value[0] !== previous[0] || value[1] !== previous[1]) void load()
+})
+onBeforeUnmount(() => {
+  dispose()
 })
 </script>
 <style scoped>
@@ -341,7 +322,6 @@ watch(pointId, (value, previous) => {
   box-shadow: var(--lp-shadow-xs);
 }
 
-/* ---------------- Heading ---------------- */
 .tutor-heading {
   padding: var(--lp-space-2) 0 var(--lp-space-1);
 }
@@ -363,7 +343,6 @@ watch(pointId, (value, previous) => {
   line-height: var(--lp-leading-relaxed);
 }
 
-/* ---------------- Lesson blocks ---------------- */
 .lesson-block {
   padding: var(--lp-space-6);
   background: var(--lp-surface);
@@ -420,7 +399,6 @@ watch(pointId, (value, previous) => {
   font-size: var(--lp-text-base);
 }
 
-/* ---------------- Evidence ---------------- */
 .evidence-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -462,14 +440,12 @@ watch(pointId, (value, previous) => {
   margin-top: var(--lp-space-3);
 }
 
-/* ---------------- Steps ---------------- */
 .steps-list {
   display: grid;
   gap: var(--lp-space-3);
   margin: var(--lp-space-4) 0 0;
   padding: 0;
   list-style: none;
-  counter-reset: steps;
 }
 
 .steps-list li {
@@ -499,7 +475,6 @@ watch(pointId, (value, previous) => {
   line-height: var(--lp-leading-relaxed);
 }
 
-/* ---------------- Check ---------------- */
 .check {
   display: flex;
   flex-direction: column;
@@ -542,7 +517,6 @@ watch(pointId, (value, previous) => {
   background: var(--lp-primary-soft);
 }
 
-/* ---------------- Result ---------------- */
 .check-result {
   width: 100%;
   padding: var(--lp-space-5);
@@ -620,7 +594,6 @@ watch(pointId, (value, previous) => {
   border-left: 3px solid var(--lp-success);
 }
 
-/* ---------------- Transitions ---------------- */
 .result-enter-active,
 .result-leave-active {
   transition:
@@ -643,9 +616,6 @@ watch(pointId, (value, previous) => {
   }
   .tutor-title {
     font-size: var(--lp-text-3xl);
-  }
-  .check-options {
-    flex-direction: column;
   }
 }
 </style>

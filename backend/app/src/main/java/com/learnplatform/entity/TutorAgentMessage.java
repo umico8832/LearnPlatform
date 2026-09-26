@@ -14,6 +14,7 @@ public class TutorAgentMessage {
     private Integer sequenceNo;
     private String role;
     private String content;
+    private String actionsJson;
     private LocalDateTime createTime;
 
     public Long getId() { return id; }
@@ -26,6 +27,8 @@ public class TutorAgentMessage {
     public void setRole(String value) { role = value; }
     public String getContent() { return content; }
     public void setContent(String value) { content = value; }
+    public String getActionsJson() { return actionsJson; }
+    public void setActionsJson(String value) { actionsJson = value; }
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime value) { createTime = value; }
 }

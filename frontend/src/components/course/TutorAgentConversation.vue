@@ -18,6 +18,14 @@
       >
         <span>{{ item.role === 'USER' ? '你' : 'Tutor' }}</span>
         <p>{{ item.content }}</p>
+        <el-button
+          v-if="item.role === 'ASSISTANT' && (item.actions ?? []).some((action) => action.type === 'CHECK')"
+          data-testid="agent-request-check"
+          class="agent-check-action"
+          @click="emit('request-check')"
+        >
+          {{ checkResult ? '查看检查结果' : '开始理解检查' }}
+        </el-button>
       </article>
     </div>
 
@@ -34,6 +42,16 @@
       {{ restoreFailed ? '重试恢复对话' : '刷新状态' }}
     </el-button>
     <p v-if="run?.status === 'FAILED'" class="agent-thinking">上次回答未完成，可重新发送问题；历史对话已保留。</p>
+
+    <el-button
+      v-if="checkResult"
+      data-testid="agent-follow-up-check"
+      :loading="submitting"
+      :disabled="!canContinueFromCheck"
+      @click="continueFromCheck"
+    >
+      请 Tutor 根据作答继续指导
+    </el-button>
 
     <div class="agent-composer">
       <label for="tutor-agent-question">你的问题</label>
@@ -71,7 +89,12 @@ import {
 } from '@/api/tutor'
 import { errorMessage } from '@/utils/errors'
 
-const props = defineProps<{ courseId: number; sessionKey: string }>()
+const props = defineProps<{
+  courseId: number
+  sessionKey: string
+  checkResult?: { correct: boolean } | null
+}>()
+const emit = defineEmits<{ 'request-check': [] }>()
 const question = ref('')
 const submitting = ref(false)
 const failure = ref('')
@@ -87,6 +110,9 @@ const canSend = computed(
     run.value?.status !== 'RUNNING' &&
     question.value.trim().length > 0,
 )
+const canContinueFromCheck = computed(
+  () => !submitting.value && !restoring.value && !restoreFailed.value && run.value?.status !== 'RUNNING',
+)
 const storageKey = computed(() => `lp:tutor-agent-run:${props.courseId}:${props.sessionKey}`)
 const statusLabel = computed(() => {
   if (restoring.value) return '正在恢复对话'
@@ -99,7 +125,15 @@ let generation = 0
 
 async function send() {
   if (!canSend.value) return
-  const message = question.value.trim()
+  await sendMessage(question.value.trim(), true)
+}
+
+async function continueFromCheck() {
+  if (!canContinueFromCheck.value) return
+  await sendMessage('请根据我本节理解检查的实际作答，继续指导我。', false)
+}
+
+async function sendMessage(message: string, clearQuestion: boolean) {
   const current = generation
   submitting.value = true
   failure.value = ''
@@ -109,7 +143,7 @@ async function send() {
       : await startTutorAgentRun(props.courseId, props.sessionKey, message)
     if (current !== generation) return
     rememberRun(response.data)
-    question.value = ''
+    if (clearQuestion) question.value = ''
   } catch (error) {
     if (current !== generation) return
     failure.value = errorMessage(error, 'Tutor 暂时无法回答，请稍后重试')
@@ -259,6 +293,10 @@ onBeforeUnmount(() => {
 .agent-message.is-user p {
   background: var(--lp-primary-soft);
   border-color: var(--lp-primary-softer);
+}
+
+.agent-check-action {
+  margin-top: var(--lp-space-2);
 }
 
 .agent-thinking {

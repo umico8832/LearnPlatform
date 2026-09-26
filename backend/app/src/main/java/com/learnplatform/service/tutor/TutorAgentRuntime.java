@@ -5,6 +5,7 @@ import com.learnplatform.ai.model.ModelException;
 import com.learnplatform.ai.model.JsonContract;
 import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.ai.model.ModelResult;
+import com.learnplatform.dto.TutorAgentActionVO;
 import com.learnplatform.service.AiInvocationService;
 import com.learnplatform.service.ai.AiCallContext;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,10 @@ public class TutorAgentRuntime {
             不得把用户自评当作掌握事实，不得泄露理解检查的正确选项，也不得声称执行了未注册操作。
             每个用户问题都必须先调用 read_tutor_lesson；需要结合服务端学习记录时再调用
             read_learning_evidence。这两个工具的参数必须是空对象。信息不足时明确说明边界，不要自行补造课程事实。
+            用户准备自测时，调用 present_tutor_check 提供理解检查入口，等待用户自己选择并提交答案。
+            用户提到已作答或需要作答反馈时，先调用 read_tutor_check_result 核对本节真实结果，
+            未作答时不得判分或把聊天中的答案当作学习事实；已作答时根据服务端结果指导复习或后续学习。
+            这两个教学工具同样只接受空对象。展示检查不会自动作答或改变学习状态。
             回答应直接、简洁，并在回答后等待用户继续提问。
             """;
     private static final String EMPTY_OBJECT_SCHEMA = """
@@ -39,6 +44,10 @@ public class TutorAgentRuntime {
             new ModelRequest.Tool("read_tutor_lesson", "读取当前会话已审查的教学内容与公开检查题。",
                     EMPTY_OBJECT_SCHEMA),
             new ModelRequest.Tool("read_learning_evidence", "读取当前会话启动时固化的学习证据计数与时间。",
+                    EMPTY_OBJECT_SCHEMA),
+            new ModelRequest.Tool("present_tutor_check", "提供本节理解检查操作，等待用户真实作答；已作答时返回结果。",
+                    EMPTY_OBJECT_SCHEMA),
+            new ModelRequest.Tool("read_tutor_check_result", "读取本节服务端首次判分结果；未作答时不返回解释。",
                     EMPTY_OBJECT_SCHEMA));
 
     private final AiInvocationService invocation;
@@ -49,11 +58,12 @@ public class TutorAgentRuntime {
         this.tools = tools;
     }
 
-    public String respond(Long userId, Long courseId, String sessionKey, UUID runId,
+    public TutorAgentReply respond(Long userId, Long courseId, String sessionKey, UUID runId,
                           List<TutorAgentHistoryMessage> history, String question) {
         List<ModelRequest.Message> messages = initialMessages(history, question);
         boolean readLesson = false;
         Map<String, String> sources = new LinkedHashMap<>();
+        List<TutorAgentActionVO> actions = new ArrayList<>();
         List<ModelRequest.Tool> availableTools = new ArrayList<>(TOOLS);
         if (tools.supportsKnowledgeSearch()) {
             availableTools.add(KNOWLEDGE_SEARCH);
@@ -66,7 +76,9 @@ public class TutorAgentRuntime {
                     request, new Cancellation(), candidate -> validate(candidate, lessonWasRead, finalToolRound));
             if (result.finish() != ModelResult.Finish.TOOL_CALLS) {
                 String answer = result.requireCompleteText();
-                return sources.isEmpty() ? answer : answer + "\n\n本轮检索资料：\n" + String.join("\n", sources.values());
+                String content = sources.isEmpty() ? answer
+                        : answer + "\n\n本轮检索资料：\n" + String.join("\n", sources.values());
+                return new TutorAgentReply(content, actions);
             }
             messages.add(new ModelRequest.Message(ModelRequest.Role.ASSISTANT, result.text(),
                     result.toolCalls(), null));
@@ -77,11 +89,28 @@ public class TutorAgentRuntime {
                 if ("search_course_knowledge".equals(call.name())) {
                     collectSources(output, sources);
                 }
+                if ("present_tutor_check".equals(call.name())) {
+                    collectCheckAction(output, actions);
+                }
                 messages.add(new ModelRequest.Message(ModelRequest.Role.TOOL, output, List.of(), call.id()));
                 readLesson |= "read_tutor_lesson".equals(call.name());
             }
         }
         throw new ModelException(ModelException.Code.PROTOCOL);
+    }
+
+    private void collectCheckAction(String output, List<TutorAgentActionVO> actions) {
+        var action = JsonContract.parse(output).path("action");
+        if (action.isMissingNode() || action.isNull()) {
+            return;
+        }
+        if (!action.isObject() || action.size() != 1 || !"CHECK".equals(action.path("type").asText())) {
+            throw new ModelException(ModelException.Code.PROTOCOL);
+        }
+        TutorAgentActionVO check = new TutorAgentActionVO("CHECK");
+        if (!actions.contains(check)) {
+            actions.add(check);
+        }
     }
 
     private void collectSources(String output, Map<String, String> sources) {
@@ -127,7 +156,8 @@ public class TutorAgentRuntime {
         messages.add(ModelRequest.Message.text(ModelRequest.Role.SYSTEM, instructions));
         int from = Math.max(0, history.size() - HISTORY_LIMIT);
         history.subList(from, history.size()).forEach(message -> messages.add(
-                ModelRequest.Message.text(message.role(), message.content())));
+                ModelRequest.Message.text(message.role(), message.content()
+                        + (message.actions().isEmpty() ? "" : "\n本轮已提供理解检查入口；展示不代表用户已作答。"))));
         messages.add(ModelRequest.Message.text(ModelRequest.Role.USER, question));
         return messages;
     }

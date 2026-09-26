@@ -87,6 +87,69 @@ describe('TutorAgentConversation', () => {
     expect(wrapper.text()).toContain('可以把它看成给书架腾位置。')
   })
 
+  it('offers an assistant-requested understanding check without supplying an answer', async () => {
+    mockLatest.mockResolvedValueOnce({
+      data: {
+        runKey: 'run',
+        status: 'WAITING_USER',
+        messages: [
+          { sequence: 1, role: 'USER', content: '我准备好了', createTime: null, actions: [{ type: 'CHECK' }] },
+          {
+            sequence: 2,
+            role: 'ASSISTANT',
+            content: '我们先检查一下理解。',
+            createTime: null,
+            actions: [{ type: 'CHECK' }],
+          },
+        ],
+      },
+    })
+    const wrapper = mountAgent()
+    await flushPromises()
+
+    expect(wrapper.findAll('[data-testid="agent-request-check"]')).toHaveLength(1)
+    await wrapper.get('[data-testid="agent-request-check"]').trigger('click')
+    expect(wrapper.emitted('request-check')).toEqual([[]])
+  })
+
+  it('only asks Tutor to read the saved check result after the learner explicitly requests follow-up', async () => {
+    mockLatest.mockResolvedValueOnce({ data: { runKey: 'run', status: 'WAITING_USER', messages: [] } })
+    const wrapper = mount(TutorAgentConversation, {
+      props: {
+        courseId: 10,
+        sessionKey: 'session',
+        checkResult: {
+          correct: false,
+          explanation: '这项由服务端判分。',
+          guidanceType: null,
+          guidanceTitle: null,
+          guidanceDescription: null,
+          guidanceKnowledgePointId: null,
+        },
+      },
+      global: { stubs },
+    })
+    await flushPromises()
+
+    await wrapper.get('[data-testid="agent-follow-up-check"]').trigger('click')
+    await flushPromises()
+
+    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'run', '请根据我本节理解检查的实际作答，继续指导我。')
+    expect(mockResume).not.toHaveBeenCalledWith(10, 'session', 'run', expect.stringContaining('这项由服务端判分'))
+  })
+
+  it('starts a first Agent run when the learner explicitly requests follow-up after checking', async () => {
+    mockLatest.mockResolvedValueOnce({ data: null })
+    const wrapper = mount(TutorAgentConversation, {
+      props: { courseId: 10, sessionKey: 'session', checkResult: { correct: true } },
+      global: { stubs },
+    })
+    await flushPromises()
+    await wrapper.get('[data-testid="agent-follow-up-check"]').trigger('click')
+    await flushPromises()
+    expect(mockStart).toHaveBeenCalledWith(10, 'session', '请根据我本节理解检查的实际作答，继续指导我。')
+  })
+
   it('keeps the question available when the request fails', async () => {
     mockStart.mockRejectedValueOnce(new Error('当前 AI 模型不支持 Tutor Agent 工具调用'))
     const wrapper = mountAgent()

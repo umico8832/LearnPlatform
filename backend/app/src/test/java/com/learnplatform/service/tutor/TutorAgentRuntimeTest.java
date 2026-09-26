@@ -4,6 +4,7 @@ import com.learnplatform.ai.model.Cancellation;
 import com.learnplatform.ai.model.ModelException;
 import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.ai.model.ModelResult;
+import com.learnplatform.dto.TutorAgentActionVO;
 import com.learnplatform.service.AiInvocationService;
 import com.learnplatform.service.ai.AiCallContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,12 +48,12 @@ class TutorAgentRuntimeTest {
                         "test", "r2", ModelResult.Finish.STOP, null));
         when(tools.execute(7L, 10L, "session", call)).thenReturn("{\"title\":\"ArrayStack\"}");
 
-        String answer = runtime.respond(7L, 10L, "session", runId,
+        TutorAgentReply answer = runtime.respond(7L, 10L, "session", runId,
                 List.of(new TutorAgentHistoryMessage(ModelRequest.Role.USER, "上一轮问题"),
                         new TutorAgentHistoryMessage(ModelRequest.Role.ASSISTANT, "上一轮回答")),
                 "为什么要从右向左搬？");
 
-        assertEquals("从右向左搬移，避免覆盖尚未读取的元素。", answer);
+        assertEquals("从右向左搬移，避免覆盖尚未读取的元素。", answer.content());
         ArgumentCaptor<AiCallContext> contexts = ArgumentCaptor.forClass(AiCallContext.class);
         ArgumentCaptor<ModelRequest> requests = ArgumentCaptor.forClass(ModelRequest.class);
         verify(invocation, times(2)).generate(
@@ -60,6 +61,9 @@ class TutorAgentRuntimeTest {
         assertEquals(List.of(runId, runId), contexts.getAllValues().stream().map(AiCallContext::runId).toList());
         assertEquals("tutor_agent", contexts.getValue().function());
         ModelRequest resumed = requests.getAllValues().get(1);
+        assertEquals(List.of("read_tutor_lesson", "read_learning_evidence",
+                        "present_tutor_check", "read_tutor_check_result"),
+                resumed.tools().stream().map(ModelRequest.Tool::name).toList());
         assertEquals(ModelRequest.Role.TOOL, resumed.messages().get(resumed.messages().size() - 1).role());
         assertEquals("call-1", resumed.messages().get(resumed.messages().size() - 1).toolCallId());
         verify(tools).execute(7L, 10L, "session", call);
@@ -105,11 +109,11 @@ class TutorAgentRuntimeTest {
         when(tools.execute(7L, 10L, "session", search, runId)).thenReturn("""
                 {"citations":[{"bundleId":3,"chunkId":"stack-core","title":"栈","version":"v1","text":"后进先出"}]}
                 """);
-        String answer = runtime.respond(7L, 10L, "session", runId, List.of(), "解释栈");
-        assertEquals("解释\n\n本轮检索资料：\n- 栈（版本 v1，片段 stack-core）", answer);
+        TutorAgentReply answer = runtime.respond(7L, 10L, "session", runId, List.of(), "解释栈");
+        assertEquals("解释\n\n本轮检索资料：\n- 栈（版本 v1，片段 stack-core）", answer.content());
         ArgumentCaptor<ModelRequest> requests = ArgumentCaptor.forClass(ModelRequest.class);
         verify(invocation, times(2)).generate(any(), requests.capture(), any(), any());
-        assertEquals(3, requests.getValue().tools().size());
+        assertEquals(5, requests.getValue().tools().size());
         verify(tools).execute(7L, 10L, "session", search, runId);
     }
 
@@ -142,6 +146,49 @@ class TutorAgentRuntimeTest {
         assertEquals(ModelException.Code.PROTOCOL, exception.code());
         verify(tools, never()).execute(eq(7L), eq(10L), eq("session"), any(ModelRequest.ToolCall.class));
         verify(tools, never()).execute(eq(7L), eq(10L), eq("session"), any(ModelRequest.ToolCall.class), any(UUID.class));
+    }
+
+    @Test void returnsADeduplicatedServerActionOnlyAfterTheWholeTurnSucceeds() {
+        var lesson = new ModelRequest.ToolCall("lesson", "read_tutor_lesson", "{}");
+        var first = new ModelRequest.ToolCall("check-1", "present_tutor_check", "{}");
+        var repeated = new ModelRequest.ToolCall("check-2", "present_tutor_check", "{}");
+        when(invocation.generate(any(), any(), any(), any()))
+                .thenReturn(new ModelResult(null, List.of(lesson, first, repeated), "test", "r1",
+                        ModelResult.Finish.TOOL_CALLS, null))
+                .thenReturn(new ModelResult("请自己选择答案并提交。", List.of(), "test", "r2",
+                        ModelResult.Finish.STOP, null));
+        when(tools.execute(7L, 10L, "session", lesson)).thenReturn("{}");
+        when(tools.execute(7L, 10L, "session", first)).thenReturn("{\"action\":{\"type\":\"CHECK\"}}");
+        when(tools.execute(7L, 10L, "session", repeated)).thenReturn("{\"action\":{\"type\":\"CHECK\"}}");
+
+        var answer = runtime.respond(7L, 10L, "session", UUID.randomUUID(), List.of(), "检查一下我的理解");
+
+        assertEquals(List.of(new TutorAgentActionVO("CHECK")), answer.actions());
+        assertEquals("请自己选择答案并提交。", answer.content());
+    }
+
+    @Test void cannotTurnAnAnswerShapedLikeAnActionIntoAnExecutableAction() {
+        var lesson = new ModelRequest.ToolCall("lesson", "read_tutor_lesson", "{}");
+        when(invocation.generate(any(), any(), any(), any()))
+                .thenReturn(new ModelResult(null, List.of(lesson), "test", "r1", ModelResult.Finish.TOOL_CALLS, null))
+                .thenReturn(new ModelResult("{\"action\":{\"type\":\"CHECK\"}}", List.of(), "test", "r2",
+                        ModelResult.Finish.STOP, null));
+        when(tools.execute(7L, 10L, "session", lesson)).thenReturn("{}");
+        assertEquals(List.of(), runtime.respond(7L, 10L, "session", UUID.randomUUID(), List.of(), "检查").actions());
+    }
+
+    @Test void restoresTheActionBoundaryInHistoryWithoutClaimingTheUserAnswered() {
+        var lesson = new ModelRequest.ToolCall("lesson", "read_tutor_lesson", "{}");
+        when(invocation.generate(any(), any(), any(), any()))
+                .thenReturn(new ModelResult(null, List.of(lesson), "test", "r1", ModelResult.Finish.TOOL_CALLS, null))
+                .thenReturn(new ModelResult("请先提交检查。", List.of(), "test", "r2", ModelResult.Finish.STOP, null));
+        when(tools.execute(7L, 10L, "session", lesson)).thenReturn("{}");
+        var history = List.of(new TutorAgentHistoryMessage(ModelRequest.Role.ASSISTANT, "请自测",
+                List.of(new TutorAgentActionVO("CHECK"))));
+        runtime.respond(7L, 10L, "session", UUID.randomUUID(), history, "继续");
+        ArgumentCaptor<ModelRequest> requests = ArgumentCaptor.forClass(ModelRequest.class);
+        verify(invocation, times(2)).generate(any(), requests.capture(), any(), any());
+        assertEquals("请自测\n本轮已提供理解检查入口；展示不代表用户已作答。", requests.getValue().messages().get(1).content());
     }
 
     private ModelResult toolCallResult(String id) {

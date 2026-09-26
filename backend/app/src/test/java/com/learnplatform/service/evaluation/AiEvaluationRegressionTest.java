@@ -52,7 +52,8 @@ class AiEvaluationRegressionTest {
             assertFalse(sample.online() && sample.expectedCode() != 0, sample.id());
             assertTrue(Set.of("NORMAL", "CORRECT_ANSWER", "ANSWER_INJECTION", "UNANSWERED",
                     "OUTSIDE_SESSION", "FOREIGN_OWNER", "QUOTA", "UPSTREAM_ERROR", "EMPTY_STREAM",
-                    "SELF_REVIEW", "LEARNING_EVIDENCE", "RAG_FOUND", "RAG_EMPTY", "RAG_INJECTION")
+                    "SELF_REVIEW", "LEARNING_EVIDENCE", "RAG_FOUND", "RAG_EMPTY", "RAG_INJECTION",
+                    "TUTOR_CHECK_UNANSWERED", "TUTOR_CHECK_ANSWERED", "TUTOR_CHECK_SELF_CLAIM")
                     .contains(sample.scenario()), sample.id());
             if (sample.usesRetrieval()) {
                 assertEquals("AGENT", sample.route());
@@ -175,6 +176,18 @@ class AiEvaluationRegressionTest {
         assertEquals(2, fixture.logs.size());
         assertEquals(2, AiEvaluationReport.result(sample, fixture, CONFIG, false,
                 fixture.check(false)).get("modelCalls"));
+    }
+
+    @Test
+    void corpusIncludesTutorCheckActionAndServerResultCases() throws Exception {
+        var corpus = AiEvaluationCorpus.load();
+        for (String scenario : List.of("TUTOR_CHECK_UNANSWERED", "TUTOR_CHECK_ANSWERED", "TUTOR_CHECK_SELF_CLAIM")) {
+            var sample = corpus.cases().stream().filter(item -> scenario.equals(item.scenario())).findFirst().orElseThrow();
+            var fixture = new AiEvaluationFixture(corpus, sample, CONFIG, null);
+            fixture.execute();
+            assertTrue(fixture.check(false).isEmpty(), () -> fixture.check(false).toString());
+            assertTrue(fixture.publicOutput.contains("\"content\"") && fixture.publicOutput.contains("\"actions\""));
+        }
     }
 
     @AfterAll

@@ -275,6 +275,8 @@ export interface TutorSessionVO {
     nextStep?: TutorLearningPathItem
   }
   check: { id: string; prompt: string; options: { id: string; text: string }[] }
+  checkAnswer: string | null
+  checkResult: TutorCheckResultVO | null
   learningContext: TutorLearningContextVO
 }
 export interface TutorCheckResultVO {

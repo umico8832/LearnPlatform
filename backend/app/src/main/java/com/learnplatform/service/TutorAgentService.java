@@ -6,6 +6,7 @@ import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.TutorAgentMessageRequest;
 import com.learnplatform.dto.TutorAgentRunVO;
 import com.learnplatform.service.tutor.TutorAgentExecutionState;
+import com.learnplatform.service.tutor.TutorAgentReply;
 import com.learnplatform.service.tutor.TutorAgentRuntime;
 import org.springframework.stereotype.Service;
 
@@ -43,7 +44,7 @@ public class TutorAgentService {
     private TutorAgentRunVO execute(Long userId, Long courseId, String sessionKey,
                                     TutorAgentExecutionState state, String question) {
         try {
-            String answer = runtime.respond(userId, courseId, sessionKey, state.runId(),
+            TutorAgentReply answer = runtime.respond(userId, courseId, sessionKey, state.runId(),
                     state.history(), question);
             return states.complete(state, question, answer);
         } catch (RuntimeException exception) {

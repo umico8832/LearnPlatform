@@ -39,10 +39,10 @@ public class TutorSessionController {
 
     @Operation(summary = "提交 Tutor 理解检查")
     @PostMapping("/{sessionKey}/check")
-    public R<TutorCheckResultVO> answer(@PathVariable String sessionKey,
+    public R<TutorCheckResultVO> answer(@PathVariable Long courseId, @PathVariable String sessionKey,
                                         @RequestBody @Valid TutorCheckAnswerRequest request,
                                         @AuthenticationPrincipal CustomUserDetails user) {
-        return R.ok(service.answer(user.getUserId(), sessionKey, request));
+        return R.ok(service.answer(user.getUserId(), courseId, sessionKey, request));
     }
 
     @Operation(summary = "恢复当前用户的 Tutor 会话")

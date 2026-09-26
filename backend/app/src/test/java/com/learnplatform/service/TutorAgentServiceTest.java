@@ -5,6 +5,7 @@ import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.TutorAgentMessageRequest;
 import com.learnplatform.dto.TutorAgentRunVO;
 import com.learnplatform.service.tutor.TutorAgentExecutionState;
+import com.learnplatform.service.tutor.TutorAgentReply;
 import com.learnplatform.service.tutor.TutorAgentRuntime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,8 +37,8 @@ class TutorAgentServiceTest {
         expected.setStatus("WAITING_USER");
         when(states.begin(7L, 10L, "session")).thenReturn(state);
         when(runtime.respond(7L, 10L, "session", state.runId(), List.of(), "为什么从右向左搬移？"))
-                .thenReturn("为了避免覆盖尚未读取的元素。");
-        when(states.complete(state, "为什么从右向左搬移？", "为了避免覆盖尚未读取的元素。"))
+                .thenReturn(new TutorAgentReply("为了避免覆盖尚未读取的元素。", List.of()));
+        when(states.complete(state, "为什么从右向左搬移？", new TutorAgentReply("为了避免覆盖尚未读取的元素。", List.of())))
                 .thenReturn(expected);
 
         assertSame(expected, service.start(7L, 10L, "session", request));

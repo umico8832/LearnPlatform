@@ -2,6 +2,7 @@ package com.learnplatform.controller;
 
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.TutorAgentRunVO;
+import com.learnplatform.dto.TutorCheckResultVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.TutorAgentService;
 import com.learnplatform.service.TutorSessionService;
@@ -80,5 +81,19 @@ class TutorSessionControllerTest {
         mockMvc.perform(get("/api/my-courses/10/tutor-sessions/session"))
                 .andExpect(status().isOk());
         verify(sessions).get(7L, 10L, "session");
+    }
+
+    @Test void submitsTutorCheckWithinTheCoursePath() throws Exception {
+        TutorCheckResultVO result = new TutorCheckResultVO(); result.setCorrect(true);
+        when(sessions.answer(org.mockito.ArgumentMatchers.eq(7L), org.mockito.ArgumentMatchers.eq(10L),
+                org.mockito.ArgumentMatchers.eq("session"),
+                argThat(value -> "A".equals(value.getOptionId())))).thenReturn(result);
+
+        mockMvc.perform(post("/api/my-courses/10/tutor-sessions/session/check")
+                        .contentType("application/json").content("{\"optionId\":\"A\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.correct").value(true));
+        verify(sessions).answer(org.mockito.ArgumentMatchers.eq(7L), org.mockito.ArgumentMatchers.eq(10L),
+                org.mockito.ArgumentMatchers.eq("session"), argThat(value -> "A".equals(value.getOptionId())));
     }
 }

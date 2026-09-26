@@ -78,6 +78,13 @@ final class AiEvaluationProvider implements AiProvider {
                 toolCalls.add(new ModelRequest.ToolCall("knowledge-1", "search_course_knowledge",
                         "{\"query\":\"栈的后进先出\"}"));
             }
+            if ("TUTOR_CHECK_UNANSWERED".equals(sample.scenario())) {
+                toolCalls.add(new ModelRequest.ToolCall("present-check-1", "present_tutor_check", "{}"));
+            }
+            if ("TUTOR_CHECK_ANSWERED".equals(sample.scenario())
+                    || "TUTOR_CHECK_SELF_CLAIM".equals(sample.scenario())) {
+                toolCalls.add(new ModelRequest.ToolCall("check-result-1", "read_tutor_check_result", "{}"));
+            }
             return new ModelResult("", toolCalls, config.getModel(), null,
                     ModelResult.Finish.TOOL_CALLS, null);
         }

@@ -10,8 +10,9 @@ import com.learnplatform.mapper.TutorAgentMessageMapper;
 import com.learnplatform.mapper.TutorAgentRunMapper;
 import com.learnplatform.mapper.TutorSessionMapper;
 import com.learnplatform.service.tutor.TutorAgentExecutionState;
+import com.learnplatform.service.tutor.TutorAgentReply;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
-import org.apache.ibatis.session.Configuration;
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -33,14 +34,17 @@ class TutorAgentRunStateServiceTest {
     private final TutorSessionMapper sessions = mock(TutorSessionMapper.class);
     private final TutorAgentRunMapper runs = mock(TutorAgentRunMapper.class);
     private final TutorAgentMessageMapper messages = mock(TutorAgentMessageMapper.class);
+    private final TutorSessionService tutorSessions = mock(TutorSessionService.class);
     private TutorAgentRunStateService service;
 
     @BeforeEach void setUp() {
-        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new Configuration(), ""), TutorAgentRun.class);
-        service = new TutorAgentRunStateService(sessions, runs, messages);
+        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), TutorAgentRun.class);
+        service = new TutorAgentRunStateService(sessions, runs, messages,
+                new com.fasterxml.jackson.databind.ObjectMapper(), tutorSessions);
     }
 
     @Test void createsARunningRunBoundToTheOwnedTutorSession() {
+        allowSession();
         when(sessions.selectOne(any())).thenReturn(session());
         when(runs.claim(eq(5L), any())).thenReturn(1);
         doAnswer(call -> {
@@ -59,6 +63,7 @@ class TutorAgentRunStateServiceTest {
     }
 
     @Test void refusesToClaimARunThatIsAlreadyProcessing() {
+        allowSession();
         when(sessions.selectOne(any())).thenReturn(session());
         when(runs.selectOne(any())).thenReturn(run());
         when(runs.claim(eq(5L), any())).thenReturn(0);
@@ -67,6 +72,7 @@ class TutorAgentRunStateServiceTest {
     }
 
     @Test void appendsAUserAssistantPairAndPausesAtTheUserBoundary() {
+        allowCurrentSession();
         TutorAgentRun run = run();
         run.setStatus("WAITING_USER");
         when(runs.selectById(5L)).thenReturn(run);
@@ -77,7 +83,7 @@ class TutorAgentRunStateServiceTest {
         TutorAgentExecutionState state = new TutorAgentExecutionState(5L,
                 java.util.UUID.fromString(run.getRunKey()), "execution", 1, List.of());
 
-        TutorAgentRunVO result = service.complete(state, "问题", "回答");
+        TutorAgentRunVO result = service.complete(state, "问题", new TutorAgentReply("回答", List.of()));
 
         assertEquals("WAITING_USER", result.getStatus());
         assertEquals(List.of("USER", "ASSISTANT"),
@@ -88,11 +94,13 @@ class TutorAgentRunStateServiceTest {
     }
 
     @Test void hidesRunsWhenTheTutorSessionDoesNotBelongToTheRequester() {
-        when(sessions.selectOne(any())).thenReturn(null);
+        doAnswer(call -> { throw new BusinessException(com.learnplatform.common.result.ResultCode.NOT_FOUND, "Tutor 会话不存在"); })
+                .when(tutorSessions).get(eq(8L), eq(10L), eq("session"));
         assertThrows(BusinessException.class, () -> service.get(8L, 10L, "session", "run"));
     }
 
     @Test void rejectsLateCompletionFromAnEarlierExecution() {
+        allowCurrentSession();
         TutorAgentRun current = run();
         current.setNextSequence(3);
         when(runs.selectById(5L)).thenReturn(current);
@@ -100,7 +108,7 @@ class TutorAgentRunStateServiceTest {
         TutorAgentExecutionState earlier = new TutorAgentExecutionState(5L,
                 java.util.UUID.fromString(current.getRunKey()), "earlier-execution", 1, List.of());
 
-        assertThrows(BusinessException.class, () -> service.complete(earlier, "迟到的问题", "迟到的回答"));
+        assertThrows(BusinessException.class, () -> service.complete(earlier, "迟到的问题", new TutorAgentReply("迟到的回答", List.of())));
         verify(messages, never()).insert(any());
     }
 
@@ -109,6 +117,7 @@ class TutorAgentRunStateServiceTest {
         session.setId(30L);
         session.setUserId(7L);
         session.setCourseId(10L);
+        session.setSessionKey("session");
         return session;
     }
 
@@ -130,5 +139,15 @@ class TutorAgentRunStateServiceTest {
         message.setRole(role);
         message.setContent(content);
         return message;
+    }
+
+    private void allowSession() {
+        when(tutorSessions.get(eq(7L), eq(10L), eq("session"))).thenReturn(new com.learnplatform.dto.TutorSessionVO());
+    }
+
+    private void allowCurrentSession() {
+        when(runs.selectById(5L)).thenReturn(run());
+        when(sessions.selectById(30L)).thenReturn(session());
+        allowSession();
     }
 }

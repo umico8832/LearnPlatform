@@ -7,6 +7,8 @@ public class TutorSessionVO {
     private String title;
     private JsonNode lesson;
     private JsonNode check;
+    private String checkAnswer;
+    private TutorCheckResultVO checkResult;
     private TutorLearningContextVO learningContext;
     private boolean agentAvailable;
 
@@ -18,6 +20,10 @@ public class TutorSessionVO {
     public void setLesson(JsonNode value) { lesson = value; }
     public JsonNode getCheck() { return check; }
     public void setCheck(JsonNode value) { check = value; }
+    public String getCheckAnswer() { return checkAnswer; }
+    public void setCheckAnswer(String value) { checkAnswer = value; }
+    public TutorCheckResultVO getCheckResult() { return checkResult; }
+    public void setCheckResult(TutorCheckResultVO value) { checkResult = value; }
     public TutorLearningContextVO getLearningContext() { return learningContext; }
     public void setLearningContext(TutorLearningContextVO value) { learningContext = value; }
     public boolean isAgentAvailable() { return agentAvailable; }

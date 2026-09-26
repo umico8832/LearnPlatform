@@ -1,47 +1,33 @@
 package com.learnplatform.service.tutor;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.learnplatform.ai.model.JsonContract;
 import com.learnplatform.ai.model.ModelException;
 import com.learnplatform.ai.model.ModelRequest;
-import com.learnplatform.common.exception.BusinessException;
-import com.learnplatform.common.result.ResultCode;
-import com.learnplatform.entity.TutorContent;
-import com.learnplatform.entity.TutorSession;
-import com.learnplatform.mapper.TutorContentMapper;
-import com.learnplatform.mapper.TutorSessionMapper;
-import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.learnplatform.dto.TutorSessionVO;
 import com.learnplatform.service.KnowledgeSearchService;
+import com.learnplatform.service.TutorSessionService;
+import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
 @Service
 public class TutorAgentToolService implements TutorAgentToolExecutor {
-    private final TutorSessionMapper sessions;
-    private final TutorContentMapper contents;
+    private final TutorSessionService sessions;
     private final ObjectMapper json;
     private final KnowledgeSearchService knowledge;
 
-    @Autowired
-    public TutorAgentToolService(TutorSessionMapper sessions, TutorContentMapper contents, ObjectMapper json,
-                                 KnowledgeSearchService knowledge) {
-        this.knowledge = knowledge;
+    public TutorAgentToolService(TutorSessionService sessions, ObjectMapper json, KnowledgeSearchService knowledge) {
         this.sessions = sessions;
-        this.contents = contents;
         this.json = json;
-    }
-
-    public TutorAgentToolService(TutorSessionMapper sessions, TutorContentMapper contents, ObjectMapper json) {
-        this(sessions, contents, json, null);
+        this.knowledge = knowledge;
     }
 
     @Override
     public boolean supportsKnowledgeSearch() {
-        return knowledge != null && knowledge.enabled();
+        return knowledge.enabled();
     }
 
     @Override
@@ -54,14 +40,12 @@ public class TutorAgentToolService implements TutorAgentToolExecutor {
         if (!"search_course_knowledge".equals(call.name())) {
             requireEmptyArguments(call.arguments());
         }
-        TutorSession session = sessions.selectOne(new QueryWrapper<TutorSession>()
-                .eq("session_key", sessionKey).eq("user_id", userId).eq("course_id", courseId));
-        if (session == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "Tutor 会话不存在");
-        }
+        TutorSessionVO session = sessions.get(userId, courseId, sessionKey);
         return switch (call.name()) {
             case "read_tutor_lesson" -> lesson(session);
-            case "read_learning_evidence" -> learningEvidence(session);
+            case "read_learning_evidence" -> write(json.valueToTree(session.getLearningContext()));
+            case "present_tutor_check" -> check(session, true);
+            case "read_tutor_check_result" -> check(session, false);
             case "search_course_knowledge" -> search(userId, courseId, call.arguments(), runId);
             default -> throw new ModelException(ModelException.Code.PROTOCOL);
         };
@@ -76,45 +60,32 @@ public class TutorAgentToolService implements TutorAgentToolExecutor {
         return write(json.valueToTree(knowledge.search(userId, courseId, query, runId)));
     }
 
-    private String lesson(TutorSession session) {
-        TutorContent content = contents.selectById(session.getTutorContentId());
-        if (content == null || !"REVIEWED".equals(content.getReviewStatus())) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "已审查 Tutor 教学内容不存在");
-        }
+    private String lesson(TutorSessionVO session) {
         ObjectNode result = json.createObjectNode();
-        result.put("title", content.getTitle());
-        result.set("lesson", parseObject(content.getLessonJson()));
-        ObjectNode check = parseObject(content.getCheckJson()).deepCopy();
-        check.remove("correctOptionId");
-        check.remove("correctExplanation");
-        check.remove("incorrectExplanation");
-        result.set("check", check);
+        result.put("title", session.getTitle());
+        result.set("lesson", session.getLesson());
+        result.set("check", session.getCheck());
         return write(result);
     }
 
-    private String learningEvidence(TutorSession session) {
-        String value = session.getLearningContextJson();
-        return value == null || value.isBlank() ? "{}" : write(parseObject(value));
+    private String check(TutorSessionVO session, boolean present) {
+        ObjectNode result = json.createObjectNode();
+        if (session.getCheckResult() == null) {
+            result.put("status", "UNANSWERED");
+            if (present) {
+                result.putObject("action").put("type", "CHECK");
+            }
+        } else {
+            result.put("status", "ANSWERED");
+            result.set("result", json.valueToTree(session.getCheckResult()));
+        }
+        return write(result);
     }
 
     private void requireEmptyArguments(String arguments) {
         JsonNode node = JsonContract.parse(arguments);
         if (!node.isObject() || !node.isEmpty()) {
             throw new ModelException(ModelException.Code.SCHEMA);
-        }
-    }
-
-    private ObjectNode parseObject(String value) {
-        try {
-            JsonNode node = json.readTree(value);
-            if (node instanceof ObjectNode object) {
-                return object;
-            }
-            throw new IllegalStateException("Tutor 内容必须是 JSON 对象");
-        } catch (IllegalStateException exception) {
-            throw exception;
-        } catch (Exception exception) {
-            throw new IllegalStateException("已审查 Tutor 内容格式无效", exception);
         }
     }
 

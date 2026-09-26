@@ -21,6 +21,7 @@ import com.learnplatform.mapper.TutorContentMapper;
 import com.learnplatform.mapper.TutorSessionMapper;
 import com.learnplatform.mapper.UserCourseMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -76,21 +77,24 @@ public class TutorSessionService {
         return view(session, content);
     }
 
-    @Transactional
-    public TutorCheckResultVO answer(Long userId, String sessionKey, TutorCheckAnswerRequest request) {
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public TutorCheckResultVO answer(Long userId, Long courseId, String sessionKey, TutorCheckAnswerRequest request) {
         TutorSession session = sessionMapper.selectOne(new LambdaQueryWrapper<TutorSession>()
-                .eq(TutorSession::getSessionKey, sessionKey));
-        if (session == null || !userId.equals(session.getUserId())) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "Tutor 会话不存在");
-        }
+                .eq(TutorSession::getSessionKey, sessionKey).eq(TutorSession::getUserId, userId)
+                .eq(TutorSession::getCourseId, courseId));
+        if (session == null) { throw new BusinessException(ResultCode.NOT_FOUND, "Tutor 会话不存在"); }
+        requireCourse(userId, courseId);
         TutorContent content = contentMapper.selectById(session.getTutorContentId());
-        if (content == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "Tutor 教学内容不存在");
+        if (content == null || !"REVIEWED".equals(content.getReviewStatus())) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "Tutor 教学内容不存在或已停止发布");
         }
         if (session.getCheckCorrect() != null) {
             return result(session.getCheckCorrect(), content, session.getCourseId());
         }
         JsonNode check = parse(content.getCheckJson());
+        if (!hasOption(check, request.getOptionId())) {
+            throw new BusinessException(ResultCode.VALIDATION_ERROR, "理解检查选项无效");
+        }
         String correctOption = check.path("correctOptionId").asText();
         boolean correct = correctOption.equals(request.getOptionId());
         int updated = sessionMapper.update(null, new LambdaUpdateWrapper<TutorSession>()
@@ -113,6 +117,7 @@ public class TutorSessionService {
         if (session == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "Tutor 会话不存在");
         }
+        requireCourse(userId, courseId);
         TutorContent content = contentMapper.selectById(session.getTutorContentId());
         if (content == null || !"REVIEWED".equals(content.getReviewStatus())) {
             throw new BusinessException(ResultCode.NOT_FOUND, "Tutor 教学内容不存在或已停止发布");
@@ -127,9 +132,22 @@ public class TutorSessionService {
         view.setLesson(parse(content.getLessonJson()));
         view.setLearningContext(readContext(session.getLearningContextJson()));
         view.setAgentAvailable(aiConfig.isEnabled() && aiConfig.isToolsSupported());
-        JsonNode check = parse(content.getCheckJson()).deepCopy();
-        ((ObjectNode) check).remove("correctOptionId");
+        JsonNode sourceCheck = parse(content.getCheckJson());
+        ObjectNode check = objectMapper.createObjectNode();
+        if (sourceCheck.path("id").isTextual()) {
+            check.put("id", sourceCheck.path("id").asText());
+        }
+        check.put("prompt", sourceCheck.path("prompt").asText());
+        if (sourceCheck.path("options").isArray()) {
+            var options = check.putArray("options");
+            sourceCheck.path("options").forEach(option -> options.addObject()
+                    .put("id", option.path("id").asText()).put("text", option.path("text").asText()));
+        }
         view.setCheck(check);
+        view.setCheckAnswer(session.getCheckAnswer());
+        if (session.getCheckCorrect() != null) {
+            view.setCheckResult(result(session.getCheckCorrect(), content, session.getCourseId()));
+        }
         return view;
     }
 
@@ -165,6 +183,14 @@ public class TutorSessionService {
         } catch (Exception e) {
             throw new IllegalStateException("已审查教学内容格式无效", e);
         }
+    }
+
+    private boolean hasOption(JsonNode check, String optionId) {
+        if (optionId == null || optionId.isBlank() || !check.path("options").isArray()) { return false; }
+        for (JsonNode option : check.path("options")) {
+            if (optionId.equals(option.path("id").asText())) { return true; }
+        }
+        return false;
     }
 
     private String writeContext(TutorLearningContextVO value) {

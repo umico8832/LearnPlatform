@@ -1,10 +1,13 @@
 package com.learnplatform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.TutorAgentMessageVO;
+import com.learnplatform.dto.TutorAgentActionVO;
 import com.learnplatform.dto.TutorAgentRunVO;
 import com.learnplatform.entity.TutorAgentMessage;
 import com.learnplatform.entity.TutorAgentRun;
@@ -14,6 +17,7 @@ import com.learnplatform.mapper.TutorAgentRunMapper;
 import com.learnplatform.mapper.TutorSessionMapper;
 import com.learnplatform.service.tutor.TutorAgentExecutionState;
 import com.learnplatform.service.tutor.TutorAgentHistoryMessage;
+import com.learnplatform.service.tutor.TutorAgentReply;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Isolation;
@@ -30,12 +34,17 @@ public class TutorAgentRunStateService {
     private final TutorSessionMapper sessions;
     private final TutorAgentRunMapper runs;
     private final TutorAgentMessageMapper messages;
+    private final ObjectMapper json;
+    private final TutorSessionService tutorSessions;
 
     public TutorAgentRunStateService(TutorSessionMapper sessions, TutorAgentRunMapper runs,
-                                     TutorAgentMessageMapper messages) {
+                                     TutorAgentMessageMapper messages, ObjectMapper json,
+                                     TutorSessionService tutorSessions) {
         this.sessions = sessions;
         this.runs = runs;
         this.messages = messages;
+        this.json = json;
+        this.tutorSessions = tutorSessions;
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -62,12 +71,13 @@ public class TutorAgentRunStateService {
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public TutorAgentRunVO complete(TutorAgentExecutionState state, String question, String answer) {
+    public TutorAgentRunVO complete(TutorAgentExecutionState state, String question, TutorAgentReply answer) {
+        requireCurrentSession(state.id());
         if (runs.complete(state.id(), state.executionKey(), state.nextSequence()) != 1) {
             throw new BusinessException(ResultCode.RATE_LIMITED, "Tutor Agent 运行状态已变化");
         }
-        insertMessage(state.id(), state.nextSequence(), "USER", question);
-        insertMessage(state.id(), state.nextSequence() + 1, "ASSISTANT", answer);
+        insertMessage(state.id(), state.nextSequence(), "USER", question, List.of());
+        insertMessage(state.id(), state.nextSequence() + 1, "ASSISTANT", answer.content(), answer.actions());
         TutorAgentRun run = runs.selectById(state.id());
         return view(run, listMessages(run.getId()));
     }
@@ -100,12 +110,22 @@ public class TutorAgentRunStateService {
     }
 
     private TutorSession requireSession(Long userId, Long courseId, String sessionKey) {
+        tutorSessions.get(userId, courseId, sessionKey);
         TutorSession session = sessions.selectOne(new QueryWrapper<TutorSession>()
                 .eq("session_key", sessionKey).eq("user_id", userId).eq("course_id", courseId));
         if (session == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "Tutor 会话不存在");
         }
         return session;
+    }
+
+    private void requireCurrentSession(Long runId) {
+        TutorAgentRun run = runs.selectById(runId);
+        TutorSession session = run == null ? null : sessions.selectById(run.getTutorSessionId());
+        if (session == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "Tutor 会话不存在");
+        }
+        tutorSessions.get(session.getUserId(), session.getCourseId(), session.getSessionKey());
     }
 
     private TutorAgentRun requireRun(Long userId, Long tutorSessionId, String runKey) {
@@ -124,17 +144,25 @@ public class TutorAgentRunStateService {
 
     private TutorAgentExecutionState state(TutorAgentRun run, List<TutorAgentMessage> stored) {
         List<TutorAgentHistoryMessage> history = stored.stream().map(message -> new TutorAgentHistoryMessage(
-                ModelRequest.Role.valueOf(message.getRole()), message.getContent())).toList();
+                ModelRequest.Role.valueOf(message.getRole()), message.getContent(), readActions(message))).toList();
         return new TutorAgentExecutionState(run.getId(), UUID.fromString(run.getRunKey()),
                 run.getExecutionKey(), run.getNextSequence(), history);
     }
 
-    private void insertMessage(Long runId, int sequence, String role, String content) {
+    private void insertMessage(Long runId, int sequence, String role, String content,
+                               List<TutorAgentActionVO> actions) {
         TutorAgentMessage message = new TutorAgentMessage();
         message.setRunId(runId);
         message.setSequenceNo(sequence);
         message.setRole(role);
         message.setContent(content);
+        if (!actions.isEmpty()) {
+            try {
+                message.setActionsJson(json.writeValueAsString(actions));
+            } catch (Exception exception) {
+                throw new IllegalStateException("Tutor 教学动作无法保存", exception);
+            }
+        }
         messages.insert(message);
     }
 
@@ -149,8 +177,25 @@ public class TutorAgentRunStateService {
             item.setRole(message.getRole());
             item.setContent(message.getContent());
             item.setCreateTime(message.getCreateTime());
+            item.setActions(readActions(message));
             return item;
         }).toList());
         return result;
+    }
+
+    private List<TutorAgentActionVO> readActions(TutorAgentMessage message) {
+        String value = message.getActionsJson();
+        if (value == null) {
+            return List.of();
+        }
+        try {
+            List<TutorAgentActionVO> actions = json.readValue(value, new TypeReference<>() { });
+            if (!"ASSISTANT".equals(message.getRole()) || actions.size() > 1) {
+                throw new IllegalStateException("Tutor 教学动作与消息不匹配");
+            }
+            return List.copyOf(actions);
+        } catch (Exception exception) {
+            throw new IllegalStateException("Tutor 教学动作格式无效", exception);
+        }
     }
 }

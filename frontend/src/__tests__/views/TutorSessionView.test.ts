@@ -66,8 +66,9 @@ const stubs = {
   TutorFactorialCallStack: true,
   TutorAgentConversation: {
     template:
-      '<section data-testid="tutor-agent" :data-course-id="courseId" :data-session-key="sessionKey">Agent</section>',
-    props: ['courseId', 'sessionKey'],
+      '<section data-testid="tutor-agent" :data-course-id="courseId" :data-session-key="sessionKey" @click="$emit(\'request-check\')">Agent</section>',
+    props: ['courseId', 'sessionKey', 'checkResult'],
+    emits: ['request-check'],
   },
 }
 
@@ -127,6 +128,22 @@ describe('TutorSessionView', () => {
     })
   })
 
+  it('理解检查提交失败时保留学习者的选择以便重试', async () => {
+    mockSubmitTutorCheck.mockRejectedValueOnce(new Error('网络暂不可用'))
+    const wrapper = mount(TutorSessionView, { global: { stubs } })
+    await flushPromises()
+
+    await wrapper.get('[data-testid="choose-option"]').trigger('click')
+    await findButton(wrapper, '提交检查').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('网络暂不可用')
+    expect(findButton(wrapper, '提交检查').attributes('disabled')).toBeUndefined()
+    await findButton(wrapper, '提交检查').trigger('click')
+    await flushPromises()
+    expect(mockSubmitTutorCheck).toHaveBeenCalledTimes(2)
+  })
+
   it('展示Tutor会话启动时消费的最近相关记录', async () => {
     const wrapper = mount(TutorSessionView, { global: { stubs } })
     await flushPromises()
@@ -149,6 +166,48 @@ describe('TutorSessionView', () => {
     expect(wrapper.get('[data-testid="tutor-agent"]').attributes('data-session-key')).toBe('session-key')
   })
 
+  it('恢复已判分的理解检查，并将 Tutor 的检查动作聚焦到现有表单', async () => {
+    mockStartTutorSession.mockResolvedValueOnce({
+      data: {
+        sessionKey: 'answered-session',
+        agentAvailable: true,
+        title: 'ArrayQueue 的循环数组表示',
+        lesson: { summary: 'summary', steps: ['step'] },
+        check: { id: 'check', prompt: 'prompt', options: [{ id: 'RIGHT', text: '正确选项' }] },
+        checkAnswer: 'RIGHT',
+        checkResult: {
+          correct: true,
+          explanation: '回答正确。',
+          guidanceType: null,
+          guidanceTitle: null,
+          guidanceDescription: null,
+          guidanceKnowledgePointId: null,
+        },
+        learningContext: {
+          paperAnswerCount: 0,
+          paperIncorrectCount: 0,
+          paperAiAssistanceCount: 0,
+          unresolvedWrongCount: 0,
+          dueReviewCount: 0,
+          reviewAnswerCount: 0,
+          latestEvidenceAt: null,
+        },
+      },
+    })
+    const wrapper = mount(TutorSessionView, { global: { stubs } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('回答正确')
+    expect(findButton(wrapper, '提交检查').attributes('disabled')).toBeDefined()
+    const check = wrapper.get('[data-testid="tutor-check"]').element as HTMLElement
+    const focus = vi.spyOn(check, 'focus')
+    Object.assign(check, { scrollIntoView: vi.fn() })
+    await wrapper.get('[data-testid="tutor-agent"]').trigger('click')
+    await flushPromises()
+    expect(check.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true })
+  })
+
   it('刷新页面时恢复同一 Tutor 会话而不重复创建', async () => {
     const restored = await mockStartTutorSession()
     mockStartTutorSession.mockClear()
@@ -160,6 +219,24 @@ describe('TutorSessionView', () => {
 
     expect(mockGetTutorSession).toHaveBeenCalledWith(408, 'session-key')
     expect(mockStartTutorSession).not.toHaveBeenCalled()
+  })
+
+  it('恢复会话的网络失败不会清除标识，重试后仍恢复同一会话', async () => {
+    const restored = await mockStartTutorSession()
+    mockStartTutorSession.mockClear()
+    sessionStorage.setItem('lp:tutor-session:408:37', 'session-key')
+    mockGetTutorSession.mockRejectedValueOnce(new Error('网络暂不可用'))
+
+    const wrapper = mount(TutorSessionView, { global: { stubs } })
+    await flushPromises()
+
+    expect(sessionStorage.getItem('lp:tutor-session:408:37')).toBe('session-key')
+    mockGetTutorSession.mockResolvedValueOnce(restored)
+    await findButton(wrapper, '重新尝试').trigger('click')
+    await flushPromises()
+    expect(mockGetTutorSession).toHaveBeenCalledTimes(2)
+    expect(mockStartTutorSession).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('ArrayQueue 的循环数组表示')
   })
 
   it('没有相关证据时不制造学习进度卡片', async () => {

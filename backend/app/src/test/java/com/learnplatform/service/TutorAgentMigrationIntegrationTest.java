@@ -22,7 +22,7 @@ class TutorAgentMigrationIntegrationTest {
             .withCommand("--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci");
 
     @Test void upgradesFromThePreviousSchemaAndProtectsMessageOrder() {
-        Flyway.configure().dataSource(MYSQL.getJdbcUrl(), "root", MYSQL.getPassword()).target("98").load().migrate();
+        Flyway.configure().dataSource(MYSQL.getJdbcUrl(), "root", MYSQL.getPassword()).target("99").load().migrate();
         JdbcTemplate jdbc = new JdbcTemplate(new DriverManagerDataSource(
                 MYSQL.getJdbcUrl(), "root", MYSQL.getPassword()));
         assertEquals(1, tableCount(jdbc, "tutor_agent_run"));
@@ -32,9 +32,16 @@ class TutorAgentMigrationIntegrationTest {
                 VALUES (2, '69af726c-2a51-443f-a475-bab94530748f', 30, 7, 'RUNNING', 1)
                 """);
 
+        jdbc.update("""
+                INSERT INTO tutor_agent_message (run_id, sequence_no, role, content)
+                VALUES (2, 1, 'ASSISTANT', '已有回答')
+                """);
+
         Flyway.configure().dataSource(MYSQL.getJdbcUrl(), "root", MYSQL.getPassword()).load().migrate();
         assertEquals(1, tableCount(jdbc, "tutor_agent_run"));
         assertEquals(1, tableCount(jdbc, "tutor_agent_message"));
+        assertNull(jdbc.queryForObject("SELECT actions_json FROM tutor_agent_message WHERE run_id=2", String.class));
+        assertEquals("已有回答", jdbc.queryForObject("SELECT content FROM tutor_agent_message WHERE run_id=2", String.class));
         assertNull(jdbc.queryForObject("SELECT execution_key FROM tutor_agent_run WHERE id=2", String.class));
         assertNull(jdbc.queryForObject("SELECT lease_until FROM tutor_agent_run WHERE id=2", java.sql.Timestamp.class));
         assertEquals("RUNNING", jdbc.queryForObject("SELECT status FROM tutor_agent_run WHERE id=2", String.class));

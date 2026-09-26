@@ -6,6 +6,11 @@ export interface TutorAgentMessageVO {
   role: 'USER' | 'ASSISTANT'
   content: string
   createTime: string | null
+  actions: TutorAgentActionVO[]
+}
+
+export interface TutorAgentActionVO {
+  type: 'CHECK'
 }
 
 export interface TutorAgentRunVO {
