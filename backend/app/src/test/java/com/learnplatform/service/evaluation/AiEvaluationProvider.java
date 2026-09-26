@@ -117,7 +117,8 @@ final class AiEvaluationProvider implements AiProvider {
         lastResult = null;
         response = "";
         systemPrompt = request.messages().get(0).content();
-        userPrompt = request.messages().get(1).content();
+        userPrompt = request.messages().stream().filter(message -> message.role() == ModelRequest.Role.USER)
+                .reduce((previous, current) -> current).orElseThrow().content();
     }
     private void failIfRequested() {
         if ("UPSTREAM_ERROR".equals(sample.scenario())) {

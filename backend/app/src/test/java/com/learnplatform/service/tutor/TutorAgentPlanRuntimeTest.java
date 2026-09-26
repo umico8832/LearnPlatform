@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 class TutorAgentPlanRuntimeTest {
     @Mock private AiInvocationService invocation;
     @Mock private TutorAgentToolExecutor tools;
+    @Mock private TutorMemoryService memories;
     private TutorAgentRuntime runtime;
     private static final String PLAN = """
             {"status":"AVAILABLE","action":{"type":"PLAN","steps":[
@@ -30,7 +31,8 @@ class TutorAgentPlanRuntimeTest {
             """;
 
     @BeforeEach void setUp() {
-        runtime = new TutorAgentRuntime(invocation, tools);
+        runtime = new TutorAgentRuntime(invocation, tools, memories);
+        when(memories.promptContext(7L, 10L)).thenReturn("{\"revision\":0,\"explanationStyle\":null,\"goal\":null}");
         when(invocation.defaultOptions()).thenReturn(new ModelRequest.Options("test", 400, 0.2));
     }
 

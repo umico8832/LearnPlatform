@@ -12,6 +12,18 @@ VARIANT_MARKER = "E2E_TUTOR_VARIANT"
 HINT_REQUEST = "请给我本节理解检查的下一步提示，不要直接告诉我答案。"
 PLAN_REQUEST = "请建议本课程接下来的学习安排，由我确认是否采用。"
 PLAN_STATE_REQUEST = "E2E_READ_PLAN_STATE"
+MEMORY_REQUEST = "E2E_READ_MEMORY"
+
+
+def current_memory(messages):
+    for message in reversed(messages):
+        content = message.get("content", "")
+        if message.get("role") == "user" and content.startswith("当前课程的用户记忆"):
+            try:
+                return json.loads(content.split("\n", 1)[1])
+            except (IndexError, TypeError, ValueError):
+                return {}
+    return {}
 
 
 def current_turn(messages):
@@ -100,6 +112,10 @@ def completion(payload):
                               else "服务端尚未记录计划确认。")
     elif question == PLAN_REQUEST:
         message["content"] = "已核对课程记录，请查看建议并自行确认是否采用。"
+    elif question == MEMORY_REQUEST:
+        memory = current_memory(messages)
+        message["content"] = (f"当前保存的目标：{memory.get('goal') or '未设置'}；"
+                              f"讲解偏好：{memory.get('explanationStyle') or '未设置'}。")
     elif question == PRACTICE_FOLLOW_UP:
         correct = result_from_current_turn(turn, "read_tutor_practice_result").get("correct")
         message["content"] = (f"服务端变式练习结果：{'回答正确' if correct else '回答不正确'}。"

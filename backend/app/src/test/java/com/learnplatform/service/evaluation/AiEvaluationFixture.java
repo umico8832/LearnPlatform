@@ -158,6 +158,8 @@ final class AiEvaluationFixture {
         when(learning.getSession(30L, 7L)).thenReturn(session(data));
         paperService = new ExamLearningAiService(learning, interactionMapper, courses,
                 new AiService(assistance, null, null), events);
+        var memory = mock(com.learnplatform.service.tutor.TutorMemoryService.class);
+        when(memory.promptContext(7L, 20L)).thenReturn(AiTutorMemoryEvaluation.context(sample.scenario()));
         agentRuntime = new TutorAgentRuntime(invocation, new TutorAgentToolExecutor() {
             @Override public boolean supportsKnowledgeSearch() { return sample.usesRetrieval(); }
             @Override public String execute(Long userId, Long courseId, String sessionKey, ModelRequest.ToolCall call) {
@@ -167,7 +169,7 @@ final class AiEvaluationFixture {
                                             ModelRequest.ToolCall call, UUID runId) {
                 return executeAgentTool(userId, courseId, sessionKey, call, runId);
             }
-        });
+        }, memory);
     }
 
     void execute() {
@@ -291,6 +293,7 @@ final class AiEvaluationFixture {
                 AiTutorHintEvaluation.check(sample.scenario(), publicOutput, toolTrace, failures);
                 AiTutorPracticeEvaluation.check(sample.scenario(), publicOutput, toolTrace, logs, failures);
                 AiTutorPlanEvaluation.check(sample.scenario(), publicOutput, toolTrace, logs, failures);
+                AiTutorMemoryEvaluation.check(sample.scenario(), provider.requests, failures);
                 if (sample.usesRetrieval()) { checkRetrieval(failures); }
             }
         }

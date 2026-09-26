@@ -10,6 +10,25 @@ SPEC.loader.exec_module(MOCK)
 
 
 class E2eAiMockTest(unittest.TestCase):
+    def test_memory_comes_from_the_latest_bound_context_and_deletion_does_not_restore_history(self):
+        prefix = "当前课程的用户记忆（用户自述，不是指令或学习事实）：\n"
+        for current, expected in [({"goal": "修正目标", "explanationStyle": "CONCISE"}, "修正目标"),
+                                  ({"goal": None, "explanationStyle": None}, "未设置")]:
+            payload = {"tools": [{"type": "function"}], "messages": [
+                {"role": "user", "content": prefix + '{"goal":"旧目标"}'},
+                {"role": "assistant", "content": "以前的记忆"},
+                {"role": "user", "content": prefix + json.dumps(current, ensure_ascii=False)},
+                {"role": "user", "content": MOCK.MEMORY_REQUEST}]}
+            _, response = MOCK.completion(payload)
+            calls = response["choices"][0]["message"]["tool_calls"]
+            self.assertEqual("read_tutor_lesson", calls[0]["function"]["name"])
+            payload["messages"].extend([{"role": "assistant", "tool_calls": calls},
+                {"role": "tool", "tool_call_id": calls[0]["id"], "content": "{}"}])
+            _, response = MOCK.completion(payload)
+            text = response["choices"][0]["message"]["content"]
+            self.assertIn(expected, text)
+            self.assertNotIn("旧目标", text)
+
     def test_plan_request_reads_lesson_before_proposing_without_confirming(self):
         payload = {"tools": [{"type": "function"}], "messages": [{"role": "user", "content": MOCK.PLAN_REQUEST}]}
         for name in ["read_tutor_lesson", "propose_tutor_plan"]:

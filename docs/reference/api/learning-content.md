@@ -11,6 +11,9 @@
 | `POST /api/my-courses/{courseId}` | 将已开放课程幂等加入当前用户的个人课程库 |
 | `GET /api/my-courses` | 查询当前用户的个人课程库 |
 | `GET /api/my-courses/{courseId}/overview` | 查询已加入课程的学习概况与下一步候选目标 |
+| `GET /api/my-courses/{courseId}/tutor-memory` | 读取本人在该课程保存的学习目标和讲解偏好 |
+| `PUT /api/my-courses/{courseId}/tutor-memory` | 携带当前版本显式保存或纠正课程记忆 |
+| `DELETE /api/my-courses/{courseId}/tutor-memory` | 必填查询参数 `revision`；清除当前目标和偏好 |
 | `GET /api/my-courses/{courseId}/knowledge-point-facts` | 分页查询当前用户的知识点作答、错题和到期复习事实 |
 | `POST /api/my-courses/{courseId}/start-learning` | 不指定知识点，按当前统一课程状态选择下一学习目标 |
 | `POST /api/my-courses/{courseId}/stage-assessments` | 创建或恢复当前用户在课程中的进行中阶段测评 |
@@ -212,6 +215,21 @@ GET 保留提出时的标题、原因和目标，按目标类型及 ID 重新核
 查询 Embedding 同样计入当前用户配额并共享 Agent `runId`；未审核或未就绪时返回空资料。
 成功回答末尾由服务端追加本轮实际检索的资料名称、版本和片段标识，随回答持久化；这不是模型生成的来源声明。
 检索工具默认关闭，配置和审核入口见[知识快照配置](../../getting-started/configuration.md#知识快照)。
+
+### 课程学习记忆
+
+记忆接口只接受认证用户本人已加入且仍启用、未删除的课程，不接受客户端指定用户。
+GET 返回 `{ "revision": 0, "explanationStyle": null, "goal": null }` 表示尚未保存；空字段始终返回 null。
+PUT 请求同样包含三个字段：必填非负 `revision`，可空 `explanationStyle`（`STEP_BY_STEP`、`CONCISE`、
+`EXAMPLES`），可空 `goal`（最多 500 字符，去除首尾空白）。至少填写一项；清空全部使用 DELETE。
+保存和删除均返回最新快照；首次保存版本为 1，后续修改递增。版本过期返回业务错误 `1005`，要求重新读取后编辑。
+删除清空目标和偏好，只保留归属及版本以拒绝旧页面覆盖；未保存时删除版本 0 返回原空快照。
+请求结果不确定时，页面保留草稿并暂停写入，用户显式重新读取服务端内容后才可继续修改。
+
+记忆跨本课程的 Tutor 会话使用，不从聊天自动提取，也不能由模型工具修改；它不写作答、学习事件或掌握度。
+每次新提问开始时重新读取一次，作为独立的用户数据消息提供给模型，与真实学习证据区分。
+纠正或删除影响后续开始的提问；已在运行的提问仍使用开始时的快照。删除记忆不会清除历史对话、学习记录，
+也不会撤回已发送给模型的请求。系统策略要求模型不从旧对话恢复已删除设置；真实模型遵循情况仍需在线评测。
 
 ### 受限课件
 

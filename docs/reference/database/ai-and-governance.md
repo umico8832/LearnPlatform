@@ -46,6 +46,7 @@ Embedding 每个批次记录 `call_kind=EMBEDDING`，只按实际输入用量计
 | `tutor_agent_message` | V95 | 成功轮次的用户可见问题与回答 | `(run_id, sequence_no)` 唯一；内部工具消息不持久化 |
 | `tutor_agent_practice_attempt` | V101 | 推荐题的首次正式练习及结果快照 | 消息与练习记录各自唯一 |
 | `tutor_agent_plan_confirmation` | V102 | 用户对已保存计划的显式确认 | `message_id` 唯一；不投影为学习事实 |
+| `tutor_course_memory` | V103 | 用户显式保存的课程目标和讲解偏好 | `(user_id, course_id)` 主键；版本递增，删除清空内容 |
 
 一次用户提问中的多次 `ai_call_log` 共享 `tutor_agent_run.run_key` 对应的 `run_id`，但各自独立准入、计费和
 记录终止原因。调用审计仍不保存 Prompt 或响应正文；可恢复对话正文属于独立的用户功能数据，只在最终回答
@@ -77,6 +78,13 @@ V102 新增 `tutor_agent_plan_confirmation`，唯一 `message_id` 指向包含 P
 PLAN 的最多三步快照仍存于 `actions_json`，确认接口不接受替换步骤。READ COMMITTED 事务锁定消息后查重、
 核对当前目标并插入；响应重新读取持久化时间，避免应用时钟精度与 DATETIME 精度不同导致刷新不一致。
 确认不新建练习、课程事件或学习进度。过时计划保留原确认事实，恢复时独立计算目标可用性。
+
+V103 的 `tutor_course_memory` 与对话、学习事实分开保存；不自动提取聊天，也不保存掌握结论。
+`revision` 必须为正，`explanation_style` 仅允许三种公开偏好或 null，`goal` 最长 500 字符。
+写入采用 READ COMMITTED 短事务，锁定当前成员与课程后读取最新版本，首次插入或按版本条件更新。
+删除将两项内容设为 null 并递增版本，保留归属和版本防止旧请求重建已删除内容；不存在的空记忆无需建行。
+空库迁移、V102 升级、并发首次写入和删除后的过期请求由真实 MySQL 测试覆盖。
+公开契约和删除边界见[课程学习记忆](../api/learning-content.md#课程学习记忆)。
 
 ## 学习资产
 

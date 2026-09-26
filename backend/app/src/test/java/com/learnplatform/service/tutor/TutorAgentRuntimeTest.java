@@ -32,11 +32,13 @@ import static org.mockito.Mockito.when;
 class TutorAgentRuntimeTest {
     @Mock private AiInvocationService invocation;
     @Mock private TutorAgentToolExecutor tools;
+    @Mock private TutorMemoryService memories;
     private TutorAgentRuntime runtime;
     private final ModelRequest.Options options = new ModelRequest.Options("test", 400, 0.2);
 
     @BeforeEach void setUp() {
-        runtime = new TutorAgentRuntime(invocation, tools);
+        runtime = new TutorAgentRuntime(invocation, tools, memories);
+        when(memories.promptContext(7L, 10L)).thenReturn("{\"revision\":0,\"explanationStyle\":null,\"goal\":null}");
         when(invocation.defaultOptions()).thenReturn(options);
     }
 
@@ -84,6 +86,20 @@ class TutorAgentRuntimeTest {
                 7L, 10L, "session", UUID.randomUUID(), List.of(), "解释一下"));
 
         assertEquals(ModelException.Code.PROTOCOL, exception.code());
+    }
+
+    @Test void suppliesCurrentMemorySeparatelyFromHistoricalConversation() {
+        var lesson = new ModelRequest.ToolCall("lesson", "read_tutor_lesson", "{}");
+        when(invocation.generate(any(), any(), any(), any()))
+                .thenReturn(new ModelResult(null, List.of(lesson), "test", "r1", ModelResult.Finish.TOOL_CALLS, null))
+                .thenReturn(new ModelResult("继续教学。", List.of(), "test", "r2", ModelResult.Finish.STOP, null));
+        when(tools.execute(7L, 10L, "session", lesson)).thenReturn("{}");
+        runtime.respond(7L, 10L, "session", UUID.randomUUID(), List.of(), "继续");
+        ArgumentCaptor<ModelRequest> requests = ArgumentCaptor.forClass(ModelRequest.class);
+        verify(invocation, times(2)).generate(any(), requests.capture(), any(), any());
+        org.junit.jupiter.api.Assertions.assertTrue(requests.getValue().messages().stream()
+                .anyMatch(message -> message.role() == ModelRequest.Role.USER
+                        && message.content().startsWith("当前课程的用户记忆")));
     }
 
     @Test void stopsAnUnboundedToolLoop() {

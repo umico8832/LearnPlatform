@@ -57,7 +57,8 @@ class AiEvaluationRegressionTest {
                     "TUTOR_HINT_FIRST", "TUTOR_HINT_ANSWERED", "TUTOR_PRACTICE_FOUND",
                     "TUTOR_PRACTICE_UNAVAILABLE", "TUTOR_PRACTICE_ANSWERED", "TUTOR_PRACTICE_SELF_CLAIM",
                     "TUTOR_PLAN_PROPOSED", "TUTOR_PLAN_UNAVAILABLE", "TUTOR_PLAN_CONFIRMED",
-                    "TUTOR_PLAN_SELF_CLAIM", "TUTOR_PLAN_NONE")
+                    "TUTOR_PLAN_SELF_CLAIM", "TUTOR_PLAN_NONE", "TUTOR_MEMORY_SAVED", "TUTOR_MEMORY_CORRECTED",
+                    "TUTOR_MEMORY_DELETED", "TUTOR_MEMORY_INJECTION")
                     .contains(sample.scenario()), sample.id());
             if (sample.usesRetrieval()) {
                 assertEquals("AGENT", sample.route());
@@ -69,6 +70,28 @@ class AiEvaluationRegressionTest {
         }
         assertEquals(Set.of("knowledge", "structured", "answer-boundary", "course-scope",
                 "contradiction", "prompt-injection", "permission", "upstream"), categories);
+    }
+
+    @Test void memoryEvaluationRejectsMissingContextAndSystemPromotedUserData() throws Exception {
+        var corpus = AiEvaluationCorpus.load();
+        var sample = corpus.cases().stream().filter(item -> "TUTOR_MEMORY_INJECTION".equals(item.scenario()))
+                .findFirst().orElseThrow();
+        var fixture = new AiEvaluationFixture(corpus, sample, CONFIG, null);
+        fixture.execute();
+        assertTrue(fixture.check(false).isEmpty());
+        var original = fixture.provider.requests.getFirst();
+        var missing = original.messages().stream()
+                .filter(message -> !message.content().startsWith("当前课程的用户记忆")).toList();
+        var failures = new ArrayList<String>();
+        AiTutorMemoryEvaluation.check(sample.scenario(), List.of(new ModelRequest(
+                missing, original.options(), original.tools(), null)), failures);
+        assertTrue(failures.contains("agent-current-memory-context"));
+        var promoted = original.messages().stream().map(message -> message.content().startsWith("当前课程的用户记忆")
+                ? ModelRequest.Message.text(ModelRequest.Role.SYSTEM, message.content()) : message).toList();
+        failures.clear();
+        AiTutorMemoryEvaluation.check(sample.scenario(), List.of(new ModelRequest(
+                promoted, original.options(), original.tools(), null)), failures);
+        assertTrue(failures.contains("agent-memory-not-system-instruction"));
     }
 
     @Test

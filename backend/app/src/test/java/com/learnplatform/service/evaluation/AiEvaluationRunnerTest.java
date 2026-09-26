@@ -136,7 +136,7 @@ class AiEvaluationRunnerTest {
             assertTrue(fixture.check(true).isEmpty(), () -> fixture.check(true).toString());
             assertEquals(2, requests.size());
             var second = json.readTree(requests.get(1));
-            var knowledge = second.path("messages").get(4);
+            var knowledge = second.path("messages").get(second.path("messages").size() - 1);
             assertEquals("tool", knowledge.path("role").asText());
             assertEquals("knowledge-1", knowledge.path("tool_call_id").asText());
             assertTrue(knowledge.path("content").asText().contains("EVAL_INJECTION_CANARY"));

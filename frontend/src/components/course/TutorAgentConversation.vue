@@ -8,6 +8,7 @@
       <span v-if="statusLabel" class="agent-status" role="status">{{ statusLabel }}</span>
     </header>
     <p class="agent-intro">教学解释只依据本节已审查内容；学习安排依据课程记录，理解检查由服务端判分。</p>
+    <TutorMemory :course-id="courseId" :busy="!canContinueFromCheck" />
 
     <div v-if="run?.messages.length" class="agent-messages" aria-live="polite">
       <article
@@ -143,6 +144,7 @@ import {
 import { errorMessage } from '@/utils/errors'
 import TutorAgentPractice from './TutorAgentPractice.vue'
 import TutorAgentPlan from './TutorAgentPlan.vue'
+import TutorMemory from './TutorMemory.vue'
 
 const props = defineProps<{
   courseId: number
