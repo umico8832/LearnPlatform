@@ -96,6 +96,15 @@ final class AiEvaluationProvider implements AiProvider {
                     || "TUTOR_PRACTICE_SELF_CLAIM".equals(sample.scenario())) {
                 toolCalls.add(new ModelRequest.ToolCall("practice-result-1", "read_tutor_practice_result", "{}"));
             }
+            if ("TUTOR_PLAN_PROPOSED".equals(sample.scenario())
+                    || "TUTOR_PLAN_UNAVAILABLE".equals(sample.scenario())) {
+                toolCalls.add(new ModelRequest.ToolCall("plan-1", "propose_tutor_plan", "{}"));
+            }
+            if ("TUTOR_PLAN_CONFIRMED".equals(sample.scenario())
+                    || "TUTOR_PLAN_SELF_CLAIM".equals(sample.scenario())
+                    || "TUTOR_PLAN_NONE".equals(sample.scenario())) {
+                toolCalls.add(new ModelRequest.ToolCall("plan-state-1", "read_tutor_plan_state", "{}"));
+            }
             return new ModelResult("", toolCalls, config.getModel(), null,
                     ModelResult.Finish.TOOL_CALLS, null);
         }

@@ -26,6 +26,8 @@
 | `GET /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/latest` | 找回本人该会话最近创建的运行；尚无运行时返回成功及空 data |
 | `GET /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/{runKey}/messages/{sequence}/practice` | 显式打开已保存推荐的变式练习，恢复本人首次结果 |
 | `POST /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/{runKey}/messages/{sequence}/practice/answer` | 提交 `{ "userAnswer": "B", "answerTime": 12 }`；返回首次判分，耗时秒数可省略 |
+| `GET /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/{runKey}/messages/{sequence}/plan` | 恢复已保存安排及真实确认状态，重新核对目标可用性 |
+| `POST /api/my-courses/{courseId}/tutor-sessions/{sessionKey}/agent-runs/{runKey}/messages/{sequence}/plan/confirm` | 无请求体；显式确认该消息的安排，重试返回首次确认时间 |
 
 课程和知识点的写接口位于[管理与治理 API](admin-governance.md#课程与知识点管理)。
 个人课程库关系以服务端认证用户为准，客户端不能指定或查询其他用户的 `userId`。
@@ -153,7 +155,7 @@ Agent 可以调用无参数的 `present_tutor_check`。未作答时，由服务�
 分配下一级：第 1 级提供概念方向，第 2 级引导推理步骤，第 3 级使用课内相似情境。提示正文由模型依据公开
 课节生成，不能选择或排除检查选项；真实提示质量仍需在线人工验收。
 成功回复保存 `actions: [{ "type": "HINT", "level": 1 }]`（级别范围 1–3），表示该回复提供了提示，
-不表示用户阅读、掌握或作答。每轮最多一个 HINT，可与 CHECK、PRACTICE 共存；同轮重复调用不升级，失败不消费级别。
+不表示用户阅读、掌握或作答。每轮最多一个 HINT，可与 CHECK、PRACTICE、PLAN 共存；同轮重复调用不升级，失败不消费级别。
 已达第 3 级返回 `LIMIT_REACHED`，已作答返回 `ANSWERED`，两者均不产生新的 HINT。
 页面从保存的动作恢复进度，逐次点击才请求提示；新运行重新计算其提示进度。模型和客户端均不能指定级别。
 生成提示期间用户在另一请求中完成作答时，完成写回前会再次校验，拒绝保存已过时的提示回复。
@@ -173,6 +175,24 @@ Agent 可以调用无参数的 `present_tutor_check`。未作答时，由服务�
 只有用户再次点击指导才调用模型。无参数 `read_tutor_practice_result` 使用服务端绑定的 run ID，读取当前运行
 最新 PRACTICE 消息的首次结果（后面的普通聊天不影响选择）；尚无作答返回 `UNANSWERED`，不会回退到旧题结果。
 已答仅向模型提供真实正误及解析，不采信聊天自述。页面只为最新推荐提供该指导入口。
+
+用户点击“建议学习安排”时，Agent 可调用无参数 `propose_tutor_plan`，复用当前本人课程概览的建议目标：
+未完成的已审查 Tutor、到期复习、错题、课程目录。过滤无有效 ID 的目标，同一道题去重后按原顺序取最多三步。
+Tutor 目标要求知识点和教学内容均已审查，知识点撤回审核后也不再作为可确认的教学目标。
+没有候选返回 `UNAVAILABLE`；有候选返回 `AVAILABLE` 和服务端 PLAN 动作，在本轮成功后随消息保存。
+动作结构为 `{ "type": "PLAN", "steps": [{ "type": "TUTOR", "title": "...", "reason": "...", "knowledgePointId": 31 }] }`。
+每步类型为 `TUTOR/COURSE_SEQUENCE/DUE_REVIEW/WRONG_QUESTION`；前两者只带 `knowledgePointId`，后两者只带 `questionId`，
+模型不能指定目标、改写步骤或提供导航 URL。每种动作每轮至多一个，同轮相同计划去重、冲突计划拒绝保存。
+
+计划 GET/confirm 返回 `{ "steps": [...], "confirmed": false, "confirmedAt": null, "available": true }`。
+GET 保留提出时的标题、原因和目标，按目标类型及 ID 重新核对当前建议；确认前目标失效时拒绝首次确认。
+用户点击“确认这份安排”才写确认记录，模型工具无确认权限；确认不写作答、错题、复习、完成或掌握事实，也不自动调用模型。
+首次及并发重试返回同一持久化确认时间。已确认目标后来失效时仍返回历史安排与原确认时间，但 `available=false`，页面禁用旧入口。
+页面刷新恢复服务端状态；确认响应丢失后先查询，查询也失败则要求显式同步；初始加载失败可重试。
+确认成功后，每一步仍需用户点击才导航。原会话、运行、消息归属及当前会话权限在每次访问中复核。
+
+无参数 `read_tutor_plan_state` 使用服务端绑定的 run ID，读取当前运行最新 PLAN 消息，跳过后来的普通聊天；
+返回 `NONE`，或 `PROPOSED/CONFIRMED` 及上述 `plan`。聊天自称“已确认”不改变状态；确认也不代表学习完成。
 
 运行状态为 `RUNNING`、`WAITING_USER` 或 `FAILED`。成功回答后停在 `WAITING_USER`，下一条消息领取同一运行；
 同一运行并发提问会被拒绝，失败运行可以重试。每次执行最多保留 10 分钟的领取租约；

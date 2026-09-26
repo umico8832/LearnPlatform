@@ -45,6 +45,7 @@ Embedding 每个批次记录 `call_kind=EMBEDDING`，只按实际输入用量计
 | `tutor_agent_run` | V95 | 运行归属、状态和下一消息序号 | `run_key` 唯一；每次执行通过独立标识和租约避免并发推进 |
 | `tutor_agent_message` | V95 | 成功轮次的用户可见问题与回答 | `(run_id, sequence_no)` 唯一；内部工具消息不持久化 |
 | `tutor_agent_practice_attempt` | V101 | 推荐题的首次正式练习及结果快照 | 消息与练习记录各自唯一 |
+| `tutor_agent_plan_confirmation` | V102 | 用户对已保存计划的显式确认 | `message_id` 唯一；不投影为学习事实 |
 
 一次用户提问中的多次 `ai_call_log` 共享 `tutor_agent_run.run_key` 对应的 `run_id`，但各自独立准入、计费和
 记录终止原因。调用审计仍不保存 Prompt 或响应正文；可恢复对话正文属于独立的用户功能数据，只在最终回答
@@ -58,8 +59,8 @@ V99 增加可空的 `execution_key` 和 `lease_until`。每次创建或继续提
 过期恢复不自动重发模型请求或返还已消耗配额。
 
 V100 在 `tutor_agent_message` 增加可空 JSON 字段 `actions_json`，存量消息的空值按无动作读取。
-存放服务端确认的 `CHECK` 展示动作、`HINT` 提示等级（1–3）及 `PRACTICE` 正式题 ID，与 ASSISTANT 正文、用户问题及运行状态
-在同一事务中提交。每种动作单轮最多一个，CHECK、HINT 与 PRACTICE 可同时存在；旧 CHECK JSON 不需要 level 字段。
+存放服务端确认的 `CHECK` 展示动作、`HINT` 提示等级（1–3）、`PRACTICE` 正式题 ID 及 `PLAN` 建议步骤，与 ASSISTANT 正文、用户问题及运行状态
+在同一事务中提交。每种动作单轮最多一个，四种动作可同时存在；旧动作 JSON 不需要新增的 steps 字段。
 重复工具请求在单轮内去重；失败、过期执行和无效动作不能单独留下可操作消息。
 动作不包含答案、判分或客户端目标标识，检查结果仍以 `tutor_session` 的首次事实为准。
 
@@ -70,6 +71,12 @@ V101 新增 `tutor_agent_practice_attempt`，以 `message_id` 唯一绑定一次
 正式练习记录、错题/复习更新、课程学习事件与 attempt 同事务提交，任一写入失败全部回滚。
 推荐和打开不建立 attempt。学习统计复用 `practice_record`，不把 attempt 再计一次；
 公开内容与恢复权限见[课程与 Tutor API](../api/learning-content.md#tutor-会话)。
+
+V102 新增 `tutor_agent_plan_confirmation`，唯一 `message_id` 指向包含 PLAN 动作的 ASSISTANT 消息，
+`confirmed_time` 保存用户首次显式确认时间；归属经消息、运行和原 Tutor 会话核对。
+PLAN 的最多三步快照仍存于 `actions_json`，确认接口不接受替换步骤。READ COMMITTED 事务锁定消息后查重、
+核对当前目标并插入；响应重新读取持久化时间，避免应用时钟精度与 DATETIME 精度不同导致刷新不一致。
+确认不新建练习、课程事件或学习进度。过时计划保留原确认事实，恢复时独立计算目标可用性。
 
 ## 学习资产
 

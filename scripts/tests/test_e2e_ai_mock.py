@@ -10,6 +10,33 @@ SPEC.loader.exec_module(MOCK)
 
 
 class E2eAiMockTest(unittest.TestCase):
+    def test_plan_request_reads_lesson_before_proposing_without_confirming(self):
+        payload = {"tools": [{"type": "function"}], "messages": [{"role": "user", "content": MOCK.PLAN_REQUEST}]}
+        for name in ["read_tutor_lesson", "propose_tutor_plan"]:
+            _, response = MOCK.completion(payload)
+            calls = response["choices"][0]["message"]["tool_calls"]
+            self.assertEqual(name, calls[0]["function"]["name"])
+            payload["messages"].extend([{"role": "assistant", "tool_calls": calls},
+                {"role": "tool", "tool_call_id": calls[0]["id"], "content": "{}"}])
+        _, response = MOCK.completion(payload)
+        self.assertIn("自行确认", response["choices"][0]["message"]["content"])
+
+    def test_plan_confirmation_comes_from_the_current_tool_result(self):
+        for plan, expected in [({}, "尚未记录"), ({"confirmed": False}, "尚未记录"),
+                               ({"confirmed": True}, "已记录计划确认；确认不代表完成学习")]:
+            payload = {"tools": [{"type": "function"}], "messages": [
+                {"role": "assistant", "tool_calls": [MOCK.tool_call("old", "read_tutor_plan_state")]},
+                {"role": "tool", "tool_call_id": "old", "content": '{"plan":{"confirmed":true}}'},
+                {"role": "user", "content": MOCK.PLAN_STATE_REQUEST}]}
+            for name, result in [("read_tutor_lesson", {}), ("read_tutor_plan_state", {"plan": plan})]:
+                _, response = MOCK.completion(payload)
+                calls = response["choices"][0]["message"]["tool_calls"]
+                self.assertEqual(name, calls[0]["function"]["name"])
+                payload["messages"].extend([{"role": "assistant", "tool_calls": calls},
+                    {"role": "tool", "tool_call_id": calls[0]["id"], "content": json.dumps(result)}])
+            _, response = MOCK.completion(payload)
+            self.assertIn(expected, response["choices"][0]["message"]["content"])
+
     def test_existing_asset_generation_keeps_structured_answer(self):
         status, response = MOCK.completion({"messages": [{"role": "user", "content": "解释"}]})
         self.assertEqual(200, status)

@@ -228,6 +228,7 @@ class CourseLearningFactIntegrationTest extends IntegrationTestBase {
 
     @Test
     void tutorProgressAggregatesSessionsAndOnlyOffersReviewedCurrentContent() {
+        jdbc.update("UPDATE knowledge_point SET content_review_status='REVIEWED' WHERE id=?", K1);
         jdbc.update("""
                 INSERT INTO tutor_content (id,knowledge_point_id,content_key,content_version,review_status,title,lesson_json,check_json)
                 VALUES (963099,?,'course-facts-reviewed',1,'REVIEWED','知识点教学','{}','{}')

@@ -275,10 +275,11 @@ final class AiEvaluationFixture {
                 Set<String> declaredTools = sample.usesRetrieval()
                         ? Set.of("read_tutor_lesson", "read_learning_evidence", "present_tutor_check",
                         "read_tutor_check_result", "request_tutor_hint", "recommend_tutor_practice",
-                        "read_tutor_practice_result", "search_course_knowledge")
+                        "read_tutor_practice_result", "propose_tutor_plan", "read_tutor_plan_state",
+                        "search_course_knowledge")
                         : Set.of("read_tutor_lesson", "read_learning_evidence", "present_tutor_check",
                         "read_tutor_check_result", "request_tutor_hint", "recommend_tutor_practice",
-                        "read_tutor_practice_result");
+                        "read_tutor_practice_result", "propose_tutor_plan", "read_tutor_plan_state");
                 check(failures, provider.requests.stream().allMatch(request -> request.tools().stream()
                         .map(ModelRequest.Tool::name).collect(java.util.stream.Collectors.toSet())
                         .equals(declaredTools)), "agent-tool-contract");
@@ -289,6 +290,7 @@ final class AiEvaluationFixture {
                 checkTutorCheckActions(failures);
                 AiTutorHintEvaluation.check(sample.scenario(), publicOutput, toolTrace, failures);
                 AiTutorPracticeEvaluation.check(sample.scenario(), publicOutput, toolTrace, logs, failures);
+                AiTutorPlanEvaluation.check(sample.scenario(), publicOutput, toolTrace, logs, failures);
                 if (sample.usesRetrieval()) { checkRetrieval(failures); }
             }
         }
@@ -428,6 +430,8 @@ final class AiEvaluationFixture {
                 case "request_tutor_hint" -> AiTutorHintEvaluation.toolOutput(sample.scenario());
                 case "recommend_tutor_practice" -> AiTutorPracticeEvaluation.recommendationOutput(sample.scenario());
                 case "read_tutor_practice_result" -> AiTutorPracticeEvaluation.resultOutput(sample.scenario());
+                case "propose_tutor_plan" -> AiTutorPlanEvaluation.proposalOutput(sample.scenario());
+                case "read_tutor_plan_state" -> AiTutorPlanEvaluation.stateOutput(sample.scenario());
                 default -> throw new IllegalArgumentException("Unknown Agent evaluation tool");
             };
             toolTrace.add(new ToolObservation(call.id(), call.name(), call.arguments(), output, runId));

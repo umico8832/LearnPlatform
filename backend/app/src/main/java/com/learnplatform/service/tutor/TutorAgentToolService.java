@@ -7,6 +7,7 @@ import com.learnplatform.ai.model.JsonContract;
 import com.learnplatform.ai.model.ModelException;
 import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.dto.TutorSessionVO;
+import com.learnplatform.dto.TutorAgentActionVO;
 import com.learnplatform.service.KnowledgeSearchService;
 import com.learnplatform.service.TutorSessionService;
 import org.springframework.stereotype.Service;
@@ -19,13 +20,15 @@ public class TutorAgentToolService implements TutorAgentToolExecutor {
     private final ObjectMapper json;
     private final KnowledgeSearchService knowledge;
     private final TutorAgentPracticeService practice;
+    private final TutorAgentPlanService plans;
 
     public TutorAgentToolService(TutorSessionService sessions, ObjectMapper json, KnowledgeSearchService knowledge,
-                                 TutorAgentPracticeService practice) {
+                                 TutorAgentPracticeService practice, TutorAgentPlanService plans) {
         this.sessions = sessions;
         this.json = json;
         this.knowledge = knowledge;
         this.practice = practice;
+        this.plans = plans;
     }
 
     @Override
@@ -52,6 +55,8 @@ public class TutorAgentToolService implements TutorAgentToolExecutor {
             case "request_tutor_hint" -> hintAvailability(session);
             case "recommend_tutor_practice" -> recommendPractice(userId, courseId, sessionKey);
             case "read_tutor_practice_result" -> practiceResult(userId, courseId, sessionKey, runId);
+            case "propose_tutor_plan" -> proposePlan(userId, courseId, sessionKey);
+            case "read_tutor_plan_state" -> planState(userId, courseId, sessionKey, runId);
             case "search_course_knowledge" -> search(userId, courseId, call.arguments(), runId);
             default -> throw new ModelException(ModelException.Code.PROTOCOL);
         };
@@ -118,6 +123,25 @@ public class TutorAgentToolService implements TutorAgentToolExecutor {
             result.putObject("result").put("correct", outcome.getCorrect())
                     .put("explanation", outcome.getAnalysis());
         }
+        return write(result);
+    }
+
+    private String proposePlan(Long userId, Long courseId, String sessionKey) {
+        var steps = plans.propose(userId, courseId, sessionKey);
+        ObjectNode result = json.createObjectNode();
+        result.put("status", steps.isEmpty() ? "UNAVAILABLE" : "AVAILABLE");
+        if (!steps.isEmpty()) {
+            result.set("action", json.valueToTree(new TutorAgentActionVO("PLAN", null, null, steps)));
+        }
+        return write(result);
+    }
+
+    private String planState(Long userId, Long courseId, String sessionKey, UUID runId) {
+        if (runId == null) { throw new ModelException(ModelException.Code.PROTOCOL); }
+        var state = plans.latest(userId, courseId, sessionKey, runId.toString());
+        ObjectNode result = json.createObjectNode();
+        result.put("status", state == null ? "NONE" : (state.confirmed() ? "CONFIRMED" : "PROPOSED"));
+        if (state != null) { result.set("plan", json.valueToTree(state)); }
         return write(result);
     }
 

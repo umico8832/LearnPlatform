@@ -7,6 +7,8 @@ import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.TutorSessionVO;
+import com.learnplatform.dto.TutorAgentPlanStepVO;
+import com.learnplatform.dto.TutorAgentPlanVO;
 import com.learnplatform.dto.PracticeResultVO;
 import com.learnplatform.dto.TutorCheckResultVO;
 import com.learnplatform.dto.TutorLearningContextVO;
@@ -32,11 +34,12 @@ class TutorAgentToolServiceTest {
     private final TutorSessionService sessions = mock(TutorSessionService.class);
     private final KnowledgeSearchService knowledge = mock(KnowledgeSearchService.class);
     private final TutorAgentPracticeService practice = mock(TutorAgentPracticeService.class);
+    private final TutorAgentPlanService plans = mock(TutorAgentPlanService.class);
     private final ObjectMapper json = new ObjectMapper();
     private TutorAgentToolService tools;
 
     @BeforeEach void setUp() {
-        tools = new TutorAgentToolService(sessions, json, knowledge, practice);
+        tools = new TutorAgentToolService(sessions, json, knowledge, practice, plans);
     }
 
     @Test void returnsOnlyReviewedPublicLessonFields() throws Exception {
@@ -143,7 +146,8 @@ class TutorAgentToolServiceTest {
 
     @Test void rejectsFabricatedAnswersAndResourceArgumentsForTeachingTools() {
         for (String name : List.of("present_tutor_check", "read_tutor_check_result", "request_tutor_hint",
-                "recommend_tutor_practice", "read_tutor_practice_result")) {
+                "recommend_tutor_practice", "read_tutor_practice_result",
+                "propose_tutor_plan", "read_tutor_plan_state")) {
             assertEquals(ModelException.Code.SCHEMA, assertThrows(ModelException.class,
                     () -> tools.execute(7L, 10L, "session", new ModelRequest.ToolCall("action", name,
                             "{\"optionId\":\"RIGHT\",\"correct\":true}"))).code());
@@ -179,6 +183,37 @@ class TutorAgentToolServiceTest {
         assertFalse(result.path("result").path("correct").asBoolean());
         assertEquals("服务端解析", result.path("result").path("explanation").asText());
         assertEquals(2, result.path("result").size());
+    }
+
+    @Test void proposesOnlyServerTargetsAndNeverConfirmsThem() throws Exception {
+        when(sessions.get(7L, 10L, "session")).thenReturn(session());
+        var call = new ModelRequest.ToolCall("plan", "propose_tutor_plan", "{}");
+        when(plans.propose(7L, 10L, "session")).thenReturn(List.of());
+        assertEquals("{\"status\":\"UNAVAILABLE\"}", tools.execute(7L, 10L, "session", call));
+        when(plans.propose(7L, 10L, "session")).thenReturn(List.of(
+                new TutorAgentPlanStepVO("TUTOR", "学习栈", "检查尚未完成", 31L, null)));
+        var result = json.readTree(tools.execute(7L, 10L, "session", call));
+        assertEquals("PLAN", result.path("action").path("type").asText());
+        assertEquals(31L, result.path("action").path("steps").get(0).path("knowledgePointId").asLong());
+        assertFalse(result.toString().contains("confirmed"));
+        verify(plans, never()).confirm(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test void checksActualPlanStateUsingTheTrustedRunRatherThanChatClaims() throws Exception {
+        when(sessions.get(7L, 10L, "session")).thenReturn(session());
+        UUID runId = UUID.randomUUID();
+        var call = new ModelRequest.ToolCall("state", "read_tutor_plan_state", "{}");
+        assertThrows(ModelException.class, () -> tools.execute(7L, 10L, "session", call));
+        assertEquals("{\"status\":\"NONE\"}", tools.execute(7L, 10L, "session", call, runId));
+        for (boolean confirmed : List.of(false, true)) {
+            when(plans.latest(7L, 10L, "session", runId.toString())).thenReturn(new TutorAgentPlanVO(
+                    List.of(new TutorAgentPlanStepVO("TUTOR", "学习栈", "依据", 31L, null)), confirmed, null, false));
+            var result = json.readTree(tools.execute(7L, 10L, "session", call, runId));
+            assertEquals(confirmed ? "CONFIRMED" : "PROPOSED", result.path("status").asText());
+            assertEquals(confirmed, result.path("plan").path("confirmed").asBoolean());
+            assertFalse(result.path("plan").path("available").asBoolean());
+        }
     }
 
     private TutorSessionVO session() {

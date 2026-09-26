@@ -64,9 +64,9 @@ class TutorAgentMigrationIntegrationTest {
                 """));
     }
 
-    @Test void upgradesV100ToV101AndEnforcesAttemptUniqueness() {
+    @Test void upgradesV101ToV102AndEnforcesAttemptAndConfirmationUniqueness() {
         Flyway.configure().dataSource(V101_MYSQL.getJdbcUrl(), "root", V101_MYSQL.getPassword())
-                .target("100").load().migrate();
+                .target("101").load().migrate();
         JdbcTemplate jdbc = new JdbcTemplate(new DriverManagerDataSource(
                 V101_MYSQL.getJdbcUrl(), "root", V101_MYSQL.getPassword()));
         jdbc.update("""
@@ -98,6 +98,10 @@ class TutorAgentMigrationIntegrationTest {
                 INSERT INTO tutor_agent_practice_attempt (message_id, question_id, practice_record_id, question_json, result_json)
                 VALUES (2, 9, 10, '{"id":9,"content":"题干","questionType":"SINGLE_CHOICE","options":[]}', '{"recordId":10}')
                 """));
+        assertEquals(1, tableCount(jdbc, "tutor_agent_plan_confirmation"));
+        jdbc.update("INSERT INTO tutor_agent_plan_confirmation (message_id) VALUES (1)");
+        assertThrows(DataAccessException.class, () -> jdbc.update(
+                "INSERT INTO tutor_agent_plan_confirmation (message_id) VALUES (1)"));
     }
 
     private int tableCount(JdbcTemplate jdbc, String table) {

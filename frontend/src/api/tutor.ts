@@ -1,6 +1,7 @@
 import { aiService } from '@/utils/request'
 import type { ApiResponse } from '@/types/api'
 import type { PracticeResultVO } from '@/api/practice'
+import type { TutorAgentPlanStepVO } from '@/api/tutorPlan'
 
 export interface TutorAgentMessageVO {
   sequence: number
@@ -11,7 +12,10 @@ export interface TutorAgentMessageVO {
 }
 
 export type TutorAgentActionVO =
-  { type: 'CHECK' } | { type: 'HINT'; level: 1 | 2 | 3 } | { type: 'PRACTICE'; questionId: number }
+  | { type: 'CHECK' }
+  | { type: 'HINT'; level: 1 | 2 | 3 }
+  | { type: 'PRACTICE'; questionId: number }
+  | { type: 'PLAN'; steps: TutorAgentPlanStepVO[] }
 export interface TutorAgentPracticeVO {
   question: {
     id: number

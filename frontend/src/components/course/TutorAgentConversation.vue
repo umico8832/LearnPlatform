@@ -7,7 +7,7 @@
       </div>
       <span v-if="statusLabel" class="agent-status" role="status">{{ statusLabel }}</span>
     </header>
-    <p class="agent-intro">回答只依据本节已审查内容；理解检查仍由服务端判分。</p>
+    <p class="agent-intro">教学解释只依据本节已审查内容；学习安排依据课程记录，理解检查由服务端判分。</p>
 
     <div v-if="run?.messages.length" class="agent-messages" aria-live="polite">
       <article
@@ -48,6 +48,17 @@
           :allow-follow-up="item.sequence === latestPracticeSequence"
           @continue-practice="continueFromPractice"
         />
+        <TutorAgentPlan
+          v-for="action in (item.actions ?? []).filter(
+            (candidate) => item.role === 'ASSISTANT' && candidate.type === 'PLAN',
+          )"
+          :key="`plan-${item.sequence}-${action.type}`"
+          :course-id="courseId"
+          :session-key="sessionKey"
+          :run-key="run!.runKey"
+          :sequence="item.sequence"
+          :busy="!canContinueFromCheck"
+        />
       </article>
     </div>
 
@@ -67,6 +78,9 @@
     <p v-if="run?.status === 'FAILED'" class="agent-thinking">上次回答未完成，可重新发送问题；历史对话已保留。</p>
 
     <div class="agent-quick-actions">
+      <el-button data-testid="agent-request-plan" :disabled="!canContinueFromCheck" @click="requestPlan"
+        >建议学习安排</el-button
+      >
       <el-button data-testid="agent-request-practice" :disabled="!canContinueFromCheck" @click="requestPractice"
         >练一道变式题</el-button
       >
@@ -128,6 +142,7 @@ import {
 } from '@/api/tutor'
 import { errorMessage } from '@/utils/errors'
 import TutorAgentPractice from './TutorAgentPractice.vue'
+import TutorAgentPlan from './TutorAgentPlan.vue'
 
 const props = defineProps<{
   courseId: number
@@ -201,6 +216,10 @@ async function requestHint() {
 async function requestPractice() {
   if (!canContinueFromCheck.value) return
   await sendMessage('请推荐一道本节已审查的变式题，让我自己作答。', false)
+}
+async function requestPlan() {
+  if (!canContinueFromCheck.value) return
+  await sendMessage('请建议本课程接下来的学习安排，由我确认是否采用。', false)
 }
 async function continueFromPractice() {
   if (!canContinueFromCheck.value) return

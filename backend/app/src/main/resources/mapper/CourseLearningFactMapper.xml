@@ -166,7 +166,7 @@
                     WHEN COUNT(s.id) > 0 THEN 'IN_PROGRESS' ELSE 'NOT_STARTED' END AS status
         FROM knowledge_point k JOIN tutor_content t ON t.knowledge_point_id = k.id AND t.review_status = 'REVIEWED'
         LEFT JOIN tutor_session s ON s.tutor_content_id = t.id AND s.user_id = #{userId} AND s.course_id = #{courseId}
-        WHERE k.course_id = #{courseId} AND k.deleted = 0
+        WHERE k.course_id = #{courseId} AND k.deleted = 0 AND k.content_review_status = 'REVIEWED'
         GROUP BY k.id, k.sort_order, t.id, t.knowledge_point_id, t.title
         ORDER BY k.sort_order, k.id, t.id
     </select>

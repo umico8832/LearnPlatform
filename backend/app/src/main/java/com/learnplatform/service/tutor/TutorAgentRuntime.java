@@ -37,6 +37,11 @@ public class TutorAgentRuntime {
             明确说明，不生成或捏造题目。推荐入口不代表开始或完成训练，必须由用户自己打开并提交答案。
             用户请求变式练习反馈时调用 read_tutor_practice_result，依据当前对话实际保存的结果指导，
             不把聊天中的答案、自评或推荐记录当作练习事实。这两个工具的参数也必须是空对象。
+            用户请求后续学习安排时，先读取课节，再调用 propose_tutor_plan，提供服务端选出的最多三步建议，
+            等待用户在页面确认是否采用；不能从聊天自述代替确认，也不能把建议或确认当作学习、作答或掌握事实。
+            用户询问已确认安排时调用 read_tutor_plan_state 核对当前运行最新计划；NONE 表示没有计划，
+            PROPOSED 表示尚未确认，CONFIRMED 仅表示用户采用了安排。available=false 时提示重新获取建议，
+            不引导执行已失效目标。这两个工具只接受空对象，没有代用户确认、作答或执行计划的权限。
             回答应直接、简洁，并在回答后等待用户继续提问。
             """;
     private static final String EMPTY_OBJECT_SCHEMA = """
@@ -62,6 +67,10 @@ public class TutorAgentRuntime {
             new ModelRequest.Tool("recommend_tutor_practice", "推荐本节已审查的正式变式题，用户显式打开并作答。",
                     EMPTY_OBJECT_SCHEMA),
             new ModelRequest.Tool("read_tutor_practice_result", "读取当前对话最近变式练习的真实首次结果；未答不判分。",
+                    EMPTY_OBJECT_SCHEMA),
+            new ModelRequest.Tool("propose_tutor_plan", "依据本课程真实事实提出最多三步学习安排，等待用户显式确认。",
+                    EMPTY_OBJECT_SCHEMA),
+            new ModelRequest.Tool("read_tutor_plan_state", "读取当前对话最新计划的真实确认状态及当前可用性。",
                     EMPTY_OBJECT_SCHEMA));
 
     private final AiInvocationService invocation;
@@ -99,7 +108,8 @@ public class TutorAgentRuntime {
                     result.toolCalls(), null));
             for (ModelRequest.ToolCall call : result.toolCalls()) {
                 String output = ("search_course_knowledge".equals(call.name())
-                        || "read_tutor_practice_result".equals(call.name()))
+                        || "read_tutor_practice_result".equals(call.name())
+                        || "read_tutor_plan_state".equals(call.name()))
                         ? tools.execute(userId, courseId, sessionKey, call, runId)
                         : tools.execute(userId, courseId, sessionKey, call);
                 if ("search_course_knowledge".equals(call.name())) {
@@ -113,6 +123,9 @@ public class TutorAgentRuntime {
                 }
                 if ("recommend_tutor_practice".equals(call.name())) {
                     collectPracticeAction(output, actions);
+                }
+                if ("propose_tutor_plan".equals(call.name())) {
+                    collectPlanAction(output, actions);
                 }
                 messages.add(new ModelRequest.Message(ModelRequest.Role.TOOL, output, List.of(), call.id()));
                 readLesson |= "read_tutor_lesson".equals(call.name());
@@ -180,6 +193,16 @@ public class TutorAgentRuntime {
         if (existing.isEmpty()) { actions.add(practice); }
     }
 
+    private void collectPlanAction(String output, List<TutorAgentActionVO> actions) {
+        TutorAgentActionVO plan = TutorAgentPlanActionParser.parse(output);
+        if (plan == null) { return; }
+        var existing = actions.stream().filter(item -> "PLAN".equals(item.type())).findFirst();
+        if (existing.isPresent() && !existing.get().equals(plan)) {
+            throw new ModelException(ModelException.Code.PROTOCOL);
+        }
+        if (existing.isEmpty()) { actions.add(plan); }
+    }
+
     private void collectSources(String output, Map<String, String> sources) {
         var citations = JsonContract.parse(output).path("citations");
         if (!citations.isArray()) {
@@ -242,6 +265,9 @@ public class TutorAgentRuntime {
         }
         if (actions.stream().anyMatch(action -> "PRACTICE".equals(action.type()))) {
             note.append("\n本轮已提供变式练习入口；推荐不代表用户开始或完成练习，结果以服务端记录为准。");
+        }
+        if (actions.stream().anyMatch(action -> "PLAN".equals(action.type()))) {
+            note.append("\n本轮已提出待确认的学习安排；用户是否确认以 read_tutor_plan_state 为准，确认也不代表完成学习。");
         }
         return note.toString();
     }

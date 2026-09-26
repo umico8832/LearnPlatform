@@ -10,6 +10,8 @@ PRACTICE_REQUEST = "请推荐一道本节已审查的变式题，让我自己作
 PRACTICE_FOLLOW_UP = "请根据我刚才变式练习的服务端结果，继续指导我。"
 VARIANT_MARKER = "E2E_TUTOR_VARIANT"
 HINT_REQUEST = "请给我本节理解检查的下一步提示，不要直接告诉我答案。"
+PLAN_REQUEST = "请建议本课程接下来的学习安排，由我确认是否采用。"
+PLAN_STATE_REQUEST = "E2E_READ_PLAN_STATE"
 
 
 def current_turn(messages):
@@ -32,7 +34,7 @@ def tool_call(identifier, name):
     return {"id": identifier, "type": "function", "function": {"name": name, "arguments": "{}"}}
 
 
-def result_from_current_turn(messages, tool_name="read_tutor_check_result"):
+def result_from_current_turn(messages, tool_name="read_tutor_check_result", field="result"):
     calls = {
         call.get("id"): call.get("function", {}).get("name")
         for message in messages
@@ -42,7 +44,7 @@ def result_from_current_turn(messages, tool_name="read_tutor_check_result"):
     for message in reversed(messages):
         if message.get("role") == "tool" and calls.get(message.get("tool_call_id")) == tool_name:
             try:
-                return json.loads(message.get("content", "{}")).get("result", {})
+                return json.loads(message.get("content", "{}")).get(field, {})
             except (TypeError, ValueError):
                 return {}
     return {}
@@ -86,6 +88,18 @@ def completion(payload):
     elif payload.get("tools") and question == PRACTICE_FOLLOW_UP and "read_tutor_practice_result" not in calls:
         finish = "tool_calls"
         message["tool_calls"] = [tool_call("e2e-practice-result", "read_tutor_practice_result")]
+    elif payload.get("tools") and question == PLAN_REQUEST and "propose_tutor_plan" not in calls:
+        finish = "tool_calls"
+        message["tool_calls"] = [tool_call("e2e-plan", "propose_tutor_plan")]
+    elif payload.get("tools") and question == PLAN_STATE_REQUEST and "read_tutor_plan_state" not in calls:
+        finish = "tool_calls"
+        message["tool_calls"] = [tool_call("e2e-plan-state", "read_tutor_plan_state")]
+    elif question == PLAN_STATE_REQUEST:
+        plan = result_from_current_turn(turn, "read_tutor_plan_state", "plan")
+        message["content"] = ("服务端已记录计划确认；确认不代表完成学习。" if plan.get("confirmed") is True
+                              else "服务端尚未记录计划确认。")
+    elif question == PLAN_REQUEST:
+        message["content"] = "已核对课程记录，请查看建议并自行确认是否采用。"
     elif question == PRACTICE_FOLLOW_UP:
         correct = result_from_current_turn(turn, "read_tutor_practice_result").get("correct")
         message["content"] = (f"服务端变式练习结果：{'回答正确' if correct else '回答不正确'}。"

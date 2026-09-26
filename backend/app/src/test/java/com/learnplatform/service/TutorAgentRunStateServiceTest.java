@@ -125,6 +125,10 @@ class TutorAgentRunStateServiceTest {
             "[{\"type\":\"PRACTICE\",\"questionId\":0}]",
             "[{\"type\":\"PRACTICE\",\"questionId\":51,\"level\":1}]",
             "[{\"type\":\"PRACTICE\",\"questionId\":51},{\"type\":\"PRACTICE\",\"questionId\":52}]",
+            "[{\"type\":\"PLAN\"}]",
+            "[{\"type\":\"PLAN\",\"steps\":[]}]",
+            "[{\"type\":\"PLAN\",\"steps\":[null]}]",
+            "[{\"type\":\"PLAN\",\"steps\":[{\"type\":\"TUTOR\",\"title\":\"学习\",\"reason\":\"依据\"}]}]",
             "[{\"type\":\"UNSUPPORTED\"}]"
     })
     void refusesMalformedOrDuplicatedStoredTeachingActions(String value) {

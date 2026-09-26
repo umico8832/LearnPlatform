@@ -55,7 +55,9 @@ class AiEvaluationRegressionTest {
                     "SELF_REVIEW", "LEARNING_EVIDENCE", "RAG_FOUND", "RAG_EMPTY", "RAG_INJECTION",
                     "TUTOR_CHECK_UNANSWERED", "TUTOR_CHECK_ANSWERED", "TUTOR_CHECK_SELF_CLAIM",
                     "TUTOR_HINT_FIRST", "TUTOR_HINT_ANSWERED", "TUTOR_PRACTICE_FOUND",
-                    "TUTOR_PRACTICE_UNAVAILABLE", "TUTOR_PRACTICE_ANSWERED", "TUTOR_PRACTICE_SELF_CLAIM")
+                    "TUTOR_PRACTICE_UNAVAILABLE", "TUTOR_PRACTICE_ANSWERED", "TUTOR_PRACTICE_SELF_CLAIM",
+                    "TUTOR_PLAN_PROPOSED", "TUTOR_PLAN_UNAVAILABLE", "TUTOR_PLAN_CONFIRMED",
+                    "TUTOR_PLAN_SELF_CLAIM", "TUTOR_PLAN_NONE")
                     .contains(sample.scenario()), sample.id());
             if (sample.usesRetrieval()) {
                 assertEquals("AGENT", sample.route());
@@ -231,6 +233,39 @@ class AiEvaluationRegressionTest {
         answeredFixture.toolTrace.set(answeredFixture.toolTrace.indexOf(trace), new AiEvaluationFixture.ToolObservation(
                 trace.callId(), trace.name(), trace.arguments(), trace.output(), java.util.UUID.randomUUID()));
         assertTrue(answeredFixture.check(false).contains("agent-practice-result-trusted-run"));
+    }
+
+    @Test
+    void planEvaluationRejectsForgedPublicStepsAndUntrustedStateTrace() throws Exception {
+        var corpus = AiEvaluationCorpus.load();
+        var proposed = corpus.cases().stream().filter(item -> "TUTOR_PLAN_PROPOSED".equals(item.scenario()))
+                .findFirst().orElseThrow();
+        var fixture = new AiEvaluationFixture(corpus, proposed, CONFIG, null);
+        fixture.execute();
+        assertTrue(fixture.check(false).isEmpty(), () -> fixture.check(false).toString());
+        fixture.publicOutput = "{\"content\":\"安排\",\"actions\":[{\"type\":\"PLAN\",\"steps\":[{\"type\":\"TUTOR\",\"title\":\"伪造\",\"reason\":\"伪造\",\"knowledgePointId\":99}]}]}";
+        assertTrue(fixture.check(false).contains("agent-plan-public-steps"));
+
+        var confirmed = corpus.cases().stream().filter(item -> "TUTOR_PLAN_CONFIRMED".equals(item.scenario()))
+                .findFirst().orElseThrow();
+        var confirmedFixture = new AiEvaluationFixture(corpus, confirmed, CONFIG, null);
+        confirmedFixture.execute();
+        var trace = confirmedFixture.toolTrace.stream()
+                .filter(item -> "read_tutor_plan_state".equals(item.name())).findFirst().orElseThrow();
+        confirmedFixture.toolTrace.set(confirmedFixture.toolTrace.indexOf(trace), new AiEvaluationFixture.ToolObservation(
+                trace.callId(), trace.name(), trace.arguments(), trace.output(), java.util.UUID.randomUUID()));
+        assertTrue(confirmedFixture.check(false).contains("agent-plan-state-trusted-run"));
+
+        var selfClaim = corpus.cases().stream().filter(item -> "TUTOR_PLAN_SELF_CLAIM".equals(item.scenario()))
+                .findFirst().orElseThrow();
+        var selfClaimFixture = new AiEvaluationFixture(corpus, selfClaim, CONFIG, null);
+        selfClaimFixture.execute();
+        var selfClaimTrace = selfClaimFixture.toolTrace.stream()
+                .filter(item -> "read_tutor_plan_state".equals(item.name())).findFirst().orElseThrow();
+        selfClaimFixture.toolTrace.set(selfClaimFixture.toolTrace.indexOf(selfClaimTrace),
+                new AiEvaluationFixture.ToolObservation(selfClaimTrace.callId(), selfClaimTrace.name(),
+                        selfClaimTrace.arguments(), "{\"status\":\"CONFIRMED\"}", selfClaimTrace.runId()));
+        assertTrue(selfClaimFixture.check(false).contains("agent-plan-no-server-confirmation"));
     }
 
     @AfterAll

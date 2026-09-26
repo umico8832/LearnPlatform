@@ -36,6 +36,10 @@ const stubs = {
     props: ['courseId', 'sessionKey', 'runKey', 'sequence', 'busy', 'allowFollowUp'],
     emits: ['continue-practice'],
   },
+  TutorAgentPlan: {
+    template: '<div data-testid="plan-child" :data-sequence="sequence" :data-busy="busy" />',
+    props: ['courseId', 'sessionKey', 'runKey', 'sequence', 'busy'],
+  },
 }
 
 function mountAgent() {
@@ -170,6 +174,38 @@ describe('TutorAgentConversation', () => {
     await wrapper.get('[data-testid="agent-request-practice"]').trigger('click')
     await flushPromises()
     expect(mockResume).toHaveBeenCalledWith(10, 'session', 'run', '请推荐一道本节已审查的变式题，让我自己作答。')
+  })
+
+  it('requests a server-selected plan only on click and restores assistant plans while disabling busy actions', async () => {
+    mockLatest.mockResolvedValueOnce({
+      data: {
+        runKey: 'run',
+        status: 'WAITING_USER',
+        messages: [
+          { sequence: 1, role: 'USER', content: '安排', actions: [{ type: 'PLAN', steps: [] }] },
+          { sequence: 2, role: 'ASSISTANT', content: '请确认', actions: [{ type: 'PLAN', steps: [] }] },
+        ],
+      },
+    })
+    let finish!: (value: unknown) => void
+    mockResume.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+    )
+    const wrapper = mountAgent()
+    await flushPromises()
+    expect(mockResume).not.toHaveBeenCalled()
+    expect(wrapper.findAll('[data-testid="plan-child"]')).toHaveLength(1)
+    expect(wrapper.get('[data-testid="plan-child"]').attributes('data-sequence')).toBe('2')
+    await wrapper.get('[data-testid="agent-request-plan"]').trigger('click')
+    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'run', '请建议本课程接下来的学习安排，由我确认是否采用。')
+    expect(wrapper.get('[data-testid="plan-child"]').attributes('data-busy')).toBe('true')
+    await wrapper.get('[data-testid="agent-request-plan"]').trigger('click')
+    expect(mockResume).toHaveBeenCalledTimes(1)
+    finish({ data: { runKey: 'run', status: 'WAITING_USER', messages: [] } })
+    await flushPromises()
   })
 
   it('only lets the latest saved practice action request server-result follow-up', async () => {
