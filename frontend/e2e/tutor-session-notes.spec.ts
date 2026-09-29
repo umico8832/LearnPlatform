@@ -2,15 +2,12 @@ import { expect, test } from '@playwright/test'
 import type { CourseOverviewVO, TutorCheckResultVO } from '../src/api/course'
 import type { TutorAgentRunVO } from '../src/api/tutor'
 import type { TutorSessionNoteVO } from '../src/api/tutorNotes'
+import { loginAsIsolatedTutorUser, readApiData } from './tutor-fixtures'
 
 test('Tutor 会话复盘跨会话关联真实检查，纠正和删除不会增加学习事实', async ({ page }, testInfo) => {
   test.setTimeout(90_000)
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/login')
-  await page.getByPlaceholder('请输入用户名或邮箱').fill('testuser')
-  await page.getByPlaceholder('请输入密码').fill('test123')
-  await page.getByRole('button', { name: '登录', exact: true }).click()
-  await expect(page).toHaveURL(/\/my-courses$/, { timeout: 15_000 })
+  await loginAsIsolatedTutorUser(page, testInfo, 'notes')
   await page.goto('/courses')
   await page
     .locator('.course-card')
@@ -30,7 +27,7 @@ test('Tutor 会话复盘跨会话关联真实检查，纠正和删除不会增�
     )
   const firstSession = sessionCreated()
   await page.goto(`${courseUrl}/tutor?knowledgePointId=${target.knowledgePointId}`)
-  const originalKey = (await (await firstSession).json()).data.sessionKey
+  const originalKey = (await readApiData<{ sessionKey: string }>(await firstSession)).sessionKey
   const panel = page.locator('.agent-panel')
   const notes = panel.getByTestId('tutor-session-notes')
   const editor = notes.getByRole('region', { name: '会话复盘编辑器' })
@@ -41,7 +38,7 @@ test('Tutor 会话复盘跨会话关联真实检查，纠正和删除不会增�
     (response) => response.request().method() === 'PUT' && response.url().endsWith('/note'),
   )
   await notes.getByTestId('session-note-save').click()
-  const saved: TutorSessionNoteVO = (await (await firstSave).json()).data
+  const saved = await readApiData<TutorSessionNoteVO>(await firstSave)
   expect(saved.revision).toBe(1)
   expect(saved.source.checkStatus).toBe('UNANSWERED')
   expect(saved.source.checkAnsweredAt).toBeNull()
@@ -52,7 +49,7 @@ test('Tutor 会话复盘跨会话关联真实检查，纠正和删除不会增�
     )
     await panel.getByTestId('agent-input').fill('E2E_READ_SESSION_NOTES')
     await panel.getByTestId('agent-submit').click()
-    const run: TutorAgentRunVO = (await (await response).json()).data
+    const run = await readApiData<TutorAgentRunVO>(await response)
     expect(run.messages.at(-1)?.content).toBe(expected)
     await expect(panel).toContainText(expected)
     await expect(notes.getByTestId('session-note-input')).toBeEnabled()
@@ -64,14 +61,14 @@ test('Tutor 会话复盘跨会话关联真实检查，纠正和删除不会增�
     (response) => response.request().method() === 'POST' && /\/tutor-sessions\/[^/]+\/check$/.test(response.url()),
   )
   await page.getByRole('button', { name: '提交检查' }).click()
-  const result: TutorCheckResultVO = (await (await answer).json()).data
+  const result = await readApiData<TutorCheckResultVO>(await answer)
   expect(result.correct).toBe(false)
   await expect(editor).toContainText('已作答，待复习')
 
   await page.evaluate(() => sessionStorage.clear())
   const nextSession = sessionCreated()
   await page.reload()
-  expect((await (await nextSession).json()).data.sessionKey).not.toBe(originalKey)
+  expect((await readApiData<{ sessionKey: string }>(await nextSession)).sessionKey).not.toBe(originalKey)
   await notes.locator('summary').click()
   await expect(notes.getByTestId('session-note-input')).toHaveValue('')
   const original = notes.locator('article').filter({ hasText: '我觉得自己全都答对了' })
@@ -85,7 +82,7 @@ test('Tutor 会话复盘跨会话关联真实检查，纠正和删除不会增�
       response.request().method() === 'PUT' && response.url().endsWith(`/tutor-sessions/${originalKey}/note`),
   )
   await notes.getByTestId('session-note-save').click()
-  const corrected: TutorSessionNoteVO = (await (await correction).json()).data
+  const corrected = await readApiData<TutorSessionNoteVO>(await correction)
   expect(corrected.revision).toBe(2)
   expect(corrected.source.checkStatus).toBe('INCORRECT')
   expect(corrected.source.checkAnsweredAt).not.toBeNull()
@@ -99,7 +96,7 @@ test('Tutor 会话复盘跨会话关联真实检查，纠正和删除不会增�
       response.url().endsWith(`/tutor-sessions/${originalKey}/note?revision=2`),
   )
   await notes.getByTestId('session-note-delete').click()
-  const erased: TutorSessionNoteVO = (await (await deletion).json()).data
+  const erased = await readApiData<TutorSessionNoteVO>(await deletion)
   expect(erased.revision).toBe(3)
   expect(erased.note).toBeNull()
   expect(erased.source.checkStatus).toBe('INCORRECT')

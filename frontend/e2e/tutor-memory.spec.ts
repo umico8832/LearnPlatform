@@ -2,15 +2,12 @@ import { expect, test } from '@playwright/test'
 import type { CourseOverviewVO } from '../src/api/course'
 import type { TutorAgentRunVO } from '../src/api/tutor'
 import type { TutorMemoryVO } from '../src/api/tutorMemory'
+import { loginAsIsolatedTutorUser, readApiData } from './tutor-fixtures'
 
 test('Tutor Agent 跨会话读取课程记忆，纠正和删除后使用最新设置', async ({ page }, testInfo) => {
   test.setTimeout(90_000)
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/login')
-  await page.getByPlaceholder('请输入用户名或邮箱').fill('testuser')
-  await page.getByPlaceholder('请输入密码').fill('test123')
-  await page.getByRole('button', { name: '登录', exact: true }).click()
-  await expect(page).toHaveURL(/\/my-courses$/, { timeout: 15_000 })
+  await loginAsIsolatedTutorUser(page, testInfo, 'memory')
   await page.goto('/courses')
   await page
     .locator('.course-card')
@@ -29,8 +26,13 @@ test('Tutor Agent 跨会话读取课程记忆，纠正和删除后使用最新�
       (response) => response.request().method() === 'POST' && /\/tutor-sessions\?/.test(response.url()),
     )
   const initialSession = sessionCreated()
+  const initialMemoryResponse = page.waitForResponse(
+    (response) => response.request().method() === 'GET' && response.url().endsWith('/tutor-memory'),
+  )
   await page.goto(`${courseUrl}/tutor?knowledgePointId=${target.knowledgePointId}`)
-  const initialKey = (await (await initialSession).json()).data.sessionKey
+  const initialKey = (await readApiData<{ sessionKey: string }>(await initialSession)).sessionKey
+  const initialMemory = await readApiData<TutorMemoryVO>(await initialMemoryResponse)
+  expect(initialMemory).toEqual({ revision: 0, explanationStyle: null, goal: null })
   const panel = page.locator('.agent-panel')
   const memory = panel.getByTestId('tutor-memory')
   await memory.locator('summary').click()
@@ -41,8 +43,8 @@ test('Tutor Agent 跨会话读取课程记忆，纠正和删除后使用最新�
     (response) => response.request().method() === 'PUT' && response.url().endsWith('/tutor-memory'),
   )
   await memory.getByTestId('memory-save').click()
-  const saved: TutorMemoryVO = (await (await saveResponse).json()).data
-  expect(saved).toEqual({ revision: 1, explanationStyle: 'EXAMPLES', goal: '理解栈顶变化' })
+  const saved = await readApiData<TutorMemoryVO>(await saveResponse)
+  expect(saved).toEqual({ revision: initialMemory.revision + 1, explanationStyle: 'EXAMPLES', goal: '理解栈顶变化' })
   await expect(memory).toContainText('记忆已保存')
 
   async function askForCurrentMemory(expected: string) {
@@ -51,7 +53,7 @@ test('Tutor Agent 跨会话读取课程记忆，纠正和删除后使用最新�
     )
     await panel.getByTestId('agent-input').fill('E2E_READ_MEMORY')
     await panel.getByTestId('agent-submit').click()
-    const run: TutorAgentRunVO = (await (await response).json()).data
+    const run = await readApiData<TutorAgentRunVO>(await response)
     expect(run.messages.at(-1)?.content).toBe(expected)
     await expect(panel).toContainText(expected)
     await expect(memory.getByTestId('memory-goal')).toBeEnabled()
@@ -61,13 +63,18 @@ test('Tutor Agent 跨会话读取课程记忆，纠正和删除后使用最新�
   await page.evaluate(() => sessionStorage.clear())
   const newSession = sessionCreated()
   await page.reload()
-  expect((await (await newSession).json()).data.sessionKey).not.toBe(initialKey)
+  expect((await readApiData<{ sessionKey: string }>(await newSession)).sessionKey).not.toBe(initialKey)
   await memory.locator('summary').click()
   await expect(memory.getByTestId('memory-goal')).toHaveValue('理解栈顶变化')
   await expect(memory.getByTestId('memory-style')).toHaveValue('EXAMPLES')
   await memory.getByTestId('memory-goal').fill('理解队列顺序')
   await memory.getByTestId('memory-style').selectOption('CONCISE')
+  const updateResponse = page.waitForResponse(
+    (response) => response.request().method() === 'PUT' && response.url().endsWith('/tutor-memory'),
+  )
   await memory.getByTestId('memory-save').click()
+  const updated = await readApiData<TutorMemoryVO>(await updateResponse)
+  expect(updated).toEqual({ revision: saved.revision + 1, explanationStyle: 'CONCISE', goal: '理解队列顺序' })
   await expect(memory).toContainText('记忆已保存')
   await askForCurrentMemory('当前保存的目标：理解队列顺序；讲解偏好：CONCISE。')
   await page.evaluate(() => window.scrollTo(0, 0))
@@ -75,10 +82,15 @@ test('Tutor Agent 跨会话读取课程记忆，纠正和删除后使用最新�
 
   await expect(memory.getByTestId('memory-delete')).toBeEnabled()
   const deletedResponse = page.waitForResponse(
-    (response) => response.request().method() === 'DELETE' && /\/tutor-memory\?revision=2$/.test(response.url()),
+    (response) =>
+      response.request().method() === 'DELETE' && response.url().endsWith(`/tutor-memory?revision=${updated.revision}`),
   )
   await memory.getByTestId('memory-delete').click()
-  expect((await (await deletedResponse).json()).data).toEqual({ revision: 3, explanationStyle: null, goal: null })
+  expect(await readApiData<TutorMemoryVO>(await deletedResponse)).toEqual({
+    revision: updated.revision + 1,
+    explanationStyle: null,
+    goal: null,
+  })
   await expect(memory.getByTestId('memory-goal')).toHaveValue('')
   await askForCurrentMemory('当前保存的目标：未设置；讲解偏好：未设置。')
   await page.reload()

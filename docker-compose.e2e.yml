@@ -58,6 +58,8 @@ services:
       TURNSTILE_ENABLED: "true"
       TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA"
       AI_ENABLED: "true"
+      # 功能 E2E 的调用量不共享日配额；配额拒绝由独立后端测试验证。
+      AI_DAILY_QUOTA: "0"
       AI_API_KEY: "e2e-test-key"
       AI_API_BASE_URL: "http://ai-mock/v1"
       AI_MODEL: "e2e-deterministic"

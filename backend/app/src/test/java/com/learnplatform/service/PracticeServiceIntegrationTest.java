@@ -403,7 +403,7 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
             assertNull(vo.getAnalysis(), "练习模式不应返回解析");
             if (vo.getOptions() != null) {
                 vo.getOptions().forEach(opt ->
-                        assertEquals(0, opt.getIsCorrect(), "练习模式选项不应标记正确答案"));
+                        assertNull(opt.getIsCorrect(), "练习模式选项不应标记正确答案"));
             }
         }
     }
