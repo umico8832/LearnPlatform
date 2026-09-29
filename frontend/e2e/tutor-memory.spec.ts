@@ -31,11 +31,11 @@ test('Tutor Agent 跨会话读取课程记忆，纠正和删除后使用最新�
   )
   await page.goto(`${courseUrl}/tutor?knowledgePointId=${target.knowledgePointId}`)
   const initialKey = (await readApiData<{ sessionKey: string }>(await initialSession)).sessionKey
-  const initialMemory = await readApiData<TutorMemoryVO>(await initialMemoryResponse)
-  expect(initialMemory).toEqual({ revision: 0, explanationStyle: null, goal: null })
   const panel = page.locator('.agent-panel')
   const memory = panel.getByTestId('tutor-memory')
   await memory.locator('summary').click()
+  const initialMemory = await readApiData<TutorMemoryVO>(await initialMemoryResponse)
+  expect(initialMemory).toEqual({ revision: 0, explanationStyle: null, goal: null })
   await expect(memory.getByTestId('memory-goal')).toBeEnabled()
   await memory.getByTestId('memory-style').selectOption('EXAMPLES')
   await memory.getByTestId('memory-goal').fill('理解栈顶变化')
