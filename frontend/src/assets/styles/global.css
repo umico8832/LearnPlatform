@@ -230,7 +230,33 @@ h6 {
     background-color var(--lp-duration-fast) var(--lp-ease-out),
     border-color var(--lp-duration-fast) var(--lp-ease-out),
     color var(--lp-duration-fast) var(--lp-ease-out),
-    box-shadow var(--lp-duration-fast) var(--lp-ease-out);
+    box-shadow var(--lp-duration-fast) var(--lp-ease-out),
+    transform var(--lp-duration-fast) var(--lp-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .el-button:not(.is-disabled):not([disabled]):hover {
+    transform: translateY(-1px);
+  }
+}
+
+.el-button:not(.is-disabled):not([disabled]):active {
+  transform: translateY(0);
+}
+
+.el-button:focus-visible {
+  outline: 2px solid var(--lp-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .el-button {
+    transition-duration: var(--lp-duration-fast);
+  }
+  .el-button:not(.is-disabled):not([disabled]):hover,
+  .el-button:not(.is-disabled):not([disabled]):active {
+    transform: none;
+  }
 }
 
 .el-button--primary {

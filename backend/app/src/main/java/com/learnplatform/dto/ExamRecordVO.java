@@ -26,6 +26,7 @@ public class ExamRecordVO {
     private Integer status;
     private Integer duration;
     private List<ExamAnswerVO> answers;
+    private GamificationSubmissionRewardVO submissionReward;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -63,6 +64,10 @@ public class ExamRecordVO {
     public void setDuration(Integer duration) { this.duration = duration; }
     public List<ExamAnswerVO> getAnswers() { return answers; }
     public void setAnswers(List<ExamAnswerVO> answers) { this.answers = answers; }
+    public GamificationSubmissionRewardVO getSubmissionReward() { return submissionReward; }
+    public void setSubmissionReward(GamificationSubmissionRewardVO submissionReward) {
+        this.submissionReward = submissionReward;
+    }
 
     public static class ExamAnswerVO {
         private Long questionId;

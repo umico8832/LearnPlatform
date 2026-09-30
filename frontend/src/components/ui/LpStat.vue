@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { computed, watch } from 'vue'
+import { useAnimatedNumber } from '@/composables/useAnimatedNumber'
+import { useReducedMotion } from '@/composables/useReducedMotion'
 /**
  * 学习事实统计：一个安静的数值 + 标签 + 说明。
  * 只展示真实计数，不允许包装成掌握度或能力评分。
  */
-withDefaults(
+const props = withDefaults(
   defineProps<{
     label: string
     value: number | string
@@ -12,11 +15,24 @@ withDefaults(
   }>(),
   { note: '', tone: 'default' },
 )
+
+const { reducedMotion } = useReducedMotion()
+const numericValue = computed(() =>
+  typeof props.value === 'number' && Number.isFinite(props.value) ? props.value : null,
+)
+const { value: displayedNumber, animateTo } = useAnimatedNumber(0, { reducedMotion })
+watch(
+  numericValue,
+  (next) => {
+    if (next !== null) animateTo(next)
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
   <article class="lp-stat" :data-tone="tone">
-    <span class="lp-stat-value">{{ value }}</span>
+    <output class="lp-stat-value">{{ numericValue === null ? value : displayedNumber }}</output>
     <span class="lp-stat-label">{{ label }}</span>
     <small v-if="note" class="lp-stat-note">{{ note }}</small>
   </article>

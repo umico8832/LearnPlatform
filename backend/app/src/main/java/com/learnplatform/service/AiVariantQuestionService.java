@@ -155,15 +155,18 @@ public class AiVariantQuestionService {
         training.setStatus("COMPLETED");
         training.setCompletedTime(now);
         aiVariantTrainingMapper.updateById(training);
+        com.learnplatform.dto.GamificationRewardFeedback reward = null;
         if (courseLearningEventService != null) {
             com.learnplatform.entity.Question sourceQuestion = new com.learnplatform.entity.Question();
             sourceQuestion.setId(questionId);
             // 变式题的课程归属仍由原题决定，避免客户端传入或复制课程范围。
             sourceQuestion.setCourseId(questionAiAssetMapper.findCourseIdByQuestionId(questionId));
-            courseLearningEventService.recordQuestionAnswer(userId, sourceQuestion, "AI_VARIANT_ANSWERED", "AI_TUTOR",
-                    training.getId(), correct, now);
+            reward = courseLearningEventService.recordQuestionAnswer(
+                    userId, sourceQuestion, "AI_VARIANT_ANSWERED", "AI_TUTOR", training.getId(), correct, now);
         }
-        return enrichTrainingVO(training, newTrainingVO(training));
+        AiVariantTrainingVO result = enrichTrainingVO(training, newTrainingVO(training));
+        result.setReward(reward);
+        return result;
     }
 
     /** 只有完成首次判分后才补充正确答案和解析。 */

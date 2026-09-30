@@ -2,12 +2,12 @@
   <el-card v-if="reviewing && currentCard" shadow="never" class="review-session">
     <template #header>
       <div class="card-header">
-        <span>复习进度: {{ currentIndex + 1 }} / {{ cards.length }}</span>
+        <span>复习进度: {{ currentIndex + 1 }} / {{ sessionCards.length }}</span>
         <el-tag :type="reviewStatusTag(currentCard.statusLabel)" size="small">{{ currentCard.statusLabel }}</el-tag>
       </div>
     </template>
 
-    <LpProgress :percent="Math.round((currentIndex / cards.length) * 100)" />
+    <LpProgress :percent="Math.round((currentIndex / sessionCards.length) * 100)" />
 
     <div class="question-info">
       <div class="question-tags">
@@ -35,51 +35,50 @@
     <div class="session-actions">
       <el-button
         type="primary"
-        :disabled="!userAnswer.trim() || answerSubmitted"
+        :disabled="!userAnswer.trim() || answerSubmitted || submitting"
         :loading="submitting"
         @click="submitCurrentAnswer"
       >
         提交答案
       </el-button>
-      <el-button :disabled="answerSubmitted" @click="nextCard">跳过</el-button>
+      <el-button :disabled="answerSubmitted || submitting" @click="nextCard">跳过</el-button>
       <el-button type="danger" plain @click="stop">结束复习</el-button>
     </div>
 
     <el-alert
       v-if="answerSubmitted"
-      :title="lastCorrect ? '回答正确！' : '回答错误'"
-      :type="lastCorrect ? 'success' : 'error'"
-      :description="
-        lastCorrect
-          ? `下次复习: ${currentCard.intervalDays} 天后 | 新间隔: ${lastResult?.intervalDays} 天`
-          : '间隔已重置为 1 天，请继续加油！'
-      "
+      :title="lastCorrect === null ? '作答已记录' : lastCorrect ? '回答正确！' : '回答错误，请继续尝试'"
+      :type="lastCorrect === null ? 'info' : lastCorrect ? 'success' : 'warning'"
+      :description="lastCorrect === null ? '本题尚未判分' : `下次复习: ${lastResult?.nextReviewDate || '待安排'}`"
       show-icon
       :closable="false"
       class="result-alert"
     />
 
+    <AnswerRewardFeedback v-if="answerSubmitted && lastResult?.reward" :reward="lastResult.reward" />
     <div v-if="answerSubmitted" class="next-action">
       <el-button type="primary" @click="nextCard">
-        {{ currentIndex < cards.length - 1 ? '下一题' : '完成复习' }}
+        {{ currentIndex < sessionCards.length - 1 ? '下一题' : '完成复习' }}
       </el-button>
     </div>
   </el-card>
 
   <div v-if="reviewComplete" class="complete-card">
-    <div class="complete-icon" aria-hidden="true">✓</div>
-    <h3>今日复习完成！</h3>
-    <p>共复习 {{ reviewedCount }} 题，正确 {{ correctCount }} 题</p>
-    <el-button type="primary" @click="finish">返回</el-button>
+    <GamificationPracticeSummary :summary="sessionSummary" @continue="finish" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { submitReview } from '@/api/review'
 import type { ReviewScheduleVO } from '@/api/review'
 import { errorMessage } from '@/utils/errors'
+import { useGamificationStore } from '@/stores/gamification'
+import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
+import GamificationPracticeSummary from '@/components/gamification/GamificationPracticeSummary.vue'
+import AnswerRewardFeedback from '@/components/gamification/AnswerRewardFeedback.vue'
+import type { GamificationAchievement } from '@/components/gamification/types'
 import { reviewStatusTag } from './reviewSessionPresentation'
 
 const props = defineProps<{ cards: ReviewScheduleVO[] }>()
@@ -91,53 +90,108 @@ const userAnswer = ref('')
 const answerSubmitted = ref(false)
 const submitting = ref(false)
 const lastResult = ref<ReviewScheduleVO | null>(null)
-const lastCorrect = ref(false)
+const lastCorrect = ref<boolean | null>(null)
 const reviewedCount = ref(0)
 const correctCount = ref(0)
+const gradedCount = ref(0)
 const reviewComplete = ref(false)
 
-const currentCard = computed(() => props.cards[currentIndex.value] || null)
+const sessionCards = ref<ReviewScheduleVO[]>([])
+const currentCard = computed(() => sessionCards.value[currentIndex.value] || null)
+const gamification = useGamificationStore()
+const sessionXp = ref(0)
+const longestCombo = ref(0)
+const sessionAchievements = ref<GamificationAchievement[]>([])
+let generation = 0
+let alive = true
+const sessionSummary = computed(() => ({
+  answeredCount: reviewedCount.value,
+  correctRate: gradedCount.value ? (correctCount.value / gradedCount.value) * 100 : null,
+  xpGained: sessionXp.value,
+  longestCombo: longestCombo.value,
+  achievements: sessionAchievements.value,
+  kicker: '本组复习完成',
+  rateLabel: '已判分正确率',
+  comboLabel: '本组期间最高连续答对',
+}))
+const unsubscribeSession = onAuthSessionChange(() => {
+  generation++
+  reviewing.value = false
+  reviewComplete.value = false
+  sessionCards.value = []
+  lastResult.value = null
+})
+onUnmounted(() => {
+  alive = false
+  generation++
+  unsubscribeSession()
+})
 
 function resetAnswer() {
   userAnswer.value = ''
   answerSubmitted.value = false
   lastResult.value = null
-  lastCorrect.value = false
+  lastCorrect.value = null
 }
 
 function start() {
+  generation++
+  submitting.value = false
+  sessionCards.value = [...props.cards]
+  sessionXp.value = 0
+  longestCombo.value = 0
+  sessionAchievements.value = []
   reviewing.value = true
   reviewComplete.value = false
   currentIndex.value = 0
   reviewedCount.value = 0
   correctCount.value = 0
+  gradedCount.value = 0
   resetAnswer()
 }
 
 async function submitCurrentAnswer() {
-  if (!currentCard.value || !userAnswer.value.trim()) return
+  if (!currentCard.value || !userAnswer.value.trim() || submitting.value || answerSubmitted.value || !reviewing.value)
+    return
+  const card = currentCard.value
+  const requestGeneration = generation
+  const session = getAuthSessionVersion()
   submitting.value = true
   try {
-    const previousRepetitions = currentCard.value.repetitions || 0
     const { data } = await submitReview({
-      questionId: currentCard.value.questionId,
+      questionId: card.questionId,
       userAnswer: userAnswer.value.trim(),
     })
+    if (!alive || requestGeneration !== generation || session !== getAuthSessionVersion()) return
     lastResult.value = data
-    lastCorrect.value = (data?.repetitions ?? 0) > previousRepetitions || (data?.intervalDays ?? 0) > 1
+    lastCorrect.value = data.correct ?? null
+    if (gamification.acceptReward(data.reward, session) && data.reward) {
+      sessionXp.value += data.reward.awardedXp
+      longestCombo.value = Math.max(longestCombo.value, data.reward.summary.currentCombo)
+      for (const item of data.reward.newAchievements) {
+        if (!sessionAchievements.value.some((achievement) => achievement.id === item.code))
+          sessionAchievements.value.push({ id: item.code, title: item.name, description: item.description })
+      }
+    }
     answerSubmitted.value = true
     reviewedCount.value++
-    if (lastCorrect.value) correctCount.value++
+    if (lastCorrect.value !== null) {
+      gradedCount.value++
+      if (lastCorrect.value) correctCount.value++
+    }
     emit('reviewed')
   } catch (error) {
-    ElMessage.error(errorMessage(error, '提交失败'))
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion())
+      ElMessage.error(errorMessage(error, '提交失败'))
   } finally {
-    submitting.value = false
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) submitting.value = false
   }
 }
 
 function nextCard() {
-  if (currentIndex.value < props.cards.length - 1) {
+  if (submitting.value) return
+  generation++
+  if (currentIndex.value < sessionCards.value.length - 1) {
     currentIndex.value++
     resetAnswer()
     return
@@ -147,16 +201,19 @@ function nextCard() {
 }
 
 function stop() {
+  generation++
+  submitting.value = false
   reviewing.value = false
   ElMessage.info(`已结束复习，本次复习 ${reviewedCount.value} 题`)
 }
 
 function finish() {
+  generation++
   reviewComplete.value = false
   reviewing.value = false
 }
 
-defineExpose({ start })
+defineExpose({ start, reviewing })
 </script>
 
 <style scoped>
@@ -206,6 +263,13 @@ defineExpose({ start })
   margin-top: var(--lp-space-4);
 }
 
+.review-reward {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-space-3);
+  margin-top: var(--lp-space-4);
+  color: var(--lp-reward-combo);
+}
 .session-actions {
   display: flex;
   gap: var(--lp-space-3);

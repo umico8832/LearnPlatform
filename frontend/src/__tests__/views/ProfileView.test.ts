@@ -88,7 +88,7 @@ describe('ProfileView', () => {
   function mountProfile() {
     return mount(ProfileView, {
       global: {
-        stubs: { ...globalStubs },
+        stubs: { ...globalStubs, ProfileGamification: true },
         mocks: { $router: { push: mockPush } },
       },
     })

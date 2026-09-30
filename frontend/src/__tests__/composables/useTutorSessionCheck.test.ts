@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { setToken } from '@/utils/auth'
 
 const { get, start, submit } = vi.hoisted(() => ({ get: vi.fn(), start: vi.fn(), submit: vi.fn() }))
 vi.mock('@/api/course', () => ({
@@ -47,6 +48,8 @@ const session = (key = 's', answer: string | null = null, checkResult: TutorChec
 describe('useTutorSessionCheck', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    localStorage.clear()
+    setToken('tutor-check-session-a')
     sessionStorage.clear()
   })
   it('uses the refreshed server session after a successful check submission', async () => {
@@ -122,5 +125,44 @@ describe('useTutorSessionCheck', () => {
     await pending
     expect(state.session.value?.sessionKey).toBe('new')
     expect(state.checkFailure.value).toBe('')
+  })
+
+  it('does not apply a Tutor session load that resolves after the account changes', async () => {
+    let resolve!: (value: { data: ReturnType<typeof session> }) => void
+    start.mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          resolve = done
+        }),
+    )
+    const state = useTutorSessionCheck(ref(1), ref(2))
+    const pending = state.load()
+    setToken('tutor-check-session-b')
+    resolve({ data: session('old') })
+    await pending
+    expect(state.session.value).toBeUndefined()
+    expect(state.loading.value).toBe(false)
+  })
+
+  it('does not apply a post-submit refresh after the account changes', async () => {
+    let resolveRefresh!: (value: { data: ReturnType<typeof session> }) => void
+    start.mockResolvedValueOnce({ data: session('old') })
+    submit.mockResolvedValueOnce({ data: result })
+    get.mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          resolveRefresh = done
+        }),
+    )
+    const state = useTutorSessionCheck(ref(1), ref(2))
+    await state.load()
+    state.optionId.value = 'A'
+    const pending = state.submit()
+    await vi.waitFor(() => expect(get).toHaveBeenCalledWith(1, 'old'))
+    setToken('tutor-check-session-b')
+    resolveRefresh({ data: session('old', 'B', result) })
+    await pending
+    expect(state.session.value).toBeUndefined()
+    expect(state.result.value).toBeUndefined()
   })
 })

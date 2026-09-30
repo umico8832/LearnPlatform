@@ -6,6 +6,7 @@ import com.learnplatform.common.exception.ExamTimedOutException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.ExamRecordVO;
 import com.learnplatform.dto.ExamSubmitRequest;
+import com.learnplatform.dto.GamificationSubmissionRewardVO;
 import com.learnplatform.entity.ExamAnswer;
 import com.learnplatform.entity.ExamPaper;
 import com.learnplatform.entity.ExamQuestion;
@@ -54,6 +55,7 @@ class ExamServiceTest {
     @Mock private QuestionOptionMapper questionOptionMapper;
     @Mock private WrongQuestionService wrongQuestionService;
     @Mock private CacheEvictService cacheEvictService;
+    @Mock private ExamSubmissionRewardService examSubmissionRewardService;
     private ExamService examService;
 
     /**
@@ -75,7 +77,7 @@ class ExamServiceTest {
                 viewService, FIXED_CLOCK);
         ExamSubmissionService submissionService = new ExamSubmissionService(examRecordMapper, examPaperMapper,
                 answerSubmissionService, cacheEvictService, FIXED_CLOCK);
-        examService = new ExamService(sessionService, submissionService, viewService);
+        examService = new ExamService(sessionService, submissionService, viewService, examSubmissionRewardService);
     }
 
     @Test
@@ -87,6 +89,33 @@ class ExamServiceTest {
                 () -> examService.submitExam(request(answer(99L, "A")), 7L));
 
         assertEquals("提交内容包含非本试卷题目", exception.getMessage());
+    }
+
+    @Test
+    void completedResultIncludesOnlyItsSubmissionReward() {
+        ExamRecord completed = record(LocalDateTime.now(FIXED_CLOCK).minusMinutes(10));
+        completed.setStatus(1);
+        GamificationSubmissionRewardVO reward = new GamificationSubmissionRewardVO();
+        reward.setAwardedXp(12);
+        when(examRecordMapper.selectById(1L)).thenReturn(completed);
+        when(examPaperMapper.selectById(2L)).thenReturn(paper());
+        when(examAnswerMapper.selectList(any())).thenReturn(List.of());
+        when(examQuestionMapper.selectList(any())).thenReturn(List.of());
+        when(examSubmissionRewardService.forExam(1L, 7L)).thenReturn(reward);
+
+        ExamRecordVO result = examService.getExamResult(1L, 7L);
+
+        assertEquals(12, result.getSubmissionReward().getAwardedXp());
+        verify(examSubmissionRewardService).forExam(1L, 7L);
+    }
+
+    @Test
+    void activeRecordCannotExposeSubmissionReward() {
+        when(examRecordMapper.selectById(1L)).thenReturn(record(LocalDateTime.now(FIXED_CLOCK)));
+
+        assertThrows(BusinessException.class, () -> examService.getExamResult(1L, 7L));
+
+        verify(examSubmissionRewardService, never()).forExam(any(), any());
     }
 
     @Test

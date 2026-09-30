@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
+import { setToken } from '@/utils/auth'
 
 const { mockGetSession, mockSubmitAnswer, mockCompleteSession, mockSuccess } = vi.hoisted(() => ({
   mockGetSession: vi.fn(),
@@ -25,6 +27,7 @@ vi.mock('element-plus', () => ({
 }))
 
 import ExamLearningView from '@/views/exam/ExamLearningView.vue'
+import { useGamificationStore } from '@/stores/gamification'
 
 const stubs = {
   'el-card': { template: '<div><slot /></div>' },
@@ -77,6 +80,9 @@ const session = () => ({
 describe('ExamLearningView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    localStorage.clear()
+    setActivePinia(createPinia())
+    setToken('exam-learning-session-a')
     mockGetSession.mockResolvedValue({ code: 0, data: session() })
     mockSubmitAnswer.mockResolvedValue({
       code: 0,
@@ -170,5 +176,54 @@ describe('ExamLearningView', () => {
     expect(wrapper.text()).toContain('分步参考答案')
     expect(wrapper.text()).not.toContain('回答错误')
     expect(wrapper.text()).not.toContain('正确答案：')
+  })
+
+  it('does not accept a reward from a submission that resolves after unmount', async () => {
+    let resolve!: (value: { code: number; data: Record<string, unknown> }) => void
+    mockSubmitAnswer.mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          resolve = done
+        }),
+    )
+    const acceptReward = vi.spyOn(useGamificationStore(), 'acceptReward')
+    const wrapper = mount(ExamLearningView, {
+      global: { stubs, directives: { loading: () => undefined } },
+    })
+    await flushPromises()
+    await wrapper.find('.option-item').trigger('click')
+    const pending = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('提交答案'))!
+      .trigger('click')
+    wrapper.unmount()
+    resolve({
+      code: 0,
+      data: {
+        answerId: 81,
+        questionId: 10,
+        attemptNo: 1,
+        userAnswer: 'A',
+        correct: true,
+        score: 5,
+        fullScore: 5,
+        correctAnswer: 'A',
+        analysis: '解析',
+        reward: {
+          eventId: 81,
+          awardedXp: 10,
+          reason: 'CORRECT_ANSWER',
+          eligible: true,
+          levelBefore: 1,
+          levelAfter: 1,
+          leveledUp: false,
+          streakDays: 1,
+          newAchievements: [],
+          summary: { version: 1 },
+        },
+      },
+    })
+    await pending
+    expect(acceptReward).not.toHaveBeenCalled()
   })
 })

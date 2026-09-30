@@ -5,6 +5,7 @@ import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.PracticeResultVO;
 import com.learnplatform.dto.PracticeSubmitRequest;
+import com.learnplatform.dto.GamificationRewardFeedback;
 import com.learnplatform.entity.PracticeRecord;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionOption;
@@ -77,15 +78,18 @@ public class PracticeAnswerService {
                 userId, request.getQuestionId(), correct);
 
         PracticeRecord record = saveRecord(request, userId, userAnswer, correct);
+        GamificationRewardFeedback reward = null;
         if (courseLearningEventService != null) {
-            courseLearningEventService.recordQuestionAnswer(
+            reward = courseLearningEventService.recordQuestionAnswer(
                     userId, question, "PRACTICE_ANSWERED", "PRACTICE",
                     record.getId(), correct, record.getCreateTime());
         }
         updateWrongQuestion(userId, request.getQuestionId(), userAnswer, correct);
         cacheEvictService.evictUserStatistics(userId);
         addReviewPlan(userId, request.getQuestionId());
-        return buildResult(question, record, userAnswer, correctAnswer, correct);
+        PracticeResultVO result = buildResult(question, record, userAnswer, correctAnswer, correct);
+        result.setReward(reward);
+        return result;
     }
 
     private void validateRequest(PracticeSubmitRequest request) {

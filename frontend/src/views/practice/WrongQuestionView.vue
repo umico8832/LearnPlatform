@@ -48,67 +48,69 @@
         </LpEmptyState>
       </section>
 
-      <el-card v-for="item in records" :key="item.id" class="wrong-card" shadow="never">
-        <div class="wrong-card-header">
-          <div class="wrong-meta">
-            <el-tag :type="getTypeTag(item.questionType)" size="small">
-              {{ getTypeLabel(item.questionType) }}
-            </el-tag>
-            <el-tag v-if="item.courseName" type="info" size="small">{{ item.courseName }}</el-tag>
-            <el-rate v-model="item.difficulty" disabled :max="5" />
-            <span class="wrong-count">答错 {{ item.wrongCount }} 次</span>
+      <TransitionGroup name="wrong-card-list" tag="div" class="wrong-card-list">
+        <el-card v-for="item in records" :key="item.id" class="wrong-card" shadow="never">
+          <div class="wrong-card-header">
+            <div class="wrong-meta">
+              <el-tag :type="getTypeTag(item.questionType)" size="small">
+                {{ getTypeLabel(item.questionType) }}
+              </el-tag>
+              <el-tag v-if="item.courseName" type="info" size="small">{{ item.courseName }}</el-tag>
+              <el-rate v-model="item.difficulty" disabled :max="5" />
+              <span class="wrong-count">答错 {{ item.wrongCount }} 次</span>
+            </div>
+            <div class="wrong-actions">
+              <el-tag :type="getMasteryTag(item.masteryLevel)" size="small" effect="dark">
+                {{ getMasteryLabel(item.masteryLevel) }}
+              </el-tag>
+            </div>
           </div>
-          <div class="wrong-actions">
-            <el-tag :type="getMasteryTag(item.masteryLevel)" size="small" effect="dark">
-              {{ getMasteryLabel(item.masteryLevel) }}
-            </el-tag>
+
+          <div class="wrong-content">{{ item.questionContent }}</div>
+
+          <div v-if="item.lastWrongAnswer" class="wrong-answer">
+            <span class="label">上次错误答案：</span>
+            <span class="answer-wrong">{{ item.lastWrongAnswer }}</span>
           </div>
-        </div>
 
-        <div class="wrong-content">{{ item.questionContent }}</div>
+          <AiQuestionAssistant :question-id="item.questionId" />
 
-        <div v-if="item.lastWrongAnswer" class="wrong-answer">
-          <span class="label">上次错误答案：</span>
-          <span class="answer-wrong">{{ item.lastWrongAnswer }}</span>
-        </div>
+          <!-- AI 深度学习资产（错题本中折叠展示，减少页面长度） -->
+          <QuestionLearningAsset :question-id="item.questionId" collapsible />
 
-        <AiQuestionAssistant :question-id="item.questionId" />
-
-        <!-- AI 深度学习资产（错题本中折叠展示，减少页面长度） -->
-        <QuestionLearningAsset :question-id="item.questionId" collapsible />
-
-        <div class="wrong-card-footer">
-          <div class="mastery-controls">
-            <span class="label">掌握程度：</span>
-            <el-radio-group
-              v-model="item.masteryLevel"
-              size="small"
-              @change="(val: any) => handleMasteryChange(item.id, val as number)"
-            >
-              <el-radio-button :value="0">未掌握</el-radio-button>
-              <el-radio-button :value="1">部分掌握</el-radio-button>
-              <el-radio-button :value="2">已掌握</el-radio-button>
-            </el-radio-group>
+          <div class="wrong-card-footer">
+            <div class="mastery-controls">
+              <span class="label">掌握程度：</span>
+              <el-radio-group
+                v-model="item.masteryLevel"
+                size="small"
+                @change="(val: any) => handleMasteryChange(item.id, val as number)"
+              >
+                <el-radio-button :value="0">未掌握</el-radio-button>
+                <el-radio-button :value="1">部分掌握</el-radio-button>
+                <el-radio-button :value="2">已掌握</el-radio-button>
+              </el-radio-group>
+            </div>
+            <div class="footer-right">
+              <span class="time">{{ formatTime(item.updateTime) }}</span>
+              <el-button
+                type="primary"
+                text
+                size="small"
+                :icon="Search"
+                @click="similarQuestionsDialog?.open(item.questionId, item.questionContent)"
+              >
+                找相似题
+              </el-button>
+              <el-popconfirm title="确定从错题本移出？" @confirm="handleRemove(item.id)">
+                <template #reference>
+                  <el-button type="danger" text size="small" :icon="Delete">移出错题本</el-button>
+                </template>
+              </el-popconfirm>
+            </div>
           </div>
-          <div class="footer-right">
-            <span class="time">{{ formatTime(item.updateTime) }}</span>
-            <el-button
-              type="primary"
-              text
-              size="small"
-              :icon="Search"
-              @click="similarQuestionsDialog?.open(item.questionId, item.questionContent)"
-            >
-              找相似题
-            </el-button>
-            <el-popconfirm title="确定从错题本移出？" @confirm="handleRemove(item.id)">
-              <template #reference>
-                <el-button type="danger" text size="small" :icon="Delete">移出错题本</el-button>
-              </template>
-            </el-popconfirm>
-          </div>
-        </div>
-      </el-card>
+        </el-card>
+      </TransitionGroup>
     </div>
 
     <!-- 分页 -->
@@ -335,6 +337,34 @@ const handleStartWrongPractice = async () => {
 </script>
 
 <style scoped>
+.wrong-card-list {
+  position: relative;
+}
+.wrong-card-list-move,
+.wrong-card-list-leave-active {
+  transition:
+    transform var(--lp-duration-slow) var(--lp-ease-out),
+    opacity var(--lp-duration-normal) var(--lp-ease-out);
+}
+.wrong-card-list-leave-active {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+.wrong-card-list-leave-to {
+  opacity: 0;
+  transform: translateX(var(--lp-space-2));
+}
+@media (prefers-reduced-motion: reduce) {
+  .wrong-card-list-move,
+  .wrong-card-list-leave-active {
+    transition: none;
+  }
+  .wrong-card-list-leave-to {
+    transform: none;
+  }
+}
+
 .wrong-question-container {
   display: flex;
   flex-direction: column;

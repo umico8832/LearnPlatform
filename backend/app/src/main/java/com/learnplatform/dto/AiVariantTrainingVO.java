@@ -17,6 +17,7 @@ public class AiVariantTrainingVO {
     private LocalDateTime startedTime;
     private LocalDateTime answeredTime;
     private LocalDateTime completedTime;
+    private GamificationRewardFeedback reward;
 
     public Long getQuestionId() { return questionId; }
     public void setQuestionId(Long questionId) { this.questionId = questionId; }
@@ -42,4 +43,6 @@ public class AiVariantTrainingVO {
     public void setAnsweredTime(LocalDateTime answeredTime) { this.answeredTime = answeredTime; }
     public LocalDateTime getCompletedTime() { return completedTime; }
     public void setCompletedTime(LocalDateTime completedTime) { this.completedTime = completedTime; }
+    public GamificationRewardFeedback getReward() { return reward; }
+    public void setReward(GamificationRewardFeedback reward) { this.reward = reward; }
 }

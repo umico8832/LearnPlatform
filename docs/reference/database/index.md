@@ -10,6 +10,7 @@ LearnPlatform 使用 MySQL 8，结构由 Flyway 迁移管理。运行时数据�
 | [学习内容域](learning-domain.md) | 用户、课程、知识点、题目、投稿和互动 |
 | [练习与考试域](assessment-domain.md) | 练习、错题、复习、试卷和考试 |
 | [AI 与治理域](ai-and-governance.md) | AI 调用、资产、变式训练、配额和提醒 |
+| [学习激励域](gamification.md) | 事件奖励流水、用户聚合与成就 |
 | [迁移策略](migration-policy.md) | Flyway 规则、约束和验证方式 |
 
 ## 维护规则

@@ -59,6 +59,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useGamificationStore } from '@/stores/gamification'
+import { getAuthSessionVersion } from '@/utils/auth'
 import { ElMessage } from 'element-plus'
 import {
   getCourseOverview,
@@ -257,7 +259,9 @@ async function openAssessmentDetail(assessmentId: number) {
 }
 
 async function submitAssessment() {
-  if (!assessment.value) return
+  if (!assessment.value || assessmentSubmitting.value) return
+  const session = getAuthSessionVersion()
+  const submittedCourse = courseId.value
   const incomplete = assessment.value.questions.some((question) => !assessmentAnswers.value[question.id]?.length)
   if (incomplete) {
     ElMessage.warning('请完成全部题目后再提交')
@@ -270,8 +274,10 @@ async function submitAssessment() {
       userAnswer: [...assessmentAnswers.value[question.id]].sort().join(','),
     }))
     const response = await submitCourseStageAssessment(assessment.value.id, answers)
+    if (session !== getAuthSessionVersion() || submittedCourse !== courseId.value) return
     assessment.value = response.data
     syncAssessmentAnswers(response.data)
+    void useGamificationStore().load()
     await fetchOverview()
   } finally {
     assessmentSubmitting.value = false

@@ -16,13 +16,16 @@ public class ExamService {
     private final ExamSessionService examSessionService;
     private final ExamSubmissionService examSubmissionService;
     private final ExamRecordViewService examRecordViewService;
+    private final ExamSubmissionRewardService examSubmissionRewardService;
 
     public ExamService(ExamSessionService examSessionService,
                        ExamSubmissionService examSubmissionService,
-                       ExamRecordViewService examRecordViewService) {
+                       ExamRecordViewService examRecordViewService,
+                       ExamSubmissionRewardService examSubmissionRewardService) {
         this.examSessionService = examSessionService;
         this.examSubmissionService = examSubmissionService;
         this.examRecordViewService = examRecordViewService;
+        this.examSubmissionRewardService = examSubmissionRewardService;
     }
 
     public Page<ExamRecordVO> getExamList(Long userId, int pageNum, int pageSize) {
@@ -42,11 +45,16 @@ public class ExamService {
     @Transactional(noRollbackFor = ExamTimedOutException.class)
     public ExamRecordVO submitExam(ExamSubmitRequest request, Long userId) {
         Long examRecordId = examSubmissionService.submitExam(request, userId);
-        return examRecordViewService.getExamResult(examRecordId, userId);
+        return withSubmissionReward(examRecordViewService.getExamResult(examRecordId, userId), userId);
     }
 
     public ExamRecordVO getExamResult(Long examRecordId, Long userId) {
-        return examRecordViewService.getExamResult(examRecordId, userId);
+        return withSubmissionReward(examRecordViewService.getExamResult(examRecordId, userId), userId);
+    }
+
+    private ExamRecordVO withSubmissionReward(ExamRecordVO result, Long userId) {
+        result.setSubmissionReward(examSubmissionRewardService.forExam(result.getId(), userId));
+        return result;
     }
 
 }

@@ -1,5 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { setToken } from '@/utils/auth'
 import type { TutorAgentPracticeVO } from '@/api/tutor'
 const { get, submit } = vi.hoisted(() => ({ get: vi.fn(), submit: vi.fn() }))
 vi.mock('@/api/tutor', () => ({
@@ -53,6 +54,8 @@ describe('TutorAgentPractice', () => {
   beforeEach(() => {
     get.mockReset()
     submit.mockReset()
+    localStorage.clear()
+    setToken('tutor-practice-session-a')
   })
   it('loads only after an explicit click, submits, and restores the server result', async () => {
     get.mockResolvedValueOnce({ data: practice })
@@ -268,6 +271,48 @@ describe('TutorAgentPractice', () => {
     posting.reject(new Error('network'))
     await flushPromises()
     expect(get).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not apply a late practice load after the account changes', async () => {
+    const loading = deferred<{ data: typeof practice }>()
+    get.mockReturnValueOnce(loading.promise)
+    const wrapper = mountPractice()
+    await wrapper.get('[data-testid="practice-open"]').trigger('click')
+    setToken('tutor-practice-session-b')
+    loading.resolve({ data: practice })
+    await flushPromises()
+    expect(wrapper.find('[data-testid="practice-open"]').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('题目')
+  })
+
+  it('does not apply a recovery refresh after the account changes', async () => {
+    const recovery = deferred<{ data: TutorAgentPracticeVO }>()
+    get.mockResolvedValueOnce({ data: practice }).mockReturnValueOnce(recovery.promise)
+    submit.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mountPractice()
+    await wrapper.get('[data-testid="practice-open"]').trigger('click')
+    await flushPromises()
+    await wrapper.findAll('button')[0].trigger('click')
+    await wrapper.get('[data-testid="practice-submit"]').trigger('click')
+    await vi.waitFor(() => expect(get).toHaveBeenCalledTimes(2))
+    setToken('tutor-practice-session-b')
+    recovery.resolve({
+      data: {
+        ...practice,
+        result: {
+          recordId: 8,
+          questionId: 7,
+          userAnswer: 'A',
+          correct: true,
+          correctAnswer: 'A',
+          analysis: '解析',
+          score: 1,
+        },
+      },
+    })
+    await flushPromises()
+    expect(wrapper.find('[data-testid="practice-open"]').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('回答正确')
   })
 
   it('does not emit follow-up while busy', async () => {

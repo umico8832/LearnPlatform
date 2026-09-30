@@ -28,6 +28,7 @@
     </div>
 
     <section v-else class="variant-result" :class="training.correct ? 'is-correct' : 'is-wrong'">
+      <AnswerRewardFeedback v-if="lastReward" :reward="lastReward" />
       <div class="variant-result__headline">
         <span>{{ training.correct ? '✓' : '!' }}</span>
         <div>
@@ -44,10 +45,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { errorMessage } from '@/utils/errors'
 import { ElMessage } from 'element-plus'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
+import { useGamificationStore } from '@/stores/gamification'
+import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
+import AnswerRewardFeedback from '@/components/gamification/AnswerRewardFeedback.vue'
+import type { RewardFeedback } from '@/api/gamification'
 import { submitVariantAnswer, type AiVariantQuestion, type AiVariantTrainingStatus } from '@/api/ai'
 
 const props = defineProps<{
@@ -68,6 +73,9 @@ const emit = defineEmits<{
 
 const selectedAnswer = ref(props.training.userAnswer || '')
 const submitting = ref(false)
+const lastReward = ref<RewardFeedback>()
+let generation = 0
+let alive = true
 const resultClass = computed(() =>
   props.training.answered ? (props.training.correct ? 'has-correct-result' : 'has-wrong-result') : '',
 )
@@ -79,17 +87,53 @@ watch(
   },
 )
 
+watch(
+  () => props.questionId,
+  () => {
+    generation++
+    lastReward.value = undefined
+  },
+)
+const unsubscribeAuth = onAuthSessionChange(() => {
+  generation++
+  submitting.value = false
+  lastReward.value = undefined
+})
+onBeforeUnmount(() => {
+  alive = false
+  generation++
+  unsubscribeAuth()
+})
+
+function isCurrent(requestGeneration: number, authSession: number, questionId: number) {
+  return (
+    alive &&
+    requestGeneration === generation &&
+    authSession === getAuthSessionVersion() &&
+    questionId === props.questionId
+  )
+}
+
 async function submitAnswer() {
   if (!selectedAnswer.value || submitting.value) return
+  const requestGeneration = generation
+  const authSession = getAuthSessionVersion()
+  const questionId = props.questionId
   submitting.value = true
   try {
-    const response = await submitVariantAnswer(props.questionId, selectedAnswer.value)
+    const response = await submitVariantAnswer(questionId, selectedAnswer.value)
+    if (!isCurrent(requestGeneration, authSession, questionId)) return
+    if (response.data.reward) {
+      lastReward.value = response.data.reward
+      useGamificationStore().acceptReward(response.data.reward, authSession)
+    }
     emit('answered', response.data)
     ElMessage.success(response.data.correct ? '回答正确' : '已完成判分，看看解析再巩固一次')
   } catch (error) {
-    ElMessage.error(errorMessage(error, '提交答案失败，请稍后重试'))
+    if (isCurrent(requestGeneration, authSession, questionId))
+      ElMessage.error(errorMessage(error, '提交答案失败，请稍后重试'))
   } finally {
-    submitting.value = false
+    if (isCurrent(requestGeneration, authSession, questionId)) submitting.value = false
   }
 }
 </script>

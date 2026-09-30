@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.ReviewSubmitRequest;
+import com.learnplatform.dto.ReviewAnswerOutcome;
+import com.learnplatform.dto.GamificationRewardFeedback;
 import com.learnplatform.entity.PracticeRecord;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionOption;
@@ -42,6 +44,10 @@ public class ReviewAnswerRecordingService {
     }
 
     public boolean evaluateAndRecord(ReviewSubmitRequest request, Long userId) {
+        return evaluateAndRecordWithReward(request, userId).correct();
+    }
+
+    public ReviewAnswerOutcome evaluateAndRecordWithReward(ReviewSubmitRequest request, Long userId) {
         Long questionId = request.getQuestionId();
         Question question = questionMapper.selectById(questionId);
         if (question == null) {
@@ -65,14 +71,15 @@ public class ReviewAnswerRecordingService {
         record.setIsCorrect(correct ? 1 : 0);
         record.setAnswerTime(request.getAnswerTime());
         practiceRecordMapper.insert(record);
+        GamificationRewardFeedback reward = null;
         if (courseLearningEventService != null) {
-            courseLearningEventService.recordQuestionAnswer(
+            reward = courseLearningEventService.recordQuestionAnswer(
                     userId, question, "REVIEW_ANSWERED", "REVIEW",
                     record.getId(), correct, record.getCreateTime());
         }
 
         updateWrongQuestion(userId, questionId, request.getUserAnswer().trim(), correct);
-        return correct;
+        return new ReviewAnswerOutcome(correct, reward);
     }
 
     private void updateWrongQuestion(Long userId, Long questionId, String userAnswer, boolean correct) {
@@ -104,4 +111,5 @@ public class ReviewAnswerRecordingService {
         wrongQuestion.setDeleted(0);
         wrongQuestionMapper.insert(wrongQuestion);
     }
+
 }

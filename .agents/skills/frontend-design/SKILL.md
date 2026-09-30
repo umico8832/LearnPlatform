@@ -46,13 +46,21 @@ The current CSS variables, Element Plus components, icons, layouts, and page con
 - Change an existing rule when repository evidence shows that it causes an accessibility, hierarchy, consistency, usability, or maintainability problem and the task authorizes the affected scope.
 - Explain a material shared-system change and verify its downstream consumers; do not preserve a weak rule solely because it already exists.
 - Do not create a parallel token vocabulary or one-off component system when the existing system can be corrected directly.
-- Do not change the framework, API contracts, permissions, learning rules, or real-data flow for visual convenience.
+- Preserve permissions, grading, learning semantics, and real-data flow. Framework or API changes require an authorized product need; a visual convenience alone is insufficient.
 
 ## Product-surface priorities
 
 For learner and authentication workflows, prioritize orientation, readable learning content, clear next actions, recovery from errors, and low-friction task completion. For administration workflows, support scanning and comparison at the necessary density without hiding controls or state.
 
 Use decoration and motion only when they improve hierarchy, comprehension, feedback, or continuity. Product workflows do not inherit marketing-page composition rules by default.
+
+## Learning encouragement layer
+
+Use bright experience, streak, goal, and achievement tokens at feedback and progress moments; keep question text, explanations, code, and Markdown readable and calm. Experience and levels describe learning effort, with rewards and achievements supplied by the backend from persisted learning events; they never imply mastery. Render honest zero, empty, loading, and failure states.
+
+Timed exams remain silent until submission: no correctness cues, reward floats, combos, celebrations, or sound during answers. Celebrations queue or merge, remain dismissible, and never gate the next action. Respect reduced motion and clear account-scoped progress and pending feedback on logout or account changes.
+
+Animation dependencies are allowed when they serve an evidenced interaction need. Keep simple feedback in CSS/Vue transitions; load infrequent celebration libraries on demand. Assess official Vue compatibility, lifecycle cleanup, reduced-motion support, and measured bundle cost before introducing a library; maintain one token and feedback system.
 
 ## Work in two passes
 

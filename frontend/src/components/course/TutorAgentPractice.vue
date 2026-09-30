@@ -25,6 +25,7 @@
         >提交作答</el-button
       >
       <div v-if="practice.result" class="practice-result" role="status">
+        <AnswerRewardFeedback v-if="practice.result.reward" :reward="practice.result.reward" />
         <strong>{{ practice.result.correct ? '回答正确' : '回答不正确' }}</strong>
         <p>你的选择：{{ practice.result.userAnswer }} · 参考答案：{{ practice.result.correctAnswer }}</p>
         <p v-if="practice.result.analysis" class="practice-content">{{ practice.result.analysis }}</p>
@@ -46,6 +47,9 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { useGamificationStore } from '@/stores/gamification'
+import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
+import AnswerRewardFeedback from '@/components/gamification/AnswerRewardFeedback.vue'
 import { getTutorAgentPractice, submitTutorAgentPractice, type TutorAgentPracticeVO } from '@/api/tutor'
 import { errorMessage } from '@/utils/errors'
 
@@ -71,6 +75,25 @@ const failure = ref('')
 const headingId = computed(() => `tutor-practice-${props.runKey}-${props.sequence}`)
 let generation = 0
 
+function resetForContext() {
+  opened.value = false
+  loading.value = false
+  submitting.value = false
+  syncRequired.value = false
+  practice.value = undefined
+  answer.value = ''
+  failure.value = ''
+}
+
+function isCurrent(current: number, authSession: number) {
+  return current === generation && authSession === getAuthSessionVersion()
+}
+
+const unsubscribeAuth = onAuthSessionChange(() => {
+  generation++
+  resetForContext()
+})
+
 function context() {
   return [props.courseId, props.sessionKey, props.runKey, props.sequence] as const
 }
@@ -85,17 +108,18 @@ function apply(value: TutorAgentPracticeVO) {
 async function load() {
   if (loading.value || submitting.value) return
   const current = generation
+  const authSession = getAuthSessionVersion()
   const target = context()
   loading.value = true
   failure.value = ''
   try {
     const response = await getTutorAgentPractice(...target)
-    if (current !== generation) return
+    if (!isCurrent(current, authSession)) return
     apply(response.data)
   } catch (error) {
-    if (current === generation) failure.value = errorMessage(error, '暂时无法加载练习，请重试')
+    if (isCurrent(current, authSession)) failure.value = errorMessage(error, '暂时无法加载练习，请重试')
   } finally {
-    if (current === generation) loading.value = false
+    if (isCurrent(current, authSession)) loading.value = false
   }
 }
 
@@ -112,28 +136,30 @@ async function submit() {
   }
   const current = generation
   const target = context()
+  const authSession = getAuthSessionVersion()
   const chosen = answer.value
   submitting.value = true
   failure.value = ''
   try {
     const response = await submitTutorAgentPractice(...target, chosen)
-    if (current !== generation) return
+    if (!isCurrent(current, authSession)) return
+    if (response.data.result?.reward) useGamificationStore().acceptReward(response.data.result.reward, authSession)
     if (!response.data.result) throw new Error('暂时无法确认作答结果')
     apply(response.data)
   } catch (error) {
-    if (current !== generation) return
+    if (!isCurrent(current, authSession)) return
     try {
       const restored = await getTutorAgentPractice(...target)
-      if (current !== generation) return
+      if (!isCurrent(current, authSession)) return
       apply(restored.data)
       if (!restored.data.result) failure.value = errorMessage(error, '暂时无法提交作答，请重试')
     } catch {
-      if (current !== generation) return
+      if (!isCurrent(current, authSession)) return
       syncRequired.value = true
       failure.value = '暂时无法确认作答是否保存，请先同步结果。'
     }
   } finally {
-    if (current === generation) submitting.value = false
+    if (isCurrent(current, authSession)) submitting.value = false
   }
 }
 
@@ -147,12 +173,13 @@ watch(
   () => [props.courseId, props.sessionKey, props.runKey, props.sequence],
   () => {
     generation++
-    opened.value = loading.value = submitting.value = syncRequired.value = false
-    practice.value = undefined
-    answer.value = failure.value = ''
+    resetForContext()
   },
 )
-onBeforeUnmount(() => generation++)
+onBeforeUnmount(() => {
+  generation++
+  unsubscribeAuth()
+})
 </script>
 
 <style scoped>

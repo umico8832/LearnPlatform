@@ -352,8 +352,10 @@ function knowledgePointSummaryText(summary: CourseStageAssessmentKnowledgePointS
   cursor: pointer;
   transition: background-color var(--lp-duration-fast) var(--lp-ease-out);
 }
-.alternative-item:hover {
-  background: var(--lp-surface);
+@media (hover: hover) and (pointer: fine) {
+  .alternative-item:hover {
+    background: var(--lp-surface);
+  }
 }
 .alternative-title {
   color: var(--lp-text);
@@ -403,12 +405,14 @@ function knowledgePointSummaryText(summary: CourseStageAssessmentKnowledgePointS
     background-color var(--lp-duration-fast) var(--lp-ease-out),
     transform var(--lp-duration-fast) var(--lp-ease-out);
 }
-.tool-row:hover {
-  background: var(--lp-primary-soft);
-}
-.tool-row:hover .tool-arrow {
-  color: var(--lp-primary);
-  transform: translateX(2px);
+@media (hover: hover) and (pointer: fine) {
+  .tool-row:hover {
+    background: var(--lp-primary-soft);
+  }
+  .tool-row:hover .tool-arrow {
+    color: var(--lp-primary);
+    transform: translateX(2px);
+  }
 }
 .tool-icon {
   display: inline-flex;
@@ -455,8 +459,10 @@ function knowledgePointSummaryText(summary: CourseStageAssessmentKnowledgePointS
   border-radius: var(--lp-radius-sm);
   transition: background-color var(--lp-duration-fast) var(--lp-ease-out);
 }
-.outline-item:hover {
-  background: var(--lp-surface-soft);
+@media (hover: hover) and (pointer: fine) {
+  .outline-item:hover {
+    background: var(--lp-surface-soft);
+  }
 }
 .outline-status {
   width: 8px;
@@ -545,6 +551,17 @@ function knowledgePointSummaryText(summary: CourseStageAssessmentKnowledgePointS
   color: var(--lp-text-muted);
   font-size: var(--lp-text-xs);
   line-height: var(--lp-leading-snug);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tool-row,
+  .tool-arrow,
+  .alternative-item,
+  .outline-item {
+    transition-duration: var(--lp-duration-fast);
+  }
+  .tool-row:hover .tool-arrow {
+    transform: none;
+  }
 }
 @media (max-width: 1080px) {
   .overview-grid {

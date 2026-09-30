@@ -25,6 +25,7 @@ public class PracticeResultVO {
 
     /** 题目分值 */
     private Integer score;
+    private GamificationRewardFeedback reward;
 
     public Long getRecordId() { return recordId; }
     public void setRecordId(Long recordId) { this.recordId = recordId; }
@@ -40,4 +41,6 @@ public class PracticeResultVO {
     public void setAnalysis(String analysis) { this.analysis = analysis; }
     public Integer getScore() { return score; }
     public void setScore(Integer score) { this.score = score; }
+    public GamificationRewardFeedback getReward() { return reward; }
+    public void setReward(GamificationRewardFeedback reward) { this.reward = reward; }
 }

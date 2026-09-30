@@ -362,6 +362,22 @@ onBeforeUnmount(() => {
 
 .agent-message {
   max-width: min(88%, 680px);
+  animation: tutor-message-arrive var(--lp-duration-normal) var(--lp-ease-out);
+}
+@keyframes tutor-message-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .agent-message {
+    animation: none;
+  }
 }
 
 .agent-message > span {

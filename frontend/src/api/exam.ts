@@ -1,5 +1,6 @@
 import request from '@/utils/request'
 import type { ApiResponse, PageData } from '@/types/api'
+import type { RewardFeedback } from '@/api/gamification'
 
 // ======================== 类型定义 ========================
 
@@ -85,6 +86,7 @@ export interface ExamRecordVO {
   status: ExamStatus
   duration: number
   answers: ExamAnswerVO[] | null
+  submissionReward?: RewardFeedback | null
 }
 
 export interface ExamAnswerVO {
@@ -125,6 +127,7 @@ export interface ExamLearningAnswerResultVO {
   analysis: string | null
   answeredAt: string
   gradingStatus: 'AUTO_GRADED' | 'SELF_REVIEW'
+  reward?: RewardFeedback | null
 }
 
 export interface SubjectiveGradingPointVO {

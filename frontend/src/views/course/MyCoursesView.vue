@@ -60,7 +60,12 @@
       <section class="course-list-section" aria-labelledby="course-list-heading">
         <LpSectionHeading title="全部课程" :description="`共 ${courses.length} 门`" />
         <div class="course-list">
-          <article v-for="course in courses" :key="course.courseId" class="course-card">
+          <article
+            v-for="(course, index) in courses"
+            :key="course.courseId"
+            class="course-card"
+            :style="{ '--course-index': Math.min(index, 4) }"
+          >
             <div class="course-icon" aria-hidden="true">
               <el-icon :size="20"><Reading /></el-icon>
             </div>
@@ -75,6 +80,16 @@
                 >
                 <span v-else>尚未开始学习</span>
               </div>
+              <dl v-if="course.overview" class="course-facts" aria-label="课程学习事实">
+                <div>
+                  <dt>已作答</dt>
+                  <dd>{{ course.overview.answeredCount }}</dd>
+                </div>
+                <div>
+                  <dt>答对</dt>
+                  <dd>{{ course.overview.correctCount }}</dd>
+                </div>
+              </dl>
               <div
                 v-if="(course.overview?.dueReviewCount ?? 0) > 0 || (course.overview?.unresolvedWrongCount ?? 0) > 0"
                 class="course-signals"
@@ -291,6 +306,8 @@ onMounted(fetchCourses)
 }
 
 .course-card {
+  animation: course-arrive var(--lp-duration-slow) var(--lp-ease-out) both;
+  animation-delay: calc(var(--course-index) * var(--lp-duration-stagger));
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: start;
@@ -302,12 +319,16 @@ onMounted(fetchCourses)
   box-shadow: var(--lp-shadow-xs);
   transition:
     border-color var(--lp-duration-fast) var(--lp-ease-out),
-    box-shadow var(--lp-duration-fast) var(--lp-ease-out);
+    box-shadow var(--lp-duration-fast) var(--lp-ease-out),
+    transform var(--lp-duration-fast) var(--lp-ease-out);
 }
 
-.course-card:hover {
-  border-color: var(--lp-border-strong);
-  box-shadow: var(--lp-shadow-sm);
+@media (hover: hover) and (pointer: fine) {
+  .course-card:hover {
+    border-color: var(--lp-primary-softer);
+    box-shadow: var(--lp-shadow-sm);
+    transform: translateY(-1px);
+  }
 }
 
 .course-icon {
@@ -345,6 +366,48 @@ onMounted(fetchCourses)
   margin-top: var(--lp-space-3);
   color: var(--lp-text-muted);
   font-size: var(--lp-text-sm);
+}
+
+.course-facts {
+  display: flex;
+  gap: var(--lp-space-4);
+  margin: var(--lp-space-3) 0 0;
+}
+
+.course-facts div {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lp-space-1);
+}
+.course-facts dt {
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-xs);
+}
+.course-facts dd {
+  margin: 0;
+  color: var(--lp-primary);
+  font-size: var(--lp-text-sm);
+  font-weight: var(--lp-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes course-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(var(--lp-space-2));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .course-card {
+    animation: none;
+  }
+  .course-card {
+    transition-duration: var(--lp-duration-fast);
+  }
 }
 
 .course-signals {

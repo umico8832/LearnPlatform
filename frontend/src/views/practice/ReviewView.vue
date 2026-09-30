@@ -2,7 +2,14 @@
   <div class="review-container page-container">
     <LpPageHeader title="复习">
       <template #actions>
-        <el-button type="primary" size="large" :icon="Reading" :disabled="stats.dueToday === 0" @click="startReview">
+        <el-button
+          type="primary"
+          size="large"
+          :icon="Reading"
+          :loading="startingReview"
+          :disabled="stats.dueToday === 0 || reviewSession?.reviewing"
+          @click="startReview"
+        >
           开始复习
           <el-badge v-if="stats.overdue > 0" :value="`${stats.overdue}逾期`" type="danger" class="button-badge" />
         </el-button>
@@ -179,6 +186,7 @@ const stats = ref<ReviewStatsVO>({
 })
 
 const dueCards = ref<ReviewScheduleVO[]>([])
+const startingReview = ref(false)
 const reviewSession = ref<InstanceType<typeof ReviewSessionPanel>>()
 
 // 卡片列表
@@ -232,12 +240,18 @@ async function loadAllCards() {
 }
 
 async function startReview() {
-  await loadDueCards()
-  if (dueCards.value.length === 0) {
-    ElMessage.info('没有待复习的题目')
-    return
+  if (startingReview.value || reviewSession.value?.reviewing) return
+  startingReview.value = true
+  try {
+    await loadDueCards()
+    if (dueCards.value.length === 0) {
+      ElMessage.info('没有待复习的题目')
+      return
+    }
+    reviewSession.value?.start()
+  } finally {
+    startingReview.value = false
   }
-  reviewSession.value?.start()
 }
 
 async function handleRemove(questionId: number) {

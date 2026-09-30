@@ -8,7 +8,7 @@
 
             <div class="score-main">
               <div class="score-circle" aria-label="考试得分">
-                <span class="score-number">{{ result.score ?? 0 }}</span>
+                <span class="score-number">{{ result.score == null ? '待评分' : displayedScore }}</span>
                 <span class="score-total">/ {{ result.totalScore }}</span>
               </div>
               <div class="score-rate">
@@ -50,6 +50,18 @@
               </div>
               <p v-if="result.sourceReference">来源：{{ result.sourceReference }}</p>
             </div>
+            <section
+              v-if="result.submissionReward"
+              class="exam-reward"
+              data-testid="gamification-exam-reward"
+              aria-label="本次学习奖励"
+            >
+              <strong>本次学习奖励</strong><span>+{{ result.submissionReward.awardedXp }} 经验</span
+              ><span v-if="result.submissionReward.leveledUp">升级至 Lv.{{ result.submissionReward.levelAfter }}</span
+              ><small v-if="result.submissionReward.newAchievements.length"
+                >解锁：{{ result.submissionReward.newAchievements.map((item) => item.name).join('、') }}</small
+              >
+            </section>
 
             <div class="score-actions">
               <el-button @click="router.push({ name: 'ExamList', query: { tab: 'records' } })">
@@ -133,17 +145,27 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getExamResult } from '@/api/exam'
 import type { ExamRecordVO } from '@/api/exam'
 import LpEmptyState from '@/components/ui/LpEmptyState.vue'
+import { useAnimatedNumber } from '@/composables/useAnimatedNumber'
+import { useReducedMotion } from '@/composables/useReducedMotion'
 
 const route = useRoute()
 const router = useRouter()
 const loading = ref(true)
 const result = ref<ExamRecordVO | null>(null)
+const { reducedMotion } = useReducedMotion()
+const { value: displayedScore, animateTo } = useAnimatedNumber(0, { reducedMotion })
+watch(
+  () => result.value?.score,
+  (score) => {
+    if (score != null) animateTo(score)
+  },
+)
 
 const scoreRate = computed(() => {
   if (!result.value || result.value.score == null || !result.value.totalScore) return 0
@@ -358,6 +380,40 @@ onMounted(async () => {
   gap: var(--lp-space-3);
   flex-wrap: wrap;
   margin-top: var(--lp-space-5);
+}
+.exam-reward {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--lp-space-3);
+  margin-top: var(--lp-space-4);
+  padding: var(--lp-space-3);
+  color: var(--lp-reward-xp);
+  background: var(--lp-reward-xp-soft);
+  border-radius: var(--lp-radius-md);
+  animation: exam-reward-in var(--lp-duration-celebration) var(--lp-ease-celebration);
+}
+.exam-reward strong {
+  color: var(--lp-text);
+}
+.exam-reward small {
+  flex-basis: 100%;
+  color: var(--lp-text-secondary);
+}
+@keyframes exam-reward-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--lp-space-2));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .exam-reward {
+    animation: none;
+  }
 }
 
 .answers-heading {

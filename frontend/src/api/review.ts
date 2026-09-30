@@ -1,7 +1,10 @@
 import request from '@/utils/request'
+import type { RewardFeedback } from './gamification'
 
 /** 复习计划卡片 */
 export interface ReviewScheduleVO {
+  correct?: boolean | null
+  reward?: RewardFeedback | null
   id: number
   questionId: number
   questionContent: string

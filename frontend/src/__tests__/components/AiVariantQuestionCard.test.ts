@@ -1,5 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
+import { setToken } from '@/utils/auth'
 
 const { submitVariantAnswer } = vi.hoisted(() => ({
   submitVariantAnswer: vi.fn(),
@@ -12,6 +14,7 @@ vi.mock('@/components/MarkdownRenderer.vue', () => ({
 }))
 
 import AiVariantQuestionCard from '@/components/AiVariantQuestionCard.vue'
+import { useGamificationStore } from '@/stores/gamification'
 
 const question = {
   id: 3,
@@ -41,6 +44,9 @@ const global = {
 describe('AiVariantQuestionCard', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    localStorage.clear()
+    setActivePinia(createPinia())
+    setToken('variant-session-a')
     submitVariantAnswer.mockResolvedValue({
       code: 0,
       data: {
@@ -93,5 +99,52 @@ describe('AiVariantQuestionCard', () => {
     expect(wrapper.text()).toContain('你的答案：A · 正确答案：B')
     expect(wrapper.text()).toContain('B 对应核心概念。')
     expect(wrapper.find('.variant-card__actions').exists()).toBe(false)
+  })
+
+  it('does not accept a reward or emit after an unmounted variant submission resolves', async () => {
+    let resolve!: (value: { code: number; data: Record<string, unknown> }) => void
+    submitVariantAnswer.mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          resolve = done
+        }),
+    )
+    const acceptReward = vi.spyOn(useGamificationStore(), 'acceptReward')
+    const wrapper = mount(AiVariantQuestionCard, {
+      props: { questionId: 42, question, training: { answered: false } },
+      global,
+    })
+    await wrapper.find('.select-answer').trigger('click')
+    const pending = wrapper.find('.variant-card__actions button').trigger('click')
+    wrapper.unmount()
+    resolve({
+      code: 0,
+      data: {
+        questionId: 42,
+        assetId: 9,
+        status: 'COMPLETED',
+        completed: true,
+        answered: true,
+        correct: true,
+        userAnswer: 'B',
+        correctAnswer: 'B',
+        analysis: '解析',
+        reward: {
+          eventId: 42,
+          awardedXp: 10,
+          reason: 'CORRECT_ANSWER',
+          eligible: true,
+          levelBefore: 1,
+          levelAfter: 1,
+          leveledUp: false,
+          streakDays: 1,
+          newAchievements: [],
+          summary: { version: 1 },
+        },
+      },
+    })
+    await pending
+    expect(acceptReward).not.toHaveBeenCalled()
+    expect(wrapper.emitted('answered')).toBeUndefined()
   })
 })

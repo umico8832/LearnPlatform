@@ -25,10 +25,16 @@
     />
     <template v-else>
       <div class="facts-list">
-        <article v-for="fact in records" :key="factKey(fact)" class="fact-row">
+        <article
+          v-for="fact in records"
+          :key="factKey(fact)"
+          class="fact-row"
+          :data-engaged="fact.answeredCount > 0"
+          :data-has-unresolved-wrong="fact.unresolvedWrongCount > 0"
+        >
           <div class="fact-heading">
             <div>
-              <h3>{{ fact.knowledgePointName }}</h3>
+              <h3><span class="fact-activity-dot" aria-hidden="true" />{{ fact.knowledgePointName }}</h3>
               <p v-if="!fact.available" class="fact-status">
                 {{ fact.knowledgePointId === null ? '未关联知识点的课程记录' : '历史知识点记录' }}
               </p>
@@ -213,6 +219,21 @@ onBeforeUnmount(() => {
   border: var(--lp-border-hairline);
   border-radius: var(--lp-radius-md);
   background: var(--lp-surface-soft);
+  transition:
+    border-color var(--lp-duration-fast) var(--lp-ease-out),
+    box-shadow var(--lp-duration-fast) var(--lp-ease-out);
+}
+.fact-row[data-engaged='true'] {
+  border-color: var(--lp-primary-softer);
+  background: linear-gradient(90deg, var(--lp-primary-soft), var(--lp-surface-soft) 34%);
+}
+.fact-row[data-has-unresolved-wrong='true'] {
+  border-left: 3px solid var(--lp-warning);
+}
+@media (hover: hover) and (pointer: fine) {
+  .fact-row:hover {
+    box-shadow: var(--lp-shadow-xs);
+  }
 }
 .fact-heading,
 .fact-actions {
@@ -224,11 +245,25 @@ onBeforeUnmount(() => {
   justify-content: space-between;
 }
 .fact-heading h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-space-2);
   margin: 0;
   color: var(--lp-text);
   font-size: var(--lp-text-lg);
   font-weight: var(--lp-weight-semibold);
   line-height: var(--lp-leading-snug);
+}
+.fact-activity-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: var(--lp-radius-full);
+  background: var(--lp-ink-300);
+}
+.fact-row[data-engaged='true'] .fact-activity-dot {
+  background: var(--lp-primary);
+  box-shadow: 0 0 0 3px var(--lp-primary-soft);
 }
 .fact-status {
   margin: var(--lp-space-1) 0 0;
@@ -276,6 +311,11 @@ onBeforeUnmount(() => {
 .fact-actions :deep(.el-button:focus-visible),
 .facts-error :deep(.el-button:focus-visible) {
   box-shadow: var(--lp-shadow-focus);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fact-row {
+    transition-duration: var(--lp-duration-fast);
+  }
 }
 @media (max-width: 767px) {
   .facts-error {

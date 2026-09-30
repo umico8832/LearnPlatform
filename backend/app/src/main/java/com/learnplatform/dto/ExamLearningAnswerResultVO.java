@@ -14,6 +14,7 @@ public class ExamLearningAnswerResultVO {
     private String analysis;
     private LocalDateTime answeredAt;
     private String gradingStatus;
+    private GamificationRewardFeedback reward;
 
     public Long getAnswerId() { return answerId; }
     public void setAnswerId(Long answerId) { this.answerId = answerId; }
@@ -37,4 +38,6 @@ public class ExamLearningAnswerResultVO {
     public void setAnsweredAt(LocalDateTime answeredAt) { this.answeredAt = answeredAt; }
     public String getGradingStatus() { return gradingStatus; }
     public void setGradingStatus(String gradingStatus) { this.gradingStatus = gradingStatus; }
+    public GamificationRewardFeedback getReward() { return reward; }
+    public void setReward(GamificationRewardFeedback reward) { this.reward = reward; }
 }

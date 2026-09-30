@@ -11,6 +11,7 @@ const {
   mockGetAssessmentHistory,
   mockGetAssessmentDetail,
   mockPush,
+  mockLoadGamification,
 } = vi.hoisted(() => ({
   mockGetCourseOverview: vi.fn(),
   mockGetKnowledgePointFacts: vi.fn(),
@@ -20,6 +21,7 @@ const {
   mockGetAssessmentHistory: vi.fn(),
   mockGetAssessmentDetail: vi.fn(),
   mockPush: vi.fn(),
+  mockLoadGamification: vi.fn(),
 }))
 
 vi.mock('@/api/course', () => ({
@@ -31,6 +33,8 @@ vi.mock('@/api/course', () => ({
   getCourseStageAssessmentHistory: (...args: unknown[]) => mockGetAssessmentHistory(...args),
   getCourseStageAssessmentDetail: (...args: unknown[]) => mockGetAssessmentDetail(...args),
 }))
+
+vi.mock('@/stores/gamification', () => ({ useGamificationStore: () => ({ load: mockLoadGamification }) }))
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ params: { id: '408' } }),

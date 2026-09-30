@@ -1,5 +1,6 @@
 import request from '@/utils/request'
 import type { ApiResponse, PageData } from '@/types/api'
+import type { RewardFeedback } from './gamification'
 
 // ======================== 类型定义 ========================
 
@@ -35,6 +36,7 @@ export interface PracticeSubmitRequest {
 
 /** 答题结果 */
 export interface PracticeResultVO {
+  reward?: RewardFeedback | null
   recordId: number
   questionId: number
   userAnswer: string

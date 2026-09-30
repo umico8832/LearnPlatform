@@ -4,31 +4,33 @@
       <template #content><span class="page-title">🧠 学习诊断</span></template>
     </el-page-header>
 
-    <div v-if="loading" v-loading="true" class="page-loading"></div>
+    <div v-if="loading" class="page-loading" aria-label="正在加载学习诊断"><LpSkeleton card :rows="8" /></div>
     <div v-else-if="loadError" class="page-error" role="alert">
       <p>加载学习诊断失败：{{ loadError }}</p>
       <button type="button" class="retry-button" @click="loadDiagnosis">重试</button>
     </div>
-    <template v-else-if="data">
-      <LearningDiagnosisSummary
-        :data="data"
-        :ai-advice-loading="aiAdviceLoading"
-        :ai-advice-streaming="aiAdviceStreaming"
-        :ai-advice-content="aiAdviceContent"
-        @generate-ai-advice="generateAiAdvice"
-      />
-      <LearningDiagnosisErrorPatterns
-        :patterns="data.errorPatterns"
-        @similar-question="loadSimilarQuestions"
-        @question-error-analysis="loadQuestionErrorAnalysis"
-      />
-      <LearningDiagnosisRecommendations
-        :course-masteries="data.courseMasteries"
-        :recommendations="data.dailyRecommendations"
-        @start-recommend-practice="startRecommendPractice"
-        @similar-question="loadSimilarQuestions"
-      />
-    </template>
+    <Transition name="diagnosis-content">
+      <section v-if="!loading && data" class="diagnosis-content">
+        <LearningDiagnosisSummary
+          :data="data"
+          :ai-advice-loading="aiAdviceLoading"
+          :ai-advice-streaming="aiAdviceStreaming"
+          :ai-advice-content="aiAdviceContent"
+          @generate-ai-advice="generateAiAdvice"
+        />
+        <LearningDiagnosisErrorPatterns
+          :patterns="data.errorPatterns"
+          @similar-question="loadSimilarQuestions"
+          @question-error-analysis="loadQuestionErrorAnalysis"
+        />
+        <LearningDiagnosisRecommendations
+          :course-masteries="data.courseMasteries"
+          :recommendations="data.dailyRecommendations"
+          @start-recommend-practice="startRecommendPractice"
+          @similar-question="loadSimilarQuestions"
+        />
+      </section>
+    </Transition>
 
     <QuestionErrorAnalysisDialog
       v-model="errorAnalysisDialogVisible"
@@ -225,6 +227,22 @@ onMounted(() => {
   min-height: 240px;
   padding: var(--lp-space-6);
   color: var(--lp-danger);
+}
+
+.diagnosis-content {
+  display: grid;
+  gap: var(--lp-space-5);
+}
+.diagnosis-content-enter-active {
+  transition: opacity var(--lp-duration-normal) var(--lp-ease-out);
+}
+.diagnosis-content-enter-from {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .diagnosis-content-enter-active {
+    transition-duration: var(--lp-duration-fast);
+  }
 }
 
 .retry-button {

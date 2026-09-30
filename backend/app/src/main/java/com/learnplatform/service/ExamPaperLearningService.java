@@ -145,14 +145,17 @@ public class ExamPaperLearningService {
 
         session.setCurrentQuestionId(nextQuestionId(paperQuestions, question.getId()));
         sessionMapper.updateById(session);
+        com.learnplatform.dto.GamificationRewardFeedback reward = null;
         if (!manualSelfReview) {
-            courseLearningEventService.recordQuestionAnswer(userId, question,
+            reward = courseLearningEventService.recordQuestionAnswer(userId, question,
                     "PAPER_LEARNING_ANSWERED", "PAPER_LEARNING", answer.getId(), correct, answer.getCreateTime());
             updateWrongQuestionAndReview(userId, question.getId(), userAnswer, correct);
         }
         cacheEvictService.evictUserStatistics(userId);
 
-        return toAnswerResult(answer, paperQuestion, question, correctAnswer);
+        ExamLearningAnswerResultVO result = toAnswerResult(answer, paperQuestion, question, correctAnswer);
+        result.setReward(reward);
+        return result;
     }
 
     @Transactional

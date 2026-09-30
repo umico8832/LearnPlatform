@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+import type { RewardFeedback } from './gamification'
 import type { ApiResponse } from '@/types/api'
 
 /** 课程 VO */
@@ -280,6 +281,7 @@ export interface TutorSessionVO {
   learningContext: TutorLearningContextVO
 }
 export interface TutorCheckResultVO {
+  reward?: RewardFeedback | null
   correct: boolean
   explanation: string
   guidanceType: 'PREREQUISITE' | 'NEXT_TARGET' | null

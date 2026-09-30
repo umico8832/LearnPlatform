@@ -105,8 +105,10 @@ public class TutorSessionService {
             TutorSession persisted = sessionMapper.selectById(session.getId());
             return result(Boolean.TRUE.equals(persisted.getCheckCorrect()), content, persisted.getCourseId());
         }
-        events.recordTutorCheck(userId, session.getCourseId(), session.getKnowledgePointId(), session.getId(), correct);
-        return result(correct, content, session.getCourseId());
+        TutorCheckResultVO result = result(correct, content, session.getCourseId());
+        result.setReward(events.recordTutorCheck(userId, session.getCourseId(),
+                session.getKnowledgePointId(), session.getId(), correct));
+        return result;
     }
 
     public TutorSessionVO get(Long userId, Long courseId, String sessionKey) {

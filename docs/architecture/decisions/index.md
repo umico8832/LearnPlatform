@@ -20,5 +20,6 @@
 | [0006](0006-separate-learner-admin-frontends.md) | Accepted | 用户学习端与管理系统采用独立前端应用目标 |
 | [0007](0007-tutor-model-foundation.md) | Accepted | Tutor 模型契约、独立 AI 核心与原子调用准入 |
 | [0008](0008-tutor-agent-execution-loop.md) | Accepted | Tutor Agent 可控工具循环、持久状态与恢复边界 |
+| [0009](0009-learning-effort-gamification.md) | Accepted | 从真实学习事件派生投入激励与反馈 |
 
 ADR 采用追加式维护。决策变化时新增记录并标记替代关系，不重写旧决策的历史背景。

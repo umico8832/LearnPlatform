@@ -4,10 +4,11 @@ import { defineComponent } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { useUserStore } from '@/stores/user'
 
-const { mockSubmitAnswer, mockPush, mockReplace } = vi.hoisted(() => ({
+const { mockSubmitAnswer, mockPush, mockReplace, mockError } = vi.hoisted(() => ({
   mockSubmitAnswer: vi.fn(),
   mockPush: vi.fn(),
   mockReplace: vi.fn(),
+  mockError: vi.fn(),
 }))
 
 vi.mock('@/api/practice', () => ({
@@ -23,10 +24,11 @@ vi.mock('vue-router', async (importOriginal) => {
 })
 
 vi.mock('element-plus', () => ({
-  ElMessage: { error: vi.fn(), warning: vi.fn() },
+  ElMessage: { error: mockError, warning: vi.fn() },
 }))
 
 import PracticeSessionView from '@/views/practice/PracticeSessionView.vue'
+import { useGamificationStore } from '@/stores/gamification'
 
 const DialogStub = defineComponent({
   name: 'ElDialog',
@@ -188,5 +190,123 @@ describe('PracticeSessionView', () => {
     expect(radios).toHaveLength(2)
     await radios[0].setValue()
     expect((radios[0].element as HTMLInputElement).checked).toBe(true)
+  })
+
+  it('submits one answer once while the first request is still pending', async () => {
+    let resolve!: (value: {
+      code: number
+      data: (typeof questions)[number] & {
+        recordId: number
+        userAnswer: string
+        correct: boolean
+        correctAnswer: string
+        analysis: string
+        score: number
+      }
+    }) => void
+    mockSubmitAnswer.mockImplementationOnce(
+      () =>
+        new Promise((next) => {
+          resolve = next
+        }),
+    )
+    const wrapper = mount(PracticeSessionView, { global: { stubs } })
+    await flushPromises()
+    const correctOption = wrapper
+      .findAll('input[type="radio"]')
+      .find((option) => option.attributes('value') === 'TRUE')!
+    await correctOption.setValue()
+    const submitButton = wrapper.findAll('button').find((button) => button.text().includes('提交答案'))!
+    const first = submitButton.trigger('click')
+    const second = submitButton.trigger('click')
+    expect(mockSubmitAnswer).toHaveBeenCalledOnce()
+    resolve({
+      code: 0,
+      data: {
+        ...questions[0],
+        recordId: 1,
+        userAnswer: 'TRUE',
+        correct: true,
+        correctAnswer: 'TRUE',
+        analysis: '解析',
+        score: 5,
+      },
+    })
+    await Promise.all([first, second])
+    await flushPromises()
+    expect(wrapper.get('[data-testid="result-dialog"]').text()).toContain('答对了')
+  })
+
+  it('does not accept a reward or show a result when submission fails', async () => {
+    mockSubmitAnswer.mockRejectedValueOnce(new Error('network'))
+    const acceptReward = vi.spyOn(useGamificationStore(), 'acceptReward')
+    const wrapper = mount(PracticeSessionView, { global: { stubs } })
+    await flushPromises()
+    const correctOption = wrapper
+      .findAll('input[type="radio"]')
+      .find((option) => option.attributes('value') === 'TRUE')!
+    await correctOption.setValue()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('提交答案'))!
+      .trigger('click')
+    await flushPromises()
+    expect(acceptReward).not.toHaveBeenCalled()
+    expect(wrapper.find('[data-testid="result-dialog"]').exists()).toBe(false)
+    expect(mockError).toHaveBeenCalledWith('提交答案失败')
+  })
+
+  it('ignores a late submission from the account that started it', async () => {
+    let resolve!: (value: {
+      code: number
+      data: (typeof questions)[number] & {
+        recordId: number
+        userAnswer: string
+        correct: boolean
+        correctAnswer: string
+        analysis: string
+        score: number
+      }
+    }) => void
+    mockSubmitAnswer.mockImplementationOnce(
+      () =>
+        new Promise((next) => {
+          resolve = next
+        }),
+    )
+    const acceptReward = vi.spyOn(useGamificationStore(), 'acceptReward')
+    const wrapper = mount(PracticeSessionView, { global: { stubs } })
+    await flushPromises()
+    const correctOption = wrapper
+      .findAll('input[type="radio"]')
+      .find((option) => option.attributes('value') === 'TRUE')!
+    await correctOption.setValue()
+    const pending = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('提交答案'))!
+      .trigger('click')
+    useUserStore().setLoginInfo('other-account-token', {
+      id: 8,
+      username: 'other',
+      nickname: 'Other',
+      avatar: null,
+      role: 'USER',
+    })
+    resolve({
+      code: 0,
+      data: {
+        ...questions[0],
+        recordId: 1,
+        userAnswer: 'TRUE',
+        correct: true,
+        correctAnswer: 'TRUE',
+        analysis: '解析',
+        score: 5,
+      },
+    })
+    await pending
+    await flushPromises()
+    expect(acceptReward).not.toHaveBeenCalled()
+    expect(wrapper.text()).not.toContain('答对了')
   })
 })

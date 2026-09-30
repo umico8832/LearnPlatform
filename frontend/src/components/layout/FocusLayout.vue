@@ -13,6 +13,11 @@
         </div>
       </div>
       <div class="focus-topbar-right">
+        <LearningProgressHeader
+          v-if="gamification.summary && route.name !== 'ExamTake'"
+          :summary="gamification.summary"
+          compact
+        />
         <slot name="actions" />
       </div>
     </header>
@@ -29,6 +34,8 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
+import { useGamificationStore } from '@/stores/gamification'
+import LearningProgressHeader from '@/components/gamification/LearningProgressHeader.vue'
 
 /**
  * Focus Layout：沉浸式学习布局。
@@ -39,6 +46,7 @@ withDefaults(defineProps<{ narrow?: boolean }>(), { narrow: true })
 
 const route = useRoute()
 const router = useRouter()
+const gamification = useGamificationStore()
 
 const contextTitle = computed(() => (route.meta.focusTitle as string) || (route.meta.title as string) || '学习')
 const contextSub = computed(() => (route.meta.focusSubtitle as string) || '')

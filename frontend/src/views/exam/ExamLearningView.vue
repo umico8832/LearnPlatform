@@ -95,6 +95,10 @@
                   : 'is-review'
             "
           >
+            <AnswerRewardFeedback
+              v-if="currentQuestion.latestAnswer?.reward"
+              :reward="currentQuestion.latestAnswer.reward"
+            />
             <div class="result-title">
               {{
                 currentQuestion.latestAnswer.correct === null
@@ -190,9 +194,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useGamificationStore } from '@/stores/gamification'
+import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
+import AnswerRewardFeedback from '@/components/gamification/AnswerRewardFeedback.vue'
 import { completeExamLearningSession, getExamLearningSession, submitExamLearningAnswer } from '@/api/exam'
 import type { ExamLearningSessionVO } from '@/api/exam'
 import AiQuestionAssistant from '@/components/AiQuestionAssistant.vue'
@@ -208,6 +215,30 @@ const currentIndex = ref(0)
 const userAnswer = ref('')
 const multiAnswers = ref<Set<string>>(new Set())
 const answerStartedAt = ref(Date.now())
+let alive = true
+let generation = 0
+
+function isCurrent(requestGeneration: number, authSession: number, sessionId?: number) {
+  return (
+    alive &&
+    requestGeneration === generation &&
+    authSession === getAuthSessionVersion() &&
+    (sessionId === undefined || session.value?.id === sessionId)
+  )
+}
+
+const unsubscribeAuth = onAuthSessionChange(() => {
+  generation++
+  loading.value = false
+  submitting.value = false
+  completing.value = false
+  session.value = null
+})
+onUnmounted(() => {
+  alive = false
+  generation++
+  unsubscribeAuth()
+})
 
 const currentQuestion = computed(() => session.value?.questions[currentIndex.value] || null)
 const canSubmit = computed(() => {
@@ -224,8 +255,11 @@ onMounted(async () => {
     loading.value = false
     return
   }
+  const requestGeneration = ++generation
+  const authSession = getAuthSessionVersion()
   try {
     const response = await getExamLearningSession(sessionId)
+    if (!isCurrent(requestGeneration, authSession)) return
     if (response.code === 0 && response.data) {
       session.value = response.data
       const savedIndex = response.data.questions.findIndex(
@@ -237,9 +271,9 @@ onMounted(async () => {
       ElMessage.error(response.message || '获取试卷学习会话失败')
     }
   } catch {
-    ElMessage.error('获取试卷学习会话失败')
+    if (isCurrent(requestGeneration, authSession)) ElMessage.error('获取试卷学习会话失败')
   } finally {
-    loading.value = false
+    if (isCurrent(requestGeneration, authSession)) loading.value = false
   }
 })
 
@@ -265,29 +299,35 @@ function goTo(index: number) {
 }
 
 async function submitCurrentAnswer() {
-  if (!session.value || !currentQuestion.value || !canSubmit.value) return
+  if (!session.value || !currentQuestion.value || !canSubmit.value || submitting.value) return
+  const authSession = getAuthSessionVersion()
+  const requestGeneration = generation
+  const learningSessionId = session.value.id
+  const submittedQuestion = currentQuestion.value
   submitting.value = true
   const answer =
     currentQuestion.value.questionType === 'MULTIPLE_CHOICE'
       ? Array.from(multiAnswers.value).sort().join(',')
       : userAnswer.value.trim()
   try {
-    const response = await submitExamLearningAnswer(session.value.id, {
-      questionId: currentQuestion.value.questionId,
+    const response = await submitExamLearningAnswer(learningSessionId, {
+      questionId: submittedQuestion.questionId,
       userAnswer: answer,
       answerTime: Math.max(0, Math.round((Date.now() - answerStartedAt.value) / 1000)),
     })
+    if (!isCurrent(requestGeneration, authSession, learningSessionId)) return
     if (response.code === 0 && response.data) {
-      currentQuestion.value.latestAnswer = response.data
+      submittedQuestion.latestAnswer = response.data
+      if (response.data.reward) useGamificationStore().acceptReward(response.data.reward, authSession)
       refreshSummary()
       ElMessage.success(response.data.correct ? '回答正确' : '已保存本次作答')
     } else {
       ElMessage.error(response.message || '提交答案失败')
     }
   } catch {
-    ElMessage.error('提交答案失败')
+    if (isCurrent(requestGeneration, authSession, learningSessionId)) ElMessage.error('提交答案失败')
   } finally {
-    submitting.value = false
+    if (isCurrent(requestGeneration, authSession, learningSessionId)) submitting.value = false
   }
 }
 
@@ -299,9 +339,13 @@ function refreshSummary() {
 
 async function completeLearning() {
   if (!session.value) return
+  const requestGeneration = generation
+  const authSession = getAuthSessionVersion()
+  const learningSessionId = session.value.id
   completing.value = true
   try {
-    const response = await completeExamLearningSession(session.value.id)
+    const response = await completeExamLearningSession(learningSessionId)
+    if (!isCurrent(requestGeneration, authSession, learningSessionId)) return
     if (response.code === 0 && response.data) {
       session.value = response.data
       ElMessage.success('本轮试卷学习已完成，可继续查看逐题复盘')
@@ -309,9 +353,9 @@ async function completeLearning() {
       ElMessage.error(response.message || '完成学习失败')
     }
   } catch {
-    ElMessage.error('完成学习失败')
+    if (isCurrent(requestGeneration, authSession, learningSessionId)) ElMessage.error('完成学习失败')
   } finally {
-    completing.value = false
+    if (isCurrent(requestGeneration, authSession, learningSessionId)) completing.value = false
   }
 }
 

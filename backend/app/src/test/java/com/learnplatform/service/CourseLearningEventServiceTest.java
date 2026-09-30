@@ -4,6 +4,7 @@ import com.learnplatform.entity.CourseLearningEvent;
 import com.learnplatform.entity.Question;
 import com.learnplatform.mapper.CourseLearningEventMapper;
 import com.learnplatform.mapper.UserCourseMapper;
+import com.learnplatform.service.gamification.GamificationRewardService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,7 +30,8 @@ class CourseLearningEventServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new CourseLearningEventService(userCourseMapper, courseLearningEventMapper);
+        service = new CourseLearningEventService(userCourseMapper, courseLearningEventMapper,
+                org.mockito.Mockito.mock(com.learnplatform.service.gamification.GamificationRewardService.class));
     }
 
     @Test
@@ -63,5 +65,20 @@ class CourseLearningEventServiceTest {
         service.recordQuestionAnswer(7L, question, "PRACTICE_ANSWERED", "PRACTICE", 32L, true, null);
 
         verify(courseLearningEventMapper, never()).insert(any());
+    }
+
+    @Test
+    void projectsOnlyInsertedCourseFactsToTheRewardLedger() {
+        GamificationRewardService rewards = org.mockito.Mockito.mock(GamificationRewardService.class);
+        CourseLearningEventService rewardedService = new CourseLearningEventService(
+                userCourseMapper, courseLearningEventMapper, rewards);
+        Question question = new Question();
+        question.setId(12L);
+        question.setCourseId(8L);
+        when(userCourseMapper.selectCount(any())).thenReturn(1L);
+
+        rewardedService.recordQuestionAnswer(7L, question, "PRACTICE_ANSWERED", "PRACTICE", 32L, true, null);
+
+        verify(rewards).reward(any(CourseLearningEvent.class), org.mockito.ArgumentMatchers.eq(true));
     }
 }

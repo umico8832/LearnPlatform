@@ -77,6 +77,7 @@
           </button>
         </div>
         <div class="header-right">
+          <LearningProgressHeader v-if="gamification.summary" :summary="gamification.summary" />
           <button class="header-search-trigger" type="button" @click="openSearch">
             <el-icon :size="16"><Search /></el-icon>
             <span v-if="!isMobile" class="search-trigger-text">搜索题目、课程、知识点</span>
@@ -151,6 +152,8 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { errorMessage } from '@/utils/errors'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useGamificationStore } from '@/stores/gamification'
+import LearningProgressHeader from '@/components/gamification/LearningProgressHeader.vue'
 import { acknowledgeAiUsageAlert, getAiUsageAlerts, type AiUsageAlert } from '@/api/aiUsage'
 import { ElMessage } from 'element-plus'
 import {
@@ -170,6 +173,7 @@ import { useResponsiveSidebar } from './useResponsiveSidebar'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const gamification = useGamificationStore()
 
 const userInfo = computed(() => userStore.userInfo)
 const isAdmin = computed(() => userStore.userInfo?.role === 'ADMIN')
@@ -591,6 +595,9 @@ function handleCommand(command: string) {
     opacity var(--lp-duration-normal) var(--lp-ease-out),
     transform var(--lp-duration-normal) var(--lp-ease-out);
 }
+.page-fade-leave-active {
+  transition: none;
+}
 
 .page-fade-enter-from {
   opacity: 0;
@@ -599,6 +606,16 @@ function handleCommand(command: string) {
 
 .page-fade-leave-to {
   opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-fade-enter-active,
+  .page-fade-leave-active {
+    transition: none;
+  }
+  .page-fade-enter-from {
+    transform: none;
+  }
 }
 
 /* ---------------- Mobile ---------------- */

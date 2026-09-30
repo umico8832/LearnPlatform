@@ -1,6 +1,6 @@
 ---
 name: interaction-motion
-description: Build, review, audit, name, or find purposeful interaction motion in LearnPlatform's Vue 3 and Element Plus frontend. Use for transitions, micro-interactions, reduced-motion behavior, or motion-quality review; do not use to add a new animation library or redesign a page.
+description: Build, review, audit, name, or find purposeful interaction motion in LearnPlatform's Vue 3 and Element Plus frontend. Use for transitions, learning feedback, celebrations, reduced-motion behavior, or motion-quality review; use frontend-design for page redesign.
 ---
 
 # LearnPlatform Interaction Motion
@@ -9,7 +9,7 @@ Make state changes easier to understand without slowing a learning or administra
 
 ## Read first
 
-Inspect the target component and its actual trigger path. Read `../../../frontend/src/assets/styles/tokens.css` and `../../../docs/architecture/frontend.md`; also use [frontend-design](../frontend-design/SKILL.md) for page-level visual work. Reuse the current Vue 3, TypeScript, Element Plus, and CSS-variable stack. Do not add React, Next, Tailwind, Motion, or another animation package for ordinary UI motion.
+Inspect the target component and its actual trigger path. Read `../../../frontend/src/assets/styles/tokens.css` and `../../../docs/architecture/frontend.md`; also use [frontend-design](../frontend-design/SKILL.md) for page-level visual work. Reuse the current Vue 3, TypeScript, Element Plus, and CSS-variable stack. Simple motion stays in CSS/Vue transitions. Animation libraries are allowed for evidenced needs beyond those primitives; check official compatibility, lifecycle cleanup, accessibility, and bundle cost. Load infrequent celebration effects on demand rather than increasing the initial route bundle.
 
 The current `--lp-duration-*` and `--lp-ease-*` variables are the baseline, not an unchangeable law. Reuse them where they fit. Propose a token addition or adjustment only when repeated, evidenced component needs cannot be represented by that scale; keep tokens semantic and avoid a parallel local motion system.
 
@@ -22,6 +22,12 @@ The current `--lp-duration-*` and `--lp-ease-*` variables are the baseline, not 
 - **Vocabulary** — name a described effect concisely. Read [motion vocabulary](references/motion-vocabulary.md) only for this mode.
 
 For build, review, audit, and opportunities work, read [motion decision guide](references/motion-decision-guide.md). It contains the operating checks and project implementation guidance. For attribution and the upstream scope, read [source note](references/source-and-license.md).
+
+## Learning feedback
+
+Experience, streaks, goals, and achievements come from persisted backend learning events. Motion may acknowledge an answer or reward but never calculate or approve it. Keep answer reading areas calm and encouragement elements expressive. During timed exams, suppress all correctness, combo, reward, celebration, and sound cues until submission.
+
+Use one celebration queue, deduplicate events, and merge bursts without dropping achievements. Clear pending feedback on account change, logout, or entry into an exam. Completion and level-up may have a larger finite delight budget; users can dismiss and continue immediately. Reduced motion retains the result and removes travel, scale, confetti, and loops.
 
 ## Shared boundaries
 

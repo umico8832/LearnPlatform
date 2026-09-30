@@ -145,7 +145,9 @@ public class SpacedRepetitionService {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不在复习计划中");
         }
 
-        boolean isCorrect = reviewAnswerRecordingService.evaluateAndRecord(request, userId);
+        com.learnplatform.dto.ReviewAnswerOutcome outcome = reviewAnswerRecordingService
+                .evaluateAndRecordWithReward(request, userId);
+        boolean isCorrect = outcome.correct();
 
         // 计算 SM-2 质量评分
         int quality = calculateQuality(isCorrect, request.getSelfAssessedQuality());
@@ -160,7 +162,10 @@ public class SpacedRepetitionService {
         log.info("复习答题完成: userId={}, questionId={}, isCorrect={}, quality={}, newInterval={}d",
                 userId, questionId, isCorrect, quality, schedule.getIntervalDays());
 
-        return reviewScheduleQueryService.buildScheduleView(schedule);
+        ReviewScheduleVO view = reviewScheduleQueryService.buildScheduleView(schedule);
+        view.setReward(outcome.reward());
+        view.setCorrect(isCorrect);
+        return view;
     }
 
     /**

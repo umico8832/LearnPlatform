@@ -8,6 +8,7 @@
         <el-button :icon="EditPen" @click="router.push('/practice')"> 继续刷题 </el-button>
       </div>
     </section>
+    <ProfileGamification />
 
     <section class="profile-layout">
       <aside class="identity-panel">
@@ -154,6 +155,7 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { ArrowRight, Clock, EditPen, Key, Lock, Reading, Star, User } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { updateProfile, updatePassword } from '@/api/user'
+import ProfileGamification from '@/components/gamification/ProfileGamification.vue'
 
 const router = useRouter()
 const userStore = useUserStore()

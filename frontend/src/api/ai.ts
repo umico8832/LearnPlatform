@@ -1,3 +1,4 @@
+import type { RewardFeedback } from './gamification'
 import { aiService } from '@/utils/request'
 import { getToken } from '@/utils/auth'
 import type { ApiResponse } from '@/types/api'
@@ -376,6 +377,7 @@ export interface AiVariantQuestion {
 
 /** 当前缓存变式题的训练与首次判分状态。 */
 export interface AiVariantTrainingStatus {
+  reward?: RewardFeedback | null
   questionId: number
   assetId: number
   status: 'STARTED' | 'COMPLETED'

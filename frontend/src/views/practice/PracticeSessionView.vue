@@ -1,6 +1,5 @@
 <template>
   <div class="practice-session">
-    <!-- 顶部进度栏 -->
     <div class="session-header">
       <div class="header-left">
         <el-button @click="handleBack" text>
@@ -23,10 +22,9 @@
       </div>
     </div>
 
-    <!-- 答题结果弹窗 -->
     <el-dialog
       v-model="showResult"
-      :title="currentResult?.correct ? '答对了！' : '答错了！'"
+      :title="currentResult?.correct ? '答对了！' : '再看一下这题'"
       :width="isMobile ? '95%' : '680px'"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
@@ -46,6 +44,9 @@
             <span class="correct-answer">{{ currentResult?.correctAnswer }}</span>
           </p>
         </div>
+
+        <AnswerRewardFeedback v-if="currentResult?.reward" :reward="currentResult.reward" />
+        <p v-if="isWrongPractice && currentResult?.correct" class="wrong-resolved">✓ 这道错题已移出错题本</p>
 
         <div v-if="currentResult?.analysis" class="result-analysis">
           <LpDivider />
@@ -70,39 +71,10 @@
       </template>
     </el-dialog>
 
-    <!-- 练习完成总结 -->
     <div v-if="finished" class="finish-container">
-      <div class="finish-card">
-        <div class="finish-icon" aria-hidden="true">✓</div>
-        <h2>练习完成！</h2>
-        <div class="finish-stats">
-          <div class="finish-stat">
-            <div class="fs-value">{{ questions.length }}</div>
-            <div class="fs-label">总题数</div>
-          </div>
-          <div class="finish-stat">
-            <div class="fs-value correct">{{ correctCount }}</div>
-            <div class="fs-label">答对</div>
-          </div>
-          <div class="finish-stat">
-            <div class="fs-value wrong">{{ wrongCount }}</div>
-            <div class="fs-label">答错</div>
-          </div>
-          <div class="finish-stat">
-            <div class="fs-value rate">
-              {{ questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0 }}%
-            </div>
-            <div class="fs-label">正确率</div>
-          </div>
-        </div>
-        <div class="finish-actions">
-          <el-button @click="handleBack" size="large">返回</el-button>
-          <el-button type="primary" @click="restartPractice" size="large">再练一次</el-button>
-        </div>
-      </div>
+      <GamificationPracticeSummary :summary="sessionSummary" @continue="handleBack" />
     </div>
 
-    <!-- 题目卡片 -->
     <div v-if="!finished && currentQuestion" class="question-card-wrapper">
       <el-card class="question-card" shadow="never">
         <div class="question-meta">
@@ -137,7 +109,13 @@
             <label
               v-for="opt in currentQuestion.options"
               :key="opt.id"
-              :class="['option-item', { selected: userAnswer === opt.optionLabel }]"
+              :class="[
+                'option-item',
+                {
+                  selected: userAnswer === opt.optionLabel,
+                  'answer-confirmed': currentResult?.correct && userAnswer === opt.optionLabel,
+                },
+              ]"
             >
               <input
                 v-model="userAnswer"
@@ -189,9 +167,14 @@
           </div>
         </div>
 
-        <!-- 提交按钮 -->
         <div class="submit-area">
-          <el-button type="primary" size="large" @click="handleSubmit" :loading="submitting" :disabled="!canSubmit">
+          <el-button
+            type="primary"
+            size="large"
+            @click="handleSubmit"
+            :loading="submitting"
+            :disabled="!canSubmit || !!currentResult || finished"
+          >
             提交答案
           </el-button>
         </div>
@@ -201,7 +184,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
@@ -212,6 +195,12 @@ import { useMobileViewport } from '@/composables/useMobileViewport'
 import { usePracticeAnswer } from './usePracticeAnswer'
 import { useUserStore } from '@/stores/user'
 import { clearPracticeSession, loadPracticeSession } from '@/utils/practiceSession'
+import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
+import { useGamificationStore } from '@/stores/gamification'
+import AnswerRewardFeedback from '@/components/gamification/AnswerRewardFeedback.vue'
+import GamificationPracticeSummary from '@/components/gamification/GamificationPracticeSummary.vue'
+import type { GamificationAchievement } from '@/components/gamification/types'
+import { launchCelebrationConfetti } from '@/utils/celebrationConfetti'
 import {
   practiceQuestionTypeLabel as getQuestionTypeLabel,
   practiceQuestionTypeTag as getQuestionTypeTag,
@@ -232,6 +221,38 @@ const wrongCount = ref(0)
 const startTime = ref(Date.now())
 const practiceMode = ref<string>('')
 const isMobile = useMobileViewport()
+const gamification = useGamificationStore()
+const sessionXp = ref(0)
+const longestCombo = ref(0)
+const sessionAchievements = ref<GamificationAchievement[]>([])
+let alive = true
+const unsubscribeSession = onAuthSessionChange(() => {
+  questions.value = []
+  currentResult.value = null
+  showResult.value = false
+  sessionXp.value = 0
+  longestCombo.value = 0
+  correctCount.value = 0
+  wrongCount.value = 0
+  finished.value = false
+  submitting.value = false
+  sessionAchievements.value = []
+})
+onUnmounted(() => {
+  alive = false
+  unsubscribeSession()
+})
+const sessionSummary = computed(() => ({
+  answeredCount: correctCount.value + wrongCount.value,
+  correctRate:
+    correctCount.value + wrongCount.value > 0
+      ? (correctCount.value / (correctCount.value + wrongCount.value)) * 100
+      : 0,
+  xpGained: sessionXp.value,
+  longestCombo: longestCombo.value,
+  achievements: sessionAchievements.value,
+  comboLabel: '本组期间最高连续答对',
+}))
 
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
 const { userAnswer, multiAnswers, canSubmit, toggleMulti, answer, reset } = usePracticeAnswer(currentQuestion)
@@ -241,6 +262,7 @@ const isFavoritePractice = computed(() => practiceMode.value === 'favorite')
 onMounted(async () => {
   const userStore = useUserStore()
   if (!userStore.userInfo) await userStore.fetchUserInfo()
+  if (!alive) return
   const stored = loadPracticeSession(userStore.userInfo?.id)
   if (stored) {
     questions.value = stored.questions
@@ -253,19 +275,34 @@ onMounted(async () => {
 })
 
 const handleSubmit = async () => {
-  if (!currentQuestion.value) return
+  if (!currentQuestion.value || !canSubmit.value || submitting.value || currentResult.value || finished.value) return
+  const questionId = currentQuestion.value.id
+  const session = getAuthSessionVersion()
   submitting.value = true
   try {
     const elapsed = Math.round((Date.now() - startTime.value) / 1000)
 
     const res = await submitAnswer({
-      questionId: currentQuestion.value.id,
+      questionId,
       userAnswer: answer(),
       answerTime: elapsed,
     })
 
+    if (!alive || session !== getAuthSessionVersion() || currentQuestion.value?.id !== questionId) return
     if (res.code === 0 && res.data) {
       currentResult.value = res.data
+      if (gamification.acceptReward(res.data.reward, session) && res.data.reward) {
+        sessionXp.value += res.data.reward.awardedXp
+        longestCombo.value = Math.max(longestCombo.value, res.data.reward.summary.currentCombo)
+        for (const achievement of res.data.reward.newAchievements) {
+          if (!sessionAchievements.value.some((item) => item.id === achievement.code))
+            sessionAchievements.value.push({
+              id: achievement.code,
+              title: achievement.name,
+              description: achievement.description,
+            })
+        }
+      }
       if (res.data.correct) {
         correctCount.value++
       } else {
@@ -276,9 +313,9 @@ const handleSubmit = async () => {
       ElMessage.error(res.message || '提交失败')
     }
   } catch {
-    ElMessage.error('提交答案失败')
+    if (alive && session === getAuthSessionVersion()) ElMessage.error('提交答案失败')
   } finally {
-    submitting.value = false
+    if (alive && session === getAuthSessionVersion()) submitting.value = false
   }
 }
 
@@ -301,6 +338,7 @@ const handleResultClosed = () => {
     startTime.value = Date.now()
   } else {
     finished.value = true
+    if (correctCount.value > 0 && correctCount.value >= wrongCount.value) void launchCelebrationConfetti()
   }
 }
 
@@ -310,7 +348,6 @@ const leavePractice = () => {
 }
 
 const handleBack = leavePractice
-const restartPractice = leavePractice
 </script>
 
 <style scoped>
@@ -320,7 +357,6 @@ const restartPractice = leavePractice
   margin: 0 auto;
 }
 
-/* 顶部进度栏 */
 .session-header {
   display: flex;
   align-items: center;
@@ -357,7 +393,6 @@ const restartPractice = leavePractice
   margin-left: var(--lp-space-2);
 }
 
-/* 题目卡片 */
 .question-card-wrapper {
   animation: lp-fade-in var(--lp-duration-normal) var(--lp-ease-out);
 }
@@ -506,9 +541,12 @@ const restartPractice = leavePractice
   margin-top: var(--lp-space-6);
 }
 
-/* 结果弹窗 */
 .result-content {
   text-align: center;
+}
+.wrong-resolved {
+  color: var(--lp-success);
+  font-weight: var(--lp-weight-semibold);
 }
 
 .result-icon {
@@ -524,11 +562,13 @@ const restartPractice = leavePractice
 }
 
 .result-icon.is-correct {
+  animation: answer-confirm var(--lp-duration-feedback) var(--lp-ease-celebration);
   background: var(--lp-success-soft);
   color: var(--lp-success);
 }
 
 .result-icon.is-wrong {
+  animation: answer-reconsider var(--lp-duration-feedback) var(--lp-ease-out);
   background: var(--lp-danger-soft);
   color: var(--lp-danger);
 }
@@ -564,83 +604,12 @@ const restartPractice = leavePractice
   text-align: left;
 }
 
-/* 完成页 */
 .finish-container {
   display: flex;
   justify-content: center;
-  padding-top: var(--lp-space-16);
+  padding-top: var(--lp-space-8);
 }
 
-.finish-card {
-  width: 100%;
-  max-width: 500px;
-  text-align: center;
-  padding: var(--lp-space-8) var(--lp-space-6);
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
-}
-
-.finish-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 60px;
-  height: 60px;
-  margin: 0 auto var(--lp-space-4);
-  border-radius: var(--lp-radius-full);
-  background: var(--lp-success-soft);
-  color: var(--lp-success);
-  font-size: var(--lp-text-4xl);
-  font-weight: var(--lp-weight-bold);
-}
-
-.finish-card h2 {
-  margin-bottom: var(--lp-space-2);
-  color: var(--lp-text);
-  font-size: var(--lp-text-3xl);
-}
-
-.finish-stats {
-  display: flex;
-  justify-content: center;
-  gap: var(--lp-space-8);
-  margin-bottom: var(--lp-space-8);
-}
-
-.fs-value {
-  font-size: var(--lp-text-4xl);
-  font-weight: var(--lp-weight-bold);
-  color: var(--lp-primary);
-  font-variant-numeric: tabular-nums;
-}
-
-.fs-value.correct {
-  color: var(--lp-success);
-}
-
-.fs-value.wrong {
-  color: var(--lp-danger);
-}
-
-.fs-value.rate {
-  color: var(--lp-warning);
-}
-
-.fs-label {
-  font-size: var(--lp-text-sm);
-  color: var(--lp-text-muted);
-  margin-top: var(--lp-space-1);
-}
-
-.finish-actions {
-  display: flex;
-  justify-content: center;
-  gap: var(--lp-space-4);
-}
-
-/* 移动端适配 */
 @media (max-width: 767px) {
   .practice-session {
     padding: var(--lp-space-3);
@@ -670,7 +639,6 @@ const restartPractice = leavePractice
   .option-item {
     padding: var(--lp-space-3) var(--lp-space-4);
     gap: var(--lp-space-2);
-    /* 触摸友好的最小高度 */
     min-height: 48px;
   }
 
@@ -679,21 +647,45 @@ const restartPractice = leavePractice
     gap: var(--lp-space-3);
   }
 
-  .finish-stats {
-    gap: var(--lp-space-4);
-    flex-wrap: wrap;
-  }
-
-  .fs-value {
-    font-size: var(--lp-text-3xl);
-  }
-
   .finish-container {
     padding-top: var(--lp-space-6);
   }
 
   .el-dialog {
     margin: var(--lp-space-2) auto !important;
+  }
+}
+@keyframes answer-confirm {
+  0% {
+    transform: scale(0.8);
+  }
+  55% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes answer-reconsider {
+  0%,
+  100% {
+    transform: none;
+  }
+  25% {
+    transform: translateX(-3px);
+  }
+  60% {
+    transform: translateX(3px);
+  }
+}
+.answer-confirmed {
+  border-color: var(--lp-success);
+  background: var(--lp-success-soft);
+}
+@media (prefers-reduced-motion: reduce) {
+  .result-icon,
+  .question-card-wrapper {
+    animation: none;
   }
 }
 </style>

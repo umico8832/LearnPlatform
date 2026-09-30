@@ -26,6 +26,7 @@ class ExamServiceWiringTest {
                 .withBean(ExamAnswerSubmissionService.class, () -> mock(ExamAnswerSubmissionService.class))
                 .withBean(CacheEvictService.class, () -> mock(CacheEvictService.class))
                 .withBean(AnswerEvaluator.class)
+                .withBean(ExamSubmissionRewardService.class, () -> mock(ExamSubmissionRewardService.class))
                 .withUserConfiguration(ExamSessionService.class, ExamSubmissionService.class,
                         ExamRecordViewService.class, ExamService.class)
                 .run(context -> {

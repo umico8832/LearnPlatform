@@ -45,6 +45,9 @@ public class ReviewScheduleVO {
 
     /** 掌握等级文字（新卡片/学习中/已掌握/困难） */
     private String statusLabel;
+    private GamificationRewardFeedback reward;
+    /** Present only on a submit response; schedule queries do not infer a grading result. */
+    private Boolean correct;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -80,4 +83,8 @@ public class ReviewScheduleVO {
     public void setOverdueDays(int overdueDays) { this.overdueDays = overdueDays; }
     public String getStatusLabel() { return statusLabel; }
     public void setStatusLabel(String statusLabel) { this.statusLabel = statusLabel; }
+    public GamificationRewardFeedback getReward() { return reward; }
+    public void setReward(GamificationRewardFeedback reward) { this.reward = reward; }
+    public Boolean getCorrect() { return correct; }
+    public void setCorrect(Boolean correct) { this.correct = correct; }
 }
