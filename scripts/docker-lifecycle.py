@@ -473,7 +473,7 @@ def run_playwright(env: Mapping[str, str], playwright_args: Sequence[str]) -> in
 
 def show_e2e_failure_logs(env: Mapping[str, str]) -> None:
     run_command(
-        compose_command("logs", "--no-color", "--tail", "200", "backend", "frontend", e2e=True),
+        compose_command("logs", "--no-color", "--tail", "200", "loki", "backend", "frontend", e2e=True),
         env=env,
         check=False,
     )
@@ -512,6 +512,7 @@ def e2e(playwright_args: Sequence[str]) -> int:
             show_e2e_failure_logs(env)
     except Exception as error:
         lifecycle_error = error
+        show_e2e_failure_logs(env)
     finally:
         cleanup_code = stop_e2e(env)
         try:

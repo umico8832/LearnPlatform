@@ -186,6 +186,8 @@ class E2ELifecycleTest(unittest.TestCase):
         with self.assertRaisesRegex(lifecycle.LifecycleError, "start failed"):
             lifecycle.e2e([])
 
+        mocks[5].assert_called_once()
+        mocks[4].assert_not_called()
         mocks[6].assert_called_once()
         mocks[7].assert_called_once_with()
 
