@@ -3,14 +3,10 @@ import { computed } from 'vue'
 import type { GamificationSummary } from '@/api/gamification'
 
 const props = defineProps<{ summary: GamificationSummary; compact?: boolean }>()
-const progress = computed(() =>
-  props.summary.nextLevelXp
-    ? Math.min(100, (props.summary.xpIntoLevel / (props.summary.nextLevelXp - props.summary.levelStartXp)) * 100)
-    : 100,
-)
-const goal = computed(() =>
-  props.summary.dailyGoal ? Math.min(100, (props.summary.todayAnsweredCount / props.summary.dailyGoal) * 100) : 0,
-)
+const linkLabel = computed(() => {
+  const { level, todayAnsweredCount, dailyGoal, streakDays } = props.summary
+  return `查看学习进度：等级 ${level}，今日已答 ${todayAnsweredCount}/${dailyGoal}${props.compact ? '' : `，连续学习 ${streakDays} 天`}`
+})
 </script>
 
 <template>
@@ -19,17 +15,12 @@ const goal = computed(() =>
     class="learning-progress-header"
     :class="{ 'is-compact': compact }"
     data-testid="gamification-summary"
-    aria-label="查看学习进度"
+    :aria-label="linkLabel"
   >
     <span class="learning-progress-header__level">Lv.{{ summary.level }}</span>
-    <span class="learning-progress-header__xp" data-testid="gamification-xp-progress"
-      ><span :style="{ width: `${progress}%` }"
-    /></span>
-    <span v-if="!compact" class="learning-progress-header__streak">◆ {{ summary.streakDays }} 天</span>
-    <span
-      class="learning-progress-header__goal"
-      :aria-label="`今日目标 ${summary.todayAnsweredCount}/${summary.dailyGoal}`"
-      ><i :style="{ '--goal': `${goal}%` }" />{{ summary.todayAnsweredCount }}/{{ summary.dailyGoal }}</span
+    <span class="learning-progress-header__goal">今日 {{ summary.todayAnsweredCount }}/{{ summary.dailyGoal }}</span>
+    <span v-if="!compact && summary.streakDays > 0" class="learning-progress-header__streak"
+      >连续 {{ summary.streakDays }} 天</span
     >
   </router-link>
 </template>
@@ -45,50 +36,16 @@ const goal = computed(() =>
   text-decoration: none;
 }
 .learning-progress-header__level {
-  padding: 3px 6px;
-  color: var(--lp-on-primary);
-  font-weight: var(--lp-weight-bold);
-  background: var(--lp-reward-level);
-  border-radius: var(--lp-radius-full);
-}
-.learning-progress-header__xp {
-  width: 88px;
-  height: 6px;
-  overflow: hidden;
-  background: var(--lp-reward-xp-soft);
-  border-radius: var(--lp-radius-full);
-}
-.learning-progress-header__xp span {
-  display: block;
-  height: 100%;
-  background: var(--lp-reward-xp);
-  border-radius: inherit;
-  transition: width var(--lp-duration-feedback) var(--lp-ease-out);
-}
-.learning-progress-header__streak {
-  color: var(--lp-reward-streak);
+  color: var(--lp-text);
   font-weight: var(--lp-weight-semibold);
-  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 .learning-progress-header__goal {
-  display: flex;
-  align-items: center;
-  gap: 3px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.learning-progress-header__goal i {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: conic-gradient(var(--lp-reward-xp) var(--goal), var(--lp-surface-inset) 0);
-}
-.is-compact .learning-progress-header__xp {
-  width: 56px;
-}
-@media (prefers-reduced-motion: reduce) {
-  .learning-progress-header__xp span {
-    transition-duration: var(--lp-duration-fast);
-  }
+.learning-progress-header__streak {
+  color: var(--lp-text-muted);
+  white-space: nowrap;
 }
 </style>

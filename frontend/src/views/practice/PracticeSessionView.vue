@@ -200,7 +200,6 @@ import { useGamificationStore } from '@/stores/gamification'
 import AnswerRewardFeedback from '@/components/gamification/AnswerRewardFeedback.vue'
 import GamificationPracticeSummary from '@/components/gamification/GamificationPracticeSummary.vue'
 import type { GamificationAchievement } from '@/components/gamification/types'
-import { launchCelebrationConfetti } from '@/utils/celebrationConfetti'
 import {
   practiceQuestionTypeLabel as getQuestionTypeLabel,
   practiceQuestionTypeTag as getQuestionTypeTag,
@@ -223,7 +222,6 @@ const practiceMode = ref<string>('')
 const isMobile = useMobileViewport()
 const gamification = useGamificationStore()
 const sessionXp = ref(0)
-const longestCombo = ref(0)
 const sessionAchievements = ref<GamificationAchievement[]>([])
 let alive = true
 const unsubscribeSession = onAuthSessionChange(() => {
@@ -231,7 +229,6 @@ const unsubscribeSession = onAuthSessionChange(() => {
   currentResult.value = null
   showResult.value = false
   sessionXp.value = 0
-  longestCombo.value = 0
   correctCount.value = 0
   wrongCount.value = 0
   finished.value = false
@@ -249,9 +246,7 @@ const sessionSummary = computed(() => ({
       ? (correctCount.value / (correctCount.value + wrongCount.value)) * 100
       : 0,
   xpGained: sessionXp.value,
-  longestCombo: longestCombo.value,
   achievements: sessionAchievements.value,
-  comboLabel: '本组期间最高连续答对',
 }))
 
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
@@ -293,7 +288,6 @@ const handleSubmit = async () => {
       currentResult.value = res.data
       if (gamification.acceptReward(res.data.reward, session) && res.data.reward) {
         sessionXp.value += res.data.reward.awardedXp
-        longestCombo.value = Math.max(longestCombo.value, res.data.reward.summary.currentCombo)
         for (const achievement of res.data.reward.newAchievements) {
           if (!sessionAchievements.value.some((item) => item.id === achievement.code))
             sessionAchievements.value.push({
@@ -338,7 +332,6 @@ const handleResultClosed = () => {
     startTime.value = Date.now()
   } else {
     finished.value = true
-    if (correctCount.value > 0 && correctCount.value >= wrongCount.value) void launchCelebrationConfetti()
   }
 }
 
@@ -562,13 +555,11 @@ const handleBack = leavePractice
 }
 
 .result-icon.is-correct {
-  animation: answer-confirm var(--lp-duration-feedback) var(--lp-ease-celebration);
   background: var(--lp-success-soft);
   color: var(--lp-success);
 }
 
 .result-icon.is-wrong {
-  animation: answer-reconsider var(--lp-duration-feedback) var(--lp-ease-out);
   background: var(--lp-danger-soft);
   color: var(--lp-danger);
 }
@@ -653,29 +644,6 @@ const handleBack = leavePractice
 
   .el-dialog {
     margin: var(--lp-space-2) auto !important;
-  }
-}
-@keyframes answer-confirm {
-  0% {
-    transform: scale(0.8);
-  }
-  55% {
-    transform: scale(1.12);
-  }
-  100% {
-    transform: none;
-  }
-}
-@keyframes answer-reconsider {
-  0%,
-  100% {
-    transform: none;
-  }
-  25% {
-    transform: translateX(-3px);
-  }
-  60% {
-    transform: translateX(3px);
   }
 }
 .answer-confirmed {

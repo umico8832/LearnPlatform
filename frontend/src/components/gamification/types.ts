@@ -8,23 +8,12 @@ export interface GamificationAchievement {
   icon?: string
 }
 
-export interface GamificationReward {
-  xpGained: number
-  combo?: number
-  streakDays?: number
-  leveledUp?: boolean
-  level?: number
-  achievements?: GamificationAchievement[]
-}
-
 export interface GamificationPracticeSummaryData {
   /** null keeps an ungraded subjective answer distinct from an incorrect one. */
   correctRate: number | null
   xpGained: number
-  longestCombo: number
   answeredCount: number
   achievements?: GamificationAchievement[]
   kicker?: string
   rateLabel?: string
-  comboLabel?: string
 }

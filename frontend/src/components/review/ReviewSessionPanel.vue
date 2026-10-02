@@ -100,7 +100,6 @@ const sessionCards = ref<ReviewScheduleVO[]>([])
 const currentCard = computed(() => sessionCards.value[currentIndex.value] || null)
 const gamification = useGamificationStore()
 const sessionXp = ref(0)
-const longestCombo = ref(0)
 const sessionAchievements = ref<GamificationAchievement[]>([])
 let generation = 0
 let alive = true
@@ -108,11 +107,9 @@ const sessionSummary = computed(() => ({
   answeredCount: reviewedCount.value,
   correctRate: gradedCount.value ? (correctCount.value / gradedCount.value) * 100 : null,
   xpGained: sessionXp.value,
-  longestCombo: longestCombo.value,
   achievements: sessionAchievements.value,
   kicker: '本组复习完成',
   rateLabel: '已判分正确率',
-  comboLabel: '本组期间最高连续答对',
 }))
 const unsubscribeSession = onAuthSessionChange(() => {
   generation++
@@ -139,7 +136,6 @@ function start() {
   submitting.value = false
   sessionCards.value = [...props.cards]
   sessionXp.value = 0
-  longestCombo.value = 0
   sessionAchievements.value = []
   reviewing.value = true
   reviewComplete.value = false
@@ -167,7 +163,6 @@ async function submitCurrentAnswer() {
     lastCorrect.value = data.correct ?? null
     if (gamification.acceptReward(data.reward, session) && data.reward) {
       sessionXp.value += data.reward.awardedXp
-      longestCombo.value = Math.max(longestCombo.value, data.reward.summary.currentCombo)
       for (const item of data.reward.newAchievements) {
         if (!sessionAchievements.value.some((achievement) => achievement.id === item.code))
           sessionAchievements.value.push({ id: item.code, title: item.name, description: item.description })

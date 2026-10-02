@@ -62,16 +62,32 @@ describe('account-scoped learning encouragement', () => {
     else setToken('test-session-b')
     expect(store.summary).toBeNull()
   })
-  it('clears queued celebrations and rejects all rewards during an exam', () => {
+  it('rejects rewards during an exam without rolling back existing progress', () => {
     const store = useGamificationStore()
-    store.acceptReward({ ...reward(), leveledUp: true, levelAfter: 2 })
-    expect(store.celebrations.current()).toBeDefined()
+    store.acceptReward(reward())
     store.setExamMode(true)
-    expect(store.celebrations.current()).toBeUndefined()
     expect(store.acceptReward(reward(2))).toBe(false)
     expect(store.summary?.version).toBe(1)
     store.setExamMode(false)
     expect(store.acceptReward(reward(2))).toBe(true)
+  })
+  it('invalidates an in-flight summary request on entering an exam', async () => {
+    let resolve!: (value: { data: GamificationSummary }) => void
+    vi.mocked(getGamificationSummary).mockImplementationOnce(
+      () =>
+        new Promise((r) => {
+          resolve = (value) => r({ ...value, code: 0, message: 'ok' })
+        }),
+    )
+    const store = useGamificationStore()
+    const pending = store.load()
+    expect(store.loading).toBe(true)
+    store.setExamMode(true)
+    expect(store.loading).toBe(false)
+    resolve({ data: summary(5) })
+    await pending
+    expect(store.summary).toBeNull()
+    expect(store.loading).toBe(false)
   })
   it('ignores a summary response from the previous account', async () => {
     let resolve!: (value: { data: GamificationSummary }) => void

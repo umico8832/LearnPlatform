@@ -65,7 +65,7 @@ frontend/admin/   # 独立管理端 HTML 入口
   原生 View Transitions 是后续候选，未接入路由。
 - 反馈组件集中在 `components/gamification/`，使用后端奖励与概况，不在前端认定积分或成就。
   ADR-0010 定义其安静呈现方向：数据在顶栏、个人页和总结中原位显示，不增加奖励飘字、全屏庆祝、彩纸、连击火焰、成就弹窗或常驻 pulse。
-  该呈现方向的实现收敛由后续前端任务完成；动画不阻塞继续学习。
+  答题只显示一行已记录事实，无连击徽章；动画不阻塞继续学习。
 - 游戏化数据决策见 [ADR-0009](decisions/0009-learning-effort-gamification.md)，视觉与交互规范见项目 `frontend-design` Skill。
 - 学习端认证页面采用居中浅渐变卡片，仅承载账户操作；Google 登录入口按后端提供方状态启用，
   Facebook 与 Apple 保持禁用并明确标注暂未开放。

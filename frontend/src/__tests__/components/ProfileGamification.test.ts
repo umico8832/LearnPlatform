@@ -80,6 +80,8 @@ describe('ProfileGamification', () => {
     expect(wrapper.get('[data-testid="gamification-achievements"]').text()).toContain('初次作答')
     expect(wrapper.get('[data-testid="gamification-heatmap"]').text()).toContain('Asia/Shanghai')
     expect(wrapper.findAll('[data-active="true"]')).not.toHaveLength(0)
+    expect(wrapper.get('[data-testid="gamification-achievements"]').element.tagName).toBe('DETAILS')
+    expect((wrapper.get('[data-testid="gamification-achievements"]').element as HTMLDetailsElement).open).toBe(false)
   })
 
   it('does not render a prior account’s late achievements', async () => {
@@ -99,6 +101,17 @@ describe('ProfileGamification', () => {
     expect(wrapper.text()).not.toContain('累计 36 经验')
   })
 
+  it('removes a failed-detail message after an in-place retry succeeds', async () => {
+    getAchievements.mockRejectedValueOnce(new Error('network'))
+    const wrapper = mount(ProfileGamification, { global: { stubs } })
+    await flushPromises()
+    expect(wrapper.get('[role="alert"]').text()).toContain('成就与学习日历暂时无法加载')
+    await wrapper.get('.lp-state-panel-retry').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="gamification-heatmap"]').exists()).toBe(true)
+  })
+
   it('keeps the form actionable and explains a failed daily-goal save', async () => {
     updateDailyGoal.mockRejectedValueOnce(new Error('network'))
     const wrapper = mount(ProfileGamification, { global: { stubs } })
@@ -111,5 +124,20 @@ describe('ProfileGamification', () => {
     expect((wrapper.get('[data-testid="gamification-daily-goal"] button').element as HTMLButtonElement).disabled).toBe(
       false,
     )
+    expect((input.element as HTMLInputElement).value).toBe('8')
+    await wrapper.get('.goal-error button').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.goal-error').exists()).toBe(false)
+    expect(updateDailyGoal).toHaveBeenLastCalledWith(8)
+  })
+
+  it('exposes the selected heatmap day as a pressed control', async () => {
+    const wrapper = mount(ProfileGamification, { global: { stubs } })
+    await flushPromises()
+    const day = wrapper.get('[data-testid="gamification-heatmap"] button')
+
+    expect(day.attributes('aria-pressed')).toBe('false')
+    await day.trigger('click')
+    expect(day.attributes('aria-pressed')).toBe('true')
   })
 })

@@ -54,9 +54,9 @@
               v-if="result.submissionReward"
               class="exam-reward"
               data-testid="gamification-exam-reward"
-              aria-label="本次学习奖励"
+              aria-label="学习记录"
             >
-              <strong>本次学习奖励</strong><span>+{{ result.submissionReward.awardedXp }} 经验</span
+              <strong>学习记录</strong><span>+{{ result.submissionReward.awardedXp }} 经验</span
               ><span v-if="result.submissionReward.leveledUp">升级至 Lv.{{ result.submissionReward.levelAfter }}</span
               ><small v-if="result.submissionReward.newAchievements.length"
                 >解锁：{{ result.submissionReward.newAchievements.map((item) => item.name).join('、') }}</small
@@ -388,10 +388,8 @@ onMounted(async () => {
   gap: var(--lp-space-3);
   margin-top: var(--lp-space-4);
   padding: var(--lp-space-3);
-  color: var(--lp-reward-xp);
-  background: var(--lp-reward-xp-soft);
-  border-radius: var(--lp-radius-md);
-  animation: exam-reward-in var(--lp-duration-celebration) var(--lp-ease-celebration);
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
 }
 .exam-reward strong {
   color: var(--lp-text);
@@ -399,21 +397,6 @@ onMounted(async () => {
 .exam-reward small {
   flex-basis: 100%;
   color: var(--lp-text-secondary);
-}
-@keyframes exam-reward-in {
-  from {
-    opacity: 0;
-    transform: translateY(var(--lp-space-2));
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .exam-reward {
-    animation: none;
-  }
 }
 
 .answers-heading {

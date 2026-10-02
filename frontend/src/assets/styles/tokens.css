@@ -250,7 +250,6 @@
   --lp-duration-leave: 120ms;
   --lp-duration-stagger: 24ms;
   --lp-duration-feedback: 260ms;
-  --lp-duration-celebration: 320ms;
   --lp-auth-duration-enter: var(--lp-duration-enter);
   --lp-auth-duration-leave: var(--lp-duration-leave);
   --lp-duration-skeleton: 1600ms;
@@ -258,7 +257,6 @@
   --lp-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --lp-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   --lp-ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
-  --lp-ease-celebration: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* ----------------------------------------------------------------
    * Auth · 认证页面

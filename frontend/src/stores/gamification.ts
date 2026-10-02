@@ -7,14 +7,11 @@ import {
   type RewardFeedback,
 } from '@/api/gamification'
 import { getAuthSessionVersion, getToken, onAuthSessionChange } from '@/utils/auth'
-import { createCelebrationScheduler } from '@/utils/celebrationScheduler'
-import { resetCelebrationConfetti } from '@/utils/celebrationConfetti'
 
 export const useGamificationStore = defineStore('gamification', () => {
   const summary = ref<GamificationSummary | null>(null)
   const loading = ref(false)
   const error = ref('')
-  const celebrations = createCelebrationScheduler()
   const seenEvents = new Set<number>()
   let requestVersion = 0
   let silent = false
@@ -25,8 +22,6 @@ export const useGamificationStore = defineStore('gamification', () => {
     loading.value = false
     error.value = ''
     seenEvents.clear()
-    celebrations.reset()
-    resetCelebrationConfetti()
   }
   onScopeDispose(onAuthSessionChange(reset))
 
@@ -56,8 +51,8 @@ export const useGamificationStore = defineStore('gamification', () => {
   function setExamMode(value: boolean) {
     silent = value
     if (value) {
-      celebrations.reset()
-      resetCelebrationConfetti()
+      requestVersion++
+      loading.value = false
     }
   }
   function acceptReward(reward: RewardFeedback | null | undefined, session = getAuthSessionVersion()) {
@@ -65,26 +60,7 @@ export const useGamificationStore = defineStore('gamification', () => {
     applySummary(reward.summary)
     if (seenEvents.has(reward.eventId)) return false
     seenEvents.add(reward.eventId)
-    if (reward.leveledUp)
-      celebrations.enqueue({
-        id: `level:${reward.eventId}`,
-        kind: 'level',
-        context: 'learning',
-        level: reward.levelAfter,
-        xpGained: reward.awardedXp,
-      })
-    if (reward.newAchievements.length)
-      celebrations.enqueue({
-        id: `achievement:${reward.eventId}`,
-        kind: 'achievement',
-        context: 'learning',
-        achievements: reward.newAchievements.map((item) => ({
-          id: item.code,
-          title: item.name,
-          description: item.description,
-        })),
-      })
     return true
   }
-  return { summary, loading, error, celebrations, load, saveGoal, acceptReward, setExamMode, reset }
+  return { summary, loading, error, load, saveGoal, acceptReward, setExamMode, reset }
 })

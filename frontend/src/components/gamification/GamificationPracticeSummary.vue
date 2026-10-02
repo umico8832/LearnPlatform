@@ -1,27 +1,12 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
-import { useAnimatedNumber } from '@/composables/useAnimatedNumber'
-import { useReducedMotion } from '@/composables/useReducedMotion'
+import { computed } from 'vue'
 import type { GamificationPracticeSummaryData } from './types'
 
 const props = defineProps<{ summary: GamificationPracticeSummaryData }>()
 const emit = defineEmits<{ continue: [] }>()
-const { reducedMotion } = useReducedMotion()
-const { value: rate, animateTo: animateRate } = useAnimatedNumber(0, { reducedMotion })
-const { value: xp, animateTo: animateXp } = useAnimatedNumber(0, { reducedMotion })
-const { value: combo, animateTo: animateCombo } = useAnimatedNumber(0, { reducedMotion })
 const hasGradedRate = computed(() => props.summary.correctRate !== null)
 const correctRate = computed(() => Math.max(0, Math.min(100, Math.round(props.summary.correctRate ?? 0))))
-const ringOffset = computed(() => 100 - rate.value)
-watch(
-  () => [correctRate.value, props.summary.xpGained, props.summary.longestCombo] as const,
-  ([nextRate, nextXp, nextCombo]) => {
-    animateRate(nextRate)
-    animateXp(nextXp)
-    animateCombo(nextCombo)
-  },
-  { immediate: true },
-)
+const rateLabel = computed(() => props.summary.rateLabel || '正确率')
 </script>
 
 <template>
@@ -32,34 +17,30 @@ watch(
     </header>
     <div class="gamification-summary__results">
       <div
+        v-if="hasGradedRate"
         class="gamification-summary__rate"
-        role="img"
-        :aria-label="hasGradedRate ? `${summary.rateLabel || '正确率'} ${rate}%` : '本组作答待判分'"
+        role="progressbar"
+        :aria-label="rateLabel"
+        :aria-valuenow="correctRate"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        :aria-valuetext="`${rateLabel} ${correctRate}%`"
       >
-        <svg viewBox="0 0 36 36" aria-hidden="true">
-          <path
-            class="gamification-summary__ring-base"
-            pathLength="100"
-            d="M18 2.5a15.5 15.5 0 1 1 0 31a15.5 15.5 0 1 1 0-31"
-          />
-          <path
-            class="gamification-summary__ring-value"
-            pathLength="100"
-            :style="{ strokeDashoffset: ringOffset }"
-            d="M18 2.5a15.5 15.5 0 1 1 0 31a15.5 15.5 0 1 1 0-31"
-          />
-        </svg>
-        <strong>{{ hasGradedRate ? `${rate}%` : '待判分' }}</strong
-        ><span>{{ summary.rateLabel || '正确率' }}</span>
+        <span>{{ rateLabel }}</span>
+        <strong>{{ correctRate }}%</strong>
       </div>
+      <p v-else class="gamification-summary__rate">
+        <span>{{ rateLabel }}</span
+        ><strong>待判分</strong>
+      </p>
       <dl>
         <div>
-          <dt>获得经验</dt>
-          <dd>+{{ xp }}</dd>
+          <dt>已答</dt>
+          <dd>{{ summary.answeredCount }} 题</dd>
         </div>
         <div>
-          <dt>{{ summary.comboLabel || '本组期间最高连击' }}</dt>
-          <dd>{{ combo }}</dd>
+          <dt>获得经验</dt>
+          <dd>+{{ summary.xpGained }}</dd>
         </div>
       </dl>
     </div>
@@ -75,80 +56,45 @@ watch(
 <style scoped>
 .gamification-summary {
   width: min(520px, 100%);
-  padding: var(--lp-space-6);
+  padding: var(--lp-space-5);
   background: var(--lp-surface);
   border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-xl);
-  box-shadow: var(--lp-shadow-md);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: var(--lp-shadow-xs);
 }
 header p {
   margin: 0;
-  color: var(--lp-reward-xp);
+  color: var(--lp-text-secondary);
   font-size: var(--lp-text-sm);
-  font-weight: var(--lp-weight-semibold);
 }
 h2 {
   margin: var(--lp-space-1) 0 0;
   color: var(--lp-text);
-  font-size: var(--lp-text-3xl);
+  font-size: var(--lp-text-2xl);
 }
 .gamification-summary__results {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-5);
+  display: grid;
+  gap: var(--lp-space-4);
   margin: var(--lp-space-5) 0;
 }
 .gamification-summary__rate {
-  position: relative;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 92px;
-  height: 92px;
-}
-.gamification-summary__rate svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
-}
-.gamification-summary__ring-base,
-.gamification-summary__ring-value {
-  fill: none;
-  stroke-width: 3.5;
-}
-.gamification-summary__ring-base {
-  stroke: var(--lp-reward-xp-soft);
-}
-.gamification-summary__ring-value {
-  stroke: var(--lp-reward-xp);
-  stroke-linecap: round;
-  stroke-dasharray: 100;
-  transition: stroke-dashoffset var(--lp-duration-celebration) var(--lp-ease-celebration);
+  display: flex;
+  align-items: baseline;
+  gap: var(--lp-space-2);
+  margin: 0;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
 }
 .gamification-summary__rate strong {
   color: var(--lp-text);
   font-size: var(--lp-text-xl);
   font-variant-numeric: tabular-nums;
-  z-index: 1;
-}
-.gamification-summary__rate span {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
-  z-index: 1;
 }
 dl {
   display: grid;
-  flex: 1;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--lp-space-3);
   margin: 0;
-}
-dl div {
-  padding: var(--lp-space-3);
-  background: var(--lp-surface-soft);
-  border-radius: var(--lp-radius-md);
 }
 dt {
   color: var(--lp-text-muted);
@@ -157,8 +103,8 @@ dt {
 dd {
   margin: var(--lp-space-1) 0 0;
   color: var(--lp-text);
-  font-size: var(--lp-text-lg);
-  font-weight: var(--lp-weight-bold);
+  font-size: var(--lp-text-base);
+  font-weight: var(--lp-weight-semibold);
   font-variant-numeric: tabular-nums;
 }
 ul {
@@ -170,30 +116,16 @@ ul {
   list-style: none;
 }
 li {
-  padding: var(--lp-space-1) var(--lp-space-2);
-  color: var(--lp-reward-achievement);
+  color: var(--lp-text-secondary);
   font-size: var(--lp-text-xs);
-  background: var(--lp-reward-achievement-soft);
-  border-radius: var(--lp-radius-full);
 }
 button {
-  width: 100%;
-  min-height: 40px;
-  color: var(--lp-on-primary);
+  padding: 0;
+  color: var(--lp-primary);
   font: inherit;
   font-weight: var(--lp-weight-semibold);
-  background: var(--lp-primary);
+  background: transparent;
   border: 0;
-  border-radius: var(--lp-radius-md);
   cursor: pointer;
-}
-button:focus-visible {
-  outline: 3px solid var(--lp-primary-softer);
-  outline-offset: 2px;
-}
-@media (prefers-reduced-motion: reduce) {
-  .gamification-summary__ring-value {
-    transition-duration: var(--lp-duration-fast);
-  }
 }
 </style>

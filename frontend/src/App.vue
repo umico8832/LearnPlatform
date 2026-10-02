@@ -5,7 +5,6 @@
         <component :is="Component" />
       </Transition>
     </router-view>
-    <GamificationFeedbackHost v-if="route.name !== 'ExamTake'" :scheduler="gamification.celebrations" />
   </el-config-provider>
 </template>
 
@@ -17,7 +16,6 @@ import { useUserStore } from '@/stores/user'
 import { isAuthenticated } from '@/utils/auth'
 import { getToken, onAuthSessionChange } from '@/utils/auth'
 import { useGamificationStore } from '@/stores/gamification'
-import GamificationFeedbackHost from '@/components/gamification/GamificationFeedbackHost.vue'
 
 // 页面刷新时恢复用户信息
 const userStore = useUserStore()

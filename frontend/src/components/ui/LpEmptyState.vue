@@ -58,24 +58,6 @@ withDefaults(
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.lp-empty-book-spark {
-  animation: empty-book-arrive var(--lp-duration-celebration) var(--lp-ease-out);
-}
-@keyframes empty-book-arrive {
-  from {
-    opacity: 0;
-    transform: translateY(2px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .lp-empty-book-spark {
-    animation: none;
-  }
-}
 .lp-empty-title {
   font-size: var(--lp-text-lg);
   font-weight: var(--lp-weight-semibold);
