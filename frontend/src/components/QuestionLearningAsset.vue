@@ -104,7 +104,6 @@ const {
   partialContent,
   stopped,
   error,
-  reset,
   suspend,
   loadExistingAssets,
   onTabChange,

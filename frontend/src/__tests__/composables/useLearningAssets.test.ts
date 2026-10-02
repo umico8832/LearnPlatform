@@ -203,6 +203,7 @@ describe('learning asset lifecycle', () => {
       assetId: 2,
       status: 'STARTED',
       completed: false,
+      answered: false,
       startedTime: '',
       completedTime: null,
     })
