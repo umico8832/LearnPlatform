@@ -21,11 +21,11 @@
   --lp-ink-100: #e6e6df;
 
   --lp-paper-0: #ffffff;
-  --lp-paper-50: #fdfdfb;
-  --lp-paper-100: #f7f7f4;
-  --lp-paper-200: #f1f1ec;
-  --lp-paper-300: #e8e7e1;
-  --lp-paper-400: #d6d5cd;
+  --lp-paper-50: #fdfcf9;
+  --lp-paper-100: #f7f7f2;
+  --lp-paper-200: #f0f0e9;
+  --lp-paper-300: #e5e5dc;
+  --lp-paper-400: #c9cbc2;
 
   --lp-blue-950: #1c2b40;
   --lp-blue-900: #22344e;
@@ -76,15 +76,21 @@
   --lp-surface-subtle: var(--lp-paper-50);
   --lp-surface-soft: var(--lp-paper-100);
   --lp-surface-inset: var(--lp-paper-200);
+  --lp-surface-hover: var(--lp-paper-100);
+  --lp-surface-selected: var(--lp-blue-50);
+  --lp-surface-glass: color-mix(in srgb, var(--lp-paper-50) 94%, transparent);
+  --lp-loading-surface: color-mix(in srgb, var(--lp-paper-100) 80%, transparent);
+  --lp-overlay-scrim: rgba(29, 29, 27, 0.28);
 
   --lp-border: var(--lp-paper-300);
   --lp-border-strong: var(--lp-paper-400);
 
   --lp-text: var(--lp-ink-900);
   --lp-text-secondary: var(--lp-ink-600);
-  --lp-text-muted: var(--lp-ink-400);
+  --lp-text-muted: var(--lp-ink-500);
 
   --lp-primary: var(--lp-blue-700);
+  --lp-focus-ring: var(--lp-primary);
   --lp-primary-hover: var(--lp-blue-800);
   --lp-primary-active: var(--lp-blue-900);
   --lp-primary-soft: var(--lp-blue-50);
@@ -102,34 +108,34 @@
   --lp-accent: var(--lp-gold-600);
   --lp-accent-soft: var(--lp-gold-50);
 
-  /* Gamification · 只表达真实学习投入与已解锁奖励，正文阅读区域保持教材色彩。 */
-  --lp-reward-xp: var(--lp-home-blue);
-  --lp-reward-xp-soft: var(--lp-home-blue-soft);
-  --lp-reward-combo: var(--lp-home-blue);
-  --lp-reward-combo-soft: var(--lp-home-blue-soft);
+  /* 学习投入沿用阅读界面的语义色。 */
+  --lp-reward-xp: var(--lp-primary);
+  --lp-reward-xp-soft: var(--lp-primary-soft);
+  --lp-reward-combo: var(--lp-primary);
+  --lp-reward-combo-soft: var(--lp-primary-soft);
   --lp-reward-streak: var(--lp-amber-600);
   --lp-reward-streak-soft: var(--lp-amber-50);
-  --lp-reward-achievement: var(--lp-gold-600);
-  --lp-reward-achievement-soft: var(--lp-gold-50);
-  --lp-reward-level: var(--lp-home-blue-deep);
-  --lp-reward-level-soft: var(--lp-home-lilac);
-  --lp-reward-shadow: 0 14px 34px rgba(49, 84, 216, 0.16);
+  --lp-reward-achievement: var(--lp-primary);
+  --lp-reward-achievement-soft: var(--lp-primary-soft);
+  --lp-reward-level: var(--lp-text-secondary);
+  --lp-reward-level-soft: var(--lp-surface-inset);
+  --lp-reward-shadow: var(--lp-shadow-sm);
 
   /* Homepage · editorial learning */
-  --lp-home-ink: #181817;
-  --lp-home-paper: #f4f1ea;
-  --lp-home-surface: #fbfaf7;
-  --lp-home-sand: #e9e4db;
-  --lp-home-blue: #3154d8;
-  --lp-home-blue-deep: #263f9e;
-  --lp-home-blue-soft: #dce3fa;
-  --lp-home-sky: #b9dff0;
-  --lp-home-sky-deep: #8ec8e5;
-  --lp-home-mint: #b9dfc1;
-  --lp-home-yellow: #f2d96f;
-  --lp-home-lilac: #c9d1f5;
+  --lp-home-ink: var(--lp-text);
+  --lp-home-paper: var(--lp-bg);
+  --lp-home-surface: var(--lp-surface-subtle);
+  --lp-home-sand: var(--lp-paper-300);
+  --lp-home-blue: var(--lp-primary);
+  --lp-home-blue-deep: var(--lp-primary-active);
+  --lp-home-blue-soft: var(--lp-primary-softer);
+  --lp-home-sky: #d9e7e9;
+  --lp-home-sky-deep: #b9d1d7;
+  --lp-home-mint: #d4e2d3;
+  --lp-home-yellow: #e8dcad;
+  --lp-home-lilac: #d9dce9;
   --lp-home-glass: rgba(255, 255, 255, 0.72);
-  --lp-home-blue-wash: rgba(49, 84, 216, 0.06);
+  --lp-home-blue-wash: color-mix(in srgb, var(--lp-primary) 6%, transparent);
   --lp-home-ink-muted: rgba(24, 24, 23, 0.66);
   --lp-home-ink-faint: rgba(24, 24, 23, 0.38);
   --lp-home-line: rgba(24, 24, 23, 0.14);
@@ -209,6 +215,7 @@
   --lp-radius-lg: 14px;
   --lp-radius-xl: 18px;
   --lp-radius-full: 999px;
+  --lp-radius-control: 8px;
   /* 兼容旧变量 */
   --lp-radius: var(--lp-radius-md);
 
@@ -222,11 +229,13 @@
   /* ----------------------------------------------------------------
    * Shadow · 低对比、柔和
    * ---------------------------------------------------------------- */
-  --lp-shadow-xs: 0 1px 2px rgba(29, 29, 27, 0.04);
-  --lp-shadow-sm: 0 1px 3px rgba(29, 29, 27, 0.05), 0 4px 12px rgba(29, 29, 27, 0.04);
-  --lp-shadow-md: 0 4px 10px rgba(29, 29, 27, 0.05), 0 14px 30px rgba(29, 29, 27, 0.07);
-  --lp-shadow-lg: 0 10px 20px rgba(29, 29, 27, 0.08), 0 28px 56px rgba(29, 29, 27, 0.1);
-  --lp-shadow-focus: 0 0 0 3px rgba(51, 80, 122, 0.18);
+  --lp-shadow-xs: 0 1px 2px rgba(29, 29, 27, 0.025);
+  --lp-shadow-sm: 0 1px 3px rgba(29, 29, 27, 0.035), 0 4px 12px rgba(29, 29, 27, 0.025);
+  --lp-shadow-md: 0 2px 6px rgba(29, 29, 27, 0.04), 0 12px 28px rgba(29, 29, 27, 0.07);
+  --lp-shadow-lg: 0 4px 12px rgba(29, 29, 27, 0.06), 0 24px 64px rgba(29, 29, 27, 0.12);
+  --lp-shadow-focus: 0 0 0 3px color-mix(in srgb, var(--lp-primary) 14%, transparent);
+  --lp-focus-width: 2px;
+  --lp-focus-offset: 3px;
   /* 兼容历史引用 */
   --lp-shadow-card: var(--lp-shadow-sm);
   --lp-shadow-card-hover: var(--lp-shadow-md);
@@ -236,15 +245,19 @@
    * ---------------------------------------------------------------- */
   --lp-duration-fast: 120ms;
   --lp-duration-normal: 180ms;
-  --lp-duration-slow: 280ms;
-  --lp-duration-stagger: 40ms;
-  --lp-duration-feedback: 420ms;
-  --lp-duration-celebration: 640ms;
-  --lp-auth-duration-enter: 500ms;
-  --lp-auth-duration-leave: 300ms;
-  --lp-ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --lp-duration-slow: 260ms;
+  --lp-duration-enter: 200ms;
+  --lp-duration-leave: 120ms;
+  --lp-duration-stagger: 24ms;
+  --lp-duration-feedback: 260ms;
+  --lp-duration-celebration: 320ms;
+  --lp-auth-duration-enter: var(--lp-duration-enter);
+  --lp-auth-duration-leave: var(--lp-duration-leave);
+  --lp-duration-skeleton: 1600ms;
+  --lp-motion-distance: 4px;
+  --lp-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --lp-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-  --lp-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --lp-ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
   --lp-ease-celebration: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* ----------------------------------------------------------------
@@ -253,13 +266,13 @@
   --lp-auth-card-width: 540px;
   --lp-auth-card-radius: 24px;
   --lp-auth-symbol-size: 72px;
-  --lp-auth-surface-start: #f6fbff;
-  --lp-auth-border: #dbeafe;
-  --lp-auth-input-bg: #f8f9fb;
-  --lp-auth-input-border: #e0e4ea;
-  --lp-auth-button-start: #374151;
-  --lp-auth-button-end: #111827;
-  --lp-auth-shadow: 0 4px 8px rgba(17, 24, 39, 0.025), 0 20px 32px -12px rgba(17, 24, 39, 0.22);
+  --lp-auth-surface-start: var(--lp-surface-subtle);
+  --lp-auth-border: var(--lp-border);
+  --lp-auth-input-bg: var(--lp-surface);
+  --lp-auth-input-border: var(--lp-border-strong);
+  --lp-auth-button-start: var(--lp-primary);
+  --lp-auth-button-end: var(--lp-primary-active);
+  --lp-auth-shadow: var(--lp-shadow-md);
 
   /* ----------------------------------------------------------------
    * Layout
@@ -271,6 +284,11 @@
   --lp-sidebar-width: 248px;
   --lp-header-height: 64px;
   --lp-content-gutter: 32px;
+  --lp-control-height: 36px;
+  --lp-control-height-small: 28px;
+  --lp-control-height-large: 44px;
+  --lp-skeleton-base: var(--lp-paper-200);
+  --lp-skeleton-highlight: var(--lp-paper-50);
   --lp-home-header-height: 56px;
   --lp-home-button-height: 48px;
   --lp-home-hero-height-refined: 900px;

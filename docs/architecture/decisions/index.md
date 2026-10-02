@@ -21,5 +21,6 @@
 | [0007](0007-tutor-model-foundation.md) | Accepted | Tutor 模型契约、独立 AI 核心与原子调用准入 |
 | [0008](0008-tutor-agent-execution-loop.md) | Accepted | Tutor Agent 可控工具循环、持久状态与恢复边界 |
 | [0009](0009-learning-effort-gamification.md) | Accepted | 从真实学习事件派生投入激励与反馈 |
+| [0010](0010-quiet-digital-textbook-motion.md) | Accepted | 使用 token 化 Quiet Digital Textbook 与 Vue/CSS 动效基线 |
 
 ADR 采用追加式维护。决策变化时新增记录并标记替代关系，不重写旧决策的历史背景。

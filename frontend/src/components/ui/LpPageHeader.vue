@@ -1,17 +1,12 @@
 <script setup lang="ts">
-/**
- * 页面标题区：kicker + 标题 + 描述 + 右侧动作插槽。
- * 典型用于「我的课程」「课程库」等一级页面的顶部。
- */
 withDefaults(
   defineProps<{
     kicker?: string
     title: string
     description?: string
-    /** 标题使用衬线 display 字体，体现数字教材气质 */
     display?: boolean
   }>(),
-  { kicker: '', description: '', display: true },
+  { kicker: '', description: '', display: false },
 )
 </script>
 
@@ -22,7 +17,7 @@ withDefaults(
       <h1 class="lp-page-header-title" :class="{ 'is-display': display }">{{ title }}</h1>
       <p v-if="description" class="lp-page-header-desc">{{ description }}</p>
     </div>
-    <div v-if="$slots.actions" class="lp-page-header-actions">
+    <div v-if="$slots.actions" class="lp-page-header-actions" role="group" :aria-label="`${title}操作`">
       <slot name="actions" />
     </div>
     <slot v-if="$slots.default" />
@@ -34,19 +29,23 @@ withDefaults(
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: var(--lp-space-6);
+  gap: var(--lp-space-5);
 }
 .lp-page-header-copy {
   min-width: 0;
   max-width: 720px;
 }
 .lp-page-header-title {
-  margin-top: var(--lp-space-2);
+  margin: 0;
   font-size: var(--lp-text-4xl);
-  font-weight: var(--lp-weight-heavy);
+  font-weight: var(--lp-weight-semibold);
   line-height: var(--lp-leading-display);
   letter-spacing: var(--lp-tracking-tight);
   color: var(--lp-text);
+  overflow-wrap: anywhere;
+}
+.lp-kicker + .lp-page-header-title {
+  margin-top: var(--lp-space-2);
 }
 .lp-page-header-title.is-display {
   font-family: var(--lp-font-display);

@@ -6,9 +6,9 @@ Use this guide for build, review, audit, and opportunity work. Treat its ranges 
 
 Decide in this order and state the result briefly when building:
 
-1. **Necessity and frequency.** How often will a user encounter it, and is it user-initiated, keyboard-initiated, automatic, or scroll-linked? Frequently repeated learning actions, navigation, typing, shortcuts, timers, and data-reading surfaces usually need instant or nearly imperceptible feedback. Occasional dialogs, menus, and status messages may benefit from a short transition. Rare onboarding or completion moments have a larger delight budget, provided they remain skippable and do not delay work. Keyboard initiation alone is evidence to reduce or remove motion, not a substitute for inspecting the task and user expectation.
+1. **Necessity and frequency.** How often will a user encounter it, and is it user-initiated, keyboard-initiated, automatic, or scroll-linked? Frequently repeated learning actions, navigation, typing, shortcuts, timers, and data-reading surfaces usually need instant or nearly imperceptible feedback. Occasional dialogs, menus, and status messages may benefit from a short transition. Completion may use a brief state cue when it improves continuity, but receives no exceptional motion budget. Keyboard initiation alone is evidence to reduce or remove motion, not a substitute for inspecting the task and user expectation.
 2. **Purpose.** Name one: feedback, state indication, spatial continuity, prevention of a jarring change, explanation, or rare-moment delight. If no purpose survives, do not animate. Do not decorate charts, answer content, countdowns, or dense administrative data merely to make them move.
-3. **Tool and lifecycle.** Use a CSS transition for a controlled class/attribute state, Vue `<Transition>` for mount/unmount, `@starting-style` for a CSS entry where support fits the target browsers, and a keyframe for finite predetermined or status motion. Prefer a transition or cancelable WAAPI sequence for a toggle, toast, or other state that can change before its animation ends. Gesture momentum and complex measured layout changes require explicit evidence before introducing custom code.
+3. **Tool and lifecycle.** Use a CSS transition for a controlled class/attribute state, Vue `<Transition>` for mount/unmount, `@starting-style` for a CSS entry where support fits the target browsers, and a keyframe only for a finite state indicator with a clear user benefit. Prefer a transition or cancelable WAAPI sequence for a toggle, toast, or other state that can change before its animation ends. Gesture momentum and complex measured layout changes require explicit evidence before introducing custom code.
 4. **Properties and origin.** Use a small opacity plus translate/scale change where spatial motion helps. An anchored menu, popover, or tooltip should originate near its trigger; a centered modal need not pretend to have one. Do not use an extreme `scale(0)` entrance. Use percentage translation when the distance should follow the element's own size. Avoid permanent `will-change`; apply it only to a measured, short-lived need.
 5. **Timing and easing.** Entering or responsive exits generally feel best with the existing `--lp-ease-out`; on-screen repositioning generally calls for `--lp-ease-in-out`; color and subtle hover feedback may use the project baseline that best matches the component. `linear` suits progress or other constant-rate status only. Select duration from the existing fast/normal/slow scale before inventing values: small feedback is commonly fastest, compact surfaces normal, and larger surfaces may require slow. Longer durations can be valid for an explanatory or deliberately paced interaction, but must not block input or contradict perceived responsiveness. Do not use a slow-start curve for a response unless its purpose requires it.
 6. **Interruption and exit.** Rapid reversals must retarget smoothly from the current state; do not restart a keyframe from its first frame. An exit should maintain spatial logic with its entrance unless a documented interaction (such as a user drag) supplies another direction. A deliberate hold and the resulting system response may deserve different timing.
@@ -18,37 +18,16 @@ Decide in this order and state the result briefly when building:
 Use Vue's built-in transition classes before adding JavaScript hooks:
 
 ```vue
-<Transition name="lp-fade-rise">
+<Transition name="lp-disclosure">
   <section v-if="open" class="panel">…</section>
 </Transition>
 ```
 
 ```css
-.lp-fade-rise-enter-active,
-.lp-fade-rise-leave-active {
-  transition:
-    opacity var(--lp-duration-normal) var(--lp-ease-out),
-    transform var(--lp-duration-normal) var(--lp-ease-out);
-}
-
-.lp-fade-rise-enter-from,
-.lp-fade-rise-leave-to {
-  opacity: 0;
-  transform: translateY(0.5rem);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lp-fade-rise-enter-active,
-  .lp-fade-rise-leave-active {
-    transition: opacity var(--lp-duration-fast) linear;
-  }
-
-  .lp-fade-rise-enter-from,
-  .lp-fade-rise-leave-to { transform: none; }
-}
+/* Shared lp-disclosure classes live in motion.css. */
 ```
 
-This is a pattern, not a copy-paste requirement: match names, state ownership, and Element Plus extension points already used by the target. Do not animate an Element Plus overlay in a way that conflicts with its visibility, focus, or close lifecycle.
+This is a pattern, not a copy-paste requirement: reuse the named shared transition when it fits; otherwise match token ownership and Element Plus extension points already used by the target. Do not animate an Element Plus overlay in a way that conflicts with its visibility, focus, or close lifecycle.
 
 ## Review and audit checklist
 
@@ -65,7 +44,7 @@ Classify findings as blocking only when they materially impair task completion, 
 
 ## Opportunity discovery
 
-Search a bounded area for missing feedback on important pressable controls, instantaneous appearance/disappearance that disorients users, anchored surfaces with no spatial relationship, and rare completion or empty states that need a small state cue. For every candidate, apply the build gate. Return a compact table with location, current behavior, purpose, frequency, and proposed implementation; also list candidates rejected for high frequency, lack of purpose, information-reading interference, or accessibility risk.
+Search a bounded area for missing feedback on important pressable controls, instantaneous appearance/disappearance that disorients users, anchored surfaces with no spatial relationship, and completion or empty states that need a small state cue. Do not propose reward floats, full-screen celebrations, confetti, combo flames, achievement dialogs, or persistent pulses. For every candidate, apply the build gate. Return a compact table with location, current behavior, purpose, frequency, and proposed implementation; also list candidates rejected for high frequency, lack of purpose, information-reading interference, or accessibility risk.
 
 ## Verification
 

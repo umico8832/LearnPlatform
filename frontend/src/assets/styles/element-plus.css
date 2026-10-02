@@ -1,0 +1,383 @@
+/* ------------------------------------------------------------------
+ * Element Plus · 安静主题覆盖
+ * ------------------------------------------------------------------ */
+:root {
+  --el-color-primary: var(--lp-primary);
+  --el-color-primary-light-3: color-mix(in srgb, var(--lp-primary) 70%, var(--lp-surface));
+  --el-color-primary-light-5: color-mix(in srgb, var(--lp-primary) 50%, var(--lp-surface));
+  --el-color-primary-light-7: color-mix(in srgb, var(--lp-primary) 30%, var(--lp-surface));
+  --el-color-primary-light-8: color-mix(in srgb, var(--lp-primary) 20%, var(--lp-surface));
+  --el-color-primary-light-9: color-mix(in srgb, var(--lp-primary) 10%, var(--lp-surface));
+  --el-color-primary-dark-2: color-mix(in srgb, var(--lp-primary) 80%, var(--lp-ink-900));
+  --el-color-success: var(--lp-success);
+  --el-color-success-light-3: color-mix(in srgb, var(--lp-success) 70%, var(--lp-surface));
+  --el-color-success-light-5: color-mix(in srgb, var(--lp-success) 50%, var(--lp-surface));
+  --el-color-success-light-7: color-mix(in srgb, var(--lp-success) 30%, var(--lp-surface));
+  --el-color-success-light-8: color-mix(in srgb, var(--lp-success) 20%, var(--lp-surface));
+  --el-color-success-light-9: color-mix(in srgb, var(--lp-success) 10%, var(--lp-surface));
+  --el-color-success-dark-2: color-mix(in srgb, var(--lp-success) 80%, var(--lp-ink-900));
+  --el-color-warning: var(--lp-warning);
+  --el-color-warning-light-3: color-mix(in srgb, var(--lp-warning) 70%, var(--lp-surface));
+  --el-color-warning-light-5: color-mix(in srgb, var(--lp-warning) 50%, var(--lp-surface));
+  --el-color-warning-light-7: color-mix(in srgb, var(--lp-warning) 30%, var(--lp-surface));
+  --el-color-warning-light-8: color-mix(in srgb, var(--lp-warning) 20%, var(--lp-surface));
+  --el-color-warning-light-9: color-mix(in srgb, var(--lp-warning) 10%, var(--lp-surface));
+  --el-color-warning-dark-2: color-mix(in srgb, var(--lp-warning) 80%, var(--lp-ink-900));
+  --el-color-danger: var(--lp-danger);
+  --el-color-danger-light-3: color-mix(in srgb, var(--lp-danger) 70%, var(--lp-surface));
+  --el-color-danger-light-5: color-mix(in srgb, var(--lp-danger) 50%, var(--lp-surface));
+  --el-color-danger-light-7: color-mix(in srgb, var(--lp-danger) 30%, var(--lp-surface));
+  --el-color-danger-light-8: color-mix(in srgb, var(--lp-danger) 20%, var(--lp-surface));
+  --el-color-danger-light-9: color-mix(in srgb, var(--lp-danger) 10%, var(--lp-surface));
+  --el-color-danger-dark-2: color-mix(in srgb, var(--lp-danger) 80%, var(--lp-ink-900));
+  --el-color-error: var(--lp-danger);
+  --el-color-error-light-3: color-mix(in srgb, var(--lp-danger) 70%, var(--lp-surface));
+  --el-color-error-light-5: color-mix(in srgb, var(--lp-danger) 50%, var(--lp-surface));
+  --el-color-error-light-7: color-mix(in srgb, var(--lp-danger) 30%, var(--lp-surface));
+  --el-color-error-light-8: color-mix(in srgb, var(--lp-danger) 20%, var(--lp-surface));
+  --el-color-error-light-9: color-mix(in srgb, var(--lp-danger) 10%, var(--lp-surface));
+  --el-color-error-dark-2: color-mix(in srgb, var(--lp-danger) 80%, var(--lp-ink-900));
+  --el-color-info: var(--lp-info);
+  --el-color-info-light-3: color-mix(in srgb, var(--lp-info) 70%, var(--lp-surface));
+  --el-color-info-light-5: color-mix(in srgb, var(--lp-info) 50%, var(--lp-surface));
+  --el-color-info-light-7: color-mix(in srgb, var(--lp-info) 30%, var(--lp-surface));
+  --el-color-info-light-8: color-mix(in srgb, var(--lp-info) 20%, var(--lp-surface));
+  --el-color-info-light-9: color-mix(in srgb, var(--lp-info) 10%, var(--lp-surface));
+  --el-color-info-dark-2: color-mix(in srgb, var(--lp-info) 80%, var(--lp-ink-900));
+
+  --el-text-color-primary: var(--lp-text);
+  --el-text-color-regular: var(--lp-ink-700);
+  --el-text-color-secondary: var(--lp-text-secondary);
+  --el-text-color-placeholder: var(--lp-text-muted);
+  --el-text-color-disabled: var(--lp-ink-300);
+
+  --el-border-color: var(--lp-border);
+  --el-border-color-light: var(--lp-paper-200);
+  --el-border-color-lighter: var(--lp-paper-100);
+  --el-border-color-extra-light: var(--lp-paper-50);
+  --el-border-color-dark: var(--lp-border-strong);
+  --el-border-color-hover: var(--lp-border-strong);
+
+  --el-fill-color: var(--lp-surface-soft);
+  --el-fill-color-light: var(--lp-surface-subtle);
+  --el-fill-color-lighter: var(--lp-paper-50);
+  --el-fill-color-blank: var(--lp-surface);
+
+  --el-bg-color: var(--lp-surface);
+  --el-bg-color-page: var(--lp-bg);
+  --el-bg-color-overlay: var(--lp-surface);
+
+  --el-border-radius-base: var(--lp-radius-control);
+  --el-border-radius-small: var(--lp-radius-xs);
+  --el-border-radius-round: var(--lp-radius-full);
+
+  --el-font-family: var(--lp-font-sans);
+  --el-font-size-base: var(--lp-text-base);
+  --el-component-size: var(--lp-control-height);
+  --el-component-size-small: var(--lp-control-height-small);
+  --el-component-size-large: var(--lp-control-height-large);
+  --el-transition-duration: var(--lp-duration-normal);
+  --el-transition-duration-fast: var(--lp-duration-fast);
+  --el-transition-function-ease-in-out-bezier: var(--lp-ease-in-out);
+  --el-transition-function-fast-bezier: var(--lp-ease-out);
+  --el-overlay-color-lighter: var(--lp-overlay-scrim);
+
+  --el-box-shadow-light: var(--lp-shadow-sm);
+  --el-box-shadow: var(--lp-shadow-md);
+  --el-box-shadow-dark: var(--lp-shadow-lg);
+
+  /* 兼容历史引用（管理端 styles.css 使用） */
+  --lp-text-primary: var(--lp-text);
+  --lp-bg-page: var(--lp-bg);
+}
+
+/* 按钮 */
+.el-button {
+  --el-button-border-radius: var(--lp-radius-control);
+  font-weight: var(--lp-weight-medium);
+  transition:
+    background-color var(--lp-duration-fast) var(--lp-ease-out),
+    border-color var(--lp-duration-fast) var(--lp-ease-out),
+    color var(--lp-duration-fast) var(--lp-ease-out),
+    box-shadow var(--lp-duration-fast) var(--lp-ease-out),
+    transform var(--lp-duration-fast) var(--lp-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .el-button:not(.is-disabled):not([disabled]):hover {
+    box-shadow: var(--lp-shadow-xs);
+  }
+}
+
+.el-button:not(.is-disabled):not([disabled]):active {
+  transform: scale(0.985);
+}
+
+.el-button:focus-visible {
+  outline: var(--lp-focus-width) solid var(--lp-primary);
+  outline-offset: var(--lp-focus-offset);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .el-button {
+    transition-duration: var(--lp-duration-fast);
+  }
+  .el-button:not(.is-disabled):not([disabled]):hover,
+  .el-button:not(.is-disabled):not([disabled]):active {
+    transform: none;
+  }
+}
+
+.el-button--primary {
+  --el-button-bg-color: var(--lp-primary);
+  --el-button-border-color: var(--lp-primary);
+  --el-button-hover-bg-color: var(--lp-primary-hover);
+  --el-button-hover-border-color: var(--lp-primary-hover);
+  --el-button-active-bg-color: var(--lp-primary-active);
+  --el-button-active-border-color: var(--lp-primary-active);
+  --el-button-text-color: var(--lp-on-primary);
+  --el-button-hover-text-color: var(--lp-on-primary);
+  --el-button-active-text-color: var(--lp-on-primary);
+}
+
+.el-button.is-plain,
+.el-button--primary.is-plain {
+  --el-button-plain-bg-color: var(--lp-surface);
+}
+
+.el-button--primary.is-plain {
+  --el-button-bg-color: var(--lp-surface);
+  --el-button-border-color: var(--lp-blue-300);
+  --el-button-hover-bg-color: var(--lp-primary-soft);
+  --el-button-hover-border-color: var(--lp-primary);
+  --el-button-active-bg-color: var(--lp-primary-softer);
+  --el-button-active-border-color: var(--lp-primary);
+  --el-button-text-color: var(--lp-primary);
+  --el-button-hover-text-color: var(--lp-primary);
+  --el-button-active-text-color: var(--lp-primary-active);
+}
+
+.el-button--default {
+  --el-button-bg-color: var(--lp-surface);
+  --el-button-border-color: var(--lp-border-strong);
+  --el-button-hover-bg-color: var(--lp-surface-subtle);
+  --el-button-hover-border-color: var(--lp-primary);
+  --el-button-hover-text-color: var(--lp-primary);
+  --el-button-active-border-color: var(--lp-primary);
+  --el-button-active-text-color: var(--lp-primary);
+  --el-button-text-color: var(--lp-ink-700);
+}
+
+.el-button--danger {
+  --el-button-bg-color: var(--lp-danger);
+  --el-button-border-color: var(--lp-danger);
+  --el-button-hover-bg-color: var(--lp-danger);
+  --el-button-hover-border-color: var(--lp-danger);
+  --el-button-active-bg-color: var(--lp-red-700);
+  --el-button-active-border-color: var(--lp-red-700);
+}
+
+.el-button.is-text {
+  transition: color var(--lp-duration-fast) var(--lp-ease-out);
+}
+
+/* 输入控件 */
+.el-input__wrapper,
+.el-textarea__inner {
+  box-shadow: 0 0 0 1px var(--lp-border-strong) inset !important;
+  border-radius: var(--lp-radius-control);
+  transition: box-shadow var(--lp-duration-normal) var(--lp-ease-out);
+}
+
+.el-input__wrapper:hover,
+.el-textarea__inner:hover {
+  box-shadow: 0 0 0 1px var(--lp-ink-300) inset !important;
+}
+
+.el-input__wrapper.is-focus,
+.el-textarea__inner:focus {
+  box-shadow:
+    0 0 0 1px var(--lp-primary) inset,
+    var(--lp-shadow-focus) !important;
+}
+
+.el-select__wrapper {
+  border-radius: var(--lp-radius-control);
+  box-shadow: 0 0 0 1px var(--lp-border-strong) inset !important;
+  transition: box-shadow var(--lp-duration-normal) var(--lp-ease-out);
+}
+
+.el-select__wrapper.is-focused {
+  box-shadow:
+    0 0 0 1px var(--lp-primary) inset,
+    var(--lp-shadow-focus) !important;
+}
+
+/* 标签 */
+.el-tag {
+  --el-tag-border-radius: var(--lp-radius-xs);
+  font-weight: var(--lp-weight-medium);
+}
+
+/* 卡片：默认无重阴影，靠边框与留白分层 */
+.el-card {
+  --el-card-border-color: var(--lp-border);
+}
+
+/* 表格 */
+.el-table {
+  --el-table-header-bg-color: var(--lp-surface-soft);
+  --el-table-header-text-color: var(--lp-text-secondary);
+  --el-table-border-color: var(--lp-border);
+  --el-table-row-hover-bg-color: var(--lp-surface-subtle);
+  color: var(--lp-text);
+}
+
+.el-table th.el-table__cell {
+  font-size: var(--lp-text-xs);
+  font-weight: var(--lp-weight-bold);
+}
+
+.el-table td.el-table__cell {
+  transition: background-color var(--lp-duration-fast) var(--lp-ease-out);
+}
+
+.el-table .cell {
+  line-height: var(--lp-leading-body);
+}
+
+/* 弹窗 */
+.el-dialog {
+  --el-dialog-padding-primary: 0;
+  max-width: calc(100vw - var(--lp-space-12));
+  border-radius: var(--lp-radius-lg) !important;
+  box-shadow: var(--lp-shadow-lg) !important;
+}
+
+.el-dialog__header {
+  padding: var(--lp-space-5) var(--lp-space-6) var(--lp-space-3);
+}
+
+.el-dialog__title {
+  font-weight: var(--lp-weight-bold);
+  font-size: var(--lp-text-xl);
+  color: var(--lp-text);
+}
+
+.el-dialog__body {
+  padding: var(--lp-space-4) var(--lp-space-6) var(--lp-space-5);
+}
+
+.el-dialog__footer {
+  padding: var(--lp-space-3) var(--lp-space-6) var(--lp-space-5);
+}
+
+.el-message-box {
+  border-radius: var(--lp-radius-lg) !important;
+  box-shadow: var(--lp-shadow-lg) !important;
+}
+
+.el-message {
+  border-radius: var(--lp-radius-md) !important;
+  box-shadow: var(--lp-shadow-md) !important;
+  border: 1px solid var(--lp-border) !important;
+}
+
+.el-dropdown-menu {
+  border-radius: var(--lp-radius-md);
+  box-shadow: var(--lp-shadow-md);
+  padding: var(--lp-space-1);
+}
+
+.el-dropdown-menu__item {
+  border-radius: var(--lp-radius-sm);
+  font-size: var(--lp-text-base);
+  transition:
+    color var(--lp-duration-fast) var(--lp-ease-out),
+    background-color var(--lp-duration-fast) var(--lp-ease-out);
+}
+
+.el-popper.is-light {
+  border-color: var(--lp-border) !important;
+  border-radius: var(--lp-radius-md) !important;
+  box-shadow: var(--lp-shadow-md) !important;
+}
+
+/* 分页 */
+.el-pagination {
+  --el-pagination-button-bg-color: var(--lp-surface);
+  --el-pagination-hover-color: var(--lp-primary);
+}
+
+.el-pagination .el-pager li {
+  border-radius: var(--lp-radius-sm);
+  font-variant-numeric: tabular-nums;
+  transition:
+    color var(--lp-duration-fast) var(--lp-ease-out),
+    background-color var(--lp-duration-fast) var(--lp-ease-out);
+}
+
+.el-pagination .el-pager li.is-active {
+  background: var(--lp-primary-soft);
+  color: var(--lp-primary);
+  font-weight: var(--lp-weight-bold);
+}
+
+/* 空状态 */
+.el-empty__description p {
+  color: var(--lp-text-muted);
+}
+
+/* 加载 */
+.el-loading-mask {
+  background-color: var(--lp-loading-surface);
+  backdrop-filter: blur(1px);
+}
+
+.el-loading-spinner .path {
+  stroke: var(--lp-primary);
+}
+
+/* 消息提醒 */
+.el-alert {
+  border-radius: var(--lp-radius-md);
+}
+
+.el-tabs__item {
+  font-weight: var(--lp-weight-medium);
+  transition: color var(--lp-duration-fast) var(--lp-ease-out);
+}
+
+.el-tabs__item.is-active {
+  font-weight: var(--lp-weight-semibold);
+}
+
+.el-tabs__active-bar {
+  border-radius: var(--lp-radius-full);
+  transition: transform var(--lp-duration-normal) var(--lp-ease-out);
+}
+
+.el-tabs__nav-wrap::after {
+  height: 1px;
+  background: var(--lp-border);
+}
+
+.el-checkbox__inner,
+.el-radio__inner,
+.el-radio-button__inner,
+.el-switch__core {
+  transition:
+    color var(--lp-duration-fast) var(--lp-ease-out),
+    background-color var(--lp-duration-fast) var(--lp-ease-out),
+    border-color var(--lp-duration-fast) var(--lp-ease-out),
+    box-shadow var(--lp-duration-fast) var(--lp-ease-out);
+}
+
+.el-form-item__label {
+  font-weight: var(--lp-weight-medium);
+  color: var(--lp-text-secondary);
+}
+
+.el-textarea__inner {
+  line-height: var(--lp-leading-relaxed);
+}

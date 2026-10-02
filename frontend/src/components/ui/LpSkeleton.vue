@@ -1,21 +1,25 @@
 <script setup lang="ts">
-/**
- * 安静骨架屏：加载时以柔和块状占位，避免闪烁与跳动。
- */
 withDefaults(
   defineProps<{
     rows?: number
-    /** 是否渲染为卡片式（带边框与圆角） */
     card?: boolean
+    label?: string
+    announce?: boolean
   }>(),
-  { rows: 3, card: false },
+  { rows: 3, card: false, label: '正在加载', announce: true },
 )
 
 const rowWidths = ['92%', '100%', '78%', '96%', '84%']
 </script>
 
 <template>
-  <div class="lp-skeleton" :class="{ 'is-card': card }" :aria-hidden="true">
+  <div
+    class="lp-skeleton"
+    :class="{ 'is-card': card }"
+    :role="announce ? 'status' : undefined"
+    :aria-label="announce ? label : undefined"
+    :aria-hidden="announce ? undefined : true"
+  >
     <div
       v-for="index in rows"
       :key="index"
@@ -38,11 +42,16 @@ const rowWidths = ['92%', '100%', '78%', '96%', '84%']
   background: var(--lp-surface);
 }
 .lp-skeleton-line {
-  height: 14px;
+  height: var(--lp-text-base);
   border-radius: var(--lp-radius-xs);
-  background: linear-gradient(90deg, var(--lp-paper-200) 25%, var(--lp-paper-100) 50%, var(--lp-paper-200) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--lp-skeleton-base) 25%,
+    var(--lp-skeleton-highlight) 50%,
+    var(--lp-skeleton-base) 75%
+  );
   background-size: 200% 100%;
-  animation: lp-skeleton-shimmer 1.4s ease-in-out infinite;
+  animation: lp-skeleton-shimmer var(--lp-duration-skeleton) var(--lp-ease-in-out) infinite;
 }
 @keyframes lp-skeleton-shimmer {
   from {

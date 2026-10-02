@@ -2,6 +2,8 @@
  * 所有视觉取值来自 tokens.css，页面组件不直接定义裸色值/裸尺寸。
  */
 @import './tokens.css';
+@import './element-plus.css';
+@import './motion.css';
 
 /* ------------------------------------------------------------------
  * 基础元素
@@ -63,9 +65,30 @@ h6 {
 }
 
 :focus-visible {
-  outline: 2px solid var(--lp-primary);
-  outline-offset: 2px;
+  outline: var(--lp-focus-width) solid var(--lp-primary);
+  outline-offset: var(--lp-focus-offset);
   border-radius: var(--lp-radius-xs);
+}
+
+.lp-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+  scroll-margin-block: calc(var(--lp-header-height) + var(--lp-space-6));
 }
 
 /* 极简滚动条 */
@@ -135,326 +158,6 @@ h6 {
   font-weight: var(--lp-weight-heavy);
   letter-spacing: var(--lp-tracking-wide);
   text-transform: uppercase;
-}
-
-/* ------------------------------------------------------------------
- * Element Plus · 安静主题覆盖
- * ------------------------------------------------------------------ */
-:root {
-  --el-color-primary: var(--lp-primary);
-  --el-color-primary-light-3: #7084a2;
-  --el-color-primary-light-5: #99a8bc;
-  --el-color-primary-light-7: #c2ccd7;
-  --el-color-primary-light-8: #d6dee5;
-  --el-color-primary-light-9: #ebeff3;
-  --el-color-primary-dark-2: #293f61;
-  --el-color-success: var(--lp-success);
-  --el-color-success-light-3: #8fb099;
-  --el-color-success-light-5: #acc7b3;
-  --el-color-success-light-7: #caddd0;
-  --el-color-success-light-8: #e2ede4;
-  --el-color-success-light-9: #f2f7f3;
-  --el-color-success-dark-2: #3a5c45;
-  --el-color-warning: var(--lp-warning);
-  --el-color-warning-light-3: #c2a374;
-  --el-color-warning-light-5: #d4bd97;
-  --el-color-warning-light-7: #e5d6bb;
-  --el-color-warning-light-8: #efe5d3;
-  --el-color-warning-light-9: #f9f4ea;
-  --el-color-warning-dark-2: #7d5524;
-  --el-color-danger: var(--lp-danger);
-  --el-color-danger-light-3: #cc8b83;
-  --el-color-danger-light-5: #daaaa4;
-  --el-color-danger-light-7: #e8c9c5;
-  --el-color-danger-light-8: #f0dbd8;
-  --el-color-danger-light-9: #faf0ee;
-  --el-color-danger-dark-2: #8c3b31;
-  --el-color-error: var(--lp-danger);
-  --el-color-error-light-3: #cc8b83;
-  --el-color-error-light-5: #daaaa4;
-  --el-color-error-light-7: #e8c9c5;
-  --el-color-error-light-8: #f0dbd8;
-  --el-color-error-light-9: #faf0ee;
-  --el-color-error-dark-2: #8c3b31;
-  --el-color-info: var(--lp-info);
-  --el-color-info-light-3: #9aa7b3;
-  --el-color-info-light-5: #b7c0c9;
-  --el-color-info-light-7: #d3d9df;
-  --el-color-info-light-8: #e3e7eb;
-  --el-color-info-light-9: #f0f3f5;
-  --el-color-info-dark-2: #495663;
-
-  --el-text-color-primary: var(--lp-text);
-  --el-text-color-regular: var(--lp-ink-700);
-  --el-text-color-secondary: var(--lp-text-secondary);
-  --el-text-color-placeholder: var(--lp-text-muted);
-  --el-text-color-disabled: var(--lp-ink-300);
-
-  --el-border-color: var(--lp-border);
-  --el-border-color-light: var(--lp-paper-200);
-  --el-border-color-lighter: var(--lp-paper-100);
-  --el-border-color-extra-light: var(--lp-paper-50);
-  --el-border-color-dark: var(--lp-border-strong);
-  --el-border-color-hover: var(--lp-border-strong);
-
-  --el-fill-color: var(--lp-surface-soft);
-  --el-fill-color-light: var(--lp-surface-subtle);
-  --el-fill-color-lighter: var(--lp-paper-50);
-  --el-fill-color-blank: var(--lp-surface);
-
-  --el-bg-color: var(--lp-surface);
-  --el-bg-color-page: var(--lp-bg);
-  --el-bg-color-overlay: var(--lp-surface);
-
-  --el-border-radius-base: var(--lp-radius-sm);
-  --el-border-radius-small: var(--lp-radius-xs);
-  --el-border-radius-round: var(--lp-radius-full);
-
-  --el-font-family: var(--lp-font-sans);
-  --el-font-size-base: var(--lp-text-base);
-
-  --el-box-shadow-light: var(--lp-shadow-sm);
-  --el-box-shadow: var(--lp-shadow-md);
-  --el-box-shadow-dark: var(--lp-shadow-lg);
-
-  /* 兼容历史引用（管理端 styles.css 使用） */
-  --lp-text-primary: var(--lp-text);
-  --lp-bg-page: var(--lp-bg);
-}
-
-/* 按钮 */
-.el-button {
-  --el-button-border-radius: var(--lp-radius-sm);
-  font-weight: var(--lp-weight-medium);
-  transition:
-    background-color var(--lp-duration-fast) var(--lp-ease-out),
-    border-color var(--lp-duration-fast) var(--lp-ease-out),
-    color var(--lp-duration-fast) var(--lp-ease-out),
-    box-shadow var(--lp-duration-fast) var(--lp-ease-out),
-    transform var(--lp-duration-fast) var(--lp-ease-out);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .el-button:not(.is-disabled):not([disabled]):hover {
-    transform: translateY(-1px);
-  }
-}
-
-.el-button:not(.is-disabled):not([disabled]):active {
-  transform: translateY(0);
-}
-
-.el-button:focus-visible {
-  outline: 2px solid var(--lp-primary);
-  outline-offset: 2px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .el-button {
-    transition-duration: var(--lp-duration-fast);
-  }
-  .el-button:not(.is-disabled):not([disabled]):hover,
-  .el-button:not(.is-disabled):not([disabled]):active {
-    transform: none;
-  }
-}
-
-.el-button--primary {
-  --el-button-bg-color: var(--lp-primary);
-  --el-button-border-color: var(--lp-primary);
-  --el-button-hover-bg-color: var(--lp-primary-hover);
-  --el-button-hover-border-color: var(--lp-primary-hover);
-  --el-button-active-bg-color: var(--lp-primary-active);
-  --el-button-active-border-color: var(--lp-primary-active);
-  --el-button-text-color: var(--lp-on-primary);
-  --el-button-hover-text-color: var(--lp-on-primary);
-  --el-button-active-text-color: var(--lp-on-primary);
-}
-
-.el-button.is-plain,
-.el-button--primary.is-plain {
-  --el-button-plain-bg-color: var(--lp-surface);
-}
-
-.el-button--primary.is-plain {
-  --el-button-bg-color: var(--lp-surface);
-  --el-button-border-color: var(--lp-blue-300);
-  --el-button-hover-bg-color: var(--lp-primary-soft);
-  --el-button-hover-border-color: var(--lp-primary);
-  --el-button-active-bg-color: var(--lp-primary-softer);
-  --el-button-active-border-color: var(--lp-primary);
-  --el-button-text-color: var(--lp-primary);
-  --el-button-hover-text-color: var(--lp-primary);
-  --el-button-active-text-color: var(--lp-primary-active);
-}
-
-.el-button--default {
-  --el-button-bg-color: var(--lp-surface);
-  --el-button-border-color: var(--lp-border-strong);
-  --el-button-hover-bg-color: var(--lp-surface-subtle);
-  --el-button-hover-border-color: var(--lp-primary);
-  --el-button-hover-text-color: var(--lp-primary);
-  --el-button-active-border-color: var(--lp-primary);
-  --el-button-active-text-color: var(--lp-primary);
-  --el-button-text-color: var(--lp-ink-700);
-}
-
-.el-button--danger {
-  --el-button-bg-color: var(--lp-danger);
-  --el-button-border-color: var(--lp-danger);
-  --el-button-hover-bg-color: var(--lp-danger);
-  --el-button-hover-border-color: var(--lp-danger);
-  --el-button-active-bg-color: var(--lp-red-700);
-  --el-button-active-border-color: var(--lp-red-700);
-}
-
-.el-button.is-text {
-  transition: color var(--lp-duration-fast) var(--lp-ease-out);
-}
-
-/* 输入控件 */
-.el-input__wrapper,
-.el-textarea__inner {
-  box-shadow: 0 0 0 1px var(--lp-border-strong) inset !important;
-  border-radius: var(--lp-radius-sm);
-  transition: box-shadow var(--lp-duration-normal) var(--lp-ease-out);
-}
-
-.el-input__wrapper:hover,
-.el-textarea__inner:hover {
-  box-shadow: 0 0 0 1px var(--lp-ink-300) inset !important;
-}
-
-.el-input__wrapper.is-focus,
-.el-textarea__inner:focus {
-  box-shadow:
-    0 0 0 1px var(--lp-primary) inset,
-    var(--lp-shadow-focus) !important;
-}
-
-.el-select__wrapper {
-  border-radius: var(--lp-radius-sm);
-  box-shadow: 0 0 0 1px var(--lp-border-strong) inset !important;
-  transition: box-shadow var(--lp-duration-normal) var(--lp-ease-out);
-}
-
-.el-select__wrapper.is-focused {
-  box-shadow:
-    0 0 0 1px var(--lp-primary) inset,
-    var(--lp-shadow-focus) !important;
-}
-
-/* 标签 */
-.el-tag {
-  --el-tag-border-radius: var(--lp-radius-xs);
-  font-weight: var(--lp-weight-medium);
-}
-
-/* 卡片：默认无重阴影，靠边框与留白分层 */
-.el-card {
-  --el-card-border-color: var(--lp-border);
-}
-
-/* 表格 */
-.el-table {
-  --el-table-header-bg-color: var(--lp-surface-soft);
-  --el-table-header-text-color: var(--lp-text-secondary);
-  --el-table-border-color: var(--lp-border);
-  --el-table-row-hover-bg-color: var(--lp-surface-subtle);
-  color: var(--lp-text);
-}
-
-.el-table th.el-table__cell {
-  font-size: var(--lp-text-xs);
-  font-weight: var(--lp-weight-bold);
-}
-
-/* 弹窗 */
-.el-dialog {
-  border-radius: var(--lp-radius-lg) !important;
-  box-shadow: var(--lp-shadow-lg) !important;
-}
-
-.el-dialog__header {
-  padding: var(--lp-space-5) var(--lp-space-6) var(--lp-space-3);
-}
-
-.el-dialog__title {
-  font-weight: var(--lp-weight-bold);
-  font-size: var(--lp-text-xl);
-  color: var(--lp-text);
-}
-
-.el-dialog__body {
-  padding: var(--lp-space-4) var(--lp-space-6) var(--lp-space-5);
-}
-
-.el-dialog__footer {
-  padding: var(--lp-space-3) var(--lp-space-6) var(--lp-space-5);
-}
-
-.el-message-box {
-  border-radius: var(--lp-radius-lg) !important;
-  box-shadow: var(--lp-shadow-lg) !important;
-}
-
-.el-message {
-  border-radius: var(--lp-radius-md) !important;
-  box-shadow: var(--lp-shadow-md) !important;
-  border: 1px solid var(--lp-border) !important;
-}
-
-.el-dropdown-menu {
-  border-radius: var(--lp-radius-md);
-  box-shadow: var(--lp-shadow-md);
-  padding: var(--lp-space-1);
-}
-
-.el-dropdown-menu__item {
-  border-radius: var(--lp-radius-sm);
-  font-size: var(--lp-text-base);
-}
-
-.el-popper.is-light {
-  border-color: var(--lp-border) !important;
-  border-radius: var(--lp-radius-md) !important;
-  box-shadow: var(--lp-shadow-md) !important;
-}
-
-/* 分页 */
-.el-pagination {
-  --el-pagination-button-bg-color: var(--lp-surface);
-  --el-pagination-hover-color: var(--lp-primary);
-}
-
-.el-pagination .el-pager li {
-  border-radius: var(--lp-radius-sm);
-}
-
-.el-pagination .el-pager li.is-active {
-  background: var(--lp-primary-soft);
-  color: var(--lp-primary);
-  font-weight: var(--lp-weight-bold);
-}
-
-/* 空状态 */
-.el-empty__description p {
-  color: var(--lp-text-muted);
-}
-
-/* 加载 */
-.el-loading-mask {
-  background-color: rgba(247, 247, 244, 0.72);
-  backdrop-filter: blur(1px);
-}
-
-.el-loading-spinner .path {
-  stroke: var(--lp-primary);
-}
-
-/* 消息提醒 */
-.el-alert {
-  border-radius: var(--lp-radius-md);
 }
 
 /* ------------------------------------------------------------------

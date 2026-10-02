@@ -48,19 +48,29 @@ The current CSS variables, Element Plus components, icons, layouts, and page con
 - Do not create a parallel token vocabulary or one-off component system when the existing system can be corrected directly.
 - Preserve permissions, grading, learning semantics, and real-data flow. Framework or API changes require an authorized product need; a visual convenience alone is insufficient.
 
+## Shared visual primitives
+
+The learner and administration surfaces share the Quiet Digital Textbook foundation: warm paper surfaces, low-saturation blue for primary action and focus, and restrained semantic feedback colors. Use `tokens.css` for typography, spacing, radii, shadows, control height, focus treatment, surface states, skeleton colors, and durations; use `element-plus.css` for Element Plus mapping. Do not recreate those values in a page or component.
+
+Use `LpPageHeader`, `LpCard`, `LpListItem`, `LpStatePanel`, `LpStat`, `LpProgress`, `LpProgressRing`, `LpEmptyState`, and `LpSkeleton` when their contracts fit. A card owns semantic containment and density, a list item must remain a real button or RouterLink, and a state panel keeps loading, empty, error, and ready content mutually exclusive. Loading must not show default zeroes; empty only follows a successful absence of data; an error stays in place with recovery.
+
+Keep page titles sans by default. Enable the display face only for an explicitly editorial or reading-oriented title that benefits from it. Give a page header one visually primary action; related secondary actions remain quieter and grouped. Visible focus follows the shared focus tokens rather than a local outline.
+
 ## Product-surface priorities
 
 For learner and authentication workflows, prioritize orientation, readable learning content, clear next actions, recovery from errors, and low-friction task completion. For administration workflows, support scanning and comparison at the necessary density without hiding controls or state.
 
 Use decoration and motion only when they improve hierarchy, comprehension, feedback, or continuity. Product workflows do not inherit marketing-page composition rules by default.
 
+For routine entry, disclosure, and list reordering, use the named Vue/CSS transitions in `motion.css`. The shared reduced-motion rules make those transitions immediate and remove their travel; do not assume every component transform outside that shared scope is reset. See [interaction-motion](../interaction-motion/SKILL.md) before adding a new motion pattern or dependency.
+
 ## Learning encouragement layer
 
-Use bright experience, streak, goal, and achievement tokens at feedback and progress moments; keep question text, explanations, code, and Markdown readable and calm. Experience and levels describe learning effort, with rewards and achievements supplied by the backend from persisted learning events; they never imply mastery. Render honest zero, empty, loading, and failure states.
+Experience, levels, streaks, goals, and achievements remain backend-supplied learning facts. Present them as quiet inline data in the header, profile, and completion summary; they never imply mastery. Keep question text, explanations, code, and Markdown calm, and render honest zero, empty, loading, and failure states.
 
-Timed exams remain silent until submission: no correctness cues, reward floats, combos, celebrations, or sound during answers. Celebrations queue or merge, remain dismissible, and never gate the next action. Respect reduced motion and clear account-scoped progress and pending feedback on logout or account changes.
+Timed exams remain silent until submission: no correctness cues, reward floats, combos, celebrations, or sound during answers. Do not add reward floats, full-screen celebrations, confetti, combo flames, achievement dialogs, or persistent pulse effects to learning workflows. Feedback never gates the next action.
 
-Animation dependencies are allowed when they serve an evidenced interaction need. Keep simple feedback in CSS/Vue transitions; load infrequent celebration libraries on demand. Assess official Vue compatibility, lifecycle cleanup, reduced-motion support, and measured bundle cost before introducing a library; maintain one token and feedback system.
+Use Vue/CSS for the restrained state transitions already covered by the shared motion system. Do not introduce a celebration library for this direction; a future animation dependency requires a concrete interaction need plus compatibility, lifecycle, reduced-motion, and measured bundle evidence.
 
 ## Work in two passes
 

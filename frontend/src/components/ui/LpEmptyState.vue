@@ -1,7 +1,4 @@
 <script setup lang="ts">
-/**
- * 空状态：标题 + 描述 + 可选动作。比 el-empty 更符合教材式安静表达。
- */
 withDefaults(
   defineProps<{
     title: string

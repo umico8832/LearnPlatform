@@ -32,6 +32,25 @@ describe('useAnimatedNumber', () => {
     wrapper.unmount()
   })
 
+  it('uses the first received server value immediately instead of presenting a fabricated zero', () => {
+    const request = vi.fn()
+    vi.stubGlobal('requestAnimationFrame', request)
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+    const wrapper = mount(
+      defineComponent({
+        setup: () => useAnimatedNumber(0),
+        render: () => h('output'),
+      }),
+    )
+    const instance = wrapper.vm as unknown as { animateTo: (target: number) => void; value: number }
+
+    instance.animateTo(72)
+
+    expect(instance.value).toBe(72)
+    expect(request).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
   it('cancels movement and retains the target when reduced motion changes mid-animation', async () => {
     const reduced = ref(false)
     vi.stubGlobal(
@@ -48,10 +67,11 @@ describe('useAnimatedNumber', () => {
     )
     const instance = wrapper.vm as unknown as { animateTo: (target: number) => void; value: number }
     instance.animateTo(250)
+    instance.animateTo(300)
     reduced.value = true
     await nextTick()
     expect(cancel).toHaveBeenCalledWith(42)
-    expect(instance.value).toBe(250)
+    expect(instance.value).toBe(300)
     wrapper.unmount()
   })
 
@@ -64,6 +84,7 @@ describe('useAnimatedNumber', () => {
     vi.stubGlobal('cancelAnimationFrame', vi.fn())
     const wrapper = mount(AnimatedNumberHarness)
     const instance = wrapper.vm as unknown as { animateTo: (target: number) => void; value: number }
+    instance.animateTo(4)
     instance.animateTo(4.5)
     frame(performance.now() + 1000)
     expect(instance.value).toBe(4.5)
@@ -80,6 +101,7 @@ describe('useAnimatedNumber', () => {
 
     instance.animateTo(20)
     instance.animateTo(50)
+    instance.animateTo(70)
     expect(cancelAnimationFrame).toHaveBeenCalledWith(23)
     wrapper.unmount()
     expect(cancelAnimationFrame).toHaveBeenLastCalledWith(23)

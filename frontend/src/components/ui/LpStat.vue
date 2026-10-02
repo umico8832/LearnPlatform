@@ -20,7 +20,10 @@ const { reducedMotion } = useReducedMotion()
 const numericValue = computed(() =>
   typeof props.value === 'number' && Number.isFinite(props.value) ? props.value : null,
 )
-const { value: displayedNumber, animateTo } = useAnimatedNumber(0, { reducedMotion })
+const accessibleValue = computed(() =>
+  typeof props.value === 'number' && !Number.isFinite(props.value) ? '—' : props.value,
+)
+const { value: displayedNumber, animateTo } = useAnimatedNumber(numericValue.value ?? 0, { reducedMotion })
 watch(
   numericValue,
   (next) => {
@@ -32,7 +35,10 @@ watch(
 
 <template>
   <article class="lp-stat" :data-tone="tone">
-    <output class="lp-stat-value">{{ numericValue === null ? value : displayedNumber }}</output>
+    <span class="lp-stat-value" aria-hidden="true">{{
+      numericValue === null ? accessibleValue : displayedNumber
+    }}</span>
+    <span class="lp-sr-only">{{ accessibleValue }}</span>
     <span class="lp-stat-label">{{ label }}</span>
     <small v-if="note" class="lp-stat-note">{{ note }}</small>
   </article>

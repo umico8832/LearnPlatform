@@ -1,6 +1,6 @@
 ---
 name: interaction-motion
-description: Build, review, audit, name, or find purposeful interaction motion in LearnPlatform's Vue 3 and Element Plus frontend. Use for transitions, learning feedback, celebrations, reduced-motion behavior, or motion-quality review; use frontend-design for page redesign.
+description: Build, review, audit, name, or find purposeful interaction motion in LearnPlatform's Vue 3 and Element Plus frontend. Use for transitions, restrained learning-state feedback, reduced-motion behavior, or motion-quality review; use frontend-design for page redesign.
 ---
 
 # LearnPlatform Interaction Motion
@@ -9,9 +9,19 @@ Make state changes easier to understand without slowing a learning or administra
 
 ## Read first
 
-Inspect the target component and its actual trigger path. Read `../../../frontend/src/assets/styles/tokens.css` and `../../../docs/architecture/frontend.md`; also use [frontend-design](../frontend-design/SKILL.md) for page-level visual work. Reuse the current Vue 3, TypeScript, Element Plus, and CSS-variable stack. Simple motion stays in CSS/Vue transitions. Animation libraries are allowed for evidenced needs beyond those primitives; check official compatibility, lifecycle cleanup, accessibility, and bundle cost. Load infrequent celebration effects on demand rather than increasing the initial route bundle.
+Inspect the target component and its actual trigger path. Read `../../../frontend/src/assets/styles/tokens.css`, `../../../frontend/src/assets/styles/motion.css`, and `../../../docs/architecture/frontend.md`; also use [frontend-design](../frontend-design/SKILL.md) for page-level visual work. Reuse the current Vue 3, TypeScript, Element Plus, and CSS-variable stack. Simple motion stays in CSS/Vue transitions. A new animation dependency requires an evidenced need plus compatibility, lifecycle, accessibility, and bundle review.
 
 The current `--lp-duration-*` and `--lp-ease-*` variables are the baseline, not an unchangeable law. Reuse them where they fit. Propose a token addition or adjustment only when repeated, evidenced component needs cannot be represented by that scale; keep tokens semantic and avoid a parallel local motion system.
+
+## Current implementation boundary
+
+Use Vue `<Transition>` for one entering or leaving root, and `<TransitionGroup>` only when keyed list insertion, removal, or movement needs continuity. The shared names are `lp-content` for short enter-only content, `lp-disclosure` for conditional panels, and `lp-list` / `lp-list-move` for keyed list updates. Their CSS names, opacity, translation distance, duration, and easing come from `motion.css` and tokens; do not duplicate a near-equivalent local transition.
+
+Numeric changes use the cancellable `useAnimatedNumber` RAF helper. Its first received value renders directly; later finite updates may transition briefly. Component unmount cancels outstanding RAF work; a reduced-motion preference change cancels and shows the current target. Account-scoped feedback cleanup belongs to its store, not this composable. It displays supplied facts only and never derives scores, rewards, or mastery.
+
+The global `prefers-reduced-motion` treatment makes CSS transitions effectively immediate (`0.01ms`). The shared `motion.css` transitions also remove travel; do not assume that rule resets unrelated component transforms. JavaScript-driven numeric motion must observe `useReducedMotion` and stop at its target. Do not retain a decorative opacity, scale, or layout animation merely because it is short.
+
+Motion for Vue's `MotionConfig` and `LazyMotion` are evaluated references, not installed project dependencies. Do not add them without a concrete timeline, gesture, or physics need plus compatibility, lifecycle, reduced-motion, and bundle evidence. Native `Document.startViewTransition()` remains a later candidate; it is not part of the current routing or state transition implementation.
 
 ## Choose a mode
 
@@ -25,9 +35,9 @@ For build, review, audit, and opportunities work, read [motion decision guide](r
 
 ## Learning feedback
 
-Experience, streaks, goals, and achievements come from persisted backend learning events. Motion may acknowledge an answer or reward but never calculate or approve it. Keep answer reading areas calm and encouragement elements expressive. During timed exams, suppress all correctness, combo, reward, celebration, and sound cues until submission.
+Experience, streaks, goals, and achievements come from persisted backend learning events. Motion never calculates or approves them. Display those facts quietly in the header, profile, and summary rather than with reward floats, full-screen celebrations, confetti, combo flames, achievement dialogs, or persistent pulses. During timed exams, suppress correctness, combo, reward, and sound cues until submission.
 
-Use one celebration queue, deduplicate events, and merge bursts without dropping achievements. Clear pending feedback on account change, logout, or entry into an exam. Completion and level-up may have a larger finite delight budget; users can dismiss and continue immediately. Reduced motion retains the result and removes travel, scale, confetti, and loops.
+An answer or completion may use the shared short state transition only when it improves continuity and never delays the next action. Account-scoped feedback cleanup belongs to the feedback store. Reduced motion retains the information while making shared transitions immediate and removing their travel.
 
 ## Shared boundaries
 

@@ -51,15 +51,21 @@ frontend/admin/   # 独立管理端 HTML 入口
 ## 视觉与设计系统
 
 - `assets/styles/tokens.css` 是唯一视觉来源：颜色、字体、间距、圆角、边框、阴影、动效、布局、
-  z-index 均以 CSS 变量定义。应用工作区采用 Quiet Digital Textbook，公开首页使用高对比的编辑式视觉子集，
+  z-index 均以 CSS 变量定义；`element-plus.css` 将这些语义变量映射到 Element Plus。应用工作区采用暖纸底色、
+  低饱和蓝主操作与焦点的 Quiet Digital Textbook；公开首页使用高对比的编辑式视觉子集，
   两者继续共享语义变量、交互状态与无障碍约束。学习端激励元素延续首页的鲜亮配色，
   题干、解析、代码和 Markdown 阅读区域保持克制；经验与等级表示学习投入。
-- `components/ui/` 提供全局注册的基础组件（`LpPageHeader`、`LpSectionHeading`、`LpStat`、
-  `LpEmptyState`、`LpSkeleton`、`LpDivider`、`LpSignal`、`LpProgress`、`LpKicker`），
-  页面与组件不得随手定义裸色值/裸尺寸。
+- `components/ui/` 提供全局注册的基础组件（包括 `LpPageHeader`、`LpCard`、`LpListItem`、`LpStatePanel`、
+  `LpStat`、`LpProgress`、`LpProgressRing`、`LpEmptyState`、`LpSkeleton`、`LpDivider`、`LpSignal`、`LpKicker`）。
+  `LpStatePanel` 将 loading、empty、error 与 ready 分开，避免将失败呈现为零数据；页面与组件不得随手定义裸色值/裸尺寸。
+- `assets/styles/motion.css` 提供 Vue `Transition` / `TransitionGroup` 的共享内容、披露与列表移动类；
+  它只使用 token 化的 opacity 与短距离 transform。`prefers-reduced-motion` 使 CSS 过渡即时，
+  并由共享动效类移除位移，
+  `useAnimatedNumber` 对服务端数值的后续更新使用可取消 RAF，首次值直接显示。当前不引入新的通用动画库，
+  原生 View Transitions 是后续候选，未接入路由。
 - 反馈组件集中在 `components/gamification/`，使用后端奖励与概况，不在前端认定积分或成就。
-  统一调度去重与合并庆祝，账号切换、退出和考试作答时清空；动画不阻塞继续学习。
-  CSS/Vue 负责简单过渡，稀有庆祝按需加载 `canvas-confetti`，所有位移、缩放与彩纸提供 reduced-motion 版本。
+  ADR-0010 定义其安静呈现方向：数据在顶栏、个人页和总结中原位显示，不增加奖励飘字、全屏庆祝、彩纸、连击火焰、成就弹窗或常驻 pulse。
+  该呈现方向的实现收敛由后续前端任务完成；动画不阻塞继续学习。
 - 游戏化数据决策见 [ADR-0009](decisions/0009-learning-effort-gamification.md)，视觉与交互规范见项目 `frontend-design` Skill。
 - 学习端认证页面采用居中浅渐变卡片，仅承载账户操作；Google 登录入口按后端提供方状态启用，
   Facebook 与 Apple 保持禁用并明确标注暂未开放。

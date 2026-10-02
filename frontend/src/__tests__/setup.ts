@@ -10,6 +10,10 @@ import {
   LpSignal,
   LpProgress,
   LpSkeleton,
+  LpCard,
+  LpListItem,
+  LpStatePanel,
+  LpProgressRing,
 } from '@/components/ui'
 
 class MemoryStorage implements Storage {
@@ -60,4 +64,8 @@ config.global.components = {
   LpSignal,
   LpProgress,
   LpSkeleton,
+  LpCard,
+  LpListItem,
+  LpStatePanel,
+  LpProgressRing,
 }

@@ -8,9 +8,9 @@ export interface AnimatedNumberOptions {
 /** A cancellable numeric transition for values returned by the server. */
 export function useAnimatedNumber(initialValue = 0, options: AnimatedNumberOptions = {}) {
   const value = ref(initialValue)
-  const duration = options.duration ?? 420
   let frameId: number | undefined
   let targetValue = initialValue
+  let hasReceivedValue = false
 
   const stop = () => {
     if (frameId !== undefined) cancelAnimationFrame(frameId)
@@ -19,9 +19,17 @@ export function useAnimatedNumber(initialValue = 0, options: AnimatedNumberOptio
 
   const animateTo = (target: number) => {
     stop()
-    targetValue = Number.isFinite(target) ? target : 0
-    if (!Number.isFinite(target) || options.reducedMotion?.value || duration <= 0) {
-      value.value = Number.isFinite(target) ? target : 0
+    if (!Number.isFinite(target)) return
+    targetValue = target
+    const token =
+      typeof document === 'undefined'
+        ? ''
+        : getComputedStyle(document.documentElement).getPropertyValue('--lp-duration-feedback').trim()
+    const tokenDuration = Number.parseFloat(token) * (token.endsWith('ms') ? 1 : 1000)
+    const duration = options.duration ?? (Number.isFinite(tokenDuration) ? tokenDuration : 260)
+    if (!hasReceivedValue || options.reducedMotion?.value || duration <= 0) {
+      hasReceivedValue = true
+      value.value = target
       return
     }
 
@@ -37,6 +45,7 @@ export function useAnimatedNumber(initialValue = 0, options: AnimatedNumberOptio
       if (progress < 1) frameId = requestAnimationFrame(tick)
       else frameId = undefined
     }
+    hasReceivedValue = true
     frameId = requestAnimationFrame(tick)
   }
 

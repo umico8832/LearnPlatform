@@ -1,0 +1,56 @@
+.lp-content-enter-active,
+.lp-disclosure-enter-active {
+  transition:
+    opacity var(--lp-duration-enter) var(--lp-ease-out),
+    transform var(--lp-duration-enter) var(--lp-ease-out);
+}
+
+.lp-content-leave-active,
+.lp-disclosure-leave-active {
+  transition:
+    opacity var(--lp-duration-leave) var(--lp-ease-out),
+    transform var(--lp-duration-leave) var(--lp-ease-out);
+}
+
+.lp-content-enter-from,
+.lp-disclosure-enter-from,
+.lp-disclosure-leave-to {
+  opacity: 0;
+  transform: translateY(var(--lp-motion-distance));
+}
+
+.lp-content-leave-to {
+  opacity: 0;
+}
+
+.lp-list-move {
+  transition: transform var(--lp-duration-slow) var(--lp-ease-out);
+}
+
+.lp-list-enter-active,
+.lp-list-leave-active {
+  transition:
+    opacity var(--lp-duration-normal) var(--lp-ease-out),
+    transform var(--lp-duration-normal) var(--lp-ease-out);
+}
+
+.lp-list-enter-from,
+.lp-list-leave-to {
+  opacity: 0;
+  transform: translateY(var(--lp-motion-distance));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-content-enter-from,
+  .lp-content-leave-to,
+  .lp-disclosure-enter-from,
+  .lp-disclosure-leave-to,
+  .lp-list-enter-from,
+  .lp-list-leave-to {
+    transform: none;
+  }
+
+  .lp-list-move {
+    transition: none;
+  }
+}

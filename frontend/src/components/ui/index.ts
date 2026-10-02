@@ -11,7 +11,11 @@ import LpEmptyState from './LpEmptyState.vue'
 import LpDivider from './LpDivider.vue'
 import LpSignal from './LpSignal.vue'
 import LpProgress from './LpProgress.vue'
+import LpProgressRing from './LpProgressRing.vue'
 import LpSkeleton from './LpSkeleton.vue'
+import LpCard from './LpCard.vue'
+import LpListItem from './LpListItem.vue'
+import LpStatePanel from './LpStatePanel.vue'
 
 const components: Record<string, Component> = {
   LpKicker,
@@ -22,7 +26,11 @@ const components: Record<string, Component> = {
   LpDivider,
   LpSignal,
   LpProgress,
+  LpProgressRing,
   LpSkeleton,
+  LpCard,
+  LpListItem,
+  LpStatePanel,
 }
 
 export function registerUiComponents(app: App) {
@@ -31,4 +39,18 @@ export function registerUiComponents(app: App) {
   }
 }
 
-export { LpKicker, LpPageHeader, LpSectionHeading, LpStat, LpEmptyState, LpDivider, LpSignal, LpProgress, LpSkeleton }
+export {
+  LpKicker,
+  LpPageHeader,
+  LpSectionHeading,
+  LpStat,
+  LpEmptyState,
+  LpDivider,
+  LpSignal,
+  LpProgress,
+  LpProgressRing,
+  LpSkeleton,
+  LpCard,
+  LpListItem,
+  LpStatePanel,
+}
