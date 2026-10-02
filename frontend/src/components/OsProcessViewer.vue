@@ -101,12 +101,12 @@ function getGanttPos(value: number): number {
 
 function getStateLabel(state: string): string {
   const labels: Record<string, string> = {
-    running: '🏃 运行中',
-    ready: '✅ 就绪',
-    waiting: '⏳ 等待',
-    blocked: '🔒 阻塞',
-    terminated: '⛔ 终止',
-    new: '🆕 新建',
+    running: '运行中',
+    ready: '就绪',
+    waiting: '等待',
+    blocked: '阻塞',
+    terminated: '终止',
+    new: '新建',
   }
   return labels[state] || state
 }

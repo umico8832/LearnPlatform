@@ -369,8 +369,14 @@ export function getPaperDetail(id: number, options?: { errorDisplay?: 'inline' }
   return request.get<unknown, ApiResponse<ExamPaperVO>>(`/exam/papers/${id}`)
 }
 
-export function previewPrivateExamImport(data: PrivateExamImportRequest) {
-  return request.post<unknown, ApiResponse<PrivateExamImportPreview>>('/exam/private-papers/import/preview', data)
+function postPrivateImport<T>(url: string, data: unknown, options?: ExamRequestOptions) {
+  return options
+    ? request.post<unknown, ApiResponse<T>>(url, data, options)
+    : request.post<unknown, ApiResponse<T>>(url, data)
+}
+
+export function previewPrivateExamImport(data: PrivateExamImportRequest, options?: ExamRequestOptions) {
+  return postPrivateImport<PrivateExamImportPreview>('/exam/private-papers/import/preview', data, options)
 }
 
 export interface PrivateExamFileMetadata {
@@ -386,78 +392,88 @@ function fileFormData(metadata: object, file: File) {
   return data
 }
 
-export function previewPrivateExamPdf(metadata: PrivateExamFileMetadata, file: File) {
+export function previewPrivateExamPdf(metadata: PrivateExamFileMetadata, file: File, options?: ExamRequestOptions) {
   return request.post<unknown, ApiResponse<PrivateExamImportPreview>>(
     '/exam/private-papers/import/pdf/preview',
     fileFormData(metadata, file),
-    { headers: { 'Content-Type': 'multipart/form-data' } },
+    { headers: { 'Content-Type': 'multipart/form-data' }, ...options },
   )
 }
 
 export function confirmPrivateExamPdf(
   metadata: PrivateExamFileMetadata & { expectedContentHash: string; confirmed: true },
   file: File,
+  options?: ExamRequestOptions,
 ) {
   return request.post<unknown, ApiResponse<ExamPaperVO>>(
     '/exam/private-papers/import/pdf/confirm',
     fileFormData(metadata, file),
-    { headers: { 'Content-Type': 'multipart/form-data' } },
+    { headers: { 'Content-Type': 'multipart/form-data' }, ...options },
   )
 }
 
 export function createPrivateExamPdfDraft(
   metadata: PrivateExamFileMetadata & { expectedContentHash: string },
   file: File,
+  options?: ExamRequestOptions,
 ) {
   return request.post<unknown, ApiResponse<PrivateExamDraft>>(
     '/exam/private-papers/drafts/pdf',
     fileFormData(metadata, file),
-    { headers: { 'Content-Type': 'multipart/form-data' } },
+    { headers: { 'Content-Type': 'multipart/form-data' }, ...options },
   )
 }
 
-export function previewPrivateExamDocx(metadata: PrivateExamFileMetadata, file: File) {
+export function previewPrivateExamDocx(metadata: PrivateExamFileMetadata, file: File, options?: ExamRequestOptions) {
   return request.post<unknown, ApiResponse<PrivateExamImportPreview>>(
     '/exam/private-papers/import/docx/preview',
     fileFormData(metadata, file),
-    { headers: { 'Content-Type': 'multipart/form-data' } },
+    { headers: { 'Content-Type': 'multipart/form-data' }, ...options },
   )
 }
 
 export function confirmPrivateExamDocx(
   metadata: PrivateExamFileMetadata & { expectedContentHash: string; confirmed: true },
   file: File,
+  options?: ExamRequestOptions,
 ) {
   return request.post<unknown, ApiResponse<ExamPaperVO>>(
     '/exam/private-papers/import/docx/confirm',
     fileFormData(metadata, file),
-    { headers: { 'Content-Type': 'multipart/form-data' } },
+    { headers: { 'Content-Type': 'multipart/form-data' }, ...options },
   )
 }
 
 export function createPrivateExamDocxDraft(
   metadata: PrivateExamFileMetadata & { expectedContentHash: string },
   file: File,
+  options?: ExamRequestOptions,
 ) {
   return request.post<unknown, ApiResponse<PrivateExamDraft>>(
     '/exam/private-papers/drafts/docx',
     fileFormData(metadata, file),
-    { headers: { 'Content-Type': 'multipart/form-data' } },
+    { headers: { 'Content-Type': 'multipart/form-data' }, ...options },
   )
 }
 
 export function confirmPrivateExamImport(
   data: PrivateExamImportRequest & { expectedContentHash: string; confirmed: true },
+  options?: ExamRequestOptions,
 ) {
-  return request.post<unknown, ApiResponse<ExamPaperVO>>('/exam/private-papers/import/confirm', data)
+  return postPrivateImport<ExamPaperVO>('/exam/private-papers/import/confirm', data, options)
 }
 
-export function createPrivateExamDraft(data: PrivateExamImportRequest & { expectedContentHash: string }) {
-  return request.post<unknown, ApiResponse<PrivateExamDraft>>('/exam/private-papers/drafts', data)
+export function createPrivateExamDraft(
+  data: PrivateExamImportRequest & { expectedContentHash: string },
+  options?: ExamRequestOptions,
+) {
+  return postPrivateImport<PrivateExamDraft>('/exam/private-papers/drafts', data, options)
 }
 
-export function getPrivateExamDrafts() {
-  return request.get<unknown, ApiResponse<PrivateExamDraft[]>>('/exam/private-papers/drafts')
+export function getPrivateExamDrafts(options?: ExamRequestOptions) {
+  return options
+    ? request.get<unknown, ApiResponse<PrivateExamDraft[]>>('/exam/private-papers/drafts', options)
+    : request.get<unknown, ApiResponse<PrivateExamDraft[]>>('/exam/private-papers/drafts')
 }
 
 export function getPrivateExamDraft(draftId: number) {
@@ -481,14 +497,20 @@ export function reviewPrivateExamDraftQuestion(
   )
 }
 
-export function confirmPrivateExamDraft(draftId: number) {
-  return request.post<unknown, ApiResponse<ExamPaperVO>>(`/exam/private-papers/drafts/${draftId}/confirm`, {
-    confirmed: true,
-  })
+export function confirmPrivateExamDraft(draftId: number, options?: ExamRequestOptions) {
+  return postPrivateImport<ExamPaperVO>(
+    `/exam/private-papers/drafts/${draftId}/confirm`,
+    {
+      confirmed: true,
+    },
+    options,
+  )
 }
 
-export function deletePrivateExamDraft(draftId: number) {
-  return request.delete<unknown, ApiResponse<null>>(`/exam/private-papers/drafts/${draftId}`)
+export function deletePrivateExamDraft(draftId: number, options?: ExamRequestOptions) {
+  return options
+    ? request.delete<unknown, ApiResponse<null>>(`/exam/private-papers/drafts/${draftId}`, options)
+    : request.delete<unknown, ApiResponse<null>>(`/exam/private-papers/drafts/${draftId}`)
 }
 
 export function deletePrivateExamPaper(paperId: number, options?: ExamRequestOptions) {
@@ -497,27 +519,40 @@ export function deletePrivateExamPaper(paperId: number, options?: ExamRequestOpt
     : request.delete<unknown, ApiResponse<null>>(`/exam/private-papers/${paperId}`)
 }
 
-export function getPrivateExamSource(paperId: number) {
-  return request.get<unknown, ApiResponse<PrivateExamSource>>(`/exam/private-papers/${paperId}/source`)
+export function getPrivateExamSource(paperId: number, options?: ExamRequestOptions) {
+  return options
+    ? request.get<unknown, ApiResponse<PrivateExamSource>>(`/exam/private-papers/${paperId}/source`, options)
+    : request.get<unknown, ApiResponse<PrivateExamSource>>(`/exam/private-papers/${paperId}/source`)
 }
 
-export function getPrivateExamStorageUsage() {
-  return request.get<unknown, ApiResponse<PrivateExamStorageUsage>>('/exam/private-papers/source-storage')
+export function getPrivateExamStorageUsage(options?: ExamRequestOptions) {
+  return options
+    ? request.get<unknown, ApiResponse<PrivateExamStorageUsage>>('/exam/private-papers/source-storage', options)
+    : request.get<unknown, ApiResponse<PrivateExamStorageUsage>>('/exam/private-papers/source-storage')
 }
 
-export function getPrivateExamStorageFiles(params?: { pageNum?: number; pageSize?: number }) {
+export function getPrivateExamStorageFiles(
+  params?: { pageNum?: number; pageSize?: number },
+  options?: ExamRequestOptions,
+) {
   return request.get<unknown, ApiResponse<PageData<PrivateExamSourceStorageItem>>>(
     '/exam/private-papers/source-storage/files',
-    { params },
+    options ? { params, ...options } : { params },
   )
 }
 
-export function downloadPrivateExamSourceFile(paperId: number) {
-  return request.get(`/exam/private-papers/${paperId}/source/file`, { responseType: 'blob' })
+export function downloadPrivateExamSourceFile(paperId: number, options?: ExamRequestOptions) {
+  return request.get(
+    `/exam/private-papers/${paperId}/source/file`,
+    options ? { responseType: 'blob', ...options } : { responseType: 'blob' },
+  )
 }
 
-export function downloadPrivateExamDraftSourceFile(draftId: number) {
-  return request.get(`/exam/private-papers/drafts/${draftId}/source/file`, { responseType: 'blob' })
+export function downloadPrivateExamDraftSourceFile(draftId: number, options?: ExamRequestOptions) {
+  return request.get(
+    `/exam/private-papers/drafts/${draftId}/source/file`,
+    options ? { responseType: 'blob', ...options } : { responseType: 'blob' },
+  )
 }
 
 export function startExam(paperId: number, options?: ExamRequestOptions) {

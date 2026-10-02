@@ -34,7 +34,7 @@
           >
         </el-table-column>
         <el-table-column label="题型" width="80" align="center">
-          <template #default="{ row }">{{ row.questionType }}</template>
+          <template #default="{ row }">{{ questionTypeLabel(row.questionType) }}</template>
         </el-table-column>
         <el-table-column label="难度" width="80" align="center">
           <template #default="{ row }">
@@ -68,7 +68,7 @@
 
 <script setup lang="ts">
 import type { SimilarQuestions } from '@/api/statistics'
-import { similarityColor } from './diagnosisDisplay'
+import { questionTypeLabel, similarityColor } from './diagnosisDisplay'
 
 defineProps<{
   modelValue: boolean

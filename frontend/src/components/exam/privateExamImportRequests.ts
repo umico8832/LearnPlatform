@@ -16,12 +16,13 @@ interface FileMetadata {
   courseId: number
   duration: number
 }
+const inlineErrors = { errorDisplay: 'inline' } as const
 
 export function previewPrivateExamSource(form: PrivateExamImportRequest, sourceFile: File | null) {
   const metadata = fileMetadata(form)
-  if (form.sourceFormat === 'PDF' && sourceFile) return previewPrivateExamPdf(metadata, sourceFile)
-  if (form.sourceFormat === 'DOCX' && sourceFile) return previewPrivateExamDocx(metadata, sourceFile)
-  return previewPrivateExamImport(form)
+  if (form.sourceFormat === 'PDF' && sourceFile) return previewPrivateExamPdf(metadata, sourceFile, inlineErrors)
+  if (form.sourceFormat === 'DOCX' && sourceFile) return previewPrivateExamDocx(metadata, sourceFile, inlineErrors)
+  return previewPrivateExamImport(form, inlineErrors)
 }
 
 export function confirmPrivateExamSource(
@@ -30,9 +31,9 @@ export function confirmPrivateExamSource(
   sourceFile: File | null,
 ) {
   const metadata = { ...fileMetadata(form), expectedContentHash: preview.contentHash, confirmed: true as const }
-  if (form.sourceFormat === 'PDF' && sourceFile) return confirmPrivateExamPdf(metadata, sourceFile)
-  if (form.sourceFormat === 'DOCX' && sourceFile) return confirmPrivateExamDocx(metadata, sourceFile)
-  return confirmPrivateExamImport({ ...form, expectedContentHash: preview.contentHash, confirmed: true })
+  if (form.sourceFormat === 'PDF' && sourceFile) return confirmPrivateExamPdf(metadata, sourceFile, inlineErrors)
+  if (form.sourceFormat === 'DOCX' && sourceFile) return confirmPrivateExamDocx(metadata, sourceFile, inlineErrors)
+  return confirmPrivateExamImport({ ...form, expectedContentHash: preview.contentHash, confirmed: true }, inlineErrors)
 }
 
 export function createPrivateExamAnswerDraft(
@@ -41,9 +42,9 @@ export function createPrivateExamAnswerDraft(
   sourceFile: File | null,
 ) {
   const metadata = { ...fileMetadata(form), expectedContentHash: preview.contentHash }
-  if (form.sourceFormat === 'PDF' && sourceFile) return createPrivateExamPdfDraft(metadata, sourceFile)
-  if (form.sourceFormat === 'DOCX' && sourceFile) return createPrivateExamDocxDraft(metadata, sourceFile)
-  return createPrivateExamDraft({ ...form, expectedContentHash: preview.contentHash })
+  if (form.sourceFormat === 'PDF' && sourceFile) return createPrivateExamPdfDraft(metadata, sourceFile, inlineErrors)
+  if (form.sourceFormat === 'DOCX' && sourceFile) return createPrivateExamDocxDraft(metadata, sourceFile, inlineErrors)
+  return createPrivateExamDraft({ ...form, expectedContentHash: preview.contentHash }, inlineErrors)
 }
 
 function fileMetadata(form: PrivateExamImportRequest): FileMetadata {

@@ -1,7 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { useUserStore } from '@/stores/user'
-import { flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { getQuestionById, getSimilarQuestions, message, routerPush } = vi.hoisted(() => ({
   getQuestionById: vi.fn(),
@@ -16,6 +16,7 @@ vi.mock('element-plus', () => ({ ElMessage: message }))
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: routerPush }) }))
 
 import SimilarQuestionsDialog from '@/components/practice/SimilarQuestionsDialog.vue'
+enableAutoUnmount(afterEach)
 
 describe('SimilarQuestionsDialog', () => {
   beforeEach(() => {
@@ -109,8 +110,11 @@ describe('SimilarQuestionsDialog', () => {
       }
 
       expect(sessionStorage.getItem('practice_user_id')).toBe('7')
-      expect(getSimilarQuestions).toHaveBeenCalledWith(10, 8)
-      expect(getQuestionById).toHaveBeenCalledWith(11)
+      expect(getSimilarQuestions).toHaveBeenCalledWith(10, 8, {
+        errorDisplay: 'inline',
+        signal: expect.any(AbortSignal),
+      })
+      expect(getQuestionById).toHaveBeenCalledWith(11, { errorDisplay: 'inline' })
       expect(JSON.parse(sessionStorage.getItem('practice_questions') || '[]')).toEqual([
         { id: 11, content: '完整相似题' },
       ])

@@ -195,7 +195,7 @@ describe('ReviewSessionPanel', () => {
     wrapper.unmount()
   })
 
-  it('does not accept a reward or report completion when review submission fails', async () => {
+  it('keeps a failed review submission beside the answer with a retry, without a global error toast', async () => {
     submitReview.mockRejectedValueOnce(new Error('network'))
     const acceptReward = vi.spyOn(useGamificationStore(), 'acceptReward')
     const wrapper = mount(ReviewSessionPanel, {
@@ -213,7 +213,9 @@ describe('ReviewSessionPanel', () => {
     expect(acceptReward).not.toHaveBeenCalled()
     expect(wrapper.emitted('reviewed')).toBeUndefined()
     expect(wrapper.text()).not.toContain('作答已记录')
-    expect(message.error).toHaveBeenCalled()
+    expect(wrapper.get('[role="alert"]').text()).toContain('network')
+    expect(wrapper.get('[role="alert"] button').text()).toBe('重试')
+    expect(message.error).not.toHaveBeenCalled()
   })
 
   it('ignores a late response after the learner ends the review session', async () => {

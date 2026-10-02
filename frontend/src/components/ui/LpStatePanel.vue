@@ -61,12 +61,14 @@ const emit = defineEmits<{ retry: [] }>()
   background: var(--lp-surface-subtle);
 }
 .lp-state-panel-title {
+  overflow-wrap: anywhere;
   color: var(--lp-text);
   font-size: var(--lp-text-base);
   line-height: var(--lp-leading-snug);
 }
 .lp-state-panel-description {
   margin: 0;
+  overflow-wrap: anywhere;
   color: var(--lp-text-secondary);
   font-size: var(--lp-text-sm);
   line-height: var(--lp-leading-body);

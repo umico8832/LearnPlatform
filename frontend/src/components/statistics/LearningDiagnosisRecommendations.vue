@@ -54,7 +54,7 @@
       <el-table-column prop="questionType" label="题型" width="80" align="center" />
       <el-table-column label="难度" width="100" align="center">
         <template #default="{ row }"
-          ><span v-if="row.difficulty">{{ '⭐'.repeat(row.difficulty) }}</span></template
+          ><span v-if="row.difficulty">难度 {{ row.difficulty }}</span></template
         >
       </el-table-column>
       <el-table-column prop="courseName" label="课程" width="120" />

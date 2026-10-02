@@ -145,7 +145,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{ 'generate-ai-advice': []; 'stop-ai-advice': [] }>()
 
-const adviceLines = computed(() => props.data.dailyAdvice.split('\n').filter((line) => line.trim()))
+const adviceLines = computed(() =>
+  props.data.dailyAdvice
+    .split('\n')
+    .map((line) => line.trim().replace(/^(?:📚|⚠️?|⏰|🔥|📈|💡|✅)\s*/u, ''))
+    .filter(Boolean),
+)
 const maxBarValue = computed(() => {
   const max = Math.max(...props.data.learningHabit.weeklyTrend.map((day) => day.total))
   return max || 1

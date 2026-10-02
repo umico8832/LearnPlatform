@@ -1,5 +1,11 @@
 <template>
   <el-dialog v-model="dialogVisible" title="导入私有试卷" width="min(760px, 92vw)" class="private-import-dialog">
+    <p v-if="validationError" class="import-error" role="alert">{{ validationError }}</p>
+    <el-alert v-if="actionError" :title="actionError" type="error" :closable="false" show-icon class="import-error">
+      <template v-if="retryKind" #default
+        ><el-button link type="primary" @click="retryAction">重试</el-button></template
+      >
+    </el-alert>
     <el-alert
       title="支持结构化 Markdown、文本、文本型 PDF 或有限 DOCX；无答案题目会先保存为草稿，AI 建议必须逐题人工复核后才能启用。"
       type="info"
@@ -8,7 +14,17 @@
       class="import-intro"
     />
 
-    <div v-if="storageUsage" class="storage-summary">
+    <p v-if="readLoading.usage" role="status">正在读取原文件用量</p>
+    <el-alert
+      v-else-if="loadErrors.usage"
+      :title="loadErrors.usage"
+      type="error"
+      :closable="false"
+      class="import-error"
+    >
+      <template #default><el-button @click="loadStorageUsage">重试用量</el-button></template>
+    </el-alert>
+    <div v-else-if="storageUsage" class="storage-summary">
       <span>
         原文件存储：{{ formatStorage(storageUsage.usedBytes) }} / {{ formatStorage(storageUsage.limitBytes) }} ·
         {{ storageUsage.fileCount }} 个文件
@@ -16,27 +32,60 @@
       <el-button type="primary" link @click="emit('open-storage')">查看明细</el-button>
     </div>
 
-    <el-form v-if="!importPreview && !activeDraft" label-position="top" class="import-form">
-      <section v-if="privateDrafts.length" class="draft-list">
+    <el-form
+      v-if="!importPreview && !activeDraft"
+      label-position="top"
+      class="import-form"
+      :disabled="previewLoading || confirmLoading"
+    >
+      <p v-if="readLoading.drafts" role="status">正在读取待复核草稿</p>
+      <el-alert
+        v-else-if="loadErrors.drafts"
+        :title="loadErrors.drafts"
+        type="error"
+        :closable="false"
+        class="import-error"
+      >
+        <template #default><el-button @click="loadPrivateDrafts">重试草稿</el-button></template>
+      </el-alert>
+      <section v-else-if="privateDrafts.length" class="draft-list">
         <strong class="draft-list-title">待复核草稿</strong>
         <div v-for="draft in privateDrafts" :key="draft.id" class="draft-list-item">
           <el-button plain class="draft-open-button" @click="openDraft(draft)">
             {{ draft.title }} · {{ draft.reviewedQuestionCount }}/{{ draft.questionCount }} 已复核
           </el-button>
-          <el-button type="danger" link :loading="deletingDraftId === draft.id" @click="deleteDraft(draft)">
+          <el-button
+            type="danger"
+            link
+            :loading="deletingDraftId === draft.id"
+            :disabled="deletingDraftId !== null"
+            @click="deleteDraft(draft)"
+          >
             删除草稿
           </el-button>
         </div>
       </section>
+      <p v-else-if="readLoaded.drafts" class="import-hint">暂无待复核草稿</p>
 
       <div class="import-grid">
         <el-form-item label="试卷标题">
           <el-input v-model="importForm.title" maxlength="200" />
         </el-form-item>
         <el-form-item label="所属课程">
-          <el-select v-model="importForm.courseId" filterable placeholder="选择课程">
+          <el-select
+            :model-value="importForm.courseId || undefined"
+            @update:model-value="importForm.courseId = Number($event) || 0"
+            :loading="readLoading.courses"
+            :disabled="readLoading.courses || !!loadErrors.courses"
+            filterable
+            placeholder="选择课程"
+          >
             <el-option v-for="course in courses" :key="course.id" :label="course.name" :value="course.id" />
           </el-select>
+          <div v-if="loadErrors.courses" class="import-error" role="alert">
+            {{ loadErrors.courses }} <el-button link @click="loadCourses">重试课程</el-button>
+          </div>
+          <p v-else-if="readLoaded.courses && !courses.length" class="import-hint">暂无可选课程</p>
         </el-form-item>
         <el-form-item label="原始资料名称">
           <el-input
@@ -83,7 +132,7 @@
           :rows="14"
           maxlength="100000"
           show-word-limit
-          :placeholder="importPlaceholder"
+          :placeholder="PLACEHOLDER"
         />
       </el-form-item>
     </el-form>
@@ -119,8 +168,8 @@
     />
 
     <template #footer>
-      <el-button v-if="importPreview" @click="importPreview = null">返回修改</el-button>
-      <el-button v-if="activeDraft" @click="openDraft(null)">返回导入</el-button>
+      <el-button v-if="importPreview" :disabled="confirmLoading" @click="openDraft(null)">返回修改</el-button>
+      <el-button v-if="activeDraft" :disabled="confirmLoading" @click="openDraft(null)">返回导入</el-button>
       <el-button @click="dialogVisible = false">取消</el-button>
       <el-button v-if="!importPreview && !activeDraft" type="primary" :loading="previewLoading" @click="previewImport">
         解析并预览
@@ -151,28 +200,19 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { UploadFile } from 'element-plus'
-import {
-  confirmPrivateExamDraft,
-  deletePrivateExamDraft,
-  getPrivateExamDrafts,
-  getPrivateExamStorageUsage,
-} from '@/api/exam'
-import type {
-  PrivateExamDraft,
-  PrivateExamImportPreview,
-  PrivateExamImportRequest,
-  PrivateExamStorageUsage,
-} from '@/api/exam'
-import { getAllCourses } from '@/api/course'
-import type { CourseVO } from '@/api/course'
+import { confirmPrivateExamDraft, deletePrivateExamDraft } from '@/api/exam'
+import type { PrivateExamDraft, PrivateExamImportPreview, PrivateExamStorageUsage } from '@/api/exam'
 import { formatStorage } from '@/utils/format'
+import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
+import { usePrivateExamImportLoaders } from './usePrivateExamImportLoaders'
+import { errorMessage } from '@/utils/errors'
 import PrivateExamDraftReview from '@/components/exam/PrivateExamDraftReview.vue'
 import {
   confirmPrivateExamSource,
   createPrivateExamAnswerDraft,
   previewPrivateExamSource,
 } from './privateExamImportRequests'
+import { initialPrivateExamCourseId, PLACEHOLDER, usePrivateExamImportForm } from './usePrivateExamImportForm'
 
 const props = defineProps<{
   modelValue: boolean
@@ -190,7 +230,7 @@ const dialogVisible = computed({
   set: (value: boolean) => emit('update:modelValue', value),
 })
 
-const courses = ref<CourseVO[]>([])
+const courses = ref([] as import('@/api/course').CourseVO[])
 const previewLoading = ref(false)
 const confirmLoading = ref(false)
 const importPreview = ref<PrivateExamImportPreview | null>(null)
@@ -198,51 +238,76 @@ const privateDrafts = ref<PrivateExamDraft[]>([])
 const activeDraft = ref<PrivateExamDraft | null>(null)
 const deletingDraftId = ref<number | null>(null)
 const storageUsage = ref<PrivateExamStorageUsage | null>(null)
-const sourceFile = ref<File | null>(null)
+const actionError = ref('')
+const retryKind = ref<'preview' | 'confirm' | 'draft' | 'enable' | null>(null)
 
-const initialCourseId = computed(() => {
-  const id = props.defaultCourseId ?? 0
-  return Number.isFinite(id) && id > 0 ? id : 0
-})
+const initialCourseId = computed(() => initialPrivateExamCourseId(props.defaultCourseId))
 
-const emptyImportForm = (): PrivateExamImportRequest => ({
-  title: '',
-  courseId: initialCourseId.value,
-  duration: 60,
-  sourceName: '',
-  sourceFormat: 'MARKDOWN',
-  content: '',
-})
-
-const importForm = ref<PrivateExamImportRequest>(emptyImportForm())
-const importPlaceholder = `## 1. 单选题\n**题干**: 栈遵循哪种访问顺序？\n**选项**:\n- A. 先进先出\n- B. 先进后出\n**答案**: B\n**解析**: 栈遵循 LIFO。\n**分值**: 2`
-
-const isFileImport = computed(() => ['PDF', 'DOCX'].includes(importForm.value.sourceFormat))
-const fileAccept = computed(() =>
-  importForm.value.sourceFormat === 'PDF'
-    ? 'application/pdf,.pdf'
-    : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx',
-)
+const {
+  sourceFile,
+  importForm,
+  isFileImport,
+  fileAccept,
+  selectSourceFile,
+  removeSourceFile,
+  changeSourceFormat,
+  valid: validImportForm,
+  validationError,
+  reset: resetForm,
+} = usePrivateExamImportForm(initialCourseId)
 
 let dialogVersion = 0
-let draftListVersion = 0
+let alive = true
+
+function current(version: number, session: number) {
+  return alive && version === dialogVersion && session === getAuthSessionVersion()
+}
+const {
+  loadCourses,
+  loadDrafts: loadPrivateDrafts,
+  loadUsage: loadStorageUsage,
+  invalidate: invalidateLoads,
+  invalidateDrafts,
+  errors: loadErrors,
+  loading: readLoading,
+  loaded: readLoaded,
+} = usePrivateExamImportLoaders(courses, privateDrafts, storageUsage, () => alive && dialogVisible.value)
 
 function invalidateDialogRequests() {
   dialogVersion++
   previewLoading.value = false
   confirmLoading.value = false
+  deletingDraftId.value = null
+  actionError.value = ''
+  retryKind.value = null
 }
 
-onBeforeUnmount(() => {
+const unsubscribe = onAuthSessionChange(() => {
   invalidateDialogRequests()
-  draftListVersion++
+  invalidateLoads()
+  courses.value = []
+  privateDrafts.value = []
+  storageUsage.value = null
+  actionError.value = ''
+  resetImport()
+  if (dialogVisible.value) {
+    void loadCourses()
+    void loadPrivateDrafts()
+    void loadStorageUsage()
+  }
+})
+onBeforeUnmount(() => {
+  alive = false
+  invalidateDialogRequests()
+  invalidateLoads()
+  unsubscribe()
 })
 
 watch(
   () => props.modelValue,
   (open) => {
     invalidateDialogRequests()
-    draftListVersion++
+    invalidateLoads()
     if (!open) {
       resetImport()
       return
@@ -254,104 +319,56 @@ watch(
   { flush: 'sync' },
 )
 
-async function loadStorageUsage() {
-  try {
-    const res = await getPrivateExamStorageUsage()
-    storageUsage.value = res.code === 0 && res.data ? res.data : null
-  } catch {
-    storageUsage.value = null
-  }
-}
-
-async function loadCourses() {
-  if (courses.value.length) return
-  try {
-    const res = await getAllCourses()
-    if (res.code === 0 && res.data) courses.value = res.data
-  } catch {
-    ElMessage.error('获取课程列表失败')
-  }
-}
-
-async function loadPrivateDrafts() {
-  const version = ++draftListVersion
-  try {
-    const res = await getPrivateExamDrafts()
-    if (version === draftListVersion && res.code === 0 && res.data) privateDrafts.value = res.data
-  } catch {
-    if (version === draftListVersion) ElMessage.error('获取待复核草稿失败')
-  }
-}
-
-const selectSourceFile = (uploadFile: UploadFile) => {
-  sourceFile.value = uploadFile.raw || null
-  importForm.value.sourceName = uploadFile.name
-  importForm.value.content = ''
-}
-
-const removeSourceFile = () => {
-  sourceFile.value = null
-  importForm.value.sourceName = ''
-}
-
-const changeSourceFormat = () => {
-  sourceFile.value = null
-  importForm.value.sourceName = ''
-  importForm.value.content = ''
-}
-
-const validateImportForm = () => {
-  if (isFileImport.value) {
-    if (!importForm.value.title.trim() || !importForm.value.courseId || !sourceFile.value) {
-      ElMessage.warning(`请完整填写标题、课程并选择 ${importForm.value.sourceFormat} 文件`)
-      return false
-    }
-    return true
-  }
-  if (
-    !importForm.value.title.trim() ||
-    !importForm.value.sourceName.trim() ||
-    !importForm.value.courseId ||
-    !importForm.value.content.trim()
-  ) {
-    ElMessage.warning('请完整填写标题、课程、资料名称和原始内容')
-    return false
-  }
-  return true
-}
-
 const previewImport = async () => {
-  if (previewLoading.value || !validateImportForm()) return
+  if (previewLoading.value || !validImportForm()) return
   const version = dialogVersion
+  const session = getAuthSessionVersion()
+  actionError.value = ''
+  retryKind.value = null
   previewLoading.value = true
   try {
     const res = await previewPrivateExamSource(importForm.value, sourceFile.value)
-    if (version !== dialogVersion) return
+    if (!current(version, session)) return
     if (res.code === 0 && res.data) importPreview.value = res.data
-    else ElMessage.error(res.message || '解析失败')
-  } catch {
-    if (version === dialogVersion) ElMessage.error('解析失败，请检查结构化格式')
+    else {
+      actionError.value = res.message || '解析失败'
+      retryKind.value = 'preview'
+    }
+  } catch (cause) {
+    if (current(version, session)) {
+      actionError.value = errorMessage(cause, '暂时无法解析，请重试。已选内容会保留。')
+      retryKind.value = 'preview'
+    }
   } finally {
-    if (version === dialogVersion) previewLoading.value = false
+    if (current(version, session)) previewLoading.value = false
   }
 }
 
 const confirmImport = async () => {
   if (confirmLoading.value || !importPreview.value) return
   const version = dialogVersion
+  const session = getAuthSessionVersion()
+  actionError.value = ''
+  retryKind.value = null
   confirmLoading.value = true
   try {
     const res = await confirmPrivateExamSource(importForm.value, importPreview.value, sourceFile.value)
-    if (version !== dialogVersion) return
+    if (!current(version, session)) return
     if (res.code === 0 && res.data) {
       ElMessage.success('私有试卷已导入')
       emit('update:modelValue', false)
       emit('imported')
-    } else ElMessage.error(res.message || '导入失败')
-  } catch {
-    if (version === dialogVersion) ElMessage.error('导入失败')
+    } else {
+      actionError.value = res.message || '导入失败'
+      retryKind.value = 'confirm'
+    }
+  } catch (cause) {
+    if (current(version, session)) {
+      actionError.value = errorMessage(cause, '导入未完成，请重试。')
+      retryKind.value = 'confirm'
+    }
   } finally {
-    if (version === dialogVersion) confirmLoading.value = false
+    if (current(version, session)) confirmLoading.value = false
   }
 }
 
@@ -362,7 +379,7 @@ const openDraft = (draft: PrivateExamDraft | null) => {
 }
 
 const updateDraftList = (draft: PrivateExamDraft) => {
-  draftListVersion++
+  invalidateDrafts()
   const index = privateDrafts.value.findIndex((item) => item.id === draft.id)
   if (index >= 0) privateDrafts.value[index] = draft
   else privateDrafts.value.unshift(draft)
@@ -375,6 +392,10 @@ const replaceDraft = (draft: PrivateExamDraft) => {
 }
 
 const deleteDraft = async (draft: PrivateExamDraft) => {
+  if (deletingDraftId.value !== null) return
+  const version = dialogVersion
+  const session = getAuthSessionVersion()
+  deletingDraftId.value = draft.id
   const confirmed = await ElMessageBox.confirm(
     `删除草稿“${draft.title}”及其未引用原始资料？此操作不可恢复。`,
     '删除私有试卷草稿',
@@ -382,75 +403,113 @@ const deleteDraft = async (draft: PrivateExamDraft) => {
   )
     .then(() => true)
     .catch(() => false)
-  if (!confirmed) return
-  deletingDraftId.value = draft.id
+  if (!current(version, session)) return
+  if (!confirmed) {
+    deletingDraftId.value = null
+    return
+  }
+  actionError.value = ''
   try {
-    const res = await deletePrivateExamDraft(draft.id)
+    const res = await deletePrivateExamDraft(draft.id, { errorDisplay: 'inline' })
+    if (!current(version, session)) return
     if (res.code === 0) {
-      draftListVersion++
+      invalidateDrafts()
       privateDrafts.value = privateDrafts.value.filter((item) => item.id !== draft.id)
       if (activeDraft.value?.id === draft.id) activeDraft.value = null
       await loadStorageUsage()
-      ElMessage.success('私有试卷草稿已删除')
-    }
+      if (current(version, session)) ElMessage.success('私有试卷草稿已删除')
+    } else actionError.value = res.message || '删除草稿失败，请重试。'
+  } catch (cause) {
+    if (current(version, session)) actionError.value = errorMessage(cause, '删除草稿失败，请重试。')
   } finally {
-    deletingDraftId.value = null
+    if (current(version, session)) deletingDraftId.value = null
   }
 }
 
 const createAnswerDraft = async () => {
   if (confirmLoading.value || !importPreview.value) return
   const version = dialogVersion
+  const session = getAuthSessionVersion()
+  actionError.value = ''
+  retryKind.value = null
   confirmLoading.value = true
   try {
     const res = await createPrivateExamAnswerDraft(importForm.value, importPreview.value, sourceFile.value)
-    if (version !== dialogVersion) return
+    if (!current(version, session)) return
     if (res.code === 0 && res.data) {
       updateDraftList(res.data)
       openDraft(res.data)
       ElMessage.success('草稿已保存，请逐题生成并复核答案')
-    } else ElMessage.error(res.message || '创建草稿失败')
-  } catch {
-    if (version === dialogVersion) ElMessage.error('创建草稿失败')
+    } else {
+      actionError.value = res.message || '创建草稿失败'
+      retryKind.value = 'draft'
+    }
+  } catch (cause) {
+    if (current(version, session)) {
+      actionError.value = errorMessage(cause, '创建草稿失败')
+      retryKind.value = 'draft'
+    }
   } finally {
-    if (version === dialogVersion) confirmLoading.value = false
+    if (current(version, session)) confirmLoading.value = false
   }
 }
 
 const confirmDraft = async () => {
   if (confirmLoading.value || !activeDraft.value) return
   const version = dialogVersion
+  const session = getAuthSessionVersion()
+  actionError.value = ''
+  retryKind.value = null
   confirmLoading.value = true
   try {
-    const res = await confirmPrivateExamDraft(activeDraft.value.id)
-    if (version !== dialogVersion) return
+    const res = await confirmPrivateExamDraft(activeDraft.value.id, { errorDisplay: 'inline' })
+    if (!current(version, session)) return
     if (res.code === 0 && res.data) {
       ElMessage.success('私有试卷已人工确认并启用')
       emit('update:modelValue', false)
       emit('imported')
-    } else ElMessage.error(res.message || '启用失败')
-  } catch {
-    if (version === dialogVersion) ElMessage.error('启用失败')
+    } else {
+      actionError.value = res.message || '启用失败'
+      retryKind.value = 'enable'
+    }
+  } catch (cause) {
+    if (current(version, session)) {
+      actionError.value = errorMessage(cause, '启用失败')
+      retryKind.value = 'enable'
+    }
   } finally {
-    if (version === dialogVersion) confirmLoading.value = false
+    if (current(version, session)) confirmLoading.value = false
   }
+}
+
+const retryAction = () => {
+  const retry = retryKind.value
+  const actions = { preview: previewImport, confirm: confirmImport, draft: createAnswerDraft, enable: confirmDraft }
+  if (retry) void actions[retry]()
 }
 
 const resetImport = () => {
   importPreview.value = null
   activeDraft.value = null
-  sourceFile.value = null
-  importForm.value = emptyImportForm()
+  resetForm()
 }
 
-const reload = async () => {
-  await Promise.all([loadPrivateDrafts(), loadStorageUsage()])
-}
-
-defineExpose({ reload })
+defineExpose({ reload: () => Promise.all([loadPrivateDrafts(), loadStorageUsage()]) })
 </script>
 
 <style scoped>
+.import-error {
+  margin: var(--lp-space-3) 0;
+  overflow-wrap: anywhere;
+}
+p.import-error,
+div.import-error[role='alert'] {
+  color: var(--lp-danger);
+}
+.import-hint {
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-sm);
+}
 .private-import-dialog :deep(.el-dialog__body) {
   padding-top: var(--lp-space-3);
 }

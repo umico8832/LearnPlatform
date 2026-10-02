@@ -3,7 +3,11 @@ import { flushPromises, shallowMount } from '@vue/test-utils'
 import ElementPlus, { ElMessageBox } from 'element-plus'
 import type { PrivateExamDraft, PrivateExamImportPreview, PrivateExamImportRequest } from '@/api/exam'
 import { deletePrivateExamDraft, getPrivateExamDrafts } from '@/api/exam'
-import { createPrivateExamAnswerDraft, previewPrivateExamSource } from '@/components/exam/privateExamImportRequests'
+import {
+  confirmPrivateExamSource,
+  createPrivateExamAnswerDraft,
+  previewPrivateExamSource,
+} from '@/components/exam/privateExamImportRequests'
 import PrivateExamImportDialog from '@/components/exam/PrivateExamImportDialog.vue'
 import PrivateExamDraftReview from '@/components/exam/PrivateExamDraftReview.vue'
 
@@ -32,6 +36,11 @@ type DialogVm = {
   confirmLoading: boolean
   loadPrivateDrafts: () => Promise<void>
   deleteDraft: (draft: PrivateExamDraft) => Promise<void>
+  actionError: string
+  retryKind: string | null
+  retryAction: () => void
+  confirmImport: () => Promise<void>
+  openDraft: (draft: PrivateExamDraft | null) => void
 }
 function fixture(id: number): PrivateExamDraft {
   return {
@@ -87,6 +96,54 @@ function setup() {
 beforeEach(() => vi.clearAllMocks())
 
 describe('私有试卷导入弹窗的草稿更新隔离', () => {
+  it('预览失败保留输入并可以原位重试', async () => {
+    vi.mocked(previewPrivateExamSource)
+      .mockRejectedValueOnce(new Error('网络暂时不可用'))
+      .mockResolvedValueOnce({ code: 0, message: '', data: previewFixture() })
+    const { wrapper, vm } = setup()
+    vm.importForm = previewFixture()
+    await vm.previewImport()
+    expect(vm.actionError).toBe('网络暂时不可用')
+    expect(vm.importForm.content).toBe('两道无答案题')
+    expect(vm.importPreview).toBeNull()
+    vm.retryAction()
+    await flushPromises()
+    expect(vm.actionError).toBe('')
+    expect(vm.importPreview?.title).toBe('草稿')
+    wrapper.unmount()
+  })
+
+  it('确认失败保留预览，返回修改时清除旧确认重试', async () => {
+    vi.mocked(confirmPrivateExamSource).mockRejectedValueOnce(new Error('确认未完成'))
+    const { wrapper, vm } = setup()
+    vm.importForm = previewFixture()
+    vm.importPreview = { ...previewFixture(), requiresAnswerReview: false }
+    await vm.confirmImport()
+    expect(vm.actionError).toBe('确认未完成')
+    expect(vm.importPreview?.title).toBe('草稿')
+    expect(vm.retryKind).toBe('confirm')
+    vm.openDraft(null)
+    expect(vm.importForm.content).toBe('两道无答案题')
+    expect(vm.actionError).toBe('')
+    expect(vm.retryKind).toBeNull()
+    wrapper.unmount()
+  })
+
+  it('删除确认期间阻止重复弹窗，关闭导入后不执行迟到的确认', async () => {
+    const pending = deferred<Awaited<ReturnType<typeof ElMessageBox.confirm>>>()
+    const confirmation = vi.spyOn(ElMessageBox, 'confirm').mockReturnValueOnce(pending.promise)
+    const { wrapper, vm } = setup()
+    const first = vm.deleteDraft(fixture(31))
+    await vm.deleteDraft(fixture(31))
+    expect(confirmation).toHaveBeenCalledTimes(1)
+    await wrapper.setProps({ modelValue: false })
+    pending.resolve('confirm' as Awaited<ReturnType<typeof ElMessageBox.confirm>>)
+    await first
+    expect(deletePrivateExamDraft).not.toHaveBeenCalled()
+    confirmation.mockRestore()
+    wrapper.unmount()
+  })
+
   it('只更新正在复核的同一份草稿和对应列表项', async () => {
     const { wrapper, vm } = setup()
     vm.activeDraft = fixture(32)

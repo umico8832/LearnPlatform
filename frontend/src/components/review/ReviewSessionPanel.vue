@@ -65,12 +65,21 @@
     </fieldset>
 
     <div class="session-actions">
-      <el-button type="primary" :disabled="!canSubmit" :loading="submitting" @click="submitCurrentAnswer">
+      <el-button
+        type="primary"
+        :disabled="!canSubmit || !!submissionError"
+        :loading="submitting"
+        @click="submitCurrentAnswer"
+      >
         提交答案
       </el-button>
       <el-button :disabled="answerSubmitted || submitting" @click="nextCard">跳过</el-button>
       <el-button type="danger" plain @click="stop">结束复习</el-button>
     </div>
+    <p v-if="submissionError" class="submission-error" role="alert">
+      {{ submissionError }}
+      <button type="button" :disabled="submitting" @click="submitCurrentAnswer">重试</button>
+    </p>
 
     <section v-if="answerSubmitted" class="review-result" aria-live="polite">
       <p class="review-result__title">
@@ -131,6 +140,7 @@ const correctCount = ref(0)
 const gradedCount = ref(0)
 const pendingCount = ref(0)
 const reviewComplete = ref(false)
+const submissionError = ref('')
 const nextActionButton = ref<{ $el?: HTMLButtonElement }>()
 const questionContent = ref<HTMLElement>()
 
@@ -179,6 +189,8 @@ const unsubscribeSession = onAuthSessionChange(() => {
   reviewComplete.value = false
   sessionCards.value = []
   lastResult.value = null
+  submissionError.value = ''
+  submitting.value = false
 })
 onUnmounted(() => {
   alive = false
@@ -191,6 +203,7 @@ function resetAnswer() {
   answerSubmitted.value = false
   lastResult.value = null
   lastCorrect.value = null
+  submissionError.value = ''
 }
 
 function questionTypeLabel(type: string) {
@@ -236,6 +249,7 @@ async function submitCurrentAnswer() {
   const card = currentCard.value
   const requestGeneration = generation
   const session = getAuthSessionVersion()
+  submissionError.value = ''
   submitting.value = true
   try {
     const { data } = await submitReview(
@@ -266,7 +280,7 @@ async function submitCurrentAnswer() {
     nextActionButton.value?.$el?.focus()
   } catch (error) {
     if (alive && requestGeneration === generation && session === getAuthSessionVersion())
-      ElMessage.error(errorMessage(error, '提交失败'))
+      submissionError.value = errorMessage(error, '提交失败，请重试')
   } finally {
     if (alive && requestGeneration === generation && session === getAuthSessionVersion()) submitting.value = false
   }
@@ -439,6 +453,30 @@ defineExpose({ start, reviewing })
   gap: var(--lp-space-3);
   flex-wrap: wrap;
   margin-top: var(--lp-space-3);
+}
+.submission-error {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--lp-space-2);
+  margin: var(--lp-space-3) 0 0;
+  color: var(--lp-danger);
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-body);
+}
+.submission-error button {
+  padding: 0;
+  border: 0;
+  border-radius: var(--lp-radius-sm);
+  color: var(--lp-primary);
+  background: transparent;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.submission-error button:focus-visible {
+  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
+  outline-offset: var(--lp-focus-offset);
 }
 
 .complete-card {

@@ -12,6 +12,10 @@
         </el-button>
       </template>
     </LpPageHeader>
+    <p v-if="startPracticeError" class="page-action-error" role="alert">
+      {{ startPracticeError }}
+      <button type="button" :disabled="startPracticeLoading" @click="handleStartWrongPractice">重试</button>
+    </p>
 
     <section class="stats-grid" v-if="stats && !statsLoading">
       <LpStat v-for="item in statCards" :key="item.label" :label="item.label" :value="item.value" :tone="item.tone" />
@@ -54,16 +58,16 @@
         <el-card v-for="item in records" :key="item.id" class="wrong-card" shadow="never">
           <div class="wrong-card-header">
             <div class="wrong-meta">
-              <el-tag :type="getTypeTag(item.questionType)" size="small">
-                {{ getTypeLabel(item.questionType) }}
+              <el-tag :type="wrongQuestionTypeTag(item.questionType)" size="small">
+                {{ wrongQuestionTypeLabel(item.questionType) }}
               </el-tag>
               <el-tag v-if="item.courseName" type="info" size="small">{{ item.courseName }}</el-tag>
               <el-rate v-model="item.difficulty" disabled :max="5" />
               <span class="wrong-count">答错 {{ item.wrongCount }} 次</span>
             </div>
             <div class="wrong-actions">
-              <el-tag :type="getMasteryTag(item.masteryLevel)" size="small" effect="dark">
-                {{ getMasteryLabel(item.masteryLevel) }}
+              <el-tag :type="masteryTag(item.masteryLevel)" size="small" effect="dark">
+                {{ masteryLabel(item.masteryLevel) }}
               </el-tag>
             </div>
           </div>
@@ -93,6 +97,16 @@
                 <el-radio-button :value="1">部分掌握</el-radio-button>
                 <el-radio-button :value="2">已掌握</el-radio-button>
               </el-radio-group>
+              <p v-if="masteryErrors[item.id]" class="wrong-action-error" role="alert">
+                {{ masteryErrors[item.id].message }}
+                <button
+                  type="button"
+                  :disabled="updatingIds.has(item.id)"
+                  @click="handleMasteryChange(item.id, masteryErrors[item.id].masteryLevel)"
+                >
+                  重试
+                </button>
+              </p>
             </div>
             <div class="footer-right">
               <el-button
@@ -111,6 +125,10 @@
                   >
                 </template>
               </el-popconfirm>
+              <p v-if="removeErrors[item.id]" class="wrong-action-error" role="alert">
+                {{ removeErrors[item.id] }}
+                <button type="button" :disabled="removingIds.has(item.id)" @click="handleRemove(item.id)">重试</button>
+              </p>
             </div>
           </div>
         </el-card>
@@ -138,9 +156,7 @@
 import { useUserStore } from '@/stores/user'
 import { savePracticeSession } from '@/utils/practiceSession'
 import { ref, reactive, onMounted, computed, onBeforeUnmount } from 'vue'
-import { SemanticTagType } from '@/utils/errors'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import { Delete, RefreshRight, Search } from '@element-plus/icons-vue'
 import { getWrongQuestions, getWrongQuestionStats, updateMasteryLevel, removeWrongQuestion } from '@/api/wrongQuestion'
 import type { WrongQuestionVO, WrongQuestionStatsVO } from '@/api/wrongQuestion'
@@ -148,6 +164,7 @@ import { getWrongQuestionPractice } from '@/api/practice'
 import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
 import SimilarQuestionsDialog from '@/components/practice/SimilarQuestionsDialog.vue'
 import AiQuestionAssistant from '@/components/AiQuestionAssistant.vue'
+import { masteryLabel, masteryTag, wrongQuestionTypeLabel, wrongQuestionTypeTag } from './wrongQuestionPresentation'
 
 const router = useRouter()
 const route = useRoute()
@@ -155,14 +172,20 @@ const loading = ref(false)
 const statsLoading = ref(false)
 const listError = ref('')
 const startPracticeLoading = ref(false)
+const startPracticeError = ref('')
 const records = ref<WrongQuestionVO[]>([])
 const total = ref(0)
 const stats = ref<WrongQuestionStatsVO | null>(null)
 const updatingIds = ref<Set<number>>(new Set())
 const removingIds = ref<Set<number>>(new Set())
+const masteryErrors = ref<Record<number, { message: string; masteryLevel: number }>>({})
+const removeErrors = ref<Record<number, string>>({})
 const similarQuestionsDialog = ref<InstanceType<typeof SimilarQuestionsDialog>>()
 let generation = 0
+let listVersion = 0
+let statsVersion = 0
 let alive = true
+let practiceRequestVersion = 0
 
 const statCards = computed(() => [
   { label: '待处理', value: (stats.value?.unmastered ?? 0) + (stats.value?.partial ?? 0), tone: 'emphasis' as const },
@@ -209,16 +232,29 @@ const unsubscribeSession = onAuthSessionChange(() => {
   total.value = 0
   stats.value = null
   listError.value = ''
+  loading.value = false
+  statsLoading.value = false
+  startPracticeError.value = ''
+  masteryErrors.value = {}
+  removeErrors.value = {}
+  startPracticeLoading.value = false
+  updatingIds.value = new Set()
+  removingIds.value = new Set()
+  practiceRequestVersion++
 })
 onBeforeUnmount(() => {
   alive = false
   generation++
+  practiceRequestVersion++
   unsubscribeSession()
 })
 
 const loadRecords = async () => {
-  const requestGeneration = ++generation
+  const requestGeneration = generation
+  const version = ++listVersion
   const session = getAuthSessionVersion()
+  const current = () =>
+    alive && requestGeneration === generation && version === listVersion && session === getAuthSessionVersion()
   loading.value = true
   listError.value = ''
   try {
@@ -239,31 +275,33 @@ const loadRecords = async () => {
     if (filter.masteryLevel !== undefined) params.masteryLevel = filter.masteryLevel
 
     const res = await getWrongQuestions(params, { errorDisplay: 'inline' })
-    if (!alive || requestGeneration !== generation || session !== getAuthSessionVersion()) return
+    if (!current()) return
     if (res.code === 0 && res.data) {
       records.value = res.data.records || []
       total.value = res.data.total || 0
     }
   } catch {
-    if (alive && requestGeneration === generation && session === getAuthSessionVersion())
-      listError.value = '错题暂时无法加载，请重试'
+    if (current()) listError.value = '错题暂时无法加载，请重试'
   } finally {
-    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) loading.value = false
+    if (current()) loading.value = false
   }
 }
 
 const loadStats = async () => {
   const requestGeneration = generation
+  const version = ++statsVersion
   const session = getAuthSessionVersion()
+  const current = () =>
+    alive && requestGeneration === generation && version === statsVersion && session === getAuthSessionVersion()
   statsLoading.value = true
   try {
     const res = await getWrongQuestionStats({ errorDisplay: 'inline' })
     if (res.code === 0) {
-      if (alive && requestGeneration === generation && session === getAuthSessionVersion()) stats.value = res.data
+      if (current()) stats.value = res.data
     }
   } catch {
   } finally {
-    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) statsLoading.value = false
+    if (current()) statsLoading.value = false
   }
 }
 
@@ -274,20 +312,30 @@ const handleSearch = () => {
 
 const handleMasteryChange = async (id: number, masteryLevel: number) => {
   if (updatingIds.value.has(id)) return
+  const requestGeneration = generation
   const session = getAuthSessionVersion()
+  const remainingErrors = { ...masteryErrors.value }
+  delete remainingErrors[id]
+  masteryErrors.value = remainingErrors
   updatingIds.value = new Set(updatingIds.value).add(id)
   try {
     const res = await updateMasteryLevel(id, masteryLevel, { errorDisplay: 'inline' })
-    if (alive && session === getAuthSessionVersion() && res.code === 0) {
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion() && res.code === 0) {
       const record = records.value.find((item) => item.id === id)
       if (record) record.masteryLevel = masteryLevel
-      ElMessage.success('掌握程度已更新')
       void loadStats()
+    } else if (alive && requestGeneration === generation && session === getAuthSessionVersion()) {
+      masteryErrors.value = {
+        ...masteryErrors.value,
+        [id]: { message: res.message || '更新掌握程度失败，请重试', masteryLevel },
+      }
     }
   } catch {
-    if (alive && session === getAuthSessionVersion()) ElMessage.error('更新失败')
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) {
+      masteryErrors.value = { ...masteryErrors.value, [id]: { message: '更新掌握程度失败，请重试', masteryLevel } }
+    }
   } finally {
-    if (alive && session === getAuthSessionVersion()) {
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) {
       const next = new Set(updatingIds.value)
       next.delete(id)
       updatingIds.value = next
@@ -297,19 +345,30 @@ const handleMasteryChange = async (id: number, masteryLevel: number) => {
 
 const handleRemove = async (id: number) => {
   if (removingIds.value.has(id)) return
+  const requestGeneration = generation
   const session = getAuthSessionVersion()
+  const remainingErrors = { ...removeErrors.value }
+  delete remainingErrors[id]
+  removeErrors.value = remainingErrors
   removingIds.value = new Set(removingIds.value).add(id)
   try {
     const res = await removeWrongQuestion(id, { errorDisplay: 'inline' })
-    if (alive && session === getAuthSessionVersion() && res.code === 0) {
-      ElMessage.success('已移出错题本')
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion() && res.code === 0) {
+      const next = new Set(removingIds.value)
+      next.delete(id)
+      removingIds.value = next
       void loadRecords()
       void loadStats()
+      return
+    } else if (alive && requestGeneration === generation && session === getAuthSessionVersion()) {
+      removeErrors.value = { ...removeErrors.value, [id]: res.message || '移出错题失败，请重试' }
     }
   } catch {
-    if (alive && session === getAuthSessionVersion()) ElMessage.error('移出失败')
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) {
+      removeErrors.value = { ...removeErrors.value, [id]: '移出错题失败，请重试' }
+    }
   } finally {
-    if (alive && session === getAuthSessionVersion()) {
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) {
       const next = new Set(removingIds.value)
       next.delete(id)
       removingIds.value = next
@@ -317,51 +376,23 @@ const handleRemove = async (id: number) => {
   }
 }
 
-const getTypeLabel = (type: string) => {
-  const map: Record<string, string> = {
-    SINGLE_CHOICE: '单选',
-    MULTIPLE_CHOICE: '多选',
-    TRUE_FALSE: '判断',
-    FILL_BLANK: '填空',
-    SHORT_ANSWER: '简答',
-  }
-  return map[type] || type
-}
-
-const getTypeTag = (type: string) => {
-  const map: Record<string, SemanticTagType> = {
-    SINGLE_CHOICE: undefined,
-    MULTIPLE_CHOICE: 'warning',
-    TRUE_FALSE: 'success',
-    FILL_BLANK: 'info',
-    SHORT_ANSWER: 'danger',
-  }
-  return map[type]
-}
-
-const getMasteryLabel = (level: number) => {
-  const map: Record<number, string> = { 0: '未掌握', 1: '部分掌握', 2: '已掌握' }
-  return map[level] || '未知'
-}
-
-const getMasteryTag = (level: number) => {
-  const map: Record<number, SemanticTagType> = { 0: 'danger', 1: 'warning', 2: 'success' }
-  return map[level] || 'info'
-}
-
-const formatTime = (time: string) => {
-  if (!time) return '-'
-  return new Date(time).toLocaleString('zh-CN')
-}
-
 function openSimilarQuestions(questionId: number, questionContent: string) {
   similarQuestionsDialog.value?.open(questionId, questionContent)
 }
 
+function formatTime(time: string) {
+  if (!time) return '-'
+  return new Date(time).toLocaleString('zh-CN')
+}
+
 const handleStartWrongPractice = async () => {
+  if (startPracticeLoading.value) return
   const userId = useUserStore().userInfo?.id
+  const session = getAuthSessionVersion()
+  const requestVersion = ++practiceRequestVersion
+  startPracticeError.value = ''
   if (stats.value && stats.value.total === 0) {
-    ElMessage.warning('错题本为空，暂无错题可重练')
+    startPracticeError.value = '错题本为空，暂无错题可重练。'
     return
   }
 
@@ -380,21 +411,24 @@ const handleStartWrongPractice = async () => {
     if (filter.masteryLevel !== undefined) {
       params.masteryLevel = filter.masteryLevel
     }
-    const res = await getWrongQuestionPractice(params)
+    const res = await getWrongQuestionPractice(params, { errorDisplay: 'inline' })
+    if (!alive || requestVersion !== practiceRequestVersion || session !== getAuthSessionVersion()) return
     if (res.code === 0 && res.data) {
       if (res.data.length === 0) {
-        ElMessage.warning('当前筛选条件下暂无错题可重练')
+        startPracticeError.value = '当前筛选条件下暂无错题可重练。'
         return
       }
       if (userId !== useUserStore().userInfo?.id || !savePracticeSession(userId, res.data, 'wrong_question')) return
       router.push({ name: 'PracticeSession' })
     } else {
-      ElMessage.error(res.message || '获取错题失败')
+      startPracticeError.value = res.message || '获取错题失败，请重试'
     }
   } catch {
-    ElMessage.error('获取错题重练题目失败')
+    if (alive && requestVersion === practiceRequestVersion && session === getAuthSessionVersion())
+      startPracticeError.value = '获取错题重练题目失败，请重试'
   } finally {
-    startPracticeLoading.value = false
+    if (alive && requestVersion === practiceRequestVersion && session === getAuthSessionVersion())
+      startPracticeLoading.value = false
   }
 }
 </script>
@@ -432,6 +466,36 @@ const handleStartWrongPractice = async () => {
   display: flex;
   flex-direction: column;
   gap: var(--lp-space-6);
+}
+.page-action-error,
+.wrong-action-error {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--lp-space-2);
+  margin: 0;
+  color: var(--lp-danger);
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-body);
+}
+.page-action-error {
+  margin-top: calc(var(--lp-space-4) * -1);
+}
+.page-action-error button,
+.wrong-action-error button {
+  padding: 0;
+  border: 0;
+  border-radius: var(--lp-radius-sm);
+  color: var(--lp-primary);
+  background: transparent;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.page-action-error button:focus-visible,
+.wrong-action-error button:focus-visible {
+  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
+  outline-offset: var(--lp-focus-offset);
 }
 
 .stats-grid {
@@ -556,8 +620,9 @@ const handleStartWrongPractice = async () => {
 }
 
 .mastery-controls {
-  display: flex;
+  display: grid;
   align-items: center;
+  grid-template-columns: auto auto;
   gap: var(--lp-space-2);
 }
 
@@ -571,6 +636,10 @@ const handleStartWrongPractice = async () => {
   align-items: center;
   gap: var(--lp-space-3);
   flex-wrap: wrap;
+}
+.mastery-controls .wrong-action-error,
+.footer-right .wrong-action-error {
+  grid-column: 1 / -1;
 }
 
 .time {
@@ -611,7 +680,7 @@ const handleStartWrongPractice = async () => {
 
   .mastery-controls {
     align-items: flex-start;
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
 }
 </style>

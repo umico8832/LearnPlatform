@@ -2,12 +2,20 @@
   <div class="page-container community-page">
     <LpPageHeader title="社区共建">
       <template #actions
-        ><el-button @click="composer = 'question_bank'">贡献资料</el-button
-        ><el-button type="primary" @click="composer = 'TOPIC'">发起讨论</el-button></template
+        ><el-button :disabled="categoriesLoading || !!categoryError" @click="composer = 'question_bank'"
+          >贡献资料</el-button
+        ><el-button type="primary" :disabled="categoriesLoading || !!categoryError" @click="composer = 'TOPIC'"
+          >发起讨论</el-button
+        ></template
       >
     </LpPageHeader>
     <div class="community-layout">
       <aside class="community-filters" aria-label="社区筛选">
+        <p v-if="categoriesLoading" role="status">正在读取分类</p>
+        <div v-else-if="categoryError" class="community-category-error" role="alert">
+          <p>{{ categoryError }}</p>
+          <el-button data-testid="categories-retry" @click="loadCategories">重试分类</el-button>
+        </div>
         <label for="community-kind">内容</label>
         <el-select id="community-kind" v-model="filters.contentType" clearable placeholder="全部内容" @change="search">
           <el-option v-for="(label, type) in communityTypes" :key="type" :label="label" :value="type" />
@@ -71,10 +79,11 @@
         </form>
         <LpSkeleton v-if="loading" :rows="6" />
         <el-alert v-else-if="error" :title="error" type="error" :closable="false" show-icon
-          ><el-button @click="initialize">重试</el-button></el-alert
+          ><el-button @click="load">重试</el-button></el-alert
         >
         <LpEmptyState
           v-else-if="!posts.length"
+          kind="search"
           title="还没有匹配的内容"
           description="换一个筛选条件，或发起第一条讨论。"
         />
@@ -139,6 +148,8 @@ const router = useRouter()
 const categories = ref<CommunityCategory[]>([])
 const posts = ref<CommunityPost[]>([])
 const filters = reactive<CommunityQuery>({ mine: false })
+const categoryError = ref('')
+const categoriesLoading = ref(false)
 const page = ref(1),
   total = ref(0),
   loading = ref(true),
@@ -150,6 +161,7 @@ const subjects = computed(() =>
 )
 const schools = computed(() => categories.value.filter((c) => c.kind === 'SCHOOL'))
 let generation = 0
+let categoryGeneration = 0
 let alive = true
 function current(ticket: number, session: number) {
   return alive && ticket === generation && session === getAuthSessionVersion() && isAuthenticated()
@@ -160,11 +172,15 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const res = await getCommunityPosts({
-      ...filters,
-      status: filters.mine ? filters.status : undefined,
-      pageNum: page.value,
-    })
+    const res = await getCommunityPosts(
+      {
+        ...filters,
+        status: filters.mine ? filters.status : undefined,
+        pageNum: page.value,
+      },
+      false,
+      { errorDisplay: 'inline' },
+    )
     if (current(ticket, session)) {
       posts.value = res.data.records
       total.value = res.data.total
@@ -175,15 +191,25 @@ async function load() {
     if (current(ticket, session)) loading.value = false
   }
 }
-async function initialize() {
+async function loadCategories() {
+  const request = ++categoryGeneration
   const session = getAuthSessionVersion()
+  categoriesLoading.value = true
+  categoryError.value = ''
   try {
-    const categoryResult = await getCommunityCategories()
-    if (alive && session === getAuthSessionVersion()) categories.value = categoryResult.data
+    const categoryResult = await getCommunityCategories({ errorDisplay: 'inline' })
+    if (alive && request === categoryGeneration && session === getAuthSessionVersion())
+      categories.value = categoryResult.data
   } catch (e) {
-    if (alive && session === getAuthSessionVersion()) error.value = errorMessage(e, '分类加载失败')
+    if (alive && request === categoryGeneration && session === getAuthSessionVersion())
+      categoryError.value = errorMessage(e, '分类暂时无法读取，请重试后筛选或发布。')
+  } finally {
+    if (alive && request === categoryGeneration && session === getAuthSessionVersion()) categoriesLoading.value = false
   }
-  if (alive && session === getAuthSessionVersion()) await load()
+}
+function initialize() {
+  void loadCategories()
+  void load()
 }
 function search() {
   page.value = 1
@@ -204,6 +230,10 @@ function created(id: number) {
 onMounted(initialize)
 const unsubscribeAuth = onAuthSessionChange(() => {
   generation++
+  categoryGeneration++
+  composer.value = ''
+  categoryError.value = ''
+  categoriesLoading.value = false
   categories.value = []
   posts.value = []
   total.value = 0
@@ -216,3 +246,16 @@ onUnmounted(() => {
   unsubscribeAuth()
 })
 </script>
+
+<style scoped>
+.community-category-error {
+  padding: var(--lp-space-3);
+  border-inline-start: 2px solid var(--lp-danger);
+  background: var(--lp-surface-subtle);
+  font-size: var(--lp-text-sm);
+  overflow-wrap: anywhere;
+}
+.community-category-error p {
+  margin: 0 0 var(--lp-space-3);
+}
+</style>

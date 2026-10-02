@@ -51,7 +51,7 @@
 
     <!-- 最终结果 -->
     <div v-if="currentStepIndex === element.steps.length - 1 && element.finalResult" class="sql-final-panel">
-      <div class="sql-final-header">✅ 最终结果</div>
+      <div class="sql-final-header">最终结果</div>
       <div class="sql-result-table-wrap">
         <table class="sql-result-table sql-result-table--final">
           <thead>
@@ -71,10 +71,18 @@
     <!-- 控制栏 -->
     <div class="sql-controls">
       <div class="sql-controls-buttons">
-        <el-button size="small" :icon="DArrowLeft" circle :disabled="currentStepIndex <= 0" @click="goToStep(0)" />
+        <el-button
+          aria-label="第一步"
+          size="small"
+          :icon="DArrowLeft"
+          circle
+          :disabled="currentStepIndex <= 0"
+          @click="goToStep(0)"
+        />
         <el-button
           size="small"
           :icon="ArrowLeft"
+          aria-label="上一步"
           circle
           :disabled="currentStepIndex <= 0"
           @click="goToStep(currentStepIndex - 1)"
@@ -83,12 +91,15 @@
           size="small"
           :type="playing ? 'warning' : 'primary'"
           :icon="playing ? VideoPause : VideoPlay"
+          :aria-label="playing ? '暂停' : '播放'"
+          :aria-pressed="playing"
           circle
           @click="togglePlay"
         />
         <el-button
           size="small"
           :icon="ArrowRight"
+          aria-label="下一步"
           circle
           :disabled="currentStepIndex >= element.steps.length - 1"
           @click="goToStep(currentStepIndex + 1)"
@@ -96,6 +107,7 @@
         <el-button
           size="small"
           :icon="DArrowRight"
+          aria-label="最后一步"
           circle
           :disabled="currentStepIndex >= element.steps.length - 1"
           @click="goToStep(element.steps.length - 1)"
@@ -104,7 +116,15 @@
       <!-- 速度调节 -->
       <div class="sql-speed-control">
         <span class="sql-speed-label">速度</span>
-        <el-slider v-model="speed" :min="300" :max="3000" :step="300" :show-tooltip="false" style="width: 100px" />
+        <el-slider
+          v-model="speed"
+          aria-label="每步停留时间（毫秒）"
+          :min="300"
+          :max="3000"
+          :step="300"
+          :show-tooltip="false"
+          style="width: 100px"
+        />
       </div>
       <!-- 进度条 -->
       <div class="sql-progress-bar">

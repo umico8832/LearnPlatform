@@ -232,13 +232,16 @@ describe('ExamListView paper provenance', () => {
     pageVm.openStorageDialog()
     await flushPromises()
 
-    expect(mockGetPrivateExamStorageFiles).toHaveBeenCalledWith({ pageNum: 1, pageSize: 10 })
+    expect(mockGetPrivateExamStorageFiles).toHaveBeenCalledWith(
+      { pageNum: 1, pageSize: 10 },
+      { errorDisplay: 'inline' },
+    )
     expect(wrapper.text()).toContain('paper.pdf')
     expect(wrapper.text()).toContain('关联草稿：待复核试卷')
     expect(wrapper.text()).not.toContain('application/pdf')
 
     await sourceManagerVm.deleteStorageItem(sourceManagerVm.storageFiles[0])
-    expect(mockDeletePrivateExamDraft).toHaveBeenCalledWith(31)
+    expect(mockDeletePrivateExamDraft).toHaveBeenCalledWith(31, { errorDisplay: 'inline' })
     expect(mockGetPrivateExamStorageFiles).toHaveBeenCalledTimes(2)
   })
 
@@ -300,6 +303,7 @@ describe('ExamListView paper provenance', () => {
         expectedContentHash: 'a'.repeat(64),
         confirmed: true,
       }),
+      { errorDisplay: 'inline' },
     )
   })
 
@@ -416,7 +420,7 @@ describe('ExamListView paper provenance', () => {
       analysis: '栈遵循后进先出。',
     })
     await vm.confirmDraft()
-    expect(mockConfirmPrivateExamDraft).toHaveBeenCalledWith(31)
+    expect(mockConfirmPrivateExamDraft).toHaveBeenCalledWith(31, { errorDisplay: 'inline' })
   })
 
   it('文本型PDF重复提交原文件并使用预览哈希确认', async () => {
@@ -457,11 +461,14 @@ describe('ExamListView paper provenance', () => {
     vm.sourceFile = file
 
     await vm.previewImport()
-    expect(mockPreviewPrivateExamPdf).toHaveBeenCalledWith({ title: 'PDF 试卷', courseId: 10, duration: 30 }, file)
+    expect(mockPreviewPrivateExamPdf).toHaveBeenCalledWith({ title: 'PDF 试卷', courseId: 10, duration: 30 }, file, {
+      errorDisplay: 'inline',
+    })
     await vm.confirmImport()
     expect(mockConfirmPrivateExamPdf).toHaveBeenCalledWith(
       { title: 'PDF 试卷', courseId: 10, duration: 30, expectedContentHash: hash, confirmed: true },
       file,
+      { errorDisplay: 'inline' },
     )
   })
 
@@ -505,11 +512,14 @@ describe('ExamListView paper provenance', () => {
     vm.sourceFile = file
 
     await vm.previewImport()
-    expect(mockPreviewPrivateExamDocx).toHaveBeenCalledWith({ title: 'DOCX 试卷', courseId: 10, duration: 30 }, file)
+    expect(mockPreviewPrivateExamDocx).toHaveBeenCalledWith({ title: 'DOCX 试卷', courseId: 10, duration: 30 }, file, {
+      errorDisplay: 'inline',
+    })
     await vm.confirmImport()
     expect(mockConfirmPrivateExamDocx).toHaveBeenCalledWith(
       { title: 'DOCX 试卷', courseId: 10, duration: 30, expectedContentHash: hash, confirmed: true },
       file,
+      { errorDisplay: 'inline' },
     )
   })
 
@@ -539,7 +549,7 @@ describe('ExamListView paper provenance', () => {
     dialogVm.privateDrafts = [draftFixture]
 
     await dialogVm.deleteDraft(draftFixture)
-    expect(mockDeletePrivateExamDraft).toHaveBeenCalledWith(31)
+    expect(mockDeletePrivateExamDraft).toHaveBeenCalledWith(31, { errorDisplay: 'inline' })
     expect(dialogVm.privateDrafts).toEqual([])
     await pageVm.deletePaper(paperFixture)
     expect(mockDeletePrivateExamPaper).toHaveBeenCalledWith(51, { errorDisplay: 'inline' })
@@ -578,7 +588,7 @@ describe('ExamListView paper provenance', () => {
     await sourceManagerVm.downloadPaperSource()
     await draftReviewVm.downloadDraftSource()
 
-    expect(mockDownloadPrivateExamSourceFile).toHaveBeenCalledWith(51)
+    expect(mockDownloadPrivateExamSourceFile).toHaveBeenCalledWith(51, { errorDisplay: 'inline' })
     expect(mockDownloadPrivateExamDraftSourceFile).toHaveBeenCalledWith(31)
     expect(createObjectURL).toHaveBeenCalledTimes(2)
     expect(revokeObjectURL).toHaveBeenCalledTimes(2)

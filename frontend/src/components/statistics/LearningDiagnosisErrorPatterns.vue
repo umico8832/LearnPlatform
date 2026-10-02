@@ -41,7 +41,7 @@
             <span class="mastery-label">{{ typeName }}</span>
             <el-progress
               :percentage="totalWrong > 0 ? Math.round((count / totalWrong) * 100) : 0"
-              color="#409eff"
+              color="var(--lp-primary)"
               :stroke-width="18"
               :text-inside="true"
               :format="() => count + ' 道'"
@@ -54,7 +54,7 @@
         <h4>错题难度分布</h4>
         <div v-if="Object.keys(patterns.difficultyDistribution).length">
           <div v-for="(count, diff) in patterns.difficultyDistribution" :key="diff" class="mastery-item">
-            <span class="mastery-label">{{ '⭐'.repeat(Number(diff)) }}</span>
+            <span class="mastery-label">难度 {{ diff }}</span>
             <el-progress
               :percentage="totalWrong > 0 ? Math.round((count / totalWrong) * 100) : 0"
               :color="difficultyColor(Number(diff))"
@@ -122,7 +122,7 @@
         <el-table-column prop="questionType" label="题型" width="80" align="center" />
         <el-table-column label="难度" width="80" align="center">
           <template #default="{ row }"
-            ><span v-if="row.difficulty">{{ '⭐'.repeat(row.difficulty) }}</span></template
+            ><span v-if="row.difficulty">难度 {{ row.difficulty }}</span></template
           >
         </el-table-column>
         <el-table-column prop="wrongCount" label="错次" width="70" align="center">
@@ -178,7 +178,7 @@ const maxWeeklyBarValue = computed(() => {
 })
 
 function weeklyBarHeight(value: number): string {
-  return Math.max(4, (value / maxWeeklyBarValue.value) * 100) + 'px'
+  return Math.max(0, (value / maxWeeklyBarValue.value) * 100) + '%'
 }
 </script>
 
@@ -255,7 +255,7 @@ function weeklyBarHeight(value: number): string {
 
 .chart-bar {
   width: 16px;
-  min-height: 2px;
+  min-height: 0;
   border-radius: var(--lp-radius-xs) var(--lp-radius-xs) 0 0;
   transition: height var(--lp-duration-slow) var(--lp-ease-out);
 }

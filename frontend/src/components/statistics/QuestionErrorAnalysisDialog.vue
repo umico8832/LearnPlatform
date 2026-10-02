@@ -14,8 +14,8 @@
       <div class="error-analysis-header">
         <div class="error-analysis-question">{{ data.questionContent }}</div>
         <div class="error-analysis-tags">
-          <el-tag size="small">{{ data.questionType }}</el-tag>
-          <el-tag v-if="data.difficulty" size="small" type="warning">{{ '⭐'.repeat(data.difficulty) }}</el-tag>
+          <el-tag size="small">{{ questionTypeLabel(data.questionType) }}</el-tag>
+          <el-tag v-if="data.difficulty" size="small" type="info">难度 {{ data.difficulty }}</el-tag>
           <el-tag v-if="data.courseName" size="small" type="info">{{ data.courseName }}</el-tag>
           <el-tag v-if="data.knowledgePointName" size="small" type="info">{{ data.knowledgePointName }}</el-tag>
         </div>
@@ -81,7 +81,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { QuestionErrorAnalysis } from '@/api/statistics'
-import { masteryLevelLabel, masteryLevelType, rateColor } from './diagnosisDisplay'
+import { masteryLevelLabel, masteryLevelType, questionTypeLabel, rateColor } from './diagnosisDisplay'
 
 const props = defineProps<{
   modelValue: boolean

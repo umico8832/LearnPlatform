@@ -80,7 +80,7 @@
             v-if="!currentResult"
             type="primary"
             :loading="submitting"
-            :disabled="!canSubmit"
+            :disabled="!canSubmit || !!submissionError"
             @click="handleSubmit"
             >提交答案</el-button
           ><span v-else ref="nextActionRef"
@@ -88,6 +88,10 @@
               currentIndex < questions.length - 1 ? '下一题' : '查看结果'
             }}</el-button></span
           >
+          <p v-if="submissionError" class="submission-error" role="alert">
+            {{ submissionError }}
+            <button type="button" :disabled="submitting" @click="handleSubmit">重试</button>
+          </p>
         </div></template
       >
     </LpCard>
@@ -128,10 +132,12 @@ const questions = ref<PracticeQuestionVO[]>([]),
   practiceMode = ref(''),
   sessionXp = ref(0),
   sessionAchievements = ref<GamificationAchievement[]>([])
+const submissionError = ref('')
 const nextActionRef = ref<HTMLElement | null>(null)
 const questionHeadingRef = ref<HTMLElement | null>(null)
 const gamification = useGamificationStore()
 let alive = true
+let submissionVersion = 0
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
 const answerLocked = computed(() => submitting.value || currentResult.value !== null)
 const { userAnswer, multiAnswers, canSubmit, toggleMulti, answer, reset } = usePracticeAnswer(
@@ -154,8 +160,10 @@ const sessionSummary = computed(() => {
   }
 })
 function resetSession() {
+  submissionVersion++
   questions.value = []
   currentResult.value = null
+  submissionError.value = ''
   sessionXp.value = 0
   correctCount.value = 0
   wrongCount.value = 0
@@ -194,16 +202,24 @@ onMounted(async () => {
 async function handleSubmit() {
   if (!currentQuestion.value || !canSubmit.value || answerLocked.value || finished.value) return
   const questionId = currentQuestion.value.id,
-    session = getAuthSessionVersion()
+    session = getAuthSessionVersion(),
+    requestVersion = ++submissionVersion
+  submissionError.value = ''
   submitting.value = true
   try {
     const response = await submitAnswer(
       { questionId, userAnswer: answer(), answerTime: Math.round((Date.now() - startTime.value) / 1000) },
       { errorDisplay: 'inline' },
     )
-    if (!alive || session !== getAuthSessionVersion() || currentQuestion.value?.id !== questionId) return
+    if (
+      !alive ||
+      requestVersion !== submissionVersion ||
+      session !== getAuthSessionVersion() ||
+      currentQuestion.value?.id !== questionId
+    )
+      return
     if (response.code !== 0 || !response.data) {
-      ElMessage.error(response.message || '提交失败')
+      submissionError.value = response.message || '提交失败，请重试'
       return
     }
     currentResult.value = response.data
@@ -221,20 +237,33 @@ async function handleSubmit() {
           })
     }
     await nextTick()
-    if (!alive || session !== getAuthSessionVersion() || currentResult.value?.questionId !== questionId) return
+    if (
+      !alive ||
+      requestVersion !== submissionVersion ||
+      session !== getAuthSessionVersion() ||
+      currentResult.value?.questionId !== questionId
+    )
+      return
     const nextElement = nextActionRef.value?.querySelector<HTMLElement>('button')
     if (nextElement) {
       nextElement.scrollIntoView?.({ block: 'nearest' })
       nextElement.focus()
     }
   } catch {
-    if (alive && session === getAuthSessionVersion()) ElMessage.error('提交答案失败')
+    if (
+      alive &&
+      requestVersion === submissionVersion &&
+      session === getAuthSessionVersion() &&
+      currentQuestion.value?.id === questionId
+    )
+      submissionError.value = '提交答案失败，请重试'
   } finally {
-    if (alive && session === getAuthSessionVersion()) submitting.value = false
+    if (alive && requestVersion === submissionVersion && session === getAuthSessionVersion()) submitting.value = false
   }
 }
 async function nextQuestion() {
   if (!currentResult.value) return
+  submissionError.value = ''
   currentResult.value = null
   if (currentIndex.value >= questions.value.length - 1) {
     finished.value = true
@@ -340,7 +369,34 @@ function leavePractice() {
 .finish-container {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--lp-space-3);
   width: 100%;
+}
+.submission-error {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--lp-space-2);
+  margin: 0;
+  color: var(--lp-danger);
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-body);
+}
+.submission-error button {
+  padding: 0;
+  border: 0;
+  border-radius: var(--lp-radius-sm);
+  color: var(--lp-primary);
+  background: transparent;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.submission-error button:focus-visible {
+  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
+  outline-offset: var(--lp-focus-offset);
 }
 .finish-container {
   justify-content: center;

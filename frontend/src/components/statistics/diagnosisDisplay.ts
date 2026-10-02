@@ -4,6 +4,17 @@ export function rateColor(rate: number): string {
   return 'var(--lp-danger)'
 }
 
+export function questionTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    SINGLE_CHOICE: '单选题',
+    MULTIPLE_CHOICE: '多选题',
+    TRUE_FALSE: '判断题',
+    FILL_BLANK: '填空题',
+    SHORT_ANSWER: '简答题',
+  }
+  return labels[type] || type
+}
+
 export function statusType(status: string): 'danger' | 'warning' | 'info' | undefined {
   if (status === 'WEAK') return 'danger'
   if (status === 'NEEDS_REVIEW') return 'warning'

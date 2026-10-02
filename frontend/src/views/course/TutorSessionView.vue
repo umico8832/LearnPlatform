@@ -1,5 +1,5 @@
 <template>
-  <main class="tutor" v-loading="loading">
+  <section class="tutor" v-loading="loading" aria-label="课程教学">
     <template v-if="failed">
       <section class="state-panel">
         <el-result icon="error" title="无法开始教学" sub-title="请确认已加入课程，并从可学习的知识点进入。">
@@ -155,7 +155,7 @@
         @request-check="focusCheck"
       />
     </template>
-  </main>
+  </section>
 </template>
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'

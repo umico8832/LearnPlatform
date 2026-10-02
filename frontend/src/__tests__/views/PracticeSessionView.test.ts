@@ -342,7 +342,7 @@ describe('PracticeSessionView', () => {
     expect(wrapper.get('[data-testid="practice-feedback"]').text()).toContain('回答正确')
   })
 
-  it('does not accept a reward or show a result when submission fails', async () => {
+  it('keeps a failed submission beside the answer with a retry, without a global error toast', async () => {
     mockSubmitAnswer.mockRejectedValueOnce(new Error('network'))
     const acceptReward = vi.spyOn(useGamificationStore(), 'acceptReward')
     const wrapper = mount(PracticeSessionView, { global: { stubs } })
@@ -358,7 +358,9 @@ describe('PracticeSessionView', () => {
     await flushPromises()
     expect(acceptReward).not.toHaveBeenCalled()
     expect(wrapper.find('[data-testid="result-dialog"]').exists()).toBe(false)
-    expect(mockError).toHaveBeenCalledWith('提交答案失败')
+    expect(wrapper.get('[role="alert"]').text()).toContain('提交答案失败')
+    expect(wrapper.get('[role="alert"] button').text()).toBe('重试')
+    expect(mockError).not.toHaveBeenCalled()
   })
 
   it('ignores a late submission from the account that started it', async () => {
@@ -413,5 +415,34 @@ describe('PracticeSessionView', () => {
     await flushPromises()
     expect(acceptReward).not.toHaveBeenCalled()
     expect(wrapper.text()).not.toContain('答对了')
+  })
+
+  it('does not place a late failed submission on the next account session', async () => {
+    let reject!: (error: Error) => void
+    mockSubmitAnswer.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, next) => {
+          reject = next
+        }),
+    )
+    const wrapper = mount(PracticeSessionView, { global: { stubs } })
+    await flushPromises()
+    await wrapper.findAll('input[type="radio"]')[0]!.setValue()
+    const pending = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('提交答案'))!
+      .trigger('click')
+    useUserStore().setLoginInfo('other-account-token', {
+      id: 8,
+      username: 'other',
+      nickname: 'Other',
+      avatar: null,
+      role: 'USER',
+    })
+    reject(new Error('offline'))
+    await pending
+    await flushPromises()
+
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
   })
 })

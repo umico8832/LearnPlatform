@@ -47,7 +47,7 @@
 
       <!-- 变量面板 -->
       <div class="ca-var-panel">
-        <div class="ca-var-title">📋 变量状态</div>
+        <div class="ca-var-title">变量状态</div>
         <div v-if="currentStepData.variables.length === 0" class="ca-var-empty">暂无变量</div>
         <div v-else class="ca-var-list">
           <div
@@ -59,13 +59,13 @@
             <span class="ca-var-name">{{ v.name }}</span>
             <span class="ca-var-eq">=</span>
             <span class="ca-var-value">{{ v.value }}</span>
-            <span v-if="v.changed" class="ca-var-badge">changed</span>
+            <span v-if="v.changed" class="ca-var-badge">已变化</span>
           </div>
         </div>
 
         <!-- 控制台输出 -->
         <div v-if="currentStepData.output" class="ca-output">
-          <div class="ca-output-title">🖨️ 输出</div>
+          <div class="ca-output-title">输出</div>
           <pre class="ca-output-text">{{ currentStepData.output }}</pre>
         </div>
       </div>
@@ -73,7 +73,6 @@
 
     <!-- 步骤描述 -->
     <div class="ca-description">
-      <span class="ca-desc-icon">💬</span>
       {{ currentStepData.description }}
     </div>
   </div>
@@ -487,10 +486,6 @@ export default { name: 'CodeAnimationViewer' }
   align-items: flex-start;
   gap: 8px;
   line-height: 1.5;
-}
-
-.ca-desc-icon {
-  flex-shrink: 0;
 }
 
 /* highlight.js 主题覆盖（全局 CSS 影响 v-html 内容） */
