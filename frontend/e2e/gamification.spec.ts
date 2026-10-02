@@ -211,7 +211,7 @@ test.describe('安静学习投入记录', () => {
     const fixture = await createFixture(browser, page, `practice-${Date.now()}`)
     await loadFavoriteQuestions(page, fixture.questions)
     const { context: captureContext, page: capturePage } = await createPracticeCapturePage(browser, page, testInfo)
-    await expect(capturePage.getByText('收藏练习', { exact: true })).toBeVisible()
+    await expect(capturePage.locator('.question-card')).toBeVisible()
 
     let expectedCombo = (await api<GamificationSummary>(capturePage, '/gamification/summary')).currentCombo
     for (let index = 0; index < fixture.questions.length; index += 1) {
@@ -220,6 +220,9 @@ test.describe('安静学习投入记录', () => {
       expect(result.data.correct).toBe(index < fixture.questions.length - 1)
       expectedCombo = result.data.correct ? expectedCombo + 1 : 0
       expect(result.data.reward.summary.currentCombo).toBe(expectedCombo)
+      await expect(capturePage.getByTestId('practice-feedback')).toContainText(
+        result.data.correct ? '回答正确' : '请结合解析再看一遍',
+      )
       await expect(capturePage.getByTestId('gamification-answer-record')).toContainText(
         `+${result.data.reward.awardedXp} 经验`,
       )
@@ -228,7 +231,7 @@ test.describe('安静学习投入记录', () => {
         capturePage.locator('.gamification-feedback-host, .gamification-level, .gamification-achievement'),
       ).toHaveCount(0)
       if (index === 0) {
-        await expect(capturePage.locator('.el-dialog')).toBeVisible()
+        await expect(capturePage.locator('.el-dialog')).toHaveCount(0)
         await capturePage.screenshot({
           path: showcasePath(testInfo, 'practice-correct-reward.png'),
           fullPage: true,
@@ -281,6 +284,42 @@ test.describe('安静学习投入记录', () => {
     if (video) await video.saveAs(showcasePath(testInfo, 'gamification-practice-loop.webm'))
   })
 
+  test('错题当前范围只练习路由指定的真实题目', async ({ page, browser }) => {
+    test.setTimeout(90_000)
+    await loginAsLearner(page)
+    await ensureLearnerCourse(page)
+    const fixture = await createFixture(browser, page, `wrong-scope-${Date.now()}`, 2)
+    const [target, other] = fixture.questions
+    await loadFavoriteQuestions(page, [target, other])
+    await page.goto('/practice/session')
+    for (let index = 0; index < 2; index += 1) {
+      const result = await submitPracticeAnswer(page, 'B')
+      expect(result.data.correct).toBe(false)
+      await page.getByRole('button', { name: index === 0 ? '下一题' : '查看结果', exact: true }).click()
+    }
+
+    await page.goto(
+      `/wrong-questions?courseId=${courseId}&knowledgePointId=${knowledgePointId}&questionId=${target.id}`,
+    )
+    await expect(page.locator('.wrong-card')).toHaveCount(1)
+    await expect(page.locator('.wrong-card')).toContainText(`wrong-scope-`)
+    const response = page.waitForResponse(
+      (item) => item.request().method() === 'GET' && item.url().includes('/api/practice/wrong-questions'),
+    )
+    await page.getByRole('button', { name: '练习当前范围', exact: true }).click()
+    const request = await response
+    const url = new URL(request.url())
+    expect(url.searchParams.get('courseId')).toBe(String(courseId))
+    expect(url.searchParams.get('knowledgePointId')).toBe(String(knowledgePointId))
+    expect(url.searchParams.get('questionId')).toBe(String(target.id))
+    const result = (await request.json()) as ApiEnvelope<{ id: number }[]>
+    expect(result.data.map((item) => item.id)).toEqual([target.id])
+    await expect(page).toHaveURL(/\/practice\/session$/)
+    await expect(page.locator('.question-card')).toContainText(`wrong-scope-`)
+    const correct = await submitPracticeAnswer(page, target.answer)
+    expect(correct.data.correct).toBe(true)
+  })
+
   test('减少动态时仍保留真实判分信息且不渲染彩纸画布', async ({ page, browser }) => {
     test.setTimeout(90_000)
     await page.emulateMedia({ reducedMotion: 'reduce' })
@@ -291,7 +330,7 @@ test.describe('安静学习投入记录', () => {
     await page.goto('/practice/session')
     const result = await submitPracticeAnswer(page, fixture.questions[0].answer)
     expect(result.data.correct).toBe(true)
-    await expect(page.getByText('答对了！', { exact: true })).toBeVisible()
+    await expect(page.getByTestId('practice-feedback')).toContainText('回答正确')
     await expect(page.getByTestId('gamification-answer-record')).toContainText(`+${result.data.reward.awardedXp} 经验`)
     await expect(page.locator('canvas')).toHaveCount(0)
   })
@@ -304,21 +343,20 @@ test.describe('安静学习投入记录', () => {
     const question = fixture.questions[0]
     await api<void>(page, `/review/add/${question.id}`, 'POST')
     await page.goto(`/review?questionId=${question.id}`)
-    // 带 questionId 的路由会在 ReviewView.onMounted 自动 startReview；再次点击会并发
-    // loadDueCards，并由较晚的 start() 重置刚填入的 userAnswer。
-    const answerInput = page.getByPlaceholder('输入你的答案...')
-    await expect(answerInput).toBeVisible()
+    // 定位单题时自动开始复习，等待真实题面选项加载后再作答。
+    const correctOption = page.locator(`input[type="radio"][value="${question.answer}"]`)
+    await expect(correctOption).toBeVisible()
     const response = page.waitForResponse(
       (item) => item.request().method() === 'POST' && item.url().endsWith('/api/review/submit'),
     )
     const submit = page.getByRole('button', { name: '提交答案', exact: true })
-    await answerInput.fill(question.answer)
-    await expect(answerInput).toHaveValue(question.answer)
+    await correctOption.check()
+    await expect(correctOption).toBeChecked()
     await expect(submit).toBeEnabled()
     await submit.click()
     const submitted = (await response).json() as Promise<ApiEnvelope<{ correct: boolean; reward: Reward }>>
     expect((await submitted).data.correct).toBe(true)
-    await expect(page.getByText('回答正确！', { exact: true })).toBeVisible()
+    await expect(page.getByText('服务端判分：回答正确', { exact: true })).toBeVisible()
     await expect(page.getByTestId('gamification-answer-record')).toContainText('经验')
     await expect(page.getByTestId('gamification-combo')).toHaveCount(0)
   })
@@ -364,6 +402,7 @@ test.describe('学习投入边界验收', () => {
       for (let index = 0; index < fixture.questions.length; index += 1) {
         const result = await submitPracticeAnswer(capturePage, fixture.questions[index].answer)
         expect(result.data.correct).toBe(true)
+        await expect(capturePage.getByTestId('practice-feedback')).toContainText('回答正确')
         if (result.data.reward.levelAfter >= 2) levelReward = result.data.reward
         await expect(capturePage.getByTestId('gamification-answer-record')).toContainText(
           `+${result.data.reward.awardedXp} 经验`,
@@ -453,7 +492,7 @@ test.describe('学习投入边界验收', () => {
       button.click()
       button.click()
     })
-    await expect(page.getByText('答对了！', { exact: true })).toBeVisible()
+    await expect(page.getByTestId('practice-feedback')).toContainText('回答正确')
     await expect.poll(() => submitRequests, { timeout: 5_000 }).toBe(1)
     await page.screenshot({
       path: showcasePath(testInfo, 'practice-repeat-submit.png'),
@@ -472,6 +511,7 @@ test.describe('学习投入边界验收', () => {
     await page.goto('/practice/session')
     const wrong = await submitPracticeAnswer(page, 'B')
     expect(wrong.data.correct).toBe(false)
+    await expect(page.getByTestId('practice-feedback')).toContainText('请结合解析再看一遍')
     await page.getByRole('button', { name: '查看结果', exact: true }).click()
     await page.goto(`/wrong-questions?questionId=${question.id}`)
     await expect(page.locator('.wrong-card')).toHaveCount(1)
@@ -479,9 +519,10 @@ test.describe('学习投入边界验收', () => {
 
     await api<void>(page, `/review/add/${question.id}`, 'POST')
     await page.goto(`/review?questionId=${question.id}`)
-    const answer = page.getByPlaceholder('输入你的答案...')
-    await expect(answer).toBeVisible()
-    await answer.fill(question.answer)
+    const correctOption = page.locator(`input[type="radio"][value="${question.answer}"]`)
+    await expect(correctOption).toBeVisible()
+    await correctOption.check()
+    await expect(correctOption).toBeChecked()
     const submitted = page.waitForResponse(
       (item) => item.request().method() === 'POST' && item.url().endsWith('/api/review/submit'),
     )
@@ -489,7 +530,7 @@ test.describe('学习投入边界验收', () => {
     expect((await (await submitted).json()) as ApiEnvelope<{ correct: boolean }>).toMatchObject({
       data: { correct: true },
     })
-    await expect(page.getByText('回答正确！', { exact: true })).toBeVisible()
+    await expect(page.getByText('服务端判分：回答正确', { exact: true })).toBeVisible()
     await page.goto(`/wrong-questions?questionId=${question.id}`)
     await expect(page.locator('.wrong-card')).toHaveCount(0)
     await expect(page.getByText('暂无错题', { exact: true })).toBeVisible()

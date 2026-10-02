@@ -40,7 +40,7 @@ export interface PracticeResultVO {
   recordId: number
   questionId: number
   userAnswer: string
-  correct: boolean
+  correct: boolean | null
   correctAnswer: string
   analysis: string
   score: number
@@ -55,7 +55,7 @@ export interface PracticeRecordVO {
   courseName: string
   difficulty: number
   userAnswer: string
-  isCorrect: number
+  isCorrect: number | null
   answerTime: number
   createTime: string
 }
@@ -70,61 +70,102 @@ export interface PracticeStatsVO {
 
 // ======================== API 方法 ========================
 
+export interface PracticeRequestOptions {
+  errorDisplay?: 'inline'
+}
+
+function requestConfig<T>(params: T, options?: PracticeRequestOptions) {
+  return options ? { params, ...options } : { params }
+}
+
 /** 获取练习题目（随机抽取） */
-export function getPracticeQuestions(params?: {
-  courseId?: number
-  knowledgePointId?: number
-  questionType?: string
-  difficulty?: number
-  count?: number
-}) {
-  return request.get<unknown, ApiResponse<PracticeQuestionVO[]>>('/practice/questions', { params })
+export function getPracticeQuestions(
+  params?: {
+    courseId?: number
+    knowledgePointId?: number
+    questionType?: string
+    difficulty?: number
+    count?: number
+  },
+  options?: PracticeRequestOptions,
+) {
+  return request.get<unknown, ApiResponse<PracticeQuestionVO[]>>('/practice/questions', requestConfig(params, options))
 }
 
 /** 提交答案 */
-export function submitAnswer(data: PracticeSubmitRequest) {
-  return request.post<unknown, ApiResponse<PracticeResultVO>>('/practice/submit', data)
+export function submitAnswer(data: PracticeSubmitRequest, options?: PracticeRequestOptions) {
+  return options
+    ? request.post<unknown, ApiResponse<PracticeResultVO>>('/practice/submit', data, options)
+    : request.post<unknown, ApiResponse<PracticeResultVO>>('/practice/submit', data)
 }
 
 /** 获取练习记录（分页） */
-export function getPracticeRecords(params: {
-  pageNum?: number
-  pageSize?: number
-  questionType?: string
-  courseId?: number
-  isCorrect?: number
-}) {
-  return request.get<unknown, ApiResponse<PageData<PracticeRecordVO>>>('/practice/records', { params })
+export function getPracticeRecords(
+  params: {
+    pageNum?: number
+    pageSize?: number
+    questionType?: string
+    courseId?: number
+    isCorrect?: number
+  },
+  options?: PracticeRequestOptions,
+) {
+  return request.get<unknown, ApiResponse<PageData<PracticeRecordVO>>>(
+    '/practice/records',
+    requestConfig(params, options),
+  )
 }
 
 /** 获取练习统计 */
-export function getPracticeStats() {
-  return request.get<unknown, ApiResponse<PracticeStatsVO>>('/practice/stats')
+export function getPracticeStats(options?: PracticeRequestOptions) {
+  return options
+    ? request.get<unknown, ApiResponse<PracticeStatsVO>>('/practice/stats', options)
+    : request.get<unknown, ApiResponse<PracticeStatsVO>>('/practice/stats')
 }
 
 /** 获取错题重练题目 */
-export function getWrongQuestionPractice(params?: { masteryLevel?: number; count?: number }) {
-  return request.get<unknown, ApiResponse<PracticeQuestionVO[]>>('/practice/wrong-questions', { params })
+export function getWrongQuestionPractice(
+  params?: {
+    masteryLevel?: number
+    count?: number
+    courseId?: number
+    knowledgePointId?: number
+    questionId?: number
+  },
+  options?: PracticeRequestOptions,
+) {
+  return request.get<unknown, ApiResponse<PracticeQuestionVO[]>>(
+    '/practice/wrong-questions',
+    requestConfig(params, options),
+  )
 }
 
 /** 获取收藏题练习题目 */
-export function getFavoritePractice(params?: { count?: number; questionId?: number }) {
-  return request.get<unknown, ApiResponse<PracticeQuestionVO[]>>('/practice/favorites', { params })
+export function getFavoritePractice(
+  params?: { count?: number; questionId?: number },
+  options?: PracticeRequestOptions,
+) {
+  return request.get<unknown, ApiResponse<PracticeQuestionVO[]>>('/practice/favorites', requestConfig(params, options))
 }
 
 /** 自适应智能推荐题目 */
-export function getAdaptiveQuestions(params?: {
-  courseId?: number
-  knowledgePointId?: number
-  questionType?: string
-  count?: number
-}) {
-  return request.get<unknown, ApiResponse<PracticeQuestionVO[]>>('/practice/adaptive', { params })
+export function getAdaptiveQuestions(
+  params?: {
+    courseId?: number
+    knowledgePointId?: number
+    questionType?: string
+    count?: number
+  },
+  options?: PracticeRequestOptions,
+) {
+  return request.get<unknown, ApiResponse<PracticeQuestionVO[]>>('/practice/adaptive', requestConfig(params, options))
 }
 
 /** 获取自适应推荐摘要（各难度答题表现和推荐权重） */
-export function getAdaptiveSummary() {
-  return request.get<unknown, ApiResponse<AdaptiveSummaryVO>>('/practice/adaptive/summary')
+export function getAdaptiveSummary(options?: PracticeRequestOptions) {
+  return options
+    ? request.get<unknown, ApiResponse<AdaptiveSummaryVO>>('/practice/adaptive/summary', options)
+    : request.get<unknown, ApiResponse<AdaptiveSummaryVO>>('/practice/adaptive/summary')
 }
 
 /** 自适应推荐摘要 VO */

@@ -79,10 +79,11 @@ describe('quiet learning progress', () => {
 
   it('keeps an ungraded summary distinct from a zero-percent result', () => {
     const wrapper = mount(GamificationPracticeSummary, {
-      props: { summary: { correctRate: null, xpGained: 0, answeredCount: 1 } },
+      props: { summary: { correctRate: null, xpGained: 0, answeredCount: 1, pendingCount: 1 } },
     })
 
     expect(wrapper.text()).toContain('待判分')
+    expect(wrapper.text()).toContain('1 题')
     expect(wrapper.find('[role="progressbar"]').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('0%')
   })

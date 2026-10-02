@@ -1,477 +1,217 @@
+<script setup lang="ts">
+import { computed, onScopeDispose, ref } from 'vue'
+import { getMySubmissions, type QuestionSubmissionVO } from '@/api/submission'
+import { onAuthSessionChange } from '@/utils/auth'
+import QuestionSubmissionEditor from './QuestionSubmissionEditor.vue'
+import QuestionSubmissionDetail from './QuestionSubmissionDetail.vue'
+import { usePersonalCollection } from './usePersonalCollection'
+import { questionTypeLabel, recordTime } from './practiceLibraryPresentation'
+import { submissionStatus } from './questionSubmissionForm'
+
+const statusFilter = ref(-1)
+const { records, total, page, size, state, load, resetPage } = usePersonalCollection<QuestionSubmissionVO>(
+  (pageNum, pageSize) =>
+    getMySubmissions(
+      { pageNum, pageSize, status: statusFilter.value < 0 ? undefined : statusFilter.value },
+      { errorDisplay: 'inline' },
+    ),
+)
+const statusOptions = computed(() => [
+  { value: -1, label: '全部' },
+  ...[0, 1, 2, 3].map((value) => ({ value, label: submissionStatus(value) })),
+])
+const showEditor = ref(false)
+const showDetail = ref(false)
+const currentDetail = ref<QuestionSubmissionVO | null>(null)
+const notice = ref('')
+function viewDetail(row: QuestionSubmissionVO) {
+  currentDetail.value = row
+  showDetail.value = true
+}
+function submitted() {
+  notice.value = '投稿已提交，等待审核。可以在这里查看后续反馈。'
+  clearFilter()
+}
+function clearFilter() {
+  statusFilter.value = -1
+  void resetPage()
+}
+onScopeDispose(
+  onAuthSessionChange(() => {
+    showEditor.value = false
+    showDetail.value = false
+    currentDetail.value = null
+    notice.value = ''
+  }),
+)
+</script>
+
 <template>
-  <div class="question-submit-page page-container">
-    <section class="page-hero">
-      <div class="hero-copy">
-        <h1>题目投稿</h1>
+  <div class="submission-page page-container">
+    <LpPageHeader title="题目投稿" description="分享一道好题，查看它的审核与入库进度。"
+      ><template #actions
+        ><el-button type="primary" @click="showEditor = true">投稿新题目</el-button></template
+      ></LpPageHeader
+    >
+    <p v-if="notice" class="submission-notice" role="status">{{ notice }}</p>
+    <section class="submission-list" aria-label="我的题目投稿">
+      <div class="submission-toolbar">
+        <el-radio-group v-model="statusFilter" aria-label="按审核状态筛选" @change="resetPage"
+          ><el-radio-button v-for="option in statusOptions" :key="option.value" :value="option.value">{{
+            option.label
+          }}</el-radio-button></el-radio-group
+        ><span v-if="total !== null">共 {{ total }} 篇投稿</span>
       </div>
-      <div class="hero-actions">
-        <el-button type="primary" :icon="Plus" @click="showSubmitDialog = true">投稿新题目</el-button>
-      </div>
-    </section>
-
-    <el-card shadow="never">
-      <!-- 状态筛选 -->
-      <div class="filter-bar">
-        <el-radio-group v-model="statusFilter" @change="loadSubmissions">
-          <el-radio-button :value="undefined">全部</el-radio-button>
-          <el-radio-button :value="0">待审核</el-radio-button>
-          <el-radio-button :value="1">已通过</el-radio-button>
-          <el-radio-button :value="2">已拒绝</el-radio-button>
-          <el-radio-button :value="3">已入库</el-radio-button>
-        </el-radio-group>
-      </div>
-
-      <!-- 投稿列表 -->
-      <el-table :data="submissions" v-loading="loading" stripe>
-        <el-table-column label="题干" prop="content" show-overflow-tooltip min-width="200" />
-        <el-table-column label="课程" prop="courseName" width="120" />
-        <el-table-column label="题型" width="120">
-          <template #default="{ row }">
-            <el-tag size="small">{{ questionTypeLabel(row.questionType) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="难度" width="100">
-          <template #default="{ row }">
-            <el-rate v-model="row.difficulty" disabled :max="5" />
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="statusTagType(row.status)" size="small">
-              {{ statusLabel(row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="审核意见" prop="reviewComment" show-overflow-tooltip width="160" />
-        <el-table-column label="投稿时间" width="170">
-          <template #default="{ row }">
-            {{ formatTime(row.createTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
-          <template #default="{ row }">
-            <el-button type="primary" link @click="viewDetail(row as QuestionSubmissionVO)">详情</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
+      <LpStatePanel
+        :state="state"
+        :title="
+          state === 'error' ? '投稿记录暂时无法加载' : statusFilter >= 0 ? '没有这个状态的投稿' : '还没有投稿记录'
+        "
+        :description="
+          state === 'error'
+            ? '请重试，已提交的题目会继续保留。'
+            : statusFilter >= 0
+              ? '可以切换到全部，查看其他投稿。'
+              : '准备好题干、选项和参考答案，就可以分享你的第一道题。'
+        "
+        loading-label="正在加载投稿记录"
+        @retry="load"
+      >
+        <template #actions
+          ><el-button v-if="statusFilter >= 0" @click="clearFilter">查看全部投稿</el-button
+          ><el-button v-else @click="showEditor = true">投稿新题目</el-button></template
+        >
+        <ol class="submission-rows">
+          <li v-for="row in records" :key="row.id">
+            <div class="submission-meta">
+              <span class="submission-status" :data-status="row.status">{{ submissionStatus(row.status) }}</span
+              ><span>{{ row.courseName }}</span
+              ><span>{{ questionTypeLabel(row.questionType) }}</span
+              ><time>{{ recordTime(row.createTime) }}</time>
+            </div>
+            <div class="submission-content">
+              <p>{{ row.content }}</p>
+              <el-button @click="viewDetail(row)">查看详情</el-button>
+            </div>
+            <p v-if="row.reviewComment" class="review-comment"><span>审核反馈</span>{{ row.reviewComment }}</p>
+            <p v-else-if="row.status === 1" class="review-comment">已通过审核，等待入库。</p>
+          </li>
+        </ol>
+      </LpStatePanel>
       <el-pagination
-        v-if="total > pageSize"
-        :current-page="pageNum"
-        :page-size="pageSize"
+        v-if="total && total > size"
+        v-model:current-page="page"
+        :page-size="size"
         :total="total"
         layout="total, prev, pager, next"
-        @current-change="handlePageChange"
-        style="margin-top: 16px; justify-content: flex-end"
+        @current-change="load"
       />
-    </el-card>
-
-    <!-- 投稿对话框 -->
-    <el-dialog v-model="showSubmitDialog" title="投稿新题目" width="700px" destroy-on-close>
-      <el-form :model="form" label-width="100px" :rules="rules" ref="formRef">
-        <el-form-item label="所属课程" prop="courseId">
-          <el-select v-model="form.courseId" placeholder="选择课程" filterable style="width: 100%">
-            <el-option v-for="c in courses" :key="c.id" :label="c.name" :value="c.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="题型" prop="questionType">
-          <el-select v-model="form.questionType" placeholder="选择题型" @change="onTypeChange">
-            <el-option label="单选题" value="SINGLE_CHOICE" />
-            <el-option label="多选题" value="MULTIPLE_CHOICE" />
-            <el-option label="判断题" value="TRUE_FALSE" />
-            <el-option label="填空题" value="FILL_BLANK" />
-            <el-option label="简答题" value="SHORT_ANSWER" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="难度" prop="difficulty">
-          <el-rate v-model="form.difficulty" :max="5" />
-        </el-form-item>
-        <el-form-item label="题干内容" prop="content">
-          <el-input v-model="form.content" type="textarea" :rows="4" placeholder="输入题目内容，支持 Markdown" />
-        </el-form-item>
-
-        <!-- 选择题选项 -->
-        <template v-if="showOptions">
-          <el-form-item label="选项">
-            <div v-for="(opt, idx) in optionList" :key="idx" class="option-row">
-              <el-input
-                v-model="opt.content"
-                :placeholder="'选项 ' + String.fromCharCode(65 + idx)"
-                style="width: 300px"
-              />
-              <el-checkbox v-model="opt.isCorrect" style="margin-left: 8px">正确答案</el-checkbox>
-              <el-button
-                v-if="optionList.length > 2"
-                type="danger"
-                link
-                @click="optionList.splice(idx, 1)"
-                style="margin-left: 4px"
-              >
-                <el-icon><Delete /></el-icon>
-              </el-button>
-            </div>
-            <el-button v-if="optionList.length < 8" type="primary" link @click="addOption" style="margin-top: 4px">
-              + 添加选项
-            </el-button>
-          </el-form-item>
-        </template>
-
-        <!-- 判断题答案 -->
-        <template v-if="form.questionType === 'TRUE_FALSE'">
-          <el-form-item label="正确答案">
-            <el-radio-group v-model="form.correctAnswer">
-              <el-radio-button value="TRUE">正确</el-radio-button>
-              <el-radio-button value="FALSE">错误</el-radio-button>
-            </el-radio-group>
-          </el-form-item>
-        </template>
-
-        <!-- 填空/简答答案 -->
-        <template v-else-if="form.questionType === 'FILL_BLANK' || form.questionType === 'SHORT_ANSWER'">
-          <el-form-item label="正确答案">
-            <el-input v-model="form.correctAnswer" type="textarea" :rows="2" placeholder="输入参考答案" />
-          </el-form-item>
-        </template>
-
-        <el-form-item label="解析">
-          <el-input v-model="form.analysis" type="textarea" :rows="3" placeholder="题目解析（可选）" />
-        </el-form-item>
-        <el-form-item label="标签">
-          <el-input v-model="form.tags" placeholder="多个标签用逗号分隔" />
-        </el-form-item>
-        <el-form-item label="来源">
-          <el-input v-model="form.source" placeholder="题目来源（如：课本第X章、网络等）" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showSubmitDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitting">提交投稿</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 详情对话框 -->
-    <el-dialog v-model="showDetailDialog" title="投稿详情" width="650px">
-      <el-descriptions :column="2" border v-if="currentDetail">
-        <el-descriptions-item label="状态" :span="2">
-          <el-tag :type="statusTagType(currentDetail.status)">{{ statusLabel(currentDetail.status) }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="课程">{{ currentDetail.courseName }}</el-descriptions-item>
-        <el-descriptions-item label="题型">{{ questionTypeLabel(currentDetail.questionType) }}</el-descriptions-item>
-        <el-descriptions-item label="难度"
-          ><el-rate v-model="currentDetail.difficulty" disabled :max="5"
-        /></el-descriptions-item>
-        <el-descriptions-item label="投稿时间">{{ formatTime(currentDetail.createTime) }}</el-descriptions-item>
-        <el-descriptions-item label="题干内容" :span="2">
-          <div class="detail-content">{{ currentDetail.content }}</div>
-        </el-descriptions-item>
-        <el-descriptions-item label="选项" :span="2" v-if="currentDetail.optionsJson">
-          <div v-for="(opt, idx) in parseOptions(currentDetail.optionsJson)" :key="idx">
-            <strong>{{ opt.label || String.fromCharCode(65 + idx) }}.</strong> {{ opt.content }}
-            <el-tag v-if="opt.isCorrect" type="success" size="small" style="margin-left: 4px">正确</el-tag>
-          </div>
-        </el-descriptions-item>
-        <el-descriptions-item label="参考答案" :span="2" v-if="currentDetail.correctAnswer">
-          {{ currentDetail.correctAnswer }}
-        </el-descriptions-item>
-        <el-descriptions-item label="解析" :span="2" v-if="currentDetail.analysis">
-          <div class="detail-content">{{ currentDetail.analysis }}</div>
-        </el-descriptions-item>
-        <el-descriptions-item label="标签" v-if="currentDetail.tags">{{ currentDetail.tags }}</el-descriptions-item>
-        <el-descriptions-item label="来源" v-if="currentDetail.source">{{ currentDetail.source }}</el-descriptions-item>
-        <el-descriptions-item label="审核意见" :span="2" v-if="currentDetail.reviewComment">
-          <el-text type="info">{{ currentDetail.reviewComment }}</el-text>
-        </el-descriptions-item>
-        <el-descriptions-item label="审核人" v-if="currentDetail.reviewedByName">{{
-          currentDetail.reviewedByName
-        }}</el-descriptions-item>
-        <el-descriptions-item label="审核时间" v-if="currentDetail.reviewedTime">{{
-          formatTime(currentDetail.reviewedTime)
-        }}</el-descriptions-item>
-      </el-descriptions>
-    </el-dialog>
+    </section>
+    <QuestionSubmissionEditor v-model="showEditor" @submitted="submitted" />
+    <QuestionSubmissionDetail v-model="showDetail" :detail="currentDetail" />
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
-import { SemanticTagType } from '@/utils/errors'
-import { ElMessage, type FormInstance } from 'element-plus'
-import { Plus, Delete } from '@element-plus/icons-vue'
-import { submitQuestion, getMySubmissions, type QuestionSubmissionVO, type SubmissionForm } from '@/api/submission'
-import { getAllCourses, type CourseVO } from '@/api/course'
-
-const loading = ref(false)
-const submitting = ref(false)
-const showSubmitDialog = ref(false)
-const showDetailDialog = ref(false)
-const submissions = ref<QuestionSubmissionVO[]>([])
-const courses = ref<CourseVO[]>([])
-const currentDetail = ref<QuestionSubmissionVO | null>(null)
-const statusFilter = ref<number | undefined>(undefined)
-const pageNum = ref(1)
-const pageSize = 10
-const total = ref(0)
-const formRef = ref<FormInstance>()
-
-interface OptionItem {
-  content: string
-  label: string
-  isCorrect: boolean
-}
-
-const optionList = ref<OptionItem[]>([
-  { content: '', label: 'A', isCorrect: false },
-  { content: '', label: 'B', isCorrect: false },
-  { content: '', label: 'C', isCorrect: false },
-  { content: '', label: 'D', isCorrect: false },
-])
-
-const form = reactive<SubmissionForm & { correctAnswer?: string }>({
-  content: '',
-  questionType: '',
-  courseId: 0,
-  difficulty: 3,
-  analysis: '',
-  tags: '',
-  source: '',
-  correctAnswer: '',
-})
-
-const rules = {
-  courseId: [{ required: true, message: '请选择课程', trigger: 'change' }],
-  questionType: [{ required: true, message: '请选择题型', trigger: 'change' }],
-  content: [{ required: true, message: '请输入题干内容', trigger: 'blur' }],
-  difficulty: [{ required: true, message: '请选择难度', trigger: 'change' }],
-}
-
-const showOptions = computed(() => form.questionType === 'SINGLE_CHOICE' || form.questionType === 'MULTIPLE_CHOICE')
-
-const questionTypeLabel = (type: string) => {
-  const map: Record<string, string> = {
-    SINGLE_CHOICE: '单选题',
-    MULTIPLE_CHOICE: '多选题',
-    TRUE_FALSE: '判断题',
-    FILL_BLANK: '填空题',
-    SHORT_ANSWER: '简答题',
-  }
-  return map[type] || type
-}
-
-const statusLabel = (status: number) => {
-  const map: Record<number, string> = { 0: '待审核', 1: '已通过', 2: '已拒绝', 3: '已入库' }
-  return map[status] || '未知'
-}
-
-const statusTagType = (status: number) => {
-  const map: Record<number, SemanticTagType> = { 0: 'warning', 1: 'success', 2: 'danger', 3: undefined }
-  return map[status] || 'info'
-}
-
-const formatTime = (t: string | null) => (t ? t.replace('T', ' ').substring(0, 19) : '')
-
-const parseOptions = (json: string | null): Array<{ content: string; label: string; isCorrect: boolean }> => {
-  if (!json) return []
-  try {
-    return JSON.parse(json)
-  } catch {
-    return []
-  }
-}
-
-const addOption = () => {
-  const nextLabel: string = String.fromCharCode(65 + optionList.value.length)
-  optionList.value.push({ content: '', label: nextLabel, isCorrect: false })
-}
-
-const onTypeChange = () => {
-  form.correctAnswer = ''
-}
-
-const loadSubmissions = async () => {
-  loading.value = true
-  try {
-    const res = await getMySubmissions({ pageNum: pageNum.value, pageSize, status: statusFilter.value })
-    if (res.code === 0 && res.data) {
-      submissions.value = res.data.records
-      total.value = res.data.total
-    }
-  } finally {
-    loading.value = false
-  }
-}
-
-const loadCourses = async () => {
-  try {
-    const res = await getAllCourses()
-    if (res.code === 0 && res.data) {
-      courses.value = res.data
-    }
-  } catch {
-    /* ignore */
-  }
-}
-
-const handlePageChange = (page: number) => {
-  pageNum.value = page
-  loadSubmissions()
-}
-
-const handleSubmit = async () => {
-  if (!formRef.value) return
-  await formRef.value.validate()
-  submitting.value = true
-  try {
-    const payload: SubmissionForm = {
-      content: form.content,
-      questionType: form.questionType,
-      courseId: form.courseId,
-      difficulty: form.difficulty,
-      analysis: form.analysis || undefined,
-      tags: form.tags || undefined,
-      source: form.source || undefined,
-      knowledgePointIds: undefined,
-    }
-
-    // 组装选项 JSON
-    if (showOptions.value) {
-      const filled = optionList.value.filter((o) => o.content.trim())
-      if (filled.length < 2) {
-        ElMessage.warning('至少需要填写 2 个选项')
-        return
-      }
-      if (!filled.some((o) => o.isCorrect)) {
-        ElMessage.warning('请标记至少一个正确答案')
-        return
-      }
-      if (form.questionType === 'SINGLE_CHOICE' && filled.filter((o) => o.isCorrect).length !== 1) {
-        ElMessage.warning('单选题必须且只能标记 1 个正确答案')
-        return
-      }
-      payload.optionsJson = JSON.stringify(
-        filled.map((o, i) => ({
-          content: o.content,
-          label: String.fromCharCode(65 + i),
-          isCorrect: o.isCorrect,
-        })),
-      )
-    }
-
-    if (form.questionType === 'TRUE_FALSE') {
-      if (!form.correctAnswer) {
-        ElMessage.warning('请选择判断题正确答案')
-        return
-      }
-      payload.correctAnswer = form.correctAnswer
-    }
-
-    if (form.questionType === 'FILL_BLANK' || form.questionType === 'SHORT_ANSWER') {
-      if (!form.correctAnswer?.trim()) {
-        ElMessage.warning('请输入参考答案')
-        return
-      }
-      payload.correctAnswer = form.correctAnswer.trim()
-    }
-
-    const res = await submitQuestion(payload)
-    if (res.code === 0) {
-      ElMessage.success('投稿提交成功，等待管理员审核')
-      showSubmitDialog.value = false
-      resetForm()
-      loadSubmissions()
-    } else {
-      ElMessage.error(res.message || '提交失败')
-    }
-  } finally {
-    submitting.value = false
-  }
-}
-
-const resetForm = () => {
-  form.content = ''
-  form.questionType = ''
-  form.courseId = 0
-  form.difficulty = 3
-  form.analysis = ''
-  form.tags = ''
-  form.source = ''
-  form.correctAnswer = ''
-  optionList.value = [
-    { content: '', label: 'A', isCorrect: false },
-    { content: '', label: 'B', isCorrect: false },
-    { content: '', label: 'C', isCorrect: false },
-    { content: '', label: 'D', isCorrect: false },
-  ]
-}
-
-const viewDetail = (row: QuestionSubmissionVO) => {
-  currentDetail.value = row
-  showDetailDialog.value = true
-}
-
-onMounted(() => {
-  loadCourses()
-  loadSubmissions()
-})
-</script>
-
 <style scoped>
-.page-hero {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--lp-space-5);
-  margin-bottom: var(--lp-space-5);
-  padding: var(--lp-space-6);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  background: linear-gradient(135deg, var(--lp-primary-soft) 0%, var(--lp-surface) 58%), var(--lp-surface);
+.submission-page {
+  display: grid;
+  gap: var(--lp-space-6);
 }
-
-.page-hero h1 {
+.submission-notice {
   margin: 0;
-  color: var(--lp-text);
-  font-size: var(--lp-text-3xl);
-  font-weight: var(--lp-weight-heavy);
-  letter-spacing: var(--lp-tracking-tight);
-}
-
-.hero-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-3);
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.filter-bar {
-  margin-bottom: var(--lp-space-4);
-}
-
-.option-row {
-  display: flex;
-  align-items: center;
-  margin-bottom: var(--lp-space-2);
-}
-
-.detail-content {
-  white-space: pre-wrap;
+  color: var(--lp-text-secondary);
   line-height: var(--lp-leading-body);
 }
-
-@media (max-width: 768px) {
-  .page-hero {
-    align-items: stretch;
+.submission-list {
+  padding: var(--lp-space-5);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  background: var(--lp-surface);
+}
+.submission-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lp-space-4);
+  margin-bottom: var(--lp-space-5);
+}
+.submission-toolbar > span {
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-sm);
+}
+.submission-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.submission-rows > li {
+  padding: var(--lp-space-5) 0;
+  border-top: var(--lp-border-hairline);
+}
+.submission-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--lp-space-3);
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-xs);
+}
+.submission-status {
+  color: var(--lp-text-secondary);
+  padding: var(--lp-space-1) var(--lp-space-2);
+  border-radius: var(--lp-radius-sm);
+  background: var(--lp-surface-soft);
+}
+.submission-status[data-status='3'] {
+  color: var(--lp-success);
+  background: var(--lp-success-soft);
+}
+.submission-meta time {
+  margin-left: auto;
+}
+.submission-content {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lp-space-5);
+  margin-top: var(--lp-space-3);
+}
+.submission-content p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: var(--lp-leading-relaxed);
+}
+.review-comment {
+  margin: var(--lp-space-3) 0 0;
+  padding-left: var(--lp-space-3);
+  border-left: 2px solid var(--lp-border);
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.review-comment span {
+  margin-right: var(--lp-space-3);
+  color: var(--lp-text-muted);
+}
+.el-pagination {
+  justify-content: flex-end;
+  padding-top: var(--lp-space-5);
+  border-top: var(--lp-border-hairline);
+}
+@media (max-width: 767px) {
+  .submission-toolbar {
+    flex-wrap: wrap;
+  }
+  .submission-content {
     flex-direction: column;
-    padding: var(--lp-space-4);
+    gap: var(--lp-space-3);
   }
-
-  .page-hero h1 {
-    font-size: var(--lp-text-2xl);
-  }
-
-  .hero-actions,
-  .hero-actions .el-button {
-    width: 100%;
+  .submission-meta time {
+    margin-left: 0;
   }
 }
 </style>

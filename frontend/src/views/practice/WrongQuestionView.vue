@@ -8,17 +8,17 @@
           @click="handleStartWrongPractice"
           :loading="startPracticeLoading"
         >
-          重练错题
+          练习当前范围
         </el-button>
       </template>
     </LpPageHeader>
 
-    <section class="stats-grid" v-if="stats">
+    <section class="stats-grid" v-if="stats && !statsLoading">
       <LpStat v-for="item in statCards" :key="item.label" :label="item.label" :value="item.value" :tone="item.tone" />
     </section>
 
-    <section class="filter-panel">
-      <LpSectionHeading title="筛选错题" description="当前筛选会同步影响「重练错题」范围。" />
+    <section class="filter-panel" aria-label="错题筛选">
+      <LpSectionHeading title="当前范围" description="筛选会同步决定本次练习范围。" />
       <el-form :inline="true" :model="filter" class="filter-form">
         <el-form-item label="掌握程度">
           <el-select v-model="filter.masteryLevel" placeholder="全部" clearable>
@@ -39,8 +39,10 @@
     </section>
 
     <!-- 错题列表 -->
-    <div class="wrong-list" v-loading="loading">
-      <section v-if="!loading && records.length === 0" class="state-panel">
+    <div class="wrong-list">
+      <LpStatePanel v-if="loading" state="loading" loading-label="正在读取错题" />
+      <LpStatePanel v-else-if="listError" state="error" :description="listError" @retry="loadRecords" />
+      <section v-else-if="records.length === 0" class="state-panel">
         <LpEmptyState title="暂无错题" description="这里会收集你答错的题目，标记掌握后可随时移出。">
           <template #actions>
             <el-button type="primary" :icon="RefreshRight" @click="$router.push('/practice')">去刷题</el-button>
@@ -48,7 +50,7 @@
         </LpEmptyState>
       </section>
 
-      <TransitionGroup name="wrong-card-list" tag="div" class="wrong-card-list">
+      <TransitionGroup v-else name="lp-list" tag="div" class="wrong-card-list">
         <el-card v-for="item in records" :key="item.id" class="wrong-card" shadow="never">
           <div class="wrong-card-header">
             <div class="wrong-meta">
@@ -69,21 +71,22 @@
           <div class="wrong-content">{{ item.questionContent }}</div>
 
           <div v-if="item.lastWrongAnswer" class="wrong-answer">
-            <span class="label">上次错误答案：</span>
+            <span class="label">上次作答：</span>
             <span class="answer-wrong">{{ item.lastWrongAnswer }}</span>
           </div>
 
-          <AiQuestionAssistant :question-id="item.questionId" />
-
-          <!-- AI 深度学习资产（错题本中折叠展示，减少页面长度） -->
-          <QuestionLearningAsset :question-id="item.questionId" collapsible />
+          <details class="question-assistance">
+            <summary>学习辅助</summary>
+            <AiQuestionAssistant :question-id="item.questionId" />
+          </details>
 
           <div class="wrong-card-footer">
             <div class="mastery-controls">
               <span class="label">掌握程度：</span>
               <el-radio-group
-                v-model="item.masteryLevel"
+                :model-value="item.masteryLevel"
                 size="small"
+                :disabled="updatingIds.has(item.id)"
                 @change="(val: any) => handleMasteryChange(item.id, val as number)"
               >
                 <el-radio-button :value="0">未掌握</el-radio-button>
@@ -92,19 +95,20 @@
               </el-radio-group>
             </div>
             <div class="footer-right">
-              <span class="time">{{ formatTime(item.updateTime) }}</span>
               <el-button
-                type="primary"
                 text
                 size="small"
                 :icon="Search"
-                @click="similarQuestionsDialog?.open(item.questionId, item.questionContent)"
+                @click="openSimilarQuestions(item.questionId, item.questionContent)"
               >
                 找相似题
               </el-button>
+              <span class="time">{{ formatTime(item.updateTime) }}</span>
               <el-popconfirm title="确定从错题本移出？" @confirm="handleRemove(item.id)">
                 <template #reference>
-                  <el-button type="danger" text size="small" :icon="Delete">移出错题本</el-button>
+                  <el-button type="danger" text size="small" :icon="Delete" :loading="removingIds.has(item.id)"
+                    >移出</el-button
+                  >
                 </template>
               </el-popconfirm>
             </div>
@@ -112,6 +116,8 @@
         </el-card>
       </TransitionGroup>
     </div>
+
+    <SimilarQuestionsDialog ref="similarQuestionsDialog" />
 
     <!-- 分页 -->
     <div class="pagination-wrapper" v-if="total > 0">
@@ -125,15 +131,13 @@
         @size-change="loadRecords"
       />
     </div>
-
-    <SimilarQuestionsDialog ref="similarQuestionsDialog" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { useUserStore } from '@/stores/user'
 import { savePracticeSession } from '@/utils/practiceSession'
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, onBeforeUnmount } from 'vue'
 import { SemanticTagType } from '@/utils/errors'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -141,23 +145,27 @@ import { Delete, RefreshRight, Search } from '@element-plus/icons-vue'
 import { getWrongQuestions, getWrongQuestionStats, updateMasteryLevel, removeWrongQuestion } from '@/api/wrongQuestion'
 import type { WrongQuestionVO, WrongQuestionStatsVO } from '@/api/wrongQuestion'
 import { getWrongQuestionPractice } from '@/api/practice'
-import AiQuestionAssistant from '@/components/AiQuestionAssistant.vue'
-import QuestionLearningAsset from '@/components/QuestionLearningAsset.vue'
+import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
 import SimilarQuestionsDialog from '@/components/practice/SimilarQuestionsDialog.vue'
+import AiQuestionAssistant from '@/components/AiQuestionAssistant.vue'
 
 const router = useRouter()
 const route = useRoute()
 const loading = ref(false)
+const statsLoading = ref(false)
+const listError = ref('')
 const startPracticeLoading = ref(false)
 const records = ref<WrongQuestionVO[]>([])
 const total = ref(0)
 const stats = ref<WrongQuestionStatsVO | null>(null)
+const updatingIds = ref<Set<number>>(new Set())
+const removingIds = ref<Set<number>>(new Set())
 const similarQuestionsDialog = ref<InstanceType<typeof SimilarQuestionsDialog>>()
+let generation = 0
+let alive = true
 
 const statCards = computed(() => [
-  { label: '总错题数', value: stats.value?.total ?? 0, tone: 'emphasis' as const },
-  { label: '未掌握', value: stats.value?.unmastered ?? 0, tone: 'danger' as const },
-  { label: '部分掌握', value: stats.value?.partial ?? 0, tone: 'warning' as const },
+  { label: '待处理', value: (stats.value?.unmastered ?? 0) + (stats.value?.partial ?? 0), tone: 'emphasis' as const },
   { label: '已掌握', value: stats.value?.mastered ?? 0, tone: 'default' as const },
 ])
 
@@ -191,12 +199,28 @@ async function clearKnowledgePointFilter() {
 }
 
 onMounted(() => {
-  loadRecords()
-  loadStats()
+  void loadRecords()
+  void loadStats()
+})
+
+const unsubscribeSession = onAuthSessionChange(() => {
+  generation++
+  records.value = []
+  total.value = 0
+  stats.value = null
+  listError.value = ''
+})
+onBeforeUnmount(() => {
+  alive = false
+  generation++
+  unsubscribeSession()
 })
 
 const loadRecords = async () => {
+  const requestGeneration = ++generation
+  const session = getAuthSessionVersion()
   loading.value = true
+  listError.value = ''
   try {
     const params: {
       pageNum: number
@@ -214,26 +238,32 @@ const loadRecords = async () => {
     if (targetKnowledgePointId.value !== undefined) params.knowledgePointId = targetKnowledgePointId.value
     if (filter.masteryLevel !== undefined) params.masteryLevel = filter.masteryLevel
 
-    const res = await getWrongQuestions(params)
+    const res = await getWrongQuestions(params, { errorDisplay: 'inline' })
+    if (!alive || requestGeneration !== generation || session !== getAuthSessionVersion()) return
     if (res.code === 0 && res.data) {
       records.value = res.data.records || []
       total.value = res.data.total || 0
     }
   } catch {
-    ElMessage.error('获取错题列表失败')
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion())
+      listError.value = '错题暂时无法加载，请重试'
   } finally {
-    loading.value = false
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) loading.value = false
   }
 }
 
 const loadStats = async () => {
+  const requestGeneration = generation
+  const session = getAuthSessionVersion()
+  statsLoading.value = true
   try {
-    const res = await getWrongQuestionStats()
+    const res = await getWrongQuestionStats({ errorDisplay: 'inline' })
     if (res.code === 0) {
-      stats.value = res.data
+      if (alive && requestGeneration === generation && session === getAuthSessionVersion()) stats.value = res.data
     }
   } catch {
-    // ignore
+  } finally {
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) statsLoading.value = false
   }
 }
 
@@ -243,27 +273,47 @@ const handleSearch = () => {
 }
 
 const handleMasteryChange = async (id: number, masteryLevel: number) => {
+  if (updatingIds.value.has(id)) return
+  const session = getAuthSessionVersion()
+  updatingIds.value = new Set(updatingIds.value).add(id)
   try {
-    const res = await updateMasteryLevel(id, masteryLevel)
-    if (res.code === 0) {
+    const res = await updateMasteryLevel(id, masteryLevel, { errorDisplay: 'inline' })
+    if (alive && session === getAuthSessionVersion() && res.code === 0) {
+      const record = records.value.find((item) => item.id === id)
+      if (record) record.masteryLevel = masteryLevel
       ElMessage.success('掌握程度已更新')
-      loadStats()
+      void loadStats()
     }
   } catch {
-    ElMessage.error('更新失败')
+    if (alive && session === getAuthSessionVersion()) ElMessage.error('更新失败')
+  } finally {
+    if (alive && session === getAuthSessionVersion()) {
+      const next = new Set(updatingIds.value)
+      next.delete(id)
+      updatingIds.value = next
+    }
   }
 }
 
 const handleRemove = async (id: number) => {
+  if (removingIds.value.has(id)) return
+  const session = getAuthSessionVersion()
+  removingIds.value = new Set(removingIds.value).add(id)
   try {
-    const res = await removeWrongQuestion(id)
-    if (res.code === 0) {
+    const res = await removeWrongQuestion(id, { errorDisplay: 'inline' })
+    if (alive && session === getAuthSessionVersion() && res.code === 0) {
       ElMessage.success('已移出错题本')
-      loadRecords()
-      loadStats()
+      void loadRecords()
+      void loadStats()
     }
   } catch {
-    ElMessage.error('移出失败')
+    if (alive && session === getAuthSessionVersion()) ElMessage.error('移出失败')
+  } finally {
+    if (alive && session === getAuthSessionVersion()) {
+      const next = new Set(removingIds.value)
+      next.delete(id)
+      removingIds.value = next
+    }
   }
 }
 
@@ -304,6 +354,10 @@ const formatTime = (time: string) => {
   return new Date(time).toLocaleString('zh-CN')
 }
 
+function openSimilarQuestions(questionId: number, questionContent: string) {
+  similarQuestionsDialog.value?.open(questionId, questionContent)
+}
+
 const handleStartWrongPractice = async () => {
   const userId = useUserStore().userInfo?.id
   if (stats.value && stats.value.total === 0) {
@@ -313,7 +367,16 @@ const handleStartWrongPractice = async () => {
 
   startPracticeLoading.value = true
   try {
-    const params: { masteryLevel?: number; count?: number } = { count: 10 }
+    const params: {
+      masteryLevel?: number
+      count?: number
+      courseId?: number
+      questionId?: number
+      knowledgePointId?: number
+    } = { count: 10 }
+    if (targetCourseId.value !== undefined) params.courseId = targetCourseId.value
+    if (targetQuestionId.value !== undefined) params.questionId = targetQuestionId.value
+    if (targetKnowledgePointId.value !== undefined) params.knowledgePointId = targetKnowledgePointId.value
     if (filter.masteryLevel !== undefined) {
       params.masteryLevel = filter.masteryLevel
     }
@@ -453,6 +516,24 @@ const handleStartWrongPractice = async () => {
 .wrong-answer {
   font-size: var(--lp-text-sm);
   margin-bottom: var(--lp-space-3);
+}
+
+.question-assistance {
+  margin-top: var(--lp-space-4);
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+}
+
+.question-assistance summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--lp-primary);
+}
+
+.question-assistance summary:focus-visible {
+  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
+  outline-offset: var(--lp-focus-offset);
+  border-radius: var(--lp-radius-sm);
 }
 
 .wrong-answer .label {

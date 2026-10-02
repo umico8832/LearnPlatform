@@ -24,8 +24,8 @@ export function addFavorite(questionId: number) {
 }
 
 /** 取消收藏 */
-export function removeFavorite(questionId: number) {
-  return request.delete<unknown, ApiResponse<null>>(`/favorites/${questionId}`)
+export function removeFavorite(questionId: number, options?: { errorDisplay?: 'inline' }) {
+  return request.delete<unknown, ApiResponse<null>>(`/favorites/${questionId}`, ...(options ? [options] : []))
 }
 
 /** 检查是否已收藏 */
@@ -34,8 +34,8 @@ export function checkFavorite(questionId: number) {
 }
 
 /** 获取收藏列表（分页） */
-export function getFavorites(params?: { pageNum?: number; pageSize?: number }) {
-  return request.get<unknown, ApiResponse<PageData<FavoriteQuestionVO>>>('/favorites', { params })
+export function getFavorites(params?: { pageNum?: number; pageSize?: number }, options?: { errorDisplay?: 'inline' }) {
+  return request.get<unknown, ApiResponse<PageData<FavoriteQuestionVO>>>('/favorites', { params, ...options })
 }
 
 /** 获取收藏题目 ID 列表 */

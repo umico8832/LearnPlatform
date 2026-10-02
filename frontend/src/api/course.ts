@@ -611,8 +611,8 @@ interface PageResult<T> {
 }
 
 /** 获取所有启用课程（不分页） */
-export function getAllCourses() {
-  return request.get<unknown, ApiResponse<CourseVO[]>>('/courses/list')
+export function getAllCourses(options?: { errorDisplay?: 'inline' }) {
+  return request.get<unknown, ApiResponse<CourseVO[]>>('/courses/list', ...(options ? [options] : []))
 }
 
 /** 获取课程分页 */

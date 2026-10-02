@@ -78,8 +78,10 @@ export function getQuestionPage(params: {
 }
 
 /** 获取题目详情（用户端） */
-export function getQuestionById(id: number) {
-  return request.get<unknown, ApiResponse<QuestionVO>>(`/questions/${id}`)
+export function getQuestionById(id: number, options?: { errorDisplay?: 'inline' }) {
+  return options
+    ? request.get<unknown, ApiResponse<QuestionVO>>(`/questions/${id}`, options)
+    : request.get<unknown, ApiResponse<QuestionVO>>(`/questions/${id}`)
 }
 
 /** 获取题目分页（管理端） */

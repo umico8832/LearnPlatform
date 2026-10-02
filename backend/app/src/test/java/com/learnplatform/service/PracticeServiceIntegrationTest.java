@@ -403,7 +403,7 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
             assertNull(vo.getAnalysis(), "练习模式不应返回解析");
             if (vo.getOptions() != null) {
                 vo.getOptions().forEach(opt ->
-                        assertEquals(0, opt.getIsCorrect(), "练习模式选项不应标记正确答案"));
+                        assertNull(opt.getIsCorrect(), "练习模式选项不应标记正确答案"));
             }
         }
     }
@@ -497,7 +497,7 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         practiceService.submitAnswer(wrongReq, userId);
 
         // 获取错题重练
-        List<QuestionVO> questions = practiceService.getWrongQuestionPractice(userId, null, 10);
+        List<QuestionVO> questions = practiceService.getWrongQuestionPractice(userId, null, 10, null, null, null);
 
         assertFalse(questions.isEmpty(), "错题本有记录时应返回重练题目");
         // 验证返回的题目确实在错题本中
@@ -522,15 +522,138 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         userMapper.insert(freshUser);
 
         List<QuestionVO> questions = practiceService.getWrongQuestionPractice(
-                freshUser.getId(), null, 10);
+                freshUser.getId(), null, 10, null, null, null);
 
         assertTrue(questions.isEmpty(), "无错题时应返回空列表");
+    }
+
+    @Test
+    @Order(15)
+    @DisplayName("错题重练：在抽样前同时收紧课程、知识点和单题，并排除非本人或不可访问题目")
+    void getWrongQuestionPractice_filtersScopeBeforeSamplingAndPreservesAccessBoundaries() {
+        KnowledgePoint secondKnowledgePoint = knowledgePoint("同课程第二知识点", courseId);
+        Course otherCourse = course("错题重练其他课程");
+        KnowledgePoint otherCoursePoint = knowledgePoint("其他课程知识点", otherCourse.getId());
+        User otherUser = user("practice_scope_other_user");
+
+        Question target = question("范围内目标题", courseId, 1, "PUBLIC", null);
+        associate(target, knowledgePointId);
+        addWrongQuestion(userId, target.getId());
+
+        for (int index = 0; index < 12; index++) {
+            Question outsideKnowledgePoint = question("同课程其他知识点 " + index, courseId, 1, "PUBLIC", null);
+            associate(outsideKnowledgePoint, secondKnowledgePoint.getId());
+            addWrongQuestion(userId, outsideKnowledgePoint.getId());
+        }
+        Question otherCourseQuestion = question("其他课程题", otherCourse.getId(), 1, "PUBLIC", null);
+        associate(otherCourseQuestion, otherCoursePoint.getId());
+        addWrongQuestion(userId, otherCourseQuestion.getId());
+
+        Question disabled = question("已禁用题", courseId, 0, "PUBLIC", null);
+        associate(disabled, knowledgePointId);
+        addWrongQuestion(userId, disabled.getId());
+        Question otherPrivate = question("他人私有题", courseId, 1, "PRIVATE", otherUser.getId());
+        associate(otherPrivate, knowledgePointId);
+        addWrongQuestion(userId, otherPrivate.getId());
+        Question onlyOtherUsersWrong = question("仅他人错题", courseId, 1, "PUBLIC", null);
+        associate(onlyOtherUsersWrong, knowledgePointId);
+        addWrongQuestion(otherUser.getId(), onlyOtherUsersWrong.getId());
+
+        List<QuestionVO> result = practiceService.getWrongQuestionPractice(
+                userId, null, 1, courseId, knowledgePointId, target.getId());
+
+        assertEquals(List.of(target.getId()), result.stream().map(QuestionVO::getId).toList());
+        assertEquals(List.of(otherCourseQuestion.getId()), practiceService.getWrongQuestionPractice(
+                userId, null, 10, otherCourse.getId(), null, null).stream().map(QuestionVO::getId).toList(),
+                "课程范围必须排除其他课程的错题");
+        assertEquals(12, practiceService.getWrongQuestionPractice(
+                userId, null, 20, courseId, secondKnowledgePoint.getId(), null).size(),
+                "同一课程内知识点范围必须独立生效");
+        assertTrue(practiceService.getWrongQuestionPractice(userId, null, 10,
+                courseId, secondKnowledgePoint.getId(), target.getId()).isEmpty(),
+                "单题与不匹配知识点的交集必须为空，不能退回扩大范围");
+        assertTrue(practiceService.getWrongQuestionPractice(userId, null, 10,
+                courseId, knowledgePointId, disabled.getId()).isEmpty(), "禁用题不能进入错题重练");
+        assertTrue(practiceService.getWrongQuestionPractice(userId, null, 10,
+                courseId, knowledgePointId, otherPrivate.getId()).isEmpty(), "他人私有题不能进入错题重练");
+        assertTrue(practiceService.getWrongQuestionPractice(userId, null, 10,
+                courseId, knowledgePointId, onlyOtherUsersWrong.getId()).isEmpty(), "他人的错题记录不能被读取");
+    }
+
+    private Course course(String name) {
+        Course course = new Course();
+        course.setName(name);
+        course.setDeleted(0);
+        course.setCreateTime(LocalDateTime.now());
+        course.setUpdateTime(LocalDateTime.now());
+        courseMapper.insert(course);
+        return course;
+    }
+
+    private KnowledgePoint knowledgePoint(String name, Long targetCourseId) {
+        KnowledgePoint point = new KnowledgePoint();
+        point.setName(name);
+        point.setCourseId(targetCourseId);
+        point.setDeleted(0);
+        point.setCreateTime(LocalDateTime.now());
+        point.setUpdateTime(LocalDateTime.now());
+        knowledgePointMapper.insert(point);
+        return point;
+    }
+
+    private User user(String username) {
+        User user = new User();
+        user.setUsername(username);
+        user.setPassword("$2a$10$dummyHashForTest");
+        user.setNickname(username);
+        user.setRole("USER");
+        user.setStatus(1);
+        user.setDeleted(0);
+        user.setCreateTime(LocalDateTime.now());
+        user.setUpdateTime(LocalDateTime.now());
+        userMapper.insert(user);
+        return user;
+    }
+
+    private Question question(String content, Long targetCourseId, int status, String visibility, Long ownerUserId) {
+        Question question = new Question();
+        question.setContent(content);
+        question.setQuestionType("SINGLE_CHOICE");
+        question.setDifficulty(1);
+        question.setCourseId(targetCourseId);
+        question.setStatus(status);
+        question.setVisibility(visibility);
+        question.setOwnerUserId(ownerUserId);
+        question.setDeleted(0);
+        question.setCreateTime(LocalDateTime.now());
+        question.setUpdateTime(LocalDateTime.now());
+        questionMapper.insert(question);
+        return question;
+    }
+
+    private void associate(Question question, Long targetKnowledgePointId) {
+        QuestionKnowledgePoint association = new QuestionKnowledgePoint();
+        association.setQuestionId(question.getId());
+        association.setKnowledgePointId(targetKnowledgePointId);
+        questionKnowledgePointMapper.insert(association);
+    }
+
+    private void addWrongQuestion(Long targetUserId, Long questionId) {
+        WrongQuestion wrongQuestion = new WrongQuestion();
+        wrongQuestion.setUserId(targetUserId);
+        wrongQuestion.setQuestionId(questionId);
+        wrongQuestion.setWrongCount(1);
+        wrongQuestion.setMasteryLevel(0);
+        wrongQuestion.setDeleted(0);
+        wrongQuestion.setCreateTime(LocalDateTime.now());
+        wrongQuestion.setUpdateTime(LocalDateTime.now());
+        wrongQuestionMapper.insert(wrongQuestion);
     }
 
     // ======================== 收藏题练习集成测试 ========================
 
     @Test
-    @Order(15)
+    @Order(16)
     @DisplayName("收藏题练习：有收藏时可获取收藏题")
     void getFavoritePractice_withFavorites_returnsQuestions() {
         // 先收藏一道题
@@ -548,7 +671,7 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    @Order(16)
+    @Order(17)
     @DisplayName("收藏题练习：无收藏时返回空列表")
     void getFavoritePractice_noFavorites_returnsEmpty() {
         User freshUser = new User();

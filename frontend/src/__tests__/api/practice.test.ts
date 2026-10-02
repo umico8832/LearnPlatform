@@ -43,6 +43,17 @@ describe('Practice API', () => {
       expect(result).toEqual({ code: 0, data: mockData, message: 'success' })
     })
 
+    it('原位错误展示仍保留筛选参数', async () => {
+      mockedRequest.get.mockResolvedValue({ code: 0, data: [], message: 'success' })
+
+      await getPracticeQuestions({ courseId: 7, count: 5 }, { errorDisplay: 'inline' })
+
+      expect(mockedRequest.get).toHaveBeenCalledWith('/practice/questions', {
+        params: { courseId: 7, count: 5 },
+        errorDisplay: 'inline',
+      })
+    })
+
     it('无参数时应调用正确路径', async () => {
       mockedRequest.get.mockResolvedValue({ code: 0, data: [], message: 'success' })
 
@@ -89,6 +100,18 @@ describe('Practice API', () => {
         answerTime: 30,
       })
       expect(result).toEqual({ code: 0, data: mockResult, message: 'success' })
+    })
+
+    it('支持提交失败时由页面原位呈现错误', async () => {
+      mockedRequest.post.mockResolvedValue({ code: 0, data: {}, message: 'success' })
+
+      await submitAnswer({ questionId: 1, userAnswer: 'B' }, { errorDisplay: 'inline' })
+
+      expect(mockedRequest.post).toHaveBeenCalledWith(
+        '/practice/submit',
+        { questionId: 1, userAnswer: 'B' },
+        { errorDisplay: 'inline' },
+      )
     })
 
     it('应支持不传 answerTime', async () => {
@@ -139,16 +162,23 @@ describe('Practice API', () => {
       expect(mockedRequest.get).toHaveBeenCalledWith('/practice/stats')
       expect(result).toEqual({ code: 0, data: mockStats, message: 'success' })
     })
+    it('支持统计失败由页面原位呈现', async () => {
+      mockedRequest.get.mockResolvedValue({ code: 0, data: {}, message: 'success' })
+
+      await getPracticeStats({ errorDisplay: 'inline' })
+
+      expect(mockedRequest.get).toHaveBeenCalledWith('/practice/stats', { errorDisplay: 'inline' })
+    })
   })
 
   describe('getWrongQuestionPractice', () => {
     it('应使用 GET 请求获取错题重练题目', async () => {
       mockedRequest.get.mockResolvedValue({ code: 0, data: [], message: 'success' })
 
-      await getWrongQuestionPractice({ masteryLevel: 1, count: 5 })
+      await getWrongQuestionPractice({ masteryLevel: 1, count: 5, courseId: 9, knowledgePointId: 31, questionId: 21 })
 
       expect(mockedRequest.get).toHaveBeenCalledWith('/practice/wrong-questions', {
-        params: { masteryLevel: 1, count: 5 },
+        params: { masteryLevel: 1, count: 5, courseId: 9, knowledgePointId: 31, questionId: 21 },
       })
     })
 

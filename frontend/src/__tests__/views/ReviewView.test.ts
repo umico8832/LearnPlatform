@@ -1,10 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { flushPromises, mount } from '@vue/test-utils'
 
-const { mockGetReviewStats, mockGetDueReviewCards } = vi.hoisted(() => ({
+const { mockGetReviewStats, mockGetDueReviewCards, mockGetQuestionById } = vi.hoisted(() => ({
   mockGetReviewStats: vi.fn(),
   mockGetDueReviewCards: vi.fn(),
+  mockGetQuestionById: vi.fn(),
 }))
 
 vi.mock('@/api/review', () => ({
@@ -16,6 +17,10 @@ vi.mock('@/api/review', () => ({
   resetReviewProgress: vi.fn(),
   syncWrongQuestionsToReview: vi.fn(),
   getAiReviewSuggestionStream: vi.fn(),
+}))
+
+vi.mock('@/api/question', () => ({
+  getQuestionById: (...args: unknown[]) => mockGetQuestionById(...args),
 }))
 
 vi.mock('@/utils/auth', async (original) => ({
@@ -30,6 +35,7 @@ vi.mock('vue-router', () => ({
 }))
 
 import ReviewView from '@/views/practice/ReviewView.vue'
+import { removeToken, setToken } from '@/utils/auth'
 
 describe('ReviewView course target', () => {
   beforeEach(() => {
@@ -67,7 +73,20 @@ describe('ReviewView course target', () => {
         },
       ],
     })
+    mockGetQuestionById.mockImplementation((id: number) =>
+      Promise.resolve({
+        code: 0,
+        data: {
+          id,
+          content: '课程目标复习题',
+          questionType: 'SHORT_ANSWER',
+          options: [],
+        },
+      }),
+    )
   })
+
+  afterEach(() => removeToken())
 
   it('从课程总览进入时自动加载并开始服务端选择的到期题', async () => {
     const wrapper = mount(ReviewView, {
@@ -78,7 +97,7 @@ describe('ReviewView course target', () => {
     })
     await flushPromises()
 
-    expect(mockGetDueReviewCards).toHaveBeenCalledWith(408, 30, 21, undefined)
+    expect(mockGetDueReviewCards).toHaveBeenCalledWith(408, 30, 21, undefined, { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('课程目标复习题')
   })
 
@@ -90,7 +109,7 @@ describe('ReviewView course target', () => {
           id: 1,
           questionId: 21,
           questionContent: '课程目标复习题',
-          questionType: 'SINGLE_CHOICE',
+          questionType: 'SHORT_ANSWER',
           courseId: 408,
           statusLabel: '新卡片',
         },
@@ -132,6 +151,66 @@ describe('ReviewView course target', () => {
     wrapper.unmount()
   })
 
+  it('does not start a stale due-card response after an account switch', async () => {
+    routeQuery = {}
+    let resolve!: (value: unknown) => void
+    mockGetDueReviewCards.mockImplementationOnce(
+      () =>
+        new Promise((next) => {
+          resolve = next
+        }),
+    )
+    setToken('review-account-a')
+    const wrapper = mount(ReviewView, {
+      global: {
+        stubs: {
+          MarkdownRenderer: true,
+          LpPageHeader: { template: '<header><slot name="actions" /></header>' },
+          'el-button': { emits: ['click'], template: '<button @click="$emit(\'click\')"><slot /></button>' },
+        },
+        directives: { loading: () => undefined },
+      },
+    })
+    await flushPromises()
+
+    const start = wrapper.findAll('button').find((button) => button.text().includes('开始复习'))!
+    const pending = start.trigger('click')
+    setToken('review-account-b')
+    resolve({
+      data: [
+        {
+          id: 2,
+          questionId: 22,
+          questionContent: '旧账户题目',
+          questionType: 'SINGLE_CHOICE',
+          courseId: 408,
+          statusLabel: '新卡片',
+        },
+      ],
+    })
+    await pending
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('旧账户题目')
+    expect(wrapper.text()).not.toContain('没有待复习的题目')
+    wrapper.unmount()
+  })
+
+  it('读取统计失败时保留原位重试状态，不把失败显示为零张卡片', async () => {
+    mockGetReviewStats.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(ReviewView, {
+      global: {
+        stubs: { MarkdownRenderer: true },
+        directives: { loading: () => undefined },
+      },
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('复习计划暂时无法加载，请重试')
+    expect(wrapper.text()).not.toContain('暂时没有复习卡片')
+    wrapper.unmount()
+  })
+
   it('从知识点入口进入时按知识点筛选并展示可清除的筛选标记', async () => {
     routeQuery = { courseId: '408', knowledgePointId: '31', knowledgePointName: '栈' }
     const wrapper = mount(ReviewView, {
@@ -142,7 +221,7 @@ describe('ReviewView course target', () => {
     })
     await flushPromises()
 
-    expect(mockGetDueReviewCards).toHaveBeenCalledWith(408, 30, undefined, 31)
+    expect(mockGetDueReviewCards).toHaveBeenCalledWith(408, 30, undefined, 31, { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('知识点：栈')
   })
 })

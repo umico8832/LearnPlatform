@@ -1,310 +1,228 @@
 <template>
-  <div class="practice-session">
-    <div class="session-header">
-      <div class="header-left">
-        <el-button @click="handleBack" text>
-          <el-icon><ArrowLeft /></el-icon> 退出练习
-        </el-button>
-        <el-tag v-if="isWrongPractice" type="danger" size="small" effect="dark" class="mode-tag"> 错题重练 </el-tag>
-        <el-tag v-if="isFavoritePractice" type="warning" size="small" effect="dark" class="mode-tag"> 收藏练习 </el-tag>
+  <section class="practice-session" aria-label="练习会话">
+    <header class="session-header">
+      <el-button text @click="leavePractice"
+        ><el-icon><ArrowLeft /></el-icon>退出练习</el-button
+      ><LpProgress
+        class="session-progress"
+        :percent="progressPercent"
+        show-label
+        :label="`${currentIndex + 1} / ${questions.length}`"
+      />
+      <p>已判分：{{ correctCount }} 对，{{ wrongCount }} 错</p>
+    </header>
+    <section v-if="finished" class="finish-container">
+      <GamificationPracticeSummary :summary="sessionSummary" @continue="leavePractice" />
+    </section>
+    <LpCard v-else-if="currentQuestion" as="article" class="question-card">
+      <template #header
+        ><div class="question-meta">
+          <el-tag :type="getQuestionTypeTag(currentQuestion.questionType)" size="small">{{
+            getQuestionTypeLabel(currentQuestion.questionType)
+          }}</el-tag
+          ><span>{{ currentQuestion.courseName }}</span
+          ><span>{{ currentQuestion.score }} 分</span>
+        </div></template
+      >
+      <p ref="questionHeadingRef" class="question-content" tabindex="-1">{{ currentQuestion.content }}</p>
+      <div v-if="currentQuestion.knowledgePointNames?.length" class="knowledge-points">
+        <el-tag v-for="name in currentQuestion.knowledgePointNames" :key="name" size="small" effect="plain">{{
+          name
+        }}</el-tag>
       </div>
-      <div class="header-center">
-        <LpProgress
-          :percent="((currentIndex + 1) / questions.length) * 100"
-          show-label
-          :label="`${currentIndex + 1} / ${questions.length}`"
-        />
-      </div>
-      <div class="header-right">
-        <el-tag :type="correctCount > wrongCount ? 'success' : 'danger'" size="large">
-          ✓ {{ correctCount }} / ✗ {{ wrongCount }}
-        </el-tag>
-      </div>
-    </div>
-
-    <el-dialog
-      v-model="showResult"
-      :title="currentResult?.correct ? '答对了！' : '再看一下这题'"
-      :width="isMobile ? '95%' : '680px'"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      class="result-dialog"
-      @closed="handleResultClosed"
-    >
-      <div class="result-content">
-        <div class="result-icon" :class="currentResult?.correct ? 'is-correct' : 'is-wrong'">
-          <span>{{ currentResult?.correct ? '✓' : '✗' }}</span>
-        </div>
-
-        <div class="result-answer">
-          <p><strong>你的答案：</strong>{{ currentResult?.userAnswer }}</p>
-          <p v-if="!currentResult?.correct">
-            <strong>正确答案：</strong>
-            <span class="correct-answer">{{ currentResult?.correctAnswer }}</span>
-          </p>
-        </div>
-
-        <AnswerRewardFeedback v-if="currentResult?.reward" :reward="currentResult.reward" />
-        <p v-if="isWrongPractice && currentResult?.correct" class="wrong-resolved">✓ 这道错题已移出错题本</p>
-
-        <div v-if="currentResult?.analysis" class="result-analysis">
-          <LpDivider />
-          <p class="analysis-title">解析</p>
-          <p class="analysis-text">{{ currentResult.analysis }}</p>
-        </div>
-
-        <AiQuestionAssistant v-if="currentResult" :question-id="currentResult.questionId" />
-
-        <!-- 答错后展示 AI 深度学习资产（答错后的 AI 讲解入口），折叠模式减少弹窗长度 -->
-        <QuestionLearningAsset
-          v-if="currentResult && !currentResult.correct"
-          :question-id="currentResult.questionId"
-          collapsible
-        />
-      </div>
-
-      <template #footer>
-        <el-button type="primary" @click="nextQuestion" size="large">
-          {{ currentIndex < questions.length - 1 ? '下一题' : '查看结果' }}
-        </el-button>
-      </template>
-    </el-dialog>
-
-    <div v-if="finished" class="finish-container">
-      <GamificationPracticeSummary :summary="sessionSummary" @continue="handleBack" />
-    </div>
-
-    <div v-if="!finished && currentQuestion" class="question-card-wrapper">
-      <el-card class="question-card" shadow="never">
-        <div class="question-meta">
-          <el-tag :type="getQuestionTypeTag(currentQuestion.questionType)" size="small">
-            {{ getQuestionTypeLabel(currentQuestion.questionType) }}
-          </el-tag>
-          <el-tag v-if="currentQuestion.courseName" type="info" size="small">
-            {{ currentQuestion.courseName }}
-          </el-tag>
-          <div class="difficulty-stars">
-            <el-rate v-model="currentQuestion.difficulty" disabled :max="5" />
-          </div>
-          <span class="score-tag">分值：{{ currentQuestion.score }}</span>
-        </div>
-
-        <div class="question-content">{{ currentQuestion.content }}</div>
-
-        <div class="knowledge-points" v-if="currentQuestion.knowledgePointNames?.length">
-          <el-tag
-            v-for="name in currentQuestion.knowledgePointNames"
-            :key="name"
-            size="small"
-            type="info"
-            effect="plain"
+      <fieldset class="answer-area" :disabled="answerLocked">
+        <legend>作答</legend>
+        <div v-if="currentQuestion.questionType === 'SINGLE_CHOICE'" class="option-list">
+          <label
+            v-for="option in currentQuestion.options"
+            :key="option.id"
+            class="option-item"
+            :class="{ selected: userAnswer === option.optionLabel }"
+            ><input v-model="userAnswer" type="radio" name="practice-answer" :value="option.optionLabel" /><span
+              >{{ option.optionLabel }}. {{ option.content }}</span
+            ></label
           >
-            {{ name }}
-          </el-tag>
         </div>
-
-        <div class="answer-area">
-          <div v-if="currentQuestion.questionType === 'SINGLE_CHOICE'" class="option-list">
-            <label
-              v-for="opt in currentQuestion.options"
-              :key="opt.id"
-              :class="[
-                'option-item',
-                {
-                  selected: userAnswer === opt.optionLabel,
-                  'answer-confirmed': currentResult?.correct && userAnswer === opt.optionLabel,
-                },
-              ]"
-            >
-              <input
-                v-model="userAnswer"
-                class="option-input"
-                type="radio"
-                name="practice-answer"
-                :value="opt.optionLabel"
-              />
-              <span class="option-label">{{ opt.optionLabel }}</span>
-              <span class="option-content">{{ opt.content }}</span>
-            </label>
-          </div>
-
-          <div v-else-if="currentQuestion.questionType === 'MULTIPLE_CHOICE'" class="option-list">
-            <label
-              v-for="opt in currentQuestion.options"
-              :key="opt.id"
-              :class="['option-item', { selected: multiAnswers.has(opt.optionLabel) }]"
-            >
-              <input
-                class="option-input"
-                type="checkbox"
-                :checked="multiAnswers.has(opt.optionLabel)"
-                @change="toggleMulti(opt.optionLabel)"
-              />
-              <span class="option-label">{{ opt.optionLabel }}</span>
-              <span class="option-content">{{ opt.content }}</span>
-            </label>
-          </div>
-
-          <div v-else-if="currentQuestion.questionType === 'TRUE_FALSE'" class="option-list tf-options">
-            <label :class="['option-item tf-item', { selected: userAnswer === 'TRUE' }]">
-              <input v-model="userAnswer" class="option-input" type="radio" name="practice-answer" value="TRUE" />
-              <span class="option-content">✓ 正确</span>
-            </label>
-            <label :class="['option-item tf-item', { selected: userAnswer === 'FALSE' }]">
-              <input v-model="userAnswer" class="option-input" type="radio" name="practice-answer" value="FALSE" />
-              <span class="option-content">✗ 错误</span>
-            </label>
-          </div>
-
-          <div v-else class="text-answer">
-            <el-input
-              v-model="userAnswer"
-              type="textarea"
-              :rows="currentQuestion.questionType === 'SHORT_ANSWER' ? 4 : 2"
-              placeholder="请输入你的答案..."
-            />
-          </div>
+        <div v-else-if="currentQuestion.questionType === 'MULTIPLE_CHOICE'" class="option-list">
+          <label
+            v-for="option in currentQuestion.options"
+            :key="option.id"
+            class="option-item"
+            :class="{ selected: multiAnswers.has(option.optionLabel) }"
+            ><input
+              type="checkbox"
+              :checked="multiAnswers.has(option.optionLabel)"
+              @change="toggleMulti(option.optionLabel)"
+            /><span>{{ option.optionLabel }}. {{ option.content }}</span></label
+          >
         </div>
-
-        <div class="submit-area">
+        <div v-else-if="currentQuestion.questionType === 'TRUE_FALSE'" class="option-list">
+          <label class="option-item" :class="{ selected: userAnswer === 'TRUE' }"
+            ><input v-model="userAnswer" type="radio" name="practice-answer" value="TRUE" />正确</label
+          ><label class="option-item" :class="{ selected: userAnswer === 'FALSE' }"
+            ><input v-model="userAnswer" type="radio" name="practice-answer" value="FALSE" />错误</label
+          >
+        </div>
+        <el-input
+          v-else
+          v-model="userAnswer"
+          type="textarea"
+          :rows="currentQuestion.questionType === 'SHORT_ANSWER' ? 4 : 2"
+          placeholder="请输入你的答案"
+        />
+      </fieldset>
+      <PracticeAnswerFeedback v-if="currentResult" :result="currentResult" :wrong-practice="isWrongPractice" />
+      <template #footer
+        ><div class="session-action">
           <el-button
+            v-if="!currentResult"
             type="primary"
-            size="large"
-            @click="handleSubmit"
             :loading="submitting"
-            :disabled="!canSubmit || !!currentResult || finished"
+            :disabled="!canSubmit"
+            @click="handleSubmit"
+            >提交答案</el-button
+          ><span v-else ref="nextActionRef"
+            ><el-button type="primary" @click="nextQuestion">{{
+              currentIndex < questions.length - 1 ? '下一题' : '查看结果'
+            }}</el-button></span
           >
-            提交答案
-          </el-button>
-        </div>
-      </el-card>
-    </div>
-  </div>
+        </div></template
+      >
+    </LpCard>
+  </section>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { submitAnswer, type PracticeQuestionVO, type PracticeResultVO } from '@/api/practice'
-import AiQuestionAssistant from '@/components/AiQuestionAssistant.vue'
-import QuestionLearningAsset from '@/components/QuestionLearningAsset.vue'
-import { useMobileViewport } from '@/composables/useMobileViewport'
-import { usePracticeAnswer } from './usePracticeAnswer'
-import { useUserStore } from '@/stores/user'
-import { clearPracticeSession, loadPracticeSession } from '@/utils/practiceSession'
-import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
-import { useGamificationStore } from '@/stores/gamification'
-import AnswerRewardFeedback from '@/components/gamification/AnswerRewardFeedback.vue'
 import GamificationPracticeSummary from '@/components/gamification/GamificationPracticeSummary.vue'
 import type { GamificationAchievement } from '@/components/gamification/types'
+import { useGamificationStore } from '@/stores/gamification'
+import { useUserStore } from '@/stores/user'
+import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
+import { clearPracticeSession, loadPracticeSession } from '@/utils/practiceSession'
+import PracticeAnswerFeedback from './PracticeAnswerFeedback.vue'
 import {
   practiceQuestionTypeLabel as getQuestionTypeLabel,
   practiceQuestionTypeTag as getQuestionTypeTag,
   practiceReturnRoute,
 } from './practiceSessionPresentation'
+import { usePracticeAnswer } from './usePracticeAnswer'
 
 const router = useRouter()
-
-const questions = ref<PracticeQuestionVO[]>([])
-const currentIndex = ref(0)
-const submitting = ref(false)
-const showResult = ref(false)
-const currentResult = ref<PracticeResultVO | null>(null)
-const pendingResultAction = ref(false)
-const finished = ref(false)
-const correctCount = ref(0)
-const wrongCount = ref(0)
-const startTime = ref(Date.now())
-const practiceMode = ref<string>('')
-const isMobile = useMobileViewport()
+const questions = ref<PracticeQuestionVO[]>([]),
+  currentIndex = ref(0),
+  submitting = ref(false),
+  currentResult = ref<PracticeResultVO | null>(null),
+  finished = ref(false),
+  correctCount = ref(0),
+  wrongCount = ref(0),
+  pendingCount = ref(0),
+  startTime = ref(Date.now()),
+  practiceMode = ref(''),
+  sessionXp = ref(0),
+  sessionAchievements = ref<GamificationAchievement[]>([])
+const nextActionRef = ref<HTMLElement | null>(null)
+const questionHeadingRef = ref<HTMLElement | null>(null)
 const gamification = useGamificationStore()
-const sessionXp = ref(0)
-const sessionAchievements = ref<GamificationAchievement[]>([])
 let alive = true
-const unsubscribeSession = onAuthSessionChange(() => {
+const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
+const answerLocked = computed(() => submitting.value || currentResult.value !== null)
+const { userAnswer, multiAnswers, canSubmit, toggleMulti, answer, reset } = usePracticeAnswer(
+  currentQuestion,
+  answerLocked,
+)
+const isWrongPractice = computed(() => practiceMode.value === 'wrong_question')
+const progressPercent = computed(() =>
+  questions.value.length ? ((currentIndex.value + 1) / questions.value.length) * 100 : 0,
+)
+const sessionSummary = computed(() => {
+  const graded = correctCount.value + wrongCount.value
+  return {
+    answeredCount: graded + pendingCount.value,
+    pendingCount: pendingCount.value,
+    correctRate: graded ? (correctCount.value / graded) * 100 : null,
+    xpGained: sessionXp.value,
+    achievements: sessionAchievements.value,
+    rateLabel: graded ? '正确率' : '判分状态',
+  }
+})
+function resetSession() {
   questions.value = []
   currentResult.value = null
-  showResult.value = false
   sessionXp.value = 0
   correctCount.value = 0
   wrongCount.value = 0
+  pendingCount.value = 0
   finished.value = false
   submitting.value = false
   sessionAchievements.value = []
+}
+const unsubscribeSession = onAuthSessionChange(() => {
+  resetSession()
+  if (alive) void router.replace({ name: 'Practice' })
+})
+onBeforeRouteLeave(() => {
+  clearPracticeSession()
+  return true
 })
 onUnmounted(() => {
   alive = false
   unsubscribeSession()
 })
-const sessionSummary = computed(() => ({
-  answeredCount: correctCount.value + wrongCount.value,
-  correctRate:
-    correctCount.value + wrongCount.value > 0
-      ? (correctCount.value / (correctCount.value + wrongCount.value)) * 100
-      : 0,
-  xpGained: sessionXp.value,
-  achievements: sessionAchievements.value,
-}))
-
-const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
-const { userAnswer, multiAnswers, canSubmit, toggleMulti, answer, reset } = usePracticeAnswer(currentQuestion)
-const isWrongPractice = computed(() => practiceMode.value === 'wrong_question')
-const isFavoritePractice = computed(() => practiceMode.value === 'favorite')
-
 onMounted(async () => {
-  const userStore = useUserStore()
-  if (!userStore.userInfo) await userStore.fetchUserInfo()
-  if (!alive) return
-  const stored = loadPracticeSession(userStore.userInfo?.id)
-  if (stored) {
-    questions.value = stored.questions
-    startTime.value = Date.now()
-    practiceMode.value = stored.mode
-  } else {
-    ElMessage.warning('没有练习题目，请先选择刷题模式')
-    router.replace({ name: 'Practice' })
-  }
-})
-
-const handleSubmit = async () => {
-  if (!currentQuestion.value || !canSubmit.value || submitting.value || currentResult.value || finished.value) return
-  const questionId = currentQuestion.value.id
+  const user = useUserStore()
   const session = getAuthSessionVersion()
+  if (!user.userInfo) await user.fetchUserInfo()
+  if (!alive || session !== getAuthSessionVersion()) return
+  const stored = loadPracticeSession(user.userInfo?.id)
+  if (!stored) {
+    ElMessage.warning('没有练习题目，请先选择练习条件')
+    void router.replace({ name: 'Practice' })
+    return
+  }
+  questions.value = stored.questions
+  practiceMode.value = stored.mode
+  startTime.value = Date.now()
+})
+async function handleSubmit() {
+  if (!currentQuestion.value || !canSubmit.value || answerLocked.value || finished.value) return
+  const questionId = currentQuestion.value.id,
+    session = getAuthSessionVersion()
   submitting.value = true
   try {
-    const elapsed = Math.round((Date.now() - startTime.value) / 1000)
-
-    const res = await submitAnswer({
-      questionId,
-      userAnswer: answer(),
-      answerTime: elapsed,
-    })
-
+    const response = await submitAnswer(
+      { questionId, userAnswer: answer(), answerTime: Math.round((Date.now() - startTime.value) / 1000) },
+      { errorDisplay: 'inline' },
+    )
     if (!alive || session !== getAuthSessionVersion() || currentQuestion.value?.id !== questionId) return
-    if (res.code === 0 && res.data) {
-      currentResult.value = res.data
-      if (gamification.acceptReward(res.data.reward, session) && res.data.reward) {
-        sessionXp.value += res.data.reward.awardedXp
-        for (const achievement of res.data.reward.newAchievements) {
-          if (!sessionAchievements.value.some((item) => item.id === achievement.code))
-            sessionAchievements.value.push({
-              id: achievement.code,
-              title: achievement.name,
-              description: achievement.description,
-            })
-        }
-      }
-      if (res.data.correct) {
-        correctCount.value++
-      } else {
-        wrongCount.value++
-      }
-      showResult.value = true
-    } else {
-      ElMessage.error(res.message || '提交失败')
+    if (response.code !== 0 || !response.data) {
+      ElMessage.error(response.message || '提交失败')
+      return
+    }
+    currentResult.value = response.data
+    if (response.data.correct === true) correctCount.value++
+    else if (response.data.correct === false) wrongCount.value++
+    else pendingCount.value++
+    if (gamification.acceptReward(response.data.reward, session) && response.data.reward) {
+      sessionXp.value += response.data.reward.awardedXp
+      for (const achievement of response.data.reward.newAchievements)
+        if (!sessionAchievements.value.some((item) => item.id === achievement.code))
+          sessionAchievements.value.push({
+            id: achievement.code,
+            title: achievement.name,
+            description: achievement.description,
+          })
+    }
+    await nextTick()
+    if (!alive || session !== getAuthSessionVersion() || currentResult.value?.questionId !== questionId) return
+    const nextElement = nextActionRef.value?.querySelector<HTMLElement>('button')
+    if (nextElement) {
+      nextElement.scrollIntoView?.({ block: 'nearest' })
+      nextElement.focus()
     }
   } catch {
     if (alive && session === getAuthSessionVersion()) ElMessage.error('提交答案失败')
@@ -312,348 +230,130 @@ const handleSubmit = async () => {
     if (alive && session === getAuthSessionVersion()) submitting.value = false
   }
 }
-
-const nextQuestion = () => {
-  // Keep the current result intact until Element Plus finishes its closing
-  // transition. Clearing it immediately makes the leaving dialog briefly
-  // render as an empty "wrong answer" result.
-  pendingResultAction.value = true
-  showResult.value = false
-}
-
-const handleResultClosed = () => {
-  if (!pendingResultAction.value) return
-  pendingResultAction.value = false
+async function nextQuestion() {
+  if (!currentResult.value) return
   currentResult.value = null
-
-  if (currentIndex.value < questions.value.length - 1) {
-    currentIndex.value++
-    reset()
-    startTime.value = Date.now()
-  } else {
+  if (currentIndex.value >= questions.value.length - 1) {
     finished.value = true
+    return
   }
+  currentIndex.value++
+  reset()
+  startTime.value = Date.now()
+  await nextTick()
+  questionHeadingRef.value?.scrollIntoView?.({ block: 'nearest' })
+  questionHeadingRef.value?.focus()
 }
-
-const leavePractice = () => {
+function leavePractice() {
   clearPracticeSession()
-  router.push(practiceReturnRoute(practiceMode.value))
+  void router.push(practiceReturnRoute(practiceMode.value))
 }
-
-const handleBack = leavePractice
 </script>
 
 <style scoped>
 .practice-session {
-  padding: var(--lp-space-6);
-  max-width: 800px;
+  width: min(840px, 100%);
   margin: 0 auto;
+  padding: var(--lp-space-6);
 }
-
 .session-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: auto minmax(180px, 1fr) auto;
   gap: var(--lp-space-4);
+  align-items: center;
   margin-bottom: var(--lp-space-6);
-  padding: var(--lp-space-3) var(--lp-space-5);
+  padding: var(--lp-space-3) var(--lp-space-4);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
   background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
 }
-
-.header-left,
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-2);
+.session-header p {
+  margin: 0;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
 }
-
-.header-center {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  min-width: 160px;
-  max-width: 320px;
-}
-
-.header-center :deep(.lp-progress) {
-  width: 100%;
-}
-
-.mode-tag {
-  margin-left: var(--lp-space-2);
-}
-
-.question-card-wrapper {
-  animation: lp-fade-in var(--lp-duration-normal) var(--lp-ease-out);
-}
-
-@keyframes lp-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.question-card {
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
-}
-
 .question-meta {
   display: flex;
-  align-items: center;
-  gap: var(--lp-space-2);
-  margin-bottom: var(--lp-space-4);
-  flex-wrap: wrap;
+  gap: var(--lp-space-3);
+  width: 100%;
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-sm);
 }
-
-.difficulty-stars {
+.question-meta span:last-child {
   margin-left: auto;
 }
-
-.score-tag {
-  font-size: var(--lp-text-sm);
-  color: var(--lp-text-muted);
-  font-variant-numeric: tabular-nums;
-}
-
 .question-content {
+  margin: 0 0 var(--lp-space-4);
+  color: var(--lp-text);
   font-size: var(--lp-text-xl);
   line-height: var(--lp-leading-relaxed);
-  color: var(--lp-text);
-  margin-bottom: var(--lp-space-4);
   white-space: pre-wrap;
 }
-
+.knowledge-points,
+.option-list {
+  display: grid;
+  gap: var(--lp-space-3);
+}
 .knowledge-points {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--lp-space-2);
+  grid-template-columns: repeat(auto-fit, minmax(0, max-content));
   margin-bottom: var(--lp-space-5);
 }
-
 .answer-area {
-  margin: var(--lp-space-5) 0;
-}
-
-.option-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: var(--lp-space-3);
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
-
+.answer-area legend {
+  padding: 0;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+}
 .option-item {
   display: flex;
-  align-items: center;
   gap: var(--lp-space-3);
-  padding: var(--lp-space-4) var(--lp-space-5);
-  background: var(--lp-surface);
+  align-items: center;
+  padding: var(--lp-space-4);
   border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
+  border-radius: var(--lp-radius-control);
   cursor: pointer;
-  transition:
-    border-color var(--lp-duration-fast) var(--lp-ease-out),
-    background-color var(--lp-duration-fast) var(--lp-ease-out);
 }
-
-.option-input {
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  accent-color: var(--lp-primary);
-  flex-shrink: 0;
-}
-
-.option-item:has(.option-input:focus-visible) {
-  outline: 2px solid var(--lp-primary);
-  outline-offset: 2px;
-}
-
 .option-item:hover {
-  border-color: var(--lp-border-strong);
-  background: var(--lp-surface-subtle);
+  background: var(--lp-surface-hover);
 }
-
 .option-item.selected {
   border-color: var(--lp-primary);
-  background: var(--lp-primary-soft);
+  background: var(--lp-surface-selected);
 }
-
-.option-label {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 28px;
-  height: 28px;
-  border-radius: var(--lp-radius-full);
-  background: var(--lp-surface-inset);
-  color: var(--lp-text-secondary);
-  font-weight: var(--lp-weight-bold);
-  font-size: var(--lp-text-sm);
-  flex-shrink: 0;
+.option-item:has(input:focus-visible) {
+  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
+  outline-offset: var(--lp-focus-offset);
+  box-shadow: var(--lp-shadow-focus);
 }
-
-.option-item.selected .option-label {
-  background: var(--lp-primary);
-  color: var(--lp-on-primary);
+.option-item input {
+  margin: 0;
+  accent-color: var(--lp-primary);
 }
-
-.option-content {
-  flex: 1;
-  font-size: var(--lp-text-md);
-  color: var(--lp-text);
-  line-height: var(--lp-leading-snug);
-}
-
-.tf-options {
-  flex-direction: row;
-  gap: var(--lp-space-4);
-}
-
-.tf-item {
-  flex: 1;
-  justify-content: center;
-  font-size: var(--lp-text-lg);
-  font-weight: var(--lp-weight-semibold);
-}
-
-.text-answer {
-  margin-top: var(--lp-space-2);
-}
-
-.submit-area {
-  text-align: center;
-  margin-top: var(--lp-space-6);
-}
-
-.result-content {
-  text-align: center;
-}
-.wrong-resolved {
-  color: var(--lp-success);
-  font-weight: var(--lp-weight-semibold);
-}
-
-.result-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  margin: 0 auto var(--lp-space-4);
-  border-radius: var(--lp-radius-full);
-  font-size: var(--lp-text-3xl);
-  font-weight: var(--lp-weight-bold);
-}
-
-.result-icon.is-correct {
-  background: var(--lp-success-soft);
-  color: var(--lp-success);
-}
-
-.result-icon.is-wrong {
-  background: var(--lp-danger-soft);
-  color: var(--lp-danger);
-}
-
-.result-answer {
-  text-align: left;
-  font-size: var(--lp-text-md);
-  line-height: var(--lp-leading-relaxed);
-  color: var(--lp-text);
-}
-
-.result-answer strong {
-  color: var(--lp-text-secondary);
-  font-weight: var(--lp-weight-semibold);
-}
-
-.correct-answer {
-  color: var(--lp-success);
-  font-weight: var(--lp-weight-bold);
-}
-
-.analysis-title {
-  font-weight: var(--lp-weight-bold);
-  margin-bottom: var(--lp-space-2);
-  color: var(--lp-text);
-}
-
-.analysis-text {
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-base);
-  line-height: var(--lp-leading-relaxed);
-  white-space: pre-wrap;
-  text-align: left;
-}
-
+.session-action,
 .finish-container {
   display: flex;
-  justify-content: center;
-  padding-top: var(--lp-space-8);
+  justify-content: flex-end;
+  width: 100%;
 }
-
+.finish-container {
+  justify-content: center;
+  padding-top: var(--lp-space-6);
+}
 @media (max-width: 767px) {
   .practice-session {
     padding: var(--lp-space-3);
   }
-
   .session-header {
+    grid-template-columns: 1fr;
+  }
+  .question-meta {
     flex-wrap: wrap;
-    gap: var(--lp-space-2);
-    padding: var(--lp-space-3);
-  }
-
-  .header-center {
-    order: 3;
-    width: 100%;
-    max-width: none;
-    justify-content: center;
-  }
-
-  .header-left .el-button span {
-    display: none;
-  }
-
-  .question-content {
-    font-size: var(--lp-text-lg);
-  }
-
-  .option-item {
-    padding: var(--lp-space-3) var(--lp-space-4);
-    gap: var(--lp-space-2);
-    min-height: 48px;
-  }
-
-  .tf-options {
-    flex-direction: column;
-    gap: var(--lp-space-3);
-  }
-
-  .finish-container {
-    padding-top: var(--lp-space-6);
-  }
-
-  .el-dialog {
-    margin: var(--lp-space-2) auto !important;
-  }
-}
-.answer-confirmed {
-  border-color: var(--lp-success);
-  background: var(--lp-success-soft);
-}
-@media (prefers-reduced-motion: reduce) {
-  .result-icon,
-  .question-card-wrapper {
-    animation: none;
   }
 }
 </style>

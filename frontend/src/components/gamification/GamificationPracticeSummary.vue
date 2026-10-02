@@ -38,6 +38,10 @@ const rateLabel = computed(() => props.summary.rateLabel || '正确率')
           <dt>已答</dt>
           <dd>{{ summary.answeredCount }} 题</dd>
         </div>
+        <div v-if="summary.pendingCount">
+          <dt>待判分</dt>
+          <dd>{{ summary.pendingCount }} 题</dd>
+        </div>
         <div>
           <dt>获得经验</dt>
           <dd>+{{ summary.xpGained }}</dd>

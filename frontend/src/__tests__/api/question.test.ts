@@ -129,6 +129,14 @@ describe('Question API', () => {
       expect(mockedRequest.get).toHaveBeenCalledWith('/questions/5')
       expect(result).toEqual({ code: 0, data: mockQuestion, message: 'success' })
     })
+
+    it('支持页面内联处理详情加载失败', async () => {
+      mockedRequest.get.mockResolvedValue({ code: 0, data: null, message: 'success' })
+
+      await getQuestionById(5, { errorDisplay: 'inline' })
+
+      expect(mockedRequest.get).toHaveBeenCalledWith('/questions/5', { errorDisplay: 'inline' })
+    })
   })
 
   describe('getAdminQuestionPage', () => {

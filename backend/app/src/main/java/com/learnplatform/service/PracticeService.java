@@ -48,8 +48,10 @@ public class PracticeService {
         return historyService.getUserPracticeStats(userId);
     }
 
-    public List<QuestionVO> getWrongQuestionPractice(Long userId, Integer masteryLevel, Integer count) {
-        return questionQueryService.getWrongQuestionPractice(userId, masteryLevel, count);
+    public List<QuestionVO> getWrongQuestionPractice(Long userId, Integer masteryLevel, Integer count,
+            Long courseId, Long knowledgePointId, Long questionId) {
+        return questionQueryService.getWrongQuestionPractice(
+                userId, masteryLevel, count, courseId, knowledgePointId, questionId);
     }
 
     public List<QuestionVO> getFavoritePractice(Long userId, Integer count, Long questionId) {

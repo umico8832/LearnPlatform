@@ -7,7 +7,7 @@
           size="large"
           :icon="Reading"
           :loading="startingReview"
-          :disabled="stats.dueToday === 0 || reviewSession?.reviewing"
+          :disabled="statsLoading || !!statsError || stats.dueToday === 0 || reviewSession?.reviewing"
           @click="startReview"
         >
           开始复习
@@ -22,14 +22,16 @@
       </el-tag>
     </div>
 
-    <section class="stats-grid">
+    <LpStatePanel v-if="statsLoading" state="loading" loading-label="正在读取复习计划" />
+    <LpStatePanel v-else-if="statsError" state="error" :description="statsError" @retry="loadStats" />
+
+    <section v-else class="stats-grid" aria-label="复习概况">
       <LpStat label="今日待复习" :value="stats.dueToday" tone="emphasis" />
       <LpStat label="今日已完成" :value="stats.reviewedToday" />
-      <LpStat label="已掌握" :value="stats.masteredCards" tone="warning" />
-      <LpStat label="连续复习" :value="`${stats.streakDays} 天`" tone="danger" />
+      <LpStat label="复习卡片" :value="stats.totalCards" />
     </section>
 
-    <section v-if="stats.totalCards > 0" class="progress-panel">
+    <section v-if="!statsLoading && !statsError && stats.totalCards > 0" class="progress-panel">
       <LpSectionHeading :title="`已掌握 ${stats.masteredCards} / ${stats.totalCards} 张卡片`" />
       <LpProgress
         :percent="masteredPercent"
@@ -37,44 +39,43 @@
         tone="success"
         show-label
       />
-      <div class="status-row">
-        <span><el-tag type="info" size="small">新卡片</el-tag> {{ stats.newCards }}</span>
-        <span><el-tag type="warning" size="small">学习中</el-tag> {{ stats.learningCards }}</span>
-        <span><el-tag type="success" size="small">已掌握</el-tag> {{ stats.masteredCards }}</span>
-        <span><el-tag type="danger" size="small">困难</el-tag> {{ stats.difficultCards }}</span>
+      <p class="status-row">
+        新卡 {{ stats.newCards }} · 学习中 {{ stats.learningCards }} · 困难 {{ stats.difficultCards }}
+      </p>
+    </section>
+
+    <LpEmptyState
+      v-else-if="!statsLoading && !statsError"
+      title="暂时没有复习卡片"
+      description="完成练习或同步错题后，待复习内容会出现在这里。"
+    />
+
+    <section class="action-panel" aria-label="复习工具">
+      <div class="action-buttons">
+        <el-button :icon="View" @click="toggleAllCards">
+          {{ showAllCards ? '收起卡片列表' : '查看全部卡片' }}
+        </el-button>
+        <el-button :icon="Download" :loading="syncing" @click="handleSyncWrongQuestions"> 同步错题到复习 </el-button>
+        <el-button
+          :icon="MagicStick"
+          :loading="aiSuggestionLoading"
+          :disabled="statsLoading || !!statsError || stats.totalCards === 0"
+          @click="handleAiSuggestion"
+        >
+          AI 复习建议
+        </el-button>
       </div>
     </section>
 
-    <section class="action-panel">
-      <div class="action-bar">
-        <div class="action-buttons">
-          <el-button size="large" :icon="View" @click="showAllCards = !showAllCards">
-            {{ showAllCards ? '收起卡片列表' : '查看全部卡片' }}
-          </el-button>
-          <el-button size="large" :icon="Download" :loading="syncing" @click="handleSyncWrongQuestions">
-            同步错题到复习
-          </el-button>
-          <el-button
-            size="large"
-            :icon="MagicStick"
-            :loading="aiSuggestionLoading"
-            :disabled="stats.totalCards === 0"
-            @click="handleAiSuggestion"
-          >
-            AI 复习建议
-          </el-button>
-        </div>
-      </div>
-    </section>
+    <LpStatePanel v-if="aiSuggestionError" state="error" :description="aiSuggestionError" @retry="handleAiSuggestion" />
 
-    <!-- AI 复习建议区域 -->
-    <section v-if="aiSuggestionContent" class="ai-panel">
+    <section v-if="aiSuggestionContent || aiSuggestionLoading" class="ai-panel" aria-label="AI 复习建议">
       <LpSectionHeading title="AI 复习建议">
         <template #aside>
           <el-button size="small" text @click="aiSuggestionContent = ''">收起</el-button>
         </template>
       </LpSectionHeading>
-      <div class="ai-suggestion-content">
+      <div v-if="aiSuggestionContent" class="ai-suggestion-content">
         <MarkdownRenderer :content="aiSuggestionContent" />
         <div v-if="aiSuggestionLoading" class="streaming-tip">
           <el-icon class="is-loading"><Loading /></el-icon> AI 正在生成建议...
@@ -82,6 +83,7 @@
       </div>
     </section>
 
+    <LpStatePanel v-if="sessionError" state="error" :description="sessionError" @retry="startReview" />
     <ReviewSessionPanel ref="reviewSession" :cards="dueCards" @reviewed="loadStats" />
 
     <!-- 全部卡片列表 -->
@@ -93,13 +95,14 @@
         </div>
       </template>
 
-      <el-table
-        :data="allCards"
-        stripe
-        style="width: 100%"
-        v-loading="cardsLoading"
-        empty-text="暂无复习卡片，刷题后自动加入"
-      >
+      <LpStatePanel v-if="cardsLoading" state="loading" loading-label="正在读取复习卡片" />
+      <LpStatePanel v-else-if="allCardsError" state="error" :description="allCardsError" @retry="loadAllCards" />
+      <LpEmptyState
+        v-else-if="allCards.length === 0"
+        title="暂无复习卡片"
+        description="刷题后自动加入；也可以同步错题到复习计划。"
+      />
+      <el-table v-else :data="allCards" stripe style="width: 100%">
         <el-table-column label="题目" min-width="200" show-overflow-tooltip>
           <template #default="{ row }">
             <span>{{ row.questionContent }}</span>
@@ -120,8 +123,24 @@
         <el-table-column label="下次复习" width="120" prop="nextReviewDate" />
         <el-table-column label="操作" width="160">
           <template #default="{ row }">
-            <el-button size="small" type="danger" plain @click="handleRemove(row.questionId)">移出</el-button>
-            <el-button size="small" @click="handleReset(row.questionId)">重置</el-button>
+            <el-button
+              size="small"
+              type="danger"
+              plain
+              :loading="removingQuestionIds.has(row.questionId)"
+              :disabled="resettingQuestionIds.has(row.questionId)"
+              @click="handleRemove(row.questionId)"
+            >
+              移出
+            </el-button>
+            <el-button
+              size="small"
+              :loading="resettingQuestionIds.has(row.questionId)"
+              :disabled="removingQuestionIds.has(row.questionId)"
+              @click="handleReset(row.questionId)"
+            >
+              重置
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -130,15 +149,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { errorMessage, isAbortError } from '@/utils/errors'
+import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
+import { errorMessage } from '@/utils/errors'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, Loading, MagicStick, Reading, View } from '@element-plus/icons-vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import ReviewSessionPanel from '@/components/review/ReviewSessionPanel.vue'
-import { getAiReviewSuggestionStream } from '@/api/review'
-import { getToken } from '@/utils/auth'
+import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
 import {
   getReviewStats,
   getDueReviewCards,
@@ -149,7 +167,7 @@ import {
   type ReviewStatsVO,
   type ReviewScheduleVO,
 } from '@/api/review'
-import { consumeReviewSuggestionStream } from './reviewSuggestionStream'
+import { useReviewAiSuggestion } from './useReviewAiSuggestion'
 import { reviewStatusTag as statusTagType } from '@/components/review/reviewSessionPresentation'
 import { positiveQueryNumber } from './reviewPresentation'
 
@@ -186,18 +204,27 @@ const stats = ref<ReviewStatsVO>({
 })
 
 const dueCards = ref<ReviewScheduleVO[]>([])
+const statsLoading = ref(false)
+const statsError = ref('')
 const startingReview = ref(false)
+const sessionError = ref('')
 const reviewSession = ref<InstanceType<typeof ReviewSessionPanel>>()
 
 // 卡片列表
 const showAllCards = ref(false)
 const allCards = ref<ReviewScheduleVO[]>([])
 const cardsLoading = ref(false)
+const allCardsError = ref('')
 const syncing = ref(false)
+const removingQuestionIds = ref(new Set<number>())
+const resettingQuestionIds = ref(new Set<number>())
 
 // AI 复习建议
-const aiSuggestionLoading = ref(false)
-const aiSuggestionContent = ref('')
+const aiSuggestion = useReviewAiSuggestion(() => alive)
+const { loading: aiSuggestionLoading, content: aiSuggestionContent, error: aiSuggestionError } = aiSuggestion
+
+let generation = 0
+let alive = true
 
 const masteredPercent = computed(() => {
   if (stats.value.totalCards === 0) return 0
@@ -205,71 +232,119 @@ const masteredPercent = computed(() => {
 })
 
 async function loadStats() {
+  const requestGeneration = generation
+  const session = getAuthSessionVersion()
+  statsLoading.value = true
+  statsError.value = ''
   try {
-    const { data } = await getReviewStats()
-    stats.value = data
+    const { data } = await getReviewStats({ errorDisplay: 'inline' })
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) stats.value = data
   } catch {
-    // ignore
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) {
+      statsError.value = '复习计划暂时无法加载，请重试'
+    }
+  } finally {
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) statsLoading.value = false
   }
 }
 
 async function loadDueCards() {
+  const requestGeneration = generation
+  const session = getAuthSessionVersion()
+  sessionError.value = ''
   try {
     const { data } = await getDueReviewCards(
       targetCourseId.value,
       30,
       targetQuestionId.value,
       targetKnowledgePointId.value,
+      { errorDisplay: 'inline' },
     )
-    dueCards.value = data
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) dueCards.value = data
   } catch {
-    ElMessage.error('获取待复习题目失败')
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) {
+      sessionError.value = '待复习题目暂时无法加载，请重试'
+    }
   }
 }
 
 async function loadAllCards() {
+  const requestGeneration = generation
+  const session = getAuthSessionVersion()
   cardsLoading.value = true
+  allCardsError.value = ''
   try {
-    const { data } = await getAllReviewCards()
-    allCards.value = data
+    const { data } = await getAllReviewCards(undefined, { errorDisplay: 'inline' })
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) allCards.value = data
   } catch {
-    ElMessage.error('获取复习卡片失败')
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion())
+      allCardsError.value = '复习卡片暂时无法加载，请重试'
   } finally {
-    cardsLoading.value = false
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) cardsLoading.value = false
   }
+}
+
+async function toggleAllCards() {
+  showAllCards.value = !showAllCards.value
+  if (showAllCards.value) await loadAllCards()
 }
 
 async function startReview() {
   if (startingReview.value || reviewSession.value?.reviewing) return
+  const requestGeneration = generation
+  const session = getAuthSessionVersion()
   startingReview.value = true
+  sessionError.value = ''
   try {
     await loadDueCards()
+    if (!alive || requestGeneration !== generation || session !== getAuthSessionVersion()) return
+    if (sessionError.value) return
     if (dueCards.value.length === 0) {
       ElMessage.info('没有待复习的题目')
       return
     }
     reviewSession.value?.start()
   } finally {
-    startingReview.value = false
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) startingReview.value = false
   }
 }
 
 async function handleRemove(questionId: number) {
-  await ElMessageBox.confirm('确定将该题目移出复习计划？', '确认')
+  if (removingQuestionIds.value.has(questionId) || resettingQuestionIds.value.has(questionId)) return
   try {
-    await removeFromReviewPlan(questionId)
+    await ElMessageBox.confirm('确定将该题目移出复习计划？', '确认')
+  } catch {
+    return
+  }
+  const requestGeneration = generation
+  const session = getAuthSessionVersion()
+  removingQuestionIds.value = new Set(removingQuestionIds.value).add(questionId)
+  try {
+    await removeFromReviewPlan(questionId, { errorDisplay: 'inline' })
+    if (!alive || requestGeneration !== generation || session !== getAuthSessionVersion()) return
     ElMessage.success('已移出')
     await loadAllCards()
     await loadStats()
   } catch (e) {
-    ElMessage.error(errorMessage(e, '操作失败'))
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion())
+      ElMessage.error(errorMessage(e, '操作失败'))
+  } finally {
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) {
+      const next = new Set(removingQuestionIds.value)
+      next.delete(questionId)
+      removingQuestionIds.value = next
+    }
   }
 }
 
 async function handleSyncWrongQuestions() {
+  if (syncing.value) return
+  const requestGeneration = generation
+  const session = getAuthSessionVersion()
   syncing.value = true
   try {
-    const { data } = await syncWrongQuestionsToReview()
+    const { data } = await syncWrongQuestionsToReview({ errorDisplay: 'inline' })
+    if (!alive || requestGeneration !== generation || session !== getAuthSessionVersion()) return
     const count = data.syncedCount
     if (count > 0) {
       ElMessage.success(`已同步 ${count} 道错题到复习计划`)
@@ -281,45 +356,42 @@ async function handleSyncWrongQuestions() {
       ElMessage.info('暂无新的错题需要同步（已在复习计划中的会跳过）')
     }
   } catch (e) {
-    ElMessage.error(errorMessage(e, '同步失败'))
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion())
+      ElMessage.error(errorMessage(e, '同步失败'))
   } finally {
-    syncing.value = false
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) syncing.value = false
   }
 }
 
 async function handleReset(questionId: number) {
-  await ElMessageBox.confirm('确定重置该题目的复习进度？', '确认')
+  if (resettingQuestionIds.value.has(questionId) || removingQuestionIds.value.has(questionId)) return
   try {
-    await resetReviewProgress(questionId)
+    await ElMessageBox.confirm('确定重置该题目的复习进度？', '确认')
+  } catch {
+    return
+  }
+  const requestGeneration = generation
+  const session = getAuthSessionVersion()
+  resettingQuestionIds.value = new Set(resettingQuestionIds.value).add(questionId)
+  try {
+    await resetReviewProgress(questionId, { errorDisplay: 'inline' })
+    if (!alive || requestGeneration !== generation || session !== getAuthSessionVersion()) return
     ElMessage.success('已重置')
     await loadAllCards()
   } catch (e) {
-    ElMessage.error(errorMessage(e, '操作失败'))
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion())
+      ElMessage.error(errorMessage(e, '操作失败'))
+  } finally {
+    if (alive && requestGeneration === generation && session === getAuthSessionVersion()) {
+      const next = new Set(resettingQuestionIds.value)
+      next.delete(questionId)
+      resettingQuestionIds.value = next
+    }
   }
 }
 
-async function handleAiSuggestion() {
-  aiSuggestionLoading.value = true
-  aiSuggestionContent.value = ''
-  const token = getToken()
-  if (!token) {
-    ElMessage.error('请先登录')
-    aiSuggestionLoading.value = false
-    return
-  }
-  try {
-    const response = await getAiReviewSuggestionStream(token)
-    await consumeReviewSuggestionStream(response, {
-      onContent: (content) => (aiSuggestionContent.value += content),
-      onError: (message) => ElMessage.error(message),
-    })
-  } catch (e) {
-    if (!isAbortError(e)) {
-      ElMessage.error(errorMessage(e, 'AI 复习建议获取失败'))
-    }
-  } finally {
-    aiSuggestionLoading.value = false
-  }
+function handleAiSuggestion() {
+  return aiSuggestion.request()
 }
 
 onMounted(async () => {
@@ -327,6 +399,27 @@ onMounted(async () => {
   if (targetCourseId.value || targetQuestionId.value) {
     await startReview()
   }
+})
+
+const unsubscribeSession = onAuthSessionChange(() => {
+  generation++
+  aiSuggestion.clear()
+  stats.value = { ...stats.value, totalCards: 0, dueToday: 0, reviewedToday: 0 }
+  dueCards.value = []
+  allCards.value = []
+  allCardsError.value = ''
+  statsError.value = ''
+  sessionError.value = ''
+  startingReview.value = false
+  syncing.value = false
+  removingQuestionIds.value = new Set()
+  resettingQuestionIds.value = new Set()
+})
+onBeforeUnmount(() => {
+  alive = false
+  generation++
+  aiSuggestion.cancel()
+  unsubscribeSession()
 })
 </script>
 

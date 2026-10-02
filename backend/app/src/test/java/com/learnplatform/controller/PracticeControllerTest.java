@@ -176,7 +176,7 @@ class PracticeControllerTest {
 
     @Test
     void getWrongQuestionPractice_defaultParams() throws Exception {
-        when(practiceService.getWrongQuestionPractice(eq(1L), isNull(), isNull()))
+        when(practiceService.getWrongQuestionPractice(eq(1L), isNull(), isNull(), isNull(), isNull(), isNull()))
                 .thenReturn(List.of());
 
         mockMvc.perform(get("/api/practice/wrong-questions").with(mockUser(1L)))
@@ -189,13 +189,16 @@ class PracticeControllerTest {
     void getWrongQuestionPractice_withParams() throws Exception {
         QuestionVO q = new QuestionVO();
         q.setId(5L);
-        when(practiceService.getWrongQuestionPractice(eq(1L), eq(1), eq(3)))
+        when(practiceService.getWrongQuestionPractice(eq(1L), eq(1), eq(3), eq(9L), eq(31L), eq(5L)))
                 .thenReturn(List.of(q));
 
         mockMvc.perform(get("/api/practice/wrong-questions")
                         .with(mockUser(1L))
                         .param("masteryLevel", "1")
-                        .param("count", "3"))
+                        .param("count", "3")
+                        .param("courseId", "9")
+                        .param("knowledgePointId", "31")
+                        .param("questionId", "5"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.length()").value(1));
     }

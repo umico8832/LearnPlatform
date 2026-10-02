@@ -1,4 +1,5 @@
 import type { SemanticTagType } from '@/utils/errors'
+import type { PracticeResultVO } from '@/api/practice'
 
 export function practiceQuestionTypeLabel(type: string) {
   const labels: Record<string, string> = {
@@ -27,4 +28,13 @@ export function practiceReturnRoute(mode: string) {
   if (mode === 'favorite') return { name: 'Favorites' }
   if (mode === 'recommended') return { name: 'LearningDiagnosis' }
   return { name: 'Practice' }
+}
+
+export function isGradedPracticeResult(result: PracticeResultVO | null) {
+  return result?.correct !== null && result?.correct !== undefined
+}
+
+export function practiceResultTitle(result: PracticeResultVO) {
+  if (!isGradedPracticeResult(result)) return '答案已记录，等待判分'
+  return result.correct ? '回答正确' : '请结合解析再看一遍'
 }

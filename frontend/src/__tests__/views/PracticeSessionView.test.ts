@@ -4,11 +4,12 @@ import { defineComponent } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { useUserStore } from '@/stores/user'
 
-const { mockSubmitAnswer, mockPush, mockReplace, mockError } = vi.hoisted(() => ({
+const { mockSubmitAnswer, mockPush, mockReplace, mockError, mockRouteLeave } = vi.hoisted(() => ({
   mockSubmitAnswer: vi.fn(),
   mockPush: vi.fn(),
   mockReplace: vi.fn(),
   mockError: vi.fn(),
+  mockRouteLeave: vi.fn(),
 }))
 
 vi.mock('@/api/practice', () => ({
@@ -20,6 +21,7 @@ vi.mock('vue-router', async (importOriginal) => {
   return {
     ...actual,
     useRouter: () => ({ push: mockPush, replace: mockReplace }),
+    onBeforeRouteLeave: (guard: unknown) => mockRouteLeave(guard),
   }
 })
 
@@ -158,8 +160,33 @@ describe('PracticeSessionView', () => {
     expect(sessionStorage.getItem('practice_questions')).toBeNull()
   })
 
-  it('keeps the result intact until the closing transition finishes before moving to the next question', async () => {
+  it('clears the refresh cache only when leaving the session route', async () => {
     const wrapper = mount(PracticeSessionView, { global: { stubs } })
+    await flushPromises()
+    const leave = mockRouteLeave.mock.calls.at(-1)?.[0] as () => boolean
+    expect(leave()).toBe(true)
+    expect(sessionStorage.getItem('practice_questions')).toBeNull()
+    wrapper.unmount()
+  })
+
+  it('returns to practice after authentication changes so another account never sees a blank old session', async () => {
+    const wrapper = mount(PracticeSessionView, { global: { stubs } })
+    await flushPromises()
+    useUserStore().setLoginInfo('other-token', {
+      id: 8,
+      username: 'other',
+      nickname: 'Other',
+      avatar: null,
+      role: 'USER',
+    })
+    await flushPromises()
+
+    expect(mockReplace).toHaveBeenCalledWith({ name: 'Practice' })
+    expect(wrapper.text()).not.toContain('第一题')
+  })
+
+  it('moves focus to the inline next action, then to the next question heading', async () => {
+    const wrapper = mount(PracticeSessionView, { attachTo: document.body, global: { stubs } })
     await flushPromises()
 
     const correctOption = wrapper.findAll('input[type="radio"]').find((option) => option.attributes('value') === 'TRUE')
@@ -170,16 +197,13 @@ describe('PracticeSessionView', () => {
     await flushPromises()
 
     const nextButton = wrapper.findAll('button').find((button) => button.text().includes('下一题'))
+    expect(document.activeElement).toBe(nextButton!.element)
     await nextButton!.trigger('click')
 
-    expect(wrapper.text()).toContain('第一题')
-    expect(wrapper.get('[data-testid="result-dialog"]').text()).toContain('答对了')
-
-    ;(wrapper.findComponent(DialogStub).vm as unknown as { finishClosing: () => void }).finishClosing()
-    await flushPromises()
-
     expect(wrapper.text()).toContain('第二题')
-    expect(wrapper.find('[data-testid="result-dialog"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="practice-feedback"]').exists()).toBe(false)
+    expect(document.activeElement).toBe(wrapper.get('.question-content').element)
+    wrapper.unmount()
   })
 
   it('uses native radio controls for true-or-false answers', async () => {
@@ -190,6 +214,87 @@ describe('PracticeSessionView', () => {
     expect(radios).toHaveLength(2)
     await radios[0].setValue()
     expect((radios[0].element as HTMLInputElement).checked).toBe(true)
+  })
+
+  it('keeps an ungraded answer out of correct and wrong counts', async () => {
+    mockSubmitAnswer.mockResolvedValueOnce({
+      code: 0,
+      data: {
+        recordId: 1,
+        questionId: 1,
+        userAnswer: '解释',
+        correct: null,
+        correctAnswer: '',
+        analysis: '',
+        score: 0,
+      },
+    })
+    const wrapper = mount(PracticeSessionView, { global: { stubs } })
+    await flushPromises()
+    await wrapper.findAll('input[type="radio"]')[0]!.setValue()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('提交答案'))!
+      .trigger('click')
+    await flushPromises()
+    expect(wrapper.get('[data-testid="practice-feedback"]').text()).toContain('等待判分')
+    expect(wrapper.text()).toContain('已判分：0 对，0 错')
+  })
+
+  it('summarizes only graded answers while retaining a pending answer count', async () => {
+    mockSubmitAnswer
+      .mockResolvedValueOnce({
+        code: 0,
+        data: {
+          recordId: 1,
+          questionId: 1,
+          userAnswer: 'TRUE',
+          correct: true,
+          correctAnswer: 'TRUE',
+          analysis: '解析',
+          score: 5,
+        },
+      })
+      .mockResolvedValueOnce({
+        code: 0,
+        data: {
+          recordId: 2,
+          questionId: 2,
+          userAnswer: 'FALSE',
+          correct: null,
+          correctAnswer: '',
+          analysis: '',
+          score: 0,
+        },
+      })
+    const wrapper = mount(PracticeSessionView, { global: { stubs } })
+    await flushPromises()
+
+    await wrapper.findAll('input[type="radio"]')[0]!.setValue()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('提交答案'))!
+      .trigger('click')
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('下一题'))!
+      .trigger('click')
+
+    await wrapper.findAll('input[type="radio"]')[1]!.setValue()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('提交答案'))!
+      .trigger('click')
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('查看结果'))!
+      .trigger('click')
+
+    expect(wrapper.text()).toContain('2 题已记录')
+    expect(wrapper.text()).toContain('待判分1 题')
+    expect(wrapper.get('[role="progressbar"]').attributes('aria-valuenow')).toBe('100')
   })
 
   it('submits one answer once while the first request is still pending', async () => {
@@ -234,7 +339,7 @@ describe('PracticeSessionView', () => {
     })
     await Promise.all([first, second])
     await flushPromises()
-    expect(wrapper.get('[data-testid="result-dialog"]').text()).toContain('答对了')
+    expect(wrapper.get('[data-testid="practice-feedback"]').text()).toContain('回答正确')
   })
 
   it('does not accept a reward or show a result when submission fails', async () => {

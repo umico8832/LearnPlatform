@@ -96,9 +96,11 @@ public class PracticeQuestionQueryService {
     }
 
     public List<QuestionVO> getWrongQuestionPractice(
-            Long userId, Integer masteryLevel, Integer requestedCount) {
+            Long userId, Integer masteryLevel, Integer requestedCount,
+            Long courseId, Long knowledgePointId, Long questionId) {
         int count = normalizeCount(requestedCount);
-        log.info("获取错题重练题目: userId={}, masteryLevel={}, count={}", userId, masteryLevel, count);
+        log.info("获取错题重练题目: userId={}, masteryLevel={}, courseId={}, knowledgePointId={}, questionId={}, count={}",
+                userId, masteryLevel, courseId, knowledgePointId, questionId, count);
 
         LambdaQueryWrapper<WrongQuestion> wrongWrapper = new LambdaQueryWrapper<>();
         wrongWrapper.eq(WrongQuestion::getUserId, userId);
@@ -110,16 +112,30 @@ public class PracticeQuestionQueryService {
         if (wrongQuestions.isEmpty()) {
             return new ArrayList<>();
         }
-        if (wrongQuestions.size() > count) {
-            Collections.shuffle(wrongQuestions);
-            wrongQuestions = wrongQuestions.subList(0, count);
-        }
-
         List<Long> questionIds = wrongQuestions.stream()
                 .map(WrongQuestion::getQuestionId)
                 .distinct()
                 .collect(Collectors.toList());
-        return findAccessibleQuestions(userId, questionIds);
+        LambdaQueryWrapper<Question> questionWrapper = accessibleQuestionWrapper(userId, questionIds);
+        if (courseId != null) {
+            questionWrapper.eq(Question::getCourseId, courseId);
+        }
+        if (questionId != null) {
+            questionWrapper.eq(Question::getId, questionId);
+        }
+        if (knowledgePointId != null) {
+            List<Long> knowledgeQuestionIds = questionIdsForKnowledgePoint(knowledgePointId);
+            if (knowledgeQuestionIds.isEmpty()) {
+                return new ArrayList<>();
+            }
+            questionWrapper.in(Question::getId, knowledgeQuestionIds);
+        }
+        List<Question> questions = questionMapper.selectList(questionWrapper);
+        if (questions.size() > count) {
+            Collections.shuffle(questions);
+            questions = questions.subList(0, count);
+        }
+        return toPracticeQuestions(questions);
     }
 
     public List<QuestionVO> getFavoritePractice(Long userId, Integer requestedCount, Long questionId) {
@@ -148,13 +164,25 @@ public class PracticeQuestionQueryService {
     }
 
     private List<QuestionVO> findAccessibleQuestions(Long userId, List<Long> questionIds) {
+        return toPracticeQuestions(questionMapper.selectList(accessibleQuestionWrapper(userId, questionIds)));
+    }
+
+    private LambdaQueryWrapper<Question> accessibleQuestionWrapper(Long userId, List<Long> questionIds) {
         LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(Question::getId, questionIds);
         wrapper.eq(Question::getStatus, 1);
         wrapper.and(scope -> scope.eq(Question::getVisibility, "PUBLIC")
                 .or(privateScope -> privateScope.eq(Question::getVisibility, "PRIVATE")
                         .eq(Question::getOwnerUserId, userId)));
-        return toPracticeQuestions(questionMapper.selectList(wrapper));
+        return wrapper;
+    }
+
+    private List<Long> questionIdsForKnowledgePoint(Long knowledgePointId) {
+        LambdaQueryWrapper<QuestionKnowledgePoint> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(QuestionKnowledgePoint::getKnowledgePointId, knowledgePointId);
+        return questionKnowledgePointMapper.selectList(wrapper).stream()
+                .map(QuestionKnowledgePoint::getQuestionId)
+                .collect(Collectors.toList());
     }
 
     private List<QuestionVO> toPracticeQuestions(List<Question> questions) {

@@ -123,13 +123,16 @@ export interface SubmissionDifficultyAssessment {
 // ========== 用户端 ==========
 
 /** 提交题目投稿 */
-export function submitQuestion(data: SubmissionForm) {
-  return request.post<unknown, ApiResponse<QuestionSubmissionVO>>('/submission', data)
+export function submitQuestion(data: SubmissionForm, options?: { errorDisplay?: 'inline' }) {
+  return request.post<unknown, ApiResponse<QuestionSubmissionVO>>('/submission', data, ...(options ? [options] : []))
 }
 
 /** 我的投稿列表 */
-export function getMySubmissions(params?: { pageNum?: number; pageSize?: number; status?: number }) {
-  return request.get<unknown, ApiResponse<PageResult<QuestionSubmissionVO>>>('/submission/my', { params })
+export function getMySubmissions(
+  params?: { pageNum?: number; pageSize?: number; status?: number },
+  options?: { errorDisplay?: 'inline' },
+) {
+  return request.get<unknown, ApiResponse<PageResult<QuestionSubmissionVO>>>('/submission/my', { params, ...options })
 }
 
 /** 投稿详情 */

@@ -99,16 +99,19 @@ public class PracticeController {
 
     /**
      * 获取错题重练题目
-     * 从错题本中按掌握程度筛选并随机抽取题目
+     * 从错题本中按当前学习范围和掌握程度筛选并随机抽取题目
      */
     @Operation(summary = "错题重练", description = "从错题本中随机抽取题目用于重练")
     @GetMapping("/wrong-questions")
     public R<List<QuestionVO>> getWrongQuestionPractice(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(required = false) Integer masteryLevel,
-            @RequestParam(required = false) Integer count) {
+            @RequestParam(required = false) Integer count,
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) Long knowledgePointId,
+            @RequestParam(required = false) Long questionId) {
         List<QuestionVO> questions = practiceService.getWrongQuestionPractice(
-                userDetails.getUserId(), masteryLevel, count);
+                userDetails.getUserId(), masteryLevel, count, courseId, knowledgePointId, questionId);
         return R.ok(questions);
     }
 

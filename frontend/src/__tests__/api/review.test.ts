@@ -108,4 +108,17 @@ describe('Review API', () => {
       },
     })
   })
+
+  it('流式 AI 请求可接收取消信号', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response())
+    vi.stubGlobal('fetch', fetchMock)
+    const controller = new AbortController()
+
+    await getAiReviewSuggestionStream('token-1', controller.signal)
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/review/ai-suggestion/stream',
+      expect.objectContaining({ signal: controller.signal }),
+    )
+  })
 })

@@ -41,7 +41,7 @@ Follow the [service reuse rules](../../../docs/development/workflow.md#运行环
 
 Choose one primary loop:
 
-- Practice: login -> `/practice` -> start self-selected practice -> answer -> result dialog -> completion summary.
+- Practice: login -> `/practice` -> start self-selected practice -> answer -> inline feedback and explanation -> next question -> completion summary.
 - Wrong questions: login -> answer one question incorrectly if needed -> `/wrong-questions` -> filter/update mastery/retry.
 - Exam: login -> `/exams` -> start or continue exam -> answer -> submit -> result detail.
 - Submission: normal user submits -> admin reviews -> approved question appears in question bank.

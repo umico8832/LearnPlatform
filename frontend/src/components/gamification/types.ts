@@ -13,6 +13,7 @@ export interface GamificationPracticeSummaryData {
   correctRate: number | null
   xpGained: number
   answeredCount: number
+  pendingCount?: number
   achievements?: GamificationAchievement[]
   kicker?: string
   rateLabel?: string
