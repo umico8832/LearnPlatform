@@ -15,6 +15,7 @@ import QuestionVisualMermaid from '@/components/question-visual/QuestionVisualMe
 describe('QuestionVisualMermaid', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    render.mockReset()
     render.mockResolvedValue({ svg: '<svg aria-label="流程图"><text>初始图</text></svg>' })
   })
 
@@ -50,6 +51,26 @@ describe('QuestionVisualMermaid', () => {
     await flushPromises()
 
     expect(wrapper.find('.vi-mermaid-error').text()).toBe('invalid diagram')
+    expect(wrapper.find('[role="alert"]').text()).toContain('图形无法呈现')
+    expect(wrapper.get('button').text()).toBe('重新渲染')
+  })
+
+  it('keeps the source visible and retries a failed render in place', async () => {
+    render.mockRejectedValueOnce(new Error('temporary renderer failure'))
+    const wrapper = mount(QuestionVisualMermaid, {
+      props: { element: { type: 'mermaid', label: '流程', code: 'flowchart TD\nA-->B' } },
+    })
+    await flushPromises()
+
+    expect(wrapper.find('.vi-mermaid-error').text()).toBe('flowchart TD\nA-->B')
+    expect(wrapper.get('[role="alert"]')).toBeTruthy()
+
+    render.mockResolvedValueOnce({ svg: '<svg><text>重试后的图</text></svg>' })
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('svg').text()).toContain('重试后的图')
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
   })
 
   it('sanitizes executable content from rendered SVG', async () => {
@@ -103,7 +124,13 @@ describe('QuestionVisualMermaid', () => {
     await flushPromises()
 
     expect(wrapper.find('.vi-mermaid-error').text()).toBe('flowchart TD\nA-->B')
-    expect(wrapper.find('.vi-mermaid-error').attributes('role')).toBe('status')
+    expect(wrapper.find('[role="alert"]').text()).toContain('图形无法呈现')
+
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+
+    expect(initialize).toHaveBeenCalledTimes(2)
+    expect(wrapper.find('svg').text()).toContain('初始图')
   })
 })
 

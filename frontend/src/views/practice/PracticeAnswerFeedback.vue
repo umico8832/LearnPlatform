@@ -10,6 +10,10 @@ import { isGradedPracticeResult, practiceResultTitle } from './practiceSessionPr
 const props = defineProps<{ result: PracticeResultVO; wrongPractice?: boolean }>()
 const graded = computed(() => isGradedPracticeResult(props.result))
 const title = computed(() => practiceResultTitle(props.result))
+const feedbackStatus = computed(() => {
+  if (!graded.value) return '答案已记录，尚未判分。'
+  return props.result.correct ? '本题回答正确。' : '本题回答错误。'
+})
 const understandingOpen = ref(false)
 </script>
 
@@ -17,9 +21,11 @@ const understandingOpen = ref(false)
   <section
     class="practice-answer-feedback"
     :class="{ 'is-correct': result.correct === true, 'is-wrong': result.correct === false }"
-    aria-live="polite"
     data-testid="practice-feedback"
   >
+    <p class="lp-sr-only" role="status" aria-atomic="true" data-testid="practice-feedback-status">
+      {{ feedbackStatus }}
+    </p>
     <p class="practice-answer-feedback__eyebrow">本题反馈</p>
     <h2>{{ title }}</h2>
     <p v-if="!graded" class="practice-answer-feedback__pending">答案已记录，尚未判分，不计入正确率。</p>

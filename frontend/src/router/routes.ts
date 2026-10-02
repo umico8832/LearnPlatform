@@ -194,6 +194,6 @@ export const learnerRoutes: RouteRecordRaw[] = [
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/NotFoundView.vue'),
-    meta: { title: '页面不存在' },
+    meta: { title: '页面不存在', requiresAuth: false },
   },
 ]

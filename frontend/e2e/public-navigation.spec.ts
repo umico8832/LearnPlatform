@@ -1,0 +1,22 @@
+import { expect, test } from '@playwright/test'
+
+test('匿名未知地址可通过404返回首页，学习入口仍要求登录', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/unknown-learning-page')
+  await expect(page).toHaveURL(/\/unknown-learning-page$/)
+  await expect(page).toHaveTitle('页面不存在 · LearnPlatform')
+  await expect(page.getByRole('heading', { name: '404' })).toBeVisible()
+  const home = page.getByRole('link', { name: '返回首页' })
+  await home.focus()
+  await page.keyboard.press('Enter')
+  await expect(page).toHaveURL(/\/$/)
+  await page.goto('/unknown-learning-page')
+  const courses = page.getByRole('link', { name: '查看课程' })
+  await courses.focus()
+  await page.keyboard.press('Enter')
+  await expect(page).toHaveURL(/\/login\?redirect=/)
+  expect(new URL(page.url()).searchParams.get('redirect')).toBe('/courses')
+  await expect(page.getByPlaceholder('请输入用户名或邮箱')).toBeVisible()
+  await expect(page.locator('.el-overlay:visible')).toHaveCount(0)
+})

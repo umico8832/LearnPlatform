@@ -342,7 +342,7 @@ onBeforeUnmount(() => {
   gap: var(--lp-space-5);
 }
 .diagnosis-intro {
-  max-width: var(--lp-container-reading);
+  max-width: var(--lp-container-narrow);
   padding: var(--lp-space-5) 0 var(--lp-space-1);
 }
 .diagnosis-kicker {

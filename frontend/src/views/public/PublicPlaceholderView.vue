@@ -49,7 +49,7 @@ h1 {
   margin: 0;
   font-family: var(--lp-font-display);
   font-size: var(--lp-text-5xl);
-  font-weight: var(--lp-weight-regular);
+  font-weight: var(--lp-weight-normal);
   line-height: var(--lp-leading-display);
 }
 

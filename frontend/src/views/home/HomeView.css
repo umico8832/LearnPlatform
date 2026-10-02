@@ -261,7 +261,7 @@
 .course-copy h2,
 .closing h2 {
   font-family: var(--lp-font-display);
-  font-weight: var(--lp-weight-regular);
+  font-weight: var(--lp-weight-normal);
   letter-spacing: var(--lp-home-display-tracking-refined);
 }
 
@@ -481,7 +481,7 @@
   color: var(--lp-home-blue-deep);
   font-family: var(--lp-font-display);
   font-size: var(--lp-text-5xl);
-  font-weight: var(--lp-weight-regular);
+  font-weight: var(--lp-weight-normal);
 }
 
 .venn-circle span {
@@ -690,7 +690,7 @@
   max-width: 12ch;
   font-family: var(--lp-font-display);
   font-size: var(--lp-text-5xl);
-  font-weight: var(--lp-weight-regular);
+  font-weight: var(--lp-weight-normal);
   line-height: var(--lp-leading-tight);
 }
 
@@ -892,7 +892,7 @@
 .continuity-path strong {
   font-family: var(--lp-font-display);
   font-size: var(--lp-text-2xl);
-  font-weight: var(--lp-weight-regular);
+  font-weight: var(--lp-weight-normal);
 }
 
 .continuity-path small {
@@ -944,7 +944,7 @@
   margin-top: var(--lp-space-20);
   font-family: var(--lp-font-display);
   font-size: var(--lp-text-4xl);
-  font-weight: var(--lp-weight-regular);
+  font-weight: var(--lp-weight-normal);
 }
 
 .paper-modes p {

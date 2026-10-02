@@ -78,8 +78,8 @@ frontend/admin/   # 独立管理端 HTML 入口
   ADR-0010 定义其安静呈现方向：数据在顶栏、个人页和总结中原位显示，不增加奖励飘字、全屏庆祝、彩纸、连击火焰、成就弹窗或常驻 pulse。
   答题只显示一行已记录事实，无连击徽章；动画不阻塞继续学习。
 - 游戏化数据决策见 [ADR-0009](decisions/0009-learning-effort-gamification.md)，视觉与交互规范见项目 `frontend-design` Skill。
-- 学习端认证页面采用居中浅渐变卡片，仅承载账户操作；Google 登录入口按后端提供方状态启用，
-  Facebook 与 Apple 保持禁用并明确标注暂未开放。
+- 学习端认证页面采用静态暖纸背景与居中账户卡片；Google 登录入口按后端提供方状态启用，
+  未配置的提供方不显示可操作入口。
 
 ## 页面分层
 
@@ -147,6 +147,8 @@ sequenceDiagram
 - 组合函数和纯工具使用 Vitest。
 - 关键页面状态使用组件或页面测试。
 - 登录、练习、考试、投稿审核等真实闭环使用隔离 Docker Playwright E2E。
-- Element Plus 和 ECharts 按需加载；大依赖继续按页面边界拆包。
+- Element Plus 和 ECharts 按需加载；Mermaid 渲染器只在实际图元素出现后加载，加载或渲染失败原位重试并保留源代码。
+  完整图种继续保留，扩展解析器的大块告警按真实构建记录，不提高预算掩盖。
+- 动态播报限定为简短状态；恢复的 Tutor 历史、完整题目解析和按需展开的学习资产不放入整块 live region。
 
 前端视觉和交互规则见项目 `frontend-design` Skill，测试分层见[测试策略](../development/testing.md)。

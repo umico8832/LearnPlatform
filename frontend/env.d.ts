@@ -7,3 +7,8 @@ declare module '*.vue' {
 }
 
 declare module 'element-plus/dist/locale/zh-cn.mjs'
+
+declare module '*QuestionVisualMermaid.vue?retry=1' {
+  const component: (typeof import('./src/components/question-visual/QuestionVisualMermaid.vue'))['default']
+  export default component
+}

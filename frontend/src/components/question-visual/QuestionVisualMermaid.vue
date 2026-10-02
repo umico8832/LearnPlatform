@@ -1,7 +1,13 @@
 <template>
   <div class="vi-block">
     <div class="vi-block-label">{{ element.label }}</div>
-    <div ref="container" class="vi-mermaid-container" role="img" :aria-label="element.label" />
+    <div ref="container" class="vi-mermaid-container" role="img" :aria-label="element.label" :aria-busy="rendering" />
+    <p v-if="rendering" class="vi-mermaid-status" role="status">正在渲染图形…</p>
+    <div v-else-if="renderError" class="vi-mermaid-render-error" role="alert">
+      <p>图形无法呈现，已显示源代码。</p>
+      <button type="button" @click="retryRender">重新渲染</button>
+      <pre class="vi-mermaid-error">{{ element.code }}</pre>
+    </div>
     <div v-if="element.caption" class="vi-mermaid-caption">{{ element.caption }}</div>
   </div>
 </template>
@@ -33,8 +39,8 @@ function fitSvgToContent(svg: SVGSVGElement) {
 async function ensureMermaid(): Promise<typeof import('mermaid').default> {
   if (!mermaidInstance) {
     const mod = await import('mermaid')
-    mermaidInstance = mod.default
-    mermaidInstance.initialize({
+    const candidate = mod.default
+    candidate.initialize({
       startOnLoad: false,
       theme: 'base',
       securityLevel: 'strict',
@@ -62,6 +68,7 @@ async function ensureMermaid(): Promise<typeof import('mermaid').default> {
       },
       flowchart: { useMaxWidth: true, htmlLabels: false, curve: 'basis' },
     })
+    mermaidInstance = candidate
   }
   return mermaidInstance
 }
@@ -77,11 +84,15 @@ const props = defineProps<{
 }>()
 
 const container = ref<HTMLElement | null>(null)
+const rendering = ref(false)
+const renderError = ref(false)
 let renderVersion = 0
 let alive = true
 
 async function renderMermaid(code: string) {
   const currentVersion = ++renderVersion
+  rendering.value = true
+  renderError.value = false
   await nextTick()
 
   const target = container.value
@@ -111,13 +122,14 @@ async function renderMermaid(code: string) {
     if (!alive || currentVersion !== renderVersion) return
 
     target.replaceChildren()
-    const pre = document.createElement('pre')
-    pre.className = 'vi-mermaid-error'
-    pre.setAttribute('role', 'status')
-    pre.setAttribute('aria-label', '图形无法呈现，显示源代码')
-    pre.textContent = code
-    target.appendChild(pre)
+    renderError.value = true
+  } finally {
+    if (alive && currentVersion === renderVersion) rendering.value = false
   }
+}
+
+function retryRender() {
+  void renderMermaid(props.element.code)
 }
 
 watch(
@@ -154,6 +166,30 @@ onBeforeUnmount(() => {
 .vi-mermaid-container :deep(svg) {
   max-width: 100%;
   height: auto;
+}
+.vi-mermaid-status,
+.vi-mermaid-render-error {
+  margin: var(--lp-space-2) 0 0;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-xs);
+}
+.vi-mermaid-render-error {
+  display: grid;
+  gap: var(--lp-space-2);
+}
+.vi-mermaid-render-error p {
+  margin: 0;
+}
+.vi-mermaid-render-error button {
+  justify-self: start;
+  min-height: var(--lp-control-height-small);
+  padding: 0 var(--lp-space-3);
+  border: 1px solid var(--lp-border-strong);
+  border-radius: var(--lp-radius-control);
+  background: var(--lp-surface);
+  color: var(--lp-primary);
+  font: inherit;
+  cursor: pointer;
 }
 .vi-mermaid-caption {
   margin-top: var(--lp-space-2);

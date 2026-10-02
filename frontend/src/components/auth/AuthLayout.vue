@@ -77,7 +77,7 @@ withDefaults(defineProps<{ titleId?: string; showSymbol?: boolean }>(), {
 }
 .auth-home-label {
   color: var(--lp-text-muted);
-  font-weight: var(--lp-weight-regular);
+  font-weight: var(--lp-weight-normal);
 }
 .auth-home:focus-visible {
   outline: var(--lp-focus-width) solid var(--lp-focus-ring);

@@ -97,6 +97,24 @@ describe('TutorAgentConversation', () => {
     expect(wrapper.text()).toContain('可以把它看成给书架腾位置。')
   })
 
+  it('keeps restored transcript content out of the live region while retaining an atomic short status', async () => {
+    mockLatest.mockResolvedValueOnce({
+      data: {
+        runKey: 'restored',
+        status: 'WAITING_USER',
+        messages: [{ sequence: 2, role: 'ASSISTANT', content: '已保存的长回复。', createTime: null }],
+      },
+    })
+    const wrapper = mountAgent()
+    await flushPromises()
+
+    expect(wrapper.get('.agent-messages').attributes('aria-live')).toBeUndefined()
+    const status = wrapper.get('.agent-status')
+    expect(status.attributes('role')).toBe('status')
+    expect(status.attributes('aria-atomic')).toBe('true')
+    expect(status.text()).not.toContain('已保存的长回复。')
+  })
+
   it('offers an assistant-requested understanding check without supplying an answer', async () => {
     mockLatest.mockResolvedValueOnce({
       data: {

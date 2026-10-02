@@ -22,6 +22,16 @@ beforeEach(() => {
 })
 
 describe('真实学习端路由守卫', () => {
+  it('匿名未知路由显示404，已知学习路由仍需登录', async () => {
+    const router = await createTestRouter()
+    await router.push('/does-not-exist-t11')
+    expect(router.currentRoute.value.name).toBe('NotFound')
+    expect(document.title).toBe('页面不存在 · LearnPlatform')
+    await router.push('/my-courses')
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(router.currentRoute.value.query.redirect).toBe('/my-courses')
+  })
+
   it('登录后进入练习更新标题，取消离开时保留当前标题', async () => {
     auth.loggedIn = true
     const router = await createTestRouter()

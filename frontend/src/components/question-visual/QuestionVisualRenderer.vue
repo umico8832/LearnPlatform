@@ -151,12 +151,13 @@
         <OsProcessViewer :element="element" />
       </div>
 
-      <QuestionVisualMermaid v-else-if="element.type === 'mermaid'" :element="element" />
+      <QuestionVisualMermaidLazy v-else-if="element.type === 'mermaid'" :element="element" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { defineComponent, h, onBeforeUnmount, onMounted, ref, shallowRef, type Component, type PropType } from 'vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import CodeAnimationViewer from '@/components/CodeAnimationViewer.vue'
 import SqlExecutionViewer from '@/components/SqlExecutionViewer.vue'
@@ -167,10 +168,69 @@ import type {
   VisualElementState,
   VisualInteractiveData,
   VisualMatrixCell,
+  VisualMermaidElement,
   VisualNumberLineElement,
 } from '@/api/ai'
-import QuestionVisualMermaid from './QuestionVisualMermaid.vue'
 import QuestionVisualTree from './QuestionVisualTree.vue'
+
+const QuestionVisualMermaidLazy = defineComponent({
+  name: 'QuestionVisualMermaidLazy',
+  props: {
+    element: { type: Object as PropType<VisualMermaidElement>, required: true },
+  },
+  setup(props) {
+    const component = shallowRef<Component | null>(null)
+    const loading = ref(true)
+    const error = ref('')
+    const canRetry = ref(true)
+    let alive = true
+    let generation = 0
+
+    async function load() {
+      const current = ++generation
+      loading.value = true
+      error.value = ''
+      try {
+        // Browsers cache a rejected ESM import. The retry query creates a distinct,
+        // Vite-built module identity for one in-place recovery attempt.
+        const module =
+          current === 1
+            ? await import('./QuestionVisualMermaid.vue')
+            : await import('./QuestionVisualMermaid.vue?retry=1')
+        if (!alive || current !== generation) return
+        component.value = module.default
+      } catch {
+        if (alive && current === generation) {
+          canRetry.value = current === 1
+          error.value =
+            current === 1
+              ? '图形渲染器暂时无法加载，已保留源代码。'
+              : '图形暂时无法加载，已保留源代码；刷新页面后可再试。'
+        }
+      } finally {
+        if (alive && current === generation) loading.value = false
+      }
+    }
+
+    onMounted(() => void load())
+    onBeforeUnmount(() => {
+      alive = false
+      generation++
+    })
+
+    return () => {
+      if (component.value) return h(component.value, { element: props.element })
+      if (loading.value)
+        return h('div', { class: 'vi-block vi-mermaid-load-state', role: 'status' }, '正在加载图形渲染器…')
+      return h('div', { class: 'vi-block vi-mermaid-load-error', role: 'alert' }, [
+        h('div', { class: 'vi-block-label' }, props.element.label),
+        h('p', error.value),
+        h('pre', { class: 'vi-mermaid-source' }, props.element.code),
+        canRetry.value ? h('button', { type: 'button', onClick: load }, '重试加载') : null,
+      ])
+    }
+  },
+})
 
 defineProps<{
   data: VisualInteractiveData
@@ -253,6 +313,40 @@ function getCellAriaLabel(cell: string | VisualMatrixCell): string | undefined {
   color: var(--lp-text);
   font-size: var(--lp-text-sm);
   font-weight: var(--lp-weight-semibold);
+}
+.vi-mermaid-load-state,
+.vi-mermaid-load-error {
+  display: grid;
+  gap: var(--lp-space-2);
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+}
+.vi-mermaid-load-error p {
+  margin: 0;
+}
+.vi-mermaid-source {
+  margin: 0;
+  padding: var(--lp-space-3);
+  overflow-x: auto;
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-sm);
+  background: var(--lp-surface-inset);
+  color: var(--lp-text);
+  font-family: var(--lp-font-mono);
+  font-size: var(--lp-text-xs);
+  line-height: var(--lp-leading-body);
+  white-space: pre-wrap;
+}
+.vi-mermaid-load-error button {
+  justify-self: start;
+  min-height: var(--lp-control-height-small);
+  padding: 0 var(--lp-space-3);
+  border: 1px solid var(--lp-border-strong);
+  border-radius: var(--lp-radius-control);
+  background: var(--lp-surface);
+  color: var(--lp-primary);
+  font: inherit;
+  cursor: pointer;
 }
 .vi-description,
 .vi-step-detail,

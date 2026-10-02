@@ -1,57 +1,48 @@
 <template>
   <div class="npv">
-    <!-- 描述 -->
-    <div v-if="element.description" class="npv-description">{{ element.description }}</div>
-
-    <!-- 时序图 -->
-    <div class="npv-diagram">
-      <!-- 实体头部 -->
-      <div class="npv-entities">
-        <div v-for="(entity, ei) in element.entities" :key="ei" class="npv-entity">
-          <div class="npv-entity-box">{{ entity }}</div>
-        </div>
-      </div>
-
-      <!-- 竖线（生命线） -->
-      <div class="npv-lifelines">
-        <div v-for="(_, ei) in element.entities" :key="ei" class="npv-lifeline" />
-      </div>
-
-      <!-- 消息 -->
-      <div class="npv-messages">
+    <p v-if="element.description" class="npv-description">{{ element.description }}</p>
+    <div class="npv-diagram" role="region" :aria-label="element.label || '协议消息时序图'" tabindex="0">
+      <div
+        class="npv-canvas"
+        :style="{ width: `${svgWidth}px`, '--entity-gap': `${entityGap}px`, '--canvas-inset': `${canvasInset}px` }"
+      >
         <div
-          v-for="(msg, mi) in element.messages"
-          :key="mi"
-          class="npv-message"
-          :class="{
-            'npv-message--current': msg.state === 'current',
-            'npv-message--highlight': msg.state === 'highlight',
-          }"
+          class="npv-entities"
+          :style="{ gridTemplateColumns: `repeat(${element.entities.length}, ${entityWidth}px)` }"
         >
-          <!-- 消息标签（中间） -->
-          <div class="npv-message-label">{{ msg.content }}</div>
-
-          <!-- 消息线 + 箭头 -->
-          <svg class="npv-message-svg" :viewBox="`0 0 ${svgWidth} 24`">
-            <!-- 左边界 x -->
-            <line
-              :x1="getEntityCenterX(msg.from)"
-              y1="12"
-              :x2="getEntityCenterX(msg.to)"
-              y2="12"
-              :stroke="msg.state === 'current' ? '#409eff' : msg.state === 'highlight' ? '#e6a23c' : '#606266'"
-              stroke-width="2"
-            />
-            <!-- 箭头 -->
-            <polygon
-              :points="getArrowPoints(msg.from, msg.to)"
-              :fill="msg.state === 'current' ? '#409eff' : msg.state === 'highlight' ? '#e6a23c' : '#606266'"
-            />
-          </svg>
-
-          <!-- 消息描述 -->
-          <div v-if="msg.description" class="npv-message-desc">{{ msg.description }}</div>
+          <div v-for="(entity, index) in element.entities" :key="index" class="npv-entity">{{ entity }}</div>
         </div>
+        <ol class="npv-messages">
+          <li
+            v-for="(msg, index) in element.messages"
+            :key="index"
+            class="npv-message"
+            :class="{
+              'npv-message--current': msg.state === 'current',
+              'npv-message--highlight': msg.state === 'highlight',
+            }"
+            :aria-current="msg.state === 'current' ? 'step' : undefined"
+          >
+            <div class="npv-message-route">
+              <span>{{ element.entities[msg.from] }} → {{ element.entities[msg.to] }}</span>
+              <span v-if="msg.state === 'current'" class="npv-state">当前步骤</span>
+              <span v-else-if="msg.state === 'highlight'" class="npv-state">重点步骤</span>
+            </div>
+            <div class="npv-message-label">{{ msg.content }}</div>
+            <svg class="npv-message-svg" :viewBox="`0 0 ${svgWidth} 24`" aria-hidden="true" focusable="false">
+              <line
+                :x1="entityCenter(msg.from)"
+                y1="12"
+                :x2="entityCenter(msg.to)"
+                y2="12"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <polygon :points="arrowPoints(msg.from, msg.to)" fill="currentColor" />
+            </svg>
+            <p v-if="msg.description" class="npv-message-desc">{{ msg.description }}</p>
+          </li>
+        </ol>
       </div>
     </div>
   </div>
@@ -61,188 +52,131 @@
 import { computed } from 'vue'
 import type { NetworkProtocolElement } from '@/api/ai'
 
-const props = defineProps<{
-  element: NetworkProtocolElement
-}>()
-
+const props = defineProps<{ element: NetworkProtocolElement }>()
 const entityWidth = 100
 const entityGap = 80
-const svgWidth = computed(() => {
-  const n = props.element.entities.length
-  return n * entityWidth + (n - 1) * entityGap + 40
-})
-
-function getEntityCenterX(index: number): number {
-  const startX = 50
-  return startX + index * (entityWidth + entityGap) + entityWidth / 2
+const canvasInset = 20
+const svgWidth = computed(
+  () => Math.max(1, props.element.entities.length) * (entityWidth + entityGap) - entityGap + canvasInset * 2,
+)
+function entityCenter(index: number) {
+  return canvasInset + index * (entityWidth + entityGap) + entityWidth / 2
 }
-
-function getArrowPoints(from: number, to: number): string {
-  const cx = getEntityCenterX(to)
-  if (to > from) {
-    // 向右
-    return `${cx - 8},6 ${cx},12 ${cx - 8},18`
-  } else {
-    // 向左
-    return `${cx + 8},6 ${cx},12 ${cx + 8},18`
-  }
+function arrowPoints(from: number, to: number) {
+  const end = entityCenter(to)
+  const start = end + (to > from ? -8 : 8)
+  return `${start},6 ${end},12 ${start},18`
 }
-</script>
-
-<script lang="ts">
-export default { name: 'NetworkProtocolViewer' }
 </script>
 
 <style scoped>
 .npv {
-  padding: 4px 0;
+  padding: var(--lp-space-1) 0;
 }
-
 .npv-description {
-  font-size: 12px;
-  color: #909399;
-  margin-bottom: 12px;
+  margin: 0 0 var(--lp-space-3);
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-body);
 }
-
 .npv-diagram {
-  background: #fff;
-  border: 1px solid #ebeef5;
-  border-radius: 8px;
-  padding: 16px 8px;
   overflow-x: auto;
+  padding: var(--lp-space-4) var(--lp-space-2);
+  background: var(--lp-surface);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-md);
 }
-
-/* 实体头部 */
+.npv-diagram:focus-visible {
+  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
+  outline-offset: var(--lp-focus-offset);
+}
+.npv-canvas {
+  margin: 0 auto;
+}
 .npv-entities {
-  display: flex;
-  justify-content: center;
-  gap: 80px;
-  margin-bottom: 4px;
+  display: grid;
+  align-items: stretch;
+  gap: var(--entity-gap);
+  padding: 0 var(--canvas-inset);
+  margin-bottom: var(--lp-space-4);
 }
-
 .npv-entity {
-  width: 100px;
-  display: flex;
-  justify-content: center;
-}
-
-.npv-entity-box {
-  background: #ecf5ff;
-  border: 2px solid #409eff;
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #303133;
+  padding: var(--lp-space-2);
+  border: 1px solid var(--lp-border-strong);
+  border-radius: var(--lp-radius-sm);
+  background: var(--lp-surface-soft);
+  color: var(--lp-text);
+  font-size: var(--lp-text-sm);
+  font-weight: var(--lp-weight-semibold);
+  line-height: var(--lp-leading-body);
   text-align: center;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
-
-/* 生命线 */
-.npv-lifelines {
-  display: flex;
-  justify-content: center;
-  gap: 80px;
-  margin-bottom: 8px;
-}
-
-.npv-lifeline {
-  width: 100px;
-  display: flex;
-  justify-content: center;
-}
-
-.npv-lifeline::after {
-  content: '';
-  display: block;
-  width: 2px;
-  height: calc(100% + 8px);
-  background: repeating-linear-gradient(to bottom, #c0c4cc 0, #c0c4cc 4px, transparent 4px, transparent 8px);
-}
-
-/* 消息 */
 .npv-messages {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 0 16px;
+  display: grid;
+  gap: var(--lp-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
-
 .npv-message {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  padding: var(--lp-space-2) 0;
+  border: 1px solid transparent;
+  border-radius: var(--lp-radius-sm);
+  color: var(--lp-text-secondary);
+  text-align: center;
 }
-
 .npv-message--current {
-  background: #ecf5ff;
-  border-radius: 6px;
-  padding: 4px 8px;
+  color: var(--lp-primary);
+  background: var(--lp-primary-soft);
+  border-color: var(--lp-primary);
 }
-
 .npv-message--highlight {
-  background: #fdf6ec;
-  border-radius: 6px;
-  padding: 4px 8px;
+  color: var(--lp-warning);
+  background: var(--lp-warning-soft);
+  border-color: currentColor;
+  border-style: dashed;
 }
-
+.npv-message-route {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--lp-space-2);
+  padding: 0 var(--lp-space-3);
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-xs);
+  overflow-wrap: anywhere;
+}
+.npv-state {
+  color: var(--lp-text);
+  font-weight: var(--lp-weight-medium);
+}
 .npv-message-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #303133;
-  background: #fff;
-  padding: 2px 8px;
-  border-radius: 4px;
-  border: 1px solid #dcdfe6;
-  margin-bottom: 2px;
-  z-index: 1;
-  white-space: nowrap;
+  padding: var(--lp-space-1) var(--lp-space-3) 0;
+  color: var(--lp-text);
+  font-size: var(--lp-text-sm);
+  font-weight: var(--lp-weight-semibold);
+  line-height: var(--lp-leading-body);
+  overflow-wrap: anywhere;
 }
-
 .npv-message-svg {
+  display: block;
   width: 100%;
   height: 24px;
-  min-width: 200px;
 }
-
 .npv-message-desc {
-  font-size: 11px;
-  color: #909399;
-  text-align: center;
-  margin-top: 2px;
-  max-width: 400px;
+  margin: 0;
+  padding: 0 var(--lp-space-3);
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-xs);
+  line-height: var(--lp-leading-body);
+  overflow-wrap: anywhere;
 }
-
-/* 移动端适配 */
-@media (max-width: 768px) {
-  .npv-entities {
-    gap: 40px;
-  }
-
-  .npv-entity {
-    width: 70px;
-  }
-
-  .npv-entity-box {
-    font-size: 11px;
-    padding: 6px 8px;
-  }
-
-  .npv-lifelines {
-    gap: 40px;
-  }
-
-  .npv-lifeline {
-    width: 70px;
-  }
-
-  .npv-message-label {
-    font-size: 11px;
-  }
-
-  .npv-message-desc {
-    font-size: 10px;
+@media (forced-colors: active) {
+  .npv-message--current,
+  .npv-message--highlight {
+    border-color: CanvasText;
   }
 }
 </style>

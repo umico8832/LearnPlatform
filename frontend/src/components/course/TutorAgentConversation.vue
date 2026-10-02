@@ -5,11 +5,11 @@
         <LpKicker>按需追问</LpKicker>
         <h2 id="tutor-agent-heading">继续问 Tutor</h2>
       </div>
-      <span v-if="statusLabel" class="agent-status" role="status">{{ statusLabel }}</span>
+      <span v-if="statusLabel" class="agent-status" role="status" aria-atomic="true">{{ statusLabel }}</span>
     </header>
     <p class="agent-intro">教学解释只依据本节已审查内容；理解检查会按实际作答记录。</p>
 
-    <div v-if="run?.messages.length" class="agent-messages" aria-live="polite">
+    <div v-if="run?.messages.length" class="agent-messages">
       <article
         v-for="item in run.messages"
         :key="item.sequence"

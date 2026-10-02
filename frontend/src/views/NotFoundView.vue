@@ -3,8 +3,12 @@
     <h1 class="not-found-code">404</h1>
     <p class="not-found-message">这个地址不存在，或内容已移动。</p>
     <div class="not-found-actions">
-      <el-button type="primary" @click="$router.push('/')">返回首页</el-button
-      ><el-button @click="$router.push('/courses')">查看课程</el-button>
+      <router-link v-slot="{ href, navigate }" to="/" custom>
+        <el-button tag="a" type="primary" :href="href" @click="navigate">返回首页</el-button>
+      </router-link>
+      <router-link v-slot="{ href, navigate }" to="/courses" custom>
+        <el-button tag="a" :href="href" @click="navigate">查看课程</el-button>
+      </router-link>
     </div>
   </main>
 </template>
