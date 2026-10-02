@@ -4,7 +4,7 @@
 
 | 接口 | 说明 |
 |---|---|
-| `GET /api/exam/papers` | 查询已发布试卷 |
+| `GET /api/exam/papers` | 分页查询当前用户可访问的已发布试卷；可选 `courseId`、`paperType`（`PRACTICE`、`OFFICIAL_EXAM`、`USER_PRIVATE`）和最多 100 字符的标题 `keyword`。类型非法时返回参数错误；筛选始终保留已发布、PUBLIC 或本人 PRIVATE 的访问边界。 |
 | `GET /api/exam/papers/{id}` | 获取可作答试卷详情 |
 | `POST /api/exam/start/{paperId}` | 创建或恢复考试记录 |
 | `GET /api/exam/records/{recordId}/session` | 获取本人限时考试会话、服务端时钟和试卷引用；不返回答案 |

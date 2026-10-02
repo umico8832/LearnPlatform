@@ -62,12 +62,14 @@ class ExamControllerTest {
         paper.setTitle("测试试卷");
         Page<ExamPaperVO> page = new Page<>(1, 10, 1);
         page.setRecords(List.of(paper));
-        when(examPaperService.getAccessiblePublishedExamPaperPage(7L, 1, 10, 3L))
+        when(examPaperService.getAccessiblePublishedExamPaperPage(7L, 1, 10, 3L, "OFFICIAL_EXAM", " 2026 真题 "))
                 .thenReturn(page);
         when(examPaperService.getAccessiblePublishedExamPaperById(2L, 7L)).thenReturn(paper);
 
         mockMvc.perform(get("/api/exam/papers")
                         .param("courseId", "3")
+                        .param("paperType", "OFFICIAL_EXAM")
+                        .param("keyword", " 2026 真题 ")
                         .with(mockUser(7L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.records[0].id").value(2));

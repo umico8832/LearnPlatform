@@ -1,6 +1,14 @@
 <template>
   <div v-loading="loading" class="record-panel">
-    <LpEmptyState v-if="!loading && records.length === 0" title="暂无考试记录" />
+    <LpStatePanel
+      v-if="loadError"
+      state="error"
+      title="暂时无法读取考试记录"
+      :description="loadError"
+      :retrying="loading"
+      @retry="loadRecords"
+    />
+    <LpEmptyState v-else-if="!loading && records.length === 0" title="暂无考试记录" />
 
     <el-table v-else :data="records" stripe class="record-table">
       <el-table-column prop="examTitle" label="试卷名称" min-width="200" />
@@ -79,7 +87,7 @@
     </div>
   </div>
 
-  <div v-if="total > 0" class="pagination-wrapper">
+  <div v-if="!loadError && total > 0" class="pagination-wrapper">
     <el-pagination
       v-model:current-page="pageNum"
       :total="total"
@@ -91,40 +99,73 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import { EditPen, View } from '@element-plus/icons-vue'
 import { getMyExamRecords } from '@/api/exam'
 import type { ExamRecordVO, ExamStatus } from '@/api/exam'
 import { formatTime } from '@/utils/format'
 import LpEmptyState from '@/components/ui/LpEmptyState.vue'
+import LpStatePanel from '@/components/ui/LpStatePanel.vue'
+import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
 
 const emit = defineEmits<{
-  totalChange: [total: number]
+  totalChange: [total: number | null]
 }>()
 
 const router = useRouter()
 const loading = ref(false)
+const loadError = ref('')
 const records = ref<ExamRecordVO[]>([])
 const total = ref(0)
 const pageNum = ref(1)
+let alive = true
+let requestGeneration = 0
 
-onMounted(loadRecords)
+function current(generation: number, session: number) {
+  return alive && generation === requestGeneration && session === getAuthSessionVersion()
+}
+
+onMounted(() => void loadRecords())
+
+const unsubscribeAuth = onAuthSessionChange(() => {
+  requestGeneration++
+  records.value = []
+  total.value = 0
+  loadError.value = ''
+  emit('totalChange', null)
+  if (isAuthenticated()) void loadRecords()
+})
+
+onUnmounted(() => {
+  alive = false
+  requestGeneration++
+  unsubscribeAuth()
+})
 
 async function loadRecords() {
+  const generation = ++requestGeneration
+  const session = getAuthSessionVersion()
   loading.value = true
+  loadError.value = ''
   try {
-    const res = await getMyExamRecords({ pageNum: pageNum.value, pageSize: 10 })
-    if (res.code === 0 && res.data) {
-      records.value = res.data.records || []
-      total.value = res.data.total || 0
-      emit('totalChange', total.value)
+    const res = await getMyExamRecords({ pageNum: pageNum.value, pageSize: 10 }, { errorDisplay: 'inline' })
+    if (!current(generation, session)) return
+    if (res.code !== 0 || !res.data) {
+      loadError.value = res.message || '考试记录暂时无法读取。'
+      emit('totalChange', null)
+      return
     }
+    records.value = res.data.records || []
+    total.value = res.data.total || 0
+    emit('totalChange', total.value)
   } catch {
-    ElMessage.error('获取考试记录失败')
+    if (current(generation, session)) {
+      loadError.value = '考试记录暂时无法读取。'
+      emit('totalChange', null)
+    }
   } finally {
-    loading.value = false
+    if (current(generation, session)) loading.value = false
   }
 }
 
@@ -145,7 +186,10 @@ const getScoreClass = (record: ExamRecordVO) => {
 }
 
 const formatScore = (record: ExamRecordVO) => {
-  if (record.status === 3) return `${record.score ?? 0} / ${record.totalScore}（暂定）`
+  if (record.status === 3)
+    return record.score == null
+      ? `待评分 / ${record.totalScore}（暂定）`
+      : `${record.score} / ${record.totalScore}（暂定）`
   if (record.status !== 1 || record.score == null) return `— / ${record.totalScore}`
   return `${record.score} / ${record.totalScore}`
 }

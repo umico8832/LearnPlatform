@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises, mount } from '@vue/test-utils'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 
 const { mockGetExamSession, mockGetPaperDetail, mockSubmitExam, mockReplace, mockConfirm, mockWarning, mockError } =
   vi.hoisted(() => ({
@@ -33,6 +33,22 @@ vi.mock('element-plus', () => ({
 }))
 
 import ExamTakeView from '@/views/exam/ExamTakeView.vue'
+import { removeToken } from '@/utils/auth'
+
+enableAutoUnmount(afterEach)
+
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (reason: unknown) => void
+  const promise = new Promise<T>((yes, no) => {
+    resolve = yes
+    reject = no
+  })
+  return { promise, resolve, reject }
+}
+const mountExam = () => mount(ExamTakeView, { global: { stubs, directives: { loading: () => undefined } } })
+const button = (wrapper: ReturnType<typeof mountExam>, text: string) =>
+  wrapper.findAll('button').find((item) => item.text() === text)!
 
 const stubs = {
   'el-button': {
@@ -127,8 +143,8 @@ describe('ExamTakeView', () => {
     })
     await flushPromises()
 
-    expect(mockGetExamSession).toHaveBeenCalledWith(101)
-    expect(mockGetPaperDetail).toHaveBeenCalledWith(7)
+    expect(mockGetExamSession).toHaveBeenCalledWith(101, { errorDisplay: 'inline' })
+    expect(mockGetPaperDetail).toHaveBeenCalledWith(7, { errorDisplay: 'inline' })
     expect(wrapper.find('.countdown').text()).toContain('17:00')
     expect(wrapper.find('.q-section').text()).toBe('第一部分 数据结构')
     expect(wrapper.find('.q-number').text()).toBe('1(1)')
@@ -222,7 +238,8 @@ describe('ExamTakeView', () => {
     await wrapper
       .findAll('.option-item')
       .find((item) => item.text().includes('extends'))!
-      .trigger('click')
+      .find('input')
+      .setValue(true)
     await wrapper
       .findAll('button')
       .find((button) => button.text().includes('下一题'))!
@@ -231,11 +248,13 @@ describe('ExamTakeView', () => {
     await wrapper
       .findAll('.option-item')
       .find((item) => item.text().includes('int'))!
-      .trigger('click')
+      .find('input')
+      .setValue(true)
     await wrapper
       .findAll('.option-item')
       .find((item) => item.text().includes('boolean'))!
-      .trigger('click')
+      .find('input')
+      .setValue(true)
     await wrapper
       .findAll('button')
       .find((button) => button.text().includes('下一题'))!
@@ -244,22 +263,30 @@ describe('ExamTakeView', () => {
     await wrapper
       .findAll('.option-item')
       .find((item) => item.text().includes('正确'))!
-      .trigger('click')
+      .find('input')
+      .setValue(true)
     await wrapper
       .findAll('button')
       .find((button) => button.text().includes('提交试卷'))!
       .trigger('click')
     await flushPromises()
 
-    expect(mockConfirm).toHaveBeenCalledWith('确定提交试卷？提交后不可修改', '提交确认', { type: 'warning' })
-    expect(mockSubmitExam).toHaveBeenCalledWith({
-      examRecordId: 101,
-      answers: [
-        { questionId: 1, userAnswer: 'A' },
-        { questionId: 2, userAnswer: 'A,C' },
-        { questionId: 3, userAnswer: 'TRUE' },
-      ],
-    })
+    expect(mockConfirm).toHaveBeenCalledWith(
+      '已完成全部作答。确定提交试卷？提交后不可修改。',
+      '提交确认',
+      expect.objectContaining({ confirmButtonText: '提交试卷', cancelButtonText: '继续作答' }),
+    )
+    expect(mockSubmitExam).toHaveBeenCalledWith(
+      {
+        examRecordId: 101,
+        answers: [
+          { questionId: 1, userAnswer: 'A' },
+          { questionId: 2, userAnswer: 'A,C' },
+          { questionId: 3, userAnswer: 'TRUE' },
+        ],
+      },
+      { errorDisplay: 'inline' },
+    )
     expect(sessionStorage.getItem('exam_session_101')).toContain('"duration":999')
     expect(sessionStorage.getItem('exam_result_101')).toBeNull()
     expect(mockReplace).toHaveBeenCalledWith({ name: 'ExamResult', params: { recordId: '101' } })
@@ -296,7 +323,7 @@ describe('ExamTakeView', () => {
     wrapper.unmount()
   })
 
-  it('returns to exam records when the safe paper cannot be loaded', async () => {
+  it('keeps a recoverable paper error inline without a false countdown', async () => {
     mockGetPaperDetail.mockRejectedValue(new Error('network'))
 
     const wrapper = mount(ExamTakeView, {
@@ -304,8 +331,14 @@ describe('ExamTakeView', () => {
     })
     await flushPromises()
 
-    expect(mockError).toHaveBeenCalledWith('恢复考试失败')
-    expect(mockReplace).toHaveBeenCalledWith({ name: 'ExamList', query: { tab: 'records' } })
+    expect(wrapper.text()).toContain('暂时无法恢复考试')
+    expect(wrapper.find('.countdown').exists()).toBe(false)
+    expect(mockReplace).not.toHaveBeenCalled()
+    expect(mockError).not.toHaveBeenCalled()
+    mockGetPaperDetail.mockResolvedValue({ code: 0, data: { id: 7, questions } })
+    await button(wrapper, '重试恢复').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.countdown').exists()).toBe(true)
 
     wrapper.unmount()
   })
@@ -334,5 +367,101 @@ describe('ExamTakeView', () => {
     expect(mockReplace).toHaveBeenCalledWith({ name: 'ExamList', query: { tab: 'records' } })
 
     wrapper.unmount()
+  })
+  it('locks answering during one confirmation and keeps choices when it is cancelled', async () => {
+    const confirmation = deferred<void>()
+    mockConfirm.mockReturnValueOnce(confirmation.promise)
+    const wrapper = mountExam()
+    await flushPromises()
+    await wrapper.find('input[value="A"]').setValue(true)
+    await button(wrapper, '提交试卷').trigger('click')
+    await button(wrapper, '提交试卷').trigger('click')
+    expect(mockConfirm).toHaveBeenCalledTimes(1)
+    expect(mockConfirm.mock.calls[0][0]).toContain('还有 2 题未作答')
+    expect(wrapper.find('fieldset').attributes('disabled')).toBeDefined()
+    confirmation.reject('cancel')
+    await flushPromises()
+    expect(mockSubmitExam).not.toHaveBeenCalled()
+    expect((wrapper.find('input[value="A"]').element as HTMLInputElement).checked).toBe(true)
+    expect(wrapper.find('fieldset').attributes('disabled')).toBeUndefined()
+  })
+
+  it('preserves choices after failed submission and sends one locked retry', async () => {
+    mockSubmitExam.mockRejectedValueOnce(new Error('Network Error'))
+    const wrapper = mountExam()
+    await flushPromises()
+    await wrapper.find('input[value="A"]').setValue(true)
+    await button(wrapper, '提交试卷').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[role="alert"]').text()).toContain('答案仍保留在本页')
+    expect((wrapper.find('input[value="A"]').element as HTMLInputElement).checked).toBe(true)
+    const retry = deferred<unknown>()
+    mockSubmitExam.mockReturnValueOnce(retry.promise)
+    await button(wrapper, '重试交卷').trigger('click')
+    await button(wrapper, '提交试卷').trigger('click')
+    expect(mockSubmitExam).toHaveBeenCalledTimes(2)
+    expect(wrapper.find('fieldset').attributes('disabled')).toBeDefined()
+    retry.resolve({ code: 0, data: { id: 101 } })
+    await flushPromises()
+    expect(mockReplace).toHaveBeenCalledWith({ name: 'ExamResult', params: { recordId: '101' } })
+  })
+
+  it('does not submit a confirmation resolved after the authoritative deadline', async () => {
+    vi.useFakeTimers()
+    const confirmation = deferred<void>()
+    mockConfirm.mockReturnValueOnce(confirmation.promise)
+    mockGetExamSession.mockResolvedValue({
+      code: 0,
+      data: { id: 101, examPaperId: 7, status: 0, deadline: '2026-08-13T10:00:01', serverTime: '2026-08-13T10:00:00' },
+    })
+    const wrapper = mountExam()
+    await flushPromises()
+    await button(wrapper, '提交试卷').trigger('click')
+    await vi.advanceTimersByTimeAsync(1_000)
+    confirmation.resolve()
+    await flushPromises()
+    expect(mockSubmitExam).not.toHaveBeenCalled()
+    expect(mockWarning).toHaveBeenCalledTimes(1)
+    expect(mockReplace).toHaveBeenCalledWith({ name: 'ExamList', query: { tab: 'records' } })
+  })
+
+  it('ignores a restored session that arrives after unmount', async () => {
+    const pending = deferred<unknown>()
+    mockGetExamSession.mockReturnValueOnce(pending.promise)
+    const wrapper = mountExam()
+    wrapper.unmount()
+    pending.resolve({ code: 0, data: { id: 101, examPaperId: 7, status: 1 } })
+    await flushPromises()
+    expect(mockReplace).not.toHaveBeenCalled()
+    expect(mockGetPaperDetail).not.toHaveBeenCalled()
+  })
+  it('clears answers on account change and ignores a late submission', async () => {
+    const pending = deferred<unknown>()
+    mockSubmitExam.mockReturnValueOnce(pending.promise)
+    const wrapper = mountExam()
+    await flushPromises()
+    await wrapper.find('input[value="A"]').setValue(true)
+    await button(wrapper, '提交试卷').trigger('click')
+    await flushPromises()
+    removeToken()
+    await flushPromises()
+    expect(wrapper.find('.question-card').exists()).toBe(false)
+    pending.resolve({ code: 0, data: { id: 101 } })
+    await flushPromises()
+    expect(mockReplace).toHaveBeenCalledTimes(1)
+    expect(mockReplace).toHaveBeenCalledWith({ name: 'ExamList', query: { tab: 'records' } })
+    expect(mockWarning).not.toHaveBeenCalled()
+  })
+
+  it('ignores a paper response that arrives after unmount', async () => {
+    const pending = deferred<unknown>()
+    mockGetPaperDetail.mockReturnValueOnce(pending.promise)
+    const wrapper = mountExam()
+    await flushPromises()
+    wrapper.unmount()
+    pending.resolve({ code: 0, data: { id: 7, questions } })
+    await flushPromises()
+    expect(mockReplace).not.toHaveBeenCalled()
+    expect(mockWarning).not.toHaveBeenCalled()
   })
 })

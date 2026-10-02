@@ -15,6 +15,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Set;
+
 /**
  * 试卷服务（管理端）
  */
@@ -22,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class ExamPaperService {
 
     private static final Logger log = LoggerFactory.getLogger(ExamPaperService.class);
+    private static final Set<String> ACCESSIBLE_PAPER_TYPES = Set.of("PRACTICE", "OFFICIAL_EXAM", "USER_PRIVATE");
+    private static final int MAX_PAPER_KEYWORD_LENGTH = 100;
     private final ExamPaperMapper examPaperMapper;
     private final ExamQuestionMapper examQuestionMapper;
     private final ExamPaperViewService viewService;
@@ -45,8 +49,28 @@ public class ExamPaperService {
     }
 
     public Page<ExamPaperVO> getAccessiblePublishedExamPaperPage(Long userId, int pageNum,
-                                                                 int pageSize, Long courseId) {
-        return viewService.getAccessiblePublishedPage(userId, pageNum, pageSize, courseId);
+                                                                 int pageSize, Long courseId,
+                                                                 String paperType, String keyword) {
+        return viewService.getAccessiblePublishedPage(userId, pageNum, pageSize, courseId,
+                normalizeAccessiblePaperType(paperType), normalizeKeyword(keyword));
+    }
+
+    private String normalizeAccessiblePaperType(String paperType) {
+        if (paperType == null || paperType.isBlank()) { return null; }
+        String normalized = paperType.trim();
+        if (!ACCESSIBLE_PAPER_TYPES.contains(normalized)) {
+            throw new BusinessException(ResultCode.VALIDATION_ERROR, "不支持的试卷类型");
+        }
+        return normalized;
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null || keyword.isBlank()) { return null; }
+        String normalized = keyword.trim();
+        if (normalized.length() > MAX_PAPER_KEYWORD_LENGTH) {
+            throw new BusinessException(ResultCode.VALIDATION_ERROR, "试卷名称关键词不能超过100个字符");
+        }
+        return normalized;
     }
 
     /**

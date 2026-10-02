@@ -49,6 +49,24 @@ class ExamPaperServiceTest {
     }
 
     @Test
+    void rejectsUnsupportedAccessiblePaperType() {
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> examPaperService.getAccessiblePublishedExamPaperPage(7L, 1, 10, null,
+                        "INTERNAL", null));
+
+        assertEquals("不支持的试卷类型", exception.getMessage());
+    }
+
+    @Test
+    void rejectsTooLongAccessiblePaperKeyword() {
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> examPaperService.getAccessiblePublishedExamPaperPage(7L, 1, 10, null,
+                        null, "x".repeat(101)));
+
+        assertEquals("试卷名称关键词不能超过100个字符", exception.getMessage());
+    }
+
+    @Test
     void rejectsUpdatingPublishedPaper() {
         ExamPaper paper = paper(1, 3);
         when(examPaperMapper.selectByIdForUpdate(1L)).thenReturn(paper);

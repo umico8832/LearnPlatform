@@ -34,9 +34,11 @@ public class ExamPaperController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize,
-            @RequestParam(required = false) Long courseId) {
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) String paperType,
+            @RequestParam(required = false) String keyword) {
         return R.ok(examPaperService.getAccessiblePublishedExamPaperPage(
-                userDetails.getUserId(), pageNum, pageSize, courseId));
+                userDetails.getUserId(), pageNum, pageSize, courseId, paperType, keyword));
     }
 
     @Operation(summary = "试卷详情", description = "获取试卷详情，用于考试前预览")

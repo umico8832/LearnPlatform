@@ -24,7 +24,7 @@
     </header>
 
     <main id="focus-main" ref="mainRef" class="focus-main" tabindex="-1">
-      <div class="focus-content" :class="{ 'is-narrow': narrow }">
+      <div class="focus-content" :class="{ 'is-narrow': narrow && route.meta.focusWidth !== 'wide' }">
         <router-view v-slot="{ Component }">
           <component :is="Component" :key="route.path" />
         </router-view>

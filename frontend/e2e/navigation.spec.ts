@@ -199,9 +199,9 @@ test('考试离开确认保留作答，正式提交仅进入结果页', async ({
   await expect(page.getByRole('heading', { name: '考试进行中' })).toBeVisible()
   const takeUrl = page.url()
 
-  const selectedOption = page.locator('.question-card .option-item').first()
-  await selectedOption.click()
-  await expect(selectedOption).toHaveClass(/selected/)
+  const selectedOption = page.locator('.question-card').getByRole('radio').first()
+  await selectedOption.check()
+  await expect(selectedOption).toBeChecked()
 
   await page.getByRole('button', { name: '返回' }).click()
   const leaveDialog = page.getByRole('dialog', { name: '离开考试' })
@@ -211,7 +211,7 @@ test('考试离开确认保留作答，正式提交仅进入结果页', async ({
   await maybeScreenshot(page, 'navigation-exam-leave-confirm', false)
   await leaveDialog.getByRole('button', { name: '继续考试' }).click()
   await expect(page).toHaveURL(takeUrl)
-  await expect(selectedOption).toHaveClass(/selected/)
+  await expect(selectedOption).toBeChecked()
   await expect(page).toHaveTitle(/考试中 · LearnPlatform/)
 
   await page.getByRole('button', { name: '提交试卷' }).first().click()
@@ -220,7 +220,7 @@ test('考试离开确认保留作答，正式提交仅进入结果页', async ({
   await expect(submitDialog).toContainText('确定提交试卷？提交后不可修改')
   await page.waitForTimeout(350)
   await maybeScreenshot(page, 'navigation-exam-submit-confirm', false)
-  await submitDialog.getByRole('button', { name: '确定' }).click()
+  await submitDialog.getByRole('button', { name: '提交试卷' }).click()
   await expect(page).toHaveURL(/\/exams\/result\/\d+$/, { timeout: 15_000 })
   await expect(page.getByRole('dialog', { name: '离开考试' })).toHaveCount(0)
   await maybeScreenshot(page, 'navigation-exam-result')

@@ -2,15 +2,15 @@ import { computed, ref } from 'vue'
 
 export function useExamAnswers(totalQuestions: () => number) {
   const answers = ref<Record<number, string>>({})
-  const multiAnswers = ref<Record<number, Set<string>>>({})
-  const answeredCount = computed(() => Object.values(answers.value).filter(Boolean).length)
+  const answeredCount = computed(() => Object.values(answers.value).filter((answer) => answer.trim()).length)
   const progressPercent = computed(() =>
     totalQuestions() ? Math.round((answeredCount.value / totalQuestions()) * 100) : 0,
   )
-  const isMultiSelected = (questionId: number, label: string) => multiAnswers.value[questionId]?.has(label) || false
+  const isMultiSelected = (questionId: number, label: string) =>
+    answers.value[questionId]?.split(',').includes(label) || false
 
   const toggleMulti = (questionId: number, label: string) => {
-    const selected = (multiAnswers.value[questionId] ??= new Set())
+    const selected = new Set(answers.value[questionId]?.split(',').filter(Boolean) || [])
     if (selected.has(label)) selected.delete(label)
     else selected.add(label)
     answers.value[questionId] = Array.from(selected).sort().join(',')

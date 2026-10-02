@@ -1,297 +1,242 @@
 <template>
   <div class="exam-take-container">
-    <header class="take-header">
-      <div class="take-header-title">
-        <span class="section-kicker">限时考试</span>
-        <h1 class="take-heading">考试进行中</h1>
+    <LpStatePanel v-if="loading" state="loading" loading-label="正在恢复考试与剩余时间" />
+    <LpStatePanel
+      v-else-if="loadError"
+      state="error"
+      title="暂时无法恢复考试"
+      :description="loadError"
+      retry-label="重试恢复"
+      @retry="load"
+    >
+      <template #retry
+        ><el-button type="primary" @click="load">重试恢复</el-button
+        ><el-button @click="leaveForRecords">返回考试记录</el-button></template
+      >
+    </LpStatePanel>
+    <LpEmptyState
+      v-else-if="!currentQuestion"
+      title="这份试卷暂无可作答题目"
+      description="请返回考试记录，核对试卷状态。"
+    >
+      <template #actions><el-button @click="leaveForRecords">返回考试记录</el-button></template>
+    </LpEmptyState>
+    <template v-else>
+      <header class="take-header">
+        <div class="take-header-title">
+          <span class="section-kicker">{{ paperTitle }}</span>
+          <h1 class="take-heading">考试进行中</h1>
+        </div>
+        <div class="take-header-progress">
+          <span class="progress-text">{{ currentIndex + 1 }} / {{ questions.length }}</span
+          ><LpProgress
+            :percent="progressPercent"
+            tone="primary"
+            :label="`已作答 ${answeredCount} / ${questions.length} 题`"
+          /><span class="answered-text">已答 {{ answeredCount }} / {{ questions.length }}</span>
+        </div>
+        <div class="take-header-right">
+          <span
+            :class="['countdown', { 'countdown-warn': remainSeconds < 300 }]"
+            role="timer"
+            aria-live="off"
+            :aria-label="`剩余 ${countdownText}`"
+            ><el-icon aria-hidden="true"><Timer /></el-icon>{{ countdownText }}</span
+          ><el-button type="primary" :loading="submitted" :disabled="locked" @click="handleSubmit">提交试卷</el-button>
+        </div>
+      </header>
+      <p class="exam-note">
+        答案暂存在本页，刷新或离开后需重新作答；计时会继续。<span v-if="remainSeconds < 300" role="status"
+          >剩余不足 5 分钟，请留意交卷时间。</span
+        >
+      </p>
+      <div class="question-area">
+        <article class="question-card" aria-labelledby="exam-question-title">
+          <div v-if="currentQuestion.sectionTitle" class="q-section">{{ currentQuestion.sectionTitle }}</div>
+          <div class="q-meta">
+            <strong class="q-number">{{ currentQuestion.displayNumber || `第 ${currentIndex + 1} 题` }}</strong
+            ><el-tag size="small" effect="plain">{{ getTypeLabel(currentQuestion.questionType) }}</el-tag
+            ><span class="q-score">{{ currentQuestion.score }} 分</span>
+          </div>
+          <div id="exam-question-title" ref="questionTitle" class="q-content" tabindex="-1">
+            <MarkdownRenderer :content="currentQuestion.content" />
+          </div>
+          <fieldset class="answer-options" :disabled="locked">
+            <legend>作答</legend>
+            <div
+              v-if="currentQuestion.questionType === 'SINGLE_CHOICE'"
+              class="option-list"
+              role="radiogroup"
+              aria-label="单选答案"
+            >
+              <label
+                v-for="opt in currentQuestion.options"
+                :key="opt.id"
+                class="option-item"
+                :class="{ selected: answers[currentQuestion.questionId] === opt.optionLabel }"
+                ><input
+                  v-model="answers[currentQuestion.questionId]"
+                  type="radio"
+                  name="exam-answer"
+                  :value="opt.optionLabel"
+                /><span class="opt-label">{{ opt.optionLabel }}</span
+                ><span>{{ opt.content }}</span></label
+              >
+            </div>
+            <div
+              v-else-if="currentQuestion.questionType === 'MULTIPLE_CHOICE'"
+              class="option-list"
+              role="group"
+              aria-label="多选答案"
+            >
+              <label
+                v-for="opt in currentQuestion.options"
+                :key="opt.id"
+                class="option-item"
+                :class="{ selected: isMultiSelected(currentQuestion.questionId, opt.optionLabel) }"
+                ><input
+                  type="checkbox"
+                  :checked="isMultiSelected(currentQuestion.questionId, opt.optionLabel)"
+                  @change="toggleMulti(currentQuestion.questionId, opt.optionLabel)"
+                /><span class="opt-label">{{ opt.optionLabel }}</span
+                ><span>{{ opt.content }}</span></label
+              >
+            </div>
+            <div
+              v-else-if="currentQuestion.questionType === 'TRUE_FALSE'"
+              class="option-list tf-list"
+              role="radiogroup"
+              aria-label="判断答案"
+            >
+              <label
+                v-for="opt in [
+                  { value: 'TRUE', label: '正确' },
+                  { value: 'FALSE', label: '错误' },
+                ]"
+                :key="opt.value"
+                class="option-item"
+                :class="{ selected: answers[currentQuestion.questionId] === opt.value }"
+                ><input
+                  v-model="answers[currentQuestion.questionId]"
+                  type="radio"
+                  name="exam-answer"
+                  :value="opt.value"
+                />{{ opt.label }}</label
+              >
+            </div>
+            <el-input
+              v-else
+              v-model="answers[currentQuestion.questionId]"
+              type="textarea"
+              :rows="6"
+              :aria-label="`${currentQuestion.displayNumber || `第 ${currentIndex + 1} 题`}答案`"
+              placeholder="请输入答案"
+            />
+          </fieldset>
+          <div v-if="submitError" class="submit-error" role="alert">
+            <p>{{ submitError }}</p>
+            <el-button :loading="submitted" :disabled="locked" @click="doSubmit">重试交卷</el-button>
+          </div>
+          <div class="nav-btns">
+            <el-button :disabled="currentIndex === 0 || locked" @click="goTo(currentIndex - 1)">上一题</el-button
+            ><el-button
+              v-if="currentIndex < questions.length - 1"
+              type="primary"
+              :disabled="locked"
+              @click="goTo(currentIndex + 1)"
+              >下一题</el-button
+            ><el-button v-else type="primary" :loading="submitted" :disabled="locked" @click="handleSubmit"
+              >提交试卷</el-button
+            >
+          </div>
+        </article>
+        <aside class="answer-sheet" aria-label="答题导航">
+          <h2 class="sheet-heading">答题卡</h2>
+          <p class="sheet-summary">已答 {{ answeredCount }} · 未答 {{ questions.length - answeredCount }}</p>
+          <div class="sheet-grid">
+            <button
+              v-for="(q, idx) in questions"
+              :key="q.questionId"
+              type="button"
+              class="sheet-item"
+              :class="{ answered: answers[q.questionId]?.trim(), current: idx === currentIndex }"
+              :disabled="locked"
+              :title="q.displayNumber || `第 ${idx + 1} 题`"
+              :aria-label="`前往${q.displayNumber || `第 ${idx + 1} 题`}${answers[q.questionId]?.trim() ? '，已作答' : '，未作答'}`"
+              :aria-current="idx === currentIndex ? 'step' : undefined"
+              @click="goTo(idx)"
+            >
+              {{ q.displayNumber || idx + 1
+              }}<span v-if="answers[q.questionId]?.trim()" class="sheet-check" aria-hidden="true">✓</span>
+            </button>
+          </div>
+        </aside>
       </div>
-      <div class="take-header-progress">
-        <span class="progress-text">{{ currentIndex + 1 }} / {{ questions.length }}</span>
-        <LpProgress :percent="progressPercent" tone="primary" />
-        <span class="answered-text">已答 {{ answeredCount }} / {{ questions.length }}</span>
-      </div>
-      <div class="take-header-right">
-        <span :class="['countdown', { 'countdown-warn': remainSeconds < 300 }]">
-          <el-icon><Timer /></el-icon> {{ countdownText }}
-        </span>
-        <el-button type="danger" size="small" :loading="submitted" :disabled="submitted" @click="handleSubmit">
-          提交试卷
-        </el-button>
-      </div>
-    </header>
-
-    <div v-if="loading" v-loading="true" class="take-loading"></div>
-
-    <div v-else-if="currentQuestion" class="question-area">
-      <article class="question-card">
-        <div v-if="currentQuestion.sectionTitle" class="q-section">{{ currentQuestion.sectionTitle }}</div>
-        <div class="q-meta">
-          <strong class="q-number">{{ currentQuestion.displayNumber || `第 ${currentIndex + 1} 题` }}</strong>
-          <el-tag size="small">{{ getTypeLabel(currentQuestion.questionType) }}</el-tag>
-          <span class="q-score">分值：{{ currentQuestion.score }} 分</span>
-        </div>
-        <div class="q-content">{{ currentQuestion.content }}</div>
-
-        <div v-if="currentQuestion.questionType === 'SINGLE_CHOICE'" class="option-list">
-          <button
-            v-for="opt in currentQuestion.options"
-            :key="opt.id"
-            type="button"
-            :class="['option-item', { selected: answers[currentQuestion.questionId] === opt.optionLabel }]"
-            :aria-pressed="answers[currentQuestion.questionId] === opt.optionLabel"
-            @click="answers[currentQuestion.questionId] = opt.optionLabel"
-          >
-            <span class="opt-label">{{ opt.optionLabel }}</span
-            ><span>{{ opt.content }}</span>
-          </button>
-        </div>
-
-        <div v-else-if="currentQuestion.questionType === 'MULTIPLE_CHOICE'" class="option-list">
-          <button
-            v-for="opt in currentQuestion.options"
-            :key="opt.id"
-            type="button"
-            :class="['option-item', { selected: isMultiSelected(currentQuestion.questionId, opt.optionLabel) }]"
-            :aria-pressed="isMultiSelected(currentQuestion.questionId, opt.optionLabel)"
-            @click="toggleMulti(currentQuestion.questionId, opt.optionLabel)"
-          >
-            <span aria-hidden="true" class="multi-check">
-              {{ isMultiSelected(currentQuestion.questionId, opt.optionLabel) ? '✓' : '' }}
-            </span>
-            <span class="opt-label">{{ opt.optionLabel }}</span
-            ><span>{{ opt.content }}</span>
-          </button>
-        </div>
-
-        <div v-else-if="currentQuestion.questionType === 'TRUE_FALSE'" class="option-list tf-list">
-          <button
-            type="button"
-            :class="['option-item', { selected: answers[currentQuestion.questionId] === 'TRUE' }]"
-            :aria-pressed="answers[currentQuestion.questionId] === 'TRUE'"
-            @click="answers[currentQuestion.questionId] = 'TRUE'"
-          >
-            正确
-          </button>
-          <button
-            type="button"
-            :class="['option-item', { selected: answers[currentQuestion.questionId] === 'FALSE' }]"
-            :aria-pressed="answers[currentQuestion.questionId] === 'FALSE'"
-            @click="answers[currentQuestion.questionId] = 'FALSE'"
-          >
-            错误
-          </button>
-        </div>
-
-        <div v-else>
-          <el-input
-            v-model="answers[currentQuestion.questionId]"
-            type="textarea"
-            :rows="3"
-            :aria-label="`${currentQuestion.displayNumber || `第 ${currentIndex + 1} 题`}答案`"
-            placeholder="请输入答案"
-          />
-        </div>
-
-        <div class="nav-btns">
-          <el-button @click="currentIndex--" :disabled="currentIndex === 0">上一题</el-button>
-          <el-button v-if="currentIndex < questions.length - 1" type="primary" @click="currentIndex++">
-            下一题
-          </el-button>
-          <el-button v-else type="danger" :loading="submitted" :disabled="submitted" @click="handleSubmit">
-            提交试卷
-          </el-button>
-        </div>
-      </article>
-
-      <div class="answer-sheet">
-        <h4 class="sheet-heading">答题卡</h4>
-        <div class="sheet-legend">
-          <span><i class="legend-dot is-current"></i>当前</span>
-          <span><i class="legend-dot is-answered"></i>已答</span>
-        </div>
-        <div class="sheet-grid">
-          <button
-            v-for="(q, idx) in questions"
-            :key="q.questionId"
-            type="button"
-            :class="['sheet-item', { answered: answers[q.questionId], current: idx === currentIndex }]"
-            :title="q.displayNumber || `第 ${idx + 1} 题`"
-            :aria-label="`前往${q.displayNumber || `第 ${idx + 1} 题`}${answers[q.questionId] ? '，已作答' : '，未作答'}`"
-            :aria-current="idx === currentIndex ? 'step' : undefined"
-            @click="currentIndex = idx"
-          >
-            {{ q.displayNumber || idx + 1 }}
-          </button>
-        </div>
-      </div>
-    </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { computed, nextTick, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { Timer } from '@element-plus/icons-vue'
-import { getExamSession, getPaperDetail, submitExam } from '@/api/exam'
-import type { ExamQuestionItem } from '@/api/exam'
-import LpProgress from '@/components/ui/LpProgress.vue'
-import { useExamCountdown } from './useExamCountdown'
-import { useExamAnswers } from './useExamAnswers'
-import { useExamLeaveGuard } from './useExamLeaveGuard'
-
+import { useExamTakingSession } from './useExamTakingSession'
+import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 const route = useRoute()
-const router = useRouter()
-const loading = ref(true)
-const questions = ref<ExamQuestionItem[]>([])
-const currentIndex = ref(0)
-const { answers, answeredCount, progressPercent, isMultiSelected, toggleMulti } = useExamAnswers(
-  () => questions.value.length,
-)
-const submitted = ref(false)
-const finished = ref(false)
-const recordId = ref(0)
-const { allowNavigation } = useExamLeaveGuard({
-  hasQuestions: () => questions.value.length > 0,
-  submitting: submitted,
-  finished,
-})
-
-async function leaveForExamList(query: Record<string, string> = {}) {
-  allowNavigation()
-  await router.replace({ name: 'ExamList', query })
-}
-
+const recordId = computed(() => Number(route.params.recordId))
+const questionTitle = ref<HTMLElement>()
 const {
+  loading,
+  loadError,
+  submitError,
+  paperTitle,
+  questions,
+  currentIndex,
+  currentQuestion,
+  answers,
+  answeredCount,
+  progressPercent,
+  isMultiSelected,
+  toggleMulti,
+  submitted,
+  locked,
   remainSeconds,
   countdownText,
-  configure: configureCountdown,
-  start: startCountdown,
-} = useExamCountdown({
-  submitted,
-  hasQuestions: () => questions.value.length > 0,
-  onExpired: async () => {
-    submitted.value = true
-    finished.value = true
-    ElMessage.warning('考试时间已结束，已返回考试列表')
-    await leaveForExamList({ tab: 'records' })
+  load,
+  handleSubmit,
+  doSubmit,
+  leaveForRecords,
+} = useExamTakingSession(recordId)
+function getTypeLabel(type: string) {
+  return (
+    (
+      {
+        SINGLE_CHOICE: '单选题',
+        MULTIPLE_CHOICE: '多选题',
+        TRUE_FALSE: '判断题',
+        FILL_BLANK: '填空题',
+        SHORT_ANSWER: '简答题',
+      } as Record<string, string>
+    )[type] || type
+  )
+}
+function goTo(index: number) {
+  if (!locked.value && index >= 0 && index < questions.value.length) currentIndex.value = index
+}
+watch(
+  () => currentQuestion.value?.questionId,
+  async () => {
+    await nextTick()
+    questionTitle.value?.scrollIntoView({ block: 'nearest', behavior: 'auto' })
+    questionTitle.value?.focus({ preventScroll: true })
   },
-})
-
-const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
-
-const doSubmit = async () => {
-  if (submitted.value) return
-  submitted.value = true
-  const answerList = questions.value.map((q) => ({
-    questionId: q.questionId,
-    userAnswer: answers.value[q.questionId] || '',
-  }))
-  try {
-    const res = await submitExam({ examRecordId: recordId.value, answers: answerList })
-    if (res.code === 0 && res.data) {
-      finished.value = true
-      allowNavigation()
-      await router.replace({ name: 'ExamResult', params: { recordId: String(res.data.id) } })
-    } else {
-      if (remainSeconds.value === 0) {
-        ElMessage.warning('考试时间已结束，已返回考试列表')
-        finished.value = true
-        await leaveForExamList({ tab: 'records' })
-        return
-      }
-      ElMessage.error(res.message || '提交失败')
-      submitted.value = false
-    }
-  } catch {
-    if (remainSeconds.value === 0) {
-      ElMessage.warning('考试时间已结束，已返回考试列表')
-      finished.value = true
-      await leaveForExamList({ tab: 'records' })
-      return
-    }
-    ElMessage.error('提交失败')
-    submitted.value = false
-  }
-}
-
-const getTypeLabel = (type: string) => {
-  const map: Record<string, string> = {
-    SINGLE_CHOICE: '单选',
-    MULTIPLE_CHOICE: '多选',
-    TRUE_FALSE: '判断',
-    FILL_BLANK: '填空',
-    SHORT_ANSWER: '简答',
-  }
-  return map[type] || type
-}
-
-const handleSubmit = () => {
-  ElMessageBox.confirm('确定提交试卷？提交后不可修改', '提交确认', { type: 'warning' })
-    .then(() => doSubmit())
-    .catch(() => {})
-}
-
-onMounted(async () => {
-  recordId.value = Number(route.params.recordId)
-  if (!Number.isInteger(recordId.value) || recordId.value <= 0) {
-    ElMessage.error('考试记录无效')
-    await leaveForExamList()
-    loading.value = false
-    return
-  }
-
-  try {
-    const sessionRequestStartedAt = Date.now()
-    const sessionRes = await getExamSession(recordId.value)
-    if (sessionRes.code !== 0 || !sessionRes.data) {
-      ElMessage.error(sessionRes.message || '恢复考试失败')
-      await leaveForExamList({ tab: 'records' })
-      return
-    }
-
-    const session = sessionRes.data
-    if (session.status === 1 || session.status === 3) {
-      finished.value = true
-      allowNavigation()
-      await router.replace({ name: 'ExamResult', params: { recordId: String(recordId.value) } })
-      return
-    }
-    if (session.status === 2) {
-      ElMessage.warning('考试已超时，已返回考试列表')
-      finished.value = true
-      await leaveForExamList({ tab: 'records' })
-      return
-    }
-
-    if (!configureCountdown(session.deadline || '', session.serverTime || '', sessionRequestStartedAt)) {
-      ElMessage.error('考试时间信息无效，请返回列表重试')
-      await leaveForExamList({ tab: 'records' })
-      return
-    }
-
-    const paperRes = await getPaperDetail(session.examPaperId)
-    if (paperRes.code !== 0 || !paperRes.data) {
-      ElMessage.error(paperRes.message || '获取试卷详情失败')
-      await leaveForExamList({ tab: 'records' })
-      return
-    }
-
-    questions.value = paperRes.data.questions || []
-    startCountdown()
-  } catch {
-    ElMessage.error('恢复考试失败')
-    await leaveForExamList({ tab: 'records' })
-  } finally {
-    loading.value = false
-  }
-})
+)
 </script>
 
 <style scoped>
 .exam-take-container {
   padding: var(--lp-space-6) var(--lp-space-4);
-  max-width: var(--lp-container-narrow);
+  max-width: var(--lp-container-max);
   margin: 0 auto;
 }
 
@@ -346,10 +291,6 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
-.take-loading {
-  height: 300px;
-}
-
 .question-area {
   display: flex;
   gap: var(--lp-space-5);
@@ -395,7 +336,7 @@ onMounted(async () => {
   font-size: var(--lp-text-lg);
   line-height: var(--lp-leading-relaxed);
   margin-bottom: var(--lp-space-5);
-  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .option-list {
@@ -429,8 +370,8 @@ onMounted(async () => {
   background: var(--lp-surface-subtle);
 }
 
-.option-item:focus-visible {
-  outline: var(--lp-shadow-focus);
+.option-item:focus-within {
+  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
   outline-offset: 2px;
   border-color: var(--lp-primary);
 }
@@ -458,25 +399,6 @@ onMounted(async () => {
   background: var(--lp-primary);
 }
 
-.multi-check {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 20px;
-  width: 20px;
-  height: 20px;
-  color: var(--lp-surface);
-  background: var(--lp-surface);
-  border: 1px solid var(--lp-border-strong);
-  border-radius: var(--lp-radius-xs);
-}
-
-.option-item.selected .multi-check {
-  color: var(--lp-surface);
-  background: var(--lp-primary);
-  border-color: var(--lp-primary);
-}
-
 .tf-list {
   flex-direction: row;
   gap: var(--lp-space-4);
@@ -497,7 +419,8 @@ onMounted(async () => {
 }
 
 .answer-sheet {
-  width: 200px;
+  width: 280px;
+  flex-shrink: 0;
   padding: var(--lp-space-4);
   background: var(--lp-surface);
   border: var(--lp-border-hairline);
@@ -513,41 +436,9 @@ onMounted(async () => {
   font-size: var(--lp-text-base);
 }
 
-.sheet-legend {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: var(--lp-space-3);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
-}
-
-.sheet-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--lp-space-1);
-}
-
-.legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--lp-radius-full);
-  background: var(--lp-surface-inset);
-  border: 1px solid var(--lp-border-strong);
-}
-
-.legend-dot.is-answered {
-  background: var(--lp-primary);
-  border-color: var(--lp-primary);
-}
-
-.legend-dot.is-current {
-  background: var(--lp-warning);
-  border-color: var(--lp-warning);
-}
-
 .sheet-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--lp-space-2);
 }
 
@@ -555,8 +446,9 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 44px;
-  height: 44px;
+  min-width: 0;
+  min-height: 44px;
+  position: relative;
   padding: 0 var(--lp-space-1);
   overflow: hidden;
   color: var(--lp-text);
@@ -578,7 +470,7 @@ onMounted(async () => {
 }
 
 .sheet-item:focus-visible {
-  outline: var(--lp-shadow-focus);
+  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
   outline-offset: 2px;
 }
 
@@ -589,8 +481,9 @@ onMounted(async () => {
 }
 
 .sheet-item.current {
-  border-color: var(--lp-warning);
-  box-shadow: 0 0 0 2px var(--lp-warning);
+  border-color: var(--lp-primary);
+  outline: 2px solid var(--lp-primary);
+  outline-offset: 2px;
 }
 
 .countdown {
@@ -605,18 +498,71 @@ onMounted(async () => {
 
 .countdown-warn {
   color: var(--lp-danger);
-  animation: blink 1s infinite;
 }
 
-@keyframes blink {
-  50% {
-    opacity: 0.5;
-  }
+.exam-note {
+  margin: 0 0 var(--lp-space-5);
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-body);
+}
+.exam-note span {
+  margin-left: var(--lp-space-2);
+  color: var(--lp-warning);
+}
+.answer-options {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.answer-options legend {
+  margin-bottom: var(--lp-space-3);
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+}
+.answer-options input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: var(--lp-primary);
+}
+.answer-options:disabled .option-item {
+  cursor: default;
+}
+.sheet-summary {
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  margin: 0 0 var(--lp-space-4);
+}
+.sheet-check {
+  position: absolute;
+  bottom: 1px;
+  right: 3px;
+  font-size: 9px;
+}
+.submit-error {
+  padding: var(--lp-space-4);
+  margin-top: var(--lp-space-4);
+  color: var(--lp-danger);
+  background: var(--lp-surface-subtle);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-md);
+}
+.submit-error p {
+  margin: 0 0 var(--lp-space-3);
+}
+.q-content :deep(p:first-child) {
+  margin-top: 0;
+}
+.q-content :deep(p:last-child) {
+  margin-bottom: 0;
 }
 
 @media (max-width: 720px) {
   .exam-take-container {
-    padding: var(--lp-space-4);
+    padding: 0;
   }
 
   .take-header {
@@ -640,6 +586,7 @@ onMounted(async () => {
 
   .question-area {
     flex-direction: column;
+    align-items: stretch;
   }
 
   .answer-sheet {
@@ -670,10 +617,6 @@ onMounted(async () => {
 @media (max-width: 420px) {
   .question-card {
     padding: var(--lp-space-4);
-  }
-
-  .sheet-grid {
-    grid-template-columns: repeat(4, minmax(44px, 1fr));
   }
 
   .q-meta {

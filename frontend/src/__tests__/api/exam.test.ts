@@ -146,6 +146,20 @@ describe('Exam API', () => {
         })
       })
 
+      it('服务端筛选保留类型、关键词和原位错误选项', async () => {
+        mockedRequest.get.mockResolvedValue({ code: 0, data: { records: [], total: 0 }, message: 'success' })
+
+        await getPublishedPapers(
+          { pageNum: 2, paperType: 'OFFICIAL_EXAM', keyword: '2026 真题' },
+          { errorDisplay: 'inline' },
+        )
+
+        expect(mockedRequest.get).toHaveBeenCalledWith('/exam/papers', {
+          params: { pageNum: 2, paperType: 'OFFICIAL_EXAM', keyword: '2026 真题' },
+          errorDisplay: 'inline',
+        })
+      })
+
       it('无参数时应使用默认值', async () => {
         mockedRequest.get.mockResolvedValue({ code: 0, data: { records: [], total: 0 }, message: 'success' })
 
@@ -174,6 +188,18 @@ describe('Exam API', () => {
 
         expect(mockedRequest.post).toHaveBeenCalledWith('/exam/start/1')
         expect(result).toEqual({ code: 0, data: mockRecord, message: 'success' })
+      })
+    })
+
+    it('为开始考试和试卷学习保留可选的原位错误显示', async () => {
+      mockedRequest.post.mockResolvedValue({ code: 0, data: { id: 10 }, message: 'success' })
+
+      await startExam(1, { errorDisplay: 'inline' })
+      await startExamLearningSession(2, { errorDisplay: 'inline' })
+
+      expect(mockedRequest.post).toHaveBeenNthCalledWith(1, '/exam/start/1', undefined, { errorDisplay: 'inline' })
+      expect(mockedRequest.post).toHaveBeenNthCalledWith(2, '/exam/papers/2/learning-sessions', undefined, {
+        errorDisplay: 'inline',
       })
     })
 
@@ -261,6 +287,14 @@ describe('Exam API', () => {
 
         expect(mockedRequest.get).toHaveBeenCalledWith('/exam/result/10')
         expect(result).toEqual({ code: 0, data: mockResult, message: 'success' })
+      })
+
+      it('可将结果读取错误留在页面内处理', async () => {
+        mockedRequest.get.mockResolvedValue({ code: 0, data: null, message: 'success' })
+
+        await getExamResult(10, { errorDisplay: 'inline' })
+
+        expect(mockedRequest.get).toHaveBeenCalledWith('/exam/result/10', { errorDisplay: 'inline' })
       })
     })
 

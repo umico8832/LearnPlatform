@@ -174,7 +174,7 @@ export const learnerRoutes: RouteRecordRaw[] = [
         path: 'exams/take/:recordId',
         name: 'ExamTake',
         component: () => import('@/views/exam/ExamTakeView.vue'),
-        meta: { title: '考试中', focusTitle: '考试进行中' },
+        meta: { title: '考试中', focusTitle: '考试进行中', focusWidth: 'wide' },
       },
       {
         path: 'exams/learn/:sessionId',

@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 
-const { mockGetExamResult, mockPush, mockError } = vi.hoisted(() => ({
+const { mockGetExamResult, mockPush, mockError, mockRoute } = vi.hoisted(() => ({
   mockGetExamResult: vi.fn(),
   mockPush: vi.fn(),
   mockError: vi.fn(),
+  mockRoute: { params: { recordId: '101' } },
 }))
 
 vi.mock('@/api/exam', () => ({
@@ -13,7 +14,7 @@ vi.mock('@/api/exam', () => ({
 
 vi.mock('vue-router', async (importOriginal) => ({
   ...(await importOriginal<typeof import('vue-router')>()),
-  useRoute: () => ({ params: { recordId: '101' } }),
+  useRoute: () => mockRoute,
   useRouter: () => ({ push: mockPush }),
 }))
 
@@ -38,6 +39,7 @@ const stubs = {
 describe('ExamResultView authoritative review', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockRoute.params.recordId = '101'
     sessionStorage.clear()
     sessionStorage.setItem('exam_result_101', JSON.stringify({ examTitle: '本地伪造结果', score: 100 }))
     mockGetExamResult.mockResolvedValue({
@@ -101,7 +103,7 @@ describe('ExamResultView authoritative review', () => {
     })
     await flushPromises()
 
-    expect(mockGetExamResult).toHaveBeenCalledWith(101)
+    expect(mockGetExamResult).toHaveBeenCalledWith(101, { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('服务端权威结果')
     expect(wrapper.text()).not.toContain('本地伪造结果')
     expect(wrapper.text()).toContain('来源已核验')
@@ -109,6 +111,9 @@ describe('ExamResultView authoritative review', () => {
     expect(wrapper.text()).toContain('来源：教育主管部门公开文件')
     expect(wrapper.text()).toContain('第一部分 数据结构')
     expect(wrapper.text()).toContain('一、1（1）')
+    expect(wrapper.find('a[href="#answer-22"]').text()).toBe('一、1（1）')
+    expect(wrapper.find('.score-number').text()).toBe('5')
+    expect(wrapper.find('.rate-value').text()).toBe('50%')
   })
 
   it('在课程上下文中返回课程总览，并把错题精确深链到错题本', async () => {
@@ -207,5 +212,75 @@ describe('ExamResultView authoritative review', () => {
     expect(wrapper.text()).toContain('待人工批阅')
     expect(wrapper.text()).not.toContain('正确答案')
     expect(wrapper.text()).not.toContain('复习此错题')
+    expect(wrapper.text()).toContain('暂定得分')
+    expect(wrapper.text()).toContain('暂定得分率')
+    expect(wrapper.find('.rate-value').text()).toBe('49%')
+  })
+
+  it('以原位错误恢复失败请求，重试后读取同一权威结果', async () => {
+    mockGetExamResult.mockRejectedValueOnce(new Error('network unavailable'))
+    const wrapper = mount(ExamResultView, { global: { stubs, directives: { loading: () => undefined } } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('暂时无法读取考试结果')
+    expect(wrapper.text()).not.toContain('考试结果不存在')
+    mockGetExamResult.mockResolvedValueOnce({
+      code: 0,
+      data: {
+        id: 101,
+        examPaperId: 7,
+        examTitle: '恢复后的结果',
+        courseId: null,
+        paperType: 'PRACTICE',
+        startTime: '2026-08-13T10:00:00',
+        deadline: null,
+        serverTime: null,
+        endTime: '2026-08-13T10:01:00',
+        score: 1,
+        totalScore: 1,
+        status: 1,
+        duration: 30,
+        answers: [],
+      },
+    })
+    await wrapper.find('.lp-state-panel-retry').trigger('click')
+    await flushPromises()
+
+    expect(mockGetExamResult).toHaveBeenCalledTimes(2)
+    expect(wrapper.text()).toContain('恢复后的结果')
+  })
+
+  it('未判分或无效分母不伪造零分率，并区分无效记录', async () => {
+    mockGetExamResult.mockResolvedValueOnce({
+      code: 0,
+      data: {
+        id: 101,
+        examPaperId: 7,
+        examTitle: '待评分结果',
+        courseId: null,
+        paperType: 'PRACTICE',
+        startTime: '2026-08-13T10:00:00',
+        deadline: null,
+        serverTime: null,
+        endTime: '2026-08-13T10:01:00',
+        score: null,
+        totalScore: 0,
+        status: 3,
+        duration: 30,
+        answers: [],
+      },
+    })
+    const wrapper = mount(ExamResultView, { global: { stubs, directives: { loading: () => undefined } } })
+    await flushPromises()
+
+    expect(wrapper.find('.score-number').text()).toBe('待评分')
+    expect(wrapper.find('.rate-value').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('0%')
+
+    mockRoute.params.recordId = 'not-a-record'
+    const invalid = mount(ExamResultView, { global: { stubs, directives: { loading: () => undefined } } })
+    await flushPromises()
+    expect(invalid.text()).toContain('考试记录无效')
+    expect(mockGetExamResult).toHaveBeenCalledTimes(1)
   })
 })

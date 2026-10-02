@@ -43,6 +43,7 @@ export interface ExamQuestionItem {
 
 export type PaperType = 'PRACTICE' | 'OFFICIAL_EXAM' | 'USER_PRIVATE'
 export type ExamStatus = 0 | 1 | 2 | 3
+export type ExamRequestOptions = { errorDisplay?: 'inline' }
 
 export interface ExamPaperCreateRequest {
   title: string
@@ -353,11 +354,18 @@ export function gradeSubjectiveAnswer(answerId: number, data: SubjectiveGradingR
 
 // ======================== 用户端 API ========================
 
-export function getPublishedPapers(params?: { pageNum?: number; pageSize?: number; courseId?: number }) {
-  return request.get<unknown, ApiResponse<PageData<ExamPaperVO>>>('/exam/papers', { params })
+export function getPublishedPapers(
+  params?: { pageNum?: number; pageSize?: number; courseId?: number; paperType?: PaperType; keyword?: string },
+  options?: ExamRequestOptions,
+) {
+  return request.get<unknown, ApiResponse<PageData<ExamPaperVO>>>(
+    '/exam/papers',
+    options ? { params, ...options } : { params },
+  )
 }
 
-export function getPaperDetail(id: number) {
+export function getPaperDetail(id: number, options?: { errorDisplay?: 'inline' }) {
+  if (options) return request.get<unknown, ApiResponse<ExamPaperVO>>(`/exam/papers/${id}`, options)
   return request.get<unknown, ApiResponse<ExamPaperVO>>(`/exam/papers/${id}`)
 }
 
@@ -483,8 +491,10 @@ export function deletePrivateExamDraft(draftId: number) {
   return request.delete<unknown, ApiResponse<null>>(`/exam/private-papers/drafts/${draftId}`)
 }
 
-export function deletePrivateExamPaper(paperId: number) {
-  return request.delete<unknown, ApiResponse<null>>(`/exam/private-papers/${paperId}`)
+export function deletePrivateExamPaper(paperId: number, options?: ExamRequestOptions) {
+  return options
+    ? request.delete<unknown, ApiResponse<null>>(`/exam/private-papers/${paperId}`, options)
+    : request.delete<unknown, ApiResponse<null>>(`/exam/private-papers/${paperId}`)
 }
 
 export function getPrivateExamSource(paperId: number) {
@@ -510,16 +520,25 @@ export function downloadPrivateExamDraftSourceFile(draftId: number) {
   return request.get(`/exam/private-papers/drafts/${draftId}/source/file`, { responseType: 'blob' })
 }
 
-export function startExam(paperId: number) {
-  return request.post<unknown, ApiResponse<ExamRecordVO>>(`/exam/start/${paperId}`)
+export function startExam(paperId: number, options?: ExamRequestOptions) {
+  return options
+    ? request.post<unknown, ApiResponse<ExamRecordVO>>(`/exam/start/${paperId}`, undefined, options)
+    : request.post<unknown, ApiResponse<ExamRecordVO>>(`/exam/start/${paperId}`)
 }
 
-export function getExamSession(recordId: number) {
+export function getExamSession(recordId: number, options?: { errorDisplay?: 'inline' }) {
+  if (options) return request.get<unknown, ApiResponse<ExamRecordVO>>(`/exam/records/${recordId}/session`, options)
   return request.get<unknown, ApiResponse<ExamRecordVO>>(`/exam/records/${recordId}/session`)
 }
 
-export function startExamLearningSession(paperId: number) {
-  return request.post<unknown, ApiResponse<ExamLearningSessionVO>>(`/exam/papers/${paperId}/learning-sessions`)
+export function startExamLearningSession(paperId: number, options?: ExamRequestOptions) {
+  return options
+    ? request.post<unknown, ApiResponse<ExamLearningSessionVO>>(
+        `/exam/papers/${paperId}/learning-sessions`,
+        undefined,
+        options,
+      )
+    : request.post<unknown, ApiResponse<ExamLearningSessionVO>>(`/exam/papers/${paperId}/learning-sessions`)
 }
 
 export function getExamLearningSession(sessionId: number, options?: { errorDisplay?: 'inline' }) {
@@ -554,14 +573,19 @@ export function completeExamLearningSession(sessionId: number, options?: { error
   )
 }
 
-export function submitExam(data: ExamSubmitRequest) {
+export function submitExam(data: ExamSubmitRequest, options?: { errorDisplay?: 'inline' }) {
+  if (options) return request.post<unknown, ApiResponse<ExamRecordVO>>('/exam/submit', data, options)
   return request.post<unknown, ApiResponse<ExamRecordVO>>('/exam/submit', data)
 }
 
-export function getExamResult(recordId: number) {
-  return request.get<unknown, ApiResponse<ExamRecordVO>>(`/exam/result/${recordId}`)
+export function getExamResult(recordId: number, options?: { errorDisplay?: 'inline' }) {
+  if (!options) return request.get<unknown, ApiResponse<ExamRecordVO>>(`/exam/result/${recordId}`)
+  return request.get<unknown, ApiResponse<ExamRecordVO>>(`/exam/result/${recordId}`, options)
 }
 
-export function getMyExamRecords(params?: { pageNum?: number; pageSize?: number }) {
-  return request.get<unknown, ApiResponse<PageData<ExamRecordVO>>>('/exam/records', { params })
+export function getMyExamRecords(params?: { pageNum?: number; pageSize?: number }, options?: ExamRequestOptions) {
+  return request.get<unknown, ApiResponse<PageData<ExamRecordVO>>>(
+    '/exam/records',
+    options ? { params, ...options } : { params },
+  )
 }

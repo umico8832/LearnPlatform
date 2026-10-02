@@ -34,6 +34,21 @@ async function loginToAdminApp(page: Page, username: string, password: string) {
 }
 
 async function findPublishedPaper(page: Page, title: string) {
+  await page.locator('.paper-filters .el-select').first().click()
+  await Promise.all([
+    page.waitForResponse(
+      (response) => response.url().includes('/api/exam/papers') && response.request().method() === 'GET',
+    ),
+    page.getByRole('option', { name: '官方原题' }).click(),
+  ])
+  await page.getByRole('textbox', { name: '按试卷名称查找' }).fill(title)
+  await Promise.all([
+    page.waitForResponse(
+      (response) => response.url().includes('/api/exam/papers') && response.request().method() === 'GET',
+    ),
+    page.getByRole('button', { name: '查找试卷' }).click(),
+  ])
+
   for (let pageIndex = 1; pageIndex <= 100; pageIndex += 1) {
     const card = page.locator('.exam-card').filter({ hasText: title })
     if (await card.count()) return card.first()
@@ -187,11 +202,13 @@ test('用户答错后可在错题本更新掌握程度并重练', async ({ page 
   await expect(page.getByText('错题重练', { exact: true })).toBeVisible()
 })
 
-test('用户刷新后可继续限时考试并查看自动判分结果', async ({ page }) => {
+test('用户刷新后可继续限时考试，取消提交并在失败重试后查看保存的自动判分结果', async ({ page }) => {
   await loginAs(page, 'testuser', 'test123')
 
   await page.goto('/exams')
   await expect(page).toHaveURL(/\/exams$/)
+  await page.getByRole('textbox', { name: '按试卷名称查找' }).fill('Java 基础入门测验')
+  await page.getByRole('button', { name: '查找试卷' }).click()
   const examCard = page.locator('.exam-card').filter({ hasText: 'Java 基础入门测验' })
   await expect(examCard).toBeVisible()
   await examCard.getByRole('button', { name: '考试模式' }).click()
@@ -215,23 +232,46 @@ test('用户刷新后可继续限时考试并查看自动判分结果', async ({
   expect(await readCountdownSeconds(countdown)).toBeLessThanOrEqual(beforeReloadSeconds)
 
   // 演示试卷固定包含单选、多选和判断三题，分别覆盖三种作答状态与后端判分。
-  await page.locator('.question-area .option-item').filter({ hasText: 'extends' }).click()
+  const extendsAnswer = page.getByRole('radio', { name: /extends/ })
+  await extendsAnswer.check()
+  await expect(extendsAnswer).toBeChecked()
   await page.getByRole('button', { name: '下一题' }).click()
-  await page.getByRole('button', { name: /^A\s+int$/ }).click()
-  await page.getByRole('button', { name: /^C\s+boolean$/ }).click()
+  const intAnswer = page.getByRole('checkbox', { name: /A.*int/ })
+  const booleanAnswer = page.getByRole('checkbox', { name: /C.*boolean/ })
+  await intAnswer.check()
+  await booleanAnswer.check()
+  await expect(intAnswer).toBeChecked()
+  await expect(booleanAnswer).toBeChecked()
   await page.getByRole('button', { name: '下一题' }).click()
-  await page.locator('.question-area .option-item').filter({ hasText: '正确' }).click()
+  const trueAnswer = page.getByRole('radio', { name: '正确', exact: true })
+  await trueAnswer.check()
+  await expect(trueAnswer).toBeChecked()
 
   await page.locator('.take-header').getByRole('button', { name: '提交试卷' }).click()
   const confirmDialog = page.getByRole('dialog', { name: '提交确认' })
   await expect(confirmDialog).toBeVisible()
-  await confirmDialog.getByRole('button', { name: '确定' }).click()
+  await confirmDialog.getByRole('button', { name: '继续作答' }).click()
+  await expect(page).toHaveURL(takeUrl)
+  await expect(trueAnswer).toBeChecked()
+
+  await page.route('**/api/exam/submit', (route) => route.abort('failed'), { times: 1 })
+  await page.locator('.take-header').getByRole('button', { name: '提交试卷' }).click()
+  await confirmDialog.getByRole('button', { name: '提交试卷' }).click()
+  const submitError = page.locator('.submit-error[role="alert"]')
+  await expect(submitError).toBeVisible()
+  await expect(trueAnswer).toBeChecked()
+  await submitError.getByRole('button', { name: '重试交卷' }).click()
 
   await expect(page).toHaveURL(/\/exams\/result\/\d+$/)
+  const resultUrl = page.url()
   await expect(page.locator('.score-number')).toHaveText('15')
   await expect(page.getByText('答题详情', { exact: true })).toBeVisible()
   await expect(page.locator('.result-tag')).toHaveCount(3)
   await expect(page.locator('.result-tag').filter({ hasText: '正确' })).toHaveCount(3)
+
+  await page.reload()
+  await expect(page).toHaveURL(resultUrl)
+  await expect(page.locator('.score-number')).toHaveText('15')
 })
 
 test('用户可预览确认结构化私有试卷并隔离给其他账号', async ({ page }) => {
@@ -271,9 +311,9 @@ test('用户可预览确认结构化私有试卷并隔离给其他账号', async
 
   await privateCard.getByRole('button', { name: '考试模式' }).click()
   await expect(page).toHaveURL(/\/exams\/take\/\d+$/)
-  await page.locator('.question-area .option-item').filter({ hasText: '先进后出' }).click()
+  await page.getByRole('radio', { name: /先进后出/ }).check()
   await page.locator('.take-header').getByRole('button', { name: '提交试卷' }).click()
-  await page.getByRole('dialog', { name: '提交确认' }).getByRole('button', { name: '确定' }).click()
+  await page.getByRole('dialog', { name: '提交确认' }).getByRole('button', { name: '提交试卷' }).click()
   await expect(page).toHaveURL(/\/exams\/result\/\d+$/)
   await expect(page.locator('.score-number')).toHaveText('2')
 
@@ -332,9 +372,9 @@ test('无答案私有题必须经过AI建议与逐题人工复核才可启用', 
   const card = page.locator('.exam-card').filter({ hasText: paperTitle })
   await expect(card).toContainText('可参加')
   await card.getByRole('button', { name: '考试模式' }).click()
-  await page.locator('.question-area .option-item').filter({ hasText: '栈' }).click()
+  await page.getByRole('radio', { name: /栈/ }).check()
   await page.locator('.take-header').getByRole('button', { name: '提交试卷' }).click()
-  await page.getByRole('dialog', { name: '提交确认' }).getByRole('button', { name: '确定' }).click()
+  await page.getByRole('dialog', { name: '提交确认' }).getByRole('button', { name: '提交试卷' }).click()
   await expect(page.locator('.score-number')).toHaveText('2')
 })
 
@@ -613,6 +653,7 @@ test('用户可完成2026真题学习并恢复可信来源反馈', async ({ page
 })
 
 test('用户可完成2026真题限时考试并复盘可信来源', async ({ page }) => {
+  test.setTimeout(60_000)
   await loginAs(page, 'testuser', 'test123')
   await page.goto('/exams')
   const examCard = await findPublishedPaper(page, '2026 年 408 真题·数据结构选择题')
@@ -620,14 +661,16 @@ test('用户可完成2026真题限时考试并复盘可信来源', async ({ page
   await expect(page).toHaveURL(/\/exams\/take\/\d+$/)
   await expect(page.locator('.question-area')).toBeVisible()
   for (let questionNumber = 1; questionNumber <= 11; questionNumber += 1) {
-    await page.locator('.question-area .option-item').first().click()
+    const firstAnswer = page.locator('.question-area').getByRole('radio').first()
+    await firstAnswer.check()
+    await expect(firstAnswer).toBeChecked()
     if (questionNumber < 11) {
       await page.getByRole('button', { name: '下一题' }).click()
     }
   }
   await page.locator('.take-header').getByRole('button', { name: '提交试卷' }).click()
   const confirmDialog = page.getByRole('dialog', { name: '提交确认' })
-  await confirmDialog.getByRole('button', { name: '确定' }).click()
+  await confirmDialog.getByRole('button', { name: '提交试卷' }).click()
 
   await expect(page).toHaveURL(/\/exams\/result\/\d+$/)
   await expect(page.getByRole('heading', { name: '2026 年 408 真题·数据结构选择题' })).toBeVisible()
@@ -649,7 +692,7 @@ test('2026主观题提交后由管理员按评分点批阅并固化总分', asyn
 
   for (let questionNumber = 1; questionNumber <= 13; questionNumber += 1) {
     if (questionNumber <= 11) {
-      await page.locator('.question-area .option-item').first().click()
+      await page.locator('.question-area').getByRole('radio').first().check()
     } else {
       await page.locator('.question-area textarea').fill(`第${questionNumber === 12 ? 41 : 42}题 E2E 分步作答`)
     }
@@ -658,7 +701,7 @@ test('2026主观题提交后由管理员按评分点批阅并固化总分', asyn
     }
   }
   await page.locator('.take-header').getByRole('button', { name: '提交试卷' }).click()
-  await page.getByRole('dialog', { name: '提交确认' }).getByRole('button', { name: '确定' }).click()
+  await page.getByRole('dialog', { name: '提交确认' }).getByRole('button', { name: '提交试卷' }).click()
 
   await expect(page).toHaveURL(/\/exams\/result\/\d+$/)
   const resultUrl = page.url()

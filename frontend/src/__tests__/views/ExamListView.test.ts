@@ -6,6 +6,7 @@ const {
   mockGetMyExamRecords,
   mockGetPaperDetail,
   mockStartExam,
+  mockStartLearning,
   mockPreviewPrivateExamImport,
   mockConfirmPrivateExamImport,
   mockPreviewPrivateExamPdf,
@@ -33,6 +34,7 @@ const {
   mockGetMyExamRecords: vi.fn(),
   mockGetPaperDetail: vi.fn(),
   mockStartExam: vi.fn(),
+  mockStartLearning: vi.fn(),
   mockPreviewPrivateExamImport: vi.fn(),
   mockConfirmPrivateExamImport: vi.fn(),
   mockPreviewPrivateExamPdf: vi.fn(),
@@ -62,7 +64,7 @@ vi.mock('@/api/exam', () => ({
   getMyExamRecords: (...args: unknown[]) => mockGetMyExamRecords(...args),
   getPaperDetail: (...args: unknown[]) => mockGetPaperDetail(...args),
   startExam: (...args: unknown[]) => mockStartExam(...args),
-  startExamLearningSession: vi.fn(),
+  startExamLearningSession: (...args: unknown[]) => mockStartLearning(...args),
   previewPrivateExamImport: (...args: unknown[]) => mockPreviewPrivateExamImport(...args),
   confirmPrivateExamImport: (...args: unknown[]) => mockConfirmPrivateExamImport(...args),
   previewPrivateExamPdf: (...args: unknown[]) => mockPreviewPrivateExamPdf(...args),
@@ -540,7 +542,7 @@ describe('ExamListView paper provenance', () => {
     expect(mockDeletePrivateExamDraft).toHaveBeenCalledWith(31)
     expect(dialogVm.privateDrafts).toEqual([])
     await pageVm.deletePaper(paperFixture)
-    expect(mockDeletePrivateExamPaper).toHaveBeenCalledWith(51)
+    expect(mockDeletePrivateExamPaper).toHaveBeenCalledWith(51, { errorDisplay: 'inline' })
     expect(mockConfirmDialog).toHaveBeenCalledTimes(2)
   })
 
@@ -612,10 +614,103 @@ describe('ExamListView paper provenance', () => {
       .trigger('click')
     await flushPromises()
 
-    expect(mockStartExam).toHaveBeenCalledWith(1)
+    expect(mockStartExam).toHaveBeenCalledWith(1, { errorDisplay: 'inline' })
     expect(mockGetPaperDetail).not.toHaveBeenCalled()
     expect(sessionStorage.length).toBe(0)
     expect(mockPush).toHaveBeenCalledWith({ name: 'ExamTake', params: { recordId: '101' } })
+  })
+
+  it('筛选请求服务端分页结果，并在开始失败后原位重试', async () => {
+    mockStartExam.mockResolvedValueOnce({ code: 1005, message: '考试会话暂时不可用' }).mockResolvedValueOnce({
+      code: 0,
+      data: { id: 102 },
+    })
+    const wrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as { paperType: string; keyword: string; applyFilters: () => void }
+    vm.paperType = 'OFFICIAL_EXAM'
+    vm.keyword = ' 2026 真题 '
+    vm.applyFilters()
+    await flushPromises()
+    expect(mockGetPublishedPapers).toHaveBeenLastCalledWith(
+      expect.objectContaining({ paperType: 'OFFICIAL_EXAM', keyword: '2026 真题' }),
+      { errorDisplay: 'inline' },
+    )
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('考试模式'))!
+      .trigger('click')
+    await flushPromises()
+    expect(wrapper.get('[role="alert"]').text()).toContain('考试会话暂时不可用')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '重试')!
+      .trigger('click')
+    await flushPromises()
+    expect(mockStartExam).toHaveBeenCalledTimes(2)
+    expect(mockPush).toHaveBeenCalledWith({ name: 'ExamTake', params: { recordId: '102' } })
+  })
+
+  it('将零条筛选结果说明为筛选结果，并提供可见查找操作', async () => {
+    mockGetPublishedPapers.mockResolvedValue({ code: 0, data: { records: [], total: 0 } })
+    const wrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as { paperType: string; keyword: string; applyFilters: () => void }
+    vm.paperType = 'OFFICIAL_EXAM'
+    vm.keyword = '2026 真题'
+    vm.applyFilters()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('没有符合筛选条件的试卷')
+    expect(wrapper.text()).toContain('可调整名称关键词或试卷类型后重新查找。')
+    expect(wrapper.text()).not.toContain('暂时无法读取试卷')
+    expect(wrapper.findAll('button').some((button) => button.text() === '查找试卷')).toBe(true)
+  })
+
+  it('私有试卷删除失败时保留卡片并在原位重试，卸载后的确认不会发起删除', async () => {
+    const privatePaper = {
+      id: 51,
+      title: '待删除私有试卷',
+      visibility: 'PRIVATE' as const,
+      paperType: 'USER_PRIVATE' as const,
+      questionCount: 1,
+      duration: 30,
+      totalScore: 2,
+    }
+    mockGetPublishedPapers.mockResolvedValue({ code: 0, data: { records: [privatePaper], total: 1 } })
+    mockDeletePrivateExamPaper
+      .mockResolvedValueOnce({ code: 1005, message: '试卷已有学习记录，暂不能删除' })
+      .mockResolvedValueOnce({ code: 0, data: null })
+    const wrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as { deletePaper: (paper: typeof privatePaper) => Promise<void> }
+
+    await vm.deletePaper(privatePaper)
+    expect(wrapper.get('[role="alert"]').text()).toContain('试卷已有学习记录，暂不能删除')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '重试')!
+      .trigger('click')
+    await flushPromises()
+    expect(mockDeletePrivateExamPaper).toHaveBeenCalledTimes(2)
+
+    let resolveConfirmation: (() => void) | undefined
+    mockConfirmDialog.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveConfirmation = resolve
+        }),
+    )
+    const staleWrapper = mount(ExamListView, { global: { stubs, directives: { loading: () => undefined } } })
+    await flushPromises()
+    const staleVm = staleWrapper.vm as unknown as { deletePaper: (paper: typeof privatePaper) => Promise<void> }
+    const pendingDelete = staleVm.deletePaper(privatePaper)
+    await flushPromises()
+    staleWrapper.unmount()
+    resolveConfirmation?.()
+    await pendingDelete
+    expect(mockDeletePrivateExamPaper).toHaveBeenCalledTimes(2)
   })
 
   it('分别为进行中、已完成和已超时记录提供正确状态与操作', async () => {

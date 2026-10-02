@@ -48,5 +48,5 @@ export function useExamCountdown(options: ExamCountdownOptions) {
 
   onBeforeUnmount(stop)
 
-  return { remainSeconds, countdownText, configure, start }
+  return { remainSeconds, countdownText, configure, start, stop }
 }

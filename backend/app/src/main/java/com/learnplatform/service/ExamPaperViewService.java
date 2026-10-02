@@ -52,7 +52,8 @@ public class ExamPaperViewService {
     }
 
     public Page<ExamPaperVO> getAccessiblePublishedPage(Long userId, int pageNum,
-                                                        int pageSize, Long courseId) {
+                                                        int pageSize, Long courseId,
+                                                        String paperType, String keyword) {
         Page<ExamPaper> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<ExamPaper> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ExamPaper::getStatus, 1)
@@ -60,6 +61,8 @@ public class ExamPaperViewService {
                         .or(privateScope -> privateScope.eq(ExamPaper::getVisibility, "PRIVATE")
                                 .eq(ExamPaper::getOwnerUserId, userId)));
         if (courseId != null) { wrapper.eq(ExamPaper::getCourseId, courseId); }
+        if (paperType != null) { wrapper.eq(ExamPaper::getPaperType, paperType); }
+        if (keyword != null) { wrapper.like(ExamPaper::getTitle, keyword); }
         wrapper.orderByDesc(ExamPaper::getCreateTime);
         return toPage(examPaperMapper.selectPage(page, wrapper));
     }
