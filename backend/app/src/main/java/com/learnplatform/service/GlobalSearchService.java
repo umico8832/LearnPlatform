@@ -88,7 +88,8 @@ public class GlobalSearchService {
                 .map(q -> {
                     String title = truncate(q.getContent(), 80);
                     String subtitle = formatQuestionSubtitle(q);
-                    return new SearchItem(q.getId(), title, subtitle, "QUESTION", "/questions");
+                    return new SearchItem(q.getId(), title, subtitle, "QUESTION",
+                            "/questions?questionId=" + q.getId());
                 })
                 .collect(Collectors.toList());
     }

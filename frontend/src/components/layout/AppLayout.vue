@@ -1,5 +1,6 @@
 <template>
   <div class="app-layout">
+    <a class="skip-link" href="#app-main" @click.prevent="focusMain">跳到主要内容</a>
     <div v-if="isMobile && sidebarOpen" class="sidebar-overlay" @click="sidebarOpen = false" />
 
     <aside class="app-sidebar" :class="{ 'mobile-open': isMobile && sidebarOpen }">
@@ -22,15 +23,30 @@
         </router-link>
 
         <nav class="nav-primary" aria-label="主导航">
-          <router-link to="/my-courses" class="nav-item" :class="{ 'is-active': isActive('/my-courses') }">
+          <router-link
+            to="/my-courses"
+            class="nav-item"
+            :class="{ 'is-active': isActive('/my-courses') }"
+            :aria-current="isActive('/my-courses') ? 'page' : undefined"
+          >
             <el-icon :size="17"><Collection /></el-icon>
             <span>我的课程</span>
           </router-link>
-          <router-link to="/courses" class="nav-item" :class="{ 'is-active': isActive('/courses') }">
+          <router-link
+            to="/courses"
+            class="nav-item"
+            :class="{ 'is-active': isActive('/courses') }"
+            :aria-current="isActive('/courses') ? 'page' : undefined"
+          >
             <el-icon :size="17"><Reading /></el-icon>
             <span>课程库</span>
           </router-link>
-          <router-link to="/community" class="nav-item" :class="{ 'is-active': isActive('/community') }">
+          <router-link
+            to="/community"
+            class="nav-item"
+            :class="{ 'is-active': isActive('/community') }"
+            :aria-current="isActive('/community') ? 'page' : undefined"
+          >
             <el-icon :size="17"><ChatDotRound /></el-icon><span>社区共建</span>
           </router-link>
         </nav>
@@ -41,7 +57,7 @@
             <span>进入管理系统</span>
           </a>
           <el-dropdown trigger="click" @command="handleCommand">
-            <button type="button" class="user-entry" aria-label="用户菜单">
+            <button type="button" class="user-entry" aria-label="打开用户菜单" aria-haspopup="menu">
               <el-avatar :size="30" :src="userInfo?.avatar || undefined" class="user-avatar">
                 {{ avatarText }}
               </el-avatar>
@@ -75,10 +91,15 @@
           >
             <el-icon :size="18"><component :is="sidebarOpen ? Fold : Expand" /></el-icon>
           </button>
+          <div class="route-context" aria-live="polite">
+            <router-link v-if="parentPath" :to="parentPath.path">{{ parentPath.label }}</router-link>
+            <span v-if="parentPath" aria-hidden="true">/</span>
+            <strong>{{ currentTitle }}</strong>
+          </div>
         </div>
         <div class="header-right">
           <LearningProgressHeader v-if="gamification.summary" :summary="gamification.summary" />
-          <button class="header-search-trigger" type="button" @click="openSearch">
+          <button class="header-search-trigger" type="button" aria-label="搜索题目、课程、知识点" @click="openSearch">
             <el-icon :size="16"><Search /></el-icon>
             <span v-if="!isMobile" class="search-trigger-text">搜索题目、课程、知识点</span>
             <kbd v-if="!isMobile">⌘K</kbd>
@@ -102,7 +123,12 @@
                     刷新
                   </el-button>
                 </div>
-                <div v-if="openAlerts.length" class="ops-alert-list">
+                <div v-if="alertsLoading" class="ops-alert-status" role="status">正在读取提醒…</div>
+                <div v-else-if="alertsError" class="ops-alert-status" role="alert">
+                  <p>{{ alertsError }}</p>
+                  <el-button link type="primary" @click.stop="fetchOpenAlerts">重新加载</el-button>
+                </div>
+                <div v-else-if="openAlerts.length" class="ops-alert-list">
                   <div v-for="alert in openAlerts" :key="alert.id || alert.type" class="ops-alert-item">
                     <div>
                       <div class="ops-alert-title">
@@ -121,11 +147,14 @@
                       size="small"
                       text
                       type="primary"
-                      :loading="acknowledgingAlertId === alert.id"
+                      :loading="isAcknowledgingAlert(alert.id)"
                       @click.stop="handleAcknowledgeOpenAlert(alert.id)"
                     >
                       确认
                     </el-button>
+                    <p v-if="alert.id && alertAcknowledgeErrors[alert.id]" class="ops-alert-action-error" role="status">
+                      {{ alertAcknowledgeErrors[alert.id] }}
+                    </p>
                   </div>
                 </div>
                 <el-empty v-else description="暂无未确认提醒" :image-size="48" />
@@ -135,9 +164,9 @@
         </div>
       </header>
 
-      <main class="app-main">
+      <main id="app-main" ref="mainRef" class="app-main" tabindex="-1">
         <router-view v-slot="{ Component }">
-          <transition name="page-fade" mode="out-in">
+          <transition name="lp-content" @leave="finishPageLeave">
             <component :is="Component" :key="route.fullPath" />
           </transition>
         </router-view>
@@ -148,14 +177,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import { errorMessage } from '@/utils/errors'
+import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useGamificationStore } from '@/stores/gamification'
 import LearningProgressHeader from '@/components/gamification/LearningProgressHeader.vue'
-import { acknowledgeAiUsageAlert, getAiUsageAlerts, type AiUsageAlert } from '@/api/aiUsage'
-import { ElMessage } from 'element-plus'
 import {
   ChatDotRound,
   ArrowDown,
@@ -169,6 +195,7 @@ import {
 } from '@element-plus/icons-vue'
 import GlobalSearchDialog from '@/components/GlobalSearchDialog.vue'
 import { useResponsiveSidebar } from './useResponsiveSidebar'
+import { useOpsAlerts } from './useOpsAlerts'
 
 const route = useRoute()
 const router = useRouter()
@@ -178,11 +205,26 @@ const gamification = useGamificationStore()
 const userInfo = computed(() => userStore.userInfo)
 const isAdmin = computed(() => userStore.userInfo?.role === 'ADMIN')
 const avatarText = computed(() => userInfo.value?.nickname?.charAt(0) || userInfo.value?.username?.charAt(0) || 'U')
-const openAlerts = ref<AiUsageAlert[]>([])
-const alertsLoading = ref(false)
-const acknowledgingAlertId = ref<number | null>(null)
-const openAlertCount = computed(() => openAlerts.value.length)
 const { isMobile, sidebarOpen } = useResponsiveSidebar()
+const {
+  alerts: openAlerts,
+  loading: alertsLoading,
+  error: alertsError,
+  count: openAlertCount,
+  acknowledgeErrors: alertAcknowledgeErrors,
+  refresh: fetchOpenAlerts,
+  acknowledge: handleAcknowledgeOpenAlert,
+  isAcknowledging: isAcknowledgingAlert,
+} = useOpsAlerts(isAdmin)
+const mainRef = ref<HTMLElement>()
+
+const currentTitle = computed(() => (route.meta.title as string) || '学习')
+const parentPath = computed(() => {
+  if (route.name === 'CommunityDetail') return { path: '/community', label: '社区共建' }
+  if (route.name === 'CourseDetail') return { path: '/courses', label: '课程库' }
+  if (route.name === 'CourseOverview') return { path: '/my-courses', label: '我的课程' }
+  return undefined
+})
 
 function isActive(prefix: string) {
   return route.path === prefix || route.path.startsWith(`${prefix}/`)
@@ -193,17 +235,17 @@ function openSearch() {
   searchDialogRef.value?.open()
 }
 
-async function fetchOpenAlerts() {
-  if (!isAdmin.value || alertsLoading.value) return
-  alertsLoading.value = true
-  try {
-    const response = await getAiUsageAlerts(20)
-    openAlerts.value = response.data || []
-  } catch (error) {
-    console.error('Failed to fetch AI usage alerts', error)
-  } finally {
-    alertsLoading.value = false
-  }
+function focusMain() {
+  mainRef.value?.focus({ preventScroll: true })
+}
+
+onMounted(() => {
+  if (document.activeElement === document.body) focusMain()
+})
+
+function finishPageLeave(_element: Element, done: () => void) {
+  // 立即移除旧页，避免两个页面同时撑高文档并破坏历史滚动位置。
+  done()
 }
 
 function handleAlertDropdownVisible(visible: boolean) {
@@ -212,31 +254,14 @@ function handleAlertDropdownVisible(visible: boolean) {
   }
 }
 
-async function handleAcknowledgeOpenAlert(id: number) {
-  acknowledgingAlertId.value = id
-  try {
-    await acknowledgeAiUsageAlert(id)
-    openAlerts.value = openAlerts.value.filter((alert) => alert.id !== id)
-    ElMessage.success('已确认 AI 运营提醒')
-  } catch (error) {
-    console.error('Failed to acknowledge AI usage alert', error)
-    ElMessage.error(errorMessage(error, '确认提醒失败'))
-  } finally {
-    acknowledgingAlertId.value = null
-  }
-}
-
-onMounted(() => {
-  fetchOpenAlerts()
-})
-
-watch(isAdmin, (value) => {
-  if (value) {
-    fetchOpenAlerts()
-  } else {
-    openAlerts.value = []
-  }
-})
+watch(
+  () => route.path,
+  async () => {
+    await nextTick()
+    focusMain()
+  },
+  { flush: 'post' },
+)
 
 function handleCommand(command: string) {
   if (command === 'logout') {
@@ -256,8 +281,6 @@ function handleCommand(command: string) {
   background: var(--lp-bg);
   color: var(--lp-text);
 }
-
-/* ---------------- Sidebar ---------------- */
 .app-sidebar {
   position: sticky;
   top: 0;
@@ -265,7 +288,6 @@ function handleCommand(command: string) {
   background: var(--lp-surface-subtle);
   border-right: var(--lp-border-hairline);
 }
-
 .sidebar-inner {
   display: flex;
   flex-direction: column;
@@ -274,14 +296,12 @@ function handleCommand(command: string) {
   overflow-y: auto;
   overflow-x: hidden;
 }
-
 .brand {
   display: flex;
   align-items: center;
   gap: var(--lp-space-3);
   padding: var(--lp-space-2) var(--lp-space-2) var(--lp-space-4);
 }
-
 .brand-mark {
   display: grid;
   place-items: center;
@@ -292,14 +312,12 @@ function handleCommand(command: string) {
   background: var(--lp-primary);
   color: var(--lp-paper-0);
 }
-
 .brand-copy {
   display: grid;
   gap: 1px;
   min-width: 0;
   line-height: 1.15;
 }
-
 .brand-copy strong {
   color: var(--lp-text);
   font-size: var(--lp-text-md);
@@ -307,13 +325,11 @@ function handleCommand(command: string) {
   letter-spacing: var(--lp-tracking-tight);
   white-space: nowrap;
 }
-
 .nav-primary {
   display: grid;
   gap: 2px;
   margin-top: var(--lp-space-2);
 }
-
 .nav-item {
   display: flex;
   align-items: center;
@@ -328,18 +344,15 @@ function handleCommand(command: string) {
     background-color var(--lp-duration-fast) var(--lp-ease-out),
     color var(--lp-duration-fast) var(--lp-ease-out);
 }
-
 .nav-item:hover {
   background: var(--lp-surface-inset);
   color: var(--lp-text);
 }
-
 .nav-item.is-active {
   background: var(--lp-primary-soft);
   color: var(--lp-primary);
   font-weight: var(--lp-weight-semibold);
 }
-
 .header-search-trigger kbd {
   padding: 1px 5px;
   border: 1px solid var(--lp-border);
@@ -349,14 +362,12 @@ function handleCommand(command: string) {
   font-size: 11px;
   font-family: inherit;
 }
-
 .sidebar-bottom {
   display: grid;
   gap: var(--lp-space-2);
   margin-top: auto;
   padding-top: var(--lp-space-4);
 }
-
 .admin-entry {
   display: flex;
   align-items: center;
@@ -368,12 +379,10 @@ function handleCommand(command: string) {
   font-size: var(--lp-text-sm);
   transition: background-color var(--lp-duration-fast) var(--lp-ease-out);
 }
-
 .admin-entry:hover {
   background: var(--lp-surface-inset);
   color: var(--lp-text);
 }
-
 .user-entry {
   display: flex;
   align-items: center;
@@ -388,18 +397,15 @@ function handleCommand(command: string) {
   text-align: left;
   transition: background-color var(--lp-duration-fast) var(--lp-ease-out);
 }
-
 .user-entry:hover {
   background: var(--lp-surface-inset);
 }
-
 .user-avatar {
   flex: 0 0 auto;
   background: var(--lp-primary-soft);
   color: var(--lp-primary);
   font-weight: var(--lp-weight-bold);
 }
-
 .user-copy {
   display: grid;
   gap: 1px;
@@ -407,7 +413,6 @@ function handleCommand(command: string) {
   flex: 1;
   line-height: 1.15;
 }
-
 .user-copy strong {
   font-size: var(--lp-text-sm);
   font-weight: var(--lp-weight-semibold);
@@ -415,23 +420,18 @@ function handleCommand(command: string) {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .user-copy small {
   color: var(--lp-text-muted);
   font-size: var(--lp-text-xs);
 }
-
 .user-chevron {
   color: var(--lp-text-muted);
 }
-
-/* ---------------- Header ---------------- */
 .app-content-shell {
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
-
 .app-header {
   position: sticky;
   top: 0;
@@ -442,27 +442,23 @@ function handleCommand(command: string) {
   gap: var(--lp-space-4);
   height: var(--lp-header-height);
   padding: 0 var(--lp-content-gutter);
-  background: rgba(253, 253, 251, 0.86);
+  background: var(--lp-surface-glass);
   border-bottom: var(--lp-border-hairline);
   backdrop-filter: blur(12px);
 }
-
 .header-left,
 .header-right {
   display: flex;
   align-items: center;
 }
-
 .header-left {
   gap: var(--lp-space-3);
   min-width: 0;
 }
-
 .header-right {
   gap: var(--lp-space-3);
   flex-shrink: 0;
 }
-
 .hamburger {
   width: 36px;
   height: 36px;
@@ -474,7 +470,6 @@ function handleCommand(command: string) {
   color: var(--lp-text);
   cursor: pointer;
 }
-
 .header-search-trigger {
   min-width: 236px;
   height: 34px;
@@ -492,17 +487,14 @@ function handleCommand(command: string) {
     border-color var(--lp-duration-fast) var(--lp-ease-out),
     box-shadow var(--lp-duration-fast) var(--lp-ease-out);
 }
-
 .header-search-trigger:hover {
   border-color: var(--lp-border-strong);
   box-shadow: var(--lp-shadow-xs);
 }
-
 .search-trigger-text {
   flex: 1;
   text-align: left;
 }
-
 .header-icon-button {
   width: 34px;
   height: 34px;
@@ -517,17 +509,14 @@ function handleCommand(command: string) {
     border-color var(--lp-duration-fast) var(--lp-ease-out),
     color var(--lp-duration-fast) var(--lp-ease-out);
 }
-
 .header-icon-button:hover {
   border-color: var(--lp-border-strong);
   color: var(--lp-primary);
 }
-
 .ops-alert-panel {
   width: min(360px, calc(100vw - 24px));
   padding: var(--lp-space-3);
 }
-
 .ops-alert-panel-header {
   display: flex;
   align-items: center;
@@ -536,18 +525,32 @@ function handleCommand(command: string) {
   padding: 2px 2px var(--lp-space-3);
   border-bottom: var(--lp-border-hairline);
 }
-
 .ops-alert-panel-header strong {
   color: var(--lp-text);
   font-size: var(--lp-text-base);
 }
-
+.ops-alert-status {
+  display: grid;
+  gap: var(--lp-space-2);
+  padding: var(--lp-space-5) var(--lp-space-2);
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  text-align: center;
+}
+.ops-alert-status p,
+.ops-alert-action-error {
+  margin: 0;
+}
+.ops-alert-action-error {
+  grid-column: 1 / -1;
+  color: var(--lp-danger);
+  font-size: var(--lp-text-xs);
+}
 .ops-alert-list {
   max-height: 360px;
   overflow-y: auto;
   padding-top: var(--lp-space-2);
 }
-
 .ops-alert-item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -555,11 +558,9 @@ function handleCommand(command: string) {
   padding: var(--lp-space-3) 2px;
   border-bottom: var(--lp-border-hairline);
 }
-
 .ops-alert-item:last-child {
   border-bottom: 0;
 }
-
 .ops-alert-title {
   display: flex;
   align-items: center;
@@ -568,62 +569,59 @@ function handleCommand(command: string) {
   font-size: var(--lp-text-sm);
   font-weight: var(--lp-weight-bold);
 }
-
 .ops-alert-item p {
   margin: 6px 0 5px;
   color: var(--lp-text-secondary);
   font-size: var(--lp-text-sm);
   line-height: 1.45;
 }
-
 .ops-alert-item small {
   color: var(--lp-text-muted);
   font-size: var(--lp-text-xs);
 }
-
-/* ---------------- Main ---------------- */
 .app-main {
   flex: 1;
   min-width: 0;
   padding: var(--lp-space-6) var(--lp-content-gutter) var(--lp-space-12);
 }
-
-/* 页面切换过渡：克制淡入 */
-.page-fade-enter-active,
-.page-fade-leave-active {
-  transition:
-    opacity var(--lp-duration-normal) var(--lp-ease-out),
-    transform var(--lp-duration-normal) var(--lp-ease-out);
+.skip-link {
+  position: fixed;
+  top: var(--lp-space-2);
+  left: var(--lp-space-2);
+  z-index: var(--lp-z-modal);
+  padding: var(--lp-space-2) var(--lp-space-3);
+  color: var(--lp-on-primary);
+  background: var(--lp-primary);
+  border-radius: var(--lp-radius-control);
+  transform: translateY(-150%);
 }
-.page-fade-leave-active {
-  transition: none;
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
+  outline-offset: var(--lp-focus-offset);
 }
-
-.page-fade-enter-from {
-  opacity: 0;
-  transform: translateY(4px);
+.route-context {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-space-2);
+  min-width: 0;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
 }
-
-.page-fade-leave-to {
-  opacity: 0;
+.route-context a {
+  color: var(--lp-link);
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .page-fade-enter-active,
-  .page-fade-leave-active {
-    transition: none;
-  }
-  .page-fade-enter-from {
-    transform: none;
-  }
+.route-context strong {
+  overflow: hidden;
+  color: var(--lp-text);
+  font-weight: var(--lp-weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-
-/* ---------------- Mobile ---------------- */
 @media (max-width: 767px) {
   .app-layout {
     grid-template-columns: minmax(0, 1fr);
   }
-
   .app-sidebar {
     position: fixed;
     top: 0;
@@ -634,37 +632,34 @@ function handleCommand(command: string) {
     transition: transform var(--lp-duration-normal) var(--lp-ease-out);
     box-shadow: var(--lp-shadow-lg);
   }
-
   .app-sidebar.mobile-open {
     transform: translateX(0);
   }
-
   .sidebar-overlay {
     position: fixed;
     inset: 0;
     z-index: calc(var(--lp-z-modal) - 1);
-    background: rgba(29, 29, 27, 0.42);
+    background: var(--lp-overlay-scrim);
   }
-
   .app-header {
     height: 54px;
     padding: 0 var(--lp-content-gutter);
   }
-
   .header-search-trigger {
     min-width: 36px;
     width: 36px;
     justify-content: center;
     padding: 0;
   }
-
   .header-search-trigger span,
   .header-search-trigger kbd {
     display: none;
   }
-
   .app-main {
     padding: var(--lp-space-4) var(--lp-content-gutter) var(--lp-space-10);
+  }
+  .route-context {
+    max-width: min(46vw, 280px);
   }
 }
 </style>

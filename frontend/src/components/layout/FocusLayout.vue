@@ -1,5 +1,6 @@
 <template>
   <div class="focus-layout">
+    <a class="skip-link" href="#focus-main" @click.prevent="focusMain">跳到主要内容</a>
     <header class="focus-topbar">
       <div class="focus-topbar-left">
         <button type="button" class="focus-back" @click="handleBack">
@@ -22,16 +23,18 @@
       </div>
     </header>
 
-    <main class="focus-main">
+    <main id="focus-main" ref="mainRef" class="focus-main" tabindex="-1">
       <div class="focus-content" :class="{ 'is-narrow': narrow }">
-        <router-view />
+        <router-view v-slot="{ Component }">
+          <component :is="Component" :key="route.path" />
+        </router-view>
       </div>
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { useGamificationStore } from '@/stores/gamification'
@@ -47,17 +50,46 @@ withDefaults(defineProps<{ narrow?: boolean }>(), { narrow: true })
 const route = useRoute()
 const router = useRouter()
 const gamification = useGamificationStore()
+const mainRef = ref<HTMLElement>()
 
 const contextTitle = computed(() => (route.meta.focusTitle as string) || (route.meta.title as string) || '学习')
 const contextSub = computed(() => (route.meta.focusSubtitle as string) || '')
 
-function handleBack() {
-  if (window.history.length > 1) {
-    router.back()
-  } else {
-    router.push('/my-courses')
-  }
+function focusMain() {
+  mainRef.value?.focus({ preventScroll: true })
 }
+
+onMounted(() => {
+  if (document.activeElement === document.body) focusMain()
+})
+
+function isInternalPath(path: unknown): path is string {
+  return typeof path === 'string' && path.startsWith('/') && !path.startsWith('//')
+}
+
+function fallbackPath() {
+  if (route.name === 'TutorSession' && typeof route.params.id === 'string') return `/my-courses/${route.params.id}`
+  if (route.name === 'ExamTake' || route.name === 'ExamLearning' || route.name === 'ExamResult') return '/exams'
+  return '/my-courses'
+}
+
+function handleBack() {
+  const back = window.history.state?.back
+  if (isInternalPath(back)) {
+    router.back()
+    return
+  }
+  void router.push(fallbackPath())
+}
+
+watch(
+  () => route.path,
+  async () => {
+    await nextTick()
+    focusMain()
+  },
+  { flush: 'post' },
+)
 </script>
 
 <style scoped>
@@ -78,7 +110,7 @@ function handleBack() {
   gap: var(--lp-space-4);
   height: 56px;
   padding: 0 var(--lp-content-gutter);
-  background: rgba(253, 253, 251, 0.9);
+  background: var(--lp-surface-glass);
   border-bottom: var(--lp-border-hairline);
   backdrop-filter: blur(12px);
 }
@@ -152,6 +184,24 @@ function handleBack() {
 .focus-main {
   flex: 1;
   min-width: 0;
+}
+
+.skip-link {
+  position: fixed;
+  top: var(--lp-space-2);
+  left: var(--lp-space-2);
+  z-index: var(--lp-z-modal);
+  padding: var(--lp-space-2) var(--lp-space-3);
+  color: var(--lp-on-primary);
+  background: var(--lp-primary);
+  border-radius: var(--lp-radius-control);
+  transform: translateY(-150%);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
+  outline-offset: var(--lp-focus-offset);
 }
 
 .focus-content {

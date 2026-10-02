@@ -1,5 +1,9 @@
 package com.learnplatform.service;
 
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.dto.QuestionDuplicateGroupVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.KnowledgePoint;
@@ -12,17 +16,23 @@ import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,12 +50,14 @@ class QuestionServiceTest {
 
     @BeforeEach
     void setUp() {
+        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), "QuestionServiceTest"),
+                Question.class);
         QuestionViewService viewService = new QuestionViewService(
                 questionOptionMapper, questionKnowledgePointMapper, courseMapper, knowledgePointMapper);
         QuestionMutationService mutationService = new QuestionMutationService(
                 questionMapper, questionOptionMapper, questionKnowledgePointMapper, courseMapper,
                 knowledgePointMapper, examQuestionMapper, questionVersionService);
-        questionService = new QuestionService(questionMapper, viewService, mutationService);
+        questionService = new QuestionService(questionMapper, knowledgePointMapper, viewService, mutationService);
     }
 
     @Test
@@ -94,6 +106,52 @@ class QuestionServiceTest {
         assertEquals(1, upperClamped.size());
         assertEquals(List.of(1L, 2L),
                 upperClamped.get(0).getQuestions().stream().map(question -> question.getId()).toList());
+    }
+
+    @Test
+    void getEnabledQuestionPage_filtersByQuestionAndKnowledgePoint_withoutLeakingAnswers() {
+        Question question = question(21L, "题目", 1L, "SINGLE_CHOICE");
+        question.setVisibility("PUBLIC");
+        question.setAnalysis("仅供判分的解析");
+        Page<Question> result = new Page<>(1, 10, 1);
+        result.setRecords(List.of(question));
+        when(knowledgePointMapper.selectQuestionIdsByKnowledgePointId(31L)).thenReturn(List.of(21L, 22L));
+        when(questionMapper.selectPage(any(Page.class), any(LambdaQueryWrapper.class))).thenReturn(result);
+        when(courseMapper.selectById(1L)).thenReturn(new Course());
+        QuestionOption correctOption = option(1L, 21L, "A", "选项");
+        correctOption.setIsCorrect(1);
+        when(questionOptionMapper.selectList(any())).thenReturn(List.of(correctOption));
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(questionKnowledgePoint(21L, 31L)));
+
+        Page<com.learnplatform.dto.QuestionVO> page = questionService.getEnabledQuestionPage(
+                1, 10, null, null, null, 21L, 31L);
+
+        ArgumentCaptor<LambdaQueryWrapper<Question>> wrapperCaptor = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+        verify(questionMapper).selectPage(any(Page.class), wrapperCaptor.capture());
+        assertEquals(List.of(21L), page.getRecords().stream().map(item -> item.getId()).toList());
+        assertNull(page.getRecords().getFirst().getAnalysis());
+        assertNull(page.getRecords().getFirst().getOptions().getFirst().getIsCorrect());
+        String sqlSegment = wrapperCaptor.getValue().getSqlSegment();
+        assertTrue(sqlSegment.contains("status"));
+        assertTrue(sqlSegment.contains("visibility"));
+        List<Object> filterValues = wrapperCaptor.getValue().getParamNameValuePairs().values().stream().toList();
+        assertTrue(filterValues.stream().anyMatch(value -> value instanceof Number number && number.intValue() == 1));
+        assertTrue(filterValues.contains("PUBLIC"));
+        assertTrue(filterValues.contains(21L));
+        assertTrue(filterValues.contains(22L));
+        verify(knowledgePointMapper).selectQuestionIdsByKnowledgePointId(31L);
+    }
+
+    @Test
+    void getEnabledQuestionPage_returnsEmptyPageWhenKnowledgePointHasNoQuestions() {
+        when(knowledgePointMapper.selectQuestionIdsByKnowledgePointId(31L)).thenReturn(List.of());
+
+        Page<com.learnplatform.dto.QuestionVO> page = questionService.getEnabledQuestionPage(
+                2, 5, null, null, null, null, 31L);
+
+        assertEquals(0, page.getTotal());
+        assertEquals(List.of(), page.getRecords());
+        verify(questionMapper, never()).selectPage(any(Page.class), any(LambdaQueryWrapper.class));
     }
 
     private Question question(Long id, String content, Long courseId, String questionType) {

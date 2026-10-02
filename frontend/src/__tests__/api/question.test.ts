@@ -70,11 +70,12 @@ describe('Question API', () => {
 
       expect(mockedRequest.get).toHaveBeenCalledWith('/questions', {
         params: { pageNum: 1, pageSize: 20 },
+        errorDisplay: 'inline',
       })
       expect(result).toEqual({ code: 0, data: mockPageData, message: 'success' })
     })
 
-    it('应支持按题型、课程、难度筛选', async () => {
+    it('应支持按题型、课程、难度、题目与知识点筛选', async () => {
       mockedRequest.get.mockResolvedValue({ code: 0, data: { records: [], total: 0 }, message: 'success' })
 
       await getQuestionPage({
@@ -83,10 +84,21 @@ describe('Question API', () => {
         questionType: 'MULTI_CHOICE',
         courseId: 2,
         difficulty: 4,
+        questionId: 18,
+        knowledgePointId: 9,
       })
 
       expect(mockedRequest.get).toHaveBeenCalledWith('/questions', {
-        params: { pageNum: 1, pageSize: 10, questionType: 'MULTI_CHOICE', courseId: 2, difficulty: 4 },
+        params: {
+          pageNum: 1,
+          pageSize: 10,
+          questionType: 'MULTI_CHOICE',
+          courseId: 2,
+          difficulty: 4,
+          questionId: 18,
+          knowledgePointId: 9,
+        },
+        errorDisplay: 'inline',
       })
     })
   })

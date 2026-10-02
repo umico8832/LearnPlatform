@@ -8,6 +8,7 @@ import com.learnplatform.dto.QuestionCreateRequest;
 import com.learnplatform.dto.QuestionDuplicateGroupVO;
 import com.learnplatform.dto.QuestionVO;
 import com.learnplatform.entity.Question;
+import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.service.question.QuestionDuplicateDetector;
 import org.springframework.cache.annotation.CacheEvict;
@@ -19,14 +20,17 @@ import java.util.List;
 @Service
 public class QuestionService {
     private final QuestionMapper questionMapper;
+    private final KnowledgePointMapper knowledgePointMapper;
     private final QuestionViewService viewService;
     private final QuestionMutationService mutationService;
 
     public QuestionService(
             QuestionMapper questionMapper,
+            KnowledgePointMapper knowledgePointMapper,
             QuestionViewService viewService,
             QuestionMutationService mutationService) {
         this.questionMapper = questionMapper;
+        this.knowledgePointMapper = knowledgePointMapper;
         this.viewService = viewService;
         this.mutationService = mutationService;
     }
@@ -70,6 +74,12 @@ public class QuestionService {
 
     public Page<QuestionVO> getEnabledQuestionPage(int pageNum, int pageSize, String questionType,
                                                     Long courseId, Integer difficulty) {
+        return getEnabledQuestionPage(pageNum, pageSize, questionType, courseId, difficulty, null, null);
+    }
+
+    public Page<QuestionVO> getEnabledQuestionPage(int pageNum, int pageSize, String questionType,
+                                                    Long courseId, Integer difficulty,
+                                                    Long questionId, Long knowledgePointId) {
         Page<Question> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Question::getStatus, 1).eq(Question::getVisibility, "PUBLIC");
@@ -81,6 +91,16 @@ public class QuestionService {
         }
         if (difficulty != null) {
             wrapper.eq(Question::getDifficulty, difficulty);
+        }
+        if (questionId != null) {
+            wrapper.eq(Question::getId, questionId);
+        }
+        if (knowledgePointId != null) {
+            List<Long> questionIds = knowledgePointMapper.selectQuestionIdsByKnowledgePointId(knowledgePointId);
+            if (questionIds.isEmpty()) {
+                return new Page<>(pageNum, pageSize, 0);
+            }
+            wrapper.in(Question::getId, questionIds);
         }
         wrapper.orderByDesc(Question::getCreateTime);
         Page<Question> result = questionMapper.selectPage(page, wrapper);

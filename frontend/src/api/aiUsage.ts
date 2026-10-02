@@ -211,13 +211,14 @@ export function getAiLearningEffect(days?: number) {
 }
 
 /** 获取未确认 AI 运营提醒 */
-export function getAiUsageAlerts(limit?: number) {
+export function getAiUsageAlerts(limit?: number, options: { errorDisplay?: 'inline' } = {}) {
   return request.get<AiUsageAlert[]>('/admin/ai-usage/alerts', {
+    ...options,
     params: limit ? { limit } : {},
   })
 }
 
 /** 确认 AI 运营提醒 */
-export function acknowledgeAiUsageAlert(id: number) {
-  return request.post<AiUsageAlert>(`/admin/ai-usage/alerts/${id}/acknowledge`)
+export function acknowledgeAiUsageAlert(id: number, options: { errorDisplay?: 'inline' } = {}) {
+  return request.post<AiUsageAlert>(`/admin/ai-usage/alerts/${id}/acknowledge`, undefined, options)
 }

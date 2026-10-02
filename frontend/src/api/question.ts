@@ -71,8 +71,10 @@ export function getQuestionPage(params: {
   questionType?: string
   courseId?: number
   difficulty?: number
+  questionId?: number
+  knowledgePointId?: number
 }) {
-  return request.get<unknown, ApiResponse<PageResult<QuestionVO>>>('/questions', { params })
+  return request.get<unknown, ApiResponse<PageResult<QuestionVO>>>('/questions', { params, errorDisplay: 'inline' })
 }
 
 /** 获取题目详情（用户端） */

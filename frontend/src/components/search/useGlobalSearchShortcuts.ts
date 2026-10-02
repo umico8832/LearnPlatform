@@ -5,17 +5,18 @@ export function useGlobalSearchShortcuts(visible: Ref<boolean>, open: () => void
   const isMobile = useMobileViewport()
 
   const inputFocused = () => {
-    const active = document.activeElement
-    const tag = active?.tagName?.toLowerCase()
-    return tag === 'input' || tag === 'textarea' || active?.getAttribute('contenteditable') === 'true'
+    const active = document.activeElement as HTMLElement | null
+    const tag = active?.tagName.toLowerCase()
+    return tag === 'input' || tag === 'textarea' || active?.isContentEditable === true
   }
 
   const handleKeydown = (event: KeyboardEvent) => {
-    if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+    if (event.isComposing || inputFocused()) return
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
       event.preventDefault()
       if (visible.value) close()
       else open()
-    } else if (event.key === '/' && !visible.value && !inputFocused()) {
+    } else if (event.key === '/' && !visible.value) {
       event.preventDefault()
       open()
     }

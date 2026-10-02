@@ -43,9 +43,11 @@ public class QuestionController {
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String questionType,
             @RequestParam(required = false) Long courseId,
-            @RequestParam(required = false) Integer difficulty) {
+            @RequestParam(required = false) Integer difficulty,
+            @RequestParam(required = false) Long questionId,
+            @RequestParam(required = false) Long knowledgePointId) {
         return R.ok(questionService.getEnabledQuestionPage(pageNum, pageSize,
-                questionType, courseId, difficulty));
+                questionType, courseId, difficulty, questionId, knowledgePointId));
     }
 
     /**

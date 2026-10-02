@@ -80,6 +80,6 @@ describe('AI usage API', () => {
 
     await acknowledgeAiUsageAlert(8)
 
-    expect(mockedRequest.post).toHaveBeenCalledWith('/admin/ai-usage/alerts/8/acknowledge')
+    expect(mockedRequest.post).toHaveBeenCalledWith('/admin/ai-usage/alerts/8/acknowledge', undefined, {})
   })
 })

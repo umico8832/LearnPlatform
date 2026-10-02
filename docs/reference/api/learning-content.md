@@ -308,6 +308,10 @@ PUT 请求同样包含三个字段：必填非负 `revision`，可空 `explanati
 
 用户题目详情不能泄露正确选项和标准解析。判分结果只能通过练习或考试提交接口获得。
 
+题库分页支持 `pageNum/pageSize/questionType/courseId/difficulty`，以及可选的 `questionId` 与
+`knowledgePointId`。后两项用于搜索结果的精确落点，与其他筛选取交集；知识点只匹配直接关联的题目，
+没有关联时返回空页。分页始终只返回公开、启用的学习者题面，并移除答案和正确选项标记。
+
 ## 收藏
 
 | 接口 | 说明 |
@@ -346,3 +350,6 @@ PUT 请求同样包含三个字段：必填非负 `revision`，可空 `explanati
 | `GET /api/search/suggestions` | 获取建议、历史和热门词 |
 | `DELETE /api/search/history` | 清空当前用户搜索历史 |
 | `DELETE /api/search/history/item` | 删除单条搜索历史 |
+
+题目搜索结果链接为 `/questions?questionId=<id>`；知识点结果链接为
+`/questions?knowledgePointId=<id>`。题库显示当前搜索范围，显式清除后才回到普通筛选。

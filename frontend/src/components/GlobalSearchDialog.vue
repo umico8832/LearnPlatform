@@ -1,693 +1,586 @@
+<script setup lang="ts">
+import { computed, nextTick, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { Clock, Close, EditPen, Notebook, Reading, Search, TrendCharts } from '@element-plus/icons-vue'
+import type { SearchItem } from '@/api/search'
+import { useGlobalSearchShortcuts } from './search/useGlobalSearchShortcuts'
+import { flattenSearchResults, searchResultCount, searchResultIndex } from './search/searchResultModel'
+import { splitSearchMatch } from './search/searchText'
+import { useGlobalSearchState } from './search/useGlobalSearchState'
+
+const router = useRouter()
+const visible = ref(false)
+const inputRef = ref<HTMLInputElement>()
+const resultsRef = ref<HTMLElement>()
+const activeIndex = ref(-1)
+const {
+  keyword,
+  loading,
+  error,
+  results,
+  suggestions,
+  suggestionsLoading,
+  suggestionsError,
+  historyError,
+  historyUpdating,
+  hasQuery,
+  open: openState,
+  close: closeState,
+  search,
+  retrySearch,
+  clearHistory,
+  removeHistory,
+  retryHistory,
+} = useGlobalSearchState()
+
+const totalCount = computed(() => searchResultCount(results.value))
+const activeOptionId = computed(() =>
+  activeIndex.value >= 0 ? `global-search-option-${activeIndex.value}` : undefined,
+)
+const isMobile = useGlobalSearchShortcuts(visible, open, close)
+
+watch(visible, (nextVisible) => {
+  if (!nextVisible) closeState()
+})
+
+function open() {
+  visible.value = true
+  openState()
+}
+
+function close() {
+  visible.value = false
+  closeState()
+}
+
+function handleOpened() {
+  nextTick(() => inputRef.value?.focus())
+}
+
+function handleClosed() {
+  activeIndex.value = -1
+}
+
+function handleInput() {
+  activeIndex.value = -1
+  search()
+}
+
+function fillKeyword(value: string) {
+  keyword.value = value
+  activeIndex.value = -1
+  search(value)
+  nextTick(() => inputRef.value?.focus())
+}
+
+function flatIndex(group: 'q' | 'c' | 'kp', index: number) {
+  return searchResultIndex(results.value, group, index)
+}
+
+function optionId(group: 'q' | 'c' | 'kp', index: number) {
+  return `global-search-option-${flatIndex(group, index)}`
+}
+
+function moveFocus(delta: number) {
+  if (!totalCount.value) return
+  if (activeIndex.value < 0) activeIndex.value = delta > 0 ? 0 : totalCount.value - 1
+  else activeIndex.value = (activeIndex.value + delta + totalCount.value) % totalCount.value
+  nextTick(() =>
+    resultsRef.value
+      ?.querySelector<HTMLElement>('.result-item[aria-selected="true"]')
+      ?.scrollIntoView({ block: 'nearest' }),
+  )
+}
+
+function selectCurrent() {
+  const item = flattenSearchResults(results.value)[activeIndex.value]
+  if (item) navigateTo(item)
+}
+
+function navigateTo(item: SearchItem) {
+  close()
+  void router.push(item.link)
+}
+
+function splitMatch(text: string) {
+  return splitSearchMatch(text, keyword.value)
+}
+
+defineExpose({ open })
+</script>
+
 <template>
   <el-dialog
     v-model="visible"
-    :show-header="false"
+    title="全局搜索"
     :width="isMobile ? '95%' : '600px'"
     :top="isMobile ? '5vh' : '12vh'"
-    :append-to-body="true"
-    :close-on-click-modal="true"
-    :close-on-press-escape="true"
+    append-to-body
     class="global-search-dialog"
+    aria-label="全局搜索"
     @closed="handleClosed"
     @opened="handleOpened"
   >
-    <div class="search-container">
-      <!-- 搜索输入框 -->
+    <template #header="{ titleId }">
+      <div class="search-header">
+        <h2 :id="titleId">全局搜索</h2>
+        <p>搜索题目、课程或知识点</p>
+      </div>
+    </template>
+    <section class="search-container" aria-label="全局搜索内容">
       <div class="search-input-wrapper">
-        <el-icon class="search-icon"><Search /></el-icon>
+        <el-icon class="search-icon" aria-hidden="true"><Search /></el-icon>
         <input
           ref="inputRef"
-          aria-label="搜索题目、课程或知识点"
           v-model="keyword"
           class="search-input"
-          placeholder="搜索题目、课程、知识点…"
+          type="search"
+          role="combobox"
+          aria-label="搜索题目、课程或知识点"
+          aria-controls="global-search-results"
+          :aria-expanded="hasQuery"
+          :aria-activedescendant="activeOptionId"
+          autocomplete="off"
+          placeholder="搜索题目、课程或知识点"
           @input="handleInput"
           @keydown.escape="close"
           @keydown.down.prevent="moveFocus(1)"
           @keydown.up.prevent="moveFocus(-1)"
           @keydown.enter.prevent="selectCurrent"
         />
-        <kbd v-if="!isMobile" class="shortcut-hint">ESC</kbd>
+        <kbd v-if="!isMobile" class="shortcut-hint">Esc</kbd>
       </div>
 
-      <!-- 搜索结果 -->
-      <div v-if="keyword.trim()" class="search-results" ref="resultsRef">
-        <!-- 加载状态 -->
-        <div v-if="loading" class="search-loading">
-          <el-icon class="is-loading"><Loading /></el-icon>
-          <span>搜索中…</span>
-        </div>
-
-        <!-- 无结果 -->
-        <div v-else-if="totalCount === 0 && !loading" class="search-empty">
-          <el-icon><Search /></el-icon>
+      <section
+        v-if="hasQuery"
+        id="global-search-results"
+        ref="resultsRef"
+        class="search-results"
+        role="listbox"
+        aria-label="搜索结果"
+      >
+        <LpStatePanel v-if="loading" state="loading" loading-label="正在搜索" class="search-state" />
+        <LpStatePanel
+          v-else-if="error"
+          state="error"
+          title="搜索暂时无法完成"
+          :description="error"
+          retry-label="重试"
+          @retry="retrySearch"
+        />
+        <div v-else-if="totalCount === 0" class="search-empty" role="status">
+          <el-icon aria-hidden="true"><Search /></el-icon>
           <span>未找到匹配结果</span>
         </div>
-
-        <!-- 有结果 -->
         <template v-else>
-          <!-- 题目 -->
-          <div v-if="results.questions.length > 0" class="result-group">
-            <div class="group-title">
-              <el-icon><EditPen /></el-icon>
-              <span>题目</span>
-              <span class="group-count">{{ results.questions.length }}</span>
-            </div>
+          <section
+            v-if="results.questions.length"
+            class="result-group"
+            role="group"
+            aria-labelledby="global-search-questions"
+          >
+            <h3 id="global-search-questions" class="group-title">
+              <el-icon aria-hidden="true"><EditPen /></el-icon>题目 <span>{{ results.questions.length }}</span>
+            </h3>
             <button
-              v-for="(item, idx) in results.questions"
-              :key="'q-' + item.id"
+              v-for="(item, index) in results.questions"
+              :id="optionId('q', index)"
+              :key="`q-${item.id}`"
               type="button"
-              :class="['result-item', { active: flatIndex('q', idx) === activeIndex }]"
+              role="option"
+              class="result-item"
+              :aria-selected="flatIndex('q', index) === activeIndex"
               @click="navigateTo(item)"
-              @mouseenter="activeIndex = flatIndex('q', idx)"
+              @mouseenter="activeIndex = flatIndex('q', index)"
             >
-              <div class="item-title">
-                <template v-for="(segment, segmentIndex) in splitMatch(item.title)" :key="segmentIndex"
+              <span class="item-title"
+                ><template v-for="(segment, segmentIndex) in splitMatch(item.title)" :key="segmentIndex"
                   ><mark v-if="segment.match">{{ segment.text }}</mark
                   ><template v-else>{{ segment.text }}</template></template
-                >
-              </div>
-              <div class="item-subtitle">{{ item.subtitle }}</div>
-            </button>
-          </div>
-
-          <!-- 课程 -->
-          <div v-if="results.courses.length > 0" class="result-group">
-            <div class="group-title">
-              <el-icon><Reading /></el-icon>
-              <span>课程</span>
-              <span class="group-count">{{ results.courses.length }}</span>
-            </div>
-            <button
-              v-for="(item, idx) in results.courses"
-              :key="'c-' + item.id"
-              type="button"
-              :class="['result-item', { active: flatIndex('c', idx) === activeIndex }]"
-              @click="navigateTo(item)"
-              @mouseenter="activeIndex = flatIndex('c', idx)"
-            >
-              <div class="item-title">
-                <template v-for="(segment, segmentIndex) in splitMatch(item.title)" :key="segmentIndex"
-                  ><mark v-if="segment.match">{{ segment.text }}</mark
-                  ><template v-else>{{ segment.text }}</template></template
-                >
-              </div>
-              <div class="item-subtitle">{{ item.subtitle }}</div>
-            </button>
-          </div>
-
-          <!-- 知识点 -->
-          <div v-if="results.knowledgePoints.length > 0" class="result-group">
-            <div class="group-title">
-              <el-icon><Notebook /></el-icon>
-              <span>知识点</span>
-              <span class="group-count">{{ results.knowledgePoints.length }}</span>
-            </div>
-            <button
-              v-for="(item, idx) in results.knowledgePoints"
-              :key="'kp-' + item.id"
-              type="button"
-              :class="['result-item', { active: flatIndex('kp', idx) === activeIndex }]"
-              @click="navigateTo(item)"
-              @mouseenter="activeIndex = flatIndex('kp', idx)"
-            >
-              <div class="item-title">
-                <template v-for="(segment, segmentIndex) in splitMatch(item.title)" :key="segmentIndex"
-                  ><mark v-if="segment.match">{{ segment.text }}</mark
-                  ><template v-else>{{ segment.text }}</template></template
-                >
-              </div>
-              <div class="item-subtitle">{{ item.subtitle }}</div>
-            </button>
-          </div>
-        </template>
-      </div>
-
-      <!-- 未输入时：搜索历史 + 热门搜索 -->
-      <div v-else class="search-suggestions">
-        <!-- 搜索历史 -->
-        <div v-if="suggestions.history.length > 0" class="suggestion-section">
-          <div class="section-header">
-            <span class="section-title">
-              <el-icon><Clock /></el-icon>
-              搜索历史
-            </span>
-            <button type="button" class="section-action" @click="handleClearHistory">清除</button>
-          </div>
-          <div class="history-list">
-            <div v-for="(item, idx) in suggestions.history" :key="'h-' + idx" class="history-item">
-              <el-icon class="history-icon"><Clock /></el-icon>
-              <button type="button" class="history-text" @click="fillKeyword(item)">{{ item }}</button>
-              <button
-                type="button"
-                class="history-delete"
-                :aria-label="`删除搜索历史：${item}`"
-                @click="handleRemoveHistory(item)"
+                ></span
               >
-                <el-icon><Close /></el-icon>
+              <span class="item-subtitle">{{ item.subtitle }}</span>
+            </button>
+          </section>
+          <section
+            v-if="results.courses.length"
+            class="result-group"
+            role="group"
+            aria-labelledby="global-search-courses"
+          >
+            <h3 id="global-search-courses" class="group-title">
+              <el-icon aria-hidden="true"><Reading /></el-icon>课程 <span>{{ results.courses.length }}</span>
+            </h3>
+            <button
+              v-for="(item, index) in results.courses"
+              :id="optionId('c', index)"
+              :key="`c-${item.id}`"
+              type="button"
+              role="option"
+              class="result-item"
+              :aria-selected="flatIndex('c', index) === activeIndex"
+              @click="navigateTo(item)"
+              @mouseenter="activeIndex = flatIndex('c', index)"
+            >
+              <span class="item-title"
+                ><template v-for="(segment, segmentIndex) in splitMatch(item.title)" :key="segmentIndex"
+                  ><mark v-if="segment.match">{{ segment.text }}</mark
+                  ><template v-else>{{ segment.text }}</template></template
+                ></span
+              >
+              <span class="item-subtitle">{{ item.subtitle }}</span>
+            </button>
+          </section>
+          <section
+            v-if="results.knowledgePoints.length"
+            class="result-group"
+            role="group"
+            aria-labelledby="global-search-knowledge-points"
+          >
+            <h3 id="global-search-knowledge-points" class="group-title">
+              <el-icon aria-hidden="true"><Notebook /></el-icon>知识点 <span>{{ results.knowledgePoints.length }}</span>
+            </h3>
+            <button
+              v-for="(item, index) in results.knowledgePoints"
+              :id="optionId('kp', index)"
+              :key="`kp-${item.id}`"
+              type="button"
+              role="option"
+              class="result-item"
+              :aria-selected="flatIndex('kp', index) === activeIndex"
+              @click="navigateTo(item)"
+              @mouseenter="activeIndex = flatIndex('kp', index)"
+            >
+              <span class="item-title"
+                ><template v-for="(segment, segmentIndex) in splitMatch(item.title)" :key="segmentIndex"
+                  ><mark v-if="segment.match">{{ segment.text }}</mark
+                  ><template v-else>{{ segment.text }}</template></template
+                ></span
+              >
+              <span class="item-subtitle">{{ item.subtitle }}</span>
+            </button>
+          </section>
+        </template>
+      </section>
+
+      <section v-else class="search-suggestions" aria-label="搜索建议">
+        <LpSkeleton v-if="suggestionsLoading" :rows="2" label="正在读取搜索建议" />
+        <LpStatePanel
+          v-else-if="suggestionsError"
+          state="error"
+          title="搜索建议暂时无法加载"
+          :description="suggestionsError"
+          retry-label="重新加载"
+          @retry="openState"
+        />
+        <template v-else-if="suggestions.history.length || suggestions.hotKeywords.length">
+          <section v-if="suggestions.history.length" class="suggestion-section">
+            <div class="section-header">
+              <h3 class="section-title">
+                <el-icon aria-hidden="true"><Clock /></el-icon>搜索历史
+              </h3>
+              <button type="button" class="section-action" :disabled="historyUpdating" @click="clearHistory">
+                清除
               </button>
             </div>
-          </div>
-        </div>
-
-        <!-- 热门搜索 -->
-        <div v-if="suggestions.hotKeywords.length > 0" class="suggestion-section">
-          <div class="section-header">
-            <span class="section-title">
-              <el-icon><TrendCharts /></el-icon>
-              热门搜索
-            </span>
-          </div>
-          <div class="hot-keyword-list">
-            <button
-              v-for="(item, idx) in suggestions.hotKeywords"
-              :key="'hot-' + idx"
-              type="button"
-              class="hot-keyword-tag"
-              @click="fillKeyword(item)"
-            >
-              <span class="hot-rank" :class="{ 'top-3': idx < 3 }">{{ idx + 1 }}</span>
-              {{ item }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+            <p v-if="historyError" class="history-error" role="status">
+              {{ historyError }} <button type="button" :disabled="historyUpdating" @click="retryHistory">重试</button>
+            </p>
+            <ul class="history-list">
+              <li v-for="item in suggestions.history" :key="item" class="history-item">
+                <el-icon class="history-icon" aria-hidden="true"><Clock /></el-icon>
+                <button type="button" class="history-text" @click="fillKeyword(item)">{{ item }}</button>
+                <button
+                  type="button"
+                  class="history-delete"
+                  :disabled="historyUpdating"
+                  :aria-label="`删除搜索历史：${item}`"
+                  @click="removeHistory(item)"
+                >
+                  <el-icon aria-hidden="true"><Close /></el-icon>
+                </button>
+              </li>
+            </ul>
+          </section>
+          <section v-if="suggestions.hotKeywords.length" class="suggestion-section">
+            <div class="section-header">
+              <h3 class="section-title">
+                <el-icon aria-hidden="true"><TrendCharts /></el-icon>热门搜索
+              </h3>
+            </div>
+            <div class="hot-keyword-list">
+              <button
+                v-for="(item, index) in suggestions.hotKeywords"
+                :key="item"
+                type="button"
+                class="hot-keyword-tag"
+                @click="fillKeyword(item)"
+              >
+                <span class="hot-rank">{{ index + 1 }}</span
+                >{{ item }}
+              </button>
+            </div>
+          </section>
+        </template>
+        <p v-else class="search-helper">输入关键词即可搜索题目、课程或知识点。</p>
+      </section>
+    </section>
   </el-dialog>
 </template>
 
-<script setup lang="ts">
-import { ref, computed, nextTick, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
-import { Search, Loading, EditPen, Reading, Notebook, Clock, Close, TrendCharts } from '@element-plus/icons-vue'
-import {
-  globalSearch,
-  getSearchSuggestions,
-  clearSearchHistory,
-  removeSearchHistoryItem,
-  type SearchItem,
-  type GlobalSearchResult,
-  type SearchSuggestions,
-} from '@/api/search'
-import { useGlobalSearchShortcuts } from './search/useGlobalSearchShortcuts'
-import { splitSearchMatch } from './search/searchText'
-import {
-  emptySearchResult,
-  flattenSearchResults,
-  searchResultCount,
-  searchResultIndex,
-} from './search/searchResultModel'
-
-const router = useRouter()
-
-const visible = ref(false)
-const keyword = ref('')
-const loading = ref(false)
-const results = ref<GlobalSearchResult>(emptySearchResult())
-const activeIndex = ref(0)
-
-const suggestions = ref<SearchSuggestions>({
-  history: [],
-  hotKeywords: [],
-})
-
-const inputRef = ref<HTMLInputElement>()
-const resultsRef = ref<HTMLDivElement>()
-
-let debounceTimer: ReturnType<typeof setTimeout> | null = null
-
-const totalCount = computed(() => searchResultCount(results.value))
-
-const flatIndex = (group: 'q' | 'c' | 'kp', index: number) => searchResultIndex(results.value, group, index)
-
-// 打开搜索
-function open() {
-  visible.value = true
-  keyword.value = ''
-  results.value = emptySearchResult()
-  activeIndex.value = 0
-  nextTick(() => {
-    inputRef.value?.focus()
-  })
-}
-
-// 对话框打开后加载建议
-async function handleOpened() {
-  await loadSuggestions()
-}
-
-// 加载搜索建议
-async function loadSuggestions() {
-  try {
-    const res = await getSearchSuggestions()
-    suggestions.value = res.data
-  } catch {
-    suggestions.value = { history: [], hotKeywords: [] }
-  }
-}
-
-// 关闭搜索
-function close() {
-  visible.value = false
-}
-
-// 关闭后清理
-function handleClosed() {
-  keyword.value = ''
-  results.value = emptySearchResult()
-  activeIndex.value = 0
-  suggestions.value = { history: [], hotKeywords: [] }
-}
-
-// 填充关键词并触发搜索
-function fillKeyword(kw: string) {
-  keyword.value = kw
-  nextTick(() => {
-    doSearch(kw)
-  })
-}
-
-// 输入防抖
-function handleInput() {
-  if (debounceTimer) clearTimeout(debounceTimer)
-  const q = keyword.value.trim()
-  if (!q) {
-    results.value = emptySearchResult()
-    return
-  }
-  debounceTimer = setTimeout(() => {
-    doSearch(q)
-  }, 250)
-}
-
-// 执行搜索
-async function doSearch(q: string) {
-  loading.value = true
-  activeIndex.value = 0
-  try {
-    const res = await globalSearch(q, 5)
-    results.value = res.data
-  } catch {
-    results.value = emptySearchResult()
-  } finally {
-    loading.value = false
-  }
-}
-
-// 清除搜索历史
-async function handleClearHistory() {
-  try {
-    await clearSearchHistory()
-    suggestions.value.history = []
-  } catch {
-    // ignore
-  }
-}
-
-// 删除单条搜索历史
-async function handleRemoveHistory(kw: string) {
-  try {
-    await removeSearchHistoryItem(kw)
-    suggestions.value.history = suggestions.value.history.filter((h) => h !== kw)
-  } catch {
-    // ignore
-  }
-}
-
-// 键盘导航
-function moveFocus(delta: number) {
-  const total = totalCount.value
-  if (total === 0) return
-  activeIndex.value = (activeIndex.value + delta + total) % total
-  scrollToActive()
-}
-
-// 回车选择当前项
-function selectCurrent() {
-  const all = getAllItems()
-  if (all[activeIndex.value]) {
-    navigateTo(all[activeIndex.value])
-  }
-}
-
-// 滚动到活动项
-function scrollToActive() {
-  nextTick(() => {
-    const el = resultsRef.value?.querySelector('.result-item.active')
-    el?.scrollIntoView({ block: 'nearest' })
-  })
-}
-
-// 获取所有项的扁平列表
-function getAllItems(): SearchItem[] {
-  return flattenSearchResults(results.value)
-}
-
-// 导航到选中项
-function navigateTo(item: SearchItem) {
-  close()
-  router.push(item.link)
-}
-
-// 高亮匹配文本
-function splitMatch(text: string) {
-  return splitSearchMatch(text, keyword.value)
-}
-
-const isMobile = useGlobalSearchShortcuts(visible, open, close)
-
-onBeforeUnmount(() => {
-  if (debounceTimer) clearTimeout(debounceTimer)
-})
-
-// 暴露 open 方法给父组件
-defineExpose({ open })
-</script>
-
 <style scoped>
-.global-search-dialog :deep(.el-dialog__body) {
+:global(.global-search-dialog .el-dialog__body) {
   padding: 0;
 }
-
+:global(.global-search-dialog .el-dialog__header) {
+  padding: var(--lp-space-5) var(--lp-space-5) var(--lp-space-2);
+}
 .search-container {
   display: flex;
   flex-direction: column;
   max-height: 60vh;
 }
-
-/* 搜索输入区 */
+.search-header {
+  padding-right: var(--lp-space-6);
+}
+.search-header h2,
+.search-header p {
+  margin: 0;
+}
+.search-header h2 {
+  color: var(--lp-text);
+  font-size: var(--lp-text-lg);
+}
+.search-header p,
+.search-helper {
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+}
+.search-header p {
+  margin-top: var(--lp-space-1);
+}
 .search-input-wrapper {
   display: flex;
   align-items: center;
-  padding: var(--lp-space-3) var(--lp-space-4);
-  border-bottom: var(--lp-border-hairline);
   gap: var(--lp-space-2);
+  padding: var(--lp-space-3) var(--lp-space-5);
+  border-bottom: var(--lp-border-hairline);
 }
-
 .search-icon {
+  flex-shrink: 0;
   color: var(--lp-text-muted);
   font-size: var(--lp-text-xl);
-  flex-shrink: 0;
 }
-
 .search-input {
   flex: 1;
-  border: none;
-  outline: none;
+  min-width: 0;
+  min-height: var(--lp-control-height);
+  padding: 0 var(--lp-space-2);
+  color: var(--lp-text);
+  font: inherit;
   font-size: var(--lp-text-lg);
   line-height: var(--lp-leading-snug);
-  color: var(--lp-text);
   background: transparent;
-}
-
-.search-input::placeholder {
-  color: var(--lp-ink-300);
-}
-
-.shortcut-hint {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--lp-space-1) var(--lp-space-2);
-  font-size: var(--lp-text-xs);
-  color: var(--lp-text-muted);
-  background: var(--lp-surface-soft);
-  border: 1px solid var(--lp-border-strong);
-  border-radius: var(--lp-radius-xs);
-  flex-shrink: 0;
-}
-
-/* 搜索结果区 */
-.search-results {
-  overflow-y: auto;
-  max-height: 50vh;
-  padding: var(--lp-space-2) 0;
-}
-
-.search-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--lp-space-2);
-  padding: var(--lp-space-6);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-base);
-}
-
-.search-empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--lp-space-2);
-  padding: var(--lp-space-6);
-  color: var(--lp-ink-300);
-  font-size: var(--lp-text-base);
-}
-
-/* 结果分组 */
-.result-group {
-  margin-bottom: var(--lp-space-1);
-}
-
-.group-title {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-2);
-  padding: var(--lp-space-2) var(--lp-space-4) var(--lp-space-1);
-  font-size: var(--lp-text-xs);
-  font-weight: var(--lp-weight-semibold);
-  color: var(--lp-text-muted);
-  text-transform: uppercase;
-  letter-spacing: var(--lp-tracking-wide);
-}
-
-.group-count {
-  margin-left: auto;
-  font-size: var(--lp-text-xs);
-  color: var(--lp-ink-300);
-  font-weight: var(--lp-weight-normal);
-}
-
-.result-item {
-  display: flex;
-  flex-direction: column;
-  padding: var(--lp-space-3) var(--lp-space-4);
-  cursor: pointer;
-  transition: background-color var(--lp-duration-fast) var(--lp-ease-out);
-  border-radius: 0;
-  width: 100%;
   border: 0;
-  text-align: left;
-  font: inherit;
+  appearance: none;
 }
-
-.result-item:hover,
-.result-item.active {
-  background-color: var(--lp-primary-soft);
+.search-input::placeholder {
+  color: var(--lp-text-muted);
 }
-
-.result-item:focus-visible,
-.section-action:focus-visible,
-.history-text:focus-visible,
-.history-delete:focus-visible,
-.hot-keyword-tag:focus-visible {
-  outline: 2px solid var(--lp-primary);
-  outline-offset: -2px;
+.search-input:focus-visible {
+  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
+  outline-offset: var(--lp-focus-offset);
 }
-
-.item-title {
-  font-size: var(--lp-text-base);
-  color: var(--lp-text);
-  line-height: var(--lp-leading-snug);
-  word-break: break-word;
-}
-
-.item-title mark {
-  background: var(--lp-warning-soft);
-  color: var(--lp-warning);
-  padding: 0 var(--lp-space-1);
+.shortcut-hint {
+  padding: var(--lp-space-1) var(--lp-space-2);
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-xs);
+  background: var(--lp-surface-soft);
+  border: var(--lp-border-hairline);
   border-radius: var(--lp-radius-xs);
 }
-
-.item-subtitle {
-  font-size: var(--lp-text-xs);
-  color: var(--lp-text-muted);
-  margin-top: var(--lp-space-1);
-  line-height: var(--lp-leading-snug);
-}
-
-/* 搜索建议区（历史 + 热门） */
+.search-results,
 .search-suggestions {
   overflow-y: auto;
   max-height: 50vh;
   padding: var(--lp-space-2) 0;
 }
-
+.search-state {
+  margin: var(--lp-space-2) var(--lp-space-4);
+}
+.search-empty,
+.search-helper {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-space-2);
+  padding: var(--lp-space-6) var(--lp-space-4);
+}
+.result-group {
+  margin-bottom: var(--lp-space-1);
+}
+.group-title,
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-space-2);
+  margin: 0;
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-xs);
+  font-weight: var(--lp-weight-semibold);
+  letter-spacing: var(--lp-tracking-wide);
+}
+.group-title {
+  padding: var(--lp-space-2) var(--lp-space-4) var(--lp-space-1);
+}
+.group-title span {
+  margin-left: auto;
+  font-weight: var(--lp-weight-normal);
+}
+.result-item {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: var(--lp-space-3) var(--lp-space-4);
+  color: var(--lp-text);
+  font: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.result-item:hover,
+.result-item[aria-selected='true'] {
+  background: var(--lp-primary-soft);
+}
+.result-item:focus-visible,
+.section-action:focus-visible,
+.history-text:focus-visible,
+.history-delete:focus-visible,
+.hot-keyword-tag:focus-visible {
+  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
+  outline-offset: var(--lp-focus-offset);
+}
+.item-title {
+  line-height: var(--lp-leading-snug);
+  word-break: break-word;
+}
+.item-title mark {
+  padding: 0 var(--lp-space-1);
+  color: var(--lp-warning);
+  background: var(--lp-warning-soft);
+  border-radius: var(--lp-radius-xs);
+}
+.item-subtitle {
+  margin-top: var(--lp-space-1);
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-xs);
+  line-height: var(--lp-leading-snug);
+}
 .suggestion-section {
   padding: var(--lp-space-1) 0;
 }
-
 .section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: var(--lp-space-2) var(--lp-space-4) var(--lp-space-1);
 }
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-2);
-  font-size: var(--lp-text-xs);
-  font-weight: var(--lp-weight-semibold);
-  color: var(--lp-text-muted);
-  text-transform: uppercase;
-  letter-spacing: var(--lp-tracking-wide);
-}
-
-.section-action {
-  font-size: var(--lp-text-xs);
-  color: var(--lp-ink-300);
-  cursor: pointer;
-  border: 0;
-  background: transparent;
-  transition: color var(--lp-duration-normal) var(--lp-ease-out);
-}
-
-.section-action:hover {
+.section-action,
+.history-error button {
+  padding: 0;
   color: var(--lp-primary);
+  font: inherit;
+  font-size: var(--lp-text-xs);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
 }
-
-/* 搜索历史列表 */
+.history-error {
+  margin: 0;
+  padding: var(--lp-space-1) var(--lp-space-4);
+  color: var(--lp-danger);
+  font-size: var(--lp-text-xs);
+}
 .history-list {
   display: flex;
   flex-direction: column;
+  padding: 0;
+  margin: 0;
+  list-style: none;
 }
-
 .history-item {
   display: flex;
   align-items: center;
   gap: var(--lp-space-3);
   padding: var(--lp-space-2) var(--lp-space-4);
-  transition: background-color var(--lp-duration-fast) var(--lp-ease-out);
 }
-
-.history-item:hover {
-  background-color: var(--lp-surface-soft);
-}
-
 .history-icon {
-  color: var(--lp-ink-300);
-  font-size: var(--lp-text-base);
   flex-shrink: 0;
+  color: var(--lp-ink-300);
 }
-
 .history-text {
   flex: 1;
-  font-size: var(--lp-text-base);
-  color: var(--lp-text);
   overflow: hidden;
+  padding: 0;
+  color: var(--lp-text);
+  font: inherit;
+  text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding: 0;
-  border: 0;
   background: transparent;
-  text-align: left;
+  border: 0;
   cursor: pointer;
 }
-
 .history-delete {
-  color: var(--lp-ink-300);
-  font-size: var(--lp-text-base);
-  cursor: pointer;
+  display: grid;
+  place-items: center;
+  min-width: var(--lp-control-height-small);
+  min-height: var(--lp-control-height-small);
   padding: 0;
-  border: 0;
+  color: var(--lp-text-muted);
   background: transparent;
-  opacity: 0;
-  transition:
-    opacity var(--lp-duration-normal) var(--lp-ease-out),
-    color var(--lp-duration-normal) var(--lp-ease-out);
-  flex-shrink: 0;
+  border: 0;
+  cursor: pointer;
 }
-
-.history-item:hover .history-delete {
-  opacity: 1;
-}
-
 .history-delete:hover {
   color: var(--lp-danger);
 }
-
-/* 热门搜索标签 */
 .hot-keyword-list {
   display: flex;
   flex-wrap: wrap;
   gap: var(--lp-space-2);
   padding: var(--lp-space-2) var(--lp-space-4) var(--lp-space-3);
 }
-
 .hot-keyword-tag {
   display: inline-flex;
   align-items: center;
   gap: var(--lp-space-2);
   padding: var(--lp-space-2) var(--lp-space-3);
-  font-size: var(--lp-text-sm);
   color: var(--lp-text-secondary);
+  font: inherit;
+  font-size: var(--lp-text-sm);
   background: var(--lp-surface-soft);
+  border: var(--lp-border-hairline);
   border-radius: var(--lp-radius-full);
   cursor: pointer;
-  transition:
-    background-color var(--lp-duration-normal) var(--lp-ease-out),
-    color var(--lp-duration-normal) var(--lp-ease-out),
-    border-color var(--lp-duration-normal) var(--lp-ease-out);
-  border: 1px solid transparent;
-  cursor: pointer;
 }
-
 .hot-keyword-tag:hover {
-  background: var(--lp-primary-soft);
   color: var(--lp-primary);
-  border-color: var(--lp-blue-200);
+  background: var(--lp-primary-soft);
 }
-
 .hot-rank {
+  min-width: var(--lp-space-3);
+  color: var(--lp-text-muted);
   font-size: var(--lp-text-xs);
-  font-weight: var(--lp-weight-bold);
-  color: var(--lp-ink-300);
-  min-width: 14px;
-  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
-
-.hot-rank.top-3 {
-  color: var(--lp-warning);
-}
-
-/* 移动端适配 */
 @media (max-width: 767px) {
-  .search-input {
-    font-size: var(--lp-text-lg); /* 避免 iOS 缩放 */
-  }
-
-  .result-item {
-    padding: var(--lp-space-3) var(--lp-space-4);
-    min-height: 48px;
-  }
-
-  .search-results {
-    max-height: 60vh;
-  }
-
+  .search-results,
   .search-suggestions {
     max-height: 60vh;
   }
-
-  .history-delete {
-    opacity: 1;
-  }
-
-  .hot-keyword-tag {
-    padding: var(--lp-space-2) var(--lp-space-3);
-    font-size: var(--lp-text-base);
+  .result-item {
+    min-height: 48px;
   }
 }
 </style>

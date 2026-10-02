@@ -119,6 +119,7 @@ class GlobalSearchServiceTest {
             // 验证题目结果
             assertEquals(1L, result.getQuestions().get(0).getId());
             assertEquals("QUESTION", result.getQuestions().get(0).getType());
+            assertEquals("/questions?questionId=1", result.getQuestions().get(0).getLink());
             assertNotNull(result.getQuestions().get(0).getSubtitle());
 
             // 验证课程结果

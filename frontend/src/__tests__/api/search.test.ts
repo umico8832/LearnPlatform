@@ -23,6 +23,7 @@ describe('Search API', () => {
     await globalSearch('Java', 5)
 
     expect(mockedRequest.get).toHaveBeenCalledWith('/search', {
+      errorDisplay: 'inline',
       params: { keyword: 'Java', limit: 5 },
     })
   })
@@ -35,9 +36,10 @@ describe('Search API', () => {
     await clearSearchHistory()
     await removeSearchHistoryItem('SQL')
 
-    expect(mockedRequest.get).toHaveBeenCalledWith('/search/suggestions')
-    expect(mockedRequest.delete).toHaveBeenCalledWith('/search/history')
+    expect(mockedRequest.get).toHaveBeenCalledWith('/search/suggestions', { errorDisplay: 'inline' })
+    expect(mockedRequest.delete).toHaveBeenCalledWith('/search/history', { errorDisplay: 'inline' })
     expect(mockedRequest.delete).toHaveBeenCalledWith('/search/history/item', {
+      errorDisplay: 'inline',
       params: { keyword: 'SQL' },
     })
   })

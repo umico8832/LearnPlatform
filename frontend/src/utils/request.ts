@@ -5,6 +5,12 @@ import { getToken, removeToken } from './auth'
 import { redirectToLogin } from './authNavigation'
 import type { ApiResponse } from '@/types/api'
 
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    errorDisplay?: 'inline'
+  }
+}
+
 /**
  * 创建 Axios 实例
  */
@@ -49,10 +55,11 @@ aiService.interceptors.response.use(
       ElMessage.error('登录已过期，请重新登录')
       return Promise.reject(new Error(res.message))
     }
-    ElMessage.error(res.message || '请求失败')
+    if (response.config.errorDisplay !== 'inline') ElMessage.error(res.message || '请求失败')
     return Promise.reject(new Error(res.message))
   },
   (error) => {
+    if (error.config?.errorDisplay === 'inline' && error.response?.status !== 401) return Promise.reject(error)
     if (error.response) {
       const { status } = error.response
       if (status === 401) {
@@ -104,7 +111,7 @@ service.interceptors.response.use(
             removeToken()
             redirectToLogin()
             ElMessage.error('登录已过期，请重新登录')
-          } else {
+          } else if (response.config.errorDisplay !== 'inline') {
             ElMessage.error(errorResponse.message || '请求失败')
           }
           return Promise.reject(new Error(errorResponse.message || '请求失败'))
@@ -128,10 +135,11 @@ service.interceptors.response.use(
     }
 
     // 其他业务错误
-    ElMessage.error(res.message || '请求失败')
+    if (response.config.errorDisplay !== 'inline') ElMessage.error(res.message || '请求失败')
     return Promise.reject(new Error(res.message))
   },
   (error) => {
+    if (error.config?.errorDisplay === 'inline' && error.response?.status !== 401) return Promise.reject(error)
     if (error.response) {
       const { status } = error.response
       switch (status) {

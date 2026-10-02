@@ -5,7 +5,7 @@
         <div class="hero-metrics">
           <div class="metric-item">
             <span>当前结果</span>
-            <strong>{{ total }}</strong>
+            <strong>{{ loading || loadError ? '—' : total }}</strong>
           </div>
           <div class="metric-item">
             <span>已收藏</span>
@@ -64,23 +64,32 @@
         </div>
       </aside>
 
-      <main class="question-results">
+      <section class="question-results" aria-label="题目列表">
         <div class="result-toolbar">
           <div>
             <h3>题目列表</h3>
             <p>{{ resultSummary }}</p>
           </div>
-          <el-tag v-if="activeFilterCount > 0" type="info" effect="plain">{{ activeFilterCount }} 个筛选条件</el-tag>
+          <div class="result-context">
+            <el-tag v-if="activeFilterCount > 0" type="info" effect="plain">{{ activeFilterCount }} 个筛选条件</el-tag>
+            <el-tag v-if="searchContext" type="primary" effect="plain">{{ searchContext.label }}</el-tag>
+            <el-button v-if="searchContext" link type="primary" @click="clearSearchContext">清除搜索筛选</el-button>
+          </div>
         </div>
 
-        <div v-loading="loading" class="result-body" element-loading-background="rgba(255,255,255,0.72)">
-          <div v-if="questions.length === 0 && !loading" class="empty-state">
+        <p v-if="searchQueryWarning" class="search-query-warning" role="status">{{ searchQueryWarning }}</p>
+
+        <div class="result-body">
+          <LpStatePanel v-if="loading" state="loading" loading-label="正在加载题目" />
+          <LpStatePanel v-else-if="loadError" state="error" :description="loadError" @retry="retryFetch" />
+          <div v-else-if="questions.length === 0" class="empty-state">
             <el-empty description="暂无符合条件的题目">
-              <el-button type="primary" @click="resetFilters">查看全部题目</el-button>
+              <el-button v-if="searchContext" type="primary" @click="clearSearchContext">清除搜索筛选</el-button>
+              <el-button v-else type="primary" @click="resetFilters">查看全部题目</el-button>
             </el-empty>
           </div>
 
-          <article v-for="q in questions" :key="q.id" class="question-card">
+          <article v-for="q in questions" v-else :key="q.id" class="question-card">
             <div class="question-main">
               <div class="question-meta">
                 <el-tag size="small" :type="questionTypeTag(q.questionType)">
@@ -151,7 +160,7 @@
             @size-change="handleSizeChange"
           />
         </div>
-      </main>
+      </section>
     </section>
 
     <el-dialog v-model="correctionDialogVisible" title="提交题目纠错" width="520px" destroy-on-close>
@@ -196,6 +205,7 @@ import { useQuestionCatalog } from './useQuestionCatalog'
 const {
   questions,
   loading,
+  loadError,
   pageNum,
   pageSize,
   total,
@@ -211,6 +221,8 @@ const {
   correctionForm,
   activeFilterCount,
   resultSummary,
+  searchContext,
+  searchQueryWarning,
   toggleComment,
   questionTypeLabel,
   questionTypeTag,
@@ -219,6 +231,8 @@ const {
   handleSizeChange,
   selectDifficulty,
   resetFilters,
+  retryFetch,
+  clearSearchContext,
   fetchQuestions,
   toggleFavorite,
   openCorrectionDialog,
@@ -291,6 +305,14 @@ const {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.result-context {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--lp-space-2);
 }
 
 .panel-title h3,
@@ -387,6 +409,16 @@ const {
   margin: 5px 0 0;
   color: var(--lp-text-muted);
   font-size: 13px;
+}
+
+.search-query-warning {
+  margin: 0 0 var(--lp-space-3);
+  padding: var(--lp-space-2) var(--lp-space-3);
+  color: var(--lp-text-secondary);
+  background: var(--lp-surface-soft);
+  border-left: 3px solid var(--lp-border-strong);
+  border-radius: var(--lp-radius-sm);
+  font-size: var(--lp-text-sm);
 }
 
 .result-body {

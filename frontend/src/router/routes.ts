@@ -168,7 +168,7 @@ export const learnerRoutes: RouteRecordRaw[] = [
         path: 'my-courses/:id/tutor',
         name: 'TutorSession',
         component: () => import('@/views/course/TutorSessionView.vue'),
-        meta: { title: 'AI 教学', focusTitle: 'AI 教学', focusSubtitle: '按步骤理解，服务端判分' },
+        meta: { title: 'AI 教学', focusTitle: 'AI 教学', focusSubtitle: '围绕本节内容，逐步理解与练习' },
       },
       {
         path: 'exams/take/:recordId',

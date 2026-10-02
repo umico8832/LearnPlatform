@@ -31,6 +31,7 @@ export interface SearchSuggestions {
  */
 export function globalSearch(keyword: string, limit?: number) {
   return request.get<GlobalSearchResult>('/search', {
+    errorDisplay: 'inline',
     params: { keyword, limit },
   })
 }
@@ -39,14 +40,14 @@ export function globalSearch(keyword: string, limit?: number) {
  * 获取搜索建议（搜索历史 + 热门搜索）
  */
 export function getSearchSuggestions() {
-  return request.get<SearchSuggestions>('/search/suggestions')
+  return request.get<SearchSuggestions>('/search/suggestions', { errorDisplay: 'inline' })
 }
 
 /**
  * 清除当前用户全部搜索历史
  */
 export function clearSearchHistory() {
-  return request.delete<void>('/search/history')
+  return request.delete<void>('/search/history', { errorDisplay: 'inline' })
 }
 
 /**
@@ -55,6 +56,7 @@ export function clearSearchHistory() {
  */
 export function removeSearchHistoryItem(keyword: string) {
   return request.delete<void>('/search/history/item', {
+    errorDisplay: 'inline',
     params: { keyword },
   })
 }

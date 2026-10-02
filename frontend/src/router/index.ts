@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { isAuthenticated } from '@/utils/auth'
 import { learnerRoutes } from './routes'
+import { learnerScrollBehavior } from './scrollBehavior'
 
 const devRoutes: RouteRecordRaw[] = import.meta.env.DEV
   ? [
@@ -21,15 +22,13 @@ export function createLearnerRoutes(includeDev = import.meta.env.DEV): RouteReco
 const router = createRouter({
   history: createWebHistory(),
   routes: createLearnerRoutes(),
+  scrollBehavior: learnerScrollBehavior,
 })
 
 /**
  * 路由守卫：检查登录状态
  */
 router.beforeEach(async (to) => {
-  const title = to.meta.title as string
-  if (title) document.title = `${title} · LearnPlatform`
-
   const loggedIn = isAuthenticated()
   const isAuthPreview = import.meta.env.DEV && typeof to.query['auth-preview'] === 'string'
 
@@ -41,6 +40,12 @@ router.beforeEach(async (to) => {
   if (requiresAuth && !loggedIn) return { path: '/login', query: { redirect: to.fullPath } }
 
   return true
+})
+
+router.afterEach((to, _from, failure) => {
+  if (failure) return
+  const title = to.meta.title as string | undefined
+  document.title = title ? `${title} · LearnPlatform` : 'LearnPlatform'
 })
 
 export default router

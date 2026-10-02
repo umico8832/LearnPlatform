@@ -137,16 +137,31 @@ import { getExamSession, getPaperDetail, submitExam } from '@/api/exam'
 import type { ExamQuestionItem } from '@/api/exam'
 import LpProgress from '@/components/ui/LpProgress.vue'
 import { useExamCountdown } from './useExamCountdown'
+import { useExamAnswers } from './useExamAnswers'
+import { useExamLeaveGuard } from './useExamLeaveGuard'
 
 const route = useRoute()
 const router = useRouter()
 const loading = ref(true)
 const questions = ref<ExamQuestionItem[]>([])
 const currentIndex = ref(0)
-const answers = ref<Record<number, string>>({})
-const multiAnswers = ref<Record<number, Set<string>>>({})
+const { answers, answeredCount, progressPercent, isMultiSelected, toggleMulti } = useExamAnswers(
+  () => questions.value.length,
+)
 const submitted = ref(false)
+const finished = ref(false)
 const recordId = ref(0)
+const { allowNavigation } = useExamLeaveGuard({
+  hasQuestions: () => questions.value.length > 0,
+  submitting: submitted,
+  finished,
+})
+
+async function leaveForExamList(query: Record<string, string> = {}) {
+  allowNavigation()
+  await router.replace({ name: 'ExamList', query })
+}
+
 const {
   remainSeconds,
   countdownText,
@@ -157,31 +172,13 @@ const {
   hasQuestions: () => questions.value.length > 0,
   onExpired: async () => {
     submitted.value = true
+    finished.value = true
     ElMessage.warning('考试时间已结束，已返回考试列表')
-    await router.replace({ name: 'ExamList', query: { tab: 'records' } })
+    await leaveForExamList({ tab: 'records' })
   },
 })
 
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
-
-const answeredCount = computed(() => Object.values(answers.value).filter(Boolean).length)
-
-const progressPercent = computed(() => {
-  if (!questions.value.length) return 0
-  return Math.round((answeredCount.value / questions.value.length) * 100)
-})
-
-const isMultiSelected = (qId: number, label: string) => multiAnswers.value[qId]?.has(label) || false
-const toggleMulti = (qId: number, label: string) => {
-  if (!multiAnswers.value[qId]) multiAnswers.value[qId] = new Set()
-  const s = multiAnswers.value[qId]
-  if (s.has(label)) {
-    s.delete(label)
-  } else {
-    s.add(label)
-  }
-  answers.value[qId] = Array.from(s).sort().join(',')
-}
 
 const doSubmit = async () => {
   if (submitted.value) return
@@ -193,11 +190,14 @@ const doSubmit = async () => {
   try {
     const res = await submitExam({ examRecordId: recordId.value, answers: answerList })
     if (res.code === 0 && res.data) {
-      router.replace({ name: 'ExamResult', params: { recordId: String(res.data.id) } })
+      finished.value = true
+      allowNavigation()
+      await router.replace({ name: 'ExamResult', params: { recordId: String(res.data.id) } })
     } else {
       if (remainSeconds.value === 0) {
         ElMessage.warning('考试时间已结束，已返回考试列表')
-        await router.replace({ name: 'ExamList', query: { tab: 'records' } })
+        finished.value = true
+        await leaveForExamList({ tab: 'records' })
         return
       }
       ElMessage.error(res.message || '提交失败')
@@ -206,7 +206,8 @@ const doSubmit = async () => {
   } catch {
     if (remainSeconds.value === 0) {
       ElMessage.warning('考试时间已结束，已返回考试列表')
-      await router.replace({ name: 'ExamList', query: { tab: 'records' } })
+      finished.value = true
+      await leaveForExamList({ tab: 'records' })
       return
     }
     ElMessage.error('提交失败')
@@ -235,7 +236,7 @@ onMounted(async () => {
   recordId.value = Number(route.params.recordId)
   if (!Number.isInteger(recordId.value) || recordId.value <= 0) {
     ElMessage.error('考试记录无效')
-    await router.replace({ name: 'ExamList' })
+    await leaveForExamList()
     loading.value = false
     return
   }
@@ -245,31 +246,34 @@ onMounted(async () => {
     const sessionRes = await getExamSession(recordId.value)
     if (sessionRes.code !== 0 || !sessionRes.data) {
       ElMessage.error(sessionRes.message || '恢复考试失败')
-      await router.replace({ name: 'ExamList', query: { tab: 'records' } })
+      await leaveForExamList({ tab: 'records' })
       return
     }
 
     const session = sessionRes.data
     if (session.status === 1 || session.status === 3) {
+      finished.value = true
+      allowNavigation()
       await router.replace({ name: 'ExamResult', params: { recordId: String(recordId.value) } })
       return
     }
     if (session.status === 2) {
       ElMessage.warning('考试已超时，已返回考试列表')
-      await router.replace({ name: 'ExamList', query: { tab: 'records' } })
+      finished.value = true
+      await leaveForExamList({ tab: 'records' })
       return
     }
 
     if (!configureCountdown(session.deadline || '', session.serverTime || '', sessionRequestStartedAt)) {
       ElMessage.error('考试时间信息无效，请返回列表重试')
-      await router.replace({ name: 'ExamList', query: { tab: 'records' } })
+      await leaveForExamList({ tab: 'records' })
       return
     }
 
     const paperRes = await getPaperDetail(session.examPaperId)
     if (paperRes.code !== 0 || !paperRes.data) {
       ElMessage.error(paperRes.message || '获取试卷详情失败')
-      await router.replace({ name: 'ExamList', query: { tab: 'records' } })
+      await leaveForExamList({ tab: 'records' })
       return
     }
 
@@ -277,7 +281,7 @@ onMounted(async () => {
     startCountdown()
   } catch {
     ElMessage.error('恢复考试失败')
-    await router.replace({ name: 'ExamList', query: { tab: 'records' } })
+    await leaveForExamList({ tab: 'records' })
   } finally {
     loading.value = false
   }

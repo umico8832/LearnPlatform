@@ -88,7 +88,14 @@ input,
 select,
 textarea {
   -webkit-tap-highlight-color: transparent;
+}
+
+main :is(button, a, input, select, textarea) {
   scroll-margin-block: calc(var(--lp-header-height) + var(--lp-space-6));
+}
+
+:target {
+  scroll-margin-top: calc(var(--lp-header-height) + var(--lp-space-6));
 }
 
 /* 极简滚动条 */
