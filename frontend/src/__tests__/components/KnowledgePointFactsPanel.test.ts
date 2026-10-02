@@ -43,7 +43,7 @@ describe('KnowledgePointFactsPanel', () => {
     const wrapper = mount(KnowledgePointFactsPanel, { props: { courseId: 408, refreshKey: 0 }, global: { stubs } })
     await flushPromises()
 
-    expect(mockGetFacts).toHaveBeenCalledWith(408, 1, 10)
+    expect(mockGetFacts).toHaveBeenCalledWith(408, 1, 10, { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('作答次数')
     expect(wrapper.get('[data-test="facts-help"]').attributes('data-content')).toContain('作答与答对按次数统计')
     expect(wrapper.get('[data-test="facts-help"]').attributes('data-content')).toContain('错题与复习按题目统计')
@@ -66,7 +66,7 @@ describe('KnowledgePointFactsPanel', () => {
     expect(wrapper.emitted('open-tutor')).toEqual([[31]])
 
     await wrapper.find('nav button').trigger('click')
-    expect(mockGetFacts).toHaveBeenLastCalledWith(408, 2, 10)
+    expect(mockGetFacts).toHaveBeenLastCalledWith(408, 2, 10, { errorDisplay: 'inline' })
   })
 
   it('历史与未关联行不提供伪精确导航，只提供课程题库入口', async () => {
@@ -131,7 +131,7 @@ describe('KnowledgePointFactsPanel', () => {
     await flushPromises()
 
     expect(mockGetFacts).toHaveBeenCalledTimes(2)
-    expect(mockGetFacts).toHaveBeenLastCalledWith(408, 1, 10)
+    expect(mockGetFacts).toHaveBeenLastCalledWith(408, 1, 10, { errorDisplay: 'inline' })
   })
 
   it('当前页在数据减少后为空时回到最后一页', async () => {
@@ -147,8 +147,8 @@ describe('KnowledgePointFactsPanel', () => {
     const vm = wrapper.vm as unknown as { loadFacts: (page: number) => Promise<void> }
     await vm.loadFacts(3)
 
-    expect(mockGetFacts).toHaveBeenNthCalledWith(1, 408, 3, 10)
-    expect(mockGetFacts).toHaveBeenNthCalledWith(2, 408, 2, 10)
+    expect(mockGetFacts).toHaveBeenNthCalledWith(1, 408, 3, 10, { errorDisplay: 'inline' })
+    expect(mockGetFacts).toHaveBeenNthCalledWith(2, 408, 2, 10, { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('队列')
   })
 
@@ -166,8 +166,8 @@ describe('KnowledgePointFactsPanel', () => {
     finishOldRequest!({ data: { records: [currentFact], total: 1, current: 1, size: 10 } })
     await flushPromises()
 
-    expect(mockGetFacts).toHaveBeenNthCalledWith(1, 408, 1, 10)
-    expect(mockGetFacts).toHaveBeenNthCalledWith(2, 409, 1, 10)
+    expect(mockGetFacts).toHaveBeenNthCalledWith(1, 408, 1, 10, { errorDisplay: 'inline' })
+    expect(mockGetFacts).toHaveBeenNthCalledWith(2, 409, 1, 10, { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('队列')
     expect(wrapper.text()).not.toContain('栈')
   })

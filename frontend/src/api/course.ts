@@ -626,8 +626,8 @@ export function getAdminCoursePage(params: { pageNum?: number; pageSize?: number
 }
 
 /** 获取课程详情 */
-export function getCourseById(id: number) {
-  return request.get<unknown, ApiResponse<CourseVO>>(`/courses/${id}`)
+export function getCourseById(id: number, options?: { errorDisplay?: 'inline' }) {
+  return request.get<unknown, ApiResponse<CourseVO>>(`/courses/${id}`, ...(options ? [options] : []))
 }
 
 /** 获取管理端课程详情，包含禁用课程。 */
@@ -636,48 +636,76 @@ export function getAdminCourseById(id: number) {
 }
 
 /** 获取当前用户的个人课程库 */
-export function getMyCourses() {
-  return request.get<unknown, ApiResponse<UserCourseVO[]>>('/my-courses')
+export function getMyCourses(options?: { errorDisplay?: 'inline' }) {
+  return request.get<unknown, ApiResponse<UserCourseVO[]>>('/my-courses', ...(options ? [options] : []))
 }
 
 /** 幂等地将课程加入当前用户的个人课程库 */
-export function addCourseToLibrary(courseId: number) {
-  return request.post<unknown, ApiResponse<UserCourseVO>>(`/my-courses/${courseId}`)
+export function addCourseToLibrary(courseId: number, options?: { errorDisplay?: 'inline' }) {
+  if (!options) return request.post<unknown, ApiResponse<UserCourseVO>>(`/my-courses/${courseId}`)
+  return request.post<unknown, ApiResponse<UserCourseVO>>(`/my-courses/${courseId}`, undefined, options)
 }
 
 /** 获取当前用户已加入课程的学习总览。 */
-export function getCourseOverview(courseId: number) {
-  return request.get<unknown, ApiResponse<CourseOverviewVO>>(`/my-courses/${courseId}/overview`)
+export function getCourseOverview(courseId: number, options?: { errorDisplay?: 'inline' }) {
+  return request.get<unknown, ApiResponse<CourseOverviewVO>>(
+    `/my-courses/${courseId}/overview`,
+    ...(options ? [options] : []),
+  )
 }
 
 /** 获取当前用户课程内按知识点归集的学习事实。 */
-export function getCourseKnowledgePointFacts(courseId: number, pageNum = 1, pageSize = 10) {
+export function getCourseKnowledgePointFacts(
+  courseId: number,
+  pageNum = 1,
+  pageSize = 10,
+  options?: { errorDisplay?: 'inline' },
+) {
   return request.get<unknown, ApiResponse<CourseKnowledgePointFactsPage>>(
     `/my-courses/${courseId}/knowledge-point-facts`,
-    { params: { pageNum, pageSize } },
+    { params: { pageNum, pageSize }, ...options },
   )
 }
 
 /** 不由客户端预选知识点，按当前统一课程状态取得下一学习目标。 */
-export function startCourseLearning(courseId: number) {
-  return request.post<unknown, ApiResponse<LearningTargetVO>>(`/my-courses/${courseId}/start-learning`)
+export function startCourseLearning(courseId: number, options?: { errorDisplay?: 'inline' }) {
+  return options
+    ? request.post<unknown, ApiResponse<LearningTargetVO>>(`/my-courses/${courseId}/start-learning`, undefined, options)
+    : request.post<unknown, ApiResponse<LearningTargetVO>>(`/my-courses/${courseId}/start-learning`)
 }
 
-export function startCourseStageAssessment(courseId: number, questionCount = 5, knowledgePointId?: number | null) {
-  return request.post<unknown, ApiResponse<CourseStageAssessmentVO>>(`/my-courses/${courseId}/stage-assessments`, {
-    questionCount,
-    knowledgePointId: knowledgePointId ?? null,
-  })
+export function startCourseStageAssessment(
+  courseId: number,
+  questionCount = 5,
+  knowledgePointId?: number | null,
+  options?: { errorDisplay?: 'inline' },
+) {
+  const body = { questionCount, knowledgePointId: knowledgePointId ?? null }
+  return options
+    ? request.post<unknown, ApiResponse<CourseStageAssessmentVO>>(
+        `/my-courses/${courseId}/stage-assessments`,
+        body,
+        options,
+      )
+    : request.post<unknown, ApiResponse<CourseStageAssessmentVO>>(`/my-courses/${courseId}/stage-assessments`, body)
 }
 
 export function submitCourseStageAssessment(
   assessmentId: number,
   answers: { assessmentQuestionId: number; userAnswer: string }[],
+  options?: { errorDisplay?: 'inline' },
 ) {
-  return request.post<unknown, ApiResponse<CourseStageAssessmentVO>>(
-    `/my-courses/stage-assessments/${assessmentId}/submit`,
-    { answers },
-  )
+  const body = { answers }
+  return options
+    ? request.post<unknown, ApiResponse<CourseStageAssessmentVO>>(
+        `/my-courses/stage-assessments/${assessmentId}/submit`,
+        body,
+        options,
+      )
+    : request.post<unknown, ApiResponse<CourseStageAssessmentVO>>(
+        `/my-courses/stage-assessments/${assessmentId}/submit`,
+        body,
+      )
 }
 
 export function getCourseStageAssessmentHistory(
@@ -685,15 +713,19 @@ export function getCourseStageAssessmentHistory(
   pageNum = 1,
   pageSize = 10,
   knowledgePointId?: number | null,
+  options?: { errorDisplay?: 'inline' },
 ) {
   return request.get<unknown, ApiResponse<PageResult<CourseStageAssessmentSummaryVO>>>(
     `/my-courses/${courseId}/stage-assessments`,
-    { params: { pageNum, pageSize, knowledgePointId: knowledgePointId ?? undefined } },
+    { params: { pageNum, pageSize, knowledgePointId: knowledgePointId ?? undefined }, ...options },
   )
 }
 
-export function getCourseStageAssessmentDetail(assessmentId: number) {
-  return request.get<unknown, ApiResponse<CourseStageAssessmentVO>>(`/my-courses/stage-assessments/${assessmentId}`)
+export function getCourseStageAssessmentDetail(assessmentId: number, options?: { errorDisplay?: 'inline' }) {
+  return request.get<unknown, ApiResponse<CourseStageAssessmentVO>>(
+    `/my-courses/stage-assessments/${assessmentId}`,
+    ...(options ? [options] : []),
+  )
 }
 
 export function startTutorSession(courseId: number, knowledgePointId: number) {

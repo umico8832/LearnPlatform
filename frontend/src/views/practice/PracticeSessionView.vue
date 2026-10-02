@@ -24,7 +24,9 @@
           ><span>{{ currentQuestion.score }} 分</span>
         </div></template
       >
-      <p ref="questionHeadingRef" class="question-content" tabindex="-1">{{ currentQuestion.content }}</p>
+      <div ref="questionHeadingRef" class="question-content" tabindex="-1">
+        <MarkdownRenderer :content="currentQuestion.content" />
+      </div>
       <div v-if="currentQuestion.knowledgePointNames?.length" class="knowledge-points">
         <el-tag v-for="name in currentQuestion.knowledgePointNames" :key="name" size="small" effect="plain">{{
           name
@@ -105,6 +107,7 @@ import { useUserStore } from '@/stores/user'
 import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
 import { clearPracticeSession, loadPracticeSession } from '@/utils/practiceSession'
 import PracticeAnswerFeedback from './PracticeAnswerFeedback.vue'
+import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import {
   practiceQuestionTypeLabel as getQuestionTypeLabel,
   practiceQuestionTypeTag as getQuestionTypeTag,
@@ -285,9 +288,7 @@ function leavePractice() {
 .question-content {
   margin: 0 0 var(--lp-space-4);
   color: var(--lp-text);
-  font-size: var(--lp-text-xl);
   line-height: var(--lp-leading-relaxed);
-  white-space: pre-wrap;
 }
 .knowledge-points,
 .option-list {

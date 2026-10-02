@@ -210,10 +210,12 @@ export function submitQuestionCorrectionReport(
     reportType: string
     description: string
   },
+  options?: { errorDisplay?: 'inline' },
 ) {
   return request.post<unknown, ApiResponse<QuestionCorrectionReportVO>>(
     `/questions/${questionId}/correction-reports`,
     data,
+    ...(options ? [options] : []),
   )
 }
 

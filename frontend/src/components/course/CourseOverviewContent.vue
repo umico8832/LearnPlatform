@@ -19,6 +19,7 @@
         </div>
         <div class="hero-actions">
           <el-button
+            v-if="!hasRecommendedTarget"
             type="primary"
             size="large"
             :icon="ArrowRight"
@@ -27,7 +28,7 @@
             @click="emit('primaryAction')"
             >{{ primaryActionLabel }}</el-button
           >
-          <el-button size="large" :icon="Collection" @click="emit('openContent')">课程目录</el-button>
+          <el-button size="large" :icon="Collection" @click="emit('openContent')">查看教学目录</el-button>
           <el-dropdown trigger="click" @command="handleMoreCommand">
             <el-button size="large" :icon="MoreFilled"
               >更多<el-icon class="more-caret"><ArrowDown /></el-icon
@@ -40,16 +41,17 @@
               ></template
             >
           </el-dropdown>
+          <p v-if="primaryActionError" class="hero-action-error" role="alert">{{ primaryActionError }}</p>
         </div>
       </section>
       <section v-if="overview.recommendedTargets.length" class="continue-section">
         <div class="continue-main">
           <LpKicker>继续学习</LpKicker>
-          <h2 class="continue-title">{{ overview.recommendedTargets[0].title }}</h2>
+          <h2 class="continue-title">{{ recommendedTargetTitle }}</h2>
           <p class="continue-reason">{{ overview.recommendedTargets[0].reason }}</p>
-          <el-button type="primary" :icon="ArrowRight" @click="emit('openTarget', overview.recommendedTargets[0])"
-            >继续</el-button
-          >
+          <el-button type="primary" :icon="ArrowRight" @click="emit('openTarget', overview.recommendedTargets[0])">{{
+            recommendedActionLabel
+          }}</el-button>
         </div>
         <div v-if="overview.recommendedTargets.length > 1" class="continue-alternatives">
           <button
@@ -66,8 +68,8 @@
       </section>
       <div class="overview-grid">
         <div class="overview-main">
-          <section class="panel" aria-labelledby="tools-heading">
-            <LpSectionHeading title="学习工具" />
+          <section class="panel tools-panel" aria-labelledby="learning-tools-heading">
+            <LpSectionHeading heading-id="learning-tools-heading" title="学习工具" />
             <div class="tool-list">
               <button
                 v-for="tool in tools"
@@ -85,16 +87,19 @@
               </button>
             </div>
           </section>
-          <section class="panel" aria-labelledby="outline-heading">
-            <LpSectionHeading title="教学内容"
+          <section class="panel" aria-labelledby="course-outline-heading">
+            <LpSectionHeading heading-id="course-outline-heading" title="教学内容"
               ><template #aside
                 ><el-button text type="primary" :icon="Collection" @click="emit('openContent')"
                   >课程目录</el-button
                 ></template
               ></LpSectionHeading
             >
-            <div v-if="overview.tutorProgress.length" class="outline-list">
-              <div v-for="item in overview.tutorProgress" :key="item.knowledgePointId" class="outline-item">
+            <p v-if="overview.tutorProgress.length" class="outline-summary">
+              共 {{ overview.tutorProgress.length }} 节教学内容。
+            </p>
+            <div v-if="overview.tutorProgress.length" id="course-outline-list" class="outline-list">
+              <div v-for="item in visibleTutorProgress" :key="item.knowledgePointId" class="outline-item">
                 <span class="outline-status" :data-status="item.status" aria-hidden="true" />
                 <div class="outline-copy">
                   <strong>{{ item.title }}</strong
@@ -108,6 +113,19 @@
                 >
               </div>
             </div>
+            <el-button
+              v-if="overview.tutorProgress.length > initialOutlineCount"
+              text
+              type="primary"
+              class="outline-toggle"
+              :aria-expanded="showAllTutorProgress"
+              aria-controls="course-outline-list"
+              @click="showAllTutorProgress = !showAllTutorProgress"
+            >
+              {{
+                showAllTutorProgress ? '收起目录' : `展开其余 ${overview.tutorProgress.length - initialOutlineCount} 节`
+              }}
+            </el-button>
             <LpEmptyState v-else compact title="暂无教学内容" description="可以从题目或试卷开始。" />
           </section>
           <KnowledgePointFactsPanel
@@ -158,6 +176,9 @@
               ><el-button text @click="emit('openAssessmentDetail', overview.latestStageAssessment.id)"
                 >查看逐题复盘</el-button
               >
+              <p v-if="assessmentDetailError" class="latest-assessment-error" role="alert">
+                {{ assessmentDetailError }}
+              </p>
             </div>
           </div>
           <el-button text :icon="Refresh" :loading="loading" @click="emit('refresh')">刷新记录</el-button>
@@ -168,6 +189,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue'
 import type { Component } from 'vue'
 import {
   ArrowDown,
@@ -196,12 +218,17 @@ interface CourseTool {
   icon: Component
 }
 
-defineProps<{
+const props = defineProps<{
   overview: CourseOverviewVO | null
   loading: boolean
   failed: boolean
   starting: boolean
   primaryActionLabel: string
+  primaryActionError: string
+  recommendedActionLabel: string
+  recommendedTargetTitle: string
+  assessmentDetailError: string
+  hasRecommendedTarget: boolean
   courseId: number
   factsRefreshKey: number
 }>()
@@ -226,6 +253,19 @@ const tools: CourseTool[] = [
   { routeName: 'ExamList', title: '真题与试卷', desc: '学习模式逐题理解，考试模式检验阶段效果', icon: Trophy },
   { routeName: 'QuestionList', title: '题目', desc: '按课程、题型和难度浏览题库', icon: EditPen },
 ]
+const initialOutlineCount = 6
+const showAllTutorProgress = ref(false)
+const visibleTutorProgress = computed(() =>
+  showAllTutorProgress.value
+    ? (props.overview?.tutorProgress ?? [])
+    : (props.overview?.tutorProgress ?? []).slice(0, initialOutlineCount),
+)
+watch(
+  () => props.courseId,
+  () => {
+    showAllTutorProgress.value = false
+  },
+)
 function handleMoreCommand(command: string) {
   emit('moreCommand', command)
 }
@@ -304,6 +344,13 @@ function knowledgePointSummaryText(summary: CourseStageAssessmentKnowledgePointS
   flex-shrink: 0;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+.hero-action-error {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--lp-danger);
+  font-size: var(--lp-text-sm);
+  text-align: right;
 }
 .more-caret {
   margin-left: 2px;
@@ -389,13 +436,14 @@ function knowledgePointSummaryText(summary: CourseStageAssessmentKnowledgePointS
 }
 .tool-list {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--lp-space-2);
 }
 .tool-row {
   display: flex;
   align-items: center;
   gap: var(--lp-space-3);
-  padding: var(--lp-space-3) var(--lp-space-4);
+  padding: var(--lp-space-3);
   border: 0;
   border-radius: var(--lp-radius-md);
   background: var(--lp-surface-soft);
@@ -440,6 +488,14 @@ function knowledgePointSummaryText(summary: CourseStageAssessmentKnowledgePointS
 .tool-copy small {
   color: var(--lp-text-muted);
   font-size: var(--lp-text-sm);
+}
+.outline-summary {
+  margin: calc(-1 * var(--lp-space-2)) 0 0;
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-sm);
+}
+.outline-toggle {
+  justify-self: start;
 }
 .tool-arrow {
   color: var(--lp-text-muted);
@@ -552,6 +608,11 @@ function knowledgePointSummaryText(summary: CourseStageAssessmentKnowledgePointS
   font-size: var(--lp-text-xs);
   line-height: var(--lp-leading-snug);
 }
+.latest-assessment-error {
+  margin: var(--lp-space-1) 0 0;
+  color: var(--lp-danger);
+  font-size: var(--lp-text-sm);
+}
 @media (prefers-reduced-motion: reduce) {
   .tool-row,
   .tool-arrow,
@@ -579,8 +640,14 @@ function knowledgePointSummaryText(summary: CourseStageAssessmentKnowledgePointS
   .hero-actions {
     justify-content: flex-start;
   }
+  .hero-action-error {
+    text-align: left;
+  }
 }
 @media (max-width: 767px) {
+  .tool-list {
+    grid-template-columns: 1fr;
+  }
   .overview-hero {
     padding: var(--lp-space-5);
   }

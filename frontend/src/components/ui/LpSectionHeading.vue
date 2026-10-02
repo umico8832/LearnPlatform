@@ -6,6 +6,7 @@ withDefaults(
   defineProps<{
     kicker?: string
     title?: string
+    headingId?: string
     description?: string
     aside?: string
   }>(),
@@ -17,7 +18,7 @@ withDefaults(
   <div class="lp-section-heading">
     <div class="lp-section-heading-copy">
       <LpKicker v-if="kicker">{{ kicker }}</LpKicker>
-      <h2 v-if="title" class="lp-section-heading-title">{{ title }}</h2>
+      <h2 v-if="title" :id="headingId" class="lp-section-heading-title">{{ title }}</h2>
       <p v-if="description" class="lp-section-heading-desc">{{ description }}</p>
     </div>
     <div v-if="aside || $slots.aside" class="lp-section-heading-aside">

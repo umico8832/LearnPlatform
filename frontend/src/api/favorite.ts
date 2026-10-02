@@ -19,8 +19,10 @@ export interface FavoriteQuestionVO {
 // ======================== API 方法 ========================
 
 /** 收藏题目 */
-export function addFavorite(questionId: number) {
-  return request.post<unknown, ApiResponse<null>>(`/favorites/${questionId}`)
+export function addFavorite(questionId: number, options?: { errorDisplay?: 'inline' }) {
+  return options
+    ? request.post<unknown, ApiResponse<null>>(`/favorites/${questionId}`, undefined, options)
+    : request.post<unknown, ApiResponse<null>>(`/favorites/${questionId}`)
 }
 
 /** 取消收藏 */
@@ -39,6 +41,6 @@ export function getFavorites(params?: { pageNum?: number; pageSize?: number }, o
 }
 
 /** 获取收藏题目 ID 列表 */
-export function getFavoriteIds() {
-  return request.get<unknown, ApiResponse<number[]>>('/favorites/ids')
+export function getFavoriteIds(options?: { errorDisplay?: 'inline' }) {
+  return request.get<unknown, ApiResponse<number[]>>('/favorites/ids', ...(options ? [options] : []))
 }

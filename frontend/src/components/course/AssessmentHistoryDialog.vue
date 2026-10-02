@@ -17,6 +17,8 @@ const props = defineProps<{
   total: number
   filterKnowledgePointId: number
   knowledgePointOptions: { id: number; title: string }[]
+  detailError: string
+  detailLoading: boolean
 }>()
 
 const emit = defineEmits<{
@@ -55,6 +57,7 @@ function sourceCompositionText(composition: CourseStageAssessmentSummaryVO['sour
     <div class="history-filter-row">
       <el-select
         :model-value="filterKnowledgePointId"
+        :disabled="loading || detailLoading"
         placeholder="按知识点筛选"
         clearable
         @change="(value: number | undefined) => emit('filter-change', value ?? 0)"
@@ -63,6 +66,7 @@ function sourceCompositionText(composition: CourseStageAssessmentSummaryVO['sour
         <el-option v-for="item in knowledgePointOptions" :key="item.id" :value="item.id" :label="item.title" />
       </el-select>
     </div>
+    <el-alert v-if="detailError" class="history-detail-error" type="error" :title="detailError" :closable="false" />
     <el-result v-if="failed" icon="error" title="暂时无法读取测评历史" sub-title="请稍后重试。">
       <template #extra><el-button type="primary" @click="emit('load', page)">重新加载</el-button></template>
     </el-result>
@@ -76,7 +80,9 @@ function sourceCompositionText(composition: CourseStageAssessmentSummaryVO['sour
           <small>范围：{{ item.targetKnowledgePointName || '课程整体' }}</small>
           <small>题源：{{ sourceCompositionText(item.sourceComposition) }}</small>
         </div>
-        <el-button @click="emit('open-detail', item.id)">查看复盘</el-button>
+        <el-button :loading="detailLoading" :disabled="loading || detailLoading" @click="emit('open-detail', item.id)"
+          >查看复盘</el-button
+        >
       </article>
     </div>
     <el-pagination
@@ -92,6 +98,9 @@ function sourceCompositionText(composition: CourseStageAssessmentSummaryVO['sour
 
 <style scoped>
 .history-filter-row {
+  margin-bottom: var(--lp-space-3);
+}
+.history-detail-error {
   margin-bottom: var(--lp-space-3);
 }
 .history-filter-row :deep(.el-select) {

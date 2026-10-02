@@ -1,122 +1,83 @@
 <template>
   <div class="my-courses page-container">
-    <LpPageHeader title="我的课程">
-      <template #actions>
-        <el-button :icon="Plus" @click="router.push({ name: 'CourseList' })">浏览课程库</el-button>
-      </template>
+    <LpPageHeader title="我的课程" description="查看已加入课程，并从当前学习处继续。">
+      <template #actions
+        ><el-button :icon="Plus" @click="router.push({ name: 'CourseList' })">浏览课程库</el-button></template
+      >
     </LpPageHeader>
 
-    <template v-if="loading">
-      <div class="courses-stack">
-        <LpSkeleton card :rows="4" />
-        <LpSkeleton card :rows="3" />
-      </div>
-    </template>
-
-    <template v-else-if="loadFailed">
-      <section class="state-panel">
-        <LpEmptyState title="暂时无法读取课程库" description="请刷新重试。">
-          <template #actions>
-            <el-button type="primary" @click="fetchCourses">重新加载</el-button>
-          </template>
-        </LpEmptyState>
-      </section>
-    </template>
-
-    <template v-else-if="courses.length === 0">
-      <section class="state-panel">
-        <LpEmptyState title="课程库还是空的" description="从课程库加入课程后，会显示在这里。">
-          <template #actions>
-            <el-button type="primary" :icon="Plus" @click="router.push({ name: 'CourseList' })">浏览课程库</el-button>
-          </template>
-        </LpEmptyState>
-      </section>
-    </template>
+    <LpStatePanel v-if="loading" state="loading" loading-label="正在读取我的课程" />
+    <LpStatePanel
+      v-else-if="loadFailed"
+      state="error"
+      title="暂时无法读取我的课程"
+      description="课程和学习概况尚未加载，请重试。"
+      @retry="fetchCourses"
+    />
+    <LpStatePanel
+      v-else-if="!courses.length"
+      state="empty"
+      title="还没有加入课程"
+      description="从课程库加入课程后，会显示在这里。"
+    >
+      <template #actions
+        ><el-button type="primary" :icon="Plus" @click="router.push({ name: 'CourseList' })"
+          >浏览课程库</el-button
+        ></template
+      >
+    </LpStatePanel>
 
     <template v-else>
       <section v-if="continueCourse" class="continue-section" aria-labelledby="continue-heading">
-        <div class="continue-copy">
+        <div>
           <LpKicker>继续学习</LpKicker>
           <h2 id="continue-heading">{{ continueCourse.name }}</h2>
           <p v-if="continueTarget" class="continue-target">{{ continueTarget.title }} · {{ continueTarget.reason }}</p>
-          <span v-if="continueCourse.overview?.lastLearningTime" class="continue-time">
-            上次学习：{{ formatRelativeTime(continueCourse.overview?.lastLearningTime) }}
-          </span>
+          <p v-else class="continue-target">回到课程空间，选择下一步学习内容。</p>
         </div>
-        <div class="continue-actions">
-          <el-button
-            type="primary"
-            size="large"
-            :icon="ArrowRight"
-            :loading="starting"
-            @click="startContinue(continueCourse)"
-          >
-            继续学习
-          </el-button>
-          <el-button size="large" @click="openCourse(continueCourse.courseId)">进入课程空间</el-button>
-        </div>
+        <el-button type="primary" size="large" :icon="ArrowRight" :loading="starting" @click="startContinue">
+          继续学习
+        </el-button>
       </section>
 
       <section class="course-list-section" aria-labelledby="course-list-heading">
-        <LpSectionHeading title="全部课程" :description="`共 ${courses.length} 门`" />
+        <LpSectionHeading heading-id="course-list-heading" title="全部课程" :description="`共 ${courses.length} 门`" />
         <div class="course-list">
-          <article
-            v-for="(course, index) in courses"
-            :key="course.courseId"
-            class="course-card"
-            :style="{ '--course-index': Math.min(index, 4) }"
-          >
-            <div class="course-icon" aria-hidden="true">
-              <el-icon :size="20"><Reading /></el-icon>
-            </div>
-
+          <article v-for="course in courses" :key="course.courseId" class="course-card">
+            <span class="course-icon" aria-hidden="true"
+              ><el-icon :size="20"><Reading /></el-icon
+            ></span>
             <div class="course-copy">
               <h3 class="course-name">{{ course.name }}</h3>
               <p class="course-desc">{{ course.description || '暂无课程描述' }}</p>
-              <div class="course-meta">
-                <span>加入于 {{ formatDate(course.addedAt) }}</span>
-                <span v-if="course.overview?.lastLearningTime"
-                  >上次学习 {{ formatRelativeTime(course.overview?.lastLearningTime) }}</span
-                >
-                <span v-else>尚未开始学习</span>
-              </div>
-              <dl v-if="course.overview" class="course-facts" aria-label="课程学习事实">
-                <div>
-                  <dt>已作答</dt>
-                  <dd>{{ course.overview.answeredCount }}</dd>
-                </div>
-                <div>
-                  <dt>答对</dt>
-                  <dd>{{ course.overview.correctCount }}</dd>
-                </div>
-              </dl>
-              <div
-                v-if="(course.overview?.dueReviewCount ?? 0) > 0 || (course.overview?.unresolvedWrongCount ?? 0) > 0"
-                class="course-signals"
-              >
-                <LpSignal
-                  v-if="(course.overview?.dueReviewCount ?? 0) > 0"
-                  icon="review"
-                  tone="warning"
-                  title="有到期的复习"
-                  :reason="`${course.overview?.dueReviewCount ?? 0} 条复习计划已到时间`"
-                />
-                <LpSignal
-                  v-if="(course.overview?.unresolvedWrongCount ?? 0) > 0"
-                  icon="wrong"
-                  tone="danger"
-                  title="有待处理错题"
-                  :reason="`${course.overview?.unresolvedWrongCount ?? 0} 道错题尚未标记掌握`"
-                />
-              </div>
+              <p v-if="course.overviewState === 'error'" class="overview-error" role="alert">
+                学习概况暂时无法读取。
+                <button type="button" @click="retryOverview(course.courseId)">重新读取</button>
+              </p>
+              <template v-else-if="course.overview">
+                <p class="course-meta">
+                  <template v-if="course.overview.lastLearningTime"
+                    >上次学习 {{ formatRelativeTime(course.overview.lastLearningTime) }}</template
+                  >
+                  <template v-else>尚未开始学习</template>
+                </p>
+                <dl class="course-facts" aria-label="课程学习事实">
+                  <div>
+                    <dt>已作答</dt>
+                    <dd>{{ course.overview.answeredCount }}</dd>
+                  </div>
+                  <div>
+                    <dt>答对</dt>
+                    <dd>{{ course.overview.correctCount }}</dd>
+                  </div>
+                  <div v-if="course.overview.dueReviewCount">
+                    <dt>到期复习</dt>
+                    <dd>{{ course.overview.dueReviewCount }}</dd>
+                  </div>
+                </dl>
+              </template>
             </div>
-
-            <div class="course-actions">
-              <el-button type="primary" :icon="ArrowRight" @click="startCourse(course)">
-                {{ course.overview?.recommendedTargets[0] ? '继续学习' : '开始学习' }}
-              </el-button>
-              <el-button plain @click="openCourse(course.courseId)">进入课程空间</el-button>
-            </div>
+            <el-button plain @click="openCourse(course.courseId)">进入课程空间</el-button>
           </article>
         </div>
       </section>
@@ -125,19 +86,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowRight, Plus, Reading } from '@element-plus/icons-vue'
-import { getMyCourses, getCourseOverview, type CourseOverviewVO, type UserCourseVO } from '@/api/course'
+import type { LearningTargetVO } from '@/api/course'
+import { getCourseOverview, getMyCourses, type CourseOverviewVO, type UserCourseVO } from '@/api/course'
 import { openLearningTarget } from '@/utils/learningTarget'
 import { formatRelativeTime } from '@/utils/format'
+import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
 
+type OverviewState = 'ready' | 'error'
 interface CourseEntry {
   courseId: number
   name: string
   description: string | null
-  addedAt: string
   overview: CourseOverviewVO | null
+  overviewState: OverviewState
 }
 
 const router = useRouter()
@@ -145,304 +109,200 @@ const courses = ref<CourseEntry[]>([])
 const loading = ref(false)
 const loadFailed = ref(false)
 const starting = ref(false)
+let alive = true
+let generation = 0
 
-/** 最近有学习记录的课程用于「继续学习」主入口。 */
-const continueCourse = computed(() => {
-  const withLearning = courses.value
-    .filter((course) => course.overview?.lastLearningTime)
-    .sort(
+const continueCourse = computed(
+  () =>
+    [...courses.value.filter((course) => course.overview?.lastLearningTime)].sort(
       (a, b) => new Date(b.overview!.lastLearningTime!).getTime() - new Date(a.overview!.lastLearningTime!).getTime(),
-    )
-  return withLearning[0] || null
-})
+    )[0],
+)
+const continueTarget = computed<LearningTargetVO | null>(
+  () => continueCourse.value?.overview?.recommendedTargets[0] || null,
+)
 
-const continueTarget = computed(() => continueCourse.value?.overview?.recommendedTargets[0] || null)
-
-function formatDate(value: string) {
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('zh-CN')
+function isCurrent(requestGeneration: number, session: number) {
+  return alive && requestGeneration === generation && session === getAuthSessionVersion()
+}
+function toEntry(item: UserCourseVO, overview: CourseOverviewVO | null, overviewState: OverviewState): CourseEntry {
+  return { courseId: item.courseId, name: item.courseName, description: item.description, overview, overviewState }
 }
 
 async function fetchCourses() {
+  const requestGeneration = ++generation
+  const session = getAuthSessionVersion()
   loading.value = true
   loadFailed.value = false
   try {
-    const response = await getMyCourses()
+    const response = await getMyCourses({ errorDisplay: 'inline' })
+    if (!isCurrent(requestGeneration, session)) return
     const list = response.data || []
     const overviews = await Promise.allSettled(
-      list.map((item) => getCourseOverview(item.courseId).then((res) => res.data)),
+      list.map((item) => getCourseOverview(item.courseId, { errorDisplay: 'inline' }).then((result) => result.data)),
     )
-    courses.value = list.map((item: UserCourseVO, index: number) => {
-      const settled = overviews[index]
-      return {
-        courseId: item.courseId,
-        name: item.courseName,
-        description: item.description,
-        addedAt: item.addedAt,
-        overview: settled.status === 'fulfilled' ? settled.value : null,
-      }
-    })
-    courses.value.sort((a, b) => {
-      const timeA = a.overview?.lastLearningTime ? new Date(a.overview.lastLearningTime).getTime() : 0
-      const timeB = b.overview?.lastLearningTime ? new Date(b.overview.lastLearningTime).getTime() : 0
-      return timeB - timeA
+    if (!isCurrent(requestGeneration, session)) return
+    courses.value = list.map((item, index) => {
+      const overview = overviews[index]
+      return overview.status === 'fulfilled' ? toEntry(item, overview.value, 'ready') : toEntry(item, null, 'error')
     })
   } catch {
-    loadFailed.value = true
+    if (isCurrent(requestGeneration, session)) loadFailed.value = true
   } finally {
-    loading.value = false
+    if (isCurrent(requestGeneration, session)) loading.value = false
+  }
+}
+
+async function retryOverview(courseId: number) {
+  const requestGeneration = generation
+  const session = getAuthSessionVersion()
+  const index = courses.value.findIndex((course) => course.courseId === courseId)
+  if (index < 0) return
+  try {
+    const result = await getCourseOverview(courseId, { errorDisplay: 'inline' })
+    if (!isCurrent(requestGeneration, session)) return
+    courses.value[index] = { ...courses.value[index], overview: result.data, overviewState: 'ready' }
+  } catch {
+    // 原位错误已保留，用户可再次重试。
   }
 }
 
 function openCourse(courseId: number) {
   router.push({ name: 'CourseOverview', params: { id: courseId } })
 }
-
-async function startContinue(entry: CourseEntry) {
-  if (!entry.overview) {
-    openCourse(entry.courseId)
-    return
-  }
-  const target = entry.overview.recommendedTargets[0]
-  if (target) {
-    openLearningTarget(router, entry.courseId, target)
-  } else {
-    router.push({ name: 'CourseOverview', params: { id: entry.courseId } })
-  }
-}
-
-async function startCourse(entry: CourseEntry) {
+async function startContinue() {
+  const entry = continueCourse.value
+  if (!entry || starting.value) return
   starting.value = true
   try {
-    if (entry.overview?.recommendedTargets[0]) {
-      openLearningTarget(router, entry.courseId, entry.overview.recommendedTargets[0])
-    } else {
-      router.push({ name: 'CourseOverview', params: { id: entry.courseId } })
-    }
+    const target = entry.overview?.recommendedTargets[0]
+    if (target) openLearningTarget(router, entry.courseId, target)
+    else openCourse(entry.courseId)
   } finally {
     starting.value = false
   }
 }
 
-onMounted(fetchCourses)
+const unsubscribeSession = onAuthSessionChange(() => {
+  generation++
+  courses.value = []
+  loading.value = false
+  loadFailed.value = false
+  if (isAuthenticated()) void fetchCourses()
+})
+onMounted(() => void fetchCourses())
+onUnmounted(() => {
+  alive = false
+  generation++
+  unsubscribeSession()
+})
 </script>
 
 <style scoped>
 .my-courses {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: var(--lp-space-6);
 }
-
-.courses-stack {
-  display: grid;
-  gap: var(--lp-space-4);
-}
-
-.state-panel {
-  padding: var(--lp-space-6) 0;
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
-}
-
-/* ---------------- Continue ---------------- */
 .continue-section {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--lp-space-6);
   padding: var(--lp-space-6);
-  background: linear-gradient(120deg, var(--lp-primary-soft), var(--lp-surface) 62%);
   border: var(--lp-border-hairline);
+  border-inline-start: 3px solid var(--lp-primary);
   border-radius: var(--lp-radius-lg);
+  background: var(--lp-surface);
+  box-shadow: var(--lp-shadow-xs);
 }
-
-.continue-copy {
-  min-width: 0;
-}
-
-.continue-copy h2 {
-  margin-top: var(--lp-space-2);
-  font-family: var(--lp-font-display);
-  font-size: var(--lp-text-3xl);
-  font-weight: var(--lp-weight-bold);
-  line-height: var(--lp-leading-display);
+.continue-section h2 {
+  margin: var(--lp-space-2) 0 0;
   color: var(--lp-text);
+  font-size: var(--lp-text-2xl);
+  line-height: var(--lp-leading-snug);
 }
-
-.continue-target {
+.continue-target,
+.course-desc,
+.course-meta {
   margin: var(--lp-space-2) 0 0;
   color: var(--lp-text-secondary);
-  font-size: var(--lp-text-md);
   line-height: var(--lp-leading-body);
 }
-
-.continue-time {
-  display: block;
-  margin-top: var(--lp-space-2);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
-}
-
-.continue-actions {
-  display: flex;
-  gap: var(--lp-space-3);
-  flex-shrink: 0;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-/* ---------------- Course list ---------------- */
-.course-list-section {
-  display: grid;
-  gap: var(--lp-space-4);
-}
-
+.course-list-section,
 .course-list {
   display: grid;
+  gap: var(--lp-space-4);
+}
+.course-list {
   gap: var(--lp-space-3);
 }
-
 .course-card {
-  animation: course-arrive var(--lp-duration-slow) var(--lp-ease-out) both;
-  animation-delay: calc(var(--course-index) * var(--lp-duration-stagger));
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: start;
   gap: var(--lp-space-4);
+  align-items: start;
   padding: var(--lp-space-5);
-  background: var(--lp-surface);
   border: var(--lp-border-hairline);
   border-radius: var(--lp-radius-lg);
+  background: var(--lp-surface);
   box-shadow: var(--lp-shadow-xs);
-  transition:
-    border-color var(--lp-duration-fast) var(--lp-ease-out),
-    box-shadow var(--lp-duration-fast) var(--lp-ease-out),
-    transform var(--lp-duration-fast) var(--lp-ease-out);
 }
-
-@media (hover: hover) and (pointer: fine) {
-  .course-card:hover {
-    border-color: var(--lp-primary-softer);
-    box-shadow: var(--lp-shadow-sm);
-    transform: translateY(-1px);
-  }
-}
-
 .course-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: var(--lp-radius-md);
-  background: var(--lp-primary-soft);
+  width: 40px;
+  height: 40px;
   color: var(--lp-primary);
+  background: var(--lp-primary-soft);
+  border-radius: var(--lp-radius-md);
 }
-
 .course-copy {
   min-width: 0;
 }
-
 .course-name {
-  font-size: var(--lp-text-xl);
-  font-weight: var(--lp-weight-bold);
+  margin: 0;
   color: var(--lp-text);
+  font-size: var(--lp-text-lg);
 }
-
-.course-desc {
-  margin: var(--lp-space-1) 0 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-base);
-  line-height: var(--lp-leading-body);
-}
-
-.course-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--lp-space-2) var(--lp-space-4);
-  margin-top: var(--lp-space-3);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
-}
-
 .course-facts {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--lp-space-4);
   margin: var(--lp-space-3) 0 0;
 }
-
 .course-facts div {
   display: flex;
   align-items: baseline;
   gap: var(--lp-space-1);
 }
-.course-facts dt {
+.course-facts dt,
+.overview-error {
   color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
+  font-size: var(--lp-text-sm);
 }
 .course-facts dd {
   margin: 0;
-  color: var(--lp-primary);
-  font-size: var(--lp-text-sm);
-  font-weight: var(--lp-weight-bold);
+  color: var(--lp-text);
+  font-weight: var(--lp-weight-semibold);
   font-variant-numeric: tabular-nums;
 }
-
-@keyframes course-arrive {
-  from {
-    opacity: 0;
-    transform: translateY(var(--lp-space-2));
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.overview-error {
+  margin: var(--lp-space-3) 0 0;
 }
-@media (prefers-reduced-motion: reduce) {
-  .course-card {
-    animation: none;
-  }
-  .course-card {
-    transition-duration: var(--lp-duration-fast);
-  }
+.overview-error button {
+  padding: 0;
+  border: 0;
+  color: var(--lp-primary);
+  background: transparent;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
-
-.course-signals {
-  display: grid;
-  gap: var(--lp-space-2);
-  margin-top: var(--lp-space-3);
-  max-width: 560px;
-}
-
-.course-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--lp-space-2);
-  flex-shrink: 0;
-}
-
 @media (max-width: 900px) {
   .continue-section {
     align-items: stretch;
     flex-direction: column;
-  }
-  .continue-actions {
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 767px) {
-  .course-card {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-  .course-actions {
-    grid-column: 2;
-    flex-direction: row;
-    flex-wrap: wrap;
   }
 }
 </style>

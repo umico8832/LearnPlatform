@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, watch } from 'vue'
 import type { CourseStageAssessmentVO } from '@/api/course'
 
 /**
@@ -10,6 +10,8 @@ const props = defineProps<{
   visible: boolean
   assessment: CourseStageAssessmentVO | null
   submitting: boolean
+  submitError: string
+  focusQuestionId: number | null
   reviewedKnowledgePointIds: number[]
 }>()
 
@@ -31,11 +33,23 @@ const dialogVisible = computed({
 
 const strategyLabel = computed(() =>
   props.assessment?.selectionStrategy === 'LEARNING_STATE_PRIORITY'
-    ? '按当前错题、到期复习和近期错误记录优先选题'
-    : '学习数据不足，采用确定性课程题序；本次不标记为 AI 个性化',
+    ? '根据当前错题、到期复习和近期作答情况安排题目'
+    : '学习记录不足时，按课程题序安排题目',
 )
 
 const isReviewed = (knowledgePointId: number) => props.reviewedKnowledgePointIds.includes(knowledgePointId)
+const questionElements = new Map<number, HTMLElement>()
+
+watch(
+  () => props.focusQuestionId,
+  async (questionId) => {
+    if (!questionId) return
+    await nextTick()
+    const element = questionElements.get(questionId)
+    element?.scrollIntoView({ block: 'center', behavior: 'auto' })
+    element?.focus({ preventScroll: true })
+  },
+)
 
 function sourceCompositionText(composition: CourseStageAssessmentVO['sourceComposition']) {
   if (!composition) return '暂无题源快照'
@@ -52,7 +66,15 @@ function sourceCompositionText(composition: CourseStageAssessmentVO['sourceCompo
 </script>
 
 <template>
-  <el-dialog v-model="dialogVisible" title="课程阶段测评" width="min(780px, 94vw)">
+  <el-dialog
+    v-model="dialogVisible"
+    class="stage-assessment-dialog"
+    title="课程阶段测评"
+    width="min(780px, 94vw)"
+    :close-on-click-modal="false"
+    :close-on-press-escape="!submitting"
+    :show-close="!submitting"
+  >
     <template v-if="assessment">
       <el-alert
         :title="strategyLabel"
@@ -65,6 +87,13 @@ function sourceCompositionText(composition: CourseStageAssessmentVO['sourceCompo
           sourceCompositionText(assessment.sourceComposition)
         }}
       </p>
+      <el-alert
+        v-if="submitError"
+        class="assessment-submit-error"
+        type="error"
+        :title="submitError"
+        :closable="false"
+      />
       <p v-if="assessment.status === 'COMPLETED'" class="assessment-summary">
         答对 {{ assessment.correctCount }} / {{ assessment.questionCount }} 题
       </p>
@@ -101,7 +130,13 @@ function sourceCompositionText(composition: CourseStageAssessmentVO['sourceCompo
         </ul>
       </div>
       <div class="assessment-list">
-        <article v-for="question in assessment.questions" :key="question.id" class="assessment-question">
+        <article
+          v-for="question in assessment.questions"
+          :key="question.id"
+          :ref="(element) => element && questionElements.set(question.id, element as HTMLElement)"
+          class="assessment-question"
+          tabindex="-1"
+        >
           <div class="assessment-question-header">
             <strong>{{ question.sortOrder }}. {{ question.content }}</strong>
             <div class="assessment-question-tags">
@@ -129,7 +164,7 @@ function sourceCompositionText(composition: CourseStageAssessmentVO['sourceCompo
           <el-checkbox-group
             v-if="question.questionType === 'MULTIPLE_CHOICE'"
             v-model="answers[question.id]"
-            :disabled="assessment.status === 'COMPLETED'"
+            :disabled="assessment.status === 'COMPLETED' || submitting"
             class="assessment-options"
           >
             <el-checkbox v-for="option in question.options" :key="option.label" :value="option.label">
@@ -139,7 +174,7 @@ function sourceCompositionText(composition: CourseStageAssessmentVO['sourceCompo
           <el-radio-group
             v-else
             v-model="answers[question.id][0]"
-            :disabled="assessment.status === 'COMPLETED'"
+            :disabled="assessment.status === 'COMPLETED' || submitting"
             class="assessment-options"
           >
             <el-radio v-for="option in question.options" :key="option.label" :value="option.label">
@@ -163,7 +198,7 @@ function sourceCompositionText(composition: CourseStageAssessmentVO['sourceCompo
       </div>
     </template>
     <template #footer>
-      <el-button @click="emit('update:visible', false)">关闭</el-button>
+      <el-button :disabled="submitting" @click="emit('update:visible', false)">关闭</el-button>
       <el-button
         v-if="assessment?.status === 'IN_PROGRESS'"
         type="primary"
@@ -180,6 +215,9 @@ function sourceCompositionText(composition: CourseStageAssessmentVO['sourceCompo
   margin: var(--lp-space-3) 0 var(--lp-space-4);
   color: var(--lp-text-muted);
   font-size: var(--lp-text-sm);
+}
+.assessment-submit-error {
+  margin-bottom: var(--lp-space-3);
 }
 .assessment-summary {
   margin: var(--lp-space-4) 0 0;
@@ -220,6 +258,10 @@ function sourceCompositionText(composition: CourseStageAssessmentVO['sourceCompo
   display: grid;
   gap: var(--lp-space-4);
   margin-top: var(--lp-space-4);
+}
+:global(.stage-assessment-dialog .el-dialog__body) {
+  max-height: min(62vh, 620px);
+  overflow-y: auto;
 }
 .assessment-question {
   padding: var(--lp-space-4);

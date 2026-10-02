@@ -1,180 +1,208 @@
 <template>
   <div class="question-list page-container">
-    <LpPageHeader title="题库">
-      <template #actions>
-        <div class="hero-metrics">
-          <div class="metric-item">
-            <span>当前结果</span>
-            <strong>{{ loading || loadError ? '—' : total }}</strong>
-          </div>
-          <div class="metric-item">
-            <span>已收藏</span>
-            <strong>{{ favoriteSet.size }}</strong>
-          </div>
-        </div>
-      </template>
+    <LpPageHeader title="题库" description="选一道题开始练习，或收藏后集中练习。">
+      <template #actions><RouterLink class="collection-link" to="/favorites">查看我的收藏</RouterLink></template>
     </LpPageHeader>
 
-    <section class="question-workbench">
-      <aside class="filter-panel">
-        <div class="panel-title">
-          <div>
-            <h3>筛选</h3>
-          </div>
-          <el-button v-if="activeFilterCount > 0" link type="primary" @click="resetFilters">清空</el-button>
-        </div>
-
-        <div class="filter-block">
-          <span class="filter-label">题型</span>
-          <el-radio-group v-model="filters.questionType" class="type-switch" @change="handleFilterChange">
-            <el-radio-button v-for="type in questionTypes" :key="type.value" :value="type.value">
-              {{ type.shortLabel }}
-            </el-radio-button>
-          </el-radio-group>
-        </div>
-
-        <div class="filter-block">
-          <span class="filter-label">所属课程</span>
+    <section class="filter-panel" aria-label="题目筛选">
+      <div class="filter-fields">
+        <div class="filter-field course-filter">
+          <label for="catalog-course">课程</label>
           <el-select
+            id="catalog-course"
             v-model="filters.courseId"
             placeholder="全部课程"
             clearable
             filterable
+            :loading="coursesLoading"
+            :disabled="coursesLoading || !!coursesError"
             @change="handleFilterChange"
           >
-            <el-option v-for="c in courseList" :key="c.id" :label="c.name" :value="c.id" />
+            <el-option v-for="course in courseList" :key="course.id" :label="course.name" :value="course.id" />
           </el-select>
         </div>
-
-        <div class="filter-block">
-          <span class="filter-label">难度</span>
-          <div class="difficulty-grid">
+        <div class="filter-field type-filter">
+          <label for="catalog-type">题型</label>
+          <el-select
+            id="catalog-type"
+            v-model="filters.questionType"
+            placeholder="全部题型"
+            @change="handleFilterChange"
+          >
+            <el-option v-for="type in questionTypes" :key="type.value" :label="type.label" :value="type.value" />
+          </el-select>
+        </div>
+        <fieldset class="difficulty-filter">
+          <legend>难度</legend>
+          <div class="difficulty-options">
             <button
               v-for="item in difficultyOptions"
               :key="item.value"
               type="button"
               class="difficulty-chip"
-              :class="{ active: filters.difficulty === item.value }"
+              :aria-pressed="filters.difficulty === item.value"
               @click="selectDifficulty(item.value)"
             >
-              <strong>{{ item.value }}</strong>
-              <span>{{ item.label }}</span>
+              <span>{{ item.value }}</span> {{ item.label }}
             </button>
           </div>
-        </div>
-      </aside>
-
-      <section class="question-results" aria-label="题目列表">
-        <div class="result-toolbar">
-          <div>
-            <h3>题目列表</h3>
-            <p>{{ resultSummary }}</p>
-          </div>
-          <div class="result-context">
-            <el-tag v-if="activeFilterCount > 0" type="info" effect="plain">{{ activeFilterCount }} 个筛选条件</el-tag>
-            <el-tag v-if="searchContext" type="primary" effect="plain">{{ searchContext.label }}</el-tag>
-            <el-button v-if="searchContext" link type="primary" @click="clearSearchContext">清除搜索筛选</el-button>
-          </div>
-        </div>
-
-        <p v-if="searchQueryWarning" class="search-query-warning" role="status">{{ searchQueryWarning }}</p>
-
-        <div class="result-body">
-          <LpStatePanel v-if="loading" state="loading" loading-label="正在加载题目" />
-          <LpStatePanel v-else-if="loadError" state="error" :description="loadError" @retry="retryFetch" />
-          <div v-else-if="questions.length === 0" class="empty-state">
-            <el-empty description="暂无符合条件的题目">
-              <el-button v-if="searchContext" type="primary" @click="clearSearchContext">清除搜索筛选</el-button>
-              <el-button v-else type="primary" @click="resetFilters">查看全部题目</el-button>
-            </el-empty>
-          </div>
-
-          <article v-for="q in questions" v-else :key="q.id" class="question-card">
-            <div class="question-main">
-              <div class="question-meta">
-                <el-tag size="small" :type="questionTypeTag(q.questionType)">
-                  {{ questionTypeLabel(q.questionType) }}
-                </el-tag>
-                <span>{{ q.courseName || '未关联课程' }}</span>
-                <span>{{ difficultyLabel(q.difficulty) }}</span>
-                <span>{{ q.score }} 分</span>
-              </div>
-
-              <h4>{{ q.content }}</h4>
-
-              <div v-if="q.options && q.options.length > 0" class="question-options">
-                <div v-for="opt in q.options" :key="opt.id" class="option-item">
-                  <span class="option-label">{{ opt.optionLabel }}</span>
-                  <span>{{ opt.content }}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="question-side">
-              <el-tooltip :content="favoriteSet.has(q.id) ? '取消收藏' : '收藏题目'" placement="top">
-                <button
-                  type="button"
-                  class="icon-action favorite-btn"
-                  :class="{ active: favoriteSet.has(q.id) }"
-                  @click.stop="toggleFavorite(q.id)"
-                >
-                  <el-icon :size="18">
-                    <StarFilled v-if="favoriteSet.has(q.id)" />
-                    <Star v-else />
-                  </el-icon>
-                </button>
-              </el-tooltip>
-              <button type="button" class="text-action" @click="toggleComment(q.id)">
-                <el-icon><ChatLineRound /></el-icon>
-                <span>{{ expandedComments.has(q.id) ? '收起讨论' : '讨论' }}</span>
-              </button>
-              <button type="button" class="text-action" @click="openCorrectionDialog(q)">
-                <el-icon><Warning /></el-icon>
-                <span>纠错</span>
-              </button>
-            </div>
-
-            <div class="question-footer">
-              <div v-if="q.knowledgePointNames && q.knowledgePointNames.length > 0" class="question-tags">
-                <el-tag v-for="name in q.knowledgePointNames" :key="name" size="small" type="info" class="kp-tag">
-                  {{ name }}
-                </el-tag>
-              </div>
-              <span v-else class="no-kp">暂无知识点标签</span>
-            </div>
-
-            <div v-if="expandedComments.has(q.id)" class="comment-section">
-              <QuestionComment :question-id="q.id" />
-            </div>
-          </article>
-        </div>
-
-        <div class="pagination-wrap">
-          <el-pagination
-            v-model:current-page="pageNum"
-            v-model:page-size="pageSize"
-            :total="total"
-            :page-sizes="[10, 20, 50]"
-            layout="total, sizes, prev, pager, next"
-            @current-change="fetchQuestions"
-            @size-change="handleSizeChange"
-          />
-        </div>
-      </section>
+        </fieldset>
+        <el-button v-if="activeFilterCount" text @click="resetFilters">重置条件</el-button>
+      </div>
+      <div v-if="coursesError" class="inline-message" role="alert">
+        <span>{{ coursesError }}</span
+        ><el-button text @click="loadCourses">重新加载课程</el-button>
+      </div>
+      <div v-if="searchContext" class="search-context">
+        <span>{{ searchContext.label }}</span>
+        <el-button text @click="clearSearchContext">清除搜索筛选</el-button>
+      </div>
+      <p v-if="searchQueryWarning" class="search-query-warning" role="status">{{ searchQueryWarning }}</p>
     </section>
 
-    <el-dialog v-model="correctionDialogVisible" title="提交题目纠错" width="520px" destroy-on-close>
+    <div v-if="favoritesError" class="inline-message" role="alert">
+      <span>{{ favoritesError }}重新加载后可继续收藏。</span>
+      <el-button text :loading="favoritesLoading" @click="loadFavoriteIds">重新加载收藏状态</el-button>
+    </div>
+    <p v-if="actionError" class="action-message is-error" role="alert">{{ actionError }}</p>
+    <p v-else-if="notice" class="action-message" role="status">{{ notice }}</p>
+
+    <section class="question-results" aria-label="题目列表">
+      <div class="result-toolbar">
+        <p>{{ resultSummary }}</p>
+        <span v-if="favoritesReady">已收藏 {{ favoriteSet.size }} 题</span>
+        <span v-else-if="favoritesLoading">正在读取收藏状态…</span>
+      </div>
+      <LpStatePanel v-if="loading" state="loading" loading-label="正在加载题目" />
+      <LpStatePanel v-else-if="loadError" state="error" :description="loadError" @retry="retryFetch" />
+      <LpStatePanel
+        v-else-if="!questions.length"
+        state="empty"
+        title="没有找到符合条件的题目"
+        description="调整课程、题型或难度后再试。"
+      >
+        <template #actions>
+          <el-button v-if="searchContext" @click="clearSearchContext">清除搜索筛选</el-button>
+          <el-button v-else @click="resetFilters">查看全部题目</el-button>
+        </template>
+      </LpStatePanel>
+      <div v-else class="question-collection">
+        <article
+          v-for="(question, index) in questions"
+          :key="question.id"
+          class="question-card"
+          :aria-labelledby="`question-title-${question.id}`"
+        >
+          <header class="question-meta">
+            <h2 :id="`question-title-${question.id}`">第 {{ (pageNum - 1) * pageSize + index + 1 }} 题</h2>
+            <span>{{ questionTypeLabel(question.questionType) }}</span>
+            <span>{{ question.courseName || '未关联课程' }}</span>
+            <span>{{ difficultyLabel(question.difficulty) }}</span>
+            <span>{{ question.score }} 分</span>
+          </header>
+          <div class="question-content"><MarkdownRenderer :content="question.content" /></div>
+          <ol
+            v-if="question.options?.length"
+            class="question-options"
+            :class="{
+              'has-long-options': question.options.some(
+                (option) => option.content.length > 45 || option.content.includes('\n'),
+              ),
+            }"
+          >
+            <li v-for="option in question.options" :key="option.id">
+              <span class="option-label">{{ option.optionLabel }}.</span><span>{{ option.content }}</span>
+            </li>
+          </ol>
+          <div v-if="question.knowledgePointNames?.length" class="question-tags" aria-label="相关知识点">
+            <span v-for="name in question.knowledgePointNames" :key="name">{{ name }}</span>
+          </div>
+          <footer class="question-actions">
+            <el-button
+              type="primary"
+              text
+              :icon="ArrowRight"
+              :loading="practiceStartingId === question.id"
+              :disabled="practiceStartingId !== null"
+              @click="startQuestionPractice(question.id)"
+              >练这道题</el-button
+            >
+            <div class="secondary-actions">
+              <button
+                type="button"
+                class="quiet-action favorite-btn"
+                :aria-label="`${favoriteSet.has(question.id) ? '取消收藏' : '收藏题目'}：第 ${(pageNum - 1) * pageSize + index + 1} 题`"
+                :aria-pressed="favoritesReady ? favoriteSet.has(question.id) : undefined"
+                :aria-busy="favoritePending.has(question.id)"
+                :disabled="!favoritesReady || favoritesLoading || favoritePending.has(question.id)"
+                @click="toggleFavorite(question.id)"
+              >
+                <el-icon aria-hidden="true"
+                  ><StarFilled v-if="favoritesReady && favoriteSet.has(question.id)" /><Star v-else
+                /></el-icon>
+                {{
+                  favoritePending.has(question.id)
+                    ? '正在保存'
+                    : favoritesReady && favoriteSet.has(question.id)
+                      ? '已收藏'
+                      : '收藏'
+                }}
+              </button>
+              <button
+                type="button"
+                class="quiet-action"
+                :aria-expanded="expandedComments.has(question.id)"
+                :aria-controls="`question-discussion-${question.id}`"
+                @click="toggleComment(question.id)"
+              >
+                <el-icon aria-hidden="true"><ChatLineRound /></el-icon
+                >{{ expandedComments.has(question.id) ? '收起讨论' : '讨论' }}
+              </button>
+              <button type="button" class="quiet-action" @click="openCorrectionDialog(question)">
+                <el-icon aria-hidden="true"><Warning /></el-icon>纠错
+              </button>
+            </div>
+          </footer>
+          <div
+            v-if="expandedComments.has(question.id)"
+            :id="`question-discussion-${question.id}`"
+            class="comment-section"
+          >
+            <QuestionComment :question-id="question.id" />
+          </div>
+        </article>
+      </div>
+      <div v-if="!loading && !loadError && total > 0" class="pagination-wrap">
+        <el-pagination
+          v-model:current-page="pageNum"
+          v-model:page-size="pageSize"
+          :total="total"
+          :page-sizes="[10, 20, 50]"
+          layout="total, sizes, prev, pager, next"
+          @current-change="fetchQuestions"
+          @size-change="handleSizeChange"
+        />
+      </div>
+    </section>
+
+    <el-dialog
+      v-model="correctionDialogVisible"
+      title="提交题目纠错"
+      width="560px"
+      class="catalog-correction-dialog"
+      :show-close="!correctionSubmitting"
+      :close-on-click-modal="false"
+      :close-on-press-escape="!correctionSubmitting"
+    >
       <div v-if="correctionQuestion" class="correction-question">
-        <span>#{{ correctionQuestion.id }} · {{ questionTypeLabel(correctionQuestion.questionType) }}</span>
+        <span>{{ questionTypeLabel(correctionQuestion.questionType) }}</span>
         <p>{{ correctionQuestion.content }}</p>
       </div>
-      <el-form label-width="88px" @submit.prevent>
-        <el-form-item label="问题类型">
-          <el-select v-model="correctionForm.reportType" style="width: 100%">
-            <el-option label="题干内容错误" value="CONTENT" />
-            <el-option label="答案有误" value="ANSWER" />
-            <el-option label="解析有误" value="ANALYSIS" />
-            <el-option label="知识点关联错误" value="KNOWLEDGE_POINT" />
+      <el-form label-position="top" :disabled="correctionSubmitting" @submit.prevent="submitCorrection">
+        <el-form-item label="需要核对的内容">
+          <el-select v-model="correctionForm.reportType" aria-label="需要核对的内容">
+            <el-option label="题干内容" value="CONTENT" /><el-option label="答案" value="ANSWER" />
+            <el-option label="解析" value="ANALYSIS" /><el-option label="知识点关联" value="KNOWLEDGE_POINT" />
             <el-option label="其他问题" value="OTHER" />
           </el-select>
         </el-form-item>
@@ -185,12 +213,14 @@
             :rows="4"
             maxlength="1000"
             show-word-limit
-            placeholder="请描述你发现的问题，例如正确答案、题干错字或解析不清楚之处"
+            aria-label="问题描述"
+            placeholder="说明疑问所在；如有依据，也可以一起提供。"
           />
         </el-form-item>
       </el-form>
+      <p v-if="correctionError" class="correction-error" role="alert">{{ correctionError }}</p>
       <template #footer>
-        <el-button @click="correctionDialogVisible = false">取消</el-button>
+        <el-button :disabled="correctionSubmitting" @click="correctionDialogVisible = false">暂时关闭</el-button>
         <el-button type="primary" :loading="correctionSubmitting" @click="submitCorrection">提交纠错</el-button>
       </template>
     </el-dialog>
@@ -198,7 +228,8 @@
 </template>
 
 <script setup lang="ts">
-import { Star, StarFilled, ChatLineRound, Warning } from '@element-plus/icons-vue'
+import { ArrowRight, Star, StarFilled, ChatLineRound, Warning } from '@element-plus/icons-vue'
+import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import QuestionComment from '@/components/QuestionComment.vue'
 import { useQuestionCatalog } from './useQuestionCatalog'
 
@@ -213,19 +244,31 @@ const {
   questionTypes,
   difficultyOptions,
   courseList,
+  coursesLoading,
+  coursesError,
+  loadCourses,
   favoriteSet,
+  favoritePending,
+  favoritesLoading,
+  favoritesReady,
+  favoritesError,
+  loadFavoriteIds,
+  actionError,
+  notice,
+  practiceStartingId,
+  startQuestionPractice,
   expandedComments,
   correctionDialogVisible,
   correctionSubmitting,
   correctionQuestion,
   correctionForm,
+  correctionError,
   activeFilterCount,
   resultSummary,
   searchContext,
   searchQueryWarning,
   toggleComment,
   questionTypeLabel,
-  questionTypeTag,
   difficultyLabel,
   handleFilterChange,
   handleSizeChange,
@@ -242,430 +285,287 @@ const {
 
 <style scoped>
 .question-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: var(--lp-space-5);
 }
-
-.hero-metrics {
-  display: grid;
-  grid-template-columns: repeat(2, 118px);
-  gap: var(--lp-space-2);
-  align-items: stretch;
+.collection-link {
+  color: var(--lp-primary);
+  font-size: var(--lp-text-sm);
+  text-underline-offset: 4px;
 }
-
-.metric-item {
+.filter-panel {
+  padding: var(--lp-space-5);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  background: var(--lp-surface);
+}
+.filter-fields {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 72px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--lp-space-4);
+}
+.filter-field {
+  display: grid;
+  gap: var(--lp-space-2);
+}
+.filter-field label,
+.difficulty-filter legend {
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  font-weight: var(--lp-weight-medium);
+}
+.course-filter {
+  flex: 1 1 220px;
+}
+.type-filter {
+  flex: 0 1 160px;
+}
+.difficulty-filter {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.difficulty-filter legend {
+  margin-bottom: var(--lp-space-2);
+  padding: 0;
+}
+.difficulty-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lp-space-1);
+}
+.difficulty-chip {
+  min-height: 34px;
+  padding: var(--lp-space-2) var(--lp-space-3);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-sm);
+  background: var(--lp-surface);
+  color: var(--lp-text-secondary);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--lp-text-sm);
+}
+.difficulty-chip span {
+  font-variant-numeric: tabular-nums;
+  margin-right: var(--lp-space-1);
+}
+.difficulty-chip[aria-pressed='true'] {
+  color: var(--lp-primary);
+  border-color: var(--lp-primary);
+  background: var(--lp-primary-soft);
+}
+.search-context,
+.inline-message {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--lp-space-3);
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+}
+.search-context {
+  margin-top: var(--lp-space-3);
+  border-top: var(--lp-border-hairline);
+  padding-top: var(--lp-space-2);
+}
+.inline-message {
   padding: var(--lp-space-3) var(--lp-space-4);
-  background: var(--lp-surface-soft);
   border: var(--lp-border-hairline);
   border-radius: var(--lp-radius-md);
+  background: var(--lp-surface-subtle);
 }
-
-.metric-item span {
-  color: var(--lp-text-muted);
+.filter-panel .inline-message {
+  margin-top: var(--lp-space-3);
+}
+.action-message,
+.search-query-warning {
+  margin: 0;
+  color: var(--lp-text-secondary);
   font-size: var(--lp-text-sm);
 }
-
-.metric-item strong {
-  margin-top: 4px;
-  color: var(--lp-text);
-  font-size: var(--lp-text-2xl);
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
+.action-message.is-error,
+.correction-error {
+  color: var(--lp-danger);
 }
-
-.question-workbench {
-  display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
-  gap: 16px;
-  align-items: start;
-}
-
-.filter-panel,
-.question-results {
-  background: var(--lp-surface);
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  box-shadow: var(--lp-shadow-sm);
-}
-
-.filter-panel {
-  position: sticky;
-  top: 76px;
-  padding: 18px;
-}
-
-.panel-title,
 .result-toolbar {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.result-context {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--lp-space-2);
-}
-
-.panel-title h3,
-.result-toolbar h3 {
-  margin: 4px 0 0;
-  color: var(--lp-text);
-  font-size: 18px;
-}
-
-.filter-block {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  margin-top: 18px;
-}
-
-.filter-label {
+  justify-content: space-between;
+  gap: var(--lp-space-3);
+  margin-bottom: var(--lp-space-3);
   color: var(--lp-text-muted);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.type-switch {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.type-switch :deep(.el-radio-button__inner) {
-  width: 100%;
-  border: 1px solid var(--lp-border);
-  border-radius: 7px !important;
-  box-shadow: none !important;
-}
-
-.type-switch :deep(.el-radio-button:first-child .el-radio-button__inner),
-.type-switch :deep(.el-radio-button:last-child .el-radio-button__inner) {
-  border-radius: 7px !important;
-}
-
-.difficulty-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 6px;
-}
-
-.difficulty-chip {
-  min-width: 0;
-  padding: 9px 4px;
-  color: var(--lp-text-secondary);
-  background: var(--lp-surface-soft);
-  border: 1px solid var(--lp-border);
-  border-radius: 7px;
-  cursor: pointer;
-}
-
-.difficulty-chip strong,
-.difficulty-chip span {
-  display: block;
-}
-
-.difficulty-chip strong {
-  color: var(--lp-text);
-  font-size: 15px;
-}
-
-.difficulty-chip span {
-  margin-top: 2px;
-  font-size: 12px;
-}
-
-.difficulty-chip.active,
-.difficulty-chip:hover {
-  color: var(--lp-primary);
-  background: var(--lp-primary-soft);
-  border-color: var(--lp-primary);
-}
-
-.difficulty-chip.active strong,
-.difficulty-chip:hover strong {
-  color: var(--lp-primary);
-}
-
-.question-results {
-  min-width: 0;
-  padding: 18px;
-}
-
-.result-toolbar {
-  margin-bottom: 14px;
-}
-
-.result-toolbar p {
-  margin: 5px 0 0;
-  color: var(--lp-text-muted);
-  font-size: 13px;
-}
-
-.search-query-warning {
-  margin: 0 0 var(--lp-space-3);
-  padding: var(--lp-space-2) var(--lp-space-3);
-  color: var(--lp-text-secondary);
-  background: var(--lp-surface-soft);
-  border-left: 3px solid var(--lp-border-strong);
-  border-radius: var(--lp-radius-sm);
   font-size: var(--lp-text-sm);
 }
-
-.result-body {
-  min-height: 260px;
+.result-toolbar p {
+  margin: 0;
 }
-
+.question-collection {
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  background: var(--lp-surface);
+  overflow: clip;
+}
 .question-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 14px;
-  padding: 18px;
-  margin-bottom: 12px;
-  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius);
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
+  padding: var(--lp-space-6);
 }
-
-.question-card:hover {
-  border-color: var(--lp-border-strong);
-  box-shadow: var(--lp-shadow-md);
+.question-card + .question-card {
+  border-top: var(--lp-border-hairline);
 }
-
-.question-main {
-  min-width: 0;
-}
-
 .question-meta {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--lp-space-3);
   color: var(--lp-text-muted);
-  font-size: 13px;
+  font-size: var(--lp-text-sm);
 }
-
-.question-meta span:not(.el-tag) {
-  padding-right: 8px;
-  border-right: 1px solid var(--lp-border);
+.question-meta h2 {
+  margin: 0;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  font-weight: var(--lp-weight-semibold);
 }
-
-.question-meta span:last-child {
-  border-right: 0;
+.question-meta > span + span::before {
+  content: '·';
+  margin-right: var(--lp-space-3);
+  color: var(--lp-border-strong);
 }
-
-.question-card h4 {
-  margin: 12px 0;
-  color: var(--lp-text);
-  font-size: 16px;
-  line-height: 1.75;
+.question-content {
+  margin: var(--lp-space-4) 0;
+  max-width: 86ch;
+  overflow-wrap: anywhere;
 }
-
+.question-content :deep(.markdown-body) {
+  font-size: var(--lp-text-base);
+  line-height: var(--lp-leading-relaxed);
+}
 .question-options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: var(--lp-space-2) var(--lp-space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 90ch;
 }
-
-.option-item {
+.question-options.has-long-options {
+  grid-template-columns: 1fr;
+}
+.question-options li {
   display: flex;
-  gap: 8px;
-  min-width: 0;
-  padding: 9px 10px;
+  gap: var(--lp-space-2);
+  padding: var(--lp-space-2) 0;
   color: var(--lp-text-secondary);
-  background: var(--lp-surface-soft);
-  border: 1px solid var(--lp-border);
-  border-radius: 7px;
-  font-size: 14px;
-  line-height: 1.55;
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
-
 .option-label {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  flex: 0 0 22px;
-  color: var(--lp-primary);
-  background: var(--lp-primary-soft);
-  border-radius: 50%;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.question-side {
-  display: flex;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.icon-action,
-.text-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 34px;
-  border: 1px solid var(--lp-border);
-  border-radius: 7px;
-  cursor: pointer;
-}
-
-.icon-action {
-  width: 34px;
   color: var(--lp-text-muted);
-  background: var(--lp-surface);
+  flex: 0 0 20px;
 }
-
-.icon-action.active {
-  color: var(--lp-accent);
-  border-color: #efd99b;
-  background: #fff8e7;
-}
-
-.text-action {
-  gap: 5px;
-  padding: 0 10px;
-  color: var(--lp-text-secondary);
-  background: var(--lp-surface);
-  white-space: nowrap;
-}
-
-.icon-action:hover,
-.text-action:hover {
-  color: var(--lp-primary);
-  border-color: var(--lp-primary);
-}
-
-.correction-question {
-  margin-bottom: 14px;
-  padding: 12px;
-  background: var(--lp-surface-soft);
-  border: 1px solid var(--lp-border);
-  border-radius: 7px;
-}
-
-.correction-question span {
-  color: var(--lp-text-muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.correction-question p {
-  margin: 6px 0 0;
-  color: var(--lp-text);
-  font-size: 14px;
-  line-height: 1.7;
-}
-
-.question-footer {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-top: 2px;
-}
-
 .question-tags {
   display: flex;
-  gap: 6px;
   flex-wrap: wrap;
-}
-
-.kp-tag {
-  font-size: 12px;
-}
-
-.no-kp {
+  gap: var(--lp-space-2);
+  margin-top: var(--lp-space-4);
   color: var(--lp-text-muted);
-  font-size: 13px;
+  font-size: var(--lp-text-xs);
 }
-
+.question-tags span {
+  padding: 2px var(--lp-space-2);
+  background: var(--lp-surface-soft);
+  border-radius: var(--lp-radius-sm);
+}
+.question-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--lp-space-3);
+  margin-top: var(--lp-space-4);
+}
+.question-actions > .el-button {
+  margin-left: calc(-1 * var(--lp-space-3));
+}
+.secondary-actions {
+  display: flex;
+  gap: var(--lp-space-4);
+}
+.quiet-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--lp-space-1);
+  min-height: 36px;
+  padding: var(--lp-space-1);
+  border: 0;
+  background: transparent;
+  color: var(--lp-text-secondary);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--lp-text-sm);
+}
+.quiet-action[aria-pressed='true'],
+.quiet-action:hover:not(:disabled) {
+  color: var(--lp-primary);
+}
+.quiet-action:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
 .comment-section {
-  grid-column: 1 / -1;
-  padding-top: 12px;
-  border-top: 1px solid var(--lp-border);
+  margin-top: var(--lp-space-4);
+  padding-top: var(--lp-space-4);
+  border-top: var(--lp-border-hairline);
 }
-
-.empty-state {
-  padding: 44px 0;
-}
-
 .pagination-wrap {
   display: flex;
   justify-content: flex-end;
-  padding-top: 8px;
+  margin-top: var(--lp-space-5);
 }
-
-@media (max-width: 1080px) {
-  .question-workbench {
-    grid-template-columns: 1fr;
-  }
-
-  .filter-panel {
-    position: static;
-  }
+.correction-question {
+  max-height: 180px;
+  overflow: auto;
+  margin-bottom: var(--lp-space-4);
+  padding: var(--lp-space-3);
+  background: var(--lp-surface-soft);
+  border-radius: var(--lp-radius-sm);
 }
-
-@media (max-width: 720px) {
-  .panel-title,
-  .result-toolbar {
-    flex-direction: column;
+.correction-question span {
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-xs);
+}
+.correction-question p {
+  margin: var(--lp-space-2) 0 0;
+  color: var(--lp-text-secondary);
+  line-height: var(--lp-leading-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.correction-error {
+  margin: 0;
+  line-height: var(--lp-leading-body);
+  font-size: var(--lp-text-sm);
+}
+@media (max-width: 767px) {
+  .filter-field {
+    flex: 1 1 100%;
   }
-
-  .hero-metrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    width: 100%;
-  }
-
-  .question-results,
-  .filter-panel {
-    padding: 14px;
-  }
-
-  .type-switch {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .question-card {
-    grid-template-columns: 1fr;
-    padding: 14px;
+    padding: var(--lp-space-4);
   }
-
-  .question-side {
-    justify-content: space-between;
-  }
-
   .question-options {
     grid-template-columns: 1fr;
   }
-
+  .secondary-actions {
+    gap: var(--lp-space-2);
+  }
   .pagination-wrap {
     justify-content: center;
-  }
-}
-
-@media (max-width: 420px) {
-  .type-switch {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .difficulty-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 </style>

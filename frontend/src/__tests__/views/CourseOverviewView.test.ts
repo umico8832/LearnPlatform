@@ -146,6 +146,58 @@ describe('CourseOverviewView', () => {
     })
   })
 
+  it('新学生的 Tutor 推荐显示开始学习而非继续学习', async () => {
+    mockGetCourseOverview.mockResolvedValueOnce({
+      data: {
+        courseId: 408,
+        courseName: '408 数据结构',
+        answeredCount: 0,
+        correctCount: 0,
+        dueReviewCount: 0,
+        unresolvedWrongCount: 0,
+        lastLearningTime: null,
+        latestStageAssessment: null,
+        recommendedTargets: [
+          { type: 'TUTOR', title: '继续 AI 教学', reason: '首个未完成内容', questionId: null, knowledgePointId: 31 },
+        ],
+        tutorProgress: [{ knowledgePointId: 31, title: '线性表的定义与基本操作', status: 'NOT_STARTED' }],
+      },
+    })
+    const wrapper = mount(CourseOverviewView, { global: { stubs } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('学习：线性表的定义与基本操作')
+    expect(findButton(wrapper, '开始学习').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('继续 AI 教学')
+  })
+
+  it('教学目录先展示六节并可按需展开余下课程内容', async () => {
+    mockGetCourseOverview.mockResolvedValueOnce({
+      data: {
+        courseId: 408,
+        courseName: '408 数据结构',
+        answeredCount: 0,
+        correctCount: 0,
+        dueReviewCount: 0,
+        unresolvedWrongCount: 0,
+        lastLearningTime: null,
+        latestStageAssessment: null,
+        recommendedTargets: [],
+        tutorProgress: Array.from({ length: 8 }, (_, index) => ({
+          knowledgePointId: index + 1,
+          title: `教学内容 ${index + 1}`,
+          status: 'NOT_STARTED',
+        })),
+      },
+    })
+    const wrapper = mount(CourseOverviewView, { global: { stubs } })
+    await flushPromises()
+
+    expect(wrapper.findAll('.outline-item')).toHaveLength(6)
+    await findButton(wrapper, '展开其余 2 节').trigger('click')
+    expect(wrapper.findAll('.outline-item')).toHaveLength(8)
+  })
+
   it('从课程中枢的更多入口进入当前课程的试卷学习', async () => {
     const wrapper = mount(CourseOverviewView, { global: { stubs } })
     await flushPromises()
@@ -238,7 +290,7 @@ describe('CourseOverviewView', () => {
     await button.trigger('click')
     await flushPromises()
 
-    expect(mockStartCourseLearning).toHaveBeenCalledWith(408)
+    expect(mockStartCourseLearning).toHaveBeenCalledWith(408, { errorDisplay: 'inline' })
     expect(mockPush).toHaveBeenCalledWith({
       name: 'TutorSession',
       params: { id: 408 },
@@ -321,16 +373,18 @@ describe('CourseOverviewView', () => {
     vm.openAssessmentSetup()
     expect(wrapper.text()).toContain('课程整体测评')
     await vm.startAssessment()
-    expect(mockStartAssessment).toHaveBeenCalledWith(408, 5, null)
+    expect(mockStartAssessment).toHaveBeenCalledWith(408, 5, null, { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('范围：课程整体')
-    expect(wrapper.text()).toContain('确定性课程题序')
+    expect(wrapper.text()).toContain('学习记录不足时，按课程题序安排题目')
     expect(wrapper.text()).toContain('知识点：栈')
     expect(wrapper.text()).toContain('AI 审查生成题 · 母题 #20')
     expect(wrapper.text()).not.toContain('栈顶元素先离开')
     vm.assessmentAnswers[61] = ['A']
     await vm.submitAssessment()
 
-    expect(mockSubmitAssessment).toHaveBeenCalledWith(51, [{ assessmentQuestionId: 61, userAnswer: 'A' }])
+    expect(mockSubmitAssessment).toHaveBeenCalledWith(51, [{ assessmentQuestionId: 61, userAnswer: 'A' }], {
+      errorDisplay: 'inline',
+    })
     expect(wrapper.text()).toContain('答对 1 / 1 题')
     expect(wrapper.text()).toContain('栈顶元素先离开')
   })
@@ -352,15 +406,112 @@ describe('CourseOverviewView', () => {
     const wrapper = mount(CourseOverviewView, { global: { stubs } })
     await flushPromises()
     const vm = wrapper.vm as unknown as {
-      assessmentKnowledgePointId: number | null
-      startAssessment: () => Promise<void>
+      startAssessment: (knowledgePointId?: number) => Promise<void>
     }
 
-    vm.assessmentKnowledgePointId = 32
+    await vm.startAssessment(32)
+
+    expect(mockStartAssessment).toHaveBeenCalledWith(408, 5, 32, { errorDisplay: 'inline' })
+    expect(wrapper.text()).toContain('范围：ArrayStack 的容量调整')
+  })
+
+  it('开始测评失败时保留当前范围和原位重试提示', async () => {
+    mockStartAssessment.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(CourseOverviewView, { global: { stubs } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as { openAssessmentSetup: () => void; startAssessment: () => Promise<void> }
+
+    vm.openAssessmentSetup()
     await vm.startAssessment()
 
-    expect(mockStartAssessment).toHaveBeenCalledWith(408, 5, 32)
-    expect(wrapper.text()).toContain('范围：ArrayStack 的容量调整')
+    expect(wrapper.text()).toContain('测评暂时无法开始，请重试。')
+    expect(wrapper.text()).toContain('课程整体测评')
+  })
+
+  it('关闭未完成测评、查看历史复盘后重新开始时保留该测评的本页草稿', async () => {
+    const active = {
+      id: 88,
+      courseId: 408,
+      status: 'IN_PROGRESS',
+      selectionStrategy: 'COURSE_SEQUENCE_FALLBACK',
+      questionCount: 1,
+      correctCount: null,
+      questions: [
+        {
+          id: 601,
+          questionId: 21,
+          sortOrder: 1,
+          questionType: 'SINGLE_CHOICE',
+          content: '草稿题目',
+          options: [{ label: 'A', content: '答案 A' }],
+          userAnswer: null,
+          correct: null,
+          correctAnswer: null,
+          analysis: null,
+        },
+      ],
+    }
+    mockStartAssessment.mockResolvedValue({ data: active })
+    mockGetAssessmentDetail.mockResolvedValue({
+      data: { ...active, id: 89, status: 'COMPLETED', correctCount: 1 },
+    })
+    const wrapper = mount(CourseOverviewView, { global: { stubs } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as {
+      startAssessment: () => Promise<void>
+      openAssessmentDetail: (id: number) => Promise<void>
+      assessmentAnswers: Record<number, string[]>
+      assessmentDialogVisible: boolean
+    }
+
+    await vm.startAssessment()
+    vm.assessmentAnswers[601] = ['A']
+    await nextTick()
+    vm.assessmentDialogVisible = false
+    await vm.openAssessmentDetail(89)
+    await vm.startAssessment()
+
+    expect(vm.assessmentAnswers).toEqual({ 601: ['A'] })
+  })
+
+  it('未答题提交保留在测评页并标出首个未答题', async () => {
+    const active = {
+      id: 90,
+      courseId: 408,
+      status: 'IN_PROGRESS',
+      selectionStrategy: 'COURSE_SEQUENCE_FALLBACK',
+      questionCount: 1,
+      correctCount: null,
+      questions: [
+        {
+          id: 701,
+          questionId: 22,
+          sortOrder: 1,
+          questionType: 'SINGLE_CHOICE',
+          content: '未作答题目',
+          options: [{ label: 'A', content: '答案 A' }],
+          userAnswer: null,
+          correct: null,
+          correctAnswer: null,
+          analysis: null,
+        },
+      ],
+    }
+    mockStartAssessment.mockResolvedValue({ data: active })
+    const wrapper = mount(CourseOverviewView, { global: { stubs } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as {
+      startAssessment: () => Promise<void>
+      submitAssessment: () => Promise<void>
+      focusQuestionId: number | null
+    }
+
+    await vm.startAssessment()
+    await vm.submitAssessment()
+
+    expect(wrapper.text()).toContain('请完成全部题目后再提交。')
+    expect(vm.focusQuestionId).toBe(701)
+    expect(mockSubmitAssessment).not.toHaveBeenCalled()
   })
 
   it('复盘按知识点标注并提供错题复习与已审查教学内容入口', async () => {
@@ -496,7 +647,7 @@ describe('CourseOverviewView', () => {
     vm.assessmentHistoryKnowledgePointId = 31
     await vm.loadAssessmentHistory(1)
 
-    expect(mockGetAssessmentHistory).toHaveBeenCalledWith(408, 1, 10, 31)
+    expect(mockGetAssessmentHistory).toHaveBeenCalledWith(408, 1, 10, 31, { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('答对 1 / 2 题')
   })
 
@@ -591,7 +742,7 @@ describe('CourseOverviewView', () => {
     expect(wrapper.text()).toContain('知识点：栈 2/3 · 队列 1/2')
     await findButton(wrapper, '查看逐题复盘').trigger('click')
     await flushPromises()
-    expect(mockGetAssessmentDetail).toHaveBeenCalledWith(51)
+    expect(mockGetAssessmentDetail).toHaveBeenCalledWith(51, { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('栈顶元素先离开')
     const vm = wrapper.vm as unknown as {
       openAssessmentHistory: () => Promise<void>
@@ -599,7 +750,7 @@ describe('CourseOverviewView', () => {
     }
 
     await vm.openAssessmentHistory()
-    expect(mockGetAssessmentHistory).toHaveBeenCalledWith(408, 1, 10, null)
+    expect(mockGetAssessmentHistory).toHaveBeenCalledWith(408, 1, 10, null, { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('按当前学习事实优先选题')
     expect(wrapper.text()).toContain('官方原题 3 · AI 生成题 2')
   })

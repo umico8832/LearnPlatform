@@ -202,6 +202,19 @@ describe('Course API', () => {
   })
 
   describe('个人课程库', () => {
+    it('为课程详情、课程库和加入课程保留可选的原位错误配置', async () => {
+      mockedRequest.get.mockResolvedValue({ code: 0, data: [], message: 'success' })
+      mockedRequest.post.mockResolvedValue({ code: 0, data: { courseId: 408 }, message: 'success' })
+
+      await getCourseById(408, { errorDisplay: 'inline' })
+      await getMyCourses({ errorDisplay: 'inline' })
+      await addCourseToLibrary(408, { errorDisplay: 'inline' })
+
+      expect(mockedRequest.get).toHaveBeenCalledWith('/courses/408', { errorDisplay: 'inline' })
+      expect(mockedRequest.get).toHaveBeenCalledWith('/my-courses', { errorDisplay: 'inline' })
+      expect(mockedRequest.post).toHaveBeenCalledWith('/my-courses/408', undefined, { errorDisplay: 'inline' })
+    })
+
     it('应使用 GET 请求获取当前用户的课程库', async () => {
       mockedRequest.get.mockResolvedValue({ code: 0, data: [], message: 'success' })
 
@@ -273,6 +286,42 @@ describe('Course API', () => {
       expect(mockedRequest.post).toHaveBeenNthCalledWith(2, '/my-courses/stage-assessments/51/submit', {
         answers: [{ assessmentQuestionId: 61, userAnswer: 'A' }],
       })
+    })
+
+    it('课程空间请求可要求原位呈现失败而不改变默认契约', async () => {
+      const inline = { errorDisplay: 'inline' } as const
+
+      await getCourseOverview(408, inline)
+      await getCourseKnowledgePointFacts(408, 1, 10, inline)
+      await startCourseLearning(408, inline)
+      await startCourseStageAssessment(408, 5, null, inline)
+      await submitCourseStageAssessment(51, [], inline)
+      await getCourseStageAssessmentHistory(408, 1, 10, null, inline)
+      await getCourseStageAssessmentDetail(51, inline)
+
+      expect(mockedRequest.get).toHaveBeenNthCalledWith(1, '/my-courses/408/overview', inline)
+      expect(mockedRequest.get).toHaveBeenNthCalledWith(2, '/my-courses/408/knowledge-point-facts', {
+        params: { pageNum: 1, pageSize: 10 },
+        ...inline,
+      })
+      expect(mockedRequest.post).toHaveBeenNthCalledWith(1, '/my-courses/408/start-learning', undefined, inline)
+      expect(mockedRequest.post).toHaveBeenNthCalledWith(
+        2,
+        '/my-courses/408/stage-assessments',
+        { questionCount: 5, knowledgePointId: null },
+        inline,
+      )
+      expect(mockedRequest.post).toHaveBeenNthCalledWith(
+        3,
+        '/my-courses/stage-assessments/51/submit',
+        { answers: [] },
+        inline,
+      )
+      expect(mockedRequest.get).toHaveBeenNthCalledWith(3, '/my-courses/408/stage-assessments', {
+        params: { pageNum: 1, pageSize: 10, knowledgePointId: undefined },
+        ...inline,
+      })
+      expect(mockedRequest.get).toHaveBeenNthCalledWith(4, '/my-courses/stage-assessments/51', inline)
     })
 
     it('应以课程和知识点创建 Tutor 会话并提交服务端检查', async () => {

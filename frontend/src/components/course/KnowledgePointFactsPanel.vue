@@ -1,6 +1,6 @@
 <template>
-  <section class="panel knowledge-facts-panel" aria-label="知识点学习事实">
-    <LpSectionHeading title="知识点学习记录">
+  <section class="panel knowledge-facts-panel" aria-labelledby="knowledge-facts-heading">
+    <LpSectionHeading heading-id="knowledge-facts-heading" title="知识点学习记录">
       <template #aside>
         <el-tooltip content="作答与答对按次数统计，错题与复习按题目统计；一道题可能计入多个知识点。" placement="top">
           <el-button text circle aria-label="查看统计口径"
@@ -109,6 +109,7 @@
 import { onBeforeUnmount, ref, watch } from 'vue'
 import { InfoFilled } from '@element-plus/icons-vue'
 import { getCourseKnowledgePointFacts, type CourseKnowledgePointFactVO } from '@/api/course'
+import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
 
 const props = defineProps<{
   courseId: number
@@ -142,11 +143,19 @@ function factKey(fact: CourseKnowledgePointFactVO) {
 async function loadFacts(targetPage = page.value) {
   const requestedCourseId = props.courseId
   const version = ++requestVersion
+  const session = getAuthSessionVersion()
+  const current = () =>
+    !disposed &&
+    version === requestVersion &&
+    requestedCourseId === props.courseId &&
+    session === getAuthSessionVersion()
   loading.value = true
   failed.value = false
   try {
-    const response = await getCourseKnowledgePointFacts(requestedCourseId, targetPage, pageSize.value)
-    if (disposed || version !== requestVersion || requestedCourseId !== props.courseId) return
+    const response = await getCourseKnowledgePointFacts(requestedCourseId, targetPage, pageSize.value, {
+      errorDisplay: 'inline',
+    })
+    if (!current()) return
     const responsePageSize = response.data.size || pageSize.value
     const lastPage = Math.max(1, Math.ceil(response.data.total / responsePageSize))
     if (!response.data.records.length && response.data.total > 0 && response.data.current > lastPage) {
@@ -158,10 +167,10 @@ async function loadFacts(targetPage = page.value) {
     page.value = response.data.current
     pageSize.value = responsePageSize
   } catch {
-    if (disposed || version !== requestVersion || requestedCourseId !== props.courseId) return
+    if (!current()) return
     failed.value = true
   } finally {
-    if (!disposed && version === requestVersion && requestedCourseId === props.courseId) loading.value = false
+    if (current()) loading.value = false
   }
 }
 
@@ -179,9 +188,19 @@ watch(
   { immediate: true },
 )
 
+const unsubscribeAuth = onAuthSessionChange(() => {
+  requestVersion += 1
+  records.value = []
+  total.value = 0
+  page.value = 1
+  loading.value = false
+  failed.value = false
+})
+
 onBeforeUnmount(() => {
   disposed = true
   requestVersion += 1
+  unsubscribeAuth()
 })
 </script>
 

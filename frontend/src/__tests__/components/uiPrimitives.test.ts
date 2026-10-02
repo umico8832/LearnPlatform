@@ -4,10 +4,17 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import LpCard from '@/components/ui/LpCard.vue'
 import LpListItem from '@/components/ui/LpListItem.vue'
 import LpPageHeader from '@/components/ui/LpPageHeader.vue'
+import LpSectionHeading from '@/components/ui/LpSectionHeading.vue'
 import LpSkeleton from '@/components/ui/LpSkeleton.vue'
 import LpStatePanel from '@/components/ui/LpStatePanel.vue'
 
 describe('UI primitives', () => {
+  it('places the section label target on its semantic heading', () => {
+    const wrapper = mount(LpSectionHeading, { props: { title: '课程目录', headingId: 'course-outline' } })
+    expect(wrapper.get('#course-outline').element.tagName).toBe('H2')
+    expect(wrapper.get('#course-outline').text()).toBe('课程目录')
+    expect(wrapper.attributes('id')).toBeUndefined()
+  })
   it('keeps the page header sans by default and marks explicit display headings', () => {
     const defaultHeader = mount(LpPageHeader, { props: { title: '学习计划' } })
     const displayHeader = mount(LpPageHeader, { props: { title: '学习计划', display: true } })

@@ -451,7 +451,7 @@ test('用户可上传有限DOCX并提取段落表格进入同一确认闭环', a
   await expect(page.getByText('私有试卷已删除')).toBeVisible()
 })
 
-test('用户可完成2026真题学习与限时考试并复盘可信来源', async ({ page }) => {
+test('课程空间可完成整体与知识点阶段测评并查看历史复盘', async ({ page }) => {
   await loginAs(page, 'testuser', 'test123')
 
   await page.goto('/courses')
@@ -460,14 +460,17 @@ test('用户可完成2026真题学习与限时考试并复盘可信来源', asyn
   await courseCard.getByRole('button', { name: '查看课程' }).click()
   // 页面切换过渡期间旧页面内容仍在 DOM（旧卡片标题会命中 heading 断言），
   // 因此先等详情页独有的按钮出现，再判断「加入课程库 / 进入课程空间」分支。
-  await expect(page).toHaveURL(/\/courses\/\d+$/)
+  await expect(page).toHaveURL(/\/courses\/\d+\?from=course-list$/)
+  expect(new URL(page.url()).searchParams.get('from')).toBe('course-list')
   await expect(page.getByRole('button', { name: '查看题目' })).toBeVisible()
-  const joinButton = page.getByRole('button', { name: '加入课程库' })
-  if (await joinButton.isVisible()) {
+  const joinButton = page.getByRole('button', { name: '加入课程库', exact: true })
+  const overviewButton = page.getByRole('button', { name: '进入课程空间', exact: true })
+  const enabledJoinButton = joinButton.locator('xpath=self::button[not(@disabled)]')
+  await expect(overviewButton.or(enabledJoinButton)).toBeVisible()
+  if (await enabledJoinButton.isVisible()) {
     await joinButton.click()
     await expect(page).toHaveURL(/\/my-courses\/\d+$/)
   } else {
-    const overviewButton = page.getByRole('button', { name: '进入课程空间' })
     await expect(overviewButton).toBeVisible()
     await overviewButton.click()
   }
@@ -477,7 +480,7 @@ test('用户可完成2026真题学习与限时考试并复盘可信来源', asyn
   await expect(setupDialog).toContainText('课程整体测评')
   await setupDialog.getByRole('button', { name: '开始测评' }).click()
   const assessmentDialog = page.getByRole('dialog', { name: '课程阶段测评' })
-  await expect(assessmentDialog).toContainText(/按当前错题|确定性课程题序/)
+  await expect(assessmentDialog).toContainText(/根据当前错题|学习记录不足时/)
   await expect(assessmentDialog).toContainText('范围：课程整体')
   await expect(assessmentDialog).toContainText('题源构成：')
   const assessmentQuestions = await assessmentDialog.locator('.assessment-question').all()
@@ -522,6 +525,10 @@ test('用户可完成2026真题学习与限时考试并复盘可信来源', asyn
   await expect(assessmentDialog).toContainText('知识点：顺序表的插入与删除')
   await expect(assessmentDialog).toContainText('按知识点统计')
   await assessmentDialog.getByRole('button', { name: '关闭', exact: true }).click()
+})
+
+test('用户可完成2026真题学习与限时考试并复盘可信来源', async ({ page }) => {
+  await loginAs(page, 'testuser', 'test123')
 
   await page.goto('/exams')
   const officialCard = page.locator('.exam-card').filter({ hasText: '2026 年 408 真题·数据结构选择题' })
@@ -697,7 +704,7 @@ test('课程空间学习工具可进入对应页面并携带课程参数', async
   await page.goto('/courses')
   const courseCard = page.locator('.course-card').filter({ hasText: '408 数据结构' })
   await courseCard.getByRole('button', { name: '查看课程' }).click()
-  await expect(page).toHaveURL(/\/courses\/\d+$/)
+  await expect(page).toHaveURL(/\/courses\/\d+\?from=course-list$/)
   // 页面切换过渡期间旧页面内容仍在 DOM，先等详情页独有按钮再判断加入分支。
   await expect(page.getByRole('button', { name: '查看题目' })).toBeVisible()
   const courseId = new URL(page.url()).pathname.split('/').pop()!

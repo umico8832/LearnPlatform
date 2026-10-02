@@ -1,15 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 
-const { mockAddCourseToLibrary, mockGetCourseById, mockGetKnowledgeTree, mockGetMyCourses, mockPush, mockSuccess } =
-  vi.hoisted(() => ({
-    mockAddCourseToLibrary: vi.fn(),
-    mockGetCourseById: vi.fn(),
-    mockGetKnowledgeTree: vi.fn(),
-    mockGetMyCourses: vi.fn(),
-    mockPush: vi.fn(),
-    mockSuccess: vi.fn(),
-  }))
+const {
+  mockAddCourseToLibrary,
+  mockGetCourseById,
+  mockGetKnowledgeTree,
+  mockGetMyCourses,
+  mockPush,
+  mockSuccess,
+  auth,
+} = vi.hoisted(() => ({
+  mockAddCourseToLibrary: vi.fn(),
+  mockGetCourseById: vi.fn(),
+  mockGetKnowledgeTree: vi.fn(),
+  mockGetMyCourses: vi.fn(),
+  mockPush: vi.fn(),
+  mockSuccess: vi.fn(),
+  auth: { version: 1, listeners: new Set<() => void>() },
+}))
 
 vi.mock('@/api/course', () => ({
   addCourseToLibrary: (...args: unknown[]) => mockAddCourseToLibrary(...args),
@@ -20,9 +28,18 @@ vi.mock('@/api/course', () => ({
 vi.mock('@/api/knowledgePoint', () => ({
   getKnowledgeTree: (...args: unknown[]) => mockGetKnowledgeTree(...args),
 }))
+vi.mock('@/utils/auth', () => ({
+  getAuthSessionVersion: () => auth.version,
+  isAuthenticated: () => true,
+  onAuthSessionChange: (listener: () => void) => {
+    auth.listeners.add(listener)
+    return () => auth.listeners.delete(listener)
+  },
+}))
 
+let routeQuery: Record<string, string> = {}
 vi.mock('vue-router', () => ({
-  useRoute: () => ({ params: { id: '408' } }),
+  useRoute: () => ({ params: { id: '408' }, query: routeQuery }),
   useRouter: () => ({ back: vi.fn(), push: mockPush }),
 }))
 
@@ -78,6 +95,9 @@ function findButton(wrapper: ReturnType<typeof mount>, text: string) {
 describe('CourseDetailView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    auth.version = 1
+    auth.listeners.clear()
+    routeQuery = {}
     mockGetCourseById.mockResolvedValue({ data: { id: 408, name: '408 数据结构', description: '课程描述' } })
     mockGetKnowledgeTree.mockResolvedValue({ data: reviewedNodes })
     mockAddCourseToLibrary.mockResolvedValue({ data: { courseId: 408 } })
@@ -101,8 +121,29 @@ describe('CourseDetailView', () => {
     await findButton(wrapper, '加入课程库').trigger('click')
     await flushPromises()
 
-    expect(mockAddCourseToLibrary).toHaveBeenCalledWith(408)
+    expect(mockAddCourseToLibrary).toHaveBeenCalledWith(408, { errorDisplay: 'inline' })
     expect(mockPush).toHaveBeenCalledWith({ name: 'CourseOverview', params: { id: 408 } })
+  })
+
+  it('加入请求在认证会话切换后完成时不会导航到旧课程空间', async () => {
+    let finishJoin!: () => void
+    mockGetMyCourses.mockResolvedValue({ data: [] })
+    mockAddCourseToLibrary.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishJoin = resolve
+        }),
+    )
+    const wrapper = mount(CourseDetailView, { global: { stubs } })
+    await flushPromises()
+
+    await findButton(wrapper, '加入课程库').trigger('click')
+    auth.version += 1
+    auth.listeners.forEach((listener) => listener())
+    finishJoin()
+    await flushPromises()
+
+    expect(mockPush).not.toHaveBeenCalledWith({ name: 'CourseOverview', params: { id: 408 } })
   })
 
   it('已加入课程库时，将主操作切换为进入课程空间并开放 Tutor 入口', async () => {
@@ -130,6 +171,16 @@ describe('CourseDetailView', () => {
       params: { id: 408 },
       query: { knowledgePointId: '41' },
     })
+  })
+
+  it('从课程空间打开目录时明确返回课程空间', async () => {
+    routeQuery = { from: 'learning-space' }
+    mockGetMyCourses.mockResolvedValue({ data: [{ courseId: 408 }] })
+    const wrapper = mount(CourseDetailView, { global: { stubs } })
+    await flushPromises()
+
+    await findButton(wrapper, '返回课程空间').trigger('click')
+    expect(mockPush).toHaveBeenCalledWith({ name: 'CourseOverview', params: { id: 408 } })
   })
 
   it('未审查内容不提供学习入口', async () => {

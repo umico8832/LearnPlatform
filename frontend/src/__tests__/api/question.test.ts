@@ -255,6 +255,17 @@ describe('Question API', () => {
   })
 
   describe('submitQuestionCorrectionReport', () => {
+    it('支持页面以内联错误处理提交纠错反馈', async () => {
+      const report = { reportType: 'ANSWER', description: '答案应为 B' }
+      mockedRequest.post.mockResolvedValue({ code: 0, data: { id: 1, status: 'OPEN' }, message: 'success' })
+
+      await submitQuestionCorrectionReport(12, report, { errorDisplay: 'inline' })
+
+      expect(mockedRequest.post).toHaveBeenCalledWith('/questions/12/correction-reports', report, {
+        errorDisplay: 'inline',
+      })
+    })
+
     it('应使用 POST 请求提交题目纠错反馈', async () => {
       mockedRequest.post.mockResolvedValue({
         code: 0,

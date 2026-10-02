@@ -20,6 +20,13 @@ describe('Favorite API', () => {
   })
 
   describe('addFavorite', () => {
+    it('支持页面以内联错误处理收藏请求', async () => {
+      mockedRequest.post.mockResolvedValue({ code: 0, data: null, message: 'success' })
+
+      await addFavorite(42, { errorDisplay: 'inline' })
+
+      expect(mockedRequest.post).toHaveBeenCalledWith('/favorites/42', undefined, { errorDisplay: 'inline' })
+    })
     it('应使用 POST 请求收藏题目', async () => {
       mockedRequest.post.mockResolvedValue({ code: 0, data: null, message: 'success' })
 
@@ -41,6 +48,13 @@ describe('Favorite API', () => {
   })
 
   describe('removeFavorite', () => {
+    it('支持页面以内联错误处理取消收藏请求', async () => {
+      mockedRequest.delete.mockResolvedValue({ code: 0, data: null, message: 'success' })
+
+      await removeFavorite(42, { errorDisplay: 'inline' })
+
+      expect(mockedRequest.delete).toHaveBeenCalledWith('/favorites/42', { errorDisplay: 'inline' })
+    })
     it('应使用 DELETE 请求取消收藏', async () => {
       mockedRequest.delete.mockResolvedValue({ code: 0, data: null, message: 'success' })
 
@@ -97,6 +111,13 @@ describe('Favorite API', () => {
   })
 
   describe('getFavoriteIds', () => {
+    it('支持页面以内联错误处理读取收藏状态', async () => {
+      mockedRequest.get.mockResolvedValue({ code: 0, data: [], message: 'success' })
+
+      await getFavoriteIds({ errorDisplay: 'inline' })
+
+      expect(mockedRequest.get).toHaveBeenCalledWith('/favorites/ids', { errorDisplay: 'inline' })
+    })
     it('应使用 GET 请求获取收藏 ID 列表', async () => {
       mockedRequest.get.mockResolvedValue({ code: 0, data: [1, 5, 42], message: 'success' })
 

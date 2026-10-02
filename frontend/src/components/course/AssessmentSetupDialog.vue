@@ -9,6 +9,7 @@ const props = withDefaults(
   defineProps<{
     visible: boolean
     starting: boolean
+    error: string
     knowledgePoints: { id: number; title: string }[]
   }>(),
   { visible: false, starting: false },
@@ -40,8 +41,17 @@ function handleStart() {
 </script>
 
 <template>
-  <el-dialog v-model="dialogVisible" title="开始阶段测评" width="min(480px, 94vw)" :close-on-click-modal="false">
-    <el-form label-position="top" @submit.prevent>
+  <el-dialog
+    v-model="dialogVisible"
+    title="开始阶段测评"
+    width="min(480px, 94vw)"
+    :close-on-click-modal="false"
+    :close-on-press-escape="!starting"
+    :show-close="!starting"
+  >
+    <p class="assessment-setup-intro">从课程范围中选择 5 道题；系统会保留未完成测评供你继续作答。</p>
+    <el-alert v-if="error" class="assessment-setup-error" type="error" :title="error" :closable="false" />
+    <el-form label-position="top" :disabled="starting" @submit.prevent>
       <el-form-item label="知识点范围">
         <el-select v-model="knowledgePointId" placeholder="选择知识点范围" class="assessment-scope-select">
           <el-option :value="0" label="课程整体测评" />
@@ -50,7 +60,7 @@ function handleStart() {
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="emit('update:visible', false)">取消</el-button>
+      <el-button :disabled="starting" @click="emit('update:visible', false)">取消</el-button>
       <el-button type="primary" :loading="starting" @click="handleStart">开始测评</el-button>
     </template>
   </el-dialog>
@@ -59,5 +69,14 @@ function handleStart() {
 <style scoped>
 .assessment-scope-select {
   width: 100%;
+}
+.assessment-setup-intro {
+  margin: 0 0 var(--lp-space-4);
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-body);
+}
+.assessment-setup-error {
+  margin-bottom: var(--lp-space-4);
 }
 </style>

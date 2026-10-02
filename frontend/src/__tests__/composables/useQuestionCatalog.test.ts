@@ -15,7 +15,7 @@ const {
   submitQuestionCorrectionReport,
 } = vi.hoisted(() => ({
   addFavorite: vi.fn(),
-  auth: { authenticated: true, listener: undefined as (() => void) | undefined },
+  auth: { authenticated: true, version: 1, listeners: new Set<() => void>() },
   getAllCourses: vi.fn(),
   getFavoriteIds: vi.fn(),
   getQuestionPage: vi.fn(),
@@ -27,18 +27,17 @@ const {
 }))
 
 vi.mock('vue-router', () => ({ useRoute: () => route, useRouter: () => ({ replace: replaceRoute }) }))
+vi.mock('@/stores/user', () => ({ useUserStore: () => ({ userInfo: { id: 1 } }) }))
 vi.mock('@/api/course', () => ({ getAllCourses }))
 vi.mock('@/api/favorite', () => ({ addFavorite, getFavoriteIds, removeFavorite }))
 vi.mock('@/api/question', () => ({ getQuestionPage, submitQuestionCorrectionReport }))
 vi.mock('element-plus', () => ({ ElMessage: message }))
 vi.mock('@/utils/auth', () => ({
-  getAuthSessionVersion: () => 1,
+  getAuthSessionVersion: () => auth.version,
   isAuthenticated: () => auth.authenticated,
   onAuthSessionChange: (listener: () => void) => {
-    auth.listener = listener
-    return () => {
-      auth.listener = undefined
-    }
+    auth.listeners.add(listener)
+    return () => auth.listeners.delete(listener)
   },
 }))
 
@@ -50,7 +49,8 @@ describe('useQuestionCatalog', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     auth.authenticated = true
-    auth.listener = undefined
+    auth.listeners.clear()
+    auth.version = 1
     route.query = { courseId: '7' }
     getQuestionPage.mockResolvedValue({ data: { records: [{ id: 12, questionType: 'SINGLE_CHOICE' }], total: 1 } })
     getAllCourses.mockResolvedValue({ data: [{ id: 7, name: '数据结构' }] })
@@ -105,17 +105,21 @@ describe('useQuestionCatalog', () => {
     expect(getQuestionPage).toHaveBeenLastCalledWith(expect.objectContaining({ difficulty: 3, pageNum: 1 }))
 
     await state.toggleFavorite(12)
-    expect(removeFavorite).toHaveBeenCalledWith(12)
+    expect(removeFavorite).toHaveBeenCalledWith(12, { errorDisplay: 'inline' })
     expect(state.favoriteSet.value.has(12)).toBe(false)
 
     const question = state.questions.value[0]!
     state.openCorrectionDialog(question)
     state.correctionForm.description = '题干存在歧义'
     await state.submitCorrection()
-    expect(submitQuestionCorrectionReport).toHaveBeenCalledWith(12, {
-      reportType: 'CONTENT',
-      description: '题干存在歧义',
-    })
+    expect(submitQuestionCorrectionReport).toHaveBeenCalledWith(
+      12,
+      {
+        reportType: 'CONTENT',
+        description: '题干存在歧义',
+      },
+      { errorDisplay: 'inline' },
+    )
     expect(state.correctionDialogVisible.value).toBe(false)
   })
 
@@ -240,7 +244,8 @@ describe('useQuestionCatalog', () => {
     await flushPromises()
     const catalogCallsBeforeLogout = getQuestionPage.mock.calls.length
     auth.authenticated = false
-    auth.listener?.()
+    auth.version++
+    auth.listeners.forEach((listener) => listener())
     resolveFavorites({ code: 0, data: [12] })
     await flushPromises()
 
