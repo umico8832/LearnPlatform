@@ -8,6 +8,16 @@ export function errorMessage(error: unknown, fallback: string): string {
     const serverMessage = response?.data?.message
     if (typeof serverMessage === 'string' && serverMessage) return serverMessage
   }
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    if (['ERR_NETWORK', 'ECONNABORTED', 'ETIMEDOUT'].includes(String(error.code))) return fallback
+  }
+  if (
+    error instanceof Error &&
+    /^(Network Error|Failed to fetch|Load failed|NetworkError when attempting to fetch resource\.?|timeout of \d+ms exceeded|Request failed with status code \d+)$/i.test(
+      error.message,
+    )
+  )
+    return fallback
   if (error instanceof Error && error.message) return error.message
   if (typeof error === 'string' && error) return error
   return fallback

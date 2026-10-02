@@ -217,7 +217,7 @@ describe('TutorSessionView', () => {
     mount(TutorSessionView, { global: { stubs } })
     await flushPromises()
 
-    expect(mockGetTutorSession).toHaveBeenCalledWith(408, 'session-key')
+    expect(mockGetTutorSession).toHaveBeenCalledWith(408, 'session-key', { errorDisplay: 'inline' })
     expect(mockStartTutorSession).not.toHaveBeenCalled()
   })
 

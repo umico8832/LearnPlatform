@@ -56,6 +56,7 @@ import {
 } from '@/api/tutorPlan'
 import { openLearningTarget } from '@/utils/learningTarget'
 import { errorMessage } from '@/utils/errors'
+import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
 
 const props = withDefaults(
   defineProps<{
@@ -95,6 +96,11 @@ const canOpenStep = computed(
     !syncRequired.value,
 )
 let generation = 0
+let alive = true
+
+function isCurrent(current: number, authSession: number) {
+  return alive && current === generation && authSession === getAuthSessionVersion()
+}
 
 function context() {
   return [props.courseId, props.sessionKey, props.runKey, props.sequence] as const
@@ -109,16 +115,17 @@ async function load() {
   if (loading.value || confirming.value) return
   const current = generation
   const target = context()
+  const authSession = getAuthSessionVersion()
   loading.value = true
   failure.value = ''
   try {
-    const response = await getTutorAgentPlan(...target)
-    if (current !== generation) return
+    const response = await getTutorAgentPlan(...target, { errorDisplay: 'inline' })
+    if (!isCurrent(current, authSession)) return
     apply(response.data)
   } catch (error) {
-    if (current === generation) failure.value = errorMessage(error, '暂时无法恢复建议安排，请重试')
+    if (isCurrent(current, authSession)) failure.value = errorMessage(error, '暂时无法恢复建议安排，请重试')
   } finally {
-    if (current === generation) loading.value = false
+    if (isCurrent(current, authSession)) loading.value = false
   }
 }
 
@@ -126,26 +133,27 @@ async function confirmPlan() {
   if (!canConfirm.value) return
   const current = generation
   const target = context()
+  const authSession = getAuthSessionVersion()
   confirming.value = true
   failure.value = ''
   try {
-    const response = await confirmTutorAgentPlan(...target)
-    if (current !== generation) return
+    const response = await confirmTutorAgentPlan(...target, { errorDisplay: 'inline' })
+    if (!isCurrent(current, authSession)) return
     apply(response.data)
   } catch (error) {
-    if (current !== generation) return
+    if (!isCurrent(current, authSession)) return
     try {
-      const restored = await getTutorAgentPlan(...target)
-      if (current !== generation) return
+      const restored = await getTutorAgentPlan(...target, { errorDisplay: 'inline' })
+      if (!isCurrent(current, authSession)) return
       apply(restored.data)
       if (!restored.data.confirmed) failure.value = errorMessage(error, '暂时无法确认安排，请重试')
     } catch {
-      if (current !== generation) return
+      if (!isCurrent(current, authSession)) return
       syncRequired.value = true
       failure.value = '暂时无法确认安排是否已保存，请先同步安排。'
     }
   } finally {
-    if (current === generation) confirming.value = false
+    if (isCurrent(current, authSession)) confirming.value = false
   }
 }
 
@@ -174,8 +182,19 @@ watch(
     void load()
   },
 )
+const unsubscribeAuth = onAuthSessionChange(() => {
+  generation++
+  plan.value = undefined
+  loading.value = confirming.value = syncRequired.value = false
+  failure.value = ''
+})
+
 onMounted(() => void load())
-onBeforeUnmount(() => generation++)
+onBeforeUnmount(() => {
+  alive = false
+  generation++
+  unsubscribeAuth()
+})
 </script>
 
 <style scoped>

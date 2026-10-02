@@ -1,26 +1,24 @@
 <template>
   <div class="visual-interactive">
-    <!-- 加载状态 -->
-    <div v-if="loading" class="vi-loading">
-      <el-icon class="is-loading" :size="24"><Loading /></el-icon>
-      <span>{{ loadingText }}</span>
+    <div v-if="loading" class="vi-loading" role="status">
+      <el-icon class="is-loading" :size="20" aria-hidden="true"><Loading /></el-icon>
+      <span>{{ loadingText || '正在准备可视化讲解' }}</span>
     </div>
 
-    <!-- 错误状态：JSON 解析失败，回退为 Markdown 显示 -->
+    <!-- 结构化内容无效时保留原文本，避免丢失可阅读信息。 -->
     <div v-else-if="fallbackMode" class="vi-fallback">
       <el-alert
         type="info"
         :closable="false"
         show-icon
         title="可视化数据解析失败，已切换为文本显示"
-        style="margin-bottom: 12px"
+        class="vi-fallback-notice"
       />
       <MarkdownRenderer :content="rawContent" />
     </div>
 
     <QuestionVisualRenderer v-else-if="data" :data="data" />
 
-    <!-- 空状态 -->
     <div v-else class="vi-empty">
       <el-empty description="暂无可视化数据" :image-size="60" />
     </div>
@@ -48,23 +46,21 @@ const rawContent = computed(() => contentState.value.rawContent)
 
 <style scoped>
 .visual-interactive {
-  padding: 4px 0;
+  padding-block: var(--lp-space-1);
 }
-
-.vi-loading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 20px 0;
-  color: #909399;
-  justify-content: center;
-}
-
+.vi-loading,
 .vi-empty {
-  padding: 20px 0;
+  display: grid;
+  justify-items: center;
+  gap: var(--lp-space-2);
+  padding: var(--lp-space-5) 0;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
 }
-
 .vi-fallback {
-  padding: 4px 0;
+  padding-block: var(--lp-space-1);
+}
+.vi-fallback-notice {
+  margin-bottom: var(--lp-space-3);
 }
 </style>

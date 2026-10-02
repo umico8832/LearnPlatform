@@ -113,7 +113,7 @@ async function load() {
   loading.value = true
   failure.value = ''
   try {
-    const response = await getTutorAgentPractice(...target)
+    const response = await getTutorAgentPractice(...target, { errorDisplay: 'inline' })
     if (!isCurrent(current, authSession)) return
     apply(response.data)
   } catch (error) {
@@ -141,7 +141,7 @@ async function submit() {
   submitting.value = true
   failure.value = ''
   try {
-    const response = await submitTutorAgentPractice(...target, chosen)
+    const response = await submitTutorAgentPractice(...target, chosen, undefined, { errorDisplay: 'inline' })
     if (!isCurrent(current, authSession)) return
     if (response.data.result?.reward) useGamificationStore().acceptReward(response.data.result.reward, authSession)
     if (!response.data.result) throw new Error('暂时无法确认作答结果')
@@ -149,7 +149,7 @@ async function submit() {
   } catch (error) {
     if (!isCurrent(current, authSession)) return
     try {
-      const restored = await getTutorAgentPractice(...target)
+      const restored = await getTutorAgentPractice(...target, { errorDisplay: 'inline' })
       if (!isCurrent(current, authSession)) return
       apply(restored.data)
       if (!restored.data.result) failure.value = errorMessage(error, '暂时无法提交作答，请重试')

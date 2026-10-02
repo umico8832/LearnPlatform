@@ -728,19 +728,33 @@ export function getCourseStageAssessmentDetail(assessmentId: number, options?: {
   )
 }
 
-export function startTutorSession(courseId: number, knowledgePointId: number) {
+export function startTutorSession(courseId: number, knowledgePointId: number, options?: { errorDisplay?: 'inline' }) {
   return request.post<unknown, ApiResponse<TutorSessionVO>>(`/my-courses/${courseId}/tutor-sessions`, undefined, {
     params: { knowledgePointId },
+    ...(options || {}),
   })
 }
-export function getTutorSession(courseId: number, sessionKey: string) {
-  return request.get<unknown, ApiResponse<TutorSessionVO>>(`/my-courses/${courseId}/tutor-sessions/${sessionKey}`)
+export function getTutorSession(courseId: number, sessionKey: string, options?: { errorDisplay?: 'inline' }) {
+  return options
+    ? request.get<unknown, ApiResponse<TutorSessionVO>>(`/my-courses/${courseId}/tutor-sessions/${sessionKey}`, options)
+    : request.get<unknown, ApiResponse<TutorSessionVO>>(`/my-courses/${courseId}/tutor-sessions/${sessionKey}`)
 }
-export function submitTutorCheck(courseId: number, sessionKey: string, optionId: string) {
-  return request.post<unknown, ApiResponse<TutorCheckResultVO>>(
-    `/my-courses/${courseId}/tutor-sessions/${sessionKey}/check`,
-    { optionId },
-  )
+export function submitTutorCheck(
+  courseId: number,
+  sessionKey: string,
+  optionId: string,
+  options?: { errorDisplay?: 'inline' },
+) {
+  return options
+    ? request.post<unknown, ApiResponse<TutorCheckResultVO>>(
+        `/my-courses/${courseId}/tutor-sessions/${sessionKey}/check`,
+        { optionId },
+        options,
+      )
+    : request.post<unknown, ApiResponse<TutorCheckResultVO>>(
+        `/my-courses/${courseId}/tutor-sessions/${sessionKey}/check`,
+        { optionId },
+      )
 }
 
 /** 创建课程（管理端） */

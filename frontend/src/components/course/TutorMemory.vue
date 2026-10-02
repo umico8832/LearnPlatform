@@ -55,6 +55,7 @@ import {
   type TutorMemoryVO,
 } from '@/api/tutorMemory'
 import { errorMessage } from '@/utils/errors'
+import { onAuthSessionChange } from '@/utils/auth'
 
 const props = withDefaults(defineProps<{ courseId: number; busy?: boolean }>(), { busy: false })
 const style = ref<TutorExplanationStyle | ''>('')
@@ -77,6 +78,7 @@ const canSave = computed(
     (style.value !== (saved.value.explanationStyle ?? '') || goal.value.trim() !== (saved.value.goal ?? '')),
 )
 let generation = 0
+let alive = true
 
 function apply(memory: TutorMemoryVO) {
   saved.value = memory
@@ -92,10 +94,10 @@ async function load() {
   loading.value = true
   failure.value = notice.value = ''
   try {
-    const response = await getTutorMemory(props.courseId)
-    if (current === generation) apply(response.data)
+    const response = await getTutorMemory(props.courseId, { errorDisplay: 'inline' })
+    if (alive && current === generation) apply(response.data)
   } catch (error) {
-    if (current === generation) {
+    if (alive && current === generation) {
       syncRequired.value = true
       failure.value = errorMessage(error, '暂时无法读取记忆，请重试')
     }
@@ -122,12 +124,16 @@ async function change(removing: boolean) {
   failure.value = notice.value = ''
   try {
     const response = removing
-      ? await deleteTutorMemory(courseId, revision)
-      : await saveTutorMemory(courseId, {
-          revision,
-          explanationStyle: style.value || null,
-          goal: goal.value.trim() || null,
-        })
+      ? await deleteTutorMemory(courseId, revision, { errorDisplay: 'inline' })
+      : await saveTutorMemory(
+          courseId,
+          {
+            revision,
+            explanationStyle: style.value || null,
+            goal: goal.value.trim() || null,
+          },
+          { errorDisplay: 'inline' },
+        )
     if (current !== generation) return
     apply(response.data)
     notice.value = removing ? '记忆已删除，后续新提问不再使用这些设置。' : '记忆已保存，将用于后续新提问。'
@@ -145,6 +151,13 @@ function onToggle(event: Event) {
   if (opened.value && !loaded.value && !syncRequired.value) void load()
 }
 
+const unsubscribeAuth = onAuthSessionChange(() => {
+  generation++
+  saved.value = { revision: 0, explanationStyle: null, goal: null }
+  style.value = goal.value = failure.value = notice.value = ''
+  loading.value = saving.value = loaded.value = syncRequired.value = false
+})
+
 watch(
   () => props.courseId,
   () => {
@@ -156,7 +169,11 @@ watch(
     if (opened.value) void load()
   },
 )
-onBeforeUnmount(() => generation++)
+onBeforeUnmount(() => {
+  alive = false
+  generation++
+  unsubscribeAuth()
+})
 </script>
 
 <style scoped>

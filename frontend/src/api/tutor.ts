@@ -38,9 +38,20 @@ function agentPath(courseId: number, sessionKey: string) {
 function practicePath(courseId: number, sessionKey: string, runKey: string, sequence: number) {
   return `${agentPath(courseId, sessionKey)}/${runKey}/messages/${sequence}/practice`
 }
-export function getTutorAgentPractice(courseId: number, sessionKey: string, runKey: string, sequence: number) {
+export type TutorRequestOptions = { errorDisplay?: 'inline' }
+
+export function getTutorAgentPractice(
+  courseId: number,
+  sessionKey: string,
+  runKey: string,
+  sequence: number,
+  options?: TutorRequestOptions,
+) {
   return aiService
-    .get<ApiResponse<TutorAgentPracticeVO>>(practicePath(courseId, sessionKey, runKey, sequence))
+    .get<ApiResponse<TutorAgentPracticeVO>>(
+      practicePath(courseId, sessionKey, runKey, sequence),
+      ...(options ? [options] : []),
+    )
     .then((response) => response.data)
 }
 export function submitTutorAgentPractice(
@@ -50,35 +61,58 @@ export function submitTutorAgentPractice(
   sequence: number,
   userAnswer: string,
   answerTime?: number,
+  options?: TutorRequestOptions,
 ) {
   return aiService
-    .post<ApiResponse<TutorAgentPracticeVO>>(practicePath(courseId, sessionKey, runKey, sequence) + '/answer', {
-      userAnswer,
-      ...(answerTime === undefined ? {} : { answerTime }),
-    })
+    .post<ApiResponse<TutorAgentPracticeVO>>(
+      practicePath(courseId, sessionKey, runKey, sequence) + '/answer',
+      {
+        userAnswer,
+        ...(answerTime === undefined ? {} : { answerTime }),
+      },
+      ...(options ? [options] : []),
+    )
     .then((response) => response.data)
 }
 
-export function startTutorAgentRun(courseId: number, sessionKey: string, message: string) {
+export function startTutorAgentRun(
+  courseId: number,
+  sessionKey: string,
+  message: string,
+  options?: TutorRequestOptions,
+) {
   return aiService
-    .post<ApiResponse<TutorAgentRunVO>>(agentPath(courseId, sessionKey), { message })
+    .post<ApiResponse<TutorAgentRunVO>>(agentPath(courseId, sessionKey), { message }, ...(options ? [options] : []))
     .then((response) => response.data)
 }
 
-export function resumeTutorAgentRun(courseId: number, sessionKey: string, runKey: string, message: string) {
+export function resumeTutorAgentRun(
+  courseId: number,
+  sessionKey: string,
+  runKey: string,
+  message: string,
+  options?: TutorRequestOptions,
+) {
   return aiService
-    .post<ApiResponse<TutorAgentRunVO>>(`${agentPath(courseId, sessionKey)}/${runKey}/messages`, { message })
+    .post<ApiResponse<TutorAgentRunVO>>(
+      `${agentPath(courseId, sessionKey)}/${runKey}/messages`,
+      { message },
+      ...(options ? [options] : []),
+    )
     .then((response) => response.data)
 }
 
-export function getTutorAgentRun(courseId: number, sessionKey: string, runKey: string) {
+export function getTutorAgentRun(courseId: number, sessionKey: string, runKey: string, options?: TutorRequestOptions) {
   return aiService
-    .get<ApiResponse<TutorAgentRunVO>>(`${agentPath(courseId, sessionKey)}/${runKey}`)
+    .get<ApiResponse<TutorAgentRunVO>>(`${agentPath(courseId, sessionKey)}/${runKey}`, ...(options ? [options] : []))
     .then((response) => response.data)
 }
 
-export function getLatestTutorAgentRun(courseId: number, sessionKey: string) {
+export function getLatestTutorAgentRun(courseId: number, sessionKey: string, options?: TutorRequestOptions) {
   return aiService
-    .get<ApiResponse<TutorAgentRunVO | null>>(`${agentPath(courseId, sessionKey)}/latest`)
+    .get<ApiResponse<TutorAgentRunVO | null>>(
+      `${agentPath(courseId, sessionKey)}/latest`,
+      ...(options ? [options] : []),
+    )
     .then((response) => response.data)
 }

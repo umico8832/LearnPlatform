@@ -101,3 +101,37 @@ describe('QuestionVisualInteractive', () => {
     expect(wrapper.find('.empty-stub').exists()).toBe(true)
   })
 })
+
+it('scales each bar chart against its own values', () => {
+  const wrapper = mount(QuestionVisualInteractive, {
+    props: {
+      content: JSON.stringify({
+        title: '两个图表',
+        summary: '各自比较。',
+        elements: [
+          {
+            type: 'bar_chart',
+            label: '图一',
+            items: [
+              { label: 'A', value: 1 },
+              { label: 'B', value: 4 },
+            ],
+          },
+          {
+            type: 'bar_chart',
+            label: '图二',
+            items: [
+              { label: 'C', value: 1 },
+              { label: 'D', value: 2 },
+            ],
+          },
+        ],
+      }),
+    },
+    global,
+  })
+
+  const fills = wrapper.findAll('.vi-bar-fill')
+  expect(fills[0].attributes('style')).toContain('width: 25%')
+  expect(fills[2].attributes('style')).toContain('width: 50%')
+})

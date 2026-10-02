@@ -3,6 +3,11 @@ import { aiService } from '@/utils/request'
 import { getToken } from '@/utils/auth'
 import type { ApiResponse } from '@/types/api'
 
+export interface AiRequestOptions {
+  errorDisplay?: 'inline'
+  signal?: AbortSignal
+}
+
 export interface AiResponse {
   content: string
   source: string
@@ -102,20 +107,28 @@ async function streamAiResponse(
   const decoder = new TextDecoder()
   let buffer = ''
 
-  while (true) {
-    const { done, value } = await reader.read()
-    buffer += decoder.decode(value, { stream: !done })
-    const events = buffer.split(/\r?\n\r?\n/)
-    buffer = events.pop() || ''
-
-    for (const eventBlock of events) {
-      handleStreamEvent(eventBlock, handlers)
+  const cancelReader = () => reader.cancel().catch(() => undefined)
+  const onAbort = () => void cancelReader()
+  signal?.addEventListener('abort', onAbort, { once: true })
+  try {
+    while (true) {
+      if (signal?.aborted) throw new DOMException('已停止生成', 'AbortError')
+      const { done, value } = await reader.read()
+      if (signal?.aborted) throw new DOMException('已停止生成', 'AbortError')
+      buffer += decoder.decode(value, { stream: !done })
+      const events = buffer.split(/\r?\n\r?\n/)
+      buffer = events.pop() || ''
+      for (const eventBlock of events) {
+        if (handleStreamEvent(eventBlock, handlers)) return
+      }
+      if (done) break
     }
-    if (done) break
-  }
-
-  if (buffer.trim()) {
-    handleStreamEvent(buffer, handlers)
+    if (buffer.trim() && handleStreamEvent(buffer, handlers)) return
+    throw new Error('AI 回答中断，已收到的内容可能不完整，请重试')
+  } finally {
+    signal?.removeEventListener('abort', onAbort)
+    await cancelReader()
+    reader.releaseLock()
   }
 }
 
@@ -134,7 +147,7 @@ export type AiAssetType =
 /** AI 学习资产类型标签映射 */
 export const AI_ASSET_LABELS: Record<AiAssetType, string> = {
   FULL_EXPLANATION: '标准解析',
-  BEGINNER_EXPLANATION: '小白版',
+  BEGINNER_EXPLANATION: '入门讲解',
   STEP_BY_STEP: '步骤拆解',
   WRONG_OPTION_ANALYSIS: '错误选项分析',
   COMMON_MISTAKES: '常见误区',
@@ -393,14 +406,20 @@ export interface AiVariantTrainingStatus {
 }
 
 /** 查询一道题的所有已缓存 AI 学习资产 */
-export function getQuestionAssets(questionId: number) {
-  return aiService.get<ApiResponse<QuestionLearningAsset[]>>(`/ai/assets/${questionId}`).then((res) => res.data)
+export function getQuestionAssets(questionId: number, options?: AiRequestOptions) {
+  return aiService
+    .get<ApiResponse<QuestionLearningAsset[]>>(`/ai/assets/${questionId}`, ...(options ? [options] : []))
+    .then((res) => res.data)
 }
 
 /** 同步生成或获取指定类型的 AI 学习资产 */
-export function generateAsset(questionId: number, assetType: AiAssetType) {
+export function generateAsset(questionId: number, assetType: AiAssetType, options?: AiRequestOptions) {
   return aiService
-    .post<ApiResponse<QuestionLearningAsset>>('/ai/asset/generate', { questionId, assetType })
+    .post<ApiResponse<QuestionLearningAsset>>(
+      '/ai/asset/generate',
+      { questionId, assetType },
+      ...(options ? [options] : []),
+    )
     .then((res) => res.data)
 }
 
@@ -416,42 +435,66 @@ export async function streamAsset(
 }
 
 /** 提交 AI 学习资产反馈 */
-export function submitAssetFeedback(questionId: number, assetType: AiAssetType, helpful: boolean, comment?: string) {
+export function submitAssetFeedback(
+  questionId: number,
+  assetType: AiAssetType,
+  helpful: boolean,
+  comment?: string,
+  options?: AiRequestOptions,
+) {
   return aiService
-    .post<ApiResponse<void>>('/ai/asset/feedback', {
-      questionId,
-      assetType,
-      helpful,
-      comment: comment || null,
-    })
+    .post<ApiResponse<void>>(
+      '/ai/asset/feedback',
+      {
+        questionId,
+        assetType,
+        helpful,
+        comment: comment || null,
+      },
+      ...(options ? [options] : []),
+    )
     .then((res) => res.data)
 }
 
 /** 查询当前用户对某资产的反馈状态 */
-export function getAssetFeedback(questionId: number, assetType: AiAssetType) {
+export function getAssetFeedback(questionId: number, assetType: AiAssetType, options?: AiRequestOptions) {
   return aiService
-    .get<ApiResponse<{ helpful: boolean; comment: string }>>(`/ai/asset/feedback/${questionId}/${assetType}`)
+    .get<ApiResponse<{ helpful: boolean; comment: string }>>(
+      `/ai/asset/feedback/${questionId}/${assetType}`,
+      ...(options ? [options] : []),
+    )
     .then((res) => res.data)
 }
 
 /** 记录当前用户实际看到某类 AI 学习资产 */
-export function recordAssetView(questionId: number, assetType: AiAssetType) {
+export function recordAssetView(questionId: number, assetType: AiAssetType, options?: AiRequestOptions) {
   return aiService
-    .post<ApiResponse<AiVariantTrainingStatus | null>>('/ai/asset/view', { questionId, assetType })
+    .post<ApiResponse<AiVariantTrainingStatus | null>>(
+      '/ai/asset/view',
+      { questionId, assetType },
+      ...(options ? [options] : []),
+    )
     .then((res) => res.data)
 }
 
 /** 显式确认完成当前缓存版本的变式题训练。 */
-export function completeVariantTraining(questionId: number) {
+export function completeVariantTraining(questionId: number, options?: AiRequestOptions) {
   return aiService
-    .post<ApiResponse<AiVariantTrainingStatus>>(`/ai/variant-training/${questionId}/complete`)
+    .post<ApiResponse<AiVariantTrainingStatus>>(
+      `/ai/variant-training/${questionId}/complete`,
+      ...(options ? [undefined, options] : []),
+    )
     .then((res) => res.data)
 }
 
 /** 提交结构化变式题答案；服务端保留首次判分结果。 */
-export function submitVariantAnswer(questionId: number, userAnswer: string) {
+export function submitVariantAnswer(questionId: number, userAnswer: string, options?: AiRequestOptions) {
   return aiService
-    .post<ApiResponse<AiVariantTrainingStatus>>(`/ai/variant-training/${questionId}/answer`, { userAnswer })
+    .post<ApiResponse<AiVariantTrainingStatus>>(
+      `/ai/variant-training/${questionId}/answer`,
+      { userAnswer },
+      ...(options ? [options] : []),
+    )
     .then((res) => res.data)
 }
 
@@ -476,6 +519,7 @@ function handleStreamEvent(eventBlock: string, handlers: StreamHandlers) {
     handlers.onContent(data.content)
   } else if (eventName === 'done') {
     handlers.onDone?.(data.source || 'ai')
+    return true
   } else if (eventName === 'error') {
     throw new Error(data.message || 'AI 服务调用失败')
   }

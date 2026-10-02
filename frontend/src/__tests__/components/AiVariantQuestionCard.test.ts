@@ -1,5 +1,5 @@
-import { flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { setToken } from '@/utils/auth'
 
@@ -15,6 +15,7 @@ vi.mock('@/components/MarkdownRenderer.vue', () => ({
 
 import AiVariantQuestionCard from '@/components/AiVariantQuestionCard.vue'
 import { useGamificationStore } from '@/stores/gamification'
+enableAutoUnmount(afterEach)
 
 const question = {
   id: 3,
@@ -75,7 +76,7 @@ describe('AiVariantQuestionCard', () => {
     await wrapper.find('.variant-card__actions button').trigger('click')
     await flushPromises()
 
-    expect(submitVariantAnswer).toHaveBeenCalledWith(42, 'B')
+    expect(submitVariantAnswer).toHaveBeenCalledWith(42, 'B', { errorDisplay: 'inline' })
     expect(wrapper.emitted('answered')?.[0]?.[0]).toMatchObject({ answered: true, correct: true })
   })
 
@@ -96,7 +97,7 @@ describe('AiVariantQuestionCard', () => {
     })
 
     expect(wrapper.text()).toContain('这次未答对')
-    expect(wrapper.text()).toContain('你的答案：A · 正确答案：B')
+    expect(wrapper.text()).toContain('你的答案：A · 参考答案：B')
     expect(wrapper.text()).toContain('B 对应核心概念。')
     expect(wrapper.find('.variant-card__actions').exists()).toBe(false)
   })
@@ -146,5 +147,59 @@ describe('AiVariantQuestionCard', () => {
     await pending
     expect(acceptReward).not.toHaveBeenCalled()
     expect(wrapper.emitted('answered')).toBeUndefined()
+  })
+
+  it('将未判分的已保存结果作为自评，不显示错误结论', () => {
+    const wrapper = mount(AiVariantQuestionCard, {
+      props: {
+        questionId: 42,
+        question,
+        training: { answered: true, correct: null, userAnswer: 'A', correctAnswer: 'B' },
+      },
+      global,
+    })
+    expect(wrapper.text()).toContain('已保存，供你自评')
+    expect(wrapper.text()).not.toContain('这次未答对')
+    expect(wrapper.classes()).not.toContain('has-wrong-result')
+    expect(wrapper.text()).toContain('参考答案：B')
+  })
+
+  it('clears a failed submission after retry so the saved result becomes visible', async () => {
+    submitVariantAnswer.mockRejectedValueOnce(new Error('offline'))
+    const wrapper = mount(AiVariantQuestionCard, {
+      props: { questionId: 42, question, training: { answered: false } },
+      global,
+    })
+    await wrapper.find('.select-answer').trigger('click')
+    await wrapper.find('.variant-card__actions button').trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('提交答案失败')
+    await wrapper.find('.variant-error button').trigger('click')
+    await flushPromises()
+    expect(submitVariantAnswer).toHaveBeenCalledTimes(2)
+    await wrapper.setProps({ training: { answered: true, correct: true, userAnswer: 'B' } })
+    expect(wrapper.text()).not.toContain('提交答案失败')
+    expect(wrapper.text()).toContain('回答正确')
+  })
+
+  it('切换题目后忽略旧题迟到提交结果并清空选择', async () => {
+    let resolve!: (value: { code: number; data: Record<string, unknown> }) => void
+    submitVariantAnswer.mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          resolve = done
+        }),
+    )
+    const wrapper = mount(AiVariantQuestionCard, {
+      props: { questionId: 42, question, training: { answered: false } },
+      global,
+    })
+    await wrapper.find('.select-answer').trigger('click')
+    const pending = wrapper.find('.variant-card__actions button').trigger('click')
+    await wrapper.setProps({ questionId: 43, question: { ...question, id: 4 }, training: { answered: false } })
+    resolve({ code: 0, data: { questionId: 42, answered: true, correct: true, userAnswer: 'B', correctAnswer: 'B' } })
+    await pending
+    expect(wrapper.emitted('answered')).toBeUndefined()
+    expect(wrapper.find('.variant-card__actions button').attributes('disabled')).toBeDefined()
   })
 })

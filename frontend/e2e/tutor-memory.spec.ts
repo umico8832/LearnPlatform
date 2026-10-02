@@ -1,16 +1,13 @@
 import { expect, test } from '@playwright/test'
+import { createLearnerAndLogin } from './helpers/registerLearner'
 import type { CourseOverviewVO } from '../src/api/course'
 import type { TutorAgentRunVO } from '../src/api/tutor'
 import type { TutorMemoryVO } from '../src/api/tutorMemory'
 
-test('Tutor Agent 跨会话读取课程记忆，纠正和删除后使用最新设置', async ({ page }, testInfo) => {
+test('Tutor Agent 跨会话读取课程记忆，纠正和删除后使用最新设置', async ({ page, browser }, testInfo) => {
   test.setTimeout(90_000)
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/login')
-  await page.getByPlaceholder('请输入用户名或邮箱').fill('testuser')
-  await page.getByPlaceholder('请输入密码').fill('test123')
-  await page.getByRole('button', { name: '登录', exact: true }).click()
-  await expect(page).toHaveURL(/\/my-courses$/, { timeout: 15_000 })
+  await createLearnerAndLogin(browser, page, 'tutor-memory.spec')
   await page.goto('/courses')
   await page
     .locator('.course-card')
@@ -32,7 +29,9 @@ test('Tutor Agent 跨会话读取课程记忆，纠正和删除后使用最新�
   await page.goto(`${courseUrl}/tutor?knowledgePointId=${target.knowledgePointId}`)
   const initialKey = (await (await initialSession).json()).data.sessionKey
   const panel = page.locator('.agent-panel')
+  const records = panel.getByTestId('agent-records')
   const memory = panel.getByTestId('tutor-memory')
+  await records.locator(':scope > summary').click()
   await memory.locator('summary').click()
   await expect(memory.getByTestId('memory-goal')).toBeEnabled()
   await memory.getByTestId('memory-style').selectOption('EXAMPLES')
@@ -62,6 +61,7 @@ test('Tutor Agent 跨会话读取课程记忆，纠正和删除后使用最新�
   const newSession = sessionCreated()
   await page.reload()
   expect((await (await newSession).json()).data.sessionKey).not.toBe(initialKey)
+  await records.locator(':scope > summary').click()
   await memory.locator('summary').click()
   await expect(memory.getByTestId('memory-goal')).toHaveValue('理解栈顶变化')
   await expect(memory.getByTestId('memory-style')).toHaveValue('EXAMPLES')
@@ -82,6 +82,7 @@ test('Tutor Agent 跨会话读取课程记忆，纠正和删除后使用最新�
   await expect(memory.getByTestId('memory-goal')).toHaveValue('')
   await askForCurrentMemory('当前保存的目标：未设置；讲解偏好：未设置。')
   await page.reload()
+  await records.locator(':scope > summary').click()
   await memory.locator('summary').click()
   await expect(memory.getByTestId('memory-goal')).toHaveValue('')
   await expect(memory.getByTestId('memory-delete')).toBeDisabled()

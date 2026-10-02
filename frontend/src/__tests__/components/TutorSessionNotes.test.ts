@@ -62,13 +62,18 @@ describe('TutorSessionNotes', () => {
     const wrapper = create()
     expect(getCurrent).not.toHaveBeenCalled()
     await open(wrapper)
-    expect(getCurrent).toHaveBeenCalledWith(10, 'session-a')
-    expect(getNotes).toHaveBeenCalledWith(10, 1)
+    expect(getCurrent).toHaveBeenCalledWith(10, 'session-a', { errorDisplay: 'inline' })
+    expect(getNotes).toHaveBeenCalledWith(10, 1, { errorDisplay: 'inline' })
     await wrapper.get('[data-testid="session-note-input"]').setValue('  我能解释入栈和出栈的顺序。  ')
     saveNote.mockResolvedValueOnce({ data: { ...empty, revision: 1, note: '我能解释入栈和出栈的顺序。' } })
     await wrapper.get('[data-testid="session-note-save"]').trigger('click')
     await flushPromises()
-    expect(saveNote).toHaveBeenCalledWith(10, 'session-a', { revision: 0, note: '我能解释入栈和出栈的顺序。' })
+    expect(saveNote).toHaveBeenCalledWith(
+      10,
+      'session-a',
+      { revision: 0, note: '我能解释入栈和出栈的顺序。' },
+      { errorDisplay: 'inline' },
+    )
   })
 
   it('selects a paged saved review for correction and keeps the real check result visible', async () => {
@@ -88,7 +93,7 @@ describe('TutorSessionNotes', () => {
     const pagination = wrapper.findComponent(stubs['el-pagination'])
     pagination.vm.$emit('current-change', 2)
     await flushPromises()
-    expect(getNotes).toHaveBeenLastCalledWith(10, 2)
+    expect(getNotes).toHaveBeenLastCalledWith(10, 2, { errorDisplay: 'inline' })
     getCurrent.mockResolvedValueOnce({ data: existing })
     await wrapper
       .findAll('button')
@@ -100,7 +105,12 @@ describe('TutorSessionNotes', () => {
     saveNote.mockResolvedValueOnce({ data: { ...existing, revision: 5, note: '修正复盘' } })
     await wrapper.get('[data-testid="session-note-save"]').trigger('click')
     await flushPromises()
-    expect(saveNote).toHaveBeenCalledWith(10, 'session-b', { revision: 4, note: '修正复盘' })
+    expect(saveNote).toHaveBeenCalledWith(
+      10,
+      'session-b',
+      { revision: 4, note: '修正复盘' },
+      { errorDisplay: 'inline' },
+    )
   })
 
   it('keeps the draft and requires a fresh read when a write result is uncertain', async () => {
@@ -132,7 +142,7 @@ describe('TutorSessionNotes', () => {
     })
     await wrapper.setProps({ checkResult: { correct: true } })
     await flushPromises()
-    expect(getCurrent).toHaveBeenLastCalledWith(10, 'session-a')
+    expect(getCurrent).toHaveBeenLastCalledWith(10, 'session-a', { errorDisplay: 'inline' })
     expect(wrapper.get('textarea').element.value).toBe('尚未保存的复盘')
     expect(wrapper.text()).toContain('已答对')
     expect(wrapper.text()).not.toContain('尚未作答')
@@ -154,14 +164,14 @@ describe('TutorSessionNotes', () => {
     getCurrent.mockResolvedValueOnce({ data: { ...existing, revision: 5, note: '服务端复盘' } })
     await wrapper.get('[data-testid="session-note-reload"]').trigger('click')
     await flushPromises()
-    expect(getCurrent).toHaveBeenLastCalledWith(10, 'session-b')
+    expect(getCurrent).toHaveBeenLastCalledWith(10, 'session-b', { errorDisplay: 'inline' })
     getCurrent.mockResolvedValueOnce({ data: { ...empty, note: '本次会话复盘' } })
     await wrapper
       .findAll('button')
       .find((button) => button.text() === '返回本次会话')!
       .trigger('click')
     await flushPromises()
-    expect(getCurrent).toHaveBeenLastCalledWith(10, 'session-a')
+    expect(getCurrent).toHaveBeenLastCalledWith(10, 'session-a', { errorDisplay: 'inline' })
     expect(wrapper.get('textarea').element.value).toBe('本次会话复盘')
   })
 
@@ -183,7 +193,7 @@ describe('TutorSessionNotes', () => {
       .find((button) => button.text() === '编辑此复盘')!
       .trigger('click')
     await flushPromises()
-    expect(getCurrent).toHaveBeenLastCalledWith(10, 'session-b')
+    expect(getCurrent).toHaveBeenLastCalledWith(10, 'session-b', { errorDisplay: 'inline' })
     finishOld({ data: { ...empty, note: '旧会话响应' } })
     await flushPromises()
     expect(wrapper.get('textarea').element.value).toBe('历史服务端复盘')
@@ -224,7 +234,7 @@ describe('TutorSessionNotes', () => {
     await open(wrapper)
     await wrapper.get('[data-testid="session-note-delete"]').trigger('click')
     await flushPromises()
-    expect(getNotes).toHaveBeenLastCalledWith(10, 1)
+    expect(getNotes).toHaveBeenLastCalledWith(10, 1, { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('仍可查看的复盘')
   })
 
@@ -247,7 +257,7 @@ describe('TutorSessionNotes', () => {
     })
     await wrapper.get('[data-testid="session-note-delete"]').trigger('click')
     await flushPromises()
-    expect(deleteNote).toHaveBeenCalledWith(10, 'session-a', 2)
+    expect(deleteNote).toHaveBeenCalledWith(10, 'session-a', 2, { errorDisplay: 'inline' })
   })
 
   it('ignores late current and list responses after session changes and after unmount', async () => {

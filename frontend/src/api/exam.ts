@@ -522,22 +522,36 @@ export function startExamLearningSession(paperId: number) {
   return request.post<unknown, ApiResponse<ExamLearningSessionVO>>(`/exam/papers/${paperId}/learning-sessions`)
 }
 
-export function getExamLearningSession(sessionId: number) {
-  return request.get<unknown, ApiResponse<ExamLearningSessionVO>>(`/exam/learning-sessions/${sessionId}`)
+export function getExamLearningSession(sessionId: number, options?: { errorDisplay?: 'inline' }) {
+  if (!options) return request.get<unknown, ApiResponse<ExamLearningSessionVO>>(`/exam/learning-sessions/${sessionId}`)
+  return request.get<unknown, ApiResponse<ExamLearningSessionVO>>(`/exam/learning-sessions/${sessionId}`, options)
 }
 
 export function submitExamLearningAnswer(
   sessionId: number,
   data: { questionId: number; userAnswer: string; answerTime?: number },
+  options?: { errorDisplay?: 'inline' },
 ) {
+  if (!options)
+    return request.post<unknown, ApiResponse<ExamLearningAnswerResultVO>>(
+      `/exam/learning-sessions/${sessionId}/answers`,
+      data,
+    )
   return request.post<unknown, ApiResponse<ExamLearningAnswerResultVO>>(
     `/exam/learning-sessions/${sessionId}/answers`,
     data,
+    options,
   )
 }
 
-export function completeExamLearningSession(sessionId: number) {
-  return request.post<unknown, ApiResponse<ExamLearningSessionVO>>(`/exam/learning-sessions/${sessionId}/complete`)
+export function completeExamLearningSession(sessionId: number, options?: { errorDisplay?: 'inline' }) {
+  if (!options)
+    return request.post<unknown, ApiResponse<ExamLearningSessionVO>>(`/exam/learning-sessions/${sessionId}/complete`)
+  return request.post<unknown, ApiResponse<ExamLearningSessionVO>>(
+    `/exam/learning-sessions/${sessionId}/complete`,
+    undefined,
+    options,
+  )
 }
 
 export function submitExam(data: ExamSubmitRequest) {

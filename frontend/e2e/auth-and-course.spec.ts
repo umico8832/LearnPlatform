@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { createLearnerAndLogin } from './helpers/registerLearner'
 import type { Locator, Page } from '@playwright/test'
 import path from 'node:path'
 import { readFile } from 'node:fs/promises'
@@ -30,6 +31,22 @@ async function loginToAdminApp(page: Page, username: string, password: string) {
   await expect(loginButton).toBeEnabled({ timeout: 15_000 })
   await loginButton.click()
   await expect(page).toHaveURL(/\/admin\/subjective-reviews$/)
+}
+
+async function findPublishedPaper(page: Page, title: string) {
+  for (let pageIndex = 1; pageIndex <= 100; pageIndex += 1) {
+    const card = page.locator('.exam-card').filter({ hasText: title })
+    if (await card.count()) return card.first()
+    const next = page.locator('.exam-tabs .btn-next:visible')
+    if (await next.isDisabled()) break
+    await Promise.all([
+      page.waitForResponse(
+        (response) => response.url().includes('/api/exam/papers') && response.request().method() === 'GET',
+      ),
+      next.click(),
+    ])
+  }
+  throw new Error(`未在已发布试卷分页中找到：${title}`)
 }
 
 async function readCountdownSeconds(countdown: Locator) {
@@ -156,7 +173,7 @@ test('用户答错后可在错题本更新掌握程度并重练', async ({ page 
   await expect(wrongCard).toBeVisible()
 
   // 测评复盘可深链按知识点筛选错题（Java 基础演示题关联“面向对象”知识点）
-  await page.goto('/wrong-questions?courseId=1&knowledgePointId=2&knowledgePointName=面向对象')
+  await page.goto('/wrong-questions?courseId=6&knowledgePointId=2&knowledgePointName=面向对象')
   await expect(page.locator('.kp-filter-chip')).toContainText('知识点：面向对象')
   await expect(page.locator('.wrong-card')).toHaveCount(1)
   await expect(page.locator('.wrong-card')).toContainText('Java 中用于定义类继承关系的关键字是？')
@@ -527,11 +544,22 @@ test('课程空间可完成整体与知识点阶段测评并查看历史复盘',
   await assessmentDialog.getByRole('button', { name: '关闭', exact: true }).click()
 })
 
-test('用户可完成2026真题学习与限时考试并复盘可信来源', async ({ page }) => {
-  await loginAs(page, 'testuser', 'test123')
+test('用户可完成2026真题学习并恢复可信来源反馈', async ({ page, browser }, testInfo) => {
+  test.setTimeout(90_000)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await createLearnerAndLogin(browser, page, 'paper-learning')
+  await page.goto('/courses')
+  await page
+    .locator('.course-card')
+    .filter({ hasText: '408 数据结构' })
+    .getByRole('button', { name: '查看课程' })
+    .click()
+  await page.getByRole('button', { name: '加入课程库', exact: true }).click()
+  await expect(page).toHaveURL(/\/my-courses\/\d+$/)
 
   await page.goto('/exams')
-  const officialCard = page.locator('.exam-card').filter({ hasText: '2026 年 408 真题·数据结构选择题' })
+  const officialCard = await findPublishedPaper(page, '2026 年 408 真题·数据结构选择题')
   await expect(officialCard).toBeVisible()
   await expect(officialCard).toContainText('官方原题')
   await expect(officialCard).toContainText('2026 · 全国硕士研究生招生考试计算机学科专业基础')
@@ -547,25 +575,47 @@ test('用户可完成2026真题学习与限时考试并复盘可信来源', asyn
   )
   await expect(page.locator('.question-meta')).toContainText('第1题')
   await expect(page.locator('.question-section')).toHaveText('一、单项选择题（数据结构）')
-  await expect(page.getByRole('button', { name: 'AI 深度解析' })).toBeDisabled()
+  await expect(page.getByRole('heading', { name: 'AI 学习助手' })).toBeVisible()
 
-  for (let questionNumber = 1; questionNumber <= 11; questionNumber += 1) {
-    if (questionNumber > 1) {
-      await page
-        .locator('.sheet-item')
-        .filter({ hasText: `第${questionNumber}题` })
-        .click()
+  const firstChoice = page.locator('.question-card .option-item input').first()
+  await firstChoice.check()
+  await page.route('**/exam/learning-sessions/*/answers', (route) => route.abort(), { times: 1 })
+  await page.getByRole('button', { name: '提交答案', exact: true }).click()
+  await expect(page.locator('.inline-error')).toContainText('提交答案失败')
+  await expect(firstChoice).toBeChecked()
+  await page.getByRole('button', { name: '重新提交', exact: true }).click()
+  await expect(page.locator('.exam-learning-feedback')).toBeVisible()
+  await expect(firstChoice).toBeDisabled()
+  await page.reload()
+  await expect(page.locator('.question-meta')).toContainText('第2题')
+  await page.locator('.sheet-item').first().click()
+  await expect(firstChoice).toBeChecked()
+  await expect(firstChoice).toBeDisabled()
+  await page.getByRole('button', { name: '重新作答', exact: true }).click()
+  await expect(firstChoice).toBeEnabled()
+  await page.locator('.question-card .option-item input').nth(1).check()
+  await page.getByRole('button', { name: '提交答案', exact: true }).click()
+  await expect(page.locator('.exam-learning-feedback dd').first()).toHaveText('B')
+
+  for (const item of await page.locator('.sheet-item').all()) {
+    await item.click()
+    const submit = page.getByRole('button', { name: '提交答案', exact: true })
+    if (await submit.isVisible()) {
+      await page.locator('.question-card .option-item input').first().check()
+      await submit.click()
+      await expect(page.locator('.exam-learning-feedback')).toBeVisible()
     }
-    await page.locator('.question-card .option-item').first().click()
-    await page.getByRole('button', { name: '提交答案' }).click()
-    await expect(page.locator('.answer-result')).toBeVisible()
   }
-  await expect(page.getByRole('button', { name: 'AI 深度解析' })).toBeEnabled()
-  await page.getByRole('button', { name: '完成本轮学习' }).click()
+  await expect(page.getByRole('heading', { name: 'AI 学习助手' })).toBeVisible()
+  await page.getByRole('button', { name: '完成本轮学习', exact: true }).click()
   await expect(page.locator('.learning-header')).toContainText('本轮已完成')
+  await page.screenshot({ path: testInfo.outputPath('official-learning-completed.png') })
+})
 
+test('用户可完成2026真题限时考试并复盘可信来源', async ({ page }) => {
+  await loginAs(page, 'testuser', 'test123')
   await page.goto('/exams')
-  const examCard = page.locator('.exam-card').filter({ hasText: '2026 年 408 真题·数据结构选择题' })
+  const examCard = await findPublishedPaper(page, '2026 年 408 真题·数据结构选择题')
   await examCard.getByRole('button', { name: '考试模式' }).click()
   await expect(page).toHaveURL(/\/exams\/take\/\d+$/)
   await expect(page.locator('.question-area')).toBeVisible()
@@ -589,7 +639,6 @@ test('用户可完成2026真题学习与限时考试并复盘可信来源', asyn
   await expect(page.locator('.answer-item').first()).toContainText('第1题')
   await expect(page.locator('.answer-item').first()).toContainText('一、单项选择题（数据结构）')
 })
-
 test('2026主观题提交后由管理员按评分点批阅并固化总分', async ({ page }) => {
   await loginAs(page, 'testuser', 'test123')
   await page.goto('/exams')

@@ -7,14 +7,7 @@
       </div>
       <span v-if="statusLabel" class="agent-status" role="status">{{ statusLabel }}</span>
     </header>
-    <p class="agent-intro">教学解释只依据本节已审查内容；学习安排依据课程记录，理解检查由服务端判分。</p>
-    <TutorMemory :course-id="courseId" :busy="!canContinueFromCheck" />
-    <TutorSessionNotes
-      :course-id="courseId"
-      :session-key="sessionKey"
-      :check-result="checkResult"
-      :busy="!canContinueFromCheck"
-    />
+    <p class="agent-intro">教学解释只依据本节已审查内容；理解检查会按实际作答记录。</p>
 
     <div v-if="run?.messages.length" class="agent-messages" aria-live="polite">
       <article
@@ -24,7 +17,8 @@
         :class="item.role === 'USER' ? 'is-user' : 'is-tutor'"
       >
         <span>{{ item.role === 'USER' ? '你' : 'Tutor' }}</span>
-        <p>{{ item.content }}</p>
+        <MarkdownRenderer v-if="item.role === 'ASSISTANT'" class="agent-message-content" :content="item.content" />
+        <p v-else>{{ item.content }}</p>
         <span
           v-for="action in (item.role === 'ASSISTANT' ? (item.actions ?? []) : []).filter(
             (candidate) => candidate.type === 'HINT',
@@ -69,7 +63,7 @@
       </article>
     </div>
 
-    <p v-if="submitting" class="agent-thinking" role="status">Tutor 正在核对本节内容…</p>
+    <p v-if="submitting" class="agent-thinking" role="status">Tutor 正在生成完整回复…</p>
     <el-alert v-if="failure" :title="failure" type="error" :closable="false" show-icon />
 
     <el-button
@@ -135,6 +129,17 @@
         </el-button>
       </div>
     </div>
+
+    <details class="agent-records" data-testid="agent-records">
+      <summary>学习偏好与本次复盘</summary>
+      <TutorMemory :course-id="courseId" :busy="!canContinueFromCheck" />
+      <TutorSessionNotes
+        :course-id="courseId"
+        :session-key="sessionKey"
+        :check-result="checkResult"
+        :busy="!canContinueFromCheck"
+      />
+    </details>
   </section>
 </template>
 
@@ -148,6 +153,8 @@ import {
   type TutorAgentRunVO,
 } from '@/api/tutor'
 import { errorMessage } from '@/utils/errors'
+import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
+import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import TutorAgentPractice from './TutorAgentPractice.vue'
 import TutorAgentPlan from './TutorAgentPlan.vue'
 import TutorMemory from './TutorMemory.vue'
@@ -207,6 +214,35 @@ const statusLabel = computed(() => {
   return run.value ? '等待你的问题' : ''
 })
 let generation = 0
+let alive = true
+
+function clearStoredRunKeys() {
+  try {
+    for (let index = sessionStorage.length - 1; index >= 0; index--) {
+      const key = sessionStorage.key(index)
+      if (key?.startsWith('lp:tutor-agent-run:')) sessionStorage.removeItem(key)
+    }
+  } catch {
+    // Storage is optional; the authenticated server session remains the source of truth.
+  }
+}
+
+function isCurrent(current: number, authSession: number) {
+  return alive && current === generation && authSession === getAuthSessionVersion()
+}
+
+function clearForNewAccount() {
+  generation++
+  clearStoredRunKeys()
+  run.value = undefined
+  question.value = ''
+  failure.value = ''
+  submitting.value = false
+  restoring.value = false
+  restoreFailed.value = false
+  storedRunKey.value = null
+}
+const unsubscribeAuth = onAuthSessionChange(clearForNewAccount)
 
 async function send() {
   if (!canSend.value) return
@@ -237,21 +273,24 @@ async function continueFromPractice() {
 
 async function sendMessage(message: string, clearQuestion: boolean) {
   const current = generation
+  const authSession = getAuthSessionVersion()
   submitting.value = true
   failure.value = ''
   try {
     const response = run.value
-      ? await resumeTutorAgentRun(props.courseId, props.sessionKey, run.value.runKey, message)
-      : await startTutorAgentRun(props.courseId, props.sessionKey, message)
-    if (current !== generation) return
+      ? await resumeTutorAgentRun(props.courseId, props.sessionKey, run.value.runKey, message, {
+          errorDisplay: 'inline',
+        })
+      : await startTutorAgentRun(props.courseId, props.sessionKey, message, { errorDisplay: 'inline' })
+    if (!isCurrent(current, authSession)) return
     rememberRun(response.data)
     if (clearQuestion) question.value = ''
   } catch (error) {
-    if (current !== generation) return
-    failure.value = errorMessage(error, 'Tutor 暂时无法回答，请稍后重试')
+    if (!isCurrent(current, authSession)) return
+    failure.value = errorMessage(error, 'Tutor 暂时无法回答，请重试')
     await restore(true)
   } finally {
-    if (current === generation) submitting.value = false
+    if (isCurrent(current, authSession)) submitting.value = false
   }
 }
 
@@ -269,21 +308,22 @@ function rememberRun(value: TutorAgentRunVO | null) {
 async function restore(preserveFailure = false) {
   if (restoring.value) return
   const current = generation
+  const authSession = getAuthSessionVersion()
   restoring.value = true
   restoreFailed.value = false
   if (!preserveFailure) failure.value = ''
   try {
     const response = storedRunKey.value
-      ? await getTutorAgentRun(props.courseId, props.sessionKey, storedRunKey.value)
-      : await getLatestTutorAgentRun(props.courseId, props.sessionKey)
-    if (current !== generation) return
+      ? await getTutorAgentRun(props.courseId, props.sessionKey, storedRunKey.value, { errorDisplay: 'inline' })
+      : await getLatestTutorAgentRun(props.courseId, props.sessionKey, { errorDisplay: 'inline' })
+    if (!isCurrent(current, authSession)) return
     rememberRun(response.data)
   } catch (error) {
-    if (current !== generation) return
+    if (!isCurrent(current, authSession)) return
     restoreFailed.value = true
     failure.value = errorMessage(error, '暂时无法恢复对话，请重试')
   } finally {
-    if (current === generation) restoring.value = false
+    if (isCurrent(current, authSession)) restoring.value = false
   }
 }
 
@@ -308,7 +348,9 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  alive = false
   generation++
+  unsubscribeAuth()
 })
 </script>
 
@@ -388,7 +430,8 @@ onBeforeUnmount(() => {
   font-weight: var(--lp-weight-semibold);
 }
 
-.agent-message p {
+.agent-message p,
+.agent-message-content {
   margin: 0;
   padding: var(--lp-space-3) var(--lp-space-4);
   color: var(--lp-text);
@@ -452,6 +495,24 @@ onBeforeUnmount(() => {
   color: var(--lp-text);
   font-size: var(--lp-text-sm);
   font-weight: var(--lp-weight-semibold);
+}
+
+.agent-records {
+  margin-top: var(--lp-space-5);
+  border-top: var(--lp-border-hairline);
+}
+
+.agent-records > summary {
+  padding-top: var(--lp-space-3);
+  color: var(--lp-text-secondary);
+  cursor: pointer;
+  font-size: var(--lp-text-sm);
+  font-weight: var(--lp-weight-semibold);
+}
+
+.agent-records > summary:focus-visible {
+  outline: var(--lp-space-1) solid var(--lp-primary);
+  outline-offset: var(--lp-space-1);
 }
 
 .composer-actions {

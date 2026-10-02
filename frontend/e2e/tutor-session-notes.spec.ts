@@ -1,16 +1,13 @@
 import { expect, test } from '@playwright/test'
+import { createLearnerAndLogin } from './helpers/registerLearner'
 import type { CourseOverviewVO, TutorCheckResultVO } from '../src/api/course'
 import type { TutorAgentRunVO } from '../src/api/tutor'
 import type { TutorSessionNoteVO } from '../src/api/tutorNotes'
 
-test('Tutor 会话复盘跨会话关联真实检查，纠正和删除不会增加学习事实', async ({ page }, testInfo) => {
+test('Tutor 会话复盘跨会话关联真实检查，纠正和删除不会增加学习事实', async ({ page, browser }, testInfo) => {
   test.setTimeout(90_000)
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/login')
-  await page.getByPlaceholder('请输入用户名或邮箱').fill('testuser')
-  await page.getByPlaceholder('请输入密码').fill('test123')
-  await page.getByRole('button', { name: '登录', exact: true }).click()
-  await expect(page).toHaveURL(/\/my-courses$/, { timeout: 15_000 })
+  await createLearnerAndLogin(browser, page, 'tutor-notes.spec')
   await page.goto('/courses')
   await page
     .locator('.course-card')
@@ -32,8 +29,10 @@ test('Tutor 会话复盘跨会话关联真实检查，纠正和删除不会增�
   await page.goto(`${courseUrl}/tutor?knowledgePointId=${target.knowledgePointId}`)
   const originalKey = (await (await firstSession).json()).data.sessionKey
   const panel = page.locator('.agent-panel')
+  const records = panel.getByTestId('agent-records')
   const notes = panel.getByTestId('tutor-session-notes')
   const editor = notes.getByRole('region', { name: '会话复盘编辑器' })
+  await records.locator(':scope > summary').click()
   await notes.locator('summary').click()
   await expect(notes.getByTestId('session-note-input')).toBeEnabled()
   await notes.getByTestId('session-note-input').fill('我觉得自己全都答对了')
@@ -72,6 +71,7 @@ test('Tutor 会话复盘跨会话关联真实检查，纠正和删除不会增�
   const nextSession = sessionCreated()
   await page.reload()
   expect((await (await nextSession).json()).data.sessionKey).not.toBe(originalKey)
+  await records.locator(':scope > summary').click()
   await notes.locator('summary').click()
   await expect(notes.getByTestId('session-note-input')).toHaveValue('')
   const original = notes.locator('article').filter({ hasText: '我觉得自己全都答对了' })
@@ -105,6 +105,7 @@ test('Tutor 会话复盘跨会话关联真实检查，纠正和删除不会增�
   expect(erased.source.checkStatus).toBe('INCORRECT')
   await ask('当前没有可用的会话复盘。')
   await page.reload()
+  await records.locator(':scope > summary').click()
   await notes.locator('summary').click()
   await expect(notes).toContainText('还没有保存的会话复盘')
 

@@ -7,7 +7,7 @@ import {
   type TutorSessionVO,
 } from '@/api/course'
 import { useGamificationStore } from '@/stores/gamification'
-import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
+import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
 import { errorMessage } from '@/utils/errors'
 
 export function useTutorSessionCheck(courseId: Ref<number>, pointId: Ref<number>) {
@@ -19,9 +19,22 @@ export function useTutorSessionCheck(courseId: Ref<number>, pointId: Ref<number>
   const result = ref<TutorCheckResultVO>()
   const checkFailure = ref('')
   let generation = 0
+  let alive = true
+
+  function clearStoredSessions() {
+    try {
+      for (let index = sessionStorage.length - 1; index >= 0; index--) {
+        const key = sessionStorage.key(index)
+        if (key?.startsWith('lp:tutor-session:')) sessionStorage.removeItem(key)
+      }
+    } catch {
+      // Private browsing storage can be unavailable; server-side ownership remains authoritative.
+    }
+  }
 
   function clearForNewAccount() {
     generation++
+    clearStoredSessions()
     loading.value = false
     failed.value = false
     submitting.value = false
@@ -29,11 +42,13 @@ export function useTutorSessionCheck(courseId: Ref<number>, pointId: Ref<number>
     optionId.value = ''
     result.value = undefined
     checkFailure.value = ''
+    if (isAuthenticated()) void load()
   }
   const unsubscribeAuth = onAuthSessionChange(clearForNewAccount)
 
   function isCurrent(current: number, authSession: number, sessionKey?: string) {
     return (
+      alive &&
       current === generation &&
       authSession === getAuthSessionVersion() &&
       (sessionKey === undefined || session.value?.sessionKey === sessionKey)
@@ -66,12 +81,12 @@ export function useTutorSessionCheck(courseId: Ref<number>, pointId: Ref<number>
     try {
       const storedSessionKey = restart ? null : sessionStorage.getItem(key)
       if (storedSessionKey) {
-        const restored = (await getTutorSession(requestedCourseId, storedSessionKey)).data
+        const restored = (await getTutorSession(requestedCourseId, storedSessionKey, { errorDisplay: 'inline' })).data
         if (!isCurrent(current, authSession)) return
         applySession(restored)
         return
       }
-      const created = (await startTutorSession(requestedCourseId, requestedPointId)).data
+      const created = (await startTutorSession(requestedCourseId, requestedPointId, { errorDisplay: 'inline' })).data
       if (!isCurrent(current, authSession)) return
       applySession(created)
       sessionStorage.setItem(key, created.sessionKey)
@@ -92,12 +107,12 @@ export function useTutorSessionCheck(courseId: Ref<number>, pointId: Ref<number>
     submitting.value = true
     checkFailure.value = ''
     try {
-      const response = await submitTutorCheck(courseId.value, sessionKey, selectedOption)
+      const response = await submitTutorCheck(courseId.value, sessionKey, selectedOption, { errorDisplay: 'inline' })
       if (!isCurrent(current, authSession, sessionKey)) return
       if (response.data.reward) useGamificationStore().acceptReward(response.data.reward, authSession)
       result.value = response.data
       try {
-        const refreshed = await getTutorSession(courseId.value, sessionKey)
+        const refreshed = await getTutorSession(courseId.value, sessionKey, { errorDisplay: 'inline' })
         if (!isCurrent(current, authSession, sessionKey)) return
         applySession(refreshed.data)
       } catch {
@@ -113,6 +128,7 @@ export function useTutorSessionCheck(courseId: Ref<number>, pointId: Ref<number>
   }
 
   function dispose() {
+    alive = false
     generation++
     unsubscribeAuth()
   }

@@ -1,7 +1,6 @@
-import { onBeforeUnmount, onMounted, ref } from 'vue'
-import type { Ref } from 'vue'
-import { recordAssetView } from '@/api/ai'
-import type { AiAssetType, AiVariantTrainingStatus } from '@/api/ai'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
+import { recordAssetView, type AiAssetType, type AiVariantTrainingStatus } from '@/api/ai'
+import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
 
 interface AssetViewTrackingOptions {
   questionId: Readonly<Ref<number>>
@@ -14,39 +13,61 @@ export function useAssetViewTracking(options: AssetViewTrackingOptions) {
   const assetRoot = ref<HTMLElement | null>(null)
   const isInViewport = ref(false)
   const trackedViews = new Set<string>()
-  let visibilityObserver: IntersectionObserver | null = null
+  let observer: IntersectionObserver | null = null
+  let alive = true,
+    generation = 0
 
-  function trackVisibleAsset(assetType: AiAssetType) {
-    if (!isInViewport.value || !options.hasContent(assetType)) return
-    const key = `${options.questionId.value}:${assetType}`
+  async function trackVisibleAsset(assetType: AiAssetType) {
+    await nextTick()
+    if (!alive || !isInViewport.value || options.activeType.value !== assetType || !options.hasContent(assetType))
+      return
+    const id = options.questionId.value,
+      session = getAuthSessionVersion(),
+      version = generation
+    const key = `${session}:${id}:${assetType}`
     if (trackedViews.has(key)) return
     trackedViews.add(key)
-    recordAssetView(options.questionId.value, assetType)
-      .then((response) => {
-        if (assetType === 'VARIANT' && response.data) options.onVariantTraining(response.data)
-      })
-      .catch(() => {
-        trackedViews.delete(key)
-      })
-  }
-
-  onMounted(() => {
-    if (typeof IntersectionObserver === 'undefined') {
-      isInViewport.value = true
-      return
+    try {
+      const response = await recordAssetView(id, assetType, { errorDisplay: 'inline' })
+      if (!alive || version !== generation || session !== getAuthSessionVersion() || id !== options.questionId.value)
+        return
+      if (assetType === 'VARIANT' && response.data) options.onVariantTraining(response.data)
+    } catch {
+      if (version === generation) trackedViews.delete(key)
     }
-    if (!assetRoot.value) return
-    visibilityObserver = new IntersectionObserver(
+  }
+  function observeTarget(el: HTMLElement | null, old: HTMLElement | null) {
+    if (old) observer?.unobserve(old)
+    isInViewport.value = false
+    if (el) observer?.observe(el)
+  }
+  onMounted(() => {
+    if (typeof IntersectionObserver === 'undefined') return
+    observer = new IntersectionObserver(
       (entries) => {
-        isInViewport.value = Boolean(entries[0]?.isIntersecting)
-        if (isInViewport.value) trackVisibleAsset(options.activeType.value)
+        const entry = entries.find((item) => item.target === assetRoot.value)
+        if (!entry) return
+        isInViewport.value = entry.isIntersecting
+        if (entry.isIntersecting) void trackVisibleAsset(options.activeType.value)
       },
       { threshold: 0.1 },
     )
-    visibilityObserver.observe(assetRoot.value)
+    if (assetRoot.value) observer.observe(assetRoot.value)
   })
-
-  onBeforeUnmount(() => visibilityObserver?.disconnect())
-
+  watch(assetRoot, observeTarget, { flush: 'post' })
+  watch(options.questionId, () => {
+    generation++
+    trackedViews.clear()
+  })
+  const unsubscribe = onAuthSessionChange(() => {
+    generation++
+    trackedViews.clear()
+  })
+  onBeforeUnmount(() => {
+    alive = false
+    generation++
+    observer?.disconnect()
+    unsubscribe()
+  })
   return { assetRoot, trackVisibleAsset }
 }

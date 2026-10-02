@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { createLearnerAndLogin } from './helpers/registerLearner'
 import type { CourseOverviewVO } from '../src/api/course'
 import type { TutorAgentPracticeVO, TutorAgentRunVO } from '../src/api/tutor'
 
@@ -21,14 +22,29 @@ async function post<T>(page: Page, path: string, body: unknown): Promise<T> {
   return result.data as T
 }
 
+async function get<T>(page: Page, path: string): Promise<T> {
+  const result = await page.evaluate(async (requestPath) => {
+    const response = await fetch(`/api${requestPath}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('learn_platform_token')}` },
+    })
+    return response.json()
+  }, path)
+  expect(result.code, `${path}: ${result.message}`).toBe(0)
+  return result.data as T
+}
+
+type ApprovedVariantReview = {
+  motherQuestionId: number
+  courseId: number
+  knowledgePointIds?: number[]
+  reviewStatus: 'APPROVED'
+  publishedQuestionId: number
+}
+
 test('Tutor Agent 推荐已批准变式题、恢复首次作答并读取真实结果', async ({ page, browser }, testInfo) => {
   test.setTimeout(90_000)
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/login')
-  await page.getByPlaceholder('请输入用户名或邮箱').fill('testuser')
-  await page.getByPlaceholder('请输入密码').fill('test123')
-  await page.getByRole('button', { name: '登录', exact: true }).click()
-  await expect(page).toHaveURL(/\/my-courses$/, { timeout: 15_000 })
+  await createLearnerAndLogin(browser, page, 'tutor-practice')
   await page.goto('/courses')
   await page
     .locator('.course-card')
@@ -73,12 +89,18 @@ test('Tutor Agent 推荐已批准变式题、恢复首次作答并读取真实�
       questionId: mother.id,
       assetType: 'VARIANT',
     })
-    const approved = await post<{ publishedQuestionId: number; reviewStatus: string }>(
-      admin,
-      `/admin/ai-variant-reviews/${asset.variantQuestion.id}`,
-      { decision: 'APPROVE', reviewNote: '已核对隔离测试原创题目及答案，仅用于自动化验收。' },
-    )
+    const approved = await post<ApprovedVariantReview>(admin, `/admin/ai-variant-reviews/${asset.variantQuestion.id}`, {
+      decision: 'APPROVE',
+      reviewNote: '已核对隔离测试原创题目及答案，仅用于自动化验收。',
+    })
     expect(approved.reviewStatus).toBe('APPROVED')
+    await testInfo.attach('generated-variant-ids.json', {
+      body: JSON.stringify({
+        motherQuestionId: approved.motherQuestionId,
+        publishedQuestionId: approved.publishedQuestionId,
+      }),
+      contentType: 'application/json',
+    })
 
     await page.goto(`${courseUrl}/tutor?knowledgePointId=${target.knowledgePointId}`)
     const panel = page.locator('.agent-panel')
@@ -88,9 +110,26 @@ test('Tutor Agent 推荐已批准变式题、恢复首次作答并读取真实�
     )
     await panel.getByTestId('agent-request-practice').click()
     const recommended: TutorAgentRunVO = (await (await recommendationResponse).json()).data
-    expect(recommended.messages.at(-1)?.actions).toEqual([
-      { type: 'PRACTICE', questionId: approved.publishedQuestionId },
+    const action = recommended.messages.at(-1)?.actions.find((item) => item.type === 'PRACTICE')
+    expect(action).toEqual({ type: 'PRACTICE', questionId: expect.any(Number) })
+    if (!action || action.type !== 'PRACTICE') throw new Error('Tutor 未返回可作答的变式题')
+
+    const [recommendedQuestion, approvedReviews] = await Promise.all([
+      get<{ courseId: number; knowledgePointIds: number[] }>(admin, `/admin/questions/${action.questionId}`),
+      get<{ records: ApprovedVariantReview[] }>(
+        admin,
+        '/admin/ai-variant-reviews?reviewStatus=APPROVED&pageNum=1&pageSize=50',
+      ),
     ])
+    expect(recommendedQuestion.courseId).toBe(courseId)
+    expect(recommendedQuestion.knowledgePointIds).toContain(target.knowledgePointId)
+    expect(approvedReviews.records).toContainEqual(
+      expect.objectContaining({
+        publishedQuestionId: action.questionId,
+        courseId,
+        reviewStatus: 'APPROVED',
+      }),
+    )
     const openResponse = page.waitForResponse(
       (response) => response.request().method() === 'GET' && response.url().endsWith('/practice'),
     )

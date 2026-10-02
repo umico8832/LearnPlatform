@@ -86,14 +86,14 @@ describe('TutorAgentConversation', () => {
     await wrapper.get('[data-testid="agent-submit"]').trigger('click')
     await flushPromises()
 
-    expect(mockStart).toHaveBeenCalledWith(10, 'session', '为什么从右向左搬？')
+    expect(mockStart).toHaveBeenCalledWith(10, 'session', '为什么从右向左搬？', { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('这样不会覆盖尚未读取的元素。')
 
     await wrapper.get('[data-testid="agent-input"]').setValue('换个例子')
     await wrapper.get('[data-testid="agent-submit"]').trigger('click')
     await flushPromises()
 
-    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'run', '换个例子')
+    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'run', '换个例子', { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('可以把它看成给书架腾位置。')
   })
 
@@ -151,7 +151,9 @@ describe('TutorAgentConversation', () => {
     await wrapper.get('[data-testid="agent-follow-up-check"]').trigger('click')
     await flushPromises()
 
-    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'run', '请根据我本节理解检查的实际作答，继续指导我。')
+    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'run', '请根据我本节理解检查的实际作答，继续指导我。', {
+      errorDisplay: 'inline',
+    })
     expect(mockResume).not.toHaveBeenCalledWith(10, 'session', 'run', expect.stringContaining('这项由服务端判分'))
   })
 
@@ -164,7 +166,9 @@ describe('TutorAgentConversation', () => {
     await flushPromises()
     await wrapper.get('[data-testid="agent-follow-up-check"]').trigger('click')
     await flushPromises()
-    expect(mockStart).toHaveBeenCalledWith(10, 'session', '请根据我本节理解检查的实际作答，继续指导我。')
+    expect(mockStart).toHaveBeenCalledWith(10, 'session', '请根据我本节理解检查的实际作答，继续指导我。', {
+      errorDisplay: 'inline',
+    })
   })
 
   it('requests a reviewed variant exercise without accepting a client-selected question', async () => {
@@ -173,7 +177,9 @@ describe('TutorAgentConversation', () => {
     await flushPromises()
     await wrapper.get('[data-testid="agent-request-practice"]').trigger('click')
     await flushPromises()
-    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'run', '请推荐一道本节已审查的变式题，让我自己作答。')
+    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'run', '请推荐一道本节已审查的变式题，让我自己作答。', {
+      errorDisplay: 'inline',
+    })
   })
 
   it('requests a server-selected plan only on click and restores assistant plans while disabling busy actions', async () => {
@@ -200,7 +206,9 @@ describe('TutorAgentConversation', () => {
     expect(wrapper.findAll('[data-testid="plan-child"]')).toHaveLength(1)
     expect(wrapper.get('[data-testid="plan-child"]').attributes('data-sequence')).toBe('2')
     await wrapper.get('[data-testid="agent-request-plan"]').trigger('click')
-    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'run', '请建议本课程接下来的学习安排，由我确认是否采用。')
+    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'run', '请建议本课程接下来的学习安排，由我确认是否采用。', {
+      errorDisplay: 'inline',
+    })
     expect(wrapper.get('[data-testid="plan-child"]').attributes('data-busy')).toBe('true')
     await wrapper.get('[data-testid="agent-request-plan"]').trigger('click')
     expect(mockResume).toHaveBeenCalledTimes(1)
@@ -241,7 +249,9 @@ describe('TutorAgentConversation', () => {
     expect(mockResume).not.toHaveBeenCalled()
     await practices[1].trigger('click')
     await flushPromises()
-    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'run', '请根据我刚才变式练习的服务端结果，继续指导我。')
+    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'run', '请根据我刚才变式练习的服务端结果，继续指导我。', {
+      errorDisplay: 'inline',
+    })
     expect(mockResume).not.toHaveBeenCalledWith(10, 'session', 'run', expect.stringContaining('questionId'))
   })
 
@@ -272,6 +282,7 @@ describe('TutorAgentConversation', () => {
       'session',
       'run',
       '请给我本节理解检查的下一步提示，不要直接告诉我答案。',
+      { errorDisplay: 'inline' },
     )
 
     await wrapper.setProps({ checkResult: { correct: true } })
@@ -293,7 +304,9 @@ describe('TutorAgentConversation', () => {
     await flushPromises()
     await wrapper.get('[data-testid="agent-request-hint"]').trigger('click')
     await flushPromises()
-    expect(mockStart).toHaveBeenCalledWith(10, 'session', '请给我本节理解检查的下一步提示，不要直接告诉我答案。')
+    expect(mockStart).toHaveBeenCalledWith(10, 'session', '请给我本节理解检查的下一步提示，不要直接告诉我答案。', {
+      errorDisplay: 'inline',
+    })
   })
 
   it('does not advance locally after a failed hint and allows an explicit retry', async () => {
@@ -385,7 +398,7 @@ describe('TutorAgentConversation', () => {
     const wrapper = mountAgent()
     await flushPromises()
 
-    expect(mockGet).toHaveBeenCalledWith(10, 'session', 'run')
+    expect(mockGet).toHaveBeenCalledWith(10, 'session', 'run', { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('上次回答')
   })
 
@@ -435,7 +448,7 @@ describe('TutorAgentConversation', () => {
     expect(wrapper.text()).toContain('可重试')
     await wrapper.get('[data-testid="agent-submit"]').trigger('click')
     await flushPromises()
-    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'run', '继续')
+    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'run', '继续', { errorDisplay: 'inline' })
   })
 
   it('ignores restored messages after switching to another Tutor session', async () => {
@@ -460,7 +473,7 @@ describe('TutorAgentConversation', () => {
     await wrapper.get('[data-testid="agent-input"]').setValue('新的问题')
     await wrapper.get('[data-testid="agent-submit"]').trigger('click')
     await flushPromises()
-    expect(mockStart).toHaveBeenCalledWith(10, 'next-session', '新的问题')
+    expect(mockStart).toHaveBeenCalledWith(10, 'next-session', '新的问题', { errorDisplay: 'inline' })
   })
 
   it('ignores a late send response after the session changes', async () => {
@@ -498,13 +511,13 @@ describe('TutorAgentConversation', () => {
     })
     const wrapper = mountAgent()
     await flushPromises()
-    expect(mockLatest).toHaveBeenCalledWith(10, 'session')
+    expect(mockLatest).toHaveBeenCalledWith(10, 'session', { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('服务端已保存的回答')
     expect(sessionStorage.getItem('lp:tutor-agent-run:10:session')).toBe('recovered')
     await wrapper.get('[data-testid="agent-input"]').setValue('继续')
     await wrapper.get('[data-testid="agent-submit"]').trigger('click')
     await flushPromises()
-    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'recovered', '继续')
+    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'recovered', '继续', { errorDisplay: 'inline' })
     expect(mockStart).not.toHaveBeenCalled()
   })
 
@@ -520,7 +533,7 @@ describe('TutorAgentConversation', () => {
     await wrapper.get('[data-testid="agent-submit"]').trigger('click')
     await flushPromises()
     expect(mockStart).toHaveBeenCalledTimes(1)
-    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'created', '原问题')
+    expect(mockResume).toHaveBeenCalledWith(10, 'session', 'created', '原问题', { errorDisplay: 'inline' })
   })
 
   it('does not create a new run while server discovery is unavailable', async () => {

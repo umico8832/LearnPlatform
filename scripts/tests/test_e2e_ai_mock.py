@@ -1,7 +1,9 @@
 import importlib.util
 import json
 from pathlib import Path
+from threading import Thread
 import unittest
+from urllib.request import Request, urlopen
 
 SPEC = importlib.util.spec_from_file_location(
     "e2e_ai_mock", Path(__file__).resolve().parents[2] / "frontend/e2e/ai-mock.py")
@@ -10,6 +12,26 @@ SPEC.loader.exec_module(MOCK)
 
 
 class E2eAiMockTest(unittest.TestCase):
+    def test_stream_request_returns_openai_sse_content_terminal_usage_and_done(self):
+        server = MOCK.ThreadingHTTPServer(("127.0.0.1", 0), MOCK.Handler)
+        thread = Thread(target=server.handle_request, daemon=True)
+        thread.start()
+        try:
+            payload = json.dumps({"stream": True, "messages": [{"role": "user", "content": "解释"}]}).encode()
+            request = Request(f"http://127.0.0.1:{server.server_port}/v1/chat/completions", payload,
+                              {"Content-Type": "application/json"}, method="POST")
+            with urlopen(request, timeout=2) as response:
+                raw = response.read().decode()
+                self.assertTrue(response.headers["Content-Type"].startswith("text/event-stream"))
+        finally:
+            server.server_close()
+            thread.join(timeout=1)
+        frames = [line[6:] for line in raw.splitlines() if line.startswith("data: ")]
+        self.assertEqual("[DONE]", frames[-1])
+        self.assertIn("answerLabels", json.loads(frames[0])["choices"][0]["delta"]["content"])
+        self.assertEqual("stop", json.loads(frames[1])["choices"][0]["finish_reason"])
+        self.assertEqual(35, json.loads(frames[2])["usage"]["total_tokens"])
+
     def test_session_note_self_claim_is_not_the_bound_check_evidence_and_empty_context_does_not_fall_back(self):
         prefix = "当前课程的用户记忆（自述与服务端证据分列）：\n"
         for notes, expected in [([{"note": "我都答对了", "source": {"checkStatus": "INCORRECT"}}],

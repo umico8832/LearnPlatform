@@ -18,10 +18,11 @@
         <p class="tutor-summary">{{ session.lesson.summary }}</p>
       </header>
 
-      <section v-if="hasLearningContext" class="lesson-block evidence" aria-labelledby="learning-context-heading">
+      <details v-if="hasLearningContext" class="lesson-block evidence" aria-labelledby="learning-context-heading">
+        <summary id="learning-context-heading">相关学习记录</summary>
         <div class="block-heading">
           <LpKicker>最近相关记录</LpKicker>
-          <h2 id="learning-context-heading">与本节内容相关的记录</h2>
+          <h2>与本节内容相关的记录</h2>
         </div>
         <div class="evidence-grid">
           <div v-if="session.learningContext.paperAnswerCount" class="evidence-item">
@@ -51,17 +52,18 @@
         <small v-if="session.learningContext.latestEvidenceAt" class="evidence-time">
           最近相关记录：{{ formatEvidenceTime(session.learningContext.latestEvidenceAt) }}
         </small>
-      </section>
+      </details>
 
-      <section
+      <details
         v-if="session.lesson.prerequisite"
         class="lesson-block prerequisite"
         aria-labelledby="prerequisite-heading"
       >
+        <summary id="prerequisite-heading">学习前提：{{ session.lesson.prerequisite.title }}</summary>
         <LpKicker tone="warning">学习前提</LpKicker>
-        <h2 id="prerequisite-heading">{{ session.lesson.prerequisite.title }}</h2>
+        <h2>{{ session.lesson.prerequisite.title }}</h2>
         <p>{{ session.lesson.prerequisite.description }}</p>
-      </section>
+      </details>
 
       <section class="lesson-block steps" aria-labelledby="steps-heading">
         <LpKicker>教学步骤</LpKicker>
@@ -88,15 +90,6 @@
       <TutorSequentialListStorage v-if="sequentialStorageCourseware" :visualization="sequentialStorageCourseware" />
       <TutorLinkedListReversal v-if="linkedListReversalCourseware" :visualization="linkedListReversalCourseware" />
       <TutorFactorialCallStack v-if="factorialCallStackCourseware" :visualization="factorialCallStackCourseware" />
-
-      <TutorAgentConversation
-        v-if="session.agentAvailable"
-        :key="session.sessionKey"
-        :course-id="courseId"
-        :session-key="session.sessionKey"
-        :check-result="result"
-        @request-check="focusCheck"
-      />
 
       <section
         ref="checkSection"
@@ -153,6 +146,14 @@
           </div>
         </transition>
       </section>
+      <TutorAgentConversation
+        v-if="session.agentAvailable"
+        :key="session.sessionKey"
+        :course-id="courseId"
+        :session-key="session.sessionKey"
+        :check-result="result"
+        @request-check="focusCheck"
+      />
     </template>
   </main>
 </template>
@@ -341,6 +342,17 @@ onBeforeUnmount(() => {
   color: var(--lp-text-secondary);
   font-size: var(--lp-text-md);
   line-height: var(--lp-leading-relaxed);
+}
+
+.lesson-block > summary {
+  cursor: pointer;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  font-weight: var(--lp-weight-semibold);
+}
+.lesson-block > summary:focus-visible {
+  outline: var(--lp-space-1) solid var(--lp-primary);
+  outline-offset: var(--lp-space-1);
 }
 
 .lesson-block {

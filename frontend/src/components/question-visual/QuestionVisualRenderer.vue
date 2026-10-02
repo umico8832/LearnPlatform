@@ -1,7 +1,7 @@
 <template>
   <div class="vi-content">
     <div class="vi-header">
-      <h3 class="vi-title">📊 {{ data.title }}</h3>
+      <h3 class="vi-title">{{ data.title }}</h3>
       <p class="vi-summary">{{ data.summary }}</p>
     </div>
 
@@ -20,11 +20,7 @@
             class="vi-step"
             :class="`vi-step--${step.status}`"
           >
-            <div class="vi-step-icon">
-              <span v-if="step.status === 'done'">✅</span>
-              <span v-else-if="step.status === 'current'">🔵</span>
-              <span v-else>⏳</span>
-            </div>
+            <span class="vi-step-status">{{ stepStatusLabel(step.status) }}</span>
             <div class="vi-step-body">
               <div class="vi-step-content">{{ step.content }}</div>
               <div v-if="step.detail" class="vi-step-detail">{{ step.detail }}</div>
@@ -63,6 +59,9 @@
           >
             <div class="vi-cell-value">{{ cell.value }}</div>
             <div class="vi-cell-index">{{ cell.index }}</div>
+            <span v-if="cell.state && cell.state !== 'default'" class="vi-cell-state">{{
+              stateLabel(cell.state)
+            }}</span>
           </div>
         </div>
       </div>
@@ -79,7 +78,12 @@
             </thead>
             <tbody>
               <tr v-for="(row, rowIndex) in element.rows" :key="rowIndex">
-                <td v-for="(cell, cellIndex) in row" :key="cellIndex" :class="getCellClass(cell)">
+                <td
+                  v-for="(cell, cellIndex) in row"
+                  :key="cellIndex"
+                  :class="getCellClass(cell)"
+                  :aria-label="getCellAriaLabel(cell)"
+                >
                   {{ getCellValue(cell) }}
                 </td>
               </tr>
@@ -96,7 +100,7 @@
           <div v-for="(item, itemIndex) in element.items" :key="itemIndex" class="vi-bar-row">
             <div class="vi-bar-label">{{ item.label }}</div>
             <div class="vi-bar-track">
-              <div class="vi-bar-fill" :style="{ width: getBarWidth(item.value) + '%' }" />
+              <div class="vi-bar-fill" :style="{ width: getBarWidth(element, item.value) + '%' }" />
             </div>
             <div class="vi-bar-value">{{ item.value }}</div>
           </div>
@@ -128,22 +132,22 @@
       </div>
 
       <div v-else-if="element.type === 'code_animation'" class="vi-block">
-        <div class="vi-block-label">▶ {{ element.label }}</div>
+        <div class="vi-block-label">{{ element.label }}</div>
         <CodeAnimationViewer :element="element" />
       </div>
 
       <div v-else-if="element.type === 'sql_execution'" class="vi-block">
-        <div class="vi-block-label">🗃️ {{ element.label }}</div>
+        <div class="vi-block-label">{{ element.label }}</div>
         <SqlExecutionViewer :element="element" />
       </div>
 
       <div v-else-if="element.type === 'network_protocol'" class="vi-block">
-        <div class="vi-block-label">🌐 {{ element.label }}</div>
+        <div class="vi-block-label">{{ element.label }}</div>
         <NetworkProtocolViewer :element="element" />
       </div>
 
       <div v-else-if="element.type === 'os_process'" class="vi-block">
-        <div class="vi-block-label">⚙️ {{ element.label }}</div>
+        <div class="vi-block-label">{{ element.label }}</div>
         <OsProcessViewer :element="element" />
       </div>
 
@@ -158,28 +162,49 @@ import CodeAnimationViewer from '@/components/CodeAnimationViewer.vue'
 import SqlExecutionViewer from '@/components/SqlExecutionViewer.vue'
 import NetworkProtocolViewer from '@/components/NetworkProtocolViewer.vue'
 import OsProcessViewer from '@/components/OsProcessViewer.vue'
-import type { VisualBarChartElement, VisualInteractiveData, VisualMatrixCell, VisualNumberLineElement } from '@/api/ai'
+import type {
+  VisualBarChartElement,
+  VisualElementState,
+  VisualInteractiveData,
+  VisualMatrixCell,
+  VisualNumberLineElement,
+} from '@/api/ai'
 import QuestionVisualMermaid from './QuestionVisualMermaid.vue'
 import QuestionVisualTree from './QuestionVisualTree.vue'
 
-const props = defineProps<{
+defineProps<{
   data: VisualInteractiveData
 }>()
 
-function getBarWidth(value: number): number {
-  const chartElement = props.data.elements.find(
-    (element): element is VisualBarChartElement => element.type === 'bar_chart',
-  )
-  if (!chartElement || chartElement.items.length === 0) return 0
+function getBarWidth(element: VisualBarChartElement, value: number): number {
+  if (!element.items.length || !Number.isFinite(value)) return 0
+  const max = Math.max(...element.items.map((item) => item.value).filter(Number.isFinite), 1)
+  return Math.max(0, Math.min(100, Math.round((value / max) * 100)))
+}
 
-  const max = Math.max(...chartElement.items.map((item) => item.value), 1)
-  return Math.round((value / max) * 100)
+function stepStatusLabel(status: 'done' | 'current' | 'pending'): string {
+  if (status === 'done') return '已完成'
+  if (status === 'current') return '当前'
+  return '待进行'
 }
 
 function getMarkerPos(element: VisualNumberLineElement, position: number): number {
   const range = element.max - element.min
   if (range === 0) return 50
   return Math.round(((position - element.min) / range) * 100)
+}
+
+function stateLabel(state?: VisualElementState): string {
+  const labels: Partial<Record<VisualElementState, string>> = {
+    current: '当前',
+    visited: '已访问',
+    sorted: '已排序',
+    highlight: '重点',
+    swapped: '已交换',
+    done: '已完成',
+    pending: '待处理',
+  }
+  return labels[state ?? 'default'] ?? ''
 }
 
 function getCellClass(cell: string | VisualMatrixCell): string {
@@ -189,294 +214,255 @@ function getCellClass(cell: string | VisualMatrixCell): string {
 function getCellValue(cell: string | VisualMatrixCell): string {
   return typeof cell === 'string' ? cell : cell.value
 }
+
+function getCellAriaLabel(cell: string | VisualMatrixCell): string | undefined {
+  if (typeof cell === 'string') return undefined
+  const label = stateLabel(cell.state)
+  return label ? `${cell.value}，${label}` : cell.value
+}
 </script>
 
 <style scoped>
 .vi-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  gap: var(--lp-space-4);
 }
-
 .vi-header {
-  border-bottom: 1px solid #ebeef5;
-  padding-bottom: 12px;
+  padding-bottom: var(--lp-space-3);
+  border-bottom: var(--lp-border-hairline);
 }
-
 .vi-title {
-  color: #303133;
-  font-size: 16px;
-  margin: 0 0 6px;
+  margin: 0 0 var(--lp-space-1);
+  color: var(--lp-text);
+  font-size: var(--lp-text-lg);
 }
-
 .vi-summary {
-  color: #606266;
-  font-size: 13px;
-  line-height: 1.5;
   margin: 0;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-body);
 }
-
 .vi-block {
-  background: #f8f9fa;
-  border: 1px solid #ebeef5;
-  border-radius: 8px;
-  padding: 12px 14px;
+  padding: var(--lp-space-4);
+  background: var(--lp-surface-subtle);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-md);
 }
-
 .vi-block-label {
-  color: #409eff;
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: var(--lp-space-2);
+  color: var(--lp-text);
+  font-size: var(--lp-text-sm);
+  font-weight: var(--lp-weight-semibold);
 }
-
+.vi-description,
+.vi-step-detail,
+.vi-cell-index,
+.vi-cell-state,
+.vi-nl-marker-label,
+.vi-nl-range {
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-xs);
+}
 .vi-description {
-  color: #909399;
-  font-size: 12px;
-  margin-bottom: 8px;
+  margin-bottom: var(--lp-space-2);
 }
-
-.vi-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.vi-steps,
+.vi-bar-chart {
+  display: grid;
+  gap: var(--lp-space-2);
 }
-
 .vi-step {
-  align-items: flex-start;
-  border-left: 3px solid #dcdfe6;
-  border-radius: 6px;
-  display: flex;
-  gap: 10px;
-  padding: 8px 10px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--lp-space-3);
+  align-items: start;
+  padding: var(--lp-space-2) var(--lp-space-3);
+  border-inline-start: 3px solid var(--lp-border-strong);
+  border-radius: var(--lp-radius-sm);
 }
-
 .vi-step--done {
-  background: #f0f9ff;
-  border-left-color: #67c23a;
+  border-inline-start-color: var(--lp-success);
+  background: var(--lp-success-soft);
 }
-
 .vi-step--current {
-  background: #ecf5ff;
-  border-left-color: #409eff;
+  border-inline-start-color: var(--lp-primary);
+  background: var(--lp-primary-soft);
 }
-
 .vi-step--pending {
-  background: #fafafa;
-  border-left-color: #dcdfe6;
+  background: var(--lp-surface);
 }
-
-.vi-step-icon {
-  flex-shrink: 0;
-  font-size: 14px;
-  margin-top: 1px;
+.vi-step-status {
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-xs);
+  font-weight: var(--lp-weight-semibold);
+  white-space: nowrap;
 }
-
-.vi-step-content {
-  color: #303133;
-  font-size: 13px;
+.vi-step-content,
+.vi-cell-value {
+  color: var(--lp-text);
+  font-size: var(--lp-text-sm);
 }
-
+.vi-cell-value {
+  font-weight: var(--lp-weight-semibold);
+}
 .vi-step-detail {
-  color: #909399;
-  font-size: 12px;
-  margin-top: 4px;
+  margin-top: var(--lp-space-1);
 }
-
 .vi-table-wrapper {
   overflow-x: auto;
 }
-
 .vi-table,
 .vi-matrix {
-  border-collapse: collapse;
-  font-size: 12px;
   width: 100%;
+  border-collapse: collapse;
+  font-size: var(--lp-text-xs);
 }
-
 .vi-table th,
 .vi-table td,
 .vi-matrix th,
 .vi-matrix td {
-  border: 1px solid #ebeef5;
-  padding: 6px 10px;
+  padding: var(--lp-space-2) var(--lp-space-3);
+  border: var(--lp-border-hairline);
   text-align: center;
   white-space: nowrap;
 }
-
 .vi-table th,
 .vi-matrix th {
-  background: #f5f7fa;
-  color: #606266;
-  font-weight: 600;
+  background: var(--lp-surface-inset);
+  color: var(--lp-text-secondary);
+  font-weight: var(--lp-weight-semibold);
 }
-
 .vi-matrix td.vi-cell--visited {
-  background: #ecf5ff;
-  color: #409eff;
+  background: var(--lp-success-soft);
+  color: var(--lp-text);
 }
-
 .vi-matrix td.vi-cell--current {
-  background: #409eff;
-  color: #fff;
-  font-weight: 600;
+  background: var(--lp-primary);
+  color: var(--lp-on-primary);
+  font-weight: var(--lp-weight-semibold);
 }
-
 .vi-matrix td.vi-cell--highlight {
-  background: #fdf6ec;
-  color: #e6a23c;
+  background: var(--lp-warning-soft);
+  color: var(--lp-text);
 }
-
 .vi-state-array {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
   justify-content: center;
+  gap: var(--lp-space-1);
 }
-
 .vi-cell {
-  align-items: center;
-  background: #fff;
-  border: 2px solid #dcdfe6;
-  border-radius: 6px;
   display: flex;
   flex-direction: column;
+  align-items: center;
   min-width: 40px;
-  padding: 6px 8px;
+  padding: var(--lp-space-2);
+  background: var(--lp-surface);
+  border: 2px solid var(--lp-border-strong);
+  border-radius: var(--lp-radius-sm);
 }
-
-.vi-cell--default {
-  border-color: #dcdfe6;
-}
-
 .vi-cell--current {
-  background: #ecf5ff;
-  border-color: #409eff;
+  background: var(--lp-primary-soft);
+  border-color: var(--lp-primary);
 }
-
 .vi-cell--visited,
 .vi-cell--sorted {
-  background: #f0f9eb;
-  border-color: #67c23a;
+  background: var(--lp-success-soft);
+  border-color: var(--lp-success);
 }
-
 .vi-cell--highlight {
-  background: #fdf6ec;
-  border-color: #e6a23c;
+  background: var(--lp-warning-soft);
+  border-color: var(--lp-warning);
 }
-
 .vi-cell--swapped {
-  background: #fef0f0;
-  border-color: #f56c6c;
+  background: var(--lp-danger-soft);
+  border-color: var(--lp-danger);
 }
-
-.vi-cell-value {
-  color: #303133;
-  font-size: 14px;
-  font-weight: 600;
-}
-
 .vi-cell-index {
-  color: #909399;
-  font-size: 10px;
   margin-top: 2px;
 }
-
-.vi-bar-chart {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.vi-cell-state {
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-xs);
 }
-
 .vi-bar-row {
+  display: grid;
+  grid-template-columns: minmax(5rem, auto) minmax(0, 1fr) auto;
+  gap: var(--lp-space-3);
   align-items: center;
-  display: flex;
-  gap: 10px;
 }
-
-.vi-bar-label {
-  color: #606266;
-  font-size: 12px;
-  min-width: 80px;
-  text-align: right;
-}
-
-.vi-bar-track {
-  background: #f5f7fa;
-  border-radius: 4px;
-  flex: 1;
-  height: 20px;
-  overflow: hidden;
-}
-
-.vi-bar-fill {
-  background: linear-gradient(90deg, #409eff, #66b1ff);
-  border-radius: 4px;
-  height: 100%;
-  min-width: 2px;
-  transition: width 0.3s ease;
-}
-
+.vi-bar-label,
 .vi-bar-value {
-  color: #409eff;
-  font-size: 12px;
-  font-weight: 600;
-  min-width: 30px;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-xs);
 }
-
+.vi-bar-label {
+  text-align: end;
+}
+.vi-bar-value {
+  color: var(--lp-text);
+  font-weight: var(--lp-weight-semibold);
+}
+.vi-bar-track {
+  height: 18px;
+  overflow: hidden;
+  background: var(--lp-surface-inset);
+  border-radius: var(--lp-radius-xs);
+}
+.vi-bar-fill {
+  min-width: 2px;
+  height: 100%;
+  background: var(--lp-primary);
+  border-radius: inherit;
+}
 .vi-number-line {
-  padding: 20px 0 8px;
+  padding: var(--lp-space-5) 0 var(--lp-space-2);
 }
-
 .vi-nl-track {
-  background: #dcdfe6;
-  border-radius: 2px;
-  height: 4px;
-  margin: 0 10px;
   position: relative;
+  height: 4px;
+  margin: 0 var(--lp-space-3);
+  background: var(--lp-border-strong);
+  border-radius: var(--lp-radius-full);
 }
-
 .vi-nl-marker {
   position: absolute;
   top: -6px;
   transform: translateX(-50%);
 }
-
 .vi-nl-marker-line {
-  background: #909399;
-  height: 16px;
   width: 2px;
+  height: 16px;
+  background: var(--lp-text-muted);
 }
-
 .vi-nl-marker-label {
-  color: #909399;
-  font-size: 10px;
   margin-top: 2px;
   text-align: center;
   white-space: nowrap;
 }
-
 .vi-nl-current {
   position: absolute;
   top: -10px;
   transform: translateX(-50%);
 }
-
 .vi-nl-current-dot {
-  background: #409eff;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px #409eff;
-  height: 12px;
   width: 12px;
+  height: 12px;
+  background: var(--lp-primary);
+  border: 2px solid var(--lp-surface);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--lp-primary);
 }
-
 .vi-nl-range {
-  color: #909399;
   display: flex;
-  font-size: 12px;
   justify-content: space-between;
-  margin-top: 20px;
-  padding: 0 6px;
+  margin-top: var(--lp-space-5);
+  padding: 0 var(--lp-space-2);
+}
+@media (max-width: 640px) {
+  .vi-bar-row {
+    grid-template-columns: minmax(4rem, auto) minmax(0, 1fr) auto;
+    gap: var(--lp-space-2);
+  }
 }
 </style>

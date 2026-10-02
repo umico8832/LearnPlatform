@@ -214,6 +214,23 @@ describe('Exam API', () => {
         })
         expect(mockedRequest.post).toHaveBeenNthCalledWith(3, '/exam/learning-sessions/30/complete')
       })
+
+      it('可为学习会话请求选择原位错误展示，默认调用形状保持不变', async () => {
+        await getExamLearningSession(30, { errorDisplay: 'inline' })
+        await submitExamLearningAnswer(30, { questionId: 10, userAnswer: 'A' }, { errorDisplay: 'inline' })
+        await completeExamLearningSession(30, { errorDisplay: 'inline' })
+
+        expect(mockedRequest.get).toHaveBeenCalledWith('/exam/learning-sessions/30', { errorDisplay: 'inline' })
+        expect(mockedRequest.post).toHaveBeenNthCalledWith(
+          1,
+          '/exam/learning-sessions/30/answers',
+          { questionId: 10, userAnswer: 'A' },
+          { errorDisplay: 'inline' },
+        )
+        expect(mockedRequest.post).toHaveBeenNthCalledWith(2, '/exam/learning-sessions/30/complete', undefined, {
+          errorDisplay: 'inline',
+        })
+      })
     })
 
     describe('submitExam', () => {

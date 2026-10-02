@@ -80,7 +80,7 @@ describe('TutorAgentPractice', () => {
     expect(get).not.toHaveBeenCalled()
     await wrapper.get('[data-testid="practice-open"]').trigger('click')
     await flushPromises()
-    expect(get).toHaveBeenCalledWith(1, 's', 'r', 2)
+    expect(get).toHaveBeenCalledWith(1, 's', 'r', 2, { errorDisplay: 'inline' })
     await wrapper.findAll('button')[0].trigger('click')
     await wrapper.get('[data-testid="practice-submit"]').trigger('click')
     await flushPromises()

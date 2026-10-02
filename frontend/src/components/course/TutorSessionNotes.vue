@@ -111,6 +111,7 @@ import {
   type TutorSessionNoteVO,
 } from '@/api/tutorNotes'
 import { errorMessage } from '@/utils/errors'
+import { onAuthSessionChange } from '@/utils/auth'
 import { formatDateTime } from '@/utils/format'
 
 const props = withDefaults(
@@ -172,7 +173,7 @@ async function loadCurrent() {
   loadingCurrent.value = true
   currentFailure.value = notice.value = ''
   try {
-    const response = await getTutorSessionNote(courseId, sessionKey)
+    const response = await getTutorSessionNote(courseId, sessionKey, { errorDisplay: 'inline' })
     if (
       currentGeneration === generation &&
       currentEditorRequest === editorRequest &&
@@ -204,7 +205,7 @@ async function loadList(targetPage = page.value, force = false) {
   loadingList.value = true
   listFailure.value = ''
   try {
-    const response = await getTutorSessionNotes(courseId, targetPage)
+    const response = await getTutorSessionNotes(courseId, targetPage, { errorDisplay: 'inline' })
     if (currentGeneration !== generation || currentListRequest !== listRequest || courseId !== props.courseId) return
     const responsePageSize = response.data.size || 5
     const lastPage = Math.max(1, Math.ceil(response.data.total / responsePageSize))
@@ -243,8 +244,13 @@ async function change(removing: boolean) {
   currentFailure.value = notice.value = ''
   try {
     const response = removing
-      ? await deleteTutorSessionNote(courseId, target.sessionKey, target.revision)
-      : await saveTutorSessionNote(courseId, target.sessionKey, { revision: target.revision, note: draft.value.trim() })
+      ? await deleteTutorSessionNote(courseId, target.sessionKey, target.revision, { errorDisplay: 'inline' })
+      : await saveTutorSessionNote(
+          courseId,
+          target.sessionKey,
+          { revision: target.revision, note: draft.value.trim() },
+          { errorDisplay: 'inline' },
+        )
     if (currentGeneration !== generation) return
     applyCurrent(response.data)
     notice.value = removing ? '复盘已删除；已有会话历史和理解检查记录仍会保留。' : '复盘已保存。'
@@ -291,7 +297,7 @@ async function refreshCurrentSource() {
   const currentEditorRequest = editorRequest
   const currentSourceRequest = ++sourceRequest
   try {
-    const response = await getTutorSessionNote(props.courseId, sessionKey)
+    const response = await getTutorSessionNote(props.courseId, sessionKey, { errorDisplay: 'inline' })
     if (
       currentGeneration !== generation ||
       currentEditorRequest !== editorRequest ||
@@ -327,6 +333,22 @@ function onToggle(event: Event) {
   if (opened.value && !records.value.length && !loadingList.value) void loadList(1)
 }
 
+const unsubscribeAuth = onAuthSessionChange(() => {
+  generation++
+  editorRequest++
+  sourceRequest++
+  listRequest++
+  current.value = undefined
+  selectedSessionKey.value = props.sessionKey
+  draft.value = ''
+  records.value = []
+  page.value = 1
+  pageSize.value = 5
+  total.value = 0
+  loadingCurrent.value = loadingList.value = saving.value = syncRequired.value = false
+  currentFailure.value = listFailure.value = notice.value = ''
+})
+
 watch(
   () => [props.courseId, props.sessionKey] as const,
   () => {
@@ -359,6 +381,7 @@ onBeforeUnmount(() => {
   editorRequest++
   sourceRequest++
   listRequest++
+  unsubscribeAuth()
 })
 </script>
 

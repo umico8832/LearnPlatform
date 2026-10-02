@@ -20,14 +20,32 @@ function planPath(courseId: number, sessionKey: string, runKey: string, sequence
   return `/my-courses/${courseId}/tutor-sessions/${sessionKey}/agent-runs/${runKey}/messages/${sequence}/plan`
 }
 
-export function getTutorAgentPlan(courseId: number, sessionKey: string, runKey: string, sequence: number) {
+export type TutorPlanRequestOptions = { errorDisplay?: 'inline' }
+
+export function getTutorAgentPlan(
+  courseId: number,
+  sessionKey: string,
+  runKey: string,
+  sequence: number,
+  options?: TutorPlanRequestOptions,
+) {
   return aiService
-    .get<ApiResponse<TutorAgentPlanVO>>(planPath(courseId, sessionKey, runKey, sequence))
+    .get<ApiResponse<TutorAgentPlanVO>>(planPath(courseId, sessionKey, runKey, sequence), ...(options ? [options] : []))
     .then((response) => response.data)
 }
 
-export function confirmTutorAgentPlan(courseId: number, sessionKey: string, runKey: string, sequence: number) {
+export function confirmTutorAgentPlan(
+  courseId: number,
+  sessionKey: string,
+  runKey: string,
+  sequence: number,
+  options?: TutorPlanRequestOptions,
+) {
   return aiService
-    .post<ApiResponse<TutorAgentPlanVO>>(planPath(courseId, sessionKey, runKey, sequence) + '/confirm')
+    .post<ApiResponse<TutorAgentPlanVO>>(
+      planPath(courseId, sessionKey, runKey, sequence) + '/confirm',
+      undefined,
+      ...(options ? [options] : []),
+    )
     .then((response) => response.data)
 }

@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setToken } from '@/utils/auth'
 
 const { get, start, submit } = vi.hoisted(() => ({ get: vi.fn(), start: vi.fn(), submit: vi.fn() }))
@@ -46,6 +46,17 @@ const session = (key = 's', answer: string | null = null, checkResult: TutorChec
 })
 
 describe('useTutorSessionCheck', () => {
+  const states: ReturnType<typeof useTutorSessionCheck>[] = []
+  const createState = () => {
+    const state = useTutorSessionCheck(ref(1), ref(2))
+    states.push(state)
+    return state
+  }
+
+  afterEach(() => {
+    states.splice(0).forEach((state) => state.dispose())
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
@@ -56,19 +67,19 @@ describe('useTutorSessionCheck', () => {
     start.mockResolvedValue({ data: session() })
     submit.mockResolvedValue({ data: result })
     get.mockResolvedValue({ data: session('s', 'B', result) })
-    const state = useTutorSessionCheck(ref(1), ref(2))
+    const state = createState()
     await state.load()
     state.optionId.value = 'A'
     await state.submit()
     expect(state.optionId.value).toBe('B')
     expect(state.result.value).toEqual(result)
-    expect(get).toHaveBeenCalledWith(1, 's')
+    expect(get).toHaveBeenCalledWith(1, 's', { errorDisplay: 'inline' })
   })
   it('keeps a saved result locked when refresh after submission fails', async () => {
     start.mockResolvedValue({ data: session() })
     submit.mockResolvedValue({ data: result })
     get.mockRejectedValue(new Error('offline'))
-    const state = useTutorSessionCheck(ref(1), ref(2))
+    const state = createState()
     await state.load()
     state.optionId.value = 'A'
     await state.submit()
@@ -79,11 +90,11 @@ describe('useTutorSessionCheck', () => {
     sessionStorage.setItem('lp:tutor-session:1:2', 'old')
     get.mockRejectedValue(new Error('offline'))
     start.mockResolvedValue({ data: session('new') })
-    const state = useTutorSessionCheck(ref(1), ref(2))
+    const state = createState()
     await state.load()
     expect(sessionStorage.getItem('lp:tutor-session:1:2')).toBe('old')
     await state.load(true)
-    expect(start).toHaveBeenCalledWith(1, 2)
+    expect(start).toHaveBeenCalledWith(1, 2, { errorDisplay: 'inline' })
   })
 
   it('ignores a late submission after a new Tutor session starts', async () => {
@@ -94,7 +105,7 @@ describe('useTutorSessionCheck', () => {
         resolve = done
       }),
     )
-    const state = useTutorSessionCheck(ref(1), ref(2))
+    const state = createState()
     await state.load()
     state.optionId.value = 'A'
     const pending = state.submit()
@@ -115,11 +126,11 @@ describe('useTutorSessionCheck', () => {
         reject = fail
       }),
     )
-    const state = useTutorSessionCheck(ref(1), ref(2))
+    const state = createState()
     await state.load()
     state.optionId.value = 'A'
     const pending = state.submit()
-    await vi.waitFor(() => expect(get).toHaveBeenCalledWith(1, 'old'))
+    await vi.waitFor(() => expect(get).toHaveBeenCalledWith(1, 'old', { errorDisplay: 'inline' }))
     await state.load(true)
     reject(new Error('old refresh failed'))
     await pending
@@ -127,26 +138,31 @@ describe('useTutorSessionCheck', () => {
     expect(state.checkFailure.value).toBe('')
   })
 
-  it('does not apply a Tutor session load that resolves after the account changes', async () => {
+  it('clears old storage and starts a fresh current-account session after an account change', async () => {
     let resolve!: (value: { data: ReturnType<typeof session> }) => void
-    start.mockImplementationOnce(
+    sessionStorage.setItem('lp:tutor-session:1:2', 'old-stored')
+    get.mockImplementationOnce(
       () =>
         new Promise((done) => {
           resolve = done
         }),
     )
-    const state = useTutorSessionCheck(ref(1), ref(2))
+    start.mockResolvedValueOnce({ data: session('fresh') })
+    const state = createState()
     const pending = state.load()
     setToken('tutor-check-session-b')
+    await vi.waitFor(() => expect(start).toHaveBeenCalledWith(1, 2, { errorDisplay: 'inline' }))
     resolve({ data: session('old') })
     await pending
-    expect(state.session.value).toBeUndefined()
-    expect(state.loading.value).toBe(false)
+    expect(state.session.value?.sessionKey).toBe('fresh')
+    expect(state.result.value).toBeUndefined()
+    expect(sessionStorage.getItem('lp:tutor-session:1:2')).toBe('fresh')
+    expect(get).toHaveBeenCalledWith(1, 'old-stored', { errorDisplay: 'inline' })
   })
 
   it('does not apply a post-submit refresh after the account changes', async () => {
     let resolveRefresh!: (value: { data: ReturnType<typeof session> }) => void
-    start.mockResolvedValueOnce({ data: session('old') })
+    start.mockResolvedValueOnce({ data: session('old') }).mockResolvedValueOnce({ data: session('fresh') })
     submit.mockResolvedValueOnce({ data: result })
     get.mockImplementationOnce(
       () =>
@@ -154,15 +170,15 @@ describe('useTutorSessionCheck', () => {
           resolveRefresh = done
         }),
     )
-    const state = useTutorSessionCheck(ref(1), ref(2))
+    const state = createState()
     await state.load()
     state.optionId.value = 'A'
     const pending = state.submit()
-    await vi.waitFor(() => expect(get).toHaveBeenCalledWith(1, 'old'))
+    await vi.waitFor(() => expect(get).toHaveBeenCalledWith(1, 'old', { errorDisplay: 'inline' }))
     setToken('tutor-check-session-b')
     resolveRefresh({ data: session('old', 'B', result) })
     await pending
-    expect(state.session.value).toBeUndefined()
+    expect(state.session.value?.sessionKey).toBe('fresh')
     expect(state.result.value).toBeUndefined()
   })
 })

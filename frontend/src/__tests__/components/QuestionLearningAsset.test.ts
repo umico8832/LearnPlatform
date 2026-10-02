@@ -1,5 +1,5 @@
-import { flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
 const { getQuestionAssets, getAssetFeedback, recordAssetView, completeVariantTraining, generateAsset } = vi.hoisted(
@@ -31,6 +31,7 @@ vi.mock('@/components/QuestionVisualInteractive.vue', () => ({
 }))
 
 import QuestionLearningAsset from '@/components/QuestionLearningAsset.vue'
+enableAutoUnmount(afterEach)
 
 describe('QuestionLearningAsset view tracking', () => {
   let intersectionCallback: IntersectionObserverCallback
@@ -84,11 +85,17 @@ describe('QuestionLearningAsset view tracking', () => {
   })
 
   it('records a cached asset only after the component enters the viewport', async () => {
-    mount(QuestionLearningAsset, {
+    const wrapper = mount(QuestionLearningAsset, {
       props: { questionId: 42 },
       global: {
         stubs: {
-          'el-tabs': { template: '<div><slot /></div>' },
+          'el-select': {
+            name: 'ElSelect',
+            template: '<select><slot /></select>',
+            props: ['modelValue'],
+            emits: ['update:modelValue', 'change'],
+          },
+          'el-option': { template: '<option>{{ label }}</option>', props: ['label', 'value'] },
           'el-tab-pane': { template: '<section><slot name="label" /><slot /></section>' },
           'el-tag': { template: '<span><slot /></span>' },
           'el-button': { template: '<button><slot /></button>' },
@@ -102,13 +109,19 @@ describe('QuestionLearningAsset view tracking', () => {
 
     expect(recordAssetView).not.toHaveBeenCalled()
 
-    intersectionCallback([{ isIntersecting: true }] as IntersectionObserverEntry[], {} as IntersectionObserver)
+    intersectionCallback(
+      [{ isIntersecting: true, target: wrapper.get('.asset-content').element }] as IntersectionObserverEntry[],
+      {} as IntersectionObserver,
+    )
     await nextTick()
 
     expect(recordAssetView).toHaveBeenCalledTimes(1)
-    expect(recordAssetView).toHaveBeenCalledWith(42, 'FULL_EXPLANATION')
+    expect(recordAssetView).toHaveBeenCalledWith(42, 'FULL_EXPLANATION', { errorDisplay: 'inline' })
 
-    intersectionCallback([{ isIntersecting: true }] as IntersectionObserverEntry[], {} as IntersectionObserver)
+    intersectionCallback(
+      [{ isIntersecting: true, target: wrapper.get('.asset-content').element }] as IntersectionObserverEntry[],
+      {} as IntersectionObserver,
+    )
     await nextTick()
     expect(recordAssetView).toHaveBeenCalledTimes(1)
   })
@@ -145,7 +158,13 @@ describe('QuestionLearningAsset view tracking', () => {
       props: { questionId: 42 },
       global: {
         stubs: {
-          'el-tabs': { template: '<div><slot /></div>' },
+          'el-select': {
+            name: 'ElSelect',
+            template: '<select><slot /></select>',
+            props: ['modelValue'],
+            emits: ['update:modelValue', 'change'],
+          },
+          'el-option': { template: '<option>{{ label }}</option>', props: ['label', 'value'] },
           'el-tab-pane': { template: '<section><slot name="label" /><slot /></section>' },
           'el-tag': { template: '<span><slot /></span>' },
           'el-button': { template: '<button :disabled="$attrs.disabled" @click="$emit(\'click\')"><slot /></button>' },
@@ -157,6 +176,10 @@ describe('QuestionLearningAsset view tracking', () => {
     })
     await flushPromises()
 
+    const selector = wrapper.findComponent({ name: 'ElSelect' })
+    selector.vm.$emit('update:modelValue', 'VARIANT')
+    selector.vm.$emit('change', 'VARIANT')
+    await nextTick()
     const completeButton = wrapper.find('.variant-training-panel button')
     expect(completeButton.exists()).toBe(true)
     expect(completeVariantTraining).not.toHaveBeenCalled()
@@ -164,8 +187,8 @@ describe('QuestionLearningAsset view tracking', () => {
     await completeButton.trigger('click')
     await flushPromises()
 
-    expect(recordAssetView).toHaveBeenCalledWith(42, 'VARIANT')
-    expect(completeVariantTraining).toHaveBeenCalledWith(42)
+    expect(recordAssetView).toHaveBeenCalledWith(42, 'VARIANT', { errorDisplay: 'inline' })
+    expect(completeVariantTraining).toHaveBeenCalledWith(42, { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('已标记完成')
   })
 })

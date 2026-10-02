@@ -1,16 +1,13 @@
 import { expect, test } from '@playwright/test'
+import { createLearnerAndLogin } from './helpers/registerLearner'
 import type { CourseOverviewVO } from '../src/api/course'
 import type { TutorAgentRunVO } from '../src/api/tutor'
 import type { TutorAgentPlanVO } from '../src/api/tutorPlan'
 
-test('Tutor Agent 提出课程安排，显式确认后恢复真实状态且不记录学习完成', async ({ page }, testInfo) => {
+test('Tutor Agent 提出课程安排，显式确认后恢复真实状态且不记录学习完成', async ({ page, browser }, testInfo) => {
   test.setTimeout(90_000)
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/login')
-  await page.getByPlaceholder('请输入用户名或邮箱').fill('testuser')
-  await page.getByPlaceholder('请输入密码').fill('test123')
-  await page.getByRole('button', { name: '登录', exact: true }).click()
-  await expect(page).toHaveURL(/\/my-courses$/, { timeout: 15_000 })
+  await createLearnerAndLogin(browser, page, 'tutor-plan.spec')
   await page.goto('/courses')
   await page
     .locator('.course-card')

@@ -27,30 +27,50 @@ export interface TutorSessionNotesPage {
   size: number
 }
 
-export function getTutorSessionNotes(courseId: number, page: number) {
+export type TutorNotesRequestOptions = { errorDisplay?: 'inline' }
+
+export function getTutorSessionNotes(courseId: number, page: number, options?: TutorNotesRequestOptions) {
   return service.get<unknown, ApiResponse<TutorSessionNotesPage>>(`/my-courses/${courseId}/tutor-notes`, {
     params: { page },
+    ...(options || {}),
   })
 }
 
-export function getTutorSessionNote(courseId: number, sessionKey: string) {
-  return service.get<unknown, ApiResponse<TutorSessionNoteVO>>(
-    `/my-courses/${courseId}/tutor-sessions/${sessionKey}/note`,
-  )
+export function getTutorSessionNote(courseId: number, sessionKey: string, options?: TutorNotesRequestOptions) {
+  return options
+    ? service.get<unknown, ApiResponse<TutorSessionNoteVO>>(
+        `/my-courses/${courseId}/tutor-sessions/${sessionKey}/note`,
+        options,
+      )
+    : service.get<unknown, ApiResponse<TutorSessionNoteVO>>(`/my-courses/${courseId}/tutor-sessions/${sessionKey}/note`)
 }
 
-export function saveTutorSessionNote(courseId: number, sessionKey: string, note: { revision: number; note: string }) {
-  return service.put<unknown, ApiResponse<TutorSessionNoteVO>>(
-    `/my-courses/${courseId}/tutor-sessions/${sessionKey}/note`,
-    note,
-  )
+export function saveTutorSessionNote(
+  courseId: number,
+  sessionKey: string,
+  note: { revision: number; note: string },
+  options?: TutorNotesRequestOptions,
+) {
+  return options
+    ? service.put<unknown, ApiResponse<TutorSessionNoteVO>>(
+        `/my-courses/${courseId}/tutor-sessions/${sessionKey}/note`,
+        note,
+        options,
+      )
+    : service.put<unknown, ApiResponse<TutorSessionNoteVO>>(
+        `/my-courses/${courseId}/tutor-sessions/${sessionKey}/note`,
+        note,
+      )
 }
 
-export function deleteTutorSessionNote(courseId: number, sessionKey: string, revision: number) {
+export function deleteTutorSessionNote(
+  courseId: number,
+  sessionKey: string,
+  revision: number,
+  options?: TutorNotesRequestOptions,
+) {
   return service.delete<unknown, ApiResponse<TutorSessionNoteVO>>(
     `/my-courses/${courseId}/tutor-sessions/${sessionKey}/note`,
-    {
-      params: { revision },
-    },
+    { params: { revision }, ...(options || {}) },
   )
 }

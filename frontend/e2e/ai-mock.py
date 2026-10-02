@@ -160,6 +160,28 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def respond_stream(self, status, body):
+        if status != 200:
+            self.respond(status, body)
+            return
+        message = body["choices"][0]["message"]
+        finish = body["choices"][0]["finish_reason"]
+        delta = {key: value for key, value in message.items() if key in {"content", "tool_calls"}}
+        frames = [
+            {"choices": [{"index": 0, "delta": delta}]},
+            {"choices": [{"index": 0, "delta": {}, "finish_reason": finish}]},
+            {"choices": [], "usage": body["usage"]},
+        ]
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+        self.send_header("Cache-Control", "no-cache")
+        self.end_headers()
+        for frame in frames:
+            self.wfile.write(b"data: " + json.dumps(frame, ensure_ascii=False).encode() + b"\n\n")
+            self.wfile.flush()
+        self.wfile.write(b"data: [DONE]\n\n")
+        self.wfile.flush()
+
     def do_GET(self):
         self.respond(200 if self.path == "/health" else 404, {})
 
@@ -169,7 +191,11 @@ class Handler(BaseHTTPRequestHandler):
             return
         try:
             payload = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
-            self.respond(*completion(payload))
+            status, body = completion(payload)
+            if payload.get("stream") is True:
+                self.respond_stream(status, body)
+            else:
+                self.respond(status, body)
         except (ValueError, TypeError):
             self.respond(400, {})
 

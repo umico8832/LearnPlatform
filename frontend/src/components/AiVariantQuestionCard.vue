@@ -14,7 +14,11 @@
       <MarkdownRenderer :content="question.questionContent" />
     </div>
 
-    <el-radio-group v-model="selectedAnswer" class="variant-options" :disabled="Boolean(training.answered)">
+    <el-radio-group
+      v-model="selectedAnswer"
+      class="variant-options"
+      :disabled="Boolean(training.answered) || submitting"
+    >
       <el-radio v-for="option in question.options" :key="option.label" :value="option.label" class="variant-option">
         <span class="variant-option__label">{{ option.label }}</span>
         <span class="variant-option__content">{{ option.content }}</span>
@@ -27,13 +31,28 @@
       </el-button>
     </div>
 
-    <section v-else class="variant-result" :class="training.correct ? 'is-correct' : 'is-wrong'">
+    <div v-if="submitError" class="variant-error" role="alert">
+      <span>{{ submitError }}</span
+      ><el-button size="small" @click="submitAnswer">重试</el-button>
+    </div>
+    <section
+      v-else-if="training.answered"
+      class="variant-result"
+      :class="training.correct === true ? 'is-correct' : training.correct === false ? 'is-wrong' : 'is-review'"
+    >
       <AnswerRewardFeedback v-if="lastReward" :reward="lastReward" />
       <div class="variant-result__headline">
-        <span>{{ training.correct ? '✓' : '!' }}</span>
+        <span aria-hidden="true">{{ training.correct === true ? '✓' : training.correct === false ? '!' : '—' }}</span>
         <div>
-          <strong>{{ training.correct ? '回答正确' : '这次未答对' }}</strong>
-          <p>你的答案：{{ training.userAnswer || '-' }} · 正确答案：{{ training.correctAnswer || '-' }}</p>
+          <strong>{{
+            training.correct === null ? '已保存，供你自评' : training.correct ? '回答正确' : '这次未答对'
+          }}</strong>
+          <p>
+            你的答案：{{ training.userAnswer || '-'
+            }}<template v-if="training.correct !== true && training.correctAnswer">
+              · 参考答案：{{ training.correctAnswer }}</template
+            >
+          </p>
         </div>
       </div>
       <div v-if="training.analysis" class="variant-result__analysis">
@@ -46,8 +65,6 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { errorMessage } from '@/utils/errors'
-import { ElMessage } from 'element-plus'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { useGamificationStore } from '@/stores/gamification'
 import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
@@ -74,16 +91,23 @@ const emit = defineEmits<{
 const selectedAnswer = ref(props.training.userAnswer || '')
 const submitting = ref(false)
 const lastReward = ref<RewardFeedback>()
+const submitError = ref('')
 let generation = 0
 let alive = true
 const resultClass = computed(() =>
-  props.training.answered ? (props.training.correct ? 'has-correct-result' : 'has-wrong-result') : '',
+  props.training.answered
+    ? props.training.correct === true
+      ? 'has-correct-result'
+      : props.training.correct === false
+        ? 'has-wrong-result'
+        : 'has-review-result'
+    : '',
 )
 
 watch(
   () => props.training.userAnswer,
   (value) => {
-    if (value) selectedAnswer.value = value
+    selectedAnswer.value = value || ''
   },
 )
 
@@ -92,12 +116,17 @@ watch(
   () => {
     generation++
     lastReward.value = undefined
+    selectedAnswer.value = props.training.userAnswer || ''
+    submitting.value = false
+    submitError.value = ''
   },
 )
 const unsubscribeAuth = onAuthSessionChange(() => {
   generation++
   submitting.value = false
+  selectedAnswer.value = ''
   lastReward.value = undefined
+  submitError.value = ''
 })
 onBeforeUnmount(() => {
   alive = false
@@ -115,23 +144,22 @@ function isCurrent(requestGeneration: number, authSession: number, questionId: n
 }
 
 async function submitAnswer() {
-  if (!selectedAnswer.value || submitting.value) return
+  if (!selectedAnswer.value || submitting.value || props.training.answered) return
   const requestGeneration = generation
   const authSession = getAuthSessionVersion()
   const questionId = props.questionId
   submitting.value = true
+  submitError.value = ''
   try {
-    const response = await submitVariantAnswer(questionId, selectedAnswer.value)
+    const response = await submitVariantAnswer(questionId, selectedAnswer.value, { errorDisplay: 'inline' })
     if (!isCurrent(requestGeneration, authSession, questionId)) return
     if (response.data.reward) {
       lastReward.value = response.data.reward
       useGamificationStore().acceptReward(response.data.reward, authSession)
     }
     emit('answered', response.data)
-    ElMessage.success(response.data.correct ? '回答正确' : '已完成判分，看看解析再巩固一次')
-  } catch (error) {
-    if (isCurrent(requestGeneration, authSession, questionId))
-      ElMessage.error(errorMessage(error, '提交答案失败，请稍后重试'))
+  } catch {
+    if (isCurrent(requestGeneration, authSession, questionId)) submitError.value = '提交答案失败，请重试。'
   } finally {
     if (isCurrent(requestGeneration, authSession, questionId)) submitting.value = false
   }
@@ -140,182 +168,153 @@ async function submitAnswer() {
 
 <style scoped>
 .variant-card {
-  --variant-accent: #256b8f;
+  --variant-accent: var(--lp-primary);
   position: relative;
-  overflow: hidden;
-  padding: 22px;
-  border: 1px solid #cdddea;
-  border-radius: 14px;
-  background:
-    linear-gradient(135deg, rgb(240 248 252 / 92%), rgb(255 255 255 / 96%) 48%),
-    repeating-linear-gradient(90deg, transparent 0 31px, rgb(37 107 143 / 4%) 31px 32px);
-  box-shadow: 0 12px 28px rgb(42 77 102 / 8%);
+  padding: var(--lp-space-5);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  background: var(--lp-surface);
+  box-shadow: var(--lp-shadow-xs);
 }
-
 .variant-card::before {
   position: absolute;
   inset: 0 auto 0 0;
-  width: 4px;
+  width: 3px;
   background: var(--variant-accent);
   content: '';
 }
-
 .variant-card.has-correct-result {
-  --variant-accent: #2b8a57;
+  --variant-accent: var(--lp-success);
 }
 .variant-card.has-wrong-result {
-  --variant-accent: #c26b36;
+  --variant-accent: var(--lp-danger);
 }
-
 .variant-card__header,
 .variant-card__actions,
 .variant-result__headline {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--lp-space-3);
 }
-
 .variant-card h3 {
   margin: 0;
-  color: #1c3444;
-  font-size: 18px;
+  color: var(--lp-text);
+  font-size: var(--lp-text-lg);
 }
-
 .variant-card__meta {
   display: flex;
-  gap: 6px;
+  gap: var(--lp-space-2);
 }
-
 .variant-card__question {
-  margin: 20px 0 14px;
-  color: #203646;
-  font-size: 15px;
-  line-height: 1.7;
+  margin: var(--lp-space-5) 0 var(--lp-space-3);
+  color: var(--lp-text);
+  line-height: var(--lp-leading-relaxed);
 }
-
 .variant-options {
   display: grid;
-  gap: 10px;
+  gap: var(--lp-space-2);
   width: 100%;
 }
-
 .variant-option {
   box-sizing: border-box;
   width: 100%;
-  height: auto;
-  min-height: 48px;
+  min-height: var(--lp-control-height-large);
   margin: 0;
-  padding: 11px 14px;
-  border: 1px solid #d8e3eb;
-  border-radius: 10px;
-  background: rgb(255 255 255 / 82%);
-  transition:
-    border-color 0.18s ease,
-    transform 0.18s ease,
-    box-shadow 0.18s ease;
+  padding: var(--lp-space-3) var(--lp-space-4);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-control);
+  background: var(--lp-surface);
 }
-
 .variant-option:hover {
-  border-color: #8eb4ca;
-  box-shadow: 0 7px 18px rgb(42 77 102 / 8%);
-  transform: translateY(-1px);
+  border-color: var(--lp-primary);
+  background: var(--lp-surface-hover);
 }
-
 .variant-option :deep(.el-radio__label) {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  color: #334b5b;
+  gap: var(--lp-space-2);
+  color: var(--lp-text);
   white-space: normal;
 }
-
 .variant-option__label {
   display: inline-grid;
-  width: 26px;
-  height: 26px;
-  flex: 0 0 26px;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
   place-items: center;
-  border-radius: 7px;
-  background: #e8f1f6;
+  border-radius: var(--lp-radius-md);
+  background: var(--lp-primary-soft);
   color: var(--variant-accent);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-weight: 800;
+  font-weight: var(--lp-weight-bold);
 }
-
 .variant-card__actions {
-  align-items: flex-end;
   justify-content: flex-end;
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px dashed #cbdbe5;
+  margin-top: var(--lp-space-4);
+  padding-top: var(--lp-space-4);
+  border-top: var(--lp-border-hairline);
 }
-
 .variant-result {
-  margin-top: 18px;
-  padding: 16px;
-  border: 1px solid #d5e7dc;
-  border-radius: 11px;
-  background: #f2faf5;
+  margin-top: var(--lp-space-4);
+  padding: var(--lp-space-4);
+  border: var(--lp-border-hairline);
+  border-inline-start: 3px solid var(--variant-accent);
+  border-radius: var(--lp-radius-lg);
+  background: var(--lp-surface-subtle);
 }
-
-.variant-result.is-wrong {
-  border-color: #ead9cd;
-  background: #fff8f2;
+.variant-result.is-review {
+  border-inline-start-color: var(--lp-info);
 }
-
+.variant-error {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--lp-space-3);
+  margin-top: var(--lp-space-4);
+  padding: var(--lp-space-3);
+  color: var(--lp-text);
+  background: var(--lp-danger-soft);
+  border-inline-start: 3px solid var(--lp-danger);
+}
 .variant-result__headline {
   justify-content: flex-start;
 }
-
 .variant-result__headline > span {
   display: grid;
-  width: 36px;
-  height: 36px;
-  flex: 0 0 36px;
+  width: var(--lp-control-height);
+  height: var(--lp-control-height);
+  flex: 0 0 var(--lp-control-height);
   place-items: center;
-  border-radius: 50%;
+  border-radius: var(--lp-radius-full);
   background: var(--variant-accent);
-  color: #fff;
-  font-size: 18px;
-  font-weight: 800;
+  color: var(--lp-on-primary);
+  font-weight: var(--lp-weight-bold);
 }
-
 .variant-result__headline strong {
-  color: #244536;
-}
-.variant-result.is-wrong .variant-result__headline strong {
-  color: #754329;
+  color: var(--lp-text);
 }
 .variant-result__headline p {
-  margin: 4px 0 0;
-  color: #6f7e75;
-  font-size: 12px;
+  margin: var(--lp-space-1) 0 0;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
 }
-
 .variant-result__analysis {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid rgb(64 111 80 / 14%);
+  margin-top: var(--lp-space-3);
+  padding-top: var(--lp-space-3);
+  border-top: var(--lp-border-hairline);
 }
-
 .variant-result__analysis > span {
   color: var(--variant-accent);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--lp-text-xs);
+  font-weight: var(--lp-weight-semibold);
 }
-
 @media (max-width: 720px) {
   .variant-card {
-    padding: 18px 15px;
+    padding: var(--lp-space-4);
   }
   .variant-card__header,
   .variant-card__actions {
     align-items: stretch;
     flex-direction: column;
-  }
-  .variant-card__meta {
-    align-self: flex-start;
   }
   .variant-card__actions :deep(.el-button) {
     width: 100%;

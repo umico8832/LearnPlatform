@@ -10,11 +10,27 @@
 <script setup lang="ts">
 import { defineComponent, h } from 'vue'
 import type { PropType, VNode } from 'vue'
-import type { VisualTreeElement, VisualTreeNode } from '@/api/ai'
+import type { VisualElementState, VisualTreeElement, VisualTreeNode } from '@/api/ai'
 
 defineProps<{
   element: VisualTreeElement
 }>()
+
+function stateLabel(state: VisualElementState): string {
+  return (
+    (
+      {
+        current: '当前',
+        visited: '已访问',
+        sorted: '已排序',
+        highlight: '重点',
+        swapped: '已交换',
+        done: '已完成',
+        pending: '待处理',
+      } as Partial<Record<VisualElementState, string>>
+    )[state] ?? ''
+  )
+}
 
 const TreeNode = defineComponent({
   name: 'QuestionVisualTreeNode',
@@ -26,9 +42,17 @@ const TreeNode = defineComponent({
       const children = (props.node.children || []).map((child, index) => h(TreeNode, { node: child, key: index }))
 
       return h('div', { class: 'vi-tree-node-wrapper' }, [
-        h('div', { class: `vi-tree-node vi-tree-node--${props.node.state || 'default'}` }, [
-          h('span', { class: 'vi-tree-node-name' }, props.node.name),
-        ]),
+        h(
+          'div',
+          {
+            class: `vi-tree-node vi-tree-node--${props.node.state || 'default'}`,
+            'aria-label':
+              props.node.state && props.node.state !== 'default'
+                ? `${props.node.name}，${stateLabel(props.node.state)}`
+                : undefined,
+          },
+          [h('span', { class: 'vi-tree-node-name' }, props.node.name)],
+        ),
         children.length > 0 ? h('div', { class: 'vi-tree-children' }, children) : null,
       ])
     }
@@ -38,76 +62,66 @@ const TreeNode = defineComponent({
 
 <style scoped>
 .vi-block {
-  background: #f8f9fa;
-  border: 1px solid #ebeef5;
-  border-radius: 8px;
-  padding: 12px 14px;
+  padding: var(--lp-space-4);
+  background: var(--lp-surface-subtle);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-md);
 }
-
 .vi-block-label {
-  color: #409eff;
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: var(--lp-space-2);
+  color: var(--lp-text);
+  font-size: var(--lp-text-sm);
+  font-weight: var(--lp-weight-semibold);
 }
-
 .vi-tree {
-  padding: 8px 0;
+  padding-block: var(--lp-space-2);
+  overflow-x: auto;
 }
-
 .vi-tree-node-wrapper {
-  align-items: center;
+  position: relative;
   display: flex;
   flex-direction: column;
-  position: relative;
-}
-
-.vi-tree-node {
   align-items: center;
-  background: #fff;
-  border: 2px solid #dcdfe6;
-  border-radius: 20px;
+  min-width: max-content;
+}
+.vi-tree-node {
   display: inline-flex;
-  font-size: 13px;
+  align-items: center;
   justify-content: center;
-  margin-bottom: 4px;
   min-width: 50px;
-  padding: 6px 12px;
+  margin-bottom: var(--lp-space-1);
+  padding: var(--lp-space-2) var(--lp-space-3);
+  color: var(--lp-text);
+  background: var(--lp-surface);
+  border: 2px solid var(--lp-border-strong);
+  border-radius: var(--lp-radius-full);
+  font-size: var(--lp-text-sm);
 }
-
-.vi-tree-node--default {
-  border-color: #dcdfe6;
-}
-
 .vi-tree-node--current {
-  background: #ecf5ff;
-  border-color: #409eff;
-  font-weight: 600;
+  background: var(--lp-primary-soft);
+  border-color: var(--lp-primary);
+  font-weight: var(--lp-weight-semibold);
 }
-
 .vi-tree-node--visited {
-  background: #f0f9eb;
-  border-color: #67c23a;
+  background: var(--lp-success-soft);
+  border-color: var(--lp-success);
 }
-
 .vi-tree-node-name {
   white-space: nowrap;
 }
-
 .vi-tree-children {
-  display: flex;
-  gap: 16px;
-  padding-top: 8px;
   position: relative;
+  display: flex;
+  gap: var(--lp-space-4);
+  padding-top: var(--lp-space-2);
 }
-
 .vi-tree-children::before {
-  background: #dcdfe6;
-  content: '';
-  height: 8px;
-  left: 50%;
   position: absolute;
   top: 0;
+  left: 50%;
   width: 1px;
+  height: var(--lp-space-2);
+  background: var(--lp-border-strong);
+  content: '';
 }
 </style>

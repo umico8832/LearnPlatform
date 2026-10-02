@@ -1,15 +1,12 @@
 import { expect, test } from '@playwright/test'
+import { createLearnerAndLogin } from './helpers/registerLearner'
 import type { CourseOverviewVO, TutorCheckResultVO } from '../src/api/course'
 import type { TutorAgentRunVO } from '../src/api/tutor'
 
-test('Tutor Agent 将理解检查交给学习者，并依据服务端结果继续指导', async ({ page }, testInfo) => {
+test('Tutor Agent 将理解检查交给学习者，并依据服务端结果继续指导', async ({ page, browser }, testInfo) => {
   test.setTimeout(90_000)
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/login')
-  await page.getByPlaceholder('请输入用户名或邮箱').fill('testuser')
-  await page.getByPlaceholder('请输入密码').fill('test123')
-  await page.getByRole('button', { name: '登录', exact: true }).click()
-  await expect(page).toHaveURL(/\/my-courses$/, { timeout: 15_000 })
+  await createLearnerAndLogin(browser, page, 'tutor-teaching.spec')
   await page.goto('/courses')
   await page
     .locator('.course-card')

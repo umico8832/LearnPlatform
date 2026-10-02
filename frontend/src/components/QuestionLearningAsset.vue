@@ -1,459 +1,238 @@
 <template>
-  <section ref="assetRoot" class="learning-asset">
-    <!-- 可折叠模式：仅显示标题栏，点击展开 -->
-    <button v-if="collapsible && !expanded" type="button" class="asset-collapsed" @click="expandAndLoad">
-      <span class="collapsed-text">AI 深度学习</span>
-      <el-icon class="collapsed-arrow"><ArrowRight /></el-icon>
+  <section class="learning-asset" aria-label="AI 深度学习">
+    <button
+      v-if="collapsible && !expanded"
+      type="button"
+      class="asset-collapsed"
+      :aria-expanded="false"
+      @click="expandAndLoad"
+    >
+      <span>AI 深度学习</span><el-icon aria-hidden="true"><ArrowRight /></el-icon>
     </button>
-
-    <!-- 完整内容 -->
-    <template v-if="!collapsible || expanded">
-      <div class="asset-header">
-        <div class="asset-title">AI 深度学习</div>
+    <template v-else>
+      <header class="asset-header">
+        <h3>AI 深度学习</h3>
+        <button v-if="collapsible" type="button" class="collapse-button" :aria-expanded="true" @click="collapse">
+          收起
+        </button>
+      </header>
+      <div class="asset-controls">
+        <label :for="`asset-kind-${questionId}`">讲解方式</label>
+        <el-select
+          :id="`asset-kind-${questionId}`"
+          v-model="activeTab"
+          :disabled="existingLoading"
+          @change="onTabChange"
+        >
+          <el-option v-for="tab in assetTabs" :key="tab.type" :label="tab.label" :value="tab.type" />
+        </el-select>
       </div>
-
-      <el-tabs v-model="activeTab" class="asset-tabs" @tab-change="onTabChange">
-        <el-tab-pane v-for="tab in assetTabs" :key="tab.type" :label="tab.label" :name="tab.type">
-          <template #label>
-            <span class="tab-label">
-              <span class="tab-icon">{{ tab.icon }}</span>
-              {{ tab.label }}
-            </span>
-          </template>
-
-          <div class="asset-content">
-            <!-- 已有缓存内容 -->
-            <div v-if="tabContent[tab.type]" class="asset-result">
-              <QuestionVisualInteractive v-if="tab.type === 'VISUAL_INTERACTIVE'" :content="tabContent[tab.type]" />
-              <AiVariantQuestionCard
-                v-else-if="tab.type === 'VARIANT' && variantQuestion"
-                :question-id="questionId"
-                :question="variantQuestion"
-                :training="variantTraining"
-                @answered="applyVariantTraining"
-              />
-              <MarkdownRenderer v-else :content="tabContent[tab.type]" />
-
-              <div v-if="tab.type === 'VARIANT' && !variantQuestion" class="variant-training-panel">
-                <div>
-                  <strong>{{ variantTraining.completed ? '本组变式训练已完成' : '完成这组变式训练了吗？' }}</strong>
-                  <p>请先独立作答并核对解析，再确认完成。该记录是学习者自我确认，不代表系统自动判分。</p>
-                </div>
-                <el-button
-                  type="primary"
-                  :loading="variantTrainingSubmitting"
-                  :disabled="variantTraining.completed"
-                  @click="handleVariantTrainingComplete"
-                >
-                  {{ variantTraining.completed ? '✓ 已标记完成' : '标记已完成' }}
-                </el-button>
-              </div>
-
-              <QuestionAssetFeedback :question-id="questionId" :asset-type="tab.type" :available="true" />
-            </div>
-
-            <!-- 加载中 -->
-            <div v-else-if="loadingType === tab.type" class="asset-loading">
-              <div class="stream-placeholder">
-                <el-icon class="is-loading"><Loading /></el-icon>
-                正在生成 {{ tab.label }}，请稍候...
-              </div>
-              <div v-if="streamBuffer" class="asset-result">
-                <QuestionVisualInteractive v-if="activeTab === 'VISUAL_INTERACTIVE'" :content="streamBuffer" />
-                <MarkdownRenderer v-else :content="streamBuffer" />
-              </div>
-            </div>
-
-            <!-- 空状态：未生成 -->
-            <div v-else class="asset-empty">
-              <div class="empty-icon">{{ tab.icon }}</div>
-              <div class="empty-text">{{ tab.description }}</div>
-              <el-button type="primary" :loading="loading" @click="generateTab(tab.type)">
-                <el-icon><MagicStick /></el-icon>
-                生成{{ tab.label }}
-              </el-button>
-            </div>
-
-            <!-- 错误提示 -->
-            <el-alert
-              v-if="error && loadingType !== tab.type"
-              :title="error"
-              type="error"
-              show-icon
-              :closable="false"
-              style="margin-top: 12px"
-            />
+      <LpStatePanel v-if="existingLoading" state="loading" loading-label="正在读取已有讲解" />
+      <LpStatePanel v-else-if="existingError" state="error" :description="existingError" @retry="loadExistingAssets" />
+      <div v-else ref="assetRoot" class="asset-content" :aria-label="activeDefinition.label" :aria-busy="loading">
+        <template v-if="tabContent[activeTab]">
+          <QuestionVisualInteractive v-if="activeTab === 'VISUAL_INTERACTIVE'" :content="tabContent[activeTab]" />
+          <AiVariantQuestionCard
+            v-else-if="activeTab === 'VARIANT' && variantQuestion"
+            :question-id="questionId"
+            :question="variantQuestion"
+            :training="variantTraining"
+            @answered="applyVariantTraining"
+          />
+          <MarkdownRenderer v-else :content="tabContent[activeTab]" />
+          <div v-if="activeTab === 'VARIANT' && !variantQuestion" class="variant-training-panel">
+            <strong>{{ variantTraining.completed ? '本组变式训练已完成' : '完成这组变式练习后，记录你的进度' }}</strong>
+            <p>请先独立作答并核对解析。这里记录你的完成确认，不计为已判分答案。</p>
+            <el-button
+              :loading="variantTrainingSubmitting"
+              :disabled="variantTraining.completed"
+              @click="handleVariantTrainingComplete"
+            >
+              {{ variantTraining.completed ? '已标记完成' : '标记已完成' }}
+            </el-button>
+            <p v-if="completionError" class="asset-error" role="alert">{{ completionError }}</p>
           </div>
-        </el-tab-pane>
-      </el-tabs>
+          <QuestionAssetFeedback :question-id="questionId" :asset-type="activeTab" :available="true" />
+        </template>
+        <template v-else>
+          <p class="asset-description">{{ activeDefinition.description }}</p>
+          <div v-if="loading" class="stream-heading">
+            <p role="status">{{ partialContent ? '正在生成讲解…' : '正在连接 AI 服务…' }}</p>
+            <el-button text @click="cancelGeneration">停止生成</el-button>
+          </div>
+          <p v-else-if="stopped" class="asset-description" role="status">已停止，当前内容可能不完整。</p>
+          <p v-if="error" class="asset-error" role="alert">{{ error }}</p>
+          <MarkdownRenderer
+            v-if="partialContent && partialType === activeTab && activeTab !== 'VISUAL_INTERACTIVE'"
+            :content="partialContent"
+          />
+          <el-button v-if="!loading" class="generate-button" @click="generateTab(activeTab)">
+            {{ error || stopped ? '重新生成' : `生成${activeDefinition.label}` }}
+          </el-button>
+        </template>
+      </div>
     </template>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, toRef, watch } from 'vue'
-import { errorMessage, isAbortError } from '@/utils/errors'
-import { Loading, MagicStick, ArrowRight } from '@element-plus/icons-vue'
-import {
-  type AiAssetType,
-  type QuestionLearningAsset,
-  getQuestionAssets,
-  generateAsset,
-  streamAsset,
-  recordAssetView,
-  completeVariantTraining,
-  type AiVariantTrainingStatus,
-  type AiVariantQuestion,
-} from '@/api/ai'
+import { computed, onMounted, onScopeDispose, ref, toRef, watch } from 'vue'
+import { ArrowRight } from '@element-plus/icons-vue'
+import { isAuthenticated, onAuthSessionChange } from '@/utils/auth'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import QuestionVisualInteractive from '@/components/QuestionVisualInteractive.vue'
 import AiVariantQuestionCard from '@/components/AiVariantQuestionCard.vue'
 import QuestionAssetFeedback from './question-learning/QuestionAssetFeedback.vue'
 import { useAssetViewTracking } from './question-learning/useAssetViewTracking'
-import { ElMessage } from 'element-plus'
-import {
-  applyVariantTrainingState,
-  createAssetContent,
-  createVariantTrainingState,
-  QUESTION_ASSET_TABS,
-  resetVariantTrainingState,
-} from './question-learning/assetState'
+import { useLearningAssets } from './question-learning/useLearningAssets'
+import { QUESTION_ASSET_TABS } from './question-learning/assetState'
 
-const props = withDefaults(
-  defineProps<{
-    questionId: number
-    collapsible?: boolean
-  }>(),
-  {
-    collapsible: false,
-  },
-)
-
+const props = withDefaults(defineProps<{ questionId: number; collapsible?: boolean }>(), { collapsible: false })
 const expanded = ref(false)
 const assetTabs = QUESTION_ASSET_TABS
-
-const activeTab = ref<AiAssetType>('FULL_EXPLANATION')
-const loadingType = ref<AiAssetType | null>(null)
-const error = ref('')
-const streamBuffer = ref('')
-const tabContent = reactive(createAssetContent())
-const variantQuestion = ref<AiVariantQuestion | null>(null)
-
-const variantTrainingSubmitting = ref(false)
-const variantTraining = reactive(createVariantTrainingState())
-
-let abortController: AbortController | null = null
-
-const loading = computed(() => loadingType.value !== null)
-
+const {
+  activeTab,
+  tabContent,
+  variantQuestion,
+  variantTraining,
+  variantTrainingSubmitting,
+  completionError,
+  existingLoading,
+  existingError,
+  loading,
+  partialType,
+  partialContent,
+  stopped,
+  error,
+  reset,
+  suspend,
+  loadExistingAssets,
+  onTabChange,
+  applyVariantTraining,
+  handleVariantTrainingComplete,
+  generateTab,
+  cancelGeneration,
+} = useLearningAssets(toRef(props, 'questionId'), (type) => void trackVisibleAsset(type))
+const activeDefinition = computed(() => assetTabs.find((tab) => tab.type === activeTab.value)!)
 const { assetRoot, trackVisibleAsset } = useAssetViewTracking({
   questionId: toRef(props, 'questionId'),
   activeType: activeTab,
-  hasContent: (assetType) => Boolean(tabContent[assetType]),
+  hasContent: (type) => (!props.collapsible || expanded.value) && Boolean(tabContent[type]),
   onVariantTraining: applyVariantTraining,
 })
-
-// 加载已有缓存资产（非折叠模式立即加载，折叠模式展开时加载）
+function expandAndLoad() {
+  expanded.value = true
+  void loadExistingAssets()
+}
+function collapse() {
+  expanded.value = false
+  suspend()
+}
 onMounted(() => {
-  if (!props.collapsible) {
-    loadExistingAssets()
-  }
+  if (!props.collapsible) void loadExistingAssets()
 })
-
 watch(
   () => props.questionId,
   () => {
-    reset()
-    if (!props.collapsible || expanded.value) {
-      loadExistingAssets()
-    }
+    expanded.value = false
+    if (!props.collapsible) void loadExistingAssets()
   },
 )
-
-function expandAndLoad() {
-  expanded.value = true
-  loadExistingAssets()
-}
-
-function reset() {
-  abortController?.abort()
-  abortController = null
-  loadingType.value = null
-  error.value = ''
-  streamBuffer.value = ''
-  variantTrainingSubmitting.value = false
-  resetVariantTrainingState(variantTraining)
-  variantQuestion.value = null
-  for (const key of Object.keys(tabContent) as AiAssetType[]) {
-    tabContent[key] = ''
-  }
-}
-
-async function loadExistingAssets() {
-  try {
-    const data = await getQuestionAssets(props.questionId)
-    if (data?.code === 0 && data.data) {
-      for (const asset of data.data as QuestionLearningAsset[]) {
-        tabContent[asset.assetType] = asset.content
-        if (asset.assetType === 'VARIANT') {
-          variantQuestion.value = asset.variantQuestion || null
-        }
-      }
-      trackVisibleAsset(activeTab.value)
-    }
-  } catch {
-    // 静默失败，用户可手动触发生成
-  }
-}
-
-function onTabChange() {
-  error.value = ''
-  // 切换 tab 时如果正在加载，取消之前的请求
-  if (loadingType.value && loadingType.value !== activeTab.value) {
-    abortController?.abort()
-    abortController = null
-    loadingType.value = null
-    streamBuffer.value = ''
-  }
-  trackVisibleAsset(activeTab.value)
-}
-
-function applyVariantTraining(training: AiVariantTrainingStatus) {
-  applyVariantTrainingState(variantTraining, training)
-}
-
-async function handleVariantTrainingComplete() {
-  if (variantTraining.completed || variantTrainingSubmitting.value) return
-  variantTrainingSubmitting.value = true
-  try {
-    if (!variantTraining.status) {
-      const startedResponse = await recordAssetView(props.questionId, 'VARIANT')
-      if (startedResponse.data) applyVariantTraining(startedResponse.data)
-    }
-    const completedResponse = await completeVariantTraining(props.questionId)
-    applyVariantTraining(completedResponse.data)
-    ElMessage.success('已记录本组变式训练完成')
-  } catch (e) {
-    ElMessage.error(errorMessage(e, '记录训练完成失败，请稍后重试'))
-  } finally {
-    variantTrainingSubmitting.value = false
-  }
-}
-
-async function generateTab(type: AiAssetType) {
-  if (tabContent[type]) return // 已有缓存
-
-  loadingType.value = type
-  error.value = ''
-  streamBuffer.value = ''
-
-  const controller = new AbortController()
-  abortController = controller
-
-  try {
-    if (type === 'VARIANT') {
-      const response = await generateAsset(props.questionId, type)
-      const asset = response.data
-      tabContent[type] = asset.content
-      variantQuestion.value = asset.variantQuestion || null
-      trackVisibleAsset(type)
-      return
-    }
-    await streamAsset(
-      props.questionId,
-      type,
-      {
-        onContent: (content) => {
-          streamBuffer.value += content
-        },
-        onDone: () => {
-          // 流式完成，将 buffer 存入缓存内容
-          tabContent[type] = streamBuffer.value
-          streamBuffer.value = ''
-          trackVisibleAsset(type)
-        },
-      },
-      controller.signal,
-    )
-  } catch (e) {
-    if (!isAbortError(e)) {
-      error.value = errorMessage(e, 'AI 服务调用失败，请稍后重试')
-    }
-  } finally {
-    if (abortController === controller) {
-      abortController = null
-      loadingType.value = null
-    }
-  }
-}
+onScopeDispose(
+  onAuthSessionChange(() => {
+    expanded.value = false
+    if (!props.collapsible && isAuthenticated()) void loadExistingAssets()
+  }),
+)
 </script>
 
 <style scoped>
 .learning-asset {
-  margin-top: 18px;
-  padding: 16px;
-  border: 1px solid #d9e5f2;
-  border-radius: 10px;
-  background: #f8fbff;
+  margin-top: var(--lp-space-5);
+  padding: var(--lp-space-5);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-md);
+  background: var(--lp-surface-subtle);
   text-align: left;
 }
-
-.asset-header {
-  margin-bottom: 12px;
-}
-
-.asset-title {
-  color: #1f2d3d;
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.asset-tabs :deep(.el-tabs__header) {
-  margin-bottom: 0;
-}
-
-.asset-tabs :deep(.el-tabs__nav-wrap::after) {
-  height: 1px;
-}
-
-.tab-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.tab-icon {
-  font-size: 14px;
-}
-
-.asset-content {
-  padding: 16px 0 8px;
-  min-height: 120px;
-}
-
-.asset-result {
-  animation: fadeIn 0.3s ease;
-}
-
-.asset-loading {
-  animation: fadeIn 0.3s ease;
-}
-
-.stream-placeholder {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #7a8797;
-  font-size: 13px;
-  margin-bottom: 12px;
-}
-
-.asset-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 24px 16px;
-  text-align: center;
-}
-
-.empty-icon {
-  font-size: 36px;
-  line-height: 1;
-}
-
-.empty-text {
-  color: #7a8797;
-  font-size: 13px;
-  line-height: 1.6;
-  max-width: 360px;
-}
-
-.asset-collapsed {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  border: 1px dashed #c0d4e8;
-  border-radius: 8px;
-  background: #f0f6ff;
-  cursor: pointer;
-  transition: all 0.2s;
-  user-select: none;
-  width: 100%;
-  text-align: left;
-  font: inherit;
-}
-
-.asset-collapsed:hover {
-  background: #e4efff;
-  border-color: #a0c0e0;
-}
-
-.asset-collapsed:focus-visible {
-  outline: 2px solid var(--lp-primary);
-  outline-offset: 2px;
-}
-
-.collapsed-text {
-  font-size: 14px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.collapsed-arrow {
-  margin-left: auto;
-  color: #909399;
-}
-
-.variant-training-panel {
+.asset-header,
+.asset-collapsed,
+.stream-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin-top: 18px;
-  padding: 14px 16px;
-  border: 1px solid #cce5d5;
-  border-radius: 10px;
-  background: #f3faf5;
+  gap: var(--lp-space-3);
 }
-
-.variant-training-panel strong {
-  color: #256b43;
-  font-size: 14px;
+.asset-header h3 {
+  margin: 0;
+  font-size: var(--lp-text-base);
+  font-weight: var(--lp-weight-semibold);
 }
-
+.asset-collapsed,
+.collapse-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--lp-primary);
+  font: inherit;
+  cursor: pointer;
+}
+.asset-collapsed {
+  width: 100%;
+  text-align: left;
+}
+.collapse-button {
+  font-size: var(--lp-text-sm);
+}
+.asset-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-space-3);
+  margin: var(--lp-space-4) 0;
+}
+.asset-controls label {
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  flex-shrink: 0;
+}
+.asset-controls :deep(.el-select) {
+  width: 210px;
+  max-width: 100%;
+}
+.asset-content {
+  padding-top: var(--lp-space-4);
+  border-top: var(--lp-border-hairline);
+}
+.asset-description,
+.stream-heading p,
 .variant-training-panel p {
-  margin: 5px 0 0;
-  color: #6f7e75;
-  font-size: 12px;
-  line-height: 1.55;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-body);
+  margin: 0 0 var(--lp-space-3);
 }
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.stream-heading {
+  margin-bottom: var(--lp-space-3);
 }
-
-@media (max-width: 720px) {
-  .asset-tabs :deep(.el-tabs__item) {
-    padding: 0 8px;
-    font-size: 12px;
-  }
-
-  .tab-icon {
-    font-size: 12px;
-  }
-
-  .variant-training-panel {
-    align-items: stretch;
-    flex-direction: column;
-  }
+.stream-heading p {
+  margin: 0;
+}
+.asset-error {
+  color: var(--lp-danger);
+  font-size: var(--lp-text-sm);
+}
+.generate-button {
+  margin-top: var(--lp-space-3);
+}
+.variant-training-panel {
+  margin-top: var(--lp-space-4);
+  padding: var(--lp-space-4);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-sm);
+}
+.variant-training-panel strong {
+  display: block;
+  margin-bottom: var(--lp-space-2);
+  font-size: var(--lp-text-sm);
 }
 </style>

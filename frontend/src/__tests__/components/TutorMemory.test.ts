@@ -45,19 +45,23 @@ describe('TutorMemory', () => {
     const wrapper = create()
     expect(getMemory).not.toHaveBeenCalled()
     await open(wrapper)
-    expect(getMemory).toHaveBeenCalledWith(10)
+    expect(getMemory).toHaveBeenCalledWith(10, { errorDisplay: 'inline' })
     expect(saveMemory).not.toHaveBeenCalled()
     await wrapper.get('[data-testid="memory-style"]').setValue('EXAMPLES')
     await wrapper.get('[data-testid="memory-goal"]').setValue('  理解栈  ')
     saveMemory.mockResolvedValueOnce({ data: { revision: 1, explanationStyle: 'EXAMPLES', goal: '理解栈' } })
     await wrapper.get('[data-testid="memory-save"]').trigger('click')
     await flushPromises()
-    expect(saveMemory).toHaveBeenCalledWith(10, { revision: 0, explanationStyle: 'EXAMPLES', goal: '理解栈' })
+    expect(saveMemory).toHaveBeenCalledWith(
+      10,
+      { revision: 0, explanationStyle: 'EXAMPLES', goal: '理解栈' },
+      { errorDisplay: 'inline' },
+    )
     expect(wrapper.text()).toContain('记忆已保存')
     deleteMemory.mockResolvedValueOnce({ data: { ...empty, revision: 2 } })
     await wrapper.get('[data-testid="memory-delete"]').trigger('click')
     await flushPromises()
-    expect(deleteMemory).toHaveBeenCalledWith(10, 1)
+    expect(deleteMemory).toHaveBeenCalledWith(10, 1, { errorDisplay: 'inline' })
     expect(wrapper.get('textarea').element.value).toBe('')
     expect(wrapper.text()).toContain('记忆已删除')
     expect(wrapper.get('[data-testid="memory-delete"]').attributes('disabled')).toBeDefined()
@@ -82,7 +86,11 @@ describe('TutorMemory', () => {
     saveMemory.mockResolvedValueOnce({ data: { revision: 2, explanationStyle: null, goal: '修正目标' } })
     await wrapper.get('[data-testid="memory-save"]').trigger('click')
     await flushPromises()
-    expect(saveMemory).toHaveBeenLastCalledWith(10, { revision: 1, explanationStyle: null, goal: '修正目标' })
+    expect(saveMemory).toHaveBeenLastCalledWith(
+      10,
+      { revision: 1, explanationStyle: null, goal: '修正目标' },
+      { errorDisplay: 'inline' },
+    )
   })
 
   it('recovers an initial read failure only through explicit retry', async () => {

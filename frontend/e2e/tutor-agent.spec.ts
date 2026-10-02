@@ -1,17 +1,14 @@
 import { expect, test } from '@playwright/test'
+import { createLearnerAndLogin } from './helpers/registerLearner'
 import type { TutorAgentRunVO } from '../src/api/tutor'
 import type { CourseOverviewVO } from '../src/api/course'
 
-test('Tutor Agent 可追问、刷新恢复，并在上游失败后继续同一对话', async ({ page }, testInfo) => {
+test('Tutor Agent 可追问、刷新恢复，并在上游失败后继续同一对话', async ({ page, browser }, testInfo) => {
   test.setTimeout(90_000)
   await page.setViewportSize({ width: 1440, height: 900 })
   const pageErrors: string[] = []
   page.on('pageerror', (error) => pageErrors.push(error.message))
-  await page.goto('/login')
-  await page.getByPlaceholder('请输入用户名或邮箱').fill('testuser')
-  await page.getByPlaceholder('请输入密码').fill('test123')
-  await page.getByRole('button', { name: '登录', exact: true }).click()
-  await expect(page).toHaveURL(/\/my-courses$/, { timeout: 15_000 })
+  await createLearnerAndLogin(browser, page, 'tutor-agent.spec')
   await page.goto('/courses')
   await page
     .locator('.course-card')
