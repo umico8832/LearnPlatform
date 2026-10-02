@@ -1,9 +1,9 @@
 <template>
   <main class="public-placeholder">
     <div class="public-placeholder__content">
-      <p class="public-placeholder__status">开发中</p>
+      <p class="public-placeholder__status">正在整理</p>
       <h1>{{ title }}</h1>
-      <p class="public-placeholder__message">本页面正在开发中，更多内容将陆续上线。</p>
+      <p class="public-placeholder__message">更多介绍正在整理中。你可以返回首页了解学习方式，也可以直接开始学习。</p>
       <div class="public-placeholder__actions">
         <RouterLink class="public-placeholder__link" to="/">返回首页</RouterLink>
         <RouterLink class="public-placeholder__link public-placeholder__link--primary" :to="learningDestination">

@@ -65,7 +65,7 @@
         </el-card>
       </aside>
 
-      <main class="settings-panel">
+      <section class="settings-panel" aria-label="账户设置">
         <el-card shadow="never" class="settings-card">
           <template #header>
             <div class="card-header">
@@ -82,6 +82,7 @@
             :model="profileForm"
             :rules="profileRules"
             label-position="top"
+            :disabled="isSubmitting"
             @submit.prevent="handleUpdateProfile"
           >
             <el-form-item label="用户名">
@@ -91,8 +92,14 @@
               <el-input v-model="profileForm.nickname" placeholder="请输入昵称" maxlength="30" show-word-limit />
             </el-form-item>
             <el-form-item class="form-actions">
-              <el-button type="primary" :loading="profileLoading" @click="handleUpdateProfile"> 保存修改 </el-button>
+              <el-button type="primary" :loading="profileLoading" :disabled="isSubmitting" @click="handleUpdateProfile">
+                保存修改
+              </el-button>
             </el-form-item>
+            <p v-if="profileError" class="form-error" role="alert">
+              {{ profileError }}
+              <button type="button" :disabled="isSubmitting" @click="handleUpdateProfile">重试</button>
+            </p>
           </el-form>
         </el-card>
 
@@ -112,6 +119,7 @@
             :model="passwordForm"
             :rules="passwordRules"
             label-position="top"
+            :disabled="isSubmitting"
             @submit.prevent="handleUpdatePassword"
           >
             <el-form-item label="原密码" prop="oldPassword">
@@ -138,24 +146,36 @@
               修改后需要重新登录。
             </div>
             <el-form-item class="form-actions">
-              <el-button type="primary" :loading="passwordLoading" @click="handleUpdatePassword"> 修改密码 </el-button>
+              <el-button
+                type="primary"
+                :loading="passwordLoading"
+                :disabled="isSubmitting"
+                @click="handleUpdatePassword"
+              >
+                修改密码
+              </el-button>
             </el-form-item>
+            <p v-if="passwordError" class="form-error" role="alert">
+              {{ passwordError }}
+              <button type="button" :disabled="isSubmitting" @click="handleUpdatePassword">重试</button>
+            </p>
           </el-form>
         </el-card>
-      </main>
+      </section>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ArrowRight, Clock, EditPen, Key, Lock, Reading, Star, User } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { updateProfile, updatePassword } from '@/api/user'
 import ProfileGamification from '@/components/gamification/ProfileGamification.vue'
+import { errorMessage } from '@/utils/errors'
+import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -176,6 +196,7 @@ const shortcutItems = [
 // ========== 修改昵称 ==========
 const profileFormRef = ref<FormInstance>()
 const profileLoading = ref(false)
+const profileError = ref('')
 const profileForm = reactive({
   nickname: '',
 })
@@ -188,31 +209,34 @@ const profileRules: FormRules = {
 }
 
 async function handleUpdateProfile() {
-  const valid = await profileFormRef.value?.validate().catch(() => false)
-  if (!valid) return
-
+  if (isSubmitting.value) return
+  const session = getAuthSessionVersion()
+  const request = ++requestVersion
+  profileError.value = ''
   profileLoading.value = true
   try {
-    const res = await updateProfile({ nickname: profileForm.nickname })
-    if (userStore.userInfo && res.data) {
-      userStore.userInfo.nickname = res.data.nickname
-    }
-    ElMessage.success('昵称修改成功')
-  } catch {
-    // 错误已由拦截器处理
+    const valid = await profileFormRef.value?.validate().catch(() => false)
+    if (!isCurrent(request, session) || !valid) return
+    const res = await updateProfile({ nickname: profileForm.nickname }, { errorDisplay: 'inline' })
+    if (!isCurrent(request, session)) return
+    if (userStore.userInfo && res.data) userStore.userInfo.nickname = res.data.nickname
+  } catch (error) {
+    if (isCurrent(request, session)) profileError.value = errorMessage(error, '昵称保存失败，请重试')
   } finally {
-    profileLoading.value = false
+    if (isCurrent(request, session)) profileLoading.value = false
   }
 }
 
 // ========== 修改密码 ==========
 const passwordFormRef = ref<FormInstance>()
 const passwordLoading = ref(false)
+const passwordError = ref('')
 const passwordForm = reactive({
   oldPassword: '',
   newPassword: '',
   confirmPassword: '',
 })
+const isSubmitting = computed(() => profileLoading.value || passwordLoading.value)
 
 const passwordRules: FormRules = {
   oldPassword: [{ required: true, message: '请输入原密码', trigger: 'blur' }],
@@ -236,28 +260,55 @@ const passwordRules: FormRules = {
 }
 
 async function handleUpdatePassword() {
-  const valid = await passwordFormRef.value?.validate().catch(() => false)
-  if (!valid) return
-
+  if (isSubmitting.value) return
+  const session = getAuthSessionVersion()
+  const request = ++requestVersion
+  passwordError.value = ''
   passwordLoading.value = true
   try {
-    await updatePassword({
-      oldPassword: passwordForm.oldPassword,
-      newPassword: passwordForm.newPassword,
-    })
-    ElMessage.success('密码修改成功，请重新登录')
+    const valid = await passwordFormRef.value?.validate().catch(() => false)
+    if (!isCurrent(request, session) || !valid) return
+    await updatePassword(
+      { oldPassword: passwordForm.oldPassword, newPassword: passwordForm.newPassword },
+      { errorDisplay: 'inline' },
+    )
+    if (!isCurrent(request, session)) return
     passwordFormRef.value?.resetFields()
-  } catch {
-    // 错误已由拦截器处理
+    userStore.clearLoginInfo()
+    await router.replace('/login')
+  } catch (error) {
+    if (isCurrent(request, session)) passwordError.value = errorMessage(error, '密码修改失败，请重试')
   } finally {
-    passwordLoading.value = false
+    if (isCurrent(request, session)) passwordLoading.value = false
   }
 }
 
-onMounted(() => {
-  if (userStore.userInfo) {
-    profileForm.nickname = userStore.userInfo.nickname || ''
-  }
+let alive = true
+let requestVersion = 0
+function isCurrent(request: number, session: number) {
+  return alive && request === requestVersion && session === getAuthSessionVersion() && isAuthenticated()
+}
+const unsubscribeAuth = onAuthSessionChange(() => {
+  requestVersion++
+  profileLoading.value = false
+  passwordLoading.value = false
+  profileError.value = ''
+  passwordError.value = ''
+  passwordForm.oldPassword = ''
+  passwordForm.newPassword = ''
+  passwordForm.confirmPassword = ''
+})
+watch(
+  () => userStore.userInfo?.id,
+  () => {
+    profileForm.nickname = userStore.userInfo?.nickname || ''
+  },
+  { immediate: true },
+)
+onUnmounted(() => {
+  alive = false
+  requestVersion++
+  unsubscribeAuth()
 })
 </script>
 
@@ -299,6 +350,7 @@ onMounted(() => {
   grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
   gap: var(--lp-space-5);
   align-items: start;
+  margin-top: var(--lp-space-5);
 }
 
 .identity-panel,
@@ -458,6 +510,33 @@ onMounted(() => {
   margin-bottom: 0;
 }
 
+.form-error {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--lp-space-2);
+  margin: var(--lp-space-3) 0 0;
+  color: var(--lp-danger);
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-body);
+}
+
+.form-error button {
+  padding: 0;
+  border: 0;
+  color: var(--lp-primary);
+  background: transparent;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.form-error button:focus-visible {
+  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
+  outline-offset: var(--lp-focus-offset);
+  border-radius: var(--lp-radius-sm);
+}
+
 .password-note {
   display: flex;
   align-items: flex-start;
@@ -475,6 +554,16 @@ onMounted(() => {
 .password-note .el-icon {
   margin-top: 2px;
   color: var(--lp-warning);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shortcut-item {
+    transition: none;
+  }
+
+  .shortcut-item:hover {
+    transform: none;
+  }
 }
 
 @media (max-width: 900px) {

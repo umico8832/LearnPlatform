@@ -1,7 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises, mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
 import RegisterView from '@/views/auth/RegisterView.vue'
+
+enableAutoUnmount(afterEach)
 
 const {
   mockRegister,
@@ -101,7 +103,7 @@ describe('RegisterView', () => {
     expect(w.text()).not.toContain('填写用户名和邮箱')
     expect(w.html()).toContain('3-50 个字符')
     expect(w.html()).toContain('placeholder="邮箱"')
-    expect(w.text()).toContain('其他登录方式')
+    expect(w.text()).not.toContain('其他登录方式')
   })
   it('keeps the first-step preview form empty', () => {
     mockRoute.query = { 'auth-preview': 'step-1' }
@@ -130,7 +132,7 @@ describe('RegisterView', () => {
     const send = w.findAll('button').find((b) => b.text().includes('获取验证码'))
     await send?.trigger('click')
     await flushPromises()
-    expect(mockSendCode).toHaveBeenCalledWith('learner@example.com', 'turnstile-ok')
+    expect(mockSendCode).toHaveBeenCalledWith('learner@example.com', 'turnstile-ok', { errorDisplay: 'inline' })
   })
   it('does not send or start the cooldown when verification is cancelled', async () => {
     mockVerify.mockResolvedValue(null)
@@ -160,12 +162,58 @@ describe('RegisterView', () => {
     await inputs[1].setValue('Password1!')
     await w.find('form').trigger('submit')
     await flushPromises()
-    expect(mockRegister).toHaveBeenCalledWith({
-      username: 'newlearner',
-      email: 'learner@example.com',
-      password: 'Password1!',
-      verificationTicket: 'ticket-1',
-    })
+    expect(mockRegister).toHaveBeenCalledWith(
+      {
+        username: 'newlearner',
+        email: 'learner@example.com',
+        password: 'Password1!',
+        verificationTicket: 'ticket-1',
+      },
+      { errorDisplay: 'inline' },
+    )
     expect(mockPush).toHaveBeenCalledWith('/login')
+  })
+
+  it('allows only one pending code verification and ignores it after leaving', async () => {
+    let finish: (value: unknown) => void = () => undefined
+    mockVerifyCode.mockImplementation(() => new Promise((resolve) => (finish = resolve)))
+    const w = mountRegister()
+    await w.findAll('input')[0].setValue('newlearner')
+    await w.findAll('input')[1].setValue('learner@example.com')
+    await w.find('form').trigger('submit')
+    await flushPromises()
+    await w.find('input').setValue('123456')
+    await w.find('form').trigger('submit')
+    await w.find('form').trigger('submit')
+    expect(mockVerifyCode).toHaveBeenCalledOnce()
+    w.unmount()
+    finish({ data: { verificationTicket: 'late-test-ticket', expiresIn: 300 } })
+    await flushPromises()
+    expect(mockRegister).not.toHaveBeenCalled()
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  it('locks before password validation and never navigates for a late registration response', async () => {
+    const w = mountRegister()
+    await advanceToPassword(w)
+    let validate: (value: boolean) => void = () => undefined
+    let finish: (value: unknown) => void = () => undefined
+    mockValidate.mockImplementation(() => new Promise<boolean>((resolve) => (validate = resolve)))
+    mockRegister.mockImplementation(() => new Promise((resolve) => (finish = resolve)))
+    await w.findAll('input')[0].setValue('Password1!')
+    await w.findAll('input')[1].setValue('Password1!')
+    await w.find('form').trigger('submit')
+    await w.find('form').trigger('submit')
+    expect(mockValidate).toHaveBeenCalledOnce()
+    validate(true)
+    await flushPromises()
+    expect(mockRegister).toHaveBeenCalledOnce()
+    await w.find('form').trigger('submit')
+    expect(mockRegister).toHaveBeenCalledOnce()
+    w.unmount()
+    finish({ data: { id: 2 } })
+    await flushPromises()
+    expect(mockSuccess).not.toHaveBeenCalledWith('注册成功，请登录')
+    expect(mockPush).not.toHaveBeenCalled()
   })
 })

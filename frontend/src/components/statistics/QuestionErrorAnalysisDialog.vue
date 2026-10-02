@@ -1,12 +1,15 @@
 <template>
   <el-dialog
     :model-value="modelValue"
-    title="🔍 单题错因分析"
+    title="单题作答记录"
     width="750px"
     destroy-on-close
     @update:model-value="emit('update:modelValue', $event)"
   >
     <div v-if="loading" v-loading="true" class="dialog-loading"></div>
+    <el-alert v-else-if="error" :title="error" type="error" :closable="false" show-icon>
+      <template #default><el-button link type="primary" @click="emit('retry')">重试读取</el-button></template>
+    </el-alert>
     <template v-else-if="data">
       <div class="error-analysis-header">
         <div class="error-analysis-question">{{ data.questionContent }}</div>
@@ -41,12 +44,12 @@
       </div>
 
       <div class="error-pattern-box">
-        <h4>📋 错误模式分析</h4>
+        <h4>作答模式</h4>
         <p>{{ data.errorPattern }}</p>
       </div>
 
       <div v-if="data.attempts.length" class="attempt-history">
-        <h4>📝 作答历史（共 {{ data.attempts.length }} 次）</h4>
+        <h4>作答历史（共 {{ data.attempts.length }} 次）</h4>
         <el-timeline>
           <el-timeline-item
             v-for="(attempt, index) in data.attempts"
@@ -58,8 +61,8 @@
             <el-card shadow="never" body-style="padding: 10px 14px">
               <div class="attempt-row">
                 <span>
-                  <el-tag :type="attempt.isCorrect === 1 ? 'success' : 'danger'" size="small">
-                    {{ attempt.isCorrect === 1 ? '✓ 答对' : '✗ 答错' }}
+                  <el-tag :type="attemptStatus(attempt.isCorrect).type" size="small">
+                    {{ attemptStatus(attempt.isCorrect).label }}
                   </el-tag>
                   <span v-if="attempt.userAnswer" class="attempt-answer">答案：{{ attempt.userAnswer }}</span>
                 </span>
@@ -84,14 +87,21 @@ const props = defineProps<{
   modelValue: boolean
   loading: boolean
   data: QuestionErrorAnalysis | null
+  error?: string
 }>()
 
-const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
+const emit = defineEmits<{ 'update:modelValue': [value: boolean]; retry: [] }>()
 const trendType = computed(() => {
   if (props.data?.masteryTrend === 'IMPROVING') return 'success'
   if (props.data?.masteryTrend === 'DECLINING') return 'error'
   return 'info'
 })
+
+function attemptStatus(isCorrect: number | null) {
+  if (isCorrect === 1) return { label: '答对', type: 'success' as const }
+  if (isCorrect === 0) return { label: '答错', type: 'danger' as const }
+  return { label: '待判分', type: 'info' as const }
+}
 </script>
 
 <style scoped>

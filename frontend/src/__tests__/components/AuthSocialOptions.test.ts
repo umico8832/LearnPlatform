@@ -18,36 +18,34 @@ describe('AuthSocialOptions', () => {
     vi.clearAllMocks()
   })
 
-  it('enables Google when configured and keeps Facebook and Apple disabled', async () => {
+  it('shows only the available Google login method', async () => {
     mockGetOAuthProviders.mockResolvedValue({ data: { google: true } })
     const wrapper = mount(AuthSocialOptions)
 
     await flushPromises()
 
     const buttons = wrapper.findAll('button')
-    expect(buttons).toHaveLength(3)
+    expect(buttons).toHaveLength(1)
     expect(buttons[0].attributes('disabled')).toBeUndefined()
-    expect(buttons[1].attributes('disabled')).toBeDefined()
-    expect(buttons[2].attributes('disabled')).toBeDefined()
+    expect(buttons[0].text()).toBe('使用 Google 登录')
   })
 
-  it('keeps every provider disabled when Google is not configured', async () => {
+  it('does not advertise unavailable providers', async () => {
     mockGetOAuthProviders.mockResolvedValue({ data: { google: false } })
     const wrapper = mount(AuthSocialOptions)
 
     await flushPromises()
 
-    expect(wrapper.findAll('button').every((button) => button.attributes('disabled') !== undefined)).toBe(true)
+    expect(wrapper.findAll('button')).toHaveLength(0)
   })
 
-  it('keeps provider buttons disabled when discovery fails', async () => {
+  it('omits optional login methods when discovery fails', async () => {
     mockGetOAuthProviders.mockRejectedValue(new Error('Unavailable'))
     const wrapper = mount(AuthSocialOptions)
 
     await flushPromises()
 
-    expect(wrapper.findAll('button')).toHaveLength(3)
-    expect(wrapper.findAll('button').every((button) => button.attributes('disabled') !== undefined)).toBe(true)
+    expect(wrapper.findAll('button')).toHaveLength(0)
     wrapper.unmount()
   })
 })

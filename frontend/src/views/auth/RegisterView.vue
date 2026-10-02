@@ -24,6 +24,7 @@
         class="auth-form auth-form--minimal"
         :model="form"
         :rules="rules"
+        :disabled="sending || verifying || loading"
         label-position="top"
         @submit.prevent="handlePrimary"
       >
@@ -56,7 +57,7 @@
                 /><el-button
                   native-type="button"
                   :loading="sending"
-                  :disabled="sending || countdown > 0"
+                  :disabled="sending || verifying || countdown > 0"
                   @click="sendCode"
                   >{{ countdown > 0 ? `${countdown}s 后重发` : '获取验证码' }}</el-button
                 >
@@ -70,7 +71,7 @@
                   type="primary"
                   class="auth-primary"
                   :loading="verifying"
-                  :disabled="code.length !== 6"
+                  :disabled="!/^\d{6}$/.test(code) || verifying || sending"
                   >验证并继续</el-button
                 >
               </div></el-form-item
@@ -102,7 +103,7 @@
             /></el-form-item>
             <el-form-item
               ><div class="step-actions">
-                <el-button native-type="button" class="auth-secondary" @click="step = 2">上一步</el-button
+                <el-button native-type="button" class="auth-secondary" @click="backToVerification">上一步</el-button
                 ><el-button native-type="submit" type="primary" class="auth-primary" :loading="loading"
                   >创建账号</el-button
                 >
@@ -111,7 +112,8 @@
           </div>
         </Transition>
       </el-form>
-      <AuthSocialOptions v-if="step === 1" :preview="previewMode" />
+      <p v-if="error" class="auth-inline-error" role="alert">{{ error }}</p>
+      <AuthSocialOptions v-if="step === 1" :preview="previewMode" :disabled="loading" />
     </div>
     <template #footer>
       <div v-if="step === 1" class="auth-footer">已有账号？ <router-link to="/login">立即登录</router-link></div>
@@ -131,6 +133,8 @@ import AuthSocialOptions from '@/components/auth/AuthSocialOptions.vue'
 import TurnstileDialog from '@/components/auth/TurnstileDialog.vue'
 import { register, sendRegisterCode, verifyRegisterCode } from '@/api/auth'
 import { getAuthPreviewState } from '@/utils/authPreview'
+import { useAuthPageGuard } from './useAuthPageGuard'
+import { errorMessage } from '@/utils/errors'
 import '@/assets/styles/auth.css'
 
 const router = useRouter(),
@@ -146,6 +150,9 @@ const step = ref(previewState ? Number(previewState.at(-1)) : 1),
   code = ref(''),
   countdown = ref(0)
 let timer: number | undefined
+const capture = useAuthPageGuard()
+const error = ref('')
+let stageVersion = 0
 const form = reactive({
   username: '',
   email: '',
@@ -188,70 +195,100 @@ const passwordStrengthLabel = computed(() =>
         : '强',
 )
 async function handlePrimary() {
-  if (step.value === 1) {
-    if (
-      await formRef.value
+  if (sending.value || verifying.value || loading.value) return
+  if (step.value === 2) return verifyCode()
+  const current = capture(),
+    version = stageVersion
+  loading.value = true
+  error.value = ''
+  try {
+    if (step.value === 1) {
+      const valid = await formRef.value
         ?.validateField(['username', 'email'])
         .then(() => true)
         .catch(() => false)
+      if (valid && current() && version === stageVersion) step.value = 2
+      return
+    }
+    if (!(await formRef.value?.validate().catch(() => false)) || !current() || version !== stageVersion) return
+    await register(
+      {
+        username: form.username,
+        email: form.email,
+        password: form.password,
+        verificationTicket: form.verificationTicket,
+      },
+      { errorDisplay: 'inline' },
     )
-      step.value = 2
-    return
-  }
-  if (step.value === 2) {
-    await verifyCode()
-    return
-  }
-  if (!(await formRef.value?.validate().catch(() => false))) return
-  loading.value = true
-  try {
-    await register({
-      username: form.username,
-      email: form.email,
-      password: form.password,
-      verificationTicket: form.verificationTicket,
-    })
+    if (!current() || version !== stageVersion) return
     ElMessage.success('注册成功，请登录')
     await router.push('/login')
+  } catch (cause) {
+    if (current() && version === stageVersion)
+      error.value = errorMessage(cause, '暂时无法创建账号，输入已保留，请重试。')
   } finally {
-    loading.value = false
+    if (current() && version === stageVersion) loading.value = false
   }
 }
 async function sendCode() {
-  if (sending.value || countdown.value > 0 || step.value !== 2) return
+  if (sending.value || verifying.value || countdown.value > 0 || step.value !== 2) return
+  const current = capture(),
+    version = stageVersion
   const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : undefined
   sending.value = true
+  error.value = ''
   try {
     const email = form.email
     const turnstileToken = await verificationRef.value?.verify(trigger)
-    if (!turnstileToken) return
-    await sendRegisterCode(email, turnstileToken)
+    if (!turnstileToken || !current() || version !== stageVersion) return
+    await sendRegisterCode(email, turnstileToken, { errorDisplay: 'inline' })
+    if (!current() || version !== stageVersion) return
     ElMessage.success('验证码已发送')
+    const deadline = Date.now() + 60_000
     countdown.value = 60
+    if (timer) clearInterval(timer)
     timer = window.setInterval(() => {
-      countdown.value--
+      countdown.value = Math.max(0, Math.ceil((deadline - Date.now()) / 1000))
       if (countdown.value <= 0 && timer) clearInterval(timer)
     }, 1000)
-  } catch {
+  } catch (cause) {
+    if (current() && version === stageVersion) error.value = errorMessage(cause, '验证码暂时无法发送，请重试。')
   } finally {
-    sending.value = false
+    if (current() && version === stageVersion) sending.value = false
   }
 }
 async function verifyCode() {
+  if (verifying.value || sending.value || step.value !== 2 || !/^\d{6}$/.test(code.value)) return
+  const current = capture(),
+    version = stageVersion
   verifying.value = true
+  error.value = ''
   try {
-    const res = await verifyRegisterCode(form.email, code.value)
+    const res = await verifyRegisterCode(form.email, code.value, { errorDisplay: 'inline' })
+    if (!current() || version !== stageVersion) return
     form.verificationTicket = res.data.verificationTicket
     step.value = 3
-  } catch {
+  } catch (cause) {
+    if (current() && version === stageVersion) error.value = errorMessage(cause, '验证码暂时无法验证，请重试。')
   } finally {
-    verifying.value = false
+    if (current() && version === stageVersion) verifying.value = false
   }
 }
 function backToAccount() {
+  if (sending.value || verifying.value || loading.value) return
+  stageVersion++
   step.value = 1
+  error.value = ''
   code.value = ''
   form.verificationTicket = ''
+}
+function backToVerification() {
+  if (loading.value) return
+  stageVersion++
+  step.value = 2
+  error.value = ''
+  form.verificationTicket = ''
+  code.value = ''
 }
 onBeforeUnmount(() => {
   if (timer) clearInterval(timer)

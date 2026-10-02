@@ -128,6 +128,9 @@ service.interceptors.response.use(
 
     // 1002: 未登录 / Token 无效
     if (res.code === 1002) {
+      if (response.config.url === '/auth/login' && response.config.errorDisplay === 'inline') {
+        return Promise.reject(new Error(res.message || '用户名或密码错误'))
+      }
       removeToken()
       redirectToLogin()
       ElMessage.error('登录已过期，请重新登录')
@@ -139,6 +142,7 @@ service.interceptors.response.use(
     return Promise.reject(new Error(res.message))
   },
   (error) => {
+    if (error.config?.url === '/auth/login' && error.config?.errorDisplay === 'inline') return Promise.reject(error)
     if (error.config?.errorDisplay === 'inline' && error.response?.status !== 401) return Promise.reject(error)
     if (error.response) {
       const { status } = error.response

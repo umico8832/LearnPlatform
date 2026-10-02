@@ -35,7 +35,7 @@ export const useGamificationStore = defineStore('gamification', () => {
     loading.value = true
     error.value = ''
     try {
-      const response = await getGamificationSummary()
+      const response = await getGamificationSummary({ errorDisplay: 'inline' })
       if (session === getAuthSessionVersion() && request === requestVersion && getToken()) applySummary(response.data)
     } catch {
       if (session === getAuthSessionVersion() && request === requestVersion) error.value = '学习进度暂时无法加载'
@@ -45,7 +45,7 @@ export const useGamificationStore = defineStore('gamification', () => {
   }
   async function saveGoal(goal: number) {
     const session = getAuthSessionVersion()
-    const response = await updateDailyGoal(goal)
+    const response = await updateDailyGoal(goal, { errorDisplay: 'inline' })
     if (session === getAuthSessionVersion() && getToken()) applySummary(response.data)
   }
   function setExamMode(value: boolean) {

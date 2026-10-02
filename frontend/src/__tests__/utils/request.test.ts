@@ -67,3 +67,31 @@ describe.each([
     expect(mocks.error).toHaveBeenCalledWith('登录已过期，请重新登录')
   })
 })
+
+describe('login credentials with inline feedback', () => {
+  it('does not clear an existing token for an inline login HTTP 401', async () => {
+    const unauthorized: AxiosAdapter = async (config) => {
+      throw new AxiosError('Unauthorized', 'ERR_BAD_REQUEST', config, undefined, {
+        config,
+        data: {},
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: {},
+      })
+    }
+    setToken('test-session-placeholder')
+    await expect(request.post('/auth/login', {}, { errorDisplay: 'inline', adapter: unauthorized })).rejects.toThrow()
+    expect(getToken()).toBe('test-session-placeholder')
+    expect(mocks.redirect).not.toHaveBeenCalled()
+  })
+
+  it('does not treat rejected credentials as an expired protected session', async () => {
+    setToken('test-session-placeholder')
+    await expect(
+      request.post('/auth/login', {}, { errorDisplay: 'inline', adapter: responseWithCode(1002) }),
+    ).rejects.toThrow('测试错误')
+    expect(getToken()).toBe('test-session-placeholder')
+    expect(mocks.redirect).not.toHaveBeenCalled()
+    expect(mocks.error).not.toHaveBeenCalled()
+  })
+})

@@ -1,12 +1,15 @@
 <template>
   <el-dialog
     :model-value="modelValue"
-    title="🔍 相似题推荐"
+    title="相似题推荐"
     width="800px"
     destroy-on-close
     @update:model-value="emit('update:modelValue', $event)"
   >
     <div v-if="loading" v-loading="true" class="dialog-loading"></div>
+    <el-alert v-else-if="error" :title="error" type="error" :closable="false" show-icon>
+      <template #default><el-button link type="primary" @click="emit('retry')">重试读取</el-button></template>
+    </el-alert>
     <template v-else-if="data">
       <div class="similar-source"><strong>原题：</strong>{{ sourceContent }}</div>
       <el-table :data="data.similarQuestions" stripe class="similar-table">
@@ -34,9 +37,9 @@
           <template #default="{ row }">{{ row.questionType }}</template>
         </el-table-column>
         <el-table-column label="难度" width="80" align="center">
-          <template #default="{ row }"
-            ><span v-if="row.difficulty">{{ '⭐'.repeat(row.difficulty) }}</span></template
-          >
+          <template #default="{ row }">
+            <el-tag v-if="row.difficulty" size="small" type="info">难度 {{ row.difficulty }}</el-tag>
+          </template>
         </el-table-column>
         <el-table-column label="已练过" width="80" align="center">
           <template #default="{ row }">
@@ -49,8 +52,14 @@
     </template>
     <el-empty v-else description="暂无相似题目" />
     <template #footer>
+      <p v-if="practiceError" class="similar-error" role="alert">{{ practiceError }}</p>
       <el-button @click="emit('update:modelValue', false)">关闭</el-button>
-      <el-button type="primary" :disabled="!data?.similarQuestions?.length" @click="emit('start-practice')">
+      <el-button
+        type="primary"
+        :loading="starting"
+        :disabled="starting || !data?.similarQuestions?.length"
+        @click="emit('start-practice')"
+      >
         开始练习相似题
       </el-button>
     </template>
@@ -66,11 +75,15 @@ defineProps<{
   loading: boolean
   data: SimilarQuestions | null
   sourceContent: string
+  error?: string
+  starting?: boolean
+  practiceError?: string
 }>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
   'start-practice': []
+  retry: []
 }>()
 </script>
 
@@ -90,5 +103,11 @@ const emit = defineEmits<{
 
 .similar-table {
   margin-top: var(--lp-space-3);
+}
+
+.similar-error {
+  margin: 0 var(--lp-space-3) 0 0;
+  color: var(--lp-danger);
+  font-size: var(--lp-text-sm);
 }
 </style>

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises, mount } from '@vue/test-utils'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, disposePinia, setActivePinia, type Pinia } from 'pinia'
 import { removeToken, setToken } from '@/utils/auth'
 
@@ -44,6 +44,7 @@ const stubs = {
 }
 
 let pinia: Pinia
+const wrappers: VueWrapper[] = []
 describe('ProfileGamification', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -70,12 +71,19 @@ describe('ProfileGamification', () => {
   })
 
   afterEach(() => {
+    wrappers.splice(0).forEach((wrapper) => wrapper.unmount())
     removeToken()
     disposePinia(pinia)
   })
 
-  it('shows backend achievement and calendar facts after the summary loads', async () => {
+  function mountProfileGamification() {
     const wrapper = mount(ProfileGamification, { global: { stubs } })
+    wrappers.push(wrapper)
+    return wrapper
+  }
+
+  it('shows backend achievement and calendar facts after the summary loads', async () => {
+    const wrapper = mountProfileGamification()
     await flushPromises()
     expect(wrapper.get('[data-testid="gamification-achievements"]').text()).toContain('初次作答')
     expect(wrapper.get('[data-testid="gamification-heatmap"]').text()).toContain('Asia/Shanghai')
@@ -92,21 +100,22 @@ describe('ProfileGamification', () => {
           resolveAchievements = resolve
         }),
     )
-    const wrapper = mount(ProfileGamification, { global: { stubs } })
+    const wrapper = mountProfileGamification()
     await flushPromises()
     setToken('profile-session-b')
     resolveAchievements({ data: [] })
     await flushPromises()
-    expect(wrapper.find('[data-testid="gamification-achievements"]').exists()).toBe(false)
-    expect(wrapper.text()).not.toContain('累计 36 经验')
+    expect(getGamificationSummary).toHaveBeenCalledTimes(2)
+    expect(wrapper.find('[data-testid="gamification-achievements"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('累计 36 经验')
   })
 
   it('removes a failed-detail message after an in-place retry succeeds', async () => {
     getAchievements.mockRejectedValueOnce(new Error('network'))
-    const wrapper = mount(ProfileGamification, { global: { stubs } })
+    const wrapper = mountProfileGamification()
     await flushPromises()
-    expect(wrapper.get('[role="alert"]').text()).toContain('成就与学习日历暂时无法加载')
-    await wrapper.get('.lp-state-panel-retry').trigger('click')
+    expect(wrapper.get('[role="alert"]').text()).toContain('学习日历与成就暂时无法加载')
+    await wrapper.get('[role="alert"] button').trigger('click')
     await flushPromises()
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="gamification-heatmap"]').exists()).toBe(true)
@@ -114,7 +123,7 @@ describe('ProfileGamification', () => {
 
   it('keeps the form actionable and explains a failed daily-goal save', async () => {
     updateDailyGoal.mockRejectedValueOnce(new Error('network'))
-    const wrapper = mount(ProfileGamification, { global: { stubs } })
+    const wrapper = mountProfileGamification()
     await flushPromises()
     const input = wrapper.find('input[type="number"]')
     await input.setValue('8')
@@ -128,11 +137,11 @@ describe('ProfileGamification', () => {
     await wrapper.get('.goal-error button').trigger('click')
     await flushPromises()
     expect(wrapper.find('.goal-error').exists()).toBe(false)
-    expect(updateDailyGoal).toHaveBeenLastCalledWith(8)
+    expect(updateDailyGoal).toHaveBeenLastCalledWith(8, { errorDisplay: 'inline' })
   })
 
   it('exposes the selected heatmap day as a pressed control', async () => {
-    const wrapper = mount(ProfileGamification, { global: { stubs } })
+    const wrapper = mountProfileGamification()
     await flushPromises()
     const day = wrapper.get('[data-testid="gamification-heatmap"] button')
 

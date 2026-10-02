@@ -1,6 +1,6 @@
 <template>
   <el-card v-if="courseMasteries.length" class="section-card" shadow="hover">
-    <template #header><span>📖 课程掌握概况</span></template>
+    <template #header><span>课程学习情况</span></template>
     <el-table :data="courseMasteries" stripe>
       <el-table-column prop="courseName" label="课程" min-width="140" />
       <el-table-column label="正确率" width="140">
@@ -29,8 +29,15 @@
   <el-card v-if="recommendations.length" class="section-card" shadow="hover">
     <template #header>
       <div class="card-header">
-        <span>🎯 今日推荐题目</span>
-        <el-button type="primary" size="small" @click="emit('start-recommend-practice')">开始练习</el-button>
+        <span>下一步练习</span>
+        <el-button
+          type="primary"
+          size="small"
+          :loading="startingPractice"
+          :disabled="startingPractice"
+          @click="emit('start-recommend-practice')"
+          >开始练习</el-button
+        >
       </div>
     </template>
     <el-table :data="recommendations" stripe>
@@ -65,6 +72,7 @@
         </template>
       </el-table-column>
     </el-table>
+    <el-alert v-if="practiceError" :title="practiceError" type="error" :closable="false" class="practice-error" />
   </el-card>
 </template>
 
@@ -75,6 +83,8 @@ import { rateColor, reasonType } from './diagnosisDisplay'
 defineProps<{
   courseMasteries: CourseMastery[]
   recommendations: RecommendedQuestion[]
+  startingPractice: boolean
+  practiceError: string
 }>()
 
 const emit = defineEmits<{
@@ -92,5 +102,8 @@ const emit = defineEmits<{
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+.practice-error {
+  margin-top: var(--lp-space-3);
 }
 </style>

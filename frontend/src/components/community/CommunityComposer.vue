@@ -98,7 +98,7 @@
   </el-dialog>
 </template>
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { ElMessageBox } from 'element-plus'
 import {
   createCommunityPost,
@@ -110,6 +110,7 @@ import {
 import { getAllCourses, type CourseVO } from '@/api/course'
 import { getKnowledgeTree, type KnowledgePointVO } from '@/api/knowledgePoint'
 import { errorMessage } from '@/utils/errors'
+import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
 const props = defineProps<{ categories: CommunityCategory[]; initialType: string }>()
 const emit = defineEmits<{ close: []; created: [id: number] }>()
 const draft = reactive<CommunityDraft>({
@@ -130,16 +131,23 @@ const exams = computed(() => props.categories.filter((c) => c.kind === 'EXAM'))
 const subjects = computed(() => props.categories.filter((c) => c.parentId === examId.value))
 const schools = computed(() => props.categories.filter((c) => c.kind === 'SCHOOL'))
 let knowledgeRequest = 0
+let alive = true
+let requestGeneration = 0
+function current(request: number, session: number) {
+  return alive && request === requestGeneration && session === getAuthSessionVersion() && isAuthenticated()
+}
 async function loadKnowledge() {
   const request = ++knowledgeRequest
+  const session = getAuthSessionVersion()
   draft.knowledgePointId = undefined
   knowledge.value = []
   if (!draft.courseId) return
   try {
     const result = await getKnowledgeTree(draft.courseId)
-    if (request === knowledgeRequest) knowledge.value = result.data
+    if (request === knowledgeRequest && current(requestGeneration, session)) knowledge.value = result.data
   } catch (e) {
-    if (request === knowledgeRequest) error.value = errorMessage(e, '知识点加载失败')
+    if (request === knowledgeRequest && current(requestGeneration, session))
+      error.value = errorMessage(e, '知识点加载失败')
   }
 }
 function selectFiles(event: Event) {
@@ -187,6 +195,8 @@ async function submit() {
     error.value = '请填写标题、正文和科目，投稿还需来源说明，题库投稿需选择附件。'
     return
   }
+  const request = ++requestGeneration
+  const session = getAuthSessionVersion()
   saving.value = true
   error.value = ''
   try {
@@ -198,19 +208,35 @@ async function submit() {
         knowledgePointId: draft.knowledgePointId || undefined,
       },
       files.value,
+      { errorDisplay: 'inline' },
     )
+    if (!current(request, session)) return
     emit('created', result.data)
   } catch (e) {
-    error.value = errorMessage(e, '提交失败，内容已保留，请重试。')
+    if (current(request, session)) error.value = errorMessage(e, '提交失败，内容已保留，请重试。')
   } finally {
-    saving.value = false
+    if (current(request, session)) saving.value = false
   }
 }
 onMounted(async () => {
+  const request = requestGeneration
+  const session = getAuthSessionVersion()
   try {
-    courses.value = (await getAllCourses()).data
+    courses.value = (await getAllCourses({ errorDisplay: 'inline' })).data
   } catch (e) {
-    error.value = errorMessage(e, '课程加载失败，请重新打开表单')
+    if (current(request, session)) error.value = errorMessage(e, '课程加载失败，请重新打开表单')
   }
+})
+const unsubscribeAuth = onAuthSessionChange(() => {
+  requestGeneration++
+  knowledgeRequest++
+  saving.value = false
+  if (!isAuthenticated()) emit('close')
+})
+onUnmounted(() => {
+  alive = false
+  requestGeneration++
+  knowledgeRequest++
+  unsubscribeAuth()
 })
 </script>

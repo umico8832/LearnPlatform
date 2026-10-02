@@ -3,7 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { getAchievements, getLearningHeatmap, type Achievement, type HeatmapDay } from '@/api/gamification'
 import { useGamificationStore } from '@/stores/gamification'
 import { calendarDays, calendarRange, learningDate } from '@/utils/learningCalendar'
-import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
+import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
 
 const store = useGamificationStore()
 const achievements = ref<Achievement[]>([])
@@ -17,6 +17,7 @@ const loading = ref(false)
 const selectedDay = ref<HeatmapDay>()
 const unlockedCount = computed(() => achievements.value.filter((item) => item.unlocked).length)
 let alive = true
+let requestGeneration = 0
 
 const resetForSession = () => {
   achievements.value = []
@@ -29,7 +30,11 @@ const resetForSession = () => {
   saving.value = false
   loading.value = false
 }
-const unsubscribe = onAuthSessionChange(resetForSession)
+const unsubscribe = onAuthSessionChange(() => {
+  requestGeneration++
+  resetForSession()
+  if (isAuthenticated()) void load()
+})
 
 onUnmounted(() => {
   alive = false
@@ -38,11 +43,13 @@ onUnmounted(() => {
 
 async function load() {
   if (loading.value) return
+  const generation = ++requestGeneration
   const session = getAuthSessionVersion()
   loading.value = true
   detailError.value = ''
   await store.load()
-  if (!alive || !store.summary || session !== getAuthSessionVersion()) {
+  if (!current(generation, session)) return
+  if (!store.summary) {
     loading.value = false
     return
   }
@@ -50,32 +57,37 @@ async function load() {
   const range = calendarRange(learningDate(new Date(), store.summary.zoneId))
   try {
     const [achievementResponse, heatmapResponse] = await Promise.all([
-      getAchievements(),
-      getLearningHeatmap(range.from, range.to),
+      getAchievements({ errorDisplay: 'inline' }),
+      getLearningHeatmap(range.from, range.to, { errorDisplay: 'inline' }),
     ])
-    if (!alive || session !== getAuthSessionVersion()) return
+    if (!current(generation, session)) return
     achievements.value = achievementResponse.data
     heatmap.value = calendarDays(range.from, range.to, heatmapResponse.data)
     loaded.value = true
   } catch {
-    if (alive && session === getAuthSessionVersion()) detailError.value = '成就与学习日历暂时无法加载'
+    if (current(generation, session)) detailError.value = '学习日历与成就暂时无法加载'
   } finally {
-    if (alive && session === getAuthSessionVersion()) loading.value = false
+    if (current(generation, session)) loading.value = false
   }
 }
 
 async function saveGoal() {
   if (!Number.isInteger(goal.value) || goal.value < 1 || goal.value > 200 || saving.value) return
+  const generation = requestGeneration
   const session = getAuthSessionVersion()
   saving.value = true
   goalError.value = ''
   try {
     await store.saveGoal(goal.value)
   } catch {
-    if (alive && session === getAuthSessionVersion()) goalError.value = '目标保存失败，请重试'
+    if (current(generation, session)) goalError.value = '目标保存失败，请重试'
   } finally {
-    if (alive && session === getAuthSessionVersion()) saving.value = false
+    if (current(generation, session)) saving.value = false
   }
+}
+
+function current(generation: number, session: number) {
+  return alive && generation === requestGeneration && session === getAuthSessionVersion() && isAuthenticated()
 }
 
 onMounted(() => void load())
@@ -97,7 +109,7 @@ onMounted(() => void load())
     </header>
 
     <LpStatePanel
-      v-if="detailError || store.error"
+      v-if="!store.summary && (detailError || store.error)"
       state="error"
       title="学习记录暂时无法加载"
       :description="detailError || store.error"
@@ -107,6 +119,10 @@ onMounted(() => void load())
     />
     <LpStatePanel v-else-if="loading && !store.summary" state="loading" loading-label="正在读取学习记录" />
     <template v-if="store.summary">
+      <p v-if="store.error" class="profile-gamification__partial" role="alert">
+        概览正在显示最近一次成功读取的数据。{{ store.error }}
+        <button type="button" :disabled="loading" @click="load">重新加载</button>
+      </p>
       <div class="profile-gamification__overview">
         <div>
           <strong>Lv.{{ store.summary.level }}</strong>
@@ -129,12 +145,16 @@ onMounted(() => void load())
         </label>
         <button type="submit" :disabled="saving || loading">保存目标</button>
       </form>
-      <p v-if="goalError" class="goal-error" role="status">
+      <p v-if="goalError" class="goal-error" role="alert">
         {{ goalError }}
         <button type="button" :disabled="saving || loading" @click="saveGoal">重试</button>
       </p>
 
       <LpSkeleton v-if="loading" :rows="3" label="正在读取学习日历" />
+      <p v-else-if="detailError" class="profile-gamification__partial" role="alert">
+        {{ detailError }}
+        <button type="button" @click="load">重新加载</button>
+      </p>
       <template v-else-if="loaded">
         <section data-testid="gamification-heatmap">
           <h3>学习日历</h3>
@@ -211,6 +231,25 @@ header > span {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--lp-space-3);
+}
+.profile-gamification__partial {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--lp-space-2);
+  margin: 0;
+  color: var(--lp-danger);
+  font-size: var(--lp-text-sm);
+}
+
+.profile-gamification__partial button {
+  padding: 0;
+  border: 0;
+  color: var(--lp-primary);
+  background: transparent;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 .profile-gamification__overview div {
   display: grid;

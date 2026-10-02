@@ -26,7 +26,7 @@ describe('NotFoundView', () => {
         },
       },
     })
-    expect(wrapper.find('p').text()).toBe('页面不存在')
+    expect(wrapper.find('p').text()).toBe('这个地址不存在，或内容已移动。')
   })
 
   it('renders a back-to-home button', () => {

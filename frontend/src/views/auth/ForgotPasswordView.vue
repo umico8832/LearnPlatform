@@ -12,6 +12,7 @@
         class="auth-form auth-form--stable-errors"
         :model="form"
         :rules="rules"
+        :disabled="loading"
         label-position="top"
         @submit.prevent="submit"
       >
@@ -29,7 +30,8 @@
       <div class="recovery-symbol recovery-symbol--success" aria-hidden="true">
         <el-icon><CircleCheckFilled /></el-icon>
       </div>
-      <h2 id="auth-title">邮件已发送</h2>
+      <h1 id="auth-title">查看重置邮件</h1>
+      <p>如果该邮箱已注册，你会收到一封重置邮件。</p>
       <p>
         重置链接 30 分钟内有效。{{ resendCount === 0 ? '没有收到邮件？' : '仍未收到？'
         }}<button
@@ -40,9 +42,12 @@
           @click="resend"
         >
           {{ loading ? '正在发送…' : resendCount === 0 ? '重新发送' : '再次发送' }}</button
-        ><router-link v-else class="recovery-help-link recovery-support-link" to="/">联系支持</router-link>
+        ><button v-else type="button" class="recovery-help-link recovery-support-link" @click="editEmail">
+          重新填写邮箱
+        </button>
       </p>
     </div>
+    <p v-if="error" class="auth-inline-error" role="alert">{{ error }}</p>
     <div class="auth-footer recovery-actions"><router-link to="/login">返回登录</router-link></div>
     <TurnstileDialog ref="verificationRef" />
   </AuthLayout>
@@ -57,6 +62,8 @@ import AuthLayout from '@/components/auth/AuthLayout.vue'
 import TurnstileDialog from '@/components/auth/TurnstileDialog.vue'
 import { forgotPassword } from '@/api/auth'
 import { getAuthPreviewState } from '@/utils/authPreview'
+import { useAuthPageGuard } from './useAuthPageGuard'
+import { errorMessage } from '@/utils/errors'
 import '@/assets/styles/auth.css'
 
 const route = useRoute()
@@ -67,6 +74,13 @@ const formRef = ref<FormInstance>(),
   submitted = ref(previewState === 'sent' || previewState === 'resent' || previewState === 'support'),
   resendCount = ref(previewState === 'support' ? 2 : previewState === 'resent' ? 1 : 0)
 const maxResendAttempts = 2
+const error = ref('')
+const capture = useAuthPageGuard()
+function editEmail() {
+  submitted.value = false
+  resendCount.value = 0
+  error.value = ''
+}
 const form = reactive({ email: '' })
 const rules: FormRules = {
   email: [
@@ -76,33 +90,42 @@ const rules: FormRules = {
 }
 async function submit() {
   if (loading.value) return
+  const current = capture()
+  error.value = ''
   const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : undefined
   loading.value = true
   try {
-    if (!(await formRef.value?.validate().catch(() => false))) return
-    submitted.value = await requestReset(form.email, trigger)
-  } catch {
+    if (!(await formRef.value?.validate().catch(() => false)) || !current()) return
+    const sent = await requestReset(form.email, current, trigger)
+    if (current()) submitted.value = sent
+  } catch (cause) {
+    if (current()) error.value = errorMessage(cause, '暂时无法发送邮件，请检查网络后重试。')
   } finally {
-    loading.value = false
+    if (current()) loading.value = false
   }
 }
 
 async function resend() {
   if (loading.value || resendCount.value >= maxResendAttempts) return
+  const current = capture()
+  error.value = ''
   const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : undefined
   loading.value = true
   try {
-    if (await requestReset(form.email, trigger)) resendCount.value++
-  } catch {
+    if (await requestReset(form.email, current, trigger)) {
+      if (current()) resendCount.value++
+    }
+  } catch (cause) {
+    if (current()) error.value = errorMessage(cause, '暂时无法发送邮件，请检查网络后重试。')
   } finally {
-    loading.value = false
+    if (current()) loading.value = false
   }
 }
 
-async function requestReset(email: string, trigger?: HTMLElement) {
+async function requestReset(email: string, current: () => boolean, trigger?: HTMLElement) {
   const turnstileToken = await verificationRef.value?.verify(trigger)
-  if (!turnstileToken) return false
-  await forgotPassword(email, turnstileToken)
+  if (!turnstileToken || !current()) return false
+  await forgotPassword(email, turnstileToken, { errorDisplay: 'inline' })
   return true
 }
 </script>
@@ -139,7 +162,7 @@ async function requestReset(email: string, trigger?: HTMLElement) {
 .recovery-symbol--success .el-icon {
   font-size: 88px;
 }
-.recovery-status h2 {
+.recovery-status h1 {
   margin: 0;
   color: var(--lp-text);
   font-size: var(--lp-text-4xl);
@@ -152,7 +175,7 @@ async function requestReset(email: string, trigger?: HTMLElement) {
   color: var(--lp-text-secondary);
   font-size: var(--lp-text-base);
   line-height: var(--lp-leading-body);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .recovery-help-link {
   appearance: none;

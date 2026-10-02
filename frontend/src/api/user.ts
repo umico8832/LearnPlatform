@@ -13,12 +13,20 @@ export interface UpdatePasswordRequest {
   newPassword: string
 }
 
+export interface UserRequestOptions {
+  errorDisplay?: 'inline'
+}
+
 /** 修改个人信息 */
-export function updateProfile(data: UpdateProfileRequest) {
-  return request.put<unknown, ApiResponse<UserInfo>>('/auth/profile', data)
+export function updateProfile(data: UpdateProfileRequest, options?: UserRequestOptions) {
+  return options
+    ? request.put<unknown, ApiResponse<UserInfo>>('/auth/profile', data, options)
+    : request.put<unknown, ApiResponse<UserInfo>>('/auth/profile', data)
 }
 
 /** 修改密码 */
-export function updatePassword(data: UpdatePasswordRequest) {
-  return request.put<unknown, ApiResponse<void>>('/auth/password', data)
+export function updatePassword(data: UpdatePasswordRequest, options?: UserRequestOptions) {
+  return options
+    ? request.put<unknown, ApiResponse<void>>('/auth/password', data, options)
+    : request.put<unknown, ApiResponse<void>>('/auth/password', data)
 }

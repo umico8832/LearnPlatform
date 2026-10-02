@@ -1,7 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises, mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
 import ForgotPasswordView from '@/views/auth/ForgotPasswordView.vue'
+
+enableAutoUnmount(afterEach)
 
 const { mockForgotPassword, mockValidate, mockVerify } = vi.hoisted(() => ({
   mockForgotPassword: vi.fn(),
@@ -50,22 +52,26 @@ describe('ForgotPasswordView', () => {
     await wrapper.find('form').trigger('submit')
     await flushPromises()
 
-    expect(mockForgotPassword).toHaveBeenCalledWith('learner@example.com', 'turnstile-ok')
+    expect(mockForgotPassword).toHaveBeenCalledWith('learner@example.com', 'turnstile-ok', { errorDisplay: 'inline' })
+    expect(wrapper.text()).toContain('如果该邮箱已注册')
     expect(wrapper.text()).toContain('重置链接 30 分钟内有效。没有收到邮件？')
     expect(wrapper.get('.recovery-resend-link').text()).toBe('重新发送')
 
     await wrapper.get('.recovery-resend-link').trigger('click')
     await flushPromises()
     expect(mockForgotPassword).toHaveBeenCalledTimes(2)
-    expect(mockForgotPassword).toHaveBeenLastCalledWith('learner@example.com', 'turnstile-ok')
+    expect(mockForgotPassword).toHaveBeenLastCalledWith('learner@example.com', 'turnstile-ok', {
+      errorDisplay: 'inline',
+    })
     expect(wrapper.get('.recovery-resend-link').text()).toBe('再次发送')
 
     await wrapper.get('.recovery-resend-link').trigger('click')
     await flushPromises()
     expect(mockForgotPassword).toHaveBeenCalledTimes(3)
     expect(wrapper.find('.recovery-resend-link').exists()).toBe(false)
-    expect(wrapper.get('.recovery-support-link').text()).toBe('联系支持')
-    expect(wrapper.get('.recovery-support-link').attributes('href')).toBe('/')
+    expect(wrapper.get('.recovery-support-link').text()).toBe('重新填写邮箱')
+    await wrapper.get('.recovery-support-link').trigger('click')
+    expect(wrapper.find('input').element.value).toBe('learner@example.com')
   })
 
   it('does not call the API when validation fails', async () => {

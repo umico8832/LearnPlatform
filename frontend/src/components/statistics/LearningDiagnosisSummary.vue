@@ -2,7 +2,7 @@
   <el-card class="advice-card" shadow="hover">
     <template #header>
       <div class="card-header">
-        <span>💡 每日学习建议</span>
+        <span>今日建议</span>
         <el-button
           type="primary"
           size="small"
@@ -10,7 +10,7 @@
           :disabled="aiAdviceStreaming"
           @click="emit('generate-ai-advice')"
         >
-          🤖 AI 个性化建议
+          获取 AI 建议
         </el-button>
       </div>
     </template>
@@ -19,11 +19,11 @@
     </div>
   </el-card>
 
-  <el-card v-if="aiAdviceContent || aiAdviceLoading" class="ai-advice-card" shadow="hover">
+  <el-card v-if="aiAdviceContent || aiAdviceLoading || aiAdviceError" class="ai-advice-card" shadow="hover">
     <template #header>
       <div class="card-header">
-        <span>🤖 AI 个性化学习建议</span>
-        <el-tag v-if="aiAdviceStreaming" type="success" size="small" effect="light">生成中...</el-tag>
+        <span>AI 学习建议</span>
+        <el-button v-if="aiAdviceStreaming" link size="small" @click="emit('stop-ai-advice')">停止</el-button>
         <el-tag v-else-if="aiAdviceContent" type="info" size="small" effect="light">AI 生成</el-tag>
       </div>
     </template>
@@ -31,6 +31,7 @@
     <div v-else class="ai-advice-content">
       <MarkdownRenderer :content="aiAdviceContent" />
     </div>
+    <el-alert v-if="aiAdviceError" :title="aiAdviceError" type="error" :closable="false" class="ai-advice-error" />
   </el-card>
 
   <el-row :gutter="16" class="stat-row">
@@ -61,7 +62,7 @@
   </el-row>
 
   <el-card v-if="data.weakPoints.length" class="section-card" shadow="hover">
-    <template #header><span>📚 知识点薄弱诊断</span></template>
+    <template #header><span>需要巩固的知识点</span></template>
     <el-table :data="data.weakPoints" stripe>
       <el-table-column label="知识点" min-width="160">
         <template #default="{ row }">
@@ -95,7 +96,7 @@
   </el-card>
 
   <el-card v-if="data.learningHabit" class="section-card" shadow="hover">
-    <template #header><span>📊 学习习惯分析</span></template>
+    <template #header><span>学习节奏</span></template>
     <el-row :gutter="24">
       <el-col :xs="24" :sm="12">
         <el-descriptions :column="1" border>
@@ -139,9 +140,10 @@ const props = defineProps<{
   aiAdviceLoading: boolean
   aiAdviceStreaming: boolean
   aiAdviceContent: string
+  aiAdviceError: string
 }>()
 
-const emit = defineEmits<{ 'generate-ai-advice': [] }>()
+const emit = defineEmits<{ 'generate-ai-advice': []; 'stop-ai-advice': [] }>()
 
 const adviceLines = computed(() => props.data.dailyAdvice.split('\n').filter((line) => line.trim()))
 const maxBarValue = computed(() => {
@@ -155,7 +157,7 @@ const frequencyType = computed(() => {
 })
 
 function barHeight(value: number): string {
-  return Math.max(0, (value / maxBarValue.value) * 100) + 'px'
+  return `${Math.max(0, (value / maxBarValue.value) * 100)}%`
 }
 </script>
 
@@ -210,6 +212,10 @@ function barHeight(value: number): string {
   margin-top: var(--lp-space-4);
 }
 
+.ai-advice-error {
+  margin-top: var(--lp-space-3);
+}
+
 .course-tag {
   margin-left: var(--lp-space-2);
 }
@@ -244,7 +250,6 @@ function barHeight(value: number): string {
 
 .chart-bar {
   width: 16px;
-  min-height: 2px;
   border-radius: var(--lp-radius-xs) var(--lp-radius-xs) 0 0;
   transition: height var(--lp-duration-slow) var(--lp-ease-out);
 }
@@ -318,6 +323,14 @@ function barHeight(value: number): string {
 
   .chart-bar {
     width: 10px;
+  }
+}
+</style>
+
+<style scoped>
+@media (prefers-reduced-motion: reduce) {
+  .chart-bar {
+    transition: none;
   }
 }
 </style>

@@ -1,7 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises, mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
 import LoginView from '@/views/auth/LoginView.vue'
+
+enableAutoUnmount(afterEach)
 
 const { mockLogin, mockPush, mockSetLoginInfo, mockSuccess, mockValidate, mockVerify } = vi.hoisted(() => ({
   mockLogin: vi.fn(),
@@ -76,11 +78,14 @@ describe('LoginView', () => {
     await flushPromises()
     await w.find('form').trigger('submit')
     await flushPromises()
-    expect(mockLogin).toHaveBeenCalledWith({
-      account: 'learner@example.com',
-      password: 'password123',
-      turnstileToken: 'turnstile-ok',
-    })
+    expect(mockLogin).toHaveBeenCalledWith(
+      {
+        account: 'learner@example.com',
+        password: 'password123',
+        turnstileToken: 'turnstile-ok',
+      },
+      { errorDisplay: 'inline' },
+    )
     expect(mockSetLoginInfo).toHaveBeenCalled()
     expect(mockPush).toHaveBeenCalledWith('/my-courses')
   })
@@ -128,7 +133,9 @@ describe('LoginView', () => {
     resolveVerification('fresh-token')
     await flushPromises()
     expect(mockLogin).toHaveBeenCalledOnce()
-    expect(mockLogin).toHaveBeenCalledWith(expect.objectContaining({ turnstileToken: 'fresh-token' }))
+    expect(mockLogin).toHaveBeenCalledWith(expect.objectContaining({ turnstileToken: 'fresh-token' }), {
+      errorDisplay: 'inline',
+    })
   })
   it('requests a new token when retrying a failed login', async () => {
     mockVerify.mockResolvedValueOnce('first-token').mockResolvedValueOnce('second-token')
@@ -139,6 +146,34 @@ describe('LoginView', () => {
     await w.find('form').trigger('submit')
     await flushPromises()
     expect(mockVerify).toHaveBeenCalledTimes(2)
-    expect(mockLogin).toHaveBeenNthCalledWith(2, expect.objectContaining({ turnstileToken: 'second-token' }))
+    expect(mockLogin).toHaveBeenNthCalledWith(2, expect.objectContaining({ turnstileToken: 'second-token' }), {
+      errorDisplay: 'inline',
+    })
+  })
+  it('ignores a login response after leaving the page', async () => {
+    let resolve!: (value: unknown) => void
+    mockLogin.mockReturnValueOnce(
+      new Promise((yes) => {
+        resolve = yes
+      }),
+    )
+    const w = mountLogin()
+    await w.find('form').trigger('submit')
+    await flushPromises()
+    w.unmount()
+    resolve({ data: { token: 'test-session-placeholder', user: { id: 1 } } })
+    await flushPromises()
+    expect(mockSetLoginInfo).not.toHaveBeenCalled()
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+  it('shows login failure beside the form and retains the account draft', async () => {
+    mockLogin.mockRejectedValueOnce(new Error('用户名或密码错误'))
+    const w = mountLogin()
+    await w.find('input').setValue('learner')
+    await w.find('form').trigger('submit')
+    await flushPromises()
+    expect(w.get('[role="alert"]').text()).toContain('用户名或密码错误')
+    expect((w.find('input').element as HTMLInputElement).value).toBe('learner')
+    w.unmount()
   })
 })

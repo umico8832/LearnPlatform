@@ -87,7 +87,8 @@
             >
           </div>
         </form>
-        <p v-if="!comments.length && !commentsError" class="community-muted">还没有回复。</p>
+        <LpSkeleton v-if="commentsLoading" :rows="3" />
+        <p v-else-if="!comments.length && !commentsError" class="community-muted">还没有回复。</p>
         <article v-for="comment in comments" :key="comment.id" class="community-comment">
           <div class="community-meta">
             <strong>{{ comment.authorName }}</strong
@@ -149,6 +150,7 @@ import {
 } from '@/api/community'
 import { formatTime } from '@/utils/format'
 import { errorMessage } from '@/utils/errors'
+import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
 const props = defineProps<{ id: number }>()
 const emit = defineEmits<{ deleted: []; changed: [] }>()
 const user = useUserStore()
@@ -160,6 +162,7 @@ const loading = ref(true),
   loadError = ref(''),
   actionError = ref(''),
   commentsError = ref(''),
+  commentsLoading = ref(false),
   reply = ref('')
 const downloading = ref<number | null>(null),
   replyTo = ref<CommunityComment | null>(null),
@@ -169,56 +172,73 @@ const commentPage = ref(1),
 const canManage = computed(() => post.value?.userId === user.userInfo?.id || user.userInfo?.role === 'ADMIN')
 let generation = 0,
   commentGeneration = 0
+let alive = true
+let downloadController: AbortController | undefined
+function current(ticket: number, session: number) {
+  return alive && ticket === generation && session === getAuthSessionVersion() && isAuthenticated()
+}
 async function loadComments() {
   const ticket = ++commentGeneration,
-    id = props.id
+    id = props.id,
+    session = getAuthSessionVersion()
+  commentsLoading.value = true
   commentsError.value = ''
   try {
-    const res = await getCommunityComments(id, commentPage.value)
-    if (ticket === commentGeneration && id === props.id) {
+    const res = await getCommunityComments(id, commentPage.value, { errorDisplay: 'inline' })
+    if (ticket === commentGeneration && current(generation, session) && id === props.id) {
       comments.value = res.data.records
       commentTotal.value = res.data.total
     }
   } catch (e) {
-    if (ticket === commentGeneration) commentsError.value = errorMessage(e, '回复加载失败')
+    if (ticket === commentGeneration && current(generation, session))
+      commentsError.value = errorMessage(e, '回复加载失败')
+  } finally {
+    if (ticket === commentGeneration && current(generation, session)) commentsLoading.value = false
   }
 }
 async function load() {
   const ticket = ++generation,
-    id = props.id
+    id = props.id,
+    session = getAuthSessionVersion()
   loading.value = true
   loadError.value = ''
   reviews.value = []
   try {
-    const result = await getCommunityPost(id)
-    if (ticket !== generation) return
+    const result = await getCommunityPost(id, { errorDisplay: 'inline' })
+    if (!current(ticket, session)) return
     post.value = result.data
     await loadComments()
+    if (!current(ticket, session)) return
     if (canManage.value) {
-      const history = await getCommunityReviews(id)
-      if (ticket === generation) reviews.value = history.data
+      const history = await getCommunityReviews(id, { errorDisplay: 'inline' })
+      if (!current(ticket, session) || id !== props.id) return
+      if (current(ticket, session)) reviews.value = history.data
     }
   } catch (e) {
-    if (ticket === generation) loadError.value = errorMessage(e, '内容加载失败或已不可访问')
+    if (current(ticket, session)) loadError.value = errorMessage(e, '内容加载失败或已不可访问')
   } finally {
-    if (ticket === generation) loading.value = false
+    if (current(ticket, session)) loading.value = false
   }
 }
 async function action(fn: () => Promise<unknown>) {
-  if (busy.value) return
+  if (busy.value) return false
+  const actionGeneration = generation
+  const session = getAuthSessionVersion()
+  const id = props.id
   busy.value = true
   actionError.value = ''
-  const id = props.id
   try {
     await fn()
-    if (id === props.id) {
-      await load()
-      emit('changed')
-    }
+    if (!current(actionGeneration, session) || id !== props.id) return false
+    await load()
+    if (!current(generation, session) || id !== props.id) return false
+    emit('changed')
+    return true
   } catch (e) {
-    if (id === props.id) actionError.value = errorMessage(e, '操作失败，请重试')
+    if (current(actionGeneration, session) && id === props.id) actionError.value = errorMessage(e, '操作失败，请重试')
+    return false
   } finally {
-    busy.value = false
+    if (current(generation, session) && id === props.id) busy.value = false
   }
 }
 async function like(comment?: CommunityComment) {
@@ -226,12 +246,15 @@ async function like(comment?: CommunityComment) {
 }
 async function submitReply() {
   if (!reply.value.trim()) return
-  await action(async () => {
-    await addCommunityComment(props.id, reply.value, replyTo.value?.id)
+  const body = reply.value
+  const parentId = replyTo.value?.id
+  const submitted = await action(() => addCommunityComment(props.id, body, parentId, { errorDisplay: 'inline' }))
+  if (submitted && reply.value === body && replyTo.value?.id === parentId) {
     reply.value = ''
     replyTo.value = null
-    commentPage.value = Math.ceil((commentTotal.value + 1) / 20)
-  })
+    commentPage.value = Math.max(1, Math.ceil(commentTotal.value / 20))
+    await loadComments()
+  }
 }
 async function beginReply(comment: CommunityComment) {
   replyTo.value = comment
@@ -239,42 +262,58 @@ async function beginReply(comment: CommunityComment) {
   replyInput.value?.focus()
 }
 async function removeComment(comment: CommunityComment) {
+  if (busy.value) return
   const id = props.id
+  const actionGeneration = generation
+  const session = getAuthSessionVersion()
+  busy.value = true
   try {
     await ElMessageBox.confirm('删除后不能恢复。', '删除这条回复？', { type: 'warning' })
   } catch {
+    if (current(actionGeneration, session)) busy.value = false
     return
   }
-  if (id === props.id) await action(() => deleteCommunityComment(comment.id))
+  if (!current(actionGeneration, session) || id !== props.id) return
+  busy.value = false
+  await action(() => deleteCommunityComment(comment.id, { errorDisplay: 'inline' }))
 }
 async function removePost() {
+  if (busy.value) return
   const id = props.id
+  const actionGeneration = generation
+  const session = getAuthSessionVersion()
+  busy.value = true
   try {
     await ElMessageBox.confirm('正文和附件将不再可访问，已整理的题目投稿会保留。', '删除这条内容？', {
       type: 'warning',
     })
   } catch {
+    if (current(actionGeneration, session)) busy.value = false
     return
   }
-  if (id !== props.id) return
-  busy.value = true
+  if (!current(actionGeneration, session) || id !== props.id) return
   try {
-    await deleteCommunityPost(id)
-    emit('deleted')
+    await deleteCommunityPost(id, { errorDisplay: 'inline' })
+    if (current(actionGeneration, session) && id === props.id) emit('deleted')
   } catch (e) {
-    actionError.value = errorMessage(e, '删除失败')
+    if (current(actionGeneration, session) && id === props.id) actionError.value = errorMessage(e, '删除失败')
   } finally {
-    busy.value = false
+    if (current(actionGeneration, session) && id === props.id) busy.value = false
   }
 }
 async function download(file: CommunityAttachment) {
+  const ticket = generation
+  const session = getAuthSessionVersion()
+  const controller = new AbortController()
+  downloadController?.abort()
+  downloadController = controller
   downloading.value = file.id
   try {
-    await downloadCommunityAttachment(file)
+    await downloadCommunityAttachment(file, { errorDisplay: 'inline', signal: controller.signal })
   } catch (e) {
-    actionError.value = errorMessage(e, '下载失败')
+    if (current(ticket, session) && !controller.signal.aborted) actionError.value = errorMessage(e, '下载失败')
   } finally {
-    downloading.value = null
+    if (current(ticket, session) && downloadController === controller) downloading.value = null
   }
 }
 function formatBytes(bytes: number) {
@@ -287,18 +326,46 @@ function pageComments(page: number) {
 watch(
   () => props.id,
   () => {
+    downloadController?.abort()
     reply.value = ''
     replyTo.value = null
     post.value = null
     comments.value = []
+    reviews.value = []
+    busy.value = false
+    downloading.value = null
+    actionError.value = ''
+    commentsError.value = ''
+    loadError.value = ''
     commentPage.value = 1
     void load()
   },
   { immediate: true },
 )
-onUnmounted(() => {
+const unsubscribeAuth = onAuthSessionChange(() => {
   generation++
   commentGeneration++
+  downloadController?.abort()
+  post.value = null
+  comments.value = []
+  reviews.value = []
+  reply.value = ''
+  replyTo.value = null
+  busy.value = false
+  downloading.value = null
+  actionError.value = ''
+  commentsError.value = ''
+  loadError.value = ''
+  commentPage.value = 1
+  commentsLoading.value = false
+  if (isAuthenticated()) void load()
+})
+onUnmounted(() => {
+  alive = false
+  generation++
+  commentGeneration++
+  downloadController?.abort()
+  unsubscribeAuth()
 })
 defineExpose({ reload: load })
 </script>

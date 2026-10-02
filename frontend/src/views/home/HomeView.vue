@@ -13,11 +13,11 @@
         </RouterLink>
 
         <nav class="site-nav" aria-label="首页导航">
-          <RouterLink to="/product">产品</RouterLink>
-          <RouterLink to="/learning">学习</RouterLink>
+          <a href="#one-space-title">产品</a>
+          <a href="#teaching-demo">学习方式</a>
           <RouterLink to="/courses">课程</RouterLink>
-          <RouterLink to="/resources">资源</RouterLink>
-          <RouterLink to="/roadmap">路线图</RouterLink>
+          <a href="#course-title">当前体验</a>
+          <a href="#closing-title">关于</a>
         </nav>
 
         <div class="site-actions">
@@ -56,9 +56,10 @@
             </div>
           </div>
 
-          <div id="teaching-demo" class="lesson-window" aria-label="自适应教学互动演示">
+          <div id="teaching-demo" class="lesson-window" aria-label="自适应教学互动示例">
+            <p class="lesson-window__example">交互示例 · 集合与概率</p>
             <div class="lesson-window__bar">
-              <span class="lesson-window__brand"><i></i> Tutor 正在调整讲法</span>
+              <span class="lesson-window__brand"><i></i> 尝试不同的讲解方式</span>
               <span>集合与概率</span>
             </div>
 
@@ -98,7 +99,7 @@
                   <span v-if="overlap > 0" class="overlap-badge">重复 {{ overlap }}</span>
                 </div>
                 <label class="overlap-control">
-                  <span>拖动蓝色圆，观察合并人数</span>
+                  <span>拖动滑块，观察合并人数</span>
                   <input
                     v-model.number="overlap"
                     data-testid="overlap-input"

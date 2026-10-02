@@ -141,8 +141,13 @@ export interface LearningDiagnosis {
 }
 
 /** 获取学习诊断数据 */
-export function getLearningDiagnosis() {
-  return request.get<unknown, ApiResponse<LearningDiagnosis>>('/statistics/learning-diagnosis')
+export interface StatisticsRequestOptions {
+  errorDisplay?: 'inline'
+  signal?: AbortSignal
+}
+
+export function getLearningDiagnosis(options: StatisticsRequestOptions = {}) {
+  return request.get<unknown, ApiResponse<LearningDiagnosis>>('/statistics/learning-diagnosis', options)
 }
 
 // ======================== AI 个性化学习建议 ========================
@@ -153,7 +158,7 @@ export function getAiAdvice() {
 }
 
 /** 获取 AI 个性化学习建议（流式 SSE） */
-export function getAiAdviceStream(): Promise<Response> {
+export function getAiAdviceStream(signal?: AbortSignal): Promise<Response> {
   const token = getToken() || ''
   const base = import.meta.env.VITE_API_BASE_URL || '/api'
   return fetch(`${base}/statistics/ai-advice/stream`, {
@@ -162,6 +167,7 @@ export function getAiAdviceStream(): Promise<Response> {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
+    signal,
   })
 }
 
@@ -186,9 +192,10 @@ export interface SimilarQuestions {
 }
 
 /** 获取相似题推荐 */
-export function getSimilarQuestions(questionId: number, limit = 5) {
+export function getSimilarQuestions(questionId: number, limit = 5, options: StatisticsRequestOptions = {}) {
   return request.get<unknown, ApiResponse<SimilarQuestions>>('/statistics/similar-questions', {
     params: { questionId, limit },
+    ...options,
   })
 }
 
@@ -221,8 +228,9 @@ export interface QuestionErrorAnalysis {
 }
 
 /** 获取单题错因分析 */
-export function getQuestionErrorAnalysis(questionId: number) {
+export function getQuestionErrorAnalysis(questionId: number, options: StatisticsRequestOptions = {}) {
   return request.get<unknown, ApiResponse<QuestionErrorAnalysis>>('/statistics/question-error-analysis', {
     params: { questionId },
+    ...options,
   })
 }

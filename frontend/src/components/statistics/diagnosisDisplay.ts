@@ -1,7 +1,7 @@
 export function rateColor(rate: number): string {
-  if (rate >= 80) return '#67c23a'
-  if (rate >= 60) return '#e6a23c'
-  return '#f56c6c'
+  if (rate >= 80) return 'var(--lp-success)'
+  if (rate >= 60) return 'var(--lp-warning)'
+  return 'var(--lp-danger)'
 }
 
 export function statusType(status: string): 'danger' | 'warning' | 'info' | undefined {
@@ -19,9 +19,9 @@ export function statusLabel(status: string): string {
 }
 
 export function masteryColor(label: string): string {
-  if (label.includes('未掌握')) return '#f56c6c'
-  if (label.includes('部分')) return '#e6a23c'
-  return '#67c23a'
+  if (label.includes('未掌握')) return 'var(--lp-danger)'
+  if (label.includes('部分')) return 'var(--lp-warning)'
+  return 'var(--lp-success)'
 }
 
 export function reasonType(reason: string): 'danger' | 'warning' | 'info' | undefined {
@@ -32,17 +32,17 @@ export function reasonType(reason: string): 'danger' | 'warning' | 'info' | unde
 }
 
 export function similarityColor(score: number): string {
-  if (score >= 80) return '#67c23a'
-  if (score >= 60) return '#e6a23c'
-  return '#409eff'
+  if (score >= 80) return 'var(--lp-success)'
+  if (score >= 60) return 'var(--lp-warning)'
+  return 'var(--lp-primary)'
 }
 
 export function difficultyColor(difficulty: number): string {
-  if (difficulty <= 1) return '#67c23a'
-  if (difficulty <= 2) return '#409eff'
-  if (difficulty <= 3) return '#e6a23c'
-  if (difficulty <= 4) return '#f56c6c'
-  return '#909399'
+  if (difficulty <= 1) return 'var(--lp-success)'
+  if (difficulty <= 2) return 'var(--lp-primary)'
+  if (difficulty <= 3) return 'var(--lp-warning)'
+  if (difficulty <= 4) return 'var(--lp-danger)'
+  return 'var(--lp-text-muted)'
 }
 
 export function masteryLevelType(level: number | null): 'danger' | 'warning' | 'success' | 'info' {

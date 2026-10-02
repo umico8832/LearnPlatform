@@ -133,6 +133,7 @@ import {
 import CommunityComposer from '@/components/community/CommunityComposer.vue'
 import { errorMessage } from '@/utils/errors'
 import { formatTime } from '@/utils/format'
+import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
 import '@/assets/styles/community.css'
 const router = useRouter()
 const categories = ref<CommunityCategory[]>([])
@@ -149,8 +150,13 @@ const subjects = computed(() =>
 )
 const schools = computed(() => categories.value.filter((c) => c.kind === 'SCHOOL'))
 let generation = 0
+let alive = true
+function current(ticket: number, session: number) {
+  return alive && ticket === generation && session === getAuthSessionVersion() && isAuthenticated()
+}
 async function load() {
   const ticket = ++generation
+  const session = getAuthSessionVersion()
   loading.value = true
   error.value = ''
   try {
@@ -159,24 +165,25 @@ async function load() {
       status: filters.mine ? filters.status : undefined,
       pageNum: page.value,
     })
-    if (ticket === generation) {
+    if (current(ticket, session)) {
       posts.value = res.data.records
       total.value = res.data.total
     }
   } catch (e) {
-    if (ticket === generation) error.value = errorMessage(e, '社区内容加载失败')
+    if (current(ticket, session)) error.value = errorMessage(e, '社区内容加载失败')
   } finally {
-    if (ticket === generation) loading.value = false
+    if (current(ticket, session)) loading.value = false
   }
 }
 async function initialize() {
+  const session = getAuthSessionVersion()
   try {
-    categories.value = (await getCommunityCategories()).data
-    await load()
+    const categoryResult = await getCommunityCategories()
+    if (alive && session === getAuthSessionVersion()) categories.value = categoryResult.data
   } catch (e) {
-    error.value = errorMessage(e, '分类加载失败')
-    loading.value = false
+    if (alive && session === getAuthSessionVersion()) error.value = errorMessage(e, '分类加载失败')
   }
+  if (alive && session === getAuthSessionVersion()) await load()
 }
 function search() {
   page.value = 1
@@ -195,7 +202,17 @@ function created(id: number) {
   void router.push(`/community/${id}`)
 }
 onMounted(initialize)
-onUnmounted(() => {
+const unsubscribeAuth = onAuthSessionChange(() => {
   generation++
+  categories.value = []
+  posts.value = []
+  total.value = 0
+  error.value = ''
+  if (isAuthenticated()) void initialize()
+})
+onUnmounted(() => {
+  alive = false
+  generation++
+  unsubscribeAuth()
 })
 </script>

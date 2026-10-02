@@ -8,6 +8,7 @@
       class="auth-form auth-form--minimal"
       :model="form"
       :rules="rules"
+      :disabled="loading"
       label-position="top"
       @submit.prevent="handleLogin"
     >
@@ -32,7 +33,8 @@
         ></el-form-item
       >
     </el-form>
-    <AuthSocialOptions :preview="previewMode" />
+    <p v-if="error" class="auth-inline-error" role="alert">{{ error }}</p>
+    <AuthSocialOptions :preview="previewMode" :disabled="loading" />
     <template #footer>
       <div class="auth-footer">还没有账号？ <router-link to="/register">免费注册</router-link></div>
     </template>
@@ -52,6 +54,8 @@ import TurnstileDialog from '@/components/auth/TurnstileDialog.vue'
 import { login } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
 import { getAuthPreviewState } from '@/utils/authPreview'
+import { useAuthPageGuard } from './useAuthPageGuard'
+import { errorMessage } from '@/utils/errors'
 import '@/assets/styles/auth.css'
 
 const router = useRouter(),
@@ -61,6 +65,8 @@ const previewMode = getAuthPreviewState(route.query['auth-preview'], ['default']
 const formRef = ref<FormInstance>(),
   verificationRef = ref<InstanceType<typeof TurnstileDialog>>(),
   loading = ref(false)
+const capture = useAuthPageGuard()
+const error = ref('')
 const form = reactive({ account: '', password: '' })
 const rules: FormRules = {
   account: [{ required: true, message: '用户名或邮箱不能为空', trigger: 'blur' }],
@@ -68,20 +74,27 @@ const rules: FormRules = {
 }
 async function handleLogin() {
   if (loading.value) return
+  const current = capture()
+  error.value = ''
   const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : undefined
   loading.value = true
   try {
-    if (!(await formRef.value?.validate().catch(() => false))) return
+    if (!(await formRef.value?.validate().catch(() => false)) || !current()) return
     const credentials = { ...form }
     const turnstileToken = await verificationRef.value?.verify(trigger)
-    if (!turnstileToken) return
-    const res = await login({ ...credentials, turnstileToken })
+    if (!turnstileToken || !current()) return
+    const res = await login({ ...credentials, turnstileToken }, { errorDisplay: 'inline' })
+    if (!current()) return
     userStore.setLoginInfo(res.data.token, res.data.user)
     ElMessage.success('登录成功')
-    await router.push((route.query.redirect as string) || '/my-courses')
-  } catch {
+    const redirect = route.query.redirect
+    await router.push(
+      typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/my-courses',
+    )
+  } catch (cause) {
+    if (current()) error.value = errorMessage(cause, '暂时无法登录，请检查网络后重试。')
   } finally {
-    loading.value = false
+    if (current()) loading.value = false
   }
 }
 </script>

@@ -35,6 +35,16 @@ describe('User API', () => {
       expect(mockedRequest.put).toHaveBeenCalledWith('/auth/profile', { nickname: '新昵称' })
       expect(result).toEqual({ code: 0, data: mockUserInfo, message: 'success' })
     })
+
+    it('可将资料失败交给页面原位呈现', async () => {
+      await updateProfile({ nickname: '新昵称' }, { errorDisplay: 'inline' })
+
+      expect(mockedRequest.put).toHaveBeenCalledWith(
+        '/auth/profile',
+        { nickname: '新昵称' },
+        { errorDisplay: 'inline' },
+      )
+    })
   })
 
   describe('updatePassword', () => {
@@ -48,6 +58,16 @@ describe('User API', () => {
         newPassword: 'new456',
       })
       expect(result).toEqual({ code: 0, data: null, message: 'success' })
+    })
+
+    it('可将密码失败交给页面原位呈现', async () => {
+      await updatePassword({ oldPassword: 'old123', newPassword: 'new456' }, { errorDisplay: 'inline' })
+
+      expect(mockedRequest.put).toHaveBeenCalledWith(
+        '/auth/password',
+        { oldPassword: 'old123', newPassword: 'new456' },
+        { errorDisplay: 'inline' },
+      )
     })
 
     it('修改密码失败时应传递错误', async () => {

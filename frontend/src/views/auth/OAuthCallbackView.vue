@@ -24,8 +24,11 @@ import { exchangeOAuthTicket } from '@/api/auth'
 import AuthLayout from '@/components/auth/AuthLayout.vue'
 import { useUserStore } from '@/stores/user'
 import { getAuthPreviewState } from '@/utils/authPreview'
+import { useAuthPageGuard } from './useAuthPageGuard'
+import { errorMessage } from '@/utils/errors'
 import '@/assets/styles/auth.css'
 
+const capture = useAuthPageGuard()
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
@@ -45,6 +48,7 @@ const errorMessages: Record<string, string> = {
 
 onMounted(async () => {
   if (previewState) return
+  const current = capture()
   const error = typeof route.query.error === 'string' ? route.query.error : ''
   const ticket = new URLSearchParams(route.hash.replace(/^#/, '')).get('ticket')
   window.history.replaceState(window.history.state, '', route.path)
@@ -57,15 +61,18 @@ onMounted(async () => {
   }
 
   try {
-    const response = await exchangeOAuthTicket(ticket)
+    const response = await exchangeOAuthTicket(ticket, { errorDisplay: 'inline' })
+    if (!current()) return
     userStore.setLoginInfo(response.data.token, response.data.user)
     const savedRedirect = sessionStorage.getItem('oauth_login_redirect')
     sessionStorage.removeItem('oauth_login_redirect')
     const target = savedRedirect?.startsWith('/') && !savedRedirect.startsWith('//') ? savedRedirect : '/my-courses'
     await router.replace(target)
-  } catch {
+  } catch (cause) {
+    if (!current()) return
+    sessionStorage.removeItem('oauth_login_redirect')
     loading.value = false
-    message.value = '登录票据无效或已过期，请重新登录。'
+    message.value = errorMessage(cause, '暂时无法完成登录，请返回登录页重试。')
   }
 })
 </script>

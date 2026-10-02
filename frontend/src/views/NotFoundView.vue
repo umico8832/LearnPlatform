@@ -1,8 +1,11 @@
 <template>
   <main class="not-found">
     <h1 class="not-found-code">404</h1>
-    <p class="not-found-message">页面不存在</p>
-    <el-button type="primary" @click="$router.push('/')">返回首页</el-button>
+    <p class="not-found-message">这个地址不存在，或内容已移动。</p>
+    <div class="not-found-actions">
+      <el-button type="primary" @click="$router.push('/')">返回首页</el-button
+      ><el-button @click="$router.push('/courses')">查看课程</el-button>
+    </div>
   </main>
 </template>
 
@@ -27,6 +30,13 @@
   line-height: var(--lp-leading-display);
   letter-spacing: var(--lp-tracking-tight);
   color: var(--lp-text);
+}
+
+.not-found-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--lp-space-3);
 }
 
 .not-found-message {

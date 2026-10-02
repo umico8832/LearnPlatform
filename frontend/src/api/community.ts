@@ -1,6 +1,7 @@
 import request from '@/utils/request'
 import type { ApiResponse } from '@/types/api'
 import type { SubmissionForm, QuestionSubmissionVO } from './submission'
+export type CommunityRequestOptions = { errorDisplay?: 'inline'; signal?: AbortSignal }
 
 export interface CommunityCategory {
   id: string
@@ -105,52 +106,59 @@ export const communityStatuses: Record<string, string> = {
   HIDDEN: '已隐藏',
 }
 export const communityFormats = '.pdf,.doc,.docx,.wps,.xls,.xlsx,.et,.csv,.json,.txt,.md,.zip'
-export const getCommunityCategories = () =>
-  request.get<unknown, ApiResponse<CommunityCategory[]>>('/community/categories')
-export const getCommunityPosts = (params: CommunityQuery, admin = false) =>
+export const getCommunityCategories = (options?: CommunityRequestOptions) =>
+  request.get<unknown, ApiResponse<CommunityCategory[]>>('/community/categories', options)
+export const getCommunityPosts = (params: CommunityQuery, admin = false, options?: CommunityRequestOptions) =>
   request.get<unknown, ApiResponse<CommunityPage<CommunityPost>>>(
     admin ? '/admin/community/posts' : '/community/posts',
-    { params },
+    { params, ...options },
   )
-export const getCommunityPost = (id: number) =>
-  request.get<unknown, ApiResponse<CommunityPost>>(`/community/posts/${id}`)
-export function createCommunityPost(post: CommunityDraft, files: File[]) {
+export const getCommunityPost = (id: number, options?: CommunityRequestOptions) =>
+  request.get<unknown, ApiResponse<CommunityPost>>(`/community/posts/${id}`, options)
+export function createCommunityPost(post: CommunityDraft, files: File[], options?: CommunityRequestOptions) {
   const form = new FormData()
   form.append('post', new Blob([JSON.stringify(post)], { type: 'application/json' }))
   files.forEach((file) => form.append('files', file))
   return request.post<unknown, ApiResponse<number>>('/community/posts', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
     timeout: 180000,
+    ...options,
   })
 }
-export const deleteCommunityPost = (id: number) => request.delete(`/community/posts/${id}`)
-export const getCommunityComments = (id: number, pageNum = 1) =>
+export const deleteCommunityPost = (id: number, options?: CommunityRequestOptions) =>
+  request.delete(`/community/posts/${id}`, options)
+export const getCommunityComments = (id: number, pageNum = 1, options?: CommunityRequestOptions) =>
   request.get<unknown, ApiResponse<CommunityPage<CommunityComment>>>(`/community/posts/${id}/comments`, {
     params: { pageNum, pageSize: 20 },
+    ...options,
   })
-export const addCommunityComment = (id: number, body: string, parentId?: number) =>
-  request.post<unknown, ApiResponse<number>>(`/community/posts/${id}/comments`, { body, parentId })
-export const deleteCommunityComment = (id: number) => request.delete(`/community/comments/${id}`)
-export function setCommunityLike(id: number, liked: boolean, commentId?: number) {
+export const addCommunityComment = (id: number, body: string, parentId?: number, options?: CommunityRequestOptions) =>
+  request.post<unknown, ApiResponse<number>>(`/community/posts/${id}/comments`, { body, parentId }, options)
+export const deleteCommunityComment = (id: number, options?: CommunityRequestOptions) =>
+  request.delete(`/community/comments/${id}`, options)
+export function setCommunityLike(id: number, liked: boolean, commentId?: number, options?: CommunityRequestOptions) {
   const url = `/community/posts/${id}${commentId ? `/comments/${commentId}` : ''}/like`
-  return liked ? request.put(url) : request.delete(url)
+  return liked ? request.put(url, undefined, options) : request.delete(url, options)
 }
-export async function downloadCommunityAttachment(file: CommunityAttachment) {
+export async function downloadCommunityAttachment(file: CommunityAttachment, options: CommunityRequestOptions = {}) {
   const response = await request.get<Blob>(`/community/attachments/${file.id}`, {
     responseType: 'blob',
     timeout: 60000,
+    ...options,
   })
+  if (options.signal?.aborted) return
   const url = URL.createObjectURL(response.data)
   const anchor = document.createElement('a')
   anchor.href = url
   anchor.download = file.name
+  if (options.signal?.aborted) return
   anchor.click()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 export const reviewCommunityPost = (id: number, decision: string, note: string) =>
   request.post(`/admin/community/posts/${id}/review`, { decision, note })
-export const getCommunityReviews = (id: number) =>
-  request.get<unknown, ApiResponse<CommunityReview[]>>(`/community/posts/${id}/reviews`)
+export const getCommunityReviews = (id: number, options?: CommunityRequestOptions) =>
+  request.get<unknown, ApiResponse<CommunityReview[]>>(`/community/posts/${id}/reviews`, options)
 export const createCommunitySchool = (name: string, description: string) =>
   request.post('/admin/community/schools', { name, description })
 export const prepareCommunityQuestion = (id: number, form: SubmissionForm, requestKey: string) =>

@@ -1,6 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises, mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import OAuthCallbackView from '@/views/auth/OAuthCallbackView.vue'
+
+enableAutoUnmount(afterEach)
 
 const { mockExchange, mockReplace, mockSetLoginInfo } = vi.hoisted(() => ({
   mockExchange: vi.fn(),
@@ -50,7 +52,7 @@ describe('OAuthCallbackView', () => {
     })
     await flushPromises()
 
-    expect(mockExchange).toHaveBeenCalledWith('one-time-ticket')
+    expect(mockExchange).toHaveBeenCalledWith('one-time-ticket', { errorDisplay: 'inline' })
     expect(mockSetLoginInfo).toHaveBeenCalledWith('jwt', expect.objectContaining({ username: 'learner' }))
     expect(mockReplace).toHaveBeenCalledWith('/exams')
   })
@@ -70,5 +72,24 @@ describe('OAuthCallbackView', () => {
 
     expect(wrapper.text()).toContain('该邮箱已有账号，请先使用原登录方式。')
     expect(mockExchange).not.toHaveBeenCalled()
+  })
+
+  it('does not write a late OAuth exchange after unmount', async () => {
+    let resolve!: (value: { data: { token: string; user: { id: number; username: string; role: string } } }) => void
+    mockRoute.hash = '#ticket=late-ticket'
+    mockExchange.mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          resolve = done
+        }),
+    )
+    const wrapper = mount(OAuthCallbackView, {
+      global: { stubs: { AuthLayout: { template: '<main><slot /></main>' } } },
+    })
+    wrapper.unmount()
+    resolve({ data: { token: 'jwt', user: { id: 1, username: 'learner', role: 'USER' } } })
+    await flushPromises()
+    expect(mockSetLoginInfo).not.toHaveBeenCalled()
+    expect(mockReplace).not.toHaveBeenCalled()
   })
 })

@@ -1,6 +1,6 @@
 <template>
   <el-card class="section-card" shadow="hover">
-    <template #header><span>⚠️ 错因分析</span></template>
+    <template #header><span>错因分析</span></template>
     <el-row :gutter="24">
       <el-col :xs="24" :sm="12">
         <h4>错题掌握程度分布</h4>
@@ -35,7 +35,7 @@
 
     <el-row :gutter="24" class="distribution-row">
       <el-col :xs="24" :sm="12">
-        <h4>📊 错题题型分布</h4>
+        <h4>错题题型分布</h4>
         <div v-if="Object.keys(patterns.questionTypeDistribution).length">
           <div v-for="(count, typeName) in patterns.questionTypeDistribution" :key="typeName" class="mastery-item">
             <span class="mastery-label">{{ typeName }}</span>
@@ -51,7 +51,7 @@
         <el-empty v-else description="暂无数据" :image-size="40" />
       </el-col>
       <el-col :xs="24" :sm="12">
-        <h4>⭐ 错题难度分布</h4>
+        <h4>错题难度分布</h4>
         <div v-if="Object.keys(patterns.difficultyDistribution).length">
           <div v-for="(count, diff) in patterns.difficultyDistribution" :key="diff" class="mastery-item">
             <span class="mastery-label">{{ '⭐'.repeat(Number(diff)) }}</span>
@@ -69,7 +69,7 @@
     </el-row>
 
     <div v-if="patterns.weeklyErrorTrend.length" class="detail-section">
-      <h4>📈 近 4 周错题趋势</h4>
+      <h4>近 4 周错题趋势</h4>
       <div class="mini-chart">
         <div v-for="(week, index) in patterns.weeklyErrorTrend" :key="index" class="chart-bar-group">
           <div class="chart-bar-wrapper">
@@ -82,7 +82,7 @@
     </div>
 
     <div v-if="patterns.knowledgePointErrors.length" class="detail-section">
-      <h4>🎯 知识点错因排名</h4>
+      <h4>知识点错因排名</h4>
       <el-table :data="patterns.knowledgePointErrors" stripe size="small">
         <el-table-column label="知识点" min-width="160">
           <template #default="{ row }">
@@ -112,7 +112,7 @@
     </div>
 
     <div v-if="patterns.repeatedErrors.length" class="detail-section">
-      <h4>🔄 反复错题详情</h4>
+      <h4>反复错题详情</h4>
       <el-table :data="patterns.repeatedErrors" stripe size="small">
         <el-table-column label="题目" min-width="240" show-overflow-tooltip>
           <template #default="{ row }"
@@ -287,6 +287,14 @@ function weeklyBarHeight(value: number): string {
 
   .chart-bar {
     width: 10px;
+  }
+}
+</style>
+
+<style scoped>
+@media (prefers-reduced-motion: reduce) {
+  .chart-bar {
+    transition: none;
   }
 }
 </style>

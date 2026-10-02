@@ -50,18 +50,27 @@ export interface HeatmapDay {
   earnedXp: number
 }
 
-export function getGamificationSummary() {
-  return request.get<unknown, ApiResponse<GamificationSummary>>('/gamification/summary')
+export type GamificationRequestOptions = { errorDisplay?: 'inline' }
+
+export function getGamificationSummary(options?: GamificationRequestOptions) {
+  return options
+    ? request.get<unknown, ApiResponse<GamificationSummary>>('/gamification/summary', options)
+    : request.get<unknown, ApiResponse<GamificationSummary>>('/gamification/summary')
 }
 
-export function getAchievements() {
-  return request.get<unknown, ApiResponse<Achievement[]>>('/gamification/achievements')
+export function getAchievements(options?: GamificationRequestOptions) {
+  return options
+    ? request.get<unknown, ApiResponse<Achievement[]>>('/gamification/achievements', options)
+    : request.get<unknown, ApiResponse<Achievement[]>>('/gamification/achievements')
 }
 
-export function updateDailyGoal(dailyGoal: number) {
-  return request.post<unknown, ApiResponse<GamificationSummary>>('/gamification/daily-goal', { dailyGoal })
+export function updateDailyGoal(dailyGoal: number, options?: GamificationRequestOptions) {
+  return options
+    ? request.post<unknown, ApiResponse<GamificationSummary>>('/gamification/daily-goal', { dailyGoal }, options)
+    : request.post<unknown, ApiResponse<GamificationSummary>>('/gamification/daily-goal', { dailyGoal })
 }
 
-export function getLearningHeatmap(from: string, to: string) {
-  return request.get<unknown, ApiResponse<HeatmapDay[]>>('/gamification/heatmap', { params: { from, to } })
+export function getLearningHeatmap(from: string, to: string, options?: GamificationRequestOptions) {
+  const config = { params: { from, to }, ...options }
+  return request.get<unknown, ApiResponse<HeatmapDay[]>>('/gamification/heatmap', config)
 }

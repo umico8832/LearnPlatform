@@ -298,3 +298,15 @@
     width: 100%;
   }
 }
+
+.auth-inline-error {
+  margin: var(--lp-space-4) 0 0;
+  padding: var(--lp-space-3) var(--lp-space-4);
+  color: var(--lp-danger);
+  background: var(--lp-surface-subtle);
+  border-left: 3px solid var(--lp-danger);
+  border-radius: var(--lp-radius-sm);
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-body);
+  overflow-wrap: anywhere;
+}

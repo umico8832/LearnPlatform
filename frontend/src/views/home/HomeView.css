@@ -321,6 +321,13 @@
   animation: lesson-arrive 700ms var(--lp-ease-out) both;
 }
 
+.lesson-window__example {
+  margin: 0;
+  padding: var(--lp-space-4) var(--lp-space-5) 0;
+  color: var(--lp-home-ink-faint);
+  font-size: var(--lp-text-xs);
+}
+
 .lesson-window__bar {
   display: flex;
   min-height: var(--lp-space-12);
@@ -1207,7 +1214,7 @@
   }
 
   .hero-copy h1 {
-    font-size: var(--lp-home-hero-display-mobile-refined);
+    font-size: clamp(var(--lp-text-3xl), 9.5vw, var(--lp-home-hero-display-mobile-refined));
   }
 
   .hero-copy > p:last-of-type {

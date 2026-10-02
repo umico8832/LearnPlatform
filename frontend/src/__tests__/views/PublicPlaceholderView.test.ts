@@ -28,7 +28,7 @@ describe('PublicPlaceholderView', () => {
     })
 
     expect(wrapper.get('h1').text()).toBe('产品')
-    expect(wrapper.text()).toContain('开发中')
+    expect(wrapper.text()).toContain('正在整理')
     expect(wrapper.find('[data-to="/"]').text()).toBe('返回首页')
   })
 
