@@ -2,7 +2,7 @@
   <el-dialog
     :model-value="modelValue"
     title="相似题推荐"
-    width="800px"
+    width="840px"
     destroy-on-close
     @update:model-value="emit('update:modelValue', $event)"
   >
@@ -20,17 +20,21 @@
         </el-table-column>
         <el-table-column label="相似度" width="100" align="center">
           <template #default="{ row }">
-            <el-progress
-              :percentage="row.similarityScore"
-              :stroke-width="14"
-              :text-inside="true"
-              :color="similarityColor(row.similarityScore)"
-            />
+            <div class="similarity-meter">
+              <el-progress
+                :percentage="row.similarityScore"
+                :stroke-width="8"
+                :show-text="false"
+                :color="similarityColor(row.similarityScore)"
+                aria-hidden="true"
+              />
+              <span class="similarity-value">{{ row.similarityScore }}%</span>
+            </div>
           </template>
         </el-table-column>
-        <el-table-column label="相似原因" width="140">
+        <el-table-column label="相似原因" width="160">
           <template #default="{ row }"
-            ><el-tag size="small" type="info">{{ row.reason }}</el-tag></template
+            ><span class="similar-reason">{{ row.reason }}</span></template
           >
         </el-table-column>
         <el-table-column label="题型" width="80" align="center">
@@ -103,6 +107,35 @@ const emit = defineEmits<{
 
 .similar-table {
   margin-top: var(--lp-space-3);
+}
+
+.similarity-meter {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-space-2);
+}
+
+.similarity-meter :deep(.el-progress) {
+  flex: 1;
+  min-width: 0;
+}
+
+.similarity-value {
+  min-width: 3em;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.similar-reason {
+  display: block;
+  width: 100%;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .similar-error {

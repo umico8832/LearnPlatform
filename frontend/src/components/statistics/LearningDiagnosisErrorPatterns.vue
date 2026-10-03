@@ -103,12 +103,16 @@
         <el-table-column prop="totalAttempts" label="作答次数" width="80" align="center" />
         <el-table-column label="正确率" width="120">
           <template #default="{ row }">
-            <el-progress
-              :percentage="Math.round(row.correctRate)"
-              :color="rateColor(row.correctRate)"
-              :stroke-width="14"
-              :text-inside="true"
-            />
+            <div class="rate-meter">
+              <el-progress
+                :percentage="Math.round(row.correctRate)"
+                :color="rateColor(row.correctRate)"
+                :stroke-width="8"
+                :show-text="false"
+                aria-hidden="true"
+              />
+              <span class="rate-value">{{ Math.round(row.correctRate) }}%</span>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -226,6 +230,25 @@ function weeklyBarHeight(value: number): string {
   font-variant-numeric: tabular-nums;
   text-align: right;
   white-space: nowrap;
+}
+
+.rate-meter {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-space-2);
+}
+
+.rate-meter :deep(.el-progress) {
+  flex: 1;
+  min-width: 0;
+}
+
+.rate-value {
+  min-width: 3em;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 .error-course-item {
