@@ -10,10 +10,11 @@
             <el-progress
               :percentage="totalWrong > 0 ? Math.round((count / totalWrong) * 100) : 0"
               :color="masteryColor(label as string)"
-              :stroke-width="20"
-              :text-inside="true"
-              :format="() => count + ' 道'"
+              :stroke-width="8"
+              :show-text="false"
+              aria-hidden="true"
             />
+            <span class="mastery-count">{{ count }} 道</span>
           </div>
         </div>
         <el-descriptions :column="1" border class="summary-descriptions">
@@ -42,10 +43,11 @@
             <el-progress
               :percentage="totalWrong > 0 ? Math.round((count / totalWrong) * 100) : 0"
               color="var(--lp-primary)"
-              :stroke-width="18"
-              :text-inside="true"
-              :format="() => count + ' 道'"
+              :stroke-width="8"
+              :show-text="false"
+              aria-hidden="true"
             />
+            <span class="mastery-count">{{ count }} 道</span>
           </div>
         </div>
         <el-empty v-else description="暂无数据" :image-size="40" />
@@ -58,10 +60,11 @@
             <el-progress
               :percentage="totalWrong > 0 ? Math.round((count / totalWrong) * 100) : 0"
               :color="difficultyColor(Number(diff))"
-              :stroke-width="18"
-              :text-inside="true"
-              :format="() => count + ' 道'"
+              :stroke-width="8"
+              :show-text="false"
+              aria-hidden="true"
             />
+            <span class="mastery-count">{{ count }} 道</span>
           </div>
         </div>
         <el-empty v-else description="暂无数据" :image-size="40" />
@@ -209,6 +212,20 @@ function weeklyBarHeight(value: number): string {
   min-width: 60px;
   font-size: var(--lp-text-sm);
   color: var(--lp-text-secondary);
+}
+
+.mastery-item :deep(.el-progress) {
+  flex: 1;
+  min-width: 0;
+}
+
+.mastery-count {
+  min-width: 3em;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .error-course-item {
