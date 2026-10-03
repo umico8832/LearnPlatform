@@ -383,7 +383,7 @@ test.describe('安静学习投入记录', () => {
       if (index < fixture.questions.length - 1) await page.getByRole('button', { name: '下一题', exact: true }).click()
     }
     await page.getByRole('button', { name: '提交试卷', exact: true }).last().click()
-    await page.getByRole('dialog', { name: '提交确认' }).getByRole('button', { name: '确定', exact: true }).click()
+    await page.getByRole('dialog', { name: '提交确认' }).getByRole('button', { name: '提交试卷', exact: true }).click()
     await expect(page).toHaveURL(/\/exams\/result\/\d+$/)
     await expect(page.getByTestId('gamification-exam-reward')).toContainText('学习记录')
   })
@@ -454,7 +454,7 @@ test.describe('学习投入边界验收', () => {
       else await route.continue()
     })
     await page.reload()
-    await expect(profile).toContainText('成就与学习日历暂时无法加载')
+    await expect(profile).toContainText('学习日历与成就暂时无法加载')
     await profile.getByRole('button', { name: '重新加载', exact: true }).click()
     await expect(profile.getByTestId('gamification-achievements')).toBeVisible()
     await expect(profile.getByRole('alert')).toHaveCount(0)

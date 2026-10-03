@@ -59,9 +59,10 @@ test('审查修复：私有收藏练习刷新恢复，退出和切换账号后�
   expect((await api(page, `/favorites/${questionId}`, 'POST')).code).toBe(0)
   await page.goto('/favorites')
   await page
-    .getByRole('row')
+    .getByRole('region', { name: '收藏题目', exact: true })
+    .getByRole('listitem')
     .filter({ hasText: questionText })
-    .getByRole('button', { name: '练习', exact: true })
+    .getByRole('button', { name: /^练习第 \d+ 道收藏题$/ })
     .click()
   await expect(page).toHaveURL(/\/practice\/session$/)
   await expect(page.getByText(questionText, { exact: true })).toBeVisible()

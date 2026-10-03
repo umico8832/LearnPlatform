@@ -1,5 +1,10 @@
 import pluginVue from 'eslint-plugin-vue'
-import vueTsConfigs from '@vue/eslint-config-typescript'
+import tseslint from 'typescript-eslint'
+import vueParser from 'vue-eslint-parser'
+
+const typeScriptRecommendedForVue = tseslint.configs.recommended.map((config) =>
+  config.files?.includes('**/*.ts') ? { ...config, files: [...config.files, '**/*.vue'] } : config,
+)
 
 export default [
   {
@@ -14,7 +19,29 @@ export default [
     ],
   },
   ...pluginVue.configs['flat/essential'],
-  ...vueTsConfigs(),
+  ...typeScriptRecommendedForVue,
+  ...pluginVue.configs['flat/base'],
+  {
+    name: 'learnplatform/vue-typescript-setup',
+    files: ['*.vue', '**/*.vue'],
+    languageOptions: {
+      parser: vueParser,
+      parserOptions: {
+        parser: {
+          js: 'espree',
+          jsx: 'espree',
+          ts: tseslint.parser,
+          tsx: tseslint.parser,
+        },
+        ecmaVersion: 2024,
+        ecmaFeatures: { jsx: false },
+        extraFileExtensions: ['.vue'],
+      },
+    },
+    rules: {
+      'vue/block-lang': ['error', { script: { lang: ['ts'], allowNoLang: false } }],
+    },
+  },
   {
     files: ['src/**/*.{ts,vue}', 'e2e/**/*.ts'],
     rules: {

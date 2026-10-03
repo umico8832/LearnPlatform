@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { createLearnerAndLogin } from './helpers/registerLearner'
-import type { Locator, Page } from '@playwright/test'
+import type { Locator, Page, Response } from '@playwright/test'
 import path from 'node:path'
 import { readFile } from 'node:fs/promises'
 
@@ -71,6 +71,18 @@ async function readCountdownSeconds(countdown: Locator) {
   return Number(match[1]) * 60 + Number(match[2])
 }
 
+function waitForPrivatePaperDelete(page: Page): Promise<Response> {
+  return page.waitForResponse(
+    (response) => response.request().method() === 'DELETE' && response.url().includes('/api/exam/private-papers/'),
+  )
+}
+
+async function deleteResponsePayload(responsePromise: Promise<Response>) {
+  const response = await responsePromise
+  expect(response.status()).toBe(200)
+  return (await response.json()) as { code: number; message?: string }
+}
+
 /** 课程空间 Hero 的「更多」下拉：阶段测评 / 测评历史 / 课程试卷 收纳在内。 */
 async function openCourseMore(page: Page, item: string) {
   await page.getByRole('button', { name: '更多' }).click()
@@ -139,7 +151,7 @@ test('高频用户与管理页面可通过真实接口加载', async ({ page }) 
   await page.getByRole('navigation', { name: '管理导航' }).getByRole('link', { name: '试卷管理' }).click()
   await expect(page).toHaveURL(/\/admin\/exams$/)
   await expect(page.getByRole('main').getByRole('heading', { name: '试卷管理', exact: true })).toBeVisible()
-  await page.getByRole('navigation', { name: '管理导航' }).getByRole('link', { name: '课程管理' }).click()
+  await page.getByRole('navigation', { name: '管理导航' }).getByRole('link', { name: '课程与知识点' }).click()
   await expect(page.getByRole('main').getByRole('heading', { name: '课程管理', exact: true })).toBeVisible()
   await page.locator('.admin-data-table').getByRole('button', { name: '知识点' }).first().click()
   await expect(page).toHaveURL(/\/admin\/knowledge-points\?courseId=/)
@@ -159,28 +171,34 @@ test('高频用户与管理页面可通过真实接口加载', async ({ page }) 
   expect(consoleErrors, `页面加载期间出现 console.error：\n${consoleErrors.join('\n')}`).toEqual([])
 })
 
-test('用户答错后可在错题本更新掌握程度并重练', async ({ page }) => {
-  await loginAs(page, 'testuser', 'test123')
+test('用户答错后可在错题本更新掌握程度并重练', async ({ browser, page }) => {
+  await createLearnerAndLogin(browser, page, 'wrong-question')
 
   await page.goto('/practice')
   await expect(page).toHaveURL(/\/practice$/)
   const courseField = page.locator('.config-card .el-form-item').filter({ hasText: '选择课程' })
   await courseField.locator('.el-select').click()
   await page.getByRole('option', { name: 'Java 基础' }).click()
+  const knowledgePointField = page.locator('.config-card .el-form-item').filter({ hasText: '知识点' })
+  await knowledgePointField.locator('.el-select').click()
+  await page.getByRole('option', { name: '面向对象', exact: true }).click()
+  await page.locator('.config-card').getByText('自选条件', { exact: true }).click()
+  await expect(page.getByRole('radio', { name: '自选条件' })).toBeChecked()
   const questionTypeField = page.locator('.config-card .el-form-item').filter({ hasText: '题型' })
   await questionTypeField.locator('.el-select').click()
   await page.getByRole('option', { name: '单选题' }).click()
-  await page.locator('.config-card input').last().fill('1')
+  await page.locator('.config-card').getByRole('spinbutton').fill('1')
   await page.locator('.config-card').getByRole('button', { name: '开始刷题' }).click()
   await expect(page).toHaveURL(/\/practice\/session$/)
+  await expect(page.locator('.question-content')).toContainText('Java 中用于定义类继承关系的关键字是？')
 
   // 演示题库中的三道题均将第二个选项设为错误答案，保证会进入错题闭环。
   await page.locator('.question-card .option-item').nth(1).click()
   await page.getByRole('button', { name: '提交答案' }).click()
-  const resultDialog = page.getByRole('dialog')
-  await expect(resultDialog).toContainText('答错了')
-  await resultDialog.getByRole('button', { name: '查看结果' }).click()
-  await expect(page.getByText('练习完成！')).toBeVisible()
+  const feedback = page.getByTestId('practice-feedback')
+  await expect(feedback).toContainText('请结合解析再看一遍')
+  await page.getByRole('button', { name: '查看结果' }).click()
+  await expect(page.getByRole('heading', { name: '1 题已记录' })).toBeVisible()
 
   await page.goto('/wrong-questions')
   await expect(page).toHaveURL(/\/wrong-questions$/)
@@ -188,18 +206,20 @@ test('用户答错后可在错题本更新掌握程度并重练', async ({ page 
   await expect(wrongCard).toBeVisible()
 
   // 测评复盘可深链按知识点筛选错题（Java 基础演示题关联“面向对象”知识点）
-  await page.goto('/wrong-questions?courseId=6&knowledgePointId=2&knowledgePointName=面向对象')
+  await page.goto('/wrong-questions?courseId=1&knowledgePointId=2&knowledgePointName=面向对象')
   await expect(page.locator('.kp-filter-chip')).toContainText('知识点：面向对象')
   await expect(page.locator('.wrong-card')).toHaveCount(1)
   await expect(page.locator('.wrong-card')).toContainText('Java 中用于定义类继承关系的关键字是？')
 
   const filteredCard = page.locator('.wrong-card').first()
   await filteredCard.locator('.el-radio-button').filter({ hasText: '部分掌握' }).click()
-  await expect(page.getByText('掌握程度已更新')).toBeVisible()
+  await expect(filteredCard.getByRole('radio', { name: '部分掌握' })).toBeChecked()
 
-  await page.getByRole('button', { name: '重练错题' }).click()
+  await page.getByRole('button', { name: '练习当前范围' }).click()
   await expect(page).toHaveURL(/\/practice\/session$/)
-  await expect(page.getByText('错题重练', { exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: '练习会话' }).locator('.question-content')).toContainText(
+    'Java 中用于定义类继承关系的关键字是？',
+  )
 })
 
 test('用户刷新后可继续限时考试，取消提交并在失败重试后查看保存的自动判分结果', async ({ page }) => {
@@ -325,8 +345,13 @@ test('用户可预览确认结构化私有试卷并隔离给其他账号', async
   await page.goto('/exams')
   const referencedCard = page.locator('.exam-card').filter({ hasText: paperTitle })
   await referencedCard.getByRole('button', { name: '删除试卷' }).click()
+  const deleteResponse = waitForPrivatePaperDelete(page)
   await page.getByRole('dialog', { name: '删除私有试卷' }).getByRole('button', { name: '确认删除' }).click()
-  await expect(page.getByText('私有试卷已有考试、学习记录或衍生内容，不能删除')).toBeVisible()
+  const deletePayload = await deleteResponsePayload(deleteResponse)
+  expect(deletePayload.code).not.toBe(0)
+  expect(deletePayload.message).toContain('私有试卷已有考试、学习记录或衍生内容，不能删除')
+  await expect(referencedCard).toBeVisible()
+  await expect(referencedCard.getByRole('alert')).toContainText('删除私有试卷失败。')
 
   await page.evaluate(() => localStorage.clear())
   await loginAs(page, 'admin', 'admin123')
@@ -407,8 +432,11 @@ test('用户可删除未引用的私有试卷和未确认草稿', async ({ page 
   await dialog.getByRole('button', { name: '确认导入' }).click()
   const paperCard = page.locator('.exam-card').filter({ hasText: paperTitle })
   await paperCard.getByRole('button', { name: '删除试卷' }).click()
+  const paperDeleteResponse = waitForPrivatePaperDelete(page)
   await page.getByRole('dialog', { name: '删除私有试卷' }).getByRole('button', { name: '确认删除' }).click()
-  await expect(page.getByText('私有试卷已删除')).toBeVisible()
+  expect((await deleteResponsePayload(paperDeleteResponse)).code).toBe(0)
+  await expect(page.getByText(paperTitle, { exact: true })).toHaveCount(0)
+  await page.reload()
   await expect(page.getByText(paperTitle, { exact: true })).toHaveCount(0)
 
   await page.getByRole('button', { name: '导入私有试卷' }).click()
@@ -428,8 +456,9 @@ test('用户可删除未引用的私有试卷和未确认草稿', async ({ page 
   await dialog.getByRole('button', { name: '返回导入' }).click()
   const draftItem = dialog.locator('.draft-list-item').filter({ hasText: draftTitle })
   await draftItem.getByRole('button', { name: '删除草稿', exact: true }).click()
+  const draftDeleteResponse = waitForPrivatePaperDelete(page)
   await page.getByRole('dialog', { name: '删除私有试卷草稿' }).getByRole('button', { name: '确认删除' }).click()
-  await expect(page.getByText('私有试卷草稿已删除')).toBeVisible()
+  expect((await deleteResponsePayload(draftDeleteResponse)).code).toBe(0)
   await expect(dialog.getByText(draftTitle)).toHaveCount(0)
 })
 
@@ -470,8 +499,9 @@ test('用户可上传文本型PDF并沿用预览确认与来源追溯', async ({
   await expect(storageDialog).not.toContainText('application/pdf')
   expect(await storageDialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
   await storageDialog.getByRole('button', { name: '删除关联内容' }).click()
+  const storageDeleteResponse = waitForPrivatePaperDelete(page)
   await page.getByRole('dialog', { name: '删除关联内容' }).getByRole('button', { name: '确认删除' }).click()
-  await expect(page.getByText('私有试卷及其原文件已删除')).toBeVisible()
+  expect((await deleteResponsePayload(storageDeleteResponse)).code).toBe(0)
   await expect(storageDialog).not.toContainText(paperTitle)
 })
 
@@ -509,8 +539,12 @@ test('用户可上传有限DOCX并提取段落表格进入同一确认闭环', a
   )
   await page.keyboard.press('Escape')
   await card.getByRole('button', { name: '删除试卷' }).click()
+  const paperDeleteResponse = waitForPrivatePaperDelete(page)
   await page.getByRole('dialog', { name: '删除私有试卷' }).getByRole('button', { name: '确认删除' }).click()
-  await expect(page.getByText('私有试卷已删除')).toBeVisible()
+  expect((await deleteResponsePayload(paperDeleteResponse)).code).toBe(0)
+  await expect(page.getByText(paperTitle, { exact: true })).toHaveCount(0)
+  await page.reload()
+  await expect(page.getByText(paperTitle, { exact: true })).toHaveCount(0)
 })
 
 test('课程空间可完成整体与知识点阶段测评并查看历史复盘', async ({ page }) => {
@@ -690,7 +724,7 @@ test('用户可完成2026真题限时考试并复盘可信来源', async ({ page
 test('2026主观题提交后由管理员按评分点批阅并固化总分', async ({ page }) => {
   await loginAs(page, 'testuser', 'test123')
   await page.goto('/exams')
-  const paperCard = page.locator('.exam-card').filter({ hasText: '2026 年 408 真题·数据结构部分' })
+  const paperCard = await findPublishedPaper(page, '2026 年 408 真题·数据结构部分')
   await expect(paperCard).toContainText('13 题')
   await expect(paperCard).toContainText('45 分')
   await paperCard.getByRole('button', { name: '考试模式' }).click()
@@ -759,12 +793,13 @@ test('用户投稿可由管理员审核并入库', async ({ page }) => {
   const questionTypeSelect = submissionDialog.getByRole('combobox', { name: /题型/ })
   await questionTypeSelect.press('Enter')
   await page.getByRole('option', { name: '单选题' }).click()
-  await submissionDialog.getByPlaceholder('输入题目内容，支持 Markdown').fill(questionContent)
-  await submissionDialog.getByPlaceholder('选项 A').fill('正确选项')
-  await submissionDialog.getByPlaceholder('选项 B').fill('错误选项')
-  await submissionDialog.locator('.option-row').first().getByText('正确答案', { exact: true }).click()
+  await submissionDialog.getByPlaceholder('写下完整的题目').fill(questionContent)
+  await submissionDialog.getByPlaceholder('选项 A 的内容').fill('正确选项')
+  await submissionDialog.getByPlaceholder('选项 B 的内容').fill('错误选项')
+  await submissionDialog.locator('.option-row').first().getByText('正确', { exact: true }).click()
+  await expect(submissionDialog.getByRole('checkbox', { name: '标记 A 为正确答案' })).toBeChecked()
   await submissionDialog.getByRole('button', { name: '提交投稿' }).click()
-  await expect(page.getByText('投稿提交成功，等待管理员审核')).toBeVisible()
+  await expect(page.getByText('投稿已提交，等待审核。可以在这里查看后续反馈。')).toBeVisible()
 
   await page.evaluate(() => localStorage.clear())
   await loginAs(page, 'admin', 'admin123')
@@ -784,8 +819,7 @@ test('用户投稿可由管理员审核并入库', async ({ page }) => {
   await submissionRow.getByRole('button', { name: '入库' }).click()
   const importDialog = page.getByRole('dialog', { name: '确认入库' })
   await expect(importDialog).toContainText('入库为正式题目')
-  await importDialog.getByRole('button', { name: '确定' }).click()
-  await expect(page.getByText('入库成功')).toBeVisible()
+  await importDialog.getByRole('button', { name: '入库' }).click()
   await expect(submissionRow).toContainText('已入库')
 })
 

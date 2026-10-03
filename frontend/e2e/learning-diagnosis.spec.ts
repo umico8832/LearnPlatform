@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Route } from '@playwright/test'
 import { createLearnerAndLogin } from './helpers/registerLearner'
 
 test('新学习者看到诚实的空学习诊断', async ({ browser, page }, testInfo) => {
@@ -30,9 +30,23 @@ test('隔离学习者完成练习后可获取并停止 AI 学习建议', async (
   }
   await page.goto('/learning-diagnosis')
   await expect(page.getByRole('heading', { name: '下一步从最需要处理的内容开始' })).toBeVisible()
+  let holdRequest!: (route: Route) => void
+  const heldRequest = new Promise<Route>((resolve) => (holdRequest = resolve))
+  await page.route('**/statistics/ai-advice/stream', (route) => holdRequest(route), { times: 1 })
   await page.getByRole('button', { name: '获取 AI 建议' }).click()
+  const pausedRoute = await heldRequest
   await expect(page.getByRole('button', { name: '停止' })).toBeVisible()
   await page.getByRole('button', { name: '停止' }).click()
   await expect(page.getByRole('button', { name: '获取 AI 建议' })).toBeEnabled()
+  await expect(page.getByRole('button', { name: '停止', exact: true })).toHaveCount(0)
+  await pausedRoute.abort().catch(() => undefined)
+
+  const generated = page.waitForResponse((response) => response.url().endsWith('/statistics/ai-advice/stream'))
+  await page.getByRole('button', { name: '获取 AI 建议' }).click()
+  expect((await generated).status()).toBe(200)
+  const advice = page.locator('.ai-advice-card')
+  await expect(advice.getByText('AI 生成', { exact: true })).toBeVisible()
+  await expect(advice.locator('.markdown-body')).not.toBeEmpty()
+  await expect(advice.getByRole('alert')).toHaveCount(0)
   await page.screenshot({ path: testInfo.outputPath('learning-diagnosis-populated.png'), fullPage: true })
 })
