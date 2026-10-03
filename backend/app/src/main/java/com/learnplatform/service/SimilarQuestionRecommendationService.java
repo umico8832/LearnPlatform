@@ -110,6 +110,15 @@ public class SimilarQuestionRecommendationService {
             );
         }
 
+        if (sourceKpIds.isEmpty() && source.getCourseId() == null) {
+            return similarQuestions(source, questionId, Collections.emptyList());
+        }
+
+        candidates = candidates.stream()
+                .filter(candidate -> hasSemanticAnchor(source, sourceKpIds,
+                        candidate, candidateKpsMap.getOrDefault(candidate.getId(), Collections.emptySet())))
+                .collect(Collectors.toList());
+
         // 5. 获取课程名称缓存
         Map<Long, String> courseNameCache = new HashMap<>();
         Map<Long, String> kpNameCache = new HashMap<>();
@@ -193,10 +202,23 @@ public class SimilarQuestionRecommendationService {
         List<SimilarQuestionVO.SimilarItem> topItems = items.stream().limit(limit).collect(Collectors.toList());
 
         // 8. 组装返回
+        return similarQuestions(source, questionId, topItems);
+    }
+
+    private boolean hasSemanticAnchor(
+            Question source, Set<Long> sourceKpIds, Question candidate, Set<Long> candidateKpIds) {
+        if (!sourceKpIds.isEmpty()) {
+            return candidateKpIds.stream().anyMatch(sourceKpIds::contains);
+        }
+        return source.getCourseId().equals(candidate.getCourseId());
+    }
+
+    private SimilarQuestionVO similarQuestions(
+            Question source, Long questionId, List<SimilarQuestionVO.SimilarItem> items) {
         SimilarQuestionVO vo = new SimilarQuestionVO();
         vo.setSourceQuestionId(questionId);
         vo.setSourceQuestionContent(truncate(source.getContent(), 100));
-        vo.setSimilarQuestions(topItems);
+        vo.setSimilarQuestions(items);
         return vo;
     }
 

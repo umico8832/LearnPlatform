@@ -122,6 +122,49 @@ class RecommendationEligibilityIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void similarQuestionsRequireSharedKnowledgePointWhenSourceHasOne() {
+        Long userId = insertUser(USERNAME);
+        Long sharedPoint = insertKnowledgePoint();
+        Long disjointPoint = insertKnowledgePoint("不相交知识点", 1L);
+        Long source = insertQuestion("相似来源有知识点", "PUBLIC", null);
+        Long sharedDifferentType = insertQuestion(
+                "跨题型共享知识点", "PUBLIC", null, 1L, "TRUE_FALSE", 2);
+        Long sameCourseDisjoint = insertQuestion("同课程不同知识点", "PUBLIC", null);
+        Long crossCourseSameFormat = insertQuestion(
+                "跨课程同题型", "PUBLIC", null, 2L, "SINGLE_CHOICE", 2);
+        for (Long questionId : List.of(source, sharedDifferentType, sameCourseDisjoint, crossCourseSameFormat)) {
+            addOption(questionId, "有效正确项", "A", 1, 0);
+        }
+        jdbc.update("INSERT INTO question_knowledge_point (question_id, knowledge_point_id) VALUES (?, ?)",
+                source, sharedPoint);
+        jdbc.update("INSERT INTO question_knowledge_point (question_id, knowledge_point_id) VALUES (?, ?)",
+                sharedDifferentType, sharedPoint);
+        jdbc.update("INSERT INTO question_knowledge_point (question_id, knowledge_point_id) VALUES (?, ?)",
+                sameCourseDisjoint, disjointPoint);
+
+        List<Long> similarIds = similarQuestionService.findSimilarQuestions(userId, source, 10)
+                .getSimilarQuestions().stream().map(SimilarQuestionVO.SimilarItem::getQuestionId).toList();
+
+        assertEquals(List.of(sharedDifferentType), similarIds);
+    }
+
+    @Test
+    void similarQuestionsWithoutKnowledgePointStayInSourceCourseAndNeedAnAnchor() {
+        Long userId = insertUser(USERNAME);
+        Long source = insertQuestion("相似来源无知识点", "PUBLIC", null);
+        Long sameCourse = insertQuestion("同课程候选", "PUBLIC", null);
+        Long crossCourse = insertQuestion("跨课程候选", "PUBLIC", null, 2L, "SINGLE_CHOICE", 2);
+        for (Long questionId : List.of(source, sameCourse, crossCourse)) {
+            addOption(questionId, "有效正确项", "A", 1, 0);
+        }
+
+        List<Long> similarIds = similarQuestionService.findSimilarQuestions(userId, source, 10)
+                .getSimilarQuestions().stream().map(SimilarQuestionVO.SimilarItem::getQuestionId).toList();
+        assertTrue(similarIds.contains(sameCourse));
+        assertFalse(similarIds.contains(crossCourse));
+    }
+
+    @Test
     void questionOptionChangesEvictCachedDiagnosisAfterCommit() {
         Long userId = insertUser(USERNAME);
         Long questionId = insertQuestion("诊断缓存题", "PUBLIC", null);
@@ -174,19 +217,30 @@ class RecommendationEligibilityIntegrationTest extends IntegrationTestBase {
     }
 
     private Long insertKnowledgePoint() {
+        return insertKnowledgePoint("知识点", 1L);
+    }
+
+    private Long insertKnowledgePoint(String suffix, Long courseId) {
+        String name = PREFIX + suffix;
         jdbc.update("INSERT INTO knowledge_point "
                         + "(name, description, course_id, parent_id, content_review_status, sort_order, deleted) "
-                        + "VALUES (?, '集成测试', 1, 0, 'REVIEWED', 99, 0)",
-                PREFIX + "知识点");
-        return jdbc.queryForObject("SELECT id FROM knowledge_point WHERE name = ?", Long.class, PREFIX + "知识点");
+                        + "VALUES (?, '集成测试', ?, 0, 'REVIEWED', 99, 0)",
+                name, courseId);
+        return jdbc.queryForObject("SELECT id FROM knowledge_point WHERE name = ?", Long.class, name);
     }
 
     private Long insertQuestion(String suffix, String visibility, Long ownerUserId) {
+        return insertQuestion(suffix, visibility, ownerUserId, 1L, "SINGLE_CHOICE", 2);
+    }
+
+    private Long insertQuestion(
+            String suffix, String visibility, Long ownerUserId, Long courseId, String type, int difficulty) {
+        String content = PREFIX + suffix;
         jdbc.update("INSERT INTO question (content, question_type, course_id, difficulty, analysis, tags, score, "
                         + "status, visibility, owner_user_id, create_by, deleted) "
-                        + "VALUES (?, 'SINGLE_CHOICE', 1, 2, '测试解析', '集成测试', 2, 1, ?, ?, 1, 0)",
-                PREFIX + suffix, visibility, ownerUserId);
-        return jdbc.queryForObject("SELECT id FROM question WHERE content = ?", Long.class, PREFIX + suffix);
+                        + "VALUES (?, ?, ?, ?, '测试解析', '集成测试', 2, 1, ?, ?, 1, 0)",
+                content, type, courseId, difficulty, visibility, ownerUserId);
+        return jdbc.queryForObject("SELECT id FROM question WHERE content = ?", Long.class, content);
     }
 
     private void addOption(Long questionId, String content, String label, int correct, int deleted) {

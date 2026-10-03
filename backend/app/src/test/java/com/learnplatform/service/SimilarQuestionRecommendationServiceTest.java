@@ -74,6 +74,61 @@ class SimilarQuestionRecommendationServiceTest {
         assertTrue(captor.getValue().getCustomSqlSegment().contains("question_option"));
     }
 
+    @Test
+    void sourceKnowledgePointExcludesDisjointCandidatesBeforeScoring() {
+        Question source = question(10L, "来源");
+        Question sharedDifferentType = question(11L, "共享知识点不同题型");
+        sharedDifferentType.setQuestionType("TRUE_FALSE");
+        Question sameCourseDisjoint = question(12L, "同课程不同知识点");
+        Question crossCourseSameType = question(13L, "跨课程同题型");
+        crossCourseSameType.setCourseId(2L);
+        when(questionMapper.selectById(10L)).thenReturn(source);
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of());
+        when(questionMapper.selectList(any())).thenReturn(List.of(
+                sharedDifferentType, sameCourseDisjoint, crossCourseSameType));
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(
+                List.of(relation(10L, 3L)),
+                List.of(relation(11L, 3L), relation(12L, 4L)));
+
+        SimilarQuestionVO result = service.findSimilarQuestions(7L, 10L, 10);
+
+        assertEquals(List.of(11L), result.getSimilarQuestions().stream()
+                .map(SimilarQuestionVO.SimilarItem::getQuestionId).toList());
+    }
+
+    @Test
+    void sourceWithoutKnowledgePointUsesOnlySameCourseCandidates() {
+        Question source = question(10L, "来源");
+        Question sameCourse = question(11L, "同课程");
+        Question crossCourse = question(12L, "跨课程");
+        crossCourse.setCourseId(2L);
+        when(questionMapper.selectById(10L)).thenReturn(source);
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of());
+        when(questionMapper.selectList(any())).thenReturn(List.of(sameCourse, crossCourse));
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(), List.of());
+
+        SimilarQuestionVO result = service.findSimilarQuestions(7L, 10L, 10);
+
+        assertEquals(List.of(11L), result.getSimilarQuestions().stream()
+                .map(SimilarQuestionVO.SimilarItem::getQuestionId).toList());
+    }
+
+    @Test
+    void sourceWithoutKnowledgePointOrCourseReturnsNoSimilarityCandidates() {
+        Question source = question(10L, "无锚点来源");
+        source.setCourseId(null);
+        Question candidate = question(11L, "无锚点候选");
+        candidate.setCourseId(null);
+        when(questionMapper.selectById(10L)).thenReturn(source);
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of());
+        when(questionMapper.selectList(any())).thenReturn(List.of(candidate));
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(), List.of());
+
+        SimilarQuestionVO result = service.findSimilarQuestions(7L, 10L, 10);
+
+        assertTrue(result.getSimilarQuestions().isEmpty());
+    }
+
     private Question question(Long id, String content) {
         Question question = new Question();
         question.setId(id);
