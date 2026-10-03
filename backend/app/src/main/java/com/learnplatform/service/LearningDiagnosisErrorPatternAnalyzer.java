@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 @Service
 public class LearningDiagnosisErrorPatternAnalyzer {
 
+    private static final int REPEATED_ERROR_MIN_COUNT = 2;
+
     private final QuestionMapper questionMapper;
     private final CourseMapper courseMapper;
 
@@ -54,7 +56,7 @@ public class LearningDiagnosisErrorPatternAnalyzer {
                 .count());
         summary.setMasteryDistribution(masteryDistribution);
         summary.setRepeatedErrorCount((int) allWrongs.stream()
-                .filter(wrong -> wrong.getWrongCount() >= 3)
+                .filter(this::isRepeatedError)
                 .count());
 
         LocalDateTime weekAgo = LocalDate.now().minusDays(7).atStartOfDay();
@@ -235,12 +237,16 @@ public class LearningDiagnosisErrorPatternAnalyzer {
         Map<Long, KnowledgePoint> knowledgePointMap = allPoints.stream()
                 .collect(Collectors.toMap(KnowledgePoint::getId, point -> point));
         return allWrongs.stream()
-                .filter(wrong -> wrong.getWrongCount() >= 2)
+                .filter(this::isRepeatedError)
                 .sorted((left, right) -> Integer.compare(right.getWrongCount(), left.getWrongCount()))
                 .limit(10)
                 .map(wrong -> buildRepeatedError(
                         wrong, knowledgePointMap, questionToKps, questionMap, courseMap))
                 .collect(Collectors.toList());
+    }
+
+    private boolean isRepeatedError(WrongQuestion wrong) {
+        return wrong.getWrongCount() >= REPEATED_ERROR_MIN_COUNT;
     }
 
     private LearningDiagnosisVO.RepeatedErrorItem buildRepeatedError(
