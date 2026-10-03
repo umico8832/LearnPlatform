@@ -127,6 +127,66 @@ describe('AiUsageView', () => {
     await flushPromises()
     expect(wrapper.findComponent({ name: 'AiUsageDetails' }).props('overview')).toMatchObject({ totalCalls: 12 })
   })
+  it('renders readable empty states instead of mounting empty charts', async () => {
+    getOverview.mockResolvedValueOnce({
+      data: {
+        totalCalls: 0,
+        successCalls: 0,
+        failedCalls: 0,
+        successRate: 0,
+        totalTokens: 0,
+        avgDuration: 0,
+        todayCalls: 0,
+        todayTokens: 0,
+        totalCostUsd: 0,
+        todayCostUsd: 0,
+        functionStats: [],
+        modelStats: [],
+        dailyTrends: [],
+        topUsers: [],
+        recentFailures: [],
+      },
+    })
+    const wrapper = render()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('当前周期暂无每日调用数据。')
+    expect(wrapper.text()).toContain('当前周期暂无功能调用分布。')
+    expect(wrapper.text()).toContain('当前周期暂无模型调用分布。')
+    expect(wrapper.text()).toContain('当前周期暂无功能、活跃用户或失败调用数据。')
+    expect(wrapper.text()).toContain('暂无记录')
+    expect(wrapper.findAll('.chart-container')).toHaveLength(0)
+    expect(wrapper.findComponent({ name: 'AiUsageDetails' }).exists()).toBe(false)
+  })
+  it('restores populated details after a zero-data refresh', async () => {
+    getOverview.mockResolvedValueOnce({
+      data: {
+        totalCalls: 0,
+        successCalls: 0,
+        failedCalls: 0,
+        successRate: 0,
+        totalTokens: 0,
+        avgDuration: 0,
+        todayCalls: 0,
+        todayTokens: 0,
+        totalCostUsd: 0,
+        todayCostUsd: 0,
+        functionStats: [],
+        modelStats: [],
+        dailyTrends: [],
+        topUsers: [],
+        recentFailures: [],
+      },
+    })
+    const wrapper = render()
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'AiUsageDetails' }).exists()).toBe(false)
+
+    await wrapper.get('.admin-header-actions el-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findComponent({ name: 'AiUsageDetails' }).props('overview')).toMatchObject({ totalCalls: 12 })
+  })
   it('ignores an overview that resolves after session invalidation', async () => {
     let resolve!: (value: unknown) => void
     getOverview.mockReturnValueOnce(

@@ -55,8 +55,9 @@
 
         <el-card shadow="never" class="chart-card">
           <template #header><span>每日调用趋势</span></template>
-          <div ref="trendChartRef" class="chart-container" aria-hidden="true"></div>
-          <details class="usage-data-table">
+          <div v-if="hasDailyTrends" ref="trendChartRef" class="chart-container" aria-hidden="true"></div>
+          <p v-else class="chart-empty" role="status">当前周期暂无每日调用数据。</p>
+          <details v-if="hasDailyTrends" class="usage-data-table">
             <summary>查看每日调用数据</summary>
             <table>
               <caption class="lp-sr-only">
@@ -79,7 +80,6 @@
                 </tr>
               </tbody>
             </table>
-            <p v-if="!overview.dailyTrends.length">当前周期暂无调用记录。</p>
           </details>
         </el-card>
 
@@ -87,14 +87,16 @@
           <el-col :xs="24" :md="12">
             <el-card shadow="never" class="chart-card">
               <template #header><span>按功能分布</span></template>
-              <div ref="functionChartRef" class="chart-container" aria-hidden="true"></div>
+              <div v-if="hasFunctionStats" ref="functionChartRef" class="chart-container" aria-hidden="true"></div>
+              <p v-else class="chart-empty" role="status">当前周期暂无功能调用分布。</p>
             </el-card>
           </el-col>
           <el-col :xs="24" :md="12">
             <el-card shadow="never" class="chart-card">
               <template #header><span>按模型分布</span></template>
-              <div ref="modelChartRef" class="chart-container" aria-hidden="true"></div>
-              <details class="usage-data-table">
+              <div v-if="hasModelStats" ref="modelChartRef" class="chart-container" aria-hidden="true"></div>
+              <p v-else class="chart-empty" role="status">当前周期暂无模型调用分布。</p>
+              <details v-if="hasModelStats" class="usage-data-table">
                 <summary>查看模型调用数据</summary>
                 <table>
                   <caption class="lp-sr-only">
@@ -113,13 +115,15 @@
                     </tr>
                   </tbody>
                 </table>
-                <p v-if="!overview.modelStats.length">当前周期暂无模型调用。</p>
               </details>
             </el-card>
           </el-col>
         </el-row>
 
-        <AiUsageDetails :overview="overview" />
+        <AiUsageDetails v-if="hasDetailedUsage" :overview="overview" />
+        <el-card v-else shadow="never" class="usage-details-empty">
+          <p role="status">当前周期暂无功能、活跃用户或失败调用数据。</p>
+        </el-card>
         <details class="learning-effect-disclosure">
           <summary>学习效果观察</summary>
           <AiLearningEffectPanel :effect="learningEffect" />
@@ -177,7 +181,7 @@ const usageStats = computed(() => {
     },
     {
       label: '成功率',
-      value: `${data.successRate ?? '-'}%`,
+      value: data.totalCalls > 0 ? `${data.successRate ?? '-'}%` : '暂无记录',
       note: `成功 ${data.successCalls?.toLocaleString() ?? 0} 次`,
       icon: SuccessFilled,
       className: 'is-success',
@@ -225,6 +229,14 @@ const usageStats = computed(() => {
       className: 'is-success',
     },
   ]
+})
+
+const hasDailyTrends = computed(() => Boolean(overview.value?.dailyTrends.length))
+const hasFunctionStats = computed(() => Boolean(overview.value?.functionStats.length))
+const hasModelStats = computed(() => Boolean(overview.value?.modelStats.length))
+const hasDetailedUsage = computed(() => {
+  const data = overview.value
+  return Boolean(data && (data.totalCalls > 0 || data.topUsers.length || data.recentFailures.length))
 })
 
 const { trendChartRef, functionChartRef, modelChartRef, renderCharts, disposeCharts } = useAiUsageCharts(overview)
@@ -372,6 +384,20 @@ th {
 .chart-container {
   width: 100%;
   height: 320px;
+}
+.chart-empty {
+  margin: 0;
+  padding: var(--lp-space-6) var(--lp-space-4);
+  color: var(--lp-text-secondary);
+  text-align: center;
+}
+.usage-details-empty {
+  margin-bottom: var(--lp-space-4);
+  color: var(--lp-text-secondary);
+}
+.usage-details-empty p {
+  margin: 0;
+  padding: var(--lp-space-3) 0;
 }
 @media (max-width: 768px) {
   .chart-container {

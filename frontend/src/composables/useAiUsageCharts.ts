@@ -28,8 +28,11 @@ export function useAiUsageCharts(overview: Ref<AiUsageOverview | null>) {
   let modelChart: echarts.ECharts | null = null
 
   function renderCharts() {
-    if (!overview.value) return
-    trendChart = renderTrendChart(trendChartRef, trendChart)
+    if (!overview.value) {
+      disposeCharts()
+      return
+    }
+    trendChart = renderTrendChart(trendChartRef, trendChart, overview.value.dailyTrends || [])
     functionChart = renderDistributionChart(
       functionChartRef,
       functionChart,
@@ -42,10 +45,13 @@ export function useAiUsageCharts(overview: Ref<AiUsageOverview | null>) {
     )
   }
 
-  function renderTrendChart(target: Ref<HTMLElement | undefined>, chart: echarts.ECharts | null) {
-    if (!target.value) return chart
+  function renderTrendChart(
+    target: Ref<HTMLElement | undefined>,
+    chart: echarts.ECharts | null,
+    trends: NonNullable<AiUsageOverview['dailyTrends']>,
+  ) {
+    if (!target.value || !trends.length) return disposeChart(chart)
     const instance = chart || echarts.init(target.value)
-    const trends = overview.value?.dailyTrends || []
     instance.setOption({
       ...chartStyle(),
       tooltip: { trigger: 'axis' },
@@ -94,7 +100,7 @@ export function useAiUsageCharts(overview: Ref<AiUsageOverview | null>) {
     chart: echarts.ECharts | null,
     data: Array<{ name: string; value: number }>,
   ) {
-    if (!target.value) return chart
+    if (!target.value || !data.length) return disposeChart(chart)
     const instance = chart || echarts.init(target.value)
     instance.setOption({
       ...chartStyle(),
@@ -125,10 +131,13 @@ export function useAiUsageCharts(overview: Ref<AiUsageOverview | null>) {
     }
   }
   function disposeCharts() {
-    trendChart?.dispose()
-    functionChart?.dispose()
-    modelChart?.dispose()
-    trendChart = functionChart = modelChart = null
+    trendChart = disposeChart(trendChart)
+    functionChart = disposeChart(functionChart)
+    modelChart = disposeChart(modelChart)
+  }
+  function disposeChart(chart: echarts.ECharts | null) {
+    chart?.dispose()
+    return null
   }
   watch(reducedMotion, () => {
     if (trendChart || functionChart || modelChart) renderCharts()
