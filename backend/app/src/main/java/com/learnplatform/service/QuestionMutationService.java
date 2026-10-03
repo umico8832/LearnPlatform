@@ -29,6 +29,7 @@ public class QuestionMutationService {
     private final KnowledgePointMapper knowledgePointMapper;
     private final ExamQuestionMapper examQuestionMapper;
     private final QuestionVersionService questionVersionService;
+    private final CacheEvictService cacheEvictService;
 
     public QuestionMutationService(
             QuestionMapper questionMapper,
@@ -37,7 +38,8 @@ public class QuestionMutationService {
             CourseMapper courseMapper,
             KnowledgePointMapper knowledgePointMapper,
             ExamQuestionMapper examQuestionMapper,
-            QuestionVersionService questionVersionService) {
+            QuestionVersionService questionVersionService,
+            CacheEvictService cacheEvictService) {
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
@@ -45,6 +47,7 @@ public class QuestionMutationService {
         this.knowledgePointMapper = knowledgePointMapper;
         this.examQuestionMapper = examQuestionMapper;
         this.questionVersionService = questionVersionService;
+        this.cacheEvictService = cacheEvictService;
     }
 
     public Long create(QuestionCreateRequest request, Long createBy,
@@ -72,6 +75,7 @@ public class QuestionMutationService {
         replaceKnowledgePoints(question.getId(), request, false);
         questionVersionService.recordChange(question.getId(), "CREATE", createBy,
                 "创建题目", null, questionMapper.selectById(question.getId()));
+        cacheEvictService.evictLearningDiagnosisAfterCommit();
         return question.getId();
     }
 
@@ -112,6 +116,7 @@ public class QuestionMutationService {
         questionVersionService.recordChangeSnapshots(id, "UPDATE", operatorId,
                 "更新题目内容、选项或知识点", snapshotBefore,
                 questionVersionService.buildSnapshotJson(questionMapper.selectById(id)));
+        cacheEvictService.evictLearningDiagnosisAfterCommit();
     }
 
     public void delete(Long id, Long operatorId) {
@@ -125,6 +130,7 @@ public class QuestionMutationService {
                 .eq(QuestionKnowledgePoint::getQuestionId, id));
         questionVersionService.recordChangeSnapshots(id, "DELETE", operatorId,
                 "删除题目", snapshotBefore, null);
+        cacheEvictService.evictLearningDiagnosisAfterCommit();
     }
 
     private void replaceOptions(Long questionId, QuestionCreateRequest request, boolean deleteExisting) {

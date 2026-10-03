@@ -29,9 +29,10 @@ class QuestionReferenceValidationTest {
     private final CourseMapper courses = mock(CourseMapper.class);
     private final KnowledgePointMapper points = mock(KnowledgePointMapper.class);
     private final QuestionKnowledgePointMapper links = mock(QuestionKnowledgePointMapper.class);
+    private final CacheEvictService cacheEvictService = mock(CacheEvictService.class);
     private final QuestionMutationService service = new QuestionMutationService(questions,
             mock(QuestionOptionMapper.class), links, courses, points, mock(ExamQuestionMapper.class),
-            mock(QuestionVersionService.class));
+            mock(QuestionVersionService.class), cacheEvictService);
     private QuestionCreateRequest request;
 
     @BeforeEach
@@ -83,6 +84,7 @@ class QuestionReferenceValidationTest {
         request.setKnowledgePointIds(List.of());
         service.update(10L, request, 7L);
         verify(questions).updateById(any(Question.class));
+        verify(cacheEvictService).evictLearningDiagnosisAfterCommit();
     }
 
     private void stubCourseAndPoint() {

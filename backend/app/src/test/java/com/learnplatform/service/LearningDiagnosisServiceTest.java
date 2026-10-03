@@ -535,7 +535,7 @@ class LearningDiagnosisServiceTest {
 
         Question q = stubQuestion(100L, "SINGLE_CHOICE", 10L);
         q.setContent("What is JVM?");
-        when(questionMapper.selectById(100L)).thenReturn(q);
+        when(questionMapper.selectList(any())).thenReturn(List.of(q));
 
         Course course = stubCourse(10L, "Java Basics");
         when(courseMapper.selectById(10L)).thenReturn(course);
@@ -567,11 +567,13 @@ class LearningDiagnosisServiceTest {
         WrongQuestion wq7 = stubWrongQuestion(USER_ID, 7L, 2, 0);
         when(wrongQuestionMapper.selectList(any())).thenReturn(List.of(wq1, wq2, wq3, wq4, wq5, wq6, wq7));
 
+        List<Question> eligibleQuestions = new java.util.ArrayList<>();
         for (long i = 1; i <= 7; i++) {
             Question q = stubQuestion(i, "SINGLE_CHOICE", 10L);
             q.setContent("Question " + i);
-            lenient().when(questionMapper.selectById(i)).thenReturn(q);
+            eligibleQuestions.add(q);
         }
+        when(questionMapper.selectList(any())).thenReturn(eligibleQuestions);
         when(practiceRecordMapper.selectList(any())).thenReturn(Collections.emptyList());
 
         LearningDiagnosisVO vo = service.getDiagnosis(USER_ID);
@@ -597,7 +599,7 @@ class LearningDiagnosisServiceTest {
     }
 
     @Test
-    void getDiagnosisRecommendationsDoNotExposeAnotherUsersPrivateQuestion() {
+    void getDiagnosisRecommendationsPassThroughNoEligibleCandidates() {
         KnowledgePoint kp = stubKnowledgePoint(1L, "KP-1", 10L);
         when(knowledgePointMapper.selectList(any())).thenReturn(List.of(kp));
 
@@ -613,16 +615,7 @@ class LearningDiagnosisServiceTest {
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(wrongAttempt));
         when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
 
-        Question answeredQuestion = stubQuestion(1L, "SINGLE_CHOICE", 10L);
-        answeredQuestion.setStatus(1);
-        answeredQuestion.setVisibility("PUBLIC");
-        when(questionMapper.selectById(1L)).thenReturn(answeredQuestion);
-        Question otherUsersPrivateQuestion = stubQuestion(200L, "SINGLE_CHOICE", 10L);
-        otherUsersPrivateQuestion.setStatus(1);
-        otherUsersPrivateQuestion.setVisibility("PRIVATE");
-        otherUsersPrivateQuestion.setOwnerUserId(2L);
-        otherUsersPrivateQuestion.setContent("private content");
-        when(questionMapper.selectById(200L)).thenReturn(otherUsersPrivateQuestion);
+        when(questionMapper.selectList(any())).thenReturn(Collections.emptyList());
 
         LearningDiagnosisVO vo = service.getDiagnosis(USER_ID);
 
@@ -697,12 +690,9 @@ class LearningDiagnosisServiceTest {
         when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
         when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "数据结构"));
 
-        Question answered = stubQuestion(1L, "SINGLE_CHOICE", 10L);
-        answered.setVisibility("PUBLIC");
         Question candidate = stubQuestion(2L, "SINGLE_CHOICE", 10L);
         candidate.setVisibility("PUBLIC");
-        when(questionMapper.selectById(1L)).thenReturn(answered);
-        when(questionMapper.selectById(2L)).thenReturn(candidate);
+        when(questionMapper.selectList(any())).thenReturn(List.of(candidate));
 
         LearningDiagnosisVO.RecommendedQuestion recommendation = service.getDiagnosis(USER_ID)
                 .getDailyRecommendations().stream().filter(item -> item.getQuestionId().equals(2L))

@@ -79,10 +79,23 @@ const stubs = {
   'el-col': { template: '<div><slot /></div>' },
   'el-descriptions': { template: '<dl><slot /></dl>' },
   'el-descriptions-item': { props: ['label'], template: '<div><dt>{{ label }}</dt><dd><slot /></dd></div>' },
+  RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
   MarkdownRenderer: { template: '<div />' },
 }
 
 describe('Learning diagnosis trustworthy display', () => {
+  it('offers a course entry instead of starting an empty recommendation session', () => {
+    const wrapper = mount(LearningDiagnosisRecommendations, {
+      props: { courseMasteries: [], recommendations: [], startingPractice: false, practiceError: '' },
+      global: { stubs },
+    })
+
+    expect(wrapper.text()).toContain('暂时没有推荐题目')
+    expect(wrapper.text()).not.toContain('开始练习')
+    expect(wrapper.get('a').attributes('href')).toBe('/courses')
+    expect(wrapper.emitted('start-recommend-practice')).toBeUndefined()
+  })
+
   it('labels a single graded attempt as insufficient data instead of weak mastery', () => {
     const wrapper = mount(LearningDiagnosisSummary, {
       props: {

@@ -12,6 +12,7 @@ import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.PracticeRecordMapper;
 import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
+import com.learnplatform.service.question.AutomaticGradingPolicy;
 import com.learnplatform.service.question.QuestionAccessPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,6 +95,7 @@ public class SimilarQuestionRecommendationService {
         qWrapper.ne(Question::getId, questionId)
                 .eq(Question::getStatus, 1)
                 .eq(Question::getVisibility, "PUBLIC");
+        AutomaticGradingPolicy.restrictCandidates(qWrapper);
         List<Question> candidates = questionMapper.selectList(qWrapper);
 
         // 4. 获取所有知识点关联（用于批量查询）

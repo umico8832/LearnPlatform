@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * 缓存清除服务
@@ -48,6 +50,20 @@ public class CacheEvictService {
     public void evictAdminStatistics() {
         log.debug("清除管理端统计缓存");
         evictAll("adminStatistics");
+    }
+
+    public void evictLearningDiagnosisAfterCommit() {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()
+                || !TransactionSynchronizationManager.isActualTransactionActive()) {
+            evictAll("learningDiagnosis");
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                evictAll("learningDiagnosis");
+            }
+        });
     }
 
     private void clearCache(String cacheName, Object key) {

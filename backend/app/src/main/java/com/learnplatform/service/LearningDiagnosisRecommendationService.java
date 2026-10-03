@@ -12,11 +12,13 @@ import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
-import com.learnplatform.service.question.QuestionAccessPolicy;
+import com.learnplatform.service.question.AutomaticGradingPolicy;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -57,10 +59,13 @@ public class LearningDiagnosisRecommendationService {
                 .sorted((a, b) -> Integer.compare(b.getWrongCount(), a.getWrongCount()))
                 .toList();
 
+        Map<Long, Question> eligibleRepeatedQuestions = eligibleQuestions(userId, repeatedWrongs.stream()
+                .map(WrongQuestion::getQuestionId)
+                .collect(Collectors.toSet()));
         for (WrongQuestion wrong : repeatedWrongs) {
             if (recommendations.size() >= RECOMMEND_COUNT) { break; }
-            Question question = questionMapper.selectById(wrong.getQuestionId());
-            if (!isEnabledAndAccessible(question, userId)) { continue; }
+            Question question = eligibleRepeatedQuestions.get(wrong.getQuestionId());
+            if (question == null) { continue; }
             recommendations.add(toRecommendation(question, questionToKps, "ERROR_PRONE",
                     "反复出错 " + wrong.getWrongCount() + " 次，建议重点复习", wrong.getLastWrongAnswer()));
         }
@@ -84,20 +89,22 @@ public class LearningDiagnosisRecommendationService {
                 .map(PracticeRecord::getQuestionId)
                 .collect(Collectors.toSet());
 
+        Map<Long, Question> eligibleCandidates = eligibleQuestions(userId, candidateIds);
         List<Long> wrongCandidateIds = allWrongs.stream()
                 .map(WrongQuestion::getQuestionId)
-                .filter(candidateIds::contains)
+                .filter(eligibleCandidates::containsKey)
                 .distinct()
                 .collect(Collectors.toCollection(ArrayList::new));
         Collections.shuffle(wrongCandidateIds);
-        addCandidates(recommendations, wrongCandidateIds, userId, questionToKps,
+        addCandidates(recommendations, wrongCandidateIds, eligibleCandidates, questionToKps,
                 "与当前关注的知识点相关，可继续练习");
 
         List<Long> untriedIds = candidateIds.stream()
+                .filter(eligibleCandidates::containsKey)
                 .filter(id -> !answeredIds.contains(id))
                 .collect(Collectors.toCollection(ArrayList::new));
         Collections.shuffle(untriedIds);
-        addCandidates(recommendations, untriedIds, userId, questionToKps,
+        addCandidates(recommendations, untriedIds, eligibleCandidates, questionToKps,
                 "与当前关注的知识点相关，可继续练习");
         return recommendations;
     }
@@ -123,21 +130,32 @@ public class LearningDiagnosisRecommendationService {
 
     private void addCandidates(List<LearningDiagnosisVO.RecommendedQuestion> recommendations,
                                List<Long> candidateIds,
-                               Long userId,
+                               Map<Long, Question> eligibleCandidates,
                                Map<Long, Set<Long>> questionToKps,
                                String description) {
         for (Long questionId : candidateIds) {
             if (recommendations.size() >= RECOMMEND_COUNT) { break; }
-            Question question = questionMapper.selectById(questionId);
-            if (!isEnabledAndAccessible(question, userId)) { continue; }
+            Question question = eligibleCandidates.get(questionId);
+            if (question == null) { continue; }
             recommendations.add(toRecommendation(question, questionToKps,
                     "WEAK_POINT_REINFORCE", description, null));
         }
     }
 
-    private boolean isEnabledAndAccessible(Question question, Long userId) {
-        return question != null && Integer.valueOf(1).equals(question.getStatus())
-                && QuestionAccessPolicy.canAccess(question, userId);
+    private Map<Long, Question> eligibleQuestions(Long userId, Collection<Long> questionIds) {
+        if (questionIds.isEmpty()) {
+            return Map.of();
+        }
+        LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(Question::getId, questionIds)
+                .eq(Question::getStatus, 1)
+                .and(scope -> scope.eq(Question::getVisibility, "PUBLIC")
+                        .or(publicScope -> publicScope.isNull(Question::getVisibility))
+                        .or(privateScope -> privateScope.eq(Question::getVisibility, "PRIVATE")
+                                .eq(Question::getOwnerUserId, userId)));
+        AutomaticGradingPolicy.restrictCandidates(wrapper);
+        return questionMapper.selectList(wrapper).stream()
+                .collect(Collectors.toMap(Question::getId, question -> question, (left, right) -> left, HashMap::new));
     }
 
     private LearningDiagnosisVO.RecommendedQuestion toRecommendation(

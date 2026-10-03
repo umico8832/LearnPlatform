@@ -27,11 +27,12 @@
     </el-table>
   </el-card>
 
-  <el-card v-if="recommendations.length" class="section-card" shadow="hover">
+  <el-card class="section-card" shadow="hover">
     <template #header>
       <div class="card-header">
         <span>下一步练习</span>
         <el-button
+          v-if="recommendations.length"
           type="primary"
           size="small"
           :loading="startingPractice"
@@ -41,7 +42,7 @@
         >
       </div>
     </template>
-    <el-table :data="recommendations" stripe>
+    <el-table v-if="recommendations.length" :data="recommendations" stripe>
       <el-table-column label="题目内容" min-width="280" show-overflow-tooltip>
         <template #default="{ row }"
           ><span>{{ row.questionContent }}</span></template
@@ -49,7 +50,9 @@
       </el-table-column>
       <el-table-column label="推荐原因" width="160">
         <template #default="{ row }">
-          <el-tag :type="reasonType(row.reason)" size="small">{{ row.reasonDescription }}</el-tag>
+          <el-tag class="recommendation-reason" :type="reasonType(row.reason)" size="small">{{
+            row.reasonDescription
+          }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="questionType" label="题型" width="80" align="center" />
@@ -73,12 +76,17 @@
         </template>
       </el-table-column>
     </el-table>
+    <LpEmptyState v-else compact title="暂时没有推荐题目" description="可以从课程中选择下一步学习内容。">
+      <template #actions><RouterLink class="course-link" to="/courses">浏览课程</RouterLink></template>
+    </LpEmptyState>
     <el-alert v-if="practiceError" :title="practiceError" type="error" :closable="false" class="practice-error" />
   </el-card>
 </template>
 
 <script setup lang="ts">
+import { RouterLink } from 'vue-router'
 import type { CourseMastery, RecommendedQuestion } from '@/api/statistics'
+import LpEmptyState from '@/components/ui/LpEmptyState.vue'
 import { rateColor, reasonType } from './diagnosisDisplay'
 
 defineProps<{
@@ -111,5 +119,19 @@ const emit = defineEmits<{
 .no-record {
   color: var(--lp-text-muted);
   font-size: var(--lp-text-sm);
+}
+.course-link {
+  color: var(--lp-primary);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.recommendation-reason {
+  max-width: 100%;
+  height: auto;
+  padding-block: var(--lp-space-1);
+  line-height: var(--lp-leading-body);
+}
+.recommendation-reason :deep(.el-tag__content) {
+  white-space: normal;
 }
 </style>
