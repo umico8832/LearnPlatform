@@ -14,6 +14,7 @@ PLAN_REQUEST = "请建议本课程接下来的学习安排，由我确认是否�
 PLAN_STATE_REQUEST = "E2E_READ_PLAN_STATE"
 MEMORY_REQUEST = "E2E_READ_MEMORY"
 NOTE_REQUEST = "E2E_READ_SESSION_NOTES"
+PAPER_LEARNING_EXPLANATION_MARKER = "针对错误或不完整理解给出清晰讲解"
 
 
 def current_memory(messages):
@@ -41,6 +42,14 @@ def tool_names(messages):
         if message.get("role") == "assistant"
         for call in message.get("tool_calls", [])
     }
+
+
+def is_paper_learning_explanation(messages):
+    return any(
+        message.get("role") == "system"
+        and PAPER_LEARNING_EXPLANATION_MARKER in str(message.get("content", ""))
+        for message in messages
+    )
 
 
 def tool_call(identifier, name):
@@ -134,6 +143,11 @@ def completion(payload):
         message["content"] = f"服务端判分结果：{'回答正确' if correct else '回答不正确'}。"
     elif payload.get("tools"):
         message["content"] = "本节教学内容已读取。你可以结合步骤继续提问。"
+    elif is_paper_learning_explanation(messages):
+        message["content"] = (
+            "### 补充解析\n\n"
+            "请结合题干和已保存的作答，逐步核对每个选项的依据。"
+        )
     elif VARIANT_MARKER in question and "questionContent" in messages[0].get("content", ""):
         message["content"] = json.dumps({
             "questionType": "SINGLE_CHOICE", "questionContent": "线性表中除首尾外，每个元素的直接前驱和后继有几个？",

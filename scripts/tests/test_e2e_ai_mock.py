@@ -100,6 +100,28 @@ class E2eAiMockTest(unittest.TestCase):
         result = json.loads(response["choices"][0]["message"]["content"])
         self.assertEqual(["A"], result["answerLabels"])
 
+    def test_paper_learning_explanation_returns_markdown_not_private_exam_json(self):
+        payload = {"messages": [
+            {"role": "system", "content": "你是一位试卷学习辅导老师。请结合原试卷位置和用户最近一次真实作答，针对错误或不完整理解给出清晰讲解，分析关键步骤与选项，并使用 Markdown。"},
+            {"role": "user", "content": "## 试卷学习上下文\n用户最近答案：A"},
+        ]}
+        status, response = MOCK.completion(payload)
+        self.assertEqual(200, status)
+        content = response["choices"][0]["message"]["content"]
+        self.assertTrue(content.startswith("### 补充解析"))
+        self.assertNotIn("answerLabels", content)
+
+    def test_private_exam_answer_prompt_keeps_structured_json(self):
+        payload = {"messages": [
+            {"role": "system", "content": "你负责为用户私有客观题提供待人工复核的答案建议。"
+             "仅输出 JSON：{\"answerLabels\":[\"A\"],\"analysis\":\"解释依据\"}。"},
+            {"role": "user", "content": "私有题目上下文"},
+        ]}
+        status, response = MOCK.completion(payload)
+        self.assertEqual(200, status)
+        result = json.loads(response["choices"][0]["message"]["content"])
+        self.assertEqual(["A"], result["answerLabels"])
+
     def test_agent_requests_lesson_then_uses_a_final_response(self):
         payload = {"tools": [{"type": "function"}], "messages": [{"role": "user", "content": "解释"}]}
         status, response = MOCK.completion(payload)
