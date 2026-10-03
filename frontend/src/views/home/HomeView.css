@@ -172,7 +172,7 @@
 
 .hero-stage {
   position: relative;
-  min-height: 980px;
+  padding-bottom: var(--lp-space-16);
   overflow: hidden;
   border-radius: calc(var(--lp-radius-xl) + var(--lp-space-3));
   background:
@@ -306,18 +306,16 @@
 }
 
 .lesson-window {
-  position: absolute;
+  position: relative;
   z-index: 3;
-  right: 50%;
-  bottom: var(--lp-space-16);
   width: min(calc(100% - (var(--lp-space-12) * 2)), 920px);
+  margin: var(--lp-space-12) auto 0;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--lp-home-surface) 76%, var(--lp-home-line));
   border-radius: var(--lp-radius-home-refined);
   background: color-mix(in srgb, var(--lp-home-surface) 92%, transparent);
   box-shadow: var(--lp-shadow-lg);
   backdrop-filter: blur(var(--lp-space-3));
-  transform: translateX(50%);
   animation: lesson-arrive 700ms var(--lp-ease-out) both;
 }
 
@@ -1117,11 +1115,11 @@
 @keyframes lesson-arrive {
   from {
     opacity: 0;
-    transform: translate(50%, var(--lp-space-6));
+    transform: translateY(var(--lp-space-6));
   }
   to {
     opacity: 1;
-    transform: translate(50%, 0);
+    transform: translateY(0);
   }
 }
 
@@ -1205,7 +1203,7 @@
   }
 
   .hero-stage {
-    min-height: 1160px;
+    padding-bottom: var(--lp-space-10);
     border-radius: var(--lp-radius-xl);
   }
 
@@ -1241,8 +1239,8 @@
   }
 
   .lesson-window {
-    bottom: calc(var(--lp-space-5) + var(--lp-space-20));
     width: calc(100% - var(--lp-space-6));
+    margin-top: var(--lp-space-8);
   }
 
   .lesson-window__body {
