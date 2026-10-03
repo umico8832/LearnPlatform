@@ -16,6 +16,7 @@ import com.learnplatform.mapper.QuestionOptionMapper;
 import com.learnplatform.dto.QuestionVO;
 import com.learnplatform.dto.QuestionOptionVO;
 import com.learnplatform.service.question.AdaptivePracticePolicy;
+import com.learnplatform.service.question.AutomaticGradingPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -251,6 +252,7 @@ public class AdaptivePracticeService {
             wrapper.in(Question::getId, questionIds);
         }
 
+        AutomaticGradingPolicy.restrictCandidates(wrapper);
         return questionMapper.selectList(wrapper);
     }
 

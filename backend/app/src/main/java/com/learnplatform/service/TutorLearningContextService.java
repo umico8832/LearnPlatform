@@ -12,6 +12,7 @@ import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import com.learnplatform.mapper.QuestionReviewScheduleMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
+import com.learnplatform.service.question.AutomaticGradingPolicy;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -73,11 +74,12 @@ public class TutorLearningContextService {
                         .eq(WrongQuestion::getUserId, userId)
                         .in(WrongQuestion::getQuestionId, questionIds)
                         .lt(WrongQuestion::getMasteryLevel, 2))));
-        context.setDueReviewCount(Math.toIntExact(reviewScheduleMapper.selectCount(
-                new LambdaQueryWrapper<QuestionReviewSchedule>()
-                        .eq(QuestionReviewSchedule::getUserId, userId)
-                        .in(QuestionReviewSchedule::getQuestionId, questionIds)
-                        .le(QuestionReviewSchedule::getNextReviewDate, LocalDate.now()))));
+        LambdaQueryWrapper<QuestionReviewSchedule> dueReviewQuery = new LambdaQueryWrapper<>();
+        dueReviewQuery.eq(QuestionReviewSchedule::getUserId, userId)
+                .in(QuestionReviewSchedule::getQuestionId, questionIds)
+                .le(QuestionReviewSchedule::getNextReviewDate, LocalDate.now());
+        AutomaticGradingPolicy.restrictReviewCandidates(dueReviewQuery);
+        context.setDueReviewCount(Math.toIntExact(reviewScheduleMapper.selectCount(dueReviewQuery)));
         CourseLearningEvent latest = courseLearningEventMapper.selectOne(
                 baseEventQuery(userId, courseId, questionIds)
                         .in(CourseLearningEvent::getEventSource, CONTEXT_EVENT_SOURCES)

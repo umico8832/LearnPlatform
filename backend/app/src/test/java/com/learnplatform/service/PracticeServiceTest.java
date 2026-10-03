@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -160,6 +161,36 @@ class PracticeServiceTest {
 
         assertEquals("题目不存在", exception.getMessage());
         verify(practiceRecordMapper, never()).insert(any());
+    }
+
+    @Test
+    void missingGradingBasisDoesNotCreateWrongAnswerOrLearningFacts() {
+        Question question = singleChoiceQuestion();
+        question.setQuestionType("SHORT_ANSWER");
+        when(questionMapper.selectById(10L)).thenReturn(question);
+        when(questionOptionMapper.selectList(any())).thenReturn(List.of());
+
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> practiceService.submitAnswer(request(10L, "我的解答", 30), 7L));
+
+        assertEquals("题目尚未配置可用判分依据，暂时无法提交练习", exception.getMessage());
+        verifyNoInteractions(practiceRecordMapper, courseLearningEventService,
+                cacheEvictService, spacedRepetitionService);
+        assertEquals(0, wrongQuestionService.addWrongQuestionCalls);
+        assertEquals(0, wrongQuestionService.removeOnCorrectCalls);
+    }
+
+    @Test
+    void shortAnswerWithConfiguredKeywordsKeepsExistingGrading() {
+        Question question = singleChoiceQuestion();
+        question.setQuestionType("SHORT_ANSWER");
+        when(questionMapper.selectById(10L)).thenReturn(question);
+        when(questionOptionMapper.selectList(any())).thenReturn(List.of(option("A", "后进先出", 1)));
+
+        PracticeResultVO result = practiceService.submitAnswer(request(10L, "栈遵循后进先出", 30), 7L);
+
+        assertTrue(result.getCorrect());
+        verify(practiceRecordMapper).insert(any(PracticeRecord.class));
     }
 
     @Test

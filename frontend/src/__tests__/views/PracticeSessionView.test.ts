@@ -343,7 +343,7 @@ describe('PracticeSessionView', () => {
   })
 
   it('keeps a failed submission beside the answer with a retry, without a global error toast', async () => {
-    mockSubmitAnswer.mockRejectedValueOnce(new Error('network'))
+    mockSubmitAnswer.mockRejectedValueOnce(new Error('Network Error'))
     const acceptReward = vi.spyOn(useGamificationStore(), 'acceptReward')
     const wrapper = mount(PracticeSessionView, { global: { stubs } })
     await flushPromises()
@@ -361,6 +361,27 @@ describe('PracticeSessionView', () => {
     expect(wrapper.get('[role="alert"]').text()).toContain('提交答案失败')
     expect(wrapper.get('[role="alert"] button').text()).toBe('重试')
     expect(mockError).not.toHaveBeenCalled()
+  })
+
+  it('keeps a server grading-basis rejection beside the answer without grading or navigation', async () => {
+    const rejection = '题目尚未配置可用判分依据，暂时无法提交练习'
+    mockSubmitAnswer.mockRejectedValueOnce(new Error(rejection))
+    const acceptReward = vi.spyOn(useGamificationStore(), 'acceptReward')
+    const wrapper = mount(PracticeSessionView, { global: { stubs } })
+    await flushPromises()
+    const answer = wrapper.findAll('input[type="radio"]').find((option) => option.attributes('value') === 'TRUE')!
+    await answer.setValue()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('提交答案'))!
+      .trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[role="alert"]').text()).toContain(rejection)
+    expect((answer.element as HTMLInputElement).checked).toBe(true)
+    expect(wrapper.find('[data-testid="practice-feedback"]').exists()).toBe(false)
+    expect(wrapper.findAll('button').some((button) => button.text().includes('下一题'))).toBe(false)
+    expect(acceptReward).not.toHaveBeenCalled()
   })
 
   it('ignores a late submission from the account that started it', async () => {

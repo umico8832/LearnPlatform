@@ -45,6 +45,10 @@ public class ReviewScheduleVO {
 
     /** 掌握等级文字（新卡片/学习中/已掌握/困难） */
     private String statusLabel;
+
+    /** 是否仍具备自动判分所需的题型和答案依据。 */
+    private boolean availableForReview;
+
     private GamificationRewardFeedback reward;
     /** Present only on a submit response; schedule queries do not infer a grading result. */
     private Boolean correct;
@@ -83,6 +87,10 @@ public class ReviewScheduleVO {
     public void setOverdueDays(int overdueDays) { this.overdueDays = overdueDays; }
     public String getStatusLabel() { return statusLabel; }
     public void setStatusLabel(String statusLabel) { this.statusLabel = statusLabel; }
+    public boolean isAvailableForReview() { return availableForReview; }
+    public void setAvailableForReview(boolean availableForReview) {
+        this.availableForReview = availableForReview;
+    }
     public GamificationRewardFeedback getReward() { return reward; }
     public void setReward(GamificationRewardFeedback reward) { this.reward = reward; }
     public Boolean getCorrect() { return correct; }

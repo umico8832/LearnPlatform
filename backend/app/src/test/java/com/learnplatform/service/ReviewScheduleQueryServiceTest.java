@@ -25,6 +25,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -85,6 +86,59 @@ class ReviewScheduleQueryServiceTest {
 
         assertEquals(List.of(101L), cards.stream().map(ReviewScheduleVO::getQuestionId).toList());
         verify(knowledgePointMapper).selectQuestionIdsByKnowledgePointId(31L);
+    }
+
+    @Test
+    void dueCardsExcludeUnavailableQuestionsBeforeTheLimit() {
+        when(reviewScheduleMapper.selectList(any())).thenReturn(List.of(schedule(101L)));
+        when(cardViewService.toViews(any(), any())).thenReturn(List.of(view(101L)));
+
+        service.getDueReviewCards(7L, null, 30);
+
+        ArgumentCaptor<LambdaQueryWrapper<QuestionReviewSchedule>> captor =
+                ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+        verify(reviewScheduleMapper).selectList(captor.capture());
+        String sql = captor.getValue().getSqlSegment();
+        int candidateFilter = sql.indexOf("SELECT question.id FROM question");
+        int limit = sql.indexOf("LIMIT");
+        assertTrue(candidateFilter >= 0 && candidateFilter < limit, sql);
+    }
+
+    @Test
+    void statsCountOnlyAutomaticallyReviewableDueCardsWhileKeepingHistoricalTotals() {
+        when(reviewScheduleMapper.selectCount(any())).thenReturn(2L, 1L, 1L, 0L, 0L);
+        when(reviewScheduleMapper.selectList(any())).thenReturn(List.of());
+
+        ReviewStatsVO stats = service.getReviewStats(7L);
+
+        assertEquals(2, stats.getTotalCards(), "历史卡总数不应因缺少答案依据而丢失");
+        ArgumentCaptor<LambdaQueryWrapper<QuestionReviewSchedule>> captor =
+                ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+        verify(reviewScheduleMapper, atLeast(4)).selectCount(captor.capture());
+        long filteredDueCounts = captor.getAllValues().stream()
+                .map(LambdaQueryWrapper::getSqlSegment)
+                .filter(sql -> sql.contains("SELECT question.id FROM question"))
+                .count();
+        assertEquals(2, filteredDueCounts, "今日待复习和逾期统计均必须排除无法自动判分的历史卡");
+    }
+
+    @Test
+    void aiReviewContextExcludesUnavailableDifficultAndOverdueCards() {
+        when(reviewScheduleMapper.selectCount(any())).thenReturn(0L);
+        when(reviewScheduleMapper.selectList(any())).thenReturn(List.of());
+        when(cardViewService.toViews(any(), any())).thenReturn(List.of());
+
+        service.buildReviewContext(7L);
+
+        ArgumentCaptor<LambdaQueryWrapper<QuestionReviewSchedule>> captor =
+                ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+        verify(reviewScheduleMapper, atLeast(2)).selectList(captor.capture());
+        long filteredSuggestions = captor.getAllValues().stream()
+                .map(LambdaQueryWrapper::getSqlSegment)
+                .filter(sql -> sql.contains("SELECT question.id FROM question"))
+                .count();
+        assertEquals(2, filteredSuggestions,
+                "困难与逾期建议均不应向 AI 传递无法提交的历史卡");
     }
 
     @Test

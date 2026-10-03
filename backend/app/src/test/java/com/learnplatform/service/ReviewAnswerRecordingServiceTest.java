@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -118,6 +119,19 @@ class ReviewAnswerRecordingServiceTest {
 
         verify(practiceRecordMapper, never()).insert(any());
         verify(wrongQuestionMapper, never()).insert(any());
+    }
+
+    @Test
+    void missingGradingBasisDoesNotCreateReviewFacts() {
+        Question question = question();
+        question.setQuestionType("SHORT_ANSWER");
+        when(questionMapper.selectById(12L)).thenReturn(question);
+        when(questionOptionMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of());
+
+        assertThrows(BusinessException.class,
+                () -> service.evaluateAndRecordWithReward(request("我的解答"), 7L));
+
+        verifyNoInteractions(practiceRecordMapper, wrongQuestionMapper, courseLearningEventService);
     }
 
     private ReviewSubmitRequest request(String answer) {

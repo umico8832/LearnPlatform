@@ -1,6 +1,7 @@
 package com.learnplatform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.learnplatform.dto.LearningReportVO;
 import com.learnplatform.entity.QuestionReviewSchedule;
 import com.learnplatform.mapper.CourseMapper;
@@ -9,9 +10,12 @@ import com.learnplatform.mapper.PracticeRecordMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionReviewScheduleMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
+import org.apache.ibatis.session.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -52,6 +56,8 @@ class LearningReportReviewStatsTest {
 
     @BeforeEach
     void setUp() {
+        TableInfoHelper.initTableInfo(
+                new MapperBuilderAssistant(new Configuration(), ""), QuestionReviewSchedule.class);
         learningReportService = new LearningReportService(
                 practiceRecordMapper, wrongQuestionMapper, questionMapper,
                 courseMapper, examRecordMapper, reviewScheduleMapper
@@ -167,6 +173,23 @@ class LearningReportReviewStatsTest {
         assertNotNull(report);
         assertEquals(3, report.getTotalReviewCards());
         assertEquals(2, report.getMasteredReviewCards());
+    }
+
+    @Test
+    void dueTodayCountUsesOnlyAutomaticallyGradableReviewCards() {
+        when(reviewScheduleMapper.selectCount(any(LambdaQueryWrapper.class)))
+                .thenReturn(1L, 1L, 0L);
+        when(reviewScheduleMapper.selectList(any(LambdaQueryWrapper.class)))
+                .thenReturn(Collections.emptyList());
+
+        learningReportService.getLearningReport(1L);
+
+        ArgumentCaptor<LambdaQueryWrapper<QuestionReviewSchedule>> dueCaptor =
+                ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+        verify(reviewScheduleMapper, atLeast(2)).selectCount(dueCaptor.capture());
+        assertTrue(dueCaptor.getAllValues().stream()
+                .map(LambdaQueryWrapper::getSqlSegment)
+                .anyMatch(sql -> sql.contains("SELECT question.id FROM question")));
     }
 
     // ========== 辅助方法 ==========

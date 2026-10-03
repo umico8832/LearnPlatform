@@ -2,6 +2,7 @@ package com.learnplatform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.QuestionOptionVO;
+import com.learnplatform.service.question.AutomaticGradingPolicy;
 import com.learnplatform.dto.QuestionVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.KnowledgePoint;
@@ -64,6 +65,7 @@ public class PracticeQuestionQueryService {
         LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Question::getStatus, 1);
         wrapper.eq(Question::getVisibility, "PUBLIC");
+        AutomaticGradingPolicy.restrictCandidates(wrapper);
         if (courseId != null) {
             wrapper.eq(Question::getCourseId, courseId);
         }
@@ -152,24 +154,26 @@ public class PracticeQuestionQueryService {
         if (favorites.isEmpty()) {
             return new ArrayList<>();
         }
-        if (questionId == null && favorites.size() > count) {
-            Collections.shuffle(favorites);
-            favorites = favorites.subList(0, count);
-        }
         List<Long> questionIds = favorites.stream()
                 .map(UserFavoriteQuestion::getQuestionId)
                 .distinct()
                 .collect(Collectors.toList());
-        return findAccessibleQuestions(userId, questionIds);
+        return findAccessibleQuestions(userId, questionIds, count);
     }
 
-    private List<QuestionVO> findAccessibleQuestions(Long userId, List<Long> questionIds) {
-        return toPracticeQuestions(questionMapper.selectList(accessibleQuestionWrapper(userId, questionIds)));
+    private List<QuestionVO> findAccessibleQuestions(Long userId, List<Long> questionIds, int count) {
+        List<Question> questions = questionMapper.selectList(accessibleQuestionWrapper(userId, questionIds));
+        if (questions.size() > count) {
+            Collections.shuffle(questions);
+            questions = questions.subList(0, count);
+        }
+        return toPracticeQuestions(questions);
     }
 
     private LambdaQueryWrapper<Question> accessibleQuestionWrapper(Long userId, List<Long> questionIds) {
         LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(Question::getId, questionIds);
+        AutomaticGradingPolicy.restrictCandidates(wrapper);
         wrapper.eq(Question::getStatus, 1);
         wrapper.and(scope -> scope.eq(Question::getVisibility, "PUBLIC")
                 .or(privateScope -> privateScope.eq(Question::getVisibility, "PRIVATE")

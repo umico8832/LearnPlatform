@@ -1,11 +1,13 @@
 package com.learnplatform.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.ReviewScheduleVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionReviewSchedule;
 import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.QuestionMapper;
+import com.learnplatform.service.question.AutomaticGradingPolicy;
 import com.learnplatform.service.review.ReviewSchedulePolicy;
 import org.springframework.stereotype.Service;
 
@@ -45,9 +47,18 @@ public class ReviewScheduleCardViewService {
 
         List<Long> questionIds = schedules.stream()
                 .map(QuestionReviewSchedule::getQuestionId)
+                .filter(Objects::nonNull)
+                .distinct()
                 .toList();
         Map<Long, Question> questionMap = questionMapper.selectBatchIds(questionIds).stream()
                 .collect(Collectors.toMap(Question::getId, question -> question));
+
+        LambdaQueryWrapper<Question> availableQuestionQuery = new LambdaQueryWrapper<>();
+        availableQuestionQuery.in(Question::getId, questionIds);
+        AutomaticGradingPolicy.restrictCandidates(availableQuestionQuery);
+        Set<Long> availableQuestionIds = questionMapper.selectList(availableQuestionQuery).stream()
+                .map(Question::getId)
+                .collect(Collectors.toSet());
 
         Set<Long> courseIds = questionMap.values().stream()
                 .map(Question::getCourseId)
@@ -73,6 +84,7 @@ public class ReviewScheduleCardViewService {
             view.setTotalReviews(schedule.getTotalReviews());
             fillDueState(view, schedule, today);
             view.setStatusLabel(ReviewSchedulePolicy.statusLabel(schedule));
+            view.setAvailableForReview(availableQuestionIds.contains(schedule.getQuestionId()));
             fillQuestion(view, questionMap.get(schedule.getQuestionId()), courseNameMap);
             result.add(view);
         }

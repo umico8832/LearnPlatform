@@ -17,6 +17,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -59,5 +60,38 @@ class ReviewScheduleCardViewServiceTest {
         assertEquals("数据结构", view.getCourseName());
         assertEquals(3, view.getOverdueDays());
         assertFalse(view.getQuestionContent().contains("<"));
+    }
+
+    @Test
+    void retainsLegacyCardsButMarksOnlyAutomaticallyGradableCardsAvailable() {
+        QuestionReviewSchedule availableSchedule = new QuestionReviewSchedule();
+        availableSchedule.setId(1L);
+        availableSchedule.setQuestionId(10L);
+        QuestionReviewSchedule legacySchedule = new QuestionReviewSchedule();
+        legacySchedule.setId(2L);
+        legacySchedule.setQuestionId(20L);
+
+        Question availableQuestion = question(10L, 30L, "可自动判分题");
+        Question legacyQuestion = question(20L, 30L, "缺少判分依据的历史题");
+        when(questionMapper.selectBatchIds(any())).thenReturn(List.of(availableQuestion, legacyQuestion));
+        when(questionMapper.selectList(any())).thenReturn(List.of(availableQuestion));
+        when(courseMapper.selectBatchIds(any())).thenReturn(List.of());
+
+        ReviewScheduleCardViewService service = new ReviewScheduleCardViewService(questionMapper, courseMapper);
+        List<ReviewScheduleVO> views = service.toViews(
+                List.of(availableSchedule, legacySchedule), LocalDate.of(2026, 10, 2));
+
+        assertEquals(2, views.size(), "历史卡仍应显示，供用户查看或移出计划");
+        assertTrue(views.get(0).isAvailableForReview());
+        assertFalse(views.get(1).isAvailableForReview());
+    }
+
+    private Question question(Long id, Long courseId, String content) {
+        Question question = new Question();
+        question.setId(id);
+        question.setCourseId(courseId);
+        question.setContent(content);
+        question.setQuestionType("SINGLE_CHOICE");
+        return question;
     }
 }

@@ -14,6 +14,7 @@ import com.learnplatform.mapper.PracticeRecordMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionReviewScheduleMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
+import com.learnplatform.service.question.AutomaticGradingPolicy;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -233,6 +234,7 @@ public class LearningReportService {
         LambdaQueryWrapper<QuestionReviewSchedule> dueWrapper = new LambdaQueryWrapper<>();
         dueWrapper.eq(QuestionReviewSchedule::getUserId, userId)
                 .le(QuestionReviewSchedule::getNextReviewDate, today);
+        AutomaticGradingPolicy.restrictReviewCandidates(dueWrapper);
         Long dueCount = reviewScheduleMapper.selectCount(dueWrapper);
         vo.setDueTodayCount(dueCount != null ? dueCount.intValue() : 0);
 

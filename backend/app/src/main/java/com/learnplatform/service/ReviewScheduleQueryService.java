@@ -9,6 +9,7 @@ import com.learnplatform.entity.QuestionReviewSchedule;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionReviewScheduleMapper;
+import com.learnplatform.service.question.AutomaticGradingPolicy;
 import com.learnplatform.service.review.ReviewSchedulePolicy;
 import org.springframework.stereotype.Service;
 
@@ -81,6 +82,7 @@ public class ReviewScheduleQueryService {
         if (questionId != null) {
             wrapper.eq(QuestionReviewSchedule::getQuestionId, questionId);
         }
+        AutomaticGradingPolicy.restrictReviewCandidates(wrapper);
         wrapper.orderByAsc(QuestionReviewSchedule::getNextReviewDate)
                 .orderByDesc(QuestionReviewSchedule::getEaseFactor)
                 .last("LIMIT " + limit);
@@ -115,8 +117,10 @@ public class ReviewScheduleQueryService {
             return stats;
         }
 
-        stats.setDueToday(count(userId, QuestionReviewSchedule::getNextReviewDate, today, false));
-        stats.setOverdue(count(userId, QuestionReviewSchedule::getNextReviewDate, today, true));
+        stats.setDueToday(countAutomaticallyReviewable(
+                userId, QuestionReviewSchedule::getNextReviewDate, today, false));
+        stats.setOverdue(countAutomaticallyReviewable(
+                userId, QuestionReviewSchedule::getNextReviewDate, today, true));
 
         LambdaQueryWrapper<QuestionReviewSchedule> doneWrapper = new LambdaQueryWrapper<>();
         doneWrapper.eq(QuestionReviewSchedule::getUserId, userId)
@@ -158,15 +162,17 @@ public class ReviewScheduleQueryService {
         LambdaQueryWrapper<QuestionReviewSchedule> difficultWrapper = new LambdaQueryWrapper<>();
         difficultWrapper.eq(QuestionReviewSchedule::getUserId, userId)
                 .lt(QuestionReviewSchedule::getEaseFactor, ReviewSchedulePolicy.DIFFICULT_THRESHOLD)
-                .orderByAsc(QuestionReviewSchedule::getEaseFactor)
-                .last("LIMIT 10");
+                .orderByAsc(QuestionReviewSchedule::getEaseFactor);
+        AutomaticGradingPolicy.restrictReviewCandidates(difficultWrapper);
+        difficultWrapper.last("LIMIT 10");
         context.setDifficultCards(cardViewService.toViews(reviewScheduleMapper.selectList(difficultWrapper), today));
 
         LambdaQueryWrapper<QuestionReviewSchedule> overdueWrapper = new LambdaQueryWrapper<>();
         overdueWrapper.eq(QuestionReviewSchedule::getUserId, userId)
                 .lt(QuestionReviewSchedule::getNextReviewDate, today)
-                .orderByAsc(QuestionReviewSchedule::getNextReviewDate)
-                .last("LIMIT 10");
+                .orderByAsc(QuestionReviewSchedule::getNextReviewDate);
+        AutomaticGradingPolicy.restrictReviewCandidates(overdueWrapper);
+        overdueWrapper.last("LIMIT 10");
         context.setOverdueCards(cardViewService.toViews(reviewScheduleMapper.selectList(overdueWrapper), today));
 
         List<Integer> dailyReviews = new ArrayList<>();
@@ -208,10 +214,11 @@ public class ReviewScheduleQueryService {
                 .toList();
     }
 
-    private int count(Long userId,
-                      com.baomidou.mybatisplus.core.toolkit.support.SFunction<QuestionReviewSchedule, ?> column,
-                      LocalDate today,
-                      boolean beforeOnly) {
+    private int countAutomaticallyReviewable(
+            Long userId,
+            com.baomidou.mybatisplus.core.toolkit.support.SFunction<QuestionReviewSchedule, ?> column,
+            LocalDate today,
+            boolean beforeOnly) {
         LambdaQueryWrapper<QuestionReviewSchedule> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(QuestionReviewSchedule::getUserId, userId);
         if (beforeOnly) {
@@ -219,6 +226,7 @@ public class ReviewScheduleQueryService {
         } else {
             wrapper.le(column, today);
         }
+        AutomaticGradingPolicy.restrictReviewCandidates(wrapper);
         return toInt(reviewScheduleMapper.selectCount(wrapper));
     }
 

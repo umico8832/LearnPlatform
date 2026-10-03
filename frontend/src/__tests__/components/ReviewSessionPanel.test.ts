@@ -196,7 +196,7 @@ describe('ReviewSessionPanel', () => {
   })
 
   it('keeps a failed review submission beside the answer with a retry, without a global error toast', async () => {
-    submitReview.mockRejectedValueOnce(new Error('network'))
+    submitReview.mockRejectedValueOnce(new Error('Network Error'))
     const acceptReward = vi.spyOn(useGamificationStore(), 'acceptReward')
     const wrapper = mount(ReviewSessionPanel, {
       props: { cards: [card] },
@@ -213,9 +213,31 @@ describe('ReviewSessionPanel', () => {
     expect(acceptReward).not.toHaveBeenCalled()
     expect(wrapper.emitted('reviewed')).toBeUndefined()
     expect(wrapper.text()).not.toContain('作答已记录')
-    expect(wrapper.get('[role="alert"]').text()).toContain('network')
+    expect(wrapper.get('[role="alert"]').text()).toContain('提交失败，请重试')
     expect(wrapper.get('[role="alert"] button').text()).toBe('重试')
     expect(message.error).not.toHaveBeenCalled()
+  })
+
+  it('keeps a server grading-basis rejection beside the selected answer without completing the review', async () => {
+    const rejection = '题目尚未配置可用判分依据，暂时无法提交练习'
+    submitReview.mockRejectedValueOnce(new Error(rejection))
+    const acceptReward = vi.spyOn(useGamificationStore(), 'acceptReward')
+    const wrapper = mount(ReviewSessionPanel, { props: { cards: [card] }, global: { stubs: reviewStubs } })
+    ;(wrapper.vm as unknown as { start: () => void }).start()
+    await flushPromises()
+    const input = wrapper.find('textarea')
+    await input.setValue('答案')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('提交答案'))!
+      .trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[role="alert"]').text()).toContain(rejection)
+    expect((input.element as HTMLTextAreaElement).value).toBe('答案')
+    expect(wrapper.emitted('reviewed')).toBeUndefined()
+    expect(wrapper.text()).not.toContain('服务端判分：')
+    expect(acceptReward).not.toHaveBeenCalled()
   })
 
   it('ignores a late response after the learner ends the review session', async () => {

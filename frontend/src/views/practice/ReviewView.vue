@@ -102,48 +102,55 @@
         title="暂无复习卡片"
         description="刷题后自动加入；也可以同步错题到复习计划。"
       />
-      <el-table v-else :data="allCards" stripe style="width: 100%">
-        <el-table-column label="题目" min-width="200" show-overflow-tooltip>
-          <template #default="{ row }">
-            <span>{{ row.questionContent }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="类型" width="80">
-          <template #default="{ row }">
-            <el-tag size="small">{{ row.questionType }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="课程" width="120" show-overflow-tooltip prop="courseName" />
-        <el-table-column label="状态" width="80">
-          <template #default="{ row }">
-            <el-tag size="small" :type="statusTagType(row.statusLabel)">{{ row.statusLabel }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="间隔" width="80" prop="intervalDays" />
-        <el-table-column label="下次复习" width="120" prop="nextReviewDate" />
-        <el-table-column label="操作" width="160">
-          <template #default="{ row }">
-            <el-button
-              size="small"
-              type="danger"
-              plain
-              :loading="removingQuestionIds.has(row.questionId)"
-              :disabled="resettingQuestionIds.has(row.questionId)"
-              @click="handleRemove(row.questionId)"
-            >
-              移出
-            </el-button>
-            <el-button
-              size="small"
-              :loading="resettingQuestionIds.has(row.questionId)"
-              :disabled="removingQuestionIds.has(row.questionId)"
-              @click="handleReset(row.questionId)"
-            >
-              重置
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <template v-else>
+        <p v-if="allCards.some((card) => card.availableForReview === false)" class="card-availability-note">
+          缺少判分依据的卡片暂不安排作答，答案配置完成后会恢复。卡片与已有复习进度保留。
+        </p>
+        <el-table :data="allCards" stripe style="width: 100%">
+          <el-table-column label="题目" min-width="200" show-overflow-tooltip>
+            <template #default="{ row }">
+              <span>{{ row.questionContent }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="类型" width="80">
+            <template #default="{ row }">
+              <el-tag size="small">{{ practiceQuestionTypeLabel(row.questionType) }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="课程" width="120" show-overflow-tooltip prop="courseName" />
+          <el-table-column label="状态" width="110">
+            <template #default="{ row }">
+              <el-tag size="small" :type="row.availableForReview === false ? 'info' : statusTagType(row.statusLabel)">{{
+                row.availableForReview === false ? '待配置答案' : row.statusLabel
+              }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="间隔" width="80" prop="intervalDays" />
+          <el-table-column label="下次复习" width="120" prop="nextReviewDate" />
+          <el-table-column label="操作" width="160">
+            <template #default="{ row }">
+              <el-button
+                size="small"
+                type="danger"
+                plain
+                :loading="removingQuestionIds.has(row.questionId)"
+                :disabled="resettingQuestionIds.has(row.questionId)"
+                @click="handleRemove(row.questionId)"
+              >
+                移出
+              </el-button>
+              <el-button
+                size="small"
+                :loading="resettingQuestionIds.has(row.questionId)"
+                :disabled="removingQuestionIds.has(row.questionId)"
+                @click="handleReset(row.questionId)"
+              >
+                重置
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </template>
     </el-card>
   </div>
 </template>
@@ -170,6 +177,7 @@ import {
 import { useReviewAiSuggestion } from './useReviewAiSuggestion'
 import { reviewStatusTag as statusTagType } from '@/components/review/reviewSessionPresentation'
 import { positiveQueryNumber } from './reviewPresentation'
+import { practiceQuestionTypeLabel } from './practiceSessionPresentation'
 
 const route = useRoute()
 const router = useRouter()
@@ -510,6 +518,13 @@ onBeforeUnmount(() => {
   border: var(--lp-border-hairline);
   border-radius: var(--lp-radius-lg);
   box-shadow: var(--lp-shadow-xs);
+}
+
+.card-availability-note {
+  margin: 0 0 var(--lp-space-4);
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-relaxed);
 }
 
 @media (max-width: 900px) {

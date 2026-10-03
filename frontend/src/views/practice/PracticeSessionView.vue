@@ -109,6 +109,7 @@ import type { GamificationAchievement } from '@/components/gamification/types'
 import { useGamificationStore } from '@/stores/gamification'
 import { useUserStore } from '@/stores/user'
 import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
+import { errorMessage } from '@/utils/errors'
 import { clearPracticeSession, loadPracticeSession } from '@/utils/practiceSession'
 import PracticeAnswerFeedback from './PracticeAnswerFeedback.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
@@ -249,14 +250,14 @@ async function handleSubmit() {
       nextElement.scrollIntoView?.({ block: 'nearest' })
       nextElement.focus()
     }
-  } catch {
+  } catch (error) {
     if (
       alive &&
       requestVersion === submissionVersion &&
       session === getAuthSessionVersion() &&
       currentQuestion.value?.id === questionId
     )
-      submissionError.value = '提交答案失败，请重试'
+      submissionError.value = errorMessage(error, '提交答案失败，请重试')
   } finally {
     if (alive && requestVersion === submissionVersion && session === getAuthSessionVersion()) submitting.value = false
   }

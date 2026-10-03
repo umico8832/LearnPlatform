@@ -5,6 +5,7 @@ import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.CourseKnowledgePointFactVO;
 import com.learnplatform.dto.CourseOverviewVO;
 import com.learnplatform.entity.Question;
+import com.learnplatform.service.question.AutomaticGradingPolicy;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -15,6 +16,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -77,6 +79,8 @@ class CourseLearningFactIntegrationTest extends IntegrationTestBase {
                 """, USER, Q1);
         eventService.recordTutorCheck(USER, COURSE, K1, 963001L, true);
         eventService.recordQuestionAnswer(USER, question, "AI_VARIANT_ANSWERED", "AI_TUTOR", 963001L, false, null);
+        eventService.recordTutorCheck(USER, COURSE, K1, 963001L, true);
+        eventService.recordQuestionAnswer(USER, question, "AI_VARIANT_ANSWERED", "AI_TUTOR", 963001L, false, null);
         examAnswer(964001, Q1, 1, "A", "AUTO_GRADED");
         stageAnswer(965001, Q1, "[{\"id\":" + K1 + ",\"name\":\"快照一\"},{\"id\":"
                 + K2 + ",\"name\":\"快照二\"}]", 1);
@@ -95,7 +99,11 @@ class CourseLearningFactIntegrationTest extends IntegrationTestBase {
         assertEquals(4, point(K2).getCorrectCount());
         assertEquals(0, point(K3).getAnsweredCount());
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM course_learning_event WHERE user_id=? "
-                + "AND event_source='AI_TUTOR' AND source_record_id=963001", Integer.class, USER));
+                + "AND event_source='AI_TUTOR' AND source_record_id=963001 "
+                + "AND event_type='TUTOR_CHECK_ANSWERED'", Integer.class, USER));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM course_learning_event WHERE user_id=? "
+                + "AND event_source='AI_TUTOR' AND source_record_id=963001 "
+                + "AND event_type='AI_VARIANT_ANSWERED'", Integer.class, USER));
     }
 
     @Test
@@ -213,6 +221,32 @@ class CourseLearningFactIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void excludesLegacyDueCardsWithoutAutomaticGradingBasisFromCourseFactsAndTargets() {
+        long ungradableQuestion = Q2 + 10;
+        jdbc.update("INSERT INTO question (id,content,question_type,course_id,visibility) "
+                + "VALUES (?,'未配置答案的历史简答题','SHORT_ANSWER',?,'PUBLIC')", ungradableQuestion, COURSE);
+        jdbc.update("INSERT INTO question_knowledge_point (question_id,knowledge_point_id) VALUES (?,?)",
+                ungradableQuestion, K1);
+        backlog(USER, ungradableQuestion, 0, 0);
+
+        CourseOverviewVO overview = overviewService.getOverview(USER, COURSE);
+
+        assertEquals(0, overview.getDueReviewCount());
+        assertEquals(0, point(K1).getDueReviewCount());
+        assertTrue(overview.getRecommendedTargets().stream()
+                .noneMatch(target -> "DUE_REVIEW".equals(target.getType())));
+    }
+
+    @Test
+    void automaticallyGradablePolicyIncludesFixtureQuestionsWithMarkedChoiceAnswers() {
+        List<Long> eligibleQuestionIds = jdbc.queryForList(
+                AutomaticGradingPolicy.eligibleQuestionIdsSql(), Long.class);
+
+        assertTrue(eligibleQuestionIds.contains(Q1));
+        assertTrue(eligibleQuestionIds.contains(Q2));
+    }
+
+    @Test
     void emptyDataAndStablePaginationDoNotRequireLoadingEveryRecord() {
         CourseOverviewVO empty = overviewService.getOverview(USER, COURSE + 90);
         assertEquals(0, empty.getAnsweredCount());
@@ -251,6 +285,8 @@ class CourseLearningFactIntegrationTest extends IntegrationTestBase {
     private void question(long id, String visibility, Long owner) {
         jdbc.update("INSERT INTO question (id,content,question_type,course_id,visibility,owner_user_id) "
                 + "VALUES (?,'事实测试题','SINGLE_CHOICE',?,?,?)", id, COURSE, visibility, owner);
+        jdbc.update("INSERT INTO question_option (question_id,content,option_label,is_correct) VALUES (?,'选项 A','A',1)",
+                id);
     }
 
     private Question eventQuestion(long id) {
@@ -304,6 +340,6 @@ class CourseLearningFactIntegrationTest extends IntegrationTestBase {
         jdbc.update("INSERT INTO wrong_question (user_id,question_id,mastery_level) VALUES (?,?,?)",
                 userId, questionId, mastery);
         jdbc.update("INSERT INTO question_review_schedule (user_id,question_id,next_review_date) "
-                + "VALUES (?,?,DATE_ADD(CURRENT_DATE, INTERVAL ? DAY))", userId, questionId, daysUntilDue);
+                + "VALUES (?,?,?)", userId, questionId, LocalDate.now().plusDays(daysUntilDue));
     }
 }

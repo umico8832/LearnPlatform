@@ -9,6 +9,8 @@
 
     <!-- 来源表的主键就是一次作答；练习与复习共用 practice_record，不能再叠加事件计数。 -->
     <sql id="facts">
+        <bind name="automaticallyGradableQuestionIds"
+              value="@com.learnplatform.service.question.AutomaticGradingPolicy@eligibleQuestionIdsSql()"/>
         WITH visible_questions AS (<include refid="visibleQuestions"/>),
         library AS (
             SELECT create_time FROM user_course WHERE user_id = #{userId} AND course_id = #{courseId}
@@ -55,6 +57,7 @@
         ), due_facts AS (
             SELECT s.* FROM question_review_schedule s JOIN visible_questions q ON q.id = s.question_id
             WHERE s.user_id = #{userId} AND s.deleted = 0 AND s.next_review_date &lt;= #{today}
+              AND q.id IN (${automaticallyGradableQuestionIds})
         )
     </sql>
 
@@ -148,9 +151,12 @@
     </select>
 
     <select id="selectFirstDueQuestion" resultType="long">
+        <bind name="automaticallyGradableQuestionIds"
+              value="@com.learnplatform.service.question.AutomaticGradingPolicy@eligibleQuestionIdsSql()"/>
         SELECT s.question_id FROM question_review_schedule s
         JOIN (<include refid="visibleQuestions"/>) q ON q.id = s.question_id
         WHERE s.user_id = #{userId} AND s.deleted = 0 AND s.next_review_date &lt;= #{today}
+          AND q.id IN (${automaticallyGradableQuestionIds})
         ORDER BY s.next_review_date, s.id LIMIT 1
     </select>
 

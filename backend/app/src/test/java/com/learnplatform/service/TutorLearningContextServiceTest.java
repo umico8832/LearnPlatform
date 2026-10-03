@@ -1,20 +1,28 @@
 package com.learnplatform.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.learnplatform.dto.TutorLearningContextVO;
 import com.learnplatform.entity.CourseLearningEvent;
 import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.QuestionKnowledgePoint;
+import com.learnplatform.entity.QuestionReviewSchedule;
 import com.learnplatform.mapper.CourseLearningEventMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import com.learnplatform.mapper.QuestionReviewScheduleMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
+import org.apache.ibatis.session.Configuration;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -22,6 +30,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class TutorLearningContextServiceTest {
+
+    @BeforeEach
+    void initializeReviewScheduleTableInfo() {
+        TableInfoHelper.initTableInfo(
+                new MapperBuilderAssistant(new Configuration(), ""), QuestionReviewSchedule.class);
+    }
 
     @Test
     void aggregatesQuestionEvidenceFromTargetAndCourseAncestors() {
@@ -52,6 +66,11 @@ class TutorLearningContextServiceTest {
         assertEquals(1, context.getDueReviewCount());
         assertEquals(4, context.getReviewAnswerCount());
         assertEquals(LocalDateTime.of(2026, 8, 15, 9, 30), context.getLatestEvidenceAt());
+
+        ArgumentCaptor<LambdaQueryWrapper<QuestionReviewSchedule>> dueCaptor =
+                ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+        verify(reviews).selectCount(dueCaptor.capture());
+        assertTrue(dueCaptor.getValue().getSqlSegment().contains("SELECT question.id FROM question"));
     }
 
     @Test

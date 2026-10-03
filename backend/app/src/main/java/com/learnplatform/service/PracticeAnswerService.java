@@ -2,6 +2,7 @@ package com.learnplatform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
+import com.learnplatform.service.question.AutomaticGradingPolicy;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.PracticeResultVO;
 import com.learnplatform.dto.PracticeSubmitRequest;
@@ -69,6 +70,7 @@ public class PracticeAnswerService {
         List<QuestionOption> correctOptions = questionOptionMapper.selectList(optionWrapper).stream()
                 .filter(option -> option.getIsCorrect() != null && option.getIsCorrect() == 1)
                 .collect(Collectors.toList());
+        AutomaticGradingPolicy.requireBasis(question.getQuestionType(), correctOptions);
         String correctAnswer = answerEvaluator.buildCorrectAnswer(
                 correctOptions, question.getQuestionType());
         String userAnswer = request.getUserAnswer().trim();

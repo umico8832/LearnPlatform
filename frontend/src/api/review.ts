@@ -7,6 +7,7 @@ export interface ReviewRequestOptions {
 
 /** 复习计划卡片 */
 export interface ReviewScheduleVO {
+  availableForReview?: boolean
   correct?: boolean | null
   reward?: RewardFeedback | null
   id: number

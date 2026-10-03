@@ -2,16 +2,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { flushPromises, mount } from '@vue/test-utils'
 
-const { mockGetReviewStats, mockGetDueReviewCards, mockGetQuestionById } = vi.hoisted(() => ({
+const { mockGetReviewStats, mockGetDueReviewCards, mockGetAllReviewCards, mockGetQuestionById } = vi.hoisted(() => ({
   mockGetReviewStats: vi.fn(),
   mockGetDueReviewCards: vi.fn(),
+  mockGetAllReviewCards: vi.fn(),
   mockGetQuestionById: vi.fn(),
 }))
 
 vi.mock('@/api/review', () => ({
   getReviewStats: (...args: unknown[]) => mockGetReviewStats(...args),
   getDueReviewCards: (...args: unknown[]) => mockGetDueReviewCards(...args),
-  getAllReviewCards: vi.fn(),
+  getAllReviewCards: (...args: unknown[]) => mockGetAllReviewCards(...args),
   submitReview: vi.fn(),
   removeFromReviewPlan: vi.fn(),
   resetReviewProgress: vi.fn(),
@@ -99,6 +100,58 @@ describe('ReviewView course target', () => {
 
     expect(mockGetDueReviewCards).toHaveBeenCalledWith(408, 30, 21, undefined, { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('课程目标复习题')
+  })
+
+  it('保留不可判分的历史卡片并说明暂不安排作答，仍可由用户移出', async () => {
+    routeQuery = {}
+    mockGetReviewStats.mockResolvedValueOnce({ data: { totalCards: 1, dueToday: 0, overdue: 0 } })
+    const card = {
+      id: 1,
+      questionId: 21,
+      questionContent: '待补答案的历史卡片',
+      availableForReview: false,
+      statusLabel: '新卡片',
+    }
+    mockGetAllReviewCards.mockResolvedValueOnce({ data: [card] })
+    const wrapper = mount(ReviewView, {
+      global: {
+        stubs: {
+          MarkdownRenderer: true,
+          ReviewSessionPanel: true,
+          LpPageHeader: { template: '<header><slot name="actions" /></header>' },
+          'el-card': { template: '<section><slot name="header" /><slot /></section>' },
+          'el-button': {
+            props: ['disabled'],
+            emits: ['click'],
+            template: '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
+          },
+          'el-table': { template: '<div><slot /></div>' },
+          'el-table-column': {
+            setup: () => ({ row: card }),
+            template: '<div><slot :row="row" /></div>',
+          },
+        },
+      },
+    })
+    await flushPromises()
+    const start = wrapper.findAll('button').find((button) => button.text().includes('开始复习'))!
+    expect(start.attributes('disabled')).toBeDefined()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('查看全部卡片'))!
+      .trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('待补答案的历史卡片')
+    expect(wrapper.text()).toContain('待配置答案')
+    expect(wrapper.text()).toContain('缺少判分依据的卡片暂不安排作答')
+    expect(
+      wrapper
+        .findAll('button')
+        .find((button) => button.text() === '移出')
+        ?.attributes('disabled'),
+    ).toBeUndefined()
+    expect(mockGetDueReviewCards).not.toHaveBeenCalled()
+    wrapper.unmount()
   })
 
   it('自动启动期间重复开始不会重载，进行中再次开始保留答案草稿', async () => {

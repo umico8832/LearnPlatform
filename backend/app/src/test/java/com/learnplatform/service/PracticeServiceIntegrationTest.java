@@ -7,13 +7,18 @@ import com.learnplatform.dto.PracticeRecordVO;
 import com.learnplatform.dto.PracticeResultVO;
 import com.learnplatform.dto.PracticeSubmitRequest;
 import com.learnplatform.dto.QuestionVO;
+import com.learnplatform.dto.ReviewScheduleVO;
+import com.learnplatform.dto.ReviewStatsVO;
+import com.learnplatform.dto.ReviewSubmitRequest;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.PracticeRecord;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionKnowledgePoint;
 import com.learnplatform.entity.QuestionOption;
+import com.learnplatform.entity.QuestionReviewSchedule;
 import com.learnplatform.entity.User;
+import com.learnplatform.entity.UserCourse;
 import com.learnplatform.entity.UserFavoriteQuestion;
 import com.learnplatform.entity.WrongQuestion;
 import com.learnplatform.mapper.CourseMapper;
@@ -22,6 +27,8 @@ import com.learnplatform.mapper.PracticeRecordMapper;
 import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
+import com.learnplatform.mapper.QuestionReviewScheduleMapper;
+import com.learnplatform.mapper.UserCourseMapper;
 import com.learnplatform.mapper.UserFavoriteQuestionMapper;
 import com.learnplatform.mapper.UserMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
@@ -35,9 +42,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +67,12 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private PracticeService practiceService;
+    @Autowired
+    private AdaptivePracticeService adaptivePracticeService;
+    @Autowired
+    private SpacedRepetitionService spacedRepetitionService;
+    @Autowired
+    private ReviewScheduleQueryService reviewScheduleQueryService;
 
     @Autowired
     private QuestionMapper questionMapper;
@@ -76,6 +92,12 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
     private KnowledgePointMapper knowledgePointMapper;
     @Autowired
     private UserFavoriteQuestionMapper userFavoriteQuestionMapper;
+    @Autowired
+    private QuestionReviewScheduleMapper questionReviewScheduleMapper;
+    @Autowired
+    private UserCourseMapper userCourseMapper;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     private static Long userId;
     private static Long singleChoiceQId;   // 单选题
@@ -215,6 +237,15 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         q3.setUpdateTime(LocalDateTime.now());
         questionMapper.insert(q3);
         fillBlankQId = q3.getId();
+
+        QuestionOption opt3 = new QuestionOption();
+        opt3.setQuestionId(fillBlankQId);
+        opt3.setOptionLabel("答案");
+        opt3.setContent("Central Processing Unit");
+        opt3.setIsCorrect(1);
+        opt3.setSortOrder(1);
+        opt3.setDeleted(0);
+        questionOptionMapper.insert(opt3);
 
         // 7. 创建判断题 (TRUE_FALSE)
         Question q4 = new Question();
@@ -616,9 +647,16 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
     }
 
     private Question question(String content, Long targetCourseId, int status, String visibility, Long ownerUserId) {
+        Question question = questionWithoutOptions(content, targetCourseId, "SINGLE_CHOICE", status, visibility, ownerUserId);
+        addCorrectOption(question, "A", "正确答案", 0);
+        return question;
+    }
+
+    private Question questionWithoutOptions(String content, Long targetCourseId, String questionType,
+                                            int status, String visibility, Long ownerUserId) {
         Question question = new Question();
         question.setContent(content);
-        question.setQuestionType("SINGLE_CHOICE");
+        question.setQuestionType(questionType);
         question.setDifficulty(1);
         question.setCourseId(targetCourseId);
         question.setStatus(status);
@@ -629,6 +667,60 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         question.setUpdateTime(LocalDateTime.now());
         questionMapper.insert(question);
         return question;
+    }
+
+    private void addCorrectOption(Question question, String optionLabel, String content, int deleted) {
+        QuestionOption option = new QuestionOption();
+        option.setQuestionId(question.getId());
+        option.setOptionLabel(optionLabel);
+        option.setContent(content);
+        option.setIsCorrect(1);
+        option.setSortOrder(1);
+        option.setDeleted(deleted);
+        questionOptionMapper.insert(option);
+    }
+
+    private void addFavoriteQuestion(Long targetUserId, Long questionId) {
+        UserFavoriteQuestion favorite = new UserFavoriteQuestion();
+        favorite.setUserId(targetUserId);
+        favorite.setQuestionId(questionId);
+        favorite.setCreateTime(LocalDateTime.now());
+        userFavoriteQuestionMapper.insert(favorite);
+    }
+
+    private QuestionReviewSchedule addReviewSchedule(Long targetUserId, Long questionId, LocalDate dueDate) {
+        QuestionReviewSchedule schedule = new QuestionReviewSchedule();
+        schedule.setUserId(targetUserId);
+        schedule.setQuestionId(questionId);
+        schedule.setEaseFactor(new BigDecimal("2.50"));
+        schedule.setIntervalDays(0);
+        schedule.setRepetitions(0);
+        schedule.setNextReviewDate(dueDate);
+        schedule.setTotalReviews(0);
+        schedule.setDeleted(0);
+        questionReviewScheduleMapper.insert(schedule);
+        return schedule;
+    }
+
+    private void addCourseToLibrary(Long targetUserId, Long targetCourseId) {
+        UserCourse userCourse = new UserCourse();
+        userCourse.setUserId(targetUserId);
+        userCourse.setCourseId(targetCourseId);
+        userCourseMapper.insert(userCourse);
+    }
+
+    private long countLearningEvents(Long targetUserId, Long questionId) {
+        return jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM course_learning_event
+                WHERE user_id = ? AND subject_type = 'QUESTION' AND subject_id = ?
+                """, Long.class, targetUserId, questionId);
+    }
+
+    private long countGamificationLedgerEntries(Long targetUserId, Long questionId) {
+        return jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM gamification_xp_ledger
+                WHERE user_id = ? AND subject_type = 'QUESTION' AND subject_id = ?
+                """, Long.class, targetUserId, questionId);
     }
 
     private void associate(Question question, Long targetKnowledgePointId) {
@@ -690,4 +782,162 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
 
         assertTrue(questions.isEmpty(), "无收藏时应返回空列表");
     }
+
+    @Test
+    @Order(18)
+    @DisplayName("自动判分候选：各练习入口在抽样前排除无依据题目并保留有关键词的简答题")
+    void automaticGradingCandidates_filterBeforeSamplingAcrossPracticeEntries() {
+        Course gradingCourse = course("自动判分候选课程");
+        User gradingUser = user("practice_grading_policy_user");
+
+        Question missingAnswer = questionWithoutOptions("缺少正确答案", gradingCourse.getId(),
+                "SINGLE_CHOICE", 1, "PUBLIC", null);
+        Question blankLabel = questionWithoutOptions("只有空白选项标签", gradingCourse.getId(),
+                "SINGLE_CHOICE", 1, "PUBLIC", null);
+        addCorrectOption(blankLabel, "\t\n\r", "不应作为单选答案", 0);
+        Question deletedAnswer = questionWithoutOptions("正确答案已软删除", gradingCourse.getId(),
+                "SINGLE_CHOICE", 1, "PUBLIC", null);
+        addCorrectOption(deletedAnswer, "A", "已删除答案", 1);
+        Question validShortAnswer = questionWithoutOptions("写出栈的关键词", gradingCourse.getId(),
+                "SHORT_ANSWER", 1, "PUBLIC", null);
+        addCorrectOption(validShortAnswer, "", "后进先出", 0);
+
+        assertEquals(List.of(validShortAnswer.getId()), practiceService.getPracticeQuestions(
+                gradingCourse.getId(), null, null, null, 1).stream().map(QuestionVO::getId).toList(),
+                "普通练习必须先过滤无判分依据题目，再按数量抽样");
+        assertEquals(List.of(validShortAnswer.getId()), adaptivePracticeService.getAdaptiveQuestions(
+                gradingUser.getId(), gradingCourse.getId(), null, null, 1).stream().map(QuestionVO::getId).toList(),
+                "自适应练习必须先过滤无判分依据题目，再补足数量");
+
+        addFavoriteQuestion(gradingUser.getId(), missingAnswer.getId());
+        addFavoriteQuestion(gradingUser.getId(), validShortAnswer.getId());
+        assertEquals(List.of(validShortAnswer.getId()), practiceService.getFavoritePractice(
+                gradingUser.getId(), 1, null).stream().map(QuestionVO::getId).toList(),
+                "收藏练习必须先过滤无判分依据题目，再按数量抽样");
+
+        addWrongQuestion(gradingUser.getId(), blankLabel.getId());
+        addWrongQuestion(gradingUser.getId(), deletedAnswer.getId());
+        addWrongQuestion(gradingUser.getId(), validShortAnswer.getId());
+        assertEquals(List.of(validShortAnswer.getId()), practiceService.getWrongQuestionPractice(
+                gradingUser.getId(), null, 1, gradingCourse.getId(), null, null)
+                .stream().map(QuestionVO::getId).toList(),
+                "错题重练必须先过滤无判分依据题目，再按数量抽样");
+    }
+
+    @Test
+    @Order(19)
+    @DisplayName("提交答案：没有可用判分依据时在写入练习记录和错题前拒绝")
+    void submitAnswer_withoutGradingBasis_rejectsBeforeAnyPracticeWrite() {
+        Question ungradable = questionWithoutOptions("只有空白判分标签的单选题", courseId,
+                "SINGLE_CHOICE", 1, "PUBLIC", null);
+        addCorrectOption(ungradable, "\t\n\r", "看似存在但不可用的答案", 0);
+        PracticeSubmitRequest request = new PracticeSubmitRequest();
+        request.setQuestionId(ungradable.getId());
+        request.setUserAnswer("A");
+
+        long recordsBefore = practiceRecordMapper.selectCount(new LambdaQueryWrapper<PracticeRecord>()
+                .eq(PracticeRecord::getUserId, userId)
+                .eq(PracticeRecord::getQuestionId, ungradable.getId()));
+        long wrongQuestionsBefore = wrongQuestionMapper.selectCount(new LambdaQueryWrapper<WrongQuestion>()
+                .eq(WrongQuestion::getUserId, userId)
+                .eq(WrongQuestion::getQuestionId, ungradable.getId()));
+
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> practiceService.submitAnswer(request, userId));
+
+        assertTrue(exception.getMessage().contains("可用判分依据"));
+        assertEquals(recordsBefore, practiceRecordMapper.selectCount(new LambdaQueryWrapper<PracticeRecord>()
+                .eq(PracticeRecord::getUserId, userId)
+                .eq(PracticeRecord::getQuestionId, ungradable.getId())));
+        assertEquals(wrongQuestionsBefore, wrongQuestionMapper.selectCount(new LambdaQueryWrapper<WrongQuestion>()
+                .eq(WrongQuestion::getUserId, userId)
+                .eq(WrongQuestion::getQuestionId, ungradable.getId())));
+    }
+
+
+    @Test
+    @Order(20)
+    @DisplayName("历史复习卡：不可判分卡保留可见但不占到期优先级或统计，补全答案后恢复")
+    void reviewCards_keepHistoricalUngradableCardsButExcludeThemBeforeDueLimitAndStats() {
+        Course reviewCourse = course("历史复习可用性课程");
+        User reviewUser = user("practice_review_eligibility_user");
+        Question invalidEarlier = questionWithoutOptions("历史缺失判分依据", reviewCourse.getId(),
+                "SINGLE_CHOICE", 1, "PUBLIC", null);
+        Question validLater = question("历史有效复习题", reviewCourse.getId(), 1, "PUBLIC", null);
+        LocalDate today = LocalDate.now();
+        addReviewSchedule(reviewUser.getId(), invalidEarlier.getId(), today.minusDays(5));
+        addReviewSchedule(reviewUser.getId(), validLater.getId(), today.minusDays(1));
+
+        assertEquals(List.of(validLater.getId()), reviewScheduleQueryService.getDueReviewCards(
+                reviewUser.getId(), reviewCourse.getId(), 1).stream().map(ReviewScheduleVO::getQuestionId).toList(),
+                "更早的不可判分历史卡不能在数据库限额前挤掉有效到期卡");
+
+        ReviewStatsVO stats = reviewScheduleQueryService.getReviewStats(reviewUser.getId());
+        assertEquals(2, stats.getTotalCards(), "历史卡总数必须保留");
+        assertEquals(1, stats.getDueToday(), "到期统计仅计算可自动判分卡");
+        assertEquals(1, stats.getOverdue(), "逾期统计仅计算可自动判分卡");
+
+        List<ReviewScheduleVO> allCards = reviewScheduleQueryService.getAllReviewCards(
+                reviewUser.getId(), reviewCourse.getId());
+        assertEquals(2, allCards.size(), "所有卡片列表必须保留历史卡");
+        assertFalse(allCards.stream().filter(card -> invalidEarlier.getId().equals(card.getQuestionId()))
+                .findFirst().orElseThrow().isAvailableForReview());
+        assertTrue(allCards.stream().filter(card -> validLater.getId().equals(card.getQuestionId()))
+                .findFirst().orElseThrow().isAvailableForReview());
+
+        addCorrectOption(invalidEarlier, "A", "恢复后的正确答案", 0);
+        assertEquals(List.of(invalidEarlier.getId()), reviewScheduleQueryService.getDueReviewCards(
+                reviewUser.getId(), reviewCourse.getId(), 1).stream().map(ReviewScheduleVO::getQuestionId).toList(),
+                "补齐正确答案后，原历史卡应恢复为最早可复习卡");
+        assertTrue(reviewScheduleQueryService.getAllReviewCards(reviewUser.getId(), reviewCourse.getId()).stream()
+                .filter(card -> invalidEarlier.getId().equals(card.getQuestionId()))
+                .findFirst().orElseThrow().isAvailableForReview());
+    }
+
+    @Test
+    @Order(21)
+    @DisplayName("提交复习：没有可用判分依据时不写记录、错题、学习事件、经验或 SM-2 调度")
+    void submitReview_withoutGradingBasis_rejectsBeforeAnyLearningWrite() {
+        Course reviewCourse = course("复习拒绝写入课程");
+        User reviewUser = user("practice_review_reject_user");
+        addCourseToLibrary(reviewUser.getId(), reviewCourse.getId());
+        Question ungradable = questionWithoutOptions("复习题缺少判分依据", reviewCourse.getId(),
+                "SINGLE_CHOICE", 1, "PUBLIC", null);
+        QuestionReviewSchedule schedule = addReviewSchedule(reviewUser.getId(), ungradable.getId(), LocalDate.now());
+        ReviewSubmitRequest request = new ReviewSubmitRequest();
+        request.setQuestionId(ungradable.getId());
+        request.setUserAnswer("A");
+        request.setAnswerTime(12);
+        request.setSelfAssessedQuality(5);
+
+        long recordsBefore = practiceRecordMapper.selectCount(new LambdaQueryWrapper<PracticeRecord>()
+                .eq(PracticeRecord::getUserId, reviewUser.getId())
+                .eq(PracticeRecord::getQuestionId, ungradable.getId()));
+        long wrongQuestionsBefore = wrongQuestionMapper.selectCount(new LambdaQueryWrapper<WrongQuestion>()
+                .eq(WrongQuestion::getUserId, reviewUser.getId())
+                .eq(WrongQuestion::getQuestionId, ungradable.getId()));
+        long eventsBefore = countLearningEvents(reviewUser.getId(), ungradable.getId());
+        long rewardsBefore = countGamificationLedgerEntries(reviewUser.getId(), ungradable.getId());
+
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> spacedRepetitionService.submitReview(request, reviewUser.getId()));
+
+        assertTrue(exception.getMessage().contains("可用判分依据"));
+        assertEquals(recordsBefore, practiceRecordMapper.selectCount(new LambdaQueryWrapper<PracticeRecord>()
+                .eq(PracticeRecord::getUserId, reviewUser.getId())
+                .eq(PracticeRecord::getQuestionId, ungradable.getId())));
+        assertEquals(wrongQuestionsBefore, wrongQuestionMapper.selectCount(new LambdaQueryWrapper<WrongQuestion>()
+                .eq(WrongQuestion::getUserId, reviewUser.getId())
+                .eq(WrongQuestion::getQuestionId, ungradable.getId())));
+        assertEquals(eventsBefore, countLearningEvents(reviewUser.getId(), ungradable.getId()));
+        assertEquals(rewardsBefore, countGamificationLedgerEntries(reviewUser.getId(), ungradable.getId()));
+
+        QuestionReviewSchedule after = questionReviewScheduleMapper.selectById(schedule.getId());
+        assertEquals(0, after.getRepetitions());
+        assertEquals(0, after.getTotalReviews());
+        assertEquals(LocalDate.now(), after.getNextReviewDate());
+        assertNull(after.getLastReviewDate());
+        assertNull(after.getLastQuality());
+    }
+
 }
