@@ -15,6 +15,7 @@ import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
+import com.learnplatform.service.question.AutomaticGradingPolicy;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -52,6 +53,7 @@ public class QuestionMutationService {
 
     public Long create(QuestionCreateRequest request, Long createBy,
                        String sourceType, String sourceReference, Long originQuestionId) {
+        normalizeAndValidateOptions(request.getQuestionType(), request.getOptions());
         validateReferences(request.getCourseId(), request.getKnowledgePointIds());
         Question question = new Question();
         question.setContent(request.getContent());
@@ -87,6 +89,9 @@ public class QuestionMutationService {
                 : questionKnowledgePointMapper.selectList(new LambdaQueryWrapper<QuestionKnowledgePoint>()
                         .eq(QuestionKnowledgePoint::getQuestionId, id)).stream()
                         .map(QuestionKnowledgePoint::getKnowledgePointId).toList();
+        String questionType = request.getQuestionType() != null
+                ? request.getQuestionType() : question.getQuestionType();
+        normalizeAndValidateOptions(questionType, request.getOptions(), id);
         validateReferences(courseId, pointIds);
         String snapshotBefore = questionVersionService.buildSnapshotJson(question);
         if (request.getContent() != null) {
@@ -150,6 +155,38 @@ public class QuestionMutationService {
             option.setSortOrder(item.getSortOrder() != null ? item.getSortOrder() : 0);
             option.setDeleted(0);
             questionOptionMapper.insert(option);
+        }
+    }
+
+    private void normalizeAndValidateOptions(
+            String questionType, List<QuestionCreateRequest.OptionItem> options) {
+        normalizeAndValidateOptions(questionType, options, null);
+    }
+
+    private void normalizeAndValidateOptions(
+            String questionType, List<QuestionCreateRequest.OptionItem> options, Long questionId) {
+        if (options == null) {
+            if (questionId == null) {
+                return;
+            }
+            List<QuestionOption> correctOptions = questionOptionMapper.selectList(
+                    new LambdaQueryWrapper<QuestionOption>().eq(QuestionOption::getQuestionId, questionId)).stream()
+                    .filter(item -> Integer.valueOf(1).equals(item.getIsCorrect()))
+                    .toList();
+            AutomaticGradingPolicy.validateConfiguredStructure(questionType,
+                    correctOptions.stream().map(QuestionOption::getOptionLabel).toList(),
+                    correctOptions.stream().map(QuestionOption::getContent).toList());
+            return;
+        }
+        List<QuestionCreateRequest.OptionItem> correctOptions = options.stream()
+                .filter(item -> Integer.valueOf(1).equals(item.getIsCorrect()))
+                .toList();
+        AutomaticGradingPolicy.validateConfiguredStructure(questionType,
+                correctOptions.stream().map(QuestionCreateRequest.OptionItem::getOptionLabel).toList(),
+                correctOptions.stream().map(QuestionCreateRequest.OptionItem::getContent).toList());
+        if ("TRUE_FALSE".equals(questionType) && correctOptions.size() == 1) {
+            correctOptions.getFirst().setContent(
+                    AutomaticGradingPolicy.normalizeTrueFalseAnswer(correctOptions.getFirst().getContent()));
         }
     }
 

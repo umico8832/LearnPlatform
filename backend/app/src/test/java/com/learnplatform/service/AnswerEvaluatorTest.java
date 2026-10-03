@@ -23,6 +23,8 @@ class AnswerEvaluatorTest {
     void buildsTrueFalseAnswerFromOptionContent() {
         assertEquals("TRUE", evaluator.buildCorrectAnswer(List.of(option("A", "正确")), "TRUE_FALSE"));
         assertEquals("FALSE", evaluator.buildCorrectAnswer(List.of(option("B", "错误")), "TRUE_FALSE"));
+        assertEquals("TRUE", evaluator.buildCorrectAnswer(List.of(option("A", "对")), "TRUE_FALSE"));
+        assertEquals("FALSE", evaluator.buildCorrectAnswer(List.of(option("B", "B")), "TRUE_FALSE"));
     }
 
     @Test

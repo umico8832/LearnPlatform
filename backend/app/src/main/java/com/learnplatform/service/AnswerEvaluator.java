@@ -1,6 +1,7 @@
 package com.learnplatform.service;
 
 import com.learnplatform.entity.QuestionOption;
+import com.learnplatform.service.question.AutomaticGradingPolicy;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -28,8 +29,7 @@ public class AnswerEvaluator {
             if (correctOptions.isEmpty()) {
                 return "";
             }
-            String content = correctOptions.get(0).getContent();
-            return "TRUE".equalsIgnoreCase(content) || "正确".equals(content) ? "TRUE" : "FALSE";
+            return AutomaticGradingPolicy.normalizeTrueFalseAnswer(correctOptions.get(0).getContent());
         }
 
         if ("FILL_BLANK".equals(questionType) || "SHORT_ANSWER".equals(questionType)) {

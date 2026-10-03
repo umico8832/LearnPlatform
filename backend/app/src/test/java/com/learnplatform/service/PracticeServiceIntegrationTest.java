@@ -51,6 +51,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -670,14 +671,47 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
     }
 
     private void addCorrectOption(Question question, String optionLabel, String content, int deleted) {
+        addOption(question, optionLabel, content, 1, deleted);
+    }
+
+    private void addOption(Question question, String optionLabel, String content, int isCorrect, int deleted) {
         QuestionOption option = new QuestionOption();
         option.setQuestionId(question.getId());
         option.setOptionLabel(optionLabel);
         option.setContent(content);
-        option.setIsCorrect(1);
+        option.setIsCorrect(isCorrect);
         option.setSortOrder(1);
         option.setDeleted(deleted);
         questionOptionMapper.insert(option);
+    }
+
+    private void assertRejectsBeforeLearningWrites(Long targetUserId, Long questionId, String answer) {
+        PracticeSubmitRequest request = new PracticeSubmitRequest();
+        request.setQuestionId(questionId);
+        request.setUserAnswer(answer);
+        long recordsBefore = practiceRecordMapper.selectCount(new LambdaQueryWrapper<PracticeRecord>()
+                .eq(PracticeRecord::getUserId, targetUserId).eq(PracticeRecord::getQuestionId, questionId));
+        long wrongBefore = wrongQuestionMapper.selectCount(new LambdaQueryWrapper<WrongQuestion>()
+                .eq(WrongQuestion::getUserId, targetUserId).eq(WrongQuestion::getQuestionId, questionId));
+        long eventsBefore = countLearningEvents(targetUserId, questionId);
+        long rewardsBefore = countGamificationLedgerEntries(targetUserId, questionId);
+        long schedulesBefore = questionReviewScheduleMapper.selectCount(new LambdaQueryWrapper<QuestionReviewSchedule>()
+                .eq(QuestionReviewSchedule::getUserId, targetUserId)
+                .eq(QuestionReviewSchedule::getQuestionId, questionId));
+
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> practiceService.submitAnswer(request, targetUserId));
+
+        assertTrue(exception.getMessage().contains("可用判分依据"));
+        assertEquals(recordsBefore, practiceRecordMapper.selectCount(new LambdaQueryWrapper<PracticeRecord>()
+                .eq(PracticeRecord::getUserId, targetUserId).eq(PracticeRecord::getQuestionId, questionId)));
+        assertEquals(wrongBefore, wrongQuestionMapper.selectCount(new LambdaQueryWrapper<WrongQuestion>()
+                .eq(WrongQuestion::getUserId, targetUserId).eq(WrongQuestion::getQuestionId, questionId)));
+        assertEquals(eventsBefore, countLearningEvents(targetUserId, questionId));
+        assertEquals(rewardsBefore, countGamificationLedgerEntries(targetUserId, questionId));
+        assertEquals(schedulesBefore, questionReviewScheduleMapper.selectCount(new LambdaQueryWrapper<QuestionReviewSchedule>()
+                .eq(QuestionReviewSchedule::getUserId, targetUserId)
+                .eq(QuestionReviewSchedule::getQuestionId, questionId)));
     }
 
     private void addFavoriteQuestion(Long targetUserId, Long questionId) {
@@ -938,6 +972,51 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         assertEquals(LocalDate.now(), after.getNextReviewDate());
         assertNull(after.getLastReviewDate());
         assertNull(after.getLastQuality());
+    }
+
+    @Test
+    @Order(22)
+    @DisplayName("自动判分结构：在已加入课程的正向对照后拒绝无效题且不写学习事实")
+    void automaticGradingStructure_excludesInvalidConfiguredAnswersBeforeSamplingAndSubmission() {
+        Course gradingCourse = course("自动判分结构课程");
+        User gradingUser = user("practice_grading_structure_user");
+        Question doubleCorrectSingle = questionWithoutOptions("双正确单选", gradingCourse.getId(),
+                "SINGLE_CHOICE", 1, "PUBLIC", null);
+        addOption(doubleCorrectSingle, "A", "选项 A", 1, 0);
+        addOption(doubleCorrectSingle, "B", "选项 B", 1, 0);
+        Question invalidTrueFalse = questionWithoutOptions("非法判断标答", gradingCourse.getId(),
+                "TRUE_FALSE", 1, "PUBLIC", null);
+        addOption(invalidTrueFalse, "A", "MAYBE", 1, 0);
+        Question doubleCorrectTrueFalse = questionWithoutOptions("双正确判断", gradingCourse.getId(),
+                "TRUE_FALSE", 1, "PUBLIC", null);
+        addOption(doubleCorrectTrueFalse, "A", "TRUE", 1, 0);
+        addOption(doubleCorrectTrueFalse, "B", "FALSE", 1, 0);
+        Question validTrueFalseAlias = questionWithoutOptions("判断别名正确项", gradingCourse.getId(),
+                "TRUE_FALSE", 1, "PUBLIC", null);
+        addOption(validTrueFalseAlias, "A", "对", 1, 0);
+        Question valid = question("有效单选", gradingCourse.getId(), 1, "PUBLIC", null);
+
+        addCourseToLibrary(gradingUser.getId(), gradingCourse.getId());
+        PracticeSubmitRequest validRequest = new PracticeSubmitRequest();
+        validRequest.setQuestionId(valid.getId());
+        validRequest.setUserAnswer("A");
+        assertTrue(practiceService.submitAnswer(validRequest, gradingUser.getId()).getCorrect());
+        assertEquals(1, practiceRecordMapper.selectCount(new LambdaQueryWrapper<PracticeRecord>()
+                .eq(PracticeRecord::getUserId, gradingUser.getId())
+                .eq(PracticeRecord::getQuestionId, valid.getId())));
+        assertEquals(1, countLearningEvents(gradingUser.getId(), valid.getId()));
+        assertEquals(1, countGamificationLedgerEntries(gradingUser.getId(), valid.getId()));
+        assertEquals(1, questionReviewScheduleMapper.selectCount(new LambdaQueryWrapper<QuestionReviewSchedule>()
+                .eq(QuestionReviewSchedule::getUserId, gradingUser.getId())
+                .eq(QuestionReviewSchedule::getQuestionId, valid.getId())));
+
+        assertEquals(Set.of(valid.getId(), validTrueFalseAlias.getId()), practiceService.getPracticeQuestions(
+                gradingCourse.getId(), null, null, null, 10).stream().map(QuestionVO::getId)
+                .collect(java.util.stream.Collectors.toSet()),
+                "结构无效题必须在数据库限额前排除");
+
+        assertRejectsBeforeLearningWrites(gradingUser.getId(), doubleCorrectSingle.getId(), "A");
+        assertRejectsBeforeLearningWrites(gradingUser.getId(), invalidTrueFalse.getId(), "FALSE");
     }
 
 }

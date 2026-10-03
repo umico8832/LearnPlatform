@@ -2,6 +2,7 @@ package com.learnplatform.service.question;
 
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.entity.QuestionOption;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -10,6 +11,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class AutomaticGradingPolicyTest {
 
@@ -47,6 +49,27 @@ class AutomaticGradingPolicyTest {
         assertDoesNotThrow(() -> AutomaticGradingPolicy.requireBasis(type, List.of(correctOption(null, "FALSE"))));
         assertThrows(BusinessException.class,
                 () -> AutomaticGradingPolicy.requireBasis(type, List.of(correctOption("A", null))));
+    }
+
+    @Test
+    void trueFalseAliasesAreNormalizedBeforeEvaluation() {
+        assertEquals(List.of("TRUE", "TRUE", "TRUE", "TRUE", "FALSE", "FALSE", "FALSE", "FALSE"),
+                List.of("TRUE", "正确", "对", "A", "false", "错误", "错", "b").stream()
+                        .map(AutomaticGradingPolicy::normalizeTrueFalseAnswer).toList());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"MAYBE", "1", "是"})
+    void invalidTrueFalseAnswerCannotBeGraded(String answer) {
+        assertThrows(BusinessException.class, () -> AutomaticGradingPolicy.requireBasis("TRUE_FALSE",
+                List.of(correctOption(null, answer))));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"SINGLE_CHOICE", "TRUE_FALSE"})
+    void singleAnswerTypesRejectMultipleMarkedAnswers(String type) {
+        assertThrows(BusinessException.class, () -> AutomaticGradingPolicy.requireBasis(type,
+                List.of(correctOption("A", "TRUE"), correctOption("B", "FALSE"))));
     }
 
     @ParameterizedTest

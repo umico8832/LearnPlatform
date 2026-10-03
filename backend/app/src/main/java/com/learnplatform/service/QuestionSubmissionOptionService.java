@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.QuestionSubmissionRequest;
+import com.learnplatform.service.question.AutomaticGradingPolicy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -97,16 +98,11 @@ public class QuestionSubmissionOptionService {
         if (answer == null || answer.trim().isEmpty()) {
             throw new BusinessException(ResultCode.VALIDATION_ERROR, "判断题必须提供正确答案");
         }
-        String normalized = answer.trim();
-        if ("TRUE".equalsIgnoreCase(normalized) || "正确".equals(normalized)
-                || "对".equals(normalized) || "A".equalsIgnoreCase(normalized)) {
-            return "TRUE";
+        String normalized = AutomaticGradingPolicy.normalizeTrueFalseAnswer(answer);
+        if (normalized == null) {
+            throw new BusinessException(ResultCode.VALIDATION_ERROR, "判断题答案只能是正确/错误");
         }
-        if ("FALSE".equalsIgnoreCase(normalized) || "错误".equals(normalized)
-                || "错".equals(normalized) || "B".equalsIgnoreCase(normalized)) {
-            return "FALSE";
-        }
-        throw new BusinessException(ResultCode.VALIDATION_ERROR, "判断题答案只能是正确/错误");
+        return normalized;
     }
 
     private OptionItem optionItem(String content, String label, boolean isCorrect) {
