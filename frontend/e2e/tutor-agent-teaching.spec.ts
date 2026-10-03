@@ -71,7 +71,9 @@ test('Tutor Agent 将理解检查交给学习者，并依据服务端结果继�
   await expect(page.getByRole('button', { name: '提交检查' })).toBeDisabled()
   await expect(panel.getByTestId('agent-request-check')).toBeVisible()
   await expect(check).toContainText('需要再想一步')
-  await page.locator('main.tutor').screenshot({ path: testInfo.outputPath('tutor-agent-teaching-desktop.png') })
+  const teaching = page.locator('section.tutor[aria-label="课程教学"]')
+  await expect(teaching).toBeVisible()
+  await teaching.screenshot({ path: testInfo.outputPath('tutor-agent-teaching-desktop.png') })
 
   const followUpResponse = page.waitForResponse(
     (response) => response.request().method() === 'POST' && /\/agent-runs\/[^/]+\/messages$/.test(response.url()),
