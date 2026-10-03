@@ -223,6 +223,9 @@ test('用户刷新后可继续限时考试，取消提交并在失败重试后�
   expect(startedSeconds).toBeGreaterThan(0)
   await expect.poll(() => readCountdownSeconds(countdown), { timeout: 5_000 }).toBeLessThan(startedSeconds)
   const beforeReloadSeconds = await readCountdownSeconds(countdown)
+  const answerBeforeReload = page.getByRole('radio', { name: /extends/ })
+  await answerBeforeReload.check()
+  await expect(answerBeforeReload).toBeChecked()
 
   await page.reload()
   await expect(page).toHaveURL(takeUrl)
@@ -230,9 +233,11 @@ test('用户刷新后可继续限时考试，取消提交并在失败重试后�
   await expect(page.locator('.question-area')).toBeVisible()
   await expect(countdown).toHaveText(/\d+:\d{2}/)
   expect(await readCountdownSeconds(countdown)).toBeLessThanOrEqual(beforeReloadSeconds)
+  const restoredExtendsAnswer = page.getByRole('radio', { name: /extends/ })
+  await expect(restoredExtendsAnswer).toBeChecked()
 
   // 演示试卷固定包含单选、多选和判断三题，分别覆盖三种作答状态与后端判分。
-  const extendsAnswer = page.getByRole('radio', { name: /extends/ })
+  const extendsAnswer = restoredExtendsAnswer
   await extendsAnswer.check()
   await expect(extendsAnswer).toBeChecked()
   await page.getByRole('button', { name: '下一题' }).click()

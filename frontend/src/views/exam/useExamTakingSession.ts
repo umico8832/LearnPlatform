@@ -3,13 +3,16 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getExamSession, getPaperDetail, submitExam, type ExamQuestionItem } from '@/api/exam'
 import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
+import { useUserStore } from '@/stores/user'
 import { errorMessage } from '@/utils/errors'
 import { useExamAnswers } from './useExamAnswers'
+import { clearAllExamDrafts, clearExamDraftsForRecord, loadExamDraft, saveExamDraft } from './examDraft'
 import { useExamCountdown } from './useExamCountdown'
 import { useExamLeaveGuard } from './useExamLeaveGuard'
 
 export function useExamTakingSession(recordId: Readonly<Ref<number>>) {
   const router = useRouter()
+  const user = useUserStore()
   const loading = ref(false),
     loadError = ref(''),
     submitError = ref('')
@@ -26,17 +29,56 @@ export function useExamTakingSession(recordId: Readonly<Ref<number>>) {
     hasQuestions: () => questions.value.length > 0,
     submitting: submitted,
     finished,
+    onLeave: () => clearExamDraftsForRecord(recordId.value),
   })
+  const draftStorageError = ref('')
   let generation = 0,
-    alive = true
+    alive = true,
+    pendingDraftRestore: { version: number; auth: number; recordId: number } | null = null
   const isCurrent = (version: number, auth: number) =>
     alive && version === generation && auth === getAuthSessionVersion()
   const leaveForRecords = async () => {
     allowNavigation()
     await router.replace({ name: 'ExamList', query: { tab: 'records' } })
   }
+  function restoreDraft(version: number, auth: number, id: number) {
+    if (!isCurrent(version, auth) || !questions.value.length) return
+    const userId = user.userInfo?.id
+    if (!userId) {
+      pendingDraftRestore = { version, auth, recordId: id }
+      return
+    }
+    pendingDraftRestore = null
+    if (Object.keys(answerState.answers.value).length || currentIndex.value !== 0) {
+      saveDraft()
+      return
+    }
+    const draft = loadExamDraft({
+      userId,
+      recordId: id,
+      questionIds: questions.value.map((question) => question.questionId),
+    })
+    if (!draft) return
+    answerState.answers.value = draft.answers
+    if (draft.currentQuestionId !== null) {
+      const restoredIndex = questions.value.findIndex((question) => question.questionId === draft.currentQuestionId)
+      if (restoredIndex >= 0) currentIndex.value = restoredIndex
+    }
+  }
+  function saveDraft() {
+    const userId = user.userInfo?.id
+    if (!userId || !questions.value.length || finished.value) return
+    const saved = saveExamDraft({
+      userId,
+      recordId: recordId.value,
+      answers: answerState.answers.value,
+      currentQuestionId: currentQuestion.value?.questionId ?? null,
+    })
+    draftStorageError.value = saved ? '' : '浏览器暂时无法保存本页草稿，刷新后需重新作答。'
+  }
   async function expire(message = '考试时间已结束，已返回考试列表') {
     if (!alive || finished.value) return
+    clearExamDraftsForRecord(recordId.value)
     finished.value = true
     if (confirming.value) ElMessageBox.close?.()
     ElMessage.warning(message)
@@ -59,6 +101,8 @@ export function useExamTakingSession(recordId: Readonly<Ref<number>>) {
     finished.value = false
     submitError.value = ''
     loadError.value = ''
+    draftStorageError.value = ''
+    pendingDraftRestore = null
   }
   async function load() {
     const version = ++generation,
@@ -78,6 +122,7 @@ export function useExamTakingSession(recordId: Readonly<Ref<number>>) {
       if (response.code !== 0 || !response.data) throw new Error(response.message || '暂时无法恢复考试，请重试。')
       const session = response.data
       if (session.status === 1 || session.status === 3) {
+        clearExamDraftsForRecord(id)
         finished.value = true
         allowNavigation()
         await router.replace({ name: 'ExamResult', params: { recordId: String(id) } })
@@ -94,6 +139,7 @@ export function useExamTakingSession(recordId: Readonly<Ref<number>>) {
       if (paper.code !== 0 || !paper.data) throw new Error(paper.message || '试卷暂时无法读取，请重试。')
       questions.value = paper.data.questions || []
       paperTitle.value = paper.data.title || session.examTitle || '限时考试'
+      restoreDraft(version, auth, id)
       countdown.start()
     } catch (cause) {
       if (isCurrent(version, auth)) loadError.value = errorMessage(cause, '暂时无法恢复考试，请检查网络后重试。')
@@ -117,6 +163,7 @@ export function useExamTakingSession(recordId: Readonly<Ref<number>>) {
       const response = await submitExam({ examRecordId: id, answers }, { errorDisplay: 'inline' })
       if (!isCurrent(version, auth)) return
       if (response.code !== 0 || !response.data) throw new Error(response.message || '交卷失败，请重试。')
+      clearExamDraftsForRecord(id)
       finished.value = true
       countdown.stop()
       allowNavigation()
@@ -150,9 +197,18 @@ export function useExamTakingSession(recordId: Readonly<Ref<number>>) {
       if (isCurrent(version, auth)) confirming.value = false
     }
   }
+  watch([() => answerState.answers.value, currentIndex], () => saveDraft(), { deep: true })
+  watch(
+    () => user.userInfo?.id,
+    () => {
+      const pending = pendingDraftRestore
+      if (pending) restoreDraft(pending.version, pending.auth, pending.recordId)
+    },
+  )
   watch(recordId, () => void load(), { immediate: true })
   const unsubscribe = onAuthSessionChange(() => {
     generation++
+    clearAllExamDrafts()
     clearSession()
     loading.value = false
     void leaveForRecords()
@@ -169,6 +225,7 @@ export function useExamTakingSession(recordId: Readonly<Ref<number>>) {
     loading,
     loadError,
     submitError,
+    draftStorageError,
     paperTitle,
     questions,
     currentIndex,

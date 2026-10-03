@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 
 const { mockGetExamSession, mockGetPaperDetail, mockSubmitExam, mockReplace, mockConfirm, mockWarning, mockError } =
   vi.hoisted(() => ({
@@ -34,6 +35,8 @@ vi.mock('element-plus', () => ({
 
 import ExamTakeView from '@/views/exam/ExamTakeView.vue'
 import { removeToken } from '@/utils/auth'
+import { useUserStore } from '@/stores/user'
+import { loadExamDraft, saveExamDraft } from '@/views/exam/examDraft'
 
 enableAutoUnmount(afterEach)
 
@@ -106,6 +109,14 @@ const questions = [
 describe('ExamTakeView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    setActivePinia(createPinia())
+    useUserStore().setLoginInfo('exam-user-token', {
+      id: 7,
+      username: 'exam-learner',
+      nickname: 'Exam learner',
+      avatar: null,
+      role: 'USER',
+    })
     sessionStorage.clear()
     sessionStorage.setItem('exam_session_101', JSON.stringify({ questions: [], duration: 999 }))
     mockConfirm.mockResolvedValue(undefined)
@@ -132,6 +143,7 @@ describe('ExamTakeView', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+    removeToken()
   })
 
   it('restores the server session, loads its safe paper, and uses the authoritative remaining time', async () => {
@@ -229,6 +241,88 @@ describe('ExamTakeView', () => {
     wrapper.unmount()
   })
 
+  it('restores valid answers and the current question after the active server session and paper reload', async () => {
+    const first = mountExam()
+    await flushPromises()
+    await first.find('input[value="A"]').setValue(true)
+    await button(first, '下一题').trigger('click')
+    await flushPromises()
+    first.unmount()
+
+    const restored = mountExam()
+    await flushPromises()
+    expect(restored.text()).toContain('哪些是基本数据类型？')
+    await button(restored, '上一题').trigger('click')
+    expect((restored.find('input[value="A"]').element as HTMLInputElement).checked).toBe(true)
+    restored.unmount()
+  })
+
+  it('saves current answers rather than overwriting them with an old draft when user data arrives late', async () => {
+    saveExamDraft({ userId: 7, recordId: 101, answers: { 1: 'B' }, currentQuestionId: 2 })
+    const store = useUserStore()
+    const currentUser = store.userInfo
+    store.userInfo = null
+    const wrapper = mountExam()
+    await flushPromises()
+    await wrapper.find('input[value="A"]').setValue(true)
+    store.userInfo = currentUser
+    await flushPromises()
+
+    expect((wrapper.find('input[value="A"]').element as HTMLInputElement).checked).toBe(true)
+    expect(wrapper.text()).toContain('继承关键字是？')
+    expect(loadExamDraft({ userId: 7, recordId: 101, questionIds: [1, 2, 3] })?.answers).toEqual({ 1: 'A' })
+    wrapper.unmount()
+  })
+
+  it('restores a same-account draft after user data arrives late when there are no local edits', async () => {
+    saveExamDraft({ userId: 7, recordId: 101, answers: { 1: 'B' }, currentQuestionId: 2 })
+    const store = useUserStore()
+    const currentUser = store.userInfo
+    store.userInfo = null
+    const wrapper = mountExam()
+    await flushPromises()
+    store.userInfo = currentUser
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('哪些是基本数据类型？')
+    await button(wrapper, '上一题').trigger('click')
+    expect((wrapper.find('input[value="B"]').element as HTMLInputElement).checked).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('keeps answering available and explains when this tab cannot store a refresh draft', async () => {
+    const originalDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'sessionStorage')
+    const backingStorage = sessionStorage
+    const unavailableStorage: Storage = {
+      get length() {
+        return backingStorage.length
+      },
+      clear: () => backingStorage.clear(),
+      getItem: (key) => backingStorage.getItem(key),
+      key: (index) => backingStorage.key(index),
+      removeItem: (key) => backingStorage.removeItem(key),
+      setItem: (key, value) => {
+        if (key.startsWith('lp:exam-draft:')) throw new Error('storage unavailable')
+        backingStorage.setItem(key, value)
+      },
+    }
+    vi.stubGlobal('sessionStorage', unavailableStorage)
+    const wrapper = mountExam()
+    try {
+      await flushPromises()
+      await wrapper.find('input[value="A"]').setValue(true)
+      await flushPromises()
+
+      expect((wrapper.find('input[value="A"]').element as HTMLInputElement).checked).toBe(true)
+      expect(wrapper.text()).toContain('浏览器暂时无法保存本页草稿')
+      expect(button(wrapper, '提交试卷').attributes('disabled')).toBeUndefined()
+    } finally {
+      vi.unstubAllGlobals()
+      if (originalDescriptor) Object.defineProperty(globalThis, 'sessionStorage', originalDescriptor)
+      wrapper.unmount()
+    }
+  })
+
   it('submits answers for single choice, multiple choice, and true/false then opens the authoritative result page', async () => {
     const wrapper = mount(ExamTakeView, {
       global: { stubs, directives: { loading: () => undefined } },
@@ -295,6 +389,7 @@ describe('ExamTakeView', () => {
   })
 
   it('redirects a completed server session to its result without loading paper questions', async () => {
+    saveExamDraft({ userId: 7, recordId: 101, answers: { 1: 'A' }, currentQuestionId: 1 })
     mockGetExamSession.mockResolvedValue({ code: 0, data: { id: 101, examPaperId: 7, status: 1 } })
 
     const wrapper = mount(ExamTakeView, {
@@ -304,11 +399,13 @@ describe('ExamTakeView', () => {
 
     expect(mockReplace).toHaveBeenCalledWith({ name: 'ExamResult', params: { recordId: '101' } })
     expect(mockGetPaperDetail).not.toHaveBeenCalled()
+    expect(loadExamDraft({ userId: 7, recordId: 101, questionIds: [1, 2, 3] })).toBeNull()
 
     wrapper.unmount()
   })
 
   it('explains an expired server session and returns to exam records', async () => {
+    saveExamDraft({ userId: 7, recordId: 101, answers: { 1: 'A' }, currentQuestionId: 1 })
     mockGetExamSession.mockResolvedValue({ code: 0, data: { id: 101, examPaperId: 7, status: 2 } })
 
     const wrapper = mount(ExamTakeView, {
@@ -319,6 +416,7 @@ describe('ExamTakeView', () => {
     expect(mockWarning).toHaveBeenCalledWith('考试已超时，已返回考试列表')
     expect(mockReplace).toHaveBeenCalledWith({ name: 'ExamList', query: { tab: 'records' } })
     expect(mockGetPaperDetail).not.toHaveBeenCalled()
+    expect(loadExamDraft({ userId: 7, recordId: 101, questionIds: [1, 2, 3] })).toBeNull()
 
     wrapper.unmount()
   })
@@ -395,6 +493,7 @@ describe('ExamTakeView', () => {
     await flushPromises()
     expect(wrapper.find('[role="alert"]').text()).toContain('答案仍保留在本页')
     expect((wrapper.find('input[value="A"]').element as HTMLInputElement).checked).toBe(true)
+    expect(loadExamDraft({ userId: 7, recordId: 101, questionIds: [1, 2, 3] })?.answers).toEqual({ 1: 'A' })
     const retry = deferred<unknown>()
     mockSubmitExam.mockReturnValueOnce(retry.promise)
     await button(wrapper, '重试交卷').trigger('click')
@@ -404,6 +503,7 @@ describe('ExamTakeView', () => {
     retry.resolve({ code: 0, data: { id: 101 } })
     await flushPromises()
     expect(mockReplace).toHaveBeenCalledWith({ name: 'ExamResult', params: { recordId: '101' } })
+    expect(loadExamDraft({ userId: 7, recordId: 101, questionIds: [1, 2, 3] })).toBeNull()
   })
 
   it('does not submit a confirmation resolved after the authoritative deadline', async () => {
@@ -446,6 +546,7 @@ describe('ExamTakeView', () => {
     removeToken()
     await flushPromises()
     expect(wrapper.find('.question-card').exists()).toBe(false)
+    expect(loadExamDraft({ userId: 7, recordId: 101, questionIds: [1, 2, 3] })).toBeNull()
     pending.resolve({ code: 0, data: { id: 101 } })
     await flushPromises()
     expect(mockReplace).toHaveBeenCalledTimes(1)

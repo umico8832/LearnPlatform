@@ -6,6 +6,7 @@ interface ExamLeaveGuardOptions {
   hasQuestions: () => boolean
   submitting: Ref<boolean>
   finished: Ref<boolean>
+  onLeave?: () => void
 }
 
 const leaveMessage = '离开后，本页未提交的答案会丢失，考试计时仍会继续。'
@@ -30,7 +31,10 @@ export function useExamLeaveGuard(options: ExamLeaveGuardOptions) {
       cancelButtonText: '继续考试',
       autofocus: false,
     })
-      .then(() => true)
+      .then(() => {
+        options.onLeave?.()
+        return true
+      })
       .catch(() => false)
       .finally(() => {
         pendingConfirmation = undefined

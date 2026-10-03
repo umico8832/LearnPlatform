@@ -46,9 +46,11 @@
         </div>
       </header>
       <p class="exam-note">
-        答案暂存在本页，刷新或离开后需重新作答；计时会继续。<span v-if="remainSeconds < 300" role="status"
-          >剩余不足 5 分钟，请留意交卷时间。</span
-        >
+        答案暂存于当前标签页，刷新可继续作答；离开或交卷后清除。计时不会暂停。<span
+          v-if="draftStorageError"
+          role="status"
+          >{{ draftStorageError }}</span
+        ><span v-else-if="remainSeconds < 300" role="status">剩余不足 5 分钟，请留意交卷时间。</span>
       </p>
       <div class="question-area">
         <article class="question-card" aria-labelledby="exam-question-title">
@@ -189,6 +191,7 @@ const {
   loading,
   loadError,
   submitError,
+  draftStorageError,
   paperTitle,
   questions,
   currentIndex,
