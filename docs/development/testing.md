@@ -128,9 +128,10 @@ L3 仍然是按风险选择，不是为了展示测试数量机械执行所有�
 浏览器测试使用独立的 Spring `e2e` Profile（`docker-compose.e2e.yml`），前端站点密钥与后端
 校验密钥使用 Cloudflare Turnstile 测试配置；账号密码、JWT、权限和路由守卫仍执行真实逻辑。
 测试密钥只用于隔离 E2E，不写入日常开发或生产配置；这些环境按自己的 Turnstile 配置完成验证。
-E2E Compose 还提供 OpenAI 兼容的确定性上游响应，只替代不可重复且需要密钥的外部模型调用；后端的配额、
-Prompt 构造、HTTP Provider、结构校验、调用审计、草稿状态和数据库事务仍使用真实实现。该响应不得在开发或
-生产 Compose 中启用，也不能替代 AI 解析与异常分支的单元测试。
+E2E Compose 还提供 OpenAI 兼容的确定性上游响应，只替代不可重复且需要密钥的外部模型调用；后端的
+Prompt 构造、HTTP Provider、结构校验、调用审计、草稿状态和数据库事务仍使用真实实现。
+功能 E2E 的 AI 日配额设为 0（不限次数），避免并发用例及重试共用额度；配额拒绝由后端专项测试验证。
+模拟上游不得在开发或生产 Compose 中启用，也不能替代 AI 解析与异常分支的单元测试。
 
 `docker-compose.e2e.yml` 使用独立 Compose 项目名 `learnplatform-e2e`，E2E 拥有自己的
 容器、网络和数据卷，与开发环境隔离。`down -v` 只清理 E2E 数据，不会误删开发数据。
