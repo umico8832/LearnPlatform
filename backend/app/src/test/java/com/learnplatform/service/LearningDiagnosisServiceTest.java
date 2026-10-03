@@ -172,7 +172,7 @@ class LearningDiagnosisServiceTest {
         assertEquals(0, habit.getAvgDailyPractice());
         assertEquals("暂无数据", habit.getPreferredQuestionType());
         assertEquals("暂无数据", habit.getPreferredCourse());
-        assertEquals("INACTIVE", habit.getFrequencyLevel());
+        assertEquals("INSUFFICIENT_DATA", habit.getFrequencyLevel());
         assertNotNull(habit.getWeeklyTrend());
         assertEquals(7, habit.getWeeklyTrend().size());
     }
@@ -217,6 +217,23 @@ class LearningDiagnosisServiceTest {
             assertTrue(day.containsKey("wrong"));
             assertEquals(0, day.get("total"));
         }
+    }
+
+    @Test
+    void getDiagnosisMultipleActiveDaysRetainsFrequencyGroupingWithFactualDescription() {
+        List<PracticeRecord> records = new java.util.ArrayList<>();
+        for (int day = 0; day < 10; day++) {
+            records.add(stubRecord(USER_ID, (long) day + 1, 1, LocalDateTime.now().minusDays(day)));
+        }
+        when(practiceRecordMapper.selectList(any())).thenReturn(records);
+        when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(knowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
+
+        LearningDiagnosisVO diagnosis = service.getDiagnosis(USER_ID);
+
+        assertEquals("MODERATE", diagnosis.getLearningHabit().getFrequencyLevel());
+        assertEquals("近30天有10天留下练习记录。", diagnosis.getLearningHabit().getFrequencyDescription());
+        assertFalse(diagnosis.getLearningHabit().getFrequencyDescription().contains("建议"));
     }
 
     // ======================== getDiagnosis — 错因分析 ========================
@@ -356,6 +373,103 @@ class LearningDiagnosisServiceTest {
     }
 
     @Test
+    void getDiagnosisSingleWrongAttemptUsesEvidenceLimitedKnowledgeAndHabitLanguage() {
+        LearningDiagnosisVO diagnosis = diagnosisForSingleAttempt(0);
+
+        LearningDiagnosisVO.WeakPoint point = diagnosis.getWeakPoints().get(0);
+        assertEquals("INSUFFICIENT_DATA", point.getMasteryStatus());
+        assertEquals(1, point.getTotalAttempts());
+        assertTrue(point.getDiagnosis().contains("本次未答对"));
+        assertTrue(point.getDiagnosis().contains("暂不足以判断"));
+        assertFalse(point.getDiagnosis().contains("基础不扎实"));
+        assertEquals("INSUFFICIENT_DATA", diagnosis.getLearningHabit().getFrequencyLevel());
+        assertEquals("近30天有1天留下练习记录，样本不足，继续积累记录后再评估学习节奏。",
+                diagnosis.getLearningHabit().getFrequencyDescription());
+        assertFalse(diagnosis.getDailyAdvice().contains("增加学习频率"));
+    }
+
+    @Test
+    void getDiagnosisSingleCorrectAttemptStillKeepsEvidenceLimitedKnowledgeCard() {
+        LearningDiagnosisVO diagnosis = diagnosisForSingleAttempt(1);
+
+        assertEquals(1, diagnosis.getWeakPoints().size(), "单次答对也不能据此认定掌握并隐藏继续练习入口");
+        LearningDiagnosisVO.WeakPoint point = diagnosis.getWeakPoints().get(0);
+        assertEquals("INSUFFICIENT_DATA", point.getMasteryStatus());
+        assertTrue(point.getDiagnosis().contains("本次答对"));
+        assertTrue(point.getDiagnosis().contains("暂不足以判断"));
+    }
+
+    @Test
+    void getDiagnosisMultipleAttemptsOnOneDayRetainsKnowledgeRuleButNotLongTermFrequencyJudgment() {
+        KnowledgePoint kp = stubKnowledgePoint(1L, "KP-A", 10L);
+        when(knowledgePointMapper.selectList(any())).thenReturn(List.of(kp));
+        QuestionKnowledgePoint qkp = new QuestionKnowledgePoint();
+        qkp.setQuestionId(100L);
+        qkp.setKnowledgePointId(1L);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(qkp));
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(
+                stubRecord(USER_ID, 100L, 1, LocalDateTime.now()),
+                stubRecord(USER_ID, 100L, 0, LocalDateTime.now().minusHours(1))));
+        when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
+
+        LearningDiagnosisVO diagnosis = service.getDiagnosis(USER_ID);
+
+        assertEquals("NEEDS_REVIEW", diagnosis.getWeakPoints().get(0).getMasteryStatus());
+        assertEquals("INSUFFICIENT_DATA", diagnosis.getLearningHabit().getFrequencyLevel());
+        assertFalse(diagnosis.getLearningHabit().getFrequencyDescription().contains("建议增加"));
+    }
+
+    @Test
+    void getDiagnosisUsesRecordedWrongAttemptsInsteadOfCumulativeWrongBookCountInWeakDiagnosis() {
+        KnowledgePoint kp = stubKnowledgePoint(1L, "KP-A", 10L);
+        when(knowledgePointMapper.selectList(any())).thenReturn(List.of(kp));
+        QuestionKnowledgePoint qkp = new QuestionKnowledgePoint();
+        qkp.setQuestionId(100L);
+        qkp.setKnowledgePointId(1L);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(qkp));
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(
+                stubRecord(USER_ID, 100L, 0, LocalDateTime.now()),
+                stubRecord(USER_ID, 100L, 0, LocalDateTime.now().minusHours(1))));
+        when(wrongQuestionMapper.selectList(any())).thenReturn(List.of(
+                stubWrongQuestion(USER_ID, 100L, 7, 0)));
+        when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
+
+        LearningDiagnosisVO.WeakPoint point = service.getDiagnosis(USER_ID).getWeakPoints().get(0);
+
+        assertEquals(7, point.getWrongCount(), "错题本累计次数仍是独立事实");
+        assertTrue(point.getDiagnosis().contains("2 次作答中 2 次未答对"));
+        assertFalse(point.getDiagnosis().contains("答错 7 道"));
+    }
+
+    @Test
+    void getDiagnosisSortsEvidenceLimitedCorrectCardAfterExistingReviewNeed() {
+        KnowledgePoint singleCorrectPoint = stubKnowledgePoint(1L, "单次答对", 10L);
+        KnowledgePoint reviewPoint = stubKnowledgePoint(2L, "需要复习", 10L);
+        when(knowledgePointMapper.selectList(any())).thenReturn(List.of(singleCorrectPoint, reviewPoint));
+        QuestionKnowledgePoint singleLink = new QuestionKnowledgePoint();
+        singleLink.setQuestionId(100L);
+        singleLink.setKnowledgePointId(1L);
+        QuestionKnowledgePoint reviewLink = new QuestionKnowledgePoint();
+        reviewLink.setQuestionId(200L);
+        reviewLink.setKnowledgePointId(2L);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(singleLink, reviewLink));
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(
+                stubRecord(USER_ID, 100L, 1, LocalDateTime.now()),
+                stubRecord(USER_ID, 200L, 1, LocalDateTime.now().minusHours(1)),
+                stubRecord(USER_ID, 200L, 0, LocalDateTime.now().minusHours(2))));
+        when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
+
+        List<LearningDiagnosisVO.WeakPoint> points = service.getDiagnosis(USER_ID).getWeakPoints();
+
+        assertEquals(2L, points.get(0).getKnowledgePointId());
+        assertEquals("NEEDS_REVIEW", points.get(0).getMasteryStatus());
+        assertEquals(1L, points.get(1).getKnowledgePointId());
+        assertEquals("INSUFFICIENT_DATA", points.get(1).getMasteryStatus());
+    }
+
+    @Test
     void getDiagnosisWeakPointsHighCorrectRateFiltered() {
         // Knowledge point with 90% correct rate => should be filtered out (>=70%)
         KnowledgePoint kp = stubKnowledgePoint(1L, "KP-Strong", 10L);
@@ -405,7 +519,7 @@ class LearningDiagnosisServiceTest {
         assertEquals(1, vo.getWeakPoints().size());
         assertEquals("NOT_STARTED", vo.getWeakPoints().get(0).getMasteryStatus());
         assertFalse(vo.getDailyAdvice().contains("-1.0%"));
-        assertTrue(vo.getDailyAdvice().contains("尚未开始"));
+        assertTrue(vo.getDailyAdvice().contains("尚未留下练习记录"));
     }
 
     // ======================== getDiagnosis — 每日推荐 ========================
@@ -542,12 +656,61 @@ class LearningDiagnosisServiceTest {
         LearningDiagnosisVO vo = service.getDiagnosis(USER_ID);
 
         assertNotNull(vo.getDailyAdvice());
-        // Should contain advice about not starting today
-        assertTrue(vo.getDailyAdvice().contains("今天还没有开始学习")
-                || vo.getDailyAdvice().contains("学习状态良好"));
+        assertTrue(vo.getDailyAdvice().contains("完成第一道练习")
+                || vo.getDailyAdvice().contains("当前学习记录没有显示"));
     }
 
     // ======================== getDiagnosis — 课程掌握概况 ========================
+
+    @Test
+    void getDiagnosisSingleWrongAttemptDoesNotCountAsCourseWeakPoint() {
+        KnowledgePoint kp = stubKnowledgePoint(1L, "KP-1", 10L);
+        when(knowledgePointMapper.selectList(any())).thenReturn(List.of(kp));
+        QuestionKnowledgePoint qkp = new QuestionKnowledgePoint();
+        qkp.setQuestionId(1L);
+        qkp.setKnowledgePointId(1L);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(qkp));
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(
+                stubRecord(USER_ID, 1L, 0, LocalDateTime.now())));
+        when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "数据结构"));
+
+        LearningDiagnosisVO.CourseMastery course = service.getDiagnosis(USER_ID).getCourseMasteries().get(0);
+
+        assertEquals(1, course.getTotalAttempts());
+        assertEquals(0, course.getWeakPointCount());
+    }
+
+    @Test
+    void getDiagnosisSingleAttemptRecommendationUsesNeutralRecordBasedDescription() {
+        KnowledgePoint kp = stubKnowledgePoint(1L, "KP-1", 10L);
+        when(knowledgePointMapper.selectList(any())).thenReturn(List.of(kp));
+        QuestionKnowledgePoint answeredLink = new QuestionKnowledgePoint();
+        answeredLink.setQuestionId(1L);
+        answeredLink.setKnowledgePointId(1L);
+        QuestionKnowledgePoint candidateLink = new QuestionKnowledgePoint();
+        candidateLink.setQuestionId(2L);
+        candidateLink.setKnowledgePointId(1L);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(answeredLink, candidateLink));
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(
+                stubRecord(USER_ID, 1L, 0, LocalDateTime.now())));
+        when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "数据结构"));
+
+        Question answered = stubQuestion(1L, "SINGLE_CHOICE", 10L);
+        answered.setVisibility("PUBLIC");
+        Question candidate = stubQuestion(2L, "SINGLE_CHOICE", 10L);
+        candidate.setVisibility("PUBLIC");
+        when(questionMapper.selectById(1L)).thenReturn(answered);
+        when(questionMapper.selectById(2L)).thenReturn(candidate);
+
+        LearningDiagnosisVO.RecommendedQuestion recommendation = service.getDiagnosis(USER_ID)
+                .getDailyRecommendations().stream().filter(item -> item.getQuestionId().equals(2L))
+                .findFirst().orElseThrow();
+
+        assertEquals("WEAK_POINT_REINFORCE", recommendation.getReason());
+        assertEquals("与当前关注的知识点相关，可继续练习", recommendation.getReasonDescription());
+    }
 
     @Test
     void getDiagnosisCourseMasteries() {
@@ -781,7 +944,7 @@ class LearningDiagnosisServiceTest {
         String userPrompt = userPromptCaptor.getValue();
 
         // Verify the prompt contains diagnosis data
-        assertTrue(userPrompt.contains("总刷题数"));
+        assertTrue(userPrompt.contains("总已判分作答"));
         assertTrue(userPrompt.contains("请基于以上数据"));
     }
 
@@ -1216,6 +1379,20 @@ class LearningDiagnosisServiceTest {
     }
 
     // ======================== Helpers ========================
+
+    private LearningDiagnosisVO diagnosisForSingleAttempt(int isCorrect) {
+        KnowledgePoint kp = stubKnowledgePoint(1L, "KP-A", 10L);
+        when(knowledgePointMapper.selectList(any())).thenReturn(List.of(kp));
+        QuestionKnowledgePoint qkp = new QuestionKnowledgePoint();
+        qkp.setQuestionId(100L);
+        qkp.setKnowledgePointId(1L);
+        when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(qkp));
+        when(practiceRecordMapper.selectList(any())).thenReturn(List.of(
+                stubRecord(USER_ID, 100L, isCorrect, LocalDateTime.now())));
+        when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
+        when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
+        return service.getDiagnosis(USER_ID);
+    }
 
     private PracticeRecord stubRecord(Long userId, Long questionId, int isCorrect, LocalDateTime createTime) {
         PracticeRecord r = new PracticeRecord();

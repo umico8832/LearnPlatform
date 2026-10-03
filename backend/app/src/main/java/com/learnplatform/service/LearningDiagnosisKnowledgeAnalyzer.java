@@ -74,6 +74,8 @@ public class LearningDiagnosisKnowledgeAnalyzer {
             String status;
             if (total == 0) {
                 status = "NOT_STARTED";
+            } else if (total == 1) {
+                status = "INSUFFICIENT_DATA";
             } else if (rate >= REVIEW_THRESHOLD) {
                 continue;
             } else if (rate >= WEAK_THRESHOLD) {
@@ -93,7 +95,7 @@ public class LearningDiagnosisKnowledgeAnalyzer {
             weakPoint.setWrongCount(wrongs);
             weakPoint.setMasteryStatus(status);
             weakPoint.setPriorityScore(calculatePriority(rate, wrongs, status));
-            weakPoint.setDiagnosis(generateDiagnosis(status, rate, total, wrongs));
+            weakPoint.setDiagnosis(generateDiagnosis(status, rate, total, (int) (total - correct)));
             weakPoints.add(weakPoint);
         }
 
@@ -195,7 +197,7 @@ public class LearningDiagnosisKnowledgeAnalyzer {
         int weakCount = 0;
         for (Long pointId : coursePointIds) {
             List<PracticeRecord> records = pointRecords.getOrDefault(pointId, Collections.emptyList());
-            if (records.isEmpty()) {
+            if (records.size() <= 1) {
                 continue;
             }
             long correct = records.stream()
@@ -211,6 +213,9 @@ public class LearningDiagnosisKnowledgeAnalyzer {
     private double calculatePriority(double rate, int wrongs, String status) {
         return switch (status) {
             case "NOT_STARTED" -> 60.0;
+            case "INSUFFICIENT_DATA" -> rate < REVIEW_THRESHOLD
+                    ? 70 + (WEAK_THRESHOLD - Math.max(rate, 0)) * 0.3 + wrongs * 1.5
+                    : 0.0;
             case "WEAK" -> 70 + (WEAK_THRESHOLD - Math.max(rate, 0)) * 0.3 + wrongs * 1.5;
             case "NEEDS_REVIEW" -> 40 + (REVIEW_THRESHOLD - rate) * 0.5 + wrongs;
             default -> 0;
@@ -219,12 +224,15 @@ public class LearningDiagnosisKnowledgeAnalyzer {
 
     private String generateDiagnosis(String status, double rate, int total, int wrongs) {
         return switch (status) {
-            case "NOT_STARTED" -> "该知识点尚未开始练习，建议系统学习后进行专项练习。";
+            case "NOT_STARTED" -> "该知识点尚未留下练习记录。完成练习后可在这里查看记录。";
+            case "INSUFFICIENT_DATA" -> String.format(
+                    "仅有 1 条已判分记录，本次%s，暂不足以判断掌握程度。可继续完成同一知识点的练习。",
+                    rate >= 100.0 ? "答对" : "未答对");
             case "WEAK" -> String.format(
-                    "正确率 %.1f%%（%d 道题中答错 %d 道），基础不扎实。建议重新学习核心概念，从基础题开始逐步提升。",
+                    "这些练习记录的正确率为 %.1f%%（%d 次作答中 %d 次未答对）。可从核心概念和基础题继续练习。",
                     rate, total, wrongs);
             case "NEEDS_REVIEW" -> String.format(
-                    "正确率 %.1f%%，有一定基础但仍有薄弱环节。建议做几道变式题巩固，重点关注错题涉及的知识盲区。", rate);
+                    "这些练习记录的正确率为 %.1f%%。可继续做变式题，并回看错题涉及的知识点。", rate);
             default -> "";
         };
     }

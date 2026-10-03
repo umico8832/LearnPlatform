@@ -18,8 +18,8 @@ public class LearningDiagnosisPromptBuilder {
                 + "要求：\n"
                 + "1. 根据用户的具体学习数据（薄弱知识点、错题模式、学习习惯等）给出有针对性的建议\n"
                 + "2. 建议要具体可操作，不要泛泛而谈\n"
-                + "3. 分析用户的学习优势和不足，给出平衡的评价\n"
-                + "4. 为用户制定短期（本周）和中期（本月）学习计划\n"
+                + "3. 仅在数据足够时分析学习表现；样本不足时只能陈述记录与下一步练习，不能评定能力、基础或长期学习习惯\n"
+                + "4. 为用户制定可执行的下一步练习计划；样本不足时不推断本周或本月表现\n"
                 + "5. 给予鼓励，但不要过度夸奖\n"
                 + "6. 使用 Markdown 格式输出，包含标题、列表等结构化内容\n"
                 + "7. 回复长度控制在 500-800 字，不要太长\n"
@@ -33,21 +33,34 @@ public class LearningDiagnosisPromptBuilder {
 
         // 基本数据
         sb.append("## 基本学习数据\n");
-        sb.append("- 总刷题数：").append(diagnosis.getTotalPractice()).append(" 道\n");
-        sb.append("- 总正确率：").append(String.format("%.1f%%", diagnosis.getOverallCorrectRate())).append("\n");
+        sb.append("- 总已判分作答：").append(diagnosis.getTotalPractice()).append(" 次\n");
+        sb.append("- 总正确率：")
+                .append(rateText(diagnosis.getOverallCorrectRate(), diagnosis.getTotalPractice())).append("\n");
         sb.append("- 连续学习天数：").append(diagnosis.getStreakDays()).append(" 天\n");
         sb.append("- 近 30 天活跃天数：").append(diagnosis.getActiveDaysLast30()).append(" 天\n\n");
 
+        boolean hasInsufficientKnowledgeEvidence = diagnosis.getWeakPoints() != null
+                && diagnosis.getWeakPoints().stream()
+                .anyMatch(point -> "INSUFFICIENT_DATA".equals(point.getMasteryStatus()));
+        boolean hasInsufficientHabitEvidence = diagnosis.getLearningHabit() != null
+                && "INSUFFICIENT_DATA".equals(diagnosis.getLearningHabit().getFrequencyLevel());
+        if (hasInsufficientKnowledgeEvidence || hasInsufficientHabitEvidence) {
+            sb.append("## 证据边界\n");
+            sb.append("当前记录样本不足。不得据此评定能力、基础或长期学习习惯；"
+                    + "只陈述已有练习记录，并给出可执行的下一步练习。\n\n");
+        }
+
         // 薄弱知识点
         if (diagnosis.getWeakPoints() != null && !diagnosis.getWeakPoints().isEmpty()) {
-            sb.append("## 薄弱知识点（按优先级排序）\n");
+            sb.append("## 需要继续处理的知识点（按当前优先级排序）\n");
             for (LearningDiagnosisVO.WeakPoint wp : diagnosis.getWeakPoints()) {
                 sb.append("- ").append(wp.getKnowledgePointName())
                         .append("（").append(wp.getCourseName()).append("）：正确率 ")
-                        .append(String.format("%.1f%%", wp.getCorrectRate()))
+                        .append(rateText(wp.getCorrectRate(), wp.getTotalAttempts()))
+                        .append("，样本=").append(wp.getTotalAttempts()).append("次作答")
                         .append("，状态=").append(wp.getMasteryStatus())
-                        .append("，练习 ").append(wp.getTotalAttempts()).append(" 次")
-                        .append("，错 ").append(wp.getWrongCount()).append(" 题\n");
+                        .append("，错题本累计=").append(wp.getWrongCount())
+                        .append("，诊断=").append(wp.getDiagnosis()).append("\n");
             }
             sb.append("\n");
         }
@@ -57,7 +70,7 @@ public class LearningDiagnosisPromptBuilder {
             sb.append("## 课程掌握概况\n");
             for (LearningDiagnosisVO.CourseMastery cm : diagnosis.getCourseMasteries()) {
                 sb.append("- ").append(cm.getCourseName())
-                        .append("：正确率 ").append(String.format("%.1f%%", cm.getCorrectRate()))
+                        .append("：正确率 ").append(rateText(cm.getCorrectRate(), cm.getTotalAttempts()))
                         .append("，练习 ").append(cm.getTotalAttempts()).append(" 次")
                         .append("，薄弱知识点 ").append(cm.getWeakPointCount()).append(" 个\n");
             }
@@ -95,7 +108,7 @@ public class LearningDiagnosisPromptBuilder {
                 sb.append("- 知识点错因排名：\n");
                 ep.getKnowledgePointErrors().forEach(r -> sb.append("  · ").append(r.getKnowledgePointName())
                         .append("（").append(r.getCourseName()).append("）：错 ").append(r.getWrongCount())
-                        .append(" 题，正确率 ").append(String.format("%.1f%%", r.getCorrectRate())).append("\n"));
+                        .append(" 题，正确率 ").append(rateText(r.getCorrectRate(), r.getTotalAttempts())).append("\n"));
             }
             if (ep.getWeeklyErrorTrend() != null && !ep.getWeeklyErrorTrend().isEmpty()) {
                 sb.append("- 近 4 周错题趋势：");
@@ -136,5 +149,9 @@ public class LearningDiagnosisPromptBuilder {
 
         sb.append("请基于以上数据，给出个性化的学习建议。");
         return sb.toString();
+    }
+
+    private String rateText(double rate, int attempts) {
+        return attempts <= 0 ? "暂无记录" : String.format("%.1f%%", rate);
     }
 }

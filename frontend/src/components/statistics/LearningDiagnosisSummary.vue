@@ -38,13 +38,13 @@
     <el-col :xs="12" :sm="6">
       <el-card shadow="hover" class="stat-card">
         <div class="stat-value">{{ data.totalPractice }}</div>
-        <div class="stat-label">总刷题数</div>
+        <div class="stat-label">已判分作答</div>
       </el-card>
     </el-col>
     <el-col :xs="12" :sm="6">
       <el-card shadow="hover" class="stat-card">
         <div class="stat-value">{{ data.overallCorrectRate }}%</div>
-        <div class="stat-label">总正确率</div>
+        <div class="stat-label">作答正确率</div>
       </el-card>
     </el-col>
     <el-col :xs="12" :sm="6">
@@ -62,7 +62,12 @@
   </el-row>
 
   <el-card v-if="data.weakPoints.length" class="section-card" shadow="hover">
-    <template #header><span>需要巩固的知识点</span></template>
+    <template #header>
+      <div>
+        <span>下一步关注的知识点</span>
+        <p class="section-description">诊断基于平台已判分的练习记录；记录较少时仅展示事实，不判断掌握程度。</p>
+      </div>
+    </template>
     <el-table :data="data.weakPoints" stripe>
       <el-table-column label="知识点" min-width="160">
         <template #default="{ row }">
@@ -75,15 +80,16 @@
       <el-table-column label="正确率" width="120">
         <template #default="{ row }">
           <el-progress
-            :percentage="row.correctRate >= 0 ? Math.round(row.correctRate) : 0"
+            v-if="row.totalAttempts > 0"
+            :percentage="Math.round(row.correctRate)"
             :color="rateColor(row.correctRate)"
-            :stroke-width="18"
-            :text-inside="true"
+            :stroke-width="6"
           />
+          <span v-else class="no-record">暂无记录</span>
         </template>
       </el-table-column>
-      <el-table-column prop="totalAttempts" label="练习数" width="80" align="center" />
-      <el-table-column prop="wrongCount" label="错题数" width="80" align="center" />
+      <el-table-column prop="totalAttempts" label="作答次数" width="96" align="center" />
+      <el-table-column prop="wrongCount" label="累计错次" width="96" align="center" />
       <el-table-column label="状态" width="100" align="center">
         <template #default="{ row }">
           <el-tag :type="statusType(row.masteryStatus)" size="small">
@@ -99,14 +105,15 @@
     <template #header><span>学习节奏</span></template>
     <el-row :gutter="24">
       <el-col :xs="24" :sm="12">
-        <el-descriptions :column="1" border>
-          <el-descriptions-item label="日均刷题">{{ data.learningHabit.avgDailyPractice }} 道</el-descriptions-item>
+        <el-descriptions :column="1" :label-width="88" border>
+          <el-descriptions-item label="日均作答">{{ data.learningHabit.avgDailyPractice }} 次</el-descriptions-item>
           <el-descriptions-item label="偏好题型">{{ data.learningHabit.preferredQuestionType }}</el-descriptions-item>
           <el-descriptions-item label="偏好课程">{{ data.learningHabit.preferredCourse }}</el-descriptions-item>
           <el-descriptions-item label="学习频次">
-            <el-tag :type="frequencyType" size="small">
-              {{ data.learningHabit.frequencyDescription }}
-            </el-tag>
+            <div class="frequency-detail">
+              <el-tag :type="frequencyType" size="small">{{ frequencyLabel }}</el-tag>
+              <p class="frequency-description">{{ data.learningHabit.frequencyDescription }}</p>
+            </div>
           </el-descriptions-item>
         </el-descriptions>
       </el-col>
@@ -158,7 +165,14 @@ const maxBarValue = computed(() => {
 const frequencyType = computed(() => {
   if (props.data.learningHabit.frequencyLevel === 'ACTIVE') return 'success'
   if (props.data.learningHabit.frequencyLevel === 'MODERATE') return 'warning'
+  if (props.data.learningHabit.frequencyLevel === 'INSUFFICIENT_DATA') return 'info'
   return 'danger'
+})
+const frequencyLabel = computed(() => {
+  if (props.data.learningHabit.frequencyLevel === 'ACTIVE') return '学习活跃'
+  if (props.data.learningHabit.frequencyLevel === 'MODERATE') return '保持练习'
+  if (props.data.learningHabit.frequencyLevel === 'INSUFFICIENT_DATA') return '记录较少'
+  return '活跃日记录'
 })
 
 function barHeight(value: number): string {
@@ -223,6 +237,35 @@ function barHeight(value: number): string {
 
 .course-tag {
   margin-left: var(--lp-space-2);
+}
+
+.section-description {
+  margin: var(--lp-space-1) 0 0;
+  font-size: var(--lp-text-sm);
+  font-weight: var(--lp-weight-normal);
+  color: var(--lp-text-muted);
+}
+
+.no-record {
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-sm);
+}
+
+.frequency-detail {
+  display: grid;
+  gap: var(--lp-space-1);
+  align-items: start;
+}
+
+.frequency-detail .el-tag {
+  justify-self: start;
+}
+
+.frequency-description {
+  margin: 0;
+  line-height: var(--lp-leading-body);
+  color: var(--lp-text-secondary);
+  overflow-wrap: anywhere;
 }
 
 .chart-container h4 {

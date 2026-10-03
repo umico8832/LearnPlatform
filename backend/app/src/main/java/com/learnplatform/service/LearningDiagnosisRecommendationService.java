@@ -91,14 +91,14 @@ public class LearningDiagnosisRecommendationService {
                 .collect(Collectors.toCollection(ArrayList::new));
         Collections.shuffle(wrongCandidateIds);
         addCandidates(recommendations, wrongCandidateIds, userId, questionToKps,
-                "薄弱知识点相关，建议强化练习");
+                "与当前关注的知识点相关，可继续练习");
 
         List<Long> untriedIds = candidateIds.stream()
                 .filter(id -> !answeredIds.contains(id))
                 .collect(Collectors.toCollection(ArrayList::new));
         Collections.shuffle(untriedIds);
         addCandidates(recommendations, untriedIds, userId, questionToKps,
-                "薄弱知识点相关，尚未练习");
+                "与当前关注的知识点相关，可继续练习");
         return recommendations;
     }
 

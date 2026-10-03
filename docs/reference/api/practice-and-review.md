@@ -74,3 +74,9 @@
 | `GET /api/statistics/similar-questions`       | 相似题推荐         |
 
 统计和推荐结果属于学习辅助信息；观察性指标不能表述为因果效果。
+
+规则诊断中的 `totalPractice`、`totalAttempts` 表示已记录的作答次数，包含同一题目的重复作答。
+知识点仅有一次作答时，`masteryStatus` 为 `INSUFFICIENT_DATA`，保留本次结果和后续练习入口，
+不据此认定掌握或薄弱；课程的薄弱知识点汇总遵循同一边界。近 30 天只有零或一个活跃日时，
+`frequencyLevel` 同样为 `INSUFFICIENT_DATA`；频次文案只描述平台记录，不假设帐号年龄或长期习惯。
+页面、规则建议和 AI 输入同步这一证据范围；未作答内容显示“暂无记录”，实际答错后的 0% 继续保留。

@@ -6,14 +6,15 @@
       <el-table-column label="正确率" width="140">
         <template #default="{ row }">
           <el-progress
+            v-if="row.totalAttempts > 0"
             :percentage="Math.round(row.correctRate)"
             :color="rateColor(row.correctRate)"
-            :stroke-width="16"
-            :text-inside="true"
+            :stroke-width="6"
           />
+          <span v-else class="no-record">暂无记录</span>
         </template>
       </el-table-column>
-      <el-table-column prop="totalAttempts" label="练习数" width="80" align="center" />
+      <el-table-column prop="totalAttempts" label="作答次数" width="96" align="center" />
       <el-table-column prop="wrongCount" label="错题数" width="80" align="center" />
       <el-table-column prop="knowledgePointCount" label="知识点总数" width="100" align="center" />
       <el-table-column prop="weakPointCount" label="薄弱知识点" width="100" align="center">
@@ -105,5 +106,10 @@ const emit = defineEmits<{
 }
 .practice-error {
   margin-top: var(--lp-space-3);
+}
+
+.no-record {
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-sm);
 }
 </style>

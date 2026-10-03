@@ -60,8 +60,8 @@ public class LearningDiagnosisHabitAnalyzer {
             habit.setAvgDailyPractice(0);
             habit.setPreferredQuestionType("暂无数据");
             habit.setPreferredCourse("暂无数据");
-            habit.setFrequencyLevel("INACTIVE");
-            habit.setFrequencyDescription("暂无学习记录，开始你的第一道题吧！");
+            habit.setFrequencyLevel("INSUFFICIENT_DATA");
+            habit.setFrequencyDescription("近30天尚未留下练习记录。完成第一道题后再整理学习节奏。");
             habit.setWeeklyTrend(buildEmptyWeeklyTrend());
             return habit;
         }
@@ -76,15 +76,19 @@ public class LearningDiagnosisHabitAnalyzer {
         habit.setPreferredCourse(findPreferredCourse(allRecords));
 
         int activeDays = calculateActiveDays(allRecords, 30);
-        if (activeDays >= 20) {
+        String activityFact = "近30天有" + activeDays + "天留下练习记录";
+        if (activeDays <= 1) {
+            habit.setFrequencyLevel("INSUFFICIENT_DATA");
+            habit.setFrequencyDescription(activityFact + "，样本不足，继续积累记录后再评估学习节奏。");
+        } else if (activeDays >= 20) {
             habit.setFrequencyLevel("ACTIVE");
-            habit.setFrequencyDescription("近 30 天学习 " + activeDays + " 天，学习习惯很好！");
+            habit.setFrequencyDescription(activityFact + "。");
         } else if (activeDays >= 10) {
             habit.setFrequencyLevel("MODERATE");
-            habit.setFrequencyDescription("近 30 天学习 " + activeDays + " 天，坚持每天练习效果更好。");
+            habit.setFrequencyDescription(activityFact + "。");
         } else {
             habit.setFrequencyLevel("INACTIVE");
-            habit.setFrequencyDescription("近 30 天仅学习 " + activeDays + " 天，建议增加学习频率。");
+            habit.setFrequencyDescription(activityFact + "。");
         }
         habit.setWeeklyTrend(buildWeeklyTrend(allRecords));
         return habit;
@@ -92,38 +96,41 @@ public class LearningDiagnosisHabitAnalyzer {
 
     public String generateDailyAdvice(LearningDiagnosisVO diagnosis) {
         StringBuilder advice = new StringBuilder();
-        if (diagnosis.getStreakDays() >= 7) {
-            advice.append("🔥 连续学习 ").append(diagnosis.getStreakDays()).append(" 天，非常好！继续保持。\n\n");
-        } else if (diagnosis.getStreakDays() >= 3) {
-            advice.append("📈 连续学习 ").append(diagnosis.getStreakDays()).append(" 天，坚持下去会更好。\n\n");
-        } else if (diagnosis.getStreakDays() == 0) {
-            advice.append("💡 今天还没有开始学习，每天练习几道题效果更好。\n\n");
+        if (diagnosis.getTotalPractice() == 0) {
+            advice.append("完成第一道练习后，这里会基于已判分记录整理下一步。\n\n");
+        } else if (diagnosis.getLearningHabit() != null
+                && "INSUFFICIENT_DATA".equals(diagnosis.getLearningHabit().getFrequencyLevel())) {
+            advice.append("当前学习记录覆盖的活跃日有限，继续完成练习后再评估学习节奏。\n\n");
         }
 
         if (diagnosis.getWeakPoints() != null && !diagnosis.getWeakPoints().isEmpty()) {
             LearningDiagnosisVO.WeakPoint top = diagnosis.getWeakPoints().get(0);
-            advice.append("📚 重点关注：").append(top.getKnowledgePointName())
-                    .append("（").append(top.getCourseName()).append("）");
+            advice.append("下一步可处理：").append(top.getKnowledgePointName())
+                    .append("（").append(top.getCourseName()).append("）。");
             if ("NOT_STARTED".equals(top.getMasteryStatus())) {
-                advice.append("尚未开始练习，建议先学习核心概念。\n\n");
+                advice.append("该知识点尚未留下练习记录，可先完成基础练习。\n\n");
+            } else if ("INSUFFICIENT_DATA".equals(top.getMasteryStatus())) {
+                advice.append("当前只有 ").append(top.getTotalAttempts())
+                        .append(" 条已判分记录，继续练习后再判断掌握情况。\n\n");
             } else {
-                advice.append("，正确率仅 ")
+                advice.append("这些练习记录的正确率为 ")
                         .append(String.format("%.1f%%", top.getCorrectRate()))
-                        .append("。\n\n");
+                        .append("，可继续做相关练习。\n\n");
             }
         }
 
         if (diagnosis.getErrorPatterns() != null
                 && diagnosis.getErrorPatterns().getRepeatedErrorCount() > 0) {
-            advice.append("⚠️ 有 ").append(diagnosis.getErrorPatterns().getRepeatedErrorCount())
-                    .append(" 道题反复出错，建议使用 AI 讲解理解后再练习。\n\n");
+            advice.append("有 ").append(diagnosis.getErrorPatterns().getRepeatedErrorCount())
+                    .append(" 道题有重复错误记录，可先回看解析再练习。\n\n");
         }
         if (diagnosis.getLearningHabit() != null
                 && "INACTIVE".equals(diagnosis.getLearningHabit().getFrequencyLevel())) {
-            advice.append("⏰ ").append(diagnosis.getLearningHabit().getFrequencyDescription()).append("\n");
+            advice.append(diagnosis.getLearningHabit().getFrequencyDescription())
+                    .append(" 可安排下一次练习。\n");
         }
         if (advice.length() == 0) {
-            advice.append("✅ 学习状态良好，继续按计划练习吧！可以尝试更高难度的题目提升自己。");
+            advice.append("当前学习记录没有显示需要优先处理的项目。可以按课程计划继续练习。");
         }
         return advice.toString().trim();
     }

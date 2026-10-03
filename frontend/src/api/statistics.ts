@@ -45,7 +45,7 @@ export interface WeakPoint {
   correctRate: number
   totalAttempts: number
   wrongCount: number
-  masteryStatus: 'WEAK' | 'NEEDS_REVIEW' | 'NOT_STARTED'
+  masteryStatus: 'WEAK' | 'NEEDS_REVIEW' | 'NOT_STARTED' | 'INSUFFICIENT_DATA'
   priorityScore: number
   diagnosis: string
 }
@@ -112,7 +112,7 @@ export interface LearningHabit {
   preferredQuestionType: string
   preferredCourse: string
   weeklyTrend: DailyTrendItem[]
-  frequencyLevel: 'ACTIVE' | 'MODERATE' | 'INACTIVE'
+  frequencyLevel: 'ACTIVE' | 'MODERATE' | 'INACTIVE' | 'INSUFFICIENT_DATA'
   frequencyDescription: string
 }
 

@@ -69,7 +69,7 @@ public class LearningDiagnosisVO {
         private int totalAttempts;
         /** 错题数 */
         private int wrongCount;
-        /** 掌握状态：WEAK / NEEDS_REVIEW / NOT_STARTED */
+        /** 掌握状态：INSUFFICIENT_DATA / WEAK / NEEDS_REVIEW / NOT_STARTED */
         private String masteryStatus;
         /** 优先级得分（越高越需要关注） */
         private double priorityScore;
@@ -279,7 +279,7 @@ public class LearningDiagnosisVO {
         private String preferredCourse;
         /** 最近 7 天每天刷题数列表 */
         private List<Map<String, Object>> weeklyTrend;
-        /** 学习频次评价：ACTIVE / MODERATE / INACTIVE */
+        /** 学习频次状态：INSUFFICIENT_DATA / ACTIVE / MODERATE / INACTIVE */
         private String frequencyLevel;
         /** 学习频次描述 */
         private String frequencyDescription;

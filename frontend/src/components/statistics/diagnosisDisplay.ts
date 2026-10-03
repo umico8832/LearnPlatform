@@ -18,7 +18,7 @@ export function questionTypeLabel(type: string): string {
 export function statusType(status: string): 'danger' | 'warning' | 'info' | undefined {
   if (status === 'WEAK') return 'danger'
   if (status === 'NEEDS_REVIEW') return 'warning'
-  if (status === 'NOT_STARTED') return 'info'
+  if (status === 'NOT_STARTED' || status === 'INSUFFICIENT_DATA') return 'info'
   return undefined
 }
 
@@ -26,6 +26,7 @@ export function statusLabel(status: string): string {
   if (status === 'WEAK') return '薄弱'
   if (status === 'NEEDS_REVIEW') return '需复习'
   if (status === 'NOT_STARTED') return '未开始'
+  if (status === 'INSUFFICIENT_DATA') return '记录较少'
   return status
 }
 
