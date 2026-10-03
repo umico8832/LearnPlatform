@@ -1,6 +1,7 @@
 import { onScopeDispose, ref, watch, type Ref } from 'vue'
 import { useGamificationStore } from '@/stores/gamification'
 import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
+import { errorMessage } from '@/utils/errors'
 import {
   getCourseStageAssessmentDetail,
   getCourseStageAssessmentHistory,
@@ -75,8 +76,10 @@ export function useCourseStageAssessment(courseId: Ref<number>, refreshOverview:
       if (response.data.status === 'IN_PROGRESS') syncAssessmentAnswers(response.data)
       assessmentSetupVisible.value = false
       assessmentDialogVisible.value = true
-    } catch {
-      if (current(version, session, requestedCourseId)) assessmentStartError.value = '测评暂时无法开始，请重试。'
+    } catch (error) {
+      if (current(version, session, requestedCourseId)) {
+        assessmentStartError.value = errorMessage(error, '测评暂时无法开始，请重试。')
+      }
     } finally {
       if (current(version, session, requestedCourseId)) assessmentStarting.value = false
     }

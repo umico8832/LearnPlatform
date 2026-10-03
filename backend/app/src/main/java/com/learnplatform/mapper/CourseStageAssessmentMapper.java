@@ -76,9 +76,13 @@ public interface CourseStageAssessmentMapper extends BaseMapper<CourseStageAsses
                  @Param("completeTime") java.time.LocalDateTime completeTime);
 
     @Select("""
+            <script>
+            <bind name="automaticallyGradableQuestionIds"
+                  value="@com.learnplatform.service.question.AutomaticGradingPolicy@eligibleQuestionIdsSql()"/>
             SELECT q.* FROM question q
             WHERE q.course_id = #{courseId} AND q.status = 1 AND q.deleted = 0
               AND q.question_type IN ('SINGLE_CHOICE','MULTIPLE_CHOICE','TRUE_FALSE')
+              AND q.id IN (${automaticallyGradableQuestionIds})
               AND (q.visibility = 'PUBLIC' OR (q.visibility = 'PRIVATE' AND q.owner_user_id = #{userId}))
               AND (#{knowledgePointId} IS NULL OR EXISTS (
                 SELECT 1 FROM question_knowledge_point qkp
@@ -89,7 +93,7 @@ public interface CourseStageAssessmentMapper extends BaseMapper<CourseStageAsses
                 WHEN EXISTS (SELECT 1 FROM wrong_question w WHERE w.user_id = #{userId}
                   AND w.question_id = q.id AND w.mastery_level != 2 AND w.deleted = 0) THEN 0
                 WHEN EXISTS (SELECT 1 FROM question_review_schedule r WHERE r.user_id = #{userId}
-                  AND r.question_id = q.id AND r.next_review_date <= CURRENT_DATE) THEN 1
+                  AND r.question_id = q.id AND r.next_review_date &lt;= CURRENT_DATE) THEN 1
                 WHEN EXISTS (SELECT 1 FROM course_learning_event e WHERE e.user_id = #{userId}
                   AND e.course_id = #{courseId} AND e.subject_type = 'QUESTION'
                   AND e.subject_id = q.id AND e.payload_json = '{"isCorrect":false}') THEN 2
@@ -97,6 +101,7 @@ public interface CourseStageAssessmentMapper extends BaseMapper<CourseStageAsses
               END,
               q.id
             LIMIT #{limit}
+            </script>
             """)
     List<Question> selectCandidateQuestions(@Param("userId") Long userId,
                                             @Param("courseId") Long courseId,
@@ -104,9 +109,13 @@ public interface CourseStageAssessmentMapper extends BaseMapper<CourseStageAsses
                                             @Param("limit") int limit);
 
     @Select("""
+            <script>
+            <bind name="automaticallyGradableQuestionIds"
+                  value="@com.learnplatform.service.question.AutomaticGradingPolicy@eligibleQuestionIdsSql()"/>
             SELECT COUNT(*) FROM question q
             WHERE q.course_id = #{courseId} AND q.status = 1 AND q.deleted = 0
               AND q.question_type IN ('SINGLE_CHOICE','MULTIPLE_CHOICE','TRUE_FALSE')
+              AND q.id IN (${automaticallyGradableQuestionIds})
               AND (q.visibility = 'PUBLIC' OR (q.visibility = 'PRIVATE' AND q.owner_user_id = #{userId}))
               AND (#{knowledgePointId} IS NULL OR EXISTS (
                 SELECT 1 FROM question_knowledge_point qkp
@@ -116,11 +125,12 @@ public interface CourseStageAssessmentMapper extends BaseMapper<CourseStageAsses
                 EXISTS (SELECT 1 FROM wrong_question w WHERE w.user_id = #{userId}
                   AND w.question_id = q.id AND w.mastery_level != 2 AND w.deleted = 0)
                 OR EXISTS (SELECT 1 FROM question_review_schedule r WHERE r.user_id = #{userId}
-                  AND r.question_id = q.id AND r.next_review_date <= CURRENT_DATE)
+                  AND r.question_id = q.id AND r.next_review_date &lt;= CURRENT_DATE)
                 OR EXISTS (SELECT 1 FROM course_learning_event e WHERE e.user_id = #{userId}
                   AND e.course_id = #{courseId} AND e.subject_type = 'QUESTION'
                   AND e.subject_id = q.id AND e.payload_json = '{"isCorrect":false}')
               )
+            </script>
             """)
     Long countPrioritySignals(@Param("userId") Long userId,
                               @Param("courseId") Long courseId,

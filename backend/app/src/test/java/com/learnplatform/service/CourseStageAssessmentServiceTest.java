@@ -3,6 +3,7 @@ package com.learnplatform.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
+import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.CourseStageAssessmentCreateRequest;
 import com.learnplatform.dto.CourseStageAssessmentSubmitRequest;
 import com.learnplatform.dto.CourseStageAssessmentSummaryVO;
@@ -37,6 +38,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class CourseStageAssessmentServiceTest {
@@ -50,12 +52,13 @@ class CourseStageAssessmentServiceTest {
     @Mock private CourseLearningEventService eventService;
     @Mock private CacheEvictService cacheEvictService;
     private CourseStageAssessmentService service;
+    private CourseStageAssessmentSnapshotService snapshotService;
 
     @BeforeEach
     void setUp() {
         AnswerEvaluator answerEvaluator = new AnswerEvaluator();
         ObjectMapper objectMapper = new ObjectMapper();
-        CourseStageAssessmentSnapshotService snapshotService = new CourseStageAssessmentSnapshotService(
+        snapshotService = new CourseStageAssessmentSnapshotService(
                 assessmentMapper, assessmentQuestionMapper, optionMapper, knowledgePointMapper,
                 answerEvaluator, objectMapper);
         CourseStageAssessmentLearningFactService learningFactService =
@@ -67,6 +70,25 @@ class CourseStageAssessmentServiceTest {
                 knowledgePointMapper, answerEvaluator, snapshotService, learningFactService, viewService,
                 cacheEvictService);
         lenient().when(knowledgePointMapper.selectByQuestionId(any())).thenReturn(List.of());
+    }
+
+    @Test
+    void rejectsSnapshotWhenAConcurrentOptionChangeRemovesItsGradingBasis() {
+        Question trueFalse = question();
+        trueFalse.setQuestionType("TRUE_FALSE");
+        QuestionOption blankCorrect = new QuestionOption();
+        blankCorrect.setQuestionId(trueFalse.getId());
+        blankCorrect.setOptionLabel("A");
+        blankCorrect.setContent("\t\n\r");
+        blankCorrect.setIsCorrect(1);
+        when(optionMapper.selectList(any())).thenReturn(List.of(blankCorrect));
+
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> snapshotService.createSnapshot(51L, 1, trueFalse));
+
+        assertEquals(ResultCode.VALIDATION_ERROR.getCode(), exception.getCode());
+        assertEquals("课程题目缺少可判分选项", exception.getMessage());
+        verify(assessmentQuestionMapper, never()).insert(any(CourseStageAssessmentQuestion.class));
     }
 
     @Test

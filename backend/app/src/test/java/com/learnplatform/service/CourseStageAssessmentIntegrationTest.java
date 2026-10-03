@@ -9,6 +9,8 @@ import com.learnplatform.dto.CourseStageAssessmentCreateRequest;
 import com.learnplatform.dto.CourseStageAssessmentSubmitRequest;
 import com.learnplatform.dto.CourseStageAssessmentVO;
 import com.learnplatform.dto.CourseStageAssessmentSummaryVO;
+import com.learnplatform.entity.Question;
+import com.learnplatform.mapper.CourseStageAssessmentMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -48,6 +50,7 @@ class CourseStageAssessmentIntegrationTest extends IntegrationTestBase {
 
     @Autowired private JdbcTemplate jdbcTemplate;
     @Autowired private CourseStageAssessmentService service;
+    @Autowired private CourseStageAssessmentMapper assessmentMapper;
     @Autowired private CourseOverviewService overviewService;
     @Autowired private MySqlRaceSupport raceSupport;
 
@@ -210,6 +213,68 @@ class CourseStageAssessmentIntegrationTest extends IntegrationTestBase {
         BusinessException noCandidateError = assertThrows(BusinessException.class,
                 () -> service.start(userId, 1L, noCandidate));
         assertEquals("该知识点暂无可用于阶段测评的客观题", noCandidateError.getMessage());
+    }
+
+    @Test
+    void filtersUngradableCandidatesBeforeLimitAndSnapshotsOnlyEligibleQuestion() {
+        Long userId = insertUser(USERNAME);
+        jdbcTemplate.update("INSERT INTO user_course (user_id,course_id) VALUES (?,1)", userId);
+        Long knowledgePointId = insertKnowledgePoint(1L, "REVIEWED");
+        Long missingCorrect = insertCandidateQuestion(1L, "候选缺少正确项", "SINGLE_CHOICE");
+        insertCandidateOption(missingCorrect, "干扰项", "A", 0, 0);
+        Long blankLabel = insertCandidateQuestion(1L, "候选空白标签", "SINGLE_CHOICE");
+        insertCandidateOption(blankLabel, "空白正确项", "\t\n\r", 1, 0);
+        Long deletedCorrect = insertCandidateQuestion(1L, "候选软删正确项", "MULTIPLE_CHOICE");
+        insertCandidateOption(deletedCorrect, "软删正确项", "A", 1, 1);
+        Long blankTrueFalse = insertCandidateQuestion(1L, "候选空白判断项", "TRUE_FALSE");
+        insertCandidateOption(blankTrueFalse, "\t\n\r", "A", 1, 0);
+        Long valid = insertCandidateQuestion(1L, "候选有效题", "SINGLE_CHOICE");
+        insertCandidateOption(valid, "有效正确项", "A", 1, 0);
+        Long laterValid = insertCandidateQuestion(1L, "候选后序有效题", "MULTIPLE_CHOICE");
+        insertCandidateOption(laterValid, "后序有效正确项", "A", 1, 0);
+        for (Long questionId : List.of(missingCorrect, blankLabel, deletedCorrect, blankTrueFalse, valid, laterValid)) {
+            jdbcTemplate.update("INSERT INTO question_knowledge_point (question_id,knowledge_point_id) VALUES (?,?)",
+                    questionId, knowledgePointId);
+        }
+
+        assertEquals(List.of(valid), assessmentMapper.selectCandidateQuestions(
+                userId, 1L, knowledgePointId, 1).stream().map(Question::getId).toList());
+        assertEquals(List.of(valid, laterValid), assessmentMapper.selectCandidateQuestions(
+                userId, 1L, knowledgePointId, 10).stream().map(Question::getId).toList());
+
+        CourseStageAssessmentVO assessment = service.start(userId, 1L, scopedRequest(knowledgePointId, 1));
+        assertEquals(List.of(valid), assessment.getQuestions().stream()
+                .map(CourseStageAssessmentVO.QuestionItem::getQuestionId).toList());
+        assertEquals(1, jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM course_stage_assessment WHERE user_id = ?", Integer.class, userId));
+    }
+
+    @Test
+    void rejectsAllUngradableCandidatesBeforeCreatingAssessment() {
+        Long userId = insertUser(USERNAME);
+        jdbcTemplate.update("INSERT INTO user_course (user_id,course_id) VALUES (?,1)", userId);
+        Long knowledgePointId = insertKnowledgePoint(1L, "REVIEWED");
+        Long missingCorrect = insertCandidateQuestion(1L, "全无效缺少正确项", "SINGLE_CHOICE");
+        insertCandidateOption(missingCorrect, "干扰项", "A", 0, 0);
+        Long blankTrueFalse = insertCandidateQuestion(1L, "全无效空白判断项", "TRUE_FALSE");
+        insertCandidateOption(blankTrueFalse, "\t\n\r", "A", 1, 0);
+        Long deletedCorrect = insertCandidateQuestion(1L, "全无效软删正确项", "MULTIPLE_CHOICE");
+        insertCandidateOption(deletedCorrect, "软删正确项", "A", 1, 1);
+        for (Long questionId : List.of(missingCorrect, blankTrueFalse, deletedCorrect)) {
+            jdbcTemplate.update("INSERT INTO question_knowledge_point (question_id,knowledge_point_id) VALUES (?,?)",
+                    questionId, knowledgePointId);
+        }
+
+        assertTrue(assessmentMapper.selectCandidateQuestions(userId, 1L, knowledgePointId, 1).isEmpty());
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> service.start(userId, 1L, scopedRequest(knowledgePointId, 1)));
+
+        assertEquals("该知识点暂无可用于阶段测评的客观题", exception.getMessage());
+        assertEquals(0, jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM course_stage_assessment WHERE user_id = ?", Integer.class, userId));
+        assertEquals(0, jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM course_stage_assessment_question q JOIN course_stage_assessment a "
+                        + "ON a.id = q.assessment_id WHERE a.user_id = ?", Integer.class, userId));
     }
 
     @Test
@@ -523,6 +588,27 @@ class CourseStageAssessmentIntegrationTest extends IntegrationTestBase {
             return statement;
         }, keys);
         return keys.getKey().longValue();
+    }
+
+    private Long insertCandidateQuestion(Long courseId, String content, String questionType) {
+        GeneratedKeyHolder keys = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            var statement = connection.prepareStatement("INSERT INTO question "
+                            + "(content, question_type, course_id, difficulty, analysis, tags, score, status, visibility, create_by, deleted) "
+                            + "VALUES (?, ?, ?, 2, '测试解析', '集成测试', 2, 1, 'PUBLIC', 1, 0)",
+                    Statement.RETURN_GENERATED_KEYS);
+            statement.setString(1, "测试限定知识点" + content);
+            statement.setString(2, questionType);
+            statement.setLong(3, courseId);
+            return statement;
+        }, keys);
+        return keys.getKey().longValue();
+    }
+
+    private void insertCandidateOption(Long questionId, String content, String optionLabel, int correct, int deleted) {
+        jdbcTemplate.update("INSERT INTO question_option "
+                        + "(question_id, content, option_label, is_correct, sort_order, deleted) VALUES (?, ?, ?, ?, 1, ?)",
+                questionId, content, optionLabel, correct, deleted);
     }
 
     private Long insertQuestion(Long courseId, String content, String questionType, String correctLabel) {

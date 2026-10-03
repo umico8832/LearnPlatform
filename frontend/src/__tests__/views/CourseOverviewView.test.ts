@@ -416,7 +416,7 @@ describe('CourseOverviewView', () => {
   })
 
   it('开始测评失败时保留当前范围和原位重试提示', async () => {
-    mockStartAssessment.mockRejectedValueOnce(new Error('offline'))
+    mockStartAssessment.mockRejectedValueOnce(new Error('Network Error'))
     const wrapper = mount(CourseOverviewView, { global: { stubs } })
     await flushPromises()
     const vm = wrapper.vm as unknown as { openAssessmentSetup: () => void; startAssessment: () => Promise<void> }
@@ -426,6 +426,23 @@ describe('CourseOverviewView', () => {
 
     expect(wrapper.text()).toContain('测评暂时无法开始，请重试。')
     expect(wrapper.text()).toContain('课程整体测评')
+  })
+
+  it('没有可判分题时在当前设置中展示服务端原因', async () => {
+    mockStartAssessment.mockRejectedValueOnce(new Error('该知识点暂无可用于阶段测评的客观题'))
+    const wrapper = mount(CourseOverviewView, { global: { stubs } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as {
+      openAssessmentSetup: () => void
+      startAssessment: (id: number) => Promise<void>
+    }
+
+    vm.openAssessmentSetup()
+    await vm.startAssessment(32)
+
+    expect(wrapper.text()).toContain('该知识点暂无可用于阶段测评的客观题')
+    expect(wrapper.text()).not.toContain('测评暂时无法开始，请重试。')
+    expect(mockStartAssessment).toHaveBeenCalledWith(408, 5, 32, { errorDisplay: 'inline' })
   })
 
   it('关闭未完成测评、查看历史复盘后重新开始时保留该测评的本页草稿', async () => {

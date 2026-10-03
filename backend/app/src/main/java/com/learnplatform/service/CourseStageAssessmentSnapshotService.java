@@ -14,6 +14,7 @@ import com.learnplatform.mapper.CourseStageAssessmentMapper;
 import com.learnplatform.mapper.CourseStageAssessmentQuestionMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
+import com.learnplatform.service.question.AutomaticGradingPolicy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -48,8 +49,13 @@ public class CourseStageAssessmentSnapshotService {
                 .orderByAsc(QuestionOption::getSortOrder));
         List<QuestionOption> correctOptions = options.stream()
                 .filter(option -> Integer.valueOf(1).equals(option.getIsCorrect())).toList();
+        try {
+            AutomaticGradingPolicy.requireBasis(question.getQuestionType(), correctOptions);
+        } catch (BusinessException exception) {
+            throw validation("课程题目缺少可判分选项");
+        }
         String correctAnswer = answerEvaluator.buildCorrectAnswer(correctOptions, question.getQuestionType());
-        if (options.isEmpty() || correctAnswer.isBlank()) {
+        if (correctAnswer.isBlank()) {
             throw validation("课程题目缺少可判分选项");
         }
         List<CourseStageAssessmentVO.OptionItem> optionSnapshot = options.stream()
