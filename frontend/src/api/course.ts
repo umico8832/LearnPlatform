@@ -620,9 +620,16 @@ export function getCoursePage(params: { pageNum?: number; pageSize?: number; key
   return request.get<unknown, ApiResponse<PageResult<CourseVO>>>('/courses', { params })
 }
 
+export interface AdminCourseRequestOptions {
+  errorDisplay?: 'inline'
+}
+
 /** 获取管理端课程分页，包含禁用课程。 */
-export function getAdminCoursePage(params: { pageNum?: number; pageSize?: number; keyword?: string }) {
-  return request.get<unknown, ApiResponse<PageResult<CourseVO>>>('/admin/courses', { params })
+export function getAdminCoursePage(
+  params: { pageNum?: number; pageSize?: number; keyword?: string },
+  options?: AdminCourseRequestOptions,
+) {
+  return request.get<unknown, ApiResponse<PageResult<CourseVO>>>('/admin/courses', { params, ...options })
 }
 
 /** 获取课程详情 */
@@ -758,16 +765,22 @@ export function submitTutorCheck(
 }
 
 /** 创建课程（管理端） */
-export function createCourse(data: CourseForm) {
-  return request.post<unknown, ApiResponse<CourseVO>>('/admin/courses', data)
+export function createCourse(data: CourseForm, options?: AdminCourseRequestOptions) {
+  return options
+    ? request.post<unknown, ApiResponse<CourseVO>>('/admin/courses', data, options)
+    : request.post<unknown, ApiResponse<CourseVO>>('/admin/courses', data)
 }
 
 /** 更新课程（管理端） */
-export function updateCourse(id: number, data: CourseForm) {
-  return request.put<unknown, ApiResponse<CourseVO>>(`/admin/courses/${id}`, data)
+export function updateCourse(id: number, data: CourseForm, options?: AdminCourseRequestOptions) {
+  return options
+    ? request.put<unknown, ApiResponse<CourseVO>>(`/admin/courses/${id}`, data, options)
+    : request.put<unknown, ApiResponse<CourseVO>>(`/admin/courses/${id}`, data)
 }
 
 /** 删除课程（管理端） */
-export function deleteCourse(id: number) {
-  return request.delete<unknown, ApiResponse<void>>(`/admin/courses/${id}`)
+export function deleteCourse(id: number, options?: AdminCourseRequestOptions) {
+  return options
+    ? request.delete<unknown, ApiResponse<void>>(`/admin/courses/${id}`, options)
+    : request.delete<unknown, ApiResponse<void>>(`/admin/courses/${id}`)
 }

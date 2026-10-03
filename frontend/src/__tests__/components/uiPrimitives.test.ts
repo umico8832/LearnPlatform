@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { config, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import LpCard from '@/components/ui/LpCard.vue'
 import LpListItem from '@/components/ui/LpListItem.vue'
@@ -69,6 +69,20 @@ describe('UI primitives', () => {
     expect(wrapper.get('a').attributes('href')).toBe('/review')
     expect(wrapper.get('a').attributes('aria-current')).toBe('page')
     expect(wrapper.text()).toContain('复习')
+  })
+
+  it('renders state children without the learner global component registry', async () => {
+    const components = config.global.components
+    config.global.components = {}
+    try {
+      const wrapper = mount(LpStatePanel, { props: { state: 'loading' } })
+      expect(wrapper.find('.lp-skeleton').exists()).toBe(true)
+      await wrapper.setProps({ state: 'empty', title: '暂无记录' })
+      expect(wrapper.find('h3').text()).toBe('暂无记录')
+      wrapper.unmount()
+    } finally {
+      config.global.components = components
+    }
   })
 
   it('announces loading without rendering ready, empty, or error content', () => {

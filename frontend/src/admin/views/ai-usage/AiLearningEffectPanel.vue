@@ -1,5 +1,5 @@
 <template>
-  <el-card shadow="hover" class="learning-effect-card">
+  <el-card shadow="never" class="learning-effect-card">
     <template #header>
       <div class="effect-card-header">
         <div>
@@ -194,7 +194,7 @@ defineProps<{ effect: AiLearningEffect }>()
 }
 .report-subtitle {
   margin-left: 8px;
-  color: #909399;
+  color: var(--lp-text-muted);
   font-size: 13px;
   font-weight: normal;
 }
@@ -220,14 +220,14 @@ defineProps<{ effect: AiLearningEffect }>()
 }
 .effect-coverage span {
   padding: 8px 10px;
-  border: 1px solid #dbe7e0;
+  border: 1px solid var(--lp-border);
   border-radius: 8px;
-  background: #f4faf6;
+  background: var(--lp-surface-subtle);
   color: var(--lp-text-secondary);
   font-size: 12px;
 }
 .effect-coverage b {
-  color: #25794d;
+  color: var(--lp-success);
   font-size: 15px;
 }
 .effect-comparison {
@@ -240,11 +240,11 @@ defineProps<{ effect: AiLearningEffect }>()
   padding: 18px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 12px;
-  background: #fafcfe;
+  background: var(--lp-surface-subtle);
 }
 .effect-group.is-after-view {
-  border-color: #cce8d7;
-  background: #f3fbf6;
+  border-color: var(--lp-border);
+  background: var(--lp-success-soft);
 }
 .effect-group-label,
 .effect-group small,
@@ -268,13 +268,13 @@ defineProps<{ effect: AiLearningEffect }>()
   margin-bottom: 8px;
   overflow: hidden;
   border-radius: 999px;
-  background: #e9eef4;
+  background: var(--lp-surface-soft);
 }
 .effect-rate-track i {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: #8aa1b8;
+  background: var(--lp-text-muted);
 }
 .is-after-view .effect-rate-track i {
   background: var(--lp-success);
@@ -289,13 +289,13 @@ defineProps<{ effect: AiLearningEffect }>()
   font-size: 18px;
 }
 .positive {
-  color: #67c23a;
+  color: var(--lp-success);
 }
 .negative {
-  color: #f56c6c;
+  color: var(--lp-danger);
 }
 .neutral {
-  color: #909399;
+  color: var(--lp-text-muted);
 }
 .effect-conclusion {
   margin-bottom: 18px;
@@ -344,20 +344,20 @@ defineProps<{ effect: AiLearningEffect }>()
   font-size: 28px;
 }
 .effect-feedback.is-variant-training {
-  background: #f3faf5;
+  background: var(--lp-success-soft);
 }
 .effect-feedback.is-variant-training strong {
   color: var(--lp-success);
 }
 .effect-feedback.is-variant-accuracy {
-  background: #fff7e8;
+  background: var(--lp-warning-soft);
 }
 .effect-feedback.is-variant-accuracy strong {
-  color: #a96812;
+  color: var(--lp-warning);
 }
 .effect-feedback em {
   margin-top: 10px;
-  color: var(--lp-text-tertiary);
+  color: var(--lp-text-muted);
   font-size: 11px;
   font-style: normal;
   line-height: 1.4;

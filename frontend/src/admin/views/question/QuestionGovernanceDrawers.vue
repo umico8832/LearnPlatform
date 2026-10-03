@@ -228,7 +228,7 @@ const versionOpen = computed({
   justify-content: space-between;
 }
 .summary {
-  background: var(--lp-bg-soft);
+  background: var(--lp-surface-soft);
   border: 1px solid var(--lp-border-light);
   border-radius: 8px;
   color: var(--lp-text-muted);
@@ -250,13 +250,13 @@ const versionOpen = computed({
 }
 .question-item,
 .description {
-  background: var(--lp-bg-soft);
+  background: var(--lp-surface-soft);
   border: 1px solid var(--lp-border-light);
   border-radius: 8px;
   padding: 10px;
 }
 .description {
-  color: var(--lp-text-regular);
+  color: var(--lp-text-secondary);
   line-height: 1.6;
 }
 .pagination {

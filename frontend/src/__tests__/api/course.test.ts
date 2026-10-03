@@ -377,3 +377,27 @@ describe('Course API', () => {
     })
   })
 })
+
+describe('admin course inline errors', () => {
+  it('forwards inline options for list and writes without changing default contracts', async () => {
+    const options = { errorDisplay: 'inline' as const }
+    const form = { name: '隔离课程', description: '仅用于契约测试', sortOrder: 1 }
+    mockedRequest.get.mockResolvedValue({ code: 0, data: { records: [] }, message: 'success' })
+    mockedRequest.post.mockResolvedValue({ code: 0, data: {}, message: 'success' })
+    mockedRequest.put.mockResolvedValue({ code: 0, data: {}, message: 'success' })
+    mockedRequest.delete.mockResolvedValue({ code: 0, data: null, message: 'success' })
+
+    await getAdminCoursePage({ pageNum: 1, pageSize: 100 }, options)
+    await createCourse(form, options)
+    await updateCourse(1, form, options)
+    await deleteCourse(1, options)
+
+    expect(mockedRequest.get).toHaveBeenCalledWith('/admin/courses', {
+      params: { pageNum: 1, pageSize: 100 },
+      ...options,
+    })
+    expect(mockedRequest.post).toHaveBeenCalledWith('/admin/courses', form, options)
+    expect(mockedRequest.put).toHaveBeenCalledWith('/admin/courses/1', form, options)
+    expect(mockedRequest.delete).toHaveBeenCalledWith('/admin/courses/1', options)
+  })
+})

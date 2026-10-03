@@ -1,5 +1,5 @@
 <template>
-  <el-card shadow="hover" class="report-card">
+  <el-card shadow="never" class="report-card">
     <template #header>
       <div class="report-header">
         <div>
@@ -7,7 +7,7 @@
           <span class="report-subtitle">与前一 {{ report.days }} 天周期对比</span>
         </div>
         <el-tag :type="report.alerts.length ? 'warning' : 'success'" effect="light">
-          {{ report.alerts.length ? `${report.alerts.length} 项待关注` : '运行平稳' }}
+          {{ report.alerts.length ? `${report.alerts.length} 项待关注` : '暂无待处理提醒' }}
         </el-tag>
       </div>
     </template>
@@ -64,6 +64,7 @@
             link
             type="primary"
             :loading="acknowledgingId === alert.id"
+            :disabled="acknowledgingId !== null"
             @click="$emit('acknowledge', alert.id)"
           >
             确认
@@ -71,7 +72,7 @@
         </div>
       </template>
     </el-alert>
-    <el-empty v-if="!report.alerts.length" description="当前周期未发现失败率、耗时或调用量异常" :image-size="52" />
+    <p v-if="!report.alerts.length" class="no-alerts">当前周期没有待处理的运营提醒。</p>
   </el-card>
 </template>
 
@@ -84,9 +85,14 @@ defineEmits<{ acknowledge: [id: number] }>()
 </script>
 
 <style scoped>
+.no-alerts {
+  margin: var(--lp-space-4) 0 0;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+}
 .report-card {
   margin-bottom: 16px;
-  border-left: 3px solid #409eff;
+  border-left: 3px solid var(--lp-primary);
 }
 .report-header {
   display: flex;
@@ -96,7 +102,7 @@ defineEmits<{ acknowledge: [id: number] }>()
 }
 .report-subtitle {
   margin-left: 8px;
-  color: #909399;
+  color: var(--lp-text-muted);
   font-size: 13px;
   font-weight: normal;
 }
@@ -110,23 +116,23 @@ defineEmits<{ acknowledge: [id: number] }>()
   justify-content: center;
   gap: 5px;
   padding: 0 12px;
-  border-left: 1px solid #ebeef5;
+  border-left: 1px solid var(--lp-border);
 }
 .report-metric span {
-  color: #909399;
+  color: var(--lp-text-muted);
   font-size: 13px;
 }
 .report-metric strong {
   font-size: 18px;
 }
 .positive {
-  color: #67c23a;
+  color: var(--lp-success);
 }
 .negative {
-  color: #f56c6c;
+  color: var(--lp-danger);
 }
 .neutral {
-  color: #909399;
+  color: var(--lp-text-muted);
 }
 .usage-alert + .usage-alert {
   margin-top: 8px;
@@ -139,7 +145,7 @@ defineEmits<{ acknowledge: [id: number] }>()
   width: 100%;
 }
 .usage-alert-period {
-  color: #909399;
+  color: var(--lp-text-muted);
   font-size: 12px;
 }
 @media (max-width: 768px) {

@@ -160,17 +160,20 @@ export interface QuestionVersionVO {
   createTime: string
 }
 
-export function getAdminQuestionPage(params: {
-  pageNum?: number
-  pageSize?: number
-  keyword?: string
-  questionType?: string
-  courseId?: number
-  difficulty?: number
-  status?: number
-  sourceType?: string
-}) {
-  return request.get<unknown, ApiResponse<PageResult<QuestionVO>>>('/admin/questions', { params })
+export function getAdminQuestionPage(
+  params: {
+    pageNum?: number
+    pageSize?: number
+    keyword?: string
+    questionType?: string
+    courseId?: number
+    difficulty?: number
+    status?: number
+    sourceType?: string
+  },
+  options?: { errorDisplay?: 'inline' },
+) {
+  return request.get<unknown, ApiResponse<PageResult<QuestionVO>>>('/admin/questions', { params, ...options })
 }
 
 /** 获取题目详情（管理端） */
@@ -189,7 +192,8 @@ export function updateQuestion(id: number, data: QuestionForm) {
 }
 
 /** 删除题目（管理端） */
-export function deleteQuestion(id: number) {
+export function deleteQuestion(id: number, options?: { errorDisplay?: 'inline' }) {
+  if (options) return request.delete<unknown, ApiResponse<null>>(`/admin/questions/${id}`, options)
   return request.delete<unknown, ApiResponse<void>>(`/admin/questions/${id}`)
 }
 
@@ -317,12 +321,22 @@ export function getReviewOverdue(params?: { pageNum?: number; pageSize?: number 
 }
 
 /** 获取题目的复审记录 */
-export function getReviewRecords(questionId: number) {
+export function getReviewRecords(questionId: number, options?: { errorDisplay?: 'inline' }) {
+  if (options)
+    return request.get<unknown, ApiResponse<QuestionReviewRecordVO[]>>(
+      `/admin/questions/${questionId}/review-records`,
+      options,
+    )
   return request.get<unknown, ApiResponse<QuestionReviewRecordVO[]>>(`/admin/questions/${questionId}/review-records`)
 }
 
 /** 获取 AI 复审建议 */
-export function getReviewSuggestion(questionId: number) {
+export function getReviewSuggestion(questionId: number, options?: { errorDisplay?: 'inline' }) {
+  if (options)
+    return request.get<unknown, ApiResponse<QuestionReviewSuggestionVO>>(
+      `/admin/questions/${questionId}/review-suggestion`,
+      options,
+    )
   return request.get<unknown, ApiResponse<QuestionReviewSuggestionVO>>(
     `/admin/questions/${questionId}/review-suggestion`,
   )
@@ -337,6 +351,13 @@ export function performReReview(
     newDifficulty?: number
     comment: string
   },
+  options?: { errorDisplay?: 'inline' },
 ) {
+  if (options)
+    return request.post<unknown, ApiResponse<QuestionReviewRecordVO>>(
+      `/admin/questions/${questionId}/re-review`,
+      data,
+      options,
+    )
   return request.post<unknown, ApiResponse<QuestionReviewRecordVO>>(`/admin/questions/${questionId}/re-review`, data)
 }

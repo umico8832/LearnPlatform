@@ -30,7 +30,8 @@ export interface AdminStatisticsOverview {
 }
 
 /** 获取管理端平台统计概览 */
-export function getAdminStatisticsOverview() {
+export function getAdminStatisticsOverview(options?: StatisticsRequestOptions) {
+  if (options) return request.get<unknown, ApiResponse<AdminStatisticsOverview>>('/admin/statistics/overview', options)
   return request.get<unknown, ApiResponse<AdminStatisticsOverview>>('/admin/statistics/overview')
 }
 

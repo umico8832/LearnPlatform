@@ -91,7 +91,7 @@ defineProps<{ effect: AiLearningEffect }>()
   color: var(--lp-text-primary);
 }
 .asset-type-effect-value small {
-  color: var(--lp-text-tertiary);
+  color: var(--lp-text-muted);
   font-size: 11px;
 }
 .positive {

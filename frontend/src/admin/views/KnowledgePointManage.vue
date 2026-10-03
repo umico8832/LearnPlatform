@@ -10,7 +10,7 @@
       </div>
     </header>
 
-    <section class="admin-summary-grid">
+    <section v-if="!loading && !listError" class="admin-summary-grid" aria-label="知识点统计">
       <el-card v-for="item in knowledgeStats" :key="item.label" shadow="never" class="admin-summary-card">
         <span class="admin-summary-icon" :class="item.className">
           <el-icon><component :is="item.icon" /></el-icon>
@@ -34,10 +34,20 @@
           />
           <el-button :icon="Refresh" @click="fetchTree">刷新</el-button>
         </div>
-        <span class="table-summary">当前显示 {{ visibleNodeCount }} / {{ totalNodeCount }} 个知识点</span>
+        <span v-if="!loading && !listError" class="table-summary"
+          >当前显示 {{ visibleNodeCount }} / {{ totalNodeCount }} 个知识点</span
+        >
       </div>
 
-      <div v-loading="loading">
+      <LpStatePanel v-if="loading" state="loading" loading-label="正在读取知识点" />
+      <LpStatePanel
+        v-else-if="listError"
+        state="error"
+        title="知识点暂时无法读取"
+        :description="listError"
+        @retry="fetchTree"
+      />
+      <div v-else>
         <el-tree
           v-if="filteredTreeData.length > 0"
           :data="filteredTreeData"
@@ -45,8 +55,6 @@
           node-key="id"
           default-expand-all
           :expand-on-click-node="false"
-          draggable
-          :allow-drop="allowDrop"
         >
           <template #default="{ data }">
             <div class="tree-node">
@@ -70,7 +78,7 @@
                 <el-button type="primary" link size="small" :icon="Edit" @click.stop="openDialog(data)">
                   编辑
                 </el-button>
-                <el-popconfirm title="删除知识点将同时删除其子知识点，确定？" @confirm="handleDelete(data.id)">
+                <el-popconfirm title="有子知识点时无法删除，确定删除该知识点？" @confirm="handleDelete(data.id)">
                   <template #reference>
                     <el-button type="danger" link size="small" :icon="Delete" @click.stop>删除</el-button>
                   </template>
@@ -80,15 +88,22 @@
           </template>
         </el-tree>
 
-        <el-empty v-else-if="!loading" description="暂无知识点">
+        <el-empty v-else description="暂无知识点">
           <el-button type="primary" @click="openDialog()">新增知识点</el-button>
         </el-empty>
       </div>
     </el-card>
 
     <!-- 新增/编辑弹窗 -->
-    <el-dialog v-model="dialogVisible" :title="editingKP ? '编辑知识点' : '新增知识点'" width="500px" destroy-on-close>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" @submit.prevent>
+    <el-dialog
+      v-model="dialogVisible"
+      :title="editingKP ? '编辑知识点' : '新增知识点'"
+      width="500px"
+      :close-on-click-modal="!submitting"
+      :close-on-press-escape="!submitting"
+      :show-close="!submitting"
+    >
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" :disabled="submitting" @submit.prevent>
         <el-form-item label="知识点名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入知识点名称" maxlength="100" />
         </el-form-item>
@@ -118,7 +133,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
+        <p v-if="submitError" class="admin-inline-error" role="alert">{{ submitError }}</p>
+        <el-button :disabled="submitting" @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="submitting" @click="handleSubmit">
           {{ editingKP ? '更新' : '创建' }}
         </el-button>
@@ -128,7 +144,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import LpStatePanel from '@/components/ui/LpStatePanel.vue'
+import { ref, reactive, computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ArrowLeft,
@@ -144,6 +161,7 @@ import {
   Search,
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
 import type { FormInstance, FormRules } from 'element-plus'
 import {
   getKnowledgeTree,
@@ -160,13 +178,16 @@ const router = useRouter()
 const courseId = computed(() => Number(route.query.courseId))
 
 const treeData = ref<KnowledgePointVO[]>([])
-const loading = ref(false)
+const loading = ref(true)
+const listError = ref('')
 const keyword = ref('')
 
 // 弹窗相关
 const dialogVisible = ref(false)
 const editingKP = ref<KnowledgePointVO | null>(null)
 const submitting = ref(false)
+const deletingId = ref<number | null>(null)
+const submitError = ref('')
 const formRef = ref<FormInstance>()
 const presetParentId = ref<number | undefined>(undefined)
 
@@ -261,78 +282,112 @@ function filterTree(nodes: KnowledgePointVO[], searchText: string): KnowledgePoi
   }, [])
 }
 
-/** 不允许拖拽到叶子节点内部 */
-function allowDrop(_draggingNode: unknown, _dropNode: unknown, type: string) {
-  if (type === 'inner') {
-    return true
-  }
-  return true
-}
+let alive = true
+let listVersion = 0
+let writeVersion = 0
+const listCurrent = (version: number, session: number) =>
+  alive && version === listVersion && session === getAuthSessionVersion()
+const writeCurrent = (version: number, session: number) =>
+  alive && version === writeVersion && session === getAuthSessionVersion()
 
 async function fetchTree() {
+  const version = ++listVersion
+  const session = getAuthSessionVersion()
   loading.value = true
+  listError.value = ''
   try {
-    const res = await getKnowledgeTree(courseId.value)
-    treeData.value = res.data
+    const res = await getKnowledgeTree(courseId.value, { errorDisplay: 'inline' })
+    if (!listCurrent(version, session)) return
+    if (res.code === 0 && res.data) treeData.value = res.data
+    else listError.value = res.message || '请稍后重试。'
   } catch {
-    // 错误已在拦截器中处理
+    if (listCurrent(version, session)) listError.value = '请检查网络后重试。'
   } finally {
-    loading.value = false
+    if (listCurrent(version, session)) loading.value = false
   }
 }
 
 function openDialog(kp?: KnowledgePointVO, parentId?: number) {
+  if (submitting.value || deletingId.value) return
   editingKP.value = kp || null
   presetParentId.value = parentId
   form.name = kp?.name || ''
   form.description = kp?.description || ''
   form.parentId = kp?.parentId || parentId || undefined
   form.sortOrder = kp?.sortOrder || 0
+  submitError.value = ''
   dialogVisible.value = true
 }
 
 async function handleSubmit() {
-  if (!formRef.value) return
-  const valid = await formRef.value.validate().catch(() => false)
-  if (!valid) return
-
+  if (submitting.value || !formRef.value) return
+  const version = ++writeVersion
+  const session = getAuthSessionVersion()
   submitting.value = true
+  submitError.value = ''
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!writeCurrent(version, session) || !valid) {
+    if (writeCurrent(version, session)) submitting.value = false
+    return
+  }
+  const id = editingKP.value?.id
   try {
-    if (editingKP.value) {
-      await updateKnowledgePoint(editingKP.value.id, {
-        name: form.name,
-        description: form.description,
-        sortOrder: form.sortOrder,
-      })
-      ElMessage.success('更新成功')
-    } else {
-      await createKnowledgePoint({
-        courseId: courseId.value,
-        parentId: form.parentId || 0,
-        name: form.name,
-        description: form.description,
-        sortOrder: form.sortOrder,
-      })
-      ElMessage.success('创建成功')
+    const payload = { name: form.name, description: form.description, sortOrder: form.sortOrder }
+    const res = id
+      ? await updateKnowledgePoint(id, payload, { errorDisplay: 'inline' })
+      : await createKnowledgePoint(
+          { ...payload, courseId: courseId.value, parentId: form.parentId || 0 },
+          { errorDisplay: 'inline' },
+        )
+    if (!writeCurrent(version, session)) return
+    if (res.code !== 0) {
+      submitError.value = res.message || '保存失败，请重试。'
+      return
     }
     dialogVisible.value = false
-    fetchTree()
+    ElMessage.success(id ? '更新成功' : '创建成功')
+    void fetchTree()
   } catch {
-    // 错误已在拦截器中处理
+    if (writeCurrent(version, session)) submitError.value = '保存失败，请重试。'
   } finally {
-    submitting.value = false
+    if (writeCurrent(version, session)) submitting.value = false
   }
 }
 
 async function handleDelete(id: number) {
+  if (deletingId.value) return
+  const version = ++writeVersion
+  const session = getAuthSessionVersion()
+  deletingId.value = id
   try {
-    await deleteKnowledgePoint(id)
+    const res = await deleteKnowledgePoint(id, { errorDisplay: 'inline' })
+    if (!writeCurrent(version, session)) return
+    if (res.code !== 0) {
+      listError.value = res.message || '删除失败，请重试。'
+      return
+    }
     ElMessage.success('删除成功')
-    fetchTree()
+    void fetchTree()
   } catch {
-    // 错误已在拦截器中处理
+    if (writeCurrent(version, session)) listError.value = '删除失败，请重试。'
+  } finally {
+    if (writeCurrent(version, session)) deletingId.value = null
   }
 }
+
+watch(
+  courseId,
+  (nextCourseId, previousCourseId) => {
+    if (nextCourseId === previousCourseId) return
+    writeVersion++
+    submitting.value = false
+    deletingId.value = null
+    dialogVisible.value = false
+    treeData.value = []
+    if (nextCourseId) void fetchTree()
+  },
+  { flush: 'sync' },
+)
 
 onMounted(() => {
   if (!courseId.value) {
@@ -340,11 +395,31 @@ onMounted(() => {
     router.push({ name: 'AdminCourseManage' })
     return
   }
-  fetchTree()
+  void fetchTree()
+})
+
+const stopSession = onAuthSessionChange(() => {
+  listVersion++
+  writeVersion++
+  treeData.value = []
+  dialogVisible.value = false
+  submitting.value = false
+  deletingId.value = null
+})
+onBeforeUnmount(() => {
+  alive = false
+  listVersion++
+  writeVersion++
+  stopSession()
 })
 </script>
 
 <style scoped>
+.admin-inline-error {
+  margin: 0 0 var(--lp-space-3);
+  color: var(--lp-danger);
+  font-size: var(--lp-text-sm);
+}
 .table-summary {
   color: var(--lp-text-muted);
   font-size: 13px;

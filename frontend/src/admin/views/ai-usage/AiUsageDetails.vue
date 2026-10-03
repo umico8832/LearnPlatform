@@ -1,7 +1,7 @@
 <template>
   <el-row :gutter="16" class="chart-row">
     <el-col :xs="24" :md="12">
-      <el-card shadow="hover">
+      <el-card shadow="never">
         <template #header><span>功能调用详情</span></template>
         <el-table :data="overview.functionStats" stripe size="small" max-height="360">
           <el-table-column prop="functionType" label="功能" min-width="120" />
@@ -24,7 +24,7 @@
       </el-card>
     </el-col>
     <el-col :xs="24" :md="12">
-      <el-card shadow="hover">
+      <el-card shadow="never">
         <template #header><span>Top 活跃用户</span></template>
         <el-table :data="overview.topUsers" stripe size="small" max-height="360">
           <el-table-column label="#" width="50" type="index" align="center" />
@@ -44,7 +44,7 @@
     </el-col>
   </el-row>
 
-  <el-card v-if="overview.recentFailures?.length" shadow="hover" class="chart-card">
+  <el-card v-if="overview.recentFailures?.length" shadow="never" class="chart-card">
     <template #header>
       <div class="failure-header">
         <span>最近失败调用</span>

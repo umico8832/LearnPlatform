@@ -93,4 +93,15 @@ describe('独立管理端路由守卫', () => {
       expect(router.currentRoute.value.name).toBe(name)
     }
   })
+  it('取消导航后保留当前页面标题', async () => {
+    setToken('token')
+    state.userInfo = { role: 'ADMIN' }
+    const router = createAdminRouter(createMemoryHistory('/admin/'))
+    await router.push('/')
+    const title = document.title
+    router.beforeEach((to) => (to.path === '/exams' ? false : true))
+    await router.push('/exams')
+    expect(router.currentRoute.value.name).toBe('AdminDashboard')
+    expect(document.title).toBe(title)
+  })
 })

@@ -26,22 +26,35 @@ export interface KnowledgePointForm {
   sortOrder?: number
 }
 
+export interface KnowledgePointRequestOptions {
+  errorDisplay?: 'inline'
+}
+
 /** 获取课程下的知识点树 */
-export function getKnowledgeTree(courseId: number) {
-  return request.get<unknown, ApiResponse<KnowledgePointVO[]>>(`/knowledge-points/tree/${courseId}`)
+export function getKnowledgeTree(courseId: number, options?: KnowledgePointRequestOptions) {
+  return request.get<unknown, ApiResponse<KnowledgePointVO[]>>(
+    `/knowledge-points/tree/${courseId}`,
+    ...(options ? [options] : []),
+  )
 }
 
 /** 创建知识点（管理端） */
-export function createKnowledgePoint(data: KnowledgePointForm) {
-  return request.post<unknown, ApiResponse<KnowledgePointVO>>('/admin/knowledge-points', data)
+export function createKnowledgePoint(data: KnowledgePointForm, options?: KnowledgePointRequestOptions) {
+  return options
+    ? request.post<unknown, ApiResponse<KnowledgePointVO>>('/admin/knowledge-points', data, options)
+    : request.post<unknown, ApiResponse<KnowledgePointVO>>('/admin/knowledge-points', data)
 }
 
 /** 更新知识点（管理端） */
-export function updateKnowledgePoint(id: number, data: KnowledgePointForm) {
-  return request.put<unknown, ApiResponse<KnowledgePointVO>>(`/admin/knowledge-points/${id}`, data)
+export function updateKnowledgePoint(id: number, data: KnowledgePointForm, options?: KnowledgePointRequestOptions) {
+  return options
+    ? request.put<unknown, ApiResponse<KnowledgePointVO>>(`/admin/knowledge-points/${id}`, data, options)
+    : request.put<unknown, ApiResponse<KnowledgePointVO>>(`/admin/knowledge-points/${id}`, data)
 }
 
 /** 删除知识点（管理端） */
-export function deleteKnowledgePoint(id: number) {
-  return request.delete<unknown, ApiResponse<void>>(`/admin/knowledge-points/${id}`)
+export function deleteKnowledgePoint(id: number, options?: KnowledgePointRequestOptions) {
+  return options
+    ? request.delete<unknown, ApiResponse<void>>(`/admin/knowledge-points/${id}`, options)
+    : request.delete<unknown, ApiResponse<void>>(`/admin/knowledge-points/${id}`)
 }

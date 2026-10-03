@@ -30,15 +30,32 @@ interface PageResult<T> {
   pages: number
 }
 
-export function getAiVariantReviews(reviewStatus: AiVariantReviewStatus, pageNum = 1, pageSize = 10) {
+export function getAiVariantReviews(
+  reviewStatus: AiVariantReviewStatus,
+  pageNum = 1,
+  pageSize = 10,
+  options?: { errorDisplay?: 'inline' },
+) {
   return request.get<unknown, ApiResponse<PageResult<AiVariantReviewVO>>>('/admin/ai-variant-reviews', {
     params: { reviewStatus, pageNum, pageSize },
+    ...options,
   })
 }
 
-export function reviewAiVariant(variantId: number, decision: 'APPROVE' | 'REJECT', reviewNote: string) {
-  return request.post<unknown, ApiResponse<AiVariantReviewVO>>(`/admin/ai-variant-reviews/${variantId}`, {
-    decision,
-    reviewNote,
-  })
+export function reviewAiVariant(
+  variantId: number,
+  decision: 'APPROVE' | 'REJECT',
+  reviewNote: string,
+  options?: { errorDisplay?: 'inline' },
+) {
+  if (!options)
+    return request.post<unknown, ApiResponse<AiVariantReviewVO>>(`/admin/ai-variant-reviews/${variantId}`, {
+      decision,
+      reviewNote,
+    })
+  return request.post<unknown, ApiResponse<AiVariantReviewVO>>(
+    `/admin/ai-variant-reviews/${variantId}`,
+    { decision, reviewNote },
+    options,
+  )
 }

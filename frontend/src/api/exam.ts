@@ -309,8 +309,11 @@ export interface PrivateExamSourceStorageItem {
 
 // ======================== 管理端 API ========================
 
-export function getExamPaperList(params?: { pageNum?: number; pageSize?: number; courseId?: number; status?: number }) {
-  return request.get<unknown, ApiResponse<PageData<ExamPaperVO>>>('/admin/exam-papers', { params })
+export function getExamPaperList(
+  params?: { pageNum?: number; pageSize?: number; courseId?: number; status?: number },
+  options?: ExamRequestOptions,
+) {
+  return request.get<unknown, ApiResponse<PageData<ExamPaperVO>>>('/admin/exam-papers', { params, ...options })
 }
 
 export function getExamPaperDetail(id: number) {
@@ -325,11 +328,13 @@ export function updateExamPaper(id: number, data: ExamPaperCreateRequest) {
   return request.put<unknown, ApiResponse<ExamPaperVO>>(`/admin/exam-papers/${id}`, data)
 }
 
-export function deleteExamPaper(id: number) {
+export function deleteExamPaper(id: number, options?: ExamRequestOptions) {
+  if (options) return request.delete<unknown, ApiResponse<null>>(`/admin/exam-papers/${id}`, options)
   return request.delete<unknown, ApiResponse<null>>(`/admin/exam-papers/${id}`)
 }
 
-export function publishExamPaper(id: number) {
+export function publishExamPaper(id: number, options?: ExamRequestOptions) {
+  if (options) return request.post<unknown, ApiResponse<null>>(`/admin/exam-papers/${id}/publish`, undefined, options)
   return request.post<unknown, ApiResponse<null>>(`/admin/exam-papers/${id}/publish`)
 }
 
@@ -341,11 +346,22 @@ export function smartExamCreate(data: SmartExamPreview) {
   return request.post<unknown, ApiResponse<ExamPaperVO>>('/admin/exam-papers/smart-create', data)
 }
 
-export function getPendingSubjectiveReviews() {
+export function getPendingSubjectiveReviews(options?: ExamRequestOptions) {
+  if (options)
+    return request.get<unknown, ApiResponse<SubjectiveAnswerReviewVO[]>>(
+      '/admin/exam-papers/subjective-reviews/pending',
+      options,
+    )
   return request.get<unknown, ApiResponse<SubjectiveAnswerReviewVO[]>>('/admin/exam-papers/subjective-reviews/pending')
 }
 
-export function gradeSubjectiveAnswer(answerId: number, data: SubjectiveGradingRequest) {
+export function gradeSubjectiveAnswer(answerId: number, data: SubjectiveGradingRequest, options?: ExamRequestOptions) {
+  if (options)
+    return request.post<unknown, ApiResponse<SubjectiveAnswerReviewVO>>(
+      `/admin/exam-papers/subjective-reviews/${answerId}`,
+      data,
+      options,
+    )
   return request.post<unknown, ApiResponse<SubjectiveAnswerReviewVO>>(
     `/admin/exam-papers/subjective-reviews/${answerId}`,
     data,

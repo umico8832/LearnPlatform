@@ -143,14 +143,20 @@ export function getSubmissionDetail(id: number) {
 // ========== 管理端 ==========
 
 /** 管理端投稿列表 */
-export function getAdminSubmissions(params?: {
-  pageNum?: number
-  pageSize?: number
-  status?: number
-  courseId?: number
-  keyword?: string
-}) {
-  return request.get<unknown, ApiResponse<PageResult<QuestionSubmissionVO>>>('/admin/submission', { params })
+export function getAdminSubmissions(
+  params?: {
+    pageNum?: number
+    pageSize?: number
+    status?: number
+    courseId?: number
+    keyword?: string
+  },
+  options?: { errorDisplay?: 'inline' },
+) {
+  return request.get<unknown, ApiResponse<PageResult<QuestionSubmissionVO>>>('/admin/submission', {
+    params,
+    ...options,
+  })
 }
 
 /** 管理端投稿详情 */
@@ -159,17 +165,22 @@ export function getAdminSubmissionDetail(id: number) {
 }
 
 /** 审核投稿 */
-export function reviewSubmission(id: number, data: ReviewForm) {
-  return request.post<unknown, ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}/review`, data)
+export function reviewSubmission(id: number, data: ReviewForm, options?: { errorDisplay?: 'inline' }) {
+  return options
+    ? request.post<unknown, ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}/review`, data, options)
+    : request.post<unknown, ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}/review`, data)
 }
 
 /** 投稿入库 */
-export function importSubmission(id: number) {
-  return request.post<unknown, ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}/import`)
+export function importSubmission(id: number, options?: { errorDisplay?: 'inline' }) {
+  return options
+    ? request.post<unknown, ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}/import`, undefined, options)
+    : request.post<unknown, ApiResponse<QuestionSubmissionVO>>(`/admin/submission/${id}/import`)
 }
 
 /** 投稿统计 */
-export function getSubmissionStats() {
+export function getSubmissionStats(options?: { errorDisplay?: 'inline' }) {
+  if (options) return request.get<unknown, ApiResponse<SubmissionStats>>('/admin/submission/stats', options)
   return request.get<unknown, ApiResponse<SubmissionStats>>('/admin/submission/stats')
 }
 
@@ -198,6 +209,12 @@ export function assessDifficulty(id: number) {
 }
 
 /** AI 生成审核意见（基于质检结果） */
-export function generateReviewComment(id: number) {
+export function generateReviewComment(id: number, options?: { errorDisplay?: 'inline' }) {
+  if (options)
+    return request.post<unknown, ApiResponse<string>>(
+      `/admin/submission/${id}/generate-review-comment`,
+      undefined,
+      options,
+    )
   return request.post<unknown, ApiResponse<string>>(`/admin/submission/${id}/generate-review-comment`)
 }

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import LpEmptyState from './LpEmptyState.vue'
+import LpSkeleton from './LpSkeleton.vue'
+
 withDefaults(
   defineProps<{
     state: 'ready' | 'loading' | 'error' | 'empty'

@@ -1,12 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 
-const { mockList, mockReview, mockConfirm } = vi.hoisted(() => ({
+const { auth, mockList, mockReview, mockConfirm, mockPrompt, mockSuccess } = vi.hoisted(() => ({
+  auth: { version: 1, listener: undefined as undefined | (() => void) },
   mockList: vi.fn(),
   mockReview: vi.fn(),
   mockConfirm: vi.fn(),
+  mockPrompt: vi.fn(),
+  mockSuccess: vi.fn(),
 }))
 
+vi.mock('@/utils/auth', () => ({
+  getAuthSessionVersion: () => auth.version,
+  onAuthSessionChange: (listener: () => void) => {
+    auth.listener = listener
+    return () => undefined
+  },
+}))
 vi.mock('@/api/aiVariantReview', () => ({
   getAiVariantReviews: (...args: unknown[]) => mockList(...args),
   reviewAiVariant: (...args: unknown[]) => mockReview(...args),
@@ -14,7 +24,7 @@ vi.mock('@/api/aiVariantReview', () => ({
 
 vi.mock('element-plus', async (importOriginal) => {
   const actual = await importOriginal<typeof import('element-plus')>()
-  return { ...actual, ElMessageBox: { confirm: mockConfirm, prompt: vi.fn() }, ElMessage: { success: vi.fn() } }
+  return { ...actual, ElMessageBox: { confirm: mockConfirm, prompt: mockPrompt }, ElMessage: { success: mockSuccess } }
 })
 
 import AiVariantReviewView from '@/admin/views/AiVariantReviewView.vue'
@@ -55,6 +65,7 @@ describe('AiVariantReviewView', () => {
       },
     })
     mockConfirm.mockResolvedValue('confirm')
+    mockPrompt.mockResolvedValue({ value: '原拒绝说明' })
     mockReview.mockResolvedValue({ data: { reviewStatus: 'APPROVED' } })
   })
 
@@ -68,7 +79,39 @@ describe('AiVariantReviewView', () => {
     const vm = wrapper.vm as unknown as { approve: (id: number) => Promise<void> }
     await vm.approve(12)
 
-    expect(mockReview).toHaveBeenCalledWith(12, 'APPROVE', '管理员核验题干、选项、答案与解析后通过')
+    expect(mockReview).toHaveBeenCalledWith(12, 'APPROVE', '管理员核验题干、选项、答案与解析后通过', {
+      errorDisplay: 'inline',
+    })
     expect(mockList).toHaveBeenCalledTimes(2)
+  })
+
+  it('确认期间会话变化不发送审核写请求', async () => {
+    let resolve!: () => void
+    mockConfirm.mockReturnValueOnce(
+      new Promise<void>((done) => {
+        resolve = done
+      }),
+    )
+    const wrapper = mount(AiVariantReviewView, { global: { stubs } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as { approve: (id: number) => Promise<void> }
+    const pending = vm.approve(12)
+    auth.version++
+    auth.listener?.()
+    resolve()
+    await pending
+    expect(mockReview).not.toHaveBeenCalled()
+  })
+
+  it('驳回失败后重试保留 REJECT 和原说明', async () => {
+    mockReview.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({ data: {} })
+    const wrapper = mount(AiVariantReviewView, { global: { stubs } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as { reject: (id: number) => Promise<void>; retry: (item: { id: number }) => void }
+    await vm.reject(12)
+    vm.retry({ id: 12 })
+    await flushPromises()
+    expect(mockReview).toHaveBeenLastCalledWith(12, 'REJECT', '原拒绝说明', { errorDisplay: 'inline' })
+    expect(mockSuccess).toHaveBeenLastCalledWith('已拒绝该变式题')
   })
 })

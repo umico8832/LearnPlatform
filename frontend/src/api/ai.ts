@@ -499,8 +499,11 @@ export function submitVariantAnswer(questionId: number, userAnswer: string, opti
 }
 
 /** 清除题目的 AI 学习资产缓存（管理端） */
-export function clearAssetCache(questionId: number) {
-  return aiService.delete<ApiResponse<void>>(`/ai/assets/${questionId}`).then((res) => res.data)
+export function clearAssetCache(questionId: number, options?: AiRequestOptions) {
+  const request = options
+    ? aiService.delete<ApiResponse<void>>(`/ai/assets/${questionId}`, options)
+    : aiService.delete<ApiResponse<void>>(`/ai/assets/${questionId}`)
+  return request.then((res) => res.data)
 }
 
 function handleStreamEvent(eventBlock: string, handlers: StreamHandlers) {

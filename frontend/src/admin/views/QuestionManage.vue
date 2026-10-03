@@ -98,7 +98,7 @@
           <el-button :icon="Search" @click="fetchQuestions">查询</el-button>
           <el-button :icon="Connection" :loading="duplicateLoading" @click="handleDetectDuplicates">重复检测</el-button>
         </div>
-        <span class="table-summary">当前筛选 {{ total }} 道题</span>
+        <span v-if="hasLoaded && !listError" class="table-summary">当前筛选 {{ total }} 道题</span>
       </div>
 
       <div v-if="selectedQuestions.length" class="admin-bulk-bar">
@@ -106,87 +106,104 @@
           >已选择 <strong>{{ selectedQuestions.length }}</strong> 道题目</span
         >
         <div class="admin-bulk-actions">
-          <el-button size="small" :icon="DeleteFilled" @click="handleBulkClearAiCache">批量清缓存</el-button>
-          <el-button size="small" type="danger" :icon="Delete" @click="handleBulkDelete">批量删除</el-button>
+          <el-button size="small" :icon="DeleteFilled" :disabled="actionPending" @click="handleBulkClearAiCache"
+            >批量清缓存</el-button
+          >
+          <el-button size="small" type="danger" :icon="Delete" :disabled="actionPending" @click="handleBulkDelete"
+            >批量删除</el-button
+          >
           <el-button size="small" @click="clearQuestionSelection">清空选择</el-button>
         </div>
       </div>
 
-      <el-table
-        ref="questionTableRef"
-        :data="questions"
-        v-loading="loading"
-        stripe
-        class="admin-data-table"
-        @selection-change="handleQuestionSelectionChange"
-      >
-        <el-table-column type="selection" width="44" />
-        <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="content" label="题干" min-width="240" show-overflow-tooltip />
-        <el-table-column prop="questionType" label="题型" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag size="small" :type="questionTypeTag((row as QuestionVO).questionType)">
-              {{ questionTypeLabel((row as QuestionVO).questionType) }}
-            </el-tag>
+      <LpStatePanel v-if="loading" state="loading" loading-label="正在读取题目" />
+      <LpStatePanel
+        v-else-if="listError"
+        state="error"
+        title="题目暂时无法读取"
+        :description="listError"
+        @retry="fetchQuestions"
+      />
+      <template v-else>
+        <p v-if="actionError" class="admin-inline-error" role="alert">{{ actionError }}</p>
+        <el-table
+          ref="questionTableRef"
+          :data="questions"
+          stripe
+          class="admin-data-table"
+          @selection-change="handleQuestionSelectionChange"
+        >
+          <el-table-column type="selection" width="44" />
+          <el-table-column prop="id" label="ID" width="60" />
+          <el-table-column prop="content" label="题干" min-width="240" show-overflow-tooltip />
+          <el-table-column prop="questionType" label="题型" width="100" align="center">
+            <template #default="{ row }">
+              <el-tag size="small" :type="questionTypeTag((row as QuestionVO).questionType)">
+                {{ questionTypeLabel((row as QuestionVO).questionType) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="courseName" label="课程" width="130" show-overflow-tooltip />
+          <el-table-column prop="difficulty" label="难度" width="90" align="center">
+            <template #default="{ row }"> {{ (row as QuestionVO).difficulty }} 级 </template>
+          </el-table-column>
+          <el-table-column prop="sourceType" label="来源" width="110" align="center">
+            <template #default="{ row }">
+              <el-tag size="small" :type="sourceTypeTag((row as QuestionVO).sourceType)">
+                {{ sourceTypeLabel((row as QuestionVO).sourceType) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="score" label="分值" width="70" align="center" />
+          <el-table-column prop="status" label="状态" width="80" align="center">
+            <template #default="{ row }">
+              <el-tag :type="(row as QuestionVO).status === 1 ? 'success' : 'info'" size="small">
+                {{ (row as QuestionVO).status === 1 ? '启用' : '禁用' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createTime" label="创建时间" width="170" />
+          <el-table-column label="操作" width="185" fixed="right">
+            <template #default="{ row }">
+              <div class="admin-row-actions">
+                <el-button
+                  type="primary"
+                  link
+                  size="small"
+                  :icon="RefreshRight"
+                  @click="openReReview(row as QuestionVO)"
+                  >复审</el-button
+                >
+                <el-button type="primary" link size="small" :icon="Edit" @click="openQuestionEditor(row as QuestionVO)"
+                  >编辑</el-button
+                >
+                <el-dropdown
+                  trigger="click"
+                  @command="(command) => handleQuestionRowCommand(command as string, row as QuestionVO)"
+                >
+                  <el-button link size="small" :icon="MoreFilled">更多</el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item command="versions" :icon="Clock">版本记录</el-dropdown-item>
+                      <el-dropdown-item command="cache" :icon="DeleteFilled">清缓存</el-dropdown-item>
+                      <el-dropdown-item command="delete" :icon="Delete" class="danger-dropdown-item"
+                        >删除题目</el-dropdown-item
+                      >
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
+            </template>
+          </el-table-column>
+          <template #empty>
+            <el-empty class="admin-table-empty" description="没有匹配的题目">
+              <el-button type="primary" :icon="Plus" @click="openQuestionEditor()">新增题目</el-button>
+            </el-empty>
           </template>
-        </el-table-column>
-        <el-table-column prop="courseName" label="课程" width="130" show-overflow-tooltip />
-        <el-table-column prop="difficulty" label="难度" width="90" align="center">
-          <template #default="{ row }">
-            {{ '⭐'.repeat((row as QuestionVO).difficulty) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="sourceType" label="来源" width="110" align="center">
-          <template #default="{ row }">
-            <el-tag size="small" :type="sourceTypeTag((row as QuestionVO).sourceType)">
-              {{ sourceTypeLabel((row as QuestionVO).sourceType) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="score" label="分值" width="70" align="center" />
-        <el-table-column prop="status" label="状态" width="80" align="center">
-          <template #default="{ row }">
-            <el-tag :type="(row as QuestionVO).status === 1 ? 'success' : 'info'" size="small">
-              {{ (row as QuestionVO).status === 1 ? '启用' : '禁用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="170" />
-        <el-table-column label="操作" width="185" fixed="right">
-          <template #default="{ row }">
-            <div class="admin-row-actions">
-              <el-button type="primary" link size="small" :icon="RefreshRight" @click="openReReview(row as QuestionVO)"
-                >复审</el-button
-              >
-              <el-button type="primary" link size="small" :icon="Edit" @click="openQuestionEditor(row as QuestionVO)"
-                >编辑</el-button
-              >
-              <el-dropdown
-                trigger="click"
-                @command="(command) => handleQuestionRowCommand(command as string, row as QuestionVO)"
-              >
-                <el-button link size="small" :icon="MoreFilled">更多</el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item command="versions" :icon="Clock">版本记录</el-dropdown-item>
-                    <el-dropdown-item command="cache" :icon="DeleteFilled">清缓存</el-dropdown-item>
-                    <el-dropdown-item command="delete" :icon="Delete" class="danger-dropdown-item"
-                      >删除题目</el-dropdown-item
-                    >
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </div>
-          </template>
-        </el-table-column>
-        <template #empty>
-          <el-empty class="admin-table-empty" description="没有匹配的题目">
-            <el-button type="primary" :icon="Plus" @click="openQuestionEditor()">新增题目</el-button>
-          </el-empty>
-        </template>
-      </el-table>
+        </el-table>
+      </template>
 
-      <div class="admin-pagination">
+      <div v-if="hasLoaded && !listError" class="admin-pagination">
         <el-pagination
           v-model:current-page="pageNum"
           v-model:page-size="pageSize"
@@ -248,6 +265,7 @@ import {
   Clock,
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import LpStatePanel from '@/components/ui/LpStatePanel.vue'
 import {
   detectDuplicateQuestions,
   getQuestionVersions,
@@ -275,6 +293,10 @@ const {
   questionTableRef,
   selectedQuestions,
   loading,
+  listError,
+  hasLoaded,
+  actionPending,
+  actionError,
   pageNum,
   pageSize,
   total,
@@ -324,35 +346,10 @@ const questionStats = computed(() => {
 })
 
 const handleQuestionRowCommand = async (command: string, question: QuestionVO) => {
-  if (command === 'cache') {
-    try {
-      await ElMessageBox.confirm('确定清除该题目的 AI 学习资产缓存？', '清除缓存', {
-        type: 'warning',
-        confirmButtonText: '清除',
-        cancelButtonText: '取消',
-      })
-      await handleClearAiCache(question.id)
-    } catch {
-      // 用户取消确认时不提示错误。
-    }
-    return
-  }
-  if (command === 'versions') {
-    await openVersionDrawer(question)
-    return
-  }
-  if (command === 'delete') {
-    try {
-      await ElMessageBox.confirm('确定删除该题目？', '删除题目', {
-        type: 'warning',
-        confirmButtonText: '删除',
-        cancelButtonText: '取消',
-      })
-      await handleDelete(question.id)
-    } catch {
-      // 用户取消确认时不提示错误。
-    }
-  }
+  if (actionPending.value) return
+  if (command === 'cache') return handleClearAiCache(question.id)
+  if (command === 'versions') return openVersionDrawer(question)
+  if (command === 'delete') return handleDelete(question.id)
 }
 
 const openQuestionEditor = (question?: QuestionVO) => questionEditor.value?.open(question)
@@ -452,6 +449,11 @@ async function fetchQuestionVersions() {
 <style scoped>
 .table-summary {
   color: var(--lp-text-muted);
-  font-size: 13px;
+  font-size: var(--lp-text-sm);
+}
+.admin-inline-error {
+  margin: 0 0 var(--lp-space-3);
+  color: var(--lp-danger);
+  font-size: var(--lp-text-sm);
 }
 </style>

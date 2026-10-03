@@ -1,5 +1,9 @@
 import request from '@/utils/request'
 
+export interface AdminUserRequestOptions {
+  errorDisplay?: 'inline'
+}
+
 /** 用户 VO */
 export interface AdminUserVO {
   id: number
@@ -48,14 +52,17 @@ export interface AiQuotaAuditLog {
 }
 
 /** 获取用户分页列表 */
-export function getAdminUserList(params: {
-  page?: number
-  size?: number
-  keyword?: string
-  role?: string
-  status?: number | string
-}) {
-  return request.get<AdminUserListResponse>('/admin/users', { params })
+export function getAdminUserList(
+  params: {
+    page?: number
+    size?: number
+    keyword?: string
+    role?: string
+    status?: number | string
+  },
+  options?: AdminUserRequestOptions,
+) {
+  return request.get<AdminUserListResponse>('/admin/users', { params, ...options })
 }
 
 /** 管理员创建用户 */
@@ -69,7 +76,8 @@ export function updateUserRole(id: number, role: string) {
 }
 
 /** 启用/禁用用户 */
-export function updateUserStatus(id: number, status: number) {
+export function updateUserStatus(id: number, status: number, options?: AdminUserRequestOptions) {
+  if (options) return request.put(`/admin/users/${id}/status`, { status }, options)
   return request.put(`/admin/users/${id}/status`, { status })
 }
 
@@ -89,11 +97,13 @@ export function resetUserPassword(id: number, newPassword: string) {
 }
 
 /** 删除用户 */
-export function deleteAdminUser(id: number) {
+export function deleteAdminUser(id: number, options?: AdminUserRequestOptions) {
+  if (options) return request.delete(`/admin/users/${id}`, options)
   return request.delete(`/admin/users/${id}`)
 }
 
 /** 获取用户统计 */
-export function getAdminUserStats() {
+export function getAdminUserStats(options?: AdminUserRequestOptions) {
+  if (options) return request.get<AdminUserStats>('/admin/users/stats', options)
   return request.get<AdminUserStats>('/admin/users/stats')
 }

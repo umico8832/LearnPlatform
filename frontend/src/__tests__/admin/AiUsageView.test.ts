@@ -1,5 +1,6 @@
+import { removeToken } from '@/utils/auth'
 import { flushPromises, shallowMount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { acknowledge, getEffect, getOverview, getReport, renderCharts, success } = vi.hoisted(() => ({
   acknowledge: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock('@/composables/useAiUsageCharts', () => ({
     functionChartRef: { value: undefined },
     modelChartRef: { value: undefined },
     renderCharts,
+    disposeCharts: vi.fn(),
   }),
 }))
 
@@ -33,6 +35,13 @@ vi.mock('element-plus', async (importOriginal) => {
 
 import AiUsageView from '@/admin/views/AiUsageView.vue'
 
+const wrappers: ReturnType<typeof shallowMount>[] = []
+function render() {
+  const wrapper = shallowMount(AiUsageView, { global: { stubs: { LpStatePanel: false } } })
+  wrappers.push(wrapper)
+  return wrapper
+}
+afterEach(() => wrappers.splice(0).forEach((wrapper) => wrapper.unmount()))
 describe('AiUsageView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -81,12 +90,12 @@ describe('AiUsageView', () => {
   })
 
   it('并发加载三类数据并传给领域组件', async () => {
-    const wrapper = shallowMount(AiUsageView)
+    const wrapper = render()
     await flushPromises()
 
-    expect(getOverview).toHaveBeenCalledWith(30)
-    expect(getReport).toHaveBeenCalledWith(30)
-    expect(getEffect).toHaveBeenCalledWith(30)
+    expect(getOverview).toHaveBeenCalledWith(30, { errorDisplay: 'inline' })
+    expect(getReport).toHaveBeenCalledWith(30, { errorDisplay: 'inline' })
+    expect(getEffect).toHaveBeenCalledWith(30, { errorDisplay: 'inline' })
     expect(renderCharts).toHaveBeenCalledOnce()
     expect(wrapper.findComponent({ name: 'AiUsageReportPanel' }).props('report')).toMatchObject({ days: 30 })
     expect(wrapper.findComponent({ name: 'AiLearningEffectPanel' }).props('effect')).toMatchObject({
@@ -96,16 +105,40 @@ describe('AiUsageView', () => {
   })
 
   it('领域组件确认提醒后重新加载数据', async () => {
-    const wrapper = shallowMount(AiUsageView)
+    const wrapper = render()
     await flushPromises()
 
     wrapper.findComponent({ name: 'AiUsageReportPanel' }).vm.$emit('acknowledge', 7)
     await flushPromises()
 
-    expect(acknowledge).toHaveBeenCalledWith(7)
+    expect(acknowledge).toHaveBeenCalledWith(7, { errorDisplay: 'inline' })
     expect(success).toHaveBeenCalledWith('已确认该提醒')
     expect(getOverview).toHaveBeenCalledTimes(2)
     expect(getReport).toHaveBeenCalledTimes(2)
     expect(getEffect).toHaveBeenCalledTimes(2)
+  })
+  it('shows a recoverable read error instead of placeholder statistics', async () => {
+    getReport.mockRejectedValueOnce(new Error('报告读取失败'))
+    const wrapper = render()
+    await flushPromises()
+    expect(wrapper.find('[role="alert"]').exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'AiUsageDetails' }).exists()).toBe(false)
+    await wrapper.get('[role="alert"] button').trigger('click')
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'AiUsageDetails' }).props('overview')).toMatchObject({ totalCalls: 12 })
+  })
+  it('ignores an overview that resolves after session invalidation', async () => {
+    let resolve!: (value: unknown) => void
+    getOverview.mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done
+      }),
+    )
+    const wrapper = render()
+    removeToken()
+    resolve({ data: { totalCalls: 999 } })
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'AiUsageDetails' }).exists()).toBe(false)
+    expect(renderCharts).not.toHaveBeenCalled()
   })
 })

@@ -10,7 +10,7 @@
       </div>
     </header>
 
-    <section class="admin-summary-grid">
+    <section v-if="!loading && !listError" class="admin-summary-grid" aria-label="试卷统计">
       <el-card v-for="item in paperStats" :key="item.label" shadow="never" class="admin-summary-card">
         <span class="admin-summary-icon">
           <el-icon><component :is="item.icon" /></el-icon>
@@ -31,10 +31,18 @@
           </el-select>
           <el-button @click="loadPapers" :icon="Refresh">刷新</el-button>
         </div>
-        <span class="table-summary">当前筛选 {{ total }} 份试卷</span>
+        <span v-if="!listError && !loading" class="table-summary">当前筛选 {{ total }} 份试卷</span>
       </div>
 
-      <el-table :data="papers as any" v-loading="loading" stripe class="admin-data-table">
+      <LpStatePanel v-if="loading" state="loading" loading-label="正在读取试卷" />
+      <LpStatePanel
+        v-else-if="listError"
+        state="error"
+        title="试卷暂时无法读取"
+        :description="listError"
+        @retry="loadPapers"
+      />
+      <el-table v-else-if="papers.length" :data="papers as any" stripe class="admin-data-table">
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="title" label="试卷名称" min-width="200" />
         <el-table-column label="性质" width="100">
@@ -65,7 +73,13 @@
         </el-table-column>
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link size="small" :icon="Edit" @click="openDialog(row as ExamPaperVO)"
+            <el-button
+              type="primary"
+              link
+              size="small"
+              :icon="Edit"
+              :disabled="Boolean(actionId)"
+              @click="openDialog(row as ExamPaperVO)"
               >编辑</el-button
             >
             <el-button
@@ -74,17 +88,27 @@
               link
               size="small"
               :icon="Promotion"
+              :loading="actionId === (row as ExamPaperVO).id"
+              :disabled="Boolean(actionId) && actionId !== (row as ExamPaperVO).id"
               @click="handlePublish(row as ExamPaperVO)"
               >发布</el-button
             >
-            <el-button type="danger" link size="small" :icon="Delete" @click="handleDelete(row as ExamPaperVO)"
+            <el-button
+              type="danger"
+              link
+              size="small"
+              :icon="Delete"
+              :loading="actionId === (row as ExamPaperVO).id"
+              :disabled="Boolean(actionId) && actionId !== (row as ExamPaperVO).id"
+              @click="handleDelete(row as ExamPaperVO)"
               >删除</el-button
             >
           </template>
         </el-table-column>
       </el-table>
+      <LpEmptyState v-else title="暂无试卷" description="可新增试卷或调整筛选条件。" />
 
-      <div class="admin-pagination" v-if="total > 0">
+      <div class="admin-pagination" v-if="!listError && !loading && total > 0">
         <el-pagination
           v-model:current-page="pageNum"
           :total="total"
@@ -101,8 +125,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import LpEmptyState from '@/components/ui/LpEmptyState.vue'
+import LpStatePanel from '@/components/ui/LpStatePanel.vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
 import { Collection, Delete, Edit, MagicStick, Plus, Promotion, Refresh } from '@element-plus/icons-vue'
 import { deleteExamPaper, getExamPaperList, publishExamPaper } from '@/api/exam'
 import type { ExamPaperVO } from '@/api/exam'
@@ -113,7 +140,9 @@ import SmartExamDialog from './exam/SmartExamDialog.vue'
 import { paperTypeLabel, paperTypeTag } from './exam/examManagePresentation'
 
 // 试卷列表
-const loading = ref(false)
+const loading = ref(true)
+const listError = ref('')
+const actionId = ref<number | null>(null)
 const papers = ref<ExamPaperVO[]>([])
 const total = ref(0)
 const pageNum = ref(1)
@@ -138,58 +167,110 @@ const paperStats = computed(() => {
   ]
 })
 
-onMounted(() => {
-  loadPapers()
-  loadCourses()
-})
+let alive = true
+let listVersion = 0
+let actionVersion = 0
+const listCurrent = (version: number, session: number) =>
+  alive && version === listVersion && session === getAuthSessionVersion()
+const actionCurrent = (version: number, session: number) =>
+  alive && version === actionVersion && session === getAuthSessionVersion()
 
 const loadPapers = async () => {
+  const version = ++listVersion
+  const session = getAuthSessionVersion()
   loading.value = true
+  listError.value = ''
   try {
-    const res = await getExamPaperList({ pageNum: pageNum.value, pageSize: 10, status: filterStatus.value })
+    const res = await getExamPaperList(
+      { pageNum: pageNum.value, pageSize: 10, status: filterStatus.value },
+      { errorDisplay: 'inline' },
+    )
+    if (!listCurrent(version, session)) return
     if (res.code === 0 && res.data) {
       papers.value = res.data.records || []
       total.value = res.data.total || 0
-    }
+    } else listError.value = res.message || '请稍后重试。'
   } catch {
-    ElMessage.error('获取试卷列表失败')
+    if (listCurrent(version, session)) listError.value = '请检查网络后重试。'
   } finally {
-    loading.value = false
+    if (listCurrent(version, session)) loading.value = false
   }
 }
-
 const loadCourses = async () => {
   try {
-    const res = await getAdminCoursePage({ pageNum: 1, pageSize: 100 })
+    const res = await getAdminCoursePage({ pageNum: 1, pageSize: 100 }, { errorDisplay: 'inline' })
     courseList.value = (res.data?.records ?? []).map((c) => ({ id: c.id, name: c.name }))
   } catch {}
 }
-
 const openDialog = (paper?: ExamPaperVO) => {
-  void paperEditorDialog.value?.open(paper)
+  if (!actionId.value) void paperEditorDialog.value?.open(paper)
 }
-
 const handlePublish = async (paper: ExamPaperVO) => {
+  if (actionId.value) return
+  const version = ++actionVersion
+  const session = getAuthSessionVersion()
+  actionId.value = paper.id
+  let confirmed = false
   try {
     await ElMessageBox.confirm(`确定发布试卷「${paper.title}」？发布后用户可见`, '发布确认', { type: 'warning' })
-    const res = await publishExamPaper(paper.id)
-    if (res.code === 0) {
-      ElMessage.success('发布成功')
-      loadPapers()
+    confirmed = true
+    if (!actionCurrent(version, session)) return
+    const res = await publishExamPaper(paper.id, { errorDisplay: 'inline' })
+    if (!actionCurrent(version, session)) return
+    if (res.code !== 0) {
+      listError.value = res.message || '发布失败，请重试。'
+      return
     }
-  } catch {}
+    ElMessage.success('发布成功')
+    void loadPapers()
+  } catch {
+    if (confirmed && actionCurrent(version, session)) listError.value = '发布失败，请重试。'
+  } finally {
+    if (actionCurrent(version, session)) actionId.value = null
+  }
 }
-
 const handleDelete = async (paper: ExamPaperVO) => {
+  if (actionId.value) return
+  const version = ++actionVersion
+  const session = getAuthSessionVersion()
+  actionId.value = paper.id
+  let confirmed = false
   try {
     await ElMessageBox.confirm(`确定删除试卷「${paper.title}」？`, '删除确认', { type: 'warning' })
-    const res = await deleteExamPaper(paper.id)
-    if (res.code === 0) {
-      ElMessage.success('删除成功')
-      loadPapers()
+    confirmed = true
+    if (!actionCurrent(version, session)) return
+    const res = await deleteExamPaper(paper.id, { errorDisplay: 'inline' })
+    if (!actionCurrent(version, session)) return
+    if (res.code !== 0) {
+      listError.value = res.message || '删除失败，请重试。'
+      return
     }
-  } catch {}
+    ElMessage.success('删除成功')
+    void loadPapers()
+  } catch {
+    if (confirmed && actionCurrent(version, session)) listError.value = '删除失败，请重试。'
+  } finally {
+    if (actionCurrent(version, session)) actionId.value = null
+  }
 }
+
+onMounted(() => {
+  void loadPapers()
+  void loadCourses()
+})
+const stopSession = onAuthSessionChange(() => {
+  listVersion++
+  actionVersion++
+  papers.value = []
+  total.value = 0
+  actionId.value = null
+})
+onBeforeUnmount(() => {
+  alive = false
+  listVersion++
+  actionVersion++
+  stopSession()
+})
 </script>
 
 <style scoped>

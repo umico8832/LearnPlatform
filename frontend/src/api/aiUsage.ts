@@ -190,23 +190,26 @@ export interface AiLearningEffect {
 }
 
 /** 获取 AI 调用总览 */
-export function getAiUsageOverview(days?: number) {
+export function getAiUsageOverview(days?: number, options?: { errorDisplay?: 'inline' }) {
   return request.get<AiUsageOverview>('/admin/ai-usage/overview', {
     params: days ? { days } : {},
+    ...options,
   })
 }
 
 /** 获取 AI 调用运营报告与实时异常提醒 */
-export function getAiUsageReport(days?: number) {
+export function getAiUsageReport(days?: number, options?: { errorDisplay?: 'inline' }) {
   return request.get<AiUsageReport>('/admin/ai-usage/report', {
     params: days ? { days } : {},
+    ...options,
   })
 }
 
 /** 获取 AI 学习资产使用与后续答题表现的观察性统计 */
-export function getAiLearningEffect(days?: number) {
+export function getAiLearningEffect(days?: number, options?: { errorDisplay?: 'inline' }) {
   return request.get<AiLearningEffect>('/admin/ai-usage/learning-effect', {
     params: days ? { days } : {},
+    ...options,
   })
 }
 

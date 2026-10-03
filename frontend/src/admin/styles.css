@@ -1,8 +1,8 @@
 /* 管理端独立应用样式 · 与学习端共享 Design Tokens 的克制工作台
  * 管理端保持信息密度与工作流效率，不引入装饰性视觉。 */
 :root {
-  color: var(--lp-text-primary);
-  background: var(--lp-bg-page);
+  color: var(--lp-text);
+  background: var(--lp-bg);
   font-family: var(--lp-font-sans);
 }
 
@@ -27,8 +27,9 @@ body {
   flex-direction: column;
   gap: var(--lp-space-6);
   padding: var(--lp-space-6) var(--lp-space-4);
-  background: var(--lp-blue-950);
-  color: #fff;
+  border-right: var(--lp-border-hairline);
+  background: var(--lp-surface-subtle);
+  color: var(--lp-text);
 }
 
 .admin-shell-brand {
@@ -36,7 +37,7 @@ body {
   align-items: center;
   gap: var(--lp-space-2);
   padding: 0 var(--lp-space-2);
-  color: #fff;
+  color: var(--lp-text);
   text-decoration: none;
 }
 
@@ -46,7 +47,8 @@ body {
   width: 34px;
   height: 34px;
   border-radius: var(--lp-radius-md);
-  background: var(--lp-primary);
+  background: var(--lp-primary-soft);
+  color: var(--lp-primary);
   font-weight: var(--lp-weight-heavy);
   letter-spacing: 0.02em;
 }
@@ -62,9 +64,9 @@ body {
 }
 
 .admin-shell-sidebar nav a {
-  padding: var(--lp-space-3) var(--lp-space-3);
+  padding: var(--lp-space-2) var(--lp-space-3);
   border-radius: var(--lp-radius-sm);
-  color: rgba(235, 239, 243, 0.72);
+  color: var(--lp-text-secondary);
   font-size: var(--lp-text-base);
   text-decoration: none;
   transition:
@@ -73,26 +75,28 @@ body {
 }
 
 .admin-shell-sidebar nav a:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--lp-text);
+  background: var(--lp-surface-hover);
 }
 
-.admin-shell-sidebar nav a.router-link-active {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.14);
+.admin-shell-sidebar nav a.router-link-active,
+.admin-shell-sidebar nav a.is-active {
+  color: var(--lp-primary);
+  background: var(--lp-primary-soft);
+  box-shadow: inset 3px 0 var(--lp-primary);
   font-weight: var(--lp-weight-medium);
 }
 
 .admin-shell-legacy {
   margin-top: auto;
   padding: 0 var(--lp-space-2);
-  color: rgba(235, 239, 243, 0.5);
+  color: var(--lp-text-secondary);
   font-size: var(--lp-text-sm);
   text-decoration: none;
 }
 
 .admin-shell-legacy:hover {
-  color: #fff;
+  color: var(--lp-text);
 }
 
 /* ---------------- Content ---------------- */
@@ -105,18 +109,17 @@ body {
 .admin-shell-content > header {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   min-height: 68px;
   padding: 0 var(--lp-space-8);
   border-bottom: var(--lp-border-hairline);
-  background: rgba(253, 253, 251, 0.9);
-  backdrop-filter: blur(12px);
+  background: var(--lp-surface);
 }
 
 .admin-shell-content > main {
   flex: 1;
   min-width: 0;
-  padding: var(--lp-space-6);
+  padding: var(--lp-space-6) var(--lp-space-8);
   background: var(--lp-bg);
 }
 
@@ -194,6 +197,77 @@ body {
     padding: var(--lp-space-3) var(--lp-space-4);
   }
 
+  .admin-shell-content > main {
+    padding: var(--lp-space-4);
+  }
+}
+
+.admin-nav-group {
+  display: grid;
+  gap: 2px;
+  margin-top: var(--lp-space-4);
+}
+.admin-nav-group > p {
+  margin: 0;
+  padding: var(--lp-space-2) var(--lp-space-3);
+  color: var(--lp-text-muted);
+  font-size: var(--lp-text-xs);
+}
+.admin-shell-sidebar nav a {
+  line-height: var(--lp-leading-body);
+}
+.admin-location {
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+}
+.admin-account {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-space-4);
+  font-size: var(--lp-text-sm);
+  min-width: 0;
+}
+.admin-account > span {
+  max-width: 24ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-shell-content > main:focus {
+  outline: none;
+}
+.admin-shell-content > main:focus-visible {
+  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
+  outline-offset: calc(-1 * var(--lp-focus-width));
+}
+.admin-shell-content .admin-page {
+  padding: 0;
+}
+.admin-skip-link {
+  position: fixed;
+  z-index: var(--lp-z-modal);
+  top: var(--lp-space-3);
+  left: var(--lp-space-3);
+  transform: translateY(-160%);
+  padding: var(--lp-space-3) var(--lp-space-4);
+  background: var(--lp-primary);
+  color: var(--lp-on-primary);
+  border-radius: var(--lp-radius-sm);
+}
+.admin-skip-link:focus {
+  transform: translateY(0);
+}
+@media (max-width: 760px) {
+  .admin-nav-group {
+    display: inline;
+    margin: 0;
+  }
+  .admin-nav-group > p {
+    display: none;
+  }
+  .admin-shell-sidebar nav {
+    min-width: 0;
+  }
   .admin-shell-content > main {
     padding: var(--lp-space-4);
   }

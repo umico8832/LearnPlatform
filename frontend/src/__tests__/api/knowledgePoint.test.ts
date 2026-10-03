@@ -104,3 +104,24 @@ describe('KnowledgePoint API', () => {
     })
   })
 })
+
+describe('KnowledgePoint API inline errors', () => {
+  it('keeps the default call shapes and forwards inline options for management recovery', async () => {
+    const options = { errorDisplay: 'inline' as const }
+    const form = { name: '隔离知识点', courseId: 1, parentId: 0 }
+    mockedRequest.get.mockResolvedValue({ code: 0, data: [], message: 'success' })
+    mockedRequest.post.mockResolvedValue({ code: 0, data: {}, message: 'success' })
+    mockedRequest.put.mockResolvedValue({ code: 0, data: {}, message: 'success' })
+    mockedRequest.delete.mockResolvedValue({ code: 0, data: null, message: 'success' })
+
+    await getKnowledgeTree(1, options)
+    await createKnowledgePoint(form, options)
+    await updateKnowledgePoint(1, form, options)
+    await deleteKnowledgePoint(1, options)
+
+    expect(mockedRequest.get).toHaveBeenCalledWith('/knowledge-points/tree/1', options)
+    expect(mockedRequest.post).toHaveBeenCalledWith('/admin/knowledge-points', form, options)
+    expect(mockedRequest.put).toHaveBeenCalledWith('/admin/knowledge-points/1', form, options)
+    expect(mockedRequest.delete).toHaveBeenCalledWith('/admin/knowledge-points/1', options)
+  })
+})

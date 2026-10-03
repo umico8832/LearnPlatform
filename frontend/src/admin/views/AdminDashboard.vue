@@ -1,402 +1,337 @@
 <template>
   <div class="dashboard-container admin-page">
-    <header class="dashboard-header admin-page-header">
-      <div>
-        <h1>平台数据总览</h1>
-      </div>
-      <div class="update-time">
-        <el-icon><Refresh /></el-icon>
-        <span>数据更新于 {{ updateTime }}</span>
+    <header class="admin-page-header">
+      <h1>平台数据总览</h1>
+      <div class="dashboard-actions">
+        <span v-if="stats" class="update-time">读取于 {{ updateTime }}</span>
+        <el-button :icon="Refresh" :loading="loading" @click="loadDashboard">刷新数据</el-button>
       </div>
     </header>
-
-    <el-skeleton :loading="loading" animated :rows="8">
-      <template #default>
-        <el-row :gutter="16" class="metric-grid">
-          <el-col v-for="metric in metrics" :key="metric.label" :xs="24" :sm="12" :lg="6">
-            <el-card shadow="never" class="metric-card">
-              <div class="metric-icon" :style="{ color: metric.color, backgroundColor: metric.background }">
-                <el-icon><component :is="metric.icon" /></el-icon>
+    <LpStatePanel
+      :state="loading ? 'loading' : error ? 'error' : stats ? 'ready' : 'loading'"
+      title="平台数据暂时无法读取"
+      :description="error"
+      loading-label="正在读取平台数据"
+      @retry="loadDashboard"
+    >
+      <template v-if="stats">
+        <div class="metric-grid">
+          <div v-for="metric in metrics" :key="metric.label" class="metric-card">
+            <span class="metric-label">{{ metric.label }}</span>
+            <strong class="metric-value">{{ metric.value.toLocaleString() }}</strong>
+            <span class="metric-note">{{ metric.note }}</span>
+          </div>
+        </div>
+        <div class="chart-grid">
+          <section class="dashboard-panel" aria-labelledby="activity-heading">
+            <header class="panel-header">
+              <div>
+                <h2 id="activity-heading">近 7 日平台活跃</h2>
+                <p>刷题次数与活跃用户变化</p>
               </div>
-              <div class="metric-content">
-                <span class="metric-label">{{ metric.label }}</span>
-                <strong class="metric-value">{{ metric.value }}</strong>
-                <span class="metric-note">{{ metric.note }}</span>
+              <span>累计 {{ stats.totalPracticeRecords.toLocaleString() }} 次练习</span>
+            </header>
+            <div v-if="stats.dailyActivity.length" ref="activityChartRef" class="activity-chart" aria-hidden="true" />
+            <LpEmptyState v-else title="暂无活跃记录" description="发生练习后，这里将展示每日变化。" />
+            <details v-if="stats.dailyActivity.length" class="chart-data">
+              <summary>查看每日数据</summary>
+              <table>
+                <caption class="lp-sr-only">
+                  平台每日活跃数据
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">日期</th>
+                    <th scope="col">刷题次数</th>
+                    <th scope="col">活跃用户</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="day in stats.dailyActivity" :key="day.date">
+                    <th scope="row">{{ day.date }}</th>
+                    <td>{{ day.practiceCount }}</td>
+                    <td>{{ day.activeUsers }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </details>
+          </section>
+          <section class="dashboard-panel" aria-labelledby="question-types-heading">
+            <header class="panel-header">
+              <div>
+                <h2 id="question-types-heading">题型分布</h2>
+                <p>当前题库内容结构</p>
               </div>
-            </el-card>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="16" class="chart-grid">
-          <el-col :xs="24" :lg="16">
-            <el-card shadow="never" class="panel-card">
-              <template #header>
-                <div class="panel-header">
-                  <div>
-                    <strong>近 7 日平台活跃</strong>
-                    <span>刷题次数与活跃用户变化</span>
-                  </div>
-                  <el-tag type="success" effect="plain">累计 {{ stats.totalPracticeRecords }} 次练习</el-tag>
-                </div>
-              </template>
-              <div ref="activityChartRef" class="activity-chart"></div>
-            </el-card>
-          </el-col>
-
-          <el-col :xs="24" :lg="8">
-            <el-card shadow="never" class="panel-card">
-              <template #header>
-                <div class="panel-header">
-                  <div>
-                    <strong>题型分布</strong>
-                    <span>当前题库内容结构</span>
-                  </div>
-                </div>
-              </template>
-              <div ref="questionChartRef" class="question-chart"></div>
-            </el-card>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="16" class="status-grid">
-          <el-col :xs="24" :md="12">
-            <el-card shadow="never" class="status-card">
-              <div class="status-copy">
-                <span class="status-label">用户状态</span>
-                <strong>{{ stats.enabledUsers }} / {{ stats.totalUsers }}</strong>
-                <span>启用用户</span>
-              </div>
-              <el-progress type="dashboard" :percentage="enabledUserRate" :width="112" color="#2f855a" />
-            </el-card>
-          </el-col>
-          <el-col :xs="24" :md="12">
-            <el-card shadow="never" class="status-card">
-              <div class="status-copy">
-                <span class="status-label">试卷发布</span>
-                <strong>{{ stats.publishedExamPapers }} / {{ stats.totalExamPapers }}</strong>
-                <span>{{ stats.draftExamPapers }} 份草稿待发布</span>
-              </div>
-              <el-progress type="dashboard" :percentage="publishedPaperRate" :width="112" color="#b7791f" />
-            </el-card>
-          </el-col>
-        </el-row>
+            </header>
+            <div v-if="questionTypes.length" ref="questionChartRef" class="question-chart" aria-hidden="true" />
+            <LpEmptyState v-else title="题库暂无题目" />
+            <details v-if="questionTypes.length" class="chart-data">
+              <summary>查看题型数据</summary>
+              <table>
+                <caption class="lp-sr-only">
+                  题型数量
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">题型</th>
+                    <th scope="col">题目数</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="[type, count] in questionTypes" :key="type">
+                    <th scope="row">{{ type }}</th>
+                    <td>{{ count }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </details>
+          </section>
+        </div>
+        <div class="status-grid">
+          <section class="dashboard-panel status-panel">
+            <div>
+              <h2>用户状态</h2>
+              <p>
+                <strong>{{ stats.enabledUsers }} / {{ stats.totalUsers }}</strong> 位用户启用
+              </p>
+            </div>
+            <el-progress
+              :percentage="percentage(stats.enabledUsers, stats.totalUsers)"
+              :stroke-width="6"
+              :show-text="false"
+              aria-hidden="true"
+            />
+          </section>
+          <section class="dashboard-panel status-panel">
+            <div>
+              <h2>试卷发布</h2>
+              <p>
+                <strong>{{ stats.publishedExamPapers }} / {{ stats.totalExamPapers }}</strong> 份已发布 ·
+                {{ stats.draftExamPapers }} 份草稿
+              </p>
+            </div>
+            <el-progress
+              :percentage="percentage(stats.publishedExamPapers, stats.totalExamPapers)"
+              :stroke-width="6"
+              :show-text="false"
+              aria-hidden="true"
+            />
+          </section>
+        </div>
       </template>
-    </el-skeleton>
+    </LpStatePanel>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Collection, DataAnalysis, Document, Refresh, User } from '@element-plus/icons-vue'
-import { init, use } from 'echarts/core'
-import { LineChart, PieChart } from 'echarts/charts'
-import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components'
-import { CanvasRenderer } from 'echarts/renderers'
-import type { ECharts } from 'echarts/core'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { Refresh } from '@element-plus/icons-vue'
+import { LpEmptyState, LpStatePanel } from '@/components/ui'
+import { getAdminStatisticsOverview, type AdminStatisticsOverview } from '@/api/statistics'
+import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
+import { errorMessage } from '@/utils/errors'
+import { useReducedMotion } from '@/composables/useReducedMotion'
+import { useDashboardCharts } from './useDashboardCharts'
 
-use([LineChart, PieChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer])
-import { getAdminStatisticsOverview } from '@/api/statistics'
-import type { AdminStatisticsOverview } from '@/api/statistics'
-
-const emptyStats: AdminStatisticsOverview = {
-  totalUsers: 0,
-  enabledUsers: 0,
-  totalQuestions: 0,
-  weeklyNewQuestions: 0,
-  totalExamPapers: 0,
-  publishedExamPapers: 0,
-  draftExamPapers: 0,
-  todayActiveUsers: 0,
-  totalPracticeRecords: 0,
-  questionTypeDistribution: {},
-  dailyActivity: [],
-}
-
-const loading = ref(true)
-const stats = ref<AdminStatisticsOverview>({ ...emptyStats })
-const updateTime = ref('--')
-const activityChartRef = ref<HTMLElement | null>(null)
-const questionChartRef = ref<HTMLElement | null>(null)
-let activityChart: ECharts | null = null
-let questionChart: ECharts | null = null
-
-const metrics = computed(() => [
-  {
-    label: '注册用户',
-    value: stats.value.totalUsers,
-    note: `${stats.value.enabledUsers} 位用户正常启用`,
-    icon: User,
-    color: '#2563eb',
-    background: '#eff6ff',
-  },
-  {
-    label: '题库总量',
-    value: stats.value.totalQuestions,
-    note: `近 7 日新增 ${stats.value.weeklyNewQuestions} 道`,
-    icon: Collection,
-    color: '#0f766e',
-    background: '#f0fdfa',
-  },
-  {
-    label: '试卷总量',
-    value: stats.value.totalExamPapers,
-    note: `${stats.value.publishedExamPapers} 份已发布`,
-    icon: Document,
-    color: '#b45309',
-    background: '#fffbeb',
-  },
-  {
-    label: '今日活跃',
-    value: stats.value.todayActiveUsers,
-    note: '今日参与刷题的用户',
-    icon: DataAnalysis,
-    color: '#be123c',
-    background: '#fff1f2',
-  },
-])
-
-const enabledUserRate = computed(() => percentage(stats.value.enabledUsers, stats.value.totalUsers))
-const publishedPaperRate = computed(() => percentage(stats.value.publishedExamPapers, stats.value.totalExamPapers))
-
-onMounted(loadDashboard)
-
-onBeforeUnmount(() => {
-  activityChart?.dispose()
-  questionChart?.dispose()
-  window.removeEventListener('resize', resizeCharts)
-})
+const stats = ref<AdminStatisticsOverview | null>(null)
+const loading = ref(false)
+const error = ref('')
+const updateTime = ref('')
+const { reducedMotion } = useReducedMotion()
+const { activityChartRef, questionChartRef, renderCharts, disposeCharts } = useDashboardCharts()
+let generation = 0
+let alive = true
+const valid = (version: number, session: number) =>
+  alive && version === generation && session === getAuthSessionVersion()
+const metrics = computed(() =>
+  stats.value
+    ? [
+        { label: '注册用户', value: stats.value.totalUsers, note: `${stats.value.enabledUsers} 位正常启用` },
+        {
+          label: '题库总量',
+          value: stats.value.totalQuestions,
+          note: `近 7 日新增 ${stats.value.weeklyNewQuestions} 道`,
+        },
+        { label: '试卷总量', value: stats.value.totalExamPapers, note: `${stats.value.publishedExamPapers} 份已发布` },
+        { label: '今日活跃', value: stats.value.todayActiveUsers, note: '今日参与刷题的用户' },
+      ]
+    : [],
+)
+const questionTypes = computed(() => Object.entries(stats.value?.questionTypeDistribution ?? {}))
 
 async function loadDashboard() {
+  if (loading.value) return
+  const version = ++generation,
+    session = getAuthSessionVersion()
   loading.value = true
-  let loaded = false
+  error.value = ''
+  disposeCharts()
   try {
-    const res = await getAdminStatisticsOverview()
-    if (res.code === 0 && res.data) {
-      stats.value = res.data
-      updateTime.value = new Date().toLocaleString('zh-CN', { hour12: false })
-      loaded = true
-    }
-  } catch {
-    ElMessage.error('管理端统计数据加载失败')
+    const res = await getAdminStatisticsOverview({ errorDisplay: 'inline' })
+    if (!valid(version, session)) return
+    if (res.code !== 0 || !res.data) throw new Error(res.message || '平台数据暂时无法读取。')
+    stats.value = res.data
+    updateTime.value = new Date().toLocaleTimeString('zh-CN', { hour12: false })
+  } catch (cause) {
+    if (valid(version, session)) error.value = errorMessage(cause, '平台数据暂时无法读取，请重试。')
   } finally {
-    loading.value = false
+    if (valid(version, session)) loading.value = false
   }
-
-  if (loaded) {
-    await nextTick()
-    renderCharts()
-    window.addEventListener('resize', resizeCharts)
-  }
+  await nextTick()
+  if (valid(version, session) && !error.value && stats.value) renderCharts(stats.value, reducedMotion.value)
 }
-
-function renderCharts() {
-  renderActivityChart()
-  renderQuestionChart()
-}
-
-function renderActivityChart() {
-  if (!activityChartRef.value) return
-  activityChart?.dispose()
-  activityChart = init(activityChartRef.value)
-  const data = stats.value.dailyActivity || []
-  activityChart.setOption({
-    tooltip: { trigger: 'axis' },
-    legend: { data: ['刷题次数', '活跃用户'], right: 8, top: 0 },
-    grid: { left: 40, right: 24, top: 50, bottom: 28 },
-    xAxis: {
-      type: 'category',
-      boundaryGap: false,
-      data: data.map((item) => item.date.substring(5)),
-      axisLine: { lineStyle: { color: '#d8dee8' } },
-      axisLabel: { color: '#7a8492' },
-    },
-    yAxis: {
-      type: 'value',
-      minInterval: 1,
-      splitLine: { lineStyle: { color: '#eef1f5' } },
-      axisLabel: { color: '#7a8492' },
-    },
-    series: [
-      {
-        name: '刷题次数',
-        type: 'line',
-        smooth: true,
-        symbolSize: 7,
-        data: data.map((item) => item.practiceCount),
-        lineStyle: { width: 3, color: '#2563eb' },
-        itemStyle: { color: '#2563eb' },
-        areaStyle: { color: 'rgba(37, 99, 235, 0.08)' },
-      },
-      {
-        name: '活跃用户',
-        type: 'line',
-        smooth: true,
-        symbolSize: 7,
-        data: data.map((item) => item.activeUsers),
-        lineStyle: { width: 2, color: '#0f766e' },
-        itemStyle: { color: '#0f766e' },
-      },
-    ],
-  })
-}
-
-function renderQuestionChart() {
-  if (!questionChartRef.value) return
-  questionChart?.dispose()
-  questionChart = init(questionChartRef.value)
-  const data = Object.entries(stats.value.questionTypeDistribution || {}).map(([name, value]) => ({ name, value }))
-  questionChart.setOption({
-    tooltip: { trigger: 'item', formatter: '{b}<br/>{c} 道（{d}%）' },
-    legend: { orient: 'horizontal', bottom: 0, itemWidth: 10, itemHeight: 10 },
-    color: ['#2563eb', '#0f766e', '#b45309', '#7c3aed', '#be123c'],
-    series: [
-      {
-        type: 'pie',
-        radius: ['45%', '70%'],
-        center: ['50%', '44%'],
-        avoidLabelOverlap: true,
-        label: { show: false },
-        data,
-      },
-    ],
-  })
-}
-
-function resizeCharts() {
-  activityChart?.resize()
-  questionChart?.resize()
-}
-
+const unsubscribe = onAuthSessionChange(() => {
+  generation++
+  stats.value = null
+  loading.value = false
+  error.value = ''
+  disposeCharts()
+  if (isAuthenticated()) void loadDashboard()
+})
+watch(reducedMotion, () => {
+  if (stats.value && !loading.value && !error.value) renderCharts(stats.value, reducedMotion.value)
+})
+onMounted(loadDashboard)
+onBeforeUnmount(() => {
+  alive = false
+  generation++
+  unsubscribe()
+})
 function percentage(value: number, total: number) {
   return total > 0 ? Math.round((value * 100) / total) : 0
 }
 </script>
 
 <style scoped>
-.dashboard-container {
-  min-height: 100%;
-  color: var(--lp-text);
-}
-
-.update-time {
+.dashboard-actions {
   display: flex;
   align-items: center;
-  gap: 7px;
-  color: var(--lp-text-muted);
-  font-size: 12px;
+  gap: var(--lp-space-3);
 }
-
-.metric-grid,
-.chart-grid {
-  margin-bottom: 16px;
-}
-
-.metric-grid :deep(.el-col),
-.chart-grid :deep(.el-col),
-.status-grid :deep(.el-col) {
-  margin-bottom: 16px;
-}
-
-.metric-card,
-.panel-card,
-.status-card {
-  border-color: var(--lp-border);
-  border-radius: var(--lp-radius);
-}
-
-.metric-card :deep(.el-card__body) {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  min-height: 112px;
-  padding: 20px;
-}
-
-.metric-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  font-size: 23px;
-}
-
-.metric-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.metric-label,
+.update-time,
 .metric-note,
-.panel-header span,
-.status-copy span {
-  color: #8490a0;
-  font-size: 12px;
+.panel-header p,
+.panel-header > span,
+.status-panel p {
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
 }
-
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: var(--lp-space-6);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  background: var(--lp-surface);
+}
+.metric-card {
+  min-width: 0;
+  display: grid;
+  gap: var(--lp-space-2);
+  padding: var(--lp-space-5);
+}
+.metric-card + .metric-card {
+  border-left: var(--lp-border-hairline);
+}
+.metric-label {
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+}
 .metric-value {
-  margin: 3px 0;
-  color: #172033;
-  font-size: 28px;
-  line-height: 1.2;
+  color: var(--lp-text);
+  font-size: var(--lp-text-3xl);
+  font-weight: var(--lp-weight-semibold);
+  line-height: var(--lp-leading-tight);
+  font-variant-numeric: tabular-nums;
 }
-
+.chart-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: var(--lp-space-5);
+  margin-bottom: var(--lp-space-5);
+}
+.dashboard-panel {
+  min-width: 0;
+  padding: var(--lp-space-5);
+  border: var(--lp-border-hairline);
+  border-radius: var(--lp-radius-lg);
+  background: var(--lp-surface);
+}
 .panel-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  align-items: baseline;
+  gap: var(--lp-space-3);
 }
-
-.panel-header > div {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+h2 {
+  margin: 0;
+  color: var(--lp-text);
+  font-size: var(--lp-text-base);
+  font-weight: var(--lp-weight-semibold);
 }
-
-.panel-header strong {
-  font-size: 15px;
+.panel-header p {
+  margin: var(--lp-space-1) 0 0;
 }
-
 .activity-chart,
 .question-chart {
-  height: 320px;
+  height: 280px;
+  margin-top: var(--lp-space-4);
 }
-
-.status-card :deep(.el-card__body) {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 140px;
-  padding: 18px 28px;
+.chart-data {
+  border-top: var(--lp-border-hairline);
+  padding-top: var(--lp-space-3);
 }
-
-.status-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.chart-data summary {
+  cursor: pointer;
+  color: var(--lp-primary);
+  font-size: var(--lp-text-sm);
 }
-
-.status-copy strong {
-  color: #172033;
-  font-size: 28px;
+.chart-data table {
+  width: 100%;
+  margin-top: var(--lp-space-3);
+  border-collapse: collapse;
+  font-size: var(--lp-text-sm);
+  font-variant-numeric: tabular-nums;
 }
-
-.status-label {
-  color: #4b5563 !important;
-  font-weight: 700;
+th,
+td {
+  padding: var(--lp-space-2);
+  border-bottom: var(--lp-border-hairline);
+  text-align: right;
 }
-
-@media (max-width: 768px) {
-  .dashboard-container {
-    padding: 16px;
+th:first-child {
+  text-align: left;
+}
+th {
+  font-weight: var(--lp-weight-medium);
+}
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--lp-space-5);
+}
+.status-panel strong {
+  color: var(--lp-text);
+  font-weight: var(--lp-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 900px) {
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
-  .activity-chart,
-  .question-chart {
-    height: 280px;
+  .metric-card:nth-child(3) {
+    border-left: 0;
+  }
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-actions {
+    flex-wrap: wrap;
   }
 }
 </style>

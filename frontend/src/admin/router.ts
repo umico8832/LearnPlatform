@@ -8,7 +8,6 @@ export function createAdminRouter(history: RouterHistory = createWebHistory(impo
   const router = createRouter({ history, routes: adminRoutes })
 
   router.beforeEach(async (to) => {
-    if (to.meta.title) document.title = `${String(to.meta.title)} - LearnPlatform 管理系统`
     const loggedIn = isAuthenticated()
     if (to.name === 'AdminLogin') {
       if (!loggedIn) return true
@@ -26,6 +25,10 @@ export function createAdminRouter(history: RouterHistory = createWebHistory(impo
       return { name: 'AdminLogin' }
     }
     return true
+  })
+
+  router.afterEach((to, _from, failure) => {
+    if (!failure && to.meta.title) document.title = `${String(to.meta.title)} - LearnPlatform 管理系统`
   })
 
   return router
