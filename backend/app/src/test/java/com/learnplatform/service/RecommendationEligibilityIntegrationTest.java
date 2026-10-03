@@ -132,9 +132,10 @@ class RecommendationEligibilityIntegrationTest extends IntegrationTestBase {
         Long sameCourseDisjoint = insertQuestion("同课程不同知识点", "PUBLIC", null);
         Long crossCourseSameFormat = insertQuestion(
                 "跨课程同题型", "PUBLIC", null, 2L, "SINGLE_CHOICE", 2);
-        for (Long questionId : List.of(source, sharedDifferentType, sameCourseDisjoint, crossCourseSameFormat)) {
+        for (Long questionId : List.of(source, sameCourseDisjoint, crossCourseSameFormat)) {
             addOption(questionId, "有效正确项", "A", 1, 0);
         }
+        addOption(sharedDifferentType, "TRUE", "A", 1, 0);
         jdbc.update("INSERT INTO question_knowledge_point (question_id, knowledge_point_id) VALUES (?, ?)",
                 source, sharedPoint);
         jdbc.update("INSERT INTO question_knowledge_point (question_id, knowledge_point_id) VALUES (?, ?)",
