@@ -95,12 +95,12 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="wrongCount" label="错题数" width="80" align="center">
+        <el-table-column prop="wrongCount" label="累计错次" width="80" align="center">
           <template #default="{ row }"
             ><el-tag type="danger" size="small">{{ row.wrongCount }}</el-tag></template
           >
         </el-table-column>
-        <el-table-column prop="totalAttempts" label="练习数" width="80" align="center" />
+        <el-table-column prop="totalAttempts" label="作答次数" width="80" align="center" />
         <el-table-column label="正确率" width="120">
           <template #default="{ row }">
             <el-progress
