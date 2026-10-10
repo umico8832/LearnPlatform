@@ -99,11 +99,11 @@ roadmap 引用有效候选。不能因为某个流程涉及多个领域，就在
   和 surface brief 仅在对应命令和用户授权范围内创建或修改，不替代 PRD、架构和项目状态等权威来源。项目仅收窄
   其发现描述，避免普通前端任务绕过项目路由或隐式触发首次 runtime 下载；显式调用仍保留全部上游命令。
 - 项目自有设计 Skill 对 Anthropic `frontend-design`、Taste Skill、Emil Design Engineering 与 Vercel
-  `web-design-guidelines` 的吸收边界、提交和许可证记录在各 Skill 的来源说明中；升级时重新审查并转写，
+  `web-design-guidelines` 的吸收边界和提交记录在各 Skill 的来源说明中；升级时重新审查并转写，
   不把 React、Next.js、Tailwind、shadcn/ui 或品牌专属规则直接移植到当前 Vue 技术栈。
 - 升级上游包前确认工作区可隔离，执行 `npm install -g ui-ux-pro-max-cli@latest` 和
   `uipro init --ai codex --force`，检查生成差异及自有 Skill 是否被覆盖；不得将升级与无关任务混合。
-- 升级 Impeccable 时先核对目标提交与许可证，在隔离目录生成 Codex/agents 分发并与当前 vendored 目录比较；
+- 升级 Impeccable 时先核对目标提交，在隔离目录生成 Codex/agents 分发并与当前 vendored 目录比较；
   未经用户明确要求不得安装 Hook，不能把首次 CLI 下载或 live-browser 成功当作静态安装验证。
 - 修改自有 Skill 后执行系统 `skill-creator` 的 `quick_validate.py`，核对描述、引用与适用范围；
   安装或升级后运行 `python3 scripts/check-docs.py`。长期来源与升级边界保留在本节，单次版本和验证由 Git 与 CI 保存。

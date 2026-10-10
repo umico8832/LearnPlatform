@@ -28,7 +28,7 @@ Zustand 本地快照、示例帖子或示例学校。原型只记录附件元数
 - `content_source = AISTU` 只说明迁移来源，不自动表示内容已审核、已发布或适合直接
   进入正式教学。
 - 原子知识和 RAG chunks 的首版快照保留了来源、版本与质量状态；正式教学启用前仍需
-  核对适用许可和内容质量。`review_pending` 不能在 Web 中展示为已审核内容。
+  核对内容质量。`review_pending` 不能在 Web 中展示为已审核内容。
 - LearnPlatform 运行时不能依赖相邻 AiStu 工作区的绝对路径。首版快照已进入本仓库，
   内容版本和文件哈希见[清单](../../content/knowledge/cs408/v1/manifest.json)；目前尚未导入
   MySQL 或向量索引，不能把文件迁移称为 RAG 已上线。

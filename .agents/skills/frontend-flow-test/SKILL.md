@@ -46,7 +46,7 @@ Choose one primary loop:
 - Exam: login -> `/exams` -> start or continue exam -> answer -> submit -> result detail.
 - Submission: normal user submits -> admin reviews -> approved question appears in question bank.
 - Admin list: admin login -> target admin page -> filter/search/paginate/open edit dialog -> verify no layout or permission regression.
-- Layout/navigation: login -> visit changed pages directly by URL -> verify desktop/mobile visibility, no overlap, and key actions visible.
+- Layout/navigation: login -> visit changed pages directly by URL -> verify desktop visibility within the viewport scope in project status (mobile only when the task touches existing mobile layout or the user asks), no overlap, and key actions visible.
 
 Use `testuser / test123` for learner flows and `admin / admin123` for admin flows. If login CAPTCHA is present, ask for explicit permission before solving it, or let the user log in manually.
 

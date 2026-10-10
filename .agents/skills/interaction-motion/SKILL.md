@@ -36,7 +36,7 @@ The stage animates declarative frames keyed by id; a simulator decides every sta
 
 ## Shared boundaries
 
-- Motion only expresses facts the backend has returned; it never calculates or approves scores, rewards, or mastery.
+- Motion for scores, rewards, and mastery only expresses results the backend has returned; it never calculates or approves them. Visualization steps and prediction feedback come from the deterministic scene simulator and are exempt.
 - No reward floats, full-screen celebrations, confetti, combo flames, achievement dialogs, or loops without a status meaning. A loop that signals a pending state (for example a question waiting for an answer) is allowed and stops when the state ends.
 - Animation must not delay an action, conceal validation, trap focus, or make an exit unavailable; focus, announcements, and navigation never wait for an animation to finish.
 - Name transitioned properties; never use `transition: all`. Prefer `transform` and `opacity`; measure before animating layout.

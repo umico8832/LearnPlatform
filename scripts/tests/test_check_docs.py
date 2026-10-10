@@ -47,16 +47,18 @@ class StatusOwnershipTest(unittest.TestCase):
                 self.assertTrue(any("round" in error for error in errors), errors)
 
     def test_rejects_growth_even_without_round_labels(self) -> None:
-        at_limit = "# 项目状态\n" + "- 已记录验证。\n" * 149
+        limit = checker.STATUS_MAX_LINES
+        at_limit = "# 项目状态\n" + "- 已记录验证。\n" * (limit - 1)
         self.assertEqual([], self.check_content(at_limit))
         errors = self.check_content(at_limit + "- 又一次验证。\n")
-        self.assertTrue(any("150 lines" in error for error in errors), errors)
+        self.assertTrue(any(f"{limit} lines" in error for error in errors), errors)
 
     def test_rejects_compressing_history_into_long_lines(self) -> None:
-        at_limit = "# 项目状态\n".ljust(10000, "文")
+        limit = checker.STATUS_MAX_CHARACTERS
+        at_limit = "# 项目状态\n".ljust(limit, "文")
         self.assertEqual([], self.check_content(at_limit))
         errors = self.check_content(at_limit + "文")
-        self.assertTrue(any("10000 characters" in error for error in errors), errors)
+        self.assertTrue(any(f"{limit} characters" in error for error in errors), errors)
 
     def test_audits_can_keep_long_round_records(self) -> None:
         content = "# 历史\n\n## Round 313\n" + "- 历史证据。\n" * 1600

@@ -13,8 +13,8 @@ from urllib.parse import unquote
 ROOT = Path(__file__).resolve().parents[1]
 DOCS_ROOT = ROOT / "docs"
 PROJECT_SKILLS_ROOT = ROOT / ".agents" / "skills"
-STATUS_MAX_LINES = 150
-STATUS_MAX_CHARACTERS = 10000
+STATUS_MAX_LINES = 80
+STATUS_MAX_CHARACTERS = 5000
 NUMBERED_ROUND = re.compile(r"\bRound\s+\d+\b|第\s*[\d一二三四五六七八九十百千万零〇两]+\s*轮", re.IGNORECASE)
 UPSTREAM_SKILL_NAMES = frozenset(
     {
