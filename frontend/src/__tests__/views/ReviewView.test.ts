@@ -2,11 +2,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { flushPromises, mount } from '@vue/test-utils'
 
-const { mockGetReviewStats, mockGetDueReviewCards, mockGetAllReviewCards, mockGetQuestionById } = vi.hoisted(() => ({
+const {
+  mockGetReviewStats,
+  mockGetDueReviewCards,
+  mockGetAllReviewCards,
+  mockGetQuestionById,
+  mockReset,
+  mockConfirm,
+} = vi.hoisted(() => ({
   mockGetReviewStats: vi.fn(),
   mockGetDueReviewCards: vi.fn(),
   mockGetAllReviewCards: vi.fn(),
   mockGetQuestionById: vi.fn(),
+  mockReset: vi.fn(),
+  mockConfirm: vi.fn(),
 }))
 
 vi.mock('@/api/review', () => ({
@@ -15,9 +24,14 @@ vi.mock('@/api/review', () => ({
   getAllReviewCards: (...args: unknown[]) => mockGetAllReviewCards(...args),
   submitReview: vi.fn(),
   removeFromReviewPlan: vi.fn(),
-  resetReviewProgress: vi.fn(),
+  resetReviewProgress: (...args: unknown[]) => mockReset(...args),
   syncWrongQuestionsToReview: vi.fn(),
   getAiReviewSuggestionStream: vi.fn(),
+}))
+
+vi.mock('element-plus', async (original) => ({
+  ...(await original<typeof import('element-plus')>()),
+  ElMessageBox: { confirm: mockConfirm },
 }))
 
 vi.mock('@/api/question', () => ({
@@ -276,5 +290,53 @@ describe('ReviewView course target', () => {
 
     expect(mockGetDueReviewCards).toHaveBeenCalledWith(408, 30, undefined, 31, { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('知识点：栈')
+  })
+
+  it('重置复习卡后刷新概览并立即允许开始今日复习', async () => {
+    routeQuery = {}
+    const card = { id: 1, questionId: 21, questionContent: '重置目标题', statusLabel: '新卡片' }
+    mockGetReviewStats
+      .mockResolvedValueOnce({ data: { totalCards: 1, dueToday: 0, overdue: 0, masteredCards: 0 } })
+      .mockResolvedValueOnce({ data: { totalCards: 1, dueToday: 1, overdue: 0, masteredCards: 0 } })
+    mockGetAllReviewCards.mockResolvedValue({ data: [card] })
+    mockReset.mockResolvedValue({ code: 0 })
+    mockConfirm.mockResolvedValue('confirm')
+    const wrapper = mount(ReviewView, {
+      global: {
+        stubs: {
+          ReviewSessionPanel: true,
+          LpPageHeader: { template: '<header><slot name="actions" /></header>' },
+          'el-card': { template: '<section><slot name="header" /><slot /></section>' },
+          'el-button': {
+            props: ['disabled'],
+            emits: ['click'],
+            template: '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
+          },
+          'el-table': { template: '<div><slot /></div>' },
+          'el-table-column': {
+            setup: () => ({ row: card }),
+            template: '<div><slot :row="row" /></div>',
+          },
+        },
+      },
+    })
+    await flushPromises()
+    const start = wrapper.findAll('button').find((button) => button.text().includes('开始复习'))!
+    expect(start.attributes('disabled')).toBeDefined()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('查看全部卡片'))!
+      .trigger('click')
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '重置')!
+      .trigger('click')
+    await flushPromises()
+
+    expect(mockReset).toHaveBeenCalledWith(21, { errorDisplay: 'inline' })
+    expect(mockGetReviewStats).toHaveBeenCalledTimes(2)
+    expect(start.attributes('disabled')).toBeUndefined()
+    wrapper.unmount()
   })
 })

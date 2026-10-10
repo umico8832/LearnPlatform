@@ -370,7 +370,6 @@ async function handleSyncWrongQuestions() {
     if (alive && requestGeneration === generation && session === getAuthSessionVersion()) syncing.value = false
   }
 }
-
 async function handleReset(questionId: number) {
   if (resettingQuestionIds.value.has(questionId) || removingQuestionIds.value.has(questionId)) return
   try {
@@ -386,6 +385,7 @@ async function handleReset(questionId: number) {
     if (!alive || requestGeneration !== generation || session !== getAuthSessionVersion()) return
     ElMessage.success('已重置')
     await loadAllCards()
+    await loadStats()
   } catch (e) {
     if (alive && requestGeneration === generation && session === getAuthSessionVersion())
       ElMessage.error(errorMessage(e, '操作失败'))
