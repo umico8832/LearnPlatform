@@ -44,7 +44,9 @@ public class CourseOverviewTargetService {
             nextTutor = progress.stream().filter(item -> !"COMPLETED".equals(item.getStatus()))
                     .findFirst().orElse(null);
         }
-        if (nextTutor != null) targets.add(tutorTarget(nextTutor));
+        if (nextTutor != null) {
+            targets.add(tutorTarget(nextTutor));
+        }
         if (dueQuestionId != null) {
             targets.add(questionTarget("DUE_REVIEW", "优先复习到期题目", "有 " + overview.getDueReviewCount()
                     + " 道题已到复习时间", dueQuestionId));

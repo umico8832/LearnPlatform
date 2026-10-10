@@ -131,7 +131,9 @@ public class AdaptivePracticeService {
 
             // 不限制排除列表，从所有候选题中补
             for (int diff : difficultyOrder) {
-                if (shortfall == 0) break;
+                if (shortfall == 0) {
+                    break;
+                }
                 List<Question> extras = queryQuestions(diff, courseId,
                         knowledgePointId, questionType, Collections.emptySet());
                 // 去除已选中的
@@ -192,7 +194,9 @@ public class AdaptivePracticeService {
         }
 
         for (PracticeRecord record : records) {
-            if (record.getUserAnswer() == null || record.getUserAnswer().isBlank()) continue;
+            if (record.getUserAnswer() == null || record.getUserAnswer().isBlank()) {
+                continue;
+            }
             Question question = questionMapper.selectById(record.getQuestionId());
             if (question == null || question.getDifficulty() == null) { continue; }
 

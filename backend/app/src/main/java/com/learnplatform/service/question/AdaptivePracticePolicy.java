@@ -60,7 +60,9 @@ public final class AdaptivePracticePolicy {
 
     public static int[] allocateCounts(double[] weights, int total) {
         int[] counts = new int[5];
-        if (total <= 0) return counts;
+        if (total <= 0) {
+            return counts;
+        }
         double sum = 0;
         for (double weight : weights) {
             sum += weight;
@@ -76,7 +78,9 @@ public final class AdaptivePracticePolicy {
         while (allocated < total) {
             int best = 0;
             for (int index = 1; index < fractions.length; index++) {
-                if (fractions[index] > fractions[best]) best = index;
+                if (fractions[index] > fractions[best]) {
+                    best = index;
+                }
             }
             counts[best]++;
             fractions[best] = -1;
