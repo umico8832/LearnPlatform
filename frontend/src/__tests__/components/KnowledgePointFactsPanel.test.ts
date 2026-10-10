@@ -69,6 +69,36 @@ describe('KnowledgePointFactsPanel', () => {
     expect(mockGetFacts).toHaveBeenLastCalledWith(408, 2, 10, { errorDisplay: 'inline' })
   })
 
+  it('默认只展示前三条真实记录，展开后显示本页其余记录并省略零计数', async () => {
+    mockGetFacts.mockResolvedValue({
+      data: {
+        records: Array.from({ length: 5 }, (_, index) => ({
+          ...currentFact,
+          knowledgePointId: 31 + index,
+          knowledgePointName: `知识点 ${index + 1}`,
+          correctCount: 0,
+          unresolvedWrongCount: 0,
+          dueReviewCount: 0,
+        })),
+        total: 5,
+        current: 1,
+        size: 10,
+      },
+    })
+    const wrapper = mount(KnowledgePointFactsPanel, { props: { courseId: 408, refreshKey: 0 }, global: { stubs } })
+    await flushPromises()
+
+    expect(wrapper.findAll('.fact-row')).toHaveLength(3)
+    expect(wrapper.text()).not.toContain('知识点 5')
+    expect(wrapper.text()).not.toContain('答对次数')
+    expect(wrapper.text()).not.toContain('未处理错题')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('展开全部'))!
+      .trigger('click')
+    expect(wrapper.findAll('.fact-row')).toHaveLength(5)
+  })
+
   it('历史与未关联行不提供伪精确导航，只提供课程题库入口', async () => {
     mockGetFacts.mockResolvedValue({
       data: {

@@ -11,6 +11,8 @@ async function findKnowledgePoint(page: Page, id: number, firstRecords: CourseKn
   for (let pageNumber = 1; pageNumber <= 30; pageNumber++) {
     const fact = records.find((item) => item.knowledgePointId === id)
     if (fact) {
+      const expand = panel.locator('.facts-toggle')
+      if (await expand.isVisible()) await expand.click()
       const row = panel
         .locator('.fact-row')
         .filter({ has: page.getByRole('heading', { name: fact.knowledgePointName, exact: true }) })
@@ -24,8 +26,9 @@ async function findKnowledgePoint(page: Page, id: number, firstRecords: CourseKn
   throw new Error('分页中未找到已审查知识点')
 }
 
-test('课程知识点事实在真实理解检查后更新并保持分页深链与移动端可用', async ({ page }, testInfo) => {
+test('课程空间从首节学习并在真实理解检查后展示知识点记录', async ({ page }, testInfo) => {
   test.setTimeout(60_000)
+  await page.setViewportSize({ width: 1440, height: 900 })
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   page.on('response', (response) => {
@@ -55,15 +58,21 @@ test('课程知识点事实在真实理解检查后更新并保持分页深链�
   const beforeOverviewResponse = page.waitForResponse((response) => /\/my-courses\/\d+\/overview$/.test(response.url()))
   const beforeFactsResponse = factsResponse(page)
   const joinButton = page.getByRole('button', { name: '加入课程库' })
-  await ((await joinButton.isVisible()) ? joinButton : page.getByRole('button', { name: '进入课程空间' })).click()
+  const overviewButton = page.getByRole('button', { name: '进入课程空间' })
+  await expect(joinButton.or(overviewButton)).toBeEnabled()
+  await ((await joinButton.isVisible()) ? joinButton : overviewButton).click()
   await expect(page).toHaveURL(/\/my-courses\/\d+$/)
   const overviewUrl = page.url()
   const overview: CourseOverviewVO = (await (await beforeOverviewResponse).json()).data
   const initialFacts = (await (await beforeFactsResponse).json()).data
-  expect(initialFacts.records.length).toBeLessThanOrEqual(10)
+  expect(initialFacts.records).toEqual([])
+  await expect(page.locator('.knowledge-facts-panel')).toContainText('暂无知识点学习记录')
+  await expect(page.locator('.activity-panel')).toHaveCount(0)
+  await expect(page.locator('.continue-section button')).toHaveCount(1)
   const pointId = overview.tutorProgress[0].knowledgePointId
-  const before = await findKnowledgePoint(page, pointId, initialFacts.records)
-  await before.row.getByRole('button', { name: '进入教学' }).click()
+  expect(overview.recommendedTargets[0].knowledgePointId).toBe(pointId)
+  await page.screenshot({ path: testInfo.outputPath('course-space-new-1440.png'), fullPage: true })
+  await page.locator('.continue-section button').click()
   await expect(page).toHaveURL(new RegExp(`/tutor\\?knowledgePointId=${pointId}$`))
   await page.getByRole('radiogroup').locator('label').first().click()
   const answerResponse = page.waitForResponse(
@@ -80,19 +89,18 @@ test('课程知识点事实在真实理解检查后更新并保持分页深链�
   expect(updated.answeredCount).toBe(overview.answeredCount + 1)
   expect(updated.correctCount).toBe(overview.correctCount + Number(answer.correct))
   const after = await findKnowledgePoint(page, pointId, (await (await afterFactsResponse).json()).data.records)
-  expect(after.fact.answeredCount).toBe(before.fact.answeredCount + 1)
-  expect(after.fact.correctCount).toBe(before.fact.correctCount + Number(answer.correct))
-  await expect(after.row.locator('dd').nth(0)).toHaveText(String(after.fact.answeredCount))
-  await expect(after.row.locator('dd').nth(1)).toHaveText(String(after.fact.correctCount))
+  expect(after.fact.answeredCount).toBe(1)
+  expect(after.fact.correctCount).toBe(Number(answer.correct))
+  await expect(after.row.getByText(String(after.fact.answeredCount), { exact: true }).first()).toBeVisible()
   await expect(page.locator('.activity-panel .lp-stat').first().locator('.lp-stat-value')).toHaveText(
     String(updated.answeredCount),
   )
 
-  await after.row.getByRole('button', { name: '复习', exact: true }).focus()
-  await expect(after.row.getByRole('button', { name: '复习', exact: true })).toBeFocused()
+  await after.row.getByRole('button', { name: '进入教学', exact: true }).focus()
+  await expect(after.row.getByRole('button', { name: '进入教学', exact: true })).toBeFocused()
   await page.locator('.knowledge-facts-panel').screenshot({ path: testInfo.outputPath('knowledge-facts-desktop.png') })
   await page.setViewportSize({ width: 390, height: 844 })
-  await expect(after.row.getByRole('button', { name: '复习', exact: true })).toBeVisible()
+  await expect(after.row.getByRole('button', { name: '进入教学', exact: true })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
   await page.locator('.knowledge-facts-panel').screenshot({ path: testInfo.outputPath('knowledge-facts-mobile.png') })
 
@@ -100,8 +108,7 @@ test('课程知识点事实在真实理解检查后更新并保持分页深链�
   await page.getByRole('button', { name: '刷新记录' }).click()
   const refreshed = await findKnowledgePoint(page, pointId, (await (await refreshedResponse).json()).data.records)
   expect(refreshed.fact.answeredCount).toBe(after.fact.answeredCount)
-  await refreshed.row.getByRole('button', { name: '复习', exact: true }).click()
-  await expect(page).toHaveURL(new RegExp(`/review\\?.*knowledgePointId=${pointId}`))
-  await expect(page.getByText(refreshed.fact.knowledgePointName, { exact: false }).first()).toBeVisible()
+  await refreshed.row.getByRole('button', { name: '进入教学', exact: true }).click()
+  await expect(page).toHaveURL(new RegExp(`/tutor\\?knowledgePointId=${pointId}$`))
   expect(errors).toEqual([])
 })

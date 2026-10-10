@@ -17,16 +17,13 @@
       <p>暂时无法读取知识点学习事实，请重试。</p>
       <el-button type="primary" @click="loadFacts(page)">重新加载</el-button>
     </div>
-    <LpEmptyState
-      v-else-if="!records.length"
-      compact
-      title="暂无知识点学习记录"
-      description="完成课程内作答后，这里会按知识点展示对应记录。"
-    />
+    <p v-else-if="!records.length" class="facts-empty">
+      暂无知识点学习记录。完成课程内作答后，这里会显示有数据的知识点。
+    </p>
     <template v-else>
       <div class="facts-list">
         <article
-          v-for="fact in records"
+          v-for="fact in visibleRecords"
           :key="factKey(fact)"
           class="fact-row"
           :data-engaged="fact.answeredCount > 0"
@@ -44,19 +41,19 @@
             </el-tag>
           </div>
           <dl class="fact-metrics">
-            <div>
+            <div v-if="fact.answeredCount">
               <dt>作答次数</dt>
               <dd>{{ fact.answeredCount }}</dd>
             </div>
-            <div>
+            <div v-if="fact.correctCount">
               <dt>答对次数</dt>
               <dd>{{ fact.correctCount }}</dd>
             </div>
-            <div>
+            <div v-if="fact.unresolvedWrongCount">
               <dt>未处理错题</dt>
               <dd>{{ fact.unresolvedWrongCount }}</dd>
             </div>
-            <div>
+            <div v-if="fact.dueReviewCount">
               <dt>到期复习题</dt>
               <dd>{{ fact.dueReviewCount }}</dd>
             </div>
@@ -64,6 +61,7 @@
           <div class="fact-actions">
             <template v-if="canDeepLink(fact)">
               <el-button
+                v-if="fact.dueReviewCount"
                 text
                 type="primary"
                 @click="emit('open-review', fact.knowledgePointId!, fact.knowledgePointName)"
@@ -71,6 +69,7 @@
                 复习
               </el-button>
               <el-button
+                v-if="fact.unresolvedWrongCount"
                 text
                 type="primary"
                 @click="emit('open-wrong-questions', fact.knowledgePointId!, fact.knowledgePointName)"
@@ -92,6 +91,16 @@
           </div>
         </article>
       </div>
+      <el-button
+        v-if="records.length > initialVisibleCount"
+        text
+        class="facts-toggle"
+        :aria-expanded="showAllRecords"
+        @click="showAllRecords = !showAllRecords"
+        >{{
+          showAllRecords ? '收起记录' : `展开${total > pageSize ? '本页' : ''}全部 ${records.length} 条记录`
+        }}</el-button
+      >
       <el-pagination
         v-if="total > pageSize"
         class="facts-pagination"
@@ -106,7 +115,7 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { InfoFilled } from '@element-plus/icons-vue'
 import { getCourseKnowledgePointFacts, type CourseKnowledgePointFactVO } from '@/api/course'
 import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
@@ -127,6 +136,11 @@ const records = ref<CourseKnowledgePointFactVO[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
+const initialVisibleCount = 3
+const showAllRecords = ref(false)
+const visibleRecords = computed(() =>
+  showAllRecords.value ? records.value : records.value.slice(0, initialVisibleCount),
+)
 const loading = ref(false)
 const failed = ref(false)
 let requestVersion = 0
@@ -162,10 +176,12 @@ async function loadFacts(targetPage = page.value) {
       await loadFacts(lastPage)
       return
     }
+    const pageChanged = response.data.current !== page.value
     records.value = response.data.records
     total.value = response.data.total
     page.value = response.data.current
     pageSize.value = responsePageSize
+    if (pageChanged) showAllRecords.value = false
   } catch {
     if (!current()) return
     failed.value = true
@@ -182,6 +198,7 @@ watch(
       page.value = 1
       records.value = []
       total.value = 0
+      showAllRecords.value = false
     }
     void loadFacts(courseChanged ? 1 : page.value)
   },
@@ -193,6 +210,7 @@ const unsubscribeAuth = onAuthSessionChange(() => {
   records.value = []
   total.value = 0
   page.value = 1
+  showAllRecords.value = false
   loading.value = false
   failed.value = false
 })
@@ -210,6 +228,15 @@ onBeforeUnmount(() => {
 }
 .facts-skeleton {
   min-height: var(--lp-space-20);
+}
+.facts-empty {
+  margin: 0;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-body);
+}
+.facts-toggle {
+  justify-self: start;
 }
 .facts-error {
   display: flex;

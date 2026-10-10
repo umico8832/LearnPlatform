@@ -47,8 +47,10 @@
 非空作答次数和其中正确次数；`dueReviewCount` 与 `unresolvedWrongCount` 是当前待办题数。
 `lastLearningTime` 为作答、人工批阅或课程学习事件的最近时间，可包含 AI 辅导，不等于最近判分时间。
 不会返回或推断“掌握度”、趋势或个性化结论。`tutorProgress` 只列出当前课程中已审查、已迁入的 Tutor 内容，并以
-`NOT_STARTED`、`IN_PROGRESS`、`COMPLETED` 表示是否存在会话或首次正确理解检查；未迁入的目录节点
-不会被列为未完成。`recommendedTargets` 依次给出当前课程中已审查且尚未完成理解检查的 Tutor 内容、
+`NOT_STARTED`、`IN_PROGRESS`、`COMPLETED` 表示是否存在会话或首次正确理解检查，并返回可空的
+`lastSessionTime`。课节按课程目录的父子顺序排列；未迁入的目录节点不会被列为未完成。
+`recommendedTargets` 首先给出最近学习且尚未完成的 Tutor 课节；最近课节已完成时接续目录中后续首个未完成课节，
+否则从目录首个未完成课节开始，然后依次给出
 到期复习、未掌握错题和课程默认目录。Tutor 目标携带当前课程内的
 `knowledgePointId`，客户端只能跳转到既有 Tutor 页面；一次正确理解检查后，该内容不再作为
 未完成教学推荐。
@@ -77,7 +79,7 @@
 
 知识点接口参数为 `pageNum`（默认 1、至少 1）、`pageSize`（默认 10、1–50），返回常规
 `Page` 的 `records/total/current/size`；越界页返回空列表。每行返回知识点 ID、名称、
-`available`、`tutorAvailable` 和四项计数。当前目录节点即使没有事实也显示零值。
+`available`、`tutorAvailable` 和四项计数。只有至少一项计数有数据的知识点才返回；没有学习事实时列表为空。
 
 - 练习、复习、试卷学习、考试与变式训练按当前题目在本课程中的直接知识点关联归属；不向父目录
   递归累计。非测评题目须仍存在且为公共题或当前用户所有的私有题，其他用户的内容不进入统计。

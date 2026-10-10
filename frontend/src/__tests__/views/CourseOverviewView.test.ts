@@ -169,6 +169,8 @@ describe('CourseOverviewView', () => {
     expect(wrapper.text()).toContain('学习：线性表的定义与基本操作')
     expect(findButton(wrapper, '开始学习').exists()).toBe(true)
     expect(wrapper.text()).not.toContain('继续 AI 教学')
+    expect(wrapper.find('.activity-panel').exists()).toBe(false)
+    expect(wrapper.findAll('.continue-section button')).toHaveLength(1)
   })
 
   it('教学目录先展示六节并可按需展开余下课程内容', async () => {

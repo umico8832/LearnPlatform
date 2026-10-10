@@ -46,27 +46,15 @@
       </section>
       <section v-if="overview.recommendedTargets.length" class="continue-section">
         <div class="continue-main">
-          <LpKicker>继续学习</LpKicker>
+          <LpKicker>下一步</LpKicker>
           <h2 class="continue-title">{{ recommendedTargetTitle }}</h2>
           <p class="continue-reason">{{ overview.recommendedTargets[0].reason }}</p>
           <el-button type="primary" :icon="ArrowRight" @click="emit('openTarget', overview.recommendedTargets[0])">{{
             recommendedActionLabel
           }}</el-button>
         </div>
-        <div v-if="overview.recommendedTargets.length > 1" class="continue-alternatives">
-          <button
-            v-for="target in overview.recommendedTargets.slice(1)"
-            :key="target.type + (target.knowledgePointId ?? target.questionId ?? '')"
-            type="button"
-            class="alternative-item"
-            @click="emit('openTarget', target)"
-          >
-            <span class="alternative-title">{{ target.title }}</span
-            ><span class="alternative-reason">{{ target.reason }}</span>
-          </button>
-        </div>
       </section>
-      <div class="overview-grid">
+      <div class="overview-grid" :class="{ 'overview-grid--single': !hasLearningActivity }">
         <div class="overview-main">
           <section class="panel tools-panel" aria-labelledby="learning-tools-heading">
             <LpSectionHeading heading-id="learning-tools-heading" title="学习工具" />
@@ -143,7 +131,7 @@
             "
           />
         </div>
-        <aside class="activity-panel" aria-labelledby="activity-heading">
+        <aside v-if="hasLearningActivity" class="activity-panel" aria-labelledby="activity-heading">
           <h2 id="activity-heading" class="activity-title">学习情况</h2>
           <div class="stats-grid">
             <LpStat label="已作答" :value="overview.answeredCount" /><LpStat
@@ -260,6 +248,17 @@ const visibleTutorProgress = computed(() =>
     ? (props.overview?.tutorProgress ?? [])
     : (props.overview?.tutorProgress ?? []).slice(0, initialOutlineCount),
 )
+const hasLearningActivity = computed(() => {
+  const overview = props.overview
+  return Boolean(
+    overview &&
+    (overview.answeredCount ||
+      overview.dueReviewCount ||
+      overview.unresolvedWrongCount ||
+      overview.lastLearningTime ||
+      overview.latestStageAssessment),
+  )
+})
 watch(
   () => props.courseId,
   () => {
@@ -380,45 +379,14 @@ function knowledgePointSummaryText(summary: CourseStageAssessmentKnowledgePointS
   font-size: var(--lp-text-base);
   line-height: var(--lp-leading-body);
 }
-.continue-alternatives {
-  flex: 1;
-  min-width: 0;
-  display: grid;
-  gap: var(--lp-space-2);
-  border-left: var(--lp-border-hairline);
-  padding-left: var(--lp-space-5);
-}
-.alternative-item {
-  display: grid;
-  gap: 2px;
-  padding: var(--lp-space-3);
-  border: 0;
-  border-radius: var(--lp-radius-sm);
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-  transition: background-color var(--lp-duration-fast) var(--lp-ease-out);
-}
-@media (hover: hover) and (pointer: fine) {
-  .alternative-item:hover {
-    background: var(--lp-surface);
-  }
-}
-.alternative-title {
-  color: var(--lp-text);
-  font-size: var(--lp-text-base);
-  font-weight: var(--lp-weight-semibold);
-}
-.alternative-reason {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
-  line-height: var(--lp-leading-snug);
-}
 .overview-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.85fr);
   gap: var(--lp-space-5);
   align-items: start;
+}
+.overview-grid--single {
+  grid-template-columns: minmax(0, 1fr);
 }
 .overview-main {
   display: grid;
@@ -616,7 +584,6 @@ function knowledgePointSummaryText(summary: CourseStageAssessmentKnowledgePointS
 @media (prefers-reduced-motion: reduce) {
   .tool-row,
   .tool-arrow,
-  .alternative-item,
   .outline-item {
     transition-duration: var(--lp-duration-fast);
   }
@@ -656,12 +623,6 @@ function knowledgePointSummaryText(summary: CourseStageAssessmentKnowledgePointS
   }
   .continue-section {
     flex-direction: column;
-  }
-  .continue-alternatives {
-    border-left: 0;
-    border-top: var(--lp-border-hairline);
-    padding-left: 0;
-    padding-top: var(--lp-space-3);
   }
   .panel,
   .activity-panel {

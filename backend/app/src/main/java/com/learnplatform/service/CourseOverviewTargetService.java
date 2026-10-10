@@ -8,6 +8,7 @@ import com.learnplatform.mapper.KnowledgePointMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -26,8 +27,24 @@ public class CourseOverviewTargetService {
                          Long dueQuestionId, Long wrongQuestionId) {
         List<CourseOverviewVO.TutorProgressVO> progress = factMapper.selectTutorProgress(userId, courseId);
         List<CourseOverviewVO.LearningTargetVO> targets = new ArrayList<>();
-        progress.stream().filter(item -> !"COMPLETED".equals(item.getStatus()))
-                .findFirst().map(this::tutorTarget).ifPresent(targets::add);
+        CourseOverviewVO.TutorProgressVO latestSession = progress.stream()
+                .filter(item -> item.getLastSessionTime() != null)
+                .max(Comparator.comparing(CourseOverviewVO.TutorProgressVO::getLastSessionTime))
+                .orElse(null);
+        CourseOverviewVO.TutorProgressVO nextTutor = null;
+        if (latestSession != null) {
+            if (!"COMPLETED".equals(latestSession.getStatus())) {
+                nextTutor = latestSession;
+            } else {
+                nextTutor = progress.stream().skip(progress.indexOf(latestSession) + 1L)
+                        .filter(item -> !"COMPLETED".equals(item.getStatus())).findFirst().orElse(null);
+            }
+        }
+        if (nextTutor == null) {
+            nextTutor = progress.stream().filter(item -> !"COMPLETED".equals(item.getStatus()))
+                    .findFirst().orElse(null);
+        }
+        if (nextTutor != null) targets.add(tutorTarget(nextTutor));
         if (dueQuestionId != null) {
             targets.add(questionTarget("DUE_REVIEW", "优先复习到期题目", "有 " + overview.getDueReviewCount()
                     + " 道题已到复习时间", dueQuestionId));

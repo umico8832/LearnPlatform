@@ -72,6 +72,7 @@ export interface TutorProgressVO {
   knowledgePointId: number
   title: string
   status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED'
+  lastSessionTime: string | null
 }
 
 export interface CourseStageAssessmentVO {

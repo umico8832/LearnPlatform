@@ -118,8 +118,7 @@
             SELECT p.id AS knowledge_point_id, COUNT(DISTINCT d.question_id) AS due_review_count
             FROM due_facts d LEFT JOIN question_points p ON p.question_id = d.question_id GROUP BY p.id
         ), point_ids AS (
-            SELECT id FROM current_points
-            UNION SELECT knowledge_point_id FROM answer_counts
+            SELECT knowledge_point_id FROM answer_counts
             UNION SELECT knowledge_point_id FROM wrong_counts
             UNION SELECT knowledge_point_id FROM due_counts
         )
@@ -132,21 +131,21 @@
 
     <select id="selectKnowledgePoints" resultType="com.learnplatform.dto.CourseKnowledgePointFactVO">
         <include refid="knowledgeFacts"/>
-        SELECT p.id AS knowledge_point_id,
-               CASE WHEN p.id IS NULL THEN '未关联知识点'
-                    ELSE COALESCE(k.name, n.snapshot_name, CONCAT('知识点 #', p.id)) END AS knowledge_point_name,
+        SELECT p.knowledge_point_id,
+               CASE WHEN p.knowledge_point_id IS NULL THEN '未关联知识点'
+                    ELSE COALESCE(k.name, n.snapshot_name, CONCAT('知识点 #', p.knowledge_point_id)) END AS knowledge_point_name,
                k.id IS NOT NULL AS available,
                EXISTS(SELECT 1 FROM tutor_content t WHERE t.knowledge_point_id = k.id
                       AND t.review_status = 'REVIEWED') AS tutor_available,
                COALESCE(a.answered_count, 0) AS answered_count, COALESCE(a.correct_count, 0) AS correct_count,
                COALESCE(w.unresolved_wrong_count, 0) AS unresolved_wrong_count,
                COALESCE(d.due_review_count, 0) AS due_review_count
-        FROM point_ids p LEFT JOIN current_points k ON k.id = p.id
-        LEFT JOIN snapshot_names n ON n.knowledge_point_id = p.id AND n.name_order = 1
-        LEFT JOIN answer_counts a ON a.knowledge_point_id &lt;=> p.id
-        LEFT JOIN wrong_counts w ON w.knowledge_point_id &lt;=> p.id
-        LEFT JOIN due_counts d ON d.knowledge_point_id &lt;=> p.id
-        ORDER BY k.id IS NULL, k.sort_order, p.id IS NULL, p.id
+        FROM point_ids p LEFT JOIN current_points k ON k.id = p.knowledge_point_id
+        LEFT JOIN snapshot_names n ON n.knowledge_point_id = p.knowledge_point_id AND n.name_order = 1
+        LEFT JOIN answer_counts a ON a.knowledge_point_id &lt;=> p.knowledge_point_id
+        LEFT JOIN wrong_counts w ON w.knowledge_point_id &lt;=> p.knowledge_point_id
+        LEFT JOIN due_counts d ON d.knowledge_point_id &lt;=> p.knowledge_point_id
+        ORDER BY k.id IS NULL, k.sort_order, p.knowledge_point_id IS NULL, p.knowledge_point_id
         LIMIT #{pageSize} OFFSET #{offset}
     </select>
 
@@ -167,13 +166,26 @@
     </select>
 
     <select id="selectTutorProgress" resultType="com.learnplatform.dto.CourseOverviewVO$TutorProgressVO">
+        WITH RECURSIVE siblings AS (
+            SELECT k.id, k.parent_id,
+                   ROW_NUMBER() OVER (PARTITION BY k.parent_id ORDER BY k.sort_order, k.id) AS position
+            FROM knowledge_point k WHERE k.course_id = #{courseId} AND k.deleted = 0
+        ), course_tree AS (
+            SELECT id, CAST(LPAD(position, 10, '0') AS CHAR(1024)) AS path
+            FROM siblings WHERE parent_id = 0
+            UNION ALL
+            SELECT child.id, CONCAT(parent.path, '.', LPAD(child.position, 10, '0'))
+            FROM siblings child JOIN course_tree parent ON child.parent_id = parent.id
+        )
         SELECT t.knowledge_point_id, t.title,
                CASE WHEN MAX(s.check_correct) = 1 THEN 'COMPLETED'
-                    WHEN COUNT(s.id) > 0 THEN 'IN_PROGRESS' ELSE 'NOT_STARTED' END AS status
-        FROM knowledge_point k JOIN tutor_content t ON t.knowledge_point_id = k.id AND t.review_status = 'REVIEWED'
+                    WHEN COUNT(s.id) > 0 THEN 'IN_PROGRESS' ELSE 'NOT_STARTED' END AS status,
+               MAX(s.create_time) AS last_session_time
+        FROM course_tree tree JOIN knowledge_point k ON k.id = tree.id
+        JOIN tutor_content t ON t.knowledge_point_id = k.id AND t.review_status = 'REVIEWED'
         LEFT JOIN tutor_session s ON s.tutor_content_id = t.id AND s.user_id = #{userId} AND s.course_id = #{courseId}
         WHERE k.course_id = #{courseId} AND k.deleted = 0 AND k.content_review_status = 'REVIEWED'
-        GROUP BY k.id, k.sort_order, t.id, t.knowledge_point_id, t.title
-        ORDER BY k.sort_order, k.id, t.id
+        GROUP BY k.id, tree.path, t.id, t.knowledge_point_id, t.title
+        ORDER BY tree.path, t.id
     </select>
 </mapper>

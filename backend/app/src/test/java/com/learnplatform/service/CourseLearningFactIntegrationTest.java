@@ -97,7 +97,8 @@ class CourseLearningFactIntegrationTest extends IntegrationTestBase {
         assertEquals(6, point(K2).getAnsweredCount());
         assertEquals(5, point(K1).getCorrectCount());
         assertEquals(4, point(K2).getCorrectCount());
-        assertEquals(0, point(K3).getAnsweredCount());
+        assertTrue(overviewService.getKnowledgePointFacts(USER, COURSE, 1, 10).getRecords().stream()
+                .noneMatch(point -> Objects.equals(K3, point.getKnowledgePointId())));
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM course_learning_event WHERE user_id=? "
                 + "AND event_source='AI_TUTOR' AND source_record_id=963001 "
                 + "AND event_type='TUTOR_CHECK_ANSWERED'", Integer.class, USER));
@@ -116,7 +117,7 @@ class CourseLearningFactIntegrationTest extends IntegrationTestBase {
         assertEquals(0, overview.getAnsweredCount());
         assertEquals(0, overview.getCorrectCount());
         assertNotNull(overview.getLastLearningTime());
-        assertEquals(0, point(K1).getAnsweredCount());
+        assertTrue(overviewService.getKnowledgePointFacts(USER, COURSE, 1, 10).getRecords().isEmpty());
     }
 
     @Test
@@ -247,17 +248,40 @@ class CourseLearningFactIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    void emptyDataAndStablePaginationDoNotRequireLoadingEveryRecord() {
+    void emptyDataDoesNotReturnZeroRowsForEveryCourseKnowledgePoint() {
         CourseOverviewVO empty = overviewService.getOverview(USER, COURSE + 90);
         assertEquals(0, empty.getAnsweredCount());
         assertNull(empty.getLastLearningTime());
         assertTrue(overviewService.getKnowledgePointFacts(USER, COURSE + 90, 1, 10).getRecords().isEmpty());
         var first = overviewService.getKnowledgePointFacts(USER, COURSE, 1, 2);
-        var second = overviewService.getKnowledgePointFacts(USER, COURSE, 2, 2);
-        assertEquals(3, first.getTotal());
-        assertEquals(List.of(K1, K2), first.getRecords().stream().map(CourseKnowledgePointFactVO::getKnowledgePointId).toList());
-        assertEquals(List.of(K3), second.getRecords().stream().map(CourseKnowledgePointFactVO::getKnowledgePointId).toList());
+        assertEquals(0, first.getTotal());
+        assertTrue(first.getRecords().isEmpty());
+        practice(961001, USER, Q1, 1, "A");
+        sqlSessionTemplate.clearCache();
+        var firstWithFacts = overviewService.getKnowledgePointFacts(USER, COURSE, 1, 1);
+        var secondWithFacts = overviewService.getKnowledgePointFacts(USER, COURSE, 2, 1);
+        assertEquals(2, firstWithFacts.getTotal());
+        assertEquals(List.of(K1), firstWithFacts.getRecords().stream().map(CourseKnowledgePointFactVO::getKnowledgePointId).toList());
+        assertEquals(List.of(K2), secondWithFacts.getRecords().stream().map(CourseKnowledgePointFactVO::getKnowledgePointId).toList());
         assertTrue(overviewService.getKnowledgePointFacts(USER, COURSE, Integer.MAX_VALUE, 50).getRecords().isEmpty());
+    }
+
+    @Test
+    void tutorProgressFollowsDepthFirstCourseDirectoryRatherThanGlobalSortOrder() {
+        jdbc.update("UPDATE knowledge_point SET parent_id=?, sort_order=1 WHERE id=?", K1, K3);
+        jdbc.update("UPDATE knowledge_point SET sort_order=2 WHERE id=?", K2);
+        jdbc.update("UPDATE knowledge_point SET content_review_status='REVIEWED' WHERE id IN (?,?,?)", K1, K2, K3);
+        for (long id : List.of(K1, K2, K3)) {
+            jdbc.update("""
+                    INSERT INTO tutor_content (knowledge_point_id,content_key,content_version,review_status,title,lesson_json,check_json)
+                    VALUES (?,?,1,'REVIEWED',?,'{}','{}')
+                    """, id, "course-facts-order-" + id, "教学 " + id);
+        }
+
+        var progress = overviewService.getOverview(USER, COURSE).getTutorProgress();
+        assertEquals(List.of(K1, K3, K2), progress.stream()
+                .map(CourseOverviewVO.TutorProgressVO::getKnowledgePointId).toList());
+        assertEquals(K1, overviewService.getOverview(USER, COURSE).getRecommendedTargets().get(0).getKnowledgePointId());
     }
 
     @Test
@@ -270,7 +294,8 @@ class CourseLearningFactIntegrationTest extends IntegrationTestBase {
         tutorAnswer(963001, 0);
         tutorAnswer(963002, 1);
         assertTrue(point(K1).isTutorAvailable());
-        assertFalse(point(K2).isTutorAvailable());
+        assertTrue(overviewService.getKnowledgePointFacts(USER, COURSE, 1, 10).getRecords().stream()
+                .noneMatch(point -> Objects.equals(K2, point.getKnowledgePointId())));
         var progress = overviewService.getOverview(USER, COURSE).getTutorProgress();
         assertEquals(1, progress.size());
         assertEquals("COMPLETED", progress.get(0).getStatus());

@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import java.time.LocalDateTime;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,6 +51,36 @@ class CourseOverviewTargetServiceTest {
                 7L, 10L, totals(0, 0, 0, 0), null, null);
         assertEquals("COURSE_SEQUENCE", snapshot.recommendedTargets().get(0).getType());
         assertEquals(31L, snapshot.recommendedTargets().get(0).getKnowledgePointId());
+    }
+
+    @Test
+    void resumesMostRecentUnfinishedTutorSessionWithoutReorderingDirectory() {
+        CourseOverviewVO.TutorProgressVO first = progress(41L, "IN_PROGRESS");
+        first.setLastSessionTime(LocalDateTime.of(2026, 10, 1, 10, 0));
+        CourseOverviewVO.TutorProgressVO second = progress(42L, "IN_PROGRESS");
+        second.setLastSessionTime(LocalDateTime.of(2026, 10, 2, 10, 0));
+        when(factMapper.selectTutorProgress(7L, 10L)).thenReturn(List.of(first, second));
+        when(knowledgePointMapper.selectOne(any())).thenReturn(root());
+
+        var snapshot = targetService.build(7L, 10L, totals(0, 0, 0, 0), null, null);
+
+        assertEquals(List.of(41L, 42L), snapshot.tutorProgress().stream()
+                .map(CourseOverviewVO.TutorProgressVO::getKnowledgePointId).toList());
+        assertEquals(42L, snapshot.recommendedTargets().get(0).getKnowledgePointId());
+    }
+
+    @Test
+    void movesToNextDirectoryLessonAfterMostRecentCompletedLesson() {
+        CourseOverviewVO.TutorProgressVO earlier = progress(41L, "NOT_STARTED");
+        CourseOverviewVO.TutorProgressVO completed = progress(42L, "COMPLETED");
+        completed.setLastSessionTime(LocalDateTime.of(2026, 10, 2, 10, 0));
+        CourseOverviewVO.TutorProgressVO next = progress(43L, "NOT_STARTED");
+        when(factMapper.selectTutorProgress(7L, 10L)).thenReturn(List.of(earlier, completed, next));
+        when(knowledgePointMapper.selectOne(any())).thenReturn(root());
+
+        var snapshot = targetService.build(7L, 10L, totals(1, 1, 0, 0), null, null);
+
+        assertEquals(43L, snapshot.recommendedTargets().get(0).getKnowledgePointId());
     }
 
     private CourseOverviewVO totals(int answered, int correct, int due, int wrong) {

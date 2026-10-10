@@ -64,6 +64,7 @@ public class CourseOverviewVO {
         private Long knowledgePointId;
         private String title;
         private String status;
+        private LocalDateTime lastSessionTime;
 
         public Long getKnowledgePointId() { return knowledgePointId; }
         public void setKnowledgePointId(Long knowledgePointId) { this.knowledgePointId = knowledgePointId; }
@@ -71,5 +72,7 @@ public class CourseOverviewVO {
         public void setTitle(String title) { this.title = title; }
         public String getStatus() { return status; }
         public void setStatus(String status) { this.status = status; }
+        public LocalDateTime getLastSessionTime() { return lastSessionTime; }
+        public void setLastSessionTime(LocalDateTime lastSessionTime) { this.lastSessionTime = lastSessionTime; }
     }
 }
