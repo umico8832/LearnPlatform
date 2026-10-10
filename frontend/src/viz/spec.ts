@@ -31,13 +31,37 @@ export function visibleSpec(module: SceneModule, spec: SceneSpec): SceneSpec {
   return Object.fromEntries(Object.entries(spec).filter(([key]) => !hidden.has(key))) as SceneSpec
 }
 
-/** Keep only the checkpoints the spec asks for (all by default). */
+/**
+ * A checkpoint to pause at: its predict id, or the id with what the learner
+ * believed there (e.g. the node they took to come first), so the question can
+ * offer that belief and answer it.
+ */
+export type PauseEntry = string | { id: string; guess?: string }
+
+function entryId(entry: unknown): string | undefined {
+  if (typeof entry === 'string') return entry
+  const id = (entry as { id?: unknown } | null)?.id
+  return typeof id === 'string' ? id : undefined
+}
+
+/** The learner's belief recorded for one checkpoint in `spec.pauseAt`. */
+export function guessAt(spec: SceneSpec, id: string): string | undefined {
+  if (!Array.isArray(spec.pauseAt)) return undefined
+  for (const entry of spec.pauseAt) {
+    const guess = (entry as { guess?: unknown } | null)?.guess
+    if (entryId(entry) === id && typeof guess === 'string') return guess
+  }
+  return undefined
+}
+
+/** Keep only the checkpoints the spec asks for (all by default; an empty list plays straight through). */
 export function applyPauseAt(trace: Trace, pauseAt: unknown): Trace {
   if (!Array.isArray(pauseAt)) return trace
+  const ids = new Set(pauseAt.map(entryId))
   return {
     ...trace,
     steps: trace.steps.map((step) =>
-      step.predict && !pauseAt.includes(step.predict.id) ? { ...step, predict: undefined } : step,
+      step.predict && !ids.has(step.predict.id) ? { ...step, predict: undefined } : step,
     ),
   }
 }

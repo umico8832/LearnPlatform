@@ -12,6 +12,7 @@ import type {
   Trace,
   VarView,
 } from '../../engine/types'
+import { guessAt } from '../../spec'
 
 /**
  * Binary tree traversals (pre / in / post order) with the recursion made
@@ -310,7 +311,32 @@ function iterative(tree: Tree, op: Op): string[] {
   return out
 }
 
-function firstVisitPredict(tree: Tree, op: Op): Predict {
+/** Every label in the subtree under `label`, in level order. */
+function subtree(tree: Tree, label: string | null): string[] {
+  if (!label) return []
+  const out: string[] = []
+  const queue = [label]
+  while (queue.length) {
+    const node = tree.nodes.get(queue.shift()!)!
+    out.push(node.label)
+    if (node.left) queue.push(node.left)
+    if (node.right) queue.push(node.right)
+  }
+  return out
+}
+
+/** Why a node the learner believed comes first does not, read off the tree itself. */
+function notFirst(tree: Tree, op: Op, label: string, answer: string): string {
+  const node = tree.nodes.get(label)!
+  const left = subtree(tree, node.left)
+  const right = subtree(tree, node.right)
+  if (op === 'preorder') return `先序一进入结点就访问，根 ${tree.root} 最先输出；${label} 要等走到它时才输出。`
+  if (left.length) return `${label} 的左子树里还有 ${left.join('、')}，${SPEC[op].name}要先把左子树走完。`
+  if (op === 'postorder' && right.length) return `${label} 的右子树里还有 ${right.join('、')}，后序要等它们都输出完。`
+  return `${label} 前面还有结点要先输出：${SPEC[op].name}第一个输出的是 ${answer}。`
+}
+
+function firstVisitPredict(tree: Tree, op: Op, guess?: string): Predict {
   const answer = traversal(tree, op)[0]
   const firsts: Record<Op, string> = {
     preorder: traversal(tree, 'preorder')[0],
@@ -328,6 +354,10 @@ function firstVisitPredict(tree: Tree, op: Op): Predict {
     postorder: '这是后序的第一个：要等子树处理完才输出。',
   }
   const options: PredictOption[] = [{ id: answer, text: answer, correct: true, feedback: `对。${rules[op]}` }]
+  // The learner's own belief comes right after the answer, so it survives the cut to three options.
+  if (guess && guess !== answer && tree.nodes.has(guess)) {
+    options.push({ id: guess, text: guess, feedback: notFirst(tree, op, guess, answer) })
+  }
   for (const other of ['preorder', 'inorder', 'postorder'] as Op[]) {
     const label = firsts[other]
     if (options.some((o) => o.id === label)) continue
@@ -437,7 +467,7 @@ function pickReturn(tree: Tree, op: Op): string {
   )
 }
 
-function simulate(tree: Tree, op: Op): { steps: Step[]; output: string[] } {
+function simulate(tree: Tree, op: Op, firstGuess?: string): { steps: Step[]; output: string[] } {
   const { fn, parts } = SPEC[op]
   const st: State = { frames: [], visited: [] }
   const steps: Step[] = []
@@ -489,7 +519,7 @@ function simulate(tree: Tree, op: Op): { steps: Step[]; output: string[] } {
           line: lineOf(op, 'visit'),
           title: `visit(${id})`,
           note: `访问 ${id}。访问序列：${st.visited.join(' ')}`,
-          predict: askedFirst || tree.nodes.size === 1 ? undefined : firstVisitPredict(tree, op),
+          predict: askedFirst || tree.nodes.size === 1 ? undefined : firstVisitPredict(tree, op, firstGuess),
         })
         askedFirst = true
       } else {
@@ -540,7 +570,7 @@ export const binaryTree: SceneModule = {
   build(raw: SceneSpec): Trace {
     const spec = raw as BinaryTreeSpec
     const tree = buildTree(spec.tree)
-    const { steps, output } = simulate(tree, spec.op)
+    const { steps, output } = simulate(tree, spec.op, guessAt(spec, 'tree-first-visit'))
     const expected = iterative(tree, spec.op)
     const ok = output.length === expected.length && output.every((v, i) => v === expected[i])
     return { steps, code: listing(spec.op), check: { ok, detail: `${SPEC[spec.op].name}序列 ${output.join(' ')}` } }

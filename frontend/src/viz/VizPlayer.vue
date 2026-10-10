@@ -5,7 +5,7 @@ import { Braces, Maximize2 } from '@lucide/vue'
 import { LtButton, LtIconButton } from '@/components/living'
 import type { SceneSpec } from './engine/types'
 import { announceFullPlayerReady, expandInto } from './expandTransition'
-import { visibleSpec } from './spec'
+import { specToQuery, visibleSpec } from './spec'
 import { useVizSession } from './useVizSession'
 import VizCaption from './ui/VizCaption.vue'
 import VizCheckpoints from './ui/VizCheckpoints.vue'
@@ -28,8 +28,8 @@ const props = withDefaults(
     size?: 'embedded' | 'full'
     /** Heading shown above an embedded player. */
     title?: string
-    /** Full-page link for an embedded player. */
-    expandTo?: RouteLocationRaw
+    /** Full-page link for an embedded player; defaults to this scene's own page, false hides it. */
+    expandTo?: RouteLocationRaw | false
     /** Let learners edit the data; defaults to the full size only. */
     editable?: boolean
   }>(),
@@ -59,7 +59,16 @@ const codeLine = computed(() =>
 const shownSpec = computed(() =>
   session.module.value && session.spec.value ? visibleSpec(session.module.value, session.spec.value) : props.spec,
 )
-const expandHref = computed(() => (props.expandTo ? router.resolve(props.expandTo).href : undefined))
+const expandTarget = computed<RouteLocationRaw | undefined>(() => {
+  if (full.value || props.expandTo === false) return undefined
+  if (props.expandTo) return props.expandTo
+  const module = session.module.value
+  const spec = session.spec.value
+  return module && spec
+    ? { name: 'Visualization', params: { scene: spec.scene }, query: specToQuery(module, spec) }
+    : undefined
+})
+const expandHref = computed(() => (expandTarget.value ? router.resolve(expandTarget.value).href : undefined))
 const sheetOrigin = computed(() => (specButton.value?.$el as HTMLElement | undefined) ?? null)
 const stageLabel = computed(() =>
   step.value ? `${props.title || '数据结构动画'}：${step.value.title}` : props.title || '数据结构动画',
@@ -90,9 +99,11 @@ function onKeydown(event: KeyboardEvent) {
 
 /** Expand into the full page; the stage card morphs across with a view transition. */
 function expand(event: MouseEvent) {
-  if (!props.expandTo || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+  const target = expandTarget.value
+  if (!target || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
   event.preventDefault()
-  const target = props.expandTo
+  // The full page plays its own copy; this one waits where it was, e.g. in a page kept alive behind it.
+  session.player.pause()
   expandInto(card.value, () => router.push(target))
 }
 
@@ -252,7 +263,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 }
 
 .viz[data-size='embedded'] .viz-stage {
-  height: 300px;
+  height: 380px;
 }
 
 .viz-dock {

@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft } from '@lucide/vue'
 import { LtButton, LtIconButton, LtSegmented } from '@/components/living'
 import { useLivingTheme } from '@/composables/useLivingTheme'
-import { findScene, specFromQuery, specToQuery, VizPlayer, type SceneModule, type SceneSpec } from '@/viz'
+import { collapseInto, findScene, specFromQuery, specToQuery, VizPlayer, type SceneModule, type SceneSpec } from '@/viz'
 
 /** Full-page visualization with its own shareable link: the scene, operation and data live in the URL. */
 useLivingTheme()
@@ -15,6 +15,20 @@ const entry = computed(() => findScene(String(route.params.scene ?? '')))
 const module = shallowRef<SceneModule | null>(null)
 const failed = ref(false)
 const canGoBack = typeof window !== 'undefined' && typeof window.history.state?.back === 'string'
+
+/** Back into the explanation this page was expanded from; the card morphs back into the embedded player. */
+function goBack() {
+  collapseInto(
+    () =>
+      new Promise<void>((resolve) => {
+        const stop = router.afterEach(() => {
+          stop()
+          resolve()
+        })
+        router.back()
+      }),
+  )
+}
 
 async function load() {
   const target = entry.value
@@ -55,7 +69,7 @@ watch(
 <template>
   <div class="viz-page">
     <header class="viz-page-head">
-      <LtIconButton v-if="canGoBack" label="返回" @click="router.back()">
+      <LtIconButton v-if="canGoBack" label="返回" @click="goBack">
         <ChevronLeft aria-hidden="true" />
       </LtIconButton>
       <div v-if="entry" class="viz-page-heading">
