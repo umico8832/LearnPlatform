@@ -8,7 +8,7 @@ import java.util.OptionalInt;
 
 /** 提示层级由服务端控制；展示提示不构成学习事实。 */
 public final class TutorAgentHintPolicy {
-    private static final int MAX_LEVEL = 3;
+    public static final int MAX_LEVEL = 3;
 
     private TutorAgentHintPolicy() { }
 
@@ -21,7 +21,14 @@ public final class TutorAgentHintPolicy {
                 .filter(java.util.Objects::nonNull)
                 .mapToInt(Integer::intValue)
                 .max().orElse(0);
-        return maximum >= MAX_LEVEL ? OptionalInt.empty() : OptionalInt.of(maximum + 1);
+        return nextLevel(maximum);
+    }
+
+    public static OptionalInt nextLevel(int highestReceivedLevel) {
+        if (highestReceivedLevel < 0 || highestReceivedLevel > MAX_LEVEL) {
+            throw new IllegalArgumentException("Invalid Tutor hint level");
+        }
+        return highestReceivedLevel == MAX_LEVEL ? OptionalInt.empty() : OptionalInt.of(highestReceivedLevel + 1);
     }
 
     public static String guidance(int level) {

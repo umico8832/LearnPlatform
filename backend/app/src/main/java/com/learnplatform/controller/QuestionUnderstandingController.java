@@ -37,6 +37,24 @@ public class QuestionUnderstandingController {
         return R.ok(service.reveal(user.getUserId(), attemptId));
     }
 
+    @GetMapping("/attempts/{attemptId}/tutor/next")
+    public R<Map<String, Object>> tutorNext(@PathVariable long attemptId,
+                                            @AuthenticationPrincipal CustomUserDetails user) {
+        return R.ok(service.tutorNext(user.getUserId(), attemptId));
+    }
+
+    @PostMapping("/attempts/{attemptId}/tutor/hints/next")
+    public R<Map<String, Object>> tutorHint(@PathVariable long attemptId, @RequestBody JsonNode body,
+                                            @AuthenticationPrincipal CustomUserDetails user) {
+        return R.ok(service.tutorHint(user.getUserId(), attemptId, body));
+    }
+
+    @PostMapping("/attempts/{attemptId}/tutor/viz-views")
+    public R<Map<String, Object>> tutorVizView(@PathVariable long attemptId, @RequestBody JsonNode body,
+                                               @AuthenticationPrincipal CustomUserDetails user) {
+        return R.ok(service.tutorVizView(user.getUserId(), attemptId, body));
+    }
+
     @GetMapping("/attempts/{attemptId}/variant")
     public R<Map<String, Object>> variant(@PathVariable long attemptId, @AuthenticationPrincipal CustomUserDetails user) {
         return R.ok(service.variant(user.getUserId(), attemptId));

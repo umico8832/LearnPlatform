@@ -101,17 +101,19 @@ public class QuestionUnderstandingMapper {
                         result.getLong("id"), result.getLong("user_id"), result.getLong("question_id"),
                         result.getLong("content_id"), (Long) result.getObject("variant_id"),
                         result.getLong("practice_record_id"),
+                        result.getBoolean("hint_chain_enabled"),
                         result.getTimestamp("solution_revealed_time") == null ? null
                                 : result.getTimestamp("solution_revealed_time").toLocalDateTime()), attemptId);
         return rows.isEmpty() ? null : rows.getFirst();
     }
 
-    public long insertAttempt(long userId, long questionId, long contentId, Long variantId, long practiceRecordId) {
+    public long insertAttempt(long userId, long questionId, long contentId, Long variantId,
+                              long practiceRecordId, boolean hintChainEnabled) {
         return insert("""
                 INSERT INTO question_understanding_attempt
-                (user_id,question_id,content_id,variant_id,practice_record_id) VALUES(?,?,?,?,?)
+                (user_id,question_id,content_id,variant_id,practice_record_id,hint_chain_enabled) VALUES(?,?,?,?,?,?)
                 """,
-                userId, questionId, contentId, variantId, practiceRecordId);
+                userId, questionId, contentId, variantId, practiceRecordId, hintChainEnabled ? 1 : 0);
     }
 
     public void reveal(long attemptId) {
@@ -125,13 +127,17 @@ public class QuestionUnderstandingMapper {
         return one("SELECT * FROM question_understanding_variant_attempt WHERE origin_attempt_id=?", originAttemptId);
     }
 
+    public Map<String, Object> practiceFact(long practiceRecordId) {
+        return one("SELECT user_answer,is_correct FROM practice_record WHERE id=?", practiceRecordId);
+    }
+
     public long insertVariantAttempt(long originAttemptId, long userId, long variantId,
-                                     String answer, boolean correct, Integer answerTime) {
+                                     String answer, boolean correct, String assistance, Integer answerTime) {
         return insert("""
                 INSERT INTO question_understanding_variant_attempt
                 (origin_attempt_id,user_id,variant_id,user_answer,is_correct,assistance,answer_time)
-                VALUES(?,?,?,?,?,'UNAIDED',?)
-                """, originAttemptId, userId, variantId, answer, correct ? 1 : 0, answerTime);
+                VALUES(?,?,?,?,?,?,?)
+                """, originAttemptId, userId, variantId, answer, correct ? 1 : 0, assistance, answerTime);
     }
 
     private Map<String, Object> one(String sql, Object... args) {

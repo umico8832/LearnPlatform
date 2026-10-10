@@ -9,4 +9,5 @@ public record QuestionUnderstandingAttempt(
         Long contentId,
         Long variantId,
         Long practiceRecordId,
+        boolean hintChainEnabled,
         LocalDateTime solutionRevealedTime) { }

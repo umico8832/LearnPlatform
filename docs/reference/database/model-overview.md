@@ -18,10 +18,10 @@ flowchart LR
 
 | 领域 | 表 |
 |---|---|
-| 用户与内容 | `user`、`course`、`knowledge_point`、`user_course`、`question`、`question_option`、`question_knowledge_point`、`question_understanding_content`、`question_understanding_misconception`、`question_understanding_attempt` |
+| 用户与内容 | `user`、`course`、`knowledge_point`、`user_course`、`question`、`question_option`、`question_knowledge_point`、`question_understanding_content`、`question_understanding_misconception`、`question_understanding_hint`、`question_understanding_attempt` |
 | 互动与投稿 | `user_favorite_question`、`question_comment`、`comment_like`、`question_submission`、`question_correction_report`、`question_review_record`、`question_version` |
 | 社区共建 | `community_category`、`community_post`、`community_attachment`、`community_comment`、`community_like`、`community_review`、`community_question_link` |
-| 练习与复习 | `practice_record`、`wrong_question`、`learning_plan`、`question_review_schedule`、`course_learning_event`、`question_understanding_variant_attempt` |
+| 练习与复习 | `practice_record`、`wrong_question`、`learning_plan`、`question_review_schedule`、`course_learning_event`、`question_understanding_variant_attempt`、`question_understanding_hint_receipt`、`question_understanding_viz_view` |
 | 试卷与考试 | `exam_paper`、`exam_question`、`exam_record`、`exam_answer`、`subjective_grading_point`、`exam_learning_session`、`exam_learning_answer`、`exam_learning_ai_interaction`、`user_exam_source`、`private_exam_import_draft`、`private_exam_draft_question` |
 | AI 与运营 | `ai_call_log`、`ai_quota_audit_log`、`ai_usage_alert`、`question_ai_asset`、`ai_asset_feedback`、`ai_asset_view`、`ai_variant_training`、`ai_variant_question`、`tutor_agent_run`、`tutor_agent_message`、`tutor_agent_practice_attempt`、`tutor_agent_plan_confirmation`、`tutor_course_memory`、`tutor_session_note`、`knowledge_content_bundle`、`knowledge_content_chunk`、`knowledge_content_index` |
 

@@ -35,15 +35,20 @@ public class QuestionUnderstandingService {
     private final PracticeAnswerService practice;
     private final ObjectMapper json;
     private final CourseLearningEventService events;
+    private final QuestionTutorService tutor;
+    private final QuestionUnderstandingPresentation presentation;
 
     public QuestionUnderstandingService(QuestionMapper questions, QuestionUnderstandingMapper mapper,
                                         PracticeAnswerService practice, ObjectMapper json,
-                                        CourseLearningEventService events) {
+                                        CourseLearningEventService events, QuestionTutorService tutor,
+                                        QuestionUnderstandingPresentation presentation) {
         this.questions = questions;
         this.mapper = mapper;
         this.practice = practice;
         this.json = json;
         this.events = events;
+        this.tutor = tutor;
+        this.presentation = presentation;
     }
 
     public Map<String, Object> question(long userId, long questionId) {
@@ -54,7 +59,7 @@ public class QuestionUnderstandingService {
         data.put("questionType", ready.question().getQuestionType());
         data.put("options", publicOptions(ready.options()));
         data.put("position", position(ready));
-        data.put("source", source(ready));
+        data.put("source", presentation.source(ready.question(), ready.content()));
         return data;
     }
 
@@ -67,8 +72,10 @@ public class QuestionUnderstandingService {
         request.setUserAnswer(answer.label());
         request.setAnswerTime(answer.time());
         PracticeResultVO practiceResult = practice.submitAnswer(request, userId);
-        long attemptId = mapper.insertAttempt(userId, questionId, id(ready.content(), "id"),
-                mapper.approvedVariantId(questionId), practiceResult.getRecordId());
+        long contentId = id(ready.content(), "id");
+        long attemptId = mapper.insertAttempt(userId, questionId, contentId,
+                mapper.approvedVariantId(questionId), practiceResult.getRecordId(),
+                tutor.completeReviewedHints(contentId));
         Map<String, Object> data = map();
         data.put("attemptId", attemptId);
         data.put("correct", practiceResult.getCorrect());
@@ -82,7 +89,7 @@ public class QuestionUnderstandingService {
             data.put("misconception", Map.of("title", misconception.get("title"),
                     "explanation", misconception.get("explanation"),
                     "source", Map.of("kind", misconception.get("content_source"), "reviewStatus", "REVIEWED")));
-            data.put("viz", viz(misconception, "viz_title", "viz_spec_json"));
+            data.put("viz", presentation.viz(misconception, "viz_title", "viz_spec_json"));
         }
         return data;
     }
@@ -91,12 +98,37 @@ public class QuestionUnderstandingService {
     public Map<String, Object> reveal(long userId, long attemptId) {
         QuestionUnderstandingAttempt attempt = ownedAttempt(userId, attemptId, true);
         Ready ready = ready(userId, attempt.questionId(), attempt.contentId());
+        if (!tutor.canReveal(tutorContext(attempt, ready))) {
+            throw business("请先依次领取三级提示");
+        }
         mapper.reveal(attemptId);
         Map<String, Object> data = map();
         data.put("correctAnswer", correctOption(ready.options()).get("option_label"));
         data.put("explanation", ready.content().get("solution_explanation"));
-        data.put("viz", viz(ready.content(), "solution_viz_title", "solution_viz_spec_json"));
+        data.put("explanationSource", presentation.contentSource(
+                (String) ready.content().get("solution_content_source")));
+        data.put("viz", presentation.viz(ready.content(), "solution_viz_title", "solution_viz_spec_json"));
         return data;
+    }
+
+    public Map<String, Object> tutorNext(long userId, long attemptId) {
+        QuestionUnderstandingAttempt attempt = ownedAttempt(userId, attemptId, false);
+        Ready ready = ready(userId, attempt.questionId(), attempt.contentId());
+        return tutor.next(tutorContext(attempt, ready));
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public Map<String, Object> tutorHint(long userId, long attemptId, JsonNode body) {
+        QuestionUnderstandingAttempt attempt = ownedAttempt(userId, attemptId, true);
+        Ready ready = ready(userId, attempt.questionId(), attempt.contentId());
+        return tutor.hint(tutorContext(attempt, ready), body);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public Map<String, Object> tutorVizView(long userId, long attemptId, JsonNode body) {
+        QuestionUnderstandingAttempt attempt = ownedAttempt(userId, attemptId, true);
+        Ready ready = ready(userId, attempt.questionId(), attempt.contentId());
+        return tutor.view(tutorContext(attempt, ready), body);
     }
 
     public Map<String, Object> variant(long userId, long attemptId) {
@@ -108,7 +140,7 @@ public class QuestionUnderstandingService {
         data.put("stem", variant.get("question_content"));
         data.put("options", variantOptions(variant));
         data.put("changedCondition", variant.get("changed_condition"));
-        data.put("source", sourceVariant());
+        data.put("source", presentation.sourceVariant());
         return data;
     }
 
@@ -135,12 +167,15 @@ public class QuestionUnderstandingService {
             return variantResult(existing, variant);
         }
         boolean correct = answer.label().equalsIgnoreCase((String) variant.get("correct_answer"));
-        long id = mapper.insertVariantAttempt(originId, userId, variantId, answer.label(), correct, answer.time());
+        String assistance = tutor.assistance(originId);
+        long id = mapper.insertVariantAttempt(originId, userId, variantId, answer.label(), correct,
+                assistance, answer.time());
         events.recordQuestionAnswer(userId, ready.question(), "UNDERSTANDING_VARIANT_ANSWERED",
                 "UNDERSTANDING_VARIANT", id, correct, null);
         Map<String, Object> saved = map();
         saved.put("id", id);
         saved.put("is_correct", correct ? 1 : 0);
+        saved.put("assistance", assistance);
         return variantResult(saved, variant);
     }
 
@@ -150,8 +185,9 @@ public class QuestionUnderstandingService {
         data.put("correct", ((Number) attempt.get("is_correct")).intValue() == 1);
         data.put("correctAnswer", variant.get("correct_answer"));
         data.put("explanation", variant.get("analysis"));
-        data.put("viz", viz(variant, "viz_title", "viz_spec_json"));
-        data.put("assistance", "UNAIDED");
+        data.put("viz", presentation.viz(variant, "viz_title", "viz_spec_json"));
+        data.put("assistance", attempt.get("assistance"));
+        data.put("explanationSource", presentation.contentSource("AI_GENERATED"));
         return data;
     }
 
@@ -206,6 +242,35 @@ public class QuestionUnderstandingService {
             throw unavailable();
         }
         return variant;
+    }
+
+    private QuestionTutorService.Context tutorContext(QuestionUnderstandingAttempt attempt, Ready ready) {
+        Map<String, Object> fact = mapper.practiceFact(attempt.practiceRecordId());
+        if (fact == null) { throw unavailable(); }
+        boolean correct = ((Number) fact.get("is_correct")).intValue() == 1;
+        Map<String, Object> misconception = null;
+        if (!correct) {
+            String chosen = (String) fact.get("user_answer");
+            for (Map<String, Object> option : ready.options()) {
+                if (chosen.equals(option.get("option_label"))) {
+                    misconception = mapper.misconception(attempt.contentId(), id(option, "id"));
+                    break;
+                }
+            }
+        }
+        Map<String, Object> misconceptionViz = misconception == null ? null
+                : presentation.viz(misconception, "viz_title", "viz_spec_json");
+        Map<String, Object> solutionViz = presentation.viz(ready.content(),
+                "solution_viz_title", "solution_viz_spec_json");
+        boolean variantAvailable = false;
+        if (attempt.variantId() != null) {
+            Map<String, Object> variant = mapper.variant(attempt.variantId(), attempt.questionId());
+            if (variant != null) {
+                try { variantAvailable = !variantOptions(variant).isEmpty(); }
+                catch (BusinessException exception) { variantAvailable = false; }
+            }
+        }
+        return new QuestionTutorService.Context(attempt, correct, misconceptionViz, solutionViz, variantAvailable);
     }
 
     private Answer answer(JsonNode body, List<Map<String, Object>> options, boolean variant) {
@@ -295,53 +360,6 @@ public class QuestionUnderstandingService {
         return Map.of("courseId", id(row, "course_id"), "courseName", row.get("course_name"),
                 "chapterName", row.get("chapter_name"), "knowledgePointId", id(row, "knowledge_point_id"),
                 "knowledgePointName", row.get("knowledge_point_name"));
-    }
-
-    private Map<String, Object> source(Ready ready) {
-        Map<String, Object> content = ready.content();
-        Map<String, Object> source = map();
-        boolean official = content.get("source_exam_question_id") != null
-                && "VERIFIED".equals(content.get("source_verification"))
-                && content.get("source_verified_by") != null && content.get("source_verified_time") != null;
-        String kind = official ? "OFFICIAL_EXAM"
-                : "AI_GENERATED".equals(ready.question().getSourceType()) ? "AI_GENERATED" : "MANUAL";
-        source.put("kind", kind);
-        if (official) {
-            Map<String, Object> paper = mapper.officialSource(
-                    id(content, "source_exam_question_id"), ready.question().getId());
-            source.put("title", content.get("source_title") != null ? content.get("source_title")
-                    : paper.get("exam_name") + " " + paper.get("exam_year") + " " + paper.get("display_number"));
-            String reference = (String) paper.get("source_reference");
-            source.put("url", reference != null && reference.matches("https?://.+") ? reference : null);
-        } else {
-            source.put("title", content.get("source_title"));
-            source.put("url", content.get("source_url"));
-        }
-        source.put("verification", content.get("source_verification"));
-        return source;
-    }
-
-    private Map<String, Object> sourceVariant() {
-        Map<String, Object> source = map();
-        source.put("kind", "AI_GENERATED");
-        source.put("title", null);
-        source.put("url", null);
-        source.put("verification", "REVIEWED");
-        return source;
-    }
-
-    private Map<String, Object> viz(Map<String, Object> row, String titleKey, String specKey) {
-        if (row.get(titleKey) == null || row.get(specKey) == null) {
-            return null;
-        }
-        try {
-            Map<String, Object> viz = map();
-            viz.put("title", row.get(titleKey));
-            viz.put("spec", json.readTree(row.get(specKey).toString()));
-            return viz;
-        } catch (Exception exception) {
-            throw new IllegalStateException("理解可视化内容无效", exception);
-        }
     }
 
     private long id(Map<String, Object> row, String key) {

@@ -30,5 +30,9 @@ class TutorAgentHintPolicyTest {
         assertFalse(TutorAgentHintPolicy.nextLevel(List.of(new TutorAgentHistoryMessage(
                 ModelRequest.Role.ASSISTANT, "第三层", List.of(new TutorAgentActionVO("HINT", 3))))).isPresent());
         assertTrue(TutorAgentHintPolicy.guidance(1).contains("不要判断或排除选项"));
+        assertEquals(1, TutorAgentHintPolicy.nextLevel(0).orElseThrow());
+        assertEquals(3, TutorAgentHintPolicy.nextLevel(2).orElseThrow());
+        assertFalse(TutorAgentHintPolicy.nextLevel(3).isPresent());
+        assertThrows(IllegalArgumentException.class, () -> TutorAgentHintPolicy.nextLevel(-1));
     }
 }

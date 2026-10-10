@@ -27,9 +27,15 @@ export interface QuestionSource {
   verification: SourceVerification
 }
 
+export interface UnderstandingContentSource {
+  kind: 'CURATED' | 'AI_GENERATED'
+  reviewStatus: 'REVIEWED'
+}
+
 export interface UnderstandingViz {
   title: string
   spec: SceneSpec
+  source: UnderstandingContentSource
 }
 
 export interface UnderstandingQuestion {
@@ -58,6 +64,7 @@ export interface AttemptResult {
 export interface Solution {
   correctAnswer: string
   explanation: string
+  explanationSource: UnderstandingContentSource
   viz: UnderstandingViz | null
 }
 
@@ -74,8 +81,9 @@ export interface VariantResult {
   correct: boolean
   correctAnswer: string
   explanation: string
+  explanationSource: UnderstandingContentSource
   viz: UnderstandingViz | null
-  assistance: 'UNAIDED'
+  assistance: 'UNAIDED' | 'AIDED'
 }
 
 const inline = { errorDisplay: 'inline' as const }

@@ -1,6 +1,6 @@
 # 题目理解 API
 
-M3 已定的导师扩展契约见[题目导师 API](question-tutor.md)；在 A2 实现前，本页仍描述当前运行时行为。
+M3 分级提示与辅助记录见[题目导师 API](question-tutor.md)。
 
 本页说明已实现的预置单选题理解流程。响应仍使用[统一外壳](conventions.md#统一响应)；以下字段表只列 `data`。M2 不在请求时生成 AI 内容。数据结构与审核门禁见[数据库学习内容域](../database/learning-domain.md#题目理解)。
 
@@ -18,9 +18,9 @@ M3 已定的导师扩展契约见[题目导师 API](question-tutor.md)；在 A2 
 |---|---|---|---|
 | `GET /api/understanding/questions/{questionId}` | 无 | `questionId`、`stem`、`questionType`、`options`、`position`、`source` | 不含答案、正确标记和解析 |
 | `POST /api/understanding/questions/{questionId}/attempts` | `answer`、可选 `answerTime` | `attemptId`、`correct`、`answer`、`misconception`、`viz` | 不含正确答案；只在选错且该选项有审核内容时给误区；选对时 `misconception` 和 `viz` 为 `null` |
-| `POST /api/understanding/attempts/{attemptId}/solution/reveal` | 无请求体 | `correctAnswer`、`explanation`、`viz` | 只限该尝试的作答者；首次调用持久标记正解已开放，重复调用返回相同结果；M3 在此入口增加服务端提示阶段门禁 |
+| `POST /api/understanding/attempts/{attemptId}/solution/reveal` | 无请求体 | `correctAnswer`、`explanation`、`explanationSource`、`viz` | 只限该尝试的作答者；首次调用持久标记正解已开放，重复调用返回相同结果；M3 已审核提示链可用的错答须先领完三级提示 |
 | `GET /api/understanding/attempts/{attemptId}/variant` | 无 | `variantId`、`stem`、`options`、`changedCondition`、`source` | 只限该尝试的作答者且已开放正解；不含答案；读取作答时锁定的已批准变式 |
-| `POST /api/understanding/variants/{variantId}/attempts` | `answer`、可选 `answerTime`、`originAttemptId` | `variantAttemptId`、`correct`、`correctAnswer`、`explanation`、`viz`、`assistance` | 只限原尝试的作答者；首次提交后开放答案 |
+| `POST /api/understanding/variants/{variantId}/attempts` | `answer`、可选 `answerTime`、`originAttemptId` | `variantAttemptId`、`correct`、`correctAnswer`、`explanation`、`explanationSource`、`viz`、`assistance` | 只限原尝试的作答者；首次提交后开放答案 |
 
 `options` 元素为 `{ "label": "A", "content": "..." }`，按题目选项顺序返回，不含 `isCorrect`。`position` 为 `{courseId, courseName, chapterName, knowledgePointId, knowledgePointName}`：理解内容指定一个已关联且属于题目课程的主知识点，`chapterName` 取其所属顶层知识点名称；主知识点自身位于顶层时同名。位置缺失或失效时不发布理解内容，不从多个知识点中任意取第一个。
 
@@ -28,8 +28,8 @@ M3 已定的导师扩展契约见[题目导师 API](question-tutor.md)；在 A2 
 
 原题提交在同一事务中复用练习判分、练习记录、错题同步、复习计划和课程学习事件，另建一条与 `practice_record` 一对一的理解尝试；服务层可取得标准答案，但此响应投影绝不传给客户端。错项讲解只按本次选择的选项 ID 查找。若该选项没有审核讲解，`misconception` 和 `viz` 均为 `null`。若讲解存在但无可视化，只有 `viz=null`。`misconception` 为 `{title, explanation, source: {kind, reviewStatus}}`，其中 `kind` 为 `CURATED` 或 `AI_GENERATED`，`reviewStatus` 在公开响应中恒为 `REVIEWED`。
 
-正解 `explanation` 取本次锁定的理解内容版本；`viz` 结构为 `{title, spec}`，无内容时为 `null`。正解以幂等 POST 显式开放并记录 `solution_revealed_time`，让变式必须在正解之后，供 M3 在此动作前加入 `TutorAgentHintPolicy` 控制的提示阶段。版本仍有效时重复开放返回相同结果；被撤回时返回 `1004`。M2 不新增提示接口或提示事实。原题选对也可开放正解和变式。
+正解 `explanation` 取本次锁定的理解内容版本；`viz` 结构为 `{title, spec, source}`，无内容时为 `null`。正解以幂等 POST 显式开放并记录 `solution_revealed_time`，让变式必须在正解之后。版本仍有效时重复开放返回相同结果；被撤回时返回 `1004`。原题选对也可开放正解和变式。提示门禁的详细条件见[题目导师 API](question-tutor.md)。
 
-变式复用 `ai_variant_question` 的题干、选项、私有答案、解析与 `APPROVED` 审查状态，通过其 `asset_id → question_ai_asset.question_id` 关联原题。M2 增加 `changed_condition`，审核时确认只改一个可核对条件并保留所测概念；可选 `viz` 同样只存 spec。创建原题尝试时锁定当前批准的变式 ID，后续内容变化不悄悄换题。变式取得与提交都重新检查其审核状态、母题关系和原题访问，未开放正解或无可用变式时返回 `1004`。一个原尝试只接受一条变式作答：并发或重试返回已锁定的首次结果，若再次请求的答案不同则返回 `1005`；不得形成第二次学习事件。`assistance` 在 M2 固定为 `UNAIDED`，由服务端写入且不接受客户端传入；M4 只能以这一持久事实作为独立无提示评分候选，并自行决定 FSRS 映射，不把原题有提示作答计入。
+变式复用 `ai_variant_question` 的题干、选项、私有答案、解析与 `APPROVED` 审查状态，通过其 `asset_id → question_ai_asset.question_id` 关联原题。M2 增加 `changed_condition`，审核时确认只改一个可核对条件并保留所测概念；可选 `viz` 同样只存 spec。创建原题尝试时锁定当前批准的变式 ID，后续内容变化不悄悄换题。变式取得与提交都重新检查其审核状态、母题关系和原题访问，未开放正解或无可用变式时返回 `1004`。一个原尝试只接受一条变式作答：并发或重试返回已锁定的首次结果，若再次请求的答案不同则返回 `1005`；不得形成第二次学习事件。`assistance` 由服务端写入，`UNAIDED` 表示本次原尝试未领取提示，`AIDED` 表示已领取提示；客户端不能传入。M4 只能以这一持久事实作为独立无提示评分候选，并自行决定 FSRS 映射。
 
 当前预置题目由迁移中的题号、课程内容键与知识点内容键定位；数据库自增 ID 不作为固定契约。

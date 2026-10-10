@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("integration")
 class QuestionUnderstandingMigrationIntegrationTest {
     @Test void migratesEmptyDatabaseAndReadsSeeds() { migrateAndCheck(null); }
-    @Test void upgradesFromPreviousVersionAndReadsSeeds() { migrateAndCheck("105"); }
+    @Test void upgradesFromPreviousVersionAndReadsSeeds() { migrateAndCheck("107"); }
 
     private void migrateAndCheck(String initialVersion) {
         try (var database = new MySQLContainer<>("mysql:8.0")
@@ -24,7 +24,7 @@ class QuestionUnderstandingMigrationIntegrationTest {
             if (initialVersion != null) configuration.target(initialVersion).load().migrate();
             Flyway.configure().dataSource(database.getJdbcUrl(), "root", database.getPassword()).load().migrate();
             var jdbc = new JdbcTemplate(new DriverManagerDataSource(database.getJdbcUrl(), "root", database.getPassword()));
-            assertEquals(107, jdbc.queryForObject("SELECT MAX(CAST(version AS UNSIGNED)) FROM flyway_schema_history", Integer.class));
+            assertEquals(108, jdbc.queryForObject("SELECT MAX(CAST(version AS UNSIGNED)) FROM flyway_schema_history", Integer.class));
             assertEquals(2, jdbc.queryForObject("SELECT COUNT(*) FROM question_understanding_content WHERE review_status='REVIEWED'", Integer.class));
             assertEquals(6, jdbc.queryForObject("SELECT COUNT(*) FROM question_understanding_misconception", Integer.class));
             assertEquals(2, jdbc.queryForObject("SELECT COUNT(*) FROM ai_variant_question WHERE changed_condition IS NOT NULL", Integer.class));
@@ -36,6 +36,8 @@ class QuestionUnderstandingMigrationIntegrationTest {
                       AND source_title='2026 年 408 真题 第 3 题'
                     """, Integer.class));
             assertEquals(2, jdbc.queryForObject("SELECT COUNT(*) FROM ai_variant_question WHERE review_note='Claude 内容复核通过'", Integer.class));
+            assertEquals(6, jdbc.queryForObject("SELECT COUNT(*) FROM question_understanding_hint WHERE review_status='PENDING' AND content_source='AI_GENERATED'", Integer.class));
+            assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM question_understanding_hint WHERE review_status='REVIEWED'", Integer.class));
         }
     }
 }

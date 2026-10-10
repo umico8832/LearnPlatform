@@ -8,7 +8,7 @@
 | `wrong_question` | V1 | 用户当前错题状态、次数和掌握程度 | 同一用户与题目维持一个当前状态 |
 | `learning_plan` | V1，V3 补齐 | 历史学习目标数据；当前无运行时入口 | V3 使用幂等创建兼容旧数据库；表保留以避免破坏既有数据 |
 | `question_review_schedule` | V9 | SM-2 复习调度状态 | 同一用户与题目唯一；保存间隔和到期时间 |
-| `question_understanding_variant_attempt` | V106 | 本人一次原题理解尝试对应的一次无提示变式首次判分 | `origin_attempt_id` 唯一，保存 `user_id`、`variant_id`、`user_answer`、`is_correct`、可空 `answer_time`、`assistance=UNAIDED`、`create_time` |
+| `question_understanding_variant_attempt` | V106 | 本人一次原题理解尝试对应的一次变式首次判分 | `origin_attempt_id` 唯一，保存 `user_id`、`variant_id`、`user_answer`、`is_correct`、可空 `answer_time`、服务端确定的 `assistance=UNAIDED/AIDED`、`create_time` |
 
 练习提交先写入 `practice_record`，再按判分结果同步 `wrong_question` 和必要的复习计划。统计必须从真实记录计算，不能由前端累计值作为事实。
 

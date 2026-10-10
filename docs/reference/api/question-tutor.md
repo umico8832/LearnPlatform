@@ -1,6 +1,6 @@
 # 题目导师 API 契约（M3）
 
-> 本页是 A1 已确定、由 A2 实现的接口与数据契约；在 A2 完成前，运行时仍以[题目理解 API](question-understanding.md) 的 M2 行为为准。全部响应使用[统一外壳](conventions.md#统一响应)。题目和尝试的访问、内容版本、答案隔离及 `1004` 不暴露存在性的规则沿用题目理解 API。
+> 本页说明 M3 已实现的接口与数据契约。全部响应使用[统一外壳](conventions.md#统一响应)。题目和尝试的访问、内容版本、答案隔离及 `1004` 不暴露存在性的规则沿用[题目理解 API](question-understanding.md)。两道预置题的新增提示仍是待审核草稿，所以目前公开流程沿用无提示通路。
 
 ## 内容与可用性
 
@@ -15,7 +15,7 @@
 | 方法与路径 | 请求 | 成功 `data` | 约束 |
 |---|---|---|---|
 | `GET /api/understanding/attempts/{attemptId}/tutor/next` | 无 | `{action, reason, reasonSource, state}` | 纯读取；按本次持久事实给唯一建议，不预占提示级别 |
-| `POST /api/understanding/attempts/{attemptId}/tutor/hints/next` | `{requestId}`，UUID | `{level, text, source, state}` | 服务端分配下一级；同一 `requestId` 的并发或重试返回同一提示，不跳级 |
+| `POST /api/understanding/attempts/{attemptId}/tutor/hints/next` | `{requestId}`，小写规范 UUID | `{level, text, source, state}` | 服务端分配下一级；同一 `requestId` 的并发或重试返回同一提示，不跳级 |
 | `POST /api/understanding/attempts/{attemptId}/tutor/viz-views` | `{context}` | `{context, viewed: true, state}` | `context` 为 `MISCONCEPTION` 或 `SOLUTION`；仅接受该尝试实际可见且存在的场景，重复记录幂等 |
 | `POST /api/understanding/attempts/{attemptId}/solution/reveal` | 无请求体 | M2 字段及 `explanationSource`、可视化 `source` | 错答且已审核提示链可用时，三级提示均取得后才开放；其余沿用 M2 幂等语义 |
 | `POST /api/understanding/variants/{variantId}/attempts` | M2 的 `answer`、可选 `answerTime`、`originAttemptId` | M2 字段；`assistance` 为 `UNAIDED` 或 `AIDED` | 服务端按原尝试提交前已用提示判定并持久化，客户端不得传入或覆盖 |
@@ -45,4 +45,4 @@
 
 - 复用 `TutorAgentHintPolicy` 的三级上限与各级教学边界；其当前 `nextLevel(history)` 基于 Tutor 对话消息，题目理解没有该对话历史，A2 以数据库领取事实实现同一分级策略，不伪造对话消息。导师 `next` 使用确定性规则，不接入 Tutor 模型运行时。
 - `GET /questions/{questionId}` 和原题提交仍兼容 M2。正解、变式响应只增字段；可视化增加 `source`。**行为变化**是错答且完整已审核提示链可用时，旧客户端直接调用 `reveal` 会收到 `1005`；M3 前端须先按提示链推进。变式 `assistance` 从恒定 `UNAIDED` 扩为 `UNAIDED | AIDED`，现有前端类型须同步。
-- A2 为新提交之后的尝试实施门禁；升级前已有尝试保持 M2 正解开放规则，避免因新内容加入而改变已开始的流程。已提交变式的 `assistance` 保持原持久值，不能事后重算。
+- 新提交的尝试在创建时锁定提示链是否已审核；升级前已有尝试保持 M2 正解开放规则，避免因新内容加入而改变已开始的流程。已提交变式的 `assistance` 保持原持久值，不能事后重算。

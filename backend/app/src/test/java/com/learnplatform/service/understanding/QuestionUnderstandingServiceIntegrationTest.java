@@ -41,6 +41,9 @@ class QuestionUnderstandingServiceIntegrationTest extends IntegrationTestBase {
     }
 
     @AfterEach void tearDown() {
+        jdbc.update("DELETE FROM question_understanding_hint_receipt WHERE attempt_id IN (SELECT id FROM question_understanding_attempt WHERE user_id IN (?,?))", USER, OTHER);
+        jdbc.update("DELETE FROM question_understanding_viz_view WHERE attempt_id IN (SELECT id FROM question_understanding_attempt WHERE user_id IN (?,?))", USER, OTHER);
+        jdbc.update("UPDATE question_understanding_hint SET review_status='PENDING',reviewed_by=NULL,reviewed_time=NULL WHERE content_id IN (SELECT id FROM question_understanding_content WHERE question_id=?)", questionId);
         jdbc.update("DELETE FROM course_learning_event WHERE user_id IN (?,?)", USER, OTHER);
         jdbc.update("DELETE FROM question_understanding_variant_attempt WHERE user_id IN (?,?)", USER, OTHER);
         jdbc.update("DELETE FROM question_understanding_attempt WHERE user_id IN (?,?)", USER, OTHER);
@@ -153,7 +156,52 @@ class QuestionUnderstandingServiceIntegrationTest extends IntegrationTestBase {
                 variantBody(origin, "D", "HINTED")));
     }
 
+    @Test void reviewedHintsGateSolutionAndMarkVariantAided() throws Exception {
+        jdbc.update("UPDATE question_understanding_hint SET review_status='REVIEWED',reviewed_by='test-reviewer',reviewed_time=CURRENT_TIMESTAMP WHERE content_id IN (SELECT id FROM question_understanding_content WHERE question_id=?)", questionId);
+        long origin = ((Number) service.submit(USER, questionId, body("B")).get("attemptId")).longValue();
+        assertEquals("HINT", ((Map<?, ?>) service.tutorNext(USER, origin).get("action")).get("type"));
+        assertThrowsCode(1005, () -> service.reveal(USER, origin));
+        assertThrowsCode(1004, () -> service.tutorHint(OTHER, origin, hintBody("00000000-0000-4000-8000-000000000001")));
+        JsonNode firstRequest = hintBody("00000000-0000-4000-8000-000000000001");
+        var latch = new CountDownLatch(1);
+        try (var pool = Executors.newFixedThreadPool(2)) {
+            Future<Map<String, Object>> first = pool.submit(() -> { latch.await(); return service.tutorHint(USER, origin, firstRequest); });
+            Future<Map<String, Object>> retry = pool.submit(() -> { latch.await(); return service.tutorHint(USER, origin, firstRequest); });
+            latch.countDown();
+            assertEquals(first.get(), retry.get());
+        }
+        assertEquals(1, count("SELECT COUNT(*) FROM question_understanding_hint_receipt WHERE attempt_id=?", origin));
+        assertEquals(1, service.tutorHint(USER, origin, firstRequest).get("level"));
+        assertThrowsCode(1001, () -> service.tutorHint(USER, origin, hintBody("invalid")));
+        assertEquals(2, service.tutorHint(USER, origin, hintBody("00000000-0000-4000-8000-000000000002")).get("level"));
+        assertThrowsCode(1005, () -> service.reveal(USER, origin));
+        assertEquals(3, service.tutorHint(USER, origin, hintBody("00000000-0000-4000-8000-000000000003")).get("level"));
+        assertThrowsCode(1005, () -> service.tutorHint(USER, origin, hintBody("00000000-0000-4000-8000-000000000004")));
+        Map<?, ?> hintSource = (Map<?, ?>) service.tutorHint(USER, origin, firstRequest).get("source");
+        assertEquals("AI_GENERATED", hintSource.get("kind"));
+        assertEquals("REVIEWED", hintSource.get("reviewStatus"));
+        assertThrowsCode(1004, () -> service.tutorVizView(USER, origin, vizBody("SOLUTION")));
+        service.tutorVizView(USER, origin, vizBody("MISCONCEPTION"));
+        service.tutorVizView(USER, origin, vizBody("MISCONCEPTION"));
+        assertEquals(1, count("SELECT COUNT(*) FROM question_understanding_viz_view WHERE attempt_id=? AND context='MISCONCEPTION'", origin));
+        assertEquals("A", service.reveal(USER, origin).get("correctAnswer"));
+        long variant = ((Number) service.variant(USER, origin).get("variantId")).longValue();
+        assertEquals("AIDED", service.submitVariant(USER, variant, variantBody(origin, "D", null)).get("assistance"));
+        assertEquals(1, count("SELECT COUNT(*) FROM question_understanding_variant_attempt WHERE origin_attempt_id=? AND assistance='AIDED'", origin));
+    }
+
+    @Test void pendingHintsKeepLegacyRevealAndAreNotPublic() {
+        long origin = ((Number) service.submit(USER, questionId, body("B")).get("attemptId")).longValue();
+        assertThrowsCode(1004, () -> service.tutorHint(USER, origin, hintBody("00000000-0000-4000-8000-000000000005")));
+        assertFalse(service.tutorNext(USER, origin).toString().contains("hint_text"));
+        jdbc.update("UPDATE question_understanding_hint SET review_status='REVIEWED',reviewed_by='test-reviewer',reviewed_time=CURRENT_TIMESTAMP WHERE content_id IN (SELECT id FROM question_understanding_content WHERE question_id=?)", questionId);
+        assertThrowsCode(1004, () -> service.tutorHint(USER, origin, hintBody("00000000-0000-4000-8000-000000000006")));
+        assertEquals("A", service.reveal(USER, origin).get("correctAnswer"));
+    }
+
     private JsonNode body(String answer) { return json.createObjectNode().put("answer", answer); }
+    private JsonNode hintBody(String requestId) { return json.createObjectNode().put("requestId", requestId); }
+    private JsonNode vizBody(String context) { return json.createObjectNode().put("context", context); }
     private JsonNode variantBody(long origin, String answer, String assistance) {
         var node = json.createObjectNode().put("originAttemptId", origin).put("answer", answer);
         if (assistance != null) node.put("assistance", assistance);

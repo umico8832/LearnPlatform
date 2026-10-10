@@ -34,6 +34,7 @@ const question: UnderstandingQuestion = {
 const wrongViz = {
   title: '误区演示',
   spec: { scene: 'stack', op: 'check', seq: [3, 1, 2], pauseAt: ['stack-buried'] },
+  source: { kind: 'CURATED', reviewStatus: 'REVIEWED' },
 } as const
 const wrongAttempt: AttemptResult = {
   attemptId: 81,
@@ -49,7 +50,9 @@ const wrongAttempt: AttemptResult = {
 const solution: Solution = {
   correctAnswer: 'A',
   explanation: '从栈顶弹出',
-  viz: { title: '正解演示', spec: { scene: 'stack', op: 'check', seq: [3, 2, 1], pauseAt: [] } } as Solution['viz'],
+  explanationSource: { kind: 'CURATED', reviewStatus: 'REVIEWED' },
+  viz: { title: '正解演示', spec: { scene: 'stack', op: 'check', seq: [3, 2, 1], pauseAt: [] },
+    source: { kind: 'CURATED', reviewStatus: 'REVIEWED' } } as Solution['viz'],
 }
 const variant: Variant = {
   variantId: 91,
@@ -63,6 +66,7 @@ const variantResult: VariantResult = {
   correct: true,
   correctAnswer: 'B',
   explanation: '仍遵守栈顶规则',
+  explanationSource: { kind: 'AI_GENERATED', reviewStatus: 'REVIEWED' },
   viz: null,
   assistance: 'UNAIDED',
 }
