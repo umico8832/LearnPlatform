@@ -138,7 +138,10 @@ describe('PracticeView', () => {
       code: 0,
       data: { totalAnswered: 2, correctCount: 1, wrongCount: 1, correctRate: 50 },
     })
-    mockGetAdaptiveSummary.mockResolvedValue({ code: 0, data: { totalAnswered: 0 } })
+    mockGetAdaptiveSummary.mockResolvedValue({
+      code: 0,
+      data: { totalAnswered: 0, recommendedDifficulty: 1.89, difficultyDetails: [] },
+    })
     mockGetCoursePage.mockResolvedValue({ code: 0, data: { records: [{ id: 7, name: 'Java' }] } })
     mockGetKnowledgeTree.mockResolvedValue({
       code: 0,
@@ -220,6 +223,16 @@ describe('PracticeView', () => {
     expect(wrapper.findAll('[data-testid="stat"]')).toHaveLength(4)
   })
 
+  it('shows an introductory starting difficulty without claiming prior performance', async () => {
+    const wrapper = mountView()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('初次练习偏好')
+    expect(wrapper.text()).toContain('1.9 / 5')
+    expect(wrapper.text()).toContain('优先从当前范围内较易的题目开始，再根据作答调整')
+    expect(wrapper.text()).not.toContain('推荐难度偏好')
+  })
+
   it('keeps a failed recommendation distinct from an empty successful recommendation and retries it', async () => {
     mockGetAdaptiveSummary.mockRejectedValueOnce(new Error('offline'))
     const wrapper = mountView()
@@ -233,6 +246,6 @@ describe('PracticeView', () => {
     await flushPromises()
 
     expect(mockGetAdaptiveSummary).toHaveBeenCalledTimes(2)
-    expect(wrapper.text()).toContain('暂无答题记录')
+    expect(wrapper.text()).toContain('初次练习偏好')
   })
 })

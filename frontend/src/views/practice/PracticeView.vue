@@ -5,7 +5,7 @@
     <div class="practice-grid">
       <section class="config-section">
         <LpSectionHeading title="开始练习" description="选择范围后开始一组练习。" />
-        <el-card class="config-card" ref="configCardRef" shadow="never">
+        <el-card class="config-card" shadow="never">
           <el-form :model="form" label-position="top">
             <el-form-item label="出题方式">
               <el-radio-group v-model="mode">
@@ -61,9 +61,12 @@
         <LpSectionHeading title="智能推荐" description="根据你已完成的练习记录调整难度。" />
         <div class="adaptive-panel" v-loading="adaptiveLoading">
           <div v-if="adaptiveSummary" class="adaptive-content">
-            <p class="recommend-label">当前推荐难度</p>
+            <p class="recommend-label">{{ adaptiveSummary.totalAnswered ? '推荐难度偏好' : '初次练习偏好' }}</p>
             <strong class="recommend-value">{{ adaptiveSummary.recommendedDifficulty.toFixed(1) }} / 5</strong>
-            <details class="recommend-details">
+            <p v-if="!adaptiveSummary.totalAnswered" class="recommend-note">
+              优先从当前范围内较易的题目开始，再根据作答调整。
+            </p>
+            <details v-else class="recommend-details">
               <summary>查看推荐依据</summary>
               <dl>
                 <div v-for="item in adaptiveSummary.difficultyDetails" :key="item.difficulty">
@@ -80,11 +83,6 @@
             description="可重试，或直接选择练习条件。"
             @retry="loadAdaptiveSummary"
           />
-          <LpEmptyState v-else-if="!adaptiveLoading" title="暂无答题记录" description="完成练习后会显示推荐难度。"
-            ><template #actions
-              ><el-button type="primary" :icon="Promotion" @click="scrollToConfig">查看练习设置</el-button></template
-            ></LpEmptyState
-          >
         </div>
       </section>
     </div>
@@ -131,7 +129,6 @@ const statsError = ref(false)
 const adaptiveError = ref(false)
 const courseList = ref<CourseVO[]>([])
 const knowledgePoints = ref<KnowledgePointVO[]>([])
-const configCardRef = ref<{ $el: HTMLElement } | null>(null)
 
 const form = reactive({
   courseId: undefined as number | undefined,
@@ -254,12 +251,13 @@ const loadAdaptiveSummary = async () => {
   const requestGeneration = generation
   const session = getAuthSessionVersion()
   adaptiveLoading.value = true
+  adaptiveSummary.value = null
   adaptiveError.value = false
   try {
     const res = await getAdaptiveSummary({ errorDisplay: 'inline' })
     if (!requestIsCurrent(requestGeneration, session)) return
-    if (res.code === 0 && res.data && res.data.totalAnswered > 0) adaptiveSummary.value = res.data
-    else if (res.code !== 0) adaptiveError.value = true
+    if (res.code === 0 && res.data) adaptiveSummary.value = res.data
+    else adaptiveError.value = true
   } catch {
     if (requestIsCurrent(requestGeneration, session)) adaptiveError.value = true
   } finally {
@@ -294,10 +292,6 @@ const startPractice = async () => {
   } finally {
     if (requestIsCurrent(requestGeneration, session)) loading.value = false
   }
-}
-
-const scrollToConfig = () => {
-  configCardRef.value?.$el?.scrollIntoView({ behavior: 'smooth' })
 }
 </script>
 
@@ -348,6 +342,12 @@ const scrollToConfig = () => {
   color: var(--lp-text);
   font-size: var(--lp-text-2xl);
   font-variant-numeric: tabular-nums;
+}
+.recommend-note {
+  margin: 0;
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-text-sm);
+  line-height: var(--lp-leading-body);
 }
 .recommend-details {
   color: var(--lp-text-secondary);

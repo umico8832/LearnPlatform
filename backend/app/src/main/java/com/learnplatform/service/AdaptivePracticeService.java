@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +89,7 @@ public class AdaptivePracticeService {
 
         // 1. 查询用户各难度级别答题统计
         Map<Integer, AdaptivePracticePolicy.DifficultyStats> statsMap = calculateDifficultyStats(userId);
+        boolean startingOut = AdaptivePracticePolicy.isStartingOut(statsMap);
 
         // 2. 计算各难度级别的权重
         double[] weights = AdaptivePracticePolicy.calculateWeights(statsMap);
@@ -103,6 +105,8 @@ public class AdaptivePracticeService {
 
         // 4. 按权重分配各难度应抽取的题目数量
         int[] countsPerDifficulty = AdaptivePracticePolicy.allocateCounts(weights, count);
+        List<Integer> difficultyOrder = new ArrayList<>(List.of(1, 2, 3, 4, 5));
+        difficultyOrder.sort((left, right) -> Double.compare(weights[right - 1], weights[left - 1]));
 
         // 5. 从各难度级别选题
         List<Question> selected = new ArrayList<>();
@@ -126,7 +130,8 @@ public class AdaptivePracticeService {
                     .map(Question::getId).collect(Collectors.toSet());
 
             // 不限制排除列表，从所有候选题中补
-            for (int diff = 5; diff >= 1 && shortfall > 0; diff--) {
+            for (int diff : difficultyOrder) {
+                if (shortfall == 0) break;
                 List<Question> extras = queryQuestions(diff, courseId,
                         knowledgePointId, questionType, Collections.emptySet());
                 // 去除已选中的
@@ -144,8 +149,10 @@ public class AdaptivePracticeService {
             }
         }
 
-        // 最终打乱顺序
         Collections.shuffle(selected);
+        if (startingOut) {
+            selected.sort(Comparator.comparingInt(q -> difficultyOrder.indexOf(q.getDifficulty())));
+        }
 
         log.info("自适应推荐结果: userId={}, requested={}, actual={}",
                 userId, count, selected.size());
@@ -175,7 +182,8 @@ public class AdaptivePracticeService {
      */
     private Map<Integer, AdaptivePracticePolicy.DifficultyStats> calculateDifficultyStats(Long userId) {
         LambdaQueryWrapper<PracticeRecord> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(PracticeRecord::getUserId, userId);
+        wrapper.eq(PracticeRecord::getUserId, userId)
+               .in(PracticeRecord::getIsCorrect, 0, 1);
         List<PracticeRecord> records = practiceRecordMapper.selectList(wrapper);
 
         Map<Integer, int[]> counts = new HashMap<>();
@@ -184,6 +192,7 @@ public class AdaptivePracticeService {
         }
 
         for (PracticeRecord record : records) {
+            if (record.getUserAnswer() == null || record.getUserAnswer().isBlank()) continue;
             Question question = questionMapper.selectById(record.getQuestionId());
             if (question == null || question.getDifficulty() == null) { continue; }
 

@@ -11,9 +11,20 @@ public final class AdaptivePracticePolicy {
 
     public static double[] calculateWeights(Map<Integer, DifficultyStats> statsMap) {
         double[] weights = {1.0, 1.0, 1.0, 1.0, 1.0};
-        boolean hasAnyData = statsMap.values().stream().anyMatch(stats -> stats.total() > 0);
-        if (!hasAnyData) {
-            return normalizeWeights(new double[]{2.5, 3.0, 2.5, 1.0, 0.5});
+        int totalAnswered = statsMap.values().stream().mapToInt(DifficultyStats::total).sum();
+        if (isStartingOut(statsMap)) {
+            if (totalAnswered < 3) {
+                return normalizeWeights(new double[]{3.0, 4.0, 2.0, 0.0, 0.0});
+            }
+            int totalCorrect = statsMap.values().stream().mapToInt(DifficultyStats::correct).sum();
+            double correctRate = (double) totalCorrect / totalAnswered;
+            if (correctRate >= 0.8) {
+                return normalizeWeights(new double[]{1.0, 3.0, 4.0, 0.0, 0.0});
+            }
+            if (correctRate < 0.5) {
+                return normalizeWeights(new double[]{4.0, 3.0, 2.0, 0.0, 0.0});
+            }
+            return normalizeWeights(new double[]{3.0, 4.0, 2.0, 0.0, 0.0});
         }
         for (int difficulty = 1; difficulty <= 5; difficulty++) {
             DifficultyStats stats = statsMap.getOrDefault(difficulty, new DifficultyStats(0, 0));
@@ -49,21 +60,33 @@ public final class AdaptivePracticePolicy {
 
     public static int[] allocateCounts(double[] weights, int total) {
         int[] counts = new int[5];
+        if (total <= 0) return counts;
         double sum = 0;
         for (double weight : weights) {
             sum += weight;
         }
+        double[] fractions = new double[counts.length];
         int allocated = 0;
         for (int index = 0; index < counts.length; index++) {
-            if (index == counts.length - 1) {
-                counts[index] = total - allocated;
-            } else {
-                counts[index] = (int) Math.round(weights[index] / sum * total);
-                allocated += counts[index];
+            double exact = weights[index] / sum * total;
+            counts[index] = (int) Math.floor(exact);
+            fractions[index] = exact - counts[index];
+            allocated += counts[index];
+        }
+        while (allocated < total) {
+            int best = 0;
+            for (int index = 1; index < fractions.length; index++) {
+                if (fractions[index] > fractions[best]) best = index;
             }
-            counts[index] = Math.max(counts[index], 0);
+            counts[best]++;
+            fractions[best] = -1;
+            allocated++;
         }
         return counts;
+    }
+
+    public static boolean isStartingOut(Map<Integer, DifficultyStats> statsMap) {
+        return statsMap.values().stream().mapToInt(DifficultyStats::total).sum() < 5;
     }
 
     public static Map<String, Object> buildSummary(
@@ -108,11 +131,11 @@ public final class AdaptivePracticePolicy {
     private static double[] normalizeWeights(double[] weights) {
         double sum = 0;
         for (double weight : weights) {
-            sum += Math.max(weight, 0.01);
+            sum += Math.max(weight, 0.0);
         }
         double[] normalized = new double[weights.length];
         for (int index = 0; index < weights.length; index++) {
-            normalized[index] = Math.max(weights[index], 0.01) / sum;
+            normalized[index] = Math.max(weights[index], 0.0) / sum;
         }
         return normalized;
     }
