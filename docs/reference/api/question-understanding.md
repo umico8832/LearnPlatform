@@ -1,6 +1,6 @@
-# 题目理解 API（M2 契约，尚未实现）
+# 题目理解 API
 
-本页约定预置并经人工审核的单选题理解流程。响应仍使用[统一外壳](conventions.md#统一响应)；以下字段表只列 `data`。M2 不在请求时生成 AI 内容。数据结构与审核门禁见[数据库学习内容域](../database/learning-domain.md#题目理解m2-计划结构)。
+本页说明已实现的预置单选题理解流程。响应仍使用[统一外壳](conventions.md#统一响应)；以下字段表只列 `data`。M2 不在请求时生成 AI 内容。数据结构与审核门禁见[数据库学习内容域](../database/learning-domain.md#题目理解)。
 
 ## 通用边界
 
@@ -22,7 +22,7 @@
 
 `options` 元素为 `{ "label": "A", "content": "..." }`，按题目选项顺序返回，不含 `isCorrect`。`position` 为 `{courseId, courseName, chapterName, knowledgePointId, knowledgePointName}`：理解内容指定一个已关联且属于题目课程的主知识点，`chapterName` 取其所属顶层知识点名称；主知识点自身位于顶层时同名。位置缺失或失效时不发布理解内容，不从多个知识点中任意取第一个。
 
-`source` 为 `{kind, title, url, verification}`。`OFFICIAL_EXAM` 只能来自本题明确绑定的、已发布且 `sourceVerified=true` 的官方试卷题号，并留有本题逐题核验人和时间；标题由考试名、年份和展示题号组成，URL 仅取确认为 URL 的试卷来源；其他题按 `question.source_type` 区分 `AI_GENERATED` 与 `MANUAL`（投稿和导入归入后者）。AI 变式只在 `APPROVED` 后返回 `AI_GENERATED/REVIEWED`。不能仅凭题目 `source_reference` 或试卷类型声称 `VERIFIED`。
+`source` 为 `{kind, title, url, verification}`。`OFFICIAL_EXAM` 只能来自本题明确绑定的、已发布且 `sourceVerified=true` 的官方试卷题号，并留有本题逐题核验人和时间且核验结论为 `VERIFIED`；未完成逐字核对的试卷题暂按 `MANUAL/UNREVIEWED` 展示；标题由考试名、年份和展示题号组成，URL 仅取确认为 URL 的试卷来源；其他题按 `question.source_type` 区分 `AI_GENERATED` 与 `MANUAL`（投稿和导入归入后者）。AI 变式只在 `APPROVED` 后返回 `AI_GENERATED/REVIEWED`。不能仅凭题目 `source_reference` 或试卷类型声称 `VERIFIED`。
 
 原题提交在同一事务中复用练习判分、练习记录、错题同步、复习计划和课程学习事件，另建一条与 `practice_record` 一对一的理解尝试；服务层可取得标准答案，但此响应投影绝不传给客户端。错项讲解只按本次选择的选项 ID 查找。若该选项没有审核讲解，`misconception` 和 `viz` 均为 `null`。若讲解存在但无可视化，只有 `viz=null`。`misconception` 为 `{title, explanation, source: {kind, reviewStatus}}`，其中 `kind` 为 `CURATED` 或 `AI_GENERATED`，`reviewStatus` 在公开响应中恒为 `REVIEWED`。
 
@@ -30,4 +30,4 @@
 
 变式复用 `ai_variant_question` 的题干、选项、私有答案、解析与 `APPROVED` 审查状态，通过其 `asset_id → question_ai_asset.question_id` 关联原题。M2 增加 `changed_condition`，审核时确认只改一个可核对条件并保留所测概念；可选 `viz` 同样只存 spec。创建原题尝试时锁定当前批准的变式 ID，后续内容变化不悄悄换题。变式取得与提交都重新检查其审核状态、母题关系和原题访问，未开放正解或无可用变式时返回 `1004`。一个原尝试只接受一条变式作答：并发或重试返回已锁定的首次结果，若再次请求的答案不同则返回 `1005`；不得形成第二次学习事件。`assistance` 在 M2 固定为 `UNAIDED`，由服务端写入且不接受客户端传入；M4 只能以这一持久事实作为独立无提示评分候选，并自行决定 FSRS 映射，不把原题有提示作答计入。
 
-示例与前后端交接见本轮 `tmp/m2/contract.md`；示例 ID 和题干仅说明 JSON 形状，不代表已导入题目。
+当前预置题目由迁移中的题号、课程内容键与知识点内容键定位；数据库自增 ID 不作为固定契约。

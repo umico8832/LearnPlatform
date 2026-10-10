@@ -79,11 +79,11 @@ AI 生成题的批准发布行为见[管理 API](../api/admin-governance.md#ai-�
 | `question_review_record` | 正式题目定期复审记录 | 记录审查人、结论和时间 |
 | `question_correction_report` | 用户纠错及管理员处理状态 | 状态变化需要记录处理人和结果 |
 
-### 题目理解（M2 计划结构）
+### 题目理解
 
-以下结构是下一轮迁移与实现的契约，当前数据库尚无这些表或列；对外行为见[题目理解 API](../api/question-understanding.md)。
+V106 建立以下结构；对外行为见[题目理解 API](../api/question-understanding.md)。
 
-| 新表 | 核心字段与约束 | 用途 |
+| 表 | 核心字段与约束 | 用途 |
 |---|---|---|
 | `question_understanding_content` | `id`、`question_id`、`content_version`、`review_status` (`PENDING/REVIEWED/WITHDRAWN`)、`reviewed_by/time`、`question_fingerprint`、`knowledge_point_id`、`solution_explanation`、可空 `solution_viz_title/spec_json`、可空 `source_exam_question_id`、`source_title/url`、`source_verification`、可空 `source_verified_by/time`；`(question_id, content_version)` 唯一 | 一题一版的正解、主知识点、来源证据和审核结果；旧版只追加或撤回，作答保留所用版本 |
 | `question_understanding_misconception` | `id`、`content_id`、`option_id`、`title`、`explanation`、`content_source` (`CURATED/AI_GENERATED`)、可空 `viz_title/spec_json`；`(content_id, option_id)` 唯一 | 每个错误选项的定向误区与可视化；内容审核覆盖全部子行 |

@@ -8,11 +8,11 @@
 | `wrong_question` | V1 | 用户当前错题状态、次数和掌握程度 | 同一用户与题目维持一个当前状态 |
 | `learning_plan` | V1，V3 补齐 | 历史学习目标数据；当前无运行时入口 | V3 使用幂等创建兼容旧数据库；表保留以避免破坏既有数据 |
 | `question_review_schedule` | V9 | SM-2 复习调度状态 | 同一用户与题目唯一；保存间隔和到期时间 |
-| `question_understanding_variant_attempt`（M2 计划） | 下一轮迁移 | 本人一次原题理解尝试对应的一次无提示变式首次判分 | `origin_attempt_id` 唯一，保存 `user_id`、`variant_id`、`user_answer`、`is_correct`、可空 `answer_time`、`assistance=UNAIDED`、`create_time` |
+| `question_understanding_variant_attempt` | V106 | 本人一次原题理解尝试对应的一次无提示变式首次判分 | `origin_attempt_id` 唯一，保存 `user_id`、`variant_id`、`user_answer`、`is_correct`、可空 `answer_time`、`assistance=UNAIDED`、`create_time` |
 
 练习提交先写入 `practice_record`，再按判分结果同步 `wrong_question` 和必要的复习计划。统计必须从真实记录计算，不能由前端累计值作为事实。
 
-M2 原题理解提交复用上述练习事务，并以唯一 `practice_record_id` 关联[理解尝试](learning-domain.md#题目理解m2-计划结构)，不重复写练习记录或课程事件。变式题仍是 `ai_variant_question` 的私有判分题，尚非一次正式 `question` 练习，因此它的首次判分只写计划中的独立尝试表及唯一来源的课程学习事件，不同步原题错题状态，也不复用按用户与资产唯一的 `ai_variant_training`。`origin_attempt_id` 唯一约束和事务锁保护并发首次提交；重复提交只读回首次事实。`assistance` 由服务端固化为 `UNAIDED`，M4 以此筛选 FSRS 的评分候选；M2 已有 SM-2 复习计划副作用不自动等同于 FSRS 评分。
+原题理解提交复用上述练习事务，并以唯一 `practice_record_id` 关联[理解尝试](learning-domain.md#题目理解)，不重复写练习记录或课程事件。变式题仍是 `ai_variant_question` 的私有判分题，尚非一次正式 `question` 练习，因此它的首次判分只写独立尝试表及唯一来源的课程学习事件，不同步原题错题状态，也不复用按用户与资产唯一的 `ai_variant_training`。`origin_attempt_id` 唯一约束和事务锁保护并发首次提交；重复提交只读回首次事实。`assistance` 由服务端固化为 `UNAIDED`，M4 以此筛选 FSRS 的评分候选；M2 已有 SM-2 复习计划副作用不自动等同于 FSRS 评分。
 
 ## 试卷与考试
 

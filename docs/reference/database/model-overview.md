@@ -18,17 +18,17 @@ flowchart LR
 
 | 领域 | 表 |
 |---|---|
-| 用户与内容 | `user`、`course`、`knowledge_point`、`user_course`、`question`、`question_option`、`question_knowledge_point` |
+| 用户与内容 | `user`、`course`、`knowledge_point`、`user_course`、`question`、`question_option`、`question_knowledge_point`、`question_understanding_content`、`question_understanding_misconception`、`question_understanding_attempt` |
 | 互动与投稿 | `user_favorite_question`、`question_comment`、`comment_like`、`question_submission`、`question_correction_report`、`question_review_record`、`question_version` |
 | 社区共建 | `community_category`、`community_post`、`community_attachment`、`community_comment`、`community_like`、`community_review`、`community_question_link` |
-| 练习与复习 | `practice_record`、`wrong_question`、`learning_plan`、`question_review_schedule`、`course_learning_event` |
+| 练习与复习 | `practice_record`、`wrong_question`、`learning_plan`、`question_review_schedule`、`course_learning_event`、`question_understanding_variant_attempt` |
 | 试卷与考试 | `exam_paper`、`exam_question`、`exam_record`、`exam_answer`、`subjective_grading_point`、`exam_learning_session`、`exam_learning_answer`、`exam_learning_ai_interaction`、`user_exam_source`、`private_exam_import_draft`、`private_exam_draft_question` |
 | AI 与运营 | `ai_call_log`、`ai_quota_audit_log`、`ai_usage_alert`、`question_ai_asset`、`ai_asset_feedback`、`ai_asset_view`、`ai_variant_training`、`ai_variant_question`、`tutor_agent_run`、`tutor_agent_message`、`tutor_agent_practice_attempt`、`tutor_agent_plan_confirmation`、`tutor_course_memory`、`tutor_session_note`、`knowledge_content_bundle`、`knowledge_content_chunk`、`knowledge_content_index` |
 
 `learning_plan` 是旧首页学习目标功能留下的兼容表；当前运行时代码和 API 已移除，表仅为
 避免破坏既有数据而保留，不代表仍可使用的产品能力。
 
-M2 计划新增 `question_understanding_content`、`question_understanding_misconception`、`question_understanding_attempt` 和 `question_understanding_variant_attempt`；当前迁移尚未创建。结构和归属分别见[学习内容域](learning-domain.md#题目理解m2-计划结构)与[练习与错题](assessment-domain.md#练习与错题)，不提前列为现行表。
+题目理解内容、误区和原题尝试见[学习内容域](learning-domain.md#题目理解)；变式首次判分见[练习与错题](assessment-domain.md#练习与错题)。
 
 ## 关系原则
 
