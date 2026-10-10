@@ -7,7 +7,7 @@ import type { QuestionSource } from '@/api/understanding'
 const props = defineProps<{ source: QuestionSource }>()
 
 const kindLabel = computed(() => {
-  if (props.source.kind === 'OFFICIAL_EXAM') return props.source.title
+  if (props.source.kind === 'OFFICIAL_EXAM') return props.source.title ?? '考试真题'
   return props.source.kind === 'AI_GENERATED' ? 'AI 生成' : '人工整理'
 })
 

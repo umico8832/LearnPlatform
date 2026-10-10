@@ -22,7 +22,7 @@ export type SourceVerification = 'VERIFIED' | 'REVIEWED' | 'UNREVIEWED'
 
 export interface QuestionSource {
   kind: SourceKind
-  title: string
+  title: string | null
   url: string | null
   verification: SourceVerification
 }
