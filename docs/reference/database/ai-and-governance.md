@@ -113,6 +113,8 @@ V104 的 `tutor_session_note` 只保存 `session_id`、正 `revision`、可空�
 V87 为结构校验后的变式题增加 `PENDING`、`APPROVED`、`REJECTED` 审查状态、审查人/时间/说明和唯一的
 正式题目引用。批准与正式题目创建在同一事务完成；驳回不创建题目，已完成审查不能重复改写。
 
+M2 计划复用 `question_ai_asset` 的 `VARIANT` 缓存键和 `ai_variant_question` 的结构化题干、选项、私有答案、解析与审核状态；在 `ai_variant_question` 增加可空 `changed_condition`、`viz_title`、`viz_spec_json`。既有行不回填虚构的变更条件；只有 `APPROVED`、确有 `changed_condition`、与原题同概念且仅一个可核对条件发生改变的单选变式，才可进入[题目理解 API](../api/question-understanding.md)。审核流程需在批准前验证这些 M2 字段和 spec。`published_question_id` 继续表示审核后物化的正式题，不用来代替母题关联；母题经 `asset_id → question_ai_asset.question_id` 取得。M2 作答另见[练习与错题](assessment-domain.md#练习与错题)，不使用每用户/资产唯一的 `ai_variant_training` 作为逐次原题理解尝试。
+
 ## 观察性学习效果
 
 学习效果不单独保存一个结论字段，而是组合：

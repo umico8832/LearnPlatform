@@ -79,6 +79,20 @@ AI 生成题的批准发布行为见[管理 API](../api/admin-governance.md#ai-�
 | `question_review_record` | 正式题目定期复审记录 | 记录审查人、结论和时间 |
 | `question_correction_report` | 用户纠错及管理员处理状态 | 状态变化需要记录处理人和结果 |
 
+### 题目理解（M2 计划结构）
+
+以下结构是下一轮迁移与实现的契约，当前数据库尚无这些表或列；对外行为见[题目理解 API](../api/question-understanding.md)。
+
+| 新表 | 核心字段与约束 | 用途 |
+|---|---|---|
+| `question_understanding_content` | `id`、`question_id`、`content_version`、`review_status` (`PENDING/REVIEWED/WITHDRAWN`)、`reviewed_by/time`、`question_fingerprint`、`knowledge_point_id`、`solution_explanation`、可空 `solution_viz_title/spec_json`、可空 `source_exam_question_id`、`source_title/url`、`source_verification`、可空 `source_verified_by/time`；`(question_id, content_version)` 唯一 | 一题一版的正解、主知识点、来源证据和审核结果；旧版只追加或撤回，作答保留所用版本 |
+| `question_understanding_misconception` | `id`、`content_id`、`option_id`、`title`、`explanation`、`content_source` (`CURATED/AI_GENERATED`)、可空 `viz_title/spec_json`；`(content_id, option_id)` 唯一 | 每个错误选项的定向误区与可视化；内容审核覆盖全部子行 |
+| `question_understanding_attempt` | `id`、`user_id`、`question_id`、`content_id`、可空 `variant_id`、`practice_record_id`、可空 `solution_revealed_time`、`create_time`；`practice_record_id` 唯一 | 将原题作答绑定真实练习、当时可用的变式及正解开放状态，供本人和 M3 提示门禁使用 |
+
+`question_fingerprint` 覆盖题干、题型、有效选项标签/内容/正确性；发布和读取时与正式题重新核对，防止题目修改后展示过期误区或答案。新读取只选最新版本，最新被撤回时不回退。`knowledge_point_id` 必须属于题目关联且同课程。`source_exam_question_id` 只允许指向包含本题的已发布、核验通过的 `OFFICIAL_EXAM`，且本题有逐题核验人和时间，避免同一题被多套试卷引用时任意选来源。非官方题的 `source_title/url` 是经过审核的展示资料；`source_verification` 不能从 `question.last_review_time` 或 `TutorContent.review_status` 推断。待审和撤回版不能公开；一次作答锁定审核版，若版被撤回则停止对外提供相关正解与变式，保留已发生的判分事实供审计。
+
+复用现有 `question`、`question_option`、`question_knowledge_point`、`knowledge_point` 作为题干、答案和位置事实；`question.source_type/source_reference` 与 `exam_paper`、`exam_question` 作为来源线索和官方核验依据。`question.analysis` 不按错项区分且缺少独立审核与版本，因此不充当理解正解。`question_ai_asset` 是生成缓存，按题目/资产类型唯一，缺少逐选项和审核语义；`tutor_content` 属于知识点课件，也不复用为本题内容。来源类别和来源核对状态与内容自身审核状态分离。
+
 ## 收藏与评论
 
 | 表 | 职责 | 关键约束 |

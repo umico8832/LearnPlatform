@@ -28,6 +28,8 @@ flowchart LR
 `learning_plan` 是旧首页学习目标功能留下的兼容表；当前运行时代码和 API 已移除，表仅为
 避免破坏既有数据而保留，不代表仍可使用的产品能力。
 
+M2 计划新增 `question_understanding_content`、`question_understanding_misconception`、`question_understanding_attempt` 和 `question_understanding_variant_attempt`；当前迁移尚未创建。结构和归属分别见[学习内容域](learning-domain.md#题目理解m2-计划结构)与[练习与错题](assessment-domain.md#练习与错题)，不提前列为现行表。
+
 ## 关系原则
 
 - `question` 是练习、错题、试卷、复习和 AI 资产共同引用的核心聚合。
