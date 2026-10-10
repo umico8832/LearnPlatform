@@ -1,0 +1,205 @@
+/* 会动的课本 · 新视觉基线（ADR-0011）
+ * 只在 `.lt` 根内生效：重做页面通过 useLivingTheme 把 <html> 放进新基线，嵌入式组件自带 `.lt` 根。
+ * 颜色用 light-dark() 一处定义两种外观；默认跟随系统，data-appearance 可强制浅色或深色。
+ * 弹簧缓动由 src/motion 的同名预设生成，测试保证两边一致，不要手改数值。
+ */
+
+.lt {
+  color-scheme: light dark;
+
+  /* ---------------------------------------------------------------- type */
+  --lt-font:
+    -apple-system, BlinkMacSystemFont, system-ui, 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif;
+  --lt-font-rounded:
+    ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, system-ui, 'PingFang SC', 'Microsoft YaHei UI',
+    sans-serif;
+  --lt-font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'PingFang SC', monospace;
+
+  --lt-text-caption2: 11px;
+  --lt-text-caption: 12px;
+  --lt-text-footnote: 13px;
+  --lt-text-subhead: 14px;
+  --lt-text-body: 15px;
+  --lt-text-reading: 17px;
+  --lt-text-headline: 17px;
+  --lt-text-title3: 20px;
+  --lt-text-title2: 24px;
+  --lt-text-title1: 30px;
+  --lt-text-display: 40px;
+
+  --lt-leading-tight: 1.25;
+  --lt-leading-ui: 1.45;
+  --lt-leading-reading: 1.75;
+  --lt-tracking-title: -0.015em;
+
+  /* ------------------------------------------------------------- surfaces */
+  --lt-canvas: light-dark(#f5f5f7, #0b0b0d);
+  --lt-surface: light-dark(#ffffff, #1c1c1e);
+  --lt-surface-raised: light-dark(rgba(255, 255, 255, 0.86), rgba(44, 44, 46, 0.86));
+  --lt-well: light-dark(#f5f5f7, #141416);
+  --lt-glass: light-dark(rgba(255, 255, 255, 0.72), rgba(44, 44, 46, 0.7));
+  --lt-scrim: light-dark(rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.42));
+  --lt-thumb: light-dark(#ffffff, #636366);
+
+  /* --------------------------------------------------------- text & fills */
+  --lt-label: light-dark(#1d1d1f, #f5f5f7);
+  --lt-label-2: light-dark(rgba(60, 60, 67, 0.74), rgba(235, 235, 245, 0.68));
+  --lt-label-3: light-dark(rgba(60, 60, 67, 0.46), rgba(235, 235, 245, 0.38));
+  --lt-separator: light-dark(rgba(60, 60, 67, 0.13), rgba(84, 84, 88, 0.62));
+  --lt-fill: light-dark(rgba(120, 120, 128, 0.16), rgba(120, 120, 128, 0.36));
+  --lt-fill-2: light-dark(rgba(120, 120, 128, 0.1), rgba(120, 120, 128, 0.24));
+  --lt-fill-3: light-dark(rgba(118, 118, 128, 0.06), rgba(118, 118, 128, 0.14));
+
+  /* ------------------------------------------------- colours with meaning
+   * accent = 操作与焦点；green = 正确；orange = 需要注意；red = 错误与危险；purple = 预测或假设。 */
+  --lt-accent: light-dark(#0071e3, #0a84ff);
+  --lt-accent-pressed: light-dark(#0062c4, #3d9bff);
+  --lt-accent-soft: light-dark(rgba(0, 113, 227, 0.11), rgba(10, 132, 255, 0.2));
+  --lt-on-accent: #ffffff;
+  --lt-green: light-dark(#34c759, #30d158);
+  --lt-green-text: light-dark(#1f8a3c, #30d158);
+  --lt-green-soft: light-dark(rgba(52, 199, 89, 0.14), rgba(48, 209, 88, 0.18));
+  --lt-orange: light-dark(#ff9500, #ff9f0a);
+  --lt-orange-text: light-dark(#b25000, #ffb340);
+  --lt-orange-soft: light-dark(rgba(255, 149, 0, 0.13), rgba(255, 159, 10, 0.18));
+  --lt-red: light-dark(#ff3b30, #ff453a);
+  --lt-red-text: light-dark(#d70015, #ff6961);
+  --lt-red-soft: light-dark(rgba(255, 59, 48, 0.11), rgba(255, 69, 58, 0.18));
+  --lt-purple: light-dark(#a14ad1, #d08cf0);
+  --lt-purple-text: light-dark(#8944ab, #d08cf0);
+  --lt-purple-soft: light-dark(rgba(175, 82, 222, 0.11), rgba(191, 90, 242, 0.2));
+
+  /* 程序变量的固定身份色：图、代码与变量表共用，深到足以承载白字。 */
+  --lt-var-blue: light-dark(#0071e3, #0a84ff);
+  --lt-var-indigo: light-dark(#5552d0, #6260e8);
+  --lt-var-orange: light-dark(#c95500, #d76a0b);
+  --lt-var-green: light-dark(#248a3d, #2a9d4a);
+  --lt-var-pink: light-dark(#d30f45, #e52a5b);
+  --lt-var-teal: light-dark(#0e7c8f, #1a8fa3);
+  --lt-var-purple: light-dark(#8944ab, #a35bd0);
+  --lt-var-graphite: light-dark(#6e6e73, #7c7c82);
+
+  /* ----------------------------------------------------------------- code */
+  --lt-code-bg: light-dark(rgba(118, 118, 128, 0.07), rgba(118, 118, 128, 0.14));
+  --lt-syn-keyword: light-dark(#ad3da4, #fc5fa3);
+  --lt-syn-type: light-dark(#703daa, #d0a8ff);
+  --lt-syn-number: light-dark(#272ad8, #d0bf69);
+  --lt-syn-comment: light-dark(#707f8c, #7f8c98);
+  --lt-syn-key: light-dark(#0b4f79, #6bdfff);
+  --lt-syn-string: light-dark(#c41a16, #fc6a5d);
+
+  --lt-tooltip-bg: light-dark(rgba(29, 29, 31, 0.92), rgba(245, 245, 247, 0.94));
+  --lt-tooltip-fg: light-dark(#f5f5f7, #1d1d1f);
+
+  /* ---------------------------------------------------- shape & elevation */
+  --lt-space-1: 4px;
+  --lt-space-2: 8px;
+  --lt-space-3: 12px;
+  --lt-space-4: 16px;
+  --lt-space-5: 20px;
+  --lt-space-6: 24px;
+  --lt-space-7: 32px;
+  --lt-space-8: 40px;
+  --lt-space-9: 56px;
+  --lt-space-10: 72px;
+
+  --lt-radius-sm: 10px;
+  --lt-radius-md: 16px;
+  --lt-radius-lg: 22px;
+  --lt-radius-xl: 28px;
+  --lt-radius-pill: 999px;
+
+  --lt-control-sm: 28px;
+  --lt-control-md: 32px;
+  --lt-control-lg: 44px;
+
+  --lt-hairline: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.08));
+  --lt-shadow-card:
+    0 0 0 0.5px var(--lt-hairline), 0 1px 2px light-dark(rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.3)),
+    0 10px 30px light-dark(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.4));
+  --lt-shadow-float: 0 0 0 0.5px var(--lt-hairline), 0 24px 70px light-dark(rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.6));
+  --lt-shadow-thumb:
+    0 0 0 0.5px light-dark(rgba(0, 0, 0, 0.04), transparent),
+    0 1px 2px light-dark(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.3)),
+    0 3px 10px light-dark(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.25));
+  --lt-shadow-accent: 0 4px 14px light-dark(rgba(0, 113, 227, 0.32), rgba(10, 132, 255, 0.3));
+
+  /* ------------------------------------------------- motion (from springs) */
+  /* prettier-ignore */
+  --lt-ease-snappy: linear(0, 0.0109, 0.0399, 0.0823, 0.1342, 0.1924, 0.2541, 0.3173, 0.3803, 0.4419, 0.5011, 0.5572, 0.6097, 0.6584, 0.7032, 0.7439, 0.7807, 0.8136, 0.843, 0.8689, 0.8917, 0.9115, 0.9286, 0.9434, 0.9559, 0.9665, 0.9754, 0.9828, 0.9888, 0.9938, 0.9977, 1.0007, 1.0031, 1.0049, 1.0061, 1.007, 1.0075, 1.0077, 1.0077, 1.0076, 1.0073, 1.0069, 1.0065, 1.006, 1.0056, 1.0051, 1.0046, 1.0041, 1.0037, 1.0033, 1.0029, 1.0025, 1.0022, 1.0019, 1.0016, 1.0013, 1.0011, 1.0009, 1.0008, 1.0006, 1.0005, 1.0004, 1.0003, 1);
+  --lt-dur-snappy: 517ms;
+  /* prettier-ignore */
+  --lt-ease-layout: linear(0, 0.0163, 0.0583, 0.1176, 0.1876, 0.263, 0.3401, 0.416, 0.4887, 0.5569, 0.6197, 0.6766, 0.7277, 0.7728, 0.8124, 0.8467, 0.8761, 0.9012, 0.9223, 0.9399, 0.9544, 0.9663, 0.9759, 0.9835, 0.9896, 0.9942, 0.9978, 1.0004, 1.0023, 1.0036, 1.0044, 1.0048, 1.005, 1.005, 1.0048, 1.0045, 1.0042, 1.0038, 1.0034, 1.0031, 1.0027, 1.0023, 1.002, 1.0017, 1.0014, 1.0012, 1.001, 1.0008, 1);
+  --lt-dur-layout: 792ms;
+  /* prettier-ignore */
+  --lt-ease-fade: linear(0, 0.012, 0.0432, 0.0874, 0.1402, 0.1977, 0.2575, 0.3175, 0.3764, 0.433, 0.4867, 0.5371, 0.584, 0.6273, 0.667, 0.7032, 0.7361, 0.7658, 0.7925, 0.8165, 0.838, 0.8572, 0.8743, 0.8895, 0.9029, 0.9148, 0.9254, 0.9347, 0.9428, 0.9501, 0.9564, 0.9619, 0.9668, 0.9711, 0.9748, 0.9781, 0.9809, 0.9834, 0.9856, 0.9875, 0.9892, 0.9906, 0.9918, 0.9929, 0.9939, 0.9947, 0.9954, 0.996, 0.9966, 0.997, 0.9974, 0.9978, 0.9981, 0.9983, 0.9986, 0.9988, 0.9989, 0.9991, 0.9992, 0.9993, 0.9994, 0.9995, 1);
+  --lt-dur-fade: 508ms;
+
+  color: var(--lt-label);
+  font-family: var(--lt-font);
+  font-size: var(--lt-text-body);
+  line-height: var(--lt-leading-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.lt[data-appearance='light'] {
+  color-scheme: light;
+}
+
+.lt[data-appearance='dark'] {
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lt {
+    --lt-dur-snappy: 0ms;
+    --lt-dur-layout: 0ms;
+    --lt-dur-fade: 0ms;
+  }
+}
+
+/* ------------------------------------------------------------------ page */
+
+html.lt,
+html.lt body {
+  background: var(--lt-canvas);
+  color: var(--lt-label);
+}
+
+/* 中和旧基线 global.css 中的元素级规则，避免旧值漏进新页面。 */
+.lt :where(h1, h2, h3, h4, h5, h6) {
+  color: inherit;
+  font-weight: 600;
+  line-height: var(--lt-leading-tight);
+  letter-spacing: var(--lt-tracking-title);
+}
+
+.lt ::selection {
+  background: var(--lt-accent-soft);
+  color: inherit;
+}
+
+.lt :focus-visible {
+  outline: 2px solid var(--lt-accent);
+  outline-offset: 2px;
+}
+
+html.lt::-webkit-scrollbar-thumb,
+.lt ::-webkit-scrollbar-thumb {
+  background: var(--lt-fill);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.lt .lt-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

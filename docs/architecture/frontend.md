@@ -11,7 +11,8 @@ frontend/src/
 ├── admin/        # 独立管理端入口、Router、布局与全部管理端页面
 ├── api/          # 按业务域封装请求和 TypeScript 契约
 ├── assets/       # 全局样式与 Design Tokens
-├── components/   # 可复用组件（ui/ 基础组件、layout/ 布局、course/ 领域组件）
+├── components/   # 可复用组件（ui/ 旧基线基础组件、living/ 新基线基础组件、layout/ 布局、course/ 领域组件）
+├── motion/       # 与框架无关的弹簧动效核心（新视觉基线）
 ├── router/       # 学习端路由记录、Router 与登录守卫
 ├── stores/       # 用户等跨页面状态
 ├── types/        # 共享类型
@@ -61,7 +62,16 @@ frontend/admin/   # 独立管理端 HTML 入口
 
 ## 视觉与设计系统
 
-学习端正按 [ADR-0011](decisions/0011-living-textbook-spring-motion.md) 逐页重做为新的视觉与弹簧动效基线；
+学习端正按 [ADR-0011](decisions/0011-living-textbook-spring-motion.md) 逐页重做为新的视觉与弹簧动效基线：
+
+- 新基线只在 `.lt` 根内生效。`assets/styles/living.css` 定义 `--lt-` 令牌，颜色用 `light-dark()` 同时给出浅色与深色，
+  默认跟随系统，`data-appearance` 可强制其一。重做页面用 `useLivingTheme` 把整个文档放进新基线，嵌入式组件自带 `.lt` 根；
+  新页面不使用 `--lp-` 变量、Element Plus 或 `Lp*` 组件，两套基线互不覆盖。
+- `motion/` 是与框架无关的解析解弹簧核心（命名预设、共享帧循环、减弱动效时直接到达）和 `linear()` 缓动生成，
+  `useSpring` 提供 Vue 绑定；`living.css` 中的缓动令牌由同名预设生成，测试保证两边一致。
+- `components/living/` 提供按需导入的 `Lt*` 基础组件，图标使用 Lucide。面板基于原生 `<dialog>`，
+  从触发处展开并把焦点还给触发处。开发环境 `/dev/kit` 并排预览两种外观。
+
 下述 Quiet Digital Textbook 实现仍适用于尚未重做的学习端页面和管理端。
 
 - `assets/styles/tokens.css` 是唯一视觉来源：颜色、字体、间距、圆角、边框、阴影、动效、布局、
@@ -75,8 +85,8 @@ frontend/admin/   # 独立管理端 HTML 入口
 - `assets/styles/motion.css` 提供 Vue `Transition` / `TransitionGroup` 的共享内容、披露与列表移动类；
   它只使用 token 化的 opacity 与短距离 transform。`prefers-reduced-motion` 使 CSS 过渡即时，
   并由共享动效类移除位移，
-  `useAnimatedNumber` 对服务端数值的后续更新使用可取消 RAF，首次值直接显示。旧页面不引入新的动画依赖；
-  新基线的弹簧核心与可选动效库按 ADR-0011 随重做页面引入，原生 View Transitions 尚未接入路由。
+  `useAnimatedNumber` 对服务端数值的后续更新使用可取消 RAF，首次值直接显示。旧页面不引入新的动画依赖，
+  也不混用新基线的弹簧动效；原生 View Transitions 尚未接入路由。
 - 反馈组件集中在 `components/gamification/`，使用后端奖励与概况，不在前端认定积分或成就。
   ADR-0010 定义其安静呈现方向：数据在顶栏、个人页和总结中原位显示，不增加奖励飘字、全屏庆祝、彩纸、连击火焰、成就弹窗或常驻 pulse。
   答题只显示一行已记录事实，无连击徽章；动画不阻塞继续学习。
