@@ -309,8 +309,8 @@ public class QuestionUnderstandingService {
         if (official) {
             Map<String, Object> paper = mapper.officialSource(
                     id(content, "source_exam_question_id"), ready.question().getId());
-            source.put("title", paper.get("exam_name") + " " + paper.get("exam_year") + " "
-                    + paper.get("display_number"));
+            source.put("title", content.get("source_title") != null ? content.get("source_title")
+                    : paper.get("exam_name") + " " + paper.get("exam_year") + " " + paper.get("display_number"));
             String reference = (String) paper.get("source_reference");
             source.put("url", reference != null && reference.matches("https?://.+") ? reference : null);
         } else {
