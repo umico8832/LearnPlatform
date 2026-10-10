@@ -24,7 +24,7 @@
         <el-button @click="loadQuestion">重新加载题目</el-button>
       </div>
       <div v-else-if="question" ref="questionContent" class="question-content" tabindex="-1">
-        {{ question.content }}
+        <MarkdownRenderer :content="question.content" />
       </div>
     </div>
 
@@ -121,6 +121,7 @@ import { useGamificationStore } from '@/stores/gamification'
 import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
 import GamificationPracticeSummary from '@/components/gamification/GamificationPracticeSummary.vue'
 import AnswerRewardFeedback from '@/components/gamification/AnswerRewardFeedback.vue'
+import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import type { GamificationAchievement } from '@/components/gamification/types'
 import { reviewStatusTag } from './reviewSessionPresentation'
 import { useReviewQuestion } from './useReviewQuestion'
@@ -347,13 +348,15 @@ defineExpose({ start, reviewing })
 }
 
 .question-content {
-  font-size: var(--lp-text-lg);
-  line-height: var(--lp-leading-relaxed);
+  min-width: 0;
   padding: var(--lp-space-4);
   background: var(--lp-surface-soft);
   border-radius: var(--lp-radius-md);
-  white-space: pre-wrap;
-  color: var(--lp-text);
+}
+
+.question-content :deep(.markdown-body) {
+  font-size: var(--lp-text-lg);
+  line-height: var(--lp-leading-relaxed);
 }
 
 .question-loading,

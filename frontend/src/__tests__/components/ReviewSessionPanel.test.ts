@@ -150,6 +150,28 @@ describe('ReviewSessionPanel', () => {
     expect(submitReview).toHaveBeenLastCalledWith({ questionId: 21, userAnswer: 'B' }, { errorDisplay: 'inline' })
   })
 
+  it('renders Markdown question structure through the shared renderer', async () => {
+    getQuestionById.mockResolvedValueOnce({
+      code: 0,
+      data: {
+        id: card.questionId,
+        content: '**阅读代码**\n\n```java\nint total = 1 + 2;\n```\n\n- 写出结果',
+        questionType: 'SHORT_ANSWER',
+        options: [],
+      },
+    })
+    const wrapper = mount(ReviewSessionPanel, { props: { cards: [card] }, global: { stubs: reviewStubs } })
+    ;(wrapper.vm as unknown as { start: () => void }).start()
+    await flushPromises()
+
+    const content = wrapper.get('.question-content')
+    expect(content.get('strong').text()).toBe('阅读代码')
+    expect(content.get('pre code').text()).toBe('int total = 1 + 2;')
+    expect(content.get('ul li').text()).toBe('写出结果')
+    expect(submitReview).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
   it('blocks submission until the learner-safe question loads and offers an inline retry', async () => {
     getQuestionById.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({
       code: 0,

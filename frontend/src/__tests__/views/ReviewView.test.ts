@@ -106,7 +106,6 @@ describe('ReviewView course target', () => {
   it('从课程总览进入时自动加载并开始服务端选择的到期题', async () => {
     const wrapper = mount(ReviewView, {
       global: {
-        stubs: { MarkdownRenderer: true },
         directives: { loading: () => undefined },
       },
     })
