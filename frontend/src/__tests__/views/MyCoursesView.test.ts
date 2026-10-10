@@ -1,15 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 
-const { mockGetMyCourses, mockGetCourseOverview, mockPush, auth } = vi.hoisted(() => ({
-  mockGetMyCourses: vi.fn(),
-  mockGetCourseOverview: vi.fn(),
-  mockPush: vi.fn(),
-  auth: { version: 1, listeners: new Set<() => void>() },
-}))
+const { mockGetMyCourses, mockGetCourseOverview, mockGetAllCourses, mockAddCourse, mockOpenTarget, mockPush, auth } =
+  vi.hoisted(() => ({
+    mockGetMyCourses: vi.fn(),
+    mockGetCourseOverview: vi.fn(),
+    mockGetAllCourses: vi.fn(),
+    mockAddCourse: vi.fn(),
+    mockOpenTarget: vi.fn(),
+    mockPush: vi.fn(),
+    auth: { version: 1, listeners: new Set<() => void>() },
+  }))
 vi.mock('@/api/course', () => ({
   getMyCourses: (...args: unknown[]) => mockGetMyCourses(...args),
   getCourseOverview: (...args: unknown[]) => mockGetCourseOverview(...args),
+  getAllCourses: (...args: unknown[]) => mockGetAllCourses(...args),
+  addCourseToLibrary: (...args: unknown[]) => mockAddCourse(...args),
 }))
 vi.mock('@/utils/auth', () => ({
   getAuthSessionVersion: () => auth.version,
@@ -19,7 +25,7 @@ vi.mock('@/utils/auth', () => ({
     return () => auth.listeners.delete(listener)
   },
 }))
-vi.mock('@/utils/learningTarget', () => ({ openLearningTarget: vi.fn() }))
+vi.mock('@/utils/learningTarget', () => ({ openLearningTarget: (...args: unknown[]) => mockOpenTarget(...args) }))
 vi.mock('@/utils/format', () => ({ formatRelativeTime: () => '刚刚' }))
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: mockPush }) }))
 import MyCoursesView from '@/views/course/MyCoursesView.vue'
@@ -31,8 +37,8 @@ const stubs = {
   LpSectionHeading: { template: '<h2 :id="headingId">{{ title }}</h2>', props: ['title', 'headingId'] },
   LpStatePanel: {
     template:
-      '<section><strong>{{ title }}</strong><button @click="$emit(\'retry\')">重试</button><slot name="actions" /></section>',
-    props: ['state', 'title'],
+      '<section><strong>{{ title }}</strong><p>{{ description }}</p><button @click="$emit(\'retry\')">重试</button><slot name="actions" /></section>',
+    props: ['state', 'title', 'description'],
     emits: ['retry'],
   },
 }
@@ -51,6 +57,101 @@ beforeEach(() => {
   auth.listeners.clear()
 })
 describe('MyCoursesView', () => {
+  it('lets a new learner join the published 408 course and open its first server target', async () => {
+    const target = {
+      type: 'TUTOR',
+      title: '线性表的定义',
+      reason: '从第一节开始',
+      knowledgePointId: 12,
+      questionId: null,
+    }
+    mockGetMyCourses.mockResolvedValue({ data: [] })
+    mockGetAllCourses.mockResolvedValue({
+      data: [
+        { id: 7, name: '数据结构与算法', contentKey: null },
+        { id: 42, name: '408 数据结构', contentKey: 'cs408-data-structures' },
+      ],
+    })
+    mockAddCourse.mockResolvedValue({ data: { courseId: 42 } })
+    mockGetCourseOverview.mockResolvedValue({ data: { recommendedTargets: [target] } })
+    const wrapper = mountView()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('408 数据结构')
+    expect(wrapper.text()).not.toContain('全部课程')
+    expect(wrapper.findAll('button').filter((button) => button.text().includes('浏览课程库'))).toHaveLength(0)
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('加入并开始学习'))!
+      .trigger('click')
+    await flushPromises()
+
+    expect(mockAddCourse).toHaveBeenCalledWith(42, { errorDisplay: 'inline' })
+    expect(mockGetCourseOverview).toHaveBeenCalledWith(42, { errorDisplay: 'inline' })
+    expect(mockOpenTarget).toHaveBeenCalledWith(expect.anything(), 42, target)
+  })
+
+  it('offers the course catalog when the recommended course is not published', async () => {
+    mockGetMyCourses.mockResolvedValue({ data: [] })
+    mockGetAllCourses.mockResolvedValue({ data: [{ id: 7, name: '数据结构与算法', contentKey: null }] })
+    const wrapper = mountView()
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('加入并开始学习')
+    expect(wrapper.findAll('button').filter((button) => button.text().includes('浏览课程库'))).toHaveLength(1)
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('浏览课程库'))!
+      .trigger('click')
+    expect(mockPush).toHaveBeenCalledWith({ name: 'CourseList' })
+  })
+
+  it('keeps the recommendation and supports retry when joining fails', async () => {
+    mockGetMyCourses.mockResolvedValue({ data: [] })
+    mockGetAllCourses.mockResolvedValue({
+      data: [{ id: 42, name: '408 数据结构', contentKey: 'cs408-data-structures' }],
+    })
+    mockAddCourse.mockRejectedValueOnce(new Error('暂时无法加入')).mockResolvedValueOnce({ data: { courseId: 42 } })
+    mockGetCourseOverview.mockResolvedValue({ data: { recommendedTargets: [] } })
+    const wrapper = mountView()
+    await flushPromises()
+
+    const button = wrapper.findAll('button').find((item) => item.text().includes('加入并开始学习'))!
+    await button.trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('暂时无法加入')
+    expect(mockPush).not.toHaveBeenCalled()
+
+    await button.trigger('click')
+    await flushPromises()
+    expect(mockAddCourse).toHaveBeenCalledTimes(2)
+    expect(mockPush).toHaveBeenCalledWith({ name: 'CourseOverview', params: { id: 42 } })
+  })
+
+  it('does not open the first learner course after the authenticated account changes', async () => {
+    let finishJoin!: (value: unknown) => void
+    mockGetMyCourses.mockResolvedValue({ data: [] })
+    mockGetAllCourses.mockResolvedValue({
+      data: [{ id: 42, name: '408 数据结构', contentKey: 'cs408-data-structures' }],
+    })
+    mockAddCourse.mockImplementation(() => new Promise((resolve) => (finishJoin = resolve)))
+    const wrapper = mountView()
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('加入并开始学习'))!
+      .trigger('click')
+
+    auth.version += 1
+    auth.listeners.forEach((listener) => listener())
+    finishJoin({ data: { courseId: 42 } })
+    await flushPromises()
+
+    expect(mockGetCourseOverview).not.toHaveBeenCalled()
+    expect(mockOpenTarget).not.toHaveBeenCalled()
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
   it('does not present a failed overview as not started and retries that overview inline', async () => {
     mockGetMyCourses.mockResolvedValue({ data: [{ courseId: 1, courseName: 'Java', description: null }] })
     mockGetCourseOverview.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({

@@ -1,7 +1,7 @@
 import axios from 'axios'
 import request from '@/utils/request'
 import type { ApiResponse } from '@/types/api'
-import type { LoginRequest, LoginResponse, RegisterRequest, UserInfo } from '@/types/user'
+import type { LoginRequest, LoginResponse, RegisterRequest } from '@/types/user'
 
 export type AuthRequestOptions = { errorDisplay?: 'inline' }
 
@@ -27,8 +27,8 @@ export function verifyRegisterCode(email: string, code: string, options?: AuthRe
   )
 }
 export function register(data: RegisterRequest, options?: AuthRequestOptions) {
-  if (options) return request.post<unknown, ApiResponse<UserInfo>>('/auth/register', data, options)
-  return request.post<unknown, ApiResponse<UserInfo>>('/auth/register', data)
+  if (options) return request.post<unknown, ApiResponse<LoginResponse>>('/auth/register', data, options)
+  return request.post<unknown, ApiResponse<LoginResponse>>('/auth/register', data)
 }
 export function forgotPassword(email: string, turnstileToken: string, options?: AuthRequestOptions) {
   if (options)

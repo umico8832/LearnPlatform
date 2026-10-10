@@ -78,7 +78,8 @@ class AuthControllerTest {
         userVO.setUsername("testuser");
         userVO.setNickname("测试用户");
 
-        when(authService.register(any(RegisterRequest.class))).thenReturn(userVO);
+        when(authService.register(any(RegisterRequest.class)))
+                .thenReturn(new LoginResponse("issued-on-register", 3600L, userVO));
 
         RegisterRequest request = new RegisterRequest();
         request.setUsername("testuser");
@@ -91,7 +92,8 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.username").value("testuser"));
+                .andExpect(jsonPath("$.data.token").value("issued-on-register"))
+                .andExpect(jsonPath("$.data.user.username").value("testuser"));
     }
 
     @Test

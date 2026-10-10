@@ -132,6 +132,7 @@ import AuthLayout from '@/components/auth/AuthLayout.vue'
 import AuthSocialOptions from '@/components/auth/AuthSocialOptions.vue'
 import TurnstileDialog from '@/components/auth/TurnstileDialog.vue'
 import { register, sendRegisterCode, verifyRegisterCode } from '@/api/auth'
+import { useUserStore } from '@/stores/user'
 import { getAuthPreviewState } from '@/utils/authPreview'
 import { useAuthPageGuard } from './useAuthPageGuard'
 import { errorMessage } from '@/utils/errors'
@@ -139,6 +140,7 @@ import '@/assets/styles/auth.css'
 
 const router = useRouter(),
   route = useRoute(),
+  userStore = useUserStore(),
   formRef = ref<FormInstance>(),
   verificationRef = ref<InstanceType<typeof TurnstileDialog>>()
 const previewState = getAuthPreviewState(route.query['auth-preview'], ['step-1', 'step-2', 'step-3'])
@@ -201,6 +203,7 @@ async function handlePrimary() {
     version = stageVersion
   loading.value = true
   error.value = ''
+  let authenticated = false
   try {
     if (step.value === 1) {
       const valid = await formRef.value
@@ -211,7 +214,7 @@ async function handlePrimary() {
       return
     }
     if (!(await formRef.value?.validate().catch(() => false)) || !current() || version !== stageVersion) return
-    await register(
+    const response = await register(
       {
         username: form.username,
         email: form.email,
@@ -221,13 +224,15 @@ async function handlePrimary() {
       { errorDisplay: 'inline' },
     )
     if (!current() || version !== stageVersion) return
-    ElMessage.success('注册成功，请登录')
-    await router.push('/login')
+    userStore.setLoginInfo(response.data.token, response.data.user)
+    authenticated = true
+    ElMessage.success('账号已创建')
+    await router.push('/my-courses')
   } catch (cause) {
     if (current() && version === stageVersion)
       error.value = errorMessage(cause, '暂时无法创建账号，输入已保留，请重试。')
   } finally {
-    if (current() && version === stageVersion) loading.value = false
+    if ((current() && version === stageVersion) || authenticated) loading.value = false
   }
 }
 async function sendCode() {

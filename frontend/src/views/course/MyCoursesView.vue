@@ -1,7 +1,7 @@
 <template>
   <div class="my-courses page-container">
-    <LpPageHeader title="我的课程" description="查看已加入课程，并从当前学习处继续。">
-      <template #actions
+    <LpPageHeader title="我的课程" :description="pageDescription">
+      <template v-if="courses.length" #actions
         ><el-button :icon="Plus" @click="router.push({ name: 'CourseList' })">浏览课程库</el-button></template
       >
     </LpPageHeader>
@@ -14,19 +14,22 @@
       description="课程和学习概况尚未加载，请重试。"
       @retry="fetchCourses"
     />
-    <LpStatePanel
-      v-else-if="!courses.length"
-      state="empty"
-      title="还没有加入课程"
-      description="从课程库加入课程后，会显示在这里。"
-    >
-      <template #actions
-        ><el-button type="primary" :icon="Plus" @click="router.push({ name: 'CourseList' })"
+    <LpStatePanel v-else-if="!courses.length" state="empty" title="还没有加入课程" :description="emptyDescription">
+      <template #actions>
+        <el-button
+          v-if="recommendedCourse"
+          type="primary"
+          :icon="ArrowRight"
+          :loading="joiningRecommended"
+          @click="startRecommended"
+          >加入并开始学习</el-button
+        >
+        <el-button v-else-if="recommendationError" @click="loadRecommendedCourse">重新查找推荐课程</el-button>
+        <el-button v-if="!recommendedCourse && !recommendationLoading" @click="router.push({ name: 'CourseList' })"
           >浏览课程库</el-button
-        ></template
-      >
+        >
+      </template>
     </LpStatePanel>
-
     <template v-else>
       <section v-if="continueCourse" class="continue-section" aria-labelledby="continue-heading">
         <div>
@@ -82,6 +85,12 @@
         </div>
       </section>
     </template>
+    <p v-if="!courses.length && recommendationError && !loading && !loadFailed" class="course-empty-error" role="alert">
+      {{ recommendationError }}
+    </p>
+    <p v-if="!courses.length && joinError && !loading && !loadFailed" class="course-empty-error" role="alert">
+      {{ joinError }}
+    </p>
   </div>
 </template>
 
@@ -89,11 +98,19 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowRight, Plus, Reading } from '@element-plus/icons-vue'
-import type { LearningTargetVO } from '@/api/course'
-import { getCourseOverview, getMyCourses, type CourseOverviewVO, type UserCourseVO } from '@/api/course'
+import type { CourseVO, LearningTargetVO } from '@/api/course'
+import {
+  addCourseToLibrary,
+  getAllCourses,
+  getCourseOverview,
+  getMyCourses,
+  type CourseOverviewVO,
+  type UserCourseVO,
+} from '@/api/course'
 import { openLearningTarget } from '@/utils/learningTarget'
 import { formatRelativeTime } from '@/utils/format'
 import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
+import { errorMessage } from '@/utils/errors'
 
 type OverviewState = 'ready' | 'error'
 interface CourseEntry {
@@ -109,6 +126,11 @@ const courses = ref<CourseEntry[]>([])
 const loading = ref(false)
 const loadFailed = ref(false)
 const starting = ref(false)
+const recommendedCourse = ref<CourseVO | null>(null)
+const recommendationLoading = ref(false)
+const recommendationError = ref('')
+const joiningRecommended = ref(false)
+const joinError = ref('')
 let alive = true
 let generation = 0
 
@@ -120,6 +142,16 @@ const continueCourse = computed(
 )
 const continueTarget = computed<LearningTargetVO | null>(
   () => continueCourse.value?.overview?.recommendedTargets[0] || null,
+)
+const emptyDescription = computed(() => {
+  if (recommendedCourse.value) return `推荐从 ${recommendedCourse.value.name} 开始，按课程目录学习第一节。`
+  if (recommendationLoading.value) return '正在查找适合开始的课程…'
+  return '可以从课程库选择一门课程开始学习。'
+})
+const pageDescription = computed(() =>
+  !loading.value && !loadFailed.value && !courses.value.length
+    ? '加入一门课程，开始第一节学习。'
+    : '查看已加入课程，并从当前学习处继续。',
 )
 
 function isCurrent(requestGeneration: number, session: number) {
@@ -138,6 +170,10 @@ async function fetchCourses() {
     const response = await getMyCourses({ errorDisplay: 'inline' })
     if (!isCurrent(requestGeneration, session)) return
     const list = response.data || []
+    recommendedCourse.value = null
+    recommendationError.value = ''
+    joinError.value = ''
+    if (!list.length) void loadRecommendedCourse()
     const overviews = await Promise.allSettled(
       list.map((item) => getCourseOverview(item.courseId, { errorDisplay: 'inline' }).then((result) => result.data)),
     )
@@ -150,6 +186,44 @@ async function fetchCourses() {
     if (isCurrent(requestGeneration, session)) loadFailed.value = true
   } finally {
     if (isCurrent(requestGeneration, session)) loading.value = false
+  }
+}
+
+async function loadRecommendedCourse() {
+  const requestGeneration = generation
+  const session = getAuthSessionVersion()
+  recommendationLoading.value = true
+  recommendationError.value = ''
+  try {
+    const result = await getAllCourses({ errorDisplay: 'inline' })
+    if (!isCurrent(requestGeneration, session)) return
+    recommendedCourse.value = result.data.find((course) => course.contentKey === 'cs408-data-structures') || null
+  } catch {
+    if (isCurrent(requestGeneration, session)) recommendationError.value = '推荐课程暂时无法读取。'
+  } finally {
+    if (isCurrent(requestGeneration, session)) recommendationLoading.value = false
+  }
+}
+
+async function startRecommended() {
+  const course = recommendedCourse.value
+  if (!course || joiningRecommended.value) return
+  const requestGeneration = generation
+  const session = getAuthSessionVersion()
+  joiningRecommended.value = true
+  joinError.value = ''
+  try {
+    await addCourseToLibrary(course.id, { errorDisplay: 'inline' })
+    if (!isCurrent(requestGeneration, session)) return
+    const result = await getCourseOverview(course.id, { errorDisplay: 'inline' })
+    if (!isCurrent(requestGeneration, session)) return
+    const target = result.data.recommendedTargets[0]
+    if (target) openLearningTarget(router, course.id, target)
+    else openCourse(course.id)
+  } catch (cause) {
+    if (isCurrent(requestGeneration, session)) joinError.value = errorMessage(cause, '暂时无法进入课程，请重试。')
+  } finally {
+    if (isCurrent(requestGeneration, session)) joiningRecommended.value = false
   }
 }
 
@@ -188,6 +262,11 @@ const unsubscribeSession = onAuthSessionChange(() => {
   courses.value = []
   loading.value = false
   loadFailed.value = false
+  recommendedCourse.value = null
+  recommendationLoading.value = false
+  recommendationError.value = ''
+  joiningRecommended.value = false
+  joinError.value = ''
   if (isAuthenticated()) void fetchCourses()
 })
 onMounted(() => void fetchCourses())
@@ -202,6 +281,11 @@ onUnmounted(() => {
 .my-courses {
   display: grid;
   gap: var(--lp-space-6);
+}
+.course-empty-error {
+  margin: calc(var(--lp-space-4) * -1) 0 0;
+  color: var(--lp-danger);
+  font-size: var(--lp-text-sm);
 }
 .continue-section {
   display: flex;

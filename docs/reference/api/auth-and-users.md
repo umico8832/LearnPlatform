@@ -8,7 +8,7 @@
 | `POST /api/auth/login` | 用户名或邮箱登录，需 Turnstile |
 | `POST /api/auth/email/register-code` | 发送注册邮箱验证码，需 Turnstile |
 | `POST /api/auth/email/verify-register-code` | 验证邮箱验证码并签发一次性注册票据 |
-| `POST /api/auth/register` | 消费注册票据并创建用户 |
+| `POST /api/auth/register` | 消费注册票据、创建用户并返回登录会话 |
 | `POST /api/auth/password/forgot` | 发送密码重置邮件，需 Turnstile |
 | `GET /api/auth/password/reset/validate` | 验证一次性重置令牌 |
 | `POST /api/auth/password/reset` | 消费重置令牌并设置新密码 |
@@ -35,7 +35,9 @@
 2. 验证验证码并获得五分钟有效的一次性 `verificationTicket`；
 3. 注册请求提交用户名、邮箱、密码、可选昵称和该 Ticket。
 
-服务端在同一事务中消费 Ticket 并创建用户，不能仅依赖前端记录邮箱已验证。
+服务端在同一事务中消费 Ticket 并创建用户，成功响应与登录接口一样返回 Token、有效期和用户摘要，
+供新用户直接进入已登录状态。注册不调用登录接口；登录接口的 Turnstile 校验保持不变。
+Ticket 无效或已使用时不创建用户，也不签发会话。不能仅依赖前端记录邮箱已验证。
 
 忘记密码接口无论邮箱是否存在均返回中性成功响应。邮件链接携带高熵一次性令牌，数据库只保存令牌 HMAC；成功重置后令牌作废、用户认证版本递增，旧 JWT 随即失效。
 

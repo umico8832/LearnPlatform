@@ -15,6 +15,7 @@ const {
   mockValidateField,
   mockVerify,
   mockRoute,
+  mockSetLoginInfo,
 } = vi.hoisted(() => ({
   mockRegister: vi.fn(),
   mockSendCode: vi.fn(),
@@ -25,7 +26,9 @@ const {
   mockValidate: vi.fn().mockResolvedValue(true),
   mockValidateField: vi.fn().mockResolvedValue(undefined),
   mockRoute: { query: {} as Record<string, string> },
+  mockSetLoginInfo: vi.fn(),
 }))
+vi.mock('@/stores/user', () => ({ useUserStore: () => ({ setLoginInfo: mockSetLoginInfo }) }))
 vi.mock('@/api/auth', () => ({
   register: (...a: unknown[]) => mockRegister(...a),
   sendRegisterCode: (...a: unknown[]) => mockSendCode(...a),
@@ -94,7 +97,9 @@ describe('RegisterView', () => {
     mockValidateField.mockResolvedValue(undefined)
     mockSendCode.mockResolvedValue({})
     mockVerifyCode.mockResolvedValue({ data: { verificationTicket: 'ticket-1', expiresIn: 300 } })
-    mockRegister.mockResolvedValue({ data: { id: 2, username: 'newlearner' } })
+    mockRegister.mockResolvedValue({
+      data: { token: 'registered-session', user: { id: 2, username: 'newlearner', role: 'USER' } },
+    })
   })
   it('renders three-step registration beginning with username and email', () => {
     const w = mountRegister()
@@ -171,7 +176,12 @@ describe('RegisterView', () => {
       },
       { errorDisplay: 'inline' },
     )
-    expect(mockPush).toHaveBeenCalledWith('/login')
+    expect(mockSetLoginInfo).toHaveBeenCalledWith('registered-session', {
+      id: 2,
+      username: 'newlearner',
+      role: 'USER',
+    })
+    expect(mockPush).toHaveBeenCalledWith('/my-courses')
   })
 
   it('allows only one pending code verification and ignores it after leaving', async () => {
@@ -214,6 +224,7 @@ describe('RegisterView', () => {
     finish({ data: { id: 2 } })
     await flushPromises()
     expect(mockSuccess).not.toHaveBeenCalledWith('注册成功，请登录')
+    expect(mockSetLoginInfo).not.toHaveBeenCalled()
     expect(mockPush).not.toHaveBeenCalled()
   })
 })

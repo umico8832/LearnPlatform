@@ -69,9 +69,8 @@ public class AuthController {
      */
     @Operation(summary = "用户注册", description = "新用户注册账号")
     @PostMapping("/register")
-    public R<UserVO> register(@Valid @RequestBody RegisterRequest request) {
-        UserVO userVO = authService.register(request);
-        return R.ok(userVO);
+    public R<LoginResponse> register(@Valid @RequestBody RegisterRequest request) {
+        return R.ok(authService.register(request));
     }
 
     /**

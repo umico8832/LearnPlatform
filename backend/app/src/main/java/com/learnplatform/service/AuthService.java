@@ -46,7 +46,7 @@ public class AuthService {
      * 用户注册
      */
     @Transactional
-    public UserVO register(RegisterRequest request) {
+    public LoginResponse register(RegisterRequest request) {
         log.info("用户注册: username={}", request.getUsername());
         // 检查用户名是否已存在
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
@@ -77,7 +77,7 @@ public class AuthService {
         userMapper.insert(user);
         log.info("用户注册成功: userId={}, username={}", user.getId(), user.getUsername());
 
-        return UserVO.fromUser(user);
+        return createLoginResponse(user);
     }
 
     /**
