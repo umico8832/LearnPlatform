@@ -1,6 +1,6 @@
 # ADR-0010：Token 化 Quiet Digital Textbook 与 Vue/CSS 动效基线
 
-- 状态：Accepted
+- 状态：Superseded（视觉与动效基线由 [ADR-0011](0011-living-textbook-spring-motion.md) 替代，本文不变量继续有效）
 - 记录日期：2026-10-02
 - 类型：前端架构
 

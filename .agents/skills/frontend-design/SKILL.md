@@ -37,9 +37,13 @@ Avoid unexamined generator defaults such as identical rounded cards everywhere, 
 
 Typography and interface copy are part of the design. Use plain, consistent action names; make errors and empty states instructive; keep hierarchy, line length, weight, and spacing intentional. Do not add labels or prose only to fill a composition.
 
+## Two baselines during the learner redesign
+
+The learner app is being redesigned page by page under [ADR-0011](../../../docs/architecture/decisions/0011-living-textbook-spring-motion.md), starting with the demo flow "one question from wrong to understood". A page in redesign follows the new baseline below and is designed from scratch: do not use the old page or the old visual components as reference. Every other learner page and the admin app keep the existing system until their own redesign; do not restyle them piecemeal, because a half-migrated page is worse than either baseline.
+
 ## Treat the existing system as a baseline
 
-The current CSS variables, Element Plus components, icons, layouts, and page conventions are the first implementation candidates because they reduce inconsistency and maintenance cost. They are not immune from review.
+For pages not yet redesigned, the current CSS variables, Element Plus components, icons, layouts, and page conventions are the first implementation candidates because they reduce inconsistency and maintenance cost. They are not immune from review.
 
 - Reuse a pattern when it fits the target surface and remains accessible and coherent.
 - Extend a token or shared component when several consumers need the same semantic behavior.
@@ -50,7 +54,16 @@ The current CSS variables, Element Plus components, icons, layouts, and page con
 
 ## Shared visual primitives
 
-The learner and administration surfaces share the Quiet Digital Textbook foundation: warm paper surfaces, low-saturation blue for primary action and focus, and restrained semantic feedback colors. Use `tokens.css` for typography, spacing, radii, shadows, control height, focus treatment, surface states, skeleton colors, and durations; use `element-plus.css` for Element Plus mapping. Do not recreate those values in a page or component.
+### New baseline (redesigned pages)
+
+- Neutral light-gray canvas, white large-radius cards, system fonts with rounded numerals, and a system-blue accent, in both light and dark appearance.
+- Color carries fixed meaning only: green for correct, orange for needs attention, purple for prediction or hypothesis, and a fixed identity color per program variable shared by diagrams, code, and watch panels. No decorative gradients.
+- Motion follows [interaction-motion](../interaction-motion/SKILL.md): three intensity tiers and named spring presets.
+- Values come from the new token layer introduced with the first redesigned page; do not hard-code them in a page.
+
+### Existing baseline (pages not yet redesigned, admin)
+
+These surfaces share the Quiet Digital Textbook foundation: warm paper surfaces, low-saturation blue for primary action and focus, and restrained semantic feedback colors. Use `tokens.css` for typography, spacing, radii, shadows, control height, focus treatment, surface states, skeleton colors, and durations; use `element-plus.css` for Element Plus mapping. Do not recreate those values in a page or component.
 
 Use `LpPageHeader`, `LpCard`, `LpListItem`, `LpStatePanel`, `LpStat`, `LpProgress`, `LpProgressRing`, `LpEmptyState`, and `LpSkeleton` when their contracts fit. A card owns semantic containment and density, a list item must remain a real button or RouterLink, and a state panel keeps loading, empty, error, and ready content mutually exclusive. Loading must not show default zeroes; empty only follows a successful absence of data; an error stays in place with recovery.
 
@@ -62,15 +75,15 @@ For learner and authentication workflows, prioritize orientation, readable learn
 
 Use decoration and motion only when they improve hierarchy, comprehension, feedback, or continuity. Product workflows do not inherit marketing-page composition rules by default.
 
-For routine entry, disclosure, and list reordering, use the named Vue/CSS transitions in `motion.css`. The shared reduced-motion rules make those transitions immediate and remove their travel; do not assume every component transform outside that shared scope is reset. See [interaction-motion](../interaction-motion/SKILL.md) before adding a new motion pattern or dependency.
+On pages not yet redesigned, use the named Vue/CSS transitions in `motion.css` for routine entry, disclosure, and list reordering. The shared reduced-motion rules make those transitions immediate and remove their travel; do not assume every component transform outside that shared scope is reset. See [interaction-motion](../interaction-motion/SKILL.md) before adding a new motion pattern or dependency.
 
 ## Learning encouragement layer
 
 Experience, levels, streaks, goals, and achievements remain backend-supplied learning facts. Present them as quiet inline data in the header, profile, and completion summary; they never imply mastery. Keep question text, explanations, code, and Markdown calm, and render honest zero, empty, loading, and failure states.
 
-Timed exams remain silent until submission: no correctness cues, reward floats, combos, celebrations, or sound during answers. Do not add reward floats, full-screen celebrations, confetti, combo flames, achievement dialogs, or persistent pulse effects to learning workflows. Feedback never gates the next action.
+Timed exams remain silent until submission: no correctness cues, reward floats, combos, celebrations, or sound during answers. Do not add reward floats, full-screen celebrations, confetti, combo flames, achievement dialogs, or decorative persistent pulses to learning workflows. Feedback never gates the next action.
 
-Use Vue/CSS for the restrained state transitions already covered by the shared motion system. Do not introduce a celebration library for this direction; a future animation dependency requires a concrete interaction need plus compatibility, lifecycle, reduced-motion, and measured bundle evidence.
+State feedback may use the medium motion tier on redesigned pages and the shared Vue/CSS transitions elsewhere. Liveliness comes from explaining state changes, never from celebration: do not introduce a celebration library.
 
 ## Work in two passes
 

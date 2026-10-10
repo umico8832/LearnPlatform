@@ -61,6 +61,9 @@ frontend/admin/   # 独立管理端 HTML 入口
 
 ## 视觉与设计系统
 
+学习端正按 [ADR-0011](decisions/0011-living-textbook-spring-motion.md) 逐页重做为新的视觉与弹簧动效基线；
+下述 Quiet Digital Textbook 实现仍适用于尚未重做的学习端页面和管理端。
+
 - `assets/styles/tokens.css` 是唯一视觉来源：颜色、字体、间距、圆角、边框、阴影、动效、布局、
   z-index 均以 CSS 变量定义；`element-plus.css` 将这些语义变量映射到 Element Plus。应用工作区采用暖纸底色、
   低饱和蓝主操作与焦点的 Quiet Digital Textbook；公开首页使用高对比的编辑式视觉子集，
@@ -72,8 +75,8 @@ frontend/admin/   # 独立管理端 HTML 入口
 - `assets/styles/motion.css` 提供 Vue `Transition` / `TransitionGroup` 的共享内容、披露与列表移动类；
   它只使用 token 化的 opacity 与短距离 transform。`prefers-reduced-motion` 使 CSS 过渡即时，
   并由共享动效类移除位移，
-  `useAnimatedNumber` 对服务端数值的后续更新使用可取消 RAF，首次值直接显示。当前不引入新的通用动画库，
-  原生 View Transitions 是后续候选，未接入路由。
+  `useAnimatedNumber` 对服务端数值的后续更新使用可取消 RAF，首次值直接显示。旧页面不引入新的动画依赖；
+  新基线的弹簧核心与可选动效库按 ADR-0011 随重做页面引入，原生 View Transitions 尚未接入路由。
 - 反馈组件集中在 `components/gamification/`，使用后端奖励与概况，不在前端认定积分或成就。
   ADR-0010 定义其安静呈现方向：数据在顶栏、个人页和总结中原位显示，不增加奖励飘字、全屏庆祝、彩纸、连击火焰、成就弹窗或常驻 pulse。
   答题只显示一行已记录事实，无连击徽章；动画不阻塞继续学习。

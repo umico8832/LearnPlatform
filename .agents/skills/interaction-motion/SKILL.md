@@ -1,49 +1,58 @@
 ---
 name: interaction-motion
-description: Build, review, audit, name, or find purposeful interaction motion in LearnPlatform's Vue 3 and Element Plus frontend. Use for transitions, restrained learning-state feedback, reduced-motion behavior, or motion-quality review; use frontend-design for page redesign.
+description: Build, review, audit, name, or find interaction motion in LearnPlatform's Vue 3 frontend. Use for spring-based transitions, visualization motion, learning-state feedback, reduced-motion behavior, or motion-quality review; use frontend-design for page redesign.
 ---
 
 # LearnPlatform Interaction Motion
 
-Make state changes easier to understand without slowing a learning or administration task. Motion is optional: an instant change is the right outcome when animation adds no useful signal.
+Motion is part of how the product explains things. Under [ADR-0011](../../../docs/architecture/decisions/0011-living-textbook-spring-motion.md) any surface may move; what changes is the degree. Reading stays calm, understanding moves.
 
 ## Read first
 
-Inspect the target component and its actual trigger path. Read `../../../frontend/src/assets/styles/tokens.css`, `../../../frontend/src/assets/styles/motion.css`, and `../../../docs/architecture/frontend.md`; also use [frontend-design](../frontend-design/SKILL.md) for page-level visual work. Reuse the current Vue 3, TypeScript, Element Plus, and CSS-variable stack. Simple motion stays in CSS/Vue transitions. A new animation dependency requires an evidenced need plus compatibility, lifecycle, accessibility, and bundle review.
+Inspect the target component and its trigger path, then [frontend-design](../frontend-design/SKILL.md) for which baseline the page uses. Pages not yet redesigned keep the existing token and `motion.css` system described in [frontend architecture](../../../docs/architecture/frontend.md); do not add spring motion to them piecemeal. Redesigned pages use the spring system below.
 
-The current `--lp-duration-*` and `--lp-ease-*` variables are the baseline, not an unchangeable law. Reuse them where they fit. Propose a token addition or adjustment only when repeated, evidenced component needs cannot be represented by that scale; keep tokens semantic and avoid a parallel local motion system.
+## Intensity tiers
 
-## Current implementation boundary
+Pick the tier from the surface, then keep the motion inside it:
 
-Use Vue `<Transition>` for one entering or leaving root, and `<TransitionGroup>` only when keyed list insertion, removal, or movement needs continuity. The shared names are `lp-content` for short enter-only content, `lp-disclosure` for conditional panels, and `lp-list` / `lp-list-move` for keyed list updates. Their CSS names, opacity, translation distance, duration, and easing come from `motion.css` and tokens; do not duplicate a near-equivalent local transition.
+- **Light** — question stems, explanations, code, Markdown, and timed exams. Content may fade or slide in once; nothing moves while it is being read. During an exam, motion never hints at correctness.
+- **Medium** — controls, navigation, panels, sheets, lists, and answer feedback. Selection thumbs travel and stretch, sheets open from their trigger, lists reorder with continuity.
+- **Strong** — visualization courseware and key moments of understanding. Pointers bend to new targets, values fly from their source, the camera reframes, spring overshoot is welcome.
 
-Numeric changes use the cancellable `useAnimatedNumber` RAF helper. Its first received value renders directly; later finite updates may transition briefly. Component unmount cancels outstanding RAF work; a reduced-motion preference change cancels and shows the current target. Account-scoped feedback cleanup belongs to its store, not this composable. It displays supplied facts only and never derives scores, rewards, or mastery.
+Frequency lowers intensity: an action repeated many times per minute gets the light end of its tier.
 
-The global `prefers-reduced-motion` treatment makes CSS transitions effectively immediate (`0.01ms`). The shared `motion.css` transitions also remove travel; do not assume that rule resets unrelated component transforms. JavaScript-driven numeric motion must observe `useReducedMotion` and stop at its target. Do not retain a decorative opacity, scale, or layout animation merely because it is short.
+## Spring system
 
-Motion for Vue's `MotionConfig` and `LazyMotion` are evaluated references, not installed project dependencies. Do not add them without a concrete timeline, gesture, or physics need plus compatibility, lifecycle, reduced-motion, and bundle evidence. Native `Document.startViewTransition()` remains a later candidate; it is not part of the current routing or state transition implementation.
+- Every animated value is a spring described by response (seconds) and damping fraction, using the closed-form solution so behavior is frame-rate independent.
+- Use the named presets — layout, pointer, bend, snappy, fade, camera — before tuning a new one. A new preset needs a repeated need, not a single component's taste.
+- Springs are interruptible: retarget from the current value and keep velocity; never restart an animation from its first frame.
+- CSS transitions and WAAPI sequences use the `linear()` easing generated from the same spring so that DOM and canvas motion feel identical.
+- Things appear from where they come from: sheets and popovers scale out of their trigger, copies fly out of their source node, removed items shrink back toward where they belong.
+- A dependency is allowed for what the core does not cover well (gesture momentum, cross-page shared elements, native View Transitions); align its parameters with the presets.
 
-## Choose a mode
+## Visualization motion
 
-- **Build** — add a requested transition or interaction. Follow the build gate below, then implement the smallest viable motion.
-- **Review** — inspect supplied motion code or a focused diff. Report actionable findings with `file:line`, ordered by user impact; do not alter unrelated code.
-- **Audit** — survey a defined frontend area for existing motion quality and consistency. Establish the token and interaction baseline before judging it.
-- **Opportunities** — look for a small number of missing, defensible motion moments. Include rejected candidates so decoration is not mistaken for a gap.
-- **Vocabulary** — name a described effect concisely. Read [motion vocabulary](references/motion-vocabulary.md) only for this mode.
-
-For build, review, audit, and opportunities work, read [motion decision guide](references/motion-decision-guide.md). It contains the operating checks and project implementation guidance. For attribution and the upstream scope, read [source note](references/source-and-license.md).
-
-## Learning feedback
-
-Experience, streaks, goals, and achievements come from persisted backend learning events. Motion never calculates or approves them. Display those facts quietly in the header, profile, and summary rather than with reward floats, full-screen celebrations, confetti, combo flames, achievement dialogs, or persistent pulses. During timed exams, suppress correctness, combo, reward, and sound cues until submission.
-
-An answer or completion may use the shared short state transition only when it improves continuity and never delays the next action. Account-scoped feedback cleanup belongs to the feedback store. Reduced motion retains the information while making shared transitions immediate and removing their travel.
+The stage animates declarative frames keyed by id; a simulator decides every state and the stage only interpolates between them. Never animate a state the simulator did not produce, and never let motion imply a result the learner has not reached. Hypothetical states (a learner's prediction) are drawn as dashed purple ghosts, distinct from real state.
 
 ## Shared boundaries
 
-- Preserve real data flow, focus management, keyboard behavior, and Element Plus semantics. Animation must not defer an action, conceal validation, trap focus, or make an exit unavailable.
-- Default to CSS transitions, Vue `<Transition>`, `@starting-style`, or CSS keyframes when their lifecycle fits. Use WAAPI only for programmatic, cancelable sequences that CSS cannot express. A custom composable is justified only for real gesture or lifecycle coordination; clean up listeners, observers, timers, and animations on unmount.
-- Name transitioned properties; never use `transition: all`. Prefer `transform` and `opacity`, but do not claim they are universally compositor-only. For a layout-dependent effect such as an accordion, first choose an instant state change or a tested layout-aware technique; only animate layout with a clear benefit and performance verification.
-- Include an intentional `prefers-reduced-motion` variant whenever movement, auto-play, or scroll-linked motion is added. It may keep a short opacity or color transition when that preserves comprehension, but removes nonessential travel, scale, repetition, and long staggering.
-- Put hover-only motion behind `@media (hover: hover) and (pointer: fine)`. Provide equivalent focus-visible and active state feedback where the control needs it; touch and keyboard users must not lose the state cue.
-- Verify changed motion at the current project desktop scope, including rapid re-triggering, focus/keyboard flow, reduced motion, and loading/error/empty states it touches. Use browser flow verification when rendered behavior or performance is consequential.
+- Motion only expresses facts the backend has returned; it never calculates or approves scores, rewards, or mastery.
+- No reward floats, full-screen celebrations, confetti, combo flames, achievement dialogs, or loops without a status meaning. A loop that signals a pending state (for example a question waiting for an answer) is allowed and stops when the state ends.
+- Animation must not delay an action, conceal validation, trap focus, or make an exit unavailable; focus, announcements, and navigation never wait for an animation to finish.
+- Name transitioned properties; never use `transition: all`. Prefer `transform` and `opacity`; measure before animating layout.
+- `prefers-reduced-motion`: springs jump to their target, shared CSS transitions become immediate, travel and repetition are removed, results stay visible.
+- Hover-only motion sits behind `@media (hover: hover) and (pointer: fine)` and has an equivalent focus-visible and active state.
+
+## Choose a mode
+
+- **Build** — add motion. Follow the build gate in the [motion decision guide](references/motion-decision-guide.md), then implement within the chosen tier.
+- **Review** — inspect motion code or a focused diff; report actionable findings with `file:line`, ordered by user impact.
+- **Audit** — survey an area for motion quality and consistency against its tier and presets.
+- **Opportunities** — find a small number of missing, defensible motion moments; list rejected candidates too.
+- **Vocabulary** — name a described effect; read [motion vocabulary](references/motion-vocabulary.md) only for this mode.
+
+For attribution and the upstream scope, read [source note](references/source-and-license.md).
+
+## Verification
+
+Check the rendered result, not the source: rapid re-triggering and reversal, keyboard flow, reduced motion, dark appearance, and the loading, empty, error, and populated states the motion touches. When the browser pane is hidden, animation frames may be throttled; verify motion in a visible or headless browser instead.
