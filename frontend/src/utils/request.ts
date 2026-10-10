@@ -3,6 +3,7 @@ import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'a
 import { ElMessage } from 'element-plus'
 import { getToken, removeToken } from './auth'
 import { redirectToLogin } from './authNavigation'
+import { BusinessError } from './errors'
 import type { ApiResponse } from '@/types/api'
 
 declare module 'axios' {
@@ -139,7 +140,7 @@ service.interceptors.response.use(
 
     // 其他业务错误
     if (response.config.errorDisplay !== 'inline') ElMessage.error(res.message || '请求失败')
-    return Promise.reject(new Error(res.message))
+    return Promise.reject(new BusinessError(res.message, res.code))
   },
   (error) => {
     if (error.config?.url === '/auth/login' && error.config?.errorDisplay === 'inline') return Promise.reject(error)

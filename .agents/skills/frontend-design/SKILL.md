@@ -57,7 +57,7 @@ For pages not yet redesigned, the current CSS variables, Element Plus components
 ### New baseline (redesigned pages)
 
 - Neutral light-gray canvas, white large-radius cards, system fonts with rounded numerals, and a system-blue accent, in both light and dark appearance.
-- Color carries fixed meaning only: green for correct, orange for needs attention, purple for prediction or hypothesis, and a fixed identity color per program variable shared by diagrams, code, and watch panels. No decorative gradients; purple never decorates anything that is not a prediction.
+- Color carries fixed meaning only: green for correct, orange for needs attention, purple for prediction or hypothesis, and a fixed identity color per program variable shared by diagrams, code, and watch panels. A wrong answer is orange; red is reserved for failures and destructive actions. No decorative gradients; purple never decorates anything that is not a prediction.
 - Everything lives inside a `.lt` root: a redesigned page puts the whole document on the new baseline, an embeddable component carries `.lt` on its own root. Inside it, take every value from the `--lt-` tokens and build from the `Lt*` components (locations in [frontend architecture](../../../docs/architecture/frontend.md#视觉与设计系统)); never use `--lp-` variables, Element Plus, or `Lp*` components there, and never hard-code a color or size in a page.
 - Define a color once for both appearances with `light-dark()`. Check light and dark on every change; force one with `data-appearance` when comparing side by side.
 - Hierarchy: primary surfaces use the extra-large card radius, side panels the large one; controls are pills. A region has at most one filled accent action; secondary actions use the plain fill, tertiary ones quiet accent text. Nested corners stay concentric: an inset surface's radius is the outer radius minus the inset.
@@ -65,6 +65,8 @@ For pages not yet redesigned, the current CSS variables, Element Plus components
 - Icons come from one stroke icon family at the stroke weight of the surrounding text; only media-style glyphs such as play and pause are filled. Icon-only buttons always have an accessible name.
 - Add a new `Lt*` component only when a second surface needs the same behavior; until then keep it local. Hard accessible primitives (anchored positioning, combobox, menus) go through [borrow-first](../borrow-first/SKILL.md) before anything is hand-written.
 - Visualizations appear inside the learning content that needs them, in the embedded size and fed with that question's own data, with an expand link to the full page; they are not a navigation destination of their own.
+- Cards hold what the learner acts on (a question, a visualization); explanations are read as prose directly on the canvas at reading width, so acting and reading stay visibly different.
+- A learning flow that unfolds step by step names its steps in the left margin, each with a meaning-colored dot joined to the next by a hairline. A newly opened step rises into place and takes focus, and the page scrolls only far enough to keep what led to it, such as the chosen option, in view.
 
 ### Existing baseline (pages not yet redesigned, admin)
 

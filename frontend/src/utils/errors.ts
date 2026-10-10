@@ -23,6 +23,21 @@ export function errorMessage(error: unknown, fallback: string): string {
   return fallback
 }
 
+/** 业务错误：后端返回非 0 的 code 时由请求拦截器抛出，保留 code 供页面区分“没有内容”和失败。 */
+export class BusinessError extends Error {
+  readonly code: number
+
+  constructor(message: string, code: number) {
+    super(message)
+    this.name = 'BusinessError'
+    this.code = code
+  }
+}
+
+export function businessCode(error: unknown): number | undefined {
+  return error instanceof BusinessError ? error.code : undefined
+}
+
 export function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError'
 }

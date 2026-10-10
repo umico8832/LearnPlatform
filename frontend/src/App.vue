@@ -1,6 +1,11 @@
 <template>
   <el-config-provider :locale="zhCn">
-    <router-view />
+    <router-view v-slot="{ Component, route: current }">
+      <!-- 题目理解页展开可视化再返回时保留作答进度，只缓存最近一道题。 -->
+      <KeepAlive :include="KEEP_ALIVE" :max="1">
+        <component :is="Component" :key="KEEP_ALIVE_ROUTES.has(current.name) ? current.path : undefined" />
+      </KeepAlive>
+    </router-view>
   </el-config-provider>
 </template>
 
@@ -12,6 +17,9 @@ import { useUserStore } from '@/stores/user'
 import { isAuthenticated } from '@/utils/auth'
 import { getToken, onAuthSessionChange } from '@/utils/auth'
 import { useGamificationStore } from '@/stores/gamification'
+
+const KEEP_ALIVE = ['QuestionUnderstandingView']
+const KEEP_ALIVE_ROUTES = new Set<unknown>(['QuestionUnderstanding'])
 
 // 页面刷新时恢复用户信息
 const userStore = useUserStore()

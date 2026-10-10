@@ -20,12 +20,11 @@ describe('课程空间学习工具路由名', () => {
       createLearnerRoutes(true)
         .filter((route) => route.path.startsWith('/dev/'))
         .map((route) => route.name),
-    ).toEqual(['DevPages', 'DevLivingKit', 'DevVizEmbed'])
+    ).toEqual(['DevPages', 'DevLivingKit'])
     const productionNames = createLearnerRoutes(false).map((route) => route.name)
     expect(productionNames).not.toContain('AuthPreview')
     expect(productionNames).not.toContain('DevPages')
     expect(productionNames).not.toContain('DevLivingKit')
-    expect(productionNames).not.toContain('DevVizEmbed')
   })
 
   it('Home 是公开的首页路由', () => {
