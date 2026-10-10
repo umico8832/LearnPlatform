@@ -7,6 +7,7 @@
 - 第一次运行项目：[本地开发](getting-started/local-development.md) 或 [Docker 开发](getting-started/docker-development.md)
 - 配置与排错：[配置说明](getting-started/configuration.md)和[常见问题排查](getting-started/troubleshooting.md)
 - 了解产品：[产品需求](product/prd.md)、[产品路线图](product/roadmap.md)、[后续扩展方向](product/future.md)
+- 编写学习讲解：[学习内容讲解口径](product/explanation-conventions.md)
 - 了解系统：[系统架构](architecture/overview.md)
 - 查询契约：[API 参考](reference/api/index.md) 与 [数据库参考](reference/database/index.md)
 - 开始开发：[AI Agent 开发工作流](development/workflow.md) 与 [测试策略](development/testing.md)
@@ -39,6 +40,7 @@
 | 尚未完成的候选方向与进入条件 | [product/future.md](product/future.md) |
 | 重大阶段与长期结果 | [project/history.md](project/history.md) |
 | 产品范围与稳定验收标准 | [product/prd.md](product/prd.md) |
+| 学习题目、讲解与场景的术语及表示约定 | [product/explanation-conventions.md](product/explanation-conventions.md) |
 | 模块入口、依赖方向与职责边界 | [architecture/overview.md](architecture/overview.md)及对应前后端文档 |
 | 跨模块处理过程 | [architecture/data-flow.md](architecture/data-flow.md) |
 | 重要架构决策 | [architecture/decisions/](architecture/decisions/index.md) |
