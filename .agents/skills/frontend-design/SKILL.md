@@ -39,7 +39,7 @@ Typography and interface copy are part of the design. Use plain, consistent acti
 
 ## Two baselines during the learner redesign
 
-The learner app is being redesigned page by page under [ADR-0011](../../../docs/architecture/decisions/0011-living-textbook-spring-motion.md), starting with the demo flow "one question from wrong to understood". A page in redesign follows the new baseline below and is designed from scratch: do not use the old page or the old visual components as reference. Every other learner page and the admin app keep the existing system until their own redesign; do not restyle them piecemeal, because a half-migrated page is worse than either baseline.
+The learner app is being redesigned page by page under [ADR-0011](../../../docs/architecture/decisions/0011-living-textbook-spring-motion.md); [project status](../../../docs/project/status.md) says which pages are in redesign. A page in redesign follows the new baseline below and is designed from scratch: do not use the old page or the old visual components as reference. Every other learner page and the admin app keep the existing system until their own redesign; do not restyle them piecemeal, because a half-migrated page is worse than either baseline.
 
 ## Treat the existing system as a baseline
 
@@ -57,9 +57,14 @@ For pages not yet redesigned, the current CSS variables, Element Plus components
 ### New baseline (redesigned pages)
 
 - Neutral light-gray canvas, white large-radius cards, system fonts with rounded numerals, and a system-blue accent, in both light and dark appearance.
-- Color carries fixed meaning only: green for correct, orange for needs attention, purple for prediction or hypothesis, and a fixed identity color per program variable shared by diagrams, code, and watch panels. No decorative gradients.
-- Motion follows [interaction-motion](../interaction-motion/SKILL.md): three intensity tiers and named spring presets.
-- Values come from the new token layer introduced with the first redesigned page; do not hard-code them in a page.
+- Color carries fixed meaning only: green for correct, orange for needs attention, purple for prediction or hypothesis, and a fixed identity color per program variable shared by diagrams, code, and watch panels. No decorative gradients; purple never decorates anything that is not a prediction.
+- Everything lives inside a `.lt` root: a redesigned page puts the whole document on the new baseline, an embeddable component carries `.lt` on its own root. Inside it, take every value from the `--lt-` tokens and build from the `Lt*` components (locations in [frontend architecture](../../../docs/architecture/frontend.md#视觉与设计系统)); never use `--lp-` variables, Element Plus, or `Lp*` components there, and never hard-code a color or size in a page.
+- Define a color once for both appearances with `light-dark()`. Check light and dark on every change; force one with `data-appearance` when comparing side by side.
+- Hierarchy: primary surfaces use the extra-large card radius, side panels the large one; controls are pills. A region has at most one filled accent action; secondary actions use the plain fill, tertiary ones quiet accent text. Nested corners stay concentric: an inset surface's radius is the outer radius minus the inset.
+- Type: interface text uses the body size; long reading text (stems, explanations) uses the reading size and leading; statements and code use the monospace face; counts and values use rounded tabular numerals.
+- Icons come from one stroke icon family at the stroke weight of the surrounding text; only media-style glyphs such as play and pause are filled. Icon-only buttons always have an accessible name.
+- Add a new `Lt*` component only when a second surface needs the same behavior; until then keep it local. Hard accessible primitives (anchored positioning, combobox, menus) go through [borrow-first](../borrow-first/SKILL.md) before anything is hand-written.
+- Visualizations appear inside the learning content that needs them, in the embedded size and fed with that question's own data, with an expand link to the full page; they are not a navigation destination of their own.
 
 ### Existing baseline (pages not yet redesigned, admin)
 
@@ -89,7 +94,7 @@ State feedback may use the medium motion tier on redesigned pages and the shared
 
 First form a compact implementation plan covering hierarchy, type, color, spacing, layout, states, and any deliberate point of distinction. Compare it with the brief and current screen. Revise choices that could be transplanted unchanged into an unrelated product.
 
-Then implement in the repository's Vue 3, TypeScript, Element Plus, ECharts, and CSS-variable stack. Check selector precedence and component boundaries so local styling does not accidentally cancel shared rules. Keep the result as the finished product UI; design commentary and production notes stay outside user-facing copy.
+Then implement with the baseline the page uses: `Lt*` components and `--lt-` tokens on redesigned pages, the existing tokens, `Lp*` components, and Element Plus elsewhere. Check selector precedence and component boundaries so local styling does not accidentally cancel shared rules. Keep the result as the finished product UI; design commentary and production notes stay outside user-facing copy.
 
 ## Required states and constraints
 

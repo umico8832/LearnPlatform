@@ -74,7 +74,7 @@ frontend/admin/   # 独立管理端 HTML 入口
 - `components/living/` 提供按需导入的 `Lt*` 基础组件，图标使用 Lucide。面板基于原生 `<dialog>`，
   从触发处展开并把焦点还给触发处。开发环境 `/dev/kit` 并排预览两种外观。
 - `viz/` 是数据结构可视化模块：`engine/`（契约、播放器、舞台）与 `scenes/`（每个场景一个确定性模拟器，按需加载）
-  不依赖 Vue，`VizPlayer` 是唯一的 Vue 入口。嵌入尺寸只有舞台、讲解与播放条，用题目自己的数据；整页另有参数、代码、
+  不依赖 Vue，`VizPlayer` 是唯一的 Vue 入口。嵌入尺寸以舞台、讲解与播放条为主，数据由使用方传入；整页另有参数、代码、
   变量与检查点。嵌入处的“展开”用原生 View Transitions 把卡片放大到整页 `/viz/:scene`。开发环境 `/dev/viz` 预览嵌入尺寸。
 
 下述 Quiet Digital Textbook 实现仍适用于尚未重做的学习端页面和管理端。
@@ -91,7 +91,7 @@ frontend/admin/   # 独立管理端 HTML 入口
   它只使用 token 化的 opacity 与短距离 transform。`prefers-reduced-motion` 使 CSS 过渡即时，
   并由共享动效类移除位移，
   `useAnimatedNumber` 对服务端数值的后续更新使用可取消 RAF，首次值直接显示。旧页面不引入新的动画依赖，
-  也不混用新基线的弹簧动效；原生 View Transitions 尚未接入路由。
+  也不混用新基线的弹簧动效；原生 View Transitions 目前只用于可视化的“展开”，通用路由切换尚未使用。
 - 反馈组件集中在 `components/gamification/`，使用后端奖励与概况，不在前端认定积分或成就。
   ADR-0010 定义其安静呈现方向：数据在顶栏、个人页和总结中原位显示，不增加奖励飘字、全屏庆祝、彩纸、连击火焰、成就弹窗或常驻 pulse。
   答题只显示一行已记录事实，无连击徽章；动画不阻塞继续学习。

@@ -26,9 +26,10 @@ Frequency lowers intensity: an action repeated many times per minute gets the li
 - Every animated value is a spring described by response (seconds) and damping fraction, using the closed-form solution so behavior is frame-rate independent.
 - Use the named presets — layout, pointer, bend, snappy, fade, camera — before tuning a new one. A new preset needs a repeated need, not a single component's taste.
 - Springs are interruptible: retarget from the current value and keep velocity; never restart an animation from its first frame.
-- CSS transitions and WAAPI sequences use the `linear()` easing generated from the same spring so that DOM and canvas motion feel identical.
+- CSS transitions and WAAPI sequences use the `linear()` easing generated from the same spring so that DOM and canvas motion feel identical: the `--lt-ease-*` and `--lt-dur-*` tokens in CSS, `springAnimate` in script. No hand-tuned cubic-bezier on redesigned pages.
 - Things appear from where they come from: sheets and popovers scale out of their trigger, copies fly out of their source node, removed items shrink back toward where they belong.
 - A dependency is allowed for what the core does not cover well (gesture momentum, cross-page shared elements, native View Transitions); align its parameters with the presets.
+- A shared-element page transition names the element on both pages and captures the destination only once it has rendered its real content; otherwise the morph lands on an empty placeholder.
 
 ## Visualization motion
 

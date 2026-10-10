@@ -47,5 +47,5 @@
 
 ## 参考
 
-- 原型位于本地忽略目录 `tmp/viz-lab/`，迁入前端后以正式源码为准。
+- 原型已迁入 `frontend/src/viz/`，以正式源码为准。
 - [ADR-0010](0010-quiet-digital-textbook-motion.md)

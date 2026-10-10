@@ -53,7 +53,7 @@ LearnPlatform 是一个以**理解知识**和**课程长期学习过程**为中�
 | 测试 | JUnit、Mockito、MockMvc、Testcontainers、Vitest、Playwright |
 
 工程特点：学习端与管理端为独立前端应用（独立 Router、布局与构建产物，共用后端）；
-Design Tokens 作为唯一视觉来源（`frontend/src/assets/styles/tokens.css`）；
+视觉取值统一来自 Design Tokens（尚未重做的页面用 `tokens.css`，重做页面用 `living.css`）；
 学习页面使用沉浸式 Focus Layout；大型页面按领域拆分为可复用组件。
 
 ## 快速开始
