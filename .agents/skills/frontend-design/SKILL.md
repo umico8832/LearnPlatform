@@ -1,6 +1,6 @@
 ---
 name: frontend-design
-description: "Design, restyle, or review LearnPlatform frontend pages and components in Vue 3 and TypeScript. Use for page layout, visual direction, component styling, responsive behavior, interaction polish, or design-system changes. Classify the surface before acting: route public websites, landing pages, portfolio or showcase pages to marketing-showcase; substantive motion work to interaction-motion; and formal UI audits to frontend-quality-review. Do not introduce React, shadcn/ui, Tailwind, or a new component library unless the user explicitly requests a stack change."
+description: "Design, restyle, or review LearnPlatform frontend pages and components in Vue 3 and TypeScript. Use for page layout, visual direction, component styling, responsive behavior, interaction polish, or design-system changes. Classify the surface before acting: route public websites, landing pages, portfolio or showcase pages to marketing-showcase; substantive motion work to interaction-motion; and formal UI audits to frontend-quality-review. Do not introduce React or Tailwind; adopt new libraries or borrowed component logic through the borrow-first skill."
 ---
 
 # LearnPlatform Frontend Design

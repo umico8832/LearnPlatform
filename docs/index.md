@@ -88,8 +88,8 @@ roadmap 引用有效候选。不能因为某个流程涉及多个领域，就在
 
 ## 工具维护
 
-- `frontend-design`、`marketing-showcase`、`interaction-motion`、`frontend-quality-review`、`frontend-flow-test`
-  是项目自有 Skill，工作流维护在各自 `SKILL.md`；项目事实通过链接引用 docs。前三个设计 Skill 分别承担总路由、
+- `frontend-design`、`marketing-showcase`、`interaction-motion`、`frontend-quality-review`、`frontend-flow-test`、
+  `borrow-first` 是项目自有 Skill，工作流维护在各自 `SKILL.md`；项目事实通过链接引用 docs。前三个设计 Skill 分别承担总路由、
   对外展示场景和动效专项，质量审查保持只读审查语义；现有视觉规则是可审查基线，不因已存在而自动优先于证据。
 - `banner-design`、`brand`、`design`、`design-system`、`slides`、`ui-styling`、`ui-ux-pro-max` 来自
   [ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)，不直接修改、移动或格式化生成内容。

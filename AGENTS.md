@@ -30,6 +30,7 @@ AI 教学、试卷学习、练习、错题、复习和测评。产品范围与�
 
 | 触发条件与读取时机 | 必读入口 |
 |---|---|
+| 新建或大幅改造非小型功能、页面、动效、流程、算法、内容或测试方案前 | 项目 [borrow-first](.agents/skills/borrow-first/SKILL.md)：先找并借鉴已有优秀实现 |
 | 实质开发、持续维护、行为验证或判断完成前 | [开发工作流](docs/development/workflow.md)，需要操作运行环境时读取对应小节；选择验证范围时查[测试策略](docs/development/testing.md) |
 | 判断产品范围或下一阶段前 | [产品需求](docs/product/prd.md)、[路线图](docs/product/roadmap.md)；未承诺方向见[候选计划](docs/product/future.md) |
 | 调整模块、目录或职责边界前 | [系统架构](docs/architecture/overview.md)及对应前后端文档；重大决策查阅[ADR](docs/architecture/decisions/index.md) |
