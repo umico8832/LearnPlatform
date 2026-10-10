@@ -109,12 +109,8 @@
                 <h3 :id="`answer-heading-${answer.questionId}`" class="q-index">题目 {{ answerLabel(answer, idx) }}</h3>
                 <el-tag size="small">{{ getTypeLabel(answer.questionType) }}</el-tag>
                 <span class="q-score-tag">满分 {{ answer.fullScore }} 分</span>
-                <el-tag
-                  :type="answer.gradingStatus === 'PENDING' ? 'warning' : answer.isCorrect === 1 ? 'success' : 'danger'"
-                  size="small"
-                  class="result-tag"
-                >
-                  {{ answer.gradingStatus === 'PENDING' ? '待人工批阅' : answer.isCorrect === 1 ? '正确' : '错误' }}
+                <el-tag :type="answerStatusType(answer)" size="small" class="result-tag">
+                  {{ answerStatusLabel(answer) }}
                 </el-tag>
                 <span class="earned-score">{{ answer.score == null ? '待评分' : `得 ${answer.score} 分` }}</span>
               </div>
@@ -126,7 +122,7 @@
                   <dd
                     :class="[
                       'detail-value',
-                      answer.isCorrect === 1 ? 'correct' : answer.gradingStatus === 'PENDING' ? '' : 'wrong',
+                      answer.isCorrect === 1 ? 'correct' : answer.isCorrect === 0 ? 'wrong' : '',
                     ]"
                   >
                     {{ answer.userAnswer || '未作答' }}
@@ -204,6 +200,16 @@ const answers = computed(() => result.value?.answers || [])
 const wrongAnswers = computed(() =>
   answers.value.filter((answer) => answer.gradingStatus !== 'PENDING' && answer.isCorrect === 0),
 )
+function answerStatusLabel(answer: ExamAnswerVO) {
+  if (answer.gradingStatus === 'PENDING') return '待人工批阅'
+  if (answer.gradingStatus === 'UNANSWERED') return '未作答'
+  return answer.isCorrect === 1 ? '正确' : '错误'
+}
+function answerStatusType(answer: ExamAnswerVO) {
+  if (answer.gradingStatus === 'PENDING') return 'warning'
+  if (answer.gradingStatus === 'UNANSWERED') return 'info'
+  return answer.isCorrect === 1 ? 'success' : 'danger'
+}
 const isPendingReview = computed(() => result.value?.status === 3)
 const isOfficialPaper = computed(() => result.value?.paperType === 'OFFICIAL_EXAM')
 const scoreLabel = computed(() =>

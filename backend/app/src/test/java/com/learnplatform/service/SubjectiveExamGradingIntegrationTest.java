@@ -96,6 +96,43 @@ class SubjectiveExamGradingIntegrationTest extends IntegrationTestBase {
                 .allMatch(answer -> answer.getAnalysis() != null && answer.getReviewComment() != null));
     }
 
+    @Test
+    void unansweredSubjectiveQuestionDoesNotEnterReviewQueue() {
+        ExamPaper paper = paperMapper.selectOne(new LambdaQueryWrapper<ExamPaper>()
+                .eq(ExamPaper::getTitle, "2026 年 408 真题·数据结构部分"));
+        assertNotNull(paper);
+        User learner = createLearner();
+        ExamRecordVO started = examService.startExam(paper.getId(), learner.getId());
+        List<Long> subjectiveIds = gradingPointMapper.selectList(new LambdaQueryWrapper<SubjectiveGradingPoint>()
+                        .orderByAsc(SubjectiveGradingPoint::getQuestionId))
+                .stream().map(SubjectiveGradingPoint::getQuestionId).distinct().toList();
+        assertEquals(2, subjectiveIds.size());
+
+        ExamSubmitRequest request = new ExamSubmitRequest();
+        request.setExamRecordId(started.getId());
+        ExamSubmitRequest.AnswerItem answered = new ExamSubmitRequest.AnswerItem();
+        answered.setQuestionId(subjectiveIds.get(0));
+        answered.setUserAnswer("考生作答");
+        ExamSubmitRequest.AnswerItem blank = new ExamSubmitRequest.AnswerItem();
+        blank.setQuestionId(subjectiveIds.get(1));
+        blank.setUserAnswer("   ");
+        request.setAnswers(List.of(answered, blank));
+
+        ExamRecordVO result = examService.submitExam(request, learner.getId());
+        assertEquals(3, result.getStatus());
+        ExamRecordVO.ExamAnswerVO unanswered = result.getAnswers().stream()
+                .filter(answer -> answer.getQuestionId().equals(subjectiveIds.get(1))).findFirst().orElseThrow();
+        assertEquals("UNANSWERED", unanswered.getGradingStatus());
+        assertNull(unanswered.getIsCorrect());
+        assertEquals(0, unanswered.getScore());
+
+        List<SubjectiveAnswerReviewVO> pending = gradingService.listPending().stream()
+                .filter(answer -> answer.getExamRecordId().equals(started.getId())).toList();
+        assertEquals(1, pending.size());
+        gradingService.grade(pending.get(0).getAnswerId(), fullScoreRequest(pending.get(0)), 1L);
+        assertEquals(1, examService.getExamResult(started.getId(), learner.getId()).getStatus());
+    }
+
     private User createLearner() {
         User user = new User();
         user.setUsername("subjective_exam_" + System.nanoTime());

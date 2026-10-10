@@ -69,6 +69,7 @@ public class ExamAnswerSubmissionService {
                 }
                 int questionScore = questionScoreMap.getOrDefault(questionId, 1);
                 String userAnswer = submittedAnswers.getOrDefault(questionId, "");
+                boolean unanswered = userAnswer == null || userAnswer.isBlank();
                 List<QuestionOption> correctOptions = questionOptionMapper.selectList(
                                 new LambdaQueryWrapper<QuestionOption>()
                                         .eq(QuestionOption::getQuestionId, question.getId())
@@ -76,8 +77,8 @@ public class ExamAnswerSubmissionService {
                         .stream().filter(option -> option.getIsCorrect() != null && option.getIsCorrect() == 1)
                         .collect(Collectors.toList());
                 String correctAnswer = answerEvaluator.buildCorrectAnswer(correctOptions, question.getQuestionType());
-                boolean manualGrading = "SHORT_ANSWER".equals(question.getQuestionType());
-                boolean correct = !manualGrading && answerEvaluator.isCorrect(question.getQuestionType(),
+                boolean manualGrading = !unanswered && "SHORT_ANSWER".equals(question.getQuestionType());
+                boolean correct = !unanswered && !manualGrading && answerEvaluator.isCorrect(question.getQuestionType(),
                         userAnswer != null ? userAnswer.trim() : "", correctAnswer);
                 if (correct) {
                     earnedScore += questionScore;
@@ -90,15 +91,17 @@ public class ExamAnswerSubmissionService {
                 examAnswer.setExamRecordId(record.getId());
                 examAnswer.setQuestionId(questionId);
                 examAnswer.setUserAnswer(userAnswer != null ? userAnswer : "");
-                examAnswer.setIsCorrect(manualGrading ? null : (correct ? 1 : 0));
+                examAnswer.setIsCorrect(unanswered || manualGrading ? null : (correct ? 1 : 0));
                 examAnswer.setScore(manualGrading ? null : (correct ? questionScore : 0));
-                examAnswer.setGradingStatus(manualGrading ? "PENDING" : "AUTO_GRADED");
+                examAnswer.setGradingStatus(unanswered ? "UNANSWERED" : manualGrading ? "PENDING" : "AUTO_GRADED");
                 examAnswerMapper.insert(examAnswer);
-                if (!manualGrading && courseLearningEventService != null) {
+                if (!unanswered && !manualGrading && courseLearningEventService != null) {
                     courseLearningEventService.recordQuestionAnswer(userId, question, "EXAM_ANSWERED", "EXAM",
                             examAnswer.getId(), correct, examAnswer.getCreateTime());
                 }
-                updateWrongQuestion(userId, questionId, userAnswer, manualGrading, correct);
+                if (!unanswered) {
+                    updateWrongQuestion(userId, questionId, userAnswer, manualGrading, correct);
+                }
             }
         }
         return new GradingSummary(earnedScore, totalScore, hasPendingReview);

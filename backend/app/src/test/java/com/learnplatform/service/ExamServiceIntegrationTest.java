@@ -6,6 +6,7 @@ import com.learnplatform.common.exception.ExamTimedOutException;
 import com.learnplatform.dto.ExamSubmitRequest;
 import com.learnplatform.dto.ExamRecordVO;
 import com.learnplatform.entity.Course;
+import com.learnplatform.entity.CourseLearningEvent;
 import com.learnplatform.entity.ExamAnswer;
 import com.learnplatform.entity.ExamPaper;
 import com.learnplatform.entity.ExamQuestion;
@@ -13,8 +14,11 @@ import com.learnplatform.entity.ExamRecord;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionOption;
 import com.learnplatform.entity.User;
+import com.learnplatform.entity.UserCourse;
 import com.learnplatform.entity.WrongQuestion;
+import com.learnplatform.entity.QuestionReviewSchedule;
 import com.learnplatform.mapper.CourseMapper;
+import com.learnplatform.mapper.CourseLearningEventMapper;
 import com.learnplatform.mapper.ExamAnswerMapper;
 import com.learnplatform.mapper.ExamPaperMapper;
 import com.learnplatform.mapper.ExamQuestionMapper;
@@ -22,7 +26,9 @@ import com.learnplatform.mapper.ExamRecordMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
 import com.learnplatform.mapper.UserMapper;
+import com.learnplatform.mapper.UserCourseMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
+import com.learnplatform.mapper.QuestionReviewScheduleMapper;
 import com.learnplatform.IntegrationTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -72,8 +78,17 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
     private WrongQuestionMapper wrongQuestionMapper;
     @Autowired
     private UserMapper userMapper;
+    @Autowired
+    private UserCourseMapper userCourseMapper;
+    @Autowired
+    private CourseLearningEventMapper courseLearningEventMapper;
+    @Autowired
+    private QuestionReviewScheduleMapper reviewScheduleMapper;
+    @Autowired
+    private SpacedRepetitionService spacedRepetitionService;
 
     private static Long userId;
+    private static Long courseId;
     private static Long question1Id; // 单选题
     private static Long question2Id; // 多选题
     private static Long examPaperId;
@@ -107,7 +122,7 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
         course.setCreateTime(LocalDateTime.now());
         course.setUpdateTime(LocalDateTime.now());
         courseMapper.insert(course);
-        Long courseId = course.getId();
+        courseId = course.getId();
 
         // 2. 创建单选题 (SINGLE_CHOICE)
         Question q1 = new Question();
@@ -515,5 +530,49 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
         assertNull(examRecordMapper.selectById(first.getId()).getActiveExamKey());
         ExamRecordVO nextAttempt = examService.startExam(examPaperId, userId);
         assertNotEquals(first.getId(), nextAttempt.getId());
+    }
+
+    @Test
+    @Order(12)
+    @DisplayName("部分交卷只将已答错题计入学习事件、错题和复习")
+    void submitExam_unansweredQuestion_hasNoLearningSideEffects() {
+        UserCourse membership = new UserCourse();
+        membership.setUserId(userId);
+        membership.setCourseId(courseId);
+        userCourseMapper.insert(membership);
+
+        ExamRecordVO record = examService.startExam(examPaperId, userId);
+        ExamSubmitRequest request = new ExamSubmitRequest();
+        request.setExamRecordId(record.getId());
+        ExamSubmitRequest.AnswerItem wrong = new ExamSubmitRequest.AnswerItem();
+        wrong.setQuestionId(question1Id);
+        wrong.setUserAnswer("B");
+        request.setAnswers(List.of(wrong));
+
+        ExamRecordVO result = examService.submitExam(request, userId);
+        assertEquals(0, result.getScore());
+        assertEquals(20, result.getTotalScore());
+        assertEquals(2, result.getAnswers().size());
+        ExamRecordVO.ExamAnswerVO unanswered = result.getAnswers().stream()
+                .filter(answer -> answer.getQuestionId().equals(question2Id)).findFirst().orElseThrow();
+        assertEquals("UNANSWERED", unanswered.getGradingStatus());
+        assertEquals("", unanswered.getUserAnswer());
+        assertNull(unanswered.getIsCorrect());
+        assertEquals(0, unanswered.getScore());
+
+        List<CourseLearningEvent> events = courseLearningEventMapper.selectList(
+                new LambdaQueryWrapper<CourseLearningEvent>().eq(CourseLearningEvent::getUserId, userId));
+        assertEquals(1, events.size());
+        assertEquals(question1Id, events.get(0).getSubjectId());
+
+        List<WrongQuestion> wrongQuestions = wrongQuestionMapper.selectList(
+                new LambdaQueryWrapper<WrongQuestion>().eq(WrongQuestion::getUserId, userId));
+        assertEquals(1, wrongQuestions.size());
+        assertEquals(question1Id, wrongQuestions.get(0).getQuestionId());
+        assertEquals(1, spacedRepetitionService.syncWrongQuestionsToReviewPlan(userId));
+        List<QuestionReviewSchedule> cards = reviewScheduleMapper.selectList(
+                new LambdaQueryWrapper<QuestionReviewSchedule>().eq(QuestionReviewSchedule::getUserId, userId));
+        assertEquals(1, cards.size());
+        assertEquals(question1Id, cards.get(0).getQuestionId());
     }
 }

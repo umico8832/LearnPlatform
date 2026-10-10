@@ -106,7 +106,7 @@ export interface ExamAnswerVO {
   score: number | null
   correctAnswer: string | null
   analysis: string | null
-  gradingStatus: 'AUTO_GRADED' | 'PENDING' | 'REVIEWED'
+  gradingStatus: 'AUTO_GRADED' | 'PENDING' | 'REVIEWED' | 'UNANSWERED'
   reviewComment: string | null
   reviewDetailJson: string | null
 }

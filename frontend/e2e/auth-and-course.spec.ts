@@ -299,6 +299,41 @@ test('用户刷新后可继续限时考试，取消提交并在失败重试后�
   await expect(page.locator('.score-number')).toHaveText('15')
 })
 
+test('部分交卷后未答题保留零分且不会进入错题与复习', async ({ browser, page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await createLearnerAndLogin(browser, page, 'partial-exam')
+
+  await page.goto('/exams')
+  await page.getByRole('textbox', { name: '按试卷名称查找' }).fill('Java 基础入门测验')
+  await page.getByRole('button', { name: '查找试卷' }).click()
+  const card = page.locator('.exam-card').filter({ hasText: 'Java 基础入门测验' })
+  await expect(card).toBeVisible()
+  await card.getByRole('button', { name: '考试模式' }).click()
+  await page.getByRole('radio', { name: /implements/ }).check()
+  await page.locator('.take-header').getByRole('button', { name: '提交试卷' }).click()
+  const confirm = page.getByRole('dialog', { name: '提交确认' })
+  await expect(confirm).toContainText('还有 2 题未作答')
+  await confirm.getByRole('button', { name: '提交试卷' }).click()
+
+  await expect(page).toHaveURL(/\/exams\/result\/\d+$/)
+  await expect(page.locator('.score-number')).toHaveText('0')
+  await expect(page.locator('.result-tag').filter({ hasText: '错误' })).toHaveCount(1)
+  await expect(page.locator('.result-tag').filter({ hasText: '未作答' })).toHaveCount(2)
+  await expect(page.locator('.answers-summary')).toContainText('1 题需复习')
+
+  await page.goto('/wrong-questions')
+  await expect(page.locator('.wrong-card')).toHaveCount(1)
+  await expect(page.locator('.wrong-card')).toContainText('Java 中用于定义类继承关系的关键字')
+  await page.goto('/review')
+  await page.getByRole('button', { name: '同步错题到复习' }).click()
+  await expect(page.getByText('复习卡片', { exact: true })).toBeVisible()
+  await expect(page.locator('.stats-grid')).toContainText('1')
+  await page.getByRole('button', { name: '查看全部卡片' }).click()
+  await expect(page.locator('.all-cards-card')).toContainText('Java 中用于定义类继承关系的关键字')
+  await expect(page.locator('.all-cards-card tbody tr')).toHaveCount(1)
+})
+
 test('用户可预览确认结构化私有试卷并隔离给其他账号', async ({ page }) => {
   const paperTitle = `E2E 私有试卷 ${Date.now()}`
   await loginAs(page, 'testuser', 'test123')

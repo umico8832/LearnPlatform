@@ -27,7 +27,7 @@ public class ExamAnswer {
 
     private Integer score;
 
-    /** AUTO_GRADED / PENDING / REVIEWED */
+    /** AUTO_GRADED / PENDING / REVIEWED / UNANSWERED */
     private String gradingStatus;
 
     private Long reviewerId;

@@ -217,6 +217,26 @@ describe('ExamResultView authoritative review', () => {
     expect(wrapper.find('.rate-value').text()).toBe('49%')
   })
 
+  it('未作答题显示中性状态且不计入需复习或错题入口', async () => {
+    const response = await mockGetExamResult()
+    response.data.answers[1] = {
+      ...response.data.answers[1],
+      userAnswer: '',
+      isCorrect: null,
+      score: 0,
+      gradingStatus: 'UNANSWERED',
+    }
+    mockGetExamResult.mockResolvedValue(response)
+
+    const wrapper = mount(ExamResultView, { global: { stubs, directives: { loading: () => undefined } } })
+    await flushPromises()
+
+    expect(wrapper.findAll('.result-tag').map((tag) => tag.text())).toEqual(['错误', '未作答'])
+    expect(wrapper.text()).toContain('2 题 · 1 题需复习')
+    expect(wrapper.findAll('button').filter((button) => button.text().includes('复习此错题'))).toHaveLength(1)
+    expect(wrapper.findAll('.answer-item')[1].find('.detail-value').classes()).not.toContain('wrong')
+  })
+
   it('以原位错误恢复失败请求，重试后读取同一权威结果', async () => {
     mockGetExamResult.mockRejectedValueOnce(new Error('network unavailable'))
     const wrapper = mount(ExamResultView, { global: { stubs, directives: { loading: () => undefined } } })
