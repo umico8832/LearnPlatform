@@ -177,7 +177,7 @@ function firstPushPredict(st: State, target: number): Predict {
   if (target === 1) {
     return {
       id: 'stack-first-push',
-      prompt: '要让 1 第一个出栈，1 出栈的那一刻，栈里有什么？',
+      prompt: '要让 1 第一个出栈，弹出 1 前一刻栈里有什么？',
       options: [
         {
           id: 'right',
@@ -207,7 +207,7 @@ function firstPushPredict(st: State, target: number): Predict {
   }
   return {
     id: 'stack-first-push',
-    prompt: `要让 ${target} 第一个出栈。${target} 出栈的那一刻，栈里从底到顶是？`,
+    prompt: `要让 ${target} 第一个出栈。弹出 ${target} 前一刻，栈里从底到顶是？`,
     options: [
       {
         id: 'right',

@@ -366,14 +366,18 @@ function nullPredict(tree: Tree, op: Op, caller: string, side: 'left' | 'right')
         feedback: '第 2 行先判断 T == NULL，空树直接返回，根本不会去读 T->lchild。这一行就是递归的出口。',
       },
       isRoot
-        ? { id: 'end', text: '整个遍历结束', feedback: `返回只结束这一次空调用，回到 ${caller} 继续执行，遍历还没完。` }
+        ? {
+            id: 'end',
+            text: '直接结束遍历，不再返回根调用',
+            feedback: `这次 NULL 调用先返回 ${caller}；根调用随后是否结束，取决于它还有没有语句要执行。`,
+          }
         : {
             id: 'root',
             text: `回到根 ${tree.root} 重新开始`,
             feedback: `返回只回到直接调用者 ${caller}，不会跳回根。`,
           },
     ],
-    takeaway: '每条递归路径最终都停在 T == NULL。没有这一行，递归就停不下来。',
+    takeaway: '空调用在 T == NULL 时返回，后续的访问和递归语句不会执行。',
   }
 }
 
@@ -461,8 +465,8 @@ function simulate(tree: Tree, op: Op): { steps: Step[]; output: string[] } {
       st.frames.push({ id: `f:null${nullCount++}`, node: null, caller, side })
       snap({
         line: 2,
-        title: `${fn}(NULL)`,
-        note: `${caller} 的${SIDE_NAME[side!]}孩子为空。第 2 行发现 T == NULL，立刻返回。`,
+        title: 'if (T == NULL) return',
+        note: `${caller} 的${SIDE_NAME[side!]}孩子为空；${fn}(NULL) 在第 2 行返回。`,
         predict: askedNull ? undefined : nullPredict(tree, op, caller!, side!),
       })
       askedNull = true
@@ -485,7 +489,7 @@ function simulate(tree: Tree, op: Op): { steps: Step[]; output: string[] } {
           line: lineOf(op, 'visit'),
           title: `visit(${id})`,
           note: `访问 ${id}。访问序列：${st.visited.join(' ')}`,
-          predict: askedFirst ? undefined : firstVisitPredict(tree, op),
+          predict: askedFirst || tree.nodes.size === 1 ? undefined : firstVisitPredict(tree, op),
         })
         askedFirst = true
       } else {

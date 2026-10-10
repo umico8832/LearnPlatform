@@ -93,12 +93,14 @@ const LISTINGS: Record<Op, CodeListing> = {
     file: 'ListInsert.c',
     lines: [
       'bool ListInsert(LinkList L, int i, int e) {',
+      '    if (i < 1) return false;',
       '    LNode *p = L;  int j = 0;',
       '    while (p != NULL && j < i - 1) {',
       '        p = p->next;  j++;',
       '    }',
       '    if (p == NULL) return false;  // i 不合法',
       '    LNode *s = (LNode *)malloc(sizeof(LNode));',
+      '    if (s == NULL) return false;',
       '    s->data = e;',
       '    s->next = p->next;',
       '    p->next = s;',
@@ -111,6 +113,7 @@ const LISTINGS: Record<Op, CodeListing> = {
     file: 'ListDelete.c',
     lines: [
       'bool ListDelete(LinkList L, int i, int *e) {',
+      '    if (i < 1) return false;',
       '    LNode *p = L;  int j = 0;',
       '    while (p->next != NULL && j < i - 1) {',
       '        p = p->next;  j++;',
@@ -394,8 +397,11 @@ function simulateReverse(values: number[]): { steps: Step[]; result: number[] } 
           },
           {
             id: 'old',
-            text: `结点 ${values[1] ?? '∧'}，仍是原来的后继`,
-            feedback: `赋值会覆盖 cur->next 原来的值。原来的后继已经提前存进 nxt，所以这里可以放心改。`,
+            text: values.length > 1 ? `结点 ${values[1]}，仍是原来的后继` : `结点 ${name(0)} 自己`,
+            feedback:
+              values.length > 1
+                ? '赋值会覆盖 cur->next 原来的值。原来的后继已经提前存进 nxt。'
+                : 'prev 的初值是 NULL，不是 cur；这个结点不会指向自己。',
           },
           {
             id: 'head',
@@ -436,7 +442,9 @@ function simulateReverse(values: number[]): { steps: Step[]; result: number[] } 
       title: 'cur->next = prev',
       note:
         k === 0
-          ? `${name(0)} 的指针掉头指向 prev，也就是 NULL。它将成为新链表的尾。`
+          ? values.length > 1
+            ? `${name(0)} 的 next 改为 NULL。从头结点只能到达 ${name(0)}；后面的结点暂时只能靠 nxt 找到。`
+            : `${name(0)} 的 next 改为 NULL。从头结点仍能到达这个唯一的数据结点。`
           : `${name(k)} 的指针掉头，指向 ${name(k - 1)}。从 ${name(k)} 往回走，已经能一路走到 ${name(0)}。`,
       phase,
       wrote: id,
@@ -466,7 +474,7 @@ function simulateReverse(values: number[]): { steps: Step[]; result: number[] } 
     line: 3,
     title: 'cur == NULL，循环结束',
     note: values.length
-      ? `每个结点的指针都已掉头。prev 停在原来的最后一个结点 ${name(values.length - 1)}。`
+      ? `每个结点的指针都已掉头，prev 指向 ${name(values.length - 1)}；头结点仍只能到达原首结点 ${name(0)}。`
       : '循环一次也没有执行。',
   })
 
@@ -474,34 +482,35 @@ function simulateReverse(values: number[]): { steps: Step[]; result: number[] } 
   rec.snap({
     line: 9,
     title: 'L->next = prev',
-    note: values.length ? `头结点改为指向 ${name(values.length - 1)}，逆置完成。` : '头结点仍指向 NULL。',
+    note: values.length
+      ? `头结点改为指向 ${name(values.length - 1)}，从头结点又能到达整条逆置后的链表。`
+      : '头结点仍指向 NULL。',
     wrote: HEAD,
     predict:
       values.length >= 2
         ? {
             id: 'reverse-who-points-last',
-            prompt: `循环结束了。现在哪个指针指向原链表的最后一个结点 ${name(values.length - 1)}？`,
+            prompt: '循环结束后，若省略最后的 L->next = prev，从头结点出发能访问到哪些数据结点？',
             options: [
               {
-                id: 'prev',
-                text: 'prev',
+                id: 'old-first',
+                text: `只有原首结点 ${name(0)}`,
                 correct: true,
-                feedback: `对。最后一轮里 prev 跟到了 ${name(values.length - 1)}，而 cur 走到了 NULL。`,
+                feedback: `对。L->next 仍指向 ${name(0)}，而 ${name(0)}->next 已改为 NULL。`,
               },
               {
-                id: 'cur',
-                text: 'cur',
-                feedback: 'cur 已经是 NULL，正是因为它变成 NULL，循环才结束。',
-                ghost: { tags: [{ id: 'guess-cur', label: 'cur', color: 'blue', target: lastId }] },
+                id: 'all',
+                text: '整条逆置后的链表',
+                feedback: `逆置好的链在 prev 下面；L->next 还指着 ${name(0)}，不会随 prev 自动改变。`,
+                ghost: { edges: [{ id: 'h.next', from: HEAD, port: 'ptr', to: lastId! }] },
               },
               {
-                id: 'head',
-                text: 'L->next',
-                feedback: `L->next 还指着 ${name(0)}，它现在是尾结点。最后一行正是要修正它。`,
-                ghost: { edges: [{ id: 'h.next', from: HEAD, port: 'ptr', to: lastId ?? HEAD }] },
+                id: 'none',
+                text: '一个数据结点也访问不到',
+                feedback: `L->next 没有变成 NULL，它还指向原首结点 ${name(0)}。`,
               },
             ],
-            takeaway: '所以最后一步是 L->next = prev，把头结点接到新的首结点上。',
+            takeaway: '改变数据结点的 next 不会自动改变 L->next；最后要把头结点接到 prev。',
           }
         : undefined,
   })
@@ -527,7 +536,7 @@ function walkToPredecessor(st: State, rec: Recorder, i: number, guard: 'p' | 'p-
   st.ptr.set('p', HEAD)
   st.int.set('j', 0)
   rec.snap({
-    line: 2,
+    line: 3,
     title: 'p = L; j = 0',
     note: 'p 从头结点出发，j 记录 p 是第几个结点（头结点算第 0 个）。',
     phase: '查找前驱',
@@ -542,14 +551,14 @@ function walkToPredecessor(st: State, rec: Recorder, i: number, guard: 'p' | 'p-
       st.ptr.set('p', null)
       j++
       st.int.set('j', j)
-      rec.snap({ line: 4, title: 'p = p->next; j++', note: 'p 走出了表尾，变成 NULL。', phase: '查找前驱' })
+      rec.snap({ line: 5, title: 'p = p->next; j++', note: 'p 走出了表尾，变成 NULL。', phase: '查找前驱' })
       return false
     }
     st.ptr.set('p', nextId)
     j++
     st.int.set('j', j)
     rec.snap({
-      line: 4,
+      line: 5,
       title: 'p = p->next; j++',
       note: `p 走到第 ${j} 个结点 ${label(st, nextId)}，j = ${j}。`,
       phase: '查找前驱',
@@ -565,11 +574,27 @@ function simulateInsert(values: number[], i: number, e: number): { steps: Step[]
   st.int.set('i', i)
   st.int.set('e', e)
 
+  if (i < 1) {
+    rec.snap({
+      line: 2,
+      title: 'if (i < 1) return false',
+      note: `i = ${i}，位序必须从 1 开始，插入失败。`,
+      phase: '结束',
+    })
+    return { steps: rec.steps, result: traverse(st) }
+  }
+  rec.snap({
+    line: 2,
+    title: 'if (i < 1) return false',
+    note: `i = ${i}，满足 i ≥ 1，继续查找前驱。`,
+    phase: '查找前驱',
+  })
+
   const found = walkToPredecessor(st, rec, i, 'p')
   const pId = st.ptr.get('p') ?? null
   if (!found || !pId) {
     rec.snap({
-      line: 6,
+      line: 7,
       title: 'return false',
       note: `表中只有 ${values.length} 个结点，位置 ${i} 不合法。`,
       phase: '结束',
@@ -577,7 +602,7 @@ function simulateInsert(values: number[], i: number, e: number): { steps: Step[]
     return { steps: rec.steps, result: traverse(st) }
   }
   rec.snap({
-    line: 3,
+    line: 4,
     title: `j == i - 1，循环结束`,
     note: `p 停在第 ${i - 1} 个结点${i === 1 ? '（头结点）' : ` ${label(st, pId)}`}。新结点要接在它后面。`,
     phase: '查找前驱',
@@ -594,15 +619,21 @@ function simulateInsert(values: number[], i: number, e: number): { steps: Step[]
   st.declared.add('s')
   st.ptr.set('s', 's')
   rec.snap({
-    line: 7,
+    line: 8,
     title: 's = malloc(sizeof(LNode))',
-    note: '向系统申请一个新结点 s。刚申请到的内存里是随机值，所以先画成问号。',
+    note: '申请新结点 s；数据域和指针域尚未赋值，图中先画成问号。',
+    phase: '插入',
+  })
+  rec.snap({
+    line: 9,
+    title: 'if (s == NULL) return false',
+    note: 's 不为 NULL，内存分配成功，可以写入新结点。',
     phase: '插入',
   })
 
   s.dataUnset = false
   rec.snap({
-    line: 8,
+    line: 10,
     title: 's->data = e',
     note: `把 ${e} 写进新结点的数据域。`,
     phase: '插入',
@@ -612,14 +643,14 @@ function simulateInsert(values: number[], i: number, e: number): { steps: Step[]
   const tail = succId === null
   const swapGhost: GhostLayer = {
     edges: [
-      { id: 'swap-p', from: pId, port: 'ptr', to: 's' },
-      { id: 'swap-s', from: 's', port: 'ptr', to: 's' },
+      { id: `${pId}.next`, from: pId, port: 'ptr', to: 's' },
+      { id: 's.next', from: 's', port: 'ptr', to: 's' },
     ],
   }
   s.next = succId
   s.ptrUnset = false
   rec.snap({
-    line: 9,
+    line: 11,
     title: 's->next = p->next',
     note: tail
       ? 'p 原来就是表尾，s->next 得到 NULL。'
@@ -636,20 +667,20 @@ function simulateInsert(values: number[], i: number, e: number): { steps: Step[]
           correct: true,
           feedback: tail
             ? '对。先执行 p->next = s，再执行 s->next = p->next，s 就指向了自己，遍历会陷入死循环。'
-            : `对。p->next 是找到 ${succ} 的唯一线索，必须先由 s->next 接住。`,
+            : `对。先改 p->next，下一句会让 s 指向自己；原后继 ${succ} 也无法从头结点到达。`,
         },
         {
           id: 'yes',
           text: '能，两句互不影响',
           feedback: tail
             ? '看虚线：先改 p->next，s->next = p->next 就成了 s->next = s，形成自环。'
-            : `看虚线：先执行 p->next = s，再执行 s->next = p->next 时，p->next 已经是 s，于是 s 指向自己，${succ} 之后的结点全部丢失。`,
+            : `看虚线：先执行 p->next = s，再执行 s->next = p->next，s 就指向自己；从头结点也到不了 ${succ}。`,
           ghost: swapGhost,
         },
         {
           id: 'only-first',
           text: '只有 i = 1 时不能',
-          feedback: '与 i 无关。不管 p 是头结点还是中间结点，先改 p->next 都会覆盖它原来的后继。',
+          feedback: '与 i 无关。先改 p->next 后，s->next 读到的就是 s，自环在任何插入位置都会出现。',
           ghost: swapGhost,
         },
       ],
@@ -657,18 +688,17 @@ function simulateInsert(values: number[], i: number, e: number): { steps: Step[]
     },
   })
 
-  const expected = [...values.slice(0, i - 1), e, ...values.slice(i - 1)]
-  const options = insertOrderOptions(values, i, e, expected)
+  const options = insertOrderOptions(values, i, e)
   p.next = 's'
   rec.snap({
-    line: 10,
+    line: 12,
     title: 'p->next = s',
     note: `再把 p 的指针改到 s。s 正式接进链表，成为第 ${i} 个结点。`,
     phase: '插入',
     wrote: pId,
     predict: {
       id: 'insert-result',
-      prompt: '执行 p->next = s 之后，从头结点出发依次访问到的数据是？',
+      prompt: '执行 p->next = s 之后，从头结点出发依次经过哪些结点？（用 s 标出新结点）',
       options,
       takeaway: `“插在第 i 个位置”意味着插入后 ${e} 成为第 i 个结点，所以要找的是第 i-1 个结点。`,
     },
@@ -676,7 +706,7 @@ function simulateInsert(values: number[], i: number, e: number): { steps: Step[]
 
   tidy(st)
   rec.snap({
-    line: 11,
+    line: 13,
     title: 'return true',
     note: `插入完成：${seq(traverse(st))}。${i <= values.length ? '后面结点的位序都加 1。' : ''}`,
     phase: '结束',
@@ -684,40 +714,40 @@ function simulateInsert(values: number[], i: number, e: number): { steps: Step[]
   return { steps: rec.steps, result: traverse(st) }
 }
 
-function insertOrderOptions(values: number[], i: number, e: number, expected: number[]) {
-  const at = (pos: number) => [...values.slice(0, pos - 1), e, ...values.slice(pos - 1)]
+function insertOrderOptions(values: number[], i: number, e: number) {
+  const at = (pos: number) => seq([...values.slice(0, pos - 1), `s(${e})`, ...values.slice(pos - 1)])
   const n = values.length
   const options = [
     {
       id: 'right',
-      text: seq(expected),
+      text: at(i),
       correct: true,
-      feedback: `对。${e} 接在第 ${i - 1} 个结点之后，成为第 ${i} 个结点。`,
+      feedback: `对。s 接在${i === 1 ? '头结点' : `原第 ${i - 1} 个结点`}之后，成为第 ${i} 个结点。`,
     },
   ]
-  const used = new Set([seq(expected)])
+  const used = new Set([at(i)])
   const candidates = [
     {
       id: 'after',
       pos: i + 1,
-      feedback: `这是把 ${e} 插在第 i 个结点之后。按定义，插入后 ${e} 本身要成为第 i 个结点，所以 p 停在第 i-1 个结点。`,
+      feedback: `这把 s 插在原第 ${i} 个结点之后，结果成了第 ${i + 1} 个；应在${i === 1 ? '头结点' : `原第 ${i - 1} 个结点`}之后插入。`,
     },
     {
       id: 'before',
       pos: i - 1,
-      feedback: `这比正确位置靠前了一位。j 从 0（头结点）开始数，循环结束时 p 是第 i-1 个结点，${e} 接在它后面。`,
+      feedback: `这比正确位置靠前了一位。j 从 0（头结点）开始数，循环结束时 p 是第 ${i - 1} 个结点，s 接在它后面。`,
     },
     {
       id: 'front',
       pos: 1,
-      feedback: `只有 i = 1 时 ${e} 才在最前面。这里 p 停在第 ${i - 1} 个结点，${e} 接在它后面。`,
+      feedback: `只有 i = 1 时 s 才在最前面。这里 p 停在第 ${i - 1} 个结点，s 接在它后面。`,
     },
-    { id: 'end', pos: n + 1, feedback: `s->next 接住了 p 原来的后继，${e} 后面还连着原来的结点，并不在表尾。` },
+    { id: 'end', pos: n + 1, feedback: 's->next 接住了 p 原来的后继，s 后面还连着原来的结点，并不在表尾。' },
   ]
   for (const c of candidates) {
     if (options.length >= 3) break
     if (c.pos < 1 || c.pos > n + 1) continue
-    const text = seq(at(c.pos))
+    const text = at(c.pos)
     if (used.has(text)) continue
     used.add(text)
     options.push({ id: c.id, text, correct: false, feedback: c.feedback })
@@ -729,20 +759,36 @@ function insertOrderOptions(values: number[], i: number, e: number, expected: nu
 
 function simulateDelete(values: number[], i: number): { steps: Step[]; result: number[]; removed: number | null } {
   const st = createState(values)
-  const rec = new Recorder(st, ['L', 'p', 'q', 'i', 'j', 'e'], true)
-  st.declared.add('i').add('e')
+  const rec = new Recorder(st, ['L', 'p', 'q', 'i', 'j', '*e'], true)
+  st.declared.add('i').add('*e')
   st.int.set('i', i)
-  st.int.set('e', null)
+  st.int.set('*e', null)
+
+  if (i < 1) {
+    rec.snap({
+      line: 2,
+      title: 'if (i < 1) return false',
+      note: `i = ${i}，位序必须从 1 开始，删除失败。`,
+      phase: '结束',
+    })
+    return { steps: rec.steps, result: traverse(st), removed: null }
+  }
+  rec.snap({
+    line: 2,
+    title: 'if (i < 1) return false',
+    note: `i = ${i}，满足 i ≥ 1，继续查找前驱。`,
+    phase: '查找前驱',
+  })
 
   const found = walkToPredecessor(st, rec, i, 'p->next')
   const pId = st.ptr.get('p') ?? null
   const p = pId ? node(st, pId) : null
   if (!found || !p || p.next === null) {
-    rec.snap({ line: 6, title: 'return false', note: `第 ${i} 个结点不存在，删除失败。`, phase: '结束' })
+    rec.snap({ line: 7, title: 'return false', note: `第 ${i} 个结点不存在，删除失败。`, phase: '结束' })
     return { steps: rec.steps, result: traverse(st), removed: null }
   }
   rec.snap({
-    line: 3,
+    line: 4,
     title: 'j == i - 1，循环结束',
     note: `p 停在第 ${i - 1} 个结点${i === 1 ? '（头结点）' : ` ${label(st, pId)}`}，它的后继就是要删的结点。`,
     phase: '查找前驱',
@@ -753,17 +799,17 @@ function simulateDelete(values: number[], i: number): { steps: Step[]; result: n
   st.declared.add('q')
   st.ptr.set('q', qId)
   rec.snap({
-    line: 7,
+    line: 8,
     title: 'q = p->next',
     note: `q 指向被删结点 ${q.value}。先用 q 记住它，后面释放内存还要用到。`,
     phase: '删除',
   })
 
-  st.int.set('e', q.value)
+  st.int.set('*e', q.value)
   rec.snap({
-    line: 8,
+    line: 9,
     title: '*e = q->data',
-    note: `把 ${q.value} 存进 e，带回给调用者。`,
+    note: `把被删值 ${q.value} 写入 *e，带回给调用者。`,
     phase: '删除',
     read: { id: qId, field: 'data' },
   })
@@ -774,7 +820,7 @@ function simulateDelete(values: number[], i: number): { steps: Step[]; result: n
   st.aside.add(qId)
   st.tone.set(qId, 'danger')
   rec.snap({
-    line: 9,
+    line: 10,
     title: 'p->next = q->next',
     note: tail
       ? `p 的指针改成 NULL，${q.value} 被摘下，p 成为新的表尾。`
@@ -797,7 +843,7 @@ function simulateDelete(values: number[], i: number): { steps: Step[]; result: n
               id: 'self',
               text: 'p',
               feedback: '看虚线：p->next = p 会让 p 指向自己，遍历时陷入死循环。',
-              ghost: { edges: [{ id: 'self', from: pId!, port: 'ptr', to: pId! }] },
+              ghost: { edges: [{ id: `${pId}.next`, from: pId!, port: 'ptr', to: pId! }] },
             },
           ]
         : [
@@ -805,7 +851,20 @@ function simulateDelete(values: number[], i: number): { steps: Step[]; result: n
             {
               id: 'null',
               text: 'NULL',
-              feedback: `改成 NULL 会连同 ${after} 及之后的结点一起截掉，它们再也找不到了。`,
+              feedback: `改成 NULL 会让 ${after} 及之后的结点无法从头结点到达。`,
+              ghost: {
+                nodes: [
+                  {
+                    id: 'guess-cut',
+                    kind: 'record',
+                    x: (st.slot.get(pId!) ?? 0) * PITCH,
+                    y: 0,
+                    text: p.head ? '' : String(p.value),
+                    head: p.head,
+                    ptrMark: 'null',
+                  },
+                ],
+              },
             },
             { id: 'q', text: 'q', feedback: 'p->next 本来就是 q，什么也没改变，q 仍在链上。' },
           ],
@@ -813,34 +872,75 @@ function simulateDelete(values: number[], i: number): { steps: Step[]; result: n
     },
   })
 
+  // Nodes after q, for the "free releases the whole tail" misconception.
+  const tailIds: string[] = []
+  for (let id = q.next; id; id = node(st, id).next) tailIds.push(id)
+
   q.freed = true
+  st.display.set('q', '悬空指针（不可使用）')
   rec.snap({
-    line: 10,
+    line: 11,
     title: 'free(q)',
-    note: '释放 q 指向的结点。q 自己仍保存着原来的地址，成了悬空指针，之后不能再通过它访问。',
+    note: `释放被删结点（值为 ${q.value}）；q 已失效，成为悬空指针，不能再使用。`,
     phase: '删除',
     predict: {
       id: 'delete-dangling',
-      prompt: '执行 free(q) 之后，指针变量 q 本身的值是什么？',
+      prompt: 'q 已从链上摘下。执行 free(q) 后，哪些结点会被释放？',
       options: [
         {
-          id: 'same',
-          text: '仍是原来的地址，但那块内存已不能用',
+          id: 'only-q',
+          text: `只释放 q 指向的结点（${q.value}）`,
           correct: true,
-          feedback: '对。free 只归还内存，不会修改 q。这样的 q 叫悬空指针。',
+          feedback: '对。free(q) 只释放 q 所指的结点；p->next 已绕过它，其余结点仍在链上。',
         },
-        { id: 'null', text: '自动变成 NULL', feedback: 'free 不会改动 q 的值。想避免误用，要自己再写一句 q = NULL。' },
-        { id: 'next', text: '指向 q 原来的后继', feedback: 'free 不会移动任何指针，q 仍保存被释放结点的地址。' },
+        q.next
+          ? {
+              id: 'all',
+              text: '从 q 开始的后续结点都被释放',
+              feedback: 'free(q) 只释放一个结点，不会沿 next 逐个释放；后继仍由 p->next 接着。',
+              ghost: {
+                nodes: tailIds.map((id) => ({
+                  id: `guess-freed-${id}`,
+                  kind: 'record' as const,
+                  x: (st.slot.get(id) ?? 0) * PITCH,
+                  y: 0,
+                  text: label(st, id),
+                  tone: 'danger' as const,
+                })),
+              },
+            }
+          : {
+              id: 'predecessor',
+              text: 'q 和前驱 p 都被释放',
+              feedback: 'free(q) 只释放 q 指向的结点；前驱 p 仍在链上，已成为新表尾。',
+              ghost: {
+                nodes: [
+                  {
+                    id: 'guess-freed-p',
+                    kind: 'record',
+                    x: (st.slot.get(pId!) ?? 0) * PITCH,
+                    y: 0,
+                    text: p.head ? '' : String(p.value),
+                    head: p.head,
+                    tone: 'danger',
+                  },
+                ],
+              },
+            },
+        {
+          id: 'still',
+          text: `${q.value} 只是脱链，内存仍可使用`,
+          feedback: '脱链发生在上一行；free(q) 会归还这一个结点的内存，之后不能再通过 q 访问。',
+        },
       ],
-      takeaway: 'free(q) 释放的是 q 指向的结点，而不是 q 这个变量。',
+      takeaway: '先改 p->next 保住后继，再 free(q) 释放被删结点；此后 q 是悬空指针。',
     },
   })
 
   st.ptr.delete('q')
-  st.display.set('q', '悬空指针')
   tidy(st)
   rec.snap({
-    line: 11,
+    line: 12,
     title: 'return true',
     note: `删除完成：${seq(traverse(st))}。${tail ? '' : '后面结点的位序都减 1。'}`,
     phase: '结束',
