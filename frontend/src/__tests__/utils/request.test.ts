@@ -7,6 +7,7 @@ vi.mock('@/utils/authNavigation', () => ({ redirectToLogin: mocks.redirect }))
 
 import request, { aiService } from '@/utils/request'
 import { getToken, setToken } from '@/utils/auth'
+import { BusinessError } from '@/utils/errors'
 
 const networkFailure: AxiosAdapter = async (config) => {
   throw new AxiosError('Network Error', 'ERR_NETWORK', config)
@@ -22,6 +23,18 @@ const responseWithCode =
   })
 
 beforeEach(() => vi.clearAllMocks())
+
+describe('learning request business codes', () => {
+  it('rejects nonzero responses with their business code intact', async () => {
+    await expect(
+      request.get('/test', { errorDisplay: 'inline', adapter: responseWithCode(1004) }),
+    ).rejects.toMatchObject({
+      name: 'BusinessError',
+      code: 1004,
+      message: '测试错误',
+    } satisfies Partial<BusinessError>)
+  })
+})
 
 describe.each([
   ['学习请求', request],

@@ -52,6 +52,15 @@ describe('真实学习端路由守卫', () => {
     expect(document.title).toBe('登录 · LearnPlatform')
   })
 
+  it('匿名进入数字 ID 的题目理解页转登录，非数字 ID 不匹配该路由', async () => {
+    const router = await createTestRouter()
+    await router.push('/questions/123')
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(router.currentRoute.value.query.redirect).toBe('/questions/123')
+    await router.push('/questions/abc')
+    expect(router.currentRoute.value.name).toBe('NotFound')
+  })
+
   it.each([false, true])('首页保持公开，登录状态为 %s', async (loggedIn) => {
     auth.loggedIn = loggedIn
     const router = await createTestRouter()
