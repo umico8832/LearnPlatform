@@ -149,14 +149,35 @@ npm run test:e2e
 npm run test:e2e -- --grep '用户可完成考试'
 ```
 
-该命令由 `scripts/docker-lifecycle.py` 使用当前前后端源码构建隔离镜像、强制重建并等待
-服务健康，然后运行 Playwright。成功、测试失败或启动异常都会进入 `finally`，按明确的
+反复修改测试脚本时，可保留隔离环境并让下一轮经脚本校验后复用：
+
+```bash
+npm run test:e2e -- --keep --grep '匿名未知地址'
+python3 ../scripts/docker-lifecycle.py e2e-clean
+```
+
+`--keep` 必须放在 Playwright 参数前；它只控制生命周期，不会传给 Playwright。脚本检查
+`learnplatform-e2e` 的所有服务正在运行、带健康检查的服务已健康，并核对前后端运行容器所用镜像及镜像的当前源码
+指纹。全部满足时跳过构建与容器重建，使用已有前端映射端口运行 Playwright；否则输出原因、
+清除旧 E2E 数据卷并完整重建。`e2e-clean` 删除保留的 E2E 容器、数据卷与两份应用镜像。
+
+前端 Dockerfile 的 `COPY . .` 和 `.dockerignore` 当前没有排除 `e2e/` 或
+`playwright.config.ts`；它们进入构建阶段，但纯 Playwright TypeScript 测试代码和配置不进入
+最终运行容器，也不参与 `npm run build` 的产物。E2E 运行镜像指纹排除这些代码和配置；
+Compose 绑定挂载的 E2E 输入仍计入指纹，包括 `ai-mock.py` 和 `fixtures/knowledge/`，
+改动后须完整重建。单改未挂载的测试代码不会触发重建；
+日常 `app-up` 的指纹仍覆盖完整前端构建上下文。复用的数据库保留上一轮测试写入的数据，
+只用于应用源码未变、反复调整测试的验证。判断提交或交付前，以一次不带 `--keep` 的
+完整重建或 CI 结果为准。
+
+不带 `--keep` 时，脚本清除旧 E2E 数据卷，使用当前前后端源码构建镜像、强制重建并等待
+所有服务运行且带健康检查的服务健康，然后运行 Playwright。成功、测试失败或启动异常都会在 `finally` 中按明确的
 `learnplatform-e2e` 范围删除 E2E 容器、数据卷和两份应用镜像，再按
 [Docker 磁盘增长治理](docker-disk-governance.md)回收悬空镜像与超预算缓存。若默认 18000
-端口已被日常环境占用，脚本为本轮选择空闲端口并同步设置 Playwright Base URL。
+端口被占用，脚本选择空闲端口并同步设置 Playwright Base URL。
 
 `npm run test:e2e:playwright` 只是生命周期脚本内部使用的 Playwright 命令；Agent 不得单独
-执行它并把已有容器的结果记作当前源码 E2E。
+执行它并把已有容器的结果记作当前源码 E2E。复用必须通过上述入口的指纹校验。
 
 ## 9. Agent 临时浏览器流程验收
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
@@ -148,16 +149,25 @@ class AppLifecycleTest(unittest.TestCase):
 
 
 class E2ELifecycleTest(unittest.TestCase):
+    def metadata(self) -> dict[str, lifecycle.SourceMetadata]:
+        return {
+            service: lifecycle.SourceMetadata("rev", "dirty", f"{service}-hash")
+            for service in lifecycle.APP_SERVICES
+        }
+
     def patches(self):
         return (
             patch.object(lifecycle, "require_docker"),
-            patch.object(lifecycle, "lifecycle_environment", return_value=({}, {})),
+            patch.object(lifecycle, "lifecycle_environment", return_value=({}, self.metadata())),
             patch.object(lifecycle, "available_port", return_value=18000),
+            patch.object(lifecycle, "reset_e2e"),
             patch.object(lifecycle, "start_e2e"),
             patch.object(lifecycle, "run_playwright", return_value=0),
             patch.object(lifecycle, "show_e2e_failure_logs"),
             patch.object(lifecycle, "stop_e2e", return_value=0),
             patch.object(lifecycle, "reclaim"),
+            patch.object(lifecycle, "e2e_reuse_decision", return_value=(False, "missing")),
+            patch.object(lifecycle, "mapped_port", return_value=18000),
         )
 
     def test_success_always_cleans_the_isolated_environment(self) -> None:
@@ -167,10 +177,12 @@ class E2ELifecycleTest(unittest.TestCase):
 
         self.assertEqual(0, lifecycle.e2e(["--grep", "登录"]))
 
-        start_e2e = mocks[3]
-        run_playwright = mocks[4]
-        stop_e2e = mocks[6]
-        reclaim = mocks[7]
+        start_e2e = mocks[4]
+        run_playwright = mocks[5]
+        stop_e2e = mocks[7]
+        reclaim = mocks[8]
+        mocks[3].assert_called_once()
+        mocks[9].assert_not_called()
         start_e2e.assert_called_once()
         run_playwright.assert_called_once()
         self.assertEqual(["--grep", "登录"], run_playwright.call_args.args[1])
@@ -181,15 +193,153 @@ class E2ELifecycleTest(unittest.TestCase):
         patchers = self.patches()
         mocks = [patcher.start() for patcher in patchers]
         self.addCleanup(lambda: [patcher.stop() for patcher in reversed(patchers)])
-        mocks[3].side_effect = lifecycle.LifecycleError("start failed")
+        mocks[4].side_effect = lifecycle.LifecycleError("start failed")
 
         with self.assertRaisesRegex(lifecycle.LifecycleError, "start failed"):
             lifecycle.e2e([])
 
-        mocks[5].assert_called_once()
-        mocks[4].assert_not_called()
         mocks[6].assert_called_once()
-        mocks[7].assert_called_once_with()
+        mocks[5].assert_not_called()
+        mocks[7].assert_called_once()
+        mocks[8].assert_called_once_with()
+
+    def test_keep_reuses_healthy_matching_environment(self) -> None:
+        patchers = self.patches()
+        mocks = [patcher.start() for patcher in patchers]
+        self.addCleanup(lambda: [patcher.stop() for patcher in reversed(patchers)])
+        mocks[9].return_value = (True, "matching")
+
+        self.assertEqual(0, lifecycle.e2e(["--grep", "匿名未知地址"], keep=True))
+
+        mocks[9].assert_called_once_with(self.metadata())
+        mocks[10].assert_called_once_with("frontend", 80, mocks[1].return_value[0], e2e=True)
+        mocks[3].assert_not_called()
+        mocks[4].assert_not_called()
+        mocks[7].assert_not_called()
+        mocks[8].assert_not_called()
+
+    def test_keep_rebuilds_when_environment_is_stale(self) -> None:
+        patchers = self.patches()
+        mocks = [patcher.start() for patcher in patchers]
+        self.addCleanup(lambda: [patcher.stop() for patcher in reversed(patchers)])
+
+        self.assertEqual(0, lifecycle.e2e([], keep=True))
+
+        mocks[3].assert_called_once()
+        mocks[4].assert_called_once()
+        mocks[7].assert_not_called()
+
+    @patch.object(lifecycle, "inspect_image")
+    @patch.object(lifecycle, "inspect_container")
+    def test_reuse_decision_checks_all_services_and_both_fingerprints(
+        self, inspect_container: Mock, inspect_image: Mock
+    ) -> None:
+        metadata = self.metadata()
+        inspect_container.return_value = lifecycle.ContainerInfo("image-id", "healthy")
+        inspect_image.side_effect = lambda tag: lifecycle.ImageInfo(
+            "image-id", {"com.learnplatform.source-fingerprint": metadata["backend" if "backend" in tag else "frontend"].fingerprint}
+        )
+
+        self.assertTrue(lifecycle.e2e_reuse_decision(metadata)[0])
+
+        inspect_image.side_effect = lambda tag: lifecycle.ImageInfo(
+            "image-id", {"com.learnplatform.source-fingerprint": "old" if "frontend" in tag else metadata["backend"].fingerprint}
+        )
+        self.assertEqual((False, "frontend 镜像源码指纹不一致"), lifecycle.e2e_reuse_decision(metadata))
+
+        inspect_container.side_effect = lambda service, **kwargs: (
+            None if service == "mysql" else lifecycle.ContainerInfo("image-id", "healthy")
+        )
+        self.assertEqual((False, "mysql 容器未运行"), lifecycle.e2e_reuse_decision(metadata))
+
+    def test_e2e_bind_sources_come_from_compose_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "docker-compose.e2e.yml").write_text(
+                "services:\n"
+                "  ai-mock:\n"
+                "    volumes:\n"
+                "      - ./frontend/e2e/ai-mock.py:/app/ai-mock.py:ro\n"
+                "  backend:\n"
+                "    volumes:\n"
+                "      - type: bind\n"
+                "        source: ./frontend/e2e/fixtures/knowledge\n"
+                "        target: /e2e/knowledge\n"
+                "      - e2e-data:/data\n"
+            )
+            with patch.object(lifecycle, "ROOT", root):
+                self.assertEqual(
+                    {
+                        root / "frontend/e2e/ai-mock.py",
+                        root / "frontend/e2e/fixtures/knowledge",
+                    },
+                    lifecycle.e2e_bind_sources(),
+                )
+
+        self.assertIn(lifecycle.FRONTEND_ROOT / "e2e" / "ai-mock.py", lifecycle.e2e_bind_sources())
+        self.assertIn(
+            lifecycle.FRONTEND_ROOT / "e2e" / "fixtures" / "knowledge", lifecycle.e2e_bind_sources()
+        )
+
+    @patch.object(lifecycle, "e2e_bind_sources")
+    @patch.object(lifecycle, "source_paths")
+    @patch.object(lifecycle, "run_command")
+    def test_e2e_frontend_fingerprint_tracks_mounted_inputs_but_excludes_playwright_code(
+        self, run_command: Mock, source_paths: Mock, e2e_bind_sources: Mock
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            frontend = root / "frontend"
+            files = {
+                "package.json": "{}",
+                "playwright.config.ts": "config",
+                "e2e/public-navigation.spec.ts": "test",
+                "e2e/helpers/registerLearner.ts": "helper",
+                "e2e/ai-mock.py": "mock",
+                "e2e/fixtures/knowledge/manifest.json": "fixture",
+                "e2e/mounted.spec.ts": "mounted test",
+            }
+            for name, content in files.items():
+                path = frontend / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content)
+            with patch.object(lifecycle, "ROOT", root), patch.object(lifecycle, "FRONTEND_ROOT", frontend):
+                source_paths.return_value = [frontend / name for name in files]
+                e2e_bind_sources.return_value = {
+                    frontend / "e2e" / "ai-mock.py",
+                    frontend / "e2e" / "fixtures" / "knowledge",
+                    frontend / "e2e" / "mounted.spec.ts",
+                }
+                run_command.return_value.stdout = ""
+                fingerprint = lambda: lifecycle.source_metadata("frontend", "rev", e2e_runtime=True).fingerprint
+                baseline = fingerprint()
+                for name in ("playwright.config.ts", "e2e/public-navigation.spec.ts", "e2e/helpers/registerLearner.ts"):
+                    path = frontend / name
+                    path.write_text(files[name] + " changed")
+                    self.assertEqual(baseline, fingerprint(), name)
+                for name in ("e2e/ai-mock.py", "e2e/fixtures/knowledge/manifest.json", "e2e/mounted.spec.ts"):
+                    path = frontend / name
+                    path.write_text(files[name] + " changed")
+                    self.assertNotEqual(baseline, fingerprint(), name)
+                    path.write_text(files[name])
+
+    @patch.object(lifecycle, "inspect_image")
+    @patch.object(lifecycle, "inspect_container")
+    def test_reuse_accepts_running_service_without_healthcheck(
+        self, inspect_container: Mock, inspect_image: Mock
+    ) -> None:
+        metadata = self.metadata()
+        inspect_container.side_effect = lambda service, **kwargs: lifecycle.ContainerInfo(
+            "image-id", "running" if service == "mailpit" else "healthy"
+        )
+        inspect_image.side_effect = lambda tag: lifecycle.ImageInfo(
+            "image-id", {"com.learnplatform.source-fingerprint": metadata["backend" if "backend" in tag else "frontend"].fingerprint}
+        )
+
+        self.assertEqual(
+            (True, "所有 E2E 服务正在运行，带健康检查的服务已健康，前后端镜像源码指纹一致"),
+            lifecycle.e2e_reuse_decision(metadata),
+        )
 
     @patch.object(lifecycle, "run_command")
     def test_cleanup_targets_only_e2e_compose_and_exact_application_images(
@@ -219,21 +369,28 @@ class LifecycleCliTest(unittest.TestCase):
                 patch.object(lifecycle, "e2e", return_value=0) as e2e:
             self.assertEqual(0, lifecycle.main())
 
-        e2e.assert_called_once_with(["--grep", "用户可完成考试"])
+        e2e.assert_called_once_with(["--grep", "用户可完成考试"], keep=False)
 
     def test_e2e_forwards_arguments_after_separator(self) -> None:
         with patch.object(sys, "argv", [str(SCRIPT_PATH), "e2e", "--", "--grep", "用户可完成考试"]), \
                 patch.object(lifecycle, "e2e", return_value=0) as e2e:
             self.assertEqual(0, lifecycle.main())
 
-        e2e.assert_called_once_with(["--grep", "用户可完成考试"])
+        e2e.assert_called_once_with(["--grep", "用户可完成考试"], keep=False)
 
     def test_e2e_forwards_a_spec_filename(self) -> None:
         with patch.object(sys, "argv", [str(SCRIPT_PATH), "e2e", "e2e/knowledge-review.spec.ts"]), \
                 patch.object(lifecycle, "e2e", return_value=0) as e2e:
             self.assertEqual(0, lifecycle.main())
 
-        e2e.assert_called_once_with(["e2e/knowledge-review.spec.ts"])
+        e2e.assert_called_once_with(["e2e/knowledge-review.spec.ts"], keep=False)
+
+    def test_e2e_keep_is_consumed_before_playwright_arguments(self) -> None:
+        with patch.object(sys, "argv", [str(SCRIPT_PATH), "e2e", "--keep", "--grep", "匿名未知地址"]), \
+                patch.object(lifecycle, "e2e", return_value=0) as e2e:
+            self.assertEqual(0, lifecycle.main())
+
+        e2e.assert_called_once_with(["--grep", "匿名未知地址"], keep=True)
 
     def test_e2e_help_does_not_start_the_lifecycle(self) -> None:
         for option in ("-h", "--help"):

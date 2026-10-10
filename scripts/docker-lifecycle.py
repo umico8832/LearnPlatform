@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shlex
 import socket
 import subprocess
@@ -31,6 +32,7 @@ E2E_IMAGE_TAGS = {
     "backend": "learnplatform-e2e-backend:latest",
     "frontend": "learnplatform-e2e-frontend:latest",
 }
+E2E_SERVICES = ("ai-mock", "redis", "loki", "mailpit", "mysql", "backend", "frontend")
 HEALTH_TIMEOUT_SECONDS = 180
 
 
@@ -113,9 +115,33 @@ def source_paths(context: str) -> list[Path]:
     return sorted((path for path in paths if path.is_file()), key=lambda path: str(path))
 
 
-def source_metadata(context: str, revision: str | None = None) -> SourceMetadata:
+def e2e_bind_sources() -> set[Path]:
+    compose = (ROOT / "docker-compose.e2e.yml").read_text()
+    sources = set()
+    for line in compose.splitlines():
+        short = re.match(r"^\s*-\s+['\"]?(\./[^:\s'\"]+):", line)
+        long = re.match(r"^\s*source:\s+['\"]?(\./[^\s'\"]+)", line)
+        source = short or long
+        if source:
+            sources.add(ROOT / source.group(1))
+    return sources
+
+
+def source_metadata(
+    context: str, revision: str | None = None, *, e2e_runtime: bool = False
+) -> SourceMetadata:
     resolved_revision = revision or git_revision()
     paths = source_paths(context)
+    if context == "frontend" and e2e_runtime:
+        bind_sources = e2e_bind_sources()
+        paths = [
+            path for path in paths
+            if any(path == source or source in path.parents for source in bind_sources)
+            or not (
+                path == FRONTEND_ROOT / "playwright.config.ts"
+                or (path.is_relative_to(FRONTEND_ROOT / "e2e") and path.suffix == ".ts")
+            )
+        ]
     digest = hashlib.sha256()
     for path in paths:
         relative = path.relative_to(ROOT).as_posix().encode()
@@ -133,11 +159,11 @@ def source_metadata(context: str, revision: str | None = None) -> SourceMetadata
     return SourceMetadata(resolved_revision, state, digest.hexdigest())
 
 
-def lifecycle_environment() -> tuple[dict[str, str], dict[str, SourceMetadata]]:
+def lifecycle_environment(*, e2e_runtime: bool = False) -> tuple[dict[str, str], dict[str, SourceMetadata]]:
     revision = git_revision()
     metadata = {
         "backend": source_metadata("backend", revision),
-        "frontend": source_metadata("frontend", revision),
+        "frontend": source_metadata("frontend", revision, e2e_runtime=e2e_runtime),
     }
     env = os.environ.copy()
     env.update(
@@ -321,9 +347,9 @@ def start_app_stack(env: Mapping[str, str]) -> None:
     )
 
 
-def mapped_port(service: str, container_port: int, env: Mapping[str, str]) -> int:
+def mapped_port(service: str, container_port: int, env: Mapping[str, str], *, e2e: bool = False) -> int:
     proc = run_command(
-        compose_command("port", service, str(container_port)),
+        compose_command("port", service, str(container_port), e2e=e2e),
         env=env,
         capture=True,
     )
@@ -466,6 +492,28 @@ def start_e2e(env: Mapping[str, str]) -> None:
     )
 
 
+def reset_e2e(env: Mapping[str, str]) -> None:
+    run_command(compose_command("down", "-v", e2e=True), env=env)
+
+
+def e2e_reuse_decision(metadata: Mapping[str, SourceMetadata]) -> tuple[bool, str]:
+    for service in E2E_SERVICES:
+        container = inspect_container(service, e2e=True)
+        if container is None:
+            return False, f"{service} 容器未运行"
+        if container.health not in ("healthy", "running"):
+            return False, f"{service} 容器状态为 {container.health}"
+        if service in APP_SERVICES:
+            image = inspect_image(E2E_IMAGE_TAGS[service])
+            if image is None:
+                return False, f"{service} 镜像不存在"
+            if container.image_id != image.image_id:
+                return False, f"{service} 容器镜像与当前 E2E 标签不一致"
+            if image.labels.get("com.learnplatform.source-fingerprint") != metadata[service].fingerprint:
+                return False, f"{service} 镜像源码指纹不一致"
+    return True, "所有 E2E 服务正在运行，带健康检查的服务已健康，前后端镜像源码指纹一致"
+
+
 def run_playwright(env: Mapping[str, str], playwright_args: Sequence[str]) -> int:
     command = ("npm", "run", "test:e2e:playwright", "--", *playwright_args)
     return run_command(command, cwd=FRONTEND_ROOT, env=env, check=False).returncode
@@ -493,20 +541,27 @@ def stop_e2e(env: Mapping[str, str]) -> int:
     return down_code or image_code
 
 
-def e2e(playwright_args: Sequence[str]) -> int:
+def e2e(playwright_args: Sequence[str], *, keep: bool = False) -> int:
     require_docker()
-    env, _ = lifecycle_environment()
-    preferred_port = int(env.get("E2E_FRONTEND_HOST_PORT", "18000"))
-    selected_port = available_port(preferred_port)
-    env["FRONTEND_HOST_PORT"] = str(selected_port)
-    env["E2E_BASE_URL"] = f"http://127.0.0.1:{selected_port}"
-    print(f"E2E 地址：{env['E2E_BASE_URL']}")
+    env, metadata = lifecycle_environment(e2e_runtime=True)
 
     test_code = 1
     cleanup_code = 0
     lifecycle_error: Exception | None = None
     try:
-        start_e2e(env)
+        reuse, reason = e2e_reuse_decision(metadata) if keep else (False, "未指定 --keep，使用干净的隔离环境")
+        if reuse:
+            selected_port = mapped_port("frontend", 80, env, e2e=True)
+            print(f"E2E 复用：{reason}")
+        else:
+            print(f"E2E 重建：{reason}")
+            reset_e2e(env)
+            preferred_port = int(env.get("E2E_FRONTEND_HOST_PORT", "18000"))
+            selected_port = available_port(preferred_port)
+            env["FRONTEND_HOST_PORT"] = str(selected_port)
+            start_e2e(env)
+        env["E2E_BASE_URL"] = f"http://127.0.0.1:{selected_port}"
+        print(f"E2E 地址：{env['E2E_BASE_URL']}")
         test_code = run_playwright(env, playwright_args)
         if test_code != 0:
             show_e2e_failure_logs(env)
@@ -514,12 +569,13 @@ def e2e(playwright_args: Sequence[str]) -> int:
         lifecycle_error = error
         show_e2e_failure_logs(env)
     finally:
-        cleanup_code = stop_e2e(env)
-        try:
-            reclaim()
-        except Exception as error:
-            if lifecycle_error is None:
-                lifecycle_error = error
+        if not keep:
+            cleanup_code = stop_e2e(env)
+            try:
+                reclaim()
+            except Exception as error:
+                if lifecycle_error is None:
+                    lifecycle_error = error
     if lifecycle_error is not None:
         raise lifecycle_error
     return test_code or cleanup_code
@@ -530,7 +586,9 @@ def main() -> int:
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("app-status", help="检查日常容器、镜像和当前源码是否一致")
     subparsers.add_parser("app-up", help="构建当前源码、替换日常应用并安全回收旧镜像")
-    e2e_parser = subparsers.add_parser("e2e", help="构建、运行并清理隔离浏览器 E2E 环境")
+    subparsers.add_parser("e2e-clean", help="清理保留的 E2E 容器、数据卷和两份应用镜像")
+    e2e_parser = subparsers.add_parser("e2e", help="运行隔离浏览器 E2E；--keep 保留并允许复用环境")
+    e2e_parser.add_argument("--keep", action="store_true", help="保留 E2E 环境供下一轮校验后复用")
     e2e_parser.add_argument("playwright_args", nargs=argparse.REMAINDER)
     command_args = sys.argv[1:]
     if command_args[:1] == ["e2e"] and command_args[1:2] not in (["-h"], ["--help"]):
@@ -545,10 +603,16 @@ def main() -> int:
             return app_status()
         if args.command == "app-up":
             return app_up()
+        if args.command == "e2e-clean":
+            require_docker()
+            return stop_e2e(os.environ.copy())
         playwright_args = [*args.playwright_args, *passthrough]
         if playwright_args[:1] == ["--"]:
             playwright_args = playwright_args[1:]
-        return e2e(playwright_args)
+        keep = bool(playwright_args[:1] == ["--keep"])
+        if keep:
+            playwright_args = playwright_args[1:]
+        return e2e(playwright_args, keep=keep)
     except (LifecycleError, ValueError) as error:
         print(f"错误：{error}", file=sys.stderr)
         return 1
