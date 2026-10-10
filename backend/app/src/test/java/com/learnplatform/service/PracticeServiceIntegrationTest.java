@@ -975,6 +975,46 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    @Order(23)
+    @DisplayName("复习答对移出错题后再次答错应复活同一错题记录")
+    void submitReview_wrongAfterCorrect_revivesWrongQuestionAtomically() {
+        Course reviewCourse = course("复习错题复活课程");
+        User reviewUser = user("practice_review_revival_user");
+        addCourseToLibrary(reviewUser.getId(), reviewCourse.getId());
+        Question question = question("复习错题复活题", reviewCourse.getId(), 1, "PUBLIC", null);
+        addOption(question, "B", "错误答案", 0, 0);
+        addReviewSchedule(reviewUser.getId(), question.getId(), LocalDate.now());
+        addWrongQuestion(reviewUser.getId(), question.getId());
+        WrongQuestion original = wrongQuestionMapper.selectOne(new LambdaQueryWrapper<WrongQuestion>()
+                .eq(WrongQuestion::getUserId, reviewUser.getId())
+                .eq(WrongQuestion::getQuestionId, question.getId()));
+
+        ReviewSubmitRequest correct = new ReviewSubmitRequest();
+        correct.setQuestionId(question.getId());
+        correct.setUserAnswer("A");
+        assertTrue(spacedRepetitionService.submitReview(correct, reviewUser.getId()).getCorrect());
+        assertNull(wrongQuestionMapper.selectById(original.getId()));
+
+        spacedRepetitionService.resetReviewProgress(reviewUser.getId(), question.getId());
+        ReviewSubmitRequest wrong = new ReviewSubmitRequest();
+        wrong.setQuestionId(question.getId());
+        wrong.setUserAnswer("B");
+        assertFalse(spacedRepetitionService.submitReview(wrong, reviewUser.getId()).getCorrect());
+
+        WrongQuestion revived = wrongQuestionMapper.selectOne(new LambdaQueryWrapper<WrongQuestion>()
+                .eq(WrongQuestion::getUserId, reviewUser.getId())
+                .eq(WrongQuestion::getQuestionId, question.getId()));
+        assertEquals(original.getId(), revived.getId());
+        assertEquals(2, revived.getWrongCount());
+        assertEquals(0, revived.getMasteryLevel());
+        assertEquals("B", revived.getLastWrongAnswer());
+        assertEquals(2, practiceRecordMapper.selectCount(new LambdaQueryWrapper<PracticeRecord>()
+                .eq(PracticeRecord::getUserId, reviewUser.getId())
+                .eq(PracticeRecord::getQuestionId, question.getId())));
+        assertEquals(2, countLearningEvents(reviewUser.getId(), question.getId()));
+    }
+
+    @Test
     @Order(22)
     @DisplayName("自动判分结构：在已加入课程的正向对照后拒绝无效题且不写学习事实")
     void automaticGradingStructure_excludesInvalidConfiguredAnswersBeforeSamplingAndSubmission() {

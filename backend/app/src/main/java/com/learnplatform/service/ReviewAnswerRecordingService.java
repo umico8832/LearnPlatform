@@ -10,11 +10,9 @@ import com.learnplatform.dto.GamificationRewardFeedback;
 import com.learnplatform.entity.PracticeRecord;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionOption;
-import com.learnplatform.entity.WrongQuestion;
 import com.learnplatform.mapper.PracticeRecordMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
-import com.learnplatform.mapper.WrongQuestionMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,20 +24,20 @@ public class ReviewAnswerRecordingService {
     private final QuestionMapper questionMapper;
     private final QuestionOptionMapper questionOptionMapper;
     private final PracticeRecordMapper practiceRecordMapper;
-    private final WrongQuestionMapper wrongQuestionMapper;
+    private final WrongQuestionService wrongQuestionService;
     private final AnswerEvaluator answerEvaluator;
     private final CourseLearningEventService courseLearningEventService;
 
     public ReviewAnswerRecordingService(QuestionMapper questionMapper,
                                         QuestionOptionMapper questionOptionMapper,
                                         PracticeRecordMapper practiceRecordMapper,
-                                        WrongQuestionMapper wrongQuestionMapper,
+                                        WrongQuestionService wrongQuestionService,
                                         AnswerEvaluator answerEvaluator,
                                         CourseLearningEventService courseLearningEventService) {
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.practiceRecordMapper = practiceRecordMapper;
-        this.wrongQuestionMapper = wrongQuestionMapper;
+        this.wrongQuestionService = wrongQuestionService;
         this.answerEvaluator = answerEvaluator;
         this.courseLearningEventService = courseLearningEventService;
     }
@@ -80,38 +78,11 @@ public class ReviewAnswerRecordingService {
                     record.getId(), correct, record.getCreateTime());
         }
 
-        updateWrongQuestion(userId, questionId, request.getUserAnswer().trim(), correct);
+        if (correct) {
+            wrongQuestionService.removeOnCorrect(userId, questionId);
+        } else {
+            wrongQuestionService.addWrongQuestion(userId, questionId, request.getUserAnswer().trim());
+        }
         return new ReviewAnswerOutcome(correct, reward);
     }
-
-    private void updateWrongQuestion(Long userId, Long questionId, String userAnswer, boolean correct) {
-        LambdaQueryWrapper<WrongQuestion> query = new LambdaQueryWrapper<>();
-        query.eq(WrongQuestion::getUserId, userId)
-                .eq(WrongQuestion::getQuestionId, questionId);
-        WrongQuestion existing = wrongQuestionMapper.selectOne(query);
-        if (correct) {
-            if (existing != null) {
-                wrongQuestionMapper.deleteById(existing.getId());
-            }
-            return;
-        }
-        if (existing != null) {
-            existing.setWrongCount(existing.getWrongCount() + 1);
-            existing.setLastWrongAnswer(userAnswer);
-            if (existing.getMasteryLevel() != null && existing.getMasteryLevel() == 2) {
-                existing.setMasteryLevel(0);
-            }
-            wrongQuestionMapper.updateById(existing);
-            return;
-        }
-        WrongQuestion wrongQuestion = new WrongQuestion();
-        wrongQuestion.setUserId(userId);
-        wrongQuestion.setQuestionId(questionId);
-        wrongQuestion.setWrongCount(1);
-        wrongQuestion.setMasteryLevel(0);
-        wrongQuestion.setLastWrongAnswer(userAnswer);
-        wrongQuestion.setDeleted(0);
-        wrongQuestionMapper.insert(wrongQuestion);
-    }
-
 }

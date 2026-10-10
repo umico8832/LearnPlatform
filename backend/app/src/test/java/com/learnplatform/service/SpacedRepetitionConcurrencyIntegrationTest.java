@@ -85,6 +85,42 @@ class SpacedRepetitionConcurrencyIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void concurrentWrongReviewsReviveOneSoftDeletedWrongQuestion() throws Exception {
+        jdbc.update("INSERT INTO wrong_question (user_id,question_id,wrong_count,mastery_level,"
+                + "last_wrong_answer,deleted) VALUES (?,?,1,0,'B',1)", USER_ID, QUESTION_ID);
+        CountDownLatch start = new CountDownLatch(1);
+        Callable<Void> submission = () -> {
+            start.await();
+            ReviewSubmitRequest request = new ReviewSubmitRequest();
+            request.setQuestionId(QUESTION_ID);
+            request.setUserAnswer("B");
+            spacedRepetitionService.submitReview(request, USER_ID);
+            return null;
+        };
+
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            List<Future<Void>> futures = List.of(executor.submit(submission), executor.submit(submission));
+            start.countDown();
+            for (Future<Void> future : futures) {
+                future.get();
+            }
+        }
+
+        assertEquals(1, jdbc.queryForObject(
+                "SELECT COUNT(*) FROM wrong_question WHERE user_id=? AND question_id=?",
+                Integer.class, USER_ID, QUESTION_ID));
+        assertEquals(3, jdbc.queryForObject(
+                "SELECT wrong_count FROM wrong_question WHERE user_id=? AND question_id=? AND deleted=0",
+                Integer.class, USER_ID, QUESTION_ID));
+        assertEquals(2, jdbc.queryForObject(
+                "SELECT total_reviews FROM question_review_schedule WHERE user_id=? AND question_id=?",
+                Integer.class, USER_ID, QUESTION_ID));
+        assertEquals(2, jdbc.queryForObject(
+                "SELECT COUNT(*) FROM practice_record WHERE user_id=? AND question_id=?",
+                Integer.class, USER_ID, QUESTION_ID));
+    }
+
+    @Test
     void concurrentAdditionsCreateOneActiveSchedule() throws Exception {
         CountDownLatch start = new CountDownLatch(1);
         Callable<Void> addition = () -> {
