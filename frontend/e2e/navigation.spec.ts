@@ -177,22 +177,28 @@ test('课程空间返回恢复滚动位置和面包屑', async ({ page }) => {
   await page.goto('/my-courses/6')
   await expect(page).toHaveURL(/\/my-courses\/6$/)
   await expect(page.getByRole('heading', { name: '408 数据结构', exact: true })).toBeVisible()
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollHeight)).toBeGreaterThan(2000)
+  // 课程页高度随学习数据变化：滚到实际可滚动范围的中部，而不是固定像素。
+  const maxScroll = () => page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight)
+  await expect.poll(maxScroll).toBeGreaterThan(800)
+  const target = Math.min(1500, Math.floor((await maxScroll()) / 2))
   const courseBreadcrumb = page.locator('.route-context').getByRole('link', { name: '我的课程' })
   await expect(courseBreadcrumb).toBeVisible()
-  await page.evaluate(() => window.scrollTo(0, 1500))
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(1500)
+  await page.evaluate((y) => window.scrollTo(0, y), target)
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(target)
 
   await courseBreadcrumb.click()
   await expect(page).toHaveURL(/\/my-courses$/)
   await page.goBack()
   await expect(page).toHaveURL(/\/my-courses\/6$/)
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(1500)
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(target)
 })
 
 test('考试离开确认保留作答，正式提交仅进入结果页', async ({ page }) => {
   await page.goto('/exams')
-  const examCard = page.locator('.exam-card').first()
+  // 其他用例会并行新建试卷，按种子试卷名查找，避免取到只有填空题的试卷。
+  await page.getByRole('textbox', { name: '按试卷名称查找' }).fill('Java 基础入门测验')
+  await page.getByRole('button', { name: '查找试卷' }).click()
+  const examCard = page.locator('.exam-card').filter({ hasText: 'Java 基础入门测验' })
   await expect(examCard).toBeVisible()
   await examCard.getByRole('button', { name: '考试模式' }).click()
   await expect(page).toHaveURL(/\/exams\/take\/\d+$/)

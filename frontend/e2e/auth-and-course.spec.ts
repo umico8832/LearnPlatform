@@ -190,9 +190,12 @@ test('用户答错后可在错题本更新掌握程度并重练', async ({ brows
   await page.locator('.config-card').getByRole('spinbutton').fill('1')
   await page.locator('.config-card').getByRole('button', { name: '开始刷题' }).click()
   await expect(page).toHaveURL(/\/practice\/session$/)
-  await expect(page.locator('.question-content')).toContainText('Java 中用于定义类继承关系的关键字是？')
+  // 其他用例会并行向“面向对象”加入隔离题，抽到哪一道不固定：记住这道题，后面按它核对错题与重练。
+  const questionContent = page.locator('.question-content')
+  await expect(questionContent).toContainText(/\S/)
+  const questionText = (await questionContent.innerText()).trim().split('\n')[0]
 
-  // 演示题库中的三道题均将第二个选项设为错误答案，保证会进入错题闭环。
+  // 演示题与隔离题都把第二个选项设为错误答案，保证会进入错题闭环。
   await page.locator('.question-card .option-item').nth(1).click()
   await page.getByRole('button', { name: '提交答案' }).click()
   const feedback = page.getByTestId('practice-feedback')
@@ -209,7 +212,7 @@ test('用户答错后可在错题本更新掌握程度并重练', async ({ brows
   await page.goto('/wrong-questions?courseId=1&knowledgePointId=2&knowledgePointName=面向对象')
   await expect(page.locator('.kp-filter-chip')).toContainText('知识点：面向对象')
   await expect(page.locator('.wrong-card')).toHaveCount(1)
-  await expect(page.locator('.wrong-card')).toContainText('Java 中用于定义类继承关系的关键字是？')
+  await expect(page.locator('.wrong-card')).toContainText(questionText)
 
   const filteredCard = page.locator('.wrong-card').first()
   await filteredCard.locator('.el-radio-button').filter({ hasText: '部分掌握' }).click()
@@ -217,9 +220,7 @@ test('用户答错后可在错题本更新掌握程度并重练', async ({ brows
 
   await page.getByRole('button', { name: '练习当前范围' }).click()
   await expect(page).toHaveURL(/\/practice\/session$/)
-  await expect(page.getByRole('region', { name: '练习会话' }).locator('.question-content')).toContainText(
-    'Java 中用于定义类继承关系的关键字是？',
-  )
+  await expect(page.getByRole('region', { name: '练习会话' }).locator('.question-content')).toContainText(questionText)
 })
 
 test('用户刷新后可继续限时考试，取消提交并在失败重试后查看保存的自动判分结果', async ({ page }) => {
