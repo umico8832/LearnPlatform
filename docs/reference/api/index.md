@@ -19,6 +19,7 @@
 | [社区共建](community.md) | 共享讨论、附件、互动与社区审核 | `CommunityController`、`AdminCommunityController` |
 | [练习与复习](practice-and-review.md) | 练习、错题、间隔重复、统计诊断 | 学习闭环 Controller |
 | [题目理解](question-understanding.md) | 预置错项讲解、可视化、正解与无提示变式 | `QuestionUnderstandingController` |
+| [题目导师契约](question-tutor.md) | M3 分级提示、下一步建议、辅助记录（A2 实现前的已定契约） | `QuestionUnderstandingController` |
 | [学习激励](gamification.md) | 学习投入奖励、等级、目标、成就与热力日历 | `GamificationController` |
 | [考试](exams.md) | 试卷、考试、判分、智能组卷 | `ExamController`、`AdminExamController` |
 | [AI 学习](ai-learning.md) | AI 解析、资产、变式训练和结构化判分 | `AiController` |
