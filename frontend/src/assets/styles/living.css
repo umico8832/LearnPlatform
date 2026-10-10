@@ -151,6 +151,39 @@
   color-scheme: dark;
 }
 
+/* 变量身份色：任何带 data-color 的元素都能用 var(--var-color) 取到同一种颜色。 */
+.lt [data-color='blue'] {
+  --var-color: var(--lt-var-blue);
+}
+
+.lt [data-color='indigo'] {
+  --var-color: var(--lt-var-indigo);
+}
+
+.lt [data-color='orange'] {
+  --var-color: var(--lt-var-orange);
+}
+
+.lt [data-color='green'] {
+  --var-color: var(--lt-var-green);
+}
+
+.lt [data-color='pink'] {
+  --var-color: var(--lt-var-pink);
+}
+
+.lt [data-color='teal'] {
+  --var-color: var(--lt-var-teal);
+}
+
+.lt [data-color='purple'] {
+  --var-color: var(--lt-var-purple);
+}
+
+.lt [data-color='graphite'] {
+  --var-color: var(--lt-var-graphite);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .lt {
     --lt-dur-snappy: 0ms;

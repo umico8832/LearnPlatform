@@ -10,4 +10,4 @@ export {
   type SpringPreset,
   type TickFn,
 } from './spring'
-export { springAnimate, springEasing, type SpringEasing } from './easing'
+export { blurIn, springAnimate, springEasing, type SpringEasing } from './easing'

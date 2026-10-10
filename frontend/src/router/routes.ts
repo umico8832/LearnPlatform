@@ -32,6 +32,12 @@ export const learnerRoutes: RouteRecordRaw[] = [
     meta: { requiresAuth: false, title: '登录' },
   },
   {
+    path: '/viz/:scene',
+    name: 'Visualization',
+    component: () => import('@/views/viz/VizView.vue'),
+    meta: { requiresAuth: false, title: '可视化' },
+  },
+  {
     path: '/',
     name: 'Home',
     component: () => import('@/views/home/HomeView.vue'),

@@ -1,0 +1,441 @@
+/* 可视化舞台图元。舞台 DOM 由引擎命令式创建，Vue 的 scoped 样式够不到，因此按 `.vz-stage` 作用域写成普通样式。
+ * 颜色全部来自 `.lt` 令牌；舞台专用的结点、指针与网点颜色在这里用 light-dark() 定义。 */
+
+.vz-stage {
+  --vz-node-bg: light-dark(#ffffff, #2c2c2e);
+  --vz-node-shadow:
+    0 0 0 0.5px light-dark(rgba(0, 0, 0, 0.09), rgba(255, 255, 255, 0.1)),
+    0 1px 2px light-dark(rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.4)),
+    0 6px 16px light-dark(rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.35));
+  --vz-edge: light-dark(rgba(60, 60, 67, 0.6), rgba(235, 235, 245, 0.55));
+  --vz-grid-dot: light-dark(rgba(60, 60, 67, 0.11), rgba(235, 235, 245, 0.08));
+
+  position: relative;
+  overflow: hidden;
+  background-color: var(--lt-well);
+  background-image: radial-gradient(var(--vz-grid-dot) 1px, transparent 1.3px);
+  background-position: 11px 11px;
+  background-size: 22px 22px;
+}
+
+.vz-world,
+.vz-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.vz-world {
+  transform-origin: 0 0;
+}
+
+.vz-edges {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+}
+
+/* ------------------------------------------------------------------ nodes */
+
+.vz-node {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  border-radius: 13px;
+  background: var(--vz-node-bg);
+  box-shadow: var(--vz-node-shadow);
+  color: var(--lt-label);
+  transform-origin: center;
+  transition:
+    background-color var(--lt-dur-fade) var(--lt-ease-fade),
+    box-shadow var(--lt-dur-fade) var(--lt-ease-fade),
+    color var(--lt-dur-fade) var(--lt-ease-fade);
+}
+
+.vz-record {
+  width: 100px;
+  height: 48px;
+}
+
+.vz-cell,
+.vz-circle {
+  width: 48px;
+  height: 48px;
+}
+
+.vz-circle {
+  border-radius: 50%;
+}
+
+.vz-field {
+  display: grid;
+  place-items: center;
+  transition:
+    background-color var(--lt-dur-fade) var(--lt-ease-fade),
+    color var(--lt-dur-fade) var(--lt-ease-fade);
+}
+
+.vz-data {
+  flex: 1;
+  border-radius: 13px 0 0 13px;
+  font: 600 20px / 1 var(--lt-font-rounded);
+  font-variant-numeric: tabular-nums;
+}
+
+.vz-cell .vz-data,
+.vz-circle .vz-data {
+  border-radius: inherit;
+}
+
+.vz-circle .vz-data {
+  font-size: 18px;
+}
+
+.vz-ptr {
+  position: relative;
+  width: 40px;
+  border-left: 1px solid var(--lt-separator);
+  border-radius: 0 13px 13px 0;
+  background: var(--lt-fill-3);
+}
+
+.vz-ptr-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--vz-edge);
+  transition:
+    opacity var(--lt-dur-fade) var(--lt-ease-fade),
+    transform var(--lt-dur-snappy) var(--lt-ease-snappy),
+    background-color var(--lt-dur-fade) var(--lt-ease-fade);
+}
+
+.vz-ptr-mark {
+  position: absolute;
+  color: var(--lt-label-3);
+  font: 600 15px / 1 var(--lt-font-rounded);
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    opacity var(--lt-dur-fade) var(--lt-ease-fade),
+    transform var(--lt-dur-snappy) var(--lt-ease-snappy),
+    color var(--lt-dur-fade) var(--lt-ease-fade);
+}
+
+.vz-ptr[data-mark='null'] .vz-ptr-null,
+.vz-ptr[data-mark='unset'] .vz-ptr-unset {
+  opacity: 1;
+  transform: none;
+}
+
+.vz-ptr[data-mark='null'] .vz-ptr-dot,
+.vz-ptr[data-mark='unset'] .vz-ptr-dot {
+  opacity: 0;
+  transform: scale(0);
+}
+
+.vz-sub {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  width: 60px;
+  color: var(--lt-label-3);
+  font-size: var(--lt-text-caption2);
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.vz-cell .vz-sub,
+.vz-circle .vz-sub {
+  left: 50%;
+  width: max-content;
+  transform: translateX(-50%);
+}
+
+.vz-node.is-head .vz-data {
+  background: repeating-linear-gradient(-45deg, var(--lt-fill) 0 1.5px, transparent 1.5px 7px);
+}
+
+.vz-node[data-tone='accent'] {
+  box-shadow:
+    0 0 0 2px var(--lt-accent),
+    0 8px 22px color-mix(in srgb, var(--lt-accent) 18%, transparent);
+}
+
+.vz-node[data-tone='success'] {
+  background: color-mix(in srgb, var(--lt-green) 11%, var(--vz-node-bg));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--lt-green) 45%, transparent),
+    var(--vz-node-shadow);
+}
+
+.vz-node[data-tone='warning'] {
+  background: color-mix(in srgb, var(--lt-orange) 12%, var(--vz-node-bg));
+  box-shadow:
+    0 0 0 1.5px color-mix(in srgb, var(--lt-orange) 75%, transparent),
+    var(--vz-node-shadow);
+}
+
+.vz-node[data-tone='danger'] {
+  background: color-mix(in srgb, var(--lt-red) 10%, var(--vz-node-bg));
+  box-shadow:
+    0 0 0 1.5px color-mix(in srgb, var(--lt-red) 70%, transparent),
+    var(--vz-node-shadow);
+}
+
+.vz-node[data-tone='muted'] {
+  background: transparent;
+  box-shadow: none;
+  outline: 1.5px dashed var(--lt-label-3);
+  outline-offset: -1.5px;
+}
+
+.vz-node[data-tone='muted'] .vz-data {
+  color: var(--lt-label-3);
+}
+
+.vz-record[data-tone='muted'] .vz-data {
+  font: 600 var(--lt-text-caption) / 1 var(--lt-font);
+}
+
+.vz-node[data-tone='muted'] .vz-ptr {
+  border-color: transparent;
+  background: transparent;
+}
+
+.vz-node[data-tone='muted'] .vz-ptr-dot {
+  opacity: 0;
+}
+
+.vz-node[data-focus='ptr'] .vz-ptr {
+  background: var(--lt-accent);
+}
+
+.vz-node[data-focus='ptr'] .vz-ptr-dot {
+  background: var(--lt-on-accent);
+}
+
+.vz-node[data-focus='ptr'] .vz-ptr-mark {
+  color: var(--lt-on-accent);
+}
+
+.vz-node[data-focus='data'] .vz-data {
+  background: var(--lt-accent-soft);
+  color: var(--lt-accent);
+}
+
+/* 假设性画面（学习者的预测）统一画成紫色虚线。 */
+.vz-node.is-ghost {
+  background: color-mix(in srgb, var(--lt-purple) 6%, transparent);
+  box-shadow: none;
+  outline: 1.5px dashed var(--lt-purple);
+  outline-offset: -1.5px;
+  color: var(--lt-purple-text);
+}
+
+/* ------------------------------------------------------------------ edges */
+
+.vz-edge-line {
+  fill: none;
+  stroke: var(--vz-edge);
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition: stroke var(--lt-dur-fade) var(--lt-ease-fade);
+}
+
+.vz-edge-head {
+  fill: var(--vz-edge);
+  transition: fill var(--lt-dur-fade) var(--lt-ease-fade);
+}
+
+.vz-edge[data-tone='accent'] .vz-edge-line {
+  stroke: var(--lt-accent);
+  stroke-width: 2.5;
+}
+
+.vz-edge[data-tone='accent'] .vz-edge-head {
+  fill: var(--lt-accent);
+}
+
+.vz-edge.is-ghost .vz-edge-line {
+  stroke: var(--lt-purple);
+  stroke-dasharray: 5 6;
+  animation: vz-march 0.9s linear infinite;
+}
+
+.vz-edge.is-ghost .vz-edge-head {
+  fill: var(--lt-purple);
+}
+
+@keyframes vz-march {
+  to {
+    stroke-dashoffset: -22;
+  }
+}
+
+/* ------------------------------------------------------------------- tags */
+
+.vz-tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.vz-tag-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateX(-50%);
+}
+
+.vz-tag[data-side='above'] .vz-tag-inner {
+  flex-direction: column-reverse;
+  transform: translate(-50%, -100%);
+}
+
+.vz-tag[data-side='right'] .vz-tag-inner {
+  flex-direction: row;
+  transform: translateY(-50%);
+}
+
+.vz-tag[data-side='left'] .vz-tag-inner {
+  flex-direction: row-reverse;
+  transform: translate(-100%, -50%);
+}
+
+.vz-tag-stem {
+  width: 0;
+  height: 0;
+  border-right: 5px solid transparent;
+  border-bottom: 6px solid var(--var-color);
+  border-left: 5px solid transparent;
+}
+
+.vz-tag[data-side='above'] .vz-tag-stem {
+  border-top: 6px solid var(--var-color);
+  border-bottom: 0;
+}
+
+.vz-tag[data-side='right'] .vz-tag-stem,
+.vz-tag[data-side='left'] .vz-tag-stem {
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+
+.vz-tag[data-side='right'] .vz-tag-stem {
+  border-right: 6px solid var(--var-color);
+  border-left: 0;
+}
+
+.vz-tag[data-side='left'] .vz-tag-stem {
+  border-right: 0;
+  border-left: 6px solid var(--var-color);
+}
+
+.vz-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: var(--lt-radius-pill);
+  background: var(--var-color);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--var-color) 30%, transparent);
+  color: var(--lt-on-accent);
+  font: 600 var(--lt-text-caption) / 1 var(--lt-font-mono);
+  white-space: nowrap;
+}
+
+.vz-tag-null {
+  display: none;
+  font: 600 9.5px / 1 var(--lt-font);
+  letter-spacing: 0.04em;
+}
+
+.vz-tag.is-null .vz-tag-pill {
+  background: var(--lt-surface);
+  box-shadow: inset 0 0 0 1.5px var(--var-color);
+  color: var(--var-color);
+}
+
+.vz-tag.is-null .vz-tag-null {
+  display: inline;
+}
+
+.vz-tag.is-null .vz-tag-stem {
+  visibility: hidden;
+}
+
+.vz-tag.is-ghost .vz-tag-pill {
+  border: 1.5px dashed var(--lt-purple);
+  background: var(--lt-surface);
+  box-shadow: none;
+  color: var(--lt-purple-text);
+}
+
+.vz-tag.is-ghost .vz-tag-stem {
+  border-bottom-color: var(--lt-purple);
+}
+
+.vz-tag.is-ghost[data-side='left'] .vz-tag-stem {
+  border-bottom-color: transparent;
+  border-left-color: var(--lt-purple);
+}
+
+.vz-tag.is-ghost[data-side='right'] .vz-tag-stem {
+  border-bottom-color: transparent;
+  border-right-color: var(--lt-purple);
+}
+
+/* ------------------------------------------------------- labels & regions */
+
+.vz-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-caption);
+  white-space: nowrap;
+  translate: -50% -50%;
+}
+
+.vz-label[data-align='start'] {
+  translate: 0 -50%;
+}
+
+.vz-label[data-align='end'] {
+  translate: -100% -50%;
+}
+
+.vz-region {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-fill-3);
+}
+
+.vz-region[data-style='outline'] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--lt-fill);
+}
+
+.vz-region-label {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  color: var(--lt-label-3);
+  font-size: var(--lt-text-caption2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vz-edge.is-ghost .vz-edge-line {
+    animation: none;
+  }
+}

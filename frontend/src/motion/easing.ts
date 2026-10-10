@@ -43,6 +43,18 @@ export function springEasing(config: SpringConfig = springs.snappy): SpringEasin
   return result
 }
 
+/** Soft entrance for swapped text: fades and settles from slightly below, once. */
+export function blurIn(target: Element, distance = 4): Animation | null {
+  return springAnimate(
+    target,
+    [
+      { opacity: 0, filter: 'blur(5px)', transform: `translateY(${distance}px)` },
+      { opacity: 1, filter: 'blur(0)', transform: 'none' },
+    ],
+    springs.fade,
+  )
+}
+
 /** Animate with spring physics; returns null (no animation) under reduced motion. */
 export function springAnimate(
   target: Element,

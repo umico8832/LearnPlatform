@@ -13,6 +13,7 @@ frontend/src/
 ├── assets/       # 全局样式与 Design Tokens
 ├── components/   # 可复用组件（ui/ 旧基线基础组件、living/ 新基线基础组件、layout/ 布局、course/ 领域组件）
 ├── motion/       # 与框架无关的弹簧动效核心（新视觉基线）
+├── viz/          # 数据结构可视化：与框架无关的引擎和场景，加 VizPlayer 组件
 ├── router/       # 学习端路由记录、Router 与登录守卫
 ├── stores/       # 用户等跨页面状态
 ├── types/        # 共享类型
@@ -40,6 +41,7 @@ frontend/admin/   # 独立管理端 HTML 入口
 
 - 公开入口：首页（`/`）、产品、学习方式、资源、路线图、关于我们占位页，以及登录、注册与账户恢复页面；
   已登录用户也可停留在这些公开页面，再由主要操作返回课程。占位页只建立后续内容入口，不表示对应功能已经实现。
+  可视化整页（`/viz/:scene`）同样公开：场景、操作与数据写在链接参数里，全部在前端计算，不调用业务接口。
 - 一级导航：我的课程（`/my-courses`）、课程库（`/courses`）、社区共建（`/community`）。
 - 社区详情使用共享的纯文本讨论组件；管理端 `/admin/community` 承载内容审核、学校分区创建和题目整理，权限由后端校验。
 - 练习、错题、复习、测评、真题等能力优先进入具体课程内部（课程空间 `CourseOverview`），
@@ -71,6 +73,9 @@ frontend/admin/   # 独立管理端 HTML 入口
   `useSpring` 提供 Vue 绑定；`living.css` 中的缓动令牌由同名预设生成，测试保证两边一致。
 - `components/living/` 提供按需导入的 `Lt*` 基础组件，图标使用 Lucide。面板基于原生 `<dialog>`，
   从触发处展开并把焦点还给触发处。开发环境 `/dev/kit` 并排预览两种外观。
+- `viz/` 是数据结构可视化模块：`engine/`（契约、播放器、舞台）与 `scenes/`（每个场景一个确定性模拟器，按需加载）
+  不依赖 Vue，`VizPlayer` 是唯一的 Vue 入口。嵌入尺寸只有舞台、讲解与播放条，用题目自己的数据；整页另有参数、代码、
+  变量与检查点。嵌入处的“展开”用原生 View Transitions 把卡片放大到整页 `/viz/:scene`。开发环境 `/dev/viz` 预览嵌入尺寸。
 
 下述 Quiet Digital Textbook 实现仍适用于尚未重做的学习端页面和管理端。
 

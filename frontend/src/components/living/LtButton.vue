@@ -14,6 +14,7 @@ withDefaults(
   <button class="lt-button" :type="type" :data-variant="variant" :data-size="size" :disabled="disabled">
     <slot name="icon" />
     <span v-if="$slots.default" class="lt-button-label"><slot /></span>
+    <slot name="trailing" />
   </button>
 </template>
 

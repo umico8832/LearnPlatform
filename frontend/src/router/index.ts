@@ -18,6 +18,12 @@ const devRoutes: RouteRecordRaw[] = import.meta.env.DEV
         component: () => import('@/views/dev/LivingKitView.vue'),
         meta: { requiresAuth: false, title: '新视觉基线预览' },
       },
+      {
+        path: '/dev/viz',
+        name: 'DevVizEmbed',
+        component: () => import('@/views/dev/VizEmbedView.vue'),
+        meta: { requiresAuth: false, title: '嵌入式可视化预览' },
+      },
     ]
   : []
 
