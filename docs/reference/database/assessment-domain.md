@@ -7,12 +7,13 @@
 | `practice_record` | V1 | 每次题目作答、答案、正确性和时间 | 作为学习统计与观察的事实记录 |
 | `wrong_question` | V1 | 用户当前错题状态、次数和掌握程度 | 同一用户与题目维持一个当前状态 |
 | `learning_plan` | V1，V3 补齐 | 历史学习目标数据；当前无运行时入口 | V3 使用幂等创建兼容旧数据库；表保留以避免破坏既有数据 |
-| `question_review_schedule` | V9 | SM-2 复习调度状态 | 同一用户与题目唯一；保存间隔和到期时间 |
+| `question_review_schedule` | V9，V109 扩展 | 用户与题目的唯一到期日期投影；新评分后保存 FSRS 卡片 JSON | 用户与题目唯一；旧卡保留原到期日与历史次数，`fsrs_card_json` 为空直到首次独立评分；FSRS 卡的旧 `ease_factor` 为空 |
+| `fsrs_review_event` | V109 | 可追溯的 FSRS 独立评分来源与等级 | `(source_type,source_id)` 唯一；保存用户、题目、卡片、评级与 UTC 评分时刻，辅助作答不写入 |
 | `question_understanding_variant_attempt` | V106 | 本人一次原题理解尝试对应的一次变式首次判分 | `origin_attempt_id` 唯一，保存 `user_id`、`variant_id`、`user_answer`、`is_correct`、可空 `answer_time`、服务端确定的 `assistance=UNAIDED/AIDED`、`create_time` |
 
 练习提交先写入 `practice_record`，再按判分结果同步 `wrong_question` 和必要的复习计划。统计必须从真实记录计算，不能由前端累计值作为事实。
 
-原题理解提交复用上述练习事务，并以唯一 `practice_record_id` 关联[理解尝试](learning-domain.md#题目理解)，不重复写练习记录或课程事件。变式题仍是 `ai_variant_question` 的私有判分题，尚非一次正式 `question` 练习，因此它的首次判分只写独立尝试表及唯一来源的课程学习事件，不同步原题错题状态，也不复用按用户与资产唯一的 `ai_variant_training`。`origin_attempt_id` 唯一约束和事务锁保护并发首次提交；重复提交只读回首次事实。`assistance` 由服务端固化为 `UNAIDED`，M4 以此筛选 FSRS 的评分候选；M2 已有 SM-2 复习计划副作用不自动等同于 FSRS 评分。
+原题理解提交复用上述练习事务，并以唯一 `practice_record_id` 关联[理解尝试](learning-domain.md#题目理解)，不重复写练习记录或课程事件。直接练习与原题理解在各自明确的独立作答入口按同一 `practice_record` ID 去重评分；Tutor 引导练习不评分。变式题仍是 `ai_variant_question` 的私有判分题，尚非一次正式 `question` 练习，因此它的首次判分只写独立尝试表及唯一来源的课程学习事件，不同步原题错题状态，也不复用按用户与资产唯一的 `ai_variant_training`。`origin_attempt_id` 唯一约束和事务锁保护并发首次提交；重复提交只读回首次事实。变式 `assistance` 由服务端固化，只有 `UNAIDED` 形成 FSRS 评分事件。旧 SM-2 历史不被伪造成 FSRS 评分，迁移口径见[ADR-0012](../../architecture/decisions/0012-fsrs-review-scheduling.md)。
 
 ## 试卷与考试
 

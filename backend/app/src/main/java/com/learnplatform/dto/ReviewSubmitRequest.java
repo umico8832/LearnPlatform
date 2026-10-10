@@ -14,14 +14,7 @@ public class ReviewSubmitRequest {
     /** 答题用时（秒） */
     private Integer answerTime;
 
-    /** 用户自评难度：0-5（可选，默认由系统根据对错自动映射）
-     * 5 - 完美记住
-     * 4 - 稍有犹豫但答对
-     * 3 - 困难但答对
-     * 2 - 答错但看到答案后觉得简单
-     * 1 - 答错但看到答案后还记得
-     * 0 - 完全不记得
-     */
+    /** 可选的 0–5 自评；答错时不能覆盖服务端 AGAIN 评分。 */
     private Integer selfAssessedQuality;
 
     public Long getQuestionId() { return questionId; }

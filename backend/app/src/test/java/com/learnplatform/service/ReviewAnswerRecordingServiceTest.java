@@ -112,6 +112,16 @@ class ReviewAnswerRecordingServiceTest {
         verifyNoInteractions(wrongQuestionService);
     }
 
+    @Test void reviewRejectsQuestionThatBecamePrivateToAnotherUser() {
+        Question question = question();
+        question.setVisibility("PRIVATE");
+        question.setOwnerUserId(8L);
+        when(questionMapper.selectById(12L)).thenReturn(question);
+
+        assertThrows(BusinessException.class, () -> service.evaluateAndRecord(request("A"), 7L));
+        verifyNoInteractions(practiceRecordMapper, wrongQuestionService, courseLearningEventService);
+    }
+
     @Test
     void missingGradingBasisDoesNotCreateReviewFacts() {
         Question question = question();
@@ -137,6 +147,7 @@ class ReviewAnswerRecordingServiceTest {
         Question question = new Question();
         question.setId(12L);
         question.setQuestionType("SINGLE_CHOICE");
+        question.setStatus(1);
         return question;
     }
 

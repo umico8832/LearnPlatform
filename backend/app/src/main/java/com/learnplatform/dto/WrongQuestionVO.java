@@ -1,6 +1,8 @@
 package com.learnplatform.dto;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.util.Map;
 
 /**
  * 错题本 VO
@@ -17,6 +19,8 @@ public class WrongQuestionVO {
     private Integer wrongCount;
     private Integer masteryLevel;
     private String lastWrongAnswer;
+    private Map<String, Object> misconception;
+    private LocalDate nextReviewDate;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 
@@ -40,6 +44,10 @@ public class WrongQuestionVO {
     public void setMasteryLevel(Integer masteryLevel) { this.masteryLevel = masteryLevel; }
     public String getLastWrongAnswer() { return lastWrongAnswer; }
     public void setLastWrongAnswer(String lastWrongAnswer) { this.lastWrongAnswer = lastWrongAnswer; }
+    public Map<String, Object> getMisconception() { return misconception; }
+    public void setMisconception(Map<String, Object> misconception) { this.misconception = misconception; }
+    public LocalDate getNextReviewDate() { return nextReviewDate; }
+    public void setNextReviewDate(LocalDate nextReviewDate) { this.nextReviewDate = nextReviewDate; }
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
     public LocalDateTime getUpdateTime() { return updateTime; }

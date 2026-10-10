@@ -36,6 +36,14 @@ class ReviewSchedulePolicyTest {
         assertTrue(ReviewSchedulePolicy.isMastered(schedule));
     }
 
+    @Test void fsrsCardsUseLastRatingInsteadOfLegacyEaseFactor() {
+        QuestionReviewSchedule card = schedule(2, null, 2);
+        card.setLastQuality(3);
+        assertTrue(ReviewSchedulePolicy.isDifficult(card));
+        card.setLastQuality(4);
+        assertFalse(ReviewSchedulePolicy.isDifficult(card));
+    }
+
     private QuestionReviewSchedule schedule(int totalReviews, BigDecimal easeFactor, int intervalDays) {
         QuestionReviewSchedule schedule = new QuestionReviewSchedule();
         schedule.setTotalReviews(totalReviews);

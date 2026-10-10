@@ -1,5 +1,6 @@
 import request from '@/utils/request'
 import type { ApiResponse, PageData } from '@/types/api'
+import type { Misconception } from './understanding'
 
 export interface WrongQuestionRequestOptions {
   errorDisplay?: 'inline'
@@ -19,6 +20,8 @@ export interface WrongQuestionVO {
   wrongCount: number
   masteryLevel: number
   lastWrongAnswer: string
+  misconception: Misconception | null
+  nextReviewDate: string | null
   createTime: string
   updateTime: string
 }

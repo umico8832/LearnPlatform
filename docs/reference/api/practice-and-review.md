@@ -31,6 +31,8 @@
 
 ## 错题本
 
+M4 在错题列表每条记录增加 `misconception` 与 `nextReviewDate`。`misconception` 为最近一次所选错项当前有效的已审核误区 `{title, explanation, source: {kind, reviewStatus}}`，其中 `kind=CURATED|AI_GENERATED`、公开 `reviewStatus=REVIEWED`；无有效讲解时为 `null`。它只解释有对应选项讲解的作答，不根据题目或统计猜测错因。`nextReviewDate` 是该用户同题现有复习卡片的到期日期，未排期为 `null`。分页、筛选与用户隔离保持原约定；这两个字段随每页记录返回，统计接口暂不扩展。
+
 | 接口                                    | 说明                                                                       |
 | --------------------------------------- | -------------------------------------------------------------------------- |
 | `GET /api/wrong-questions`              | 查询错题；可用 `courseId`、`questionId`、`knowledgePointId` 和掌握状态筛选 |
@@ -39,6 +41,14 @@
 | `DELETE /api/wrong-questions/{id}`      | 移出错题本                                                                 |
 
 ## 间隔重复
+
+M4 的排期采用 [ADR-0012](../../architecture/decisions/0012-fsrs-review-scheduling.md) 的 FSRS。现有路径和 `nextReviewDate`、`intervalDays`、`lastReviewDate`、`totalReviews` 字段保留：新评分后的日期与间隔由 FSRS 卡片产生；存量未评分卡片先显示迁移前原到期日期。`easeFactor` 对 FSRS 卡片为 `null`，仅作为存量兼容字段；`repetitions` 和 `lastQuality` 是展示投影，不作为 FSRS 计算输入。旧统计字段 `avgEaseFactor` 仅对仍有旧因子的卡片求平均，无此类卡片时为 `0`，不表示 FSRS 掌握水平。前端不得从这些旧字段推算排期。
+
+评分仅在真实、无提示的首次作答判分成功后发生：`POST /api/practice/submit` 的直接练习、题目理解原题（复用同一 `practice_record`）、`POST /api/review/submit` 的直接复习以及 `assistance=UNAIDED` 的变式。`AIDED` 变式仍保留判分与课程学习事件，但没有 FSRS 评分事件；Tutor 引导练习等无法证实独立性的入口也不评分。评分事件以实际作答记录 ID 加来源类型去重，同一事务内持久化，重试不重复推进卡片。
+
+评分映射：答错一律 `AGAIN`；答对默认 `GOOD`。直接复习的答对且 `selfAssessedQuality` 为 `0..3` 时用 `HARD`，为 `4` 时用 `GOOD`，为 `5` 时用 `EASY`；答错时自评不能覆盖 `AGAIN`。`answerTime` 不参与评级。未作答、无自动判分依据、权限不符或事务失败均不创建评分事件。
+
+卡片仍由 `/api/review/add/{questionId}`、错题同步和既有答错路径加入；新卡首次评分前当日到期。`/api/review/submit` 在同一用户与题目卡片锁下判分和更新 FSRS 状态，并返回更新后的卡片。重置清空 FSRS 记忆状态并让卡片当日到期；移出不删除历史评分记录，恢复卡片沿用移出前的排期。`GET /api/review/due` 与课程今日学习目标仍以同一 `nextReviewDate` 判断到期，数量限制前维持现有可判分过滤。
 
 | 接口                                     | 说明                                                           |
 | ---------------------------------------- | -------------------------------------------------------------- |
@@ -53,7 +63,7 @@
 | `POST /api/review/ai-suggestion`         | 获取 AI 复习建议                                               |
 | `POST /api/review/ai-suggestion/stream`  | 流式获取 AI 复习建议                                           |
 
-复习作答同样在写入前核对自动判分依据，拒绝时保留答案且不推进复习调度。到期队列在数量限制前
+复习作答同样在写入前核对当前题目访问与自动判分依据，拒绝时保留答案且不推进复习调度。到期队列在数量限制前
 排除缺少依据的题目，到期/逾期计数和 AI 待复习建议保持同一口径。全部卡片仍保留这些历史卡，
 通过 `availableForReview: false` 告知客户端等待配置答案；答案补齐后自动恢复可用性。
 卡片总量、历史分类和已复习计数保持真实历史，本规则不会追溯改写判分、经验或复习进度。

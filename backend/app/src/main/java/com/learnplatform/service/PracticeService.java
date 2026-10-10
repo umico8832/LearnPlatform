@@ -5,7 +5,9 @@ import com.learnplatform.dto.PracticeRecordVO;
 import com.learnplatform.dto.PracticeResultVO;
 import com.learnplatform.dto.PracticeSubmitRequest;
 import com.learnplatform.dto.QuestionVO;
+import com.learnplatform.service.review.FsrsReviewService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -17,13 +19,15 @@ public class PracticeService {
     private final PracticeQuestionQueryService questionQueryService;
     private final PracticeHistoryService historyService;
     private final PracticeAnswerService answerService;
+    private final FsrsReviewService fsrs;
 
     public PracticeService(PracticeQuestionQueryService questionQueryService,
                            PracticeHistoryService historyService,
-                           PracticeAnswerService answerService) {
+                           PracticeAnswerService answerService, FsrsReviewService fsrs) {
         this.questionQueryService = questionQueryService;
         this.historyService = historyService;
         this.answerService = answerService;
+        this.fsrs = fsrs;
     }
 
     public List<QuestionVO> getPracticeQuestions(Long courseId, Long knowledgePointId,
@@ -33,8 +37,12 @@ public class PracticeService {
                 courseId, knowledgePointId, questionType, difficulty, count);
     }
 
+    @Transactional
     public PracticeResultVO submitAnswer(PracticeSubmitRequest request, Long userId) {
-        return answerService.submitAnswer(request, userId);
+        PracticeResultVO result = answerService.submitAnswer(request, userId);
+        fsrs.score(userId, request.getQuestionId(), FsrsReviewService.Source.PRACTICE,
+                result.getRecordId(), result.getCorrect(), null);
+        return result;
     }
 
     public Page<PracticeRecordVO> getUserPracticeRecords(

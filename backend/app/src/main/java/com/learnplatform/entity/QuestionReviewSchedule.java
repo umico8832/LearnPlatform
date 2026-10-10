@@ -11,9 +11,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-/**
- * 间隔重复复习计划实体（SM-2 算法）
- */
+/** 复习排期日期投影；已评分 FSRS 卡片的旧简易因子为空。 */
 @TableName("question_review_schedule")
 public class QuestionReviewSchedule {
 
@@ -24,7 +22,7 @@ public class QuestionReviewSchedule {
 
     private Long questionId;
 
-    /** SM-2 简易因子（最低1.30） */
+    /** 存量 SM-2 简易因子，FSRS 评分后为空。 */
     private BigDecimal easeFactor;
 
     /** 当前间隔天数 */

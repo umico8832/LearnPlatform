@@ -12,6 +12,7 @@ import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
+import com.learnplatform.mapper.WrongQuestionInsightMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -38,17 +39,20 @@ public class WrongQuestionService {
     private final CourseMapper courseMapper;
     private final KnowledgePointMapper knowledgePointMapper;
     private final CacheEvictService cacheEvictService;
+    private final WrongQuestionInsightMapper insightMapper;
 
     public WrongQuestionService(WrongQuestionMapper wrongQuestionMapper,
                                 QuestionMapper questionMapper,
                                 CourseMapper courseMapper,
                                 KnowledgePointMapper knowledgePointMapper,
-                                CacheEvictService cacheEvictService) {
+                                CacheEvictService cacheEvictService,
+                                WrongQuestionInsightMapper insightMapper) {
         this.wrongQuestionMapper = wrongQuestionMapper;
         this.questionMapper = questionMapper;
         this.courseMapper = courseMapper;
         this.knowledgePointMapper = knowledgePointMapper;
         this.cacheEvictService = cacheEvictService;
+        this.insightMapper = insightMapper;
     }
 
     /**
@@ -126,6 +130,7 @@ public class WrongQuestionService {
         // 批量加载关联的 Question（避免 N+1）
         List<Long> questionIds = result.getRecords().stream()
                 .map(WrongQuestion::getQuestionId).distinct().collect(Collectors.toList());
+        Map<Long, WrongQuestionInsightMapper.Insight> insights = insightMapper.forQuestions(userId, questionIds);
         Map<Long, Question> questionMap = new HashMap<>();
         if (!questionIds.isEmpty()) {
             LambdaQueryWrapper<Question> qWrapper = new LambdaQueryWrapper<>();
@@ -154,6 +159,15 @@ public class WrongQuestionService {
                     vo.setLastWrongAnswer(wq.getLastWrongAnswer());
                     vo.setCreateTime(wq.getCreateTime());
                     vo.setUpdateTime(wq.getUpdateTime());
+                    WrongQuestionInsightMapper.Insight insight = insights.get(wq.getQuestionId());
+                    if (insight != null) {
+                        vo.setNextReviewDate(insight.nextReviewDate());
+                        if (insight.title() != null && insight.explanation() != null) {
+                            vo.setMisconception(Map.of("title", insight.title(),
+                                    "explanation", insight.explanation(),
+                                    "source", Map.of("kind", insight.contentSource(), "reviewStatus", "REVIEWED")));
+                        }
+                    }
 
                     Question question = questionMap.get(wq.getQuestionId());
                     if (question != null) {

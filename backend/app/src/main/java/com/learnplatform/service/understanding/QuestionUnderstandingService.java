@@ -13,6 +13,7 @@ import com.learnplatform.mapper.QuestionUnderstandingMapper;
 import com.learnplatform.service.PracticeAnswerService;
 import com.learnplatform.service.CourseLearningEventService;
 import com.learnplatform.service.question.QuestionAccessPolicy;
+import com.learnplatform.service.review.FsrsReviewService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,11 +38,12 @@ public class QuestionUnderstandingService {
     private final CourseLearningEventService events;
     private final QuestionTutorService tutor;
     private final QuestionUnderstandingPresentation presentation;
+    private final FsrsReviewService fsrs;
 
     public QuestionUnderstandingService(QuestionMapper questions, QuestionUnderstandingMapper mapper,
                                         PracticeAnswerService practice, ObjectMapper json,
                                         CourseLearningEventService events, QuestionTutorService tutor,
-                                        QuestionUnderstandingPresentation presentation) {
+                                        QuestionUnderstandingPresentation presentation, FsrsReviewService fsrs) {
         this.questions = questions;
         this.mapper = mapper;
         this.practice = practice;
@@ -49,6 +51,7 @@ public class QuestionUnderstandingService {
         this.events = events;
         this.tutor = tutor;
         this.presentation = presentation;
+        this.fsrs = fsrs;
     }
 
     public Map<String, Object> question(long userId, long questionId) {
@@ -76,6 +79,8 @@ public class QuestionUnderstandingService {
         long attemptId = mapper.insertAttempt(userId, questionId, contentId,
                 mapper.approvedVariantId(questionId), practiceResult.getRecordId(),
                 tutor.completeReviewedHints(contentId));
+        fsrs.score(userId, questionId, FsrsReviewService.Source.PRACTICE,
+                practiceResult.getRecordId(), practiceResult.getCorrect(), null);
         Map<String, Object> data = map();
         data.put("attemptId", attemptId);
         data.put("correct", practiceResult.getCorrect());
@@ -176,6 +181,10 @@ public class QuestionUnderstandingService {
         saved.put("id", id);
         saved.put("is_correct", correct ? 1 : 0);
         saved.put("assistance", assistance);
+        if ("UNAIDED".equals(assistance)) {
+            fsrs.score(userId, attempt.questionId(), FsrsReviewService.Source.UNDERSTANDING_VARIANT,
+                    id, correct, null);
+        }
         return variantResult(saved, variant);
     }
 

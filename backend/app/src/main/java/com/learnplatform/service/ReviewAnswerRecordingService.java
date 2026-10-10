@@ -3,6 +3,7 @@ package com.learnplatform.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.service.question.AutomaticGradingPolicy;
+import com.learnplatform.service.question.QuestionAccessPolicy;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.ReviewSubmitRequest;
 import com.learnplatform.dto.ReviewAnswerOutcome;
@@ -49,7 +50,8 @@ public class ReviewAnswerRecordingService {
     public ReviewAnswerOutcome evaluateAndRecordWithReward(ReviewSubmitRequest request, Long userId) {
         Long questionId = request.getQuestionId();
         Question question = questionMapper.selectById(questionId);
-        if (question == null) {
+        if (!QuestionAccessPolicy.canAccess(question, userId)
+                || !Integer.valueOf(1).equals(question.getStatus())) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
 
@@ -83,6 +85,6 @@ public class ReviewAnswerRecordingService {
         } else {
             wrongQuestionService.addWrongQuestion(userId, questionId, request.getUserAnswer().trim());
         }
-        return new ReviewAnswerOutcome(correct, reward);
+        return new ReviewAnswerOutcome(correct, record.getId(), reward);
     }
 }

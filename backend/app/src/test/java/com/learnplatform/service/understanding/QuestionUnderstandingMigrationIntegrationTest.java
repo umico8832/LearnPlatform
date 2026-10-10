@@ -22,7 +22,8 @@ class QuestionUnderstandingMigrationIntegrationTest {
             database.start();
             var configuration = Flyway.configure().dataSource(database.getJdbcUrl(), "root", database.getPassword());
             if (initialVersion != null) configuration.target(initialVersion).load().migrate();
-            Flyway.configure().dataSource(database.getJdbcUrl(), "root", database.getPassword()).load().migrate();
+            Flyway.configure().dataSource(database.getJdbcUrl(), "root", database.getPassword())
+                    .target("108").load().migrate();
             var jdbc = new JdbcTemplate(new DriverManagerDataSource(database.getJdbcUrl(), "root", database.getPassword()));
             assertEquals(108, jdbc.queryForObject("SELECT MAX(CAST(version AS UNSIGNED)) FROM flyway_schema_history", Integer.class));
             assertEquals(2, jdbc.queryForObject("SELECT COUNT(*) FROM question_understanding_content WHERE review_status='REVIEWED'", Integer.class));

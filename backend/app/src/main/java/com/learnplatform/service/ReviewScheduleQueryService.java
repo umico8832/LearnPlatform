@@ -127,7 +127,7 @@ public class ReviewScheduleQueryService {
                 .eq(QuestionReviewSchedule::getLastReviewDate, today);
         stats.setReviewedToday(toInt(reviewScheduleMapper.selectCount(doneWrapper)));
 
-        fillCardCategories(stats, reviewScheduleMapper.selectList(allWrapper), totalCards);
+        fillCardCategories(stats, reviewScheduleMapper.selectList(allWrapper));
         stats.setStreakDays(calculateStreakDays(userId, today));
         return stats;
     }
@@ -161,7 +161,9 @@ public class ReviewScheduleQueryService {
         LocalDate today = LocalDate.now();
         LambdaQueryWrapper<QuestionReviewSchedule> difficultWrapper = new LambdaQueryWrapper<>();
         difficultWrapper.eq(QuestionReviewSchedule::getUserId, userId)
-                .lt(QuestionReviewSchedule::getEaseFactor, ReviewSchedulePolicy.DIFFICULT_THRESHOLD)
+                .and(query -> query.lt(QuestionReviewSchedule::getEaseFactor, ReviewSchedulePolicy.DIFFICULT_THRESHOLD)
+                        .or(fsrs -> fsrs.isNull(QuestionReviewSchedule::getEaseFactor)
+                                .le(QuestionReviewSchedule::getLastQuality, 3)))
                 .orderByAsc(QuestionReviewSchedule::getEaseFactor);
         AutomaticGradingPolicy.restrictReviewCandidates(difficultWrapper);
         difficultWrapper.last("LIMIT 10");
@@ -231,13 +233,13 @@ public class ReviewScheduleQueryService {
     }
 
     private void fillCardCategories(ReviewStatsVO stats,
-                                    List<QuestionReviewSchedule> cards,
-                                    long totalCards) {
+                                    List<QuestionReviewSchedule> cards) {
         int newCards = 0;
         int learning = 0;
         int mastered = 0;
         int difficult = 0;
         BigDecimal totalEaseFactor = BigDecimal.ZERO;
+        int legacyCards = 0;
 
         for (QuestionReviewSchedule card : cards) {
             if (ReviewSchedulePolicy.isNew(card)) {
@@ -252,14 +254,15 @@ public class ReviewScheduleQueryService {
             }
             if (card.getEaseFactor() != null) {
                 totalEaseFactor = totalEaseFactor.add(card.getEaseFactor());
+                legacyCards++;
             }
         }
         stats.setNewCards(newCards);
         stats.setLearningCards(learning);
         stats.setMasteredCards(mastered);
         stats.setDifficultCards(difficult);
-        stats.setAvgEaseFactor(totalEaseFactor.divide(
-                BigDecimal.valueOf(totalCards), 2, RoundingMode.HALF_UP).doubleValue());
+        stats.setAvgEaseFactor(legacyCards == 0 ? 0.0 : totalEaseFactor.divide(
+                BigDecimal.valueOf(legacyCards), 2, RoundingMode.HALF_UP).doubleValue());
     }
 
     private int calculateStreakDays(Long userId, LocalDate today) {

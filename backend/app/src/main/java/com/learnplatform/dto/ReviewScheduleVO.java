@@ -16,7 +16,7 @@ public class ReviewScheduleVO {
     private Long courseId;
     private String courseName;
 
-    /** SM-2 简易因子 */
+    /** 存量 SM-2 简易因子，FSRS 卡片为空。 */
     private BigDecimal easeFactor;
 
     /** 当前间隔天数 */

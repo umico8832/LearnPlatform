@@ -16,6 +16,7 @@ import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
 import com.learnplatform.mapper.UserFavoriteQuestionMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
+import com.learnplatform.service.review.FsrsReviewService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -48,6 +50,7 @@ class PracticeServiceTest {
     @Mock private UserFavoriteQuestionMapper userFavoriteQuestionMapper;
     @Mock private CacheEvictService cacheEvictService;
     @Mock private SpacedRepetitionService spacedRepetitionService;
+    @Mock private FsrsReviewService fsrs;
     @Mock private CourseLearningEventService courseLearningEventService;
     private RecordingWrongQuestionService wrongQuestionService;
     private PracticeService practiceService;
@@ -64,7 +67,11 @@ class PracticeServiceTest {
                 questionMapper, questionOptionMapper, practiceRecordMapper, wrongQuestionService,
                 new AnswerEvaluator(), cacheEvictService, spacedRepetitionService,
                 courseLearningEventService);
-        practiceService = new PracticeService(questionQueryService, historyService, answerService);
+        practiceService = new PracticeService(questionQueryService, historyService, answerService, fsrs);
+        lenient().doAnswer(invocation -> {
+            ((PracticeRecord) invocation.getArgument(0)).setId(123L);
+            return 1;
+        }).when(practiceRecordMapper).insert(any(PracticeRecord.class));
     }
 
     @Test
@@ -254,7 +261,7 @@ class PracticeServiceTest {
         private RuntimeException failure;
 
         RecordingWrongQuestionService() {
-            super(null, null, null, null, null);
+            super(null, null, null, null, null, null);
         }
 
         @Override

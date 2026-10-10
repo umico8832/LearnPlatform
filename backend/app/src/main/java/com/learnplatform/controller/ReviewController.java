@@ -37,7 +37,7 @@ import java.util.concurrent.Executor;
 /**
  * 间隔重复复习控制器
  */
-@Tag(name = "间隔重复复习", description = "基于 SM-2 算法的智能复习计划")
+@Tag(name = "间隔重复复习", description = "基于 FSRS 算法的复习计划")
 @RestController
 @RequestMapping("/api/review")
 public class ReviewController {

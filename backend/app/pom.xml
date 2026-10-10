@@ -14,6 +14,11 @@
             <artifactId>ai-core</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.github.open-spaced-repetition</groupId>
+            <artifactId>fsrs</artifactId>
+            <version>1.0.0</version>
+        </dependency>
         <!-- Spring Boot Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

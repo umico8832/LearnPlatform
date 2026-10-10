@@ -82,6 +82,9 @@ class SpacedRepetitionConcurrencyIntegrationTest extends IntegrationTestBase {
         assertEquals(2, jdbc.queryForObject(
                 "SELECT COUNT(*) FROM practice_record WHERE user_id=? AND question_id=?",
                 Integer.class, USER_ID, QUESTION_ID));
+        assertEquals(2, jdbc.queryForObject(
+                "SELECT COUNT(*) FROM fsrs_review_event WHERE user_id=? AND question_id=? AND source_type='REVIEW'",
+                Integer.class, USER_ID, QUESTION_ID));
     }
 
     @Test
@@ -148,6 +151,7 @@ class SpacedRepetitionConcurrencyIntegrationTest extends IntegrationTestBase {
             return;
         }
         jdbc.update("DELETE FROM course_learning_event WHERE user_id=?", USER_ID);
+        jdbc.update("DELETE FROM fsrs_review_event WHERE user_id=?", USER_ID);
         jdbc.update("DELETE FROM practice_record WHERE user_id=? AND question_id=?", USER_ID, QUESTION_ID);
         jdbc.update("DELETE FROM wrong_question WHERE user_id=? AND question_id=?", USER_ID, QUESTION_ID);
         jdbc.update("DELETE FROM question_review_schedule WHERE user_id=? AND question_id=?", USER_ID, QUESTION_ID);

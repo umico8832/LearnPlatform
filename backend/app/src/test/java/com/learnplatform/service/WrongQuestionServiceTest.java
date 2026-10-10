@@ -6,6 +6,7 @@ import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
+import com.learnplatform.mapper.WrongQuestionInsightMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,13 +29,15 @@ class WrongQuestionServiceTest {
     @Mock private CourseMapper courseMapper;
     @Mock private KnowledgePointMapper knowledgePointMapper;
     @Mock private CacheEvictService cacheEvictService;
+    @Mock private WrongQuestionInsightMapper insightMapper;
 
     private WrongQuestionService wrongQuestionService;
 
     @BeforeEach
     void setUp() {
         wrongQuestionService = new WrongQuestionService(
-                wrongQuestionMapper, questionMapper, courseMapper, knowledgePointMapper, cacheEvictService);
+                wrongQuestionMapper, questionMapper, courseMapper, knowledgePointMapper, cacheEvictService,
+                insightMapper);
     }
 
     @Test

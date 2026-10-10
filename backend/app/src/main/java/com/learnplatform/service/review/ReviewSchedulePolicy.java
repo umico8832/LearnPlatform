@@ -22,8 +22,10 @@ public final class ReviewSchedulePolicy {
     }
 
     public static boolean isDifficult(QuestionReviewSchedule schedule) {
-        return schedule.getEaseFactor() != null
-                && schedule.getEaseFactor().compareTo(DIFFICULT_THRESHOLD) < 0;
+        if (schedule.getEaseFactor() == null) {
+            return schedule.getLastQuality() != null && schedule.getLastQuality() <= 3;
+        }
+        return schedule.getEaseFactor().compareTo(DIFFICULT_THRESHOLD) < 0;
     }
 
     public static String statusLabel(QuestionReviewSchedule schedule) {

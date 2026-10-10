@@ -23,5 +23,6 @@
 | [0009](0009-learning-effort-gamification.md) | Accepted | 从真实学习事件派生投入激励与反馈 |
 | [0010](0010-quiet-digital-textbook-motion.md) | Superseded | 使用 token 化 Quiet Digital Textbook 与 Vue/CSS 动效基线 |
 | [0011](0011-living-textbook-spring-motion.md) | Accepted | 学习端重做为“会动的课本”视觉与弹簧动效基线 |
+| [0012](0012-fsrs-review-scheduling.md) | Accepted | 复习排期改用 FSRS，并保留旧卡片到期日 |
 
 ADR 采用追加式维护。决策变化时新增记录并标记替代关系，不重写旧决策的历史背景。

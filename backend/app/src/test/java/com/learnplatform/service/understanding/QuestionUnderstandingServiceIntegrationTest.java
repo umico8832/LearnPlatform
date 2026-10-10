@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.common.exception.BusinessException;
+import com.learnplatform.service.WrongQuestionService;
+import com.learnplatform.service.CourseOverviewService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -27,6 +29,8 @@ class QuestionUnderstandingServiceIntegrationTest extends IntegrationTestBase {
     private static final long USER = 989301L;
     private static final long OTHER = 989302L;
     @Autowired QuestionUnderstandingService service;
+    @Autowired WrongQuestionService wrongQuestions;
+    @Autowired CourseOverviewService overviews;
     @Autowired JdbcTemplate jdbc;
     @Autowired ObjectMapper json;
     private long questionId;
@@ -41,6 +45,7 @@ class QuestionUnderstandingServiceIntegrationTest extends IntegrationTestBase {
     }
 
     @AfterEach void tearDown() {
+        jdbc.update("DELETE FROM fsrs_review_event WHERE user_id IN (?,?)", USER, OTHER);
         jdbc.update("DELETE FROM question_understanding_hint_receipt WHERE attempt_id IN (SELECT id FROM question_understanding_attempt WHERE user_id IN (?,?))", USER, OTHER);
         jdbc.update("DELETE FROM question_understanding_viz_view WHERE attempt_id IN (SELECT id FROM question_understanding_attempt WHERE user_id IN (?,?))", USER, OTHER);
         jdbc.update("UPDATE question_understanding_hint SET review_status='PENDING',reviewed_by=NULL,reviewed_time=NULL WHERE content_id IN (SELECT id FROM question_understanding_content WHERE question_id=?)", questionId);
@@ -146,6 +151,7 @@ class QuestionUnderstandingServiceIntegrationTest extends IntegrationTestBase {
         }
         Map<String, Object> result = service.submitVariant(USER, variant, request);
         assertEquals("UNAIDED", result.get("assistance"));
+        assertEquals(2, count("SELECT COUNT(*) FROM fsrs_review_event WHERE user_id=? AND question_id=?", USER, questionId));
         assertEquals(true, result.get("correct"));
         assertEquals("D", result.get("correctAnswer"));
         assertEquals(1, count("SELECT COUNT(*) FROM question_understanding_variant_attempt WHERE origin_attempt_id=? AND assistance='UNAIDED'", origin));
@@ -188,6 +194,7 @@ class QuestionUnderstandingServiceIntegrationTest extends IntegrationTestBase {
         long variant = ((Number) service.variant(USER, origin).get("variantId")).longValue();
         assertEquals("AIDED", service.submitVariant(USER, variant, variantBody(origin, "D", null)).get("assistance"));
         assertEquals(1, count("SELECT COUNT(*) FROM question_understanding_variant_attempt WHERE origin_attempt_id=? AND assistance='AIDED'", origin));
+        assertEquals(1, count("SELECT COUNT(*) FROM fsrs_review_event WHERE user_id=? AND question_id=?", USER, questionId));
     }
 
     @Test void pendingHintsKeepLegacyRevealAndAreNotPublic() {
@@ -197,6 +204,27 @@ class QuestionUnderstandingServiceIntegrationTest extends IntegrationTestBase {
         jdbc.update("UPDATE question_understanding_hint SET review_status='REVIEWED',reviewed_by='test-reviewer',reviewed_time=CURRENT_TIMESTAMP WHERE content_id IN (SELECT id FROM question_understanding_content WHERE question_id=?)", questionId);
         assertThrowsCode(1004, () -> service.tutorHint(USER, origin, hintBody("00000000-0000-4000-8000-000000000006")));
         assertEquals("A", service.reveal(USER, origin).get("correctAnswer"));
+    }
+
+    @Test void wrongQuestionShowsCurrentChosenMisconceptionAndFsrsDueDate() {
+        service.submit(USER, questionId, body("B"));
+        var page = wrongQuestions.getWrongQuestions(USER, 1, 10, null, null, null, null);
+        var row = page.getRecords().stream().filter(item -> item.getQuestionId() == questionId).findFirst().orElseThrow();
+        assertNotNull(row.getNextReviewDate());
+        assertEquals("以为能越过 2 直接弹出 1", row.getMisconception().get("title"));
+        jdbc.update("UPDATE question_review_schedule SET next_review_date=CURRENT_DATE WHERE user_id=? AND question_id=?",
+                USER, questionId);
+        var overview = overviews.getOverview(USER, courseId);
+        assertTrue(overview.getDueReviewCount() > 0);
+        assertTrue(overview.getRecommendedTargets().stream().anyMatch(target -> "DUE_REVIEW".equals(target.getType())
+                && questionId == target.getQuestionId()));
+        jdbc.update("UPDATE question SET content=CONCAT(content,'已改') WHERE id=?", questionId);
+        try {
+            var changed = wrongQuestions.getWrongQuestions(USER, 1, 10, null, null, null, null);
+            assertNull(changed.getRecords().getFirst().getMisconception());
+        } finally {
+            jdbc.update("UPDATE question SET content=LEFT(content,CHAR_LENGTH(content)-2) WHERE id=?", questionId);
+        }
     }
 
     private JsonNode body(String answer) { return json.createObjectNode().put("answer", answer); }

@@ -17,7 +17,7 @@ export interface ReviewScheduleVO {
   difficulty: number
   courseId: number
   courseName: string
-  easeFactor: number
+  easeFactor: number | null
   intervalDays: number
   repetitions: number
   nextReviewDate: string

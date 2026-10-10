@@ -9,50 +9,25 @@ import com.learnplatform.entity.QuestionReviewSchedule;
 import com.learnplatform.entity.WrongQuestion;
 import com.learnplatform.mapper.QuestionReviewScheduleMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
+import com.learnplatform.service.review.FsrsReviewService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * 间隔重复复习服务（SM-2 算法）
- *
- * SM-2 核心公式：
- * - quality >= 3: interval(n) = 1, 6, interval(n-1) * EF
- * - quality < 3: 重置 repetitions 为 0，interval 重新从 1 天开始
- * - EF = EF + (0.1 - (5-q) * (0.08 + (5-q) * 0.02))
- * - EF 最低 1.30
- *
- * 质量评分映射（用户答题结果 → 0-5）：
- * - 答对且快速: 5
- * - 答对但犹豫: 4
- * - 答对但困难: 3
- * - 答错但看到答案理解: 2
- * - 答错但模糊记得: 1
- * - 完全不记得: 0
- */
+/** 复习计划写入入口；到期日期由 FSRS 评分服务更新。 */
 @Service
 public class SpacedRepetitionService {
 
     private static final Logger log = LoggerFactory.getLogger(SpacedRepetitionService.class);
 
-    /** 新卡片初始间隔天数 */
-    private static final int INITIAL_INTERVAL = 1;
-
-    /** 第二次成功复习间隔天数 */
-    private static final int SECOND_INTERVAL = 6;
-
-    /** 最低简易因子 */
-    private static final BigDecimal MIN_EASE_FACTOR = new BigDecimal("1.30");
-
-    /** 默认初始简易因子 */
+    /** 未评级卡片与存量卡片仍保留原表的兼容列默认值。 */
     private static final BigDecimal DEFAULT_EASE_FACTOR = new BigDecimal("2.50");
 
     private final QuestionReviewScheduleMapper reviewScheduleMapper;
@@ -60,17 +35,20 @@ public class SpacedRepetitionService {
     private final ReviewAnswerRecordingService reviewAnswerRecordingService;
     private final CacheEvictService cacheEvictService;
     private final ReviewScheduleQueryService reviewScheduleQueryService;
+    private final FsrsReviewService fsrs;
 
     public SpacedRepetitionService(QuestionReviewScheduleMapper reviewScheduleMapper,
                                     WrongQuestionMapper wrongQuestionMapper,
                                     ReviewAnswerRecordingService reviewAnswerRecordingService,
                                     CacheEvictService cacheEvictService,
-                                    ReviewScheduleQueryService reviewScheduleQueryService) {
+                                    ReviewScheduleQueryService reviewScheduleQueryService,
+                                    FsrsReviewService fsrs) {
         this.reviewScheduleMapper = reviewScheduleMapper;
         this.wrongQuestionMapper = wrongQuestionMapper;
         this.reviewAnswerRecordingService = reviewAnswerRecordingService;
         this.cacheEvictService = cacheEvictService;
         this.reviewScheduleQueryService = reviewScheduleQueryService;
+        this.fsrs = fsrs;
     }
 
     /**
@@ -126,9 +104,7 @@ public class SpacedRepetitionService {
         return syncedCount;
     }
 
-    /**
-     * 提交复习答题并更新 SM-2 调度
-     */
+    /** 提交独立复习作答并更新 FSRS 排期。 */
     @Transactional
     public ReviewScheduleVO submitReview(ReviewSubmitRequest request, Long userId) {
         Long questionId = request.getQuestionId();
@@ -148,19 +124,14 @@ public class SpacedRepetitionService {
         com.learnplatform.dto.ReviewAnswerOutcome outcome = reviewAnswerRecordingService
                 .evaluateAndRecordWithReward(request, userId);
         boolean isCorrect = outcome.correct();
-
-        // 计算 SM-2 质量评分
-        int quality = calculateQuality(isCorrect, request.getSelfAssessedQuality());
-
-        // 应用 SM-2 算法更新调度
-        applySM2(schedule, quality);
-        reviewScheduleMapper.updateById(schedule);
+        schedule = fsrs.score(userId, questionId, FsrsReviewService.Source.REVIEW,
+                outcome.recordId(), isCorrect, request.getSelfAssessedQuality());
 
         // 清除统计缓存
         cacheEvictService.evictUserStatistics(userId);
 
-        log.info("复习答题完成: userId={}, questionId={}, isCorrect={}, quality={}, newInterval={}d",
-                userId, questionId, isCorrect, quality, schedule.getIntervalDays());
+        log.info("复习答题完成: userId={}, questionId={}, isCorrect={}, newInterval={}d",
+                userId, questionId, isCorrect, schedule.getIntervalDays());
 
         ReviewScheduleVO view = reviewScheduleQueryService.buildScheduleView(schedule);
         view.setReward(outcome.reward());
@@ -202,76 +173,7 @@ public class SpacedRepetitionService {
         schedule.setLastQuality(null);
         schedule.setTotalReviews(0);
         reviewScheduleMapper.updateById(schedule);
-    }
-
-    // ========== SM-2 算法核心 ==========
-
-    /**
-     * 应用 SM-2 算法更新复习计划
-     */
-    void applySM2(QuestionReviewSchedule schedule, int quality) {
-        LocalDate today = LocalDate.now();
-
-        // 获取当前值
-        int repetitions = schedule.getRepetitions() != null ? schedule.getRepetitions() : 0;
-        BigDecimal ef = schedule.getEaseFactor() != null ? schedule.getEaseFactor() : DEFAULT_EASE_FACTOR;
-        int interval = schedule.getIntervalDays() != null ? schedule.getIntervalDays() : 0;
-
-        // 更新简易因子
-        // EF' = EF + (0.1 - (5-q) * (0.08 + (5-q) * 0.02))
-        int qDiff = 5 - quality;
-        BigDecimal delta = new BigDecimal("0.1")
-                .subtract(BigDecimal.valueOf(qDiff)
-                        .multiply(new BigDecimal("0.08")
-                                .add(BigDecimal.valueOf(qDiff).multiply(new BigDecimal("0.02")))));
-        ef = ef.add(delta);
-
-        // EF 最低 1.30
-        if (ef.compareTo(MIN_EASE_FACTOR) < 0) {
-            ef = MIN_EASE_FACTOR;
-        }
-
-        // 计算下次间隔
-        if (quality >= 3) {
-            // 答对
-            repetitions++;
-            if (repetitions == 1) {
-                interval = INITIAL_INTERVAL;
-            } else if (repetitions == 2) {
-                interval = SECOND_INTERVAL;
-            } else {
-                // interval(n) = interval(n-1) * EF
-                interval = BigDecimal.valueOf(interval)
-                        .multiply(ef)
-                        .setScale(0, RoundingMode.CEILING)
-                        .intValue();
-            }
-        } else {
-            // 答错：重置
-            repetitions = 0;
-            interval = INITIAL_INTERVAL;
-        }
-
-        // 更新实体
-        schedule.setRepetitions(repetitions);
-        schedule.setEaseFactor(ef);
-        schedule.setIntervalDays(interval);
-        schedule.setNextReviewDate(today.plusDays(interval));
-        schedule.setLastReviewDate(today);
-        schedule.setLastQuality(quality);
-        schedule.setTotalReviews((schedule.getTotalReviews() != null ? schedule.getTotalReviews() : 0) + 1);
-    }
-
-    /**
-     * 计算质量评分 (0-5)
-     * 优先使用用户自评，否则根据答题结果自动映射
-     */
-    int calculateQuality(boolean isCorrect, Integer selfAssessedQuality) {
-        if (selfAssessedQuality != null && selfAssessedQuality >= 0 && selfAssessedQuality <= 5) {
-            return selfAssessedQuality;
-        }
-        // 默认映射：答对=4（稍有犹豫），答错=1（答错但还记得部分）
-        return isCorrect ? 4 : 1;
+        fsrs.reset(schedule.getId());
     }
 
 }
