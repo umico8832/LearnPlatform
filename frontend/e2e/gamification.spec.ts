@@ -517,7 +517,7 @@ test.describe('学习投入边界验收', () => {
     await expect(page.locator('.wrong-card')).toHaveCount(1)
     await expect(page.locator('.wrong-card')).toContainText(`E2E_GAMIFICATION_wrong-review-`)
 
-    await api<void>(page, `/review/add/${question.id}`, 'POST')
+    await api<void>(page, `/review/reset/${question.id}`, 'POST')
     await page.goto(`/review?questionId=${question.id}`)
     const correctOption = page.locator(`input[type="radio"][value="${question.answer}"]`)
     await expect(correctOption).toBeVisible()
