@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { SceneModule, SceneSpec } from '@/viz/engine/types'
@@ -24,7 +24,9 @@ interface DraftQuestion {
   variant: { viz: DraftViz | null }
 }
 
-const files = ['m5-linear-list.json', 'm5-stack.json', 'm5-queue.json']
+const files = readdirSync(resolve(process.cwd(), '../content/drafts'))
+  .filter((name) => /^m5-.*\.json$/.test(name))
+  .sort()
 const questions = files.flatMap((name) => {
   const document = JSON.parse(readFileSync(resolve(process.cwd(), '../content/drafts', name), 'utf8')) as {
     questions: DraftQuestion[]

@@ -1,0 +1,383 @@
+{
+  "schemaVersion": 1,
+  "section": "边界条件补充",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "ll-09",
+      "topic": "单链表尾结点删除",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "非空单链表只有头指针和尾指针，结点只含 next，没有前驱指针。要删除尾结点并保持尾指针正确，最坏情况下需要多少时间？",
+      "options": [
+        {
+          "label": "A",
+          "content": "O(1)"
+        },
+        {
+          "label": "B",
+          "content": "O(log n)"
+        },
+        {
+          "label": "C",
+          "content": "O(n)"
+        },
+        {
+          "label": "D",
+          "content": "O(n²)"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "误把尾指针等同于前驱指针",
+          "explanation": "尾指针只指向待删结点；单链表要重设前驱的 next，仍须从头遍历找前驱。"
+        },
+        "B": {
+          "title": "以为可折半寻找尾前驱",
+          "explanation": "单链表不能随机访问中间结点，无法像有序数组那样折半定位前驱。"
+        },
+        "D": {
+          "title": "把一次遍历当成嵌套遍历",
+          "explanation": "只需从头沿 next 走一遍找尾结点前驱，最坏时间与结点数成正比。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "删除尾结点后，谁的 next 必须变成 NULL？"
+        },
+        {
+          "level": 2,
+          "text": "已有尾指针能否直接找到它的前驱？沿单链表只能向哪个方向走？"
+        },
+        {
+          "level": 3,
+          "text": "例如 甲→乙→丙 且只有丙的地址，若没有 prev 域，必须从甲走到乙才能断开乙→丙。"
+        }
+      ],
+      "solution": "尾指针能直接找到尾结点，却不能在单链表中反向找到其前驱；最坏需从头遍历到倒数第二个结点，耗时 O(n)。",
+      "viz": null,
+      "variant": {
+        "stem": "只把结构改为双向链表，仍同时保存头指针和尾指针；删除尾结点的最坏时间是多少？",
+        "options": [
+          {
+            "label": "A",
+            "content": "O(1)"
+          },
+          {
+            "label": "B",
+            "content": "O(log n)"
+          },
+          {
+            "label": "C",
+            "content": "O(n)"
+          },
+          {
+            "label": "D",
+            "content": "O(n²)"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "结点从只有 next 的单链表改为含 prev 的双向链表，其余条件不变。",
+        "explanation": "尾结点的 prev 可直接定位前驱，改其 next 并更新尾指针即可，时间 O(1)。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "ll-10",
+      "topic": "顺序表操作复杂度",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "顺序表长度为 n，已预留空闲容量。只在表尾追加一个元素，且不触发扩容，这次操作的时间复杂度是多少？",
+      "options": [
+        {
+          "label": "A",
+          "content": "O(1)"
+        },
+        {
+          "label": "B",
+          "content": "O(log n)"
+        },
+        {
+          "label": "C",
+          "content": "O(n)"
+        },
+        {
+          "label": "D",
+          "content": "O(n²)"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把定位末尾当作折半查找",
+          "explanation": "顺序表保存当前长度，可直接用下标找到下一空位，不需查找。"
+        },
+        "C": {
+          "title": "把表头插入的搬移成本套到表尾",
+          "explanation": "表尾追加时旧元素位置不变；题干也排除了扩容复制。"
+        },
+        "D": {
+          "title": "把一次写入误当作两层遍历",
+          "explanation": "无需遍历任何旧元素，更没有嵌套循环。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "题干限定不扩容；哪些旧元素需要移动？"
+        },
+        {
+          "level": 2,
+          "text": "顺序表知道当前长度后，可直接定位下一空槽。"
+        },
+        {
+          "level": 3,
+          "text": "例如长度为 3 的数组表且槽位充足，追加到 data[3] 只做一次写入。"
+        }
+      ],
+      "solution": "不扩容时直接写入 data[n] 并把长度加一，旧元素不移动，时间 O(1)。",
+      "viz": null,
+      "variant": {
+        "stem": "同一顺序表仍有空闲容量，改为在表头插入一个元素并保持顺序，最坏时间复杂度是多少？",
+        "options": [
+          {
+            "label": "A",
+            "content": "O(1)"
+          },
+          {
+            "label": "B",
+            "content": "O(log n)"
+          },
+          {
+            "label": "C",
+            "content": "O(n)"
+          },
+          {
+            "label": "D",
+            "content": "O(n²)"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "插入位置由表尾改为表头，其余条件不变。",
+        "explanation": "原 n 个元素都要后移一格，移动次数与 n 成正比，因此为 O(n)。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "st-08",
+      "topic": "顺序栈满态",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "数组容量为 5 的顺序栈用 top 指向当前栈顶元素，空栈 top=-1。若 top=4，再执行一次 Push，正确结果是什么？",
+      "options": [
+        {
+          "label": "A",
+          "content": "成功，top 变 5"
+        },
+        {
+          "label": "B",
+          "content": "栈满，Push 应拒绝且 top 保持 4"
+        },
+        {
+          "label": "C",
+          "content": "成功，覆盖下标 4"
+        },
+        {
+          "label": "D",
+          "content": "栈空，需先初始化"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "越过数组最后一个下标",
+          "explanation": "容量 5 的有效下标是 0..4；top=4 时没有下标 5 可写。"
+        },
+        "C": {
+          "title": "把入栈当覆盖栈顶",
+          "explanation": "Push 应新增元素而非覆盖当前栈顶，下标 4 已被占用。"
+        },
+        "D": {
+          "title": "把满栈与空栈条件混淆",
+          "explanation": "该表示下空栈 top=-1；top=4 是容量 5 的满栈。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "top 指向当前已占用的栈顶，不是下一空位。"
+        },
+        {
+          "level": 2,
+          "text": "写出容量 5 的全部有效下标，再看 top 是否已到末端。"
+        },
+        {
+          "level": 3,
+          "text": "例如容量 2 时，top=1 已占用下标 0、1，再 Push 就没有空槽。"
+        }
+      ],
+      "solution": "有效下标为 0 至 4。top=4 表示五个槽均已占用；Push 应报告满栈，不修改栈与 top。",
+      "viz": null,
+      "variant": {
+        "stem": "同一顺序栈仍为容量 5，只把 Push 前的 top 改为 3。执行一次 Push 后 top 是多少？",
+        "options": [
+          {
+            "label": "A",
+            "content": "3"
+          },
+          {
+            "label": "B",
+            "content": "4"
+          },
+          {
+            "label": "C",
+            "content": "5"
+          },
+          {
+            "label": "D",
+            "content": "Push 必须拒绝"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "操作前 top 由 4 改为 3，容量和表示不变。",
+        "explanation": "下标 4 尚空，Push 可把新元素写入该槽，并令 top 从 3 增至 4。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "qu-07",
+      "topic": "链队列最后元素出队",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "带头结点的链队列中，front 指向头结点，rear 指向最后一个数据结点。队列只有一个数据结点 q。出队并释放 q 后，rear 应指向哪里？",
+      "options": [
+        {
+          "label": "A",
+          "content": "原 q 的后继 NULL"
+        },
+        {
+          "label": "B",
+          "content": "已释放的 q"
+        },
+        {
+          "label": "C",
+          "content": "头结点 front"
+        },
+        {
+          "label": "D",
+          "content": "另建一个数据结点"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把尾指针置 NULL 破坏该表示",
+          "explanation": "此题明确保留头结点；队列空时 front 与 rear 都应指向头结点，而不是 rear=NULL。"
+        },
+        "B": {
+          "title": "让尾指针悬空",
+          "explanation": "q 已释放，rear 继续指向 q 会成为悬空指针，后续入队不安全。"
+        },
+        "D": {
+          "title": "误以为清空队列须分配结点",
+          "explanation": "头结点仍存在，队空只需让头结点 next=NULL 并让 rear 回到 front。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "出队后还有数据结点吗？头结点是否仍存在？"
+        },
+        {
+          "level": 2,
+          "text": "该表示下空队列时，尾指针应与哪个现存结点重合？"
+        },
+        {
+          "level": 3,
+          "text": "例如只有甲一个数据结点，删除甲后不能让 rear 继续指向已释放内存。"
+        }
+      ],
+      "solution": "删除唯一的数据结点后，头结点仍在，front->next=NULL，rear 必须重新指向 front，表示空队列。",
+      "viz": null,
+      "variant": {
+        "stem": "同一带头结点链队列改为有两个数据结点 q→r。只出队 q 后，rear 应指向哪里？",
+        "options": [
+          {
+            "label": "A",
+            "content": "头结点 front"
+          },
+          {
+            "label": "B",
+            "content": "已释放的 q"
+          },
+          {
+            "label": "C",
+            "content": "剩余数据结点 r"
+          },
+          {
+            "label": "D",
+            "content": "NULL"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "原队列由一个数据结点改为两个，只删除队头一次。",
+        "explanation": "删除 q 后还有 r，r 仍是尾结点，rear 保持指向 r；只有删到空队列才重置为 front。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    }
+  ]
+}
