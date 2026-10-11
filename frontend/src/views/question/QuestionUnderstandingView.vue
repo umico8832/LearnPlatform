@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import { computed, nextTick, onActivated, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowRight, ChevronLeft, CircleAlert, CircleCheck, RotateCcw } from '@lucide/vue'
+import { ArrowRight, ChevronLeft, RotateCcw } from '@lucide/vue'
 import { LtButton, LtCard, LtIconButton } from '@/components/living'
 import { useLivingTheme } from '@/composables/useLivingTheme'
 import { blurIn, prefersReducedMotion } from '@/motion'
 import { VizPlayer } from '@/viz'
 import type { Misconception, UnderstandingOption } from '@/api/understanding'
-import ChoiceList from './ChoiceList.vue'
+import AnswerCard from './AnswerCard.vue'
 import FlowStep from './FlowStep.vue'
 import QuestionProse from './QuestionProse.vue'
-import SourceBadge from './SourceBadge.vue'
 import { useUnderstandingFlow } from './useUnderstandingFlow'
 
 /**
@@ -77,6 +76,22 @@ const verdict = computed(() => {
   const result = attempt.result.value
   if (!result) return ''
   return result.correct ? '回答正确。' : '回答错误。'
+})
+
+const answerVerdict = computed(() => {
+  const result = attempt.result.value
+  if (!result) return null
+  return result.correct
+    ? { correct: true, text: '答对了。下面对一遍完整思路。' }
+    : { correct: false, text: '不对。先看看这个选项背后的想法。' }
+})
+
+const variantVerdict = computed(() => {
+  const result = variantAttempt.result.value
+  if (!result) return null
+  return result.correct
+    ? { correct: true, text: '独立做对了。' }
+    : { correct: false, text: `这次还不对，正确答案是 ${result.correctAnswer}。` }
 })
 
 type StepName = 'answer' | 'misconception' | 'demo' | 'solution' | 'variant' | 'done'
@@ -208,47 +223,24 @@ onMounted(() => {
           :current="current === 'answer'"
           class="answer-step"
         >
-          <LtCard as="article" radius="xl" padding="none" class="question-card" aria-labelledby="question-heading">
-            <div class="card-head">
-              <SourceBadge :source="question.source" />
-              <span class="card-type">单选题</span>
-            </div>
-            <h2 id="question-heading" class="sr-only">题目</h2>
-            <QuestionProse class="stem" :content="question.stem" />
-            <ChoiceList
-              v-model="selected"
-              class="choices"
-              name="question"
-              label="选项"
-              :options="question.options"
-              :locked="answered"
-              :chosen="attempt.result.value?.answer"
-              :correct="correctLabel"
-              :active="!answered"
-              @submit="flow.submit()"
-            />
-            <footer class="card-foot">
-              <template v-if="!answered">
-                <span class="foot-note" :data-tone="attempt.error.value ? 'error' : undefined">
-                  {{ attempt.error.value || '按 A–D 选择，Enter 提交' }}
-                </span>
-                <LtButton
-                  variant="primary"
-                  size="lg"
-                  :disabled="!selected || attempt.status.value === 'pending'"
-                  @click="flow.submit()"
-                >
-                  {{ attempt.status.value === 'pending' ? '正在判分…' : '提交' }}
-                </LtButton>
-              </template>
-              <p v-else class="verdict" :data-tone="wrong ? 'orange' : 'green'">
-                <CircleAlert v-if="wrong" :size="18" aria-hidden="true" />
-                <CircleCheck v-else :size="18" aria-hidden="true" />
-                <span v-if="wrong">不对。先看看这个选项背后的想法。</span>
-                <span v-else>答对了。下面对一遍完整思路。</span>
-              </p>
-            </footer>
-          </LtCard>
+          <AnswerCard
+            v-model="selected"
+            :source="question.source"
+            kind="单选题"
+            heading="题目"
+            heading-id="question-heading"
+            :level="2"
+            :stem="question.stem"
+            :options="question.options"
+            name="question"
+            label="选项"
+            :chosen="attempt.result.value?.answer"
+            :correct="correctLabel"
+            :pending="attempt.status.value === 'pending'"
+            :error="attempt.error.value"
+            :verdict="answerVerdict"
+            @submit="flow.submit()"
+          />
         </FlowStep>
 
         <!-- 误区：只针对学习者选的那个选项 -->
@@ -347,58 +339,26 @@ onMounted(() => {
           <h2 class="step-title">换一个条件，再做一次</h2>
           <p class="lead">同一个概念，只改了一个条件。这次没有提示，自己做出来。</p>
 
-          <LtCard
+          <AnswerCard
             v-if="variant.result.value"
-            as="article"
-            radius="xl"
-            padding="none"
-            class="question-card"
-            aria-labelledby="variant-heading"
-          >
-            <div class="card-head">
-              <SourceBadge :source="variant.result.value.source" />
-              <span class="card-type">变式 · 单选题</span>
-            </div>
-            <h3 id="variant-heading" class="sr-only">变式题</h3>
-            <p class="changed">
-              <span class="changed-label">和原题相比</span>
-              <span>{{ variant.result.value.changedCondition }}</span>
-            </p>
-            <QuestionProse class="stem" :content="variant.result.value.stem" />
-            <ChoiceList
-              v-model="variantSelected"
-              class="choices"
-              name="variant"
-              label="变式题选项"
-              :options="variant.result.value.options"
-              :locked="Boolean(variantAttempt.result.value)"
-              :chosen="variantSelected"
-              :correct="variantAttempt.result.value?.correctAnswer ?? null"
-              :active="!variantAttempt.result.value"
-              @submit="flow.submitVariant()"
-            />
-            <footer class="card-foot">
-              <template v-if="!variantAttempt.result.value">
-                <span class="foot-note" :data-tone="variantAttempt.error.value ? 'error' : undefined">
-                  {{ variantAttempt.error.value || '按 A–D 选择，Enter 提交' }}
-                </span>
-                <LtButton
-                  variant="primary"
-                  size="lg"
-                  :disabled="!variantSelected || variantAttempt.status.value === 'pending'"
-                  @click="flow.submitVariant()"
-                >
-                  {{ variantAttempt.status.value === 'pending' ? '正在判分…' : '提交' }}
-                </LtButton>
-              </template>
-              <p v-else class="verdict" :data-tone="variantAttempt.result.value.correct ? 'green' : 'orange'">
-                <CircleCheck v-if="variantAttempt.result.value.correct" :size="18" aria-hidden="true" />
-                <CircleAlert v-else :size="18" aria-hidden="true" />
-                <span v-if="variantAttempt.result.value.correct">独立做对了。</span>
-                <span v-else> 这次还不对，正确答案是 {{ variantAttempt.result.value.correctAnswer }}。 </span>
-              </p>
-            </footer>
-          </LtCard>
+            v-model="variantSelected"
+            :source="variant.result.value.source"
+            kind="变式 · 单选题"
+            heading="变式题"
+            heading-id="variant-heading"
+            :level="3"
+            :changed="variant.result.value.changedCondition"
+            :stem="variant.result.value.stem"
+            :options="variant.result.value.options"
+            name="variant"
+            label="变式题选项"
+            :chosen="variantSelected"
+            :correct="variantAttempt.result.value?.correctAnswer ?? null"
+            :pending="variantAttempt.status.value === 'pending'"
+            :error="variantAttempt.error.value"
+            :verdict="variantVerdict"
+            @submit="flow.submitVariant()"
+          />
           <p v-else-if="variant.status.value === 'pending' || variant.status.value === 'idle'" class="reading muted">
             正在准备变式题…
           </p>
@@ -519,55 +479,6 @@ onMounted(() => {
   padding: 22px 28px 24px;
 }
 
-.card-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--lt-space-4);
-  margin-bottom: var(--lt-space-4);
-}
-
-.card-type {
-  flex: none;
-  color: var(--lt-label-3);
-  font-size: var(--lt-text-caption);
-}
-
-.choices {
-  margin-top: var(--lt-space-5);
-}
-
-.card-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--lt-space-4);
-  min-height: var(--lt-control-lg);
-  margin-top: var(--lt-space-5);
-}
-
-.foot-note {
-  color: var(--lt-label-3);
-  font-size: var(--lt-text-caption);
-}
-
-.verdict {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  font-size: var(--lt-text-body);
-  font-weight: 600;
-}
-
-.verdict[data-tone='orange'] {
-  color: var(--lt-orange-text);
-}
-
-.verdict[data-tone='green'] {
-  color: var(--lt-green-text);
-}
-
 /* --------------------------------------------------- explanation steps */
 
 .pick {
@@ -684,7 +595,7 @@ p.reading {
   font-size: var(--lt-text-caption);
 }
 
-:is(.next-note, .foot-note)[data-tone='error'] {
+.next-note[data-tone='error'] {
   color: var(--lt-red-text);
 }
 
@@ -693,26 +604,6 @@ p.reading {
 }
 
 /* -------------------------------------------------------------- variant */
-
-.changed {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin: 0 0 var(--lt-space-4);
-  padding: 10px 14px;
-  border-radius: var(--lt-radius-sm);
-  background: var(--lt-fill-3);
-  box-shadow: inset 0 0 0 0.5px var(--lt-separator);
-  font-size: var(--lt-text-subhead);
-  line-height: 1.5;
-}
-
-.changed-label {
-  flex: none;
-  color: var(--lt-label-2);
-  font-size: var(--lt-text-caption);
-  font-weight: 600;
-}
 
 .variant-result {
   margin-top: var(--lt-space-7);
