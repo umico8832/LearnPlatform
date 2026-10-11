@@ -107,6 +107,12 @@ CONTENT_RULES: dict[str, tuple[tuple[re.Pattern[str], str], ...]] = {
             "current phase belongs in status or roadmap, not the PRD",
         ),
     ),
+    "docs/project/status.md": (
+        (
+            re.compile(r"未推送|已推送|推送至|worktree", re.IGNORECASE),
+            "push, branch and worktree state belong in Git and CI, not the status snapshot",
+        ),
+    ),
     "docs/product/roadmap.md": (
         (
             re.compile(r"当前工作：|Round\s*级", re.IGNORECASE),

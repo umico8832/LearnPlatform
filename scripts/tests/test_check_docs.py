@@ -60,6 +60,14 @@ class StatusOwnershipTest(unittest.TestCase):
         errors = self.check_content(at_limit + "文")
         self.assertTrue(any(f"{limit} characters" in error for error in errors), errors)
 
+    def test_rejects_push_and_worktree_state(self) -> None:
+        for line in ("M2 已在本地完成，未推送。", "M1 已推送。", "已推送至 M1 收尾提交。", "后端已在独立 worktree 实现。"):
+            with self.subTest(line=line):
+                errors = self.check_content(f"# 项目状态\n\n- {line}\n")
+                self.assertTrue(any("Git and CI" in error for error in errors), errors)
+        rules = "# 项目状态\n\n- 本地提交不授权推送。\n- 推送与远端 CI 结果以 Git 和 CI 为准，本页不记录。\n"
+        self.assertEqual([], self.check_content(rules))
+
     def test_audits_can_keep_long_round_records(self) -> None:
         content = "# 历史\n\n## Round 313\n" + "- 历史证据。\n" * 1600
         self.assertEqual([], self.check_content(content, "docs/project/audits/2026-09-05.md"))
