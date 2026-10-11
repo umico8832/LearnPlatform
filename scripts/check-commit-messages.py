@@ -108,6 +108,10 @@ def read_head_commit(head_sha: str) -> list[CommitRecord]:
     return parse_log_output(output)
 
 
+def is_footer(line: str) -> bool:
+    return any(line.startswith(prefix) for prefix in FOOTER_PREFIXES)
+
+
 def validate_body_layout(body: str) -> list[str]:
     """校验正文的稳定排版，不尝试判断正文内容是否足够原子。"""
     if not body.strip():
@@ -135,8 +139,10 @@ def validate_body_layout(body: str) -> list[str]:
         if line.startswith("- "):
             continue
 
-        if any(stripped.startswith(prefix) for prefix in FOOTER_PREFIXES):
-            if index > 0 and lines[index - 1].strip():
+        if is_footer(stripped):
+            previous = lines[index - 1].strip() if index > 0 else ""
+            # 多个 footer 连续成块；只要求整块之前空一行。
+            if previous and not is_footer(previous):
                 failures.append("footer 前必须保留一个空行")
             continue
 

@@ -53,6 +53,21 @@ class CommitMessageValidationTest(unittest.TestCase):
             "BREAKING CHANGE: 客户端必须改用新的学习事件接口。",
         )
 
+    def test_accepts_consecutive_footers(self) -> None:
+        self.assert_valid(
+            "feat(question): 预置理解内容",
+            "- 预置两道题的误区与变式\n\n"
+            "Co-authored-by: Codex <noreply@openai.com>\n"
+            "Co-authored-by: Claude <noreply@anthropic.com>",
+        )
+
+    def test_rejects_footer_right_after_body(self) -> None:
+        self.assert_invalid(
+            "feat(question): 预置理解内容",
+            "footer 前必须保留一个空行",
+            "- 预置两道题的误区与变式\nCo-authored-by: Codex <noreply@openai.com>",
+        )
+
     def test_rejects_unknown_type(self) -> None:
         self.assert_invalid("release: 发布新版本", "主题格式")
 
