@@ -1,0 +1,829 @@
+{
+  "schemaVersion": 1,
+  "section": "线性表",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "ll-01",
+      "topic": "顺序表",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "长度为 5 的顺序表有足够空闲空间。若在第 1 个位置插入一个元素，为保持原有元素的相对顺序，必须移动几个原有元素？",
+      "options": [
+        {
+          "label": "A",
+          "content": "0 个"
+        },
+        {
+          "label": "B",
+          "content": "1 个"
+        },
+        {
+          "label": "C",
+          "content": "4 个"
+        },
+        {
+          "label": "D",
+          "content": "5 个"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把表头当表尾",
+          "explanation": "在第 1 个位置插入会占用原首元素的位置，原有 5 个元素都要后移。"
+        },
+        "B": {
+          "title": "只移动原首元素",
+          "explanation": "原首元素后移后还会占用第二个元素的位置，必须依次移动其余元素。"
+        },
+        "C": {
+          "title": "漏掉最后一个元素",
+          "explanation": "原第 5 个元素也要后移到第 6 个位置，否则会被覆盖。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先区分插入位置与原表长，想想哪个已有元素会被覆盖。"
+        },
+        {
+          "level": 2,
+          "text": "从末尾往前看，每个原有元素的下标是否都发生变化。"
+        },
+        {
+          "level": 3,
+          "text": "例如长度为 2 的表在最前面插入，新元素之前要给两个旧元素分别腾出位置。"
+        }
+      ],
+      "solution": "5 个原有元素都从逻辑第 i 个位置向后移动一格；这里 i=1，所以原第 1 至第 5 个都移动，共 5 个。",
+      "viz": null,
+      "variant": {
+        "stem": "长度为 5 的顺序表仍有空闲空间，改为在第 3 个位置插入一个元素，需要移动几个原有元素？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1 个"
+          },
+          {
+            "label": "B",
+            "content": "2 个"
+          },
+          {
+            "label": "C",
+            "content": "3 个"
+          },
+          {
+            "label": "D",
+            "content": "5 个"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "插入位序由 1 改为 3，其余条件不变。",
+        "explanation": "原第 3、4、5 个元素后移，共移动 5-3+1=3 个。",
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "ll-02",
+      "topic": "顺序表",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "长度为 6 的顺序表删除第 4 个元素，为保持其余元素的相对顺序，需要移动几个元素？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1 个"
+        },
+        {
+          "label": "B",
+          "content": "2 个"
+        },
+        {
+          "label": "C",
+          "content": "3 个"
+        },
+        {
+          "label": "D",
+          "content": "4 个"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "只数被删元素",
+          "explanation": "被删元素不计入移动次数；后面的第 5、6 个元素要前移。"
+        },
+        "C": {
+          "title": "把位序直接当移动量",
+          "explanation": "第 4 个是删除位置，不代表有 3 个元素在它后面；这里只剩两个。"
+        },
+        "D": {
+          "title": "把前面的元素也算进来",
+          "explanation": "原第 1 至第 3 个元素位置不变，只有后继元素前移。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "删除后空出的是哪个逻辑位置？"
+        },
+        {
+          "level": 2,
+          "text": "只统计删除位置后面的元素，它们各前移一格。"
+        },
+        {
+          "level": 3,
+          "text": "例如 4 个元素删除第 2 个，前移的是原第 3、4 个，而不是前两个。"
+        }
+      ],
+      "solution": "删除第 i 个元素需要前移原第 i+1 至第 n 个元素，共 n-i 个；这里为 6-4=2 个。",
+      "viz": null,
+      "variant": {
+        "stem": "长度仍为 6 的顺序表，改为删除第 2 个元素，需要移动几个元素？",
+        "options": [
+          {
+            "label": "A",
+            "content": "2 个"
+          },
+          {
+            "label": "B",
+            "content": "3 个"
+          },
+          {
+            "label": "C",
+            "content": "4 个"
+          },
+          {
+            "label": "D",
+            "content": "5 个"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "删除位序由 4 改为 2，其余条件不变。",
+        "explanation": "原第 3 至第 6 个元素前移，共 6-2=4 个。",
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "ll-03",
+      "topic": "位序与下标",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "C 数组 data 依次存放线性表的 8、3、5、1。逻辑上第 3 个元素位于哪个数组下标？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1"
+        },
+        {
+          "label": "B",
+          "content": "2"
+        },
+        {
+          "label": "C",
+          "content": "3"
+        },
+        {
+          "label": "D",
+          "content": "4"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把第三个误数成第二个",
+          "explanation": "数组下标 1 对应逻辑第 2 个元素 3。"
+        },
+        "C": {
+          "title": "把位序当下标",
+          "explanation": "逻辑位序从 1 起，C 数组下标从 0 起，第 3 个应减 1。"
+        },
+        "D": {
+          "title": "把元素个数当下标",
+          "explanation": "下标 4 已越过这 4 个元素的有效范围 0..3。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先写出逻辑第 1 个元素对应的数组下标。"
+        },
+        {
+          "level": 2,
+          "text": "每往后一个逻辑位置，下标也加一；对照两列数字。"
+        },
+        {
+          "level": 3,
+          "text": "例如逻辑第 2 个元素存在 data[1]，继续往后一个元素时下标如何变化？"
+        }
+      ],
+      "solution": "逻辑第 i 个元素对应 data[i-1]；第 3 个元素 5 在 data[2]。",
+      "viz": null,
+      "variant": {
+        "stem": "同一个 C 数组与线性表，改问逻辑第 1 个元素的数组下标。",
+        "options": [
+          {
+            "label": "A",
+            "content": "0"
+          },
+          {
+            "label": "B",
+            "content": "1"
+          },
+          {
+            "label": "C",
+            "content": "2"
+          },
+          {
+            "label": "D",
+            "content": "3"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "询问的逻辑位序由 3 改为 1，数据不变。",
+        "explanation": "逻辑第 1 个元素对应 data[0]。",
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "ll-04",
+      "topic": "带头结点单链表",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "带头结点的单链表 L 当前为 4→7→9。在第 1 个数据位置插入新结点 s，令 s 成为首元结点。插入前 p 应指向哪里？",
+      "options": [
+        {
+          "label": "A",
+          "content": "头结点"
+        },
+        {
+          "label": "B",
+          "content": "原首元结点 4"
+        },
+        {
+          "label": "C",
+          "content": "原第 2 个数据结点 7"
+        },
+        {
+          "label": "D",
+          "content": "NULL"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把插入前驱看成原首元",
+          "explanation": "若 p 指向原首元结点，s 接在 4 后面，成为第 2 个数据结点。"
+        },
+        "C": {
+          "title": "前驱多走一步",
+          "explanation": "7 是原第 2 个数据结点，接在它后面会插得更靠后。"
+        },
+        "D": {
+          "title": "忽略头结点",
+          "explanation": "带头结点时第 1 个数据位置的前驱是头结点，p 不应为 NULL。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先找新结点插入后紧接着的后继是谁。"
+        },
+        {
+          "level": 2,
+          "text": "插入第 i 个位置，要让 p 停在原第 i-1 个结点；带头结点时它记第 0 个。"
+        },
+        {
+          "level": 3,
+          "text": "例如在 甲→乙 前插入新首元，连接位置在头结点与甲之间。"
+        }
+      ],
+      "solution": "第 1 个数据结点的前驱是头结点，所以 p=L；令 s->next=p->next，再令 p->next=s。",
+      "viz": {
+        "title": "先找到头结点这个前驱",
+        "spec": {
+          "scene": "linked-list",
+          "op": "insert",
+          "values": [4, 7, 9],
+          "i": 1,
+          "e": 6,
+          "pauseAt": ["insert-result"]
+        }
+      },
+      "variant": {
+        "stem": "同一带头结点链表 4→7→9，改为在第 3 个数据位置插入 s。插入前 p 应指向哪里？",
+        "options": [
+          {
+            "label": "A",
+            "content": "头结点"
+          },
+          {
+            "label": "B",
+            "content": "原首元结点 4"
+          },
+          {
+            "label": "C",
+            "content": "原第 2 个数据结点 7"
+          },
+          {
+            "label": "D",
+            "content": "原第 3 个数据结点 9"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "插入位序由 1 改为 3，其余结构不变。",
+        "explanation": "第 3 个位置的前驱是原第 2 个数据结点 7。",
+        "viz": {
+          "title": "在本题第 3 个位置插入",
+          "spec": {
+            "scene": "linked-list",
+            "op": "insert",
+            "values": [4, 7, 9],
+            "i": 3,
+            "e": 6,
+            "pauseAt": ["insert-result"]
+          }
+        },
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "ll-05",
+      "topic": "单链表插入赋值顺序",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "带头结点的单链表中，p 指向某数据结点，其后继为 q。要把新结点 s 插在 p 与 q 之间，哪组指针赋值顺序正确？",
+      "options": [
+        {
+          "label": "A",
+          "content": "先 p->next=s，再 s->next=p->next"
+        },
+        {
+          "label": "B",
+          "content": "先 s->next=p->next，再 p->next=s"
+        },
+        {
+          "label": "C",
+          "content": "先 p->next=q->next，再 s->next=q"
+        },
+        {
+          "label": "D",
+          "content": "先 s->next=p，再 p->next=s"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "先改前驱丢失后继",
+          "explanation": "先令 p->next=s 后，再读 p->next 得到的是 s 自己，会令 s->next=s，原 q 从头结点不可达。"
+        },
+        "C": {
+          "title": "跳过原后继",
+          "explanation": "令 p 指向 q 的后继会跳过 q，未把 s 接入 p 与 q 之间。"
+        },
+        "D": {
+          "title": "把新结点指回前驱",
+          "explanation": "s->next=p 会形成回指，无法按原顺序接上 q。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "画出插入前 p→q，先问哪条旧连接必须保留。"
+        },
+        {
+          "level": 2,
+          "text": "第一次赋值应让 s 记住原后继；第二次才可改 p 的指针域。"
+        },
+        {
+          "level": 3,
+          "text": "例如 2→4 中插入 3，若先让 2 指向 3，再从 2 读取后继，就只能读到 3。"
+        }
+      ],
+      "solution": "先执行 s->next=p->next 保存 q，再执行 p->next=s；从头结点出发变为 p→s→q。",
+      "viz": {
+        "title": "停在赋值顺序出错的一刻",
+        "spec": {
+          "scene": "linked-list",
+          "op": "insert",
+          "values": [2, 4, 8],
+          "i": 2,
+          "e": 6,
+          "pauseAt": ["insert-order"]
+        }
+      },
+      "variant": {
+        "stem": "同一带头结点链表中，改为把 s 插在尾结点 p 之后（原 p->next=NULL）。哪组赋值顺序仍正确？",
+        "options": [
+          {
+            "label": "A",
+            "content": "先 p->next=s，再 s->next=p->next"
+          },
+          {
+            "label": "B",
+            "content": "先 s->next=p->next，再 p->next=s"
+          },
+          {
+            "label": "C",
+            "content": "只令 s->next=p，不改 p"
+          },
+          {
+            "label": "D",
+            "content": "只令 p->next=s，不初始化 s->next"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "p 由中间结点改为尾结点，原后继从 q 改为 NULL。",
+        "explanation": "仍先令 s->next 取原 p->next，即 NULL，再令 p->next=s；这样新尾结点的指针域确定为空。",
+        "viz": {
+          "title": "在尾部接入新结点",
+          "spec": {
+            "scene": "linked-list",
+            "op": "insert",
+            "values": [2, 4, 8],
+            "i": 4,
+            "e": 6,
+            "pauseAt": ["insert-order"]
+          }
+        },
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "ll-06",
+      "topic": "单链表删除",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "带头结点的单链表 2→4→8 中，p 指向 2，q=p->next 指向 4。要删除 q 且保留后继，释放 q 前必须怎样更新链接？",
+      "options": [
+        {
+          "label": "A",
+          "content": "令 p->next=NULL"
+        },
+        {
+          "label": "B",
+          "content": "令 q->next=p"
+        },
+        {
+          "label": "C",
+          "content": "令 p->next=q->next"
+        },
+        {
+          "label": "D",
+          "content": "令 p=q->next"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "截断剩余链表",
+          "explanation": "令 p->next=NULL 会让 8 从头结点不可达。"
+        },
+        "B": {
+          "title": "形成回指",
+          "explanation": "q->next=p 会让待释放的 q 指回 p，没把 p 正确接到 8。"
+        },
+        "D": {
+          "title": "只移动局部变量",
+          "explanation": "令 p=q->next 只改指针变量 p，不会修改结点 2 的 next 域。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "删除结点后，从头结点出发应能直接走到哪个后继？"
+        },
+        {
+          "level": 2,
+          "text": "要改的是前驱结点的 next 指针域，不是局部变量 p 的值。"
+        },
+        {
+          "level": 3,
+          "text": "例如 甲→乙→丙 删除乙，应让甲直接指向丙，然后才能释放乙。"
+        }
+      ],
+      "solution": "先保存 q= p->next，令 p->next=q->next，再 free(q)；原结点 8 仍可达。",
+      "viz": {
+        "title": "先接后继再释放",
+        "spec": {
+          "scene": "linked-list",
+          "op": "delete",
+          "values": [2, 4, 8],
+          "i": 2,
+          "pauseAt": ["delete-relink"]
+        }
+      },
+      "variant": {
+        "stem": "带头结点的单链表改为 2→4→8→10，仍删除 4。完成链接更新并释放 q 后，从结点 2 直接到达哪个数据结点？",
+        "options": [
+          {
+            "label": "A",
+            "content": "4"
+          },
+          {
+            "label": "B",
+            "content": "8"
+          },
+          {
+            "label": "C",
+            "content": "10"
+          },
+          {
+            "label": "D",
+            "content": "NULL"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "原链表尾部增加数据结点 10，其余删除位置不变。",
+        "explanation": "前驱 2 的 next 改指向原 q=4 的后继 8；10 仍在 8 之后。",
+        "viz": {
+          "title": "删除后仍接到原后继",
+          "spec": {
+            "scene": "linked-list",
+            "op": "delete",
+            "values": [2, 4, 8, 10],
+            "i": 2,
+            "pauseAt": ["delete-relink"]
+          }
+        },
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "ll-07",
+      "topic": "单链表原地逆置",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "带头结点的单链表 L 原为 2→4→8。循环中所有数据结点的 next 都已反向，prev 指向 8。要让从 L 出发可访问完整的新链表，最后还必须执行什么？",
+      "options": [
+        {
+          "label": "A",
+          "content": "令 prev->next=L"
+        },
+        {
+          "label": "B",
+          "content": "令 L=prev"
+        },
+        {
+          "label": "C",
+          "content": "令 L->next=NULL"
+        },
+        {
+          "label": "D",
+          "content": "令 L->next=prev"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把头结点接成环",
+          "explanation": "prev 指向新首元 8；让 8 指回头结点会破坏应以 NULL 结束的链。"
+        },
+        "B": {
+          "title": "只改局部头指针",
+          "explanation": "L 是指向头结点的变量；仅令 L=prev 会丢开原头结点，不符合带头结点结构。"
+        },
+        "C": {
+          "title": "切断新链表",
+          "explanation": "令头结点 next=NULL 会使所有数据结点从 L 不可达。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "区分数据结点间的指针反向与头结点的指针域。"
+        },
+        {
+          "level": 2,
+          "text": "prev 已指向新的第 1 个数据结点，谁必须指向它？"
+        },
+        {
+          "level": 3,
+          "text": "例如头结点原先指向甲，甲与乙反向后新的首元是乙，头结点还需重新接到乙。"
+        }
+      ],
+      "solution": "逆置循环结束后 prev 指向新的首元结点 8；必须令 L->next=prev，使头结点接上 8→4→2。",
+      "viz": {
+        "title": "谁来接回新首元",
+        "spec": {
+          "scene": "linked-list",
+          "op": "reverse",
+          "values": [2, 4, 8],
+          "pauseAt": ["reverse-who-points-last"]
+        }
+      },
+      "variant": {
+        "stem": "同一带头结点链表改为 2→4。逆置循环结束时 prev 指向 4，最后应令 L->next 指向谁？",
+        "options": [
+          {
+            "label": "A",
+            "content": "头结点 L"
+          },
+          {
+            "label": "B",
+            "content": "原首元 2"
+          },
+          {
+            "label": "C",
+            "content": "新首元 4"
+          },
+          {
+            "label": "D",
+            "content": "NULL"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "数据结点由 3 个改为 2 个，其余逆置方式不变。",
+        "explanation": "无论数据结点个数如何，头结点 next 都要接到 prev；此时 prev 指向 4。",
+        "viz": {
+          "title": "两个结点逆置后的头结点连接",
+          "spec": {
+            "scene": "linked-list",
+            "op": "reverse",
+            "values": [2, 4],
+            "pauseAt": ["reverse-who-points-last"]
+          }
+        },
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "ll-08",
+      "topic": "顺序表长度与容量",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "顺序表当前长度为 4、容量为 7，在表尾插入一个元素且不触发扩容。操作后长度和容量分别是多少？",
+      "options": [
+        {
+          "label": "A",
+          "content": "4 和 7"
+        },
+        {
+          "label": "B",
+          "content": "5 和 5"
+        },
+        {
+          "label": "C",
+          "content": "5 和 7"
+        },
+        {
+          "label": "D",
+          "content": "7 和 7"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把插入当成覆盖",
+          "explanation": "表尾插入增加一个有效元素，长度应从 4 变成 5。"
+        },
+        "B": {
+          "title": "把容量当作当前长度",
+          "explanation": "容量是已分配的可容纳上限，不会因加入一个元素自动缩到 5。"
+        },
+        "D": {
+          "title": "把长度改成容量",
+          "explanation": "原有 4 个加上新元素只有 5 个有效元素，剩余 2 个槽仍空闲。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "分清已使用的元素个数与已分配的槽位数。"
+        },
+        {
+          "level": 2,
+          "text": "不扩容时哪个量保持不变？表尾插入又使哪个量加一？"
+        },
+        {
+          "level": 3,
+          "text": "例如容量 3、长度 1 的表追加一项后，容量仍 3，而长度变 2。"
+        }
+      ],
+      "solution": "表尾插入使有效元素数 4→5；题干明确不扩容，容量仍为 7。",
+      "viz": null,
+      "variant": {
+        "stem": "同一顺序表长度改为 6、容量仍为 7；在表尾再插入一项且不扩容，操作后长度和容量分别是多少？",
+        "options": [
+          {
+            "label": "A",
+            "content": "6 和 7"
+          },
+          {
+            "label": "B",
+            "content": "7 和 7"
+          },
+          {
+            "label": "C",
+            "content": "7 和 8"
+          },
+          {
+            "label": "D",
+            "content": "8 和 7"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "原长度由 4 改为 6，容量和操作不变。",
+        "explanation": "追加一项后长度为 7，恰好占满容量 7；本次没有扩容。",
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    }
+  ]
+}

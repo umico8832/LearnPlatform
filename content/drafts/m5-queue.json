@@ -1,0 +1,571 @@
+{
+  "schemaVersion": 1,
+  "section": "队列",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "qu-01",
+      "topic": "先进先出",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "空队列依次入队 1、2、3，出队两次后再入队 4。此时队头到队尾的元素顺序是什么？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1、4"
+        },
+        {
+          "label": "B",
+          "content": "2、4"
+        },
+        {
+          "label": "C",
+          "content": "3、4"
+        },
+        {
+          "label": "D",
+          "content": "4、3"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把已出队元素留在队头",
+          "explanation": "1 已在第一次出队时离开队列，不会再次成为队头。"
+        },
+        "B": {
+          "title": "只计算一次出队",
+          "explanation": "前两次出队分别移走 1 和 2，队中剩 3。"
+        },
+        "D": {
+          "title": "把新入队元素放在队头",
+          "explanation": "4 从队尾加入，不能排在已有元素 3 之前。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "队列只从队头出队、队尾入队。"
+        },
+        {
+          "level": 2,
+          "text": "每一次操作后写下队头到队尾的完整顺序。"
+        },
+        {
+          "level": 3,
+          "text": "例如 甲、乙入队后出队一次只剩乙，再入队丙得到乙、丙。"
+        }
+      ],
+      "solution": "出队两次依次移走 1、2，只剩 3；4 从队尾进入，顺序为 3、4。",
+      "viz": null,
+      "variant": {
+        "stem": "仍先入队 1、2、3，但只出队一次后再入队 4。此时队头到队尾的顺序是什么？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1、2、3、4"
+          },
+          {
+            "label": "B",
+            "content": "2、3、4"
+          },
+          {
+            "label": "C",
+            "content": "3、4"
+          },
+          {
+            "label": "D",
+            "content": "4、2、3"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "出队次数由两次改为一次，其余操作不变。",
+        "explanation": "仅移走 1，队中为 2、3；再在队尾加入 4，得到 2、3、4。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "qu-02",
+      "topic": "循环队列长度",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "长度为 M=8 的循环数组队列保留一个空槽。front 指向队头、rear 指向下一空位。若 front=6、rear=2，队中有几个元素？",
+      "options": [
+        {
+          "label": "A",
+          "content": "2 个"
+        },
+        {
+          "label": "B",
+          "content": "3 个"
+        },
+        {
+          "label": "C",
+          "content": "4 个"
+        },
+        {
+          "label": "D",
+          "content": "6 个"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "直接取 rear 的数值",
+          "explanation": "rear=2 只是物理下标，不能代表队列元素个数。"
+        },
+        "B": {
+          "title": "回绕时少算一个槽",
+          "explanation": "从下标 6、7、0、1 共四个有效位置，rear=2 是下一空位。"
+        },
+        "D": {
+          "title": "只看 front 的数值",
+          "explanation": "front=6 是物理起点，不是元素数目；队列已跨过数组末端。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "循环队列可以从数组尾部回绕到下标 0。"
+        },
+        {
+          "level": 2,
+          "text": "从 front 数到 rear 之前，或使用 (rear-front+M)%M。"
+        },
+        {
+          "level": 3,
+          "text": "例如 M=5、front=4、rear=1 时，有下标 4、0 两个元素。"
+        }
+      ],
+      "solution": "元素占据下标 6、7、0、1；长度为 (2-6+8)%8=4。",
+      "viz": null,
+      "variant": {
+        "stem": "同样 M=8、rear=2，只把 front 改为 7。队中有几个元素？",
+        "options": [
+          {
+            "label": "A",
+            "content": "2 个"
+          },
+          {
+            "label": "B",
+            "content": "3 个"
+          },
+          {
+            "label": "C",
+            "content": "4 个"
+          },
+          {
+            "label": "D",
+            "content": "7 个"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "front 由 6 改为 7，rear 与容量不变。",
+        "explanation": "有效下标为 7、0、1，长度 (2-7+8)%8=3。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "qu-03",
+      "topic": "循环队列容量",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "长度为 M=6 的循环数组队列用“保留一个空槽”区分队满与队空，最多可同时存放几个元素？",
+      "options": [
+        {
+          "label": "A",
+          "content": "4 个"
+        },
+        {
+          "label": "B",
+          "content": "5 个"
+        },
+        {
+          "label": "C",
+          "content": "6 个"
+        },
+        {
+          "label": "D",
+          "content": "7 个"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "多预留了一个槽",
+          "explanation": "只保留一个空槽，6 个物理位置仍可放 5 个元素。"
+        },
+        "C": {
+          "title": "把物理容量当有效容量",
+          "explanation": "若 6 个槽全放满，front==rear 会与空队列状态混淆。"
+        },
+        "D": {
+          "title": "超过物理数组长度",
+          "explanation": "物理数组只有 6 个槽，不可能同时存放 7 个元素。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "想想队空与队满若都满足 front==rear，会怎样区分。"
+        },
+        {
+          "level": 2,
+          "text": "保留一个空槽时，有效容量比数组长度少多少？"
+        },
+        {
+          "level": 3,
+          "text": "例如 M=3 的循环队列必须留 1 个空槽，因此最多放 2 个元素。"
+        }
+      ],
+      "solution": "该表示必须始终留下一个空槽，因此 M=6 时最多存 M-1=5 个元素。",
+      "viz": null,
+      "variant": {
+        "stem": "仍用保留一个空槽的循环队列，改为 M=8。最多可同时存放几个元素？",
+        "options": [
+          {
+            "label": "A",
+            "content": "6 个"
+          },
+          {
+            "label": "B",
+            "content": "7 个"
+          },
+          {
+            "label": "C",
+            "content": "8 个"
+          },
+          {
+            "label": "D",
+            "content": "9 个"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "物理数组长度由 6 改为 8，满空规则不变。",
+        "explanation": "有效容量为 M-1=7。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "qu-04",
+      "topic": "循环队列入队回绕",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "循环队列 M=5，front=1、rear=4，rear 指向下一空位。队列未满，执行一次 EnQueue(x) 后 rear 为多少？",
+      "options": [
+        {
+          "label": "A",
+          "content": "0"
+        },
+        {
+          "label": "B",
+          "content": "1"
+        },
+        {
+          "label": "C",
+          "content": "3"
+        },
+        {
+          "label": "D",
+          "content": "4"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把 rear 跳回 front",
+          "explanation": "入队后的 rear 要按模 5 前进一格，从 4 到 0；front 保持 1。"
+        },
+        "C": {
+          "title": "让 rear 反向移动",
+          "explanation": "入队在尾部增加元素，rear 沿下标递增方向前进，不向 3 倒退。"
+        },
+        "D": {
+          "title": "忘记推进 rear",
+          "explanation": "x 写在原下标 4 后，rear 必须指向下一空位 0。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "rear 表示下一次可写的空位，写入后也要更新。"
+        },
+        {
+          "level": 2,
+          "text": "循环数组从最后一个下标前进一步会回到哪里？"
+        },
+        {
+          "level": 3,
+          "text": "例如 M=4、rear=3 时入队后，新 rear=(3+1)%4。"
+        }
+      ],
+      "solution": "先把 x 写入 data[4]，再令 rear=(4+1)%5=0；front 仍为 1。",
+      "viz": null,
+      "variant": {
+        "stem": "同样 M=5、front=1，只把入队前 rear 改为 3。执行一次 EnQueue(x) 后 rear 为多少？",
+        "options": [
+          {
+            "label": "A",
+            "content": "0"
+          },
+          {
+            "label": "B",
+            "content": "1"
+          },
+          {
+            "label": "C",
+            "content": "3"
+          },
+          {
+            "label": "D",
+            "content": "4"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "入队前 rear 由 4 改为 3，容量与操作不变。",
+        "explanation": "把 x 写在 data[3]，随后 rear=(3+1)%5=4。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "qu-05",
+      "topic": "循环队列空态入队",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "循环队列 M=5，front 指向队头元素、rear 指向下一空位；空队列初始 front=rear=3。向空队列入队 x 后，(front,rear) 应为哪一对？",
+      "options": [
+        {
+          "label": "A",
+          "content": "(4,3)"
+        },
+        {
+          "label": "B",
+          "content": "(4,4)"
+        },
+        {
+          "label": "C",
+          "content": "(3,4)"
+        },
+        {
+          "label": "D",
+          "content": "(3,3)"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把队头也推进了",
+          "explanation": "入队只改变尾部，front 仍指向刚写入 x 的位置 3。"
+        },
+        "B": {
+          "title": "同时移动两个指针",
+          "explanation": "front 和 rear 同时到 4 会再次满足空队列条件，错误地把含 x 的队列判空。"
+        },
+        "D": {
+          "title": "忘记 rear 前进",
+          "explanation": "写入 x 后 rear 要指向下一空位 4，不能继续与 front 相等。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "空队列的 front=rear；入队后新元素位于原 rear 指向的位置。"
+        },
+        {
+          "level": 2,
+          "text": "队头是否需要移动？再看 rear 应指向哪里。"
+        },
+        {
+          "level": 3,
+          "text": "例如空队列 front=rear=0，放入甲后队头仍在 0，rear 前进到 1。"
+        }
+      ],
+      "solution": "x 写入下标 3，front 仍为 3，rear 前进到 4，因此为 (3,4)。",
+      "viz": null,
+      "variant": {
+        "stem": "仍是 M=5 的空循环队列，只把初始 front=rear 改为 4。入队 x 后 (front,rear) 为哪一对？",
+        "options": [
+          {
+            "label": "A",
+            "content": "(0,4)"
+          },
+          {
+            "label": "B",
+            "content": "(4,0)"
+          },
+          {
+            "label": "C",
+            "content": "(0,0)"
+          },
+          {
+            "label": "D",
+            "content": "(4,4)"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "初始空队列指针由 3 改为 4，其余规则不变。",
+        "explanation": "x 写入下标 4，front 保持 4，rear=(4+1)%5=0。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "qu-06",
+      "topic": "双栈实现队列",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "用 in、out 两个栈实现队列：入队压入 in；出队时若 out 为空，先把 in 的元素全部逐个弹出并压入 out。起初 in 从底到顶为 1、2、3，out 为空。出队一次、再入队 4、再出队一次，两次出队值依次是什么？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1、2"
+        },
+        {
+          "label": "B",
+          "content": "1、4"
+        },
+        {
+          "label": "C",
+          "content": "3、2"
+        },
+        {
+          "label": "D",
+          "content": "3、4"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "误以为新入队 4 会抢到队头",
+          "explanation": "第一次转移后 out 里仍有 2、3，第二次出队先取 out 栈顶的 2，不会取刚进入 in 的 4。"
+        },
+        "C": {
+          "title": "直接从 in 栈顶出队",
+          "explanation": "out 为空时须先把 in 全部倒过去，使最早入队的 1 位于 out 栈顶。"
+        },
+        "D": {
+          "title": "把队列当栈使用",
+          "explanation": "两次都取较晚入队的元素违反先进先出；转移到 out 的目的就是恢复队列顺序。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先看 out 为空时转移全部元素会怎样改变上下顺序。"
+        },
+        {
+          "level": 2,
+          "text": "画出第一次转移后 out 从底到顶的元素，再插入 4 到 in。"
+        },
+        {
+          "level": 3,
+          "text": "例如 in 底甲顶乙倒入 out 后，out 顶为甲，先出队的是甲。"
+        }
+      ],
+      "solution": "把 in 的 3、2、1 依次弹出压入 out 后，out 从底到顶为 3、2、1；第一次出队得 1。入队 4 到 in 时 out 仍有 2 在顶端，第二次出队得 2。",
+      "viz": null,
+      "variant": {
+        "stem": "初始 in 仍为底 1、2、3 顶、out 为空；第一次出队后入队 4，随后连续出队两次。三次出队值依次是什么？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1、4、2"
+          },
+          {
+            "label": "B",
+            "content": "1、2、3"
+          },
+          {
+            "label": "C",
+            "content": "3、2、1"
+          },
+          {
+            "label": "D",
+            "content": "1、2、4"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "入队 4 后的出队次数由一次改为两次，其余状态与规则不变。",
+        "explanation": "转移后 out 依次弹出 1、2、3；新加入 in 的 4 要等 out 清空后才会被取出。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    }
+  ]
+}

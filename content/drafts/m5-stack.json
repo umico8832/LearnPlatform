@@ -1,0 +1,724 @@
+{
+  "schemaVersion": 1,
+  "section": "栈",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "st-01",
+      "topic": "合法出栈序列",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "元素按 1、2、3、4 的顺序各入栈一次。下列哪个序列可能是其出栈顺序？",
+      "options": [
+        {
+          "label": "A",
+          "content": "2,4,1,3"
+        },
+        {
+          "label": "B",
+          "content": "3,1,2,4"
+        },
+        {
+          "label": "C",
+          "content": "2,1,4,3"
+        },
+        {
+          "label": "D",
+          "content": "4,2,3,1"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "以为弹出 4 后可越过 3 取 1",
+          "explanation": "弹出 2 后栈内留着 1；为取 4 要压入 3、4。弹出 4 时栈顶是 3，不能跳过 3 取 1。",
+          "viz": {
+            "title": "用候选序列逐步检查栈顶",
+            "spec": {
+              "scene": "stack",
+              "op": "check",
+              "seq": [2, 4, 1, 3],
+              "pauseAt": ["stack-buried"]
+            }
+          }
+        },
+        "B": {
+          "title": "以为弹出 3 后可直接取 1",
+          "explanation": "先弹出 3 后，栈中从底到顶是 1、2；下一目标 1 被 2 压住。",
+          "viz": {
+            "title": "用候选序列逐步检查栈顶",
+            "spec": {
+              "scene": "stack",
+              "op": "check",
+              "seq": [3, 1, 2, 4],
+              "pauseAt": ["stack-buried"]
+            }
+          }
+        },
+        "D": {
+          "title": "以为弹出 4 后可直接取 2",
+          "explanation": "弹出 4 后，栈顶仍是 3；下一步不能越过 3 取 2。",
+          "viz": {
+            "title": "用候选序列逐步检查栈顶",
+            "spec": {
+              "scene": "stack",
+              "op": "check",
+              "seq": [4, 2, 3, 1],
+              "pauseAt": ["stack-buried"]
+            }
+          }
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先记住入栈顺序固定，出栈只能取当前栈顶。"
+        },
+        {
+          "level": 2,
+          "text": "逐个检查候选的下一目标：没入栈就继续压，已在栈内就看是否位于顶端。"
+        },
+        {
+          "level": 3,
+          "text": "例如入栈 1、2、3 后先弹 3，此时还不能弹 1，因为 2 仍压在上面。"
+        }
+      ],
+      "solution": "要得到 2,1，先压入 1、2，依次弹出；再压入 3、4，依次弹出 4、3，恰好得到 2,1,4,3。",
+      "viz": {
+        "title": "用候选序列逐步检查栈顶",
+        "spec": {
+          "scene": "stack",
+          "op": "check",
+          "seq": [2, 1, 4, 3],
+          "pauseAt": ["stack-first-push"]
+        }
+      },
+      "variant": {
+        "stem": "入栈顺序改为 1、2、3、4、5，下列哪个出栈序列可能？",
+        "options": [
+          {
+            "label": "A",
+            "content": "2,5,1,4,3"
+          },
+          {
+            "label": "B",
+            "content": "2,1,5,4,3"
+          },
+          {
+            "label": "C",
+            "content": "4,2,3,1,5"
+          },
+          {
+            "label": "D",
+            "content": "3,1,2,5,4"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "入栈元素从 4 个改为 5 个，仍各入栈一次。",
+        "explanation": "先压 1、2 并弹出 2、1；再压 3、4、5 并弹出 5、4、3，可得 B。其余候选都要求越过当前栈顶。",
+        "viz": {
+          "title": "用候选序列逐步检查栈顶",
+          "spec": {
+            "scene": "stack",
+            "op": "check",
+            "seq": [2, 1, 5, 4, 3],
+            "pauseAt": ["stack-first-push"]
+          }
+        },
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "st-02",
+      "topic": "顺序栈栈顶下标",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "某顺序栈的 top 指向当前栈顶元素，空栈时 top=-1。连续入栈 3 个元素，再出栈 1 个元素后，top 的值是多少？",
+      "options": [
+        {
+          "label": "A",
+          "content": "0"
+        },
+        {
+          "label": "B",
+          "content": "1"
+        },
+        {
+          "label": "C",
+          "content": "2"
+        },
+        {
+          "label": "D",
+          "content": "3"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "多减了一次",
+          "explanation": "入栈三次后 top=2，只出栈一次，所以 top=1。"
+        },
+        "C": {
+          "title": "忘记出栈会使 top 下移",
+          "explanation": "top=2 是三次入栈后、尚未出栈时的值。"
+        },
+        "D": {
+          "title": "把入栈次数直接当下标",
+          "explanation": "数组下标从 0 起；三次入栈后的栈顶在下标 2。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "题干已指定 top 指向当前元素，不是下一个空位。"
+        },
+        {
+          "level": 2,
+          "text": "从 -1 开始，入栈一次加 1，出栈一次减 1。"
+        },
+        {
+          "level": 3,
+          "text": "例如空栈入栈两次后 top=1，再出栈一次就回到 0。"
+        }
+      ],
+      "solution": "top 从 -1 经三次入栈变为 0、1、2，再经一次出栈降为 1。",
+      "viz": null,
+      "variant": {
+        "stem": "同样的顺序栈改为连续入栈 5 个元素，再出栈 1 个，top 的值是多少？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1"
+          },
+          {
+            "label": "B",
+            "content": "2"
+          },
+          {
+            "label": "C",
+            "content": "3"
+          },
+          {
+            "label": "D",
+            "content": "4"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "入栈次数由 3 改为 5，出栈一次与 top 表示不变。",
+        "explanation": "从 -1 入栈五次到 4，再出栈一次到 3。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "st-03",
+      "topic": "取栈顶与出栈",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "栈中从底到顶为 2、5、7。先执行 GetTop(S)（只读取不移除），再执行一次 Pop(S)。两次得到的元素依次是什么？",
+      "options": [
+        {
+          "label": "A",
+          "content": "5、7"
+        },
+        {
+          "label": "B",
+          "content": "7、5"
+        },
+        {
+          "label": "C",
+          "content": "5、5"
+        },
+        {
+          "label": "D",
+          "content": "7、7"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把第二个元素当成第一次栈顶",
+          "explanation": "第一次取栈顶读到 7，不是下方的 5。"
+        },
+        "B": {
+          "title": "误以为 GetTop 会弹出",
+          "explanation": "GetTop 只读 7，不改变栈；紧接着 Pop 仍弹出 7。"
+        },
+        "C": {
+          "title": "把栈顶和下一个元素混淆",
+          "explanation": "两次操作前栈顶都为 7；5 要等 7 真正出栈后才成为栈顶。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "确认 GetTop 与 Pop 是否改变栈。"
+        },
+        {
+          "level": 2,
+          "text": "画出操作前后的栈，第一次读取后保持原样，再进行第二次操作。"
+        },
+        {
+          "level": 3,
+          "text": "例如只有甲、乙且乙在顶端，先查看栈顶并不会让甲马上露出来。"
+        }
+      ],
+      "solution": "GetTop(S) 返回 7 且栈不变；Pop(S) 随后弹出同一个栈顶 7。",
+      "viz": null,
+      "variant": {
+        "stem": "栈中从底到顶改为 2、5、7、9。先 GetTop，再 Pop 一次，两个返回值依次是什么？",
+        "options": [
+          {
+            "label": "A",
+            "content": "7、7"
+          },
+          {
+            "label": "B",
+            "content": "9、9"
+          },
+          {
+            "label": "C",
+            "content": "9、7"
+          },
+          {
+            "label": "D",
+            "content": "7、9"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "只在原栈顶上新增元素 9，操作顺序不变。",
+        "explanation": "GetTop 读取 9 不移除；随后 Pop 仍弹出 9。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "st-04",
+      "topic": "括号匹配",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "用栈检查括号串 ([)]。从左到右读到第 3 个字符 ) 时，尚未匹配失败前的栈顶是哪一个字符？",
+      "options": [
+        {
+          "label": "A",
+          "content": "("
+        },
+        {
+          "label": "B",
+          "content": "["
+        },
+        {
+          "label": "C",
+          "content": ")"
+        },
+        {
+          "label": "D",
+          "content": "栈已空"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把较早入栈的左括号当栈顶",
+          "explanation": "读到 ) 前依次压入 ( 与 [，较晚压入的 [ 才在栈顶。"
+        },
+        "C": {
+          "title": "把当前输入字符当栈顶",
+          "explanation": "当前 ) 尚未入栈；匹配检查取的是已有左括号栈顶。"
+        },
+        "D": {
+          "title": "提前弹出了未匹配的左括号",
+          "explanation": "前两个左括号都未遇到对应右括号，栈不为空。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "匹配检查只看最近尚未配对的左括号。"
+        },
+        {
+          "level": 2,
+          "text": "逐字扫描前两个字符，把左括号按出现顺序压入栈。"
+        },
+        {
+          "level": 3,
+          "text": "例如读完 ({ 后，下一右括号首先要与更晚压入的 { 比较。"
+        }
+      ],
+      "solution": "读到第三个字符前，栈从底到顶为 (、[，因此栈顶是 [；当前 ) 与之不匹配。",
+      "viz": null,
+      "variant": {
+        "stem": "括号串改为 [{]}。从左到右读到第 3 个字符 ] 时，尚未匹配失败前的栈顶是什么？",
+        "options": [
+          {
+            "label": "A",
+            "content": "["
+          },
+          {
+            "label": "B",
+            "content": "{"
+          },
+          {
+            "label": "C",
+            "content": "]"
+          },
+          {
+            "label": "D",
+            "content": "栈已空"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "括号串由 ([)] 改为 [{]}，检查方式不变。",
+        "explanation": "读到 ] 前已压入 [、{；更晚压入的 { 位于栈顶。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "st-05",
+      "topic": "后缀表达式",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "按栈求值后缀表达式 3 4 + 2 * 的结果是多少？",
+      "options": [
+        {
+          "label": "A",
+          "content": "9"
+        },
+        {
+          "label": "B",
+          "content": "11"
+        },
+        {
+          "label": "C",
+          "content": "14"
+        },
+        {
+          "label": "D",
+          "content": "24"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把乘号也当成加号",
+          "explanation": "3 与 4 先相加为 7，随后应乘 2，而不是再加 2。"
+        },
+        "B": {
+          "title": "按中缀优先级提前算 4×2",
+          "explanation": "后缀表达式的运算顺序由操作符出现位置决定；+ 先作用于 3 与 4。"
+        },
+        "D": {
+          "title": "忽略加号把三个数连乘",
+          "explanation": "第一个操作符是 +，不能把 3 与 4 先相乘。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "后缀表达式遇到数字就入栈，遇到运算符才取栈顶两个数。"
+        },
+        {
+          "level": 2,
+          "text": "从左到右处理，先看 + 出现时栈顶的两个值。"
+        },
+        {
+          "level": 3,
+          "text": "例如 2 5 + 3 * 先得到 7，再拿 7 与 3 相乘。"
+        }
+      ],
+      "solution": "依次压入 3、4，遇 + 得到 7 并入栈；压入 2，遇 * 得到 7×2=14。",
+      "viz": null,
+      "variant": {
+        "stem": "后缀表达式的首个操作数由 3 改为 5，即 5 4 + 2 *，结果是多少？",
+        "options": [
+          {
+            "label": "A",
+            "content": "11"
+          },
+          {
+            "label": "B",
+            "content": "13"
+          },
+          {
+            "label": "C",
+            "content": "18"
+          },
+          {
+            "label": "D",
+            "content": "40"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "首个操作数由 3 改为 5，其余符号不变。",
+        "explanation": "先算 5+4=9，再算 9×2=18。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "st-06",
+      "topic": "入栈与出栈操作追踪",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "空栈依次执行 Push(1)、Push(2)、Pop、Push(3)、Pop、Pop。三次 Pop 的返回值依次是什么？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1、2、3"
+        },
+        {
+          "label": "B",
+          "content": "2、1、3"
+        },
+        {
+          "label": "C",
+          "content": "2、3、1"
+        },
+        {
+          "label": "D",
+          "content": "3、2、1"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把栈当成队列",
+          "explanation": "第一次 Pop 取的是后压入的 2，而非最早入栈的 1。"
+        },
+        "B": {
+          "title": "忘记 Push(3) 改变栈顶",
+          "explanation": "第一次弹出 2 后又压入 3；第二次应弹出 3，而不是 1。"
+        },
+        "D": {
+          "title": "把后来的 3 提前到第一次出栈",
+          "explanation": "第一次 Pop 发生在 Push(3) 之前，不可能先弹出 3。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "逐步画出栈，不要只看所有 Push 的总顺序。"
+        },
+        {
+          "level": 2,
+          "text": "在每一次 Pop 发生的时刻记录当时的栈顶。"
+        },
+        {
+          "level": 3,
+          "text": "例如 Push(甲)、Push(乙)、Pop、Push(丙)、Pop 会先后得到乙和丙。"
+        }
+      ],
+      "solution": "第一次 Pop 弹出 2；此后 Push(3)，第二次 Pop 弹出 3；最后弹出剩余的 1。",
+      "viz": {
+        "title": "用候选序列逐步检查栈顶",
+        "spec": {
+          "scene": "stack",
+          "op": "check",
+          "seq": [2, 3, 1],
+          "pauseAt": ["stack-first-push"]
+        }
+      },
+      "variant": {
+        "stem": "仍从空栈开始，改为先 Push(1)、Push(2)、Push(3)，随后连续 Pop 三次。返回值依次是什么？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1、2、3"
+          },
+          {
+            "label": "B",
+            "content": "2、3、1"
+          },
+          {
+            "label": "C",
+            "content": "3、2、1"
+          },
+          {
+            "label": "D",
+            "content": "3、1、2"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "第一次 Pop 延后到 Push(3) 之后，其余元素及操作次数不变。",
+        "explanation": "三个元素全部压入后，栈顶依次为 3、2、1。",
+        "viz": {
+          "title": "用候选序列逐步检查栈顶",
+          "spec": {
+            "scene": "stack",
+            "op": "check",
+            "seq": [3, 2, 1],
+            "pauseAt": ["stack-first-push"]
+          }
+        },
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "st-07",
+      "topic": "合法出栈序列计数",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "1、2、3 各按顺序入栈一次，每个元素也各出栈一次。共有多少种不同的合法出栈序列？",
+      "options": [
+        {
+          "label": "A",
+          "content": "4 种"
+        },
+        {
+          "label": "B",
+          "content": "5 种"
+        },
+        {
+          "label": "C",
+          "content": "6 种"
+        },
+        {
+          "label": "D",
+          "content": "8 种"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "漏算一种可达顺序",
+          "explanation": "除 1,2,3、1,3,2、2,1,3、3,2,1 外，2,3,1 也可由先弹 2、再弹 3、最后弹 1 得到。"
+        },
+        "C": {
+          "title": "把所有排列都算作合法",
+          "explanation": "3,1,2 不合法：弹出 3 后栈顶是 2，1 被压在下面。"
+        },
+        "D": {
+          "title": "把入栈过程也当作不同输出",
+          "explanation": "题目只统计不同出栈序列，不统计产生同一序列的操作路径。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先列出 3 个元素的所有排列，再逐个检查栈顶限制。"
+        },
+        {
+          "level": 2,
+          "text": "固定输入顺序后，某个候选若要求越过栈顶，就排除它。"
+        },
+        {
+          "level": 3,
+          "text": "例如两元素 1、2 只有 1,2 与 2,1 两种合法输出。"
+        }
+      ],
+      "solution": "3 个元素有 6 个排列，其中 3,1,2 不可达；其余 1,2,3、1,3,2、2,1,3、2,3,1、3,2,1 共 5 种。",
+      "viz": null,
+      "variant": {
+        "stem": "输入元素改为 1、2、3、4，仍各入栈和出栈一次。不同合法出栈序列有多少种？",
+        "options": [
+          {
+            "label": "A",
+            "content": "12 种"
+          },
+          {
+            "label": "B",
+            "content": "14 种"
+          },
+          {
+            "label": "C",
+            "content": "16 种"
+          },
+          {
+            "label": "D",
+            "content": "24 种"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "元素个数由 3 改为 4，其他规则不变。",
+        "explanation": "合法出栈序列数为第 4 个 Catalan 数 C₄=1/(4+1)×组合数(8,4)=14；不能把 4!=24 个排列全算进去。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    }
+  ]
+}
