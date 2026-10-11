@@ -19,9 +19,11 @@ interface DraftViz {
 }
 interface DraftQuestion {
   id: string
+  options: { label: string; content: string }[]
+  correctAnswer: string
   viz: DraftViz | null
   misconceptions: Record<string, { viz?: DraftViz }>
-  variant: { viz: DraftViz | null }
+  variant: { options: { label: string; content: string }[]; correctAnswer: string; viz: DraftViz | null }
 }
 
 const files = readdirSync(resolve(process.cwd(), '../content/drafts'))
@@ -110,5 +112,38 @@ describe('M5 待审核题目草稿的正式场景', () => {
       }
     }
     expect(count).toBeGreaterThan(0)
+  })
+
+  it('合法出栈序列题的原题和变式只有标注答案可达', () => {
+    const question = questions.find((item) => item.id === 'st-01')!
+    for (const part of [question, question.variant]) {
+      const validLabels = part.options
+        .filter((option) => {
+          const seq = option.content.split(',').map(Number)
+          return stack.build({ scene: 'stack', op: 'check', seq }).check.detail === '序列合法'
+        })
+        .map((option) => option.label)
+      expect(validLabels).toEqual([part.correctAnswer])
+    }
+  })
+
+  it('出栈序列计数题的 3 元素与 4 元素答案由逐排列模拟得到', () => {
+    const question = questions.find((item) => item.id === 'st-07')!
+    const permutations = (values: number[]): number[][] =>
+      values.length === 0
+        ? [[]]
+        : values.flatMap((value, index) =>
+            permutations(values.filter((_, i) => i !== index)).map((tail) => [value, ...tail]),
+          )
+    for (const [part, n] of [
+      [question, 3],
+      [question.variant, 4],
+    ] as const) {
+      const reachable = permutations(Array.from({ length: n }, (_, i) => i + 1)).filter(
+        (seq) => stack.build({ scene: 'stack', op: 'check', seq }).check.detail === '序列合法',
+      ).length
+      const chosen = part.options.find((option) => option.label === part.correctAnswer)!
+      expect(Number.parseInt(chosen.content, 10)).toBe(reachable)
+    }
   })
 })
