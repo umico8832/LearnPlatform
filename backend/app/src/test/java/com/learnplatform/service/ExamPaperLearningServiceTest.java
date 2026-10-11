@@ -17,6 +17,7 @@ import com.learnplatform.mapper.ExamQuestionMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
 import com.learnplatform.mapper.UserCourseMapper;
+import com.learnplatform.service.exam.ExamAutomaticGradingGuard;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,12 +53,14 @@ class ExamPaperLearningServiceTest {
     @Mock private SpacedRepetitionService spacedRepetitionService;
     @Mock private CacheEvictService cacheEvictService;
     @Mock private CourseLearningEventService courseLearningEventService;
+    @Mock private ExamAutomaticGradingGuard gradingGuard;
     private ExamPaperLearningService service;
 
     @BeforeEach
     void setUp() {
         ExamPaperLearningContextService contextService = new ExamPaperLearningContextService(
-                examPaperMapper, examQuestionMapper, questionMapper, questionOptionMapper, userCourseMapper);
+                examPaperMapper, examQuestionMapper, questionMapper, questionOptionMapper, userCourseMapper,
+                gradingGuard);
         service = new ExamPaperLearningService(sessionMapper, learningAnswerMapper, contextService,
                 new AnswerEvaluator(), wrongQuestionService, spacedRepetitionService,
                 cacheEvictService, courseLearningEventService);

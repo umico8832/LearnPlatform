@@ -11,6 +11,7 @@ import com.learnplatform.entity.SubjectiveGradingPoint;
 import com.learnplatform.mapper.ExamQuestionMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.SubjectiveGradingPointMapper;
+import com.learnplatform.service.exam.ExamAutomaticGradingGuard;
 import org.springframework.stereotype.Service;
 
 import java.time.Year;
@@ -27,13 +28,16 @@ public class ExamPaperValidationService {
     private final ExamQuestionMapper examQuestionMapper;
     private final QuestionMapper questionMapper;
     private final SubjectiveGradingPointMapper subjectiveGradingPointMapper;
+    private final ExamAutomaticGradingGuard gradingGuard;
 
     public ExamPaperValidationService(ExamQuestionMapper examQuestionMapper,
                                       QuestionMapper questionMapper,
-                                      SubjectiveGradingPointMapper subjectiveGradingPointMapper) {
+                                      SubjectiveGradingPointMapper subjectiveGradingPointMapper,
+                                      ExamAutomaticGradingGuard gradingGuard) {
         this.examQuestionMapper = examQuestionMapper;
         this.questionMapper = questionMapper;
         this.subjectiveGradingPointMapper = subjectiveGradingPointMapper;
+        this.gradingGuard = gradingGuard;
     }
 
     public void ensureDraft(ExamPaper paper, String message) {
@@ -91,6 +95,18 @@ public class ExamPaperValidationService {
                 ensureQuestionRubric(relation.getQuestionId(),
                         relation.getScore() != null ? relation.getScore() : 1);
             }
+        }
+    }
+
+    public void ensureAutomaticGradingReady(Integer status,
+                                           List<ExamPaperCreateRequest.QuestionItem> requestedQuestions,
+                                           Long paperId) {
+        if (status == null || status != 1) { return; }
+        if (requestedQuestions != null) {
+            gradingGuard.requireQuestionIds(requestedQuestions.stream()
+                    .map(ExamPaperCreateRequest.QuestionItem::getQuestionId).toList());
+        } else if (paperId != null) {
+            gradingGuard.requirePaper(paperId);
         }
     }
 

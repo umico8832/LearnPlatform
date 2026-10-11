@@ -448,8 +448,9 @@ class ExamConcurrencyIntegrationTest extends IntegrationTestBase {
         @Bean
         @Primary
         ExamSessionService timedExamSessions(ExamRecordMapper records, ExamPaperMapper papers,
-                                             ExamRecordViewService views, MutableExamClock clock) {
-            return new ExamSessionService(records, papers, views, clock);
+                                             ExamRecordViewService views, MutableExamClock clock,
+                                             com.learnplatform.service.exam.ExamAutomaticGradingGuard gradingGuard) {
+            return new ExamSessionService(records, papers, views, clock, gradingGuard);
         }
 
         @Bean

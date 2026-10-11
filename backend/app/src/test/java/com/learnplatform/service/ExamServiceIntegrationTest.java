@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.exception.ExamTimedOutException;
 import com.learnplatform.dto.ExamSubmitRequest;
+import com.learnplatform.dto.ExamLearningAnswerRequest;
 import com.learnplatform.dto.ExamRecordVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.CourseLearningEvent;
@@ -39,6 +40,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -86,6 +88,12 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
     private QuestionReviewScheduleMapper reviewScheduleMapper;
     @Autowired
     private SpacedRepetitionService spacedRepetitionService;
+    @Autowired
+    private ExamPaperLearningService paperLearningService;
+    @Autowired
+    private ExamPaperService paperService;
+    @Autowired
+    private JdbcTemplate jdbc;
 
     private static Long userId;
     private static Long courseId;
@@ -93,6 +101,94 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
     private static Long question2Id; // 多选题
     private static Long examPaperId;
     private static Long examRecordId;
+
+    @Test
+    @Order(13)
+    @DisplayName("存量双正确单选不得开始学习或写入限时考试判分事实")
+    void invalidSingleChoiceBlocksBothPaperFlowsBeforeLearningFacts() {
+        ExamRecordVO record = examService.startExam(examPaperId, userId);
+        jdbc.update("UPDATE question_option SET is_correct=1 WHERE question_id=? AND option_label='B'", question1Id);
+        jdbc.update("UPDATE exam_paper SET course_id=? WHERE id=?", courseId, examPaperId);
+        jdbc.update("INSERT INTO user_course(user_id,course_id) VALUES(?,?)", userId, courseId);
+
+        assertThrows(BusinessException.class, () -> paperLearningService.startSession(examPaperId, userId));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM exam_learning_session WHERE user_id=? AND exam_paper_id=?",
+                Integer.class, userId, examPaperId));
+        assertThrows(BusinessException.class, () -> examService.startExam(examPaperId, userId));
+
+        ExamSubmitRequest request = new ExamSubmitRequest();
+        request.setExamRecordId(record.getId());
+        ExamSubmitRequest.AnswerItem answer = new ExamSubmitRequest.AnswerItem();
+        answer.setQuestionId(question1Id);
+        answer.setUserAnswer("A");
+        request.setAnswers(List.of(answer));
+        assertThrows(BusinessException.class, () -> examService.submitExam(request, userId));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM exam_answer WHERE exam_record_id=?",
+                Integer.class, record.getId()));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM course_learning_event WHERE user_id=?",
+                Integer.class, userId));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM wrong_question WHERE user_id=?",
+                Integer.class, userId));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM question_review_schedule WHERE user_id=?",
+                Integer.class, userId));
+    }
+
+    @Test
+    @Order(14)
+    @DisplayName("进行中的试卷学习在答案结构失效后拒绝逐题提交")
+    void learningSubmissionRechecksGradingBasisBeforeWritingFacts() {
+        jdbc.update("UPDATE exam_paper SET course_id=? WHERE id=?", courseId, examPaperId);
+        jdbc.update("INSERT INTO user_course(user_id,course_id) VALUES(?,?)", userId, courseId);
+        var session = paperLearningService.startSession(examPaperId, userId);
+        QuestionOption answerOption = questionOptionMapper.selectList(new LambdaQueryWrapper<QuestionOption>()
+                .eq(QuestionOption::getQuestionId, question1Id)
+                .eq(QuestionOption::getOptionLabel, "A")).getFirst();
+        answerOption.setContent("MAYBE");
+        questionOptionMapper.updateById(answerOption);
+        Question question = questionMapper.selectById(question1Id);
+        question.setQuestionType("TRUE_FALSE");
+        questionMapper.updateById(question);
+
+        ExamLearningAnswerRequest request = new ExamLearningAnswerRequest();
+        request.setQuestionId(question1Id);
+        request.setUserAnswer("FALSE");
+        assertThrows(BusinessException.class,
+                () -> paperLearningService.submitAnswer(session.getId(), request, userId));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM exam_learning_answer WHERE session_id=?",
+                Integer.class, session.getId()));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM course_learning_event WHERE user_id=?",
+                Integer.class, userId));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM wrong_question WHERE user_id=?",
+                Integer.class, userId));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM question_review_schedule WHERE user_id=?",
+                Integer.class, userId));
+    }
+
+    @Test
+    @Order(15)
+    @DisplayName("新试卷发布拒绝双正确单选题")
+    void publicationRejectsInvalidAutomaticGradingConfiguration() {
+        ExamPaper draft = new ExamPaper();
+        draft.setTitle("待修正的试卷");
+        draft.setPaperType("PRACTICE");
+        draft.setStatus(0);
+        draft.setQuestionCount(1);
+        draft.setDeleted(0);
+        examPaperMapper.insert(draft);
+        ExamQuestion relation = new ExamQuestion();
+        relation.setExamPaperId(draft.getId());
+        relation.setQuestionId(question1Id);
+        relation.setScore(2);
+        examQuestionMapper.insert(relation);
+        QuestionOption answerOption = questionOptionMapper.selectList(new LambdaQueryWrapper<QuestionOption>()
+                .eq(QuestionOption::getQuestionId, question1Id)
+                .eq(QuestionOption::getOptionLabel, "B")).getFirst();
+        answerOption.setIsCorrect(1);
+        questionOptionMapper.updateById(answerOption);
+
+        assertThrows(BusinessException.class, () -> paperService.publishExamPaper(draft.getId()));
+        assertEquals(0, examPaperMapper.selectById(draft.getId()).getStatus());
+    }
 
     @BeforeAll
     static void setupTestData(

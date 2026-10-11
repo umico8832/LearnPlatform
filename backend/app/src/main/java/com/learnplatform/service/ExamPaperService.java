@@ -100,6 +100,7 @@ public class ExamPaperService {
                 request.getExamYear(), request.getSourceReference(), request.getSourceVerified(),
                 request.getQuestions(), null);
         validationService.ensureManualGradingReady(request.getStatus(), request.getQuestions(), null);
+        validationService.ensureAutomaticGradingReady(request.getStatus(), request.getQuestions(), null);
 
         ExamPaper paper = new ExamPaper();
         paper.setTitle(request.getTitle());
@@ -170,6 +171,7 @@ public class ExamPaperService {
         validationService.ensureOfficialRequestReady(status, paperType, examName, examYear, sourceReference,
                 sourceVerified, request.getQuestions(), id);
         validationService.ensureManualGradingReady(status, request.getQuestions(), id);
+        validationService.ensureAutomaticGradingReady(status, request.getQuestions(), id);
 
         if (request.getTitle() != null) { paper.setTitle(request.getTitle()); }
         if (request.getDescription() != null) { paper.setDescription(request.getDescription()); }
@@ -234,6 +236,7 @@ public class ExamPaperService {
         }
         validationService.ensureOfficialPaperReady(paper);
         validationService.ensureManualGradingReady(1, null, paper.getId());
+        validationService.ensureAutomaticGradingReady(1, null, paper.getId());
         paper.setStatus(1);
         examPaperMapper.updateById(paper);
     }

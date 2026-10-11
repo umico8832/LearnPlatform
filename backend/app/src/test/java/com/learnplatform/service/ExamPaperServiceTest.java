@@ -10,6 +10,7 @@ import com.learnplatform.mapper.ExamQuestionMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
 import com.learnplatform.mapper.SubjectiveGradingPointMapper;
+import com.learnplatform.service.exam.ExamAutomaticGradingGuard;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +37,7 @@ class ExamPaperServiceTest {
     @Mock private QuestionOptionMapper questionOptionMapper;
     @Mock private CourseMapper courseMapper;
     @Mock private SubjectiveGradingPointMapper subjectiveGradingPointMapper;
+    @Mock private ExamAutomaticGradingGuard gradingGuard;
     private ExamPaperService examPaperService;
 
     @BeforeEach
@@ -43,7 +45,7 @@ class ExamPaperServiceTest {
         ExamPaperViewService viewService = new ExamPaperViewService(examPaperMapper, examQuestionMapper,
                 questionMapper, questionOptionMapper, courseMapper);
         ExamPaperValidationService validationService = new ExamPaperValidationService(
-                examQuestionMapper, questionMapper, subjectiveGradingPointMapper);
+                examQuestionMapper, questionMapper, subjectiveGradingPointMapper, gradingGuard);
         examPaperService = new ExamPaperService(
                 examPaperMapper, examQuestionMapper, viewService, validationService);
     }

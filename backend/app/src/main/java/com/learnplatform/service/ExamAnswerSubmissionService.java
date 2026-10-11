@@ -14,6 +14,7 @@ import com.learnplatform.mapper.ExamAnswerMapper;
 import com.learnplatform.mapper.ExamQuestionMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
+import com.learnplatform.service.exam.ExamAutomaticGradingGuard;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -32,6 +33,7 @@ public class ExamAnswerSubmissionService {
     private final WrongQuestionService wrongQuestionService;
     private final AnswerEvaluator answerEvaluator;
     private final CourseLearningEventService courseLearningEventService;
+    private final ExamAutomaticGradingGuard gradingGuard;
 
     public ExamAnswerSubmissionService(ExamAnswerMapper examAnswerMapper,
                                        ExamQuestionMapper examQuestionMapper,
@@ -39,7 +41,8 @@ public class ExamAnswerSubmissionService {
                                        QuestionOptionMapper questionOptionMapper,
                                        WrongQuestionService wrongQuestionService,
                                        AnswerEvaluator answerEvaluator,
-                                       CourseLearningEventService courseLearningEventService) {
+                                       CourseLearningEventService courseLearningEventService,
+                                       ExamAutomaticGradingGuard gradingGuard) {
         this.examAnswerMapper = examAnswerMapper;
         this.examQuestionMapper = examQuestionMapper;
         this.questionMapper = questionMapper;
@@ -47,6 +50,7 @@ public class ExamAnswerSubmissionService {
         this.wrongQuestionService = wrongQuestionService;
         this.answerEvaluator = answerEvaluator;
         this.courseLearningEventService = courseLearningEventService;
+        this.gradingGuard = gradingGuard;
     }
 
     public GradingSummary gradeAndSave(ExamSubmitRequest request, ExamRecord record, ExamPaper paper, Long userId) {
@@ -58,6 +62,7 @@ public class ExamAnswerSubmissionService {
                 question.getScore() != null ? question.getScore() : 1).sum();
 
         Map<Long, String> submittedAnswers = submittedAnswers(request, questionScoreMap);
+        gradingGuard.requireRelations(examQuestions);
         int earnedScore = 0;
         boolean hasPendingReview = false;
         if (request.getAnswers() != null) {

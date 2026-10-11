@@ -9,6 +9,7 @@ import com.learnplatform.entity.ExamPaper;
 import com.learnplatform.entity.ExamRecord;
 import com.learnplatform.mapper.ExamPaperMapper;
 import com.learnplatform.mapper.ExamRecordMapper;
+import com.learnplatform.service.exam.ExamAutomaticGradingGuard;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,22 +34,25 @@ public class ExamSessionService {
     private final ExamPaperMapper examPaperMapper;
     private final ExamRecordViewService examRecordViewService;
     private final Clock clock;
+    private final ExamAutomaticGradingGuard gradingGuard;
 
     @Autowired
     public ExamSessionService(ExamRecordMapper examRecordMapper,
                               ExamPaperMapper examPaperMapper,
-                              ExamRecordViewService examRecordViewService) {
-        this(examRecordMapper, examPaperMapper, examRecordViewService, Clock.system(EXAM_ZONE));
+                              ExamRecordViewService examRecordViewService,
+                              ExamAutomaticGradingGuard gradingGuard) {
+        this(examRecordMapper, examPaperMapper, examRecordViewService, Clock.system(EXAM_ZONE), gradingGuard);
     }
 
     ExamSessionService(ExamRecordMapper examRecordMapper,
                        ExamPaperMapper examPaperMapper,
                        ExamRecordViewService examRecordViewService,
-                       Clock clock) {
+                       Clock clock, ExamAutomaticGradingGuard gradingGuard) {
         this.examRecordMapper = examRecordMapper;
         this.examPaperMapper = examPaperMapper;
         this.examRecordViewService = examRecordViewService;
         this.clock = clock;
+        this.gradingGuard = gradingGuard;
     }
 
     public Page<ExamRecordVO> getExamList(Long userId, int pageNum, int pageSize) {
@@ -73,6 +77,7 @@ public class ExamSessionService {
         if (paper.getStatus() == null || paper.getStatus() != 1) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "试卷未发布");
         }
+        gradingGuard.requirePaper(examPaperId);
 
         String activeKey = activeExamKey(userId, examPaperId);
         LocalDateTime now = currentExamTime();

@@ -6,6 +6,7 @@ import com.learnplatform.mapper.ExamQuestionMapper;
 import com.learnplatform.mapper.ExamRecordMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
+import com.learnplatform.service.exam.ExamAutomaticGradingGuard;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
@@ -23,6 +24,7 @@ class ExamServiceWiringTest {
                 .withBean(ExamQuestionMapper.class, () -> mock(ExamQuestionMapper.class))
                 .withBean(QuestionMapper.class, () -> mock(QuestionMapper.class))
                 .withBean(QuestionOptionMapper.class, () -> mock(QuestionOptionMapper.class))
+                .withBean(ExamAutomaticGradingGuard.class, () -> mock(ExamAutomaticGradingGuard.class))
                 .withBean(ExamAnswerSubmissionService.class, () -> mock(ExamAnswerSubmissionService.class))
                 .withBean(CacheEvictService.class, () -> mock(CacheEvictService.class))
                 .withBean(AnswerEvaluator.class)

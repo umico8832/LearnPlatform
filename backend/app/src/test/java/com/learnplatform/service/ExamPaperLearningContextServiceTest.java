@@ -10,6 +10,7 @@ import com.learnplatform.mapper.ExamQuestionMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
 import com.learnplatform.mapper.UserCourseMapper;
+import com.learnplatform.service.exam.ExamAutomaticGradingGuard;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,12 +43,16 @@ class ExamPaperLearningContextServiceTest {
     @Mock
     private UserCourseMapper userCourseMapper;
 
+    @Mock
+    private ExamAutomaticGradingGuard gradingGuard;
+
     private ExamPaperLearningContextService contextService;
 
     @BeforeEach
     void setUp() {
         contextService = new ExamPaperLearningContextService(
-                examPaperMapper, examQuestionMapper, questionMapper, questionOptionMapper, userCourseMapper);
+                examPaperMapper, examQuestionMapper, questionMapper, questionOptionMapper, userCourseMapper,
+                gradingGuard);
     }
 
     @Test

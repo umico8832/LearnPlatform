@@ -13,6 +13,7 @@ import com.learnplatform.mapper.ExamQuestionMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
 import com.learnplatform.mapper.UserCourseMapper;
+import com.learnplatform.service.exam.ExamAutomaticGradingGuard;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,17 +26,20 @@ public class ExamPaperLearningContextService {
     private final QuestionMapper questionMapper;
     private final QuestionOptionMapper questionOptionMapper;
     private final UserCourseMapper userCourseMapper;
+    private final ExamAutomaticGradingGuard gradingGuard;
 
     public ExamPaperLearningContextService(ExamPaperMapper examPaperMapper,
                                            ExamQuestionMapper examQuestionMapper,
                                            QuestionMapper questionMapper,
                                            QuestionOptionMapper questionOptionMapper,
-                                           UserCourseMapper userCourseMapper) {
+                                           UserCourseMapper userCourseMapper,
+                                           ExamAutomaticGradingGuard gradingGuard) {
         this.examPaperMapper = examPaperMapper;
         this.examQuestionMapper = examQuestionMapper;
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.userCourseMapper = userCourseMapper;
+        this.gradingGuard = gradingGuard;
     }
 
     ExamPaper loadEligiblePaper(Long paperId, Long userId) {
@@ -72,6 +76,7 @@ public class ExamPaperLearningContextService {
         for (ExamQuestion item : questions) {
             loadPaperQuestion(paper, item);
         }
+        gradingGuard.requireRelations(questions);
         return questions;
     }
 
