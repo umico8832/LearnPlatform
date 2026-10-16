@@ -22,25 +22,14 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Test commit message validator
-        run: python3 -m unittest discover -s scripts/tests -p 'test_*.py'
-
-      - name: Validate new commit messages
-        if: github.event_name != 'pull_request' || github.event.pull_request.user.login != 'dependabot[bot]'
+      - name: Run repository checks
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD_SHA: ${{ github.sha }}
           FORCED_PUSH: ${{ github.event.forced || 'false' }}
-        run: python3 scripts/check-commit-messages.py "$BASE_SHA" "$HEAD_SHA"
-
-      - name: Validate tracked repository layout
-        run: python3 scripts/check-repository-layout.py
-
-      - name: Validate code structure limits
-        run: python3 scripts/check-code-structure.py
-
-      - name: Validate documentation and project Skills
-        run: python3 scripts/check-docs.py
+        run: >-
+          python3 scripts/check-all.py docs
+          ${{ github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]' && '--skip-commit-messages' || '' }}
 
   backend:
     name: Backend Build & Test
@@ -74,14 +63,13 @@ jobs:
           cache: 'maven'
 
       - name: Run tests and quality checks
-        working-directory: backend
         env:
           SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/learn_platform?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8mb4
           SPRING_DATASOURCE_USERNAME: learn
           SPRING_DATASOURCE_PASSWORD: learn123
           JWT_SECRET: ci-test-jwt-secret-key-for-testing-only
           AI_ENABLED: 'false'
-        run: mvn clean verify -B
+        run: python3 scripts/check-all.py backend
 
   backend-integration:
     name: Backend MySQL Integration Tests
@@ -99,8 +87,7 @@ jobs:
           cache: 'maven'
 
       - name: Run Testcontainers integration tests
-        working-directory: backend
-        run: mvn test -B -DexcludedGroups= -Dgroups=integration
+        run: python3 scripts/check-all.py backend-integration
 
   frontend:
     name: Frontend Test & Build
@@ -117,25 +104,8 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install dependencies
-        working-directory: frontend
-        run: npm ci
-
-      - name: Audit dependencies
-        working-directory: frontend
-        run: npm audit --audit-level=high
-
-      - name: Run tests with coverage gate
-        working-directory: frontend
-        run: npm run coverage
-
-      - name: Run lint
-        working-directory: frontend
-        run: npm run lint
-
-      - name: Type check
-        working-directory: frontend
-        run: npm run build
+      - name: Run frontend checks
+        run: python3 scripts/check-all.py frontend
 
   docker:
     name: Docker Build
@@ -146,11 +116,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build backend image
-        run: docker build -t learnplatform-backend ./backend
-
-      - name: Build frontend image
-        run: docker build -t learnplatform-frontend ./frontend
+      - name: Build application images
+        run: python3 scripts/check-all.py docker
 
   e2e:
     name: Browser E2E
@@ -169,20 +136,14 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install frontend dependencies
-        working-directory: frontend
-        run: npm ci
+        run: python3 scripts/check-all.py e2e --step dependencies
 
       - name: Install Chromium
         working-directory: frontend
         run: npx playwright install --with-deps chromium
 
       - name: Run browser E2E tests
-        working-directory: frontend
-        env:
-          DB_PASSWORD: root123
-          JWT_SECRET: ci-e2e-jwt-secret-key-for-testing-only
-          E2E_FRONTEND_HOST_PORT: 18000
-        run: npm run test:e2e
+        run: python3 scripts/check-all.py e2e --step tests
 
       - name: Upload Playwright report
         if: always()

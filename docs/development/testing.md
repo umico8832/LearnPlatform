@@ -161,33 +161,47 @@ Compose 绑定挂载的 E2E 输入仍计入指纹，包括 `ai-mock.py` 和 `fix
 
 ## 10. 运行命令
 
-```bash
-python3 -m unittest discover -s scripts/tests -p 'test_*.py'
-python3 scripts/check-code-structure.py
-python3 scripts/check-docs.py
-```
+完整检查与 CI 共用入口，默认顺序执行所有 job，任一步失败立即停止：
 
 ```bash
-cd frontend
-npm test
-npm run build
+python3 scripts/check-all.py
 ```
+
+按 CI 的 job 名只跑一部分，可指定多个：
+
+```bash
+python3 scripts/check-all.py docs
+python3 scripts/check-all.py backend backend-integration
+python3 scripts/check-all.py frontend
+python3 scripts/check-all.py docker e2e
+```
+
+job 名为 `docs`、`backend`、`backend-integration`、`frontend`、`docker`、`e2e`。
+本机需准备 JDK 21、Node.js 22、Docker 和 Playwright Chromium；Maven 不在 PATH 时自动使用
+仓库 Wrapper。脚本统一设置 `CI=true`，使 Playwright 的 `.only` 门禁、重试与报告配置也与 CI 一致。
+CI 保留工具安装、缓存与浏览器准备，检查命令统一由脚本维护。
+E2E 使用正式 `npm run test:e2e` 入口，重建并清理隔离环境，不带 `--keep`；
+脚本设置隔离测试凭据并禁止 Compose 自动加载 `.env`。
+CI 用 `e2e --step dependencies` 和 `e2e --step tests` 在安装依赖与执行测试之间准备 Chromium。
+
+本地提交信息检查范围为 `origin/main..HEAD`；CI 传入事件的 `BASE_SHA`、`HEAD_SHA` 与
+`FORCED_PUSH`，并保留 Dependabot PR 的提交格式豁免。
+
+只有全部 job 通过、检查前后工作区均无未提交改动且 HEAD 未改变，脚本才将该 HEAD 写入
+Git common dir 的 `check-all-passed`（worktree 共用）。部分检查、跳过提交信息检查或失败均不写入；
+开始完整检查时会清除旧记录。提交或 rebase 后须对新的 HEAD 完整检查。
+
+安装本地钩子：`cp scripts/hooks/pre-push "$(git rev-parse --git-common-dir)/hooks/pre-push"`。
+钩子保留 `CODEX_AUTONOMOUS=1` 拦截，并逐条核对推送引用的提交与记录完全一致；删除远端引用除外，
+钩子只查记录，不重跑测试，也不修改 Git 配置。
+
+默认后端单测排除 `@Tag("integration")`；单独验证某个真实 MySQL 集成测试类可以使用：
 
 ```bash
 cd backend
-mvn test
+./mvnw test -DexcludedGroups= -Dtest=WrongQuestionServiceIntegrationTest
+./mvnw test -DexcludedGroups= -Dtest=AiVariantTrainingIntegrationTest
 ```
-
-默认后端单测会排除 `@Tag("integration")` 的 Testcontainers 集成测试。如需单独运行集成测试，清空默认排除项并按需指定类名：
-
-```bash
-cd backend
-mvn test -DexcludedGroups= -Dgroups=integration
-mvn test -DexcludedGroups= -Dtest=WrongQuestionServiceIntegrationTest
-mvn test -DexcludedGroups= -Dtest=AiVariantTrainingIntegrationTest
-```
-
-GitHub Actions 将 Testcontainers 集成测试作为独立 job 执行，避免默认 `excludedGroups=integration` 让真实 MySQL 约束退出提交门禁。后端常规 job 使用 `mvn clean verify`，同时执行 Checkstyle、SpotBugs 和 JaCoCo 报告生成。
 
 覆盖率门槛是防倒退基线，不是追求数字的目标：
 

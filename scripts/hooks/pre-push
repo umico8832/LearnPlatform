@@ -1,0 +1,19 @@
+#!/bin/sh
+if [ "${CODEX_AUTONOMOUS:-}" = "1" ]; then
+  echo "pre-push: pushes are disabled during autonomous Codex runs (CODEX_AUTONOMOUS=1)." >&2
+  exit 1
+fi
+
+common_dir=$(git rev-parse --git-common-dir) || exit 1
+verified=$(cat "$common_dir/check-all-passed" 2>/dev/null)
+while read -r local_ref local_oid remote_ref remote_oid; do
+  case "$local_oid" in
+    *[!0]*) ;;
+    *) continue ;;
+  esac
+  if [ "$local_oid" != "$verified" ]; then
+    echo "pre-push: $local_ref 未通过当前提交的完整检查；请先运行 python3 scripts/check-all.py。" >&2
+    exit 1
+  fi
+done
+exit 0
