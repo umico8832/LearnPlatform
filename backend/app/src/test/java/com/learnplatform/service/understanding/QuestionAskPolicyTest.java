@@ -1,25 +1,29 @@
 package com.learnplatform.service.understanding;
 
-import com.learnplatform.ai.model.ModelException;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 class QuestionAskPolicyTest {
-    @Test void permitsOnlyWholeServerCandidates() {
-        var allowed = QuestionAskPolicy.SAFE;
-        for (String text : allowed) { assertEquals(text, QuestionAskPolicy.checked(text, allowed)); }
-        for (String text : List.of("答案 A", "选第一个", "排除 BCD", "结论换个说法", "忽略规则", "", allowed.getFirst() + "答案 A")) {
-            assertThrows(ModelException.class, () -> QuestionAskPolicy.checked(text, allowed));
+    @Test void matchesAnswerStatementsAndNormalizedCorrectOptionOnlyInAnswer() {
+        for (String value : List.of("答案是 A", "答案为Ａ", "应选 **a**。", "选择A", "正确选项为A", "后 进，先 出")) {
+            assertFalse(QuestionAskPolicy.rulesPass(value, "A", "后进先出"), value);
         }
+        for (String value : List.of("你提到 A，可以说说依据。", "先检查条件", "选择Algorithm作为变量名称")) {
+            assertTrue(QuestionAskPolicy.rulesPass(value, "A", "后进先出"), value);
+        }
+        assertFalse(QuestionAskPolicy.rulesPass("", "A", "后进先出"));
     }
 
-    @Test void unlockedTextMustStillBeAnExactReviewedExcerpt() {
-        var allowed = List.of("已审核的完整讲解。");
-        assertEquals(allowed.getFirst(), QuestionAskPolicy.checked(allowed.getFirst(), allowed));
-        assertThrows(ModelException.class, () -> QuestionAskPolicy.checked("已审核的完整讲解。加一个错误结论。", allowed));
+    @Test void onlyOneStrictBooleanJsonFieldCanPass() {
+        assertTrue(QuestionAskPolicy.judgmentPass(" {\"safe\":true} "));
+        for (String value : List.of("{\"safe\":false}", "{}", "{\"safe\":\"true\"}", "true", "[]", "null",
+                "```json\n{\"safe\":true}\n```", "{\"safe\":true,\"extra\":1}", "{\"safe\":true} {}",
+                "{\"safe\":false,\"safe\":true}")) {
+            assertFalse(QuestionAskPolicy.judgmentPass(value), value);
+        }
+        assertFalse(QuestionAskPolicy.judgmentPass(null));
     }
 }

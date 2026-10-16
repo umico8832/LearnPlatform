@@ -156,17 +156,29 @@ SSE 的 JSON data：`content` 事件 `{content: "正文增量"}`；结束 `done`
 规则未通过时跳过判断；任一道检查未通过（含判断 JSON 无效）均重新生成一次，不拼入被拒回答。
 第二次仍未通过，成功返回固定安全引导并建议领取提示（没有剩余提示时沿用可用下一步），不返回被拒正文。
 网络失败、超时、停止仍使用原错误码，不因退回策略掩盖基础设施故障。
-解锁后输入扩为本题已审核讲解、各错项误区及提示，自由讲解，不要求逐字引用，不执行答案泄露检查。
+解锁后输入扩为本题已审核讲解、各错项误区及提示，自由讲解，不要求逐字引用，不执行答案泄露检查；
+仍用同一 JSON 判断检查离题、注入和材料口径，不通过也最多重生成一次后退回。
 历史只用于显示，不作为已审核材料。生成与自动检查不构成人工审核，回答不标“AI 生成·已审核”。
 两道检查属于纵深防护，语义判断可能漏判；真实语料评测与人工复核仍为教学质量验收依据。
 
 复用：`AiInvocationService → OpenAiProvider → ai-core/CloudChatModel` 的 OpenAI 兼容流式协议、
 `Cancellation`、`AiCallGovernanceService/AiCallReservationService` 的每日配额与 usage/成本审计；
 调用功能名 `question_ask`；同一追问的生成、重试与判断使用同一服务端 `runId`，每次调用各自记录
-usage、成本和结果，可按 runId 汇总。每日配额按该组首次准入计一次，跨午夜的后续调用不再次占额；
-本题次数只在追问预占时计一次，不因重试或判断增加。不新增客户端字段或数据库迁移。复用 `QuestionUnderstandingContent` 的内容门禁、正式作答事实和
+usage、成本和结果，可按 runId 汇总（关联算法见[调用与配额](../database/ai-and-governance.md#调用与配额)）。
+每日配额按该组首次准入计一次，跨午夜的后续调用不再次占额；
+本题次数只在追问预占时计一次，不因重试或判断增加。不新增客户端字段或数据库迁移。
+复用 `QuestionUnderstandingContent` 的内容门禁、正式作答事实和
 `QuestionTutorService.next` 的动作格式与提示策略，不另建 AI 客户端或 Tutor Agent 工具循环。
 配置沿用 `AI_*`，另加追问开关、每题次数和思考模式开关；DeepSeek Flash 单价按输入未命中
 0.3 / 输出 1.2 USD 每百万 token 配置，缺 usage 时成本为空，不估算。
 思考模式默认开启，关闭后仍执行同一门禁；只发正文，不发送 reasoning_content。
-真实模型评测须价格获用户同意后单独运行；模拟结果不能决定真实教学效果或思考模式优劣。
+评测入口 `python3 scripts/evaluate-question-ask.py` 默认仅用本机模拟 HTTP 上游，30 条语料分别运行思考开/关。
+真实模式由用户在终端执行 `python3 scripts/evaluate-question-ask.py --real`，须注入环境变量
+`AI_ENABLED`、`AI_API_BASE_URL`、`AI_API_KEY`、`AI_MODEL`；可选 `AI_TIMEOUT`、`AI_MAX_TOKENS`。
+入口不读取 `.env`；真实模式限制 DeepSeek Flash 官方端点，最多 60 次追问 / 240 次模型调用。
+结果在 `backend/app/target/question-ask-evaluation/real.json`，含每次调用输出、用量、总成本与总延迟；
+失败与未知 usage 分开显示，不能将已知成本小计当完整成本。模拟模式输出同目录 `mock.json`。
+人工复核真实结果的未解锁 `humanPublicLeak`，及每个 generation 的 `humanUnsafe`（均填布尔），再运行
+`python3 scripts/evaluate-question-ask.py --summary backend/app/target/question-ask-evaluation/real.json`，
+按思考开/关查看语义泄露率、判断误拦率、审核分母、规则泄露率、P50/P95 延迟、每次总 tokens 与 USD 成本。
+未人工标注的语义指标保持空值，规则扫描通过不能代替语义审核；模拟结果不能决定教学效果或思考模式优劣。

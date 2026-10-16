@@ -35,11 +35,13 @@ public class AiCallReservationService {
         }
         int limit = user.getAiDailyQuota() == null ? config.getDailyQuota() : user.getAiDailyQuota();
         LocalDateTime now = LocalDateTime.now();
-        if (limit > 0) {
-            Long count = logs.selectCount(new LambdaQueryWrapper<AiCallLog>()
-                    .eq(AiCallLog::getUserId, entry.getUserId())
-                    .ge(AiCallLog::getCreateTime, now.toLocalDate().atStartOfDay()));
-            if (count != null && count >= limit) {
+        boolean followup = "question_ask".equals(entry.getFunctionType()) && entry.getRunId() != null
+                && logs.selectCount(new LambdaQueryWrapper<AiCallLog>()
+                .eq(AiCallLog::getUserId, entry.getUserId()).eq(AiCallLog::getFunctionType, "question_ask")
+                .eq(AiCallLog::getRunId, entry.getRunId())) > 0;
+        if (limit > 0 && !followup) {
+            long count = logs.countQuota(entry.getUserId(), now.toLocalDate().atStartOfDay());
+            if (count >= limit) {
                 throw new BusinessException(ResultCode.QUOTA_EXCEEDED,
                         "今日 AI 调用次数已达上限（" + limit + " 次），请明天再试");
             }

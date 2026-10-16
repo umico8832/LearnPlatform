@@ -53,7 +53,7 @@ public class QuestionAskController {
     public ResponseEntity<SseEmitter> stream(@PathVariable long attemptId, @RequestBody JsonNode body,
                               @AuthenticationPrincipal CustomUserDetails user) {
         var job = service.prepare(user.getUserId(), attemptId, body);
-        var emitter = new SseEmitter(190000L);
+        var emitter = new SseEmitter(job.timeoutMillis());
         Runnable stop = () -> {
             job.cancellation().cancel();
             try { service.stop(user.getUserId(), attemptId, job.requestId()); }

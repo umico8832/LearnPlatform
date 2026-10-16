@@ -2,7 +2,6 @@ package com.learnplatform.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.learnplatform.ai.model.Cancellation;
-import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.common.result.ResultCode;
@@ -36,8 +35,7 @@ class QuestionAskControllerTest {
     @BeforeEach void setup() {
         service = mock(QuestionAskService.class);
         job = new QuestionAskService.Job(7L, 11L, 9L, "00000000-0000-4000-8000-000000000001",
-                ModelRequest.text("system", "user", new ModelRequest.Options("deepseek-flash", 100, 0.7)),
-                List.of("安全正文"), new Cancellation());
+                "问题", null, java.util.UUID.randomUUID(), 190000L, new Cancellation());
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
                 new CustomUserDetails(7L, "learner", "USER"), null, List.of()));
         mvc = MockMvcBuilders.standaloneSetup(new QuestionAskController(service, Runnable::run))

@@ -80,6 +80,46 @@ class AiModelCallIntegrationTest extends IntegrationTestBase {
         }
     }
 
+    @Test void concurrentQuestionAskCallsShareOneQuotaButOtherFunctionsStillCountIndividually() throws Exception {
+        jdbc.update("UPDATE user SET ai_daily_quota=1 WHERE id=?", userId);
+        UUID run = UUID.randomUUID();
+        var start = new CountDownLatch(1);
+        try (var pool = Executors.newFixedThreadPool(4)) {
+            var futures = new ArrayList<Future<?>>();
+            for (int i = 0; i < 4; i++) {
+                futures.add(pool.submit(() -> {
+                    assertTrue(start.await(5, TimeUnit.SECONDS));
+                    return governance.begin(new AiCallContext(userId, "question_ask", run), request);
+                }));
+            }
+            start.countDown();
+            for (var future : futures) { assertNotNull(future.get(20, TimeUnit.SECONDS)); }
+        }
+        assertEquals(1, governance.countTodayCalls(userId));
+        assertEquals(4, jdbc.queryForObject("SELECT COUNT(*) FROM ai_call_log WHERE user_id=?", Integer.class, userId));
+        assertEquals(1006, assertThrows(BusinessException.class, () -> governance.begin(
+                new AiCallContext(userId, "question_ask", UUID.randomUUID()), request)).getCode());
+        jdbc.update("UPDATE user SET ai_daily_quota=0 WHERE id=?", userId);
+        governance.begin(new AiCallContext(userId, "tutor_agent", run), request);
+        governance.begin(new AiCallContext(userId, "tutor_agent", run), request);
+        assertEquals(3, governance.countTodayCalls(userId));
+    }
+
+    @Test void followupAfterMidnightDoesNotOccupyTheNewDaysQuotaAndLegacyNullRunStillCounts() {
+        UUID run = UUID.randomUUID();
+        governance.begin(new AiCallContext(userId, "question_ask", run), request);
+        jdbc.update("UPDATE ai_call_log SET create_time=? WHERE user_id=?",
+                java.time.LocalDate.now().minusDays(1).atTime(23, 59), userId);
+        governance.begin(new AiCallContext(userId, "question_ask", run), request);
+        assertEquals(0, governance.countTodayCalls(userId));
+        governance.begin(new AiCallContext(userId, "question_ask", null), request);
+        assertEquals(1, governance.countTodayCalls(userId));
+        governance.begin(new AiCallContext(userId, "question_ask", UUID.randomUUID()), request);
+        assertEquals(2, governance.countTodayCalls(userId));
+        governance.begin(new AiCallContext(userId, "question_ask", run), request);
+        assertEquals(2, governance.countTodayCalls(userId));
+    }
+
     @Test void outerRollbackDoesNotEraseAnAdmittedCall() {
         var transaction = new TransactionTemplate(transactions);
         assertThrows(IllegalStateException.class, () -> transaction.executeWithoutResult(status -> {

@@ -89,7 +89,7 @@ class AiCallGovernanceServiceTest {
         User user = new User();
         user.setAiDailyQuota(2);
         when(users.selectById(7L)).thenReturn(user);
-        when(logs.selectCount(any())).thenReturn(2L);
+        when(logs.countQuota(any(), any())).thenReturn(2L);
         var error = assertThrows(com.learnplatform.common.exception.BusinessException.class,
                 () -> governance.checkDailyQuota(7L));
         assertEquals(1006, error.getCode());
@@ -97,7 +97,7 @@ class AiCallGovernanceServiceTest {
 
     @Test void nullUserQuotaInheritsGlobalQuotaForUsage() {
         when(users.selectById(7L)).thenReturn(new User());
-        when(logs.selectCount(any())).thenReturn(3L);
+        when(logs.countQuota(any(), any())).thenReturn(3L);
         assertArrayEquals(new int[]{3, 50}, governance.getDailyUsage(7L));
     }
 

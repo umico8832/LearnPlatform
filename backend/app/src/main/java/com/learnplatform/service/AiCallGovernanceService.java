@@ -1,6 +1,5 @@
 package com.learnplatform.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.ai.model.ModelRequest;
@@ -136,9 +135,7 @@ public class AiCallGovernanceService {
 
     public long countTodayCalls(Long userId) {
         LocalDateTime start = LocalDate.now().atStartOfDay();
-        Long count = logs.selectCount(new LambdaQueryWrapper<AiCallLog>()
-                .eq(AiCallLog::getUserId, userId).ge(AiCallLog::getCreateTime, start));
-        return count == null ? 0 : count;
+        return logs.countQuota(userId, start);
     }
 
     public int[] getDailyUsage(Long userId) {

@@ -1,26 +1,19 @@
 package com.learnplatform.service.understanding;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.ai.model.Cancellation;
 import com.learnplatform.ai.model.ModelException;
-import com.learnplatform.ai.model.ModelEvent;
-import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.config.AiConfig;
-import com.learnplatform.entity.QuestionUnderstandingAttempt;
 import com.learnplatform.dto.QuestionAskResponse;
-import com.learnplatform.mapper.QuestionTutorMapper;
-import com.learnplatform.mapper.QuestionUnderstandingMapper;
+import com.learnplatform.entity.QuestionUnderstandingAttempt;
 import com.learnplatform.service.AiCallGovernanceService;
-import com.learnplatform.service.AiInvocationService;
 import com.learnplatform.service.ai.AiCallContext;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -29,29 +22,19 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class QuestionAskService {
     private final QuestionAskStateService state;
-    private final QuestionUnderstandingContent content;
-    private final QuestionUnderstandingMapper attempts;
-    private final QuestionTutorMapper hints;
-    private final QuestionUnderstandingService understanding;
-    private final AiInvocationService ai;
+    private final QuestionAskMaterials materials;
+    private final QuestionAskAnswerService answers;
     private final AiCallGovernanceService governance;
     private final AiConfig config;
-    private final ObjectMapper json;
     private final ConcurrentHashMap<String, Cancellation> running = new ConcurrentHashMap<>();
 
-    public QuestionAskService(QuestionAskStateService state, QuestionUnderstandingContent content,
-                              QuestionUnderstandingMapper attempts, QuestionTutorMapper hints,
-                              QuestionUnderstandingService understanding, AiInvocationService ai,
-                              AiCallGovernanceService governance, AiConfig config, ObjectMapper json) {
+    public QuestionAskService(QuestionAskStateService state, QuestionAskMaterials materials,
+                              QuestionAskAnswerService answers, AiCallGovernanceService governance, AiConfig config) {
         this.state = state;
-        this.content = content;
-        this.attempts = attempts;
-        this.hints = hints;
-        this.understanding = understanding;
-        this.ai = ai;
+        this.materials = materials;
+        this.answers = answers;
         this.governance = governance;
         this.config = config;
-        this.json = json;
     }
 
     public QuestionAskResponse.Status status(long userId, long attemptId) {
@@ -72,23 +55,14 @@ public class QuestionAskService {
             throw new BusinessException(ResultCode.VALIDATION_ERROR);
         }
         return state.locked(userId, attemptId, attempt -> {
-            var ready = content.ready(userId, attempt.questionId(), attempt.contentId(), false);
+            var snapshot = materials.snapshot(attempt);
             if (disabledReason() != null) { throw new BusinessException(ResultCode.ASK_UNAVAILABLE); }
             governance.checkDailyQuota(userId);
-            Map<String, Object> fact = attempts.practiceFact(attempt.practiceRecordId());
-            if (fact == null) { throw new BusinessException(ResultCode.NOT_FOUND); }
-            boolean unlocked = ((Number) fact.get("is_correct")).intValue() == 1
-                    || attempt.solutionRevealedTime() != null;
-            var candidates = candidates(attempt, ready, fact);
-            var materials = new LinkedHashMap<String, Object>();
-            materials.put("stem", ready.question().getContent());
-            materials.put("options", content.publicOptions(ready.options()));
-            materials.put("selected", fact.get("user_answer"));
-            materials.put("solutionUnlocked", unlocked);
-            var request = QuestionAskPolicy.request(encode(materials), message, candidates, ai.defaultOptions());
-            state.reserve(attempt, requestId, message, config.getQuestionAskLimit(), config.getTimeout() / 1000 + 60);
-            return new Job(userId, attemptId, attempt.questionId(), requestId, request,
-                    List.copyOf(candidates), new Cancellation());
+            state.reserve(attempt, requestId, message, config.getQuestionAskLimit(),
+                    4 * config.getTimeout() / 1000 + 60);
+            return new Job(userId, attemptId, attempt.questionId(), requestId, message, snapshot,
+                    UUID.nameUUIDFromBytes(key(attemptId, requestId).getBytes(StandardCharsets.UTF_8)),
+                    4L * config.getTimeout() + 60000, new Cancellation());
         });
     }
 
@@ -97,24 +71,14 @@ public class QuestionAskService {
         running.put(key, job.cancellation());
         try {
             check(job);
-            var completed = ai.generateStream(new AiCallContext(job.userId(), "question_ask", null), job.request(),
-                    event -> {
-                        if (!(event instanceof ModelEvent.TextDelta)) { return; }
-                        job.cancellation().check();
-                        if (!state.active(job.attemptId(), job.requestId())) {
-                            throw new ModelException(ModelException.Code.CANCELLED);
-                        }
-                    }, job.cancellation(), result -> state.locked(job.userId(), job.attemptId(), attempt -> {
-                        check(job);
-                        var ready = content.ready(job.userId(), attempt.questionId(), attempt.contentId(), false);
-                        var current = candidates(attempt, ready, attempts.practiceFact(attempt.practiceRecordId()));
-                        String answer = QuestionAskPolicy.checked(result.requireCompleteText(), job.candidates());
-                        QuestionAskPolicy.checked(answer, current);
-                        var suggestion = suggestion(job.userId(), job.attemptId());
-                        state.succeed(job.attemptId(), job.requestId(), answer, suggestion);
-                        return new Completed(answer, suggestion);
-                    }));
-            String answer = completed.answer();
+            String answer = answers.answer(new AiCallContext(job.userId(), "question_ask", job.runId()),
+                    job.materials(), job.message(), job.cancellation(), () -> check(job), () -> active(job));
+            var suggestion = state.locked(job.userId(), job.attemptId(), attempt -> {
+                check(job);
+                var next = materials.suggestion(job.userId(), job.attemptId());
+                state.succeed(job.attemptId(), job.requestId(), answer, next);
+                return next;
+            });
             int offset = 0;
             while (offset < answer.length()) {
                 int end = answer.offsetByCodePoints(
@@ -124,7 +88,7 @@ public class QuestionAskService {
             }
             var quota = remaining(job.userId(), job.questionId());
             return new QuestionAskResponse.Done(
-                    job.requestId(), quota.question(), quota.daily(), completed.suggestion());
+                    job.requestId(), quota.question(), quota.daily(), suggestion);
         } catch (ModelException exception) {
             ResultCode code = switch (exception.code()) {
                 case TIMEOUT -> ResultCode.ASK_TIMEOUT;
@@ -145,7 +109,7 @@ public class QuestionAskService {
 
     public Map<String, Object> stop(long userId, long attemptId, String requestId) {
         return state.locked(userId, attemptId, attempt -> {
-            content.ready(userId, attempt.questionId(), attempt.contentId(), false);
+            materials.snapshot(attempt);
             validateRequestId(requestId);
             state.fail(attemptId, requestId, 1014);
             Cancellation cancellation = running.get(key(attemptId, requestId));
@@ -154,53 +118,27 @@ public class QuestionAskService {
         });
     }
 
-    private List<String> candidates(QuestionUnderstandingAttempt attempt, QuestionUnderstandingContent.Ready ready,
-                                    Map<String, Object> fact) {
-        var result = new ArrayList<>(QuestionAskPolicy.SAFE);
-        boolean unlocked = ((Number) fact.get("is_correct")).intValue() == 1
-                    || attempt.solutionRevealedTime() != null;
-        if (unlocked) {
-            result.add((String) ready.content().get("solution_explanation"));
-            for (int level = 1; level <= 3; level++) {
-                var hint = hints.reviewedHint(attempt.contentId(), level);
-                if (hint != null) { result.add((String) hint.get("hint_text")); }
-            }
-            for (var option : ready.options()) {
-                if (option.get("option_label").equals(fact.get("user_answer"))) {
-                    var misconception = attempts.misconception(
-                            attempt.contentId(), ((Number) option.get("id")).longValue());
-                    if (misconception != null) { result.add((String) misconception.get("explanation")); }
-                }
-            }
-        }
-        result.removeIf(value -> value == null || value.isBlank());
-        return List.copyOf(result);
-    }
-
-    private record Completed(String answer, Map<String, Object> suggestion) { }
-
-    private void check(Job job) {
+    private void active(Job job) {
         job.cancellation().check();
         if (!state.active(job.attemptId(), job.requestId())) {
             job.cancellation().cancel();
             throw new ModelException(ModelException.Code.CANCELLED);
         }
+    }
+
+    private void check(Job job) {
+        active(job);
         if (disabledReason() != null) { throw new ModelException(ModelException.Code.CONFIGURATION); }
-        checkedAttempt(job.userId(), job.attemptId());
+        var attempt = state.owned(job.userId(), job.attemptId(), false);
+        if (!materials.snapshot(attempt).equals(job.materials())) {
+            throw new ModelException(ModelException.Code.SCHEMA);
+        }
     }
 
     private QuestionUnderstandingAttempt checkedAttempt(long userId, long attemptId) {
         var attempt = state.owned(userId, attemptId, false);
-        content.ready(userId, attempt.questionId(), attempt.contentId(), false);
+        materials.snapshot(attempt);
         return attempt;
-    }
-
-    private Map<String, Object> suggestion(long userId, long attemptId) {
-        Map<String, Object> next = understanding.tutorNext(userId, attemptId);
-        String type = (String) ((Map<?, ?>) next.get("action")).get("type");
-        if (!List.of("HINT", "PLAY_VIZ").contains(type)) { return null; }
-        return Map.of("action", next.get("action"), "reason", next.get("reason"),
-                "reasonSource", next.get("reasonSource"));
     }
 
     private record Quota(int question, Integer daily) { }
@@ -234,11 +172,7 @@ public class QuestionAskService {
     }
 
     private String key(long attemptId, String requestId) { return attemptId + ":" + requestId; }
-    private String encode(Object value) {
-        try { return json.writeValueAsString(value); }
-        catch (Exception exception) { throw new IllegalStateException("Invalid question materials"); }
-    }
-
-    public record Job(long userId, long attemptId, long questionId, String requestId, ModelRequest request,
-                      List<String> candidates, Cancellation cancellation) { }
+    public record Job(long userId, long attemptId, long questionId, String requestId, String message,
+                      QuestionAskMaterials.Snapshot materials, UUID runId, long timeoutMillis,
+                      Cancellation cancellation) { }
 }

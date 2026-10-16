@@ -32,3 +32,32 @@ class EvaluateQuestionAskTest(unittest.TestCase):
                 with self.assertRaises(SystemExit):
                     EVAL.main()
                 run.assert_not_called()
+
+    def test_summary_uses_all_call_costs_and_requires_human_labels(self):
+        row = dict(thinking=True, unlocked=False, error=None, fallback=True, ruleLeak=False,
+                   humanPublicLeak=None, latencyMs=200, totalTokens=480, costUsd=0.000216,
+                   usageComplete=True, calls=[
+                       dict(stage='generation', humanUnsafe=None),
+                       dict(stage='judgment', rawOutput='{"safe":false}'),
+                   ])
+        summary = EVAL.summarize({'cases': [row]})['thinking_on']
+        self.assertIsNone(summary['humanLeakRate'])
+        self.assertIsNone(summary['judgmentFalseBlockRate'])
+        self.assertEqual(480, summary['meanTokensPerAsk'])
+        self.assertEqual(0.000216, summary['meanCostUsdPerAsk'])
+        row['humanPublicLeak'] = False
+        row['calls'][0]['humanUnsafe'] = False
+        summary = EVAL.summarize({'cases': [row]})['thinking_on']
+        self.assertEqual(0, summary['humanLeakRate'])
+        self.assertEqual(1, summary['judgmentFalseBlockRate'])
+
+    def test_summary_command_never_invokes_model(self):
+        import json
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / 'report.json'
+            report.write_text(json.dumps({'cases': []}))
+            with patch.object(sys, 'argv', ['evaluate-question-ask.py', '--summary', str(report)]):
+                with patch.object(EVAL.subprocess, 'run') as run:
+                    self.assertEqual(0, EVAL.main())
+                    run.assert_not_called()
