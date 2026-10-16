@@ -43,9 +43,10 @@ frontend/admin/   # 独立管理端 HTML 入口
   已登录用户也可停留在这些公开页面，再由主要操作返回课程。占位页只建立后续内容入口，不表示对应功能已经实现。
   可视化整页（`/viz/:scene`）同样公开：场景、操作与数据写在链接参数里，全部在前端计算，不调用业务接口。
 - 题目理解页（`/questions/:id`，需登录）是演示主线“一道题从错到懂”的页面，已按新基线重做，不在旧外壳内：
-  作答后由服务端开放所选错项的误区、停在出错一步的可视化、正解和无提示变式，接口见
-  [题目理解 API](../reference/api/question-understanding.md)。该页在 `App.vue` 的 `KeepAlive` 中只缓存最近一道题，
-  展开可视化再返回时保留作答进度与滚动位置。
+  作答后由服务端开放所选错项的误区、三级提示、停在出错一步的可视化、正解和变式，页面只跟随导师的下一步建议，
+  接口见[题目理解 API](../reference/api/question-understanding.md)与[题目导师 API](../reference/api/question-tutor.md)。
+  正式流程与管理员预览（`?preview=1`，含待审核内容、不记录学习事实）共用 `understandingTransport` 的同一组步骤。
+  该页在 `App.vue` 的 `KeepAlive` 中只缓存最近一道题，展开可视化再返回时保留作答进度与滚动位置。
 - 一级导航：我的课程（`/my-courses`）、课程库（`/courses`）、社区共建（`/community`）。
 - 社区详情使用共享的纯文本讨论组件；管理端 `/admin/community` 承载内容审核、学校分区创建和题目整理，权限由后端校验。
 - 练习、错题、复习、测评、真题等能力优先进入具体课程内部（课程空间 `CourseOverview`），

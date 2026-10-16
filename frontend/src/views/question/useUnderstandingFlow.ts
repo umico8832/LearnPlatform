@@ -1,18 +1,15 @@
 import { computed, ref, shallowRef } from 'vue'
-import {
-  getUnderstandingQuestion,
-  getVariant,
-  revealSolution,
-  submitAttempt,
-  submitVariantAttempt,
-  type AttemptResult,
-  type Solution,
-  type UnderstandingQuestion,
-  type UnderstandingViz,
-  type Variant,
-  type VariantResult,
+import type {
+  AttemptResult,
+  Solution,
+  UnderstandingQuestion,
+  UnderstandingViz,
+  Variant,
+  VariantResult,
 } from '@/api/understanding'
 import { businessCode, errorMessage } from '@/utils/errors'
+import { useQuestionTutor } from './useQuestionTutor'
+import { liveTransport, type UnderstandingTransport } from './understandingTransport'
 
 const NOT_FOUND = 1004
 
@@ -63,11 +60,15 @@ export function sameViz(a: UnderstandingViz | null, b: UnderstandingViz | null):
 }
 
 /**
- * "一道题从错到懂": answer → (wrong) the chosen option's misconception and a
- * visualization paused at the error step → solution → an unaided variant.
- * The server grades everything; answers reach the client only when opened.
+ * "一道题从错到懂": answer → (wrong) the chosen option's misconception, the
+ * tutor's hint ladder and a visualization paused at the error step → solution
+ * → a variant. The server grades everything, gates the solution behind the
+ * hints and decides the next step; answers reach the client only when opened.
  */
-export function useUnderstandingFlow(questionId: () => number) {
+export function useUnderstandingFlow(
+  questionId: () => number,
+  transport: () => UnderstandingTransport = () => liveTransport,
+) {
   const loadStatus = ref<LoadStatus>('loading')
   const loadError = ref('')
   const question = shallowRef<UnderstandingQuestion | null>(null)
@@ -79,6 +80,7 @@ export function useUnderstandingFlow(questionId: () => number) {
   const variantMissing = ref(false)
   const variantSelected = ref<string | null>(null)
   const variantAttempt = useTask<VariantResult>()
+  const tutor = useQuestionTutor(() => attempt.result.value?.attemptId ?? null, transport)
 
   let shownAt = 0
   let variantShownAt = 0
@@ -88,13 +90,15 @@ export function useUnderstandingFlow(questionId: () => number) {
     loadStatus.value = 'loading'
     loadError.value = ''
     for (const task of [attempt, solution, variant, variantAttempt]) task.reset()
+    tutor.reset()
     selected.value = null
     variantSelected.value = null
     variantMissing.value = false
     try {
-      const response = await getUnderstandingQuestion(id)
+      transport().reset()
+      const loaded = await transport().question(id)
       if (id !== questionId()) return
-      question.value = response.data
+      question.value = loaded
       loadStatus.value = 'ready'
       shownAt = performance.now()
     } catch (e) {
@@ -111,10 +115,9 @@ export function useUnderstandingFlow(questionId: () => number) {
   async function openSolution() {
     const result = attempt.result.value
     if (!result) return
-    const opened = await solution.run(
-      () => revealSolution(result.attemptId).then((r) => r.data),
-      '正解加载失败，请重试',
-    )
+    const opened = await solution.run(() => transport().revealSolution(result.attemptId), '正解加载失败，请重试')
+    // Also after a refusal: the gate may have moved on since the last suggestion.
+    void tutor.refresh()
     if (opened) void loadVariant()
   }
 
@@ -123,11 +126,12 @@ export function useUnderstandingFlow(questionId: () => number) {
     const answer = selected.value
     if (!current || !answer || answered.value) return
     const result = await attempt.run(
-      () => submitAttempt(current.questionId, answer, seconds(shownAt)).then((r) => r.data),
+      () => transport().submitAttempt(current.questionId, answer, seconds(shownAt)),
       '提交失败，请重试',
     )
     // A right answer goes straight to the full reasoning; a wrong one first meets its misconception.
     if (result?.correct) void openSolution()
+    else if (result) void tutor.refresh()
   }
 
   async function loadVariant() {
@@ -137,8 +141,7 @@ export function useUnderstandingFlow(questionId: () => number) {
     variant.error.value = ''
     variantMissing.value = false
     try {
-      const response = await getVariant(result.attemptId)
-      variant.result.value = response.data
+      variant.result.value = await transport().variant(result.attemptId)
       variant.status.value = 'done'
       variantShownAt = performance.now()
     } catch (e) {
@@ -158,10 +161,10 @@ export function useUnderstandingFlow(questionId: () => number) {
     const answer = variantSelected.value
     if (!result || !current || !answer || variantAttempt.result.value) return
     await variantAttempt.run(
-      () =>
-        submitVariantAttempt(current.variantId, result.attemptId, answer, seconds(variantShownAt)).then((r) => r.data),
+      () => transport().submitVariant(current.variantId, result.attemptId, answer, seconds(variantShownAt)),
       '提交失败，请重试',
     )
+    void tutor.refresh()
   }
 
   /** The solution's own player, unless it only repeats the misconception's one. */
@@ -189,6 +192,7 @@ export function useUnderstandingFlow(questionId: () => number) {
     variantSelected,
     variantAttempt,
     submitVariant,
+    tutor,
   }
 }
 

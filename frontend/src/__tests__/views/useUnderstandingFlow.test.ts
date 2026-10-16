@@ -11,6 +11,8 @@ const api = vi.hoisted(() => ({
   submitVariantAttempt: vi.fn(),
 }))
 vi.mock('@/api/understanding', () => api)
+const tutorApi = vi.hoisted(() => ({ getTutorNext: vi.fn(), requestNextHint: vi.fn(), recordVizView: vi.fn() }))
+vi.mock('@/api/questionTutor', () => tutorApi)
 
 import { useUnderstandingFlow } from '@/views/question/useUnderstandingFlow'
 
@@ -51,8 +53,11 @@ const solution: Solution = {
   correctAnswer: 'A',
   explanation: '从栈顶弹出',
   explanationSource: { kind: 'CURATED', reviewStatus: 'REVIEWED' },
-  viz: { title: '正解演示', spec: { scene: 'stack', op: 'check', seq: [3, 2, 1], pauseAt: [] },
-    source: { kind: 'CURATED', reviewStatus: 'REVIEWED' } } as Solution['viz'],
+  viz: {
+    title: '正解演示',
+    spec: { scene: 'stack', op: 'check', seq: [3, 2, 1], pauseAt: [] },
+    source: { kind: 'CURATED', reviewStatus: 'REVIEWED' },
+  } as Solution['viz'],
 }
 const variant: Variant = {
   variantId: 91,
@@ -78,6 +83,14 @@ beforeEach(() => {
   api.revealSolution.mockResolvedValue({ data: solution })
   api.getVariant.mockResolvedValue({ data: variant })
   api.submitVariantAttempt.mockResolvedValue({ data: variantResult })
+  tutorApi.getTutorNext.mockResolvedValue({
+    data: {
+      action: { type: 'REVEAL_SOLUTION' },
+      reason: '看正解',
+      reasonSource: { kind: 'CURATED', reviewStatus: 'REVIEWED' },
+      state: null,
+    },
+  })
 })
 
 describe('useUnderstandingFlow', () => {
@@ -173,6 +186,23 @@ describe('useUnderstandingFlow', () => {
     await flow.submit()
     await flow.openSolution()
     expect(flow.solutionViz.value).toBeNull()
+  })
+
+  it('asks the tutor again after the attempt, the solution and the variant', async () => {
+    const flow = useUnderstandingFlow(() => 17)
+    await flow.load()
+    flow.selected.value = 'B'
+    await flow.submit()
+    await flushPromises()
+    expect(tutorApi.getTutorNext).toHaveBeenCalledTimes(1)
+    await flow.openSolution()
+    await flushPromises()
+    expect(tutorApi.getTutorNext).toHaveBeenCalledTimes(2)
+    flow.variantSelected.value = 'B'
+    await flow.submitVariant()
+    await flushPromises()
+    expect(tutorApi.getTutorNext).toHaveBeenCalledTimes(3)
+    expect(tutorApi.getTutorNext).toHaveBeenLastCalledWith(81)
   })
 
   it('guards both submissions while a request is pending', async () => {

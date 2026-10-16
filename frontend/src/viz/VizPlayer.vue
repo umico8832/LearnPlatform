@@ -36,7 +36,11 @@ const props = withDefaults(
   { size: 'embedded', title: '', expandTo: undefined, editable: undefined },
 )
 
-const emit = defineEmits<{ 'update:spec': [spec: SceneSpec] }>()
+const emit = defineEmits<{
+  'update:spec': [spec: SceneSpec]
+  /** The learner started this player for the first time: pressed play or stepped forward. */
+  started: []
+}>()
 
 const router = useRouter()
 const session = useVizSession(() => props.spec)
@@ -106,6 +110,15 @@ function expand(event: MouseEvent) {
   session.player.pause()
   expandInto(card.value, () => router.push(target))
 }
+
+const started = watch(
+  () => session.state.value.playing || session.state.value.index > 0,
+  (moving) => {
+    if (!moving) return
+    started.stop()
+    emit('started')
+  },
+)
 
 watch(
   () => full.value && session.status.value === 'ready',

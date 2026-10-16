@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { createLearnerAndLogin } from './helpers/registerLearner'
+import { prepareTurnstile } from './helpers/turnstile'
 
 const stem = '入栈顺序为 1,2,3,4,5，下列哪个是可能的出栈序列？'
 
@@ -50,6 +51,7 @@ test('出栈序列答错后依次理解误区、演示、正解并独立作答�
   await variant.getByRole('button', { name: '提交' }).click()
   await expect(page.getByText('这次还不对，正确答案是 D。')).toBeVisible()
   await expect(page.getByRole('heading', { name: '这道变式的思路' })).toBeVisible()
+  await expect(page.getByText('这次独立作答已计入复习安排。')).toBeVisible()
 })
 
 test('出栈序列选对后直接开放正解和变式', async ({ page }) => {
@@ -61,4 +63,37 @@ test('出栈序列选对后直接开放正解和变式', async ({ page }) => {
   await expect(page.getByRole('heading', { name: '对一遍思路' })).toBeVisible()
   await expect(page.getByRole('heading', { name: '换一个条件，再做一次' })).toBeVisible()
   await expect(page.getByRole('button', { name: '看正解' })).toHaveCount(0)
+})
+
+test('管理员预览待审核的三级提示，且预览不留下错题', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await prepareTurnstile(page)
+  await page.goto('/login')
+  await page.getByPlaceholder('请输入用户名或邮箱').fill('admin')
+  await page.getByPlaceholder('请输入密码').fill('admin123')
+  const loginButton = page.getByRole('button', { name: '登录', exact: true })
+  await expect(loginButton).toBeEnabled({ timeout: 15_000 })
+  await loginButton.click()
+  await expect(page).toHaveURL(/\/my-courses$/)
+  const id = await seededStackQuestionId(page)
+
+  await page.goto(`/questions/${id}?preview=1`)
+  await expect(page.getByText(stem, { exact: true })).toBeVisible()
+  await expect(page.getByText('预览 · 含待审核内容')).toBeVisible()
+  await page.locator('.answer-step input[value="B"]').check({ force: true })
+  await page.locator('.answer-step').getByRole('button', { name: '提交' }).click()
+  await expect(page.getByRole('heading', { name: '以为能越过 2 直接弹出 1' })).toBeVisible()
+  await expect(page.getByRole('button', { name: '看正解' })).toHaveCount(0)
+  for (const [name, level] of [
+    ['给我一点提示', 1],
+    ['再具体一点', 2],
+    ['看一个相似的例子', 3],
+  ] as const) {
+    await page.getByRole('button', { name }).click()
+    await expect(page.getByRole('heading', { name: new RegExp(`^提示 ${level}`) })).toBeVisible()
+  }
+  await expect(page.getByText('以上提示 · AI 生成 · 待审核')).toBeVisible()
+  await expect(page.locator('.viz').first()).toBeVisible()
+  await page.getByRole('button', { name: '看正解' }).click()
+  await expect(page.getByText('正确选项 3,2,1,5,4：每一步都取栈顶')).toBeVisible()
 })
