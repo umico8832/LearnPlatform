@@ -678,9 +678,9 @@ function simulateInsert(values: number[], i: number, e: number): { steps: Step[]
           ghost: swapGhost,
         },
         {
-          id: 'only-first',
-          text: '只有 i = 1 时不能',
-          feedback: '与 i 无关。先改 p->next 后，s->next 读到的就是 s，自环在任何插入位置都会出现。',
+          id: 'only-tail',
+          text: '只有 p 是表尾时不能',
+          feedback: '与 p 在哪里无关。先改 p->next 后，s->next 读到的就是 s，自环在任何插入位置都会出现。',
           ghost: swapGhost,
         },
       ],
