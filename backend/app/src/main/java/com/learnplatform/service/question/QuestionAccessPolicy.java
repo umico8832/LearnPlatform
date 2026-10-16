@@ -5,6 +5,12 @@ import com.learnplatform.entity.Question;
 public final class QuestionAccessPolicy {
     private QuestionAccessPolicy() { }
 
+    public static final String DRAFT_IDS_SQL = "SELECT id FROM question WHERE visibility='DRAFT'";
+
+    public static boolean isDraft(Question question) {
+        return question != null && "DRAFT".equals(question.getVisibility());
+    }
+
     public static boolean canAccess(Question question, Long userId) {
         if (question == null) { return false; }
         String visibility = question.getVisibility();

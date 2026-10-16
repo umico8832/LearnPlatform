@@ -66,6 +66,7 @@ public class FavoriteService {
      */
     public void removeFavorite(Long userId, Long questionId) {
         LambdaQueryWrapper<UserFavoriteQuestion> wrapper = new LambdaQueryWrapper<>();
+        wrapper.notInSql(UserFavoriteQuestion::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
         wrapper.eq(UserFavoriteQuestion::getUserId, userId)
                .eq(UserFavoriteQuestion::getQuestionId, questionId);
         int deleted = favoriteMapper.delete(wrapper);
@@ -88,6 +89,7 @@ public class FavoriteService {
     public Page<FavoriteQuestionVO> getFavorites(Long userId, int pageNum, int pageSize) {
         // 1. 查询收藏记录
         LambdaQueryWrapper<UserFavoriteQuestion> wrapper = new LambdaQueryWrapper<>();
+        wrapper.notInSql(UserFavoriteQuestion::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
         wrapper.eq(UserFavoriteQuestion::getUserId, userId)
                .orderByDesc(UserFavoriteQuestion::getCreateTime);
         Page<UserFavoriteQuestion> favoritePage = favoriteMapper.selectPage(
@@ -127,6 +129,7 @@ public class FavoriteService {
      */
     public List<Long> getFavoriteQuestionIds(Long userId) {
         LambdaQueryWrapper<UserFavoriteQuestion> wrapper = new LambdaQueryWrapper<>();
+        wrapper.notInSql(UserFavoriteQuestion::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
         wrapper.eq(UserFavoriteQuestion::getUserId, userId)
                .select(UserFavoriteQuestion::getQuestionId);
         return favoriteMapper.selectList(wrapper).stream()

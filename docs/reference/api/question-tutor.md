@@ -63,7 +63,7 @@
 | `variantAnswer` | 可选变式选项标签 | 正解已开放后预览变式判分；不生成正式变式尝试 |
 
 不接受 `attemptId`、`originAttemptId`、`assistance` 或其他字段；每次从当前最新内容重新计算。
-`answer` 缺省时不能携带非默认进度。预览选取最新 `PENDING/REVIEWED` 理解版本，撤回版本不可预览，
+`answer` 缺省时不能携带非默认进度。预览允许启用的 `DRAFT` 题（仅此管理员入口放行），并选取最新 `PENDING/REVIEWED` 理解版本，撤回版本不可预览，
 并保留正式题目、课程、知识点关联、指纹与来源有效性检查；管理员不能借此查看他人私有题。
 提示只选择该版本的 `PENDING/REVIEWED` 行；不足三级时沿用正式无提示通路，`hintLevel` 必须为 `0`。
 变式取首个有效 `PENDING/APPROVED` 单选变式，拒绝/撤回的内容不可预览。

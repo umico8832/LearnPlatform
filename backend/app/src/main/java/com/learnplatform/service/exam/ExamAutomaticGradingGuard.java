@@ -10,6 +10,7 @@ import com.learnplatform.mapper.ExamQuestionMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
 import com.learnplatform.service.question.AutomaticGradingPolicy;
+import com.learnplatform.service.question.QuestionAccessPolicy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -46,7 +47,8 @@ public class ExamAutomaticGradingGuard {
     }
 
     public void requireQuestion(Question question, List<QuestionOption> questionOptions) {
-        if (question == null || !Integer.valueOf(1).equals(question.getStatus())) {
+        if (question == null || QuestionAccessPolicy.isDraft(question)
+                || !Integer.valueOf(1).equals(question.getStatus())) {
             throw invalid();
         }
         if ("SHORT_ANSWER".equals(question.getQuestionType())) { return; }

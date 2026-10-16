@@ -28,7 +28,7 @@ class QuestionContentCorrectionMigrationIntegrationTest {
                         .target("109").load().migrate();
                 insertUnrelatedContentAndLearningFacts(jdbc);
             }
-            Flyway.configure().dataSource(database.getJdbcUrl(), "root", database.getPassword()).load().migrate();
+            Flyway.configure().dataSource(database.getJdbcUrl(), "root", database.getPassword()).target("110").load().migrate();
             assertEquals(2, count(jdbc, """
                     SELECT COUNT(*) FROM question_understanding_content
                     WHERE content_version=1 AND review_status='PENDING' AND solution_content_source='AI_GENERATED'

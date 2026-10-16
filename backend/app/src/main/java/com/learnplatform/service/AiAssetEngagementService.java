@@ -10,6 +10,8 @@ import com.learnplatform.entity.QuestionAiAsset;
 import com.learnplatform.mapper.AiAssetViewMapper;
 import com.learnplatform.mapper.AiVariantTrainingMapper;
 import com.learnplatform.mapper.QuestionAiAssetMapper;
+import com.learnplatform.mapper.QuestionMapper;
+import com.learnplatform.service.question.QuestionAccessPolicy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,7 @@ import java.time.LocalDateTime;
 @Service
 public class AiAssetEngagementService {
 
+    private final QuestionMapper questions;
     private final AiAssetViewMapper aiAssetViewMapper;
     private final QuestionAiAssetMapper questionAiAssetMapper;
     private final AiVariantTrainingMapper aiVariantTrainingMapper;
@@ -29,7 +32,8 @@ public class AiAssetEngagementService {
     public AiAssetEngagementService(AiAssetViewMapper aiAssetViewMapper,
                                     QuestionAiAssetMapper questionAiAssetMapper,
                                     AiVariantTrainingMapper aiVariantTrainingMapper,
-                                    AiVariantQuestionService aiVariantQuestionService) {
+                                    AiVariantQuestionService aiVariantQuestionService, QuestionMapper questions) {
+        this.questions = questions;
         this.aiAssetViewMapper = aiAssetViewMapper;
         this.questionAiAssetMapper = questionAiAssetMapper;
         this.aiVariantTrainingMapper = aiVariantTrainingMapper;
@@ -41,6 +45,7 @@ public class AiAssetEngagementService {
      */
     @Transactional
     public AiVariantTrainingVO recordAssetView(Long questionId, AiAssetType assetType, Long userId) {
+        requireAccessible(questionId, userId);
         QuestionAiAsset asset = questionAiAssetMapper.selectOne(new LambdaQueryWrapper<QuestionAiAsset>()
                 .eq(QuestionAiAsset::getQuestionId, questionId)
                 .eq(QuestionAiAsset::getAssetType, assetType.name()));
@@ -60,6 +65,7 @@ public class AiAssetEngagementService {
      */
     @Transactional
     public AiVariantTrainingVO completeVariantTraining(Long questionId, Long userId) {
+        requireAccessible(questionId, userId);
         QuestionAiAsset asset = questionAiAssetMapper.selectOne(new LambdaQueryWrapper<QuestionAiAsset>()
                 .eq(QuestionAiAsset::getQuestionId, questionId)
                 .eq(QuestionAiAsset::getAssetType, AiAssetType.VARIANT.name()));
@@ -82,7 +88,14 @@ public class AiAssetEngagementService {
     }
 
     public AiVariantTrainingVO submitVariantAnswer(Long questionId, Long userId, String userAnswer) {
+        requireAccessible(questionId, userId);
         return aiVariantQuestionService.submitAnswer(questionId, userId, userAnswer);
+    }
+
+    private void requireAccessible(Long questionId, Long userId) {
+        if (!QuestionAccessPolicy.canAccess(questions.selectById(questionId), userId)) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
+        }
     }
 
     private AiVariantTraining findVariantTraining(Long userId, Long assetId) {

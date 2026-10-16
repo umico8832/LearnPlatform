@@ -16,6 +16,7 @@ import com.learnplatform.mapper.ExamPaperMapper;
 import com.learnplatform.mapper.ExamQuestionMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
+import com.learnplatform.service.question.QuestionAccessPolicy;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -144,6 +145,9 @@ public class ExamPaperViewService {
             item.setSubquestionNumber(relation.getSubquestionNumber());
             item.setDisplayNumber(relation.getDisplayNumber());
             Question question = questionMapper.selectById(relation.getQuestionId());
+            if (QuestionAccessPolicy.isDraft(question)) {
+                throw new BusinessException(ResultCode.NOT_FOUND, "试卷题目不可用");
+            }
             if (question != null) {
                 item.setContent(question.getContent());
                 item.setQuestionType(question.getQuestionType());

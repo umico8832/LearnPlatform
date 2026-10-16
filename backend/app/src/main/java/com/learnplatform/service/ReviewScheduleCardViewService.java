@@ -9,6 +9,7 @@ import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.service.question.AutomaticGradingPolicy;
 import com.learnplatform.service.review.ReviewSchedulePolicy;
+import com.learnplatform.service.question.QuestionAccessPolicy;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -72,6 +73,7 @@ public class ReviewScheduleCardViewService {
 
         List<ReviewScheduleVO> result = new ArrayList<>();
         for (QuestionReviewSchedule schedule : schedules) {
+            if (QuestionAccessPolicy.isDraft(questionMap.get(schedule.getQuestionId()))) { continue; }
             ReviewScheduleVO view = new ReviewScheduleVO();
             view.setId(schedule.getId());
             view.setQuestionId(schedule.getQuestionId());

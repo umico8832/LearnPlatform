@@ -8,6 +8,9 @@ import com.learnplatform.entity.QuestionAiAsset;
 import com.learnplatform.mapper.AiAssetViewMapper;
 import com.learnplatform.mapper.AiVariantTrainingMapper;
 import com.learnplatform.mapper.QuestionAiAssetMapper;
+import com.learnplatform.entity.Question;
+import com.learnplatform.mapper.QuestionMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -26,14 +29,21 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class AiAssetEngagementServiceTest {
 
+    @Mock private QuestionMapper questions;
     @Mock private AiAssetViewMapper aiAssetViewMapper;
     @Mock private QuestionAiAssetMapper questionAiAssetMapper;
     @Mock private AiVariantTrainingMapper aiVariantTrainingMapper;
     @Mock private AiVariantQuestionService aiVariantQuestionService;
 
+    @BeforeEach void accessibleQuestion() {
+        var question = new Question();
+        question.setVisibility("PUBLIC");
+        when(questions.selectById(8L)).thenReturn(question);
+    }
+
     private AiAssetEngagementService service() {
         return new AiAssetEngagementService(aiAssetViewMapper, questionAiAssetMapper,
-                aiVariantTrainingMapper, aiVariantQuestionService);
+                aiVariantTrainingMapper, aiVariantQuestionService, questions);
     }
 
     @Test

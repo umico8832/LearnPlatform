@@ -12,6 +12,7 @@ import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.service.question.QuestionDuplicateDetector;
 import com.learnplatform.service.understanding.QuestionUnderstandingContent;
+import com.learnplatform.service.question.QuestionAccessPolicy;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -115,7 +116,7 @@ public class QuestionService {
 
     public QuestionVO getQuestionById(Long id) {
         Question question = questionMapper.selectById(id);
-        if (question == null || "PRIVATE".equals(question.getVisibility())) {
+        if (!QuestionAccessPolicy.isPublic(question)) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
         return toAdminView(question);

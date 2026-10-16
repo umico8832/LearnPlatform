@@ -11,6 +11,7 @@ import com.learnplatform.entity.WrongQuestion;
 import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
+import com.learnplatform.service.question.QuestionAccessPolicy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -89,7 +90,8 @@ public class AiReviewSuggestionService {
         List<WrongQuestion> wrongQuestions = wrongQuestionMapper.selectList(
                 new LambdaQueryWrapper<WrongQuestion>()
                         .eq(WrongQuestion::getUserId, userId)
-                        .eq(WrongQuestion::getDeleted, 0));
+                        .eq(WrongQuestion::getDeleted, 0)
+                        .notInSql(WrongQuestion::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL));
         StringBuilder context = new StringBuilder("用户错题数量：")
                 .append(wrongQuestions.size()).append(" 道\n");
         if (!wrongQuestions.isEmpty()) {

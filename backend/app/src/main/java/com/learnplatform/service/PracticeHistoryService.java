@@ -38,6 +38,7 @@ public class PracticeHistoryService {
             String questionType, Long courseId, Integer isCorrect) {
         Page<PracticeRecord> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<PracticeRecord> wrapper = new LambdaQueryWrapper<>();
+        wrapper.notInSql(PracticeRecord::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
         wrapper.eq(PracticeRecord::getUserId, userId);
         if (isCorrect != null) {
             wrapper.eq(PracticeRecord::getIsCorrect, isCorrect);
@@ -62,6 +63,7 @@ public class PracticeHistoryService {
 
     public Map<String, Object> getUserPracticeStats(Long userId) {
         LambdaQueryWrapper<PracticeRecord> wrapper = new LambdaQueryWrapper<>();
+        wrapper.notInSql(PracticeRecord::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
         wrapper.eq(PracticeRecord::getUserId, userId);
         List<PracticeRecord> records = practiceRecordMapper.selectList(wrapper);
         int totalAnswered = records.size();

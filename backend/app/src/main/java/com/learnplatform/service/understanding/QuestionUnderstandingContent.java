@@ -46,7 +46,9 @@ public class QuestionUnderstandingContent {
 
     Ready ready(Long userId, long questionId, Long contentId, boolean preview) {
         Question question = questions.selectById(questionId);
-        if (!QuestionAccessPolicy.canAccess(question, userId) || !Integer.valueOf(1).equals(question.getStatus())) {
+        boolean accessible = QuestionAccessPolicy.canAccess(question, userId)
+                || preview && QuestionAccessPolicy.isDraft(question);
+        if (!accessible || !Integer.valueOf(1).equals(question.getStatus())) {
             throw unavailable();
         }
         if (!"SINGLE_CHOICE".equals(question.getQuestionType())) {

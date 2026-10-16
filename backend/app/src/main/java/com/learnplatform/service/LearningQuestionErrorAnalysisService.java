@@ -16,6 +16,7 @@ import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.learnplatform.service.question.QuestionAccessPolicy;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -63,7 +64,7 @@ public class LearningQuestionErrorAnalysisService {
         log.info("单题错因分析: userId={}, questionId={}", userId, questionId);
 
         Question question = questionMapper.selectById(questionId);
-        if (question == null) {
+        if (!QuestionAccessPolicy.canAccess(question, userId)) {
             LearningDiagnosisVO.QuestionErrorAnalysis empty = new LearningDiagnosisVO.QuestionErrorAnalysis();
             empty.setQuestionId(questionId);
             empty.setQuestionContent("题目不存在");

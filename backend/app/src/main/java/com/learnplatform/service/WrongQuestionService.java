@@ -17,6 +17,7 @@ import com.learnplatform.mapper.WrongQuestionInsightMapper;
 import com.learnplatform.service.understanding.QuestionUnderstandingContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.learnplatform.service.question.QuestionAccessPolicy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -296,6 +297,7 @@ public class WrongQuestionService {
     private QueryWrapper<WrongQuestion> scope(Long userId, Long courseId, Long questionId, Long knowledgePointId) {
         QueryWrapper<WrongQuestion> wrapper = new QueryWrapper<>();
         wrapper.eq("user_id", userId).eq(questionId != null, "question_id", questionId);
+        wrapper.notInSql("question_id", QuestionAccessPolicy.DRAFT_IDS_SQL);
         if (courseId != null) {
             Set<Long> ids = questionMapper.selectList(new LambdaQueryWrapper<Question>()
                             .eq(Question::getCourseId, courseId)).stream()

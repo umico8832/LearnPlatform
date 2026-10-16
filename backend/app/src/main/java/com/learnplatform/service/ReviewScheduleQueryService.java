@@ -11,6 +11,7 @@ import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionReviewScheduleMapper;
 import com.learnplatform.service.question.AutomaticGradingPolicy;
 import com.learnplatform.service.review.ReviewSchedulePolicy;
+import com.learnplatform.service.question.QuestionAccessPolicy;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -71,6 +72,7 @@ public class ReviewScheduleQueryService {
 
         LocalDate today = LocalDate.now();
         LambdaQueryWrapper<QuestionReviewSchedule> wrapper = new LambdaQueryWrapper<>();
+        wrapper.notInSql(QuestionReviewSchedule::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
         wrapper.eq(QuestionReviewSchedule::getUserId, userId)
                 .le(QuestionReviewSchedule::getNextReviewDate, today);
         if (courseId != null) {
@@ -110,6 +112,7 @@ public class ReviewScheduleQueryService {
         ReviewStatsVO stats = new ReviewStatsVO();
 
         LambdaQueryWrapper<QuestionReviewSchedule> allWrapper = new LambdaQueryWrapper<>();
+        allWrapper.notInSql(QuestionReviewSchedule::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
         allWrapper.eq(QuestionReviewSchedule::getUserId, userId);
         long totalCards = reviewScheduleMapper.selectCount(allWrapper);
         stats.setTotalCards((int) totalCards);
@@ -123,6 +126,7 @@ public class ReviewScheduleQueryService {
                 userId, QuestionReviewSchedule::getNextReviewDate, today, true));
 
         LambdaQueryWrapper<QuestionReviewSchedule> doneWrapper = new LambdaQueryWrapper<>();
+        doneWrapper.notInSql(QuestionReviewSchedule::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
         doneWrapper.eq(QuestionReviewSchedule::getUserId, userId)
                 .eq(QuestionReviewSchedule::getLastReviewDate, today);
         stats.setReviewedToday(toInt(reviewScheduleMapper.selectCount(doneWrapper)));
@@ -137,6 +141,7 @@ public class ReviewScheduleQueryService {
      */
     public List<ReviewScheduleVO> getAllReviewCards(Long userId, Long courseId) {
         LambdaQueryWrapper<QuestionReviewSchedule> wrapper = new LambdaQueryWrapper<>();
+        wrapper.notInSql(QuestionReviewSchedule::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
         wrapper.eq(QuestionReviewSchedule::getUserId, userId)
                 .orderByAsc(QuestionReviewSchedule::getNextReviewDate);
 
@@ -160,6 +165,7 @@ public class ReviewScheduleQueryService {
 
         LocalDate today = LocalDate.now();
         LambdaQueryWrapper<QuestionReviewSchedule> difficultWrapper = new LambdaQueryWrapper<>();
+        difficultWrapper.notInSql(QuestionReviewSchedule::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
         difficultWrapper.eq(QuestionReviewSchedule::getUserId, userId)
                 .and(query -> query.lt(QuestionReviewSchedule::getEaseFactor, ReviewSchedulePolicy.DIFFICULT_THRESHOLD)
                         .or(fsrs -> fsrs.isNull(QuestionReviewSchedule::getEaseFactor)
@@ -170,6 +176,7 @@ public class ReviewScheduleQueryService {
         context.setDifficultCards(cardViewService.toViews(reviewScheduleMapper.selectList(difficultWrapper), today));
 
         LambdaQueryWrapper<QuestionReviewSchedule> overdueWrapper = new LambdaQueryWrapper<>();
+        overdueWrapper.notInSql(QuestionReviewSchedule::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
         overdueWrapper.eq(QuestionReviewSchedule::getUserId, userId)
                 .lt(QuestionReviewSchedule::getNextReviewDate, today)
                 .orderByAsc(QuestionReviewSchedule::getNextReviewDate);
@@ -180,6 +187,7 @@ public class ReviewScheduleQueryService {
         List<Integer> dailyReviews = new ArrayList<>();
         for (int i = 6; i >= 0; i--) {
             LambdaQueryWrapper<QuestionReviewSchedule> dayWrapper = new LambdaQueryWrapper<>();
+            dayWrapper.notInSql(QuestionReviewSchedule::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
             dayWrapper.eq(QuestionReviewSchedule::getUserId, userId)
                     .eq(QuestionReviewSchedule::getLastReviewDate, today.minusDays(i));
             dailyReviews.add(toInt(reviewScheduleMapper.selectCount(dayWrapper)));
@@ -222,6 +230,7 @@ public class ReviewScheduleQueryService {
             LocalDate today,
             boolean beforeOnly) {
         LambdaQueryWrapper<QuestionReviewSchedule> wrapper = new LambdaQueryWrapper<>();
+        wrapper.notInSql(QuestionReviewSchedule::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
         wrapper.eq(QuestionReviewSchedule::getUserId, userId);
         if (beforeOnly) {
             wrapper.lt(column, today);
@@ -270,6 +279,7 @@ public class ReviewScheduleQueryService {
         LocalDate checkDate = today;
         while (true) {
             LambdaQueryWrapper<QuestionReviewSchedule> wrapper = new LambdaQueryWrapper<>();
+            wrapper.notInSql(QuestionReviewSchedule::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
             wrapper.eq(QuestionReviewSchedule::getUserId, userId)
                     .eq(QuestionReviewSchedule::getLastReviewDate, checkDate);
             if (reviewScheduleMapper.selectCount(wrapper) <= 0) {

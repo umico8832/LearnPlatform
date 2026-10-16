@@ -79,6 +79,13 @@ AI 生成题的批准发布行为见[管理 API](../api/admin-governance.md#ai-�
 | `question_review_record` | 正式题目定期复审记录 | 记录审查人、结论和时间 |
 | `question_correction_report` | 用户纠错及管理员处理状态 | 状态变化需要记录处理人和结果 |
 
+题目 `visibility` 为 `PUBLIC`（公共）、`PRIVATE`（仅所有者）或 `DRAFT`（待审题）。
+`DRAFT` 不授予所有者学习权限，`status=1` 也不能绕过该边界；只允许 ADMIN 的无副作用理解预览读取。
+普通题目、练习、搜索、测评和推荐按 PUBLIC/本人 PRIVATE 白名单读取；错题与复习查询在分页、计数前排除 DRAFT，历史引用不能绕过。
+M5 作者源保留在 `content/drafts/`，迁移按 `question.source_reference=m5-draft:<id>` 定位，自增 ID 不固定。
+题目、理解正解、误区、提示与变式均保留 AI 来源；理解内容和提示为 PENDING，变式为 PENDING；不写审核人或审核时间。
+`vizCandidates` 为作者候选，不入库；草稿 `viz` 原样存储。审核发布需同时显式更新题目为 PUBLIC、理解内容及提示为 REVIEWED、变式为 APPROVED，单改子内容审核状态不会公开 DRAFT。
+
 ### 题目理解
 
 V106 建立以下结构；对外行为见[题目理解 API](../api/question-understanding.md)。

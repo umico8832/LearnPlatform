@@ -15,6 +15,7 @@ import com.learnplatform.mapper.PracticeRecordMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.UserMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
+import com.learnplatform.service.question.QuestionAccessPolicy;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -67,6 +68,7 @@ public class StatisticsService {
 
         // 总刷题数
         LambdaQueryWrapper<PracticeRecord> wrapper = new LambdaQueryWrapper<>();
+        wrapper.notInSql(PracticeRecord::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
         wrapper.eq(PracticeRecord::getUserId, userId);
         List<PracticeRecord> allRecords = practiceRecordMapper.selectList(wrapper);
         vo.setTotalPractice(allRecords.size());
@@ -88,6 +90,7 @@ public class StatisticsService {
 
         // 错题统计
         LambdaQueryWrapper<WrongQuestion> wqWrapper = new LambdaQueryWrapper<>();
+        wqWrapper.notInSql(WrongQuestion::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
         wqWrapper.eq(WrongQuestion::getUserId, userId).eq(WrongQuestion::getDeleted, 0);
         List<WrongQuestion> wrongQuestions = wrongQuestionMapper.selectList(wqWrapper);
         vo.setWrongQuestionCount(wrongQuestions.size());
@@ -106,6 +109,7 @@ public class StatisticsService {
         LocalDateTime start = today.minusDays(6).atStartOfDay();
 
         LambdaQueryWrapper<PracticeRecord> wrapper = new LambdaQueryWrapper<>();
+        wrapper.notInSql(PracticeRecord::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
         wrapper.eq(PracticeRecord::getUserId, userId).ge(PracticeRecord::getCreateTime, start);
         List<PracticeRecord> records = practiceRecordMapper.selectList(wrapper);
 
@@ -135,6 +139,7 @@ public class StatisticsService {
     @Cacheable(value = "courseStats", key = "#userId")
     public List<Map<String, Object>> getCourseStats(Long userId) {
         LambdaQueryWrapper<PracticeRecord> wrapper = new LambdaQueryWrapper<>();
+        wrapper.notInSql(PracticeRecord::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
         wrapper.eq(PracticeRecord::getUserId, userId);
         List<PracticeRecord> records = practiceRecordMapper.selectList(wrapper);
 
