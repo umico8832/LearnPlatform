@@ -98,7 +98,7 @@ M4 的排期采用 [ADR-0012](../../architecture/decisions/0012-fsrs-review-sche
 
 `GET /api/review/due`、`GET /api/review/cards` 的每张卡片，以及 `POST /api/review/submit`
 返回的更新后卡片，均包含必返布尔 `hasUnderstanding`，无可用理解内容时为 `false`，不返回 `null`。
-为 `true` 时，复习页可进入 `/questions/{questionId}`；为 `false` 时沿用单题练习入口，
+为 `true` 时，复习页可进入 `/questions/{questionId}`；为 `false` 时沿用旧复习页单题作答入口（见[前端架构](../../architecture/frontend.md#信息架构)），
 能否直接复习仍读取既有 `availableForReview`。
 
 该字段复用错题列表和题目列表的[理解入口门禁](question-understanding.md#列表中的理解入口b7)，

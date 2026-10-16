@@ -55,7 +55,8 @@ frontend/admin/   # 独立管理端 HTML 入口
   有理解内容的题及本人做题状态，逐题进入 `/questions/:id`。旧课程空间整体保留在 `/my-courses/:id/space`（`CourseSpace`），
   课程页底部留入口。
 - 复习页（`/review`，需登录）已按新基线重做主线版，不在旧外壳内：今天到期的题排成队列并说明为什么回来
-  （上次答错、上次觉得难、首次复习或按排期到期），进入方式与错题页“重做”一致；下面按下次日期列出全部卡片，可重置或移出。
+  （上次答错、上次觉得难、首次复习或按排期到期）；有理解内容的题进入 `/questions/:id`，其余进入 `/review/classic` 单题作答。
+  下面按下次日期列出全部卡片，可重置或移出。
   统计按[复习统计口径](../reference/api/practice-and-review.md#复习统计与卡片状态b14)。AI 复习建议、同步错题与页内作答自评
   保留在旧复习页 `/review/classic`（`ReviewClassic`），复习页底部留入口。
 - 一级导航：我的课程（`/my-courses`）、课程库（`/courses`）、社区共建（`/community`）。
