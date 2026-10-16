@@ -18,7 +18,7 @@ export interface UnderstandingPosition {
 }
 
 export type SourceKind = 'OFFICIAL_EXAM' | 'AI_GENERATED' | 'MANUAL'
-export type SourceVerification = 'VERIFIED' | 'REVIEWED' | 'UNREVIEWED'
+export type SourceVerification = 'VERIFIED' | 'REVIEWED' | 'UNREVIEWED' | 'PENDING'
 
 export interface QuestionSource {
   kind: SourceKind
@@ -29,7 +29,7 @@ export interface QuestionSource {
 
 export interface UnderstandingContentSource {
   kind: 'CURATED' | 'AI_GENERATED'
-  reviewStatus: 'REVIEWED'
+  reviewStatus: 'REVIEWED' | 'PENDING'
 }
 
 export interface UnderstandingViz {
@@ -50,7 +50,7 @@ export interface UnderstandingQuestion {
 export interface Misconception {
   title: string
   explanation: string
-  source: { kind: 'CURATED' | 'AI_GENERATED'; reviewStatus: 'REVIEWED' }
+  source: { kind: 'CURATED' | 'AI_GENERATED'; reviewStatus: 'REVIEWED' | 'PENDING' }
 }
 
 export interface AttemptResult {

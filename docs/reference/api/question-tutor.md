@@ -1,11 +1,11 @@
 # 题目导师 API 契约（M3）
 
-> 本页说明 M3 已实现的接口与数据契约。全部响应使用[统一外壳](conventions.md#统一响应)。题目和尝试的访问、内容版本、答案隔离及 `1004` 不暴露存在性的规则沿用[题目理解 API](question-understanding.md)。两道预置题的新增提示仍是待审核草稿，所以目前公开流程沿用无提示通路。
+> 本页说明 M3 已实现的接口与数据契约。全部响应使用[统一外壳](conventions.md#统一响应)。题目和尝试的访问、内容版本、答案隔离及 `1004` 不暴露存在性的规则沿用[题目理解 API](question-understanding.md)。两道预置题的理解内容、提示与变式目前均为待审核草稿，仅可由管理员预览；审核通过后才能进入公开流程。
 
 ## 内容与可用性
 
 - 导师运行时只选择已存储、与本次尝试锁定的理解内容版本一致、人工审核为 `REVIEWED` 的内容，不调用云模型或在请求中生成文案。新生成的提示、场景描述和变式草稿必须以 `AI_GENERATED/PENDING` 入库；人工审核后才能公开。审核撤回即停止公开，不回退到旧版。
-- 三级提示分别给概念方向、推理步骤、课内相似案例；均不判断或排除选项，也不泄露答案。每级文本有独立来源 `source: {kind, reviewStatus}`，`kind` 为 `CURATED` 或 `AI_GENERATED`；公开的 `reviewStatus` 恒为 `REVIEWED`。待审核内容只在管理端可见，必须标为“AI 生成·待审核”，不能标成已审核或来源已核对。
+- 三级提示分别给概念方向、推理步骤、课内相似案例；均不判断或排除选项，也不泄露答案。每级文本有独立来源 `source: {kind, reviewStatus}`，`kind` 为 `CURATED` 或 `AI_GENERATED`；公开的 `reviewStatus` 恒为 `REVIEWED`。待审核内容只在管理员预览中可见，必须标为“AI 生成·待审核”，不能标成已审核或来源已核对。
 - 可视化返回 `{title, spec, source}`，其中 `spec` 使用 `frontend/src/viz/engine/types.ts` 的 `SceneSpec`，包括 `scene`、`op`、场景参数以及可选 `pauseAt`；后端不执行场景。审核时须用正式模拟器验证场景、参数和检查点。`source` 描述可视化文案与描述本身，和题目来源 `source.verification` 分开。
 - 正解响应保留 M2 的 `correctAnswer`、`explanation`、`viz`，增加 `explanationSource: {kind, reviewStatus}`；变式响应保留 M2 结构，其 `source` 继续描述变式的生成与审核。错项误区已有 `misconception.source`；新增的 `viz.source` 表示所用场景描述的来源与审核状态。导师建议的理由是服务端规则文案，返回 `reasonSource: {kind: "CURATED", reviewStatus: "REVIEWED"}`。
 - 若本次内容版本缺任一级已审核提示，导师提示链整体不可用：`next` 不建议提示，正解保持 M2 的直接开放路径。这样待审核草稿不会让现有题目卡住。提示链可用后，错答者须依次取得三级提示才能开放正解；答对者可直接开放正解。
@@ -46,3 +46,44 @@
 - 复用 `TutorAgentHintPolicy` 的三级上限与各级教学边界；其当前 `nextLevel(history)` 基于 Tutor 对话消息，题目理解没有该对话历史，A2 以数据库领取事实实现同一分级策略，不伪造对话消息。导师 `next` 使用确定性规则，不接入 Tutor 模型运行时。
 - `GET /questions/{questionId}` 和原题提交仍兼容 M2。正解、变式响应只增字段；可视化增加 `source`。**行为变化**是错答且完整已审核提示链可用时，旧客户端直接调用 `reveal` 会收到 `1005`；M3 前端须先按提示链推进。变式 `assistance` 从恒定 `UNAIDED` 扩为 `UNAIDED | AIDED`，现有前端类型须同步。
 - 新提交的尝试在创建时锁定提示链是否已审核；升级前已有尝试保持 M2 正解开放规则，避免因新内容加入而改变已开始的流程。已提交变式的 `assistance` 保持原持久值，不能事后重算。
+
+## 管理员无副作用预览（B5）
+
+`POST /api/understanding/preview/questions/{questionId}`，登录管理员调用。前端在 `/questions/:id` 切换预览后，
+用本接口替代所有正式理解/导师接口，并显示“预览·含待审核内容”。预览进度仅保存在页面内存，退出或刷新即清空。
+
+请求为 JSON 对象，首次传 `{}`；后续每次携带当前全部进度：
+
+| 字段 | 类型与默认值 | 用法 |
+|---|---|---|
+| `answer` | 可选选项标签 | 原题预览作答，规则与正式 `answer` 相同；未传表示只读题干 |
+| `hintLevel` | 整数 `0..3`，默认 `0` | 展示前 n 级提示；前端每次点下一提示将其加一。管理员可回退或重置预览 |
+| `misconceptionVizViewed` / `solutionVizViewed` | 布尔，默认 `false` | 本地是否已播放相应场景，影响下一步建议 |
+| `revealSolution` | 布尔，默认 `false` | 请求正解；错答且完整提示链可用时须 `hintLevel=3` |
+| `variantAnswer` | 可选变式选项标签 | 正解已开放后预览变式判分；不生成正式变式尝试 |
+
+不接受 `attemptId`、`originAttemptId`、`assistance` 或其他字段；每次从当前最新内容重新计算。
+`answer` 缺省时不能携带非默认进度。预览选取最新 `PENDING/REVIEWED` 理解版本，撤回版本不可预览，
+并保留正式题目、课程、知识点关联、指纹与来源有效性检查；管理员不能借此查看他人私有题。
+提示只选择该版本的 `PENDING/REVIEWED` 行；不足三级时沿用正式无提示通路，`hintLevel` 必须为 `0`。
+变式取首个有效 `PENDING/APPROVED` 单选变式，拒绝/撤回的内容不可预览。
+
+成功 `data`：
+
+- `preview: true`、`question`（与正式题干结构一致）。
+- `attempt: null | {correct, answer, misconception, viz}`，未作答为 `null`；没有正式 `attemptId`。
+- `hints: {level, text, source}[]`，按级别顺序，仅返回请求展示的等级。
+- `solution: null | Solution`、`variant: null | Variant`，未请求正解时均为 `null`；无有效变式也为 `null`。
+- `variantResult: null | {correct, correctAnswer, explanation, explanationSource, viz, assistance}`，
+  未提交变式为 `null`；没有正式 `variantAttemptId`，`assistance` 依 `hintLevel` 投影为 `UNAIDED/AIDED`。
+- `next: null | {action, reason, reasonSource, state}`，未作答为 `null`；其余复用正式导师建议规则。
+  `TRY_VARIANT.variantId` 仅供显示，预览变式仍通过本接口提交。
+
+误区、正解与其动画的 `source.reviewStatus` 继承理解版本；提示使用提示行自身状态；
+变式 `PENDING` 映射为 `source.verification=PENDING` 和内容 `reviewStatus=PENDING`，`APPROVED` 映射为 `REVIEWED`。
+题目来源 `question.source` 保持原有来源核验语义，规则理由仍是 `CURATED/REVIEWED`，不把待审核内容标成已审核。
+
+错误：非管理员（包括题目不存在时）统一 `1004`；无权限、无有效内容或已撤回为 `1004`；
+字段、类型、选项或进度组合无效为 `1001`；提示门禁未满足时请求正解为 `1005`。
+本接口幂等计算，无预览会话或数据库写入；不记录提示、动画、作答、学习事件、错题、排期、FSRS、经验、课程事实，
+也不读取或改变管理员的正式尝试。正式接口继续只接受正式 ID 和已审核内容。

@@ -23,6 +23,12 @@ public class QuestionTutorService {
 
     public Map<String, Object> next(Context context) {
         Map<String, Object> state = state(context);
+        return recommend(new Recommendation(context.correct(), context.attempt().solutionRevealedTime() != null,
+                context.variantAvailable() ? context.attempt().variantId() : null,
+                context.misconceptionViz(), context.solutionViz()), state);
+    }
+
+    public Map<String, Object> recommend(Recommendation context, Map<String, Object> state) {
         Object nextLevel = state.get("nextHintLevel");
         Map<String, Object> action;
         String reason;
@@ -33,7 +39,7 @@ public class QuestionTutorService {
                 case 2 -> "接着按步骤检查推理。";
                 default -> "再看一个相似情境，自己完成本题。";
             };
-        } else if (context.attempt().solutionRevealedTime() == null) {
+        } else if (!context.solutionRevealed()) {
             if (!context.correct() && context.misconceptionViz() != null
                     && !Boolean.TRUE.equals(state.get("misconceptionVizViewed"))) {
                 action = vizAction("MISCONCEPTION", context.misconceptionViz());
@@ -46,8 +52,8 @@ public class QuestionTutorService {
                 && !sameStory(context.misconceptionViz(), context.solutionViz())) {
             action = vizAction("SOLUTION", context.solutionViz());
             reason = "跟着本题数据再走一遍正确过程。";
-        } else if (context.variantAvailable() && !Boolean.TRUE.equals(state.get("variantAttempted"))) {
-            action = Map.of("type", "TRY_VARIANT", "variantId", context.attempt().variantId());
+        } else if (context.variantId() != null && !Boolean.TRUE.equals(state.get("variantAttempted"))) {
+            action = Map.of("type", "TRY_VARIANT", "variantId", context.variantId());
             reason = "换一个条件，独立检验是否掌握。";
         } else {
             action = Map.of("type", "DONE");
@@ -172,6 +178,9 @@ public class QuestionTutorService {
     private BusinessException unavailable() {
         return new BusinessException(ResultCode.NOT_FOUND, "题目导师内容不可用");
     }
+
+    public record Recommendation(boolean correct, boolean solutionRevealed, Long variantId,
+                                 Map<String, Object> misconceptionViz, Map<String, Object> solutionViz) { }
 
     public record Context(QuestionUnderstandingAttempt attempt, boolean correct,
                           Map<String, Object> misconceptionViz, Map<String, Object> solutionViz,

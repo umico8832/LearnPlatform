@@ -28,6 +28,14 @@ public class QuestionTutorMapper {
                 """, contentId, level);
     }
 
+    public List<Map<String, Object>> previewHints(long contentId) {
+        return db.queryForList("""
+                SELECT hint_level,hint_text,content_source,review_status FROM question_understanding_hint
+                WHERE content_id=? AND hint_level BETWEEN 1 AND 3 AND review_status IN ('PENDING','REVIEWED')
+                ORDER BY hint_level
+                """, contentId);
+    }
+
     public Map<String, Object> receipt(long attemptId, String requestId) {
         return one("""
                 SELECT h.hint_level,h.hint_text,h.content_source,h.review_status

@@ -75,22 +75,32 @@ public class QuestionUnderstandingMapper {
     }
 
     public Map<String, Object> variant(long variantId, long questionId) {
+        return variant(variantId, questionId, false);
+    }
+
+    public Map<String, Object> variant(long variantId, long questionId, boolean preview) {
         return one("""
                 SELECT v.* FROM ai_variant_question v JOIN question_ai_asset a ON a.id=v.asset_id
                 WHERE v.id=? AND a.question_id=? AND a.deleted=0 AND a.asset_type='VARIANT'
-                  AND v.review_status='APPROVED' AND v.question_type='SINGLE_CHOICE'
+                  AND (v.review_status='APPROVED' OR (? AND v.review_status='PENDING'))
+                  AND v.question_type='SINGLE_CHOICE'
                   AND v.changed_condition IS NOT NULL AND TRIM(v.changed_condition)<>''
-                """, variantId, questionId);
+                """, variantId, questionId, preview);
     }
 
     public Long approvedVariantId(long questionId) {
+        return variantId(questionId, false);
+    }
+
+    public Long variantId(long questionId, boolean preview) {
         Map<String, Object> row = one("""
                 SELECT v.id FROM ai_variant_question v JOIN question_ai_asset a ON a.id=v.asset_id
                 WHERE a.question_id=? AND a.deleted=0 AND a.asset_type='VARIANT'
-                  AND v.review_status='APPROVED' AND v.question_type='SINGLE_CHOICE'
+                  AND (v.review_status='APPROVED' OR (? AND v.review_status='PENDING'))
+                  AND v.question_type='SINGLE_CHOICE'
                   AND v.changed_condition IS NOT NULL AND TRIM(v.changed_condition)<>''
                 ORDER BY v.id LIMIT 1
-                """, questionId);
+                """, questionId, preview);
         return row == null ? null : number(row, "id");
     }
 

@@ -41,12 +41,14 @@ public class QuestionUnderstandingPresentation {
         return source;
     }
 
-    public Map<String, Object> sourceVariant() {
+    public Map<String, Object> sourceVariant() { return sourceVariant("REVIEWED"); }
+
+    public Map<String, Object> sourceVariant(String status) {
         Map<String, Object> source = new LinkedHashMap<>();
         source.put("kind", "AI_GENERATED");
         source.put("title", null);
         source.put("url", null);
-        source.put("verification", "REVIEWED");
+        source.put("verification", status);
         return source;
     }
 
@@ -61,7 +63,8 @@ public class QuestionUnderstandingPresentation {
             String kind = row.containsKey("content_source") ? (String) row.get("content_source")
                     : row.containsKey("solution_content_source") ? (String) row.get("solution_content_source")
                     : "AI_GENERATED";
-            viz.put("source", contentSource(kind));
+            String status = row.getOrDefault("review_status", "REVIEWED").toString();
+            viz.put("source", contentSource(kind, "APPROVED".equals(status) ? "REVIEWED" : status));
             return viz;
         } catch (Exception exception) {
             throw new IllegalStateException("理解可视化内容无效", exception);
@@ -69,7 +72,11 @@ public class QuestionUnderstandingPresentation {
     }
 
     public Map<String, Object> contentSource(String kind) {
-        return Map.of("kind", kind, "reviewStatus", "REVIEWED");
+        return contentSource(kind, "REVIEWED");
+    }
+
+    public Map<String, Object> contentSource(String kind, String status) {
+        return Map.of("kind", kind, "reviewStatus", status);
     }
 
     private long id(Map<String, Object> row, String key) {
