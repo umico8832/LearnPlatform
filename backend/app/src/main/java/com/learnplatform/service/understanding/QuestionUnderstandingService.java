@@ -75,6 +75,7 @@ public class QuestionUnderstandingService {
         data.put("attemptId", attemptId);
         data.put("correct", practiceResult.getCorrect());
         data.put("answer", answer.label());
+        data.put("review", mapper.review(userId, questionId, "PRACTICE", practiceResult.getRecordId()));
         Map<String, Object> misconception = practiceResult.getCorrect() ? null
                 : mapper.misconception(id(ready.content(), "id"), answer.optionId());
         if (misconception == null) {
@@ -159,7 +160,7 @@ public class QuestionUnderstandingService {
             if (!answer.label().equals(existing.get("user_answer"))) {
                 throw business("变式答案已锁定");
             }
-            return variantResult(existing, variant);
+            return variantResult(existing, variant, userId, attempt.questionId());
         }
         boolean correct = answer.label().equalsIgnoreCase((String) variant.get("correct_answer"));
         String assistance = tutor.assistance(originId);
@@ -175,12 +176,14 @@ public class QuestionUnderstandingService {
             fsrs.score(userId, attempt.questionId(), FsrsReviewService.Source.UNDERSTANDING_VARIANT,
                     id, correct, null);
         }
-        return variantResult(saved, variant);
+        return variantResult(saved, variant, userId, attempt.questionId());
     }
 
-    private Map<String, Object> variantResult(Map<String, Object> attempt, Map<String, Object> variant) {
+    private Map<String, Object> variantResult(Map<String, Object> attempt, Map<String, Object> variant,
+                                              long userId, long questionId) {
         Map<String, Object> data = map();
         data.put("variantAttemptId", id(attempt, "id"));
+        data.put("review", mapper.review(userId, questionId, "UNDERSTANDING_VARIANT", id(attempt, "id")));
         data.put("correct", ((Number) attempt.get("is_correct")).intValue() == 1);
         data.put("correctAnswer", variant.get("correct_answer"));
         data.put("explanation", variant.get("analysis"));

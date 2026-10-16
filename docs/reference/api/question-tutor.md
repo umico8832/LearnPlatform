@@ -18,7 +18,7 @@
 | `POST /api/understanding/attempts/{attemptId}/tutor/hints/next` | `{requestId}`，小写规范 UUID | `{level, text, source, state}` | 服务端分配下一级；同一 `requestId` 的并发或重试返回同一提示，不跳级 |
 | `POST /api/understanding/attempts/{attemptId}/tutor/viz-views` | `{context}` | `{context, viewed: true, state}` | `context` 为 `MISCONCEPTION` 或 `SOLUTION`；仅接受该尝试实际可见且存在的场景，重复记录幂等 |
 | `POST /api/understanding/attempts/{attemptId}/solution/reveal` | 无请求体 | M2 字段及 `explanationSource`、可视化 `source` | 错答且已审核提示链可用时，三级提示均取得后才开放；其余沿用 M2 幂等语义 |
-| `POST /api/understanding/variants/{variantId}/attempts` | M2 的 `answer`、可选 `answerTime`、`originAttemptId` | M2 字段；`assistance` 为 `UNAIDED` 或 `AIDED` | 服务端按原尝试提交前已用提示判定并持久化，客户端不得传入或覆盖 |
+| `POST /api/understanding/variants/{variantId}/attempts` | M2 的 `answer`、可选 `answerTime`、`originAttemptId` | M2 字段；`assistance` 为 `UNAIDED` 或 `AIDED`；含 `review` | 服务端按原尝试提交前已用提示判定并持久化，客户端不得传入或覆盖 |
 
 `state` 为 `{nextHintLevel, hintsUsed, misconceptionVizViewed, solutionVizViewed, solutionRevealed, variantAttempted}`。`nextHintLevel` 仅在完整已审核提示链可用、原题答错、正解尚未开放且仍有下一等级时为 `1`、`2` 或 `3`，其他情况为 `null`。`hintsUsed` 是已领取的最高等级，取值 `0..3`。两项可视化状态只表明客户端报告“已开始播放”，不宣称学习者看完或理解。`variantAttempted` 只表明本次原尝试已有变式提交。
 
@@ -87,3 +87,9 @@
 字段、类型、选项或进度组合无效为 `1001`；提示门禁未满足时请求正解为 `1005`。
 本接口幂等计算，无预览会话或数据库写入；不记录提示、动画、作答、学习事件、错题、排期、FSRS、经验、课程事实，
 也不读取或改变管理员的正式尝试。正式接口继续只接受正式 ID 和已审核内容。
+
+## 作答后复习日期（B6）
+
+原题与变式正式作答响应增加 `review: {nextReviewDate, counted}`，前端直接读取日期和本次是否计分；
+空值、幂等重试和辅助变式语义见[题目理解 API](question-understanding.md#作答后的当前复习排期b6)。
+预览响应中的 `attempt` / `variantResult` 没有 `review`。

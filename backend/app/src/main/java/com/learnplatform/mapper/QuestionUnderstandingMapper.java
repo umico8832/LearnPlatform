@@ -150,6 +150,21 @@ public class QuestionUnderstandingMapper {
                 """, originAttemptId, userId, variantId, answer, correct ? 1 : 0, assistance, answerTime);
     }
 
+    public Map<String, Object> review(long userId, long questionId, String source, long sourceId) {
+        return db.queryForObject("""
+                SELECT (SELECT next_review_date FROM question_review_schedule
+                        WHERE user_id=? AND question_id=? AND deleted=0) AS next_review_date,
+                       EXISTS (SELECT 1 FROM fsrs_review_event
+                        WHERE user_id=? AND question_id=? AND source_type=? AND source_id=?) AS counted
+                """, (row, index) -> {
+                    Map<String, Object> result = new java.util.LinkedHashMap<>();
+                    java.sql.Date date = row.getDate("next_review_date");
+                    result.put("nextReviewDate", date == null ? null : date.toLocalDate());
+                    result.put("counted", row.getBoolean("counted"));
+                    return result;
+                }, userId, questionId, userId, questionId, source, sourceId);
+    }
+
     private Map<String, Object> one(String sql, Object... args) {
         List<Map<String, Object>> rows = db.queryForList(sql, args);
         return rows.isEmpty() ? null : rows.getFirst();

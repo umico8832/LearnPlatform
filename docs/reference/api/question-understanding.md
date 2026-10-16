@@ -33,3 +33,21 @@ M3 分级提示与辅助记录见[题目导师 API](question-tutor.md)。
 变式复用 `ai_variant_question` 的题干、选项、私有答案、解析与 `APPROVED` 审查状态，通过其 `asset_id → question_ai_asset.question_id` 关联原题。M2 增加 `changed_condition`，审核时确认只改一个可核对条件并保留所测概念；可选 `viz` 同样只存 spec。创建原题尝试时锁定当前批准的变式 ID，后续内容变化不悄悄换题。变式取得与提交都重新检查其审核状态、母题关系和原题访问，未开放正解或无可用变式时返回 `1004`。一个原尝试只接受一条变式作答：并发或重试返回已锁定的首次结果，若再次请求的答案不同则返回 `1005`；不得形成第二次学习事件。`assistance` 由服务端写入，`UNAIDED` 表示本次原尝试未领取提示，`AIDED` 表示已领取提示；客户端不能传入。FSRS 仅对 `UNAIDED` 的首次判分形成评分事件，映射见[练习与复习 API](practice-and-review.md#间隔重复)。
 
 当前预置题目由迁移中的题号、课程内容键与知识点内容键定位；数据库自增 ID 不作为固定契约。
+
+## 作答后的当前复习排期（B6）
+
+正式原题 `POST /api/understanding/questions/{questionId}/attempts` 与正式变式
+`POST /api/understanding/variants/{variantId}/attempts` 的成功 `data` 均增加必返字段：
+
+```json
+{"review": {"nextReviewDate": "2026-10-17", "counted": true}}
+```
+
+前端直接使用 `data.review.nextReviewDate` 显示“下次复习”，无须另外查卡片。
+日期为该用户原题当前未删除卡片的真实 `YYYY-MM-DD` 到期日；无卡片/日期时返回 `null`，不按正误或历史推断。
+`counted` 表示这一次作答已有对应 FSRS 评分事实：原题独立作答及 `UNAIDED` 变式为 `true`，
+`AIDED` 变式为 `false`，其日期仍读取原题现存卡片，不因辅助作答重排。
+
+同一变式答案重试仍幂等，`counted` 继续表示原作答是否计入，日期每次读取当前卡片，可能因后续正式作答而变化。
+该字段不触发额外评分或创建卡片；错误码与既有作答接口一致，不新增错误码。
+管理员[预览](question-tutor.md#管理员无副作用预览b5)不返回 `review`，也不读取正式排期。

@@ -53,7 +53,13 @@ export interface Misconception {
   source: { kind: 'CURATED' | 'AI_GENERATED'; reviewStatus: 'REVIEWED' | 'PENDING' }
 }
 
+export interface UnderstandingReview {
+  nextReviewDate: string | null
+  counted: boolean
+}
+
 export interface AttemptResult {
+  review?: UnderstandingReview
   attemptId: number
   correct: boolean
   answer: string
@@ -77,6 +83,7 @@ export interface Variant {
 }
 
 export interface VariantResult {
+  review?: UnderstandingReview
   variantAttemptId: number
   correct: boolean
   correctAnswer: string

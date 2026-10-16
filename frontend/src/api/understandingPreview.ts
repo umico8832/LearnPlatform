@@ -45,11 +45,11 @@ export interface TutorNext {
 export interface UnderstandingPreview {
   preview: true
   question: UnderstandingQuestion
-  attempt: Omit<AttemptResult, 'attemptId'> | null
+  attempt: Omit<AttemptResult, 'attemptId' | 'review'> | null
   hints: { level: number; text: string; source: UnderstandingContentSource }[]
   solution: Solution | null
   variant: Variant | null
-  variantResult: Omit<VariantResult, 'variantAttemptId'> | null
+  variantResult: Omit<VariantResult, 'variantAttemptId' | 'review'> | null
   next: TutorNext | null
 }
 

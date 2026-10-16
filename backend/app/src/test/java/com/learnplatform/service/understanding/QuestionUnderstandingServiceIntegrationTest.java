@@ -72,6 +72,8 @@ class QuestionUnderstandingServiceIntegrationTest extends IntegrationTestBase {
         assertThrowsCode(1004, () -> service.question(USER, -1));
         Map<String, Object> attempt = service.submit(USER, questionId, body("B"));
         assertFalse(attempt.containsKey("correctAnswer"));
+        assertEquals(true, ((Map<?, ?>) attempt.get("review")).get("counted"));
+        assertNotNull(((Map<?, ?>) attempt.get("review")).get("nextReviewDate"));
         assertEquals("以为能越过 2 直接弹出 1", ((Map<?, ?>) attempt.get("misconception")).get("title"));
         assertEquals(1, count("SELECT COUNT(*) FROM practice_record WHERE user_id=? AND question_id=?", USER, questionId));
         assertEquals(1, count("SELECT COUNT(*) FROM course_learning_event WHERE user_id=? AND event_source='PRACTICE'", USER));
@@ -176,6 +178,8 @@ class QuestionUnderstandingServiceIntegrationTest extends IntegrationTestBase {
         }
         Map<String, Object> result = service.submitVariant(USER, variant, request);
         assertEquals("UNAIDED", result.get("assistance"));
+        assertEquals(true, ((Map<?, ?>) result.get("review")).get("counted"));
+        assertNotNull(((Map<?, ?>) result.get("review")).get("nextReviewDate"));
         assertEquals(2, count("SELECT COUNT(*) FROM fsrs_review_event WHERE user_id=? AND question_id=?", USER, questionId));
         assertEquals(true, result.get("correct"));
         assertEquals("D", result.get("correctAnswer"));
@@ -217,7 +221,18 @@ class QuestionUnderstandingServiceIntegrationTest extends IntegrationTestBase {
         assertEquals(1, count("SELECT COUNT(*) FROM question_understanding_viz_view WHERE attempt_id=? AND context='MISCONCEPTION'", origin));
         assertEquals("A", service.reveal(USER, origin).get("correctAnswer"));
         long variant = ((Number) service.variant(USER, origin).get("variantId")).longValue();
-        assertEquals("AIDED", service.submitVariant(USER, variant, variantBody(origin, "D", null)).get("assistance"));
+        var aided = service.submitVariant(USER, variant, variantBody(origin, "D", null));
+        assertEquals("AIDED", aided.get("assistance"));
+        assertEquals(false, ((Map<?, ?>) aided.get("review")).get("counted"));
+        var originalDate = jdbc.queryForObject("SELECT next_review_date FROM question_review_schedule WHERE user_id=? AND question_id=?", java.time.LocalDate.class, USER, questionId);
+        assertEquals(originalDate, ((Map<?, ?>) aided.get("review")).get("nextReviewDate"));
+        jdbc.update("UPDATE question_review_schedule SET next_review_date='2030-04-05' WHERE user_id=? AND question_id=?", USER, questionId);
+        var retry = service.submitVariant(USER, variant, variantBody(origin, "D", null));
+        assertEquals(java.time.LocalDate.of(2030, 4, 5), ((Map<?, ?>) retry.get("review")).get("nextReviewDate"));
+        jdbc.update("UPDATE question_review_schedule SET deleted=1 WHERE user_id=? AND question_id=?", USER, questionId);
+        var withoutCard = service.submitVariant(USER, variant, variantBody(origin, "D", null));
+        assertNull(((Map<?, ?>) withoutCard.get("review")).get("nextReviewDate"));
+        assertEquals(false, ((Map<?, ?>) withoutCard.get("review")).get("counted"));
         assertEquals(1, count("SELECT COUNT(*) FROM question_understanding_variant_attempt WHERE origin_attempt_id=? AND assistance='AIDED'", origin));
         assertEquals(1, count("SELECT COUNT(*) FROM fsrs_review_event WHERE user_id=? AND question_id=?", USER, questionId));
     }
