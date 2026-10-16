@@ -817,14 +817,15 @@ test('2026主观题提交后由管理员按评分点批阅并固化总分', asyn
   await expect(page.locator('.result-tag')).toHaveCount(13)
 })
 
-test('用户投稿可由管理员审核并入库', async ({ page }) => {
+test('用户投稿可由管理员审核并入库', async ({ browser, page }) => {
   const questionContent = `E2E 投稿题目 ${Date.now()}`
 
-  await loginAs(page, 'testuser', 'test123')
+  await createLearnerAndLogin(browser, page, 'submission')
 
   await page.goto('/submit')
   await expect(page.getByRole('main').getByText('题目投稿', { exact: true })).toBeVisible()
-  await page.getByRole('button', { name: '投稿新题目' }).click()
+  await expect(page.getByRole('region', { name: '我的题目投稿' })).toContainText('还没有投稿记录')
+  await page.getByRole('group', { name: '题目投稿操作' }).getByRole('button', { name: '投稿新题目' }).click()
   const submissionDialog = page.getByRole('dialog', { name: '投稿新题目' })
   const courseSelect = submissionDialog.getByRole('combobox', { name: /所属课程/ })
   await courseSelect.click()
