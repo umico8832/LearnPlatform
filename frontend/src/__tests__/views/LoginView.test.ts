@@ -1,50 +1,30 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { enableAutoUnmount, flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
 import LoginView from '@/views/auth/LoginView.vue'
 
 enableAutoUnmount(afterEach)
 
-const { mockLogin, mockPush, mockSetLoginInfo, mockSuccess, mockValidate, mockVerify } = vi.hoisted(() => ({
+const { mockLogin, mockPush, mockSetLoginInfo, mockVerify } = vi.hoisted(() => ({
   mockLogin: vi.fn(),
   mockPush: vi.fn(),
   mockSetLoginInfo: vi.fn(),
-  mockSuccess: vi.fn(),
-  mockValidate: vi.fn().mockResolvedValue(true),
   mockVerify: vi.fn(),
 }))
 const mockRoute: { query: Record<string, string> } = { query: {} }
-vi.mock('@/api/auth', () => ({ login: (...args: unknown[]) => mockLogin(...args) }))
+vi.mock('@/api/auth', () => ({
+  login: (...args: unknown[]) => mockLogin(...args),
+  getOAuthProviders: () => Promise.resolve({ data: { google: false } }),
+}))
 vi.mock('@/stores/user', () => ({ useUserStore: () => ({ setLoginInfo: mockSetLoginInfo }) }))
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: mockPush }),
   useRoute: () => mockRoute,
   RouterLink: { template: '<a><slot /></a>' },
 }))
-vi.mock('element-plus', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('element-plus')>()
-  return { ...actual, ElMessage: { ...actual.ElMessage, success: mockSuccess } }
-})
 
 const stubs = {
-  'router-link': { template: '<a><slot /></a>' },
-  'el-form': {
-    template: '<form><slot /></form>',
-    props: ['model', 'rules'],
-    methods: { validate: () => mockValidate() },
-  },
-  'el-form-item': { template: '<label><slot /></label>', props: ['label', 'prop'] },
-  'el-input': {
-    template:
-      '<input :value="modelValue" :placeholder="placeholder" :type="type||\'text\'" @input="$emit(\'update:modelValue\',$event.target.value)" />',
-    props: ['modelValue', 'placeholder', 'type'],
-  },
-  'el-button': {
-    template: '<button :disabled="disabled"><slot /></button>',
-    props: ['disabled', 'loading', 'nativeType'],
-  },
-  'el-icon': { template: '<span><slot /></span>' },
-  TurnstileDialog: defineComponent({
+  TurnstileSheet: defineComponent({
     setup(_props, { expose }) {
       expose({ verify: mockVerify })
       return () => h('div')
@@ -54,11 +34,15 @@ const stubs = {
 function mountLogin() {
   return mount(LoginView, { global: { stubs } })
 }
+async function fill(w: VueWrapper, account = 'learner', password = 'password123') {
+  const inputs = w.findAll('input')
+  await inputs[0].setValue(account)
+  await inputs[1].setValue(password)
+}
 
 describe('LoginView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockValidate.mockResolvedValue(true)
     mockVerify.mockResolvedValue('turnstile-ok')
     mockRoute.query = {}
     mockLogin.mockResolvedValue({ data: { token: 'jwt', user: { id: 1, username: 'learner', role: 'USER' } } })
@@ -100,20 +84,24 @@ describe('LoginView', () => {
     await flushPromises()
     expect(mockPush).toHaveBeenCalledWith('/exams')
   })
-  it('does not submit invalid form', async () => {
-    mockValidate.mockResolvedValue(false)
+  it('does not submit an incomplete form and says which field is missing', async () => {
     const w = mountLogin()
+    await w.findAll('input')[0].setValue('learner')
     await w.find('form').trigger('submit')
     await flushPromises()
     expect(mockLogin).not.toHaveBeenCalled()
     expect(mockVerify).not.toHaveBeenCalled()
+    expect(w.text()).toContain('请输入密码')
+    expect(w.findAll('input')[1].attributes('aria-invalid')).toBe('true')
+    await w.findAll('input')[1].setValue('x')
+    expect(w.text()).not.toContain('请输入密码')
   })
   it('requests verification only on submit and sends nothing after cancellation', async () => {
     mockVerify.mockResolvedValue(null)
     const w = mountLogin()
     expect(w.find('.turnstile-stub').exists()).toBe(false)
     expect(mockVerify).not.toHaveBeenCalled()
-    await w.find('input').setValue('learner')
+    await fill(w)
     await w.find('form').trigger('submit')
     await flushPromises()
     expect(mockVerify).toHaveBeenCalledOnce()
@@ -124,6 +112,7 @@ describe('LoginView', () => {
     let resolveVerification!: (token: string) => void
     mockVerify.mockImplementation(() => new Promise<string>((resolve) => (resolveVerification = resolve)))
     const w = mountLogin()
+    await fill(w)
     await w.find('form').trigger('submit')
     await flushPromises()
     await w.find('form').trigger('submit')
@@ -141,6 +130,7 @@ describe('LoginView', () => {
     mockVerify.mockResolvedValueOnce('first-token').mockResolvedValueOnce('second-token')
     mockLogin.mockRejectedValueOnce(new Error('login failed'))
     const w = mountLogin()
+    await fill(w)
     await w.find('form').trigger('submit')
     await flushPromises()
     await w.find('form').trigger('submit')
@@ -158,6 +148,7 @@ describe('LoginView', () => {
       }),
     )
     const w = mountLogin()
+    await fill(w)
     await w.find('form').trigger('submit')
     await flushPromises()
     w.unmount()
@@ -169,7 +160,7 @@ describe('LoginView', () => {
   it('shows login failure beside the form and retains the account draft', async () => {
     mockLogin.mockRejectedValueOnce(new Error('用户名或密码错误'))
     const w = mountLogin()
-    await w.find('input').setValue('learner')
+    await fill(w)
     await w.find('form').trigger('submit')
     await flushPromises()
     expect(w.get('[role="alert"]').text()).toContain('用户名或密码错误')

@@ -118,6 +118,7 @@ defineExpose({ reset })
 </script>
 
 <style scoped>
+/* Inside a new-baseline (.lt) page the --lt- tokens apply; elsewhere the old ones. */
 .turnstile-box {
   position: relative;
   width: 100%;
@@ -128,8 +129,8 @@ defineExpose({ reset })
   display: flex;
   align-items: center;
   margin: 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
+  color: var(--lt-label-2, var(--lp-text-secondary));
+  font-size: var(--lt-text-footnote, var(--lp-text-sm));
 }
 .turnstile-container {
   min-height: 65px;
@@ -137,8 +138,8 @@ defineExpose({ reset })
 }
 .turnstile-error {
   margin: 7px 0 0;
-  color: var(--lp-danger);
-  font-size: var(--lp-text-xs);
+  color: var(--lt-red-text, var(--lp-danger));
+  font-size: var(--lt-text-caption, var(--lp-text-xs));
   line-height: 1.5;
 }
 </style>

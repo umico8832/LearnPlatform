@@ -19,46 +19,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
-import { useRoute } from 'vue-router'
-import { getOAuthProviders } from '@/api/auth'
-import googleIcon from '@/assets/auth/google.png'
+import { useOAuthProviders } from './useOAuthProviders'
 
 const props = withDefaults(defineProps<{ preview?: boolean; disabled?: boolean }>(), {
   preview: false,
   disabled: false,
 })
-const route = useRoute()
-const googleEnabled = ref(props.preview)
-const providers = computed(() =>
-  googleEnabled.value ? [{ id: 'google', name: 'Google', icon: googleIcon, enabled: true }] : [],
-)
-let alive = true
-onBeforeUnmount(() => {
-  alive = false
+const { providers, startGoogleLogin } = useOAuthProviders({
+  preview: () => props.preview,
+  disabled: () => props.disabled,
 })
-
-onMounted(async () => {
-  if (props.preview) return
-  try {
-    const response = await getOAuthProviders()
-    if (alive) googleEnabled.value = response.data.google
-  } catch {
-    if (alive) googleEnabled.value = false
-  }
-})
-
-function startGoogleLogin() {
-  if (!googleEnabled.value || props.disabled) return
-  const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : ''
-  if (redirect.startsWith('/') && !redirect.startsWith('//')) {
-    sessionStorage.setItem('oauth_login_redirect', redirect)
-  } else {
-    sessionStorage.removeItem('oauth_login_redirect')
-  }
-  const apiBaseUrl = String(import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
-  window.location.assign(`${apiBaseUrl}/auth/oauth/authorization/google`)
-}
 </script>
 
 <style scoped>
