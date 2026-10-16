@@ -13,7 +13,7 @@
       :has-recommended-target="Boolean(overview?.recommendedTargets.length)"
       :course-id="courseId"
       :facts-refresh-key="factsRefreshKey"
-      @back="router.push({ name: 'MyCourses' })"
+      @back="router.push({ name: 'CourseOverview', params: { id: courseId } })"
       @retry="fetchOverview"
       @primary-action="handlePrimaryAction"
       @open-content="openCourseContent"

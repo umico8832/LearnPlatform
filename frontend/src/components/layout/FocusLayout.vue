@@ -68,7 +68,8 @@ function isInternalPath(path: unknown): path is string {
 }
 
 function fallbackPath() {
-  if (route.name === 'TutorSession' && typeof route.params.id === 'string') return `/my-courses/${route.params.id}`
+  if (route.name === 'TutorSession' && typeof route.params.id === 'string')
+    return `/my-courses/${route.params.id}/space`
   if (route.name === 'ExamTake' || route.name === 'ExamLearning' || route.name === 'ExamResult') return '/exams'
   return '/my-courses'
 }

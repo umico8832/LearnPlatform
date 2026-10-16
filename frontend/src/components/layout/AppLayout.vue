@@ -222,7 +222,7 @@ const currentTitle = computed(() => (route.meta.title as string) || '学习')
 const parentPath = computed(() => {
   if (route.name === 'CommunityDetail') return { path: '/community', label: '社区共建' }
   if (route.name === 'CourseDetail') return { path: '/courses', label: '课程库' }
-  if (route.name === 'CourseOverview') return { path: '/my-courses', label: '我的课程' }
+  if (route.name === 'CourseSpace') return { path: `/my-courses/${route.params.id}`, label: '课程' }
   return undefined
 })
 

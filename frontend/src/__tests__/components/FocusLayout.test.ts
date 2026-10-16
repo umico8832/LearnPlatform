@@ -18,7 +18,7 @@ function createTestRouter() {
     history: createMemoryHistory(),
     routes: [
       { path: '/my-courses', component: { template: '<div>课程</div>' } },
-      { path: '/my-courses/:id', component: { template: '<div>课程空间</div>' } },
+      { path: '/my-courses/:id/space', component: { template: '<div>课程空间</div>' } },
       { path: '/my-courses/:id/tutor', name: 'TutorSession', component: { template: '<div>教学</div>' } },
       { path: '/exams', component: { template: '<div>考试</div>' } },
       { path: '/exams/result/:recordId', name: 'ExamResult', component: { template: '<div>结果</div>' } },
@@ -27,7 +27,7 @@ function createTestRouter() {
 }
 
 describe('FocusLayout navigation', () => {
-  it('returns Tutor sessions to their known course when no internal history entry exists', async () => {
+  it('returns Tutor sessions to their course space when no internal history entry exists', async () => {
     const router = createTestRouter()
     await router.push('/my-courses/17/tutor')
     await router.isReady()
@@ -36,7 +36,7 @@ describe('FocusLayout navigation', () => {
     await wrapper.get('.focus-back').trigger('click')
     await flushPromises()
 
-    expect(router.currentRoute.value.path).toBe('/my-courses/17')
+    expect(router.currentRoute.value.path).toBe('/my-courses/17/space')
   })
 
   it('uses an internal Vue history back path before the exam fallback', async () => {

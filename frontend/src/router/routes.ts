@@ -38,6 +38,12 @@ export const learnerRoutes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, title: '一道题' },
   },
   {
+    path: '/my-courses/:id(\\d+)',
+    name: 'CourseOverview',
+    component: () => import('@/views/course/home/CourseHomeView.vue'),
+    meta: { requiresAuth: true, title: '课程' },
+  },
+  {
     path: '/wrong-questions',
     name: 'WrongQuestions',
     component: () => import('@/views/wrong/WrongQuestionsView.vue'),
@@ -104,8 +110,8 @@ export const learnerRoutes: RouteRecordRaw[] = [
         meta: { title: '课程详情' },
       },
       {
-        path: 'my-courses/:id',
-        name: 'CourseOverview',
+        path: 'my-courses/:id/space',
+        name: 'CourseSpace',
         component: () => import('@/views/course/CourseOverviewView.vue'),
         meta: { title: '课程空间' },
       },

@@ -12,7 +12,7 @@
       </section>
     </template>
     <template v-else>
-      <div class="back-row"><el-button text :icon="ArrowLeft" @click="emit('back')">返回我的课程</el-button></div>
+      <div class="back-row"><el-button text :icon="ArrowLeft" @click="emit('back')">返回课程</el-button></div>
       <section class="overview-hero">
         <div class="hero-copy">
           <h1 class="hero-title">{{ overview.courseName }}</h1>
