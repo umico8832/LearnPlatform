@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onActivated, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowRight, ChevronLeft, RotateCcw } from '@lucide/vue'
 import { LtButton, LtCard, LtIconButton } from '@/components/living'
@@ -31,6 +31,13 @@ function openSpace() {
   void router.push({ name: 'CourseSpace', params: { id: courseId.value } })
 }
 
+/** The tab names the course once it is known, after the router's generic title. */
+function applyTitle() {
+  if (overview.value?.courseName) document.title = `${overview.value.courseName} · LearnPlatform`
+}
+
+watch(() => overview.value?.courseName, applyTitle)
+onActivated(applyTitle)
 onMounted(load)
 </script>
 

@@ -202,7 +202,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 }
 
 .choice[data-state='selected'] .choice-key {
-  background: var(--lt-accent);
+  background: var(--lt-accent-fill);
   color: var(--lt-on-accent);
 }
 
@@ -217,7 +217,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 .choice[data-state='wrong'] .choice-key {
   background: var(--lt-orange);
-  color: var(--lt-on-accent);
+  color: var(--lt-on-tint);
 }
 
 .choice[data-state='wrong'] .choice-tag {
@@ -231,7 +231,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 .choice[data-state='right'] .choice-key {
   background: var(--lt-green);
-  color: var(--lt-on-accent);
+  color: var(--lt-on-tint);
 }
 
 .choice[data-state='right'] .choice-tag {

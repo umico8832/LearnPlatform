@@ -57,7 +57,7 @@ withDefaults(
 }
 
 .lt-icon-button[data-variant='primary'] {
-  background: var(--lt-accent);
+  background: var(--lt-accent-fill);
   color: var(--lt-on-accent);
   box-shadow: var(--lt-shadow-accent);
 }
@@ -103,7 +103,7 @@ withDefaults(
   }
 
   .lt-icon-button[data-variant='primary']:hover:not(:disabled) {
-    background: var(--lt-accent-pressed);
+    background: var(--lt-accent-fill-pressed);
   }
 }
 </style>

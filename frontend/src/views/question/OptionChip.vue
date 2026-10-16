@@ -41,7 +41,7 @@ defineProps<{ tone: 'orange' | 'green'; label: string; optionKey?: string | null
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  color: var(--lt-on-accent);
+  color: var(--lt-on-tint);
   font: 600 var(--lt-text-caption) / 1 var(--lt-font-rounded);
 }
 

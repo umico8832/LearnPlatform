@@ -213,7 +213,7 @@
 }
 
 .vz-node[data-focus='ptr'] .vz-ptr {
-  background: var(--lt-accent);
+  background: var(--lt-accent-fill);
 }
 
 .vz-node[data-focus='ptr'] .vz-ptr-dot {

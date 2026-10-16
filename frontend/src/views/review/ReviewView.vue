@@ -91,7 +91,9 @@ onMounted(() => review.load())
       <section aria-labelledby="due-title">
         <div class="section-head">
           <h2 id="due-title" class="section-title">
-            今天到期<span v-if="due.length" class="count">{{ due.length }}</span>
+            今天到期<span v-if="due.length" class="sr-only">，</span
+            ><span v-if="due.length" class="count">{{ due.length }}</span
+            ><span v-if="due.length" class="sr-only">道</span>
           </h2>
           <LtButton v-if="due.length" variant="primary" @click="review.open(due[0])">
             从第一道开始
@@ -116,7 +118,8 @@ onMounted(() => review.load())
       <section v-if="cards.length" class="all" aria-labelledby="cards-title">
         <div class="section-head">
           <h2 id="cards-title" class="section-title">
-            全部卡片<span class="count">{{ cards.length }}</span>
+            全部卡片<span class="sr-only">，共</span><span class="count">{{ cards.length }}</span
+            ><span class="sr-only">张</span>
           </h2>
         </div>
         <LtCard radius="xl" padding="none" class="list">

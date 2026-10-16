@@ -52,7 +52,7 @@ withDefaults(
 }
 
 .lt-button[data-variant='primary'] {
-  background: var(--lt-accent);
+  background: var(--lt-accent-fill);
   color: var(--lt-on-accent);
 }
 
@@ -66,7 +66,7 @@ withDefaults(
 }
 
 .lt-button[data-variant='primary']:active:not(:disabled) {
-  background: var(--lt-accent-pressed);
+  background: var(--lt-accent-fill-pressed);
 }
 
 .lt-button:disabled {
@@ -90,7 +90,7 @@ withDefaults(
   }
 
   .lt-button[data-variant='primary']:hover:not(:disabled) {
-    background: var(--lt-accent-pressed);
+    background: var(--lt-accent-fill-pressed);
   }
 
   .lt-button[data-variant='quiet']:hover:not(:disabled) {

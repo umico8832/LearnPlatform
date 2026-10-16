@@ -57,7 +57,7 @@ withDefaults(
 }
 
 .lt-link-button[data-variant='primary'] {
-  background: var(--lt-accent);
+  background: var(--lt-accent-fill);
   color: var(--lt-on-accent);
 }
 
@@ -71,7 +71,7 @@ withDefaults(
 }
 
 .lt-link-button[data-variant='primary']:active {
-  background: var(--lt-accent-pressed);
+  background: var(--lt-accent-fill-pressed);
 }
 
 .lt-link-button :deep(svg) {
@@ -86,7 +86,7 @@ withDefaults(
   }
 
   .lt-link-button[data-variant='primary']:hover {
-    background: var(--lt-accent-pressed);
+    background: var(--lt-accent-fill-pressed);
   }
 
   .lt-link-button[data-variant='quiet']:hover {

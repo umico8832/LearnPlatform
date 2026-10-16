@@ -321,7 +321,7 @@ defineExpose({ handleKey })
 
 .viz-option[data-state='wrong'] .viz-option-key {
   background: var(--lt-orange);
-  color: var(--lt-on-accent);
+  color: var(--lt-on-tint);
 }
 
 .viz-option[data-state='right'] {
@@ -331,7 +331,7 @@ defineExpose({ handleKey })
 
 .viz-option[data-state='right'] .viz-option-key {
   background: var(--lt-green);
-  color: var(--lt-on-accent);
+  color: var(--lt-on-tint);
 }
 
 .viz-option[data-state='dim'] {

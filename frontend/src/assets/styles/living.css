@@ -43,8 +43,9 @@
 
   /* --------------------------------------------------------- text & fills */
   --lt-label: light-dark(#1d1d1f, #f5f5f7);
-  --lt-label-2: light-dark(rgba(60, 60, 67, 0.74), rgba(235, 235, 245, 0.68));
-  --lt-label-3: light-dark(rgba(60, 60, 67, 0.46), rgba(235, 235, 245, 0.38));
+  --lt-label-2: light-dark(rgba(60, 60, 67, 0.82), rgba(235, 235, 245, 0.74));
+  /* 三级文字仍要达到 WCAG AA（画布与卡片上 ≥ 4.5:1）；更淡的只用于占位与禁用。 */
+  --lt-label-3: light-dark(rgba(60, 60, 67, 0.72), rgba(235, 235, 245, 0.52));
   --lt-separator: light-dark(rgba(60, 60, 67, 0.13), rgba(84, 84, 88, 0.62));
   --lt-fill: light-dark(rgba(120, 120, 128, 0.16), rgba(120, 120, 128, 0.36));
   --lt-fill-2: light-dark(rgba(120, 120, 128, 0.1), rgba(120, 120, 128, 0.24));
@@ -52,10 +53,15 @@
 
   /* ------------------------------------------------- colours with meaning
    * accent = 操作与焦点；green = 正确；orange = 需要注意；red = 错误与危险；purple = 预测或假设。 */
-  --lt-accent: light-dark(#0071e3, #0a84ff);
-  --lt-accent-pressed: light-dark(#0062c4, #3d9bff);
+  --lt-accent: light-dark(#0068d6, #0a84ff);
+  --lt-accent-pressed: light-dark(#005bbd, #3d9bff);
+  /* 白字所在的强调色填充：深色外观的系统蓝太亮，白字达不到 4.5:1，填充单独取深一档。 */
+  --lt-accent-fill: light-dark(#0068d6, #0a6ee0);
+  --lt-accent-fill-pressed: light-dark(#005bbd, #0a62c8);
   --lt-accent-soft: light-dark(rgba(0, 113, 227, 0.11), rgba(10, 132, 255, 0.2));
   --lt-on-accent: #ffffff;
+  /* 橙、绿实色上的文字：两种外观的橙绿都偏亮，用深色字。 */
+  --lt-on-tint: #1d1d1f;
   --lt-green: light-dark(#34c759, #30d158);
   --lt-green-text: light-dark(#1f8a3c, #30d158);
   --lt-green-soft: light-dark(rgba(52, 199, 89, 0.14), rgba(48, 209, 88, 0.18));
