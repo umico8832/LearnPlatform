@@ -10,6 +10,7 @@ import type { Misconception, UnderstandingOption } from '@/api/understanding'
 import { useUserStore } from '@/stores/user'
 import { redoWhen } from '@/utils/redoDate'
 import AnswerCard from './AnswerCard.vue'
+import AskPanel from './AskPanel.vue'
 import ContentByline from './ContentByline.vue'
 import FlowStep from './FlowStep.vue'
 import QuestionHead from './QuestionHead.vue'
@@ -17,6 +18,7 @@ import HintLadder from './HintLadder.vue'
 import OptionChip from './OptionChip.vue'
 import QuestionProse from './QuestionProse.vue'
 import TutorNext from './TutorNext.vue'
+import { useQuestionAsk } from './useQuestionAsk'
 import { useUnderstandingFlow } from './useUnderstandingFlow'
 import { liveTransport, previewTransport } from './understandingTransport'
 
@@ -73,7 +75,11 @@ const showVariantStep = computed(() => solution.status.value === 'done' && !vari
 const hints = computed(() => tutor.hints.value)
 /** The misconception's player follows the hint ladder, as the tutor orders them. */
 const showDemo = computed(() => wrong.value && !!attempt.result.value?.viz && tutor.hintsSettled.value)
-const aided = computed(() => (tutor.state.value?.hintsUsed ?? 0) > 0)
+/** Free-form questions about this attempt; previews record nothing, so they never ask. */
+const ask = useQuestionAsk(() => (previewing.value ? null : (attempt.result.value?.attemptId ?? null)))
+const showAsk = computed(() => answered.value && ask.status.value === 'ready')
+const solved = computed(() => !wrong.value || solution.status.value === 'done')
+const aided = computed(() => (tutor.state.value?.hintsUsed ?? 0) > 0 || ask.used.value)
 
 /** Which step carries the tutor's next suggestion; none once the solution is open. */
 const nextHost = computed<'misconception' | 'hints' | 'demo' | null>(() => {
@@ -147,7 +153,7 @@ const wrapUp = computed(() => {
 
 const variantLead = computed(() =>
   aided.value
-    ? '同一个概念，只改了一个条件。你在原题用过提示，这次当作练习，结果不计入复习安排。'
+    ? '同一个概念，只改了一个条件。你在原题用过提示或追问，这次当作练习，结果不计入复习安排。'
     : '同一个概念，只改了一个条件。这次没有提示，自己做出来；结果会计入复习安排。',
 )
 
@@ -204,6 +210,10 @@ watch(
   () => variantAttempt.result.value,
   (result) => result && present(() => variantResultEl.value, 6),
 )
+
+function showDemoStep() {
+  void present(() => stepEl(demoStep.value))
+}
 
 function stepEl(component: unknown): HTMLElement | null {
   return ((component as { $el?: HTMLElement } | null)?.$el as HTMLElement | undefined) ?? null
@@ -381,6 +391,11 @@ onMounted(start)
           />
         </FlowStep>
 
+        <!-- 追问：用自己的话问这道题；答对或揭示正解之前不给答案 -->
+        <FlowStep v-if="showAsk && !solved" label="追问" tone="accent">
+          <AskPanel :ask="ask" :solved="solved" @hint="tutor.takeHint()" @demo="showDemoStep()" />
+        </FlowStep>
+
         <!-- 正解 -->
         <FlowStep
           v-if="solution.status.value !== 'idle' && (!wrong || solution.status.value === 'done')"
@@ -418,6 +433,10 @@ onMounted(start)
             <span class="next-note" data-tone="error">{{ solution.error.value }}</span>
             <LtButton @click="flow.openSolution()">重试</LtButton>
           </div>
+        </FlowStep>
+
+        <FlowStep v-if="showAsk && solved" label="追问" tone="accent">
+          <AskPanel :ask="ask" :solved="solved" @hint="tutor.takeHint()" @demo="showDemoStep()" />
         </FlowStep>
 
         <!-- 变式：保留概念，只改一个条件，无提示独立作答 -->
