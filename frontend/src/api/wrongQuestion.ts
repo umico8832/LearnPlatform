@@ -10,6 +10,7 @@ export interface WrongQuestionRequestOptions {
 
 /** 错题 VO */
 export interface WrongQuestionVO {
+  hasUnderstanding?: boolean
   id: number
   questionId: number
   questionContent: string

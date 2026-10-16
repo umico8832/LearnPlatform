@@ -10,6 +10,7 @@ import java.util.Map;
 public class WrongQuestionVO {
 
     private Long id;
+    private boolean hasUnderstanding;
     private Long questionId;
     private String questionContent;
     private String questionType;
@@ -23,6 +24,9 @@ public class WrongQuestionVO {
     private LocalDate nextReviewDate;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+
+    public boolean getHasUnderstanding() { return hasUnderstanding; }
+    public void setHasUnderstanding(boolean hasUnderstanding) { this.hasUnderstanding = hasUnderstanding; }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

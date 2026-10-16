@@ -9,6 +9,7 @@ import java.util.List;
  */
 public class QuestionVO {
     private Long id;
+    private boolean hasUnderstanding;
     private String content;
     private String questionType;
     private Long courseId;
@@ -49,6 +50,9 @@ public class QuestionVO {
         if (q.getUpdateTime() != null) { vo.setUpdateTime(q.getUpdateTime().toString()); }
         return vo;
     }
+
+    public boolean getHasUnderstanding() { return hasUnderstanding; }
+    public void setHasUnderstanding(boolean hasUnderstanding) { this.hasUnderstanding = hasUnderstanding; }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

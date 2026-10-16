@@ -13,6 +13,7 @@ import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.WrongQuestionMapper;
 import com.learnplatform.mapper.WrongQuestionInsightMapper;
+import com.learnplatform.service.understanding.QuestionUnderstandingContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -40,19 +41,22 @@ public class WrongQuestionService {
     private final KnowledgePointMapper knowledgePointMapper;
     private final CacheEvictService cacheEvictService;
     private final WrongQuestionInsightMapper insightMapper;
+    private final QuestionUnderstandingContent understanding;
 
     public WrongQuestionService(WrongQuestionMapper wrongQuestionMapper,
                                 QuestionMapper questionMapper,
                                 CourseMapper courseMapper,
                                 KnowledgePointMapper knowledgePointMapper,
                                 CacheEvictService cacheEvictService,
-                                WrongQuestionInsightMapper insightMapper) {
+                                WrongQuestionInsightMapper insightMapper,
+                                QuestionUnderstandingContent understanding) {
         this.wrongQuestionMapper = wrongQuestionMapper;
         this.questionMapper = questionMapper;
         this.courseMapper = courseMapper;
         this.knowledgePointMapper = knowledgePointMapper;
         this.cacheEvictService = cacheEvictService;
         this.insightMapper = insightMapper;
+        this.understanding = understanding;
     }
 
     /**
@@ -154,6 +158,7 @@ public class WrongQuestionService {
                     WrongQuestionVO vo = new WrongQuestionVO();
                     vo.setId(wq.getId());
                     vo.setQuestionId(wq.getQuestionId());
+                    vo.setHasUnderstanding(understanding.available(userId, wq.getQuestionId()));
                     vo.setWrongCount(wq.getWrongCount());
                     vo.setMasteryLevel(wq.getMasteryLevel());
                     vo.setLastWrongAnswer(wq.getLastWrongAnswer());

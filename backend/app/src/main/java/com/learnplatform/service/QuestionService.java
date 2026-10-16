@@ -11,6 +11,7 @@ import com.learnplatform.entity.Question;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.service.question.QuestionDuplicateDetector;
+import com.learnplatform.service.understanding.QuestionUnderstandingContent;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,16 +24,19 @@ public class QuestionService {
     private final KnowledgePointMapper knowledgePointMapper;
     private final QuestionViewService viewService;
     private final QuestionMutationService mutationService;
+    private final QuestionUnderstandingContent understanding;
 
     public QuestionService(
             QuestionMapper questionMapper,
             KnowledgePointMapper knowledgePointMapper,
             QuestionViewService viewService,
-            QuestionMutationService mutationService) {
+            QuestionMutationService mutationService,
+            QuestionUnderstandingContent understanding) {
         this.questionMapper = questionMapper;
         this.knowledgePointMapper = knowledgePointMapper;
         this.viewService = viewService;
         this.mutationService = mutationService;
+        this.understanding = understanding;
     }
 
     public Page<QuestionVO> getQuestionPage(int pageNum, int pageSize, String keyword,
@@ -105,7 +109,7 @@ public class QuestionService {
         wrapper.orderByDesc(Question::getCreateTime);
         Page<Question> result = questionMapper.selectPage(page, wrapper);
         Page<QuestionVO> views = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
-        views.setRecords(result.getRecords().stream().map(this::toUserView).toList());
+        views.setRecords(result.getRecords().stream().map(question -> toUserView(question, null)).toList());
         return views;
     }
 
@@ -125,7 +129,7 @@ public class QuestionService {
         if (!accessible || question.getStatus() == null || question.getStatus() != 1) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
-        return toUserView(question);
+        return toUserView(question, userId);
     }
 
     public List<QuestionDuplicateGroupVO> findDuplicateGroups(
@@ -181,9 +185,10 @@ public class QuestionService {
         return view;
     }
 
-    private QuestionVO toUserView(Question question) {
+    private QuestionVO toUserView(Question question, Long userId) {
         QuestionVO view = QuestionVO.fromEntity(question);
         view.setAnalysis(null);
+        view.setHasUnderstanding(understanding.available(userId, question.getId()));
         viewService.enrichForUser(view);
         return view;
     }

@@ -12,6 +12,7 @@ export interface QuestionOptionVO {
 
 /** 题目 VO */
 export interface QuestionVO {
+  hasUnderstanding?: boolean
   id: number
   content: string
   questionType: string

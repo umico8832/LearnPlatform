@@ -33,7 +33,18 @@ public class QuestionUnderstandingContent {
         this.json = json;
     }
 
-    Ready ready(long userId, long questionId, Long contentId, boolean preview) {
+    public boolean available(Long userId, long questionId) {
+        try {
+            ready(userId, questionId, null, false);
+            return true;
+        } catch (BusinessException exception) {
+            if (exception.getCode() == ResultCode.NOT_FOUND.getCode()
+                    || exception.getCode() == ResultCode.BUSINESS_ERROR.getCode()) { return false; }
+            throw exception;
+        }
+    }
+
+    Ready ready(Long userId, long questionId, Long contentId, boolean preview) {
         Question question = questions.selectById(questionId);
         if (!QuestionAccessPolicy.canAccess(question, userId) || !Integer.valueOf(1).equals(question.getStatus())) {
             throw unavailable();

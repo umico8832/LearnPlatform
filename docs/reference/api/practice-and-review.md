@@ -31,6 +31,8 @@
 
 ## 错题本
 
+错题列表每条记录还返回布尔 `hasUnderstanding`，为 `true` 时“重做”可进入 `/questions/{questionId}`，否则沿用旧练习入口；判定与空值规则见[理解入口契约](question-understanding.md#列表中的理解入口b7)。
+
 M4 在错题列表每条记录增加 `misconception` 与 `nextReviewDate`。`misconception` 为最近一次所选错项当前有效的已审核误区 `{title, explanation, source: {kind, reviewStatus}}`，其中 `kind=CURATED|AI_GENERATED`、公开 `reviewStatus=REVIEWED`；无有效讲解时为 `null`。它只解释有对应选项讲解的作答，不根据题目或统计猜测错因。`nextReviewDate` 是该用户同题现有复习卡片的到期日期，未排期为 `null`。分页、筛选与用户隔离保持原约定；这两个字段随每页记录返回，统计接口暂不扩展。
 
 | 接口                                    | 说明                                                                       |

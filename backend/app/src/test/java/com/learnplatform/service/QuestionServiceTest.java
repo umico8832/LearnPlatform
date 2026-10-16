@@ -15,6 +15,7 @@ import com.learnplatform.mapper.ExamQuestionMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
+import com.learnplatform.service.understanding.QuestionUnderstandingContent;
 import com.learnplatform.mapper.QuestionOptionMapper;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,6 +48,8 @@ class QuestionServiceTest {
     @Mock private QuestionVersionService questionVersionService;
     @Mock private CacheEvictService cacheEvictService;
 
+    @Mock private QuestionUnderstandingContent understanding;
+
     private QuestionService questionService;
 
     @BeforeEach
@@ -58,7 +61,7 @@ class QuestionServiceTest {
         QuestionMutationService mutationService = new QuestionMutationService(
                 questionMapper, questionOptionMapper, questionKnowledgePointMapper, courseMapper,
                 knowledgePointMapper, examQuestionMapper, questionVersionService, cacheEvictService);
-        questionService = new QuestionService(questionMapper, knowledgePointMapper, viewService, mutationService);
+        questionService = new QuestionService(questionMapper, knowledgePointMapper, viewService, mutationService, understanding);
     }
 
     @Test

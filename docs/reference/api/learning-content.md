@@ -1,5 +1,12 @@
 # 学习内容 API
 
+## 题目列表与理解入口
+
+`GET /api/questions` 支持 `courseId`、`questionId` 与 `knowledgePointId` 等现有筛选；
+学习端列表和 `GET /api/questions/{id}` 的题目行包含布尔 `hasUnderstanding`。
+为 `true` 时前端可进入 `/questions/{id}`，其余沿用既有练习入口。
+可见性、空值与内容变化后的错误语义见[题目理解 API](question-understanding.md#列表中的理解入口b7)。
+
 ## 课程与知识点
 
 | 接口 | 说明 |
