@@ -4,7 +4,7 @@
 
 ## 内容与可用性
 
-- 导师运行时只选择已存储、与本次尝试锁定的理解内容版本一致、人工审核为 `REVIEWED` 的内容，不调用云模型或在请求中生成文案。新生成的提示、场景描述和变式草稿必须以 `AI_GENERATED/PENDING` 入库；人工审核后才能公开。审核撤回即停止公开，不回退到旧版。
+- 导师运行时只选择已存储、与本次尝试锁定的理解内容版本一致、人工审核为 `REVIEWED` 的内容，分级提示和下一步建议不调用云模型或在请求中生成文案。新生成的提示、场景描述和变式草稿必须以 `AI_GENERATED/PENDING` 入库；人工审核后才能公开。审核撤回即停止公开，不回退到旧版。
 - 三级提示分别给概念方向、推理步骤、课内相似案例；均不判断或排除选项，也不泄露答案。每级文本有独立来源 `source: {kind, reviewStatus}`，`kind` 为 `CURATED` 或 `AI_GENERATED`；公开的 `reviewStatus` 恒为 `REVIEWED`。待审核内容只在管理员预览中可见，必须标为“AI 生成·待审核”，不能标成已审核或来源已核对。
 - 可视化返回 `{title, spec, source}`，其中 `spec` 使用 `frontend/src/viz/engine/types.ts` 的 `SceneSpec`，包括 `scene`、`op`、场景参数以及可选 `pauseAt`；后端不执行场景。审核时须用正式模拟器验证场景、参数和检查点。`source` 描述可视化文案与描述本身，和题目来源 `source.verification` 分开。
 - 正解响应保留 M2 的 `correctAnswer`、`explanation`、`viz`，增加 `explanationSource: {kind, reviewStatus}`；变式响应保留 M2 结构，其 `source` 继续描述变式的生成与审核。错项误区已有 `misconception.source`；新增的 `viz.source` 表示所用场景描述的来源与审核状态。导师建议的理由是服务端规则文案，返回 `reasonSource: {kind: "CURATED", reviewStatus: "REVIEWED"}`。
@@ -93,3 +93,67 @@
 原题与变式正式作答响应增加 `review: {nextReviewDate, counted}`，前端直接读取日期和本次是否计分；
 空值、幂等重试和辅助变式语义见[题目理解 API](question-understanding.md#作答后的当前复习排期b6)。
 预览响应中的 `attempt` / `variantResult` 没有 `review`。
+
+## 题目追问（Phase 27，D1 契约）
+
+追问独立于确定性三级提示，复用正式理解尝试、内容审核与所有权校验，不接入管理员预览。
+
+| 方法与路径 | 请求 | 返回 |
+|---|---|---|
+| `GET /api/understanding/attempts/{attemptId}/ask` | 无 | 统一外壳 `{available, reason, questionRemaining, dailyRemaining, records}` |
+| `POST /api/understanding/attempts/{attemptId}/ask/stream` | `{requestId, message}` | SSE，见下文 |
+| `DELETE /api/understanding/attempts/{attemptId}/ask/{requestId}` | 无 | 统一外壳 `{stopped: true}`；停止幂等 |
+
+`requestId` 为小写规范 UUID；`message` 去首尾空白后 1–1000 字符，不接受额外字段。
+`available` 只表示配置可用，不表示尚有额度。未启用 AI、追问开关关闭、凭据/端点不完整或模型不是
+`deepseek-flash` 时返回 `false`，`reason=DISABLED | UNCONFIGURED`，前端隐藏入口；可用时 reason 为 null。
+理解页不依赖此请求成功。额度耗尽仍可读历史和显示剩余量；`dailyRemaining=null` 表示既有每日配额不限。
+`questionRemaining` 默认每用户每题总计 5 次，跨尝试累计，可配置为正整数；每日沿用既有用户覆盖值或
+`AI_DAILY_QUOTA`（默认 50，所有 AI 功能共享，按应用服务器日期计算）。
+
+`records` 按时间升序返回本次尝试的记录，每条为
+`{requestId, attemptId, message, content, status, errorCode, createdAt, suggestion}`。
+`content` 为 Markdown，仅成功记录有正文；状态为 `RUNNING | SUCCEEDED | FAILED | CANCELLED`。
+`errorCode` 成功/运行中为 null，失败为下表业务码。`suggestion` 为 null 或既有 next 的
+`{action, reason, reasonSource}`，仅允许 `HINT` 或 `PLAY_VIZ`，不推进等级、不自动播放。
+刷新后以 attemptId 读取同一次理解流程；其他用户、预览尝试或已撤回版本统一 1004。
+
+SSE 的 JSON data：`content` 事件 `{content: "正文增量"}`；结束 `done`
+`{requestId, questionRemaining, dailyRemaining, suggestion}`；失败 `error` 为 `{code, message}`，之后关闭。
+业务校验失败发生在建流前，使用统一错误外壳；建流后的失败通过 error 事件。正文必须先完整缓冲并通过
+服务端门禁才分片发送，因此首次正文可能在上游完成后到达。中断使用 DELETE 并 AbortController 关闭连接；
+断连/超时也取消本次执行。停止不退回已预占次数或已登记的每日配额，不保存部分正文。
+
+| 码 | 语义 |
+|---|---|
+| 1001 | 输入不合法 |
+| 1004 | 不可访问的尝试或审核内容 |
+| 1006 | 今日共享 AI 配额用完 |
+| 1007 | 此用户同一道题已有运行中的追问，或重复 requestId（通过 GET 恢复） |
+| 1010 | 追问不可用（未启用、关闭或未配置） |
+| 1011 | 本题追问次数用完 |
+| 1012 | 上游失败、协议或输出校验失败 |
+| 1013 | 上游超时 |
+| 1014 | 已停止或运行租约过期 |
+
+按用户短事务串行预占次数，再释放数据库锁调用上游；同一题只允许一个有效运行，租约到期不接受迟到完成。
+有效请求一经预占即计本题次数，包含失败和停止；输入、权限、配置、限次拒绝不计次。
+每日配额只计统一 AI 准入已登记的调用；本题预占后若每日准入因并发被拒，保留失败记录与本题次数。
+重复 requestId 不重复调用上游。记录和辅助事实在预占时同事务保存，与变式作答使用同一原尝试锁；
+追问后的变式为 AIDED，不产生 FSRS 评分；原题提交时已有的独立评分不回写、不撤销。
+
+门禁采用受限输出：模型只从服务端候选正文中选一条，最终逐字匹配，否则按 1012 拒绝。
+答对或本次尝试已揭示正解之前，候选只有不涉及本题结论的安全推理引导语，不传正解或正确选项标记，
+不直接输出模型自由文本；提示通过 suggestion 引导学习者显式领取。此限制避免单靠关键词扫描遗漏等价结论。
+解锁后候选可包含本版本已审核讲解、所选错项误区及已审核提示，逐字引用，防止另起讲解口径。
+模型输入不使用检索、外部工具、其他题目或未审核材料；历史仅用于显示，不把旧回答提升为已审核材料。
+模型生成和选择不构成人工审核；记录的回答不标为“AI 生成·已审核”。
+
+复用：`AiInvocationService → OpenAiProvider → ai-core/CloudChatModel` 的 OpenAI 兼容流式协议、
+`Cancellation`、`AiCallGovernanceService/AiCallReservationService` 的每日配额与 usage/成本审计；
+调用功能名 `QUESTION_ASK`。复用 `QuestionUnderstandingContent` 的内容门禁、正式作答事实和
+`QuestionTutorService.next` 的动作格式与提示策略，不另建 AI 客户端或 Tutor Agent 工具循环。
+配置沿用 `AI_*`，另加追问开关、每题次数和思考模式开关；DeepSeek Flash 单价按输入未命中
+0.3 / 输出 1.2 USD 每百万 token 配置，缺 usage 时成本为空，不估算。
+思考模式默认开启，关闭后仍执行同一门禁；只发正文，不发送 reasoning_content。
+真实模型评测须价格获用户同意后单独运行；模拟结果不能决定真实教学效果或思考模式优劣。
