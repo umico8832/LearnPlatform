@@ -20,18 +20,20 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
 class QuestionDraftMigrationIntegrationTest {
-    @Test void migratesEmptyDatabase() throws Exception { migrate(false); }
-    @Test void upgradesCurrentV111AndPreservesUnrelatedRowsAndLearningFacts() throws Exception { migrate(true); }
+    @Test void migratesEmptyDatabase() throws Exception { migrate(null); }
+    @Test void upgradesCurrentV111AndPreservesUnrelatedRowsAndLearningFacts() throws Exception { migrate("111"); }
 
-    private void migrate(boolean upgrade) throws Exception {
+    @Test void upgradesCurrentV112AndPreservesLearningFacts() throws Exception { migrate("112"); }
+
+    private void migrate(String initialVersion) throws Exception {
         try (var database = new MySQLContainer<>("mysql:8.0")
                 .withDatabaseName("learn_platform").withUsername("test").withPassword("test")
                 .withCommand("--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci")) {
             database.start();
             var db = new JdbcTemplate(new DriverManagerDataSource(database.getJdbcUrl(), "root", database.getPassword()));
             Map<String, List<Map<String, Object>>> before = new LinkedHashMap<>();
-            if (upgrade) {
-                Flyway.configure().dataSource(database.getJdbcUrl(), "root", database.getPassword()).target("111").load().migrate();
+            if (initialVersion != null) {
+                Flyway.configure().dataSource(database.getJdbcUrl(), "root", database.getPassword()).target(initialVersion).load().migrate();
                 db.update("""
                         INSERT INTO question_understanding_content
                         (question_id,content_version,review_status,question_fingerprint,knowledge_point_id,

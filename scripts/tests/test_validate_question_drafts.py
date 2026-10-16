@@ -51,7 +51,7 @@ class DraftValidationTest(unittest.TestCase):
 
     def test_rejects_unquoted_code_in_all_reader_text(self) -> None:
         for code in ("p->next=s", "data[i-1]", "front==rear", "Push(1)",
-                     "free(q)", "(rear+1)%M==front", "8->next=L", "data[]", "top=-1", "++top"):
+                     "free(q)", "(rear+1)%M==front", "8->next=L", "data[]", "top=-1", "++top", "next", "prior"):
             with self.subTest(code=code):
                 document = draft()
                 document["questions"][0]["hints"][2]["text"] = "例如 " + code + "。"
@@ -74,7 +74,7 @@ class DraftValidationTest(unittest.TestCase):
         document = draft()
         document["questions"][0]["stem"] = (
             "执行 `p->next=s`、`data[i-1]`、`front==rear`、`Push(1)`（示意）。"
-            "再看 ``GetTop(S)`` 与第 1 个（头结点不计）。"
+            "再看 ``GetTop(S)``、`next`、`prior` 与第 1 个（头结点不计）。"
         )
         self.assertEqual((1, 0), self.validate(document))
 

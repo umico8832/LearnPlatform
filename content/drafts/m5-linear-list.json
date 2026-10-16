@@ -454,7 +454,7 @@
         },
         "C": {
           "title": "跳过原后继",
-          "explanation": "把 p 所指结点的 next 改为 `q->next` 会跳过 q；再令 `s->next=q` 也没有把 s 接到 p 后面。指针变量 p 本身没有移动。"
+          "explanation": "把 p 所指结点的 `next` 改为 `q->next` 会跳过 q；再令 `s->next=q` 也没有把 s 接到 p 后面。指针变量 p 本身没有移动。"
         },
         "D": {
           "title": "把新结点指回前驱",
@@ -574,7 +574,7 @@
         },
         "D": {
           "title": "只移动局部变量",
-          "explanation": "令 `p=q->next` 只改指针变量 p，不会修改结点 2 的 next 域。"
+          "explanation": "令 `p=q->next` 只改指针变量 p，不会修改结点 2 的 `next` 域。"
         }
       },
       "hints": [
@@ -584,7 +584,7 @@
         },
         {
           "level": 2,
-          "text": "分别画出改变指针变量与改变结点 next 域后的图，沿头结点出发的路径检查哪些结点仍可达。"
+          "text": "分别画出改变指针变量与改变结点 `next` 域后的图，沿头结点出发的路径检查哪些结点仍可达。"
         },
         {
           "level": 3,
@@ -624,7 +624,7 @@
         ],
         "correctAnswer": "D",
         "changedCondition": "删除对象由中间结点改为尾结点，检验后继为 NULL 的重接边界。",
-        "explanation": "原 `q->next=NULL`，删除前令 `p->next=q->next`，再释放 q；结点 4 成为尾结点，其 next 为 NULL。",
+        "explanation": "原 `q->next=NULL`，删除前令 `p->next=q->next`，再释放 q；结点 4 成为尾结点，其 `next` 为 NULL。",
         "viz": {
           "title": "以 2→4→8 删除第 3 个数据结点为例：删除尾结点后的链接",
           "spec": {
@@ -657,7 +657,7 @@
         "label": "AI 生成·已审核",
         "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
       },
-      "stem": "带头结点的单链表 L 原为 2→4→8。循环中所有数据结点的 next 都已反向，prev 指向 8。要让从 L 出发可访问完整的新链表，最后还必须执行什么？",
+      "stem": "带头结点的单链表 L 原为 2→4→8。循环中所有数据结点的 `next` 都已反向，prev 指向 8。要让从 L 出发可访问完整的新链表，最后还必须执行什么？",
       "options": [
         {
           "label": "A",
@@ -716,7 +716,7 @@
         }
       },
       "variant": {
-        "stem": "带头结点的单链表 L 为空，`L->next=NULL`。逆置算法令 `prev=NULL`，从首元结点开始循环反转 next，循环结束后统一执行 `L->next=prev`。最终 `L->next` 指向哪里？",
+        "stem": "带头结点的单链表 L 为空，`L->next=NULL`。逆置算法令 `prev=NULL`，从首元结点开始循环反转 `next`，循环结束后统一执行 `L->next=prev`。最终 `L->next` 指向哪里？",
         "options": [
           {
             "label": "A",

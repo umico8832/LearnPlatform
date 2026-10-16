@@ -17,7 +17,7 @@
         "label": "AI 生成·已审核",
         "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
       },
-      "stem": "非空单链表只有头指针和尾指针，结点只含 next，没有前驱指针。要删除尾结点并保持尾指针正确，最坏情况下需要多少时间？",
+      "stem": "非空单链表只有头指针和尾指针，结点只含 `next`，没有前驱指针。要删除尾结点并保持尾指针正确，最坏情况下需要多少时间？",
       "options": [
         {
           "label": "A",
@@ -40,7 +40,7 @@
       "misconceptions": {
         "A": {
           "title": "误把尾指针等同于前驱指针",
-          "explanation": "尾指针只指向待删结点；单链表要重设前驱的 next，仍须从头遍历找前驱。"
+          "explanation": "尾指针只指向待删结点；单链表要重设前驱的 `next`，仍须从头遍历找前驱。"
         },
         "B": {
           "title": "以为可折半寻找尾前驱",
@@ -48,13 +48,13 @@
         },
         "D": {
           "title": "把一次遍历当成嵌套遍历",
-          "explanation": "只需从头沿 next 走一遍找尾结点前驱，最坏时间与结点数成正比。"
+          "explanation": "只需从头沿 `next` 走一遍找尾结点前驱，最坏时间与结点数成正比。"
         }
       },
       "hints": [
         {
           "level": 1,
-          "text": "删除尾结点后，谁的 next 必须变成 NULL？"
+          "text": "删除尾结点后，谁的 `next` 必须变成 NULL？"
         },
         {
           "level": 2,
@@ -88,8 +88,8 @@
           }
         ],
         "correctAnswer": "A",
-        "changedCondition": "结点从只有 next 的单链表改为含 prev 的双向链表，其余条件不变。",
-        "explanation": "尾结点的 prev 可直接定位前驱，改其 next 并更新尾指针即可，时间 `O(1)`。",
+        "changedCondition": "结点从只有 `next` 的单链表改为含 prev 的双向链表，其余条件不变。",
+        "explanation": "尾结点的 prev 可直接定位前驱，改其 `next` 并更新尾指针即可，时间 `O(1)`。",
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",

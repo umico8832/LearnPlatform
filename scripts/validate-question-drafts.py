@@ -41,7 +41,7 @@ def text(where: str, value: object) -> None:
         if re.search(r"[A-Za-z_]\w*\s*\(", code):
             require(code.count("(") == code.count(")"), where, "函数形式须完整放在同一对反引号内")
     prose = re.sub(r"(`+)(?:(?!\1).)*?\1", "", value, flags=re.DOTALL)
-    require(not re.search(r"->|\[[^]\n]*\]|[=!<>]=|[A-Za-z_]\w*\s*=|\+\+|--|[A-Za-z_]\w*\s*\(|\b(?:Push|Pop|GetTop|EnQueue|DeQueue)\b", prose),
+    require(not re.search(r"->|\[[^]\n]*\]|[=!<>]=|[A-Za-z_]\w*\s*=|\+\+|--|[A-Za-z_]\w*\s*\(|\b(?:Push|Pop|GetTop|EnQueue|DeQueue|next|prior)\b", prose),
             where, "代码表达式必须放在反引号内")
 
 
