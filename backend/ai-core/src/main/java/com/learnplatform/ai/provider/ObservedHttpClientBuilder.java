@@ -21,8 +21,15 @@ final class ObservedHttpClientBuilder implements HttpClientBuilder {
     private final ProtocolObservation observation;
     private final Cancellation cancellation;
     private final boolean includeUsage;
+    private final Boolean thinking;
 
     ObservedHttpClientBuilder(ProtocolObservation observation, Cancellation cancellation, boolean includeUsage) {
+        this(observation, cancellation, includeUsage, null);
+    }
+
+    ObservedHttpClientBuilder(ProtocolObservation observation, Cancellation cancellation, boolean includeUsage,
+                              Boolean thinking) {
+        this.thinking = thinking;
         this.observation = observation;
         this.cancellation = cancellation;
         this.includeUsage = includeUsage;
@@ -47,7 +54,7 @@ final class ObservedHttpClientBuilder implements HttpClientBuilder {
             public SuccessfulHttpResponse execute(HttpRequest request) {
                 try {
                     cancellation.check();
-                    SuccessfulHttpResponse response = client.execute(request);
+                    SuccessfulHttpResponse response = client.execute(withThinking(request));
                     observation.observe(response.body(), false);
                     observation.requireTerminal();
                     cancellation.check();
@@ -61,7 +68,7 @@ final class ObservedHttpClientBuilder implements HttpClientBuilder {
             public void execute(HttpRequest request, ServerSentEventParser parser, ServerSentEventListener listener) {
                 try {
                     cancellation.check();
-                    client.execute(streamRequest(request), parser, new ServerSentEventListener() {
+                    client.execute(withThinking(streamRequest(request)), parser, new ServerSentEventListener() {
                         private boolean failed;
                         @Override public void onOpen(SuccessfulHttpResponse response) { listener.onOpen(response); }
                         @Override public synchronized void onEvent(ServerSentEvent event, ServerSentEventContext context) {
@@ -102,6 +109,14 @@ final class ObservedHttpClientBuilder implements HttpClientBuilder {
                 }
             }
         };
+    }
+
+    private HttpRequest withThinking(HttpRequest request) {
+        if (thinking == null) { return request; }
+        ObjectNode body = (ObjectNode) JsonContract.parse(request.body());
+        body.putObject("thinking").put("type", thinking ? "enabled" : "disabled");
+        return HttpRequest.builder().method(request.method()).url(request.url()).headers(request.headers())
+                .body(body.toString()).build();
     }
 
     private HttpRequest streamRequest(HttpRequest request) {

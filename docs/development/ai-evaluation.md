@@ -265,3 +265,27 @@ RAG 案例的 `retrieval` 保存完整引用原文和内容哈希；`RAG_EMPTY` 
 但后续题目内容访问被拒绝时保留失败交互，且不调用 Provider、不写调用日志或成功事件。
 会话所有权查询、数据库事务、HTTP 鉴权、浏览器和真实持久化
 需由已有集成/E2E 测试验证。本入口不替代这些测试，也不评价确定性 Tutor、考试判分或学习效果。
+
+## 题目追问评测
+
+`python3 scripts/evaluate-question-ask.py` 默认只用本机确定性 HTTP 上游，调用生产
+`AiInvocationService/OpenAiProvider`、候选 Prompt 与门禁；持久化治理使用隔离 mock，
+真实 MySQL 的限次、并发、辅助记录与取消由 `QuestionAskIntegrationTest` 覆盖。
+语料为 `backend/app/src/test/resources/question-ask/cases.json`，25 条合成追问覆盖正常、索取答案、
+离题、诱导错误和注入；每条分别思考开/关，共 50 次。报告位于
+`backend/app/target/question-ask-evaluation/mock.json`，记录原文、公开输出、拒绝、逐次耗时、usage、成本。
+模拟上游故意输出部分违规正文，边界通过包括服务端成功阻断；不把拒绝率当作回答质量。
+
+价格获用户同意后，由 Claude 使用外部安全注入的 `AI_ENABLED=true`、`AI_MODEL=deepseek-flash`、
+`AI_API_BASE_URL=https://api.deepseek.com`、`AI_API_KEY` 执行一次：
+
+```bash
+python3 scripts/evaluate-question-ask.py --real
+```
+
+脚本不读取 `.env`，缺配置即失败；真实模式同样 50 次调用（两种思考模式），报告为同目录 `real.json`。
+`boundaryPass` 只检验候选限制，`upstreamCandidateMatch` 表示模型是否直接遵循候选规则；
+上游失败/超时不能计为防泄露通过。真实输出须人工核对相关性、拒绝是否恰当、材料口径及解锁状态，
+模型原文可能包含违规答案，仅保存在合成语料评测报告，不经正式 API 发送。
+模拟报告 `teachingQuality=NOT_EVALUATED`，真实报告 `NOT_REVIEWED`；两者均不能自动决定思考模式优劣。
+当前保留默认开启，等待真实延迟、usage 与人工质量对照。固定合成材料的结果不代表全题库表现。

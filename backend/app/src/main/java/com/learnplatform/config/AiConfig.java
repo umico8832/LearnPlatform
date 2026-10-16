@@ -15,9 +15,13 @@ import java.util.Map;
 public class AiConfig {
 
     private boolean enabled = false;
-    private String apiBaseUrl = "https://api.openai.com/v1";
+    private boolean questionAskEnabled = true;
+    private int questionAskLimit = 5;
+    private boolean thinkingEnabled = true;
+
+    private String apiBaseUrl = "https://api.deepseek.com";
     private String apiKey = "";
-    private String model = "gpt-3.5-turbo";
+    private String model = "deepseek-flash";
     private int timeout = 30000;
     private int maxTokens = 2000;
     private Double temperature = 0.7;
@@ -37,6 +41,13 @@ public class AiConfig {
     private int alertWebhookTimeout = 5000;
     /** 按模型配置的输入/输出单价，单位为 USD / 1M tokens。未配置的模型不计算成本。 */
     private Map<String, ModelPrice> modelPrices = new LinkedHashMap<>();
+
+    public boolean isQuestionAskEnabled() { return questionAskEnabled; }
+    public void setQuestionAskEnabled(boolean value) { questionAskEnabled = value; }
+    public int getQuestionAskLimit() { return questionAskLimit; }
+    public void setQuestionAskLimit(int value) { questionAskLimit = value; }
+    public boolean isThinkingEnabled() { return thinkingEnabled; }
+    public void setThinkingEnabled(boolean value) { thinkingEnabled = value; }
 
     public Double getTemperature() { return temperature; }
     public void setTemperature(Double temperature) { this.temperature = temperature; }

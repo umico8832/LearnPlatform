@@ -46,6 +46,7 @@ public class OpenAiProvider implements AiProvider {
 
     private CloudChatModel model() {
         return new CloudChatModel(config.getApiBaseUrl(), config.getApiKey(), Duration.ofMillis(config.getTimeout()),
-                config.isStreamIncludeUsage(), config.isToolsSupported(), config.isStructuredOutputSupported());
+                config.isStreamIncludeUsage(), config.isToolsSupported(), config.isStructuredOutputSupported(),
+                config.getModel().startsWith("deepseek-") ? config.isThinkingEnabled() : null);
     }
 }

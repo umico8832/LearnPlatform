@@ -26,9 +26,16 @@ public final class CloudChatModel {
     private final boolean includeUsage;
     private final boolean toolsSupported;
     private final boolean schemaSupported;
+    private final Boolean thinking;
 
     public CloudChatModel(String baseUrl, String apiKey, Duration timeout, boolean includeUsage,
                           boolean toolsSupported, boolean schemaSupported) {
+        this(baseUrl, apiKey, timeout, includeUsage, toolsSupported, schemaSupported, null);
+    }
+
+    public CloudChatModel(String baseUrl, String apiKey, Duration timeout, boolean includeUsage,
+                          boolean toolsSupported, boolean schemaSupported, Boolean thinking) {
+        this.thinking = thinking;
         this.baseUrl = baseUrl;
         this.apiKey = apiKey;
         this.timeout = timeout;
@@ -65,7 +72,7 @@ public final class CloudChatModel {
         try {
             var model = OpenAiChatModel.builder().baseUrl(baseUrl).apiKey(apiKey).timeout(timeout).maxRetries(0)
                     .strictJsonSchema(true).httpClientBuilder(new ObservedHttpClientBuilder(observation,
-                            cancellation, includeUsage)).build();
+                            cancellation, includeUsage, thinking)).build();
             return result(request, model.chat(LangChainRequestMapper.map(request)), observation);
         } catch (RuntimeException exception) {
             return failureOrRefusal(exception, observation);
@@ -110,7 +117,7 @@ public final class CloudChatModel {
         };
         try {
             OpenAiStreamingChatModel.builder().baseUrl(baseUrl).apiKey(apiKey).timeout(timeout).strictJsonSchema(true)
-                    .httpClientBuilder(new ObservedHttpClientBuilder(observation, cancellation, includeUsage))
+                    .httpClientBuilder(new ObservedHttpClientBuilder(observation, cancellation, includeUsage, thinking))
                     .build().chat(LangChainRequestMapper.map(request), handler);
             long deadline = System.nanoTime() + timeout.toNanos();
             while (System.nanoTime() < deadline) {

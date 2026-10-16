@@ -55,7 +55,7 @@ public class AiCallGovernanceService {
                 hash(serialize(request.options()) + serialize(request.tools()) + serialize(request.outputSchema())
                         + serialize(new java.util.TreeMap<>(prices)) + config.getApiBaseUrl()
                         + config.isStreamIncludeUsage() + config.isToolsSupported()
-                        + config.isStructuredOutputSupported()));
+                        + config.isStructuredOutputSupported() + config.isThinkingEnabled()));
         reservations.reserve(entry);
         return new AiCallTicket(entry, prices);
     }

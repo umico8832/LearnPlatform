@@ -36,10 +36,10 @@
 
 ### 幂等、并发与错误
 
-- 每次调用重新核对所有权、题目和课程访问、内容版本及审核状态。不可访问或内容撤回统一 `1004`；题目答案仍只在原题提交后显式开放的正解或已提交的变式结果中出现。
+- 每次调用重新核对所有权、题目和课程访问、内容版本及审核状态。不可访问或内容撤回统一 `1004`；题目答案只在原题提交后显式开放的正解、已提交的变式结果或满足追问解锁条件后的受限回答中出现。
 - 提示推进在同一原尝试上串行化。服务端记录三行以内的提示领取事实，唯一约束 `(attempt_id, level)`。为消除网络重试与用户下一次点击的歧义，`hints/next` 请求使用必填 `requestId`（UUID），同一 `requestId` 的重试返回同一结果；不同 `requestId` 才能推进一层。若两个不同请求同时到达，各按锁序最多推进一层，不超过 3；前端一次点击只生成一个 `requestId` 并在重试时复用。`requestId` 与结果一同持久化，唯一约束 `(attempt_id, request_id)`。
 - `viz-views` 只记第一次开始播放时间，唯一约束 `(attempt_id, context)`；相同请求无附加学习事实。对不存在或尚未开放的场景返回 `1004`，非法 `context` 或 `requestId` 返回 `1001`。提示链可用但正解门禁未满足时，`reveal` 返回 `1005` 且不记开放事实。
-- 变式提交的唯一约束与答案冲突规则沿用 M2。`AIDED` 表示本次原尝试在变式提交前领取过任一级提示；否则为 `UNAIDED`。原题误区、正解或动画的查看不单独改变这一标记。M4 只把 `UNAIDED` 的首次作答作为独立评分候选，不从请求或客户端状态推断。辅助记录与变式提交必须在同一原尝试的锁下取一致快照。
+- 变式提交的唯一约束与答案冲突规则沿用 M2。`AIDED` 表示本次原尝试在变式提交前领取过任一级提示或预占过题目追问；否则为 `UNAIDED`。原题误区、正解或动画的查看不单独改变这一标记。M4 只把 `UNAIDED` 的首次作答作为独立评分候选，不从请求或客户端状态推断。辅助记录与变式提交必须在同一原尝试的锁下取一致快照。
 
 ## 与既有契约的衔接
 
@@ -151,7 +151,7 @@ SSE 的 JSON data：`content` 事件 `{content: "正文增量"}`；结束 `done`
 
 复用：`AiInvocationService → OpenAiProvider → ai-core/CloudChatModel` 的 OpenAI 兼容流式协议、
 `Cancellation`、`AiCallGovernanceService/AiCallReservationService` 的每日配额与 usage/成本审计；
-调用功能名 `QUESTION_ASK`。复用 `QuestionUnderstandingContent` 的内容门禁、正式作答事实和
+调用功能名 `question_ask`。复用 `QuestionUnderstandingContent` 的内容门禁、正式作答事实和
 `QuestionTutorService.next` 的动作格式与提示策略，不另建 AI 客户端或 Tutor Agent 工具循环。
 配置沿用 `AI_*`，另加追问开关、每题次数和思考模式开关；DeepSeek Flash 单价按输入未命中
 0.3 / 输出 1.2 USD 每百万 token 配置，缺 usage 时成本为空，不估算。

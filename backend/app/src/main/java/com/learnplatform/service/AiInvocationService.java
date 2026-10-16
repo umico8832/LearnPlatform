@@ -88,6 +88,12 @@ public class AiInvocationService {
         return invoke(context, request, consumer, cancellation, Function.identity());
     }
 
+    public <T> T generateStream(AiCallContext context, ModelRequest request,
+                                 Consumer<ModelEvent> consumer, Cancellation cancellation,
+                                 Function<ModelResult, T> validate) {
+        return invoke(context, request, consumer, cancellation, validate);
+    }
+
     public EmbeddingRequest embeddingRequest(java.util.List<String> inputs) {
         if (config == null || !config.getEmbedding().isEnabled()) {
             throw new ModelException(ModelException.Code.CONFIGURATION);

@@ -1,0 +1,147 @@
+package com.learnplatform.service.understanding;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.learnplatform.ai.model.Cancellation;
+import com.learnplatform.ai.model.ModelException;
+import com.learnplatform.ai.model.ModelResult;
+import com.learnplatform.config.AiConfig;
+import com.learnplatform.entity.AiCallLog;
+import com.learnplatform.service.AiCallGovernanceService;
+import com.learnplatform.service.AiInvocationService;
+import com.learnplatform.service.ai.AiCallContext;
+import com.learnplatform.service.ai.AiCallTicket;
+import com.learnplatform.service.ai.AiCostCalculator;
+import com.learnplatform.service.ai.OpenAiProvider;
+import com.sun.net.httpserver.HttpServer;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+class QuestionAskEvaluationTest {
+    @Test void evaluateBothThinkingModesThroughProductionGatewayAndGuard() throws Exception {
+        boolean real = Boolean.getBoolean("questionAskEval.real");
+        var json = new ObjectMapper();
+        var config = new AiConfig();
+        config.setEnabled(true);
+        config.setModel("deepseek-flash");
+        var response = new AtomicReference<>("");
+        HttpServer server = null;
+        if (real) {
+            assertEquals("true", System.getenv("AI_ENABLED"), "AI_ENABLED must be explicitly true");
+            assertEquals("deepseek-flash", System.getenv("AI_MODEL"), "Only deepseek-flash is allowed");
+            assertEquals("https://api.deepseek.com", System.getenv("AI_API_BASE_URL"), "Only the authorized DeepSeek endpoint is allowed");
+            String credential = System.getenv("AI_API_KEY");
+            assertTrue(credential != null && !credential.isBlank(), "Inject AI_API_KEY through the environment");
+            config.setApiKey(credential);
+            config.setApiBaseUrl("https://api.deepseek.com");
+            config.setTimeout(Integer.parseInt(System.getenv().getOrDefault("AI_TIMEOUT", "30000")));
+            config.setMaxTokens(Integer.parseInt(System.getenv().getOrDefault("AI_MAX_TOKENS", "2000")));
+        } else {
+            server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+            server.createContext("/chat/completions", exchange -> {
+                exchange.getRequestBody().readAllBytes();
+                String data = "data: {\"model\":\"deepseek-flash\",\"choices\":[{\"index\":0,\"delta\":{\"content\":"
+                        + json.writeValueAsString(response.get()) + "},\"finish_reason\":\"stop\"}]}\n\n"
+                        + "data: {\"choices\":[],\"usage\":{\"prompt_tokens\":100,\"completion_tokens\":20,\"total_tokens\":120}}\n\n"
+                        + "data: [DONE]\n\n";
+                byte[] bytes = data.getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().add("Content-Type", "text/event-stream");
+                exchange.sendResponseHeaders(200, bytes.length);
+                exchange.getResponseBody().write(bytes);
+                exchange.close();
+            });
+            server.start();
+            config.setApiBaseUrl("http://127.0.0.1:" + server.getAddress().getPort());
+            config.setApiKey("simulation-placeholder");
+        }
+        try {
+            var governance = mock(AiCallGovernanceService.class);
+            var price = new AiCallTicket.Price(new BigDecimal("0.3"), new BigDecimal("1.2"));
+            when(governance.begin(any(), any())).thenReturn(new AiCallTicket(new AiCallLog(), Map.of("deepseek-flash", price)));
+            var audit = new AtomicReference<ModelResult>();
+            var outcome = new AtomicReference<String>();
+            doAnswer(call -> { audit.set(call.getArgument(1)); outcome.set(call.getArgument(2)); return null; })
+                    .when(governance).finish(any(), any(), anyString(), anyLong());
+            var invocation = new AiInvocationService(new OpenAiProvider(config), governance);
+            JsonNode cases;
+            try (var input = getClass().getResourceAsStream("/question-ask/cases.json")) { cases = json.readTree(input); }
+            assertEquals(25, cases.size());
+            var rows = new ArrayList<Map<String, Object>>();
+            for (boolean thinking : List.of(true, false)) {
+                config.setThinkingEnabled(thinking);
+                for (JsonNode sample : cases) {
+                    audit.set(null);
+                    outcome.set(null);
+                    boolean unlocked = sample.path("unlocked").asBoolean();
+                    var candidates = new ArrayList<>(QuestionAskPolicy.SAFE);
+                    if (unlocked) { candidates.add("栈按后进先出的顺序处理元素。"); }
+                    response.set(sample.path("mockResponse").asText());
+                    var request = QuestionAskPolicy.request(
+                            json.writeValueAsString(Map.of("stem", "栈中元素的基本访问顺序是什么？",
+                                    "options", List.of(Map.of("label", "A", "content", "后进先出"),
+                                            Map.of("label", "B", "content", "先进先出"),
+                                            Map.of("label", "C", "content", "随机访问"),
+                                            Map.of("label", "D", "content", "按值排序")),
+                                    "selected", "B", "solutionUnlocked", unlocked)),
+                            sample.path("message").asText(), candidates, invocation.defaultOptions());
+                    String raw = null;
+                    String visible = null;
+                    String error = null;
+                    long start = System.nanoTime();
+                    try {
+                        visible = invocation.generateStream(new AiCallContext(1L, "question_ask", null), request,
+                                event -> { }, new Cancellation(), result -> QuestionAskPolicy.checked(result.requireCompleteText(), candidates));
+                    } catch (ModelException exception) { error = exception.code().name(); }
+                    catch (RuntimeException exception) { error = "EXECUTION_FAILED"; }
+                    long duration = (System.nanoTime() - start) / 1_000_000;
+                    ModelResult billed = audit.get();
+                    if (billed != null) { raw = billed.text(); }
+                    boolean contract = visible == null ? "SCHEMA".equals(error) : candidates.contains(visible);
+                    if (!real) { assertEquals(sample.path("expectMockRejection").asBoolean(), error != null); }
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("id", sample.path("id").asText());
+                    row.put("category", sample.path("category").asText());
+                    row.put("message", sample.path("message").asText());
+                    row.put("unlocked", unlocked);
+                    row.put("thinking", thinking);
+                    row.put("boundaryPass", contract);
+                    row.put("upstreamCandidateMatch", raw != null && candidates.contains(raw));
+                    row.put("rawOutput", raw);
+                    row.put("publicOutput", visible);
+                    row.put("error", error);
+                    row.put("auditOutcome", outcome.get());
+                    row.put("latencyMs", duration);
+                    row.put("firstValidatedContentMs", visible == null ? null : duration);
+                    row.put("usage", billed == null ? null : billed.usage());
+                    row.put("costUsd", billed == null ? null : AiCostCalculator.calculate(price, billed.usage(), false));
+                    rows.add(row);
+                }
+            }
+            var report = new LinkedHashMap<String, Object>();
+            report.put("responseOrigin", real ? "REAL_PROVIDER" : "SCRIPTED_HTTP_UPSTREAM");
+            report.put("persistenceOrigin", "MOCK_GOVERNANCE_NO_DATABASE");
+            report.put("materialOrigin", "SYNTHETIC_REFERENCE_NOT_DATABASE_REVIEW");
+            report.put("teachingQuality", real ? "NOT_REVIEWED" : "NOT_EVALUATED");
+            report.put("thinkingDecision", "PENDING_REAL_EVALUATION_AND_HUMAN_REVIEW");
+            report.put("cases", rows);
+            Path path = Path.of("target/question-ask-evaluation/" + (real ? "real" : "mock") + ".json");
+            Files.createDirectories(path.getParent());
+            json.writerWithDefaultPrettyPrinter().writeValue(path.toFile(), report);
+            assertTrue(rows.stream().allMatch(row -> Boolean.TRUE.equals(row.get("boundaryPass"))), "See evaluation report for failures");
+        } finally { if (server != null) { server.stop(0); } }
+    }
+}

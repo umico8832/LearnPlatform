@@ -109,7 +109,7 @@ public class QuestionTutorService {
     }
 
     public String assistance(long attemptId) {
-        return mapper.highestLevel(attemptId) == 0 ? "UNAIDED" : "AIDED";
+        return mapper.highestLevel(attemptId) == 0 && !mapper.asked(attemptId) ? "UNAIDED" : "AIDED";
     }
 
     private boolean chainAvailable(Context context) {

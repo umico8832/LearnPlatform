@@ -69,6 +69,16 @@ class CloudChatModelTest {
         assertEquals("system", sent.path("messages").get(0).path("content").asText());
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void preservesExplicitThinkingToggleOnCompatibleRequests(boolean thinking) {
+        response = completion("\"lesson\"", "stop", "null");
+        var cloud = new CloudChatModel("http://127.0.0.1:" + server.getAddress().getPort() + "/v1",
+                "test-placeholder", Duration.ofSeconds(2), true, false, false, thinking);
+        cloud.complete(textRequest(), new Cancellation());
+        assertEquals(thinking ? "enabled" : "disabled", JsonContract.parse(body.get()).path("thinking").path("type").asText());
+    }
+
     @Test void unknownUsageIsNotEstimated() {
         response = completion("\"lesson\"", "stop", "null");
         assertNull(model(true).complete(textRequest(), new Cancellation()).usage());

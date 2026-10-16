@@ -117,9 +117,16 @@ app:
 # AI 配置
 ai:
   enabled: ${AI_ENABLED:false}
-  api-base-url: ${AI_API_BASE_URL:https://api.openai.com/v1}
+  api-base-url: ${AI_API_BASE_URL:https://api.deepseek.com}
   api-key: ${AI_API_KEY:}
-  model: ${AI_MODEL:gpt-3.5-turbo}
+  model: ${AI_MODEL:deepseek-flash}
+  question-ask-enabled: ${AI_QUESTION_ASK_ENABLED:true}
+  question-ask-limit: ${AI_QUESTION_ASK_LIMIT:5}
+  thinking-enabled: ${AI_THINKING_ENABLED:true}
+  model-prices:
+    deepseek-flash:
+      input-per-million: 0.3
+      output-per-million: 1.2
   timeout: ${AI_TIMEOUT:30000}
   max-tokens: ${AI_MAX_TOKENS:2000}
   temperature: ${AI_TEMPERATURE:0.7}

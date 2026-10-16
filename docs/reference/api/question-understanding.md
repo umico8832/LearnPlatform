@@ -38,7 +38,7 @@ ADMIN 也须通过[管理员预览](question-tutor.md#管理员无副作用预�
 
 正解 `explanation` 取本次锁定的理解内容版本；`viz` 结构为 `{title, spec, source}`，无内容时为 `null`。正解以幂等 POST 显式开放并记录 `solution_revealed_time`，让变式必须在正解之后。版本仍有效时重复开放返回相同结果；被撤回时返回 `1004`。原题选对也可开放正解和变式。提示门禁的详细条件见[题目导师 API](question-tutor.md)。
 
-变式复用 `ai_variant_question` 的题干、选项、私有答案、解析与 `APPROVED` 审查状态，通过其 `asset_id → question_ai_asset.question_id` 关联原题。M2 增加 `changed_condition`，审核时确认只改一个可核对条件并保留所测概念；可选 `viz` 同样只存 spec。创建原题尝试时锁定当前批准的变式 ID，后续内容变化不悄悄换题。变式取得与提交都重新检查其审核状态、母题关系和原题访问，未开放正解或无可用变式时返回 `1004`。一个原尝试只接受一条变式作答：并发或重试返回已锁定的首次结果，若再次请求的答案不同则返回 `1005`；不得形成第二次学习事件。`assistance` 由服务端写入，`UNAIDED` 表示本次原尝试未领取提示，`AIDED` 表示已领取提示；客户端不能传入。FSRS 仅对 `UNAIDED` 的首次判分形成评分事件，映射见[练习与复习 API](practice-and-review.md#间隔重复)。
+变式复用 `ai_variant_question` 的题干、选项、私有答案、解析与 `APPROVED` 审查状态，通过其 `asset_id → question_ai_asset.question_id` 关联原题。M2 增加 `changed_condition`，审核时确认只改一个可核对条件并保留所测概念；可选 `viz` 同样只存 spec。创建原题尝试时锁定当前批准的变式 ID，后续内容变化不悄悄换题。变式取得与提交都重新检查其审核状态、母题关系和原题访问，未开放正解或无可用变式时返回 `1004`。一个原尝试只接受一条变式作答：并发或重试返回已锁定的首次结果，若再次请求的答案不同则返回 `1005`；不得形成第二次学习事件。`assistance` 由服务端写入，`UNAIDED` 表示本次原尝试未领取提示或预占追问，`AIDED` 表示已领取提示或预占追问；客户端不能传入。FSRS 仅对 `UNAIDED` 的首次判分形成评分事件，映射见[练习与复习 API](practice-and-review.md#间隔重复)。
 
 当前预置题目由迁移中的题号、课程内容键与知识点内容键定位；数据库自增 ID 不作为固定契约。
 

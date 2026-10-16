@@ -67,7 +67,10 @@ test -f .env || cp .env.example .env
 | `AI_ENABLED` | 是否启用 AI |
 | `AI_API_BASE_URL` | OpenAI 兼容 API 地址 |
 | `AI_API_KEY` | 上游 Key，只保存在本机 |
-| `AI_MODEL` | 上游模型名称 |
+| `AI_MODEL` | 上游模型名称，默认 deepseek-flash；默认端点 https://api.deepseek.com |
+| `AI_QUESTION_ASK_ENABLED` | 题目追问开关，默认 true；仍须 AI_ENABLED 且配置完整 |
+| `AI_QUESTION_ASK_LIMIT` | 每用户每题累计追问次数，默认 5，须正整数 |
+| `AI_THINKING_ENABLED` | DeepSeek 思考模式，默认 true；可设 false 进行评测对照 |
 | `AI_TIMEOUT` | 后端请求超时，毫秒 |
 | `AI_MAX_TOKENS` | 最大输出 Token |
 | `AI_TEMPERATURE` | 生成温度，默认 0.7 |
@@ -84,7 +87,11 @@ test -f .env || cp .env.example .env
 | `AI_ALERT_WEBHOOK_URL` | 提醒地址 |
 | `AI_ALERT_WEBHOOK_TIMEOUT` | webhook 超时 |
 
-模型价格由后端配置决定。未配置价格或上游未返回 usage 时，成本保持未知。
+模型价格由后端配置决定。默认 `deepseek-flash` 输入未命中 0.3、输出 1.2 USD / 百万 token；
+未知模型价格或上游未返回 usage 时成本为空。思考开关依据 [DeepSeek 官方协议](https://api-docs.deepseek.com/guides/thinking_mode/)
+写入 `thinking.type=enabled/disabled`，reasoning_content 不向用户发送。
+题目追问仅支持 deepseek-flash，不依赖工具或 JSON Schema 能力开关；超时须在 1–120000 毫秒范围内，
+无配置时仅追问关闭，既有理解流程继续可用。
 Tutor Agent 追问入口要求 `AI_ENABLED=true` 且 `AI_TOOLS_SUPPORTED=true`；每次问题可能包含多次
 受治理的模型调用，因此每次调用分别计入日配额。只启用普通文本生成不会开放 Agent 工具循环。
 

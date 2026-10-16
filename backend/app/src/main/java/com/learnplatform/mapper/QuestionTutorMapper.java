@@ -59,6 +59,11 @@ public class QuestionTutorMapper {
                 """, attemptId, hintId, level, requestId);
     }
 
+    public boolean asked(long attemptId) {
+        return db.queryForObject("SELECT EXISTS(SELECT 1 FROM question_ask_record WHERE attempt_id=?)",
+                Boolean.class, attemptId);
+    }
+
     public boolean viewed(long attemptId, String context) {
         Integer count = db.queryForObject("""
                 SELECT COUNT(*) FROM question_understanding_viz_view WHERE attempt_id=? AND context=?
