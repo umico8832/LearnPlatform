@@ -5,10 +5,12 @@ import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.dto.AiAssetType;
 import com.learnplatform.entity.AiVariantTraining;
 import com.learnplatform.entity.AiVariantQuestion;
+import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionAiAsset;
 import com.learnplatform.mapper.AiVariantTrainingMapper;
 import com.learnplatform.mapper.AiVariantQuestionMapper;
 import com.learnplatform.mapper.QuestionAiAssetMapper;
+import com.learnplatform.mapper.QuestionMapper;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("integration")
 class AiVariantTrainingIntegrationTest extends IntegrationTestBase {
 
+    @Autowired private QuestionMapper questionMapper;
     @Autowired private AiAssetEngagementService assetEngagementService;
     @Autowired private AiLearningEffectService learningEffectService;
     @Autowired private QuestionAiAssetMapper questionAiAssetMapper;
@@ -36,6 +39,7 @@ class AiVariantTrainingIntegrationTest extends IntegrationTestBase {
 
     @Test
     void variantTrainingIsIdempotentForOneUserAndAssetVersion() {
+        createMotherQuestion(990001L);
         QuestionAiAsset asset = new QuestionAiAsset();
         asset.setQuestionId(990001L);
         asset.setAssetType(AiAssetType.VARIANT.name());
@@ -68,6 +72,7 @@ class AiVariantTrainingIntegrationTest extends IntegrationTestBase {
 
     @Test
     void structuredVariantPersistsPrivateAnswerAndRealGradingFields() {
+        createMotherQuestion(990002L);
         QuestionAiAsset asset = new QuestionAiAsset();
         asset.setQuestionId(990002L);
         asset.setAssetType(AiAssetType.VARIANT.name());
@@ -110,5 +115,17 @@ class AiVariantTrainingIntegrationTest extends IntegrationTestBase {
         assertEquals(1L, effect.getVariantDifficultyStats().get(2).getAnsweredCount());
         assertEquals(1L, effect.getVariantDifficultyStats().get(2).getAnsweredUserCount());
         assertEquals(100.0, effect.getVariantDifficultyStats().get(2).getCorrectRate());
+    }
+
+    private void createMotherQuestion(long id) {
+        Question question = new Question();
+        question.setId(id);
+        question.setCourseId(1L);
+        question.setContent("变式训练母题");
+        question.setQuestionType("SINGLE_CHOICE");
+        question.setVisibility("PUBLIC");
+        question.setStatus(1);
+        question.setDeleted(0);
+        questionMapper.insert(question);
     }
 }

@@ -57,13 +57,15 @@ test('课程空间从首节学习并在真实理解检查后展示知识点记�
     .getByRole('button', { name: '查看课程' })
     .click()
   await expect(page.getByRole('button', { name: '查看题目' })).toBeVisible()
-  const beforeOverviewResponse = page.waitForResponse((response) => /\/my-courses\/\d+\/overview$/.test(response.url()))
-  const beforeFactsResponse = factsResponse(page)
   const joinButton = page.getByRole('button', { name: '加入课程库' })
   const overviewButton = page.getByRole('button', { name: '进入课程空间' })
   await expect(joinButton.or(overviewButton)).toBeEnabled()
   await ((await joinButton.isVisible()) ? joinButton : overviewButton).click()
   await expect(page).toHaveURL(/\/my-courses\/\d+$/)
+  const beforeOverviewResponse = page.waitForResponse((response) => /\/my-courses\/\d+\/overview$/.test(response.url()))
+  const beforeFactsResponse = factsResponse(page)
+  await page.getByRole('button', { name: '打开课程空间' }).click()
+  await expect(page).toHaveURL(/\/my-courses\/\d+\/space$/)
   const overviewUrl = page.url()
   const overview: CourseOverviewVO = (await (await beforeOverviewResponse).json()).data
   const initialFacts = (await (await beforeFactsResponse).json()).data

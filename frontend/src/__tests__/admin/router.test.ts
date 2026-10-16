@@ -19,6 +19,15 @@ vi.mock('@/stores/user', () => ({
 
 import { createAdminRouter } from '@/admin/router'
 
+function createTestRouter() {
+  const router = createAdminRouter(createMemoryHistory('/admin/'))
+  // 守卫与路由记录保持真实，视图渲染由页面单测和 E2E 验证。
+  for (const record of router.getRoutes()) {
+    if (record.components) record.components.default = { template: '<div />' }
+  }
+  return router
+}
+
 describe('独立管理端路由守卫', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -29,7 +38,7 @@ describe('独立管理端路由守卫', () => {
   })
 
   it('未登录用户访问批阅页时进入管理端登录页', async () => {
-    const router = createAdminRouter(createMemoryHistory('/admin/'))
+    const router = createTestRouter()
     await router.push('/subjective-reviews')
     await router.isReady()
     expect(router.currentRoute.value.name).toBe('AdminLogin')
@@ -38,7 +47,7 @@ describe('独立管理端路由守卫', () => {
   it('只有管理员可以进入批阅页', async () => {
     setToken('token')
     state.userInfo = { role: 'ADMIN' }
-    const router = createAdminRouter(createMemoryHistory('/admin/'))
+    const router = createTestRouter()
     await router.push('/subjective-reviews')
     await router.isReady()
     expect(router.currentRoute.value.name).toBe('AdminSubjectiveReviews')
@@ -47,7 +56,7 @@ describe('独立管理端路由守卫', () => {
   it('普通学习者不能复用学习端令牌进入管理端', async () => {
     setToken('learner-token')
     state.userInfo = { role: 'USER' }
-    const router = createAdminRouter(createMemoryHistory('/admin/'))
+    const router = createTestRouter()
     await router.push('/login')
     await router.isReady()
     expect(router.currentRoute.value.name).toBe('AdminLogin')
@@ -57,7 +66,7 @@ describe('独立管理端路由守卫', () => {
   it('独立管理端提供总览和试卷管理路由', async () => {
     setToken('token')
     state.userInfo = { role: 'ADMIN' }
-    const router = createAdminRouter(createMemoryHistory('/admin/'))
+    const router = createTestRouter()
     await router.push('/')
     await router.isReady()
     expect(router.currentRoute.value.name).toBe('AdminDashboard')
@@ -68,7 +77,7 @@ describe('独立管理端路由守卫', () => {
   it('独立管理端提供课程知识点和题目管理路由', async () => {
     setToken('token')
     state.userInfo = { role: 'ADMIN' }
-    const router = createAdminRouter(createMemoryHistory('/admin/'))
+    const router = createTestRouter()
     await router.push('/courses')
     await router.isReady()
     expect(router.currentRoute.value.name).toBe('AdminCourseManage')
@@ -81,7 +90,7 @@ describe('独立管理端路由守卫', () => {
   it('独立管理端提供用户投稿和 AI 运营路由', async () => {
     setToken('token')
     state.userInfo = { role: 'ADMIN' }
-    const router = createAdminRouter(createMemoryHistory('/admin/'))
+    const router = createTestRouter()
     for (const [path, name] of [
       ['/users', 'AdminUserManage'],
       ['/submissions', 'AdminSubmissionManage'],
@@ -96,7 +105,7 @@ describe('独立管理端路由守卫', () => {
   it('取消导航后保留当前页面标题', async () => {
     setToken('token')
     state.userInfo = { role: 'ADMIN' }
-    const router = createAdminRouter(createMemoryHistory('/admin/'))
+    const router = createTestRouter()
     await router.push('/')
     const title = document.title
     router.beforeEach((to) => (to.path === '/exams' ? false : true))

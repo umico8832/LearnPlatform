@@ -176,23 +176,36 @@ test('搜索错误重试、迟到响应和空结果不会混淆状态', async ({
   await maybeScreenshot(page, 'navigation-search-empty-reduced-motion')
 })
 
-test('课程空间返回恢复滚动位置和面包屑', async ({ page }) => {
-  await page.goto('/my-courses/6')
-  await expect(page).toHaveURL(/\/my-courses\/6$/)
+test('课程空间返回恢复滚动位置和面包屑', async ({ page, browser }) => {
+  await page.evaluate(() => localStorage.clear())
+  await createLearnerAndLogin(browser, page, 'navigation-course')
+  await page.setViewportSize({ width: 1440, height: 600 })
+  await page.goto('/courses')
+  await page
+    .locator('.course-card')
+    .filter({ hasText: '408 数据结构' })
+    .getByRole('button', { name: '查看课程' })
+    .click()
+  await page.getByRole('button', { name: '加入课程库', exact: true }).click()
+  await expect(page).toHaveURL(/\/my-courses\/\d+$/)
+  const courseUrl = page.url()
+  await page.getByRole('button', { name: '打开课程空间' }).click()
+  await expect(page).toHaveURL(`${courseUrl}/space`)
   await expect(page.getByRole('heading', { name: '408 数据结构', exact: true })).toBeVisible()
   // 课程页高度随学习数据变化：滚到实际可滚动范围的中部，而不是固定像素。
   const maxScroll = () => page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight)
   await expect.poll(maxScroll).toBeGreaterThan(800)
   const target = Math.min(1500, Math.floor((await maxScroll()) / 2))
-  const courseBreadcrumb = page.locator('.route-context').getByRole('link', { name: '我的课程' })
+  const courseBreadcrumb = page.locator('.route-context').getByRole('link', { name: '课程', exact: true })
   await expect(courseBreadcrumb).toBeVisible()
+  await expect(courseBreadcrumb).toHaveAttribute('href', new URL(courseUrl).pathname)
   await page.evaluate((y) => window.scrollTo(0, y), target)
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(target)
 
   await courseBreadcrumb.click()
-  await expect(page).toHaveURL(/\/my-courses$/)
+  await expect(page).toHaveURL(courseUrl)
   await page.goBack()
-  await expect(page).toHaveURL(/\/my-courses\/6$/)
+  await expect(page).toHaveURL(`${courseUrl}/space`)
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(target)
 })
 

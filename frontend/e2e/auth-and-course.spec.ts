@@ -330,7 +330,7 @@ test('部分交卷后未答题保留零分且不会进入错题与复习', async
   const wrongRows = page.getByRole('region', { name: '错题列表' }).getByRole('article')
   await expect(wrongRows).toHaveCount(1)
   await expect(wrongRows).toContainText('Java 中用于定义类继承关系的关键字')
-  await page.goto('/review')
+  await page.goto('/review/classic')
   await page.getByRole('button', { name: '同步错题到复习' }).click()
   await expect(page.getByText('复习卡片', { exact: true })).toBeVisible()
   await expect(page.locator('.stats-grid')).toContainText('1')
@@ -611,6 +611,8 @@ test('课程空间可完成整体与知识点阶段测评并查看历史复盘',
     await overviewButton.click()
   }
 
+  await page.getByRole('button', { name: '打开课程空间' }).click()
+  await expect(page).toHaveURL(/\/my-courses\/\d+\/space$/)
   await openCourseMore(page, '阶段测评')
   const setupDialog = page.getByRole('dialog', { name: '开始阶段测评' })
   await expect(setupDialog).toContainText('课程整体测评')
@@ -887,6 +889,8 @@ test('课程空间学习工具可进入对应页面并携带课程参数', async
     await page.getByRole('button', { name: '进入课程空间' }).click()
   }
   await expect(page).toHaveURL(new RegExp(`/my-courses/${courseId}$`))
+  await page.getByRole('button', { name: '打开课程空间' }).click()
+  await expect(page).toHaveURL(new RegExp(`/my-courses/${courseId}/space$`))
   const overviewUrl = page.url()
 
   const toolEntries = [
@@ -899,7 +903,7 @@ test('课程空间学习工具可进入对应页面并携带课程参数', async
 
   for (const entry of toolEntries) {
     await page.goto(overviewUrl)
-    await expect(page).toHaveURL(new RegExp(`/my-courses/${courseId}$`))
+    await expect(page).toHaveURL(new RegExp(`/my-courses/${courseId}/space$`))
     await page
       .locator('.tool-row')
       .filter({ has: page.getByText(entry.tool, { exact: true }) })

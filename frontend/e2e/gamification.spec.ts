@@ -347,7 +347,7 @@ test.describe('安静学习投入记录', () => {
     const fixture = await createFixture(browser, page, `review-${Date.now()}`)
     const question = fixture.questions[0]
     await api<void>(page, `/review/add/${question.id}`, 'POST')
-    await page.goto(`/review?questionId=${question.id}`)
+    await page.goto(`/review/classic?questionId=${question.id}`)
     // 定位单题时自动开始复习，等待真实题面选项加载后再作答。
     const correctOption = page.locator(`input[type="radio"][value="${question.answer}"]`)
     await expect(correctOption).toBeVisible()
@@ -524,7 +524,7 @@ test.describe('学习投入边界验收', () => {
     await expect(wrongRows).toContainText(`E2E_GAMIFICATION_wrong-review-`)
 
     await api<void>(page, `/review/reset/${question.id}`, 'POST')
-    await page.goto(`/review?questionId=${question.id}`)
+    await page.goto(`/review/classic?questionId=${question.id}`)
     const correctOption = page.locator(`input[type="radio"][value="${question.answer}"]`)
     await expect(correctOption).toBeVisible()
     await correctOption.check()
