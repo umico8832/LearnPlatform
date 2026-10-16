@@ -16,6 +16,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.nio.file.Path;
@@ -34,6 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @ActiveProfiles("integration")
 @AutoConfigureMockMvc
+@TestPropertySource(properties = "spring.datasource.hikari.connection-init-sql=SET time_zone = '+03:00'")
 class KnowledgeSnapshotIntegrationTest extends IntegrationTestBase {
     @Autowired private KnowledgeSnapshotStoreService store;
     @Autowired private KnowledgeIndexStateService indexes;
@@ -220,14 +222,28 @@ class KnowledgeSnapshotIntegrationTest extends IntegrationTestBase {
         String endpoint = "e".repeat(64);
         indexes.review(actor, bundleId, "REVIEWED", "人工核对测试内容");
         var first = indexes.begin(actor, bundleId, key, "model", 2, "test", endpoint);
+        assertTrue(indexes.hasActiveLease(first));
+        assertDatabaseLeaseIsFresh(first.getId());
+        assertTrue(indexes.renew(first.getId(), first.getRunKey(), 0));
+        assertDatabaseLeaseIsFresh(first.getId());
         assertThrows(BusinessException.class, () -> indexes.begin(actor, bundleId, key, "model", 2, "test", endpoint));
         jdbc.update("UPDATE knowledge_content_index SET lease_until=DATE_SUB(NOW(), INTERVAL 1 SECOND) WHERE id=?", first.getId());
         var second = indexes.begin(actor, bundleId, key, "model", 2, "test", endpoint);
         assertNotEquals(first.getRunKey(), second.getRunKey());
+        assertDatabaseLeaseIsFresh(second.getId());
         assertFalse(indexes.complete(first.getId(), first.getRunKey(), 1));
         indexes.markDeleted(actor, bundleId);
         assertFalse(indexes.purged(second.getId()));
         assertFalse(indexes.renew(second.getId(), second.getRunKey(), 1));
+        jdbc.update("UPDATE knowledge_content_index SET lease_until=DATE_SUB(NOW(), INTERVAL 1 SECOND) WHERE id=?", second.getId());
+        assertTrue(indexes.purged(second.getId()));
+    }
+
+    private void assertDatabaseLeaseIsFresh(Long indexId) {
+        Integer seconds = jdbc.queryForObject("SELECT TIMESTAMPDIFF(SECOND, NOW(), lease_until) "
+                + "FROM knowledge_content_index WHERE id=?", Integer.class, indexId);
+        assertNotNull(seconds);
+        assertTrue(seconds >= 119 && seconds <= 120, "Lease must use the database clock: " + seconds);
     }
 
     private KnowledgeSnapshot snapshot(String hash, String id) {

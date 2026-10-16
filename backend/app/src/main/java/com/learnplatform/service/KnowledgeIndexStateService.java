@@ -71,7 +71,7 @@ public class KnowledgeIndexStateService {
         if (!sameMetadata(index, model, dimensions, collectionName, vectorEndpointHash)) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "索引键已绑定其他模型配置");
         }
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = indexes.currentTime();
         if ("INDEXING".equals(index.getStatus()) && index.getLeaseUntil() != null
                 && index.getLeaseUntil().isAfter(now)) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "知识索引正在构建");
@@ -89,7 +89,7 @@ public class KnowledgeIndexStateService {
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public boolean renew(Long indexId, String runKey, int indexedCount) {
         return indexedCount >= 0 && validRunKey(runKey)
-                && indexes.renew(indexId, runKey, indexedCount, LocalDateTime.now().plusSeconds(LEASE_SECONDS)) == 1;
+                && indexes.renew(indexId, runKey, indexedCount, indexes.currentTime().plusSeconds(LEASE_SECONDS)) == 1;
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -100,6 +100,10 @@ public class KnowledgeIndexStateService {
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public boolean fail(Long indexId, String runKey) {
         return validRunKey(runKey) && indexes.fail(indexId, runKey) == 1;
+    }
+
+    public boolean hasActiveLease(KnowledgeContentIndex index) {
+        return index.getLeaseUntil() != null && index.getLeaseUntil().isAfter(indexes.currentTime());
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)

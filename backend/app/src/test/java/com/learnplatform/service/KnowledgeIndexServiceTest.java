@@ -61,6 +61,23 @@ class KnowledgeIndexServiceTest {
         verify(states).fail(9L, run);
     }
 
+    @Test void withdrawalWaitsForDatabaseLeaseBeforeDeletingRemoteVectors() {
+        var index = new KnowledgeContentIndex();
+        index.setId(9L);
+        index.setIndexKey(key);
+        index.setVectorEndpointHash(endpoint);
+        index.setCollectionName(config.getVectorCollection());
+        when(states.markDeleted(7L, 3L)).thenReturn(List.of(index));
+        when(vectors.endpointHash()).thenReturn(endpoint);
+        when(states.hasActiveLease(index)).thenReturn(true, false);
+
+        assertThrows(BusinessException.class, () -> service.withdraw(7L, 3L));
+        verify(client, never()).delete(anyLong(), anyString());
+        service.withdraw(7L, 3L);
+        verify(client).delete(3L, key);
+        verify(states).purged(9L);
+    }
+
     @Test void upstreamFailureNeverMarksIndexReady() {
         when(invocation.embed(any(), any(), any())).thenThrow(new IllegalStateException("safe failure"));
         assertThrows(IllegalStateException.class, () -> service.index(7L, 3L));

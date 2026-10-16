@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.time.LocalDateTime;
 
 @Service
 public class KnowledgeIndexService {
@@ -88,7 +87,7 @@ public class KnowledgeIndexService {
         boolean remaining = false;
         try (var client = vectors.client()) {
             for (var index : indexes) {
-                if (index.getLeaseUntil() != null && index.getLeaseUntil().isAfter(LocalDateTime.now())) {
+                if (states.hasActiveLease(index)) {
                     remaining = true;
                     continue;
                 }

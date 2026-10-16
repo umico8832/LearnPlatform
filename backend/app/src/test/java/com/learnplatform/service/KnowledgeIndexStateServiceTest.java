@@ -2,6 +2,7 @@ package com.learnplatform.service;
 
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.entity.KnowledgeContentBundle;
+import com.learnplatform.entity.KnowledgeContentIndex;
 import com.learnplatform.entity.User;
 import com.learnplatform.mapper.KnowledgeContentBundleMapper;
 import com.learnplatform.mapper.KnowledgeContentIndexMapper;
@@ -9,9 +10,11 @@ import com.learnplatform.mapper.UserMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -29,6 +32,7 @@ class KnowledgeIndexStateServiceTest {
         admin.setRole("ADMIN");
         when(users.selectById(7L)).thenReturn(admin);
         when(bundles.update(any(), any())).thenReturn(1);
+        when(indexes.currentTime()).thenReturn(LocalDateTime.of(2030, 1, 1, 0, 0));
     }
 
     @Test void reviewedSourceStatusCannotReplaceManualBundleReview() {
@@ -56,6 +60,18 @@ class KnowledgeIndexStateServiceTest {
         when(indexes.purged(9L)).thenReturn(0);
 
         assertFalse(state.purged(9L));
+    }
+
+    @Test void leaseActivityUsesDatabaseClockIncludingTheExpiryBoundary() {
+        var index = new KnowledgeContentIndex();
+        assertFalse(state.hasActiveLease(index));
+        var databaseNow = LocalDateTime.of(2030, 1, 1, 0, 0);
+        index.setLeaseUntil(databaseNow.plusSeconds(1));
+        assertTrue(state.hasActiveLease(index));
+        index.setLeaseUntil(databaseNow);
+        assertFalse(state.hasActiveLease(index));
+        index.setLeaseUntil(databaseNow.minusSeconds(1));
+        assertFalse(state.hasActiveLease(index));
     }
 
     private KnowledgeContentBundle bundle(String status) {

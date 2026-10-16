@@ -14,6 +14,9 @@ import java.util.List;
 
 @Mapper
 public interface KnowledgeContentIndexMapper extends BaseMapper<KnowledgeContentIndex> {
+    @Select("SELECT NOW()")
+    LocalDateTime currentTime();
+
     @Insert("""
             INSERT INTO knowledge_content_index
                 (bundle_id,index_key,model,dimensions,collection_name,vector_endpoint_hash,status)
