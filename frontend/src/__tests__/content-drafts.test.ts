@@ -140,7 +140,7 @@ describe('M5 待审核题目草稿的正式场景', () => {
     }
   })
 
-  it('出栈序列计数题的 3 元素与 4 元素答案由逐排列模拟得到', () => {
+  it('三元素出栈序列计数题的容量不限与容量 2 答案由逐排列模拟得到', () => {
     const question = questions.find((item) => item.id === 'st-07')!
     const permutations = (values: number[]): number[][] =>
       values.length === 0
@@ -148,13 +148,24 @@ describe('M5 待审核题目草稿的正式场景', () => {
         : values.flatMap((value, index) =>
             permutations(values.filter((_, i) => i !== index)).map((tail) => [value, ...tail]),
           )
-    for (const [part, n] of [
-      [question, 3],
-      [question.variant, 4],
+    for (const [part, n, capacity] of [
+      [question, 3, Infinity],
+      [question.variant, 3, 2],
     ] as const) {
-      const reachable = permutations(Array.from({ length: n }, (_, i) => i + 1)).filter(
-        (seq) => stack.build({ scene: 'stack', op: 'check', seq }).check.detail === '序列合法',
-      ).length
+      const reachable = permutations(Array.from({ length: n }, (_, i) => i + 1)).filter((seq) => {
+        if (stack.build({ scene: 'stack', op: 'check', seq }).check.detail !== '序列合法') return false
+        if (capacity === Infinity) return true
+        const values: number[] = []
+        let next = 1
+        for (const target of seq) {
+          while (next <= target) {
+            if (values.length >= capacity) return false
+            values.push(next++)
+          }
+          if (values.pop() !== target) return false
+        }
+        return true
+      }).length
       const chosen = part.options.find((option) => option.label === part.correctAnswer)!
       expect(Number.parseInt(chosen.content, 10)).toBe(reachable)
     }
