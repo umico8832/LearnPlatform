@@ -5,7 +5,7 @@
 
 ## 当前阶段
 
-- 当前任务：按 [ADR-0011](../architecture/decisions/0011-living-textbook-spring-motion.md) 重做学习端，先把演示主线“一道题从错到懂”做到极致；M0–M5 安排见[路线图](../product/roadmap.md)。其他功能保留现状，演示材料暂不制作。
+- 当前任务：Phase 26（M0–M5）已完成。Phase 27 让题目理解页接入真实模型的题目追问（DeepSeek `deepseek-flash`，答对之前不给答案），并按 ADR-0011 重做首页与登录注册一组页面；安排见[路线图](../product/roadmap.md)。课程空间、复习工具与个人资料页保留现状，演示材料暂不制作。
 - 进度：M0、M1 已完成（新视觉基线、可视化组件与三个场景，原型 `tmp/viz-lab/` 以 `frontend/src/viz/` 为准）。
   M2 已完成：已重做的题目理解页 `/questions/:id`（作答 → 所选错项的误区 → 用本题数据停在出错一步的动画 →
   正解 → 无提示变式）、[题目理解 API](../reference/api/question-understanding.md) 与 V106–V107 迁移，以及两道预置题
