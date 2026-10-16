@@ -1,6 +1,7 @@
 package com.learnplatform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
@@ -19,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +34,11 @@ import java.util.stream.Collectors;
  */
 @Service
 public class WrongQuestionService {
+
+    private static final String NEXT_REVIEW_DATE_SQL = """
+            (SELECT s.next_review_date FROM question_review_schedule s
+             WHERE s.user_id=wrong_question.user_id AND s.question_id=wrong_question.question_id AND s.deleted=0)
+            """.strip();
 
     private static final Logger log = LoggerFactory.getLogger(WrongQuestionService.class);
 
@@ -96,38 +103,26 @@ public class WrongQuestionService {
     public Page<WrongQuestionVO> getWrongQuestions(Long userId, int pageNum, int pageSize,
                                                     Long courseId, Long questionId,
                                                     Long knowledgePointId, Integer masteryLevel) {
+        return getWrongQuestions(userId, pageNum, pageSize, courseId, questionId, knowledgePointId,
+                masteryLevel, false, "updateTime");
+    }
+
+    public Page<WrongQuestionVO> getWrongQuestions(Long userId, int pageNum, int pageSize,
+                                                    Long courseId, Long questionId, Long knowledgePointId,
+                                                    Integer masteryLevel, boolean dueOnly, String sortBy) {
+        if (!"updateTime".equals(sortBy) && !"nextReviewDate".equals(sortBy)) {
+            throw new BusinessException(ResultCode.VALIDATION_ERROR, "不支持的错题排序方式");
+        }
         Page<WrongQuestion> page = new Page<>(pageNum, pageSize);
-        LambdaQueryWrapper<WrongQuestion> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(WrongQuestion::getUserId, userId);
-        if (courseId != null) {
-            Set<Long> courseQuestionIds = questionMapper.selectList(new LambdaQueryWrapper<Question>()
-                            .eq(Question::getCourseId, courseId)).stream()
-                    .map(Question::getId)
-                    .collect(Collectors.toSet());
-            if (courseQuestionIds.isEmpty()) {
-                Page<WrongQuestionVO> emptyPage = new Page<>(pageNum, pageSize, 0);
-                emptyPage.setRecords(List.of());
-                return emptyPage;
-            }
-            wrapper.in(WrongQuestion::getQuestionId, courseQuestionIds);
+        QueryWrapper<WrongQuestion> wrapper = scope(userId, courseId, questionId, knowledgePointId);
+        wrapper.eq(masteryLevel != null, "mastery_level", masteryLevel);
+        if (dueOnly) {
+            wrapper.apply(NEXT_REVIEW_DATE_SQL + " <= {0}", LocalDate.now());
         }
-        if (knowledgePointId != null) {
-            Set<Long> kpQuestionIds = new HashSet<>(knowledgePointMapper
-                    .selectQuestionIdsByKnowledgePointId(knowledgePointId));
-            if (kpQuestionIds.isEmpty()) {
-                Page<WrongQuestionVO> emptyPage = new Page<>(pageNum, pageSize, 0);
-                emptyPage.setRecords(List.of());
-                return emptyPage;
-            }
-            wrapper.in(WrongQuestion::getQuestionId, kpQuestionIds);
+        if ("nextReviewDate".equals(sortBy)) {
+            wrapper.orderByAsc(NEXT_REVIEW_DATE_SQL + " IS NULL", NEXT_REVIEW_DATE_SQL);
         }
-        if (questionId != null) {
-            wrapper.eq(WrongQuestion::getQuestionId, questionId);
-        }
-        if (masteryLevel != null) {
-            wrapper.eq(WrongQuestion::getMasteryLevel, masteryLevel);
-        }
-        wrapper.orderByDesc(WrongQuestion::getUpdateTime);
+        wrapper.orderByDesc("update_time", "id");
 
         Page<WrongQuestion> result = wrongQuestionMapper.selectPage(page, wrapper);
 
@@ -239,9 +234,16 @@ public class WrongQuestionService {
      * 获取错题本统计 - 使用批量查询优化 N+1
      */
     public Map<String, Object> getWrongQuestionStats(Long userId) {
-        LambdaQueryWrapper<WrongQuestion> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(WrongQuestion::getUserId, userId);
+        return getWrongQuestionStats(userId, null, null, null);
+    }
+
+    public Map<String, Object> getWrongQuestionStats(Long userId, Long courseId, Long questionId,
+                                                     Long knowledgePointId) {
+        QueryWrapper<WrongQuestion> wrapper = scope(userId, courseId, questionId, knowledgePointId);
+        LocalDate today = LocalDate.now();
         List<WrongQuestion> list = wrongQuestionMapper.selectList(wrapper);
+        long dueCount = wrongQuestionMapper.selectCount(
+                wrapper.clone().apply(NEXT_REVIEW_DATE_SQL + " <= {0}", today));
 
         int total = list.size();
         int unmastered = (int) list.stream()
@@ -282,11 +284,36 @@ public class WrongQuestionService {
 
         Map<String, Object> stats = new HashMap<>();
         stats.put("total", total);
+        stats.put("dueCount", Math.toIntExact(dueCount));
         stats.put("unmastered", unmastered);
         stats.put("partial", partial);
         stats.put("mastered", mastered);
         stats.put("courseWrongCount", courseWrongCount);
 
         return stats;
+    }
+
+    private QueryWrapper<WrongQuestion> scope(Long userId, Long courseId, Long questionId, Long knowledgePointId) {
+        QueryWrapper<WrongQuestion> wrapper = new QueryWrapper<>();
+        wrapper.eq("user_id", userId).eq(questionId != null, "question_id", questionId);
+        if (courseId != null) {
+            Set<Long> ids = questionMapper.selectList(new LambdaQueryWrapper<Question>()
+                            .eq(Question::getCourseId, courseId)).stream()
+                    .map(Question::getId).collect(Collectors.toSet());
+            restrictQuestions(wrapper, ids);
+        }
+        if (knowledgePointId != null) {
+            restrictQuestions(wrapper, new HashSet<>(knowledgePointMapper
+                    .selectQuestionIdsByKnowledgePointId(knowledgePointId)));
+        }
+        return wrapper;
+    }
+
+    private void restrictQuestions(QueryWrapper<WrongQuestion> wrapper, Set<Long> ids) {
+        if (ids.isEmpty()) {
+            wrapper.apply("1=0");
+        } else {
+            wrapper.in("question_id", ids);
+        }
     }
 }

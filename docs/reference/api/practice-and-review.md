@@ -33,7 +33,7 @@
 
 错题列表每条记录还返回布尔 `hasUnderstanding`，为 `true` 时“重做”可进入 `/questions/{questionId}`，否则沿用旧练习入口；判定与空值规则见[理解入口契约](question-understanding.md#列表中的理解入口b7)。
 
-M4 在错题列表每条记录增加 `misconception` 与 `nextReviewDate`。`misconception` 为最近一次所选错项当前有效的已审核误区 `{title, explanation, source: {kind, reviewStatus}}`，其中 `kind=CURATED|AI_GENERATED`、公开 `reviewStatus=REVIEWED`；无有效讲解时为 `null`。它只解释有对应选项讲解的作答，不根据题目或统计猜测错因。`nextReviewDate` 是该用户同题现有复习卡片的到期日期，未排期为 `null`。分页、筛选与用户隔离保持原约定；这两个字段随每页记录返回，统计接口暂不扩展。
+M4 在错题列表每条记录增加 `misconception` 与 `nextReviewDate`。`misconception` 为最近一次所选错项当前有效的已审核误区 `{title, explanation, source: {kind, reviewStatus}}`，其中 `kind=CURATED|AI_GENERATED`、公开 `reviewStatus=REVIEWED`；无有效讲解时为 `null`。它只解释有对应选项讲解的作答，不根据题目或统计猜测错因。`nextReviewDate` 是该用户同题现有复习卡片的到期日期，未排期为 `null`。这两个字段随每页记录返回。
 
 | 接口                                    | 说明                                                                       |
 | --------------------------------------- | -------------------------------------------------------------------------- |
@@ -41,6 +41,30 @@ M4 在错题列表每条记录增加 `misconception` 与 `nextReviewDate`。`mis
 | `GET /api/wrong-questions/stats`        | 查询错题统计                                                               |
 | `PUT /api/wrong-questions/{id}/mastery` | 更新掌握状态                                                               |
 | `DELETE /api/wrong-questions/{id}`      | 移出错题本                                                                 |
+
+### 到期筛选、排序与范围统计（B8）
+
+`GET /api/wrong-questions` 保留 `pageNum=1`、`pageSize=10`，接受以下可选参数：
+
+| 参数 | 类型 / 默认值 | 语义 |
+| --- | --- | --- |
+| `courseId`、`questionId`、`knowledgePointId` | 整数 | 课程、题目、关联知识点，按交集限定范围 |
+| `masteryLevel` | 整数 | 原掌握状态筛选 |
+| `dueOnly` | 布尔，默认 `false` | `true` 时只返回当前用户有效排期的 `nextReviewDate <= 今天`，包含逾期；未排期和已移除卡片不计入 |
+| `sortBy` | `updateTime`（默认）或 `nextReviewDate` | 默认按更新时间降序；后者按下次重做日期升序，未排期排最后；同日期按更新时间降序、再按错题 ID 降序 |
+
+所有条件在数据库分页前组合生效，响应仍为统一 `R<Page<WrongQuestionVO>>`，`total` 是满足全部条件的错题总数。
+无效 `sortBy` 返回参数校验错误（`1001`）。示例：
+`GET /api/wrong-questions?courseId=1&knowledgePointId=2&masteryLevel=0&dueOnly=true&sortBy=nextReviewDate&pageNum=1&pageSize=10`。
+
+`GET /api/wrong-questions/stats` 新增可选 `courseId`、`questionId`、`knowledgePointId`，与列表的范围条件按相同交集生效；
+返回统一 `R`，数据保留 `total`、`unmastered`、`partial`、`mastered`、`courseWrongCount`，新增整数 `dueCount`（包含逾期）。
+各计数及课程分布均只统计当前用户、当前范围中未移出的错题；不传参数仍统计全局错题。统计不接受 `masteryLevel`、`dueOnly` 或排序参数，
+以便页面同时显示当前范围的掌握状态分布与到期数量。
+
+“今天”使用应用服务器默认时区的当前日期（Java `LocalDate.now()`），与复习到期判断及
+[ADR-0012](../../architecture/decisions/0012-fsrs-review-scheduling.md) 的日期投影一致；不使用数据库会话的 `CURRENT_DATE`，也不采用浏览器时区。
+错题到期只表达该错题现有排期是否到期，不额外套用复习入口的自动判分可用性筛选。
 
 ## 间隔重复
 

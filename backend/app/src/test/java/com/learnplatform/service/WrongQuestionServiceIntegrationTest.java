@@ -29,7 +29,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.TimeZone;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -339,6 +343,159 @@ class WrongQuestionServiceIntegrationTest extends IntegrationTestBase {
         Page<WrongQuestionVO> empty = wrongQuestionService.getWrongQuestions(
                 userId, 1, 10, null, null, 999999L, null);
         assertEquals(0, empty.getTotal(), "无关联题目的知识点应返回空结果");
+    }
+
+    @Test
+    void statsCountsDueDatesIncludingOverdueAndIgnoresOtherUsersAndRemovedSchedules() {
+        LocalDate today = LocalDate.now();
+        wrongQuestionService.addWrongQuestion(userId, questionId1, "B");
+        wrongQuestionService.addWrongQuestion(userId, questionId2, "A");
+        wrongQuestionService.addWrongQuestion(userId, questionId3, "A");
+        insertSchedule(userId, questionId1, today.minusDays(1), 0);
+        insertSchedule(userId, questionId2, today, 0);
+        insertSchedule(userId, questionId3, today, 1);
+        insertSchedule(anotherUserId, questionId3, today, 0);
+        wrongQuestionService.addWrongQuestion(anotherUserId, questionId3, "B");
+
+        Map<String, Object> stats = wrongQuestionService.getWrongQuestionStats(userId);
+        assertEquals(3, stats.get("total"));
+        assertEquals(2, stats.get("dueCount"));
+    }
+
+    @Test
+    void dueFilterAndDateSortApplyBeforePagination() {
+        LocalDate today = LocalDate.now();
+        Long unscheduled = extraQuestion();
+        Long removedSchedule = extraQuestion();
+        Long otherUsersSchedule = extraQuestion();
+        for (Long question : List.of(questionId1, questionId2, questionId3,
+                unscheduled, removedSchedule, otherUsersSchedule)) {
+            wrongQuestionService.addWrongQuestion(userId, question, "B");
+        }
+        insertSchedule(userId, questionId1, today.minusDays(2), 0);
+        insertSchedule(userId, questionId2, today, 0);
+        insertSchedule(userId, questionId3, today.plusDays(1), 0);
+        insertSchedule(userId, removedSchedule, today.minusDays(3), 1);
+        insertSchedule(anotherUserId, otherUsersSchedule, today.minusDays(4), 0);
+        jdbcTemplate.update("UPDATE wrong_question SET update_time='2026-01-01 00:00:00' WHERE user_id=?", userId);
+
+        Page<WrongQuestionVO> first = wrongQuestionService.getWrongQuestions(
+                userId, 1, 1, null, null, null, null, true, "nextReviewDate");
+        Page<WrongQuestionVO> second = wrongQuestionService.getWrongQuestions(
+                userId, 2, 1, null, null, null, null, true, "nextReviewDate");
+        Page<WrongQuestionVO> pastEnd = wrongQuestionService.getWrongQuestions(
+                userId, 3, 1, null, null, null, null, true, "nextReviewDate");
+        assertEquals(2, first.getTotal());
+        assertEquals(2, second.getTotal());
+        assertEquals(questionId1, first.getRecords().get(0).getQuestionId());
+        assertEquals(questionId2, second.getRecords().get(0).getQuestionId());
+        assertEquals(2, pastEnd.getTotal());
+        assertTrue(pastEnd.getRecords().isEmpty());
+        assertEquals(today, second.getRecords().get(0).getNextReviewDate());
+
+        Page<WrongQuestionVO> all = wrongQuestionService.getWrongQuestions(
+                userId, 1, 10, null, null, null, null, false, "nextReviewDate");
+        assertEquals(6, all.getTotal());
+        assertEquals(List.of(questionId1, questionId2, questionId3,
+                otherUsersSchedule, removedSchedule, unscheduled),
+                all.getRecords().stream().map(WrongQuestionVO::getQuestionId).toList());
+        assertTrue(all.getRecords().subList(3, 6).stream().allMatch(vo -> vo.getNextReviewDate() == null));
+    }
+
+    @Test
+    void dueScopeCombinesCourseQuestionKnowledgePointAndMasteryWithConsistentStats() {
+        LocalDate today = LocalDate.now();
+        KnowledgePoint kp = new KnowledgePoint();
+        kp.setName("到期组合筛选知识点");
+        kp.setCourseId(courseId1);
+        knowledgePointMapper.insert(kp);
+        for (Long question : List.of(questionId1, questionId2, questionId3)) {
+            wrongQuestionService.addWrongQuestion(userId, question, "B");
+            insertSchedule(userId, question, today, 0);
+        }
+        for (Long question : List.of(questionId1, questionId3)) {
+            jdbcTemplate.update("INSERT INTO question_knowledge_point (question_id, knowledge_point_id) VALUES (?, ?)",
+                    question, kp.getId());
+        }
+        jdbcTemplate.update("UPDATE wrong_question SET mastery_level=1 WHERE user_id=? AND question_id=?",
+                userId, questionId1);
+        wrongQuestionService.addWrongQuestion(anotherUserId, questionId1, "B");
+        insertSchedule(anotherUserId, questionId1, today, 0);
+
+        Page<WrongQuestionVO> combined = wrongQuestionService.getWrongQuestions(
+                userId, 1, 1, courseId1, questionId1, kp.getId(), 1, true, "nextReviewDate");
+        assertEquals(1, combined.getTotal());
+        assertEquals(questionId1, combined.getRecords().get(0).getQuestionId());
+        assertEquals(0, wrongQuestionService.getWrongQuestions(
+                userId, 1, 1, courseId1, questionId1, kp.getId(), 0, true, "nextReviewDate").getTotal());
+        assertEquals(0, wrongQuestionService.getWrongQuestions(
+                userId, 1, 1, courseId2, questionId1, kp.getId(), null, true, "nextReviewDate").getTotal());
+
+        Map<String, Object> scoped = wrongQuestionService.getWrongQuestionStats(userId, courseId1, null, kp.getId());
+        assertEquals(1, scoped.get("total"));
+        assertEquals(1, scoped.get("dueCount"));
+        assertEquals(0, scoped.get("unmastered"));
+        assertEquals(1, scoped.get("partial"));
+        assertEquals(0, scoped.get("mastered"));
+        assertEquals(Map.of("错题测试课程A", 1), scoped.get("courseWrongCount"));
+        assertEquals(0, wrongQuestionService.getWrongQuestionStats(userId, courseId1, questionId2, kp.getId())
+                .get("total"));
+        assertEquals(0, wrongQuestionService.getWrongQuestionStats(userId, null, null, 999999L).get("dueCount"));
+        assertEquals(0, wrongQuestionService.getWrongQuestionStats(userId, 999999L, null, null).get("total"));
+        assertEquals(1, wrongQuestionService.getWrongQuestionStats(anotherUserId, courseId1, questionId1, kp.getId())
+                .get("dueCount"));
+        wrongQuestionService.removeOnCorrect(userId, questionId1);
+        assertEquals(0, wrongQuestionService.getWrongQuestionStats(userId, courseId1, null, kp.getId()).get("dueCount"));
+    }
+
+    @Test
+    void todayUsesApplicationTimeZoneEvenWhenDatabaseDateDiffers() {
+        TimeZone original = TimeZone.getDefault();
+        String databaseZone = jdbcTemplate.queryForObject("SELECT @@session.time_zone", String.class);
+        try {
+            jdbcTemplate.execute("SET time_zone = '+00:00'");
+            for (String zone : List.of("Pacific/Kiritimati", "Pacific/Honolulu")) {
+                TimeZone.setDefault(TimeZone.getTimeZone(zone));
+                LocalDate today = LocalDate.now();
+                long databaseTimestamp = today.plusDays(1).atTime(12, 0).toEpochSecond(ZoneOffset.UTC);
+                jdbcTemplate.execute("SET timestamp = " + databaseTimestamp);
+                assertEquals(today.plusDays(1), jdbcTemplate.queryForObject("SELECT CURRENT_DATE", LocalDate.class));
+                for (Long question : List.of(questionId1, questionId2)) {
+                    wrongQuestionService.addWrongQuestion(userId, question, "B");
+                }
+                jdbcTemplate.update("""
+                        INSERT INTO question_review_schedule (user_id, question_id, next_review_date, deleted)
+                        VALUES (?, ?, ?, 0), (?, ?, ?, 0)
+                        ON DUPLICATE KEY UPDATE next_review_date=VALUES(next_review_date)
+                        """, userId, questionId1, today, userId, questionId2, today.plusDays(1));
+                Page<WrongQuestionVO> page = wrongQuestionService.getWrongQuestions(
+                        userId, 1, 10, null, null, null, null, true, "nextReviewDate");
+                assertEquals(1, page.getTotal(), zone);
+                assertEquals(questionId1, page.getRecords().get(0).getQuestionId(), zone);
+                assertEquals(1, wrongQuestionService.getWrongQuestionStats(userId).get("dueCount"), zone);
+            }
+        } finally {
+            TimeZone.setDefault(original);
+            jdbcTemplate.execute("SET timestamp = DEFAULT");
+            jdbcTemplate.update("SET time_zone = ?", databaseZone);
+        }
+    }
+
+    private Long extraQuestion() {
+        Question question = new Question();
+        question.setContent("错题排期测试题");
+        question.setQuestionType("SINGLE_CHOICE");
+        question.setCourseId(courseId1);
+        question.setStatus(1);
+        questionMapper.insert(question);
+        return question.getId();
+    }
+
+    private void insertSchedule(Long owner, Long question, LocalDate due, int deleted) {
+        jdbcTemplate.update("""
+                INSERT INTO question_review_schedule (user_id, question_id, next_review_date, deleted)
+                VALUES (?, ?, ?, ?)
+                """, owner, question, due, deleted);
     }
 
     // ======================== updateMasteryLevel 测试 ========================

@@ -30,23 +30,29 @@ export interface WrongQuestionVO {
 /** 错题统计 */
 export interface WrongQuestionStatsVO {
   total: number
+  dueCount: number
   unmastered: number
   partial: number
   mastered: number
   courseWrongCount: Record<string, number>
 }
 
+export interface WrongQuestionScope {
+  courseId?: number
+  questionId?: number
+  knowledgePointId?: number
+}
+
 // ======================== API 方法 ========================
 
 /** 获取错题本列表（分页） */
 export function getWrongQuestions(
-  params: {
+  params: WrongQuestionScope & {
     pageNum?: number
     pageSize?: number
-    courseId?: number
-    questionId?: number
-    knowledgePointId?: number
     masteryLevel?: number
+    dueOnly?: boolean
+    sortBy?: 'updateTime' | 'nextReviewDate'
   },
   options?: WrongQuestionRequestOptions,
 ) {
@@ -57,9 +63,23 @@ export function getWrongQuestions(
 }
 
 /** 获取错题统计 */
-export function getWrongQuestionStats(options?: WrongQuestionRequestOptions) {
-  return options
-    ? request.get<unknown, ApiResponse<WrongQuestionStatsVO>>('/wrong-questions/stats', options)
+export function getWrongQuestionStats(options?: WrongQuestionRequestOptions): Promise<ApiResponse<WrongQuestionStatsVO>>
+export function getWrongQuestionStats(
+  params: WrongQuestionScope,
+  options?: WrongQuestionRequestOptions,
+): Promise<ApiResponse<WrongQuestionStatsVO>>
+export function getWrongQuestionStats(
+  paramsOrOptions?: WrongQuestionScope | WrongQuestionRequestOptions,
+  options?: WrongQuestionRequestOptions,
+) {
+  const config =
+    paramsOrOptions && 'errorDisplay' in paramsOrOptions
+      ? paramsOrOptions
+      : paramsOrOptions
+        ? { params: paramsOrOptions, ...(options || {}) }
+        : options
+  return config
+    ? request.get<unknown, ApiResponse<WrongQuestionStatsVO>>('/wrong-questions/stats', config)
     : request.get<unknown, ApiResponse<WrongQuestionStatsVO>>('/wrong-questions/stats')
 }
 

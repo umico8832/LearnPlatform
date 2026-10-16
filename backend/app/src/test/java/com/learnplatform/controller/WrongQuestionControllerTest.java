@@ -71,7 +71,7 @@ class WrongQuestionControllerTest {
         page.setTotal(0);
 
         when(wrongQuestionService.getWrongQuestions(
-                eq(1L), eq(1), eq(10), isNull(), isNull(), isNull(), isNull()))
+                eq(1L), eq(1), eq(10), isNull(), isNull(), isNull(), isNull(), eq(false), eq("updateTime")))
                 .thenReturn(page);
 
         mockMvc.perform(get("/api/wrong-questions").with(mockUser(1L)))
@@ -87,7 +87,7 @@ class WrongQuestionControllerTest {
         page.setTotal(0);
 
         when(wrongQuestionService.getWrongQuestions(
-                eq(1L), eq(1), eq(5), eq(2L), eq(21L), eq(31L), eq(1)))
+                eq(1L), eq(1), eq(5), eq(2L), eq(21L), eq(31L), eq(1), eq(true), eq("nextReviewDate")))
                 .thenReturn(page);
 
         mockMvc.perform(get("/api/wrong-questions")
@@ -96,24 +96,39 @@ class WrongQuestionControllerTest {
                         .param("courseId", "2")
                         .param("questionId", "21")
                         .param("knowledgePointId", "31")
-                        .param("masteryLevel", "1"))
+                        .param("masteryLevel", "1")
+                        .param("dueOnly", "true")
+                        .param("sortBy", "nextReviewDate"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));
 
-        verify(wrongQuestionService).getWrongQuestions(1L, 1, 5, 2L, 21L, 31L, 1);
+        verify(wrongQuestionService).getWrongQuestions(1L, 1, 5, 2L, 21L, 31L, 1, true, "nextReviewDate");
     }
 
     // ======================== 错题统计 ========================
 
     @Test
     void getStats_returnsStats() throws Exception {
-        when(wrongQuestionService.getWrongQuestionStats(1L))
-                .thenReturn(Map.of("totalCount", 15, "unmasteredCount", 10));
+        when(wrongQuestionService.getWrongQuestionStats(1L, null, null, null))
+                .thenReturn(Map.of("total", 15, "unmastered", 10, "dueCount", 4));
 
         mockMvc.perform(get("/api/wrong-questions/stats").with(mockUser(1L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.totalCount").value(15));
+                .andExpect(jsonPath("$.data.total").value(15))
+                .andExpect(jsonPath("$.data.dueCount").value(4));
+    }
+
+    @Test
+    void getStats_forwardsScope() throws Exception {
+        when(wrongQuestionService.getWrongQuestionStats(1L, 2L, 21L, 31L))
+                .thenReturn(Map.of("total", 1, "dueCount", 1));
+
+        mockMvc.perform(get("/api/wrong-questions/stats").with(mockUser(1L))
+                        .param("courseId", "2").param("questionId", "21").param("knowledgePointId", "31"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.dueCount").value(1));
+        verify(wrongQuestionService).getWrongQuestionStats(1L, 2L, 21L, 31L);
     }
 
     // ======================== 更新掌握程度 ========================

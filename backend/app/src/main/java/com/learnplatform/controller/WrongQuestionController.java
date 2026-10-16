@@ -45,9 +45,12 @@ public class WrongQuestionController {
             @RequestParam(required = false) Long courseId,
             @RequestParam(required = false) Long questionId,
             @RequestParam(required = false) Long knowledgePointId,
-            @RequestParam(required = false) Integer masteryLevel) {
+            @RequestParam(required = false) Integer masteryLevel,
+            @RequestParam(defaultValue = "false") boolean dueOnly,
+            @RequestParam(defaultValue = "updateTime") String sortBy) {
         Page<WrongQuestionVO> page = wrongQuestionService.getWrongQuestions(
-                userDetails.getUserId(), pageNum, pageSize, courseId, questionId, knowledgePointId, masteryLevel);
+                userDetails.getUserId(), pageNum, pageSize, courseId, questionId, knowledgePointId,
+                masteryLevel, dueOnly, sortBy);
         return R.ok(page);
     }
 
@@ -58,8 +61,12 @@ public class WrongQuestionController {
     @Operation(summary = "错题统计", description = "获取当前用户的错题统计数据")
     @GetMapping("/stats")
     public R<Map<String, Object>> getStats(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Map<String, Object> stats = wrongQuestionService.getWrongQuestionStats(userDetails.getUserId());
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) Long questionId,
+            @RequestParam(required = false) Long knowledgePointId) {
+        Map<String, Object> stats = wrongQuestionService.getWrongQuestionStats(
+                userDetails.getUserId(), courseId, questionId, knowledgePointId);
         return R.ok(stats);
     }
 

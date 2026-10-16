@@ -114,6 +114,15 @@ class WrongQuestionServiceTest {
         verify(wrongQuestionMapper, never()).deleteById(any(Long.class));
     }
 
+    @Test
+    void rejectsUnsupportedSortWithoutQueryingDatabase() {
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> wrongQuestionService.getWrongQuestions(
+                        7L, 1, 10, null, null, null, null, false, "next_review_date; DROP TABLE wrong_question"));
+        assertEquals("不支持的错题排序方式", exception.getMessage());
+        verify(wrongQuestionMapper, never()).selectPage(any(), any());
+    }
+
     private WrongQuestion wrongQuestion(Long id, Long userId, Long questionId,
                                         Integer wrongCount, Integer masteryLevel,
                                         String lastWrongAnswer) {
