@@ -44,6 +44,12 @@ export const learnerRoutes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, title: '课程' },
   },
   {
+    path: '/review',
+    name: 'Review',
+    component: () => import('@/views/review/ReviewView.vue'),
+    meta: { requiresAuth: true, title: '复习' },
+  },
+  {
     path: '/wrong-questions',
     name: 'WrongQuestions',
     component: () => import('@/views/wrong/WrongQuestionsView.vue'),
@@ -146,10 +152,10 @@ export const learnerRoutes: RouteRecordRaw[] = [
         meta: { title: '我的收藏' },
       },
       {
-        path: 'review',
-        name: 'Review',
+        path: 'review/classic',
+        name: 'ReviewClassic',
         component: () => import('@/views/practice/ReviewView.vue'),
-        meta: { title: '复习' },
+        meta: { title: '复习工具' },
       },
       {
         path: 'profile',
