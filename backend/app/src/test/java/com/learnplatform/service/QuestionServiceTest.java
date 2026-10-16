@@ -15,6 +15,7 @@ import com.learnplatform.mapper.ExamQuestionMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
+import com.learnplatform.mapper.QuestionLearnerStateMapper;
 import com.learnplatform.service.understanding.QuestionUnderstandingContent;
 import com.learnplatform.mapper.QuestionOptionMapper;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
@@ -26,6 +27,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -49,6 +53,7 @@ class QuestionServiceTest {
     @Mock private CacheEvictService cacheEvictService;
 
     @Mock private QuestionUnderstandingContent understanding;
+    @Mock private QuestionLearnerStateMapper learnerStates;
 
     private QuestionService questionService;
 
@@ -61,7 +66,7 @@ class QuestionServiceTest {
         QuestionMutationService mutationService = new QuestionMutationService(
                 questionMapper, questionOptionMapper, questionKnowledgePointMapper, courseMapper,
                 knowledgePointMapper, examQuestionMapper, questionVersionService, cacheEvictService);
-        questionService = new QuestionService(questionMapper, knowledgePointMapper, viewService, mutationService, understanding);
+        questionService = new QuestionService(questionMapper, knowledgePointMapper, viewService, mutationService, understanding, learnerStates);
     }
 
     @Test
@@ -121,7 +126,9 @@ class QuestionServiceTest {
         result.setRecords(List.of(question));
         when(knowledgePointMapper.selectQuestionIdsByKnowledgePointId(31L)).thenReturn(List.of(21L, 22L));
         when(questionMapper.selectPage(any(Page.class), any(LambdaQueryWrapper.class))).thenReturn(result);
-        when(courseMapper.selectById(1L)).thenReturn(new Course());
+        Course course = new Course();
+        course.setId(1L);
+        when(courseMapper.selectBatchIds(List.of(1L))).thenReturn(List.of(course));
         QuestionOption correctOption = option(1L, 21L, "A", "选项");
         correctOption.setIsCorrect(1);
         when(questionOptionMapper.selectList(any())).thenReturn(List.of(correctOption));
@@ -156,6 +163,33 @@ class QuestionServiceTest {
         assertEquals(0, page.getTotal());
         assertEquals(List.of(), page.getRecords());
         verify(questionMapper, never()).selectPage(any(Page.class), any(LambdaQueryWrapper.class));
+    }
+
+    @Test
+    void getEnabledQuestionPage_loadsAuthenticatedStateAndAvailabilityInBatches() {
+        Question first = question(21L, "待重做", 1L, "SINGLE_CHOICE");
+        Question second = question(22L, "已做", 1L, "SINGLE_CHOICE");
+        Page<Question> result = new Page<>(1, 10, 2);
+        result.setRecords(List.of(first, second));
+        when(questionMapper.selectPage(any(Page.class), any(LambdaQueryWrapper.class))).thenReturn(result);
+        when(understanding.available(7L, List.of(first, second))).thenReturn(Set.of(21L));
+        LocalDate date = LocalDate.of(2026, 10, 16);
+        when(learnerStates.forQuestions(7L, List.of(21L, 22L))).thenReturn(Map.of(
+                21L, new QuestionLearnerStateMapper.State("TO_REDO", date),
+                22L, new QuestionLearnerStateMapper.State("DONE", null)));
+
+        var page = questionService.getEnabledQuestionPage(1, 10, null, null, null, null, null, null, 7L);
+
+        assertEquals("TO_REDO", page.getRecords().getFirst().getLearnerStatus());
+        assertEquals(date, page.getRecords().getFirst().getRedoDueDate());
+        assertTrue(page.getRecords().getFirst().getHasUnderstanding());
+        assertEquals("DONE", page.getRecords().getLast().getLearnerStatus());
+        assertNull(page.getRecords().getLast().getRedoDueDate());
+        verify(learnerStates).forQuestions(7L, List.of(21L, 22L));
+        verify(understanding).available(7L, List.of(first, second));
+        verify(understanding, never()).available(any(), org.mockito.ArgumentMatchers.anyLong());
+        verify(courseMapper, never()).selectById(any());
+        verify(knowledgePointMapper, never()).selectById(any());
     }
 
     private Question question(Long id, String content, Long courseId, String questionType) {

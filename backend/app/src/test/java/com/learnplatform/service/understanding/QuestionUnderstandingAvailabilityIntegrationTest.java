@@ -104,6 +104,14 @@ class QuestionUnderstandingAvailabilityIntegrationTest extends IntegrationTestBa
         assertTrue(row.has("hasUnderstanding"));
         assertEquals(expected, row.path("hasUnderstanding").asBoolean());
         assertFalse(row.hasNonNull("analysis"));
+        var matching = questions.getEnabledQuestionPage(1, 10, null, null, null,
+                questionId, null, expected, USER);
+        assertEquals(1, matching.getTotal());
+        assertEquals(1, matching.getRecords().size());
+        var excluded = questions.getEnabledQuestionPage(1, 10, null, null, null,
+                questionId, null, !expected, USER);
+        assertEquals(0, excluded.getTotal());
+        assertTrue(excluded.getRecords().isEmpty());
     }
 
     private void assertWrongMatches(boolean expected) {

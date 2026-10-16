@@ -13,6 +13,8 @@ export interface QuestionOptionVO {
 /** 题目 VO */
 export interface QuestionVO {
   hasUnderstanding?: boolean
+  learnerStatus?: 'NEW' | 'TO_REDO' | 'DONE' | null
+  redoDueDate?: string | null
   id: number
   content: string
   questionType: string
@@ -74,6 +76,7 @@ export function getQuestionPage(params: {
   difficulty?: number
   questionId?: number
   knowledgePointId?: number
+  hasUnderstanding?: boolean
 }) {
   return request.get<unknown, ApiResponse<PageResult<QuestionVO>>>('/questions', { params, errorDisplay: 'inline' })
 }

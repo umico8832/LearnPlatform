@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -35,6 +36,7 @@ class QuestionControllerTest {
         mockMvc = MockMvcBuilders.standaloneSetup(
                         new QuestionController(questionService, correctionReportService))
                 .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(new org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver())
                 .build();
     }
 
@@ -43,7 +45,7 @@ class QuestionControllerTest {
         Page<QuestionVO> page = new Page<>(1, 5, 0);
         page.setRecords(List.of());
         when(questionService.getEnabledQuestionPage(
-                eq(1), eq(5), eq("SINGLE_CHOICE"), eq(2L), eq(3), eq(21L), eq(31L)))
+                eq(1), eq(5), eq("SINGLE_CHOICE"), eq(2L), eq(3), eq(21L), eq(31L), eq(true), isNull()))
                 .thenReturn(page);
 
         mockMvc.perform(get("/api/questions")
@@ -52,10 +54,17 @@ class QuestionControllerTest {
                         .param("courseId", "2")
                         .param("difficulty", "3")
                         .param("questionId", "21")
-                        .param("knowledgePointId", "31"))
+                        .param("knowledgePointId", "31")
+                        .param("hasUnderstanding", "true"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));
 
-        verify(questionService).getEnabledQuestionPage(1, 5, "SINGLE_CHOICE", 2L, 3, 21L, 31L);
+        verify(questionService).getEnabledQuestionPage(1, 5, "SINGLE_CHOICE", 2L, 3, 21L, 31L, true, null);
+    }
+
+    @Test
+    void listQuestions_rejectsInvalidUnderstandingFilter() throws Exception {
+        mockMvc.perform(get("/api/questions").param("hasUnderstanding", "invalid"))
+                .andExpect(jsonPath("$.code").value(1001));
     }
 }

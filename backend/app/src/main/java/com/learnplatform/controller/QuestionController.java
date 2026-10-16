@@ -2,6 +2,8 @@ package com.learnplatform.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.result.R;
+import com.learnplatform.common.result.ResultCode;
+import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.QuestionCorrectionReportRequest;
 import com.learnplatform.dto.QuestionCorrectionReportVO;
 import com.learnplatform.dto.QuestionVO;
@@ -45,9 +47,19 @@ public class QuestionController {
             @RequestParam(required = false) Long courseId,
             @RequestParam(required = false) Integer difficulty,
             @RequestParam(required = false) Long questionId,
-            @RequestParam(required = false) Long knowledgePointId) {
+            @RequestParam(required = false) Long knowledgePointId,
+            @RequestParam(required = false) String hasUnderstanding,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         return R.ok(questionService.getEnabledQuestionPage(pageNum, pageSize,
-                questionType, courseId, difficulty, questionId, knowledgePointId));
+                questionType, courseId, difficulty, questionId, knowledgePointId,
+                understandingFilter(hasUnderstanding), userDetails == null ? null : userDetails.getUserId()));
+    }
+
+    private Boolean understandingFilter(String value) {
+        if (value == null) { return null; }
+        if ("true".equalsIgnoreCase(value)) { return true; }
+        if ("false".equalsIgnoreCase(value)) { return false; }
+        throw new BusinessException(ResultCode.VALIDATION_ERROR, "hasUnderstanding 必须为 true 或 false");
     }
 
     /**

@@ -7,6 +7,35 @@
 为 `true` 时前端可进入 `/questions/{id}`，其余沿用既有练习入口。
 可见性、空值与内容变化后的错误语义见[题目理解 API](question-understanding.md#列表中的理解入口b7)。
 
+### 我的做题状态与理解内容筛选（B16）
+
+`GET /api/questions` 新增可选布尔参数 `hasUnderstanding`：省略时不筛选，`true` / `false`
+分别只取理解入口可用 / 不可用的题目。判定复用上述正式理解入口门禁，管理员调用学习端时也不包含预览内容。
+与 `courseId`、`questionId`、`knowledgePointId`、`questionType`、`difficulty` 按交集组合，
+在分页前生效，`total` 与筛选范围一致，越界页为空；非法布尔值返回参数错误 `1001`。
+原有学习端范围仍是启用的公开题目，不因本参数扩展到私有题或待审核草稿。
+
+学习端列表每行新增必返 `learnerStatus: 'NEW' | 'TO_REDO' | 'DONE'` 和
+`redoDueDate: string | null`（日期格式 `YYYY-MM-DD`），仅使用当前认证用户的事实，按以下优先级判定：
+
+1. `TO_REDO`：存在未删除且 `mastery_level != 2` 的错题，与课程待办的“未解决错题”一致，
+   包括尚无独立作答评分的考试等入口错题。
+2. `DONE`：没有上述错题，且有该用户同题的 FSRS 独立作答评分事件。
+3. `NEW`：其余情况，即尚无独立评分证据且无未解决错题。
+
+独立作答直接采用[FSRS 评分事实](practice-and-review.md#间隔重复)：直接练习（含理解原题）、
+直接复习与 `UNAIDED` 变式；`AIDED` 变式、Tutor 辅助作答、管理员预览不计入。
+旧数据没有 FSRS 评分事件时不从旧卡片、辅助记录或累计次数推断独立性，也不回填评分。
+`DONE` 表示已独立作答且当前无未解决错题，手动移出/标为已掌握也会影响此状态，不作为掌握证明。
+
+`redoDueDate` 仅在 `TO_REDO` 时读取本人同题未删除复习卡的 `next_review_date`，与错题列表
+`nextReviewDate` 完全相同；无卡片、已移除卡片或无日期，以及 `NEW` / `DONE` 均返回 `null`。
+日期沿用 [FSRS 的应用服务器时区投影](practice-and-review.md#间隔重复)，不另行推算排期。
+
+此接口仍要求登录：未登录返回 HTTP `401` / 业务码 `1002`，不返回匿名状态。
+管理员调用 `/api/questions` 时仅返回自己的正式学习状态，权限不提供他人的作答或预览状态；
+`/api/admin/questions` 与题目详情不提供本次新增的个人状态（两个字段为 `null`）。
+
 ## 课程与知识点
 
 | 接口 | 说明 |

@@ -1,8 +1,10 @@
 package com.learnplatform.dto;
 
 import com.learnplatform.entity.Question;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.List;
+import java.time.LocalDate;
 
 /**
  * 题目 VO（包含选项和知识点关联）
@@ -10,6 +12,10 @@ import java.util.List;
 public class QuestionVO {
     private Long id;
     private boolean hasUnderstanding;
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    private String learnerStatus;
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    private LocalDate redoDueDate;
     private String content;
     private String questionType;
     private Long courseId;
@@ -53,6 +59,10 @@ public class QuestionVO {
 
     public boolean getHasUnderstanding() { return hasUnderstanding; }
     public void setHasUnderstanding(boolean hasUnderstanding) { this.hasUnderstanding = hasUnderstanding; }
+    public String getLearnerStatus() { return learnerStatus; }
+    public void setLearnerStatus(String learnerStatus) { this.learnerStatus = learnerStatus; }
+    public LocalDate getRedoDueDate() { return redoDueDate; }
+    public void setRedoDueDate(LocalDate redoDueDate) { this.redoDueDate = redoDueDate; }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

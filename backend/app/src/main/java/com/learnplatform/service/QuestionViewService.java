@@ -16,6 +16,10 @@ import com.learnplatform.service.question.QuestionDuplicateDetector;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class QuestionViewService {
@@ -65,6 +69,38 @@ public class QuestionViewService {
 
     public void enrichForUser(QuestionVO view) {
         enrich(view, true);
+    }
+
+    public void enrichForUsers(List<QuestionVO> views) {
+        if (views.isEmpty()) { return; }
+        List<Long> ids = views.stream().map(QuestionVO::getId).toList();
+        List<Long> courseIds = views.stream().map(QuestionVO::getCourseId).filter(Objects::nonNull).distinct().toList();
+        Map<Long, Course> courses = courseIds.isEmpty() ? Map.of() : courseMapper.selectBatchIds(courseIds).stream()
+                .collect(Collectors.toMap(Course::getId, Function.identity()));
+        Map<Long, List<QuestionOption>> options = questionOptionMapper.selectList(
+                new LambdaQueryWrapper<QuestionOption>().in(QuestionOption::getQuestionId, ids)
+                        .orderByAsc(QuestionOption::getSortOrder, QuestionOption::getId)).stream()
+                .collect(Collectors.groupingBy(QuestionOption::getQuestionId));
+        Map<Long, List<QuestionKnowledgePoint>> links = questionKnowledgePointMapper.selectList(
+                new LambdaQueryWrapper<QuestionKnowledgePoint>()
+                        .in(QuestionKnowledgePoint::getQuestionId, ids)).stream()
+                .collect(Collectors.groupingBy(QuestionKnowledgePoint::getQuestionId));
+        List<Long> pointIds = links.values().stream().flatMap(List::stream)
+                .map(QuestionKnowledgePoint::getKnowledgePointId).distinct().toList();
+        Map<Long, KnowledgePoint> points = pointIds.isEmpty() ? Map.of()
+                : knowledgePointMapper.selectBatchIds(pointIds).stream()
+                    .collect(Collectors.toMap(KnowledgePoint::getId, Function.identity()));
+        for (QuestionVO view : views) {
+            Course course = courses.get(view.getCourseId());
+            if (course != null) { view.setCourseName(course.getName()); }
+            view.setOptions(QuestionOptionVO.forLearner(view.getQuestionType(),
+                    options.getOrDefault(view.getId(), List.of())));
+            List<Long> related = links.getOrDefault(view.getId(), List.of()).stream()
+                    .map(QuestionKnowledgePoint::getKnowledgePointId).toList();
+            view.setKnowledgePointIds(related);
+            view.setKnowledgePointNames(related.stream().map(points::get).filter(Objects::nonNull)
+                    .map(KnowledgePoint::getName).toList());
+        }
     }
 
     public QuestionDuplicateGroupVO toDuplicateGroup(QuestionDuplicateDetector.DuplicateGroup group) {

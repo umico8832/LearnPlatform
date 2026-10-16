@@ -10,6 +10,7 @@ import com.learnplatform.dto.QuestionVO;
 import com.learnplatform.entity.Question;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
+import com.learnplatform.mapper.QuestionLearnerStateMapper;
 import com.learnplatform.service.question.QuestionDuplicateDetector;
 import com.learnplatform.service.understanding.QuestionUnderstandingContent;
 import com.learnplatform.service.question.QuestionAccessPolicy;
@@ -18,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class QuestionService {
@@ -26,18 +29,21 @@ public class QuestionService {
     private final QuestionViewService viewService;
     private final QuestionMutationService mutationService;
     private final QuestionUnderstandingContent understanding;
+    private final QuestionLearnerStateMapper learnerStates;
 
     public QuestionService(
             QuestionMapper questionMapper,
             KnowledgePointMapper knowledgePointMapper,
             QuestionViewService viewService,
             QuestionMutationService mutationService,
-            QuestionUnderstandingContent understanding) {
+            QuestionUnderstandingContent understanding,
+            QuestionLearnerStateMapper learnerStates) {
         this.questionMapper = questionMapper;
         this.knowledgePointMapper = knowledgePointMapper;
         this.viewService = viewService;
         this.mutationService = mutationService;
         this.understanding = understanding;
+        this.learnerStates = learnerStates;
     }
 
     public Page<QuestionVO> getQuestionPage(int pageNum, int pageSize, String keyword,
@@ -85,6 +91,14 @@ public class QuestionService {
     public Page<QuestionVO> getEnabledQuestionPage(int pageNum, int pageSize, String questionType,
                                                     Long courseId, Integer difficulty,
                                                     Long questionId, Long knowledgePointId) {
+        return getEnabledQuestionPage(pageNum, pageSize, questionType, courseId, difficulty,
+                questionId, knowledgePointId, null, null);
+    }
+
+    public Page<QuestionVO> getEnabledQuestionPage(int pageNum, int pageSize, String questionType,
+                                                    Long courseId, Integer difficulty,
+                                                    Long questionId, Long knowledgePointId,
+                                                    Boolean hasUnderstanding, Long userId) {
         Page<Question> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Question::getStatus, 1).eq(Question::getVisibility, "PUBLIC");
@@ -107,10 +121,36 @@ public class QuestionService {
             }
             wrapper.in(Question::getId, questionIds);
         }
-        wrapper.orderByDesc(Question::getCreateTime);
+        Set<Long> available = null;
+        if (hasUnderstanding != null) {
+            var candidates = questionMapper.selectList(wrapper.clone()
+                    .inSql(Question::getId, "SELECT question_id FROM question_understanding_content"));
+            available = understanding.available(userId, candidates);
+            if (hasUnderstanding && available.isEmpty()) { return new Page<>(pageNum, pageSize, 0); }
+            if (!available.isEmpty()) {
+                if (hasUnderstanding) { wrapper.in(Question::getId, available); }
+                else { wrapper.notIn(Question::getId, available); }
+            }
+        }
+        wrapper.orderByDesc(Question::getCreateTime).orderByDesc(Question::getId);
         Page<Question> result = questionMapper.selectPage(page, wrapper);
+        Set<Long> understandingIds = available == null
+                ? understanding.available(userId, result.getRecords()) : available;
+        Map<Long, QuestionLearnerStateMapper.State> states = userId == null ? Map.of()
+                : learnerStates.forQuestions(userId, result.getRecords().stream().map(Question::getId).toList());
         Page<QuestionVO> views = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
-        views.setRecords(result.getRecords().stream().map(question -> toUserView(question, null)).toList());
+        views.setRecords(result.getRecords().stream().map(question -> {
+            QuestionVO view = QuestionVO.fromEntity(question);
+            view.setAnalysis(null);
+            view.setHasUnderstanding(understandingIds.contains(question.getId()));
+            QuestionLearnerStateMapper.State state = states.get(question.getId());
+            if (state != null) {
+                view.setLearnerStatus(state.learnerStatus());
+                view.setRedoDueDate(state.redoDueDate());
+            }
+            return view;
+        }).toList());
+        viewService.enrichForUsers(views.getRecords());
         return views;
     }
 

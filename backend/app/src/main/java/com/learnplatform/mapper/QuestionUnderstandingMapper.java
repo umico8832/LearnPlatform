@@ -2,12 +2,15 @@ package com.learnplatform.mapper;
 
 import com.learnplatform.entity.QuestionUnderstandingAttempt;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,34 +47,72 @@ public class QuestionUnderstandingMapper {
     }
 
     public Map<String, Object> position(long questionId, long pointId) {
-        return one("""
+        return positions(Map.of(questionId, pointId)).get(questionId);
+    }
+
+    public Map<Long, Map<String, Object>> positions(Map<Long, Long> points) {
+        if (points.isEmpty()) { return Map.of(); }
+        List<Map<String, Object>> rows = new NamedParameterJdbcTemplate(db).queryForList("""
                 WITH RECURSIVE ancestors AS (
-                  SELECT id,parent_id,name,course_id,0 AS depth
-                  FROM knowledge_point WHERE id=? AND deleted=0
+                  SELECT q.id question_id,k.id knowledge_point_id,k.name knowledge_point_name,
+                    c.id course_id,c.name course_name,k.id,k.parent_id,k.name,0 AS depth
+                  FROM question q JOIN course c ON c.id=q.course_id AND c.deleted=0 AND c.status=1
+                  JOIN question_knowledge_point rel ON rel.question_id=q.id
+                  JOIN knowledge_point k ON k.id=rel.knowledge_point_id AND k.deleted=0 AND k.course_id=c.id
+                  WHERE q.id IN (:questionIds) AND k.id IN (:pointIds)
                   UNION ALL
-                  SELECT parent.id,parent.parent_id,parent.name,parent.course_id,ancestors.depth+1
-                  FROM knowledge_point parent JOIN ancestors ON parent.id=ancestors.parent_id
-                  WHERE parent.deleted=0 AND parent.course_id=ancestors.course_id AND ancestors.depth<20
+                  SELECT a.question_id,a.knowledge_point_id,a.knowledge_point_name,a.course_id,a.course_name,
+                    p.id,p.parent_id,p.name,a.depth+1
+                  FROM knowledge_point p JOIN ancestors a ON p.id=a.parent_id
+                  WHERE p.deleted=0 AND p.course_id=a.course_id AND a.depth<20
                 )
-                SELECT c.id course_id,c.name course_name,k.id knowledge_point_id,k.name knowledge_point_name,
-                  root.name chapter_name
-                FROM question q JOIN course c ON c.id=q.course_id AND c.deleted=0 AND c.status=1
-                JOIN question_knowledge_point qkp ON qkp.question_id=q.id AND qkp.knowledge_point_id=?
-                JOIN knowledge_point k ON k.id=qkp.knowledge_point_id AND k.course_id=c.id AND k.deleted=0
-                JOIN (SELECT name,course_id FROM ancestors
-                  WHERE parent_id IS NULL OR parent_id=0 ORDER BY depth DESC LIMIT 1) root
-                  ON root.course_id=c.id
-                WHERE q.id=?
-                """, pointId, pointId, questionId);
+                SELECT question_id,knowledge_point_id,knowledge_point_name,course_id,course_name,name chapter_name
+                FROM ancestors WHERE parent_id IS NULL OR parent_id=0 ORDER BY depth
+                """, Map.of("questionIds", points.keySet(), "pointIds", points.values()));
+        Map<Long, Map<String, Object>> result = new HashMap<>();
+        for (Map<String, Object> row : rows) {
+            long questionId = number(row, "question_id");
+            if (points.get(questionId).equals(number(row, "knowledge_point_id"))) {
+                result.put(questionId, row);
+            }
+        }
+        return result;
+    }
+
+    public List<Map<String, Object>> latestContents(Collection<Long> questionIds) {
+        if (questionIds.isEmpty()) { return List.of(); }
+        return new NamedParameterJdbcTemplate(db).queryForList("""
+                SELECT c.question_id,c.knowledge_point_id,c.source_exam_question_id,
+                  c.review_status,c.question_fingerprint
+                FROM question_understanding_content c WHERE c.question_id IN (:ids)
+                  AND NOT EXISTS (SELECT 1 FROM question_understanding_content newer
+                    WHERE newer.question_id=c.question_id AND newer.content_version>c.content_version)
+                """, Map.of("ids", questionIds));
+    }
+
+    public List<Map<String, Object>> options(Collection<Long> questionIds) {
+        if (questionIds.isEmpty()) { return List.of(); }
+        return new NamedParameterJdbcTemplate(db).queryForList("""
+                SELECT id,question_id,option_label,content,is_correct FROM question_option
+                WHERE question_id IN (:ids) AND deleted=0 ORDER BY sort_order,id
+                """, Map.of("ids", questionIds));
+    }
+
+    public Map<Long, Map<String, Object>> officialSources(Collection<Long> questionIds) {
+        if (questionIds.isEmpty()) { return Map.of(); }
+        List<Map<String, Object>> rows = new NamedParameterJdbcTemplate(db).queryForList("""
+                SELECT e.id,e.question_id,p.exam_name,p.exam_year,p.source_reference,e.display_number
+                FROM exam_question e JOIN exam_paper p ON p.id=e.exam_paper_id
+                WHERE e.question_id IN (:ids) AND p.deleted=0 AND p.status=1
+                  AND p.paper_type='OFFICIAL_EXAM' AND p.source_verified=1
+                """, Map.of("ids", questionIds));
+        Map<Long, Map<String, Object>> result = new HashMap<>();
+        for (Map<String, Object> row : rows) { result.put(number(row, "id"), row); }
+        return result;
     }
 
     public Map<String, Object> officialSource(long examQuestionId, long questionId) {
-        return one("""
-                SELECT p.exam_name,p.exam_year,p.source_reference,e.display_number
-                FROM exam_question e JOIN exam_paper p ON p.id=e.exam_paper_id
-                WHERE e.id=? AND e.question_id=? AND p.deleted=0 AND p.status=1
-                  AND p.paper_type='OFFICIAL_EXAM' AND p.source_verified=1
-                """, examQuestionId, questionId);
+        return officialSources(List.of(questionId)).get(examQuestionId);
     }
 
     public Map<String, Object> variant(long variantId, long questionId) {

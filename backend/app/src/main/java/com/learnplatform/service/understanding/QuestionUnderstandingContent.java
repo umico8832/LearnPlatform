@@ -15,6 +15,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -38,22 +42,49 @@ public class QuestionUnderstandingContent {
             ready(userId, questionId, null, false);
             return true;
         } catch (BusinessException exception) {
-            if (exception.getCode() == ResultCode.NOT_FOUND.getCode()
-                    || exception.getCode() == ResultCode.BUSINESS_ERROR.getCode()) { return false; }
+            if (isUnavailable(exception)) { return false; }
             throw exception;
         }
     }
 
+    public Set<Long> available(Long userId, List<Question> candidates) {
+        if (candidates.isEmpty()) { return Set.of(); }
+        List<Long> ids = candidates.stream().map(Question::getId).toList();
+        Map<Long, Map<String, Object>> contents = mapper.latestContents(ids).stream()
+                .collect(Collectors.toMap(row -> id(row, "question_id"), row -> row));
+        Map<Long, Long> points = new HashMap<>();
+        contents.forEach((questionId, row) -> points.put(questionId, id(row, "knowledge_point_id")));
+        Map<Long, Map<String, Object>> positions = mapper.positions(points);
+        Map<Long, List<Map<String, Object>>> options = mapper.options(ids).stream()
+                .collect(Collectors.groupingBy(row -> id(row, "question_id")));
+        Map<Long, Map<String, Object>> sources = mapper.officialSources(ids);
+        Set<Long> result = new HashSet<>();
+        for (Question question : candidates) {
+            Map<String, Object> content = contents.get(question.getId());
+            if (!usableQuestion(question, userId, false) || content == null
+                    || !visible(content, false) || !positions.containsKey(question.getId())) { continue; }
+            if (content.get("source_exam_question_id") != null) {
+                Map<String, Object> source = sources.get(id(content, "source_exam_question_id"));
+                if (source == null || id(source, "question_id") != question.getId()) { continue; }
+            }
+            try {
+                validateQuestion(question, content, options.getOrDefault(question.getId(), List.of()));
+                result.add(question.getId());
+            } catch (BusinessException exception) {
+                if (!isUnavailable(exception)) { throw exception; }
+            }
+        }
+        return result;
+    }
+
+    private boolean isUnavailable(BusinessException exception) {
+        return exception.getCode() == ResultCode.NOT_FOUND.getCode()
+                || exception.getCode() == ResultCode.BUSINESS_ERROR.getCode();
+    }
+
     Ready ready(Long userId, long questionId, Long contentId, boolean preview) {
         Question question = questions.selectById(questionId);
-        boolean accessible = QuestionAccessPolicy.canAccess(question, userId)
-                || preview && QuestionAccessPolicy.isDraft(question);
-        if (!accessible || !Integer.valueOf(1).equals(question.getStatus())) {
-            throw unavailable();
-        }
-        if (!"SINGLE_CHOICE".equals(question.getQuestionType())) {
-            throw unavailable();
-        }
+        if (!usableQuestion(question, userId, preview)) { throw unavailable(); }
         Map<String, Object> latest = mapper.latestContent(questionId);
         if (latest == null || !visible(latest, preview)) {
             throw unavailable();
@@ -68,15 +99,23 @@ public class QuestionUnderstandingContent {
             throw unavailable();
         }
         List<Map<String, Object>> options = mapper.options(questionId);
-        correctOption(options);
-        if (!fingerprint(question, options).equals(content.get("question_fingerprint"))) {
-            throw unavailable();
-        }
+        validateQuestion(question, content, options);
         if (content.get("source_exam_question_id") != null
                 && mapper.officialSource(id(content, "source_exam_question_id"), questionId) == null) {
             throw unavailable();
         }
         return new Ready(question, content, options, position);
+    }
+
+    private void validateQuestion(Question question, Map<String, Object> content, List<Map<String, Object>> options) {
+        correctOption(options);
+        if (!fingerprint(question, options).equals(content.get("question_fingerprint"))) { throw unavailable(); }
+    }
+
+    private boolean usableQuestion(Question question, Long userId, boolean preview) {
+        return (QuestionAccessPolicy.canAccess(question, userId) || preview && QuestionAccessPolicy.isDraft(question))
+                && Integer.valueOf(1).equals(question.getStatus())
+                && "SINGLE_CHOICE".equals(question.getQuestionType());
     }
 
     Answer answer(JsonNode body, List<Map<String, Object>> options, boolean variant) {
