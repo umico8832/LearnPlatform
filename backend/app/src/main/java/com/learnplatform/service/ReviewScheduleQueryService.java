@@ -99,7 +99,7 @@ public class ReviewScheduleQueryService {
                     .filter(schedule -> questionId.equals(schedule.getQuestionId()))
                     .toList();
         }
-        return cardViewService.toViews(schedules, today);
+        return cardViewService.toViews(userId, schedules, today);
     }
 
     /**
@@ -143,7 +143,7 @@ public class ReviewScheduleQueryService {
         wrapper.eq(QuestionReviewSchedule::getUserId, userId)
                 .orderByAsc(QuestionReviewSchedule::getNextReviewDate);
 
-        List<ReviewScheduleVO> views = cardViewService.toViews(
+        List<ReviewScheduleVO> views = cardViewService.toViews(userId,
                 reviewScheduleMapper.selectList(wrapper),
                 LocalDate.now());
         if (courseId == null) {
@@ -170,7 +170,8 @@ public class ReviewScheduleQueryService {
                 .orderByDesc(QuestionReviewSchedule::getLastReviewDate);
         AutomaticGradingPolicy.restrictReviewCandidates(difficultWrapper);
         difficultWrapper.last("LIMIT 10");
-        context.setDifficultCards(cardViewService.toViews(reviewScheduleMapper.selectList(difficultWrapper), today));
+        context.setDifficultCards(cardViewService.toViews(
+                userId, reviewScheduleMapper.selectList(difficultWrapper), today));
 
         LambdaQueryWrapper<QuestionReviewSchedule> overdueWrapper = new LambdaQueryWrapper<>();
         overdueWrapper.notInSql(QuestionReviewSchedule::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
@@ -179,7 +180,8 @@ public class ReviewScheduleQueryService {
                 .orderByAsc(QuestionReviewSchedule::getNextReviewDate);
         AutomaticGradingPolicy.restrictReviewCandidates(overdueWrapper);
         overdueWrapper.last("LIMIT 10");
-        context.setOverdueCards(cardViewService.toViews(reviewScheduleMapper.selectList(overdueWrapper), today));
+        context.setOverdueCards(cardViewService.toViews(
+                userId, reviewScheduleMapper.selectList(overdueWrapper), today));
 
         List<Integer> dailyReviews = new ArrayList<>();
         for (int i = 6; i >= 0; i--) {

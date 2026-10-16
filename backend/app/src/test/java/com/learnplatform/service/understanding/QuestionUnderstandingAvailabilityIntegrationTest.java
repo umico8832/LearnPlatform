@@ -3,7 +3,10 @@ package com.learnplatform.service.understanding;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.common.exception.BusinessException;
+import com.learnplatform.dto.ReviewSubmitRequest;
 import com.learnplatform.service.QuestionService;
+import com.learnplatform.service.ReviewScheduleQueryService;
+import com.learnplatform.service.SpacedRepetitionService;
 import com.learnplatform.service.WrongQuestionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -13,6 +16,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -26,6 +32,8 @@ class QuestionUnderstandingAvailabilityIntegrationTest extends IntegrationTestBa
     private static final long USER = 989501L;
     @Autowired QuestionService questions;
     @Autowired WrongQuestionService wrong;
+    @Autowired ReviewScheduleQueryService reviews;
+    @Autowired SpacedRepetitionService repetition;
     @Autowired QuestionUnderstandingService understanding;
     @Autowired JdbcTemplate db;
     @Autowired ObjectMapper json;
@@ -39,6 +47,7 @@ class QuestionUnderstandingAvailabilityIntegrationTest extends IntegrationTestBa
         db.update("INSERT INTO user(id,username,password,role,status,deleted) VALUES (?,'availability-user','test','USER',1,0)", USER);
         db.update("UPDATE question_understanding_content SET review_status='REVIEWED',reviewed_by='test-reviewer',reviewed_time=CURRENT_TIMESTAMP WHERE id=?", contentId);
         understanding.submit(USER, questionId, json.createObjectNode().put("answer", "B"));
+        db.update("UPDATE question_review_schedule SET next_review_date=? WHERE user_id=?", LocalDate.now(), USER);
     }
 
     @Test void publicAndWrongListsMatchFormalReadIncludingPendingHintChain() {
@@ -96,6 +105,70 @@ class QuestionUnderstandingAvailabilityIntegrationTest extends IntegrationTestBa
         assertAvailability(false);
     }
 
+    @Test void reviewCardsUseTheirOwnerAndDoNotReadOtherUsersSchedules() {
+        long other = USER + 1;
+        db.update("INSERT INTO question_review_schedule(user_id,question_id,next_review_date) VALUES(?,?,?)",
+                other, questionId, LocalDate.now());
+        db.update("UPDATE question SET visibility='PRIVATE',owner_user_id=? WHERE id=?", USER, questionId);
+        sqlSession.clearCache();
+        for (long user : new long[] {USER, other}) {
+            var cards = reviews.getAllReviewCards(user, null);
+            assertEquals(1, cards.size());
+            assertEquals(user == USER, json.valueToTree(cards.getFirst()).path("hasUnderstanding").asBoolean());
+            assertEquals(user == USER, json.valueToTree(reviews.getDueReviewCards(user, null, 50).getFirst())
+                    .path("hasUnderstanding").asBoolean());
+        }
+        db.update("UPDATE question_review_schedule SET deleted=1 WHERE user_id=?", other);
+        sqlSession.clearCache();
+        assertTrue(reviews.getAllReviewCards(other, null).isEmpty());
+        assertTrue(reviews.getDueReviewCards(other, null, 50).isEmpty());
+        assertEquals(1, reviews.getAllReviewCards(USER, null).size());
+    }
+
+    @Test void draftQuestionsRemainExcludedFromReviewLists() {
+        db.update("UPDATE question SET visibility='DRAFT' WHERE id=?", questionId);
+        sqlSession.clearCache();
+        assertTrue(reviews.getAllReviewCards(USER, null).isEmpty());
+        assertTrue(reviews.getDueReviewCards(USER, null, 50).isEmpty());
+    }
+
+    @Test void submitResponseUsesTheSameUnderstandingGate() {
+        ReviewSubmitRequest request = new ReviewSubmitRequest();
+        request.setQuestionId(questionId);
+        request.setUserAnswer("A");
+        assertTrue(json.valueToTree(repetition.submitReview(request, USER)).path("hasUnderstanding").asBoolean());
+        db.update("UPDATE question_understanding_content SET review_status='PENDING' WHERE id=?", contentId);
+        var card = json.valueToTree(repetition.submitReview(request, USER));
+        assertTrue(card.path("hasUnderstanding").isBoolean());
+        assertFalse(card.path("hasUnderstanding").asBoolean());
+    }
+
+    @Test void moreReviewCardsDoNotAddPerCardQueries() {
+        long singleAll = reviewQueryCount(false, 1);
+        long singleDue = reviewQueryCount(true, 1);
+        int added = db.update("""
+                INSERT INTO question_review_schedule(user_id,question_id,next_review_date)
+                SELECT ?,q.id,? FROM question q WHERE q.id<>? AND q.visibility='PUBLIC' AND q.deleted=0
+                  AND q.id IN (SELECT question_id FROM question_understanding_content WHERE review_status='REVIEWED')
+                """, USER, LocalDate.now(), questionId);
+        assertTrue(added > 1);
+        assertEquals(singleAll, reviewQueryCount(false, added + 1));
+        assertEquals(singleDue, reviewQueryCount(true, added + 1));
+    }
+
+    private long reviewQueryCount(boolean due, int expectedSize) {
+        sqlSession.clearCache();
+        long before = statementCount();
+        var cards = due ? reviews.getDueReviewCards(USER, null, 50) : reviews.getAllReviewCards(USER, null);
+        long queries = statementCount() - before;
+        assertEquals(expectedSize, cards.size());
+        return queries;
+    }
+
+    private long statementCount() {
+        return db.queryForObject("SHOW SESSION STATUS LIKE 'Questions'", (row, index) -> row.getLong(2));
+    }
+
     private void assertAvailability(boolean expected) {
         assertWrongMatches(expected);
         var page = questions.getEnabledQuestionPage(1, 10, null, null, null, questionId, null);
@@ -125,5 +198,15 @@ class QuestionUnderstandingAvailabilityIntegrationTest extends IntegrationTestBa
         var row = json.valueToTree(page.getRecords().getFirst());
         assertTrue(row.has("hasUnderstanding"));
         assertEquals(expected, row.path("hasUnderstanding").asBoolean());
+        var all = reviews.getAllReviewCards(USER, null);
+        assertEquals(1, all.size());
+        var due = reviews.getDueReviewCards(USER, null, 50);
+        assertEquals(all.getFirst().isAvailableForReview() ? 1 : 0, due.size());
+        for (var view : Stream.concat(all.stream(), due.stream()).toList()) {
+            var card = json.valueToTree(view);
+            assertTrue(card.has("hasUnderstanding"));
+            assertTrue(card.path("hasUnderstanding").isBoolean());
+            assertEquals(expected, card.path("hasUnderstanding").asBoolean());
+        }
     }
 }

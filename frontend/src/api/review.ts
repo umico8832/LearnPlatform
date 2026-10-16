@@ -12,6 +12,7 @@ export interface ReviewScheduleVO {
   reward?: RewardFeedback | null
   id: number
   questionId: number
+  hasUnderstanding: boolean
   questionContent: string
   questionType: string
   difficulty: number

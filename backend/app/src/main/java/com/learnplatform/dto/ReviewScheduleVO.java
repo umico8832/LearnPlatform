@@ -13,6 +13,9 @@ public class ReviewScheduleVO {
 
     private Long id;
     private Long questionId;
+
+    @Schema(description = "当前用户能否进入正式题目理解页", requiredMode = Schema.RequiredMode.REQUIRED)
+    private boolean hasUnderstanding;
     private String questionContent;
     private String questionType;
     private Integer difficulty;
@@ -67,6 +70,8 @@ public class ReviewScheduleVO {
     public void setId(Long id) { this.id = id; }
     public Long getQuestionId() { return questionId; }
     public void setQuestionId(Long questionId) { this.questionId = questionId; }
+    public boolean getHasUnderstanding() { return hasUnderstanding; }
+    public void setHasUnderstanding(boolean hasUnderstanding) { this.hasUnderstanding = hasUnderstanding; }
     public String getQuestionContent() { return questionContent; }
     public void setQuestionContent(String questionContent) { this.questionContent = questionContent; }
     public String getQuestionType() { return questionType; }

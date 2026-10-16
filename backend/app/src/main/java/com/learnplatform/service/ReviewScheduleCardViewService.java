@@ -10,6 +10,7 @@ import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.service.question.AutomaticGradingPolicy;
 import com.learnplatform.service.review.ReviewSchedulePolicy;
 import com.learnplatform.service.question.QuestionAccessPolicy;
+import com.learnplatform.service.understanding.QuestionUnderstandingContent;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -30,18 +31,21 @@ public class ReviewScheduleCardViewService {
 
     private final QuestionMapper questionMapper;
     private final CourseMapper courseMapper;
+    private final QuestionUnderstandingContent understanding;
 
-    public ReviewScheduleCardViewService(QuestionMapper questionMapper, CourseMapper courseMapper) {
+    public ReviewScheduleCardViewService(QuestionMapper questionMapper, CourseMapper courseMapper,
+                                        QuestionUnderstandingContent understanding) {
         this.questionMapper = questionMapper;
         this.courseMapper = courseMapper;
+        this.understanding = understanding;
     }
 
     public ReviewScheduleVO toView(QuestionReviewSchedule schedule) {
-        List<ReviewScheduleVO> views = toViews(List.of(schedule), LocalDate.now());
+        List<ReviewScheduleVO> views = toViews(schedule.getUserId(), List.of(schedule), LocalDate.now());
         return views.isEmpty() ? null : views.getFirst();
     }
 
-    public List<ReviewScheduleVO> toViews(List<QuestionReviewSchedule> schedules, LocalDate today) {
+    public List<ReviewScheduleVO> toViews(Long userId, List<QuestionReviewSchedule> schedules, LocalDate today) {
         if (schedules.isEmpty()) {
             return new ArrayList<>();
         }
@@ -53,6 +57,8 @@ public class ReviewScheduleCardViewService {
                 .toList();
         Map<Long, Question> questionMap = questionMapper.selectBatchIds(questionIds).stream()
                 .collect(Collectors.toMap(Question::getId, question -> question));
+
+        Set<Long> understandingIds = understanding.available(userId, new ArrayList<>(questionMap.values()));
 
         LambdaQueryWrapper<Question> availableQuestionQuery = new LambdaQueryWrapper<>();
         availableQuestionQuery.in(Question::getId, questionIds);
@@ -77,6 +83,7 @@ public class ReviewScheduleCardViewService {
             ReviewScheduleVO view = new ReviewScheduleVO();
             view.setId(schedule.getId());
             view.setQuestionId(schedule.getQuestionId());
+            view.setHasUnderstanding(understandingIds.contains(schedule.getQuestionId()));
             view.setEaseFactor(schedule.getEaseFactor());
             view.setIntervalDays(schedule.getIntervalDays());
             view.setRepetitions(schedule.getRepetitions());

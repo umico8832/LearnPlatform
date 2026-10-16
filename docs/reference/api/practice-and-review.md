@@ -94,6 +94,19 @@ M4 的排期采用 [ADR-0012](../../architecture/decisions/0012-fsrs-review-sche
 通过 `availableForReview: false` 告知客户端等待配置答案；答案补齐后自动恢复可用性。
 卡片总量、历史分类和已复习计数保持真实历史，本规则不会追溯改写判分、经验或复习进度。
 
+### 复习卡片的理解入口（B17）
+
+`GET /api/review/due`、`GET /api/review/cards` 的每张卡片，以及 `POST /api/review/submit`
+返回的更新后卡片，均包含必返布尔 `hasUnderstanding`，无可用理解内容时为 `false`，不返回 `null`。
+为 `true` 时，复习页可进入 `/questions/{questionId}`；为 `false` 时沿用单题练习入口，
+能否直接复习仍读取既有 `availableForReview`。
+
+该字段复用错题列表和题目列表的[理解入口门禁](question-understanding.md#列表中的理解入口b7)，
+按当前认证用户判定，管理员普通复习接口也不放行预览内容。最新理解版本待审核、撤回或没有理解内容时为 `false`；
+题目本身为 `DRAFT` 的卡片仍按既有规则从列表排除。历史卡片不能绕过当前题目及课程访问规则。
+列表批量判定，不逐卡读取理解内容；原有筛选、限量、排序、排期和用户隔离口径保持不变。
+此字段只表达读取时刻的可用性，进入理解页后仍重新校验，内容变化时沿用既有错误码。
+
 ### 复习统计与卡片状态（B14）
 
 `GET /api/review/stats` 返回 `R<ReviewStatsVO>`，只统计当前认证用户未移出的非草稿卡片，无范围参数。

@@ -9,6 +9,7 @@ import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionReviewSchedule;
 import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.QuestionMapper;
+import com.learnplatform.service.understanding.QuestionUnderstandingContent;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -17,11 +18,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,6 +38,9 @@ class ReviewScheduleCardViewServiceTest {
 
     @Mock
     private CourseMapper courseMapper;
+
+    @Mock
+    private QuestionUnderstandingContent understanding;
 
     @Test
     void mapsLegacyCardWithoutInferringStateFromEaseFactor() {
@@ -55,13 +64,15 @@ class ReviewScheduleCardViewServiceTest {
         when(questionMapper.selectBatchIds(any())).thenReturn(List.of(question));
         when(courseMapper.selectBatchIds(any())).thenReturn(List.of(course));
 
-        ReviewScheduleCardViewService service = new ReviewScheduleCardViewService(questionMapper, courseMapper);
-        ReviewScheduleVO view = service.toViews(List.of(schedule), LocalDate.of(2026, 9, 5)).getFirst();
+        var service = new ReviewScheduleCardViewService(questionMapper, courseMapper, understanding);
+        ReviewScheduleVO view = service.toViews(7L, List.of(schedule), LocalDate.of(2026, 9, 5)).getFirst();
 
         assertEquals("待首次 FSRS 评分", view.getStatusLabel());
         assertEquals("UNRATED", view.getSchedulingState());
         JsonNode data = new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL)
                 .findAndRegisterModules().valueToTree(view);
+        assertTrue(data.has("hasUnderstanding"));
+        assertFalse(data.get("hasUnderstanding").asBoolean());
         assertTrue(data.has("lastRating"));
         assertTrue(data.get("lastRating").isNull());
         assertEquals("二叉树 遍历", view.getQuestionContent());
@@ -85,13 +96,38 @@ class ReviewScheduleCardViewServiceTest {
         when(questionMapper.selectList(any())).thenReturn(List.of(availableQuestion));
         when(courseMapper.selectBatchIds(any())).thenReturn(List.of());
 
-        ReviewScheduleCardViewService service = new ReviewScheduleCardViewService(questionMapper, courseMapper);
-        List<ReviewScheduleVO> views = service.toViews(
+        when(understanding.available(eq(7L), anyList())).thenReturn(Set.of(10L));
+
+        var service = new ReviewScheduleCardViewService(questionMapper, courseMapper, understanding);
+        List<ReviewScheduleVO> views = service.toViews(7L,
                 List.of(availableSchedule, legacySchedule), LocalDate.of(2026, 10, 2));
 
+        verify(understanding).available(eq(7L), anyList());
+        assertTrue(views.get(0).getHasUnderstanding());
+        assertFalse(views.get(1).getHasUnderstanding());
         assertEquals(2, views.size(), "历史卡仍应显示，供用户查看或移出计划");
         assertTrue(views.get(0).isAvailableForReview());
         assertFalse(views.get(1).isAvailableForReview());
+    }
+
+    @Test
+    void emptyCardsDoNotReadUnderstandingContent() {
+        var service = new ReviewScheduleCardViewService(questionMapper, courseMapper, understanding);
+        assertTrue(service.toViews(7L, List.of(), LocalDate.now()).isEmpty());
+        verifyNoInteractions(questionMapper, courseMapper, understanding);
+    }
+
+    @Test
+    void singleCardUsesScheduleOwnerForUnderstandingGate() {
+        QuestionReviewSchedule schedule = new QuestionReviewSchedule();
+        schedule.setUserId(8L);
+        schedule.setQuestionId(10L);
+        Question question = question(10L, null, "单题");
+        when(questionMapper.selectBatchIds(any())).thenReturn(List.of(question));
+        when(understanding.available(8L, List.of(question))).thenReturn(Set.of(10L));
+        var service = new ReviewScheduleCardViewService(questionMapper, courseMapper, understanding);
+        assertTrue(service.toView(schedule).getHasUnderstanding());
+        verify(understanding).available(8L, List.of(question));
     }
 
     private Question question(Long id, Long courseId, String content) {

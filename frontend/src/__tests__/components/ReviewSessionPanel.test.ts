@@ -19,6 +19,7 @@ import ReviewSessionPanel from '@/components/review/ReviewSessionPanel.vue'
 const card: ReviewScheduleVO = {
   id: 1,
   questionId: 21,
+  hasUnderstanding: false,
   questionContent: '课程目标复习题',
   questionType: 'SHORT_ANSWER',
   difficulty: 2,

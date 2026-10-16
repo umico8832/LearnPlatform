@@ -27,6 +27,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -53,7 +54,7 @@ class ReviewScheduleQueryServiceTest {
     void dueCardsAreRestrictedToRequestedCourse() {
         when(reviewScheduleMapper.selectList(any())).thenReturn(List.of(schedule(101L), schedule(202L)));
         when(questionMapper.selectList(any())).thenReturn(List.of(question(101L, 10L)));
-        when(cardViewService.toViews(any(), any())).thenReturn(List.of(view(101L)));
+        when(cardViewService.toViews(eq(7L), any(), any())).thenReturn(List.of(view(101L)));
 
         List<ReviewScheduleVO> cards = service.getDueReviewCards(7L, 10L, 30);
 
@@ -70,7 +71,7 @@ class ReviewScheduleQueryServiceTest {
     void dueCardsCanFocusTheServerSelectedQuestion() {
         when(reviewScheduleMapper.selectList(any())).thenReturn(List.of(schedule(101L), schedule(102L)));
         when(questionMapper.selectList(any())).thenReturn(List.of(question(101L, 10L), question(102L, 10L)));
-        when(cardViewService.toViews(any(), any())).thenReturn(List.of(view(101L)));
+        when(cardViewService.toViews(eq(7L), any(), any())).thenReturn(List.of(view(101L)));
 
         List<ReviewScheduleVO> cards = service.getDueReviewCards(7L, 10L, 101L, 30);
 
@@ -82,7 +83,7 @@ class ReviewScheduleQueryServiceTest {
         when(knowledgePointMapper.selectQuestionIdsByKnowledgePointId(31L)).thenReturn(List.of(101L));
         when(reviewScheduleMapper.selectList(any())).thenReturn(List.of(schedule(101L), schedule(202L)));
         when(questionMapper.selectList(any())).thenReturn(List.of(question(101L, 10L)));
-        when(cardViewService.toViews(any(), any())).thenReturn(List.of(view(101L)));
+        when(cardViewService.toViews(eq(7L), any(), any())).thenReturn(List.of(view(101L)));
 
         List<ReviewScheduleVO> cards = service.getDueReviewCards(7L, 10L, null, 31L, 30);
 
@@ -93,7 +94,7 @@ class ReviewScheduleQueryServiceTest {
     @Test
     void dueCardsExcludeUnavailableQuestionsBeforeTheLimit() {
         when(reviewScheduleMapper.selectList(any())).thenReturn(List.of(schedule(101L)));
-        when(cardViewService.toViews(any(), any())).thenReturn(List.of(view(101L)));
+        when(cardViewService.toViews(eq(7L), any(), any())).thenReturn(List.of(view(101L)));
 
         service.getDueReviewCards(7L, null, 30);
 
@@ -128,7 +129,7 @@ class ReviewScheduleQueryServiceTest {
     void aiReviewContextExcludesUnavailableDifficultAndOverdueCards() {
         when(reviewScheduleMapper.selectCount(any())).thenReturn(0L);
         when(reviewScheduleMapper.selectList(any())).thenReturn(List.of());
-        when(cardViewService.toViews(any(), any())).thenReturn(List.of());
+        when(cardViewService.toViews(eq(7L), any(), any())).thenReturn(List.of());
 
         service.buildReviewContext(7L);
 
