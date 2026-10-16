@@ -47,7 +47,7 @@
 | 请求、响应、权限与调用者可见行为 | [reference/api/index.md](reference/api/index.md)及对应业务域 |
 | 存储语义、唯一约束与事务不变量 | [reference/database/index.md](reference/database/index.md)及对应业务域 |
 | 验证范围、命令与 E2E 生命周期 | [development/testing.md](development/testing.md) |
-| 开发循环、执行模式与完成状态 | [development/workflow.md](development/workflow.md) |
+| 任务拆分、开发循环与完成状态 | [development/workflow.md](development/workflow.md) |
 | 提交边界、分支与远端操作 | [development/git-rules.md](development/git-rules.md) |
 | 项目 Skills 来源与升级 | 本页的[工具维护](#工具维护) |
 | 文档归属、更新与验证规则 | 本页的[文档维护](#文档维护) |

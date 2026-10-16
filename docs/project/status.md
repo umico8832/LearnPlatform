@@ -3,12 +3,6 @@
 > 当前项目状态的唯一权威来源。重大历史见[项目里程碑](history.md)，长期规划见[产品路线图](../product/roadmap.md)。
 > 能力概览见 [README](../../README.md)，精确业务边界见 [API 参考](../reference/api/index.md)。
 
-## Agent 执行状态
-
-- Execution Mode: NORMAL（2026-10-10 用户批准学习端重做计划 M0–M5；本地提交不授权推送）。
-- 当前任务范围和操作授权只以用户最新要求为准。本页记录的历史完成状态不构成后续任务的 push、重写历史或其他远端操作授权。
-- 模式变更遵循[工作流](../development/workflow.md#6-执行模式与阶段边界)；执行模式不扩大当前任务范围。
-
 ## 当前阶段
 
 - 当前任务：按 [ADR-0011](../architecture/decisions/0011-living-textbook-spring-motion.md) 重做学习端，先把演示主线“一道题从错到懂”做到极致；M0–M5 安排见[路线图](../product/roadmap.md)。其他功能保留现状，演示材料暂不制作。

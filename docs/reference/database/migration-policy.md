@@ -21,6 +21,6 @@
 
 ## 验证
 
-按[测试策略](../../development/testing.md#2-分层验证l1--l2--l3)选择受影响验证，命令见
+按[测试策略](../../development/testing.md#2-验证分两档)选择受影响验证，命令见
 [运行命令](../../development/testing.md#10-运行命令)。真实 MySQL 的 Testcontainers 验证应覆盖
 空库迁移、从上一版本升级、关键唯一约束、幂等操作和事务边界。
