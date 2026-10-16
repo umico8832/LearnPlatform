@@ -15,9 +15,13 @@ const RouterLinkStub = defineComponent({
   props: { to: { type: [String, Object], required: true } },
   template: '<a :data-to="typeof to === \'string\' ? to : JSON.stringify(to)"><slot /></a>',
 })
+const VizPlayerStub = defineComponent({
+  props: { spec: { type: Object, required: true }, title: { type: String, default: '' } },
+  template: '<div class="viz-stub" :data-scene="spec.scene" :data-title="title" />',
+})
 
 function mountHome() {
-  return mount(HomeView, { global: { stubs: { RouterLink: RouterLinkStub } } })
+  return mount(HomeView, { global: { stubs: { RouterLink: RouterLinkStub, VizPlayer: VizPlayerStub } } })
 }
 
 describe('HomeView', () => {
@@ -25,56 +29,36 @@ describe('HomeView', () => {
     mockIsAuthenticated.mockReturnValue(false)
   })
 
-  it('呈现 AI 相伴的通用学习空间定位，并如实标注当前课程案例', () => {
+  it('walks through a real reviewed question from the chosen wrong option, without giving the answer away', () => {
     const wrapper = mountHome()
 
-    expect(wrapper.get('h1').text()).toContain('难懂的知识')
-    expect(wrapper.text()).toContain('AI 相伴的学习空间')
-    expect(wrapper.text()).toContain('408 数据结构课程已经连接 AI 教学')
-    expect(wrapper.text()).not.toContain('Placeholder metrics')
-    expect(wrapper.text()).not.toContain('以下为开发阶段占位数据')
+    expect(wrapper.get('h1').text()).toContain('选错的那一项')
+    expect(wrapper.text()).toContain('2026 年 408 真题 第 3 题')
+    expect(wrapper.text()).toContain('已核对来源')
+    expect(wrapper.text()).toContain('你的选择')
+    expect(wrapper.text()).toContain('把 c 放成了 b 的左孩子')
+    expect(wrapper.text()).not.toContain('正确答案')
+    expect(wrapper.find('[data-state="right"]').exists()).toBe(false)
+    const viz = wrapper.get('.viz-stub')
+    expect(viz.attributes('data-scene')).toBe('binary-tree')
+  })
+
+  it('sends visitors to sign up and keeps the placeholder pages in the navigation', () => {
+    const wrapper = mountHome()
+
     expect(wrapper.findAll('[data-to="/register"]').length).toBeGreaterThan(0)
+    expect(wrapper.find('[data-to="/login"]').exists()).toBe(true)
+    for (const path of ['/product', '/learning', '/resources', '/roadmap', '/about']) {
+      expect(wrapper.find(`[data-to="${path}"]`).exists()).toBe(true)
+    }
   })
 
-  it('把教学窗口放在远景与前景纸层之间形成景深', () => {
-    const wrapper = mountHome()
-
-    expect(wrapper.find('.hero-landscape--back').exists()).toBe(true)
-    expect(wrapper.find('.lesson-window').exists()).toBe(true)
-    expect(wrapper.find('.hero-landscape--foreground').exists()).toBe(true)
-  })
-
-  it('根据学习者选择的困难切换讲法', async () => {
-    const wrapper = mountHome()
-    const exampleButton = wrapper.findAll('button').find((button) => button.text().includes('给我一个例子'))
-
-    expect(wrapper.get('[data-testid="teaching-response"]').text()).toContain('拖动右边的圆')
-    expect(exampleButton).toBeDefined()
-
-    await exampleButton!.trigger('click')
-
-    expect(exampleButton!.attributes('aria-pressed')).toBe('true')
-    expect(wrapper.get('[data-testid="teaching-response"]').text()).toContain('两个社团的报名表')
-  })
-
-  it('允许学习者通过调整重叠数量理解并集计数', async () => {
-    const wrapper = mountHome()
-    const overlapInput = wrapper.get('[data-testid="overlap-input"]')
-
-    expect(wrapper.get('[data-testid="union-formula"]').text()).toContain('18 + 14 − 6 = 26')
-
-    await overlapInput.setValue('2')
-
-    expect(wrapper.get('[data-testid="union-formula"]').text()).toContain('18 + 14 − 2 = 30')
-    expect(overlapInput.attributes('aria-valuetext')).toContain('重复 2 人，合并后 30 人')
-  })
-
-  it('已登录时把主要操作指向我的课程', () => {
+  it('points signed-in learners back to their courses', () => {
     mockIsAuthenticated.mockReturnValue(true)
     const wrapper = mountHome()
 
     expect(wrapper.text()).toContain('回到课程')
-    expect(wrapper.text()).toContain('继续我的学习')
+    expect(wrapper.find('[data-to="/login"]').exists()).toBe(false)
     expect(wrapper.findAll('[data-to="/my-courses"]').length).toBeGreaterThan(0)
   })
 })

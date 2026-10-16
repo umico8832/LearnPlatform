@@ -1,94 +1,68 @@
+<script setup lang="ts">
+import { LtLinkButton } from '@/components/living'
+import { useLivingTheme } from '@/composables/useLivingTheme'
+import { isAuthenticated } from '@/utils/auth'
+
+/** 首页导航上尚未写好的公开页面（ADR-0011 新基线）：如实说明还在整理，并给出两条去路。 */
+defineProps<{ title: string }>()
+useLivingTheme()
+
+const learningDestination = isAuthenticated() ? '/my-courses' : '/register'
+</script>
+
 <template>
-  <main class="public-placeholder">
-    <div class="public-placeholder__content">
-      <p class="public-placeholder__status">正在整理</p>
-      <h1>{{ title }}</h1>
-      <p class="public-placeholder__message">更多介绍正在整理中。你可以返回首页了解学习方式，也可以直接开始学习。</p>
-      <div class="public-placeholder__actions">
-        <RouterLink class="public-placeholder__link" to="/">返回首页</RouterLink>
-        <RouterLink class="public-placeholder__link public-placeholder__link--primary" :to="learningDestination">
-          开始学习
-        </RouterLink>
+  <main class="placeholder">
+    <div class="content">
+      <p class="status">正在整理</p>
+      <h1 class="title">{{ title }}</h1>
+      <p class="message">这一页的介绍还在写。可以先回首页看一道题是怎么讲的，或者直接开始学习。</p>
+      <div class="actions">
+        <LtLinkButton size="lg" to="/">返回首页</LtLinkButton>
+        <LtLinkButton variant="primary" size="lg" :to="learningDestination">开始学习</LtLinkButton>
       </div>
     </div>
   </main>
 </template>
 
-<script setup lang="ts">
-import { RouterLink } from 'vue-router'
-import { isAuthenticated } from '@/utils/auth'
-
-defineProps<{ title: string }>()
-
-const learningDestination = isAuthenticated() ? '/my-courses' : '/register'
-</script>
-
 <style scoped>
-.public-placeholder {
+.placeholder {
   display: grid;
-  min-height: 100vh;
+  min-height: 100dvh;
   place-items: center;
-  padding: var(--lp-space-8);
-  background: var(--lp-bg);
-  color: var(--lp-text);
+  padding: var(--lt-space-8);
+  background: var(--lt-canvas);
+  color: var(--lt-label);
   text-align: center;
 }
 
-.public-placeholder__content {
-  width: min(100%, 42rem);
+.content {
+  max-width: 34em;
 }
 
-.public-placeholder__status {
-  margin: 0 0 var(--lp-space-4);
-  color: var(--lp-primary);
-  font-size: var(--lp-text-sm);
-  font-weight: var(--lp-weight-semibold);
-}
-
-h1 {
+.status {
   margin: 0;
-  font-family: var(--lp-font-display);
-  font-size: var(--lp-text-5xl);
-  font-weight: var(--lp-weight-normal);
-  line-height: var(--lp-leading-display);
+  color: var(--lt-label-3);
+  font-size: var(--lt-text-footnote);
+  font-weight: 500;
 }
 
-.public-placeholder__message {
-  margin: var(--lp-space-4) 0 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-md);
-  line-height: var(--lp-leading-body);
+.title {
+  margin: var(--lt-space-3) 0 0;
+  font-size: var(--lt-text-display);
+  letter-spacing: var(--lt-tracking-title);
 }
 
-.public-placeholder__actions {
+.message {
+  margin: var(--lt-space-4) 0 0;
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-reading);
+  line-height: var(--lt-leading-reading);
+}
+
+.actions {
   display: flex;
-  flex-wrap: wrap;
   justify-content: center;
-  gap: var(--lp-space-3);
-  margin-top: var(--lp-space-8);
-}
-
-.public-placeholder__link {
-  display: inline-flex;
-  min-height: var(--lp-space-12);
-  align-items: center;
-  justify-content: center;
-  padding: 0 var(--lp-space-5);
-  border: 1px solid var(--lp-border-strong);
-  border-radius: var(--lp-radius-full);
-  color: var(--lp-text);
-  font-size: var(--lp-text-sm);
-  text-decoration: none;
-}
-
-.public-placeholder__link:focus-visible {
-  outline: 2px solid var(--lp-primary);
-  outline-offset: 2px;
-}
-
-.public-placeholder__link--primary {
-  border-color: var(--lp-primary);
-  background: var(--lp-primary);
-  color: var(--lp-paper-0);
+  gap: var(--lt-space-3);
+  margin-top: var(--lt-space-8);
 }
 </style>

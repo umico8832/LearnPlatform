@@ -65,7 +65,7 @@ export const learnerRoutes: RouteRecordRaw[] = [
     path: '/',
     name: 'Home',
     component: () => import('@/views/home/HomeView.vue'),
-    meta: { requiresAuth: false, title: '把难懂的知识，真正学会' },
+    meta: { requiresAuth: false, title: '从选错的那一项讲起' },
   },
   ...[
     ['product', 'Product', '产品'],
