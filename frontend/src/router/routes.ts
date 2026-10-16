@@ -38,6 +38,12 @@ export const learnerRoutes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, title: '一道题' },
   },
   {
+    path: '/wrong-questions',
+    name: 'WrongQuestions',
+    component: () => import('@/views/wrong/WrongQuestionsView.vue'),
+    meta: { requiresAuth: true, title: '错题' },
+  },
+  {
     path: '/viz/:scene',
     name: 'Visualization',
     component: () => import('@/views/viz/VizView.vue'),
@@ -126,12 +132,6 @@ export const learnerRoutes: RouteRecordRaw[] = [
         name: 'PracticeRecords',
         component: () => import('@/views/practice/PracticeRecordView.vue'),
         meta: { title: '练习记录' },
-      },
-      {
-        path: 'wrong-questions',
-        name: 'WrongQuestions',
-        component: () => import('@/views/practice/WrongQuestionView.vue'),
-        meta: { title: '错题' },
       },
       {
         path: 'favorites',

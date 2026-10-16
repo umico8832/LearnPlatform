@@ -208,18 +208,18 @@ test('用户答错后可在错题本更新掌握程度并重练', async ({ brows
 
   await page.goto('/wrong-questions')
   await expect(page).toHaveURL(/\/wrong-questions$/)
-  const wrongCard = page.locator('.wrong-card').first()
-  await expect(wrongCard).toBeVisible()
+  const wrongRows = page.getByRole('region', { name: '错题列表' }).getByRole('article')
+  await expect(wrongRows.first()).toBeVisible()
 
   // 测评复盘可深链按知识点筛选错题（Java 基础演示题关联“面向对象”知识点）
   await page.goto('/wrong-questions?courseId=1&knowledgePointId=2&knowledgePointName=面向对象')
-  await expect(page.locator('.kp-filter-chip')).toContainText('知识点：面向对象')
-  await expect(page.locator('.wrong-card')).toHaveCount(1)
-  await expect(page.locator('.wrong-card')).toContainText(questionText)
+  await expect(page.getByRole('list', { name: '当前范围' })).toContainText('面向对象')
+  await expect(wrongRows).toHaveCount(1)
+  await expect(wrongRows).toContainText(questionText)
 
-  const filteredCard = page.locator('.wrong-card').first()
-  await filteredCard.locator('.el-radio-button').filter({ hasText: '部分掌握' }).click()
-  await expect(filteredCard.getByRole('radio', { name: '部分掌握' })).toBeChecked()
+  const filteredRow = wrongRows.first()
+  await filteredRow.getByRole('radio', { name: '部分掌握' }).click()
+  await expect(filteredRow.getByRole('radio', { name: '部分掌握' })).toHaveAttribute('aria-checked', 'true')
 
   await page.getByRole('button', { name: '练习当前范围' }).click()
   await expect(page).toHaveURL(/\/practice\/session$/)
@@ -327,8 +327,9 @@ test('部分交卷后未答题保留零分且不会进入错题与复习', async
   await expect(page.locator('.answers-summary')).toContainText('1 题需复习')
 
   await page.goto('/wrong-questions')
-  await expect(page.locator('.wrong-card')).toHaveCount(1)
-  await expect(page.locator('.wrong-card')).toContainText('Java 中用于定义类继承关系的关键字')
+  const wrongRows = page.getByRole('region', { name: '错题列表' }).getByRole('article')
+  await expect(wrongRows).toHaveCount(1)
+  await expect(wrongRows).toContainText('Java 中用于定义类继承关系的关键字')
   await page.goto('/review')
   await page.getByRole('button', { name: '同步错题到复习' }).click()
   await expect(page.getByText('复习卡片', { exact: true })).toBeVisible()

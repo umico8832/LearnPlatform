@@ -47,6 +47,9 @@ frontend/admin/   # 独立管理端 HTML 入口
   接口见[题目理解 API](../reference/api/question-understanding.md)与[题目导师 API](../reference/api/question-tutor.md)。
   正式流程与管理员预览（`?preview=1`，含待审核内容、不记录学习事实）共用 `understandingTransport` 的同一组步骤。
   该页在 `App.vue` 的 `KeepAlive` 中只缓存最近一道题，展开可视化再返回时保留作答进度与滚动位置。
+- 错题页（`/wrong-questions`，需登录）已按新基线重做，不在旧外壳内：每条先讲上次所选错项的误区，再给重做日期，
+  按到期先后排列，可只看今天该重做的题；有理解内容的题“重做”进入 `/questions/:id`，其余沿用旧练习入口。
+  课程、知识点、题目范围仍来自查询参数，统计按当前范围计算并放在最后。
 - 一级导航：我的课程（`/my-courses`）、课程库（`/courses`）、社区共建（`/community`）。
 - 社区详情使用共享的纯文本讨论组件；管理端 `/admin/community` 承载内容审核、学校分区创建和题目整理，权限由后端校验。
 - 练习、错题、复习、测评、真题等能力优先进入具体课程内部（课程空间 `CourseOverview`），

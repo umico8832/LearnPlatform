@@ -305,8 +305,9 @@ test.describe('安静学习投入记录', () => {
     await page.goto(
       `/wrong-questions?courseId=${courseId}&knowledgePointId=${knowledgePointId}&questionId=${target.id}`,
     )
-    await expect(page.locator('.wrong-card')).toHaveCount(1)
-    await expect(page.locator('.wrong-card')).toContainText(`wrong-scope-`)
+    const wrongRows = page.getByRole('region', { name: '错题列表' }).getByRole('article')
+    await expect(wrongRows).toHaveCount(1)
+    await expect(wrongRows).toContainText(`wrong-scope-`)
     const response = page.waitForResponse(
       (item) => item.request().method() === 'GET' && item.url().includes('/api/practice/wrong-questions'),
     )
@@ -518,8 +519,9 @@ test.describe('学习投入边界验收', () => {
     await expect(page.getByTestId('practice-feedback')).toContainText('请结合解析再看一遍')
     await page.getByRole('button', { name: '查看结果', exact: true }).click()
     await page.goto(`/wrong-questions?questionId=${question.id}`)
-    await expect(page.locator('.wrong-card')).toHaveCount(1)
-    await expect(page.locator('.wrong-card')).toContainText(`E2E_GAMIFICATION_wrong-review-`)
+    const wrongRows = page.getByRole('region', { name: '错题列表' }).getByRole('article')
+    await expect(wrongRows).toHaveCount(1)
+    await expect(wrongRows).toContainText(`E2E_GAMIFICATION_wrong-review-`)
 
     await api<void>(page, `/review/reset/${question.id}`, 'POST')
     await page.goto(`/review?questionId=${question.id}`)
@@ -536,7 +538,7 @@ test.describe('学习投入边界验收', () => {
     })
     await expect(page.getByText('服务端判分：回答正确', { exact: true })).toBeVisible()
     await page.goto(`/wrong-questions?questionId=${question.id}`)
-    await expect(page.locator('.wrong-card')).toHaveCount(0)
-    await expect(page.getByText('暂无错题', { exact: true })).toBeVisible()
+    await expect(wrongRows).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: '这个范围里没有错题' })).toBeVisible()
   })
 })

@@ -52,6 +52,24 @@ test('出栈序列答错后依次理解误区、演示、正解并独立作答�
   await expect(page.getByText('这次还不对，正确答案是 D。')).toBeVisible()
   await expect(page.getByRole('heading', { name: '这道变式的思路' })).toBeVisible()
   await expect(page.getByText('这次独立作答已计入复习安排。')).toBeVisible()
+
+  // 错题页先讲为什么错，再给重做日期；重置复习卡片后当日到期。
+  const id = Number(new URL(page.url()).pathname.split('/').pop())
+  await page.goto(`/wrong-questions?questionId=${id}`)
+  const row = page.getByRole('region', { name: '错题列表' }).getByRole('article')
+  await expect(row).toHaveCount(1)
+  await expect(row.getByRole('heading', { name: '以为能越过 2 直接弹出 1' })).toBeVisible()
+  await expect(row.locator('.when')).not.toContainText('未排期')
+  const reset = await page.evaluate(async (questionId) => {
+    const response = await fetch(`/api/review/reset/${questionId}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${localStorage.getItem('learn_platform_token')}` },
+    })
+    return ((await response.json()) as { code: number }).code
+  }, id)
+  expect(reset).toBe(0)
+  await page.reload()
+  await expect(row.locator('.when')).toContainText('今天')
 })
 
 test('出栈序列选对后直接开放正解和变式', async ({ page }) => {
@@ -96,4 +114,7 @@ test('管理员预览待审核的三级提示，且预览不留下错题', async
   await expect(page.locator('.viz').first()).toBeVisible()
   await page.getByRole('button', { name: '看正解' }).click()
   await expect(page.getByText('正确选项 3,2,1,5,4：每一步都取栈顶')).toBeVisible()
+
+  await page.goto(`/wrong-questions?questionId=${id}`)
+  await expect(page.getByRole('heading', { name: '这个范围里没有错题' })).toBeVisible()
 })
