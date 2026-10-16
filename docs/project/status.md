@@ -26,13 +26,15 @@
 
 以下是各类别最近一次记录的本地验证，历史通过不代表后续改动自动通过；推送与远端 CI 结果以 Git 和[主分支 CI](https://github.com/umico8832/LearnPlatform/actions/workflows/ci.yml?query=branch%3Amain)为准，本页不记录。
 
+2026-10-16，代码基线 `11f9d719` 的[完整检查](../development/testing.md#10-运行命令)六个 job 全部通过，耗时 407.6 秒，脚本已写入完整检查记录。
+
 <!-- prettier-ignore -->
 | 范围 | 最近已记录验证 | 适用范围与缺口 |
 | --- | --- | --- |
-| 后端单测与质量门禁 | 2026-10-16 [完整检查](../development/testing.md#10-运行命令)，`mvn clean verify` 通过，含打包、架构、Checkstyle、SpotBugs、JaCoCo | 未运行真实云评测。 |
-| 后端真实 MySQL 集成 | 2026-10-16 完整检查，Testcontainers 集成测试在本机 EDT 时区下全部通过 | Testcontainers MySQL 8.0。 |
-| 前端全量回归 | 2026-10-16 完整检查，带覆盖率门槛的全量前端测试、`npm audit`、lint 与双入口构建通过 | — |
-| 浏览器验收 | 2026-10-16，正式入口连续两次隔离 E2E 49 项零重试通过，每次均重建并清理 | 浏览器 SDK 使用官方测试密钥夹具，后端仍执行真实 Siteverify；未覆盖真实 Cloudflare 浏览器挑战。 |
+| 后端单测与质量门禁 | 2026-10-16 完整检查，`mvn clean verify` 通过，含打包、架构、Checkstyle、SpotBugs、JaCoCo | 2 项真实云在线评测按既有配置跳过。 |
+| 后端真实 MySQL 集成 | 2026-10-16 完整检查，Testcontainers 集成 job 在本机 EDT 时区下通过（264 项，1 项在线评测按既有配置跳过） | Testcontainers MySQL 8.0；未验证真实云检索质量。 |
+| 前端全量回归 | 2026-10-16 完整检查，1020 项测试与覆盖率门槛、`npm audit`、lint、双入口构建通过，前后端镜像构建通过 | — |
+| 浏览器验收 | 2026-10-16，正式入口隔离 E2E 50 项零重试通过，重建并清理；投稿所在文件单独运行 16 项通过 | 浏览器 SDK 使用官方测试密钥夹具，后端仍执行真实 Siteverify；未覆盖真实 Cloudflare 浏览器挑战。 |
 | 检索评测 | 2026-09-22，指标/评测/既有 AI 回归 53 项及临时 Qdrant 1 项通过 | 使用脚本向量；未运行真实 Embedding 或云检索质量评测。 |
 
 ## 当前遗留问题
