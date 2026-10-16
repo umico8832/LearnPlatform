@@ -5,29 +5,17 @@ import RegisterView from '@/views/auth/RegisterView.vue'
 
 enableAutoUnmount(afterEach)
 
-const {
-  mockRegister,
-  mockSendCode,
-  mockVerifyCode,
-  mockPush,
-  mockSuccess,
-  mockValidate,
-  mockValidateField,
-  mockVerify,
-  mockRoute,
-  mockSetLoginInfo,
-} = vi.hoisted(() => ({
-  mockRegister: vi.fn(),
-  mockSendCode: vi.fn(),
-  mockVerifyCode: vi.fn(),
-  mockPush: vi.fn(),
-  mockSuccess: vi.fn(),
-  mockVerify: vi.fn(),
-  mockValidate: vi.fn().mockResolvedValue(true),
-  mockValidateField: vi.fn().mockResolvedValue(undefined),
-  mockRoute: { query: {} as Record<string, string> },
-  mockSetLoginInfo: vi.fn(),
-}))
+const { mockRegister, mockSendCode, mockVerifyCode, mockPush, mockVerify, mockRoute, mockSetLoginInfo } = vi.hoisted(
+  () => ({
+    mockRegister: vi.fn(),
+    mockSendCode: vi.fn(),
+    mockVerifyCode: vi.fn(),
+    mockPush: vi.fn(),
+    mockVerify: vi.fn(),
+    mockRoute: { query: {} as Record<string, string> },
+    mockSetLoginInfo: vi.fn(),
+  }),
+)
 vi.mock('@/stores/user', () => ({ useUserStore: () => ({ setLoginInfo: mockSetLoginInfo }) }))
 vi.mock('@/api/auth', () => ({
   register: (...a: unknown[]) => mockRegister(...a),
@@ -40,30 +28,8 @@ vi.mock('vue-router', () => ({
   useRoute: () => mockRoute,
   RouterLink: { template: '<a><slot /></a>' },
 }))
-vi.mock('element-plus', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('element-plus')>()
-  return { ...actual, ElMessage: { ...actual.ElMessage, success: mockSuccess } }
-})
-
 const stubs = {
-  'router-link': { template: '<a><slot /></a>' },
-  'el-form': {
-    template: '<form><slot /></form>',
-    props: ['model', 'rules'],
-    methods: { validate: () => mockValidate(), validateField: () => mockValidateField() },
-  },
-  'el-form-item': { template: '<label><slot /></label>', props: ['label', 'prop'] },
-  'el-input': {
-    template:
-      '<input :value="modelValue" :placeholder="placeholder" :type="type||\'text\'" @input="$emit(\'update:modelValue\',$event.target.value)" />',
-    props: ['modelValue', 'placeholder', 'type'],
-  },
-  'el-button': {
-    template: '<button :disabled="disabled"><slot /></button>',
-    props: ['disabled', 'loading', 'nativeType'],
-  },
-  'el-icon': { template: '<span><slot /></span>' },
-  TurnstileDialog: defineComponent({
+  TurnstileSheet: defineComponent({
     setup(_props, { expose }) {
       expose({ verify: mockVerify })
       return () => h('div')
@@ -71,7 +37,7 @@ const stubs = {
   }),
 }
 function mountRegister() {
-  return mount(RegisterView, { global: { stubs } })
+  return mount(RegisterView, { attachTo: document.body, global: { stubs } })
 }
 async function advanceToPassword(w: ReturnType<typeof mountRegister>) {
   let inputs = w.findAll('input')
@@ -92,11 +58,10 @@ describe('RegisterView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockRoute.query = {}
-    mockValidate.mockResolvedValue(true)
     mockVerify.mockResolvedValue('turnstile-ok')
-    mockValidateField.mockResolvedValue(undefined)
     mockSendCode.mockResolvedValue({})
     mockVerifyCode.mockResolvedValue({ data: { verificationTicket: 'ticket-1', expiresIn: 300 } })
+    vi.useRealTimers()
     mockRegister.mockResolvedValue({
       data: { token: 'registered-session', user: { id: 2, username: 'newlearner', role: 'USER' } },
     })
@@ -203,19 +168,15 @@ describe('RegisterView', () => {
     expect(mockPush).not.toHaveBeenCalled()
   })
 
-  it('locks before password validation and never navigates for a late registration response', async () => {
+  it('locks registration and never authenticates or navigates for a late response', async () => {
     const w = mountRegister()
     await advanceToPassword(w)
-    let validate: (value: boolean) => void = () => undefined
     let finish: (value: unknown) => void = () => undefined
-    mockValidate.mockImplementation(() => new Promise<boolean>((resolve) => (validate = resolve)))
     mockRegister.mockImplementation(() => new Promise((resolve) => (finish = resolve)))
     await w.findAll('input')[0].setValue('Password1!')
     await w.findAll('input')[1].setValue('Password1!')
     await w.find('form').trigger('submit')
     await w.find('form').trigger('submit')
-    expect(mockValidate).toHaveBeenCalledOnce()
-    validate(true)
     await flushPromises()
     expect(mockRegister).toHaveBeenCalledOnce()
     await w.find('form').trigger('submit')
@@ -223,8 +184,136 @@ describe('RegisterView', () => {
     w.unmount()
     finish({ data: { id: 2 } })
     await flushPromises()
-    expect(mockSuccess).not.toHaveBeenCalledWith('注册成功，请登录')
     expect(mockSetLoginInfo).not.toHaveBeenCalled()
     expect(mockPush).not.toHaveBeenCalled()
+  })
+  it('validates required fields on submit, focuses the first error and clears only the edited field', async () => {
+    const w = mountRegister()
+    const inputs = w.findAll('input')
+    expect(w.find('[data-invalid]').exists()).toBe(false)
+    await w.get('form').trigger('submit')
+    expect(mockVerify).not.toHaveBeenCalled()
+    expect(w.text()).toContain('请输入用户名')
+    expect(w.text()).toContain('请输入邮箱')
+    expect(document.activeElement).toBe(inputs[0].element)
+    await inputs[0].setValue('ab')
+    expect(inputs[0].attributes('aria-invalid')).toBe('false')
+    expect(inputs[1].attributes('aria-invalid')).toBe('true')
+    await inputs[1].setValue('invalid')
+    await w.get('form').trigger('submit')
+    expect(w.text()).toContain('用户名长度 3-50 个字符')
+    expect(w.text()).toContain('邮箱格式不正确')
+    expect(w.text()).toContain('步骤 1/3')
+  })
+
+  it('validates six-digit codes and preserves the verified-code contract', async () => {
+    mockRoute.query = { 'auth-preview': 'step-2' }
+    const w = mountRegister()
+    const input = w.get('input')
+    expect(input.attributes('inputmode')).toBe('numeric')
+    expect(input.attributes('maxlength')).toBe('6')
+    await input.setValue('abc123')
+    await w.get('form').trigger('submit')
+    expect(mockVerifyCode).not.toHaveBeenCalled()
+    expect(w.text()).toContain('请输入 6 位数字验证码')
+    expect(document.activeElement).toBe(input.element)
+    await input.setValue('123456')
+    expect(input.attributes('aria-invalid')).toBe('false')
+  })
+
+  it('shows send success inline, counts down by elapsed time and permits resending after 60 seconds', async () => {
+    vi.useFakeTimers()
+    mockRoute.query = { 'auth-preview': 'step-2' }
+    const w = mountRegister()
+    const send = w.findAll('button').find((b) => b.text() === '获取验证码')!
+    await send.trigger('click')
+    await flushPromises()
+    expect(w.text()).toContain('验证码已发送')
+    expect(send.text()).toBe('60s 后重发')
+    expect(send.attributes('disabled')).toBeDefined()
+    await vi.advanceTimersByTimeAsync(59_000)
+    expect(send.text()).toBe('1s 后重发')
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(send.text()).toBe('获取验证码')
+    expect(send.attributes('disabled')).toBeUndefined()
+    w.unmount()
+    expect(vi.getTimerCount()).toBe(0)
+    vi.useRealTimers()
+  })
+
+  it('keeps send and verification failures above the actions, retains the code, and clears errors when edited', async () => {
+    mockRoute.query = { 'auth-preview': 'step-2' }
+    mockSendCode.mockRejectedValueOnce(new Error('邮件发送失败'))
+    const w = mountRegister()
+    await w
+      .findAll('button')
+      .find((b) => b.text() === '获取验证码')!
+      .trigger('click')
+    await flushPromises()
+    expect(w.get('[role="alert"]').text()).toContain('邮件发送失败')
+    expect(w.text()).not.toContain('后重发')
+    mockVerifyCode.mockRejectedValueOnce(new Error('验证码不正确'))
+    await w.get('input').setValue('123456')
+    expect(w.find('[role="alert"]').exists()).toBe(false)
+    await w.get('form').trigger('submit')
+    await flushPromises()
+    expect(mockVerifyCode).toHaveBeenCalledWith('', '123456', { errorDisplay: 'inline' })
+    expect(w.get('[role="alert"]').text()).toContain('验证码不正确')
+    expect(w.get('input').element.value).toBe('123456')
+    expect(w.get('.error').element.nextElementSibling?.className).toBe('actions')
+  })
+
+  it('validates password length and confirmation, preserves strength feedback and registration drafts on error', async () => {
+    const w = mountRegister()
+    await advanceToPassword(w)
+    const inputs = w.findAll('input')
+    await inputs[0].setValue('short')
+    await inputs[1].setValue('different')
+    await w.get('form').trigger('submit')
+    expect(mockRegister).not.toHaveBeenCalled()
+    expect(w.text()).toContain('密码长度 8-64 个字符')
+    expect(w.text()).toContain('两次输入的密码不一致')
+    expect(document.activeElement).toBe(inputs[0].element)
+    await inputs[0].setValue('Password1!')
+    await inputs[1].setValue('Password1!')
+    expect(w.text()).toContain('良好')
+    mockRegister.mockRejectedValueOnce(new Error('用户名已存在'))
+    await w.get('form').trigger('submit')
+    await flushPromises()
+    expect(w.get('[role="alert"]').text()).toContain('用户名已存在')
+    expect(inputs[0].element.value).toBe('Password1!')
+    await inputs[0].setValue('Password2!')
+    expect(w.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('ignores abandoned verification before sending email and locks all controls while pending', async () => {
+    let finish!: (value: string) => void
+    mockVerify.mockImplementationOnce(() => new Promise<string>((resolve) => (finish = resolve)))
+    mockRoute.query = { 'auth-preview': 'step-2' }
+    const w = mountRegister()
+    await w
+      .findAll('button')
+      .find((b) => b.text() === '获取验证码')!
+      .trigger('click')
+    expect(w.text()).toContain('正在发送…')
+    expect(w.findAll('input, button').every((control) => control.attributes('disabled') !== undefined)).toBe(true)
+    w.unmount()
+    finish('late-verification')
+    await flushPromises()
+    expect(mockSendCode).not.toHaveBeenCalled()
+  })
+
+  it('clears the verification ticket and requires verification again when returning from the password step', async () => {
+    const w = mountRegister()
+    await advanceToPassword(w)
+    await w
+      .findAll('button')
+      .find((b) => b.text() === '上一步')!
+      .trigger('click')
+    expect(w.text()).toContain('步骤 2/3')
+    expect(w.get('input').element.value).toBe('')
+    await w.get('form').trigger('submit')
+    expect(mockRegister).not.toHaveBeenCalled()
+    expect(mockVerifyCode).toHaveBeenCalledOnce()
   })
 })

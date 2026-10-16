@@ -1,92 +1,14 @@
-<template>
-  <AuthLayout class="auth-enter reset-password-page" :show-symbol="false">
-    <div v-if="checking" class="status-panel" role="status">
-      <div class="status-panel__icon status-panel__icon--loading" aria-hidden="true">
-        <el-icon class="is-loading"><Loading /></el-icon>
-      </div>
-      <h1 id="auth-title">正在验证链接</h1>
-    </div>
-    <div v-else-if="validationError" class="status-panel" role="alert">
-      <h1 id="auth-title">暂时无法验证链接</h1>
-      <p>{{ validationError }}</p>
-      <el-button class="auth-secondary" @click="validateLink">重试验证</el-button>
-    </div>
-    <template v-else-if="valid && !completed">
-      <div class="auth-feature-symbol" aria-hidden="true">
-        <el-icon><Lock /></el-icon>
-      </div>
-      <div class="auth-card-header">
-        <h1 id="auth-title">设置新密码</h1>
-        <p v-if="email">账号：{{ maskedEmail }}</p>
-      </div>
-      <el-form
-        ref="formRef"
-        class="auth-form auth-form--stable-errors"
-        :model="form"
-        :rules="rules"
-        :disabled="submitting"
-        label-position="top"
-        @submit.prevent="submit"
-      >
-        <el-form-item label="新密码" prop="password"
-          ><el-input
-            v-model="form.password"
-            :prefix-icon="Lock"
-            type="password"
-            show-password
-            placeholder="8-64 个字符"
-            autocomplete="new-password"
-        /></el-form-item>
-        <el-form-item label="确认新密码" prop="confirmPassword"
-          ><el-input
-            v-model="form.confirmPassword"
-            :prefix-icon="Lock"
-            type="password"
-            show-password
-            placeholder="再次输入新密码"
-            autocomplete="new-password"
-        /></el-form-item>
-        <el-form-item
-          ><el-button
-            native-type="submit"
-            type="primary"
-            class="auth-primary"
-            :loading="submitting"
-            :disabled="submitting"
-            >重置密码</el-button
-          ></el-form-item
-        >
-      </el-form>
-      <p v-if="submitError" class="auth-inline-error" role="alert">{{ submitError }}</p>
-    </template>
-    <div v-else-if="completed" class="status-panel" role="status">
-      <div class="status-panel__icon status-panel__icon--success" aria-hidden="true">
-        <el-icon><CircleCheckFilled /></el-icon>
-      </div>
-      <h1 id="auth-title">密码已重置</h1>
-      <el-button class="auth-secondary" @click="$router.push('/login')">前往登录</el-button>
-    </div>
-    <div v-else class="status-panel" role="status">
-      <div class="status-panel__icon status-panel__icon--error" aria-hidden="true">
-        <el-icon><CircleCloseFilled /></el-icon>
-      </div>
-      <h1 id="auth-title">链接无效或已过期</h1>
-      <el-button class="auth-secondary" @click="$router.push('/forgot-password')">重新申请</el-button>
-    </div>
-  </AuthLayout>
-</template>
-
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { CircleCheckFilled, CircleCloseFilled, Loading, Lock } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
-import AuthLayout from '@/components/auth/AuthLayout.vue'
+import { CircleAlert } from '@lucide/vue'
+import { LtButton, LtTextField } from '@/components/living'
+import AuthFrame from '@/components/auth/AuthFrame.vue'
 import { resetPassword, validateResetToken } from '@/api/auth'
 import { getAuthPreviewState } from '@/utils/authPreview'
 import { errorMessage } from '@/utils/errors'
+import { validLength } from './authValidation'
 import { useAuthPageGuard } from './useAuthPageGuard'
-import '@/assets/styles/auth.css'
 
 const route = useRoute()
 const previewState = getAuthPreviewState(route.query['auth-preview'], ['checking', 'form', 'success', 'error'])
@@ -95,7 +17,8 @@ const routeState = {
   valid: previewState === 'form' || previewState === 'success',
   completed: previewState === 'success',
 }
-const formRef = ref<FormInstance>(),
+const passwordField = ref<InstanceType<typeof LtTextField>>(),
+  confirmPasswordField = ref<InstanceType<typeof LtTextField>>(),
   checking = ref(routeState.checking),
   valid = ref(routeState.valid),
   completed = ref(routeState.completed),
@@ -106,14 +29,21 @@ const validationError = ref(''),
   submitError = ref('')
 let generation = 0
 const form = reactive({ password: '', confirmPassword: '' })
-const rules: FormRules = {
-  password: [
-    { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 8, max: 64, message: '密码长度 8-64 个字符', trigger: 'blur' },
-  ],
-  confirmPassword: [
-    { validator: (_r, v, cb) => (v === form.password ? cb() : cb(new Error('两次输入的密码不一致'))), trigger: 'blur' },
-  ],
+const fieldErrors = reactive({ password: '', confirmPassword: '' })
+function edited(key: 'password' | 'confirmPassword') {
+  fieldErrors[key] = ''
+  submitError.value = ''
+}
+function validate() {
+  fieldErrors.password = !form.password
+    ? '请输入新密码'
+    : !validLength(form.password, 8, 64)
+      ? '密码长度 8-64 个字符'
+      : ''
+  fieldErrors.confirmPassword = form.confirmPassword === form.password ? '' : '两次输入的密码不一致'
+  if (fieldErrors.password) passwordField.value?.focus()
+  else if (fieldErrors.confirmPassword) confirmPasswordField.value?.focus()
+  return !fieldErrors.password && !fieldErrors.confirmPassword
 }
 const maskedEmail = computed(() => {
   const [name, domain] = email.value.split('@')
@@ -136,6 +66,8 @@ async function validateLink() {
   email.value = ''
   form.password = ''
   form.confirmPassword = ''
+  fieldErrors.password = ''
+  fieldErrors.confirmPassword = ''
   if (!token) {
     checking.value = false
     return
@@ -155,12 +87,13 @@ async function validateLink() {
 watch(() => route.query.token, validateLink, { immediate: true })
 async function submit() {
   if (submitting.value || !valid.value || completed.value) return
+  submitError.value = ''
+  if (!validate()) return
   const current = capture(),
     version = generation
   submitting.value = true
   submitError.value = ''
   try {
-    if (!(await formRef.value?.validate().catch(() => false)) || !current() || version !== generation) return
     await resetPassword(String(route.query.token), form.password, { errorDisplay: 'inline' })
     if (!current() || version !== generation) return
     completed.value = true
@@ -175,3 +108,103 @@ async function submit() {
   }
 }
 </script>
+
+<template>
+  <AuthFrame>
+    <div v-if="checking" role="status">
+      <h1 id="auth-title" class="title">正在验证链接</h1>
+    </div>
+    <div v-else-if="validationError" class="status">
+      <h1 id="auth-title" class="title">暂时无法验证链接</h1>
+      <p class="error" role="alert">
+        <CircleAlert :size="16" aria-hidden="true" /><span>{{ validationError }}</span>
+      </p>
+      <LtButton size="lg" @click="validateLink">重试验证</LtButton>
+    </div>
+    <template v-else-if="valid && !completed">
+      <h1 id="auth-title" class="title">设置新密码</h1>
+      <p v-if="email" class="lead">账号：{{ maskedEmail }}</p>
+      <form class="form" novalidate @submit.prevent="submit">
+        <LtTextField
+          ref="passwordField"
+          v-model="form.password"
+          label="新密码"
+          type="password"
+          placeholder="8-64 个字符"
+          autocomplete="new-password"
+          :error="fieldErrors.password"
+          :disabled="submitting"
+          @update:model-value="edited('password')"
+        />
+        <LtTextField
+          ref="confirmPasswordField"
+          v-model="form.confirmPassword"
+          label="确认新密码"
+          type="password"
+          placeholder="再次输入新密码"
+          autocomplete="new-password"
+          :error="fieldErrors.confirmPassword"
+          :disabled="submitting"
+          @update:model-value="edited('confirmPassword')"
+        />
+        <p v-if="submitError" class="error" role="alert">
+          <CircleAlert :size="16" aria-hidden="true" /><span>{{ submitError }}</span>
+        </p>
+        <LtButton type="submit" variant="primary" size="lg" class="submit" :disabled="submitting">{{
+          submitting ? '正在重置…' : '重置密码'
+        }}</LtButton>
+      </form>
+    </template>
+    <div v-else-if="completed" class="status" role="status">
+      <h1 id="auth-title" class="title">密码已重置</h1>
+      <LtButton size="lg" @click="$router.push('/login')">前往登录</LtButton>
+    </div>
+    <div v-else class="status" role="status">
+      <h1 id="auth-title" class="title">链接无效或已过期</h1>
+      <LtButton size="lg" @click="$router.push('/forgot-password')">重新申请</LtButton>
+    </div>
+  </AuthFrame>
+</template>
+
+<style scoped>
+.title {
+  margin: 0;
+  font-size: var(--lt-text-title2);
+}
+.lead {
+  margin: var(--lt-space-2) 0 0;
+  color: var(--lt-label-2);
+  overflow-wrap: anywhere;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lt-space-5);
+  margin-top: var(--lt-space-7);
+}
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lt-space-2);
+  margin: 0;
+  padding: var(--lt-space-3) var(--lt-space-4);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-red-soft);
+  color: var(--lt-red-text);
+  font-size: var(--lt-text-footnote);
+  line-height: var(--lt-leading-ui);
+}
+.error svg {
+  flex: none;
+}
+.submit {
+  width: 100%;
+  margin-top: var(--lt-space-1);
+}
+
+.status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lt-space-5);
+}
+</style>

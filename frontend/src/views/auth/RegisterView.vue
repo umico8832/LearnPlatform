@@ -1,148 +1,22 @@
-<template>
-  <AuthLayout :class="['auth-enter', 'registration-page', `registration-page--step-${step}`]" :show-symbol="false">
-    <div class="auth-feature-symbol" aria-hidden="true">
-      <el-icon><UserFilled /></el-icon>
-    </div>
-    <div class="auth-card-header">
-      <h1 id="auth-title">创建学习账号</h1>
-      <p v-if="step === 2">
-        <template v-if="form.email"
-          >验证码将发送至 <strong>{{ form.email }}</strong></template
-        >
-        <template v-else>验证码将发送至注册邮箱</template>
-      </p>
-    </div>
-    <div class="registration-progress" role="status" aria-live="polite">
-      <span>步骤 {{ step }}/3</span>
-      <div class="registration-progress__bars" aria-hidden="true">
-        <i v-for="index in 3" :key="index" :class="{ 'is-active': index <= step }"></i>
-      </div>
-    </div>
-    <div class="registration-body">
-      <el-form
-        ref="formRef"
-        class="auth-form auth-form--minimal"
-        :model="form"
-        :rules="rules"
-        :disabled="sending || verifying || loading"
-        label-position="top"
-        @submit.prevent="handlePrimary"
-      >
-        <Transition name="registration-step" mode="out-in">
-          <div v-if="step === 1" key="account" class="registration-step">
-            <el-form-item label="用户名" prop="username"
-              ><el-input
-                v-model="form.username"
-                :prefix-icon="User"
-                placeholder="用户名（3-50 个字符）"
-                autocomplete="username"
-            /></el-form-item>
-            <el-form-item label="邮箱" prop="email"
-              ><el-input v-model="form.email" :prefix-icon="Message" placeholder="邮箱" autocomplete="email"
-            /></el-form-item>
-            <el-form-item
-              ><el-button native-type="submit" type="primary" class="auth-primary">下一步</el-button></el-form-item
-            >
-          </div>
-          <div v-else-if="step === 2" key="verification" class="registration-step">
-            <el-form-item label="邮箱验证码">
-              <div class="code-row">
-                <el-input
-                  v-model="code"
-                  :prefix-icon="Key"
-                  placeholder="6 位数字"
-                  inputmode="numeric"
-                  maxlength="6"
-                  autocomplete="one-time-code"
-                /><el-button
-                  native-type="button"
-                  :loading="sending"
-                  :disabled="sending || verifying || countdown > 0"
-                  @click="sendCode"
-                  >{{ countdown > 0 ? `${countdown}s 后重发` : '获取验证码' }}</el-button
-                >
-              </div>
-            </el-form-item>
-            <el-form-item
-              ><div class="step-actions">
-                <el-button native-type="button" class="auth-secondary" @click="backToAccount">上一步</el-button
-                ><el-button
-                  native-type="submit"
-                  type="primary"
-                  class="auth-primary"
-                  :loading="verifying"
-                  :disabled="!/^\d{6}$/.test(code) || verifying || sending"
-                  >验证并继续</el-button
-                >
-              </div></el-form-item
-            >
-          </div>
-          <div v-else key="password" class="registration-step">
-            <el-form-item label="密码" prop="password"
-              ><el-input
-                v-model="form.password"
-                :prefix-icon="Lock"
-                type="password"
-                show-password
-                placeholder="密码（8-64 个字符）"
-                autocomplete="new-password"
-              />
-              <div v-if="form.password" class="password-meter">
-                <div><i :style="{ width: `${passwordStrength}%` }"></i></div>
-                <span>{{ passwordStrengthLabel }}</span>
-              </div></el-form-item
-            >
-            <el-form-item label="确认密码" prop="confirmPassword"
-              ><el-input
-                v-model="form.confirmPassword"
-                :prefix-icon="Lock"
-                type="password"
-                show-password
-                placeholder="确认密码"
-                autocomplete="new-password"
-            /></el-form-item>
-            <el-form-item
-              ><div class="step-actions">
-                <el-button native-type="button" class="auth-secondary" @click="backToVerification">上一步</el-button
-                ><el-button native-type="submit" type="primary" class="auth-primary" :loading="loading"
-                  >创建账号</el-button
-                >
-              </div></el-form-item
-            >
-          </div>
-        </Transition>
-      </el-form>
-      <p v-if="error" class="auth-inline-error" role="alert">{{ error }}</p>
-      <AuthSocialOptions v-if="step === 1" :preview="previewMode" :disabled="loading" />
-    </div>
-    <template #footer>
-      <div v-if="step === 1" class="auth-footer">已有账号？ <router-link to="/login">立即登录</router-link></div>
-    </template>
-    <TurnstileDialog ref="verificationRef" />
-  </AuthLayout>
-</template>
-
 <script setup lang="ts">
 import { computed, onBeforeUnmount, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { Key, Lock, Message, User, UserFilled } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
-import { ElMessage } from 'element-plus'
-import AuthLayout from '@/components/auth/AuthLayout.vue'
-import AuthSocialOptions from '@/components/auth/AuthSocialOptions.vue'
-import TurnstileDialog from '@/components/auth/TurnstileDialog.vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { CircleAlert } from '@lucide/vue'
+import { LtButton, LtTextField } from '@/components/living'
+import AuthFrame from '@/components/auth/AuthFrame.vue'
+import AuthProviders from '@/components/auth/AuthProviders.vue'
+import TurnstileSheet from '@/components/auth/TurnstileSheet.vue'
+import { validEmail, validLength } from './authValidation'
 import { register, sendRegisterCode, verifyRegisterCode } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
 import { getAuthPreviewState } from '@/utils/authPreview'
 import { useAuthPageGuard } from './useAuthPageGuard'
 import { errorMessage } from '@/utils/errors'
-import '@/assets/styles/auth.css'
 
 const router = useRouter(),
   route = useRoute(),
   userStore = useUserStore(),
-  formRef = ref<FormInstance>(),
-  verificationRef = ref<InstanceType<typeof TurnstileDialog>>()
+  verificationRef = ref<InstanceType<typeof TurnstileSheet>>()
 const previewState = getAuthPreviewState(route.query['auth-preview'], ['step-1', 'step-2', 'step-3'])
 const previewMode = previewState !== undefined
 const step = ref(previewState ? Number(previewState.at(-1)) : 1),
@@ -162,22 +36,55 @@ const form = reactive({
   confirmPassword: '',
   verificationTicket: '',
 })
-const rules: FormRules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 50, message: '用户名长度 3-50 个字符', trigger: 'blur' },
-  ],
-  email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '邮箱格式不正确', trigger: 'blur' },
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 8, max: 64, message: '密码长度 8-64 个字符', trigger: 'blur' },
-  ],
-  confirmPassword: [
-    { validator: (_r, v, cb) => (v === form.password ? cb() : cb(new Error('两次输入的密码不一致'))), trigger: 'blur' },
-  ],
+const fieldErrors = reactive({ username: '', email: '', code: '', password: '', confirmPassword: '' })
+type Field = keyof typeof fieldErrors
+const usernameField = ref<InstanceType<typeof LtTextField>>()
+const emailField = ref<InstanceType<typeof LtTextField>>()
+const codeField = ref<InstanceType<typeof LtTextField>>()
+const passwordField = ref<InstanceType<typeof LtTextField>>()
+const confirmPasswordField = ref<InstanceType<typeof LtTextField>>()
+const busy = computed(() => sending.value || verifying.value || loading.value)
+const sent = ref(false)
+function edited(key: Field) {
+  fieldErrors[key] = ''
+  error.value = ''
+}
+function validate() {
+  let keys: Field[]
+  if (step.value === 1) {
+    fieldErrors.username = !form.username
+      ? '请输入用户名'
+      : !validLength(form.username, 3, 50)
+        ? '用户名长度 3-50 个字符'
+        : ''
+    fieldErrors.email = !form.email ? '请输入邮箱' : !validEmail(form.email) ? '邮箱格式不正确' : ''
+    keys = ['username', 'email']
+  } else if (step.value === 2) {
+    fieldErrors.code = /^\d{6}$/.test(code.value) ? '' : '请输入 6 位数字验证码'
+    keys = ['code']
+  } else {
+    fieldErrors.password = !form.password
+      ? '请输入密码'
+      : !validLength(form.password, 8, 64)
+        ? '密码长度 8-64 个字符'
+        : ''
+    fieldErrors.confirmPassword = form.confirmPassword === form.password ? '' : '两次输入的密码不一致'
+    keys = ['password', 'confirmPassword']
+  }
+  const first = keys.find((key) => fieldErrors[key])
+  if (first)
+    ({
+      username: usernameField,
+      email: emailField,
+      code: codeField,
+      password: passwordField,
+      confirmPassword: confirmPasswordField,
+    })[first].value?.focus()
+  return !first
+}
+function clearErrors() {
+  for (const key of Object.keys(fieldErrors) as Field[]) fieldErrors[key] = ''
+  error.value = ''
 }
 const passwordStrength = computed(() => {
   let n = 0
@@ -198,6 +105,8 @@ const passwordStrengthLabel = computed(() =>
 )
 async function handlePrimary() {
   if (sending.value || verifying.value || loading.value) return
+  error.value = ''
+  if (!validate()) return
   if (step.value === 2) return verifyCode()
   const current = capture(),
     version = stageVersion
@@ -206,14 +115,9 @@ async function handlePrimary() {
   let authenticated = false
   try {
     if (step.value === 1) {
-      const valid = await formRef.value
-        ?.validateField(['username', 'email'])
-        .then(() => true)
-        .catch(() => false)
-      if (valid && current() && version === stageVersion) step.value = 2
+      step.value = 2
       return
     }
-    if (!(await formRef.value?.validate().catch(() => false)) || !current() || version !== stageVersion) return
     const response = await register(
       {
         username: form.username,
@@ -226,7 +130,6 @@ async function handlePrimary() {
     if (!current() || version !== stageVersion) return
     userStore.setLoginInfo(response.data.token, response.data.user)
     authenticated = true
-    ElMessage.success('账号已创建')
     await router.push('/my-courses')
   } catch (cause) {
     if (current() && version === stageVersion)
@@ -236,7 +139,7 @@ async function handlePrimary() {
   }
 }
 async function sendCode() {
-  if (sending.value || verifying.value || countdown.value > 0 || step.value !== 2) return
+  if (busy.value || countdown.value > 0 || step.value !== 2) return
   const current = capture(),
     version = stageVersion
   const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : undefined
@@ -248,7 +151,7 @@ async function sendCode() {
     if (!turnstileToken || !current() || version !== stageVersion) return
     await sendRegisterCode(email, turnstileToken, { errorDisplay: 'inline' })
     if (!current() || version !== stageVersion) return
-    ElMessage.success('验证码已发送')
+    sent.value = true
     const deadline = Date.now() + 60_000
     countdown.value = 60
     if (timer) clearInterval(timer)
@@ -283,7 +186,8 @@ function backToAccount() {
   if (sending.value || verifying.value || loading.value) return
   stageVersion++
   step.value = 1
-  error.value = ''
+  sent.value = false
+  clearErrors()
   code.value = ''
   form.verificationTicket = ''
 }
@@ -291,7 +195,7 @@ function backToVerification() {
   if (loading.value) return
   stageVersion++
   step.value = 2
-  error.value = ''
+  clearErrors()
   form.verificationTicket = ''
   code.value = ''
 }
@@ -300,81 +204,174 @@ onBeforeUnmount(() => {
 })
 </script>
 
+<template>
+  <AuthFrame>
+    <h1 id="auth-title" class="title">创建学习账号</h1>
+    <p v-if="step === 2" class="lead">
+      <template v-if="form.email"
+        >验证码将发送至 <strong>{{ form.email }}</strong></template
+      >
+      <template v-else>验证码将发送至注册邮箱</template>
+    </p>
+    <p class="progress" role="status" aria-live="polite">步骤 {{ step }}/3</p>
+    <form class="form" novalidate @submit.prevent="handlePrimary">
+      <template v-if="step === 1">
+        <LtTextField
+          ref="usernameField"
+          v-model="form.username"
+          label="用户名"
+          placeholder="用户名（3-50 个字符）"
+          autocomplete="username"
+          :error="fieldErrors.username"
+          :disabled="busy"
+          @update:model-value="edited('username')"
+        />
+        <LtTextField
+          ref="emailField"
+          v-model="form.email"
+          label="邮箱"
+          placeholder="邮箱"
+          autocomplete="email"
+          :error="fieldErrors.email"
+          :disabled="busy"
+          @update:model-value="edited('email')"
+        />
+      </template>
+      <template v-else-if="step === 2">
+        <LtTextField
+          ref="codeField"
+          v-model="code"
+          label="邮箱验证码"
+          placeholder="6 位数字"
+          inputmode="numeric"
+          :maxlength="6"
+          autocomplete="one-time-code"
+          :error="fieldErrors.code"
+          :disabled="busy"
+          @update:model-value="edited('code')"
+        >
+          <template #label-trailing>
+            <LtButton :disabled="busy || countdown > 0" size="sm" @click="sendCode">{{
+              sending ? '正在发送…' : countdown > 0 ? `${countdown}s 后重发` : '获取验证码'
+            }}</LtButton>
+          </template>
+        </LtTextField>
+        <p v-if="sent" class="sent" role="status">验证码已发送</p>
+      </template>
+      <template v-else>
+        <LtTextField
+          ref="passwordField"
+          v-model="form.password"
+          label="密码"
+          type="password"
+          placeholder="密码（8-64 个字符）"
+          autocomplete="new-password"
+          :error="fieldErrors.password"
+          :disabled="busy"
+          @update:model-value="edited('password')"
+        />
+        <p v-if="form.password" class="strength">密码强度：{{ passwordStrengthLabel }}</p>
+        <LtTextField
+          ref="confirmPasswordField"
+          v-model="form.confirmPassword"
+          label="确认密码"
+          type="password"
+          placeholder="确认密码"
+          autocomplete="new-password"
+          :error="fieldErrors.confirmPassword"
+          :disabled="busy"
+          @update:model-value="edited('confirmPassword')"
+        />
+      </template>
+      <p v-if="error" class="error" role="alert">
+        <CircleAlert :size="16" aria-hidden="true" /><span>{{ error }}</span>
+      </p>
+      <div class="actions">
+        <LtButton
+          v-if="step > 1"
+          size="lg"
+          :disabled="busy"
+          @click="step === 2 ? backToAccount() : backToVerification()"
+          >上一步</LtButton
+        >
+        <LtButton type="submit" variant="primary" size="lg" class="submit" :disabled="busy">{{
+          loading
+            ? '正在创建…'
+            : verifying
+              ? '正在验证…'
+              : sending
+                ? '正在发送…'
+                : step === 1
+                  ? '下一步'
+                  : step === 2
+                    ? '验证并继续'
+                    : '创建账号'
+        }}</LtButton>
+      </div>
+    </form>
+    <AuthProviders v-if="step === 1" :preview="previewMode" :disabled="busy" />
+    <TurnstileSheet ref="verificationRef" />
+    <template v-if="step === 1" #footer>已有账号？<RouterLink to="/login">立即登录</RouterLink></template>
+  </AuthFrame>
+</template>
+
 <style scoped>
-.registration-progress {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--lp-space-5);
-  margin-bottom: var(--lp-space-5);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-base);
-  line-height: var(--lp-leading-body);
+.title {
+  margin: 0;
+  font-size: var(--lt-text-title2);
 }
-.registration-progress__bars {
-  display: grid;
-  grid-template-columns: repeat(3, var(--lp-space-10));
-  gap: var(--lp-space-2);
+.lead {
+  margin: var(--lt-space-2) 0 0;
+  color: var(--lt-label-2);
+  overflow-wrap: anywhere;
 }
-.registration-progress__bars i {
-  height: var(--lp-space-1);
-  border-radius: var(--lp-radius-full);
-  background: var(--lp-surface-inset);
-}
-.registration-progress__bars i.is-active {
-  background: var(--lp-primary);
-}
-.registration-step {
-  display: flow-root;
-}
-.registration-body {
+.form {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  gap: var(--lt-space-5);
+  margin-top: var(--lt-space-7);
 }
-.auth-card-header strong {
-  color: var(--lp-text);
-  font-weight: var(--lp-weight-semibold);
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lt-space-2);
+  margin: 0;
+  padding: var(--lt-space-3) var(--lt-space-4);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-red-soft);
+  color: var(--lt-red-text);
+  font-size: var(--lt-text-footnote);
+  line-height: var(--lt-leading-ui);
 }
-@media (min-width: 1280px) {
-  .registration-page--step-1 :deep(.auth-card) {
-    height: 620px;
-  }
-  .registration-page--step-1 .registration-body {
-    height: 312px;
-  }
-  .registration-page--step-2 :deep(.auth-card) {
-    height: 464px;
-  }
-  .registration-page--step-2 .registration-body {
-    height: 120px;
-  }
-  .registration-page--step-3 :deep(.auth-card) {
-    height: 500px;
-  }
-  .registration-page--step-3 .registration-body {
-    height: 192px;
-  }
-  .registration-progress {
-    font-size: var(--lp-text-lg);
-  }
+.error svg {
+  flex: none;
 }
-@media (prefers-reduced-motion: no-preference) {
-  .registration-page :deep(.auth-card) {
-    transition: height var(--lp-duration-slow) var(--lp-ease-out);
-  }
-  .registration-step-enter-active,
-  .registration-step-leave-active {
-    transition:
-      opacity var(--lp-duration-normal) var(--lp-ease-out),
-      transform var(--lp-duration-normal) var(--lp-ease-out);
-  }
-  .registration-step-enter-from {
-    opacity: 0;
-    transform: translateY(var(--lp-space-2));
-  }
-  .registration-step-leave-to {
-    opacity: 0;
-  }
+.submit {
+  width: 100%;
+  margin-top: var(--lt-space-1);
+}
+
+.progress,
+.strength,
+.sent {
+  margin: var(--lt-space-4) 0 0;
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+}
+.form {
+  margin-top: var(--lt-space-5);
+}
+.strength,
+.sent {
+  margin: 0;
+}
+.actions {
+  display: flex;
+  gap: var(--lt-space-3);
+}
+.actions .submit {
+  flex: 1;
+  width: auto;
+  margin: 0;
 }
 </style>

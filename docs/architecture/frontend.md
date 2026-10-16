@@ -116,9 +116,11 @@ frontend/admin/   # 独立管理端 HTML 入口
   ADR-0010 定义其安静呈现方向：数据在顶栏、个人页和总结中原位显示，不增加奖励飘字、全屏庆祝、彩纸、连击火焰、成就弹窗或常驻 pulse。
   答题只显示一行已记录事实，无连击徽章；动画不阻塞继续学习。
 - 游戏化数据决策见 [ADR-0009](decisions/0009-learning-effort-gamification.md)，视觉与交互规范见项目 `frontend-design` Skill。
-- 登录页（`/login`）已按新基线重做：`AuthFrame` 外壳、`LtTextField` 字段，字段错误留在字段下方，服务端错误留在按钮上方，
-  验证面板 `TurnstileSheet` 从提交按钮展开并交还焦点。注册与账户恢复页面暂用旧基线的静态暖纸背景与居中账户卡片。
-  两版共用 `useVerificationGate`（验证请求）与 `useOAuthProviders`（第三方登录）；Google 登录入口按后端提供方状态启用，
+- 登录、注册、忘记密码与重置密码四页已按新基线重做：`AuthFrame` 外壳、`LtTextField` 字段，字段错误留在字段下方，服务端错误留在按钮上方，
+  验证面板 `TurnstileSheet` 从触发按钮展开并交还焦点；验证码发送成功在页内提示，注册成功直接进入课程页。
+  OAuth 回调页仍用旧外壳与样式，管理端登录仍用 `TurnstileDialog`。
+  `TurnstileSheet` 与 `TurnstileDialog` 共用 `useVerificationGate` 管理验证请求；第三方登录通过 `useOAuthProviders` 管理，
+  Google 登录入口按后端提供方状态启用，
   未配置的提供方不显示可操作入口。
 
 管理端沿用同一 token 与状态原语，导航按内容维护、审核批阅和平台运营分组；

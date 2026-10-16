@@ -16,6 +16,8 @@ const props = withDefaults(
     error?: string
     /** Helper text under the field, replaced by the error while invalid. */
     hint?: string
+    inputmode?: 'text' | 'numeric'
+    maxlength?: number
     disabled?: boolean
   }>(),
   { type: 'text', autocomplete: 'off', placeholder: undefined, error: '', hint: '', disabled: false },
@@ -46,6 +48,8 @@ defineExpose({ focus: () => input.value?.focus() })
         :type="inputType"
         :autocomplete="autocomplete"
         :placeholder="placeholder"
+        :inputmode="inputmode"
+        :maxlength="maxlength"
         :disabled="disabled"
         :aria-invalid="Boolean(error)"
         :aria-describedby="message ? `${id}-message` : undefined"

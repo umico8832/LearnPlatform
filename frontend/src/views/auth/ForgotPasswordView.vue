@@ -1,75 +1,20 @@
-<template>
-  <AuthLayout class="recovery-page" :show-symbol="false">
-    <template v-if="!submitted">
-      <div class="recovery-symbol recovery-symbol--mail" aria-hidden="true">
-        <el-icon><Message /></el-icon>
-      </div>
-      <div class="auth-card-header recovery-header">
-        <h1 id="auth-title">重置密码</h1>
-      </div>
-      <el-form
-        ref="formRef"
-        class="auth-form auth-form--stable-errors"
-        :model="form"
-        :rules="rules"
-        :disabled="loading"
-        label-position="top"
-        @submit.prevent="submit"
-      >
-        <el-form-item label="注册邮箱" prop="email"
-          ><el-input v-model="form.email" :prefix-icon="Message" placeholder="name@example.com" autocomplete="email"
-        /></el-form-item>
-        <el-form-item
-          ><el-button native-type="submit" type="primary" class="auth-primary" :loading="loading" :disabled="loading"
-            >发送重置链接</el-button
-          ></el-form-item
-        >
-      </el-form>
-    </template>
-    <div v-else class="recovery-status" role="status">
-      <div class="recovery-symbol recovery-symbol--success" aria-hidden="true">
-        <el-icon><CircleCheckFilled /></el-icon>
-      </div>
-      <h1 id="auth-title">查看重置邮件</h1>
-      <p>如果该邮箱已注册，你会收到一封重置邮件。</p>
-      <p>
-        重置链接 30 分钟内有效。{{ resendCount === 0 ? '没有收到邮件？' : '仍未收到？'
-        }}<button
-          v-if="resendCount < maxResendAttempts"
-          type="button"
-          class="recovery-help-link recovery-resend-link"
-          :disabled="loading"
-          @click="resend"
-        >
-          {{ loading ? '正在发送…' : resendCount === 0 ? '重新发送' : '再次发送' }}</button
-        ><button v-else type="button" class="recovery-help-link recovery-support-link" @click="editEmail">
-          重新填写邮箱
-        </button>
-      </p>
-    </div>
-    <p v-if="error" class="auth-inline-error" role="alert">{{ error }}</p>
-    <div class="auth-footer recovery-actions"><router-link to="/login">返回登录</router-link></div>
-    <TurnstileDialog ref="verificationRef" />
-  </AuthLayout>
-</template>
-
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { CircleCheckFilled, Message } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
-import AuthLayout from '@/components/auth/AuthLayout.vue'
-import TurnstileDialog from '@/components/auth/TurnstileDialog.vue'
+import { CircleAlert } from '@lucide/vue'
+import { LtButton, LtTextField } from '@/components/living'
+import AuthFrame from '@/components/auth/AuthFrame.vue'
+import TurnstileSheet from '@/components/auth/TurnstileSheet.vue'
+import { validEmail } from './authValidation'
 import { forgotPassword } from '@/api/auth'
 import { getAuthPreviewState } from '@/utils/authPreview'
 import { useAuthPageGuard } from './useAuthPageGuard'
 import { errorMessage } from '@/utils/errors'
-import '@/assets/styles/auth.css'
 
 const route = useRoute()
 const previewState = getAuthPreviewState(route.query['auth-preview'], ['form', 'sent', 'resent', 'support'])
-const formRef = ref<FormInstance>(),
-  verificationRef = ref<InstanceType<typeof TurnstileDialog>>(),
+const emailField = ref<InstanceType<typeof LtTextField>>(),
+  verificationRef = ref<InstanceType<typeof TurnstileSheet>>(),
   loading = ref(false),
   submitted = ref(previewState === 'sent' || previewState === 'resent' || previewState === 'support'),
   resendCount = ref(previewState === 'support' ? 2 : previewState === 'resent' ? 1 : 0)
@@ -82,20 +27,24 @@ function editEmail() {
   error.value = ''
 }
 const form = reactive({ email: '' })
-const rules: FormRules = {
-  email: [
-    { required: true, message: '请输入注册邮箱', trigger: 'blur' },
-    { type: 'email', message: '邮箱格式不正确', trigger: 'blur' },
-  ],
+const fieldError = ref('')
+function edited() {
+  fieldError.value = ''
+  error.value = ''
+}
+function validate() {
+  fieldError.value = !form.email ? '请输入注册邮箱' : !validEmail(form.email) ? '邮箱格式不正确' : ''
+  if (fieldError.value) emailField.value?.focus()
+  return !fieldError.value
 }
 async function submit() {
   if (loading.value) return
-  const current = capture()
   error.value = ''
+  if (!validate()) return
+  const current = capture()
   const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : undefined
   loading.value = true
   try {
-    if (!(await formRef.value?.validate().catch(() => false)) || !current()) return
     const sent = await requestReset(form.email, current, trigger)
     if (current()) submitted.value = sent
   } catch (cause) {
@@ -130,126 +79,89 @@ async function requestReset(email: string, current: () => boolean, trigger?: HTM
 }
 </script>
 
+<template>
+  <AuthFrame>
+    <template v-if="!submitted">
+      <h1 id="auth-title" class="title">重置密码</h1>
+      <form class="form" novalidate @submit.prevent="submit">
+        <LtTextField
+          ref="emailField"
+          v-model="form.email"
+          label="注册邮箱"
+          placeholder="name@example.com"
+          autocomplete="email"
+          :error="fieldError"
+          :disabled="loading"
+          @update:model-value="edited"
+        />
+        <p v-if="error" class="error" role="alert">
+          <CircleAlert :size="16" aria-hidden="true" /><span>{{ error }}</span>
+        </p>
+        <LtButton type="submit" variant="primary" size="lg" class="submit" :disabled="loading">{{
+          loading ? '正在发送…' : '发送重置链接'
+        }}</LtButton>
+      </form>
+    </template>
+    <div v-else class="status" role="status">
+      <h1 id="auth-title" class="title">查看重置邮件</h1>
+      <p class="lead">如果该邮箱已注册，你会收到一封重置邮件。</p>
+      <p class="lead">重置链接 30 分钟内有效。{{ resendCount === 0 ? '没有收到邮件？' : '仍未收到？' }}</p>
+      <p v-if="error" class="error" role="alert">
+        <CircleAlert :size="16" aria-hidden="true" /><span>{{ error }}</span>
+      </p>
+      <LtButton
+        v-if="resendCount < maxResendAttempts"
+        class="recovery-resend-link"
+        :disabled="loading"
+        @click="resend"
+        >{{ loading ? '正在发送…' : resendCount === 0 ? '重新发送' : '再次发送' }}</LtButton
+      >
+      <LtButton v-else class="recovery-support-link" @click="editEmail">重新填写邮箱</LtButton>
+    </div>
+    <TurnstileSheet ref="verificationRef" />
+    <template #footer><router-link to="/login">返回登录</router-link></template>
+  </AuthFrame>
+</template>
+
 <style scoped>
-.recovery-symbol {
-  display: grid;
-  place-items: center;
-  margin: 0 auto var(--lp-space-6);
-  border-radius: 50%;
-}
-.recovery-symbol--mail {
-  width: 72px;
-  height: 72px;
-  background: var(--lp-primary-soft);
-  color: var(--lp-primary);
-}
-.recovery-symbol--mail .el-icon {
-  font-size: var(--lp-text-5xl);
-}
-.recovery-header {
-  margin-bottom: var(--lp-space-6);
-}
-.recovery-status {
-  padding: var(--lp-space-2) 0 var(--lp-space-1);
-  text-align: center;
-}
-.recovery-symbol--success {
-  width: 88px;
-  height: 88px;
-  margin-bottom: var(--lp-space-6);
-  color: var(--lp-success);
-}
-.recovery-symbol--success .el-icon {
-  font-size: 88px;
-}
-.recovery-status h1 {
+.title {
   margin: 0;
-  color: var(--lp-text);
-  font-size: var(--lp-text-4xl);
-  font-weight: var(--lp-weight-bold);
-  line-height: var(--lp-leading-tight);
-  letter-spacing: var(--lp-tracking-tight);
+  font-size: var(--lt-text-title2);
 }
-.recovery-status p {
-  margin: var(--lp-space-3) 0 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-base);
-  line-height: var(--lp-leading-body);
+.lead {
+  margin: var(--lt-space-2) 0 0;
+  color: var(--lt-label-2);
   overflow-wrap: anywhere;
 }
-.recovery-help-link {
-  appearance: none;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--lp-link);
-  font: inherit;
-  font-weight: var(--lp-weight-semibold);
-  cursor: pointer;
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lt-space-5);
+  margin-top: var(--lt-space-7);
 }
-.recovery-help-link:disabled {
-  color: var(--lp-text-muted);
-  cursor: default;
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lt-space-2);
+  margin: 0;
+  padding: var(--lt-space-3) var(--lt-space-4);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-red-soft);
+  color: var(--lt-red-text);
+  font-size: var(--lt-text-footnote);
+  line-height: var(--lt-leading-ui);
 }
-.recovery-help-link:hover {
-  color: var(--lp-link-hover);
-  text-decoration: underline;
+.error svg {
+  flex: none;
 }
-.recovery-help-link:hover:disabled {
-  color: var(--lp-text-muted);
-  text-decoration: none;
-}
-.recovery-help-link:focus-visible {
-  border-radius: var(--lp-radius-xs);
-  outline: 2px solid var(--lp-primary);
-  outline-offset: var(--lp-space-1);
-}
-.recovery-actions {
-  margin-top: var(--lp-space-4);
-}
-.recovery-actions a {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.submit {
   width: 100%;
-  min-height: var(--lp-space-10);
-  padding: var(--lp-space-2) var(--lp-space-4);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  background: transparent;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-base);
-  font-weight: var(--lp-weight-medium);
+  margin-top: var(--lt-space-1);
 }
-.recovery-actions a:hover {
-  border-color: var(--lp-border-strong);
-  color: var(--lp-text);
-  text-decoration: none;
-}
-@media (min-width: 1280px) {
-  .recovery-header h1,
-  .recovery-status h2 {
-    font-size: var(--lp-text-5xl);
-  }
-  .recovery-header p,
-  .recovery-status p {
-    font-size: var(--lp-text-lg);
-  }
-  .recovery-page :deep(.auth-form .el-form-item__label) {
-    font-size: var(--lp-text-base);
-  }
-  .recovery-page :deep(.auth-form .el-input__inner),
-  .recovery-page :deep(.auth-primary),
-  .recovery-actions a {
-    font-size: var(--lp-text-lg);
-  }
-  .recovery-actions a {
-    min-height: var(--lp-space-12);
-  }
-}
-@media (max-width: 340px) {
-  .recovery-status p {
-    white-space: normal;
-  }
+
+.status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lt-space-4);
 }
 </style>
