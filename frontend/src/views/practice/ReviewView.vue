@@ -26,21 +26,22 @@
     <LpStatePanel v-else-if="statsError" state="error" :description="statsError" @retry="loadStats" />
 
     <section v-else class="stats-grid" aria-label="复习概况">
-      <LpStat label="今日待复习" :value="stats.dueToday" tone="emphasis" />
-      <LpStat label="今日已完成" :value="stats.reviewedToday" />
+      <LpStat label="到期可复习" :value="stats.dueToday" tone="emphasis" />
+      <LpStat label="最近评分在今天" :value="stats.reviewedToday" />
       <LpStat label="复习卡片" :value="stats.totalCards" />
     </section>
 
     <section v-if="!statsLoading && !statsError && stats.totalCards > 0" class="progress-panel">
-      <LpSectionHeading :title="`已掌握 ${stats.masteredCards} / ${stats.totalCards} 张卡片`" />
+      <LpSectionHeading :title="`间隔复习 ${stats.reviewCards} / ${stats.totalCards} 张卡片`" />
       <LpProgress
-        :percent="masteredPercent"
-        :label="`${stats.masteredCards}/${stats.totalCards}`"
+        :percent="reviewPercent"
+        :label="`${stats.reviewCards}/${stats.totalCards}`"
         tone="success"
         show-label
       />
       <p class="status-row">
-        新卡 {{ stats.newCards }} · 学习中 {{ stats.learningCards }} · 困难 {{ stats.difficultCards }}
+        待首次 FSRS 评分 {{ stats.pendingRatingCards }} · 初学排期 {{ stats.learningCards }} · 重学排期
+        {{ stats.relearningCards }} · 最近评分答错 {{ stats.lastAgainCards }} · 最近自评困难 {{ stats.lastHardCards }}
       </p>
     </section>
 
@@ -118,7 +119,7 @@
             </template>
           </el-table-column>
           <el-table-column label="课程" width="120" show-overflow-tooltip prop="courseName" />
-          <el-table-column label="状态" width="110">
+          <el-table-column label="状态" width="160">
             <template #default="{ row }">
               <el-tag size="small" :type="row.availableForReview === false ? 'info' : statusTagType(row.statusLabel)">{{
                 row.availableForReview === false ? '待配置答案' : row.statusLabel
@@ -203,12 +204,12 @@ const stats = ref<ReviewStatsVO>({
   dueToday: 0,
   overdue: 0,
   reviewedToday: 0,
-  newCards: 0,
+  pendingRatingCards: 0,
   learningCards: 0,
-  masteredCards: 0,
-  difficultCards: 0,
-  streakDays: 0,
-  avgEaseFactor: 2.5,
+  reviewCards: 0,
+  relearningCards: 0,
+  lastAgainCards: 0,
+  lastHardCards: 0,
 })
 
 const dueCards = ref<ReviewScheduleVO[]>([])
@@ -234,9 +235,9 @@ const { loading: aiSuggestionLoading, content: aiSuggestionContent, error: aiSug
 let generation = 0
 let alive = true
 
-const masteredPercent = computed(() => {
+const reviewPercent = computed(() => {
   if (stats.value.totalCards === 0) return 0
-  return Math.round((stats.value.masteredCards / stats.value.totalCards) * 100)
+  return Math.round((stats.value.reviewCards / stats.value.totalCards) * 100)
 })
 
 async function loadStats() {

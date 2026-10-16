@@ -1,6 +1,8 @@
 package com.learnplatform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import io.github.openspacedrepetition.Card;
+import io.github.openspacedrepetition.State;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.learnplatform.dto.ReviewScheduleVO;
 import com.learnplatform.dto.ReviewStatsVO;
@@ -142,32 +144,44 @@ class ReviewScheduleQueryServiceTest {
     }
 
     @Test
-    void reviewStatsKeepExistingCategoryAndStreakSemantics() {
-        QuestionReviewSchedule newCard = schedule(101L);
-        newCard.setTotalReviews(0);
-        newCard.setIntervalDays(0);
-        newCard.setEaseFactor(new BigDecimal("2.50"));
-
-        QuestionReviewSchedule masteredDifficultCard = schedule(202L);
-        masteredDifficultCard.setTotalReviews(3);
-        masteredDifficultCard.setIntervalDays(21);
-        masteredDifficultCard.setEaseFactor(new BigDecimal("1.80"));
-
-        when(reviewScheduleMapper.selectCount(any()))
-                .thenReturn(2L, 1L, 1L, 1L, 1L, 0L);
+    void categoriesUseOnlyFsrsStateAndLastRating() {
+        QuestionReviewSchedule legacy = schedule(101L);
+        legacy.setTotalReviews(15);
+        legacy.setIntervalDays(100);
+        legacy.setEaseFactor(new BigDecimal("1.20"));
+        legacy.setLastQuality(1);
+        QuestionReviewSchedule fresh = schedule(102L);
+        fresh.setTotalReviews(0);
+        QuestionReviewSchedule learning = fsrsCard(103L, State.LEARNING, "GOOD");
+        QuestionReviewSchedule reviewAgain = fsrsCard(104L, State.REVIEW, "AGAIN");
+        reviewAgain.setIntervalDays(1);
+        QuestionReviewSchedule reviewHard = fsrsCard(105L, State.REVIEW, "HARD");
+        QuestionReviewSchedule relearning = fsrsCard(106L, State.RELEARNING, "AGAIN");
+        when(reviewScheduleMapper.selectCount(any())).thenReturn(6L, 1L, 1L, 1L);
         when(reviewScheduleMapper.selectList(any()))
-                .thenReturn(List.of(newCard, masteredDifficultCard));
+                .thenReturn(List.of(legacy, fresh, learning, reviewAgain, reviewHard, relearning));
 
         ReviewStatsVO stats = service.getReviewStats(7L);
 
-        assertEquals(2, stats.getTotalCards());
+        assertEquals(6, stats.getTotalCards());
         assertEquals(1, stats.getDueToday());
         assertEquals(1, stats.getOverdue());
         assertEquals(1, stats.getReviewedToday());
-        assertEquals(1, stats.getNewCards());
-        assertEquals(1, stats.getMasteredCards());
-        assertEquals(1, stats.getDifficultCards());
-        assertEquals(1, stats.getStreakDays());
+        assertEquals(2, stats.getPendingRatingCards());
+        assertEquals(1, stats.getLearningCards());
+        assertEquals(2, stats.getReviewCards());
+        assertEquals(1, stats.getRelearningCards());
+        assertEquals(2, stats.getLastAgainCards());
+        assertEquals(1, stats.getLastHardCards());
+    }
+
+    private QuestionReviewSchedule fsrsCard(long id, State state, String rating) {
+        QuestionReviewSchedule schedule = schedule(id);
+        Card card = Card.builder().build();
+        card.setState(state);
+        schedule.setFsrsCardJson(card.toJson());
+        schedule.setFsrsLastRating(rating);
+        return schedule;
     }
 
     private QuestionReviewSchedule schedule(Long questionId) {

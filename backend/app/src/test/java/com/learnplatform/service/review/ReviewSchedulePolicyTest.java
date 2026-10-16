@@ -1,47 +1,40 @@
 package com.learnplatform.service.review;
 
 import com.learnplatform.entity.QuestionReviewSchedule;
+import io.github.openspacedrepetition.Card;
+import io.github.openspacedrepetition.State;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ReviewSchedulePolicyTest {
 
     @Test
-    void classifiesNewDifficultAndMasteredCardsInPriorityOrder() {
-        QuestionReviewSchedule schedule = schedule(0, new BigDecimal("1.50"), 30);
-        assertEquals("新卡片", ReviewSchedulePolicy.statusLabel(schedule));
-
-        schedule.setTotalReviews(1);
-        assertEquals("困难", ReviewSchedulePolicy.statusLabel(schedule));
-
-        schedule.setEaseFactor(new BigDecimal("2.00"));
-        assertEquals("已掌握", ReviewSchedulePolicy.statusLabel(schedule));
+    void legacyIntervalsAndEaseDoNotImplyFsrsStateOrMastery() {
+        QuestionReviewSchedule schedule = schedule(5, new BigDecimal("1.50"), 30);
+        assertEquals("待首次 FSRS 评分", ReviewSchedulePolicy.statusLabel(schedule));
+        schedule.setTotalReviews(0);
+        assertEquals("待首次 FSRS 评分", ReviewSchedulePolicy.statusLabel(schedule));
     }
 
     @Test
-    void keepsThresholdBoundariesStable() {
-        QuestionReviewSchedule schedule = schedule(1, new BigDecimal("2.00"), 20);
-        assertFalse(ReviewSchedulePolicy.isDifficult(schedule));
-        assertFalse(ReviewSchedulePolicy.isMastered(schedule));
-        assertEquals("学习中", ReviewSchedulePolicy.statusLabel(schedule));
-
-        schedule.setEaseFactor(new BigDecimal("1.99"));
-        schedule.setIntervalDays(21);
-        assertTrue(ReviewSchedulePolicy.isDifficult(schedule));
-        assertTrue(ReviewSchedulePolicy.isMastered(schedule));
-    }
-
-    @Test void fsrsCardsUseLastRatingInsteadOfLegacyEaseFactor() {
-        QuestionReviewSchedule card = schedule(2, null, 2);
-        card.setLastQuality(3);
-        assertTrue(ReviewSchedulePolicy.isDifficult(card));
-        card.setLastQuality(4);
-        assertFalse(ReviewSchedulePolicy.isDifficult(card));
+    void fsrsStateAndRatingAreIndependentOfLegacyProjections() {
+        QuestionReviewSchedule schedule = schedule(0, new BigDecimal("1.50"), 100);
+        Card card = Card.builder().build();
+        for (State state : State.values()) {
+            card.setState(state);
+            schedule.setFsrsCardJson(card.toJson());
+            assertEquals(state.name(), ReviewSchedulePolicy.schedulingState(schedule).name());
+        }
+        schedule.setFsrsLastRating("AGAIN");
+        card.setState(State.REVIEW);
+        schedule.setFsrsCardJson(card.toJson());
+        assertEquals("间隔复习", ReviewSchedulePolicy.statusLabel(schedule));
+        assertEquals("AGAIN", ReviewSchedulePolicy.lastRating(schedule));
+        schedule.setFsrsCardJson(null);
+        assertEquals(null, ReviewSchedulePolicy.lastRating(schedule));
     }
 
     private QuestionReviewSchedule schedule(int totalReviews, BigDecimal easeFactor, int intervalDays) {

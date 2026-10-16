@@ -1,43 +1,31 @@
 package com.learnplatform.service.review;
 
 import com.learnplatform.entity.QuestionReviewSchedule;
-
-import java.math.BigDecimal;
+import io.github.openspacedrepetition.Card;
 
 public final class ReviewSchedulePolicy {
-
-    public static final int MASTERED_THRESHOLD_DAYS = 21;
-    public static final BigDecimal DIFFICULT_THRESHOLD = new BigDecimal("2.00");
+    public enum SchedulingState { UNRATED, LEARNING, REVIEW, RELEARNING }
 
     private ReviewSchedulePolicy() {
     }
 
-    public static boolean isNew(QuestionReviewSchedule schedule) {
-        return schedule.getTotalReviews() == null || schedule.getTotalReviews() == 0;
-    }
-
-    public static boolean isMastered(QuestionReviewSchedule schedule) {
-        return schedule.getIntervalDays() != null
-                && schedule.getIntervalDays() >= MASTERED_THRESHOLD_DAYS;
-    }
-
-    public static boolean isDifficult(QuestionReviewSchedule schedule) {
-        if (schedule.getEaseFactor() == null) {
-            return schedule.getLastQuality() != null && schedule.getLastQuality() <= 3;
+    public static SchedulingState schedulingState(QuestionReviewSchedule schedule) {
+        if (schedule.getFsrsCardJson() == null) {
+            return SchedulingState.UNRATED;
         }
-        return schedule.getEaseFactor().compareTo(DIFFICULT_THRESHOLD) < 0;
+        return SchedulingState.valueOf(Card.fromJson(schedule.getFsrsCardJson()).getState().name());
+    }
+
+    public static String lastRating(QuestionReviewSchedule schedule) {
+        return schedule.getFsrsCardJson() == null ? null : schedule.getFsrsLastRating();
     }
 
     public static String statusLabel(QuestionReviewSchedule schedule) {
-        if (isNew(schedule)) {
-            return "新卡片";
-        }
-        if (isDifficult(schedule)) {
-            return "困难";
-        }
-        if (isMastered(schedule)) {
-            return "已掌握";
-        }
-        return "学习中";
+        return switch (schedulingState(schedule)) {
+            case UNRATED -> "待首次 FSRS 评分";
+            case LEARNING -> "初学排期";
+            case REVIEW -> "间隔复习";
+            case RELEARNING -> "重学排期";
+        };
     }
 }

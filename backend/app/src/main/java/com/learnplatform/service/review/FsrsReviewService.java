@@ -87,6 +87,8 @@ public class FsrsReviewService {
                 VALUES(?,?,?,?,?,?,?)
                 """, schedule.getId(), userId, questionId, source.name(), sourceId, rating.name(),
                 LocalDateTime.ofInstant(now, ZoneOffset.UTC));
+        schedule.setFsrsCardJson(updated.toJson());
+        schedule.setFsrsLastRating(rating.name());
         schedule.setEaseFactor(null);
         schedule.setNextReviewDate(dueDate);
         schedule.setLastReviewDate(today);

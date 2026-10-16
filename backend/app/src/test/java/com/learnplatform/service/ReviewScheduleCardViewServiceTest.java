@@ -1,5 +1,8 @@
 package com.learnplatform.service;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.dto.ReviewScheduleVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.Question;
@@ -31,7 +34,7 @@ class ReviewScheduleCardViewServiceTest {
     private CourseMapper courseMapper;
 
     @Test
-    void mapsOverdueDifficultCardWithSanitizedQuestionAndCourse() {
+    void mapsLegacyCardWithoutInferringStateFromEaseFactor() {
         QuestionReviewSchedule schedule = new QuestionReviewSchedule();
         schedule.setId(1L);
         schedule.setQuestionId(10L);
@@ -55,7 +58,12 @@ class ReviewScheduleCardViewServiceTest {
         ReviewScheduleCardViewService service = new ReviewScheduleCardViewService(questionMapper, courseMapper);
         ReviewScheduleVO view = service.toViews(List.of(schedule), LocalDate.of(2026, 9, 5)).getFirst();
 
-        assertEquals("困难", view.getStatusLabel());
+        assertEquals("待首次 FSRS 评分", view.getStatusLabel());
+        assertEquals("UNRATED", view.getSchedulingState());
+        JsonNode data = new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL)
+                .findAndRegisterModules().valueToTree(view);
+        assertTrue(data.has("lastRating"));
+        assertTrue(data.get("lastRating").isNull());
         assertEquals("二叉树 遍历", view.getQuestionContent());
         assertEquals("数据结构", view.getCourseName());
         assertEquals(3, view.getOverdueDays());

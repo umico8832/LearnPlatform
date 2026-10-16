@@ -43,6 +43,10 @@ public class QuestionReviewSchedule {
     /** 总复习次数 */
     private Integer totalReviews;
 
+    private String fsrsCardJson;
+
+    private String fsrsLastRating;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
@@ -52,6 +56,10 @@ public class QuestionReviewSchedule {
     @TableLogic
     private Integer deleted;
 
+    public String getFsrsCardJson() { return fsrsCardJson; }
+    public void setFsrsCardJson(String value) { fsrsCardJson = value; }
+    public String getFsrsLastRating() { return fsrsLastRating; }
+    public void setFsrsLastRating(String value) { fsrsLastRating = value; }
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getUserId() { return userId; }

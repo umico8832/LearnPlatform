@@ -63,12 +63,12 @@ describe('ReviewView course target', () => {
         dueToday: 1,
         overdue: 0,
         reviewedToday: 0,
-        newCards: 1,
+        pendingRatingCards: 1,
         learningCards: 0,
-        masteredCards: 0,
-        difficultCards: 0,
-        streakDays: 0,
-        avgEaseFactor: 2.5,
+        reviewCards: 0,
+        relearningCards: 0,
+        lastAgainCards: 0,
+        lastHardCards: 0,
       },
     })
     mockGetDueReviewCards.mockResolvedValue({
@@ -113,6 +113,10 @@ describe('ReviewView course target', () => {
 
     expect(mockGetDueReviewCards).toHaveBeenCalledWith(408, 30, 21, undefined, { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('课程目标复习题')
+    expect(wrapper.text()).toContain('最近评分在今天')
+    expect(wrapper.text()).toContain('间隔复习 0 / 1 张卡片')
+    expect(wrapper.text()).toContain('待首次 FSRS 评分 1')
+    expect(wrapper.text()).not.toContain('已掌握')
   })
 
   it('保留不可判分的历史卡片并说明暂不安排作答，仍可由用户移出', async () => {
@@ -295,8 +299,8 @@ describe('ReviewView course target', () => {
     routeQuery = {}
     const card = { id: 1, questionId: 21, questionContent: '重置目标题', statusLabel: '新卡片' }
     mockGetReviewStats
-      .mockResolvedValueOnce({ data: { totalCards: 1, dueToday: 0, overdue: 0, masteredCards: 0 } })
-      .mockResolvedValueOnce({ data: { totalCards: 1, dueToday: 1, overdue: 0, masteredCards: 0 } })
+      .mockResolvedValueOnce({ data: { totalCards: 1, dueToday: 0, overdue: 0, reviewCards: 0 } })
+      .mockResolvedValueOnce({ data: { totalCards: 1, dueToday: 1, overdue: 0, reviewCards: 0 } })
     mockGetAllReviewCards.mockResolvedValue({ data: [card] })
     mockReset.mockResolvedValue({ code: 0 })
     mockConfirm.mockResolvedValue('confirm')

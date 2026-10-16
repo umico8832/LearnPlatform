@@ -27,6 +27,8 @@ export interface ReviewScheduleVO {
   overdue: boolean
   overdueDays: number
   statusLabel: string
+  schedulingState: 'UNRATED' | 'LEARNING' | 'REVIEW' | 'RELEARNING'
+  lastRating: 'AGAIN' | 'HARD' | 'GOOD' | 'EASY' | null
 }
 
 /** 复习统计概览 */
@@ -35,12 +37,12 @@ export interface ReviewStatsVO {
   dueToday: number
   overdue: number
   reviewedToday: number
-  newCards: number
+  pendingRatingCards: number
   learningCards: number
-  masteredCards: number
-  difficultCards: number
-  streakDays: number
-  avgEaseFactor: number
+  reviewCards: number
+  relearningCards: number
+  lastAgainCards: number
+  lastHardCards: number
 }
 
 /** 复习答题提交请求 */

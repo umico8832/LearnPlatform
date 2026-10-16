@@ -68,7 +68,7 @@ M4 在错题列表每条记录增加 `misconception` 与 `nextReviewDate`。`mis
 
 ## 间隔重复
 
-M4 的排期采用 [ADR-0012](../../architecture/decisions/0012-fsrs-review-scheduling.md) 的 FSRS。现有路径和 `nextReviewDate`、`intervalDays`、`lastReviewDate`、`totalReviews` 字段保留：新评分后的日期与间隔由 FSRS 卡片产生；存量未评分卡片先显示迁移前原到期日期。`easeFactor` 对 FSRS 卡片为 `null`，仅作为存量兼容字段；`repetitions` 和 `lastQuality` 是展示投影，不作为 FSRS 计算输入。旧统计字段 `avgEaseFactor` 仅对仍有旧因子的卡片求平均，无此类卡片时为 `0`，不表示 FSRS 掌握水平。前端不得从这些旧字段推算排期。
+M4 的排期采用 [ADR-0012](../../architecture/decisions/0012-fsrs-review-scheduling.md) 的 FSRS。现有路径和 `nextReviewDate`、`intervalDays`、`lastReviewDate`、`totalReviews` 字段保留：新评分后的日期与间隔由 FSRS 卡片产生；存量未评分卡片先显示迁移前原到期日期。`easeFactor` 对 FSRS 卡片为 `null`，仅作为存量兼容字段；`repetitions` 和 `lastQuality` 是展示投影，不作为 FSRS 计算输入。前端不得从这些旧字段推算排期。
 
 评分仅在真实、无提示的首次作答判分成功后发生：`POST /api/practice/submit` 的直接练习、题目理解原题（复用同一 `practice_record`）、`POST /api/review/submit` 的直接复习以及 `assistance=UNAIDED` 的变式。`AIDED` 变式仍保留判分与课程学习事件，但没有 FSRS 评分事件；Tutor 引导练习等无法证实独立性的入口也不评分。评分事件以实际作答记录 ID 加来源类型去重，同一事务内持久化，重试不重复推进卡片。
 
@@ -93,6 +93,42 @@ M4 的排期采用 [ADR-0012](../../architecture/decisions/0012-fsrs-review-sche
 排除缺少依据的题目，到期/逾期计数和 AI 待复习建议保持同一口径。全部卡片仍保留这些历史卡，
 通过 `availableForReview: false` 告知客户端等待配置答案；答案补齐后自动恢复可用性。
 卡片总量、历史分类和已复习计数保持真实历史，本规则不会追溯改写判分、经验或复习进度。
+
+### 复习统计与卡片状态（B14）
+
+`GET /api/review/stats` 返回 `R<ReviewStatsVO>`，只统计当前认证用户未移出的非草稿卡片，无范围参数。
+所有字段均为非空整数，空计划全部为 `0`。卡片分类保留暂不可自动判分的历史卡；到期项另按可作答条件过滤。
+
+| 字段 | 学习者称谓 / 一句话含义 | 计算依据 |
+| --- | --- | --- |
+| `totalCards` | 复习卡片：当前复习计划中保留的题目数。 | 有效卡片总数 |
+| `dueToday` | 到期可复习：今天可以开始作答的到期卡片数，包含逾期。 | `nextReviewDate <= 今天` 且通过复习入口自动判分可用性筛选 |
+| `overdue` | 逾期可复习：原定日期早于今天且可以作答的卡片数。 | 同上，但日期严格小于今天，是 `dueToday` 的子集 |
+| `reviewedToday` | 最近评分在今天：当前卡片中最近一次评分日期为今天的题目数。 | `lastReviewDate = 今天` 且 `totalReviews > 0`；包含独立练习、原题、无提示变式、直接复习及保留的旧评分日期，每题最多一张卡；不是今日作答次数或待办完成量 |
+| `pendingRatingCards` | 待首次 FSRS 评分：尚未建立 FSRS 状态的卡片数。 | `fsrs_card_json IS NULL`，包括新加入、重置和等待首次 FSRS 评分的旧卡；旧卡可能已有历史复习次数 |
+| `learningCards` | 初学排期：FSRS 当前处于初学状态的卡片数。 | 卡片 JSON 中 `state = LEARNING` |
+| `reviewCards` | 间隔复习：FSRS 当前处于常规间隔排期的卡片数。 | 卡片 JSON 中 `state = REVIEW`；不按间隔长短判断掌握 |
+| `relearningCards` | 重学排期：FSRS 当前处于重学状态的卡片数。 | 卡片 JSON 中 `state = RELEARNING` |
+| `lastAgainCards` | 最近评分答错：最近一次 FSRS 评分为答错的卡片数。 | 已有 FSRS 卡片且 `fsrs_last_rating = AGAIN`，所有评分入口的答错均映射为 AGAIN |
+| `lastHardCards` | 最近自评困难：最近一次 FSRS 评分为答对但自评困难的卡片数。 | 已有 FSRS 卡片且 `fsrs_last_rating = HARD`，来自直接复习答对且自评 `0..3` |
+
+四个排期状态计数之和为 `totalCards`。最近评分两项可以与任一已评分排期状态重叠，互相不重叠；“最近”指最近一次合格评分，不设时间窗口，后续辅助作答不覆盖它。
+旧卡没有 FSRS 评分时不从 SM-2 因子、间隔、质量或历史次数推断状态或最近 FSRS 评分；原到期日保持不变，首次独立评分后自然进入 FSRS 状态。
+当前配置禁用日内初学/重学步骤，因此 `learningCards`、`relearningCards` 通常为 `0`；即使答错，卡片也可能处于 `REVIEW`，答错事实应读取 `lastAgainCards`。
+这些字段表达排期或评分事实，均不证明掌握或长期稳定。
+
+`GET /api/review/cards`、`/due` 和提交响应的卡片增加非空 `schedulingState`（`UNRATED | LEARNING | REVIEW | RELEARNING`）及可空 `lastRating`（`AGAIN | HARD | GOOD | EASY`，无 FSRS 评分为 `null`）。
+`statusLabel` 按同一状态依次返回“待首次 FSRS 评分 / 初学排期 / 间隔复习 / 重学排期”；最近答错、自评困难独立于该标签。
+列表暂没有类别筛选参数。客户端如做本地类别筛选，须用 `schedulingState` 或 `lastRating` 与上表对应，不得再按间隔或简易因子分桶。
+`/cards?courseId=` 的列表为课程子集，不能与无范围参数的全局统计直接比较；`/due` 仍在限量前组合课程、题目和知识点条件。
+
+B14 删除旧统计字段 `newCards`、`masteredCards`、`difficultCards`、`avgEaseFactor`、`streakDays`，不保留别名。
+调用方分别改用 `pendingRatingCards`、`reviewCards`、`lastAgainCards/lastHardCards`；后两项没有替代字段，历史平均因子与按卡片最近日期推断的连续天数不再展示。
+保留的 `learningCards` 改为 FSRS LEARNING 状态计数；旧前端必须同步字段与称谓，C6 只使用本节口径。
+
+“今天”使用应用服务器默认时区的 `LocalDate.now()`。日期为空的卡片不计入到期或今日评分，但仍计入总量和排期状态。
+错题页 `nextReviewDate` 和课程页 `dueReviewCount` 读取同一卡片日期：课程待办是课程内、可自动判分、今天及以前到期的子集，与复习 `dueToday` 使用相同到期规则；一道题关联多个知识点时各点可重复计数，不能直接相加。
+错题 `dueCount` 只统计错题范围中的到期卡，包含暂不可判分卡，故不必等于复习 `dueToday` 或课程 `dueReviewCount`；错题的人工掌握状态也独立于 FSRS 状态。
 
 从课程总览进入复习或错题时，客户端同时传递服务端“开始学习”返回的 `courseId` 和
 `questionId`。两个条件按交集生效且只能读取当前认证用户的数据：到期复习会在数量限制前筛选，

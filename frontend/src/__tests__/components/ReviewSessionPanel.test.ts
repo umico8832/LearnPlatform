@@ -33,7 +33,9 @@ const card: ReviewScheduleVO = {
   totalReviews: 0,
   overdue: false,
   overdueDays: 0,
-  statusLabel: '新卡片',
+  statusLabel: '待首次 FSRS 评分',
+  schedulingState: 'UNRATED',
+  lastRating: null,
 }
 
 describe('ReviewSessionPanel', () => {

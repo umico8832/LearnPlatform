@@ -6,6 +6,7 @@ import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.service.WrongQuestionService;
 import com.learnplatform.service.CourseOverviewService;
+import com.learnplatform.service.ReviewScheduleQueryService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -32,6 +33,7 @@ class QuestionUnderstandingServiceIntegrationTest extends IntegrationTestBase {
     @Autowired QuestionUnderstandingService service;
     @Autowired WrongQuestionService wrongQuestions;
     @Autowired CourseOverviewService overviews;
+    @Autowired ReviewScheduleQueryService reviewQueries;
     @Autowired JdbcTemplate jdbc;
     @Autowired ObjectMapper json;
     private long questionId;
@@ -238,7 +240,9 @@ class QuestionUnderstandingServiceIntegrationTest extends IntegrationTestBase {
         assertEquals(1, count("SELECT COUNT(*) FROM question_understanding_viz_view WHERE attempt_id=? AND context='MISCONCEPTION'", origin));
         assertEquals("A", service.reveal(USER, origin).get("correctAnswer"));
         long variant = ((Number) service.variant(USER, origin).get("variantId")).longValue();
+        JsonNode statsBeforeAided = json.valueToTree(reviewQueries.getReviewStats(USER));
         var aided = service.submitVariant(USER, variant, variantBody(origin, "D", null));
+        assertEquals(statsBeforeAided, json.valueToTree(reviewQueries.getReviewStats(USER)));
         assertEquals("AIDED", aided.get("assistance"));
         assertEquals(false, ((Map<?, ?>) aided.get("review")).get("counted"));
         var originalDate = jdbc.queryForObject("SELECT next_review_date FROM question_review_schedule WHERE user_id=? AND question_id=?", java.time.LocalDate.class, USER, questionId);

@@ -85,6 +85,8 @@ public class ReviewScheduleCardViewService {
             view.setLastQuality(schedule.getLastQuality());
             view.setTotalReviews(schedule.getTotalReviews());
             fillDueState(view, schedule, today);
+            view.setSchedulingState(ReviewSchedulePolicy.schedulingState(schedule).name());
+            view.setLastRating(ReviewSchedulePolicy.lastRating(schedule));
             view.setStatusLabel(ReviewSchedulePolicy.statusLabel(schedule));
             view.setAvailableForReview(availableQuestionIds.contains(schedule.getQuestionId()));
             fillQuestion(view, questionMap.get(schedule.getQuestionId()), courseNameMap);

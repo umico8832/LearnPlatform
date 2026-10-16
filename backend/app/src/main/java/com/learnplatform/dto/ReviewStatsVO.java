@@ -1,58 +1,56 @@
 package com.learnplatform.dto;
 
-/**
- * 复习统计概览 VO
- */
+/** 复习排期与最近评分事实；计数均非空。 */
 public class ReviewStatsVO {
 
-    /** 总卡片数（已加入复习计划的题目数） */
+    /** 有效复习卡片总数。 */
     private int totalCards;
 
-    /** 今日待复习数（今天及逾期未复习） */
+    /** 到期且可自动判分的卡片数，包含逾期。 */
     private int dueToday;
 
-    /** 逾期未复习数 */
+    /** 逾期且可自动判分的卡片数。 */
     private int overdue;
 
-    /** 今日已完成复习数 */
+    /** 当前卡片中最近评分日期为今天的题目数，包含独立练习。 */
     private int reviewedToday;
 
-    /** 新卡片数（从未复习过） */
-    private int newCards;
+    /** 没有 FSRS 状态的新卡、重置卡及旧卡。 */
+    private int pendingRatingCards;
 
-    /** 学习中卡片数（复习过但间隔 < 21 天） */
+    /** FSRS LEARNING 状态卡片数。 */
     private int learningCards;
 
-    /** 已掌握卡片数（间隔 >= 21 天） */
-    private int masteredCards;
+    /** FSRS REVIEW 状态卡片数，不表示掌握。 */
+    private int reviewCards;
 
-    /** 困难卡片数（简易因子 < 2.0） */
-    private int difficultCards;
+    /** FSRS RELEARNING 状态卡片数。 */
+    private int relearningCards;
 
-    /** 连续复习天数 */
-    private int streakDays;
+    /** 最近一次 FSRS 评分为 AGAIN 的卡片数。 */
+    private int lastAgainCards;
 
-    /** 平均简易因子 */
-    private double avgEaseFactor;
+    /** 最近一次 FSRS 评分为 HARD 的卡片数。 */
+    private int lastHardCards;
 
     public int getTotalCards() { return totalCards; }
-    public void setTotalCards(int totalCards) { this.totalCards = totalCards; }
+    public void setTotalCards(int value) { totalCards = value; }
     public int getDueToday() { return dueToday; }
-    public void setDueToday(int dueToday) { this.dueToday = dueToday; }
+    public void setDueToday(int value) { dueToday = value; }
     public int getOverdue() { return overdue; }
-    public void setOverdue(int overdue) { this.overdue = overdue; }
+    public void setOverdue(int value) { overdue = value; }
     public int getReviewedToday() { return reviewedToday; }
-    public void setReviewedToday(int reviewedToday) { this.reviewedToday = reviewedToday; }
-    public int getNewCards() { return newCards; }
-    public void setNewCards(int newCards) { this.newCards = newCards; }
+    public void setReviewedToday(int value) { reviewedToday = value; }
+    public int getPendingRatingCards() { return pendingRatingCards; }
+    public void setPendingRatingCards(int value) { pendingRatingCards = value; }
     public int getLearningCards() { return learningCards; }
-    public void setLearningCards(int learningCards) { this.learningCards = learningCards; }
-    public int getMasteredCards() { return masteredCards; }
-    public void setMasteredCards(int masteredCards) { this.masteredCards = masteredCards; }
-    public int getDifficultCards() { return difficultCards; }
-    public void setDifficultCards(int difficultCards) { this.difficultCards = difficultCards; }
-    public int getStreakDays() { return streakDays; }
-    public void setStreakDays(int streakDays) { this.streakDays = streakDays; }
-    public double getAvgEaseFactor() { return avgEaseFactor; }
-    public void setAvgEaseFactor(double avgEaseFactor) { this.avgEaseFactor = avgEaseFactor; }
+    public void setLearningCards(int value) { learningCards = value; }
+    public int getReviewCards() { return reviewCards; }
+    public void setReviewCards(int value) { reviewCards = value; }
+    public int getRelearningCards() { return relearningCards; }
+    public void setRelearningCards(int value) { relearningCards = value; }
+    public int getLastAgainCards() { return lastAgainCards; }
+    public void setLastAgainCards(int value) { lastAgainCards = value; }
+    public int getLastHardCards() { return lastHardCards; }
+    public void setLastHardCards(int value) { lastHardCards = value; }
 }

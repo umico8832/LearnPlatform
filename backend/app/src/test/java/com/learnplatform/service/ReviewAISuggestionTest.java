@@ -11,7 +11,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -80,12 +79,11 @@ class ReviewAISuggestionTest {
         stats.setDueToday(10);
         stats.setOverdue(3);
         stats.setReviewedToday(5);
-        stats.setNewCards(5);
+        stats.setPendingRatingCards(5);
         stats.setLearningCards(30);
-        stats.setMasteredCards(15);
-        stats.setDifficultCards(4);
-        stats.setStreakDays(7);
-        stats.setAvgEaseFactor(2.35);
+        stats.setReviewCards(15);
+        stats.setLastAgainCards(4);
+        stats.setLastHardCards(2);
 
         ReviewContextVO ctx = new ReviewContextVO();
         ctx.setStats(stats);
@@ -102,9 +100,12 @@ class ReviewAISuggestionTest {
         assertTrue(userPrompt.contains("总卡片数：50"), "Should contain totalCards");
         assertTrue(userPrompt.contains("今日待复习：10"), "Should contain dueToday");
         assertTrue(userPrompt.contains("逾期未复习：3"), "Should contain overdue");
-        assertTrue(userPrompt.contains("连续复习天数：7"), "Should contain streak");
-        assertTrue(userPrompt.contains("平均简易因子：2.35"), "Should contain avgEaseFactor");
-        assertTrue(userPrompt.contains("近 7 天复习量"), "Should contain daily reviews section");
+        assertTrue(userPrompt.contains("间隔复习：15"));
+        assertTrue(userPrompt.contains("最近评分答错：4"));
+        assertTrue(userPrompt.contains("最近自评困难：2"));
+        assertFalse(userPrompt.contains("已掌握"));
+        assertFalse(userPrompt.contains("简易因子"));
+        assertTrue(userPrompt.contains("当前卡片最近评分日期分布"));
         assertTrue(userPrompt.contains("今天：5 题"), "Should contain today's review count");
 
         String sysPrompt = prompt.systemPrompt();
@@ -121,7 +122,7 @@ class ReviewAISuggestionTest {
         ReviewScheduleVO difficult = new ReviewScheduleVO();
         difficult.setQuestionId(100L);
         difficult.setQuestionContent("二叉树的遍历方式");
-        difficult.setEaseFactor(new BigDecimal("1.65"));
+        difficult.setLastRating("HARD");
         difficult.setIntervalDays(2);
         difficult.setTotalReviews(5);
         difficult.setCourseName("数据结构");
@@ -137,9 +138,9 @@ class ReviewAISuggestionTest {
 
         // Then
         String userPrompt = prompt.userPrompt();
-        assertTrue(userPrompt.contains("困难卡片"), "Should contain difficult cards section");
+        assertTrue(userPrompt.contains("最近评分答错或自评困难"));
         assertTrue(userPrompt.contains("二叉树的遍历方式"), "Should contain difficult card content");
-        assertTrue(userPrompt.contains("1.65"), "Should contain ease factor");
+        assertTrue(userPrompt.contains("HARD"));
         assertTrue(userPrompt.contains("数据结构"), "Should contain course name");
     }
 

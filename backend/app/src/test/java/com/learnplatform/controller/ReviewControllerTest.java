@@ -89,11 +89,27 @@ class ReviewControllerTest {
     void statsAreDelegatedToReadOnlyQueryService() throws Exception {
         ReviewStatsVO stats = new ReviewStatsVO();
         stats.setTotalCards(4);
+        stats.setPendingRatingCards(2);
+        stats.setReviewCards(1);
+        stats.setRelearningCards(1);
+        stats.setLastAgainCards(1);
+        stats.setLastHardCards(1);
         when(reviewScheduleQueryService.getReviewStats(7L)).thenReturn(stats);
 
         mockMvc.perform(get("/api/review/stats").with(mockUser(7L)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.totalCards").value(4));
+                .andExpect(jsonPath("$.data.totalCards").value(4))
+                .andExpect(jsonPath("$.data.pendingRatingCards").value(2))
+                .andExpect(jsonPath("$.data.learningCards").value(0))
+                .andExpect(jsonPath("$.data.reviewCards").value(1))
+                .andExpect(jsonPath("$.data.relearningCards").value(1))
+                .andExpect(jsonPath("$.data.lastAgainCards").value(1))
+                .andExpect(jsonPath("$.data.lastHardCards").value(1))
+                .andExpect(jsonPath("$.data.newCards").doesNotExist())
+                .andExpect(jsonPath("$.data.masteredCards").doesNotExist())
+                .andExpect(jsonPath("$.data.difficultCards").doesNotExist())
+                .andExpect(jsonPath("$.data.avgEaseFactor").doesNotExist())
+                .andExpect(jsonPath("$.data.streakDays").doesNotExist());
 
         verify(reviewScheduleQueryService).getReviewStats(7L);
     }

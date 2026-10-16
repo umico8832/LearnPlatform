@@ -1,5 +1,8 @@
 package com.learnplatform.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -43,8 +46,15 @@ public class ReviewScheduleVO {
     /** 逾期天数（未逾期为 0） */
     private int overdueDays;
 
-    /** 掌握等级文字（新卡片/学习中/已掌握/困难） */
+    /** FSRS 排期状态的学习者称谓。 */
     private String statusLabel;
+
+    @Schema(allowableValues = {"UNRATED", "LEARNING", "REVIEW", "RELEARNING"})
+    private String schedulingState;
+
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @Schema(nullable = true, allowableValues = {"AGAIN", "HARD", "GOOD", "EASY"})
+    private String lastRating;
 
     /** 是否仍具备自动判分所需的题型和答案依据。 */
     private boolean availableForReview;
@@ -85,6 +95,10 @@ public class ReviewScheduleVO {
     public void setOverdue(boolean overdue) { this.overdue = overdue; }
     public int getOverdueDays() { return overdueDays; }
     public void setOverdueDays(int overdueDays) { this.overdueDays = overdueDays; }
+    public String getSchedulingState() { return schedulingState; }
+    public void setSchedulingState(String value) { schedulingState = value; }
+    public String getLastRating() { return lastRating; }
+    public void setLastRating(String value) { lastRating = value; }
     public String getStatusLabel() { return statusLabel; }
     public void setStatusLabel(String statusLabel) { this.statusLabel = statusLabel; }
     public boolean isAvailableForReview() { return availableForReview; }

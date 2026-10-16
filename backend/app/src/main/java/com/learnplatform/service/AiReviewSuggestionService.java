@@ -22,9 +22,9 @@ public class AiReviewSuggestionService {
     private static final String SYSTEM_PROMPT = "你是一位资深学习教练，精通间隔重复（Spaced Repetition）和艾宾浩斯遗忘曲线理论。"
             + "请根据用户当前的复习计划数据和答题表现，生成个性化复习建议。\n\n"
             + "要求：\n1. 分析用户的复习节奏和习惯\n2. 指出当前复习计划中的薄弱环节\n"
-            + "3. 针对困难卡片给出具体的学习策略\n4. 建议每日复习量和时间安排\n"
+            + "3. 针对最近评分答错或自评困难的卡片给出学习策略\n4. 建议每日复习量和时间安排\n"
             + "5. 给出保持或建立连续复习习惯的建议\n6. 如果有逾期卡片，给出优先级排序和追回策略\n"
-            + "7. 语言亲切、实用、有激励性\n8. 使用 Markdown 格式输出，包含标题和列表";
+            + "7. 语言亲切、实用、有激励性\n8. 使用 Markdown 格式输出，包含标题和列表\n9. 排期状态不证明掌握，最近评分不代表长期表现";
 
     private final WrongQuestionMapper wrongQuestionMapper;
     private final QuestionMapper questionMapper;
@@ -126,13 +126,13 @@ public class AiReviewSuggestionService {
                 .append("- 总卡片数：").append(stats.getTotalCards()).append("\n")
                 .append("- 今日待复习：").append(stats.getDueToday()).append("\n")
                 .append("- 逾期未复习：").append(stats.getOverdue()).append("\n")
-                .append("- 今日已完成：").append(stats.getReviewedToday()).append("\n")
-                .append("- 新卡片：").append(stats.getNewCards()).append("\n")
-                .append("- 学习中：").append(stats.getLearningCards()).append("\n")
-                .append("- 已掌握：").append(stats.getMasteredCards()).append("\n")
-                .append("- 困难卡片：").append(stats.getDifficultCards()).append("\n")
-                .append("- 连续复习天数：").append(stats.getStreakDays()).append("\n")
-                .append("- 平均简易因子：").append(String.format("%.2f", stats.getAvgEaseFactor())).append("\n\n");
+                .append("- 最近评分在今天：").append(stats.getReviewedToday()).append("\n")
+                .append("- 待首次 FSRS 评分：").append(stats.getPendingRatingCards()).append("\n")
+                .append("- 初学排期：").append(stats.getLearningCards()).append("\n")
+                .append("- 间隔复习：").append(stats.getReviewCards()).append("\n")
+                .append("- 重学排期：").append(stats.getRelearningCards()).append("\n")
+                .append("- 最近评分答错：").append(stats.getLastAgainCards()).append("\n")
+                .append("- 最近自评困难：").append(stats.getLastHardCards()).append("\n\n");
     }
 
     private void appendDailyReviews(StringBuilder prompt, List<Integer> dailyReviews) {
@@ -140,7 +140,7 @@ public class AiReviewSuggestionService {
             return;
         }
         String[] labels = {"6天前", "5天前", "4天前", "3天前", "2天前", "昨天", "今天"};
-        prompt.append("## 近 7 天复习量\n");
+        prompt.append("## 当前卡片最近评分日期分布（近 7 天，非每日作答次数）\n");
         for (int i = 0; i < dailyReviews.size() && i < labels.length; i++) {
             prompt.append("- ").append(labels[i]).append("：").append(dailyReviews.get(i)).append(" 题\n");
         }
@@ -151,10 +151,10 @@ public class AiReviewSuggestionService {
         if (cards == null || cards.isEmpty()) {
             return;
         }
-        prompt.append("## 困难卡片（EF < 2.0）\n");
+        prompt.append("## 最近评分答错或自评困难的可作答卡片\n");
         for (ReviewScheduleVO card : cards) {
-            prompt.append("- 「").append(questionLabel(card)).append("」 EF=")
-                    .append(card.getEaseFactor() != null ? String.format("%.2f", card.getEaseFactor()) : "-")
+            prompt.append("- 「").append(questionLabel(card)).append("」 最近评分=")
+                    .append(card.getLastRating() != null ? card.getLastRating() : "未知")
                     .append("，间隔=").append(card.getIntervalDays()).append("天")
                     .append("，已复习=").append(card.getTotalReviews()).append("次")
                     .append("，课程=").append(courseLabel(card)).append("\n");
