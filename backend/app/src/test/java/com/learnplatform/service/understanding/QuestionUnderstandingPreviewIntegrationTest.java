@@ -51,6 +51,7 @@ class QuestionUnderstandingPreviewIntegrationTest extends IntegrationTestBase {
 
     @BeforeEach void setUp() {
         questionId = db.queryForObject("SELECT question_id FROM question_understanding_content WHERE source_title='系统种子生成：合法出栈序列'", Long.class);
+        db.update("UPDATE question_understanding_hint SET review_status='PENDING',reviewed_by=NULL,reviewed_time=NULL WHERE content_id IN (SELECT id FROM question_understanding_content WHERE question_id=?)", questionId);
         db.update("INSERT INTO user(id,username,password,role,status,deleted) VALUES (?,'preview-admin','test','ADMIN',1,0)", ADMIN);
     }
 

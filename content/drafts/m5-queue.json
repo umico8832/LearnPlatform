@@ -13,8 +13,9 @@
       },
       "contentSource": {
         "kind": "AI_GENERATED",
-        "reviewStatus": "PENDING",
-        "label": "AI 生成·待审核"
+        "reviewStatus": "REVIEWED",
+        "label": "AI 生成·已审核",
+        "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
       },
       "stem": "空队列依次入队 1、2、3，出队两次后再入队 4。此时队头到队尾的元素顺序是什么？",
       "options": [
@@ -92,8 +93,9 @@
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",
-          "reviewStatus": "PENDING",
-          "label": "AI 生成·待审核"
+          "reviewStatus": "REVIEWED",
+          "label": "AI 生成·已审核",
+          "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
         }
       }
     },
@@ -107,10 +109,11 @@
       },
       "contentSource": {
         "kind": "AI_GENERATED",
-        "reviewStatus": "PENDING",
-        "label": "AI 生成·待审核"
+        "reviewStatus": "REVIEWED",
+        "label": "AI 生成·已审核",
+        "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
       },
-      "stem": "长度为 M=8 的循环数组队列保留一个空槽。front 指向队头、rear 指向下一空位。若 front=6、rear=2，队中有几个元素？",
+      "stem": "长度为 `M=8` 的循环数组队列保留一个空槽。front 指向队头、rear 指向下一空位。若 `front=6`、`rear=2`，队中有几个元素？",
       "options": [
         {
           "label": "A",
@@ -133,15 +136,15 @@
       "misconceptions": {
         "A": {
           "title": "直接取 rear 的数值",
-          "explanation": "rear=2 只是物理下标，不能代表队列元素个数。"
+          "explanation": "`rear=2` 只是物理下标，不能代表队列元素个数。"
         },
         "B": {
           "title": "回绕时少算一个槽",
-          "explanation": "从下标 6、7、0、1 共四个有效位置，rear=2 是下一空位。"
+          "explanation": "从下标 6、7、0、1 共四个有效位置，`rear=2` 是下一空位。"
         },
         "D": {
           "title": "只看 front 的数值",
-          "explanation": "front=6 是物理起点，不是元素数目；队列已跨过数组末端。"
+          "explanation": "`front=6` 是物理起点，不是元素数目；队列已跨过数组末端。"
         }
       },
       "hints": [
@@ -151,17 +154,17 @@
         },
         {
           "level": 2,
-          "text": "从 front 数到 rear 之前，或使用 (rear-front+M)%M。"
+          "text": "从 front 数到 rear 之前，或使用 `(rear-front+M)%M`。"
         },
         {
           "level": 3,
-          "text": "例如 M=5、front=4、rear=1 时，有下标 4、0 两个元素。"
+          "text": "例如 `M=5`、`front=4`、`rear=1` 时，有下标 4、0 两个元素。"
         }
       ],
       "solution": "元素占据下标 6、7、0、1；长度为 (2-6+8)%8=4。",
       "viz": null,
       "variant": {
-        "stem": "循环数组队列长度 M=8，front 指向队头，rear 改为指向最后一个有效元素。用 count 区分满空：count=0 为空，count=M 为满。非空时元素占据从 front 到 rear 的连续循环区间（两端均计入）。若 front=6、rear=2，队中有几个元素？",
+        "stem": "循环数组队列长度 `M=8`，front 指向队头，rear 改为指向最后一个有效元素。用 count 区分满空：`count=0` 为空，`count=M` 为满。非空时元素占据从 front 到 rear 的连续循环区间（两端均计入）。若 `front=6`、`rear=2`，队中有几个元素？",
         "options": [
           {
             "label": "A",
@@ -182,12 +185,13 @@
         ],
         "correctAnswer": "C",
         "changedCondition": "保持数组长度和两个下标，只把 rear 由下一空位改为最后一个有效元素，配套用计数器区分满空。",
-        "explanation": "有效下标为 6、7、0、1、2，共 5 个；非空时长度为 (rear-front+M)%M+1，不能照搬 rear 指下一空位时的公式。",
+        "explanation": "有效下标为 6、7、0、1、2，共 5 个；非空时长度为 `(rear-front+M)%M+1`，不能照搬 rear 指下一空位时的公式。",
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",
-          "reviewStatus": "PENDING",
-          "label": "AI 生成·待审核"
+          "reviewStatus": "REVIEWED",
+          "label": "AI 生成·已审核",
+          "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
         }
       }
     },
@@ -201,10 +205,11 @@
       },
       "contentSource": {
         "kind": "AI_GENERATED",
-        "reviewStatus": "PENDING",
-        "label": "AI 生成·待审核"
+        "reviewStatus": "REVIEWED",
+        "label": "AI 生成·已审核",
+        "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
       },
-      "stem": "长度为 M=6 的循环数组队列用“保留一个空槽”区分队满与队空，最多可同时存放几个元素？",
+      "stem": "长度为 `M=6` 的循环数组队列用“保留一个空槽”区分队满与队空，最多可同时存放几个元素？",
       "options": [
         {
           "label": "A",
@@ -231,7 +236,7 @@
         },
         "C": {
           "title": "把物理容量当有效容量",
-          "explanation": "若 6 个槽全放满，front==rear 会与空队列状态混淆。"
+          "explanation": "若 6 个槽全放满，`front==rear` 会与空队列状态混淆。"
         },
         "D": {
           "title": "超过物理数组长度",
@@ -241,7 +246,7 @@
       "hints": [
         {
           "level": 1,
-          "text": "想想队空与队满若都满足 front==rear，会怎样区分。"
+          "text": "想想队空与队满若都满足 `front==rear`，会怎样区分。"
         },
         {
           "level": 2,
@@ -249,13 +254,13 @@
         },
         {
           "level": 3,
-          "text": "例如 M=3 的循环队列必须留 1 个空槽，因此最多放 2 个元素。"
+          "text": "例如 `M=3` 的循环队列必须留 1 个空槽，因此最多放 2 个元素。"
         }
       ],
-      "solution": "该表示必须始终留下一个空槽，因此 M=6 时最多存 M-1=5 个元素。",
+      "solution": "该表示必须始终留下一个空槽，因此 `M=6` 时最多存 `M-1=5` 个元素。",
       "viz": null,
       "variant": {
-        "stem": "循环数组队列长度 M=6，改用计数器 count 区分满空：count=0 为空，count=M 为满，不保留空槽。最多可同时存放几个元素？",
+        "stem": "循环数组队列长度 `M=6`，改用计数器 count 区分满空：`count=0` 为空，`count=M` 为满，不保留空槽。最多可同时存放几个元素？",
         "options": [
           {
             "label": "A",
@@ -276,12 +281,13 @@
         ],
         "correctAnswer": "C",
         "changedCondition": "物理数组长度保持为 6，只把保留空槽改为用计数器区分满空。",
-        "explanation": "计数器可以区分同样指针位置下的满与空，无需浪费一个槽，6 个物理位置均可存元素，有效容量为 M=6。",
+        "explanation": "计数器可以区分同样指针位置下的满与空，无需浪费一个槽，6 个物理位置均可存元素，有效容量为 `M=6`。",
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",
-          "reviewStatus": "PENDING",
-          "label": "AI 生成·待审核"
+          "reviewStatus": "REVIEWED",
+          "label": "AI 生成·已审核",
+          "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
         }
       }
     },
@@ -295,10 +301,11 @@
       },
       "contentSource": {
         "kind": "AI_GENERATED",
-        "reviewStatus": "PENDING",
-        "label": "AI 生成·待审核"
+        "reviewStatus": "REVIEWED",
+        "label": "AI 生成·已审核",
+        "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
       },
-      "stem": "循环队列 M=5，front=1、rear=4，rear 指向下一空位。队列未满，执行一次 EnQueue(x) 后 rear 为多少？",
+      "stem": "循环队列 `M=5`，`front=1`、`rear=4`，rear 指向下一空位。队列未满，执行一次 `EnQueue(x)` 后 rear 为多少？",
       "options": [
         {
           "label": "A",
@@ -343,13 +350,13 @@
         },
         {
           "level": 3,
-          "text": "例如 M=4、rear=3 时入队后，新 rear=(3+1)%4。"
+          "text": "例如 `M=4`、`rear=3` 时入队后，新 `rear=(3+1)%4`。"
         }
       ],
-      "solution": "先把 x 写入 data[4]，再令 rear=(4+1)%5=0；front 仍为 1。",
+      "solution": "先把 x 写入 `data[4]`，再令 `rear=(4+1)%5=0`；front 仍为 1。",
       "viz": null,
       "variant": {
-        "stem": "同样 M=5、front=1，只把入队前 rear 改为 3。执行一次 EnQueue(x) 后 rear 为多少？",
+        "stem": "同样 `M=5`、`front=1`，只把入队前 rear 改为 3。执行一次 `EnQueue(x)` 后 rear 为多少？",
         "options": [
           {
             "label": "A",
@@ -370,12 +377,13 @@
         ],
         "correctAnswer": "D",
         "changedCondition": "入队前 rear 由 4 改为 3，容量与操作不变。",
-        "explanation": "把 x 写在 data[3]，随后 rear=(3+1)%5=4。",
+        "explanation": "把 x 写在 `data[3]`，随后 `rear=(3+1)%5=4`。",
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",
-          "reviewStatus": "PENDING",
-          "label": "AI 生成·待审核"
+          "reviewStatus": "REVIEWED",
+          "label": "AI 生成·已审核",
+          "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
         }
       }
     },
@@ -389,10 +397,11 @@
       },
       "contentSource": {
         "kind": "AI_GENERATED",
-        "reviewStatus": "PENDING",
-        "label": "AI 生成·待审核"
+        "reviewStatus": "REVIEWED",
+        "label": "AI 生成·已审核",
+        "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
       },
-      "stem": "循环队列 M=5，front 指向队头元素、rear 指向下一空位；空队列初始 front=rear=3。向空队列入队 x 后，(front,rear) 应为哪一对？",
+      "stem": "循环队列 `M=5`，front 指向队头元素、rear 指向下一空位；空队列初始 `front=rear=3`。向空队列入队 x 后，(front,rear) 应为哪一对？",
       "options": [
         {
           "label": "A",
@@ -429,7 +438,7 @@
       "hints": [
         {
           "level": 1,
-          "text": "空队列的 front=rear；入队后新元素位于原 rear 指向的位置。"
+          "text": "空队列的 `front=rear`；入队后新元素位于原 rear 指向的位置。"
         },
         {
           "level": 2,
@@ -437,13 +446,13 @@
         },
         {
           "level": 3,
-          "text": "例如空队列 front=rear=0，放入甲后队头仍在 0，rear 前进到 1。"
+          "text": "例如空队列 `front=rear=0`，放入甲后队头仍在 0，rear 前进到 1。"
         }
       ],
       "solution": "x 写入下标 3，front 仍为 3，rear 前进到 4，因此为 (3,4)。",
       "viz": null,
       "variant": {
-        "stem": "循环数组队列 M=5，front 指向队头元素，rear 指向下一空位，保留一个空槽区分满空；初始空队列 front=rear=4。入队 x 后 (front,rear) 为哪一对？",
+        "stem": "循环数组队列 `M=5`，front 指向队头元素，rear 指向下一空位，保留一个空槽区分满空；初始空队列 `front=rear=4`。入队 x 后 (front,rear) 为哪一对？",
         "options": [
           {
             "label": "A",
@@ -464,12 +473,13 @@
         ],
         "correctAnswer": "B",
         "changedCondition": "保留 front 指队头、rear 指下一空位及保留空槽的规则，只将初始空队列指针由 3 改为 4，检验回绕。",
-        "explanation": "x 写入下标 4，front 保持 4，rear=(4+1)%5=0。",
+        "explanation": "x 写入下标 4，front 保持 4，`rear=(4+1)%5=0`。",
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",
-          "reviewStatus": "PENDING",
-          "label": "AI 生成·待审核"
+          "reviewStatus": "REVIEWED",
+          "label": "AI 生成·已审核",
+          "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
         }
       }
     },
@@ -483,8 +493,9 @@
       },
       "contentSource": {
         "kind": "AI_GENERATED",
-        "reviewStatus": "PENDING",
-        "label": "AI 生成·待审核"
+        "reviewStatus": "REVIEWED",
+        "label": "AI 生成·已审核",
+        "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
       },
       "stem": "用 in、out 两个栈实现队列：入队压入 in；出队时若 out 为空，先把 in 的元素全部逐个弹出并压入 out。起初 in 从底到顶为 1、2、3，out 为空。出队一次、再入队 4、再出队一次，两次出队值依次是什么？",
       "options": [
@@ -562,8 +573,9 @@
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",
-          "reviewStatus": "PENDING",
-          "label": "AI 生成·待审核"
+          "reviewStatus": "REVIEWED",
+          "label": "AI 生成·已审核",
+          "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
         }
       }
     }

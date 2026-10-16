@@ -17,6 +17,7 @@ import com.learnplatform.service.ReviewScheduleQueryService;
 import com.learnplatform.service.WrongQuestionService;
 import java.util.List;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +52,11 @@ class QuestionDraftVisibilityIntegrationTest extends IntegrationTestBase {
     @Autowired SqlSessionTemplate sqlSession;
     @Autowired AiAssetEngagementService assets;
     @Autowired com.learnplatform.service.StatisticsService stats;
+
+    @BeforeEach void restoreUnreviewedDraftFixture() {
+        db.update("UPDATE question SET visibility='DRAFT' WHERE source_reference LIKE 'm5-draft:%'");
+        db.update("UPDATE question_understanding_content c JOIN question q ON q.id=c.question_id SET c.review_status='PENDING' WHERE q.source_reference LIKE 'm5-draft:%'");
+    }
 
     @Test void everyMigratedDraftIsHiddenFromLearnersAndFullyPreviewableOnlyByAdmin() throws Exception {
         var rows = db.queryForList("SELECT id,content,course_id FROM question WHERE source_reference LIKE 'm5-draft:%'");

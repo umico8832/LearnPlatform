@@ -16,6 +16,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Map;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -35,12 +36,19 @@ class QuestionUnderstandingServiceIntegrationTest extends IntegrationTestBase {
     @Autowired ObjectMapper json;
     private long questionId;
     private long courseId;
+    private List<Map<String, Object>> originalContent;
+    private List<Map<String, Object>> originalHints;
+    private List<Map<String, Object>> originalVariants;
 
     @BeforeEach void setUp() {
+        originalContent = jdbc.queryForList("SELECT * FROM question_understanding_content WHERE source_title IN ('系统种子生成：合法出栈序列','2026 年 408 真题 第 3 题')");
+        originalHints = jdbc.queryForList("SELECT * FROM question_understanding_hint WHERE content_id IN (SELECT id FROM question_understanding_content WHERE source_title='系统种子生成：合法出栈序列')");
+        originalVariants = jdbc.queryForList("SELECT v.* FROM ai_variant_question v JOIN question_ai_asset a ON a.id=v.asset_id JOIN question_understanding_content c ON c.question_id=a.question_id WHERE c.source_title='系统种子生成：合法出栈序列'");
         questionId = jdbc.queryForObject("SELECT question_id FROM question_understanding_content WHERE source_title='系统种子生成：合法出栈序列'", Long.class);
         courseId = jdbc.queryForObject("SELECT course_id FROM question WHERE id=?", Long.class, questionId);
         jdbc.update("UPDATE question_understanding_content SET review_status='REVIEWED',reviewed_by='test-reviewer',reviewed_time=CURRENT_TIMESTAMP WHERE question_id=?", questionId);
         jdbc.update("UPDATE ai_variant_question v JOIN question_ai_asset a ON a.id=v.asset_id SET v.review_status='APPROVED',v.reviewed_by=0,v.reviewed_time=CURRENT_TIMESTAMP WHERE a.question_id=?", questionId);
+        jdbc.update("UPDATE question_understanding_hint SET review_status='PENDING',reviewed_by=NULL,reviewed_time=NULL WHERE content_id IN (SELECT id FROM question_understanding_content WHERE question_id=?)", questionId);
         jdbc.update("INSERT INTO user (id,username,password,role,status,deleted) VALUES (?,?,'test','USER',1,0), (?,?,'test','USER',1,0)",
                 USER, "understanding-owner", OTHER, "understanding-other");
         jdbc.update("INSERT INTO user_course(user_id,course_id) VALUES(?,?)", USER, courseId);
@@ -50,9 +58,6 @@ class QuestionUnderstandingServiceIntegrationTest extends IntegrationTestBase {
         jdbc.update("DELETE FROM fsrs_review_event WHERE user_id IN (?,?)", USER, OTHER);
         jdbc.update("DELETE FROM question_understanding_hint_receipt WHERE attempt_id IN (SELECT id FROM question_understanding_attempt WHERE user_id IN (?,?))", USER, OTHER);
         jdbc.update("DELETE FROM question_understanding_viz_view WHERE attempt_id IN (SELECT id FROM question_understanding_attempt WHERE user_id IN (?,?))", USER, OTHER);
-        jdbc.update("UPDATE question_understanding_hint SET review_status='PENDING',reviewed_by=NULL,reviewed_time=NULL WHERE content_id IN (SELECT id FROM question_understanding_content WHERE question_id=?)", questionId);
-        jdbc.update("UPDATE question_understanding_content SET review_status='PENDING',reviewed_by=NULL,reviewed_time=NULL WHERE question_id=?", questionId);
-        jdbc.update("UPDATE ai_variant_question v JOIN question_ai_asset a ON a.id=v.asset_id SET v.review_status='PENDING',v.reviewed_by=NULL,v.reviewed_time=NULL WHERE a.question_id=?", questionId);
         jdbc.update("DELETE FROM course_learning_event WHERE user_id IN (?,?)", USER, OTHER);
         jdbc.update("DELETE FROM question_understanding_variant_attempt WHERE user_id IN (?,?)", USER, OTHER);
         jdbc.update("DELETE FROM question_understanding_attempt WHERE user_id IN (?,?)", USER, OTHER);
@@ -61,6 +66,18 @@ class QuestionUnderstandingServiceIntegrationTest extends IntegrationTestBase {
         jdbc.update("DELETE FROM question_review_schedule WHERE user_id IN (?,?)", USER, OTHER);
         jdbc.update("DELETE FROM user_course WHERE user_id IN (?,?)", USER, OTHER);
         jdbc.update("DELETE FROM user WHERE id IN (?,?)", USER, OTHER);
+        for (var row : originalContent) {
+            jdbc.update("UPDATE question_understanding_content SET review_status=?,reviewed_by=?,reviewed_time=?,source_verification=?,source_verified_by=?,source_verified_time=? WHERE id=?",
+                    row.get("review_status"), row.get("reviewed_by"), row.get("reviewed_time"), row.get("source_verification"), row.get("source_verified_by"), row.get("source_verified_time"), row.get("id"));
+        }
+        for (var row : originalHints) {
+            jdbc.update("UPDATE question_understanding_hint SET review_status=?,reviewed_by=?,reviewed_time=? WHERE id=?",
+                    row.get("review_status"), row.get("reviewed_by"), row.get("reviewed_time"), row.get("id"));
+        }
+        for (var row : originalVariants) {
+            jdbc.update("UPDATE ai_variant_question SET review_status=?,reviewed_by=?,reviewed_time=? WHERE id=?",
+                    row.get("review_status"), row.get("reviewed_by"), row.get("reviewed_time"), row.get("id"));
+        }
     }
 
     @Test void hidesAnswersAndUsesOnlyChosenMisconception() throws Exception {

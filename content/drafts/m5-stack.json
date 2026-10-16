@@ -13,8 +13,9 @@
       },
       "contentSource": {
         "kind": "AI_GENERATED",
-        "reviewStatus": "PENDING",
-        "label": "AI 生成·待审核"
+        "reviewStatus": "REVIEWED",
+        "label": "AI 生成·已审核",
+        "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
       },
       "stem": "元素按 1、2、3、4 的顺序各入栈一次。下列哪个序列可能是其出栈顺序？",
       "options": [
@@ -127,8 +128,9 @@
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",
-          "reviewStatus": "PENDING",
-          "label": "AI 生成·待审核"
+          "reviewStatus": "REVIEWED",
+          "label": "AI 生成·已审核",
+          "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
         }
       },
       "vizCandidates": [
@@ -149,10 +151,11 @@
       },
       "contentSource": {
         "kind": "AI_GENERATED",
-        "reviewStatus": "PENDING",
-        "label": "AI 生成·待审核"
+        "reviewStatus": "REVIEWED",
+        "label": "AI 生成·已审核",
+        "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
       },
-      "stem": "某顺序栈的 top 指向当前栈顶元素，空栈时 top=-1。连续入栈 3 个元素，再出栈 1 个元素后，top 的值是多少？",
+      "stem": "某顺序栈的 top 指向当前栈顶元素，空栈时 `top=-1`。连续入栈 3 个元素，再出栈 1 个元素后，top 的值是多少？",
       "options": [
         {
           "label": "A",
@@ -175,11 +178,11 @@
       "misconceptions": {
         "A": {
           "title": "多减了一次",
-          "explanation": "入栈三次后 top=2，只出栈一次，所以 top=1。"
+          "explanation": "入栈三次后 `top=2`，只出栈一次，所以 `top=1`。"
         },
         "C": {
           "title": "忘记出栈会使 top 下移",
-          "explanation": "top=2 是三次入栈后、尚未出栈时的值。"
+          "explanation": "`top=2` 是三次入栈后、尚未出栈时的值。"
         },
         "D": {
           "title": "把入栈次数直接当下标",
@@ -197,13 +200,13 @@
         },
         {
           "level": 3,
-          "text": "例如空栈入栈两次后 top=1，再出栈一次就回到 0。"
+          "text": "例如空栈入栈两次后 `top=1`，再出栈一次就回到 0。"
         }
       ],
       "solution": "top 从 -1 经三次入栈变为 0、1、2，再经一次出栈降为 1。",
       "viz": null,
       "variant": {
-        "stem": "某顺序栈的 top 指向下一个可写空位，空栈时 top=0，容量充足。连续入栈 3 个元素，再出栈 1 个元素后，top 的值是多少？",
+        "stem": "某顺序栈的 top 指向下一个可写空位，空栈时 `top=0`，容量充足。连续入栈 3 个元素，再出栈 1 个元素后，top 的值是多少？",
         "options": [
           {
             "label": "A",
@@ -224,12 +227,13 @@
         ],
         "correctAnswer": "C",
         "changedCondition": "操作次数保持不变，只把 top 的表示改为下一空位，并对应规定空栈初值为 0。",
-        "explanation": "top 表示下一空位，也等于当前元素个数；由 0 入栈三次到 3，再出栈一次到 2。当前栈顶元素在下标 top-1=1。",
+        "explanation": "top 表示下一空位，也等于当前元素个数；由 0 入栈三次到 3，再出栈一次到 2。当前栈顶元素在下标 `top-1=1`。",
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",
-          "reviewStatus": "PENDING",
-          "label": "AI 生成·待审核"
+          "reviewStatus": "REVIEWED",
+          "label": "AI 生成·已审核",
+          "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
         }
       }
     },
@@ -243,10 +247,11 @@
       },
       "contentSource": {
         "kind": "AI_GENERATED",
-        "reviewStatus": "PENDING",
-        "label": "AI 生成·待审核"
+        "reviewStatus": "REVIEWED",
+        "label": "AI 生成·已审核",
+        "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
       },
-      "stem": "栈中从底到顶为 2、5、7。先执行 GetTop(S)（只读取不移除），再执行一次 Pop(S)。两次得到的元素依次是什么？",
+      "stem": "栈中从底到顶为 2、5、7。先执行 `GetTop(S)`（只读取不移除），再执行一次 `Pop(S)`。两次得到的元素依次是什么？",
       "options": [
         {
           "label": "A",
@@ -272,8 +277,8 @@
           "explanation": "第一次取栈顶读到 7，不是下方的 5。"
         },
         "B": {
-          "title": "误以为 GetTop 会弹出",
-          "explanation": "GetTop 只读 7，不改变栈；紧接着 Pop 仍弹出 7。"
+          "title": "误以为 `GetTop` 会弹出",
+          "explanation": "`GetTop` 只读 7，不改变栈；紧接着 `Pop` 仍弹出 7。"
         },
         "C": {
           "title": "把栈顶和下一个元素混淆",
@@ -283,7 +288,7 @@
       "hints": [
         {
           "level": 1,
-          "text": "确认 GetTop 与 Pop 是否改变栈。"
+          "text": "确认 `GetTop` 与 `Pop` 是否改变栈。"
         },
         {
           "level": 2,
@@ -294,10 +299,10 @@
           "text": "例如只有甲、乙且乙在顶端，先查看栈顶并不会让甲马上露出来。"
         }
       ],
-      "solution": "GetTop(S) 返回 7 且栈不变；Pop(S) 随后弹出同一个栈顶 7。",
+      "solution": "`GetTop(S)` 返回 7 且栈不变；`Pop(S)` 随后弹出同一个栈顶 7。",
       "viz": null,
       "variant": {
-        "stem": "栈中从底到顶为 2、5、7。先执行 Pop(S)（弹出并返回栈顶元素），再执行 GetTop(S)（只读取不移除栈顶）。两次返回的元素依次是什么？",
+        "stem": "栈中从底到顶为 2、5、7。先执行 `Pop(S)`（弹出并返回栈顶元素），再执行 `GetTop(S)`（只读取不移除栈顶）。两次返回的元素依次是什么？",
         "options": [
           {
             "label": "A",
@@ -317,13 +322,14 @@
           }
         ],
         "correctAnswer": "B",
-        "changedCondition": "初始栈不变，只把 GetTop 与 Pop 的先后顺序交换。",
-        "explanation": "Pop 先返回并移除 7，栈变为底 2、5 顶；GetTop 随后返回 5，栈保持不变。",
+        "changedCondition": "初始栈不变，只把 `GetTop` 与 `Pop` 的先后顺序交换。",
+        "explanation": "`Pop` 先返回并移除 7，栈变为底 2、5 顶；`GetTop` 随后返回 5，栈保持不变。",
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",
-          "reviewStatus": "PENDING",
-          "label": "AI 生成·待审核"
+          "reviewStatus": "REVIEWED",
+          "label": "AI 生成·已审核",
+          "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
         }
       }
     },
@@ -337,10 +343,11 @@
       },
       "contentSource": {
         "kind": "AI_GENERATED",
-        "reviewStatus": "PENDING",
-        "label": "AI 生成·待审核"
+        "reviewStatus": "REVIEWED",
+        "label": "AI 生成·已审核",
+        "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
       },
-      "stem": "用栈检查括号串 ([)]。从左到右读到第 3 个字符 )，尚未对这个字符执行任何栈操作时，栈顶是哪一个字符？",
+      "stem": "用栈检查括号串 `([)]`。从左到右读到第 3 个字符 )，尚未对这个字符执行任何栈操作时，栈顶是哪一个字符？",
       "options": [
         {
           "label": "A",
@@ -391,7 +398,7 @@
       "solution": "读到第三个字符前，栈从底到顶为 (、[，因此栈顶是 [；当前 ) 与之不匹配。",
       "viz": null,
       "variant": {
-        "stem": "用栈检查括号串 ([])]。从左到右读到第 5 个字符 ]，尚未对这个字符执行任何栈操作时，栈顶是什么？",
+        "stem": "用栈检查括号串 `([])]`。从左到右读到第 5 个字符 ]，尚未对这个字符执行任何栈操作时，栈顶是什么？",
         "options": [
           {
             "label": "A",
@@ -412,12 +419,13 @@
         ],
         "correctAnswer": "D",
         "changedCondition": "在后续右括号到来前加入已成功匹配的括号对，检验弹栈后的状态。",
-        "explanation": "前四个字符 ([]) 已匹配完毕：先用 ] 弹出 [，再用 ) 弹出 (。读到第五个字符 ] 时栈已空，该右括号没有可匹配的左括号。",
+        "explanation": "前四个字符 `([])` 已匹配完毕：先用 `]` 弹出 `[`，再用 `)` 弹出 `(`。读到第五个字符 `]` 时栈已空，该右括号没有可匹配的左括号。",
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",
-          "reviewStatus": "PENDING",
-          "label": "AI 生成·待审核"
+          "reviewStatus": "REVIEWED",
+          "label": "AI 生成·已审核",
+          "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
         }
       }
     },
@@ -431,8 +439,9 @@
       },
       "contentSource": {
         "kind": "AI_GENERATED",
-        "reviewStatus": "PENDING",
-        "label": "AI 生成·待审核"
+        "reviewStatus": "REVIEWED",
+        "label": "AI 生成·已审核",
+        "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
       },
       "stem": "按栈求值后缀表达式 3 4 + 2 * 的结果是多少？",
       "options": [
@@ -510,8 +519,9 @@
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",
-          "reviewStatus": "PENDING",
-          "label": "AI 生成·待审核"
+          "reviewStatus": "REVIEWED",
+          "label": "AI 生成·已审核",
+          "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
         }
       }
     },
@@ -525,10 +535,11 @@
       },
       "contentSource": {
         "kind": "AI_GENERATED",
-        "reviewStatus": "PENDING",
-        "label": "AI 生成·待审核"
+        "reviewStatus": "REVIEWED",
+        "label": "AI 生成·已审核",
+        "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
       },
-      "stem": "空栈依次执行 Push(1)、Push(2)、Pop、Push(3)、Pop、Pop。三次 Pop 的返回值依次是什么？",
+      "stem": "空栈依次执行 `Push(1)`、`Push(2)`、`Pop`、`Push(3)`、`Pop`、`Pop`。三次 `Pop` 的返回值依次是什么？",
       "options": [
         {
           "label": "A",
@@ -551,32 +562,32 @@
       "misconceptions": {
         "A": {
           "title": "把栈当成队列",
-          "explanation": "第一次 Pop 取的是后压入的 2，而非最早入栈的 1。"
+          "explanation": "第一次 `Pop` 取的是后压入的 2，而非最早入栈的 1。"
         },
         "B": {
-          "title": "忘记 Push(3) 改变栈顶",
+          "title": "忘记 `Push(3)` 改变栈顶",
           "explanation": "第一次弹出 2 后又压入 3；第二次应弹出 3，而不是 1。"
         },
         "D": {
           "title": "把后来的 3 提前到第一次出栈",
-          "explanation": "第一次 Pop 发生在 Push(3) 之前，不可能先弹出 3。"
+          "explanation": "第一次 `Pop` 发生在 `Push(3)` 之前，不可能先弹出 3。"
         }
       },
       "hints": [
         {
           "level": 1,
-          "text": "逐步画出栈，不要只看所有 Push 的总顺序。"
+          "text": "逐步画出栈，不要只看所有 `Push` 的总顺序。"
         },
         {
           "level": 2,
-          "text": "在每一次 Pop 发生的时刻记录当时的栈顶。"
+          "text": "在每一次 `Pop` 发生的时刻记录当时的栈顶。"
         },
         {
           "level": 3,
-          "text": "例如 Push(甲)、Push(乙)、Pop、Push(丙)、Pop 会先后得到乙和丙。"
+          "text": "例如 `Push(甲)`、`Push(乙)`、`Pop`、`Push(丙)`、`Pop` 会先后得到乙和丙。"
         }
       ],
-      "solution": "第一次 Pop 弹出 2；此后 Push(3)，第二次 Pop 弹出 3；最后弹出剩余的 1。",
+      "solution": "第一次 `Pop` 弹出 2；此后 `Push(3)`，第二次 `Pop` 弹出 3；最后弹出剩余的 1。",
       "viz": {
         "title": "用候选序列逐步检查栈顶",
         "spec": {
@@ -587,7 +598,7 @@
         }
       },
       "variant": {
-        "stem": "仍从空栈开始，改为先 Push(1)、Push(2)、Push(3)，随后连续 Pop 三次。返回值依次是什么？",
+        "stem": "仍从空栈开始，改为先 `Push(1)`、`Push(2)`、`Push(3)`，随后连续 `Pop` 三次。返回值依次是什么？",
         "options": [
           {
             "label": "A",
@@ -607,7 +618,7 @@
           }
         ],
         "correctAnswer": "C",
-        "changedCondition": "第一次 Pop 延后到 Push(3) 之后，其余元素及操作次数不变。",
+        "changedCondition": "第一次 `Pop` 延后到 `Push(3)` 之后，其余元素及操作次数不变。",
         "explanation": "三个元素全部压入后，栈顶依次为 3、2、1。",
         "viz": {
           "title": "用候选序列逐步检查栈顶",
@@ -620,8 +631,9 @@
         },
         "source": {
           "kind": "AI_GENERATED",
-          "reviewStatus": "PENDING",
-          "label": "AI 生成·待审核"
+          "reviewStatus": "REVIEWED",
+          "label": "AI 生成·已审核",
+          "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
         }
       }
     },
@@ -635,8 +647,9 @@
       },
       "contentSource": {
         "kind": "AI_GENERATED",
-        "reviewStatus": "PENDING",
-        "label": "AI 生成·待审核"
+        "reviewStatus": "REVIEWED",
+        "label": "AI 生成·已审核",
+        "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
       },
       "stem": "1、2、3 各按顺序入栈一次，每个元素也各出栈一次。共有多少种不同的合法出栈序列？",
       "options": [
@@ -735,8 +748,9 @@
         ],
         "source": {
           "kind": "AI_GENERATED",
-          "reviewStatus": "PENDING",
-          "label": "AI 生成·待审核"
+          "reviewStatus": "REVIEWED",
+          "label": "AI 生成·已审核",
+          "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"
         }
       }
     }

@@ -49,6 +49,46 @@ class DraftValidationTest(unittest.TestCase):
     def test_accepts_complete_pending_draft(self) -> None:
         self.assertEqual((1, 0), self.validate(draft()))
 
+    def test_rejects_unquoted_code_in_all_reader_text(self) -> None:
+        for code in ("p->next=s", "data[i-1]", "front==rear", "Push(1)",
+                     "free(q)", "(rear+1)%M==front", "8->next=L", "data[]", "top=-1", "++top"):
+            with self.subTest(code=code):
+                document = draft()
+                document["questions"][0]["hints"][2]["text"] = "例如 " + code + "。"
+                with self.assertRaisesRegex(ValueError, "反引号"):
+                    self.validate(document)
+        document = draft()
+        document["questions"][0]["variant"]["options"][0]["content"] = "令 p->next=s"
+        with self.assertRaisesRegex(ValueError, "反引号"):
+            self.validate(document)
+
+    def test_rejects_partially_quoted_function_forms(self) -> None:
+        for code in ("`O(n`²)", "`Push(`甲)", "Pop"):
+            with self.subTest(code=code):
+                document = draft()
+                document["questions"][0]["hints"][2]["text"] = code
+                with self.assertRaisesRegex(ValueError, "反引号"):
+                    self.validate(document)
+
+    def test_accepts_inline_code_and_plain_chinese_parentheses(self) -> None:
+        document = draft()
+        document["questions"][0]["stem"] = (
+            "执行 `p->next=s`、`data[i-1]`、`front==rear`、`Push(1)`（示意）。"
+            "再看 ``GetTop(S)`` 与第 1 个（头结点不计）。"
+        )
+        self.assertEqual((1, 0), self.validate(document))
+
+    def test_accepts_reviewed_ai_only_with_actual_review_method(self) -> None:
+        document = draft()
+        reviewed = {"kind": "AI_GENERATED", "reviewStatus": "REVIEWED", "label": "AI 生成·已审核",
+                    "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"}
+        document["questions"][0]["contentSource"] = reviewed
+        document["questions"][0]["variant"]["source"] = reviewed
+        self.assertEqual((1, 0), self.validate(document))
+        document["questions"][0]["variant"]["source"] = dict(reviewed, reviewNote="人工逐字审定")
+        with self.assertRaisesRegex(ValueError, "审核"):
+            self.validate(document)
+
     def test_rejects_answer_not_in_options(self) -> None:
         document = draft()
         document["questions"][0]["correctAnswer"] = "E"

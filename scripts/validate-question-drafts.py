@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Validate unreviewed M5 content and run the real frontend scene simulators."""
+"""Validate M5 author content and run the real frontend scene simulators."""
 
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -12,6 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 DRAFTS = tuple(sorted((ROOT / "content/drafts").glob("m5-*.json")))
 LABELS = {"A", "B", "C", "D"}
 PENDING = {"kind": "AI_GENERATED", "reviewStatus": "PENDING", "label": "AI 生成·待审核"}
+REVIEWED = {"kind": "AI_GENERATED", "reviewStatus": "REVIEWED", "label": "AI 生成·已审核",
+            "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"}
 
 
 def require(condition: bool, where: str, message: str) -> None:
@@ -27,10 +30,19 @@ def options(where: str, rows: object, answer: object) -> None:
             where, "选项内容不能为空")
     require(len({row["content"] for row in rows}) == 4, where, "选项内容不能重复")
     require(answer in LABELS, where, "答案必须指向现有选项")
+    for row in rows:
+        text(where + ".options." + row["label"], row["content"])
 
 
 def text(where: str, value: object) -> None:
     require(isinstance(value, str) and bool(value.strip()), where, "文字不能为空")
+    for span in re.finditer(r"(`+)(?:(?!\1).)*?\1", value, flags=re.DOTALL):
+        code = span.group().strip("`")
+        if re.search(r"[A-Za-z_]\w*\s*\(", code):
+            require(code.count("(") == code.count(")"), where, "函数形式须完整放在同一对反引号内")
+    prose = re.sub(r"(`+)(?:(?!\1).)*?\1", "", value, flags=re.DOTALL)
+    require(not re.search(r"->|\[[^]\n]*\]|[=!<>]=|[A-Za-z_]\w*\s*=|\+\+|--|[A-Za-z_]\w*\s*\(|\b(?:Push|Pop|GetTop|EnQueue|DeQueue)\b", prose),
+            where, "代码表达式必须放在反引号内")
 
 
 def viz(where: str, value: object) -> int:
@@ -57,7 +69,8 @@ def validate_question(question: dict, where: str) -> int:
         text(where + ".source.questionNumber", source.get("questionNumber"))
         require(isinstance(source.get("url"), str) and source["url"].startswith("https://"),
                 where, "408 真题需要可访问链接")
-    require(question.get("contentSource") == PENDING, where, "整题必须标为 AI 生成·待审核")
+    require(question.get("contentSource") in (PENDING, REVIEWED), where,
+            "整题须标为 AI 生成·待审核或带实际审核方式的已审核")
 
     answer = question.get("correctAnswer")
     options(where, question.get("options"), answer)
@@ -86,7 +99,8 @@ def validate_question(question: dict, where: str) -> int:
     text(where + ".variant.changedCondition", variant.get("changedCondition"))
     text(where + ".variant.explanation", variant.get("explanation"))
     options(where + ".variant", variant.get("options"), variant.get("correctAnswer"))
-    require(variant.get("source") == PENDING, where, "变式必须标为 AI 生成·待审核")
+    require(variant.get("source") in (PENDING, REVIEWED), where,
+            "变式须标为 AI 生成·待审核或带实际审核方式的已审核")
     count += viz(where + ".variant.viz", variant.get("viz"))
     return count
 
