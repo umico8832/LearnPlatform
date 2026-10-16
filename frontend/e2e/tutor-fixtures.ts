@@ -1,3 +1,4 @@
+import { prepareTurnstile } from './helpers/turnstile'
 import { randomUUID } from 'node:crypto'
 import { expect } from '@playwright/test'
 import type { Page, TestInfo } from '@playwright/test'
@@ -18,6 +19,7 @@ export async function readApiData<T>(response: { status(): number; json(): Promi
 }
 
 async function login(page: Page, account: string, password: string) {
+  await prepareTurnstile(page)
   await page.goto('/login')
   await page.getByPlaceholder('请输入用户名或邮箱').fill(account)
   await page.getByPlaceholder('请输入密码').fill(password)

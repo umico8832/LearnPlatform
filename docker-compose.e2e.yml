@@ -50,6 +50,7 @@ services:
     ports: !reset []
     volumes:
       - ./frontend/e2e/fixtures/knowledge:/e2e/knowledge:ro
+      - ./frontend/e2e/fixtures/understanding:/e2e/understanding:ro
     environment:
       SPRING_PROFILES_ACTIVE: e2e,docker
       CACHE_TYPE: simple

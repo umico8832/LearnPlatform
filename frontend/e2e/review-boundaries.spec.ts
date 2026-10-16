@@ -1,6 +1,8 @@
+import { prepareTurnstile } from './helpers/turnstile'
 import { expect, test, type Page } from '@playwright/test'
 
 async function login(page: Page, account: string, password: string) {
+  await prepareTurnstile(page)
   await page.goto('/login')
   await page.getByPlaceholder('请输入用户名或邮箱').fill(account)
   await page.getByPlaceholder('请输入密码').fill(password)

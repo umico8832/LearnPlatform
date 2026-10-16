@@ -280,6 +280,9 @@ class E2ELifecycleTest(unittest.TestCase):
         self.assertIn(
             lifecycle.FRONTEND_ROOT / "e2e" / "fixtures" / "knowledge", lifecycle.e2e_bind_sources()
         )
+        self.assertIn(
+            lifecycle.FRONTEND_ROOT / "e2e" / "fixtures" / "understanding", lifecycle.e2e_bind_sources()
+        )
 
     @patch.object(lifecycle, "e2e_bind_sources")
     @patch.object(lifecycle, "source_paths")

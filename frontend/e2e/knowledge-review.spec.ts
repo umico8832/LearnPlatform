@@ -1,3 +1,4 @@
+import { prepareTurnstile } from './helpers/turnstile'
 import { expect, test } from '@playwright/test'
 
 test('管理员可在真实知识审核页面核对原文并批准撤回', async ({ page }, testInfo) => {
@@ -5,6 +6,7 @@ test('管理员可在真实知识审核页面核对原文并批准撤回', async
   await page.setViewportSize({ width: 1440, height: 900 })
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
+  await prepareTurnstile(page)
   await page.goto('/admin/knowledge')
   await expect(page).toHaveURL(/\/admin\/login\?redirect=/)
   await page.getByPlaceholder('请输入用户名或邮箱').fill('admin')

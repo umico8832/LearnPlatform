@@ -1,3 +1,4 @@
+import { prepareTurnstile } from './helpers/turnstile'
 import { expect, test, type Page } from '@playwright/test'
 import { createLearnerAndLogin } from './helpers/registerLearner'
 import type { CourseOverviewVO } from '../src/api/course'
@@ -65,6 +66,7 @@ test('Tutor Agent 推荐已批准变式题、恢复首次作答并读取真实�
   const adminContext = await browser.newContext()
   try {
     const admin = await adminContext.newPage()
+    await prepareTurnstile(admin)
     await admin.goto(`${new URL(page.url()).origin}/admin/login`)
     await admin.getByPlaceholder('请输入用户名或邮箱').fill('admin')
     await admin.getByPlaceholder('请输入密码').fill('admin123')

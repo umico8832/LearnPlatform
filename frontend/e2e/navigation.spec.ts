@@ -1,3 +1,5 @@
+import { prepareTurnstile } from './helpers/turnstile'
+import { createLearnerAndLogin } from './helpers/registerLearner'
 import { expect, test } from '@playwright/test'
 import type { Page, Route } from '@playwright/test'
 import { mkdir } from 'node:fs/promises'
@@ -8,6 +10,7 @@ const leaveMessage = '离开后，本页未提交的答案会丢失，考试计�
 
 async function login(page: Page) {
   await page.setViewportSize({ width: 1440, height: 900 })
+  await prepareTurnstile(page)
   await page.goto('/login')
   await page.getByPlaceholder('请输入用户名或邮箱').fill('testuser')
   await page.getByPlaceholder('请输入密码').fill('test123')
@@ -193,7 +196,10 @@ test('课程空间返回恢复滚动位置和面包屑', async ({ page }) => {
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(target)
 })
 
-test('考试离开确认保留作答，正式提交仅进入结果页', async ({ page }) => {
+test('考试离开确认保留作答，正式提交仅进入结果页', async ({ page, browser }) => {
+  // 同账号同试卷会复用活动记录，不能与其他 worker 共享交卷状态。
+  await page.evaluate(() => localStorage.clear())
+  await createLearnerAndLogin(browser, page, 'navigationexam')
   await page.goto('/exams')
   // 其他用例会并行新建试卷，按种子试卷名查找，避免取到只有填空题的试卷。
   await page.getByRole('textbox', { name: '按试卷名称查找' }).fill('Java 基础入门测验')

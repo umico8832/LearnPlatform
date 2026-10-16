@@ -1,3 +1,4 @@
+import { prepareTurnstile } from './helpers/turnstile'
 import { expect, test, type Browser, type Page, type TestInfo } from '@playwright/test'
 import path from 'node:path'
 
@@ -54,6 +55,7 @@ async function api<T>(page: Page, path: string, method = 'GET', body?: unknown):
 
 async function loginAs(page: Page, username: string, password: string) {
   await page.setViewportSize(desktop)
+  await prepareTurnstile(page)
   await page.goto('/login')
   await page.getByPlaceholder('请输入用户名或邮箱').fill(username)
   await page.getByPlaceholder('请输入密码').fill(password)
@@ -73,6 +75,7 @@ async function createFixture(browser: Browser, learner: Page, name: string, coun
   const adminContext = await browser.newContext()
   try {
     const admin = await adminContext.newPage()
+    await prepareTurnstile(admin)
     await admin.goto(`${new URL(learner.url()).origin}/admin/login`)
     await admin.getByPlaceholder('请输入用户名或邮箱').fill('admin')
     await admin.getByPlaceholder('请输入密码').fill('admin123')
@@ -131,6 +134,7 @@ async function createFreshLearner(browser: Browser, learner: Page) {
   const adminContext = await browser.newContext()
   try {
     const admin = await adminContext.newPage()
+    await prepareTurnstile(admin)
     await admin.goto(`${origin}/admin/login`)
     await admin.getByPlaceholder('请输入用户名或邮箱').fill('admin')
     await admin.getByPlaceholder('请输入密码').fill('admin123')

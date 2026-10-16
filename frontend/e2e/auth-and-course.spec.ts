@@ -1,3 +1,4 @@
+import { prepareTurnstile } from './helpers/turnstile'
 import { expect, test } from '@playwright/test'
 import { createLearnerAndLogin } from './helpers/registerLearner'
 import type { Locator, Page, Response } from '@playwright/test'
@@ -5,6 +6,7 @@ import path from 'node:path'
 import { readFile } from 'node:fs/promises'
 
 async function loginAs(page: Page, username: string, password: string) {
+  await prepareTurnstile(page)
   await page.goto('/login')
   await page.getByPlaceholder('请输入用户名或邮箱').fill(username)
   await page.getByPlaceholder('请输入密码').fill(password)
@@ -23,6 +25,7 @@ async function loginAs(page: Page, username: string, password: string) {
 }
 
 async function loginToAdminApp(page: Page, username: string, password: string) {
+  await prepareTurnstile(page)
   await page.goto('/admin/subjective-reviews')
   await expect(page).toHaveURL(/\/admin\/login\?redirect=/)
   await page.getByPlaceholder('请输入用户名或邮箱').fill(username)

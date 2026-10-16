@@ -1,3 +1,4 @@
+import { prepareTurnstile } from './helpers/turnstile'
 import { expect, test, type Page } from '@playwright/test'
 import type { CourseKnowledgePointFactVO, CourseOverviewVO } from '../src/api/course'
 
@@ -35,6 +36,7 @@ test('课程空间从首节学习并在真实理解检查后展示知识点记�
     if (response.url().includes('/api/') && response.status() >= 500)
       errors.push(`${response.status()} ${response.url()}`)
   })
+  await prepareTurnstile(page)
   await page.goto('/login')
   await page.getByPlaceholder('请输入用户名或邮箱').fill('testuser')
   await page.getByPlaceholder('请输入密码').fill('test123')

@@ -1,3 +1,4 @@
+import { prepareTurnstile } from './helpers/turnstile'
 import { expect, test } from '@playwright/test'
 import type { Locator, Page, Response } from '@playwright/test'
 
@@ -19,6 +20,7 @@ type PrivateExamDraftResponse = {
 }
 
 async function loginAs(page: Page, username: string, password: string) {
+  await prepareTurnstile(page)
   await page.goto('/login')
   await page.getByPlaceholder('请输入用户名或邮箱').fill(username)
   await page.getByPlaceholder('请输入密码').fill(password)

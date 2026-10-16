@@ -1,3 +1,4 @@
+import { prepareTurnstile } from './turnstile'
 import { expect, type Browser, type Page } from '@playwright/test'
 
 type ApiEnvelope<T> = { code: number; message?: string; data: T }
@@ -22,6 +23,7 @@ async function adminApi<T>(page: Page, path: string, body: unknown): Promise<T> 
 }
 
 async function loginLearner(page: Page, username: string, password: string) {
+  await prepareTurnstile(page)
   await page.goto('/login')
   await page.getByPlaceholder('请输入用户名或邮箱').fill(username)
   await page.getByPlaceholder('请输入密码').fill(password)
@@ -42,6 +44,7 @@ export async function createLearnerAndLogin(browser: Browser, learner: Page, lab
   const adminContext = await browser.newContext()
   try {
     const admin = await adminContext.newPage()
+    await prepareTurnstile(admin)
     await admin.goto(`${origin}/admin/login`)
     await admin.getByPlaceholder('请输入用户名或邮箱').fill('admin')
     await admin.getByPlaceholder('请输入密码').fill('admin123')

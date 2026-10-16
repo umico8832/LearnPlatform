@@ -102,6 +102,15 @@
 浏览器测试使用独立的 Spring `e2e` Profile（`docker-compose.e2e.yml`），前端站点密钥与后端
 校验密钥使用 Cloudflare Turnstile 测试配置；账号密码、JWT、权限和路由守卫仍执行真实逻辑。
 测试密钥只用于隔离 E2E，不写入日常开发或生产配置；这些环境按自己的 Turnstile 配置完成验证。
+登录准备统一调用 `e2e/helpers/turnstile.ts`：只拦截浏览器端 Cloudflare SDK 请求，按
+[官方测试密钥协议](https://developers.cloudflare.com/turnstile/troubleshooting/testing/)返回 dummy token，
+避免公网脚本和挑战 iframe 下载波动阻塞业务回归。实际验证码组件、回调、登录请求和后端
+Cloudflare Siteverify 校验保持真实执行；E2E 验证缺失验证码和错误密码仍被拒绝。测试密钥的
+always-pass 响应不验证真实 token 的有效性，Siteverify 失败响应由后端专项测试覆盖；此夹具
+不覆盖 Cloudflare 浏览器挑战页面或真实凭据闭环。Playwright 默认零重试，首次失败保留 trace。
+题目理解主线的已审核状态由 `e2e/fixtures/understanding/` 的隔离 Flyway 夹具提供，复用后端
+集成测试的数据准备方式；它只在 E2E Profile 和 Compose 中加载，不改生产种子的待审核状态，
+也不构成人工内容审核。夹具属于运行镜像指纹输入，变更后须重建隔离环境。
 E2E Compose 还提供 OpenAI 兼容的确定性上游响应，只替代不可重复且需要密钥的外部模型调用；后端的
 Prompt 构造、HTTP Provider、结构校验、调用审计、草稿状态和数据库事务仍使用真实实现。
 功能 E2E 的 AI 日配额设为 0（不限次数），避免并发用例及重试共用额度；配额拒绝由后端专项测试验证。
@@ -178,7 +187,7 @@ python3 scripts/check-all.py docker e2e
 
 job 名为 `docs`、`backend`、`backend-integration`、`frontend`、`docker`、`e2e`。
 本机需准备 JDK 21、Node.js 22、Docker 和 Playwright Chromium；Maven 不在 PATH 时自动使用
-仓库 Wrapper。脚本统一设置 `CI=true`，使 Playwright 的 `.only` 门禁、重试与报告配置也与 CI 一致。
+仓库 Wrapper。脚本统一设置 `CI=true`，使 Playwright 的 `.only` 门禁与报告配置也与 CI 一致；本地与 CI 均默认零重试。
 CI 保留工具安装、缓存与浏览器准备，检查命令统一由脚本维护。
 E2E 使用正式 `npm run test:e2e` 入口，重建并清理隔离环境，不带 `--keep`；
 脚本设置隔离测试凭据并禁止 Compose 自动加载 `.env`。
