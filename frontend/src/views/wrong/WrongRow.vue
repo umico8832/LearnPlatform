@@ -60,7 +60,7 @@ const headingId = computed(() => `wrong-${props.item.id}`)
     </p>
 
     <div class="main">
-      <h3 :id="headingId" class="stem">{{ item.questionContent }}</h3>
+      <h3 :id="headingId" class="stem"><QuestionProse :content="item.questionContent" inline /></h3>
 
       <div class="why">
         <OptionChip
