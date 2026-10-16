@@ -114,13 +114,26 @@ describe('M5 待审核题目草稿的正式场景', () => {
     expect(count).toBeGreaterThan(0)
   })
 
-  it('合法出栈序列题的原题和变式只有标注答案可达', () => {
+  it('合法出栈序列题只有标注答案满足可达性及变式容量限制', () => {
     const question = questions.find((item) => item.id === 'st-01')!
-    for (const part of [question, question.variant]) {
+    for (const [part, capacity] of [
+      [question, Infinity],
+      [question.variant, 2],
+    ] as const) {
       const validLabels = part.options
         .filter((option) => {
           const seq = option.content.split(',').map(Number)
-          return stack.build({ scene: 'stack', op: 'check', seq }).check.detail === '序列合法'
+          if (stack.build({ scene: 'stack', op: 'check', seq }).check.detail !== '序列合法') return false
+          const values: number[] = []
+          let next = 1
+          for (const target of seq) {
+            while (next <= target) {
+              values.push(next++)
+              if (values.length > capacity) return false
+            }
+            if (values.pop() !== target) return false
+          }
+          return true
         })
         .map((option) => option.label)
       expect(validLabels).toEqual([part.correctAnswer])

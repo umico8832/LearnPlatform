@@ -67,28 +67,28 @@
       "solution": "出队两次依次移走 1、2，只剩 3；4 从队尾进入，顺序为 3、4。",
       "viz": null,
       "variant": {
-        "stem": "仍先入队 1、2、3，但只出队一次后再入队 4。此时队头到队尾的顺序是什么？",
+        "stem": "从空队列开始，依次执行：入队 1，出队一次，入队 2，出队一次，入队 3，入队 4，出队一次。此时队头到队尾的元素顺序是什么？",
         "options": [
           {
             "label": "A",
-            "content": "1、2、3、4"
-          },
-          {
-            "label": "B",
-            "content": "2、3、4"
-          },
-          {
-            "label": "C",
             "content": "3、4"
           },
           {
+            "label": "B",
+            "content": "4"
+          },
+          {
+            "label": "C",
+            "content": "1、4"
+          },
+          {
             "label": "D",
-            "content": "4、2、3"
+            "content": "队列为空"
           }
         ],
         "correctAnswer": "B",
-        "changedCondition": "出队次数由两次改为一次，其余操作不变。",
-        "explanation": "仅移走 1，队中为 2、3；再在队尾加入 4，得到 2、3、4。",
+        "changedCondition": "将两次出队提前到对应入队之后交错执行，并在入队 4 后再出队一次，检验多次清空与新队头。",
+        "explanation": "第一次出队移走 1，队列变空；第二次出队移走 2，再次变空；随后入队 3、4，最后出队移走新队头 3，只剩 4。",
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",
@@ -161,28 +161,28 @@
       "solution": "元素占据下标 6、7、0、1；长度为 (2-6+8)%8=4。",
       "viz": null,
       "variant": {
-        "stem": "同样 M=8、rear=2，只把 front 改为 7。队中有几个元素？",
+        "stem": "循环数组队列长度 M=8，front 指向队头，rear 改为指向最后一个有效元素。用 count 区分满空：count=0 为空，count=M 为满。非空时元素占据从 front 到 rear 的连续循环区间（两端均计入）。若 front=6、rear=2，队中有几个元素？",
         "options": [
           {
             "label": "A",
-            "content": "2 个"
-          },
-          {
-            "label": "B",
             "content": "3 个"
           },
           {
-            "label": "C",
+            "label": "B",
             "content": "4 个"
           },
           {
+            "label": "C",
+            "content": "5 个"
+          },
+          {
             "label": "D",
-            "content": "7 个"
+            "content": "6 个"
           }
         ],
-        "correctAnswer": "B",
-        "changedCondition": "front 由 6 改为 7，rear 与容量不变。",
-        "explanation": "有效下标为 7、0、1，长度 (2-7+8)%8=3。",
+        "correctAnswer": "C",
+        "changedCondition": "保持数组长度和两个下标，只把 rear 由下一空位改为最后一个有效元素，配套用计数器区分满空。",
+        "explanation": "有效下标为 6、7、0、1、2，共 5 个；非空时长度为 (rear-front+M)%M+1，不能照搬 rear 指下一空位时的公式。",
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",
@@ -255,28 +255,28 @@
       "solution": "该表示必须始终留下一个空槽，因此 M=6 时最多存 M-1=5 个元素。",
       "viz": null,
       "variant": {
-        "stem": "仍用保留一个空槽的循环队列，改为 M=8。最多可同时存放几个元素？",
+        "stem": "循环数组队列长度 M=6，改用计数器 count 区分满空：count=0 为空，count=M 为满，不保留空槽。最多可同时存放几个元素？",
         "options": [
           {
             "label": "A",
-            "content": "6 个"
+            "content": "4 个"
           },
           {
             "label": "B",
-            "content": "7 个"
+            "content": "5 个"
           },
           {
             "label": "C",
-            "content": "8 个"
+            "content": "6 个"
           },
           {
             "label": "D",
-            "content": "9 个"
+            "content": "7 个"
           }
         ],
-        "correctAnswer": "B",
-        "changedCondition": "物理数组长度由 6 改为 8，满空规则不变。",
-        "explanation": "有效容量为 M-1=7。",
+        "correctAnswer": "C",
+        "changedCondition": "物理数组长度保持为 6，只把保留空槽改为用计数器区分满空。",
+        "explanation": "计数器可以区分同样指针位置下的满与空，无需浪费一个槽，6 个物理位置均可存元素，有效容量为 M=6。",
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",
@@ -443,7 +443,7 @@
       "solution": "x 写入下标 3，front 仍为 3，rear 前进到 4，因此为 (3,4)。",
       "viz": null,
       "variant": {
-        "stem": "仍是 M=5 的空循环队列，只把初始 front=rear 改为 4。入队 x 后 (front,rear) 为哪一对？",
+        "stem": "循环数组队列 M=5，front 指向队头元素，rear 指向下一空位，保留一个空槽区分满空；初始空队列 front=rear=4。入队 x 后 (front,rear) 为哪一对？",
         "options": [
           {
             "label": "A",
@@ -463,7 +463,7 @@
           }
         ],
         "correctAnswer": "B",
-        "changedCondition": "初始空队列指针由 3 改为 4，其余规则不变。",
+        "changedCondition": "保留 front 指队头、rear 指下一空位及保留空槽的规则，只将初始空队列指针由 3 改为 4，检验回绕。",
         "explanation": "x 写入下标 4，front 保持 4，rear=(4+1)%5=0。",
         "viz": null,
         "source": {
@@ -537,28 +537,28 @@
       "solution": "把 in 的 3、2、1 依次弹出压入 out 后，out 从底到顶为 3、2、1；第一次出队得 1。入队 4 到 in 时 out 仍有 2 在顶端，第二次出队得 2。",
       "viz": null,
       "variant": {
-        "stem": "初始 in 仍为底 1、2、3 顶、out 为空；第一次出队后入队 4，随后连续出队两次。三次出队值依次是什么？",
+        "stem": "用 in、out 两栈实现队列：入队压入 in；出队时仅当 out 为空，才把 in 全部逐个弹出并压入 out，然后从 out 弹出一个元素。初始 in 从底到顶为 1、2、3，out 为空。先出队一次，再入队 4，随后连续出队三次。四次出队值依次是什么？",
         "options": [
           {
             "label": "A",
-            "content": "1、4、2"
+            "content": "1、4、2、3"
           },
           {
             "label": "B",
-            "content": "1、2、3"
+            "content": "3、2、1、4"
           },
           {
             "label": "C",
-            "content": "3、2、1"
+            "content": "1、2、3、4"
           },
           {
             "label": "D",
-            "content": "1、2、4"
+            "content": "1、2、4、3"
           }
         ],
-        "correctAnswer": "B",
-        "changedCondition": "入队 4 后的出队次数由一次改为两次，其余状态与规则不变。",
-        "explanation": "转移后 out 依次弹出 1、2、3；新加入 in 的 4 要等 out 清空后才会被取出。",
+        "correctAnswer": "C",
+        "changedCondition": "入队 4 后继续出队，跨过 out 清空的边界，触发第二次从 in 转移。",
+        "explanation": "第一次转移把 1 放到 out 栈顶，先后出队 1、2、3。第四次出队时 out 已空，才将 in 中的 4 转移到 out 并弹出，完整顺序为 1、2、3、4。",
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",

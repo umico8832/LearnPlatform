@@ -39,7 +39,7 @@
       "misconceptions": {
         "A": {
           "title": "以为弹出 4 后可越过 3 取 1",
-          "explanation": "弹出 2 后栈内留着 1；为取 4 要压入 3、4。弹出 4 时栈顶是 3，不能跳过 3 取 1。",
+          "explanation": "弹出 2 后栈内留着 1；为取 4 要压入 3、4。弹出 4 后栈顶变为 3，不能跳过 3 取 1。",
           "viz": {
             "title": "用候选序列逐步检查栈顶",
             "spec": {
@@ -88,7 +88,7 @@
         },
         {
           "level": 3,
-          "text": "例如入栈 1、2、3 后先弹 3，此时还不能弹 1，因为 2 仍压在上面。"
+          "text": "例如按甲、乙、丙入栈，为让乙先出栈，先压入甲、乙，弹出乙。接着要取丙时继续压入丙，再核对栈顶。对本题每个候选也逐步记录待入栈元素和栈顶。"
         }
       ],
       "solution": "要得到 2,1，先压入 1、2，依次弹出；再压入 3、4，依次弹出 4、3，恰好得到 2,1,4,3。",
@@ -102,43 +102,42 @@
         }
       },
       "variant": {
-        "stem": "入栈顺序改为 1、2、3、4、5，下列哪个出栈序列可能？",
+        "stem": "元素按 1、2、3、4 的顺序各入栈一次，栈最多同时容纳 2 个元素，允许入栈与出栈交错。下列哪个序列能在该容量内实现？",
         "options": [
           {
             "label": "A",
-            "content": "2,5,1,4,3"
+            "content": "3,2,1,4"
           },
           {
             "label": "B",
-            "content": "2,1,5,4,3"
+            "content": "2,1,4,3"
           },
           {
             "label": "C",
-            "content": "4,2,3,1,5"
+            "content": "4,3,2,1"
           },
           {
             "label": "D",
-            "content": "3,1,2,5,4"
+            "content": "1,4,3,2"
           }
         ],
         "correctAnswer": "B",
-        "changedCondition": "入栈元素从 4 个改为 5 个，仍各入栈一次。",
-        "explanation": "先压 1、2 并弹出 2、1；再压 3、4、5 并弹出 5、4、3，可得 B。其余候选都要求越过当前栈顶。",
-        "viz": {
-          "title": "用候选序列逐步检查栈顶",
-          "spec": {
-            "scene": "stack",
-            "op": "check",
-            "seq": [2, 1, 5, 4, 3],
-            "pauseAt": ["stack-first-push"]
-          }
-        },
+        "changedCondition": "保持入栈顺序与元素数，只增加最多同时容纳 2 个元素的容量限制。",
+        "explanation": "B 可先压入 1、2，再弹出 2、1；随后压入 3、4，再弹出 4、3，栈内最多 2 个元素。A、C、D 在首次输出 3、4 或输出 1 后再取 4 前，分别需要同时容纳 3、4、3 个元素，超出容量。",
+        "viz": null,
         "source": {
           "kind": "AI_GENERATED",
           "reviewStatus": "PENDING",
           "label": "AI 生成·待审核"
         }
-      }
+      },
+      "vizCandidates": [
+        {
+          "purpose": "变式的栈容量检查",
+          "reason": "现有出栈序列场景不支持容量参数，不能用无限容量演示代替容量判断。",
+          "appliesTo": ["variant"]
+        }
+      ]
     },
     {
       "id": "st-02",
@@ -204,28 +203,28 @@
       "solution": "top 从 -1 经三次入栈变为 0、1、2，再经一次出栈降为 1。",
       "viz": null,
       "variant": {
-        "stem": "同样的顺序栈改为连续入栈 5 个元素，再出栈 1 个，top 的值是多少？",
+        "stem": "某顺序栈的 top 指向下一个可写空位，空栈时 top=0，容量充足。连续入栈 3 个元素，再出栈 1 个元素后，top 的值是多少？",
         "options": [
           {
             "label": "A",
-            "content": "1"
+            "content": "0"
           },
           {
             "label": "B",
-            "content": "2"
+            "content": "1"
           },
           {
             "label": "C",
-            "content": "3"
+            "content": "2"
           },
           {
             "label": "D",
-            "content": "4"
+            "content": "3"
           }
         ],
         "correctAnswer": "C",
-        "changedCondition": "入栈次数由 3 改为 5，出栈一次与 top 表示不变。",
-        "explanation": "从 -1 入栈五次到 4，再出栈一次到 3。",
+        "changedCondition": "操作次数保持不变，只把 top 的表示改为下一空位，并对应规定空栈初值为 0。",
+        "explanation": "top 表示下一空位，也等于当前元素个数；由 0 入栈三次到 3，再出栈一次到 2。当前栈顶元素在下标 top-1=1。",
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",
@@ -298,28 +297,28 @@
       "solution": "GetTop(S) 返回 7 且栈不变；Pop(S) 随后弹出同一个栈顶 7。",
       "viz": null,
       "variant": {
-        "stem": "栈中从底到顶改为 2、5、7、9。先 GetTop，再 Pop 一次，两个返回值依次是什么？",
+        "stem": "栈中从底到顶为 2、5、7。先执行 Pop(S)（弹出并返回栈顶元素），再执行 GetTop(S)（只读取不移除栈顶）。两次返回的元素依次是什么？",
         "options": [
           {
             "label": "A",
-            "content": "7、7"
+            "content": "5、7"
           },
           {
             "label": "B",
-            "content": "9、9"
+            "content": "7、5"
           },
           {
             "label": "C",
-            "content": "9、7"
+            "content": "7、7"
           },
           {
             "label": "D",
-            "content": "7、9"
+            "content": "5、5"
           }
         ],
         "correctAnswer": "B",
-        "changedCondition": "只在原栈顶上新增元素 9，操作顺序不变。",
-        "explanation": "GetTop 读取 9 不移除；随后 Pop 仍弹出 9。",
+        "changedCondition": "初始栈不变，只把 GetTop 与 Pop 的先后顺序交换。",
+        "explanation": "Pop 先返回并移除 7，栈变为底 2、5 顶；GetTop 随后返回 5，栈保持不变。",
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",
@@ -341,7 +340,7 @@
         "reviewStatus": "PENDING",
         "label": "AI 生成·待审核"
       },
-      "stem": "用栈检查括号串 ([)]。从左到右读到第 3 个字符 ) 时，尚未匹配失败前的栈顶是哪一个字符？",
+      "stem": "用栈检查括号串 ([)]。从左到右读到第 3 个字符 )，尚未对这个字符执行任何栈操作时，栈顶是哪一个字符？",
       "options": [
         {
           "label": "A",
@@ -392,15 +391,15 @@
       "solution": "读到第三个字符前，栈从底到顶为 (、[，因此栈顶是 [；当前 ) 与之不匹配。",
       "viz": null,
       "variant": {
-        "stem": "括号串改为 [{]}。从左到右读到第 3 个字符 ] 时，尚未匹配失败前的栈顶是什么？",
+        "stem": "用栈检查括号串 ([])]。从左到右读到第 5 个字符 ]，尚未对这个字符执行任何栈操作时，栈顶是什么？",
         "options": [
           {
             "label": "A",
-            "content": "["
+            "content": "("
           },
           {
             "label": "B",
-            "content": "{"
+            "content": "["
           },
           {
             "label": "C",
@@ -411,9 +410,9 @@
             "content": "栈已空"
           }
         ],
-        "correctAnswer": "B",
-        "changedCondition": "括号串由 ([)] 改为 [{]}，检查方式不变。",
-        "explanation": "读到 ] 前已压入 [、{；更晚压入的 { 位于栈顶。",
+        "correctAnswer": "D",
+        "changedCondition": "在后续右括号到来前加入已成功匹配的括号对，检验弹栈后的状态。",
+        "explanation": "前四个字符 ([]) 已匹配完毕：先用 ] 弹出 [，再用 ) 弹出 (。读到第五个字符 ] 时栈已空，该右括号没有可匹配的左括号。",
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",
@@ -486,28 +485,28 @@
       "solution": "依次压入 3、4，遇 + 得到 7 并入栈；压入 2，遇 * 得到 7×2=14。",
       "viz": null,
       "variant": {
-        "stem": "后缀表达式的首个操作数由 3 改为 5，即 5 4 + 2 *，结果是多少？",
+        "stem": "按栈求值后缀表达式 3 4 - 2 * 的结果是多少？",
         "options": [
           {
             "label": "A",
-            "content": "11"
+            "content": "-2"
           },
           {
             "label": "B",
-            "content": "13"
+            "content": "2"
           },
           {
             "label": "C",
-            "content": "18"
+            "content": "-5"
           },
           {
             "label": "D",
-            "content": "40"
+            "content": "14"
           }
         ],
-        "correctAnswer": "C",
-        "changedCondition": "首个操作数由 3 改为 5，其余符号不变。",
-        "explanation": "先算 5+4=9，再算 9×2=18。",
+        "correctAnswer": "A",
+        "changedCondition": "操作数与符号位置不变，只将第一个运算符由加法改为减法，检验左右操作数次序。",
+        "explanation": "遇到 - 时先弹出的 4 是右操作数，后弹出的 3 是左操作数，计算 3-4=-1 并入栈；再压入 2，遇 * 得到 -1×2=-2。",
         "viz": null,
         "source": {
           "kind": "AI_GENERATED",
@@ -669,8 +668,8 @@
           "explanation": "3,1,2 不合法：弹出 3 后栈顶是 2，1 被压在下面。"
         },
         "D": {
-          "title": "把入栈过程也当作不同输出",
-          "explanation": "题目只统计不同出栈序列，不统计产生同一序列的操作路径。"
+          "title": "把过程当作三个独立二选一",
+          "explanation": "若给三个元素各安排一个独立的二选一决策，会误算成 2³=8。压栈与出栈受输入顺序及当前栈状态约束，不能独立选择；必须检查每个完整输出是否可达。"
         }
       },
       "hints": [

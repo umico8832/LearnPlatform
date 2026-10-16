@@ -23,7 +23,8 @@ class FsrsMigrationIntegrationTest {
             if (initialVersion != null) {
                 configuration.target(initialVersion).load().migrate();
             }
-            Flyway.configure().dataSource(database.getJdbcUrl(), "root", database.getPassword()).load().migrate();
+            Flyway.configure().dataSource(database.getJdbcUrl(), "root", database.getPassword())
+                    .target("109").load().migrate();
             var jdbc = new JdbcTemplate(new DriverManagerDataSource(
                     database.getJdbcUrl(), "root", database.getPassword()));
             assertEquals(109, jdbc.queryForObject(

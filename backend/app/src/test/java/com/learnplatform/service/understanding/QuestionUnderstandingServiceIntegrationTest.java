@@ -39,6 +39,8 @@ class QuestionUnderstandingServiceIntegrationTest extends IntegrationTestBase {
     @BeforeEach void setUp() {
         questionId = jdbc.queryForObject("SELECT question_id FROM question_understanding_content WHERE source_title='系统种子生成：合法出栈序列'", Long.class);
         courseId = jdbc.queryForObject("SELECT course_id FROM question WHERE id=?", Long.class, questionId);
+        jdbc.update("UPDATE question_understanding_content SET review_status='REVIEWED',reviewed_by='test-reviewer',reviewed_time=CURRENT_TIMESTAMP WHERE question_id=?", questionId);
+        jdbc.update("UPDATE ai_variant_question v JOIN question_ai_asset a ON a.id=v.asset_id SET v.review_status='APPROVED',v.reviewed_by=0,v.reviewed_time=CURRENT_TIMESTAMP WHERE a.question_id=?", questionId);
         jdbc.update("INSERT INTO user (id,username,password,role,status,deleted) VALUES (?,?,'test','USER',1,0), (?,?,'test','USER',1,0)",
                 USER, "understanding-owner", OTHER, "understanding-other");
         jdbc.update("INSERT INTO user_course(user_id,course_id) VALUES(?,?)", USER, courseId);
@@ -49,6 +51,8 @@ class QuestionUnderstandingServiceIntegrationTest extends IntegrationTestBase {
         jdbc.update("DELETE FROM question_understanding_hint_receipt WHERE attempt_id IN (SELECT id FROM question_understanding_attempt WHERE user_id IN (?,?))", USER, OTHER);
         jdbc.update("DELETE FROM question_understanding_viz_view WHERE attempt_id IN (SELECT id FROM question_understanding_attempt WHERE user_id IN (?,?))", USER, OTHER);
         jdbc.update("UPDATE question_understanding_hint SET review_status='PENDING',reviewed_by=NULL,reviewed_time=NULL WHERE content_id IN (SELECT id FROM question_understanding_content WHERE question_id=?)", questionId);
+        jdbc.update("UPDATE question_understanding_content SET review_status='PENDING',reviewed_by=NULL,reviewed_time=NULL WHERE question_id=?", questionId);
+        jdbc.update("UPDATE ai_variant_question v JOIN question_ai_asset a ON a.id=v.asset_id SET v.review_status='PENDING',v.reviewed_by=NULL,v.reviewed_time=NULL WHERE a.question_id=?", questionId);
         jdbc.update("DELETE FROM course_learning_event WHERE user_id IN (?,?)", USER, OTHER);
         jdbc.update("DELETE FROM question_understanding_variant_attempt WHERE user_id IN (?,?)", USER, OTHER);
         jdbc.update("DELETE FROM question_understanding_attempt WHERE user_id IN (?,?)", USER, OTHER);
@@ -86,21 +90,42 @@ class QuestionUnderstandingServiceIntegrationTest extends IntegrationTestBase {
     @Test void treeSourceUsesVerifiedTitleAndRequiresReviewer() {
         long treeId = jdbc.queryForObject("""
                 SELECT question_id FROM question_understanding_content
-                WHERE source_exam_question_id IS NOT NULL AND source_verification='VERIFIED'
+                WHERE source_title='2026 年 408 真题 第 3 题'
                 """, Long.class);
-        Map<String, Object> view = service.question(USER, treeId);
-        Map<?, ?> source = (Map<?, ?>) view.get("source");
-        assertEquals("OFFICIAL_EXAM", source.get("kind"));
-        assertEquals("VERIFIED", source.get("verification"));
-        assertEquals("2026 年 408 真题 第 3 题", source.get("title"));
-        assertEquals("树和二叉树", ((Map<?, ?>) view.get("position")).get("chapterName"));
-        jdbc.update("UPDATE question_understanding_content SET source_verified_by=NULL WHERE question_id=?", treeId);
+        jdbc.update("""
+                UPDATE question_understanding_content SET review_status='REVIEWED',reviewed_by='test-reviewer',
+                  reviewed_time=CURRENT_TIMESTAMP,source_verification='VERIFIED',source_verified_by='test-reviewer',
+                  source_verified_time=CURRENT_TIMESTAMP WHERE question_id=?
+                """, treeId);
         try {
+            Map<String, Object> view = service.question(USER, treeId);
+            Map<?, ?> source = (Map<?, ?>) view.get("source");
+            assertEquals("OFFICIAL_EXAM", source.get("kind"));
+            assertEquals("VERIFIED", source.get("verification"));
+            assertEquals("2026 年 408 真题 第 3 题", source.get("title"));
+            assertEquals("树和二叉树", ((Map<?, ?>) view.get("position")).get("chapterName"));
+            jdbc.update("UPDATE question_understanding_content SET source_verified_by=NULL WHERE question_id=?", treeId);
             Map<?, ?> unreviewed = (Map<?, ?>) service.question(USER, treeId).get("source");
             assertEquals("MANUAL", unreviewed.get("kind"));
         } finally {
-            jdbc.update("UPDATE question_understanding_content SET source_verified_by='codex-check, claude-review' WHERE question_id=?", treeId);
+            jdbc.update("""
+                    UPDATE question_understanding_content SET review_status='PENDING',reviewed_by=NULL,
+                      reviewed_time=NULL,source_verification='PENDING',source_verified_by=NULL,
+                      source_verified_time=NULL WHERE question_id=?
+                    """, treeId);
         }
+    }
+
+    @Test void pendingContentAndVariantsAreUnavailableInPublicFlow() {
+        jdbc.update("UPDATE question_understanding_content SET review_status='PENDING',reviewed_by=NULL,reviewed_time=NULL WHERE question_id=?", questionId);
+        assertThrowsCode(1004, () -> service.question(USER, questionId));
+        assertThrowsCode(1004, () -> service.submit(USER, questionId, body("A")));
+        assertEquals(0, count("SELECT COUNT(*) FROM practice_record WHERE user_id=?", USER));
+        jdbc.update("UPDATE question_understanding_content SET review_status='REVIEWED',reviewed_by='test-reviewer',reviewed_time=CURRENT_TIMESTAMP WHERE question_id=?", questionId);
+        jdbc.update("UPDATE ai_variant_question v JOIN question_ai_asset a ON a.id=v.asset_id SET v.review_status='PENDING',v.reviewed_by=NULL,v.reviewed_time=NULL WHERE a.question_id=?", questionId);
+        long origin = ((Number) service.submit(USER, questionId, body("A")).get("attemptId")).longValue();
+        service.reveal(USER, origin);
+        assertThrowsCode(1004, () -> service.variant(USER, origin));
     }
 
     @Test void rechecksPublicationCourseAccessAndFingerprint() throws Exception {

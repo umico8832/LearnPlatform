@@ -298,7 +298,7 @@
         "reviewStatus": "PENDING",
         "label": "AI 生成·待审核"
       },
-      "stem": "带头结点的链队列中，front 指向头结点，rear 指向最后一个数据结点。队列只有一个数据结点 q。出队并释放 q 后，rear 应指向哪里？",
+      "stem": "带头结点的链队列中，front 指向保留的头结点；非空时 rear 指向最后一个数据结点，空队列约定 rear=front 且 front->next=NULL。当前队列只有一个数据结点 q。出队并释放 q 后，rear 应指向哪里？",
       "options": [
         {
           "label": "A",
@@ -321,7 +321,7 @@
       "misconceptions": {
         "A": {
           "title": "把尾指针置 NULL 破坏该表示",
-          "explanation": "此题明确保留头结点；队列空时 front 与 rear 都应指向头结点，而不是 rear=NULL。"
+          "explanation": "题干明确约定空队列 rear=front。删除唯一数据结点后，rear 应回到保留的头结点；置 NULL 不符合本题的空队列表示。"
         },
         "B": {
           "title": "让尾指针悬空",
@@ -349,7 +349,7 @@
       "solution": "删除唯一的数据结点后，头结点仍在，front->next=NULL，rear 必须重新指向 front，表示空队列。",
       "viz": null,
       "variant": {
-        "stem": "同一带头结点链队列改为有两个数据结点 q→r。只出队 q 后，rear 应指向哪里？",
+        "stem": "带头结点的链队列中，front 指向保留的头结点，非空时 rear 指向最后一个数据结点，空队列约定 rear=front 且 front->next=NULL。当前有两个数据结点 q→r。只出队并释放 q 后，rear 应指向哪里？",
         "options": [
           {
             "label": "A",
