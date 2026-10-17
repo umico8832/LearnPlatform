@@ -1,0 +1,1147 @@
+{
+  "schemaVersion": 1,
+  "section": "复杂度：倍增、递归、合并与嵌套求和",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "cx01-01",
+      "topic": "倍增循环的轮数",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2011",
+        "questionNumber": "1",
+        "label": "2011 年 408 真题 第 1 题（重命名变量并明确紧确界）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2011/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "按基本操作计数，将一次算术或比较视为常数时间，忽略整数溢出与大整数位数代价。选取最紧的渐近时间量级。n为可增大的正整数。下面循环的时间量级是？\n\n```c\nint value = 2;\nwhile (value < n / 2)\n    value = 2 * value;\n```",
+      "options": [
+        {
+          "label": "A",
+          "content": "`Θ(log n)`"
+        },
+        {
+          "label": "B",
+          "content": "`Θ(n)`"
+        },
+        {
+          "label": "C",
+          "content": "`Θ(n log n)`"
+        },
+        {
+          "label": "D",
+          "content": "`Θ(n^2)`"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把倍增当逐项加一",
+          "explanation": "循环变量每次乘2，并不是经过到阈值之前的每个整数。"
+        },
+        "C": {
+          "title": "无依据再乘一个n",
+          "explanation": "这里只存在一个倍增循环，循环体的单次工作是常数，没有长度为n的内层工作。"
+        },
+        "D": {
+          "title": "把重复赋值视为两层循环",
+          "explanation": "乘2是一次基本操作，不会为当前数值展开一段循环，不能据此得到平方量级。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "按轮数写出value的变化，而不是先按n猜次数。"
+        },
+        {
+          "level": 2,
+          "text": "经过k轮后，value可写为2的某个幂；将它与终止阈值比较。"
+        },
+        {
+          "level": 3,
+          "text": "把n扩大为原来的两倍，看看倍增到阈值还需要增加多少轮。"
+        }
+      ],
+      "solution": "执行k轮后value为 `2^(k+1)`；到达与n同阶的阈值需要对数轮。阈值除以2与初始值2只影响常数，最紧量级为 `Θ(log n)`。",
+      "viz": null,
+      "variant": {
+        "stem": "按基本操作计数，将一次算术或比较视为常数时间，忽略整数溢出与大整数位数代价。选取最紧的渐近时间量级。保持初值与判断，仅将更新语句改为 `value = value + 2`，时间量级为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`Θ(log n)`"
+          },
+          {
+            "label": "B",
+            "content": "`Θ(n)`"
+          },
+          {
+            "label": "C",
+            "content": "`Θ(n log n)`"
+          },
+          {
+            "label": "D",
+            "content": "`Θ(n^2)`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "只把每轮乘2改为每轮加2。",
+        "explanation": "固定步长要经过与n成正比的轮数才能到达阈值，所以是 `Θ(n)`。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cx01-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "loop-growth",
+            "input": {
+              "nSamples": [
+                16,
+                32,
+                64,
+                128
+              ],
+              "initial": 2,
+              "limit": "n/2",
+              "update": {
+                "kind": "add",
+                "value": 2
+              }
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "并列比较规模翻倍后的循环体次数",
+            "pauseQuestion": "输入规模翻倍，循环轮数是只多常数轮，还是成比例增加？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cx01-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "loop-growth",
+          "input": {
+            "nSamples": [
+              16,
+              32,
+              64,
+              128
+            ],
+            "initial": 2,
+            "limit": "n/2",
+            "update": {
+              "kind": "multiply",
+              "value": 2
+            }
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "并列比较规模翻倍后的循环体次数",
+          "pauseQuestion": "输入规模翻倍，循环轮数是只多常数轮，还是成比例增加？"
+        }
+      ]
+    },
+    {
+      "id": "cx01-02",
+      "topic": "递归数与结果大小的区别",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2012",
+        "questionNumber": "1",
+        "label": "2012 年 408 真题 第 1 题（按基本操作与紧确界表述）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2012/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "按基本操作计数，将一次算术或比较视为常数时间，忽略整数溢出与大整数位数代价。选取最紧的渐近时间量级。n为非负整数，下列阶乘递归的时间量级是？\n\n```c\nint F(int size) {\n    if (size <= 1) return 1;\n    return size * F(size - 1);\n}\n```",
+      "options": [
+        {
+          "label": "A",
+          "content": "`Θ(log n)`"
+        },
+        {
+          "label": "B",
+          "content": "`Θ(n)`"
+        },
+        {
+          "label": "C",
+          "content": "`Θ(n log n)`"
+        },
+        {
+          "label": "D",
+          "content": "`Θ(n^2)`"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把减一当折半",
+          "explanation": "每层参数只减少1，不是除以2，递归深度不是对数。"
+        },
+        "C": {
+          "title": "把每层工作错算成对数",
+          "explanation": "除递归调用外每层只有常数次判断与算术，不能额外乘上对数因子。"
+        },
+        "D": {
+          "title": "把深度和每层参数相乘",
+          "explanation": "本模型下乘法视作常数，不会在第k层执行k轮内层循环。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "一次非基准调用产生几个下一层调用？"
+        },
+        {
+          "level": 2,
+          "text": "写出参数从n到基准值的序列，并单独计算每层的非递归工作。"
+        },
+        {
+          "level": 3,
+          "text": "返回值可能很大，但本题的单位代价模型问的是调用与基本操作次数。"
+        }
+      ],
+      "solution": "对n至少1，调用参数为n到1，每层只有一次规模减一的递归和常数工作，故时间 `Θ(n)`。阶乘值增长快不等于该模型下调用次数增长快。",
+      "viz": null,
+      "variant": {
+        "stem": "按基本操作计数，将一次算术或比较视为常数时间，忽略整数溢出与大整数位数代价。选取最紧的渐近时间量级。仅将返回语句改为下式，基准条件保持不变且不使用记忆化，时间量级为？\n\n```c\nreturn size * F(size - 1) + F(size - 1);\n```",
+        "options": [
+          {
+            "label": "A",
+            "content": "`Θ(n)`"
+          },
+          {
+            "label": "B",
+            "content": "`Θ(n log n)`"
+          },
+          {
+            "label": "C",
+            "content": "`Θ(2^n)`"
+          },
+          {
+            "label": "D",
+            "content": "`Θ(n!)`"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "只增加一次相同子问题的递归调用，不共享计算结果。",
+        "explanation": "每个非基准调用产生两个规模减一的子调用，递推为 `T(n)=2*T(n-1)+Θ(1)`，调用树呈指数增长，时间 `Θ(2^n)`。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cx01-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "recursion-call-tree",
+            "input": {
+              "nSamples": [
+                4,
+                6,
+                8,
+                10
+              ],
+              "decrement": 1,
+              "baseAt": 1,
+              "childrenPerCall": 2,
+              "memoized": false
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "区分递归深度、树结点数和返回值大小",
+            "pauseQuestion": "两个相同参数的调用会自动共享计算结果吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cx01-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "recursion-call-tree",
+          "input": {
+            "nSamples": [
+              4,
+              6,
+              8,
+              10
+            ],
+            "decrement": 1,
+            "baseAt": 1,
+            "childrenPerCall": 1,
+            "memoized": false
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "区分递归深度、树结点数和返回值大小",
+          "pauseQuestion": "两个相同参数的调用会自动共享计算结果吗？"
+        }
+      ]
+    },
+    {
+      "id": "cx01-03",
+      "topic": "两条有序链表的线性合并",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2013",
+        "questionNumber": "1",
+        "label": "2013 年 408 真题 第 1 题（明确两变量与紧确界）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2013/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "两条升序单链表的长度为m、n，二者均至少1且可独立增大。要把所有结点合成一条降序链表，允许重新链接结点。采用高效算法时，最坏时间的最紧量级是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`Θ(n)`"
+        },
+        {
+          "label": "B",
+          "content": "`Θ(m*n)`"
+        },
+        {
+          "label": "C",
+          "content": "`Θ(min(m,n))`"
+        },
+        {
+          "label": "D",
+          "content": "`Θ(max(m,n))`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "只计其中一条链",
+          "explanation": "m可远大于n，所有m个结点也必须进入结果，不能只用n界定总工作。"
+        },
+        "B": {
+          "title": "把有序归并误作笛卡尔比较",
+          "explanation": "有序链表的指针可以单向推进，不必让每个结点与另一链全部结点比较。"
+        },
+        "C": {
+          "title": "忽略较长链的剩余部分",
+          "explanation": "较短链耗尽后，较长链的结点仍要被组织成降序结果，不能只计较短链长度。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先考虑结果必须包含多少个结点。"
+        },
+        {
+          "level": 2,
+          "text": "有序归并与一次线性逆序都只需沿指针推进，不需要反复从头查找。"
+        },
+        {
+          "level": 3,
+          "text": "比较两变量的和与较大者的常数倍关系，判断选项中是否有等价表达。"
+        }
+      ],
+      "solution": "可以先线性归并再线性逆序，也可逐次取较小项头插，时间均为 `Θ(m+n)`。因为 `max(m,n)<=m+n<=2*max(m,n)`，它与选项中的 `Θ(max(m,n))` 等价。",
+      "viz": null,
+      "variant": {
+        "stem": "保持合并任务与算法，只有m改为一个不随输入增长的正整数常数，n独立增大。最紧时间量级为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`Θ(log n)`"
+          },
+          {
+            "label": "B",
+            "content": "`Θ(n)`"
+          },
+          {
+            "label": "C",
+            "content": "`Θ(n log n)`"
+          },
+          {
+            "label": "D",
+            "content": "`Θ(n^2)`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅限制第一条链的长度为固定常数。",
+        "explanation": "此时 `m+n` 与n同阶，仍须处理n个结点，故为 `Θ(n)`。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cx01-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "linked-list-merge-cost",
+            "input": {
+              "mFixed": 4,
+              "nSamples": [
+                4,
+                16,
+                64,
+                256
+              ],
+              "inputOrder": "ascending",
+              "outputOrder": "descending",
+              "strategy": "merge-then-reverse"
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "按结点实际处理次数累计成本",
+            "pauseQuestion": "一条链先耗尽后，另一条链剩余结点能否不经处理就消失？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cx01-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "linked-list-merge-cost",
+          "input": {
+            "mSamples": [
+              4,
+              16,
+              64
+            ],
+            "nSamples": [
+              4,
+              16,
+              64
+            ],
+            "inputOrder": "ascending",
+            "outputOrder": "descending",
+            "strategy": "merge-then-reverse"
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "按结点实际处理次数累计成本",
+          "pauseQuestion": "一条链先耗尽后，另一条链剩余结点能否不经处理就消失？"
+        }
+      ]
+    },
+    {
+      "id": "cx01-04",
+      "topic": "外层倍增与固定内层",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2014",
+        "questionNumber": "1",
+        "label": "2014 年 408 真题 第 1 题（重命名变量与紧确界）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2014/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "按基本操作计数，将一次算术或比较视为常数时间，忽略整数溢出与大整数位数代价。选取最紧的渐近时间量级。n为正整数。下列代码的时间量级是？\n\n```c\nint total = 0;\nfor (int step = 1; step <= n; step *= 2)\n    for (int pos = 1; pos <= n; pos++)\n        total++;\n```",
+      "options": [
+        {
+          "label": "A",
+          "content": "`Θ(log n)`"
+        },
+        {
+          "label": "B",
+          "content": "`Θ(n)`"
+        },
+        {
+          "label": "C",
+          "content": "`Θ(n log n)`"
+        },
+        {
+          "label": "D",
+          "content": "`Θ(n^2)`"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "只算外层轮数",
+          "explanation": "每一轮外层都执行长度为n的内层，不能只计算倍增层数。"
+        },
+        "B": {
+          "title": "只算一轮内层",
+          "explanation": "内层并非只运行一次，外层会反复重置pos并执行完整扫描。"
+        },
+        "D": {
+          "title": "把外层倍增当逐次加一",
+          "explanation": "外层只经过2的幂而非全部1到n，不能按n轮计算。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "分别求外层轮数与每轮内层长度。"
+        },
+        {
+          "level": 2,
+          "text": "本题每轮内层的界限都是n，不跟随step缩短。"
+        },
+        {
+          "level": 3,
+          "text": "若每轮工作相同，可以把轮数与单轮工作相乘；先确认这两个量各自是什么。"
+        }
+      ],
+      "solution": "外层有 `floor(log2(n))+1` 轮，每轮内层执行n次，故基本操作数为 `n*(floor(log2(n))+1)`，量级 `Θ(n log n)`。",
+      "viz": null,
+      "variant": {
+        "stem": "按基本操作计数，将一次算术或比较视为常数时间，忽略整数溢出与大整数位数代价。选取最紧的渐近时间量级。只把外层更新 `step *= 2` 改为 `step++`，其余代码不变，时间量级为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`Θ(log n)`"
+          },
+          {
+            "label": "B",
+            "content": "`Θ(n)`"
+          },
+          {
+            "label": "C",
+            "content": "`Θ(n log n)`"
+          },
+          {
+            "label": "D",
+            "content": "`Θ(n^2)`"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "仅将外层倍增改成固定步长加一。",
+        "explanation": "外层改为n轮，每轮仍执行n次内层，合计平方量级 `Θ(n^2)`。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cx01-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "nested-loop-growth",
+            "input": {
+              "nSamples": [
+                16,
+                32,
+                64,
+                128
+              ],
+              "outerStart": 1,
+              "outerLimit": "n",
+              "outerInclusive": true,
+              "outerAdd": 1,
+              "innerCount": "n"
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "轮数与不变的每轮成本相乘",
+            "pauseQuestion": "内层上界究竟是n还是当前外层变量？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cx01-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "nested-loop-growth",
+          "input": {
+            "nSamples": [
+              16,
+              32,
+              64,
+              128
+            ],
+            "outerStart": 1,
+            "outerLimit": "n",
+            "outerInclusive": true,
+            "outerFactor": 2,
+            "innerCount": "n"
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "轮数与不变的每轮成本相乘",
+          "pauseQuestion": "内层上界究竟是n还是当前外层变量？"
+        }
+      ]
+    },
+    {
+      "id": "cx01-05",
+      "topic": "累加增长的停止条件",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2017",
+        "questionNumber": "1",
+        "label": "2017 年 408 真题 第 1 题（等价展开自增并明确紧确界）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2017/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "按基本操作计数，将一次算术或比较视为常数时间，忽略整数溢出与大整数位数代价。选取最紧的渐近时间量级。n为正整数。下列函数的时间量级是？\n\n```c\nint F(int n) {\n    int k = 0, sum = 0;\n    while (sum < n) {\n        k++;\n        sum += k;\n    }\n    return k;\n}\n```",
+      "options": [
+        {
+          "label": "A",
+          "content": "`Θ(log n)`"
+        },
+        {
+          "label": "B",
+          "content": "`Θ(n^(1/2))`"
+        },
+        {
+          "label": "C",
+          "content": "`Θ(n)`"
+        },
+        {
+          "label": "D",
+          "content": "`Θ(n log n)`"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把累加误作倍增",
+          "explanation": "sum并非每轮乘一个常数，它累加的是逐渐增大的k，须从累加和判断。"
+        },
+        "C": {
+          "title": "把n当作固定步长终点",
+          "explanation": "循环不是每次给sum加1；随着k增大，每轮增加量也增大，轮数少于线性。"
+        },
+        "D": {
+          "title": "把求和写法误解为内层循环",
+          "explanation": "代码每轮只有一次加法，不为当前k再做一段k次循环；应解停止条件而非再乘一层。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "执行t轮后，sum等于哪一段整数的和？"
+        },
+        {
+          "level": 2,
+          "text": "先表达sum随轮数的增长，再反解达到n所需的轮数。"
+        },
+        {
+          "level": 3,
+          "text": "停止条件看sum，而不是看k；不要直接把k的更新步长当成总轮数。"
+        }
+      ],
+      "solution": "执行t轮后sum为 `t*(t+1)/2`。首次达到n时t与平方根n同阶，每轮常数工作，所以时间 `Θ(n^(1/2))`。",
+      "viz": null,
+      "variant": {
+        "stem": "按基本操作计数，将一次算术或比较视为常数时间，忽略整数溢出与大整数位数代价。选取最紧的渐近时间量级。仅把循环体的累加语句由 `sum += k` 改为 `sum += k*k`，其余不变，时间量级为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`Θ(log n)`"
+          },
+          {
+            "label": "B",
+            "content": "`Θ(n^(1/3))`"
+          },
+          {
+            "label": "C",
+            "content": "`Θ(n^(1/2))`"
+          },
+          {
+            "label": "D",
+            "content": "`Θ(n)`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "只将每轮累加当前k改为累加当前k的平方。",
+        "explanation": "t轮后的平方和为 `t*(t+1)*(2*t+1)/6`，与t的三次方同阶。反解达到n所需轮数得到 `Θ(n^(1/3))`。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cx01-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "accumulating-loop",
+            "input": {
+              "nSamples": [
+                16,
+                64,
+                256,
+                1024
+              ],
+              "initialIndex": 0,
+              "initialSum": 0,
+              "incrementIndex": 1,
+              "termPower": 2,
+              "stop": "sum>=n"
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "先求累计量与轮数关系，再反解规模",
+            "pauseQuestion": "sum的增长阶与循环轮数的增长阶是同一个量吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cx01-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "accumulating-loop",
+          "input": {
+            "nSamples": [
+              16,
+              64,
+              256,
+              1024
+            ],
+            "initialIndex": 0,
+            "initialSum": 0,
+            "incrementIndex": 1,
+            "termPower": 1,
+            "stop": "sum>=n"
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "先求累计量与轮数关系，再反解规模",
+          "pauseQuestion": "sum的增长阶与循环轮数的增长阶是同一个量吗？"
+        }
+      ]
+    },
+    {
+      "id": "cx01-06",
+      "topic": "平方阈值与常数步长",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2019",
+        "questionNumber": "1",
+        "label": "2019 年 408 真题 第 1 题（重命名变量与紧确界）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2019/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "按基本操作计数，将一次算术或比较视为常数时间，忽略整数溢出与大整数位数代价。选取最紧的渐近时间量级。n为非负整数。代码如下，其时间量级是？\n\n```c\nint value = 0;\nwhile (n >= (value + 1) * (value + 1))\n    value = value + 1;\n```",
+      "options": [
+        {
+          "label": "A",
+          "content": "`Θ(log n)`"
+        },
+        {
+          "label": "B",
+          "content": "`Θ(n^(1/2))`"
+        },
+        {
+          "label": "C",
+          "content": "`Θ(n)`"
+        },
+        {
+          "label": "D",
+          "content": "`Θ(n^2)`"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把平方条件当作变量倍增",
+          "explanation": "变量仍每轮加1；平方出现在判断中，不代表循环变量每次乘2。"
+        },
+        "C": {
+          "title": "忽略条件中的平方",
+          "explanation": "终点由平方与n的关系决定，不能把value要到达的值直接当n。"
+        },
+        "D": {
+          "title": "把乘法当作重复嵌套工作",
+          "explanation": "单位代价模型下，条件中的乘法是常数操作，不会执行与n同阶的内层循环。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "执行t轮时，value与t是什么关系？"
+        },
+        {
+          "level": 2,
+          "text": "将循环条件改写为对value的数量级限制。"
+        },
+        {
+          "level": 3,
+          "text": "区别“每轮变量怎样变化”和“到什么数值时停止”，两者共同决定轮数。"
+        }
+      ],
+      "solution": "原代码每轮value加1，最终为向下取整的平方根n，因此轮数 `floor(sqrt(n))`，时间 `Θ(n^(1/2))`。",
+      "viz": null,
+      "variant": {
+        "stem": "按基本操作计数，将一次算术或比较视为常数时间，忽略整数溢出与大整数位数代价。选取最紧的渐近时间量级。保持初值与平方判断，仅将每轮更新改为 `value = value + 2`。只问时间量级，应选？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`Θ(n^(1/2))`"
+          },
+          {
+            "label": "B",
+            "content": "`Θ(n)`"
+          },
+          {
+            "label": "C",
+            "content": "`Θ(n log n)`"
+          },
+          {
+            "label": "D",
+            "content": "`Θ(n^2)`"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "只把循环变量的固定加一步长改为加二。",
+        "explanation": "value每轮增加常数2，停止阈值仍在平方根n附近。轮数只改变常数因子，仍为 `Θ(n^(1/2))`；此处不要求新代码仍返回原来的整数平方根。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cx01-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "squared-guard-loop",
+            "input": {
+              "nSamples": [
+                16,
+                64,
+                256,
+                1024
+              ],
+              "initial": 0,
+              "guardPower": 2,
+              "guardOffset": 1,
+              "stride": 2
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "区分固定步长改变与终点量级改变",
+            "pauseQuestion": "步长乘上固定常数，是否就改变渐近增长阶？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cx01-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "squared-guard-loop",
+          "input": {
+            "nSamples": [
+              16,
+              64,
+              256,
+              1024
+            ],
+            "initial": 0,
+            "guardPower": 2,
+            "guardOffset": 1,
+            "stride": 1
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "区分固定步长改变与终点量级改变",
+          "pauseQuestion": "步长乘上固定常数，是否就改变渐近增长阶？"
+        }
+      ]
+    },
+    {
+      "id": "cx01-07",
+      "topic": "内层随外层倍增的几何级数",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2022",
+        "questionNumber": "1",
+        "label": "2022 年 408 真题 第 1 题（重命名变量与紧确界）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2022/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "按基本操作计数，将一次算术或比较视为常数时间，忽略整数溢出与大整数位数代价。选取最紧的渐近时间量级。n为正整数。下列代码的时间量级是？\n\n```c\nint total = 0;\nfor (int length = 1; length < n; length *= 2)\n    for (int pos = 0; pos < length; pos++)\n        total++;\n```",
+      "options": [
+        {
+          "label": "A",
+          "content": "`Θ(log n)`"
+        },
+        {
+          "label": "B",
+          "content": "`Θ(n)`"
+        },
+        {
+          "label": "C",
+          "content": "`Θ(n log n)`"
+        },
+        {
+          "label": "D",
+          "content": "`Θ(n^2)`"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "只计外层",
+          "explanation": "外层每轮不只有常数工作，还执行length次内层。"
+        },
+        "C": {
+          "title": "把所有内层都按最大长度计算",
+          "explanation": "各轮内层长度是逐次倍增的，不能把每一轮都当成完整n次扫描。"
+        },
+        "D": {
+          "title": "把几何级数当三角求和",
+          "explanation": "length只取2的幂，求和对象不是1到n全部整数。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "列出各轮内层执行次数，而非直接把两个上界相乘。"
+        },
+        {
+          "level": 2,
+          "text": "这里得到的是等比增长的一列次数。"
+        },
+        {
+          "level": 3,
+          "text": "比较这一列前面所有项与最后一项的数量级关系，判断总和是否再多一个对数因子。"
+        }
+      ],
+      "solution": "各轮内层为1、2、4等直到小于n的最大2幂，和是末项的常数倍，整体为 `Θ(n)`。外层虽有对数轮，但不能把每轮都重复按n计。",
+      "viz": null,
+      "variant": {
+        "stem": "按基本操作计数，将一次算术或比较视为常数时间，忽略整数溢出与大整数位数代价。选取最紧的渐近时间量级。仅把内层条件 `pos < length` 改为 `pos < n`，其他不变，时间量级为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`Θ(log n)`"
+          },
+          {
+            "label": "B",
+            "content": "`Θ(n)`"
+          },
+          {
+            "label": "C",
+            "content": "`Θ(n log n)`"
+          },
+          {
+            "label": "D",
+            "content": "`Θ(n^2)`"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "只将内层上界改为固定的n。",
+        "explanation": "外层仍是对数轮，每轮内层都执行n次，因此为 `Θ(n log n)`。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cx01-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "geometric-inner-sum",
+            "input": {
+              "nSamples": [
+                16,
+                32,
+                64,
+                128
+              ],
+              "outerStart": 1,
+              "outerFactor": 2,
+              "outerExclusive": true,
+              "innerCount": "n"
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "用实际每轮工作求和，避免松上界",
+            "pauseQuestion": "外层有对数轮，是否意味着每轮都执行n次内层？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cx01-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "geometric-inner-sum",
+          "input": {
+            "nSamples": [
+              16,
+              32,
+              64,
+              128
+            ],
+            "outerStart": 1,
+            "outerFactor": 2,
+            "outerExclusive": true,
+            "innerCount": "outer"
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "用实际每轮工作求和，避免松上界",
+          "pauseQuestion": "外层有对数轮，是否意味着每轮都执行n次内层？"
+        }
+      ]
+    },
+    {
+      "id": "cx01-08",
+      "topic": "平方根外层与三角内层",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2025",
+        "questionNumber": "1",
+        "label": "2025 年 408 真题 第 1 题（重命名变量与紧确界）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2025/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "按基本操作计数，将一次算术或比较视为常数时间，忽略整数溢出与大整数位数代价。选取最紧的渐近时间量级。n为正整数。下面代码的时间量级是？\n\n```c\nint total = 0;\nfor (int row = 0; row * row < n; row++)\n    for (int col = 0; col < row; col++)\n        total++;\n```",
+      "options": [
+        {
+          "label": "A",
+          "content": "`Θ(log n)`"
+        },
+        {
+          "label": "B",
+          "content": "`Θ(n)`"
+        },
+        {
+          "label": "C",
+          "content": "`Θ(n log n)`"
+        },
+        {
+          "label": "D",
+          "content": "`Θ(n^2)`"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "只看到一次复合判断",
+          "explanation": "平方判断使外层轮数与平方根有关，不是对数轮。"
+        },
+        "C": {
+          "title": "套用了不相干的倍增层数",
+          "explanation": "外层每轮加1，不按倍数增长；内层次数需按row的真实取值累加。"
+        },
+        "D": {
+          "title": "把外层和内层都按n计",
+          "explanation": "row只增长到平方根n附近，内层也不达到n，两个线性于n的上界都不紧。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先从外层条件确定row最多增长到什么量级。"
+        },
+        {
+          "level": 2,
+          "text": "内层次数随row从0逐渐增加，需对这个范围求和。"
+        },
+        {
+          "level": 3,
+          "text": "若外层共t轮，先用t表达内层总次数，再把t与n的关系代回。"
+        }
+      ],
+      "solution": "设外层轮数t与平方根n同阶，内层总次数为0至t减一的和，等于 `t*(t-1)/2`，所以时间 `Θ(t^2)=Θ(n)`。",
+      "viz": null,
+      "variant": {
+        "stem": "按基本操作计数，将一次算术或比较视为常数时间，忽略整数溢出与大整数位数代价。选取最紧的渐近时间量级。仅将内层条件改为 `col < n`，其余不变，时间量级为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`Θ(n^(1/2))`"
+          },
+          {
+            "label": "B",
+            "content": "`Θ(n)`"
+          },
+          {
+            "label": "C",
+            "content": "`Θ(n^(3/2))`"
+          },
+          {
+            "label": "D",
+            "content": "`Θ(n^2)`"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "只将内层上界从当前row改为固定n。",
+        "explanation": "外层仍有平方根量级的轮数，每轮内层执行n次，故为 `Θ(n^(3/2))`。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cx01-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "triangular-inner-sum",
+            "input": {
+              "nSamples": [
+                16,
+                64,
+                256,
+                1024
+              ],
+              "outerStart": 0,
+              "outerGuard": "index^2<n",
+              "outerStride": 1,
+              "innerCount": "n"
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "将外层轮数代入三角和，而非直接猜n方",
+            "pauseQuestion": "外层规模是平方根n时，内层逐渐增加的总和是什么量级？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cx01-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "triangular-inner-sum",
+          "input": {
+            "nSamples": [
+              16,
+              64,
+              256,
+              1024
+            ],
+            "outerStart": 0,
+            "outerGuard": "index^2<n",
+            "outerStride": 1,
+            "innerCount": "outer"
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "将外层轮数代入三角和，而非直接猜n方",
+          "pauseQuestion": "外层规模是平方根n时，内层逐渐增加的总和是什么量级？"
+        }
+      ]
+    }
+  ]
+}
