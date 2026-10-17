@@ -64,8 +64,8 @@ export const learnerRoutes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Home',
-    component: () => import('@/views/home/HomeView.vue'),
-    meta: { requiresAuth: false, title: '从选错的那一项讲起' },
+    component: () => import('@/views/home/showcase/ShowcaseHome.vue'),
+    meta: { requiresAuth: false, title: 'Learn to understand' },
   },
   ...[
     ['product', 'Product', '产品'],
