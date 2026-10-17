@@ -1,7 +1,6 @@
 export {
   Spring,
   Spring2,
-  prefersReducedMotion,
   springs,
   stepSpring,
   unregister,

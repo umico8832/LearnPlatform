@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useReducedMotion } from '@/composables/useReducedMotion'
 
 const props = withDefaults(
   defineProps<{
@@ -13,7 +12,6 @@ const props = withDefaults(
   { size: 'md', tone: 'primary', showLabel: true },
 )
 
-const { reducedMotion } = useReducedMotion()
 const percent = computed(() => (Number.isFinite(props.percent) ? Math.max(0, Math.min(100, props.percent)) : null))
 const displayedPercent = computed(() => (percent.value === null ? '—' : `${Math.round(percent.value)}%`))
 const valueText = computed(() =>
@@ -27,7 +25,6 @@ const dashOffset = computed(() => 100 - (percent.value ?? 0))
     class="lp-progress-ring"
     :data-size="size"
     :data-tone="tone"
-    :data-reduced-motion="reducedMotion"
     role="progressbar"
     :aria-label="label"
     :aria-valuenow="percent ?? undefined"
@@ -94,9 +91,6 @@ circle {
 }
 .lp-progress-ring[data-tone='danger'] {
   color: var(--lp-danger);
-}
-.lp-progress-ring[data-reduced-motion='true'] .lp-progress-ring-value {
-  transition: none;
 }
 .lp-progress-ring-label {
   position: absolute;

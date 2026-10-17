@@ -61,9 +61,4 @@ const rowWidths = ['92%', '100%', '78%', '96%', '84%']
     background-position: -200% 0;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .lp-skeleton-line {
-    animation: none;
-  }
-}
 </style>

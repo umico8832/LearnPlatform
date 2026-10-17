@@ -39,18 +39,3 @@
   opacity: 0;
   transform: translateY(var(--lp-motion-distance));
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .lp-content-enter-from,
-  .lp-content-leave-to,
-  .lp-disclosure-enter-from,
-  .lp-disclosure-leave-to,
-  .lp-list-enter-from,
-  .lp-list-leave-to {
-    transform: none;
-  }
-
-  .lp-list-move {
-    transition: none;
-  }
-}

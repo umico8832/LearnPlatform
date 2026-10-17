@@ -358,11 +358,6 @@ onBeforeUnmount(() => {
 .facts-error :deep(.el-button:focus-visible) {
   box-shadow: var(--lp-shadow-focus);
 }
-@media (prefers-reduced-motion: reduce) {
-  .fact-row {
-    transition-duration: var(--lp-duration-fast);
-  }
-}
 @media (max-width: 767px) {
   .facts-error {
     align-items: stretch;

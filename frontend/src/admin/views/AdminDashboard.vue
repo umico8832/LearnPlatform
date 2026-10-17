@@ -124,20 +124,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { LpEmptyState, LpStatePanel } from '@/components/ui'
 import { getAdminStatisticsOverview, type AdminStatisticsOverview } from '@/api/statistics'
 import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
 import { errorMessage } from '@/utils/errors'
-import { useReducedMotion } from '@/composables/useReducedMotion'
 import { useDashboardCharts } from './useDashboardCharts'
 
 const stats = ref<AdminStatisticsOverview | null>(null)
 const loading = ref(false)
 const error = ref('')
 const updateTime = ref('')
-const { reducedMotion } = useReducedMotion()
 const { activityChartRef, questionChartRef, renderCharts, disposeCharts } = useDashboardCharts()
 let generation = 0
 let alive = true
@@ -178,7 +176,7 @@ async function loadDashboard() {
     if (valid(version, session)) loading.value = false
   }
   await nextTick()
-  if (valid(version, session) && !error.value && stats.value) renderCharts(stats.value, reducedMotion.value)
+  if (valid(version, session) && !error.value && stats.value) renderCharts(stats.value)
 }
 const unsubscribe = onAuthSessionChange(() => {
   generation++
@@ -188,9 +186,7 @@ const unsubscribe = onAuthSessionChange(() => {
   disposeCharts()
   if (isAuthenticated()) void loadDashboard()
 })
-watch(reducedMotion, () => {
-  if (stats.value && !loading.value && !error.value) renderCharts(stats.value, reducedMotion.value)
-})
+
 onMounted(loadDashboard)
 onBeforeUnmount(() => {
   alive = false

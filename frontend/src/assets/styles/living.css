@@ -190,14 +190,6 @@
   --var-color: var(--lt-var-graphite);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .lt {
-    --lt-dur-snappy: 0ms;
-    --lt-dur-layout: 0ms;
-    --lt-dur-fade: 0ms;
-  }
-}
-
 /* ------------------------------------------------------------------ page */
 
 html.lt,

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { Spring, springs, stepSpring } from '@/motion'
 
 function run(spring: Spring, seconds: number, dt: number) {
@@ -6,8 +6,6 @@ function run(spring: Spring, seconds: number, dt: number) {
 }
 
 describe('弹簧核心', () => {
-  afterEach(() => vi.restoreAllMocks())
-
   it('解析解与帧率无关：60 帧与 240 帧走到同一时刻的位置一致', () => {
     const a = new Spring(0, springs.pointer)
     const b = new Spring(0, springs.pointer)
@@ -75,25 +73,5 @@ describe('弹簧核心', () => {
     spring.kick(-300)
     expect(spring.velocity).toBe(-300)
     expect(spring.step(1 / 60)).toBe(true)
-  })
-})
-
-describe('减弱动效', () => {
-  afterEach(() => {
-    vi.restoreAllMocks()
-    vi.resetModules()
-  })
-
-  it('系统要求减弱动效时弹簧直接到达目标', async () => {
-    vi.resetModules()
-    vi.spyOn(window, 'matchMedia').mockImplementation(
-      (query: string) => ({ matches: query.includes('reduce'), media: query }) as MediaQueryList,
-    )
-    const motion = await import('@/motion')
-    const spring = new motion.Spring(0, motion.springs.layout)
-    spring.set(80)
-    expect(spring.step(1 / 60)).toBe(false)
-    expect(spring.value).toBe(80)
-    expect(motion.springAnimate(document.createElement('div'), [{ opacity: 0 }, { opacity: 1 }])).toBeNull()
   })
 })

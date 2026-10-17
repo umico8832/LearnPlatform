@@ -556,16 +556,6 @@ onUnmounted(() => {
   color: var(--lp-warning);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .shortcut-item {
-    transition: none;
-  }
-
-  .shortcut-item:hover {
-    transform: none;
-  }
-}
-
 @media (max-width: 900px) {
   .profile-layout {
     grid-template-columns: 1fr;

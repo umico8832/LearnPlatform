@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { RotateCcw } from '@lucide/vue'
 import { LtButton, LtCard } from '@/components/living'
 import { useLivingTheme } from '@/composables/useLivingTheme'
-import { blurIn, prefersReducedMotion } from '@/motion'
+import { blurIn } from '@/motion'
 import { VizPlayer } from '@/viz'
 import type { Misconception, UnderstandingOption } from '@/api/understanding'
 import { useUserStore } from '@/stores/user'
@@ -186,7 +186,7 @@ async function present(target: () => HTMLElement | null, distance = 10) {
   const top = el.getBoundingClientRect().top
   if (top > window.innerHeight * 0.55) {
     const by = top - window.innerHeight * 0.38
-    window.scrollTo({ top: window.scrollY + by, behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
+    window.scrollTo({ top: window.scrollY + by, behavior: 'smooth' })
   }
   el.querySelector<HTMLElement>('[data-focus]')?.focus({ preventScroll: true })
 }
@@ -648,12 +648,6 @@ p.reading {
 @keyframes pending {
   to {
     opacity: 0.45;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .skeleton {
-    animation: none;
   }
 }
 

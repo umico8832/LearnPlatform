@@ -2,7 +2,6 @@ import { expect, test } from '@playwright/test'
 
 test('匿名未知地址可通过404返回首页，学习入口仍要求登录', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/unknown-learning-page')
   await expect(page).toHaveURL(/\/unknown-learning-page$/)
   await expect(page).toHaveTitle('页面不存在 · LearnPlatform')

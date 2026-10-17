@@ -322,11 +322,4 @@ defineExpose({
     transform: rotate(45deg) scale(1.25);
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .viz-diamond[data-state='asking'] {
-    animation: none;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--lt-purple) 30%, transparent);
-  }
-}
 </style>

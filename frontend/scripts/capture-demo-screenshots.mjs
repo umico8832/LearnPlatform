@@ -65,7 +65,6 @@ async function recordSegment(name, run) {
     baseURL: learnerURL,
     storageState,
     viewport,
-    reducedMotion: 'no-preference',
     recordVideo: { dir: path.join(outputDir, 'raw-recordings'), size: viewport },
   })
   const page = await context.newPage()
@@ -114,7 +113,7 @@ async function main() {
   await mkdir(outputDir, { recursive: true })
   browser = await chromium.launch({ headless: true })
   try {
-    const publicContext = await browser.newContext({ viewport, reducedMotion: 'reduce' })
+    const publicContext = await browser.newContext({ viewport })
     const publicPage = await publicContext.newPage()
     watchPage(publicPage)
     await publicPage.goto(learnerURL)
@@ -123,7 +122,7 @@ async function main() {
     await publicContext.close()
 
     const fixture = await prepareDemoFixtures(browser, { learnerURL, adminURL })
-    const context = await browser.newContext({ baseURL: learnerURL, viewport, reducedMotion: 'reduce' })
+    const context = await browser.newContext({ baseURL: learnerURL, viewport })
     const setup = await context.newPage()
     watchPage(setup)
     await login(setup, learnerURL, fixture.user)
@@ -248,9 +247,6 @@ async function main() {
       await page.goto('/profile')
       await expect(page.getByTestId('gamification-profile')).toBeVisible()
       await capture(page, '11-profile', '本轮学习后的真实日历、目标与等级')
-      await page.emulateMedia({ reducedMotion: 'reduce' })
-      await page.getByTestId('gamification-profile').scrollIntoViewIfNeeded()
-      await capture(page, '12-profile-reduced-motion', '减弱动效下的真实学习记录')
       const summary = await api(page, '/gamification/summary')
       manifest.facts.learning = {
         totalXp: summary.totalXp,

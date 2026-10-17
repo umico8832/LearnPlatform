@@ -114,7 +114,6 @@ test('课程库导航、全局搜索和键盘结果选择保持焦点与语义',
 })
 
 test('搜索错误重试、迟到响应和空结果不会混淆状态', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' })
   let abortFirstSearch = true
   await page.route(searchApi, async (route) => {
     if (abortFirstSearch) {
@@ -128,7 +127,7 @@ test('搜索错误重试、迟到响应和空结果不会混淆状态', async ({
   const input = dialog.getByRole('combobox', { name: '搜索题目、课程或知识点' })
   await input.fill('Java')
   await expect(dialog.getByText('搜索暂时无法完成，请重试')).toBeVisible()
-  await maybeScreenshot(page, 'navigation-search-error-reduced-motion')
+  await maybeScreenshot(page, 'navigation-search-error')
   await dialog.getByRole('button', { name: '重试' }).click()
   await expect(dialog.getByRole('option').first()).toBeVisible()
   await page.unroute(searchApi)
@@ -153,7 +152,7 @@ test('搜索错误重试、迟到响应和空结果不会混淆状态', async ({
   await input.fill('')
   await input.fill('Java')
   await expect(dialog.locator('.search-state')).toBeVisible()
-  await maybeScreenshot(page, 'navigation-search-loading-reduced-motion')
+  await maybeScreenshot(page, 'navigation-search-loading')
   await expect.poll(() => javaRequestSeen, { timeout: 15_000 }).toBe(true)
   await input.fill('408')
   await expect(dialog.getByRole('option').first()).toBeVisible()
@@ -173,7 +172,7 @@ test('搜索错误重试、迟到响应和空结果不会混淆状态', async ({
   await expect(dialog.getByText('未找到匹配结果')).toBeVisible()
   await expect(dialog.getByRole('option')).toHaveCount(0)
   await expect(input).toHaveAttribute('aria-expanded', 'true')
-  await maybeScreenshot(page, 'navigation-search-empty-reduced-motion')
+  await maybeScreenshot(page, 'navigation-search-empty')
 })
 
 test('课程空间返回恢复滚动位置和面包屑', async ({ page, browser }) => {

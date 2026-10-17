@@ -631,14 +631,4 @@ watch(
     flex-direction: column;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .countdown-warn {
-    animation: none;
-  }
-
-  .option-item {
-    transition: none;
-  }
-}
 </style>

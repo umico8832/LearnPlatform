@@ -95,11 +95,4 @@ const rows = computed(() =>
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .viz-var[data-changed='true'] {
-    animation: none;
-    background: color-mix(in srgb, var(--var-color, var(--lt-accent)) 14%, var(--lt-fill-3));
-  }
-}
 </style>

@@ -30,7 +30,6 @@ vi.mock('@/motion', () => ({
   springAnimate: vi.fn(),
   springs: { pointer: {} },
   blurIn: vi.fn(),
-  prefersReducedMotion: () => true,
 }))
 
 import QuestionUnderstandingView from '@/views/question/QuestionUnderstandingView.vue'

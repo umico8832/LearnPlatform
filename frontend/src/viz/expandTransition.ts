@@ -1,5 +1,4 @@
 import { nextTick } from 'vue'
-import { prefersReducedMotion } from '@/motion'
 
 const NAME = 'viz-stage'
 /** Longest wait for the full page before the transition gives up and just cross-fades. */
@@ -10,7 +9,7 @@ let announce: (() => void) | null = null
 let origin: HTMLElement | null = null
 
 function canTransition(): boolean {
-  return typeof document.startViewTransition === 'function' && !prefersReducedMotion()
+  return typeof document.startViewTransition === 'function'
 }
 
 /** Called by a full-size player once its first frame is on screen. */

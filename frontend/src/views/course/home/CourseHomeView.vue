@@ -355,12 +355,6 @@ onMounted(load)
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .skeleton {
-    animation: none;
-  }
-}
-
 .sr-only {
   position: absolute;
   width: 1px;

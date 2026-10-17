@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useAnimatedNumber } from '@/composables/useAnimatedNumber'
-import { useReducedMotion } from '@/composables/useReducedMotion'
 /**
  * 学习事实统计：一个安静的数值 + 标签 + 说明。
  * 只展示真实计数，不允许包装成掌握度或能力评分。
@@ -16,14 +15,13 @@ const props = withDefaults(
   { note: '', tone: 'default' },
 )
 
-const { reducedMotion } = useReducedMotion()
 const numericValue = computed(() =>
   typeof props.value === 'number' && Number.isFinite(props.value) ? props.value : null,
 )
 const accessibleValue = computed(() =>
   typeof props.value === 'number' && !Number.isFinite(props.value) ? '—' : props.value,
 )
-const { value: displayedNumber, animateTo } = useAnimatedNumber(numericValue.value ?? 0, { reducedMotion })
+const { value: displayedNumber, animateTo } = useAnimatedNumber(numericValue.value ?? 0)
 watch(
   numericValue,
   (next) => {

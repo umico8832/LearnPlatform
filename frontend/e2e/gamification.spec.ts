@@ -325,12 +325,11 @@ test.describe('安静学习投入记录', () => {
     expect(correct.data.correct).toBe(true)
   })
 
-  test('减少动态时仍保留真实判分信息且不渲染彩纸画布', async ({ page, browser }) => {
+  test('作答反馈保留真实判分信息且不渲染彩纸画布', async ({ page, browser }) => {
     test.setTimeout(90_000)
-    await page.emulateMedia({ reducedMotion: 'reduce' })
     await loginAsLearner(page)
     await ensureLearnerCourse(page)
-    const fixture = await createFixture(browser, page, `reduced-motion-${Date.now()}`)
+    const fixture = await createFixture(browser, page, `answer-feedback-${Date.now()}`)
     await loadFavoriteQuestions(page, [fixture.questions[0]])
     await page.goto('/practice/session')
     const result = await submitPracticeAnswer(page, fixture.questions[0].answer)

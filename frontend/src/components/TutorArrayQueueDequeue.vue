@@ -221,9 +221,4 @@ function next() {
     margin: 0;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .array-cell {
-    transition: none;
-  }
-}
 </style>

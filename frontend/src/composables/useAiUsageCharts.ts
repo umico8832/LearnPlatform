@@ -1,10 +1,9 @@
-import { onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, type Ref } from 'vue'
 import * as echarts from 'echarts/core'
 import { BarChart, LineChart, PieChart } from 'echarts/charts'
 import { GridComponent, LegendComponent, TitleComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import type { AiUsageOverview } from '@/api/aiUsage'
-import { useReducedMotion } from '@/composables/useReducedMotion'
 
 echarts.use([
   BarChart,
@@ -18,7 +17,6 @@ echarts.use([
 ])
 
 export function useAiUsageCharts(overview: Ref<AiUsageOverview | null>) {
-  const { reducedMotion } = useReducedMotion()
   const trendChartRef = ref<HTMLElement>()
   const functionChartRef = ref<HTMLElement>()
   const modelChartRef = ref<HTMLElement>()
@@ -123,7 +121,7 @@ export function useAiUsageCharts(overview: Ref<AiUsageOverview | null>) {
   const token = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(`--lp-${name}`).trim()
   function chartStyle() {
     return {
-      animation: !reducedMotion.value,
+      animation: true,
       animationDuration: 180,
       animationDurationUpdate: 180,
       textStyle: { color: token('text-secondary'), fontFamily: token('font-sans') },
@@ -139,9 +137,7 @@ export function useAiUsageCharts(overview: Ref<AiUsageOverview | null>) {
     chart?.dispose()
     return null
   }
-  watch(reducedMotion, () => {
-    if (trendChart || functionChart || modelChart) renderCharts()
-  })
+
   function handleResize() {
     trendChart?.resize()
     functionChart?.resize()

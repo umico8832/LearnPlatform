@@ -25,7 +25,6 @@ async function findPublishedPaper(page: Page, title: string) {
 test('试卷学习的补充解析遵守 Markdown 响应契约', async ({ page, browser }, testInfo) => {
   test.setTimeout(90_000)
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.emulateMedia({ reducedMotion: 'reduce' })
   await createLearnerAndLogin(browser, page, 'exam-learning-markdown')
   await page.goto('/courses')
   await page

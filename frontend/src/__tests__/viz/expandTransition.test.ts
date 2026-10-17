@@ -1,15 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { collapseInto, expandInto } from '@/viz/expandTransition'
 import VizPlayer from '@/viz/VizPlayer.vue'
 import { Player } from '@/viz/engine/player'
-
-const motion = vi.hoisted(() => ({ reduced: true }))
-vi.mock('@/motion', async (original) => ({
-  ...(await original<typeof import('@/motion')>()),
-  prefersReducedMotion: () => motion.reduced,
-}))
 
 const spec = { scene: 'stack', op: 'check', seq: [3, 2, 1], pauseAt: [] }
 const router = createRouter({
@@ -17,12 +11,8 @@ const router = createRouter({
   routes: [{ path: '/viz/:scene', name: 'Visualization', component: { template: '<div />' } }],
 })
 
-afterEach(() => {
-  motion.reduced = true
-})
-
 describe('visualization expansion', () => {
-  it('navigates directly when no origin card exists or motion is reduced', async () => {
+  it('navigates directly when no origin card exists or View Transitions are unavailable', async () => {
     const first = vi.fn(async () => undefined)
     expandInto(null, first)
     await flushPromises()

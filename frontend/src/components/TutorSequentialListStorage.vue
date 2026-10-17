@@ -140,9 +140,4 @@ function next() {
     margin: 0;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .cell {
-    transition: none;
-  }
-}
 </style>

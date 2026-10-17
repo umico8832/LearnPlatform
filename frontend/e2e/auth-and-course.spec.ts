@@ -305,7 +305,6 @@ test('用户刷新后可继续限时考试，取消提交并在失败重试后�
 
 test('部分交卷后未答题保留零分且不会进入错题与复习', async ({ browser, page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.emulateMedia({ reducedMotion: 'reduce' })
   await createLearnerAndLogin(browser, page, 'partial-exam')
 
   await page.goto('/exams')
@@ -668,7 +667,6 @@ test('课程空间可完成整体与知识点阶段测评并查看历史复盘',
 test('用户可完成2026真题学习并恢复可信来源反馈', async ({ page, browser }, testInfo) => {
   test.setTimeout(90_000)
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.emulateMedia({ reducedMotion: 'reduce' })
   await createLearnerAndLogin(browser, page, 'paper-learning')
   await page.goto('/courses')
   await page

@@ -1,15 +1,13 @@
-import { onUnmounted, readonly, ref, watch, type Ref } from 'vue'
+import { onUnmounted, readonly, ref } from 'vue'
 
 export interface AnimatedNumberOptions {
   duration?: number
-  reducedMotion?: Readonly<Ref<boolean>>
 }
 
 /** A cancellable numeric transition for values returned by the server. */
 export function useAnimatedNumber(initialValue = 0, options: AnimatedNumberOptions = {}) {
   const value = ref(initialValue)
   let frameId: number | undefined
-  let targetValue = initialValue
   let hasReceivedValue = false
 
   const stop = () => {
@@ -20,14 +18,13 @@ export function useAnimatedNumber(initialValue = 0, options: AnimatedNumberOptio
   const animateTo = (target: number) => {
     stop()
     if (!Number.isFinite(target)) return
-    targetValue = target
     const token =
       typeof document === 'undefined'
         ? ''
         : getComputedStyle(document.documentElement).getPropertyValue('--lp-duration-feedback').trim()
     const tokenDuration = Number.parseFloat(token) * (token.endsWith('ms') ? 1 : 1000)
     const duration = options.duration ?? (Number.isFinite(tokenDuration) ? tokenDuration : 260)
-    if (!hasReceivedValue || options.reducedMotion?.value || duration <= 0) {
+    if (!hasReceivedValue || duration <= 0) {
       hasReceivedValue = true
       value.value = target
       return
@@ -50,13 +47,5 @@ export function useAnimatedNumber(initialValue = 0, options: AnimatedNumberOptio
   }
 
   onUnmounted(stop)
-  if (options.reducedMotion) {
-    watch(options.reducedMotion, (reduced) => {
-      if (reduced) {
-        stop()
-        value.value = targetValue
-      }
-    })
-  }
   return { value: readonly(value), animateTo, stop }
 }

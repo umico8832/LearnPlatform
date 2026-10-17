@@ -120,26 +120,24 @@ withDefaults(defineProps<{ titleId?: string; showSymbol?: boolean }>(), {
 .auth-below-card:empty {
   display: none;
 }
-@media (prefers-reduced-motion: no-preference) {
-  .auth-page.auth-enter.auth-motion-enter-active .auth-card,
-  .auth-page.auth-enter.auth-motion-enter-active .auth-below-card,
-  .auth-page.auth-enter.auth-motion-leave-active .auth-card,
-  .auth-page.auth-enter.auth-motion-leave-active .auth-below-card {
-    transition:
-      opacity var(--lp-auth-duration-enter) var(--lp-ease-out),
-      transform var(--lp-auth-duration-enter) var(--lp-ease-out);
-  }
-  .auth-page.auth-enter.auth-motion-leave-active .auth-card,
-  .auth-page.auth-enter.auth-motion-leave-active .auth-below-card {
-    transition-duration: var(--lp-auth-duration-leave);
-  }
-  .auth-page.auth-enter.auth-motion-enter-from .auth-card,
-  .auth-page.auth-enter.auth-motion-enter-from .auth-below-card,
-  .auth-page.auth-enter.auth-motion-leave-to .auth-card,
-  .auth-page.auth-enter.auth-motion-leave-to .auth-below-card {
-    opacity: 0;
-    transform: translateY(var(--lp-space-4));
-  }
+.auth-page.auth-enter.auth-motion-enter-active .auth-card,
+.auth-page.auth-enter.auth-motion-enter-active .auth-below-card,
+.auth-page.auth-enter.auth-motion-leave-active .auth-card,
+.auth-page.auth-enter.auth-motion-leave-active .auth-below-card {
+  transition:
+    opacity var(--lp-auth-duration-enter) var(--lp-ease-out),
+    transform var(--lp-auth-duration-enter) var(--lp-ease-out);
+}
+.auth-page.auth-enter.auth-motion-leave-active .auth-card,
+.auth-page.auth-enter.auth-motion-leave-active .auth-below-card {
+  transition-duration: var(--lp-auth-duration-leave);
+}
+.auth-page.auth-enter.auth-motion-enter-from .auth-card,
+.auth-page.auth-enter.auth-motion-enter-from .auth-below-card,
+.auth-page.auth-enter.auth-motion-leave-to .auth-card,
+.auth-page.auth-enter.auth-motion-leave-to .auth-below-card {
+  opacity: 0;
+  transform: translateY(var(--lp-space-4));
 }
 @media (min-width: 1280px) {
   .auth-card {

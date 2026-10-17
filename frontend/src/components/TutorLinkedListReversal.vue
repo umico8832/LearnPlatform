@@ -142,9 +142,4 @@ function next() {
     margin: 0;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .list {
-    transition: none;
-  }
-}
 </style>

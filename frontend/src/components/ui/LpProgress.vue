@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useReducedMotion } from '@/composables/useReducedMotion'
 
 /** 细进度条：用于学习会话、考试、复习的进度表达，安静且不抢内容。 */
 const props = withDefaults(
@@ -14,7 +13,6 @@ const props = withDefaults(
   { tone: 'primary', showLabel: false, label: '' },
 )
 
-const { reducedMotion } = useReducedMotion()
 const clamped = computed(() => (Number.isFinite(props.percent) ? Math.max(0, Math.min(100, props.percent)) : null))
 const valueText = computed(() => {
   if (clamped.value === null) return `${props.label || '进度'}暂不可用`
@@ -31,7 +29,6 @@ const valueText = computed(() => {
     :aria-valuetext="valueText"
     aria-valuemin="0"
     aria-valuemax="100"
-    :data-reduced-motion="reducedMotion"
   >
     <div class="lp-progress-track">
       <div
@@ -79,9 +76,6 @@ const valueText = computed(() => {
 }
 .lp-progress-fill[data-available='false'] {
   visibility: hidden;
-}
-.lp-progress[data-reduced-motion='true'] .lp-progress-fill {
-  transition: none;
 }
 .lp-progress-label {
   flex: 0 0 auto;

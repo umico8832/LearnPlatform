@@ -1,4 +1,4 @@
-import { prefersReducedMotion, springs, stepSpring, type SpringConfig } from './spring'
+import { springs, stepSpring, type SpringConfig } from './spring'
 
 export interface SpringEasing {
   /** CSS `linear()` easing that traces the spring from 0 to 1. */
@@ -55,14 +55,14 @@ export function blurIn(target: Element, distance = 4): Animation | null {
   )
 }
 
-/** Animate with spring physics; returns null (no animation) under reduced motion. */
+/** Animate with spring physics; returns null when WAAPI is unavailable. */
 export function springAnimate(
   target: Element,
   keyframes: Keyframe[],
   config: SpringConfig = springs.snappy,
   options: KeyframeAnimationOptions = {},
 ): Animation | null {
-  if (prefersReducedMotion() || typeof target.animate !== 'function') return null
+  if (typeof target.animate !== 'function') return null
   const { easing, duration } = springEasing(config)
   return target.animate(keyframes, { duration, easing, ...options })
 }

@@ -110,9 +110,4 @@ function onClick(event: MouseEvent) {
 .lp-list-item[data-status='info'] .lp-list-item-leading {
   color: var(--lp-info);
 }
-@media (prefers-reduced-motion: reduce) {
-  .lp-list-item {
-    transition: none;
-  }
-}
 </style>

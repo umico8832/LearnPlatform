@@ -295,8 +295,7 @@ function openGuidance(knowledgePointId: number) {
 }
 async function focusCheck() {
   await nextTick()
-  const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
-  checkSection.value?.scrollIntoView({ behavior, block: 'start' })
+  checkSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   checkSection.value?.focus({ preventScroll: true })
 }
 onMounted(load)

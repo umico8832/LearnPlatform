@@ -236,9 +236,4 @@ function next() {
     margin: 0;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  :deep(.array-cell) {
-    transition: none;
-  }
-}
 </style>

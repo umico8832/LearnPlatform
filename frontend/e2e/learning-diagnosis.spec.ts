@@ -3,7 +3,6 @@ import { createLearnerAndLogin } from './helpers/registerLearner'
 
 test('新学习者看到诚实的空学习诊断', async ({ browser, page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.emulateMedia({ reducedMotion: 'reduce' })
   await createLearnerAndLogin(browser, page, 'learning-diagnosis')
   await page.goto('/learning-diagnosis')
   await expect(page.getByRole('heading', { name: '还没有可诊断的学习记录' })).toBeVisible()
@@ -14,7 +13,6 @@ test('新学习者看到诚实的空学习诊断', async ({ browser, page }, tes
 test('隔离学习者完成练习后可获取并停止 AI 学习建议', async ({ browser, page }, testInfo) => {
   test.setTimeout(90_000)
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.emulateMedia({ reducedMotion: 'reduce' })
   await createLearnerAndLogin(browser, page, 'learning-diagnosis-populated')
   await page.goto('/practice')
   await page.locator('.config-card .el-select').first().click()

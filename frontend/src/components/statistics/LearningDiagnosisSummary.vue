@@ -375,10 +375,4 @@ function barHeight(value: number): string {
 }
 </style>
 
-<style scoped>
-@media (prefers-reduced-motion: reduce) {
-  .chart-bar {
-    transition: none;
-  }
-}
-</style>
+<style scoped></style>

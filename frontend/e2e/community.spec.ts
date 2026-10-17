@@ -25,7 +25,6 @@ test('社区共建完成真实发布、回复、点赞、附件审核与题目�
   test.setTimeout(150_000)
   page.setDefaultTimeout(15_000)
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.emulateMedia({ reducedMotion: 'reduce' })
   const suffix = Date.now()
   const topicTitle = `原创测试：如何理解栈的后进先出？${suffix}`
   const bankTitle = `原创栈练习资料（隔离测试）${suffix}`

@@ -1,4 +1,4 @@
-import { Spring, Spring2, springs, wake, unregister, prefersReducedMotion } from '@/motion'
+import { Spring, Spring2, springs, wake, unregister } from '@/motion'
 import type { EdgeRoute, EdgeView, Frame, GhostLayer, LabelView, NodeView, RegionView, TagView } from './types'
 
 /**
@@ -730,7 +730,7 @@ export class Stage {
     const screenY = this.insets.top + pad + availH / 2
     const tx = screenX - cx * scale
     const ty = screenY - cy * scale
-    if (instant || prefersReducedMotion()) {
+    if (instant) {
       this.camera.scale.jump(scale)
       this.camera.x.jump(tx)
       this.camera.y.jump(ty)

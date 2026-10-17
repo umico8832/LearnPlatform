@@ -1,4 +1,4 @@
-import { defineComponent, h, nextTick, ref } from 'vue'
+import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useAnimatedNumber } from '@/composables/useAnimatedNumber'
@@ -14,23 +14,6 @@ const AnimatedNumberHarness = defineComponent({
 
 describe('useAnimatedNumber', () => {
   afterEach(() => vi.unstubAllGlobals())
-
-  it('uses the final server value immediately with reduced motion', () => {
-    const request = vi.fn()
-    vi.stubGlobal('requestAnimationFrame', request)
-    vi.stubGlobal('cancelAnimationFrame', vi.fn())
-    const wrapper = mount(
-      defineComponent({
-        setup: () => useAnimatedNumber(0, { reducedMotion: ref(true) }),
-        render: () => h('output'),
-      }),
-    )
-    const instance = wrapper.vm as unknown as { animateTo: (target: number) => void; value: number }
-    instance.animateTo(7.5)
-    expect(instance.value).toBe(7.5)
-    expect(request).not.toHaveBeenCalled()
-    wrapper.unmount()
-  })
 
   it('uses the first received server value immediately instead of presenting a fabricated zero', () => {
     const request = vi.fn()
@@ -48,30 +31,6 @@ describe('useAnimatedNumber', () => {
 
     expect(instance.value).toBe(72)
     expect(request).not.toHaveBeenCalled()
-    wrapper.unmount()
-  })
-
-  it('cancels movement and retains the target when reduced motion changes mid-animation', async () => {
-    const reduced = ref(false)
-    vi.stubGlobal(
-      'requestAnimationFrame',
-      vi.fn(() => 42),
-    )
-    const cancel = vi.fn()
-    vi.stubGlobal('cancelAnimationFrame', cancel)
-    const wrapper = mount(
-      defineComponent({
-        setup: () => useAnimatedNumber(0, { reducedMotion: reduced }),
-        render: () => h('output'),
-      }),
-    )
-    const instance = wrapper.vm as unknown as { animateTo: (target: number) => void; value: number }
-    instance.animateTo(250)
-    instance.animateTo(300)
-    reduced.value = true
-    await nextTick()
-    expect(cancel).toHaveBeenCalledWith(42)
-    expect(instance.value).toBe(300)
     wrapper.unmount()
   })
 

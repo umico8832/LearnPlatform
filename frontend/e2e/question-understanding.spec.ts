@@ -41,7 +41,6 @@ async function openSeededQuestion(page: Page, label: string) {
 }
 
 test('出栈序列答错后依次理解误区、演示、正解并辅助作答变式', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' })
   await openSeededQuestion(page, 'understanding-wrong')
   await page.locator('.answer-step input[value="B"]').check({ force: true })
   await page.locator('.answer-step').getByRole('button', { name: '提交' }).click()
@@ -103,7 +102,6 @@ test('出栈序列答错后依次理解误区、演示、正解并辅助作答�
 })
 
 test('出栈序列选对后直接开放正解和变式', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' })
   await openSeededQuestion(page, 'understanding-right')
   await page.locator('.answer-step input[value="A"]').check({ force: true })
   await page.locator('.answer-step').getByRole('button', { name: '提交' }).click()
@@ -123,7 +121,6 @@ test('出栈序列选对后直接开放正解和变式', async ({ page }) => {
 })
 
 test('管理员预览三级提示，且预览不留下错题', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' })
   await prepareTurnstile(page)
   await page.goto('/login')
   await page.getByPlaceholder('请输入用户名或邮箱').fill('admin')

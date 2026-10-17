@@ -157,9 +157,4 @@ function next() {
     margin: 0;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .courseware * {
-    transition: none;
-  }
-}
 </style>

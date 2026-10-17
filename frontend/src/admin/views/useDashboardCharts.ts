@@ -17,7 +17,7 @@ export function useDashboardCharts() {
     questionChart?.dispose()
     activityChart = questionChart = null
   }
-  function renderCharts(stats: AdminStatisticsOverview, reducedMotion: boolean) {
+  function renderCharts(stats: AdminStatisticsOverview) {
     disposeCharts()
     const styles = getComputedStyle(document.documentElement)
     const token = (name: string) => styles.getPropertyValue(`--lp-${name}`).trim()
@@ -25,7 +25,7 @@ export function useDashboardCharts() {
       secondary = token('text-secondary'),
       border = token('border')
     const base = {
-      animation: !reducedMotion,
+      animation: true,
       animationDuration: 180,
       animationDurationUpdate: 180,
       textStyle: { fontFamily: token('font-sans'), color: secondary },

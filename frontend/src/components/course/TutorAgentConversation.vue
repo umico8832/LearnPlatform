@@ -416,11 +416,6 @@ onBeforeUnmount(() => {
     transform: none;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .agent-message {
-    animation: none;
-  }
-}
 
 .agent-message > span {
   display: block;

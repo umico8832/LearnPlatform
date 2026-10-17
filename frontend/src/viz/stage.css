@@ -433,9 +433,3 @@
   color: var(--lt-label-3);
   font-size: var(--lt-text-caption2);
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .vz-edge.is-ghost .vz-edge-line {
-    animation: none;
-  }
-}

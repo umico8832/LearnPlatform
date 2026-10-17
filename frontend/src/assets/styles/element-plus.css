@@ -118,16 +118,6 @@
   outline-offset: var(--lp-focus-offset);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .el-button {
-    transition-duration: var(--lp-duration-fast);
-  }
-  .el-button:not(.is-disabled):not([disabled]):hover,
-  .el-button:not(.is-disabled):not([disabled]):active {
-    transform: none;
-  }
-}
-
 .el-button--primary {
   --el-button-bg-color: var(--lp-primary);
   --el-button-border-color: var(--lp-primary);

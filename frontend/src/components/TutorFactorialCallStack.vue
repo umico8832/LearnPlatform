@@ -173,9 +173,4 @@ function next() {
     margin: 0;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .frame {
-    transition: none;
-  }
-}
 </style>

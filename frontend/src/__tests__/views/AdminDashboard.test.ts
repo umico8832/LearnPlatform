@@ -98,16 +98,12 @@ describe('AdminDashboard', () => {
     expect(wrapper.get('.metric-value').text()).toBe('23')
   })
 
-  it('renders accessible table alternatives and respects reduced motion in charts', async () => {
-    vi.stubGlobal(
-      'matchMedia',
-      vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })),
-    )
+  it('renders accessible table alternatives alongside animated charts', async () => {
     const wrapper = render()
     await flushPromises()
     expect(wrapper.findAll('table')).toHaveLength(2)
     expect(wrapper.text()).toContain('2026-10-02')
-    expect(api.setOption).toHaveBeenCalled()
-    expect(api.setOption.mock.calls.every(([options]) => options.animation === false)).toBe(true)
+    expect(api.setOption).toHaveBeenCalledTimes(2)
+    expect(api.setOption.mock.calls.every(([options]) => options.animation === true)).toBe(true)
   })
 })

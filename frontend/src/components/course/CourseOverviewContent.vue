@@ -581,16 +581,6 @@ function knowledgePointSummaryText(summary: CourseStageAssessmentKnowledgePointS
   color: var(--lp-danger);
   font-size: var(--lp-text-sm);
 }
-@media (prefers-reduced-motion: reduce) {
-  .tool-row,
-  .tool-arrow,
-  .outline-item {
-    transition-duration: var(--lp-duration-fast);
-  }
-  .tool-row:hover .tool-arrow {
-    transform: none;
-  }
-}
 @media (max-width: 1080px) {
   .overview-grid {
     grid-template-columns: 1fr;

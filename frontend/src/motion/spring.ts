@@ -33,20 +33,6 @@ export type SpringPreset = keyof typeof springs
 
 const REST_DELTA = 0.01
 const REST_VELOCITY = 0.02
-const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)'
-
-let reducedMotionQuery: MediaQueryList | null | undefined
-
-/** Live OS preference; springs jump straight to their target when it is on. */
-export function prefersReducedMotion(): boolean {
-  if (reducedMotionQuery === undefined) {
-    reducedMotionQuery =
-      typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-        ? window.matchMedia(REDUCED_MOTION_QUERY)
-        : null
-  }
-  return reducedMotionQuery?.matches ?? false
-}
 
 /** Advance displacement `x` (relative to target) and velocity `v` by `dt` seconds. */
 export function stepSpring(x: number, v: number, config: SpringConfig, dt: number): [number, number] {
@@ -106,10 +92,6 @@ export class Spring {
 
   /** Returns true while still moving. */
   step(dt: number): boolean {
-    if (prefersReducedMotion()) {
-      this.jump(this.target)
-      return false
-    }
     if (this.settled) {
       this.value = this.target
       this.velocity = 0

@@ -4,7 +4,6 @@ import { createLearnerAndLogin } from './helpers/registerLearner'
 test('题目 AI 可停止后重试，资产读取失败和反馈失败均可原位恢复', async ({ page, browser }, testInfo) => {
   test.setTimeout(90_000)
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.emulateMedia({ reducedMotion: 'reduce' })
   await createLearnerAndLogin(browser, page, 'ai-learning')
   await page.goto('/questions?questionId=1')
   await page.getByRole('button', { name: '练这道题', exact: true }).click()

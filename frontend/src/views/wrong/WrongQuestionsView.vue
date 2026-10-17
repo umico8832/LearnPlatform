@@ -268,12 +268,6 @@ onMounted(() => wrong.load())
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .skeleton {
-    animation: none;
-  }
-}
-
 .state {
   display: flex;
   flex-direction: column;
