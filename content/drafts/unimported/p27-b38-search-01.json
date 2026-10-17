@@ -1,0 +1,1506 @@
+{
+  "schemaVersion": 1,
+  "section": "查找真题：折半、B树/B+树与分块",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "sr01-01",
+      "topic": "折半失败查找的最坏比较次数",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2010",
+        "questionNumber": "9",
+        "label": "2010 年 408 真题 第 9 题（明确中点与比较计次）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2010/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "16个互异关键字按升序连续存放，折半查找初始覆盖全部元素，下标从0起且中点向下取整。每轮与一个中点的三路比较算一次。查找不存在的关键字，最多比较几次？",
+      "options": [
+        {
+          "label": "A",
+          "content": "4"
+        },
+        {
+          "label": "B",
+          "content": "5"
+        },
+        {
+          "label": "C",
+          "content": "6"
+        },
+        {
+          "label": "D",
+          "content": "7"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把16个元素误当四层满判定树",
+          "explanation": "四层最多容纳15个内部比较位置；16个元素会使某条失败路径再增加一轮。"
+        },
+        "C": {
+          "title": "把退出空区间也计成比较",
+          "explanation": "左右边界交叉时直接结束，不会再与一个不存在的中点关键字比较。"
+        },
+        "D": {
+          "title": "将一次三路比较拆成无关循环",
+          "explanation": "本题按每轮与中点比较一次计数，不能把代码分支或指针更新额外算作关键字比较。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "可以构造目标比表中所有关键字都大的失败查找。"
+        },
+        {
+          "level": 2,
+          "text": "沿同一侧不断缩小闭区间，记录每轮仍存在的中点。"
+        },
+        {
+          "level": 3,
+          "text": "区分“确认空区间”的边界检查与“和中点关键字比较”这两种操作。"
+        }
+      ],
+      "solution": "对16项，取大于最大值的目标时可连续经过下标7、11、13、14、15五个中点，之后区间才为空。最坏为5次；退出循环不增加关键字比较。",
+      "viz": null,
+      "variant": {
+        "stem": "其他规则不变，仅将表长改为15，失败查找最多比较几次？",
+        "options": [
+          {
+            "label": "A",
+            "content": "3"
+          },
+          {
+            "label": "B",
+            "content": "4"
+          },
+          {
+            "label": "C",
+            "content": "5"
+          },
+          {
+            "label": "D",
+            "content": "6"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将有序表长度由16改为15。",
+        "explanation": "15项可形成四层满判定树，失败前最多比较4个中点；例如大于全表的目标依次经过7、11、13、14。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr01-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "binary-search-comparisons",
+            "input": {
+              "values": [
+                2,
+                4,
+                6,
+                8,
+                10,
+                12,
+                14,
+                16,
+                18,
+                20,
+                22,
+                24,
+                26,
+                28,
+                30
+              ],
+              "key": 31,
+              "indexBase": 0,
+              "midpoint": "floor"
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "同时计中点比较与边界退出，二者分开",
+            "pauseQuestion": "区间已经为空后，还存在可比较的中点关键字吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr01-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "binary-search-comparisons",
+          "input": {
+            "values": [
+              2,
+              4,
+              6,
+              8,
+              10,
+              12,
+              14,
+              16,
+              18,
+              20,
+              22,
+              24,
+              26,
+              28,
+              30,
+              32
+            ],
+            "key": 33,
+            "indexBase": 0,
+            "midpoint": "floor"
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "同时计中点比较与边界退出，二者分开",
+          "pauseQuestion": "区间已经为空后，还存在可比较的中点关键字吗？"
+        }
+      ]
+    },
+    {
+      "id": "sr01-02",
+      "topic": "B树的根占用例外",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2013",
+        "questionNumber": "10",
+        "label": "2013 年 408 真题 第 10 题（明确高度按层）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2013/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "m阶B树指每个结点至多m个孩子，高度按层数计算，根为第1层。一棵高度恰为2的5阶B树，最少有多少个关键字？",
+      "options": [
+        {
+          "label": "A",
+          "content": "5"
+        },
+        {
+          "label": "B",
+          "content": "7"
+        },
+        {
+          "label": "C",
+          "content": "8"
+        },
+        {
+          "label": "D",
+          "content": "14"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把最少孩子数当最少关键字数",
+          "explanation": "非根结点至少三个孩子对应两个关键字，不能把叶中最少关键字误取为三个。"
+        },
+        "C": {
+          "title": "将根也按非根下界取值",
+          "explanation": "非叶根允许只有一个关键字和两个孩子；不必让根达到非根结点的半满占用。"
+        },
+        "D": {
+          "title": "把根取到最多分支",
+          "explanation": "根有更多关键字和分支能构成合法树，但求最少总数时无需把根填到上限。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先分别列非叶根与非根结点的最小关键字限制。"
+        },
+        {
+          "level": 2,
+          "text": "根最少分出几个孩子？这些孩子在本题中处于哪一层？"
+        },
+        {
+          "level": 3,
+          "text": "不要用最大分支数代替最小分支数，也不要把根的例外抹掉。"
+        }
+      ],
+      "solution": "5阶非根结点至少2个关键字。两层树的根最少1个关键字、2个叶孩子，每叶最少2个，合计5。",
+      "viz": null,
+      "variant": {
+        "stem": "保持5阶定义和按层高度，只将高度改为恰好3层，最少关键字总数为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "5"
+          },
+          {
+            "label": "B",
+            "content": "9"
+          },
+          {
+            "label": "C",
+            "content": "17"
+          },
+          {
+            "label": "D",
+            "content": "26"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将高度由2层增至3层。",
+        "explanation": "根最少1键和2孩子；第二层两个结点各2键、各3孩子；第三层6个叶各2键。合计1加4加12，为17。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr01-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "b-tree-capacity",
+            "input": {
+              "order": 5,
+              "levels": 3,
+              "bound": "minimum",
+              "rootException": true
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "根用两分支，后续层按非根最小占用扩展",
+            "pauseQuestion": "能否对根直接套非根最少孩子数？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr01-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "b-tree-capacity",
+          "input": {
+            "order": 5,
+            "levels": 2,
+            "bound": "minimum",
+            "rootException": true
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "根用两分支，后续层按非根最小占用扩展",
+          "pauseQuestion": "能否对根直接套非根最少孩子数？"
+        }
+      ]
+    },
+    {
+      "id": "sr01-03",
+      "topic": "B树关键字数与结点数",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2014",
+        "questionNumber": "9",
+        "label": "2014 年 408 真题 第 9 题（补明非空与标准阶定义）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2014/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "非空4阶B树中共有15个关键字，阶表示每结点至多4个孩子，所有叶在同一层。含关键字的结点个数最多为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "5"
+        },
+        {
+          "label": "B",
+          "content": "6"
+        },
+        {
+          "label": "C",
+          "content": "10"
+        },
+        {
+          "label": "D",
+          "content": "15"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把最大装满时的结点下界当上界",
+          "explanation": "每结点最多3个关键字可用于求最少结点数，不能用于求最多结点数。"
+        },
+        "B": {
+          "title": "只看某一种树形",
+          "explanation": "合法树可让每个结点只含一个关键字，不能把某个较满布局的结点数当全局最大。"
+        },
+        "C": {
+          "title": "无依据假定部分关键字必须同结点",
+          "explanation": "4阶B树非根结点最少一个关键字；存在各结点均一键且所有叶同层的布局，结点数还能更大。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "每个非空结点至少含几个关键字？这先给出什么方向的界？"
+        },
+        {
+          "level": 2,
+          "text": "求最多结点时，应让关键字尽量分散，仍需检查树形是否能达到该界。"
+        },
+        {
+          "level": 3,
+          "text": "构造每个内部结点两个孩子、每结点一键且叶同层的小树，再推广。"
+        }
+      ],
+      "solution": "每个结点至少1键，所以结点数不超过15。四层满二叉形状、每结点1键恰有15结点，满足4阶B树占用和同层叶条件，因此最大为15。",
+      "viz": null,
+      "variant": {
+        "stem": "同样的4阶B树仍有15个关键字，仅把问题改为含关键字结点数最少为多少？",
+        "options": [
+          {
+            "label": "A",
+            "content": "5"
+          },
+          {
+            "label": "B",
+            "content": "6"
+          },
+          {
+            "label": "C",
+            "content": "10"
+          },
+          {
+            "label": "D",
+            "content": "15"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将最多结点数改为最少结点数。",
+        "explanation": "每结点至多3键，至少需要5个结点。根3键、4个叶各3键时共有15键和5结点，界可达到。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr01-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "b-tree-key-packing",
+            "input": {
+              "order": 4,
+              "keyCount": 15,
+              "bound": "minimum-nodes",
+              "witness": {
+                "keys": [
+                  4,
+                  8,
+                  12
+                ],
+                "children": [
+                  [
+                    1,
+                    2,
+                    3
+                  ],
+                  [
+                    5,
+                    6,
+                    7
+                  ],
+                  [
+                    9,
+                    10,
+                    11
+                  ],
+                  [
+                    13,
+                    14,
+                    15
+                  ]
+                ]
+              }
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "上界或下界之外，还需给可达的合法树形",
+            "pauseQuestion": "关键字集中与分散，分别让结点数向哪个方向变化？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr01-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "b-tree-key-packing",
+          "input": {
+            "order": 4,
+            "keyCount": 15,
+            "bound": "maximum-nodes",
+            "witness": "four-level-binary-each-one-key"
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "上界或下界之外，还需给可达的合法树形",
+          "pauseQuestion": "关键字集中与分散，分别让结点数向哪个方向变化？"
+        }
+      ]
+    },
+    {
+      "id": "sr01-04",
+      "topic": "B+树的叶链顺序扫描",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2016",
+        "questionNumber": "10",
+        "label": "2016 年 408 真题 第 10 题（据收录改写：叶链顺序扫描）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2016/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对原题题号、选项与答案；本站将原选项“能支持顺序查找”按B+树叶链直接扫描改写，保留考点与正确项，避免误教B树无法有序遍历。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "按标准B树与B+树定义，下列哪项最能体现B+树对全体数据记录顺序访问的结构支持？这里顺序扫描指直接沿数据叶链按关键字访问，不等同于对一般树做有序遍历。",
+      "options": [
+        {
+          "label": "A",
+          "content": "数据记录集中于叶结点，可沿叶链顺序扫描"
+        },
+        {
+          "label": "B",
+          "content": "结点中含关键字"
+        },
+        {
+          "label": "C",
+          "content": "非叶根结点至少有两个分支"
+        },
+        {
+          "label": "D",
+          "content": "所有叶结点位于同一层"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把两者共同的关键字索引当差异",
+          "explanation": "标准B树和B+树的结点都含关键字，该性质不能体现B+树的叶链访问优势。"
+        },
+        "C": {
+          "title": "把共同的非叶根约束当差异",
+          "explanation": "两者的非叶根都至少有两个分支；若根本身是叶，则另有根例外，不能凭此区分。"
+        },
+        "D": {
+          "title": "把共同的高度平衡当差异",
+          "explanation": "叶同层是两种结构的共同性质，不解释B+树集中在叶的数据顺序扫描。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "区分关键字用作导航，与数据记录存放的位置。"
+        },
+        {
+          "level": 2,
+          "text": "本题问直接沿数据叶链扫描全部记录，需要知道记录是否完整分布在叶层。"
+        },
+        {
+          "level": 3,
+          "text": "逐项排除两类树共有的形状约束，保留能解释访问方式的结构。"
+        }
+      ],
+      "solution": "标准B+树把数据记录集中于叶层，叶间按键序链接，所以可以直接顺序扫描全体记录。B树也能通过遍历得到有序记录；本题区分的是叶链直接扫描，不宣称B树无法做任何有序遍历。",
+      "viz": null,
+      "variant": {
+        "stem": "只改变查询需求：标准B+树内部结点中遇到一个与目标相等的索引键，若要取得该键的数据记录，通常应怎样继续？",
+        "options": [
+          {
+            "label": "A",
+            "content": "总是把内部索引项当作完整数据返回"
+          },
+          {
+            "label": "B",
+            "content": "继续定位到保存该记录的叶结点"
+          },
+          {
+            "label": "C",
+            "content": "必须从第一片叶顺查到最后"
+          },
+          {
+            "label": "D",
+            "content": "报告数据不存在"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "从按键序扫描全部记录改为取得一个命中键的实际记录。",
+        "explanation": "按本题标准B+树定义，内部项用于导航，实际数据记录在叶层；内部索引匹配仍需定位相应叶，不必扫全部叶。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr01-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "b-plus-leaf-scan",
+            "input": {
+              "leaves": [
+                [
+                  10,
+                  20
+                ],
+                [
+                  30,
+                  40
+                ],
+                [
+                  50,
+                  60
+                ]
+              ],
+              "separators": [
+                30,
+                50
+              ],
+              "queryKey": 30,
+              "internalRole": "index-only"
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "区分导航索引、数据记录与叶链",
+            "pauseQuestion": "内部出现相等索引键，是否就已经拿到叶中记录？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr01-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "b-plus-leaf-scan",
+          "input": {
+            "leaves": [
+              [
+                10,
+                20
+              ],
+              [
+                30,
+                40
+              ],
+              [
+                50,
+                60
+              ]
+            ],
+            "separators": [
+              30,
+              50
+            ],
+            "query": "all-records-in-order"
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "区分导航索引、数据记录与叶链",
+          "pauseQuestion": "内部出现相等索引键，是否就已经拿到叶中记录？"
+        }
+      ]
+    },
+    {
+      "id": "sr01-05",
+      "topic": "B+树的典型外存应用",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2017",
+        "questionNumber": "9",
+        "label": "2017 年 408 真题 第 9 题（按典型外存索引需求表述）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2017/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "在下列典型应用中，哪项最符合B+树减少外存访问并支持有序、区间查询的设计目标？",
+      "options": [
+        {
+          "label": "A",
+          "content": "编译器的词法扫描"
+        },
+        {
+          "label": "B",
+          "content": "关系数据库系统中的索引"
+        },
+        {
+          "label": "C",
+          "content": "网络中按地址前缀的路由快速匹配"
+        },
+        {
+          "label": "D",
+          "content": "操作系统的磁盘空闲块标记"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把字符状态转换与有序外存检索混淆",
+          "explanation": "词法扫描主要围绕字符和词法状态推进，按页组织有序记录并非这里的主要需求。"
+        },
+        "C": {
+          "title": "把最长前缀匹配当普通键范围",
+          "explanation": "路由查询的地址前缀语义与普通有序记录索引不同，本题所列B+树典型目标是外存键查询与范围扫描。"
+        },
+        "D": {
+          "title": "把分配标记需求当键索引",
+          "explanation": "空闲块标记可由位图或空闲链等组织；本题强调按键定位和顺序访问数据记录，而不是只记录块是否空闲。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先找哪个应用需要持久保存大量按键检索的记录。"
+        },
+        {
+          "level": 2,
+          "text": "结合树的高扇出和叶链，分别考虑单键定位与范围扫描。"
+        },
+        {
+          "level": 3,
+          "text": "“存在某种实现可以用”与“最符合这里给定的典型访问目标”是两个判断。"
+        }
+      ],
+      "solution": "关系数据库的外存索引需要减少磁盘页访问，同时常要按键做精确和范围查询，符合B+树的高扇出和叶链设计。其他应用并非绝对不能借用树，本题按给定的典型需求作最佳匹配。",
+      "viz": null,
+      "variant": {
+        "stem": "具体需求改为：记录按主键存放在磁盘上，要先定位区间下界，再按主键连续输出一段记录。以下哪种标准组织最贴合该需求？",
+        "options": [
+          {
+            "label": "A",
+            "content": "无序散列表"
+          },
+          {
+            "label": "B",
+            "content": "B+树索引与叶链"
+          },
+          {
+            "label": "C",
+            "content": "栈"
+          },
+          {
+            "label": "D",
+            "content": "普通FIFO队列"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "将应用名称改为对应的具体区间查询工作负载。",
+        "explanation": "B+树能用索引定位首个候选叶，再沿有序叶链输出区间；无序散列不直接提供键序连续扫描，栈与队列也不提供这种有序键索引。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr01-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "b-plus-range-query",
+            "input": {
+              "leaves": [
+                [
+                  10,
+                  20
+                ],
+                [
+                  30,
+                  40
+                ],
+                [
+                  50,
+                  60
+                ]
+              ],
+              "separators": [
+                30,
+                50
+              ],
+              "pageKeys": 2,
+              "queryRange": [
+                30,
+                60
+              ]
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "先用索引定位，再按叶链输出范围",
+            "pauseQuestion": "已经找到区间下界后，继续查每个键都必须重回根吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr01-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "b-plus-range-query",
+          "input": {
+            "leaves": [
+              [
+                10,
+                20
+              ],
+              [
+                30,
+                40
+              ],
+              [
+                50,
+                60
+              ]
+            ],
+            "separators": [
+              30,
+              50
+            ],
+            "pageKeys": 2,
+            "queryRange": [
+              20,
+              50
+            ]
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "先用索引定位，再按叶链输出范围",
+          "pauseQuestion": "已经找到区间下界后，继续查每个键都必须重回根吗？"
+        }
+      ]
+    },
+    {
+      "id": "sr01-06",
+      "topic": "B树最小容量随高度增长",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2018",
+        "questionNumber": "8",
+        "label": "2018 年 408 真题 第 8 题（明确高度按层）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2018/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "3阶B树每结点至多3个孩子，高度按层数计算，根为第1层。一棵高度恰为5的非空3阶B树，至少含多少个关键字？",
+      "options": [
+        {
+          "label": "A",
+          "content": "15"
+        },
+        {
+          "label": "B",
+          "content": "31"
+        },
+        {
+          "label": "C",
+          "content": "62"
+        },
+        {
+          "label": "D",
+          "content": "242"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "少计算了一层",
+          "explanation": "高度按层数为5，不能只累加到第4层便停止。"
+        },
+        "C": {
+          "title": "把两侧都算成完整五层树",
+          "explanation": "根的两个子树各比全树少一层，不能分别把它们都当作高度5的整树重复累计。"
+        },
+        "D": {
+          "title": "把最大容量当最小容量",
+          "explanation": "242对应每结点取满分支和关键字的容量上界，而这里要求最少占用。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先求每个非根结点的最少关键字数和最少孩子数。"
+        },
+        {
+          "level": 2,
+          "text": "根取非叶根的最少分支，后续各层也取最少分支。"
+        },
+        {
+          "level": 3,
+          "text": "逐层计关键字时，确认一共统计了五层，并把根算一次。"
+        }
+      ],
+      "solution": "3阶非根最少1键、内部最少2孩子，非叶根也可1键、2孩子。各层最少关键字数1、2、4、8、16，合计31。",
+      "viz": null,
+      "variant": {
+        "stem": "保持3阶与高度按层的约定，仅将高度改为恰好4层，至少有多少关键字？",
+        "options": [
+          {
+            "label": "A",
+            "content": "7"
+          },
+          {
+            "label": "B",
+            "content": "15"
+          },
+          {
+            "label": "C",
+            "content": "31"
+          },
+          {
+            "label": "D",
+            "content": "80"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅把树高由5层改为4层。",
+        "explanation": "最少各层1、2、4、8键，共15；这仍是占用下界，不是满3叉的容量上界。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr01-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "b-tree-capacity",
+            "input": {
+              "order": 3,
+              "levels": 4,
+              "bound": "minimum",
+              "rootException": true
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "按最少分支逐层累计，保持叶同层",
+            "pauseQuestion": "高度为五层时，两个根子树还各有五层吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr01-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "b-tree-capacity",
+          "input": {
+            "order": 3,
+            "levels": 5,
+            "bound": "minimum",
+            "rootException": true
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "按最少分支逐层累计，保持叶同层",
+          "pauseQuestion": "高度为五层时，两个根子树还各有五层吗？"
+        }
+      ]
+    },
+    {
+      "id": "sr01-07",
+      "topic": "B树插入提升与内部命中",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2023",
+        "questionNumber": "7",
+        "label": "2023 年 408 真题 第 7 题（明确成功删除与最终位置）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2023/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "对标准非空B树，插入一个不存在的新关键字，删除均指成功删除已存在的关键字。判断：I. 插入可能增加树高；II. 成功删除会使叶层状态发生变化；III. 查找一个关键字一定要到叶；IV. 新插入关键字经过全部调整后一定仍在叶中。正确的是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 I"
+        },
+        {
+          "label": "B",
+          "content": "仅 I、II"
+        },
+        {
+          "label": "C",
+          "content": "仅 III、IV"
+        },
+        {
+          "label": "D",
+          "content": "仅 I、II、IV"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "漏掉成功删除对叶层的影响",
+          "explanation": "删除内部键时通常由前驱或后继替换，并最终在叶中删去对应项；删除叶键也直接改变叶层。"
+        },
+        "C": {
+          "title": "同时误判内部命中与提升",
+          "explanation": "B树内部也可保存记录并直接命中；新键在溢出分裂中又可能作为中间键上升，所以III、IV都不成立。"
+        },
+        "D": {
+          "title": "把插入开始位置当最终位置",
+          "explanation": "新键通常先进入叶，但若它恰为分裂时的中间键，可以被提升到内部结点。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "把“首次插入位置”与“完成所有分裂后的最终位置”分开。"
+        },
+        {
+          "level": 2,
+          "text": "查找、插入、删除分别看一个小例子，不要把B+树的数据位置规则套给B树。"
+        },
+        {
+          "level": 3,
+          "text": "可以从一个已满的叶根插入位于中间的新键，观察分裂后新根保存谁。"
+        }
+      ],
+      "solution": "I正确，根分裂可增加树高。II正确，成功删除的最终去项或根收缩会改变叶层状态。III错误，内部键命中即可结束。IV错误，例如3阶叶根含10、30，插入20后20被提升为新根，最后不在叶中。",
+      "viz": null,
+      "variant": {
+        "stem": "3阶B树当前只有一个叶根，键为10、30。采用插入后溢出再以中间键分裂的标准处理，插入20后，新键20最终位于？",
+        "options": [
+          {
+            "label": "A",
+            "content": "左叶结点"
+          },
+          {
+            "label": "B",
+            "content": "新根结点"
+          },
+          {
+            "label": "C",
+            "content": "右叶结点"
+          },
+          {
+            "label": "D",
+            "content": "这种插入不可能完成"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "将一般叙述具体化为一次已满叶根的插入。",
+        "explanation": "临时有序键为10、20、30，溢出分裂时中间键20成为新根，10和30分别进入两片叶；最终为两层合法3阶B树。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr01-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "b-tree-basic-operations",
+            "input": {
+              "order": 3,
+              "root": {
+                "keys": [
+                  10,
+                  30
+                ],
+                "children": []
+              },
+              "operations": [
+                {
+                  "insert": 20
+                }
+              ],
+              "split": "median-on-overflow"
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "同一例子核对根分裂、新键提升、内部命中与叶删除",
+            "pauseQuestion": "最初插到叶里的新键，分裂后一定仍留在叶吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr01-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "b-tree-basic-operations",
+          "input": {
+            "order": 3,
+            "root": {
+              "keys": [
+                10,
+                30
+              ],
+              "children": []
+            },
+            "operations": [
+              {
+                "insert": 20
+              },
+              {
+                "search": 20
+              },
+              {
+                "delete": 10
+              }
+            ],
+            "split": "median-on-overflow"
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "同一例子核对根分裂、新键提升、内部命中与叶删除",
+          "pauseQuestion": "最初插到叶里的新键，分裂后一定仍留在叶吗？"
+        }
+      ]
+    },
+    {
+      "id": "sr01-08",
+      "topic": "有序表折半查找的判定树高度",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2023",
+        "questionNumber": "8",
+        "label": "2023 年 408 真题 第 8 题（明确比较计次）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2023/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "含600个互异元素的有序顺序表采用闭区间折半查找，中点下标向下取整。把每轮目标与中点的三路比较记作一次。关键字比较次数最多为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "9"
+        },
+        {
+          "label": "B",
+          "content": "10"
+        },
+        {
+          "label": "C",
+          "content": "30"
+        },
+        {
+          "label": "D",
+          "content": "300"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把满九层容量当够用",
+          "explanation": "九层最多容纳511个比较位置，不能覆盖600个有序元素的全部最坏路径。"
+        },
+        "C": {
+          "title": "按区间每次只少固定数量估计",
+          "explanation": "折半每轮去掉约一半候选，不会需要与表长同阶的大量比较。"
+        },
+        "D": {
+          "title": "把查找过程近似成顺序扫描半表",
+          "explanation": "按中点缩半与逐个扫描不同，不需要先检查大约一半元素。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "比较相邻两个2的幂与表长的大小。"
+        },
+        {
+          "level": 2,
+          "text": "判定树层数关系的是最坏比较次数，不能把结点总数当路径长度。"
+        },
+        {
+          "level": 3,
+          "text": "可先用长度7与8的小表，观察跨过一个满层容量后最坏路径怎样变化。"
+        }
+      ],
+      "solution": "九层至多容纳511项，十层可容纳1023项。600项的最坏路径需要10次比较；按给定下中点规则，查最大元素可实际达到10次。",
+      "viz": null,
+      "variant": {
+        "stem": "其他约定不变，仅把表长从600改为1024，比较次数最多为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "10"
+          },
+          {
+            "label": "B",
+            "content": "11"
+          },
+          {
+            "label": "C",
+            "content": "12"
+          },
+          {
+            "label": "D",
+            "content": "512"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将有序表长度改为1024。",
+        "explanation": "十层最多1023项，1024项需要再增加一层，最坏11次；下中点查最大元素可以达到。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr01-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "binary-search-comparisons",
+            "input": {
+              "count": 1024,
+              "firstValue": 1,
+              "valueStep": 1,
+              "key": 1024,
+              "midpoint": "floor"
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "对比表容量与最坏路径长度",
+            "pauseQuestion": "十层满比较树可以容纳多少个内部比较位置？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr01-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "binary-search-comparisons",
+          "input": {
+            "count": 600,
+            "firstValue": 1,
+            "valueStep": 1,
+            "key": 600,
+            "midpoint": "floor"
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "对比表容量与最坏路径长度",
+          "pauseQuestion": "十层满比较树可以容纳多少个内部比较位置？"
+        }
+      ]
+    },
+    {
+      "id": "sr01-09",
+      "topic": "折半查找的物理顺序与逻辑顺序",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2024",
+        "questionNumber": "5",
+        "label": "2024 年 408 真题 第 5 题（补明静态链表的槽与逻辑次序）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2024/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "直接按中点下标缩半查找通常要求关键字有序且能按逻辑位置随机访问。不另建索引；静态链表只用游标维护逻辑次序，物理槽位不保证按关键字排列。以下哪些不适合直接这样折半查找？I. 有序链表；II. 无序数组；III. 有序静态链表；IV. 无序静态链表。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 I、II"
+        },
+        {
+          "label": "B",
+          "content": "仅 II、IV"
+        },
+        {
+          "label": "C",
+          "content": "仅 I、II、IV"
+        },
+        {
+          "label": "D",
+          "content": "I、II、III、IV"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "漏掉静态链表的逻辑位置问题",
+          "explanation": "静态链表虽然用数组槽存结点，但中间下标不等于逻辑中间结点；两种静态链表都不能直接按槽下标缩半。"
+        },
+        "B": {
+          "title": "把有序链表当随机访问结构",
+          "explanation": "有序只满足键次序要求，普通链表还需要沿指针定位中点；有序静态链表也不保证槽下标即逻辑秩。"
+        },
+        "C": {
+          "title": "误把有序静态链表等同有序数组",
+          "explanation": "III的逻辑有序由游标链接建立，并未保证物理槽按关键字有序，因此仍不能直接折半。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "将“有序”和“按位置随机访问”分别作为条件核对。"
+        },
+        {
+          "level": 2,
+          "text": "静态链表的数组下标表示存储槽，游标才给出逻辑后继。"
+        },
+        {
+          "level": 3,
+          "text": "检查下标中点能否直接对应逻辑序列中点，不能只看到“数组实现”四个字。"
+        }
+      ],
+      "solution": "I缺少按逻辑位置随机访问；II关键字无序；III逻辑有序但槽下标不保证键序与逻辑秩；IV两方面都不满足。四者均不适合题设的直接下标折半。普通链表可另用中点扫描等办法，但那不同于题设的直接随机访问方式。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把I改成“关键字递增且连续存储的有序数组”，其余II、III、IV及全部约定不变。仍不适合直接折半的是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仅 I、II"
+          },
+          {
+            "label": "B",
+            "content": "仅 II、IV"
+          },
+          {
+            "label": "C",
+            "content": "仅 II、III、IV"
+          },
+          {
+            "label": "D",
+            "content": "I、II、III、IV"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "只把I的数据结构从有序链表改为有序数组。",
+        "explanation": "新的I同时满足键有序和随机位置访问，可以直接折半；II、III、IV的问题保持不变，所以仍不适合的是这三项。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr01-09v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "search-storage-requirements",
+            "input": {
+              "logicalKeys": [
+                10,
+                20,
+                30,
+                40
+              ],
+              "staticSlots": [
+                30,
+                10,
+                40,
+                20
+              ],
+              "nextSlots": [
+                2,
+                3,
+                null,
+                0
+              ],
+              "headSlot": 1,
+              "replacementI": [
+                10,
+                20,
+                30,
+                40
+              ],
+              "positionAccess": "I-contiguous-array"
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "对照逻辑秩与物理槽下标",
+            "pauseQuestion": "静态链表的中间槽，是否一定保存逻辑中间的关键字？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr01-09-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "search-storage-requirements",
+          "input": {
+            "logicalKeys": [
+              10,
+              20,
+              30,
+              40
+            ],
+            "staticSlots": [
+              30,
+              10,
+              40,
+              20
+            ],
+            "nextSlots": [
+              2,
+              3,
+              null,
+              0
+            ],
+            "headSlot": 1,
+            "positionAccess": "cursor-chain"
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "对照逻辑秩与物理槽下标",
+          "pauseQuestion": "静态链表的中间槽，是否一定保存逻辑中间的关键字？"
+        }
+      ]
+    },
+    {
+      "id": "sr01-10",
+      "topic": "分块查找的最优块长",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2025",
+        "questionNumber": "7",
+        "label": "2025 年 408 真题 第 7 题（补明成功均值与整除）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2025/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "400个元素等概率作为成功查找目标，均匀分块且块长整除表长。先对块索引顺序查找定位，再从目标块首项顺序查找。以两段关键字比较次数之和计代价，最优块长是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "8"
+        },
+        {
+          "label": "B",
+          "content": "10"
+        },
+        {
+          "label": "C",
+          "content": "20"
+        },
+        {
+          "label": "D",
+          "content": "25"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "块太小导致索引部分过长",
+          "explanation": "块长8对应50块，虽然块内平均扫描较短，定位块所需的索引平均比较会明显增加。"
+        },
+        "B": {
+          "title": "只优化了块内一段",
+          "explanation": "块长10仍有40块，不能只看块内十项而忽略块索引的顺序比较。"
+        },
+        "D": {
+          "title": "向较大块偏移过多",
+          "explanation": "块长25时索引有16项，块内长度增加与索引缩短需要合计比较；该组合的均值大于均衡分块。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "设块长为s，先写出块数与s的关系。"
+        },
+        {
+          "level": 2,
+          "text": "索引和块内都是等概率成功顺序查找，两段平均次数需要相加。"
+        },
+        {
+          "level": 3,
+          "text": "研究块数与块长之和何时最小，不要把其中一段的代价忽略。"
+        }
+      ],
+      "solution": "设块长s、块数 `400/s`，平均比较为 `(400/s+1)/2+(s+1)/2`。两变量之和在s为平方根400时最小，故块长20；此时平均比较为21。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将表长由400改为900，其他规则不变，最优块长是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "10"
+          },
+          {
+            "label": "B",
+            "content": "20"
+          },
+          {
+            "label": "C",
+            "content": "30"
+          },
+          {
+            "label": "D",
+            "content": "45"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "只将表长改为900，仍要求均匀分块且两段都顺序查找。",
+        "explanation": "平均次数为 `(900/s+s)/2+1`，在s为30时两段平衡并最小，故块长30，平均31次。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr01-10v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "indexed-sequential-search-cost",
+            "input": {
+              "length": 900,
+              "blockSizes": [
+                10,
+                20,
+                30,
+                45
+              ],
+              "equiprobableSuccessful": true,
+              "indexMethod": "sequential",
+              "inBlockMethod": "sequential"
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "分开累计索引定位和块内成功查找均值",
+            "pauseQuestion": "块变小节省块内比较时，会不会增加索引定位代价？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr01-10-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "indexed-sequential-search-cost",
+          "input": {
+            "length": 400,
+            "blockSizes": [
+              8,
+              10,
+              20,
+              25
+            ],
+            "equiprobableSuccessful": true,
+            "indexMethod": "sequential",
+            "inBlockMethod": "sequential"
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "分开累计索引定位和块内成功查找均值",
+          "pauseQuestion": "块变小节省块内比较时，会不会增加索引定位代价？"
+        }
+      ]
+    }
+  ]
+}
