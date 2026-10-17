@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import '@fontsource/instrument-serif/latin-400.css'
 import '@fontsource/instrument-serif/latin-400-italic.css'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ArrowDown, ArrowRight } from '@lucide/vue'
 import { LtLinkButton } from '@/components/living'
 import { useLivingTheme } from '@/composables/useLivingTheme'
@@ -15,14 +15,12 @@ import SeeItSection from './network/SeeItSection.vue'
 import ShowcaseNav from './ShowcaseNav.vue'
 import StatsMarquee from './StatsMarquee.vue'
 import { heroWords } from './showcaseContent'
-import { useAppearanceSwitch } from './useAppearanceSwitch'
 
 /**
  * English showcase homepage (C14). The headline word and the card beside it move
  * together through what the platform does; the sections below expand each word.
  */
 useLivingTheme()
-const { dark, toggle } = useAppearanceSwitch('dark')
 
 const index = ref(0)
 const word = computed(() => heroWords[index.value])
@@ -39,6 +37,8 @@ function select(next: number) {
 }
 
 onMounted(() => {
+  // The homepage is dark only; the document follows so overscroll and scrollbars match.
+  document.documentElement.dataset.appearance = 'dark'
   if (lower.value) {
     springAnimate(
       lower.value,
@@ -51,11 +51,15 @@ onMounted(() => {
     )
   }
 })
+
+onBeforeUnmount(() => {
+  delete document.documentElement.dataset.appearance
+})
 </script>
 
 <template>
   <div class="showcase">
-    <ShowcaseNav :dark="dark" @toggle-appearance="toggle" />
+    <ShowcaseNav />
 
     <section class="hero">
       <div class="hero-inner">
@@ -170,14 +174,5 @@ onMounted(() => {
 .facts {
   padding: var(--lt-space-6) 0 var(--lt-space-7);
   border-top: 0.5px solid var(--lt-separator);
-}
-</style>
-
-<style>
-/* The appearance switch draws the new page over the old one; only while it runs. */
-.lt-appearance-switch::view-transition-old(root),
-.lt-appearance-switch::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
 }
 </style>

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
 import { RouterLink } from 'vue-router'
-import { ChevronDown, Moon, Sun } from '@lucide/vue'
-import { LtIconButton, LtLinkButton } from '@/components/living'
+import { ChevronDown } from '@lucide/vue'
+import { LtLinkButton } from '@/components/living'
 import { useSpring } from '@/composables/useSpring'
 import { springs } from '@/motion'
 import { isAuthenticated } from '@/utils/auth'
@@ -13,9 +13,6 @@ import { links, menus } from './showcaseContent'
  * scrolls it gathers into a floating glass bar and stays. The two menus share one panel
  * that reshapes and slides between them instead of closing and reopening.
  */
-const props = defineProps<{ dark: boolean }>()
-const emit = defineEmits<{ toggleAppearance: [event: MouseEvent] }>()
-
 const panelId = `${useId()}-menu`
 const condensed = ref(false)
 const openId = ref<string | null>(null)
@@ -161,15 +158,6 @@ onBeforeUnmount(() => {
       </nav>
 
       <div class="actions">
-        <LtIconButton
-          :label="props.dark ? 'Switch to light' : 'Switch to dark'"
-          variant="quiet"
-          size="sm"
-          @click="emit('toggleAppearance', $event)"
-        >
-          <Sun v-if="props.dark" :size="18" aria-hidden="true" />
-          <Moon v-else :size="18" aria-hidden="true" />
-        </LtIconButton>
         <RouterLink v-if="!isAuthenticated()" class="item" to="/login">Sign in</RouterLink>
         <LtLinkButton variant="primary" size="sm" :to="start.to">{{ start.text }}</LtLinkButton>
       </div>
