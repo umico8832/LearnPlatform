@@ -100,6 +100,8 @@ frontend/admin/   # 独立管理端 HTML 入口
   变量与检查点。嵌入处的“展开”默认链接到该场景的整页 `/viz/:scene`，用原生 View Transitions 把卡片放大过去；
   整页的返回按钮在来源页面仍被缓存时把卡片收回原嵌入位置。重做页面的 `useLivingTheme` 兼容 `KeepAlive` 的停用与重新激活。
 
+图算法的纯数据轨迹与输入边界见[图算法轨迹](graph-traces.md)，当前未注册为正式场景，也未接入页面。
+
 下述 Quiet Digital Textbook 实现仍适用于尚未重做的学习端页面和管理端。
 
 - `assets/styles/tokens.css` 是唯一视觉来源：颜色、字体、间距、圆角、边框、阴影、动效、布局、
