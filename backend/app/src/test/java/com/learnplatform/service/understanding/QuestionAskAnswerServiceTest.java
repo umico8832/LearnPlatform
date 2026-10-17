@@ -10,6 +10,8 @@ import com.learnplatform.service.ai.AiCallContext;
 import com.learnplatform.service.ai.AiProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.util.List;
 import java.util.UUID;
@@ -93,5 +95,42 @@ class QuestionAskAnswerServiceTest {
         assertEquals(ModelException.Code.CANCELLED, assertThrows(ModelException.class, () -> answers.answer(
                 context, locked, "疑问", cancellation, cancellation::check, cancellation::check)).code());
         verify(provider, times(1)).stream(any(), any(), any());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ModelException.Code.class, names = {"SCHEMA", "REFUSAL", "TRUNCATED"})
+    void rejectedJudgmentRegeneratesInsteadOfPublishingUncheckedText(ModelException.Code code) {
+        when(provider.stream(any(), any(), any())).thenReturn(text("先解释定义"))
+                .thenThrow(new ModelException(code)).thenReturn(text("再检查条件"), text("{\"safe\":true}"));
+        assertEquals("再检查条件", answer(locked));
+        verify(provider, times(4)).stream(any(), any(), any());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ModelException.Code.class, names = {"PROTOCOL", "UPSTREAM", "CANCELLED", "CONFIGURATION"})
+    void operationalJudgmentFailurePropagatesWithoutPublishingOrRetry(ModelException.Code code) {
+        when(provider.stream(any(), any(), any())).thenReturn(text("先解释定义"))
+                .thenThrow(new ModelException(code));
+        assertEquals(code, assertThrows(ModelException.class, () -> answer(locked)).code());
+        verify(provider, times(2)).stream(any(), any(), any());
+    }
+
+    @Test void protocolFailureWithNonemptyStoppedPartialIsNotTreatedAsEmptyJudgment() {
+        when(provider.stream(any(), any(), any())).thenReturn(text("先解释定义"))
+                .thenThrow(new ModelException(ModelException.Code.PROTOCOL, text("{\"safe\":true}")));
+        assertEquals(ModelException.Code.PROTOCOL,
+                assertThrows(ModelException.class, () -> answer(locked)).code());
+        verify(provider, times(2)).stream(any(), any(), any());
+    }
+
+    @Test void cancellationAfterSuccessfulJudgeStillPreventsPublishing() {
+        var cancellation = new Cancellation();
+        when(provider.stream(any(), any(), any())).thenReturn(text("先解释定义")).thenAnswer(call -> {
+            cancellation.cancel();
+            return text("{\"safe\":true}");
+        });
+        assertEquals(ModelException.Code.CANCELLED, assertThrows(ModelException.class, () -> answers.answer(
+                context, locked, "疑问", cancellation, cancellation::check, () -> { })).code());
+        verify(provider, times(2)).stream(any(), any(), any());
     }
 }

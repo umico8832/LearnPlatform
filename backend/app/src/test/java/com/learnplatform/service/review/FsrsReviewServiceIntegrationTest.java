@@ -1,11 +1,15 @@
 package com.learnplatform.service.review;
 
 import com.learnplatform.IntegrationTestBase;
+import com.learnplatform.common.exception.BusinessException;
 import io.github.openspacedrepetition.Card;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -19,6 +23,7 @@ import java.util.concurrent.Executors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag("integration")
 @SpringBootTest
@@ -103,9 +108,64 @@ class FsrsReviewServiceIntegrationTest extends IntegrationTestBase {
         return jdbc.queryForObject("SELECT COUNT(*) FROM fsrs_review_event WHERE user_id=?", Integer.class, USER);
     }
 
+    @ParameterizedTest
+    @CsvSource({"0,HARD,3", "3,HARD,3", "4,GOOD,4", "5,EASY,5"})
+    void independentCorrectSelfAssessmentMapsToStoredFsrsRating(int quality, String rating, int storedQuality) {
+        service.score(USER, questionId, FsrsReviewService.Source.REVIEW, 904L, true, quality);
+        var schedule = jdbc.queryForMap("""
+                SELECT fsrs_last_rating,last_quality,total_reviews FROM question_review_schedule
+                WHERE user_id=? AND question_id=? AND deleted=0
+                """, USER, questionId);
+        assertEquals(rating, schedule.get("fsrs_last_rating"));
+        assertEquals(storedQuality, ((Number) schedule.get("last_quality")).intValue());
+        assertEquals(6, ((Number) schedule.get("total_reviews")).intValue());
+        assertEquals(rating, jdbc.queryForObject(
+                "SELECT rating FROM fsrs_review_event WHERE user_id=?", String.class, USER));
+        assertEquals(1, countEvents());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {-1, 6})
+    void invalidSelfAssessmentDoesNotMutateCardOrCreateEvent(int quality) {
+        var before = jdbc.queryForMap("SELECT * FROM question_review_schedule WHERE user_id=? AND question_id=?",
+                USER, questionId);
+        assertEquals(1001, assertThrows(BusinessException.class, () -> service.score(
+                USER, questionId, FsrsReviewService.Source.REVIEW, 905L, true, quality)).getCode());
+        assertEquals(before, jdbc.queryForMap("SELECT * FROM question_review_schedule WHERE user_id=? AND question_id=?",
+                USER, questionId));
+        assertEquals(0, countEvents());
+    }
+
+    @Test void sourceCollisionWithAnotherQuestionRollsBackNewSchedule() {
+        service.score(USER, questionId, FsrsReviewService.Source.PRACTICE, 906L, true, null);
+        long otherQuestion = jdbc.queryForObject("SELECT MIN(id) FROM question WHERE id<>? AND deleted=0",
+                Long.class, questionId);
+        var before = jdbc.queryForMap("SELECT * FROM question_review_schedule WHERE user_id=? AND question_id=?",
+                USER, questionId);
+        assertThrows(IllegalStateException.class, () -> service.score(
+                USER, otherQuestion, FsrsReviewService.Source.PRACTICE, 906L, true, 5));
+        assertEquals(0, jdbc.queryForObject(
+                "SELECT COUNT(*) FROM question_review_schedule WHERE user_id=? AND question_id=?",
+                Integer.class, USER, otherQuestion));
+        assertEquals(before, jdbc.queryForMap("SELECT * FROM question_review_schedule WHERE user_id=? AND question_id=?",
+                USER, questionId));
+        assertEquals(1, countEvents());
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {0L, -1L})
+    void missingPersistentSourceCannotCreateReviewEvidence(long sourceId) {
+        assertThrows(IllegalArgumentException.class, () -> service.score(
+                USER, questionId, FsrsReviewService.Source.REVIEW, sourceId, true, null));
+        assertEquals(0, countEvents());
+        assertNull(jdbc.queryForObject("""
+                SELECT fsrs_card_json FROM question_review_schedule WHERE user_id=? AND question_id=?
+                """, String.class, USER, questionId));
+    }
+
     private void cleanup() {
         if (jdbc == null || questionId == 0) { return; }
         jdbc.update("DELETE FROM fsrs_review_event WHERE user_id=?", USER);
-        jdbc.update("DELETE FROM question_review_schedule WHERE user_id=? AND question_id=?", USER, questionId);
+        jdbc.update("DELETE FROM question_review_schedule WHERE user_id=?", USER);
     }
 }
