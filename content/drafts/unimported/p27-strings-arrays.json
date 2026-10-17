@@ -1,0 +1,1404 @@
+{
+  "schemaVersion": 1,
+  "section": "串匹配、数组地址与特殊矩阵压缩",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "sa-01",
+      "topic": "KMP失配时主串不回退",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2015",
+        "questionNumber": "8",
+        "label": "2015 年 408 真题 第 8 题（补明0基下标）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2015/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "下标均从0起。主串为 `abaabaabacacaabaabcc`，模式为 `abaabc`，采用普通KMP回退：失配后主串下标i不变，模式下标j改为已匹配前缀的最长真前后缀长度。首次失配发生在 `i=j=5`。下一次字符比较的下标对是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`i=1,j=0`"
+        },
+        {
+          "label": "B",
+          "content": "`i=5,j=0`"
+        },
+        {
+          "label": "C",
+          "content": "`i=5,j=2`"
+        },
+        {
+          "label": "D",
+          "content": "`i=6,j=2`"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "退回主串起点",
+          "explanation": "KMP保留主串当前位置，利用模式已匹配部分的前后缀调整模式，不重新从主串前面开始。"
+        },
+        "B": {
+          "title": "忽略可保留的前后缀",
+          "explanation": "已匹配部分存在非空的相同真前缀和真后缀，直接把模式归零会丢掉可复用信息。"
+        },
+        "D": {
+          "title": "失配时提前推进主串",
+          "explanation": "回退模式后还要用当前主串字符继续比较，不能立即跳过它。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先写出失配前已经匹配成功的模式前缀，不包含当前失配字符。"
+        },
+        {
+          "level": 2,
+          "text": "在这段前缀中找相同的最长真前缀与真后缀；主串下标先保持。"
+        },
+        {
+          "level": 3,
+          "text": "可用另一模式前缀 `ababa` 练习找边界；比较前后缀的内容，不把整段本身算真前缀。"
+        }
+      ],
+      "solution": "前五个已匹配字符为 `abaab`，最长相同真前后缀是 `ab`，长度2。因此主串i仍为5，模式j回退到2，下一次比较是 `i=5,j=2`。",
+      "viz": null,
+      "variant": {
+        "stem": "主串不变，模式仅改为 `abaaac`，首次失配随之发生在 `i=j=4`。采用相同普通KMP规则，下一次比较的下标对是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`i=4,j=0`"
+          },
+          {
+            "label": "B",
+            "content": "`i=4,j=1`"
+          },
+          {
+            "label": "C",
+            "content": "`i=5,j=1`"
+          },
+          {
+            "label": "D",
+            "content": "`i=1,j=0`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "只把模式中的一个字符改为a，首次失配位置由新模式确定。",
+        "explanation": "已匹配前缀为 `abaa`，最长相同真前后缀为 `a`，长度1；主串i保持4，故下一次为 `i=4,j=1`。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sa-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "kmp-fallback",
+            "input": {
+              "text": "abaabaabacacaabaabcc",
+              "pattern": "abaaac",
+              "indexBase": 0,
+              "mismatch": [
+                4,
+                4
+              ],
+              "table": "next"
+            },
+            "goal": "同时显示主串指针与模式边界回退",
+            "pauseQuestion": "模式回退时，当前主串字符是否已经被跳过？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sa-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "kmp-fallback",
+          "input": {
+            "text": "abaabaabacacaabaabcc",
+            "pattern": "abaabc",
+            "indexBase": 0,
+            "mismatch": [
+              5,
+              5
+            ],
+            "table": "next"
+          },
+          "goal": "同时显示主串指针与模式边界回退",
+          "pauseQuestion": "模式回退时，当前主串字符是否已经被跳过？"
+        }
+      ]
+    },
+    {
+      "id": "sa-02",
+      "topic": "KMP的字符比较计次",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2019",
+        "questionNumber": "9",
+        "label": "2019 年 408 真题 第 9 题（明确不计构表）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2019/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "主串为 `abaabaabcabaabc`，模式为 `abaabc`。下标从0起且 `next[0]=-1`。从两串首字符开始，按普通KMP匹配到第一次完整命中即停。只统计匹配阶段两个实际字符的相等比较，不计构造next表及哨兵推进。比较次数为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "9 次"
+        },
+        {
+          "label": "B",
+          "content": "10 次"
+        },
+        {
+          "label": "C",
+          "content": "12 次"
+        },
+        {
+          "label": "D",
+          "content": "15 次"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "漏算失配后的再次比较",
+          "explanation": "一次失配本身要计数，回退模式后用同一主串字符继续比较也要另计一次。"
+        },
+        "C": {
+          "title": "重复计入不执行的比较",
+          "explanation": "应只沿真实下标轨迹计数，不能把回退指针赋值或未执行的分支也当字符比较。"
+        },
+        "D": {
+          "title": "把主串长度当比较数",
+          "explanation": "第一次完整命中后便停止，并不需要检查主串所有字符。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "从首字符逐对记下实际比较的下标。"
+        },
+        {
+          "level": 2,
+          "text": "失配时主串位置不变，模式回退；这次失配和回退后的新比较分开计数。"
+        },
+        {
+          "level": 3,
+          "text": "使用表格逐行记录一次比较、结果与下一下标，不把建表或哨兵推进混进匹配次数。"
+        }
+      ],
+      "solution": "先连续成功匹配5对，接着主串下标5的a与模式下标5的c失配，这是第6次。模式回退到下标2，再成功比较4对便首次命中，所以共10次。",
+      "viz": null,
+      "variant": {
+        "stem": "模式与计数规则不变，仅将主串改为 `abaabcabaabc`。到首次完整命中共需几次字符比较？",
+        "options": [
+          {
+            "label": "A",
+            "content": "6 次"
+          },
+          {
+            "label": "B",
+            "content": "9 次"
+          },
+          {
+            "label": "C",
+            "content": "10 次"
+          },
+          {
+            "label": "D",
+            "content": "12 次"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "只更换主串，使其前缀恰好等于模式。",
+        "explanation": "前六个字符逐一匹配模式，没有失配；第六次后首次完整命中即停，不再匹配第二段。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sa-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "kmp-match",
+            "input": {
+              "text": "abaabcabaabc",
+              "pattern": "abaabc",
+              "indexBase": 0,
+              "table": "next",
+              "count": "character-comparisons-until-first-match"
+            },
+            "goal": "只在实际比较字符时累计次数",
+            "pauseQuestion": "失配回退后对同一个主串字符再比较，是否仍需计数？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sa-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "kmp-match",
+          "input": {
+            "text": "abaabaabcabaabc",
+            "pattern": "abaabc",
+            "indexBase": 0,
+            "table": "next",
+            "count": "character-comparisons-until-first-match"
+          },
+          "goal": "只在实际比较字符时累计次数",
+          "pauseQuestion": "失配回退后对同一个主串字符再比较，是否仍需计数？"
+        }
+      ]
+    },
+    {
+      "id": "sa-03",
+      "topic": "KMP的nextval优化",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2024",
+        "questionNumber": "6",
+        "label": "2024 年 408 真题 第 6 题（明确nextval与0基约定）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2024/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "模式为 `aabaab`，下标从0起，普通回退表约定 `next[0]=-1`。修正表nextval在回退位置字符与当前失配的模式字符相同时继续回退，跳过必然再次失配的比较。模式在某个位置失配后，使用nextval能向右移动的最大距离为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "5"
+        },
+        {
+          "label": "B",
+          "content": "4"
+        },
+        {
+          "label": "C",
+          "content": "3"
+        },
+        {
+          "label": "D",
+          "content": "2"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "漏掉后段重复字符的继续回退",
+          "explanation": "修正表不仅处理模式开头；每个失配位置都要检查回退字符是否相同，再求各位置滑移的最大值。"
+        },
+        "C": {
+          "title": "仍按普通next计算",
+          "explanation": "普通next保留最长边界，但可能立即比较到相同的模式字符；nextval会进一步跳过这种比较。"
+        },
+        "D": {
+          "title": "只看最前面的重复片段",
+          "explanation": "最大滑移须遍历所有可能失配位置，不能只依据模式开头两个相同字符。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先按明确的0基约定求普通next，再考虑同字符优化。"
+        },
+        {
+          "level": 2,
+          "text": "当前位置为j、回退到k时，模式起点的右移量是 `j-k`。"
+        },
+        {
+          "level": 3,
+          "text": "可先在另一个含重复字符的模式 `aaab` 上观察：已知当前字符失配，回退到相同字符后是否值得再比较一次？"
+        }
+      ],
+      "solution": "普通next为 `-1,0,1,0,1,2`，优化后nextval为 `-1,-1,1,-1,-1,1`。逐项计算 `j-nextval[j]`，最大值出现在j为4时，右移5位。",
+      "viz": null,
+      "variant": {
+        "stem": "保持模式、下标与哨兵约定，仅改用未经同字符优化的普通next。失配后最大右移距离为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "2"
+          },
+          {
+            "label": "B",
+            "content": "3"
+          },
+          {
+            "label": "C",
+            "content": "4"
+          },
+          {
+            "label": "D",
+            "content": "5"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅取消nextval的同字符跳过优化。",
+        "explanation": "普通next为 `-1,0,1,0,1,2`，各位置的右移量为1、1、1、3、3、3，最大为3。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sa-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "kmp-table-shift",
+            "input": {
+              "pattern": "aabaab",
+              "indexBase": 0,
+              "sentinel": -1,
+              "table": "next"
+            },
+            "goal": "对比普通回退与同字符优化后的滑移",
+            "pauseQuestion": "回退目标字符若与当前已知失配的模式字符相同，还需要重复比较吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sa-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "kmp-table-shift",
+          "input": {
+            "pattern": "aabaab",
+            "indexBase": 0,
+            "sentinel": -1,
+            "table": "nextval"
+          },
+          "goal": "对比普通回退与同字符优化后的滑移",
+          "pauseQuestion": "回退目标字符若与当前已知失配的模式字符相同，还需要重复比较吗？"
+        }
+      ]
+    },
+    {
+      "id": "sa-04",
+      "topic": "三对角矩阵的行压缩",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2016",
+        "questionNumber": "4",
+        "label": "2016 年 408 真题 第 4 题（同义表述）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2016/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "100阶三对角矩阵的矩阵行列编号为1至100，仅把满足 `|i-j|<=1` 的带内元素按行优先依次存入0基数组N。元素 `m[30][30]` 对应N的哪个下标？",
+      "options": [
+        {
+          "label": "A",
+          "content": "86"
+        },
+        {
+          "label": "B",
+          "content": "87"
+        },
+        {
+          "label": "C",
+          "content": "88"
+        },
+        {
+          "label": "D",
+          "content": "89"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "少算本行内的偏移",
+          "explanation": "第30行按列从29开始存储，目标位于本行第二个存储位置，不能只数前面的整行。"
+        },
+        "C": {
+          "title": "将存储序号直接当0基下标",
+          "explanation": "数到第几个元素与从0起的下标相差一；本题明确N从0开始。"
+        },
+        "D": {
+          "title": "把边界行也按三个元素计",
+          "explanation": "第一行只有两项，不能对所有行统一按三项累计，再混入本行偏移。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先区分第一行、内部行和最后一行各存几项。"
+        },
+        {
+          "level": 2,
+          "text": "下标等于目标之前所有已存元素数，分成完整前置行与本行前置列。"
+        },
+        {
+          "level": 3,
+          "text": "内部行只存左下、对角、右上相邻三项；本行从哪一列开始要先确定。"
+        }
+      ],
+      "solution": "第一行存2项，第2至29行共28行、各3项，前面共86项。第30行先存列29，再存列30，所以目标下标为87。",
+      "viz": null,
+      "variant": {
+        "stem": "保持矩阵与存储约定，仅把查询元素改为 `m[30][29]`，其N下标为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "86"
+          },
+          {
+            "label": "B",
+            "content": "87"
+          },
+          {
+            "label": "C",
+            "content": "88"
+          },
+          {
+            "label": "D",
+            "content": "89"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅把目标列从30改为29。",
+        "explanation": "前面完整行仍有86项，列29是本行第一个带内元素，行内偏移为0，故下标86。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sa-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "matrix-storage",
+            "input": {
+              "order": 100,
+              "scheme": "tridiagonal",
+              "traversal": "row-major",
+              "matrixBase": 1,
+              "arrayBase": 0,
+              "query": [
+                30,
+                29
+              ]
+            },
+            "goal": "逐行枚举带内元素并累计线性下标",
+            "pauseQuestion": "第一行和内部行是否存相同数量的元素？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sa-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "matrix-storage",
+          "input": {
+            "order": 100,
+            "scheme": "tridiagonal",
+            "traversal": "row-major",
+            "matrixBase": 1,
+            "arrayBase": 0,
+            "query": [
+              30,
+              30
+            ]
+          },
+          "goal": "逐行枚举带内元素并累计线性下标",
+          "pauseQuestion": "第一行和内部行是否存相同数量的元素？"
+        }
+      ]
+    },
+    {
+      "id": "sa-05",
+      "topic": "稀疏矩阵压缩表示",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2017",
+        "questionNumber": "3",
+        "label": "2017 年 408 真题 第 3 题（同义表述）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2017/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "在常用矩阵存储结构中，以下哪一组的两种结构都适合只围绕非零元素压缩保存稀疏矩阵？",
+      "options": [
+        {
+          "label": "A",
+          "content": "三元组表和十字链表"
+        },
+        {
+          "label": "B",
+          "content": "三元组表和邻接矩阵"
+        },
+        {
+          "label": "C",
+          "content": "十字链表和二叉链表"
+        },
+        {
+          "label": "D",
+          "content": "邻接矩阵和十字链表"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把整块矩阵存储当非零压缩",
+          "explanation": "普通邻接矩阵仍按全部行列位置分配空间，不是这里所说的只存非零元素的压缩结构。"
+        },
+        "C": {
+          "title": "混入二叉树的标准链式表示",
+          "explanation": "二叉链表是常见的二叉树表示；本题问稀疏矩阵的两种标准压缩结构，应保留行列位置与非零值。"
+        },
+        "D": {
+          "title": "忽略其中一项仍是全矩阵",
+          "explanation": "十字链表适合稀疏矩阵，但同组的普通邻接矩阵仍占整块行列空间，不能使这一组的两项都满足条件。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "检查每一种结构是否主要为非零元素分配记录。"
+        },
+        {
+          "level": 2,
+          "text": "三元组保存行、列和值；另一种结构需要同时支持行方向和列方向的链接。"
+        },
+        {
+          "level": 3,
+          "text": "“一组中两种都适合”要求逐项核对，不能只看到其中一种正确结构就选整组。"
+        }
+      ],
+      "solution": "三元组表保存非零元素的位置与值，十字链表让一个非零元素同时属于所在行和所在列的链。普通邻接矩阵仍分配全矩阵位置，二叉链表并非本题的标准稀疏矩阵表示，故选A。",
+      "viz": null,
+      "variant": {
+        "stem": "若希望每个非零元素同时进入对应的行链与列链，以便沿两个方向访问和维护，最符合该组织方式的结构是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "普通三元组顺序表"
+          },
+          {
+            "label": "B",
+            "content": "十字链表"
+          },
+          {
+            "label": "C",
+            "content": "普通邻接矩阵"
+          },
+          {
+            "label": "D",
+            "content": "顺序栈"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "将两种结构的识别改为按行链和列链组织非零元素的具体需求。",
+        "explanation": "十字链表的非零元素结点具有行、列方向链接，并通过相应头指针组织；不因此承诺任意查找或插删都是常数时间。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sa-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "sparse-matrix-storage",
+            "input": {
+              "rows": 4,
+              "columns": 5,
+              "entries": [
+                [
+                  0,
+                  1,
+                  3
+                ],
+                [
+                  2,
+                  4,
+                  7
+                ]
+              ],
+              "view": "row-and-column-links",
+              "indexBase": 0
+            },
+            "goal": "同一非零项在表和行列链中的身份保持一致",
+            "pauseQuestion": "普通全矩阵是否会只为非零元素分配槽位？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sa-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "sparse-matrix-storage",
+          "input": {
+            "rows": 4,
+            "columns": 5,
+            "entries": [
+              [
+                0,
+                1,
+                3
+              ],
+              [
+                2,
+                4,
+                7
+              ]
+            ],
+            "view": "triples-and-cross-list",
+            "indexBase": 0
+          },
+          "goal": "同一非零项在表和行列链中的身份保持一致",
+          "pauseQuestion": "普通全矩阵是否会只为非零元素分配槽位？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "sa-06",
+      "topic": "对称矩阵上三角按行存储",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2018",
+        "questionNumber": "3",
+        "label": "2018 年 408 真题 第 3 题（补明包含对角线与0基数组）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2018/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "12阶对称矩阵，行列从1编号。把包含对角线的上三角元素按行优先依次放入0基数组N。元素 `m[6][6]` 的N下标为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "50"
+        },
+        {
+          "label": "B",
+          "content": "51"
+        },
+        {
+          "label": "C",
+          "content": "55"
+        },
+        {
+          "label": "D",
+          "content": "66"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "将第几个元素与下标混淆",
+          "explanation": "若先计出目标是第几个存储元素，还须换成0基下标，不能多加一。"
+        },
+        "C": {
+          "title": "套用无关的三角数",
+          "explanation": "目标之前的行长依次从12递减到8，不能直接用1到10的和代替这个前缀。"
+        },
+        "D": {
+          "title": "把整块容量当局部偏移",
+          "explanation": "66是12阶严格上三角的元素总量，不是含对角线上三角中某个目标的下标。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先列目标前各完整行的上三角存储长度。"
+        },
+        {
+          "level": 2,
+          "text": "上三角含对角线，每往下一行，可存列数减少一。"
+        },
+        {
+          "level": 3,
+          "text": "0基下标就是目标之前已存的元素数，不再额外加一。"
+        }
+      ],
+      "solution": "前5行长度依次12、11、10、9、8，总和50。第6行从列6开始，目标正是该行首项，故N下标50。",
+      "viz": null,
+      "variant": {
+        "stem": "相同矩阵与存储方式，目标仅改为下三角元素 `m[8][6]`。其值应从N的哪个下标取得？",
+        "options": [
+          {
+            "label": "A",
+            "content": "50"
+          },
+          {
+            "label": "B",
+            "content": "51"
+          },
+          {
+            "label": "C",
+            "content": "52"
+          },
+          {
+            "label": "D",
+            "content": "53"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "只更换查询的矩阵位置，需先利用对称性。",
+        "explanation": "对称性使它对应上三角的 `m[6][8]`。前5行共50项，本行从列6开始，列8偏移2，下标52。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sa-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "matrix-storage",
+            "input": {
+              "order": 12,
+              "scheme": "symmetric-upper",
+              "traversal": "row-major",
+              "matrixBase": 1,
+              "arrayBase": 0,
+              "query": [
+                8,
+                6
+              ]
+            },
+            "goal": "先做对称映射，再按实际存储顺序数位置",
+            "pauseQuestion": "目标在下三角时，能否直接按下三角的行长累计？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sa-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "matrix-storage",
+          "input": {
+            "order": 12,
+            "scheme": "symmetric-upper",
+            "traversal": "row-major",
+            "matrixBase": 1,
+            "arrayBase": 0,
+            "query": [
+              6,
+              6
+            ]
+          },
+          "goal": "先做对称映射，再按实际存储顺序数位置",
+          "pauseQuestion": "目标在下三角时，能否直接按下三角的行长累计？"
+        }
+      ]
+    },
+    {
+      "id": "sa-07",
+      "topic": "对称矩阵上三角按列存储",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2020",
+        "questionNumber": "1",
+        "label": "2020 年 408 真题 第 1 题（同义表述）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2020/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "10阶对称矩阵，矩阵行列从1起。包含对角线的上三角按列优先压入0基数组N。查询 `m[7][2]`，应读取N的哪个下标？",
+      "options": [
+        {
+          "label": "A",
+          "content": "15"
+        },
+        {
+          "label": "B",
+          "content": "16"
+        },
+        {
+          "label": "C",
+          "content": "22"
+        },
+        {
+          "label": "D",
+          "content": "23"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "未完成正确的列前缀与偏移计算",
+          "explanation": "需先把目标映到所存的上三角，再按该列之前的全部列累计，不能只取一个未对应目标列的三角数。"
+        },
+        "B": {
+          "title": "少算一列的前缀",
+          "explanation": "映射后目标在第7列；前面有6列，而不是5列，少一列就会使前缀计数不足。"
+        },
+        "D": {
+          "title": "0基下标多加一",
+          "explanation": "计数已经是目标之前的元素数，转换为N下标时不应再加一。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先判断查询位置是否在实际保存的上三角中。"
+        },
+        {
+          "level": 2,
+          "text": "上三角按列保存时，第j列包含从第1行到第j行。"
+        },
+        {
+          "level": 3,
+          "text": "对称映射后，完整前置列与本列内的行偏移分开计算。"
+        }
+      ],
+      "solution": "利用对称性读取 `m[2][7]`。第1至6列共有21项，第7列从行1开始，行2偏移1，故下标为22。",
+      "viz": null,
+      "variant": {
+        "stem": "保持全部存储约定，查询元素仅改为 `m[7][7]`，N下标为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "21"
+          },
+          {
+            "label": "B",
+            "content": "22"
+          },
+          {
+            "label": "C",
+            "content": "27"
+          },
+          {
+            "label": "D",
+            "content": "28"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "只将目标位置改为第7个对角元素。",
+        "explanation": "第7列之前仍有21项，行7在本列内偏移6，所以下标27。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sa-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "matrix-storage",
+            "input": {
+              "order": 10,
+              "scheme": "symmetric-upper",
+              "traversal": "column-major",
+              "matrixBase": 1,
+              "arrayBase": 0,
+              "query": [
+                7,
+                7
+              ]
+            },
+            "goal": "对比按列存储与按行存储的前缀长度",
+            "pauseQuestion": "上三角的第7列前面需要累计几列？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sa-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "matrix-storage",
+          "input": {
+            "order": 10,
+            "scheme": "symmetric-upper",
+            "traversal": "column-major",
+            "matrixBase": 1,
+            "arrayBase": 0,
+            "query": [
+              7,
+              2
+            ]
+          },
+          "goal": "对比按列存储与按行存储的前缀长度",
+          "pauseQuestion": "上三角的第7列前面需要累计几列？"
+        }
+      ]
+    },
+    {
+      "id": "sa-08",
+      "topic": "由地址差反推二维数组列数",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2021",
+        "questionNumber": "3",
+        "label": "2021 年 408 真题 第 3 题（补明位置有效）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2021/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "二维数组A从0起编号，按行优先连续存储，每项占1个存储单元。`A[0][0]` 地址100，`A[3][3]` 地址220，已知查询位置均有效。`A[5][5]` 地址为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "295"
+        },
+        {
+          "label": "B",
+          "content": "300"
+        },
+        {
+          "label": "C",
+          "content": "301"
+        },
+        {
+          "label": "D",
+          "content": "306"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "漏掉列内偏移",
+          "explanation": "在跨过整行的偏移之外，还要加本行内的列下标，不能只加五整行。"
+        },
+        "C": {
+          "title": "目标列多移一项",
+          "explanation": "应按题目给定的列下标5计算，不能再向右移一个单元。"
+        },
+        "D": {
+          "title": "未由校准地址确定行跨度",
+          "explanation": "必须先用已知地址差求每行元素数，再算新位置，不能猜测行跨度。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "把首地址到已知位置的差分成若干完整行与列内偏移。"
+        },
+        {
+          "level": 2,
+          "text": "行优先每跨一行都要越过完整的列数，先解出这个未知列数。"
+        },
+        {
+          "level": 3,
+          "text": "可画一个两行三列的小数组核对：到第二行的某列，须先越过第一行全部元素。"
+        }
+      ],
+      "solution": "设列数为c，则已知地址满足 `3*c+3=220-100`，得到c为39。目标地址为 `100+5*39+5=300`。总行数无法由这些数据唯一确定，也无需猜测。",
+      "viz": null,
+      "variant": {
+        "stem": "保持同一数组与校准地址，只把目标改为 `A[5][6]`，其地址为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "295"
+          },
+          {
+            "label": "B",
+            "content": "300"
+          },
+          {
+            "label": "C",
+            "content": "301"
+          },
+          {
+            "label": "D",
+            "content": "306"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅把目标列下标由5改为6。",
+        "explanation": "列数仍为39，目标地址为 `100+5*39+6=301`。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sa-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "array-address",
+            "input": {
+              "traversal": "row-major",
+              "indexBase": 0,
+              "elementUnits": 1,
+              "base": 100,
+              "columns": 39,
+              "calibration": {
+                "index": [
+                  3,
+                  3
+                ],
+                "address": 220
+              },
+              "query": [
+                5,
+                6
+              ]
+            },
+            "goal": "先解行跨度，再区分整行和列内地址偏移",
+            "pauseQuestion": "给定地址是否足以唯一确定总行数？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sa-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "array-address",
+          "input": {
+            "traversal": "row-major",
+            "indexBase": 0,
+            "elementUnits": 1,
+            "base": 100,
+            "columns": 39,
+            "calibration": {
+              "index": [
+                3,
+                3
+              ],
+              "address": 220
+            },
+            "query": [
+              5,
+              5
+            ]
+          },
+          "goal": "先解行跨度，再区分整行和列内地址偏移",
+          "pauseQuestion": "给定地址是否足以唯一确定总行数？"
+        }
+      ]
+    },
+    {
+      "id": "sa-09",
+      "topic": "三元组外的矩阵形状元数据",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2023",
+        "questionNumber": "3",
+        "label": "2023 年 408 真题 第 3 题（统一稀疏矩阵术语）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2023/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案",
+        "collectionNote": "收录题干写作系数矩阵；本站按三元组压缩语义写为稀疏矩阵，并明确四项中必要信息的问法，仍待审核。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "用三元组表保存稀疏矩阵M，每项记录一个非零元素的行号、列号和值。只比较下列四种信息，哪些无法由三元组可靠恢复而必须另外保留？I. M的总行数；II. 含非零元素的行数；III. M的总列数；IV. 含非零元素的列数。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 I 和 III"
+        },
+        {
+          "label": "B",
+          "content": "仅 I 和 IV"
+        },
+        {
+          "label": "C",
+          "content": "仅 II 和 IV"
+        },
+        {
+          "label": "D",
+          "content": "I、II、III、IV"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把非零列数当总列数",
+          "explanation": "尾部可以有全零列；非零列数能由三元组列号去重获得，却不能确定矩阵总列数。"
+        },
+        "C": {
+          "title": "丢失整体矩阵形状",
+          "explanation": "只知道哪些行列非零，无法区分末尾另有全零行列的矩阵，总行列数仍须保存。"
+        },
+        "D": {
+          "title": "把可派生统计都当必需元数据",
+          "explanation": "非零行数和非零列数可从三元组坐标去重得到，不属于这里无法恢复的形状信息。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "思考全零的末尾行或末尾列会不会出现在三元组中。"
+        },
+        {
+          "level": 2,
+          "text": "比较“总行列数”和“出现过非零项的行列数”，二者是否总相等？"
+        },
+        {
+          "level": 3,
+          "text": "构造两个尺寸不同但非零三元组完全相同的矩阵，检查哪些信息会丢失。"
+        }
+      ],
+      "solution": "总行数和总列数决定包括全零边缘在内的完整形状，不能由非零项最大坐标可靠恢复，故选I、III。非零行数、列数可从坐标统计。常见表头还记录非零项数或由表长得到它；本题四项并未列出该计数，不能因此说只需形状就足够定义整个存储。",
+      "viz": null,
+      "variant": {
+        "stem": "一个2行3列的全零矩阵和一个5行7列的全零矩阵，其非零三元组序列都为空。为区分它们，至少要另外保留以下哪种信息？",
+        "options": [
+          {
+            "label": "A",
+            "content": "矩阵的总行数与总列数"
+          },
+          {
+            "label": "B",
+            "content": "仅非零行数与非零列数"
+          },
+          {
+            "label": "C",
+            "content": "最后一个非零元素的坐标"
+          },
+          {
+            "label": "D",
+            "content": "不需要任何额外信息"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "将抽象的必要元数据问题换成两个全零矩阵的具体反例。",
+        "explanation": "两矩阵没有非零项，非零行列数均为0，也不存在最后一项；只有总行列形状信息能区分所给尺寸。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sa-09v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "sparse-matrix-metadata",
+            "input": {
+              "matrices": [
+                {
+                  "rows": 2,
+                  "columns": 3,
+                  "entries": []
+                },
+                {
+                  "rows": 5,
+                  "columns": 7,
+                  "entries": []
+                }
+              ],
+              "indexBase": 0
+            },
+            "goal": "相同非零项不能唯一决定整体矩阵尺寸",
+            "pauseQuestion": "在末尾增加全零行列，非零三元组是否会随之出现新记录？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sa-09-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "sparse-matrix-metadata",
+          "input": {
+            "rows": 4,
+            "columns": 5,
+            "entries": [
+              [
+                0,
+                1,
+                3
+              ],
+              [
+                2,
+                3,
+                7
+              ]
+            ],
+            "zeroExtension": [
+              6,
+              8
+            ],
+            "indexBase": 0
+          },
+          "goal": "相同非零项不能唯一决定整体矩阵尺寸",
+          "pauseQuestion": "在末尾增加全零行列，非零三元组是否会随之出现新记录？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "sa-10",
+      "topic": "二维数组地址中的单位",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "一个2行3列的数组A下标从0起，每项占2字节，元素连续且无额外填充，首项 `A[0][0]` 字节地址200。按行优先保存时，`A[1][1]` 的字节地址为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "204"
+        },
+        {
+          "label": "B",
+          "content": "206"
+        },
+        {
+          "label": "C",
+          "content": "208"
+        },
+        {
+          "label": "D",
+          "content": "210"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把元素偏移当字节偏移",
+          "explanation": "每项占2字节，算出前面有多少项之后还须换算成字节。"
+        },
+        "B": {
+          "title": "误用列优先顺序",
+          "explanation": "行优先先存完第一行，再到第二行目标位置；不能按列逐列累计。"
+        },
+        "D": {
+          "title": "越过目标到行尾",
+          "explanation": "目标列下标是1，不是本行最后一列2，不能再多算一个元素。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先把已存元素坐标按给定顺序列出。"
+        },
+        {
+          "level": 2,
+          "text": "目标之前的元素数量与字节数量是两个不同单位。"
+        },
+        {
+          "level": 3,
+          "text": "可用一行两项的数组核对：第二项地址与首项相差的是一项长度，而不是固定相差1。"
+        }
+      ],
+      "solution": "目标前有第一行3项与第二行首项1项，共4项；占8字节，地址为208。",
+      "viz": null,
+      "variant": {
+        "stem": "保持尺寸、元素字节数、基址和查询位置，仅改为按列优先存储，`A[1][1]` 的字节地址为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "204"
+          },
+          {
+            "label": "B",
+            "content": "206"
+          },
+          {
+            "label": "C",
+            "content": "208"
+          },
+          {
+            "label": "D",
+            "content": "210"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将存储顺序从行优先改为列优先。",
+        "explanation": "列0先存2项，列1中目标前还有行0的一项，共3项、6字节，因此地址206。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sa-10v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "array-address",
+            "input": {
+              "rows": 2,
+              "columns": 3,
+              "traversal": "column-major",
+              "indexBase": 0,
+              "elementBytes": 2,
+              "base": 200,
+              "query": [
+                1,
+                1
+              ]
+            },
+            "goal": "显式区分逻辑元素偏移与字节地址",
+            "pauseQuestion": "先跨完整行或完整列之后，还需要乘上每项的字节数吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sa-10-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "array-address",
+          "input": {
+            "rows": 2,
+            "columns": 3,
+            "traversal": "row-major",
+            "indexBase": 0,
+            "elementBytes": 2,
+            "base": 200,
+            "query": [
+              1,
+              1
+            ]
+          },
+          "goal": "显式区分逻辑元素偏移与字节地址",
+          "pauseQuestion": "先跨完整行或完整列之后，还需要乘上每项的字节数吗？"
+        }
+      ]
+    }
+  ]
+}
