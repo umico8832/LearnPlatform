@@ -1,113 +1,71 @@
 # 简历与面试材料
 
-本文档只使用真实已实现能力。提交简历前应再次核对[项目状态](../project/status.md)和代码，不把候选方向写成完成项。
+以下是基于真实实现的初稿。投递前对照[项目状态](../project/status.md)与目标提交核对，数字是工程证据，不作为学习效果或生产规模指标。
 
 ## 中文简历描述
 
 ### 简洁版
 
-> **LearnPlatform 课程学习平台**：基于 Vue 3、TypeScript、Spring Boot 3 和 MySQL 的前后端分离
-> Web 学习平台，以 408 数据结构课程为完整内容，围绕 AI 教学与试卷学习两条入口连接知识讲解、
-> 互动课件、练习、错题、间隔复习、阶段测评与官方真题考试，形成同一条可追踪的学习闭环。
-> 服务端判分与考试状态机保证学习事实真实可信，官方来源与人工批阅可核验；使用 Spring Security
->
-> - JWT 保护权限，通过 Flyway、Docker Compose、Testcontainers、Vitest 和 Playwright 建立可迁移、
->   可测试、可演示的工程基线。
+> **LearnPlatform AI 学习平台**：使用 Vue 3、TypeScript、Spring Boot 3、MySQL 构建“一道题从错到懂”的学习闭环：所选错项误区、三级提示、参数化算法动画、答案由服务端保管的变式题与 FSRS 间隔复习。追问在正解开放前隔离私有材料，并经规则与独立模型判断；仅独立作答更新复习排期。通过 Flyway、Testcontainers、Vitest 和隔离 Playwright 验证权限、判分、并发和学习事实的一致性。
 
 ### 详细版
 
-> 设计并实现一套以课程长期学习过程为中心的学习平台，形成「我的课程—课程空间—AI 教学/练习/
-> 复习/测评—真题考试—复盘」的完整业务闭环。后端使用 Spring Boot、Spring Security、
-> MyBatis-Plus 和 Flyway，前端使用 Vue 3、Element Plus、Pinia 和 ECharts。
+> 实现以课程为组织入口的 AI 学习平台，连接题目理解、练习、错题、复习、阶段测评与试卷学习；学习与限时考试使用独立状态机，主观题由管理员按评分点批阅，客户端不决定判分和总分。
 >
-> 以 Design Tokens 统一学习端与管理端的视觉与信息架构：登录默认进入「我的课程」，练习、错题、
-> 复习、测评与真题进入课程内部；学习页面使用沉浸式 Focus 布局，考试模式完整展示时间、作答
-> 状态与离开保护；数值直接呈现真实状态，学习投入以原位记录和个人日历呈现。
+> 设计题目理解与导师协议：作答后只返回所选错项的误区，已审核提示按级领取，服务端控制正解开放；变式答案提交前保存在服务端。追问未解锁时只向生成模型提供已可见材料，回答经过规则与独立 JSON 判断，最多重生成一次后安全退回；使用同一 runId 计一次每日配额，各次生成和判断分别审计用量。
 >
-> 将 AI 输出从一次性文本扩展为可缓存、可反馈的学习资产，支持 JWT 鉴权的 SSE 流式生成、答案
-> 服务端隔离的结构化变式题和首次真实判分；Tutor 会话可恢复，并按需维护计划、笔记和课程记忆。
-> 已审查的分步教学与受限互动课件（栈、队列、双端队列、线性表等）由服务端约束，理解检查由
-> 服务端判分。实现投稿 AI 质检、知识点标注和难度评估；管理员显式完成投稿审核、AI 变式审查、
-> 主观题批阅与显式入库。
+> 用确定性 TypeScript 模拟器驱动链表、出栈序列、二叉树动画，输入为场景描述与本题数据，支持执行轨迹和预测检查点，不执行模型代码。FSRS 评分区分独立与辅助作答，通过评分来源去重及事务保护避免重试重复计分；旧卡在首次 FSRS 评分前保留原到期日。
 >
-> 建立 AI Token、成本、用户配额、调整审计、trace、提醒和观察性学习效果分析；通过样本量与去重学习者双门槛避免把少数高频用户或调用次数解释成学习提升。使用 Docker Compose、Prometheus、Grafana、Loki、JUnit、Testcontainers、Vitest 和 Playwright 完成部署、监控和关键流程验证。
+> 前端采用 Vue 3、TypeScript 与设计变量组织学习端和管理端，英文展示首页包含演示卡、路网与链表实验室；内容发布保留来源和审核边界。使用 Spring Security/JWT、MyBatis-Plus、Flyway、Docker Compose、JUnit/Testcontainers、Vitest/Playwright 建立可迁移和可验证的工程基线。
 
 ## English summary
 
-> **LearnPlatform** is a full-stack course learning platform built with Vue 3, TypeScript, Spring Boot 3, and MySQL. It centers on long-term course learning: AI tutoring, interactive courseware, practice, wrong-answer review, spaced repetition, stage assessments, and official 408 Data Structures exams share one traceable learning loop. Server-side grading and an exam state machine keep learning facts trustworthy; official sources and manual grading are verifiable. The system uses Spring Security with JWT, Flyway migrations, Docker Compose, Testcontainers, Vitest, and Playwright. AI usage is governed through token, cost, quota, audit, trace, and alert data, while learning-effect reports remain explicitly observational.
+> **LearnPlatform** is a course learning platform built with Vue 3, TypeScript, Spring Boot 3, and MySQL. It connects chosen-option misconception feedback, progressive hints, deterministic algorithm visualizations, server-graded variants, and FSRS review scheduling. Before solution unlock, question follow-ups isolate private reference material and check generated replies with rules and a separate model judgment. Only unaided answers update review schedules. Flyway, Testcontainers, Vitest, and isolated Playwright tests verify access control, grading, concurrency, and learning records.
 
-## 可讲的工程亮点
+## 可核对的规模与验证
 
-### 判分与考试一致性
+截至 2026-10-17，以下数字有明确边界，投递前须重新核对：
 
-- 多题型答案归一化和最终判分位于 Service。
-- 考试提交锁定考试记录，校验归属、题目集合、重复题号和时限。
-- `exam_answer` 唯一约束为并发重复提交提供数据库兜底。
-- 用户端在提交前不获取正确选项和私有解析。
+| 项目 | 已记录事实 | 证据与边界 |
+| --- | --- | --- |
+| 正式可视化 | 3 类：链表、出栈序列、二叉树 | `frontend/src/viz/scenes/`；首页路网不算新增正式场景 |
+| 已审核理解题 | 27 道 | 两道预置 + M5 25道；包含提示、误区与变式，审核方式为AI初稿+冷读+页面审核 |
+| 待审核扩展 | 树章节18道；图论及后续章节题目仅存草稿 | 树为PENDING/DRAFT，图论未入库且未挂动画；不并入27道 |
+| 完整本地检查 | 六job通过，785.9秒；前端1093项，隔离E2E51项零重试 | 代码基线60a2a8cc；后续聚焦验证见项目状态，不能称当前HEAD全量通过 |
+| 关键后端测试补强 | 同一相关套件47→65项，含40项真实MySQL集成 | 判断服务分支20/26→24/26，FSRS25/40→36/40；仅表示该套件覆盖 |
+| 追问边界模拟 | 30条语料双模式60/60通过 | 确定性模拟用于边界回归，未完成真实模型教学质量评测 |
 
-### AI 资产与结构化训练
+技术版本以主线锁文件和 Maven 为准。Spring Boot 3.5 与前端依赖升级为独立实验分支，未合入；简历不把实验版本当主线版本。
 
-- `AiProvider` 隔离业务层和 OpenAI 兼容上游协议。
-- 同步与 SSE 流式接口并存，前端处理增量、取消、错误和完成事件。
-- AI 学习资产按题目和类型缓存并支持用户反馈。
-- 结构化变式题的正确答案只保存在服务端，首次判分结果锁定。
+## 面试时可展开的取舍
 
-### 内容生产治理
+### 为什么先隔离材料，再检查回答？
 
-- 用户投稿与正式题目使用独立状态和数据表。
-- AI 提供质检、标注、难度和审核意见，但不自动发布。
-- 正式题目保留来源、纠错、复审和版本记录。
-- 疑似重复检测优先使用可解释规则。
+前端隐藏答案无法约束模型输入。未解锁时，生成模型拿不到正确答案、正解讲解和其他错项误区；独立判断使用私有参考检查结果泄露与材料口径。规则检查提供确定性拦截，模型判断补充推导和排除法等语义风险。生成内容完整缓冲后才发布，代价是增加首字延迟、调用与成本；真实泄露率和误拦率仍需真实评测。解锁后允许完整解释，继续检查材料口径。
 
-### AI 运营与效果边界
+### 为什么同一追问有多个调用，却只占一次额度？
 
-- 从上游 usage 提取输入、输出和总 Token。
-- 仅在配置真实模型价格时固化调用成本。
-- 支持用户配额、调整审计、traceId、Prompt 指纹、模型配置指纹和运营提醒。
-- 学习效果同时检查作答量和去重学习者，样本不足返回 `INSUFFICIENT_DATA`。
-- 明确区分观察性关联与因果提升。
+生成、重生成和独立判断分别产生上游用量，审计必须完整；学习者发起的一次追问则共享服务端 runId。用户行锁保护每日准入，配额按分组首次调用计数，跨午夜的后续调用不占新一天额度。次数、成本和回答质量是不同指标。
 
-### 工程质量
+### 为什么辅助作答不更新 FSRS？
 
-- Flyway 管理数据库迁移，Testcontainers 验证真实 MySQL 约束。
-- Maven `verify` 接入 Checkstyle、SpotBugs 和 JaCoCo。
-- 前端使用 ESLint、Prettier、Vitest 和全源码覆盖率门槛。
-- Playwright 在隔离 Docker Profile 中覆盖登录、练习错题、考试和投稿审核等流程。
-- Compose 集成 MySQL、Redis、Nginx、Prometheus、Grafana 和 Loki。
+看到提示后的正确答案不能作为独立记忆证据。服务端记录提示与追问辅助状态，辅助变式保留判分事实但不评分；独立评分通过来源唯一约束与事务去重。这样保留真实过程，也避免反复请求改变卡片。具体语义见[题目理解 API](../reference/api/question-understanding.md)。
 
-## 面试问题
+### 为什么用模拟器，而不是运行模型生成的动画代码？
 
-### 为什么没有使用微服务？
+场景只接收白名单操作和参数，由确定性模拟器生成步骤、变量和检查点，可在内容审核时重放。代价是支持范围限于已实现的场景；图算法候选与不适配的题目保持草稿或无动画。首页展示脚本与正式学习场景的职责分开。
 
-当前业务量和团队规模不需要分布式部署。模块化单体可以使用本地事务保证判分、考试和投稿入库一致性，同时减少服务治理和运维成本。只有出现独立扩缩容、团队边界或故障隔离需求时，才值得拆分。
+### 为什么采用模块化单体？
 
-### 为什么主要使用逻辑外键？
+当前团队和部署规模适合本地事务，能直接保护判分、考试提交、内容入库与评分去重，减少分布式运维成本。独立扩缩容或团队职责成为实际需求时再评估拆分。当前课程/知识点引用主要由服务校验保护，极端并发竞态仍是已知债务，不能声称所有关系都由物理外键保证。
 
-项目需要低成本迁移和本地演示，因此没有为所有关系建立物理外键。代价是 Service 必须明确处理删除保护和引用一致性；关键并发不变量仍使用唯一索引，并由真实 MySQL 集成测试验证。
+### 考试、内容治理和 AI 运营还有哪些证据？
 
-### AI Provider 如何设计？
+- 考试提交校验归属、题目集合和时限，使用记录锁与唯一约束；主观题待批阅状态与结果固化保持明确。
+- 投稿和正式题目独立存储，AI 提供质检建议，管理员显式审核与入库；最新内容版本、题目指纹和访问权限持续重检。
+- AI Provider 隔离上游协议，调用治理保存Token、价格快照、trace与配额审计；没有真实模型价格时不虚构成本。
+- 学习效果报告使用样本量与去重学习者门槛，结论保持观察性，不能归因于AI教学。
 
-业务 Service 通过 `AiInvocationService` 接入配额与审计，再由 `AiProvider` 调用独立 AI 核心的云适配。模型契约、工具消息与流式终止校验见 [AI 子系统](../architecture/ai-system.md)，缓存和业务校验仍由领域服务维护。
+## 表述边界
 
-### 如何防止 AI 泄露变式题答案？
-
-后端要求结构化输出，完整校验题型、选项、答案和难度，然后把公开题面与私有答案分离保存。前端只收到题干、选项和难度，提交答案后由服务端判分并锁定首次结果。
-
-### 为什么学习效果不能说是 AI 带来的提升？
-
-当前数据来自自然使用，不是随机实验，用户基础、课程、查看意愿和多资产暴露都会造成混杂。系统只能报告阅读前后或对照组的观察性差异，并通过样本量、去重学习者和排除规则降低误判。
-
-### 项目遇到的典型问题
-
-- 修复前端 API 基础路径重复导致的 `/api/api` 请求。
-- 使用数据库唯一约束和事务处理考试重复提交。
-- 将 AI 流式最终 usage 传入统一调用日志。
-- 拆分过大的学习诊断 Service 和管理端题目页面，同时保持接口不变。
-- 将前端覆盖率统计扩展到全部源码，避免只统计已加载文件造成虚高。
-
-## 不应声称
-
-- 不声称已经实现 OCR、爬虫、自动入库、自动发布或复杂向量推荐。
-- 不声称支持生产级多租户和无限水平扩展。
-- 不把测试数量、代码行数或 AI 调用次数作为业务效果。
-- 不把当前观察性指标描述为因果实验结果。
+不声称完整覆盖408课程、已完成所有页面重做、具备生产用户规模或已经证明学习提升。OCR、自动发布、图算法舞台、真实模型教学评测、真实OIDC与Turnstile凭据闭环均按实际完成状态描述。旧截图与历史CI通过记录不能替代当前版本验证。长期事实入口为[项目状态](../project/status.md)、[系统架构](../architecture/overview.md)与[API参考](../reference/api/index.md)。
