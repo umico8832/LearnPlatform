@@ -49,6 +49,17 @@ class DraftValidationTest(unittest.TestCase):
     def test_accepts_complete_pending_draft(self) -> None:
         self.assertEqual((1, 0), self.validate(draft()))
 
+    def test_rejects_code_markup_in_plain_visualization_titles(self) -> None:
+        for part in ("solution", "variant", "misconception"):
+            with self.subTest(part=part):
+                document = draft()
+                question = document["questions"][0]
+                target = (question if part == "solution" else question["variant"]
+                          if part == "variant" else question["misconceptions"]["A"])
+                target["viz"] = {"title": "先序访问 `A`", "spec": {}}
+                with self.assertRaisesRegex(ValueError, "纯文本"):
+                    self.validate(document)
+
     def test_rejects_unquoted_code_in_all_reader_text(self) -> None:
         for code in ("p->next=s", "data[i-1]", "front==rear", "Push(1)",
                      "free(q)", "(rear+1)%M==front", "8->next=L", "data[]", "top=-1", "++top", "next", "prior"):

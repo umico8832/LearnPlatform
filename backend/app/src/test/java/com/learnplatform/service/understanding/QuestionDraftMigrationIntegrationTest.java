@@ -26,6 +26,7 @@ class QuestionDraftMigrationIntegrationTest {
     @Test void upgradesCurrentV112AndPreservesLearningFacts() throws Exception { migrate("112"); }
     @Test void upgradesCurrentV114WithPendingBinaryTreeChapter() throws Exception { migrate("114"); }
     @Test void upgradesCurrentV115WithRemainingTreeTopics() throws Exception { migrate("115"); }
+    @Test void upgradesCurrentV116WithReadableVisualizationTitles() throws Exception { migrate("116"); }
 
     private void migrate(String initialVersion) throws Exception {
         try (var database = new MySQLContainer<>("mysql:8.0")

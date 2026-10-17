@@ -46,7 +46,7 @@ const emit = defineEmits<{ submit: [] }>()
     <component :is="`h${level}`" :id="headingId" class="lt-sr-only">{{ heading }}</component>
     <p v-if="changed" class="changed">
       <span class="changed-label">和原题相比</span>
-      <span>{{ changed }}</span>
+      <QuestionProse :content="changed" inline />
     </p>
     <QuestionProse class="stem" :content="stem" />
     <ChoiceList

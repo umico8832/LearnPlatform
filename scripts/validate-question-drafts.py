@@ -51,6 +51,7 @@ def viz(where: str, value: object) -> int:
         return 0
     require(isinstance(value, dict), where, "可视化必须是对象或 null")
     text(where + ".title", value.get("title"))
+    require("`" not in value["title"], where, "动画标题按纯文本呈现，代码标记请放在正文")
     require(isinstance(value.get("spec"), dict), where, "可视化 spec 必须是对象")
     return 1
 

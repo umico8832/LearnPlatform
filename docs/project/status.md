@@ -30,7 +30,7 @@
 
 以下是各类别最近一次记录的本地验证，历史通过不代表后续改动自动通过；推送与远端 CI 结果以 Git 和[主分支 CI](https://github.com/umico8832/LearnPlatform/actions/workflows/ci.yml?query=branch%3Amain)为准，本页不记录。
 
-2026-10-17，代码基线 `60a2a8cc` 的[完整检查](../development/testing.md#10-运行命令)六个 job 全部通过，耗时 785.9 秒。此后二叉树内容仅跑相关草稿、场景、迁移与可见性回归，未重复全量检查。
+2026-10-17，代码基线 `60a2a8cc` 的[完整检查](../development/testing.md#10-运行命令)六个 job 全部通过，耗时 785.9 秒。此后树章节与变式元信息修复通过相关单测、迁移、可见性回归及 1440×900 预览截图验证，未重复全量检查。
 
 <!-- prettier-ignore -->
 | 范围 | 最近已记录验证 | 适用范围与缺口 |
