@@ -90,7 +90,7 @@ frontend/admin/   # 独立管理端 HTML 入口
 - 新基线只在 `.lt` 根内生效。`assets/styles/living.css` 定义 `--lt-` 令牌，颜色用 `light-dark()` 同时给出浅色与深色，
   默认跟随系统，`data-appearance` 可强制其一。重做页面用 `useLivingTheme` 把整个文档放进新基线，嵌入式组件自带 `.lt` 根；
   新页面不使用 `--lp-` 变量、Element Plus 或 `Lp*` 组件，两套基线互不覆盖。
-- `motion/` 是与框架无关的解析解弹簧核心（命名预设、共享帧循环、减弱动效时直接到达）和 `linear()` 缓动生成，
+- `motion/` 是与框架无关的解析解弹簧核心（命名预设、共享帧循环）和 `linear()` 缓动生成，
   `useSpring` 提供 Vue 绑定；`living.css` 中的缓动令牌由同名预设生成，测试保证两边一致。
 - `components/living/` 提供按需导入的 `Lt*` 基础组件，图标使用 Lucide；需要按钮外观的导航用 `LtLinkButton`，保持链接语义。面板基于原生 `<dialog>`，
   从触发处展开并把焦点还给触发处。开发环境 `/dev/kit` 并排预览两种外观。
@@ -110,8 +110,7 @@ frontend/admin/   # 独立管理端 HTML 入口
   `LpStat`、`LpProgress`、`LpProgressRing`、`LpEmptyState`、`LpSkeleton`、`LpDivider`、`LpSignal`、`LpKicker`）。
   `LpStatePanel` 将 loading、empty、error 与 ready 分开，避免将失败呈现为零数据；页面与组件不得随手定义裸色值/裸尺寸。
 - `assets/styles/motion.css` 提供 Vue `Transition` / `TransitionGroup` 的共享内容、披露与列表移动类；
-  它只使用 token 化的 opacity 与短距离 transform。`prefers-reduced-motion` 使 CSS 过渡即时，
-  并由共享动效类移除位移，
+  它只使用 token 化的 opacity 与短距离 transform。所有动画对所有访客一致播放，遵循 [ADR-0011](decisions/0011-living-textbook-spring-motion.md)。
   `useAnimatedNumber` 对服务端数值的后续更新使用可取消 RAF，首次值直接显示。旧页面不引入新的动画依赖，
   也不混用新基线的弹簧动效；原生 View Transitions 目前只用于可视化的展开与收回，通用路由切换尚未使用。
 - 反馈组件集中在 `components/gamification/`，使用后端奖励与概况，不在前端认定积分或成就。
@@ -128,7 +127,7 @@ frontend/admin/   # 独立管理端 HTML 入口
 管理端沿用同一 token 与状态原语，导航按内容维护、审核批阅和平台运营分组；
 工作列表保留扫描密度。列表、汇总统计与写操作分别管理请求版本，读取失败显示原位重试，
 确认框打开即锁定动作，认证变化或卸载使迟到结果失效。审核失败保留输入和原决定。
-图表使用共享语义色和减弱动效，并提供可展开的数据表；观察性学习效果保留原口径、按需展开。
+图表使用共享语义色与动画，并提供可展开的数据表；观察性学习效果保留原口径、按需展开。
 
 ## 页面分层
 

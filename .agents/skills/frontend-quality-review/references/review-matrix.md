@@ -50,7 +50,6 @@ Do not demand redundant JavaScript keyboard handlers on native buttons or links.
 ## Motion
 
 - each animation supports feedback, continuity, hierarchy, orientation, or explanation;
-- reduced-motion behavior is present for nonessential motion;
 - animation can be interrupted or reversed without stale state;
 - transforms, opacity, origin, easing, and duration fit the distance and interaction frequency;
 - hover motion is gated to hover-capable pointers; scroll effects do not hijack navigation;

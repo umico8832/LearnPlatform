@@ -17,5 +17,4 @@ Use these terms to clarify a request, not to prescribe an effect.
 | Drag / swipe to dismiss | A gesture moves a surface; release resolves from position and velocity. |
 | Spring | Physics-like settling used when an interruption or gesture needs carried momentum. |
 | Interruptible motion | A transition can change target while in flight rather than restarting. |
-| Reduced motion | A variant that removes nonessential spatial/repetitive movement while retaining useful state clarity. |
 | Jank | Visible stutter caused by missed frames, layout work, paint work, or main-thread contention. |

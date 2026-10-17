@@ -79,11 +79,13 @@ Keep page titles sans by default. Enable the display face only for an explicitly
 
 ## Product-surface priorities
 
+不为 prefers-reduced-motion 做适配：所有动画对所有访客一致播放。
+
 For learner and authentication workflows, prioritize orientation, readable learning content, clear next actions, recovery from errors, and low-friction task completion. For administration workflows, support scanning and comparison at the necessary density without hiding controls or state.
 
 Use decoration and motion only when they improve hierarchy, comprehension, feedback, or continuity. Product workflows do not inherit marketing-page composition rules by default.
 
-On pages not yet redesigned, use the named Vue/CSS transitions in `motion.css` for routine entry, disclosure, and list reordering. The shared reduced-motion rules make those transitions immediate and remove their travel; do not assume every component transform outside that shared scope is reset. See [interaction-motion](../interaction-motion/SKILL.md) before adding a new motion pattern or dependency.
+On pages not yet redesigned, use the named Vue/CSS transitions in `motion.css` for routine entry, disclosure, and list reordering. See [interaction-motion](../interaction-motion/SKILL.md) before adding a new motion pattern or dependency.
 
 ## Learning encouragement layer
 
@@ -108,7 +110,6 @@ When relevant to the touched surface, include and verify:
 - labels, helper text, validation, and recovery for forms;
 - text expansion, realistic content, and overflow behavior;
 - the viewport range declared by project status, while preserving existing behavior outside the active scope;
-- reduced-motion behavior for nonessential animation;
 - stable real API, permission, routing, and data semantics.
 
 ## Self-review and verification

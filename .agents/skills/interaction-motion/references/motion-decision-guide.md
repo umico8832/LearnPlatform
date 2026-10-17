@@ -31,13 +31,13 @@ This is a pattern, not a copy-paste requirement: reuse the named shared transiti
 
 ## Review and audit checklist
 
-For each motion-bearing interaction, establish trigger, frequency, purpose, states, properties, token usage, interruption behavior, origin, input modality, and reduced-motion behavior. Then look for:
+For each motion-bearing interaction, establish trigger, frequency, purpose, states, properties, token usage, interruption behavior, origin, and input modality. Then look for:
 
 - movement with no orientation or feedback value; long or staggered entry that delays scanning or interaction;
 - unbounded `transition: all`, layout/paint churn, perpetual loops without a status meaning, or measurement/DOM writes that cause jank;
 - hard-coded curves or durations that diverge from tokens without a component-level rationale;
 - a response that starts perceptibly late, a trigger-anchored surface that grows from the wrong place, or an abrupt/restarting rapid toggle;
-- hover that activates on touch, missing focus-visible feedback, or reduced-motion behavior that still travels or loops;
+- hover that activates on touch or missing focus-visible feedback;
 - focus, screen-reader announcement, validation, timer, or navigation changes that are coupled to animation completion.
 
 Classify findings as blocking only when they materially impair task completion, accessibility, correctness, or measured performance. Otherwise distinguish a concrete inconsistency from a subjective feel-check. Recommend removal before adding complexity.
@@ -48,4 +48,4 @@ Search a bounded area for missing feedback on important pressable controls, inst
 
 ## Verification
 
-Check in DevTools or the rendered app rather than inferring feel from source alone. Exercise rapid open/close or repeat activation, keyboard focus and Escape/Enter where applicable, `prefers-reduced-motion`, coarse-pointer behavior, and the affected loading, empty, error, and populated states. Record a visual/performance observation as an observation, not a guarantee across all devices.
+Check in DevTools or the rendered app rather than inferring feel from source alone. Exercise rapid open/close or repeat activation, keyboard focus and Escape/Enter where applicable, coarse-pointer behavior, and the affected loading, empty, error, and populated states. Record a visual/performance observation as an observation, not a guarantee across all devices.

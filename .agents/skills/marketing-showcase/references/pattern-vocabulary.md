@@ -10,7 +10,7 @@ This is a vocabulary for exploring compositions, not a block library or a requir
 - **Editorial split:** narrative and media form unequal columns; useful for a strong visual with explanatory text.
 - **Layered media hero:** foreground artifact, supporting image, and depth cues form one composition; avoid if assets are weak.
 - **Interactive proof:** a small real interaction demonstrates the value; it must remain usable and must not simulate nonexistent capability.
-- **Kinetic type:** wording changes or responds as the main expressive device; use only when motion improves the message and has a reduced-motion equivalent.
+- **Kinetic type:** wording changes or responds as the main expressive device; use only when motion improves the message.
 
 ## Page structures
 
@@ -19,7 +19,7 @@ This is a vocabulary for exploring compositions, not a block library or a requir
 - **Editorial column:** controlled reading measure with marginal notes, figures, or pull evidence.
 - **Annotated workflow:** a real screenshot or diagram with connected explanations.
 - **Sticky narrative:** one visual persists while adjacent steps change; useful for a meaningful sequence and safe only when scroll remains native.
-- **Horizontal progression:** items advance laterally; reserve for ordered visual narratives with keyboard, touch, and reduced-motion behavior.
+- **Horizontal progression:** items advance laterally; reserve for ordered visual narratives with keyboard and touch support.
 - **Comparison field:** alternatives share aligned dimensions; better than decorative cards when users need a decision.
 - **Timeline or process:** numbered structure is appropriate only when order is real.
 - **Featured and supporting:** one proof point dominates while smaller items deepen it.
@@ -53,7 +53,7 @@ Keep one label for one intent. A primary and secondary action must lead to mater
 - **Spotlight or cursor response:** points attention to an inspectable area; never make pointer position essential.
 - **Magnetic or spring response:** rare expressive feedback for hover-capable pointers; avoid on frequent task controls.
 - **Reveal sequence:** communicates order in a small number of meaningful items; do not reveal every section mechanically.
-- **Marquee or ambient loop:** acceptable for nonessential breadth or atmosphere only when pausable, non-distracting, and removed for reduced motion.
+- **Marquee or ambient loop:** acceptable for nonessential breadth or atmosphere only when pausable and non-distracting.
 
 Use [interaction-motion](../../interaction-motion/SKILL.md) before implementing any substantive pattern in this section.
 
@@ -63,7 +63,7 @@ For each candidate, answer:
 
 1. What content relationship does it express?
 2. Does the project have real assets and content for it?
-3. Is it still usable with keyboard, touch, zoom, reduced motion, and the scoped viewport?
+3. Is it still usable with keyboard, touch, zoom, and the scoped viewport?
 4. Does it introduce a new dependency or complex lifecycle?
 5. Is a simpler pattern equally clear?
 

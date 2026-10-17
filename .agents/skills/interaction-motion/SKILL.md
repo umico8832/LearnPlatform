@@ -1,6 +1,6 @@
 ---
 name: interaction-motion
-description: Build, review, audit, name, or find interaction motion in LearnPlatform's Vue 3 frontend. Use for spring-based transitions, visualization motion, learning-state feedback, reduced-motion behavior, or motion-quality review; use frontend-design for page redesign.
+description: Build, review, audit, name, or find interaction motion in LearnPlatform's Vue 3 frontend. Use for spring-based transitions, visualization motion, learning-state feedback, or motion-quality review; use frontend-design for page redesign.
 ---
 
 # LearnPlatform Interaction Motion
@@ -41,7 +41,7 @@ The stage animates declarative frames keyed by id; a simulator decides every sta
 - No reward floats, full-screen celebrations, confetti, combo flames, achievement dialogs, or loops without a status meaning. A loop that signals a pending state (for example a question waiting for an answer) is allowed and stops when the state ends.
 - Animation must not delay an action, conceal validation, trap focus, or make an exit unavailable; focus, announcements, and navigation never wait for an animation to finish.
 - Name transitioned properties; never use `transition: all`. Prefer `transform` and `opacity`; measure before animating layout.
-- `prefers-reduced-motion`: springs jump to their target, shared CSS transitions become immediate, travel and repetition are removed, results stay visible.
+- 不为 prefers-reduced-motion 做适配：所有动画对所有访客一致播放。
 - Hover-only motion sits behind `@media (hover: hover) and (pointer: fine)` and has an equivalent focus-visible and active state.
 
 ## Choose a mode
@@ -56,4 +56,4 @@ For attribution and the upstream scope, read [source note](references/source-and
 
 ## Verification
 
-Check the rendered result, not the source: rapid re-triggering and reversal, keyboard flow, reduced motion, dark appearance, and the loading, empty, error, and populated states the motion touches. When the browser pane is hidden, animation frames may be throttled; verify motion in a visible or headless browser instead.
+Check the rendered result, not the source: rapid re-triggering and reversal, keyboard flow, dark appearance, and the loading, empty, error, and populated states the motion touches. When the browser pane is hidden, animation frames may be throttled; verify motion in a visible or headless browser instead.

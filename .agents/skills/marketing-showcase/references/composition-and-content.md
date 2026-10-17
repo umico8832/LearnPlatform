@@ -54,4 +54,4 @@ Do not use invented dashboards, fabricated company marks, or fake customer evide
 
 ## Interaction states
 
-Public pages still require keyboard access, visible focus, readable contrast, hover-capability guards, touch-safe targets, reduced motion, and usable forms. When a call to action enters the application, verify the real route and state rather than presenting a dead showcase control.
+Public pages still require keyboard access, visible focus, readable contrast, hover-capability guards, touch-safe targets, and usable forms. When a call to action enters the application, verify the real route and state rather than presenting a dead showcase control.

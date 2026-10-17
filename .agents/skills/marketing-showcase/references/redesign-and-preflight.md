@@ -48,7 +48,7 @@ Before completion, check the actual page at the scoped viewport or viewports:
 - navigation, headings, buttons, labels, and long text do not clip or wrap badly;
 - imagery has correct rights and provenance, meaningful alt text, and stable dimensions;
 - controls have loading, disabled, error, hover, active, and focus behavior where relevant;
-- contrast, keyboard order, landmarks, headings, and reduced motion remain usable;
+- contrast, keyboard order, landmarks, and headings remain usable;
 - sticky, fixed, and layered elements do not obscure content;
 - the active desktop viewport has no unexpected overflow; existing out-of-scope responsive behavior was not broken;
 - production copy contains no placeholder, fabricated proof, design commentary, or stale capability claim;
