@@ -43,6 +43,7 @@ withDefaults(
   transition:
     background-color var(--lt-dur-fade) var(--lt-ease-fade),
     color var(--lt-dur-fade) var(--lt-ease-fade),
+    box-shadow var(--lt-dur-fade) var(--lt-ease-fade),
     transform var(--lt-dur-snappy) var(--lt-ease-snappy);
 }
 
@@ -104,6 +105,9 @@ withDefaults(
 
   .lt-icon-button[data-variant='primary']:hover:not(:disabled) {
     background: var(--lt-accent-fill-pressed);
+    box-shadow:
+      0 0 0 4px var(--lt-accent-soft),
+      var(--lt-shadow-accent);
   }
 }
 </style>

@@ -36,6 +36,7 @@ withDefaults(
   cursor: pointer;
   transition:
     background-color var(--lt-dur-fade) var(--lt-ease-fade),
+    box-shadow var(--lt-dur-fade) var(--lt-ease-fade),
     transform var(--lt-dur-snappy) var(--lt-ease-snappy);
 }
 
@@ -86,11 +87,12 @@ withDefaults(
 
 @media (hover: hover) and (pointer: fine) {
   .lt-button[data-variant='plain']:hover:not(:disabled) {
-    background: var(--lt-fill);
+    background: var(--lt-fill-hover);
   }
 
   .lt-button[data-variant='primary']:hover:not(:disabled) {
     background: var(--lt-accent-fill-pressed);
+    box-shadow: 0 0 0 4px var(--lt-accent-soft);
   }
 
   .lt-button[data-variant='quiet']:hover:not(:disabled) {

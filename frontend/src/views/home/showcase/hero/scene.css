@@ -1,0 +1,49 @@
+/* Shared by the hero card scenes. Each scene sits at the top of the card and the card
+   springs to the scene's height, so anything that appears inside grows the card. */
+.hero-scene {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  padding: 22px 24px 24px;
+}
+
+.hero-scene button {
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(10px);
+  }
+}
+
+@keyframes hero-appear {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Swapped text: the old line lifts away and the new one settles from below. */
+.hero-swap-enter-active,
+.hero-swap-leave-active {
+  transition:
+    opacity var(--lt-dur-fade) var(--lt-ease-fade),
+    filter var(--lt-dur-fade) var(--lt-ease-fade),
+    transform var(--lt-dur-layout) var(--lt-ease-layout);
+}
+
+.hero-swap-enter-from {
+  opacity: 0;
+  filter: blur(6px);
+  transform: translateY(8px);
+}
+
+.hero-swap-leave-to {
+  opacity: 0;
+  filter: blur(6px);
+  transform: translateY(-8px);
+}

@@ -14,6 +14,8 @@
     ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, system-ui, 'PingFang SC', 'Microsoft YaHei UI',
     sans-serif;
   --lt-font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'PingFang SC', monospace;
+  /* 展示字体：只用于英文首页的大标题，字体文件由首页自己加载；学习端不用。 */
+  --lt-font-display: 'Instrument Serif', ui-serif, Georgia, 'Times New Roman', serif;
 
   --lt-text-caption2: 11px;
   --lt-text-caption: 12px;
@@ -50,6 +52,8 @@
   --lt-fill: light-dark(rgba(120, 120, 128, 0.16), rgba(120, 120, 128, 0.36));
   --lt-fill-2: light-dark(rgba(120, 120, 128, 0.1), rgba(120, 120, 128, 0.24));
   --lt-fill-3: light-dark(rgba(118, 118, 128, 0.06), rgba(118, 118, 128, 0.14));
+  /* 灰色按钮的悬浮底：深色外观里与静止态拉开更大的差距，否则看不出来。 */
+  --lt-fill-hover: light-dark(rgba(120, 120, 128, 0.16), rgba(120, 120, 128, 0.46));
 
   /* ------------------------------------------------- colours with meaning
    * accent = 操作与焦点；green = 正确；orange = 需要注意；red = 错误与危险；purple = 预测或假设。 */

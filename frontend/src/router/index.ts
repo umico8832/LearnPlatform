@@ -18,6 +18,12 @@ const devRoutes: RouteRecordRaw[] = import.meta.env.DEV
         component: () => import('@/views/dev/LivingKitView.vue'),
         meta: { requiresAuth: false, title: '新视觉基线预览' },
       },
+      {
+        path: '/dev/home-hero',
+        name: 'DevHomeHero',
+        component: () => import('@/views/home/showcase/ShowcaseHome.vue'),
+        meta: { requiresAuth: false, title: '英文首页（开发中）' },
+      },
     ]
   : []
 
