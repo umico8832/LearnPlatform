@@ -1,0 +1,1023 @@
+{
+  "schemaVersion": 1,
+  "section": "线索、森林、哈夫曼与查找树",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "te-01",
+      "topic": "线索二叉树的空指针域",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "非空二叉树有 9 个结点，以两个孩子指针域表示每个结点。进行线索化前，一共有多少个空孩子指针域？",
+      "options": [
+        {
+          "label": "A",
+          "content": "8 个"
+        },
+        {
+          "label": "B",
+          "content": "9 个"
+        },
+        {
+          "label": "C",
+          "content": "10 个"
+        },
+        {
+          "label": "D",
+          "content": "18 个"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把边数当空域数",
+          "explanation": "8 是这棵树的边数，对应非空孩子指针域，空域还需从全部指针域中扣除这些域。"
+        },
+        "B": {
+          "title": "少算根的差额",
+          "explanation": "总指针域有 18 个，非空孩子域对应 8 条边，两者相减不是 9。"
+        },
+        "D": {
+          "title": "没有扣除非空域",
+          "explanation": "18 是全部孩子指针域，真实孩子占据的域不能算空域。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先数所有结点一共提供多少个孩子指针域。"
+        },
+        {
+          "level": 2,
+          "text": "每条父子边恰好占用一个非空孩子指针域。"
+        },
+        {
+          "level": 3,
+          "text": "在根带两个叶的小树上，分别数全部孩子域、非空域和空域，比较它们的数量关系。"
+        }
+      ],
+      "solution": "每个结点有两个孩子指针域，共 `2*9=18` 个；非空二叉树的边数为 `9-1=8`，故非空孩子域有 8 个。空域为 `18-8=10` 个；一般有 `n` 个结点时，空孩子域为 `n+1` 个。",
+      "viz": null,
+      "variant": {
+        "stem": "保持相同存储约定，改为有 4 个结点的非空二叉树，空孩子指针域有多少个？",
+        "options": [
+          {
+            "label": "A",
+            "content": "3 个"
+          },
+          {
+            "label": "B",
+            "content": "4 个"
+          },
+          {
+            "label": "C",
+            "content": "5 个"
+          },
+          {
+            "label": "D",
+            "content": "8 个"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "结点数从 9 改为 4。",
+        "explanation": "总域数为 8，非空域对应 3 条边，空域为 5。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "te-02",
+      "topic": "中序线索的含义",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "在不带头结点的中序线索二叉树中，约定标志为 0 表示真实孩子、1 表示线索。结点 `P` 没有右孩子，右标志为 1，且 `P` 不是中序最后一个结点。它的右指针指向谁？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`P` 的父结点"
+        },
+        {
+          "label": "B",
+          "content": "整棵树的根"
+        },
+        {
+          "label": "C",
+          "content": "`P` 的中序后继"
+        },
+        {
+          "label": "D",
+          "content": "`P` 的层序后继"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "线索与父指针混淆",
+          "explanation": "中序后继有时是父结点，但也可能是更高祖先，不能把右线索统一解释为父指针。"
+        },
+        "B": {
+          "title": "把返回位置固定为根",
+          "explanation": "线索按遍历相邻关系连接，不统一指向根。"
+        },
+        "D": {
+          "title": "混淆遍历次序",
+          "explanation": "本题明确按中序建立线索，层序相邻不决定右线索。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先区分标志表示的真实孩子边与遍历线索。"
+        },
+        {
+          "level": 2,
+          "text": "中序线索利用原来的空域，记录该次遍历中的相邻结点。"
+        },
+        {
+          "level": 3,
+          "text": "另画三个结点的树，写出中序，再看一个空孩子域怎样让遍历继续，而不用重新从根寻找。"
+        }
+      ],
+      "solution": "右标志为 1 时，右域不是孩子，而是记录中序后继的线索。题干排除了中序最后结点的边界，所以该域指向 `P` 在中序中的下一个结点。",
+      "viz": null,
+      "variant": {
+        "stem": "若 `P` 的右标志改为 0，且右孩子为 `R`，那么求 `P` 的中序后继应怎样做？",
+        "options": [
+          {
+            "label": "A",
+            "content": "直接取 `P` 的父结点"
+          },
+          {
+            "label": "B",
+            "content": "从 `R` 出发沿真实左孩子走到最左结点"
+          },
+          {
+            "label": "C",
+            "content": "直接取整棵树最左结点"
+          },
+          {
+            "label": "D",
+            "content": "沿 `R` 的所有左线索一直走"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "`P` 从无右孩子改为有真实右孩子。",
+        "explanation": "有右子树时，中序在 `P` 后先访问右子树最左结点；只沿左标志为 0 的真实孩子走，不能把线索继续当孩子。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "te-03",
+      "topic": "森林的左孩子右兄弟表示",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "森林依次由两棵有序树组成：第一棵根 `A` 有从左到右两个孩子 `D`、`E`；第二棵根 `B` 只有孩子 `F`。按左孩子右兄弟规则转换为二叉树，`A` 的左右指针分别指向谁？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`D`、`E`"
+        },
+        {
+          "label": "B",
+          "content": "`B`、`D`"
+        },
+        {
+          "label": "C",
+          "content": "`E`、`B`"
+        },
+        {
+          "label": "D",
+          "content": "`D`、`B`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把第二个孩子直接接在根右侧",
+          "explanation": "右指针连接同层兄弟；根 `A` 的右指针连接森林的下一个根 `B`，`E` 应通过 `D` 的右指针表示。"
+        },
+        "B": {
+          "title": "混淆左右指针职责",
+          "explanation": "左指针连接第一个孩子，右指针连接下一个兄弟；不能反过来。"
+        },
+        "C": {
+          "title": "把最后一个孩子当首孩子",
+          "explanation": "`A` 的孩子按 `D`、`E` 有序，第一个孩子为 `D`，`E` 是 `D` 的下一个兄弟。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "分别给左指针和右指针写上在这种表示中的职责。"
+        },
+        {
+          "level": 2,
+          "text": "森林的各个根也按顺序看作兄弟。"
+        },
+        {
+          "level": 3,
+          "text": "另取根 `X` 的孩子 `Y`、`Z`，分别标出第一个孩子边和下一兄弟边，再把另一棵根接入森林。"
+        }
+      ],
+      "solution": "左孩子指针连接原树的第一个孩子，故 `A` 左指针指向 `D`；森林的两个根按顺序为兄弟，故 `A` 右指针指向 `B`。其余非空边为 `D` 右指针到 `E`、`B` 左指针到 `F`。",
+      "viz": {
+        "title": "森林转换后的二叉树结构",
+        "spec": {
+          "scene": "binary-tree",
+          "op": "preorder",
+          "tree": [
+            "A",
+            "D",
+            "B",
+            null,
+            "E",
+            "F"
+          ],
+          "pauseAt": [
+            "tree-first-visit"
+          ]
+        }
+      },
+      "variant": {
+        "stem": "沿用转换后的二叉树，`D` 的右指针与 `B` 的左指针分别指向谁？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`A`、`F`"
+          },
+          {
+            "label": "B",
+            "content": "`E`、`F`"
+          },
+          {
+            "label": "C",
+            "content": "`E`、`A`"
+          },
+          {
+            "label": "D",
+            "content": "`B`、`E`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "由询问根的两域改为询问孩子与下一棵根的域。",
+        "explanation": "`D` 的下一个兄弟是 `E`，`B` 的第一个孩子是 `F`，所以分别为 `E`、`F`。",
+        "viz": {
+          "title": "转换结果的二叉树先序（只展示转换后结构）",
+          "spec": {
+            "scene": "binary-tree",
+            "op": "preorder",
+            "tree": [
+              "A",
+              "D",
+              "B",
+              null,
+              "E",
+              "F"
+            ],
+            "pauseAt": [
+              "tree-first-visit"
+            ]
+          }
+        },
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "te-04",
+      "topic": "树与二叉树遍历的对应",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "将一棵非空有序树按左孩子右兄弟规则转换为二叉树。转换后二叉树的中序遍历，等同于原有序树的哪种遍历？原树按从左到右处理孩子。",
+      "options": [
+        {
+          "label": "A",
+          "content": "先根遍历"
+        },
+        {
+          "label": "B",
+          "content": "后根遍历"
+        },
+        {
+          "label": "C",
+          "content": "层序遍历"
+        },
+        {
+          "label": "D",
+          "content": "按结点编号排序"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "只看根与左孩子",
+          "explanation": "二叉树中序先处理左子树再访问当前结点；这会使原树各孩子的后根结果先于原根输出。"
+        },
+        "C": {
+          "title": "把兄弟连接当队列",
+          "explanation": "右兄弟边只是结构表示，不会把遍历变成逐层输出。"
+        },
+        "D": {
+          "title": "把结构次序当数值次序",
+          "explanation": "结点编号或大小不参与遍历规则。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先在只有一个根与两个叶孩子的原树上做转换。"
+        },
+        {
+          "level": 2,
+          "text": "追踪二叉树的左子树包含了原树哪些孩子，以及这些孩子的兄弟。"
+        },
+        {
+          "level": 3,
+          "text": "可用 `X` 的有序孩子 `Y`、`Z` 做小例子，分别写出转换前后要比较的两个次序，再扩展到有子树的孩子。"
+        }
+      ],
+      "solution": "转换后二叉树中序先处理左孩子对应的整组孩子及其右兄弟，最后访问当前根，递归得到原树从左到右的后根次序。例如原树根 `X`、孩子 `Y`、`Z`，转换后 `X` 左 `Y`、`Y` 右 `Z`，中序 `Y`、`Z`、`X`，正是原树后根。",
+      "viz": null,
+      "variant": {
+        "stem": "将一个有序森林按左孩子右兄弟规则转换为二叉树。森林先序（依次对每棵树做先根）对应二叉树的哪种遍历？",
+        "options": [
+          {
+            "label": "A",
+            "content": "先序"
+          },
+          {
+            "label": "B",
+            "content": "中序"
+          },
+          {
+            "label": "C",
+            "content": "后序"
+          },
+          {
+            "label": "D",
+            "content": "层序"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "从一棵树的后根对应，改问森林先序对应。",
+        "explanation": "二叉树先序先访问当前原树根，再访问其左孩子所表示的孩子组，随后通过右兄弟边处理下一棵树，因此对应森林先序。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "te-05",
+      "topic": "哈夫曼树的加权平均码长",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2023",
+        "questionNumber": "4",
+        "label": "2023 年 408 真题 第 4 题（按实际收录同义表述）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2023/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "字符集含 6 个字符，出现频次分别为 3、4、5、6、8、10。为它们构造二元哈夫曼编码，加权平均码长是多少？",
+      "options": [
+        {
+          "label": "A",
+          "content": "2.4"
+        },
+        {
+          "label": "B",
+          "content": "2.5"
+        },
+        {
+          "label": "C",
+          "content": "2.67"
+        },
+        {
+          "label": "D",
+          "content": "2.75"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "漏算合并路径代价",
+          "explanation": "应将每轮合并权重累加得到总加权路径长度，再除以总频次，不能直接按叶数估计。"
+        },
+        "C": {
+          "title": "用平均层数替代加权平均",
+          "explanation": "码长必须按字符频次加权；频次较大的字符一般使用较短码字。"
+        },
+        "D": {
+          "title": "没有按最小权重合并",
+          "explanation": "每轮应合并当前最小的两棵树，不能固定按原输入相邻配对。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先区分加权路径长度与加权平均码长。"
+        },
+        {
+          "level": 2,
+          "text": "用优先队列的思路，每次合并当前最小的两项，并把新权重放回。"
+        },
+        {
+          "level": 3,
+          "text": "在频次为 1、2、3 的小例子中，把每次合并的权重加起来，再除以全部字符的总频次。"
+        }
+      ],
+      "solution": "依次合并得到权重 7、11、15、21、36，加权路径长度等于这些合并权重之和，即 90。总频次为 36，加权平均码长为 `90/36=2.5`。这是哈夫曼树的最小加权结果，不是各叶深度的简单平均。",
+      "viz": null,
+      "variant": {
+        "stem": "改为四个字符，频次为 1、2、4、8，仍用二元哈夫曼编码。加权平均码长是多少？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1.5"
+          },
+          {
+            "label": "B",
+            "content": "`5/3`"
+          },
+          {
+            "label": "C",
+            "content": "2"
+          },
+          {
+            "label": "D",
+            "content": "`7/3`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "频次集合改变，仍问加权平均码长。",
+        "explanation": "合并权重依次为 3、7、15，加权路径长度为 25；总频次 15，平均码长为 `25/15=5/3`。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "te-06",
+      "topic": "前缀编码",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "以下每组都是为四个不同字符分配的二进制码字。哪一组是前缀编码，即没有一个码字是另一个码字的前缀？",
+      "options": [
+        {
+          "label": "A",
+          "content": "0、01、10、11"
+        },
+        {
+          "label": "B",
+          "content": "10、101、110、111"
+        },
+        {
+          "label": "C",
+          "content": "0、10、110、111"
+        },
+        {
+          "label": "D",
+          "content": "00、01、0、11"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "忽略短码字包含关系",
+          "explanation": "码字 0 是码字 01 的前缀，读到 0 时不能立即确定是否还有后续位属于同一码字。"
+        },
+        "B": {
+          "title": "只检查首位是否相同",
+          "explanation": "码字 10 是 101 的前缀，即使其余码字不同，也不满足前缀条件。"
+        },
+        "D": {
+          "title": "认为长短混合必可区分",
+          "explanation": "码字 0 是 00 与 01 的前缀，违反定义。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "逐个取短码字，检查较长码字是否由它开头。"
+        },
+        {
+          "level": 2,
+          "text": "也可画二进制编码树，检查某个码字终点是否还是另一码字路径上的中间结点。"
+        },
+        {
+          "level": 3,
+          "text": "例如码字 1 与 10 不能同时作为前缀编码中的两个字符码字；检查时看完整前缀，而非只比较长度。"
+        }
+      ],
+      "solution": "`C` 中 0 与其余以 1 开头的码字区分；10 与 110、111 的前两位不同；110、111 等长且不同，互不为前缀。因此只有 `C` 满足定义。前缀编码可以即时译码，但满足前缀条件本身不保证对给定频次最优。",
+      "viz": null,
+      "variant": {
+        "stem": "下列三字符码字集合中，哪组不是前缀编码？",
+        "options": [
+          {
+            "label": "A",
+            "content": "0、10、11"
+          },
+          {
+            "label": "B",
+            "content": "00、01、1"
+          },
+          {
+            "label": "C",
+            "content": "10、110、111"
+          },
+          {
+            "label": "D",
+            "content": "0、10、101"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "从四字符集合中选合法，改为三字符集合中选不合法。",
+        "explanation": "`D` 中 10 是 101 的前缀，其余三组均没有某个完整码字作为另一码字前缀。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "te-07",
+      "topic": "哈夫曼码长与叶深度",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2025",
+        "questionNumber": "5",
+        "label": "2025 年 408 真题 第 5 题（按实际收录同义表述）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2025/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "7 个字符的出现频次依次为 2、3、4、6、8、10、11。构造二元哈夫曼编码，码长不小于 3 的字符有几个？",
+      "options": [
+        {
+          "label": "A",
+          "content": "2 个"
+        },
+        {
+          "label": "B",
+          "content": "3 个"
+        },
+        {
+          "label": "C",
+          "content": "4 个"
+        },
+        {
+          "label": "D",
+          "content": "5 个"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "只数最深层叶结点",
+          "explanation": "频次 2、3 的两个叶码长为 4，但阈值还包含码长为 3 的叶。"
+        },
+        "B": {
+          "title": "只统计码长恰为三的叶",
+          "explanation": "码长不小于 3 同时包含码长为 3 和更长的字符。"
+        },
+        "C": {
+          "title": "遗漏一个低频叶",
+          "explanation": "频次 2、3、4、6、8 对应的五个叶均达到阈值，不能只按合并轮数统计叶数。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "二元码字长度对应从根到叶经过的边数。"
+        },
+        {
+          "level": 2,
+          "text": "先完成每轮最小权重合并，再从最后一次合并的根向下数边。"
+        },
+        {
+          "level": 3,
+          "text": "另画有三片叶的二元编码树，根的某个孩子可能直接是叶，另一侧还会继续分支，不能用合并轮数直接当每个叶的深度。"
+        }
+      ],
+      "solution": "合并权重依次为 5、9、14、19、25、44。根的两子树为 19、25：19 下有权重 9 和字符 10，25 下有字符 11 和权重 14。字符 10、11 的码长为 2；字符 4、6、8 的码长为 3；字符 2、3 的码长为 4，所以共有 5 个字符码长不小于 3。",
+      "viz": null,
+      "variant": {
+        "stem": "保持同一组频次和二元哈夫曼树，把阈值改为码长不小于 4，符合条件的字符有几个？",
+        "options": [
+          {
+            "label": "A",
+            "content": "2 个"
+          },
+          {
+            "label": "B",
+            "content": "3 个"
+          },
+          {
+            "label": "C",
+            "content": "4 个"
+          },
+          {
+            "label": "D",
+            "content": "5 个"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "只把码长阈值从 3 改为 4。",
+        "explanation": "只有频次 2、3 的字符码长为 4，其余码长为 2 或 3，故有 2 个。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "te-08",
+      "topic": "二叉排序树的中序有序性",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "二叉排序树的关键字互异，根为 8，左右孩子为 4、12；4 的左右孩子为 2、6，12 的左右孩子为 10、14。中序遍历序列是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`8,4,2,6,12,10,14`"
+        },
+        {
+          "label": "B",
+          "content": "`2,6,4,10,14,12,8`"
+        },
+        {
+          "label": "C",
+          "content": "`2,4,6,8,10,12,14`"
+        },
+        {
+          "label": "D",
+          "content": "`14,12,10,8,6,4,2`"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把根先输出",
+          "explanation": "中序先访问左子树，根 8 不会最先输出；这是先序次序。"
+        },
+        "B": {
+          "title": "把中序写成后序",
+          "explanation": "先访问左右子树最后访问根是后序，不是中序。"
+        },
+        "D": {
+          "title": "交换了左右方向",
+          "explanation": "题干是左子树小、右子树大的二叉排序树，中序按左、根、右得到升序，而非降序。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先把中序的访问顺序与二叉排序树左右关键字约束结合。"
+        },
+        {
+          "level": 2,
+          "text": "每个子树也要按同一顺序访问，不能只将根的位置改一遍。"
+        },
+        {
+          "level": 3,
+          "text": "另取根 5、左叶 3、右叶 7，写出中序，并观察它与三个关键字大小的关系。"
+        }
+      ],
+      "solution": "左子树中序为 2、4、6，随后是根 8，再是右子树 10、12、14，得到严格递增序列 2、4、6、8、10、12、14。关键字互异是严格递增的前提。",
+      "viz": {
+        "title": "二叉排序树的中序",
+        "spec": {
+          "scene": "binary-tree",
+          "op": "inorder",
+          "tree": [
+            "8",
+            "4",
+            "12",
+            "2",
+            "6",
+            "10",
+            "14"
+          ],
+          "pauseAt": [
+            "tree-first-visit"
+          ]
+        }
+      },
+      "variant": {
+        "stem": "同一棵二叉排序树改为后序遍历，序列是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`2,4,6,8,10,12,14`"
+          },
+          {
+            "label": "B",
+            "content": "`8,4,2,6,12,10,14`"
+          },
+          {
+            "label": "C",
+            "content": "`2,6,4,12,10,14,8`"
+          },
+          {
+            "label": "D",
+            "content": "`2,6,4,10,14,12,8`"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "保持树形和关键字不变，改问后序。",
+        "explanation": "左子树后序为 2、6、4，右子树为 10、14、12，最后访问根 8。",
+        "viz": {
+          "title": "同一二叉排序树的后序",
+          "spec": {
+            "scene": "binary-tree",
+            "op": "postorder",
+            "tree": [
+              "8",
+              "4",
+              "12",
+              "2",
+              "6",
+              "10",
+              "14"
+            ],
+            "pauseAt": [
+              "tree-first-visit"
+            ]
+          }
+        },
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "te-09",
+      "topic": "二叉排序树查找路径",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "在关键字互异的二叉排序树中查找 60。以下从根到目标的结点访问序列中，哪一条不可能出现？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`50,80,70,60`"
+        },
+        {
+          "label": "B",
+          "content": "`50,30,70,60`"
+        },
+        {
+          "label": "C",
+          "content": "`90,20,70,60`"
+        },
+        {
+          "label": "D",
+          "content": "`40,90,50,60`"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把局部下降误当越界",
+          "explanation": "60 大于 50 进入右子树，再小于 80、70 依次向左，整个路径满足祖先给出的范围。"
+        },
+        "C": {
+          "title": "忽略区间可以同时含上下界",
+          "explanation": "90 后向左到 20，再向右到 70，再向左到 60，各关键字都满足相应祖先区间。"
+        },
+        "D": {
+          "title": "认为路径必须单调",
+          "explanation": "40 后右到 90，再左到 50，再右到 60 可以成立；访问序列本身无需数值单调。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "每次比较都由待查值与当前关键字共同决定走向。"
+        },
+        {
+          "level": 2,
+          "text": "保留所有祖先形成的上下界，而不是只看相邻两个结点的大小。"
+        },
+        {
+          "level": 3,
+          "text": "例如查找 25，若根 40 后进入左子树，则之后访问的结点都必须小于 40；再逐步收紧这个区间。"
+        }
+      ],
+      "solution": "目标 60 大于根 50，下一步必须进入 50 的右子树，其中所有关键字都大于 50。`B` 的第二个结点却为 30，因此不可能。其余路径可分别按比较方向构造相应的二叉排序树。",
+      "viz": null,
+      "variant": {
+        "stem": "把目标改为 35，以下哪条访问序列不可能？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`60,20,40,35`"
+          },
+          {
+            "label": "B",
+            "content": "`20,60,30,35`"
+          },
+          {
+            "label": "C",
+            "content": "`40,20,30,35`"
+          },
+          {
+            "label": "D",
+            "content": "`40,60,20,35`"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "待查关键字和候选访问路径都改变。",
+        "explanation": "35 小于根 40，必须进入左子树，第二结点不可能为 60；其余三条可满足全部祖先区间。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    },
+    {
+      "id": "te-10",
+      "topic": "平衡二叉树的基本旋转",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "向空 `AVL` 树依次插入互异关键字 30、20、10。用保持二叉排序树次序的最小局部调整恢复平衡后，根关键字是多少？约定平衡因子为左子树高减右子树高。",
+      "options": [
+        {
+          "label": "A",
+          "content": "10"
+        },
+        {
+          "label": "B",
+          "content": "20"
+        },
+        {
+          "label": "C",
+          "content": "30"
+        },
+        {
+          "label": "D",
+          "content": "无需调整"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把新叶直接升到根",
+          "explanation": "`LL`失衡对30右旋后，原左孩子20成为根，新插入的10仍为左孩子。"
+        },
+        "C": {
+          "title": "保留失衡根",
+          "explanation": "30的左高比右高多2，不能保持根30且完全不调整连接。"
+        },
+        "D": {
+          "title": "只检查排序不检查高度",
+          "explanation": "原结构虽然满足二叉排序树次序，但根30已违反`AVL`的高度差要求。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "插入后先画出普通二叉排序树的结构。"
+        },
+        {
+          "level": 2,
+          "text": "从插入点向上寻找第一个高度差绝对值超过1的结点，并判断插入发生在哪一侧的哪一侧。"
+        },
+        {
+          "level": 3,
+          "text": "另看根9、左孩子6、6的左孩子3，思考让中间关键字居中能否同时保持排序和减小高度差。"
+        }
+      ],
+      "solution": "插入后为30左接20、20左接10，属于30处`LL`失衡。对30做一次右旋，得到根20、左孩子10、右孩子30，保持中序10、20、30并恢复平衡。",
+      "viz": null,
+      "variant": {
+        "stem": "改为依次插入30、10、20，第一次需要的恢复平衡操作是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "先对10左旋，再对30右旋"
+          },
+          {
+            "label": "B",
+            "content": "只对30右旋"
+          },
+          {
+            "label": "C",
+            "content": "只对10左旋"
+          },
+          {
+            "label": "D",
+            "content": "无需调整"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "插入次序改变为`LR`失衡。",
+        "explanation": "新结点20在30的左孩子10的右侧。先左旋10把20提升到左子树根，再右旋30，最终根20、左右孩子10和30。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        }
+      }
+    }
+  ]
+}

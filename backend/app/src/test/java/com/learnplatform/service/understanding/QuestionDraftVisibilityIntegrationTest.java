@@ -60,7 +60,7 @@ class QuestionDraftVisibilityIntegrationTest extends IntegrationTestBase {
 
     @Test void everyMigratedDraftIsHiddenFromLearnersAndFullyPreviewableOnlyByAdmin() throws Exception {
         var rows = db.queryForList("SELECT id,content,course_id FROM question WHERE source_reference LIKE 'm5-draft:%'");
-        assertEquals(33, rows.size());
+        assertEquals(43, rows.size());
         for (var row : rows) {
             long id = ((Number) row.get("id")).longValue();
             long course = ((Number) row.get("course_id")).longValue();

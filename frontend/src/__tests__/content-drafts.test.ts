@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { basename, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { SceneModule, SceneSpec } from '@/viz/engine/types'
 import { linkedList } from '@/viz/scenes/linked-list'
@@ -26,8 +26,8 @@ interface DraftQuestion {
   variant: { options: { label: string; content: string }[]; correctAnswer: string; viz: DraftViz | null }
 }
 
-const files = readdirSync(resolve(process.cwd(), '../content/drafts'))
-  .filter((name) => /^(m5-.*|p27-binary-tree)\.json$/.test(name))
+const files = readdirSync(resolve(process.cwd(), '../content/drafts'), { recursive: true, encoding: 'utf8' })
+  .filter((name) => /^(m5-.*|p27-.*)\.json$/.test(basename(name)))
   .sort()
 const questions = files.flatMap((name) => {
   const document = JSON.parse(readFileSync(resolve(process.cwd(), '../content/drafts', name), 'utf8')) as {
