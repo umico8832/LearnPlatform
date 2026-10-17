@@ -1,0 +1,1352 @@
+{
+  "schemaVersion": 1,
+  "section": "内部排序、稳定性与外部归并",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "so-01",
+      "topic": "直接插入排序的有序前缀",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "对 `5,2,4,6,1,3` 做升序直接插入排序，每轮把下一元素插入已有有序前缀。处理完原数组前三个元素后，全数组为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`2,4,5,6,1,3`"
+        },
+        {
+          "label": "B",
+          "content": "`1,2,3,4,5,6`"
+        },
+        {
+          "label": "C",
+          "content": "`2,5,4,6,1,3`"
+        },
+        {
+          "label": "D",
+          "content": "`5,4,2,6,1,3`"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把中途状态当最终状态",
+          "explanation": "只处理前三项，后面的1、3尚未插入，不能提前全局有序。"
+        },
+        "C": {
+          "title": "少处理一轮",
+          "explanation": "2、5、4只完成了2的插入，还没把4插到2和5之间。"
+        },
+        "D": {
+          "title": "弄反排序方向",
+          "explanation": "题目要求升序，前三项应从小到大排列。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "区分已处理前缀和未处理后缀。"
+        },
+        {
+          "level": 2,
+          "text": "第一项作为初始前缀，依次插入2和4。"
+        },
+        {
+          "level": 3,
+          "text": "每轮只移动本轮插入位置之前的元素，后缀保持未处理状态。"
+        }
+      ],
+      "solution": "先插入2得到2、5，再插入4得到2、4、5；后缀6、1、3不变。",
+      "viz": null,
+      "variant": {
+        "stem": "保持输入和算法，处理完原数组前五个元素后，全数组为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`1,2,3,4,5,6`"
+          },
+          {
+            "label": "B",
+            "content": "`2,4,5,6,1,3`"
+          },
+          {
+            "label": "C",
+            "content": "`1,2,4,5,6,3`"
+          },
+          {
+            "label": "D",
+            "content": "`1,2,4,5,3,6`"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "处理范围从原前三项增到原前五项。",
+        "explanation": "插入6时前缀不变，再插入1至首位，得到1、2、4、5、6；末尾3仍未处理。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "insertion-sort",
+            "input": {
+              "values": [
+                5,
+                2,
+                4,
+                6,
+                1,
+                3
+              ],
+              "processed": 5
+            },
+            "goal": "每次只扩大一个位置的有序前缀",
+            "pauseQuestion": "未处理后缀可以提前重排吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "insertion-sort",
+          "input": {
+            "values": [
+              5,
+              2,
+              4,
+              6,
+              1,
+              3
+            ],
+            "processed": 3
+          },
+          "goal": "每次只扩大一个位置的有序前缀",
+          "pauseQuestion": "未处理后缀可以提前重排吗？"
+        }
+      ]
+    },
+    {
+      "id": "so-02",
+      "topic": "冒泡一趟的方向",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "升序冒泡排序，对 `4,1,3,2` 从左向右依次比较相邻项，左大于右才交换，完整一趟后的数组是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`1,2,3,4`"
+        },
+        {
+          "label": "B",
+          "content": "`1,3,2,4`"
+        },
+        {
+          "label": "C",
+          "content": "`1,4,2,3`"
+        },
+        {
+          "label": "D",
+          "content": "`4,3,2,1`"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把一趟当完整排序",
+          "explanation": "一趟保证最大值到末端，中间的3、2仍可能逆序。"
+        },
+        "C": {
+          "title": "从右向左做了一趟",
+          "explanation": "1、4、2、3是反方向比较所得，不符合题目方向。"
+        },
+        "D": {
+          "title": "弄反比较条件",
+          "explanation": "升序只交换左大于右，不能把较大元素留在左侧。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "严格按相邻对的比较顺序模拟。"
+        },
+        {
+          "level": 2,
+          "text": "每次交换后再比较下一对，不能使用旧数组中的值。"
+        },
+        {
+          "level": 3,
+          "text": "一趟固定的是最大端点，是否保证其余部分也有序？"
+        }
+      ],
+      "solution": "比较4与1后为1、4、3、2，再交换4与3，最后交换4与2，得到1、3、2、4。",
+      "viz": null,
+      "variant": {
+        "stem": "保持输入与升序交换规则，只改成从右向左依次比较相邻项，一趟结果是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`1,2,3,4`"
+          },
+          {
+            "label": "B",
+            "content": "`1,3,2,4`"
+          },
+          {
+            "label": "C",
+            "content": "`1,4,2,3`"
+          },
+          {
+            "label": "D",
+            "content": "`2,1,3,4`"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅反转相邻对的扫描方向。",
+        "explanation": "先交换3与2得4、1、2、3，中间1与2不交换，再交换4与1，得到1、4、2、3。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "bubble-sort",
+            "input": {
+              "values": [
+                4,
+                1,
+                3,
+                2
+              ],
+              "direction": "right-to-left",
+              "passes": 1
+            },
+            "goal": "扫描方向决定本趟固定哪一端",
+            "pauseQuestion": "当前比较应使用交换后的相邻值吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "bubble-sort",
+          "input": {
+            "values": [
+              4,
+              1,
+              3,
+              2
+            ],
+            "direction": "left-to-right",
+            "passes": 1
+          },
+          "goal": "扫描方向决定本趟固定哪一端",
+          "pauseQuestion": "当前比较应使用交换后的相邻值吗？"
+        }
+      ]
+    },
+    {
+      "id": "so-03",
+      "topic": "选择排序的稳定性",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "记录 `2a,2b,1` 中a、b仅标识同键记录的原次序。升序简单选择排序每轮找最小值并与前端直接交换。第一轮后为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`1,2a,2b`"
+        },
+        {
+          "label": "B",
+          "content": "`1,2b,2a`"
+        },
+        {
+          "label": "C",
+          "content": "`2a,1,2b`"
+        },
+        {
+          "label": "D",
+          "content": "`2b,2a,1`"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把直接交换当稳定移动",
+          "explanation": "首项2a与尾项1交换，2a越过2b，二者相对次序会改变。"
+        },
+        "C": {
+          "title": "未把最小值移到前端",
+          "explanation": "本轮最小值1必须与首项交换，不能只移动到中间。"
+        },
+        "D": {
+          "title": "忽略最小值选择",
+          "explanation": "本轮必须选1，不能只交换两个相同键记录。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "只按关键字比较，a和b不参与大小。"
+        },
+        {
+          "level": 2,
+          "text": "找到全段最小记录后，执行一次明确的首尾交换。"
+        },
+        {
+          "level": 3,
+          "text": "观察同键记录的相对先后是否保持。"
+        }
+      ],
+      "solution": "最小值1与首项2a直接交换，结果1、2b、2a。相同键次序改变，说明这种简单选择排序不稳定。",
+      "viz": null,
+      "variant": {
+        "stem": "保持原输入，改用仅在前项关键字严格大于待插入键时右移的升序直接插入排序，最终为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`1,2a,2b`"
+          },
+          {
+            "label": "B",
+            "content": "`1,2b,2a`"
+          },
+          {
+            "label": "C",
+            "content": "`2a,1,2b`"
+          },
+          {
+            "label": "D",
+            "content": "`2b,2a,1`"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将排序算法改为稳定的直接插入排序。",
+        "explanation": "2b插入时不会越过相等的2a；之后1插入首位，2a、2b依次右移而相对顺序不变。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "sort-stability",
+            "input": {
+              "records": [
+                {
+                  "key": 2,
+                  "id": "a"
+                },
+                {
+                  "key": 2,
+                  "id": "b"
+                },
+                {
+                  "key": 1,
+                  "id": "c"
+                }
+              ],
+              "method": "stable-insertion"
+            },
+            "goal": "跟踪同键记录身份",
+            "pauseQuestion": "关键字相等是否足以保证原次序不变？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "sort-stability",
+          "input": {
+            "records": [
+              {
+                "key": 2,
+                "id": "a"
+              },
+              {
+                "key": 2,
+                "id": "b"
+              },
+              {
+                "key": 1,
+                "id": "c"
+              }
+            ],
+            "method": "selection-swap"
+          },
+          "goal": "跟踪同键记录身份",
+          "pauseQuestion": "关键字相等是否足以保证原次序不变？"
+        }
+      ]
+    },
+    {
+      "id": "so-04",
+      "topic": "快速划分的基准位置",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "对 `4,2,5,1,3` 进行一次划分：末项3为基准；从左到右扫描其余项，把严格小于基准的项依次换到前缀，最后将基准与前缀后的首项交换。下标从0起，基准最终下标为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "0"
+        },
+        {
+          "label": "B",
+          "content": "1"
+        },
+        {
+          "label": "C",
+          "content": "2"
+        },
+        {
+          "label": "D",
+          "content": "3"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把末项基准直接移到首位",
+          "explanation": "基准位置由小于它的元素个数决定，并非固定为首项。"
+        },
+        "B": {
+          "title": "少数了一个小元素",
+          "explanation": "2和1都严格小于3，因此前缀有两项。"
+        },
+        "D": {
+          "title": "把基准自身计入较小前缀",
+          "explanation": "基准不参与扫描较小元素计数；两个较小项之后的下标是2。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先数有多少个非基准元素严格小于基准。"
+        },
+        {
+          "level": 2,
+          "text": "最终基准紧跟较小元素前缀。"
+        },
+        {
+          "level": 3,
+          "text": "下标从0开始时，前面有k项对应的基准下标是多少？"
+        }
+      ],
+      "solution": "严格小于3的有2、1两项，划分后为2、1、3、4、5，基准下标为2；左右两侧不要求各自已完成排序。",
+      "viz": null,
+      "variant": {
+        "stem": "保持算法，只将输入末项3改为0。基准最终下标为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "0"
+          },
+          {
+            "label": "B",
+            "content": "1"
+          },
+          {
+            "label": "C",
+            "content": "2"
+          },
+          {
+            "label": "D",
+            "content": "4"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅改变末项基准的值。",
+        "explanation": "其余元素都大于0，较小前缀为空，基准最终与首项交换至下标0。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "lomuto-partition",
+            "input": {
+              "values": [
+                4,
+                2,
+                5,
+                1,
+                0
+              ],
+              "pivot": "last",
+              "comparison": "strict-less"
+            },
+            "goal": "基准归位与子区间有序是两件事",
+            "pauseQuestion": "基准归位后，两侧是否已经各自排好？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "lomuto-partition",
+          "input": {
+            "values": [
+              4,
+              2,
+              5,
+              1,
+              3
+            ],
+            "pivot": "last",
+            "comparison": "strict-less"
+          },
+          "goal": "基准归位与子区间有序是两件事",
+          "pauseQuestion": "基准归位后，两侧是否已经各自排好？"
+        }
+      ]
+    },
+    {
+      "id": "so-05",
+      "topic": "快速排序的退化比较量",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "对互异且升序的8个键做快速排序，每次取当前区间首项为基准；每次划分恰将基准与其余每项比较一次，单元素不比较。不随机打乱。总关键字比较次数是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "7"
+        },
+        {
+          "label": "B",
+          "content": "16"
+        },
+        {
+          "label": "C",
+          "content": "24"
+        },
+        {
+          "label": "D",
+          "content": "28"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "只算第一层",
+          "explanation": "第一层7次后还需处理剩下7个键，不能只计首轮。"
+        },
+        "B": {
+          "title": "误套平衡划分数量",
+          "explanation": "取首项且输入升序时每轮只排除一个最小值，区间并未均分。"
+        },
+        "C": {
+          "title": "用近似式代替精确计数",
+          "explanation": "本题可以逐层求和，近似的对数表达不能替代精确值。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "首项基准在当前有序区间中是最大、最小还是中间项？"
+        },
+        {
+          "level": 2,
+          "text": "确定下一层尚待处理的区间长度。"
+        },
+        {
+          "level": 3,
+          "text": "按长度逐个减一直到单元素，把每层比较次数相加。"
+        }
+      ],
+      "solution": "每次基准都是最小值，划分代价依次7、6、5、4、3、2、1，总和28，呈平方级退化。",
+      "viz": null,
+      "variant": {
+        "stem": "保持全部规则，输入改为互异升序9个键，总比较次数为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "8"
+          },
+          {
+            "label": "B",
+            "content": "24"
+          },
+          {
+            "label": "C",
+            "content": "28"
+          },
+          {
+            "label": "D",
+            "content": "36"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "仅将元素数由8增为9。",
+        "explanation": "代价为8至1的和，等于36；随机化或其他基准策略不在本题规则内。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "quicksort-comparison-count",
+            "input": {
+              "values": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9
+              ],
+              "pivot": "first",
+              "shuffle": false
+            },
+            "goal": "区分最坏划分与平衡划分",
+            "pauseQuestion": "排除一个基准后还剩多少项进入下一层？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "quicksort-comparison-count",
+          "input": {
+            "values": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "pivot": "first",
+            "shuffle": false
+          },
+          "goal": "区分最坏划分与平衡划分",
+          "pauseQuestion": "排除一个基准后还剩多少项进入下一层？"
+        }
+      ]
+    },
+    {
+      "id": "so-06",
+      "topic": "大根堆的一次取顶",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "升序堆排序已有大根堆数组 `9,7,8,3,5,6`。把堆顶与末项交换，将有效堆缩小一项，再从根向下选较大孩子调整。第一次取顶调整后，全数组是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`8,7,6,3,5,9`"
+        },
+        {
+          "label": "B",
+          "content": "`7,6,8,3,5,9`"
+        },
+        {
+          "label": "C",
+          "content": "`6,7,8,3,5,9`"
+        },
+        {
+          "label": "D",
+          "content": "`9,8,7,6,5,3`"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "只与左孩子比较",
+          "explanation": "新根6的较大孩子是8，不能只看到左孩子7就停止选择。"
+        },
+        "C": {
+          "title": "只交换未调整",
+          "explanation": "根6小于孩子7、8，交换末项后还须恢复大根堆。"
+        },
+        "D": {
+          "title": "把堆当全局降序数组",
+          "explanation": "堆只约束父子关系；本轮末尾9已固定，不能再放回堆顶。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先执行顶尾交换并划清有效堆边界。"
+        },
+        {
+          "level": 2,
+          "text": "根处新值与两个有效孩子比较，选择较大孩子。"
+        },
+        {
+          "level": 3,
+          "text": "已固定的尾部元素不再参与堆调整。"
+        }
+      ],
+      "solution": "先得6、7、8、3、5、9，有效堆前5项；6与较大孩子8交换，成为8、7、6、3、5、9。6已无有效孩子，调整结束。",
+      "viz": null,
+      "variant": {
+        "stem": "从第一次调整后的状态继续执行第二次取顶并调整，全数组为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`6,7,5,3,8,9`"
+          },
+          {
+            "label": "B",
+            "content": "`7,5,6,3,8,9`"
+          },
+          {
+            "label": "C",
+            "content": "`7,6,5,3,8,9`"
+          },
+          {
+            "label": "D",
+            "content": "`5,7,6,3,8,9`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "观察点从第一次取顶后改为第二次取顶后。",
+        "explanation": "8与末项5交换，前4项为5、7、6、3；根与较大孩子7交换，成为7、5、6、3。5大于其孩子3，无需继续，尾部8、9固定。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "heap-sort",
+            "input": {
+              "values": [
+                9,
+                7,
+                8,
+                3,
+                5,
+                6
+              ],
+              "heap": "max",
+              "extractions": 2
+            },
+            "goal": "标明有效堆与固定尾区",
+            "pauseQuestion": "较大孩子应在有效堆内比较，还是把固定尾项也算入？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "heap-sort",
+          "input": {
+            "values": [
+              9,
+              7,
+              8,
+              3,
+              5,
+              6
+            ],
+            "heap": "max",
+            "extractions": 1
+          },
+          "goal": "标明有效堆与固定尾区",
+          "pauseQuestion": "较大孩子应在有效堆内比较，还是把固定尾项也算入？"
+        }
+      ]
+    },
+    {
+      "id": "so-07",
+      "topic": "归并的实际比较与上界",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "将两个升序段 `1,3,5` 和 `2,4,6,7` 二路归并，每次只比较两段当前首项，任一段耗尽后直接复制另一段。实际关键字比较几次？",
+      "options": [
+        {
+          "label": "A",
+          "content": "3"
+        },
+        {
+          "label": "B",
+          "content": "4"
+        },
+        {
+          "label": "C",
+          "content": "5"
+        },
+        {
+          "label": "D",
+          "content": "6"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "只按较短段长度计数",
+          "explanation": "输出另一路元素时同样可能消耗比较，不能只数短段的三项。"
+        },
+        "B": {
+          "title": "漏计短段末项输出前的比较",
+          "explanation": "输出5之前仍需比较5与6，这也是一次比较。"
+        },
+        "D": {
+          "title": "把最坏上界当本例实际",
+          "explanation": "本例左段先耗尽，最后的6、7直接复制；实际次数小于理论上界。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "只在两路都非空时累计关键字比较。"
+        },
+        {
+          "level": 2,
+          "text": "一方耗尽后复制剩余项，不再比较两路首项。"
+        },
+        {
+          "level": 3,
+          "text": "按每次输出的来源列出前几步，找出首次耗尽的位置。"
+        }
+      ],
+      "solution": "比较顺序为1对2、3对2、3对4、5对4、5对6，共5次。左段耗尽后直接复制6、7。",
+      "viz": null,
+      "variant": {
+        "stem": "只固定两段长度分别为3和4，不再固定键值，归并最坏需要多少次关键字比较？",
+        "options": [
+          {
+            "label": "A",
+            "content": "3"
+          },
+          {
+            "label": "B",
+            "content": "4"
+          },
+          {
+            "label": "C",
+            "content": "5"
+          },
+          {
+            "label": "D",
+            "content": "6"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "由给定键值的实际次数改问同长度最坏次数。",
+        "explanation": "最坏时直到只剩最后一个元素才有一路耗尽；总长7，至多6次比较，且交错键值能达到。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "merge-two-runs",
+            "input": {
+              "left": [
+                2,
+                4,
+                6
+              ],
+              "right": [
+                1,
+                3,
+                5,
+                7
+              ],
+              "mode": "worst-case-witness"
+            },
+            "goal": "分开记录比较与直接复制",
+            "pauseQuestion": "一段耗尽后复制另一段是否继续做关键字比较？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "merge-two-runs",
+          "input": {
+            "left": [
+              1,
+              3,
+              5
+            ],
+            "right": [
+              2,
+              4,
+              6,
+              7
+            ]
+          },
+          "goal": "分开记录比较与直接复制",
+          "pauseQuestion": "一段耗尽后复制另一段是否继续做关键字比较？"
+        }
+      ]
+    },
+    {
+      "id": "so-08",
+      "topic": "低位优先基数排序",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "对 `329,457,657,839,436,720,355` 按十进制做低位优先基数排序，每趟稳定，先按个位升序分配并收集。第一趟结果是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`720,355,436,457,657,329,839`"
+        },
+        {
+          "label": "B",
+          "content": "`329,355,436,457,657,720,839`"
+        },
+        {
+          "label": "C",
+          "content": "`720,329,436,839,355,457,657`"
+        },
+        {
+          "label": "D",
+          "content": "`720,355,436,657,457,839,329`"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "首趟就按整个键排序",
+          "explanation": "低位优先首趟只按个位，尚未按十位和百位排序。"
+        },
+        "C": {
+          "title": "提前做完十位趟",
+          "explanation": "该顺序已经按十位重新收集，不是第一趟。"
+        },
+        "D": {
+          "title": "破坏同桶稳定性",
+          "explanation": "个位同为7的457应先于657，同为9的329应先于839。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "只提取当前处理的个位，不先比较百位。"
+        },
+        {
+          "level": 2,
+          "text": "各桶按0至9收集。"
+        },
+        {
+          "level": 3,
+          "text": "同一桶保持进入桶的原次序，不能反转。"
+        }
+      ],
+      "solution": "个位分别9、7、7、9、6、0、5。按桶收集得720、355、436、457、657、329、839，两个同个位桶保持原顺序。",
+      "viz": null,
+      "variant": {
+        "stem": "保持输入与稳定规则，接着按十位完成第二趟，结果为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`329,355,436,457,657,720,839`"
+          },
+          {
+            "label": "B",
+            "content": "`720,329,436,839,355,457,657`"
+          },
+          {
+            "label": "C",
+            "content": "`720,355,436,457,657,329,839`"
+          },
+          {
+            "label": "D",
+            "content": "`720,329,839,436,657,457,355`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "观察点从个位趟后改为十位趟后。",
+        "explanation": "在第一趟结果上，十位为2的720、329先出，随后十位3的436、839，再是十位5的355、457、657；各桶稳定，得到选项B。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "lsd-radix-sort",
+            "input": {
+              "values": [
+                329,
+                457,
+                657,
+                839,
+                436,
+                720,
+                355
+              ],
+              "base": 10,
+              "passes": 2,
+              "stable": true
+            },
+            "goal": "跟踪同桶记录的先后",
+            "pauseQuestion": "同一位相等时，能否逆转上趟确定的低位次序？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "lsd-radix-sort",
+          "input": {
+            "values": [
+              329,
+              457,
+              657,
+              839,
+              436,
+              720,
+              355
+            ],
+            "base": 10,
+            "passes": 1,
+            "stable": true
+          },
+          "goal": "跟踪同桶记录的先后",
+          "pauseQuestion": "同一位相等时，能否逆转上趟确定的低位次序？"
+        }
+      ]
+    },
+    {
+      "id": "so-09",
+      "topic": "外排序的归并路数",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "外排序已经生成8个有序初始段。内存有3块等大缓冲，每个输入段占1块，输出占1块；每轮尽可能多路归并，不计生成初始段的阶段。归成一个段最少需几轮？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1"
+        },
+        {
+          "label": "B",
+          "content": "2"
+        },
+        {
+          "label": "C",
+          "content": "3"
+        },
+        {
+          "label": "D",
+          "content": "8"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把8段同时装入输入",
+          "explanation": "3块内存需预留一块输出，只能提供两个输入缓冲，不能8路并行。"
+        },
+        "B": {
+          "title": "把缓冲数全当输入路数",
+          "explanation": "输出也占一块，实际是2路归并，不是3路或4路。"
+        },
+        "D": {
+          "title": "把归并次数当轮数",
+          "explanation": "同一轮可合并多个互不重叠的段组；8不是所需轮数。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先扣除必须保留的输出缓冲。"
+        },
+        {
+          "level": 2,
+          "text": "每轮将当前段数按可用输入路数分组。"
+        },
+        {
+          "level": 3,
+          "text": "列出每轮结束后的段数，直到只剩一个。"
+        }
+      ],
+      "solution": "输入缓冲只有2块，故2路归并：段数8到4到2到1，共3轮。",
+      "viz": null,
+      "variant": {
+        "stem": "保持8个初始段，内存缓冲从3块改为5块，其他规则不变，最少几轮？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1"
+          },
+          {
+            "label": "B",
+            "content": "2"
+          },
+          {
+            "label": "C",
+            "content": "3"
+          },
+          {
+            "label": "D",
+            "content": "4"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅增加可用缓冲块数。",
+        "explanation": "扣掉输出后可4路归并；首轮8段变2段，第二轮变1段，共2轮。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so-09v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "external-merge-rounds",
+            "input": {
+              "initialRuns": 8,
+              "bufferBlocks": 5,
+              "outputBlocks": 1
+            },
+            "goal": "输出缓冲占用限制输入路数",
+            "pauseQuestion": "本轮有多少缓冲真正可作输入？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so-09-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "external-merge-rounds",
+          "input": {
+            "initialRuns": 8,
+            "bufferBlocks": 3,
+            "outputBlocks": 1
+          },
+          "goal": "输出缓冲占用限制输入路数",
+          "pauseQuestion": "本轮有多少缓冲真正可作输入？"
+        }
+      ]
+    },
+    {
+      "id": "so-10",
+      "topic": "比较排序的决策树下界",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "仅比较互异关键字的大小来排序3个元素。为区分所有可能初始排列，最坏比较次数的决策树下界为多少？每次比较只有两种可能结果。",
+      "options": [
+        {
+          "label": "A",
+          "content": "1"
+        },
+        {
+          "label": "B",
+          "content": "2"
+        },
+        {
+          "label": "C",
+          "content": "3"
+        },
+        {
+          "label": "D",
+          "content": "6"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "未覆盖所有排列",
+          "explanation": "一次比较只有两个分支，无法区分六种排列。"
+        },
+        "B": {
+          "title": "把四个叶当足够",
+          "explanation": "两层二叉决策树至多四个叶，少于六种初始排列。"
+        },
+        "D": {
+          "title": "把排列数当树高",
+          "explanation": "六是需要区分的叶数，比较次数对应路径长度而非叶数本身。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先计算互异元素有多少种排列。"
+        },
+        {
+          "level": 2,
+          "text": "比较决策树每层至多使可区分叶数翻倍。"
+        },
+        {
+          "level": 3,
+          "text": "找最小层数，使二的该次幂不少于排列数。"
+        }
+      ],
+      "solution": "三元素有6种排列。两次比较最多区分4种，三次最多区分8种，因此下界为3次。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将互异元素数由3改为4，同样模型下的最坏比较次数下界为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "3"
+          },
+          {
+            "label": "B",
+            "content": "4"
+          },
+          {
+            "label": "C",
+            "content": "5"
+          },
+          {
+            "label": "D",
+            "content": "24"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将元素数由3改为4。",
+        "explanation": "四元素有24种排列，四层至多16叶不足，五层至多32叶，故下界为5次；这是信息下界，不宣称任意算法都达到。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so-10v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "comparison-decision-tree",
+            "input": {
+              "distinctKeys": 4,
+              "outcomesPerComparison": 2
+            },
+            "goal": "比较叶数与高度下界",
+            "pauseQuestion": "排列数对应树的叶数，还是树高？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so-10-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "comparison-decision-tree",
+          "input": {
+            "distinctKeys": 3,
+            "outcomesPerComparison": 2
+          },
+          "goal": "比较叶数与高度下界",
+          "pauseQuestion": "排列数对应树的叶数，还是树高？"
+        }
+      ]
+    }
+  ]
+}

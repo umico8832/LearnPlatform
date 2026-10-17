@@ -1,0 +1,1366 @@
+{
+  "schemaVersion": 1,
+  "section": "查找、索引结构与散列表",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "se-01",
+      "topic": "顺序查找的平均比较次数",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "长度为5的线性表顺序查找，从首项开始，找到即停。每个元素被查到的概率相等，只计关键字相等比较。成功查找的平均比较次数为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1"
+        },
+        {
+          "label": "B",
+          "content": "2"
+        },
+        {
+          "label": "C",
+          "content": "3"
+        },
+        {
+          "label": "D",
+          "content": "5"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "只算首项命中",
+          "explanation": "首项只需一次，但其他位置也等概率出现，须对全部位置求平均。"
+        },
+        "B": {
+          "title": "把中间之前的位置当均值",
+          "explanation": "成功比较次数依次为1至5，总和15，不能只看前半部分。"
+        },
+        "D": {
+          "title": "把失败代价当成功均值",
+          "explanation": "比较5次只对应末项命中；成功查找须加权平均。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先写出每个位置命中时的比较次数。"
+        },
+        {
+          "level": 2,
+          "text": "等概率时，对五个位置的次数取算术平均。"
+        },
+        {
+          "level": 3,
+          "text": "若只有三个位置，分别需要1、2、3次；先用小表检查求平均的方法。"
+        }
+      ],
+      "solution": "五个位置分别比较1、2、3、4、5次，均值为15除以5，即3次。",
+      "viz": null,
+      "variant": {
+        "stem": "保持同一表与查找方式，关键字不在表中时共做多少次关键字相等比较？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1"
+          },
+          {
+            "label": "B",
+            "content": "2"
+          },
+          {
+            "label": "C",
+            "content": "3"
+          },
+          {
+            "label": "D",
+            "content": "5"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "仅将成功查找改为失败查找。",
+        "explanation": "所有5个位置都要比较，最后确认不存在；循环边界检查未计入，故为5次。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "se-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "sequential-search",
+            "input": {
+              "values": [
+                4,
+                8,
+                2,
+                9,
+                6
+              ],
+              "key": 7
+            },
+            "goal": "将每个命中位置的比较次数并列",
+            "pauseQuestion": "失败时能提前跳过尚未比较的位置吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "se-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "sequential-search",
+          "input": {
+            "values": [
+              4,
+              8,
+              2,
+              9,
+              6
+            ],
+            "mode": "successful-equiprobable"
+          },
+          "goal": "将每个命中位置的比较次数并列",
+          "pauseQuestion": "失败时能提前跳过尚未比较的位置吗？"
+        }
+      ]
+    },
+    {
+      "id": "se-02",
+      "topic": "折半查找的中点约定",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有序数组为 `1,3,5,7,9,11,13,15`，下标从0开始。折半查找初始 `lo=0,hi=7`，每轮中点取 `floor((lo+hi)/2)`，关键字小则令 `hi=mid-1`，大则令 `lo=mid+1`。查13依次比较哪些值？",
+      "options": [
+        {
+          "label": "A",
+          "content": "7,11,13"
+        },
+        {
+          "label": "B",
+          "content": "9,13"
+        },
+        {
+          "label": "C",
+          "content": "7,9,11,13"
+        },
+        {
+          "label": "D",
+          "content": "15,13"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "擅自取上中点",
+          "explanation": "偶数长度首次下中点为下标3的7，不是下标4的9。"
+        },
+        "C": {
+          "title": "把折半变成逐项扫描",
+          "explanation": "首轮后区间为下标4至7，其中点为5的11，不会先比较9。"
+        },
+        "D": {
+          "title": "从尾部开始猜测",
+          "explanation": "本题明确从整个区间的下中点开始，不从末项15开始。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先按下标而非值计算第一次中点。"
+        },
+        {
+          "level": 2,
+          "text": "每轮比较后排除中点本身，再对剩下的闭区间求中点。"
+        },
+        {
+          "level": 3,
+          "text": "另用四项有序表，写出左右边界变化，检查每轮是否真正缩小区间。"
+        }
+      ],
+      "solution": "首次中点下标3，对应7；之后区间4至7，中点5对应11；再到6至7，中点6对应13，命中。",
+      "viz": null,
+      "variant": {
+        "stem": "保持数组和规则，改查15，需要几轮关键字比较？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1"
+          },
+          {
+            "label": "B",
+            "content": "2"
+          },
+          {
+            "label": "C",
+            "content": "3"
+          },
+          {
+            "label": "D",
+            "content": "4"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "关键字由13改为15。",
+        "explanation": "依次比较7、11、13、15，共4轮。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "se-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "binary-search",
+            "input": {
+              "values": [
+                1,
+                3,
+                5,
+                7,
+                9,
+                11,
+                13,
+                15
+              ],
+              "key": 15,
+              "midpoint": "floor"
+            },
+            "goal": "记录闭区间与下中点",
+            "pauseQuestion": "排除中点后，新边界应该越过中点吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "se-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "binary-search",
+          "input": {
+            "values": [
+              1,
+              3,
+              5,
+              7,
+              9,
+              11,
+              13,
+              15
+            ],
+            "key": 13,
+            "midpoint": "floor"
+          },
+          "goal": "记录闭区间与下中点",
+          "pauseQuestion": "排除中点后，新边界应该越过中点吗？"
+        }
+      ]
+    },
+    {
+      "id": "se-03",
+      "topic": "折半查找失败区间",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有序数组 `1,3,5,7,9` 的下标为0至4。采用闭区间、下中点的折半查找，初始 `lo=0,hi=4`。查找4，按小则左移右界、大则右移左界的规则，结束时边界为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`lo=1,hi=2`"
+        },
+        {
+          "label": "B",
+          "content": "`lo=2,hi=1`"
+        },
+        {
+          "label": "C",
+          "content": "`lo=2,hi=2`"
+        },
+        {
+          "label": "D",
+          "content": "`lo=0,hi=4`"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "保留了不可能命中的区间",
+          "explanation": "先比较5后右界为1；随后比较1、3，左界依次推进至1、2，最终边界交叉，不能保留仍未交叉的区间。"
+        },
+        "C": {
+          "title": "认为失败必须卡在单点",
+          "explanation": "单点仍须比较。失败终止是左界超过右界，而非边界相等。"
+        },
+        "D": {
+          "title": "从不更新边界",
+          "explanation": "每次比较都会排除一半候选，失败时不可能保持原区间。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先比较下标2的元素并更新右界。"
+        },
+        {
+          "level": 2,
+          "text": "继续在余下闭区间按同一取整规则求中点。"
+        },
+        {
+          "level": 3,
+          "text": "在只剩一个候选时，比较后仍要排除该点；观察左右边界是否交叉。"
+        }
+      ],
+      "solution": "先比5，右界为1；再比1，左界为1；再比3，左界为2。此时左界2大于右界1，失败。",
+      "viz": null,
+      "variant": {
+        "stem": "保持数组与中点规则，改查5，要比较几轮？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1"
+          },
+          {
+            "label": "B",
+            "content": "2"
+          },
+          {
+            "label": "C",
+            "content": "3"
+          },
+          {
+            "label": "D",
+            "content": "5"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "关键字从不存在的4改为5。",
+        "explanation": "首轮中点下标2的值就是5，一轮命中。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "se-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "binary-search",
+            "input": {
+              "values": [
+                1,
+                3,
+                5,
+                7,
+                9
+              ],
+              "key": 5,
+              "midpoint": "floor"
+            },
+            "goal": "失败时展示空区间",
+            "pauseQuestion": "边界相等时能直接宣称失败吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "se-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "binary-search",
+          "input": {
+            "values": [
+              1,
+              3,
+              5,
+              7,
+              9
+            ],
+            "key": 4,
+            "midpoint": "floor"
+          },
+          "goal": "失败时展示空区间",
+          "pauseQuestion": "边界相等时能直接宣称失败吗？"
+        }
+      ]
+    },
+    {
+      "id": "se-04",
+      "topic": "分块查找的两段代价",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "分块表三块依次为 `7,2,5`、`12,9,10`、`18,14,16`，块内无序，索引依次存块最大值7、12、18。先顺序比较索引，选首个不小于关键字的块，再从该块首项顺查。查10共比较几次关键字？",
+      "options": [
+        {
+          "label": "A",
+          "content": "2"
+        },
+        {
+          "label": "B",
+          "content": "3"
+        },
+        {
+          "label": "C",
+          "content": "4"
+        },
+        {
+          "label": "D",
+          "content": "5"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "只算索引",
+          "explanation": "索引比较7、12两次后，还须在第二块查找实际元素。"
+        },
+        "B": {
+          "title": "只算块内",
+          "explanation": "第二块12、9、10三次之外，还须计算两次索引比较。"
+        },
+        "C": {
+          "title": "漏掉一段中的一次",
+          "explanation": "索引两次、块内三次，最后命中比较也计入，合计五次。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "把索引定位与块内查找分开计数。"
+        },
+        {
+          "level": 2,
+          "text": "索引找到块不等于已经找到实际元素。"
+        },
+        {
+          "level": 3,
+          "text": "检查最后一次命中的相等比较是否被漏算。"
+        }
+      ],
+      "solution": "比较索引7、12两次定位第二块；比较12、9、10三次命中，总计5次。两处出现12是不同存储位置，都要比较。",
+      "viz": null,
+      "variant": {
+        "stem": "保持表与算法，改查16，共比较几次关键字？",
+        "options": [
+          {
+            "label": "A",
+            "content": "3"
+          },
+          {
+            "label": "B",
+            "content": "4"
+          },
+          {
+            "label": "C",
+            "content": "5"
+          },
+          {
+            "label": "D",
+            "content": "6"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "仅更换查找关键字为16。",
+        "explanation": "索引7、12、18共3次，第三块18、14、16共3次，合计6次。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "se-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "indexed-sequential-search",
+            "input": {
+              "blocks": [
+                [
+                  7,
+                  2,
+                  5
+                ],
+                [
+                  12,
+                  9,
+                  10
+                ],
+                [
+                  18,
+                  14,
+                  16
+                ]
+              ],
+              "maxima": [
+                7,
+                12,
+                18
+              ],
+              "key": 16
+            },
+            "goal": "分开累计索引与块内比较",
+            "pauseQuestion": "索引命中某块是否已算作元素命中？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "se-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "indexed-sequential-search",
+          "input": {
+            "blocks": [
+              [
+                7,
+                2,
+                5
+              ],
+              [
+                12,
+                9,
+                10
+              ],
+              [
+                18,
+                14,
+                16
+              ]
+            ],
+            "maxima": [
+              7,
+              12,
+              18
+            ],
+            "key": 10
+          },
+          "goal": "分开累计索引与块内比较",
+          "pauseQuestion": "索引命中某块是否已算作元素命中？"
+        }
+      ]
+    },
+    {
+      "id": "se-05",
+      "topic": "B树的阶与根例外",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "采用至多m个孩子的m阶B树定义。5阶B树中，非根内部结点最少有多少个关键字？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1"
+        },
+        {
+          "label": "B",
+          "content": "2"
+        },
+        {
+          "label": "C",
+          "content": "3"
+        },
+        {
+          "label": "D",
+          "content": "4"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把根的例外套到非根",
+          "explanation": "非空根可只有一个关键字，但本题明确为非根内部结点。"
+        },
+        "C": {
+          "title": "把最少孩子数当关键字数",
+          "explanation": "至少三个孩子对应两个关键字，二者相差一。"
+        },
+        "D": {
+          "title": "把最大关键字数当最小",
+          "explanation": "5阶最多5个孩子、4个关键字；最小占用须另算。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先按阶的定义求非根内部结点的最少孩子数。"
+        },
+        {
+          "level": 2,
+          "text": "一个含k个关键字的内部结点有k加一个孩子。"
+        },
+        {
+          "level": 3,
+          "text": "注意根是否适用同一最小占用限制。"
+        }
+      ],
+      "solution": "非根内部结点至少有 `ceil(5/2)=3` 个孩子，因此至少2个关键字，最多4个。",
+      "viz": null,
+      "variant": {
+        "stem": "保持5阶且树非空，改问非叶根结点最少有多少个关键字？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1"
+          },
+          {
+            "label": "B",
+            "content": "2"
+          },
+          {
+            "label": "C",
+            "content": "3"
+          },
+          {
+            "label": "D",
+            "content": "4"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将对象从非根内部结点改为非叶根。",
+        "explanation": "非叶根最少两个孩子，对应一个关键字；非根的半满限制不适用于根。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "se-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "b-tree-occupancy",
+            "input": {
+              "order": 5,
+              "role": "non-leaf-root"
+            },
+            "goal": "比较根与非根占用下界",
+            "pauseQuestion": "最少孩子数与最少关键字数相等吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "se-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "b-tree-occupancy",
+          "input": {
+            "order": 5,
+            "role": "non-root-internal"
+          },
+          "goal": "比较根与非根占用下界",
+          "pauseQuestion": "最少孩子数与最少关键字数相等吗？"
+        }
+      ]
+    },
+    {
+      "id": "se-06",
+      "topic": "B树高度与容量",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "4阶B树每结点至多4个孩子，树高按层数计且恰为3层。最多可存多少个关键字？",
+      "options": [
+        {
+          "label": "A",
+          "content": "15"
+        },
+        {
+          "label": "B",
+          "content": "21"
+        },
+        {
+          "label": "C",
+          "content": "48"
+        },
+        {
+          "label": "D",
+          "content": "63"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "少算一层的结点",
+          "explanation": "三层最多1、4、16个结点，每结点还可有三个关键字；15不是总容量。"
+        },
+        "B": {
+          "title": "把结点数当关键字数",
+          "explanation": "21是满容量下的结点数，每个结点最多三个关键字。"
+        },
+        "C": {
+          "title": "漏掉上两层关键字",
+          "explanation": "48只计算第三层16个结点的关键字，根与第二层也存关键字。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "逐层求最多结点数。"
+        },
+        {
+          "level": 2,
+          "text": "每个结点最多的关键字数比阶少一。"
+        },
+        {
+          "level": 3,
+          "text": "B树内部结点也存关键字，不能只统计叶层。"
+        }
+      ],
+      "solution": "各层最多1、4、16个结点，共21个；每个最多3个关键字，所以最多63个。",
+      "viz": null,
+      "variant": {
+        "stem": "保持4阶与恰好3层，改问最少关键字总数是多少？",
+        "options": [
+          {
+            "label": "A",
+            "content": "3"
+          },
+          {
+            "label": "B",
+            "content": "7"
+          },
+          {
+            "label": "C",
+            "content": "15"
+          },
+          {
+            "label": "D",
+            "content": "21"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "将最大容量改为最小容量。",
+        "explanation": "根最少1个关键字、2个孩子；第二层每结点最少1个关键字、2个孩子，第三层最少4个叶且各至少1个关键字。总数1加2加4为7。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "se-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "b-tree-capacity",
+            "input": {
+              "order": 4,
+              "levels": 3,
+              "bound": "minimum"
+            },
+            "goal": "按层合计关键字",
+            "pauseQuestion": "内部结点的关键字是否也应计入总容量？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "se-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "b-tree-capacity",
+          "input": {
+            "order": 4,
+            "levels": 3,
+            "bound": "maximum"
+          },
+          "goal": "按层合计关键字",
+          "pauseQuestion": "内部结点的关键字是否也应计入总容量？"
+        }
+      ]
+    },
+    {
+      "id": "se-07",
+      "topic": "B加树叶链与范围查找",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "一棵B加树内部只存索引，所有数据键在叶中，叶链依次为 `5,10`、`20,30`、`40,50`。查闭区间20至40，应返回多少个键？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1"
+        },
+        {
+          "label": "B",
+          "content": "2"
+        },
+        {
+          "label": "C",
+          "content": "3"
+        },
+        {
+          "label": "D",
+          "content": "4"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "只返回区间下界",
+          "explanation": "闭区间需要返回所有满足上下界的键，不仅第一次定位的20。"
+        },
+        "B": {
+          "title": "漏掉闭区间上界",
+          "explanation": "40恰好等于上界，闭区间中也应包含。"
+        },
+        "D": {
+          "title": "多取了边界以外的键",
+          "explanation": "10小于下界、50大于上界，都不能加入结果。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先明确两个边界是否包含。"
+        },
+        {
+          "level": 2,
+          "text": "定位第一个不小于下界的叶键后，沿叶链继续。"
+        },
+        {
+          "level": 3,
+          "text": "停止条件是遇到大于上界的键，而非刚到下一片叶。"
+        }
+      ],
+      "solution": "符合条件的键为20、30、40，共3个。内部索引只用于定位，不作为额外数据键重复输出。",
+      "viz": null,
+      "variant": {
+        "stem": "同一叶链改查闭区间10至50，应返回多少个键？",
+        "options": [
+          {
+            "label": "A",
+            "content": "3"
+          },
+          {
+            "label": "B",
+            "content": "4"
+          },
+          {
+            "label": "C",
+            "content": "5"
+          },
+          {
+            "label": "D",
+            "content": "6"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "只改范围上下界。",
+        "explanation": "结果为10、20、30、40、50，共5个；5小于下界而排除。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "se-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "b-plus-range-scan",
+            "input": {
+              "leaves": [
+                [
+                  5,
+                  10
+                ],
+                [
+                  20,
+                  30
+                ],
+                [
+                  40,
+                  50
+                ]
+              ],
+              "lower": 10,
+              "upper": 50,
+              "inclusive": true
+            },
+            "goal": "索引定位后沿叶链扫描",
+            "pauseQuestion": "内部重复出现的索引键是否应再次作为数据输出？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "se-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "b-plus-range-scan",
+          "input": {
+            "leaves": [
+              [
+                5,
+                10
+              ],
+              [
+                20,
+                30
+              ],
+              [
+                40,
+                50
+              ]
+            ],
+            "lower": 20,
+            "upper": 40,
+            "inclusive": true
+          },
+          "goal": "索引定位后沿叶链扫描",
+          "pauseQuestion": "内部重复出现的索引键是否应再次作为数据输出？"
+        }
+      ]
+    },
+    {
+      "id": "se-08",
+      "topic": "线性探测与删除标记",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "散列表长度7，下标0至6，散列函数为 `key mod 7`。空表依次插入10、17、24，冲突后依次向后探测并循环。24最终存于哪个下标？",
+      "options": [
+        {
+          "label": "A",
+          "content": "3"
+        },
+        {
+          "label": "B",
+          "content": "4"
+        },
+        {
+          "label": "C",
+          "content": "5"
+        },
+        {
+          "label": "D",
+          "content": "6"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "忽略冲突",
+          "explanation": "三个键的初始地址均为3，后插入键不能覆盖已有键。"
+        },
+        "B": {
+          "title": "只避开第一个冲突",
+          "explanation": "下标4已被17占用，24还须再向后探测。"
+        },
+        "D": {
+          "title": "多跳过一个空槽",
+          "explanation": "下标5首次为空，应立即存入，无需继续到6。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "分别计算三个关键字的初始地址。"
+        },
+        {
+          "level": 2,
+          "text": "严格按给定插入顺序占槽。"
+        },
+        {
+          "level": 3,
+          "text": "探测到首个空槽就停止，不因原地址冲突额外再跳一格。"
+        }
+      ],
+      "solution": "10占3，17冲突后占4，24在3、4均冲突后占5。",
+      "viz": null,
+      "variant": {
+        "stem": "保持上述表，删除17后仍需保证能查到24。对原下标4最合适的处理是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "置为从未使用的空槽并据此终止查找"
+          },
+          {
+            "label": "B",
+            "content": "标记已删除，查找时继续探测"
+          },
+          {
+            "label": "C",
+            "content": "直接删除下标5的24"
+          },
+          {
+            "label": "D",
+            "content": "不再允许任何查询"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅新增删除中间冲突项17的操作。",
+        "explanation": "使用已删除标记能让查24的探测越过该槽；若把它当从未使用的空槽而提前终止，位于5的24会漏查。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "se-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "linear-probing",
+            "input": {
+              "capacity": 7,
+              "keys": [
+                10,
+                17,
+                24
+              ],
+              "delete": 17,
+              "lookup": 24,
+              "hash": "key-mod-capacity"
+            },
+            "goal": "保留冲突链上的查找连续性",
+            "pauseQuestion": "空槽与已删除槽的停止语义相同吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "se-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "linear-probing",
+          "input": {
+            "capacity": 7,
+            "keys": [
+              10,
+              17,
+              24
+            ],
+            "hash": "key-mod-capacity"
+          },
+          "goal": "保留冲突链上的查找连续性",
+          "pauseQuestion": "空槽与已删除槽的停止语义相同吗？"
+        }
+      ]
+    },
+    {
+      "id": "se-09",
+      "topic": "双散列探测步长",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "表长11，双散列使用初始地址 `h1(k)=k mod 11`，步长 `h2(k)=1+(k mod 10)`，第i次地址为 `(h1(k)+i*h2(k)) mod 11`，i从0开始。仅下标0、3已占用，插入22的地址为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1"
+        },
+        {
+          "label": "B",
+          "content": "3"
+        },
+        {
+          "label": "C",
+          "content": "6"
+        },
+        {
+          "label": "D",
+          "content": "9"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "沿用线性探测",
+          "explanation": "22的步长为3，应按0、3、6探测，不是每次加1。"
+        },
+        "B": {
+          "title": "覆盖已占槽",
+          "explanation": "下标3已占用，还需继续按同一步长探测。"
+        },
+        "D": {
+          "title": "越过首个空槽",
+          "explanation": "下标6为空，已可插入，不继续到9。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先分别求初始地址与步长。"
+        },
+        {
+          "level": 2,
+          "text": "从i为0开始逐个代入，检查给定占用情况。"
+        },
+        {
+          "level": 3,
+          "text": "注意步长由当前关键字决定，不能从表长直接猜一个常数。"
+        }
+      ],
+      "solution": "22初始地址0，步长3；探测0、3都已占用，下一槽6为空，因此存6。",
+      "viz": null,
+      "variant": {
+        "stem": "保持表与两个散列函数，仅将待插入关键字改为33，其存储下标为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1"
+          },
+          {
+            "label": "B",
+            "content": "3"
+          },
+          {
+            "label": "C",
+            "content": "4"
+          },
+          {
+            "label": "D",
+            "content": "6"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "待插入关键字22改为33，占用槽不变。",
+        "explanation": "33的初始地址0，步长4；0占用而4为空，所以存4，不能沿用22的步长。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "se-09v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "double-hashing",
+            "input": {
+              "capacity": 11,
+              "occupied": [
+                0,
+                3
+              ],
+              "key": 33,
+              "hash1Mod": 11,
+              "hash2Mod": 10,
+              "hash2Offset": 1
+            },
+            "goal": "分开计算初址和步长",
+            "pauseQuestion": "换关键字后能继续沿用旧步长吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "se-09-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "double-hashing",
+          "input": {
+            "capacity": 11,
+            "occupied": [
+              0,
+              3
+            ],
+            "key": 22,
+            "hash1Mod": 11,
+            "hash2Mod": 10,
+            "hash2Offset": 1
+          },
+          "goal": "分开计算初址和步长",
+          "pauseQuestion": "换关键字后能继续沿用旧步长吗？"
+        }
+      ]
+    },
+    {
+      "id": "se-10",
+      "topic": "散列表的探测次数",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "表长7，线性探测，散列函数为 `key mod 7`，空表依次插入0、7、14。查找不存在的21，每访问一个槽算一次探测，首次遇从未使用的空槽即失败。共探测几次？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1"
+        },
+        {
+          "label": "B",
+          "content": "2"
+        },
+        {
+          "label": "C",
+          "content": "3"
+        },
+        {
+          "label": "D",
+          "content": "4"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "只检查初始槽",
+          "explanation": "初始槽冲突不能立即判不存在，须沿同一探测序列继续。"
+        },
+        "B": {
+          "title": "未探完整个冲突簇",
+          "explanation": "占用槽0、1、2都必须经过，不能在第二槽提前停止。"
+        },
+        "C": {
+          "title": "未计终止空槽",
+          "explanation": "三个占用槽之后，还须访问空槽3才能确认失败。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先按插入顺序画出最终占槽。"
+        },
+        {
+          "level": 2,
+          "text": "失败查找沿用插入时同一探测序列。"
+        },
+        {
+          "level": 3,
+          "text": "终止所需的空槽访问是否也属于一次槽探测？"
+        }
+      ],
+      "solution": "0、7、14依次占槽0、1、2。查21从0出发，访问0、1、2、3；最后的3为空，共4次。",
+      "viz": null,
+      "variant": {
+        "stem": "保持上述表，0、7、14等概率作为成功查询的目标，平均槽探测次数是多少？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1"
+          },
+          {
+            "label": "B",
+            "content": "2"
+          },
+          {
+            "label": "C",
+            "content": "3"
+          },
+          {
+            "label": "D",
+            "content": "4"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "由查不存在关键字改为对已有三键等概率成功查找。",
+        "explanation": "三个键分别需1、2、3次，平均为2次；成功查询无须继续探测空槽。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "se-10v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "linear-probing",
+            "input": {
+              "capacity": 7,
+              "keys": [
+                0,
+                7,
+                14
+              ],
+              "mode": "successful-equiprobable",
+              "hash": "key-mod-capacity"
+            },
+            "goal": "失败查找包含终止空槽",
+            "pauseQuestion": "已经探过全部占槽是否足以在未访问下一槽时结束？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "se-10-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "linear-probing",
+          "input": {
+            "capacity": 7,
+            "keys": [
+              0,
+              7,
+              14
+            ],
+            "lookup": 21,
+            "hash": "key-mod-capacity"
+          },
+          "goal": "失败查找包含终止空槽",
+          "pauseQuestion": "已经探过全部占槽是否足以在未访问下一槽时结束？"
+        }
+      ]
+    }
+  ]
+}
