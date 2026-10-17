@@ -27,7 +27,7 @@ interface DraftQuestion {
 }
 
 const files = readdirSync(resolve(process.cwd(), '../content/drafts'))
-  .filter((name) => /^m5-.*\.json$/.test(name))
+  .filter((name) => /^(m5-.*|p27-binary-tree)\.json$/.test(name))
   .sort()
 const questions = files.flatMap((name) => {
   const document = JSON.parse(readFileSync(resolve(process.cwd(), '../content/drafts', name), 'utf8')) as {

@@ -24,6 +24,7 @@ class QuestionDraftMigrationIntegrationTest {
     @Test void upgradesCurrentV111AndPreservesUnrelatedRowsAndLearningFacts() throws Exception { migrate("111"); }
 
     @Test void upgradesCurrentV112AndPreservesLearningFacts() throws Exception { migrate("112"); }
+    @Test void upgradesCurrentV114WithPendingBinaryTreeChapter() throws Exception { migrate("114"); }
 
     private void migrate(String initialVersion) throws Exception {
         try (var database = new MySQLContainer<>("mysql:8.0")
@@ -70,7 +71,8 @@ class QuestionDraftMigrationIntegrationTest {
                     assertEquals(row, db.queryForMap("SELECT * FROM " + entry.getKey() + " WHERE id=?", row.get("id")));
                 }
             }
-            assertEquals(27, db.queryForObject("SELECT COUNT(*) FROM question_understanding_content WHERE content_version=1", Integer.class));
+            assertEquals(35, db.queryForObject("SELECT COUNT(*) FROM question_understanding_content WHERE content_version=1", Integer.class));
+            assertEquals(8, db.queryForObject("SELECT COUNT(*) FROM question q JOIN question_understanding_content c ON c.question_id=q.id WHERE q.source_reference LIKE 'm5-draft:bt-%' AND q.visibility='DRAFT' AND c.review_status='PENDING'", Integer.class));
             assertEquals(2, db.queryForObject("SELECT COUNT(*) FROM question_understanding_content WHERE content_version=1 AND source_title IN ('2026 年 408 真题 第 3 题','系统种子生成：合法出栈序列') AND review_status='REVIEWED' AND reviewed_by='AI 初稿 + Codex 冷读 + Claude 页面审核'", Integer.class));
             assertEquals(1, db.queryForObject("SELECT COUNT(*) FROM question_understanding_content WHERE source_title='2026 年 408 真题 第 3 题' AND source_verification='VERIFIED' AND source_verified_by LIKE '%计算机考研杂货铺%' AND source_verified_time IS NOT NULL AND source_url='https://csgraduates.com/study_methods/408quiz/2026/'", Integer.class));
             Path source = Path.of("").toAbsolutePath();

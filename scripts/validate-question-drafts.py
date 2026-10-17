@@ -11,6 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DRAFTS = tuple(sorted((ROOT / "content/drafts").glob("m5-*.json")))
+TREE_DRAFT = ROOT / "content/drafts/p27-binary-tree.json"
 LABELS = {"A", "B", "C", "D"}
 PENDING = {"kind": "AI_GENERATED", "reviewStatus": "PENDING", "label": "AI 生成·待审核"}
 REVIEWED = {"kind": "AI_GENERATED", "reviewStatus": "REVIEWED", "label": "AI 生成·已审核",
@@ -132,7 +133,12 @@ def validate_files(paths: tuple[Path, ...], require_target_count: bool = True) -
 
 def main() -> int:
     try:
+        validate_files((*DRAFTS, TREE_DRAFT), require_target_count=False)
         count, visualizations = validate_files(DRAFTS)
+        tree_count, tree_visualizations = validate_files((TREE_DRAFT,), require_target_count=False)
+        require(8 <= tree_count <= 10, "二叉树草稿", "本批目标为 8–10 道完整题")
+        count += tree_count
+        visualizations += tree_visualizations
     except (ValueError, json.JSONDecodeError, KeyError, TypeError) as error:
         print(f"草稿结构校验失败：{error}", file=sys.stderr)
         return 1

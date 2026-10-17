@@ -60,7 +60,7 @@ class QuestionDraftVisibilityIntegrationTest extends IntegrationTestBase {
 
     @Test void everyMigratedDraftIsHiddenFromLearnersAndFullyPreviewableOnlyByAdmin() throws Exception {
         var rows = db.queryForList("SELECT id,content,course_id FROM question WHERE source_reference LIKE 'm5-draft:%'");
-        assertEquals(25, rows.size());
+        assertEquals(33, rows.size());
         for (var row : rows) {
             long id = ((Number) row.get("id")).longValue();
             long course = ((Number) row.get("course_id")).longValue();
@@ -80,6 +80,10 @@ class QuestionDraftVisibilityIntegrationTest extends IntegrationTestBase {
             assertEquals("题目不存在", errors.analyzeQuestionError(1L, id).getQuestionContent());
             var state = preview.preview(1L, "ADMIN", id, json.createObjectNode());
             assertEquals(true, state.get("preview"));
+            var questionView = (java.util.Map<?, ?>) state.get("question");
+            var source = (java.util.Map<?, ?>) questionView.get("source");
+            assertEquals("AI_GENERATED", source.get("kind"));
+            assertEquals("PENDING", source.get("verification"));
             String correct = db.queryForObject("SELECT option_label FROM question_option WHERE question_id=? AND is_correct=1 AND deleted=0", String.class, id);
             String answer = "A".equals(correct) ? "B" : "A";
             var body = json.createObjectNode().put("answer", answer).put("hintLevel", 3).put("revealSolution", true);
