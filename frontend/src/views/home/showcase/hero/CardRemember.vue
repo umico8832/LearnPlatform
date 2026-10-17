@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import { useSpring } from '@/composables/useSpring'
 import { Spring, springs } from '@/motion'
 import type { Ghost } from './ghost'
+import { useHeroFrames } from './activity'
 
 /**
  * Spaced review, drawn as the forgetting curve it works against. Memory decays after every
@@ -53,7 +54,6 @@ const offset = useSpring(0, springs.pointer)
 const top = ref<HTMLElement | null>(null)
 let grab: { pointer: number; start: number } | null = null
 let leaving = false
-let frame = 0
 let last = 0
 let timer = 0
 
@@ -104,7 +104,6 @@ function tick(now: number) {
   last = now
   for (const spring of [from, reach, draw, ...reviews.map((review) => review.depth)]) spring.step(dt)
   paint()
-  frame = requestAnimationFrame(tick)
 }
 
 /** The review happens: the curve jumps back to full and the next review moves. */
@@ -170,17 +169,17 @@ async function demo(ghost: Ghost) {
   }
 }
 
+useHeroFrames(tick)
+
 defineExpose({ demo })
 
 onMounted(() => {
   from.jump(reviews[Math.max(0, reviews.length - SHOWN)].at)
   reach.jump(next.value + (next.value - from.value) * TAIL)
   last = performance.now()
-  frame = requestAnimationFrame(tick)
 })
 
 onBeforeUnmount(() => {
-  cancelAnimationFrame(frame)
   window.clearTimeout(timer)
 })
 </script>

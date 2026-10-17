@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import './hero/scene.css'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, provide, ref } from 'vue'
 import { springAnimate, springs } from '@/motion'
 import { useSpring } from '@/composables/useSpring'
 import type { HeroWord } from './showcaseContent'
@@ -10,6 +10,7 @@ import CardSeeIt from './hero/CardSeeIt.vue'
 import CardUnderstand from './hero/CardUnderstand.vue'
 import GhostCursor from './hero/GhostCursor.vue'
 import { Halt, type DemoScene } from './hero/ghost'
+import { heroActive } from './hero/activity'
 
 /**
  * The small card beside the headline. It shows a playable miniature of whatever the
@@ -30,6 +31,9 @@ const frame = ref<HTMLElement | null>(null)
 const scene = ref<DemoScene | null>(null)
 const ghost = ref<InstanceType<typeof GhostCursor> | null>(null)
 const visitor = ref(false)
+const active = ref(true)
+provide(heroActive, active)
+let visibility: IntersectionObserver | null = null
 let observer: ResizeObserver | null = null
 let sized = false
 let inside = false
@@ -50,7 +54,7 @@ function measure(entries: ResizeObserverEntry[]) {
 
 async function play() {
   run?.abort()
-  if (visitor.value || !scene.value || !ghost.value) return
+  if (!active.value || visitor.value || !scene.value || !ghost.value) return
   const controller = new AbortController()
   run = controller
   const actor = ghost.value.actor(controller.signal)
@@ -125,6 +129,15 @@ function onPointerLeave() {
 }
 
 onMounted(() => {
+  visibility = new IntersectionObserver(([entry]) => {
+    active.value = entry.isIntersecting
+    if (active.value) void play()
+    else {
+      run?.abort()
+      ghost.value?.hide()
+    }
+  })
+  if (frame.value) visibility.observe(frame.value)
   observer = new ResizeObserver(measure)
   const current = frame.value?.querySelector('.hero-scene')
   if (current) observer.observe(current)
@@ -134,6 +147,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   run?.abort()
   observer?.disconnect()
+  visibility?.disconnect()
   window.clearTimeout(resumeTimer)
 })
 </script>

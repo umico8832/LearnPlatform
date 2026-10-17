@@ -229,9 +229,12 @@ function takeOver(event: PointerEvent | KeyboardEvent) {
 }
 
 let intersection: IntersectionObserver | null = null
+let disposed = false
 
 onMounted(async () => {
-  scene = (await findScene('linked-list')?.load()) ?? null
+  const loaded = (await findScene('linked-list')?.load()) ?? null
+  if (disposed) return
+  scene = loaded
   simulate(false)
   intersection = new IntersectionObserver(
     ([entry]) => {
@@ -251,6 +254,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  disposed = true
   run?.abort()
   intersection?.disconnect()
   player.destroy()

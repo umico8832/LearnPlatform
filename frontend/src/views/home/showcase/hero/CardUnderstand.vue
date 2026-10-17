@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
+import { onMounted, ref, shallowRef } from 'vue'
 import { Spring, Spring2, springAnimate, springs, type SpringConfig } from '@/motion'
 import type { Ghost } from './ghost'
+import { useHeroFrames } from './activity'
 
 /**
  * What understanding feels like, with nothing to read. A tangle of nodes and crossing threads
@@ -79,7 +80,6 @@ let delays = seats.map(() => 0)
 let hover: { x: number; y: number } | null = null
 let grab: { index: number; x: number; y: number; hops: number[] } | null = null
 let press: { x: number; y: number; moved: boolean } | null = null
-let frame = 0
 let last = 0
 
 function homeOf(i: number, t: number) {
@@ -149,7 +149,6 @@ function tick(now: number) {
   })
   view.value = next
   calm.value = next.reduce((sum, node) => sum + node.k, 0) / next.length
-  frame = requestAnimationFrame(tick)
 }
 
 function settle(next: boolean) {
@@ -237,14 +236,13 @@ async function demo(ghost: Ghost) {
   await ghost.rest(1500)
 }
 
+useHeroFrames(tick)
+
 defineExpose({ demo })
 
 onMounted(() => {
   last = performance.now()
-  frame = requestAnimationFrame(tick)
 })
-
-onBeforeUnmount(() => cancelAnimationFrame(frame))
 </script>
 
 <template>

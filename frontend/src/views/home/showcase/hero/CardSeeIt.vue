@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import { Spring, springs } from '@/motion'
 import type { Ghost } from './ghost'
+import { useHeroFrames } from './activity'
 
 /**
  * Code turning into a picture. One line of code sits in the middle of the card; pressed, each
@@ -55,7 +56,6 @@ let starts: Box[] = []
 let held: { item: number; from: number } | null = null
 let press: { x: number; moved: boolean } | null = null
 let timers: number[] = []
-let frame = 0
 let last = 0
 /** Width of one character of the code line, before it is scaled. */
 let ch = 0
@@ -112,7 +112,6 @@ function tick(now: number) {
       thread: `M${dx},${dy} C${dx},${mid} ${bx},${mid} ${bx},${by}`,
     }
   })
-  frame = requestAnimationFrame(tick)
 }
 
 function local(el: Element): Box {
@@ -252,15 +251,15 @@ async function demo(ghost: Ghost) {
   await ghost.rest(1300)
 }
 
+useHeroFrames(tick)
+
 defineExpose({ demo })
 
 onMounted(() => {
   last = performance.now()
-  frame = requestAnimationFrame(tick)
 })
 
 onBeforeUnmount(() => {
-  cancelAnimationFrame(frame)
   timers.forEach((timer) => window.clearTimeout(timer))
   timers = []
 })
