@@ -7,7 +7,6 @@ import { LtLinkButton } from '@/components/living'
 import { useLivingTheme } from '@/composables/useLivingTheme'
 import { springAnimate, springs } from '@/motion'
 import { isAuthenticated } from '@/utils/auth'
-import ExplainSection from './explain/ExplainSection.vue'
 import HeroCard from './HeroCard.vue'
 import HeroHeadline from './HeroHeadline.vue'
 import LabSection from './lab/LabSection.vue'
@@ -96,7 +95,6 @@ onBeforeUnmount(() => {
 
     <SeeItSection />
     <LabSection />
-    <ExplainSection />
     <RememberSection />
   </div>
 </template>

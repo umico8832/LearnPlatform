@@ -203,11 +203,8 @@ onBeforeUnmount(() => observer?.disconnect())
 }
 
 .intro {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 380px;
-  column-gap: 72px;
-  align-items: end;
   margin-bottom: 40px;
+  text-align: center;
 }
 
 .title {
@@ -225,12 +222,11 @@ onBeforeUnmount(() => observer?.disconnect())
 }
 
 .line {
-  margin: 0 0 6px;
+  margin: var(--lt-space-5) 0 0;
   color: var(--lt-label-2);
   font-size: 19px;
   letter-spacing: -0.01em;
   line-height: 1.5;
-  text-wrap: balance;
 }
 
 .chart {
