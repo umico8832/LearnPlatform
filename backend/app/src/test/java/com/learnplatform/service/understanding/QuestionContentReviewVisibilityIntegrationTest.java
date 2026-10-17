@@ -36,7 +36,7 @@ class QuestionContentReviewVisibilityIntegrationTest extends IntegrationTestBase
     }
 
     @Test void learnersCanOpenEveryReviewedQuestionAndUseItsReviewedTeachingContent() {
-        var rows = db.queryForList("SELECT c.question_id,q.visibility,c.review_status FROM question_understanding_content c JOIN question q ON q.id=c.question_id WHERE c.content_version=1");
+        var rows = db.queryForList("SELECT c.question_id,q.visibility,c.review_status FROM question_understanding_content c JOIN question q ON q.id=c.question_id WHERE c.content_version=1 AND c.review_status='REVIEWED'");
         assertEquals(27, rows.size());
         for (var row : rows) {
             long id = ((Number) row.get("question_id")).longValue();
