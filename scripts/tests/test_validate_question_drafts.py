@@ -40,6 +40,28 @@ def draft() -> dict:
 
 
 class DraftValidationTest(unittest.TestCase):
+    def validate_unimported(self, document: dict) -> tuple[int, int]:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "unimported" / "sample.json"
+            path.parent.mkdir()
+            path.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
+            return MODULE.validate_files((path,), require_target_count=False)
+
+    def test_unimported_batches_require_pending_candidates_without_live_visualizations(self) -> None:
+        document = draft()
+        with self.assertRaisesRegex(ValueError, "候选"):
+            self.validate_unimported(document)
+        candidate = {"id": "example", "status": "CANDIDATE", "algorithm": "dfs",
+                     "input": {"nodes": ["A"], "edges": []},
+                     "goal": "观察访问集合", "pauseQuestion": "下一步访问谁？"}
+        question = document["questions"][0]
+        question["vizCandidates"] = [candidate]
+        question["variant"]["vizCandidates"] = [dict(candidate, id="example-variant")]
+        self.assertEqual((1, 0), self.validate_unimported(document))
+        question["viz"] = {"title": "访问过程", "spec": {}}
+        with self.assertRaisesRegex(ValueError, "不挂动画"):
+            self.validate_unimported(document)
+
     def validate(self, document: dict) -> tuple[int, int]:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "sample.json"

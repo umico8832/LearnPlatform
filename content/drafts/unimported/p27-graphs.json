@@ -1,0 +1,2071 @@
+{
+  "schemaVersion": 1,
+  "section": "图的存储、遍历、生成树、最短路与关键路径",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "gr-01",
+      "topic": "邻接表存储",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "简单无向图有 5 个顶点、5 条边，采用每条无向边在两个端点各存一条邻接记录的普通邻接表。共需要多少条邻接记录？不计顶点表项。",
+      "options": [
+        {
+          "label": "A",
+          "content": "5 条"
+        },
+        {
+          "label": "B",
+          "content": "8 条"
+        },
+        {
+          "label": "C",
+          "content": "10 条"
+        },
+        {
+          "label": "D",
+          "content": "25 条"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把边集合条数当邻接记录数",
+          "explanation": "本题每条无向边在两个端点各存一条记录，不是只存一次。"
+        },
+        "B": {
+          "title": "把边数误换成树的边数",
+          "explanation": "图不要求是一棵树，不能使用顶点数减一代替实际给出的5条边。"
+        },
+        "D": {
+          "title": "把邻接表当邻接矩阵",
+          "explanation": "25是五阶矩阵的单元数，不是邻接记录条数。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先判断题干是无向边还是有向边。"
+        },
+        {
+          "level": 2,
+          "text": "按题干的存储约定，逐条边数它在几个端点的邻接表中出现。"
+        },
+        {
+          "level": 3,
+          "text": "在只有一条无向边连接两个顶点的小图中，分别查看两个顶点的邻接表。"
+        }
+      ],
+      "solution": "每条无向边贡献两条邻接记录，5条边共 `2*5=10` 条。顶点表的5个表项已被题干明确排除。",
+      "viz": null,
+      "variant": {
+        "stem": "若改成有5个顶点、5条弧的简单有向图，每条弧只存入起点的出边邻接表，共有多少条邻接记录？",
+        "options": [
+          {
+            "label": "A",
+            "content": "5 条"
+          },
+          {
+            "label": "B",
+            "content": "8 条"
+          },
+          {
+            "label": "C",
+            "content": "10 条"
+          },
+          {
+            "label": "D",
+            "content": "25 条"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "只将边的方向约定改为有向弧，并使用出边表。",
+        "explanation": "每条弧只在其起点保存一条记录，5条弧共5条记录。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gr-01v-storage",
+            "status": "CANDIDATE",
+            "algorithm": "storage",
+            "input": {
+              "directed": true,
+              "nodes": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "E"
+              ],
+              "edges": [
+                {
+                  "id": "e01",
+                  "from": "A",
+                  "to": "B",
+                  "weight": 1
+                },
+                {
+                  "id": "e02",
+                  "from": "A",
+                  "to": "C",
+                  "weight": 1
+                },
+                {
+                  "id": "e03",
+                  "from": "B",
+                  "to": "D",
+                  "weight": 1
+                },
+                {
+                  "id": "e04",
+                  "from": "C",
+                  "to": "D",
+                  "weight": 1
+                },
+                {
+                  "id": "e05",
+                  "from": "D",
+                  "to": "E",
+                  "weight": 1
+                }
+              ]
+            },
+            "goal": "使用与题意相容的自拟实例：同一边集按有向弧保存到起点",
+            "pauseQuestion": "终点是否还应为这条弧再保存一条出边记录？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gr-01-storage",
+          "status": "CANDIDATE",
+          "algorithm": "storage",
+          "input": {
+            "directed": false,
+            "nodes": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E"
+            ],
+            "edges": [
+              {
+                "id": "e01",
+                "from": "A",
+                "to": "B",
+                "weight": 1
+              },
+              {
+                "id": "e02",
+                "from": "A",
+                "to": "C",
+                "weight": 1
+              },
+              {
+                "id": "e03",
+                "from": "B",
+                "to": "D",
+                "weight": 1
+              },
+              {
+                "id": "e04",
+                "from": "C",
+                "to": "D",
+                "weight": 1
+              },
+              {
+                "id": "e05",
+                "from": "D",
+                "to": "E",
+                "weight": 1
+              }
+            ]
+          },
+          "goal": "使用与题意相容的自拟实例：对照一条无向边在两端各出现的邻接记录",
+          "pauseQuestion": "数完一条边后，邻接记录计数应增加多少？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "gr-02",
+      "topic": "广度优先搜索",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "无向图顶点为 `A`至`F`，边为 `A`-`B`、`A`-`C`、`B`-`D`、`C`-`D`、`C`-`E`、`D`-`F`、`E`-`F`。从`A`开始`BFS`，每次按字母升序扫描邻点，首次入队即标记。顶点首次发现序列是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`A,B,C,D,E,F`"
+        },
+        {
+          "label": "B",
+          "content": "`A,B,D,F,E,C`"
+        },
+        {
+          "label": "C",
+          "content": "`A,C,B,E,D,F`"
+        },
+        {
+          "label": "D",
+          "content": "`A,B,C,E,D,F`"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "用深入一条分支代替队列层次",
+          "explanation": "`BFS`先处理同一距离层的队列，不能从`B`直接沿`D`、`F`一路深入。"
+        },
+        "C": {
+          "title": "忽略明确的邻点顺序",
+          "explanation": "`A`的邻点必须先`B`后`C`，不能先发现`C`。"
+        },
+        "D": {
+          "title": "改变队列内的先后",
+          "explanation": "`B`先于`C`出队并发现`D`，之后`C`才发现`E`，所以`D`先于`E`。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先把队列与已发现集合分开记录。"
+        },
+        {
+          "level": 2,
+          "text": "顶点首次入队就标记；扫描后续边遇到已发现顶点时不重复入队。"
+        },
+        {
+          "level": 3,
+          "text": "在根`S`同时连接`P`、`Q`的小图中，按`P`、`Q`入队后，必须先处理`P`，再处理`Q`。"
+        }
+      ],
+      "solution": "`A`先发现`B`、`C`；`B`出队发现`D`；`C`出队时`D`已被标记，只新发现`E`；`D`出队发现`F`，`E`不会重复加入`F`。因此首次发现次序为 `A`、`B`、`C`、`D`、`E`、`F`。",
+      "viz": null,
+      "variant": {
+        "stem": "同一无向图改用递归`DFS`，仍从`A`开始、邻点按字母升序，首次访问序列是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`A,B,C,D,E,F`"
+          },
+          {
+            "label": "B",
+            "content": "`A,B,D,F,E,C`"
+          },
+          {
+            "label": "C",
+            "content": "`A,B,D,C,E,F`"
+          },
+          {
+            "label": "D",
+            "content": "`A,C,E,F,D,B`"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "只将队列`BFS`改为递归`DFS`。",
+        "explanation": "递归路径先`A`到`B`到`D`；`D`的未访问邻点先`C`，`C`再到`E`，`E`到`F`。返回时其余邻点均已访问，得到 `A`、`B`、`D`、`C`、`E`、`F`。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gr-02v-dfs",
+            "status": "CANDIDATE",
+            "algorithm": "dfs",
+            "input": {
+              "directed": false,
+              "nodes": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "E",
+                "F"
+              ],
+              "edges": [
+                {
+                  "id": "e01",
+                  "from": "A",
+                  "to": "B",
+                  "weight": 1
+                },
+                {
+                  "id": "e02",
+                  "from": "A",
+                  "to": "C",
+                  "weight": 1
+                },
+                {
+                  "id": "e03",
+                  "from": "B",
+                  "to": "D",
+                  "weight": 1
+                },
+                {
+                  "id": "e04",
+                  "from": "C",
+                  "to": "D",
+                  "weight": 1
+                },
+                {
+                  "id": "e05",
+                  "from": "C",
+                  "to": "E",
+                  "weight": 1
+                },
+                {
+                  "id": "e06",
+                  "from": "D",
+                  "to": "F",
+                  "weight": 1
+                },
+                {
+                  "id": "e07",
+                  "from": "E",
+                  "to": "F",
+                  "weight": 1
+                }
+              ],
+              "start": "A",
+              "neighborOrder": "ascending-node-id"
+            },
+            "goal": "对比递归调用栈与BFS队列",
+            "pauseQuestion": "D的邻点中，下一次递归会进入哪个未访问顶点？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gr-02-bfs",
+          "status": "CANDIDATE",
+          "algorithm": "bfs",
+          "input": {
+            "directed": false,
+            "nodes": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F"
+            ],
+            "edges": [
+              {
+                "id": "e01",
+                "from": "A",
+                "to": "B",
+                "weight": 1
+              },
+              {
+                "id": "e02",
+                "from": "A",
+                "to": "C",
+                "weight": 1
+              },
+              {
+                "id": "e03",
+                "from": "B",
+                "to": "D",
+                "weight": 1
+              },
+              {
+                "id": "e04",
+                "from": "C",
+                "to": "D",
+                "weight": 1
+              },
+              {
+                "id": "e05",
+                "from": "C",
+                "to": "E",
+                "weight": 1
+              },
+              {
+                "id": "e06",
+                "from": "D",
+                "to": "F",
+                "weight": 1
+              },
+              {
+                "id": "e07",
+                "from": "E",
+                "to": "F",
+                "weight": 1
+              }
+            ],
+            "start": "A",
+            "neighborOrder": "ascending-node-id"
+          },
+          "goal": "同时显示队列和发现集合",
+          "pauseQuestion": "B出队后D已入队，C扫描到D时还要再次入队吗？"
+        }
+      ]
+    },
+    {
+      "id": "gr-03",
+      "topic": "深度优先搜索与回溯",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "无向图有边 `A`-`B`、`A`-`C`、`B`-`D`、`C`-`D`。从`A`开始递归`DFS`，进入顶点即标记，邻点按字母升序。完成`B`分支并回到`A`后，`A`再扫描到邻点`C`，应怎样处理？",
+      "options": [
+        {
+          "label": "A",
+          "content": "再次递归访问`C`"
+        },
+        {
+          "label": "B",
+          "content": "跳过`C`，因为它已在`B`分支中访问过"
+        },
+        {
+          "label": "C",
+          "content": "清除所有标记再访问`C`"
+        },
+        {
+          "label": "D",
+          "content": "立即报告图不连通"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把访问标记当单条路径标记",
+          "explanation": "`DFS`访问标记对整个本次搜索有效，不是每次回溯就清除。"
+        },
+        "C": {
+          "title": "将遍历混成枚举所有简单路径",
+          "explanation": "本题只要求每个可达顶点访问一次，不需要通过清标记枚举不同路径。"
+        },
+        "D": {
+          "title": "把回溯误当不连通",
+          "explanation": "`C`已通过`A`、`B`、`D`、`C`这条搜索路径到达，不能据此报告不连通。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先按约定写出第一次进入各顶点的路径。"
+        },
+        {
+          "level": 2,
+          "text": "回溯会弹出调用，但不会撤销本次`DFS`的已访问集合。"
+        },
+        {
+          "level": 3,
+          "text": "在带环的小图中，若每次返回都清掉访问标记，沿另一条边会发生什么？"
+        }
+      ],
+      "solution": "首次访问顺序是 `A`、`B`、`D`、`C`。`C`通过`D`已被访问，返回`A`后再次扫描到`C`应跳过。访问集合会保留到本次搜索完成。",
+      "viz": null,
+      "variant": {
+        "stem": "在同一图中再添加一个没有任何边的顶点`E`。只执行一次从`E`开始的`DFS`，不另启搜索，访问序列是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`E,A,B,C,D`"
+          },
+          {
+            "label": "B",
+            "content": "`A,B,D,C,E`"
+          },
+          {
+            "label": "C",
+            "content": "`A,B,C,D`"
+          },
+          {
+            "label": "D",
+            "content": "仅`E`"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "增加一个孤立起点，并明确只执行该起点的一次搜索。",
+        "explanation": "单次`DFS`只访问起点可达的顶点；`E`没有边，因此只访问`E`。若要遍历整张非连通图，才需在未访问顶点另启搜索。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gr-03v-dfs",
+            "status": "CANDIDATE",
+            "algorithm": "dfs",
+            "input": {
+              "directed": false,
+              "nodes": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "E"
+              ],
+              "edges": [
+                {
+                  "id": "e01",
+                  "from": "A",
+                  "to": "B",
+                  "weight": 1
+                },
+                {
+                  "id": "e02",
+                  "from": "A",
+                  "to": "C",
+                  "weight": 1
+                },
+                {
+                  "id": "e03",
+                  "from": "B",
+                  "to": "D",
+                  "weight": 1
+                },
+                {
+                  "id": "e04",
+                  "from": "C",
+                  "to": "D",
+                  "weight": 1
+                }
+              ],
+              "start": "E",
+              "neighborOrder": "ascending-node-id"
+            },
+            "goal": "展示单源可达范围与全图搜索的区别",
+            "pauseQuestion": "调用栈结束后，是否可以宣称其他分量也已访问？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gr-03-dfs",
+          "status": "CANDIDATE",
+          "algorithm": "dfs",
+          "input": {
+            "directed": false,
+            "nodes": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "edges": [
+              {
+                "id": "e01",
+                "from": "A",
+                "to": "B",
+                "weight": 1
+              },
+              {
+                "id": "e02",
+                "from": "A",
+                "to": "C",
+                "weight": 1
+              },
+              {
+                "id": "e03",
+                "from": "B",
+                "to": "D",
+                "weight": 1
+              },
+              {
+                "id": "e04",
+                "from": "C",
+                "to": "D",
+                "weight": 1
+              }
+            ],
+            "start": "A",
+            "neighborOrder": "ascending-node-id"
+          },
+          "goal": "回溯后保留发现集合",
+          "pauseQuestion": "回到A时，C是否已经在已访问集合中？"
+        }
+      ]
+    },
+    {
+      "id": "gr-04",
+      "topic": "Prim的割边选择",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "连通无向带权图有边 `A`-`B`权1、`A`-`C`权4、`B`-`C`权2、`B`-`D`权5、`C`-`D`权3。`Prim`从`A`开始，已经选入`A`-`B`，接下来应选择哪条边？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`A`-`C`，权4"
+        },
+        {
+          "label": "B",
+          "content": "`B`-`C`，权2"
+        },
+        {
+          "label": "C",
+          "content": "`C`-`D`，权3"
+        },
+        {
+          "label": "D",
+          "content": "`B`-`D`，权5"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "只从起点挑边",
+          "explanation": "当前树已含`A`、`B`，需要考虑两者到树外的全部跨边，不局限于`A`发出的边。"
+        },
+        "C": {
+          "title": "把树外两点的边也当候选",
+          "explanation": "此时`C`、`D`均未入树，`C`-`D`不跨越当前树与树外的割，不能用它扩展当前树。"
+        },
+        "D": {
+          "title": "只考虑新顶点个数",
+          "explanation": "`B`-`D`可以扩展一顶点，但其权5大于可选跨边`B`-`C`的权2。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先把当前树中的顶点集合列出来。"
+        },
+        {
+          "level": 2,
+          "text": "只比较一端在当前树、另一端在树外的边。"
+        },
+        {
+          "level": 3,
+          "text": "若一条边两端都在树外，即使权重较小，它能否连接到当前树？"
+        }
+      ],
+      "solution": "当前树顶点为`A`、`B`。跨边为`A`-`C`权4、`B`-`C`权2、`B`-`D`权5，最小为`B`-`C`权2。`C`-`D`虽然权3，但两端此时都在树外。",
+      "viz": null,
+      "variant": {
+        "stem": "保持图和权值不变，改为`Prim`从`D`开始。第一条入树边是哪条？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`A`-`B`，权1"
+          },
+          {
+            "label": "B",
+            "content": "`B`-`C`，权2"
+          },
+          {
+            "label": "C",
+            "content": "`C`-`D`，权3"
+          },
+          {
+            "label": "D",
+            "content": "`B`-`D`，权5"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "只把`Prim`起点由`A`改为`D`。",
+        "explanation": "起始树只有`D`，跨边仅`C`-`D`权3、`B`-`D`权5，所以选`C`-`D`；不能直接取与`D`无关的全图最小边。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gr-04v-prim",
+            "status": "CANDIDATE",
+            "algorithm": "prim",
+            "input": {
+              "directed": false,
+              "nodes": [
+                "A",
+                "B",
+                "C",
+                "D"
+              ],
+              "edges": [
+                {
+                  "id": "e01",
+                  "from": "A",
+                  "to": "B",
+                  "weight": 1
+                },
+                {
+                  "id": "e02",
+                  "from": "A",
+                  "to": "C",
+                  "weight": 4
+                },
+                {
+                  "id": "e03",
+                  "from": "B",
+                  "to": "C",
+                  "weight": 2
+                },
+                {
+                  "id": "e04",
+                  "from": "B",
+                  "to": "D",
+                  "weight": 5
+                },
+                {
+                  "id": "e05",
+                  "from": "C",
+                  "to": "D",
+                  "weight": 3
+                }
+              ],
+              "start": "D"
+            },
+            "goal": "起点改变时第一条跨边集合改变",
+            "pauseQuestion": "全图最小的A-B此时能直接接到当前树吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gr-04-prim",
+          "status": "CANDIDATE",
+          "algorithm": "prim",
+          "input": {
+            "directed": false,
+            "nodes": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "edges": [
+              {
+                "id": "e01",
+                "from": "A",
+                "to": "B",
+                "weight": 1
+              },
+              {
+                "id": "e02",
+                "from": "A",
+                "to": "C",
+                "weight": 4
+              },
+              {
+                "id": "e03",
+                "from": "B",
+                "to": "C",
+                "weight": 2
+              },
+              {
+                "id": "e04",
+                "from": "B",
+                "to": "D",
+                "weight": 5
+              },
+              {
+                "id": "e05",
+                "from": "C",
+                "to": "D",
+                "weight": 3
+              }
+            ],
+            "start": "A"
+          },
+          "goal": "区分跨割边与树外内部边",
+          "pauseQuestion": "已选A-B后，C-D是否属于当前可选跨边？"
+        }
+      ]
+    },
+    {
+      "id": "gr-05",
+      "topic": "Kruskal跳过成环边",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "连通无向图的边及权值为 `A`-`B`权1、`A`-`C`权2、`B`-`C`权3、`C`-`D`权4、`B`-`D`权5。用`Kruskal`得到的最小生成树总权值是多少？",
+      "options": [
+        {
+          "label": "A",
+          "content": "6"
+        },
+        {
+          "label": "B",
+          "content": "7"
+        },
+        {
+          "label": "C",
+          "content": "8"
+        },
+        {
+          "label": "D",
+          "content": "9"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "机械取前三条最小边",
+          "explanation": "权1、2、3的三条边使`A`、`B`、`C`成环且尚未连接`D`，不能作为生成树。"
+        },
+        "C": {
+          "title": "误跳过更小的可用边",
+          "explanation": "`A`-`C`权2在考虑时不会成环，应保留；不应无理由用较大边替换。"
+        },
+        "D": {
+          "title": "漏选最小边并接受较大树权",
+          "explanation": "权1的`A`-`B`在首轮不会成环，应先接受。若只选`A`-`C`权2、`B`-`C`权3、`C`-`D`权4，总权9虽然连通，但可用权1的`A`-`B`替换权3的`B`-`C`而减小总权。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "按边权排序后，逐条检查两个端点是否已经连通。"
+        },
+        {
+          "level": 2,
+          "text": "只有连接不同已选分量的边才应加入。"
+        },
+        {
+          "level": 3,
+          "text": "三个顶点已经用两条边连通时，再加入第三条内部边会得到什么结构？"
+        }
+      ],
+      "solution": "先选`A`-`B`权1和`A`-`C`权2，`B`-`C`权3会成环而跳过，再选`C`-`D`权4。已选三条边连接四个顶点，总权值为 `1+2+4=7`。",
+      "viz": null,
+      "variant": {
+        "stem": "只把`A`-`C`权值从2改为6，其余边和权不变。新的最小生成树总权值是多少？",
+        "options": [
+          {
+            "label": "A",
+            "content": "6"
+          },
+          {
+            "label": "B",
+            "content": "7"
+          },
+          {
+            "label": "C",
+            "content": "8"
+          },
+          {
+            "label": "D",
+            "content": "9"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅改变`A`-`C`的边权。",
+        "explanation": "按权排序先选`A`-`B`权1、`B`-`C`权3、`C`-`D`权4即连通全部顶点，总权值为8；更大的边不再需要。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gr-05v-kruskal",
+            "status": "CANDIDATE",
+            "algorithm": "kruskal",
+            "input": {
+              "directed": false,
+              "nodes": [
+                "A",
+                "B",
+                "C",
+                "D"
+              ],
+              "edges": [
+                {
+                  "id": "e01",
+                  "from": "A",
+                  "to": "B",
+                  "weight": 1
+                },
+                {
+                  "id": "e02",
+                  "from": "A",
+                  "to": "C",
+                  "weight": 6
+                },
+                {
+                  "id": "e03",
+                  "from": "B",
+                  "to": "C",
+                  "weight": 3
+                },
+                {
+                  "id": "e04",
+                  "from": "C",
+                  "to": "D",
+                  "weight": 4
+                },
+                {
+                  "id": "e05",
+                  "from": "B",
+                  "to": "D",
+                  "weight": 5
+                }
+              ]
+            },
+            "goal": "单条边权改变后重新排序",
+            "pauseQuestion": "改变权值后，A-C还会在早期入树吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gr-05-kruskal",
+          "status": "CANDIDATE",
+          "algorithm": "kruskal",
+          "input": {
+            "directed": false,
+            "nodes": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "edges": [
+              {
+                "id": "e01",
+                "from": "A",
+                "to": "B",
+                "weight": 1
+              },
+              {
+                "id": "e02",
+                "from": "A",
+                "to": "C",
+                "weight": 2
+              },
+              {
+                "id": "e03",
+                "from": "B",
+                "to": "C",
+                "weight": 3
+              },
+              {
+                "id": "e04",
+                "from": "C",
+                "to": "D",
+                "weight": 4
+              },
+              {
+                "id": "e05",
+                "from": "B",
+                "to": "D",
+                "weight": 5
+              }
+            ]
+          },
+          "goal": "显示端点所在分量与被拒绝的成环边",
+          "pauseQuestion": "B-C被考虑时，两个端点是否已经连通？"
+        }
+      ]
+    },
+    {
+      "id": "gr-06",
+      "topic": "等权图最短路径与生成树",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2023",
+        "questionNumber": "6",
+        "label": "2023 年 408 真题 第 6 题（按实际收录同义表述）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2023/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "无向连通图`G`的每条边权值都为1。下列算法中，一定能求出某起点到其余各顶点最短路径的是哪些？Ⅰ普里姆，Ⅱ克鲁斯卡尔，Ⅲ广度优先搜索。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅Ⅰ"
+        },
+        {
+          "label": "B",
+          "content": "仅Ⅲ"
+        },
+        {
+          "label": "C",
+          "content": "仅Ⅰ和Ⅱ"
+        },
+        {
+          "label": "D",
+          "content": "Ⅰ、Ⅱ、Ⅲ"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把最小生成树当最短路径树",
+          "explanation": "普里姆最小化生成树全部边权之和，不保证其中从指定起点出发的每条树路径都最短。"
+        },
+        "C": {
+          "title": "混淆两个优化目标",
+          "explanation": "两种生成树算法优化总树权，不优化指定源到每个顶点的距离；不能替代本题的层次最短路径。"
+        },
+        "D": {
+          "title": "认为等权时所有树都同样给出最短路",
+          "explanation": "等权只使生成树总权相同，不使每个源到目标的树路径边数都相同。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先明确目标是全树总权最小，还是从某源到各点的距离最小。"
+        },
+        {
+          "level": 2,
+          "text": "各边权为1时，路径权值等于边数。"
+        },
+        {
+          "level": 3,
+          "text": "在四顶点完全图中，链形生成树与星形生成树总权都一样，但从一端到另一端的树路径长度是否一样？"
+        }
+      ],
+      "solution": "广度优先按最少边数逐层发现顶点，等权1时就得到最短路径。生成树算法可以选出一条含四顶点的链，它总权虽最小，但链两端在原图中若有直接边，树上的三边路径就不是最短。因此只有Ⅲ保证本题目标。",
+      "viz": null,
+      "variant": {
+        "stem": "若改为边权可以不同但均非负的图，在以下标准算法中应使用哪一个求单源最短路径？",
+        "options": [
+          {
+            "label": "A",
+            "content": "普通`BFS`"
+          },
+          {
+            "label": "B",
+            "content": "`Prim`"
+          },
+          {
+            "label": "C",
+            "content": "`Kruskal`"
+          },
+          {
+            "label": "D",
+            "content": "`Dijkstra`"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "由等权改为一般非负带权。",
+        "explanation": "普通`BFS`只按边数分层，不能表达任意边权之和；`Dijkstra`维护暂定距离和松弛，适用于非负权。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gr-06v-dijkstra",
+            "status": "CANDIDATE",
+            "algorithm": "dijkstra",
+            "input": {
+              "directed": false,
+              "nodes": [
+                "A",
+                "B",
+                "C"
+              ],
+              "edges": [
+                {
+                  "id": "e01",
+                  "from": "A",
+                  "to": "B",
+                  "weight": 5
+                },
+                {
+                  "id": "e02",
+                  "from": "A",
+                  "to": "C",
+                  "weight": 1
+                },
+                {
+                  "id": "e03",
+                  "from": "C",
+                  "to": "B",
+                  "weight": 1
+                }
+              ],
+              "start": "A"
+            },
+            "goal": "使用与题意相容的自拟实例：比较少边路径与低总权路径",
+            "pauseQuestion": "直达边更少，是否必然比经另一顶点的两条边更短？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gr-06-bfs",
+          "status": "CANDIDATE",
+          "algorithm": "bfs",
+          "input": {
+            "directed": false,
+            "nodes": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "edges": [
+              {
+                "id": "e01",
+                "from": "A",
+                "to": "B",
+                "weight": 1
+              },
+              {
+                "id": "e02",
+                "from": "B",
+                "to": "C",
+                "weight": 1
+              },
+              {
+                "id": "e03",
+                "from": "C",
+                "to": "D",
+                "weight": 1
+              },
+              {
+                "id": "e04",
+                "from": "A",
+                "to": "C",
+                "weight": 1
+              },
+              {
+                "id": "e05",
+                "from": "A",
+                "to": "D",
+                "weight": 1
+              },
+              {
+                "id": "e06",
+                "from": "B",
+                "to": "D",
+                "weight": 1
+              }
+            ],
+            "start": "A",
+            "neighborOrder": "ascending-node-id"
+          },
+          "goal": "使用与题意相容的自拟实例：比较BFS最短路径与一种合法链形生成树的源距离",
+          "pauseQuestion": "生成树总权相同时，源到目标的树路径也必然最短吗？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        },
+        {
+          "id": "gr-06-prim-counterexample",
+          "status": "CANDIDATE",
+          "algorithm": "prim",
+          "input": {
+            "directed": false,
+            "nodes": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "edges": [
+              {
+                "id": "e01",
+                "from": "A",
+                "to": "B",
+                "weight": 1
+              },
+              {
+                "id": "e02",
+                "from": "B",
+                "to": "C",
+                "weight": 1
+              },
+              {
+                "id": "e03",
+                "from": "C",
+                "to": "D",
+                "weight": 1
+              },
+              {
+                "id": "e04",
+                "from": "A",
+                "to": "C",
+                "weight": 1
+              },
+              {
+                "id": "e05",
+                "from": "A",
+                "to": "D",
+                "weight": 1
+              },
+              {
+                "id": "e06",
+                "from": "B",
+                "to": "D",
+                "weight": 1
+              }
+            ],
+            "start": "A",
+            "neighborOrder": "ascending-node-id",
+            "tieBreak": "weight-then-edge-id"
+          },
+          "goal": "按权值和边id破并列，展示一棵合法链形最小生成树，比较源距离",
+          "pauseQuestion": "生成树总权最小时，树上的源到目标距离也一定最小吗？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "gr-07",
+      "topic": "Dijkstra暂定距离与松弛",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有向图的弧及权值为 `S`到`A`为4、`S`到`B`为1、`B`到`A`为1、`A`到`T`为1、`B`到`T`为5。所有边权非负，从`S`到`T`的最短距离是多少？",
+      "options": [
+        {
+          "label": "A",
+          "content": "2"
+        },
+        {
+          "label": "B",
+          "content": "3"
+        },
+        {
+          "label": "C",
+          "content": "4"
+        },
+        {
+          "label": "D",
+          "content": "6"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把中间顶点距离当终点距离",
+          "explanation": "2是经`B`到`A`的距离，继续到`T`还要经过`A`到`T`的权1。"
+        },
+        "C": {
+          "title": "把直接到`A`的边权当答案",
+          "explanation": "`S`到`A`的直接权4不是`S`到`T`的总距离，而且`A`还可经`B`得到更短暂定距离。"
+        },
+        "D": {
+          "title": "把第一次松弛终点当最终距离",
+          "explanation": "`B`被确定后可得到`T`的暂定距离6，但后续经`A`还可以改小。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "首次发现顶点时得到的只是暂定距离。"
+        },
+        {
+          "level": 2,
+          "text": "每次先取未确定顶点中暂定距离最小者，再沿其出边尝试松弛。"
+        },
+        {
+          "level": 3,
+          "text": "另取`S`到`X`为5、`S`到`Y`为1、`Y`到`X`为1的小图：`X`首次发现后的距离还能否被更新？"
+        }
+      ],
+      "solution": "从`S`先得到`A`暂定4、`B`暂定1。确定`B`后，`A`更新为2，`T`暂定6；再确定`A`，`T`更新为3。最短路径是`S`、`B`、`A`、`T`，总权 `1+1+1=3`。",
+      "viz": null,
+      "variant": {
+        "stem": "只把`B`到`A`的权值由1改为5，其余弧与权不变，`S`到`T`的最短距离是多少？",
+        "options": [
+          {
+            "label": "A",
+            "content": "2"
+          },
+          {
+            "label": "B",
+            "content": "3"
+          },
+          {
+            "label": "C",
+            "content": "5"
+          },
+          {
+            "label": "D",
+            "content": "6"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅改变`B`到`A`的权值。",
+        "explanation": "经`B`到`A`的距离变为6，不能改进直接到`A`的4；经`A`到`T`为5，经`B`直接到`T`为6，所以最短距离5。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gr-07v-dijkstra",
+            "status": "CANDIDATE",
+            "algorithm": "dijkstra",
+            "input": {
+              "directed": true,
+              "nodes": [
+                "S",
+                "A",
+                "B",
+                "T"
+              ],
+              "edges": [
+                {
+                  "id": "e01",
+                  "from": "S",
+                  "to": "A",
+                  "weight": 4
+                },
+                {
+                  "id": "e02",
+                  "from": "S",
+                  "to": "B",
+                  "weight": 1
+                },
+                {
+                  "id": "e03",
+                  "from": "B",
+                  "to": "A",
+                  "weight": 5
+                },
+                {
+                  "id": "e04",
+                  "from": "A",
+                  "to": "T",
+                  "weight": 1
+                },
+                {
+                  "id": "e05",
+                  "from": "B",
+                  "to": "T",
+                  "weight": 5
+                }
+              ],
+              "start": "S",
+              "target": "T"
+            },
+            "goal": "边权变化后保留更小的原暂定距离",
+            "pauseQuestion": "候选新距离比原暂定距离更大时，是否覆盖旧值？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gr-07-dijkstra",
+          "status": "CANDIDATE",
+          "algorithm": "dijkstra",
+          "input": {
+            "directed": true,
+            "nodes": [
+              "S",
+              "A",
+              "B",
+              "T"
+            ],
+            "edges": [
+              {
+                "id": "e01",
+                "from": "S",
+                "to": "A",
+                "weight": 4
+              },
+              {
+                "id": "e02",
+                "from": "S",
+                "to": "B",
+                "weight": 1
+              },
+              {
+                "id": "e03",
+                "from": "B",
+                "to": "A",
+                "weight": 1
+              },
+              {
+                "id": "e04",
+                "from": "A",
+                "to": "T",
+                "weight": 1
+              },
+              {
+                "id": "e05",
+                "from": "B",
+                "to": "T",
+                "weight": 5
+              }
+            ],
+            "start": "S",
+            "target": "T"
+          },
+          "goal": "显示暂定与已确定集合，观察重复改进",
+          "pauseQuestion": "确定B后，A与T的暂定距离分别是否需要更新？"
+        }
+      ]
+    },
+    {
+      "id": "gr-08",
+      "topic": "拓扑排序与有向环",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有向图有弧 `A`到`C`、`B`到`C`、`B`到`D`、`C`到`E`、`D`到`E`。以下哪一个是合法的完整拓扑序列？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`A,B,C,D,E`"
+        },
+        {
+          "label": "B",
+          "content": "`A,C,B,D,E`"
+        },
+        {
+          "label": "C",
+          "content": "`B,D,E,A,C`"
+        },
+        {
+          "label": "D",
+          "content": "`C,A,B,D,E`"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "未等待全部前驱",
+          "explanation": "`C`有前驱`A`、`B`，不能在`B`之前输出。"
+        },
+        "C": {
+          "title": "把一条分支结束当所有前驱已完成",
+          "explanation": "`E`同时依赖`C`、`D`，不能在`C`之前输出。"
+        },
+        "D": {
+          "title": "从仍有入边的顶点开始",
+          "explanation": "`C`的入度起初为2，不具备先于`A`、`B`输出的条件。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "对每条弧检查起点是否在序列中先于终点。"
+        },
+        {
+          "level": 2,
+          "text": "用入度法时，只有当前入度为零的顶点才可输出，再删去它的出边。"
+        },
+        {
+          "level": 3,
+          "text": "若任务`X`同时依赖`P`、`Q`，完成`P`后能否立刻把`X`当作无前驱任务？"
+        }
+      ],
+      "solution": "`A`、`B`均先于`C`，`B`先于`D`，`C`、`D`均先于`E`，故`A`是合法序列。图还有其他合法次序，但另外三个给定选项都违反至少一条弧的先后约束。",
+      "viz": null,
+      "variant": {
+        "stem": "在原图中只新增一条`D`到`B`的弧，以下说法正确的是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "原拓扑序仍完整有效"
+          },
+          {
+            "label": "B",
+            "content": "只需交换`B`、`D`就能得到完整拓扑序"
+          },
+          {
+            "label": "C",
+            "content": "不存在完整拓扑序列"
+          },
+          {
+            "label": "D",
+            "content": "只要先输出`E`就能消除有向环"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "只新增`D`到`B`这一条弧。",
+        "explanation": "原本已有`B`到`D`，再加`D`到`B`形成有向环。入度法可能先输出`A`等无环部分，但无法输出包含全部顶点的合法拓扑序列。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gr-08v-topological",
+            "status": "CANDIDATE",
+            "algorithm": "topological",
+            "input": {
+              "directed": true,
+              "nodes": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "E"
+              ],
+              "edges": [
+                {
+                  "id": "e01",
+                  "from": "A",
+                  "to": "C",
+                  "weight": 1
+                },
+                {
+                  "id": "e02",
+                  "from": "B",
+                  "to": "C",
+                  "weight": 1
+                },
+                {
+                  "id": "e03",
+                  "from": "B",
+                  "to": "D",
+                  "weight": 1
+                },
+                {
+                  "id": "e04",
+                  "from": "C",
+                  "to": "E",
+                  "weight": 1
+                },
+                {
+                  "id": "e05",
+                  "from": "D",
+                  "to": "E",
+                  "weight": 1
+                },
+                {
+                  "id": "e06",
+                  "from": "D",
+                  "to": "B",
+                  "weight": 1
+                }
+              ],
+              "zeroIndegreeOrder": "ascending-node-id"
+            },
+            "goal": "区分局部可输出与完整拓扑序列",
+            "pauseQuestion": "仍有顶点但已无零入度顶点时，应怎样判定？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gr-08-topological",
+          "status": "CANDIDATE",
+          "algorithm": "topological",
+          "input": {
+            "directed": true,
+            "nodes": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E"
+            ],
+            "edges": [
+              {
+                "id": "e01",
+                "from": "A",
+                "to": "C",
+                "weight": 1
+              },
+              {
+                "id": "e02",
+                "from": "B",
+                "to": "C",
+                "weight": 1
+              },
+              {
+                "id": "e03",
+                "from": "B",
+                "to": "D",
+                "weight": 1
+              },
+              {
+                "id": "e04",
+                "from": "C",
+                "to": "E",
+                "weight": 1
+              },
+              {
+                "id": "e05",
+                "from": "D",
+                "to": "E",
+                "weight": 1
+              }
+            ],
+            "zeroIndegreeOrder": "ascending-node-id"
+          },
+          "goal": "同时显示当前入度和可输出集合",
+          "pauseQuestion": "C的一个前驱已输出，是否就满足入度为零？"
+        }
+      ]
+    },
+    {
+      "id": "gr-09",
+      "topic": "AOE最早事件与工期",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "`AOE`网络唯一源为`S`、唯一汇为`T`，活动及持续时间为 `S`到`A`为3、`S`到`B`为2、`A`到`T`为2、`B`到`T`为4。`S`在时刻0发生，各活动无资源冲突且满足前置约束，项目最早何时完成？",
+      "options": [
+        {
+          "label": "A",
+          "content": "4"
+        },
+        {
+          "label": "B",
+          "content": "5"
+        },
+        {
+          "label": "C",
+          "content": "6"
+        },
+        {
+          "label": "D",
+          "content": "7"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "只取最长单条活动",
+          "explanation": "工期由从源到汇的完整路径约束决定，不等于某一条边的最大时长。"
+        },
+        "B": {
+          "title": "把第一条到达汇的路径当完成",
+          "explanation": "`S`、`A`、`T`分支在时刻5可完成，但另一条必需分支还要到时刻6，汇事件需等待全部前驱条件。"
+        },
+        "D": {
+          "title": "把两个并行起始活动串行相加",
+          "explanation": "`S`到`A`与`S`到`B`可以同时开始，不应无依据地串行累加。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "对每个事件检查它发生前需要完成哪些前驱活动。"
+        },
+        {
+          "level": 2,
+          "text": "多个前驱约束同时存在时，最早事件时刻取最大到达时刻，而非最小。"
+        },
+        {
+          "level": 3,
+          "text": "两项可以并行的前置任务分别耗时2与5，依赖二者的新事件最早何时才能发生？"
+        }
+      ],
+      "solution": "到`A`最早为3，到`B`最早为2。`T`需同时满足两条分支，到达时刻分别为 `3+2=5` 与 `2+4=6`，取最大值得6。关键路径为`S`、`B`、`T`。",
+      "viz": null,
+      "variant": {
+        "stem": "只把`B`到`T`活动持续时间由4改为2，其余不变，项目最早完成时刻是多少？",
+        "options": [
+          {
+            "label": "A",
+            "content": "4"
+          },
+          {
+            "label": "B",
+            "content": "5"
+          },
+          {
+            "label": "C",
+            "content": "6"
+          },
+          {
+            "label": "D",
+            "content": "7"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅缩短`B`到`T`活动。",
+        "explanation": "两分支变成 `3+2=5` 与 `2+2=4`，工期取最大值5，此时`S`、`A`、`T`分支成为关键路径。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gr-09v-critical",
+            "status": "CANDIDATE",
+            "algorithm": "critical-path",
+            "input": {
+              "directed": true,
+              "nodes": [
+                "S",
+                "A",
+                "B",
+                "T"
+              ],
+              "edges": [
+                {
+                  "id": "e01",
+                  "from": "S",
+                  "to": "A",
+                  "weight": 3
+                },
+                {
+                  "id": "e02",
+                  "from": "S",
+                  "to": "B",
+                  "weight": 2
+                },
+                {
+                  "id": "e03",
+                  "from": "A",
+                  "to": "T",
+                  "weight": 2
+                },
+                {
+                  "id": "e04",
+                  "from": "B",
+                  "to": "T",
+                  "weight": 2
+                }
+              ],
+              "start": "S",
+              "finish": "T"
+            },
+            "goal": "活动缩短后重新计算关键分支",
+            "pauseQuestion": "原关键分支缩短后，限制工期的分支会不会改变？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gr-09-critical",
+          "status": "CANDIDATE",
+          "algorithm": "critical-path",
+          "input": {
+            "directed": true,
+            "nodes": [
+              "S",
+              "A",
+              "B",
+              "T"
+            ],
+            "edges": [
+              {
+                "id": "e01",
+                "from": "S",
+                "to": "A",
+                "weight": 3
+              },
+              {
+                "id": "e02",
+                "from": "S",
+                "to": "B",
+                "weight": 2
+              },
+              {
+                "id": "e03",
+                "from": "A",
+                "to": "T",
+                "weight": 2
+              },
+              {
+                "id": "e04",
+                "from": "B",
+                "to": "T",
+                "weight": 4
+              }
+            ],
+            "start": "S",
+            "finish": "T"
+          },
+          "goal": "展示事件等待全部前驱的最早时刻",
+          "pauseQuestion": "T收到一条分支完成信号后，是否还必须等待另一条？"
+        }
+      ]
+    },
+    {
+      "id": "gr-10",
+      "topic": "多条关键路径与缩短活动",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "`AOE`网络唯一源`S`、唯一汇`T`，有两条并行分支：`S`到`A`耗时3、`A`到`T`耗时3；`S`到`B`耗时2、`B`到`T`耗时4。若只把`A`到`T`从3缩短到2，其他约束不变，项目最短工期是多少？",
+      "options": [
+        {
+          "label": "A",
+          "content": "4"
+        },
+        {
+          "label": "B",
+          "content": "5"
+        },
+        {
+          "label": "C",
+          "content": "6"
+        },
+        {
+          "label": "D",
+          "content": "7"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "只看被缩短分支的局部活动",
+          "explanation": "不能丢掉另一条仍需完成的`S`、`B`、`T`分支。"
+        },
+        "B": {
+          "title": "认为缩短一条关键活动必然缩短工期",
+          "explanation": "原来两分支都关键。只缩短一条后，另一条长度仍为6，继续限制项目工期。"
+        },
+        "D": {
+          "title": "把时间变化方向弄反",
+          "explanation": "缩短活动不会使这个无资源冲突网络的最短工期从6增加到7。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先分别算出原来每条源汇路径的总时长。"
+        },
+        {
+          "level": 2,
+          "text": "修改一条活动后，重新比较所有仍然必须完成的分支。"
+        },
+        {
+          "level": 3,
+          "text": "若两个并行分支都耗时8，只把其中一支缩短为7，项目是否就可以在时刻7全部完成？"
+        }
+      ],
+      "solution": "原来两分支均长6，都是关键路径。缩短`A`到`T`后，`S`、`A`、`T`变为5，但`S`、`B`、`T`仍为6，项目仍需6完成。存在多条关键路径时，只缩短一条路径上的活动未必缩短总工期。",
+      "viz": null,
+      "variant": {
+        "stem": "进一步令`A`到`T`为2、`B`到`T`为3，`S`到`A`仍为3、`S`到`B`仍为2，项目最短工期是多少？",
+        "options": [
+          {
+            "label": "A",
+            "content": "4"
+          },
+          {
+            "label": "B",
+            "content": "5"
+          },
+          {
+            "label": "C",
+            "content": "6"
+          },
+          {
+            "label": "D",
+            "content": "7"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "在原题改动基础上，再将另一分支的末活动缩短1。",
+        "explanation": "两条分支分别为 `3+2=5` 和 `2+3=5`，项目最短工期为5。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gr-10v-critical",
+            "status": "CANDIDATE",
+            "algorithm": "critical-path",
+            "input": {
+              "directed": true,
+              "nodes": [
+                "S",
+                "A",
+                "B",
+                "T"
+              ],
+              "edges": [
+                {
+                  "id": "e01",
+                  "from": "S",
+                  "to": "A",
+                  "weight": 3
+                },
+                {
+                  "id": "e02",
+                  "from": "A",
+                  "to": "T",
+                  "weight": 2
+                },
+                {
+                  "id": "e03",
+                  "from": "S",
+                  "to": "B",
+                  "weight": 2
+                },
+                {
+                  "id": "e04",
+                  "from": "B",
+                  "to": "T",
+                  "weight": 3
+                }
+              ],
+              "start": "S",
+              "finish": "T"
+            },
+            "goal": "两条限制分支都缩短后重新比较工期",
+            "pauseQuestion": "两条新路径都长5时，最早完成时刻是多少？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gr-10-critical",
+          "status": "CANDIDATE",
+          "algorithm": "critical-path",
+          "input": {
+            "directed": true,
+            "nodes": [
+              "S",
+              "A",
+              "B",
+              "T"
+            ],
+            "edges": [
+              {
+                "id": "e01",
+                "from": "S",
+                "to": "A",
+                "weight": 3
+              },
+              {
+                "id": "e02",
+                "from": "A",
+                "to": "T",
+                "weight": 2
+              },
+              {
+                "id": "e03",
+                "from": "S",
+                "to": "B",
+                "weight": 2
+              },
+              {
+                "id": "e04",
+                "from": "B",
+                "to": "T",
+                "weight": 4
+              }
+            ],
+            "start": "S",
+            "finish": "T"
+          },
+          "goal": "对比两条关键分支中仅一条被缩短的结果",
+          "pauseQuestion": "另一条分支保持原时长时，整个工程能提前完成吗？",
+          "baselineInput": {
+            "directed": true,
+            "nodes": [
+              "S",
+              "A",
+              "B",
+              "T"
+            ],
+            "edges": [
+              {
+                "id": "e01",
+                "from": "S",
+                "to": "A",
+                "weight": 3
+              },
+              {
+                "id": "e02",
+                "from": "A",
+                "to": "T",
+                "weight": 3
+              },
+              {
+                "id": "e03",
+                "from": "S",
+                "to": "B",
+                "weight": 2
+              },
+              {
+                "id": "e04",
+                "from": "B",
+                "to": "T",
+                "weight": 4
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

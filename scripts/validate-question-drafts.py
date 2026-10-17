@@ -107,9 +107,24 @@ def validate_question(question: dict, where: str) -> int:
     return count
 
 
+def candidate_ids(where: str, values: object) -> list[str]:
+    require(isinstance(values, list) and bool(values), where, "未入库题目需要动画候选设计意图")
+    ids = []
+    for index, value in enumerate(values):
+        place = f"{where}[{index}]"
+        require(isinstance(value, dict), place, "候选必须为对象")
+        for field in ("id", "algorithm", "goal", "pauseQuestion"):
+            text(place + "." + field, value.get(field))
+        require(value.get("status") == "CANDIDATE", place, "候选不能标为已实现场景")
+        require(isinstance(value.get("input"), dict) and bool(value["input"]), place, "候选需要输入数据")
+        ids.append(value["id"])
+    return ids
+
+
 def validate_files(paths: tuple[Path, ...], require_target_count: bool = True) -> tuple[int, int]:
     require(bool(paths), "草稿", "找不到内容文件")
     seen: set[str] = set()
+    seen_candidates: set[str] = set()
     count = 0
     visualizations = 0
     for path in paths:
@@ -123,7 +138,17 @@ def validate_files(paths: tuple[Path, ...], require_target_count: bool = True) -
         for question in questions:
             where = f"{path.name}:{question.get('id', '?') if isinstance(question, dict) else '?'}"
             require(isinstance(question, dict), where, "题目必须是对象")
-            visualizations += validate_question(question, where)
+            question_visualizations = validate_question(question, where)
+            if "unimported" in path.parts:
+                require(question_visualizations == 0, where, "未入库草稿不挂动画，实际 viz 必须为空")
+                require(question["contentSource"] == PENDING and question["variant"]["source"] == PENDING,
+                        where, "未入库草稿保持待审核")
+                ids = (candidate_ids(where + ".vizCandidates", question.get("vizCandidates"))
+                       + candidate_ids(where + ".variant.vizCandidates", question["variant"].get("vizCandidates")))
+                for candidate_id in ids:
+                    require(candidate_id not in seen_candidates, where, "动画候选 ID 重复")
+                    seen_candidates.add(candidate_id)
+            visualizations += question_visualizations
             require(question["id"] not in seen, where, "题目 ID 重复")
             seen.add(question["id"])
             count += 1
