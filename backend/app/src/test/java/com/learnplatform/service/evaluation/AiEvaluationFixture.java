@@ -53,6 +53,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockingDetails;
@@ -128,7 +129,7 @@ final class AiEvaluationFixture {
         Course course = new Course();
         course.setName(data.course());
         when(courses.selectById(20L)).thenReturn(course);
-        when(logMapper.selectCount(any())).thenReturn("QUOTA".equals(sample.scenario()) ? 50L : 0L);
+        when(logMapper.countQuota(eq(7L), any())).thenReturn("QUOTA".equals(sample.scenario()) ? 50L : 0L);
         doAnswer(call -> { logs.add(call.getArgument(0)); return 1; }).when(logMapper).insert(any());
         doAnswer(call -> {
             QuestionAiAsset asset = call.getArgument(0);
