@@ -120,15 +120,15 @@ onBeforeUnmount(() => observer?.disconnect())
   >
     <div class="inner">
       <header class="intro">
-        <h2 id="remember-title" class="title">Back right before<br /><em>you forget.</em></h2>
-        <p class="line">Every answer you get right pushes the next review further out.</p>
+        <h2 id="remember-title" class="title">Keep it fresh.<br /><em>One review at a time.</em></h2>
+        <p class="line">Unaided answers shape your next review. Here’s how that can look.</p>
       </header>
 
       <div class="chart" :style="{ width: `${width}px` }">
         <figure
           class="year"
           :style="{ height: `${height + LIFT}px` }"
-          aria-label="Ten months of review days, busy at first and quieter later. One question comes back after 1 week, then 2 weeks, 4 weeks, 7 weeks, 2½ months and 4 months."
+          aria-label="Illustrative review calendar: ten months of review days, busy at first and quieter later. One question comes back after 1 week, then 2 weeks, 4 weeks, 7 weeks, 2½ months and 4 months."
           @pointerover="onHover"
           @pointerleave="tipShown = false"
         >

@@ -69,8 +69,8 @@ onBeforeUnmount(() => {
           <HeroHeadline :word="word" :all="heroWords" />
           <div ref="lower" class="lower">
             <p class="lede">
-              A textbook that moves. Every step drawn out, every mistake explained, every lesson back right before you
-              forget.
+              A textbook that moves. See each step, work through mistakes, and revisit what you learn with spaced
+              review.
             </p>
             <div class="cta">
               <Magnetic class="glow">

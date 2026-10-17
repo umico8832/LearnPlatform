@@ -16,8 +16,8 @@ const HINTS = [
   "Then let's walk it through together, one step at a time.",
   "That's every rung. The last step is yours.",
 ]
-const NUDGE = 'Not yet. Give it one try first, and I’ll meet you there.'
-const LOCKED = 'Right after your first try. You’re closer than you think.'
+const NUDGE = 'Not yet. Try a hint first, and I’ll meet you there.'
+const LOCKED = 'Try the hints, then reveal it when you’re ready.'
 const ASK_GAP = 350
 const THINK = 650
 const WORD = 55
