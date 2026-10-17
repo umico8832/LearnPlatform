@@ -42,7 +42,7 @@ async function openSeededQuestion(page: Page, label: string) {
 
 test('出栈序列答错后依次理解误区、演示、正解并辅助作答变式', async ({ page }) => {
   await openSeededQuestion(page, 'understanding-wrong')
-  await page.locator('.answer-step input[value="B"]').check({ force: true })
+  await page.locator('.answer-step input[value="B"]').check()
   await page.locator('.answer-step').getByRole('button', { name: '提交' }).click()
   await expect(page.getByRole('heading', { name: '以为能越过 2 直接弹出 1' })).toBeVisible()
   await expect(page.getByRole('button', { name: '看正解' })).toHaveCount(0)
@@ -62,7 +62,7 @@ test('出栈序列答错后依次理解误区、演示、正解并辅助作答�
   await expect(page.getByText('正确选项 3,2,1,5,4：每一步都取栈顶')).toBeVisible()
   await expect(page.getByRole('heading', { name: '换一个条件，再做一次' })).toBeVisible()
   const variant = page.locator('article').filter({ hasText: '哪个不可能' })
-  await variant.locator('input[value="A"]').check({ force: true })
+  await variant.locator('input[value="A"]').check()
   const variantResponse = page.waitForResponse(
     (response) =>
       response.request().method() === 'POST' && /\/understanding\/variants\/\d+\/attempts$/.test(response.url()),
@@ -103,14 +103,14 @@ test('出栈序列答错后依次理解误区、演示、正解并辅助作答�
 
 test('出栈序列选对后直接开放正解和变式', async ({ page }) => {
   await openSeededQuestion(page, 'understanding-right')
-  await page.locator('.answer-step input[value="A"]').check({ force: true })
+  await page.locator('.answer-step input[value="A"]').check()
   await page.locator('.answer-step').getByRole('button', { name: '提交' }).click()
   await expect(page.getByText('答对了。下面对一遍完整思路。')).toBeVisible()
   await expect(page.getByRole('heading', { name: '对一遍思路' })).toBeVisible()
   await expect(page.getByRole('heading', { name: '换一个条件，再做一次' })).toBeVisible()
   await expect(page.getByRole('button', { name: '看正解' })).toHaveCount(0)
   const variant = page.locator('article').filter({ hasText: '哪个不可能' })
-  await variant.locator('input[value="A"]').check({ force: true })
+  await variant.locator('input[value="A"]').check()
   const response = page.waitForResponse(
     (item) => item.request().method() === 'POST' && /\/understanding\/variants\/\d+\/attempts$/.test(item.url()),
   )
@@ -134,7 +134,7 @@ test('管理员预览三级提示，且预览不留下错题', async ({ page }) 
   await page.goto(`/questions/${id}?preview=1`)
   await expect(page.getByText(stem, { exact: true })).toBeVisible()
   await expect(page.getByText('预览 · 含待审核内容')).toBeVisible()
-  await page.locator('.answer-step input[value="B"]').check({ force: true })
+  await page.locator('.answer-step input[value="B"]').check()
   await page.locator('.answer-step').getByRole('button', { name: '提交' }).click()
   await expect(page.getByRole('heading', { name: '以为能越过 2 直接弹出 1' })).toBeVisible()
   await expect(page.getByRole('button', { name: '看正解' })).toHaveCount(0)
