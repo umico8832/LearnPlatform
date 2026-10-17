@@ -15,6 +15,7 @@ import Magnetic from './Magnetic.vue'
 import SeeItSection from './network/SeeItSection.vue'
 import ShowcaseNav from './ShowcaseNav.vue'
 import StatsMarquee from './StatsMarquee.vue'
+import RememberSection from './remember/RememberSection.vue'
 import { heroWords } from './showcaseContent'
 
 /**
@@ -96,6 +97,7 @@ onBeforeUnmount(() => {
     <SeeItSection />
     <LabSection />
     <ExplainSection />
+    <RememberSection />
   </div>
 </template>
 
