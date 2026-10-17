@@ -9,6 +9,7 @@ import { springAnimate, springs } from '@/motion'
 import { isAuthenticated } from '@/utils/auth'
 import HeroCard from './HeroCard.vue'
 import HeroHeadline from './HeroHeadline.vue'
+import LabSection from './lab/LabSection.vue'
 import Magnetic from './Magnetic.vue'
 import SeeItSection from './network/SeeItSection.vue'
 import ShowcaseNav from './ShowcaseNav.vue'
@@ -88,6 +89,7 @@ onMounted(() => {
     </section>
 
     <SeeItSection />
+    <LabSection />
   </div>
 </template>
 

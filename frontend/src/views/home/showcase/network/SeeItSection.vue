@@ -15,9 +15,15 @@ import NetworkStage from './NetworkStage.vue'
 </template>
 
 <style scoped>
+/* Every section is exactly one screen: whatever stops on screen is one whole chapter. */
 .see-it {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;
   overflow: hidden;
-  padding-top: 132px;
+  /* Clears the floating bar so the content centres in the space below it. */
+  padding-top: 68px;
   background: var(--lt-canvas);
   color: var(--lt-label);
 }
