@@ -1,0 +1,1394 @@
+{
+  "schemaVersion": 1,
+  "section": "综合题核心算法改编一：线性结构与有序选择",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "cp01-01",
+      "topic": "倒数第k结点的间距不变量",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2009",
+        "questionNumber": "42",
+        "label": "2009 年 408 综合题第 42 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2009/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整`C++17`核心实现，不声称完成原题所有评分小问。本站给定1至5实例，保留原题正k、头结点、不改表条件；核心函数改为返回结点，说明原题输出/返回包装。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "带独立头结点的无环单链表依次存放1、2、3、4、5，要求不改变链表且常数额外空间查倒数第2个数据结点。以下哪种做法和结果均正确？",
+      "options": [
+        {
+          "label": "A",
+          "content": "从首数据结点出发，快指针先走2步，再同步至快指针为空，慢指针数据为4"
+        },
+        {
+          "label": "B",
+          "content": "快指针先走1步，再同步至其为空，慢指针数据为4"
+        },
+        {
+          "label": "C",
+          "content": "将头结点也当数据结点计入倒数，返回头结点"
+        },
+        {
+          "label": "D",
+          "content": "快指针先走2步，再同步至其为空，慢指针数据为3"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "固定间距少一条边",
+          "explanation": "快指针只领先1步，走到空时慢指针在最后一个数据结点5，而非4。"
+        },
+        "C": {
+          "title": "头结点参与倒数",
+          "explanation": "头结点不保存有效数据，倒数第2个是数据结点4。"
+        },
+        "D": {
+          "title": "终点与间距错配",
+          "explanation": "领先2步并以空指针为终点，慢指针到4；若改用末数据结点作终点则需要另配间距。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先确定头结点是否属于数据，以及快指针的终止位置。"
+        },
+        {
+          "level": 2,
+          "text": "用两指针之间的数据边数作为循环不变量。"
+        },
+        {
+          "level": 3,
+          "text": "另取三结点链，分别用末结点和空指针作终点，检查领先距离应如何配套。"
+        }
+      ],
+      "solution": "快指针从首数据结点先走2条边，两指针同步保持相隔2步；当快指针抵达空，慢指针正好距空2步，即数据4。失败时只返回空指针，不输出数据。实现返回结点供调用者在非空时输出其数据并返回1，否则返回0。时间为`Θ(n)`，辅助空间`O(1)`，不修改链接。\n\n以下为`C++17`实现；链表函数的参数为独立头结点，头结点不计入数据长度。\n```cpp\nstruct Node { int data; Node* next; };\nNode* kthFromEnd(Node* head, int k) {\n    if (k <= 0) return nullptr;\n    Node* fast = head->next;\n    Node* slow = head->next;\n    for (int i = 0; i < k; ++i) {\n        if (fast == nullptr) return nullptr;\n        fast = fast->next;\n    }\n    while (fast != nullptr) {\n        fast = fast->next;\n        slow = slow->next;\n    }\n    return slow;\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅将所查倒数位置2改为6，链表与上述边界检查算法不变，应返回什么？",
+        "options": [
+          {
+            "label": "A",
+            "content": "数据1结点"
+          },
+          {
+            "label": "B",
+            "content": "数据5结点"
+          },
+          {
+            "label": "C",
+            "content": "空指针，查找失败"
+          },
+          {
+            "label": "D",
+            "content": "头结点"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将k从2改为6。",
+        "explanation": "链表只有5个数据结点；快指针在完成6步前已为空，立即返回空，不能继续解引用。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp01-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "linked-list-two-pointer-gap",
+            "input": {
+              "values": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "k": 6
+            },
+            "goal": "展示指针或候选状态变化及终止边界",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp01-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "linked-list-two-pointer-gap",
+          "input": {
+            "values": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "k": 2
+          },
+          "goal": "展示指针或候选状态变化及终止边界",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "cp01-02",
+      "topic": "三次逆置实现循环左移",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2010",
+        "questionNumber": "42",
+        "label": "2010 年 408 综合题第 42 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2010/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整`C++17`核心实现，不声称完成原题所有评分小问。使用原解析abcdefgh示例，数组元素由整数改为互异字符只用于显示，相同置换适用于整数。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "数组依次为 `a,b,c,d,e,f,g,h`，按综合题规则原地循环左移3位，结果为？下标从0开始，元素互异。",
+      "options": [
+        {
+          "label": "A",
+          "content": "`a,b,c,d,e,f,g,h`"
+        },
+        {
+          "label": "B",
+          "content": "`c,d,e,f,g,h,a,b`"
+        },
+        {
+          "label": "C",
+          "content": "`d,e,f,g,h,a,b,c`"
+        },
+        {
+          "label": "D",
+          "content": "`f,g,h,a,b,c,d,e`"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把循环移位当三次相互抵消",
+          "explanation": "分别逆置两段再整体逆置会交换段的位置，不是保持原序。"
+        },
+        "B": {
+          "title": "起点少移动一位",
+          "explanation": "左移3位的新首元素应是原下标3的d，不是下标2的c。"
+        },
+        "D": {
+          "title": "左右方向混淆",
+          "explanation": "f起头是左移5位或右移3位。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "将数组分成前段和后段，目标是交换两段位置且各段内部保序。"
+        },
+        {
+          "level": 2,
+          "text": "考虑逆置一个拼接序列时，两段的相对次序和段内方向如何变化。"
+        },
+        {
+          "level": 3,
+          "text": "另取长度不同的两段，分别用大写和小写标记，在纸上逐次逆置。"
+        }
+      ],
+      "solution": "先逆置下标0至2，再逆置3至7，最后逆置0至7，得到defghabc。若记原两段为A、B，先得到各自逆序，整体逆置后为B、A且内部恢复。三轮交换数分别为1、2、4，共7次；时间`Θ(n)`、辅助空间`O(1)`。代码前置条件为至少2项且位移大于0、小于长度。\n\n`C++17`实现：\n```cpp\n#include <vector>\n#include <utility>\nvoid reverseRange(std::vector<char>& a, int l, int r) {\n    while (l < r) std::swap(a[l++], a[r--]);\n}\nvoid rotateLeft(std::vector<char>& a, int p) {\n    int n = static_cast<int>(a.size());\n    reverseRange(a, 0, p - 1);\n    reverseRange(a, p, n - 1);\n    reverseRange(a, 0, n - 1);\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅将左移位数3改为5，其他相同，结果为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`a,b,c,d,e,f,g,h`"
+          },
+          {
+            "label": "B",
+            "content": "`c,d,e,f,g,h,a,b`"
+          },
+          {
+            "label": "C",
+            "content": "`d,e,f,g,h,a,b,c`"
+          },
+          {
+            "label": "D",
+            "content": "`f,g,h,a,b,c,d,e`"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "仅将左移位数3改为5。",
+        "explanation": "新首为原下标5的f，原前5项移至末尾，结果fghabcde。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp01-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "array-three-reversals",
+            "input": {
+              "values": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e",
+                "f",
+                "g",
+                "h"
+              ],
+              "p": 5
+            },
+            "goal": "展示指针或候选状态变化及终止边界",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp01-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "array-three-reversals",
+          "input": {
+            "values": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e",
+              "f",
+              "g",
+              "h"
+            ],
+            "p": 3
+          },
+          "goal": "展示指针或候选状态变化及终止边界",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp01-03",
+      "topic": "两等长序列的下中位数",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2011",
+        "questionNumber": "42",
+        "label": "2011 年 408 综合题第 42 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2011/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整`C++17`核心实现，不声称完成原题所有评分小问。保留原例和下中位数定义；本站改用二分分割实现，未复制原收录代码的第二数组首下标和复杂度文字。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "两升序数组 `A={11,13,15,17,19}`、`B={2,4,6,8,20}`。沿原综合题定义，合并后第 `ceil(L/2)` 个数为中位数，位置从1计；不取中间两数平均。本例中位数是多少？",
+      "options": [
+        {
+          "label": "A",
+          "content": "11"
+        },
+        {
+          "label": "B",
+          "content": "10"
+        },
+        {
+          "label": "C",
+          "content": "12"
+        },
+        {
+          "label": "D",
+          "content": "13"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把边界邻近值当已出现元素",
+          "explanation": "原合并序列没有10；第5项为11。"
+        },
+        "C": {
+          "title": "套用两中间数平均",
+          "explanation": "12是第5项11和第6项13的平均，原题定义要求第5项自身。"
+        },
+        "D": {
+          "title": "取了上中位数",
+          "explanation": "13是第6项，偶数长度10的下中位数在第5项。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先按题给的秩定义判断偶数总长度取哪一个位置。"
+        },
+        {
+          "level": 2,
+          "text": "把两数组划分为合计一半数量的左侧元素，要求左侧都不大于右侧。"
+        },
+        {
+          "level": 3,
+          "text": "另取两个长度2的数组，枚举从第一数组分到左侧的0、1、2项，找出合法分界。"
+        }
+      ],
+      "solution": "合并前六项2、4、6、8、11、13，因此下中位数11。一般可二分在A中取的左侧项数i，B左侧取n-i项；若两侧跨界有序，左侧最大值就是合并第n项。合法分界必存在，每步排除一半候选，最坏`O(log(n+1))`时间、`O(1)`辅助空间，允许重复值，不需实际合并。代码前置条件两数组等长且非空、各自非降序。\n\n`C++17`实现：\n```cpp\n#include <vector>\n#include <algorithm>\n#include <climits>\n#include <stdexcept>\nint lowerMedian(const std::vector<int>& a, const std::vector<int>& b) {\n    int n = static_cast<int>(a.size()), lo = 0, hi = n;\n    while (lo <= hi) {\n        int i = lo + (hi - lo) / 2, j = n - i;\n        long long al = i ? a[i-1] : LLONG_MIN;\n        long long ar = i < n ? a[i] : LLONG_MAX;\n        long long bl = j ? b[j-1] : LLONG_MIN;\n        long long br = j < n ? b[j] : LLONG_MAX;\n        if (al <= br && bl <= ar) return static_cast<int>(std::max(al, bl));\n        if (al > br) hi = i - 1;\n        else lo = i + 1;\n    }\n    throw std::logic_error(\"precondition violated\");\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅把B的末项20改为10，仍保持升序且其他条件不变，中位数为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "11"
+          },
+          {
+            "label": "B",
+            "content": "10"
+          },
+          {
+            "label": "C",
+            "content": "12"
+          },
+          {
+            "label": "D",
+            "content": "13"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将B末项20改为10。",
+        "explanation": "合并前五项2、4、6、8、10，故第5项为10；不要把分界右侧11当答案。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp01-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "two-sorted-arrays-rank-partition",
+            "input": {
+              "A": [
+                11,
+                13,
+                15,
+                17,
+                19
+              ],
+              "B": [
+                2,
+                4,
+                6,
+                8,
+                10
+              ]
+            },
+            "goal": "展示指针或候选状态变化及终止边界",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp01-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "two-sorted-arrays-rank-partition",
+          "input": {
+            "A": [
+              11,
+              13,
+              15,
+              17,
+              19
+            ],
+            "B": [
+              2,
+              4,
+              6,
+              8,
+              20
+            ]
+          },
+          "goal": "展示指针或候选状态变化及终止边界",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp01-04",
+      "topic": "共享后缀必须按结点身份识别",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2012",
+        "questionNumber": "42",
+        "label": "2012 年 408 综合题第 42 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2012/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整`C++17`核心实现，不声称完成原题所有评分小问。依据原文对loading/being共享ing的描述转为文字身份条件，不声称逐字转写原图指针编号。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "两个不同头结点分别引出单词loading和being的无环单链表，loading前4个结点与being前2个结点彼此独立，之后都指向同一条i、n、g三结点后缀。给出两个头指针，要找公共后缀的首结点，哪项正确？",
+      "options": [
+        {
+          "label": "A",
+          "content": "只比较字符，第一次字符相同就是公共结点"
+        },
+        {
+          "label": "B",
+          "content": "先求长度并让较长链前进长度差，再同步比较结点地址"
+        },
+        {
+          "label": "C",
+          "content": "两个头结点不同，故数据链不可能相交"
+        },
+        {
+          "label": "D",
+          "content": "先排序两个单词的字符，再找首个相同字符"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "值相等误当对象相同",
+          "explanation": "独立结点可以保存同一字符，公共后缀要求地址身份相同。"
+        },
+        "C": {
+          "title": "头结点身份推断整条数据链",
+          "explanation": "不同头结点之后可以通过链接汇入同一后缀。"
+        },
+        "D": {
+          "title": "丢弃链接与先后关系",
+          "explanation": "排序会改变问题中的原链结构与后缀含义，不能识别共享起点。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "区分保存相同字符与两个指针指向同一个结点。"
+        },
+        {
+          "level": 2,
+          "text": "让两指针距表尾的数据结点数相同，再同步移动。"
+        },
+        {
+          "level": 3,
+          "text": "另构造两个值完全相同但地址不同的单结点链，检验只比较数据的办法。"
+        }
+      ],
+      "solution": "两链长度7和5，较长链先走2步后剩余长度一致；随后同步，首次地址相同处即共享的i结点。若无公共后缀，两个指针最终同时为空，返回空。时间`Θ(m+n)`、辅助空间`O(1)`，不改变任何链接。从首数据结点开始，避免将独立头结点误作公共数据。\n\n以下为`C++17`实现；链表函数的参数为独立头结点，头结点不计入数据长度。\n```cpp\nstruct Node { char data; Node* next; };\nint length(Node* p) {\n    int n = 0;\n    for (; p != nullptr; p = p->next) ++n;\n    return n;\n}\nNode* commonSuffix(Node* h1, Node* h2) {\n    Node* p = h1->next;\n    Node* q = h2->next;\n    int d = length(p) - length(q);\n    while (d > 0) { p = p->next; --d; }\n    while (d < 0) { q = q->next; ++d; }\n    while (p != q) { p = p->next; q = q->next; }\n    return p;\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅取消物理共享：两条链仍分别拼成loading和being，尾部i、n、g字符相同，但所有数据结点地址均不同。相同算法应返回？",
+        "options": [
+          {
+            "label": "A",
+            "content": "loading中的i"
+          },
+          {
+            "label": "B",
+            "content": "being中的i"
+          },
+          {
+            "label": "C",
+            "content": "空指针，无公共结点"
+          },
+          {
+            "label": "D",
+            "content": "任意一个g结点"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将原共享三结点复制为两组独立结点。",
+        "explanation": "字符后缀相同仍不意味着共享存储；地址始终不同，最终同时到空，返回空。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp01-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "linked-list-common-suffix-identity",
+            "input": {
+              "words": [
+                "loading",
+                "being"
+              ],
+              "identitySharing": false
+            },
+            "goal": "展示指针或候选状态变化及终止边界",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp01-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "linked-list-common-suffix-identity",
+          "input": {
+            "prefixes": [
+              "load",
+              "be"
+            ],
+            "sharedSuffix": "ing",
+            "identitySharing": true
+          },
+          "goal": "展示指针或候选状态变化及终止边界",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp01-05",
+      "topic": "主元素候选需要第二遍验证",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2013",
+        "questionNumber": "41",
+        "label": "2013 年 408 综合题第 41 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2013/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整`C++17`核心实现，不声称完成原题所有评分小问。原收录“次数大于2”等解析文字与候选重置实现不作为依据，本站使用标准抵消加验证。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "数组 `A={0,5,5,3,5,7,5,5}`，主元素必须出现严格超过长度一半。使用异值两两抵消筛选候选，再重扫计数验证，返回主元素或-1。本例应返回？",
+      "options": [
+        {
+          "label": "A",
+          "content": "5"
+        },
+        {
+          "label": "B",
+          "content": "-1"
+        },
+        {
+          "label": "C",
+          "content": "0"
+        },
+        {
+          "label": "D",
+          "content": "7"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把严格过半误算成需占全部",
+          "explanation": "5出现5次，大于8的一半4，满足主元素条件。"
+        },
+        "C": {
+          "title": "把起始候选固定不更新",
+          "explanation": "抵消过程中可更换候选，首项0只出现1次。"
+        },
+        "D": {
+          "title": "把最近的不同值当最终主元素",
+          "explanation": "7只出现1次，不满足过半；候选还必须通过总频数验证。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "题目要求严格过半，等于一半还不够。"
+        },
+        {
+          "level": 2,
+          "text": "先区分抵消剩余的候选与经完整计数证实的主元素。"
+        },
+        {
+          "level": 3,
+          "text": "另用三种符号构造没有过半元素的序列，检查筛出一个候选是否足以证明存在。"
+        }
+      ],
+      "solution": "5出现5次，严格大于4，返回5。异值成对删除不会消除一个真实过半元素的全部优势，故若主元素存在，最终候选必为它；没有主元素时也可能剩候选，因此必须重扫验证。两遍时间`Θ(n)`，辅助空间`O(1)`。代码在计数为0时由下一项重置候选，重扫用严格大于一半判定。\n\n`C++17`实现：\n```cpp\n#include <vector>\nint majority(const std::vector<int>& a) {\n    int candidate = 0, balance = 0;\n    for (int x : a) {\n        if (balance == 0) { candidate = x; balance = 1; }\n        else if (x == candidate) ++balance;\n        else --balance;\n    }\n    int occurrences = 0;\n    for (int x : a) if (x == candidate) ++occurrences;\n    return occurrences > static_cast<int>(a.size()) / 2 ? candidate : -1;\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅将原数组最后一个5改为1，其余不变，应返回？",
+        "options": [
+          {
+            "label": "A",
+            "content": "5"
+          },
+          {
+            "label": "B",
+            "content": "-1"
+          },
+          {
+            "label": "C",
+            "content": "0"
+          },
+          {
+            "label": "D",
+            "content": "7"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将最后一个元素5改为1。",
+        "explanation": "此时5恰出现4次，等于而未超过8的一半，其他元素也不超过一半，返回-1。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp01-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "majority-cancellation-and-verification",
+            "input": {
+              "values": [
+                0,
+                5,
+                5,
+                3,
+                5,
+                7,
+                5,
+                1
+              ]
+            },
+            "goal": "展示指针或候选状态变化及终止边界",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp01-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "majority-cancellation-and-verification",
+          "input": {
+            "values": [
+              0,
+              5,
+              5,
+              3,
+              5,
+              7,
+              5,
+              5
+            ]
+          },
+          "goal": "展示指针或候选状态变化及终止边界",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp01-06",
+      "topic": "按绝对值保留首现与初始化成本",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2015",
+        "questionNumber": "41",
+        "label": "2015 年 408 综合题第 41 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2015/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整`C++17`核心实现，不声称完成原题所有评分小问。本站增加显式零初始化模型并据此纠正总时间为Θ(m+n)，不照抄原解析O(m)及混用link/next的片段。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "带头单链表数据为21、-15、-15、-7、15，绝对值均不超过正上界`n=21`。按原综合题只保留每种绝对值第一次出现的结点，使用本次新建且显式全部置零的n+1项标记数组。若数据结点数为m，保留序列与这一实现总时间的紧界为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "21、-15、-7；`Θ(m+n)`"
+        },
+        {
+          "label": "B",
+          "content": "21、-15、15、-7；`Θ(m+n)`"
+        },
+        {
+          "label": "C",
+          "content": "21、15、-7；`Θ(m)`"
+        },
+        {
+          "label": "D",
+          "content": "21、-15、-7；`Θ(m)`且与n无关"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把同绝对值按正负分别保留",
+          "explanation": "-15与15的绝对值相同，第一次-15之后的两项都应删去。"
+        },
+        "C": {
+          "title": "保留最后出现而非第一次",
+          "explanation": "应保留首个-15结点；同时显式初始化n+1项不能忽略。"
+        },
+        "D": {
+          "title": "只数链表扫描漏初始化",
+          "explanation": "扫描为`Θ(m)`，但标记数组从新建到全部置零为`Θ(n)`，总`Θ(m+n)`。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先按绝对值归类，再按原位置确定保留哪个实际结点。"
+        },
+        {
+          "level": 2,
+          "text": "分开计算辅助结构初始化和链表遍历两部分成本。"
+        },
+        {
+          "level": 3,
+          "text": "另取数据很少而允许值域很大的例子，检查哪部分工作仍然随值域增长。"
+        }
+      ],
+      "solution": "保留21、第一次-15和-7。每个数据结点处理一次，保留时标记绝对值，重复时从前驱摘下并释放；删除后前驱不前进，以免跳过连续重复。显式零初始化占`Θ(n)`，扫描占`Θ(m)`，合计`Θ(m+n)`，辅助空间`Θ(n)`。原解析只列`O(m)`遗漏此指定实现的初始化，不能据此忽略n。前置条件每个绝对值不超过n且节点由new创建、允许delete，链为无环独占链。用long long求绝对值以免先在int域取负溢出。\n\n以下为`C++17`实现；链表函数的参数为独立头结点，头结点不计入数据长度。\n```cpp\n#include <vector>\nstruct Node { int data; Node* next; };\nvoid deduplicateAbs(Node* head, int n) {\n    std::vector<unsigned char> seen(static_cast<std::size_t>(n) + 1, 0);\n    Node* prev = head;\n    while (prev->next != nullptr) {\n        Node* cur = prev->next;\n        long long key = cur->data;\n        if (key < 0) key = -key;\n        if (seen[static_cast<std::size_t>(key)]) {\n            prev->next = cur->next;\n            delete cur;\n        } else {\n            seen[static_cast<std::size_t>(key)] = 1;\n            prev = cur;\n        }\n    }\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅将允许绝对值上界n从21改为1000000，数据链和显式全部置零标记数组实现不变，哪项正确？",
+        "options": [
+          {
+            "label": "A",
+            "content": "保留序列不变，初始化工作随新上界增长"
+          },
+          {
+            "label": "B",
+            "content": "必须保留最后出现的15"
+          },
+          {
+            "label": "C",
+            "content": "数据不够一百万个，算法无定义"
+          },
+          {
+            "label": "D",
+            "content": "总时间必与上界完全无关"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅扩大允许值域上界，链表数据不变。",
+        "explanation": "输出仍为21、-15、-7，但新建并置零1000001项需按上界计时，不能只数5个结点。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp01-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "linked-list-absolute-value-dedup",
+            "input": {
+              "values": [
+                21,
+                -15,
+                -15,
+                -7,
+                15
+              ],
+              "bound": 1000000,
+              "initializeAll": true
+            },
+            "goal": "展示指针或候选状态变化及终止边界",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp01-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "linked-list-absolute-value-dedup",
+          "input": {
+            "values": [
+              21,
+              -15,
+              -15,
+              -7,
+              15
+            ],
+            "bound": 21,
+            "initializeAll": true
+          },
+          "goal": "展示指针或候选状态变化及终止边界",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp01-07",
+      "topic": "最小缺失正整数的标记范围",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2018",
+        "questionNumber": "41",
+        "label": "2018 年 408 综合题第 41 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2018/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整`C++17`核心实现，不声称完成原题所有评分小问。保留原示例，明确修复原收录代码缺失的正数上界检查；本题不主张Θ(n)辅助空间为所有可改写数组实现的最优空间。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "数组 `A={-5,3,2,3}`，长度`n=4`；使用n项标记数组找未出现的最小正整数。以下结果与安全标记规则均正确的是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "返回1；只对满足 `1 <= x && x <= n` 的值写标记 `seen[x-1]`"
+        },
+        {
+          "label": "B",
+          "content": "返回0；负数不计时从0开始找"
+        },
+        {
+          "label": "C",
+          "content": "返回4；重复值自动填补更小空缺"
+        },
+        {
+          "label": "D",
+          "content": "返回1；对任意正数x都直接写 `seen[x-1]`"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把正整数起点误为0",
+          "explanation": "最小正整数从1开始，0不属于候选答案。"
+        },
+        "C": {
+          "title": "把出现次数当数值覆盖",
+          "explanation": "3重复两次仍只覆盖数值3，未覆盖1。"
+        },
+        "D": {
+          "title": "缺少上界检查",
+          "explanation": "任意正数可大于n，对n项数组直接写该下标会越界；本例恰未触发不使一般规则正确。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先用长度说明答案可能落在哪个有限区间。"
+        },
+        {
+          "level": 2,
+          "text": "映射值到标记下标时，同时检查上下界。"
+        },
+        {
+          "level": 3,
+          "text": "另取一个很大的正数和若干负数，检查是否需要为大数扩展整个标记数组。"
+        }
+      ],
+      "solution": "1未出现，返回1。长度n的数组至多覆盖1至n中的n个数，故答案在1至n+1；只需标记1至n。原收录文字给了上界，而代码遗漏了该检查，本站实现保留双界限。初始化、标记和寻找空位均线性，时间`Θ(n)`、辅助空间`Θ(n)`。\n\n`C++17`实现：\n```cpp\n#include <vector>\nint firstMissingPositive(const std::vector<int>& a) {\n    int n = static_cast<int>(a.size());\n    std::vector<unsigned char> seen(n, 0);\n    for (int x : a) if (x >= 1 && x <= n) seen[x-1] = 1;\n    for (int i = 0; i < n; ++i) if (!seen[i]) return i + 1;\n    return n + 1;\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅将首元素-5改为100，其他不变；使用相同正确规则，返回什么？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1"
+          },
+          {
+            "label": "B",
+            "content": "4"
+          },
+          {
+            "label": "C",
+            "content": "100"
+          },
+          {
+            "label": "D",
+            "content": "发生标记数组越界"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将首项-5替换为大于n的100。",
+        "explanation": "100不在1至4范围内，安全跳过，其余值仍未覆盖1，返回1；正确代码不会越界。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp01-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "array-bounded-presence-marking",
+            "input": {
+              "values": [
+                100,
+                3,
+                2,
+                3
+              ]
+            },
+            "goal": "展示指针或候选状态变化及终止边界",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp01-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "array-bounded-presence-marking",
+          "input": {
+            "values": [
+              -5,
+              3,
+              2,
+              3
+            ]
+          },
+          "goal": "展示指针或候选状态变化及终止边界",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp01-08",
+      "topic": "首尾交替重排的断链与逆置",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2019",
+        "questionNumber": "41",
+        "label": "2019 年 408 综合题第 41 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2019/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整`C++17`核心实现，不声称完成原题所有评分小问。本站把原任意n的目标实例化为5/6结点，核心实现明确断链和空尾边界。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "带头单链表的5个实际结点按1至5链接，要求原地重排为首、尾、次首、次尾交替，保留结点身份且结果无环、末尾为空。哪种策略和结果正确？",
+      "options": [
+        {
+          "label": "A",
+          "content": "从中间断开，逆置后半，再交替穿插，得到1、5、2、4、3"
+        },
+        {
+          "label": "B",
+          "content": "每次从单链表头重扫找尾，总时间必为`Θ(n)`"
+        },
+        {
+          "label": "C",
+          "content": "只逆置整条链，得到5、4、3、2、1"
+        },
+        {
+          "label": "D",
+          "content": "不先断链也不清理末链接，保证不会产生环"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "忽略反复寻找尾结点的累积成本",
+          "explanation": "每轮扫描剩余链找尾，累积最坏`Θ(n²)`，并非线性。"
+        },
+        "C": {
+          "title": "只做逆置未交替",
+          "explanation": "完整逆序不满足首尾轮流的目标。"
+        },
+        "D": {
+          "title": "旧链接形成回路",
+          "explanation": "逆置或穿插若保留回到已处理段的旧链接，可形成环；必须断开前后段并正确终止。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先确定奇数长度时中间结点归哪一段，并保持两段不重叠。"
+        },
+        {
+          "level": 2,
+          "text": "后半逆序后可只向前移动两段指针，交替摘取。"
+        },
+        {
+          "level": 3,
+          "text": "另用4个结点跟踪每次改链接前保存的后继，最后检查所有结点恰出现一次且尾为空。"
+        }
+      ],
+      "solution": "让前半含`ceil(n/2)`项，在中点后断开。原地逆置剩余后半，得到5、4，与前半1、2、3交替合并得1、5、2、4、3。三次线性阶段总`Θ(n)`，仅常数指针；空表和单结点直接返回。下面先断链、逆置时尾设空，避免照抄源片段的旧后继风险。\n\n以下为`C++17`实现；链表函数的参数为独立头结点，头结点不计入数据长度。\n```cpp\nstruct Node { int data; Node* next; };\nvoid reorder(Node* head) {\n    Node* first = head->next;\n    if (first == nullptr || first->next == nullptr) return;\n    Node* slow = first;\n    Node* fast = first;\n    while (fast->next != nullptr && fast->next->next != nullptr) {\n        slow = slow->next;\n        fast = fast->next->next;\n    }\n    Node* cur = slow->next;\n    slow->next = nullptr;\n    Node* second = nullptr;\n    while (cur != nullptr) {\n        Node* saved = cur->next;\n        cur->next = second;\n        second = cur;\n        cur = saved;\n    }\n    while (second != nullptr) {\n        Node* a = first->next;\n        Node* b = second->next;\n        first->next = second;\n        second->next = a;\n        first = a;\n        second = b;\n    }\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅给原链末尾追加数据结点6，其余目标和算法不变，结果为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1、6、2、5、3、4"
+          },
+          {
+            "label": "B",
+            "content": "1、5、2、4、3、6"
+          },
+          {
+            "label": "C",
+            "content": "6、5、4、3、2、1"
+          },
+          {
+            "label": "D",
+            "content": "1、2、3、4、5、6"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将链表从5项扩为末尾追加6的6项。",
+        "explanation": "前半1、2、3，后半4、5、6逆置为6、5、4，交替得到1、6、2、5、3、4，末尾为空。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp01-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "linked-list-split-reverse-weave",
+            "input": {
+              "values": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+              ]
+            },
+            "goal": "展示指针或候选状态变化及终止边界",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp01-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "linked-list-split-reverse-weave",
+          "input": {
+            "values": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ]
+          },
+          "goal": "展示指针或候选状态变化及终止边界",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "cp01-09",
+      "topic": "三有序数组最近三元组",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2020",
+        "questionNumber": "41",
+        "label": "2020 年 408 综合题第 41 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2020/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整`C++17`核心实现，不声称完成原题所有评分小问。原文先称正数但实例含负数，本站依实际例子明确任意整数；修正原解析游标混用和void函数返回值写法。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "三个非空升序整数数组分别为 `S1={-1,0,9}`、`S2={-25,-10,10,11}`、`S3={2,9,17,30,41}`。每组取一项，距离为三对差的绝对值之和。按实际示例允许负数；输入为32位有符号整数，计算使用至少64位的`long long`。最小距离为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "0"
+        },
+        {
+          "label": "B",
+          "content": "1"
+        },
+        {
+          "label": "C",
+          "content": "2"
+        },
+        {
+          "label": "D",
+          "content": "4"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把两组同值当三组都相同",
+          "explanation": "S1与S3有9，但S2无9，三者全相等才可能距离0。"
+        },
+        "B": {
+          "title": "只算一次最大最小差",
+          "explanation": "9、10、9的范围宽度1，三对绝对差之和为两倍宽度2。"
+        },
+        "D": {
+          "title": "漏掉9、10、9组合",
+          "explanation": "该组合距离2，已经小于4，且不存在距离0的三组共同值。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "把三个数按大小排列，化简三对绝对差之和。"
+        },
+        {
+          "level": 2,
+          "text": "固定当前最小值时，仅增大其他值能否使范围变窄？"
+        },
+        {
+          "level": 3,
+          "text": "另取三组各两个整数，穷举组合并对照移动当前最小项指针的扫描。"
+        }
+      ],
+      "solution": "距离恒等于两倍最大最小差；组合9、10、9给2，没有三组共同值故不能为0，而整数距离为非负偶数，因此最小2。一般维护三个游标，每次记录当前距离并将一个最小值所在游标前进；保持该最小项而只把其他项右移不能改善当前范围，所以可安全淘汰它；最小项并列时任选一个推进。任一数组耗尽后无需继续，时间`O(n1+n2+n3)`、辅助空间`O(1)`。代码先提升到long long再减法，允许完整int域。\n\n`C++17`实现：\n```cpp\n#include <vector>\n#include <algorithm>\n#include <climits>\nlong long minTripleDistance(const std::vector<int>& a,\n                           const std::vector<int>& b,\n                           const std::vector<int>& c) {\n    std::size_t i = 0, j = 0, k = 0;\n    long long best = LLONG_MAX;\n    while (i < a.size() && j < b.size() && k < c.size()) {\n        long long x = a[i], y = b[j], z = c[k];\n        long long low = std::min({x,y,z}), high = std::max({x,y,z});\n        best = std::min(best, 2 * (high - low));\n        if (x == low) ++i;\n        else if (y == low) ++j;\n        else ++k;\n    }\n    return best;\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅把S2中的10改为9，其他数和规则不变，最小距离为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "0"
+          },
+          {
+            "label": "B",
+            "content": "1"
+          },
+          {
+            "label": "C",
+            "content": "2"
+          },
+          {
+            "label": "D",
+            "content": "4"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将S2的10替换为9，仍升序。",
+        "explanation": "三组均含9，组合9、9、9给0；距离非负，已达最小。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp01-09v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "three-sorted-arrays-min-range",
+            "input": {
+              "S1": [
+                -1,
+                0,
+                9
+              ],
+              "S2": [
+                -25,
+                -10,
+                9,
+                11
+              ],
+              "S3": [
+                2,
+                9,
+                17,
+                30,
+                41
+              ]
+            },
+            "goal": "展示指针或候选状态变化及终止边界",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp01-09-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "three-sorted-arrays-min-range",
+          "input": {
+            "S1": [
+              -1,
+              0,
+              9
+            ],
+            "S2": [
+              -25,
+              -10,
+              10,
+              11
+            ],
+            "S3": [
+              2,
+              9,
+              17,
+              30,
+              41
+            ]
+          },
+          "goal": "展示指针或候选状态变化及终止边界",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp01-10",
+      "topic": "后缀极值与包含自身的最大乘积",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2025",
+        "questionNumber": "41",
+        "label": "2025 年 408 综合题第 41 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2025/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整`C++17`核心实现，不声称完成原题所有评分小问。保留原例与包含自身的j范围，输出接口改为宽整数避免原int乘积溢出；不声称原函数原型完全照搬。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "数组 `A={1,4,-9,6}`，每个位置i计算 `max(A[i]*A[j])`，其中 `i <= j && j < n`，保存到独立输出数组；输入为32位有符号整数，乘积和输出使用至少64位的`long long`。结果依原位置为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "6、24、81、36"
+        },
+        {
+          "label": "B",
+          "content": "6、24、-54、36"
+        },
+        {
+          "label": "C",
+          "content": "4、24、-54、0"
+        },
+        {
+          "label": "D",
+          "content": "81、81、81、81"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "负因子仍只配后缀最大值",
+          "explanation": "负数乘较小的后缀值会得更大结果；-9可与自身相乘得到81。"
+        },
+        "C": {
+          "title": "排除自身或把无后继当零",
+          "explanation": "允许j等于i，最后6至少可与自身相乘得36；负项也可平方。"
+        },
+        "D": {
+          "title": "把全局最大覆盖每个位置",
+          "explanation": "每个i固定一个乘数并限制另一个在该后缀中，结果按i不同而变化。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "分开讨论当前因子为正、负和零时希望另一个因子多大。"
+        },
+        {
+          "level": 2,
+          "text": "从右到左维护后缀最大和最小值，确认加入当前项的时机。"
+        },
+        {
+          "level": 3,
+          "text": "另用一项数组检验是否允许自身参与；再用一正一负数组观察符号影响。"
+        }
+      ],
+      "solution": "后缀取值使1配6得6、4配6得24、-9配-9得81、6配6得36。由右向左，先把当前项纳入后缀最小/最大，再按符号选择极值相乘；零配任何数得0。每项`O(1)`，总`Θ(n)`，除必须的输出外`O(1)`辅助空间。为避免原int输出接口在乘积超界时溢出，本站显式将返回数组元素改为long long；任意两个32位有符号整数的精确乘积可由至少64位的`long long`表示。输入与输出独立，数组长度可为0。\n\n`C++17`实现：\n```cpp\n#include <vector>\n#include <algorithm>\nstd::vector<long long> suffixProducts(const std::vector<int>& a) {\n    std::vector<long long> out(a.size());\n    if (a.empty()) return out;\n    long long low = a.back(), high = a.back();\n    for (std::size_t pos = a.size(); pos > 0; --pos) {\n        std::size_t i = pos - 1;\n        long long x = a[i];\n        low = std::min(low, x);\n        high = std::max(high, x);\n        out[i] = x >= 0 ? x * high : x * low;\n    }\n    return out;\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅将原数组-9替换为0，其余不变，结果为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "6、24、0、36"
+          },
+          {
+            "label": "B",
+            "content": "6、24、81、36"
+          },
+          {
+            "label": "C",
+            "content": "6、24、6、36"
+          },
+          {
+            "label": "D",
+            "content": "6、24、0、0"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将第三项-9改为0。",
+        "explanation": "该位置固定因子0，任何合法乘积均为0；其余位置的最大后缀因子仍为6，各自结果不变。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp01-10v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "array-suffix-extrema-products",
+            "input": {
+              "values": [
+                1,
+                4,
+                0,
+                6
+              ],
+              "includeSelf": true
+            },
+            "goal": "展示指针或候选状态变化及终止边界",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp01-10-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "array-suffix-extrema-products",
+          "input": {
+            "values": [
+              1,
+              4,
+              -9,
+              6
+            ],
+            "includeSelf": true
+          },
+          "goal": "展示指针或候选状态变化及终止边界",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1614 @@
+{
+  "schemaVersion": 1,
+  "section": "树真题二：遍历、线索、形状与判定树规则",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "tt02-01",
+      "topic": "按NLR字母规则识别非常规遍历",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2009",
+        "questionNumber": "3",
+        "label": "2009 年 408 真题 第 3 题（原图父子关系文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2009/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站后台渲染逐边核对原SVG，转写结构并补明每层递归规则；原四规则和序列不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "原图二叉树转写：根1的左右孩子2、3，2的左右孩子4、5，5的左右孩子6、7，3、4、6、7均为叶。`N`表示访问当前根，`L`/`R`表示递归完成左/右子树。哪个规则会得到 `3,1,7,5,6,2,4`？每个子树都用同一规则。",
+      "options": [
+        {
+          "label": "A",
+          "content": "`LRN`"
+        },
+        {
+          "label": "B",
+          "content": "`NRL`"
+        },
+        {
+          "label": "C",
+          "content": "`RLN`"
+        },
+        {
+          "label": "D",
+          "content": "`RNL`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把根延后到全树最后",
+          "explanation": "`LRN`会在左右子树完成后才访问根，不能把根1放在输出第二项。"
+        },
+        "B": {
+          "title": "把根提前到全树最先",
+          "explanation": "`NRL`先输出整树根1，与本序列先输出右叶3不符。"
+        },
+        "C": {
+          "title": "把两子树先后正确当成根时机也正确",
+          "explanation": "`RLN`虽先右后左，但根仍最后访问，而本题根处于两侧子树的输出之间。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先把每个三字母规则分别解释为当前调用的三项待办。"
+        },
+        {
+          "level": 2,
+          "text": "定位整树根在序列中的位置，再检查两边各属于哪棵子树。"
+        },
+        {
+          "level": 3,
+          "text": "另取根X带左叶Y、右叶Z的小树，按不同三字母排列输出，区分根访问时机和两侧递归次序。"
+        }
+      ],
+      "solution": "`RNL`先完成右子树得到3，再访问根1，再对左子树2递归先右5：得到7、5、6，再访问2，最后4，合并为给定序列。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把目标序列换成 `1,3,2,5,7,6,4`，树和四条规则不变，匹配哪一项？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`LRN`"
+          },
+          {
+            "label": "B",
+            "content": "`NRL`"
+          },
+          {
+            "label": "C",
+            "content": "`RLN`"
+          },
+          {
+            "label": "D",
+            "content": "`RNL`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅更换待识别的遍历序列。",
+        "explanation": "先访问根1，再右叶3，再进入左子树2仍先根再右后左，得2、5、7、6、4，正是`NRL`。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt02-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "binary-tree-order-permutations",
+            "input": {
+              "root": "1",
+              "children": {
+                "1": {
+                  "left": "2",
+                  "right": "3"
+                },
+                "2": {
+                  "left": "4",
+                  "right": "5"
+                },
+                "5": {
+                  "left": "6",
+                  "right": "7"
+                }
+              },
+              "target": [
+                1,
+                3,
+                2,
+                5,
+                7,
+                6,
+                4
+              ],
+              "rules": [
+                "LRN",
+                "NRL",
+                "RLN",
+                "RNL"
+              ]
+            },
+            "goal": "逐子树执行统一字母规则",
+            "pauseQuestion": "选定一条规则后，进入子树还能临时改用另一条吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt02-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "binary-tree-order-permutations",
+          "input": {
+            "root": "1",
+            "children": {
+              "1": {
+                "left": "2",
+                "right": "3"
+              },
+              "2": {
+                "left": "4",
+                "right": "5"
+              },
+              "5": {
+                "left": "6",
+                "right": "7"
+              }
+            },
+            "target": [
+              3,
+              1,
+              7,
+              5,
+              6,
+              2,
+              4
+            ],
+            "rules": [
+              "LRN",
+              "NRL",
+              "RLN",
+              "RNL"
+            ]
+          },
+          "goal": "逐子树执行统一字母规则",
+          "pauseQuestion": "选定一条规则后，进入子树还能临时改用另一条吗？"
+        }
+      ]
+    },
+    {
+      "id": "tt02-02",
+      "topic": "AVL要求每个结点都高度平衡",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2009",
+        "questionNumber": "4",
+        "label": "2009 年 408 真题 第 4 题（原图形状转写为左右路径集合）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2009/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站实际查看原SVG，将四图逐边转写为路径集合，不引入新键值；四图对应顺序和正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "用从根出发的`L`/`R`路径集合转写原图，空路径写作根；`L`左、`R`右，未列位置为空。只看形状，互异BST键可按中序填入。四个原图形状中，哪个满足每个结点左右子树高度差绝对值至多1？空高度0、叶高度1。",
+      "options": [
+        {
+          "label": "A",
+          "content": "`根,L,LR`"
+        },
+        {
+          "label": "B",
+          "content": "`根,L,R,LL,RL`"
+        },
+        {
+          "label": "C",
+          "content": "`根,L,R,RR,RRL`"
+        },
+        {
+          "label": "D",
+          "content": "`根,L,R,LL,LR,LLR,LLRR`"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "漏检根的空侧高度",
+          "explanation": "A根左子树高2、右为空高0，根高差2，虽下方单孩子结点高差1，整树仍失衡。"
+        },
+        "C": {
+          "title": "只检查某一对子树根而漏较长单链",
+          "explanation": "C根左叶高1，右子树高3，根高差2；右支内部也有高差过大的位置，不能凭有两个孩子就判平衡。"
+        },
+        "D": {
+          "title": "把最长路径形状当已平衡",
+          "explanation": "D根左侧高4而右叶高1，差3，且内部还存在过长单边链，明显不满足逐结点高差约束。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "从叶往上计算高度，再检查每个结点，不只看整体是否左右都有孩子。"
+        },
+        {
+          "level": 2,
+          "text": "空子树高度参与相减，单孩子的另一侧不能省略。"
+        },
+        {
+          "level": 3,
+          "text": "另构造一个根有两侧但一侧包含单链的小树，分别算根与链中各点的高度差，避免只检查一处。"
+        }
+      ],
+      "solution": "B的两个子树根各带一个左叶，高度均2，根高差0，两个子树根高差均1，叶高差0；其余原图都存在超1高差，故仅B。",
+      "viz": null,
+      "variant": {
+        "stem": "仅在A根的右孩子空位增加一个新叶，A其余边不变。修改后的A能否满足AVL形状条件？",
+        "options": [
+          {
+            "label": "A",
+            "content": "能，每个结点的高差都至多1"
+          },
+          {
+            "label": "B",
+            "content": "不能，BST禁止有右孩子"
+          },
+          {
+            "label": "C",
+            "content": "不能，AVL叶必须全部同层"
+          },
+          {
+            "label": "D",
+            "content": "不能，根的高度差仍为2"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅给原图A的根补一个右叶。",
+        "explanation": "新A左子树仍高2、右叶高1，根高差降为1；左孩子有右叶，高差1，其余叶为0，全部满足。AVL不要求所有叶同层。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt02-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "binary-shape-avl-balance",
+            "input": {
+              "paths": [
+                "",
+                "L",
+                "LR",
+                "R"
+              ],
+              "emptyHeight": 0
+            },
+            "goal": "由底向上给每个结点标高度与高差",
+            "pauseQuestion": "只检查根左右都有结点，是否就覆盖了全部AVL条件？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt02-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "binary-shape-avl-balance",
+          "input": {
+            "pathSets": [
+              [
+                "",
+                "L",
+                "LR"
+              ],
+              [
+                "",
+                "L",
+                "R",
+                "LL",
+                "RL"
+              ],
+              [
+                "",
+                "L",
+                "R",
+                "RR",
+                "RRL"
+              ],
+              [
+                "",
+                "L",
+                "R",
+                "LL",
+                "LR",
+                "LLR",
+                "LLRR"
+              ]
+            ],
+            "emptyHeight": 0
+          },
+          "goal": "由底向上给每个结点标高度与高差",
+          "pauseQuestion": "只检查根左右都有结点，是否就覆盖了全部AVL条件？"
+        }
+      ]
+    },
+    {
+      "id": "tt02-03",
+      "topic": "森林转换后两步路径的原关系",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2009",
+        "questionNumber": "6",
+        "label": "2009 年 408 真题 第 6 题（补明非根端点与两步关系）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2009/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；原题未限定端点是否为各树根，本站补明u/v非根以免根间串联与真实兄弟含义歧义，I/II正确组合不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "非空有序森林转为左孩子右兄弟二叉表示，根之间也按右兄弟串联。为使原父结点关系均有定义，本题`u`、`v`取原森林非根结点。二叉表示中`u`恰是`v`父结点的父结点，即从`u`沿两条孩子边到`v`。原森林中下列哪些关系可能？I. `u`为`v`的父结点；II. `u`与`v`为兄弟结点；III. `u`的父结点与`v`的父结点为两个兄弟结点。兄弟不包括同一个结点。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 II"
+        },
+        {
+          "label": "B",
+          "content": "I、II"
+        },
+        {
+          "label": "C",
+          "content": "I、III"
+        },
+        {
+          "label": "D",
+          "content": "I、II、III"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "漏掉先孩子再兄弟的两步情况",
+          "explanation": "从`u`先走左孩子再右兄弟，可到`u`的第二个孩子`v`，原森林`u`与`v`为父子，因此I也可能。"
+        },
+        "C": {
+          "title": "将跨两条二叉边直接当原森林堂兄弟",
+          "explanation": "左指第一个孩子、右指下一个兄弟，逐一检查四种两步组合，没有一种让两端的父结点成为兄弟；反而右右可得到II。"
+        },
+        "D": {
+          "title": "把所有看起来跨两层的亲缘都算可能",
+          "explanation": "两步只有左左、左右、右左、右右四种；它们可对应祖孙、父子、父辈兄弟、兄弟，不能直接得到III的父结点互为兄弟。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "每一条二叉边分别还原成原森林中的第一个孩子或下一个兄弟。"
+        },
+        {
+          "level": 2,
+          "text": "两条边有四种左右组合，应逐一枚举而不是只看二叉层数。"
+        },
+        {
+          "level": 3,
+          "text": "另取一个根带多个孩子的小森林，用不同方向的两步路径还原端点关系，并检查父指针是否相等或相邻。"
+        }
+      ],
+      "solution": "左右给`u`到其第二个孩子，满足I；右右给`u`到隔一个结点的后续兄弟，满足II。左左为祖孙，右左使`u`与`v`的父结点为兄弟，这两种也不能使`u`父与`v`父互为兄弟，所以III不可能。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把两步路径明确为先`R`后`L`，`u`与`v`在原森林中的关系必为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`u`是`v`父结点"
+          },
+          {
+            "label": "B",
+            "content": "`u`与`v`为兄弟"
+          },
+          {
+            "label": "C",
+            "content": "`u`与`v`的父结点为兄弟"
+          },
+          {
+            "label": "D",
+            "content": "`u`的父结点与`v`的父结点为兄弟"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将原未知左右组合限定为右、左。",
+        "explanation": "先`R`到`u`的下一个兄弟w，再`L`到w的第一个孩子`v`，因此w是`v`父，`u`与w为兄弟，即`u`与`v`的父结点为兄弟。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt02-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "forest-two-edge-relation-map",
+            "input": {
+              "directions": "RL",
+              "leftMeans": "first-child",
+              "rightMeans": "next-sibling",
+              "endpointsAreOriginalNonRoots": true
+            },
+            "goal": "逐边还原关系并枚举四种组合",
+            "pauseQuestion": "二叉表示的深度增加一次，是否就等于原树亲缘层数增加一次？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt02-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "forest-two-edge-relation-map",
+          "input": {
+            "binaryPathLength": 2,
+            "possibleDirections": [
+              "LL",
+              "LR",
+              "RL",
+              "RR"
+            ],
+            "leftMeans": "first-child",
+            "rightMeans": "next-sibling",
+            "endpointsAreOriginalNonRoots": true
+          },
+          "goal": "逐边还原关系并枚举四种组合",
+          "pauseQuestion": "二叉表示的深度增加一次，是否就等于原树亲缘层数增加一次？"
+        }
+      ]
+    },
+    {
+      "id": "tt02-04",
+      "topic": "从原线程图抽取指定三域",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2010",
+        "questionNumber": "3",
+        "label": "2010 年 408 真题 第 3 题（据原线程图改编为三域核对）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2010/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站实际查看原SVG箭头，将四图的c左/c右/d右三空域抽取为三元组选项；省略其他域，非原完整图逐字重现，正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "根据2010年第3题原图改编为三域核对：实孩子为`a`左`b`右`c`，`b`只有右孩子`d`，`c`、`d`为叶；空左指前驱，空右指后继，边界无线索为空。采用左、右、根后序，依次列`c`左线索、`c`右线索、`d`右线索，哪个三元组全正确？四项按原四图中对应三域抽取。",
+      "options": [
+        {
+          "label": "A",
+          "content": "`b`、`d`、`c`"
+        },
+        {
+          "label": "B",
+          "content": "`a`、空、`a`"
+        },
+        {
+          "label": "C",
+          "content": "`d`、空、`c`"
+        },
+        {
+          "label": "D",
+          "content": "`b`、`a`、`b`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把前驱`c`左判对后混用了其他次序的后继",
+          "explanation": "`c`的前驱是`b`，但`c`后继应为`a`而不是`d`，`d`后继应为`b`而不是`c`，不能拼接不同遍历次序。"
+        },
+        "B": {
+          "title": "套用了中序线程的三域",
+          "explanation": "`a`、空、`a`是本结构中序下这三域的值，后序访问顺序不同，不能直接复用。"
+        },
+        "C": {
+          "title": "把`d`与`c`当后序直接相邻",
+          "explanation": "`d`后还要访问父`b`才轮到`c`，故`c`前驱不是`d`，`d`后继也不是`c`；`c`不是后序末项，其右线索也不为空。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "只沿实孩子先写目标遍历序列，再用相邻项定前驱后继。"
+        },
+        {
+          "level": 2,
+          "text": "题目指定的字段都为空孩子域，但不同遍历规则会给不同线索。"
+        },
+        {
+          "level": 3,
+          "text": "另取根X左Y、右Z且Y右W的小树，逐项列访问顺序，分别取某叶的前后邻居而非按画面距离。"
+        }
+      ],
+      "solution": "后序为`d`、`b`、`c`、`a`，因此`c`前驱`b`、后继`a`，`d`后继`b`，三元组为`b`、`a`、`b`，D正确。线索字段与实孩子不同，不凭最接近的画面结点猜。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将线索化规则由后序改为左、根、右中序，结构、字段顺序和四个三元组选项不变，正确项为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`b`、`d`、`c`"
+          },
+          {
+            "label": "B",
+            "content": "`a`、空、`a`"
+          },
+          {
+            "label": "C",
+            "content": "`d`、空、`c`"
+          },
+          {
+            "label": "D",
+            "content": "`b`、`a`、`b`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅切换线索对应遍历次序。",
+        "explanation": "中序为`b`、`d`、`a`、`c`，因此`c`前驱`a`、后继为空，`d`后继`a`，得到`a`、空、`a`，为B。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt02-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "threaded-tree-selected-fields",
+            "input": {
+              "root": "a",
+              "children": {
+                "a": {
+                  "left": "b",
+                  "right": "c"
+                },
+                "b": {
+                  "right": "d"
+                },
+                "c": {},
+                "d": {}
+              },
+              "order": "LNR",
+              "fields": [
+                [
+                  "c",
+                  "left"
+                ],
+                [
+                  "c",
+                  "right"
+                ],
+                [
+                  "d",
+                  "right"
+                ]
+              ]
+            },
+            "goal": "先求实孩子遍历再填指定空域",
+            "pauseQuestion": "一条线索是否可能指到同一实子树中刚访问的后代？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt02-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "threaded-tree-selected-fields",
+          "input": {
+            "root": "a",
+            "children": {
+              "a": {
+                "left": "b",
+                "right": "c"
+              },
+              "b": {
+                "right": "d"
+              },
+              "c": {},
+              "d": {}
+            },
+            "order": "LRN",
+            "fields": [
+              [
+                "c",
+                "left"
+              ],
+              [
+                "c",
+                "right"
+              ],
+              [
+                "d",
+                "right"
+              ]
+            ]
+          },
+          "goal": "先求实孩子遍历再填指定空域",
+          "pauseQuestion": "一条线索是否可能指到同一实子树中刚访问的后代？"
+        }
+      ]
+    },
+    {
+      "id": "tt02-05",
+      "topic": "前后序反向时链的中序限制",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2011",
+        "questionNumber": "5",
+        "label": "2011 年 408 真题 第 5 题（明确标识互异与左右有序）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2011/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "结点标识互异，二叉树先序 `1,2,3,4`、后序 `4,3,2,1`。以下哪组不可能为该树中序？左右孩子位置不同计不同树。",
+      "options": [
+        {
+          "label": "A",
+          "content": "`1,2,3,4`"
+        },
+        {
+          "label": "B",
+          "content": "`2,3,4,1`"
+        },
+        {
+          "label": "C",
+          "content": "`3,2,4,1`"
+        },
+        {
+          "label": "D",
+          "content": "`4,3,2,1`"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把全部右链的合法中序排除",
+          "explanation": "每个结点都仅有右孩子时，先序和中序均为1、2、3、4，后序为逆序，A可行。"
+        },
+        "B": {
+          "title": "漏掉根在末尾且子树全向右的链",
+          "explanation": "根1只有左孩子2，2之后一路向右到3、4，中序为2、3、4、1，符合所给前后序。"
+        },
+        "D": {
+          "title": "把全部左链误判为不能同时反向",
+          "explanation": "全部左链时中序与后序均为4、3、2、1，先序仍为1、2、3、4，D可行。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "比较每个子树的先序首项与后序末项，从根逐层判断是否可能同时有左右非空子树。"
+        },
+        {
+          "level": 2,
+          "text": "若只能形成单孩子链，当前根在其中序片段的什么位置才可能？"
+        },
+        {
+          "level": 3,
+          "text": "另取三个标识互异的链，分别把每条边选左或右，列出全部中序，再检查片段内部根是否必须在端点。"
+        }
+      ],
+      "solution": "这组前后序迫使1到2到3到4为单孩子链，每条边可左可右。1去除后，中序剩余片段里2也必须在端点；C去除末尾1后为3、2、4，2在中间，不可能。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将候选C改为 `3,4,2,1`，其他序列与三个候选不变。现在四个候选的可行性为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "四个都可能"
+          },
+          {
+            "label": "B",
+            "content": "仍仅C不可能"
+          },
+          {
+            "label": "C",
+            "content": "只有A可能"
+          },
+          {
+            "label": "D",
+            "content": "四个都不可能"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅交换原候选C中的2、4，其他条件不变。",
+        "explanation": "新C可用根1左孩子2、2左孩子3、3右孩子4的链实现，中序3、4、2、1；原A、B、D也都可行，因此四项均可能。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt02-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "binary-pre-post-chain-inorders",
+            "input": {
+              "preorder": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "postorder": [
+                4,
+                3,
+                2,
+                1
+              ],
+              "inorderChoices": [
+                [
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                [
+                  2,
+                  3,
+                  4,
+                  1
+                ],
+                [
+                  3,
+                  4,
+                  2,
+                  1
+                ],
+                [
+                  4,
+                  3,
+                  2,
+                  1
+                ]
+              ]
+            },
+            "goal": "递归检查每段中序中单孩子根是否在端点",
+            "pauseQuestion": "整棵树根在中序端点，是否已经保证余下子树也合法？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt02-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "binary-pre-post-chain-inorders",
+          "input": {
+            "preorder": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "postorder": [
+              4,
+              3,
+              2,
+              1
+            ],
+            "inorderChoices": [
+              [
+                1,
+                2,
+                3,
+                4
+              ],
+              [
+                2,
+                3,
+                4,
+                1
+              ],
+              [
+                3,
+                2,
+                4,
+                1
+              ],
+              [
+                4,
+                3,
+                2,
+                1
+              ]
+            ]
+          },
+          "goal": "递归检查每段中序中单孩子根是否在端点",
+          "pauseQuestion": "整棵树根在中序端点，是否已经保证余下子树也合法？"
+        }
+      ]
+    },
+    {
+      "id": "tt02-06",
+      "topic": "先后序不能唯一树形仍能确定孩子",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2012",
+        "questionNumber": "3",
+        "label": "2012 年 408 真题 第 3 题（明确直接孩子与左右歧义）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2012/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "结点标识互异，先序为 `a,e,b,d,c`，后序为 `b,c,d,e,a`。根结点的直接孩子有哪些？不把无法区分单孩子左右位置当作无法确定孩子标识。",
+      "options": [
+        {
+          "label": "A",
+          "content": "只有`e`"
+        },
+        {
+          "label": "B",
+          "content": "`e`、`b`"
+        },
+        {
+          "label": "C",
+          "content": "`e`、`c`"
+        },
+        {
+          "label": "D",
+          "content": "无法确定"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把孙级访问到的`b`当根的另一孩子",
+          "explanation": "前后序都将`e`所辖的其余全部结点包在同一子树内，`b`属于`e`子树，而非`a`的第二个直接孩子。"
+        },
+        "C": {
+          "title": "将最后的小叶直接提升到根的另一边",
+          "explanation": "`c`属于`d`子树，`d`又在`e`子树内，不能仅凭`c`在后序靠前就把它当`a`的孩子。"
+        },
+        "D": {
+          "title": "把不唯一左右方向误作所有亲缘都不确定",
+          "explanation": "先后序不总能唯一树形，但这里先序第二与后序倒数第二同为`e`，可确定根只带`e`一个孩子。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "根是先序首项与后序末项，再看根下第一段子树能覆盖多少结点。"
+        },
+        {
+          "level": 2,
+          "text": "若首个孩子根在后序中的位置已覆盖所有非根项，是否还留位置给另一个孩子？"
+        },
+        {
+          "level": 3,
+          "text": "另用先序X、Y、Z与后序Z、Y、X的小例子，区分孩子身份与它处于左侧还是右侧。"
+        }
+      ],
+      "solution": "根`a`的首个子树根为`e`，而后序`e`就在`a`之前，说明该子树包含全部四个非根结点，没有第二个孩子，所以只有`e`；`e`在`a`左还是右仍可不同。",
+      "viz": null,
+      "variant": {
+        "stem": "其余条件不变，仅把查询结点从根`a`改为`e`，`e`的直接孩子为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "只有`b`"
+          },
+          {
+            "label": "B",
+            "content": "`b`、`d`"
+          },
+          {
+            "label": "C",
+            "content": "`b`、`c`"
+          },
+          {
+            "label": "D",
+            "content": "无法确定"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将观察的父结点由`a`改为`e`。",
+        "explanation": "`e`子树先序为`e`、`b`、`d`、`c`，后序`b`、`c`、`d`、`e`。首个孩子`b`的子树只含`b`，余下`d`、`c`构成第二个孩子`d`的子树，因此`e`直接孩子为`b`与`d`。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt02-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "binary-pre-post-ancestor-boundaries",
+            "input": {
+              "preorder": [
+                "a",
+                "e",
+                "b",
+                "d",
+                "c"
+              ],
+              "postorder": [
+                "b",
+                "c",
+                "d",
+                "e",
+                "a"
+              ],
+              "queryChildrenOf": "e"
+            },
+            "goal": "按子树根的后序终点划分非根片段",
+            "pauseQuestion": "无法确定一个孩子在左还是右，是否会妨碍确定孩子本身是谁？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt02-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "binary-pre-post-ancestor-boundaries",
+          "input": {
+            "preorder": [
+              "a",
+              "e",
+              "b",
+              "d",
+              "c"
+            ],
+            "postorder": [
+              "b",
+              "c",
+              "d",
+              "e",
+              "a"
+            ],
+            "queryChildrenOf": "a"
+          },
+          "goal": "按子树根的后序终点划分非根片段",
+          "pauseQuestion": "无法确定一个孩子在左还是右，是否会妨碍确定孩子本身是谁？"
+        }
+      ]
+    },
+    {
+      "id": "tt02-07",
+      "topic": "中序线索按邻居而非空间方向",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2014",
+        "questionNumber": "4",
+        "label": "2014 年 408 真题 第 4 题（原图父子关系文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2014/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站后台渲染逐边核对原SVG，保留目标x为叶及全部实孩子；原线索选项含义和答案不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "原图转写：根`a`左右孩子`b`、`c`，`b`左右孩子`d`、`x`，`d`只有右孩子`e`；`c`、`x`、`e`为叶。空左指中序前驱、空右指中序后继，求`x`左右线索依次指向谁。",
+      "options": [
+        {
+          "label": "A",
+          "content": "`e`、`c`"
+        },
+        {
+          "label": "B",
+          "content": "`e`、`a`"
+        },
+        {
+          "label": "C",
+          "content": "`d`、`c`"
+        },
+        {
+          "label": "D",
+          "content": "`b`、`a`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "将下层叶`e`越过`b`直接当`x`前驱",
+          "explanation": "中序访问`d`、`e`后还要先访问`b`，才轮到`x`；`e`不是`x`的直接前驱，后继也不是`c`。"
+        },
+        "B": {
+          "title": "只看`b`左子树结束点而漏访问`b`",
+          "explanation": "`b`在其左子树全部完成后先被访问，再进入右叶`x`，因此前驱为`b`，不是`e`；右后继`a`虽正确，组合仍错。"
+        },
+        "C": {
+          "title": "把物理左下位置当遍历相邻",
+          "explanation": "`d`之后还会访问`e`、`b`才到`x`，`x`后则先`a`再`c`；不能用画面较左或较右的结点替代真正邻居。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先用实孩子列完整中序，再在其中定位目标叶。"
+        },
+        {
+          "level": 2,
+          "text": "线索只在空孩子域保存遍历前后邻居，不能沿图的水平位置猜。"
+        },
+        {
+          "level": 3,
+          "text": "另取根X左Y右Z且Y带一个右叶W的小树，分别寻找W在中序里的紧邻项，再比较图上的距离。"
+        }
+      ],
+      "solution": "实孩子中序为`d`、`e`、`b`、`x`、`a`、`c`，`x`紧前为`b`、紧后为`a`，且`x`两侧均无实孩子，故左右线索为`b`、`a`。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将线索依据由中序改为后序，结构与求`x`两侧线索的目标不变，结果为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`d`、`b`"
+          },
+          {
+            "label": "B",
+            "content": "`b`、`a`"
+          },
+          {
+            "label": "C",
+            "content": "`e`、`c`"
+          },
+          {
+            "label": "D",
+            "content": "`c`、`a`"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅切换遍历次序到后序。",
+        "explanation": "后序为`e`、`d`、`x`、`b`、`c`、`a`，`x`前驱为`d`，后继为`b`，所以左、右线索为`d`、`b`。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt02-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "threaded-tree-neighbor-pair",
+            "input": {
+              "root": "a",
+              "children": {
+                "a": {
+                  "left": "b",
+                  "right": "c"
+                },
+                "b": {
+                  "left": "d",
+                  "right": "x"
+                },
+                "d": {
+                  "right": "e"
+                }
+              },
+              "order": "LRN",
+              "target": "x"
+            },
+            "goal": "先列实孩子遍历再从目标位置取邻居",
+            "pauseQuestion": "一个结点在画面上最靠近目标，是否就应成为它的线索目标？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt02-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "threaded-tree-neighbor-pair",
+          "input": {
+            "root": "a",
+            "children": {
+              "a": {
+                "left": "b",
+                "right": "c"
+              },
+              "b": {
+                "left": "d",
+                "right": "x"
+              },
+              "d": {
+                "right": "e"
+              }
+            },
+            "order": "LNR",
+            "target": "x"
+          },
+          "goal": "先列实孩子遍历再从目标位置取邻居",
+          "pauseQuestion": "一个结点在画面上最靠近目标，是否就应成为它的线索目标？"
+        }
+      ]
+    },
+    {
+      "id": "tt02-08",
+      "topic": "固定先序时有序树形的数量",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2015",
+        "questionNumber": "2",
+        "label": "2015 年 408 真题 第 2 题（明确互异标识与有序形状）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2015/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "四个互异结点标识固定先序为 `a,b,c,d`，不再限制中序或后序。左右位置不同算不同二叉树，空子树允许。符合先序的不同有序二叉树有几棵？",
+      "options": [
+        {
+          "label": "A",
+          "content": "13"
+        },
+        {
+          "label": "B",
+          "content": "14"
+        },
+        {
+          "label": "C",
+          "content": "15"
+        },
+        {
+          "label": "D",
+          "content": "16"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "漏掉一种合法左右空子树划分",
+          "explanation": "根左子树规模可为0至3，各规模都要分别计左右子树的组合，不能随意少一种。"
+        },
+        "C": {
+          "title": "把某层容量或多一个空结构加入计数",
+          "explanation": "题目是恰有四个实结点的树形，不是最多四个结点，也不计一棵额外的空树。"
+        },
+        "D": {
+          "title": "把所有连接左右选择误当独立二进制位",
+          "explanation": "并非只给固定链的每条边选左右，也有根带两棵非空子树的结构，需要按根左右规模递推。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "固定先序先给根，再根据左子树结点数切分其余序列。"
+        },
+        {
+          "level": 2,
+          "text": "枚举左规模0至3，相应右规模被总数确定，左右树形数量相乘再相加。"
+        },
+        {
+          "level": 3,
+          "text": "先在更少结点上列根的左空、右空和两侧非空情形，再用同样拆分扩展一层。"
+        }
+      ],
+      "solution": "固定先序会按每个有序形状唯一赋标识，形状数满足 `C(0)=1`、`C(n)=sum(C(i)*C(n-1-i))`，求和遍历 `i=0` 至 `n-1`。四项按左规模0至3贡献5、2、2、5，总14。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把标识增加为5个且先序固定为 `a,b,c,d,e`，其他计数方式不变，共有几棵？",
+        "options": [
+          {
+            "label": "A",
+            "content": "28"
+          },
+          {
+            "label": "B",
+            "content": "32"
+          },
+          {
+            "label": "C",
+            "content": "42"
+          },
+          {
+            "label": "D",
+            "content": "56"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将固定先序长度由4改为5。",
+        "explanation": "按相同递推，左规模0至4贡献14、5、4、5、14，合计42。这里先序只固定访问标签次序，并没有固定左右形状。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt02-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "fixed-preorder-binary-shape-count",
+            "input": {
+              "preorder": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e"
+              ],
+              "orderedChildren": true,
+              "emptySubtreesAllowed": true
+            },
+            "goal": "按左子树规模切分固定先序并枚举形状",
+            "pauseQuestion": "同一先序标签，是否已经说明每个结点的左、右孩子在哪里？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt02-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "fixed-preorder-binary-shape-count",
+          "input": {
+            "preorder": [
+              "a",
+              "b",
+              "c",
+              "d"
+            ],
+            "orderedChildren": true,
+            "emptySubtreesAllowed": true
+          },
+          "goal": "按左子树规模切分固定先序并枚举形状",
+          "pauseQuestion": "同一先序标签，是否已经说明每个结点的左、右孩子在哪里？"
+        }
+      ]
+    },
+    {
+      "id": "tt02-09",
+      "topic": "两种遍历相同时的充要结构",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2017",
+        "questionNumber": "4",
+        "label": "2017 年 408 真题 第 4 题（明确互异、非退化与充要条件）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2017/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站补明至少2结点及比较标识互异，将须满足澄清为充要结构条件，避免单结点真空条件或仅必要的度1造成多解"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "至少两个结点，标识互异。要使先序与中序序列完全相同，以下哪一项是对所有非叶结点的充要结构条件？这里要能保证相同且可由相同推出，不只问某个较弱必要条件。",
+      "options": [
+        {
+          "label": "A",
+          "content": "只有左子树"
+        },
+        {
+          "label": "B",
+          "content": "只有右子树"
+        },
+        {
+          "label": "C",
+          "content": "孩子数均为1"
+        },
+        {
+          "label": "D",
+          "content": "孩子数均为2"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "将两种遍历根位置对齐到错误方向",
+          "explanation": "有左子树时中序先输出左侧结点而先序先输出根，不可能相同；全部左链也不符合。"
+        },
+        "C": {
+          "title": "只满足必要的单孩子却允许方向不对",
+          "explanation": "孩子数1仍可选择左孩子，先序与中序会在该处调换先后，因此这项不充分。"
+        },
+        "D": {
+          "title": "保留两个非空子树而忽略中序根不在首位",
+          "explanation": "存在左孩子就会使中序先于根输出别点，双孩子不能保证两序相同。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先比较两种遍历在当前子树中，根出现的相对位置。"
+        },
+        {
+          "level": 2,
+          "text": "若根必须同时是当前片段首项，哪一侧子树还能非空？再递归看保留下来的那一侧。"
+        },
+        {
+          "level": 3,
+          "text": "另取一条混合左右方向的单孩子链，比较只要求度1能否保证不同遍历始终输出相同序列。"
+        }
+      ],
+      "solution": "先序以当前根开头，中序若有左子树就不能以根开头，所以每个结点左侧必须为空，非叶只有右子树。反之全右链的两序都沿根到右孩子输出，故为充要条件B。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把先序与中序相同改为后序与中序相同，仍问同样意义的充要条件，四选项不变。",
+        "options": [
+          {
+            "label": "A",
+            "content": "只有左子树"
+          },
+          {
+            "label": "B",
+            "content": "只有右子树"
+          },
+          {
+            "label": "C",
+            "content": "孩子数均为1"
+          },
+          {
+            "label": "D",
+            "content": "孩子数均为2"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将两序比较中的先序替换为后序。",
+        "explanation": "后序以根结束，中序若有右子树则不能以根结束，故每结点右侧必须空，非叶只有左子树；全左链两序均由最深叶向根输出，因此A充要。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt02-09v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "binary-traversal-equality-condition",
+            "input": {
+              "nodeCounts": [
+                2,
+                3,
+                4
+              ],
+              "uniqueLabels": true,
+              "orders": [
+                "LRN",
+                "LNR"
+              ],
+              "query": "necessary-and-sufficient-shape"
+            },
+            "goal": "用当前子树根在两序中的位置递归排除一侧",
+            "pauseQuestion": "只知道每个非叶度1，是否已经决定唯一的孩子方向？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt02-09-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "binary-traversal-equality-condition",
+          "input": {
+            "nodeCounts": [
+              2,
+              3,
+              4
+            ],
+            "uniqueLabels": true,
+            "orders": [
+              "NLR",
+              "LNR"
+            ],
+            "query": "necessary-and-sufficient-shape"
+          },
+          "goal": "用当前子树根在两序中的位置递归排除一侧",
+          "pauseQuestion": "只知道每个非叶度1，是否已经决定唯一的孩子方向？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "tt02-10",
+      "topic": "折半判定树必须统一中点取整",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2017",
+        "questionNumber": "8",
+        "label": "2017 年 408 真题 第 8 题（原图路径转写并明确统一取整）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2017/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站实际查看四原图，逐边转写无键形状，不把解析所加键当原题数据；补明允许全程统一上取整或下取整，原正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "用从根出发的`L`/`R`路径集合转写原图，空路径写作根；`L`左、`R`右，未列位置为空。只看形状，互异BST键可按中序填入。对升序数组闭区间折半查找，中点允许选择全程统一向下取整或全程统一向上取整，不能在不同子区间混用。四个原图形状中哪个可能成为不含外部失败结点的完整判定树？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`根,L,R,LL,LR,RL,RR,LLL,LRL,RLL`"
+        },
+        {
+          "label": "B",
+          "content": "`根,L,R,LL,LR,RL,RR,LLL,LRL,RLR,RRR`"
+        },
+        {
+          "label": "C",
+          "content": "`根,L,R,LL,LR,RL,RR,LRL,RLR`"
+        },
+        {
+          "label": "D",
+          "content": "`根,L,R,LL,LR,RL,RR,LLL,RLL,RRL`"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "只看局部子树规模差至多1而忽略方向一致",
+          "explanation": "B左侧二元子树偏左，右侧二元子树偏右，分别要求不同取整策略，不能用同一全局中点规则。"
+        },
+        "C": {
+          "title": "把各层看似均衡当成可统一取中点",
+          "explanation": "C左四结点子树的根左少右多，而右四结点子树的根左多右少，两侧要求相反取整方向。"
+        },
+        "D": {
+          "title": "根用下取整后又在子树换成上取整",
+          "explanation": "D整体根左4点右5点需下取整，但左四结点子树的根左2点右1点需上取整，规则冲突。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "对每个子树数左、右实结点数量，不只比较高度。"
+        },
+        {
+          "level": 2,
+          "text": "偶数规模时上下取整决定哪边多一个，必须在整棵判定树保持相同方向。"
+        },
+        {
+          "level": 3,
+          "text": "另用同样长度的两小数组分别固定上下取整，递归画所有中点位置，比较能否把某几个局部偏向任意混搭。"
+        }
+      ],
+      "solution": "A整体根左5点右4点，所有偶数规模子树也均左侧多1，符合全程上取整；奇数规模左右相等。B、C、D都在某处需要切换取整方向，因此只有A。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把A的整个无键结构左右镜像，再按新中序填入递增数组下标，是否可作为全程向下取整的完整判定树？",
+        "options": [
+          {
+            "label": "A",
+            "content": "可以，各子树规模偏向都同步反转"
+          },
+          {
+            "label": "B",
+            "content": "只能继续向上取整"
+          },
+          {
+            "label": "C",
+            "content": "不可以，判定树必须是完全二叉树"
+          },
+          {
+            "label": "D",
+            "content": "不可以，重新填递增下标也必定破坏BST次序"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将原图A结构全部左右镜像并按新中序赋下标。",
+        "explanation": "A原来每个偶数子树左多1，整体镜像后变成右多1；奇数子树仍相等，正好符合全程向下取整。重新按中序填升序下标会保持BST键序，不保留旧键标签的左右位置。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt02-10v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "binary-search-shape-rounding-policy",
+            "input": {
+              "paths": [
+                "",
+                "R",
+                "L",
+                "RR",
+                "RL",
+                "LR",
+                "LL",
+                "RRR",
+                "RLR",
+                "LRR"
+              ],
+              "allowedPolicies": [
+                "floor-everywhere"
+              ],
+              "externalNodes": false
+            },
+            "goal": "逐子树比较左右规模与统一取整偏向",
+            "pauseQuestion": "每个子树都相差至多1，是否已经保证它们采用同一个中点规则？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt02-10-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "binary-search-shape-rounding-policy",
+          "input": {
+            "pathSets": [
+              [
+                "",
+                "L",
+                "R",
+                "LL",
+                "LR",
+                "RL",
+                "RR",
+                "LLL",
+                "LRL",
+                "RLL"
+              ],
+              [
+                "",
+                "L",
+                "R",
+                "LL",
+                "LR",
+                "RL",
+                "RR",
+                "LLL",
+                "LRL",
+                "RLR",
+                "RRR"
+              ],
+              [
+                "",
+                "L",
+                "R",
+                "LL",
+                "LR",
+                "RL",
+                "RR",
+                "LRL",
+                "RLR"
+              ],
+              [
+                "",
+                "L",
+                "R",
+                "LL",
+                "LR",
+                "RL",
+                "RR",
+                "LLL",
+                "RLL",
+                "RRL"
+              ]
+            ],
+            "allowedPolicies": [
+              "floor-everywhere",
+              "ceil-everywhere"
+            ],
+            "externalNodes": false
+          },
+          "goal": "逐子树比较左右规模与统一取整偏向",
+          "pauseQuestion": "每个子树都相差至多1，是否已经保证它们采用同一个中点规则？"
+        }
+      ]
+    }
+  ]
+}

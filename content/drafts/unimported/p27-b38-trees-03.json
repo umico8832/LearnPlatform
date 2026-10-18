@@ -1,0 +1,1511 @@
+{
+  "schemaVersion": 1,
+  "section": "树真题三：哈夫曼、树高与顺序查找边界",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "tt03-01",
+      "topic": "标准哈夫曼构造的结构性质",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2010",
+        "questionNumber": "6",
+        "label": "2010 年 408 真题 第 6 题（明确正权与标准最小二根构造）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2010/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站补明标准算法构造，而非任意同WPL最优树；C按两个原始最小字符叶理解，四项核心含义及错误项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "至少2个字符，出现权值互异且为正。明确采用每次合并两个当前最小根权值的标准二叉哈夫曼构造，内部权为两子树根权之和，不泛指所有同WPL最优而未按此构造的树。以下哪项错误？",
+      "options": [
+        {
+          "label": "A",
+          "content": "一定是完全二叉树"
+        },
+        {
+          "label": "B",
+          "content": "没有只有一个孩子的结点"
+        },
+        {
+          "label": "C",
+          "content": "两个原始最小权字符的叶必为兄弟"
+        },
+        {
+          "label": "D",
+          "content": "任一非叶权不小于下一层任一结点权"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "忽略每次合并恰建两个孩子",
+          "explanation": "B由标准二路合并直接保证，内部不产生单孩子结点，不是错误项。"
+        },
+        "C": {
+          "title": "忽略首次最小二权合并后同父关系保留",
+          "explanation": "原始两个最小权先被合并，后续只把整棵子树向上合，不会拆散这对兄弟，C成立。"
+        },
+        "D": {
+          "title": "只想到父子和而否定贪心构造的跨支层序约束",
+          "explanation": "D不仅对直接孩子成立，标准最小二根合并也限制下一层其他支的权不会越过该层非叶权；不能把树未必完全误当D错误。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先分开看每次合并保证的度数关系与树是否按层左满。"
+        },
+        {
+          "level": 2,
+          "text": "保留最早一次合并的同父关系，再检查多次合并能否拉出长短不同的支。"
+        },
+        {
+          "level": 3,
+          "text": "另取增长较快的四个正权，逐步合并画树，分别检查叶层/完全树形状与各层权的关系。"
+        }
+      ],
+      "solution": "标准哈夫曼每次二根合并使非叶都有两个孩子，最小原始二权首次成兄弟；贪心合并也满足所列跨层非叶权性质。但树可呈一侧较深的分叉链，例如1、2、4、8构造的7结点树高4，并非完全二叉树，所以A错误。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把字符数限定为2，仍为互异正权并标准合并，此时所得树是否一定完全？",
+        "options": [
+          {
+            "label": "A",
+            "content": "一定完全"
+          },
+          {
+            "label": "B",
+            "content": "不完全，因为会有单孩子"
+          },
+          {
+            "label": "C",
+            "content": "不完全，因为两叶不能同层"
+          },
+          {
+            "label": "D",
+            "content": "要由两个权值的比率决定"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将字符数从至少2限定为恰2。",
+        "explanation": "两叶直接合到一个根，三结点树根带左右两个叶，形状必为完全二叉树，与两正权的大小比率无关。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt03-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "huffman-greedy-properties",
+            "input": {
+              "weights": [
+                1,
+                2
+              ],
+              "merge": "two-smallest",
+              "inspect": [
+                "complete-shape"
+              ]
+            },
+            "goal": "把满分支与完全树、算法构造与同代价最优区分",
+            "pauseQuestion": "非叶都有两个孩子，是否就能推出按层从左到右填满？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt03-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "huffman-greedy-properties",
+          "input": {
+            "weights": [
+              1,
+              2,
+              4,
+              8
+            ],
+            "merge": "two-smallest",
+            "inspect": [
+              "complete-shape",
+              "binary-degree",
+              "sibling",
+              "next-layer-weight"
+            ]
+          },
+          "goal": "把满分支与完全树、算法构造与同代价最优区分",
+          "pauseQuestion": "非叶都有两个孩子，是否就能推出按层从左到右填满？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "tt03-02",
+      "topic": "同一哈夫曼树的两条权路径",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2015",
+        "questionNumber": "3",
+        "label": "2015 年 408 真题 第 3 题（明确正权与完整根叶路径）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2015/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "所有真实字符叶权为正，允许不同字符同权，内部为两个孩子权和。四项各给从同一根到两个不同叶的完整权序列，哪项可同时属于同一棵按标准最小二根构造的二叉哈夫曼树？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`24,10,5` 与 `24,10,7`"
+        },
+        {
+          "label": "B",
+          "content": "`24,10,5` 与 `24,12,7`"
+        },
+        {
+          "label": "C",
+          "content": "`24,10,10` 与 `24,14,11`"
+        },
+        {
+          "label": "D",
+          "content": "`24,10,5` 与 `24,14,6`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "同权中间节点无论是否同一对象都不相容",
+          "explanation": "若两个10为同一父，两个叶5加7已超过10；若为不同的根孩子，根应为20而非24，两种解释均不成立。"
+        },
+        "B": {
+          "title": "没有让根权等于两直接子树权和",
+          "explanation": "两路径的下一项10、12不同，必是根的两个孩子，但其和22不是根权24。"
+        },
+        "C": {
+          "title": "允许了正权模型中的零权剩余孩子",
+          "explanation": "路径出现父10到叶10，另一个孩子权必须为0，与真实叶均正、内部均为正和的模型冲突。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先比较根下一项，判断两条路径是同一子树还是两个不同子树。"
+        },
+        {
+          "level": 2,
+          "text": "每个非叶都应由两正权孩子相加，沿边权必须严格下降。"
+        },
+        {
+          "level": 3,
+          "text": "另构造四个叶的两两合并树，分别记录两条根叶权序列，检查共享权值是否就一定是同一个结点。"
+        }
+      ],
+      "solution": "D可取叶5、5、6、8：先5加5得10，再6加8得14，最后10加14得24。分别到一个5与叶6的路径正为24、10、5和24、14、6，故D可行；其他三项违反正和或根孩子权和。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将A第二条路径末尾7改为5，其余三项不变，问哪些候选现在可同时属于某棵同模型的树？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仅 D"
+          },
+          {
+            "label": "B",
+            "content": "仅 A"
+          },
+          {
+            "label": "C",
+            "content": "A与D"
+          },
+          {
+            "label": "D",
+            "content": "四项都可以"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将A中的第二个叶权7替换为5。",
+        "explanation": "新A可表示10下面两个不同但同权的5叶，共享根24与子树根10；配上另一子树14可用5、5、6、8构造。D仍可行，B、C仍不相容，因此A与D。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt03-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "huffman-weight-path-consistency",
+            "input": {
+              "pathPairs": [
+                [
+                  [
+                    24,
+                    10,
+                    5
+                  ],
+                  [
+                    24,
+                    10,
+                    5
+                  ]
+                ],
+                [
+                  [
+                    24,
+                    10,
+                    5
+                  ],
+                  [
+                    24,
+                    12,
+                    7
+                  ]
+                ],
+                [
+                  [
+                    24,
+                    10,
+                    10
+                  ],
+                  [
+                    24,
+                    14,
+                    11
+                  ]
+                ],
+                [
+                  [
+                    24,
+                    10,
+                    5
+                  ],
+                  [
+                    24,
+                    14,
+                    6
+                  ]
+                ]
+              ],
+              "positiveLeafWeights": true,
+              "allowEqualLeafWeights": true
+            },
+            "goal": "区分同权节点身份并检查每个内部权和",
+            "pauseQuestion": "两次看到同一个权值，是否足够判定是在同一物理结点？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt03-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "huffman-weight-path-consistency",
+          "input": {
+            "pathPairs": [
+              [
+                [
+                  24,
+                  10,
+                  5
+                ],
+                [
+                  24,
+                  10,
+                  7
+                ]
+              ],
+              [
+                [
+                  24,
+                  10,
+                  5
+                ],
+                [
+                  24,
+                  12,
+                  7
+                ]
+              ],
+              [
+                [
+                  24,
+                  10,
+                  10
+                ],
+                [
+                  24,
+                  14,
+                  11
+                ]
+              ],
+              [
+                [
+                  24,
+                  10,
+                  5
+                ],
+                [
+                  24,
+                  14,
+                  6
+                ]
+              ]
+            ],
+            "positiveLeafWeights": true,
+            "allowEqualLeafWeights": true
+          },
+          "goal": "区分同权节点身份并检查每个内部权和",
+          "pauseQuestion": "两次看到同一个权值，是否足够判定是在同一物理结点？"
+        }
+      ]
+    },
+    {
+      "id": "tt03-03",
+      "topic": "用前缀码逐段唯一译码",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2017",
+        "questionNumber": "6",
+        "label": "2017 年 408 真题 第 6 题（明确码表为给定前缀码）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2017/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "字符a至h的码依次为 `0100,10,0000,0101,001,011,11,0001`，按给定前缀码译码 `0100011001001011110101`，结果为？不另外猜测字符频次。",
+      "options": [
+        {
+          "label": "A",
+          "content": "a c g a b f h"
+        },
+        {
+          "label": "B",
+          "content": "a d b a g b b"
+        },
+        {
+          "label": "C",
+          "content": "a f b e a g d"
+        },
+        {
+          "label": "D",
+          "content": "a f e e f g d"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "按固定长度切分而不在叶码处重新开始",
+          "explanation": "各码长度不同，每次读到完整码字就回码树根，不能机械用相同位数切块来得到A。"
+        },
+        "B": {
+          "title": "把一个已匹配码字的位重复用于下一字符",
+          "explanation": "0100先匹配a，随后011匹配f；不能跨越已结束的码字边界重组为B的字符次序。"
+        },
+        "C": {
+          "title": "局部码字混用导致中间字符不符",
+          "explanation": "第三段是001对应e而非b的10；从确定边界继续唯一译码，不能任意换成C。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "前缀码没有一个完整码字是另一个的开头，遇到叶就可立即输出。"
+        },
+        {
+          "level": 2,
+          "text": "每输出一字符后从码树根处理下一位，记录每次消耗的位数。"
+        },
+        {
+          "level": 3,
+          "text": "另用一个短的变长前缀码串，分别画叶边界，检查同一位能否被两个码字重复使用。"
+        }
+      ],
+      "solution": "按完整码字切为0100、011、001、001、011、11、0101，依次为a、f、e、e、f、g、d，故D。前缀性质保证从串首开始的分段唯一。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将整个编码串最后一位1改为0，码表不变且仍从串首译码，结果为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "a f e e f g a"
+          },
+          {
+            "label": "B",
+            "content": "a f e e f g d"
+          },
+          {
+            "label": "C",
+            "content": "a f b e a g d"
+          },
+          {
+            "label": "D",
+            "content": "a d b a g b b"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅翻转最后一位。",
+        "explanation": "前面六个码字不变，最后0101变为0100，从d改为a，因此为a、f、e、e、f、g、a。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt03-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "prefix-code-bitstream-decode",
+            "input": {
+              "codes": {
+                "a": "0100",
+                "b": "10",
+                "c": "0000",
+                "d": "0101",
+                "e": "001",
+                "f": "011",
+                "g": "11",
+                "h": "0001"
+              },
+              "bits": "0100011001001011110100"
+            },
+            "goal": "逐位走码树并在每个叶回根",
+            "pauseQuestion": "匹配到一个完整码字后，下一位应继续留在原叶还是从根开始？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt03-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "prefix-code-bitstream-decode",
+          "input": {
+            "codes": {
+              "a": "0100",
+              "b": "10",
+              "c": "0000",
+              "d": "0101",
+              "e": "001",
+              "f": "011",
+              "g": "11",
+              "h": "0001"
+            },
+            "bits": "0100011001001011110101"
+          },
+          "goal": "逐位走码树并在每个叶回根",
+          "pauseQuestion": "匹配到一个完整码字后，下一位应继续留在原叶还是从根开始？"
+        }
+      ]
+    },
+    {
+      "id": "tt03-04",
+      "topic": "前缀合法不等于哈夫曼最优",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2018",
+        "questionNumber": "5",
+        "label": "2018 年 408 真题 第 5 题（明确频次与各码字对应）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2018/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "字符a、b、c、d、e、f频次依次6、3、8、2、10、4。四项按相同字符顺序列码字，哪组可能由标准二叉哈夫曼构造产生？0/1子树方向可选，字符顺序不限定左右位置。",
+      "options": [
+        {
+          "label": "A",
+          "content": "`00,1011,01,1010,11,100`"
+        },
+        {
+          "label": "B",
+          "content": "`00,100,110,000,0010,01`"
+        },
+        {
+          "label": "C",
+          "content": "`10,1011,11,0011,00,010`"
+        },
+        {
+          "label": "D",
+          "content": "`0011,10,11,0010,01,000`"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "只看码字互异而漏前缀包含",
+          "explanation": "B中00是000和0010的前缀，不能作为前缀码，更不可能是该哈夫曼编码。"
+        },
+        "C": {
+          "title": "漏检短码已在长码开始出现",
+          "explanation": "C中10是1011的前缀，00也是0011的前缀，不满足码字叶的前缀性质。"
+        },
+        "D": {
+          "title": "只检查前缀合法而没有检验最优频次安排",
+          "explanation": "D虽前缀合法，但WPL为86，大于最优80；a频6却比b频3用更长码，交换二者即可降低代价。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先逐对检验是否前缀码，再检查权与码长的总代价或实际最小二根合并。"
+        },
+        {
+          "level": 2,
+          "text": "编码合法只意味着能唯一译码，不意味着在给定频次下最优。"
+        },
+        {
+          "level": 3,
+          "text": "另用两条频次不同的叶交换码字，保持码字集合不变，比较WPL如何随频次与长度配对变化。"
+        }
+      ],
+      "solution": "最小合并权依次5、9、14、19、33，总WPL80。A前缀合法，长度2、4、2、4、2、3与该合并树相容，WPL80；B、C有前缀冲突，D为86非最优，所以A。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将D方案里a与b的码字互换，新D为 `10,0011,11,0010,01,000`，同频次下它能否作为哈夫曼编码？",
+        "options": [
+          {
+            "label": "A",
+            "content": "可以，前缀合法且与最小合并树相容"
+          },
+          {
+            "label": "B",
+            "content": "不可以，高频字符不能和其他字符同层"
+          },
+          {
+            "label": "C",
+            "content": "不可以，码字必须按字符字母顺序排列"
+          },
+          {
+            "label": "D",
+            "content": "不可以，哈夫曼必须全为等长码"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅在原D中互换a、b两个码字，不改变码字集合或频次。",
+        "explanation": "前缀集合不变；交换使频6的a从4位变2位、频3的b从2位变4位，WPL降低6到80。其树先合d2与b3，再与f4合9，a6与c8合14，9与e10合19，最后33，确与标准哈夫曼相容。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt03-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "huffman-prefix-and-cost-audit",
+            "input": {
+              "characters": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e",
+                "f"
+              ],
+              "weights": [
+                6,
+                3,
+                8,
+                2,
+                10,
+                4
+              ],
+              "codes": [
+                "10",
+                "0011",
+                "11",
+                "0010",
+                "01",
+                "000"
+              ]
+            },
+            "goal": "先判前缀再核对WPL及标准合并",
+            "pauseQuestion": "两个方案都能唯一译码，是否就一定有同样的压缩代价？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt03-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "huffman-prefix-and-cost-audit",
+          "input": {
+            "characters": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e",
+              "f"
+            ],
+            "weights": [
+              6,
+              3,
+              8,
+              2,
+              10,
+              4
+            ],
+            "codesByChoice": [
+              [
+                "00",
+                "1011",
+                "01",
+                "1010",
+                "11",
+                "100"
+              ],
+              [
+                "00",
+                "100",
+                "110",
+                "000",
+                "0010",
+                "01"
+              ],
+              [
+                "10",
+                "1011",
+                "11",
+                "0011",
+                "00",
+                "010"
+              ],
+              [
+                "0011",
+                "10",
+                "11",
+                "0010",
+                "01",
+                "000"
+              ]
+            ]
+          },
+          "goal": "先判前缀再核对WPL及标准合并",
+          "pauseQuestion": "两个方案都能唯一译码，是否就一定有同样的压缩代价？"
+        }
+      ]
+    },
+    {
+      "id": "tt03-05",
+      "topic": "二叉哈夫曼总结点与字符数",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2019",
+        "questionNumber": "3",
+        "label": "2019 年 408 真题 第 3 题（明确只计实结点）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2019/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "互异字符各占一个真实叶，用标准二叉合并构造哈夫曼树，不加额外外部空结点。树共有115个实结点，字符数为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "56"
+        },
+        {
+          "label": "B",
+          "content": "57"
+        },
+        {
+          "label": "C",
+          "content": "58"
+        },
+        {
+          "label": "D",
+          "content": "60"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把总结点直接减去一半却少计根关系",
+          "explanation": "非叶都有两个孩子，叶数比非叶数多1，不能只做近似分半后再少取。"
+        },
+        "B": {
+          "title": "把内部结点数当字符叶数",
+          "explanation": "115个实结点对应57个非叶与58个叶，字符在叶，不能取内部结点57。"
+        },
+        "D": {
+          "title": "用容量或任意满层规模代替精确实结点关系",
+          "explanation": "该树不必完全，但非叶双孩子关系足以精确列式，不能以接近某个规模的60代替。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "把叶数和双孩子非叶数分别设未知量。"
+        },
+        {
+          "level": 2,
+          "text": "边既可按每非叶的两个孩子计，也可按总结点减一计。"
+        },
+        {
+          "level": 3,
+          "text": "另取两字符的三结点哈夫曼树，检查叶与非叶差额，再把一片叶展开成两个叶，观察关系如何保持。"
+        }
+      ],
+      "solution": "若叶数为n、非叶为i，边数既为2i也为n加i减1，得n为i加1，总点数为2n减1。115对应58个叶，即58个字符。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将实结点总数由115改为117，其他约定不变，字符数为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "57"
+          },
+          {
+            "label": "B",
+            "content": "58"
+          },
+          {
+            "label": "C",
+            "content": "59"
+          },
+          {
+            "label": "D",
+            "content": "60"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅增加两个实结点。",
+        "explanation": "同一双孩子关系给出叶数为117加1再除2，即59，不能把新增两个实结点都当新增字符。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt03-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "huffman-full-binary-node-count",
+            "input": {
+              "totalRealNodes": 117,
+              "everyInternalDegree": 2,
+              "query": "leaf-count"
+            },
+            "goal": "分别按边和实结点统计叶与非叶",
+            "pauseQuestion": "增加一次内部二路展开，叶数与总结点数分别增加多少？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt03-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "huffman-full-binary-node-count",
+          "input": {
+            "totalRealNodes": 115,
+            "everyInternalDegree": 2,
+            "query": "leaf-count"
+          },
+          "goal": "分别按边和实结点统计叶与非叶",
+          "pauseQuestion": "增加一次内部二路展开，叶数与总结点数分别增加多少？"
+        }
+      ]
+    },
+    {
+      "id": "tt03-06",
+      "topic": "最小WPL按合并权求和",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2021",
+        "questionNumber": "5",
+        "label": "2021 年 408 真题 第 5 题（明确叶权与边深度）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2021/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "二叉树的5个真实叶正权为10、12、16、21、30。WPL按根到叶边数乘叶权再求和，根深度0。最小WPL是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "89"
+        },
+        {
+          "label": "B",
+          "content": "200"
+        },
+        {
+          "label": "C",
+          "content": "208"
+        },
+        {
+          "label": "D",
+          "content": "289"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把根总权当作所有叶只走一条边",
+          "explanation": "89只是所有叶权之和，实际多个叶要经过更多层，不能替代加权路径和。"
+        },
+        "C": {
+          "title": "没有始终选两个当前最小根合并",
+          "explanation": "应将新生成的合并权与原剩余权一起参与下一次最小选择，任意按原顺序相加会偏离最优。"
+        },
+        "D": {
+          "title": "把根权重复计入已有合并总和",
+          "explanation": "WPL等于各次内部合并权累计，不应在已得到总量后再额外添加整树根权。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "每次取当前两最小权，合并结果也作为候选重新放回。"
+        },
+        {
+          "level": 2,
+          "text": "分别记下每次新内部结点的权，最终求它们的和。"
+        },
+        {
+          "level": 3,
+          "text": "用另一个三叶例子同时按叶深加权和按内部合并权求和，验证每条边的贡献被计了几次。"
+        }
+      ],
+      "solution": "合并10、12得22；16、21得37；22、30得52；37、52得89，总和22加37加52加89为200。也可按叶深度直接加权得到同值。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将最后一个叶权30改为31，其余权和计数口径不变，最小WPL为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "200"
+          },
+          {
+            "label": "B",
+            "content": "201"
+          },
+          {
+            "label": "C",
+            "content": "202"
+          },
+          {
+            "label": "D",
+            "content": "208"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅增加最后一个叶权1。",
+        "explanation": "合并依次为22、37、53、90，总和202；本例原来30所在叶深度2且新合并顺序未变，增加1会增WPL2，仍需实际复核过程。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt03-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "huffman-merge-sum-wpl",
+            "input": {
+              "weights": [
+                10,
+                12,
+                16,
+                21,
+                31
+              ],
+              "arity": 2,
+              "depthUnit": "edge"
+            },
+            "goal": "对照内部合并累计与叶深加权",
+            "pauseQuestion": "合并出来的新权是否也要和原始剩余叶一起竞争最小值？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt03-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "huffman-merge-sum-wpl",
+          "input": {
+            "weights": [
+              10,
+              12,
+              16,
+              21,
+              30
+            ],
+            "arity": 2,
+            "depthUnit": "edge"
+          },
+          "goal": "对照内部合并累计与叶深加权",
+          "pauseQuestion": "合并出来的新权是否也要和原始剩余叶一起竞争最小值？"
+        }
+      ]
+    },
+    {
+      "id": "tt03-07",
+      "topic": "最多三孩子的高度容量界",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2022",
+        "questionNumber": "4",
+        "label": "2022 年 408 真题 第 4 题（明确最多三孩与结点层高度）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2022/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "每结点最多3个孩子的有根树有244个结点，树高按最长根叶路径的结点数，单叶树高1。最少高度为？不要求每个非叶恰好3孩。",
+      "options": [
+        {
+          "label": "A",
+          "content": "8"
+        },
+        {
+          "label": "B",
+          "content": "7"
+        },
+        {
+          "label": "C",
+          "content": "6"
+        },
+        {
+          "label": "D",
+          "content": "5"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把可能高度当最少高度",
+          "explanation": "高度8当然可容纳，但更低层数已有足够容量，应先找刚覆盖244的最小层数。"
+        },
+        "B": {
+          "title": "没有与逐层最大容量的边界比较",
+          "explanation": "高度7容量足够，却不是首次足够，需要继续检查前一高度是否也可容纳。"
+        },
+        "D": {
+          "title": "把5层满三叉容量高估",
+          "explanation": "5层容量仅1加3加9加27加81等于121，放不下244，因此高度5不可能。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "每增加一层，最多结点数比上一层乘多少？"
+        },
+        {
+          "level": 2,
+          "text": "把从根层开始的几何级数相加，找首次达到指定总数的高度。"
+        },
+        {
+          "level": 3,
+          "text": "另用一个更小的结点总数，先在某高度满树中尝试按层填入，再检查降低一层是否容量不足。"
+        }
+      ],
+      "solution": "高h最多为 `(3^h-1)/2` 个结点。高5最多121，高6最多364，244介于两者之间；按层填充可在6层内放下，所以最少6。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将结点总数244改为121，其余条件不变，最少高度为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "8"
+          },
+          {
+            "label": "B",
+            "content": "7"
+          },
+          {
+            "label": "C",
+            "content": "6"
+          },
+          {
+            "label": "D",
+            "content": "5"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "仅更换总结点数。",
+        "explanation": "高4最多40点，高5最多121点且可取完整5层，故最少5。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt03-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "kary-tree-capacity-height",
+            "input": {
+              "arityMax": 3,
+              "nodeCount": 121,
+              "heightUnit": "node-levels"
+            },
+            "goal": "用最大层容量给高度下界并构造填充",
+            "pauseQuestion": "每个结点最多3孩子，是否意味着每个非叶必须都有3孩子？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt03-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "kary-tree-capacity-height",
+          "input": {
+            "arityMax": 3,
+            "nodeCount": 244,
+            "heightUnit": "node-levels"
+          },
+          "goal": "用最大层容量给高度下界并构造填充",
+          "pauseQuestion": "每个结点最多3孩子，是否意味着每个非叶必须都有3孩子？"
+        }
+      ]
+    },
+    {
+      "id": "tt03-08",
+      "topic": "定长码层数与字符频次无关",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2022",
+        "questionNumber": "5",
+        "label": "2022 年 408 真题 第 5 题（明确实际前缀树与最短定长码）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2022/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站补明定长采用最短统一码长，树只保留实际码字前缀；四个断言和正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "同一n个字符正频次，n大于2。T1为标准二叉哈夫曼码树，T2为最短统一码长的二进制定长码前缀树，只保留实际使用码字的前缀路径。下列哪项必然正确？",
+      "options": [
+        {
+          "label": "A",
+          "content": "T1与T2实结点数一定相同"
+        },
+        {
+          "label": "B",
+          "content": "T1高度一定大于T2"
+        },
+        {
+          "label": "C",
+          "content": "频次不同的字符在T1一定不同层"
+        },
+        {
+          "label": "D",
+          "content": "频次不同的字符在T2一定同层"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把同样叶数当同样内部结点数",
+          "explanation": "哈夫曼非叶都双孩子，定长实际码前缀树可有单孩子。例如3字符2位定长可需6点，而哈夫曼为5点，不一定相同。"
+        },
+        "B": {
+          "title": "把可能有长码尾部当必然更高",
+          "explanation": "3字符哈夫曼可最大码长2，与最短定长2位同高；并非所有频次输入都严格增加树高。"
+        },
+        "C": {
+          "title": "把权值严格不同误当码长必须严格不同",
+          "explanation": "较小不同权可能在同一合并对的两个叶上，码长相同；哈夫曼优化加权总和，不强制每种频次占不同层。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "定长所固定的是每个字符码字的位数，与字符出现概率是不同概念。"
+        },
+        {
+          "level": 2,
+          "text": "区分所有树实结点、叶的个数和最长根叶路径三个量。"
+        },
+        {
+          "level": 3,
+          "text": "另取三个字符画一个二路合并码树与一个两位定长前缀树，逐一比较节点总数、最大深度和同层叶的频次。"
+        }
+      ],
+      "solution": "定长码所有字符码字长度相同，因此字符叶深度相同，无论频次如何，D必然。哈夫曼不同频次可在同层，且两树节点数或高度不必满足A、B的绝对关系。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将输入具体限定为3个等频字符，仍用最短定长码，树高按根层1计。两树最大高度关系为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "两者均为3层"
+          },
+          {
+            "label": "B",
+            "content": "T1必为4层而T2为3层"
+          },
+          {
+            "label": "C",
+            "content": "T1必低于T2"
+          },
+          {
+            "label": "D",
+            "content": "等频时不能构造哈夫曼码"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅把输入具体化为3个相同正频次字符，并观察最大树高。",
+        "explanation": "三叶哈夫曼码长为1、2、2，最大边深2；最短定长码长2，最大边深也2，两树均3层。它们可以同高，但节点数仍未必相同。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt03-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "huffman-versus-fixed-code-trie",
+            "input": {
+              "weights": [
+                1,
+                1,
+                1
+              ],
+              "fixedCodes": [
+                "00",
+                "01",
+                "10"
+              ],
+              "countActualTrieOnly": true,
+              "heightUnit": "node-levels"
+            },
+            "goal": "分别统计字符叶深、最大高度和内部结点数",
+            "pauseQuestion": "相同数量字符的两棵码树，是否一定有相同内部结构？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt03-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "huffman-versus-fixed-code-trie",
+          "input": {
+            "weights": [
+              1,
+              2,
+              3
+            ],
+            "fixedCodes": [
+              "00",
+              "01",
+              "10"
+            ],
+            "countActualTrieOnly": true
+          },
+          "goal": "分别统计字符叶深、最大高度和内部结点数",
+          "pauseQuestion": "相同数量字符的两棵码树，是否一定有相同内部结构？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "tt03-09",
+      "topic": "哈夫曼同深度的字符叶",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2026",
+        "questionNumber": "5",
+        "label": "2026 年 408 真题 第 5 题（明确字符真实叶与内部同权身份）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2026/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站将所列a至g权明确为真实字符叶，内部权另由合并生成；题号、四项和答案核对不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "七字符 `a,b,c,d,e,f,g` 的真实叶正权依次为 `1,2,4,5,8,10,12`，用标准二叉最小二根合并使WPL最小。允许同权内部根交换左右，问除e外哪些字符叶与e同深度？根深度0按边计。",
+      "options": [
+        {
+          "label": "A",
+          "content": "d"
+        },
+        {
+          "label": "B",
+          "content": "g"
+        },
+        {
+          "label": "C",
+          "content": "d、f"
+        },
+        {
+          "label": "D",
+          "content": "f、g"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把权接近当成码长相同",
+          "explanation": "d5较早并入更深的子树，最终比e多一条边，不能仅按数值接近判断。"
+        },
+        "B": {
+          "title": "只找到一个同层叶而漏另一个",
+          "explanation": "g确与e同层，但e与f在同一次8加10合并下也同父同层，不能漏f。"
+        },
+        "C": {
+          "title": "把内部权12与真实字符叶g混淆",
+          "explanation": "d所在分支合并得到内部12，并不意味着d本身位于该内部结点层；f同层但d更深，g才同e层。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "保留叶的字符身份，不要只记合并后出现的相同数值。"
+        },
+        {
+          "level": 2,
+          "text": "每次合并都会让其整棵子树中原有叶深度统一增加一。"
+        },
+        {
+          "level": 3,
+          "text": "另用一组会产生内部权与某原叶同权的小例子，分别标记两者身份，避免把内部节点当字符叶。"
+        }
+      ],
+      "solution": "合并权依次3、7、12、18、24、42。最终e8与f10在18下，g12与另一内部12在24下，所以e、f、g边深均2；d深3、c深4、a和b深5，故f、g。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将e的权从8改为7，不额外固定等权时的选择身份。是否仍保证e与f、g同深度？",
+        "options": [
+          {
+            "label": "A",
+            "content": "保证，所有最小WPL树的e都在深2"
+          },
+          {
+            "label": "B",
+            "content": "不保证，合法等权选择可产生不同深度关系"
+          },
+          {
+            "label": "C",
+            "content": "无法构造，因为哈夫曼禁止重复权"
+          },
+          {
+            "label": "D",
+            "content": "必须把全部字符改成等长码"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅降低e权1并保留合法等权分支选择。",
+        "explanation": "先合1与2得3、再合3与4得7后，队列有d5、e7、内部7、f10、g12。若5与内部7合，则e可深2；若5与e7合，e可深3，后续两条合并均可达到最小WPL104，因此原同层保证不再成立。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt03-09v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "huffman-leaf-depth-with-ties",
+            "input": {
+              "weightsByCharacter": {
+                "a": 1,
+                "b": 2,
+                "c": 4,
+                "d": 5,
+                "e": 7,
+                "f": 10,
+                "g": 12
+              },
+              "merge": "two-smallest",
+              "inspectDepthOf": "e",
+              "allowAllEqualWeightChoices": true
+            },
+            "goal": "标记原叶与同权内部根并枚举平局分支",
+            "pauseQuestion": "合并出一个权值恰好等于原字符权，是否意味着两个对象可以当同一叶？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt03-09-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "huffman-leaf-depth-with-ties",
+          "input": {
+            "weightsByCharacter": {
+              "a": 1,
+              "b": 2,
+              "c": 4,
+              "d": 5,
+              "e": 8,
+              "f": 10,
+              "g": 12
+            },
+            "merge": "two-smallest",
+            "inspectDepthOf": "e",
+            "allowAllEqualWeightChoices": true
+          },
+          "goal": "标记原叶与同权内部根并枚举平局分支",
+          "pauseQuestion": "合并出一个权值恰好等于原字符权，是否意味着两个对象可以当同一叶？"
+        }
+      ]
+    },
+    {
+      "id": "tt03-10",
+      "topic": "步长3顺序查找与折半的适配",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2016",
+        "questionNumber": "9",
+        "label": "2016 年 408 真题 第 9 题（据收录修正边界与情形量词）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2016/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站原伪码在k=0且首项不匹配时可能读A[-1]，本站补k>=1/k>=2短路保护并用较宽k表示；原选项缺失目标配合有可能也可含开头快速失败，本站将四情形重写为明确量词的判断，保留步长/回查和正确项B，不逐字复现不安全边界"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "互异整数升序数组长度n大于1000，采用下面补齐安全下标的版本，逻辑下标不溢出，`&&` 短路；每次与实际数组关键字作 `<` 或 `==` 比较均计次。与普通折半查找相比，下列哪项关于比较次数的判断正确？\n\n```c\nint search(const int A[], int n, int x) {\n  long long k = 0;\n  while (k < n && A[k] < x) k = k + 3;\n  if (k < n && A[k] == x) return 1;\n  if (k >= 1 && k - 1 < n && A[k - 1] == x) return 1;\n  if (k >= 2 && k - 2 < n && A[k - 2] == x) return 1;\n  return 0;\n}\n```",
+      "options": [
+        {
+          "label": "A",
+          "content": "不论位置，只要目标缺失就一定更少"
+        },
+        {
+          "label": "B",
+          "content": "目标接近开头时，存在比较更少的情形"
+        },
+        {
+          "label": "C",
+          "content": "目标接近结尾时，一定比折半更少"
+        },
+        {
+          "label": "D",
+          "content": "目标位于中间时，一定比折半更少"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把某些失败目标也可很快误作所有失败都快",
+          "explanation": "目标大于最大值时仍要跨过整个数组，不能因为一些失败在开头就停而概括为所有缺失目标。"
+        },
+        "C": {
+          "title": "把固定步长当对数区间缩小",
+          "explanation": "接近尾部要跳过线性数量样点，步长3只改变常数，不会像折半那样每次把区间减半。"
+        },
+        "D": {
+          "title": "忽略扫描仍须走过中间之前的样点",
+          "explanation": "到数组中部通常也要线性数量的前向跳步，不具折半对数查找的普遍优势。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先观察k每轮怎样变化，是加常数还是缩小候选区间比例。"
+        },
+        {
+          "level": 2,
+          "text": "分别让目标位于首项与末项，记录到目标附近之前需要检查多少样点。"
+        },
+        {
+          "level": 3,
+          "text": "另取长度更小的有序表，对同一目标分别列固定步长访问下标与折半中点下标，不把步长常数误当增长阶变化。"
+        }
+      ],
+      "solution": "接近开头的成功目标可能只需一两轮和少量回查，而折半仍可能沿多层中点走到开头，所以B是可能更少的场景。接近尾部或中间则需线性数量跳步，不能靠固定步长取得对数缩小。安全保护还防止x小于首项时读负下标。",
+      "viz": null,
+      "variant": {
+        "stem": "保持同一安全代码，仅把成功目标固定为数组最后一项，随n增长其关键字比较次数紧界为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`Θ(1)`"
+          },
+          {
+            "label": "B",
+            "content": "`Θ(log n)`"
+          },
+          {
+            "label": "C",
+            "content": "`Θ(n)`"
+          },
+          {
+            "label": "D",
+            "content": "`Θ(n log n)`"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将目标位置限定为末项并改问同代码的比较增长。",
+        "explanation": "k以3递增，需要与线性数量的采样关键字比较才到尾部附近，再至多检查三个位置，故紧界线性；常数跳步并未把区间按比例缩小。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt03-10v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "stride-three-search-safe-bounds",
+            "input": {
+              "length": 1001,
+              "valuesRule": "A[i]=i+1",
+              "target": 1001,
+              "stride": 3,
+              "guardNegativeIndices": true
+            },
+            "goal": "并排记录跳步访问与折半访问并验边界",
+            "pauseQuestion": "每次跳过固定三个位置，候选规模是按常数减少还是按比例减少？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt03-10-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "stride-three-search-safe-bounds",
+          "input": {
+            "length": 1001,
+            "valuesRule": "A[i]=i+1",
+            "target": 1,
+            "stride": 3,
+            "guardNegativeIndices": true
+          },
+          "goal": "并排记录跳步访问与折半访问并验边界",
+          "pauseQuestion": "每次跳过固定三个位置，候选规模是按常数减少还是按比例减少？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    }
+  ]
+}

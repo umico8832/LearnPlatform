@@ -1,0 +1,1529 @@
+{
+  "schemaVersion": 1,
+  "section": "排序真题四：趟定义、间隔状态、败者树与多关键字",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "so04-01",
+      "topic": "从三趟状态识别冒泡",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2010",
+        "questionNumber": "11",
+        "label": "2010 年 408 真题 第 11 题（明确各候选趟模型）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2010/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "初始数组 `2,12,16,88,5,10`，前三趟分别为 `2,12,16,5,10,88`；`2,12,5,10,16,88`；`2,5,10,12,16,88`。冒泡按从左到右相邻比较把最大待定值送尾；归并从单项段逐趟翻倍；基数按十进制稳定LSD；希尔每趟对一个正整数间隔的各组作完整插入。可能采用哪种方法？",
+      "options": [
+        {
+          "label": "A",
+          "content": "冒泡"
+        },
+        {
+          "label": "B",
+          "content": "希尔"
+        },
+        {
+          "label": "C",
+          "content": "二路归并"
+        },
+        {
+          "label": "D",
+          "content": "基数"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "只因某个结果有局部有序组就判希尔",
+          "explanation": "必须由给定初始数组实际执行该间隔得到指定首趟；逐个检查有效间隔均不匹配，不能只看局部巧合。"
+        },
+        "C": {
+          "title": "忽略单项段初始归并的第一趟",
+          "explanation": "原数组三个相邻二元组本已分别有序，首趟两两归并应保持原数组，不能生成题目首趟。"
+        },
+        "D": {
+          "title": "把完整数值大小混入个位桶顺序",
+          "explanation": "LSD首趟按个位收集会先取个位0的10，不会保持本题首项2，因此不匹配。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "从首趟开始实际执行每个候选的标准步骤，而非只看最终接近有序。"
+        },
+        {
+          "level": 2,
+          "text": "相邻大值向尾逐项移动，会给未定前缀留下何种状态？"
+        },
+        {
+          "level": 3,
+          "text": "另取一个较短数组，分别执行各候选的一趟；用表格记录每步修改哪些相邻或间隔位置，再与原题完整趟后状态对照。"
+        }
+      ],
+      "solution": "左到右冒泡首趟把88送尾，次趟把16送到它前面，第三趟把12送到下一个最终位置，三组状态逐步一致。其他标准候选在首趟就与给定状态不符。",
+      "viz": null,
+      "variant": {
+        "stem": "只把冒泡扫描方向改为从右到左，每趟把最小待定值送到前端。从同一初始数组执行一趟，结果为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`2,12,16,5,10,88`"
+          },
+          {
+            "label": "B",
+            "content": "`2,5,12,16,88,10`"
+          },
+          {
+            "label": "C",
+            "content": "`2,5,10,12,16,88`"
+          },
+          {
+            "label": "D",
+            "content": "`10,2,12,5,16,88`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅改变冒泡扫描方向，观察该方向的新首趟。",
+        "explanation": "从右向左比较相邻项，5依次越过88、16、12，直到2之后，得到2、5、12、16、88、10。扫描方向和趟含义必须按题目给定。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so04-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "sorting-observed-pass-matching",
+            "input": {
+              "initial": [
+                2,
+                12,
+                16,
+                88,
+                5,
+                10
+              ],
+              "passes": 1,
+              "bubbleDirection": "right-to-left"
+            },
+            "goal": "逐趟从初始状态复算而非只检查局部有序",
+            "pauseQuestion": "同样叫一趟冒泡，方向改变后固定的是前端最小值还是尾端最大值？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so04-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "sorting-observed-pass-matching",
+          "input": {
+            "initial": [
+              2,
+              12,
+              16,
+              88,
+              5,
+              10
+            ],
+            "observedPasses": [
+              [
+                2,
+                12,
+                16,
+                5,
+                10,
+                88
+              ],
+              [
+                2,
+                12,
+                5,
+                10,
+                16,
+                88
+              ],
+              [
+                2,
+                5,
+                10,
+                12,
+                16,
+                88
+              ]
+            ],
+            "bubbleDirection": "left-to-right"
+          },
+          "goal": "逐趟从初始状态复算而非只检查局部有序",
+          "pauseQuestion": "同样叫一趟冒泡，方向改变后固定的是前端最小值还是尾端最大值？"
+        }
+      ]
+    },
+    {
+      "id": "so04-02",
+      "topic": "LSD第二位排序保留个位次序",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2013",
+        "questionNumber": "11",
+        "label": "2013 年 408 真题 第 11 题（明确十进制前导零与稳定LSD）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2013/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "三个十进制字符表示的关键字为 `110,119,007,911,114,120,122`，007表示十进制7的三位形式。作稳定LSD基数排序，先个位后十位，每位按桶0至9收集。第二趟后序列为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`007,110,119,114,911,120,122`"
+        },
+        {
+          "label": "B",
+          "content": "`007,110,119,114,911,122,120`"
+        },
+        {
+          "label": "C",
+          "content": "`007,110,911,114,119,120,122`"
+        },
+        {
+          "label": "D",
+          "content": "`110,120,911,122,114,007,119`"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "在同一十位桶中未保留个位已排次序",
+          "explanation": "十位为1的桶必须保留第一趟留下的110、911、114、119顺序，不能把119提前到114、911之前。"
+        },
+        "B": {
+          "title": "同时打乱十位1与十位2桶内稳定顺序",
+          "explanation": "除前述1桶外，120在第一趟先于122，第二趟同十位2仍需保持，B均不满足。"
+        },
+        "D": {
+          "title": "停在只处理个位后的状态",
+          "explanation": "D对应第一趟个位分配收集，尚未完成十位桶的稳定再排序。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先完整做个位趟，再用该结果而非原数组做十位趟。"
+        },
+        {
+          "level": 2,
+          "text": "第二趟同十位桶内，应按上一趟已经形成的先后稳定收集。"
+        },
+        {
+          "level": 3,
+          "text": "用另一个相同十位但个位不同的两记录例子，检查为何第二位排序不能抹掉低位已建立的次序。"
+        }
+      ],
+      "solution": "个位后为110、120、911、122、114、007、119。十位0先收007；十位1按已有次序收110、911、114、119；十位2收120、122，因此第二趟为C。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把观察点由第二趟改为第一趟结束，四个选项不变，序列为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`007,110,119,114,911,120,122`"
+          },
+          {
+            "label": "B",
+            "content": "`007,110,119,114,911,122,120`"
+          },
+          {
+            "label": "C",
+            "content": "`007,110,911,114,119,120,122`"
+          },
+          {
+            "label": "D",
+            "content": "`110,120,911,122,114,007,119`"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "仅将完成的位数由2改为1。",
+        "explanation": "个位0桶为110、120，1桶为911，2桶为122，4桶为114，7桶为007，9桶为119，按序收集即D。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so04-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "lsd-multiple-digit-passes",
+            "input": {
+              "codes": [
+                "110",
+                "119",
+                "007",
+                "911",
+                "114",
+                "120",
+                "122"
+              ],
+              "radix": 10,
+              "digitOrder": [
+                "units",
+                "tens"
+              ],
+              "stopAfter": 1
+            },
+            "goal": "每位稳定分配并保存完整趟后状态",
+            "pauseQuestion": "同一新桶里的元素顺序，来自原输入还是上一趟输出？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so04-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "lsd-multiple-digit-passes",
+          "input": {
+            "codes": [
+              "110",
+              "119",
+              "007",
+              "911",
+              "114",
+              "120",
+              "122"
+            ],
+            "radix": 10,
+            "digitOrder": [
+              "units",
+              "tens"
+            ],
+            "stopAfter": 2
+          },
+          "goal": "每位稳定分配并保存完整趟后状态",
+          "pauseQuestion": "同一新桶里的元素顺序，来自原输入还是上一趟输出？"
+        }
+      ]
+    },
+    {
+      "id": "so04-03",
+      "topic": "快排第二趟需要新的归位枢轴",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2014",
+        "questionNumber": "11",
+        "label": "2014 年 408 真题 第 11 题（明确快排按全部活动段计趟）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2014/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站补明一趟覆盖当前全部非平凡段，采用完整枢轴归位不变量的过程存在性判断；不绑定某个首尾枢轴实现"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "互异键升序快排，一趟处理全部当前长度至少2的未定段，每段选一枢轴并完整归位，左侧全小于它、右侧全大于它；单项段无需划分。不固定首尾选枢轴或具体交换实现，只按归位不变量判断是否存在相容过程。以下哪组不可能是第二趟结束状态？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`2,3,5,4,6,7,9`"
+        },
+        {
+          "label": "B",
+          "content": "`2,7,5,6,4,3,9`"
+        },
+        {
+          "label": "C",
+          "content": "`3,2,5,4,7,6,9`"
+        },
+        {
+          "label": "D",
+          "content": "`4,2,3,5,7,6,9`"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把仍有局部逆序误判为整体不可能",
+          "explanation": "两趟后部分段可以尚未有序；A可选首趟枢轴2、次趟右段枢轴3，不违反归位不变量。"
+        },
+        "B": {
+          "title": "忽略边界枢轴可只留下一个待定段",
+          "explanation": "B可首趟选2、次趟在余段选9，虽然中段仍乱序，也与两趟过程相容。"
+        },
+        "D": {
+          "title": "把仅有两个分隔点当成不足",
+          "explanation": "D可首趟选9，再在左侧余段选5，恰有可用的第二趟归位枢轴，仍可相容。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "已被选为枢轴的位置必须同时通过左右所有键的大小检查。"
+        },
+        {
+          "level": 2,
+          "text": "第二趟不能只复用首趟同一个枢轴，尚未完成的非平凡段需要新的归位点。"
+        },
+        {
+          "level": 3,
+          "text": "另用七个互异值找出所有左右分隔位置，再试选首趟根分隔点，检查下一趟各段是否有可选枢轴。"
+        }
+      ],
+      "solution": "C只有末尾9同时满足左小右大。若首趟以9归位，左边六项仍是非平凡段，第二趟必须再归位一个枢轴，却找不到其他合法分隔点，因此不可能；其余三项各有上述两趟见证。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将观察点从第二趟改为第一趟，其余四个候选状态不变，哪种结论正确？",
+        "options": [
+          {
+            "label": "A",
+            "content": "四组都可能"
+          },
+          {
+            "label": "B",
+            "content": "只有C可能"
+          },
+          {
+            "label": "C",
+            "content": "只有A可能"
+          },
+          {
+            "label": "D",
+            "content": "四组都不可能"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将完整划分波次由2减为1。",
+        "explanation": "四组末项9都大于前面所有键，均可作为首趟已归位枢轴，第一趟并不要求左侧余段内部有序，所以四组都与一次完整划分相容。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so04-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "quick-partition-wave-feasibility",
+            "input": {
+              "states": [
+                [
+                  2,
+                  3,
+                  5,
+                  4,
+                  6,
+                  7,
+                  9
+                ],
+                [
+                  2,
+                  7,
+                  5,
+                  6,
+                  4,
+                  3,
+                  9
+                ],
+                [
+                  3,
+                  2,
+                  5,
+                  4,
+                  7,
+                  6,
+                  9
+                ],
+                [
+                  4,
+                  2,
+                  3,
+                  5,
+                  7,
+                  6,
+                  9
+                ]
+              ],
+              "waves": 1,
+              "distinct": true,
+              "scope": "all-active-nontrivial-segments"
+            },
+            "goal": "用完整分区树见证检查波次，而非只数局部已排序项",
+            "pauseQuestion": "第一趟留下的非平凡段，第二趟是否可以完全跳过？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so04-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "quick-partition-wave-feasibility",
+          "input": {
+            "states": [
+              [
+                2,
+                3,
+                5,
+                4,
+                6,
+                7,
+                9
+              ],
+              [
+                2,
+                7,
+                5,
+                6,
+                4,
+                3,
+                9
+              ],
+              [
+                3,
+                2,
+                5,
+                4,
+                7,
+                6,
+                9
+              ],
+              [
+                4,
+                2,
+                3,
+                5,
+                7,
+                6,
+                9
+              ]
+            ],
+            "waves": 2,
+            "distinct": true,
+            "scope": "all-active-nontrivial-segments"
+          },
+          "goal": "用完整分区树见证检查波次，而非只数局部已排序项",
+          "pauseQuestion": "第一趟留下的非平凡段，第二趟是否可以完全跳过？"
+        }
+      ]
+    },
+    {
+      "id": "so04-04",
+      "topic": "希尔的标准组内排序",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2015",
+        "questionNumber": "11",
+        "label": "2015 年 408 真题 第 11 题（标准希尔而非可替换改造）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2015/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "标准希尔排序按给定增量把下标划为若干间隔组，在每组内采用的教材通常算法是？题目问标准希尔的定义，不是允许替换子程序的改造版本。",
+      "options": [
+        {
+          "label": "A",
+          "content": "直接插入"
+        },
+        {
+          "label": "B",
+          "content": "折半插入"
+        },
+        {
+          "label": "C",
+          "content": "快速排序"
+        },
+        {
+          "label": "D",
+          "content": "归并排序"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把可改造的定位策略当标准定义",
+          "explanation": "折半定位可以另行设计，但标准希尔是在每个间隔组上做直接插入，不能用改造可能性替代本题定义。"
+        },
+        "C": {
+          "title": "把分组等同于快速划分",
+          "explanation": "希尔按固定间隔分组，不是按某个枢轴值切出大小两侧，标准组内不是快排。"
+        },
+        "D": {
+          "title": "把相邻段合并当间隔插入",
+          "explanation": "归并需要合有序段，希尔本趟则沿同一间隔组逐项插入，二者步骤不同。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "看本趟对每个新元素如何在同组前缀内找到位置。"
+        },
+        {
+          "level": 2,
+          "text": "增量只改变前驱相隔多少数组位置，不改变标准插入的基本顺序。"
+        },
+        {
+          "level": 3,
+          "text": "把另一个短数组的间隔组单独摘出，看它的组内前缀是否按逐项插入方式增长。"
+        }
+      ],
+      "solution": "标准希尔对每个间隔组执行直接插入，随着增量变小逐渐改善整体次序，最后增量1时对全数组直接插入。因此组内标准算法为直接插入。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将增量序列限定为一个1，不再有其他趟，整个标准过程等价于哪种算法？",
+        "options": [
+          {
+            "label": "A",
+            "content": "直接插入"
+          },
+          {
+            "label": "B",
+            "content": "折半插入"
+          },
+          {
+            "label": "C",
+            "content": "快速排序"
+          },
+          {
+            "label": "D",
+            "content": "归并排序"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将增量序列退化为单个1。",
+        "explanation": "增量1时所有下标在同组，标准间隔直接插入就成为普通直接插入；没有其他间隔趟参与。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so04-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "shell-standard-group-insertion",
+            "input": {
+              "values": [
+                8,
+                3,
+                7,
+                2,
+                6,
+                1
+              ],
+              "gaps": [
+                1
+              ],
+              "groupSort": "direct-insertion"
+            },
+            "goal": "将同余下标的组摘成一个普通插入序列",
+            "pauseQuestion": "增量变为1后，还剩几个独立的间隔组？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so04-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "shell-standard-group-insertion",
+          "input": {
+            "values": [
+              8,
+              3,
+              7,
+              2,
+              6,
+              1
+            ],
+            "gaps": [
+              3,
+              1
+            ],
+            "groupSort": "direct-insertion"
+          },
+          "goal": "将同余下标的组摘成一个普通插入序列",
+          "pauseQuestion": "增量变为1后，还剩几个独立的间隔组？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "so04-05",
+      "topic": "希尔两趟的增量复算",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2018",
+        "questionNumber": "10",
+        "label": "2018 年 408 真题 第 10 题（明确完整间隔插入过程）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2018/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "标准升序间隔直接插入，初始为 `8,3,9,11,2,1,4,7,5,10,6`，首趟为 `1,3,7,5,2,6,4,9,11,10,8`，次趟为 `1,2,6,4,3,7,5,8,11,10,9`。两趟增量依次为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "3、1"
+        },
+        {
+          "label": "B",
+          "content": "3、2"
+        },
+        {
+          "label": "C",
+          "content": "5、2"
+        },
+        {
+          "label": "D",
+          "content": "5、3"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "首个增量就与实际组内结果不符",
+          "explanation": "从原数组做增量3不会得到给定首趟；第二增量1还会直接全局有序，也非给定次趟。"
+        },
+        "B": {
+          "title": "只尝试第二趟而不复算第一趟",
+          "explanation": "首增量3不匹配初始到首趟；且首趟按增量2完整插入也不会得到给定次趟。"
+        },
+        "C": {
+          "title": "第一趟正确却把次趟同余组判断错",
+          "explanation": "首趟确为增量5，次趟若为2应重新排好偶数与奇数下标组，结果与题中次趟不同。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "每趟的输入必须是上一趟的输出。"
+        },
+        {
+          "level": 2,
+          "text": "对候选间隔按下标余数分组，完整排序后再写回相同位置。"
+        },
+        {
+          "level": 3,
+          "text": "另取一个九项数组，把每一组元素按原下标摘出、排序和写回，检查不能只验证几个巧合的相邻值。"
+        }
+      ],
+      "solution": "初始按增量5各组插入，恰得给定首趟；再按增量3对该状态完整组内插入，恰得给定次趟。候选中的3作首趟不匹配，2作次趟也不匹配，因此为5、3。",
+      "viz": null,
+      "variant": {
+        "stem": "保持第一趟增量5与其结果，只把第二增量从3改为2，次趟后为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`1,3,2,5,4,6,7,9,8,10,11`"
+          },
+          {
+            "label": "B",
+            "content": "`1,2,6,4,3,7,5,8,11,10,9`"
+          },
+          {
+            "label": "C",
+            "content": "`1,3,7,5,2,6,4,9,11,10,8`"
+          },
+          {
+            "label": "D",
+            "content": "`1,2,3,4,5,6,7,8,9,10,11`"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将第二趟间隔3替换为2。",
+        "explanation": "首趟偶数下标值为1、7、2、4、11、8，排序为1、2、4、7、8、11；奇数下标为3、5、6、9、10已排序。交错写回得到A，仍不要求全局有序。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so04-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "shell-observed-gap-transitions",
+            "input": {
+              "initial": [
+                1,
+                3,
+                7,
+                5,
+                2,
+                6,
+                4,
+                9,
+                11,
+                10,
+                8
+              ],
+              "gaps": [
+                2
+              ]
+            },
+            "goal": "复算每个间隔组的完整写回",
+            "pauseQuestion": "组内有序的必要条件，是否能替代从指定上一状态执行的完整结果核对？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so04-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "shell-observed-gap-transitions",
+          "input": {
+            "initial": [
+              8,
+              3,
+              9,
+              11,
+              2,
+              1,
+              4,
+              7,
+              5,
+              10,
+              6
+            ],
+            "states": [
+              [
+                1,
+                3,
+                7,
+                5,
+                2,
+                6,
+                4,
+                9,
+                11,
+                10,
+                8
+              ],
+              [
+                1,
+                2,
+                6,
+                4,
+                3,
+                7,
+                5,
+                8,
+                11,
+                10,
+                9
+              ]
+            ],
+            "candidateGapPairs": [
+              [
+                3,
+                1
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                5,
+                2
+              ],
+              [
+                5,
+                3
+              ]
+            ]
+          },
+          "goal": "复算每个间隔组的完整写回",
+          "pauseQuestion": "组内有序的必要条件，是否能替代从指定上一状态执行的完整结果核对？"
+        }
+      ]
+    },
+    {
+      "id": "so04-06",
+      "topic": "第二趟需处理枢轴两侧全部活动段",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2019",
+        "questionNumber": "10",
+        "label": "2019 年 408 真题 第 10 题（明确波次而非单个分区调用）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2019/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站按原题每趟处理所有尚未定段的定义，补明完整归位与全部活动段波次；变式单独切到局部调用计步"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "互异键升序快排，一趟处理全部当前长度至少2的未定段，每段选一枢轴并完整归位，左侧全小于它、右侧全大于它；单项段无需划分。不固定首尾选枢轴或具体交换实现，只按归位不变量判断是否存在相容过程。哪组不可能是第二趟结果？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`5,2,16,12,28,60,32,72`"
+        },
+        {
+          "label": "B",
+          "content": "`2,16,5,28,12,60,32,72`"
+        },
+        {
+          "label": "C",
+          "content": "`2,12,16,5,28,32,72,60`"
+        },
+        {
+          "label": "D",
+          "content": "`5,2,12,28,16,32,72,60`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把一个边界枢轴后的中段乱序当作不可能",
+          "explanation": "A可首趟选72，第二趟在左余段选28；其他较小子段还可留待后面，过程相容。"
+        },
+        "B": {
+          "title": "忽略第二趟可以选择另一个边界枢轴",
+          "explanation": "B可首趟选72，再在左余段选2，符合两次完整活动波次。"
+        },
+        "C": {
+          "title": "没有同时检查两侧各自的枢轴见证",
+          "explanation": "C可首趟选28，第二趟分别在左段选2、右段选32，两侧都能完成合法划分。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先枚举可能的首趟全局分隔位置，再分别看两边的未定段。"
+        },
+        {
+          "level": 2,
+          "text": "第二趟按题意覆盖全部非平凡段，不能任选一边做了就停。"
+        },
+        {
+          "level": 3,
+          "text": "另构造两个全局分隔点都在内部的数组，检查无论先选哪一个，另一侧是否仍存在找不到合法枢轴的非平凡段。"
+        }
+      ],
+      "solution": "D的全局合法分隔点只有12、32。首趟若选12，左段5、2没有第二趟合法分隔点；若选32，右段72、60没有。因此无首趟选择能让第二趟覆盖两侧全部非平凡段，D不可能。其余三项有对应见证。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把计步单位改为“每次任选一个当前非平凡段划分”，两次调用后就停，不要求处理同层其他段。正题D状态是否可能？",
+        "options": [
+          {
+            "label": "A",
+            "content": "可以，例如先选12，再在右段选32"
+          },
+          {
+            "label": "B",
+            "content": "不可以，因为12不满足全局分隔条件"
+          },
+          {
+            "label": "C",
+            "content": "不可以，因为必须同时划分两侧"
+          },
+          {
+            "label": "D",
+            "content": "只有全表升序时才可能"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将全活动段波次改为任意一个活动段的一次调用。",
+        "explanation": "先以12归位，再只处理右段并以32归位，左侧5、2可暂时不处理，两次调用后D就相容。可见第二趟与第二次任意局部调用的范围不同。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so04-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "quick-partition-wave-feasibility",
+            "input": {
+              "state": [
+                5,
+                2,
+                12,
+                28,
+                16,
+                32,
+                72,
+                60
+              ],
+              "partitionCalls": 2,
+              "distinct": true,
+              "scope": "one-selected-active-segment"
+            },
+            "goal": "通过完整分区树检查另一侧是否被漏处理",
+            "pauseQuestion": "某一侧已经有下一个枢轴，是否足以说明本趟所有活动段都已处理？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so04-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "quick-partition-wave-feasibility",
+          "input": {
+            "states": [
+              [
+                5,
+                2,
+                16,
+                12,
+                28,
+                60,
+                32,
+                72
+              ],
+              [
+                2,
+                16,
+                5,
+                28,
+                12,
+                60,
+                32,
+                72
+              ],
+              [
+                2,
+                12,
+                16,
+                5,
+                28,
+                32,
+                72,
+                60
+              ],
+              [
+                5,
+                2,
+                12,
+                28,
+                16,
+                32,
+                72,
+                60
+              ]
+            ],
+            "waves": 2,
+            "distinct": true,
+            "scope": "all-active-nontrivial-segments"
+          },
+          "goal": "通过完整分区树检查另一侧是否被漏处理",
+          "pauseQuestion": "某一侧已经有下一个枢轴，是否足以说明本趟所有活动段都已处理？"
+        }
+      ]
+    },
+    {
+      "id": "so04-07",
+      "topic": "败者树冠军槽保存段号",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2024",
+        "questionNumber": "11",
+        "label": "2024 年 408 真题 第 11 题（明确段号与冠军专用槽）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2024/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站补明树记录段号、冠军常用额外槽0；不沿用收录解析将内部根败者记录和冠军槽混写的说法"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "外排序用败者树合并多个升序段，比较各段当前首关键字，树中存参赛段号并通过段号访问关键字。专门记录全局冠军的槽（常设为额外下标0）保存哪项？其余内部比赛结点记录败者段号。",
+      "options": [
+        {
+          "label": "A",
+          "content": "最大关键字值"
+        },
+        {
+          "label": "B",
+          "content": "最小关键字值"
+        },
+        {
+          "label": "C",
+          "content": "最大关键字所在段号"
+        },
+        {
+          "label": "D",
+          "content": "最小关键字所在段号"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把升序归并的胜者方向及存储类型都弄反",
+          "explanation": "应选当前最小段首继续输出，且题定槽保存参赛段号，不是直接存最大值。"
+        },
+        "B": {
+          "title": "混同被比较的键与槽内保存的索引",
+          "explanation": "冠军对应当前最小关键字，但存的是该键来自哪个段，以便输出后仅更新该段的下一个键。"
+        },
+        "C": {
+          "title": "按最大键选冠军而不是升序最小键",
+          "explanation": "升序段合并要输出当前全局最小的首项，段号存储虽对，胜负方向不对。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先看本次归并希望下一个输出最小值还是最大值。"
+        },
+        {
+          "level": 2,
+          "text": "再区分冠军所代表的关键字与记录槽实际保存的段索引。"
+        },
+        {
+          "level": 3,
+          "text": "另列三个有序段的当前首项，找出本次应输出哪段，再想输出后需要推进哪个段的游标。"
+        }
+      ],
+      "solution": "升序归并冠军来自当前首关键字最小的段，冠军槽存该段号，故D。冠军槽可单独放在下标0，不能把它与保存败者的内部根记录混为同一个语义位置。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把各段及目标都改为降序，仍存段号且每次选下一项输出，冠军槽应保存？",
+        "options": [
+          {
+            "label": "A",
+            "content": "最大关键字值"
+          },
+          {
+            "label": "B",
+            "content": "最小关键字值"
+          },
+          {
+            "label": "C",
+            "content": "最大关键字所在段号"
+          },
+          {
+            "label": "D",
+            "content": "最小关键字所在段号"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅改变归并方向为降序。",
+        "explanation": "降序段的当前首项是该段剩余最大项，整体下一项取所有段首最大者；槽仍存其段号，因此为C。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so04-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "loser-tree-champion-slot",
+            "input": {
+              "runs": [
+                [
+                  7,
+                  2
+                ],
+                [
+                  8,
+                  1
+                ],
+                [
+                  6,
+                  3
+                ]
+              ],
+              "direction": "descending",
+              "stored": "run-id",
+              "championSlot": 0
+            },
+            "goal": "同时标出比赛键与保存的段身份",
+            "pauseQuestion": "输出冠军的键之后，凭哪个身份知道应补哪个段的下一项？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so04-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "loser-tree-champion-slot",
+          "input": {
+            "runs": [
+              [
+                2,
+                7
+              ],
+              [
+                1,
+                8
+              ],
+              [
+                3,
+                6
+              ]
+            ],
+            "direction": "ascending",
+            "stored": "run-id",
+            "championSlot": 0
+          },
+          "goal": "同时标出比赛键与保存的段身份",
+          "pauseQuestion": "输出冠军的键之后，凭哪个身份知道应补哪个段的下一项？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "so04-08",
+      "topic": "希尔状态不等于归并有序段",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2025",
+        "questionNumber": "11",
+        "label": "2025 年 408 真题 第 11 题（明确标准趟与候选基线）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2025/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "初始为 `5,25,40,30,10,20,45,15,35`，首趟后 `5,10,20,30,15,35,45,25,40`，次趟后 `5,10,15,25,20,30,40,35,45`。按标准算法趟定义，基数为稳定十进制LSD、归并从单项段开始、折半插入每趟插一个新项。所用算法为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "希尔"
+        },
+        {
+          "label": "B",
+          "content": "基数"
+        },
+        {
+          "label": "C",
+          "content": "二路归并"
+        },
+        {
+          "label": "D",
+          "content": "折半插入"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "忽略个位桶收集的实际首项",
+          "explanation": "基数首趟个位0的40、30、10、20应先于个位5的记录输出，与给定首趟不符。"
+        },
+        "C": {
+          "title": "把间隔同余组有序看成相邻段已合并",
+          "explanation": "标准首趟二路归并只排相邻二元组，会得到不同数组，不能用局部有序片段替代实际合并结果。"
+        },
+        "D": {
+          "title": "忽略一趟只处理一个新元素的范围",
+          "explanation": "折半插入首趟只处理前两项，其余后缀应保持原样，给定首趟却已改变多个较后位置。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "看发生变化的位置是否是同一间隔的同余下标组。"
+        },
+        {
+          "level": 2,
+          "text": "每个候选应从给定原状态执行首趟，再对比完整数组。"
+        },
+        {
+          "level": 3,
+          "text": "另把一个数组按间隔3摘成三组，排序后交错写回，观察可能留下看似相邻逆序的局部状态。"
+        }
+      ],
+      "solution": "首趟正是增量3的组内插入，次趟再做增量2得到指定状态，符合希尔。其他标准候选从首趟起就不匹配，不能只因结果逐渐有序而判归并或插入。",
+      "viz": null,
+      "variant": {
+        "stem": "保持首趟增量3及其状态，仅把第二增量从2改为1，结果为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`5,10,15,25,20,30,40,35,45`"
+          },
+          {
+            "label": "B",
+            "content": "`5,10,20,30,15,35,45,25,40`"
+          },
+          {
+            "label": "C",
+            "content": "`5,10,15,20,25,30,35,40,45`"
+          },
+          {
+            "label": "D",
+            "content": "`5,25,40,30,10,20,45,15,35`"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将第二趟间隔从2改为1。",
+        "explanation": "增量1只有一个全数组组，完整直接插入后即全局升序，为5、10、15、20、25、30、35、40、45。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so04-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "shell-observed-gap-transitions",
+            "input": {
+              "initial": [
+                5,
+                10,
+                20,
+                30,
+                15,
+                35,
+                45,
+                25,
+                40
+              ],
+              "gaps": [
+                1
+              ]
+            },
+            "goal": "用同余组完整写回解释趟后状态",
+            "pauseQuestion": "间隔组有序时，相邻位置是否也必须已经全局有序？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so04-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "shell-observed-gap-transitions",
+          "input": {
+            "initial": [
+              5,
+              25,
+              40,
+              30,
+              10,
+              20,
+              45,
+              15,
+              35
+            ],
+            "states": [
+              [
+                5,
+                10,
+                20,
+                30,
+                15,
+                35,
+                45,
+                25,
+                40
+              ],
+              [
+                5,
+                10,
+                15,
+                25,
+                20,
+                30,
+                40,
+                35,
+                45
+              ]
+            ],
+            "gaps": [
+              3,
+              2
+            ]
+          },
+          "goal": "用同余组完整写回解释趟后状态",
+          "pauseQuestion": "间隔组有序时，相邻位置是否也必须已经全局有序？"
+        }
+      ]
+    },
+    {
+      "id": "so04-09",
+      "topic": "低优先级先排的多关键字思想",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2026",
+        "questionNumber": "10",
+        "label": "2026 年 408 真题 第 10 题（据收录改写为多关键字方法识别）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2026/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站把最适合改为稳定低优先级先排的多关键字方法识别，保留 `C1` 优先、同 `C1` 按总分及四算法选项；不声称比较排序不能用复合比较器满足原需求，非逐字题干"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "学生记录含整数成绩`C1`、`C2`，目标先按`C1`升序，相同`C1`时按总分`C1+C2`升序。现在限定采用“先按低优先级键稳定排序，再按高优先级键稳定排序”的逐键策略，而非一次复合比较器。四项中对应这种多关键字思想的方法是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "基数排序"
+        },
+        {
+          "label": "B",
+          "content": "快速排序"
+        },
+        {
+          "label": "C",
+          "content": "希尔排序"
+        },
+        {
+          "label": "D",
+          "content": "简单选择排序"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把可用复合比较器实现混同指定逐键策略",
+          "explanation": "快排确实可借复合比较器满足原排序需求，但这不是题目限定的低优先级先排且逐趟稳定的策略。"
+        },
+        "C": {
+          "title": "把间隔缩小过程当作关键字优先级",
+          "explanation": "希尔的增量控制记录位置间隔，不是先次关键字后主关键字的稳定多键处理。"
+        },
+        "D": {
+          "title": "忽略逐键稳定要求",
+          "explanation": "简单选择的通常交换版不保证稳定，也不对应这种逐键低位优先思想。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先确定哪个键是最终主关键字、哪个只在主键相同时生效。"
+        },
+        {
+          "level": 2,
+          "text": "后一趟稳定排序会保留前一趟在相等新键内部建立的次序。"
+        },
+        {
+          "level": 3,
+          "text": "另取三条含主次两键的记录，先次后主稳定排与先主后次稳定排各做一遍，比较最终优先的是哪一键。"
+        }
+      ],
+      "solution": "先按总分稳定升序，再按`C1`稳定升序，后一次成为主优先级，并保留相同`C1`内部已有的总分次序，属于低位优先多关键字基数思想。其他比较排序可用复合比较器实现目标，但不对应本题指定策略。",
+      "viz": null,
+      "variant": {
+        "stem": "只把两趟顺序交换为先按`C1`稳定排、再按总分稳定排，一般会怎样？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仍无条件满足原规则"
+          },
+          {
+            "label": "B",
+            "content": "变为总分优先，不能保证原规则"
+          },
+          {
+            "label": "C",
+            "content": "所有记录自动降序"
+          },
+          {
+            "label": "D",
+            "content": "相等键记录会被丢弃"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅交换两次稳定排序的先后。",
+        "explanation": "最后一趟总分成为主优先级，`C1`只在总分相同处被保留，通常不再满足原来的`C1`优先。稳定性只保留同新键内部的旧顺序，不会阻止优先级随趟序改变。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so04-09v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "stable-multikey-pass-order",
+            "input": {
+              "records": [
+                {
+                  "id": "A",
+                  "C1": 70,
+                  "C2": 30
+                },
+                {
+                  "id": "B",
+                  "C1": 60,
+                  "C2": 90
+                },
+                {
+                  "id": "C",
+                  "C1": 70,
+                  "C2": 20
+                }
+              ],
+              "stablePassOrder": [
+                "C1",
+                "total"
+              ]
+            },
+            "goal": "给每条记录保留身份并对照两种趟序",
+            "pauseQuestion": "最后一趟稳定排序，会让哪个键成为最终主优先级？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so04-09-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "stable-multikey-pass-order",
+          "input": {
+            "records": [
+              {
+                "id": "A",
+                "C1": 70,
+                "C2": 30
+              },
+              {
+                "id": "B",
+                "C1": 60,
+                "C2": 90
+              },
+              {
+                "id": "C",
+                "C1": 70,
+                "C2": 20
+              }
+            ],
+            "stablePassOrder": [
+              "total",
+              "C1"
+            ]
+          },
+          "goal": "给每条记录保留身份并对照两种趟序",
+          "pauseQuestion": "最后一趟稳定排序，会让哪个键成为最终主优先级？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    }
+  ]
+}

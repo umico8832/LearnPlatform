@@ -1,0 +1,1229 @@
+{
+  "schemaVersion": 1,
+  "section": "栈队列真题二：调度、FIFO分流、调用与语法树",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "sq02-01",
+      "topic": "递归基例尚未返回的调用栈",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2015",
+        "questionNumber": "1",
+        "label": "2015 年 408 真题 第 1 题（明确基例进入后的抽象栈快照）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2015/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站保留原递归定义和main调用S1，明确刚进入S0尚未返回、不考虑编译消除的抽象模型，原四帧顺序与答案不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "函数`S`对非正`n`返回0，对正`n`计算 `S(n-1)+n`；`main`调用 `S(1)`。按未做内联/调用消除的抽象函数调用栈，刚进入基例 `S(0)`、尚未返回时，从栈底到栈顶的调用帧次序为？这里箭头仅列帧顺序。",
+      "options": [
+        {
+          "label": "A",
+          "content": "`main() -> S(1) -> S(0)`"
+        },
+        {
+          "label": "B",
+          "content": "`S(0) -> S(1) -> main()`"
+        },
+        {
+          "label": "C",
+          "content": "`main() -> S(0) -> S(1)`"
+        },
+        {
+          "label": "D",
+          "content": "`S(1) -> S(0) -> main()`"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把最后进入先返回误作从底先保存",
+          "explanation": "栈底是较早尚未完成的`main`，`S(0)`最后进入位于顶端；B给的是反向顺序。"
+        },
+        "C": {
+          "title": "把调用者与被调用者压栈先后倒置",
+          "explanation": "`S(0)`由`S(1)`发起，必须先有`S(1)`帧再有`S(0)`帧，不能先把`S(0)`压在`S(1)`下。"
+        },
+        "D": {
+          "title": "把主调用者放到栈顶",
+          "explanation": "`main`先开始并等待`S(1)`返回，不会在递归基例进入后才压到最顶端。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "只保留目前尚未返回的调用，不把已结束调用或最终返回值计作帧。"
+        },
+        {
+          "level": 2,
+          "text": "每发起一次新调用，在当前活动调用帧上方增加一帧。"
+        },
+        {
+          "level": 3,
+          "text": "另对一个主函数调用`F`再由`F`调用`G`的三层关系画栈，按时间进入顺序从底向顶排列。"
+        }
+      ],
+      "solution": "`main`先进入，再调用`S(1)`，`S(1)`又调用`S(0)`；三者都未返回，后进入者在上，所以从底到顶`main`、`S(1)`、`S(0)`，A。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将`main`发起的调用从 `S(1)` 改为 `S(2)`，仍观察刚进入 `S(0)` 尚未返回时，底到顶为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`main() -> S(2) -> S(1) -> S(0)`"
+          },
+          {
+            "label": "B",
+            "content": "`main() -> S(2) -> S(0) -> S(1)`"
+          },
+          {
+            "label": "C",
+            "content": "`S(0) -> S(1) -> S(2) -> main()`"
+          },
+          {
+            "label": "D",
+            "content": "`main() -> S(1) -> S(2) -> S(0)`"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将初始递归实参1改为2。",
+        "explanation": "`main`之上依次压`S(2)`、`S(1)`、`S(0)`，尚未返回时四帧完整保留；递归结果何时相加不改变此刻帧的先后。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sq02-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "recursive-call-stack-entry",
+            "input": {
+              "function": "S",
+              "recurrence": "n<=0 ? 0 : S(n-1)+n",
+              "initialArgument": 2,
+              "includeMainFrame": true,
+              "checkpoint": "base-entry-before-return",
+              "optimizations": false
+            },
+            "goal": "按尚未返回调用的进入时间压帧",
+            "pauseQuestion": "函数已经开始处理但还没算完返回值时，它的帧是否仍在栈上？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sq02-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "recursive-call-stack-entry",
+          "input": {
+            "function": "S",
+            "recurrence": "n<=0 ? 0 : S(n-1)+n",
+            "initialArgument": 1,
+            "includeMainFrame": true,
+            "checkpoint": "base-entry-before-return",
+            "optimizations": false
+          },
+          "goal": "按尚未返回调用的进入时间压帧",
+          "pauseQuestion": "函数已经开始处理但还没算完返回值时，它的帧是否仍在栈上？"
+        }
+      ]
+    },
+    {
+      "id": "sq02-02",
+      "topic": "并行FIFO轨道的最少条数",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2016",
+        "questionNumber": "3",
+        "label": "2016 年 408 真题 第 3 题（明确所有线路均计数的FIFO模型）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2016/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站实际查看原轨道SVG，按只左进右出且所有n轨均计入解释，原到达/输出与选项答案不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "原轨道图每条均只左进右出、同轨FIFO且容量不限制，`n`包含图中所有可用线路，没有另加不计数直通路。九车按 `8,4,2,5,3,9,1,6,7` 进入，可自由选择轨道；最终按当前全部编号升序（原为1至9）离开。`n`最少为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "2"
+        },
+        {
+          "label": "B",
+          "content": "3"
+        },
+        {
+          "label": "C",
+          "content": "4"
+        },
+        {
+          "label": "D",
+          "content": "5"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把可重排分流当两轨总能排序",
+          "explanation": "8、4、2、1按严格递减次序到达，任意两辆都不能同FIFO轨而最终升序，至少4轨。"
+        },
+        "B": {
+          "title": "漏掉后到1必须单独占一轨",
+          "explanation": "在8、4、2等待更小编号时，后来的1不能排到这些较大车之后再先离开，三轨不够。"
+        },
+        "D": {
+          "title": "把某次局部选道不佳当全局下界",
+          "explanation": "可用4轨构造升序队列分解，不必因某个贪心随意塞轨导致冲突就多开第5轨。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "同一FIFO轨上先到的车不能在该轨上晚于后到车离开。"
+        },
+        {
+          "level": 2,
+          "text": "找一组按严格递减次序到达的编号，再试把全输入分成同样数量的递增子序列。"
+        },
+        {
+          "level": 3,
+          "text": "另取一串短编号，把其中一段下降子序列标出来，比较两辆倒序车能否在不倒车的同轨上完成升序输出。"
+        }
+      ],
+      "solution": "递减子序列8、4、2、1给至少4轨。可分成轨1的8、9，轨2的4、5、6、7，轨3的2、3，轨4的1；各轨均递增，按全局下一最小队头取出可得升序，因此4可达。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把到达序列中的1改为10，其他到达位置与规则不变，目标仍为当前九编号升序，`n`最少为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "2"
+          },
+          {
+            "label": "B",
+            "content": "3"
+          },
+          {
+            "label": "C",
+            "content": "4"
+          },
+          {
+            "label": "D",
+            "content": "5"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将一个列车编号1替换为10。",
+        "explanation": "新输入8、4、2、5、3、9、10、6、7，可分轨1为8、9、10，轨2为4、5、6、7，轨3为2、3。8、4、2给至少3轨，故恰3；目标不再含被替换的1。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sq02-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "parallel-fifo-increasing-subsequence-cover",
+            "input": {
+              "arrival": [
+                8,
+                4,
+                2,
+                5,
+                3,
+                9,
+                10,
+                6,
+                7
+              ],
+              "target": "sort-all-current-labels-ascending",
+              "tracksFIFO": true,
+              "noUncountedBypass": true
+            },
+            "goal": "用下降下界和递增轨道分配同时证明最少",
+            "pauseQuestion": "同轨出队顺序不可逆，先到大编号能否等后来小编号从它身后先过？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sq02-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "parallel-fifo-increasing-subsequence-cover",
+          "input": {
+            "arrival": [
+              8,
+              4,
+              2,
+              5,
+              3,
+              9,
+              1,
+              6,
+              7
+            ],
+            "target": "sort-all-current-labels-ascending",
+            "tracksFIFO": true,
+            "noUncountedBypass": true
+          },
+          "goal": "用下降下界和递增轨道分配同时证明最少",
+          "pauseQuestion": "同轨出队顺序不可逆，先到大编号能否等后来小编号从它身后先过？"
+        }
+      ]
+    },
+    {
+      "id": "sq02-03",
+      "topic": "显式模拟栈与系统调用栈分开",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2017",
+        "questionNumber": "2",
+        "label": "2017 年 408 真题 第 2 题（明确显式栈、传统系统栈与交替）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2017/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站I明确额外显式模拟，II限定普通教材调用栈模型，III明确允许交替，避免把不同实现层的栈混成一个必然断言；四考点及错误组合不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "采用传统系统调用栈、未作调用消除的教材模型，允许栈入出交替。哪些断言错误？I. 任何递归程序改为非递归都必须额外显式模拟栈；II. 本题普通函数调用由系统栈保存必要调用信息；III. 固定入栈次序就唯一确定出栈次序；IV. 标准栈ADT允许两端入出。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 I"
+        },
+        {
+          "label": "B",
+          "content": "仅 I、II、III"
+        },
+        {
+          "label": "C",
+          "content": "仅 I、III、IV"
+        },
+        {
+          "label": "D",
+          "content": "仅 II、III、IV"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "只否定模拟栈必需而漏另外两项",
+          "explanation": "I确过强，但III忽略交替调度、IV把栈当双端队列，也都错误。"
+        },
+        "B": {
+          "title": "把本题已限定的系统调用模型也否定",
+          "explanation": "II说的是本题传统系统帧，不是要求递归改写时再建显式栈，II成立；IV仍错误，不能用II替它。"
+        },
+        "D": {
+          "title": "没有找到不需要显式栈的递归改写",
+          "explanation": "例如求前`n`项和可直接用循环累加，不需模拟递归帧，I也错误；II在模型内成立。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先区分程序员额外维护的显式栈与运行时调用机制。"
+        },
+        {
+          "level": 2,
+          "text": "入栈输入固定时，输出还受哪些合法入出交替时机影响？"
+        },
+        {
+          "level": 3,
+          "text": "另用两项输入分别先全压再弹与压一弹一，列出输出；再用简单求和递推思考是否总要手工保存全部调用。"
+        }
+      ],
+      "solution": "简单递推可循环化而不另建模拟栈，否定I；入出可交替时同一输入能给同序或逆序，否定III；标准栈只允许一端操作，否定IV。II是题定传统调用模型，故错误为I、III、IV。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将III增加“全部元素入栈完毕后才允许第一次出栈”，其余断言与模型不变，错误项为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仅 I"
+          },
+          {
+            "label": "B",
+            "content": "仅 I、II"
+          },
+          {
+            "label": "C",
+            "content": "仅 I、IV"
+          },
+          {
+            "label": "D",
+            "content": "仅 II、IV"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将III的调度自由限制为先全入再出。",
+        "explanation": "先全入再出时输出唯一为输入逆序，新的III成立；I与IV仍错误，II仍成立，因此仅I、IV。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sq02-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "stack-claims-and-scheduling",
+            "input": {
+              "input": [
+                1,
+                2
+              ],
+              "allowedSchedules": [
+                "all-push-then-pop"
+              ],
+              "callModel": "ordinary-system-stack",
+              "explicitSimulationRequiredForAllRecursion": false
+            },
+            "goal": "分别演示调度对输出的影响与循环消除递归例",
+            "pauseQuestion": "一个程序使用系统函数调用帧，是否就说明改写算法必须额外维护一套模拟栈？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sq02-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "stack-claims-and-scheduling",
+          "input": {
+            "input": [
+              1,
+              2
+            ],
+            "allowedSchedules": [
+              "interleaved",
+              "all-push-then-pop"
+            ],
+            "callModel": "ordinary-system-stack",
+            "explicitSimulationRequiredForAllRecursion": false
+          },
+          "goal": "分别演示调度对输出的影响与循环消除递归例",
+          "pauseQuestion": "一个程序使用系统函数调用帧，是否就说明改写算法必须额外维护一套模拟栈？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "sq02-04",
+      "topic": "固定队头流加一个辅助栈的输出",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2018",
+        "questionNumber": "2",
+        "label": "2018 年 408 真题 第 2 题（明确三操作交替与首次输出）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2018/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "初始FIFO队列含1至6，1在头，辅助栈空。仅可做①队头出队直接输出；②队头出队压栈；③栈顶弹出输出。允许三操作合法交替，必须每项最终输出一次。哪组不可能？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`1,2,5,6,4,3`"
+        },
+        {
+          "label": "B",
+          "content": "`2,3,4,5,6,1`"
+        },
+        {
+          "label": "C",
+          "content": "`3,4,5,6,1,2`"
+        },
+        {
+          "label": "D",
+          "content": "`6,5,4,3,2,1`"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把暂存后逆序输出误当非法",
+          "explanation": "A可先直出1、2，存3、4，直出5、6，再弹4、3，所有操作合法。"
+        },
+        "B": {
+          "title": "忽略栈可把最早1留到最后",
+          "explanation": "B先把1入栈，再直出2至6，最后弹1，完全可行。"
+        },
+        "D": {
+          "title": "把初始队列FIFO误当最终输出也必须FIFO",
+          "explanation": "D可把1至5先压栈，直出6再逆序弹5至1；辅助栈允许合法反转后续输出。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "想要跳过较早队头先输出后面的项，跳过项必须进哪个结构？"
+        },
+        {
+          "level": 2,
+          "text": "这些已暂存项之间，后续输出的相对先后还受到什么限制？"
+        },
+        {
+          "level": 3,
+          "text": "另用四项队列先跳过两项，再直出第三项，记录此时栈顶到底是哪一项。"
+        }
+      ],
+      "solution": "C先输出3，意味着1、2都已先后压栈，2位于1上方；即使后面直出4、5、6，也不能最后先1再2，故C不可能。其余三项都有上述合法操作。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将C输出末两项1、2交换为2、1，新目标 `3,4,5,6,2,1` 能否完成？",
+        "options": [
+          {
+            "label": "A",
+            "content": "能，先存1、2再直出3至6，最后弹2、1"
+          },
+          {
+            "label": "B",
+            "content": "不能，因为1先入就一定先出"
+          },
+          {
+            "label": "C",
+            "content": "必须再加第二个辅助栈"
+          },
+          {
+            "label": "D",
+            "content": "必须改变原队列的FIFO规则"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅交换原C末尾两项。",
+        "explanation": "先依次把1、2移栈，直出3、4、5、6后弹2、1即可。新目标正好符合已暂存两项的LIFO约束。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sq02-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "queue-with-auxiliary-stack-output",
+            "input": {
+              "queue": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+              ],
+              "stack": [],
+              "targetOutput": [
+                3,
+                4,
+                5,
+                6,
+                2,
+                1
+              ],
+              "operations": [
+                "dequeue-output",
+                "dequeue-push",
+                "pop-output"
+              ]
+            },
+            "goal": "逐步显示未处理队头与辅助栈顶",
+            "pauseQuestion": "先跳过两个队头后，能否随意选择先弹较早压入的那个？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sq02-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "queue-with-auxiliary-stack-output",
+          "input": {
+            "queue": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "stack": [],
+            "outputChoices": [
+              [
+                1,
+                2,
+                5,
+                6,
+                4,
+                3
+              ],
+              [
+                2,
+                3,
+                4,
+                5,
+                6,
+                1
+              ],
+              [
+                3,
+                4,
+                5,
+                6,
+                1,
+                2
+              ],
+              [
+                6,
+                5,
+                4,
+                3,
+                2,
+                1
+              ]
+            ],
+            "operations": [
+              "dequeue-output",
+              "dequeue-push",
+              "pop-output"
+            ]
+          },
+          "goal": "逐步显示未处理队头与辅助栈顶",
+          "pauseQuestion": "先跳过两个队头后，能否随意选择先弹较早压入的那个？"
+        }
+      ]
+    },
+    {
+      "id": "sq02-05",
+      "topic": "固定Push/Pop操作串逐步模拟",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2020",
+        "questionNumber": "2",
+        "label": "2020 年 408 真题 第 2 题（明确输出仅计已执行Pop）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2020/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "栈初始为空，`Push`每次取输入 `a,b,c,d,e` 的下一项压入，`Pop`只弹当前栈顶并输出。依次执行 `Push,Push,Pop,Push,Pop,Push,Push,Pop` 后，目前已输出序列为？不再额外清栈。",
+      "options": [
+        {
+          "label": "A",
+          "content": "`b,a,c`"
+        },
+        {
+          "label": "B",
+          "content": "`b,a,e`"
+        },
+        {
+          "label": "C",
+          "content": "`b,c,a`"
+        },
+        {
+          "label": "D",
+          "content": "`b,c,e`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把第二次弹出指到仍在底部的`a`",
+          "explanation": "第二次`Pop`前`c`刚压在`a`上，应弹`c`而非`a`，不能跳过栈顶。"
+        },
+        "B": {
+          "title": "第二次弹出绕过`c`直接取`a`",
+          "explanation": "B虽末项`e`正确，但第二次`Pop`仍应为`c`，`a`一直在底部未输出。"
+        },
+        "C": {
+          "title": "漏看后两次连续`Push`形成的新栈顶",
+          "explanation": "最后一次`Pop`前`d`、`e`依次压入，栈顶为`e`，不是底部`a`。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "把输入游标、当前栈和已经输出三栏分别记录。"
+        },
+        {
+          "level": 2,
+          "text": "`Push`只增加下一项，`Pop`只读并移除当前顶层，不直接按输入位置取值。"
+        },
+        {
+          "level": 3,
+          "text": "另用四项输入配一段短操作串，逐步标出每次`Pop`发生前最后一次未抵消的`Push`。"
+        }
+      ],
+      "solution": "三次`Pop`分别弹`b`、`c`、`e`，最后栈底到顶仍为`a`、`d`，故输出`b`、`c`、`e`。不能因为栈里还有元素就自行追加输出。",
+      "viz": null,
+      "variant": {
+        "stem": "仅在原操作串末尾追加一次`Pop`，其他不变，目前输出变为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`b,c,e,a`"
+          },
+          {
+            "label": "B",
+            "content": "`b,c,d,e`"
+          },
+          {
+            "label": "C",
+            "content": "`b,c,e,d`"
+          },
+          {
+            "label": "D",
+            "content": "`b,a,e,d`"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅追加一次合法`Pop`。",
+        "explanation": "原来剩`a`、`d`，新增`Pop`弹`d`，输出在`b`、`c`、`e`后追加`d`，`a`仍未被弹。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sq02-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "fixed-stack-operation-trace",
+            "input": {
+              "input": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e"
+              ],
+              "operations": [
+                "Push",
+                "Push",
+                "Pop",
+                "Push",
+                "Pop",
+                "Push",
+                "Push",
+                "Pop",
+                "Pop"
+              ],
+              "flushRemaining": false
+            },
+            "goal": "分别记录已输出和仍留栈的数据",
+            "pauseQuestion": "操作串已经结束而栈还非空，是否允许擅自把剩余项加入答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sq02-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "fixed-stack-operation-trace",
+          "input": {
+            "input": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e"
+            ],
+            "operations": [
+              "Push",
+              "Push",
+              "Pop",
+              "Push",
+              "Pop",
+              "Push",
+              "Push",
+              "Pop"
+            ],
+            "flushRemaining": false
+          },
+          "goal": "分别记录已输出和仍留栈的数据",
+          "pauseQuestion": "操作串已经结束而栈还非空，是否允许擅自把剩余项加入答案？"
+        }
+      ]
+    },
+    {
+      "id": "sq02-06",
+      "topic": "输出受限双端队列的完整可达性",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2021",
+        "questionNumber": "2",
+        "label": "2021 年 408 真题 第 2 题（输出受限双端队列，明确允许交替）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2021/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站原两端入单端出的结构按输出受限命名；不沿用解析中任意输出里1/2总相邻的过强说法，而只用本候选首输出4前的实际状态约束，四项及正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "初始空双端队列，两端都可入队，仅左端可出队，输入顺序1至5，每项恰入出一次。允许入队与出队合法交替。以下哪组输出不可能？每份目标都按是否存在完整合法调度判断。",
+      "options": [
+        {
+          "label": "A",
+          "content": "`5,4,3,1,2`"
+        },
+        {
+          "label": "B",
+          "content": "`5,3,1,2,4`"
+        },
+        {
+          "label": "C",
+          "content": "`4,2,1,3,5`"
+        },
+        {
+          "label": "D",
+          "content": "`4,1,3,2,5`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "忽略右入2与后续左入的组合",
+          "explanation": "A可先1、2按右入，再3、4、5左入，全部入后队列即5、4、3、1、2，显然可行。"
+        },
+        "B": {
+          "title": "只试全左入而漏可用的右端",
+          "explanation": "B可1右、2右、3左、4右、5左得到5、3、1、2、4，允许规则下可行。"
+        },
+        "C": {
+          "title": "把首输出4而非5误当不能先把5放尾",
+          "explanation": "C可1右、2左、3右、4左、5右形成4、2、1、3、5，既可全入后出也可合法交替实现。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "对每个目标先找一个具体调度；不可能的目标则检查其前缀迫使哪些项已入且未出。"
+        },
+        {
+          "level": 2,
+          "text": "若第一个输出是4，1至4此前是否全已入队？在此特定时刻，最早两项的相邻关系如何？"
+        },
+        {
+          "level": 3,
+          "text": "另用四项输入先全部入队，观察只有两端插入能否拆开最早两个内部相邻项，再考虑新入项可能如何影响下一次输出。"
+        }
+      ],
+      "solution": "D首输出4使1至4都已入且未出，其中1、2仍相邻。若随后1能输出，2应紧接暴露在队首；3早已入队，不可能此时插到1、2之间，新5前插也只会先挡5而非3。因此不能得到4、1、3、2、5。A、B、C均有明确构造。",
+      "viz": null,
+      "variant": {
+        "stem": "仅禁止入出交替，要求全部1至5入队完才开始从左出队，其他端点规则不变。全部不同输出序列共有几种？",
+        "options": [
+          {
+            "label": "A",
+            "content": "8"
+          },
+          {
+            "label": "B",
+            "content": "16"
+          },
+          {
+            "label": "C",
+            "content": "32"
+          },
+          {
+            "label": "D",
+            "content": "120"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将允许交替改为全部先入后出，并枚举可能输出。",
+        "explanation": "首项1从哪端入都形成相同单项队列；其后2至5各有左/右两种独立且可由最终端点回溯区分的选择，共2的4次方为16。不能把全部交替调度数或所有5项排列都计入。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sq02-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "output-restricted-deque-all-orders",
+            "input": {
+              "input": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "enqueueEnds": [
+                "left",
+                "right"
+              ],
+              "dequeueEnds": [
+                "left"
+              ],
+              "allowInterleaving": false,
+              "query": "distinct-output-count"
+            },
+            "goal": "完整枚举入出调度并针对候选前缀解释",
+            "pauseQuestion": "一个只在全部入队后保持的内部相邻结论，能否直接用于已经出过若干项的所有状态？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sq02-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "output-restricted-deque-all-orders",
+          "input": {
+            "input": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "enqueueEnds": [
+              "left",
+              "right"
+            ],
+            "dequeueEnds": [
+              "left"
+            ],
+            "allowInterleaving": true,
+            "outputChoices": [
+              [
+                5,
+                4,
+                3,
+                1,
+                2
+              ],
+              [
+                5,
+                3,
+                1,
+                2,
+                4
+              ],
+              [
+                4,
+                2,
+                1,
+                3,
+                5
+              ],
+              [
+                4,
+                1,
+                3,
+                2,
+                5
+              ]
+            ]
+          },
+          "goal": "完整枚举入出调度并针对候选前缀解释",
+          "pauseQuestion": "一个只在全部入队后保持的内部相邻结论，能否直接用于已经出过若干项的所有状态？"
+        }
+      ]
+    },
+    {
+      "id": "sq02-07",
+      "topic": "已给入出排列可以判断合法性",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2022",
+        "questionNumber": "2",
+        "label": "2022 年 408 真题 第 2 题（明确两排列已给与至少两个互异符号）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2022/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有限集合有至少两个互异符号，两份完整排列`in`、`out`均已给出。空栈每项各入出一次，可交替。下列哪个断言正确？不是只知道其中一份而缺失另一份的情形。",
+      "options": [
+        {
+          "label": "A",
+          "content": "给定`in`也不能判断`out`是否可行"
+        },
+        {
+          "label": "B",
+          "content": "给定`out`也不能判断已给`in`是否可行"
+        },
+        {
+          "label": "C",
+          "content": "合法的`in`与`out`一定不同"
+        },
+        {
+          "label": "D",
+          "content": "合法的`in`与`out`可能互为逆序"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把可能输出不唯一误作给定输出不可判定",
+          "explanation": "给定两排列可按目标`out`逐项模拟压到目标再验栈顶，输出不唯一不妨碍检查某个具体排列。"
+        },
+        "B": {
+          "title": "把问题方向换说法误作信息丢失",
+          "explanation": "`in`与`out`都已给定，仍检查同一合法调度关系，不能以已知`out`为由声称无法判`in`。"
+        },
+        "C": {
+          "title": "忽略每次压一项立即弹出的同序构造",
+          "explanation": "逐项`Push`再`Pop`可使`out`等于`in`，故合法输入输出不一定不同。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "区分要列所有输出，与只检查某个已给完整候选。"
+        },
+        {
+          "level": 2,
+          "text": "记录下一个尚未入栈的位置和当前栈顶，对给定候选逐项判断能否通过合法操作到达下一输出。"
+        },
+        {
+          "level": 3,
+          "text": "另取三个互异符号和一个具体候选，逐步写输入游标、栈内容、已输出；若所需元素已在栈内却不是栈顶，检查还能否合法输出它。"
+        }
+      ],
+      "solution": "所有项先按`in`压完再弹，`out`就是`in`的逆序，D成立。逐项压弹也可同序，否定C；两序均已知时可模拟验证，否定A、B的不可判断。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将调度限制为全部入完后才能出栈，两份符号集合与模型不变，唯一可能的`out`是什么？",
+        "options": [
+          {
+            "label": "A",
+            "content": "必等于`in`原序"
+          },
+          {
+            "label": "B",
+            "content": "必等于`in`逆序"
+          },
+          {
+            "label": "C",
+            "content": "可为全部排列中的任意一个"
+          },
+          {
+            "label": "D",
+            "content": "不存在合法输出"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅禁止入出交替。",
+        "explanation": "所有元素留在栈中后只许从顶逐一取出，次序唯一为逆序；至少两个互异符号也使它与原序不同。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sq02-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "stack-given-permutation-decidability",
+            "input": {
+              "input": [
+                "A",
+                "B",
+                "C"
+              ],
+              "allowInterleaving": false,
+              "query": "unique-output"
+            },
+            "goal": "用栈顶模拟给定候选并展示同序与逆序见证",
+            "pauseQuestion": "存在多种可能输出，是否就意味着无法判断某一份完整候选？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sq02-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "stack-given-permutation-decidability",
+          "input": {
+            "input": [
+              "A",
+              "B",
+              "C"
+            ],
+            "outputExamples": [
+              [
+                "A",
+                "B",
+                "C"
+              ],
+              [
+                "C",
+                "B",
+                "A"
+              ],
+              [
+                "C",
+                "A",
+                "B"
+              ]
+            ],
+            "allowInterleaving": true
+          },
+          "goal": "用栈顶模拟给定候选并展示同序与逆序见证",
+          "pauseQuestion": "存在多种可能输出，是否就意味着无法判断某一份完整候选？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "sq02-08",
+      "topic": "标准后缀转换保留乘除结合树",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2024",
+        "questionNumber": "2",
+        "label": "2024 年 408 真题 第 2 题（明确保持原语法树的标准转换）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2024/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站将等价后缀澄清为按原优先级/左结合保持运算树，不通过代数等值改乘除结合；四个原字符串与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "保持原语法运算树，不作代数重排，按乘除高于加减、同级左结合，将 `x+y*(z-u)/v` 标准转换为后缀。操作数均为单字母，结果为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`xyzu-*v/+`"
+        },
+        {
+          "label": "B",
+          "content": "`xyzu-v/*+`"
+        },
+        {
+          "label": "C",
+          "content": "`+x/*y-zuv`"
+        },
+        {
+          "label": "D",
+          "content": "`+x*y/-zuv`"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把同级乘除重配括号而改变原运算树",
+          "explanation": "B先算z减u除v，再乘y，对应另一语法树；原式同级左结合，先y乘括号结果再除v。"
+        },
+        "C": {
+          "title": "把前缀表示误填为后缀",
+          "explanation": "C虽可作原树的前缀表示，但后缀运算符应在其操作数之后，不能以加号开头。"
+        },
+        "D": {
+          "title": "同时混用前缀格式及不同乘除结合",
+          "explanation": "D以运算符开头属前缀结构，又把除法放进乘法右侧子树，不是原树的标准后缀。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先按优先级和结合性画出括号内减法与外部乘除的语法树。"
+        },
+        {
+          "level": 2,
+          "text": "后缀按左右操作数完成后再输出运算符，不能因为数值代数关系就任意换语法树。"
+        },
+        {
+          "level": 3,
+          "text": "另取一串无括号的乘除表达式，分别标左结合与人为右括号两棵树，再对照后序输出差别。"
+        }
+      ],
+      "solution": "原树先输出x，右侧先y，再z、u、减，再乘，接v、除，最后加，得到xyzu-*v/+。此处比较标准语法转换，不把某个数域中的代数等值当成同一运算树。",
+      "viz": null,
+      "variant": {
+        "stem": "仅给除法部分显式括号，式子变为 `x+y*((z-u)/v)`，其他转换规则和四选项不变，结果为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`xyzu-*v/+`"
+          },
+          {
+            "label": "B",
+            "content": "`xyzu-v/*+`"
+          },
+          {
+            "label": "C",
+            "content": "`+x/*y-zuv`"
+          },
+          {
+            "label": "D",
+            "content": "`+x*y/-zuv`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅增加一对括号，让除法成为乘法的右子树。",
+        "explanation": "现在先形成z、u、减、v、除，再与y相乘，最后与x相加，得到xyzu-v/*+，即B。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sq02-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "infix-postfix-ordered-syntax-tree",
+            "input": {
+              "expression": "x+y*((z-u)/v)",
+              "associativity": "left",
+              "preserveSyntaxTree": true,
+              "algebraicRewrites": false
+            },
+            "goal": "并列显示保持结合关系的语法树与后缀",
+            "pauseQuestion": "两个表达式在某些数值下碰巧相等，是否说明它们的标准语法树也相同？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sq02-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "infix-postfix-ordered-syntax-tree",
+          "input": {
+            "expression": "x+y*(z-u)/v",
+            "associativity": "left",
+            "preserveSyntaxTree": true,
+            "algebraicRewrites": false
+          },
+          "goal": "并列显示保持结合关系的语法树与后缀",
+          "pauseQuestion": "两个表达式在某些数值下碰巧相等，是否说明它们的标准语法树也相同？"
+        }
+      ]
+    }
+  ]
+}

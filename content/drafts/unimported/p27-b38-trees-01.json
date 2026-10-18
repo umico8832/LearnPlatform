@@ -1,0 +1,1416 @@
+{
+  "schemaVersion": 1,
+  "section": "树真题：完全树、度、孩子兄弟、线索与前缀编码",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "tt01-01",
+      "topic": "完全树指定层叶数的规模上界",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2009",
+        "questionNumber": "5",
+        "label": "2009 年 408 真题 第 5 题（明确层号与最大值）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2009/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "一棵完全二叉树第6层有8个叶结点，根为第1层，叶指无孩子。整棵树最多多少结点？",
+      "options": [
+        {
+          "label": "A",
+          "content": "39"
+        },
+        {
+          "label": "B",
+          "content": "52"
+        },
+        {
+          "label": "C",
+          "content": "111"
+        },
+        {
+          "label": "D",
+          "content": "119"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "只考虑第6层就是最底层",
+          "explanation": "该层有叶也可能是倒数第二层，部分同层结点仍有孩子；只算6层情况会漏掉更大树。"
+        },
+        "B": {
+          "title": "用某个不对应最大合法层序填充的数估算",
+          "explanation": "应先确定树高是否还能到7，再由第6层中有孩子的结点数推算最底层容量。"
+        },
+        "D": {
+          "title": "只从满树中减叶数而漏了孩子位置",
+          "explanation": "若第6层的8个位置成为叶，它们在第7层各少两个孩子位置，不能只从7层满树减8。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "完全树的叶只可能出现在最底层或它的上一层。"
+        },
+        {
+          "level": 2,
+          "text": "比较树高为6与7时哪种能容纳更多结点，且仍满足指定层的叶数。"
+        },
+        {
+          "level": 3,
+          "text": "对较小的完全树画出倒数第二层，分别数已有孩子的父结点和剩下的叶，再给父结点尽量补齐两个孩子。"
+        }
+      ],
+      "solution": "最大规模取树高7，前6层共63点且第6层共32点。该层8个为叶，其余24个可各有两个第7层孩子，最多48个，因此总数111；更高则第6层不能有叶。",
+      "viz": null,
+      "variant": {
+        "stem": "只将第6层的叶数由8改为9，其余完全树与层号约定不变，最多结点数为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "101"
+          },
+          {
+            "label": "B",
+            "content": "109"
+          },
+          {
+            "label": "C",
+            "content": "111"
+          },
+          {
+            "label": "D",
+            "content": "127"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将指定层的叶数8改为9。",
+        "explanation": "仍取高7，前6层63点，第6层23个分支结点最多带46个最底层孩子，总数109。不能把指定层叶数增加误当全树规模增加。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt01-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "complete-tree-level-leaf-bound",
+            "input": {
+              "rootLevel": 1,
+              "leafLevel": 6,
+              "leavesAtLevel": 9,
+              "maximizeNodes": true
+            },
+            "goal": "在合法层序填充中比较树高与指定层叶数",
+            "pauseQuestion": "指定层有叶时，树还能比这一层多出多少层？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt01-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "complete-tree-level-leaf-bound",
+          "input": {
+            "rootLevel": 1,
+            "leafLevel": 6,
+            "leavesAtLevel": 8,
+            "maximizeNodes": true
+          },
+          "goal": "在合法层序填充中比较树高与指定层叶数",
+          "pauseQuestion": "指定层有叶时，树还能比这一层多出多少层？"
+        }
+      ]
+    },
+    {
+      "id": "tt01-02",
+      "topic": "一般树按孩子数统计叶",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2010",
+        "questionNumber": "5",
+        "label": "2010 年 408 真题 第 5 题（度为孩子数）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2010/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有根树的度指孩子数，最大度为4。度4、度3、度2、度1的结点分别有20、10、1、10个，叶结点有多少？",
+      "options": [
+        {
+          "label": "A",
+          "content": "41"
+        },
+        {
+          "label": "B",
+          "content": "82"
+        },
+        {
+          "label": "C",
+          "content": "113"
+        },
+        {
+          "label": "D",
+          "content": "122"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把全部非叶结点数当叶数",
+          "explanation": "41是四类非叶结点数之和，叶数需要由边数和结点数关系求出，不能直接等同。"
+        },
+        "C": {
+          "title": "混加孩子总数与部分结点数",
+          "explanation": "每个非根结点只对应一条父边，应让各度贡献总边数与总结点数减一相等，不能额外叠加。"
+        },
+        "D": {
+          "title": "把总边数当叶数",
+          "explanation": "122是各非叶结点孩子数的总和，也就是边数；叶只是总结点中的一部分。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "从父结点孩子数与从非根结点数量，两种方式数树的边。"
+        },
+        {
+          "level": 2,
+          "text": "度1结点在边数和结点数两侧都出现，它对叶数公式的贡献会怎样？"
+        },
+        {
+          "level": 3,
+          "text": "另取一棵根有三个叶的小树，在一条边中间插入单孩子结点，观察叶数与边数各如何变化。"
+        }
+      ],
+      "solution": "记 `n4`、`n3`、`n2` 为相应孩子数的结点数量。由边数等于总结点数减一，可得叶数等于 `1+3*n4+2*n3+n2`。代入为1加60加20加1等于82。度1结点只延长分支，不增加叶数。",
+      "viz": null,
+      "variant": {
+        "stem": "只将度1结点数由10增加到20，其他度数统计不变，叶数变为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "41"
+          },
+          {
+            "label": "B",
+            "content": "82"
+          },
+          {
+            "label": "C",
+            "content": "92"
+          },
+          {
+            "label": "D",
+            "content": "132"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅增加10个单孩子结点。",
+        "explanation": "度1项在边数与结点数等式两侧抵消，叶数公式不含它，所以仍为82；可通过在已有边上插入单孩子结点实现。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt01-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "rooted-tree-degree-count",
+            "input": {
+              "countsByChildDegree": {
+                "4": 20,
+                "3": 10,
+                "2": 1,
+                "1": 20
+              }
+            },
+            "goal": "用两种边数计数消去单孩子项",
+            "pauseQuestion": "插入一个单孩子结点，是否一定会产生一个新叶？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt01-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "rooted-tree-degree-count",
+          "input": {
+            "countsByChildDegree": {
+              "4": 20,
+              "3": 10,
+              "2": 1,
+              "1": 10
+            }
+          },
+          "goal": "用两种边数计数消去单孩子项",
+          "pauseQuestion": "插入一个单孩子结点，是否一定会产生一个新叶？"
+        }
+      ]
+    },
+    {
+      "id": "tt01-03",
+      "topic": "完全二叉树的叶数",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2011",
+        "questionNumber": "4",
+        "label": "2011 年 408 真题 第 4 题（补明层序编号）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2011/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "完全二叉树有768个结点，根从1开始按层序编号，叶结点个数为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "257"
+        },
+        {
+          "label": "B",
+          "content": "258"
+        },
+        {
+          "label": "C",
+          "content": "384"
+        },
+        {
+          "label": "D",
+          "content": "385"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "只数最底层而漏上一层的叶",
+          "explanation": "第10层确有257个结点，但第9层仍有127个无孩子的结点，它们也是叶；只数末层会少计。"
+        },
+        "B": {
+          "title": "仅在末层数附近修正却漏掉其他叶",
+          "explanation": "末层结点实际为257个，不能多计为258；更关键的是第9层还有127个叶，不能只围绕末层数量估算全部叶数。"
+        },
+        "D": {
+          "title": "对偶数规模错误增加一个叶",
+          "explanation": "最后分支编号为384，叶编号385至768，数量为384，不应再多加1。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "有孩子的结点，其左孩子编号必须在已有编号范围内。"
+        },
+        {
+          "level": 2,
+          "text": "找出最后一个非叶编号，再数它后面的结点。"
+        },
+        {
+          "level": 3,
+          "text": "在结点数为6与7的两棵完全树中，分别看添加的最后一个结点何时只补右孩子、何时开启新的分支。"
+        }
+      ],
+      "solution": "编号不大于384的结点都有左孩子；编号385至768没有孩子，所以共有384个叶。一般完全树叶数为结点数减去其一半向下取整。",
+      "viz": null,
+      "variant": {
+        "stem": "只将总结点数从768改为769，叶结点数为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "257"
+          },
+          {
+            "label": "B",
+            "content": "384"
+          },
+          {
+            "label": "C",
+            "content": "385"
+          },
+          {
+            "label": "D",
+            "content": "386"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅增加第769个层序结点。",
+        "explanation": "最后非叶编号仍为384，新增结点只是补齐其右孩子，叶编号385至769，共385个。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt01-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "complete-tree-leaf-count",
+            "input": {
+              "nodeCount": 769,
+              "indexBase": 1
+            },
+            "goal": "由孩子编号界限区分叶与分支",
+            "pauseQuestion": "新增一个层序结点时，原最后一个分支一定会改变吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt01-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "complete-tree-leaf-count",
+          "input": {
+            "nodeCount": 768,
+            "indexBase": 1
+          },
+          "goal": "由孩子编号界限区分叶与分支",
+          "pauseQuestion": "新增一个层序结点时，原最后一个分支一定会改变吗？"
+        }
+      ]
+    },
+    {
+      "id": "tt01-04",
+      "topic": "孩子兄弟表示的空右指针",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2011",
+        "questionNumber": "6",
+        "label": "2011 年 408 真题 第 6 题（明确单树孩子兄弟转换）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2011/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "一棵有根有序树有2011个结点，其中116个叶。转成左孩子右兄弟二叉表示：左指针指第一个孩子，右指针指下一个兄弟，单棵树根的右指针为空。无右孩子的结点有多少？",
+      "options": [
+        {
+          "label": "A",
+          "content": "115"
+        },
+        {
+          "label": "B",
+          "content": "116"
+        },
+        {
+          "label": "C",
+          "content": "1895"
+        },
+        {
+          "label": "D",
+          "content": "1896"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把非空右指针数当空指针数",
+          "explanation": "115是兄弟连接的非空右指针数，题目要求的是其余空右指针数。"
+        },
+        "B": {
+          "title": "把原树叶数对应到错误的指针方向",
+          "explanation": "原树叶没有孩子，对应二叉表示的左指针为空，不是右指针为空。"
+        },
+        "C": {
+          "title": "漏掉原树根的空右指针",
+          "explanation": "每个原分支结点的最后一个孩子都无右兄弟，此外单棵树根也没有右兄弟。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "右孩子在这个表示中代表兄弟关系，不是原树的普通子结点。"
+        },
+        {
+          "level": 2,
+          "text": "分别数每个孩子序列末尾和原树根，检查是否正好覆盖全部空右指针。"
+        },
+        {
+          "level": 3,
+          "text": "另画一棵根有三个孩子的有序树，把三个孩子串成兄弟链，比较空左与空右分别出现在哪些位置。"
+        }
+      ],
+      "solution": "原非叶共有1895个，各自的最后一个孩子贡献一个空右指针，另加根的空右指针，共1896。等价地，非空右指针共115，2011减115同样为1896。",
+      "viz": null,
+      "variant": {
+        "stem": "同一棵树与转换不变，只改问无左孩子的结点数。答案是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "115"
+          },
+          {
+            "label": "B",
+            "content": "116"
+          },
+          {
+            "label": "C",
+            "content": "1895"
+          },
+          {
+            "label": "D",
+            "content": "1896"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将查询方向从无右孩子改为无左孩子。",
+        "explanation": "左指针为空恰好表示原结点没有第一个孩子，即原树中的叶，所以为116；这与空右指针对应的兄弟链末尾不同。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt01-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "child-sibling-null-pointers",
+            "input": {
+              "nodeCount": 2011,
+              "originalLeafCount": 116,
+              "forestRootCount": 1,
+              "count": "null-left"
+            },
+            "goal": "按原孩子链的末尾数空右指针",
+            "pauseQuestion": "没有右兄弟与原树没有孩子，是同一种结构性质吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt01-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "child-sibling-null-pointers",
+          "input": {
+            "nodeCount": 2011,
+            "originalLeafCount": 116,
+            "forestRootCount": 1,
+            "count": "null-right"
+          },
+          "goal": "按原孩子链的末尾数空右指针",
+          "pauseQuestion": "没有右兄弟与原树没有孩子，是同一种结构性质吗？"
+        }
+      ]
+    },
+    {
+      "id": "tt01-05",
+      "topic": "三叉最小带权外部路径长度",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2013",
+        "questionNumber": "4",
+        "label": "2013 年 408 真题 第 4 题（明确最多三孩子与边深度）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2013/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有根树每个结点最多3个孩子，6个真实叶的权为2、3、4、5、6、7。路径长度按根到叶的边数，根深度0，WPL是各叶权乘深度之和。最小WPL为？可补0权虚叶便于构造，但虚叶不是第7个真实字符。",
+      "options": [
+        {
+          "label": "A",
+          "content": "27"
+        },
+        {
+          "label": "B",
+          "content": "46"
+        },
+        {
+          "label": "C",
+          "content": "54"
+        },
+        {
+          "label": "D",
+          "content": "56"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "只累计根的总权",
+          "explanation": "27是全部真实叶权之和，若有叶深度大于1，WPL还需反映它们经过更多边的贡献。"
+        },
+        "C": {
+          "title": "未让较小权值取得适当更深位置",
+          "explanation": "最优构造要按三叉归并规则反复选择最小权值，并补0满足满三叉的叶数条件，不能随意分层。"
+        },
+        "D": {
+          "title": "把不对应最优三叉树的组合当最优",
+          "explanation": "只看某种合并或深度安排不足以保证最小；三叉哈夫曼合并的每次权值都应计入总WPL。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "最小带权路径长度倾向让小权叶较深、大权叶较浅。"
+        },
+        {
+          "level": 2,
+          "text": "每次合并3个最小权；先检查真实叶数是否需补不增加代价的0权虚叶。"
+        },
+        {
+          "level": 3,
+          "text": "用更少权值构造一个三叉例子，比较所有内部合并权之和与各叶权乘深度之和为何相等。"
+        }
+      ],
+      "solution": "补一个0权虚叶后依次合并0、2、3得5；再合并4、5、5得14；最后合并6、7、14得27。内部合并权之和为5加14加27等于46，亦等于各真实叶权乘所在深度之和。",
+      "viz": null,
+      "variant": {
+        "stem": "只把每个结点最多3个孩子改为最多2个孩子，其他权和WPL口径不变，最小WPL为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "46"
+          },
+          {
+            "label": "B",
+            "content": "54"
+          },
+          {
+            "label": "C",
+            "content": "68"
+          },
+          {
+            "label": "D",
+            "content": "81"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将分支上限由3改为2。",
+        "explanation": "二叉哈夫曼依次合并2与3得5、4与5得9、5与6得11、7与9得16、11与16得27。合并权总和为68；不能复用三叉合并过程。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt01-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "kary-huffman-wpl",
+            "input": {
+              "weights": [
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+              ],
+              "arity": 2,
+              "dummyWeight": 0,
+              "depthUnit": "edge"
+            },
+            "goal": "对照叶深加权与内部合并权累加",
+            "pauseQuestion": "分支上限改变后，原来的三项合并还能直接沿用吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt01-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "kary-huffman-wpl",
+          "input": {
+            "weights": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "arity": 3,
+            "dummyWeight": 0,
+            "depthUnit": "edge"
+          },
+          "goal": "对照叶深加权与内部合并权累加",
+          "pauseQuestion": "分支上限改变后，原来的三项合并还能直接沿用吗？"
+        }
+      ]
+    },
+    {
+      "id": "tt01-06",
+      "topic": "后序叶结点的线索",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2013",
+        "questionNumber": "5",
+        "label": "2013 年 408 真题 第 5 题（明确前后继线索及兄弟左右）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2013/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "后序线索二叉树采用左、右、根访问顺序，空左指针存前驱线索、空右指针存后继线索。叶X有左兄弟Y，二者同父且Y为左孩子、X为右孩子。X的右线索指向？",
+      "options": [
+        {
+          "label": "A",
+          "content": "X的父结点"
+        },
+        {
+          "label": "B",
+          "content": "Y子树的最左下结点"
+        },
+        {
+          "label": "C",
+          "content": "Y本身"
+        },
+        {
+          "label": "D",
+          "content": "Y子树的最右下结点"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把后继回到已经完成的兄弟子树",
+          "explanation": "Y整棵子树在进入X之前已完成，X之后不能再返回访问Y子树里的结点。"
+        },
+        "C": {
+          "title": "把后序前驱当后继",
+          "explanation": "Y子树最后访问的是Y，所以Y是X之前的结点；右线索要求后继而非前驱。"
+        },
+        "D": {
+          "title": "用空间最右位置替代后序时间次序",
+          "explanation": "线索按遍历相邻关系确定，Y子树已在X之前完成，它的最右下位置也不能成为后继。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先确定X作为右孩子时，它之前和之后的待访问部分。"
+        },
+        {
+          "level": 2,
+          "text": "后序访问当前父结点前，左右子树必须都完成。"
+        },
+        {
+          "level": 3,
+          "text": "另画父P带两个叶U、V的局部结构，列出后序，再把左叶换成子树，检查右叶之后的访问是否改变。"
+        }
+      ],
+      "solution": "后序先完成Y子树，再访问右叶X，随后左右子树都结束，应访问父结点。因此X的右后继线索指向父结点，Y则是X的后序前驱。",
+      "viz": null,
+      "variant": {
+        "stem": "树形与后序规则不变，仅改问X的左前驱线索指向谁？",
+        "options": [
+          {
+            "label": "A",
+            "content": "X的父结点"
+          },
+          {
+            "label": "B",
+            "content": "Y本身"
+          },
+          {
+            "label": "C",
+            "content": "一定为空"
+          },
+          {
+            "label": "D",
+            "content": "X自己"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将右后继线索改为左前驱线索。",
+        "explanation": "后序中Y子树最后访问Y本身，紧接着访问右叶X，所以X前驱为Y；Y是否还有孩子不影响其作为该子树最后访问结点。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt01-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "postorder-thread-neighbors",
+            "input": {
+              "tree": {
+                "root": "P",
+                "left": {
+                  "root": "Y",
+                  "left": {
+                    "root": "U"
+                  },
+                  "right": {
+                    "root": "V"
+                  }
+                },
+                "right": {
+                  "root": "X"
+                }
+              },
+              "target": "X",
+              "thread": "left-predecessor"
+            },
+            "goal": "按后序访问邻居确定线索",
+            "pauseQuestion": "线索指向遍历邻居，还是按结点在画面上的最左最右位置决定？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt01-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "postorder-thread-neighbors",
+          "input": {
+            "tree": {
+              "root": "P",
+              "left": {
+                "root": "Y",
+                "left": {
+                  "root": "U"
+                },
+                "right": {
+                  "root": "V"
+                }
+              },
+              "right": {
+                "root": "X"
+              }
+            },
+            "target": "X",
+            "thread": "right-successor"
+          },
+          "goal": "按后序访问邻居确定线索",
+          "pauseQuestion": "线索指向遍历邻居，还是按结点在画面上的最左最右位置决定？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "tt01-07",
+      "topic": "森林叶与二叉表示的左指针",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2014",
+        "questionNumber": "5",
+        "label": "2014 年 408 真题 第 5 题（明确孩子兄弟与森林根串联）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2014/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "将非空有序森林转成左孩子右兄弟二叉表示，森林各根也按从左至右串成右兄弟链。原森林叶结点的个数等于二叉表示中的哪一项？",
+      "options": [
+        {
+          "label": "A",
+          "content": "叶结点数"
+        },
+        {
+          "label": "B",
+          "content": "恰有一个二叉孩子的结点数"
+        },
+        {
+          "label": "C",
+          "content": "左孩子指针为空的结点数"
+        },
+        {
+          "label": "D",
+          "content": "右孩子指针为空的结点数"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把右兄弟也当原树的孩子",
+          "explanation": "原森林叶仍可有右兄弟，此时在二叉表示中不再是二叉叶，所以两个叶数不能直接等同。"
+        },
+        "B": {
+          "title": "把有没有原孩子与二叉度数混同",
+          "explanation": "二叉表示的一条指针可能是第一个孩子，也可能是兄弟；恰一个二叉孩子并不等价于原森林叶。"
+        },
+        "D": {
+          "title": "把原孩子映射到兄弟方向",
+          "explanation": "右指针表示下一个兄弟，空右只说明处在兄弟链末尾，不等价于原森林没有孩子。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先用原结构解释左指针与右指针各自含义。"
+        },
+        {
+          "level": 2,
+          "text": "原结点没有任何孩子时，第一个孩子指针应处于什么状态？"
+        },
+        {
+          "level": 3,
+          "text": "取一棵根带两个叶的树，给两个叶连上右兄弟指针，检查哪个叶虽仍是原叶却已有二叉孩子。"
+        }
+      ],
+      "solution": "左指针只保存原结点的第一个孩子，因此为空当且仅当原结点无孩子，即原森林的叶。右指针保留兄弟，可能使原叶不再是二叉叶，故对应的是空左指针数。",
+      "viz": null,
+      "variant": {
+        "stem": "转换不变，只改问左孩子指针非空的结点数，它等于原森林哪项数量？",
+        "options": [
+          {
+            "label": "A",
+            "content": "叶结点数"
+          },
+          {
+            "label": "B",
+            "content": "非叶结点数"
+          },
+          {
+            "label": "C",
+            "content": "树的棵数"
+          },
+          {
+            "label": "D",
+            "content": "所有兄弟链长度之和"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将左指针为空改为非空，改问对应原森林数量。",
+        "explanation": "有第一个孩子恰好表示原结点至少有一个孩子，即原森林的非叶结点。原森林根的兄弟串联只改变右指针，不影响这个对应。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt01-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "forest-child-sibling-leaf-map",
+            "input": {
+              "forest": [
+                {
+                  "node": "A",
+                  "children": [
+                    {
+                      "node": "B",
+                      "children": []
+                    },
+                    {
+                      "node": "C",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "node": "D",
+                  "children": []
+                }
+              ],
+              "count": "non-null-left"
+            },
+            "goal": "逐结点比较原孩子列表与二叉左指针",
+            "pauseQuestion": "原叶有右兄弟时，还能否保证它是二叉表示里的叶？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt01-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "forest-child-sibling-leaf-map",
+          "input": {
+            "forest": [
+              {
+                "node": "A",
+                "children": [
+                  {
+                    "node": "B",
+                    "children": []
+                  },
+                  {
+                    "node": "C",
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "node": "D",
+                "children": []
+              }
+            ],
+            "count": "null-left"
+          },
+          "goal": "逐结点比较原孩子列表与二叉左指针",
+          "pauseQuestion": "原叶有右兄弟时，还能否保证它是二叉表示里的叶？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "tt01-08",
+      "topic": "前缀编码的逐对判定",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2014",
+        "questionNumber": "6",
+        "label": "2014 年 408 真题 第 6 题（明确码字前缀定义）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2014/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "5个字符采用以下四种二进制码字方案，哪一种不是前缀编码？前缀编码要求任一码字都不是另一码字的前缀。",
+      "options": [
+        {
+          "label": "A",
+          "content": "`01,0000,0001,001,1`"
+        },
+        {
+          "label": "B",
+          "content": "`011,000,001,010,1`"
+        },
+        {
+          "label": "C",
+          "content": "`000,001,010,011,100`"
+        },
+        {
+          "label": "D",
+          "content": "`0,100,110,1110,1100`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把不同长度直接当作前缀冲突",
+          "explanation": "长度不同可以合法，关键看短码是否完整出现在长码开头；该组逐对不存在这种关系。"
+        },
+        "B": {
+          "title": "把共享开头当作一个码字包含另一个",
+          "explanation": "多个码字可共享部分前缀，只要没有完整码字成为另一码字的前缀即可；该组满足。"
+        },
+        "C": {
+          "title": "把并非所有等长比特串都用满当作非法",
+          "explanation": "等长且互异的码字互不为前缀，不要求用满全部可能码字，方案C合法。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "逐个取较短码字，检查是否完整出现在其他更长码字的开头。"
+        },
+        {
+          "level": 2,
+          "text": "共享若干位与一个完整码字成为前缀，是不同条件。"
+        },
+        {
+          "level": 3,
+          "text": "对另例码字10与1011做逐位比较，再对10与1101比较，注意何时已经出现不同位。"
+        }
+      ],
+      "solution": "D中的110完整地出现在1100开头，接收到110时无法按前缀性质确定是否还需下一位，因此不是前缀编码。A、B逐对无包含关系；C等长互异也合法。",
+      "viz": null,
+      "variant": {
+        "stem": "只把方案D中的1100改为1010，其余四个码字不变。修改后的D是否为前缀编码？",
+        "options": [
+          {
+            "label": "A",
+            "content": "是，任一码字均非另一码字的前缀"
+          },
+          {
+            "label": "B",
+            "content": "否，因为110仍是1010的前缀"
+          },
+          {
+            "label": "C",
+            "content": "否，因为0是所有以1开头码字的前缀"
+          },
+          {
+            "label": "D",
+            "content": "仅凭码字无法判断，还必须知道概率"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将D的最后一个码字1100替换为1010。",
+        "explanation": "修改后为0、100、110、1110、1010。0与其余首位不同；100、110均不成为后两个四位码的前缀，所有对均通过，因此是前缀编码，判断不依赖字符概率。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt01-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "prefix-code-trie",
+            "input": {
+              "codes": [
+                "0",
+                "100",
+                "110",
+                "1110",
+                "1010"
+              ]
+            },
+            "goal": "用终止码字是否出现在另一条路径中间检验前缀",
+            "pauseQuestion": "共享开头的分支，是否必然意味着某个完整码字已经结束？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt01-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "prefix-code-trie",
+          "input": {
+            "schemes": [
+              [
+                "01",
+                "0000",
+                "0001",
+                "001",
+                "1"
+              ],
+              [
+                "011",
+                "000",
+                "001",
+                "010",
+                "1"
+              ],
+              [
+                "000",
+                "001",
+                "010",
+                "011",
+                "100"
+              ],
+              [
+                "0",
+                "100",
+                "110",
+                "1110",
+                "1100"
+              ]
+            ]
+          },
+          "goal": "用终止码字是否出现在另一条路径中间检验前缀",
+          "pauseQuestion": "共享开头的分支，是否必然意味着某个完整码字已经结束？"
+        }
+      ]
+    },
+    {
+      "id": "tt01-09",
+      "topic": "森林的结点边数差",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2016",
+        "questionNumber": "5",
+        "label": "2016 年 408 真题 第 5 题（孤立点也计一棵树）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2016/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有限无向森林含25个结点、15条边，每个连通分量都是一棵树，孤立结点也算一棵。森林有多少棵树？",
+      "options": [
+        {
+          "label": "A",
+          "content": "8"
+        },
+        {
+          "label": "B",
+          "content": "9"
+        },
+        {
+          "label": "C",
+          "content": "10"
+        },
+        {
+          "label": "D",
+          "content": "11"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "将结点与边差额少算两棵",
+          "explanation": "每个树分量的结点数减边数恰为1，整体差额要完整累计，不能额外扣除根。"
+        },
+        "B": {
+          "title": "重复减去整片森林的一个根",
+          "explanation": "森林每个分量各有自己的根或独立连通结构，不能再用整棵树的差额1扣一次。"
+        },
+        "D": {
+          "title": "在总差额上又补一个根",
+          "explanation": "结点数减边数已经计入每棵树的差额，不需要再额外加1。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先对一棵树写结点数与边数关系。"
+        },
+        {
+          "level": 2,
+          "text": "把关系对所有分量求和，孤立点也应贡献一个分量。"
+        },
+        {
+          "level": 3,
+          "text": "用一条边加一个孤立点的小森林，检查各分量差额相加后是否还需要另加根。"
+        }
+      ],
+      "solution": "每棵树的边数等于其结点数减一。对全部树求和，总结点数减总边数等于树的棵数，因此25减15为10。",
+      "viz": null,
+      "variant": {
+        "stem": "在同一森林中只增加一条连接原来两个不同分量的边，结点不变且不产生环，现在有多少棵树？",
+        "options": [
+          {
+            "label": "A",
+            "content": "8"
+          },
+          {
+            "label": "B",
+            "content": "9"
+          },
+          {
+            "label": "C",
+            "content": "10"
+          },
+          {
+            "label": "D",
+            "content": "11"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅添加一条连接不同树分量的边。",
+        "explanation": "新边把两棵树合成一棵，分量数减少1，边数变16，25减16为9；连接不同分量的条件保证仍是森林。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt01-09v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "forest-components-count",
+            "input": {
+              "nodeCount": 25,
+              "edgeCount": 16,
+              "acyclic": true,
+              "addedEdgeConnectsDifferentComponents": true
+            },
+            "goal": "将每棵树的结点边差相加",
+            "pauseQuestion": "两棵树间加一条边，会同时减少几个连通分量？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt01-09-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "forest-components-count",
+          "input": {
+            "nodeCount": 25,
+            "edgeCount": 15,
+            "acyclic": true
+          },
+          "goal": "将每棵树的结点边差相加",
+          "pauseQuestion": "两棵树间加一条边，会同时减少几个连通分量？"
+        }
+      ]
+    },
+    {
+      "id": "tt01-10",
+      "topic": "一般树遍历与二叉转换",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2019",
+        "questionNumber": "2",
+        "label": "2019 年 408 真题 第 2 题（明确有序孩子与单树转换）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2019/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "对任意有根有序树T，用左孩子右兄弟法转成二叉表示BT，单棵树根无右兄弟。T的后根遍历按从左到右完成所有孩子子树后再访问根。BT的哪种遍历总与T的后根序列一致？",
+      "options": [
+        {
+          "label": "A",
+          "content": "先序"
+        },
+        {
+          "label": "B",
+          "content": "中序"
+        },
+        {
+          "label": "C",
+          "content": "后序"
+        },
+        {
+          "label": "D",
+          "content": "层序"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "只因名称都有根就混同访问时机",
+          "explanation": "二叉先序先访问根，而原树后根要在所有孩子之后访问根，通常不一致。"
+        },
+        "C": {
+          "title": "把两个结构的后序名称直接等同",
+          "explanation": "二叉右指针表示兄弟，二叉后序会把右兄弟访问到当前结点之前，不能直接等同原树的后根。"
+        },
+        "D": {
+          "title": "把层次顺序当完成子树顺序",
+          "explanation": "层序按层访问，一般不会等待全部孩子子树结束后才输出根，不符合原树后根。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "二叉左边代表第一个孩子，右边代表后续兄弟，不是原树同义的左右子树。"
+        },
+        {
+          "level": 2,
+          "text": "先看第一个孩子的二叉中序如何继续处理其右兄弟链，再回到原父结点。"
+        },
+        {
+          "level": 3,
+          "text": "取另例根X的两个孩子Y、Z，Y再带孩子W，分别写原树后根与转换后的各二叉遍历，而不要只看名称。"
+        }
+      ],
+      "solution": "二叉中序先遍历左孩子表示的整个孩子与兄弟链，再访问当前根；沿兄弟链递归时，当前孩子的子树先完成、再转下一个兄弟。这恰好按原孩子顺序逐一后根访问，最后原根，因此对应BT中序。",
+      "viz": null,
+      "variant": {
+        "stem": "只把T的目标遍历从后根改为先根：先访问根再从左到右遍历各孩子。BT哪种遍历总与之相同？",
+        "options": [
+          {
+            "label": "A",
+            "content": "先序"
+          },
+          {
+            "label": "B",
+            "content": "中序"
+          },
+          {
+            "label": "C",
+            "content": "后序"
+          },
+          {
+            "label": "D",
+            "content": "层序"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将原树目标后根遍历改为先根遍历。",
+        "explanation": "二叉先序先访问当前结点，再进入第一个孩子，随后经右兄弟链继续各兄弟，恰好对应原树从左到右的先根遍历。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt01-10v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "ordered-tree-binary-traversal-map",
+            "input": {
+              "tree": {
+                "node": "A",
+                "children": [
+                  {
+                    "node": "B",
+                    "children": [
+                      {
+                        "node": "D",
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "node": "C",
+                    "children": []
+                  }
+                ]
+              },
+              "originalTraversal": "pre-root",
+              "binaryTraversal": "preorder"
+            },
+            "goal": "在同一孩子兄弟结构上对照两类访问序列",
+            "pauseQuestion": "二叉右孩子若代表兄弟，两个结构同名后序是否仍是同一个访问顺序？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt01-10-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "ordered-tree-binary-traversal-map",
+          "input": {
+            "tree": {
+              "node": "A",
+              "children": [
+                {
+                  "node": "B",
+                  "children": [
+                    {
+                      "node": "D",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "node": "C",
+                  "children": []
+                }
+              ]
+            },
+            "originalTraversal": "post-root",
+            "binaryTraversal": "inorder"
+          },
+          "goal": "在同一孩子兄弟结构上对照两类访问序列",
+          "pauseQuestion": "二叉右孩子若代表兄弟，两个结构同名后序是否仍是同一个访问顺序？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    }
+  ]
+}

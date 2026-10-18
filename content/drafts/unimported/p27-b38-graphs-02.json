@@ -1,0 +1,1733 @@
+{
+  "schemaVersion": 1,
+  "section": "图真题二：遍历序列、拓扑、最短路与关键路径",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "gg02-01",
+      "topic": "拓扑序按完整合法输出计数",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2010",
+        "questionNumber": "8",
+        "label": "2010 年 408 真题 第 8 题（原图完整边集文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2010/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站后台渲染实际查看原SVG，逐箭头/边权转写给定图，未列边不存在；原选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有向无环图原图转写，顶点a、b、c、d、e，弧为a到b、a到c、a到e、b到c、c到d、e到d，无其他弧。不同完整拓扑序列共有几种？同一序列不因删除实现不同重复计数。",
+      "options": [
+        {
+          "label": "A",
+          "content": "4"
+        },
+        {
+          "label": "B",
+          "content": "3"
+        },
+        {
+          "label": "C",
+          "content": "2"
+        },
+        {
+          "label": "D",
+          "content": "1"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把仍受b先于c约束的排列全计入",
+          "explanation": "a后面b、c、e并非完全独立，b必须先于c，且d要等c和e，不能任意凑4。"
+        },
+        "C": {
+          "title": "漏掉e可在b之前的合法情况",
+          "explanation": "a之后e与b均可成为零入度候选，e先于b的a、e、b、c、d也应计入。"
+        },
+        "D": {
+          "title": "把某个固定零入度选择策略当唯一拓扑序",
+          "explanation": "按字母顺序只输出一个结果不等于图只有一个合法序列，e可在b、c前后不同位置出现。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "从唯一或多个零入度候选出发，逐步分支列出完整输出。"
+        },
+        {
+          "level": 2,
+          "text": "将b必须早于c和d必须晚于c、e的约束分别保留。"
+        },
+        {
+          "level": 3,
+          "text": "另取一个起点后分出短链和独立点的小DAG，按独立点能插入链的哪些位置枚举，而非只跑一次固定算法。"
+        }
+      ],
+      "solution": "a必须首先，d必须在b、c、e之后；中间b先于c，而e可在两者前、之间、之后，得到abced、abecd、aebcd三种，故3。",
+      "viz": null,
+      "variant": {
+        "stem": "仅增加弧b到e，其余图不变，完整拓扑序列共有几种？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1"
+          },
+          {
+            "label": "B",
+            "content": "2"
+          },
+          {
+            "label": "C",
+            "content": "3"
+          },
+          {
+            "label": "D",
+            "content": "4"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅新增一条依赖弧b到e。",
+        "explanation": "a仍先出，新弧使b必须先于e；b出后c与e可交换，最后d，合法序列abced与abecd，共2。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg02-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "topological-all-orders",
+            "input": {
+              "nodes": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e"
+              ],
+              "directed": true,
+              "edges": [
+                [
+                  "a",
+                  "b"
+                ],
+                [
+                  "a",
+                  "c"
+                ],
+                [
+                  "a",
+                  "e"
+                ],
+                [
+                  "b",
+                  "c"
+                ],
+                [
+                  "c",
+                  "d"
+                ],
+                [
+                  "e",
+                  "d"
+                ],
+                [
+                  "b",
+                  "e"
+                ]
+              ],
+              "countDistinctOutputs": true
+            },
+            "goal": "枚举零入度选择并去重完整输出",
+            "pauseQuestion": "固定字母优先的一次输出，能否代表图的全部合法拓扑序？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg02-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "topological-all-orders",
+          "input": {
+            "nodes": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e"
+            ],
+            "directed": true,
+            "edges": [
+              [
+                "a",
+                "b"
+              ],
+              [
+                "a",
+                "c"
+              ],
+              [
+                "a",
+                "e"
+              ],
+              [
+                "b",
+                "c"
+              ],
+              [
+                "c",
+                "d"
+              ],
+              [
+                "e",
+                "d"
+              ]
+            ],
+            "countDistinctOutputs": true
+          },
+          "goal": "枚举零入度选择并去重完整输出",
+          "pauseQuestion": "固定字母优先的一次输出，能否代表图的全部合法拓扑序？"
+        }
+      ]
+    },
+    {
+      "id": "gg02-02",
+      "topic": "严格上三角邻接与拓扑存在性",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2012",
+        "questionNumber": "6",
+        "label": "2012 年 408 真题 第 6 题（补明无自环和矩阵方向）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2012/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站补明简单有向图无自环即对角线为0；仅下三角零而允许自环不能推出拓扑存在，原四结论与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有限简单有向图无自环，邻接矩阵行表示起点、列表示终点，对角线及以下元素全0。下列关于完整拓扑序的结论正确的是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "存在且一定唯一"
+        },
+        {
+          "label": "B",
+          "content": "存在且一定不唯一"
+        },
+        {
+          "label": "C",
+          "content": "存在，可能不唯一"
+        },
+        {
+          "label": "D",
+          "content": "无法确定是否存在"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把所有边顺编号前进当必须有唯一先后",
+          "explanation": "编号升序确为一个拓扑序，但没有弧直接或间接约束的点仍可换序，不保证唯一。"
+        },
+        "B": {
+          "title": "把未给出唯一约束当必然有多个",
+          "explanation": "只含连续前向链的图就能唯一，矩阵形状没有排除这类输入，不能断言一定不唯一。"
+        },
+        "D": {
+          "title": "忽略编号严格增加排除了有向环",
+          "explanation": "每条弧都由小编号到大编号，不可能沿弧返回更小的起点，故一定无环并存在拓扑序。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "从非零矩阵项的位置推每条弧起终点编号的大小。"
+        },
+        {
+          "level": 2,
+          "text": "沿有向环走一圈若编号每步严格增加，会得到什么矛盾？"
+        },
+        {
+          "level": 3,
+          "text": "另比较只有前向链与只有若干互不约束顶点的两张小图，检查上三角形状是否能同时容纳它们。"
+        }
+      ],
+      "solution": "非零项只可能在行号小于列号处，所以每条弧编号严格递增，图必为DAG；编号升序给出一条拓扑序。链可唯一，分支或独立点可多序，因此存在但可能不唯一。",
+      "viz": null,
+      "variant": {
+        "stem": "仅取消无自环限制，允许主对角非0，仍保证主对角线以下全0。还能仅凭此条件保证完整拓扑序存在吗？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仍能保证"
+          },
+          {
+            "label": "B",
+            "content": "不能，有自环就是反例"
+          },
+          {
+            "label": "C",
+            "content": "必有唯一拓扑序"
+          },
+          {
+            "label": "D",
+            "content": "必有两个拓扑序"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅允许对角线出现表示自环的非零项。",
+        "explanation": "对角非零可表示一个自环，要求该点在自身之前，不存在完整拓扑序；下三角全0并不能排除这个环，所以不再保证存在。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg02-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "upper-triangular-dag-topology",
+            "input": {
+              "matrix": [
+                [
+                  1,
+                  1
+                ],
+                [
+                  0,
+                  0
+                ]
+              ],
+              "rowMeans": "outgoing"
+            },
+            "goal": "区分严格上三角与允许对角自环",
+            "pauseQuestion": "不在主对角线下方，是否自动意味着该项不可能形成环？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg02-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "upper-triangular-dag-topology",
+          "input": {
+            "examples": [
+              {
+                "matrix": [
+                  [
+                    0,
+                    1,
+                    0
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    0,
+                    0,
+                    0
+                  ]
+                ]
+              },
+              {
+                "matrix": [
+                  [
+                    0,
+                    1,
+                    1
+                  ],
+                  [
+                    0,
+                    0,
+                    0
+                  ],
+                  [
+                    0,
+                    0,
+                    0
+                  ]
+                ]
+              }
+            ],
+            "rowMeans": "outgoing"
+          },
+          "goal": "区分严格上三角与允许对角自环",
+          "pauseQuestion": "不在主对角线下方，是否自动意味着该项不可能形成环？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "gg02-03",
+      "topic": "Dijkstra确定次序要持续松弛",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2012",
+        "questionNumber": "7",
+        "label": "2012 年 408 真题 第 7 题（原图完整边集文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2012/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站后台渲染实际查看原SVG，逐箭头/边权转写给定图，未列边不存在；原选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "非负带权有向图原图转写：a到b权2、a到c权5、b到c权1、b到d权3、c到d权3、c到e权4、c到f权1、d到e权1、d到f权4、e到f权1，无其他弧。从a运行Dijkstra，除源外先确定b再c，之后依次确定哪些目标？本数据无最小暂距并列。",
+      "options": [
+        {
+          "label": "A",
+          "content": "d、e、f"
+        },
+        {
+          "label": "B",
+          "content": "e、d、f"
+        },
+        {
+          "label": "C",
+          "content": "f、d、e"
+        },
+        {
+          "label": "D",
+          "content": "f、e、d"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把较早发现的d先于更短新路径确定",
+          "explanation": "c确定后可得f暂距4，小于d的5，必须先确定f，不能按发现时间排列。"
+        },
+        "B": {
+          "title": "把一个较大暂距e提前固定",
+          "explanation": "e在c后暂距7，随后还可由d改进，在它前面已有更小的f与d。"
+        },
+        "D": {
+          "title": "漏掉d在e之前及其进一步松弛",
+          "explanation": "f后d为5，e暂距7，d先确定并将e降到6，不能把e先于d。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "每确定一点后，用它的最终距离加出边权更新所有未确定目标。"
+        },
+        {
+          "level": 2,
+          "text": "记录暂距与已确定集合，下一项取当前最小暂距而非最小单边权。"
+        },
+        {
+          "level": 3,
+          "text": "另构造一个先发现长路、后由中间点找到短路的三四点例子，检查目标的发现时间能否代替确定时间。"
+        }
+      ],
+      "solution": "b距离2，更新c为3、d为5；c确定后f为4、e为7，d仍5。接着f4、d5，d再将e降为6，最后e6。因此后续为f、d、e。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将c到f的权从1改为5，其他边不变，先确定b、c后，后续三个目标次序为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "d、e、f"
+          },
+          {
+            "label": "B",
+            "content": "e、d、f"
+          },
+          {
+            "label": "C",
+            "content": "f、d、e"
+          },
+          {
+            "label": "D",
+            "content": "f、e、d"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅增加c到f这条弧的权。",
+        "explanation": "c后d暂距5、e7、f8，先d5使e降6；再e6使f降7，故依次d、e、f。不能复用原图f4的已失效路径。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg02-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "dijkstra-settlement-order",
+            "input": {
+              "nodes": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e",
+                "f"
+              ],
+              "directed": true,
+              "weightedEdges": [
+                [
+                  "a",
+                  "b",
+                  2
+                ],
+                [
+                  "a",
+                  "c",
+                  5
+                ],
+                [
+                  "b",
+                  "c",
+                  1
+                ],
+                [
+                  "b",
+                  "d",
+                  3
+                ],
+                [
+                  "c",
+                  "d",
+                  3
+                ],
+                [
+                  "c",
+                  "e",
+                  4
+                ],
+                [
+                  "c",
+                  "f",
+                  5
+                ],
+                [
+                  "d",
+                  "e",
+                  1
+                ],
+                [
+                  "d",
+                  "f",
+                  4
+                ],
+                [
+                  "e",
+                  "f",
+                  1
+                ]
+              ],
+              "source": "a"
+            },
+            "goal": "并列显示发现、暂距更新与正式确定",
+            "pauseQuestion": "从某条出边看到目标时，是否已经能把目标最短路永久确定？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg02-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "dijkstra-settlement-order",
+          "input": {
+            "nodes": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e",
+              "f"
+            ],
+            "directed": true,
+            "weightedEdges": [
+              [
+                "a",
+                "b",
+                2
+              ],
+              [
+                "a",
+                "c",
+                5
+              ],
+              [
+                "b",
+                "c",
+                1
+              ],
+              [
+                "b",
+                "d",
+                3
+              ],
+              [
+                "c",
+                "d",
+                3
+              ],
+              [
+                "c",
+                "e",
+                4
+              ],
+              [
+                "c",
+                "f",
+                1
+              ],
+              [
+                "d",
+                "e",
+                1
+              ],
+              [
+                "d",
+                "f",
+                4
+              ],
+              [
+                "e",
+                "f",
+                1
+              ]
+            ],
+            "source": "a"
+          },
+          "goal": "并列显示发现、暂距更新与正式确定",
+          "pauseQuestion": "从某条出边看到目标时，是否已经能把目标最短路永久确定？"
+        }
+      ]
+    },
+    {
+      "id": "gg02-04",
+      "topic": "有向矩阵行列度数分开",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2013",
+        "questionNumber": "7",
+        "label": "2013 年 408 真题 第 7 题（原KaTeX矩阵逐行转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2013/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站用本地KaTeX样式后台渲染原矩阵核对行列，避免纯文本按列抽取误读；四组度数和正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "原邻接矩阵按行转写为 `[0,1,0,1]`、`[0,0,1,1]`、`[0,1,0,0]`、`[1,0,0,0]`。这是无自环有向图，行i列j为1表示i到j有弧。按顶点1至4，总度（入度加出度）依次为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1、2、1、2"
+        },
+        {
+          "label": "B",
+          "content": "2、2、1、1"
+        },
+        {
+          "label": "C",
+          "content": "3、4、2、3"
+        },
+        {
+          "label": "D",
+          "content": "4、4、2、2"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "只统计列和即入度",
+          "explanation": "A是四列和1、2、1、2，未加各顶点对应行的出度。"
+        },
+        "B": {
+          "title": "只统计行和即出度",
+          "explanation": "B是四行和2、2、1、1，总度还须加列和，不能遗漏入弧。"
+        },
+        "D": {
+          "title": "把有向矩阵错当无向而直接把行和翻倍",
+          "explanation": "矩阵非对称，入度不必等于出度；D是行和倍增，不是真实行列和。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先按定义分别算每个顶点的出弧与入弧数量。"
+        },
+        {
+          "level": 2,
+          "text": "总度用对应行和加对应列和，不要从矩阵有某些对称项就推广为全图无向。"
+        },
+        {
+          "level": 3,
+          "text": "另取只有一个单向弧的两点图，写矩阵并比较两个端点的入、出与总度。"
+        }
+      ],
+      "solution": "行和为2、2、1、1，列和为1、2、1、2，对应相加得3、4、2、3。总和12也等于6条弧贡献的两倍，可作总量核对。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把所求指标从总度改为出度，矩阵与四组选项不变，结果为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1、2、1、2"
+          },
+          {
+            "label": "B",
+            "content": "2、2、1、1"
+          },
+          {
+            "label": "C",
+            "content": "3、4、2、3"
+          },
+          {
+            "label": "D",
+            "content": "4、4、2、2"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将统计指标由入加出改为出度。",
+        "explanation": "按行表示起点，出度就是每行和，依次2、2、1、1，为B；列和对应的是入度。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg02-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "directed-matrix-degree-accounting",
+            "input": {
+              "matrix": [
+                [
+                  0,
+                  1,
+                  0,
+                  1
+                ],
+                [
+                  0,
+                  0,
+                  1,
+                  1
+                ],
+                [
+                  0,
+                  1,
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "rowMeans": "outgoing",
+              "query": "out-degree"
+            },
+            "goal": "对应同一顶点并列累计一行与一列",
+            "pauseQuestion": "矩阵中出现一对相反弧，是否意味着其他入出关系也必须对称？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg02-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "directed-matrix-degree-accounting",
+          "input": {
+            "matrix": [
+              [
+                0,
+                1,
+                0,
+                1
+              ],
+              [
+                0,
+                0,
+                1,
+                1
+              ],
+              [
+                0,
+                1,
+                0,
+                0
+              ],
+              [
+                1,
+                0,
+                0,
+                0
+              ]
+            ],
+            "rowMeans": "outgoing",
+            "query": "in-plus-out-degree"
+          },
+          "goal": "对应同一顶点并列累计一行与一列",
+          "pauseQuestion": "矩阵中出现一对相反弧，是否意味着其他入出关系也必须对称？"
+        }
+      ]
+    },
+    {
+      "id": "gg02-05",
+      "topic": "BFS不能跨过已入队的同层点",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2013",
+        "questionNumber": "8",
+        "label": "2013 年 408 真题 第 8 题（原图完整边集文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2013/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站后台渲染实际查看原SVG，逐箭头/边权转写给定图，未列边不存在；原选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "无向图原图转写，顶点a至h，边a-b、a-e、a-h、b-c、b-d、c-d、c-h、e-f、e-g，无其他边。BFS首次发现即标记入队，按FIFO出队；每个选项从首项开始，允许各自选邻接表次序。哪组不可能为完整首次访问序列？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`h,c,a,b,d,e,g,f`"
+        },
+        {
+          "label": "B",
+          "content": "`e,a,f,g,b,h,c,d`"
+        },
+        {
+          "label": "C",
+          "content": "`d,b,c,a,h,e,f,g`"
+        },
+        {
+          "label": "D",
+          "content": "`a,b,c,d,h,e,f,g`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把同层邻点可交换误判为不合法",
+          "explanation": "A可从h先发现c、a，再经c入队b、d，经a入队e，最后e按g、f次序发现，存在合法FIFO过程。"
+        },
+        "B": {
+          "title": "忽略起点变化后距离层也随之变化",
+          "explanation": "B从e起，先a、f、g，再b、h，最后c、d，可由适当邻点次序得到，不能套从a的分层。"
+        },
+        "C": {
+          "title": "把不同父点发现同层目标误作不可行",
+          "explanation": "C从d发现b、c，再分别引出a、h，随后e再f、g，符合FIFO分层并可实现。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先按每个候选的首项求到各点的最少边数层。"
+        },
+        {
+          "level": 2,
+          "text": "处理起点时所有新邻点都会先入队，之后发现的更远点不能抢在它们前面出队。"
+        },
+        {
+          "level": 3,
+          "text": "另画一个根有三个邻点、其中一邻点再带子点的小图，逐步写队列内容，检查子点能否越过另外两个早入队邻点。"
+        }
+      ],
+      "solution": "D从a出发，b、e、h都是距离1，c、d为距离2。FIFO要求先完成所有已入队的1层点，不能在e、h之前输出c、d，故D不可能；另外三组各有合法邻接次序见证。",
+      "viz": null,
+      "variant": {
+        "stem": "只把对D的可达性查询改为递归DFS：同一图从a开始，邻点次序可选，`a,b,c,d,h,e,f,g` 是否可能？",
+        "options": [
+          {
+            "label": "A",
+            "content": "可能，可先完成b方向子树再进入e方向"
+          },
+          {
+            "label": "B",
+            "content": "不可能，DFS也须先输出a的全部邻点"
+          },
+          {
+            "label": "C",
+            "content": "不可能，h必须先于c"
+          },
+          {
+            "label": "D",
+            "content": "只有把图改成有向才可能"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将原D序列的遍历规则由BFS换为递归DFS。",
+        "explanation": "取各点邻居按字母升序，a进b，b进c，c先d后h，完成该子树后回a再进e、f、g，恰得给定序列。DFS完整深入子树，不受BFS同层先出要求。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg02-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "graph-traversal-sequence-existence",
+            "input": {
+              "nodes": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e",
+                "f",
+                "g",
+                "h"
+              ],
+              "directed": false,
+              "edges": [
+                [
+                  "a",
+                  "b"
+                ],
+                [
+                  "a",
+                  "e"
+                ],
+                [
+                  "a",
+                  "h"
+                ],
+                [
+                  "b",
+                  "c"
+                ],
+                [
+                  "b",
+                  "d"
+                ],
+                [
+                  "c",
+                  "d"
+                ],
+                [
+                  "c",
+                  "h"
+                ],
+                [
+                  "e",
+                  "f"
+                ],
+                [
+                  "e",
+                  "g"
+                ]
+              ],
+              "source": "a",
+              "sequence": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "h",
+                "e",
+                "f",
+                "g"
+              ],
+              "traversal": "recursive-DFS",
+              "neighborOrder": "existential-per-vertex"
+            },
+            "goal": "用真实队列或递归栈寻找可实现次序",
+            "pauseQuestion": "允许邻点次序自由，是否也能打破BFS已经形成的距离层约束？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg02-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "graph-traversal-sequence-existence",
+          "input": {
+            "nodes": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e",
+              "f",
+              "g",
+              "h"
+            ],
+            "directed": false,
+            "edges": [
+              [
+                "a",
+                "b"
+              ],
+              [
+                "a",
+                "e"
+              ],
+              [
+                "a",
+                "h"
+              ],
+              [
+                "b",
+                "c"
+              ],
+              [
+                "b",
+                "d"
+              ],
+              [
+                "c",
+                "d"
+              ],
+              [
+                "c",
+                "h"
+              ],
+              [
+                "e",
+                "f"
+              ],
+              [
+                "e",
+                "g"
+              ]
+            ],
+            "sequences": [
+              [
+                "h",
+                "c",
+                "a",
+                "b",
+                "d",
+                "e",
+                "g",
+                "f"
+              ],
+              [
+                "e",
+                "a",
+                "f",
+                "g",
+                "b",
+                "h",
+                "c",
+                "d"
+              ],
+              [
+                "d",
+                "b",
+                "c",
+                "a",
+                "h",
+                "e",
+                "f",
+                "g"
+              ],
+              [
+                "a",
+                "b",
+                "c",
+                "d",
+                "h",
+                "e",
+                "f",
+                "g"
+              ]
+            ],
+            "traversal": "BFS",
+            "neighborOrder": "existential-per-vertex"
+          },
+          "goal": "用真实队列或递归栈寻找可实现次序",
+          "pauseQuestion": "允许邻点次序自由，是否也能打破BFS已经形成的距离层约束？"
+        }
+      ]
+    },
+    {
+      "id": "gg02-06",
+      "topic": "缩短活动须覆盖全部原关键路径",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2013",
+        "questionNumber": "9",
+        "label": "2013 年 408 真题 第 9 题（原图活动边集转写并具体化缩短量）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2013/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站后台查看原SVG逐活动转写，明确所选两项各缩短1；原活动对选项与正确项不变，未沿用解析中候选字母矛盾行"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "AOE原图转写：a为1到2时长3，b为1到3时长8，c为2到4时长9，d为3到2时长4，e为2到5时长6，f为3到5时长10，g为4到6时长6，h为5到6时长9。源1汇6、无其他活动。下列哪对活动各缩短1，其余不变，能缩短工期？",
+      "options": [
+        {
+          "label": "A",
+          "content": "c、e"
+        },
+        {
+          "label": "B",
+          "content": "d、e"
+        },
+        {
+          "label": "C",
+          "content": "f、d"
+        },
+        {
+          "label": "D",
+          "content": "f、h"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "只缩短两条经2的路径却漏另一条",
+          "explanation": "c、e分别覆盖两条经2的最长路径，但b、f、h整条未变，仍保持原工期。"
+        },
+        "B": {
+          "title": "把同一关键路径多处改短当所有路径都变短",
+          "explanation": "d、e不能碰到b、f、h这条最长路径，另一条未变路径仍阻止总工期缩短。"
+        },
+        "D": {
+          "title": "只顾进入汇前的h却漏不经5的关键路径",
+          "explanation": "f、h仍没改变b、d、c、g路径，该路径继续以原总时长到达汇，工期不缩短。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先列全部源汇路径长度，确认最长路径是否多于一条。"
+        },
+        {
+          "level": 2,
+          "text": "不能只选看起来最慢的单边，应检查每条原最长路径是否至少含一个被缩短活动。"
+        },
+        {
+          "level": 3,
+          "text": "另画两条并行同长的源汇路，比较只动一条独有边与分别覆盖两条路径时最大路径长度如何改变。"
+        }
+      ],
+      "solution": "源汇最长路径为b、d、c、g；b、d、e、h；b、f、h，均27。d覆盖前两条，f覆盖第三条，各减1使最长降为26；其余候选都留下至少一条未变的27路径，所以C。",
+      "viz": null,
+      "variant": {
+        "stem": "仅从C所选两项中去掉f，只将d缩短1，其他时长不变，工期变为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "27"
+          },
+          {
+            "label": "B",
+            "content": "26"
+          },
+          {
+            "label": "C",
+            "content": "25"
+          },
+          {
+            "label": "D",
+            "content": "28"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅取消对f的缩短，保留d缩短1。",
+        "explanation": "经d的两条原关键路径降26，但b、f、h仍为8加10加9等于27，工期仍27；单个关键活动被缩短不保证全工程变短。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg02-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "aoe-all-critical-path-coverage",
+            "input": {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6"
+              ],
+              "activities": [
+                [
+                  "a",
+                  "1",
+                  "2",
+                  3
+                ],
+                [
+                  "b",
+                  "1",
+                  "3",
+                  8
+                ],
+                [
+                  "c",
+                  "2",
+                  "4",
+                  9
+                ],
+                [
+                  "d",
+                  "3",
+                  "2",
+                  4
+                ],
+                [
+                  "e",
+                  "2",
+                  "5",
+                  6
+                ],
+                [
+                  "f",
+                  "3",
+                  "5",
+                  10
+                ],
+                [
+                  "g",
+                  "4",
+                  "6",
+                  6
+                ],
+                [
+                  "h",
+                  "5",
+                  "6",
+                  9
+                ]
+              ],
+              "source": "1",
+              "sink": "6",
+              "shorten": [
+                "d"
+              ],
+              "deltaEach": 1
+            },
+            "goal": "枚举全部源汇路并同步重算最长值",
+            "pauseQuestion": "只缩短某一条关键路径后，其他同长路径是否也必然同步变短？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg02-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "aoe-all-critical-path-coverage",
+          "input": {
+            "nodes": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6"
+            ],
+            "activities": [
+              [
+                "a",
+                "1",
+                "2",
+                3
+              ],
+              [
+                "b",
+                "1",
+                "3",
+                8
+              ],
+              [
+                "c",
+                "2",
+                "4",
+                9
+              ],
+              [
+                "d",
+                "3",
+                "2",
+                4
+              ],
+              [
+                "e",
+                "2",
+                "5",
+                6
+              ],
+              [
+                "f",
+                "3",
+                "5",
+                10
+              ],
+              [
+                "g",
+                "4",
+                "6",
+                6
+              ],
+              [
+                "h",
+                "5",
+                "6",
+                9
+              ]
+            ],
+            "source": "1",
+            "sink": "6",
+            "shortenCandidates": [
+              [
+                "c",
+                "e"
+              ],
+              [
+                "d",
+                "e"
+              ],
+              [
+                "f",
+                "d"
+              ],
+              [
+                "f",
+                "h"
+              ]
+            ],
+            "deltaEach": 1
+          },
+          "goal": "枚举全部源汇路并同步重算最长值",
+          "pauseQuestion": "只缩短某一条关键路径后，其他同长路径是否也必然同步变短？"
+        }
+      ]
+    },
+    {
+      "id": "gg02-07",
+      "topic": "拓扑候选逐边检验先后",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2014",
+        "questionNumber": "7",
+        "label": "2014 年 408 真题 第 7 题（原图完整边集文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2014/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站后台渲染实际查看原SVG，逐箭头/边权转写给定图，未列边不存在；原选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有向图原图转写：顶点1至6，弧3到1、3到6、1到2、1到4、4到2、4到6、2到5、6到5，无其他弧。哪组可能为完整拓扑序列？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`3,1,2,4,5,6`"
+        },
+        {
+          "label": "B",
+          "content": "`3,1,2,4,6,5`"
+        },
+        {
+          "label": "C",
+          "content": "`3,1,4,2,5,6`"
+        },
+        {
+          "label": "D",
+          "content": "`3,1,4,2,6,5`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "同时违反4先于2和6先于5",
+          "explanation": "A把2放在其前驱4之前，也把5放在前驱6之前，不能逐边满足先后。"
+        },
+        "B": {
+          "title": "只修好汇点却未修中间依赖",
+          "explanation": "B虽然6先于5，但2仍先于4，违反弧4到2。"
+        },
+        "C": {
+          "title": "把已有一个前驱完成当汇点可出",
+          "explanation": "C中5之前2已输出，6却尚未输出；5需要两个入弧前驱都完成。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "给候选每个顶点标序号，再检查每条弧起点序号是否小于终点。"
+        },
+        {
+          "level": 2,
+          "text": "一个点有多个前驱时，不能只等待其中一个。"
+        },
+        {
+          "level": 3,
+          "text": "另取一个两前驱汇合点的小DAG，分别画合法线性序和只满足一条入弧的错误序，逐边核对。"
+        }
+      ],
+      "solution": "依赖迫使3、1、4先后输出，然后2与6均可选，5最后。D的3、1、4、2、6、5满足全部弧；其余分别把2抢在4前或把5抢在6前。",
+      "viz": null,
+      "variant": {
+        "stem": "仅删去弧4到2，其他边不变，完整拓扑序列共有几种？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1"
+          },
+          {
+            "label": "B",
+            "content": "2"
+          },
+          {
+            "label": "C",
+            "content": "3"
+          },
+          {
+            "label": "D",
+            "content": "4"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅删除一条4到2的依赖弧。",
+        "explanation": "3、1仍强制在前；之后2可插在4到6这条链的前、中、后共3处，5仍在2和6之后，得到3种完整序列。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg02-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "topological-candidate-edge-check",
+            "input": {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6"
+              ],
+              "directed": true,
+              "edges": [
+                [
+                  "3",
+                  "1"
+                ],
+                [
+                  "3",
+                  "6"
+                ],
+                [
+                  "1",
+                  "2"
+                ],
+                [
+                  "1",
+                  "4"
+                ],
+                [
+                  "4",
+                  "6"
+                ],
+                [
+                  "2",
+                  "5"
+                ],
+                [
+                  "6",
+                  "5"
+                ]
+              ],
+              "query": "all-topological-order-count"
+            },
+            "goal": "逐边比较候选位置并保留所有前驱约束",
+            "pauseQuestion": "某点已处理一条入弧，是否就可跳过其他尚未完成的前驱？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg02-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "topological-candidate-edge-check",
+          "input": {
+            "nodes": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6"
+            ],
+            "directed": true,
+            "edges": [
+              [
+                "3",
+                "1"
+              ],
+              [
+                "3",
+                "6"
+              ],
+              [
+                "1",
+                "2"
+              ],
+              [
+                "1",
+                "4"
+              ],
+              [
+                "4",
+                "2"
+              ],
+              [
+                "4",
+                "6"
+              ],
+              [
+                "2",
+                "5"
+              ],
+              [
+                "6",
+                "5"
+              ]
+            ],
+            "sequences": [
+              [
+                "3",
+                "1",
+                "2",
+                "4",
+                "5",
+                "6"
+              ],
+              [
+                "3",
+                "1",
+                "2",
+                "4",
+                "6",
+                "5"
+              ],
+              [
+                "3",
+                "1",
+                "4",
+                "2",
+                "5",
+                "6"
+              ],
+              [
+                "3",
+                "1",
+                "4",
+                "2",
+                "6",
+                "5"
+              ]
+            ]
+          },
+          "goal": "逐边比较候选位置并保留所有前驱约束",
+          "pauseQuestion": "某点已处理一条入弧，是否就可跳过其他尚未完成的前驱？"
+        }
+      ]
+    },
+    {
+      "id": "gg02-08",
+      "topic": "DFS邻接次序自由但子树必须连续",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2015",
+        "questionNumber": "5",
+        "label": "2015 年 408 真题 第 5 题（明确首次访问与邻接次序自由）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2015/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有向图顶点v0至v3，弧v0到v1、v0到v2、v0到v3、v1到v3。由v0递归DFS，首次进入即标记，只记录首次访问，不记录回溯重复项。允许选择各顶点邻接次序，不同完整访问序列有几种？",
+      "options": [
+        {
+          "label": "A",
+          "content": "2"
+        },
+        {
+          "label": "B",
+          "content": "3"
+        },
+        {
+          "label": "C",
+          "content": "4"
+        },
+        {
+          "label": "D",
+          "content": "5"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "只按某个固定邻接顺序跑一次或少数情况",
+          "explanation": "邻接次序可选，尤其v0的三个出邻点排列可带来多种合法首次访问序列，不只两种。"
+        },
+        "B": {
+          "title": "把根三个邻点当只有三次首选结果",
+          "explanation": "相同首个邻点之后仍可能有不同的后续次序，不能只按第一次分支数计总序列。"
+        },
+        "C": {
+          "title": "漏掉一个可在已访问目标上跳过的合法次序",
+          "explanation": "若v3先于v1已访问，后来v1的出弧只被跳过，不会重复输出v3，因此还能形成另一合法次序。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "只有三个非源点，可先列它们的全部排列再用递归规则筛掉。"
+        },
+        {
+          "level": 2,
+          "text": "若先进入v1且v3尚未访问，v1的子树在返回v0前会访问谁？"
+        },
+        {
+          "level": 3,
+          "text": "另取根分别指向两个点且两点间有单向弧的小图，比较先访问弧终点与先访问弧起点时的首次输出。"
+        }
+      ],
+      "solution": "除源v0外三点有6个排列；只有v0、v1、v2、v3不可能，因为进入v1后必须先访问尚未访问的v3再回根，不能先跳v2。其余五种都能由邻接次序实现，因此5。",
+      "viz": null,
+      "variant": {
+        "stem": "仅删去弧v1到v3，其余图和DFS规则不变，不同完整访问序列有几种？",
+        "options": [
+          {
+            "label": "A",
+            "content": "3"
+          },
+          {
+            "label": "B",
+            "content": "5"
+          },
+          {
+            "label": "C",
+            "content": "6"
+          },
+          {
+            "label": "D",
+            "content": "8"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅删去非源点之间的一条弧。",
+        "explanation": "图成为v0指向三个彼此无弧的叶，各叶访问完即回根，三个叶的6个排列都可实现，故6。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg02-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "dfs-all-discovery-orders",
+            "input": {
+              "nodes": [
+                "v0",
+                "v1",
+                "v2",
+                "v3"
+              ],
+              "directed": true,
+              "edges": [
+                [
+                  "v0",
+                  "v1"
+                ],
+                [
+                  "v0",
+                  "v2"
+                ],
+                [
+                  "v0",
+                  "v3"
+                ]
+              ],
+              "source": "v0",
+              "neighborOrder": "existential-per-vertex"
+            },
+            "goal": "枚举邻接次序并去重首次访问输出",
+            "pauseQuestion": "一条出弧终点已经访问过，是否会在DFS访问序列里再次出现？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg02-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "dfs-all-discovery-orders",
+          "input": {
+            "nodes": [
+              "v0",
+              "v1",
+              "v2",
+              "v3"
+            ],
+            "directed": true,
+            "edges": [
+              [
+                "v0",
+                "v1"
+              ],
+              [
+                "v0",
+                "v2"
+              ],
+              [
+                "v0",
+                "v3"
+              ],
+              [
+                "v1",
+                "v3"
+              ]
+            ],
+            "source": "v0",
+            "neighborOrder": "existential-per-vertex"
+          },
+          "goal": "枚举邻接次序并去重首次访问输出",
+          "pauseQuestion": "一条出弧终点已经访问过，是否会在DFS访问序列里再次出现？"
+        }
+      ]
+    }
+  ]
+}

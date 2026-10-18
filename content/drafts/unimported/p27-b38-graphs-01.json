@@ -1,0 +1,1644 @@
+{
+  "schemaVersion": 1,
+  "section": "图真题：连通边界、度数、遍历复杂度与全称断言",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "gg01-01",
+      "topic": "无向连通图的必然性质",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2009",
+        "questionNumber": "7",
+        "label": "2009 年 408 真题 第 7 题（明确非空简单图与严格不等式）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2009/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有限非空简单无向连通图有 `n` 个顶点、`m` 条边。哪些叙述必然正确？I. 所有顶点的度之和为偶数；II. 边数严格大于顶点数减1；III. 至少有一个度为1的顶点。度指关联边数。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 I"
+        },
+        {
+          "label": "B",
+          "content": "仅 II"
+        },
+        {
+          "label": "C",
+          "content": "仅 I、II"
+        },
+        {
+          "label": "D",
+          "content": "仅 I、III"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把连通的边数下界写成严格不等式",
+          "explanation": "树是连通图且边数恰好等于顶点数减1，所以II不能要求严格大于。"
+        },
+        "C": {
+          "title": "将至少与严格大于混淆",
+          "explanation": "I由每边贡献两个度成立，但树的边数恰在下界，II不一定成立。"
+        },
+        "D": {
+          "title": "把树的叶性质推广到所有连通图",
+          "explanation": "三角形连通且各点度为2，不存在度为1的顶点；III对一般连通图不成立。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "逐条区分握手计数与连通图可能包含环这两个事实。"
+        },
+        {
+          "level": 2,
+          "text": "用一棵树检验边数是否必须严格超出下界，再用一个环检验叶是否必须存在。"
+        },
+        {
+          "level": 3,
+          "text": "另取一个四顶点环，分别统计度之和、边数和度为1的顶点，不要把连通图自动当树。"
+        }
+      ],
+      "solution": "每条无向边在两端各贡献1，度之和为 `2m`，I必然正确。树有 `m=n-1`，否定II；三角形所有度为2，否定III，因此只有I。",
+      "viz": null,
+      "variant": {
+        "stem": "保持I、III不变，仅把II改为“边数至少为顶点数减1”，必然正确的是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仅 I"
+          },
+          {
+            "label": "B",
+            "content": "仅 II"
+          },
+          {
+            "label": "C",
+            "content": "仅 I、II"
+          },
+          {
+            "label": "D",
+            "content": "仅 I、III"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将II的严格大于改为至少。",
+        "explanation": "连通图含一棵覆盖全部顶点的生成树，故 `m≥n-1`，新的II成立；I仍由度和公式成立，III仍被三角形否定。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg01-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "undirected-degree-and-connectivity",
+            "input": {
+              "examples": [
+                {
+                  "n": 4,
+                  "edges": [
+                    [
+                      0,
+                      1
+                    ],
+                    [
+                      1,
+                      2
+                    ],
+                    [
+                      2,
+                      3
+                    ]
+                  ]
+                },
+                {
+                  "n": 3,
+                  "edges": [
+                    [
+                      0,
+                      1
+                    ],
+                    [
+                      1,
+                      2
+                    ],
+                    [
+                      2,
+                      0
+                    ]
+                  ]
+                }
+              ]
+            },
+            "goal": "对照树与有环连通图的必然性质",
+            "pauseQuestion": "连通图的边数是否必须严格超过一棵生成树？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg01-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "undirected-degree-and-connectivity",
+          "input": {
+            "examples": [
+              {
+                "n": 3,
+                "edges": [
+                  [
+                    0,
+                    1
+                  ],
+                  [
+                    1,
+                    2
+                  ]
+                ]
+              },
+              {
+                "n": 3,
+                "edges": [
+                  [
+                    0,
+                    1
+                  ],
+                  [
+                    1,
+                    2
+                  ],
+                  [
+                    2,
+                    0
+                  ]
+                ]
+              }
+            ]
+          },
+          "goal": "对照树与有环连通图的必然性质",
+          "pauseQuestion": "连通图的边数是否必须严格超过一棵生成树？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "gg01-02",
+      "topic": "保证任意图连通的边数",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2010",
+        "questionNumber": "7",
+        "label": "2010 年 408 真题 第 7 题（明确简单图与任意布局）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2010/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "7个顶点的简单无向图，不限制边如何选择。仅凭边数就要保证任何这样的图都连通，最少需要多少条边？",
+      "options": [
+        {
+          "label": "A",
+          "content": "6"
+        },
+        {
+          "label": "B",
+          "content": "15"
+        },
+        {
+          "label": "C",
+          "content": "16"
+        },
+        {
+          "label": "D",
+          "content": "21"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把存在连通图当作所有图必连通",
+          "explanation": "6条边可以组成树，但也能集中在部分顶点上而留下孤立点，不能保证任意布局连通。"
+        },
+        "B": {
+          "title": "停在不连通图允许的最大边数",
+          "explanation": "6个点构成完全子图、另1点孤立时恰有15边，仍不连通，需要再超过这个上界。"
+        },
+        "D": {
+          "title": "把完全图边数当最小保证门槛",
+          "explanation": "21条边当然连通，但超过最大不连通边数时已经能保证连通，无须所有边都存在。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先找边尽可能多、但仍然不连通的图。"
+        },
+        {
+          "level": 2,
+          "text": "把孤立点以外的顶点尽量连满，比较是否还有其他分块能容纳更多边。"
+        },
+        {
+          "level": 3,
+          "text": "对更小的5顶点例子，列出1加4、2加3两种分块的最大内部边数，观察哪种最接近连通的保证边界。"
+        }
+      ],
+      "solution": "不连通图的边最多为6点完全子图加1个孤立点，共15。任意其他非空分块都至少缺少分块间的边，不会超过此数。因而16边超过所有不连通情况的上界，必连通；15边有反例。",
+      "viz": null,
+      "variant": {
+        "stem": "只把顶点数从7改为8，其他简单图与任意布局条件不变，最少保证边数为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "7"
+          },
+          {
+            "label": "B",
+            "content": "21"
+          },
+          {
+            "label": "C",
+            "content": "22"
+          },
+          {
+            "label": "D",
+            "content": "28"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将顶点数由7改为8。",
+        "explanation": "最大不连通图是7点完全子图加1孤立点，有21边；22边才能仅凭边数保证连通，7边只是可能连通。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg01-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "extremal-disconnected-edge-count",
+            "input": {
+              "vertexCount": 8,
+              "blocks": [
+                7,
+                1
+              ],
+              "completeWithinBlocks": true
+            },
+            "goal": "用最大不连通图确定严格门槛",
+            "pauseQuestion": "存在一棵少边的连通树，能否保证同样边数的任意布局都连通？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg01-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "extremal-disconnected-edge-count",
+          "input": {
+            "vertexCount": 7,
+            "blocks": [
+              6,
+              1
+            ],
+            "completeWithinBlocks": true
+          },
+          "goal": "用最大不连通图确定严格门槛",
+          "pauseQuestion": "存在一棵少边的连通树，能否保证同样边数的任意布局都连通？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "gg01-03",
+      "topic": "拓扑序与路径术语",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2011",
+        "questionNumber": "8",
+        "label": "2011 年 408 真题 第 8 题（明确完整拓扑序与路径定义）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2011/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "按简单路径的顶点不重复定义，回路首尾相同且至少有一条边。稀疏图按边数随顶点数线性增长理解。下列哪些叙述正确？I. 回路是简单路径；II. 存稀疏图，普通邻接矩阵比邻接表渐近更省空间；III. 有向图存在覆盖全部顶点的拓扑序列，则不存在有向回路。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 II"
+        },
+        {
+          "label": "B",
+          "content": "仅 I、II"
+        },
+        {
+          "label": "C",
+          "content": "仅 III"
+        },
+        {
+          "label": "D",
+          "content": "仅 I、III"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "倒置稀疏图的存储开销",
+          "explanation": "普通矩阵为顶点数平方空间，邻接表为顶点加边的线性总量；稀疏时II不成立，而且III成立。"
+        },
+        "B": {
+          "title": "同时忽略顶点重复与稀疏存储",
+          "explanation": "回路首尾重复违反题定简单路径；普通矩阵仍保留大量无边位置，I、II均不成立。"
+        },
+        "D": {
+          "title": "把首尾重复当成简单路径允许的例外",
+          "explanation": "题目已明确简单路径不重复顶点，回路首尾相同，因此I不能与III同时成立。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先按题中定义检查首尾重复，再比较两种表示的空间随规模如何增长。"
+        },
+        {
+          "level": 2,
+          "text": "对拓扑序逐条检查边的方向是否都从前指向后。"
+        },
+        {
+          "level": 3,
+          "text": "画一个有向三环，尝试给所有点排一个线性次序，检查最后返回起点的边会发生什么。"
+        }
+      ],
+      "solution": "I违反简单路径的顶点不重复定义。II中矩阵空间 `Θ(n²)`，邻接表为 `Θ(n+m)`，在线性边数下后者更省。若有回路，沿环每条边都要求下一点更晚，最后却返回起点，不能有覆盖全图的拓扑序，故仅III。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把III改为“按入度法输出了至少一个顶点，就说明全图无有向回路”，I、II仍不变。哪些正确？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仅 I"
+          },
+          {
+            "label": "B",
+            "content": "仅 II"
+          },
+          {
+            "label": "C",
+            "content": "仅 III"
+          },
+          {
+            "label": "D",
+            "content": "三项均不正确"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "仅将III的完整拓扑序条件改为至少输出一个顶点。",
+        "explanation": "孤立点与一个独立有向环共存时，入度法能输出孤立点，环中顶点却无法输出。因此部分输出不能证明全图无环，新的III也不成立。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg01-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "topological-completeness",
+            "input": {
+              "n": 4,
+              "directed": true,
+              "edges": [
+                [
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  2
+                ],
+                [
+                  2,
+                  0
+                ]
+              ],
+              "isolated": 3
+            },
+            "goal": "比较完整拓扑序与只输出部分顶点",
+            "pauseQuestion": "成功输出一个孤立点，是否检查到了另一个分量里的环？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg01-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "topological-completeness",
+          "input": {
+            "n": 3,
+            "directed": true,
+            "edges": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                2,
+                0
+              ]
+            ]
+          },
+          "goal": "比较完整拓扑序与只输出部分顶点",
+          "pauseQuestion": "成功输出一个孤立点，是否检查到了另一个分量里的环？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "gg01-04",
+      "topic": "邻接表广度遍历的全图复杂度",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2012",
+        "questionNumber": "5",
+        "label": "2012 年 408 真题 第 5 题（明确全图操作与时间紧界）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2012/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站补明操作范围和实现，原O选项统一为Theta紧界以避免仅用上界的多解歧义，考点与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有向图有 `n` 个顶点、`m` 条弧，用出边邻接表存储。对全部顶点执行BFS遍历，外层检查全部顶点，未访问点作为新起点；每点首次发现入队，每条邻接记录扫描一次，不含建图。最坏时间紧界为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`Θ(n)`"
+        },
+        {
+          "label": "B",
+          "content": "`Θ(m)`"
+        },
+        {
+          "label": "C",
+          "content": "`Θ(n+m)`"
+        },
+        {
+          "label": "D",
+          "content": "`Θ(nm)`"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "只数顶点忽略邻接记录",
+          "explanation": "边表也需扫描，边数较大时不能仅以顶点数计全图遍历成本。"
+        },
+        "B": {
+          "title": "只数边忽略孤立顶点",
+          "explanation": "即使没有弧，外层仍需检查所有顶点并处理各孤立点，不能只以边数计。"
+        },
+        "D": {
+          "title": "误把两类工作视作嵌套全量乘积",
+          "explanation": "每条弧只在其起点出边表被扫描一次，不会为每个顶点再扫描所有弧。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "把外层顶点检查、队列处理、邻接记录扫描分开计数。"
+        },
+        {
+          "level": 2,
+          "text": "考虑没有边的图和边很多的图，各有哪部分成本无法省略。"
+        },
+        {
+          "level": 3,
+          "text": "在一张小邻接表上给每条出边记录做扫描标记，检查是否会因起点外层循环而被重复全量访问。"
+        }
+      ],
+      "solution": "顶点检查与首次入出队总计线性于 `n`，所有出边记录扫描总计线性于 `m`。两部分相加，得到 `Θ(n+m)`；全图外层保证孤立点也纳入。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把存储改为普通邻接矩阵，仍遍历全部顶点，并为每个处理的顶点扫描整行以找出边，最坏时间紧界为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`Θ(n)`"
+          },
+          {
+            "label": "B",
+            "content": "`Θ(m)`"
+          },
+          {
+            "label": "C",
+            "content": "`Θ(n²)`"
+          },
+          {
+            "label": "D",
+            "content": "`Θ(nm)`"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将邻接表改为逐行扫描的邻接矩阵。",
+        "explanation": "全图每个顶点处理一次，每次扫描矩阵的一整行共 `n` 个位置，合计 `Θ(n²)`；边少也不能跳过未预先索引的无边位置。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg01-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "bfs-storage-scan-cost",
+            "input": {
+              "n": 5,
+              "directed": true,
+              "edges": [
+                [
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  2
+                ],
+                [
+                  3,
+                  4
+                ]
+              ],
+              "storage": "adjacency-matrix-full-row",
+              "scope": "all-components"
+            },
+            "goal": "数访问顶点和扫描记录，而非只看输出",
+            "pauseQuestion": "一个孤立点没有出边，全图遍历是否仍要检查它？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg01-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "bfs-storage-scan-cost",
+          "input": {
+            "n": 5,
+            "directed": true,
+            "edges": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ],
+            "storage": "adjacency-list",
+            "scope": "all-components"
+          },
+          "goal": "数访问顶点和扫描记录，而非只看输出",
+          "pauseQuestion": "一个孤立点没有出边，全图遍历是否仍要检查它？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "gg01-05",
+      "topic": "最小生成树的唯一代价",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2012",
+        "questionNumber": "8",
+        "label": "2012 年 408 真题 第 8 题（明确允许等权与树的边集含义）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2012/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有限非空简单无向连通带权图，允许边权相同。哪些断言正确？I. 所有最小生成树的总权值相同；II. 每条全图最小权边都在所有最小生成树中；III. Prim从不同起点得到的树必相同；IV. Prim与Kruskal得到的树总不相同。树相同按边集判断。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 I"
+        },
+        {
+          "label": "B",
+          "content": "仅 II"
+        },
+        {
+          "label": "C",
+          "content": "仅 I、III"
+        },
+        {
+          "label": "D",
+          "content": "仅 II、IV"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "将最小权值并列当作所有边必选",
+          "explanation": "等权三角形每条边都是最小权边，但任一生成树都必须舍去一边，II不成立；I才是必然。"
+        },
+        "C": {
+          "title": "将最小总权值唯一误当边集唯一",
+          "explanation": "允许相同权值时可有多棵同代价最小树；不同起点和合法平局选择可能得到不同边集，III没有保证。"
+        },
+        "D": {
+          "title": "将不同算法误当结果一定不同",
+          "explanation": "最小树唯一时两算法必得同一边集，且等权环也否定II，所以这两个绝对断言均不成立。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "区分最小目标值是否唯一与实现该目标的边集是否唯一。"
+        },
+        {
+          "level": 2,
+          "text": "用一个所有边等权的小环检验每条最小权边是否必须同时入树。"
+        },
+        {
+          "level": 3,
+          "text": "再取一棵本身已是树的连通图，比较不同正确算法还能否选择不同的生成树边集。"
+        }
+      ],
+      "solution": "所有最小生成树都达到同一个最小总权值，I成立。等权三角形的任意两边都是最小树，否定II与III的普遍保证；图本身是一棵树时只有一个生成树，也否定IV，故仅I。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把II改为“若全图最小权边唯一，则它在所有最小生成树中”，I、III、IV不变，正确组合为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仅 I"
+          },
+          {
+            "label": "B",
+            "content": "仅 I、II"
+          },
+          {
+            "label": "C",
+            "content": "仅 II、III"
+          },
+          {
+            "label": "D",
+            "content": "I、II、III、IV"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅给II的全图最小权边增加唯一性条件。",
+        "explanation": "唯一最小边若被某生成树漏掉，加入它会形成一个环；去掉环上的另一条更重边可严格降低总权值，故最小树不能漏掉它。新的II与I成立，III、IV仍无普遍保证。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg01-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "mst-value-and-edge-uniqueness",
+            "input": {
+              "n": 3,
+              "edges": [
+                [
+                  0,
+                  1,
+                  1
+                ],
+                [
+                  1,
+                  2,
+                  2
+                ],
+                [
+                  0,
+                  2,
+                  2
+                ]
+              ],
+              "enumerateAllSpanningTrees": true
+            },
+            "goal": "枚举最小树边集并比较同一最小值",
+            "pauseQuestion": "几棵树的总代价一样，是否要求它们每条边都一样？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg01-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "mst-value-and-edge-uniqueness",
+          "input": {
+            "n": 3,
+            "edges": [
+              [
+                0,
+                1,
+                1
+              ],
+              [
+                1,
+                2,
+                1
+              ],
+              [
+                0,
+                2,
+                1
+              ]
+            ],
+            "enumerateAllSpanningTrees": true
+          },
+          "goal": "枚举最小树边集并比较同一最小值",
+          "pauseQuestion": "几棵树的总代价一样，是否要求它们每条边都一样？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "gg01-06",
+      "topic": "邻接表入度法拓扑排序复杂度",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2016",
+        "questionNumber": "7",
+        "label": "2016 年 408 真题 第 7 题（明确全图操作与时间紧界）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2016/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站补明操作范围和实现，原O选项统一为Theta紧界以避免仅用上界的多解歧义，考点与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有向无环图有 `n` 个顶点、`m` 条弧，以出边邻接表存储。用扫描全部边初始化入度、队列维护零入度顶点的Kahn算法，处理顶点时只扫其出边并递减入度，不反复全表搜索零入度点。包含入度初始化的时间紧界为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`Θ(n)`"
+        },
+        {
+          "label": "B",
+          "content": "`Θ(n+m)`"
+        },
+        {
+          "label": "C",
+          "content": "`Θ(n²)`"
+        },
+        {
+          "label": "D",
+          "content": "`Θ(nm)`"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "忽略初始化与删除出边的成本",
+          "explanation": "每条弧需参与入度统计与一次出边处理，不能仅按顶点数量估算。"
+        },
+        "C": {
+          "title": "将邻接表误按矩阵整行遍历",
+          "explanation": "邻接表只遍历实际存在的出边记录，队列也避免每轮全扫描顶点找零入度。"
+        },
+        "D": {
+          "title": "把所有边在每轮都重新遍历",
+          "explanation": "每条出边只在其起点输出时被递减一次，不是每个顶点都扫描全图边集。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先区分一次性的入度初始化与逐点输出的循环。"
+        },
+        {
+          "level": 2,
+          "text": "每条弧的入度贡献增加一次、移除一次，分别发生在哪一阶段？"
+        },
+        {
+          "level": 3,
+          "text": "在另一张DAG上为每条弧打两个阶段标记，查看队列中一个点多次被检查是否就会让所有弧重复遍历。"
+        }
+      ],
+      "solution": "初始化扫描顶点和边为 `Θ(n+m)`；队列中每点进出至多一次，出边表总扫描 `m` 条弧。两阶段相加仍为 `Θ(n+m)`。此结论依赖队列维护零入度点，而非每轮全表找点。",
+      "viz": null,
+      "variant": {
+        "stem": "仅改为普通邻接矩阵，入度通过全矩阵求和初始化，输出每点时扫描整行处理出边，其他队列规则不变，时间紧界为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`Θ(n)`"
+          },
+          {
+            "label": "B",
+            "content": "`Θ(n+m)`"
+          },
+          {
+            "label": "C",
+            "content": "`Θ(n²)`"
+          },
+          {
+            "label": "D",
+            "content": "`Θ(nm)`"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将出边邻接表改为全矩阵初始化与整行扫描的矩阵表示。",
+        "explanation": "初始化遍历全部矩阵位置已需平方时间，DAG全部顶点输出时每行再扫一次仍是平方量级，合计 `Θ(n²)`。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg01-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "kahn-topological-scan-cost",
+            "input": {
+              "n": 5,
+              "directed": true,
+              "edges": [
+                [
+                  0,
+                  1
+                ],
+                [
+                  0,
+                  2
+                ],
+                [
+                  1,
+                  3
+                ],
+                [
+                  2,
+                  3
+                ]
+              ],
+              "storage": "adjacency-matrix-full-scan",
+              "zeroIndegree": "queue"
+            },
+            "goal": "分别累计入度初始化与移除弧工作量",
+            "pauseQuestion": "每条弧会因有多个零入度候选而被反复全图扫描吗？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg01-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "kahn-topological-scan-cost",
+          "input": {
+            "n": 5,
+            "directed": true,
+            "edges": [
+              [
+                0,
+                1
+              ],
+              [
+                0,
+                2
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                2,
+                3
+              ]
+            ],
+            "storage": "adjacency-list",
+            "zeroIndegree": "queue"
+          },
+          "goal": "分别累计入度初始化与移除弧工作量",
+          "pauseQuestion": "每条弧会因有多个零入度候选而被反复全图扫描吗？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "gg01-07",
+      "topic": "度数约束下的最少顶点",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2017",
+        "questionNumber": "7",
+        "label": "2017 年 408 真题 第 7 题（补明简单图并检查可实现性）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2017/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "简单无向图有16条边，恰有3个度为4的顶点、4个度为3的顶点，其他顶点的度均小于3。最少共有多少顶点？不要求连通。",
+      "options": [
+        {
+          "label": "A",
+          "content": "10"
+        },
+        {
+          "label": "B",
+          "content": "11"
+        },
+        {
+          "label": "C",
+          "content": "13"
+        },
+        {
+          "label": "D",
+          "content": "15"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "剩余顶点数量不足以容纳度和",
+          "explanation": "已知七点贡献24度，尚有8度；其余每点至多2度，只有三个剩余点最多补6度，10点不够。"
+        },
+        "C": {
+          "title": "把其余顶点上界错压为1度",
+          "explanation": "其余顶点允许度为2，可以用更少顶点容纳剩余度和；取13没有达到最小。"
+        },
+        "D": {
+          "title": "将边数或度和直接当顶点数",
+          "explanation": "应先用度和公式算出未知部分，再按每点至多2求数量下界，并确认可实现。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "把所有边对端点的贡献相加，再扣除已知度数部分。"
+        },
+        {
+          "level": 2,
+          "text": "未知顶点的度不是任意大，应利用题中严格小于3的上界。"
+        },
+        {
+          "level": 3,
+          "text": "求出数量下界后，检查相应度序列能否画成简单图，避免只把代数下界当作已实现答案。"
+        }
+      ],
+      "solution": "总度和为32，已知部分为12加12等于24，剩余8。其余每点至多2，至少4点，故总数至少11；度序列为三个4、四个3、四个2的简单图确实可构造，因此11可达。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把边数由16改为17，其他度数条件不变，最少顶点数为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "11"
+          },
+          {
+            "label": "B",
+            "content": "12"
+          },
+          {
+            "label": "C",
+            "content": "13"
+          },
+          {
+            "label": "D",
+            "content": "14"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将边数16改为17。",
+        "explanation": "总度和变为34，已知七点仍贡献24，剩余10需至少5个度至多2的顶点，总数至少12。三个4、四个3、五个2的简单图可实现，故最少12。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg01-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "degree-sequence-minimum-vertices",
+            "input": {
+              "edgeCount": 17,
+              "fixedDegreeCounts": {
+                "4": 3,
+                "3": 4
+              },
+              "remainingDegreeMax": 2,
+              "constructWitness": true
+            },
+            "goal": "先求度和下界再构造达到下界的图",
+            "pauseQuestion": "度和算出一个下界后，是否还应确认简单图可以实现？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg01-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "degree-sequence-minimum-vertices",
+          "input": {
+            "edgeCount": 16,
+            "fixedDegreeCounts": {
+              "4": 3,
+              "3": 4
+            },
+            "remainingDegreeMax": 2,
+            "constructWitness": true
+          },
+          "goal": "先求度和下界再构造达到下界的图",
+          "pauseQuestion": "度和算出一个下界后，是否还应确认简单图可以实现？"
+        }
+      ]
+    },
+    {
+      "id": "gg01-08",
+      "topic": "关键路径按持续时间而非边数",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2020",
+        "questionNumber": "8",
+        "label": "2020 年 408 真题 第 8 题（明确AOE和改变量条件）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2020/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "AOE网络为有限DAG，单源单汇，每项活动都在某条源汇路径上，边权为非负持续时间。以下说法正确的是？增加或缩短均指其他活动不变、改变量为正且缩短后仍非负。",
+      "options": [
+        {
+          "label": "A",
+          "content": "关键路径是源汇之间边数最多的路径"
+        },
+        {
+          "label": "B",
+          "content": "关键路径是源汇之间总持续时间最长的路径"
+        },
+        {
+          "label": "C",
+          "content": "增加任一关键活动的时间不会延长工期"
+        },
+        {
+          "label": "D",
+          "content": "缩短任一关键活动的时间都会缩短工期"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把活动数量当持续时间",
+          "explanation": "关键路径按边权之和决定，少量长活动的路径可能比很多短活动更耗时。"
+        },
+        "C": {
+          "title": "忽略原关键路径会随活动延长",
+          "explanation": "关键活动位于至少一条原最长路径上，增加它会使该路径更长，从而延长工期。"
+        },
+        "D": {
+          "title": "忽略其他关键路径仍可约束完工",
+          "explanation": "存在多条关键路径时，只缩短其中一条独有活动，另一条仍保持原工期，不能保证工期减少。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先确定工程完工必须等待哪一类源汇路径。"
+        },
+        {
+          "level": 2,
+          "text": "比较路径的边数与边权总和，二者的排序可能不同。"
+        },
+        {
+          "level": 3,
+          "text": "画两条持续时间相同的并行源汇路径，只改变其中一条独有边，重新比较两条路径长度。"
+        }
+      ],
+      "solution": "项目必须等待所有活动，工期由源到汇的最大持续时间和决定，故关键路径按总时长最长定义。延长关键活动会延长至少一条原最长路径；缩短它却可能仍被另一条未变的关键路径限制。",
+      "viz": null,
+      "variant": {
+        "stem": "仍在上述模型下，具体网络为S到A耗时2、A到T耗时3、S到B耗时1、B到T耗时4，无其他边。只把关键活动S到A从2缩短到1，工期变为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "4"
+          },
+          {
+            "label": "B",
+            "content": "5"
+          },
+          {
+            "label": "C",
+            "content": "6"
+          },
+          {
+            "label": "D",
+            "content": "10"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "将任意关键活动的缩短具体化为两条并行关键路径中S到A缩短1。",
+        "explanation": "原来两条路径都是5；修改后S到A到T为4，S到B到T仍为5，因此工期仍是5。这是只缩短一条关键路径独有活动不能保证缩短工期的实例。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg01-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "aoe-longest-duration",
+            "input": {
+              "nodes": [
+                "S",
+                "A",
+                "B",
+                "T"
+              ],
+              "edges": [
+                [
+                  "S",
+                  "A",
+                  1
+                ],
+                [
+                  "A",
+                  "T",
+                  3
+                ],
+                [
+                  "S",
+                  "B",
+                  1
+                ],
+                [
+                  "B",
+                  "T",
+                  4
+                ]
+              ]
+            },
+            "goal": "同时比较所有源汇路径的总持续时间",
+            "pauseQuestion": "缩短一条原关键路径后，另一条同长路径是否仍限制完工？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg01-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "aoe-longest-duration",
+          "input": {
+            "nodes": [
+              "S",
+              "A",
+              "B",
+              "T"
+            ],
+            "edges": [
+              [
+                "S",
+                "A",
+                2
+              ],
+              [
+                "A",
+                "T",
+                3
+              ],
+              [
+                "S",
+                "B",
+                1
+              ],
+              [
+                "B",
+                "T",
+                4
+              ]
+            ]
+          },
+          "goal": "同时比较所有源汇路径的总持续时间",
+          "pauseQuestion": "缩短一条原关键路径后，另一条同长路径是否仍限制完工？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "gg01-09",
+      "topic": "连通的必要边数条件",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2022",
+        "questionNumber": "6",
+        "label": "2022 年 408 真题 第 6 题（明确非空简单图）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2022/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "非空简单无向图有 `n` 个顶点、`m` 条边。下列叙述哪项必然正确？",
+      "options": [
+        {
+          "label": "A",
+          "content": "若 `n>m`，图一定连通"
+        },
+        {
+          "label": "B",
+          "content": "若 `n<m`，图一定连通"
+        },
+        {
+          "label": "C",
+          "content": "若 `n=m-1`，图一定不连通"
+        },
+        {
+          "label": "D",
+          "content": "若 `n>m+1`，图一定不连通"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把连通图的必要数量条件当充分条件",
+          "explanation": "两个孤立点就有顶点数大于边数，但图不连通；数量条件不能代替可达性。"
+        },
+        "B": {
+          "title": "把边多当成一定跨越所有分量",
+          "explanation": "边可集中在一个完全子图中并留下孤立点，即使边数超过顶点数也可能不连通。"
+        },
+        "C": {
+          "title": "把多于树的边误当连通障碍",
+          "explanation": "四顶点五边的简单连通图可满足该等式，多出的边可形成环，不会强迫图不连通。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先回忆连通图必须包含多少条生成树边。"
+        },
+        {
+          "level": 2,
+          "text": "要否定“必然连通”，允许边都集中在部分顶点并留下别的分量。"
+        },
+        {
+          "level": 3,
+          "text": "另取一个树加一条边的图，检查边数增加是否会破坏原有的连通关系。"
+        }
+      ],
+      "solution": "连通图必须有 `m≥n-1`。D等价于 `m<n-1`，违反必要条件，因此必不连通。A有孤立点反例，B可用5点完全子图加1孤立点反驳，C可用4点5边连通图反驳。",
+      "viz": null,
+      "variant": {
+        "stem": "只把数量条件收紧到 `m=n-1`，不增加任何结构条件，能够判断什么？",
+        "options": [
+          {
+            "label": "A",
+            "content": "一定连通"
+          },
+          {
+            "label": "B",
+            "content": "一定不连通"
+          },
+          {
+            "label": "C",
+            "content": "可能连通，也可能不连通"
+          },
+          {
+            "label": "D",
+            "content": "不存在这样的简单图"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "由不足生成树边数改为恰好有生成树数量的边。",
+        "explanation": "四顶点路径有3边且连通；三角形加一个孤立点也有4顶点3边却不连通。边数恰好达到必要值，仍不足以保证连通。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg01-09v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "connectivity-necessary-edge-bound",
+            "input": {
+              "examples": [
+                {
+                  "n": 4,
+                  "edges": [
+                    [
+                      0,
+                      1
+                    ],
+                    [
+                      1,
+                      2
+                    ],
+                    [
+                      2,
+                      3
+                    ]
+                  ]
+                },
+                {
+                  "n": 4,
+                  "edges": [
+                    [
+                      0,
+                      1
+                    ],
+                    [
+                      1,
+                      2
+                    ],
+                    [
+                      2,
+                      0
+                    ]
+                  ]
+                }
+              ]
+            },
+            "goal": "用连通和不连通的同数量反例区分必要与充分",
+            "pauseQuestion": "达到树的边数，是否已经说明这些边连到了所有顶点？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg01-09-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "connectivity-necessary-edge-bound",
+          "input": {
+            "examples": [
+              {
+                "n": 2,
+                "edges": []
+              },
+              {
+                "n": 6,
+                "completeOn": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "isolated": [
+                  5
+                ]
+              },
+              {
+                "n": 4,
+                "edges": [
+                  [
+                    0,
+                    1
+                  ],
+                  [
+                    1,
+                    2
+                  ],
+                  [
+                    2,
+                    3
+                  ],
+                  [
+                    3,
+                    0
+                  ],
+                  [
+                    0,
+                    2
+                  ]
+                ]
+              }
+            ]
+          },
+          "goal": "用连通和不连通的同数量反例区分必要与充分",
+          "pauseQuestion": "达到树的边数，是否已经说明这些边连到了所有顶点？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "gg01-10",
+      "topic": "最小度与环的存在",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2025",
+        "questionNumber": "6",
+        "label": "2025 年 408 真题 第 6 题（明确普通BFS与任意带权目标）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2025/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "以下均指有限非空简单图，提到有向或无向时按相应定义。下列说法正确的是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "任意有向图都存在入度0的顶点"
+        },
+        {
+          "label": "B",
+          "content": "任意有向无环图的拓扑序存在且唯一"
+        },
+        {
+          "label": "C",
+          "content": "无向图每个顶点度都至少为2时，必含回路"
+        },
+        {
+          "label": "D",
+          "content": "普通BFS按层数即可求任意非负带权图每对顶点的最小权和路径"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把DAG的零入度性质推广到所有有向图",
+          "explanation": "有向三环的每个点入度均为1，因此一般有向图可以没有零入度点。"
+        },
+        "B": {
+          "title": "将拓扑序存在当作唯一",
+          "explanation": "两个孤立顶点构成DAG，交换输出先后仍合法，所以存在不能保证唯一。"
+        },
+        "D": {
+          "title": "把最少边数与最小权和混淆",
+          "explanation": "普通BFS层数衡量边数；一条权10的直接边可能比两条各权1的路径边更少却总权更大。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "检验绝对断言时分别尝试小环、互不约束的顶点和不同权值的两条路。"
+        },
+        {
+          "level": 2,
+          "text": "有限无向无环图的一个非空分量如果是树，最长简单路径的端点能有多少邻点？"
+        },
+        {
+          "level": 3,
+          "text": "若从任一点沿路走且不立即返回，想想最小度限制为何会迫使有限顶点中的某个点被再次遇到。"
+        }
+      ],
+      "solution": "有限无环无向图是森林，非空森林总有度为0或1的顶点，因此全图最小度至少2必含环，C成立。有向环否定A；多个零入度候选可导致多种拓扑序，否定B；普通BFS不能替代一般带权最短路，否定D。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把C的最小度条件由至少2改为至少1，其他简单无向图条件不变。哪个例子可反驳新的必含环断言？",
+        "options": [
+          {
+            "label": "A",
+            "content": "三角形"
+          },
+          {
+            "label": "B",
+            "content": "两个顶点之间只有一条边"
+          },
+          {
+            "label": "C",
+            "content": "四顶点环"
+          },
+          {
+            "label": "D",
+            "content": "四顶点完全图"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将无向图的最小度阈值从2降为1，并要求找反例。",
+        "explanation": "两个点以一条边相连，各度为1且没有环，满足新前提却否定结论。其余三个例子都有环，不能反驳该断言。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg01-10v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "minimum-degree-cycle-and-weighted-bfs",
+            "input": {
+              "n": 2,
+              "directed": false,
+              "edges": [
+                [
+                  0,
+                  1
+                ]
+              ]
+            },
+            "goal": "用无环森林端点性质证明最小度结论",
+            "pauseQuestion": "森林可以有孤立点，但是否可能每点度都至少为2？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg01-10-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "minimum-degree-cycle-and-weighted-bfs",
+          "input": {
+            "examples": [
+              {
+                "n": 3,
+                "directed": false,
+                "edges": [
+                  [
+                    0,
+                    1
+                  ],
+                  [
+                    1,
+                    2
+                  ],
+                  [
+                    2,
+                    0
+                  ]
+                ]
+              },
+              {
+                "n": 3,
+                "directed": true,
+                "weightedEdges": [
+                  [
+                    0,
+                    2,
+                    10
+                  ],
+                  [
+                    0,
+                    1,
+                    1
+                  ],
+                  [
+                    1,
+                    2,
+                    1
+                  ]
+                ]
+              }
+            ]
+          },
+          "goal": "用无环森林端点性质证明最小度结论",
+          "pauseQuestion": "森林可以有孤立点，但是否可能每点度都至少为2？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    }
+  ]
+}

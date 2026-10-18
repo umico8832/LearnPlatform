@@ -1,0 +1,1279 @@
+{
+  "schemaVersion": 1,
+  "section": "综合题核心算法改编四：探测、复用与计数",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "cp04-01",
+      "topic": "散列模数与表容量分开的ASL",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2010",
+        "questionNumber": "41",
+        "label": "2010 年 408 综合题第 41 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2010/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答给出核心计算与证明，不声称完成原题所有评分小问。保留原关键字与不同模数/容量；明确等概率初始散列地址模型，变式只替换散列模数并按新函数值域求平均。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "依次插入 `7,8,30,11,18,9,14`，表容量10、下标0至9，`H(key)=(3*key)%7`，冲突按表容量循环线性探测。成功查找对7个关键字等概率；失败查找对初始散列地址0至6等概率，探到首个空槽即停止且计该次探测。成功ASL、失败ASL依次为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "12/7、18/7"
+        },
+        {
+          "label": "B",
+          "content": "12/7、12/5"
+        },
+        {
+          "label": "C",
+          "content": "8/7、16/5"
+        },
+        {
+          "label": "D",
+          "content": "1、1"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "失败均值样本空间换成全表",
+          "explanation": "本题初始散列地址仅0至6，不能把7、8、9也当等概率起点。"
+        },
+        "C": {
+          "title": "使用不同散列函数的表",
+          "explanation": "8/7、16/5是模10重新建表后的结果，原函数模7。"
+        },
+        "D": {
+          "title": "把散列函数当无冲突",
+          "explanation": "18、9、14均发生冲突，成功与失败都可能多次探测。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "区分散列函数可能产生的初始地址与碰撞后可探到的全部槽。"
+        },
+        {
+          "level": 2,
+          "text": "成功按实际关键字计数，失败按题定初始地址分布计数。"
+        },
+        {
+          "level": 3,
+          "text": "另造容量大于散列模数的小表，检查多出的槽是否也应作为独立起始地址参与平均。"
+        }
+      ],
+      "solution": "容量由7/0.7=10。表0至9为7、14、空、8、空、11、30、18、9、空。7个成功探测次数1、1、1、1、3、3、2，均值12/7。失败从0至6探测次数3、2、1、2、1、5、4，均值18/7。散列模7不等于线性探测按7绕回，后者必须按容量10，否则永远用不到后面槽；空槽探测计入失败长度，但不叫一次实际关键字比较。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将散列函数的模数7改为10，保持容量10、原插入顺序、成功按关键字等概率；失败改按此函数可能的0至9初始地址等概率，其他探测规则不变。两ASL为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "12/7、18/7"
+          },
+          {
+            "label": "B",
+            "content": "12/7、12/5"
+          },
+          {
+            "label": "C",
+            "content": "8/7、16/5"
+          },
+          {
+            "label": "D",
+            "content": "1、1"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将散列函数模数从7改为10，随该函数值域相应枚举失败初始地址。",
+        "explanation": "新表0至9为30、7、14、11、8、18、空、9、空、空，成功探测合8得8/7；失败10起点次数7、6、5、4、3、2、1、2、1、1合32，均值16/5。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp04-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "linear-probe-asl-two-moduli",
+            "input": {
+              "keys": [
+                7,
+                8,
+                30,
+                11,
+                18,
+                9,
+                14
+              ],
+              "capacity": 10,
+              "hashMultiplier": 3,
+              "hashModulus": 10,
+              "probe": "linear-capacity-modulo",
+              "failedStartDistribution": "uniform-hash-range"
+            },
+            "goal": "展示有界状态、实际探测与计数不变量",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp04-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "linear-probe-asl-two-moduli",
+          "input": {
+            "keys": [
+              7,
+              8,
+              30,
+              11,
+              18,
+              9,
+              14
+            ],
+            "capacity": 10,
+            "hashMultiplier": 3,
+            "hashModulus": 7,
+            "probe": "linear-capacity-modulo",
+            "failedStartDistribution": "uniform-hash-range"
+          },
+          "goal": "展示有界状态、实际探测与计数不变量",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp04-02",
+      "topic": "非均匀概率的顺查与二叉查找树",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2013",
+        "questionNumber": "42",
+        "label": "2013 年 408 综合题第 42 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2013/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答给出核心计算与证明，不声称完成原题所有评分小问。原题有顺序/链式两问，本题明确比较单链顺查与合法二叉链BST，选择项和树形文字为本站生成，未冒充原图逐边编号。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有序键do、for、repeat、while，成功查找概率依次0.35、0.15、0.15、0.35。比较两种明确方案：甲按当前概率降序排列成单链表顺查；乙为BST根for、左do、右while且while左孩子repeat，根比较1次。甲与乙的成功ASL依次为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "2.1、2.0"
+        },
+        {
+          "label": "B",
+          "content": "2.0、2.1"
+        },
+        {
+          "label": "C",
+          "content": "2.1、1.8"
+        },
+        {
+          "label": "D",
+          "content": "2.1、2.2"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "交换顺查秩和树深",
+          "explanation": "顺查比较数依次1、2、3、4，BST比较数由结点深度决定；两者不能交换套用。"
+        },
+        "C": {
+          "title": "提前使用改变后的概率",
+          "explanation": "1.8是把for和while概率互换后给定BST的ASL，原根for概率仅0.15。"
+        },
+        "D": {
+          "title": "继续套原有序表折半查找值",
+          "explanation": "2.2是原题所给另一折半查找方案，不是本题明确的BST形状。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "给每个元素写清在各方案中实际需要比较的次数，再乘其概率。"
+        },
+        {
+          "level": 2,
+          "text": "单链表可按概率重排，BST则必须保持关键字有序关系；链式结构不只一种。"
+        },
+        {
+          "level": 3,
+          "text": "另将两个相邻顺查位置的概率交换，计算ASL变化量，判断高概率应放前还是后。"
+        }
+      ],
+      "solution": "甲的概率顺序0.35、0.35、0.15、0.15，均值0.35×1+0.35×2+0.15×3+0.15×4=2.1。乙中for比较1次，do/while各2次，repeat3次，均值0.15+0.7+0.7+0.45=2.0。顺查相邻逆序概率交换可降低ASL，故降概率排列最优；BST给出比2.1更短的可行方案，不能说链式存储只能顺查。此处明确给定树形，不把不同概率时仍最优当未经证明结论。",
+      "viz": null,
+      "variant": {
+        "stem": "仅交换for与while的查找概率，变为do0.35、for0.35、repeat0.15、while0.15。甲仍按当前概率排序，乙的树形不变，甲与乙ASL为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "2.1、2.0"
+          },
+          {
+            "label": "B",
+            "content": "2.0、2.1"
+          },
+          {
+            "label": "C",
+            "content": "2.1、1.8"
+          },
+          {
+            "label": "D",
+            "content": "2.1、2.2"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅交换两个键的查找概率，保持定义的两种策略。",
+        "explanation": "甲概率多重集不变仍2.1；乙根0.35、两层0.35+0.15、三层0.15，`ASL=0`.35+1.0+0.45=1.8。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp04-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "weighted-successful-search-strategies",
+            "input": {
+              "keys": [
+                "do",
+                "for",
+                "repeat",
+                "while"
+              ],
+              "probabilityHundredths": [
+                35,
+                35,
+                15,
+                15
+              ],
+              "bst": {
+                "root": "for",
+                "left": "do",
+                "right": {
+                  "root": "while",
+                  "left": "repeat"
+                }
+              }
+            },
+            "goal": "展示有界状态、实际探测与计数不变量",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp04-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "weighted-successful-search-strategies",
+          "input": {
+            "keys": [
+              "do",
+              "for",
+              "repeat",
+              "while"
+            ],
+            "probabilityHundredths": [
+              35,
+              15,
+              15,
+              35
+            ],
+            "bst": {
+              "root": "for",
+              "left": "do",
+              "right": {
+                "root": "while",
+                "left": "repeat"
+              }
+            }
+          },
+          "goal": "展示有界状态、实际探测与计数不变量",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp04-03",
+      "topic": "可复用空闲结点的增长循环队列",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2019",
+        "questionNumber": "42",
+        "label": "2019 年 408 综合题第 42 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2019/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整C++17核心实现，不声称完成原题所有评分小问。原题一般设计，本题另给具体操作流；明确front/rear各自语义和抽象分配成本，不把现实分配器最坏延迟冒充算法常数界。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "采用循环单链表增长队列：front指首元素，rear指首个空闲槽；永久预留一个槽，空为两指针相同，满为 `rear->next == front`。初始1个自环空槽；满时在rear后插新槽，随后写当前rear并后移。出队仅后移front，不释放。先入1、2、3，出2次，再入4、5，最终队列及累计结点数为？每次分配按单位成本模型且成功。",
+      "options": [
+        {
+          "label": "A",
+          "content": "3、4、5；4个结点"
+        },
+        {
+          "label": "B",
+          "content": "3、4、5；6个结点"
+        },
+        {
+          "label": "C",
+          "content": "4、5；3个结点"
+        },
+        {
+          "label": "D",
+          "content": "1、2、3、4、5；6个结点"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把每次入队都当新分配",
+          "explanation": "前三次入队最多3个有效项需4槽；出队两次留下可复用槽，后入两次无需扩容。"
+        },
+        "C": {
+          "title": "把出队次数多算或漏预留槽",
+          "explanation": "出2次后还留3，后入4/5共3项；预留一个空槽需4结点。"
+        },
+        "D": {
+          "title": "出队未更新逻辑队首",
+          "explanation": "1、2已移出逻辑队列，结点可复用不等于旧元素仍在队内。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "分开记录有效元素数、环上槽数和空闲槽数。"
+        },
+        {
+          "level": 2,
+          "text": "出队只移动逻辑边界，后续入队先使用已有空闲槽。"
+        },
+        {
+          "level": 3,
+          "text": "另模拟容量仅一有效项的小环，检查队空、队满是否仍能由预留槽区分。"
+        }
+      ],
+      "solution": "前三次入队将环从1空槽扩到4槽，保留一个空槽；出队两次后有效仅3，接着两次入队复用原1/2占用的槽，末队列3、4、5，仍4槽。占用槽数始终等于历史最大有效项数加1。每次入/出只改固定数量指针和最多分配一结点，无整块搬移，因此在约定分配单位成本模型中各为`O(1)`，并非仅摊还；队列存活期槽只增不减，析构时释放全部环结点属于生命周期结束。下面的Node内存由new创建，禁用复制避免双重释放；空队列出队失败不改输出值。\n\n`C++17`实现：\n```cpp\n#include <cstddef>\nstruct QueueSlot { int value; QueueSlot* next; };\nstruct ReusableQueue {\n    QueueSlot* front;\n    QueueSlot* rear;\n    std::size_t allocated = 1;\n    ReusableQueue() {\n        front = new QueueSlot{0,nullptr};\n        front->next = front;\n        rear = front;\n    }\n    ReusableQueue(const ReusableQueue&) = delete;\n    ReusableQueue& operator=(const ReusableQueue&) = delete;\n    bool empty() const { return front == rear; }\n    void enqueue(int value) {\n        if (rear->next == front) {\n            rear->next = new QueueSlot{0,rear->next};\n            ++allocated;\n        }\n        rear->value = value;\n        rear = rear->next;\n    }\n    bool dequeue(int& out) {\n        if (empty()) return false;\n        out = front->value;\n        front = front->next;\n        return true;\n    }\n    ~ReusableQueue() {\n        QueueSlot* p = front->next;\n        while (p != front) { QueueSlot* saved = p->next; delete p; p = saved; }\n        delete front;\n    }\n};\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅在上述操作末尾再追加一次入队6，其他不变，最终状态为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "3、4、5、6；4个结点"
+          },
+          {
+            "label": "B",
+            "content": "3、4、5、6；5个结点"
+          },
+          {
+            "label": "C",
+            "content": "4、5、6；4个结点"
+          },
+          {
+            "label": "D",
+            "content": "已满所以必须拒绝入队"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅追加入队6。",
+        "explanation": "追加前3有效项已占满4槽的可用容量，需增1槽，得到4有效项加1预留槽，共5结点。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp04-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "growing-circular-linked-queue",
+            "input": {
+              "operations": [
+                [
+                  "enqueue",
+                  1
+                ],
+                [
+                  "enqueue",
+                  2
+                ],
+                [
+                  "enqueue",
+                  3
+                ],
+                [
+                  "dequeue"
+                ],
+                [
+                  "dequeue"
+                ],
+                [
+                  "enqueue",
+                  4
+                ],
+                [
+                  "enqueue",
+                  5
+                ],
+                [
+                  "enqueue",
+                  6
+                ]
+              ],
+              "reserveEmptySlot": true
+            },
+            "goal": "展示有界状态、实际探测与计数不变量",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp04-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "growing-circular-linked-queue",
+          "input": {
+            "operations": [
+              [
+                "enqueue",
+                1
+              ],
+              [
+                "enqueue",
+                2
+              ],
+              [
+                "enqueue",
+                3
+              ],
+              [
+                "dequeue"
+              ],
+              [
+                "dequeue"
+              ],
+              [
+                "enqueue",
+                4
+              ],
+              [
+                "enqueue",
+                5
+              ]
+            ],
+            "reserveEmptySlot": true
+          },
+          "goal": "展示有界状态、实际探测与计数不变量",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "cp04-04",
+      "topic": "比较计数排序的相等键身份顺序",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2021",
+        "questionNumber": "42",
+        "label": "2021 年 408 综合题第 42 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2021/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整C++17核心实现，不声称完成原题所有评分小问。保留原6关键字，给相等键加身份标签；代码用整型id作相同标记含义，修正解析把count解释为大于元素数的文字。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "按原算法，两层循环取所有下标 `i < j`：若 `a[i] < a[j]` 则 `count[j]++`，否则 `count[i]++`，最后写 `b[count[i]]=a[i]`。输入为 `25a,-10,25b,10,11,19`，a/b只标相等25的原始身份、不参与比较。两项25的输出先后及关键字比较次数为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "25a在25b之前，15次"
+        },
+        {
+          "label": "B",
+          "content": "25b在25a之前，15次"
+        },
+        {
+          "label": "C",
+          "content": "25b在25a之前，6次"
+        },
+        {
+          "label": "D",
+          "content": "两项25会写同一槽而丢失一项"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "误把数值升序当稳定身份顺序",
+          "explanation": "相等时走否则分支给先出现者计数加1，25a被推到25b后方。"
+        },
+        "C": {
+          "title": "只数外层或输出循环",
+          "explanation": "6个元素两两比较一次，共6×5/2=15次，与相等分支无关。"
+        },
+        "D": {
+          "title": "遗漏相等键之间的秩区分",
+          "explanation": "相等一对也只给一者加1，所有记录获得不同秩，不会因相等而覆盖。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "用身份标签跟踪相等的两个记录，但大小判断只读关键字。"
+        },
+        {
+          "level": 2,
+          "text": "只看相等一对时，到底给前者还是后者的秩增加1？"
+        },
+        {
+          "level": 3,
+          "text": "另用三个全相等记录，按两个分支分别写出每个记录的最终秩。"
+        }
+      ],
+      "solution": "原严格小于分支使25a相对25b多一次计数；其最终秩5，25b秩4，输出为-10、10、11、19、25b、25a，不稳定。比较数固定`n(n-1)/2`，本例15。改为小于等于后相等对给后者加秩，保持原身份顺序；计数表示排在记录前面的数量（小于键及所选相等次序），源解析误写大于元素数不复制。时间`Θ(n²)`，辅助计数`Θ(n)`，输出另计。实现stable开关仅改变比较条件，记录身份完整保留。\n\n`C++17`实现：\n```cpp\n#include <vector>\nstruct Record { int key; int id; };\nstd::vector<Record> rankSort(const std::vector<Record>& a, bool stable) {\n    std::vector<std::size_t> count(a.size(),0);\n    for (std::size_t i = 0; i < a.size(); ++i)\n        for (std::size_t j = i+1; j < a.size(); ++j) {\n            bool first = stable ? a[i].key <= a[j].key : a[i].key < a[j].key;\n            if (first) ++count[j];\n            else ++count[i];\n        }\n    std::vector<Record> out(a.size());\n    for (std::size_t i = 0; i < a.size(); ++i) out[count[i]] = a[i];\n    return out;\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅将原比较条件 `<` 改为 `<=`，其他循环、输入与输出写法不变，结果为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "25a在25b之前，15次"
+          },
+          {
+            "label": "B",
+            "content": "25b在25a之前，15次"
+          },
+          {
+            "label": "C",
+            "content": "25b在25a之前，6次"
+          },
+          {
+            "label": "D",
+            "content": "两项25会写同一槽而丢失一项"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅把严格小于改为小于等于。",
+        "explanation": "相等时给后出现的25b计数增加，使25a秩4、25b秩5；仍比较所有15对，所以稳定且次数不变。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp04-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "comparison-count-rank-sort-identities",
+            "input": {
+              "records": [
+                [
+                  25,
+                  "a"
+                ],
+                [
+                  -10,
+                  "x"
+                ],
+                [
+                  25,
+                  "b"
+                ],
+                [
+                  10,
+                  "y"
+                ],
+                [
+                  11,
+                  "z"
+                ],
+                [
+                  19,
+                  "w"
+                ]
+              ],
+              "stable": true
+            },
+            "goal": "展示有界状态、实际探测与计数不变量",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp04-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "comparison-count-rank-sort-identities",
+          "input": {
+            "records": [
+              [
+                25,
+                "a"
+              ],
+              [
+                -10,
+                "x"
+              ],
+              [
+                25,
+                "b"
+              ],
+              [
+                10,
+                "y"
+              ],
+              [
+                11,
+                "z"
+              ],
+              [
+                19,
+                "w"
+              ]
+            ],
+            "stable": false
+          },
+          "goal": "展示有界状态、实际探测与计数不变量",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp04-05",
+      "topic": "置换选择的活跃记录与冻结记录",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2023",
+        "questionNumber": "42",
+        "label": "2023 年 408 综合题第 42 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2023/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整C++17核心实现，不声称完成原题所有评分小问。保留原19项输入与m4，另给m3变式；代码明确m>0，输出段保存开销独立计算。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "输入文件关键字依次为 `51,94,37,92,14,63,15,99,48,56,23,60,31,17,43,8,90,166,100`。工作区可容4条记录，初始读前4条；每次输出当前段活跃记录最小者，并补读下一条，新键不小于刚输出键则仍活跃，否则冻结到下一段。活跃区空才开始下一段，段内非降序。初始归并段共有几个？",
+      "options": [
+        {
+          "label": "A",
+          "content": "3"
+        },
+        {
+          "label": "B",
+          "content": "4"
+        },
+        {
+          "label": "C",
+          "content": "5"
+        },
+        {
+          "label": "D",
+          "content": "2"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把工作区容量误当固定段长",
+          "explanation": "段可通过连续补读延伸超过4项，原第一段6项、第二段9项。"
+        },
+        "C": {
+          "title": "把每个被冻结键各开一段",
+          "explanation": "同一轮被冻结的多项在下一段重新共同竞争，不各自形成独立段。"
+        },
+        "D": {
+          "title": "把平均段长当确定值",
+          "explanation": "常见平均长度估计不能代替逐步活跃/冻结状态，本输入需要3段。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "工作区中的记录分当前段可输出和必须等下一段两类，两类合计不能超过容量。"
+        },
+        {
+          "level": 2,
+          "text": "新读记录能否加入本段，只与刚输出关键字比较，不与文件中上一条输入比较。"
+        },
+        {
+          "level": 3,
+          "text": "另用递减输入和递增输入模拟相同容量，观察第一段长度是否固定为容量。"
+        }
+      ],
+      "solution": "三段依次为37、51、63、92、94、99；14、15、23、31、48、56、60、90、166；8、17、43、100。首段输出6项，结束时14、15、48、56被冻结。任意n>m>0第一段长度最小m（递减输入可达）、最大n（非降序可达），不是固定2m。最小堆实现时间`O(n log(m+1))`，活跃/冻结工作记录总数至多m，辅助`O(m)`，保存全部输出段额外`O(n)`。代码只在活跃区空后交换两堆，不把冻结记录提前放回当前段。\n\n`C++17`实现：\n```cpp\n#include <vector>\n#include <queue>\n#include <functional>\n#include <utility>\nstd::vector<std::vector<int>> replacementRuns(const std::vector<int>& a, std::size_t m) {\n    using Heap = std::priority_queue<int,std::vector<int>,std::greater<int>>;\n    Heap active, frozen;\n    std::size_t pos = 0;\n    while (pos < a.size() && pos < m) active.push(a[pos++]);\n    std::vector<std::vector<int>> runs;\n    while (!active.empty()) {\n        std::vector<int> run;\n        while (!active.empty()) {\n            int x = active.top(); active.pop();\n            run.push_back(x);\n            if (pos < a.size()) {\n                int y = a[pos++];\n                if (y >= x) active.push(y);\n                else frozen.push(y);\n            }\n        }\n        runs.push_back(std::move(run));\n        active.swap(frozen);\n    }\n    return runs;\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅将工作区容量4改为3，其他输入与置换选择规则不变，共有几个初始归并段？",
+        "options": [
+          {
+            "label": "A",
+            "content": "3"
+          },
+          {
+            "label": "B",
+            "content": "4"
+          },
+          {
+            "label": "C",
+            "content": "5"
+          },
+          {
+            "label": "D",
+            "content": "2"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅把工作区容量m从4改为3。",
+        "explanation": "四段依次37、51、92、94；14、15、48、56、63、99；23、31、43、60、90、166；8、17、100。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp04-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "replacement-selection-active-frozen-runs",
+            "input": {
+              "values": [
+                51,
+                94,
+                37,
+                92,
+                14,
+                63,
+                15,
+                99,
+                48,
+                56,
+                23,
+                60,
+                31,
+                17,
+                43,
+                8,
+                90,
+                166,
+                100
+              ],
+              "capacity": 3
+            },
+            "goal": "展示有界状态、实际探测与计数不变量",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp04-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "replacement-selection-active-frozen-runs",
+          "input": {
+            "values": [
+              51,
+              94,
+              37,
+              92,
+              14,
+              63,
+              15,
+              99,
+              48,
+              56,
+              23,
+              60,
+              31,
+              17,
+              43,
+              8,
+              90,
+              166,
+              100
+            ],
+            "capacity": 4
+          },
+          "goal": "展示有界状态、实际探测与计数不变量",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp04-06",
+      "topic": "平方增量探测的地址与实际比较键",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2024",
+        "questionNumber": "42",
+        "label": "2024 年 408 综合题第 42 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2024/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整C++17核心实现，不声称完成原题所有评分小问。保留原表容量/序列/探测式，修正源查8文字的槽2内容及超出容量的表头，不声称平方探测可覆盖全部空槽。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "长11表下标0至10，按 `20,3,11,18,9,14,7` 插入；`H0=(3*key)%11`，第k次探测地址 `(H0+k*k)%11`，k从0开始，每次均从H0加平方而非在上一地址上累加。查14时实际比较的关键字顺序为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "3、18、14"
+        },
+        {
+          "label": "B",
+          "content": "14"
+        },
+        {
+          "label": "C",
+          "content": "3、18、9、14"
+        },
+        {
+          "label": "D",
+          "content": "20、3、14"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "只看最终存储地址",
+          "explanation": "14初始地址9已有3，随后10已有18，之后2才是14，要先比较前两个冲突项。"
+        },
+        "C": {
+          "title": "把平方增量累加到上一地址",
+          "explanation": "各次探测从同一H0出发，9、10、2；不是每次在上一个地址上再加平方。"
+        },
+        "D": {
+          "title": "误用插入顺序代查找探测顺序",
+          "explanation": "查询从14的散列起点9开始，不从表内最早插入的20开始。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先完整建表，再按被查关键字自己的起始地址走同一探测规则。"
+        },
+        {
+          "level": 2,
+          "text": "把地址序列和这些地址实际存的关键字分两行记录。"
+        },
+        {
+          "level": 3,
+          "text": "另取一个小素数容量，比较从固定初始值加平方与从当前值累加平方的前几项地址。"
+        }
+      ],
+      "solution": "建表0至10为11、空、14、7、空、20、9、空、空、3、18，装填7/11。查14从9、10、2，比较3、18、14。原收录查8时把地址2内容写成18，是文本错误，实际为14；其失败终止地址7仍对。下列函数在空槽停止并单独记录空地址，不把它算作实际关键字比较；最多探m次后报该平方序列已耗尽，不能把它等同全表无空槽（平方余数未必覆盖全表）。前置非负32位键、容量正且可用int表示、没有删除标记；按该规则所需地址运算使用long long。\n\n`C++17`实现：\n```cpp\n#include <vector>\n#include <optional>\nstruct ProbeResult {\n    bool found = false;\n    bool emptyStop = false;\n    std::vector<int> addresses;\n    std::vector<int> compared;\n};\nProbeResult quadraticFind(const std::vector<std::optional<int>>& table, int key) {\n    int m = static_cast<int>(table.size());\n    long long h0 = (3LL * key) % m;\n    ProbeResult result;\n    for (int k = 0; k < m; ++k) {\n        int at = static_cast<int>((h0 + 1LL*k*k) % m);\n        result.addresses.push_back(at);\n        if (!table[at]) { result.emptyStop = true; return result; }\n        result.compared.push_back(*table[at]);\n        if (*table[at] == key) { result.found = true; return result; }\n    }\n    return result;\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅将查询目标14改为8，表与探测规则不变，实际比较序列及首个空槽地址为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "14、7、9、11；空槽7"
+          },
+          {
+            "label": "B",
+            "content": "18、7、9、11；空槽7"
+          },
+          {
+            "label": "C",
+            "content": "14、7；空槽6"
+          },
+          {
+            "label": "D",
+            "content": "3、18、14；找到8"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将查询键14改为8。",
+        "explanation": "8初始地址2，依次探2、3、6、0、7，对应14、7、9、11、空，故先比较四项后在7失败。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp04-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "quadratic-probe-actual-key-trace",
+            "input": {
+              "keys": [
+                20,
+                3,
+                11,
+                18,
+                9,
+                14,
+                7
+              ],
+              "capacity": 11,
+              "query": 8,
+              "hashMultiplier": 3,
+              "probe": "initial-plus-square"
+            },
+            "goal": "展示有界状态、实际探测与计数不变量",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp04-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "quadratic-probe-actual-key-trace",
+          "input": {
+            "keys": [
+              20,
+              3,
+              11,
+              18,
+              9,
+              14,
+              7
+            ],
+            "capacity": 11,
+            "query": 14,
+            "hashMultiplier": 3,
+            "probe": "initial-plus-square"
+          },
+          "goal": "展示有界状态、实际探测与计数不变量",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp04-07",
+      "topic": "严格BST中最近关键字的并列结果",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2026",
+        "questionNumber": "41",
+        "label": "2026 年 408 综合题第 41 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2026/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整C++17核心实现，不声称完成原题所有评分小问。原任意BST最近所有结点算法题改为明确严格互异键模型和7结点教学例；不照抄收录根10/目标10却遗漏精确结点的示例，位宽与空树单独说明。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "另给严格BST：根8，左4带左2右6，右12带左10右14，无其他结点、键互异。输入键与目标均为32位有符号整数。目标`K=9`，要求返回最小绝对差与全部并列关键字，差用至少64位整数。结果为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "差1，关键字8和10"
+        },
+        {
+          "label": "B",
+          "content": "差1，仅8"
+        },
+        {
+          "label": "C",
+          "content": "差1，仅10"
+        },
+        {
+          "label": "D",
+          "content": "差0，关键字9"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "第一次遇到最小值就直接返回",
+          "explanation": "搜索路径还可能遇到与目标对称的另一边界键；8与10同样距离1。"
+        },
+        "C": {
+          "title": "只查目标右侧或只保后出现者",
+          "explanation": "8也在树中且距9为1，必须与10一并返回。"
+        },
+        "D": {
+          "title": "把未存储的目标当匹配",
+          "explanation": "树中无9，最小差不可能为0。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "目标精确存在时与不存在时分开；若不存在，最近值可能在目标两侧。"
+        },
+        {
+          "level": 2,
+          "text": "沿BST正常比较路径同时保留当前最好差值，遇到相同差也要保留。"
+        },
+        {
+          "level": 3,
+          "text": "另用两个跨在目标左右的互异键，检查只保存一个候选是否能满足“所有”要求。"
+        }
+      ],
+      "solution": "8与10距9各1，其他键更远，返回两者。严格BST的有序集合中最近键只能为目标的前驱/后继或精确目标，至多两个；正常搜索路径会经过这两个边界候选，未走分支的全部键被对应边界隔得更远。因此可迭代走一条根叶路径，保存更小差和相等差，精确命中即止，时间`O(h)`、辅助`O(1)`（含至多2结果）；不把“最多两结点”推广给允许重复键的树。先提升为long long再作差，避免32位减法溢出；空树返回`found=false`。原收录示例画根10并以10为目标却只列5/15最近，本站不复制该例；也不使用跨调用共享全局最小值。\n\n`C++17`实现：\n```cpp\n#include <vector>\n#include <algorithm>\n#include <climits>\nstruct SearchTree { int key; SearchTree* left; SearchTree* right; };\nstruct ClosestResult {\n    bool found = false;\n    long long distance = LLONG_MAX;\n    std::vector<int> keys;\n};\nClosestResult closest(const SearchTree* root, int target) {\n    ClosestResult best;\n    for (auto p = root; p != nullptr; ) {\n        long long diff = static_cast<long long>(p->key) - target;\n        if (diff < 0) diff = -diff;\n        if (!best.found || diff < best.distance) {\n            best.found = true;\n            best.distance = diff;\n            best.keys.assign(1,p->key);\n        } else if (diff == best.distance) best.keys.push_back(p->key);\n        if (p->key == target) break;\n        p = target < p->key ? p->left : p->right;\n    }\n    std::sort(best.keys.begin(),best.keys.end());\n    return best;\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅将目标K从9改为10，树与所有结果要求不变，结果为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "差1，关键字8和10"
+          },
+          {
+            "label": "B",
+            "content": "差0，仅10"
+          },
+          {
+            "label": "C",
+            "content": "差2，关键字8和12"
+          },
+          {
+            "label": "D",
+            "content": "空结果"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅把目标9改为10。",
+        "explanation": "10本身存在，绝对差0已是下界，严格BST无其他相同键，只有该结点。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp04-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "bst-nearest-predecessor-successor",
+            "input": {
+              "tree": {
+                "key": 8,
+                "left": {
+                  "key": 4,
+                  "left": {
+                    "key": 2
+                  },
+                  "right": {
+                    "key": 6
+                  }
+                },
+                "right": {
+                  "key": 12,
+                  "left": {
+                    "key": 10
+                  },
+                  "right": {
+                    "key": 14
+                  }
+                }
+              },
+              "target": 10,
+              "strictDistinctKeys": true
+            },
+            "goal": "展示有界状态、实际探测与计数不变量",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp04-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "bst-nearest-predecessor-successor",
+          "input": {
+            "tree": {
+              "key": 8,
+              "left": {
+                "key": 4,
+                "left": {
+                  "key": 2
+                },
+                "right": {
+                  "key": 6
+                }
+              },
+              "right": {
+                "key": 12,
+                "left": {
+                  "key": 10
+                },
+                "right": {
+                  "key": 14
+                }
+              }
+            },
+            "target": 9,
+            "strictDistinctKeys": true
+          },
+          "goal": "展示有界状态、实际探测与计数不变量",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "cp04-08",
+      "topic": "固定首个出栈值与Catalan双射",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2026",
+        "questionNumber": "42",
+        "label": "2026 年 408 综合题第 42 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2026/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整C++17核心实现，不声称完成原题所有评分小问。只采用原第3/4计数小问；原第1问n9/8项歧义不猜补；本站给首项2的双射与有限机器范围DP实现，不声称解答全部小问。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "1至n互异元素依次入空栈，可合法交替入出，每项恰输出一次；不限制容量。按综合题计数小问取`n=4`，完整合法输出排列中，第一个输出为2的共有几种？",
+      "options": [
+        {
+          "label": "A",
+          "content": "4"
+        },
+        {
+          "label": "B",
+          "content": "5"
+        },
+        {
+          "label": "C",
+          "content": "14"
+        },
+        {
+          "label": "D",
+          "content": "42"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "按剩下位置随意乘或漏调度",
+          "explanation": "输出2后，1虽在栈中但可以等待后续输入，不能只按固定一个剩余顺序或简单位置数计。"
+        },
+        "C": {
+          "title": "把全部合法输出都算到首项2",
+          "explanation": "14是n4的全部输出总数，首项2只占其中5种。"
+        },
+        "D": {
+          "title": "使用了大一规模的总Catalan数",
+          "explanation": "42是n5全部输出数，题问n4且首项固定。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "固定首个输出2后，先写此时栈内已保留什么、还有哪些未入项。"
+        },
+        {
+          "level": 2,
+          "text": "把后续状态与少一个元素的完整入出栈过程建立一一对应，留意初始强制压栈操作。"
+        },
+        {
+          "level": 3,
+          "text": "另枚举n3的全部合法输出并按第一项分组，再检查“首项固定”与“总数”是否相同。"
+        }
+      ],
+      "solution": "五种为2134、2143、2314、2341、2431。一般n至少2，首出2强制先入1、入2、出2；删除已出的2并把后续3至n各减1，得到栈中预置1、未入2至n-1。普通规模n-1过程的第一个操作必为入1，去掉该强制操作就与此状态一一对应，故首出2数量`C(n-1)`；首出1数量同为`C(n-1)`。n4为`C3=5`，全部`C4=14`；n5首出2为`C4=14`，全部`C5=42`。Catalan递推按第一个入栈元素的配对出栈位置分解两部分，`C0=1`、Cn为`C(i)``C(n-1-i)`对i从0至n-1求和。下面固定机器整数实现前置0≤n≤35，保证所有非负乘加结果可由unsigned long long表示，不冒充任意大n计数。收录第1问写n9但仅列8项，本改编只采用第3/4计数小问，不猜补9。\n\n`C++17`实现：\n```cpp\n#include <vector>\nunsigned long long catalan(unsigned int n) {\n    std::vector<unsigned long long> c(n+1,0);\n    c[0] = 1;\n    for (unsigned int s = 1; s <= n; ++s)\n        for (unsigned int left = 0; left < s; ++left) c[s] += c[left] * c[s-1-left];\n    return c[n];\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅将n从4改为5，仍统计第一个输出为2的完整合法输出排列数，有几种？",
+        "options": [
+          {
+            "label": "A",
+            "content": "4"
+          },
+          {
+            "label": "B",
+            "content": "5"
+          },
+          {
+            "label": "C",
+            "content": "14"
+          },
+          {
+            "label": "D",
+            "content": "42"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将元素个数n从4改为5。",
+        "explanation": "由同一双射为规模4的Catalan数`C4=14`；42是规模5总数而非首项2子集。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp04-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "stack-first-output-catalan-bijection",
+            "input": {
+              "inputOrder": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "firstOutput": 2
+            },
+            "goal": "展示有界状态、实际探测与计数不变量",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp04-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "stack-first-output-catalan-bijection",
+          "input": {
+            "inputOrder": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "firstOutput": 2
+          },
+          "goal": "展示有界状态、实际探测与计数不变量",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    }
+  ]
+}

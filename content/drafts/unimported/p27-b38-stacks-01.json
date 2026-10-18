@@ -1,0 +1,1499 @@
+{
+  "schemaVersion": 1,
+  "section": "栈队列真题：操作调度、容量、指针与表达式",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "sq01-01",
+      "topic": "打印缓冲的先进先出",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2009",
+        "questionNumber": "1",
+        "label": "2009 年 408 真题 第 1 题（明确保序取出）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2009/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "主机按到达次序把待打印数据写入缓冲区，打印机按同一次序逐项取出，不改变输出先后。该缓冲区应采用哪种逻辑结构？",
+      "options": [
+        {
+          "label": "A",
+          "content": "栈"
+        },
+        {
+          "label": "B",
+          "content": "队列"
+        },
+        {
+          "label": "C",
+          "content": "树"
+        },
+        {
+          "label": "D",
+          "content": "图"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "用后进先出改变了要求的先后次序",
+          "explanation": "栈会优先取最近压入的数据，不能直接保证较早到达的数据先输出。"
+        },
+        "C": {
+          "title": "把层次关系当作顺序缓冲规则",
+          "explanation": "树可表达层次，但不直接给出所需的依到达顺序入出规则；该规则应采用先进先出。"
+        },
+        "D": {
+          "title": "把一般连接结构当缓冲纪律",
+          "explanation": "图描述关系，不能仅凭图结构保证数据按写入先后输出；本题需要具体的线性入出约束。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先确认最早写入的数据应在何时取出。"
+        },
+        {
+          "level": 2,
+          "text": "比较栈顶与队头各自优先取哪一个元素。"
+        },
+        {
+          "level": 3,
+          "text": "另取三个按时间到达的数据项，保持先后不变地写出取出顺序，再对照两类线性结构。"
+        }
+      ],
+      "solution": "要求数据按进入先后离开，属于先进先出，直接对应队列。缓冲解决速度差，但仍需遵守题目规定的输出顺序。",
+      "viz": null,
+      "variant": {
+        "stem": "只将取出规则改为“最近写入、尚未处理的数据最先取出”，应采用哪种逻辑结构？",
+        "options": [
+          {
+            "label": "A",
+            "content": "栈"
+          },
+          {
+            "label": "B",
+            "content": "队列"
+          },
+          {
+            "label": "C",
+            "content": "树"
+          },
+          {
+            "label": "D",
+            "content": "图"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将先进先出改为后进先出。",
+        "explanation": "最近进入的未处理项先离开，属于后进先出，对应栈；这是修改后的处理规则，不再沿用原题的到达顺序要求。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sq01-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "buffer-order-discipline",
+            "input": {
+              "arrivals": [
+                "A",
+                "B",
+                "C"
+              ],
+              "discipline": "LIFO"
+            },
+            "goal": "对照进入与离开的时间顺序",
+            "pauseQuestion": "最早到达与最近到达，哪一个应先离开？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sq01-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "buffer-order-discipline",
+          "input": {
+            "arrivals": [
+              "A",
+              "B",
+              "C"
+            ],
+            "discipline": "FIFO"
+          },
+          "goal": "对照进入与离开的时间顺序",
+          "pauseQuestion": "最早到达与最近到达，哪一个应先离开？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "sq01-02",
+      "topic": "栈队列串联的最小栈容量",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2009",
+        "questionNumber": "2",
+        "label": "2009 年 408 真题 第 2 题（明确FIFO与容量峰值）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2009/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "空栈 `S` 与空队列 `Q`，元素按 `a,b,c,d,e,f,g` 顺序入栈，可交替入出栈；每次出栈立即入 `Q`，`Q` 按FIFO出队。最终 `Q` 的出队序列为 `b,d,c,f,e,a,g`，`S` 容量最少为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1"
+        },
+        {
+          "label": "B",
+          "content": "2"
+        },
+        {
+          "label": "C",
+          "content": "3"
+        },
+        {
+          "label": "D",
+          "content": "4"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "只看一次输出而不保留待出元素",
+          "explanation": "输出b前a仍需留栈，容量1就已经不足，后续还会出现更深的积累。"
+        },
+        "B": {
+          "title": "漏掉等待d或f时的第三个栈元素",
+          "explanation": "为输出d时a、c还未输出，必须临时同时保存a、c、d，容量2不足。"
+        },
+        "D": {
+          "title": "把某次可多压入当成容量下界",
+          "explanation": "可以按下一个目标需要才继续入栈，最大深度3已经足够，无需强制把更多后续元素提前压入。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "队列不会重新排列进入它的元素，先把Q输出要求转为S输出要求。"
+        },
+        {
+          "level": 2,
+          "text": "按目标顺序只压入尚未到达的下一个必要元素，记录每一步栈大小。"
+        },
+        {
+          "level": 3,
+          "text": "在另一个短序列中，区分仍须留栈等待的元素和当前即将弹出的元素，两者会暂时同时占空间。"
+        }
+      ],
+      "solution": "FIFO使栈 `S` 的出栈顺序也为给定序列。输出b时栈为a、b；输出d前为a、c、d，深度3；之后输出f前为a、e、f，也为3。按需压入即可完成，且d前至少需三项，故最少3。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把Q的目标输出改为 `d,c,b,f,e,a,g`，入栈顺序和其他规则不变，最少S容量为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1"
+          },
+          {
+            "label": "B",
+            "content": "2"
+          },
+          {
+            "label": "C",
+            "content": "3"
+          },
+          {
+            "label": "D",
+            "content": "4"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "仅更换目标输出序列。",
+        "explanation": "第一个输出d前必须把a、b、c、d都压入，至少容量4；之后按需执行，深度不会超过4，因此最少4。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sq01-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "stack-permutation-minimum-capacity",
+            "input": {
+              "input": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e",
+                "f",
+                "g"
+              ],
+              "output": [
+                "d",
+                "c",
+                "b",
+                "f",
+                "e",
+                "a",
+                "g"
+              ],
+              "downstreamQueue": "FIFO"
+            },
+            "goal": "累计每个合法入出步骤的栈峰值",
+            "pauseQuestion": "等下一个目标进栈时，之前哪些未输出元素仍占用栈空间？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sq01-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "stack-permutation-minimum-capacity",
+          "input": {
+            "input": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e",
+              "f",
+              "g"
+            ],
+            "output": [
+              "b",
+              "d",
+              "c",
+              "f",
+              "e",
+              "a",
+              "g"
+            ],
+            "downstreamQueue": "FIFO"
+          },
+          "goal": "累计每个合法入出步骤的栈峰值",
+          "pauseQuestion": "等下一个目标进栈时，之前哪些未输出元素仍占用栈空间？"
+        }
+      ]
+    },
+    {
+      "id": "sq01-03",
+      "topic": "限制连续出栈的可达性",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2010",
+        "questionNumber": "1",
+        "label": "2010 年 408 真题 第 1 题（明确连续操作计数）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2010/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "元素按 `a,b,c,d,e,f` 入空栈，入栈与退栈可交替，但不允许连续三次退栈，不允许额外元素或空操作来中断连续计数。以下哪种出栈序列不可能？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`d,c,e,b,f,a`"
+        },
+        {
+          "label": "B",
+          "content": "`c,b,d,a,e,f`"
+        },
+        {
+          "label": "C",
+          "content": "`b,c,a,e,f,d`"
+        },
+        {
+          "label": "D",
+          "content": "`a,f,e,d,c,b`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "没有利用后续入栈中断连续退栈",
+          "explanation": "输出d、c后可入e，输出e、b后可入f，各段连续退栈均不超过两次，A可行。"
+        },
+        "B": {
+          "title": "误把输出相邻项都当连续执行的退栈",
+          "explanation": "相邻输出之间可以有入栈操作。B可在输出c、b后入d，再在后续必要处入e、f，中断连续退栈。"
+        },
+        "C": {
+          "title": "把局部倒序直接当三次连续退栈",
+          "explanation": "C可按需入栈：输出b后入c，再输出c、a，之后入d、e；后续也不需连续三次退栈。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "输出序列不展示中间入栈操作，要判断是否存在完整合法调度。"
+        },
+        {
+          "level": 2,
+          "text": "当所有后续元素已经入栈后，是否还有合法入栈可用于打断连续退栈？"
+        },
+        {
+          "level": 3,
+          "text": "用另一个四元素例子同时记录操作串和输出串，比较两项相邻输出之间是否可能插入新元素。"
+        }
+      ],
+      "solution": "D先输出a，再为输出f压入b至f；此时输入已用完，接下来必须连续弹f、e、d、c、b五次，违反上限。A、B、C都可通过后续必要入栈把连续退栈分段为至多两次，因此只有D不可行。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把限制放宽为允许连续退栈最多5次，原题四个候选序列的可行性如何？",
+        "options": [
+          {
+            "label": "A",
+            "content": "四个都可能"
+          },
+          {
+            "label": "B",
+            "content": "仍只有D不可能"
+          },
+          {
+            "label": "C",
+            "content": "仅A可能"
+          },
+          {
+            "label": "D",
+            "content": "四个都不可能"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将连续退栈上限由2放宽到5。",
+        "explanation": "原本A、B、C可行，放宽后仍可行；D在先弹a、再压完b至f后连续弹五次也被允许，所以四个均可行。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sq01-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "stack-consecutive-pop-limit",
+            "input": {
+              "input": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e",
+                "f"
+              ],
+              "outputs": [
+                [
+                  "d",
+                  "c",
+                  "e",
+                  "b",
+                  "f",
+                  "a"
+                ],
+                [
+                  "c",
+                  "b",
+                  "d",
+                  "a",
+                  "e",
+                  "f"
+                ],
+                [
+                  "b",
+                  "c",
+                  "a",
+                  "e",
+                  "f",
+                  "d"
+                ],
+                [
+                  "a",
+                  "f",
+                  "e",
+                  "d",
+                  "c",
+                  "b"
+                ]
+              ],
+              "maxConsecutivePops": 5
+            },
+            "goal": "区分连续输出位置与连续退栈操作",
+            "pauseQuestion": "输入已全部压入后，还能用哪种合法操作打断退栈？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sq01-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "stack-consecutive-pop-limit",
+          "input": {
+            "input": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e",
+              "f"
+            ],
+            "outputs": [
+              [
+                "d",
+                "c",
+                "e",
+                "b",
+                "f",
+                "a"
+              ],
+              [
+                "c",
+                "b",
+                "d",
+                "a",
+                "e",
+                "f"
+              ],
+              [
+                "b",
+                "c",
+                "a",
+                "e",
+                "f",
+                "d"
+              ],
+              [
+                "a",
+                "f",
+                "e",
+                "d",
+                "c",
+                "b"
+              ]
+            ],
+            "maxConsecutivePops": 2
+          },
+          "goal": "区分连续输出位置与连续退栈操作",
+          "pauseQuestion": "输入已全部压入后，还能用哪种合法操作打断退栈？"
+        }
+      ]
+    },
+    {
+      "id": "sq01-04",
+      "topic": "先全部入队的输出受限双端队列",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2010",
+        "questionNumber": "2",
+        "label": "2010 年 408 真题 第 2 题（明确先全部入后出及固定出端）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2010/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "元素按 `a,b,c,d,e` 顺序全部入队后，才开始出队。每次可从双端队列左端或右端入队，出队只允许左端。哪种输出不可能？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`b,a,c,d,e`"
+        },
+        {
+          "label": "B",
+          "content": "`d,b,a,c,e`"
+        },
+        {
+          "label": "C",
+          "content": "`d,b,c,a,e`"
+        },
+        {
+          "label": "D",
+          "content": "`e,c,b,a,d`"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "未尝试两端不同的入队方向",
+          "explanation": "a入后，b左入、c右入、d右入、e右入，就得到A；不能只按单一端入队判断。"
+        },
+        "B": {
+          "title": "忽略先前入队元素可被新元素包在中间",
+          "explanation": "b左入、c右入、d左入、e右入可得到B，全部入完再左出即可。"
+        },
+        "D": {
+          "title": "把逆向前缀当作不能由头插形成",
+          "explanation": "b、c、e分别左入而d右入，可形成e、c、b、a、d，D可行。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先全部入队后输出，输出就是最后的左到右排列。"
+        },
+        {
+          "level": 2,
+          "text": "最先进入的两个元素在后续仅两端插入时，是否还能被插入一个新元素隔开？"
+        },
+        {
+          "level": 3,
+          "text": "对另一个四项例子枚举每次左入或右入，观察内部已有相邻关系何时会改变。"
+        }
+      ],
+      "solution": "a、b最先入队并相邻，此后只从两端插入，二者仍相邻。C要求b与a之间插入c，不可能；其余三项都可给出左右入队方案，因此只选C。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把入队也限制为右端，仍先全部入完再从左出，唯一输出为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`a,b,c,d,e`"
+          },
+          {
+            "label": "B",
+            "content": "`b,a,c,d,e`"
+          },
+          {
+            "label": "C",
+            "content": "`d,b,a,c,e`"
+          },
+          {
+            "label": "D",
+            "content": "`e,c,b,a,d`"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将双端入队改为右端入队。",
+        "explanation": "变成普通FIFO队列，右端按a至e入，左端也按a至e出，不再有前插调整顺序的自由。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sq01-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "output-restricted-deque-build",
+            "input": {
+              "input": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e"
+              ],
+              "enqueueEnds": [
+                "right"
+              ],
+              "allInputBeforeOutput": true,
+              "dequeueEnd": "left"
+            },
+            "goal": "观察仅两端插入能否拆开内部相邻元素",
+            "pauseQuestion": "后来的元素可以直接插到已有两个相邻项之间吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sq01-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "output-restricted-deque-build",
+          "input": {
+            "input": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e"
+            ],
+            "outputs": [
+              [
+                "b",
+                "a",
+                "c",
+                "d",
+                "e"
+              ],
+              [
+                "d",
+                "b",
+                "a",
+                "c",
+                "e"
+              ],
+              [
+                "d",
+                "b",
+                "c",
+                "a",
+                "e"
+              ],
+              [
+                "e",
+                "c",
+                "b",
+                "a",
+                "d"
+              ]
+            ],
+            "enqueueEnds": [
+              "left",
+              "right"
+            ],
+            "allInputBeforeOutput": true,
+            "dequeueEnd": "left"
+          },
+          "goal": "观察仅两端插入能否拆开内部相邻元素",
+          "pauseQuestion": "后来的元素可以直接插到已有两个相邻项之间吗？"
+        }
+      ]
+    },
+    {
+      "id": "sq01-05",
+      "topic": "指定首个出栈元素的计数",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2011",
+        "questionNumber": "2",
+        "label": "2011 年 408 真题 第 2 题（按不同输出序列计数）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2011/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "互异元素按 `a,b,c,d,e` 进入初始空栈，入出可交替，每项恰好入栈一次、出栈一次。以d作为第一个输出的合法出栈序列有几个？",
+      "options": [
+        {
+          "label": "A",
+          "content": "3"
+        },
+        {
+          "label": "B",
+          "content": "4"
+        },
+        {
+          "label": "C",
+          "content": "5"
+        },
+        {
+          "label": "D",
+          "content": "6"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "漏掉e可处在最后的位置",
+          "explanation": "d先输出后，剩余a、b、c必须按c、b、a出；e还可以等它们全部输出后才入出。"
+        },
+        "C": {
+          "title": "把e放到d之前也计入",
+          "explanation": "题目固定d为首个输出，e能插入的输出位置只能在d之后，不能增加一个在d之前的位置。"
+        },
+        "D": {
+          "title": "把多个操作调度当不同输出序列",
+          "explanation": "题目数的是最终序列，不是入出操作调度；同一输出不能因入栈时机不同重复计数。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "为使d首先输出，a、b、c在此之前必须保持怎样的状态？"
+        },
+        {
+          "level": 2,
+          "text": "d之后已在栈内的三个元素相对出栈次序受到什么限制？"
+        },
+        {
+          "level": 3,
+          "text": "在另一个短例子中，固定已有栈内元素的出栈次序，再把唯一未入栈元素放进各个不同的输出空隙。"
+        }
+      ],
+      "solution": "先压a、b、c、d再弹d；e必须尚未入栈，否则会挡住d。其后c、b、a相对顺序固定，e可插在它们之前、两处间隙或之后，共4个输出序列。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把第一个输出从d改为e，其他输入与规则不变，合法输出序列有几个？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1"
+          },
+          {
+            "label": "B",
+            "content": "2"
+          },
+          {
+            "label": "C",
+            "content": "4"
+          },
+          {
+            "label": "D",
+            "content": "5"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将指定首个出栈元素由d改为e。",
+        "explanation": "为使e首先输出，五项必须全压入而没有先弹任何项。之后只能依次弹d、c、b、a，整个输出唯一。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sq01-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "stack-first-output-count",
+            "input": {
+              "input": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e"
+              ],
+              "firstOutput": "e",
+              "count": "distinct-output-sequences"
+            },
+            "goal": "枚举最后未入项在固定逆序输出中的插入位置",
+            "pauseQuestion": "不同操作时机若产生相同输出，应计一种还是多种序列？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sq01-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "stack-first-output-count",
+          "input": {
+            "input": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e"
+            ],
+            "firstOutput": "d",
+            "count": "distinct-output-sequences"
+          },
+          "goal": "枚举最后未入项在固定逆序输出中的插入位置",
+          "pauseQuestion": "不同操作时机若产生相同输出，应计一种还是多种序列？"
+        }
+      ]
+    },
+    {
+      "id": "sq01-06",
+      "topic": "队尾指向已有元素的初始化",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2011",
+        "questionNumber": "3",
+        "label": "2011 年 408 真题 第 3 题（补明队尾更新与空状态标志）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2011/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站补明入队先推进rear再写入且不改front，用count区分空满；这些实现约定用于唯一确定初值，不称所有队列的统一规则"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "循环数组下标为0至 `n-1`，`n≥2`。非空时 `front` 指队头、`rear` 指队尾已有元素。入队固定先令 `rear=(rear+1)%n` 再写 `A[rear]`，不改 `front`，空满另由计数器区分。空队首项要求写入 `A[0]`，初始两指针依次应为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "0、0"
+        },
+        {
+          "label": "B",
+          "content": "0、`n-1`"
+        },
+        {
+          "label": "C",
+          "content": "`n-1`、0"
+        },
+        {
+          "label": "D",
+          "content": "`n-1`、`n-1`"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "套用了rear指首个空位的另一模型",
+          "explanation": "本题先推进rear才写入，从0初始会把首项写在1，不符合指定地址。"
+        },
+        "C": {
+          "title": "把两个指针的更新职责颠倒",
+          "explanation": "入队不改front，它必须一开始就指向首项最终位置0；rear则要在推进后到0。"
+        },
+        "D": {
+          "title": "只满足rear回绕而漏front位置",
+          "explanation": "rear初始在末下标可回绕到0，但front入队不变，若也是末下标就不能指到首项0。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先按题目给定的执行顺序，反推第一次写入前rear应处在哪个位置。"
+        },
+        {
+          "level": 2,
+          "text": "front在本次入队是否发生变化？它在非空后的含义是什么？"
+        },
+        {
+          "level": 3,
+          "text": "另取容量4的小数组，比较先推进后写入和先写入后推进，首次写到同一位置需要的初值是否一样。"
+        }
+      ],
+      "solution": "第一次写入0前 `rear` 必须从末下标回绕，因此初始 `rear=n-1`。`front` 不随这次入队改变，而首项在0，故初始 `front` 为0。该结论依赖明确的指针语义与更新规则。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把rear模型改为“指向下一个可写空位”，入队先写 `A[rear]` 再令 `rear=(rear+1)%n`；front不变、首项地址和计数器规则不变。初始front、rear为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "0、0"
+          },
+          {
+            "label": "B",
+            "content": "0、`n-1`"
+          },
+          {
+            "label": "C",
+            "content": "`n-1`、0"
+          },
+          {
+            "label": "D",
+            "content": "`n-1`、`n-1`"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅切换rear的含义及与之对应的先写后推进规则。",
+        "explanation": "新模型第一步直接写 `rear` 当前地址，首项要在0，就需初始 `rear` 为0；`front` 仍需为0。不能把指向已有尾项的初值复用到下一空位模型。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sq01-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "circular-queue-pointer-model",
+            "input": {
+              "capacity": 5,
+              "front": 0,
+              "rear": 0,
+              "count": 0,
+              "rearMeaning": "next-free",
+              "enqueue": "write-then-advance",
+              "firstValue": "A"
+            },
+            "goal": "在相同首项地址下对照两种队尾语义",
+            "pauseQuestion": "指针名称相同，是否就能省略其到底指向已有项还是空位的说明？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sq01-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "circular-queue-pointer-model",
+          "input": {
+            "capacity": 5,
+            "front": 0,
+            "rear": 4,
+            "count": 0,
+            "rearMeaning": "last-element",
+            "enqueue": "advance-then-write",
+            "firstValue": "A"
+          },
+          "goal": "在相同首项地址下对照两种队尾语义",
+          "pauseQuestion": "指针名称相同，是否就能省略其到底指向已有项还是空位的说明？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "sq01-07",
+      "topic": "中缀转后缀的符号栈峰值",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2012",
+        "questionNumber": "2",
+        "label": "2012 年 408 真题 第 2 题（明确括号占栈与左结合）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2012/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "将中缀 `a+b-a*((c+d)/e-f)+g` 转后缀。使用通常运算符栈，左括号也占一格，右括号只触发弹栈，操作数直接输出；乘除高于加减，同优先级左结合，扫描新运算符前弹出不低于其优先级的栈顶运算符，遇左括号停止。符号栈最大同时占用几格？",
+      "options": [
+        {
+          "label": "A",
+          "content": "5"
+        },
+        {
+          "label": "B",
+          "content": "7"
+        },
+        {
+          "label": "C",
+          "content": "8"
+        },
+        {
+          "label": "D",
+          "content": "11"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把所有曾入栈符号累计成峰值",
+          "explanation": "较早运算符会按优先级或右括号及时弹出，不能把不同时刻的占用全加在一起。"
+        },
+        "C": {
+          "title": "把操作数也计入运算符栈",
+          "explanation": "操作数直接进入输出流，不占本题的符号栈格数；应仅数运算符和未闭合左括号。"
+        },
+        "D": {
+          "title": "把整个表达式长度当栈容量",
+          "explanation": "大部分符号并不同时留栈，右括号更不入栈，必须逐次维护当前栈而非计字符总数。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "把输出流与运算符栈分别记录，左括号在栈中等待匹配。"
+        },
+        {
+          "level": 2,
+          "text": "遇到新运算符时，先按优先级弹出该完成的旧运算符，再计新占用。"
+        },
+        {
+          "level": 3,
+          "text": "另用一个短的带双层括号表达式记录每步栈深，注意右括号移除而非增加栈中符号。"
+        }
+      ],
+      "solution": "在扫描内层c加d中的加号之后，栈从底到顶为减号、乘号、左括号、左括号、加号，共5格。之后闭括号和较低优先级运算会弹出旧项，其余状态都未超过5。",
+      "viz": null,
+      "variant": {
+        "stem": "只删除包住整个除减子式的外层一对括号，表达式变为 `a+b-a*(c+d)/e-f+g`，其他转换规则不变，最大栈深为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "3"
+          },
+          {
+            "label": "B",
+            "content": "4"
+          },
+          {
+            "label": "C",
+            "content": "5"
+          },
+          {
+            "label": "D",
+            "content": "6"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅删除外层一对括号，明确给出修改后表达式。",
+        "explanation": "扫描括号内加号时栈为减号、乘号、左括号、加号，深度4；后续按左结合依次弹出和入栈，不会超过4。删除括号会改变原表达式含义，本题按修改后表达式计算。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sq01-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "infix-to-postfix-stack-depth",
+            "input": {
+              "expression": "a+b-a*(c+d)/e-f+g",
+              "countLeftParentheses": true,
+              "associativity": "left"
+            },
+            "goal": "只累计当前尚未出栈的符号",
+            "pauseQuestion": "一个符号先前出现过，是否就说明它此刻仍占栈空间？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sq01-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "infix-to-postfix-stack-depth",
+          "input": {
+            "expression": "a+b-a*((c+d)/e-f)+g",
+            "countLeftParentheses": true,
+            "associativity": "left"
+          },
+          "goal": "只累计当前尚未出栈的符号",
+          "pauseQuestion": "一个符号先前出现过，是否就说明它此刻仍占栈空间？"
+        }
+      ]
+    },
+    {
+      "id": "sq01-08",
+      "topic": "第二个输出固定时的第三项可能值",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2013",
+        "questionNumber": "2",
+        "label": "2013 年 408 真题 第 2 题（明确n下界与可能值并集）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2013/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "互异整数按1至 `n` 进入空栈，`n≥3`，允许交替入出，完整输出为 `p1,p2,...,pn`。已知第二个输出 `p2=3`，第三个输出 `p3` 的可能取值共有多少个？对不同合法输出取并集。",
+      "options": [
+        {
+          "label": "A",
+          "content": "`n-3`"
+        },
+        {
+          "label": "B",
+          "content": "`n-2`"
+        },
+        {
+          "label": "C",
+          "content": "`n-1`"
+        },
+        {
+          "label": "D",
+          "content": "无法确定"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "只算3之后尚未入栈的值",
+          "explanation": "1与2也各能在某个合法调度中成为第三项，不能只数4至n。"
+        },
+        "B": {
+          "title": "把不同首项造成的可能性漏并一次",
+          "explanation": "可令首项为1使第三项为2，也可令首项为2使第三项为1，两种合法输出都须计入取值并集。"
+        },
+        "D": {
+          "title": "误以为无法穷尽合法前缀",
+          "explanation": "第二项已用掉3，其余每个数都可分别构造可行前缀，能够确定完整可能值集合。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "第三项一定不能再用第二项，但其他值是否各有可行调度，要分别构造。"
+        },
+        {
+          "level": 2,
+          "text": "取首项为1和首项为2两种情况，检查剩余较小数能否成为第三项。"
+        },
+        {
+          "level": 3,
+          "text": "对更小的固定规模枚举完整合法输出，将同一位置的值去重，不要把调度数当作不同值个数。"
+        }
+      ],
+      "solution": "3已输出，最多其余 `n-1` 个值。取首项1可在输出3后再出2，或继续压入任意4至n再弹出；取首项2可在输出3后出1。因此除3外每个值均可达，共 `n-1`。这里无需声称首项只能取1或2。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将已知第二项由 `p2=3` 改为 `p2=1`，第三项可能值个数为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`n-3`"
+          },
+          {
+            "label": "B",
+            "content": "`n-2`"
+          },
+          {
+            "label": "C",
+            "content": "`n-1`"
+          },
+          {
+            "label": "D",
+            "content": "`n`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅改变第二个输出的已知值。",
+        "explanation": "要让1作为第二项弹出，此前只能先弹2，否则挡在1上的更小未弹项会阻止它成为第二项。于是前两项固定为2、1，第三项可为任意3至n，共 `n-2` 个。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sq01-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "stack-output-position-values",
+            "input": {
+              "input": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+              ],
+              "fixedOutputPosition": 2,
+              "fixedOutputValue": 1,
+              "queryPosition": 3
+            },
+            "goal": "枚举合法输出并对第三项取值去重",
+            "pauseQuestion": "不同首项的合法输出，能否为第三项提供不同的较小值？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sq01-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "stack-output-position-values",
+          "input": {
+            "input": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "fixedOutputPosition": 2,
+            "fixedOutputValue": 3,
+            "queryPosition": 3
+          },
+          "goal": "枚举合法输出并对第三项取值去重",
+          "pauseQuestion": "不同首项的合法输出，能否为第三项提供不同的较小值？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "sq01-09",
+      "topic": "双栈求值的操作数方向",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2018",
+        "questionNumber": "1",
+        "label": "2018 年 408 真题 第 1 题（明确栈底到顶与左右操作数）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2018/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "整数栈从底到顶为 `5,8,3,2`，运算符栈从底到顶为乘、减、加。每调用一次 `F`，先弹整数记为 `a`，再弹整数记为 `b`，再弹一个运算符记为 `op`，计算 `b op a` 并压回整数栈。调用3次后整数栈顶为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "-15"
+        },
+        {
+          "label": "B",
+          "content": "15"
+        },
+        {
+          "label": "C",
+          "content": "-20"
+        },
+        {
+          "label": "D",
+          "content": "20"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "减法的操作数方向颠倒",
+          "explanation": "第二次应计算8减去前次结果，而不是前次结果减8；不能把先弹出的值当左操作数。"
+        },
+        "C": {
+          "title": "用错误的中间结果继续相乘",
+          "explanation": "前两次必须分别完成栈顶加法和随后的减法，再由最后一次乘法合并，不能跳过栈状态。"
+        },
+        "D": {
+          "title": "把运算符出栈顺序或中间值混用",
+          "explanation": "栈顶加号最先处理，乘号最后处理；每次都要把结果压回，不能把原操作数独立配对。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先按从底到顶确定两个栈当前最先弹出的项。"
+        },
+        {
+          "level": 2,
+          "text": "对非交换的减法，严格按第二次弹出值在左的规则。"
+        },
+        {
+          "level": 3,
+          "text": "另取整数栈底到顶9、4和减号，写出两次弹出的变量，再套用指定的左右操作数顺序。"
+        }
+      ],
+      "solution": "第一次3加2为5，整数栈为5、8、5；第二次8减5为3，栈为5、3；第三次5乘3为15。先弹的是右操作数，所以最终为15。",
+      "viz": null,
+      "variant": {
+        "stem": "只把调用次数从3改为2，初始两栈和操作规则不变，此时整数栈顶为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "-3"
+          },
+          {
+            "label": "B",
+            "content": "3"
+          },
+          {
+            "label": "C",
+            "content": "5"
+          },
+          {
+            "label": "D",
+            "content": "15"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将观察点改为第二次调用结束。",
+        "explanation": "前两次结果依次5、3，第二次结束整数栈为5、3，栈顶为3；乘号仍留在运算符栈中等待第三次调用。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sq01-09v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "two-stack-expression-evaluation",
+            "input": {
+              "operandsBottomToTop": [
+                5,
+                8,
+                3,
+                2
+              ],
+              "operatorsBottomToTop": [
+                "*",
+                "-",
+                "+"
+              ],
+              "calls": 2,
+              "operandOrder": "second-pop-op-first-pop"
+            },
+            "goal": "每次保存弹出次序与结果回栈",
+            "pauseQuestion": "先弹出的数在减号左边还是右边？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sq01-09-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "two-stack-expression-evaluation",
+          "input": {
+            "operandsBottomToTop": [
+              5,
+              8,
+              3,
+              2
+            ],
+            "operatorsBottomToTop": [
+              "*",
+              "-",
+              "+"
+            ],
+            "calls": 3,
+            "operandOrder": "second-pop-op-first-pop"
+          },
+          "goal": "每次保存弹出次序与结果回栈",
+          "pauseQuestion": "先弹出的数在减号左边还是右边？"
+        }
+      ]
+    },
+    {
+      "id": "sq01-10",
+      "topic": "括号匹配栈容量",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2025",
+        "questionNumber": "2",
+        "label": "2025 年 408 真题 第 2 题（只匹配括号并按同时占用计容量）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2025/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "仅做圆括号与方括号的类型和嵌套匹配，忽略其余字符。左括号入栈，右括号匹配并弹出，右括号本身不入栈。空栈容量为3，哪个表达式会因容量不足而无法完成？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`(a+[b+(c+d)e]+f)+g-h`"
+        },
+        {
+          "label": "B",
+          "content": "`[a*((b+c)/(d-e)+f/g)]-h`"
+        },
+        {
+          "label": "C",
+          "content": "`[a*(b-(c-d)*e/(f+g))-h]`"
+        },
+        {
+          "label": "D",
+          "content": "`[a-(b+[c*(d+e)-f]+g+h)]`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把已闭合或尚未出现的括号也同时计入",
+          "explanation": "A的最大未闭合深度为3，闭合括号会释放栈位，容量恰好够。"
+        },
+        "B": {
+          "title": "把并列括号组的深度累计",
+          "explanation": "B两个相继括号组会先后弹出，不同时占空间，最大深度仍为3。"
+        },
+        "C": {
+          "title": "把同一层上的两组括号当成更深嵌套",
+          "explanation": "C中的两个内层圆括号组是先后出现，不是互相包含，最大深度3。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "栈深只等于此刻尚未匹配的左括号数。"
+        },
+        {
+          "level": 2,
+          "text": "沿字符顺序每遇左括号加一、匹配右括号减一，记录峰值。"
+        },
+        {
+          "level": 3,
+          "text": "另画两个并列括号组和两个嵌套括号组，比较总括号对数相同是否意味着相同峰值。"
+        }
+      ],
+      "solution": "A、B、C的最大未闭合左括号数均为3，D的方、圆、方、圆四层同时未闭合，峰值4，因而只有D超出容量3。所有选项的括号类型与闭合次序本身均正确。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把容量从3增加到4，原四个表达式在相同规则下的匹配情况为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "四个都可完成"
+          },
+          {
+            "label": "B",
+            "content": "仅A、B可完成"
+          },
+          {
+            "label": "C",
+            "content": "仅D可完成"
+          },
+          {
+            "label": "D",
+            "content": "四个都不可完成"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅增加一个栈存储格。",
+        "explanation": "四项括号本身都匹配，最大深度分别3、3、3、4，容量4已覆盖全部峰值，因此都能完成。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sq01-10v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "bracket-stack-capacity",
+            "input": {
+              "expressions": [
+                "(a+[b+(c+d)e]+f)+g-h",
+                "[a*((b+c)/(d-e)+f/g)]-h",
+                "[a*(b-(c-d)*e/(f+g))-h]",
+                "[a-(b+[c*(d+e)-f]+g+h)]"
+              ],
+              "capacity": 4,
+              "ignoreNonBrackets": true,
+              "rightBracketPushes": false
+            },
+            "goal": "逐字符统计尚未匹配的左括号",
+            "pauseQuestion": "并列两组已先后闭合的括号，是否会同时占栈？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sq01-10-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "bracket-stack-capacity",
+          "input": {
+            "expressions": [
+              "(a+[b+(c+d)e]+f)+g-h",
+              "[a*((b+c)/(d-e)+f/g)]-h",
+              "[a*(b-(c-d)*e/(f+g))-h]",
+              "[a-(b+[c*(d+e)-f]+g+h)]"
+            ],
+            "capacity": 3,
+            "ignoreNonBrackets": true,
+            "rightBracketPushes": false
+          },
+          "goal": "逐字符统计尚未匹配的左括号",
+          "pauseQuestion": "并列两组已先后闭合的括号，是否会同时占栈？"
+        }
+      ]
+    }
+  ]
+}

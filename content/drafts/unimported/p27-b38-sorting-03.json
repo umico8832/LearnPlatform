@@ -1,0 +1,1479 @@
+{
+  "schemaVersion": 1,
+  "section": "排序真题三：堆过程、比较与移动、外归并整数边界",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "so03-01",
+      "topic": "最小堆追加后的上浮路径",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2009",
+        "questionNumber": "9",
+        "label": "2009 年 408 真题 第 9 题（明确数组下标与上浮规则）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2009/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "0基数组 `5,8,12,19,28,20,15,22` 已是最小堆。把3追加到数组尾，再仅沿父链上浮，父下标为 `(i-1)/2` 向下取整，直到父值不大于新值或到根。结果为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`3,5,12,8,28,20,15,22,19`"
+        },
+        {
+          "label": "B",
+          "content": "`3,5,12,19,20,15,22,8,28`"
+        },
+        {
+          "label": "C",
+          "content": "`3,8,12,5,20,15,22,28,19`"
+        },
+        {
+          "label": "D",
+          "content": "`3,12,5,8,28,20,15,22,19`"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "重排了不在上浮路径上的元素",
+          "explanation": "插入只改变新槽到根的父链，不能把20、15、22等其他位置整体搬成任意排列。"
+        },
+        "C": {
+          "title": "只把较小值放根却破坏父子关系",
+          "explanation": "C中8的孩子有5，违反最小堆父值不大于孩子；不是合法上浮结果。"
+        },
+        "D": {
+          "title": "将父链上的调整错放到另一子树",
+          "explanation": "上浮路径经过下标8、3、1、0，不经过下标2，原值12不能在此过程被换到根的左侧。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先找到追加位置的父结点，而不是把整个数组重新排序。"
+        },
+        {
+          "level": 2,
+          "text": "每次上浮只比较并可能交换当前结点与它的父结点。"
+        },
+        {
+          "level": 3,
+          "text": "另取一个小堆，给叶到根的路径涂色，比较路径外的结点是否会被插入上浮操作触及。"
+        }
+      ],
+      "solution": "3从下标8依次与下标3的19、下标1的8、根5交换，路径外不变，得到3、5、12、8、28、20、15、22、19。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把插入键由3改为9，其余堆和上浮规则不变，结果为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`3,5,12,8,28,20,15,22,19`"
+          },
+          {
+            "label": "B",
+            "content": "`5,8,12,9,28,20,15,22,19`"
+          },
+          {
+            "label": "C",
+            "content": "`5,8,12,19,28,20,15,22,9`"
+          },
+          {
+            "label": "D",
+            "content": "`9,5,12,8,28,20,15,22,19`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将新键3替换为9。",
+        "explanation": "9先与父19交换，到下标3后父为8，已满足最小堆条件便停止，不需要再到根。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so03-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "heap-insert-sift-up",
+            "input": {
+              "values": [
+                5,
+                8,
+                12,
+                19,
+                28,
+                20,
+                15,
+                22
+              ],
+              "heap": "min",
+              "insert": 9
+            },
+            "goal": "只沿新叶的父链恢复堆序",
+            "pauseQuestion": "上浮是否允许顺便重排另一棵不相交的子树？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so03-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "heap-insert-sift-up",
+          "input": {
+            "values": [
+              5,
+              8,
+              12,
+              19,
+              28,
+              20,
+              15,
+              22
+            ],
+            "heap": "min",
+            "insert": 3
+          },
+          "goal": "只沿新叶的父链恢复堆序",
+          "pauseQuestion": "上浮是否允许顺便重排另一棵不相交的子树？"
+        }
+      ]
+    },
+    {
+      "id": "so03-02",
+      "topic": "最大堆插入的关键字比较",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2011",
+        "questionNumber": "11",
+        "label": "2011 年 408 真题 第 11 题（明确停止比较也计次）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2011/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "最大堆数组为 `25,13,10,12,9`，尾部追加18后沿父链上浮。每次将当前值与父关键字比较计一次，停止时失败的关键字比较也计，不计下标和循环条件。共比较几次？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1"
+        },
+        {
+          "label": "B",
+          "content": "2"
+        },
+        {
+          "label": "C",
+          "content": "4"
+        },
+        {
+          "label": "D",
+          "content": "5"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "只计引起交换的比较",
+          "explanation": "18与10比较后交换，还要与25比较才能判断停止，不能漏掉这次未交换的比较。"
+        },
+        "C": {
+          "title": "把数组父下标计算也计入关键字比较",
+          "explanation": "计算父位置与检查数组界限不属于题目定义的两个关键字比较。"
+        },
+        "D": {
+          "title": "把新键与全堆逐个比较",
+          "explanation": "上浮仅沿父链，不需要依次比较其他兄弟、堂兄弟或所有已有元素。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先定位追加槽的直接父结点。"
+        },
+        {
+          "level": 2,
+          "text": "交换以后，再检查新的父结点是否仍需比较。"
+        },
+        {
+          "level": 3,
+          "text": "另取插入键比直接父更小的大根堆，思考即使完全不交换，也是否至少做了一次关键字比较。"
+        }
+      ],
+      "solution": "18先与10比较并交换，再与25比较发现不用继续，合计2次。未发生交换的停止比较仍是关键字比较。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把新键18改为8，其他规则不变，需要几次关键字比较？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1"
+          },
+          {
+            "label": "B",
+            "content": "2"
+          },
+          {
+            "label": "C",
+            "content": "4"
+          },
+          {
+            "label": "D",
+            "content": "5"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅更换待插入关键字。",
+        "explanation": "8与直接父10比较后就满足最大堆顺序，不交换即停止，所以只有1次关键字比较。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so03-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "heap-insert-comparison-count",
+            "input": {
+              "values": [
+                25,
+                13,
+                10,
+                12,
+                9
+              ],
+              "heap": "max",
+              "insert": 8,
+              "count": "key-comparisons-including-stop"
+            },
+            "goal": "把比较次数与交换次数分别记录",
+            "pauseQuestion": "没有交换的停止判断，还算不算两个关键字的比较？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so03-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "heap-insert-comparison-count",
+          "input": {
+            "values": [
+              25,
+              13,
+              10,
+              12,
+              9
+            ],
+            "heap": "max",
+            "insert": 18,
+            "count": "key-comparisons-including-stop"
+          },
+          "goal": "把比较次数与交换次数分别记录",
+          "pauseQuestion": "没有交换的停止判断，还算不算两个关键字的比较？"
+        }
+      ]
+    },
+    {
+      "id": "so03-03",
+      "topic": "最小堆删除的两类比较",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2015",
+        "questionNumber": "10",
+        "label": "2015 年 408 真题 第 10 题（明确向下调整与比较口径）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2015/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "最小堆数组为 `8,15,10,21,34,16,12`。删根8，以最后值12补根并缩短数组，再向下调整。两孩子时先比孩子选小者，再比待下沉值；单孩子只比较父子。只计关键字比较，恢复堆共几次？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1"
+        },
+        {
+          "label": "B",
+          "content": "2"
+        },
+        {
+          "label": "C",
+          "content": "3"
+        },
+        {
+          "label": "D",
+          "content": "4"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "只数实际交换次数",
+          "explanation": "第一次比较孩子15与10以及后续停止比较也要计，不是每次交换才计一次。"
+        },
+        "B": {
+          "title": "漏掉选两个孩子中较小者的比较",
+          "explanation": "除父子判断外，根有两个孩子时还需要比较15与10，不能直接知道应选哪边。"
+        },
+        "D": {
+          "title": "把已缩短数组中的删除尾槽也计入",
+          "explanation": "12补根后原尾槽已移除，新下标2只有孩子16，不再与不存在的另一个孩子比较。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先删除尾槽，再按新的数组长度判断每层有一个还是两个孩子。"
+        },
+        {
+          "level": 2,
+          "text": "把选择较小孩子与比较父子分成两个可能发生的步骤。"
+        },
+        {
+          "level": 3,
+          "text": "另取一个最后一层缺右孩子的小堆，思考当前结点只有左孩子时还能否计一次两孩子比较。"
+        }
+      ],
+      "solution": "先比15与10，再比12与10，交换后12到下标2；它只有孩子16，再比12与16即可停止，总共3次，最终堆为10、15、12、21、34、16。",
+      "viz": null,
+      "variant": {
+        "stem": "只改变计数口径：不计孩子之间选小者的比较，仅计待下沉值与选中孩子之间的比较。其他操作不变，共几次？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1"
+          },
+          {
+            "label": "B",
+            "content": "2"
+          },
+          {
+            "label": "C",
+            "content": "3"
+          },
+          {
+            "label": "D",
+            "content": "4"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅排除两孩子互比这类比较。",
+        "explanation": "12先与选中孩子10比较，再与唯一孩子16比较，共2次；数目减少来自统计口径变化，实际调整过程未变。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so03-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "heap-delete-comparison-types",
+            "input": {
+              "values": [
+                8,
+                15,
+                10,
+                21,
+                34,
+                16,
+                12
+              ],
+              "heap": "min",
+              "deleteRoot": true,
+              "count": "parent-child-only"
+            },
+            "goal": "分别记录选孩子与父子比较",
+            "pauseQuestion": "删去尾槽后，原先两个孩子的位置是否都仍存在？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so03-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "heap-delete-comparison-types",
+          "input": {
+            "values": [
+              8,
+              15,
+              10,
+              21,
+              34,
+              16,
+              12
+            ],
+            "heap": "min",
+            "deleteRoot": true,
+            "count": "child-selection-and-parent-child"
+          },
+          "goal": "分别记录选孩子与父子比较",
+          "pauseQuestion": "删去尾槽后，原先两个孩子的位置是否都仍存在？"
+        }
+      ]
+    },
+    {
+      "id": "so03-04",
+      "topic": "堆的局部偏序与次大值",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2020",
+        "questionNumber": "9",
+        "label": "2020 年 408 真题 第 9 题（补明互异与次大语义）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2020/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站补明互异关键字，避免重复键下次大记录与第二大不同数值混淆；四断言和正确组合不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "最大堆至少2项且关键字互异，次大指唯一的第二大键。哪些说法正确？I. 可看作完全二叉树；II. 可顺序存储；III. 必是二叉排序树；IV. 次大值必在根的下一层。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 I、II"
+        },
+        {
+          "label": "B",
+          "content": "仅 II、III"
+        },
+        {
+          "label": "C",
+          "content": "仅 I、II、IV"
+        },
+        {
+          "label": "D",
+          "content": "仅 I、III、IV"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "漏掉根两个子堆的最大值候选",
+          "explanation": "根以外每个键都不大于自己所在子堆根，第二大只能从根的孩子中取，IV成立。"
+        },
+        "B": {
+          "title": "把父子大小约束当BST左右区间约束",
+          "explanation": "堆不要求左子树小于根且右子树大于根；最大堆两侧孩子都小于根，并非二叉排序树。"
+        },
+        "D": {
+          "title": "用错误BST性质替换了顺序存储事实",
+          "explanation": "III并无保证，而完全树可按层序连续数组表示，II成立，不能用III替代II。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "区分完全树的形状、堆的父子偏序与二叉排序树的左右区间规则。"
+        },
+        {
+          "level": 2,
+          "text": "根以外的键在哪个子堆中，是否会比该子堆根更大？"
+        },
+        {
+          "level": 3,
+          "text": "另画根带两个非空子堆的最大堆，分别找出左右子堆的最大候选再比较。"
+        }
+      ],
+      "solution": "I、II由堆的完全树形状成立；III混同了堆序与BST键区间。根之外的任意结点都不大于根的某个孩子，互异时第二大必为其中一孩，故I、II、IV。",
+      "viz": null,
+      "variant": {
+        "stem": "仅取消关键字互异限制，并把次大明确为第二大的不同数值。它还一定在根的下一层吗？",
+        "options": [
+          {
+            "label": "A",
+            "content": "一定"
+          },
+          {
+            "label": "B",
+            "content": "不一定，可在更深层"
+          },
+          {
+            "label": "C",
+            "content": "堆不允许相等关键字"
+          },
+          {
+            "label": "D",
+            "content": "一定等于根值"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅允许重复键，并明确按不同数值定义次大。",
+        "explanation": "例如最大堆5、5、5、4、3，根的两个孩子都是5，而第二大的不同值4在更深层。原来的互异前提不可直接删除。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so03-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "max-heap-order-properties",
+            "input": {
+              "values": [
+                5,
+                5,
+                5,
+                4,
+                3
+              ],
+              "distinct": false,
+              "query": "second-distinct-value"
+            },
+            "goal": "区分堆的父子约束、BST区间和重复值名次",
+            "pauseQuestion": "第二条记录与第二个不同数值，在存在重复时是否同义？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so03-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "max-heap-order-properties",
+          "input": {
+            "values": [
+              9,
+              8,
+              7,
+              4,
+              6,
+              5
+            ],
+            "distinct": true,
+            "query": "second-largest"
+          },
+          "goal": "区分堆的父子约束、BST区间和重复值名次",
+          "pauseQuestion": "第二条记录与第二个不同数值，在存在重复时是否同义？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "so03-05",
+      "topic": "逐项插入与自底向上建堆",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2021",
+        "questionNumber": "11",
+        "label": "2021 年 408 真题 第 11 题（明确逐项上浮）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2021/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "依次将6、9、1、5、8、4、7追加到空最大堆，每次都先完成父链上浮再插下一项，数组按层序存储。最后的数组为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`9,8,7,6,5,4,1`"
+        },
+        {
+          "label": "B",
+          "content": "`9,8,7,5,6,1,4`"
+        },
+        {
+          "label": "C",
+          "content": "`9,8,7,5,6,4,1`"
+        },
+        {
+          "label": "D",
+          "content": "`9,6,7,5,8,4,1`"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把某个合法堆当作规定过程的唯一结果",
+          "explanation": "A虽满足堆序，但与逐次上浮的确定路径不一致，不能只检查最终是否合法。"
+        },
+        "C": {
+          "title": "混用了自底向上整体建堆的结果",
+          "explanation": "C是同一初始数组按非叶逆序下沉得到的结果，题目要求逐项插入并上浮。"
+        },
+        "D": {
+          "title": "未完成中途需要的上浮",
+          "explanation": "D中6的孩子8大于6，连最大堆顺序也未满足，不能作为全部插入调整完成的状态。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "每次追加新叶后只沿其父链调整，旧的其他位置保持。"
+        },
+        {
+          "level": 2,
+          "text": "记录前几个键插入后的整个数组，后来的父结点由当时位置决定。"
+        },
+        {
+          "level": 3,
+          "text": "另给三个键分别做逐项上浮和一次整体建堆，思考两种都合法时数组是否必须相同。"
+        }
+      ],
+      "solution": "逐次插入得到6；9、6；9、6、1；9、6、1、5；9、8、1、5、6；9、8、4、5、6、1；最后7上浮得到9、8、7、5、6、1、4，选B。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把构造方式改为直接使用原数组，再从最后非叶向根逐个完整下沉，仍为最大堆。四个数组选项不变，结果为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`9,8,7,6,5,4,1`"
+          },
+          {
+            "label": "B",
+            "content": "`9,8,7,5,6,1,4`"
+          },
+          {
+            "label": "C",
+            "content": "`9,8,7,5,6,4,1`"
+          },
+          {
+            "label": "D",
+            "content": "`9,6,7,5,8,4,1`"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将逐项插入上浮改为标准自底向上整体建堆。",
+        "explanation": "先调整下标2使7上移，再处理下标1，最后根6与9、8依次交换，结果9、8、7、5、6、4、1。同组键的合法堆不唯一，指定构造方法决定本次结果。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so03-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "heap-construction-methods",
+            "input": {
+              "values": [
+                6,
+                9,
+                1,
+                5,
+                8,
+                4,
+                7
+              ],
+              "heap": "max",
+              "construction": "bottom-up-sift-down"
+            },
+            "goal": "在相同键集合上对照两种构造路径",
+            "pauseQuestion": "最终满足堆序，是否就能说明一定执行了题目指定的构造过程？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so03-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "heap-construction-methods",
+          "input": {
+            "values": [
+              6,
+              9,
+              1,
+              5,
+              8,
+              4,
+              7
+            ],
+            "heap": "max",
+            "construction": "repeated-insertion"
+          },
+          "goal": "在相同键集合上对照两种构造路径",
+          "pauseQuestion": "最终满足堆序，是否就能说明一定执行了题目指定的构造过程？"
+        }
+      ]
+    },
+    {
+      "id": "so03-06",
+      "topic": "枢轴归位后的分隔条件",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2023",
+        "questionNumber": "11",
+        "label": "2023 年 408 真题 第 11 题（明确完整区间与枢轴归位）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2023/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "对互异键升序快排，完成一次覆盖整个数组且将本次枢轴放到最终位置的划分后，数组为 `68,11,70,23,80,77,48,81,93,88`。左侧都小于枢轴、右侧都大于它。本次枢轴可能是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "11"
+        },
+        {
+          "label": "B",
+          "content": "70"
+        },
+        {
+          "label": "C",
+          "content": "80"
+        },
+        {
+          "label": "D",
+          "content": "81"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "只看枢轴数值小而不检查左侧",
+          "explanation": "11左边有68，比11大，不满足左侧全部小于它。"
+        },
+        "B": {
+          "title": "只检查左侧而漏右侧较小值",
+          "explanation": "70左侧虽都小于它，但右侧仍有23、48等更小值，不能作为已归位枢轴。"
+        },
+        "C": {
+          "title": "误以为局部前缀有最大值就已完成分隔",
+          "explanation": "80右侧还有77、48，比80小，违反完整划分后的两侧约束。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "候选必须同时通过全部左侧与全部右侧检查。"
+        },
+        {
+          "level": 2,
+          "text": "只比相邻元素不够，远处也可能藏着越界值。"
+        },
+        {
+          "level": 3,
+          "text": "另取一个候选位置，分别用左侧最大值、右侧最小值与候选比较，检查两边条件。"
+        }
+      ],
+      "solution": "81左侧七项都小于81，右侧93、88均大于81，因此满足全区间枢轴归位条件。11、70、80分别有左侧过大或右侧过小的反例，故选81。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把首项68替换为82，其他顺序保持。新数组还能是同一类完整枢轴归位划分后的结果吗？",
+        "options": [
+          {
+            "label": "A",
+            "content": "能，枢轴仍是81"
+          },
+          {
+            "label": "B",
+            "content": "能，枢轴改为80"
+          },
+          {
+            "label": "C",
+            "content": "不能，没有任何位置同时满足两侧条件"
+          },
+          {
+            "label": "D",
+            "content": "能，所有位置都满足"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将趟后数组首项从68改为82。",
+        "explanation": "前面的82使81及其前若干候选均不能满足左侧约束；首项82右侧有更小值，末两项93、88又互相阻止成为枢轴。逐位置检查后没有合法枢轴，故该状态不能来自所述完整划分。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so03-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "quick-pivot-position-audit",
+            "input": {
+              "state": [
+                82,
+                11,
+                70,
+                23,
+                80,
+                77,
+                48,
+                81,
+                93,
+                88
+              ],
+              "distinct": true,
+              "pivotFinalPosition": true
+            },
+            "goal": "逐候选检查左右全部键，而非局部相邻",
+            "pauseQuestion": "一侧看似有序，是否足够证明某个候选已经把另一侧分隔正确？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so03-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "quick-pivot-position-audit",
+          "input": {
+            "state": [
+              68,
+              11,
+              70,
+              23,
+              80,
+              77,
+              48,
+              81,
+              93,
+              88
+            ],
+            "distinct": true,
+            "pivotFinalPosition": true
+          },
+          "goal": "逐候选检查左右全部键，而非局部相邻",
+          "pauseQuestion": "一侧看似有序，是否足够证明某个候选已经把另一侧分隔正确？"
+        }
+      ]
+    },
+    {
+      "id": "so03-07",
+      "topic": "连续删根后的最大堆",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2024",
+        "questionNumber": "9",
+        "label": "2024 年 408 真题 第 9 题（明确逐次尾补根与完整下沉）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2024/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "最大堆数组为 `28,22,20,19,8,12,15,5`。每次删除根，用最后一项补根并缩短数组，再与较大孩子交换向下调整至恢复堆序。连续执行两次后，新堆为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`20,19,15,12,8,5`"
+        },
+        {
+          "label": "B",
+          "content": "`20,19,15,5,8,12`"
+        },
+        {
+          "label": "C",
+          "content": "`20,19,12,15,8,5`"
+        },
+        {
+          "label": "D",
+          "content": "`20,19,8,12,15,5`"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把路径外的尾部关系任意重排",
+          "explanation": "A虽可能满足堆序，却不是规定两次下沉路径的结果；第一次留下的5与12位置要按第二次实际交换更新。"
+        },
+        "C": {
+          "title": "把正确值集合当成正确数组",
+          "explanation": "C的值集合与堆序可能正确，但两次尾补根、选较大孩子得到的路径不允许这样任意换位。"
+        },
+        "D": {
+          "title": "把另一种合法堆当作指定下沉轨迹",
+          "explanation": "D也满足最大堆序，但本题两次都从尾项补根并沿较大孩子下沉，不会把12、15、8任意换到该排列；合法堆不等于指定过程的结果。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "每删一次都先确定新长度，原来的最后项是否还在数组内要重新判断。"
+        },
+        {
+          "level": 2,
+          "text": "只改下沉路径，未经过的结点不要重新排序。"
+        },
+        {
+          "level": 3,
+          "text": "另用一个五项最大堆删根两次，分别写出第一次完整恢复后的数组再开始第二次，避免跳过中间状态。"
+        }
+      ],
+      "solution": "第一次删28后15在末尾仍保留，补根5下沉得到22、19、20、5、8、12、15。第二次以15补根删22，先与20交换后即满足堆序，结果20、19、15、5、8、12。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把删除次数由2改为1，其他规则不变，新堆为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`22,19,20,5,8,12,15`"
+          },
+          {
+            "label": "B",
+            "content": "`20,19,15,5,8,12`"
+          },
+          {
+            "label": "C",
+            "content": "`22,20,19,5,8,12,15`"
+          },
+          {
+            "label": "D",
+            "content": "`28,22,20,19,8,12,15,5`"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将删除次数2改为1。",
+        "explanation": "尾值5补根后依次与22、19交换，最终停在下标3；第一次恢复结果为22、19、20、5、8、12、15，还没开始删除22。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so03-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "heap-repeated-root-delete",
+            "input": {
+              "values": [
+                28,
+                22,
+                20,
+                19,
+                8,
+                12,
+                15,
+                5
+              ],
+              "heap": "max",
+              "deleteCount": 1
+            },
+            "goal": "保存每次完整恢复后的数组再进入下一次",
+            "pauseQuestion": "一个不同数组也满足堆序，能否替代指定操作过程的唯一结果？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so03-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "heap-repeated-root-delete",
+          "input": {
+            "values": [
+              28,
+              22,
+              20,
+              19,
+              8,
+              12,
+              15,
+              5
+            ],
+            "heap": "max",
+            "deleteCount": 2
+          },
+          "goal": "保存每次完整恢复后的数组再进入下一次",
+          "pauseQuestion": "一个不同数组也满足堆序，能否替代指定操作过程的唯一结果？"
+        }
+      ]
+    },
+    {
+      "id": "so03-08",
+      "topic": "最坏记录移动与比较分开",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2025",
+        "questionNumber": "10",
+        "label": "2025 年 408 真题 第 10 题（明确最坏移动增长与具体快排模型）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2025/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站比较最坏记录赋值的增长阶；交换计含暂存的三次赋值，快排限定Lomuto末枢轴且执行自交换，避免把比较次数与某种移位实现混淆"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "规模随 `n` 增长，比较标准冒泡、直接插入、简单选择与Lomuto末枢轴快排。移动按记录赋值计，交换含暂存计三次赋值，快排条件成立时也执行自交换。哪种最坏移动次数的增长阶最低？",
+      "options": [
+        {
+          "label": "A",
+          "content": "冒泡"
+        },
+        {
+          "label": "B",
+          "content": "直接插入"
+        },
+        {
+          "label": "C",
+          "content": "快速排序"
+        },
+        {
+          "label": "D",
+          "content": "简单选择"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "忽略逆序输入需要消除全部逆序对",
+          "explanation": "冒泡最坏要做平方数量的相邻交换，每次交换都有记录赋值，不能只数排序趟数。"
+        },
+        "B": {
+          "title": "把每趟只插一个新值当常数移动",
+          "explanation": "逆序时每趟都可能把整个有序前缀后移，累计平方数量的赋值。"
+        },
+        "C": {
+          "title": "把原地快排的空间性质当移动数量上界",
+          "explanation": "本题Lomuto每趟可能执行线性数量的交换赋值，退化递归可累计平方移动，并非常数空间就意味着线性移动。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "为每种算法找一个最坏搬运输入，不要只比较关键字次数。"
+        },
+        {
+          "level": 2,
+          "text": "简单选择每趟找到极值后究竟最多交换多少次？"
+        },
+        {
+          "level": 3,
+          "text": "另看一个逆序短数组，分别数插入的逐项后移和选择的一次交换，区分比较遍历与记录搬运。"
+        }
+      ],
+      "solution": "简单选择每趟最多一次交换，最坏记录赋值为线性阶；冒泡和插入最坏累计平方移动。题定Lomuto在有序退化输入中每层有线性数量条件内交换，含自交换后也可累计平方赋值，所以选择的增长阶最低。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将比较指标从记录移动改为关键字比较次数，其他实现不变，这四种算法的最坏增长阶关系是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "四者均为平方阶"
+          },
+          {
+            "label": "B",
+            "content": "只有简单选择为线性阶"
+          },
+          {
+            "label": "C",
+            "content": "只有快排为对数阶"
+          },
+          {
+            "label": "D",
+            "content": "四者均为线性阶"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将性能统计从记录赋值改为关键字比较。",
+        "explanation": "标准冒泡、插入、选择最坏比较均为平方阶；末枢轴Lomuto在单边退化时也累计平方比较。选择的线性移动优势不等于线性比较。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so03-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "sort-worst-record-writes",
+            "input": {
+              "length": 8,
+              "methods": [
+                "bubble",
+                "insertion",
+                "selection",
+                "lomuto-last-pivot"
+              ],
+              "swapAssignments": 3,
+              "quickExecutesSelfSwap": true,
+              "metric": "key-comparisons"
+            },
+            "goal": "分开累计查找极值的比较与交换记录",
+            "pauseQuestion": "比较了许多项，是否就必然移动了同样多条记录？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so03-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "sort-worst-record-writes",
+          "input": {
+            "length": 8,
+            "methods": [
+              "bubble",
+              "insertion",
+              "selection",
+              "lomuto-last-pivot"
+            ],
+            "swapAssignments": 3,
+            "quickExecutesSelfSwap": true,
+            "metric": "record-assignments"
+          },
+          "goal": "分开累计查找极值的比较与交换记录",
+          "pauseQuestion": "比较了许多项，是否就必然移动了同样多条记录？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "so03-09",
+      "topic": "直接插入的比较计数",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2026",
+        "questionNumber": "9",
+        "label": "2026 年 408 真题 第 9 题（明确停止比较与无哨兵模型）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2026/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "对下列序列作标准升序直接插入，从第二项起依次处理，每趟从有序前缀末尾比较到插入位置。仅计关键字比较，含成功停止比较；下标为0时直接结束，不与虚拟哨兵比较。哪个序列总比较次数最少？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`30,27,56,41,80,95,69`"
+        },
+        {
+          "label": "B",
+          "content": "`31,43,26,55,63,99,77`"
+        },
+        {
+          "label": "C",
+          "content": "`61,84,51,23,34,91,40`"
+        },
+        {
+          "label": "D",
+          "content": "`93,32,48,81,50,21,72`"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "只看首趟或少数已有序相邻项",
+          "explanation": "A总比较9次，不能因部分连续升序就忽略41和69插入前缀时的额外比较。"
+        },
+        "C": {
+          "title": "把后续升序片段抵消先前长距离插入",
+          "explanation": "C仍要多次穿越较长前缀，总比较16次，后面某趟只比较一次不能抹去前面积累。"
+        },
+        "D": {
+          "title": "只统计交换或按序对而不执行插入",
+          "explanation": "D的较小值后到造成多次长前缀比较，总计16次，不比B更少。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "每一趟都要使用此前已经排好的前缀，而不是原数组中未调整的邻接关系。"
+        },
+        {
+          "level": 2,
+          "text": "把遇到更小前驱而停止的最后一次关键字比较也记下；越过数组边界不另计虚拟键。"
+        },
+        {
+          "level": 3,
+          "text": "另取四个短值逐趟列比较对象，将比较次数与实际向右后移次数分别记录。"
+        }
+      ],
+      "solution": "A各趟为1、1、2、1、1、3共9次；B为1、2、1、1、1、2共8次；C和D都16次。B最少，停止比较与导致后移的比较不是同一计数。",
+      "viz": null,
+      "variant": {
+        "stem": "保持四个序列和排序不变，仅将指标改为旧前缀元素向右后移的次数，不计新值暂存与落位。哪个序列最少？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`30,27,56,41,80,95,69`"
+          },
+          {
+            "label": "B",
+            "content": "`31,43,26,55,63,99,77`"
+          },
+          {
+            "label": "C",
+            "content": "`61,84,51,23,34,91,40`"
+          },
+          {
+            "label": "D",
+            "content": "`93,32,48,81,50,21,72`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅把关键字比较改为已有前缀元素后移计数。",
+        "explanation": "A、B、C、D的后移次数分别4、3、12、12，因此仍为B。比较中的停止步骤不会使旧元素移动，所以后移次数通常比关键字比较少。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so03-09v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "insertion-comparison-versus-shifts",
+            "input": {
+              "arrays": [
+                [
+                  30,
+                  27,
+                  56,
+                  41,
+                  80,
+                  95,
+                  69
+                ],
+                [
+                  31,
+                  43,
+                  26,
+                  55,
+                  63,
+                  99,
+                  77
+                ],
+                [
+                  61,
+                  84,
+                  51,
+                  23,
+                  34,
+                  91,
+                  40
+                ],
+                [
+                  93,
+                  32,
+                  48,
+                  81,
+                  50,
+                  21,
+                  72
+                ]
+              ],
+              "metric": "old-prefix-right-shifts",
+              "sentinel": false
+            },
+            "goal": "逐趟并列显示比较与右移两条计数",
+            "pauseQuestion": "使循环停止的一次关键字比较，是否一定引起记录后移？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so03-09-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "insertion-comparison-versus-shifts",
+          "input": {
+            "arrays": [
+              [
+                30,
+                27,
+                56,
+                41,
+                80,
+                95,
+                69
+              ],
+              [
+                31,
+                43,
+                26,
+                55,
+                63,
+                99,
+                77
+              ],
+              [
+                61,
+                84,
+                51,
+                23,
+                34,
+                91,
+                40
+              ],
+              [
+                93,
+                32,
+                48,
+                81,
+                50,
+                21,
+                72
+              ]
+            ],
+            "metric": "key-comparisons",
+            "sentinel": false
+          },
+          "goal": "逐趟并列显示比较与右移两条计数",
+          "pauseQuestion": "使循环停止的一次关键字比较，是否一定引起记录后移？"
+        }
+      ]
+    },
+    {
+      "id": "so03-10",
+      "topic": "外归并趟数的取整平台",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2026",
+        "questionNumber": "11",
+        "label": "2026 年 408 真题 第 11 题（据收录修正取整并限定初始段模型）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2026/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站将I的k越大d越小修正为d不增加、可能下降；III限定逐内存块排序生成初始段，排除可产生更长段的置换选择；保留I/III组合，非逐字原题；每趟按全部当前段尽可能满k路分组，仅末组例外"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "固定初始段数 `m≥2`，归并路数 `k≥2`。每趟将当前全部段每k段分为一组，各组分别尽可能满k路归并；仅末组不足k段时按实际段数归并，单段组原样保留，直到只剩一段；k限于缓冲可支持范围。初始段通过一次读入至多内存容量的块、内部排序后输出生成，不用置换选择。哪些正确？I. 固定m时增大k，趟数d不增加，有时下降；II. 初始段数不影响d；III. 此处内存容量限制初始段最大长度。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 I"
+        },
+        {
+          "label": "B",
+          "content": "仅 I、II"
+        },
+        {
+          "label": "C",
+          "content": "仅 I、III"
+        },
+        {
+          "label": "D",
+          "content": "仅 II、III"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "遗漏逐块生成模型中的容量上限",
+          "explanation": "III在本题明确的一次读块再排序方式下成立，不能只选I；若改用置换选择才需另谈更长段。"
+        },
+        "B": {
+          "title": "把初始段数从趟数关系中删掉",
+          "explanation": "固定路数时，段数越多可能需要更多合并趟，II不成立，同时III在本模型中成立。"
+        },
+        "D": {
+          "title": "把取整平台误读为路数始终无影响",
+          "explanation": "平台只说明部分k变化不降低趟数，I仍描述正确单调性；II则错误地否定初始段数作用。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "每趟结束后剩余段数由当前段数除以归并路数并向上取整。"
+        },
+        {
+          "level": 2,
+          "text": "区分不增加与每次严格减少；完整趟数是整数。"
+        },
+        {
+          "level": 3,
+          "text": "另取一个小段数，分别用两种相近路数模拟到只剩1段，检查两种路数是否可能落在同一整趟平台。"
+        }
+      ],
+      "solution": "逐趟段数更新为当前数除以k向上取整，趟数等价于使 `k^d≥m` 的最小整数d。增大k不会增加d，但取整可保持相同；m显然影响该条件。III在一次读块生成段的限定下成立，故I、III。",
+      "viz": null,
+      "variant": {
+        "stem": "沿用同一归并规则，将具体初始段数固定为8，仅把归并路数由3提高到4。新的归并趟数为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1"
+          },
+          {
+            "label": "B",
+            "content": "2"
+          },
+          {
+            "label": "C",
+            "content": "3"
+          },
+          {
+            "label": "D",
+            "content": "4"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅在8个初始段的具体比较中把路数3改为4。",
+        "explanation": "3路时8段先成3段再成1段，共2趟；4路时先成2段再成1段，也为2趟。增加路数并非每次都严格减少完整归并趟。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so03-10v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "external-merge-integer-pass-count",
+            "input": {
+              "initialRuns": 8,
+              "fanIns": [
+                3,
+                4
+              ],
+              "initialGeneration": "memory-block-sort",
+              "grouping": "full-k-except-last-group"
+            },
+            "goal": "直接模拟整数段数而非只比较连续对数",
+            "pauseQuestion": "路数变大后，对数下降是否保证向上取整的趟数也下降？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so03-10-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "external-merge-integer-pass-count",
+          "input": {
+            "initialRuns": 8,
+            "fanIns": [
+              2,
+              3,
+              4
+            ],
+            "initialGeneration": "memory-block-sort",
+            "grouping": "full-k-except-last-group"
+          },
+          "goal": "直接模拟整数段数而非只比较连续对数",
+          "pauseQuestion": "路数变大后，对数下降是否保证向上取整的趟数也下降？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    }
+  ]
+}

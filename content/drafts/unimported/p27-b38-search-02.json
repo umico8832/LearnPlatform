@@ -1,0 +1,1435 @@
+{
+  "schemaVersion": 1,
+  "section": "查找真题二：AVL、BST路径与B树计数",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "sr02-01",
+      "topic": "B树定义要求与可选扩展",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2009",
+        "questionNumber": "8",
+        "label": "2009 年 408 真题 第 8 题（据收录明确不是定义必需）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2009/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站将不符合定义要求澄清为非必需属性，D写明必须串联；避免误教附加叶链会使B树非法"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "采用通常m阶B树约定，m为最大孩子数，实际含键叶结点同层，各结点键序统一。以下哪项不是普通B树定义本身要求的性质？这里问是否为必需，而不是禁止实现附加结构。",
+      "options": [
+        {
+          "label": "A",
+          "content": "根最多有m个孩子"
+        },
+        {
+          "label": "B",
+          "content": "所有实际叶结点同层"
+        },
+        {
+          "label": "C",
+          "content": "各结点内关键字按统一方向有序排列"
+        },
+        {
+          "label": "D",
+          "content": "所有叶结点必须通过链指针串联"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把阶数上限误当非根专用",
+          "explanation": "m阶B树根也受最多m个孩子的上限约束，根的特殊性在最低占用要求，不是取消最高度数。"
+        },
+        "B": {
+          "title": "忽略B树保持叶层一致的平衡条件",
+          "explanation": "实际叶同层是标准B树结构要求，不是可随意去掉的附加特性。"
+        },
+        "C": {
+          "title": "将统一键序要求当成某种可选链结构",
+          "explanation": "结点内键有序才能在多个孩子区间之间导航，这是查找结构本身的要求；整体选升序或等价反向约定需一致。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "把树的形状和有序搜索约束，与另加的数据扫描通道分开。"
+        },
+        {
+          "level": 2,
+          "text": "阶数、结点内键区间和叶层一致分别承担什么结构职责？"
+        },
+        {
+          "level": 3,
+          "text": "另取一棵多路平衡搜索树，将条件按结点占用、父子区间、层次和遍历辅助结构分类，逐类检查哪些直接参与定义约束。"
+        }
+      ],
+      "solution": "A、B、C分别给出度数上界、叶层平衡与键有序，属于B树结构约束。D的叶链是常见B+数据叶扫描组织，不是普通B树必需；给B树额外加链本身也不必然违反其原有约束。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将结构换成通常带数据叶链的B+树，这条按键序连接叶的链最直接支持什么？",
+        "options": [
+          {
+            "label": "A",
+            "content": "定位到起始叶后沿链有序范围扫描"
+          },
+          {
+            "label": "B",
+            "content": "保证所有内部结点都能直接返回完整数据记录"
+          },
+          {
+            "label": "C",
+            "content": "保证关键字不会重复而无需任何约束"
+          },
+          {
+            "label": "D",
+            "content": "保证后续插入永远不用分裂"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "由普通B树是否必须叶链改为B+数据叶链的作用。",
+        "explanation": "叶按键序链接后，可先由索引定位起始叶，再沿链连续取后续数据。它不自动保证数据唯一、不免除分裂，也不把内部索引键变成完整数据记录。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr02-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "btree-core-versus-leaf-links",
+            "input": {
+              "order": 3,
+              "rootKeys": [
+                20
+              ],
+              "leafDataKeys": [
+                [
+                  10,
+                  15
+                ],
+                [
+                  20,
+                  30
+                ]
+              ],
+              "leafLinks": true,
+              "rangeStart": 15
+            },
+            "goal": "区分索引树约束与额外叶链通路",
+            "pauseQuestion": "一个实现没有水平叶链，是否就无法按B树孩子区间完成查找？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr02-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "btree-core-versus-leaf-links",
+          "input": {
+            "order": 3,
+            "rootKeys": [
+              20
+            ],
+            "childrenKeys": [
+              [
+                10
+              ],
+              [
+                30
+              ]
+            ],
+            "leafLinks": false
+          },
+          "goal": "区分索引树约束与额外叶链通路",
+          "pauseQuestion": "一个实现没有水平叶链，是否就无法按B树孩子区间完成查找？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "sr02-02",
+      "topic": "BST查找路径保留祖先区间",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2011",
+        "questionNumber": "7",
+        "label": "2011 年 408 真题 第 7 题（明确祖先区间与连续路径）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2011/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "互异键普通二叉排序树，左键小、右键大。以下哪组不可能作为从根开始、每次沿一个孩子继续的连续查找路径？不预设具体树形，比较路径上的每个祖先约束。",
+      "options": [
+        {
+          "label": "A",
+          "content": "`95,22,91,24,94,71`"
+        },
+        {
+          "label": "B",
+          "content": "`92,20,91,34,88,35`"
+        },
+        {
+          "label": "C",
+          "content": "`21,89,77,29,36,38`"
+        },
+        {
+          "label": "D",
+          "content": "`12,25,71,68,33,34`"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "只见左右方向交替就误判",
+          "explanation": "B可持续维护合法上下界，各项均在祖先限定区间内，方向交替并不妨碍一条查找路径存在。"
+        },
+        "C": {
+          "title": "将局部下降再上升当必然违规",
+          "explanation": "C在21右侧、89左侧继续收缩区间，后续77、29、36、38仍可沿合法孩子路径排列。"
+        },
+        "D": {
+          "title": "忽略在较早上界内仍能向右",
+          "explanation": "D到33后再到34，仍处在之前68、71限定的上界内，最后一次上升并未越界。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "每到一个结点，保留所有祖先决定的上下界，而不是只比较上一项。"
+        },
+        {
+          "level": 2,
+          "text": "从某祖先转入左子树后，整段后续路径都受这个祖先的上界限制。"
+        },
+        {
+          "level": 3,
+          "text": "另取路径50、20、40，分别写每步累计区间，再试判断下一键45或15是否可能。"
+        }
+      ],
+      "solution": "A从91转入左侧到24后，后续所有键都必须小于91，但接着出现94，越过祖先上界。其他三组逐步收缩区间均无冲突，可构成相应查找路径。",
+      "viz": null,
+      "variant": {
+        "stem": "只改问A路径中的边界：已经按95、22、91到达24，并决定向右继续，后续子树键必须满足什么范围？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`22<key<95`"
+          },
+          {
+            "label": "B",
+            "content": "`24<key<91`"
+          },
+          {
+            "label": "C",
+            "content": "`91<key<95`"
+          },
+          {
+            "label": "D",
+            "content": "只需 `key>24`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "将判断整条路径改为计算同一路径到24后右分支的累计区间。",
+        "explanation": "24右侧提高下界到24，而祖先91仍限制上界为91；95的更宽上界已被覆盖，所以正确区间为24与91之间。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr02-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "bst-search-path-intervals",
+            "input": {
+              "prefix": [
+                95,
+                22,
+                91,
+                24
+              ],
+              "nextDirection": "right",
+              "query": "open-interval"
+            },
+            "goal": "每步叠加祖先边界并定位第一次越界",
+            "pauseQuestion": "当前父结点比较通过后，是否还要保留更早祖先的上界？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr02-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "bst-search-path-intervals",
+          "input": {
+            "paths": [
+              [
+                95,
+                22,
+                91,
+                24,
+                94,
+                71
+              ],
+              [
+                92,
+                20,
+                91,
+                34,
+                88,
+                35
+              ],
+              [
+                21,
+                89,
+                77,
+                29,
+                36,
+                38
+              ],
+              [
+                12,
+                25,
+                71,
+                68,
+                33,
+                34
+              ]
+            ],
+            "distinct": true,
+            "target": "last-key"
+          },
+          "goal": "每步叠加祖先边界并定位第一次越界",
+          "pauseQuestion": "当前父结点比较通过后，是否还要保留更早祖先的上界？"
+        }
+      ]
+    },
+    {
+      "id": "sr02-03",
+      "topic": "AVL单侧高度差的结点递推",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2012",
+        "questionNumber": "4",
+        "label": "2012 年 408 真题 第 4 题（明确空树高度和平衡因子方向）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2012/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "AVL高度按结点层数，空树为0、叶为1；平衡因子为左子树高度减右子树高度。树高6，所有非叶结点的平衡因子都为1，结点总数为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "10"
+        },
+        {
+          "label": "B",
+          "content": "20"
+        },
+        {
+          "label": "C",
+          "content": "32"
+        },
+        {
+          "label": "D",
+          "content": "33"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "只数一条高主干而漏掉必要子树",
+          "explanation": "每个高度至少3的非叶都必须同时有高度少1与少2的子树，不能只把最高路径附近的结点相加。"
+        },
+        "C": {
+          "title": "把某层容量或满树幂数当全树规模",
+          "explanation": "该树不是固定满树，全部子树也受相同平衡因子约束，需要逐高度递推，而不是直接取某个二次幂。"
+        },
+        "D": {
+          "title": "用完全树填充数替代指定平衡因子",
+          "explanation": "高度6的某个完全树规模不等于所有非叶因子为1；后者强制左右高度关系，递推结果不会是33。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "从叶和空树的高度、结点数写起。"
+        },
+        {
+          "level": 2,
+          "text": "父结点因子为1时，左右子树高度分别比父高度少多少？"
+        },
+        {
+          "level": 3,
+          "text": "在另一棵高度3的小树上按同一因子条件构造左右子树，再观察如何推广到下一高度。"
+        }
+      ],
+      "solution": "记高度h的结点数为 `N(h)`，则左右高度为h减1、h减2，递推 `N(h)=1+N(h-1)+N(h-2)`，初值 `N(0)=0`、`N(1)=1`。依次得2、4、7、12、20，高6为20。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将树高由6改为5，其他平衡因子和高度约定不变，结点数为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "7"
+          },
+          {
+            "label": "B",
+            "content": "12"
+          },
+          {
+            "label": "C",
+            "content": "15"
+          },
+          {
+            "label": "D",
+            "content": "20"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将高度6改为5。",
+        "explanation": "沿同一递推，高4为7、高3为4，因此高5为1加7加4等于12。不能把AVL高度约束直接换成满二叉树。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr02-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "avl-uniform-positive-balance-count",
+            "input": {
+              "height": 5,
+              "emptyHeight": 0,
+              "allNonLeafBalance": 1,
+              "balanceDefinition": "left-height-minus-right-height"
+            },
+            "goal": "递归构造两侧必要高度再数结点",
+            "pauseQuestion": "单个根的因子为1，和所有非叶结点因子为1，约束力度相同吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr02-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "avl-uniform-positive-balance-count",
+          "input": {
+            "height": 6,
+            "emptyHeight": 0,
+            "allNonLeafBalance": 1,
+            "balanceDefinition": "left-height-minus-right-height"
+          },
+          "goal": "递归构造两侧必要高度再数结点",
+          "pauseQuestion": "单个根的因子为1，和所有非叶结点因子为1，约束力度相同吗？"
+        }
+      ]
+    },
+    {
+      "id": "sr02-04",
+      "topic": "AVL逐次插入后的零因子分支",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2013",
+        "questionNumber": "3",
+        "label": "2013 年 408 真题 第 3 题（明确分支不含叶与标准旋转）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2013/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "将互异键1至7按递增顺序插入空AVL，每次标准BST插入后从最低失衡祖先作LL/RR/LR/RL调整并更新高度。平衡因子为左高减右高，分支指至少有一个孩子的非叶。最终因子为0的分支结点有几个？",
+      "options": [
+        {
+          "label": "A",
+          "content": "0"
+        },
+        {
+          "label": "B",
+          "content": "1"
+        },
+        {
+          "label": "C",
+          "content": "2"
+        },
+        {
+          "label": "D",
+          "content": "3"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "认为递增输入一定留下单链",
+          "explanation": "AVL会在插入后旋转恢复平衡，最终并非普通BST的递增单链，不能由初始输入方向断言没有零因子分支。"
+        },
+        "B": {
+          "title": "只数最终根而漏其子树根",
+          "explanation": "最终左右两个三结点子树的根也各有同高孩子，不只整体根的因子为0。"
+        },
+        "C": {
+          "title": "漏计三个对称分支中的一个",
+          "explanation": "最终根4、左子树根2、右子树根6的因子均为0；应逐个检查所有非叶，不只检查一次旋转相关结点。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "按插入顺序保存每次调整后的树，后续插入从调整后的根继续。"
+        },
+        {
+          "level": 2,
+          "text": "统计对象仅限非叶，不能把所有叶的零因子一并计入。"
+        },
+        {
+          "level": 3,
+          "text": "另用三个递增键演示一次失衡旋转，再向两侧继续插入，观察哪些子树能形成等高左右分支。"
+        }
+      ],
+      "solution": "标准逐次插入后根为4，左右孩子2、6；2的孩子1、3，6的孩子5、7。三个非叶4、2、6都有同高左右子树，因子均0，所以共有3个；四个叶不计。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把输入上限7改为6，仍按1至6递增逐次插入并同样调整，零因子分支有几个？",
+        "options": [
+          {
+            "label": "A",
+            "content": "0"
+          },
+          {
+            "label": "B",
+            "content": "1"
+          },
+          {
+            "label": "C",
+            "content": "2"
+          },
+          {
+            "label": "D",
+            "content": "3"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅去掉最后一次插入7。",
+        "explanation": "此时根4，左子树2带1、3，右子树5带右孩子6。左右子树高度均为2，根4的因子为0；分支2的因子也为0，分支5为负1，所以共2个零因子分支。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr02-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "avl-insert-balance-audit",
+            "input": {
+              "insertKeys": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+              ],
+              "count": "non-leaf-balance-zero",
+              "balanceDefinition": "left-minus-right"
+            },
+            "goal": "先完成每次局部旋转再统计全部分支",
+            "pauseQuestion": "叶也有零平衡因子，但题目是否要求把叶计入分支？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr02-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "avl-insert-balance-audit",
+          "input": {
+            "insertKeys": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "count": "non-leaf-balance-zero",
+            "balanceDefinition": "left-minus-right"
+          },
+          "goal": "先完成每次局部旋转再统计全部分支",
+          "pauseQuestion": "叶也有零平衡因子，但题目是否要求把叶计入分支？"
+        }
+      ]
+    },
+    {
+      "id": "sr02-05",
+      "topic": "BST删键重插的键值树形",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2013",
+        "questionNumber": "6",
+        "label": "2013 年 408 真题 第 6 题（明确普通删除插入及键值树形）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2013/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "互异键非空普通BST，不作平衡旋转。按标准删除（双孩子用前驱或后继替代并删除对应键），再将原键v按普通叶插入重插。比较带键有序树形，不比较对象地址。哪些断言正确？I. 原v为叶则前后不同；II. 原v为叶则前后相同；III. 原v非叶则前后不同；IV. 原v非叶则前后相同。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 I、III"
+        },
+        {
+          "label": "B",
+          "content": "仅 I、IV"
+        },
+        {
+          "label": "C",
+          "content": "仅 II、III"
+        },
+        {
+          "label": "D",
+          "content": "仅 II、IV"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把删去同一叶再按原路径补回误当必变",
+          "explanation": "原叶位置的父子空链接与搜索区间仍在，重插同键会回原叶位，I不成立，而III成立。"
+        },
+        "B": {
+          "title": "同时误判叶恢复与非叶恢复",
+          "explanation": "原叶可恢复同一键值树形；原非叶的键重插后成为叶，不能恢复其原非叶位置，I、IV均不成立。"
+        },
+        "D": {
+          "title": "把保留排序规则当恢复原非叶结构",
+          "explanation": "普通插入总把新键放在叶位置；原v非叶而重插v为叶，键值标记树形必有变化，IV不成立。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "比较对象是键在哪个父子位置，而不是分配器是否重用内存地址。"
+        },
+        {
+          "level": 2,
+          "text": "普通插入落在哪里？将这一事实分别应用到原键为叶和非叶两种情况。"
+        },
+        {
+          "level": 3,
+          "text": "另取三键BST，分别删除一个叶与删除根，再按普通插入放回原键，比较键值父子关系。"
+        }
+      ],
+      "solution": "原叶删除只腾空自身位置，原祖先区间不变，重插沿同一路径回原位置，II成立。原非叶键被移除后重插为新叶，与原来该键非叶的事实不同，III成立；对象是否复用不影响此判断。",
+      "viz": null,
+      "variant": {
+        "stem": "在同一模型中仅改问一个局部结论：原v是非叶，删除再重插完成后，含键v的结点一定属于哪类？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仍为非叶"
+          },
+          {
+            "label": "B",
+            "content": "叶"
+          },
+          {
+            "label": "C",
+            "content": "仍为原对象且有相同孩子"
+          },
+          {
+            "label": "D",
+            "content": "不存在含v结点"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "由比较整棵树形改为观察重插键的结点类型。",
+        "explanation": "普通BST插入把缺失键放到一个空孩子位置，最初没有孩子，操作到此结束且不旋转，所以重插v必为叶；这也是原非叶键前后结构不同的直接理由。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr02-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "bst-delete-reinsert-shape",
+            "input": {
+              "insertKeys": [
+                4,
+                2,
+                6,
+                1,
+                3,
+                5,
+                7
+              ],
+              "deleteKey": 4,
+              "replacement": "successor",
+              "query": "reinserted-key-is-leaf"
+            },
+            "goal": "分别比较原叶与非叶键重插后的结构位置",
+            "pauseQuestion": "搜索键相同，是否意味着父子结构或内存对象也必然相同？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr02-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "bst-delete-reinsert-shape",
+          "input": {
+            "insertKeys": [
+              4,
+              2,
+              6,
+              1,
+              3,
+              5,
+              7
+            ],
+            "deleteKeysToCompare": [
+              1,
+              4
+            ],
+            "replacement": "successor",
+            "compare": "key-labelled-ordered-shape"
+          },
+          "goal": "分别比较原叶与非叶键重插后的结构位置",
+          "pauseQuestion": "搜索键相同，是否意味着父子结构或内存对象也必然相同？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "sr02-06",
+      "topic": "反向键序AVL的最大最小位置",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2015",
+        "questionNumber": "4",
+        "label": "2015 年 408 真题 第 4 题（明确反向比较器与旋转后状态）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2015/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "互异键AVL采用反向比较次序，故按左、根、右中序可得严格降序；左右子树高度差仍至多1。下列哪项必然正确？",
+      "options": [
+        {
+          "label": "A",
+          "content": "根一定有两个孩子"
+        },
+        {
+          "label": "B",
+          "content": "最小键一定是叶"
+        },
+        {
+          "label": "C",
+          "content": "最后插入的键一定在叶"
+        },
+        {
+          "label": "D",
+          "content": "最大键所在结点一定没有左子树"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把平衡条件当作根必须满度",
+          "explanation": "只有两个结点的合法AVL，根只带一个孩子即可平衡，所以根不必有两个孩子。"
+        },
+        "B": {
+          "title": "忽略降序键规则允许最小键带较大左孩子",
+          "explanation": "例如根1带左孩子2，中序2、1降序且平衡，最小键1是非叶，否定B。"
+        },
+        "C": {
+          "title": "把插入落叶状态当旋转之后永久位置",
+          "explanation": "新键最初插在叶，但平衡调整可把它旋转到内部；反向键序插1、3、2时新键2可成为根。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先把降序中序换成左侧键与根、右侧键的严格大小关系。"
+        },
+        {
+          "level": 2,
+          "text": "对全树最大键，哪一侧若非空就会与最大性冲突？"
+        },
+        {
+          "level": 3,
+          "text": "另取一组反向比较的互异键，先逐条写出左右子树的区间关系，再区分平衡形状约束与极值位置约束。"
+        }
+      ],
+      "solution": "反向键序意味着左子树键大于根、右子树键小于根。最大键不可能再有更大的左子树，所以D必然。其余断言分别有两结点或旋转例子反驳。",
+      "viz": null,
+      "variant": {
+        "stem": "仍用同一反向键序AVL，只改问最小键必然没有哪一侧子树？",
+        "options": [
+          {
+            "label": "A",
+            "content": "左子树"
+          },
+          {
+            "label": "B",
+            "content": "右子树"
+          },
+          {
+            "label": "C",
+            "content": "父结点"
+          },
+          {
+            "label": "D",
+            "content": "左右子树都没有"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将最大键缺左侧的判断改为最小键的对应方向。",
+        "explanation": "右子树键严格更小，最小键不可能有右子树；它仍可有较大的左子树，也不必是根，因此仅无右侧是必然。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr02-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "reverse-order-avl-extremes",
+            "input": {
+              "root": 1,
+              "left": {
+                "root": 2
+              },
+              "query": "minimum-missing-side",
+              "ordering": "descending-inorder"
+            },
+            "goal": "以比较器定义左右区间再定位极值",
+            "pauseQuestion": "把升序BST的左右极值口诀直接用于降序中序，会发生什么？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr02-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "reverse-order-avl-extremes",
+          "input": {
+            "examples": [
+              {
+                "root": 1,
+                "left": {
+                  "root": 2
+                }
+              },
+              {
+                "insertKeys": [
+                  1,
+                  3,
+                  2
+                ]
+              }
+            ],
+            "ordering": "descending-inorder"
+          },
+          "goal": "以比较器定义左右区间再定位极值",
+          "pauseQuestion": "把升序BST的左右极值口诀直接用于降序中序，会发生什么？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "sr02-07",
+      "topic": "折半比较序列的累计区间",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2015",
+        "questionNumber": "7",
+        "label": "2015 年 408 真题 第 7 题（明确存在性和中点约定）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2015/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "存在某个互异整数升序数组与成功查找目标，中点按闭区间向下取整，每轮访问一个中点。以下哪组不可能成为完整关键字比较序列？原数组长度和其余关键字未预先指定，末项是成功目标。",
+      "options": [
+        {
+          "label": "A",
+          "content": "`500,200,450,180`"
+        },
+        {
+          "label": "B",
+          "content": "`500,450,200,180`"
+        },
+        {
+          "label": "C",
+          "content": "`180,500,200,450`"
+        },
+        {
+          "label": "D",
+          "content": "`180,200,500,450`"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把连续向左缩小误当不合法",
+          "explanation": "B可沿中点500、450、200、180逐级向左，键大小与累计上界相容，可嵌入适当升序数组。"
+        },
+        "C": {
+          "title": "忽略数组取中点不等于键值取算术中点",
+          "explanation": "C的键值变化可沿合法区间右、左、右收缩，数组位置中点并不要求中点键为两端键值平均。"
+        },
+        "D": {
+          "title": "把先上升再下降直接判错",
+          "explanation": "D在进入500左侧后比较450，仍高于先前200的下界，可在某个升序数组中实现。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "数组下标区间在缩小，关键字同时保留由已比较键形成的上下界。"
+        },
+        {
+          "level": 2,
+          "text": "键值比上次大或小可以交替，关键是不能越过任何祖先比较留下的区间。"
+        },
+        {
+          "level": 3,
+          "text": "另取三次比较序列60、20、40，写出下一轮键允许的范围，再检查某个较小候选是否仍在范围内。"
+        }
+      ],
+      "solution": "A比较500后到200，再到450，表示目标在200与500之间且下一步位于450左侧；180却小于仍有效的下界200，无法出现。其余三组都可填入适当长度升序数组的折半中点路径实现。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把A序列最后的180替换为460，其余三组不变。四组可实现性变为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "四组都可实现"
+          },
+          {
+            "label": "B",
+            "content": "仍只有A不可能"
+          },
+          {
+            "label": "C",
+            "content": "只有D不可能"
+          },
+          {
+            "label": "D",
+            "content": "四组都不可能"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将A的末次比较键180改为460。",
+        "explanation": "新A为500、200、450、460，目标在450与500之间，可在适当数组中实现；原B、C、D也均可实现，所以四组都可能。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr02-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "binary-search-path-array-witness",
+            "input": {
+              "paths": [
+                [
+                  500,
+                  200,
+                  450,
+                  460
+                ],
+                [
+                  500,
+                  450,
+                  200,
+                  180
+                ],
+                [
+                  180,
+                  500,
+                  200,
+                  450
+                ],
+                [
+                  180,
+                  200,
+                  500,
+                  450
+                ]
+              ],
+              "midpoint": "floor-closed-interval",
+              "buildSortedArrayWitness": true
+            },
+            "goal": "同时保留键区间并构造真实数组中点见证",
+            "pauseQuestion": "中点的数组位置取平均，是否意味着中点的键值也必须取平均？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr02-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "binary-search-path-array-witness",
+          "input": {
+            "paths": [
+              [
+                500,
+                200,
+                450,
+                180
+              ],
+              [
+                500,
+                450,
+                200,
+                180
+              ],
+              [
+                180,
+                500,
+                200,
+                450
+              ],
+              [
+                180,
+                200,
+                500,
+                450
+              ]
+            ],
+            "midpoint": "floor-closed-interval",
+            "buildSortedArrayWitness": true
+          },
+          "goal": "同时保留键区间并构造真实数组中点见证",
+          "pauseQuestion": "中点的数组位置取平均，是否意味着中点的键值也必须取平均？"
+        }
+      ]
+    },
+    {
+      "id": "sr02-08",
+      "topic": "B树一层总键数与结点数",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2021",
+        "questionNumber": "9",
+        "label": "2021 年 408 真题 第 9 题（明确实际叶与阶数占用）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2021/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "3阶B树最大孩子数3、每结点最多2键；非根至少1键，非叶孩子数为键数加1，所有实际叶同层。高度3、根为第1层，第2层总共4个键。整树结点数最多为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "11"
+        },
+        {
+          "label": "B",
+          "content": "10"
+        },
+        {
+          "label": "C",
+          "content": "9"
+        },
+        {
+          "label": "D",
+          "content": "8"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把一层总键固定误当其结点数固定",
+          "explanation": "第二层4键可分配在2或3个结点中，增加结点还会增加各自的孩子数，总结点可能超过10。"
+        },
+        "C": {
+          "title": "只取第二层两结点的最紧凑分配",
+          "explanation": "第二层两结点各2键时总结点9，是较少结点的情况；最多要比较可行的三结点分配。"
+        },
+        "D": {
+          "title": "漏掉键数加结点数形成的孩子总量",
+          "explanation": "第二层各结点孩子数为键数加1，求和时4个键之外还要加该层结点数，不能只按键计下一层。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先设第二层结点数，再用总键数求它们总共有多少孩子。"
+        },
+        {
+          "level": 2,
+          "text": "根的最大孩子数和每个非根至少一个键，同时限制第二层结点数。"
+        },
+        {
+          "level": 3,
+          "text": "另用较小总键数的同类多路树，分别按两种分组方式摆键，比较第三层孩子数是否相同。"
+        }
+      ],
+      "solution": "设第二层有t个结点，4键使其下一层总孩子为4加t，整树共1加t加4加t。t可为2或3，根最多3孩；取3且键分配2、1、1，可有7叶，总数11，合法可达。",
+      "viz": null,
+      "variant": {
+        "stem": "其他条件不变，仅把问题由结点数最多改为最少，结果为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "11"
+          },
+          {
+            "label": "B",
+            "content": "10"
+          },
+          {
+            "label": "C",
+            "content": "9"
+          },
+          {
+            "label": "D",
+            "content": "8"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将最大化改为最小化。",
+        "explanation": "第二层每结点最多2键，因此至少2结点；取2时各2键，第三层6叶，整树1加2加6为9，可达。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr02-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "btree-level-key-node-count",
+            "input": {
+              "order": 3,
+              "levels": 3,
+              "rootLevel": 1,
+              "level2KeyCount": 4,
+              "objective": "min-nodes"
+            },
+            "goal": "将每层结点数与其中键数分开记账",
+            "pauseQuestion": "同一层总键数相同，是否就能断言下一层结点数也相同？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr02-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "btree-level-key-node-count",
+          "input": {
+            "order": 3,
+            "levels": 3,
+            "rootLevel": 1,
+            "level2KeyCount": 4,
+            "objective": "max-nodes"
+          },
+          "goal": "将每层结点数与其中键数分开记账",
+          "pauseQuestion": "同一层总键数相同，是否就能断言下一层结点数也相同？"
+        }
+      ]
+    },
+    {
+      "id": "sr02-09",
+      "topic": "固定键集合的4阶B树计数",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2025",
+        "questionNumber": "8",
+        "label": "2025 年 408 真题 第 8 题（明确树形键分组而非插入历史）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2025/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "给定7个互异键，用标准4阶B树规则：每结点1至3键，非叶孩子数为键数加1，根非叶至少2孩，实际叶同层。不同树按有序树形及每结点键分组判断，不重复计插入历史；给定树形和各结点键数后，键由中序顺序唯一填入。共有几棵？",
+      "options": [
+        {
+          "label": "A",
+          "content": "7"
+        },
+        {
+          "label": "B",
+          "content": "8"
+        },
+        {
+          "label": "C",
+          "content": "9"
+        },
+        {
+          "label": "D",
+          "content": "10"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "漏掉某个可行高度或有序分配",
+          "explanation": "高度2有8种分配，高度3还能用所有结点1键形成一棵，不能只选7。"
+        },
+        "B": {
+          "title": "只数两层树而漏最少键三层树",
+          "explanation": "8恰好是高度2的分配总数，7键还可构造高度3的最小4阶树，需再计一种。"
+        },
+        "D": {
+          "title": "重复计相同键数结构或不合法分配",
+          "explanation": "相同有序结构的键由大小唯一填充，不能再把不同插入历史算新树；叶最少1键也不能违背。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先按可能高度分类，再枚举根含多少键。"
+        },
+        {
+          "level": 2,
+          "text": "高度2时根键数决定叶个数，剩余键要以每叶1至3个分配。"
+        },
+        {
+          "level": 3,
+          "text": "另用更少键做有界正整数分配，保留左右顺序而去掉仅插入次序不同的重复计数。"
+        }
+      ],
+      "solution": "高1装不下7键。高2时根1、2、3键分别得到叶键数分配1、6、1种，共8；高3最少恰7键，只能各结点1键的三层满二叉骨架，1种；更高不够键。因此总共9。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将给定互异键数从7改为6，其余4阶规则和计数方式不变，共几棵？",
+        "options": [
+          {
+            "label": "A",
+            "content": "4"
+          },
+          {
+            "label": "B",
+            "content": "5"
+          },
+          {
+            "label": "C",
+            "content": "6"
+          },
+          {
+            "label": "D",
+            "content": "9"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将键总数由7减为6。",
+        "explanation": "高度3最少7键，已不可取；高度2根1键时两叶合5键有2种分配，根2键时三叶合4键有3种分配，根3键需四叶至少4键却只余3，不可行，共5。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr02-09v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "btree-enumerate-fixed-key-count",
+            "input": {
+              "order": 4,
+              "distinctKeyCount": 6,
+              "equivalence": "ordered-shape-and-key-counts",
+              "actualLeavesSameLevel": true
+            },
+            "goal": "按高度和根占用枚举有序叶分配",
+            "pauseQuestion": "同一棵带键树用不同顺序插出来，应重复计几次？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr02-09-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "btree-enumerate-fixed-key-count",
+          "input": {
+            "order": 4,
+            "distinctKeyCount": 7,
+            "equivalence": "ordered-shape-and-key-counts",
+            "actualLeavesSameLevel": true
+          },
+          "goal": "按高度和根占用枚举有序叶分配",
+          "pauseQuestion": "同一棵带键树用不同顺序插出来，应重复计几次？"
+        }
+      ]
+    },
+    {
+      "id": "sr02-10",
+      "topic": "AVL根两侧结点数差",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2026",
+        "questionNumber": "8",
+        "label": "2026 年 408 真题 第 8 题（明确按层高度与数量差）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2026/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "AVL空树高度0、单结点高度1，树高4，每点左右子树高度差绝对值至多1。根的左右子树结点数之差的绝对值最多为？不要求两侧同样饱满。",
+      "options": [
+        {
+          "label": "A",
+          "content": "1"
+        },
+        {
+          "label": "B",
+          "content": "2"
+        },
+        {
+          "label": "C",
+          "content": "3"
+        },
+        {
+          "label": "D",
+          "content": "5"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把高度差上界1当成结点数差上界",
+          "explanation": "AVL限制高度而非数量，同高或相差1的子树可有不同饱满程度，不能直接把1移作数量界。"
+        },
+        "B": {
+          "title": "只看最小子树数量而忽略另一侧可很饱满",
+          "explanation": "要最大化差，较高一侧可取满树，较低一侧取最少结点AVL，不能只用一侧数量作答案。"
+        },
+        "C": {
+          "title": "只比较两侧同高的情况",
+          "explanation": "两侧均高3时差最多3，但允许高3与高2组合，其结点数差可更大。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先列根两侧可能的高度组合，再对每种组合比较最大与最小结点数。"
+        },
+        {
+          "level": 2,
+          "text": "固定高度的满二叉树给数量上界，最少AVL给下界。"
+        },
+        {
+          "level": 3,
+          "text": "另取高度3的根，分别用一侧尽可能满与另一侧尽可能少的合法子树，确认高度限制和数量差是两项检查。"
+        }
+      ],
+      "solution": "一侧高3最多7点，另一侧可高2且最少2点，差5，根高度4且高度差1合法。若两侧都高3，最多7对最少4，差3，故全局最大为5。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将整树高度从4改为5，其他定义不变，根两侧结点数差绝对值最大为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "7"
+          },
+          {
+            "label": "B",
+            "content": "8"
+          },
+          {
+            "label": "C",
+            "content": "10"
+          },
+          {
+            "label": "D",
+            "content": "11"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "仅将树高由4升为5。",
+        "explanation": "较高侧可高4取满树15点，较低侧高3取最少AVL4点，差11；若两侧均高4最多差15减7等于8，较小。因此最大11可达。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr02-10v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "avl-root-size-imbalance-bound",
+            "input": {
+              "height": 5,
+              "emptyHeight": 0,
+              "objective": "max-root-subtree-node-count-difference"
+            },
+            "goal": "对每种合法高度组合比较数量极值",
+            "pauseQuestion": "AVL高度平衡，是否就意味着左右结点数近乎相等？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr02-10-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "avl-root-size-imbalance-bound",
+          "input": {
+            "height": 4,
+            "emptyHeight": 0,
+            "objective": "max-root-subtree-node-count-difference"
+          },
+          "goal": "对每种合法高度组合比较数量极值",
+          "pauseQuestion": "AVL高度平衡，是否就意味着左右结点数近乎相等？"
+        }
+      ]
+    }
+  ]
+}

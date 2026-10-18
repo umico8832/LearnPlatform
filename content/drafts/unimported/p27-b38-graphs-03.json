@@ -1,0 +1,1751 @@
+{
+  "schemaVersion": 1,
+  "section": "图真题三：MST割与分量、DFS、DAG及AOE时刻",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "gg03-01",
+      "topic": "Prim割边与Kruskal全局边",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2015",
+        "questionNumber": "6",
+        "label": "2015 年 408 真题 第 6 题（原图完整边集文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2015/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站后台实际查看原SVG逐边/箭头/权转写，未列边不存在；原选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "原图为简单无向带权图，边v1-v2权10、v1-v3权8、v1-v4权5、v2-v3权8、v2-v4权11、v3-v4权8。Kruskal与从v4开始的Prim都允许等权任取，“选中”指成功加入。哪条边可能为Kruskal第2条，却不可能为Prim第2条？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`(v1,v3)`"
+        },
+        {
+          "label": "B",
+          "content": "`(v1,v4)`"
+        },
+        {
+          "label": "C",
+          "content": "`(v2,v3)`"
+        },
+        {
+          "label": "D",
+          "content": "`(v3,v4)`"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "忽略该边跨越Prim当前树割",
+          "explanation": "两算法首条都为v1-v4；此后v1-v3是跨树内v1与树外v3的最小8权边之一，Prim第2条可以选它。"
+        },
+        "B": {
+          "title": "把已在第1步选中的边再次当第2条",
+          "explanation": "v1-v4为唯一最小5权边，首步已加入，两算法都不会重复加入它。"
+        },
+        "D": {
+          "title": "把从树内另一端伸出的最小割边漏掉",
+          "explanation": "v3-v4同样跨越当前树到v3，权8最小，Prim第2条也可能取，所以不是两算法的所述差别。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先分别执行两算法的第一条成功加边，再看第二步的候选集合。"
+        },
+        {
+          "level": 2,
+          "text": "Prim只在当前树与外部之间选，Kruskal可连接两个尚未接上该树的分量。"
+        },
+        {
+          "level": 3,
+          "text": "另画当前树外还有两个顶点的局面，给它们之间一条很小边，比较全局无环选择与当前割边选择。"
+        }
+      ],
+      "solution": "首条v1-v4权5。Kruskal第二步可选任一不成环的8权边，包括v2-v3；Prim当前树仅v1、v4，v2-v3两端都在树外，不能选。另两条8权边v1-v3、v3-v4都可跨割，因此只有C。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将v2-v3权从8改为9，其他边和起点不变，还存在可能Kruskal第2条却不可能Prim第2条的边吗？",
+        "options": [
+          {
+            "label": "A",
+            "content": "不存在"
+          },
+          {
+            "label": "B",
+            "content": "仍为v2-v3"
+          },
+          {
+            "label": "C",
+            "content": "变为v1-v4"
+          },
+          {
+            "label": "D",
+            "content": "变为v2-v4"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅增加原C边的权1。",
+        "explanation": "两算法首步仍5权v1-v4；Kruskal第二步最小只剩两条8权跨割边v1-v3、v3-v4，它们也都是Prim可选第2条，所以不再有这种差别边。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg03-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "prim-kruskal-second-edge-sets",
+            "input": {
+              "nodes": [
+                "v1",
+                "v2",
+                "v3",
+                "v4"
+              ],
+              "weightedEdges": [
+                [
+                  "v1",
+                  "v2",
+                  10
+                ],
+                [
+                  "v1",
+                  "v3",
+                  8
+                ],
+                [
+                  "v1",
+                  "v4",
+                  5
+                ],
+                [
+                  "v2",
+                  "v3",
+                  9
+                ],
+                [
+                  "v2",
+                  "v4",
+                  11
+                ],
+                [
+                  "v3",
+                  "v4",
+                  8
+                ]
+              ],
+              "directed": false,
+              "primStart": "v4",
+              "allowAllTies": true
+            },
+            "goal": "在同一步分别画当前割与并查集分量",
+            "pauseQuestion": "Kruskal选一条两端都不在Prim当前树内的边，会自动违反无环条件吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg03-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "prim-kruskal-second-edge-sets",
+          "input": {
+            "nodes": [
+              "v1",
+              "v2",
+              "v3",
+              "v4"
+            ],
+            "weightedEdges": [
+              [
+                "v1",
+                "v2",
+                10
+              ],
+              [
+                "v1",
+                "v3",
+                8
+              ],
+              [
+                "v1",
+                "v4",
+                5
+              ],
+              [
+                "v2",
+                "v3",
+                8
+              ],
+              [
+                "v2",
+                "v4",
+                11
+              ],
+              [
+                "v3",
+                "v4",
+                8
+              ]
+            ],
+            "directed": false,
+            "primStart": "v4",
+            "allowAllTies": true
+          },
+          "goal": "在同一步分别画当前割与并查集分量",
+          "pauseQuestion": "Kruskal选一条两端都不在Prim当前树内的边，会自动违反无环条件吗？"
+        }
+      ]
+    },
+    {
+      "id": "gg03-02",
+      "topic": "有向DFS必须先完成未访问后继",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2016",
+        "questionNumber": "6",
+        "label": "2016 年 408 真题 第 6 题（原图完整边集文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2016/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站后台实际查看原SVG逐边/箭头/权转写，未列边不存在；原选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "原图为有向图，弧v1到v2、v1到v3、v1到v5、v3到v2、v2到v5、v5到v4、v4到v3。由v1递归DFS，首次进入就标记，邻接次序可选，只记录首次访问。哪组不可能？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`v1,v5,v4,v3,v2`"
+        },
+        {
+          "label": "B",
+          "content": "`v1,v3,v2,v5,v4`"
+        },
+        {
+          "label": "C",
+          "content": "`v1,v2,v5,v4,v3`"
+        },
+        {
+          "label": "D",
+          "content": "`v1,v2,v3,v4,v5`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把有向回路误当DFS不能完成",
+          "explanation": "A沿v5到v4到v3到v2，最后v2到v5已访问而跳过，标记机制可终止并得到A。"
+        },
+        "B": {
+          "title": "忽略v1可以先选v3",
+          "explanation": "从v3顺着唯一未访问后继v2、v5、v4走完，得到B，图有回路不会重复首次输出。"
+        },
+        "C": {
+          "title": "把未访问后继的强制深入当成不可选",
+          "explanation": "v1先选v2后只能先到v5、v4、v3，恰好得到C，这反而符合DFS。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "每步只看当前递归顶点的出弧，不把箭头当作可双向走。"
+        },
+        {
+          "level": 2,
+          "text": "一个顶点仍有未访问后继时，能否先回到更早祖先另选分支？"
+        },
+        {
+          "level": 3,
+          "text": "另取一个有向三环并从外点进入，记录首次标记与回边跳过，区分走到已访问点和再次输出该点。"
+        }
+      ],
+      "solution": "D到v2时，v2唯一出后继v5尚未访问，必须先去v5，不能直接跳v3。其余三组分别由v1首先选v5、v3、v2得到，均可行。",
+      "viz": null,
+      "variant": {
+        "stem": "输入与规则不变，仅改问从v1出发全部不同完整首次访问序列共有几种？",
+        "options": [
+          {
+            "label": "A",
+            "content": "2"
+          },
+          {
+            "label": "B",
+            "content": "3"
+          },
+          {
+            "label": "C",
+            "content": "4"
+          },
+          {
+            "label": "D",
+            "content": "6"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅把筛选不可行序列改为计完整序列种数。",
+        "explanation": "v1第一个可选v2、v3、v5，进入后有向环上剩余点被唯一出弧依次扫完，恰得原A、B、C三种，邻接剩余排列不再产生新首次访问序列。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg03-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "dfs-directed-cycle-order-sets",
+            "input": {
+              "nodes": [
+                "v1",
+                "v2",
+                "v3",
+                "v4",
+                "v5"
+              ],
+              "edges": [
+                [
+                  "v1",
+                  "v2"
+                ],
+                [
+                  "v1",
+                  "v3"
+                ],
+                [
+                  "v1",
+                  "v5"
+                ],
+                [
+                  "v3",
+                  "v2"
+                ],
+                [
+                  "v2",
+                  "v5"
+                ],
+                [
+                  "v5",
+                  "v4"
+                ],
+                [
+                  "v4",
+                  "v3"
+                ]
+              ],
+              "directed": true,
+              "source": "v1",
+              "query": "distinct-discovery-order-count",
+              "neighborOrder": "existential-per-vertex"
+            },
+            "goal": "按箭头递归深入并跳过已访问回边",
+            "pauseQuestion": "有向环能被访问标记控制，是否就意味着可以跳过当前未访问后继随意回退？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg03-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "dfs-directed-cycle-order-sets",
+          "input": {
+            "nodes": [
+              "v1",
+              "v2",
+              "v3",
+              "v4",
+              "v5"
+            ],
+            "edges": [
+              [
+                "v1",
+                "v2"
+              ],
+              [
+                "v1",
+                "v3"
+              ],
+              [
+                "v1",
+                "v5"
+              ],
+              [
+                "v3",
+                "v2"
+              ],
+              [
+                "v2",
+                "v5"
+              ],
+              [
+                "v5",
+                "v4"
+              ],
+              [
+                "v4",
+                "v3"
+              ]
+            ],
+            "directed": true,
+            "source": "v1",
+            "sequences": [
+              [
+                "v1",
+                "v5",
+                "v4",
+                "v3",
+                "v2"
+              ],
+              [
+                "v1",
+                "v3",
+                "v2",
+                "v5",
+                "v4"
+              ],
+              [
+                "v1",
+                "v2",
+                "v5",
+                "v4",
+                "v3"
+              ],
+              [
+                "v1",
+                "v2",
+                "v3",
+                "v4",
+                "v5"
+              ]
+            ],
+            "neighborOrder": "existential-per-vertex"
+          },
+          "goal": "按箭头递归深入并跳过已访问回边",
+          "pauseQuestion": "有向环能被访问标记控制，是否就意味着可以跳过当前未访问后继随意回退？"
+        }
+      ]
+    },
+    {
+      "id": "gg03-03",
+      "topic": "有向Dijkstra比较累计暂距",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2016",
+        "questionNumber": "8",
+        "label": "2016 年 408 真题 第 8 题（原图完整边集文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2016/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站后台实际查看原SVG逐边/箭头/权转写，未列边不存在；原选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "原图有向带权弧为1到2权5、1到5权4、2到3权2、2到4权9、4到1权2、5到2权6、5到4权7、3到5权6、5到6权5、6到3权2。由1运行非负权Dijkstra，依次确定除源外的最短目标次序为？该数据无最小暂距并列。",
+      "options": [
+        {
+          "label": "A",
+          "content": "`5,2,3,4,6`"
+        },
+        {
+          "label": "B",
+          "content": "`5,2,3,6,4`"
+        },
+        {
+          "label": "C",
+          "content": "`5,2,4,3,6`"
+        },
+        {
+          "label": "D",
+          "content": "`5,2,6,3,4`"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "以较早发现4为由把它排在更短6之前",
+          "explanation": "4最佳暂距11，6为9，必须先确定6，发现先后不决定最短路固定次序。"
+        },
+        "C": {
+          "title": "把4出边回到源的权2误当源到4的距离",
+          "explanation": "弧4到1不能反向当1到4，4仍需经5的累计11，不能放在3之前。"
+        },
+        "D": {
+          "title": "只看6到3的小边而让6先固定",
+          "explanation": "3已经通过2得到累计7，小于6的9；6到3权2并不使6本身更早确定。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先确认每条箭头方向，再把源距加边权算候选。"
+        },
+        {
+          "level": 2,
+          "text": "区分顶点已发现、暂距改进与最小暂距被正式选定。"
+        },
+        {
+          "level": 3,
+          "text": "另画一条回到源的短边，检查它是否能被当成从源出发的正向捷径。"
+        }
+      ],
+      "solution": "先5距4、再2距5，2使3距7；5已给6距9、4距11，之后依次3、6、4。因此完整目标次序5、2、3、6、4。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将5到4的权从7改为2，其他不变，除源外确定次序为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`5,2,3,4,6`"
+          },
+          {
+            "label": "B",
+            "content": "`5,2,3,6,4`"
+          },
+          {
+            "label": "C",
+            "content": "`5,2,4,3,6`"
+          },
+          {
+            "label": "D",
+            "content": "`5,2,6,3,4`"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅降低5到4这条弧的权。",
+        "explanation": "5确定后4暂距变为6，仍在2距5之后，但在3距7与6距9之前，故5、2、4、3、6。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg03-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "dijkstra-directed-settlement-order",
+            "input": {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6"
+              ],
+              "weightedEdges": [
+                [
+                  "1",
+                  "2",
+                  5
+                ],
+                [
+                  "1",
+                  "5",
+                  4
+                ],
+                [
+                  "2",
+                  "3",
+                  2
+                ],
+                [
+                  "2",
+                  "4",
+                  9
+                ],
+                [
+                  "4",
+                  "1",
+                  2
+                ],
+                [
+                  "5",
+                  "2",
+                  6
+                ],
+                [
+                  "5",
+                  "4",
+                  2
+                ],
+                [
+                  "3",
+                  "5",
+                  6
+                ],
+                [
+                  "5",
+                  "6",
+                  5
+                ],
+                [
+                  "6",
+                  "3",
+                  2
+                ]
+              ],
+              "directed": true,
+              "source": "1"
+            },
+            "goal": "用方向正确的累计距离维护待确定集合",
+            "pauseQuestion": "一条指向源点的短边，是否能反过来降低源到该起点的距离？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg03-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "dijkstra-directed-settlement-order",
+          "input": {
+            "nodes": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6"
+            ],
+            "weightedEdges": [
+              [
+                "1",
+                "2",
+                5
+              ],
+              [
+                "1",
+                "5",
+                4
+              ],
+              [
+                "2",
+                "3",
+                2
+              ],
+              [
+                "2",
+                "4",
+                9
+              ],
+              [
+                "4",
+                "1",
+                2
+              ],
+              [
+                "5",
+                "2",
+                6
+              ],
+              [
+                "5",
+                "4",
+                7
+              ],
+              [
+                "3",
+                "5",
+                6
+              ],
+              [
+                "5",
+                "6",
+                5
+              ],
+              [
+                "6",
+                "3",
+                2
+              ]
+            ],
+            "directed": true,
+            "source": "1"
+          },
+          "goal": "用方向正确的累计距离维护待确定集合",
+          "pauseQuestion": "一条指向源点的短边，是否能反过来降低源到该起点的距离？"
+        }
+      ]
+    },
+    {
+      "id": "gg03-04",
+      "topic": "拓扑两个前驱必须都完成",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2018",
+        "questionNumber": "7",
+        "label": "2018 年 408 真题 第 7 题（原图完整边集文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2018/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站后台实际查看原SVG逐边/箭头/权转写，未列边不存在；原选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有向图原图转写，弧1到3、1到2、5到2、5到4、2到3、2到6、3到4、6到4，顶点1至6，无其他弧。哪组不是完整拓扑序列？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`1,5,2,3,6,4`"
+        },
+        {
+          "label": "B",
+          "content": "`5,1,2,6,3,4`"
+        },
+        {
+          "label": "C",
+          "content": "`5,1,2,3,6,4`"
+        },
+        {
+          "label": "D",
+          "content": "`5,2,1,6,3,4`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "误把两个起始点先后固定为唯一",
+          "explanation": "1、5初始均可出，A先1后5再2，满足全部前驱，能够成为合法序列。"
+        },
+        "B": {
+          "title": "认为3必须先于6而添加不存在的依赖",
+          "explanation": "2输出后3与6均可选，B先6再3也合法，图中没有3到6约束。"
+        },
+        "C": {
+          "title": "把另一个起点先出的序列排除",
+          "explanation": "C先5、1后2，随后3、6，仍满足全部弧，不因与A首项不同而非法。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "逐边核对源点是否在终点之前，不只查看当时有没有某一个前驱已输出。"
+        },
+        {
+          "level": 2,
+          "text": "一个节点的入度归零需要全部入弧前驱都移除。"
+        },
+        {
+          "level": 3,
+          "text": "另画两起点共同指向一个汇合点的DAG，比较只删一个起点与都删掉时汇合点能否输出。"
+        }
+      ],
+      "solution": "2有来自1与5的前驱，D在5之后立刻输出2，而1尚未输出，违反1到2。其余三组都先完成1、5再2，并在3、6都完成后输出4，合法。",
+      "viz": null,
+      "variant": {
+        "stem": "仅删去弧1到2，其他边与四个候选不变，现在四个候选的可行性如何？",
+        "options": [
+          {
+            "label": "A",
+            "content": "四个都可行"
+          },
+          {
+            "label": "B",
+            "content": "仍只有D不可行"
+          },
+          {
+            "label": "C",
+            "content": "只有A可行"
+          },
+          {
+            "label": "D",
+            "content": "四个都不可行"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅移除1到2这一条约束。",
+        "explanation": "删边不会破坏原A、B、C的合法性；D唯一原违规1到2也已移除，剩下各弧均被满足，因此四项都可行。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg03-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "topological-sequence-edge-removal",
+            "input": {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6"
+              ],
+              "edges": [
+                [
+                  "1",
+                  "3"
+                ],
+                [
+                  "5",
+                  "2"
+                ],
+                [
+                  "5",
+                  "4"
+                ],
+                [
+                  "2",
+                  "3"
+                ],
+                [
+                  "2",
+                  "6"
+                ],
+                [
+                  "3",
+                  "4"
+                ],
+                [
+                  "6",
+                  "4"
+                ]
+              ],
+              "directed": true,
+              "sequences": [
+                [
+                  "1",
+                  "5",
+                  "2",
+                  "3",
+                  "6",
+                  "4"
+                ],
+                [
+                  "5",
+                  "1",
+                  "2",
+                  "6",
+                  "3",
+                  "4"
+                ],
+                [
+                  "5",
+                  "1",
+                  "2",
+                  "3",
+                  "6",
+                  "4"
+                ],
+                [
+                  "5",
+                  "2",
+                  "1",
+                  "6",
+                  "3",
+                  "4"
+                ]
+              ]
+            },
+            "goal": "核对多前驱并观察删约束的单调性",
+            "pauseQuestion": "删除一个依赖会使已有合法拓扑序失效，还是只可能增加可选序列？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg03-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "topological-sequence-edge-removal",
+          "input": {
+            "nodes": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6"
+            ],
+            "edges": [
+              [
+                "1",
+                "3"
+              ],
+              [
+                "1",
+                "2"
+              ],
+              [
+                "5",
+                "2"
+              ],
+              [
+                "5",
+                "4"
+              ],
+              [
+                "2",
+                "3"
+              ],
+              [
+                "2",
+                "6"
+              ],
+              [
+                "3",
+                "4"
+              ],
+              [
+                "6",
+                "4"
+              ]
+            ],
+            "directed": true,
+            "sequences": [
+              [
+                "1",
+                "5",
+                "2",
+                "3",
+                "6",
+                "4"
+              ],
+              [
+                "5",
+                "1",
+                "2",
+                "6",
+                "3",
+                "4"
+              ],
+              [
+                "5",
+                "1",
+                "2",
+                "3",
+                "6",
+                "4"
+              ],
+              [
+                "5",
+                "2",
+                "1",
+                "6",
+                "3",
+                "4"
+              ]
+            ]
+          },
+          "goal": "核对多前驱并观察删约束的单调性",
+          "pauseQuestion": "删除一个依赖会使已有合法拓扑序失效，还是只可能增加可选序列？"
+        }
+      ]
+    },
+    {
+      "id": "gg03-05",
+      "topic": "活动最迟开始看终点事件",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2019",
+        "questionNumber": "5",
+        "label": "2019 年 408 真题 第 5 题（原图完整边集文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2019/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站后台实际查看原SVG逐边/箭头/权转写，未列边不存在；原选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "AOE原图活动：a为1到2时长3，b为3到2时长4，c为1到3时长8，d为2到4时长7，e为2到5时长6，f为3到5时长10，g为4到6时长6，h为5到6时长9。事件1从0开始，汇6按最早可完工时刻完成，其余无边。d的最早、最迟开始时刻为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "3、7"
+        },
+        {
+          "label": "B",
+          "content": "12、12"
+        },
+        {
+          "label": "C",
+          "content": "12、14"
+        },
+        {
+          "label": "D",
+          "content": "15、15"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "只看a到达而未等待另一前驱路径",
+          "explanation": "事件2还需等待c后b，共12，不能在a结束3时就启动d；7也只是d持续时长，不是最迟开始。"
+        },
+        "B": {
+          "title": "把起点事件的最迟发生当活动最迟开工",
+          "explanation": "事件2因另一关键分支最迟需在12发生，但d可等待其自身余量；活动最迟开始应从终点4最迟时刻倒推。"
+        },
+        "D": {
+          "title": "把较长路径值随意当两种开始时间",
+          "explanation": "d起点最早由前驱最大值确定为12，最迟由终点约束倒推为14，不能把二者都置为15。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先向前取前驱到达最大值算事件最早时刻，再由工期向后取后继约束最小值。"
+        },
+        {
+          "level": 2,
+          "text": "活动最迟开始使用终点最迟时刻减活动时长，不直接取起点事件最迟时刻。"
+        },
+        {
+          "level": 3,
+          "text": "另取一个事件分出一条关键支和一条有余量支的小网，比较事件必须发生时刻与有余量活动可以等到何时开始。"
+        }
+      ],
+      "solution": "事件2最早为 `max(3,8+4)=12`。工期27，事件4最迟为27减g6即21，d最迟开始21减7为14。因此12、14，d有2单位开始余量。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把d持续时长从7改为9，其余不变，同样求d最早、最迟开始。",
+        "options": [
+          {
+            "label": "A",
+            "content": "3、7"
+          },
+          {
+            "label": "B",
+            "content": "12、12"
+          },
+          {
+            "label": "C",
+            "content": "12、14"
+          },
+          {
+            "label": "D",
+            "content": "15、15"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅增加d持续时长2。",
+        "explanation": "事件2最早仍12，新经d路径到汇为12加9加6等于27，工期仍27；终点4最迟21，所以d最迟开始21减9等于12，得到12、12，余量恰被用完。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg03-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "aoe-activity-start-times",
+            "input": {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6"
+              ],
+              "activities": [
+                [
+                  "a",
+                  "1",
+                  "2",
+                  3
+                ],
+                [
+                  "b",
+                  "3",
+                  "2",
+                  4
+                ],
+                [
+                  "c",
+                  "1",
+                  "3",
+                  8
+                ],
+                [
+                  "d",
+                  "2",
+                  "4",
+                  9
+                ],
+                [
+                  "e",
+                  "2",
+                  "5",
+                  6
+                ],
+                [
+                  "f",
+                  "3",
+                  "5",
+                  10
+                ],
+                [
+                  "g",
+                  "4",
+                  "6",
+                  6
+                ],
+                [
+                  "h",
+                  "5",
+                  "6",
+                  9
+                ]
+              ],
+              "source": "1",
+              "sink": "6",
+              "queryActivity": "d"
+            },
+            "goal": "并列区分事件时刻与活动最早最迟开始",
+            "pauseQuestion": "起点事件已必须发生，是否意味着每条出活动都必须立刻开始？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg03-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "aoe-activity-start-times",
+          "input": {
+            "nodes": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6"
+            ],
+            "activities": [
+              [
+                "a",
+                "1",
+                "2",
+                3
+              ],
+              [
+                "b",
+                "3",
+                "2",
+                4
+              ],
+              [
+                "c",
+                "1",
+                "3",
+                8
+              ],
+              [
+                "d",
+                "2",
+                "4",
+                7
+              ],
+              [
+                "e",
+                "2",
+                "5",
+                6
+              ],
+              [
+                "f",
+                "3",
+                "5",
+                10
+              ],
+              [
+                "g",
+                "4",
+                "6",
+                6
+              ],
+              [
+                "h",
+                "5",
+                "6",
+                9
+              ]
+            ],
+            "source": "1",
+            "sink": "6",
+            "queryActivity": "d"
+          },
+          "goal": "并列区分事件时刻与活动最早最迟开始",
+          "pauseQuestion": "起点事件已必须发生，是否意味着每条出活动都必须立刻开始？"
+        }
+      ]
+    },
+    {
+      "id": "gg03-06",
+      "topic": "表达式DAG只复用相同有序子式",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2019",
+        "questionNumber": "6",
+        "label": "2019 年 408 真题 第 6 题（明确只共享结构相同子式）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2019/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站补明有序操作数与不做代数/交换律重写，原表达式、四数值选项和答案不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "用有向无环图表示 `(x+y)*((x+y)/x)`，同一变量与完全相同的有序子表达式可共享；每个变量和每个运算各占一个结点，不做代数改写或交换律归并。每个二元运算保留左右操作数身份。最少结点数为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "5"
+        },
+        {
+          "label": "B",
+          "content": "6"
+        },
+        {
+          "label": "C",
+          "content": "8"
+        },
+        {
+          "label": "D",
+          "content": "9"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "只共享变量而漏同一加法子式",
+          "explanation": "只让x、y叶共享而保留两份相同的x加y会有6点，该加法本身也可合为一个，尚非最少。"
+        },
+        "C": {
+          "title": "只做一次局部去重而未共享全部相同子式",
+          "explanation": "无共享语法树有9点，合一个重复位置仅降到8；还有其他重复变量和完整加法可复用。"
+        },
+        "D": {
+          "title": "把原始表达式树结点数当共享DAG最少数",
+          "explanation": "9是逐次出现各建节点的树大小，DAG允许重复变量和相同子式共用，不能忽略这个规则。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "从叶向上给每个子式建立运算符与左右孩子组成的身份。"
+        },
+        {
+          "level": 2,
+          "text": "同一标签的变量可以共享，两个相同运算还要比较左右孩子身份是否都相同。"
+        },
+        {
+          "level": 3,
+          "text": "另用一个重复括号子式的短表达式，分别数原树出现次数与去重后不同子式个数。"
+        }
+      ],
+      "solution": "不同子式只有x、y、x加y、该和除x、最终乘积，共5点。两个加法出现位置共用一个运算结点，x还作为除法右操作数复用，故5。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把右侧加法从x加y改为y加x，表达式成为 `(x+y)*((y+x)/x)`，仍不使用交换律，最少结点数为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "5"
+          },
+          {
+            "label": "B",
+            "content": "6"
+          },
+          {
+            "label": "C",
+            "content": "8"
+          },
+          {
+            "label": "D",
+            "content": "9"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅互换右侧那次加法的左右操作数。",
+        "explanation": "x与y仍共享，但x加y和y加x的有序孩子不同，必须两个加法结点；再加除与乘，共2变量加2加法加2其他运算，为6。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg03-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "expression-dag-structural-sharing",
+            "input": {
+              "expression": "(x+y)*((y+x)/x)",
+              "shareIdenticalVariables": true,
+              "shareOrderedSubexpressions": true,
+              "algebraicRewrites": false
+            },
+            "goal": "从叶到根比较有序子式签名并共享",
+            "pauseQuestion": "数学上可交换的两个加法，在禁止代数改写的有序结构模型中是否自动是同一结点？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg03-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "expression-dag-structural-sharing",
+          "input": {
+            "expression": "(x+y)*((x+y)/x)",
+            "shareIdenticalVariables": true,
+            "shareOrderedSubexpressions": true,
+            "algebraicRewrites": false
+          },
+          "goal": "从叶到根比较有序子式签名并共享",
+          "pauseQuestion": "数学上可交换的两个加法，在禁止代数改写的有序结构模型中是否自动是同一结点？"
+        }
+      ]
+    },
+    {
+      "id": "gg03-07",
+      "topic": "DAG退出输出形成逆拓扑",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2020",
+        "questionNumber": "6",
+        "label": "2020 年 408 真题 第 6 题（明确退出输出与本次发现序对比）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2020/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站将原BFS/DFS序列选项明确为同外层/邻接次序的首次访问及本次进入序，询问对所有DAG的保证，避免退出序本也是DFS产物的术语歧义；正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "对DAG执行全图递归DFS，外层顶点与邻接次序固定，首次进入就标记；扫描完全部出邻点后才输出当前点并立即返回，最终包含每点一次。问对所有DAG均保证哪项性质，不把某些图上恰好相同的序列视为普遍保证。",
+      "options": [
+        {
+          "label": "A",
+          "content": "一定是拓扑序"
+        },
+        {
+          "label": "B",
+          "content": "一定是逆拓扑序"
+        },
+        {
+          "label": "C",
+          "content": "一定等于同外层及邻接次序BFS的首次访问序"
+        },
+        {
+          "label": "D",
+          "content": "一定等于本次DFS首次进入序"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把完成先后直接当边起点先于终点",
+          "explanation": "弧u到v会使v先完成、u后完成，原输出正是边方向的反序，不能直接作正拓扑。"
+        },
+        "C": {
+          "title": "把退出时机改动当仍按BFS层级输出",
+          "explanation": "DFS会深入后回退，退出输出在最深分支前，通常不等于同次序BFS的分层首访结果。"
+        },
+        "D": {
+          "title": "忽略首次标记与真正输出已经分离",
+          "explanation": "本次DFS进入源后会先递归其后继，而输出却等后继完成才发生，两种时机在有边图上可不同。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "分别分析一条弧的终点尚未发现与已经完成两种情况。"
+        },
+        {
+          "level": 2,
+          "text": "若终点仍在递归栈中会形成什么边？DAG条件排除了这种情况。"
+        },
+        {
+          "level": 3,
+          "text": "另取一条有向链记录进入表与退出输出表，再逐边比较两端在退出表的先后。"
+        }
+      ],
+      "solution": "对弧u到v，未访问v时递归会先完成v；已完成v时它也早于u输出；v若仍在栈中则成环，DAG不允许。因此每条弧终点都先于起点输出，是逆拓扑。固定本次遍历下不保证等于BFS或进入序。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把本次退出输出的整个列表再倒序，其他遍历条件不变，对所有DAG保证哪项？",
+        "options": [
+          {
+            "label": "A",
+            "content": "一定是拓扑序"
+          },
+          {
+            "label": "B",
+            "content": "一定是逆拓扑序"
+          },
+          {
+            "label": "C",
+            "content": "一定等于同外层及邻接次序BFS的首次访问序"
+          },
+          {
+            "label": "D",
+            "content": "一定等于本次DFS首次进入序"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将原完成序列表反向。",
+        "explanation": "反向后每条弧的起点都先于终点，得到完整拓扑序；它仍不保证等于同样次序的BFS或DFS进入表，具体图上的重合不是普遍结论。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg03-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "dfs-finish-topological-order",
+            "input": {
+              "nodes": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "directed": true,
+              "edges": [
+                [
+                  "a",
+                  "b"
+                ],
+                [
+                  "a",
+                  "c"
+                ],
+                [
+                  "b",
+                  "d"
+                ],
+                [
+                  "c",
+                  "d"
+                ]
+              ],
+              "outerOrder": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "neighborOrder": "ascending",
+              "outputAt": "finish",
+              "reverseOutput": true
+            },
+            "goal": "并列列出本次进入、退出与反转列表",
+            "pauseQuestion": "一条弧在DFS完成表里，两端应是谁先输出？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg03-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "dfs-finish-topological-order",
+          "input": {
+            "nodes": [
+              "a",
+              "b",
+              "c",
+              "d"
+            ],
+            "directed": true,
+            "edges": [
+              [
+                "a",
+                "b"
+              ],
+              [
+                "a",
+                "c"
+              ],
+              [
+                "b",
+                "d"
+              ],
+              [
+                "c",
+                "d"
+              ]
+            ],
+            "outerOrder": [
+              "a",
+              "b",
+              "c",
+              "d"
+            ],
+            "neighborOrder": "ascending",
+            "outputAt": "finish",
+            "reverseOutput": false
+          },
+          "goal": "并列列出本次进入、退出与反转列表",
+          "pauseQuestion": "一条弧在DFS完成表里，两端应是谁先输出？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "gg03-08",
+      "topic": "Kruskal拒绝小边成环后继续",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2020",
+        "questionNumber": "7",
+        "label": "2020 年 408 真题 第 7 题（原图完整边集文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2020/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站后台实际查看原SVG逐边/箭头/权转写，未列边不存在；原选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "简单无向图原图转写，边a-b20、a-c12、a-e9、b-e11、b-d6、b-f5、c-e10、c-d18、d-e14、d-f7。Kruskal按权升序检查，只记录成功加到最小生成树的边，加入顺序为？边端点顺序不区分方向。",
+      "options": [
+        {
+          "label": "A",
+          "content": "`(b,f),(b,d),(a,e),(c,e),(b,e)`"
+        },
+        {
+          "label": "B",
+          "content": "`(b,f),(b,d),(b,e),(a,e),(e,c)`"
+        },
+        {
+          "label": "C",
+          "content": "`(a,e),(b,e),(c,e),(b,d),(b,f)`"
+        },
+        {
+          "label": "D",
+          "content": "`(a,e),(c,e),(b,e),(b,f),(b,d)`"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "以连接大分量为由提前选更重边",
+          "explanation": "b-e权11不能抢在仍能合法加入的a-e9、c-e10之前；算法先按权，不按分量大小。"
+        },
+        "C": {
+          "title": "把任意最小树的边集合顺序当算法实际顺序",
+          "explanation": "即使某列表最终边集相同，Kruskal先取5权b-f与6权b-d，不会从9权a-e开始。"
+        },
+        "D": {
+          "title": "把跨分量关系正确当可以任意延迟更小边",
+          "explanation": "D前面先选较重a-e、c-e、b-e，违反权升序检查，不是指定算法的成功加入次序。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先给所有边按权排序，再逐一判断两端是否已在同一分量。"
+        },
+        {
+          "level": 2,
+          "text": "最小剩余边若成环应跳过，而不是把它强制加入或直接终止。"
+        },
+        {
+          "level": 3,
+          "text": "另画一个三角形先选两条小边，再考虑第三条和连向新点的边，分开记录检查表与成功加边表。"
+        }
+      ],
+      "solution": "先取b-f5、b-d6；d-f7两端已连通，跳过。再取a-e9、c-e10，最后b-e11连两分量，成功序列正为A，总权41。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把d-f权从7改为4，其余不变，Kruskal成功加入次序为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`(d,f),(b,f),(a,e),(c,e),(b,e)`"
+          },
+          {
+            "label": "B",
+            "content": "`(b,f),(d,f),(a,e),(c,e),(b,e)`"
+          },
+          {
+            "label": "C",
+            "content": "`(d,f),(b,d),(a,e),(c,e),(b,e)`"
+          },
+          {
+            "label": "D",
+            "content": "`(d,f),(b,f),(b,d),(a,e),(c,e)`"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅降低d-f边权。",
+        "explanation": "先d-f4，再b-f5；此时b-d6成环被跳过，随后a-e9、c-e10、b-e11，总代价39。哪条三角边被拒绝随新权而改变。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg03-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "kruskal-accepted-versus-rejected-edges",
+            "input": {
+              "nodes": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e",
+                "f"
+              ],
+              "weightedEdges": [
+                [
+                  "a",
+                  "b",
+                  20
+                ],
+                [
+                  "a",
+                  "c",
+                  12
+                ],
+                [
+                  "a",
+                  "e",
+                  9
+                ],
+                [
+                  "b",
+                  "e",
+                  11
+                ],
+                [
+                  "b",
+                  "d",
+                  6
+                ],
+                [
+                  "b",
+                  "f",
+                  5
+                ],
+                [
+                  "c",
+                  "e",
+                  10
+                ],
+                [
+                  "c",
+                  "d",
+                  18
+                ],
+                [
+                  "d",
+                  "e",
+                  14
+                ],
+                [
+                  "d",
+                  "f",
+                  4
+                ]
+              ],
+              "directed": false,
+              "query": "accepted-order"
+            },
+            "goal": "分开记录每次检查和成功并查集合并",
+            "pauseQuestion": "跳过一条较小成环边后，是否仍需继续检查后面的可连通边？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg03-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "kruskal-accepted-versus-rejected-edges",
+          "input": {
+            "nodes": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e",
+              "f"
+            ],
+            "weightedEdges": [
+              [
+                "a",
+                "b",
+                20
+              ],
+              [
+                "a",
+                "c",
+                12
+              ],
+              [
+                "a",
+                "e",
+                9
+              ],
+              [
+                "b",
+                "e",
+                11
+              ],
+              [
+                "b",
+                "d",
+                6
+              ],
+              [
+                "b",
+                "f",
+                5
+              ],
+              [
+                "c",
+                "e",
+                10
+              ],
+              [
+                "c",
+                "d",
+                18
+              ],
+              [
+                "d",
+                "e",
+                14
+              ],
+              [
+                "d",
+                "f",
+                7
+              ]
+            ],
+            "directed": false,
+            "query": "accepted-order"
+          },
+          "goal": "分开记录每次检查和成功并查集合并",
+          "pauseQuestion": "跳过一条较小成环边后，是否仍需继续检查后面的可连通边？"
+        }
+      ]
+    }
+  ]
+}

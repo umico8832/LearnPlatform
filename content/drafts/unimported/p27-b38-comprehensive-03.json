@@ -1,0 +1,2107 @@
+{
+  "schemaVersion": 1,
+  "section": "综合题核心算法改编三：图的模型、计数与时序",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "cp03-01",
+      "topic": "最近一条边贪心的最短路反例",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2009",
+        "questionNumber": "41",
+        "label": "2009 年 408 综合题第 41 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2009/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答给出核心计算过程、条件和证明，不声称完成原题所有评分小问。原题要求自行举反例，本站另构造3点无向反例，未声称是收录解析图中的边权。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "检验综合题算法：每一步只选当前顶点连出的、未进当前路径且边权最小的邻点，直到目标。另给无向图仅有s到a权1、a到t权5、s到t权3。起点s、终点t。对本例哪项正确？",
+      "options": [
+        {
+          "label": "A",
+          "content": "该贪心走s-a-t长6，最短为s-t长3，构成反例"
+        },
+        {
+          "label": "B",
+          "content": "每步选最近邻，所得6必为最短"
+        },
+        {
+          "label": "C",
+          "content": "最短为s-a-t长2"
+        },
+        {
+          "label": "D",
+          "content": "只要边权非负，局部最小边就等于Dijkstra策略"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "局部边权替代源点总距离",
+          "explanation": "从a到t的5虽是唯一可选，但早先走1不保证最终总长小，直接边3更短。"
+        },
+        "C": {
+          "title": "把两条边数当带权长度",
+          "explanation": "路径s-a-t有两条边，权之和却为1+5=6。"
+        },
+        "D": {
+          "title": "混淆两种贪心选择集合",
+          "explanation": "Dijkstra按全体未确定顶点的源点暂定距离选最小者，不只在当前点找最近邻。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "分别记录当前一条边的权和从源累计的路径长。"
+        },
+        {
+          "level": 2,
+          "text": "把算法实际选路完整走到目标，再与其他可行路径比较。"
+        },
+        {
+          "level": 3,
+          "text": "另取三角形，尝试让最便宜的首边后面接很贵的边，检查全程代价。"
+        }
+      ],
+      "solution": "s先选权1到a，再选5到t，累计6；直接s到t仅3，因此局部最近邻算法对非负图也不能保证正确。Dijkstra在s松弛后暂定a为1、t为3；确定a后经a到t候选6不能改善3，最终取3。对这个反例已足以否定一般正确性，无需声称每个输入都失败。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将直接边s到t权3改为7，其他边与算法不变，本例结果如何？",
+        "options": [
+          {
+            "label": "A",
+            "content": "贪心长6且本例也是最短，但算法一般正确性仍未成立"
+          },
+          {
+            "label": "B",
+            "content": "贪心必改走直接边7"
+          },
+          {
+            "label": "C",
+            "content": "最短长度必为7"
+          },
+          {
+            "label": "D",
+            "content": "无法到t"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将直接边权从3改为7。",
+        "explanation": "仍先走1再走5，长6优于直接7；单个成功实例不会推翻原3权输入给出的反例。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp03-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "nearest-neighbor-versus-global-distance",
+            "input": {
+              "vertices": [
+                "s",
+                "a",
+                "t"
+              ],
+              "edges": [
+                [
+                  "s",
+                  "a",
+                  1
+                ],
+                [
+                  "a",
+                  "t",
+                  5
+                ],
+                [
+                  "s",
+                  "t",
+                  7
+                ]
+              ],
+              "directed": false
+            },
+            "goal": "展示完整边集上的累计状态与判定依据",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp03-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "nearest-neighbor-versus-global-distance",
+          "input": {
+            "vertices": [
+              "s",
+              "a",
+              "t"
+            ],
+            "edges": [
+              [
+                "s",
+                "a",
+                1
+              ],
+              [
+                "a",
+                "t",
+                5
+              ],
+              [
+                "s",
+                "t",
+                3
+              ]
+            ],
+            "directed": false
+          },
+          "goal": "展示完整边集上的累计状态与判定依据",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "cp03-02",
+      "topic": "压缩严格上三角还原与关键路径",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2011",
+        "questionNumber": "41",
+        "label": "2011 年 408 综合题第 41 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2011/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答给出核心计算过程、条件和证明，不声称完成原题所有评分小问。作者实际查看压缩数组原SVG，严格行块逐项还原；未采用KaTeX纯文本的按列矩阵顺序。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "6顶点有向AOE网0至5，严格上三角按行压缩，依次为 `4,6,∞,∞,∞ | 5,∞,∞,∞ | 4,3,∞ | ∞,3 | 3`，竖线只划行。对角为0，下三角为∞；∞无弧，其余为持续时间。最短工期与完整关键路径条数为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "16、1"
+        },
+        {
+          "label": "B",
+          "content": "16、2"
+        },
+        {
+          "label": "C",
+          "content": "15、1"
+        },
+        {
+          "label": "D",
+          "content": "17、1"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把非零弧都算关键",
+          "explanation": "0到2直达6短于0到1到2的9；经2到4的分支到终点15，也短于16。"
+        },
+        "C": {
+          "title": "只保留较短的一支",
+          "explanation": "AOE工期须满足全部前驱，0-1-2-3-5长度16，不能按较短源汇路径15完成。"
+        },
+        "D": {
+          "title": "多算压缩数组中的行边界",
+          "explanation": "竖线不是活动，按原7弧最长路径为16，没有额外单位时长。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先按每行5、4、3、2、1个位置恢复弧的两个端点。"
+        },
+        {
+          "level": 2,
+          "text": "事件最早时刻取所有入弧候选的最大值，最迟时刻从汇点反向取最小值。"
+        },
+        {
+          "level": 3,
+          "text": "另用一处分叉后汇合的小网，比较两个分支相等与差1时关键路径条数。"
+        }
+      ],
+      "solution": "还原弧01=4、02=6、12=5、23=4、24=3、35=3、45=3。事件最早0、4、9、13、12、16；最迟0、4、9、13、13、16。关键活动01、12、23、35，唯一完整关键路径0-1-2-3-5，工期16。压缩位置是按严格上三角的行块，而不是矩阵纯文本按列抽取的顺序。作者实际查看原数组SVG核对15项。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将弧2到4的持续时间3改为4，其他不变，最短工期与关键路径条数为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "16、1"
+          },
+          {
+            "label": "B",
+            "content": "16、2"
+          },
+          {
+            "label": "C",
+            "content": "15、1"
+          },
+          {
+            "label": "D",
+            "content": "17、1"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将弧24的时长3改为4。",
+        "explanation": "经2-3-5与2-4-5两支均需7，之前0-1-2需9，工期仍16且有两条完整关键路径。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp03-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "compressed-dag-critical-path",
+            "input": {
+              "vertices": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "edges": [
+                [
+                  0,
+                  1,
+                  4
+                ],
+                [
+                  0,
+                  2,
+                  6
+                ],
+                [
+                  1,
+                  2,
+                  5
+                ],
+                [
+                  2,
+                  3,
+                  4
+                ],
+                [
+                  2,
+                  4,
+                  4
+                ],
+                [
+                  3,
+                  5,
+                  3
+                ],
+                [
+                  4,
+                  5,
+                  3
+                ]
+              ]
+            },
+            "goal": "展示完整边集上的累计状态与判定依据",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp03-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "compressed-dag-critical-path",
+          "input": {
+            "vertices": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "edges": [
+              [
+                0,
+                1,
+                4
+              ],
+              [
+                0,
+                2,
+                6
+              ],
+              [
+                1,
+                2,
+                5
+              ],
+              [
+                2,
+                3,
+                4
+              ],
+              [
+                2,
+                4,
+                3
+              ],
+              [
+                3,
+                5,
+                3
+              ],
+              [
+                4,
+                5,
+                3
+              ]
+            ],
+            "compressed": [
+              4,
+              6,
+              null,
+              null,
+              null,
+              5,
+              null,
+              null,
+              null,
+              4,
+              3,
+              null,
+              null,
+              3,
+              3
+            ]
+          },
+          "goal": "展示完整边集上的累计状态与判定依据",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp03-03",
+      "topic": "链路费用与目的子网接入费用相加",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2014",
+        "questionNumber": "42",
+        "label": "2014 年 408 综合题第 42 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2014/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答给出核心计算过程、条件和证明，不声称完成原题所有评分小问。作者实际查看原LSI表与拓扑SVG；表/图子网前缀不同，透明改为N1..N4，不将某一组IP硬称原始正确值。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "原LSI拓扑文字化：无向路由器链路R1-R2费3、R1-R3费2、R2-R4费4、R3-R4费6，无其他路由器链路。R1至R4各自直连一个子网N1至N4，接入费用都为1。按Dijkstra从R1到达N1、N3、N2、N4的最短费用依次为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1、3、4、8"
+        },
+        {
+          "label": "B",
+          "content": "0、2、3、7"
+        },
+        {
+          "label": "C",
+          "content": "1、3、4、9"
+        },
+        {
+          "label": "D",
+          "content": "1、4、3、8"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "漏目的子网接入链路",
+          "explanation": "0、2、3、7只是到路由器本身的距离，到其直连子网还须各加1。"
+        },
+        "C": {
+          "title": "只看经R3的R4路线",
+          "explanation": "R1-R3-R4到路由器费用8，而经R2只7，N4最短是8。"
+        },
+        "D": {
+          "title": "混淆N2和N3的费用次序",
+          "explanation": "经R3的链路2小于经R2的3，接入后分别3、4。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先把到路由器的距离与进入其直连子网的最后一条边分开。"
+        },
+        {
+          "level": 2,
+          "text": "每次用源点暂定距离最小者扩展，并比较到R4的两条路线。"
+        },
+        {
+          "level": 3,
+          "text": "另给路由器附一条有费用的叶网络，检验目标从路由器换成叶网络后距离如何变化。"
+        }
+      ],
+      "solution": "R1路由器距离0；R3为2、R2为3；R4取经R2的3+4=7，优于经R3的2+6=8。每个目的子网再加1，按N1、N3、N2、N4为1、3、4、8，路由分别直达、经R3、经R2、经R2/R4。原表与原图对子网前缀写法不一致，本改编依LSI链路关系仅用N编号，未替原题断定正确IP前缀。邻接表可按路由器表头保存邻居ID/接口IP/费用及各自直连网络前缀/费用；这里聚焦最短费用，不声称已交付原结构图小问。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将R2-R4费用4改为7，其他条件不变，按N1、N3、N2、N4的最短费用为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1、3、4、8"
+          },
+          {
+            "label": "B",
+            "content": "0、2、3、7"
+          },
+          {
+            "label": "C",
+            "content": "1、3、4、9"
+          },
+          {
+            "label": "D",
+            "content": "1、4、3、8"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅把一条无向链路R2-R4的费用4改为7。",
+        "explanation": "R4改走R1-R3-R4，路由器距离8而非经R2的10，接入N4后9；前三个子网不变。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp03-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "router-and-network-shortest-path",
+            "input": {
+              "routers": [
+                "R1",
+                "R2",
+                "R3",
+                "R4"
+              ],
+              "edges": [
+                [
+                  "R1",
+                  "R2",
+                  3
+                ],
+                [
+                  "R1",
+                  "R3",
+                  2
+                ],
+                [
+                  "R2",
+                  "R4",
+                  7
+                ],
+                [
+                  "R3",
+                  "R4",
+                  6
+                ]
+              ],
+              "networkAccessCost": 1
+            },
+            "goal": "展示完整边集上的累计状态与判定依据",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp03-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "router-and-network-shortest-path",
+          "input": {
+            "routers": [
+              "R1",
+              "R2",
+              "R3",
+              "R4"
+            ],
+            "edges": [
+              [
+                "R1",
+                "R2",
+                3
+              ],
+              [
+                "R1",
+                "R3",
+                2
+              ],
+              [
+                "R2",
+                "R4",
+                4
+              ],
+              [
+                "R3",
+                "R4",
+                6
+              ]
+            ],
+            "networkAccessCost": 1
+          },
+          "goal": "展示完整边集上的累计状态与判定依据",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp03-04",
+      "topic": "邻接矩阵幂计算定长走步数",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2015",
+        "questionNumber": "42",
+        "label": "2015 年 408 综合题第 42 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2015/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整C++17核心实现，不声称完成原题所有评分小问。作者实际查看原SVG逐边转写。原解析“路径”明确限定为可重复的定长走步，不冒充简单路径计数。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "原无向简单图转写：顶点0至4，边01、02、04、13、14、23、34，无其他边。0/1邻接矩阵A。`(A^2)[0][3]` 是多少，计数含义是什么？走步可重复顶点或边，每条边计1步。",
+      "options": [
+        {
+          "label": "A",
+          "content": "3；从0到3恰2步的走步数"
+        },
+        {
+          "label": "B",
+          "content": "2；从0到3的最短距离"
+        },
+        {
+          "label": "C",
+          "content": "3；从0到3任意长度的简单路径总数"
+        },
+        {
+          "label": "D",
+          "content": "0；0与3不直接相邻"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把路径长度与路径条数混淆",
+          "explanation": "距离虽为2，但矩阵项计有多少个中间顶点可完成两步，不是输出距离。"
+        },
+        "C": {
+          "title": "把固定步数扩成任意简单路径",
+          "explanation": "矩阵幂限制恰2步且一般允许重复，不能计全部长度的简单路径。"
+        },
+        "D": {
+          "title": "只检查原邻接矩阵",
+          "explanation": "A的03项为0只说明无直接边，平方还包含经中间点的两步走法。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "矩阵乘法的一项是按所有中间顶点累加两个相邻关系的乘积。"
+        },
+        {
+          "level": 2,
+          "text": "分别列0的邻点和3的邻点，比较共同邻点。"
+        },
+        {
+          "level": 3,
+          "text": "另在一条无向边上走出再走回起点，检验矩阵平方是否会统计重复起点的走步。"
+        }
+      ],
+      "solution": "中间顶点可为1、2、4，对应0-1-3、0-2-3、0-4-3，共3。一般0/1邻接矩阵的m次幂计从i到j恰m步的walk，允许重复；原收录用“路径”一词，本改编明确走步，避免误解为简单路径。乘法每次按中间点连接；以下快速幂`O(n³ log m)`时间、`O(n²)`辅助空间，前置方阵与所有所需中间计数都可由long long表示。m非负，m0返回单位阵。\n\n`C++17`实现：\n```cpp\n#include <vector>\nusing Matrix = std::vector<std::vector<long long>>;\nMatrix multiply(const Matrix& a, const Matrix& b) {\n    std::size_t n = a.size();\n    Matrix c(n,std::vector<long long>(n,0));\n    for (std::size_t i = 0; i < n; ++i)\n        for (std::size_t k = 0; k < n; ++k)\n            for (std::size_t j = 0; j < n; ++j) c[i][j] += a[i][k] * b[k][j];\n    return c;\n}\nMatrix walks(Matrix a, unsigned int m) {\n    Matrix r(a.size(),std::vector<long long>(a.size(),0));\n    for (std::size_t i = 0; i < a.size(); ++i) r[i][i] = 1;\n    while (m != 0) {\n        if (m & 1U) r = multiply(r,a);\n        m >>= 1U;\n        if (m != 0) a = multiply(a,a);\n    }\n    return r;\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅将指数2改为3，图及起终点不变，`(A^3)[0][3]` 为多少？",
+        "options": [
+          {
+            "label": "A",
+            "content": "3"
+          },
+          {
+            "label": "B",
+            "content": "2"
+          },
+          {
+            "label": "C",
+            "content": "0"
+          },
+          {
+            "label": "D",
+            "content": "5"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将要求恰2步改为恰3步。",
+        "explanation": "只有0-1-4-3和0-4-1-3两条3步走法，计数2；不能因步数变长就假设计数必增长。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp03-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "adjacency-matrix-walk-powers",
+            "input": {
+              "vertices": [
+                0,
+                1,
+                2,
+                3,
+                4
+              ],
+              "edges": [
+                [
+                  0,
+                  1
+                ],
+                [
+                  0,
+                  2
+                ],
+                [
+                  0,
+                  4
+                ],
+                [
+                  1,
+                  3
+                ],
+                [
+                  1,
+                  4
+                ],
+                [
+                  2,
+                  3
+                ],
+                [
+                  3,
+                  4
+                ]
+              ],
+              "directed": false,
+              "steps": 3,
+              "source": 0,
+              "target": 3
+            },
+            "goal": "展示完整边集上的累计状态与判定依据",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp03-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "adjacency-matrix-walk-powers",
+          "input": {
+            "vertices": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "edges": [
+              [
+                0,
+                1
+              ],
+              [
+                0,
+                2
+              ],
+              [
+                0,
+                4
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                1,
+                4
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                3,
+                4
+              ]
+            ],
+            "directed": false,
+            "steps": 2,
+            "source": 0,
+            "target": 3
+          },
+          "goal": "展示完整边集上的累计状态与判定依据",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp03-05",
+      "topic": "同权边存在时仍可能唯一的MST",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2017",
+        "questionNumber": "42",
+        "label": "2017 年 408 综合题第 42 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2017/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答给出核心计算过程、条件和证明，不声称完成原题所有评分小问。作者实际查看原图7边/权；原MST唯一结论保留，以割证明修正原解析关于其他边均更大的理由。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "原无向连通图转写：`AB=6`、`AE=5`、`AD=4`、`BC=4`、`CE=5`、`CD=6`、`DE=4`，无其他边。最小生成树总权及唯一性为？相同权值允许存在，不按“边权必须全异”作必要条件。",
+      "options": [
+        {
+          "label": "A",
+          "content": "17，唯一"
+        },
+        {
+          "label": "B",
+          "content": "17，不唯一"
+        },
+        {
+          "label": "C",
+          "content": "19，唯一"
+        },
+        {
+          "label": "D",
+          "content": "16，不唯一"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "见同权便断定有替换",
+          "explanation": "AD/DE/BC的4与AE/CE的5存在重复，但等权边未必能作为不同生成树的同价替换。"
+        },
+        "C": {
+          "title": "把较大跨割边加入树",
+          "explanation": "用6代替连接两组件的5会升总权；可构造AD、DE、CE、BC总17。"
+        },
+        "D": {
+          "title": "没有满足生成树的全部连通要求",
+          "explanation": "4权边只有3条，连成两个分量，还需至少一条5权边，故总权至少17。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先把所有最小权边组成的无环组件列出来。"
+        },
+        {
+          "level": 2,
+          "text": "比较连接这些组件的候选边是否有相同最小权，而非比较图上任意两条边是否相等。"
+        },
+        {
+          "level": 3,
+          "text": "另画有一条重复权的冗余边但它只能在组件内成环的图，检查是否真的产生第二棵MST。"
+        }
+      ],
+      "solution": "三条4权边AD、DE、BC形成组件{A,D,E}和{B,C}，跨组件候选CE5、AB6、CD6，唯一最小为CE5，得到总17。Prim从A依次选AD4、DE4、EC5、CB4，选边权不必单调。三条4权边也分别是适当割上的唯一最小边，均强制；CE连接两组件且唯一便宜，故MST唯一。原解析说其他边都比树边大并不准确：未选AE5与选入CE5同权，但AE在已有组件内部，不是同价跨割替换。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将CD权6降为5，其他不变，MST总权及唯一性为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "17，唯一"
+          },
+          {
+            "label": "B",
+            "content": "17，不唯一"
+          },
+          {
+            "label": "C",
+            "content": "19，唯一"
+          },
+          {
+            "label": "D",
+            "content": "16，不唯一"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅把CD从6改为5。",
+        "explanation": "两个4权组件间CE、CD均为5，任选其一都得到总17，至少两棵不同MST，因此不唯一。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp03-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "mst-cut-exchange-and-uniqueness",
+            "input": {
+              "vertices": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "E"
+              ],
+              "edges": [
+                [
+                  "A",
+                  "B",
+                  6
+                ],
+                [
+                  "A",
+                  "E",
+                  5
+                ],
+                [
+                  "A",
+                  "D",
+                  4
+                ],
+                [
+                  "B",
+                  "C",
+                  4
+                ],
+                [
+                  "C",
+                  "E",
+                  5
+                ],
+                [
+                  "C",
+                  "D",
+                  5
+                ],
+                [
+                  "D",
+                  "E",
+                  4
+                ]
+              ],
+              "directed": false
+            },
+            "goal": "展示完整边集上的累计状态与判定依据",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp03-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "mst-cut-exchange-and-uniqueness",
+          "input": {
+            "vertices": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E"
+            ],
+            "edges": [
+              [
+                "A",
+                "B",
+                6
+              ],
+              [
+                "A",
+                "E",
+                5
+              ],
+              [
+                "A",
+                "D",
+                4
+              ],
+              [
+                "B",
+                "C",
+                4
+              ],
+              [
+                "C",
+                "E",
+                5
+              ],
+              [
+                "C",
+                "D",
+                6
+              ],
+              [
+                "D",
+                "E",
+                4
+              ]
+            ],
+            "directed": false
+          },
+          "goal": "展示完整边集上的累计状态与判定依据",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp03-06",
+      "topic": "不同MST的费用与主机间转发跳数",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2018",
+        "questionNumber": "42",
+        "label": "2018 年 408 综合题第 42 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2018/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答给出核心计算过程、条件和证明，不声称完成原题所有评分小问。作者实际查看原12边/权，保留两MST与TTL5问题，显式化每个转发路由器减1的模型。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "原8城市无向图的全部边为XA-BJ2、BJ-TL3、XA-WH2、WH-CS4、CS-QD3、QD-NJ2、TL-JN2、JN-NJ3、QD-JN2、WH-BJ3、WH-QD3、BJ-JN4。最经济方案有两种：共同选全部5条权2边及CS-QD3，再选BJ-TL3或WH-QD3，总费用均16。H1接TL，H2接BJ。IP初始`TTL=5`，每个转发路由器含TL/BJ均减1，减至0丢弃，主机不扣。哪种方案可让H2收到？",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅选BJ-TL作桥的方案"
+        },
+        {
+          "label": "B",
+          "content": "仅选WH-QD作桥的方案"
+        },
+        {
+          "label": "C",
+          "content": "两种都可以"
+        },
+        {
+          "label": "D",
+          "content": "两种都不可以"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把铺设费用相同当路由跳数相同",
+          "explanation": "WH-QD桥方案从TL到BJ要经TL/JN/QD/WH/XA/BJ六个转发路由器，TTL5到不了目标主机。"
+        },
+        "C": {
+          "title": "未核对较长树路由的转发次数",
+          "explanation": "两MST总费用相同，但一个只需TL/BJ两次转发，另一个需六次。"
+        },
+        "D": {
+          "title": "把TTL计为只能一次转发",
+          "explanation": "BJ-TL直接桥只经两个路由器，初始5扣两次后仍正，可到H2。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先在各生成树中找TL到BJ的唯一树路径，别按原图额外连边路由。"
+        },
+        {
+          "level": 2,
+          "text": "按题给规则数实际转发路由器数，注意接入端和目的端是否都参与。"
+        },
+        {
+          "level": 3,
+          "text": "另用源主机—路由器—目的主机的一跳接入图，测试TTL为1时在哪一步丢弃。"
+        }
+      ],
+      "solution": "5条2权边先构成{XA,BJ,WH}、{TL,JN,QD,NJ}和{CS}。CS最便宜用QD边3接入；前两组件最低跨边为BJ-TL3或WH-QD3，故恰两棵MST且总16。前方案路径TL-BJ，只需两次路由转发，TTL5足够；后方案TL-JN-QD-WH-XA-BJ需六次，初始5在到主机前已耗尽。这里把TTL减法模型写明，费用权不是TTL扣减量，不能按16或权和判断。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将初始TTL从5改为7，其他边、两最经济方案及每路由器扣减规则不变，哪项成立？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仅选BJ-TL作桥的方案"
+          },
+          {
+            "label": "B",
+            "content": "仅选WH-QD作桥的方案"
+          },
+          {
+            "label": "C",
+            "content": "两种都可以"
+          },
+          {
+            "label": "D",
+            "content": "两种都不可以"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将初始TTL5改为7。",
+        "explanation": "较长路由经过六个转发路由器后还剩1，短路由更有余量，两方案均可到H2。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp03-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "mst-alternatives-and-ttl-path",
+            "input": {
+              "vertices": [
+                "XA",
+                "BJ",
+                "TL",
+                "WH",
+                "CS",
+                "QD",
+                "JN",
+                "NJ"
+              ],
+              "edges": [
+                [
+                  "XA",
+                  "BJ",
+                  2
+                ],
+                [
+                  "BJ",
+                  "TL",
+                  3
+                ],
+                [
+                  "XA",
+                  "WH",
+                  2
+                ],
+                [
+                  "WH",
+                  "CS",
+                  4
+                ],
+                [
+                  "CS",
+                  "QD",
+                  3
+                ],
+                [
+                  "QD",
+                  "NJ",
+                  2
+                ],
+                [
+                  "TL",
+                  "JN",
+                  2
+                ],
+                [
+                  "JN",
+                  "NJ",
+                  3
+                ],
+                [
+                  "QD",
+                  "JN",
+                  2
+                ],
+                [
+                  "WH",
+                  "BJ",
+                  3
+                ],
+                [
+                  "WH",
+                  "QD",
+                  3
+                ],
+                [
+                  "BJ",
+                  "JN",
+                  4
+                ]
+              ],
+              "sourceRouter": "TL",
+              "targetRouter": "BJ",
+              "ttl": 7,
+              "decrementAtBothAccessRouters": true
+            },
+            "goal": "展示完整边集上的累计状态与判定依据",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp03-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "mst-alternatives-and-ttl-path",
+          "input": {
+            "vertices": [
+              "XA",
+              "BJ",
+              "TL",
+              "WH",
+              "CS",
+              "QD",
+              "JN",
+              "NJ"
+            ],
+            "edges": [
+              [
+                "XA",
+                "BJ",
+                2
+              ],
+              [
+                "BJ",
+                "TL",
+                3
+              ],
+              [
+                "XA",
+                "WH",
+                2
+              ],
+              [
+                "WH",
+                "CS",
+                4
+              ],
+              [
+                "CS",
+                "QD",
+                3
+              ],
+              [
+                "QD",
+                "NJ",
+                2
+              ],
+              [
+                "TL",
+                "JN",
+                2
+              ],
+              [
+                "JN",
+                "NJ",
+                3
+              ],
+              [
+                "QD",
+                "JN",
+                2
+              ],
+              [
+                "WH",
+                "BJ",
+                3
+              ],
+              [
+                "WH",
+                "QD",
+                3
+              ],
+              [
+                "BJ",
+                "JN",
+                4
+              ]
+            ],
+            "sourceRouter": "TL",
+            "targetRouter": "BJ",
+            "ttl": 5,
+            "decrementAtBothAccessRouters": true
+          },
+          "goal": "展示完整边集上的累计状态与判定依据",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp03-07",
+      "topic": "连通无向图的奇度数与欧拉迹",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2021",
+        "questionNumber": "41",
+        "label": "2021 年 408 综合题第 41 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2021/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整C++17核心实现，不声称完成原题所有评分小问。原题为任意连通图，本题另给4点实例；修复原收录内循环用numEdges代列数错误，不把连通前提省成无条件判据。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "无向简单连通图顶点A至D，边AB、BC、CD、DA、AC，边数大于0。EL迹恰经过每条边一次，允许重复顶点；“开”指起终点不同。以下哪项正确？",
+      "options": [
+        {
+          "label": "A",
+          "content": "存在开EL迹，且不存在闭EL回路"
+        },
+        {
+          "label": "B",
+          "content": "存在闭EL回路"
+        },
+        {
+          "label": "C",
+          "content": "没有任何EL迹"
+        },
+        {
+          "label": "D",
+          "content": "有顶点度大于2，所以无法一次用完每条边"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "漏数对角边造成的奇度点",
+          "explanation": "A、C因额外边AC均为3度，共2个奇度点，不能闭合。"
+        },
+        "C": {
+          "title": "把允许重复顶点误限成简单路径",
+          "explanation": "A、C是两个端点，其他点偶度，连通图存在开EL迹。"
+        },
+        "D": {
+          "title": "度大于2误当阻碍欧拉性",
+          "explanation": "欧拉条件是奇度顶点数0或2，非要求每点度至多2。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先按每条无向边对两个端点各贡献1计度。"
+        },
+        {
+          "level": 2,
+          "text": "把端点未配对的进出次数与奇度联系起来，区分开迹和回路。"
+        },
+        {
+          "level": 3,
+          "text": "另用一个三角形再加一条悬挂边，观察奇度点个数如何改变。"
+        }
+      ],
+      "solution": "A、B、C、D度依次3、2、3、2，奇度点恰A、C两个，存在从一到另一的开EL迹，无闭回路。原题保证连通且非空边，因此无需在判定中额外搜索连通性；下面遍历矩阵的n列，不能将边数E误作列上界。扫描`Θ(n²)`、辅助`O(1)`，矩阵按const引用传递不复制。返回0无EL、1开EL、2闭EL；原bool需求可判断返回值是否非0。前置为对称0/1无自环的有效矩阵、连通且E>0。\n\n`C++17`实现：\n```cpp\n#include <vector>\nint eulerType(const std::vector<std::vector<int>>& a) {\n    int odd = 0;\n    for (std::size_t v = 0; v < a.size(); ++v) {\n        int degree = 0;\n        for (std::size_t u = 0; u < a.size(); ++u) degree += a[v][u];\n        if (degree % 2 != 0) ++odd;\n    }\n    if (odd == 0) return 2;\n    if (odd == 2) return 1;\n    return 0;\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅删除对角边AC，其他不变，此时哪项正确？",
+        "options": [
+          {
+            "label": "A",
+            "content": "存在开EL迹，且不存在闭EL回路"
+          },
+          {
+            "label": "B",
+            "content": "存在闭EL回路"
+          },
+          {
+            "label": "C",
+            "content": "没有任何EL迹"
+          },
+          {
+            "label": "D",
+            "content": "有顶点度大于2，所以无法一次用完每条边"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅删边AC。",
+        "explanation": "四个点度都为2，仍连通且有边，存在闭EL回路；由偶度无法得到起终不同的全边迹。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp03-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "matrix-degree-euler-classification",
+            "input": {
+              "vertices": [
+                "A",
+                "B",
+                "C",
+                "D"
+              ],
+              "edges": [
+                [
+                  "A",
+                  "B"
+                ],
+                [
+                  "B",
+                  "C"
+                ],
+                [
+                  "C",
+                  "D"
+                ],
+                [
+                  "D",
+                  "A"
+                ]
+              ],
+              "directed": false
+            },
+            "goal": "展示完整边集上的累计状态与判定依据",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp03-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "matrix-degree-euler-classification",
+          "input": {
+            "vertices": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "edges": [
+              [
+                "A",
+                "B"
+              ],
+              [
+                "B",
+                "C"
+              ],
+              [
+                "C",
+                "D"
+              ],
+              [
+                "D",
+                "A"
+              ],
+              [
+                "A",
+                "C"
+              ]
+            ],
+            "directed": false
+          },
+          "goal": "展示完整边集上的累计状态与判定依据",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "cp03-08",
+      "topic": "邻接矩阵的行出度列入度",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2023",
+        "questionNumber": "41",
+        "label": "2023 年 408 综合题第 41 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2023/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整C++17核心实现，不声称完成原题所有评分小问。本站另给明确边集，不冒充原示例图逐边转写；实现返回下标列表，调用者可输出并返回个数。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "依综合题定义，K顶点为出度严格大于入度的顶点。另给非空有向图a至d，弧a到b、a到c、b到c、b到d、c到a、d到c，无其他弧。所有K顶点为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "a、b"
+        },
+        {
+          "label": "B",
+          "content": "a、c"
+        },
+        {
+          "label": "C",
+          "content": "b、d"
+        },
+        {
+          "label": "D",
+          "content": "c、d"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把入度大的c当出度优势",
+          "explanation": "c出1入3，非K；a出2入1是K。"
+        },
+        "C": {
+          "title": "将相等也纳入严格大于",
+          "explanation": "d出1入1，差0不算；b出2入1才算。"
+        },
+        "D": {
+          "title": "把差的方向取反",
+          "explanation": "c为入度较大，d相等，两者都不满足出度严格大于入度。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "每条弧给起点出度加1，给终点入度加1。"
+        },
+        {
+          "level": 2,
+          "text": "矩阵行与列对应哪个端点，先按一个单弧例子固定方向。"
+        },
+        {
+          "level": 3,
+          "text": "另给两个点互相各一弧，检查相等时能否被计为严格优势。"
+        }
+      ],
+      "solution": "a出2入1，b出2入1，c出1入3，d出1入1，故a、b为K。矩阵每个顶点读一行计出度、一列计入度；总`Θ(n²)`。代码返回顶点下标列表，调用者可据标签输出且列表长度就是数量；除返回结果外`O(1)`辅助，结果本身`O(K)`。源代码对字符用字符串格式的打印片段不复制。对0/1自环，其出入各加1，差值不受影响。\n\n`C++17`实现：\n```cpp\n#include <vector>\nstd::vector<std::size_t> kVertices(const std::vector<std::vector<int>>& a) {\n    std::vector<std::size_t> result;\n    for (std::size_t v = 0; v < a.size(); ++v) {\n        int out = 0, in = 0;\n        for (std::size_t u = 0; u < a.size(); ++u) {\n            out += a[v][u];\n            in += a[u][v];\n        }\n        if (out > in) result.push_back(v);\n    }\n    return result;\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅增加弧c到b，其他不变，此时K顶点为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "a、b"
+          },
+          {
+            "label": "B",
+            "content": "仅a"
+          },
+          {
+            "label": "C",
+            "content": "仅b"
+          },
+          {
+            "label": "D",
+            "content": "无"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅新增c到b这一弧。",
+        "explanation": "c出度由1变2仍小于入3，b入度由1变2与出2相等；只有a仍出2入1。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp03-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "matrix-in-out-degree-comparison",
+            "input": {
+              "vertices": [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "edges": [
+                [
+                  "a",
+                  "b"
+                ],
+                [
+                  "a",
+                  "c"
+                ],
+                [
+                  "b",
+                  "c"
+                ],
+                [
+                  "b",
+                  "d"
+                ],
+                [
+                  "c",
+                  "a"
+                ],
+                [
+                  "d",
+                  "c"
+                ],
+                [
+                  "c",
+                  "b"
+                ]
+              ],
+              "directed": true
+            },
+            "goal": "展示完整边集上的累计状态与判定依据",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp03-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "matrix-in-out-degree-comparison",
+          "input": {
+            "vertices": [
+              "a",
+              "b",
+              "c",
+              "d"
+            ],
+            "edges": [
+              [
+                "a",
+                "b"
+              ],
+              [
+                "a",
+                "c"
+              ],
+              [
+                "b",
+                "c"
+              ],
+              [
+                "b",
+                "d"
+              ],
+              [
+                "c",
+                "a"
+              ],
+              [
+                "d",
+                "c"
+              ]
+            ],
+            "directed": true
+          },
+          "goal": "展示完整边集上的累计状态与判定依据",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "cp03-09",
+      "topic": "唯一拓扑序必须每轮恰一候选",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2024",
+        "questionNumber": "41",
+        "label": "2024 年 408 综合题第 41 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2024/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整C++17核心实现，不声称完成原题所有评分小问。原任意图判定题另给5点实例；说明按顶点数而非原解析文字numEdges进行删除轮次。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有向图A至E，弧A到B、A到C、B到D、C到D、D到E，无其他弧。完整拓扑序有几条，是否唯一？",
+      "options": [
+        {
+          "label": "A",
+          "content": "2条，不唯一"
+        },
+        {
+          "label": "B",
+          "content": "1条，唯一"
+        },
+        {
+          "label": "C",
+          "content": "0条，因为有环"
+        },
+        {
+          "label": "D",
+          "content": "3条，不唯一"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "只看最开始唯一零入度",
+          "explanation": "初始虽只A，但删除A后B、C同时可选，产生两个完整顺序。"
+        },
+        "C": {
+          "title": "把汇合误作回路",
+          "explanation": "弧均从A经B/C到D再E，没有返回前面顶点的环。"
+        },
+        "D": {
+          "title": "把选择点数量重复累加",
+          "explanation": "仅B、C的顺序可互换，之后D、E都被强制，共2条。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "每删除一个点后，都重新看尚未删除点的零入度集合。"
+        },
+        {
+          "level": 2,
+          "text": "唯一性要逐轮成立，若集合空或多于一个，各对应什么情况？"
+        },
+        {
+          "level": 3,
+          "text": "另画有孤立点和有向环的两张小图，检查算法是否会把它们都错误判为唯一。"
+        }
+      ],
+      "solution": "A先，B/C任意先后，D再E，只有ABCDE和ACBDE两条。判唯一可做n轮，每轮必须恰一个未删零入度点；多个表明存在不同前缀，若图还有环仍应返回非唯一存在；零个表示余下有环。实现计算入度、选择、更新均用顶点数n作范围，源文字“numEdges轮”不复制。矩阵`Θ(n²)`时间、`O(n)`辅助；原矩阵不变。前置非空0/1方阵，允许有向环输入且返回false。\n\n`C++17`实现：\n```cpp\n#include <vector>\nbool uniquelyTopological(const std::vector<std::vector<int>>& a) {\n    std::size_t n = a.size();\n    std::vector<int> in(n,0);\n    for (std::size_t v = 0; v < n; ++v)\n        for (std::size_t u = 0; u < n; ++u) in[v] += a[u][v];\n    for (std::size_t step = 0; step < n; ++step) {\n        int chosen = -1;\n        for (std::size_t v = 0; v < n; ++v) {\n            if (in[v] != 0) continue;\n            if (chosen != -1) return false;\n            chosen = static_cast<int>(v);\n        }\n        if (chosen == -1) return false;\n        in[chosen] = -1;\n        for (std::size_t v = 0; v < n; ++v) in[v] -= a[chosen][v];\n    }\n    return true;\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅增加弧B到C，其他不变，完整拓扑序及唯一性为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "2条，不唯一"
+          },
+          {
+            "label": "B",
+            "content": "1条，唯一"
+          },
+          {
+            "label": "C",
+            "content": "0条，因为有环"
+          },
+          {
+            "label": "D",
+            "content": "3条，不唯一"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅新增B到C。",
+        "explanation": "所有顶点沿A-B-C-D-E形成强制链，唯一拓扑序ABCDE。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp03-09v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "unique-topological-zero-indegree",
+            "input": {
+              "vertices": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "E"
+              ],
+              "edges": [
+                [
+                  "A",
+                  "B"
+                ],
+                [
+                  "A",
+                  "C"
+                ],
+                [
+                  "B",
+                  "D"
+                ],
+                [
+                  "C",
+                  "D"
+                ],
+                [
+                  "D",
+                  "E"
+                ],
+                [
+                  "B",
+                  "C"
+                ]
+              ],
+              "directed": true
+            },
+            "goal": "展示完整边集上的累计状态与判定依据",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp03-09-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "unique-topological-zero-indegree",
+          "input": {
+            "vertices": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E"
+            ],
+            "edges": [
+              [
+                "A",
+                "B"
+              ],
+              [
+                "A",
+                "C"
+              ],
+              [
+                "B",
+                "D"
+              ],
+              [
+                "C",
+                "D"
+              ],
+              [
+                "D",
+                "E"
+              ]
+            ],
+            "directed": true
+          },
+          "goal": "展示完整边集上的累计状态与判定依据",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "cp03-10",
+      "topic": "AOE指定延迟开始后的工期约束",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2025",
+        "questionNumber": "42",
+        "label": "2025 年 408 综合题第 42 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2025/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答给出核心计算过程、条件和证明，不声称完成原题所有评分小问。作者实际查看12活动原图逐方向/权转写，解答同时核对事件、关键链、余量及延迟约束；未更改其他活动持续时间。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "原AOE网顶点1至7，源1汇5。全部活动名、端点、时长为a:1到3=2，b:1到2=5，d:1到4=3，e:3到4=3，c:3到6=1，f:4到2=4，g:4到6=1，j:4到5=1，m:4到7=4，h:6到7=1，k:2到5=2，n:7到5=3。工程从0启动，原最短工期12。现在b被指定在时刻6开始，其他时长不变；为保持工期12，b持续时间最多为？允许将b压缩到非负时长。",
+      "options": [
+        {
+          "label": "A",
+          "content": "4"
+        },
+        {
+          "label": "B",
+          "content": "5"
+        },
+        {
+          "label": "C",
+          "content": "6"
+        },
+        {
+          "label": "D",
+          "content": "3"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "只看b能在12之前结束",
+          "explanation": "b之后还必须执行k的2单位，b最晚10结束，不是12结束。"
+        },
+        "C": {
+          "title": "把指定开始时刻当可用持续时长",
+          "explanation": "时刻6是开始边界，剩余窗口还要减去后继活动的必要时长。"
+        },
+        "D": {
+          "title": "额外扣去无关的一条边",
+          "explanation": "约束是6加b加k2不超过12，可到4，并非还需再扣1得到3。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先找所有含b的源汇路径，记住结束b不等于完成工程。"
+        },
+        {
+          "level": 2,
+          "text": "把指定开始时刻、可变持续时长、不可变后续时长写成不超过工期的不等式。"
+        },
+        {
+          "level": 3,
+          "text": "另取一条两活动串联路径，固定第一活动开始时刻，用总截止时刻反推它的最长持续时间。"
+        }
+      ],
+      "solution": "未施加b延迟时，按顶点1至7事件最早0、9、2、5、12、6、9，最迟0、10、2、5、12、8、9；关键链a/e/m/n为12。活动j的总时差12-5-1=6最大；基线e在[2,5)执行时，可与之正长度重叠的活动为b、d、c。指定b开始6后，事件2还需等待f最早9完成及b完成，事件2最早为`max(9,6+b)`。经k须在12结束，故6+b+2≤12，得b≤4，取4可达。若保持b长5，则把k从2压到1也可守住12，其他关键链仍12。上述重叠判断指延迟条件加入之前且只指正长度重叠，端点相触不计同时执行。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将b被指定的开始时刻6改为7，其他持续时间仍保持原值且只允许压缩b，为保持工期12，b最多持续多久？",
+        "options": [
+          {
+            "label": "A",
+            "content": "4"
+          },
+          {
+            "label": "B",
+            "content": "5"
+          },
+          {
+            "label": "C",
+            "content": "6"
+          },
+          {
+            "label": "D",
+            "content": "3"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "仅将b的外加开始约束时刻6改为7。",
+        "explanation": "需要7+b+2≤12，故最多3；此时b结束10仍不早于f最早完成9，工程可按12结束。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp03-10v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "aoe-fixed-start-deadline-window",
+            "input": {
+              "vertices": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+              ],
+              "activities": [
+                [
+                  "a",
+                  1,
+                  3,
+                  2
+                ],
+                [
+                  "b",
+                  1,
+                  2,
+                  5
+                ],
+                [
+                  "d",
+                  1,
+                  4,
+                  3
+                ],
+                [
+                  "e",
+                  3,
+                  4,
+                  3
+                ],
+                [
+                  "c",
+                  3,
+                  6,
+                  1
+                ],
+                [
+                  "f",
+                  4,
+                  2,
+                  4
+                ],
+                [
+                  "g",
+                  4,
+                  6,
+                  1
+                ],
+                [
+                  "j",
+                  4,
+                  5,
+                  1
+                ],
+                [
+                  "m",
+                  4,
+                  7,
+                  4
+                ],
+                [
+                  "h",
+                  6,
+                  7,
+                  1
+                ],
+                [
+                  "k",
+                  2,
+                  5,
+                  2
+                ],
+                [
+                  "n",
+                  7,
+                  5,
+                  3
+                ]
+              ],
+              "source": 1,
+              "sink": 5,
+              "forcedStart": {
+                "b": 7
+              },
+              "deadline": 12
+            },
+            "goal": "展示完整边集上的累计状态与判定依据",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp03-10-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "aoe-fixed-start-deadline-window",
+          "input": {
+            "vertices": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "activities": [
+              [
+                "a",
+                1,
+                3,
+                2
+              ],
+              [
+                "b",
+                1,
+                2,
+                5
+              ],
+              [
+                "d",
+                1,
+                4,
+                3
+              ],
+              [
+                "e",
+                3,
+                4,
+                3
+              ],
+              [
+                "c",
+                3,
+                6,
+                1
+              ],
+              [
+                "f",
+                4,
+                2,
+                4
+              ],
+              [
+                "g",
+                4,
+                6,
+                1
+              ],
+              [
+                "j",
+                4,
+                5,
+                1
+              ],
+              [
+                "m",
+                4,
+                7,
+                4
+              ],
+              [
+                "h",
+                6,
+                7,
+                1
+              ],
+              [
+                "k",
+                2,
+                5,
+                2
+              ],
+              [
+                "n",
+                7,
+                5,
+                3
+              ]
+            ],
+            "source": 1,
+            "sink": 5,
+            "forcedStart": {
+              "b": 6
+            },
+            "deadline": 12
+          },
+          "goal": "展示完整边集上的累计状态与判定依据",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    }
+  ]
+}

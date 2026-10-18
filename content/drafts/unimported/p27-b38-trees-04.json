@@ -1,0 +1,1314 @@
+{
+  "schemaVersion": 1,
+  "section": "树真题四：结构重建、存储量词与森林最小高度",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "tt04-01",
+      "topic": "树形加后序确定同层结点",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2017",
+        "questionNumber": "5",
+        "label": "2017 年 408 真题 第 5 题（原图形状路径转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2017/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站后台实际查看原SVG，逐边转写无键形状；标签只由原后序填入，原选项与答案不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "原无键树形用左右路径转写：实结点在 `根,L,R,LR,RL,LRL,RLR`；路径从根按L左/R右走，未列位置为空。互异标签的后序为 `e,a,c,b,d,g,f`，根为第1层。与标签a同层的标签是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "c"
+        },
+        {
+          "label": "B",
+          "content": "d"
+        },
+        {
+          "label": "C",
+          "content": "f"
+        },
+        {
+          "label": "D",
+          "content": "g"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把相邻后序项误当相同层",
+          "explanation": "c是a的父结点，后序紧接在孩子子树之后不意味着两者同层。"
+        },
+        "C": {
+          "title": "把后序末项当作某个分支层",
+          "explanation": "f为整体根，第1层；a位于更深位置，不能因末项参与所有子树就判同层。"
+        },
+        "D": {
+          "title": "只看左右对称大支而漏单边层数",
+          "explanation": "g在根右孩子位置，与左孩子c同为第2层；a在c下方，应与右侧更深的d比。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先固定无键结构每个位置的层数，再按后序把标签逐一填入。"
+        },
+        {
+          "level": 2,
+          "text": "后序最后一个标签给当前子树根，左、右子树各占多少项由已知形状决定。"
+        },
+        {
+          "level": 3,
+          "text": "另取两棵含单孩子链的小子树，先给位置编号和层数，再填一个遍历标签，避免按输出相邻关系推层次。"
+        }
+      ],
+      "solution": "填入后根f，第2层c、g，第3层a、d，第4层e、b，因此与a同层的是d。层数由结构决定，后序只给各位置的标签。",
+      "viz": null,
+      "variant": {
+        "stem": "其他条件不变，仅把查询标签从a改为e，与e同层的是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "a"
+          },
+          {
+            "label": "B",
+            "content": "b"
+          },
+          {
+            "label": "C",
+            "content": "d"
+          },
+          {
+            "label": "D",
+            "content": "g"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅更换所问结点。",
+        "explanation": "e在左支最深第4层，右支最深的b也在第4层，故为b。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt04-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "binary-shape-postorder-depths",
+            "input": {
+              "paths": [
+                "",
+                "L",
+                "R",
+                "LR",
+                "RL",
+                "LRL",
+                "RLR"
+              ],
+              "postorder": [
+                "e",
+                "a",
+                "c",
+                "b",
+                "d",
+                "g",
+                "f"
+              ],
+              "querySameLevelAs": "e",
+              "rootLevel": 1
+            },
+            "goal": "先给位置标层再把后序标签填到位置",
+            "pauseQuestion": "后序两个输出紧邻，是否能推出它们也在同一层？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt04-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "binary-shape-postorder-depths",
+          "input": {
+            "paths": [
+              "",
+              "L",
+              "R",
+              "LR",
+              "RL",
+              "LRL",
+              "RLR"
+            ],
+            "postorder": [
+              "e",
+              "a",
+              "c",
+              "b",
+              "d",
+              "g",
+              "f"
+            ],
+            "querySameLevelAs": "a",
+            "rootLevel": 1
+          },
+          "goal": "先给位置标层再把后序标签填到位置",
+          "pauseQuestion": "后序两个输出紧邻，是否能推出它们也在同一层？"
+        }
+      ]
+    },
+    {
+      "id": "tt04-02",
+      "topic": "双孩子计数不依赖完全形状",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2018",
+        "questionNumber": "4",
+        "label": "2018 年 408 真题 第 4 题（核对原KaTeX幂与乘法）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2018/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站直接核对HTML中C为k平方、D为2的k次方减1，避免纯文本抽取丢失上标；保留四公式与正确项"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "非空完全二叉树所有叶在同一层，且每个非叶恰有两个孩子，叶数为k。以下哪个总结点数公式对所有合法k都成立？乘法和幂按数学解释。",
+      "options": [
+        {
+          "label": "A",
+          "content": "`2*k-1`"
+        },
+        {
+          "label": "B",
+          "content": "`2*k`"
+        },
+        {
+          "label": "C",
+          "content": "`k²`"
+        },
+        {
+          "label": "D",
+          "content": "`2^k-1`"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "漏掉叶比双孩子非叶多1的差额",
+          "explanation": "若叶为k，非叶为k减1，总数2k减1；直接2k把差额遗漏。"
+        },
+        "C": {
+          "title": "把每层乘2的规模关系误作叶数平方",
+          "explanation": "总结点与叶数在双孩子树中线性关联，k平方不是对所有合法叶数适用的恒等式。"
+        },
+        "D": {
+          "title": "把叶数当树高放进幂指数",
+          "explanation": "2的高度次方减1是按高度表示的形式，不能直接把叶数k放到同一个指数位置。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "同时按非叶孩子数与总结点数减一统计边。"
+        },
+        {
+          "level": 2,
+          "text": "先求叶与非叶数量的差，再把两者相加，而不是直接代入高度幂。"
+        },
+        {
+          "level": 3,
+          "text": "另画两叶与四叶的树，分别列叶、非叶、边和总结点，观察哪项关系在展开叶时保持。"
+        }
+      ],
+      "solution": "设非叶i，每个贡献2条边，边数又为i加k减1，故i为k减1，总数i加k为2k减1。按高度也可推得，但直接边计数更清楚。",
+      "viz": null,
+      "variant": {
+        "stem": "仅取消完全树与叶同层条件，保留非空且每个非叶恰有两个孩子。总结点仍为2k减1吗？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仍成立，边数等式未改变"
+          },
+          {
+            "label": "B",
+            "content": "不成立，必须全部叶同层"
+          },
+          {
+            "label": "C",
+            "content": "不成立，必须完全二叉树"
+          },
+          {
+            "label": "D",
+            "content": "不成立，根的高度必须已知"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅移除完全与叶同层的形状限制，保留双孩子分支条件。",
+        "explanation": "只要非叶都恰有两孩，边数计数仍给非叶比叶少1，完全和叶同层都不是这个数量公式的必要条件，所以仍成立。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt04-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "full-binary-leaf-node-invariant",
+            "input": {
+              "leafCount": 8,
+              "everyInternalDegree": 2,
+              "completeRequired": false,
+              "leavesSameLevelRequired": false
+            },
+            "goal": "从边数推叶与非叶之差",
+            "pauseQuestion": "完全和双孩子这两个条件，哪一个才参与当前边数等式？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt04-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "full-binary-leaf-node-invariant",
+          "input": {
+            "leafCount": 8,
+            "everyInternalDegree": 2,
+            "complete": true,
+            "leavesSameLevel": true
+          },
+          "goal": "从边数推叶与非叶之差",
+          "pauseQuestion": "完全和双孩子这两个条件，哪一个才参与当前边数等式？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "tt04-03",
+      "topic": "顺序存储的保证容量与单树最省",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2020",
+        "questionNumber": "3",
+        "label": "2020 年 408 真题 第 3 题（明确统一容量保证任意树）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2020/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站将原任意一棵的空间问法明确为同一预分配容量覆盖所有合法形状，按原意答案31；变式单独问存在形状的最小16，避免量词混淆"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "二叉树有10个结点且高度5（根第1层）。用0基数组，根0，孩子下标 `2*i+1`、`2*i+2`，每结点数据占一格，空洞也占数组地址范围，不能压缩或改映射。预分配同一数组容量，要保证任意满足这些条件的树都能放下，至少多少格？",
+      "options": [
+        {
+          "label": "A",
+          "content": "31"
+        },
+        {
+          "label": "B",
+          "content": "16"
+        },
+        {
+          "label": "C",
+          "content": "15"
+        },
+        {
+          "label": "D",
+          "content": "10"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把存在一种较省形状当保证所有形状",
+          "explanation": "16格可容纳某些高度5、10结点的树，但最深结点若在全右路径会落到下标30，需要31格。"
+        },
+        "C": {
+          "title": "把最深左侧下标当数组长度",
+          "explanation": "第5层最左位置下标15，光覆盖它就至少16格；15格更不足，更不能保证最右可能位置。"
+        },
+        "D": {
+          "title": "把实结点数当堆式映射连续数组长度",
+          "explanation": "任意二叉树可能有空洞，数据只有10份也不意味着下标只占0至9；该表示必须覆盖最大所用下标。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先找给定高度下可能出现的最大层序下标，再问该极端能否与10结点同时实现。"
+        },
+        {
+          "level": 2,
+          "text": "数组长度覆盖末下标时要加一，且未使用的中间位置不能自动跳过。"
+        },
+        {
+          "level": 3,
+          "text": "另取一条全部右孩子的短链，用指定公式写下标，比较它的结点个数与所需数组长度是否相同。"
+        }
+      ],
+      "solution": "第5层最右下标30，可用根的全右链加其他合法结点凑足10点实现，故保证所有树必须覆盖0至30共31格。高度5又不会使用更大下标，31也足够；这不是说每一棵都实际需要31格。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把保证任意树改为“存在某棵同样10结点、高度5的树，其所需数组长度最少”，四个数值选项不变，最少多少？",
+        "options": [
+          {
+            "label": "A",
+            "content": "31"
+          },
+          {
+            "label": "B",
+            "content": "16"
+          },
+          {
+            "label": "C",
+            "content": "15"
+          },
+          {
+            "label": "D",
+            "content": "10"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅把对所有树的保证容量改为对某个合法形状的最小容量。",
+        "explanation": "高度5至少要用到第5层某位置，最左下标15给长度下界16。可取实下标0、1、2、3、4、5、6、7、8、15共10点，父位置均存在且高度5，长度16可达。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt04-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "binary-array-index-capacity-quantifiers",
+            "input": {
+              "nodeCount": 10,
+              "height": 5,
+              "rootIndex": 0,
+              "childFormulas": [
+                "2*i+1",
+                "2*i+2"
+              ],
+              "objective": "min-over-realizable-shapes"
+            },
+            "goal": "枚举极端合法形状并区分全称与存在量词",
+            "pauseQuestion": "节点数据份数相同，是否说明它们在固定下标映射下占据相同地址范围？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt04-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "binary-array-index-capacity-quantifiers",
+          "input": {
+            "nodeCount": 10,
+            "height": 5,
+            "rootIndex": 0,
+            "childFormulas": [
+              "2*i+1",
+              "2*i+2"
+            ],
+            "objective": "capacity-guarantees-all-shapes"
+          },
+          "goal": "枚举极端合法形状并区分全称与存在量词",
+          "pauseQuestion": "节点数据份数相同，是否说明它们在固定下标映射下占据相同地址范围？"
+        }
+      ]
+    },
+    {
+      "id": "tt04-04",
+      "topic": "森林两序对应二叉重建",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2020",
+        "questionNumber": "4",
+        "label": "2020 年 408 真题 第 4 题（明确森林中根定义与二叉映射）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2020/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有序森林F转为左孩子右兄弟二叉树T。森林先根对应T先序；这里森林中根定义为先完成首树根的子树森林、再访根、再处理余树森林，对应T中序。F先根为 `a,b,c,d,e,f`，中根为 `b,a,d,f,e,c`，T后序为？标识互异。",
+      "options": [
+        {
+          "label": "A",
+          "content": "b,a,d,f,e,c"
+        },
+        {
+          "label": "B",
+          "content": "b,d,f,e,c,a"
+        },
+        {
+          "label": "C",
+          "content": "b,f,e,d,c,a"
+        },
+        {
+          "label": "D",
+          "content": "f,e,d,c,b,a"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "直接拿原中根当后序",
+          "explanation": "中根只是T的中序，不是后序，根a也不应位于输出中间。"
+        },
+        "B": {
+          "title": "把子树根d放在其右子树之前",
+          "explanation": "重建后d的右子树由e带左f，后序需先f、e再d，不能先输出d。"
+        },
+        "D": {
+          "title": "将先序简单逆序当后序",
+          "explanation": "左右子树访问顺序不会通过整串倒置自动正确，左叶b应先于右侧整条子树输出。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先把森林给出的两序按题定映射转为同一棵二叉树的先、中序。"
+        },
+        {
+          "level": 2,
+          "text": "用先序根分割中序，递归重建左右片段，再单独生成后序。"
+        },
+        {
+          "level": 3,
+          "text": "另取含两棵树的简单森林，确认根间右兄弟链在二叉树中并不等于普通子女关系。"
+        }
+      ],
+      "solution": "重建T根a左b右c，c左d，d右e，e左f，其余为空。后序先左b，再右支f、e、d、c，最后a，得到b、f、e、d、c、a。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将查询从T后序改为原森林F的树数，给定序列与映射不变，F有几棵树？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1"
+          },
+          {
+            "label": "B",
+            "content": "2"
+          },
+          {
+            "label": "C",
+            "content": "3"
+          },
+          {
+            "label": "D",
+            "content": "4"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅更换查询结果为原森林根的个数。",
+        "explanation": "二叉根a沿右兄弟链到c，再无右兄弟，因此原森林根为a、c，共2棵；c下方经左孩子进入的d、e、f不是额外森林根。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt04-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "forest-traversal-binary-rebuild",
+            "input": {
+              "preorder": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e",
+                "f"
+              ],
+              "inorder": [
+                "b",
+                "a",
+                "d",
+                "f",
+                "e",
+                "c"
+              ],
+              "query": "forest-root-count"
+            },
+            "goal": "重建后沿根的右兄弟链数森林根",
+            "pauseQuestion": "二叉根的整棵右子树，是一棵原树的普通孩子群还是森林余树？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt04-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "forest-traversal-binary-rebuild",
+          "input": {
+            "preorder": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e",
+              "f"
+            ],
+            "inorder": [
+              "b",
+              "a",
+              "d",
+              "f",
+              "e",
+              "c"
+            ],
+            "query": "binary-postorder"
+          },
+          "goal": "重建后沿根的右兄弟链数森林根",
+          "pauseQuestion": "二叉根的整棵右子树，是一棵原树的普通孩子群还是森林余树？"
+        }
+      ]
+    },
+    {
+      "id": "tt04-05",
+      "topic": "森林树数沿根右链计",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2021",
+        "questionNumber": "4",
+        "label": "2021 年 408 真题 第 4 题（明确根的完整右兄弟链）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2021/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有序森林F对应左孩子右兄弟二叉树T，T先序 `a,b,d,c,e,g,f`、中序 `b,d,a,e,g,c,f`，标识互异。F中树的棵数为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1"
+        },
+        {
+          "label": "B",
+          "content": "2"
+        },
+        {
+          "label": "C",
+          "content": "3"
+        },
+        {
+          "label": "D",
+          "content": "4"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把对应二叉树只有一个根当原森林只有一树",
+          "explanation": "多个原森林根会被右兄弟链串成一棵二叉树，不能用二叉根的个数直接代替森林根数。"
+        },
+        "B": {
+          "title": "只数根与一个直接右孩子而漏右链后续",
+          "explanation": "根a的右兄弟c还有右兄弟f，应沿链走到底而不是只算一条右边。"
+        },
+        "D": {
+          "title": "把普通原子结点也误计森林根",
+          "explanation": "c左侧的e及其兄弟g属于c的孩子群，不在a开始的根右链上，不能多加一棵。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先用给出的先序与中序共同重建二叉树；原森林树数则对应其中一条特定的链。"
+        },
+        {
+          "level": 2,
+          "text": "从整棵二叉树根开始，只沿右孩子连续走，别转入左孩子。"
+        },
+        {
+          "level": 3,
+          "text": "另把三棵原树的根串成右链，再给其中一根加孩子，比较加孩子会不会改变森林棵数。"
+        }
+      ],
+      "solution": "重建后根a，右孩子c，c右孩子f，f右空，根右链a、c、f有3个，即3棵。a左b带右d；c左e带右g，分别是各原树内部孩子关系。",
+      "viz": null,
+      "variant": {
+        "stem": "给定序列与映射不变，仅改问F最左第一棵树的结点数，为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "2"
+          },
+          {
+            "label": "B",
+            "content": "3"
+          },
+          {
+            "label": "C",
+            "content": "4"
+          },
+          {
+            "label": "D",
+            "content": "7"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将查询目标从树数改为最左原树的大小。",
+        "explanation": "第一棵树以a为根，包含a及二叉左子树b、d，共3点；根右边的c与f是后续原树，不计入第一棵。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt04-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "forest-roots-and-first-tree-size",
+            "input": {
+              "preorder": [
+                "a",
+                "b",
+                "d",
+                "c",
+                "e",
+                "g",
+                "f"
+              ],
+              "inorder": [
+                "b",
+                "d",
+                "a",
+                "e",
+                "g",
+                "c",
+                "f"
+              ],
+              "query": "first-original-tree-node-count"
+            },
+            "goal": "分开计森林根右链与首树左侧孩子森林",
+            "pauseQuestion": "原森林首树规模，能否直接等于对应二叉树的整棵规模？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt04-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "forest-roots-and-first-tree-size",
+          "input": {
+            "preorder": [
+              "a",
+              "b",
+              "d",
+              "c",
+              "e",
+              "g",
+              "f"
+            ],
+            "inorder": [
+              "b",
+              "d",
+              "a",
+              "e",
+              "g",
+              "c",
+              "f"
+            ],
+            "query": "forest-root-count"
+          },
+          "goal": "分开计森林根右链与首树左侧孩子森林",
+          "pauseQuestion": "原森林首树规模，能否直接等于对应二叉树的整棵规模？"
+        }
+      ]
+    },
+    {
+      "id": "tt04-06",
+      "topic": "中序相邻不能越过共同父结点",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2022",
+        "questionNumber": "3",
+        "label": "2022 年 408 真题 第 3 题（明确真实兄弟与紧邻次序）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2022/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "二叉树结点标识互异，中序中p后面紧接q。兄弟按同一真实父结点解释，右兄弟表示p为左孩子、q为右孩子。哪些关系不可能？I. q为p父；II. q为p右孩子；III. q为p右兄弟；IV. q为p父的父。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 I"
+        },
+        {
+          "label": "B",
+          "content": "仅 III"
+        },
+        {
+          "label": "C",
+          "content": "仅 II、III"
+        },
+        {
+          "label": "D",
+          "content": "仅 II、IV"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把中序父访问在孩子之后误当不可能",
+          "explanation": "若p是q左叶，则中序p、q，I完全可能，不能排除。"
+        },
+        "C": {
+          "title": "将合法父子相邻与不合法兄弟一起排除",
+          "explanation": "若p无左侧且右孩子q也无左侧，中序可p紧接q，所以II可能；III才被共同父隔开。"
+        },
+        "D": {
+          "title": "忽略祖先与后代也能紧邻",
+          "explanation": "取q左孩子x、x右叶p，中序x、p、q，IV可行；II同样可行，不能把它们当不可能。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "相邻说的是遍历序列里没有任何结点插在两者之间。"
+        },
+        {
+          "level": 2,
+          "text": "若二者是左右兄弟，共同父在中序中的输出位置会在哪里？"
+        },
+        {
+          "level": 3,
+          "text": "另画父子、祖孙和兄弟三个小结构，分别检查是否总有一个必须夹在两者之间的结点。"
+        }
+      ],
+      "solution": "左右兄弟p、q之间，中序必输出它们共同父，因此不能紧邻，III不可能。I、II可用两节点左右关系构造，IV可用q左x、x右p的三节点构造，故仅III。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把相邻序列由中序改为先序，仍是p后紧跟q，四种亲缘关系中哪些不可能？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仅 I"
+          },
+          {
+            "label": "B",
+            "content": "仅 III"
+          },
+          {
+            "label": "C",
+            "content": "仅 I、IV"
+          },
+          {
+            "label": "D",
+            "content": "仅 II、IV"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅切换遍历次序到先序。",
+        "explanation": "先序必先输出祖先再输出后代，所以q若为p父或祖父，不可能在p后，I、IV不可能。p无左子树时右孩子q可紧接；p为左叶且q为右兄弟时也可紧接，因此II、III可能。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt04-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "binary-traversal-adjacent-relations",
+            "input": {
+              "order": "NLR",
+              "adjacent": [
+                "p",
+                "q"
+              ],
+              "relationCandidates": [
+                "q-is-parent-of-p",
+                "q-is-right-child-of-p",
+                "q-is-right-sibling-of-p",
+                "q-is-grandparent-of-p"
+              ]
+            },
+            "goal": "为可行关系找小见证，为不可行关系找必经中间项",
+            "pauseQuestion": "共同父的输出位置，在不同遍历规则下是否相同？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt04-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "binary-traversal-adjacent-relations",
+          "input": {
+            "order": "LNR",
+            "adjacent": [
+              "p",
+              "q"
+            ],
+            "relationCandidates": [
+              "q-is-parent-of-p",
+              "q-is-right-child-of-p",
+              "q-is-right-sibling-of-p",
+              "q-is-grandparent-of-p"
+            ]
+          },
+          "goal": "为可行关系找小见证，为不可行关系找必经中间项",
+          "pauseQuestion": "共同父的输出位置，在不同遍历规则下是否相同？"
+        }
+      ]
+    },
+    {
+      "id": "tt04-07",
+      "topic": "无键形状与后序填标签再遍历",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2023",
+        "questionNumber": "5",
+        "label": "2023 年 408 真题 第 5 题（原图形状路径转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2023/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站后台逐边核对原SVG，将无键树转写路径；标签依原后序赋入，原先序选项及答案不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "原无键树形路径集合为 `根,L,R,LL,LR,LLR`，L/R从根分别左/右，未列为空。互异标签后序为 `f,d,b,e,c,a`。该树先序是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "aedfbc"
+        },
+        {
+          "label": "B",
+          "content": "acebdf"
+        },
+        {
+          "label": "C",
+          "content": "cabefd"
+        },
+        {
+          "label": "D",
+          "content": "dfebac"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把整体左右子树次序交换",
+          "explanation": "原形状左子树4点，右叶只1点，后序最后a为根、前面的c为右叶；先序应先完成左e子树而不是先c。"
+        },
+        "C": {
+          "title": "把后序倒数第二标签当整体根",
+          "explanation": "后序末项a才是整树根，c只在根右叶，不能让c成为先序首项。"
+        },
+        "D": {
+          "title": "按局部后序或数值顺序直接拼接",
+          "explanation": "先序必须整体根a开头，再左子树根e，不能从较深的d、f开始。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "形状固定了每个子树的结点数，后序片段末项固定该子树根。"
+        },
+        {
+          "level": 2,
+          "text": "先把全部标签按后序填到位置，再独立按根、左、右输出。"
+        },
+        {
+          "level": 3,
+          "text": "另给一个六结点无键形状，从后序末尾分配各子树根，注意一个单孩子的左/右方向由图而非标签决定。"
+        }
+      ],
+      "solution": "原图填入后a左e右c，e左d右b，d只有右孩子f。先序为a、e、d、f、b、c，故A。",
+      "viz": null,
+      "variant": {
+        "stem": "其他条件不变，仅将所求遍历由先序改为中序，结果为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "f,d,e,b,a,c"
+          },
+          {
+            "label": "B",
+            "content": "d,f,e,b,a,c"
+          },
+          {
+            "label": "C",
+            "content": "a,e,d,f,b,c"
+          },
+          {
+            "label": "D",
+            "content": "f,d,b,e,c,a"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅切换所求遍历次序。",
+        "explanation": "d无左而右f，左侧中序先d、f，再e、b，然后整体根a与右叶c，得到d、f、e、b、a、c。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt04-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "binary-shape-postorder-relabel-traverse",
+            "input": {
+              "paths": [
+                "",
+                "L",
+                "R",
+                "LL",
+                "LR",
+                "LLR"
+              ],
+              "postorder": [
+                "f",
+                "d",
+                "b",
+                "e",
+                "c",
+                "a"
+              ],
+              "queryOrder": "LNR"
+            },
+            "goal": "先按固定形状填后序标签，再遍历同一棵树",
+            "pauseQuestion": "能否直接把后序整串反转当成先序，而不看原图子树分割？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt04-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "binary-shape-postorder-relabel-traverse",
+          "input": {
+            "paths": [
+              "",
+              "L",
+              "R",
+              "LL",
+              "LR",
+              "LLR"
+            ],
+            "postorder": [
+              "f",
+              "d",
+              "b",
+              "e",
+              "c",
+              "a"
+            ],
+            "queryOrder": "NLR"
+          },
+          "goal": "先按固定形状填后序标签，再遍历同一棵树",
+          "pauseQuestion": "能否直接把后序整串反转当成先序，而不看原图子树分割？"
+        }
+      ]
+    },
+    {
+      "id": "tt04-08",
+      "topic": "二叉树与森林的普遍断言",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2025",
+        "questionNumber": "4",
+        "label": "2025 年 408 真题 第 4 题（据收录明确表达式求值语义）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2025/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站B补明非空有序森林；原D的链式树运算符说法改为至少两个二元运算符的表达式树按后序求值，明确其可判断语义，正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "以下树均非空，度指孩子数；D特指至少含两个二元运算符的表达式树按后序计算。下列说法哪项必然正确？",
+      "options": [
+        {
+          "label": "A",
+          "content": "完全二叉树没有度1结点"
+        },
+        {
+          "label": "B",
+          "content": "任意非空有序森林都能转换为一棵二叉树"
+        },
+        {
+          "label": "C",
+          "content": "任意二叉树的分支结点数都少于叶数"
+        },
+        {
+          "label": "D",
+          "content": "表达式树根保存最先被计算的运算符"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把完全树当作每个分支必须双孩子",
+          "explanation": "两结点完全树的根只有左孩子，度为1，是A的直接反例。"
+        },
+        "C": {
+          "title": "把没有单孩子时的性质推广到所有树",
+          "explanation": "三结点单链有2个分支、1个叶，分支反而更多；分支少于叶需额外限制，C不普遍。"
+        },
+        "D": {
+          "title": "把先写根的表达式结构当运算时序",
+          "explanation": "后序求值必须先得到子表达式结果，根运算符最后计算，至少两个运算符时不会是最先。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "检查每个绝对断言是否误用了更窄的树形或遍历约束。"
+        },
+        {
+          "level": 2,
+          "text": "森林转二叉的孩子与兄弟两类关系是否足够编码任意非空有序森林？"
+        },
+        {
+          "level": 3,
+          "text": "另分别画两点完全树、三点单链和含两个运算符的小表达式树，逐个核查断言。"
+        }
+      ],
+      "solution": "左孩子右兄弟法可表示每个原孩子序列并将各树根串联，B成立。A被两点完全树否定；C被三点单链否定；D按后序根运算符最后而非最先。",
+      "viz": null,
+      "variant": {
+        "stem": "其他断言不变，仅把C的范围限定为每个非叶恰有两个孩子的二叉树。此时哪些断言必然正确？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仅 B"
+          },
+          {
+            "label": "B",
+            "content": "仅 C"
+          },
+          {
+            "label": "C",
+            "content": "B、C"
+          },
+          {
+            "label": "D",
+            "content": "A、B、C"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅给C增加无单孩子分支条件。",
+        "explanation": "双孩子条件给非叶数比叶数少1，因此新C成立，B仍成立；A和D的反例不受影响，故B、C。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt04-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "binary-forest-property-counterexamples",
+            "input": {
+              "everyInternalDegree": 2,
+              "query": "branch-versus-leaf-count"
+            },
+            "goal": "用最小合法见证区分一般与额外限定",
+            "pauseQuestion": "只有对某类双孩子树成立的计数关系，能否直接推广到有单孩子的任意树？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt04-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "binary-forest-property-counterexamples",
+          "input": {
+            "examples": [
+              {
+                "kind": "complete",
+                "nodeCount": 2
+              },
+              {
+                "kind": "single-child-chain",
+                "nodeCount": 3
+              },
+              {
+                "kind": "ordered-forest",
+                "treeNodeCounts": [
+                  2,
+                  1
+                ]
+              }
+            ],
+            "allClaims": true
+          },
+          "goal": "用最小合法见证区分一般与额外限定",
+          "pauseQuestion": "只有对某类双孩子树成立的计数关系，能否直接推广到有单孩子的任意树？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "tt04-09",
+      "topic": "给定各树大小时森林最小可达高度",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2026",
+        "questionNumber": "4",
+        "label": "2026 年 408 真题 第 4 题（明确可选择各树形状的理论最小）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2026/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站原题仅给每棵大小未给形状，本站明确各树有序形状和森林顺序都可选，求这些约束下可达最小；不是只重排任意固定未知形状就保证高度6"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有序森林由5棵树组成，结点数为2、3、4、5、7。在这些大小约束下，各棵树的有序形状以及五棵排列顺序都允许选择。转为左孩子右兄弟二叉表示，求理论可达的最小高度；高度按结点层、根1。",
+      "options": [
+        {
+          "label": "A",
+          "content": "5"
+        },
+        {
+          "label": "B",
+          "content": "6"
+        },
+        {
+          "label": "C",
+          "content": "8"
+        },
+        {
+          "label": "D",
+          "content": "10"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "只用全部21点的一般二叉容量下界",
+          "explanation": "转换形状还含5个根的右兄弟链，最后一树至少2点使该链末端还要有左孩子，故仅总容量允许5层不够。"
+        },
+        "C": {
+          "title": "用某种较差排列或较高原形状代替理论最优",
+          "explanation": "各树形状可选，能取各自最低表示并将较高树排前，8层虽可能却不是最小可达。"
+        },
+        "D": {
+          "title": "把所有树高直接相加",
+          "explanation": "各原树子结构是挂在根右链各位置，并非全部串为一条路径，高度应取偏移后各支最大值而不是求和。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "单棵原树的二叉表示根无右孩子，给定大小下它的最高容量和一般二叉树有何差别？"
+        },
+        {
+          "level": 2,
+          "text": "第i棵根沿右链多走i减1条边，合并后高度取各棵表示高度加偏移的最大值。"
+        },
+        {
+          "level": 3,
+          "text": "另给三棵不同大小的树，尝试把较高的一棵与较低的一棵交换前后位置，比较最坏偏移高度是否增加。"
+        }
+      ],
+      "solution": "n点单树表示的根无右孩子，高h最多容2的h减1次方点，最低高为 `1+ceil(log2(n))`。五棵可取高2、3、3、4、4，按4、4、3、3、2排到右链偏移0至4后，最大为6。末根在第5层且其树至少2点，必还需第6层，故6可达且最小。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将最后一棵大小由7改为33，其他四棵大小及可选形状/顺序规则不变，最小可达高度为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "5"
+          },
+          {
+            "label": "B",
+            "content": "6"
+          },
+          {
+            "label": "C",
+            "content": "7"
+          },
+          {
+            "label": "D",
+            "content": "8"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将一个原树的结点数7替换为33。",
+        "explanation": "33点单树表示至少高7，已给整体下界7；各树最低高度为2、3、3、4、7，按7、4、3、3、2排，加偏移后最大仍7，可构造达到，所以最小7。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "tt04-09v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "forest-minimum-binary-height",
+            "input": {
+              "treeNodeCounts": [
+                2,
+                3,
+                4,
+                5,
+                33
+              ],
+              "individualOrderedShapesMayVary": true,
+              "forestOrderMayVary": true,
+              "heightUnit": "node-levels"
+            },
+            "goal": "分开优化单树表示与根右链排列，并构造达到下界的森林",
+            "pauseQuestion": "只知道每棵大小而把形状固定未知时，能否声称仅靠交换树序就保证同一个最小高度？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "tt04-09-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "forest-minimum-binary-height",
+          "input": {
+            "treeNodeCounts": [
+              2,
+              3,
+              4,
+              5,
+              7
+            ],
+            "individualOrderedShapesMayVary": true,
+            "forestOrderMayVary": true,
+            "heightUnit": "node-levels"
+          },
+          "goal": "分开优化单树表示与根右链排列，并构造达到下界的森林",
+          "pauseQuestion": "只知道每棵大小而把形状固定未知时，能否声称仅靠交换树序就保证同一个最小高度？"
+        }
+      ]
+    }
+  ]
+}

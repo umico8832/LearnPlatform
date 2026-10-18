@@ -1,0 +1,1555 @@
+{
+  "schemaVersion": 1,
+  "section": "图真题四及栈队列边界：快照、存储、字符串与循环状态",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "gg04-01",
+      "topic": "冗余边之外的完整拓扑约束",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2021",
+        "questionNumber": "7",
+        "label": "2021 年 408 真题 第 7 题（原图完整边集文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2021/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站后台实际查看原SVG逐边/方向/权转写，未列边不存在；原选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有向图原图转写：A到B、A到F、B到F、B到C、B到D、C到D、D到E、D到F、E到F，无其他弧，顶点A至F。完整拓扑序列共有几种？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1"
+        },
+        {
+          "label": "B",
+          "content": "2"
+        },
+        {
+          "label": "C",
+          "content": "3"
+        },
+        {
+          "label": "D",
+          "content": "4"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把多条出弧误当可自由选择下一输出",
+          "explanation": "弧较多不等于多个零入度候选，实际A、B、C、D、E、F沿依赖链逐个被强制。"
+        },
+        "C": {
+          "title": "只数某个分支而漏依赖的再次汇合",
+          "explanation": "B同时指向C、D、F，但C到D、D到E、E到F又规定了它们的先后，不形成3种独立分支。"
+        },
+        "D": {
+          "title": "把画面中的不同路径当不同拓扑序",
+          "explanation": "多条源汇路径可以对应同一个强制线性次序，不能按路径条数代替拓扑序数。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "每一步重新计算剩余图的零入度顶点集合。"
+        },
+        {
+          "level": 2,
+          "text": "检查是否有一条经过所有顶点的有向链已经固定相对先后。"
+        },
+        {
+          "level": 3,
+          "text": "另给一条全顶点链添加几条跨越边，观察额外路径是否会自动新增合法线性序列。"
+        }
+      ],
+      "solution": "存在A到B到C到D到E到F的全顶点链，强制全部先后，其余弧均与之相容，唯一拓扑序为ABCDEF，所以1。",
+      "viz": null,
+      "variant": {
+        "stem": "仅删去弧E到F，其他不变，完整拓扑序列有几种？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1"
+          },
+          {
+            "label": "B",
+            "content": "2"
+          },
+          {
+            "label": "C",
+            "content": "3"
+          },
+          {
+            "label": "D",
+            "content": "4"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅删除E到F这一条约束。",
+        "explanation": "前缀A、B、C、D仍强制，之后E与F都已满足前驱且二者不再有依赖，可按E、F或F、E结尾，共2种。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg04-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "topological-unique-chain-and-edge-removal",
+            "input": {
+              "nodes": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "E",
+                "F"
+              ],
+              "edges": [
+                [
+                  "A",
+                  "B"
+                ],
+                [
+                  "A",
+                  "F"
+                ],
+                [
+                  "B",
+                  "F"
+                ],
+                [
+                  "B",
+                  "C"
+                ],
+                [
+                  "B",
+                  "D"
+                ],
+                [
+                  "C",
+                  "D"
+                ],
+                [
+                  "D",
+                  "E"
+                ],
+                [
+                  "D",
+                  "F"
+                ]
+              ],
+              "directed": true
+            },
+            "goal": "逐步列零入度集合并辨全顶点链",
+            "pauseQuestion": "图中有多条路径，是否就表示存在多个拓扑序？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg04-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "topological-unique-chain-and-edge-removal",
+          "input": {
+            "nodes": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F"
+            ],
+            "edges": [
+              [
+                "A",
+                "B"
+              ],
+              [
+                "A",
+                "F"
+              ],
+              [
+                "B",
+                "F"
+              ],
+              [
+                "B",
+                "C"
+              ],
+              [
+                "B",
+                "D"
+              ],
+              [
+                "C",
+                "D"
+              ],
+              [
+                "D",
+                "E"
+              ],
+              [
+                "D",
+                "F"
+              ],
+              [
+                "E",
+                "F"
+              ]
+            ],
+            "directed": true
+          },
+          "goal": "逐步列零入度集合并辨全顶点链",
+          "pauseQuestion": "图中有多条路径，是否就表示存在多个拓扑序？"
+        }
+      ]
+    },
+    {
+      "id": "gg04-02",
+      "topic": "Dijkstra中间快照不能提前松弛",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2021",
+        "questionNumber": "8",
+        "label": "2021 年 408 真题 第 8 题（原图完整边集文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2021/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站后台实际查看原SVG逐边/方向/权转写，未列边不存在；原选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有向原图弧1到5权6、1到2权26、1到3权3、5到2权15、5到4权8、5到3权6、4到2权1、4到3权6、3到2权22。从1做Dijkstra，初始化源后不把源算目标；每次确定一个未确定最小暂距点并松弛完它的全部出边。第2个目标处理完后，按2、3、4、5排列的`dist`为？已确定点的`dist`也保留。",
+      "options": [
+        {
+          "label": "A",
+          "content": "26、3、14、6"
+        },
+        {
+          "label": "B",
+          "content": "25、3、14、6"
+        },
+        {
+          "label": "C",
+          "content": "21、3、14、6"
+        },
+        {
+          "label": "D",
+          "content": "15、3、14、6"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "漏掉已经处理过的两次改进",
+          "explanation": "2的初始26先经3改25、再经5改21，不应保留原始直接边距离。"
+        },
+        "B": {
+          "title": "只应用第一个目标3的出边",
+          "explanation": "25是处理3后的中间值，第二个目标5又提供6加15为21的路径，不能漏掉这轮松弛。"
+        },
+        "D": {
+          "title": "提前应用尚未确定4的出边",
+          "explanation": "15来自将暂距14的4再沿权1到2传播，但当前只完成3、5两目标，4还未处理，不能把未来更新放进快照。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "把初始化源、确定目标和处理该目标出边这三个阶段明确分开。"
+        },
+        {
+          "level": 2,
+          "text": "每次更新只来自本轮已经确定的点，不能把所有暂距点一并向外传播。"
+        },
+        {
+          "level": 3,
+          "text": "另用一条两跳改进链逐轮记录`dist`，标明哪一轮只是发现中间点、哪一轮才轮到它松弛后继。"
+        }
+      ],
+      "solution": "初始化2、3、4、5为26、3、不可达、6；先确定3，2改25；再确定5，2改21、4改14，3不变。因此21、3、14、6，C。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把观察点从第2个目标完成后改为第3个目标完成后，其他算法、图与四选项不变，`dist`为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "26、3、14、6"
+          },
+          {
+            "label": "B",
+            "content": "25、3、14、6"
+          },
+          {
+            "label": "C",
+            "content": "21、3、14、6"
+          },
+          {
+            "label": "D",
+            "content": "15、3、14、6"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "仅将已处理目标数从2增为3。",
+        "explanation": "接下来最小未确定点为4，距14；处理其出边使2降到14加1为15，得到15、3、14、6，为D。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg04-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "dijkstra-after-relaxation-checkpoint",
+            "input": {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "5"
+              ],
+              "weightedEdges": [
+                [
+                  "1",
+                  "5",
+                  6
+                ],
+                [
+                  "1",
+                  "2",
+                  26
+                ],
+                [
+                  "1",
+                  "3",
+                  3
+                ],
+                [
+                  "5",
+                  "2",
+                  15
+                ],
+                [
+                  "5",
+                  "4",
+                  8
+                ],
+                [
+                  "5",
+                  "3",
+                  6
+                ],
+                [
+                  "4",
+                  "2",
+                  1
+                ],
+                [
+                  "4",
+                  "3",
+                  6
+                ],
+                [
+                  "3",
+                  "2",
+                  22
+                ]
+              ],
+              "source": "1",
+              "directed": true,
+              "settledTargetsExcludingSource": 3,
+              "snapshotAfterAllOutgoingRelaxations": true
+            },
+            "goal": "逐轮保存确定集合和松弛后的暂距",
+            "pauseQuestion": "一个点已经有暂距，是否就等于它的出边本轮也已被处理？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg04-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "dijkstra-after-relaxation-checkpoint",
+          "input": {
+            "nodes": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "weightedEdges": [
+              [
+                "1",
+                "5",
+                6
+              ],
+              [
+                "1",
+                "2",
+                26
+              ],
+              [
+                "1",
+                "3",
+                3
+              ],
+              [
+                "5",
+                "2",
+                15
+              ],
+              [
+                "5",
+                "4",
+                8
+              ],
+              [
+                "5",
+                "3",
+                6
+              ],
+              [
+                "4",
+                "2",
+                1
+              ],
+              [
+                "4",
+                "3",
+                6
+              ],
+              [
+                "3",
+                "2",
+                22
+              ]
+            ],
+            "source": "1",
+            "directed": true,
+            "settledTargetsExcludingSource": 2,
+            "snapshotAfterAllOutgoingRelaxations": true
+          },
+          "goal": "逐轮保存确定集合和松弛后的暂距",
+          "pauseQuestion": "一个点已经有暂距，是否就等于它的出边本轮也已被处理？"
+        }
+      ]
+    },
+    {
+      "id": "gg04-03",
+      "topic": "AOE活动总余量逐边计算",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2022",
+        "questionNumber": "7",
+        "label": "2022 年 408 真题 第 7 题（原图完整边集文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2022/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站后台实际查看原SVG逐边/方向/权转写，未列边不存在；原选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "AOE原图：a为1到2时长2，b为1到3时长5，c为2到3时长1，d为2到4时长3，e为3到4时长3，f为3到5时长4，g为3到6时长1，h为4到5时长1，`i`为4到6时长4，`j`为5到6时长1。源1时刻0，汇6按最早完工完成，活动总余量最大的是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "c"
+        },
+        {
+          "label": "B",
+          "content": "g"
+        },
+        {
+          "label": "C",
+          "content": "h"
+        },
+        {
+          "label": "D",
+          "content": "`j`"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把2单位余量当成全网最大",
+          "explanation": "c余量为事件3最迟5减事件2最早2再减持续1，等于2；还存在更大余量活动。"
+        },
+        "C": {
+          "title": "用起点较晚或时长较小猜最大",
+          "explanation": "h时长1且较晚发生，但余量为11减8减1等于2，不是6。"
+        },
+        "D": {
+          "title": "把靠近汇点的活动一概当最宽松",
+          "explanation": "`j`虽直连汇，余量仍为12减9减1等于2，位置并不能替代时间计算。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先正向算事件最早时刻，后以工期反向算事件最迟时刻。"
+        },
+        {
+          "level": 2,
+          "text": "活动总余量使用终点最迟减起点最早再减本活动时长。"
+        },
+        {
+          "level": 3,
+          "text": "另比较两条同接汇的活动，它们起点最早时刻和持续时间不同，检查为何较短不必意味着更大余量。"
+        }
+      ],
+      "solution": "事件最早为0、2、5、8、9、12，最迟为0、4、5、8、11、12。g总余量12减5减1为6，c、h、`j`均2；其他活动最大也不超过6，所以g。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将g持续时间从1改为4，其他不变，全网哪些活动并列总余量最大？",
+        "options": [
+          {
+            "label": "A",
+            "content": "c与h"
+          },
+          {
+            "label": "B",
+            "content": "d与g"
+          },
+          {
+            "label": "C",
+            "content": "f与`j`"
+          },
+          {
+            "label": "D",
+            "content": "b与e"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅增加g时长3。",
+        "explanation": "该改动仍未超过原工期路径，工期12及事件最早最迟不变。g余量降3，d余量为8减2减3也为3，其他活动不超过2，因此d与g并列最大。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg04-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "aoe-total-float-argmax",
+            "input": {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6"
+              ],
+              "activities": [
+                [
+                  "a",
+                  "1",
+                  "2",
+                  2
+                ],
+                [
+                  "b",
+                  "1",
+                  "3",
+                  5
+                ],
+                [
+                  "c",
+                  "2",
+                  "3",
+                  1
+                ],
+                [
+                  "d",
+                  "2",
+                  "4",
+                  3
+                ],
+                [
+                  "e",
+                  "3",
+                  "4",
+                  3
+                ],
+                [
+                  "f",
+                  "3",
+                  "5",
+                  4
+                ],
+                [
+                  "g",
+                  "3",
+                  "6",
+                  4
+                ],
+                [
+                  "h",
+                  "4",
+                  "5",
+                  1
+                ],
+                [
+                  "i",
+                  "4",
+                  "6",
+                  4
+                ],
+                [
+                  "j",
+                  "5",
+                  "6",
+                  1
+                ]
+              ],
+              "source": "1",
+              "sink": "6",
+              "query": "all-activity-total-float-max"
+            },
+            "goal": "每条活动分别套事件界限并比较全部候选",
+            "pauseQuestion": "一条活动变长后，它的余量会怎样变化，其他路径是否仍可能限制工期？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg04-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "aoe-total-float-argmax",
+          "input": {
+            "nodes": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6"
+            ],
+            "activities": [
+              [
+                "a",
+                "1",
+                "2",
+                2
+              ],
+              [
+                "b",
+                "1",
+                "3",
+                5
+              ],
+              [
+                "c",
+                "2",
+                "3",
+                1
+              ],
+              [
+                "d",
+                "2",
+                "4",
+                3
+              ],
+              [
+                "e",
+                "3",
+                "4",
+                3
+              ],
+              [
+                "f",
+                "3",
+                "5",
+                4
+              ],
+              [
+                "g",
+                "3",
+                "6",
+                1
+              ],
+              [
+                "h",
+                "4",
+                "5",
+                1
+              ],
+              [
+                "i",
+                "4",
+                "6",
+                4
+              ],
+              [
+                "j",
+                "5",
+                "6",
+                1
+              ]
+            ],
+            "source": "1",
+            "sink": "6",
+            "query": "all-activity-total-float-max"
+          },
+          "goal": "每条活动分别套事件界限并比较全部候选",
+          "pauseQuestion": "一条活动变长后，它的余量会怎样变化，其他路径是否仍可能限制工期？"
+        }
+      ]
+    },
+    {
+      "id": "gg04-04",
+      "topic": "邻接多重表沿当前端点选链接域",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2024",
+        "questionNumber": "4",
+        "label": "2024 年 408 真题 第 4 题（据原多重表等价重排文字版）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2024/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站实际核对原表及还原图7条边端点；本站重新编号r0至r6并按每点incident编号升序给出首指针/两端链接，不逐字原指针图；同图度数四项与答案不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "据原无向邻接多重表保留全部边端点并等价重排链，得到下表。每条无向边仅一个记录，`i`/`j`为两端；从顶点`v`遍历时，`v`等于`i`走`nextI`，否则等于`j`走`nextJ`。首记录为 `a:r0,b:r0,c:r2,d:r1,e:r4`，NULL结束。b、d的度依次为？\n\n```text\n记录  i  nextI  j  nextJ\nr0    a  r2     b  r1\nr1    b  NULL   d  r3\nr2    c  r3     a  r5\nr3    d  r5     c  r4\nr4    e  r6     c  NULL\nr5    a  NULL   d  r6\nr6    e  NULL   d  NULL\n```",
+      "options": [
+        {
+          "label": "A",
+          "content": "0、2"
+        },
+        {
+          "label": "B",
+          "content": "2、4"
+        },
+        {
+          "label": "C",
+          "content": "3、2"
+        },
+        {
+          "label": "D",
+          "content": "2、3"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "没有沿该顶点对应的另一端链接继续",
+          "explanation": "b首记录r0中位于`j`端，必须走`nextJ`到r1，不能把不对应当前顶点的空域当结束。"
+        },
+        "C": {
+          "title": "把其他顶点的incident记录数量误配给b/d",
+          "explanation": "3、2对应本图另一个顶点对，b只有r0、r1，d则有四条记录，不是按记录行号直接取数。"
+        },
+        "D": {
+          "title": "漏掉d链上最后一个记录",
+          "explanation": "d链为r1、r3、r5、r6，必须包含到终止前的r6，不能只算前三条。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "当前顶点在每个边记录可能出现在不同端，先辨端点再选择链接域。"
+        },
+        {
+          "level": 2,
+          "text": "每经过一个包含当前顶点的不同边记录，度数增加一，直到对应链接为空。"
+        },
+        {
+          "level": 3,
+          "text": "另用两条边共享一个顶点且该顶点分别出现在`i`端和`j`端的多重表，追踪为何不能固定只沿同一列。"
+        }
+      ],
+      "solution": "b从r0以`j`端转r1，r1以`i`端到空，共2。d从r1的`j`端到r3，再`i`端到r5，再`j`端到r6终止，共4；与全表端点计数一致。",
+      "viz": null,
+      "variant": {
+        "stem": "表与首指针不变，仅将所求顶点对b、d换成a、e，度依次为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "0、2"
+          },
+          {
+            "label": "B",
+            "content": "2、4"
+          },
+          {
+            "label": "C",
+            "content": "3、2"
+          },
+          {
+            "label": "D",
+            "content": "2、3"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅更换查询顶点对。",
+        "explanation": "a链r0、r2、r5共3，e链r4、r6共2，因此3、2。无向边只保存一次不等于端点度只计其中一端。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg04-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "adjacency-multilist-incident-walk",
+            "input": {
+              "vertices": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e"
+              ],
+              "heads": {
+                "a": "r0",
+                "b": "r0",
+                "c": "r2",
+                "d": "r1",
+                "e": "r4"
+              },
+              "edgeRecords": [
+                {
+                  "id": "r0",
+                  "i": "a",
+                  "nextI": "r2",
+                  "j": "b",
+                  "nextJ": "r1"
+                },
+                {
+                  "id": "r1",
+                  "i": "b",
+                  "nextI": null,
+                  "j": "d",
+                  "nextJ": "r3"
+                },
+                {
+                  "id": "r2",
+                  "i": "c",
+                  "nextI": "r3",
+                  "j": "a",
+                  "nextJ": "r5"
+                },
+                {
+                  "id": "r3",
+                  "i": "d",
+                  "nextI": "r5",
+                  "j": "c",
+                  "nextJ": "r4"
+                },
+                {
+                  "id": "r4",
+                  "i": "e",
+                  "nextI": "r6",
+                  "j": "c",
+                  "nextJ": null
+                },
+                {
+                  "id": "r5",
+                  "i": "a",
+                  "nextI": null,
+                  "j": "d",
+                  "nextJ": "r6"
+                },
+                {
+                  "id": "r6",
+                  "i": "e",
+                  "nextI": null,
+                  "j": "d",
+                  "nextJ": null
+                }
+              ],
+              "queryVertices": [
+                "a",
+                "e"
+              ],
+              "tableIsEquivalentReordering": true
+            },
+            "goal": "按当前端点在每行选择对应链接并校验端点总计",
+            "pauseQuestion": "一条记录的`nextI`为空，能否在当前顶点属于`j`端时直接判它的链已结束？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg04-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "adjacency-multilist-incident-walk",
+          "input": {
+            "vertices": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e"
+            ],
+            "heads": {
+              "a": "r0",
+              "b": "r0",
+              "c": "r2",
+              "d": "r1",
+              "e": "r4"
+            },
+            "edgeRecords": [
+              {
+                "id": "r0",
+                "i": "a",
+                "nextI": "r2",
+                "j": "b",
+                "nextJ": "r1"
+              },
+              {
+                "id": "r1",
+                "i": "b",
+                "nextI": null,
+                "j": "d",
+                "nextJ": "r3"
+              },
+              {
+                "id": "r2",
+                "i": "c",
+                "nextI": "r3",
+                "j": "a",
+                "nextJ": "r5"
+              },
+              {
+                "id": "r3",
+                "i": "d",
+                "nextI": "r5",
+                "j": "c",
+                "nextJ": "r4"
+              },
+              {
+                "id": "r4",
+                "i": "e",
+                "nextI": "r6",
+                "j": "c",
+                "nextJ": null
+              },
+              {
+                "id": "r5",
+                "i": "a",
+                "nextI": null,
+                "j": "d",
+                "nextJ": "r6"
+              },
+              {
+                "id": "r6",
+                "i": "e",
+                "nextI": null,
+                "j": "d",
+                "nextJ": null
+              }
+            ],
+            "queryVertices": [
+              "b",
+              "d"
+            ],
+            "tableIsEquivalentReordering": true
+          },
+          "goal": "按当前端点在每行选择对应链接并校验端点总计",
+          "pauseQuestion": "一条记录的`nextI`为空，能否在当前顶点属于`j`端时直接判它的链已结束？"
+        }
+      ]
+    },
+    {
+      "id": "gg04-05",
+      "topic": "出边邻接表求入度的扫描成本",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2026",
+        "questionNumber": "6",
+        "label": "2026 年 408 真题 第 6 题（明确出边表扫描并将选项改为紧界）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2026/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站补明无逆索引/缓存且扫描全部顶点头与弧，原O选项统一为Theta紧界避免仅上界含义歧义；max与和同阶，正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有向图有`n`个顶点、`m`条弧，`n`至少1，仅有普通出边邻接表，无逆邻接或已存入度。目标顶点身份已知，算法逐项检查全部`n`个顶点头及其出边记录，累计指向目标的弧。按整体输入规模，时间紧界为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`Θ(n)`"
+        },
+        {
+          "label": "B",
+          "content": "`Θ(min(n,m))`"
+        },
+        {
+          "label": "C",
+          "content": "`Θ(m)`"
+        },
+        {
+          "label": "D",
+          "content": "`Θ(max(n,m))`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "只数顶点头却漏出边记录",
+          "explanation": "`m`可能远大于`n`，扫描每条实际弧的代价不能只用`n`界定。"
+        },
+        "B": {
+          "title": "把必须相加的两类扫描错取较小者",
+          "explanation": "顶点表与出边记录都要处理，不是只需较小集合；`m`为0时仍要检查`n`个头。"
+        },
+        "C": {
+          "title": "只数弧却漏孤立顶点头的检查",
+          "explanation": "即使没有弧，算法仍逐项遍历所有顶点，`m`不能独自描述这个扫描模型。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "将顶点头检查与弧记录检查分别计数。"
+        },
+        {
+          "level": 2,
+          "text": "两个非负规模相加，与取它们最大值在常数倍意义下是什么关系？"
+        },
+        {
+          "level": 3,
+          "text": "另比较没有边的多顶点图和边密集的图，检查哪个单独计数会遗漏哪一部分。"
+        }
+      ],
+      "solution": "总扫描为 `Θ(n+m)`。因为最大值不超过和、和不超过最大值两倍，所以也为 `Θ(max(n,m))`，D。没有逆邻接或入度缓存时不能直接常数读取。",
+      "viz": null,
+      "variant": {
+        "stem": "仅增加已经正确维护的入度数组，目标顶点下标已知，此次查询只读其计数，不计此前更新维护。查询时间紧界为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`Θ(1)`"
+          },
+          {
+            "label": "B",
+            "content": "`Θ(log n)`"
+          },
+          {
+            "label": "C",
+            "content": "`Θ(n)`"
+          },
+          {
+            "label": "D",
+            "content": "`Θ(n+m)`"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅改为可直接读取已维护入度缓存的模型。",
+        "explanation": "按已知下标读一个正确计数为常数时间。维护准确性在边更新时处理，本次只查询所以不再扫描各出边表。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg04-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "incoming-degree-list-scan-cost",
+            "input": {
+              "vertexCount": 6,
+              "directedEdges": [
+                [
+                  0,
+                  1
+                ],
+                [
+                  2,
+                  1
+                ],
+                [
+                  4,
+                  5
+                ]
+              ],
+              "queryVertex": 1,
+              "storage": "outgoing-lists",
+              "cachedIndegree": true
+            },
+            "goal": "并列累计顶点头与弧读取，区分缓存查询",
+            "pauseQuestion": "目标的出边表只保存它发出的弧，是否也列出了全部进入它的弧？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg04-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "incoming-degree-list-scan-cost",
+          "input": {
+            "vertexCount": 6,
+            "directedEdges": [
+              [
+                0,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                4,
+                5
+              ]
+            ],
+            "queryVertex": 1,
+            "storage": "outgoing-lists",
+            "scanAllVertexHeads": true,
+            "cachedIndegree": false
+          },
+          "goal": "并列累计顶点头与弧读取，区分缓存查询",
+          "pauseQuestion": "目标的出边表只保存它发出的弧，是否也列出了全部进入它的弧？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "gg04-06",
+      "topic": "有环可重复走边与字符串长度",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2026",
+        "questionNumber": "7",
+        "label": "2026 年 408 真题 第 7 题（明确路径按允许重复的有向走法）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2026/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站将原路径的有环陈述所需含义明确为允许重复顶点/边的walk，保留空串与每边1字符；不是不重复顶点的简单路径，四项与错误项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有限非空有向图有`n`个顶点，每弧恰标记1个字符，不同弧可同字符。S为任意有限有向走法依次拼接边字符所得字符串集合；本题走法允许重复顶点和边，单顶点不走边产生空串。下列哪项错误？",
+      "options": [
+        {
+          "label": "A",
+          "content": "图无环则S有限"
+        },
+        {
+          "label": "B",
+          "content": "图无环则S中一定存在长度`n`的字符串"
+        },
+        {
+          "label": "C",
+          "content": "图有环则S中存在长度大于`n`的字符串"
+        },
+        {
+          "label": "D",
+          "content": "图有环则S中存在长度小于2n的字符串"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "忽略无环限制了可走的边数",
+          "explanation": "无环时不能重复顶点，边数最多`n`减1，有限图只有有限多这样的走法，A成立。"
+        },
+        "C": {
+          "title": "把原简单路径长度界套到允许重复的走法",
+          "explanation": "有向环可重复任意多圈，每圈每边都贡献字符，总长度可超过`n`，因此C成立。"
+        },
+        "D": {
+          "title": "忘记本题允许单顶点空走法",
+          "explanation": "空串长度0，而`n`至少1，所以0小于2n，D必然成立；也可取一个简单有向环，其长度不超过`n`。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "区分不重复顶点的路径与本题允许重复走边的走法。"
+        },
+        {
+          "level": 2,
+          "text": "逐边拼1字符意味着字符串长度正好等于走过的边数，重复同字符也会增加长度。"
+        },
+        {
+          "level": 3,
+          "text": "另取两个点构成的有向环，分别列走一圈、两圈和零条边的串长度，再与无环链的长度比较。"
+        }
+      ],
+      "solution": "DAG任意走法都不可能重复顶点，至多`n`减1条边，故不会产生长度`n`，B错误。有限长界给A；有环可重复到任意长给C；空串或一圈给D。",
+      "viz": null,
+      "variant": {
+        "stem": "图仍可有环，唯独把走法改为不允许重复顶点的简单路径，是否还必能得到长度大于`n`的字符串？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仍必能"
+          },
+          {
+            "label": "B",
+            "content": "不能保证，简单路径最多`n`减1条边"
+          },
+          {
+            "label": "C",
+            "content": "所有字符串只能是空串"
+          },
+          {
+            "label": "D",
+            "content": "必须所有弧标签互异才可以"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将允许重复走法改为不重复顶点的简单路径。",
+        "explanation": "简单路径无论原图有没有环，都最多访问`n`个不同顶点，故最多`n`减1条边；有环不再允许通过重复绕圈取得更长字符串。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg04-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "directed-walk-string-lengths",
+            "input": {
+              "nodes": [
+                "u",
+                "v"
+              ],
+              "labelledEdges": [
+                [
+                  "u",
+                  "v",
+                  "x"
+                ],
+                [
+                  "v",
+                  "u",
+                  "y"
+                ]
+              ],
+              "allowRepeatedVertices": false,
+              "allowEmptyWalk": true,
+              "mode": "all-simple-paths"
+            },
+            "goal": "把边数与串长度同步记录并显示绕环可重复的规律",
+            "pauseQuestion": "环上反复读到相同字符，较长的字符串会不会因此与较短串成为同一长度的对象？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg04-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "directed-walk-string-lengths",
+          "input": {
+            "nodes": [
+              "u",
+              "v"
+            ],
+            "labelledEdges": [
+              [
+                "u",
+                "v",
+                "x"
+              ],
+              [
+                "v",
+                "u",
+                "y"
+              ]
+            ],
+            "allowRepeatedVertices": true,
+            "allowEmptyWalk": true,
+            "mode": "bounded-prefix-with-cycle-witness",
+            "displayMaxEdges": 6
+          },
+          "goal": "把边数与串长度同步记录并显示绕环可重复的规律",
+          "pauseQuestion": "环上反复读到相同字符，较长的字符串会不会因此与较短串成为同一长度的对象？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "gg04-07",
+      "topic": "中缀转换的运算符栈快照",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2014",
+        "questionNumber": "2",
+        "label": "2014 年 408 真题 第 2 题（明确栈底顺序并转写符号名）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2014/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站原四栈符号串按底到顶转成中文符号名，保留全部符号含义，补明操作数处理后观察，原正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "用标准运算符栈把 `a/b+(c*d-e*f)/g` 转成后缀，乘除高于加减且同级左结合，左括号入栈、右括号触发弹出，操作数直接输出。从栈底到栈顶列符号，当扫描并处理操作数f后，栈为？选项以中文符号名写出。",
+      "options": [
+        {
+          "label": "A",
+          "content": "加、左括号、乘、减"
+        },
+        {
+          "label": "B",
+          "content": "加、左括号、减、乘"
+        },
+        {
+          "label": "C",
+          "content": "除、加、左括号、乘、减、乘"
+        },
+        {
+          "label": "D",
+          "content": "除、加、减、乘"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "未在读减号时弹出此前乘号",
+          "explanation": "扫描减号前，c乘d已满足较高优先级，应弹出旧乘号，再压减号；不能留下乘在减之前的A。"
+        },
+        "C": {
+          "title": "把不同时刻已弹出符号累计到当前栈",
+          "explanation": "最早a除b的除号在遇加时就弹出，括号内旧乘号也在减号前弹出，不能保留成C的长栈。"
+        },
+        "D": {
+          "title": "漏掉尚未闭合括号并保留最早除号",
+          "explanation": "当前仍在括号内部，左括号还在；而a除b的除号早已弹出，D这两点均不符合当前状态。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "把输出流与尚未确定输出时机的运算符栈分开记录。"
+        },
+        {
+          "level": 2,
+          "text": "每遇新运算符先按优先级和结合方向弹旧项，遇左括号停止比较。"
+        },
+        {
+          "level": 3,
+          "text": "另对一个括号内两次乘法由减号隔开的短式逐字记录栈，只看当前未弹出项而不累计历史。"
+        }
+      ],
+      "solution": "遇加号时先弹原除号；括号内先乘在减号前弹出，之后压减号、再压第二个乘号。读f不改运算符栈，所以底到顶是加、左括号、减、乘，B。",
+      "viz": null,
+      "variant": {
+        "stem": "表达式与规则不变，仅把观察操作数从f改为最后的g，刚扫描并处理g后、尚未做输入结束的清栈，栈底到栈顶为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "加、除"
+          },
+          {
+            "label": "B",
+            "content": "除、加"
+          },
+          {
+            "label": "C",
+            "content": "加、左括号、除"
+          },
+          {
+            "label": "D",
+            "content": "加、减、乘"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅把扫描快照从f后移到g后。",
+        "explanation": "经过右括号已弹出内部乘、减和左括号，只留外部加号；再压除号并输出g，当前栈为加、除，A。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg04-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "infix-operator-stack-checkpoint",
+            "input": {
+              "expression": "a/b+(c*d-e*f)/g",
+              "checkpointAfterOperand": "g",
+              "associativity": "left",
+              "leftParenthesisOccupiesStack": true,
+              "checkpointBeforeEndFlush": true
+            },
+            "goal": "逐字符保存当前运算符栈并区分历史输出",
+            "pauseQuestion": "处理一个操作数时，是否会自动将尚待右括号的运算符也弹出？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg04-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "infix-operator-stack-checkpoint",
+          "input": {
+            "expression": "a/b+(c*d-e*f)/g",
+            "checkpointAfterOperand": "f",
+            "associativity": "left",
+            "leftParenthesisOccupiesStack": true,
+            "checkpointBeforeEndFlush": true
+          },
+          "goal": "逐字符保存当前运算符栈并区分历史输出",
+          "pauseQuestion": "处理一个操作数时，是否会自动将尚待右括号的运算符也弹出？"
+        }
+      ]
+    },
+    {
+      "id": "gg04-08",
+      "topic": "双端循环队列保留空槽判空满",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2014",
+        "questionNumber": "3",
+        "label": "2014 年 408 真题 第 3 题（明确M至少2与保留槽模型）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2014/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "循环数组容量`M`至少2，`end1`指队头，`end2`指尾后下一可写位置，下标始终模`M`归一。允许两端入出，元素占从`end1`到`end2`之前的连续循环区间，保留一空格，最多`M`减1项。哪组空满判断对全部合法状态正确？",
+      "options": [
+        {
+          "label": "A",
+          "content": "空：`end1==end2`；满：`end1==(end2+1)%M`"
+        },
+        {
+          "label": "B",
+          "content": "空：`end1==end2`；满：`end2==(end1+1)%(M-1)`"
+        },
+        {
+          "label": "C",
+          "content": "空：`end1==(end1+1)%M`；满：`end1==(end2+1)%M`"
+        },
+        {
+          "label": "D",
+          "content": "空：`end1==(end2+1)%M`；满：`end2==(end1+1)%(M-1)`"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把物理环长度换成可存元素数取模",
+          "explanation": "取模必须按`M`个物理位置，不能因为只存`M`减1项就用`M`减1取模；队满方向关系也不能任意换。"
+        },
+        "C": {
+          "title": "把任一位置和自身下一格相等当空",
+          "explanation": "`M`至少2时，某下标不会等于自身加一后模`M`，C的空条件不能识别真正空态。"
+        },
+        "D": {
+          "title": "将满条件当空并复用错误的模数",
+          "explanation": "空时两端指针重合，不是相隔一空槽；D还把满判用`M`减1取模，不能成立。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "分别用占用长度0和允许的最大占用长度，写出两端指针相对位置。"
+        },
+        {
+          "level": 2,
+          "text": "物理数组长度与最多可存项数不同，取模针对哪一个？"
+        },
+        {
+          "level": 3,
+          "text": "另取容量4的环，从空到3项再从前端或后端删除，跟踪占用区间与尾后位置，检查判定是否受操作端影响。"
+        }
+      ],
+      "solution": "空为两指针相等。满时尾后空格再向前一格正到队头，即 `(end2+1)%M==end1`。双端操作只改变哪端移动，不改变连续占用区和保留空槽的两种相对关系，故A。",
+      "viz": null,
+      "variant": {
+        "stem": "仅改为另有准确计数器`count`、允许存满`M`项，端点含义不变。仅看`end1`等于`end2`能判定什么？",
+        "options": [
+          {
+            "label": "A",
+            "content": "一定空"
+          },
+          {
+            "label": "B",
+            "content": "可能空也可能满，需看`count`"
+          },
+          {
+            "label": "C",
+            "content": "一定恰好`M`减1项"
+          },
+          {
+            "label": "D",
+            "content": "一定只存1项"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将保留空槽方案改为计数器区分并允许全容量占用。",
+        "explanation": "0项与`M`项都使尾后位置绕回队头，端点可相等；必须用`count`为0或`M`分开判断，不能继续把相等唯一解释为空。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "gg04-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "circular-deque-empty-full-states",
+            "input": {
+              "capacity": 5,
+              "end1Meaning": "front-element",
+              "end2Meaning": "next-free",
+              "reserveOneSlot": false,
+              "countAvailable": true,
+              "operationsAtBothEnds": true
+            },
+            "goal": "枚举占用长度和指针位置而非套固定操作端",
+            "pauseQuestion": "允许两端操作，是否改变了尾后空位与头之间表示占用区间的定义？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "gg04-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "circular-deque-empty-full-states",
+          "input": {
+            "capacity": 5,
+            "end1Meaning": "front-element",
+            "end2Meaning": "next-free",
+            "reserveOneSlot": true,
+            "operationsAtBothEnds": true
+          },
+          "goal": "枚举占用长度和指针位置而非套固定操作端",
+          "pauseQuestion": "允许两端操作，是否改变了尾后空位与头之间表示占用区间的定义？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    }
+  ]
+}

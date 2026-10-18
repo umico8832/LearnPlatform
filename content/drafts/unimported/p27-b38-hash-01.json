@@ -1,0 +1,1224 @@
+{
+  "schemaVersion": 1,
+  "section": "散列：概率空间、冲突探测、删除与链地址",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "hs01-01",
+      "topic": "改善散列平均查找效率",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2011",
+        "questionNumber": "9",
+        "label": "2011 年 408 真题 第 9 题（明确平均性能口径）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2011/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "以通常的平均查找性能为目标，下列哪些是合理的改进方向？I. 增大装填因子；II. 选择冲突更少的散列函数；III. 选择能减轻聚集的冲突处理方式。这里不把一般统计趋势当成每个具体查询的保证。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 I"
+        },
+        {
+          "label": "B",
+          "content": "仅 II"
+        },
+        {
+          "label": "C",
+          "content": "仅 I、II"
+        },
+        {
+          "label": "D",
+          "content": "仅 II、III"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把空间占用高误当查找更快",
+          "explanation": "较大的装填因子通常使冲突与探测负担增加，不能作为改善平均查找效率的一般方向。"
+        },
+        "B": {
+          "title": "漏掉冲突处理造成的聚集",
+          "explanation": "即使初始散列分布相同，不同处理方式仍会影响聚集和后续探测，不能只考虑散列函数。"
+        },
+        "C": {
+          "title": "同时误用装填因子与遗漏聚集",
+          "explanation": "I的方向通常不利于查找，III则正是降低额外探测的合理方向，不能只选I、II。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "分别考察表的拥挤程度、初始地址分布与后续探测行为。"
+        },
+        {
+          "level": 2,
+          "text": "区分“提高空间利用率”与“减少查找比较”两个目标。"
+        },
+        {
+          "level": 3,
+          "text": "固定关键字数量时增大表容量，思考冲突机会怎样变化；再看处理方式会不会形成连续占用区。"
+        }
+      ],
+      "solution": "较少的初始冲突和较弱的聚集通常有利于平均查找性能，即II、III。装填因子增大通常意味着表更拥挤，I不是一般的性能改进方向。",
+      "viz": null,
+      "variant": {
+        "stem": "保持全部口径与II、III不变，仅把I改为“降低装填因子”，合理方向是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仅 I"
+          },
+          {
+            "label": "B",
+            "content": "仅 II、III"
+          },
+          {
+            "label": "C",
+            "content": "仅 I、II"
+          },
+          {
+            "label": "D",
+            "content": "I、II、III"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "只将I由增大装填因子改为降低装填因子。",
+        "explanation": "较低装填因子通常减少拥挤，冲突少的函数与减轻聚集的策略也合理，因此三项均可作为一般改进方向。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "hs01-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "hash-performance-factors",
+            "input": {
+              "capacities": [
+                8,
+                16
+              ],
+              "keys": [
+                0,
+                8,
+                16,
+                24
+              ],
+              "factors": [
+                "load",
+                "initial-distribution",
+                "collision-method"
+              ]
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "把装填、初址分布和冲突处理分开观察",
+            "pauseQuestion": "表更拥挤与表空间利用率更高，是同一个查找性能目标吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "hs01-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "hash-performance-factors",
+          "input": {
+            "capacity": 8,
+            "hashMod": 8,
+            "examples": [
+              [
+                0,
+                2,
+                4,
+                6
+              ],
+              [
+                0,
+                8,
+                16,
+                24
+              ]
+            ],
+            "factors": [
+              "load",
+              "initial-distribution",
+              "collision-method"
+            ]
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "把装填、初址分布和冲突处理分开观察",
+          "pauseQuestion": "表更拥挤与表空间利用率更高，是同一个查找性能目标吗？"
+        }
+      ]
+    },
+    {
+      "id": "hs01-02",
+      "topic": "聚集直接影响的指标",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2014",
+        "questionNumber": "8",
+        "label": "2014 年 408 真题 第 8 题（明确空间效率含义）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2014/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "散列表发生聚集，即许多探测落在连续占用区域。就通常的关键字查找代价而言，哪项会受聚集直接影响？此处存储效率指表空间利用率。",
+      "options": [
+        {
+          "label": "A",
+          "content": "存储效率"
+        },
+        {
+          "label": "B",
+          "content": "散列函数的定义"
+        },
+        {
+          "label": "C",
+          "content": "装填因子"
+        },
+        {
+          "label": "D",
+          "content": "平均查找长度"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把布局变化当容量变化",
+          "explanation": "聚集描述占用位置的分布；在已存关键字数和表容量不变时，空间利用率并不因此变化。"
+        },
+        "B": {
+          "title": "倒置了函数与聚集的因果方向",
+          "explanation": "散列函数可能促成冲突，但聚集形成后不会自动改写已定义的函数。"
+        },
+        "C": {
+          "title": "只看数量比例而忽略分布",
+          "explanation": "装填因子只看关键字数与容量之比，同样比例可以形成不同的占用分布。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先区分“存了多少”与“存在哪里”。"
+        },
+        {
+          "level": 2,
+          "text": "聚集使一次查找更容易连续遇到已占位置，直接增加哪一种操作？"
+        },
+        {
+          "level": 3,
+          "text": "构造容量与关键字数相同、但占用位置分散或连续的两张表，分别数探测次数。"
+        }
+      ],
+      "solution": "聚集改变探测遇到连续占用位置的长度，从而直接影响平均查找长度。它不会单独改变散列函数的定义或已存数量与容量的比例。",
+      "viz": null,
+      "variant": {
+        "stem": "固定表容量 `m` 和有效关键字数 `n`，只改变占用位置使其更聚集。装填因子如何变化？",
+        "options": [
+          {
+            "label": "A",
+            "content": "增大"
+          },
+          {
+            "label": "B",
+            "content": "减小"
+          },
+          {
+            "label": "C",
+            "content": "保持不变"
+          },
+          {
+            "label": "D",
+            "content": "无法定义"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "改为直接观察固定数量与容量时的装填因子。",
+        "explanation": "装填因子为 `n/m`，分子分母均未改变，故保持不变；查找长度仍可能因布局变化而改变。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "hs01-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "hash-clustering",
+            "input": {
+              "capacity": 8,
+              "keyCount": 4,
+              "occupiedLayouts": [
+                [
+                  0,
+                  2,
+                  4,
+                  6
+                ],
+                [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              ]
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "同装填比例对比失败探测长度",
+            "pauseQuestion": "占用位置更连续时，关键字数与表容量是否必须改变？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "hs01-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "hash-clustering",
+          "input": {
+            "capacity": 8,
+            "hashMod": 8,
+            "keySets": [
+              [
+                0,
+                2,
+                4,
+                6
+              ],
+              [
+                0,
+                8,
+                16,
+                24
+              ]
+            ],
+            "probe": "linear",
+            "failureInitials": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ]
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "同装填比例对比失败探测长度",
+          "pauseQuestion": "占用位置更连续时，关键字数与表容量是否必须改变？"
+        }
+      ]
+    },
+    {
+      "id": "hs01-03",
+      "topic": "线性探测的成功均值",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2018",
+        "questionNumber": "9",
+        "label": "2018 年 408 真题 第 9 题（明确探测与概率）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2018/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "0基散列表容量7，初始为空，初址为 `H(k)=k%7`，冲突后按表长7逐槽向后环绕。依次插入22、43、15。三个已存关键字等概率被成功查找，每访问一个槽计一次探测，平均长度为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1.5"
+        },
+        {
+          "label": "B",
+          "content": "1.6"
+        },
+        {
+          "label": "C",
+          "content": "2"
+        },
+        {
+          "label": "D",
+          "content": "3"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "只比较平均存储位置",
+          "explanation": "成功探测必须从各关键字自己的初址开始计，不是直接平均槽下标。"
+        },
+        "B": {
+          "title": "用无关的地址个数作分母",
+          "explanation": "成功查找的等概率对象是三个已存关键字，应将各自探测数相加后除以3。"
+        },
+        "D": {
+          "title": "把最坏一次当平均",
+          "explanation": "最后一个键探测较长，不意味着每个键都经历相同次数；需逐键平均。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先逐个算初址，再按插入顺序确定占槽。"
+        },
+        {
+          "level": 2,
+          "text": "成功查找沿该键的探测路径直到命中，命中槽也算一次。"
+        },
+        {
+          "level": 3,
+          "text": "为每个已存键分别记录次数，再按题目概率平均，不能只拿最后一项代表全部。"
+        }
+      ],
+      "solution": "三个键初址均为1，依次占槽1、2、3。成功探测次数为1、2、3，均值为2。",
+      "viz": null,
+      "variant": {
+        "stem": "只将最后插入的15改为16，其他规则不变。对22、43、16等概率成功查找，平均长度为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`4/3`"
+          },
+          {
+            "label": "B",
+            "content": "`5/3`"
+          },
+          {
+            "label": "C",
+            "content": "2"
+          },
+          {
+            "label": "D",
+            "content": "3"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "只更换第三个关键字。",
+        "explanation": "22、43仍占1、2，16的初址为2，遇43后在3入表。各自成功探测为1、2、2，均值 `5/3`；不同初址的键也可能在探测中冲突。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "hs01-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "linear-probing",
+            "input": {
+              "capacity": 7,
+              "hashMod": 7,
+              "keys": [
+                22,
+                43,
+                16
+              ],
+              "probe": "linear",
+              "successfulKeysEqualProb": true
+            },
+            "goal": "逐键从各自初址计成功探测",
+            "pauseQuestion": "后来插入的键遇到一个不同初址迁来的键，也算冲突吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "hs01-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "linear-probing",
+          "input": {
+            "capacity": 7,
+            "hashMod": 7,
+            "keys": [
+              22,
+              43,
+              15
+            ],
+            "probe": "linear",
+            "successfulKeysEqualProb": true
+          },
+          "goal": "逐键从各自初址计成功探测",
+          "pauseQuestion": "后来插入的键遇到一个不同初址迁来的键，也算冲突吗？"
+        }
+      ]
+    },
+    {
+      "id": "hs01-04",
+      "topic": "初始散列范围与探测表长",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2019",
+        "questionNumber": "8",
+        "label": "2019 年 408 真题 第 8 题（明确初址分布与环绕）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2019/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "0基散列表容量11，初始为空，`H(k)=k%7`。按线性探测插入87、40、30、6、11、22、98、20，探测环绕用表长11。失败查找的初址0至6等概率，每访问一个槽计一次，含最终从未使用空槽。失败平均长度为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "4"
+        },
+        {
+          "label": "B",
+          "content": "5.25"
+        },
+        {
+          "label": "C",
+          "content": "6"
+        },
+        {
+          "label": "D",
+          "content": "6.29"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "没有完整计入长占用区",
+          "explanation": "应从每个可能初址沿连续占用区域走到第一个空槽，不能只取某个较短局部路径。"
+        },
+        "B": {
+          "title": "把关键字数当初址概率空间",
+          "explanation": "分母应为7个等概率初址，而不是表中8个已存关键字。"
+        },
+        "D": {
+          "title": "把不可能的初址也计入分子",
+          "explanation": "初址只可能为0至6，不能额外算入初址7的路径却仍按7种初址平均。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先区分初址取模的7与实际表容量11，各自作用不同。"
+        },
+        {
+          "level": 2,
+          "text": "按完整插入顺序确定最终占用区域，再逐个初址数到首次空槽。"
+        },
+        {
+          "level": 3,
+          "text": "失败查找按可能初址的分布平均，不按已存键数平均；终止空槽也计探测。"
+        }
+      ],
+      "solution": "最终0至7连续占用，8为空。从初址0至6失败的探测数依次9、8、7、6、5、4、3，总和42，均值6。探测可以进入槽7、8，初址却仍只有0至6。",
+      "viz": null,
+      "variant": {
+        "stem": "保持表长和键序列，仅将散列函数改为 `H(k)=k%11`，失败初址按该函数的0至10等概率。平均失败长度为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`39/11`"
+          },
+          {
+            "label": "B",
+            "content": "`47/11`"
+          },
+          {
+            "label": "C",
+            "content": "6"
+          },
+          {
+            "label": "D",
+            "content": "7"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "只改变初始散列函数，平均的可能初址随其值域改变。",
+        "explanation": "重新插入后占槽6、7、8、9、10、0、1、2，空槽3、4、5。从全部11个初址数到空槽，次数总和47，平均 `47/11`；不能复用旧的7种初址。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "hs01-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "linear-probing-failure",
+            "input": {
+              "capacity": 11,
+              "hashMod": 11,
+              "keys": [
+                87,
+                40,
+                30,
+                6,
+                11,
+                22,
+                98,
+                20
+              ],
+              "initials": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10
+              ],
+              "countTerminalEmpty": true
+            },
+            "goal": "分别标出初址值域和后续探测可达槽",
+            "pauseQuestion": "表长11是否意味着这个散列函数的初址也一定有11种？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "hs01-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "linear-probing-failure",
+          "input": {
+            "capacity": 11,
+            "hashMod": 7,
+            "keys": [
+              87,
+              40,
+              30,
+              6,
+              11,
+              22,
+              98,
+              20
+            ],
+            "initials": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "countTerminalEmpty": true
+          },
+          "goal": "分别标出初址值域和后续探测可达槽",
+          "pauseQuestion": "表长11是否意味着这个散列函数的初址也一定有11种？"
+        }
+      ]
+    },
+    {
+      "id": "hs01-05",
+      "topic": "散列平均长度的影响因素",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2022",
+        "questionNumber": "9",
+        "label": "2022 年 408 真题 第 9 题（按通常查找模型表述）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2022/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "在通常的散列查找模型中，下列哪些因素会影响平均查找长度？I. 装填因子；II. 散列函数；III. 冲突解决策略。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 I、II"
+        },
+        {
+          "label": "B",
+          "content": "仅 I、III"
+        },
+        {
+          "label": "C",
+          "content": "仅 II、III"
+        },
+        {
+          "label": "D",
+          "content": "I、II、III"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "漏掉探测或链结构的影响",
+          "explanation": "相同初始散列分布下，采用不同冲突解决方式也可能产生不同查找过程。"
+        },
+        "B": {
+          "title": "漏掉初始地址分布",
+          "explanation": "散列函数决定关键字如何落入初址，冲突多少与分布会影响平均长度。"
+        },
+        "C": {
+          "title": "忽略表的拥挤程度",
+          "explanation": "有效键数相对容量的比例会影响一般的冲突和查找负担，不能只看函数与策略。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "分别考虑表的拥挤程度、初址分布、冲突发生后的处理。"
+        },
+        {
+          "level": 2,
+          "text": "只改变其中一个因素，其他条件尽量固定，想一个查找过程会变化的例子。"
+        },
+        {
+          "level": 3,
+          "text": "区分影响实际地址或比较过程的因素，与不改变运算含义的表面写法。"
+        }
+      ],
+      "solution": "装填因子影响拥挤程度，函数影响初始分布，策略影响冲突后的路径或链结构，三项都可能影响平均查找长度。",
+      "viz": null,
+      "variant": {
+        "stem": "保持I、II不变，只将III改为“在不改变任何运算和结构的前提下等价重命名代码变量”，仍会影响平均查找长度的是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仅 I"
+          },
+          {
+            "label": "B",
+            "content": "仅 II"
+          },
+          {
+            "label": "C",
+            "content": "仅 I、II"
+          },
+          {
+            "label": "D",
+            "content": "I、II、III"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将III由冲突解决策略改成无语义变化的变量重命名。",
+        "explanation": "等价重命名不改变地址、冲突处理或比较次数，新的III不影响；I、II仍是相关因素。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "hs01-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "hash-factor-comparison",
+            "input": {
+              "capacity": 8,
+              "keys": [
+                0,
+                8,
+                16,
+                1
+              ],
+              "hashMod": 8,
+              "method": "linear-probing",
+              "variableNamesBefore": [
+                "m",
+                "i"
+              ],
+              "variableNamesAfter": [
+                "capacity",
+                "step"
+              ]
+            },
+            "inputRole": "ILLUSTRATIVE_EXAMPLE",
+            "goal": "比较行为变化与无语义的名称变化",
+            "pauseQuestion": "只重命名变量会改变一次查询访问到的地址序列吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "hs01-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "hash-factor-comparison",
+          "input": {
+            "capacity": 8,
+            "keys": [
+              0,
+              8,
+              16,
+              1
+            ],
+            "hashMod": 8,
+            "methods": [
+              "linear-probing",
+              "separate-chaining"
+            ]
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "比较行为变化与无语义的名称变化",
+          "pauseQuestion": "只重命名变量会改变一次查询访问到的地址序列吗？"
+        }
+      ]
+    },
+    {
+      "id": "hs01-06",
+      "topic": "墓碑删除后的失败探测",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2023",
+        "questionNumber": "9",
+        "label": "2023 年 408 真题 第 9 题（明确墓碑删除）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2023/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "0基散列表容量5，初始为空，`H(k)=(k+4)%5`，线性逐槽环绕。依次插入2022、12、25，再把25的槽只标为已删除，不移动或回收其他状态。失败初址0至4等概率；墓碑继续探测，首次从未使用空槽终止并计次。失败平均长度为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1"
+        },
+        {
+          "label": "B",
+          "content": "1.6"
+        },
+        {
+          "label": "C",
+          "content": "1.8"
+        },
+        {
+          "label": "D",
+          "content": "2.2"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "忽略占用区与墓碑",
+          "explanation": "并非每个初址都是可立即终止的空槽，位于冲突区或墓碑处仍需继续。"
+        },
+        "B": {
+          "title": "把墓碑当作从未使用空槽",
+          "explanation": "1.6对应把删除槽直接回收为空的另一种处理，不符合本题指定的只留墓碑方式。"
+        },
+        "D": {
+          "title": "跨过终止空槽后仍继续计数",
+          "explanation": "墓碑和从未使用空槽不同：前者继续，后者立即终止，不能把到空槽之后的路径也加进去。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "按函数计算三个初址和冲突后的实际位置。"
+        },
+        {
+          "level": 2,
+          "text": "删除标记是否保留在探测路径中，与直接变成空槽不同。"
+        },
+        {
+          "level": 3,
+          "text": "逐一枚举五种初址，数到首个从未使用空槽；不要只看剩余键数。"
+        }
+      ],
+      "solution": "2022、12占槽1、2，25占4。删除后4为墓碑，0与3为空。从0、1、2、3、4出发分别需1、3、2、1、2次，总和9，平均1.8。",
+      "viz": null,
+      "variant": {
+        "stem": "只改变删除方式：本例已确认槽4后继槽0从未使用，因此将这个探测簇尾槽4安全回收为从未使用空槽，其余键不动。其他平均规则不变，失败平均长度为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1"
+          },
+          {
+            "label": "B",
+            "content": "1.6"
+          },
+          {
+            "label": "C",
+            "content": "1.8"
+          },
+          {
+            "label": "D",
+            "content": "2.2"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将本例尾槽的墓碑删除改为已确认安全的空槽回收。",
+        "explanation": "槽0、3、4现在均为空，五个初址失败次数为1、3、2、1、1，总和8，平均1.6。此处利用本例尾槽条件，不把任意冲突链中间槽都当作可直接清空。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "hs01-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "linear-probing-delete",
+            "input": {
+              "capacity": 5,
+              "hashMod": 5,
+              "hashOffset": 4,
+              "keys": [
+                2022,
+                12,
+                25
+              ],
+              "deleteKey": 25,
+              "deletion": "verified-cluster-tail-empty",
+              "initials": [
+                0,
+                1,
+                2,
+                3,
+                4
+              ],
+              "countTerminalEmpty": true
+            },
+            "goal": "同一删除比较墓碑继续与空槽终止",
+            "pauseQuestion": "看到墓碑能否像看到从未使用空槽那样判查找失败？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "hs01-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "linear-probing-delete",
+          "input": {
+            "capacity": 5,
+            "hashMod": 5,
+            "hashOffset": 4,
+            "keys": [
+              2022,
+              12,
+              25
+            ],
+            "deleteKey": 25,
+            "deletion": "tombstone",
+            "initials": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "countTerminalEmpty": true
+          },
+          "goal": "同一删除比较墓碑继续与空槽终止",
+          "pauseQuestion": "看到墓碑能否像看到从未使用空槽那样判查找失败？"
+        }
+      ]
+    },
+    {
+      "id": "hs01-07",
+      "topic": "探测序列是否覆盖全表",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2025",
+        "questionNumber": "9",
+        "label": "2025 年 408 真题 第 9 题（明确线性环绕与无删除）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2025/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "对无删除标记、初始地址有效的开放定址散列表，线性探测每次加1并按表长环绕。下列说法正确的是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "表未满时，完整的线性探测一定能遇到空槽"
+        },
+        {
+          "label": "B",
+          "content": "表未满时，二次探测也一定能遇到空槽"
+        },
+        {
+          "label": "C",
+          "content": "线性探测中的冲突一定只发生在初址相同的键之间"
+        },
+        {
+          "label": "D",
+          "content": "二次探测中的冲突一定只发生在初址不同的键之间"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把有空槽与探测能到达混同",
+          "explanation": "二次探测可能只覆盖部分下标，表中其他位置为空也不能保证该序列能到达。"
+        },
+        "C": {
+          "title": "忽略探测迁入造成的冲突",
+          "explanation": "一个不同初址的键可被前面冲突挤到当前位置，后续键也会与它相遇。"
+        },
+        "D": {
+          "title": "排除初址相同的最直接冲突",
+          "explanation": "初址相同的键从第一步就会冲突，采用二次探测也不会消除这一次冲突。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先看线性步长1在模表长意义下能否遍历全部槽。"
+        },
+        {
+          "level": 2,
+          "text": "同义词是初始散列地址相同，不是当前存储位置相同。"
+        },
+        {
+          "level": 3,
+          "text": "构造只覆盖部分余数的探测序列，再把那些可达槽全部占用，看看其他空槽能否帮助插入。"
+        }
+      ],
+      "solution": "步长1环绕会覆盖全部槽，未满就能找到空槽。二次探测不具备一般的全覆盖保证；冲突也可能由初址相同或探测迁移后的不同初址键造成，所以只有A成立。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将线性步长改为固定加2。表长8、初址0，槽0、2、4、6已占，奇数槽为空。完整重复该探测序列会怎样？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仍必定访问到一个奇数空槽"
+          },
+          {
+            "label": "B",
+            "content": "只循环访问四个偶数槽，本例不能插入"
+          },
+          {
+            "label": "C",
+            "content": "自动把步长改为1"
+          },
+          {
+            "label": "D",
+            "content": "初始散列函数因此改变"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "只把探测步长从1改为2，给出表长与占用例子。",
+        "explanation": "可达序列是0、2、4、6再回0，不能到达奇数槽。表虽未满，该步长与表长不互素，不能保证覆盖全表。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "hs01-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "probe-coverage",
+            "input": {
+              "capacity": 8,
+              "initial": 0,
+              "occupied": [
+                0,
+                2,
+                4,
+                6
+              ],
+              "stride": 2,
+              "budget": 8
+            },
+            "goal": "把探测可达集合和空槽集合分别画出",
+            "pauseQuestion": "“表里有空槽”是否就能保证任意探测步长都到达它？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "hs01-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "probe-coverage",
+          "input": {
+            "capacity": 8,
+            "hashMod": 8,
+            "keys": [
+              0,
+              8,
+              1
+            ],
+            "linearStride": 1,
+            "quadraticCounterexample": {
+              "occupied": [
+                0,
+                1,
+                4,
+                7
+              ],
+              "initial": 0,
+              "offsets": "symmetric-square"
+            }
+          },
+          "inputRole": "ILLUSTRATIVE_EXAMPLE",
+          "goal": "把探测可达集合和空槽集合分别画出",
+          "pauseQuestion": "“表里有空槽”是否就能保证任意探测步长都到达它？"
+        }
+      ]
+    },
+    {
+      "id": "hs01-08",
+      "topic": "链地址法的平均关键字比较",
+      "source": {
+        "kind": "ORIGINAL",
+        "label": "原创",
+        "url": null
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "散列表有7个桶，初始均空，按 `H(k)=k%7` 将7、14、21、1依次尾插到对应单链表。四个已有键等概率作为成功目标；只计链中关键字相等比较，不计读桶头与空指针判断。成功平均比较次数为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "1"
+        },
+        {
+          "label": "B",
+          "content": "`7/4`"
+        },
+        {
+          "label": "C",
+          "content": "2"
+        },
+        {
+          "label": "D",
+          "content": "4"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "只计一次散列定位",
+          "explanation": "散列定位到桶之后，还需在链中逐项比较；不能把定位桶就当全部键均已命中。"
+        },
+        "C": {
+          "title": "按非空桶等概率平均",
+          "explanation": "题目是四个关键字等概率，不是两个非空桶等概率，长链中的三个键应分别计入。"
+        },
+        "D": {
+          "title": "把总比较数与单次查找混同",
+          "explanation": "四个成功目标的比较数不同，不能把键总数当作每次查找都要比较的长度。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先按散列函数列出每个桶中的链次序。"
+        },
+        {
+          "level": 2,
+          "text": "为每个成功目标单独记录从链首到命中的关键字比较次数。"
+        },
+        {
+          "level": 3,
+          "text": "最后按四个目标等概率平均；访问桶头不是本题统计的一次关键字比较。"
+        }
+      ],
+      "solution": "桶0的链为7、14、21，桶1只有1。四个目标的关键字比较次数为1、2、3、1，总和7，平均 `7/4`。",
+      "viz": null,
+      "variant": {
+        "stem": "保持同一表，只把查询改为不存在的键，七种初始桶等概率；仍只计链中关键字比较。失败平均次数为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "0"
+          },
+          {
+            "label": "B",
+            "content": "`4/7`"
+          },
+          {
+            "label": "C",
+            "content": "1"
+          },
+          {
+            "label": "D",
+            "content": "`7/4`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将成功目标等概率查找改为初始桶等概率的失败查找。",
+        "explanation": "桶0失败要比较3个键，桶1要比较1个，其余5个空桶为0。总和4除以7，平均 `4/7`。它可小于1，因为本题不把访问空桶本身算关键字比较。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "hs01-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "separate-chaining",
+            "input": {
+              "bucketCount": 7,
+              "hashMod": 7,
+              "keys": [
+                7,
+                14,
+                21,
+                1
+              ],
+              "insert": "tail",
+              "query": "unsuccessful-equal-buckets",
+              "count": "key-equality-only"
+            },
+            "goal": "区分目标键概率、桶概率和实际关键字比较",
+            "pauseQuestion": "失败落在空桶时，按本题口径发生了关键字相等比较吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "hs01-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "separate-chaining",
+          "input": {
+            "bucketCount": 7,
+            "hashMod": 7,
+            "keys": [
+              7,
+              14,
+              21,
+              1
+            ],
+            "insert": "tail",
+            "query": "successful-equal-keys",
+            "count": "key-equality-only"
+          },
+          "goal": "区分目标键概率、桶概率和实际关键字比较",
+          "pauseQuestion": "失败落在空桶时，按本题口径发生了关键字相等比较吗？"
+        }
+      ]
+    }
+  ]
+}

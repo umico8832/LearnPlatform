@@ -1,0 +1,1647 @@
+{
+  "schemaVersion": 1,
+  "section": "查找真题三：图示结构、AVL旋转与B树修复",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "sr03-01",
+      "topic": "AVL右左失衡后的指定结点孩子",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2010",
+        "questionNumber": "4",
+        "label": "2010 年 408 真题 第 4 题（原图父子关系文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2010/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站2026-10-17后台渲染查看原SVG，逐边转写给定结构；未列孩子为空，选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "互异键AVL原图转写：根24，左孩子13，右孩子53；53的左、右孩子为37、90；13、37、90均为叶。标准BST插入48后，从最低失衡祖先作标准AVL旋转。新树中37的左右孩子键依次为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "13、48"
+        },
+        {
+          "label": "B",
+          "content": "24、48"
+        },
+        {
+          "label": "C",
+          "content": "24、53"
+        },
+        {
+          "label": "D",
+          "content": "24、90"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把原根左子树叶当旋转后的直接孩子",
+          "explanation": "13仍属于原根24的左子树，旋转后不会直接替代24成为37的左孩子。"
+        },
+        "B": {
+          "title": "把新键插入位置当最终父子关系",
+          "explanation": "48先插在37右侧，但右左双旋后它转为53的左孩子，不是37最终右孩子。"
+        },
+        "D": {
+          "title": "跳过原右子树根53而直接连到其右叶",
+          "explanation": "旋转保留中序关系，90仍在53的右侧，37右孩子应为53而非90。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先在原树按键区间找新键的插入叶位置。"
+        },
+        {
+          "level": 2,
+          "text": "沿祖先回溯找第一个高度差绝对值达到2的位置，再根据插入方向确定单旋或双旋。"
+        },
+        {
+          "level": 3,
+          "text": "另取根R、右孩子U、U左孩子V的局部失衡结构，按中序顺序画出双旋前后仍应保持的键区间。"
+        }
+      ],
+      "solution": "48先成为37的右孩子，原根24出现右左失衡。先在53右旋，再在24左旋，37成为新根，左孩子24带13，右孩子53带48、90，故为24、53。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将插入键48改为54，初始树及旋转规则不变。调整后37的左右孩子依次为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "24、53"
+          },
+          {
+            "label": "B",
+            "content": "空、空"
+          },
+          {
+            "label": "C",
+            "content": "13、48"
+          },
+          {
+            "label": "D",
+            "content": "53、90"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅更换插入关键字。",
+        "explanation": "54插入90左侧，使24右侧过高且为右右型，在24左旋后根53，左子树24带13、37，右子树90带54。37仍为叶，因此两侧均空。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr03-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "avl-insert-local-children",
+            "input": {
+              "tree": {
+                "key": 24,
+                "left": {
+                  "key": 13,
+                  "left": null,
+                  "right": null
+                },
+                "right": {
+                  "key": 53,
+                  "left": {
+                    "key": 37,
+                    "left": null,
+                    "right": null
+                  },
+                  "right": {
+                    "key": 90,
+                    "left": null,
+                    "right": null
+                  }
+                }
+              },
+              "insert": 54,
+              "queryChildrenOf": 37
+            },
+            "goal": "完整旋转后再读取指定结点的两个孩子",
+            "pauseQuestion": "新插入时位于某结点旁，是否意味着旋转后仍是它的直接孩子？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr03-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "avl-insert-local-children",
+          "input": {
+            "tree": {
+              "key": 24,
+              "left": {
+                "key": 13,
+                "left": null,
+                "right": null
+              },
+              "right": {
+                "key": 53,
+                "left": {
+                  "key": 37,
+                  "left": null,
+                  "right": null
+                },
+                "right": {
+                  "key": 90,
+                  "left": null,
+                  "right": null
+                }
+              }
+            },
+            "insert": 48,
+            "queryChildrenOf": 37
+          },
+          "goal": "完整旋转后再读取指定结点的两个孩子",
+          "pauseQuestion": "新插入时位于某结点旁，是否意味着旋转后仍是它的直接孩子？"
+        }
+      ]
+    },
+    {
+      "id": "sr03-02",
+      "topic": "3阶B树叶下溢的相邻借位",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2012",
+        "questionNumber": "9",
+        "label": "2012 年 408 真题 第 9 题（原图父子关系文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2012/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站2026-10-17后台渲染查看原SVG，逐边转写给定结构；未列孩子为空，选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "3阶B树原图转写：根键45；左孩子键17、35，其三叶依次10，21，37；右孩子键55、65，其三叶依次47，60与62，78。实际叶同层，非根至少1键、最多2键。有可借相邻兄弟时先借，否则合并。删除78并修复后最右叶的键为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "60"
+        },
+        {
+          "label": "B",
+          "content": "60、62"
+        },
+        {
+          "label": "C",
+          "content": "62、65"
+        },
+        {
+          "label": "D",
+          "content": "65"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把借出的较小键直接当新最右叶",
+          "explanation": "借位要经过父分隔键旋转，删除位置接收的是原父键65，左兄弟最大键62上移，不是把60直接移到最右。"
+        },
+        "B": {
+          "title": "把未修复前的左兄弟内容当最右叶",
+          "explanation": "60、62原在中间叶，62借出后该叶只留60，新最右叶由父键65补入。"
+        },
+        "C": {
+          "title": "把上移父键与下移叶键放在同一叶",
+          "explanation": "62需要上移替换父分隔键65，65才下移到原空叶，不能两键同时保留在最右叶。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先按删除后的最少占用判断哪个叶下溢，再看相邻兄弟是否有多余键。"
+        },
+        {
+          "level": 2,
+          "text": "B树借位须经过父分隔键，而不是把兄弟某键任意直接放到空叶。"
+        },
+        {
+          "level": 3,
+          "text": "另画一个父键分隔两个叶的局部B树，让较富叶向较少叶借一键，分别更新父和两个叶。"
+        }
+      ],
+      "solution": "删78使最右叶空，左相邻叶60、62可借。父键65下移为空叶，左兄弟最大62上移父，父右结点变55、62，中间叶剩60，最右叶为65。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将删除键由78改为47，初始B树与修复规则不变，操作后最右叶含什么键？",
+        "options": [
+          {
+            "label": "A",
+            "content": "55"
+          },
+          {
+            "label": "B",
+            "content": "62"
+          },
+          {
+            "label": "C",
+            "content": "65"
+          },
+          {
+            "label": "D",
+            "content": "78"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "仅将被删除键从最右叶改为右子树最左叶的47。",
+        "explanation": "删除47后从相邻60、62借，父55下移到该叶，60上移父，中间叶剩62；最右叶78完全不在这次局部借位中，仍为78。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr03-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "btree-leaf-delete-borrow",
+            "input": {
+              "order": 3,
+              "tree": {
+                "keys": [
+                  45
+                ],
+                "children": [
+                  {
+                    "keys": [
+                      17,
+                      35
+                    ],
+                    "children": [
+                      {
+                        "keys": [
+                          10
+                        ],
+                        "children": []
+                      },
+                      {
+                        "keys": [
+                          21
+                        ],
+                        "children": []
+                      },
+                      {
+                        "keys": [
+                          37
+                        ],
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "keys": [
+                      55,
+                      65
+                    ],
+                    "children": [
+                      {
+                        "keys": [
+                          47
+                        ],
+                        "children": []
+                      },
+                      {
+                        "keys": [
+                          60,
+                          62
+                        ],
+                        "children": []
+                      },
+                      {
+                        "keys": [
+                          78
+                        ],
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              "delete": 47,
+              "borrowBeforeMerge": true,
+              "query": "rightmost-leaf"
+            },
+            "goal": "分别显示借位时父键和两个相邻叶的变化",
+            "pauseQuestion": "左兄弟借出一键时，接收叶拿到的是兄弟原键还是父分隔键？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr03-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "btree-leaf-delete-borrow",
+          "input": {
+            "order": 3,
+            "tree": {
+              "keys": [
+                45
+              ],
+              "children": [
+                {
+                  "keys": [
+                    17,
+                    35
+                  ],
+                  "children": [
+                    {
+                      "keys": [
+                        10
+                      ],
+                      "children": []
+                    },
+                    {
+                      "keys": [
+                        21
+                      ],
+                      "children": []
+                    },
+                    {
+                      "keys": [
+                        37
+                      ],
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "keys": [
+                    55,
+                    65
+                  ],
+                  "children": [
+                    {
+                      "keys": [
+                        47
+                      ],
+                      "children": []
+                    },
+                    {
+                      "keys": [
+                        60,
+                        62
+                      ],
+                      "children": []
+                    },
+                    {
+                      "keys": [
+                        78
+                      ],
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "delete": 78,
+            "borrowBeforeMerge": true,
+            "query": "rightmost-leaf"
+          },
+          "goal": "分别显示借位时父键和两个相邻叶的变化",
+          "pauseQuestion": "左兄弟借出一键时，接收叶拿到的是兄弟原键还是父分隔键？"
+        }
+      ]
+    },
+    {
+      "id": "sr03-03",
+      "topic": "BST跨多层的符号大小顺序",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2018",
+        "questionNumber": "6",
+        "label": "2018 年 408 真题 第 6 题（原图父子关系文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2018/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站2026-10-17后台渲染查看原SVG，逐边转写给定结构；未列孩子为空，选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "互异键BST原图转写：根`x1`只有右孩子`x2`；`x2`只有左孩子`x3`；`x3`只有右孩子`x4`；`x4`只有左孩子`x5`；`x5`为叶。左键小右键大。哪组关系必然成立？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`x1<x2<x3`"
+        },
+        {
+          "label": "B",
+          "content": "`x1<x4<x5`"
+        },
+        {
+          "label": "C",
+          "content": "`x3<x5<x4`"
+        },
+        {
+          "label": "D",
+          "content": "`x4<x3<x5`"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "只看根后右行而漏掉`x2`的左子树",
+          "explanation": "`x3`在`x2`左子树，必须小于`x2`，A把这对大小反过来。"
+        },
+        "B": {
+          "title": "把`x4`的左孩子当成更大值",
+          "explanation": "`x5`是`x4`左孩子，必须小于`x4`，B违反这一局部关系。"
+        },
+        "D": {
+          "title": "只保留祖先大于关系而反转直接右边",
+          "explanation": "`x4`在`x3`右侧，必大于`x3`，D却把`x4`写得更小，直接不符。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "沿每条边写左右大小，再保留整个子树受祖先区间的限制。"
+        },
+        {
+          "level": 2,
+          "text": "中序输出可一次给出所有互异键的升序次序。"
+        },
+        {
+          "level": 3,
+          "text": "另取根A右B、B左C的小树，先写C必须同时满足的两个边界，再继续添加孙结点。"
+        }
+      ],
+      "solution": "中序为`x1`、`x3`、`x5`、`x4`、`x2`；尤其`x5`既在`x3`右子树又在`x4`左侧，所以 `x3<x5<x4`。仅按相邻访问方向记大小会漏祖先约束。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将`x5`由`x4`的左孩子改为右孩子，其他边不变。四个关系选项不变，哪组现在必然成立？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`x1<x2<x3`"
+          },
+          {
+            "label": "B",
+            "content": "`x1<x4<x5`"
+          },
+          {
+            "label": "C",
+            "content": "`x3<x5<x4`"
+          },
+          {
+            "label": "D",
+            "content": "`x4<x3<x5`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅改变`x4`到`x5`的孩子方向。",
+        "explanation": "中序改为`x1`、`x3`、`x4`、`x5`、`x2`，因此`x1`小于`x4`小于`x5`，B成立；原C的`x5`小于`x4`已不成立。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr03-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "symbolic-bst-inorder-constraints",
+            "input": {
+              "root": "x1",
+              "children": {
+                "x1": {
+                  "right": "x2"
+                },
+                "x2": {
+                  "left": "x3"
+                },
+                "x3": {
+                  "right": "x4"
+                },
+                "x4": {
+                  "right": "x5"
+                },
+                "x5": {}
+              },
+              "ordering": "ascending"
+            },
+            "goal": "用中序线性次序核对多层符号关系",
+            "pauseQuestion": "后代在某祖先右侧时，是否可以因下一条边向左就低于该祖先？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr03-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "symbolic-bst-inorder-constraints",
+          "input": {
+            "root": "x1",
+            "children": {
+              "x1": {
+                "right": "x2"
+              },
+              "x2": {
+                "left": "x3"
+              },
+              "x3": {
+                "right": "x4"
+              },
+              "x4": {
+                "left": "x5"
+              },
+              "x5": {}
+            },
+            "ordering": "ascending"
+          },
+          "goal": "用中序线性次序核对多层符号关系",
+          "pauseQuestion": "后代在某祖先右侧时，是否可以因下一条边向左就低于该祖先？"
+        }
+      ]
+    },
+    {
+      "id": "sr03-04",
+      "topic": "AVL删后重插可由旋转改变树形",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2019",
+        "questionNumber": "4",
+        "label": "2019 年 408 真题 第 4 题（明确包含两次AVL修复与键值树形）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2019/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "互异键非空AVL，删除键`v`后按标准AVL修复，再插回`v`并修复；双孩子删除用后继替代。比较带键有序树形，不比对象地址。哪些断言正确？I. 原`v`为叶，前后树形可能不同；II. 原`v`非叶，前后一定不同；III. 原`v`非叶，前后一定相同。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 I"
+        },
+        {
+          "label": "B",
+          "content": "仅 II"
+        },
+        {
+          "label": "C",
+          "content": "仅 I、II"
+        },
+        {
+          "label": "D",
+          "content": "仅 I、III"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把普通BST插入落叶结论当成AVL最终位置",
+          "explanation": "AVL插后可再旋转使`v`恢复原非叶位置，所以II没有普遍保证；原叶删除也可能引起旋转而改变结构，I成立。"
+        },
+        "C": {
+          "title": "接受了非叶一定不同的过强断言",
+          "explanation": "I正确，但标准删除再插入可能经旋转完全恢复原树，不能同时声称II必然。"
+        },
+        "D": {
+          "title": "把某个能恢复的例子推广为全部非叶",
+          "explanation": "有些非叶删后重插无恢复原结构的旋转，会使该键最终落叶，III也非普遍保证。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "区分普通BST插入结束与AVL插入后恢复平衡结束两个观察点。"
+        },
+        {
+          "level": 2,
+          "text": "要检验非叶的两个必然断言，需要分别找能恢复与不能恢复的合法例子。"
+        },
+        {
+          "level": 3,
+          "text": "另选小规模AVL，删除前标记某叶或单孩子结点，再把删除与重插过程的每次旋转完整画出。"
+        }
+      ],
+      "solution": "例如AVL由1、0、2、3插入而成，删叶0会旋转根，重插后结构可不同，I成立。非叶也有两类：树2带叶1、3删2再插会经旋转恢复；树1带左0、右2且2右3删非叶2再插会变形。因此II、III都非必然。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把`v`限定为原叶，并保证删除与重插都未触发任何旋转，其他普通BST删除插入步骤不变。最终带键树形如何？",
+        "options": [
+          {
+            "label": "A",
+            "content": "与原树相同"
+          },
+          {
+            "label": "B",
+            "content": "一定不同"
+          },
+          {
+            "label": "C",
+            "content": "键集合会少一个"
+          },
+          {
+            "label": "D",
+            "content": "无法再满足BST键序"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅增加叶删除重插过程中两步都不旋转的条件。",
+        "explanation": "没有旋转时退回普通BST的局部叶删除与同键插入：原叶位置的祖先区间和路径都未变，重插回到原叶位，带键树形恢复。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr03-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "avl-delete-reinsert-counterexamples",
+            "input": {
+              "cases": [
+                {
+                  "insertKeys": [
+                    2,
+                    1,
+                    3
+                  ],
+                  "delete": 1
+                }
+              ],
+              "replacement": "successor",
+              "requireNoRotations": true
+            },
+            "goal": "保存删前、修复后、重插修复后三棵树",
+            "pauseQuestion": "新键刚插在叶，是否意味着完成AVL修复后仍只能处在叶？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr03-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "avl-delete-reinsert-counterexamples",
+          "input": {
+            "cases": [
+              {
+                "insertKeys": [
+                  1,
+                  0,
+                  2,
+                  3
+                ],
+                "delete": 0
+              },
+              {
+                "insertKeys": [
+                  2,
+                  1,
+                  3
+                ],
+                "delete": 2
+              },
+              {
+                "insertKeys": [
+                  1,
+                  0,
+                  2,
+                  3
+                ],
+                "delete": 2
+              }
+            ],
+            "replacement": "successor"
+          },
+          "goal": "保存删前、修复后、重插修复后三棵树",
+          "pauseQuestion": "新键刚插在叶，是否意味着完成AVL修复后仍只能处在叶？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "sr03-05",
+      "topic": "同一BST可由多种输入次序生成",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2020",
+        "questionNumber": "5",
+        "label": "2020 年 408 真题 第 5 题（原图父子关系文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2020/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站2026-10-17后台渲染查看原SVG，逐边转写给定结构；未列孩子为空，选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "给定原图文字版：根4，左孩子2带叶1、3，右孩子5为叶。将各序列依次插入空的普通BST，互异键且不旋转。哪组不能生成该带键树形？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`4,5,2,1,3`"
+        },
+        {
+          "label": "B",
+          "content": "`4,5,1,2,3`"
+        },
+        {
+          "label": "C",
+          "content": "`4,2,5,3,1`"
+        },
+        {
+          "label": "D",
+          "content": "`4,2,1,3,5`"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把左右子树插入时间交错当成结构变化",
+          "explanation": "A先插右子树5再插左侧2、1、3，父键2仍早于其孩子，最终可以形成目标树。"
+        },
+        "C": {
+          "title": "误以为左侧孩子必须按从左到右输入",
+          "explanation": "C在2下先插3后插1也能分别落到两侧，结构仍为目标树。"
+        },
+        "D": {
+          "title": "把先完整建左子树当成必须失衡调整",
+          "explanation": "D用于普通BST不会作平衡旋转，先插左侧2、1、3再插5仍可得到根4的目标树。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "根由第一键决定，各后续键沿当时已有的比较路径落叶。"
+        },
+        {
+          "level": 2,
+          "text": "子树内部祖先必须先出现，但左右两个子树的插入可以交错。"
+        },
+        {
+          "level": 3,
+          "text": "另取根R的两棵小子树，分别把左右子树输入交错，检查只要各自祖先先于后代是否还能保持树形。"
+        }
+      ],
+      "solution": "B在4左侧先插1，此后2、3只能成为1的右向后代，无法让2回到4的直接左孩子；其他三组都先在该位置建立2，再放1、3，因此仅B不行。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把普通BST插入改为每次完成标准AVL再平衡，目标和四个输入序列不变。哪个现在不能生成目标？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`4,5,2,1,3`"
+          },
+          {
+            "label": "B",
+            "content": "`4,5,1,2,3`"
+          },
+          {
+            "label": "C",
+            "content": "`4,2,5,3,1`"
+          },
+          {
+            "label": "D",
+            "content": "`4,2,1,3,5`"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "仅开启每次插入后的标准AVL旋转。",
+        "explanation": "D在插入4、2、1后已右旋成根2，之后插3、5不会再使其恢复根4；A、B、C在相应局部修复后均能得到根4、左2带1/3、右5的目标。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr03-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "bst-insertion-sequence-target",
+            "input": {
+              "targetTree": {
+                "key": 4,
+                "left": {
+                  "key": 2,
+                  "left": {
+                    "key": 1,
+                    "left": null,
+                    "right": null
+                  },
+                  "right": {
+                    "key": 3,
+                    "left": null,
+                    "right": null
+                  }
+                },
+                "right": {
+                  "key": 5,
+                  "left": null,
+                  "right": null
+                }
+              },
+              "sequences": [
+                [
+                  4,
+                  5,
+                  2,
+                  1,
+                  3
+                ],
+                [
+                  4,
+                  5,
+                  1,
+                  2,
+                  3
+                ],
+                [
+                  4,
+                  2,
+                  5,
+                  3,
+                  1
+                ],
+                [
+                  4,
+                  2,
+                  1,
+                  3,
+                  5
+                ]
+              ],
+              "rebalance": "AVL"
+            },
+            "goal": "对照每个输入前缀完成后的真实树",
+            "pauseQuestion": "同一序列在普通BST与AVL中，是否应期待相同的父子结构？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr03-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "bst-insertion-sequence-target",
+          "input": {
+            "targetTree": {
+              "key": 4,
+              "left": {
+                "key": 2,
+                "left": {
+                  "key": 1,
+                  "left": null,
+                  "right": null
+                },
+                "right": {
+                  "key": 3,
+                  "left": null,
+                  "right": null
+                }
+              },
+              "right": {
+                "key": 5,
+                "left": null,
+                "right": null
+              }
+            },
+            "sequences": [
+              [
+                4,
+                5,
+                2,
+                1,
+                3
+              ],
+              [
+                4,
+                5,
+                1,
+                2,
+                3
+              ],
+              [
+                4,
+                2,
+                5,
+                3,
+                1
+              ],
+              [
+                4,
+                2,
+                1,
+                3,
+                5
+              ]
+            ],
+            "rebalance": "none"
+          },
+          "goal": "对照每个输入前缀完成后的真实树",
+          "pauseQuestion": "同一序列在普通BST与AVL中，是否应期待相同的父子结构？"
+        }
+      ]
+    },
+    {
+      "id": "sr03-06",
+      "topic": "4阶B树的逐次分裂与根键",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2020",
+        "questionNumber": "10",
+        "label": "2020 年 408 真题 第 10 题（明确溢出后下中键提升）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2020/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站补明4键溢出时第2小提升的自底向上规则；原序列与四个根键选项核对不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "从空4阶B树依次插入 `5,6,9,13,8,2,12,15`。结点最多3键；先插到叶，若溢出成4键则提升第2小键，左右各留1与2键，必要时向上继续分裂。最后根包含哪些键？",
+      "options": [
+        {
+          "label": "A",
+          "content": "8"
+        },
+        {
+          "label": "B",
+          "content": "6、9"
+        },
+        {
+          "label": "C",
+          "content": "8、13"
+        },
+        {
+          "label": "D",
+          "content": "9、12"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把曾插入的中间键直接当最终根",
+          "explanation": "根键由实际溢出时被提升的分隔键决定，不是把整个键集合某个中位值直接放根。"
+        },
+        "C": {
+          "title": "在错误的分裂时机挑提升键",
+          "explanation": "第一次叶溢出提升6，后续右叶溢出提升9，不会在本规则下变成8和13。"
+        },
+        "D": {
+          "title": "忽略首次提升的6并误把叶内12提升",
+          "explanation": "最终12仍在右叶，根未再次溢出，不能只保留9再将12任意上移。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "每插一键先定位叶，只有键数超上限的结点才分裂。"
+        },
+        {
+          "level": 2,
+          "text": "分裂提升一个分隔键，并保留其余键在左右孩子，父未溢出时不要继续重排。"
+        },
+        {
+          "level": 3,
+          "text": "另取一个4键溢出叶，按题定第2小提升规则写出父新增键及两个叶，再继续下一次插入。"
+        }
+      ],
+      "solution": "插13使根叶5、6、9、13溢出，提升6，左右为5和9、13。再插8、2后，插12使右叶8、9、12、13溢出，提升9；插15只进入右叶12、13、15不再溢出，根为6、9。",
+      "viz": null,
+      "variant": {
+        "stem": "仅在上述序列末尾再追加插入16，其余规则不变，根包含哪些键？",
+        "options": [
+          {
+            "label": "A",
+            "content": "6、9"
+          },
+          {
+            "label": "B",
+            "content": "6、9、13"
+          },
+          {
+            "label": "C",
+            "content": "9、13"
+          },
+          {
+            "label": "D",
+            "content": "13"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅增加最后一次插入16。",
+        "explanation": "右叶12、13、15、16溢出，提升第2小键13，根从6、9变为6、9、13，仍未超过3键，不再分裂。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr03-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "btree-overflow-insert",
+            "input": {
+              "order": 4,
+              "insertKeys": [
+                5,
+                6,
+                9,
+                13,
+                8,
+                2,
+                12,
+                15,
+                16
+              ],
+              "split": "after-overflow-lower-median"
+            },
+            "goal": "只在实际溢出时向父提升一个分隔键",
+            "pauseQuestion": "父结点新增一个键后，是否一定也立即溢出分裂？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr03-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "btree-overflow-insert",
+          "input": {
+            "order": 4,
+            "insertKeys": [
+              5,
+              6,
+              9,
+              13,
+              8,
+              2,
+              12,
+              15
+            ],
+            "split": "after-overflow-lower-median"
+          },
+          "goal": "只在实际溢出时向父提升一个分隔键",
+          "pauseQuestion": "父结点新增一个键后，是否一定也立即溢出分裂？"
+        }
+      ]
+    },
+    {
+      "id": "sr03-07",
+      "topic": "AVL插入后的根不等于新键",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2021",
+        "questionNumber": "6",
+        "label": "2021 年 408 真题 第 6 题（原图父子关系文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2021/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站2026-10-17后台渲染查看原SVG，逐边转写给定结构；未列孩子为空，选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "AVL原图文字版：根20，左叶16，右孩子30带左右叶25、40。按标准AVL插入23并完成最低失衡处旋转后，根键为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "16"
+        },
+        {
+          "label": "B",
+          "content": "20"
+        },
+        {
+          "label": "C",
+          "content": "23"
+        },
+        {
+          "label": "D",
+          "content": "25"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把较矮左子树当旋转提升来源",
+          "explanation": "插入发生在根右子树的左侧，应在该右左结构内调整，左叶16不会提升为根。"
+        },
+        "B": {
+          "title": "只完成叶插入而未恢复根平衡",
+          "explanation": "23使20右侧高度升高，原根20需要参与旋转，不能直接保留根不变。"
+        },
+        "C": {
+          "title": "把新插入键当必然被提升的中间键",
+          "explanation": "23位于25左侧，导致的双旋提升原结点25，23仍在其左子树中，不是新根。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先定位插入路径，再逐层回算高度。"
+        },
+        {
+          "level": 2,
+          "text": "找第一个失衡结点，并查看其较高孩子偏向哪一侧。"
+        },
+        {
+          "level": 3,
+          "text": "另画一个右子树左侧增长的AVL局部，按键序列出旋转后根与两侧应满足的区间。"
+        }
+      ],
+      "solution": "23插在25左侧，根20出现右左失衡。先在30右旋、再在20左旋，25成为根，左20带16、23，右30带40，因此选25。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将插入键23改为35，原树和调整规则不变，新根键为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "16"
+          },
+          {
+            "label": "B",
+            "content": "20"
+          },
+          {
+            "label": "C",
+            "content": "25"
+          },
+          {
+            "label": "D",
+            "content": "30"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "仅将新键从23改为35。",
+        "explanation": "35插在40左侧，20出现右右失衡（其右孩子30右侧更高），在20一次左旋后根30，左20带16、25，右40带35。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr03-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "avl-insert-root-change",
+            "input": {
+              "tree": {
+                "key": 20,
+                "left": {
+                  "key": 16,
+                  "left": null,
+                  "right": null
+                },
+                "right": {
+                  "key": 30,
+                  "left": {
+                    "key": 25,
+                    "left": null,
+                    "right": null
+                  },
+                  "right": {
+                    "key": 40,
+                    "left": null,
+                    "right": null
+                  }
+                }
+              },
+              "insert": 35,
+              "query": "root"
+            },
+            "goal": "通过失衡祖先及孩子方向决定旋转",
+            "pauseQuestion": "新键靠近某一侧，不先回算高度就能直接认定哪种旋转吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr03-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "avl-insert-root-change",
+          "input": {
+            "tree": {
+              "key": 20,
+              "left": {
+                "key": 16,
+                "left": null,
+                "right": null
+              },
+              "right": {
+                "key": 30,
+                "left": {
+                  "key": 25,
+                  "left": null,
+                  "right": null
+                },
+                "right": {
+                  "key": 40,
+                  "left": null,
+                  "right": null
+                }
+              }
+            },
+            "insert": 23,
+            "query": "root"
+          },
+          "goal": "通过失衡祖先及孩子方向决定旋转",
+          "pauseQuestion": "新键靠近某一侧，不先回算高度就能直接认定哪种旋转吗？"
+        }
+      ]
+    },
+    {
+      "id": "sr03-08",
+      "topic": "5阶B树删除的多个合法修复",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2022",
+        "questionNumber": "8",
+        "label": "2022 年 408 真题 第 8 题（原图父子关系文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2022/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站2026-10-17后台渲染查看原SVG，逐边转写给定结构；未列孩子为空，选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "5阶B树每非根2至4键，原图转写：根60、90、260、350，其五叶依次为30与50；70、80、85；100与110；280与300；400与500。删除内部键260，可选前驱或后继替代，再删除对应叶键；下溢时有相邻兄弟可借先借，均不能借时选相邻兄弟与父分隔键合并。哪组不可能成为新根键？",
+      "options": [
+        {
+          "label": "A",
+          "content": "60、90、280"
+        },
+        {
+          "label": "B",
+          "content": "60、90、350"
+        },
+        {
+          "label": "C",
+          "content": "60、85、110、350"
+        },
+        {
+          "label": "D",
+          "content": "60、90、110、350"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "忽略后继替代后可向右合并",
+          "explanation": "用280替代260后删除叶280，右侧两兄弟都最低占用；与右叶及父350合并可得根60、90、280，A可行。"
+        },
+        "B": {
+          "title": "忽略下溢叶也可选择左侧合并",
+          "explanation": "后继替代后，原后继叶剩300，可与左叶100、110及父280合并，根留下60、90、350，B可行。"
+        },
+        "C": {
+          "title": "未把前驱替代与向左借位连起来",
+          "explanation": "用110替代260，删叶110后100所在叶下溢，左兄弟70、80、85可借，85上父、90下叶，根成为60、85、110、350，C可行。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "分别从前驱替代与后继替代开始，记录真正在哪个叶删键。"
+        },
+        {
+          "level": 2,
+          "text": "每个分支都检查相邻叶的键数，借位会改哪个父分隔键、合并又会移除哪个父键？"
+        },
+        {
+          "level": 3,
+          "text": "另用两个最低占用叶加一个父分隔键作合并，再用一个较富邻叶作借位，比较父键数与键值的变化。"
+        }
+      ],
+      "solution": "前驱110替代会在100叶下溢，借85经父90调整得到C；后继280替代后，300叶两侧都不能借，可选左合并得B、右合并得A。D相当于前驱替代后没有修复只剩100的下溢叶，不是完整合法结果。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将调整策略限定为用前驱110替代260，且向可借的左相邻兄弟借一次，其他输入不变。四组选项中实际新根为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "60、90、280"
+          },
+          {
+            "label": "B",
+            "content": "60、90、350"
+          },
+          {
+            "label": "C",
+            "content": "60、85、110、350"
+          },
+          {
+            "label": "D",
+            "content": "60、90、110、350"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅固定原来允许选择的前驱替代及左借分支。",
+        "explanation": "根先将260换110，叶100、110删110剩100；从左兄弟借85使85替换根90，90下移补叶，最终根60、85、110、350，为C。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr03-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "btree-delete-strategy-enumeration",
+            "input": {
+              "order": 5,
+              "tree": {
+                "keys": [
+                  60,
+                  90,
+                  260,
+                  350
+                ],
+                "children": [
+                  {
+                    "keys": [
+                      30,
+                      50
+                    ],
+                    "children": []
+                  },
+                  {
+                    "keys": [
+                      70,
+                      80,
+                      85
+                    ],
+                    "children": []
+                  },
+                  {
+                    "keys": [
+                      100,
+                      110
+                    ],
+                    "children": []
+                  },
+                  {
+                    "keys": [
+                      280,
+                      300
+                    ],
+                    "children": []
+                  },
+                  {
+                    "keys": [
+                      400,
+                      500
+                    ],
+                    "children": []
+                  }
+                ]
+              },
+              "delete": 260,
+              "replacementChoices": [
+                "predecessor"
+              ],
+              "borrowBeforeMerge": true,
+              "borrowDirection": "left"
+            },
+            "goal": "枚举所有必要修复分支并验非根最低占用",
+            "pauseQuestion": "根序列看似有序，是否足以证明所有下层结点仍达到最低键数？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr03-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "btree-delete-strategy-enumeration",
+          "input": {
+            "order": 5,
+            "tree": {
+              "keys": [
+                60,
+                90,
+                260,
+                350
+              ],
+              "children": [
+                {
+                  "keys": [
+                    30,
+                    50
+                  ],
+                  "children": []
+                },
+                {
+                  "keys": [
+                    70,
+                    80,
+                    85
+                  ],
+                  "children": []
+                },
+                {
+                  "keys": [
+                    100,
+                    110
+                  ],
+                  "children": []
+                },
+                {
+                  "keys": [
+                    280,
+                    300
+                  ],
+                  "children": []
+                },
+                {
+                  "keys": [
+                    400,
+                    500
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            "delete": 260,
+            "replacementChoices": [
+              "predecessor",
+              "successor"
+            ],
+            "borrowBeforeMerge": true,
+            "mergeChoices": [
+              "left",
+              "right"
+            ]
+          },
+          "goal": "枚举所有必要修复分支并验非根最低占用",
+          "pauseQuestion": "根序列看似有序，是否足以证明所有下层结点仍达到最低键数？"
+        }
+      ]
+    },
+    {
+      "id": "sr03-09",
+      "topic": "BST子树范围同时保留祖先上下界",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2024",
+        "questionNumber": "7",
+        "label": "2024 年 408 真题 第 7 题（原图父子关系文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2024/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站2026-10-17后台渲染查看原SVG，逐边转写给定结构；其他三角形为未展开旁支，不据此断言为空，选项含义与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "互异键BST原图文字版：根`K1`的右孩子为`K2`，`K2`的左孩子为`K3`，非空目标子树`T`是`K3`的右子树；其他三角形仅表示相应旁支。对`T`内任一键`X`，哪组区间必然成立？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`X<K1`"
+        },
+        {
+          "label": "B",
+          "content": "`X>K2`"
+        },
+        {
+          "label": "C",
+          "content": "`K1<X<K3`"
+        },
+        {
+          "label": "D",
+          "content": "`K3<X<K2`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "忽略目标位于根的右子树",
+          "explanation": "目标所有键都在`K1`右侧，应大于`K1`，而非小于。"
+        },
+        "B": {
+          "title": "只看到从`K3`向右而漏`K2`祖先上界",
+          "explanation": "向右使下界变`K3`，但`T`仍在`K2`左子树，所有键必须小于`K2`。"
+        },
+        "C": {
+          "title": "把目标的直接孩子方向读反",
+          "explanation": "`T`在`K3`右侧，因此键大于`K3`，C却把`K3`作为上界。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "沿根到目标子树的每条边依次累积开区间。"
+        },
+        {
+          "level": 2,
+          "text": "新的右转只提高下界，不会自动取消先前左转建立的上界。"
+        },
+        {
+          "level": 3,
+          "text": "另取根40右70、70左50的小树，分别看50两侧子树中键还必须遵守哪些祖先限制。"
+        }
+      ],
+      "solution": "从`K1`向右给下界`K1`，从`K2`向左给上界`K2`，再从`K3`向右提高下界到`K3`；已有 `K1<K3<K2`，故最终 `K3<X<K2`。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将`T`从`K3`的右子树改为其非空左子树，其他父子边和四个区间选项不变，哪项必然成立？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`X<K1`"
+          },
+          {
+            "label": "B",
+            "content": "`X>K2`"
+          },
+          {
+            "label": "C",
+            "content": "`K1<X<K3`"
+          },
+          {
+            "label": "D",
+            "content": "`K3<X<K2`"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅改变目标`T`相对于`K3`的孩子方向。",
+        "explanation": "`T`仍在`K1`右侧给下界`K1`，但现在在`K3`左侧给更紧上界`K3`，得到 `K1<X<K3`，`K2`的更宽上界不再决定最终区间。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "sr03-09v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "symbolic-bst-subtree-bounds",
+            "input": {
+              "path": [
+                {
+                  "node": "K1",
+                  "direction": "right"
+                },
+                {
+                  "node": "K2",
+                  "direction": "left"
+                },
+                {
+                  "node": "K3",
+                  "direction": "left"
+                }
+              ],
+              "targetSubtree": "T",
+              "targetNonempty": true
+            },
+            "goal": "逐边保留并收紧祖先区间",
+            "pauseQuestion": "最后一次转向改变了哪个边界，另一个旧边界还有效吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "sr03-09-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "symbolic-bst-subtree-bounds",
+          "input": {
+            "path": [
+              {
+                "node": "K1",
+                "direction": "right"
+              },
+              {
+                "node": "K2",
+                "direction": "left"
+              },
+              {
+                "node": "K3",
+                "direction": "right"
+              }
+            ],
+            "targetSubtree": "T",
+            "targetNonempty": true
+          },
+          "goal": "逐边保留并收紧祖先区间",
+          "pauseQuestion": "最后一次转向改变了哪个边界，另一个旧边界还有效吗？"
+        }
+      ]
+    }
+  ]
+}

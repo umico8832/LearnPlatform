@@ -1,0 +1,1156 @@
+{
+  "schemaVersion": 1,
+  "section": "线性表真题：地址、指针、边界和移位成本",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "ll01-01",
+      "topic": "链接地址与结点自身地址",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2016",
+        "questionNumber": "1",
+        "label": "2016 年 408 真题 第 1 题（将地址表文字转写）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2016/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站按原表转写每个结点地址与逻辑链，四项地址及正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "单链表首元为`c`。结点自身地址依次为：`a`在1000H、`b`在1004H、`c`在1008H、`d`在100CH、`e`在1010H；原链接为`c`到`a`到`e`到`b`到`d`到空。把新结点`f`放在1014H并插在`a`和`e`之间。插入后`a`、`e`、`f`的链接地址依次是？链接地址指后继结点的内存地址。",
+      "options": [
+        {
+          "label": "A",
+          "content": "1010H、1014H、1004H"
+        },
+        {
+          "label": "B",
+          "content": "1010H、1004H、1014H"
+        },
+        {
+          "label": "C",
+          "content": "1014H、1010H、1004H"
+        },
+        {
+          "label": "D",
+          "content": "1014H、1004H、1010H"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把插入位置推迟到`e`之后",
+          "explanation": "A反映`a`仍指`e`、`e`指`f`、`f`指`b`的另一插入位置，不符合本题`a`与`e`之间。"
+        },
+        "B": {
+          "title": "把新结点自身地址当成它的后继地址",
+          "explanation": "`f`存于1014H并不意味着其链接也为1014H；那会指向自身。插入后`a`也不再直接指`e`。"
+        },
+        "C": {
+          "title": "把`e`自身地址填进`e`的链接字段",
+          "explanation": "`e`仍指向`b`，其链接应保持1004H，不能用`e`自身的1010H替代。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先画出逻辑后继关系，再查每个后继自身的地址。"
+        },
+        {
+          "level": 2,
+          "text": "插入只改变前驱的链接并设置新结点的链接，原后继的后续链接是否必须改变？"
+        },
+        {
+          "level": 3,
+          "text": "另取三个物理地址不连续的结点，比较一个结点住在哪里与它存的链接值指向哪里。"
+        }
+      ],
+      "solution": "插入后`a`指`f`、`e`仍指`b`、`f`指`e`，故链接分别为`f`的1014H、`b`的1004H、`e`的1010H。物理地址顺序不等于逻辑链次序。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把`f`的插入位置改为`e`与`b`之间，地址和原链不变，`a`、`e`、`f`的链接地址依次为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "1010H、1014H、1004H"
+          },
+          {
+            "label": "B",
+            "content": "1010H、1004H、1014H"
+          },
+          {
+            "label": "C",
+            "content": "1014H、1010H、1004H"
+          },
+          {
+            "label": "D",
+            "content": "1014H、1004H、1010H"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅把插入位置从`a`后改为`e`后。",
+        "explanation": "`a`仍指`e`为1010H，`e`改指`f`为1014H，`f`指原后继`b`为1004H，故选A。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "ll01-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "linked-list-address-insert",
+            "input": {
+              "addresses": {
+                "a": "1000H",
+                "b": "1004H",
+                "c": "1008H",
+                "d": "100CH",
+                "e": "1010H",
+                "f": "1014H"
+              },
+              "originalOrder": [
+                "c",
+                "a",
+                "e",
+                "b",
+                "d"
+              ],
+              "insert": "f",
+              "after": "e",
+              "queryNextOf": [
+                "a",
+                "e",
+                "f"
+              ]
+            },
+            "goal": "分开显示物理地址和逻辑后继字段",
+            "pauseQuestion": "链接值应填写当前结点地址，还是它后继的地址？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "ll01-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "linked-list-address-insert",
+          "input": {
+            "addresses": {
+              "a": "1000H",
+              "b": "1004H",
+              "c": "1008H",
+              "d": "100CH",
+              "e": "1010H",
+              "f": "1014H"
+            },
+            "originalOrder": [
+              "c",
+              "a",
+              "e",
+              "b",
+              "d"
+            ],
+            "insert": "f",
+            "after": "a",
+            "queryNextOf": [
+              "a",
+              "e",
+              "f"
+            ]
+          },
+          "goal": "分开显示物理地址和逻辑后继字段",
+          "pauseQuestion": "链接值应填写当前结点地址，还是它后继的地址？"
+        }
+      ]
+    },
+    {
+      "id": "ll01-02",
+      "topic": "双向循环链表删除重连",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2016",
+        "questionNumber": "2",
+        "label": "2016 年 408 真题 第 2 题（明确p不是头结点）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2016/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "带头结点的双向循环链表，`p` 指向一个合法数据结点，头结点保留。`prev`、`next` 分别为前驱与后继。删除并释放该结点的正确语句序列是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`p->next->prev=p->prev; p->prev->next=p->prev; free(p);`"
+        },
+        {
+          "label": "B",
+          "content": "`p->next->prev=p->next; p->prev->next=p->next; free(p);`"
+        },
+        {
+          "label": "C",
+          "content": "`p->next->prev=p->next; p->prev->next=p->prev; free(p);`"
+        },
+        {
+          "label": "D",
+          "content": "`p->next->prev=p->prev; p->prev->next=p->next; free(p);`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把前驱的后继错误地指回前驱",
+          "explanation": "第一句修好了后继的前驱，但第二句让前驱形成自指而不是跨过`p`连到原后继，链的正向关系错误。"
+        },
+        "B": {
+          "title": "把后继的前驱错误地指回后继",
+          "explanation": "第二句虽跨过`p`，第一句却令后继的前驱自指，反向遍历不能回到原前驱。"
+        },
+        "C": {
+          "title": "两侧都自指而没有互相重连",
+          "explanation": "前驱后继和后继前驱都连向自己，没有将两个邻居互相连接。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "删除后原前驱与原后继应该成为彼此的直接邻居。"
+        },
+        {
+          "level": 2,
+          "text": "分别检查两个方向的指针，不要只看正向是否绕过待删结点。"
+        },
+        {
+          "level": 3,
+          "text": "另画头结点加一个数据结点的循环表，删除唯一数据后，两个头指针域应指向谁？"
+        }
+      ],
+      "solution": "要令原后继的前驱指向原前驱，并令原前驱的后继指向原后继，最后再释放`p`。D恰好完成两次跨接，单数据结点时也会使头结点两域都指回头自身。",
+      "viz": null,
+      "variant": {
+        "stem": "只把链表规模限定为头结点`h`与唯一数据结点`p`，执行正确删除后，`h`的两指针域应为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "都为空指针"
+          },
+          {
+            "label": "B",
+            "content": "都指向`h`自身"
+          },
+          {
+            "label": "C",
+            "content": "`h`也必须释放"
+          },
+          {
+            "label": "D",
+            "content": "仍指向已释放的`p`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将数据结点数限定为1。",
+        "explanation": "循环表空态仍保留头结点，原前驱与后继都是`h`，两次跨接都使`h`指向自己；不能留下对已释放`p`的引用。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "ll01-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "doubly-circular-delete",
+            "input": {
+              "dataNodes": [
+                "P"
+              ],
+              "sentinel": "H",
+              "delete": "P",
+              "choices": [
+                "p->next->prev=p->prev; p->prev->next=p->next; free(p);"
+              ]
+            },
+            "goal": "先连接两个邻居再释放数据结点",
+            "pauseQuestion": "头结点和唯一数据互为邻居时，两侧跨接会得到什么？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "ll01-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "doubly-circular-delete",
+          "input": {
+            "dataNodes": [
+              "A",
+              "P",
+              "B"
+            ],
+            "sentinel": "H",
+            "delete": "P",
+            "choices": [
+              "p->next->prev=p->prev; p->prev->next=p->prev; free(p);",
+              "p->next->prev=p->next; p->prev->next=p->next; free(p);",
+              "p->next->prev=p->next; p->prev->next=p->prev; free(p);",
+              "p->next->prev=p->prev; p->prev->next=p->next; free(p);"
+            ]
+          },
+          "goal": "先连接两个邻居再释放数据结点",
+          "pauseQuestion": "头结点和唯一数据互为邻居时，两侧跨接会得到什么？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "ll01-03",
+      "topic": "单循环删首与尾指针边界",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2021",
+        "questionNumber": "1",
+        "label": "2021 年 408 真题 第 1 题（明确空表尾指针约定）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2021/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "带头结点`h`的非空单循环链表，尾指针`p`指最后数据结点，尾的后继为`h`；空表约定尾指针也为`h`。删除第一个数据结点时，下列哪组语句对所有非空规模均正确？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`h->next=h->next->next; q=h->next; free(q);`"
+        },
+        {
+          "label": "B",
+          "content": "`q=h->next; h->next=h->next->next; free(q);`"
+        },
+        {
+          "label": "C",
+          "content": "`q=h->next; h->next=q->next; if(p!=q) p=h; free(q);`"
+        },
+        {
+          "label": "D",
+          "content": "`q=h->next; h->next=q->next; if(p==q) p=h; free(q);`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "先改链再保存待释放结点",
+          "explanation": "A改了头链接之后才取`q`，保存到的是新首元或头结点，会释放错误对象。"
+        },
+        "B": {
+          "title": "漏掉删去唯一数据时更新尾指针",
+          "explanation": "B在多数据时可绕过首元，但只有一个数据时，尾指针仍悬在被释放的原首元。"
+        },
+        "C": {
+          "title": "把尾指针更新条件写反",
+          "explanation": "只应在被删首元同时也是尾元时更新`p`；不等条件会在多数据时把仍有效尾指针错误改为`h`，并漏掉单数据情况。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先保存原首元，断开后再释放，避免保存到新位置。"
+        },
+        {
+          "level": 2,
+          "text": "分别模拟只有一个数据与至少两个数据的情况。"
+        },
+        {
+          "level": 3,
+          "text": "在另一张三数据循环表上标记首元和尾元，再逐步缩减到单数据，观察两者何时成为同一个结点。"
+        }
+      ],
+      "solution": "`q`先保存原首元，`h`跳过它。若`p`等于`q`，原来只有一个数据，删后空表需令`p`回`h`；否则尾不变。最后释放`q`，故D处理了全部非空规模。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把输入具体化为 `h->A->B->h`、尾指针指B，按正确删除步骤删首元后，头的后继与尾指针依次指向？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`h`、`h`"
+          },
+          {
+            "label": "B",
+            "content": "B、B"
+          },
+          {
+            "label": "C",
+            "content": "B、`h`"
+          },
+          {
+            "label": "D",
+            "content": "A、B"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将输入限定为两个数据结点的循环表。",
+        "explanation": "删除A后只剩B，`h`的后继为B，B的后继为`h`；尾仍为B，不需要改为`h`。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "ll01-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "circular-head-delete-tail-boundary",
+            "input": {
+              "sentinel": "h",
+              "dataNodes": [
+                "A",
+                "B"
+              ],
+              "tail": "B",
+              "delete": "A"
+            },
+            "goal": "同时检查头链接、尾变量和释放对象",
+            "pauseQuestion": "原首元何时也正是尾指针指向的结点？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "ll01-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "circular-head-delete-tail-boundary",
+          "input": {
+            "sentinel": "H",
+            "dataNodeCounts": [
+              1,
+              3
+            ],
+            "tailMeaning": "last-data-or-sentinel",
+            "choices": [
+              "h->next=h->next->next; q=h->next; free(q);",
+              "q=h->next; h->next=h->next->next; free(q);",
+              "q=h->next; h->next=q->next; if(p!=q) p=h; free(q);",
+              "q=h->next; h->next=q->next; if(p==q) p=h; free(q);"
+            ]
+          },
+          "goal": "同时检查头链接、尾变量和释放对象",
+          "pauseQuestion": "原首元何时也正是尾指针指向的结点？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "ll01-04",
+      "topic": "顺序表的按位随机存取",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2023",
+        "questionNumber": "1",
+        "label": "2023 年 408 真题 第 1 题（补明标准数组算法与平均口径）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2023/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站保留四项操作与正确项，补明直接按位读取、折半查找、保持顺序移动和均匀合法位置的标准实现口径"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "长度 `n≥2` 的升序顺序表从固定基址连续存放，容量足够，不用额外索引。值查找用折半查找；插入和删除维持连续有序存放并逐项移位；合法位置及成功目标等概率。哪项操作的平均时间为常数阶？",
+      "options": [
+        {
+          "label": "A",
+          "content": "按指定值查找"
+        },
+        {
+          "label": "B",
+          "content": "插入指定值元素"
+        },
+        {
+          "label": "C",
+          "content": "删除第`i`个元素"
+        },
+        {
+          "label": "D",
+          "content": "读取第`i`个元素"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把有序可折半等同于常数定位",
+          "explanation": "折半查找一般仍随规模对数增长，只有按位读取能直接用已知位序算地址。"
+        },
+        "B": {
+          "title": "只算定位而漏掉搬移",
+          "explanation": "即使定位插入点较快，连续有序存储还要把后续元素移位，平均搬移量随长度增长。"
+        },
+        "C": {
+          "title": "把已知删除位序当作无需移位",
+          "explanation": "已知位置只省去了定位，被删位置后的元素仍需前移填洞，均匀位置下平均线性移动。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "把找到目标位置与维持存储表示的修改分开。"
+        },
+        {
+          "level": 2,
+          "text": "数组已知下标可直接算地址，但顺序存放的中间插删仍需保持连续。"
+        },
+        {
+          "level": 3,
+          "text": "在另一个长度6的数组上，比较读取第3项与删除第3项需要访问或改变哪些位置。"
+        }
+      ],
+      "solution": "第`i`项下标为 `i-1`，固定元素宽度下可一次地址计算后读取，为常数阶。折半值查找平均对数阶，均匀插入和删除都涉及平均线性数量移位，因此只有按位读取符合。",
+      "viz": null,
+      "variant": {
+        "stem": "将输入具体化为长度8，仍按合法删除位序1至8等概率。只数仍保留旧元素为填洞而前移的次数，删除的平均移位次数是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "0"
+          },
+          {
+            "label": "B",
+            "content": "3"
+          },
+          {
+            "label": "C",
+            "content": "3.5"
+          },
+          {
+            "label": "D",
+            "content": "4"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "将操作查询改为长度8的均匀删除平均移位数，沿用原连续移位模型。",
+        "explanation": "删第`i`项需前移8减`i`个旧元素，次数从7至0等概率，均值为3.5；不把释放被删元素或更新长度当作旧元素移位。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "ll01-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "sequential-list-address-versus-shifts",
+            "input": {
+              "length": 8,
+              "deleteRanksEqualProbability": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8
+              ],
+              "count": "retained-old-elements-shift"
+            },
+            "goal": "区分随机读取与为保持连续而移动元素",
+            "pauseQuestion": "知道要删的位置，是否意味着后面的元素不必填洞？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "ll01-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "sequential-list-address-versus-shifts",
+          "input": {
+            "length": 8,
+            "operations": [
+              "binary-value-search",
+              "ordered-insert",
+              "rank-delete",
+              "rank-read"
+            ],
+            "fixedBase": true
+          },
+          "goal": "区分随机读取与为保持连续而移动元素",
+          "pauseQuestion": "知道要删的位置，是否意味着后面的元素不必填洞？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "ll01-05",
+      "topic": "双链插入后的别名与前驱字段",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2023",
+        "questionNumber": "2",
+        "label": "2023 年 408 真题 第 2 题（明确先前赋值已生效与新字段未初始化）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2023/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "非空双向链表中`p`为非尾数据结点，`s`为新结点。已依次执行 `s->next=p->next; p->next=s;`，其他旧结点指针尚未改变，新结点的`prev`尚未初始化。接着执行哪组语句能正确完成插入？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`s->next->prev=p; s->prev=p;`"
+        },
+        {
+          "label": "B",
+          "content": "`p->next->prev=s; s->prev=p;`"
+        },
+        {
+          "label": "C",
+          "content": "`s->prev=s->next->prev; s->next->prev=s;`"
+        },
+        {
+          "label": "D",
+          "content": "`p->next->prev=s->prev; s->next->prev=p;`"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "仍把原后继的前驱设为`p`",
+          "explanation": "A虽设置`s`的前驱，却没让原后继反向连接到`s`，原后继的`prev`仍越过新结点。"
+        },
+        "B": {
+          "title": "把更新后的`p`后继误当原后继",
+          "explanation": "此时`p`的`next`已经是`s`，B第一句改的是`s`的`prev`而非原后继的`prev`；第二句再覆盖回`p`，原后继仍未修复。"
+        },
+        "D": {
+          "title": "依赖未初始化字段且没修原后继",
+          "explanation": "D通过`p`的`next`实际读写`s`自身的未初始化`prev`，并把原后继的`prev`仍写为`p`，不能完成双向连接。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "给原后继另起名字`r`，再逐句更新`p`、`s`、`r`的实际指向。"
+        },
+        {
+          "level": 2,
+          "text": "执行过前两句以后，`p`的`next`与`s`是否已经是同一个指针值？"
+        },
+        {
+          "level": 3,
+          "text": "在另一个两旧结点之间插入新结点的例子中，分别追踪旧的后继地址与更新后可达的后继地址，避免把二者混用。"
+        }
+      ],
+      "solution": "前两句后`s`的`next`仍指原后继`r`，`r`的`prev`仍为`p`。C先从`r`的`prev`取回`p`存入`s`的`prev`，再令`r`的`prev`指向`s`，正好完成反向两条连接。B虽短暂让`s`的`prev`指自己，后一句又改回`p`，但依然漏修`r`的`prev`。",
+      "viz": null,
+      "variant": {
+        "stem": "只把C中两句交换顺序，执行 `s->next->prev=s; s->prev=s->next->prev;`，最终`s`的`prev`指向谁？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`p`"
+          },
+          {
+            "label": "B",
+            "content": "`s`自己"
+          },
+          {
+            "label": "C",
+            "content": "原后继`r`"
+          },
+          {
+            "label": "D",
+            "content": "一定为空"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅交换正确补全序列两句的执行顺序。",
+        "explanation": "先把`r`的`prev`改成`s`，再读同一字段赋给`s`的`prev`，读到的已是`s`，所以`s`的`prev`自指。原来从`r`的`prev`保存`p`这一步必须先完成。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "ll01-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "doubly-list-insert-aliases",
+            "input": {
+              "nodes": [
+                "P",
+                "R"
+              ],
+              "newNode": "S",
+              "after": "P",
+              "prefix": [
+                "S.next=P.next",
+                "P.next=S"
+              ],
+              "completion": [
+                "S.next.prev=S",
+                "S.prev=S.next.prev"
+              ]
+            },
+            "goal": "逐句查看别名实际改的是哪一个结点字段",
+            "pauseQuestion": "`p`的后继更新后，经`p`的`next`再访问`prev`，还是在修改原后继吗？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "ll01-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "doubly-list-insert-aliases",
+          "input": {
+            "nodes": [
+              "P",
+              "R"
+            ],
+            "newNode": "S",
+            "after": "P",
+            "prefix": [
+              "S.next=P.next",
+              "P.next=S"
+            ],
+            "completionChoices": [
+              "s->next->prev=p; s->prev=p;",
+              "p->next->prev=s; s->prev=p;",
+              "s->prev=s->next->prev; s->next->prev=s;",
+              "p->next->prev=s->prev; s->next->prev=p;"
+            ]
+          },
+          "goal": "逐句查看别名实际改的是哪一个结点字段",
+          "pauseQuestion": "`p`的后继更新后，经`p`的`next`再访问`prev`，还是在修改原后继吗？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "ll01-06",
+      "topic": "摘取后继结点移到表头",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2024",
+        "questionNumber": "1",
+        "label": "2024 年 408 真题 第 1 题（明确逐句执行与移动对象）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2024/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "带头结点`h`的非空单链表，`p`指数据结点且不是第一个或最后一个。依次执行 `q=p->next; p->next=q->next; q->next=h->next; h->next=q;`，代码的功能是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "把`q`结点插到`p`之后"
+        },
+        {
+          "label": "B",
+          "content": "把`p`结点插到`q`之后"
+        },
+        {
+          "label": "C",
+          "content": "把`p`结点插到`h`之后"
+        },
+        {
+          "label": "D",
+          "content": "把`q`结点移到`h`之后"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "只注意最初相邻而忽略后续摘链",
+          "explanation": "`q`原本就在`p`之后，第二句先把`q`摘下，最后接到头结点之后，不会还留在`p`后。"
+        },
+        "B": {
+          "title": "把修改`p`的链接误当移动`p`结点",
+          "explanation": "`p`自身并未摘除，只改变它的后继以越过`q`，移动对象是被`q`保存的原后继。"
+        },
+        "C": {
+          "title": "忽略临时变量保存的被搬移对象",
+          "explanation": "最后`h`的`next`指向`q`而不是`p`，因此被放到首元位置的是`q`。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "每句执行后更新一条指针，区分保存地址、摘链和接回。"
+        },
+        {
+          "level": 2,
+          "text": "头结点本身保留不动，它的`next`表示第一个有效数据结点。"
+        },
+        {
+          "level": 3,
+          "text": "另画头后接四项的短链，选择中间结点为`p`，用独立标记保存`q`，执行后检查哪个原结点成了首元。"
+        }
+      ],
+      "solution": "`q`保存`p`的原后继，第二句让`p`跨过`q`接到其后继；第三句把`q`接向原首元，第四句把头接向`q`。因此`q`被完整移到头结点之后，没有释放结点，也没有移动`p`。",
+      "viz": null,
+      "variant": {
+        "stem": "仅交换最后两句顺序，改为 `q=p->next; p->next=q->next; h->next=q; q->next=h->next;`，会出现什么？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仍正确把`q`移到首元"
+          },
+          {
+            "label": "B",
+            "content": "`q`的`next`指向`q`自身，头后进入自环"
+          },
+          {
+            "label": "C",
+            "content": "`p`被释放"
+          },
+          {
+            "label": "D",
+            "content": "所有指针保持原样"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅交换原代码的最后两条赋值。",
+        "explanation": "执行`h`的`next`等于`q`后，再把`q`的`next`赋为`h`的`next`，实际就是令`q`的`next`等于`q`。于是从头进入`q`自环，原首元链也不再由头可达，不能把这些赋值当同时交换。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "ll01-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "singly-list-node-to-front",
+            "input": {
+              "sentinel": "H",
+              "dataNodes": [
+                "A",
+                "B",
+                "C",
+                "D"
+              ],
+              "p": "B",
+              "statements": "q=p->next; p->next=q->next; h->next=q; q->next=h->next;"
+            },
+            "goal": "保存旧首元引用后再改变头链接",
+            "pauseQuestion": "最后两句交换后，再读头的`next`是否仍能取得旧首元？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "ll01-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "singly-list-node-to-front",
+          "input": {
+            "sentinel": "H",
+            "dataNodes": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "p": "B",
+            "statements": "q=p->next; p->next=q->next; q->next=h->next; h->next=q;"
+          },
+          "goal": "保存旧首元引用后再改变头链接",
+          "pauseQuestion": "最后两句交换后，再读头的`next`是否仍能取得旧首元？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "ll01-07",
+      "topic": "固定基址顺序表的首尾移动",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2026",
+        "questionNumber": "1",
+        "label": "2026 年 408 真题 第 1 题（补明长度与固定基址）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2026/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站补明长度至少2、固定基址连续存放且只计旧元素位置改变；避免空表/单元素删除和改变基址造成的退化歧义，四操作组合不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "顺序表长度 `n≥2`，容量足够，已有元素从固定基址连续存放，操作不改变基址并保持相对顺序。只计仍保留旧元素改变存储位置，不计写入新值和清除被删值。哪些操作必然有旧元素移动？I. 表头插入；II. 表头删除；III. 表尾插入；IV. 表尾删除。",
+      "options": [
+        {
+          "label": "A",
+          "content": "I、II"
+        },
+        {
+          "label": "B",
+          "content": "I、III"
+        },
+        {
+          "label": "C",
+          "content": "II、IV"
+        },
+        {
+          "label": "D",
+          "content": "III、IV"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把写入新尾值当作旧元素移动",
+          "explanation": "表尾插入只在空闲尾格写入新值，不移动旧元素；相反表头删除要让剩余旧元素前移。"
+        },
+        "C": {
+          "title": "漏掉表头插入并误算尾删",
+          "explanation": "表头插入要将全部旧项后移，表尾删除则不改变仍保留元素的位置。"
+        },
+        "D": {
+          "title": "把修改长度与搬移旧元素混同",
+          "explanation": "尾插尾删都可通过尾格和长度处理，不需要移动保留的旧项；首部两操作才必然移位。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "固定基址意味着首元始终占哪个位置？"
+        },
+        {
+          "level": 2,
+          "text": "在首部腾位置或填洞，与只改变表尾长度，分别影响哪些旧元素？"
+        },
+        {
+          "level": 3,
+          "text": "另取长度3的数组画出四种操作前后位置，不把新元素首次写入算成旧项搬移。"
+        }
+      ],
+      "solution": "表头插入需后移全部`n`个旧项，表头删除需前移其余`n`减1项；因长度至少2，两者均正。尾插与尾删对保留旧项都无移位，所以为I、II。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将原长度改为1，其他固定基址与移动定义不变，仍必然有旧元素移动的操作是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仅 I"
+          },
+          {
+            "label": "B",
+            "content": "仅 I、II"
+          },
+          {
+            "label": "C",
+            "content": "仅 II"
+          },
+          {
+            "label": "D",
+            "content": "仅 IV"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将非退化长度条件改为单元素表。",
+        "explanation": "头插仍后移原有1项；头删后没有保留旧项可移动，尾插尾删也无旧项移位，因此只有I。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "ll01-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "fixed-base-array-list-moves",
+            "input": {
+              "length": 1,
+              "fixedBase": true,
+              "operations": [
+                "head-insert",
+                "head-delete",
+                "tail-insert",
+                "tail-delete"
+              ],
+              "count": "retained-old-element-location-changes"
+            },
+            "goal": "分别累计首尾操作中旧项的位置改变",
+            "pauseQuestion": "删去唯一元素后，是否还有保留的旧项需要搬动？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "ll01-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "fixed-base-array-list-moves",
+          "input": {
+            "length": 4,
+            "fixedBase": true,
+            "operations": [
+              "head-insert",
+              "head-delete",
+              "tail-insert",
+              "tail-delete"
+            ],
+            "count": "retained-old-element-location-changes"
+          },
+          "goal": "分别累计首尾操作中旧项的位置改变",
+          "pauseQuestion": "删去唯一元素后，是否还有保留的旧项需要搬动？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "ll01-08",
+      "topic": "跨一项后继赋值的空指针与推进",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2026",
+        "questionNumber": "2",
+        "label": "2026 年 408 真题 第 2 题（明确线性p1后继与更新目标）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2026/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有限线性链表每结点有`p1`、`p2`两指针域，`p1`为未改变的直接后继，尾的`p1`为空，`p2`原值不作为遍历条件。`cu`从头开始，要把每个`p2`改为`p1`所指结点的直接后继，不存在时设空；保持`p1`不变。哪段代码对全部长度都安全并终止？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`while(cu!=NULL){cu->p2=cu->p1->p1; cu=cu->p1;}`"
+        },
+        {
+          "label": "B",
+          "content": "`while(cu!=NULL && cu->p2!=NULL){cu->p2=cu->p1->p1; cu=cu->p1;}`"
+        },
+        {
+          "label": "C",
+          "content": "`while(cu!=NULL){if(cu->p1!=NULL){cu->p2=cu->p1->p1; cu=cu->p1;}}`"
+        },
+        {
+          "label": "D",
+          "content": "`while(cu!=NULL){if(cu->p1!=NULL){cu->p2=cu->p1->p1;}else{cu->p2=NULL;} cu=cu->p1;}`"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "到尾时直接解引用空后继",
+          "explanation": "A在尾结点`p1`为空时仍访问其`p1`字段，会发生非法空指针解引用。"
+        },
+        "B": {
+          "title": "把待改字段当遍历有效性条件",
+          "explanation": "`p2`原值并不代表有没有后继，可能提早停下；即使继续到尾，也没检查`p1`是否为空。"
+        },
+        "C": {
+          "title": "把遍历推进放在有后继分支内部",
+          "explanation": "到尾后条件不成立，`cu`不更新，循环永远留在尾结点，无法终止。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "分别检查`cu`本身是否为空，以及它的直接后继是否为空。"
+        },
+        {
+          "level": 2,
+          "text": "访问后继的字段需要额外保护，且无论处在哪一分支都要保证循环推进。"
+        },
+        {
+          "level": 3,
+          "text": "另取零、一、两个结点的线性链，检查最后一次循环中每个解引用是否有效，下一轮条件是否能变假。"
+        }
+      ],
+      "solution": "D先确认`cu`存在，再只在`p1`非空时读取下一层`p1`；否则令`p2`为空。每轮都沿未改变的`p1`推进，因此覆盖全部结点并在尾后终止。A缺解引用保护，B用错字段作条件，C在尾停滞。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将目标改为`p2`保存直接后继，不再跨过一项，以下哪段更简洁且对全部长度安全终止？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`while(cu!=NULL){cu->p2=cu->p1; cu=cu->p1;}`"
+          },
+          {
+            "label": "B",
+            "content": "`while(cu!=NULL){cu->p2=cu->p1->p1; cu=cu->p1;}`"
+          },
+          {
+            "label": "C",
+            "content": "`while(cu!=NULL){cu->p2=cu->p1;}`"
+          },
+          {
+            "label": "D",
+            "content": "`while(cu!=NULL){cu=cu->p1; cu->p2=cu->p1;}`"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将`p2`目标由间隔后继改为直接后继。",
+        "explanation": "直接读取当前有效结点的`p1`字段安全，即使字段值为空也只是复制空值；随后再推进即可。没有访问空值所指结点，因而不需要为读取下一层字段增加分支。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "ll01-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "linked-pointer-rewrite-and-progress",
+            "input": {
+              "nodeCount": 4,
+              "nextField": "p1",
+              "targetField": "p2",
+              "targetSkip": 1,
+              "nextFieldUnchanged": true
+            },
+            "goal": "逐步检查解引用前提与循环推进",
+            "pauseQuestion": "复制一个空指针值，与再访问它所指对象的字段，风险是否相同？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "ll01-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "linked-pointer-rewrite-and-progress",
+          "input": {
+            "nodeCount": 4,
+            "nextField": "p1",
+            "targetField": "p2",
+            "targetSkip": 2,
+            "nextFieldUnchanged": true,
+            "choices": [
+              "while(cu!=NULL){cu->p2=cu->p1->p1; cu=cu->p1;}",
+              "while(cu!=NULL && cu->p2!=NULL){cu->p2=cu->p1->p1; cu=cu->p1;}",
+              "while(cu!=NULL){if(cu->p1!=NULL){cu->p2=cu->p1->p1; cu=cu->p1;}}",
+              "while(cu!=NULL){if(cu->p1!=NULL){cu->p2=cu->p1->p1;}else{cu->p2=NULL;} cu=cu->p1;}"
+            ]
+          },
+          "goal": "逐步检查解引用前提与循环推进",
+          "pauseQuestion": "复制一个空指针值，与再访问它所指对象的字段，风险是否相同？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    }
+  ]
+}

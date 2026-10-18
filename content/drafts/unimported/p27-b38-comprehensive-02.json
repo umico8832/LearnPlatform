@@ -1,0 +1,1137 @@
+{
+  "schemaVersion": 1,
+  "section": "综合题核心算法改编二：树、编码与选择",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "cp02-01",
+      "topic": "不等长有序表的最优二路归并",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2012",
+        "questionNumber": "41",
+        "label": "2012 年 408 综合题第 41 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2012/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整C++17核心实现，不声称完成原题所有评分小问。原题文字把6表误称5表，本站明确数量；本题只选最小总比较数，解答补过程与策略证明。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "6个非空升序表长度为10、35、40、50、60、200。每次仅合并两表，长度m、n的两表最坏比较m+n-1次，最终全部合为一个表。可选择合并顺序，使各轮最坏比较数之和最小，其值为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "825"
+        },
+        {
+          "label": "B",
+          "content": "830"
+        },
+        {
+          "label": "C",
+          "content": "715"
+        },
+        {
+          "label": "D",
+          "content": "820"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把输出写入数当比较数",
+          "explanation": "5次合并长度和为830，各次末尾直接复制至少剩1项，不需比较，应减5。"
+        },
+        "C": {
+          "title": "提前把最长表改短",
+          "explanation": "715对应将200改为100的另一组条件，原题最终总长395。"
+        },
+        "D": {
+          "title": "减去次数过多",
+          "explanation": "共6表只需5次两两合并，长度和830应减5而非10。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "把合并次数与每次合并产生的新长度分别记录。"
+        },
+        {
+          "level": 2,
+          "text": "比较次数之和等于归并树叶权深度和减去一个与树形无关的常量。"
+        },
+        {
+          "level": 3,
+          "text": "另用三张长度不同的表，枚举先合哪一对，观察长表深度增加的代价。"
+        }
+      ],
+      "solution": "取两最短者依次合并，产生45、85、110、195、395，比较44、84、109、194、394，共825。任一归并树都有5个内部结点，减去的5不影响最优树形；最小加权外路径长可由Huffman两最小合并构造，交换论证把两最小权移到最深兄弟叶不增代价，合并后归纳。最小堆实现`O(N log N)`时间、`O(N)`辅助空间；正表长且结果可由long long容纳。原收录首段误写“将5个表”而列了6表，本站按6表和5次合并明确。\n\n`C++17`实现：\n```cpp\n#include <vector>\n#include <queue>\n#include <functional>\nlong long optimalMergeComparisons(const std::vector<int>& lengths) {\n    std::priority_queue<long long,std::vector<long long>,std::greater<long long>> h;\n    for (int x : lengths) h.push(x);\n    long long total = 0;\n    while (h.size() > 1) {\n        long long a = h.top(); h.pop();\n        long long b = h.top(); h.pop();\n        total += a + b - 1;\n        h.push(a + b);\n    }\n    return total;\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅将最长表长度200改为100，其他不变，最小的各轮最坏比较数之和为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "825"
+          },
+          {
+            "label": "B",
+            "content": "830"
+          },
+          {
+            "label": "C",
+            "content": "715"
+          },
+          {
+            "label": "D",
+            "content": "820"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将一个表长200改为100。",
+        "explanation": "新合并长度45、85、110、185、295，合计720，减5得715。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp02-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "optimal-binary-merge-cost",
+            "input": {
+              "lengths": [
+                10,
+                35,
+                40,
+                50,
+                60,
+                100
+              ]
+            },
+            "goal": "展示核心计数不变量、结构边界与状态变化",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp02-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "optimal-binary-merge-cost",
+          "input": {
+            "lengths": [
+              10,
+              35,
+              40,
+              50,
+              60,
+              200
+            ]
+          },
+          "goal": "展示核心计数不变量、结构边界与状态变化",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp02-02",
+      "topic": "WPL只累计叶权且根深为零",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2014",
+        "questionNumber": "41",
+        "label": "2014 年 408 综合题第 41 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2014/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整C++17核心实现，不声称完成原题所有评分小问。原题为任意树算法，本题另给具体树检验叶条件和深度；输入为教学示例。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "按原综合题叶权WPL定义，另给示例二叉树：根内部权100，左叶权3，右内部权200且其左右叶权4、5。根深度为0，仅叶权参与WPL，结果为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "21"
+        },
+        {
+          "label": "B",
+          "content": "121"
+        },
+        {
+          "label": "C",
+          "content": "33"
+        },
+        {
+          "label": "D",
+          "content": "621"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把根的域值直接计入WPL",
+          "explanation": "根不是叶，不应直接加100；即使按深度乘，根深0也不能产生100。"
+        },
+        "C": {
+          "title": "层号当边数深度",
+          "explanation": "33把每个叶的深度多算1，增加叶权和12。"
+        },
+        "D": {
+          "title": "把内部权也当叶权计入",
+          "explanation": "内部结点不贡献叶权WPL；100、200均只作非叶域值，不影响本题总和。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先列所有满足左右孩子均空的结点，其他域值不参与求和。"
+        },
+        {
+          "level": 2,
+          "text": "深度从根0开始，沿每条边加1；不要直接用从1开始的层号。"
+        },
+        {
+          "level": 3,
+          "text": "另取根本身是单个叶的树，按边数定义检查其带权路径长。"
+        }
+      ],
+      "solution": "左叶3深1，右侧叶4和5深2，`WPL=3+8+10=21`。代码把当前深度随调用传递，叶才返回权乘深度，无静态累加量，连续调用互不污染。遍历n个结点`Θ(n)`，递归栈`O(h)`；空树返回0，单叶且根深0时为0。权非负，代码使用long long并以前置条件保证总和与深度可容纳。示例树为本站给定，未冒充原题原图。\n\n`C++17`实现：\n```cpp\nstruct Tree { long long weight; Tree* left; Tree* right; };\nlong long leafWeightedDepth(const Tree* root, long long depth) {\n    if (root == nullptr) return 0;\n    if (root->left == nullptr && root->right == nullptr) return root->weight * depth;\n    return leafWeightedDepth(root->left, depth + 1)\n         + leafWeightedDepth(root->right, depth + 1);\n}\nlong long wpl(const Tree* root) { return leafWeightedDepth(root, 0); }\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅将根深度的计量起点从0改为1，每条边仍加1且只计叶，其他不变，结果为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "21"
+          },
+          {
+            "label": "B",
+            "content": "121"
+          },
+          {
+            "label": "C",
+            "content": "33"
+          },
+          {
+            "label": "D",
+            "content": "621"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅把所有结点的深度统一平移1。",
+        "explanation": "每个叶多贡献自身权，增加3+4+5=12，21+12=33；这属于改变后的量，不再是原边数深度WPL。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp02-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "binary-tree-leaf-weighted-depth",
+            "input": {
+              "tree": {
+                "weight": 100,
+                "left": {
+                  "weight": 3
+                },
+                "right": {
+                  "weight": 200,
+                  "left": {
+                    "weight": 4
+                  },
+                  "right": {
+                    "weight": 5
+                  }
+                }
+              },
+              "rootDepth": 1
+            },
+            "goal": "展示核心计数不变量、结构边界与状态变化",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp02-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "binary-tree-leaf-weighted-depth",
+          "input": {
+            "tree": {
+              "weight": 100,
+              "left": {
+                "weight": 3
+              },
+              "right": {
+                "weight": 200,
+                "left": {
+                  "weight": 4
+                },
+                "right": {
+                  "weight": 5
+                }
+              }
+            },
+            "rootDepth": 0
+          },
+          "goal": "展示核心计数不变量、结构边界与状态变化",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "cp02-03",
+      "topic": "正则k叉树固定高度的上下界",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2016",
+        "questionNumber": "42",
+        "label": "2016 年 408 综合题第 42 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2016/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给一般计数公式、证明及可达构造，不声称完成原题所有评分小问。将原题一般计数和高度小问实例化为核心理解题；解答仍给两条一般公式及可达证明。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "非空正则k叉树每个内部结点恰有k个孩子。根算第1层，高度为h。取`k=3`、`h=4`，结点总数的可达最小值和最大值依次为？不要求最小树是完全树。",
+      "options": [
+        {
+          "label": "A",
+          "content": "4、40"
+        },
+        {
+          "label": "B",
+          "content": "10、40"
+        },
+        {
+          "label": "C",
+          "content": "7、15"
+        },
+        {
+          "label": "D",
+          "content": "13、40"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把最小树退化为单孩子链",
+          "explanation": "正则3叉的每个内部结点必须带3个孩子，不能只留通往最深层的那一个。"
+        },
+        "C": {
+          "title": "把分支数误换为二叉",
+          "explanation": "7、15是相同高度下正则2叉树的极值。"
+        },
+        "D": {
+          "title": "多加了一层孩子",
+          "explanation": "高度4只需3个内部结点串起深路径，边上附叶即可，总数1+3×3=10。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "树总边数等于总结点数减1，也等于所有内部结点孩子数之和。"
+        },
+        {
+          "level": 2,
+          "text": "固定高度时，一条最深根叶路径至少包含多少个内部结点？"
+        },
+        {
+          "level": 3,
+          "text": "另画高度3的正则4叉树，只在一条路径上继续扩展；再画每层全部扩展的版本。"
+        }
+      ],
+      "solution": "若内部结点m个，边数km，而总数km+1，叶数为`(k-1)m+1`。高度h要求最深路径有h-1个内部结点，令仅这条路径继续扩展，其余孩子全为叶，达到最少`1+k(h-1)`；本例10。最多每层全满，结点数为`1+k+...+k^(h-1)=(k^h-1)/(k-1)`，本例40。`h=1`时两界均为1，`m=0`时叶1，两种边界一致。以上给出计数恒等式和可达构造，不把完全性作为正则的附加条件。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将分支数k从3改为2，高度`h=4`及正则条件不变，最小和最大总结点数为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "4、40"
+          },
+          {
+            "label": "B",
+            "content": "10、40"
+          },
+          {
+            "label": "C",
+            "content": "7、15"
+          },
+          {
+            "label": "D",
+            "content": "13、40"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将每个内部结点孩子数3改为2。",
+        "explanation": "最少1+2×3=7，最多1+2+4+8=15，两界都有对应树。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp02-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "regular-kary-tree-extremal-counts",
+            "input": {
+              "k": 2,
+              "height": 4
+            },
+            "goal": "展示核心计数不变量、结构边界与状态变化",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp02-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "regular-kary-tree-extremal-counts",
+          "input": {
+            "k": 3,
+            "height": 4
+          },
+          "goal": "展示核心计数不变量、结构边界与状态变化",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp02-04",
+      "topic": "平衡组大小后的最大组和差",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2016",
+        "questionNumber": "43",
+        "label": "2016 年 408 综合题第 43 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2016/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整C++17核心实现，不声称完成原题所有评分小问。原题无具体数列，本题给出5元素实例；本站将源递归选择改为迭代并明确平均/最坏条件，非原伪代码照搬。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "正整数集合 `A={1,2,3,4,5}` 要分成两个不交子集，先使元素个数差最小，再使元素和差的绝对值最大。允许选择哪个子集较大，元素恰各用一次。最大和差为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "9"
+        },
+        {
+          "label": "B",
+          "content": "3"
+        },
+        {
+          "label": "C",
+          "content": "7"
+        },
+        {
+          "label": "D",
+          "content": "14"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "只考虑把大组放较小元素",
+          "explanation": "1、2、3与4、5给3，但1、2与3、4、5给9，同样满足大小差1且更优。"
+        },
+        "C": {
+          "title": "误把中位数单独分离",
+          "explanation": "必须把5项分成2和3项的两组，不能漏掉中间元素或只算端点差。"
+        },
+        "D": {
+          "title": "用更大的另一输入计算",
+          "explanation": "14对应把5改为10的变式，原总和15、较小组最低和3，差为9。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "按优先级先确定两组允许的元素数量，再比较和差。"
+        },
+        {
+          "level": 2,
+          "text": "对固定小组大小，怎样使其和达到极端，并与另一组形成更大差？"
+        },
+        {
+          "level": 3,
+          "text": "另取正的奇数个元素，比较把中位数放在大数一侧和小数一侧，两种和差哪边更大。"
+        }
+      ],
+      "solution": "两组大小只能2和3。把最小2项1、2放一组，余3、4、5为另一组，和3、12，差9。一般正数情况下选最小`floor(n/2)`项为小组、大组取剩余，最大和差为总和减两倍小组和；奇数时中间正数归大数侧使该端极差更大。无需全排序，用选择划分定位第k小元素后只求两段和。下面迭代末项枢轴Lomuto划分辅助`O(1)`，随机排列假设下平均`Θ(n)`，最坏`Θ(n²)`，不把固定枢轴称为必然线性；和的计算保证long long足够。前置条件至少2个互异正整数，允许重排输入。\n\n`C++17`实现：\n```cpp\n#include <vector>\n#include <utility>\nint partitionLast(std::vector<int>& a, int lo, int hi) {\n    int p = a[hi], j = lo;\n    for (int i = lo; i < hi; ++i) if (a[i] < p) std::swap(a[i],a[j++]);\n    std::swap(a[j],a[hi]);\n    return j;\n}\nlong long balancedMaxGap(std::vector<int>& a) {\n    int n = static_cast<int>(a.size()), k = n / 2;\n    int lo = 0, hi = n - 1;\n    while (lo <= hi) {\n        int p = partitionLast(a,lo,hi);\n        if (p == k - 1) break;\n        if (p < k - 1) lo = p + 1;\n        else hi = p - 1;\n    }\n    long long small = 0, total = 0;\n    for (int i = 0; i < n; ++i) {\n        total += a[i];\n        if (i < k) small += a[i];\n    }\n    return total - 2 * small;\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅将最大元素5改为10，其他规则与元素不变，最大和差为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "9"
+          },
+          {
+            "label": "B",
+            "content": "3"
+          },
+          {
+            "label": "C",
+            "content": "7"
+          },
+          {
+            "label": "D",
+            "content": "14"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "仅将集合中5替换为10。",
+        "explanation": "小组仍1、2和3，大组3、4、10和17，差14；总和20减2×3也得14。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp02-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "quickselect-balanced-max-gap",
+            "input": {
+              "values": [
+                1,
+                2,
+                3,
+                4,
+                10
+              ]
+            },
+            "goal": "展示核心计数不变量、结构边界与状态变化",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp02-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "quickselect-balanced-max-gap",
+          "input": {
+            "values": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ]
+          },
+          "goal": "展示核心计数不变量、结构边界与状态变化",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "cp02-05",
+      "topic": "表达式树中序输出的括号边界",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2017",
+        "questionNumber": "41",
+        "label": "2017 年 408 综合题第 41 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2017/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整C++17核心实现，不声称完成原题所有评分小问。据原文输出式明确树关系，并指定非最少括号但保留运算树的统一打印规则；四选项非原卷选择项。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "表达式树根为乘号，左子树为a加b，右子树为c乘以仅右孩子d的一元负号。按固定打印规则：中序输出；每个非根运算符子树外加一对括号，根与操作数不加额外外括号。一元负号仅有右孩子。输出应严格是哪一个字符串？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`(a+b)*(c*(-d))`"
+        },
+        {
+          "label": "B",
+          "content": "`((a+b)*(c*(-d)))`"
+        },
+        {
+          "label": "C",
+          "content": "`a+b*c*-d`"
+        },
+        {
+          "label": "D",
+          "content": "`(a+b)*(c*(d-))`"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "根多加外括号",
+          "explanation": "整体再加括号语义可等价，但不符合题定根不加额外外括号的严格格式。"
+        },
+        "C": {
+          "title": "仅输出裸中序丢分组",
+          "explanation": "省略分组后按通常优先级会先乘，改变原左子树a加b的结合。"
+        },
+        "D": {
+          "title": "把右孩子负号输出成后缀",
+          "explanation": "右一元负号应先打印负号再打印右操作数，得到-d，非d-。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "把括号规则按根、叶、其他内部结点分开。"
+        },
+        {
+          "level": 2,
+          "text": "结点自身的操作符应在左子树之后、右子树之前打印，空子树不打印。"
+        },
+        {
+          "level": 3,
+          "text": "另用根为减号且只有右叶的树，检查中序和后序的输出差别。"
+        }
+      ],
+      "solution": "根不加外括号，左加法子树打印(a+b)，右乘法子树打印(c*(-d))，连接根乘号得到(a+b)*(c*(-d))。中序规则也适用于仅右孩子的一元负号。下面采用流输出，避免递归拼接字符串导致额外重复复制；每结点记号长度有固定上界时`Θ(n)`时间，递归栈`O(h)`，若收集字符串还需计输出长度空间。本题依据原文输出式重建明确树关系，不冒充核图后的原图逐边转写。\n\n`C++17`实现：\n```cpp\n#include <string>\n#include <ostream>\nstruct Expr { std::string token; Expr* left; Expr* right; };\nvoid printInfix(const Expr* t, bool isRoot, std::ostream& out) {\n    if (t == nullptr) return;\n    bool leaf = t->left == nullptr && t->right == nullptr;\n    bool wrap = !isRoot && !leaf;\n    if (wrap) out << '(';\n    printInfix(t->left, false, out);\n    out << t->token;\n    printInfix(t->right, false, out);\n    if (wrap) out << ')';\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅将整棵树根的乘号换为加号，子树结构及严格打印规则不变，输出为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`(a+b)+(c*(-d))`"
+          },
+          {
+            "label": "B",
+            "content": "`a+b+c*-d`"
+          },
+          {
+            "label": "C",
+            "content": "`((a+b)+(c*(-d)))`"
+          },
+          {
+            "label": "D",
+            "content": "`(a+b)*(c*(-d))`"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将根操作符从乘号改为加号。",
+        "explanation": "两棵非根子树的括号完全保留，只把连接它们的根符号改为+。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp02-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "expression-tree-parenthesized-inorder",
+            "input": {
+              "tree": [
+                "+",
+                [
+                  "+",
+                  "a",
+                  "b"
+                ],
+                [
+                  "*",
+                  "c",
+                  [
+                    "-",
+                    null,
+                    "d"
+                  ]
+                ]
+              ],
+              "rootOuterParens": false
+            },
+            "goal": "展示核心计数不变量、结构边界与状态变化",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp02-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "expression-tree-parenthesized-inorder",
+          "input": {
+            "tree": [
+              "*",
+              [
+                "+",
+                "a",
+                "b"
+              ],
+              [
+                "*",
+                "c",
+                [
+                  "-",
+                  null,
+                  "d"
+                ]
+              ]
+            ],
+            "rootOuterParens": false
+          },
+          "goal": "展示核心计数不变量、结构边界与状态变化",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp02-06",
+      "topic": "前缀码建树冲突与完整译码",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2020",
+        "questionNumber": "42",
+        "label": "2020 年 408 综合题第 42 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2020/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整C++17核心实现，不声称完成原题所有评分小问。原题为一般算法描述，本站另给具体码表与码流，代码补全重复/途中终点/后代/残串边界。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "依据综合题前缀特性，给3字符编码 `a:0, b:10, c:11`，0走左、1走右、叶保存字符。对完整比特串 `01011`，哪项正确？遇到字符叶立即输出并回根，非法边或结束未回根判失败。",
+      "options": [
+        {
+          "label": "A",
+          "content": "码表合法，完整译码为abc"
+        },
+        {
+          "label": "B",
+          "content": "码表合法，完整译码为acb"
+        },
+        {
+          "label": "C",
+          "content": "码表不具有前缀特性"
+        },
+        {
+          "label": "D",
+          "content": "码表合法，只输出ab并丢弃末两位"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "后两个码字顺序颠倒",
+          "explanation": "按左到右分成0、10、11，依次a、b、c；不是0、11、10。"
+        },
+        "C": {
+          "title": "把共同首位当码字互为前缀",
+          "explanation": "10与11共享首位1，但都不是另一个完整码字的前缀；0也不是二者前缀。"
+        },
+        "D": {
+          "title": "不验证输入消费完整性",
+          "explanation": "末两位11还对应c，不能在译码中擅自丢弃完整后缀。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "区分共用部分路径与一个完整码字位于另一个路径中途。"
+        },
+        {
+          "level": 2,
+          "text": "新码字加入时，既检查途中已有终点，也检查新终点是否已有后代。"
+        },
+        {
+          "level": 3,
+          "text": "另给两字符长度不同的编码，检查输入末尾只走到内部结点时是否可称完整译码。"
+        }
+      ],
+      "solution": "码字0、10、11互不为前缀，串按0/10/11得到abc。插入途中已遇字符终点说明旧码字是新码字前缀；新终点已有字符或孩子则重复或新码字是旧码字前缀。建树总时间`O(码长总和)`、空间同阶；译码每位走一次，时间`O(位数)`，除树和输出外`O(1)`状态，结束必须位于根。下面还拒绝非二进制、空码字、重复字符编码和少于2字符的表；仅在建树成功后调用译码，失败构建的部分树不用于译码。\n\n`C++17`实现：\n```cpp\n#include <vector>\n#include <string>\n#include <set>\n#include <utility>\nstruct TrieEntry { int child[2] = {-1,-1}; bool terminal = false; char value = 0; };\nbool buildCode(const std::vector<std::pair<char,std::string>>& book,\n               std::vector<TrieEntry>& t) {\n    t.assign(1,TrieEntry{});\n    if (book.size() < 2) return false;\n    std::set<char> used;\n    for (const auto& entry : book) {\n        if (!used.insert(entry.first).second || entry.second.empty()) return false;\n        int p = 0;\n        for (char bit : entry.second) {\n            if (t[p].terminal || (bit != '0' && bit != '1')) return false;\n            int b = bit - '0';\n            if (t[p].child[b] == -1) {\n                int fresh = static_cast<int>(t.size());\n                t.push_back(TrieEntry{});\n                t[p].child[b] = fresh;\n            }\n            p = t[p].child[b];\n        }\n        if (t[p].terminal || t[p].child[0] != -1 || t[p].child[1] != -1) return false;\n        t[p].terminal = true;\n        t[p].value = entry.first;\n    }\n    return true;\n}\nbool decode(const std::vector<TrieEntry>& t, const std::string& bits,\n            std::string& out) {\n    out.clear();\n    int p = 0;\n    for (char bit : bits) {\n        if (bit != '0' && bit != '1') { out.clear(); return false; }\n        int q = t[p].child[bit-'0'];\n        if (q == -1) { out.clear(); return false; }\n        p = q;\n        if (t[p].terminal) { out += t[p].value; p = 0; }\n    }\n    if (p != 0) { out.clear(); return false; }\n    return true;\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅将c的码字11改为01，其余码字不变，这张码表是否仍具有前缀特性？",
+        "options": [
+          {
+            "label": "A",
+            "content": "具有，因为码字仍互不相同"
+          },
+          {
+            "label": "B",
+            "content": "具有，因为最长仅2位"
+          },
+          {
+            "label": "C",
+            "content": "不具有，因为a的0是c的01的前缀"
+          },
+          {
+            "label": "D",
+            "content": "仅交换建树插入顺序便可合法"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将c编码从11改为01。",
+        "explanation": "0是01的完整前缀，与插入顺序无关；不能再把字符放在该编码树的内部结点并称前缀码。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp02-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "prefix-code-trie-build-and-decode",
+            "input": {
+              "book": {
+                "a": "0",
+                "b": "10",
+                "c": "01"
+              }
+            },
+            "goal": "展示核心计数不变量、结构边界与状态变化",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp02-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "prefix-code-trie-build-and-decode",
+          "input": {
+            "book": {
+              "a": "0",
+              "b": "10",
+              "c": "11"
+            },
+            "bits": "01011"
+          },
+          "goal": "展示核心计数不变量、结构边界与状态变化",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "cp02-07",
+      "topic": "顺序存储BST的全祖先约束",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2022",
+        "questionNumber": "41",
+        "label": "2022 年 408 综合题第 41 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2022/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整C++17核心实现，不声称完成原题所有评分小问。原T1存储数组据原文转写，改编聚焦跨祖先边界；解答明确函数仅对有效树存储判BST，不作任意数组合法性检查。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "非空树用0基顺序存储，-1为空，孩子下标 `2i+1` 与 `2i+2`，保证无空父下实结点。数组 `40,25,60,-1,30,-1,80,-1,-1,27` 表示的树，按关键字互异且左全小右全大的严格BST定义，哪项判断和理由正确？",
+      "options": [
+        {
+          "label": "A",
+          "content": "是BST，中序完整序列严格递增"
+        },
+        {
+          "label": "B",
+          "content": "不是BST，因为存在空位置"
+        },
+        {
+          "label": "C",
+          "content": "不是BST，因为27小于其父30"
+        },
+        {
+          "label": "D",
+          "content": "是BST，而且逐条父子大小关系对所有树都足以判BST"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把搜索树误作完全树",
+          "explanation": "BST允许缺孩子，空槽不影响所有祖先的大小范围条件。"
+        },
+        "C": {
+          "title": "误判左孩子的正确方向",
+          "explanation": "27在30左侧，小于30正合要求，且仍在25右子树、40左子树内。"
+        },
+        "D": {
+          "title": "局部关系替代所有祖先约束",
+          "explanation": "结点即便与父大小方向正确，也可能越过更早祖先的范围，不能推广此判法。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先由下标恢复位置，再按子树范围检查大小，不按数组顺序比较相邻值。"
+        },
+        {
+          "level": 2,
+          "text": "一个结点必须同时满足沿根路径积累的所有上下界。"
+        },
+        {
+          "level": 3,
+          "text": "另画根10、左孩子5、5的右孩子12，检查只看父子是否能发现12越过根的范围。"
+        }
+      ],
+      "solution": "中序25、27、30、40、60、80严格递增，故是BST。也可把开区间上下界从祖先向下传递：左子树上界收紧为当前值，右子树下界收紧。原数组是有效树存储，本函数以前置保证无孤立实结点；空位先判断后返回，且索引只有确有孩子位置时才计算，避免无界倍增。遍历可达实结点`Θ(n)`，递归`O(h)`，正整数可用long long两端界并排除重复。数组空间占用长度记为L，若计全部槽验证本可另需`O(L)`，本函数不重复校验已保证的合法存储。\n\n`C++17`实现：\n```cpp\n#include <vector>\n#include <climits>\nbool withinBounds(const std::vector<int>& a, std::size_t i,\n                  long long low, long long high) {\n    if (i >= a.size() || a[i] == -1) return true;\n    long long x = a[i];\n    if (x <= low || x >= high) return false;\n    if (i >= a.size() / 2) return true;\n    std::size_t left = 2 * i + 1;\n    return withinBounds(a,left,low,x) && withinBounds(a,left+1,x,high);\n}\nbool isBST(const std::vector<int>& a) {\n    return withinBounds(a,0,LLONG_MIN,LLONG_MAX);\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅把数组中的30改为45，其他槽不变。该树仍是有效树存储，是否为严格BST？",
+        "options": [
+          {
+            "label": "A",
+            "content": "是，因为每条父子关系仍正确"
+          },
+          {
+            "label": "B",
+            "content": "否，因为45处于根40左子树却大于40"
+          },
+          {
+            "label": "C",
+            "content": "否，因为数组必须没有空槽"
+          },
+          {
+            "label": "D",
+            "content": "无法从数组确定树形"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅把下标4的值30改为45。",
+        "explanation": "45是25右孩子且27仍小于45，局部父子关系全正确；但45在40左子树而超过40，违反祖先上界。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp02-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "array-bst-ancestor-bounds",
+            "input": {
+              "array": [
+                40,
+                25,
+                60,
+                -1,
+                45,
+                -1,
+                80,
+                -1,
+                -1,
+                27
+              ]
+            },
+            "goal": "展示核心计数不变量、结构边界与状态变化",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp02-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "array-bst-ancestor-bounds",
+          "input": {
+            "array": [
+              40,
+              25,
+              60,
+              -1,
+              30,
+              -1,
+              80,
+              -1,
+              -1,
+              27
+            ]
+          },
+          "goal": "展示核心计数不变量、结构边界与状态变化",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？"
+        }
+      ]
+    },
+    {
+      "id": "cp02-08",
+      "topic": "最小10项的有界大根堆不变量",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2022",
+        "questionNumber": "42",
+        "label": "2022 年 408 综合题第 42 题（核心算法选择题改编）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2022/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17核对综合题题号、任务和条件；本站改编为核心算法理解选择题，四选项/提示/变式为本站生成，非原卷选择项；解答另给完整C++17核心实现，不声称完成原题所有评分小问。原题未要求代码；本站增加单次向下筛的完整实现。候选使用缩小规模教学例，不冒充n大于100000的实际输入。"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "数组M含n个数，n大于100000，需要最小的10个数，重复值按出现次数计，输出无需有序。要求一次扫描、至多10个数的辅助存储，每项先与堆顶比较后至多一次堆调整。哪种策略正确？",
+      "options": [
+        {
+          "label": "A",
+          "content": "保存当前最小10项的大根堆，遇到比堆顶小的数才替换堆顶并向下调整"
+        },
+        {
+          "label": "B",
+          "content": "保存当前最小10项的小根堆，遇到比堆顶小的数替换堆顶"
+        },
+        {
+          "label": "C",
+          "content": "保存当前最大10项的大根堆，遇到更大数替换堆顶"
+        },
+        {
+          "label": "D",
+          "content": "先对全部M完整排序，称这也满足指定一次扫描堆策略"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "用最小值作淘汰门槛",
+          "explanation": "应淘汰所保存10项中最大的边界，小根堆顶最小，不能用它判断新数是否进入前10。"
+        },
+        "C": {
+          "title": "目标集合方向倒置",
+          "explanation": "保留最大10项会丢掉所需的小数。"
+        },
+        "D": {
+          "title": "将完整排序混作指定扫描",
+          "explanation": "全排序可以找出答案，但不符合题定一次扫描和堆调整流程，通常比较工作也更多。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "新元素进入候选集合时，需要淘汰当前候选中的哪一个？"
+        },
+        {
+          "level": 2,
+          "text": "把候选集合的最差边界放在堆顶，区分堆序与最终输出是否有序。"
+        },
+        {
+          "level": 3,
+          "text": "另用保留最小2项的小例子，分别拿候选最小值和最大值与新数比较。"
+        }
+      ],
+      "solution": "大根堆顶是当前保留10项中最大的门槛，前10项先建堆；后续小于顶才替换。归纳：未替换的新数不比当前第10小更小，替换时正好移除候选中最大项，保留全部已读数的最小10个值。等于顶时不替换也不损失值的多重集合，无需稳定身份承诺。一般k的最坏`O(n log k)`、辅助`O(k)`，`k=10`固定即`Θ(n)`时间和`O(1)`辅助。实现只一次向下筛，不以两次独立删除/插入冒充一次调整。源码需输入至少k项、1≤k≤n，返回堆序数组。这里提供一种线性有效策略，不声称在所有输入分布下比较次数全局最优。\n\n`C++17`实现：\n```cpp\n#include <vector>\n#include <algorithm>\nstd::vector<int> smallestK(const std::vector<int>& a, std::size_t k) {\n    std::vector<int> h(a.begin(), a.begin()+k);\n    std::make_heap(h.begin(),h.end());\n    for (std::size_t i = k; i < a.size(); ++i) {\n        if (a[i] >= h[0]) continue;\n        h[0] = a[i];\n        std::size_t p = 0;\n        while (p < h.size()/2) {\n            std::size_t c = 2*p+1;\n            if (c+1 < h.size() && h[c+1] > h[c]) ++c;\n            if (h[p] >= h[c]) break;\n            std::swap(h[p],h[c]);\n            p = c;\n        }\n    }\n    return h;\n}\n```",
+      "viz": null,
+      "variant": {
+        "stem": "仅将所求最小项数10改为3，其余n规模、一次扫描及无序输出要求不变，正确结论为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "大根堆保留当前最小3项，固定3时总`Θ(n)`、辅助`O(1)`"
+          },
+          {
+            "label": "B",
+            "content": "小根堆顶最小，故所有较大新数都应替换它"
+          },
+          {
+            "label": "C",
+            "content": "必须完整排序全部n项"
+          },
+          {
+            "label": "D",
+            "content": "n过大，3项堆无法保持不变量"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将目标数量10改为3。",
+        "explanation": "同一不变量适用于`k=3`，固定堆规模的每次调整为常数，总线性；不要求把堆序当最终升序。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "cp02-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "bounded-max-heap-smallest-k",
+            "input": {
+              "exampleValues": [
+                8,
+                2,
+                7,
+                1,
+                5,
+                0,
+                9,
+                3,
+                6,
+                4,
+                2,
+                1
+              ],
+              "k": 3,
+              "exampleOnly": true
+            },
+            "goal": "展示核心计数不变量、结构边界与状态变化",
+            "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "cp02-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "bounded-max-heap-smallest-k",
+          "input": {
+            "exampleValues": [
+              8,
+              2,
+              7,
+              1,
+              5,
+              0,
+              9,
+              3,
+              6,
+              4,
+              2,
+              1
+            ],
+            "k": 10,
+            "exampleOnly": true
+          },
+          "goal": "展示核心计数不变量、结构边界与状态变化",
+          "pauseQuestion": "当前状态为何仍保留所有可能的合法答案？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    }
+  ]
+}

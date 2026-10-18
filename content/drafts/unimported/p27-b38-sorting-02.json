@@ -1,0 +1,1460 @@
+{
+  "schemaVersion": 1,
+  "section": "排序真题二：递归、存储、趟保证与稳定性边界",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "so02-01",
+      "topic": "普通递归快排的分区处理顺序",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2010",
+        "questionNumber": "10",
+        "label": "2010 年 408 真题 第 10 题（据收录明确递归深度）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2010/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站把原文递归次数明确为最大活跃调用深度，并限定普通双递归无尾消除；四项先后顺序考点与正确项不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "常规递归快排每次独立划分后，对两个分区都分别递归调用，长度不大于1时返回，不做尾递归消除。以最大同时活跃的调用层数衡量递归深度，改变同一次划分后先处理哪一分区，哪项正确？",
+      "options": [
+        {
+          "label": "A",
+          "content": "深度与初始排列无关"
+        },
+        {
+          "label": "B",
+          "content": "先处理较长分区一定减少深度"
+        },
+        {
+          "label": "C",
+          "content": "先处理较短分区一定减少深度"
+        },
+        {
+          "label": "D",
+          "content": "深度与两个分区的先后处理顺序无关"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "忽略划分平衡程度决定调用树高度",
+          "explanation": "初始排列可影响固定枢轴规则下的分区规模，平衡与退化划分对应不同深度。"
+        },
+        "B": {
+          "title": "把子树遍历次序当成调用树高度变化",
+          "explanation": "长分区先处理只改变先访问哪棵调用子树，两边仍递归执行，最大层数不会因此减少。"
+        },
+        "C": {
+          "title": "套用了递归小分区循环大分区的优化结论",
+          "explanation": "只有消除长分区递归调用时才获得该空间优化；题目明确两个分区均递归，先短并不改变调用树高度。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "把一次调用及两个递归分区画成调用树。"
+        },
+        {
+          "level": 2,
+          "text": "交换访问左右子树的先后，与改变子树本身的高度，是两种变化。"
+        },
+        {
+          "level": 3,
+          "text": "对另一棵左右高度不同的调用树，分别先走高子树和低子树，比较访问过程中的最大根到叶层数。"
+        }
+      ],
+      "solution": "划分确定后，递归深度由调用树最长根叶路径决定。先处理长段或短段只是交换同一调用树的遍历次序，不改变最大层数；初始排列可改变划分树，故只有D。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把控制流改为“递归处理较短分区，较长分区在当前调用内用循环继续”，其最坏同时活跃调用层数的紧界为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`Θ(1)`"
+          },
+          {
+            "label": "B",
+            "content": "`Θ(log n)`"
+          },
+          {
+            "label": "C",
+            "content": "`Θ(n)`"
+          },
+          {
+            "label": "D",
+            "content": "`Θ(n log n)`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将长分区递归调用消除为当前调用中的循环。",
+        "explanation": "每层新递归都只进入两个分区中较短的一侧，其规模至多约为原来一半，所以栈深最坏为对数阶；平衡划分可达到该深度。总比较时间仍可能平方阶，不能把栈优化当时间保证。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so02-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "quicksort-call-tree-depth",
+            "input": {
+              "arrays": [
+                [
+                  4,
+                  2,
+                  1,
+                  3,
+                  6,
+                  5,
+                  7
+                ],
+                [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7
+                ]
+              ],
+              "pivot": "first",
+              "recurse": "shorter",
+              "iterate": "longer"
+            },
+            "goal": "区分调用树高度与访问先后、递归消除",
+            "pauseQuestion": "先访问短子树，是否等于不再递归调用长子树？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so02-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "quicksort-call-tree-depth",
+          "input": {
+            "arrays": [
+              [
+                4,
+                2,
+                1,
+                3,
+                6,
+                5,
+                7
+              ],
+              [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+              ]
+            ],
+            "pivot": "first",
+            "bothSidesRecursive": true,
+            "orders": [
+              "long-first",
+              "short-first"
+            ]
+          },
+          "goal": "区分调用树高度与访问先后、递归消除",
+          "pauseQuestion": "先访问短子树，是否等于不再递归调用长子树？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "so02-02",
+      "topic": "常规数组快排适合的存储",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2011",
+        "questionNumber": "10",
+        "label": "2011 年 408 真题 第 10 题（明确教材数组快排适配）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2011/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "实现教材中基于数组下标、两端扫描并交换记录的常规快速排序，希望能常数时间按位置访问记录，待排序序列宜采用？这不排除另行设计链式快排。",
+      "options": [
+        {
+          "label": "A",
+          "content": "顺序存储"
+        },
+        {
+          "label": "B",
+          "content": "散列存储"
+        },
+        {
+          "label": "C",
+          "content": "链式存储"
+        },
+        {
+          "label": "D",
+          "content": "索引存储"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把按关键字散列定位当按位序访问",
+          "explanation": "散列并不直接保留本题按下标连续分区和双向位置扫描所需的数组访问模型。"
+        },
+        "C": {
+          "title": "忽略按下标访问的额外定位成本",
+          "explanation": "普通链表不能常数时间随机访问第 `i` 项，若机械按数组下标移植会增加寻址工作。"
+        },
+        "D": {
+          "title": "把另加索引当成基础序列的直接存储",
+          "explanation": "本题要求常规连续数组实现，额外索引结构不是四项中最直接的基本选择，也会增加维护。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先看此处具体实现依赖按关键字定位还是按数组位置定位。"
+        },
+        {
+          "level": 2,
+          "text": "双向扫描和交换需要取得两个当前位置上的记录。"
+        },
+        {
+          "level": 3,
+          "text": "比较取数组第 `k` 项与从单链表头走到第 `k` 项，是否总能花同样常数步数。"
+        }
+      ],
+      "solution": "常规数组快排依赖按下标访问和交换，顺序存储直接提供常数时间定位，故宜用顺序表。这是具体实现的适配判断，不是说链表不能实现任何形式的快排。",
+      "viz": null,
+      "variant": {
+        "stem": "只把存储换成无辅助索引的单链表，仍机械地每次从头定位第 `i` 项。一次任意位置访问的最坏时间紧界为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`Θ(1)`"
+          },
+          {
+            "label": "B",
+            "content": "`Θ(log n)`"
+          },
+          {
+            "label": "C",
+            "content": "`Θ(n)`"
+          },
+          {
+            "label": "D",
+            "content": "`Θ(n log n)`"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将按位访问改为从单链表头逐项定位。",
+        "explanation": "目标可能是最后一项，需沿线性数量的链接前进，最坏线性；这项额外寻址成本不是数组下标访问原有的常数成本。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so02-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "sorting-storage-access",
+            "input": {
+              "length": 8,
+              "storage": "singly-linked-no-index",
+              "accessRanks": [
+                1,
+                8,
+                4
+              ]
+            },
+            "goal": "分别数按位定位和比较交换成本",
+            "pauseQuestion": "同样写第 `i` 项，底层是否都能直接计算地址？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so02-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "sorting-storage-access",
+          "input": {
+            "length": 8,
+            "storage": "contiguous-array",
+            "accessRanks": [
+              1,
+              8,
+              4
+            ]
+          },
+          "goal": "分别数按位定位和比较交换成本",
+          "pauseQuestion": "同样写第 `i` 项，底层是否都能直接计算地址？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "so02-03",
+      "topic": "每趟是否固定最终位置",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2012",
+        "questionNumber": "10",
+        "label": "2012 年 408 真题 第 10 题（明确互异键与各算法趟定义）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2012/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "互异关键字升序排序。按标准定义：简单选择一趟选出一个最小值；希尔一趟完成一个增量；快排一趟完整划分并放好枢轴；堆排序一趟将最大堆根放到未定尾部；二路归并一趟合并当前等长相邻段。哪些算法每一趟都至少保证一个元素的最终位置？I. 简单选择；II. 希尔；III. 快排；IV. 堆排序；V. 二路归并。",
+      "options": [
+        {
+          "label": "A",
+          "content": "I、III、IV"
+        },
+        {
+          "label": "B",
+          "content": "I、III、V"
+        },
+        {
+          "label": "C",
+          "content": "II、III、IV"
+        },
+        {
+          "label": "D",
+          "content": "III、IV、V"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "将局部归并有序当作全局位置固定",
+          "explanation": "V的一趟只保证各合段内部有序，元素在后续合并中仍可能整体换到别的位置；IV反而固定了当前最大项。"
+        },
+        "C": {
+          "title": "把间隔子序列有序当最终位置",
+          "explanation": "II的一趟只完成各间隔组排序，不保证任何项已在全表最终位置；I每趟最小项则有保证。"
+        },
+        "D": {
+          "title": "漏掉选择的极值就位并误计归并",
+          "explanation": "简单选择每趟把未定最小项放到全局下一位置；归并的中间趟却只得到局部段。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "区别一个局部区域有序与某元素在完整排序结果中的位置已确定。"
+        },
+        {
+          "level": 2,
+          "text": "极值被放到未定区边界或枢轴两边均已分开时，得到何种全局保证？"
+        },
+        {
+          "level": 3,
+          "text": "另用四个逆序值分别做首趟间隔排序与两两归并，检查趟后是否可能没有任何项落在最终下标。"
+        }
+      ],
+      "solution": "I每趟固定最小未定项，III固定枢轴，IV固定最大未定项，故三者成立。II的间隔组与V的合并段都可能仅局部有序，例如逆序四项首趟两两归并可没有任何项在最终位置。",
+      "viz": null,
+      "variant": {
+        "stem": "其他四项不变，仅把V限定为二路归并的最后一趟，哪些现在满足所述最终位置保证？",
+        "options": [
+          {
+            "label": "A",
+            "content": "I、III、IV"
+          },
+          {
+            "label": "B",
+            "content": "I、III、IV、V"
+          },
+          {
+            "label": "C",
+            "content": "I、II、III、IV、V"
+          },
+          {
+            "label": "D",
+            "content": "仅 II、V"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将V的观察范围限定为最终合并趟。",
+        "explanation": "最终合并趟结束后全表有序，所有项都在最终位置，V在此限定下成立；II仍指任意增量趟，不具普遍保证。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so02-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "sorting-final-position-invariants",
+            "input": {
+              "values": [
+                4,
+                3,
+                2,
+                1
+              ],
+              "methods": [
+                "selection",
+                "shell-gap-2",
+                "first-pivot-partition",
+                "heap-extract",
+                "final-merge"
+              ]
+            },
+            "goal": "用全局最终下标检验趟后不变量",
+            "pauseQuestion": "局部子段排好后，其中各项是否还可能被别的段挤到新位置？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so02-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "sorting-final-position-invariants",
+          "input": {
+            "values": [
+              4,
+              3,
+              2,
+              1
+            ],
+            "methods": [
+              "selection",
+              "shell-gap-2",
+              "first-pivot-partition",
+              "heap-extract",
+              "merge-width-1"
+            ]
+          },
+          "goal": "用全局最终下标检验趟后不变量",
+          "pauseQuestion": "局部子段排好后，其中各项是否还可能被别的段挤到新位置？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "so02-04",
+      "topic": "内存不足时的外排序主体",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2016",
+        "questionNumber": "11",
+        "label": "2016 年 408 真题 第 11 题（明确内存不足与标准外排序主体）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2016/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "10TB数据文件明显超过可用内存，需分批生成有序段，并主要通过磁盘顺序读写及缓冲完成整体排序。在教材常规方案中，适合作为外排序主体的是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "希尔排序"
+        },
+        {
+          "label": "B",
+          "content": "堆排序"
+        },
+        {
+          "label": "C",
+          "content": "快速排序"
+        },
+        {
+          "label": "D",
+          "content": "归并排序"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "忽略跨外存随机访问的代价",
+          "explanation": "希尔的间隔访问不是本题分段顺序读写的标准外排序主体。"
+        },
+        "B": {
+          "title": "把可用于初始段生成的堆当作全部外排序",
+          "explanation": "堆可以用于生成初始有序段或多路选择，但标准整体外排序仍要归并这些段，不等于把全文件装入一个内存堆排序。"
+        },
+        "C": {
+          "title": "直接套用全数组随机划分的内部实现",
+          "explanation": "普通数组快排假定可高效访问待排序区域，不能直接作为此处分批有序段的标准顺序外排序主体。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "区分在内存中排一个分块，与把许多外存有序段合成全局有序。"
+        },
+        {
+          "level": 2,
+          "text": "已排序段的首项可用缓冲顺序推进，而不必把所有记录同时装入内存。"
+        },
+        {
+          "level": 3,
+          "text": "对另一个文件分成三个小有序段，思考哪种合并过程只需逐段读下一项即可继续。"
+        }
+      ],
+      "solution": "外部归并先生成能装入内存的初始有序段，再用缓冲做多路顺序归并。堆可作为某些阶段的工具，但四个教材算法中外排序主体选择归并，不能只按名字把堆工具等同于整体方案。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将可用内存条件改为全部数据都能装入，是否还能只凭容量断言必须采用归并排序？",
+        "options": [
+          {
+            "label": "A",
+            "content": "不能，还需结合稳定性、初态及其他要求"
+          },
+          {
+            "label": "B",
+            "content": "仍必须归并"
+          },
+          {
+            "label": "C",
+            "content": "必须快排"
+          },
+          {
+            "label": "D",
+            "content": "必须堆排序"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将数据超过内存改为可以全部装入内存。",
+        "explanation": "容量不再强制使用外排序模型，具体内部算法需结合其他要求选择，不能从能装入这一事实推出某个唯一最优算法。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so02-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "external-merge-passes",
+            "input": {
+              "runCount": 8,
+              "bufferedMergeFanIn": 3,
+              "storage": "memory",
+              "wholeFileFitsMemory": true
+            },
+            "goal": "把段内排序与跨段归并分成两阶段",
+            "pauseQuestion": "生成段时用到堆，是否就意味着整体算法无需归并？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so02-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "external-merge-passes",
+          "input": {
+            "runCount": 8,
+            "bufferedMergeFanIn": 3,
+            "storage": "external",
+            "wholeFileFitsMemory": false
+          },
+          "goal": "把段内排序与跨段归并分成两阶段",
+          "pauseQuestion": "生成段时用到堆，是否就意味着整体算法无需归并？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "so02-05",
+      "topic": "链式移植的随机寻址成本",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2017",
+        "questionNumber": "11",
+        "label": "2017 年 408 真题 第 11 题（明确链式移植方式）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2017/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站补明前三种直接链接版本与后两种机械下标访问，避免把特定移植代价说成所有链式实现的必然结论"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "将数组改为无位置索引的普通链表：插入、简单选择、冒泡采用直接沿链接扫描的常规版本；希尔和堆仍按原算法要求访问指定下标，每次从头走到该位置。关注由随机寻址丢失造成的效率下降，哪些更受影响？I. 插入；II. 简单选择；III. 冒泡；IV. 希尔；V. 堆。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 I、II"
+        },
+        {
+          "label": "B",
+          "content": "仅 II、III"
+        },
+        {
+          "label": "C",
+          "content": "仅 III、IV"
+        },
+        {
+          "label": "D",
+          "content": "仅 IV、V"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把链接扫描与随机下标定位混同",
+          "explanation": "I、II可在本题指定版本中直接扫描链接，不需要为每个任意下标从头重新定位。"
+        },
+        "B": {
+          "title": "遗漏间隔组和父子下标访问的代价",
+          "explanation": "II、III可按链接顺序扫描；IV、V按间隔或父子下标跳转，才直接失去常数寻址。"
+        },
+        "C": {
+          "title": "把相邻冒泡扫描当间隔访问并漏堆",
+          "explanation": "III可沿相邻链接比较，IV需要间隔定位，而V也需要按父子位置定位，不能只列III、IV。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "不要只看算法名字，先看题目给定的链表版本如何获得下一条待访问记录。"
+        },
+        {
+          "level": 2,
+          "text": "相邻扫描可延续当前指针，任意位置跳转却可能需要重新从头。"
+        },
+        {
+          "level": 3,
+          "text": "在另一个短链上比较沿后继走一步与寻找下标翻倍位置的工作量，思考后者能否沿用数组的常数寻址。"
+        }
+      ],
+      "solution": "IV的间隔下标和V的堆父子下标依赖随机定位，在本题机械按下标的移植规则下每次定位可增至线性。I、II、III已有直接链接扫描的常规版本，因此相较之下应选IV、V。这不排除重新设计链式算法。",
+      "viz": null,
+      "variant": {
+        "stem": "仅给链式结构增加一个按逻辑下标直接取结点的指针数组，并在交换数据时保持位置索引有效。对原来的寻址障碍，哪项正确？",
+        "options": [
+          {
+            "label": "A",
+            "content": "可恢复常数按位定位，但需线性数量的指针空间"
+          },
+          {
+            "label": "B",
+            "content": "仍只能从头线性定位"
+          },
+          {
+            "label": "C",
+            "content": "既恢复随机定位又不需额外空间"
+          },
+          {
+            "label": "D",
+            "content": "会自动使所有排序稳定"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅增加可维护的按位结点指针索引。",
+        "explanation": "索引数组提供常数时间按下标取结点，可消除这里特指的寻址障碍；代价是线性数量指针，不能因此声称其他操作都无开销或稳定性自动改变。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so02-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "sorting-linked-access-cost",
+            "input": {
+              "length": 8,
+              "indexedAlgorithms": [
+                "shell",
+                "heap"
+              ],
+              "sequentialAlgorithms": [
+                "insertion",
+                "selection",
+                "bubble"
+              ],
+              "positionIndex": true
+            },
+            "goal": "分开计定位方式与算法自身比较",
+            "pauseQuestion": "沿当前链接继续扫描，和每次为下标重找结点，成本相同吗？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so02-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "sorting-linked-access-cost",
+          "input": {
+            "length": 8,
+            "indexedAlgorithms": [
+              "shell",
+              "heap"
+            ],
+            "sequentialAlgorithms": [
+              "insertion",
+              "selection",
+              "bubble"
+            ],
+            "positionIndex": false
+          },
+          "goal": "分开计定位方式与算法自身比较",
+          "pauseQuestion": "沿当前链接继续扫描，和每次为下标重找结点，成本相同吗？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "so02-06",
+      "topic": "选择排序算法的输入与约束",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2019",
+        "questionNumber": "7",
+        "label": "2019 年 408 真题 第 7 题（区分决策因素与实测保证）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2019/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "选择排序算法时，除已有时空效率数据外，哪些输入或需求因素也应考虑？I. 数据规模；II. 存储方式；III. 稳定性要求；IV. 初始有序程度。这里问一般决策因素，不保证某个因素单独决定唯一最佳算法。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 III"
+        },
+        {
+          "label": "B",
+          "content": "仅 I、II"
+        },
+        {
+          "label": "C",
+          "content": "仅 II、III、IV"
+        },
+        {
+          "label": "D",
+          "content": "I、II、III、IV"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "遗漏输入规模和表示对可行方案的影响",
+          "explanation": "稳定性重要，但容量是否装入内存、数据如何访问以及初态也会改变算法适配。"
+        },
+        "B": {
+          "title": "遗漏相等键顺序要求和已有序输入",
+          "explanation": "即使规模与存储相同，稳定性约束和初始有序程度也能改变合适的选择。"
+        },
+        "C": {
+          "title": "把数据规模藏在复杂度公式里而忽略实际规模",
+          "explanation": "同一个渐近公式在小规模开销、内存边界和大规模增长下有不同影响，规模仍需作为实际输入因素考虑。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "算法选择同时受输入表示和输出性质要求约束。"
+        },
+        {
+          "level": 2,
+          "text": "已有序输入、相等键次序要求和能否装入内存，分别影响哪些比较维度？"
+        },
+        {
+          "level": 3,
+          "text": "构造两个规模相同但存储方式或稳定性要求不同的任务，检查是否仍应无条件选同一个算法。"
+        }
+      ],
+      "solution": "四项都能影响适配：规模关系到增长与内外存边界，存储决定访问方式，稳定性限制相等键重排，初态影响自适应算法工作量，因此全选。不能把这些一般因素误读为单项实测保证。",
+      "viz": null,
+      "variant": {
+        "stem": "保持I、II、III不变，仅把IV改为“在运算、存储和数据都不变时等价重命名局部变量”，仍属于这些选择因素的是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仅 III"
+          },
+          {
+            "label": "B",
+            "content": "仅 I、II"
+          },
+          {
+            "label": "C",
+            "content": "仅 I、II、III"
+          },
+          {
+            "label": "D",
+            "content": "I、II、III、IV"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将IV替换为不改变语义的变量重命名。",
+        "explanation": "等价变量名称不改变输入或操作需求，不是新的算法适配因素；I、II、III仍需考虑。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so02-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "sorting-selection-constraints",
+            "input": {
+              "recordCount": 8,
+              "renamings": [
+                [
+                  "i",
+                  "index"
+                ]
+              ],
+              "semanticChange": false
+            },
+            "goal": "逐项区分需求约束和表面代码名称",
+            "pauseQuestion": "仅改变名称而保留全部运算，会改变算法适用条件吗？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so02-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "sorting-selection-constraints",
+          "input": {
+            "recordCount": 8,
+            "storageChoices": [
+              "array",
+              "linked"
+            ],
+            "stableRequiredChoices": [
+              false,
+              true
+            ],
+            "initialOrders": [
+              "sorted",
+              "reverse"
+            ]
+          },
+          "goal": "逐项区分需求约束和表面代码名称",
+          "pauseQuestion": "仅改变名称而保留全部运算，会改变算法适用条件吗？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "so02-07",
+      "topic": "已升序时插入的比较优势",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2020",
+        "questionNumber": "11",
+        "label": "2020 年 408 真题 第 11 题（据收录具体化为完全升序）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2020/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站将大部分有序明确为完全升序边界，补明自交换与位置移动口径；三条理由和正确组合不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "据收录将“大部分已有序”具体化为完全升序、互异且 `n≥3`。比较标准直接插入与每趟扫描全部剩余项的简单选择；选择不做自交换，移动只计记录改变位置，辅助空间按阶计。选择插入的理由有哪些？I. 比较更少；II. 辅助空间更少；III. 移动更少。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 I"
+        },
+        {
+          "label": "B",
+          "content": "仅 III"
+        },
+        {
+          "label": "C",
+          "content": "仅 I、II"
+        },
+        {
+          "label": "D",
+          "content": "I、II、III"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把没有移位当成少于另一种的移动",
+          "explanation": "此处两者都无需改变已有记录位置，移动次数同为0，不能据此声称插入更少。"
+        },
+        "C": {
+          "title": "把不同数量的常数变量误当空间阶更少",
+          "explanation": "两者均只需常数额外空间，按题定量级没有II所说的空间优势。"
+        },
+        "D": {
+          "title": "将比较、空间和移动优势一并套用",
+          "explanation": "完全升序只保证本题的比较优势；辅助空间同阶且两者位置移动均为0，II、III不成立。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "分别统计关键字比较、位置改变和空间，不把它们合成一个“更少”。"
+        },
+        {
+          "level": 2,
+          "text": "已升序时插入每趟检查前驱后能否立即停止，选择是否仍需扫描余项？"
+        },
+        {
+          "level": 3,
+          "text": "另取四个已升序值，逐趟记录两个算法做了几次比较、是否交换或搬移，再分别比较。"
+        }
+      ],
+      "solution": "直接插入每趟一次前驱比较，总共 `n-1`；简单选择仍需 `n(n-1)/2` 次比较。两者常数辅助空间，且题定跳过自交换后均无位置移动，因此只有I是优势。",
+      "viz": null,
+      "variant": {
+        "stem": "仅把输入改为严格逆序，标准算法与关键字比较口径不变，两者比较次数关系为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "都为 `n(n-1)/2`"
+          },
+          {
+            "label": "B",
+            "content": "插入仍只需 `n-1` 而选择平方阶"
+          },
+          {
+            "label": "C",
+            "content": "选择只需 `n-1` 而插入平方阶"
+          },
+          {
+            "label": "D",
+            "content": "两者都为常数"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将完全升序初态改为严格逆序。",
+        "explanation": "直接插入每趟要比较前缀全部项，次数从 `1` 至 `n-1` 相加；简单选择本来就固定扫描余项，次数相同。这里比较次数相同，不声称移动次数也相同。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so02-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "insertion-selection-counts",
+            "input": {
+              "values": [
+                8,
+                7,
+                6,
+                5,
+                4,
+                3,
+                2,
+                1
+              ],
+              "selectionSkipsSelfSwap": true,
+              "metrics": [
+                "key-comparisons",
+                "record-position-changes"
+              ]
+            },
+            "goal": "用相同输入分别累计比较与移动",
+            "pauseQuestion": "零次移动比另一种也为零次移动，能算严格优势吗？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so02-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "insertion-selection-counts",
+          "input": {
+            "values": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "selectionSkipsSelfSwap": true,
+            "metrics": [
+              "key-comparisons",
+              "record-position-changes"
+            ]
+          },
+          "goal": "用相同输入分别累计比较与移动",
+          "pauseQuestion": "零次移动比另一种也为零次移动，能算严格优势吗？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "so02-08",
+      "topic": "插入相对普通递归快排的理由",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2022",
+        "questionNumber": "11",
+        "label": "2022 年 408 真题 第 11 题（明确普通递归和可能理由）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2022/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "比较标准稳定直接插入与普通双递归、原地但不稳定的快排，额外空间包括递归栈，不做尾递归消除。选择插入的可能合理理由有哪些？I. 大部分已有序；II. 数量很少；III. 要求常数额外空间；IV. 要求稳定。只问可作为理由，不保证所有输入实测更快。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 I、II"
+        },
+        {
+          "label": "B",
+          "content": "仅 III、IV"
+        },
+        {
+          "label": "C",
+          "content": "仅 I、II、IV"
+        },
+        {
+          "label": "D",
+          "content": "I、II、III、IV"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "遗漏空间上限和相等键顺序约束",
+          "explanation": "插入可用常数额外空间且稳定，普通递归快排的调用栈随深度增长，通常划分还可能打乱相等键。"
+        },
+        "B": {
+          "title": "只看硬约束而漏输入适配",
+          "explanation": "小规模与已有序输入也可能使简单插入的低开销和少后移成为合理选择理由。"
+        },
+        "C": {
+          "title": "把分区原地误当整个递归算法常数空间",
+          "explanation": "快排的分区数组内操作不等于调用栈为常数；题目明确空间包含栈，III仍是理由。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "分别看输入有序程度、小规模开销、栈空间与相等键顺序。"
+        },
+        {
+          "level": 2,
+          "text": "原地分区只说明记录如何存储，递归调用是否仍占额外空间？"
+        },
+        {
+          "level": 3,
+          "text": "在另一个全等键带身份的短序列中比较稳定插入与交换式划分，再独立画递归调用栈。"
+        }
+      ],
+      "solution": "标准插入对近有序和小规模可有较低实际工作量，且保证常数额外空间和稳定性，四项都可作为选择理由。普通递归快排栈最坏可达线性，并非只因分区原地就满足常数空间。",
+      "viz": null,
+      "variant": {
+        "stem": "其余条件不变，仅把IV改为“对稳定性没有要求”，仍构成所列正面理由的组合为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仅 I、II"
+          },
+          {
+            "label": "B",
+            "content": "仅 III、IV"
+          },
+          {
+            "label": "C",
+            "content": "仅 I、II、III"
+          },
+          {
+            "label": "D",
+            "content": "I、II、III、IV"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅将稳定性要求改为不要求稳定。",
+        "explanation": "无稳定性要求不再给插入相对不稳定快排提供这项优势；输入和空间理由I、II、III仍保留。它不意味着稳定算法不能使用，只是没有IV这项约束支持。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so02-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "sorting-insertion-versus-recursive-quick",
+            "input": {
+              "values": [
+                1,
+                2,
+                3,
+                5,
+                4,
+                6
+              ],
+              "stableRequired": false,
+              "spaceIncludesCallStack": true
+            },
+            "goal": "将性能偏好与必须满足的空间稳定约束分开",
+            "pauseQuestion": "原地划分是否自动消除了所有递归栈？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so02-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "sorting-insertion-versus-recursive-quick",
+          "input": {
+            "values": [
+              1,
+              2,
+              3,
+              5,
+              4,
+              6
+            ],
+            "stableRequired": true,
+            "spaceIncludesCallStack": true
+          },
+          "goal": "将性能偏好与必须满足的空间稳定约束分开",
+          "pauseQuestion": "原地划分是否自动消除了所有递归栈？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "so02-09",
+      "topic": "标准排序的稳定性",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2023",
+        "questionNumber": "10",
+        "label": "2023 年 408 真题 第 10 题（明确稳定归并与LSD实现）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2023/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "按通常实现判断稳定性：归并相等键先取左段，LSD每趟稳定分配收集；希尔采用多种间隔，快排和堆排序采用通常交换式版本。哪些不保证相等关键字原相对顺序？I. 希尔；II. 归并；III. 快排；IV. 堆；V. 基数。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 I、II"
+        },
+        {
+          "label": "B",
+          "content": "仅 II、V"
+        },
+        {
+          "label": "C",
+          "content": "仅 I、III、IV"
+        },
+        {
+          "label": "D",
+          "content": "仅 III、IV、V"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "误把跨段归并当必然打乱相等键",
+          "explanation": "II题定相等先左，能保持原相对顺序；III、IV的远距交换却可能打乱，不能只列I、II。"
+        },
+        "B": {
+          "title": "把稳定的两种规则选反",
+          "explanation": "II与V已明确采用稳定实现，恰不是题目所问的不稳定方法。"
+        },
+        "D": {
+          "title": "忽略基数每趟稳定规则并漏希尔",
+          "explanation": "V稳定分配收集可保留等值顺序；I的跨间隔插入可能跨越相等键，不保证稳定。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "稳定性看相等键的身份顺序，不能只看最终数值是否排好。"
+        },
+        {
+          "level": 2,
+          "text": "跨距离交换或间隔移位可能让未直接比较的相等项越过彼此。"
+        },
+        {
+          "level": 3,
+          "text": "给另一个短数组的两个相等值加不同字母标签，追踪算法结束后标签次序是否可能改变。"
+        }
+      ],
+      "solution": "标准希尔、快排、堆排序均存在相等键相对顺序改变的输入，所以I、III、IV不稳定；相等先左的归并及每趟稳定的LSD保持顺序，II、V稳定。",
+      "viz": null,
+      "variant": {
+        "stem": "仅将II的归并平局规则改为“相等时先取右段”，其他实现不变，哪些现在不保证稳定？",
+        "options": [
+          {
+            "label": "A",
+            "content": "仅 I、III、IV"
+          },
+          {
+            "label": "B",
+            "content": "仅 I、II、III、IV"
+          },
+          {
+            "label": "C",
+            "content": "仅 II、V"
+          },
+          {
+            "label": "D",
+            "content": "五项全部"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅改变归并遇等值时左右段的取出优先级。",
+        "explanation": "若两个等值记录原来左段标签A在右段标签B之前，先取右会得到B在A之前，II也失去稳定性；I、III、IV仍不稳定，V未变。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so02-09v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "sorting-stability-with-identities",
+            "input": {
+              "records": [
+                [
+                  2,
+                  "A"
+                ],
+                [
+                  2,
+                  "B"
+                ],
+                [
+                  1,
+                  "C"
+                ]
+              ],
+              "mergeTie": "right-first",
+              "radixPassesStable": true
+            },
+            "goal": "给相等键保留身份并对比前后相对顺序",
+            "pauseQuestion": "值相等是否就能忽略原先谁在前面的标签信息？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so02-09-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "sorting-stability-with-identities",
+          "input": {
+            "records": [
+              [
+                2,
+                "A"
+              ],
+              [
+                2,
+                "B"
+              ],
+              [
+                1,
+                "C"
+              ]
+            ],
+            "mergeTie": "left-first",
+            "radixPassesStable": true
+          },
+          "goal": "给相等键保留身份并对比前后相对顺序",
+          "pauseQuestion": "值相等是否就能忽略原先谁在前面的标签信息？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "so02-10",
+      "topic": "一次快排划分的块间有序",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2024",
+        "questionNumber": "8",
+        "label": "2024 年 408 真题 第 8 题（明确相等键分配与块间非降序）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2024/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "数组有 `N≥3` 项，首项作枢轴，完成一次常规快排划分并把枢轴放到中间：左段P均小于枢轴，右段Q均不小于枢轴，相等项归右。两个段可为空且允许重复键。哪项必然正确？",
+      "options": [
+        {
+          "label": "A",
+          "content": "P与Q块间有序，即任一P元素不大于任一Q元素"
+        },
+        {
+          "label": "B",
+          "content": "P和Q各自内部均已升序"
+        },
+        {
+          "label": "C",
+          "content": "P和Q的元素数总大致相等"
+        },
+        {
+          "label": "D",
+          "content": "P和Q各自都不含重复键"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把划分条件当作两个段内已排序",
+          "explanation": "一次划分只分隔相对枢轴的大小，不对同侧内部完成排序，仍需后续处理。"
+        },
+        "C": {
+          "title": "把平衡性能假设当每次划分保证",
+          "explanation": "固定首项可能选到极值，左右规模可为0和N减1，不能保证大致相等。"
+        },
+        "D": {
+          "title": "把按大小分块当去重操作",
+          "explanation": "重复键可一起被分到同一侧，划分不删除重复记录，也不要求每段键互异。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "只使用划分时建立的相对枢轴条件，不额外附加排序或去重要求。"
+        },
+        {
+          "level": 2,
+          "text": "左段元素与右段元素可通过枢轴的大小关系作传递比较。"
+        },
+        {
+          "level": 3,
+          "text": "另取枢轴比所有其他值都小的短数组，检查分区规模与块内顺序是否仍有额外保证。"
+        }
+      ],
+      "solution": "P每项小于枢轴，Q每项不小于枢轴，所以任意P项都不大于Q项，形成块间有序。它不推出各块内部有序、规模均衡或没有重复键，因此只有A。",
+      "viz": null,
+      "variant": {
+        "stem": "保持同一首枢轴、相等归右的规则，仅把输入改为全部N项相等，一趟后P、Q规模依次为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "两边都恰为 `(N-1)/2`"
+          },
+          {
+            "label": "B",
+            "content": "0与 `N-1`"
+          },
+          {
+            "label": "C",
+            "content": "`N-1` 与0"
+          },
+          {
+            "label": "D",
+            "content": "无法完成合法划分"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将输入键值限定为全部相等。",
+        "explanation": "除枢轴外没有任何键严格小于它，全部 `N-1` 项归右，故左段0、右段N减1。分区仍合法，却完全不平衡。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so02-10v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "quick-partition-block-guarantees",
+            "input": {
+              "values": [
+                4,
+                4,
+                4,
+                4,
+                4,
+                4
+              ],
+              "pivot": "first",
+              "equalKeys": "right"
+            },
+            "goal": "比较块间大小关系与块内次序和规模",
+            "pauseQuestion": "同一侧都满足对枢轴的大小条件，是否已经彼此排好？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so02-10-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "quick-partition-block-guarantees",
+          "input": {
+            "values": [
+              4,
+              2,
+              6,
+              1,
+              5,
+              3
+            ],
+            "pivot": "first",
+            "equalKeys": "right"
+          },
+          "goal": "比较块间大小关系与块内次序和规模",
+          "pauseQuestion": "同一侧都满足对枢轴的大小条件，是否已经彼此排好？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    }
+  ]
+}

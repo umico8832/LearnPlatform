@@ -1,0 +1,1462 @@
+{
+  "schemaVersion": 1,
+  "section": "排序真题：趟不变量、分组、建堆、基数与多路归并",
+  "storage": "DRAFT_ONLY",
+  "conventions": "docs/product/explanation-conventions.md",
+  "questions": [
+    {
+      "id": "so01-01",
+      "topic": "由趟后状态辨认排序",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2009",
+        "questionNumber": "10",
+        "label": "2009 年 408 真题 第 10 题（明确趟与扫描方向）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2009/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "升序排序的第二趟结束后为 `11,12,13,7,8,9,23,4,5`。采用常规实现：冒泡每趟从左向右将最大待定值送到尾部，简单选择每趟将最小待定值放到头部，直接插入每趟插入一个新元素，二路归并从长度1的段开始每趟段长翻倍。算法只能是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "冒泡排序"
+        },
+        {
+          "label": "B",
+          "content": "直接插入排序"
+        },
+        {
+          "label": "C",
+          "content": "简单选择排序"
+        },
+        {
+          "label": "D",
+          "content": "二路归并排序"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "忽略冒泡尾部已就位的不变量",
+          "explanation": "两趟后最大的两个值应按升序位于最后两项，本题尾部4、5不满足。"
+        },
+        "C": {
+          "title": "忽略选择排序头部已就位的不变量",
+          "explanation": "两趟后最小的两个值4、5应位于最前两项，本题头部11、12不满足。"
+        },
+        "D": {
+          "title": "只检查部分相邻项而忽略归并段边界",
+          "explanation": "两趟归并后从数组开头起的长度4段应有序；本题开头11、12、13、7不有序。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "分别写出各算法一趟完成后承诺的局部有序区域。"
+        },
+        {
+          "level": 2,
+          "text": "第二趟之后已经就位的极值，与只在当前前缀内有序的元素，是不同保证。"
+        },
+        {
+          "level": 3,
+          "text": "对另一个短数组分别追踪有序前缀、固定尾部和长度翻倍的段，比较这些区域是否必须包含全局极值。"
+        }
+      ],
+      "solution": "直接插入的两趟只保证前三项有序，而不要求它们是全局最小项；例如初始13、12、11、7、8、9、23、4、5可得到该状态。冒泡尾部、选择头部的两个极值条件和归并首段长度4有序条件均被题内状态违反。",
+      "viz": null,
+      "variant": {
+        "stem": "只把观察点改为在给定第二趟状态后再执行一趟直接插入，结果是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`7,11,12,13,8,9,23,4,5`"
+          },
+          {
+            "label": "B",
+            "content": "`4,5,11,12,13,7,8,9,23`"
+          },
+          {
+            "label": "C",
+            "content": "`11,12,13,7,8,9,4,5,23`"
+          },
+          {
+            "label": "D",
+            "content": "`11,12,13,7,8,9,23,4,5`"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "由辨认第二趟算法改为继续执行下一趟直接插入，给定状态保持不变。",
+        "explanation": "第三趟将7插入已排序前缀11、12、13，前缀成为7、11、12、13；后面的8、9、23、4、5尚未处理，故选A。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so01-01v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "sorting-pass-invariants",
+            "input": {
+              "state": [
+                11,
+                12,
+                13,
+                7,
+                8,
+                9,
+                23,
+                4,
+                5
+              ],
+              "sortedPrefixLength": 3,
+              "additionalPasses": 1
+            },
+            "goal": "区分前缀有序与全局极值就位",
+            "pauseQuestion": "前缀内部有序是否要求前缀装着全表最小的元素？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so01-01-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "sorting-pass-invariants",
+          "input": {
+            "initial": [
+              13,
+              12,
+              11,
+              7,
+              8,
+              9,
+              23,
+              4,
+              5
+            ],
+            "algorithm": "insertion",
+            "passes": 2
+          },
+          "goal": "区分前缀有序与全局极值就位",
+          "pauseQuestion": "前缀内部有序是否要求前缀装着全表最小的元素？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "so01-02",
+      "topic": "折半插入改变的是定位比较",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2012",
+        "questionNumber": "11",
+        "label": "2012 年 408 真题 第 11 题（补明稳定性与空间口径）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2012/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站保留四项考点及正确项，补明相同稳定规则、连续移动和空间渐近口径；选项C据此澄清措辞"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "对同一数组分别进行标准原地直接插入和折半插入，每趟都把新元素稳定地插到已有等值元素之后，随后用相同连续后移方式腾位置。两者都执行全部插入趟，辅助空间按渐近量级比较。可能不同的是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "排序的总趟数"
+        },
+        {
+          "label": "B",
+          "content": "元素的移动次数"
+        },
+        {
+          "label": "C",
+          "content": "辅助空间的渐近量级"
+        },
+        {
+          "label": "D",
+          "content": "元素之间的比较次数"
+        }
+      ],
+      "correctAnswer": "D",
+      "misconceptions": {
+        "A": {
+          "title": "把定位快慢当成插入趟数变化",
+          "explanation": "两者均将剩余每个元素插入有序前缀，总趟数由元素个数决定。"
+        },
+        "B": {
+          "title": "把找位置与搬元素混为一谈",
+          "explanation": "稳定规则相同，插入位置相同，连续后移的元素也相同，定位方式不会减少这些移动。"
+        },
+        "C": {
+          "title": "把几个索引变量误当不同空间阶",
+          "explanation": "两者都只用常数个辅助变量，按题定渐近口径均为常数额外空间。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "把一趟分成定位插入点与把元素移入该位置两部分。"
+        },
+        {
+          "level": 2,
+          "text": "相同稳定规则会使每一趟的最终插入位置一致，再分别看比较与移动。"
+        },
+        {
+          "level": 3,
+          "text": "另取一个逆序短数组，只数旧前缀中被右移的元素，然后考虑是否换一种定位方式就能绕过这些位置。"
+        }
+      ],
+      "solution": "二者每趟插入位置和后移方式相同，因此趟数与移动相同，也均为常数额外空间；差别在寻找位置时的关键字比较，折半定位可减少一般情况下的比较，但仍需逐项移动元素。",
+      "viz": null,
+      "variant": {
+        "stem": "在同一稳定连续后移模型下，输入固定为 `8,7,6,5,4,3,2,1`，只数旧前缀元素向右后移的次数，不计暂存新值与最终写入。两种插入排序各需多少次后移？",
+        "options": [
+          {
+            "label": "A",
+            "content": "7"
+          },
+          {
+            "label": "B",
+            "content": "17"
+          },
+          {
+            "label": "C",
+            "content": "28"
+          },
+          {
+            "label": "D",
+            "content": "56"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "将概念比较改为固定8个逆序元素的后移计数，其他实现规则不变。",
+        "explanation": "各趟新元素都小于全部已排前缀，分别需后移1至7个旧元素，总和28。折半法只改变定位比较，不能省去同样的28次后移。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so01-02v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "insertion-position-and-shifts",
+            "input": {
+              "values": [
+                8,
+                7,
+                6,
+                5,
+                4,
+                3,
+                2,
+                1
+              ],
+              "methods": [
+                "linear-stable",
+                "binary-upper-bound"
+              ],
+              "count": "old-element-right-shift"
+            },
+            "goal": "分别累计定位比较和实际后移",
+            "pauseQuestion": "找到插入点之后，数组中原有元素能否自动腾出位置？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so01-02-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "insertion-position-and-shifts",
+          "input": {
+            "values": [
+              4,
+              3,
+              2,
+              1
+            ],
+            "methods": [
+              "linear-stable",
+              "binary-upper-bound"
+            ],
+            "count": [
+              "key-comparison",
+              "old-element-right-shift"
+            ]
+          },
+          "goal": "分别累计定位比较和实际后移",
+          "pauseQuestion": "找到插入点之后，数组中原有元素能否自动腾出位置？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "so01-03",
+      "topic": "希尔一趟后的分组有序性",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2014",
+        "questionNumber": "10",
+        "label": "2014 年 408 真题 第 10 题（明确升序与组下标）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2014/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "升序希尔排序完成一趟增量插入后，数组为 `9,1,4,13,7,8,20,23,15`。同一余数下标属于同组，下标从0起。该趟增量可能是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "2"
+        },
+        {
+          "label": "B",
+          "content": "3"
+        },
+        {
+          "label": "C",
+          "content": "4"
+        },
+        {
+          "label": "D",
+          "content": "5"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "只看部分相邻或间隔元素",
+          "explanation": "增量2的同组9、4、7、20、15不是升序，因此不满足该趟必须完成的组内有序。"
+        },
+        "C": {
+          "title": "漏检下标0与4的同组关系",
+          "explanation": "增量4会使9与7同组，前大后小，不能作为该趟已完成的结果。"
+        },
+        "D": {
+          "title": "漏检下标0与5的同组关系",
+          "explanation": "增量5会使9与8同组，仍有逆序，不能由一趟该增量排序结束后得到。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "一趟希尔排序完成的是各个间隔子序列的插入排序。"
+        },
+        {
+          "level": 2,
+          "text": "对每个候选增量，把下标按余数分组，逐组检查升序。"
+        },
+        {
+          "level": 3,
+          "text": "在另一个8项数组中试画间隔线：跨过相邻项并不影响同组元素之间必须有序的要求。"
+        }
+      ],
+      "solution": "增量3的三组为9、13、20；1、7、23；4、8、15，全部升序。增量2、4、5则分别至少有9到4、9到7、9到8的同组逆序，故只有3可能。",
+      "viz": null,
+      "variant": {
+        "stem": "只把趟后数组改为 `5,1,9,3,7,6,12,4,10`，其他规则与四个候选增量不变，哪个增量可能？",
+        "options": [
+          {
+            "label": "A",
+            "content": "2"
+          },
+          {
+            "label": "B",
+            "content": "3"
+          },
+          {
+            "label": "C",
+            "content": "4"
+          },
+          {
+            "label": "D",
+            "content": "5"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅更换一趟结束后的数组。",
+        "explanation": "增量4的组为5、7、10；1、6；9、12；3、4，均有序。增量2有9到7的逆序，增量3有5到3的逆序，增量5有9到4的逆序，故选4。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so01-03v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "shell-gap-groups",
+            "input": {
+              "state": [
+                5,
+                1,
+                9,
+                3,
+                7,
+                6,
+                12,
+                4,
+                10
+              ],
+              "candidateGaps": [
+                2,
+                3,
+                4,
+                5
+              ]
+            },
+            "goal": "按下标余数检查同组有序",
+            "pauseQuestion": "某组存在前大后小，是否还可能已完成该增量的一趟？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so01-03-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "shell-gap-groups",
+          "input": {
+            "state": [
+              9,
+              1,
+              4,
+              13,
+              7,
+              8,
+              20,
+              23,
+              15
+            ],
+            "candidateGaps": [
+              2,
+              3,
+              4,
+              5
+            ]
+          },
+          "goal": "按下标余数检查同组有序",
+          "pauseQuestion": "某组存在前大后小，是否还可能已完成该增量的一趟？"
+        }
+      ]
+    },
+    {
+      "id": "so01-04",
+      "topic": "固定趟基数排序的搬运量",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2015",
+        "questionNumber": "9",
+        "label": "2015 年 408 真题 第 9 题（固定分配收集与移动计数模型）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2015/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "在通常的数组排序模型下，固定元素个数、基数与关键字位数。基数排序每一位都执行稳定分配和收集，不做提前停止，每趟每个记录写入桶一次、收集回数组一次。下列哪种排序的记录移动次数不依赖关键字的初始排列？其他算法按标准直接插入、冒泡交换和首项枢轴快速划分理解。",
+      "options": [
+        {
+          "label": "A",
+          "content": "直接插入排序"
+        },
+        {
+          "label": "B",
+          "content": "冒泡排序"
+        },
+        {
+          "label": "C",
+          "content": "基数排序"
+        },
+        {
+          "label": "D",
+          "content": "快速排序"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "忽略插入位置受逆序关系影响",
+          "explanation": "直接插入需后移多少已有记录取决于待插值的位置；顺序与逆序输入的移动量不同。"
+        },
+        "B": {
+          "title": "忽略交换次数受逆序关系影响",
+          "explanation": "标准冒泡只在逆序时交换，初始排列决定需要消除多少逆序。"
+        },
+        "D": {
+          "title": "把分治结构当作固定记录搬运",
+          "explanation": "标准快速划分中的交换和分区形态会受初始排列与枢轴影响，不能保证固定记录移动量。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "区分按比较结果决定是否移动，与每趟都搬运全部记录。"
+        },
+        {
+          "level": 2,
+          "text": "题目固定了位数且禁止提前停止，先看每一位分配和收集访问多少记录。"
+        },
+        {
+          "level": 3,
+          "text": "对同一组关键字换两种排列，比较一种算法的逆序数和另一种算法的固定整表扫描，是否都必须随排列改变。"
+        }
+      ],
+      "solution": "在题定模型中，基数排序每一位都搬运全部记录两次，固定记录数和位数后总写入固定，与输入排列无关。直接插入、冒泡和标准快速划分则存在初始排列不同而移动次数不同的输入。",
+      "viz": null,
+      "variant": {
+        "stem": "保持上述分配收集规则，明确有8条记录、固定处理3位。只计记录写入桶和写回数组，一共写入多少次？",
+        "options": [
+          {
+            "label": "A",
+            "content": "8"
+          },
+          {
+            "label": "B",
+            "content": "16"
+          },
+          {
+            "label": "C",
+            "content": "24"
+          },
+          {
+            "label": "D",
+            "content": "48"
+          }
+        ],
+        "correctAnswer": "D",
+        "changedCondition": "从判断是否受排列影响，改为在8条记录、3个固定趟的同一模型计写入。",
+        "explanation": "每趟每条记录写入桶一次再写回一次，共16次；3趟总计48次，不把位值计算或桶计数算成记录写入。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so01-04v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "radix-fixed-record-writes",
+            "input": {
+              "recordCount": 8,
+              "radix": 10,
+              "digits": 3,
+              "writesPerRecordPerPass": 2
+            },
+            "goal": "将关键字比较与固定分配收集的搬运分开",
+            "pauseQuestion": "重新排列输入记录，是否改变固定趟数中每条记录被搬运的次数？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so01-04-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "radix-fixed-record-writes",
+          "input": {
+            "values": [
+              21,
+              12,
+              32,
+              11
+            ],
+            "radix": 10,
+            "digits": 2,
+            "writesPerRecordPerPass": 2
+          },
+          "goal": "将关键字比较与固定分配收集的搬运分开",
+          "pauseQuestion": "重新排列输入记录，是否改变固定趟数中每条记录被搬运的次数？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "so01-05",
+      "topic": "归并与插入的选择理由",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2017",
+        "questionNumber": "10",
+        "label": "2017 年 408 真题 第 10 题（据收录明确算法比较口径）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2017/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站将运行效率表述明确为最坏时间阶，将可能理由澄清为一般算法层面理由；三项考点和正确组合不变"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "以通常数组实现和规模较大的一般无序输入为背景，不把库函数调用长度当算法代码长度。比较二路归并与直接插入，下列哪些可作为算法层面的一般选择理由？I. 归并代码通常更短；II. 归并额外空间更少；III. 归并有更好的最坏时间阶。",
+      "options": [
+        {
+          "label": "A",
+          "content": "仅 II"
+        },
+        {
+          "label": "B",
+          "content": "仅 III"
+        },
+        {
+          "label": "C",
+          "content": "仅 I、II"
+        },
+        {
+          "label": "D",
+          "content": "仅 I、III"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "把递归分治误当更省辅助空间",
+          "explanation": "通常数组归并需要线性辅助数组，直接插入只需常数辅助变量，II方向不成立。"
+        },
+        "C": {
+          "title": "把代码简短和空间少当归并的一般优势",
+          "explanation": "代码长短取决于实现，不能保证I；通常归并的辅助空间反而多于直接插入，II也不成立。"
+        },
+        "D": {
+          "title": "附加了无法一般保证的代码优势",
+          "explanation": "III有复杂度依据；I受实现方式影响，不能作为归并相对插入的一般优势。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "分别审视代码表达、辅助空间和最坏时间，这三个维度不应混同。"
+        },
+        {
+          "level": 2,
+          "text": "区分实现相关的代码长度与可由递推或求和分析的复杂度。"
+        },
+        {
+          "level": 3,
+          "text": "比较需要额外归并缓冲区的算法与只暂存一个待插元素的算法，再独立分析大量逆序元素时的操作增长。"
+        }
+      ],
+      "solution": "常规数组归并最坏时间为 `Θ(n log n)`，直接插入最坏为 `Θ(n²)`，III成立。归并常用线性辅助空间而插入为常数，II不成立；代码更短没有算法层面的普遍保证，I不作为一般理由。",
+      "viz": null,
+      "variant": {
+        "stem": "只将输入条件改为已经升序，仍执行标准直接插入且逐趟先比较前驱，不作整表预检。其时间紧界为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`Θ(1)`"
+          },
+          {
+            "label": "B",
+            "content": "`Θ(log n)`"
+          },
+          {
+            "label": "C",
+            "content": "`Θ(n)`"
+          },
+          {
+            "label": "D",
+            "content": "`Θ(n log n)`"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "将一般无序输入改为已升序，并改问直接插入在该条件下的时间。",
+        "explanation": "各趟只需常数次比较与处理，无旧前缀后移，但仍逐一处理其余元素，总共线性时间；不能把没有移动当没有遍历。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so01-05v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "merge-insertion-costs",
+            "input": {
+              "values": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8
+              ],
+              "method": "direct-insertion",
+              "noWholeArrayPrecheck": true
+            },
+            "goal": "把最坏情形和已排序输入分开比较",
+            "pauseQuestion": "无后移是否就能免去检查所有待插元素？",
+            "inputRole": "ILLUSTRATIVE_EXAMPLE"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so01-05-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "merge-insertion-costs",
+          "input": {
+            "values": [
+              8,
+              7,
+              6,
+              5,
+              4,
+              3,
+              2,
+              1
+            ],
+            "methods": [
+              "array-merge",
+              "direct-insertion"
+            ],
+            "metrics": [
+              "key-comparison",
+              "auxiliary-slots"
+            ]
+          },
+          "goal": "把最坏情形和已排序输入分开比较",
+          "pauseQuestion": "无后移是否就能免去检查所有待插元素？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "so01-06",
+      "topic": "自底向上建堆的第一步",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2018",
+        "questionNumber": "11",
+        "label": "2018 年 408 真题 第 11 题（据收录改编为单步）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2018/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案；本站使用已核对原数组与正确轨迹，将原来的四条全程轨迹选项改编为四个单步状态；不是原四项逐字重现"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "根据2018年第11题的数组 `6,1,5,9,8,4,7` 改编为单步题。0基完全二叉树，自最后非叶结点下标2向0构造大根堆，每次向下调整与较大孩子交换。刚完成下标2的一次完整向下调整时，数组是？",
+      "options": [
+        {
+          "label": "A",
+          "content": "`6,1,7,9,8,4,5`"
+        },
+        {
+          "label": "B",
+          "content": "`6,9,7,1,8,4,5`"
+        },
+        {
+          "label": "C",
+          "content": "`9,6,7,1,8,4,5`"
+        },
+        {
+          "label": "D",
+          "content": "`9,8,7,1,6,4,5`"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "提前处理了下一个非叶结点",
+          "explanation": "该状态还将下标1的值1与孩子9交换；题目只完成下标2的调整，尚未轮到下标1。"
+        },
+        "C": {
+          "title": "提前开始根的向下调整",
+          "explanation": "该状态已经在处理根，而自底向上顺序必须先完成下标2、1；观察点尚未到根。"
+        },
+        "D": {
+          "title": "把完整建堆的最终态当首步结果",
+          "explanation": "该状态是全部非叶结点调整完成后的大根堆，不是第一个局部调整后的状态。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "先把数组下标转换成父子位置，最后非叶结点的孩子都已是叶。"
+        },
+        {
+          "level": 2,
+          "text": "一次局部向下调整只会改变当前结点通向叶的一条路径。"
+        },
+        {
+          "level": 3,
+          "text": "在另一棵三结点子树中，比较父值与两个孩子，选择较大的孩子决定是否交换，不要提前处理别的子树。"
+        }
+      ],
+      "solution": "下标2值为5，两个孩子位于5、6，值为4、7。与较大的7交换后5到达叶，调整结束，数组为6、1、7、9、8、4、5；下标1和根仍未调整。",
+      "viz": null,
+      "variant": {
+        "stem": "只把观察点推迟到接着完成下标1的完整向下调整，其他数组、算法和选项不变，此时数组是？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`6,1,7,9,8,4,5`"
+          },
+          {
+            "label": "B",
+            "content": "`6,9,7,1,8,4,5`"
+          },
+          {
+            "label": "C",
+            "content": "`9,6,7,1,8,4,5`"
+          },
+          {
+            "label": "D",
+            "content": "`9,8,7,1,6,4,5`"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅将观察点由完成下标2推迟到完成下标1。",
+        "explanation": "下标1的值1与孩子9、8比较，和较大的9交换，1到叶即停止；得到6、9、7、1、8、4、5，此时尚未处理根。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so01-06v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "bottom-up-max-heap",
+            "input": {
+              "values": [
+                6,
+                1,
+                5,
+                9,
+                8,
+                4,
+                7
+              ],
+              "indexBase": 0,
+              "stopAfterSiftRoot": 1
+            },
+            "goal": "区分局部向下调整与全部建堆",
+            "pauseQuestion": "当前结点调整结束后，是否已经自动处理其他非叶结点？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so01-06-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "bottom-up-max-heap",
+          "input": {
+            "values": [
+              6,
+              1,
+              5,
+              9,
+              8,
+              4,
+              7
+            ],
+            "indexBase": 0,
+            "stopAfterSiftRoot": 2
+          },
+          "goal": "区分局部向下调整与全部建堆",
+          "pauseQuestion": "当前结点调整结束后，是否已经自动处理其他非叶结点？"
+        }
+      ]
+    },
+    {
+      "id": "so01-07",
+      "topic": "多路最佳归并的虚段",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2019",
+        "questionNumber": "11",
+        "label": "2019 年 408 真题 第 11 题（明确满12叉与零权虚段）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2019/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "外存有120个初始归并段，用12路最佳归并树建模，每个内部结点恰有12个孩子；必要时补权重为0的虚段。至少补多少个，才能满足该满分支树的叶数条件？不要求所有叶同层。",
+      "options": [
+        {
+          "label": "A",
+          "content": "1"
+        },
+        {
+          "label": "B",
+          "content": "2"
+        },
+        {
+          "label": "C",
+          "content": "3"
+        },
+        {
+          "label": "D",
+          "content": "4"
+        }
+      ],
+      "correctAnswer": "B",
+      "misconceptions": {
+        "A": {
+          "title": "只凑偶数而没满足分支恒等式",
+          "explanation": "叶数必须是内部结点数乘11再加1；补1后121减1不能被11整除。"
+        },
+        "C": {
+          "title": "误以为补得更多就能整除",
+          "explanation": "补到满足同余关系的最小非负数即可；补3后叶数123也不满足条件。"
+        },
+        "D": {
+          "title": "将路数或余数直接当虚段数",
+          "explanation": "应补足叶数减1对11的整除缺口，不是取一个看起来接近的段数。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "分别用所有内部结点的出边数与总结点数减一统计树的边。"
+        },
+        {
+          "level": 2,
+          "text": "设内部结点数与叶数，消去总边数，得到叶数对分支数的约束。"
+        },
+        {
+          "level": 3,
+          "text": "对一个每个内部结点有4个孩子的小树推导同样关系，再找补到合法叶数的最小非负增量。"
+        }
+      ],
+      "solution": "记内部结点数为 `I`、总叶数为 `L`，有 `12I=I+L-1`，即 `L=11I+1`。120段加虚段数后减1需被11整除；119余9，还差2，因此补2段到122。",
+      "viz": null,
+      "variant": {
+        "stem": "只将真实初始段数由120改为122，仍为12路且其余约定不变，最少补多少虚段？",
+        "options": [
+          {
+            "label": "A",
+            "content": "0"
+          },
+          {
+            "label": "B",
+            "content": "1"
+          },
+          {
+            "label": "C",
+            "content": "2"
+          },
+          {
+            "label": "D",
+            "content": "11"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将真实初始段数120改为122。",
+        "explanation": "122减1为121，恰好是11的倍数，叶数条件已经满足，不需要补段。最小非负补数可以是0，不能强制每题都加虚段。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so01-07v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "optimal-kway-merge-dummies",
+            "input": {
+              "realRunCount": 122,
+              "arity": 12,
+              "dummyWeight": 0,
+              "fullInternalBranching": true
+            },
+            "goal": "用树的边数恒等式检查虚段数",
+            "pauseQuestion": "该条件是在限制总叶数，还是要求所有真实归并段长度相同？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so01-07-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "optimal-kway-merge-dummies",
+          "input": {
+            "realRunCount": 120,
+            "arity": 12,
+            "dummyWeight": 0,
+            "fullInternalBranching": true
+          },
+          "goal": "用树的边数恒等式检查虚段数",
+          "pauseQuestion": "该条件是在限制总叶数，还是要求所有真实归并段长度相同？"
+        }
+      ]
+    },
+    {
+      "id": "so01-08",
+      "topic": "LSD第一趟与稳定性",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2021",
+        "questionNumber": "10",
+        "label": "2021 年 408 真题 第 10 题（明确稳定桶收集）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2021/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "对数组 `93,946,372,9,146,151,301,485,236,327,43,892` 作升序LSD基数排序，第一趟按个位稳定入桶并按桶0至9收集。收集后372前后紧邻的两个元素依次为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "43、892"
+        },
+        {
+          "label": "B",
+          "content": "236、301"
+        },
+        {
+          "label": "C",
+          "content": "301、892"
+        },
+        {
+          "label": "D",
+          "content": "485、301"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "把不同个位桶的元素放进同一局部位置",
+          "explanation": "43个位为3，372个位为2；先收集个位2的完整桶，不能让43排在372之前。"
+        },
+        "B": {
+          "title": "把原数组或全值大小混入个位排序",
+          "explanation": "236属于个位6桶，301属于个位1桶；两者不会成为本趟372前后的这一组合。"
+        },
+        "D": {
+          "title": "忽略桶间从小到大收集顺序",
+          "explanation": "485属于个位5桶，301属于个位1桶；这组次序与个位桶收集顺序不符。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "第一趟只看个位，不按完整关键字数值排序。"
+        },
+        {
+          "level": 2,
+          "text": "列出与目标同桶的元素，并保留它们在原数组中的先后。"
+        },
+        {
+          "level": 3,
+          "text": "用两条个位相同但百位不同的另例记录，试试交换它们的输入顺序后，第一趟是否会主动按百位重排。"
+        }
+      ],
+      "solution": "个位1桶为151、301，个位2桶为372、892。稳定分配保持桶内先后，先收完个位1再收个位2，因此372前邻301、后邻892。完整本趟为151、301、372、892、93、43、485、946、146、236、327、9。",
+      "viz": null,
+      "variant": {
+        "stem": "只交换输入中372与892的位置，仍按个位稳定分配收集。372前后紧邻的元素依次为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "301、892"
+          },
+          {
+            "label": "B",
+            "content": "892、93"
+          },
+          {
+            "label": "C",
+            "content": "93、892"
+          },
+          {
+            "label": "D",
+            "content": "43、9"
+          }
+        ],
+        "correctAnswer": "B",
+        "changedCondition": "仅互换原数组中372与892的位置。",
+        "explanation": "个位2桶顺序随输入变成892、372；该桶之前先收集个位1桶151、301，之后接个位3桶93、43。因此372的前邻是892，后邻是93。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so01-08v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "lsd-stable-distribution",
+            "input": {
+              "values": [
+                93,
+                946,
+                892,
+                9,
+                146,
+                151,
+                301,
+                485,
+                236,
+                327,
+                43,
+                372
+              ],
+              "radix": 10,
+              "digitPosition": 0,
+              "target": 372,
+              "stable": true
+            },
+            "goal": "只看当前位并保持同桶记录次序",
+            "pauseQuestion": "第一趟处理个位时，会不会因百位更小而交换同桶记录？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so01-08-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "lsd-stable-distribution",
+          "input": {
+            "values": [
+              93,
+              946,
+              372,
+              9,
+              146,
+              151,
+              301,
+              485,
+              236,
+              327,
+              43,
+              892
+            ],
+            "radix": 10,
+            "digitPosition": 0,
+            "target": 372,
+            "stable": true
+          },
+          "goal": "只看当前位并保持同桶记录次序",
+          "pauseQuestion": "第一趟处理个位时，会不会因百位更小而交换同桶记录？"
+        }
+      ]
+    },
+    {
+      "id": "so01-09",
+      "topic": "二路归并的输入前提",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2022",
+        "questionNumber": "10",
+        "label": "2022 年 408 真题 第 10 题（明确单次双指针操作）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2022/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "在二路归并排序中，单次二路归并操作的功能是？这里使用双指针比较两个输入段的当前首项，取较小者，某段耗尽后直接复制另一段余项。",
+      "options": [
+        {
+          "label": "A",
+          "content": "把两个已排序段合并成一个新的有序段"
+        },
+        {
+          "label": "B",
+          "content": "把数组分成长度大致相等的两半"
+        },
+        {
+          "label": "C",
+          "content": "把数组拆成每段只有一个元素"
+        },
+        {
+          "label": "D",
+          "content": "按一个枢轴把较小与较大元素分到两侧"
+        }
+      ],
+      "correctAnswer": "A",
+      "misconceptions": {
+        "B": {
+          "title": "把递归拆分当作归并",
+          "explanation": "一分为二是分治的拆分步骤，归并步骤负责组合已经排好的两个段。"
+        },
+        "C": {
+          "title": "把初始单元素段当作合并过程",
+          "explanation": "单元素段是自然有序的起点；归并操作需要把段组合起来，而不是继续拆散。"
+        },
+        "D": {
+          "title": "把快速划分误当归并",
+          "explanation": "枢轴两侧分区是快速排序的划分思路，不是双路有序段逐项合并。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "区分归并排序中的分与合两个阶段。"
+        },
+        {
+          "level": 2,
+          "text": "双指针为何能只看各段当前首项就决定全局下一项？先检查每段内部的前提。"
+        },
+        {
+          "level": 3,
+          "text": "另取两个短段，若某段最小项被藏在首项后面，想想只比较当前首项是否仍能直接取到全局最小。"
+        }
+      ],
+      "solution": "两个段都已升序时，最小未输出值必在某个当前首项，反复取较小者即可得到有序合段。拆分与枢轴划分均不是二路归并操作本身。",
+      "viz": null,
+      "variant": {
+        "stem": "只取消输入段已排序的前提，给定两段 `2,1` 和 `4,3`，仍执行上述首项比较、耗尽后复制余项的同一操作，输出是什么？",
+        "options": [
+          {
+            "label": "A",
+            "content": "`1,2,3,4`"
+          },
+          {
+            "label": "B",
+            "content": "`2,4,1,3`"
+          },
+          {
+            "label": "C",
+            "content": "`2,1,4,3`"
+          },
+          {
+            "label": "D",
+            "content": "`4,3,2,1`"
+          }
+        ],
+        "correctAnswer": "C",
+        "changedCondition": "仅取消输入段已排序条件，使用两个给定反例段执行同一合并操作。",
+        "explanation": "先比较2和4取2，再比较1和4取1，第一段耗尽后复制4、3，得到2、1、4、3。算法没有额外排序每段，已排序前提不能省略。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so01-09v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "two-way-merge-precondition",
+            "input": {
+              "runs": [
+                [
+                  2,
+                  1
+                ],
+                [
+                  4,
+                  3
+                ]
+              ],
+              "headComparison": "less-or-equal",
+              "bulkCopyRemainder": true
+            },
+            "goal": "对照两个有序段与段内乱序的同一首项操作",
+            "pauseQuestion": "段内若藏着更小值，当前首项还能代表该段最小余项吗？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so01-09-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "two-way-merge-precondition",
+          "input": {
+            "runs": [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ],
+            "headComparison": "less-or-equal",
+            "bulkCopyRemainder": true
+          },
+          "goal": "对照两个有序段与段内乱序的同一首项操作",
+          "pauseQuestion": "段内若藏着更小值，当前首项还能代表该段最小余项吗？",
+          "inputRole": "ILLUSTRATIVE_EXAMPLE"
+        }
+      ]
+    },
+    {
+      "id": "so01-10",
+      "topic": "归并次序与比较次数",
+      "source": {
+        "kind": "OFFICIAL_EXAM",
+        "year": "2024",
+        "questionNumber": "10",
+        "label": "2024 年 408 真题 第 10 题（明确耗尽后不比较）",
+        "url": "https://csgraduates.com/study_methods/408quiz/2024/",
+        "collectionSource": "计算机考研杂货铺收录（非官方原卷）；2026-10-17 核对题号、条件、四个选项与答案"
+      },
+      "contentSource": {
+        "kind": "AI_GENERATED",
+        "reviewStatus": "PENDING",
+        "label": "AI 生成·待审核"
+      },
+      "stem": "有三个升序段 `3,5`、`7,9`、`6`，从左至右先合并前两段，再把结果与第三段二路归并。只计两个非空段当前首项之间的关键字比较；某段耗尽后余项直接复制不再比较。总比较次数为？",
+      "options": [
+        {
+          "label": "A",
+          "content": "3"
+        },
+        {
+          "label": "B",
+          "content": "4"
+        },
+        {
+          "label": "C",
+          "content": "5"
+        },
+        {
+          "label": "D",
+          "content": "6"
+        }
+      ],
+      "correctAnswer": "C",
+      "misconceptions": {
+        "A": {
+          "title": "提前采用了另一种合并顺序",
+          "explanation": "先合后两段再与第一段合并会得到较少次数，但题目明确从左至右，必须按指定顺序统计。"
+        },
+        "B": {
+          "title": "漏计第二次合并中的末次比较",
+          "explanation": "第二次合并需比较3与6、5与6、7与6，不能只数前两次后就把6的位置视为已确定。"
+        },
+        "D": {
+          "title": "把直接复制余项也当关键字比较",
+          "explanation": "一段已空时没有两个当前首项，复制另一段的剩余元素不增加此处定义的比较次数。"
+        }
+      },
+      "hints": [
+        {
+          "level": 1,
+          "text": "分开列出两次合并，不要一次把三段都放进同一比较过程。"
+        },
+        {
+          "level": 2,
+          "text": "每次只在两个段都还非空时比较首项。"
+        },
+        {
+          "level": 3,
+          "text": "对另两个长短不同的小段，记下先耗尽哪段，区分此前的跨段比较与此后的直接复制。"
+        }
+      ],
+      "solution": "前两段合并比较3与7、5与7共2次，得到3、5、7、9。再与6合并，比较3与6、5与6、7与6共3次，剩余7、9直接复制，总计5次。",
+      "viz": null,
+      "variant": {
+        "stem": "仅改变合并顺序：先将后两段 `7,9` 与 `6` 合并，再将结果与第一段 `3,5` 合并，计数规则不变，总比较次数为？",
+        "options": [
+          {
+            "label": "A",
+            "content": "3"
+          },
+          {
+            "label": "B",
+            "content": "4"
+          },
+          {
+            "label": "C",
+            "content": "5"
+          },
+          {
+            "label": "D",
+            "content": "6"
+          }
+        ],
+        "correctAnswer": "A",
+        "changedCondition": "仅将合并顺序由先前两段改为先后两段。",
+        "explanation": "先比较7与6一次得到6、7、9；再与3、5合并，比较3与6、5与6两次后第一段耗尽，直接复制余项。总计3次，说明同样数据的比较量会受归并次序影响。",
+        "viz": null,
+        "source": {
+          "kind": "AI_GENERATED",
+          "reviewStatus": "PENDING",
+          "label": "AI 生成·待审核"
+        },
+        "vizCandidates": [
+          {
+            "id": "so01-10v-candidate",
+            "status": "CANDIDATE",
+            "algorithm": "merge-order-comparisons",
+            "input": {
+              "runs": [
+                [
+                  3,
+                  5
+                ],
+                [
+                  7,
+                  9
+                ],
+                [
+                  6
+                ]
+              ],
+              "firstMerge": [
+                1,
+                2
+              ],
+              "count": "cross-head-only"
+            },
+            "goal": "只计当前双段之间的首项比较",
+            "pauseQuestion": "某段已空之后复制另一段，是否还发生两个关键字之间的比较？"
+          }
+        ]
+      },
+      "vizCandidates": [
+        {
+          "id": "so01-10-candidate",
+          "status": "CANDIDATE",
+          "algorithm": "merge-order-comparisons",
+          "input": {
+            "runs": [
+              [
+                3,
+                5
+              ],
+              [
+                7,
+                9
+              ],
+              [
+                6
+              ]
+            ],
+            "firstMerge": [
+              0,
+              1
+            ],
+            "count": "cross-head-only"
+          },
+          "goal": "只计当前双段之间的首项比较",
+          "pauseQuestion": "某段已空之后复制另一段，是否还发生两个关键字之间的比较？"
+        }
+      ]
+    }
+  ]
+}
