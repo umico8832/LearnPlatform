@@ -75,7 +75,7 @@ describe('AskPanel', () => {
     expect(body.message).toBe('为什么 c 不能是 b 的左孩子？')
     expect(body.requestId).toMatch(/^[0-9a-f-]{36}$/)
     expect(wrapper.text()).toContain('先看中序里 b 的位置。')
-    expect(wrapper.text()).toContain('AI 回答 · 未经人工审核')
+    expect(wrapper.text()).not.toContain('审核')
     expect(wrapper.text()).toContain('这道题还能问 4 次')
     expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toBe('')
     await wrapper

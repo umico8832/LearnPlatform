@@ -219,7 +219,8 @@ describe('QuestionUnderstandingView', () => {
       expect(wrapper.find('.meter').attributes('aria-label')).toBe(`已用 ${level} 级提示，共 3 级`)
     }
     expect(tutorApi.requestNextHint).toHaveBeenCalledTimes(3)
-    expect(wrapper.text()).toContain('提示 · AI 生成 · 已审核')
+    expect(wrapper.text()).not.toContain('已审核')
+    expect(wrapper.text()).toContain('内容由 AI 生成，请注意甄别')
     expect(wrapper.text()).toContain('用你选的序列演示')
 
     await button(wrapper, '看正解').trigger('click')
@@ -326,7 +327,6 @@ describe('QuestionUnderstandingView', () => {
     await button(wrapper, '给我一点提示').trigger('click')
     await flushPromises()
     expect(wrapper.text()).toContain('待审提示 1')
-    expect(wrapper.text()).toContain('提示 · AI 生成 · 待审核')
     expect(progressSeen.at(-1)).toEqual({ answer: 'B', hintLevel: 1 })
     expect(api.submitAttempt).not.toHaveBeenCalled()
     expect(tutorApi.getTutorNext).not.toHaveBeenCalled()

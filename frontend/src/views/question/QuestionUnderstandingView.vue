@@ -9,9 +9,9 @@ import { VizPlayer } from '@/viz'
 import type { Misconception, UnderstandingOption } from '@/api/understanding'
 import { useUserStore } from '@/stores/user'
 import { redoWhen } from '@/utils/redoDate'
+import AiNotice from './AiNotice.vue'
 import AnswerCard from './AnswerCard.vue'
 import AskPanel from './AskPanel.vue'
-import ContentByline from './ContentByline.vue'
 import FlowStep from './FlowStep.vue'
 import QuestionHead from './QuestionHead.vue'
 import HintLadder from './HintLadder.vue'
@@ -334,7 +334,6 @@ onMounted(start)
           <template v-if="misconception">
             <h2 class="step-title" tabindex="-1" data-focus>{{ misconception.title }}</h2>
             <QuestionProse class="reading" :content="misconception.explanation" />
-            <ContentByline what="讲解" :source="misconception.source" />
           </template>
           <template v-else>
             <h2 class="step-title" tabindex="-1" data-focus>这个选项还没有单独的讲解</h2>
@@ -415,7 +414,6 @@ onMounted(start)
               {{ wrong ? '正确的思路' : '对一遍思路' }}
             </h2>
             <QuestionProse class="reading" :content="solution.result.value.explanation" />
-            <ContentByline what="讲解" :source="solution.result.value.explanationSource" />
             <VizPlayer
               v-if="solutionViz"
               class="step-viz"
@@ -490,7 +488,6 @@ onMounted(start)
               :content="variantCorrectOption.content"
             />
             <QuestionProse class="reading" :content="variantAttempt.result.value.explanation" />
-            <ContentByline what="讲解" :source="variantAttempt.result.value.explanationSource" />
             <VizPlayer
               v-if="variantAttempt.result.value.viz"
               class="step-viz"
@@ -505,6 +502,7 @@ onMounted(start)
         </FlowStep>
       </template>
     </main>
+    <AiNotice />
   </div>
 </template>
 

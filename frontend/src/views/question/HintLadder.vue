@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import type { HintLevel, TutorHint } from '@/api/questionTutor'
-import ContentByline from './ContentByline.vue'
 import QuestionProse from './QuestionProse.vue'
 
 /**
@@ -9,20 +7,10 @@ import QuestionProse from './QuestionProse.vue'
  * think about, then the reasoning steps, then a similar case from the course.
  * None of them rules an option in or out.
  */
-const props = defineProps<{ hints: TutorHint[] }>()
+defineProps<{ hints: TutorHint[] }>()
 
 const LEVELS: Record<HintLevel, string> = { 1: '想一想概念', 2: '推理的步骤', 3: '一个相似的例子' }
 const TOTAL = 3
-
-/** One byline under the ladder when every hint has the same origin; otherwise each hint carries its own. */
-const sharedSource = computed(() => {
-  const [first, ...rest] = props.hints
-  if (!first) return null
-  const same = rest.every(
-    (hint) => hint.source.kind === first.source.kind && hint.source.reviewStatus === first.source.reviewStatus,
-  )
-  return same ? first.source : null
-})
 </script>
 
 <template>
@@ -37,9 +25,7 @@ const sharedSource = computed(() => {
         提示 {{ hint.level }}<span class="hint-kind"> · {{ LEVELS[hint.level] }}</span>
       </h3>
       <QuestionProse class="hint-text" :content="hint.text" />
-      <ContentByline v-if="!sharedSource" what="提示" :source="hint.source" />
     </section>
-    <ContentByline v-if="sharedSource" :what="hints.length > 1 ? '以上提示' : '提示'" :source="sharedSource" />
   </div>
 </template>
 

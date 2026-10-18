@@ -3,7 +3,6 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ArrowRight } from '@lucide/vue'
 import { LtButton, LtSegmented } from '@/components/living'
 import type { WrongQuestionVO } from '@/api/wrongQuestion'
-import ContentByline from '../question/ContentByline.vue'
 import OptionChip from '../question/OptionChip.vue'
 import QuestionProse from '../question/QuestionProse.vue'
 import { isOptionKey, MASTERY_OPTIONS, redoWhen } from './wrongPresentation'
@@ -87,7 +86,6 @@ const headingId = computed(() => `wrong-${props.item.id}`)
           >
             {{ expanded ? '收起' : '展开讲解' }}
           </button>
-          <ContentByline what="讲解" :source="item.misconception.source" />
         </template>
         <p v-else class="why-none">这个选项还没有单独讲解，重做时对照正解看看。</p>
       </div>

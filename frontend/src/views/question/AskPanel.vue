@@ -8,7 +8,7 @@ import { ASK_MAX_LENGTH, type useQuestionAsk } from './useQuestionAsk'
 
 /**
  * “还是不懂？问一句”：学习者用自己的话问这道题。答对之前回答不给答案，建议只引导到
- * 提示或动画，由学习者自己点；回答由模型生成，未经人工审核，如实标出。
+ * 提示或动画，由学习者自己点。
  */
 const props = defineProps<{ ask: ReturnType<typeof useQuestionAsk>; solved: boolean }>()
 const emit = defineEmits<{ hint: []; demo: [] }>()
@@ -76,7 +76,6 @@ function failedText(code: number | null) {
         <p class="question"><span class="who">你问</span>{{ record.message }}</p>
         <template v-if="record.status === 'SUCCEEDED' && record.content">
           <QuestionProse class="answer" :content="record.content" />
-          <p class="byline">AI 回答 · 未经人工审核</p>
           <div v-if="record.suggestion" class="suggestion">
             <span class="suggestion-reason">{{ record.suggestion.reason }}</span>
             <LtButton size="sm" @click="follow(record.suggestion)">
@@ -182,7 +181,6 @@ function failedText(code: number | null) {
   line-height: var(--lt-leading-reading);
 }
 
-.byline,
 .thinking,
 .failed {
   margin: var(--lt-space-2) 0 0;

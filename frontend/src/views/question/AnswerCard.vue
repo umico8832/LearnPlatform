@@ -93,6 +93,7 @@ const emit = defineEmits<{ submit: [] }>()
 }
 
 .card-type {
+  margin-left: auto;
   flex: none;
   color: var(--lt-label-3);
   font-size: var(--lt-text-caption);

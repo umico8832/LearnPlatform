@@ -5,6 +5,7 @@ import { ChevronLeft, RotateCcw, X } from '@lucide/vue'
 import { LtButton, LtCard, LtIconButton, LtSegmented } from '@/components/living'
 import { useLivingTheme } from '@/composables/useLivingTheme'
 import { useWrongQuestions, type WrongScope } from './useWrongQuestions'
+import AiNotice from '../question/AiNotice.vue'
 import WrongRow from './WrongRow.vue'
 
 /**
@@ -157,6 +158,7 @@ onMounted(() => wrong.load())
         <dd>{{ stats.mastered }}</dd>
       </div>
     </dl>
+    <AiNotice />
   </main>
 </template>
 

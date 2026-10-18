@@ -54,7 +54,7 @@ test('出栈序列答错后依次理解误区、演示、正解并辅助作答�
     await page.getByRole('button', { name }).click()
     await expect(page.getByRole('heading', { name: new RegExp(`^提示 ${level}`) })).toBeVisible()
   }
-  await expect(page.getByText('以上提示 · AI 生成 · 已审核')).toBeVisible()
+  await expect(page.getByText('内容由 AI 生成，请注意甄别')).toBeVisible()
   await expect(page.getByText('用你选的 3,1,2,5,4 走一遍')).toBeVisible()
   await expect(page.locator('.viz').first()).toBeVisible()
   await page.getByRole('button', { name: '看正解' }).click()
@@ -146,7 +146,7 @@ test('管理员预览三级提示，且预览不留下错题', async ({ page }) 
     await page.getByRole('button', { name }).click()
     await expect(page.getByRole('heading', { name: new RegExp(`^提示 ${level}`) })).toBeVisible()
   }
-  await expect(page.getByText('以上提示 · AI 生成 · 已审核')).toBeVisible()
+  await expect(page.getByText('内容由 AI 生成，请注意甄别')).toBeVisible()
   await expect(page.locator('.viz').first()).toBeVisible()
   await page.getByRole('button', { name: '看正解' }).click()
   await expect(page.getByText('正确选项 3,2,1,5,4：每一步都取栈顶')).toBeVisible()
