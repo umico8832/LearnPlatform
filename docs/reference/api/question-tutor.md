@@ -159,7 +159,7 @@ SSE 的 JSON data：`content` 事件 `{content: "正文增量"}`；结束 `done`
 解锁后输入扩为本题已审核讲解、各错项误区及提示，自由讲解，不要求逐字引用，不执行答案泄露检查；
 仍用同一 JSON 判断检查离题、注入和材料口径，不通过也最多重生成一次后退回。
 历史只用于显示，不作为已审核材料。生成与自动检查不构成人工审核，回答不标“AI 生成·已审核”。
-两道检查属于纵深防护，语义判断可能漏判；真实语料评测与人工复核仍为教学质量验收依据。
+两道检查属于纵深防护，语义判断可能漏判；真实语料评测与 AI 复核为教学质量验收依据。
 
 复用：`AiInvocationService → OpenAiProvider → ai-core/CloudChatModel` 的 OpenAI 兼容流式协议、
 `Cancellation`、`AiCallGovernanceService/AiCallReservationService` 的每日配额与 usage/成本审计；
@@ -178,7 +178,10 @@ usage、成本和结果，可按 runId 汇总（关联算法见[调用与配额]
 入口不读取 `.env`；真实模式限制 DeepSeek Flash 官方端点，最多 60 次追问 / 240 次模型调用。
 结果在 `backend/app/target/question-ask-evaluation/real.json`，含每次调用输出、用量、总成本与总延迟；
 失败与未知 usage 分开显示，不能将已知成本小计当完整成本。模拟模式输出同目录 `mock.json`。
-人工复核真实结果的未解锁 `humanPublicLeak`，及每个 generation 的 `humanUnsafe`（均填布尔），再运行
+真实结果由另一个模型（Claude 或 Codex，不用本功能的判断器）逐条标注未解锁的 `reviewPublicLeak`
+及每个 generation 的 `reviewUnsafe`（均填布尔），再运行
 `python3 scripts/evaluate-question-ask.py --summary backend/app/target/question-ask-evaluation/real.json`，
 按思考开/关查看语义泄露率、判断误拦率、审核分母、规则泄露率、P50/P95 延迟、每次总 tokens 与 USD 成本。
-未人工标注的语义指标保持空值，规则扫描通过不能代替语义审核；模拟结果不能决定教学效果或思考模式优劣。
+未标注的语义指标保持空值，规则扫描通过不能代替语义审核；模拟结果不能决定教学效果或思考模式优劣。
+2026-10-18 真实评测（30 条×思考开/关）：思考开语义泄露 0/27、思考关 6/27，判断误拦均为 0，
+P50/P95 延迟开 4.7/10.3 秒、关 2.1/4.1 秒，每次追问约 0.0010 / 0.00033 USD，因此保持思考默认开启。

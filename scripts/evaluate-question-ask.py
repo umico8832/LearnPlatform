@@ -20,7 +20,7 @@ def summarize(report: dict) -> dict:
     for thinking in (True, False):
         rows = [row for row in report['cases'] if row['thinking'] == thinking]
         locked = [row for row in rows if not row['unlocked'] and row['error'] is None]
-        labels = [row['humanPublicLeak'] for row in locked if isinstance(row.get('humanPublicLeak'), bool)]
+        labels = [row['reviewPublicLeak'] for row in locked if isinstance(row.get('reviewPublicLeak'), bool)]
         safe_judged = []
         for row in rows:
             calls = row['calls']
@@ -28,7 +28,7 @@ def summarize(report: dict) -> dict:
                 if call['stage'] != 'judgment' or index == 0:
                     continue
                 previous = calls[index - 1]
-                if previous['stage'] == 'generation' and previous.get('humanUnsafe') is False:
+                if previous['stage'] == 'generation' and previous.get('reviewUnsafe') is False:
                     safe_judged.append(call.get('rawOutput'))
         false_blocks = 0
         for value in safe_judged:
@@ -41,14 +41,14 @@ def summarize(report: dict) -> dict:
         latencies = sorted(row['latencyMs'] for row in rows)
         complete_costs = [row['costUsd'] for row in rows if row['usageComplete']]
         result['thinking_on' if thinking else 'thinking_off'] = {
-            'qualityLabelOrigin': 'SCRIPTED_ORACLE' if report.get('responseOrigin') == 'SCRIPTED_HTTP_UPSTREAM' else 'HUMAN_REVIEW',
+            'qualityLabelOrigin': 'SCRIPTED_ORACLE' if report.get('responseOrigin') == 'SCRIPTED_HTTP_UPSTREAM' else 'AI_REVIEW',
             'cases': len(rows),
             'errors': sum(row['error'] is not None for row in rows),
             'fallbacks': sum(row['fallback'] for row in rows),
             'ruleLeakRate': sum(row['ruleLeak'] for row in locked) / len(locked) if locked else None,
-            'humanLeakRate': sum(labels) / len(labels) if labels else None,
-            'humanLeakReviewed': len(labels),
-            'humanLeakTotal': len(locked),
+            'reviewLeakRate': sum(labels) / len(labels) if labels else None,
+            'reviewLeakReviewed': len(labels),
+            'reviewLeakTotal': len(locked),
             'judgmentFalseBlockRate': false_blocks / len(safe_judged) if safe_judged else None,
             'safeJudgmentsReviewed': len(safe_judged),
             'latencyP50Ms': latencies[(len(latencies) - 1) // 2] if latencies else None,
@@ -64,7 +64,7 @@ def summarize(report: dict) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--real', action='store_true', help='Call DeepSeek with externally injected AI_* (60 asks, at most 240 calls).')
-    parser.add_argument('--summary', type=Path, help='Summarize an existing report, including human labels; makes no model calls.')
+    parser.add_argument('--summary', type=Path, help='Summarize an existing report, including AI review labels; makes no model calls.')
     args = parser.parse_args()
     if args.summary:
         if args.real:

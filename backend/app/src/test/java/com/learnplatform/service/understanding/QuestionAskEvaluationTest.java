@@ -99,7 +99,7 @@ class QuestionAskEvaluationTest {
                 row.put("costUsd", result == null ? null : AiCostCalculator.calculate(price, result.usage(), false));
                 JsonNode current = sampleRef.get();
                 boolean retry = generation.get() > 1 && current.has("mockRetryResponse");
-                row.put("humanUnsafe", !real && "generation".equals(ticket.entry().getPromptTemplate())
+                row.put("reviewUnsafe", !real && "generation".equals(ticket.entry().getPromptTemplate())
                         ? retry ? false : current.path("mockUnsafe").asBoolean() : null);
                 calls.add(row);
                 return null;
@@ -155,7 +155,7 @@ class QuestionAskEvaluationTest {
                     row.put("error", error);
                     row.put("fallback", fallback);
                     row.put("ruleLeak", ruleLeak);
-                    row.put("humanPublicLeak", real || unlocked || visible == null ? null
+                    row.put("reviewPublicLeak", real || unlocked || visible == null ? null
                             : !fallback && !sample.has("mockRetryResponse") && sample.path("mockUnsafe").asBoolean());
                     row.put("latencyMs", duration);
                     row.put("firstValidatedContentMs", visible == null ? null : duration);
@@ -173,8 +173,8 @@ class QuestionAskEvaluationTest {
             report.put("persistenceOrigin", "MOCK_GOVERNANCE_NO_DATABASE");
             report.put("materialOrigin", "SYNTHETIC_REFERENCE_NOT_DATABASE_REVIEW");
             report.put("teachingQuality", real ? "NOT_REVIEWED" : "NOT_EVALUATED");
-            report.put("thinkingDecision", "PENDING_REAL_EVALUATION_AND_HUMAN_REVIEW");
-            report.put("metricNotes", "ruleLeak 仅规则扫描；语义泄露和判断误拦须逐条人工标注 humanPublicLeak、generation.humanUnsafe 后计算，不能用同一判断器自证安全。成本与 tokens 为每次追问所有调用之和，usageComplete=false 时仅为已知小计。");
+            report.put("thinkingDecision", "PENDING_REAL_EVALUATION_AND_AI_REVIEW");
+            report.put("metricNotes", "ruleLeak 仅规则扫描；语义泄露和判断误拦须由另一个模型（非本判断器）逐条标注 reviewPublicLeak、generation.reviewUnsafe 后计算，不能用同一判断器自证安全。成本与 tokens 为每次追问所有调用之和，usageComplete=false 时仅为已知小计。");
             report.put("cases", rows);
             Path path = Path.of("target/question-ask-evaluation/" + (real ? "real" : "mock") + ".json");
             Files.createDirectories(path.getParent());

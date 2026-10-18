@@ -33,22 +33,22 @@ class EvaluateQuestionAskTest(unittest.TestCase):
                     EVAL.main()
                 run.assert_not_called()
 
-    def test_summary_uses_all_call_costs_and_requires_human_labels(self):
+    def test_summary_uses_all_call_costs_and_requires_review_labels(self):
         row = dict(thinking=True, unlocked=False, error=None, fallback=True, ruleLeak=False,
-                   humanPublicLeak=None, latencyMs=200, totalTokens=480, costUsd=0.000216,
+                   reviewPublicLeak=None, latencyMs=200, totalTokens=480, costUsd=0.000216,
                    usageComplete=True, calls=[
-                       dict(stage='generation', humanUnsafe=None),
+                       dict(stage='generation', reviewUnsafe=None),
                        dict(stage='judgment', rawOutput='{"safe":false}'),
                    ])
         summary = EVAL.summarize({'cases': [row]})['thinking_on']
-        self.assertIsNone(summary['humanLeakRate'])
+        self.assertIsNone(summary['reviewLeakRate'])
         self.assertIsNone(summary['judgmentFalseBlockRate'])
         self.assertEqual(480, summary['meanTokensPerAsk'])
         self.assertEqual(0.000216, summary['meanCostUsdPerAsk'])
-        row['humanPublicLeak'] = False
-        row['calls'][0]['humanUnsafe'] = False
+        row['reviewPublicLeak'] = False
+        row['calls'][0]['reviewUnsafe'] = False
         summary = EVAL.summarize({'cases': [row]})['thinking_on']
-        self.assertEqual(0, summary['humanLeakRate'])
+        self.assertEqual(0, summary['reviewLeakRate'])
         self.assertEqual(1, summary['judgmentFalseBlockRate'])
 
     def test_summary_command_never_invokes_model(self):
