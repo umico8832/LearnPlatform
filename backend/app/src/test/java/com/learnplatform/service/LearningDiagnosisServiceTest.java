@@ -407,9 +407,10 @@ class LearningDiagnosisServiceTest {
         qkp.setQuestionId(100L);
         qkp.setKnowledgePointId(1L);
         when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(qkp));
+        LocalDateTime attemptTime = LocalDateTime.now();
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(
-                stubRecord(USER_ID, 100L, 1, LocalDateTime.now()),
-                stubRecord(USER_ID, 100L, 0, LocalDateTime.now().minusHours(1))));
+                stubRecord(USER_ID, 100L, 1, attemptTime),
+                stubRecord(USER_ID, 100L, 0, attemptTime.toLocalDate().atStartOfDay())));
         when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
         when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
 
