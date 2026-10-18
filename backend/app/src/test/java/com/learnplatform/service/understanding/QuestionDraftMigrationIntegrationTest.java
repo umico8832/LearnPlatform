@@ -10,6 +10,9 @@ import org.testcontainers.containers.MySQLContainer;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import com.learnplatform.common.time.BusinessTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +73,10 @@ class QuestionDraftMigrationIntegrationTest {
             assertEquals(0, flyway.migrate().migrationsExecuted);
             for (var entry : before.entrySet()) {
                 for (var row : entry.getValue()) {
+                    row.replaceAll((column, value) -> value instanceof LocalDateTime time
+                            ? time.atZone(ZoneId.of("Asia/Shanghai")).withZoneSameInstant(BusinessTime.ZONE)
+                                    .toLocalDateTime()
+                            : value);
                     assertEquals(row, db.queryForMap("SELECT * FROM " + entry.getKey() + " WHERE id=?", row.get("id")));
                 }
             }

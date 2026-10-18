@@ -1,5 +1,6 @@
 package com.learnplatform.controller;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.CommentRequest;
 import com.learnplatform.dto.CommentVO;
@@ -21,7 +22,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -81,7 +81,7 @@ class CommentControllerTest {
         vo.setParentId(0L);
         vo.setLikeCount(0);
         vo.setLikedByMe(false);
-        vo.setCreateTime(LocalDateTime.now());
+        vo.setCreateTime(BusinessTime.now());
         return vo;
     }
 

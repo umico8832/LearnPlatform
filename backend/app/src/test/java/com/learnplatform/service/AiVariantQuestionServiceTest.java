@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.AiVariantQuestionVO;
@@ -17,7 +18,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -155,7 +155,7 @@ class AiVariantQuestionServiceTest {
         training.setStatus("COMPLETED");
         training.setUserAnswer("A");
         training.setIsCorrect(0);
-        training.setAnsweredTime(LocalDateTime.now().minusMinutes(2));
+        training.setAnsweredTime(BusinessTime.now().minusMinutes(2));
         training.setCompletedTime(training.getAnsweredTime());
         when(questionAiAssetMapper.selectOne(any())).thenReturn(asset);
         when(aiVariantQuestionMapper.selectOne(any())).thenReturn(structuredQuestion());
@@ -175,7 +175,7 @@ class AiVariantQuestionServiceTest {
         training.setQuestionId(7L);
         training.setAssetId(21L);
         training.setStatus("STARTED");
-        training.setStartedTime(LocalDateTime.now().minusMinutes(5));
+        training.setStartedTime(BusinessTime.now().minusMinutes(5));
         return training;
     }
 

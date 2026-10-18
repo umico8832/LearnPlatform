@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.dto.ExamRecordVO;
@@ -19,7 +20,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -141,8 +141,8 @@ class SubjectiveExamGradingIntegrationTest extends IntegrationTestBase {
         user.setRole("USER");
         user.setStatus(1);
         user.setDeleted(0);
-        user.setCreateTime(LocalDateTime.now());
-        user.setUpdateTime(LocalDateTime.now());
+        user.setCreateTime(BusinessTime.now());
+        user.setUpdateTime(BusinessTime.now());
         userMapper.insert(user);
         return user;
     }

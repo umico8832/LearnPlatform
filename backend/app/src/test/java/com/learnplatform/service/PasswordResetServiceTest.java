@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.learnplatform.entity.PasswordResetToken;
@@ -59,7 +60,7 @@ class PasswordResetServiceTest {
         user.setEmail("learner@example.com");
         when(userMapper.selectOne(any())).thenReturn(user);
         when(resetMapper.selectCount(any())).thenReturn(0L);
-        LocalDateTime beforeRequest = LocalDateTime.now();
+        LocalDateTime beforeRequest = BusinessTime.now();
 
         service.requestReset("learner@example.com", "127.0.0.1");
 
@@ -67,7 +68,7 @@ class PasswordResetServiceTest {
         verify(resetMapper).insert(tokenCaptor.capture());
         LocalDateTime expiresAt = tokenCaptor.getValue().getExpiresAt();
         assertTrue(!expiresAt.isBefore(beforeRequest.plusMinutes(30)));
-        assertTrue(!expiresAt.isAfter(LocalDateTime.now().plusMinutes(30)));
+        assertTrue(!expiresAt.isAfter(BusinessTime.now().plusMinutes(30)));
     }
 
     @Test
@@ -75,7 +76,7 @@ class PasswordResetServiceTest {
         PasswordResetToken reset = new PasswordResetToken();
         reset.setId(10L);
         reset.setUserId(7L);
-        reset.setExpiresAt(LocalDateTime.now().plusMinutes(20));
+        reset.setExpiresAt(BusinessTime.now().plusMinutes(20));
         User user = new User();
         user.setId(7L);
         user.setAuthVersion(2);

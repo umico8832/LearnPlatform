@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.common.exception.BusinessException;
@@ -109,7 +110,7 @@ class AiModelCallIntegrationTest extends IntegrationTestBase {
         UUID run = UUID.randomUUID();
         governance.begin(new AiCallContext(userId, "question_ask", run), request);
         jdbc.update("UPDATE ai_call_log SET create_time=? WHERE user_id=?",
-                java.time.LocalDate.now().minusDays(1).atTime(23, 59), userId);
+                BusinessTime.today().minusDays(1).atTime(23, 59), userId);
         governance.begin(new AiCallContext(userId, "question_ask", run), request);
         assertEquals(0, governance.countTodayCalls(userId));
         governance.begin(new AiCallContext(userId, "question_ask", null), request);

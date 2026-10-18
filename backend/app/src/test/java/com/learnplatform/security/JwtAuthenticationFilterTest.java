@@ -1,5 +1,6 @@
 package com.learnplatform.security;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.entity.User;
 import com.learnplatform.mapper.UserMapper;
 import jakarta.servlet.FilterChain;
@@ -46,7 +47,7 @@ class JwtAuthenticationFilterTest {
     void authenticatesCurrentEnabledUser() throws Exception {
         String token = tokenProvider.generateToken(7L, "learner", "USER");
         when(userMapper.selectById(7L)).thenReturn(user("learner", "USER", 1,
-                LocalDateTime.now().minusMinutes(1)));
+                BusinessTime.now().minusMinutes(1)));
 
         filter.doFilter(request(token), new MockHttpServletResponse(), filterChain);
 
@@ -57,7 +58,7 @@ class JwtAuthenticationFilterTest {
     void rejectsDisabledOrChangedUser() throws Exception {
         String token = tokenProvider.generateToken(7L, "learner", "USER");
         when(userMapper.selectById(7L)).thenReturn(user("learner", "USER", 0,
-                LocalDateTime.now().minusMinutes(1)));
+                BusinessTime.now().minusMinutes(1)));
 
         filter.doFilter(request(token), new MockHttpServletResponse(), filterChain);
 

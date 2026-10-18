@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.dto.AdminStatisticsVO;
 import com.learnplatform.dto.LearningReportVO;
 import com.learnplatform.dto.StatisticsVO;
@@ -186,7 +187,7 @@ class StatisticsServiceIntegrationTest extends IntegrationTestBase {
         questionOptionMapper.insert(opt3);
 
         // 4. 创建练习记录：3 道题（2 正确 + 1 错误）
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = BusinessTime.now();
         PracticeRecord r1 = new PracticeRecord();
         r1.setUserId(userId);
         r1.setQuestionId(questionId1);

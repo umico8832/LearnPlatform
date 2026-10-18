@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.github.openspacedrepetition.Card;
 import io.github.openspacedrepetition.State;
@@ -21,7 +22,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -188,7 +188,7 @@ class ReviewScheduleQueryServiceTest {
     private QuestionReviewSchedule schedule(Long questionId) {
         QuestionReviewSchedule schedule = new QuestionReviewSchedule();
         schedule.setQuestionId(questionId);
-        schedule.setNextReviewDate(LocalDate.now());
+        schedule.setNextReviewDate(BusinessTime.today());
         return schedule;
     }
 

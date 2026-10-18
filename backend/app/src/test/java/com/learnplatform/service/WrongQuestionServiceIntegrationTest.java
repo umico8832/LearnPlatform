@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
@@ -30,7 +31,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.TimeZone;
@@ -88,8 +88,8 @@ class WrongQuestionServiceIntegrationTest extends IntegrationTestBase {
         user.setNickname("错题测试用户");
         user.setRole("USER");
         user.setStatus(1);
-        user.setCreateTime(LocalDateTime.now());
-        user.setUpdateTime(LocalDateTime.now());
+        user.setCreateTime(BusinessTime.now());
+        user.setUpdateTime(BusinessTime.now());
         user.setDeleted(0);
         userMapper.insert(user);
         userId = user.getId();
@@ -101,8 +101,8 @@ class WrongQuestionServiceIntegrationTest extends IntegrationTestBase {
         other.setNickname("其他用户");
         other.setRole("USER");
         other.setStatus(1);
-        other.setCreateTime(LocalDateTime.now());
-        other.setUpdateTime(LocalDateTime.now());
+        other.setCreateTime(BusinessTime.now());
+        other.setUpdateTime(BusinessTime.now());
         other.setDeleted(0);
         userMapper.insert(other);
         anotherUserId = other.getId();
@@ -111,8 +111,8 @@ class WrongQuestionServiceIntegrationTest extends IntegrationTestBase {
         Course c1 = new Course();
         c1.setName("错题测试课程A");
         c1.setDeleted(0);
-        c1.setCreateTime(LocalDateTime.now());
-        c1.setUpdateTime(LocalDateTime.now());
+        c1.setCreateTime(BusinessTime.now());
+        c1.setUpdateTime(BusinessTime.now());
         courseMapper.insert(c1);
         courseId1 = c1.getId();
 
@@ -120,8 +120,8 @@ class WrongQuestionServiceIntegrationTest extends IntegrationTestBase {
         Course c2 = new Course();
         c2.setName("错题测试课程B");
         c2.setDeleted(0);
-        c2.setCreateTime(LocalDateTime.now());
-        c2.setUpdateTime(LocalDateTime.now());
+        c2.setCreateTime(BusinessTime.now());
+        c2.setUpdateTime(BusinessTime.now());
         courseMapper.insert(c2);
         courseId2 = c2.getId();
 
@@ -134,8 +134,8 @@ class WrongQuestionServiceIntegrationTest extends IntegrationTestBase {
         q1.setCourseId(courseId1);
         q1.setStatus(1);
         q1.setDeleted(0);
-        q1.setCreateTime(LocalDateTime.now());
-        q1.setUpdateTime(LocalDateTime.now());
+        q1.setCreateTime(BusinessTime.now());
+        q1.setUpdateTime(BusinessTime.now());
         questionMapper.insert(q1);
         questionId1 = q1.getId();
 
@@ -148,8 +148,8 @@ class WrongQuestionServiceIntegrationTest extends IntegrationTestBase {
         q2.setCourseId(courseId1);
         q2.setStatus(1);
         q2.setDeleted(0);
-        q2.setCreateTime(LocalDateTime.now());
-        q2.setUpdateTime(LocalDateTime.now());
+        q2.setCreateTime(BusinessTime.now());
+        q2.setUpdateTime(BusinessTime.now());
         questionMapper.insert(q2);
         questionId2 = q2.getId();
 
@@ -162,8 +162,8 @@ class WrongQuestionServiceIntegrationTest extends IntegrationTestBase {
         q3.setCourseId(courseId2);
         q3.setStatus(1);
         q3.setDeleted(0);
-        q3.setCreateTime(LocalDateTime.now());
-        q3.setUpdateTime(LocalDateTime.now());
+        q3.setCreateTime(BusinessTime.now());
+        q3.setUpdateTime(BusinessTime.now());
         questionMapper.insert(q3);
         questionId3 = q3.getId();
     }
@@ -347,7 +347,7 @@ class WrongQuestionServiceIntegrationTest extends IntegrationTestBase {
 
     @Test
     void statsCountsDueDatesIncludingOverdueAndIgnoresOtherUsersAndRemovedSchedules() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = BusinessTime.today();
         wrongQuestionService.addWrongQuestion(userId, questionId1, "B");
         wrongQuestionService.addWrongQuestion(userId, questionId2, "A");
         wrongQuestionService.addWrongQuestion(userId, questionId3, "A");
@@ -364,7 +364,7 @@ class WrongQuestionServiceIntegrationTest extends IntegrationTestBase {
 
     @Test
     void dueFilterAndDateSortApplyBeforePagination() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = BusinessTime.today();
         Long unscheduled = extraQuestion();
         Long removedSchedule = extraQuestion();
         Long otherUsersSchedule = extraQuestion();
@@ -404,7 +404,7 @@ class WrongQuestionServiceIntegrationTest extends IntegrationTestBase {
 
     @Test
     void dueScopeCombinesCourseQuestionKnowledgePointAndMasteryWithConsistentStats() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = BusinessTime.today();
         KnowledgePoint kp = new KnowledgePoint();
         kp.setName("到期组合筛选知识点");
         kp.setCourseId(courseId1);
@@ -456,7 +456,7 @@ class WrongQuestionServiceIntegrationTest extends IntegrationTestBase {
             jdbcTemplate.execute("SET time_zone = '+00:00'");
             for (String zone : List.of("Pacific/Kiritimati", "Pacific/Honolulu")) {
                 TimeZone.setDefault(TimeZone.getTimeZone(zone));
-                LocalDate today = LocalDate.now();
+                LocalDate today = BusinessTime.today();
                 long databaseTimestamp = today.plusDays(1).atTime(12, 0).toEpochSecond(ZoneOffset.UTC);
                 jdbcTemplate.execute("SET timestamp = " + databaseTimestamp);
                 assertEquals(today.plusDays(1), jdbcTemplate.queryForObject("SELECT CURRENT_DATE", LocalDate.class));
@@ -682,8 +682,8 @@ class WrongQuestionServiceIntegrationTest extends IntegrationTestBase {
         freshUser.setNickname("统计新用户");
         freshUser.setRole("USER");
         freshUser.setStatus(1);
-        freshUser.setCreateTime(LocalDateTime.now());
-        freshUser.setUpdateTime(LocalDateTime.now());
+        freshUser.setCreateTime(BusinessTime.now());
+        freshUser.setUpdateTime(BusinessTime.now());
         freshUser.setDeleted(0);
         userMapper.insert(freshUser);
 

@@ -1,5 +1,6 @@
 package com.learnplatform.controller;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.ExamPaperCreateRequest;
@@ -26,7 +27,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -93,7 +93,7 @@ class AdminExamControllerTest {
         vo.setQuestionCount(10);
         vo.setStatus(0);
         vo.setCreateBy(1L);
-        vo.setCreateTime(LocalDateTime.now());
+        vo.setCreateTime(BusinessTime.now());
         return vo;
     }
 

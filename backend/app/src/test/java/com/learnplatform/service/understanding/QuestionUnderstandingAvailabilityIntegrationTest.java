@@ -1,5 +1,6 @@
 package com.learnplatform.service.understanding;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.common.exception.BusinessException;
@@ -17,7 +18,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,7 +47,7 @@ class QuestionUnderstandingAvailabilityIntegrationTest extends IntegrationTestBa
         db.update("INSERT INTO user(id,username,password,role,status,deleted) VALUES (?,'availability-user','test','USER',1,0)", USER);
         db.update("UPDATE question_understanding_content SET review_status='REVIEWED',reviewed_by='test-reviewer',reviewed_time=CURRENT_TIMESTAMP WHERE id=?", contentId);
         understanding.submit(USER, questionId, json.createObjectNode().put("answer", "B"));
-        db.update("UPDATE question_review_schedule SET next_review_date=? WHERE user_id=?", LocalDate.now(), USER);
+        db.update("UPDATE question_review_schedule SET next_review_date=? WHERE user_id=?", BusinessTime.today(), USER);
     }
 
     @Test void publicAndWrongListsMatchFormalReadIncludingPendingHintChain() {
@@ -108,7 +108,7 @@ class QuestionUnderstandingAvailabilityIntegrationTest extends IntegrationTestBa
     @Test void reviewCardsUseTheirOwnerAndDoNotReadOtherUsersSchedules() {
         long other = USER + 1;
         db.update("INSERT INTO question_review_schedule(user_id,question_id,next_review_date) VALUES(?,?,?)",
-                other, questionId, LocalDate.now());
+                other, questionId, BusinessTime.today());
         db.update("UPDATE question SET visibility='PRIVATE',owner_user_id=? WHERE id=?", USER, questionId);
         sqlSession.clearCache();
         for (long user : new long[] {USER, other}) {
@@ -150,7 +150,7 @@ class QuestionUnderstandingAvailabilityIntegrationTest extends IntegrationTestBa
                 INSERT INTO question_review_schedule(user_id,question_id,next_review_date)
                 SELECT ?,q.id,? FROM question q WHERE q.id<>? AND q.visibility='PUBLIC' AND q.deleted=0
                   AND q.id IN (SELECT question_id FROM question_understanding_content WHERE review_status='REVIEWED')
-                """, USER, LocalDate.now(), questionId);
+                """, USER, BusinessTime.today(), questionId);
         assertTrue(added > 1);
         assertEquals(singleAll, reviewQueryCount(false, added + 1));
         assertEquals(singleDue, reviewQueryCount(true, added + 1));

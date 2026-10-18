@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 /**
  * MyBatis-Plus 配置
@@ -37,13 +38,25 @@ public class MyBatisPlusConfig {
         return new MetaObjectHandler() {
             @Override
             public void insertFill(MetaObject metaObject) {
-                this.strictInsertFill(metaObject, "createTime", LocalDateTime.class, BusinessTime.now());
-                this.strictInsertFill(metaObject, "updateTime", LocalDateTime.class, BusinessTime.now());
+                LocalDateTime now = BusinessTime.now();
+                this.strictInsertFill(metaObject, "createTime", LocalDateTime.class, now);
+                this.strictInsertFill(metaObject, "updateTime", LocalDateTime.class, now);
+                truncateTimestamp(metaObject, "createTime");
+                truncateTimestamp(metaObject, "updateTime");
             }
 
             @Override
             public void updateFill(MetaObject metaObject) {
                 this.strictUpdateFill(metaObject, "updateTime", LocalDateTime.class, BusinessTime.now());
+                truncateTimestamp(metaObject, "updateTime");
+            }
+
+            private void truncateTimestamp(MetaObject metaObject, String fieldName) {
+                Object value = getFieldValByName(fieldName, metaObject);
+                if (value instanceof LocalDateTime time) {
+                    // DATETIME(0) 的进位可能把用户更新时间推到同秒 JWT 签发时间之后。
+                    setFieldValByName(fieldName, time.truncatedTo(ChronoUnit.SECONDS), metaObject);
+                }
             }
         };
     }

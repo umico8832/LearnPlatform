@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
@@ -22,7 +23,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -126,7 +126,7 @@ class LearningDiagnosisRecommendationServiceTest {
         PracticeRecord record = new PracticeRecord();
         record.setQuestionId(questionId);
         record.setIsCorrect(correct);
-        record.setCreateTime(LocalDateTime.now());
+        record.setCreateTime(BusinessTime.now());
         return record;
     }
 

@@ -23,9 +23,9 @@ function showcasePath(testInfo: TestInfo, name: string) {
   return showcaseDirectory ? path.join(showcaseDirectory, name) : testInfo.outputPath(name)
 }
 
-function dateInShanghai() {
+function businessDate(zoneId: string) {
   const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Shanghai',
+    timeZone: zoneId,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -266,11 +266,11 @@ test.describe('安静学习投入记录', () => {
     await expect(capturePage.getByTestId('gamification-achievements')).toContainText('成就')
     await expect(capturePage.getByTestId('gamification-heatmap')).toBeVisible()
     const profileSummary = await api<GamificationSummary>(capturePage, '/gamification/summary')
-    expect(profileSummary.zoneId).toBe('Asia/Shanghai')
+    expect(profileSummary.zoneId).toBe('America/New_York')
     expect(profileSummary.todayAnsweredCount).toBeGreaterThan(0)
-    const shanghaiToday = dateInShanghai()
+    const today = businessDate(profileSummary.zoneId)
     const todayHeatmap = capturePage.getByRole('button', {
-      name: new RegExp(`^${shanghaiToday}：${profileSummary.todayAnsweredCount} 题，`),
+      name: new RegExp(`^${today}：${profileSummary.todayAnsweredCount} 题，`),
     })
     await expect(todayHeatmap).toHaveAttribute('data-active', 'true')
     await profile.getByTestId('gamification-daily-goal').locator('input').fill('7')

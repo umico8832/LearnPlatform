@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.AiAssetType;
 import com.learnplatform.dto.AiVariantTrainingVO;
@@ -73,7 +74,7 @@ class AiAssetEngagementServiceTest {
         asset.setId(15L);
         when(questionAiAssetMapper.selectOne(any())).thenReturn(asset);
         AiVariantTraining training = variantTraining(3L, 8L, 15L, "STARTED",
-                LocalDateTime.now(), null);
+                BusinessTime.now(), null);
         when(aiVariantTrainingMapper.selectOne(any())).thenReturn(training);
 
         var result = service().recordAssetView(8L, AiAssetType.VARIANT, 3L);
@@ -104,7 +105,7 @@ class AiAssetEngagementServiceTest {
         asset.setId(15L);
         when(questionAiAssetMapper.selectOne(any())).thenReturn(asset);
         AiVariantTraining training = variantTraining(3L, 8L, 15L, "STARTED",
-                LocalDateTime.now().minusMinutes(5), null);
+                BusinessTime.now().minusMinutes(5), null);
         training.setId(20L);
         when(aiVariantTrainingMapper.selectOne(any())).thenReturn(training);
 

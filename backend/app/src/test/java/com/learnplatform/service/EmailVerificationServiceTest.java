@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.VerificationTicketResponse;
 import com.learnplatform.entity.EmailVerification;
@@ -8,7 +9,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -83,7 +83,7 @@ class EmailVerificationServiceTest {
         verification.setPurpose("register");
         verification.setCodeHash(tokenHasher.hash("register:" + email + ":" + code));
         verification.setAttemptCount(0);
-        verification.setExpiresAt(LocalDateTime.now().plusMinutes(5));
+        verification.setExpiresAt(BusinessTime.now().plusMinutes(5));
         return verification;
     }
 }

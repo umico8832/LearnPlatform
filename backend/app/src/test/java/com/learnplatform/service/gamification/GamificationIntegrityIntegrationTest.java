@@ -134,7 +134,7 @@ class GamificationIntegrityIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    void backfillConvertsSourceClockFactsIntoShanghaiDaysForGoalHeatmapAndStreak() {
+    void backfillUsesNewYorkDaysForGoalHeatmapAndStreak() {
         LocalDate today = LocalDate.now(GamificationRewardService.LEARNING_ZONE);
         fact(401, today.minusDays(1).atTime(0, 30), "PRACTICE_ANSWERED", "{\"isCorrect\":true}");
         fact(402, today.atTime(0, 30), "PRACTICE_ANSWERED", "{\"isCorrect\":true}");

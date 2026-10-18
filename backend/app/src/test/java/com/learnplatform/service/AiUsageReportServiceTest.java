@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.dto.AiUsageReportVO;
 import com.learnplatform.entity.AiCallLog;
 import com.learnplatform.entity.AiUsageAlert;
@@ -53,10 +54,10 @@ class AiUsageReportServiceTest {
         void shouldGenerateAlertsForHighFailureRateAndUsageSpike() {
             List<AiCallLog> logs = new ArrayList<>();
             for (int i = 0; i < 5; i++) {
-                logs.add(createLog(i + 1L, 1, 1000, LocalDateTime.now().minusDays(10)));
+                logs.add(createLog(i + 1L, 1, 1000, BusinessTime.now().minusDays(10)));
             }
             for (int i = 0; i < 15; i++) {
-                logs.add(createLog(i + 10L, i < 3 ? 0 : 1, 1200, LocalDateTime.now().minusDays(1)));
+                logs.add(createLog(i + 10L, i < 3 ? 0 : 1, 1200, BusinessTime.now().minusDays(1)));
             }
             when(aiCallLogMapper.selectList(any())).thenReturn(logs);
 
@@ -76,7 +77,7 @@ class AiUsageReportServiceTest {
         @DisplayName("前一周期无调用时不伪造环比百分比")
         void shouldKeepPercentChangeNullWhenPreviousPeriodIsEmpty() {
             when(aiCallLogMapper.selectList(any())).thenReturn(List.of(
-                    createLog(1L, 1, 1000, LocalDateTime.now().minusHours(1))
+                    createLog(1L, 1, 1000, BusinessTime.now().minusHours(1))
             ));
 
             AiUsageReportVO report = aiUsageReportService.getReport(null);
@@ -102,7 +103,7 @@ class AiUsageReportServiceTest {
         void shouldPersistGeneratedAlertForAcknowledgement() {
             List<AiCallLog> logs = new ArrayList<>();
             for (int i = 0; i < 6; i++) {
-                logs.add(createLog(i + 1L, i < 2 ? 0 : 1, 1200, LocalDateTime.now().minusHours(1)));
+                logs.add(createLog(i + 1L, i < 2 ? 0 : 1, 1200, BusinessTime.now().minusHours(1)));
             }
             when(aiCallLogMapper.selectList(any())).thenReturn(logs);
 
@@ -125,7 +126,7 @@ class AiUsageReportServiceTest {
         void shouldNotNotifyWebhookWhenReusingOpenAlert() {
             List<AiCallLog> logs = new ArrayList<>();
             for (int i = 0; i < 6; i++) {
-                logs.add(createLog(i + 1L, i < 2 ? 0 : 1, 1200, LocalDateTime.now().minusHours(1)));
+                logs.add(createLog(i + 1L, i < 2 ? 0 : 1, 1200, BusinessTime.now().minusHours(1)));
             }
             AiUsageAlert existing = new AiUsageAlert();
             existing.setId(5L);
@@ -133,8 +134,8 @@ class AiUsageReportServiceTest {
             existing.setAlertType("HIGH_FAILURE_RATE");
             existing.setMessage("旧提醒");
             existing.setPeriodDays(1);
-            existing.setPeriodStart(LocalDateTime.now().minusDays(1));
-            existing.setPeriodEnd(LocalDateTime.now());
+            existing.setPeriodStart(BusinessTime.now().minusDays(1));
+            existing.setPeriodEnd(BusinessTime.now());
             existing.setStatus("OPEN");
             when(aiCallLogMapper.selectList(any())).thenReturn(logs);
             when(aiUsageAlertMapper.selectOne(any())).thenReturn(existing);

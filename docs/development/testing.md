@@ -189,6 +189,18 @@ job 名为 `docs`、`backend`、`backend-integration`、`frontend`、`docker`、
 本机需准备 JDK 21、Node.js 22、Docker 和 Playwright Chromium；Maven 不在 PATH 时自动使用
 仓库 Wrapper。脚本统一设置 `CI=true`，使 Playwright 的 `.only` 门禁与报告配置也与 CI 一致；本地与 CI 均默认零重试。
 CI 保留工具安装、缓存与浏览器准备，检查命令统一由脚本维护。
+后端测试默认将进程 `TZ` 与测试 JVM 的 `user.timezone` 都设为 UTC，以检查其是否独立于纽约业务时区。
+日期夹具使用共享业务时钟或固定 `Clock`；集成测试的 JDBC 连接时区与生产一致，MySQL 会话仍采用业务时区。
+可用以下命令复验机器时区和执行顺序：
+
+```bash
+python3 scripts/check-all.py backend backend-integration --backend-order reversealphabetical
+python3 scripts/check-all.py backend backend-integration --backend-timezone America/New_York --backend-order random --backend-seed 20261018
+```
+
+`alphabetical`（默认）和 `reversealphabetical` 控制测试类顺序；`random` 同时打乱类与方法顺序，
+固定种子用于复现。命令仍执行原有完整 job，不跳过断言或开启重试。
+
 E2E 使用正式 `npm run test:e2e` 入口，重建并清理隔离环境，不带 `--keep`；
 脚本设置隔离测试凭据并禁止 Compose 自动加载 `.env`。
 CI 用 `e2e --step dependencies` 和 `e2e --step tests` 在安装依赖与执行测试之间准备 Chromium。

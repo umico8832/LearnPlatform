@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.exception.ExamTimedOutException;
@@ -45,7 +46,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -206,8 +206,8 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
         user.setNickname("考试测试用户");
         user.setRole("USER");
         user.setStatus(1);
-        user.setCreateTime(LocalDateTime.now());
-        user.setUpdateTime(LocalDateTime.now());
+        user.setCreateTime(BusinessTime.now());
+        user.setUpdateTime(BusinessTime.now());
         user.setDeleted(0);
         userMapper.insert(user);
         userId = user.getId();
@@ -215,8 +215,8 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
         Course course = new Course();
         course.setName("考试集成测试课程");
         course.setDeleted(0);
-        course.setCreateTime(LocalDateTime.now());
-        course.setUpdateTime(LocalDateTime.now());
+        course.setCreateTime(BusinessTime.now());
+        course.setUpdateTime(BusinessTime.now());
         courseMapper.insert(course);
         courseId = course.getId();
 
@@ -228,8 +228,8 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
         q1.setDifficulty(1);
         q1.setAnalysis("1+1=2");
         q1.setDeleted(0);
-        q1.setCreateTime(LocalDateTime.now());
-        q1.setUpdateTime(LocalDateTime.now());
+        q1.setCreateTime(BusinessTime.now());
+        q1.setUpdateTime(BusinessTime.now());
         questionMapper.insert(q1);
         question1Id = q1.getId();
 
@@ -257,8 +257,8 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
         q2.setDifficulty(2);
         q2.setAnalysis("2和4是偶数");
         q2.setDeleted(0);
-        q2.setCreateTime(LocalDateTime.now());
-        q2.setUpdateTime(LocalDateTime.now());
+        q2.setCreateTime(BusinessTime.now());
+        q2.setUpdateTime(BusinessTime.now());
         questionMapper.insert(q2);
         question2Id = q2.getId();
 
@@ -293,8 +293,8 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
         paper.setTotalScore(20);
         paper.setStatus(1); // 已发布
         paper.setDeleted(0);
-        paper.setCreateTime(LocalDateTime.now());
-        paper.setUpdateTime(LocalDateTime.now());
+        paper.setCreateTime(BusinessTime.now());
+        paper.setUpdateTime(BusinessTime.now());
         examPaperMapper.insert(paper);
         examPaperId = paper.getId();
 
@@ -344,8 +344,8 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
         draftPaper.setTotalScore(10);
         draftPaper.setStatus(0); // 草稿
         draftPaper.setDeleted(0);
-        draftPaper.setCreateTime(LocalDateTime.now());
-        draftPaper.setUpdateTime(LocalDateTime.now());
+        draftPaper.setCreateTime(BusinessTime.now());
+        draftPaper.setUpdateTime(BusinessTime.now());
         examPaperMapper.insert(draftPaper);
 
         assertThrows(BusinessException.class,
@@ -489,8 +489,8 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
         otherUser.setNickname("其他用户");
         otherUser.setRole("USER");
         otherUser.setStatus(1);
-        otherUser.setCreateTime(LocalDateTime.now());
-        otherUser.setUpdateTime(LocalDateTime.now());
+        otherUser.setCreateTime(BusinessTime.now());
+        otherUser.setUpdateTime(BusinessTime.now());
         otherUser.setDeleted(0);
         userMapper.insert(otherUser);
 
@@ -510,11 +510,11 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
     @Order(8)
     @DisplayName("提交考试：超时提交应标记考试超时")
     void submitExam_timedOut_marksRecordAsTimedOut() {
-        // 创建一个超时的考试记录（开始时间以服务端 Asia/Shanghai 墙钟为基准，2 小时前）
+        // 创建一个超时的考试记录（开始时间以服务端 America/New_York 墙钟为基准，2 小时前）
         ExamRecord record = new ExamRecord();
         record.setUserId(userId);
         record.setExamPaperId(examPaperId);
-        record.setStartTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")).minusHours(2));
+        record.setStartTime(LocalDateTime.now(BusinessTime.ZONE).minusHours(2));
         record.setTotalScore(20);
         record.setStatus(0); // 进行中
         record.setActiveExamKey("EXAM:" + userId + ":" + examPaperId);
@@ -576,7 +576,7 @@ class ExamServiceIntegrationTest extends IntegrationTestBase {
         ExamRecord record = new ExamRecord();
         record.setUserId(userId);
         record.setExamPaperId(examPaperId);
-        record.setStartTime(LocalDateTime.now());
+        record.setStartTime(BusinessTime.now());
         record.setTotalScore(20);
         record.setStatus(0);
         examRecordMapper.insert(record);

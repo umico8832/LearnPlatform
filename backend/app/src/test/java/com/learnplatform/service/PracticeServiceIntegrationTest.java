@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
@@ -48,7 +49,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -124,8 +124,8 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         user.setNickname("刷题测试用户");
         user.setRole("USER");
         user.setStatus(1);
-        user.setCreateTime(LocalDateTime.now());
-        user.setUpdateTime(LocalDateTime.now());
+        user.setCreateTime(BusinessTime.now());
+        user.setUpdateTime(BusinessTime.now());
         user.setDeleted(0);
         userMapper.insert(user);
         userId = user.getId();
@@ -134,8 +134,8 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         Course course = new Course();
         course.setName("集成测试课程");
         course.setDeleted(0);
-        course.setCreateTime(LocalDateTime.now());
-        course.setUpdateTime(LocalDateTime.now());
+        course.setCreateTime(BusinessTime.now());
+        course.setUpdateTime(BusinessTime.now());
         courseMapper.insert(course);
         courseId = course.getId();
 
@@ -144,8 +144,8 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         kp.setName("集成测试知识点");
         kp.setCourseId(courseId);
         kp.setDeleted(0);
-        kp.setCreateTime(LocalDateTime.now());
-        kp.setUpdateTime(LocalDateTime.now());
+        kp.setCreateTime(BusinessTime.now());
+        kp.setUpdateTime(BusinessTime.now());
         knowledgePointMapper.insert(kp);
         knowledgePointId = kp.getId();
 
@@ -158,8 +158,8 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         q1.setCourseId(courseId);
         q1.setStatus(1);
         q1.setDeleted(0);
-        q1.setCreateTime(LocalDateTime.now());
-        q1.setUpdateTime(LocalDateTime.now());
+        q1.setCreateTime(BusinessTime.now());
+        q1.setUpdateTime(BusinessTime.now());
         questionMapper.insert(q1);
         singleChoiceQId = q1.getId();
 
@@ -196,8 +196,8 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         q2.setCourseId(courseId);
         q2.setStatus(1);
         q2.setDeleted(0);
-        q2.setCreateTime(LocalDateTime.now());
-        q2.setUpdateTime(LocalDateTime.now());
+        q2.setCreateTime(BusinessTime.now());
+        q2.setUpdateTime(BusinessTime.now());
         questionMapper.insert(q2);
         multiChoiceQId = q2.getId();
 
@@ -234,8 +234,8 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         q3.setCourseId(courseId);
         q3.setStatus(1);
         q3.setDeleted(0);
-        q3.setCreateTime(LocalDateTime.now());
-        q3.setUpdateTime(LocalDateTime.now());
+        q3.setCreateTime(BusinessTime.now());
+        q3.setUpdateTime(BusinessTime.now());
         questionMapper.insert(q3);
         fillBlankQId = q3.getId();
 
@@ -257,8 +257,8 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         q4.setCourseId(courseId);
         q4.setStatus(1);
         q4.setDeleted(0);
-        q4.setCreateTime(LocalDateTime.now());
-        q4.setUpdateTime(LocalDateTime.now());
+        q4.setCreateTime(BusinessTime.now());
+        q4.setUpdateTime(BusinessTime.now());
         questionMapper.insert(q4);
         trueFalseQId = q4.getId();
 
@@ -548,8 +548,8 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         freshUser.setNickname("新用户");
         freshUser.setRole("USER");
         freshUser.setStatus(1);
-        freshUser.setCreateTime(LocalDateTime.now());
-        freshUser.setUpdateTime(LocalDateTime.now());
+        freshUser.setCreateTime(BusinessTime.now());
+        freshUser.setUpdateTime(BusinessTime.now());
         freshUser.setDeleted(0);
         userMapper.insert(freshUser);
 
@@ -616,8 +616,8 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         Course course = new Course();
         course.setName(name);
         course.setDeleted(0);
-        course.setCreateTime(LocalDateTime.now());
-        course.setUpdateTime(LocalDateTime.now());
+        course.setCreateTime(BusinessTime.now());
+        course.setUpdateTime(BusinessTime.now());
         courseMapper.insert(course);
         return course;
     }
@@ -627,8 +627,8 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         point.setName(name);
         point.setCourseId(targetCourseId);
         point.setDeleted(0);
-        point.setCreateTime(LocalDateTime.now());
-        point.setUpdateTime(LocalDateTime.now());
+        point.setCreateTime(BusinessTime.now());
+        point.setUpdateTime(BusinessTime.now());
         knowledgePointMapper.insert(point);
         return point;
     }
@@ -641,8 +641,8 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         user.setRole("USER");
         user.setStatus(1);
         user.setDeleted(0);
-        user.setCreateTime(LocalDateTime.now());
-        user.setUpdateTime(LocalDateTime.now());
+        user.setCreateTime(BusinessTime.now());
+        user.setUpdateTime(BusinessTime.now());
         userMapper.insert(user);
         return user;
     }
@@ -664,8 +664,8 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         question.setVisibility(visibility);
         question.setOwnerUserId(ownerUserId);
         question.setDeleted(0);
-        question.setCreateTime(LocalDateTime.now());
-        question.setUpdateTime(LocalDateTime.now());
+        question.setCreateTime(BusinessTime.now());
+        question.setUpdateTime(BusinessTime.now());
         questionMapper.insert(question);
         return question;
     }
@@ -718,7 +718,7 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         UserFavoriteQuestion favorite = new UserFavoriteQuestion();
         favorite.setUserId(targetUserId);
         favorite.setQuestionId(questionId);
-        favorite.setCreateTime(LocalDateTime.now());
+        favorite.setCreateTime(BusinessTime.now());
         userFavoriteQuestionMapper.insert(favorite);
     }
 
@@ -771,8 +771,8 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         wrongQuestion.setWrongCount(1);
         wrongQuestion.setMasteryLevel(0);
         wrongQuestion.setDeleted(0);
-        wrongQuestion.setCreateTime(LocalDateTime.now());
-        wrongQuestion.setUpdateTime(LocalDateTime.now());
+        wrongQuestion.setCreateTime(BusinessTime.now());
+        wrongQuestion.setUpdateTime(BusinessTime.now());
         wrongQuestionMapper.insert(wrongQuestion);
     }
 
@@ -786,7 +786,7 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         UserFavoriteQuestion fav = new UserFavoriteQuestion();
         fav.setUserId(userId);
         fav.setQuestionId(singleChoiceQId);
-        fav.setCreateTime(LocalDateTime.now());
+        fav.setCreateTime(BusinessTime.now());
         userFavoriteQuestionMapper.insert(fav);
 
         List<QuestionVO> questions = practiceService.getFavoritePractice(userId, 10, null);
@@ -806,8 +806,8 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         freshUser.setNickname("收藏新用户");
         freshUser.setRole("USER");
         freshUser.setStatus(1);
-        freshUser.setCreateTime(LocalDateTime.now());
-        freshUser.setUpdateTime(LocalDateTime.now());
+        freshUser.setCreateTime(BusinessTime.now());
+        freshUser.setUpdateTime(BusinessTime.now());
         freshUser.setDeleted(0);
         userMapper.insert(freshUser);
 
@@ -898,7 +898,7 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         Question invalidEarlier = questionWithoutOptions("历史缺失判分依据", reviewCourse.getId(),
                 "SINGLE_CHOICE", 1, "PUBLIC", null);
         Question validLater = question("历史有效复习题", reviewCourse.getId(), 1, "PUBLIC", null);
-        LocalDate today = LocalDate.now();
+        LocalDate today = BusinessTime.today();
         addReviewSchedule(reviewUser.getId(), invalidEarlier.getId(), today.minusDays(5));
         addReviewSchedule(reviewUser.getId(), validLater.getId(), today.minusDays(1));
 
@@ -937,7 +937,7 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         addCourseToLibrary(reviewUser.getId(), reviewCourse.getId());
         Question ungradable = questionWithoutOptions("复习题缺少判分依据", reviewCourse.getId(),
                 "SINGLE_CHOICE", 1, "PUBLIC", null);
-        QuestionReviewSchedule schedule = addReviewSchedule(reviewUser.getId(), ungradable.getId(), LocalDate.now());
+        QuestionReviewSchedule schedule = addReviewSchedule(reviewUser.getId(), ungradable.getId(), BusinessTime.today());
         ReviewSubmitRequest request = new ReviewSubmitRequest();
         request.setQuestionId(ungradable.getId());
         request.setUserAnswer("A");
@@ -969,7 +969,7 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         QuestionReviewSchedule after = questionReviewScheduleMapper.selectById(schedule.getId());
         assertEquals(0, after.getRepetitions());
         assertEquals(0, after.getTotalReviews());
-        assertEquals(LocalDate.now(), after.getNextReviewDate());
+        assertEquals(BusinessTime.today(), after.getNextReviewDate());
         assertNull(after.getLastReviewDate());
         assertNull(after.getLastQuality());
     }
@@ -983,7 +983,7 @@ class PracticeServiceIntegrationTest extends IntegrationTestBase {
         addCourseToLibrary(reviewUser.getId(), reviewCourse.getId());
         Question question = question("复习错题复活题", reviewCourse.getId(), 1, "PUBLIC", null);
         addOption(question, "B", "错误答案", 0, 0);
-        addReviewSchedule(reviewUser.getId(), question.getId(), LocalDate.now());
+        addReviewSchedule(reviewUser.getId(), question.getId(), BusinessTime.today());
         addWrongQuestion(reviewUser.getId(), question.getId());
         WrongQuestion original = wrongQuestionMapper.selectOne(new LambdaQueryWrapper<WrongQuestion>()
                 .eq(WrongQuestion::getUserId, reviewUser.getId())

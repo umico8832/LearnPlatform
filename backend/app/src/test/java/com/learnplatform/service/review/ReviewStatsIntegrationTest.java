@@ -1,5 +1,6 @@
 package com.learnplatform.service.review;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.dto.ReviewScheduleVO;
 import com.learnplatform.dto.ReviewStatsVO;
@@ -47,7 +48,7 @@ class ReviewStatsIntegrationTest extends IntegrationTestBase {
 
     @Test
     void statsAndListUseTheSameStateAndRatingAcrossLegacyAndUnavailableCards() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = BusinessTime.today();
         insert(USER, 0, null, null, today, 0);
         insert(USER, 1, null, null, today.minusDays(1), 5);
         insert(USER, 2, State.LEARNING, "GOOD", today.plusDays(2), 1);
@@ -94,7 +95,7 @@ class ReviewStatsIntegrationTest extends IntegrationTestBase {
 
     @Test
     void firstIndependentScoreAndResetChangeStateWithoutRewritingLegacyHistory() {
-        LocalDate legacyDue = LocalDate.now().plusDays(80);
+        LocalDate legacyDue = BusinessTime.today().plusDays(80);
         insert(USER, 0, null, null, legacyDue, 8);
         ReviewScheduleVO legacy = queries.getAllReviewCards(USER, null).getFirst();
         assertEquals("UNRATED", legacy.getSchedulingState());
@@ -149,7 +150,7 @@ class ReviewStatsIntegrationTest extends IntegrationTestBase {
                 (user_id,question_id,ease_factor,interval_days,next_review_date,total_reviews,
                  last_review_date,last_quality,fsrs_card_json,fsrs_last_rating)
                 VALUES(?,?,1.50,100,?,?,?,1,?,?)
-                """, user, questions.get(index), due, reviews, reviews == 0 ? null : LocalDate.now(),
+                """, user, questions.get(index), due, reviews, reviews == 0 ? null : BusinessTime.today(),
                 state == null ? null : card.toJson(), rating);
     }
 }

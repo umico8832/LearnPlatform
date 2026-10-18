@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.learnplatform.dto.LearningDiagnosisVO;
@@ -116,8 +117,8 @@ class LearningDiagnosisServiceTest {
 
     @Test
     void getDiagnosisComputesCorrectRate() {
-        PracticeRecord correct = stubRecord(USER_ID, 1L, 1, LocalDateTime.now());
-        PracticeRecord wrong = stubRecord(USER_ID, 2L, 0, LocalDateTime.now().minusHours(1));
+        PracticeRecord correct = stubRecord(USER_ID, 1L, 1, BusinessTime.now());
+        PracticeRecord wrong = stubRecord(USER_ID, 2L, 0, BusinessTime.now().minusHours(1));
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(correct, wrong));
         when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
         when(knowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
@@ -130,9 +131,9 @@ class LearningDiagnosisServiceTest {
 
     @Test
     void getDiagnosisComputesAllCorrectRate() {
-        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now());
-        PracticeRecord r2 = stubRecord(USER_ID, 2L, 1, LocalDateTime.now().minusHours(1));
-        PracticeRecord r3 = stubRecord(USER_ID, 3L, 1, LocalDateTime.now().minusHours(2));
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, BusinessTime.now());
+        PracticeRecord r2 = stubRecord(USER_ID, 2L, 1, BusinessTime.now().minusHours(1));
+        PracticeRecord r3 = stubRecord(USER_ID, 3L, 1, BusinessTime.now().minusHours(2));
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2, r3));
         when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
         when(knowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
@@ -146,8 +147,8 @@ class LearningDiagnosisServiceTest {
     @Test
     void getDiagnosisComputesStreakDays() {
         // Today and yesterday
-        PracticeRecord today = stubRecord(USER_ID, 1L, 1, LocalDateTime.now());
-        PracticeRecord yesterday = stubRecord(USER_ID, 2L, 1, LocalDateTime.now().minusDays(1));
+        PracticeRecord today = stubRecord(USER_ID, 1L, 1, BusinessTime.now());
+        PracticeRecord yesterday = stubRecord(USER_ID, 2L, 1, BusinessTime.now().minusDays(1));
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(today, yesterday));
         when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
         when(knowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
@@ -179,7 +180,7 @@ class LearningDiagnosisServiceTest {
 
     @Test
     void getDiagnosisLearningHabitWithRecords() {
-        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now());
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, BusinessTime.now());
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1));
         when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
         when(knowledgePointMapper.selectList(any())).thenReturn(Collections.emptyList());
@@ -223,7 +224,7 @@ class LearningDiagnosisServiceTest {
     void getDiagnosisMultipleActiveDaysRetainsFrequencyGroupingWithFactualDescription() {
         List<PracticeRecord> records = new java.util.ArrayList<>();
         for (int day = 0; day < 10; day++) {
-            records.add(stubRecord(USER_ID, (long) day + 1, 1, LocalDateTime.now().minusDays(day)));
+            records.add(stubRecord(USER_ID, (long) day + 1, 1, BusinessTime.now().minusDays(day)));
         }
         when(practiceRecordMapper.selectList(any())).thenReturn(records);
         when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
@@ -288,7 +289,7 @@ class LearningDiagnosisServiceTest {
 
         // Wrong question created now => should count in recent 7 days
         WrongQuestion recentWq = stubWrongQuestion(USER_ID, 1L, 1, 0);
-        recentWq.setCreateTime(LocalDateTime.now());
+        recentWq.setCreateTime(BusinessTime.now());
         when(wrongQuestionMapper.selectList(any())).thenReturn(List.of(recentWq));
 
         Question q1 = stubQuestion(1L, "SINGLE_CHOICE", 10L);
@@ -345,11 +346,11 @@ class LearningDiagnosisServiceTest {
         when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(qkp));
 
         // 5 practice records for question 100: 3 correct, 2 wrong => 60%
-        PracticeRecord r1 = stubRecord(USER_ID, 100L, 1, LocalDateTime.now());
-        PracticeRecord r2 = stubRecord(USER_ID, 100L, 1, LocalDateTime.now().minusHours(1));
-        PracticeRecord r3 = stubRecord(USER_ID, 100L, 1, LocalDateTime.now().minusHours(2));
-        PracticeRecord r4 = stubRecord(USER_ID, 100L, 0, LocalDateTime.now().minusHours(3));
-        PracticeRecord r5 = stubRecord(USER_ID, 100L, 0, LocalDateTime.now().minusHours(4));
+        PracticeRecord r1 = stubRecord(USER_ID, 100L, 1, BusinessTime.now());
+        PracticeRecord r2 = stubRecord(USER_ID, 100L, 1, BusinessTime.now().minusHours(1));
+        PracticeRecord r3 = stubRecord(USER_ID, 100L, 1, BusinessTime.now().minusHours(2));
+        PracticeRecord r4 = stubRecord(USER_ID, 100L, 0, BusinessTime.now().minusHours(3));
+        PracticeRecord r5 = stubRecord(USER_ID, 100L, 0, BusinessTime.now().minusHours(4));
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2, r3, r4, r5));
         when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
 
@@ -407,7 +408,7 @@ class LearningDiagnosisServiceTest {
         qkp.setQuestionId(100L);
         qkp.setKnowledgePointId(1L);
         when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(qkp));
-        LocalDateTime attemptTime = LocalDateTime.now();
+        LocalDateTime attemptTime = BusinessTime.now();
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(
                 stubRecord(USER_ID, 100L, 1, attemptTime),
                 stubRecord(USER_ID, 100L, 0, attemptTime.toLocalDate().atStartOfDay())));
@@ -430,8 +431,8 @@ class LearningDiagnosisServiceTest {
         qkp.setKnowledgePointId(1L);
         when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(qkp));
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(
-                stubRecord(USER_ID, 100L, 0, LocalDateTime.now()),
-                stubRecord(USER_ID, 100L, 0, LocalDateTime.now().minusHours(1))));
+                stubRecord(USER_ID, 100L, 0, BusinessTime.now()),
+                stubRecord(USER_ID, 100L, 0, BusinessTime.now().minusHours(1))));
         when(wrongQuestionMapper.selectList(any())).thenReturn(List.of(
                 stubWrongQuestion(USER_ID, 100L, 7, 0)));
         when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
@@ -456,9 +457,9 @@ class LearningDiagnosisServiceTest {
         reviewLink.setKnowledgePointId(2L);
         when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(singleLink, reviewLink));
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(
-                stubRecord(USER_ID, 100L, 1, LocalDateTime.now()),
-                stubRecord(USER_ID, 200L, 1, LocalDateTime.now().minusHours(1)),
-                stubRecord(USER_ID, 200L, 0, LocalDateTime.now().minusHours(2))));
+                stubRecord(USER_ID, 100L, 1, BusinessTime.now()),
+                stubRecord(USER_ID, 200L, 1, BusinessTime.now().minusHours(1)),
+                stubRecord(USER_ID, 200L, 0, BusinessTime.now().minusHours(2))));
         when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
         when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
 
@@ -482,16 +483,16 @@ class LearningDiagnosisServiceTest {
         when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(qkp));
 
         // 10 records: 9 correct, 1 wrong => 90%
-        PracticeRecord r1 = stubRecord(USER_ID, 100L, 1, LocalDateTime.now());
-        PracticeRecord r2 = stubRecord(USER_ID, 100L, 1, LocalDateTime.now().minusHours(1));
-        PracticeRecord r3 = stubRecord(USER_ID, 100L, 1, LocalDateTime.now().minusHours(2));
-        PracticeRecord r4 = stubRecord(USER_ID, 100L, 1, LocalDateTime.now().minusHours(3));
-        PracticeRecord r5 = stubRecord(USER_ID, 100L, 1, LocalDateTime.now().minusHours(4));
-        PracticeRecord r6 = stubRecord(USER_ID, 100L, 1, LocalDateTime.now().minusHours(5));
-        PracticeRecord r7 = stubRecord(USER_ID, 100L, 1, LocalDateTime.now().minusHours(6));
-        PracticeRecord r8 = stubRecord(USER_ID, 100L, 1, LocalDateTime.now().minusHours(7));
-        PracticeRecord r9 = stubRecord(USER_ID, 100L, 1, LocalDateTime.now().minusHours(8));
-        PracticeRecord r10 = stubRecord(USER_ID, 100L, 0, LocalDateTime.now().minusHours(9));
+        PracticeRecord r1 = stubRecord(USER_ID, 100L, 1, BusinessTime.now());
+        PracticeRecord r2 = stubRecord(USER_ID, 100L, 1, BusinessTime.now().minusHours(1));
+        PracticeRecord r3 = stubRecord(USER_ID, 100L, 1, BusinessTime.now().minusHours(2));
+        PracticeRecord r4 = stubRecord(USER_ID, 100L, 1, BusinessTime.now().minusHours(3));
+        PracticeRecord r5 = stubRecord(USER_ID, 100L, 1, BusinessTime.now().minusHours(4));
+        PracticeRecord r6 = stubRecord(USER_ID, 100L, 1, BusinessTime.now().minusHours(5));
+        PracticeRecord r7 = stubRecord(USER_ID, 100L, 1, BusinessTime.now().minusHours(6));
+        PracticeRecord r8 = stubRecord(USER_ID, 100L, 1, BusinessTime.now().minusHours(7));
+        PracticeRecord r9 = stubRecord(USER_ID, 100L, 1, BusinessTime.now().minusHours(8));
+        PracticeRecord r10 = stubRecord(USER_ID, 100L, 0, BusinessTime.now().minusHours(9));
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10));
         when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
 
@@ -612,7 +613,7 @@ class LearningDiagnosisServiceTest {
         privateLink.setKnowledgePointId(1L);
         when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(answeredLink, privateLink));
 
-        PracticeRecord wrongAttempt = stubRecord(USER_ID, 1L, 0, LocalDateTime.now());
+        PracticeRecord wrongAttempt = stubRecord(USER_ID, 1L, 0, BusinessTime.now());
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(wrongAttempt));
         when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
 
@@ -631,7 +632,7 @@ class LearningDiagnosisServiceTest {
         when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
 
         // Build records with 7-day streak
-        PracticeRecord r = stubRecord(USER_ID, 1L, 1, LocalDateTime.now());
+        PracticeRecord r = stubRecord(USER_ID, 1L, 1, BusinessTime.now());
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r));
 
         // Override calculateStreak by providing records for today
@@ -665,7 +666,7 @@ class LearningDiagnosisServiceTest {
         qkp.setKnowledgePointId(1L);
         when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(qkp));
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(
-                stubRecord(USER_ID, 1L, 0, LocalDateTime.now())));
+                stubRecord(USER_ID, 1L, 0, BusinessTime.now())));
         when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
         when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "数据结构"));
 
@@ -687,7 +688,7 @@ class LearningDiagnosisServiceTest {
         candidateLink.setKnowledgePointId(1L);
         when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(answeredLink, candidateLink));
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(
-                stubRecord(USER_ID, 1L, 0, LocalDateTime.now())));
+                stubRecord(USER_ID, 1L, 0, BusinessTime.now())));
         when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
         when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "数据结构"));
 
@@ -713,8 +714,8 @@ class LearningDiagnosisServiceTest {
         qkp.setKnowledgePointId(1L);
         when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(qkp));
 
-        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now());
-        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusHours(1));
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, BusinessTime.now());
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, BusinessTime.now().minusHours(1));
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2));
 
         when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
@@ -819,7 +820,7 @@ class LearningDiagnosisServiceTest {
         when(questionMapper.selectList(any())).thenReturn(List.of(candidate));
 
         // User has attempted question 2
-        PracticeRecord attempted = stubRecord(USER_ID, 2L, 0, LocalDateTime.now());
+        PracticeRecord attempted = stubRecord(USER_ID, 2L, 0, BusinessTime.now());
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(attempted));
 
         SimilarQuestionVO vo = service.findSimilarQuestions(USER_ID, 1L, 5);
@@ -917,7 +918,7 @@ class LearningDiagnosisServiceTest {
         WrongQuestion wq = stubWrongQuestion(USER_ID, 1L, 3, 0);
         when(wrongQuestionMapper.selectList(any())).thenReturn(List.of(wq));
 
-        PracticeRecord r = stubRecord(USER_ID, 1L, 0, LocalDateTime.now());
+        PracticeRecord r = stubRecord(USER_ID, 1L, 0, BusinessTime.now());
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r));
 
         Question q1 = stubQuestion(1L, "SINGLE_CHOICE", 10L);
@@ -1029,11 +1030,11 @@ class LearningDiagnosisServiceTest {
         when(questionMapper.selectById(1L)).thenReturn(q);
 
         // 5 attempts: 3 correct, 2 wrong => 60%
-        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(4));
-        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(3));
-        PracticeRecord r3 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(2));
-        PracticeRecord r4 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(1));
-        PracticeRecord r5 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now());
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, BusinessTime.now().minusDays(4));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, BusinessTime.now().minusDays(3));
+        PracticeRecord r3 = stubRecord(USER_ID, 1L, 1, BusinessTime.now().minusDays(2));
+        PracticeRecord r4 = stubRecord(USER_ID, 1L, 0, BusinessTime.now().minusDays(1));
+        PracticeRecord r5 = stubRecord(USER_ID, 1L, 1, BusinessTime.now());
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2, r3, r4, r5));
 
         when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
@@ -1054,9 +1055,9 @@ class LearningDiagnosisServiceTest {
         Question q = stubQuestion(1L, "TRUE_FALSE", 10L);
         when(questionMapper.selectById(1L)).thenReturn(q);
 
-        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(2));
-        PracticeRecord r2 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(1));
-        PracticeRecord r3 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now());
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, BusinessTime.now().minusDays(2));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 1, BusinessTime.now().minusDays(1));
+        PracticeRecord r3 = stubRecord(USER_ID, 1L, 1, BusinessTime.now());
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2, r3));
 
         WrongQuestion wq = stubWrongQuestion(USER_ID, 1L, 1, 2);
@@ -1080,9 +1081,9 @@ class LearningDiagnosisServiceTest {
         Question q = stubQuestion(1L, "SINGLE_CHOICE", 10L);
         when(questionMapper.selectById(1L)).thenReturn(q);
 
-        PracticeRecord r1 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(2));
-        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(1));
-        PracticeRecord r3 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now());
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 0, BusinessTime.now().minusDays(2));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, BusinessTime.now().minusDays(1));
+        PracticeRecord r3 = stubRecord(USER_ID, 1L, 0, BusinessTime.now());
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2, r3));
 
         WrongQuestion wq = stubWrongQuestion(USER_ID, 1L, 3, 0);
@@ -1110,13 +1111,13 @@ class LearningDiagnosisServiceTest {
 
         // 7 attempts: earlier 2 (both wrong, 0%), recent 5 (4 correct, 80%)
         // recentRate(80) - earlierRate(0) = 80 >= 20 => IMPROVING
-        PracticeRecord r1 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(9));
-        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(8));
-        PracticeRecord r3 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(4));
-        PracticeRecord r4 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(3));
-        PracticeRecord r5 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(2));
-        PracticeRecord r6 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(1));
-        PracticeRecord r7 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now());
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 0, BusinessTime.now().minusDays(9));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, BusinessTime.now().minusDays(8));
+        PracticeRecord r3 = stubRecord(USER_ID, 1L, 1, BusinessTime.now().minusDays(4));
+        PracticeRecord r4 = stubRecord(USER_ID, 1L, 1, BusinessTime.now().minusDays(3));
+        PracticeRecord r5 = stubRecord(USER_ID, 1L, 1, BusinessTime.now().minusDays(2));
+        PracticeRecord r6 = stubRecord(USER_ID, 1L, 1, BusinessTime.now().minusDays(1));
+        PracticeRecord r7 = stubRecord(USER_ID, 1L, 0, BusinessTime.now());
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2, r3, r4, r5, r6, r7));
 
         when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
@@ -1137,13 +1138,13 @@ class LearningDiagnosisServiceTest {
 
         // 7 attempts: earlier 2 (both correct, 100%), recent 5 (1 correct 4 wrong, 20%)
         // earlierRate(100) - recentRate(20) = 80 >= 20 => DECLINING
-        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(9));
-        PracticeRecord r2 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(8));
-        PracticeRecord r3 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(4));
-        PracticeRecord r4 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(3));
-        PracticeRecord r5 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(2));
-        PracticeRecord r6 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(1));
-        PracticeRecord r7 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now());
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, BusinessTime.now().minusDays(9));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 1, BusinessTime.now().minusDays(8));
+        PracticeRecord r3 = stubRecord(USER_ID, 1L, 1, BusinessTime.now().minusDays(4));
+        PracticeRecord r4 = stubRecord(USER_ID, 1L, 0, BusinessTime.now().minusDays(3));
+        PracticeRecord r5 = stubRecord(USER_ID, 1L, 0, BusinessTime.now().minusDays(2));
+        PracticeRecord r6 = stubRecord(USER_ID, 1L, 0, BusinessTime.now().minusDays(1));
+        PracticeRecord r7 = stubRecord(USER_ID, 1L, 0, BusinessTime.now());
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2, r3, r4, r5, r6, r7));
 
         when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
@@ -1164,13 +1165,13 @@ class LearningDiagnosisServiceTest {
 
         // 7 attempts: earlier 2 (1 correct 1 wrong, 50%), recent 5 (3 correct 2 wrong, 60%)
         // diff = 10 < 20 => STAGNANT, recentRate 60% not >=80 not <50 => "仍需巩固"
-        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(9));
-        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(8));
-        PracticeRecord r3 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(4));
-        PracticeRecord r4 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(3));
-        PracticeRecord r5 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(2));
-        PracticeRecord r6 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(1));
-        PracticeRecord r7 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now());
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, BusinessTime.now().minusDays(9));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, BusinessTime.now().minusDays(8));
+        PracticeRecord r3 = stubRecord(USER_ID, 1L, 1, BusinessTime.now().minusDays(4));
+        PracticeRecord r4 = stubRecord(USER_ID, 1L, 0, BusinessTime.now().minusDays(3));
+        PracticeRecord r5 = stubRecord(USER_ID, 1L, 1, BusinessTime.now().minusDays(2));
+        PracticeRecord r6 = stubRecord(USER_ID, 1L, 0, BusinessTime.now().minusDays(1));
+        PracticeRecord r7 = stubRecord(USER_ID, 1L, 1, BusinessTime.now());
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2, r3, r4, r5, r6, r7));
 
         when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
@@ -1189,8 +1190,8 @@ class LearningDiagnosisServiceTest {
         when(questionMapper.selectById(1L)).thenReturn(q);
 
         // Only 2 attempts (both correct), no earlier records
-        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(1));
-        PracticeRecord r2 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now());
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, BusinessTime.now().minusDays(1));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 1, BusinessTime.now());
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2));
 
         when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
@@ -1209,8 +1210,8 @@ class LearningDiagnosisServiceTest {
         when(questionMapper.selectById(1L)).thenReturn(q);
 
         // Only 2 attempts (both wrong), no earlier records
-        PracticeRecord r1 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(1));
-        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now());
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 0, BusinessTime.now().minusDays(1));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, BusinessTime.now());
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2));
 
         when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
@@ -1255,10 +1256,10 @@ class LearningDiagnosisServiceTest {
         when(questionMapper.selectById(1L)).thenReturn(q);
 
         // 4 attempts: 3 wrong, 1 correct
-        PracticeRecord r1 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(3));
-        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(2));
-        PracticeRecord r3 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(1));
-        PracticeRecord r4 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now());
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 0, BusinessTime.now().minusDays(3));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, BusinessTime.now().minusDays(2));
+        PracticeRecord r3 = stubRecord(USER_ID, 1L, 0, BusinessTime.now().minusDays(1));
+        PracticeRecord r4 = stubRecord(USER_ID, 1L, 1, BusinessTime.now());
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2, r3, r4));
 
         WrongQuestion wq = stubWrongQuestion(USER_ID, 1L, 3, 0);
@@ -1282,9 +1283,9 @@ class LearningDiagnosisServiceTest {
         when(questionMapper.selectById(1L)).thenReturn(q);
 
         // 3 attempts: correct, wrong, wrong (last 2 consecutive wrong)
-        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(2));
-        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now().minusDays(1));
-        PracticeRecord r3 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now());
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, BusinessTime.now().minusDays(2));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, BusinessTime.now().minusDays(1));
+        PracticeRecord r3 = stubRecord(USER_ID, 1L, 0, BusinessTime.now());
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2, r3));
 
         WrongQuestion wq = stubWrongQuestion(USER_ID, 1L, 2, 1);
@@ -1304,8 +1305,8 @@ class LearningDiagnosisServiceTest {
         when(questionMapper.selectById(1L)).thenReturn(q);
 
         // 2 attempts: correct then wrong
-        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now().minusDays(1));
-        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, LocalDateTime.now());
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, BusinessTime.now().minusDays(1));
+        PracticeRecord r2 = stubRecord(USER_ID, 1L, 0, BusinessTime.now());
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1, r2));
 
         when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
@@ -1323,7 +1324,7 @@ class LearningDiagnosisServiceTest {
         when(questionMapper.selectById(1L)).thenReturn(q);
 
         // Single correct attempt
-        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, LocalDateTime.now());
+        PracticeRecord r1 = stubRecord(USER_ID, 1L, 1, BusinessTime.now());
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(r1));
 
         when(wrongQuestionMapper.selectOne(any())).thenReturn(null);
@@ -1379,7 +1380,7 @@ class LearningDiagnosisServiceTest {
         qkp.setKnowledgePointId(1L);
         when(questionKnowledgePointMapper.selectList(any())).thenReturn(List.of(qkp));
         when(practiceRecordMapper.selectList(any())).thenReturn(List.of(
-                stubRecord(USER_ID, 100L, isCorrect, LocalDateTime.now())));
+                stubRecord(USER_ID, 100L, isCorrect, BusinessTime.now())));
         when(wrongQuestionMapper.selectList(any())).thenReturn(Collections.emptyList());
         when(courseMapper.selectById(10L)).thenReturn(stubCourse(10L, "Java"));
         return service.getDiagnosis(USER_ID);

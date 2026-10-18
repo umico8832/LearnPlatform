@@ -6,7 +6,7 @@ spring:
     baseline-version: 1
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
-    time-zone: Asia/Shanghai
+    time-zone: America/New_York
     default-property-inclusion: non_null
   data:
     redis:

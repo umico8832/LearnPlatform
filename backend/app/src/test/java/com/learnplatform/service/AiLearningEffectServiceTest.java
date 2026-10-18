@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.dto.AiLearningEffectVO;
 import com.learnplatform.entity.AiAssetFeedback;
 import com.learnplatform.entity.AiAssetView;
@@ -18,7 +19,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -70,7 +70,7 @@ class AiLearningEffectServiceTest {
 
     @Test
     void getLearningEffectSeparatesAnswersBeforeAndAfterFirstView() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = BusinessTime.now();
         when(aiAssetViewMapper.selectList(any())).thenReturn(List.of(
                 view(1L, 10L, "FULL_EXPLANATION", now.minusDays(10), 1),
                 view(3L, 10L, "FULL_EXPLANATION", now.minusDays(10), 1),
@@ -144,7 +144,7 @@ class AiLearningEffectServiceTest {
 
     @Test
     void getLearningEffectKeepsAssetTypeExposureCohortsIndependent() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = BusinessTime.now();
         when(aiAssetViewMapper.selectList(any())).thenReturn(List.of(
                 view(1L, 10L, "FULL_EXPLANATION", now.minusDays(10), 1),
                 view(1L, 10L, "STEP_BY_STEP", now.minusDays(4), 1)));
@@ -173,7 +173,7 @@ class AiLearningEffectServiceTest {
 
     @Test
     void getLearningEffectRejectsAttemptVolumeFromOneLearnerAsRepresentative() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = BusinessTime.now();
         when(aiAssetViewMapper.selectList(any())).thenReturn(List.of(
                 view(1L, 10L, "FULL_EXPLANATION", now.minusDays(10), 1)));
         when(aiAssetFeedbackMapper.selectList(any())).thenReturn(Collections.emptyList());
@@ -209,7 +209,7 @@ class AiLearningEffectServiceTest {
 
     @Test
     void getLearningEffectMeasuresCrossQuestionTransferWithinSharedKnowledgePointWindow() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = BusinessTime.now();
         when(aiAssetViewMapper.selectList(any())).thenReturn(List.of(
                 view(1L, 10L, "FULL_EXPLANATION", now.minusDays(10), 1),
                 view(2L, 10L, "FULL_EXPLANATION", now.minusDays(10), 1),
@@ -243,7 +243,7 @@ class AiLearningEffectServiceTest {
 
     @Test
     void getLearningEffectMarksDifficultyStratificationReadyWithTwoSufficientBuckets() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = BusinessTime.now();
         when(aiAssetViewMapper.selectList(any())).thenReturn(Collections.emptyList());
         when(aiAssetFeedbackMapper.selectList(any())).thenReturn(Collections.emptyList());
         when(practiceRecordMapper.selectList(any())).thenReturn(Collections.emptyList());
@@ -280,7 +280,7 @@ class AiLearningEffectServiceTest {
         view.setUserId(userId);
         view.setQuestionId(questionId);
         view.setAssetType(assetType);
-        view.setViewDate(LocalDate.now().minusDays(10));
+        view.setViewDate(BusinessTime.today().minusDays(10));
         view.setViewCount(count);
         view.setFirstViewTime(firstViewTime);
         return view;

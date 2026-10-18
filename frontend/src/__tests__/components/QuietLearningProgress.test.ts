@@ -18,7 +18,7 @@ const summary = {
   todayAnsweredCount: 4,
   dailyGoal: 8,
   todayGoalReached: false,
-  zoneId: 'Asia/Shanghai',
+  zoneId: 'America/New_York',
   version: 2,
   lastEventId: 9,
   recentAchievements: [],

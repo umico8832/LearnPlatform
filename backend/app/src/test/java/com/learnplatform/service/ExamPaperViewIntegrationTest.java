@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.dto.ExamPaperVO;
 import com.learnplatform.entity.Course;
@@ -15,7 +16,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -80,8 +80,8 @@ class ExamPaperViewIntegrationTest extends IntegrationTestBase {
         paper.setPaperType(paperType);
         paper.setStatus(status);
         paper.setDeleted(0);
-        paper.setCreateTime(LocalDateTime.now());
-        paper.setUpdateTime(LocalDateTime.now());
+        paper.setCreateTime(BusinessTime.now());
+        paper.setUpdateTime(BusinessTime.now());
         paperMapper.insert(paper);
         return paper;
     }

@@ -48,9 +48,10 @@ def job_steps(job: str, env: Mapping[str, str], *, skip_commits: bool = False) -
             ("layout", "repository-layout"), ("structure", "code-structure"), ("documentation", "docs")))
         return steps
     if job == "backend":
-        return [Step("verify", (*maven(), "clean", "verify", "-B"), "backend")]
+        return [Step("verify", (*maven(), "clean", "verify", "-B", *backend_test_options(env)), "backend")]
     if job == "backend-integration":
-        return [Step("integration", (*maven(), "test", "-B", "-DexcludedGroups=", "-Dgroups=integration"), "backend")]
+        return [Step("integration", (*maven(), "test", "-B", "-DexcludedGroups=", "-Dgroups=integration",
+                                     *backend_test_options(env)), "backend")]
     if job == "frontend":
         return [Step(name, command, "frontend") for name, command in (
             ("dependencies", ("npm", "ci")),
@@ -66,6 +67,18 @@ def job_steps(job: str, env: Mapping[str, str], *, skip_commits: bool = False) -
         return [Step("dependencies", ("npm", "ci"), "frontend"),
                 Step("tests", ("npm", "run", "test:e2e"), "frontend")]
     raise CheckError(f"未知 job：{job}")
+
+
+def backend_test_options(env: Mapping[str, str]) -> tuple[str, ...]:
+    zone = env.get("BACKEND_TEST_TIMEZONE", "UTC")
+    order = env.get("BACKEND_TEST_ORDER", "alphabetical")
+    options = (f"-Duser.timezone={zone}", f"-Dsurefire.runOrder={order}")
+    if order == "random":
+        seed = env.get("BACKEND_TEST_SEED", "20261018")
+        options += (f"-Dsurefire.runOrder.random.seed={seed}",
+                    "-Djunit.jupiter.testmethod.order.default=org.junit.jupiter.api.MethodOrderer$Random",
+                    f"-Djunit.jupiter.execution.order.random.seed={seed}")
+    return options
 
 
 def git(*args: str) -> str:
@@ -97,6 +110,8 @@ def run_step(job: str, step: Step, env: Mapping[str, str]) -> None:
     print(f"[{label}] + {shlex.join(step.command)}", flush=True)
     started = time.monotonic()
     environment = {**env, "CI": "true"}
+    if job.startswith("backend"):
+        environment["TZ"] = env.get("BACKEND_TEST_TIMEZONE", "UTC")
     if job == "e2e":
         environment.update(DB_PASSWORD="root123", JWT_SECRET="ci-e2e-jwt-secret-key-for-testing-only",
                            COMPOSE_DISABLE_ENV_FILE="1")
@@ -140,6 +155,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("jobs", nargs="*", help=f"默认全部；可选：{', '.join(JOBS)}")
     parser.add_argument("--step", help="只执行一个 job 的某一步（供 CI 在 E2E 依赖安装后准备浏览器）")
     parser.add_argument("--skip-commit-messages", action="store_true", help="保留 CI 对 Dependabot PR 的豁免；不写通过记录")
+    parser.add_argument("--backend-timezone", choices=("UTC", "America/New_York"), default="UTC",
+                        help="后端测试的机器时区，默认 UTC，与业务时区不同")
+    parser.add_argument("--backend-order", choices=("alphabetical", "reversealphabetical", "random"),
+                        default="alphabetical", help="后端测试类顺序；random 同时随机方法顺序")
+    parser.add_argument("--backend-seed", type=int, default=20261018, help="随机类与方法顺序的复现种子")
     args = parser.parse_args(argv)
     jobs = args.jobs or list(JOBS)
     if any(job not in JOBS for job in jobs) or len(jobs) != len(set(jobs)):
@@ -148,7 +168,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error("--step 必须且只能指定一个 job")
     started = time.monotonic()
     try:
-        run_checks(jobs, os.environ, step_name=args.step, skip_commits=args.skip_commit_messages)
+        environment = {**os.environ, "BACKEND_TEST_TIMEZONE": args.backend_timezone,
+                       "BACKEND_TEST_ORDER": args.backend_order, "BACKEND_TEST_SEED": str(args.backend_seed)}
+        run_checks(jobs, environment, step_name=args.step, skip_commits=args.skip_commit_messages)
     except (CheckError, OSError, subprocess.CalledProcessError) as error:
         print(f"check-all: {error}", file=sys.stderr, flush=True)
         return 1

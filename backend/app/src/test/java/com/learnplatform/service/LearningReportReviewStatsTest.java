@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.learnplatform.dto.LearningReportVO;
@@ -77,7 +78,7 @@ class LearningReportReviewStatsTest {
     @Test
     void getLearningReport_withReviewData_returnsReviewStats() {
         Long userId = 1L;
-        LocalDate today = LocalDate.now();
+        LocalDate today = BusinessTime.today();
 
         // 模拟复习卡片数据：3 张卡片
         QuestionReviewSchedule card1 = createSchedule(userId, 101L, 2.5, 30, 3, today.minusDays(1));
@@ -155,7 +156,7 @@ class LearningReportReviewStatsTest {
     @Test
     void getLearningReport_multipleMasteredCards_countedCorrectly() {
         Long userId = 1L;
-        LocalDate today = LocalDate.now();
+        LocalDate today = BusinessTime.today();
 
         // 3 张卡片，2 张已掌握（intervalDays >= 21）
         QuestionReviewSchedule card1 = createSchedule(userId, 101L, 2.5, 30, 5, today.minusDays(2));
@@ -205,7 +206,7 @@ class LearningReportReviewStatsTest {
         schedule.setRepetitions(2);
         schedule.setTotalReviews(totalReviews);
         schedule.setLastReviewDate(lastReviewDate);
-        schedule.setNextReviewDate(LocalDate.now());
+        schedule.setNextReviewDate(BusinessTime.today());
         return schedule;
     }
 }

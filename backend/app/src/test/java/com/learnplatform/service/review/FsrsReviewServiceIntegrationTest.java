@@ -1,5 +1,6 @@
 package com.learnplatform.service.review;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.common.exception.BusinessException;
 import io.github.openspacedrepetition.Card;
@@ -53,7 +54,7 @@ class FsrsReviewServiceIntegrationTest extends IntegrationTestBase {
         LocalDate legacyDue = jdbc.queryForObject("""
                 SELECT next_review_date FROM question_review_schedule WHERE user_id=? AND question_id=?
                 """, LocalDate.class, USER, questionId);
-        assertEquals(LocalDate.now().plusDays(14), legacyDue);
+        assertEquals(BusinessTime.today().plusDays(14), legacyDue);
         assertNull(jdbc.queryForObject("""
                 SELECT fsrs_card_json FROM question_review_schedule WHERE user_id=? AND question_id=?
                 """, String.class, USER, questionId));

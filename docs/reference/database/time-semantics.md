@@ -2,6 +2,8 @@
 
 业务时区采用 `America/New_York`，决策见 [ADR-0013](../../architecture/decisions/0013-new-york-business-time.md)。
 Java 本地日期时间读写显式使用统一业务时钟；JDBC 连接与 MySQL 会话使用该命名时区，Jackson 配置同口径。
+MyBatis 自动填充的 `createTime/updateTime` 在写入前截断到秒，与其 `DATETIME(0)` 存储及 JWT `iat` 精度一致，
+避免数据库进位造成新账号同秒签发的令牌立即失效；专用 `DATETIME(6)` 字段的写入路径保持原精度。
 MySQL 时区表必须包含 `Asia/Shanghai`、`America/New_York`；迁移缺少规则即失败，不回退固定偏移。
 
 ## 存量分类与迁移

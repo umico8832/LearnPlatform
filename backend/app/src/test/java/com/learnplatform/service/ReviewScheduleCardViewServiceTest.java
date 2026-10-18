@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -113,7 +114,7 @@ class ReviewScheduleCardViewServiceTest {
     @Test
     void emptyCardsDoNotReadUnderstandingContent() {
         var service = new ReviewScheduleCardViewService(questionMapper, courseMapper, understanding);
-        assertTrue(service.toViews(7L, List.of(), LocalDate.now()).isEmpty());
+        assertTrue(service.toViews(7L, List.of(), BusinessTime.today()).isEmpty());
         verifyNoInteractions(questionMapper, courseMapper, understanding);
     }
 

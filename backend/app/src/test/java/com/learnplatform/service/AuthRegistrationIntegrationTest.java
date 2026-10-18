@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.LoginResponse;
@@ -34,7 +35,7 @@ class AuthRegistrationIntegrationTest extends IntegrationTestBase {
     void verifiedRegistrationReturnsValidUserSessionAndConsumesTicket() {
         String email = "registration-session@example.com";
         String ticket = "registration-ticket-placeholder";
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = BusinessTime.now();
         jdbc.update("""
                 INSERT INTO email_verification
                     (email, purpose, code_hash, ticket_hash, attempt_count, expires_at, verified_at, create_time)

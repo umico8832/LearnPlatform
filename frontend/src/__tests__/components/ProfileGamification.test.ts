@@ -33,7 +33,7 @@ const summary = {
   todayAnsweredCount: 3,
   dailyGoal: 10,
   todayGoalReached: false,
-  zoneId: 'Asia/Shanghai',
+  zoneId: 'America/New_York',
   version: 4,
   lastEventId: 9,
   recentAchievements: [],
@@ -86,7 +86,7 @@ describe('ProfileGamification', () => {
     const wrapper = mountProfileGamification()
     await flushPromises()
     expect(wrapper.get('[data-testid="gamification-achievements"]').text()).toContain('初次作答')
-    expect(wrapper.get('[data-testid="gamification-heatmap"]').text()).toContain('Asia/Shanghai')
+    expect(wrapper.get('[data-testid="gamification-heatmap"]').text()).toContain('America/New_York')
     expect(wrapper.findAll('[data-active="true"]')).not.toHaveLength(0)
     expect(wrapper.get('[data-testid="gamification-achievements"]').element.tagName).toBe('DETAILS')
     expect((wrapper.get('[data-testid="gamification-achievements"]').element as HTMLDetailsElement).open).toBe(false)

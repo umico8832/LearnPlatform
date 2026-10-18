@@ -25,6 +25,7 @@ public abstract class IntegrationTestBase {
     private static final MySQLContainer<?> MYSQL =
             new MySQLContainer<>("mysql:8.0")
                     .withDatabaseName("learn_platform")
+                    .withUrlParam("serverTimezone", "America/New_York")
                     .withUsername("test")
                     .withPassword("test")
                     .withCommand("--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci");

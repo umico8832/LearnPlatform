@@ -30,8 +30,9 @@ class JobContractTest(unittest.TestCase):
         self.assertEqual(["tools", "commits", "layout", "structure", "documentation"],
                          [step.name for step in steps["docs"]])
         self.assertEqual(("origin/main", "HEAD"), steps["docs"][1].command[-2:])
-        self.assertEqual(("/tools/mvn", "clean", "verify", "-B"), steps["backend"][0].command)
-        self.assertEqual(("/tools/mvn", "test", "-B", "-DexcludedGroups=", "-Dgroups=integration"),
+        defaults = ("-Duser.timezone=UTC", "-Dsurefire.runOrder=alphabetical")
+        self.assertEqual(("/tools/mvn", "clean", "verify", "-B", *defaults), steps["backend"][0].command)
+        self.assertEqual(("/tools/mvn", "test", "-B", "-DexcludedGroups=", "-Dgroups=integration", *defaults),
                          steps["backend-integration"][0].command)
         self.assertEqual([
             ("npm", "ci"), ("npm", "audit", "--audit-level=high"), ("npm", "run", "coverage"),
@@ -50,6 +51,17 @@ class JobContractTest(unittest.TestCase):
     @patch.object(checker.shutil, "which", return_value=None)
     def test_maven_wrapper_fallback(self, which: Mock) -> None:
         self.assertEqual(("sh", "./mvnw"), checker.maven())
+
+    def test_backend_order_timezone_and_random_seed_are_reproducible(self) -> None:
+        for job in ("backend", "backend-integration"):
+            reverse = checker.job_steps(job, {"BACKEND_TEST_TIMEZONE": "America/New_York",
+                                             "BACKEND_TEST_ORDER": "reversealphabetical"})[0].command
+            self.assertIn("-Duser.timezone=America/New_York", reverse)
+            self.assertIn("-Dsurefire.runOrder=reversealphabetical", reverse)
+            random = checker.job_steps(job, {"BACKEND_TEST_ORDER": "random", "BACKEND_TEST_SEED": "43"})[0].command
+            self.assertIn("-Dsurefire.runOrder.random.seed=43", random)
+            self.assertIn("-Djunit.jupiter.testmethod.order.default=org.junit.jupiter.api.MethodOrderer$Random", random)
+            self.assertIn("-Djunit.jupiter.execution.order.random.seed=43", random)
 
     def test_event_range_and_dependabot_exception(self) -> None:
         env = {"BASE_SHA": "0" * 40, "HEAD_SHA": "event-head", "FORCED_PUSH": "true"}
@@ -122,8 +134,17 @@ class RunnerTest(unittest.TestCase):
             self.assertEqual("true", env["CI"])
             self.assertEqual("true", env["FORCED_PUSH"])
 
+    def test_backend_process_and_forked_jvm_use_the_requested_machine_timezone(self) -> None:
+        for zone in ("UTC", "America/New_York"):
+            with patch.object(checker.subprocess, "run", return_value=Mock(returncode=0)) as run:
+                checker.run_step("backend", checker.Step("test", ("mvn", "test"), "backend"),
+                                 {"TZ": "Asia/Tokyo", "BACKEND_TEST_TIMEZONE": zone})
+                self.assertEqual(zone, run.call_args.kwargs["env"]["TZ"])
+
     def test_unknown_jobs_duplicate_jobs_and_invalid_step_are_rejected(self) -> None:
-        for args in (["unknown"], ["docs", "docs"], ["--step", "tests"], ["docs", "frontend", "--step", "build"]):
+        for args in (["unknown"], ["docs", "docs"], ["--step", "tests"], ["docs", "frontend", "--step", "build"],
+                     ["backend", "--backend-timezone", "Asia/Tokyo"], ["backend", "--backend-order", "invalid"],
+                     ["backend", "--backend-seed", "invalid"]):
             with self.subTest(args=args), self.assertRaises(SystemExit) as error:
                 checker.main(args)
             self.assertEqual(2, error.exception.code)
@@ -137,6 +158,11 @@ class RunnerTest(unittest.TestCase):
         self.assertEqual(list(checker.JOBS), run.call_args.args[0])
         self.assertEqual(0, checker.main(["backend-integration", "frontend"]))
         self.assertEqual(["backend-integration", "frontend"], run.call_args.args[0])
+        self.assertEqual(0, checker.main(["backend", "--backend-timezone", "America/New_York",
+                                          "--backend-order", "random", "--backend-seed", "43"]))
+        self.assertEqual("America/New_York", run.call_args.args[1]["BACKEND_TEST_TIMEZONE"])
+        self.assertEqual("random", run.call_args.args[1]["BACKEND_TEST_ORDER"])
+        self.assertEqual("43", run.call_args.args[1]["BACKEND_TEST_SEED"])
         run.side_effect = checker.CheckError("backend/verify")
         self.assertEqual(1, checker.main(["backend"]))
         run.side_effect = KeyboardInterrupt()

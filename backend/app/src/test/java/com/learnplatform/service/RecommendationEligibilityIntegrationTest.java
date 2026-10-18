@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.dto.LearningDiagnosisVO;
 import com.learnplatform.dto.QuestionCreateRequest;
@@ -15,7 +16,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -105,7 +105,7 @@ class RecommendationEligibilityIntegrationTest extends IntegrationTestBase {
         PracticeRecord wrongAttempt = new PracticeRecord();
         wrongAttempt.setQuestionId(source);
         wrongAttempt.setIsCorrect(0);
-        wrongAttempt.setCreateTime(LocalDateTime.now());
+        wrongAttempt.setCreateTime(BusinessTime.now());
         List<Long> recommendationIds = recommendationIds(recommendationService.recommend(
                 userId, List.of(wrongAttempt, wrongAttempt), List.of(), List.of(point),
                 Map.of(source, Set.of(pointId))));

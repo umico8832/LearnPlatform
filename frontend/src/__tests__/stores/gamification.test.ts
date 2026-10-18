@@ -20,7 +20,7 @@ const summary = (version: number): GamificationSummary => ({
   todayAnsweredCount: version,
   dailyGoal: 10,
   todayGoalReached: false,
-  zoneId: 'Asia/Shanghai',
+  zoneId: 'America/New_York',
   version,
   lastEventId: version,
   recentAchievements: [],

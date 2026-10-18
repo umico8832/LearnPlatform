@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.CourseKnowledgePointFactVO;
@@ -16,7 +17,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -85,7 +85,7 @@ class CourseLearningFactIntegrationTest extends IntegrationTestBase {
         stageAnswer(965001, Q1, "[{\"id\":" + K1 + ",\"name\":\"快照一\"},{\"id\":"
                 + K2 + ",\"name\":\"快照二\"}]", 1);
         eventService.recordPaperLearningAiAssistance(USER, COURSE, Q1, 966001L, 962001L, 1L,
-                "EXPLAIN", null, LocalDateTime.now().plusMinutes(1));
+                "EXPLAIN", null, BusinessTime.now().plusMinutes(1));
         eventService.recordQuestionAnswer(USER, question, "QUESTION_VIEWED", "BROWSER", 966002L, true, null);
 
         CourseOverviewVO overview = overviewService.getOverview(USER, COURSE);
@@ -110,7 +110,7 @@ class CourseLearningFactIntegrationTest extends IntegrationTestBase {
     @Test
     void aiAssistanceAloneIsActivityButNeverAnAnswer() {
         eventService.recordPaperLearningAiAssistance(USER, COURSE, Q1, 966001L, 962001L, 1L,
-                "EXPLAIN", null, LocalDateTime.now());
+                "EXPLAIN", null, BusinessTime.now());
 
         CourseOverviewVO overview = overviewService.getOverview(USER, COURSE);
 
@@ -365,6 +365,6 @@ class CourseLearningFactIntegrationTest extends IntegrationTestBase {
         jdbc.update("INSERT INTO wrong_question (user_id,question_id,mastery_level) VALUES (?,?,?)",
                 userId, questionId, mastery);
         jdbc.update("INSERT INTO question_review_schedule (user_id,question_id,next_review_date) "
-                + "VALUES (?,?,?)", userId, questionId, LocalDate.now().plusDays(daysUntilDue));
+                + "VALUES (?,?,?)", userId, questionId, BusinessTime.today().plusDays(daysUntilDue));
     }
 }

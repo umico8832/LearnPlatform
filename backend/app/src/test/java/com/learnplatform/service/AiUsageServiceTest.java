@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.dto.AiUsageOverviewVO;
 import com.learnplatform.entity.AiCallLog;
 import com.learnplatform.entity.User;
@@ -14,7 +15,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,7 +56,7 @@ class AiUsageServiceTest {
         successLog.setCostUsd(new BigDecimal("0.00150000"));
         successLog.setStatus(1);
         successLog.setDuration(2000);
-        successLog.setCreateTime(LocalDateTime.now());
+        successLog.setCreateTime(BusinessTime.now());
         sampleLogs.add(successLog);
 
         // 流式日志
@@ -69,7 +69,7 @@ class AiUsageServiceTest {
         streamLog.setCostUsd(new BigDecimal("0.00080000"));
         streamLog.setStatus(1);
         streamLog.setDuration(3500);
-        streamLog.setCreateTime(LocalDateTime.now().minusDays(1));
+        streamLog.setCreateTime(BusinessTime.now().minusDays(1));
         sampleLogs.add(streamLog);
 
         // 失败日志
@@ -86,7 +86,7 @@ class AiUsageServiceTest {
         failLog.setModelConfigVersion("abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789");
         failLog.setErrorMessage("API timeout");
         failLog.setDuration(30000);
-        failLog.setCreateTime(LocalDateTime.now().minusHours(5));
+        failLog.setCreateTime(BusinessTime.now().minusHours(5));
         sampleLogs.add(failLog);
 
         // 复习建议成功日志
@@ -99,7 +99,7 @@ class AiUsageServiceTest {
         reviewLog.setCostUsd(new BigDecimal("0.00200000"));
         reviewLog.setStatus(1);
         reviewLog.setDuration(1800);
-        reviewLog.setCreateTime(LocalDateTime.now().minusDays(2));
+        reviewLog.setCreateTime(BusinessTime.now().minusDays(2));
         sampleLogs.add(reviewLog);
     }
 
@@ -272,7 +272,7 @@ class AiUsageServiceTest {
                 log.setTokensUsed(100);
                 log.setStatus(1);
                 log.setDuration(1000);
-                log.setCreateTime(LocalDateTime.now());
+                log.setCreateTime(BusinessTime.now());
                 manyUsersLogs.add(log);
             }
             when(aiCallLogMapper.selectList(any())).thenReturn(manyUsersLogs);
@@ -299,7 +299,7 @@ class AiUsageServiceTest {
             nullDurationLog.setFunctionType("explanation");
             nullDurationLog.setStatus(1);
             nullDurationLog.setDuration(null);
-            nullDurationLog.setCreateTime(LocalDateTime.now());
+            nullDurationLog.setCreateTime(BusinessTime.now());
 
             List<AiCallLog> logs = new ArrayList<>(sampleLogs);
             logs.add(nullDurationLog);
