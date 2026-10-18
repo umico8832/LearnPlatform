@@ -804,7 +804,9 @@ test('2026主观题提交后由管理员按评分点批阅并固化总分', asyn
     }
     await drawer.getByRole('textbox', { name: '总体批阅意见' }).fill('E2E 按评分点复核完成')
     await drawer.getByRole('button', { name: '确认并完成批阅' }).click()
-    await expect(page.getByText('批阅已保存，考试成绩已重新计算')).toBeVisible()
+    const savedMessage = page.getByText('批阅已保存，考试成绩已重新计算', { exact: true })
+    await expect(savedMessage).toBeVisible()
+    await expect(savedMessage).toBeHidden()
   }
   await expect(page.getByText('当前没有待批阅答案')).toBeVisible()
 
