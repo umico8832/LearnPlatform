@@ -12,7 +12,6 @@ const Link = defineComponent({
   props: ['to', 'href'],
   template: '<a :href="to || href"><slot /></a>',
 })
-const Slot = defineComponent({ template: '<div><slot /></div>' })
 let wrapper: VueWrapper
 function render() {
   wrapper = mount(ShowcaseHome, {
@@ -20,7 +19,6 @@ function render() {
       stubs: {
         RouterLink: Link,
         LtLinkButton: Link,
-        Magnetic: Slot,
         HeroCard: true,
         SeeItSection: true,
         LabSection: true,

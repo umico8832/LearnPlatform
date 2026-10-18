@@ -11,7 +11,6 @@ import ClosingSection from './closing/ClosingSection.vue'
 import HeroCard from './HeroCard.vue'
 import HeroHeadline from './HeroHeadline.vue'
 import LabSection from './lab/LabSection.vue'
-import Magnetic from './Magnetic.vue'
 import SeeItSection from './network/SeeItSection.vue'
 import ShowcaseNav from './ShowcaseNav.vue'
 import StatsMarquee from './StatsMarquee.vue'
@@ -73,18 +72,16 @@ onBeforeUnmount(() => {
               review.
             </p>
             <div class="cta">
-              <Magnetic class="glow">
+              <span class="glow">
                 <LtLinkButton class="nudge-right" variant="primary" size="lg" :to="start">
                   Get started
                   <ArrowRight :size="18" aria-hidden="true" />
                 </LtLinkButton>
-              </Magnetic>
-              <Magnetic>
-                <LtLinkButton class="nudge-down" variant="plain" size="lg" href="#see-it">
-                  See how it works
-                  <ArrowDown :size="18" aria-hidden="true" />
-                </LtLinkButton>
-              </Magnetic>
+              </span>
+              <LtLinkButton class="nudge-down" variant="plain" size="lg" href="#see-it">
+                See how it works
+                <ArrowDown :size="18" aria-hidden="true" />
+              </LtLinkButton>
             </div>
           </div>
         </div>
@@ -152,6 +149,7 @@ onBeforeUnmount(() => {
 }
 
 .glow {
+  display: inline-flex;
   border-radius: var(--lt-radius-pill);
   transition: filter var(--lt-dur-fade) var(--lt-ease-fade);
 }

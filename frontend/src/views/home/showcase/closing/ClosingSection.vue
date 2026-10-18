@@ -4,7 +4,6 @@ import { RouterLink } from 'vue-router'
 import { ArrowRight } from '@lucide/vue'
 import { LtLinkButton } from '@/components/living'
 import { isAuthenticated } from '@/utils/auth'
-import Magnetic from '../Magnetic.vue'
 import { links, menus } from '../showcaseContent'
 
 /**
@@ -25,15 +24,13 @@ const columns = [
       <div class="inner">
         <h2 id="closing-title" class="title">Start with the one<br /><em>you got wrong.</em></h2>
         <div class="cta">
-          <Magnetic class="glow">
+          <span class="glow">
             <LtLinkButton variant="primary" size="lg" :to="start">
               Get started
               <ArrowRight :size="18" aria-hidden="true" />
             </LtLinkButton>
-          </Magnetic>
-          <Magnetic>
-            <LtLinkButton variant="plain" size="lg" to="/courses">Browse courses</LtLinkButton>
-          </Magnetic>
+          </span>
+          <LtLinkButton variant="plain" size="lg" to="/courses">Browse courses</LtLinkButton>
         </div>
       </div>
     </section>
@@ -104,6 +101,7 @@ const columns = [
 
 /* Same as the hero's way in: the primary button gathers a glow under the pointer. */
 .glow {
+  display: inline-flex;
   border-radius: var(--lt-radius-pill);
   transition: filter var(--lt-dur-fade) var(--lt-ease-fade);
 }

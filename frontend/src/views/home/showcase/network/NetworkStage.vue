@@ -1,32 +1,28 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { Spring, springs } from '@/motion'
-import GhostCursor from '../hero/GhostCursor.vue'
-import { Halt, type Ghost } from '../hero/ghost'
 import { buildCity, nearestJunction, search, type Route } from './city'
-import { TRACE, foundFor, frontAt, paint, project, units, type Palette, type Point, type Scene } from './paint'
+import { STILL_AFTER, foundFor, frontAt, paint, project, type Palette, type Point, type Scene } from './paint'
 
 /**
  * A city seen from above. Light spreads from the start exactly as Dijkstra settles each
- * junction, the route is traced back from the destination, and a pulse then rides it.
- * Scrolling in tips the ground from a map into perspective; the demo pointer picks the
- * first destinations, then any click picks the next one.
+ * junction, the route is traced back from the destination, and a pulse rides it once.
+ * Scrolling in tips the ground from a map into perspective. The first time the stage comes
+ * into view the city draws itself and finds one route on its own; after that any click
+ * picks the next destination. Once nothing is moving, the stage stops drawing.
  */
 const root = ref<HTMLElement | null>(null)
 const canvas = ref<HTMLCanvasElement | null>(null)
 const probe = ref<HTMLElement | null>(null)
-const ghost = ref<InstanceType<typeof GhostCursor> | null>(null)
 
 const city = buildCity()
 const START = nearestJunction(city, -1.5, 0.7)
-const DEMO = [nearestJunction(city, 1.3, 1.5), nearestJunction(city, 0.2, 2.6)]
+const FIRST = nearestJunction(city, 1.3, 1.5)
 const MAP_PITCH = 1.2
 const VIEW_PITCH = 0.7
 const APPEAR = 1.4
 
 const reached = ref(0)
-const streets = ref(0)
-const length = ref(0)
 
 const pitch = new Spring(MAP_PITCH, springs.camera)
 const previews = new Map<number, Route>()
@@ -43,8 +39,7 @@ let waveFrom = 0
 let frameId = 0
 let last = 0
 let visible = false
-let visitor = false
-let run: AbortController | null = null
+let entered = false
 
 function rgb(color: string): number[] {
   return (color.match(/[\d.]+/g) ?? ['128', '128', '128']).slice(0, 3).map(Number)
@@ -99,9 +94,12 @@ function draw() {
   paint(ctx, current)
   const front = frontAt(current)
   reached.value = route ? route.distance.filter((d) => d <= front).length : 0
-  const done = route && foundFor(current) > TRACE
-  streets.value = done ? route!.pathStreets.length : 0
-  length.value = done ? units(route!.distance[route!.target]) : 0
+}
+
+/** Nothing left to animate: the city is in, the tilt has settled and the route has been ridden. */
+function still() {
+  const current = scene()
+  return pitch.settled && clock - appearFrom > 1.6 && (!route || foundFor(current) > STILL_AFTER)
 }
 
 /** Ground tilt follows how far the stage has come up the screen, through a camera spring. */
@@ -124,7 +122,7 @@ function frame(now: number) {
     points = project(city, width, height, pitch.value)
   }
   draw()
-  frameId = visible ? requestAnimationFrame(frame) : 0
+  frameId = visible && !still() ? requestAnimationFrame(frame) : 0
 }
 
 function wake() {
@@ -133,53 +131,19 @@ function wake() {
   frameId = requestAnimationFrame(frame)
 }
 
-function go(target: number) {
+function go(target: number, delay = 0.12) {
   if (target === START) return
   route = search(city, START, target)
-  waveFrom = clock + 0.12
+  waveFrom = clock + delay
+  wake()
 }
 
-/** Resolves once the current route has been traced and has had a moment to be seen. */
-async function settled(actor: Ghost, linger: number) {
-  while (foundFor(scene()) < TRACE + linger / 1000) await actor.rest(100)
-}
-
-async function demo() {
-  run?.abort()
-  const controller = new AbortController()
-  run = controller
-  const actor = ghost.value?.actor(controller.signal)
-  if (!actor) return
-  try {
-    await actor.rest(APPEAR * 1000)
-    ghost.value?.show()
-    for (const target of DEMO) {
-      const p = points[target]
-      await actor.clickAt(p.x, p.y)
-      go(target)
-      await settled(actor, 1800)
-    }
-    ghost.value?.hide()
-  } catch (error) {
-    if (!(error instanceof Halt)) throw error
-  }
-}
-
-/** Each time the stage comes back into view the city is drawn again from nothing. */
+/** Only the first time the stage comes into view: the city draws itself in and finds one route. */
 function enter() {
+  if (entered) return
+  entered = true
   appearFrom = clock
-  const previous = route?.target
-  route = null
-  if (!visitor) return void demo()
-  if (previous !== undefined) {
-    route = search(city, START, previous)
-    waveFrom = clock + APPEAR
-  }
-}
-
-function leave() {
-  run?.abort()
-  ghost.value?.hide()
+  go(FIRST, APPEAR)
 }
 
 function pick(event: MouseEvent) {
@@ -201,23 +165,25 @@ function pick(event: MouseEvent) {
 
 function onMove(event: PointerEvent) {
   const node = pick(event)
-  hovered = node === START || node === route?.target ? -1 : node
+  const next = node === START || node === route?.target ? -1 : node
+  if (next === hovered) return
+  hovered = next
   if (hovered >= 0 && !previews.has(hovered)) previews.set(hovered, search(city, START, hovered))
   if (canvas.value) canvas.value.style.cursor = hovered >= 0 ? 'pointer' : ''
+  wake()
 }
 
-/** A real press hands the city to the visitor: the demo pointer bows out. */
-function onDown(event: PointerEvent) {
-  if (!event.isTrusted) return
-  visitor = true
-  leave()
+function onLeave() {
+  if (hovered < 0) return
+  hovered = -1
+  wake()
 }
 
 function onClick(event: MouseEvent) {
   const node = pick(event)
   if (node < 0) return
-  go(node)
   hovered = -1
+  go(node)
 }
 
 let resizeObserver: ResizeObserver | null = null
@@ -242,7 +208,7 @@ onMounted(() => {
       if (visible) {
         enter()
         wake()
-      } else leave()
+      }
     },
     { threshold: [0, 0.35] },
   )
@@ -252,7 +218,6 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   visible = false
-  run?.abort()
   cancelAnimationFrame(frameId)
   resizeObserver?.disconnect()
   intersection?.disconnect()
@@ -267,8 +232,7 @@ onBeforeUnmount(() => {
       class="surface"
       aria-hidden="true"
       @pointermove="onMove"
-      @pointerleave="hovered = -1"
-      @pointerdown="onDown"
+      @pointerleave="onLeave"
       @click="onClick"
     />
     <dl class="readout" aria-live="off">
@@ -278,16 +242,7 @@ onBeforeUnmount(() => {
           {{ reached }}<span class="of"> / {{ city.junctions.length }}</span>
         </dd>
       </div>
-      <div>
-        <dt>Streets on route</dt>
-        <dd>{{ streets || '–' }}</dd>
-      </div>
-      <div>
-        <dt>Distance</dt>
-        <dd>{{ length || '–' }}</dd>
-      </div>
     </dl>
-    <GhostCursor ref="ghost" />
     <span ref="probe" class="probe" aria-hidden="true" />
   </div>
 </template>

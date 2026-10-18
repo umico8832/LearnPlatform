@@ -19,8 +19,8 @@ import LabTimeline from './LabTimeline.vue'
  * A chain that turns itself around, one link at a time. The platform's own simulator
  * computes the run and its spring stage draws it; the homepage only strips away
  * everything that would need reading code. Drag time either way, or shuffle the data
- * and the whole run is worked out again. The code stays one press away: opening it
- * brings back every statement as its own step, with the variables riding the chain.
+ * and the whole run is worked out again. The code starts open, every statement its own
+ * step with the variables riding the chain; hiding it leaves only the moves of the chain.
  */
 const SPEED = 2
 const START = [3, 7, 1, 9, 4]
@@ -36,9 +36,9 @@ const bare = shallowRef<Trace | null>(null)
 const full = shallowRef<Trace | null>(null)
 /** For each bare step, the statement it shows. */
 const sources = shallowRef<number[]>([])
-const detail = ref(false)
+const detail = ref(true)
 const hovered = ref<number | null>(null)
-const panel = useSpring(0, springs.layout)
+const panel = useSpring(CODE_WIDTH, springs.layout)
 let scene: SceneModule | null = null
 
 player.subscribe((next) => {
@@ -47,8 +47,6 @@ player.subscribe((next) => {
 
 const root = ref<HTMLElement | null>(null)
 const timeline = ref<InstanceType<typeof LabTimeline> | null>(null)
-const shuffleButton = ref<InstanceType<typeof LtButton> | null>(null)
-const playButton = ref<InstanceType<typeof LtIconButton> | null>(null)
 const ghost = ref<InstanceType<typeof GhostCursor> | null>(null)
 
 const trace = computed(() => (detail.value ? full.value : bare.value))
@@ -206,14 +204,9 @@ async function demo() {
     await scrub(actor, 0)
     await actor.rest(900)
     await scrub(actor, steps.value.length - 1)
-    await actor.rest(1500)
-    await actor.click(shuffleButton.value?.$el)
-    shuffle()
-    await actor.rest(1300)
-    await actor.click(playButton.value?.$el)
-    player.play()
-    await actor.moveBy(-80, 60)
     await actor.rest(600)
+    await actor.moveBy(-80, 60)
+    await actor.rest(400)
     ghost.value?.hide()
   } catch (error) {
     if (!(error instanceof Halt)) throw error
@@ -277,7 +270,7 @@ onBeforeUnmount(() => {
             <template #icon><CodeXml :size="15" aria-hidden="true" /></template>
             {{ detail ? 'Hide code' : 'Show code' }}
           </LtButton>
-          <LtButton ref="shuffleButton" size="sm" @click="shuffle">
+          <LtButton size="sm" @click="shuffle">
             <template #icon><Shuffle :size="15" aria-hidden="true" /></template>
             Shuffle
           </LtButton>
@@ -298,7 +291,7 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="transport">
-      <LtIconButton ref="playButton" :label="playing ? 'Pause' : 'Play'" variant="primary" @click="toggle">
+      <LtIconButton :label="playing ? 'Pause' : 'Play'" variant="primary" @click="toggle">
         <Pause v-if="playing" :size="18" fill="currentColor" aria-hidden="true" />
         <Play v-else :size="18" fill="currentColor" aria-hidden="true" />
       </LtIconButton>

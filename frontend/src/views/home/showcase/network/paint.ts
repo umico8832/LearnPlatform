@@ -38,8 +38,9 @@ export interface Scene {
 /** Seconds the light takes to cover the whole city, and to trace the route back. */
 export const SPREAD = 2.8
 export const TRACE = 1
-const PULSE_EVERY = 2.8
 const PULSE_RIDE = 1.6
+/** Seconds after the target is found when the route has been traced and ridden, and nothing moves. */
+export const STILL_AFTER = TRACE + 0.3 + PULSE_RIDE
 const CAMERA_HEIGHT = 1.4
 
 /**
@@ -175,7 +176,7 @@ export function paint(ctx: CanvasRenderingContext2D, scene: Scene) {
     }
   })
 
-  // Junctions: waiting ones breathe, settled ones flash and show their distance once.
+  // Junctions: waiting ones breathe while the search runs, settled ones flash and show their distance once.
   city.junctions.forEach((_, node) => {
     const p = points[node]
     const fade = p.fog * shown(node)
@@ -188,8 +189,10 @@ export function paint(ctx: CanvasRenderingContext2D, scene: Scene) {
     if (!route || !d) return
     const waiting = front >= route.seen[node] && since < 0
     ctx.globalCompositeOperation = 'lighter'
-    if (waiting) {
-      ctx.strokeStyle = rgba(accent, (0.35 + 0.25 * Math.sin(t * 7 + node)) * settle * fade)
+    // Once the target is found the search is over, so the junctions still waiting fade away.
+    const searching = 1 - clamp01(found / 0.6)
+    if (waiting && searching > 0) {
+      ctx.strokeStyle = rgba(accent, (0.35 + 0.25 * Math.sin(t * 7 + node)) * settle * searching * fade)
       ctx.lineWidth = 1.2 * p.s
       ring(ctx, p.x, p.y, (5.5 + 1.2 * Math.sin(t * 7 + node)) * p.s)
     } else if (since >= 0 && since < 0.7) {
@@ -241,7 +244,7 @@ export function paint(ctx: CanvasRenderingContext2D, scene: Scene) {
   ctx.globalCompositeOperation = 'source-over'
 }
 
-/** The route is traced back from the destination along the recorded predecessors; then a pulse rides it. */
+/** The route is traced back from the destination along the recorded predecessors; then a pulse rides it once. */
 function paintRoute(ctx: CanvasRenderingContext2D, scene: Scene, found: number) {
   const { city, points, route, palette } = scene
   if (!route || found <= 0) return
@@ -273,7 +276,7 @@ function paintRoute(ctx: CanvasRenderingContext2D, scene: Scene, found: number) 
     label(ctx, target, String(units(route.distance[route.target])), Math.round(13 + 3 * target.s), rgba(ink, alpha))
   }
   const after = found - TRACE - 0.3
-  const phase = after > 0 ? (after % PULSE_EVERY) / PULSE_RIDE : 2
+  const phase = after > 0 ? after / PULSE_RIDE : 2
   if (phase > 1) return
   let at = phase * total
   for (let i = 0; i < route.pathStreets.length; i += 1) {
