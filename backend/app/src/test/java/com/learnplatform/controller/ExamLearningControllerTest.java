@@ -26,6 +26,7 @@ import com.learnplatform.service.PrivateExamPdfImportService;
 import com.learnplatform.service.PrivateExamDocxImportService;
 import com.learnplatform.service.PrivateExamSourceFileService;
 import com.learnplatform.service.PrivateExamSourceStorageService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -66,6 +67,11 @@ class ExamLearningControllerTest {
     @Mock private PrivateExamSourceStorageService privateExamSourceStorageService;
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @BeforeEach
     void setUp() {

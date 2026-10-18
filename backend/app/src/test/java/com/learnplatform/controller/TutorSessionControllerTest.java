@@ -6,6 +6,7 @@ import com.learnplatform.dto.TutorCheckResultVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.TutorAgentService;
 import com.learnplatform.service.TutorSessionService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +33,11 @@ class TutorSessionControllerTest {
     @Mock private TutorSessionService sessions;
     @Mock private TutorAgentService agent;
     private MockMvc mockMvc;
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @BeforeEach void setUp() {
         SecurityContextHolder.getContext().setAuthentication(

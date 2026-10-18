@@ -7,6 +7,7 @@ import com.learnplatform.service.AiAssetEngagementService;
 import com.learnplatform.service.AiCallGovernanceService;
 import com.learnplatform.service.AiService;
 import com.learnplatform.service.QuestionLearningAssetService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,6 +44,11 @@ class AiControllerTest {
     private Executor aiTaskExecutor;
 
     private MockMvc mockMvc;
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @BeforeEach
     void setUp() {

@@ -5,6 +5,7 @@ import com.learnplatform.dto.CommentRequest;
 import com.learnplatform.dto.CommentVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.CommentService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,6 +45,11 @@ class CommentControllerTest {
 
     @InjectMocks
     private CommentController commentController;
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @BeforeEach
     void setUp() {

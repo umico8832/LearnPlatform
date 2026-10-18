@@ -8,6 +8,7 @@ import com.learnplatform.dto.QuestionVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AdaptivePracticeService;
 import com.learnplatform.service.PracticeService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,6 +51,11 @@ class PracticeControllerTest {
     private PracticeController practiceController;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @BeforeEach
     void setUp() {

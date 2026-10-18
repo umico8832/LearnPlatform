@@ -5,6 +5,7 @@ import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.WrongQuestionVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.WrongQuestionService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,6 +42,11 @@ class WrongQuestionControllerTest {
 
     @InjectMocks
     private WrongQuestionController wrongQuestionController;
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @BeforeEach
     void setUp() {

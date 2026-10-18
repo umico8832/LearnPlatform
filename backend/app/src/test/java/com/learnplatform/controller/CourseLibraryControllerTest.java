@@ -13,6 +13,7 @@ import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.CourseLibraryService;
 import com.learnplatform.service.CourseOverviewService;
 import com.learnplatform.service.CourseStageAssessmentService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,6 +44,11 @@ class CourseLibraryControllerTest {
     @Mock private CourseLibraryService courseLibraryService;
     @Mock private CourseOverviewService courseOverviewService;
     @Mock private CourseStageAssessmentService stageAssessmentService;
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @BeforeEach
     void setUp() {

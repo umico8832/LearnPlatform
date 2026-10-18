@@ -5,6 +5,7 @@ import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.FavoriteQuestionVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.FavoriteService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +41,11 @@ class FavoriteControllerTest {
 
     @InjectMocks
     private FavoriteController favoriteController;
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @BeforeEach
     void setUp() {

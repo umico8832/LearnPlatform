@@ -10,6 +10,7 @@ import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AiExamGenerationService;
 import com.learnplatform.service.ExamPaperService;
 import com.learnplatform.service.SubjectiveExamGradingService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,6 +56,11 @@ class AdminExamControllerTest {
 
     @InjectMocks
     private AdminExamController adminExamController;
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @BeforeEach
     void setUp() {

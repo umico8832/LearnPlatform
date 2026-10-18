@@ -6,6 +6,7 @@ import com.learnplatform.dto.StatisticsVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.LearningReportService;
 import com.learnplatform.service.StatisticsService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,6 +46,11 @@ class StatisticsControllerTest {
 
     @InjectMocks
     private StatisticsController statisticsController;
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @BeforeEach
     void setUp() {

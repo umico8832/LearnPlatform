@@ -16,6 +16,7 @@ import com.learnplatform.service.QuestionReviewSuggestionService;
 import com.learnplatform.service.QuestionService;
 import com.learnplatform.service.QuestionSourceService;
 import com.learnplatform.service.QuestionVersionService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -72,6 +73,11 @@ class AdminQuestionControllerTest {
     private QuestionVersionService questionVersionService;
 
     private AdminQuestionController adminQuestionController;
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @BeforeEach
     void setUp() {

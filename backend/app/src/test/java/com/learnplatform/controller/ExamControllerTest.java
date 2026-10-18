@@ -9,6 +9,7 @@ import com.learnplatform.dto.ExamSubmitRequest;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.ExamPaperService;
 import com.learnplatform.service.ExamService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,6 +45,11 @@ class ExamControllerTest {
 
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @BeforeEach
     void setUp() {

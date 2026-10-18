@@ -9,6 +9,7 @@ import com.learnplatform.dto.AiQuotaAuditLogVO;
 import com.learnplatform.dto.UserVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AdminUserService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,6 +42,11 @@ class AdminUserControllerTest {
 
     @Mock
     private AdminUserService adminUserService;
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @BeforeEach
     void setUp() {
