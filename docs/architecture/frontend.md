@@ -90,7 +90,7 @@ frontend/admin/   # 独立管理端 HTML 入口
 学习端正按 [ADR-0011](decisions/0011-living-textbook-spring-motion.md) 逐页重做为新的视觉与弹簧动效基线：
 
 - 新基线只在 `.lt` 根内生效。`assets/styles/living.css` 定义 `--lt-` 令牌，颜色用 `light-dark()` 同时给出浅色与深色，
-  默认跟随系统，`data-appearance` 可强制其一。重做页面用 `useLivingTheme` 把整个文档放进新基线，嵌入式组件自带 `.lt` 根；
+  默认跟随系统，`data-appearance` 可强制其一；展示首页与 Phase 28 起新做的学员页面固定深色（[ADR-0014](decisions/0014-learner-dark-only.md)）。重做页面用 `useLivingTheme` 把整个文档放进新基线，嵌入式组件自带 `.lt` 根；
   新页面不使用 `--lp-` 变量、Element Plus 或 `Lp*` 组件，两套基线互不覆盖。
 - `motion/` 是与框架无关的解析解弹簧核心（命名预设、共享帧循环）和 `linear()` 缓动生成，
   `useSpring` 提供 Vue 绑定；`living.css` 中的缓动令牌由同名预设生成，测试保证两边一致。
@@ -107,8 +107,7 @@ frontend/admin/   # 独立管理端 HTML 入口
 
 - `assets/styles/tokens.css` 是唯一视觉来源：颜色、字体、间距、圆角、边框、阴影、动效、布局、
   z-index 均以 CSS 变量定义；`element-plus.css` 将这些语义变量映射到 Element Plus。应用工作区采用暖纸底色、
-  低饱和蓝主操作与焦点的 Quiet Digital Textbook；公开首页使用高对比的编辑式视觉子集，
-  两者继续共享语义变量、交互状态与无障碍约束。学习投入记录使用共享低饱和色与文字层级，
+  低饱和蓝主操作与焦点的 Quiet Digital Textbook。学习投入记录使用共享低饱和色与文字层级，
   题干、解析、代码和 Markdown 阅读区域保持克制；经验与等级表示学习投入。
 - `components/ui/` 提供全局注册的基础组件（包括 `LpPageHeader`、`LpCard`、`LpListItem`、`LpStatePanel`、
   `LpStat`、`LpProgress`、`LpProgressRing`、`LpEmptyState`、`LpSkeleton`、`LpDivider`、`LpSignal`、`LpKicker`）。
