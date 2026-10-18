@@ -14,8 +14,7 @@ DRAFTS = tuple(sorted((ROOT / "content/drafts").glob("m5-*.json")))
 P27_DRAFTS = tuple(sorted((ROOT / "content/drafts").rglob("p27-*.json")))
 LABELS = {"A", "B", "C", "D"}
 PENDING = {"kind": "AI_GENERATED", "reviewStatus": "PENDING", "label": "AI 生成·待审核"}
-REVIEWED = {"kind": "AI_GENERATED", "reviewStatus": "REVIEWED", "label": "AI 生成·已审核",
-            "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"}
+REVIEWED = {"kind": "AI_GENERATED", "reviewStatus": "REVIEWED", "label": "AI 生成·已审核"}
 
 
 def require(condition: bool, where: str, message: str) -> None:
@@ -56,6 +55,16 @@ def viz(where: str, value: object) -> int:
     return 1
 
 
+def content_source(where: str, value: object) -> None:
+    require(isinstance(value, dict), where, "缺少内容审核状态")
+    if value == PENDING:
+        return
+    metadata = {key: item for key, item in value.items() if key != "reviewNote"}
+    require(metadata == REVIEWED, where, "内容须为 AI 生成的待审核或已审核状态")
+    note = value.get("reviewNote")
+    require(isinstance(note, str) and bool(note.strip()), where, "已审核内容须记录实际审核方式与核对依据")
+
+
 def validate_question(question: dict, where: str) -> int:
     text(where + ".id", question.get("id"))
     text(where + ".topic", question.get("topic"))
@@ -71,8 +80,7 @@ def validate_question(question: dict, where: str) -> int:
         text(where + ".source.questionNumber", source.get("questionNumber"))
         require(isinstance(source.get("url"), str) and source["url"].startswith("https://"),
                 where, "408 真题需要可访问链接")
-    require(question.get("contentSource") in (PENDING, REVIEWED), where,
-            "整题须标为 AI 生成·待审核或带实际审核方式的已审核")
+    content_source(where + ".contentSource", question.get("contentSource"))
 
     answer = question.get("correctAnswer")
     options(where, question.get("options"), answer)
@@ -101,8 +109,7 @@ def validate_question(question: dict, where: str) -> int:
     text(where + ".variant.changedCondition", variant.get("changedCondition"))
     text(where + ".variant.explanation", variant.get("explanation"))
     options(where + ".variant", variant.get("options"), variant.get("correctAnswer"))
-    require(variant.get("source") in (PENDING, REVIEWED), where,
-            "变式须标为 AI 生成·待审核或带实际审核方式的已审核")
+    content_source(where + ".variant.source", variant.get("source"))
     count += viz(where + ".variant.viz", variant.get("viz"))
     return count
 

@@ -58,6 +58,18 @@ class DraftValidationTest(unittest.TestCase):
         question["vizCandidates"] = [candidate]
         question["variant"]["vizCandidates"] = [dict(candidate, id="example-variant")]
         self.assertEqual((1, 0), self.validate_unimported(document))
+        for target in ("content", "variant"):
+            with self.subTest(target=target):
+                reviewed_document = copy.deepcopy(document)
+                reviewed_question = reviewed_document["questions"][0]
+                reviewed = {"kind": "AI_GENERATED", "reviewStatus": "REVIEWED", "label": "AI 生成·已审核",
+                            "reviewNote": "独立 AI 审核：核对记录 test-evidence"}
+                if target == "content":
+                    reviewed_question["contentSource"] = reviewed
+                else:
+                    reviewed_question["variant"]["source"] = reviewed
+                with self.assertRaisesRegex(ValueError, "保持待审核"):
+                    self.validate_unimported(reviewed_document)
         question["viz"] = {"title": "访问过程", "spec": {}}
         with self.assertRaisesRegex(ValueError, "不挂动画"):
             self.validate_unimported(document)
@@ -111,16 +123,44 @@ class DraftValidationTest(unittest.TestCase):
         )
         self.assertEqual((1, 0), self.validate(document))
 
-    def test_accepts_reviewed_ai_only_with_actual_review_method(self) -> None:
-        document = draft()
-        reviewed = {"kind": "AI_GENERATED", "reviewStatus": "REVIEWED", "label": "AI 生成·已审核",
-                    "reviewNote": "AI 初稿 + Codex 冷读 + Claude 页面审核"}
-        document["questions"][0]["contentSource"] = reviewed
-        document["questions"][0]["variant"]["source"] = reviewed
-        self.assertEqual((1, 0), self.validate(document))
-        document["questions"][0]["variant"]["source"] = dict(reviewed, reviewNote="人工逐字审定")
-        with self.assertRaisesRegex(ValueError, "审核"):
-            self.validate(document)
+    def test_accepts_reviewed_ai_with_recorded_review_method(self) -> None:
+        for note in ("AI 初稿 + Codex 冷读 + Claude 页面审核",
+                     "独立 AI 审核：新会话 review-test；模型 test-model；核对记录 test-evidence"):
+            with self.subTest(note=note):
+                document = draft()
+                reviewed = {"kind": "AI_GENERATED", "reviewStatus": "REVIEWED", "label": "AI 生成·已审核",
+                            "reviewNote": note}
+                document["questions"][0]["contentSource"] = reviewed
+                document["questions"][0]["variant"]["source"] = reviewed
+                self.assertEqual((1, 0), self.validate(document))
+
+    def test_reviewed_content_and_variant_require_nonempty_review_notes(self) -> None:
+        for target in ("content", "variant"):
+            for note in (None, "", "  ", 7, ["独立 AI 审核"]):
+                with self.subTest(target=target, note=note):
+                    document = draft()
+                    reviewed = {"kind": "AI_GENERATED", "reviewStatus": "REVIEWED", "label": "AI 生成·已审核"}
+                    if note is not None:
+                        reviewed["reviewNote"] = note
+                    question = document["questions"][0]
+                    if target == "content":
+                        question["contentSource"] = reviewed
+                    else:
+                        question["variant"]["source"] = reviewed
+                    with self.assertRaisesRegex(ValueError, "审核"):
+                        self.validate(document)
+
+    def test_review_note_cannot_replace_valid_review_state(self) -> None:
+        for field, value in (("kind", "CURATED"), ("reviewStatus", "APPROVED"),
+                             ("label", "AI 生成·待审核")):
+            with self.subTest(field=field):
+                document = draft()
+                source = {"kind": "AI_GENERATED", "reviewStatus": "REVIEWED", "label": "AI 生成·已审核",
+                          "reviewNote": "独立 AI 审核：核对记录 test-evidence"}
+                source[field] = value
+                document["questions"][0]["contentSource"] = source
+                with self.assertRaisesRegex(ValueError, "审核"):
+                    self.validate(document)
 
     def test_rejects_answer_not_in_options(self) -> None:
         document = draft()

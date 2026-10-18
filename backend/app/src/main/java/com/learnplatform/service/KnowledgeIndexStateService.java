@@ -149,7 +149,7 @@ public class KnowledgeIndexStateService {
 
     private void requireReviewed(KnowledgeContentBundle bundle) {
         if (!"REVIEWED".equals(bundle.getReviewStatus())) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR, "知识版本尚未人工审核");
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "知识版本尚未审核");
         }
     }
 

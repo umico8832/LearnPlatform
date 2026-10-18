@@ -140,7 +140,7 @@ Schema 约束。外部引用与动态方言不允许加载，业务约束仍须�
 调用 OpenAI 兼容 `/embeddings`，禁止自动重试与重定向。返回顺序按输入索引恢复，未知用量不推算，
 协议校验失败仍保留已获得的计费元数据。协议依据 [OpenAI Embeddings API](https://developers.openai.com/api/reference/resources/embeddings/methods/create)。
 
-管理员逐条审查后可将版本从 `PENDING` 标记为 `REVIEWED` 并显式构建 Qdrant 索引。
+知识快照经[独立 AI 审核](../product/explanation-conventions.md#教学内容审核)覆盖整包片段后，管理员通过现有入口记录结论，将版本从 `PENDING` 标记为 `REVIEWED`，再显式构建 Qdrant 索引；当前未自动运行内容审核。
 每批 Embedding 单独计配额与用量，共享本次索引任务的 run ID；网络调用不占数据库长事务。
 索引键绑定模型、维度、云端点、向量端点和集合，任务租约允许超时后重新领取，旧运行不能提交成功。
 索引只有在全部片段写入成功且版本仍已审核时才进入 `READY`。

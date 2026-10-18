@@ -19,5 +19,5 @@
 
 运行 `python3 scripts/check-knowledge-snapshot.py` 核对哈希、课程隔离、知识点引用、
 考纲映射和数量。快照可通过[管理端导入接口](../../../docs/reference/api/admin-governance.md#知识快照导入)存入 MySQL；
-云 Embedding 与 Qdrant/Tutor RAG 接入默认关闭；本快照未经人工审核，不会自动进入检索。更新内容时应创建新版本目录并保留旧版本的标识与清单，
+云 Embedding 与 Qdrant/Tutor RAG 接入默认关闭；本快照尚未按[独立 AI 审核口径](../../../docs/product/explanation-conventions.md#教学内容审核)完成平台审核，不会自动进入检索。更新内容时应创建新版本目录并保留旧版本的标识与清单，
 避免直接改写已被调用引用的知识片段。

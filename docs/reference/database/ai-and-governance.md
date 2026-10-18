@@ -27,7 +27,7 @@ Embedding 每个批次记录 `call_kind=EMBEDDING`，只按实际输入用量计
 期限为四倍单次 AI 超时加 60 秒（两次生成与两次判断的上界），过期运行不能提交迟到结果。
 记录即辅助事实，包含失败、取消与过期，
 与变式提交共用原尝试锁；此前已经提交的独立作答评分保持原值。历史只返回本人同一次尝试，
-每次重查正式内容访问与审核；保存的回答属于经自动检查的自由生成输出，不赋予人工审核状态。
+每次重查正式内容访问与审核；保存的回答属于经自动检查的自由生成输出，不赋予正式内容审核状态。
 追问审计 run ID 为 Java `UUID.nameUUIDFromBytes` 对 UTF-8 `attemptId:requestId` 的结果，可从追问记录关联并汇总
 所有调用用量与成本；旧的空 run ID 仍逐条计额，其他功能的 run ID 不参与追问分组。
 记录不保存 reasoning_content、凭据或原始上游响应，只有通过校验的完整 Markdown 可写 content；
@@ -44,7 +44,7 @@ suggestion 保存当次规则动作，恢复不会重新执行动作。状态、
 `source_quality_status` 保留来源审查状态，`review_status` 为独立平台状态，导入固定为 `PENDING`。
 快照属于课程内容库，按稳定内容键关联课程，不包含用户私有资料，也不自动写入现有教学内容表。
 并发导入通过版本唯一索引和行锁串行化，事务采用 READ COMMITTED，避免等待锁后继续读取旧片段快照。
-数据库导入不代表向量索引已创建或内容已向学习者开放。V97 增加平台审核者、时间和说明，审核与来源质量分离。
+数据库导入不代表向量索引已创建或内容已向学习者开放。V97 增加平台审核操作者、时间和说明，审核与来源质量分离。操作者字段仍记录管理员 ID，不表示审核模型；独立 AI 审核方式与证据按[教学内容审核口径](../../product/explanation-conventions.md#教学内容审核)记录，现有表没有结构化的模型或会话字段。
 索引状态为 `INDEXING`、`READY`、`FAILED`、`DELETED`、`PURGED`；120 秒租约支持中断恢复，
 续租、完成和失败更新绑定当前运行标识。只有完整片段数且版本仍 `REVIEWED` 时允许 `READY`。
 撤回将非 `PURGED` 索引标记为 `DELETED`，保留未到期写入租约；删除确认后标为 `PURGED`，
@@ -125,7 +125,7 @@ V104 的 `tutor_session_note` 只保存 `session_id`、正 `revision`、可空�
 V87 为结构校验后的变式题增加 `PENDING`、`APPROVED`、`REJECTED` 审查状态、审查人/时间/说明和唯一的
 正式题目引用。批准与正式题目创建在同一事务完成；驳回不创建题目，已完成审查不能重复改写。
 
-M2 复用 `question_ai_asset` 的 `VARIANT` 缓存键和 `ai_variant_question` 的结构化题干、选项、私有答案、解析与审核状态；V106 在 `ai_variant_question` 增加可空 `changed_condition`、`viz_title`、`viz_spec_json`。既有行不回填虚构的变更条件；只有 `APPROVED`、确有 `changed_condition`、与原题同概念且仅一个可核对条件发生改变的单选变式，才可进入[题目理解 API](../api/question-understanding.md)。“同概念、只改一个条件”和 spec 的正确性目前由预置内容的人工审核保证；通用批准流程尚不校验这些 M2 字段，理解查询只要求 `APPROVED`、单选且 `changed_condition` 非空。`published_question_id` 继续表示审核后物化的正式题，不用来代替母题关联；母题经 `asset_id → question_ai_asset.question_id` 取得。M2 作答另见[练习与错题](assessment-domain.md#练习与错题)，不使用每用户/资产唯一的 `ai_variant_training` 作为逐次原题理解尝试。
+M2 复用 `question_ai_asset` 的 `VARIANT` 缓存键和 `ai_variant_question` 的结构化题干、选项、私有答案、解析与审核状态；V106 在 `ai_variant_question` 增加可空 `changed_condition`、`viz_title`、`viz_spec_json`。既有行不回填虚构的变更条件；只有 `APPROVED`、确有 `changed_condition`、与原题同概念且仅一个可核对条件发生改变的单选变式，才可进入[题目理解 API](../api/question-understanding.md)。“同概念、只改一个条件”和 spec 的正确性依赖内容审核及模拟器核对；后续审核遵循[独立 AI 审核口径](../../product/explanation-conventions.md#教学内容审核)，既有预置内容保留原审核记录；通用批准流程尚不校验这些 M2 字段，理解查询只要求 `APPROVED`、单选且 `changed_condition` 非空。`published_question_id` 继续表示审核后物化的正式题，不用来代替母题关联；母题经 `asset_id → question_ai_asset.question_id` 取得。M2 作答另见[练习与错题](assessment-domain.md#练习与错题)，不使用每用户/资产唯一的 `ai_variant_training` 作为逐次原题理解尝试。
 
 ## 观察性学习效果
 

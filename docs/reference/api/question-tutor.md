@@ -4,8 +4,8 @@
 
 ## 内容与可用性
 
-- 导师运行时只选择已存储、与本次尝试锁定的理解内容版本一致、人工审核为 `REVIEWED` 的内容，分级提示和下一步建议不调用云模型或在请求中生成文案。新生成的提示、场景描述和变式草稿必须以 `AI_GENERATED/PENDING` 入库；人工审核后才能公开。审核撤回即停止公开，不回退到旧版。
-- 三级提示分别给概念方向、推理步骤、课内相似案例；均不判断或排除选项，也不泄露答案。每级文本有独立来源 `source: {kind, reviewStatus}`，`kind` 为 `CURATED` 或 `AI_GENERATED`；公开的 `reviewStatus` 恒为 `REVIEWED`。待审核内容只在管理员预览中可见，必须标为“AI 生成·待审核”，不能标成已审核或来源已核对。
+- 导师运行时只选择已存储、与本次尝试锁定的理解内容版本一致、审核为 `REVIEWED` 的内容，分级提示和下一步建议不调用云模型或在请求中生成文案。新生成的提示、场景描述和变式草稿必须以 `AI_GENERATED/PENDING` 入库；经[独立 AI 审核](../../product/explanation-conventions.md#教学内容审核)通过后才能公开。审核撤回即停止公开，不回退到旧版。
+- 三级提示分别给概念方向、推理步骤、课内相似案例；均不判断或排除选项，也不泄露答案。每级文本有独立来源 `source: {kind, reviewStatus}`，`kind` 为 `CURATED` 或 `AI_GENERATED`；公开的 `reviewStatus` 恒为 `REVIEWED`。待审核内容只在明确标明含待审核内容的管理员预览中可见。学习者页面不再逐条显示审核标记，只在页底统一提示“内容由 AI 生成，请注意甄别”；真题只标出处。来源字段仍用于表达服务端内容状态，不授予来源核验结论。
 - 可视化返回 `{title, spec, source}`，其中 `spec` 使用 `frontend/src/viz/engine/types.ts` 的 `SceneSpec`，包括 `scene`、`op`、场景参数以及可选 `pauseAt`；后端不执行场景。审核时须用正式模拟器验证场景、参数和检查点。`source` 描述可视化文案与描述本身，和题目来源 `source.verification` 分开。
 - 正解响应保留 M2 的 `correctAnswer`、`explanation`、`viz`，增加 `explanationSource: {kind, reviewStatus}`；变式响应保留 M2 结构，其 `source` 继续描述变式的生成与审核。错项误区已有 `misconception.source`；新增的 `viz.source` 表示所用场景描述的来源与审核状态。导师建议的理由是服务端规则文案，返回 `reasonSource: {kind: "CURATED", reviewStatus: "REVIEWED"}`。
 - 若本次内容版本缺任一级已审核提示，导师提示链整体不可用：`next` 不建议提示，正解保持 M2 的直接开放路径。这样待审核草稿不会让现有题目卡住。提示链可用后，错答者须依次取得三级提示才能开放正解；答对者可直接开放正解。
@@ -158,7 +158,7 @@ SSE 的 JSON data：`content` 事件 `{content: "正文增量"}`；结束 `done`
 网络失败、超时、停止仍使用原错误码，不因退回策略掩盖基础设施故障。
 解锁后输入扩为本题已审核讲解、各错项误区及提示，自由讲解，不要求逐字引用，不执行答案泄露检查；
 仍用同一 JSON 判断检查离题、注入和材料口径，不通过也最多重生成一次后退回。
-历史只用于显示，不作为已审核材料。生成与自动检查不构成人工审核，回答不标“AI 生成·已审核”。
+历史只用于显示，不作为已审核材料。生成与运行时自动检查不授予正式内容审核状态；回答沿用页底统一 AI 提示。
 两道检查属于纵深防护，语义判断可能漏判；真实语料评测与 AI 复核为教学质量验收依据。
 
 复用：`AiInvocationService → OpenAiProvider → ai-core/CloudChatModel` 的 OpenAI 兼容流式协议、

@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class KnowledgeIndexStateServiceTest {
@@ -35,13 +36,27 @@ class KnowledgeIndexStateServiceTest {
         when(indexes.currentTime()).thenReturn(LocalDateTime.of(2030, 1, 1, 0, 0));
     }
 
-    @Test void reviewedSourceStatusCannotReplaceManualBundleReview() {
+    @Test void reviewedSourceStatusCannotReplacePlatformBundleReview() {
         var bundle = bundle("PENDING");
         when(bundles.lockById(3L)).thenReturn(bundle);
 
         state.review(7L, 3L, "REVIEWED", "checked by reviewer");
 
         assertEquals("REVIEWED", bundle.getReviewStatus());
+    }
+
+    @Test void unreviewedBundlesCannotStartIndexingEvenWithReviewedSources() {
+        for (String status : new String[]{"PENDING", "WITHDRAWN"}) {
+            var bundle = bundle(status);
+            bundle.setSourceQualityStatus("reviewed");
+            when(bundles.lockById(3L)).thenReturn(bundle);
+
+            BusinessException error = assertThrows(BusinessException.class,
+                    () -> state.begin(7L, 3L, "index-key", "test-model", 3, "collection", "endpoint-hash"));
+
+            assertEquals("知识版本尚未审核", error.getMessage());
+            verifyNoInteractions(indexes);
+        }
     }
 
     @Test void withdrawnBundleCannotBeReviewedAgain() {
