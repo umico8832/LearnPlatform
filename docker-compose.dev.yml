@@ -7,7 +7,7 @@ services:
       - "127.0.0.1:${DEV_SMTP_PORT:-11025}:1025"
   backend:
     environment:
-      DB_URL: jdbc:mysql://127.0.0.1:${DEV_MYSQL_PORT:-13306}/learn_platform?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      DB_URL: jdbc:mysql://127.0.0.1:${DEV_MYSQL_PORT:-13306}/learn_platform?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=America/New_York&allowPublicKeyRetrieval=true
       REDIS_HOST: 127.0.0.1
       REDIS_PORT: ${REDIS_HOST_PORT:-6379}
       SERVER_ADDRESS: 127.0.0.1

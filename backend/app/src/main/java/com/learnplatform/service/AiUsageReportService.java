@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
@@ -53,7 +54,7 @@ public class AiUsageReportService {
     @Transactional
     public AiUsageReportVO getReport(Integer days) {
         int resolvedDays = resolveReportDays(days);
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = BusinessTime.now();
         LocalDateTime currentStart = now.minusDays(resolvedDays);
         LocalDateTime previousStart = currentStart.minusDays(resolvedDays);
 
@@ -106,7 +107,7 @@ public class AiUsageReportService {
         }
         alert.setStatus(ALERT_STATUS_ACKNOWLEDGED);
         alert.setAcknowledgedBy(adminUserId);
-        alert.setAcknowledgedTime(LocalDateTime.now());
+        alert.setAcknowledgedTime(BusinessTime.now());
         aiUsageAlertMapper.updateById(alert);
         return toAlertVO(alert);
     }

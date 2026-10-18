@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.ReviewScheduleVO;
 import com.learnplatform.entity.Course;
@@ -41,7 +42,7 @@ public class ReviewScheduleCardViewService {
     }
 
     public ReviewScheduleVO toView(QuestionReviewSchedule schedule) {
-        List<ReviewScheduleVO> views = toViews(schedule.getUserId(), List.of(schedule), LocalDate.now());
+        List<ReviewScheduleVO> views = toViews(schedule.getUserId(), List.of(schedule), BusinessTime.today());
         return views.isEmpty() ? null : views.getFirst();
     }
 

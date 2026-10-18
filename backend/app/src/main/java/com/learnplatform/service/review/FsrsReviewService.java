@@ -1,5 +1,6 @@
 package com.learnplatform.service.review;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.entity.QuestionReviewSchedule;
@@ -9,14 +10,15 @@ import io.github.openspacedrepetition.Rating;
 import io.github.openspacedrepetition.Scheduler;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -31,10 +33,17 @@ public class FsrsReviewService {
             .enableFuzzing(false)
             .build();
 
+    private final Clock clock;
     private final QuestionReviewScheduleMapper schedules;
     private final JdbcTemplate db;
 
+    @Autowired
     public FsrsReviewService(QuestionReviewScheduleMapper schedules, JdbcTemplate db) {
+        this(schedules, db, BusinessTime.clock());
+    }
+
+    FsrsReviewService(QuestionReviewScheduleMapper schedules, JdbcTemplate db, Clock clock) {
+        this.clock = clock;
         this.schedules = schedules;
         this.db = db;
     }
@@ -48,7 +57,9 @@ public class FsrsReviewService {
             throw new IllegalArgumentException("FSRS source ID must be positive");
         }
         Rating rating = rating(correct, selfAssessedQuality);
-        schedules.insertOrRestore(userId, questionId, LEGACY_DEFAULT_EASE, LocalDate.now());
+        Instant now = clock.instant();
+        LocalDate today = LocalDate.ofInstant(now, BusinessTime.ZONE);
+        schedules.insertOrRestore(userId, questionId, LEGACY_DEFAULT_EASE, today);
         QuestionReviewSchedule schedule = schedules.selectByUserAndQuestionForUpdate(userId, questionId);
         if (schedule == null) {
             throw new IllegalStateException("Review schedule disappeared before FSRS score");
@@ -63,10 +74,8 @@ public class FsrsReviewService {
         }
         String savedCard = cardJson(schedule.getId());
         Card card = savedCard == null ? Card.builder().build() : Card.fromJson(savedCard);
-        Instant now = Instant.now();
         Card updated = SCHEDULER.reviewCard(card, rating, now).card();
-        LocalDate today = LocalDate.now();
-        LocalDate dueDate = updated.getDue().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate dueDate = updated.getDue().atZone(BusinessTime.ZONE).toLocalDate();
         int intervalDays = Math.toIntExact(Math.max(0, ChronoUnit.DAYS.between(today, dueDate)));
         int repetitions = correct ? defaultInt(schedule.getRepetitions()) + 1 : 0;
         int quality = quality(rating);

@@ -61,11 +61,11 @@ class ExamServiceTest {
     private ExamService examService;
 
     /**
-     * 固定时钟：考试时间语义固定在 Asia/Shanghai，测试结果不依赖机器系统时区，
+     * 固定时钟：考试时间语义固定在 America/New_York，测试结果不依赖机器系统时区，
      * 也不依赖真实墙钟的流逝速度。
      */
     private static final Clock FIXED_CLOCK = Clock.fixed(
-            Instant.parse("2026-01-01T00:00:00Z"), ZoneId.of("Asia/Shanghai"));
+            Instant.parse("2026-01-01T00:00:00Z"), ZoneId.of("America/New_York"));
 
     @BeforeEach
     void setUp() {

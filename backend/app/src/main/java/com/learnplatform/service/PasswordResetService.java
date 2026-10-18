@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
@@ -49,7 +50,7 @@ public class PasswordResetService {
         if (user == null) {
             return;
         }
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = BusinessTime.now();
         Long count = resetMapper.selectCount(Wrappers.<PasswordResetToken>lambdaQuery()
                 .eq(PasswordResetToken::getUserId, user.getId())
                 .gt(PasswordResetToken::getCreateTime, now.minusHours(1)));
@@ -83,7 +84,7 @@ public class PasswordResetService {
     @Transactional
     public void resetPassword(String token, String newPassword) {
         PasswordResetToken reset = findValid(token);
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = BusinessTime.now();
         int consumed = resetMapper.update(null, Wrappers.<PasswordResetToken>lambdaUpdate()
                 .set(PasswordResetToken::getUsedAt, now)
                 .eq(PasswordResetToken::getId, reset.getId())
@@ -109,7 +110,7 @@ public class PasswordResetService {
         PasswordResetToken reset = resetMapper.selectOne(Wrappers.<PasswordResetToken>lambdaQuery()
                 .eq(PasswordResetToken::getTokenHash, tokenHasher.hash(token))
                 .isNull(PasswordResetToken::getUsedAt)
-                .gt(PasswordResetToken::getExpiresAt, LocalDateTime.now()));
+                .gt(PasswordResetToken::getExpiresAt, BusinessTime.now()));
         if (reset == null) {
             throw invalidToken();
         }

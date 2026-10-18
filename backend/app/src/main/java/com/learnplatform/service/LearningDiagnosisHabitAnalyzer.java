@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.LearningDiagnosisVO;
 import com.learnplatform.entity.Course;
@@ -41,12 +42,12 @@ public class LearningDiagnosisHabitAnalyzer {
                 .filter(record -> record.getCreateTime() != null)
                 .map(record -> record.getCreateTime().toLocalDate())
                 .collect(Collectors.toSet());
-        int streak = countBackwardFrom(LocalDate.now(), dates);
-        return streak == 0 ? countBackwardFrom(LocalDate.now().minusDays(1), dates) : streak;
+        int streak = countBackwardFrom(BusinessTime.today(), dates);
+        return streak == 0 ? countBackwardFrom(BusinessTime.today().minusDays(1), dates) : streak;
     }
 
     public int calculateActiveDays(List<PracticeRecord> records, int days) {
-        LocalDateTime since = LocalDate.now().minusDays(days).atStartOfDay();
+        LocalDateTime since = BusinessTime.today().minusDays(days).atStartOfDay();
         return (int) records.stream()
                 .filter(record -> record.getCreateTime() != null && record.getCreateTime().isAfter(since))
                 .map(record -> record.getCreateTime().toLocalDate())
@@ -66,7 +67,7 @@ public class LearningDiagnosisHabitAnalyzer {
             return habit;
         }
 
-        LocalDateTime thirtyDaysAgo = LocalDate.now().minusDays(30).atStartOfDay();
+        LocalDateTime thirtyDaysAgo = BusinessTime.today().minusDays(30).atStartOfDay();
         long recent30Count = allRecords.stream()
                 .filter(record -> record.getCreateTime() != null
                         && record.getCreateTime().isAfter(thirtyDaysAgo))
@@ -179,7 +180,7 @@ public class LearningDiagnosisHabitAnalyzer {
     }
 
     private List<Map<String, Object>> buildWeeklyTrend(List<PracticeRecord> allRecords) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = BusinessTime.today();
         LocalDateTime weekStart = today.minusDays(6).atStartOfDay();
         Map<LocalDate, List<PracticeRecord>> grouped = allRecords.stream()
                 .filter(record -> record.getCreateTime() != null
@@ -198,7 +199,7 @@ public class LearningDiagnosisHabitAnalyzer {
     }
 
     private List<Map<String, Object>> buildEmptyWeeklyTrend() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = BusinessTime.today();
         List<Map<String, Object>> trend = new ArrayList<>();
         for (int day = 6; day >= 0; day--) {
             trend.add(buildTrendItem(today.minusDays(day), 0, 0));

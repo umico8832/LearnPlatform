@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -86,7 +87,7 @@ public class AiVariantReviewService {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "母题不可用于发布 AI 生成题");
         }
 
-        LocalDateTime reviewedTime = LocalDateTime.now();
+        LocalDateTime reviewedTime = BusinessTime.now();
         variant.setReviewNote(trimToNull(request.getReviewNote()));
         variant.setReviewedBy(reviewerId);
         variant.setReviewedTime(reviewedTime);

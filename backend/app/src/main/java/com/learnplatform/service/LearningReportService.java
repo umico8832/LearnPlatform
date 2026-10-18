@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.LearningReportVO;
 import com.learnplatform.entity.Course;
@@ -63,7 +64,7 @@ public class LearningReportService {
     public LearningReportVO getLearningReport(Long userId) {
         LearningReportVO vo = new LearningReportVO();
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = BusinessTime.today();
         LocalDate monthStart = today.withDayOfMonth(1);
         LocalDate lastMonthStart = today.minusMonths(1).withDayOfMonth(1);
         LocalDate lastMonthEnd = monthStart.minusDays(1);

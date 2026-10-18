@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.AiUsageOverviewVO;
 import com.learnplatform.entity.AiCallLog;
@@ -9,7 +10,6 @@ import com.learnplatform.mapper.UserMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.math.BigDecimal;
@@ -51,8 +51,8 @@ public class AiUsageService {
 
         AiUsageOverviewVO vo = new AiUsageOverviewVO();
 
-        LocalDateTime since = LocalDateTime.now().minusDays(days);
-        LocalDateTime todayStart = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
+        LocalDateTime since = BusinessTime.now().minusDays(days);
+        LocalDateTime todayStart = LocalDateTime.of(BusinessTime.today(), LocalTime.MIN);
 
         // 查询时间范围内的所有日志
         List<AiCallLog> allLogs = aiCallLogMapper.selectList(
@@ -147,7 +147,7 @@ public class AiUsageService {
                 .collect(Collectors.groupingBy(l -> l.getCreateTime().format(dtf)));
         List<AiUsageOverviewVO.DailyTrend> dailyTrends = new ArrayList<>();
         for (int i = days - 1; i >= 0; i--) {
-            String date = LocalDate.now().minusDays(i).format(dtf);
+            String date = BusinessTime.today().minusDays(i).format(dtf);
             AiUsageOverviewVO.DailyTrend dt = new AiUsageOverviewVO.DailyTrend();
             dt.setDate(date);
             List<AiCallLog> dayLogs = byDate.getOrDefault(date, Collections.emptyList());

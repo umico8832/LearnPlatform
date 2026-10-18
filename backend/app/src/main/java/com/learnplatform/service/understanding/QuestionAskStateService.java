@@ -1,5 +1,6 @@
 package com.learnplatform.service.understanding;
 
+import java.time.LocalDateTime;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
@@ -107,7 +108,7 @@ public class QuestionAskStateService {
                         row.getString("message"), row.getString("content"),
                         expired ? "CANCELLED" : row.getString("status"),
                         expired ? Integer.valueOf(1014) : (Integer) row.getObject("error_code"),
-                        row.getTimestamp("created_at").toLocalDateTime(), row.getString("suggestion") == null
+                        row.getObject("created_at", LocalDateTime.class), row.getString("suggestion") == null
                                 ? null : json.readTree(row.getString("suggestion")));
             } catch (JsonProcessingException exception) { throw new IllegalStateException("Invalid saved suggestion"); }
         }, attemptId);

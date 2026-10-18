@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.GamificationRewardFeedback;
 import com.learnplatform.entity.CourseLearningEvent;
@@ -65,7 +66,7 @@ public class CourseLearningEventService {
     event.setIdempotencyKey(eventSource + ":" + sourceRecordId);
     event.setEventVersion(EVENT_VERSION);
     event.setPayloadJson("{\"isCorrect\":" + correct + "}");
-    event.setOccurredTime(occurredTime != null ? occurredTime : LocalDateTime.now());
+    event.setOccurredTime(occurredTime != null ? occurredTime : BusinessTime.now());
     try {
       courseLearningEventMapper.insert(event);
     } catch (DuplicateKeyException ignored) {
@@ -97,7 +98,7 @@ public class CourseLearningEventService {
     event.setIdempotencyKey("AI_TUTOR_CHECK:" + sessionId);
     event.setEventVersion(EVENT_VERSION);
     event.setPayloadJson("{\"isCorrect\":" + correct + "}");
-    event.setOccurredTime(LocalDateTime.now());
+    event.setOccurredTime(BusinessTime.now());
     try {
       courseLearningEventMapper.insert(event);
     } catch (DuplicateKeyException ignored) {
@@ -144,7 +145,7 @@ public class CourseLearningEventService {
             + "\",\"answerId\":"
             + answerId
             + "}");
-    event.setOccurredTime(occurredTime != null ? occurredTime : LocalDateTime.now());
+    event.setOccurredTime(occurredTime != null ? occurredTime : BusinessTime.now());
     try {
       courseLearningEventMapper.insert(event);
     } catch (DuplicateKeyException ignored) {

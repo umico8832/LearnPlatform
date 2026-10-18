@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.TutorLearningContextVO;
 import com.learnplatform.entity.CourseLearningEvent;
@@ -15,7 +16,6 @@ import com.learnplatform.mapper.WrongQuestionMapper;
 import com.learnplatform.service.question.AutomaticGradingPolicy;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -77,7 +77,7 @@ public class TutorLearningContextService {
         LambdaQueryWrapper<QuestionReviewSchedule> dueReviewQuery = new LambdaQueryWrapper<>();
         dueReviewQuery.eq(QuestionReviewSchedule::getUserId, userId)
                 .in(QuestionReviewSchedule::getQuestionId, questionIds)
-                .le(QuestionReviewSchedule::getNextReviewDate, LocalDate.now());
+                .le(QuestionReviewSchedule::getNextReviewDate, BusinessTime.today());
         AutomaticGradingPolicy.restrictReviewCandidates(dueReviewQuery);
         context.setDueReviewCount(Math.toIntExact(reviewScheduleMapper.selectCount(dueReviewQuery)));
         CourseLearningEvent latest = courseLearningEventMapper.selectOne(

@@ -10,7 +10,7 @@
 | `GET /api/gamification/heatmap` | 最长一年、仅返回有投入的日期 |
 | `POST /api/gamification/backfill` | 幂等补算当前用户历史课程学习事件 |
 
-`summary` 的 `version` 和 `lastEventId` 是单调水位；客户端只应用不早于当前水位的概况，防止迟到的提交响应回退显示。`zoneId` 固定为 `Asia/Shanghai`。
+`summary` 的 `version` 和 `lastEventId` 是单调水位；客户端只应用不早于当前水位的概况，防止迟到的提交响应回退显示。`zoneId` 固定为 `America/New_York`。
 
 `PracticeResultVO.reward` 是该次即时判分事实的奖励反馈，包含 `eventId`、`awardedXp`、`reason`、升级、`currentCombo`、`maxCombo`、新成就和同步 `summary`。同一课程内同一学习对象同一自然日只按首个已判分事件记入经验、目标、连续日和连击：若首答错误，随后答对仍返回 `DUPLICATE_QUESTION_SAME_DAY` 与零经验。考试作答过程不返回奖励；结果页只能展示该次最终提交的聚合奖励。概况、成就和热力读取会自动初始化历史奖励，不要求客户端先请求补算。
 

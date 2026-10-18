@@ -39,6 +39,7 @@ services:
     container_name: learn-platform-mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?请在 .env 中设置 DB_PASSWORD}
+      TZ: America/New_York
       MYSQL_DATABASE: learn_platform
       MYSQL_CHARSET: utf8mb4
       MYSQL_COLLATION: utf8mb4_general_ci
@@ -65,7 +66,8 @@ services:
     ports:
       - "${BACKEND_HOST_PORT:-8080}:8080"
     environment:
-      DB_URL: jdbc:mysql://mysql:3306/learn_platform?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      DB_URL: jdbc:mysql://mysql:3306/learn_platform?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=America/New_York&allowPublicKeyRetrieval=true
+      TZ: America/New_York
       DB_USERNAME: root
       DB_PASSWORD: ${DB_PASSWORD:?请在 .env 中设置 DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET:?请在 .env 中设置 JWT_SECRET}

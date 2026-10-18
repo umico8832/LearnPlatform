@@ -1,6 +1,6 @@
 import type { HeatmapDay } from '@/api/gamification'
 
-export function learningDate(now = new Date(), zoneId = 'Asia/Shanghai') {
+export function learningDate(now = new Date(), zoneId = 'America/New_York') {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: zoneId,
     year: 'numeric',

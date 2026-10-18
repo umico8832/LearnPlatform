@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.StreamReadFeature;
@@ -148,7 +149,7 @@ public class AiVariantQuestionService {
         }
         boolean correct = answerEvaluator.isCorrect(
                 variantQuestion.getQuestionType(), userAnswer, variantQuestion.getCorrectAnswer());
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = BusinessTime.now();
         training.setUserAnswer(userAnswer);
         training.setIsCorrect(correct ? 1 : 0);
         training.setAnsweredTime(now);

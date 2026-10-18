@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
@@ -17,7 +18,6 @@ import com.learnplatform.service.question.QuestionAccessPolicy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -107,7 +107,7 @@ public class QuestionCorrectionReportService {
         report.setStatus(status);
         report.setHandlerId(handlerId);
         report.setHandlerComment(request.getHandlerComment().trim());
-        report.setHandledTime("OPEN".equals(status) ? null : LocalDateTime.now());
+        report.setHandledTime("OPEN".equals(status) ? null : BusinessTime.now());
         correctionReportMapper.updateById(report);
 
         QuestionCorrectionReportVO vo = QuestionCorrectionReportVO.fromEntity(report);

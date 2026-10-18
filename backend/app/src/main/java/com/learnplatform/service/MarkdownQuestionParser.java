@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.QuestionCreateRequest;
 import com.learnplatform.dto.QuestionImportResult;
@@ -185,7 +186,7 @@ public class MarkdownQuestionParser {
                 question.setCreateBy(createBy);
                 question.setSourceType("MARKDOWN_IMPORT");
                 question.setReviewRounds(0);
-                question.setNextReviewTime(java.time.LocalDateTime.now().plusDays(90));
+                question.setNextReviewTime(BusinessTime.now().plusDays(90));
                 question.setDeleted(0);
                 questionMapper.insert(question);
                 insertedQuestionId = question.getId();

@@ -1,5 +1,6 @@
 package com.learnplatform.security;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.entity.User;
 import com.learnplatform.mapper.UserMapper;
 import jakarta.servlet.FilterChain;
@@ -17,7 +18,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -94,7 +94,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (user.getUpdateTime() == null || issuedAt == null) {
             return true;
         }
-        Date updatedAt = Date.from(user.getUpdateTime().atZone(ZoneId.of("Asia/Shanghai")).toInstant());
+        Date updatedAt = Date.from(user.getUpdateTime().atZone(BusinessTime.ZONE).toInstant());
         return !updatedAt.after(issuedAt);
     }
 

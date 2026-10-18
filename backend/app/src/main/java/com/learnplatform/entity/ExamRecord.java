@@ -24,6 +24,8 @@ public class ExamRecord {
 
     private LocalDateTime startTime;
 
+    private LocalDateTime startInstantUtc;
+
     private LocalDateTime endTime;
 
     private Integer score;
@@ -49,6 +51,8 @@ public class ExamRecord {
     public void setUserId(Long userId) { this.userId = userId; }
     public Long getExamPaperId() { return examPaperId; }
     public void setExamPaperId(Long examPaperId) { this.examPaperId = examPaperId; }
+    public LocalDateTime getStartInstantUtc() { return startInstantUtc; }
+    public void setStartInstantUtc(LocalDateTime value) { this.startInstantUtc = value; }
     public LocalDateTime getStartTime() { return startTime; }
     public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
     public LocalDateTime getEndTime() { return endTime; }

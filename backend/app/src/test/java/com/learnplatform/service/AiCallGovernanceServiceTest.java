@@ -40,6 +40,24 @@ class AiCallGovernanceServiceTest {
         governance = new AiCallGovernanceService(config, logs, users, reservations, new ObjectMapper());
     }
 
+    @Test void quotaResetsAtNewYorkMidnightOnBothDstDatesWithUtcClock() {
+        String[][] cases = {
+                {"2026-03-08T04:59:59Z", "2026-03-07T00:00:00"},
+                {"2026-03-08T05:00:00Z", "2026-03-08T00:00:00"},
+                {"2026-03-09T04:00:00Z", "2026-03-09T00:00:00"},
+                {"2026-11-01T03:59:59Z", "2026-10-31T00:00:00"},
+                {"2026-11-01T04:00:00Z", "2026-11-01T00:00:00"},
+                {"2026-11-02T05:00:00Z", "2026-11-02T00:00:00"}
+        };
+        for (String[] row : cases) {
+            reset(logs);
+            var clock = java.time.Clock.fixed(java.time.Instant.parse(row[0]), java.time.ZoneOffset.UTC);
+            governance = new AiCallGovernanceService(config, logs, users, reservations, new ObjectMapper(), clock);
+            governance.countTodayCalls(7L);
+            verify(logs).countQuota(7L, java.time.LocalDateTime.parse(row[1]));
+        }
+    }
+
     @Test void reservesTraceRunAndFingerprintsWithoutRawContent() {
         MDC.put("traceId", "a1b2c3d4");
         try {

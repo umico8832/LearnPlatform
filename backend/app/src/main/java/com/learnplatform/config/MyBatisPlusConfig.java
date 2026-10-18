@@ -1,5 +1,6 @@
 package com.learnplatform.config;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
@@ -36,13 +37,13 @@ public class MyBatisPlusConfig {
         return new MetaObjectHandler() {
             @Override
             public void insertFill(MetaObject metaObject) {
-                this.strictInsertFill(metaObject, "createTime", LocalDateTime.class, LocalDateTime.now());
-                this.strictInsertFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
+                this.strictInsertFill(metaObject, "createTime", LocalDateTime.class, BusinessTime.now());
+                this.strictInsertFill(metaObject, "updateTime", LocalDateTime.class, BusinessTime.now());
             }
 
             @Override
             public void updateFill(MetaObject metaObject) {
-                this.strictUpdateFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
+                this.strictUpdateFill(metaObject, "updateTime", LocalDateTime.class, BusinessTime.now());
             }
         };
     }

@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
@@ -61,7 +62,7 @@ public class QuestionSourceService {
         question.setSourceType(sourceType);
         question.setSourceReference(sourceReference);
         // 新入库的题目默认 90 天后需要复审
-        question.setNextReviewTime(LocalDateTime.now().plusDays(DEFAULT_REVIEW_DAYS));
+        question.setNextReviewTime(BusinessTime.now().plusDays(DEFAULT_REVIEW_DAYS));
         question.setReviewRounds(0);
         questionMapper.updateById(question);
         log.info("题目 {} 来源设置为 {} (reference={})", questionId, sourceType, sourceReference);
@@ -81,7 +82,7 @@ public class QuestionSourceService {
 
         Question question = questionMapper.selectById(questionId);
         if (question != null) {
-            question.setLastReviewTime(LocalDateTime.now());
+            question.setLastReviewTime(BusinessTime.now());
             question.setReviewRounds(1);
             questionMapper.updateById(question);
         }
@@ -116,7 +117,7 @@ public class QuestionSourceService {
      */
     public Page<QuestionVO> getOverdueReviews(int pageNum, int pageSize) {
         Page<Question> page = new Page<>(pageNum, pageSize);
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = BusinessTime.now();
         LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Question::getVisibility, "PUBLIC");
         wrapper.and(w -> w
@@ -192,8 +193,8 @@ public class QuestionSourceService {
         }
 
         // 更新复审信息
-        question.setLastReviewTime(LocalDateTime.now());
-        question.setNextReviewTime(LocalDateTime.now().plusDays(DEFAULT_REVIEW_DAYS));
+        question.setLastReviewTime(BusinessTime.now());
+        question.setNextReviewTime(BusinessTime.now().plusDays(DEFAULT_REVIEW_DAYS));
         question.setReviewRounds(question.getReviewRounds() != null ? question.getReviewRounds() + 1 : 1);
         questionMapper.updateById(question);
 

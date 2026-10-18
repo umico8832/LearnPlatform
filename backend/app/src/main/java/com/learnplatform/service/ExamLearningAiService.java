@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.ExamLearningAnswerResultVO;
@@ -10,7 +11,6 @@ import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.ExamLearningAiInteractionMapper;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -70,7 +70,7 @@ public class ExamLearningAiService {
                 ? null : latestAnswer.getCorrect() ? 1 : 0);
         interaction.setInteractionType(normalizedType);
         interaction.setStatus(PROCESSING);
-        interaction.setStartTime(LocalDateTime.now());
+        interaction.setStartTime(BusinessTime.now());
         interactionMapper.insert(interaction);
 
         try {
@@ -86,7 +86,7 @@ public class ExamLearningAiService {
                 throw new BusinessException(ResultCode.BUSINESS_ERROR, "AI 服务未返回有效辅导内容，请稍后重试");
             }
             interaction.setStatus(SUCCEEDED);
-            interaction.setCompleteTime(LocalDateTime.now());
+            interaction.setCompleteTime(BusinessTime.now());
             interactionMapper.updateById(interaction);
             courseLearningEventService.recordPaperLearningAiAssistance(
                     userId, session.getCourseId(), questionId, interaction.getId(), sessionId,
@@ -95,7 +95,7 @@ public class ExamLearningAiService {
         } catch (RuntimeException exception) {
             interaction.setStatus(FAILED);
             interaction.setErrorMessage(truncate(exception.getMessage()));
-            interaction.setCompleteTime(LocalDateTime.now());
+            interaction.setCompleteTime(BusinessTime.now());
             interactionMapper.updateById(interaction);
             throw exception;
         }

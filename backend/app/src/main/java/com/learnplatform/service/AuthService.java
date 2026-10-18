@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
@@ -18,7 +19,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Locale;
 
 /**
@@ -67,7 +67,7 @@ public class AuthService {
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(email);
-        user.setEmailVerifiedAt(LocalDateTime.now());
+        user.setEmailVerifiedAt(BusinessTime.now());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setNickname(request.getNickname() != null ? request.getNickname() : request.getUsername());
         user.setRole("USER");

@@ -1,9 +1,11 @@
 package com.learnplatform.service.gamification;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.learnplatform.dto.GamificationAchievementVO;
 import com.learnplatform.dto.GamificationRewardFeedback;
 import com.learnplatform.dto.GamificationSummaryVO;
 import com.learnplatform.entity.CourseLearningEvent;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -15,17 +17,13 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 /** Incremental reward projection; first use replays server-graded facts in business-time order. */
 @Service
 public class GamificationRewardService {
-  public static final ZoneId LEARNING_ZONE = ZoneId.of("Asia/Shanghai");
-  /**
-   * Course event {@code DATETIME} values were written from the application's existing no-zone JVM
-   * clock. Read their fields in that same source clock before converting them to the learning day.
-   */
-  public static final ZoneId SOURCE_CLOCK_ZONE = ZoneId.systemDefault();
+  public static final ZoneId LEARNING_ZONE = BusinessTime.ZONE;
   private static final List<Definition> ACHIEVEMENTS =
       List.of(
           new Definition("FIRST_ANSWER", "启程一题", "完成首次真实作答", "answers", 1),
@@ -40,9 +38,16 @@ public class GamificationRewardService {
           new Definition("STREAK_30", "月度坚持", "连续学习 30 天", "streak", 30),
           new Definition("TUTOR_FIRST", "问有所获", "完成首次 Tutor 理解检查", "tutor", 1),
           new Definition("STAGE_FIRST", "阶段见证", "完成首次阶段测评作答", "stage", 1));
+  private final Clock clock;
   private final JdbcTemplate jdbc;
 
+  @Autowired
   public GamificationRewardService(JdbcTemplate jdbc) {
+    this(jdbc, BusinessTime.clock());
+  }
+
+  GamificationRewardService(JdbcTemplate jdbc, Clock clock) {
+    this.clock = clock;
     this.jdbc = jdbc;
   }
 
@@ -262,7 +267,7 @@ public class GamificationRewardService {
                 + " user_id=? AND event_date=? AND xp>0",
             Integer.class,
             userId,
-            LocalDate.now(LEARNING_ZONE));
+            LocalDate.ofInstant(clock.instant(), BusinessTime.ZONE));
     GamificationSummaryVO summary = new GamificationSummaryVO();
     summary.setTotalXp(xp);
     summary.setLevel(level);
@@ -321,7 +326,7 @@ public class GamificationRewardService {
   }
 
   private int activeStreak(int streak, LocalDate day) {
-    LocalDate today = LocalDate.now(LEARNING_ZONE);
+    LocalDate today = LocalDate.ofInstant(clock.instant(), BusinessTime.ZONE);
     return day != null && (day.equals(today) || day.equals(today.minusDays(1))) ? streak : 0;
   }
 
@@ -342,11 +347,8 @@ public class GamificationRewardService {
     return e;
   }
 
-  static LocalDate learningDate(LocalDateTime sourceClockTime) {
-    return sourceClockTime
-        .atZone(SOURCE_CLOCK_ZONE)
-        .withZoneSameInstant(LEARNING_ZONE)
-        .toLocalDate();
+  static LocalDate learningDate(LocalDateTime localTime) {
+    return localTime.toLocalDate();
   }
 
   private Map<String, Object> profile(Long user) {

@@ -1,5 +1,6 @@
 package com.learnplatform.service.tutor;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
@@ -89,7 +90,7 @@ public class TutorAgentPlanService {
         }
         TutorAgentPlanConfirmation confirmation = new TutorAgentPlanConfirmation();
         confirmation.setMessageId(message.getId());
-        confirmation.setConfirmedTime(LocalDateTime.now());
+        confirmation.setConfirmedTime(BusinessTime.now());
         confirmations.insert(confirmation);
         TutorAgentPlanConfirmation persisted = confirmations.selectByMessageId(message.getId());
         return new TutorAgentPlanVO(steps, true, persisted.getConfirmedTime(), true);

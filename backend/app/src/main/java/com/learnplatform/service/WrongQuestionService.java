@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -118,7 +119,7 @@ public class WrongQuestionService {
         QueryWrapper<WrongQuestion> wrapper = scope(userId, courseId, questionId, knowledgePointId);
         wrapper.eq(masteryLevel != null, "mastery_level", masteryLevel);
         if (dueOnly) {
-            wrapper.apply(NEXT_REVIEW_DATE_SQL + " <= {0}", LocalDate.now());
+            wrapper.apply(NEXT_REVIEW_DATE_SQL + " <= {0}", BusinessTime.today());
         }
         if ("nextReviewDate".equals(sortBy)) {
             wrapper.orderByAsc(NEXT_REVIEW_DATE_SQL + " IS NULL", NEXT_REVIEW_DATE_SQL);
@@ -241,7 +242,7 @@ public class WrongQuestionService {
     public Map<String, Object> getWrongQuestionStats(Long userId, Long courseId, Long questionId,
                                                      Long knowledgePointId) {
         QueryWrapper<WrongQuestion> wrapper = scope(userId, courseId, questionId, knowledgePointId);
-        LocalDate today = LocalDate.now();
+        LocalDate today = BusinessTime.today();
         List<WrongQuestion> list = wrongQuestionMapper.selectList(wrapper);
         long dueCount = wrongQuestionMapper.selectCount(
                 wrapper.clone().apply(NEXT_REVIEW_DATE_SQL + " <= {0}", today));

@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
@@ -18,7 +19,6 @@ import com.learnplatform.mapper.QuestionOptionMapper;
 import com.learnplatform.service.question.AutomaticGradingPolicy;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -70,7 +70,7 @@ public class QuestionMutationService {
         question.setSourceReference(sourceReference);
         question.setOriginQuestionId(originQuestionId);
         question.setReviewRounds(0);
-        question.setNextReviewTime(LocalDateTime.now().plusDays(90));
+        question.setNextReviewTime(BusinessTime.now().plusDays(90));
         question.setDeleted(0);
         questionMapper.insert(question);
         replaceOptions(question.getId(), request, false);

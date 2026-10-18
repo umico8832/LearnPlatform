@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
@@ -92,7 +93,7 @@ public class CourseStageAssessmentService {
         }
         assessment.setQuestionCount(questions.size());
         assessment.setActiveSessionKey("ACTIVE");
-        assessment.setStartTime(LocalDateTime.now());
+        assessment.setStartTime(BusinessTime.now());
         assessmentMapper.insert(assessment);
 
         int sortOrder = 1;
@@ -127,7 +128,7 @@ public class CourseStageAssessmentService {
         }
 
         int correctCount = 0;
-        LocalDateTime answeredTime = LocalDateTime.now();
+        LocalDateTime answeredTime = BusinessTime.now();
         for (CourseStageAssessmentQuestion item : items) {
             String userAnswer = answers.get(item.getId());
             boolean correct = answerEvaluator.isCorrect(

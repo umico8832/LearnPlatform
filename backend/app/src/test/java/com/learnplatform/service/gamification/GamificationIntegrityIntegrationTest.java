@@ -69,6 +69,31 @@ class GamificationIntegrityIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void dstMidnightCountsCalendarDaysAndExpiresStreakUsingBusinessClock() {
+        for (String transition : java.util.List.of("2026-03-08T07:00:00Z", "2026-11-01T06:00:00Z")) {
+            cleanUp();
+            var instant = java.time.Instant.parse(transition);
+            var day = instant.atZone(com.learnplatform.common.time.BusinessTime.ZONE).toLocalDate();
+            var fixedRewards = new GamificationRewardService(jdbc,
+                    java.time.Clock.fixed(instant, java.time.ZoneOffset.UTC));
+            fact(991, day.minusDays(2).atTime(23, 59), "PRACTICE_ANSWERED", "{\"isCorrect\":true}");
+            fact(992, day.minusDays(1).atTime(23, 59), "PRACTICE_ANSWERED", "{\"isCorrect\":true}");
+            fact(993, day.atTime(0, 1), "PRACTICE_ANSWERED", "{\"isCorrect\":true}");
+            var summary = fixedRewards.summary(userId);
+            assertEquals(3, summary.getStreakDays());
+            assertEquals(1, summary.getTodayAnsweredCount());
+            var tomorrow = day.plusDays(1).atStartOfDay(com.learnplatform.common.time.BusinessTime.ZONE).toInstant();
+            var tomorrowRewards = new GamificationRewardService(jdbc,
+                    java.time.Clock.fixed(tomorrow, java.time.ZoneOffset.UTC));
+            assertEquals(3, tomorrowRewards.summary(userId).getStreakDays());
+            assertEquals(0, tomorrowRewards.summary(userId).getTodayAnsweredCount());
+            var expired = day.plusDays(2).atStartOfDay(com.learnplatform.common.time.BusinessTime.ZONE).toInstant();
+            assertEquals(0, new GamificationRewardService(jdbc,
+                    java.time.Clock.fixed(expired, java.time.ZoneOffset.UTC)).summary(userId).getStreakDays());
+        }
+    }
+
+    @Test
     void replayAcceptsOnlyGradedBooleanFactsAndKeepsYesterdayStreak() {
         LocalDate today = LocalDate.now(GamificationRewardService.LEARNING_ZONE);
         fact(101, today.minusDays(2).atTime(23, 59), "PRACTICE_ANSWERED", "{\"isCorrect\":true}");
@@ -125,7 +150,7 @@ class GamificationIntegrityIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    void liveRewardUsesTheSameShanghaiDayAndPreservesTheSourceDatetimeInMysql() {
+    void liveRewardUsesTheSameNewYorkDayAndPreservesTheSourceDatetimeInMysql() {
         LocalDate today = LocalDate.now(GamificationRewardService.LEARNING_ZONE);
         rewards.summary(userId);
         LocalDateTime learningTime = today.atTime(0, 30);
@@ -138,8 +163,7 @@ class GamificationIntegrityIntegrationTest extends IntegrationTestBase {
         assertEquals(1, feedback.getSummary().getStreakDays());
         assertEquals(today, jdbc.queryForObject(
                 "SELECT event_date FROM gamification_xp_ledger WHERE event_id=?", LocalDate.class, event.getId()));
-        assertEquals(learningTime.atZone(GamificationRewardService.LEARNING_ZONE)
-                        .withZoneSameInstant(GamificationRewardService.SOURCE_CLOCK_ZONE).toLocalDateTime(),
+        assertEquals(learningTime,
                 jdbc.queryForObject(
                         "SELECT occurred_time FROM gamification_xp_ledger WHERE event_id=?",
                         LocalDateTime.class, event.getId()));
@@ -227,7 +251,7 @@ class GamificationIntegrityIntegrationTest extends IntegrationTestBase {
     private CourseLearningEvent fact(long questionId, LocalDateTime learningTime, String type, String payload) {
         long id = IDS.incrementAndGet();
         LocalDateTime sourceClockTime = learningTime.atZone(GamificationRewardService.LEARNING_ZONE)
-                .withZoneSameInstant(GamificationRewardService.SOURCE_CLOCK_ZONE).toLocalDateTime();
+                .withZoneSameInstant(GamificationRewardService.LEARNING_ZONE).toLocalDateTime();
         jdbc.update("INSERT INTO course_learning_event(id,user_id,course_id,event_type,event_source,subject_type,subject_id,source_record_id,idempotency_key,event_version,payload_json,occurred_time) VALUES(?,?,1,?,'PRACTICE','QUESTION',?,?,?,1,?,?)",
                 id, userId, type, questionId, id, "integrity:" + id, payload, sourceClockTime);
         CourseLearningEvent event = new CourseLearningEvent();

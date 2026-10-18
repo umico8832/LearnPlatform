@@ -20,7 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -86,12 +86,12 @@ public class ExamRecordViewService {
                 || (record.getStatus() != COMPLETED && record.getStatus() != PENDING_REVIEW)) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "考试尚未完成");
         }
-        ExamRecordVO view = toRecordVO(record, LocalDateTime.now(clock));
+        ExamRecordVO view = toRecordVO(record, clock.instant());
         view.setAnswers(toAnswerViews(record));
         return view;
     }
 
-    ExamRecordVO toRecordVO(ExamRecord record, LocalDateTime serverTime) {
+    ExamRecordVO toRecordVO(ExamRecord record, Instant serverTime) {
         ExamRecordVO view = new ExamRecordVO();
         view.setId(record.getId());
         view.setExamPaperId(record.getExamPaperId());
@@ -105,7 +105,7 @@ public class ExamRecordViewService {
         if (paper != null) {
             fillPaperMetadata(view, paper);
             if (record.getStartTime() != null && paper.getDuration() != null) {
-                LocalDateTime deadline = record.getStartTime().plusMinutes(paper.getDuration());
+                Instant deadline = ExamSessionService.deadline(record, paper);
                 view.setDeadline(deadline.atZone(ExamSessionService.EXAM_ZONE).toOffsetDateTime());
                 if (record.getStatus() == ACTIVE && !serverTime.isBefore(deadline)) {
                     view.setStatus(ExamSessionService.TIMED_OUT);

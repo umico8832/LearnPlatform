@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.ReviewContextVO;
 import com.learnplatform.dto.ReviewScheduleVO;
@@ -68,7 +69,7 @@ public class ReviewScheduleQueryService {
             return List.of();
         }
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = BusinessTime.today();
         LambdaQueryWrapper<QuestionReviewSchedule> wrapper = new LambdaQueryWrapper<>();
         wrapper.notInSql(QuestionReviewSchedule::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
         wrapper.eq(QuestionReviewSchedule::getUserId, userId)
@@ -106,7 +107,7 @@ public class ReviewScheduleQueryService {
      * 获取复习统计概览。
      */
     public ReviewStatsVO getReviewStats(Long userId) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = BusinessTime.today();
         ReviewStatsVO stats = new ReviewStatsVO();
 
         LambdaQueryWrapper<QuestionReviewSchedule> allWrapper = new LambdaQueryWrapper<>();
@@ -145,7 +146,7 @@ public class ReviewScheduleQueryService {
 
         List<ReviewScheduleVO> views = cardViewService.toViews(userId,
                 reviewScheduleMapper.selectList(wrapper),
-                LocalDate.now());
+                BusinessTime.today());
         if (courseId == null) {
             return views;
         }
@@ -161,7 +162,7 @@ public class ReviewScheduleQueryService {
         ReviewContextVO context = new ReviewContextVO();
         context.setStats(getReviewStats(userId));
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = BusinessTime.today();
         LambdaQueryWrapper<QuestionReviewSchedule> difficultWrapper = new LambdaQueryWrapper<>();
         difficultWrapper.notInSql(QuestionReviewSchedule::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
         difficultWrapper.eq(QuestionReviewSchedule::getUserId, userId)

@@ -16,7 +16,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 
@@ -31,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class FsrsReviewServiceIntegrationTest extends IntegrationTestBase {
     private static final long USER = 989303L;
     @Autowired FsrsReviewService service;
+    @Autowired com.learnplatform.mapper.QuestionReviewScheduleMapper schedules;
     @Autowired JdbcTemplate jdbc;
     private long questionId;
 
@@ -64,7 +64,7 @@ class FsrsReviewServiceIntegrationTest extends IntegrationTestBase {
                 SELECT fsrs_card_json FROM question_review_schedule WHERE user_id=? AND question_id=?
                 """, String.class, USER, questionId);
         assertNotNull(cardJson);
-        LocalDate fsrsDue = Card.fromJson(cardJson).getDue().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate fsrsDue = Card.fromJson(cardJson).getDue().atZone(com.learnplatform.common.time.BusinessTime.ZONE).toLocalDate();
         assertEquals(fsrsDue, jdbc.queryForObject("""
                 SELECT next_review_date FROM question_review_schedule WHERE user_id=? AND question_id=?
                 """, LocalDate.class, USER, questionId));
@@ -81,6 +81,20 @@ class FsrsReviewServiceIntegrationTest extends IntegrationTestBase {
                 SELECT fsrs_last_rating FROM question_review_schedule WHERE user_id=? AND question_id=?
                 """, String.class, USER, questionId));
         assertEquals(2, countEvents());
+    }
+
+    @Test void fixedUtcClockSchedulesByNewYorkDateAcrossBothDstMidnights() {
+        for (String timestamp : java.util.List.of("2026-03-08T04:59:59Z", "2026-03-08T05:00:00Z",
+                "2026-11-01T03:59:59Z", "2026-11-01T04:00:00Z")) {
+            cleanup();
+            var instant = java.time.Instant.parse(timestamp);
+            var fixed = new FsrsReviewService(schedules, jdbc,
+                    java.time.Clock.fixed(instant, java.time.ZoneOffset.UTC));
+            var result = fixed.score(USER, questionId, FsrsReviewService.Source.PRACTICE, 999L, true, null);
+            assertEquals(instant.atZone(com.learnplatform.common.time.BusinessTime.ZONE).toLocalDate(), result.getLastReviewDate());
+            assertEquals(Card.fromJson(result.getFsrsCardJson()).getDue()
+                    .atZone(com.learnplatform.common.time.BusinessTime.ZONE).toLocalDate(), result.getNextReviewDate());
+        }
     }
 
     @Test void concurrentRetryOfOneSourceChangesCardOnce() throws Exception {

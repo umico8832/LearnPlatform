@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
@@ -45,7 +46,7 @@ public class CourseOverviewService {
             throw new BusinessException(ResultCode.NOT_FOUND, "课程不存在");
         }
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = BusinessTime.today();
         CourseOverviewVO overview = factMapper.selectTotals(userId, courseId, today);
         overview.setCourseId(courseId);
         overview.setCourseName(course.getName());
@@ -70,7 +71,7 @@ public class CourseOverviewService {
         if (pageNum < 1 || pageSize < 1 || pageSize > 50) {
             throw new BusinessException(ResultCode.VALIDATION_ERROR, "页码必须大于 0，每页数量须为 1–50");
         }
-        LocalDate today = LocalDate.now();
+        LocalDate today = BusinessTime.today();
         long total = factMapper.countKnowledgePoints(userId, courseId, today);
         Page<CourseKnowledgePointFactVO> page = new Page<>(pageNum, pageSize, total);
         long offset = ((long) pageNum - 1) * pageSize;

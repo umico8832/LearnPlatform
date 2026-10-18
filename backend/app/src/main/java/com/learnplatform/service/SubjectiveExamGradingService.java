@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
@@ -21,7 +22,6 @@ import com.learnplatform.mapper.SubjectiveGradingPointMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -110,7 +110,7 @@ public class SubjectiveExamGradingService {
         answer.setReviewerId(reviewerId);
         answer.setReviewComment(request.getReviewComment());
         answer.setReviewDetailJson(writeReviewDetail(submitted));
-        answer.setReviewedAt(LocalDateTime.now());
+        answer.setReviewedAt(BusinessTime.now());
         answerMapper.updateById(answer);
 
         List<ExamAnswer> allAnswers = answerMapper.selectList(new LambdaQueryWrapper<ExamAnswer>()

@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
@@ -15,7 +16,6 @@ import com.learnplatform.service.question.QuestionAccessPolicy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 
 /**
  * AI 学习资产交互服务：记录资产查看并管理当前缓存版本的变式训练。
@@ -81,7 +81,7 @@ public class AiAssetEngagementService {
         }
         if (!"COMPLETED".equals(training.getStatus())) {
             training.setStatus("COMPLETED");
-            training.setCompletedTime(LocalDateTime.now());
+            training.setCompletedTime(BusinessTime.now());
             aiVariantTrainingMapper.updateById(training);
         }
         return toVariantTrainingVO(training);

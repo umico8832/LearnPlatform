@@ -1,5 +1,6 @@
 package com.learnplatform.mapper;
 
+import java.time.LocalDateTime;
 import com.learnplatform.entity.QuestionUnderstandingAttempt;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -153,8 +154,7 @@ public class QuestionUnderstandingMapper {
                         result.getLong("content_id"), (Long) result.getObject("variant_id"),
                         result.getLong("practice_record_id"),
                         result.getBoolean("hint_chain_enabled"),
-                        result.getTimestamp("solution_revealed_time") == null ? null
-                                : result.getTimestamp("solution_revealed_time").toLocalDateTime()), attemptId);
+                        result.getObject("solution_revealed_time", LocalDateTime.class)), attemptId);
         return rows.isEmpty() ? null : rows.getFirst();
     }
 

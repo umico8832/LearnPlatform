@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.AdminStatisticsVO;
 import com.learnplatform.dto.StatisticsVO;
@@ -80,7 +81,7 @@ public class StatisticsService {
         vo.setCorrectRate(allRecords.isEmpty() ? 0 : Math.round(correct * 1000.0 / allRecords.size()) / 10.0);
 
         // 今日刷题
-        LocalDateTime todayStart = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
+        LocalDateTime todayStart = LocalDateTime.of(BusinessTime.today(), LocalTime.MIN);
         long today = allRecords.stream()
                 .filter(r -> r.getCreateTime() != null && r.getCreateTime().isAfter(todayStart)).count();
         vo.setTodayPractice(today);
@@ -105,7 +106,7 @@ public class StatisticsService {
      */
     @Cacheable(value = "dailyTrend", key = "#userId")
     public List<Map<String, Object>> getDailyTrend(Long userId) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = BusinessTime.today();
         LocalDateTime start = today.minusDays(6).atStartOfDay();
 
         LambdaQueryWrapper<PracticeRecord> wrapper = new LambdaQueryWrapper<>();
@@ -185,7 +186,7 @@ public class StatisticsService {
     @Cacheable(value = "adminStatistics", key = "'global'")
     public AdminStatisticsVO getAdminStatistics() {
         AdminStatisticsVO vo = new AdminStatisticsVO();
-        LocalDate today = LocalDate.now();
+        LocalDate today = BusinessTime.today();
         LocalDateTime todayStart = today.atStartOfDay();
         LocalDateTime weekStart = today.minusDays(6).atStartOfDay();
 
@@ -258,14 +259,14 @@ public class StatisticsService {
                 .collect(Collectors.toSet());
 
         int streak = 0;
-        LocalDate date = LocalDate.now();
+        LocalDate date = BusinessTime.today();
         while (dates.contains(date.toString())) {
             streak++;
             date = date.minusDays(1);
         }
         // 如果今天没做题但昨天做了，也从昨天开始算
         if (streak == 0) {
-            date = LocalDate.now().minusDays(1);
+            date = BusinessTime.today().minusDays(1);
             while (dates.contains(date.toString())) {
                 streak++;
                 date = date.minusDays(1);

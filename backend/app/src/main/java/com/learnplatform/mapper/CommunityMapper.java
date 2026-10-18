@@ -1,5 +1,6 @@
 package com.learnplatform.mapper;
 
+import java.time.LocalDateTime;
 import com.learnplatform.dto.community.CommunityContracts.Attachment;
 import com.learnplatform.dto.community.CommunityContracts.Category;
 import com.learnplatform.dto.community.CommunityContracts.Comment;
@@ -60,7 +61,7 @@ public class CommunityMapper {
                             r.getString("source_note"),
                             r.getString("status"),
                             r.getString("review_note"),
-                            r.getTimestamp("created_at").toLocalDateTime(),
+                            r.getObject("created_at", LocalDateTime.class),
                             r.getLong("like_count"),
                             r.getLong("comment_count"),
                             r.getBoolean("liked"),
@@ -232,7 +233,7 @@ public class CommunityMapper {
                                 r.getString("author_name"),
                                 r.getString("decision"),
                                 r.getString("note"),
-                                r.getTimestamp("created_at").toLocalDateTime()),
+                                r.getObject("created_at", LocalDateTime.class)),
                 postId);
     }
 
@@ -267,7 +268,7 @@ public class CommunityMapper {
                                 r.getString("reply_to_name"),
                                 r.getBoolean("deleted") ? "" : r.getString("body"),
                                 r.getBoolean("deleted"),
-                                r.getTimestamp("created_at").toLocalDateTime(),
+                                r.getObject("created_at", LocalDateTime.class),
                                 r.getLong("like_count"),
                                 r.getBoolean("liked")),
                 actor,

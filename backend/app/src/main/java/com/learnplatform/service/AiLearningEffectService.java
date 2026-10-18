@@ -14,6 +14,7 @@ import com.learnplatform.mapper.AiVariantTrainingMapper;
 import com.learnplatform.mapper.PracticeRecordMapper;
 import org.springframework.stereotype.Service;
 
+import com.learnplatform.common.time.BusinessTime;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -64,7 +65,7 @@ public class AiLearningEffectService {
 
     public AiLearningEffectVO getLearningEffect(Integer requestedDays) {
         int days = normalizeDays(requestedDays);
-        LocalDate periodEnd = LocalDate.now();
+        LocalDate periodEnd = BusinessTime.today();
         LocalDate periodStart = periodEnd.minusDays(days - 1L);
         LocalDateTime startTime = periodStart.atStartOfDay();
         LocalDateTime endExclusive = periodEnd.plusDays(1).atStartOfDay();

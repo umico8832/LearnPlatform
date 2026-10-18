@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.LearningDiagnosisVO;
 import com.learnplatform.entity.Course;
@@ -59,7 +60,7 @@ public class LearningDiagnosisErrorPatternAnalyzer {
                 .filter(this::isRepeatedError)
                 .count());
 
-        LocalDateTime weekAgo = LocalDate.now().minusDays(7).atStartOfDay();
+        LocalDateTime weekAgo = BusinessTime.today().minusDays(7).atStartOfDay();
         summary.setRecentNewWrongCount((int) allWrongs.stream()
                 .filter(wrong -> wrong.getCreateTime() != null && wrong.getCreateTime().isAfter(weekAgo))
                 .count());
@@ -280,7 +281,7 @@ public class LearningDiagnosisErrorPatternAnalyzer {
     }
 
     private List<Map<String, Object>> buildWeeklyErrorTrend(List<WrongQuestion> allWrongs) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = BusinessTime.today();
         List<Map<String, Object>> trend = new ArrayList<>();
         for (int week = 3; week >= 0; week--) {
             LocalDate weekStart = today.minusWeeks(week).with(java.time.DayOfWeek.MONDAY);

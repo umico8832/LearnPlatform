@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
@@ -35,7 +36,7 @@ public class EmailVerificationService {
     @Transactional
     public void sendRegistrationCode(String rawEmail, String ipAddress, String userAgent) {
         String email = normalizeEmail(rawEmail);
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = BusinessTime.now();
         Long recentCount = mapper.selectCount(Wrappers.<EmailVerification>lambdaQuery()
                 .eq(EmailVerification::getEmail, email)
                 .eq(EmailVerification::getPurpose, PURPOSE_REGISTER)
@@ -71,7 +72,7 @@ public class EmailVerificationService {
     @Transactional
     public VerificationTicketResponse verifyRegistrationCode(String rawEmail, String code) {
         String email = normalizeEmail(rawEmail);
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = BusinessTime.now();
         EmailVerification verification = mapper.selectOne(Wrappers.<EmailVerification>lambdaQuery()
                 .eq(EmailVerification::getEmail, email)
                 .eq(EmailVerification::getPurpose, PURPOSE_REGISTER)
@@ -102,7 +103,7 @@ public class EmailVerificationService {
 
     public void consumeRegistrationTicket(String rawEmail, String ticket) {
         String email = normalizeEmail(rawEmail);
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = BusinessTime.now();
         int updated = mapper.update(null, Wrappers.<EmailVerification>lambdaUpdate()
                 .set(EmailVerification::getUsedAt, now)
                 .eq(EmailVerification::getEmail, email)

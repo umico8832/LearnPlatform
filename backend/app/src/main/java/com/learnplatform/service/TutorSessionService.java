@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -23,7 +24,6 @@ import com.learnplatform.mapper.UserCourseMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 /** 已审查内容驱动的确定性 Tutor，会话与判分均不信任客户端。 */
@@ -100,7 +100,7 @@ public class TutorSessionService {
         int updated = sessionMapper.update(null, new LambdaUpdateWrapper<TutorSession>()
                 .eq(TutorSession::getId, session.getId()).isNull(TutorSession::getCheckCorrect)
                 .set(TutorSession::getCheckAnswer, request.getOptionId()).set(TutorSession::getCheckCorrect, correct)
-                .set(TutorSession::getCheckAnsweredAt, LocalDateTime.now()));
+                .set(TutorSession::getCheckAnsweredAt, BusinessTime.now()));
         if (updated == 0) {
             TutorSession persisted = sessionMapper.selectById(session.getId());
             return result(Boolean.TRUE.equals(persisted.getCheckCorrect()), content, persisted.getCourseId());

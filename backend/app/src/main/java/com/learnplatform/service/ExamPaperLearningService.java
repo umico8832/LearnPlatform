@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
@@ -21,7 +22,6 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -78,7 +78,7 @@ public class ExamPaperLearningService {
         session.setStatus(ACTIVE);
         session.setCurrentQuestionId(paperQuestions.get(0).getQuestionId());
         session.setActiveSessionKey(activeKey);
-        session.setStartTime(LocalDateTime.now());
+        session.setStartTime(BusinessTime.now());
         try {
             sessionMapper.insert(session);
         } catch (DuplicateKeyException exception) {
@@ -140,7 +140,7 @@ public class ExamPaperLearningService {
         answer.setIsCorrect(manualSelfReview ? null : (correct ? 1 : 0));
         answer.setScore(manualSelfReview ? null : (correct ? scoreOf(paperQuestion) : 0));
         answer.setAnswerTime(request.getAnswerTime());
-        answer.setCreateTime(LocalDateTime.now());
+        answer.setCreateTime(BusinessTime.now());
         learningAnswerMapper.insert(answer);
 
         session.setCurrentQuestionId(nextQuestionId(paperQuestions, question.getId()));
@@ -173,7 +173,7 @@ public class ExamPaperLearningService {
         }
         session.setStatus(COMPLETED);
         session.setActiveSessionKey(null);
-        session.setCompleteTime(LocalDateTime.now());
+        session.setCompleteTime(BusinessTime.now());
         sessionMapper.updateById(session);
         return toSessionVO(session, paper, paperQuestions, answers);
     }

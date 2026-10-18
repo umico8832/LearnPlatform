@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
@@ -17,6 +18,8 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.stream.Collectors;
@@ -28,7 +31,7 @@ public class ExamSessionService {
     private static final Logger log = LoggerFactory.getLogger(ExamSessionService.class);
     static final int ACTIVE = 0;
     static final int TIMED_OUT = 2;
-    static final ZoneId EXAM_ZONE = ZoneId.of("Asia/Shanghai");
+    static final ZoneId EXAM_ZONE = BusinessTime.ZONE;
 
     private final ExamRecordMapper examRecordMapper;
     private final ExamPaperMapper examPaperMapper;
@@ -60,7 +63,7 @@ public class ExamSessionService {
         Page<ExamRecord> result = examRecordMapper.selectPage(page, new LambdaQueryWrapper<ExamRecord>()
                 .eq(ExamRecord::getUserId, userId)
                 .orderByDesc(ExamRecord::getCreateTime));
-        LocalDateTime now = currentExamTime();
+        Instant now = clock.instant();
         Page<ExamRecordVO> voPage = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
         voPage.setRecords(result.getRecords().stream()
                 .map(record -> examRecordViewService.toRecordVO(record, now))
@@ -83,8 +86,8 @@ public class ExamSessionService {
         LocalDateTime now = currentExamTime();
         ExamRecord existing = lockActiveRecord(activeKey);
         if (existing != null) {
-            if (!isExpired(existing, paper, now)) {
-                return examRecordViewService.toRecordVO(existing, now);
+            if (!isExpired(existing, paper, clock.instant())) {
+                return examRecordViewService.toRecordVO(existing, clock.instant());
             }
             markTimedOut(existing, now);
         }
@@ -93,6 +96,7 @@ public class ExamSessionService {
         record.setUserId(userId);
         record.setExamPaperId(examPaperId);
         record.setStartTime(now);
+        record.setStartInstantUtc(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
         record.setTotalScore(paper.getTotalScore());
         record.setStatus(ACTIVE);
         record.setActiveExamKey(activeKey);
@@ -103,9 +107,9 @@ public class ExamSessionService {
             if (concurrent == null || concurrent.getStatus() == null || concurrent.getStatus() != ACTIVE) {
                 throw exception;
             }
-            return examRecordViewService.toRecordVO(concurrent, currentExamTime());
+            return examRecordViewService.toRecordVO(concurrent, clock.instant());
         }
-        return examRecordViewService.toRecordVO(record, now);
+        return examRecordViewService.toRecordVO(record, clock.instant());
     }
 
     public ExamRecordVO getExamSession(Long examRecordId, Long userId) {
@@ -121,15 +125,24 @@ public class ExamSessionService {
             throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在");
         }
         LocalDateTime now = currentExamTime();
-        if (record.getStatus() == ACTIVE && isExpired(record, paper, now)) {
+        if (record.getStatus() == ACTIVE && isExpired(record, paper, clock.instant())) {
             markTimedOut(record, now);
         }
-        return examRecordViewService.toRecordVO(record, now);
+        return examRecordViewService.toRecordVO(record, clock.instant());
     }
 
-    static boolean isExpired(ExamRecord record, ExamPaper paper, LocalDateTime now) {
-        int duration = paper.getDuration() != null ? paper.getDuration() : 60;
-        return record.getStartTime() == null || !now.isBefore(record.getStartTime().plusMinutes(duration));
+    static Instant deadline(ExamRecord record, ExamPaper paper) {
+        if (record.getStartTime() == null) {
+            return Instant.MIN;
+        }
+        Instant start = record.getStartInstantUtc() == null
+                ? record.getStartTime().atZone(BusinessTime.ZONE).toInstant()
+                : record.getStartInstantUtc().toInstant(ZoneOffset.UTC);
+        return start.plusSeconds((paper.getDuration() != null ? paper.getDuration() : 60) * 60L);
+    }
+
+    static boolean isExpired(ExamRecord record, ExamPaper paper, Instant now) {
+        return !now.isBefore(deadline(record, paper));
     }
 
     private boolean canAccessPaper(ExamPaper paper, Long userId) {
@@ -155,7 +168,7 @@ public class ExamSessionService {
     }
 
     private LocalDateTime currentExamTime() {
-        return LocalDateTime.now(clock);
+        return LocalDateTime.ofInstant(clock.instant(), BusinessTime.ZONE);
     }
 
     private void markTimedOut(ExamRecord record, LocalDateTime now) {

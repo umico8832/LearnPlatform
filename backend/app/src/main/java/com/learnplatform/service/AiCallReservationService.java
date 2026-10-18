@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
@@ -34,7 +35,7 @@ public class AiCallReservationService {
             throw new BusinessException(ResultCode.NOT_FOUND, "用户不存在");
         }
         int limit = user.getAiDailyQuota() == null ? config.getDailyQuota() : user.getAiDailyQuota();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = BusinessTime.now();
         boolean followup = "question_ask".equals(entry.getFunctionType()) && entry.getRunId() != null
                 && logs.selectCount(new LambdaQueryWrapper<AiCallLog>()
                 .eq(AiCallLog::getUserId, entry.getUserId()).eq(AiCallLog::getFunctionType, "question_ask")

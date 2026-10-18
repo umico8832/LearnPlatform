@@ -70,7 +70,7 @@ public class ExamSubmissionService {
         }
 
         LocalDateTime now = currentExamTime();
-        if (ExamSessionService.isExpired(record, paper, now)) {
+        if (ExamSessionService.isExpired(record, paper, clock.instant())) {
             markTimedOut(record, now);
             throw new ExamTimedOutException();
         }
@@ -90,7 +90,7 @@ public class ExamSubmissionService {
     }
 
     private LocalDateTime currentExamTime() {
-        return LocalDateTime.now(clock);
+        return LocalDateTime.ofInstant(clock.instant(), ExamSessionService.EXAM_ZONE);
     }
 
     private void markTimedOut(ExamRecord record, LocalDateTime now) {

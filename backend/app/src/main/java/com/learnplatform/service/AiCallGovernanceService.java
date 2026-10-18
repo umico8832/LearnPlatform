@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.ai.model.ModelRequest;
@@ -19,7 +20,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.Clock;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -33,14 +36,22 @@ import java.util.UUID;
 @Service
 public class AiCallGovernanceService {
     private static final Logger log = LoggerFactory.getLogger(AiCallGovernanceService.class);
+    private final Clock clock;
     private final AiConfig config;
     private final AiCallLogMapper logs;
     private final UserMapper users;
     private final AiCallReservationService reservations;
     private final ObjectMapper json;
 
+    @Autowired
     public AiCallGovernanceService(AiConfig config, AiCallLogMapper logs, UserMapper users,
                                    AiCallReservationService reservations, ObjectMapper json) {
+        this(config, logs, users, reservations, json, BusinessTime.clock());
+    }
+
+    AiCallGovernanceService(AiConfig config, AiCallLogMapper logs, UserMapper users,
+                            AiCallReservationService reservations, ObjectMapper json, Clock clock) {
+        this.clock = clock;
         this.config = config;
         this.logs = logs;
         this.users = users;
@@ -134,7 +145,7 @@ public class AiCallGovernanceService {
     }
 
     public long countTodayCalls(Long userId) {
-        LocalDateTime start = LocalDate.now().atStartOfDay();
+        LocalDateTime start = LocalDate.ofInstant(clock.instant(), BusinessTime.ZONE).atStartOfDay();
         return logs.countQuota(userId, start);
     }
 

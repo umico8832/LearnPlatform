@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
@@ -16,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Arrays;
 
 /**
@@ -150,7 +150,7 @@ public class QuestionSubmissionService {
         submission.setStatus(request.getStatus());
         submission.setReviewComment(request.getReviewComment());
         submission.setReviewedBy(reviewerId);
-        submission.setReviewedTime(LocalDateTime.now());
+        submission.setReviewedTime(BusinessTime.now());
         submissionMapper.updateById(submission);
 
         log.info("管理员 {} 审核投稿 {}, 结果: {}", reviewerId, submissionId,

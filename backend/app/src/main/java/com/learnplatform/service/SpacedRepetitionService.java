@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
@@ -16,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -56,7 +56,7 @@ public class SpacedRepetitionService {
      */
     public void addToReviewPlan(Long userId, Long questionId) {
         int changed = reviewScheduleMapper.insertOrRestore(
-                userId, questionId, DEFAULT_EASE_FACTOR, LocalDate.now());
+                userId, questionId, DEFAULT_EASE_FACTOR, BusinessTime.today());
         if (changed > 0) {
             log.info("题目加入复习计划: userId={}, questionId={}", userId, questionId);
         }
@@ -91,7 +91,7 @@ public class SpacedRepetitionService {
         for (WrongQuestion wq : wrongQuestions) {
             if (!existingQuestionIds.contains(wq.getQuestionId())) {
                 int changed = reviewScheduleMapper.insertOrRestore(
-                        userId, wq.getQuestionId(), DEFAULT_EASE_FACTOR, LocalDate.now());
+                        userId, wq.getQuestionId(), DEFAULT_EASE_FACTOR, BusinessTime.today());
                 if (changed > 0) {
                     syncedCount++;
                 }
@@ -168,7 +168,7 @@ public class SpacedRepetitionService {
         schedule.setEaseFactor(DEFAULT_EASE_FACTOR);
         schedule.setIntervalDays(0);
         schedule.setRepetitions(0);
-        schedule.setNextReviewDate(LocalDate.now());
+        schedule.setNextReviewDate(BusinessTime.today());
         schedule.setLastReviewDate(null);
         schedule.setLastQuality(null);
         schedule.setTotalReviews(0);

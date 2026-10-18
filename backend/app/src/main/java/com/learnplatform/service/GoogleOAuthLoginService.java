@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.exception.OAuthLoginException;
@@ -62,7 +63,7 @@ public class GoogleOAuthLoginService {
             throw new OAuthLoginException("email_unverified", "Google 邮箱尚未验证");
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = BusinessTime.now();
         UserIdentity identity = identityMapper.selectOne(Wrappers.<UserIdentity>lambdaQuery()
                 .eq(UserIdentity::getProvider, PROVIDER)
                 .eq(UserIdentity::getProviderSubject, subject));
@@ -93,7 +94,7 @@ public class GoogleOAuthLoginService {
         if (rawTicket == null || rawTicket.isBlank()) {
             throw invalidTicket();
         }
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = BusinessTime.now();
         OAuthLoginTicket ticket = ticketMapper.selectOne(Wrappers.<OAuthLoginTicket>lambdaQuery()
                 .eq(OAuthLoginTicket::getTokenHash, tokenHasher.hash(rawTicket))
                 .isNull(OAuthLoginTicket::getUsedAt)

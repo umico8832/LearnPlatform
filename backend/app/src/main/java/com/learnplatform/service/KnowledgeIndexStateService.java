@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
@@ -155,7 +156,7 @@ public class KnowledgeIndexStateService {
     private void updateBundleReview(KnowledgeContentBundle bundle, String status, Long actorId, String note) {
         bundle.setReviewStatus(status);
         var update = new UpdateWrapper<KnowledgeContentBundle>().eq("id", bundle.getId())
-                .set("review_status", status).set("reviewed_by", actorId).set("reviewed_at", LocalDateTime.now())
+                .set("review_status", status).set("reviewed_by", actorId).set("reviewed_at", BusinessTime.now())
                 .set("review_note", note);
         if (bundles.update(null, update) != 1) {
             throw new IllegalStateException("Knowledge review update failed");
