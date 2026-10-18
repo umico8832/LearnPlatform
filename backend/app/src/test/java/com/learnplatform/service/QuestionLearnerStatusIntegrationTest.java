@@ -19,6 +19,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -121,15 +122,26 @@ class QuestionLearnerStatusIntegrationTest extends IntegrationTestBase {
     }
 
     @Test void increasingPageSizeDoesNotAddPerQuestionQueries() {
+        var latest = db.queryForObject("SELECT MAX(create_time) FROM question", LocalDateTime.class);
+        db.update("""
+                INSERT INTO question(content,question_type,course_id,status,visibility,create_time)
+                SELECT '分页计数对照题','SINGLE_CHOICE',course_id,1,'PUBLIC',? FROM question WHERE id=?
+                """, latest.plusSeconds(1), questionId);
+        db.update("UPDATE question SET create_time=? WHERE id=?", latest.plusSeconds(2), questionId);
         for (Boolean filter : new Boolean[] {null, true, false}) {
+            db.update("UPDATE question_understanding_content SET review_status=? WHERE question_id=?",
+                    Boolean.FALSE.equals(filter) ? "PENDING" : "REVIEWED", questionId);
             sessions.clearCache();
             long before = statementCount();
-            questions.getEnabledQuestionPage(1, 1, null, null, null, null, null, filter, USER);
+            var single = questions.getEnabledQuestionPage(1, 1, null, null, null, null, null, filter, USER);
             long small = statementCount() - before;
             sessions.clearCache();
             before = statementCount();
             var large = questions.getEnabledQuestionPage(1, 50, null, null, null, null, null, filter, USER);
             long many = statementCount() - before;
+            assertEquals(questionId, single.getRecords().getFirst().getId());
+            assertEquals(questionId, large.getRecords().getFirst().getId());
+            assertEquals(!Boolean.FALSE.equals(filter), single.getRecords().getFirst().getHasUnderstanding());
             assertTrue(large.getRecords().size() > 1);
             assertTrue(many <= small + 1, "query count grew with page size: " + small + " -> " + many);
         }
