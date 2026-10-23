@@ -317,7 +317,7 @@ test('部分交卷后未答题保留零分且不会进入错题与复习', async
   await expect(page.locator('.score-number')).toHaveText('0')
   await expect(page.locator('.result-tag').filter({ hasText: '错误' })).toHaveCount(1)
   await expect(page.locator('.result-tag').filter({ hasText: '未作答' })).toHaveCount(2)
-  await expect(page.locator('.answers-summary')).toContainText('1 题需复习')
+  await expect(page.locator('.answers-heading .muted')).toContainText('1 题需复习')
 
   await page.goto('/wrong-questions')
   const wrongRows = page.getByRole('region', { name: '错题列表' }).getByRole('article')

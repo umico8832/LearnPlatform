@@ -1,174 +1,143 @@
 <template>
-  <div class="exam-result-container">
-    <LpStatePanel
-      :state="resultState"
-      :title="stateTitle"
-      :description="stateDescription"
-      loading-label="正在读取考试结果"
-      retry-label="重试读取"
-      :retrying="resultState === 'loading'"
-      @retry="loadResult"
-    >
-      <template #actions>
-        <el-button type="primary" @click="router.push({ name: 'ExamList' })">返回考试列表</el-button>
-      </template>
-
-      <template v-if="result">
-        <section class="result-header" aria-labelledby="result-title">
-          <article class="score-card">
-            <h1 id="result-title" class="result-title">{{ result.examTitle }}</h1>
-
-            <div class="score-main" aria-live="polite">
-              <div class="score-circle" :aria-label="scoreAriaLabel">
-                <span class="score-label">{{ scoreLabel }}</span>
-                <span class="score-number">{{ displayScore }}</span>
-                <span v-if="result.score != null" class="score-total">/ {{ result.totalScore }}</span>
-              </div>
-              <div v-if="scoreRate != null" class="score-rate" :aria-label="`${rateLabel} ${scoreRate}%`">
-                <span class="rate-value">{{ scoreRate }}%</span>
-                <span class="rate-label">{{ rateLabel }}</span>
-              </div>
-            </div>
-
-            <el-alert
-              v-if="isPendingReview"
-              title="客观题已判分，主观题正在等待管理员按评分点复核；当前分数为暂定分。"
-              type="warning"
-              :closable="false"
-              show-icon
-              class="grading-alert"
-            />
-
-            <dl class="score-meta">
-              <div class="meta-item">
-                <dt class="meta-label">用时</dt>
-                <dd class="meta-value">{{ timeUsed }}</dd>
-              </div>
-              <div class="meta-item">
-                <dt class="meta-label">题数</dt>
-                <dd class="meta-value">{{ answers.length }} 题</dd>
-              </div>
-              <div class="meta-item">
-                <dt class="meta-label">需复习</dt>
-                <dd class="meta-value">{{ wrongAnswers.length }} 题</dd>
-              </div>
-            </dl>
-
-            <div v-if="isOfficialPaper" class="source-panel">
-              <div class="source-heading">
-                <strong>官方试卷 · {{ officialPaperTitle }}</strong>
-                <el-tag :type="result.sourceVerified ? 'success' : 'warning'" size="small">
-                  {{ result.sourceVerified ? '来源已核验' : '来源未核验' }}
-                </el-tag>
-              </div>
-              <p v-if="result.sourceReference">来源：{{ result.sourceReference }}</p>
-            </div>
-            <section
-              v-if="result.submissionReward"
-              class="exam-reward"
-              data-testid="gamification-exam-reward"
-              aria-label="学习记录"
-            >
-              <strong>学习记录</strong><span>+{{ result.submissionReward.awardedXp }} 经验</span
-              ><span v-if="result.submissionReward.leveledUp">升级至 Lv.{{ result.submissionReward.levelAfter }}</span
-              ><small v-if="result.submissionReward.newAchievements.length"
-                >解锁：{{ result.submissionReward.newAchievements.map((item) => item.name).join('、') }}</small
-              >
-            </section>
-
-            <div class="score-actions">
-              <el-button @click="router.push({ name: 'ExamList', query: { tab: 'records' } })">返回考试列表</el-button>
-              <el-button v-if="result.courseId" type="primary" @click="goToCourseOverview">返回课程总览</el-button>
-            </div>
-          </article>
-        </section>
-
-        <section class="answers-section" aria-labelledby="answer-detail-title">
-          <div class="answers-heading">
+  <div class="lt exam-result-container" data-appearance="dark">
+    <div v-if="resultState === 'loading'" class="state" role="status" aria-busy="true">正在读取考试结果</div>
+    <div v-else-if="resultState !== 'ready'" class="state" :role="resultState === 'error' ? 'alert' : 'status'">
+      <h1>{{ stateTitle }}</h1>
+      <p>{{ stateDescription }}</p>
+      <LtButton v-if="resultState === 'error'" @click="loadResult">重试读取</LtButton>
+    </div>
+    <template v-else-if="result"
+      ><section class="result-header" aria-labelledby="result-title">
+        <h1 id="result-title" class="result-title">{{ result.examTitle }}</h1>
+        <div class="score-main">
+          <div class="score-circle" :aria-label="scoreAriaLabel">
+            <span class="score-label">{{ scoreLabel }}</span>
             <div>
-              <h2 id="answer-detail-title" class="answers-title">答题详情</h2>
-              <p class="answers-summary">{{ answers.length }} 题 · {{ wrongAnswers.length }} 题需复习</p>
+              <strong class="score-number">{{ displayScore }}</strong
+              ><span v-if="result.score != null" class="score-total"> / {{ result.totalScore }}</span>
             </div>
-            <nav v-if="answers.length > 1" class="answer-navigation" aria-label="答题导航">
-              <a v-for="(answer, idx) in answers" :key="answer.questionId" :href="`#answer-${answer.questionId}`">
-                {{ answerLabel(answer, idx) }}
-              </a>
-            </nav>
           </div>
-
-          <article
-            v-for="(answer, idx) in answers"
-            :id="`answer-${answer.questionId}`"
-            :key="answer.questionId"
-            class="answer-item"
-            tabindex="-1"
+          <div v-if="scoreRate != null" class="score-rate" :aria-label="`${rateLabel} ${scoreRate}%`">
+            <strong class="rate-value">{{ scoreRate }}%</strong><span class="rate-label">{{ rateLabel }}</span>
+          </div>
+        </div>
+        <p v-if="isPendingReview" class="grading-alert" role="status">
+          客观题已判分，主观题正在等待管理员按评分点复核；当前分数为暂定分。
+        </p>
+        <dl class="score-meta">
+          <div>
+            <dt>用时</dt>
+            <dd>{{ timeUsed }}</dd>
+          </div>
+          <div>
+            <dt>题数</dt>
+            <dd>{{ answers.length }} 题</dd>
+          </div>
+          <div>
+            <dt>需复习</dt>
+            <dd>{{ wrongAnswers.length }} 题</dd>
+          </div>
+        </dl>
+        <div v-if="isOfficialPaper" class="source-panel">
+          <div class="source-heading">
+            <strong>官方试卷 · {{ officialPaperTitle }}</strong
+            ><span :data-tone="result.sourceVerified ? 'success' : 'warning'">{{
+              result.sourceVerified ? '来源已核验' : '来源未核验'
+            }}</span>
+          </div>
+          <p v-if="result.sourceReference">来源：{{ result.sourceReference }}</p>
+        </div>
+        <section
+          v-if="result.submissionReward"
+          class="exam-reward"
+          data-testid="gamification-exam-reward"
+          aria-label="学习记录"
+        >
+          <strong>学习记录</strong><span>+{{ result.submissionReward.awardedXp }} 经验</span
+          ><span v-if="result.submissionReward.leveledUp">升级至 Lv.{{ result.submissionReward.levelAfter }}</span
+          ><small v-if="result.submissionReward.newAchievements.length"
+            >解锁：{{ result.submissionReward.newAchievements.map((item) => item.name).join('、') }}</small
           >
-            <div class="answer-card">
-              <div v-if="answer.sectionTitle" class="answer-section-title">{{ answer.sectionTitle }}</div>
-              <div class="answer-header">
-                <h3 :id="`answer-heading-${answer.questionId}`" class="q-index">题目 {{ answerLabel(answer, idx) }}</h3>
-                <el-tag size="small">{{ getTypeLabel(answer.questionType) }}</el-tag>
-                <span class="q-score-tag">满分 {{ answer.fullScore }} 分</span>
-                <el-tag :type="answerStatusType(answer)" size="small" class="result-tag">
-                  {{ answerStatusLabel(answer) }}
-                </el-tag>
-                <span class="earned-score">{{ answer.score == null ? '待评分' : `得 ${answer.score} 分` }}</span>
-              </div>
-
-              <div class="answer-content"><MarkdownRenderer :content="answer.content" /></div>
-              <dl class="answer-detail">
-                <div class="detail-row">
-                  <dt class="detail-label">我的答案</dt>
-                  <dd
-                    :class="[
-                      'detail-value',
-                      answer.isCorrect === 1 ? 'correct' : answer.isCorrect === 0 ? 'wrong' : '',
-                    ]"
-                  >
-                    {{ answer.userAnswer || '未作答' }}
-                  </dd>
-                </div>
-                <div v-if="answer.gradingStatus !== 'PENDING' && answer.isCorrect !== 1" class="detail-row">
-                  <dt class="detail-label">正确答案</dt>
-                  <dd class="detail-value correct">{{ answer.correctAnswer }}</dd>
-                </div>
-                <div v-if="answer.gradingStatus !== 'PENDING' && answer.analysis" class="detail-row">
-                  <dt class="detail-label">解析</dt>
-                  <dd class="detail-value analysis"><MarkdownRenderer :content="answer.analysis" /></dd>
-                </div>
-                <div v-if="answer.gradingStatus !== 'PENDING' && answer.reviewComment" class="detail-row">
-                  <dt class="detail-label">批阅意见</dt>
-                  <dd class="detail-value analysis"><MarkdownRenderer :content="answer.reviewComment" /></dd>
-                </div>
-              </dl>
-
-              <div
-                v-if="answer.gradingStatus !== 'PENDING' && answer.isCorrect === 0 && result.courseId"
-                class="answer-actions"
-              >
-                <el-button
-                  type="primary"
-                  plain
-                  :aria-label="`复习错题 ${answerLabel(answer, idx)}`"
-                  @click="reviewWrongAnswer(answer.questionId)"
-                >
-                  复习此错题
-                </el-button>
-              </div>
-            </div>
-          </article>
         </section>
-      </template>
-    </LpStatePanel>
+        <div v-if="result.courseId" class="score-actions">
+          <LtButton @click="goToCourseOverview">查看课程总览</LtButton>
+        </div>
+      </section>
+      <section class="answers-section" aria-labelledby="answer-detail-title">
+        <div class="answers-heading">
+          <div>
+            <h2 id="answer-detail-title">答题详情</h2>
+            <p class="muted">{{ answers.length }} 题 · {{ wrongAnswers.length }} 题需复习</p>
+          </div>
+          <nav v-if="answers.length > 1" class="answer-navigation" aria-label="答题导航">
+            <a v-for="(answer, idx) in answers" :key="answer.questionId" :href="`#answer-${answer.questionId}`">{{
+              answerLabel(answer, idx)
+            }}</a>
+          </nav>
+        </div>
+        <article
+          v-for="(answer, idx) in answers"
+          :id="`answer-${answer.questionId}`"
+          :key="answer.questionId"
+          class="answer-item"
+          tabindex="-1"
+        >
+          <div class="answer-card">
+            <p v-if="answer.sectionTitle" class="muted">{{ answer.sectionTitle }}</p>
+            <div class="answer-header">
+              <h3 :id="`answer-heading-${answer.questionId}`">题目 {{ answerLabel(answer, idx) }}</h3>
+              <span>{{ getTypeLabel(answer.questionType) }}</span
+              ><span>满分 {{ answer.fullScore }} 分</span
+              ><span class="result-tag" :data-tone="answerStatusType(answer)"
+                ><span class="verdict-dot" aria-hidden="true" />{{ answerStatusLabel(answer) }}</span
+              ><span>{{ answer.score == null ? '待评分' : `得 ${answer.score} 分` }}</span>
+            </div>
+            <div class="answer-content"><MarkdownRenderer :content="answer.content" /></div>
+          </div>
+          <div class="answer-detail">
+            <div class="answer-chips">
+              <p
+                class="answer-chip"
+                :data-tone="answer.isCorrect === 1 ? 'success' : answer.isCorrect === 0 ? 'warning' : 'neutral'"
+              >
+                <span>我的答案</span><strong>{{ answer.userAnswer || '未作答' }}</strong>
+              </p>
+              <p
+                v-if="answer.gradingStatus !== 'PENDING' && answer.isCorrect !== 1"
+                class="answer-chip"
+                data-tone="success"
+              >
+                <span>正确答案</span><strong>{{ answer.correctAnswer }}</strong>
+              </p>
+            </div>
+            <div v-if="answer.gradingStatus !== 'PENDING' && answer.analysis" class="analysis">
+              <h4>解析</h4>
+              <MarkdownRenderer :content="answer.analysis" />
+            </div>
+            <div v-if="answer.gradingStatus !== 'PENDING' && answer.reviewComment" class="analysis">
+              <h4>批阅意见</h4>
+              <MarkdownRenderer :content="answer.reviewComment" />
+            </div>
+          </div>
+          <div
+            v-if="answer.gradingStatus !== 'PENDING' && answer.isCorrect === 0 && result.courseId"
+            class="answer-actions"
+          >
+            <LtButton :aria-label="`复习错题 ${answerLabel(answer, idx)}`" @click="reviewWrongAnswer(answer.questionId)"
+              >复习此错题</LtButton
+            >
+          </div>
+        </article>
+      </section>
+    </template>
   </div>
 </template>
-
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getExamResult, type ExamAnswerVO, type ExamRecordVO } from '@/api/exam'
-import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
-import LpStatePanel from '@/components/ui/LpStatePanel.vue'
+import MarkdownRenderer from '@/views/question/QuestionProse.vue'
+import { LtButton } from '@/components/living'
 import { errorMessage } from '@/utils/errors'
 import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
 
@@ -208,7 +177,7 @@ function answerStatusLabel(answer: ExamAnswerVO) {
 function answerStatusType(answer: ExamAnswerVO) {
   if (answer.gradingStatus === 'PENDING') return 'warning'
   if (answer.gradingStatus === 'UNANSWERED') return 'info'
-  return answer.isCorrect === 1 ? 'success' : 'danger'
+  return answer.isCorrect === 1 ? 'success' : 'warning'
 }
 const isPendingReview = computed(() => result.value?.status === 3)
 const isOfficialPaper = computed(() => result.value?.paperType === 'OFFICIAL_EXAM')
@@ -327,368 +296,223 @@ onBeforeUnmount(() => {
   unsubscribeAuth()
 })
 </script>
-
 <style scoped>
 .exam-result-container {
-  width: min(100%, 960px);
-  margin: 0 auto;
-  padding: var(--lp-space-4) 0;
+  display: grid;
+  gap: var(--lt-space-8);
+  color: var(--lt-label);
 }
-
-.result-loading-shell {
-  min-height: 320px;
+h1 {
+  margin: 0;
+  font-size: var(--lt-text-title1);
+  line-height: var(--lt-leading-tight);
+  overflow-wrap: anywhere;
 }
-
+h2 {
+  margin: 0;
+  font-size: var(--lt-text-title2);
+}
+h3,
+h4 {
+  margin: 0;
+  font-size: var(--lt-text-body);
+}
+p {
+  margin: 0;
+  line-height: var(--lt-leading-reading);
+}
+.muted,
+dt {
+  color: var(--lt-label-2);
+}
 .result-header {
-  margin-bottom: var(--lp-space-6);
+  padding: var(--lt-space-6);
+  background: var(--lt-surface);
+  border-radius: var(--lt-radius-xl);
+  box-shadow: var(--lt-shadow-card);
+  display: grid;
+  gap: var(--lt-space-5);
 }
-
-.score-card {
-  padding: var(--lp-space-8) var(--lp-space-6) var(--lp-space-6);
-  text-align: center;
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
-}
-
-.result-title,
-.answers-title {
-  margin: var(--lp-space-1) 0 0;
-  color: var(--lp-text);
-  font-size: var(--lp-text-2xl);
-  line-height: var(--lp-leading-snug);
-}
-
 .score-main {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: var(--lp-space-10);
-  margin: var(--lp-space-8) 0 var(--lp-space-6);
+  gap: var(--lt-space-9);
 }
-
+.score-label,
+.rate-label {
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+}
 .score-circle,
 .score-rate {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.score-number {
-  color: var(--lp-primary);
-  font-size: var(--lp-text-5xl);
-  font-weight: var(--lp-weight-bold);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
-.score-total,
-.rate-label {
-  margin-top: var(--lp-space-1);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-base);
-}
-
-.rate-value {
-  color: var(--lp-success);
-  font-size: var(--lp-text-4xl);
-  font-weight: var(--lp-weight-bold);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
-.grading-alert {
-  margin: 0 auto var(--lp-space-4);
-  text-align: left;
-}
-
-.score-meta {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--lp-space-4);
-  margin: 0;
-  padding: var(--lp-space-4) 0;
-  border-top: var(--lp-border-hairline);
-  border-bottom: var(--lp-border-hairline);
+  gap: var(--lt-space-2);
 }
-
-.meta-item {
+.score-number {
+  font: 600 var(--lt-text-display)/var(--lt-leading-tight) var(--lt-font-rounded);
+}
+.score-total {
+  color: var(--lt-label-2);
+  font-family: var(--lt-font-rounded);
+}
+.rate-value {
+  font: 600 var(--lt-text-title2)/var(--lt-leading-tight) var(--lt-font-rounded);
+}
+.grading-alert {
+  padding: var(--lt-space-4);
+  background: var(--lt-orange-soft);
+  color: var(--lt-orange-text);
+  border-radius: var(--lt-radius-md);
+}
+.score-meta {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--lp-space-1);
-}
-
-.meta-label {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
-}
-
-.meta-value {
+  gap: var(--lt-space-8);
   margin: 0;
-  color: var(--lp-text);
-  font-size: var(--lp-text-base);
-  font-weight: var(--lp-weight-semibold);
 }
-
+dd {
+  margin: var(--lt-space-2) 0 0;
+  font-family: var(--lt-font-rounded);
+}
 .source-panel {
-  margin-top: var(--lp-space-4);
-  padding: var(--lp-space-3) var(--lp-space-4);
-  color: var(--lp-text-secondary);
-  text-align: left;
-  background: var(--lp-surface-soft);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
+  display: grid;
+  gap: var(--lt-space-2);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
-
-.source-heading {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-3);
-  flex-wrap: wrap;
-}
-
-.source-heading strong {
-  color: var(--lp-text);
-}
-
-.source-panel p {
-  margin: var(--lp-space-2) 0 0;
-  overflow-wrap: anywhere;
-  font-size: var(--lp-text-sm);
-  line-height: var(--lp-leading-body);
-}
-
-.score-actions {
-  display: flex;
-  justify-content: center;
-  gap: var(--lp-space-3);
-  flex-wrap: wrap;
-  margin-top: var(--lp-space-5);
-}
+.source-heading,
 .exam-reward {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--lp-space-3);
-  margin-top: var(--lp-space-4);
-  padding: var(--lp-space-3);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
+  align-items: center;
+  gap: var(--lt-space-3);
 }
-.exam-reward strong {
-  color: var(--lp-text);
+[data-tone='success'] {
+  color: var(--lt-green-text);
 }
-.exam-reward small {
-  flex-basis: 100%;
-  color: var(--lp-text-secondary);
+[data-tone='warning'] {
+  color: var(--lt-orange-text);
 }
-
+.exam-reward {
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+}
+.answers-section {
+  display: grid;
+  gap: var(--lt-space-6);
+}
 .answers-heading {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--lp-space-4);
-  margin-bottom: var(--lp-space-4);
+  display: grid;
+  gap: var(--lt-space-4);
 }
-
-.answers-heading > div:first-child {
-  flex: 0 0 auto;
-  min-width: max-content;
-}
-
-.answers-summary {
-  margin: var(--lp-space-2) 0 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-}
-
 .answer-navigation {
   display: flex;
+  gap: var(--lt-space-2);
   flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--lp-space-2);
 }
-
 .answer-navigation a {
-  padding: var(--lp-space-1) var(--lp-space-2);
-  color: var(--lp-text-secondary);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-sm);
-  font-size: var(--lp-text-xs);
+  display: grid;
+  place-items: center;
+  padding: var(--lt-space-2);
+  min-width: var(--lt-control-md);
+  background: var(--lt-fill-2);
+  border-radius: var(--lt-radius-sm);
+  color: var(--lt-label);
   text-decoration: none;
 }
-
-.answer-navigation a:hover {
-  color: var(--lp-text);
-  background: var(--lp-surface-inset);
-}
-
-.answer-navigation a:focus-visible {
-  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
-  outline-offset: var(--lp-focus-offset);
-  box-shadow: var(--lp-shadow-focus);
-}
-
 .answer-item {
-  margin-bottom: var(--lp-space-3);
-  scroll-margin-top: calc(var(--lp-header-height) + var(--lp-space-4));
+  display: grid;
+  gap: var(--lt-space-4);
+  scroll-margin-top: var(--lt-space-10);
+  min-width: 0;
 }
-
 .answer-card {
-  padding: var(--lp-space-5);
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
+  padding: var(--lt-space-6);
+  border-radius: var(--lt-radius-xl);
+  background: var(--lt-surface);
+  box-shadow: var(--lt-shadow-card);
 }
-
-.answer-section-title {
-  margin-bottom: var(--lp-space-2);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  font-weight: var(--lp-weight-bold);
-}
-
 .answer-header {
   display: flex;
-  align-items: center;
-  gap: var(--lp-space-2);
   flex-wrap: wrap;
-  margin-bottom: var(--lp-space-3);
+  align-items: center;
+  gap: var(--lt-space-3);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
-
-.q-index {
-  margin: 0;
-  color: var(--lp-text);
-  font-size: var(--lp-text-lg);
-  font-weight: var(--lp-weight-bold);
+.answer-header h3 {
+  color: var(--lt-label);
 }
-
-.q-score-tag {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
-}
-
 .result-tag {
-  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lt-space-2);
 }
-
-.earned-score {
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  font-weight: var(--lp-weight-semibold);
+.verdict-dot {
+  width: var(--lt-space-2);
+  height: var(--lt-space-2);
+  border-radius: var(--lt-radius-pill);
+  background: currentColor;
 }
-
 .answer-content {
-  margin-bottom: var(--lp-space-4);
-  color: var(--lp-text);
-  font-size: var(--lp-text-md);
-  line-height: var(--lp-leading-relaxed);
-  white-space: pre-wrap;
+  margin-top: var(--lt-space-5);
 }
-
 .answer-detail {
   display: grid;
-  gap: var(--lp-space-3);
-  margin: 0;
-  padding: var(--lp-space-4);
-  background: var(--lp-surface-soft);
-  border-radius: var(--lp-radius-md);
+  gap: var(--lt-space-5);
 }
-
-.detail-row {
-  display: grid;
-  grid-template-columns: 88px minmax(0, 1fr);
-  gap: var(--lp-space-2);
+.answer-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lt-space-3);
 }
-
-.detail-label {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
+.answer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lt-space-2);
+  padding: var(--lt-space-1) var(--lt-space-2) var(--lt-space-1) var(--lt-space-3);
+  border-radius: var(--lt-radius-pill);
+  font-size: var(--lt-text-footnote);
+  max-width: 100%;
+  background: var(--lt-fill-2);
 }
-
-.detail-value {
-  margin: 0;
-  font-size: var(--lp-text-base);
-  line-height: var(--lp-leading-body);
+.answer-chip strong {
+  min-width: var(--lt-space-6);
+  padding: var(--lt-space-1) var(--lt-space-2);
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill);
+  color: var(--lt-label);
+  font-family: var(--lt-font-rounded);
   overflow-wrap: anywhere;
 }
-
-.detail-value.correct {
-  color: var(--lp-success);
+.answer-chip[data-tone='success'] {
+  background: var(--lt-green-soft);
 }
-
-.detail-value.wrong {
-  color: var(--lp-danger);
+.answer-chip[data-tone='warning'] {
+  background: var(--lt-orange-soft);
 }
-
-.detail-value.analysis {
-  color: var(--lp-text-secondary);
+.answer-chip[data-tone='success'] strong {
+  background: var(--lt-green);
+  color: var(--lt-on-tint);
 }
-
-.answer-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: var(--lp-space-4);
+.answer-chip[data-tone='warning'] strong {
+  background: var(--lt-orange);
+  color: var(--lt-on-tint);
 }
-
-@media (max-width: 640px) {
-  .exam-result-container {
-    padding: 0;
-  }
-
-  .score-card {
-    padding: var(--lp-space-6) var(--lp-space-4) var(--lp-space-5);
-  }
-
-  .score-main {
-    gap: var(--lp-space-6);
-  }
-
-  .score-number {
-    font-size: var(--lp-text-4xl);
-  }
-
-  .rate-value {
-    font-size: var(--lp-text-3xl);
-  }
-
-  .score-actions,
-  .answers-heading {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .answer-navigation {
-    justify-content: flex-start;
-  }
-
-  .score-actions .el-button,
-  .answer-actions .el-button {
-    width: 100%;
-    min-height: 44px;
-    margin-left: 0;
-  }
-
-  .answer-header {
-    align-items: flex-start;
-  }
-
-  .result-tag {
-    margin-left: 0;
-  }
-
-  .detail-row {
-    grid-template-columns: 1fr;
-    gap: var(--lp-space-1);
-  }
+.analysis {
+  font-size: var(--lt-text-reading);
+  line-height: var(--lt-leading-reading);
 }
-
-@media (max-width: 420px) {
-  .score-meta {
-    grid-template-columns: 1fr;
-  }
+.analysis h4 {
+  margin-bottom: var(--lt-space-2);
+}
+.state {
+  padding: var(--lt-space-8);
+  border-radius: var(--lt-radius-xl);
+  background: var(--lt-surface);
+  text-align: center;
+}
+.state p {
+  margin-block: var(--lt-space-4);
+  color: var(--lt-label-2);
 }
 </style>

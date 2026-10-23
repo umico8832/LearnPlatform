@@ -211,7 +211,7 @@ export const learnerRoutes: RouteRecordRaw[] = [
         path: 'exams/result/:recordId',
         name: 'ExamResult',
         component: () => import('@/views/exam/ExamResultView.vue'),
-        meta: { title: '考试结果', focusTitle: '考试结果' },
+        meta: { title: '考试结果', focusTitle: '考试结果', living: true },
       },
     ],
   },

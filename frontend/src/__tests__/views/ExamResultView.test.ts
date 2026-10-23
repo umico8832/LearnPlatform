@@ -125,7 +125,7 @@ describe('ExamResultView authoritative review', () => {
     })
     await flushPromises()
 
-    const courseButton = wrapper.findAll('button').find((button) => button.text().includes('返回课程总览'))!
+    const courseButton = wrapper.findAll('button').find((button) => button.text().includes('查看课程总览'))!
     const reviewButton = wrapper.findAll('button').find((button) => button.text().includes('复习此错题'))!
     expect(courseButton).toBeTruthy()
     expect(wrapper.findAll('button').filter((button) => button.text().includes('复习此错题'))).toHaveLength(1)
@@ -234,7 +234,7 @@ describe('ExamResultView authoritative review', () => {
     expect(wrapper.findAll('.result-tag').map((tag) => tag.text())).toEqual(['错误', '未作答'])
     expect(wrapper.text()).toContain('2 题 · 1 题需复习')
     expect(wrapper.findAll('button').filter((button) => button.text().includes('复习此错题'))).toHaveLength(1)
-    expect(wrapper.findAll('.answer-item')[1].find('.detail-value').classes()).not.toContain('wrong')
+    expect(wrapper.findAll('.answer-item')[1].get('.answer-chip').attributes('data-tone')).toBe('neutral')
   })
 
   it('以原位错误恢复失败请求，重试后读取同一权威结果', async () => {
@@ -263,7 +263,7 @@ describe('ExamResultView authoritative review', () => {
         answers: [],
       },
     })
-    await wrapper.find('.lp-state-panel-retry').trigger('click')
+    await wrapper.get('[role="alert"] button').trigger('click')
     await flushPromises()
 
     expect(mockGetExamResult).toHaveBeenCalledTimes(2)
