@@ -150,7 +150,7 @@ export const learnerRoutes: RouteRecordRaw[] = [
         path: 'favorites',
         name: 'Favorites',
         component: () => import('@/views/practice/FavoriteView.vue'),
-        meta: { title: '我的收藏' },
+        meta: { title: '我的收藏', living: true },
       },
       {
         path: 'review/classic',
