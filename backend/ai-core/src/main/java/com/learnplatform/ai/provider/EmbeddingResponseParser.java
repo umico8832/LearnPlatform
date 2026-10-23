@@ -1,6 +1,6 @@
 package com.learnplatform.ai.provider;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.learnplatform.ai.model.EmbeddingRequest;
 import com.learnplatform.ai.model.EmbeddingResult;
 import com.learnplatform.ai.model.JsonContract;

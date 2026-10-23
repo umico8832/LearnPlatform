@@ -1,6 +1,6 @@
 package com.learnplatform.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.config.AiConfig;
 import com.learnplatform.dto.TutorCheckAnswerRequest;
@@ -39,10 +39,10 @@ class TutorSessionServiceTest {
         TutorLearningContextVO learningContext = new TutorLearningContextVO();
         learningContext.setPaperAnswerCount(3); learningContext.setUnresolvedWrongCount(2);
         when(contexts.summarize(7L, 10L, 3L)).thenReturn(learningContext);
-        doAnswer(i -> { ((TutorSession) i.getArgument(0)).setId(9L); return 1; }).when(sessions).insert(any());
+        doAnswer(i -> { ((TutorSession) i.getArgument(0)).setId(9L); return 1; }).when(sessions).insert(any(TutorSession.class));
         AiConfig config = new AiConfig(); config.setEnabled(true); config.setToolsSupported(true);
         TutorSessionVO result = new TutorSessionService(
-                users, points, contents, sessions, new ObjectMapper(), events, contexts, config).start(7L, 10L, 3L);
+                users, points, contents, sessions, JsonMapper.builderWithJackson2Defaults().build(), events, contexts, config).start(7L, 10L, 3L);
         assertEquals("如何搬移？", result.getCheck().path("prompt").asText());
         assertTrue(result.getCheck().has("options"));
         assertEquals(2, result.getCheck().path("options").get(0).size());
@@ -55,12 +55,12 @@ class TutorSessionServiceTest {
         assertTrue(result.isAgentAvailable());
         assertEquals(3, result.getLearningContext().getPaperAnswerCount());
         assertEquals(2, result.getLearningContext().getUnresolvedWrongCount());
-        verify(sessions).insert(argThat(session -> session.getLearningContextJson().contains("\"paperAnswerCount\":3")));
+        verify(sessions).insert(argThat((TutorSession session) -> session.getLearningContextJson().contains("\"paperAnswerCount\":3")));
     }
     @Test void rejectsTutorStartOutsideLibrary() {
         UserCourseMapper users = mock(UserCourseMapper.class); when(users.selectCount(any())).thenReturn(0L);
         TutorSessionService service = new TutorSessionService(users, mock(KnowledgePointMapper.class),
-                mock(TutorContentMapper.class), mock(TutorSessionMapper.class), new ObjectMapper(),
+                mock(TutorContentMapper.class), mock(TutorSessionMapper.class), JsonMapper.builderWithJackson2Defaults().build(),
                 mock(CourseLearningEventService.class), mock(TutorLearningContextService.class), new AiConfig());
         assertThrows(BusinessException.class, () -> service.start(7L, 10L, 3L));
     }
@@ -81,20 +81,20 @@ class TutorSessionServiceTest {
         KnowledgePoint nextTarget = new KnowledgePoint(); nextTarget.setId(35L);
         when(points.selectOne(any())).thenReturn(prerequisite, nextTarget);
         TutorSessionService service = new TutorSessionService(users, points, contents, sessions,
-                new ObjectMapper(), events, mock(TutorLearningContextService.class), new AiConfig());
+                JsonMapper.builderWithJackson2Defaults().build(), events, mock(TutorLearningContextService.class), new AiConfig());
 
         TutorCheckAnswerRequest incorrect = new TutorCheckAnswerRequest(); incorrect.setOptionId("LEFT_TO_RIGHT");
         TutorCheckResultVO incorrectResult = service.answer(7L, 10L, "session", incorrect);
         assertEquals("PREREQUISITE", incorrectResult.getGuidanceType());
         assertEquals("元素数量与数组容量", incorrectResult.getGuidanceTitle());
-        assertEquals(30L, new ObjectMapper().valueToTree(incorrectResult)
+        assertEquals(30L, JsonMapper.builderWithJackson2Defaults().build().valueToTree(incorrectResult)
                 .path("guidanceKnowledgePointId").asLong());
 
         TutorCheckAnswerRequest correct = new TutorCheckAnswerRequest(); correct.setOptionId("RIGHT_TO_LEFT");
         TutorCheckResultVO correctResult = service.answer(7L, 10L, "session", correct);
         assertEquals("NEXT_TARGET", correctResult.getGuidanceType());
         assertEquals("ArrayStack 的操作复杂度", correctResult.getGuidanceTitle());
-        assertEquals(35L, new ObjectMapper().valueToTree(correctResult)
+        assertEquals(35L, JsonMapper.builderWithJackson2Defaults().build().valueToTree(correctResult)
                 .path("guidanceKnowledgePointId").asLong());
     }
 
@@ -111,7 +111,7 @@ class TutorSessionServiceTest {
         when(contents.selectById(8L)).thenReturn(content);
         when(sessions.update(any(), any())).thenReturn(1);
         TutorSessionService service = new TutorSessionService(users, points, contents, sessions,
-                new ObjectMapper(), events, mock(TutorLearningContextService.class), new AiConfig());
+                JsonMapper.builderWithJackson2Defaults().build(), events, mock(TutorLearningContextService.class), new AiConfig());
 
         TutorCheckAnswerRequest answer = new TutorCheckAnswerRequest(); answer.setOptionId("LEFT_TO_RIGHT");
         assertEquals("正确：删除后从左向右搬移后缀，填补空位。", service.answer(7L, 10L, "session", answer).getExplanation());
@@ -128,7 +128,7 @@ class TutorSessionServiceTest {
         when(sessions.selectOne(any())).thenReturn(session);
         when(contents.selectById(8L)).thenReturn(content);
         TutorSessionService service = new TutorSessionService(users, points, contents, sessions,
-                new ObjectMapper(), mock(CourseLearningEventService.class),
+                JsonMapper.builderWithJackson2Defaults().build(), mock(CourseLearningEventService.class),
                 mock(TutorLearningContextService.class), new AiConfig());
 
         assertFalse(service.get(7L, 10L, "session").getCheck().has("correctOptionId"));
@@ -148,10 +148,10 @@ class TutorSessionServiceTest {
         when(sessions.selectOne(any())).thenReturn(session);
         when(contents.selectById(8L)).thenReturn(content);
         TutorSessionService service = new TutorSessionService(users, points, contents, sessions,
-                new ObjectMapper(), mock(CourseLearningEventService.class),
+                JsonMapper.builderWithJackson2Defaults().build(), mock(CourseLearningEventService.class),
                 mock(TutorLearningContextService.class), new AiConfig());
 
-        var response = new ObjectMapper().valueToTree(service.get(7L, 10L, "session"));
+        var response = JsonMapper.builderWithJackson2Defaults().build().valueToTree(service.get(7L, 10L, "session"));
         assertEquals("A", response.path("checkAnswer").asText());
         assertTrue(response.path("checkResult").path("correct").asBoolean());
         assertEquals("正确", response.path("checkResult").path("explanation").asText());
@@ -180,7 +180,7 @@ class TutorSessionServiceTest {
         when(contents.selectById(8L)).thenReturn(reviewedContent("{\"options\":[{\"id\":\"A\"}],\"correctOptionId\":\"A\",\"correctExplanation\":\"正确\"}"));
         CourseLearningEventService events = mock(CourseLearningEventService.class);
         TutorSessionService service = new TutorSessionService(users, mock(KnowledgePointMapper.class), contents, sessions,
-                new ObjectMapper(), events, mock(TutorLearningContextService.class), new AiConfig());
+                JsonMapper.builderWithJackson2Defaults().build(), events, mock(TutorLearningContextService.class), new AiConfig());
         TutorCheckAnswerRequest request = new TutorCheckAnswerRequest(); request.setOptionId("A");
 
         assertTrue(service.answer(7L, 10L, "session", request).isCorrect());
@@ -208,7 +208,7 @@ class TutorSessionServiceTest {
 
     private TutorSessionService service(UserCourseMapper users, KnowledgePointMapper points,
                                         TutorContentMapper contents, TutorSessionMapper sessions) {
-        return new TutorSessionService(users, points, contents, sessions, new ObjectMapper(),
+        return new TutorSessionService(users, points, contents, sessions, JsonMapper.builderWithJackson2Defaults().build(),
                 mock(CourseLearningEventService.class), mock(TutorLearningContextService.class), new AiConfig());
     }
 

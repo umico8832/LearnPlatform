@@ -1,14 +1,15 @@
 package com.learnplatform.service.evaluation;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.entity.AiCallLog;
 
 import java.util.List;
 
 /** 固定计划夹具核对服务端动作和确认状态，不评价真实模型的计划质量。 */
 final class AiTutorPlanEvaluation {
-    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ObjectMapper JSON = JsonMapper.builderWithJackson2Defaults().build();
     private static final String STEPS = "[{\"type\":\"TUTOR\",\"title\":\"回看栈顶\","
             + "\"reason\":\"先巩固当前知识点\",\"knowledgePointId\":41}]";
 

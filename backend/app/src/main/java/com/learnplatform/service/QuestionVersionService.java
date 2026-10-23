@@ -1,10 +1,10 @@
 package com.learnplatform.service;
 
+import tools.jackson.databind.json.JsonMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.cfg.DateTimeFeature;
 import com.learnplatform.dto.QuestionVersionVO;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionKnowledgePoint;
@@ -41,9 +41,8 @@ public class QuestionVersionService {
         this.questionOptionMapper = questionOptionMapper;
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
         this.userMapper = userMapper;
-        this.objectMapper = new ObjectMapper()
-                .registerModule(new JavaTimeModule())
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        this.objectMapper = JsonMapper.builderWithJackson2Defaults()
+                .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS).build();
     }
 
     public void recordChange(Long questionId, String changeType, Long operatorId,
@@ -126,7 +125,7 @@ public class QuestionVersionService {
         snapshot.put("knowledgePointIds", getKnowledgePointIds(question.getId()));
         try {
             return objectMapper.writeValueAsString(snapshot);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("题目版本快照序列化失败", e);
         }
     }

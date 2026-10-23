@@ -1,6 +1,6 @@
 package com.learnplatform.service.understanding;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.learnplatform.ai.model.Cancellation;
 import com.learnplatform.ai.model.ModelException;
 import com.learnplatform.common.exception.BusinessException;

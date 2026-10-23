@@ -2,12 +2,12 @@ package com.learnplatform.service;
 
 import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.StreamReadFeature;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.StreamReadFeature;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.AiVariantQuestionVO;
@@ -108,7 +108,7 @@ public class AiVariantQuestionService {
                     new TypeReference<List<AiVariantQuestionVO.Option>>() {}));
             vo.setDifficulty(question.getDifficulty());
             return vo;
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             log.error("结构化变式题选项解析失败: assetId={}", assetId, ex);
             return null;
         }
@@ -278,7 +278,7 @@ public class AiVariantQuestionService {
     private String writeOptions(List<AiVariantQuestionVO.Option> options) {
         try {
             return objectMapper.writeValueAsString(options);
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             throw invalidFormat("选项序列化失败");
         }
     }

@@ -1,6 +1,7 @@
 package com.learnplatform.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.config.AiConfig;
 import com.learnplatform.entity.AiUsageAlert;
 import org.junit.jupiter.api.DisplayName;
@@ -22,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AiUsageAlertNotificationServiceTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builderWithJackson2Defaults().build();
     private final RestOperations restOperations = mock(RestOperations.class);
 
     @Test

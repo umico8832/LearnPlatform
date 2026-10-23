@@ -7,10 +7,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Knife4j / OpenAPI 接口文档配置
+ * OpenAPI 接口文档配置
  */
 @Configuration
-public class Knife4jConfig {
+public class OpenApiConfig {
 
     @Bean
     public OpenAPI customOpenAPI() {

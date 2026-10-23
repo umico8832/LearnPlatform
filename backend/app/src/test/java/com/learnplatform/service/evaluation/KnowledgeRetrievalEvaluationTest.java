@@ -1,6 +1,6 @@
 package com.learnplatform.service.evaluation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.ai.model.EmbeddingRequest;
 import com.learnplatform.ai.model.EmbeddingResult;
 import com.learnplatform.ai.model.ModelException;
@@ -90,7 +90,7 @@ class KnowledgeRetrievalEvaluationTest {
         assertEquals("NOT_EVALUATED", report.get("teachingQuality"));
         assertEquals(0, new BigDecimal("0.000020").multiply(BigDecimal.valueOf(calls))
                 .compareTo((BigDecimal) report.get("costUsd")));
-        var json = new ObjectMapper().valueToTree(report);
+        var json = JsonMapper.builderWithJackson2Defaults().build().valueToTree(report);
         assertEquals(calls * 10, json.path("usage").path("totalTokens").asInt());
         assertEquals(snapshot.corpus().queries().size(), json.path("results").size());
         assertEquals("rag_eval_index", json.path("callMetrics").get(0).path("function").asText());

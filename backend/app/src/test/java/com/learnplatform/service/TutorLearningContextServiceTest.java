@@ -7,6 +7,7 @@ import com.learnplatform.entity.CourseLearningEvent;
 import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.QuestionKnowledgePoint;
 import com.learnplatform.entity.QuestionReviewSchedule;
+import com.learnplatform.entity.WrongQuestion;
 import com.learnplatform.mapper.CourseLearningEventMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionKnowledgePointMapper;
@@ -32,9 +33,12 @@ import static org.mockito.Mockito.when;
 class TutorLearningContextServiceTest {
 
     @BeforeEach
-    void initializeReviewScheduleTableInfo() {
-        TableInfoHelper.initTableInfo(
-                new MapperBuilderAssistant(new Configuration(), ""), QuestionReviewSchedule.class);
+    void initializeMybatisMetadata() {
+        MapperBuilderAssistant assistant = new MapperBuilderAssistant(new Configuration(), "");
+        TableInfoHelper.initTableInfo(assistant, QuestionReviewSchedule.class);
+        TableInfoHelper.initTableInfo(assistant, CourseLearningEvent.class);
+        TableInfoHelper.initTableInfo(assistant, QuestionKnowledgePoint.class);
+        TableInfoHelper.initTableInfo(assistant, WrongQuestion.class);
     }
 
     @Test

@@ -1,6 +1,6 @@
 package com.learnplatform.service.understanding;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.service.QuestionService;
 import java.util.Map;

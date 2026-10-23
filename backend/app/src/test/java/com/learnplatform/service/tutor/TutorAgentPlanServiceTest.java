@@ -1,6 +1,6 @@
 package com.learnplatform.service.tutor;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.dto.CourseOverviewVO;
 import com.learnplatform.dto.TutorAgentPlanStepVO;
 import com.learnplatform.mapper.TutorAgentPlanConfirmationMapper;
@@ -27,7 +27,7 @@ class TutorAgentPlanServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new TutorAgentPlanService(sessions, overviews, plans, confirmations, new ObjectMapper());
+        service = new TutorAgentPlanService(sessions, overviews, plans, confirmations, JsonMapper.builderWithJackson2Defaults().build());
     }
 
     @Test

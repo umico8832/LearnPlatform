@@ -1,7 +1,8 @@
 package com.learnplatform.service.evaluation;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.entity.AiCallLog;
 
 import java.util.List;
@@ -9,7 +10,7 @@ import java.util.List;
 /** 固定练习夹具仅核对服务端题目与结果契约，不评价真实模型教学质量。 */
 final class AiTutorPracticeEvaluation {
     private static final long QUESTION_ID = 51L;
-    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ObjectMapper JSON = JsonMapper.builderWithJackson2Defaults().build();
 
     private AiTutorPracticeEvaluation() {
     }

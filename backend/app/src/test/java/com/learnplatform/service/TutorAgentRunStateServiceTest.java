@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import tools.jackson.databind.json.JsonMapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.TutorAgentRunVO;
@@ -42,7 +43,7 @@ class TutorAgentRunStateServiceTest {
     @BeforeEach void setUp() {
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), TutorAgentRun.class);
         service = new TutorAgentRunStateService(sessions, runs, messages,
-                new com.fasterxml.jackson.databind.ObjectMapper(), tutorSessions);
+                JsonMapper.builderWithJackson2Defaults().build(), tutorSessions);
     }
 
     @Test void createsARunningRunBoundToTheOwnedTutorSession() {
@@ -52,7 +53,7 @@ class TutorAgentRunStateServiceTest {
         doAnswer(call -> {
             ((TutorAgentRun) call.getArgument(0)).setId(5L);
             return 1;
-        }).when(runs).insert(any());
+        }).when(runs).insert(any(TutorAgentRun.class));
 
         TutorAgentExecutionState state = service.begin(7L, 10L, "session");
 
@@ -111,7 +112,7 @@ class TutorAgentRunStateServiceTest {
                 java.util.UUID.fromString(current.getRunKey()), "earlier-execution", 1, List.of());
 
         assertThrows(BusinessException.class, () -> service.complete(earlier, "迟到的问题", new TutorAgentReply("迟到的回答", List.of())));
-        verify(messages, never()).insert(any());
+        verify(messages, never()).insert(any(TutorAgentMessage.class));
     }
 
     @ParameterizedTest

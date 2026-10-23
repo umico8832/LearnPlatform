@@ -1,6 +1,6 @@
 package com.learnplatform.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.ai.model.EmbeddingRequest;
 import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.ai.model.ModelResult;
@@ -37,7 +37,7 @@ class AiCallGovernanceServiceTest {
     private final AiCallContext context = new AiCallContext(7L, "explanation", UUID.randomUUID());
 
     @BeforeEach void setUp() {
-        governance = new AiCallGovernanceService(config, logs, users, reservations, new ObjectMapper());
+        governance = new AiCallGovernanceService(config, logs, users, reservations, JsonMapper.builderWithJackson2Defaults().build());
     }
 
     @Test void quotaResetsAtNewYorkMidnightOnBothDstDatesWithUtcClock() {
@@ -52,7 +52,7 @@ class AiCallGovernanceServiceTest {
         for (String[] row : cases) {
             reset(logs);
             var clock = java.time.Clock.fixed(java.time.Instant.parse(row[0]), java.time.ZoneOffset.UTC);
-            governance = new AiCallGovernanceService(config, logs, users, reservations, new ObjectMapper(), clock);
+            governance = new AiCallGovernanceService(config, logs, users, reservations, JsonMapper.builderWithJackson2Defaults().build(), clock);
             governance.countTodayCalls(7L);
             verify(logs).countQuota(7L, java.time.LocalDateTime.parse(row[1]));
         }

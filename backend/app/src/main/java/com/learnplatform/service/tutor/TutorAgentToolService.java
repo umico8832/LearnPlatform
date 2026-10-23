@@ -1,8 +1,8 @@
 package com.learnplatform.service.tutor;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import com.learnplatform.ai.model.JsonContract;
 import com.learnplatform.ai.model.ModelException;
 import com.learnplatform.ai.model.ModelRequest;

@@ -1,6 +1,6 @@
 package com.learnplatform.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.dto.QuestionSubmissionVO;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionOption;
@@ -43,7 +43,7 @@ class QuestionSubmissionImportServiceTest {
 
     @BeforeEach
     void setUp() {
-        QuestionSubmissionOptionService optionService = new QuestionSubmissionOptionService(new ObjectMapper());
+        QuestionSubmissionOptionService optionService = new QuestionSubmissionOptionService(JsonMapper.builderWithJackson2Defaults().build());
         QuestionSubmissionViewService viewService = new QuestionSubmissionViewService(userMapper, courseMapper);
         importService = new QuestionSubmissionImportService(submissionMapper, questionMapper, questionOptionMapper,
                 questionKnowledgePointMapper, knowledgePointMapper, questionSourceService, optionService, viewService);

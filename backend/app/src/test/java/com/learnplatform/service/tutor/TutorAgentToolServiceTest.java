@@ -1,7 +1,8 @@
 package com.learnplatform.service.tutor;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.ai.model.ModelException;
 import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.common.exception.BusinessException;
@@ -35,7 +36,7 @@ class TutorAgentToolServiceTest {
     private final KnowledgeSearchService knowledge = mock(KnowledgeSearchService.class);
     private final TutorAgentPracticeService practice = mock(TutorAgentPracticeService.class);
     private final TutorAgentPlanService plans = mock(TutorAgentPlanService.class);
-    private final ObjectMapper json = new ObjectMapper();
+    private final ObjectMapper json = JsonMapper.builderWithJackson2Defaults().build();
     private TutorAgentToolService tools;
 
     @BeforeEach void setUp() {

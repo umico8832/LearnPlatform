@@ -192,7 +192,7 @@ class ExamServiceTest {
 
         assertEquals(1L, result.getId());
         assertEquals(0, result.getStatus());
-        verify(examRecordMapper, never()).insert(any());
+        verify(examRecordMapper, never()).insert(any(ExamRecord.class));
     }
 
     @Test
@@ -206,7 +206,7 @@ class ExamServiceTest {
                 () -> examService.startExam(2L, 7L));
 
         assertEquals("试卷不存在", exception.getMessage());
-        verify(examRecordMapper, never()).insert(any());
+        verify(examRecordMapper, never()).insert(any(ExamRecord.class));
     }
 
     @Test

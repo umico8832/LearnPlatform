@@ -31,8 +31,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class AiModelCallIntegrationTest extends IntegrationTestBase {
     @org.springframework.context.annotation.Configuration(proxyBeanMethods = false)
     @org.springframework.boot.autoconfigure.EnableAutoConfiguration(exclude = {
-            org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class,
-            org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration.class})
+            org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration.class,
+            org.springframework.boot.security.autoconfigure.actuate.web.servlet.ManagementWebSecurityAutoConfiguration.class})
     @org.mybatis.spring.annotation.MapperScan("com.learnplatform.mapper")
     @org.springframework.context.annotation.Import({AiCallGovernanceService.class, AiCallReservationService.class,
             AiCallLogQueryService.class, com.learnplatform.config.AiConfig.class})

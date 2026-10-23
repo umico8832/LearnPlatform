@@ -1,11 +1,11 @@
 package com.learnplatform.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.config.AiConfig;
 import com.learnplatform.entity.AiUsageAlert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.boot.restclient.RestTemplateBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -37,8 +37,8 @@ public class AiUsageAlertNotificationService {
                                            RestTemplateBuilder restTemplateBuilder,
                                            ObjectMapper objectMapper) {
         this(aiConfig, objectMapper, restTemplateBuilder
-                .setConnectTimeout(Duration.ofMillis(resolveTimeout(aiConfig)))
-                .setReadTimeout(Duration.ofMillis(resolveTimeout(aiConfig)))
+                .connectTimeout(Duration.ofMillis(resolveTimeout(aiConfig)))
+                .readTimeout(Duration.ofMillis(resolveTimeout(aiConfig)))
                 .build());
     }
 

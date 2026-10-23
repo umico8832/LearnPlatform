@@ -64,7 +64,7 @@ class CourseLearningEventServiceTest {
 
         service.recordQuestionAnswer(7L, question, "PRACTICE_ANSWERED", "PRACTICE", 32L, true, null);
 
-        verify(courseLearningEventMapper, never()).insert(any());
+        verify(courseLearningEventMapper, never()).insert(any(CourseLearningEvent.class));
     }
 
     @Test

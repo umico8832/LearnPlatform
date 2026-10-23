@@ -5,6 +5,9 @@ import com.learnplatform.entity.Question;
 import com.learnplatform.entity.WrongQuestion;
 import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.QuestionMapper;
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +31,7 @@ class LearningDiagnosisErrorPatternAnalyzerTest {
 
     @BeforeEach
     void setUp() {
+        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), Question.class);
         analyzer = new LearningDiagnosisErrorPatternAnalyzer(questionMapper, courseMapper);
     }
 

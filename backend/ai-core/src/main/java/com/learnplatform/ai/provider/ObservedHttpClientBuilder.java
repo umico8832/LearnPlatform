@@ -1,6 +1,6 @@
 package com.learnplatform.ai.provider;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ObjectNode;
 import com.learnplatform.ai.model.Cancellation;
 import com.learnplatform.ai.model.JsonContract;
 import com.learnplatform.ai.model.ModelException;

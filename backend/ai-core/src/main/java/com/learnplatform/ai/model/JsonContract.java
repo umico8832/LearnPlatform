@@ -1,17 +1,18 @@
 package com.learnplatform.ai.model;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.core.StreamReadFeature;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.SpecificationVersion;
 
 public final class JsonContract {
-    private static final ObjectMapper JSON = new ObjectMapper()
-            .enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
-            .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
-    private static final JsonSchemaFactory SCHEMAS = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
+    private static final ObjectMapper JSON = JsonMapper.builderWithJackson2Defaults()
+            .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
+            .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).build();
+    private static final SchemaRegistry SCHEMAS = SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12);
 
     private JsonContract() { }
 
@@ -44,7 +45,7 @@ public final class JsonContract {
                 }
             }
         }
-        node.elements().forEachRemaining(JsonContract::rejectExternalReferences);
+        node.values().forEach(JsonContract::rejectExternalReferences);
     }
 
     public static void validate(String content, String schema) {

@@ -1,12 +1,13 @@
 package com.learnplatform.service.evaluation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
 /** 固定提示夹具只验证服务端动作和工具契约，教学质量仍需人工验收真实模型输出。 */
 final class AiTutorHintEvaluation {
-    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ObjectMapper JSON = JsonMapper.builderWithJackson2Defaults().build();
 
     private AiTutorHintEvaluation() { }
 

@@ -58,7 +58,7 @@ class WrongQuestionServiceTest {
         assertEquals(0, record.getMasteryLevel());
         assertEquals("B", record.getLastWrongAnswer());
         assertEquals(0, record.getDeleted());
-        verify(wrongQuestionMapper, never()).updateById(any());
+        verify(wrongQuestionMapper, never()).updateById(any(WrongQuestion.class));
     }
 
     @Test
@@ -68,8 +68,8 @@ class WrongQuestionServiceTest {
         wrongQuestionService.addWrongQuestion(7L, 10L, "C");
 
         verify(wrongQuestionMapper).reviveOrIncrement(7L, 10L, "C");
-        verify(wrongQuestionMapper, never()).updateById(any());
-        verify(wrongQuestionMapper, never()).insert(any());
+        verify(wrongQuestionMapper, never()).updateById(any(WrongQuestion.class));
+        verify(wrongQuestionMapper, never()).insert(any(WrongQuestion.class));
     }
 
     @Test
@@ -79,7 +79,7 @@ class WrongQuestionServiceTest {
         wrongQuestionService.addWrongQuestion(7L, 10L, "D");
 
         verify(wrongQuestionMapper).reviveOrIncrement(7L, 10L, "D");
-        verify(wrongQuestionMapper, never()).insert(any());
+        verify(wrongQuestionMapper, never()).insert(any(WrongQuestion.class));
     }
 
     @Test
@@ -100,7 +100,7 @@ class WrongQuestionServiceTest {
                 () -> wrongQuestionService.updateMasteryLevel(3L, 7L, 2));
 
         assertEquals("错题记录不存在", exception.getMessage());
-        verify(wrongQuestionMapper, never()).updateById(any());
+        verify(wrongQuestionMapper, never()).updateById(any(WrongQuestion.class));
     }
 
     @Test

@@ -96,7 +96,7 @@ class AiAssetEngagementServiceTest {
                 () -> service().completeVariantTraining(8L, 3L));
 
         assertEquals("请先查看变式题，再标记训练完成", exception.getMessage());
-        verify(aiVariantTrainingMapper, never()).updateById(any());
+        verify(aiVariantTrainingMapper, never()).updateById(any(AiVariantTraining.class));
     }
 
     @Test

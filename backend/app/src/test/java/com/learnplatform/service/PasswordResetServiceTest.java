@@ -49,7 +49,7 @@ class PasswordResetServiceTest {
 
         service.requestReset("unknown@example.com", "127.0.0.1");
 
-        verify(resetMapper, never()).insert(any());
+        verify(resetMapper, never()).insert(any(PasswordResetToken.class));
         verify(mailService, never()).sendPasswordResetLink(any(), any());
     }
 

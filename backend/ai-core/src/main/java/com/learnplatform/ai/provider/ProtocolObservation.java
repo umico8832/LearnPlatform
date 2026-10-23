@@ -1,6 +1,6 @@
 package com.learnplatform.ai.provider;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.learnplatform.ai.model.JsonContract;
 import com.learnplatform.ai.model.ModelException;
 import com.learnplatform.ai.model.ModelResult;

@@ -1,6 +1,6 @@
 package com.learnplatform.service.tutor;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.ai.model.ModelException;
 import com.learnplatform.dto.TutorAgentActionVO;
 import com.learnplatform.dto.TutorAgentPlanStepVO;
@@ -23,7 +23,7 @@ class TutorAgentPlanActionParserTest {
                 """);
         assertEquals(List.of(new TutorAgentPlanStepVO("TUTOR", "学习栈", "检查尚未完成", 31L, null),
                 new TutorAgentPlanStepVO("DUE_REVIEW", "复习", "已有到期记录", null, 51L)), action.steps());
-        var json = new ObjectMapper();
+        var json = JsonMapper.builderWithJackson2Defaults().build();
         assertEquals(action, json.readValue(json.writeValueAsString(action), TutorAgentActionVO.class));
         for (String legacy : List.of("{\"type\":\"CHECK\"}", "{\"type\":\"HINT\",\"level\":2}",
                 "{\"type\":\"PRACTICE\",\"questionId\":51}")) {

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.mysql.MySQLContainer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class GamificationMigrationIntegrationTest {
     @Test
     void upgradesFromPreviousVersionAndCreatesRewardConstraints() {
-        try (MySQLContainer<?> database = new MySQLContainer<>("mysql:8.0")
+        try (MySQLContainer database = new MySQLContainer("mysql:8.0")
                 .withDatabaseName("learn_platform").withUsername("test").withPassword("test")) {
             database.start();
             Flyway.configure().dataSource(database.getJdbcUrl(), "root", database.getPassword()).target("104").load().migrate();

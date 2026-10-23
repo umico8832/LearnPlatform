@@ -1,6 +1,7 @@
 package com.learnplatform.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.ExamLearningAnswerRequest;
@@ -66,7 +67,7 @@ class ExamLearningControllerTest {
     @Mock private PrivateExamSourceFileService privateExamSourceFileService;
     @Mock private PrivateExamSourceStorageService privateExamSourceStorageService;
     private MockMvc mockMvc;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builderWithJackson2Defaults().build();
 
     @AfterEach
     void clearSecurityContext() {

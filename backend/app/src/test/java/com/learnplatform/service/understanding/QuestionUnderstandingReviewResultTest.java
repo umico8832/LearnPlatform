@@ -1,6 +1,6 @@
 package com.learnplatform.service.understanding;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.dto.PracticeResultVO;
 import com.learnplatform.entity.Question;
 import com.learnplatform.mapper.QuestionUnderstandingMapper;
@@ -29,7 +29,7 @@ class QuestionUnderstandingReviewResultTest {
         question.setId(9L);
         var ready = new QuestionUnderstandingContent.Ready(question, Map.of("id", 12L), java.util.List.of(), Map.of());
         when(content.ready(7L, 9L, null, false)).thenReturn(ready);
-        var request = new ObjectMapper().createObjectNode().put("answer", "A");
+        var request = JsonMapper.builderWithJackson2Defaults().build().createObjectNode().put("answer", "A");
         when(content.answer(request, ready.options(), false)).thenReturn(new QuestionUnderstandingContent.Answer("A", null, 1L));
         var practiceResult = new PracticeResultVO();
         practiceResult.setRecordId(22L);

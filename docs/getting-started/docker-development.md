@@ -27,7 +27,7 @@ python3 scripts/docker-lifecycle.py app-status
 
 - 前端：`http://localhost`
 - 后端：`http://localhost:8080`
-- Knife4j：`http://localhost:8080/doc.html`
+- Swagger UI：`http://localhost:8080/doc.html`
 
 如 80 或 8080 端口被占用，在 `.env` 中配置：
 

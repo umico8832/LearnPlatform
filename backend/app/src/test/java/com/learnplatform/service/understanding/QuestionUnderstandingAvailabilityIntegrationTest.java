@@ -1,7 +1,7 @@
 package com.learnplatform.service.understanding;
 
 import com.learnplatform.common.time.BusinessTime;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.ReviewSubmitRequest;

@@ -1,6 +1,7 @@
 package com.learnplatform.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.ExamPaperVO;
 import com.learnplatform.dto.PrivateExamDraftConfirmRequest;
@@ -42,7 +43,7 @@ class PrivateExamDraftServiceTest {
     @Mock private AiProvider aiProvider;
     @Mock private AiCallGovernanceService callGovernanceService;
     private PrivateExamDraftService service;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builderWithJackson2Defaults().build();
 
     @BeforeEach
     void setUp() {
@@ -59,15 +60,15 @@ class PrivateExamDraftServiceTest {
         PrivateExamDraftCreateRequest request = createRequest();
         PrivateExamImportPreviewVO preview = preview(false);
         when(importService.previewWithSourceHash(request, "a".repeat(64))).thenReturn(preview);
-        when(sourceMapper.insert(any())).thenAnswer(invocation -> {
+        when(sourceMapper.insert(any(UserExamSource.class))).thenAnswer(invocation -> {
             ((UserExamSource) invocation.getArgument(0)).setId(21L);
             return 1;
         });
-        when(draftMapper.insert(any())).thenAnswer(invocation -> {
+        when(draftMapper.insert(any(PrivateExamImportDraft.class))).thenAnswer(invocation -> {
             ((PrivateExamImportDraft) invocation.getArgument(0)).setId(31L);
             return 1;
         });
-        when(questionMapper.insert(any())).thenAnswer(invocation -> {
+        when(questionMapper.insert(any(PrivateExamDraftQuestion.class))).thenAnswer(invocation -> {
             ((PrivateExamDraftQuestion) invocation.getArgument(0)).setId(41L);
             return 1;
         });
@@ -131,7 +132,7 @@ class PrivateExamDraftServiceTest {
                 () -> service.generateAnswer(31L, 41L, 7L));
 
         assertEquals("AI 建议答案未通过结构校验，请重试", exception.getMessage());
-        verify(questionMapper, never()).updateById(any());
+        verify(questionMapper, never()).updateById(any(PrivateExamDraftQuestion.class));
     }
 
     @Test

@@ -1,6 +1,6 @@
 package com.learnplatform.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.dto.CourseStageAssessmentSummaryVO;
 import com.learnplatform.entity.CourseStageAssessment;
 import com.learnplatform.entity.CourseStageAssessmentQuestion;

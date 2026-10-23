@@ -1,9 +1,9 @@
 package com.learnplatform.service;
 
+import tools.jackson.databind.json.JsonMapper;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.QuestionReviewSuggestionVO;
 import com.learnplatform.entity.Question;
@@ -54,7 +54,7 @@ class QuestionReviewSuggestionServiceTest {
                 questionKnowledgePointMapper,
                 knowledgePointMapper,
                 courseMapper,
-                new ObjectMapper());
+                JsonMapper.builderWithJackson2Defaults().build());
 
         question = new Question();
         question.setId(1L);

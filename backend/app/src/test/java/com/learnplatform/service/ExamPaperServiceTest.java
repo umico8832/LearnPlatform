@@ -121,7 +121,7 @@ class ExamPaperServiceTest {
                 () -> examPaperService.createExamPaper(request, 1L));
 
         assertEquals("空试卷不能发布", exception.getMessage());
-        verify(examPaperMapper, never()).insert(org.mockito.ArgumentMatchers.any());
+        verify(examPaperMapper, never()).insert(org.mockito.ArgumentMatchers.any(ExamPaper.class));
     }
 
     @Test
@@ -147,7 +147,7 @@ class ExamPaperServiceTest {
                 () -> examPaperService.createExamPaper(request, 1L));
 
         assertEquals("不支持的试卷类型", exception.getMessage());
-        verify(examPaperMapper, never()).insert(org.mockito.ArgumentMatchers.any());
+        verify(examPaperMapper, never()).insert(org.mockito.ArgumentMatchers.any(ExamPaper.class));
     }
 
     @Test
@@ -196,7 +196,7 @@ class ExamPaperServiceTest {
     void persistsOfficialPaperProvenanceAndQuestionStructure() {
         ExamPaperCreateRequest request = officialDraftRequest();
         AtomicReference<ExamPaper> savedPaper = new AtomicReference<>();
-        when(examPaperMapper.insert(org.mockito.ArgumentMatchers.any())).thenAnswer(invocation -> {
+        when(examPaperMapper.insert(org.mockito.ArgumentMatchers.any(ExamPaper.class))).thenAnswer(invocation -> {
             ExamPaper paper = invocation.getArgument(0);
             paper.setId(1L);
             savedPaper.set(paper);

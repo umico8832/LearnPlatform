@@ -1,6 +1,6 @@
 package com.learnplatform.service.understanding;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.mapper.QuestionTutorMapper;
@@ -154,7 +154,7 @@ public class QuestionUnderstandingPreviewService {
 
     private Map<String, Object> variantResult(JsonNode body, Map<String, Object> row, int level) {
         JsonNode variantBody = body.deepCopy();
-        ((com.fasterxml.jackson.databind.node.ObjectNode) variantBody).set("answer", body.get("variantAnswer"));
+        ((tools.jackson.databind.node.ObjectNode) variantBody).set("answer", body.get("variantAnswer"));
         Answer answer = content.answer(variantBody, content.variantOptions(row), true);
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("correct", answer.label().equals(row.get("correct_answer")));
@@ -178,7 +178,9 @@ public class QuestionUnderstandingPreviewService {
 
     private void validate(JsonNode body) {
         if (body == null || !body.isObject()) { throw invalid(); }
-        body.fieldNames().forEachRemaining(field -> { if (!FIELDS.contains(field)) { throw invalid(); } });
+        body.propertyNames().forEach(field -> {
+            if (!FIELDS.contains(field)) { throw invalid(); }
+        });
         for (String flag : List.of("revealSolution", "misconceptionVizViewed", "solutionVizViewed")) {
             if (body.has(flag) && !body.get(flag).isBoolean()) { throw invalid(); }
         }

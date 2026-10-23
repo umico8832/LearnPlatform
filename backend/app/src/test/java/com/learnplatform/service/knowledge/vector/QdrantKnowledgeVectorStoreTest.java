@@ -1,7 +1,8 @@
 package com.learnplatform.service.knowledge.vector;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
@@ -19,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class QdrantKnowledgeVectorStoreTest {
-    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ObjectMapper JSON = JsonMapper.builderWithJackson2Defaults().build();
     private HttpServer server;
 
     @AfterEach

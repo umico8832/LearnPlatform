@@ -1,6 +1,7 @@
 package com.learnplatform.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
@@ -57,7 +58,7 @@ class CourseStageAssessmentServiceTest {
     @BeforeEach
     void setUp() {
         AnswerEvaluator answerEvaluator = new AnswerEvaluator();
-        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = JsonMapper.builderWithJackson2Defaults().build();
         snapshotService = new CourseStageAssessmentSnapshotService(
                 assessmentMapper, assessmentQuestionMapper, optionMapper, knowledgePointMapper,
                 answerEvaluator, objectMapper);

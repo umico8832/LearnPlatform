@@ -1,8 +1,8 @@
 package com.learnplatform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.SubmissionKPTaggingVO;

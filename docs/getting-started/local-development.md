@@ -55,7 +55,7 @@ python3 scripts/dev.py backend
 后端默认地址：
 
 - API：`http://localhost:8080`
-- Knife4j：`http://localhost:8080/doc.html`
+- Swagger UI：`http://localhost:8080/doc.html`
 
 入口先构建并安装 `ai-core` 及父 POM，再运行 `app` 的 Spring Boot 插件；使用本机 Maven，未安装时尝试已有的 Maven Wrapper。日志保留在当前终端，使用
 `Ctrl+C` 停止；修改 Java 代码后再次执行同一命令。默认没有后端自动热重载。

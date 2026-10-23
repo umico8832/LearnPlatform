@@ -1,6 +1,6 @@
 package com.learnplatform.ai.provider;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.JsonNodeFactory;
 import com.learnplatform.ai.model.Cancellation;
 import com.learnplatform.ai.model.EmbeddingRequest;
 import com.learnplatform.ai.model.EmbeddingResult;

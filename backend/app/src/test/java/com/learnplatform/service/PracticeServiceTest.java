@@ -147,7 +147,7 @@ class PracticeServiceTest {
                 () -> practiceService.submitAnswer(request(null, "A", 10), 7L));
 
         assertEquals("题目ID不能为空", exception.getMessage());
-        verify(practiceRecordMapper, never()).insert(any());
+        verify(practiceRecordMapper, never()).insert(any(PracticeRecord.class));
     }
 
     @Test
@@ -156,7 +156,7 @@ class PracticeServiceTest {
                 () -> practiceService.submitAnswer(request(10L, "   ", 10), 7L));
 
         assertEquals("答案不能为空", exception.getMessage());
-        verify(practiceRecordMapper, never()).insert(any());
+        verify(practiceRecordMapper, never()).insert(any(PracticeRecord.class));
     }
 
     @Test
@@ -167,7 +167,7 @@ class PracticeServiceTest {
                 () -> practiceService.submitAnswer(request(404L, "A", 10), 7L));
 
         assertEquals("题目不存在", exception.getMessage());
-        verify(practiceRecordMapper, never()).insert(any());
+        verify(practiceRecordMapper, never()).insert(any(PracticeRecord.class));
     }
 
     @Test

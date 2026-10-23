@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +31,7 @@ class ExamLearningAiIntegrationTest extends IntegrationTestBase {
     @Autowired private ExamPaperLearningService learningService;
     @Autowired private ExamLearningAiService learningAiService;
     @Autowired private TutorSessionService tutorSessionService;
-    @MockBean private AiProvider aiProvider;
+    @MockitoBean private AiProvider aiProvider;
 
     @Test
     void real2026PaperAnswerCanProduceTraceableCourseAiAssistance() {

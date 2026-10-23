@@ -1,6 +1,6 @@
 package com.learnplatform.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.AiVariantReviewRequest;
 import com.learnplatform.dto.AiVariantReviewVO;
@@ -40,7 +40,7 @@ class AiVariantReviewServiceTest {
     @BeforeEach
     void setUp() {
         service = new AiVariantReviewService(variantMapper, assetMapper, questionMapper,
-                courseMapper, questionKnowledgePointMapper, questionService, new ObjectMapper());
+                courseMapper, questionKnowledgePointMapper, questionService, JsonMapper.builderWithJackson2Defaults().build());
     }
 
     @Test

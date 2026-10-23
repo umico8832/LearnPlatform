@@ -1,8 +1,8 @@
 package com.learnplatform.service.understanding;
 
 import java.time.LocalDateTime;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.entity.QuestionUnderstandingAttempt;
@@ -110,13 +110,13 @@ public class QuestionAskStateService {
                         expired ? Integer.valueOf(1014) : (Integer) row.getObject("error_code"),
                         row.getObject("created_at", LocalDateTime.class), row.getString("suggestion") == null
                                 ? null : json.readTree(row.getString("suggestion")));
-            } catch (JsonProcessingException exception) { throw new IllegalStateException("Invalid saved suggestion"); }
+            } catch (JacksonException exception) { throw new IllegalStateException("Invalid saved suggestion"); }
         }, attemptId);
     }
 
     private String encode(Map<String, Object> value) {
         if (value == null) { return null; }
         try { return json.writeValueAsString(value); }
-        catch (JsonProcessingException exception) { throw new IllegalStateException("Invalid suggestion"); }
+        catch (JacksonException exception) { throw new IllegalStateException("Invalid suggestion"); }
     }
 }

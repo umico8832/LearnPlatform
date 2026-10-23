@@ -1,6 +1,6 @@
 package com.learnplatform.service.understanding;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.PracticeResultVO;

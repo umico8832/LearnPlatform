@@ -1,7 +1,8 @@
 package com.learnplatform.service.evaluation;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.ai.model.ModelResult;
 import com.learnplatform.config.AiConfig;
@@ -27,7 +28,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class AiMemoryAblationTest {
-    private final ObjectMapper json = new ObjectMapper();
+    private final ObjectMapper json = JsonMapper.builderWithJackson2Defaults().build();
 
     @Test
     void offlineMatrixUsesIdenticalNonMemoryInputsAndNeverScoresTeachingQuality() throws Exception {

@@ -83,7 +83,7 @@ class QuestionCorrectionReportServiceTest {
         request.setDescription("问题描述");
 
         assertThrows(BusinessException.class, () -> service.submitReport(1L, request, 2L));
-        verify(correctionReportMapper, never()).insert(any());
+        verify(correctionReportMapper, never()).insert(any(QuestionCorrectionReport.class));
     }
 
     @Test

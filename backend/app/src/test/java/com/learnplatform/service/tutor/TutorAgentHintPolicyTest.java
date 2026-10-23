@@ -1,6 +1,7 @@
 package com.learnplatform.service.tutor;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.dto.TutorAgentActionVO;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TutorAgentHintPolicyTest {
     @Test void acceptsOnlyBoundedHintLevelsAndKeepsCheckJsonCompatible() throws Exception {
-        ObjectMapper json = new ObjectMapper();
+        ObjectMapper json = JsonMapper.builderWithJackson2Defaults().build();
         assertEquals("{\"type\":\"CHECK\"}", json.writeValueAsString(new TutorAgentActionVO("CHECK")));
         assertEquals("{\"type\":\"HINT\",\"level\":2}", json.writeValueAsString(new TutorAgentActionVO("HINT", 2)));
         assertThrows(IllegalArgumentException.class, () -> new TutorAgentActionVO("CHECK", 1));

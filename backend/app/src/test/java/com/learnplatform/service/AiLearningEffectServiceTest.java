@@ -14,6 +14,10 @@ import com.learnplatform.mapper.AiVariantQuestionMapper;
 import com.learnplatform.mapper.AiVariantTrainingMapper;
 import com.learnplatform.mapper.PracticeRecordMapper;
 import com.learnplatform.mapper.QuestionKnowledgePointMapper;
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -38,6 +42,13 @@ class AiLearningEffectServiceTest {
     @Mock private AiVariantTrainingMapper aiVariantTrainingMapper;
     @Mock private AiVariantQuestionMapper aiVariantQuestionMapper;
     @Mock private QuestionKnowledgePointMapper questionKnowledgePointMapper;
+
+    @BeforeEach
+    void initializeMybatisMetadata() {
+        MapperBuilderAssistant assistant = new MapperBuilderAssistant(new MybatisConfiguration(), "");
+        TableInfoHelper.initTableInfo(assistant, QuestionKnowledgePoint.class);
+        TableInfoHelper.initTableInfo(assistant, AiVariantQuestion.class);
+    }
 
     private AiLearningEffectService service() {
         AiLearningCrossQuestionService crossQuestionService =

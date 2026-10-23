@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.ai.model.Cancellation;
 import com.learnplatform.ai.model.ModelRequest;
@@ -19,7 +20,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 import com.learnplatform.security.CustomUserDetails;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -238,7 +239,7 @@ class TutorAgentRunStateIntegrationTest extends IntegrationTestBase {
 
     @Test void hintLevelAndCheckActionRecoverTogetherWithoutAdvancingOnFailure() throws Exception {
         var execution = states.begin(USER, COURSE, sessionKey);
-        var hint = new com.fasterxml.jackson.databind.ObjectMapper()
+        var hint = JsonMapper.builderWithJackson2Defaults().build()
                 .readValue("{\"type\":\"HINT\",\"level\":1}", TutorAgentActionVO.class);
         var actions = List.of(new TutorAgentActionVO("CHECK"), hint);
         states.complete(execution, "提示一步", new TutorAgentReply("先回看概念", actions));
@@ -266,7 +267,7 @@ class TutorAgentRunStateIntegrationTest extends IntegrationTestBase {
 
     @Test void answerSubmittedDuringHintGenerationPreventsSavingANewHint() throws Exception {
         var execution = states.begin(USER, COURSE, sessionKey);
-        var hint = new com.fasterxml.jackson.databind.ObjectMapper()
+        var hint = JsonMapper.builderWithJackson2Defaults().build()
                 .readValue("{\"type\":\"HINT\",\"level\":1}", TutorAgentActionVO.class);
         jdbc.update("UPDATE tutor_session SET check_answer='A',check_correct=1 WHERE session_key=?", sessionKey);
         assertThrows(BusinessException.class, () -> states.complete(execution,

@@ -39,7 +39,7 @@ class CourseLibraryServiceTest {
         Course course = course(10L, 1);
         when(courseMapper.selectById(10L)).thenReturn(course);
         when(userCourseMapper.selectOne(any())).thenReturn(null);
-        when(userCourseMapper.insert(any())).thenAnswer(invocation -> {
+        when(userCourseMapper.insert(any(UserCourse.class))).thenAnswer(invocation -> {
             UserCourse relation = invocation.getArgument(0);
             relation.setId(3L);
             relation.setCreateTime(LocalDateTime.of(2026, 8, 3, 10, 0));
@@ -68,7 +68,7 @@ class CourseLibraryServiceTest {
         UserCourseVO result = service.addCourse(7L, 10L);
 
         assertEquals(3L, result.getId());
-        verify(userCourseMapper, never()).insert(any());
+        verify(userCourseMapper, never()).insert(any(UserCourse.class));
     }
 
     @Test
@@ -77,7 +77,7 @@ class CourseLibraryServiceTest {
         UserCourse concurrent = relation(4L, 7L, 10L);
         when(courseMapper.selectById(10L)).thenReturn(course);
         when(userCourseMapper.selectOne(any())).thenReturn(null, concurrent);
-        when(userCourseMapper.insert(any())).thenThrow(new DuplicateKeyException("duplicate"));
+        when(userCourseMapper.insert(any(UserCourse.class))).thenThrow(new DuplicateKeyException("duplicate"));
 
         UserCourseVO result = service.addCourse(7L, 10L);
 

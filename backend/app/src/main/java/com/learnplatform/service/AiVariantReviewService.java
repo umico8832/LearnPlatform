@@ -3,9 +3,9 @@ package com.learnplatform.service;
 import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.AiVariantQuestionVO;
@@ -165,7 +165,7 @@ public class AiVariantReviewService {
     private List<AiVariantQuestionVO.Option> readOptions(String json) {
         try {
             return objectMapper.readValue(json, new TypeReference<>() { });
-        } catch (JsonProcessingException exception) {
+        } catch (JacksonException exception) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "变式题选项数据损坏");
         }
     }

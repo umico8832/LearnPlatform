@@ -1,6 +1,7 @@
 package com.learnplatform.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.common.result.ResultCode;
@@ -59,7 +60,7 @@ class AuthControllerTest {
     @InjectMocks
     private AuthController authController;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builderWithJackson2Defaults().build();
 
     @BeforeEach
     void setUp() {

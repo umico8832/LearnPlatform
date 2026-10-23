@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.CourseOverviewVO;
 import com.learnplatform.dto.CourseKnowledgePointFactVO;
@@ -10,7 +11,6 @@ import com.learnplatform.mapper.UserCourseMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.CourseStageAssessmentMapper;
 import com.learnplatform.mapper.CourseStageAssessmentQuestionMapper;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,7 @@ class CourseOverviewServiceTest {
     void setUp() {
         CourseOverviewTargetService target = new CourseOverviewTargetService(knowledgePointMapper, factMapper);
         CourseOverviewAssessmentService assessment = new CourseOverviewAssessmentService(
-                stageAssessmentMapper, stageAssessmentQuestionMapper, new ObjectMapper());
+                stageAssessmentMapper, stageAssessmentQuestionMapper, JsonMapper.builderWithJackson2Defaults().build());
         service = new CourseOverviewService(userCourseMapper, courseMapper, factMapper, target, assessment);
     }
 

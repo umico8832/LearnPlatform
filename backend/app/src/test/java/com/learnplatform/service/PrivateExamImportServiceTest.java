@@ -68,8 +68,8 @@ class PrivateExamImportServiceTest {
         assertEquals(3, preview.getTotalScore());
         assertEquals("SINGLE_CHOICE", preview.getQuestions().get(0).getQuestionType());
         assertEquals(true, preview.getQuestions().get(0).getOptions().get(0).getCorrect());
-        verify(paperMapper, never()).insert(any());
-        verify(questionMapper, never()).insert(any());
+        verify(paperMapper, never()).insert(any(ExamPaper.class));
+        verify(questionMapper, never()).insert(any(Question.class));
     }
 
     @Test
@@ -122,7 +122,7 @@ class PrivateExamImportServiceTest {
                 () -> service.confirm(request, 7L));
 
         assertEquals("原始资料已变化，请重新预览确认", exception.getMessage());
-        verify(sourceMapper, never()).insert(any());
+        verify(sourceMapper, never()).insert(any(UserExamSource.class));
     }
 
     @Test
@@ -131,17 +131,17 @@ class PrivateExamImportServiceTest {
         String hash = service.preview(previewRequest).getContentHash();
         PrivateExamImportConfirmRequest request = confirmRequest();
         request.setExpectedContentHash(hash);
-        when(sourceMapper.insert(any())).thenAnswer(invocation -> {
+        when(sourceMapper.insert(any(UserExamSource.class))).thenAnswer(invocation -> {
             UserExamSource source = invocation.getArgument(0);
             source.setId(31L);
             return 1;
         });
-        when(paperMapper.insert(any())).thenAnswer(invocation -> {
+        when(paperMapper.insert(any(ExamPaper.class))).thenAnswer(invocation -> {
             ExamPaper paper = invocation.getArgument(0);
             paper.setId(41L);
             return 1;
         });
-        when(questionMapper.insert(any())).thenAnswer(invocation -> {
+        when(questionMapper.insert(any(Question.class))).thenAnswer(invocation -> {
             Question question = invocation.getArgument(0);
             question.setId(100L + question.getScore());
             return 1;

@@ -1,6 +1,6 @@
 package com.learnplatform.service.evaluation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.config.AiConfig;
 import com.learnplatform.entity.AiCallLog;
 import com.learnplatform.service.ai.AiTokenUsage;
@@ -114,7 +114,7 @@ final class AiEvaluationReport {
         report.put("results", results);
         Path output = Path.of("target", "ai-evaluation", online ? "online.json" : "offline.json");
         Files.createDirectories(output.getParent());
-        new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(output.toFile(), report);
+        JsonMapper.builderWithJackson2Defaults().build().writerWithDefaultPrettyPrinter().writeValue(output.toFile(), report);
     }
 
     static String sha256(String value) {

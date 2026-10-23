@@ -85,7 +85,7 @@ class AdminUserServiceTest {
         BusinessException error = assertThrows(BusinessException.class, () -> service.createUser(request));
 
         assertEquals("用户名已存在", error.getMessage());
-        verify(userMapper, never()).insert(any());
+        verify(userMapper, never()).insert(any(User.class));
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.learnplatform.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.SubmissionDifficultyVO;
 import com.learnplatform.entity.Course;
@@ -35,7 +36,7 @@ class SubmissionDifficultyAssessmentServiceTest {
     @Mock
     private CourseMapper courseMapper;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builderWithJackson2Defaults().build();
 
     @InjectMocks
     private SubmissionDifficultyAssessmentService assessmentService;

@@ -50,6 +50,7 @@ spring:
 
   # Jackson 配置
   jackson:
+    use-jackson2-defaults: true
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: America/New_York
     default-property-inclusion: non_null
@@ -174,10 +175,10 @@ management:
       export:
         enabled: true
 
-# Knife4j 配置
+# OpenAPI 配置
 springdoc:
   swagger-ui:
-    path: /swagger-ui.html
+    path: /doc.html
     tags-sorter: alpha
     operations-sorter: alpha
   api-docs:

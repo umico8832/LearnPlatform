@@ -1,11 +1,13 @@
 # API 参考
 
-本目录记录 LearnPlatform 的稳定接口约定和业务域入口。运行时字段定义以 Spring Controller、DTO 和 Knife4j/OpenAPI 为准；本文档负责解释认证、权限、业务边界和前后端共同依赖的契约。
+本目录记录 LearnPlatform 的稳定接口约定和业务域入口。运行时字段定义以 Spring Controller、DTO 和 Swagger UI/OpenAPI 为准；本文档负责解释认证、权限、业务边界和前后端共同依赖的契约。
 
 ## 在线接口定义
 
-- 本地 Knife4j：`http://localhost:8080/doc.html`
+- 本地 Swagger UI：`http://localhost:8080/doc.html`
 - OpenAPI JSON：`http://localhost:8080/v3/api-docs`
+
+`/doc.html` 由 springdoc 的 Swagger UI 提供，重定向至 `/swagger-ui/index.html`。生产环境启用 `prod` Profile，关闭文档 JSON 与 UI。
 - 基础路径：`/api`
 - 管理端路径：`/api/admin`
 

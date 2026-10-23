@@ -1,11 +1,12 @@
 package com.learnplatform.service.knowledge.vector;
 
-import com.fasterxml.jackson.core.StreamReadFeature;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.core.StreamReadFeature;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,9 +31,9 @@ public class QdrantKnowledgeVectorStore implements AutoCloseable {
     private static final int MAX_DIMENSIONS = 65536;
     private static final int MAX_POINTS = 256;
     private static final int MAX_LIMIT = 100;
-    private static final ObjectMapper JSON = new ObjectMapper()
-            .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION.mappedFeature())
-            .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+    private static final ObjectMapper JSON = JsonMapper.builderWithJackson2Defaults()
+            .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
+            .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).build();
 
     private final URI baseUri;
     private final String apiKey;
@@ -310,7 +311,7 @@ public class QdrantKnowledgeVectorStore implements AutoCloseable {
             ObjectNode source = JSON.createObjectNode();
             source.put("bundle_id", bundleId).put("index_key", indexKey).put("chunk_id", chunkId);
             return UUID.nameUUIDFromBytes(JSON.writeValueAsBytes(source)).toString();
-        } catch (IOException exception) {
+        } catch (tools.jackson.core.JacksonException exception) {
             throw new IllegalStateException(exception);
         }
     }

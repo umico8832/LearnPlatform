@@ -1,8 +1,9 @@
 package com.learnplatform.service.evaluation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
 import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.config.AiConfig;
@@ -68,7 +69,7 @@ final class AiEvaluationFixture {
     final List<String> agentTools = new ArrayList<>();
     final List<ToolObservation> toolTrace = new ArrayList<>();
     final CourseLearningEventService events = mock(CourseLearningEventService.class);
-    private final ObjectMapper json = new ObjectMapper();
+    private final ObjectMapper json = JsonMapper.builderWithJackson2Defaults().build();
     private final AiEvaluationCorpus.Case sample;
     private final AiEvaluationCorpus.QuestionData data;
     private final String memoryContext;
@@ -130,28 +131,28 @@ final class AiEvaluationFixture {
         course.setName(data.course());
         when(courses.selectById(20L)).thenReturn(course);
         when(logMapper.countQuota(eq(7L), any())).thenReturn("QUOTA".equals(sample.scenario()) ? 50L : 0L);
-        doAnswer(call -> { logs.add(call.getArgument(0)); return 1; }).when(logMapper).insert(any());
+        doAnswer(call -> { logs.add(call.getArgument(0)); return 1; }).when(logMapper).insert(any(AiCallLog.class));
         doAnswer(call -> {
             QuestionAiAsset asset = call.getArgument(0);
             asset.setId(70L);
             assets.add(asset);
             return 1;
-        }).when(assetMapper).insert(any());
+        }).when(assetMapper).insert(any(QuestionAiAsset.class));
         doAnswer(call -> {
             AiVariantQuestion variant = call.getArgument(0);
             variant.setId(71L);
             variants.add(variant);
             return 1;
-        }).when(variantMapper).insert(any());
+        }).when(variantMapper).insert(any(AiVariantQuestion.class));
         when(variantMapper.selectOne(any())).thenAnswer(call -> variants.isEmpty() ? null : variants.get(0));
         doAnswer(call -> {
             ExamLearningAiInteraction interaction = call.getArgument(0);
             interaction.setId(90L);
             interactions.add(interaction);
             return 1;
-        }).when(interactionMapper).insert(any());
+        }).when(interactionMapper).insert(any(ExamLearningAiInteraction.class));
         when(users.lockAiQuotaUser(7L)).thenReturn(new com.learnplatform.entity.User());
-        when(logMapper.updateById(any())).thenReturn(1);
+        when(logMapper.updateById(any(AiCallLog.class))).thenReturn(1);
         AiCallGovernanceService governance = new AiCallGovernanceService(config, logMapper, users,
                 new com.learnplatform.service.AiCallReservationService(users, logMapper, config), json);
         AiInvocationService invocation = new AiInvocationService(provider, governance);
@@ -447,12 +448,12 @@ final class AiEvaluationFixture {
             };
             toolTrace.add(new ToolObservation(call.id(), call.name(), call.arguments(), output, runId));
             return output;
-        } catch (com.fasterxml.jackson.core.JsonProcessingException exception) {
+        } catch (tools.jackson.core.JacksonException exception) {
             throw new IllegalArgumentException("Invalid Agent evaluation tool payload", exception);
         }
     }
 
-    private String checkToolOutput(boolean present) throws com.fasterxml.jackson.core.JsonProcessingException {
+    private String checkToolOutput(boolean present) throws tools.jackson.core.JacksonException {
         if ("TUTOR_CHECK_ANSWERED".equals(sample.scenario())) {
             return json.writeValueAsString(Map.of("status", "ANSWERED", "result", Map.of(
                     "correct", true, "explanation", "服务端首次判分为正确。",

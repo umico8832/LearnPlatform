@@ -1,6 +1,6 @@
 package com.learnplatform.dto;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 public class TutorSessionVO {
     private String sessionKey;

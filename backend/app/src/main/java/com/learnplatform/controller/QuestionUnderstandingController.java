@@ -1,6 +1,6 @@
 package com.learnplatform.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.learnplatform.common.result.R;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.understanding.QuestionUnderstandingService;

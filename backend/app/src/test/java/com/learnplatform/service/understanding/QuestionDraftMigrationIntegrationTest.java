@@ -1,12 +1,12 @@
 package com.learnplatform.service.understanding;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.mysql.MySQLContainer;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,7 +32,7 @@ class QuestionDraftMigrationIntegrationTest {
     @Test void upgradesCurrentV116WithReadableVisualizationTitles() throws Exception { migrate("116"); }
 
     private void migrate(String initialVersion) throws Exception {
-        try (var database = new MySQLContainer<>("mysql:8.0")
+        try (var database = new MySQLContainer("mysql:8.0")
                 .withDatabaseName("learn_platform").withUsername("test").withPassword("test")
                 .withCommand("--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci")) {
             database.start();
@@ -87,7 +87,7 @@ class QuestionDraftMigrationIntegrationTest {
             assertEquals(1, db.queryForObject("SELECT COUNT(*) FROM question_understanding_content WHERE source_title='2026 年 408 真题 第 3 题' AND source_verification='VERIFIED' AND source_verified_by LIKE '%计算机考研杂货铺%' AND source_verified_time IS NOT NULL AND source_url='https://csgraduates.com/study_methods/408quiz/2026/'", Integer.class));
             Path source = Path.of("").toAbsolutePath();
             while (!Files.isDirectory(source.resolve("content/drafts"))) { source = source.getParent(); }
-            var json = new ObjectMapper();
+            var json = JsonMapper.builderWithJackson2Defaults().build();
             try (var files = Files.list(source.resolve("content/drafts"))) {
                 for (Path file : files.filter(path -> path.toString().endsWith(".json")).toList()) {
                     for (var q : json.readTree(file.toFile()).get("questions")) {

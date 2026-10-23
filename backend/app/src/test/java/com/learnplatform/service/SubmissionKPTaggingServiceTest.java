@@ -1,6 +1,7 @@
 package com.learnplatform.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.SubmissionKPTaggingVO;
 import com.learnplatform.entity.Course;
@@ -40,7 +41,7 @@ class SubmissionKPTaggingServiceTest {
     @Mock
     private KnowledgePointMapper knowledgePointMapper;
     @Spy
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private ObjectMapper objectMapper = JsonMapper.builderWithJackson2Defaults().build();
 
     @InjectMocks
     private SubmissionKPTaggingService kpTaggingService;

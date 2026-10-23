@@ -1,7 +1,7 @@
 package com.learnplatform.service;
 
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.common.time.BusinessTime;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.AiVariantQuestionVO;
 import com.learnplatform.dto.AiVariantTrainingVO;
@@ -40,18 +40,18 @@ class AiVariantQuestionServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new AiVariantQuestionService(new ObjectMapper(), questionAiAssetMapper,
+        service = new AiVariantQuestionService(JsonMapper.builderWithJackson2Defaults().build(), questionAiAssetMapper,
                 aiVariantQuestionMapper, aiVariantTrainingMapper, new AnswerEvaluator());
     }
 
     @Test
     void saveGeneratedAssetSeparatesPublicContentFromPrivateAnswer() {
-        when(questionAiAssetMapper.insert(any())).thenAnswer(invocation -> {
+        when(questionAiAssetMapper.insert(any(QuestionAiAsset.class))).thenAnswer(invocation -> {
             QuestionAiAsset asset = invocation.getArgument(0);
             asset.setId(21L);
             return 1;
         });
-        when(aiVariantQuestionMapper.insert(any())).thenAnswer(invocation -> {
+        when(aiVariantQuestionMapper.insert(any(AiVariantQuestion.class))).thenAnswer(invocation -> {
             AiVariantQuestion question = invocation.getArgument(0);
             question.setId(31L);
             return 1;
@@ -93,7 +93,7 @@ class AiVariantQuestionServiceTest {
                 () -> service.saveGeneratedAsset(7L, "test-model", invalid));
 
         assertTrue(exception.getMessage().contains("正确答案必须对应"));
-        verify(questionAiAssetMapper, never()).insert(any());
+        verify(questionAiAssetMapper, never()).insert(any(QuestionAiAsset.class));
     }
 
     @Test
@@ -165,7 +165,7 @@ class AiVariantQuestionServiceTest {
 
         assertFalse(result.getCorrect());
         assertEquals("A", result.getUserAnswer());
-        verify(aiVariantTrainingMapper, never()).updateById(any());
+        verify(aiVariantTrainingMapper, never()).updateById(any(AiVariantTraining.class));
     }
 
     private AiVariantTraining training() {
@@ -181,7 +181,7 @@ class AiVariantQuestionServiceTest {
 
     private void assertInvalidVariant(String content) {
         assertThrows(BusinessException.class, () -> service.saveGeneratedAsset(7L, "test-model", content));
-        verify(questionAiAssetMapper, never()).insert(any());
+        verify(questionAiAssetMapper, never()).insert(any(QuestionAiAsset.class));
     }
 
     private AiVariantQuestion structuredQuestion() {

@@ -165,7 +165,7 @@ class QuestionLearningAssetServiceTest {
 
         when(aiConfig.getModel()).thenReturn("gpt-4");
         when(aiProvider.chat(anyString(), anyString())).thenReturn("AI generated content");
-        when(questionAiAssetMapper.insert(any())).thenReturn(1);
+        when(questionAiAssetMapper.insert(any(QuestionAiAsset.class))).thenReturn(1);
 
         QuestionLearningAssetVO result = service.generateOrGetAsset(1L, AiAssetType.FULL_EXPLANATION, 7L);
 
@@ -193,7 +193,7 @@ class QuestionLearningAssetServiceTest {
         setupFullQuestionContext();
         when(aiConfig.getModel()).thenReturn("gpt-4");
         when(aiProvider.chat(anyString(), anyString())).thenReturn("content");
-        when(questionAiAssetMapper.insert(any())).thenReturn(1);
+        when(questionAiAssetMapper.insert(any(QuestionAiAsset.class))).thenReturn(1);
 
         service.generateOrGetAsset(1L, AiAssetType.BEGINNER_EXPLANATION, 7L);
 
@@ -226,7 +226,7 @@ class QuestionLearningAssetServiceTest {
             setupFullQuestionContext();
             when(aiConfig.getModel()).thenReturn("gpt-4");
             when(aiProvider.chat(anyString(), anyString())).thenReturn("content for " + type);
-            when(questionAiAssetMapper.insert(any())).thenReturn(1);
+            when(questionAiAssetMapper.insert(any(QuestionAiAsset.class))).thenReturn(1);
             if (type == AiAssetType.VARIANT) {
                 when(aiVariantQuestionService.saveGeneratedAsset(eq(1L), eq("gpt-4"), anyString()))
                         .thenReturn(stubAsset(1L, "VARIANT", "structured variant"));
@@ -271,7 +271,7 @@ class QuestionLearningAssetServiceTest {
             return null;
         }).when(aiProvider).chatStream(anyString(), anyString(), any(Consumer.class));
 
-        when(questionAiAssetMapper.insert(any())).thenReturn(1);
+        when(questionAiAssetMapper.insert(any(QuestionAiAsset.class))).thenReturn(1);
 
         List<String> receivedChunks = new ArrayList<>();
         service.generateAssetStream(1L, AiAssetType.STEP_BY_STEP, 7L, receivedChunks::add);
@@ -333,7 +333,7 @@ class QuestionLearningAssetServiceTest {
             callback.accept("content");
             return null;
         }).when(aiProvider).chatStream(anyString(), anyString(), any(Consumer.class));
-        when(questionAiAssetMapper.insert(any())).thenThrow(new RuntimeException("db error"));
+        when(questionAiAssetMapper.insert(any(QuestionAiAsset.class))).thenThrow(new RuntimeException("db error"));
 
         // Should not throw - cache save failure is swallowed
         List<String> receivedChunks = new ArrayList<>();
@@ -412,13 +412,13 @@ class QuestionLearningAssetServiceTest {
     @Test
     void submitFeedbackCreatesNewFeedbackWhenNoneExists() {
         when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(null);
-        when(aiAssetFeedbackMapper.insert(any())).thenReturn(1);
+        when(aiAssetFeedbackMapper.insert(any(AiAssetFeedback.class))).thenReturn(1);
 
         service.submitFeedback(1L, "FULL_EXPLANATION", 7L, true, "very helpful");
 
         verify(aiAssetFeedbackMapper).selectOne(any());
-        verify(aiAssetFeedbackMapper).insert(any());
-        verify(aiAssetFeedbackMapper, never()).updateById(any());
+        verify(aiAssetFeedbackMapper).insert(any(AiAssetFeedback.class));
+        verify(aiAssetFeedbackMapper, never()).updateById(any(AiAssetFeedback.class));
 
         ArgumentCaptor<AiAssetFeedback> captor = ArgumentCaptor.forClass(AiAssetFeedback.class);
         verify(aiAssetFeedbackMapper).insert(captor.capture());
@@ -433,7 +433,7 @@ class QuestionLearningAssetServiceTest {
     @Test
     void submitFeedbackCreatesFeedbackWithNullComment() {
         when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(null);
-        when(aiAssetFeedbackMapper.insert(any())).thenReturn(1);
+        when(aiAssetFeedbackMapper.insert(any(AiAssetFeedback.class))).thenReturn(1);
 
         service.submitFeedback(1L, "BEGINNER_EXPLANATION", 7L, false, null);
 
@@ -454,12 +454,12 @@ class QuestionLearningAssetServiceTest {
         existing.setHelpful(false);
         existing.setComment("old comment");
         when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(existing);
-        when(aiAssetFeedbackMapper.updateById(any())).thenReturn(1);
+        when(aiAssetFeedbackMapper.updateById(any(AiAssetFeedback.class))).thenReturn(1);
 
         service.submitFeedback(1L, "FULL_EXPLANATION", 7L, true, "changed my mind");
 
-        verify(aiAssetFeedbackMapper, never()).insert(any());
-        verify(aiAssetFeedbackMapper).updateById(any());
+        verify(aiAssetFeedbackMapper, never()).insert(any(AiAssetFeedback.class));
+        verify(aiAssetFeedbackMapper).updateById(any(AiAssetFeedback.class));
 
         ArgumentCaptor<AiAssetFeedback> captor = ArgumentCaptor.forClass(AiAssetFeedback.class);
         verify(aiAssetFeedbackMapper).updateById(captor.capture());
@@ -479,7 +479,7 @@ class QuestionLearningAssetServiceTest {
         existing.setHelpful(true);
         existing.setComment("was good");
         when(aiAssetFeedbackMapper.selectOne(any())).thenReturn(existing);
-        when(aiAssetFeedbackMapper.updateById(any())).thenReturn(1);
+        when(aiAssetFeedbackMapper.updateById(any(AiAssetFeedback.class))).thenReturn(1);
 
         service.submitFeedback(1L, "VARIANT", 7L, false, null);
 

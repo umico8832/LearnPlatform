@@ -2,7 +2,7 @@
 
 ## 技术与分层
 
-后端使用 Java 21、Spring Boot、Spring Security、MyBatis-Plus、Validation、Flyway、Redis 和 Knife4j。
+后端使用 Java 21、Spring Boot 4、Spring Security、MyBatis-Plus、Validation、Flyway、Redis 和 Swagger UI。
 
 ```text
 backend/app/src/main/java/com/learnplatform/
@@ -53,7 +53,7 @@ Controller 也不得直接依赖 Mapper 或持久化 Entity；对外响应统一
 `SecurityConfig` 当前规则：
 
 - `/api/public/**`、注册、登录、注册邮箱验证和密码重置公开。
-- Knife4j/OpenAPI 与允许公开的 Actuator 健康、Prometheus 端点公开。
+- 开发环境的 Swagger UI/OpenAPI 与允许公开的 Actuator 健康、Prometheus 端点公开；`prod` Profile 关闭 API 文档。
 - `/api/admin/**` 需要 `ADMIN`。
 - 其他请求需要 JWT 认证。
 - SSE 的异步和错误二次分发允许继续完成，但首次请求仍必须经过认证。

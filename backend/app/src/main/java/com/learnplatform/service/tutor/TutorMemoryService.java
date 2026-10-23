@@ -1,8 +1,8 @@
 package com.learnplatform.service.tutor;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.TutorMemoryUpdateRequest;
@@ -38,7 +38,7 @@ public class TutorMemoryService {
             ObjectNode context = json.valueToTree(get(userId, courseId));
             context.set("sessionNotes", json.valueToTree(notes.forPrompt(userId, courseId)));
             return json.writeValueAsString(context);
-        } catch (JsonProcessingException exception) {
+        } catch (JacksonException exception) {
             throw new IllegalStateException("Cannot serialize Tutor memory", exception);
         }
     }

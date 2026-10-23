@@ -55,7 +55,7 @@ class ExamLearningAiServiceTest {
             ExamLearningAiInteraction interaction = invocation.getArgument(0);
             interaction.setId(90L);
             return 1;
-        }).when(interactionMapper).insert(any());
+        }).when(interactionMapper).insert(any(ExamLearningAiInteraction.class));
         doAnswer(invocation -> {
             Consumer<String> consumer = invocation.getArgument(4);
             consumer.accept("辅导内容");
@@ -131,7 +131,7 @@ class ExamLearningAiServiceTest {
                 () -> service.streamAssistance(30L, 10L, "EXPLANATION", 7L, ignored -> { }));
 
         assertEquals("请先完成本题首次作答再使用 AI 辅导", exception.getMessage());
-        verify(interactionMapper, never()).insert(any());
+        verify(interactionMapper, never()).insert(any(ExamLearningAiInteraction.class));
         verify(aiService, never()).generatePaperLearningAssistanceStream(any(), any(), any(), any(), any());
     }
 
@@ -142,7 +142,7 @@ class ExamLearningAiServiceTest {
             ExamLearningAiInteraction interaction = invocation.getArgument(0);
             interaction.setId(91L);
             return 1;
-        }).when(interactionMapper).insert(any());
+        }).when(interactionMapper).insert(any(ExamLearningAiInteraction.class));
         doThrow(new IllegalStateException("provider unavailable"))
                 .when(aiService).generatePaperLearningAssistanceStream(
                         eq(10L), eq("VARIANT"), any(), eq(7L), any());

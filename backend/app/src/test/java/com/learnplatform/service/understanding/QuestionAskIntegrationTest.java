@@ -1,7 +1,8 @@
 package com.learnplatform.service.understanding;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.IntegrationTestBase;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.config.AiConfig;
@@ -58,7 +59,7 @@ class QuestionAskIntegrationTest extends IntegrationTestBase {
                 try {
                     if (delay > 0) { Thread.sleep(delay); }
                     if (judge && judgeDelay > 0) { Thread.sleep(judgeDelay); }
-                    String answer = new ObjectMapper().writeValueAsString(judge ? JUDGMENT.get()
+                    String answer = JsonMapper.builderWithJackson2Defaults().build().writeValueAsString(judge ? JUDGMENT.get()
                             : generation > 1 && RETRY.get() != null ? RETRY.get() : RESPONSE.get());
                     String data = "data: {\"model\":\"deepseek-flash\",\"choices\":[{\"index\":0,\"delta\":{\"reasoning_content\":\"答案 A，不得公开\"}}]}\n\n"
                             + "data: {\"model\":\"deepseek-flash\",\"choices\":[{\"index\":0,\"delta\":{\"content\":" + answer + "},\"finish_reason\":\"stop\"}]}\n\n"

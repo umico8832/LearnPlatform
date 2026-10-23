@@ -1,9 +1,10 @@
 package com.learnplatform.service.knowledge;
 
-import com.fasterxml.jackson.core.StreamReadFeature;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.core.StreamReadFeature;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -31,13 +32,13 @@ public class KnowledgeSnapshotLoader {
     private final ObjectMapper json;
 
     public KnowledgeSnapshotLoader() {
-        this(new ObjectMapper());
+        this(JsonMapper.builderWithJackson2Defaults().build());
     }
 
     public KnowledgeSnapshotLoader(ObjectMapper json) {
-        this.json = json.copy()
-                .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION.mappedFeature())
-                .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+        this.json = json.rebuild()
+                .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
+                .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).build();
     }
 
     public KnowledgeSnapshot load(Path root) {
@@ -59,7 +60,7 @@ public class KnowledgeSnapshotLoader {
             Map<String, String> listed = new HashMap<>();
             Map<String, byte[]> content = new HashMap<>();
             long totalBytes = 0;
-            var fields = files.fields();
+            var fields = files.properties().iterator();
             while (fields.hasNext()) {
                 var entry = fields.next();
                 String relative = entry.getKey();

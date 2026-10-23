@@ -39,7 +39,7 @@ final class LangChainRequestMapper {
     private static JsonObjectSchema toolSchema(String json) {
         var root = JsonContract.parse(json);
         var builder = JsonObjectSchema.builder();
-        root.path("properties").fields().forEachRemaining(field ->
+        root.path("properties").properties().iterator().forEachRemaining(field ->
                 builder.addProperty(field.getKey(), JsonRawSchema.from(field.getValue().toString())));
         var required = new java.util.ArrayList<String>();
         root.path("required").forEach(node -> required.add(node.asText()));

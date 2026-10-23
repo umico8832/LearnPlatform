@@ -89,7 +89,7 @@ public record ModelRequest(List<Message> messages, Options options, List<Tool> t
             requireText(description);
             JsonContract.validateSchema(parametersJson);
             var root = JsonContract.parse(parametersJson);
-            root.fieldNames().forEachRemaining(key -> {
+            root.propertyNames().iterator().forEachRemaining(key -> {
                 if (!List.of("type", "properties", "required", "additionalProperties", "description").contains(key)) {
                     throw new IllegalArgumentException("Unsupported tool schema keyword");
                 }

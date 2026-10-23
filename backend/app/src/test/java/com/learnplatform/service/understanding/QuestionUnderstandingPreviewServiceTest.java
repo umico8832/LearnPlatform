@@ -1,6 +1,6 @@
 package com.learnplatform.service.understanding;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.mapper.QuestionTutorMapper;
 import com.learnplatform.mapper.QuestionUnderstandingMapper;
@@ -29,7 +29,7 @@ class QuestionUnderstandingPreviewServiceTest {
     @Test void rejectsForgedAttemptIdsAndInvalidProgressBeforeReadingContent() throws Exception {
         var content = mock(QuestionUnderstandingContent.class);
         var service = new QuestionUnderstandingPreviewService(content, null, null, null, null);
-        var json = new ObjectMapper();
+        var json = JsonMapper.builderWithJackson2Defaults().build();
         for (String body : new String[] {"[]", "{\"attemptId\":7}", "{\"assistance\":\"UNAIDED\"}",
                 "{\"hintLevel\":4}", "{\"hintLevel\":1.5}", "{\"revealSolution\":\"true\"}"}) {
             var node = json.readTree(body);

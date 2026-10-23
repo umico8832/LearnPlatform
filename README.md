@@ -47,7 +47,7 @@ LearnPlatform 是一个以**理解知识**和**课程长期学习过程**为中�
 | 层级 | 技术 |
 |---|---|
 | 前端 | Vue 3、TypeScript、Vite、Element Plus、Pinia、Vue Router、Axios、ECharts |
-| 后端 | Java 21、Spring Boot 3、MyBatis-Plus、Spring Security、JWT、Validation、Knife4j |
+| 后端 | Java 21、Spring Boot 4、MyBatis-Plus、Spring Security、JWT、Validation、Swagger UI |
 | 数据 | MySQL 8、Flyway |
 | 部署 | Docker、Docker Compose、Nginx |
 | 测试 | JUnit、Mockito、MockMvc、Testcontainers、Vitest、Playwright |
@@ -74,7 +74,7 @@ python3 scripts/dev.py frontend
 - 前端：`http://localhost:5173`
 - 独立管理端：另运行 `python3 scripts/dev.py admin` 后访问 `http://localhost:5174/admin/`
 - 后端：`http://localhost:8080`
-- Knife4j：`http://localhost:8080/doc.html`
+- Swagger UI：`http://localhost:8080/doc.html`
 
 完整步骤见[本地开发指南](docs/getting-started/local-development.md)。
 

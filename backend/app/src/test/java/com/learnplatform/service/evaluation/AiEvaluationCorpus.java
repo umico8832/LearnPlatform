@@ -1,6 +1,6 @@
 package com.learnplatform.service.evaluation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.service.knowledge.KnowledgeSearchResult;
 
 import java.io.IOException;
@@ -13,7 +13,7 @@ record AiEvaluationCorpus(int version, String provenance, Map<String, QuestionDa
     static AiEvaluationCorpus load() throws IOException {
         try (InputStream input = AiEvaluationCorpus.class.getResourceAsStream("/ai-evaluation/cases.json")) {
             if (input == null) { throw new IOException("Missing AI evaluation corpus"); }
-            return new ObjectMapper().readValue(input, AiEvaluationCorpus.class);
+            return JsonMapper.builderWithJackson2Defaults().build().readValue(input, AiEvaluationCorpus.class);
         }
     }
 

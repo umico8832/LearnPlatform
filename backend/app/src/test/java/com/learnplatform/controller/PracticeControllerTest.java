@@ -1,6 +1,7 @@
 package com.learnplatform.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.PracticeResultVO;
 import com.learnplatform.dto.PracticeSubmitRequest;
@@ -50,7 +51,7 @@ class PracticeControllerTest {
     @InjectMocks
     private PracticeController practiceController;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builderWithJackson2Defaults().build();
 
     @AfterEach
     void clearSecurityContext() {

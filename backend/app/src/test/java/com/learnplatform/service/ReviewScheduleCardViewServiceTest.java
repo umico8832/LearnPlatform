@@ -1,9 +1,9 @@
 package com.learnplatform.service;
 
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.common.time.BusinessTime;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
 import com.learnplatform.dto.ReviewScheduleVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.Question;
@@ -11,6 +11,10 @@ import com.learnplatform.entity.QuestionReviewSchedule;
 import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.service.understanding.QuestionUnderstandingContent;
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -43,6 +47,11 @@ class ReviewScheduleCardViewServiceTest {
     @Mock
     private QuestionUnderstandingContent understanding;
 
+    @BeforeEach
+    void initializeMybatisMetadata() {
+        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), Question.class);
+    }
+
     @Test
     void mapsLegacyCardWithoutInferringStateFromEaseFactor() {
         QuestionReviewSchedule schedule = new QuestionReviewSchedule();
@@ -70,8 +79,9 @@ class ReviewScheduleCardViewServiceTest {
 
         assertEquals("待首次 FSRS 评分", view.getStatusLabel());
         assertEquals("UNRATED", view.getSchedulingState());
-        JsonNode data = new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL)
-                .findAndRegisterModules().valueToTree(view);
+        JsonNode data = JsonMapper.builderWithJackson2Defaults()
+                .changeDefaultPropertyInclusion(value -> value.withValueInclusion(JsonInclude.Include.NON_NULL))
+                .findAndAddModules().build().valueToTree(view);
         assertTrue(data.has("hasUnderstanding"));
         assertFalse(data.get("hasUnderstanding").asBoolean());
         assertTrue(data.has("lastRating"));

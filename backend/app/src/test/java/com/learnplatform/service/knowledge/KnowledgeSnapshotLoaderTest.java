@@ -1,7 +1,8 @@
 package com.learnplatform.service.knowledge;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.Test;
 
@@ -139,7 +140,7 @@ class KnowledgeSnapshotLoaderTest {
     }
 
     private ObjectMapper mapper() {
-        return new ObjectMapper();
+        return JsonMapper.builderWithJackson2Defaults().build();
     }
 
     private String sha256(byte[] bytes) throws Exception {

@@ -32,7 +32,7 @@ class KnowledgePointServiceTest {
         assertThrows(BusinessException.class,
                 () -> service.createKnowledgePoint(1L, 20L, "子知识点", null, 0));
 
-        verify(knowledgePointMapper, never()).insert(org.mockito.ArgumentMatchers.any());
+        verify(knowledgePointMapper, never()).insert(org.mockito.ArgumentMatchers.any(KnowledgePoint.class));
     }
 
     @Test

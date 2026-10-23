@@ -1,7 +1,8 @@
 package com.learnplatform.controller;
 
+import tools.jackson.databind.json.JsonMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.ExamPaperVO;
 import com.learnplatform.dto.ExamRecordVO;
@@ -44,7 +45,7 @@ class ExamControllerTest {
     private ExamPaperService examPaperService;
 
     private MockMvc mockMvc;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builderWithJackson2Defaults().build();
 
     @AfterEach
     void clearSecurityContext() {

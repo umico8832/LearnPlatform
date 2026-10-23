@@ -1,6 +1,6 @@
 package com.learnplatform.service.understanding;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.entity.Question;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionUnderstandingMapper;
@@ -28,7 +28,7 @@ class QuestionUnderstandingAvailabilityTest {
         question.setQuestionType("SINGLE_CHOICE");
         when(questions.selectById(9L)).thenReturn(question);
         when(mapper.latestContent(9L)).thenReturn(Map.of("review_status", "PENDING"));
-        var content = new QuestionUnderstandingContent(questions, mapper, new ObjectMapper());
+        var content = new QuestionUnderstandingContent(questions, mapper, JsonMapper.builderWithJackson2Defaults().build());
         assertFalse(content.available(7L, 9L));
         verify(mapper, never()).options(anyLong());
     }
@@ -36,7 +36,7 @@ class QuestionUnderstandingAvailabilityTest {
     @Test void infrastructureFailuresArePropagatedRatherThanReportedAsMissingContent() {
         var questions = mock(QuestionMapper.class);
         when(questions.selectById(9L)).thenThrow(new DataAccessResourceFailureException("database unavailable"));
-        var content = new QuestionUnderstandingContent(questions, mock(QuestionUnderstandingMapper.class), new ObjectMapper());
+        var content = new QuestionUnderstandingContent(questions, mock(QuestionUnderstandingMapper.class), JsonMapper.builderWithJackson2Defaults().build());
         assertThrows(DataAccessResourceFailureException.class, () -> content.available(7L, 9L));
     }
 }

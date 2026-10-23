@@ -1,8 +1,9 @@
 package com.learnplatform.service.evaluation;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -11,7 +12,7 @@ import java.util.Set;
 
 record AiMemoryAblationCorpus(int version, String provenance, List<Case> cases) {
     static final String RESOURCE = "/ai-evaluation/memory-cases.json";
-    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ObjectMapper JSON = JsonMapper.builderWithJackson2Defaults().build();
 
     static AiMemoryAblationCorpus load() throws IOException {
         try (var input = AiMemoryAblationCorpus.class.getResourceAsStream(RESOURCE)) {
@@ -60,7 +61,7 @@ record AiMemoryAblationCorpus(int version, String provenance, List<Case> cases) 
         }
 
         String context(Case sample) {
-            ObjectNode memory = sample.memory().deepCopy();
+            ObjectNode memory = (ObjectNode) sample.memory().deepCopy();
             if (!profile) {
                 memory.put("revision", 0);
                 memory.putNull("explanationStyle");

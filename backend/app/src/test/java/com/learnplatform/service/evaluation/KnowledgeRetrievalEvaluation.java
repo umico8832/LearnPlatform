@@ -1,6 +1,6 @@
 package com.learnplatform.service.evaluation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.ai.model.Cancellation;
 import com.learnplatform.ai.model.ModelException;
 import com.learnplatform.config.AiConfig;
@@ -45,7 +45,7 @@ final class KnowledgeRetrievalEvaluation {
         try (var input = KnowledgeRetrievalEvaluation.class.getResourceAsStream("/ai-evaluation/retrieval-cases.json")) {
             if (input == null) { throw new IOException("Missing retrieval evaluation corpus"); }
             String text = new String(input.readAllBytes(), StandardCharsets.UTF_8);
-            Corpus corpus = new ObjectMapper().readValue(text, Corpus.class);
+            Corpus corpus = JsonMapper.builderWithJackson2Defaults().build().readValue(text, Corpus.class);
             validate(corpus);
             return new Snapshot(corpus, AiEvaluationReport.sha256(text));
         }
@@ -163,10 +163,10 @@ final class KnowledgeRetrievalEvaluation {
         var users = mock(UserMapper.class);
         when(users.lockAiQuotaUser(7L)).thenReturn(new User());
         when(mapper.selectCount(any())).thenReturn(0L);
-        when(mapper.updateById(any())).thenReturn(1);
-        doAnswer(call -> { logs.add(call.getArgument(0)); return 1; }).when(mapper).insert(any());
+        when(mapper.updateById(any(AiCallLog.class))).thenReturn(1);
+        doAnswer(call -> { logs.add(call.getArgument(0)); return 1; }).when(mapper).insert(any(AiCallLog.class));
         var governance = new AiCallGovernanceService(config, mapper, users,
-                new AiCallReservationService(users, mapper, config), new ObjectMapper());
+                new AiCallReservationService(users, mapper, config), JsonMapper.builderWithJackson2Defaults().build());
         return new AiInvocationService(mock(AiProvider.class), provider, governance, config);
     }
 

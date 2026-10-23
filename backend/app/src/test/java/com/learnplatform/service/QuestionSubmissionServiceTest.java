@@ -1,6 +1,6 @@
 package com.learnplatform.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.QuestionSubmissionRequest;
 import com.learnplatform.dto.QuestionSubmissionVO;
@@ -36,7 +36,7 @@ class QuestionSubmissionServiceTest {
 
     @BeforeEach
     void setUp() {
-        QuestionSubmissionOptionService optionService = new QuestionSubmissionOptionService(new ObjectMapper());
+        QuestionSubmissionOptionService optionService = new QuestionSubmissionOptionService(JsonMapper.builderWithJackson2Defaults().build());
         QuestionSubmissionViewService viewService = new QuestionSubmissionViewService(userMapper, courseMapper);
         service = new QuestionSubmissionService(submissionMapper, courseMapper, optionService, viewService);
     }
@@ -57,7 +57,7 @@ class QuestionSubmissionServiceTest {
                 () -> service.submitQuestion(request, 7L));
 
         assertEquals("单选题必须且只能有 1 个正确答案", exception.getMessage());
-        verify(submissionMapper, never()).insert(any());
+        verify(submissionMapper, never()).insert(any(QuestionSubmission.class));
     }
 
     @Test

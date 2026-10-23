@@ -1,8 +1,8 @@
 package com.learnplatform.service;
 
 import com.learnplatform.common.time.BusinessTime;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.ai.model.ModelResult;
 import com.learnplatform.ai.model.EmbeddingRequest;
@@ -161,7 +161,7 @@ public class AiCallGovernanceService {
     private String serialize(Object value) {
         try {
             return json.writeValueAsString(value);
-        } catch (JsonProcessingException exception) {
+        } catch (JacksonException exception) {
             throw new IllegalArgumentException("AI request cannot be fingerprinted");
         }
     }

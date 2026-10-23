@@ -5,7 +5,7 @@ import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.boot.restclient.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -33,8 +33,8 @@ public class TurnstileService {
         this.enabled = enabled;
         this.secretKey = secretKey == null ? "" : secretKey.trim();
         this.restTemplate = restTemplateBuilder
-                .setConnectTimeout(Duration.ofSeconds(3))
-                .setReadTimeout(Duration.ofSeconds(5))
+                .connectTimeout(Duration.ofSeconds(3))
+                .readTimeout(Duration.ofSeconds(5))
                 .build();
     }
 

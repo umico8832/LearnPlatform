@@ -1,7 +1,7 @@
 package com.learnplatform.service.understanding;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.JsonNode;
 import com.learnplatform.ai.model.Cancellation;
 import com.learnplatform.ai.model.ModelException;
 import com.learnplatform.ai.model.ModelResult;
@@ -36,7 +36,7 @@ import static org.mockito.Mockito.*;
 class QuestionAskEvaluationTest {
     @Test void evaluateBothThinkingModesThroughProductionGatewayAndGuard() throws Exception {
         boolean real = Boolean.getBoolean("questionAskEval.real");
-        var json = new ObjectMapper();
+        var json = JsonMapper.builderWithJackson2Defaults().build();
         var config = new AiConfig();
         config.setEnabled(true);
         config.setModel("deepseek-flash");

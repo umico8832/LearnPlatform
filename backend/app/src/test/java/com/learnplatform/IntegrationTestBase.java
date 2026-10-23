@@ -2,7 +2,7 @@ package com.learnplatform;
 
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.mysql.MySQLContainer;
 
 import java.io.File;
 
@@ -22,8 +22,8 @@ public abstract class IntegrationTestBase {
         }
     }
 
-    private static final MySQLContainer<?> MYSQL =
-            new MySQLContainer<>("mysql:8.0")
+    private static final MySQLContainer MYSQL =
+            new MySQLContainer("mysql:8.0")
                     .withDatabaseName("learn_platform")
                     .withUrlParam("serverTimezone", "America/New_York")
                     .withUsername("test")

@@ -1,8 +1,8 @@
 package com.learnplatform.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.CourseStageAssessmentSummaryVO;
@@ -91,7 +91,7 @@ public class CourseStageAssessmentViewService {
     private List<CourseStageAssessmentVO.OptionItem> readOptions(String json) {
         try {
             return objectMapper.readValue(json, new TypeReference<>() { });
-        } catch (JsonProcessingException exception) {
+        } catch (JacksonException exception) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "测评题目快照损坏");
         }
     }

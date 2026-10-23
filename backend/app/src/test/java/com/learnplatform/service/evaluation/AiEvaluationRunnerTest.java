@@ -1,6 +1,7 @@
 package com.learnplatform.service.evaluation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.config.AiConfig;
 import com.learnplatform.service.ai.AiTokenUsage;
 import com.learnplatform.service.ai.OpenAiProvider;
@@ -18,7 +19,7 @@ import com.sun.net.httpserver.HttpServer;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AiEvaluationRunnerTest {
-    private final ObjectMapper json = new ObjectMapper();
+    private final ObjectMapper json = JsonMapper.builderWithJackson2Defaults().build();
 
     @Test void environmentBindingRequiresExplicitApplicationConfiguration() {
         assertThrows(AssertionError.class, () -> AiEvaluationOnlineTest.configuration(Map.of()));

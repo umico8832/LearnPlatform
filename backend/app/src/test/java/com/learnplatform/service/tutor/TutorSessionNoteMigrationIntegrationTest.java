@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.mysql.MySQLContainer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag("integration")
 class TutorSessionNoteMigrationIntegrationTest {
     @Test void upgradesV103WithoutChangingMemoryAndEnforcesOneVersionedNotePerSession() {
-        try (var database = new MySQLContainer<>("mysql:8.0")
+        try (var database = new MySQLContainer("mysql:8.0")
                 .withDatabaseName("learn_platform").withUsername("test").withPassword("test")
                 .withCommand("--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci")) {
             database.start();

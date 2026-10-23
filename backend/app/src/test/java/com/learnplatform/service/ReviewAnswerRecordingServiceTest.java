@@ -108,7 +108,7 @@ class ReviewAnswerRecordingServiceTest {
 
         assertThrows(BusinessException.class, () -> service.evaluateAndRecord(request, 7L));
 
-        verify(practiceRecordMapper, never()).insert(any());
+        verify(practiceRecordMapper, never()).insert(any(PracticeRecord.class));
         verifyNoInteractions(wrongQuestionService);
     }
 

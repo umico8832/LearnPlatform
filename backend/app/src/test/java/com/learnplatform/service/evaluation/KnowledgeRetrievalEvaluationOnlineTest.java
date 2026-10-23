@@ -1,8 +1,8 @@
 package com.learnplatform.service.evaluation;
 
+import tools.jackson.databind.json.JsonMapper;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnplatform.config.AiConfig;
 import com.learnplatform.service.ai.OpenAiEmbeddingProvider;
 import com.learnplatform.service.knowledge.vector.QdrantKnowledgeVectorStore;
@@ -53,7 +53,7 @@ class KnowledgeRetrievalEvaluationOnlineTest {
                 }
                 Path output = Path.of("target", "ai-evaluation", "retrieval-online.json");
                 Files.createDirectories(output.getParent());
-                new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(output.toFile(), report);
+                JsonMapper.builderWithJackson2Defaults().build().writerWithDefaultPrettyPrinter().writeValue(output.toFile(), report);
                 assertEquals("SUCCEEDED", report.get("executionStatus"),
                         "Retrieval evaluation failed; see sanitized retrieval-online.json");
             }

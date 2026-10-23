@@ -1,8 +1,8 @@
 package com.learnplatform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.CourseStageAssessmentVO;
@@ -106,7 +106,7 @@ public class CourseStageAssessmentSnapshotService {
     private String writeJson(Object value) {
         try {
             return objectMapper.writeValueAsString(value);
-        } catch (JsonProcessingException exception) {
+        } catch (JacksonException exception) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "测评题目快照保存失败");
         }
     }

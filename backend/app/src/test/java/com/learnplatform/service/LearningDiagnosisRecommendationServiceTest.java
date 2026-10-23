@@ -49,6 +49,7 @@ class LearningDiagnosisRecommendationServiceTest {
         MapperBuilderAssistant assistant = new MapperBuilderAssistant(configuration, "");
         assistant.setCurrentNamespace("test");
         TableInfoHelper.initTableInfo(assistant, Question.class);
+        TableInfoHelper.initTableInfo(assistant, QuestionKnowledgePoint.class);
     }
 
     @BeforeEach

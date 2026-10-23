@@ -1,6 +1,6 @@
 package com.learnplatform.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.dto.CourseStageAssessmentSummaryVO;
 import com.learnplatform.entity.CourseStageAssessment;
 import com.learnplatform.entity.CourseStageAssessmentQuestion;
@@ -34,7 +34,7 @@ class CourseOverviewAssessmentServiceTest {
     @BeforeEach
     void setUp() {
         assessmentService = new CourseOverviewAssessmentService(
-                stageAssessmentMapper, stageAssessmentQuestionMapper, new ObjectMapper());
+                stageAssessmentMapper, stageAssessmentQuestionMapper, JsonMapper.builderWithJackson2Defaults().build());
     }
 
     @Test

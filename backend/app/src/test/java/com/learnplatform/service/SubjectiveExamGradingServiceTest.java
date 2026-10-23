@@ -1,6 +1,6 @@
 package com.learnplatform.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.dto.SubjectiveAnswerReviewVO;
 import com.learnplatform.dto.SubjectiveGradingRequest;
 import com.learnplatform.entity.ExamAnswer;
@@ -43,7 +43,7 @@ class SubjectiveExamGradingServiceTest {
     @BeforeEach
     void setUp() {
         service = new SubjectiveExamGradingService(answerMapper, recordMapper, paperMapper, examQuestionMapper,
-                questionMapper, gradingPointMapper, new ObjectMapper(), cacheEvictService);
+                questionMapper, gradingPointMapper, JsonMapper.builderWithJackson2Defaults().build(), cacheEvictService);
     }
 
     @Test

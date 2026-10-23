@@ -6,7 +6,7 @@
 
 ### 简洁版
 
-> **LearnPlatform AI 学习平台**：使用 Vue 3、TypeScript、Spring Boot 3、MySQL 构建“一道题从错到懂”的学习闭环：所选错项误区、三级提示、参数化算法动画、答案由服务端保管的变式题与 FSRS 间隔复习。追问在正解开放前隔离私有材料，并经规则与独立模型判断；仅独立作答更新复习排期。通过 Flyway、Testcontainers、Vitest 和隔离 Playwright 验证权限、判分、并发和学习事实的一致性。
+> **LearnPlatform AI 学习平台**：使用 Vue 3、TypeScript、Spring Boot 4、MySQL 构建“一道题从错到懂”的学习闭环：所选错项误区、三级提示、参数化算法动画、答案由服务端保管的变式题与 FSRS 间隔复习。追问在正解开放前隔离私有材料，并经规则与独立模型判断；仅独立作答更新复习排期。通过 Flyway、Testcontainers、Vitest 和隔离 Playwright 验证权限、判分、并发和学习事实的一致性。
 
 ### 详细版
 
@@ -20,7 +20,7 @@
 
 ## English summary
 
-> **LearnPlatform** is a course learning platform built with Vue 3, TypeScript, Spring Boot 3, and MySQL. It connects chosen-option misconception feedback, progressive hints, deterministic algorithm visualizations, server-graded variants, and FSRS review scheduling. Before solution unlock, question follow-ups isolate private reference material and check generated replies with rules and a separate model judgment. Only unaided answers update review schedules. Flyway, Testcontainers, Vitest, and isolated Playwright tests verify access control, grading, concurrency, and learning records.
+> **LearnPlatform** is a course learning platform built with Vue 3, TypeScript, Spring Boot 4, and MySQL. It connects chosen-option misconception feedback, progressive hints, deterministic algorithm visualizations, server-graded variants, and FSRS review scheduling. Before solution unlock, question follow-ups isolate private reference material and check generated replies with rules and a separate model judgment. Only unaided answers update review schedules. Flyway, Testcontainers, Vitest, and isolated Playwright tests verify access control, grading, concurrency, and learning records.
 
 ## 可核对的规模与验证
 
@@ -35,7 +35,7 @@
 | 关键后端测试补强 | 同一相关套件47→65项，含40项真实MySQL集成 | 判断服务分支20/26→24/26，FSRS25/40→36/40；仅表示该套件覆盖 |
 | 追问边界模拟 | 30条语料双模式60/60通过 | 确定性模拟用于边界回归，未完成真实模型教学质量评测 |
 
-技术版本以主线锁文件和 Maven 为准。Spring Boot 3.5 与前端依赖升级为独立实验分支，未合入；简历不把实验版本当主线版本。
+技术版本以主线锁文件和 Maven 为准。后端已迁移到 Spring Boot 4；精确版本以 `backend/pom.xml` 为准。前端依赖实验结果仍按各自分支与验证记录判断。
 
 ## 面试时可展开的取舍
 

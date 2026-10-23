@@ -71,7 +71,7 @@ class ExamPaperLearningServiceTest {
         AtomicReference<ExamLearningSession> saved = new AtomicReference<>();
         stubEligiblePaper();
         when(sessionMapper.selectOne(any())).thenReturn(null);
-        when(sessionMapper.insert(any())).thenAnswer(invocation -> {
+        when(sessionMapper.insert(any(ExamLearningSession.class))).thenAnswer(invocation -> {
             ExamLearningSession session = invocation.getArgument(0);
             session.setId(30L);
             saved.set(session);
@@ -124,7 +124,7 @@ class ExamPaperLearningServiceTest {
         stubActiveSession();
         stubEligiblePaper();
         when(learningAnswerMapper.selectCount(any())).thenReturn(0L);
-        when(learningAnswerMapper.insert(any())).thenAnswer(invocation -> {
+        when(learningAnswerMapper.insert(any(ExamLearningAnswer.class))).thenAnswer(invocation -> {
             ExamLearningAnswer answer = invocation.getArgument(0);
             answer.setId(81L);
             return 1;

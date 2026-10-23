@@ -1,6 +1,7 @@
 package com.learnplatform.service.evaluation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.learnplatform.ai.model.ModelRequest;
 import com.learnplatform.config.AiConfig;
 import com.learnplatform.service.ai.AiProvider;
@@ -23,7 +24,7 @@ import java.util.Set;
 import java.util.UUID;
 
 final class AiMemoryAblationEvaluation {
-    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ObjectMapper JSON = JsonMapper.builderWithJackson2Defaults().build();
     private static final String SCRIPTED_RESPONSE = "栈遵循后进先出。先观察每次操作前后的栈顶，再继续本节学习。";
     private static final String LESSON = "栈只在栈顶插入或删除，遵循后进先出。"
             + "空栈先压入 1，再压入 2，栈顶为 2；弹出一次后，栈顶恢复为 1。"

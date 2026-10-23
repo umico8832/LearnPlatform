@@ -1,6 +1,6 @@
 package com.learnplatform.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.common.result.R;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.security.GoogleOAuthFailureHandler;
@@ -63,14 +63,14 @@ public class SecurityConfig {
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                             response.setCharacterEncoding("UTF-8");
-                            new ObjectMapper().writeValue(response.getWriter(),
+                            JsonMapper.builderWithJackson2Defaults().build().writeValue(response.getWriter(),
                                     R.fail(ResultCode.UNAUTHORIZED));
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                             response.setCharacterEncoding("UTF-8");
-                            new ObjectMapper().writeValue(response.getWriter(),
+                            JsonMapper.builderWithJackson2Defaults().build().writeValue(response.getWriter(),
                                     R.fail(ResultCode.FORBIDDEN));
                         })
                 )
@@ -82,7 +82,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/email/**",
                                 "/api/auth/password/forgot", "/api/auth/password/reset/**",
                                 "/api/auth/oauth/**").permitAll()
-                        // Knife4j / Swagger 文档
+                        // OpenAPI / Swagger 文档
                         .requestMatchers("/doc.html", "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
                         // Actuator 仅开放健康检查和 Prometheus 指标；其他管理端点仍需认证。
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/prometheus").permitAll()
