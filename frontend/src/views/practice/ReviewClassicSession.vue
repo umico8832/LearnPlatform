@@ -27,7 +27,6 @@ const submitting = ref(false)
 const error = ref('')
 type ReviewResult = ReviewScheduleVO & { correct?: boolean | null }
 const result = ref<ReviewResult | null>(null)
-const quality = ref<2 | 5 | undefined>(undefined)
 const sessionCards = ref<ReviewScheduleVO[]>([])
 const reviewedCount = ref(0)
 const correctCount = ref(0)
@@ -91,7 +90,6 @@ function reset() {
   submitting.value = false
   error.value = ''
   result.value = null
-  quality.value = undefined
   question.value = null
 }
 function start() {
@@ -121,7 +119,6 @@ async function submit() {
       {
         questionId: current.value.questionId,
         userAnswer: answer.value.trim(),
-        ...(quality.value === undefined ? {} : { selfAssessedQuality: quality.value }),
       },
       { errorDisplay: 'inline' },
     )
@@ -238,22 +235,6 @@ defineExpose({ start, reviewing })
         </div>
         <textarea v-else v-model="answer" aria-label="复习答案" placeholder="输入你的答案" />
       </fieldset>
-      <div v-if="!submitted" class="rating" aria-label="自评难度">
-        <span>自评（可选）</span
-        ><label
-          ><input
-            v-model="quality"
-            type="radio"
-            name="review-quality"
-            :disabled="submitting"
-            :value="undefined"
-          />按作答安排</label
-        ><label
-          ><input v-model="quality" type="radio" name="review-quality" :disabled="submitting" :value="2" />困难</label
-        ><label
-          ><input v-model="quality" type="radio" name="review-quality" :disabled="submitting" :value="5" />容易</label
-        >
-      </div>
       <p v-if="error" class="error" role="alert">{{ error }}</p>
       <div v-if="submitted" class="result" aria-live="polite">
         <p>
@@ -296,16 +277,14 @@ defineExpose({ start, reviewing })
   margin-top: var(--lt-space-6);
 }
 .session-head,
-.actions,
-.rating {
+.actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--lt-space-3);
 }
 .eyebrow,
-.due,
-.rating {
+.due {
   color: var(--lt-label-2);
   font-size: var(--lt-text-footnote);
 }
@@ -364,15 +343,6 @@ textarea {
   color: var(--lt-label);
   font: inherit;
   resize: vertical;
-}
-.rating {
-  justify-content: flex-start;
-  margin-top: var(--lt-space-4);
-}
-.rating label {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--lt-space-1);
 }
 .error {
   margin-top: var(--lt-space-3);

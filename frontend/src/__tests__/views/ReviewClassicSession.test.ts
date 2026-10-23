@@ -44,30 +44,8 @@ describe('ReviewClassicSession', () => {
 
   afterEach(() => removeToken())
 
-  it('submits the selected self-assessment with the answer and presents server grading', async () => {
+  it('uses automatic scheduling and presents server grading', async () => {
     submitReview.mockResolvedValue({ data: { correct: false, nextReviewDate: '2026-11-02', reward: null } })
-    const wrapper = mount(ReviewClassicSession, { props: { cards: [card] } })
-    ;(wrapper.vm as { start: () => void }).start()
-    await flushPromises()
-    await wrapper.get('textarea').setValue('A')
-    await wrapper.get('input[value="2"]').setValue()
-    await wrapper.get('button').trigger('click')
-    await flushPromises()
-    expect(submitReview).toHaveBeenCalledWith(
-      { questionId: 11, userAnswer: 'A', selfAssessedQuality: 2 },
-      { errorDisplay: 'inline' },
-    )
-    expect(wrapper.text()).toContain('服务端判分：回答错误')
-    expect(wrapper.text()).toContain('下次复习：2026-11-02')
-    expect(wrapper.get('[role="region"][aria-label="复习作答"]')).toBeTruthy()
-    await wrapper.get('button').trigger('click')
-    await flushPromises()
-    expect(wrapper.get('[role="region"][aria-label="本组复习完成"]')).toBeTruthy()
-    expect(wrapper.text()).toContain('本组复习完成')
-  })
-
-  it('keeps automatic scheduling when no self assessment is selected', async () => {
-    submitReview.mockResolvedValue({ data: { correct: true, reward: null } })
     const wrapper = mount(ReviewClassicSession, { props: { cards: [card] } })
     ;(wrapper.vm as { start: () => void }).start()
     await flushPromises()
@@ -75,7 +53,13 @@ describe('ReviewClassicSession', () => {
     await wrapper.get('button').trigger('click')
     await flushPromises()
     expect(submitReview).toHaveBeenCalledWith({ questionId: 11, userAnswer: 'A' }, { errorDisplay: 'inline' })
-    wrapper.unmount()
+    expect(wrapper.text()).toContain('服务端判分：回答错误')
+    expect(wrapper.text()).toContain('下次复习：2026-11-02')
+    expect(wrapper.get('[role="region"][aria-label="复习作答"]')).toBeTruthy()
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('[role="region"][aria-label="本组复习完成"]')).toBeTruthy()
+    expect(wrapper.text()).toContain('本组复习完成')
   })
 
   it('keeps the answer editable after a failed submission and offers retry', async () => {

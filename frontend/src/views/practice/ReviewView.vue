@@ -467,7 +467,7 @@ h1 {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--lt-green);
+  background: var(--lt-accent);
 }
 .tools {
   justify-content: flex-start;
