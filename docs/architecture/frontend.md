@@ -77,8 +77,8 @@ frontend/admin/   # 独立管理端 HTML 入口
   带侧栏的限时考试用宽版；交卷与离开考试都在页面自己的弹层里确认，时间到后的说明交给考试记录页显示。
 
 主导航的 `aria-current` 覆盖子页面，当前项的高亮随导航滑到新位置；返回上一级由各页面自己提供。
-已重做页面（路由 `meta.living`）由 LearnerShell 统一 1280px 内容区与左右留白，普通页头复用 `LtPageHeader`；
-阅读页面可在内容区内收窄阅读列，特殊主线页头保留自身结构。其余旧页面保留旧内边距与宽度。
+外框内页面由 LearnerShell 统一 1280px 内容区与左右留白，普通页头复用 `LtPageHeader`；
+阅读页面可在内容区内收窄阅读列，特殊主线页头保留自身结构。
 路径导航完成后聚焦主内容并保留滚动位置，同页筛选不转移焦点。普通页面仅做共享内容入场，旧页面立即移除，
 避免进出页面同时占据文档高度；沉浸式页面直接切换。历史返回在内容尚未加载到原高度时短暂等待布局，
 最多八秒；主动滚动、键盘操作或新导航会取消这次恢复。Focus 返回优先使用站内历史，无历史时回到课程或考试列表。
@@ -97,9 +97,8 @@ frontend/admin/   # 独立管理端 HTML 入口
 - 新基线只在 `.lt` 根内生效。`assets/styles/living.css` 定义 `--lt-` 令牌，颜色用 `light-dark()` 同时给出浅色与深色，
   默认跟随系统，`data-appearance` 可强制其一；展示首页与 Phase 28 起新做的学员页面固定深色（[ADR-0014](decisions/0014-learner-dark-only.md)）。重做页面用 `useLivingTheme` 把整个文档放进新基线，嵌入式组件自带 `.lt` 根；
   学员外框与 404 用 `useLivingTheme({ dark: true })` 固定深色，外框内的页面一并为深色。
-- 过渡期深色桥接：外框挂载时给 `<html>` 加 `lp-dark`，`assets/styles/legacy-dark.css` 把旧 `--lp-` 令牌和 Element Plus 变量换成深色取值，
-  尚未重做的旧页面不再出现整块白底；页面里写死的颜色不处理。旧页面全部迁到新基线后删除该文件。
-  新页面不使用 `--lp-` 变量、Element Plus 或 `Lp*` 组件，两套基线互不覆盖。
+- 学员端页面与外框（含全局搜索）全部在新基线上，不使用 `--lp-` 变量、Element Plus 或 `Lp*` 组件；这些只留给管理端。
+  `utils/request.ts` 的失败与登录过期提示经 `utils/notify.ts` 发出：管理端用 Element Plus 消息，学员端入口换成底部浮层提示条。
 - `motion/` 是与框架无关的解析解弹簧核心（命名预设、共享帧循环）和 `linear()` 缓动生成，
   `useSpring` 提供 Vue 绑定；`living.css` 中的缓动令牌由同名预设生成，测试保证两边一致。
 - `components/living/` 提供按需导入的 `Lt*` 基础组件，图标使用 Lucide；需要按钮外观的导航用 `LtLinkButton`，保持链接语义。面板基于原生 `<dialog>`，
@@ -111,18 +110,18 @@ frontend/admin/   # 独立管理端 HTML 入口
 
 图算法的纯数据轨迹与输入边界见[图算法轨迹](graph-traces.md)，当前未注册为正式场景，也未接入页面。
 
-下述 Quiet Digital Textbook 实现仍适用于尚未重做的学习端页面和管理端。
+下述 Quiet Digital Textbook 实现仍适用于管理端。
 
 - `assets/styles/tokens.css` 是唯一视觉来源：颜色、字体、间距、圆角、边框、阴影、动效、布局、
   z-index 均以 CSS 变量定义；`element-plus.css` 将这些语义变量映射到 Element Plus。应用工作区采用暖纸底色、
   低饱和蓝主操作与焦点的 Quiet Digital Textbook。学习投入记录使用共享低饱和色与文字层级，
   题干、解析、代码和 Markdown 阅读区域保持克制；经验与等级表示学习投入。
-- `components/ui/` 提供全局注册的基础组件（包括 `LpPageHeader`、`LpCard`、`LpListItem`、`LpStatePanel`、
+- `components/ui/` 提供管理端按需导入的基础组件（包括 `LpPageHeader`、`LpCard`、`LpListItem`、`LpStatePanel`、
   `LpStat`、`LpProgress`、`LpProgressRing`、`LpEmptyState`、`LpSkeleton`、`LpDivider`、`LpSignal`、`LpKicker`）。
   `LpStatePanel` 将 loading、empty、error 与 ready 分开，避免将失败呈现为零数据；页面与组件不得随手定义裸色值/裸尺寸。
 - `assets/styles/motion.css` 提供 Vue `Transition` / `TransitionGroup` 的共享内容、披露与列表移动类；
   它只使用 token 化的 opacity 与短距离 transform。所有动画对所有访客一致播放，遵循 [ADR-0011](decisions/0011-living-textbook-spring-motion.md)。
-  `useAnimatedNumber` 对服务端数值的后续更新使用可取消 RAF，首次值直接显示。旧页面不引入新的动画依赖，
+  `useAnimatedNumber` 对服务端数值的后续更新使用可取消 RAF，首次值直接显示。管理端不引入新的动画依赖，
   也不混用新基线的弹簧动效；原生 View Transitions 目前只用于可视化的展开与收回，通用路由切换尚未使用。
 - 反馈组件集中在 `components/gamification/`，使用后端奖励与概况，不在前端认定积分或成就。
   ADR-0010 定义其安静呈现方向：数据在顶栏、个人页和总结中原位显示，不增加奖励飘字、全屏庆祝、彩纸、连击火焰、成就弹窗或常驻 pulse。
