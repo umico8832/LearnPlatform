@@ -63,10 +63,6 @@ async function loginAs(page: Page, username: string, password: string) {
   await expect(page).toHaveURL(/\/my-courses$/, { timeout: 15_000 })
 }
 
-async function loginAsLearner(page: Page) {
-  await loginAs(page, 'testuser', 'test123')
-}
-
 async function ensureLearnerCourse(page: Page) {
   await api(page, `/my-courses/${courseId}`, 'POST')
 }
@@ -210,7 +206,7 @@ async function submitPracticeAnswer(page: Page, answer: string) {
 test.describe('安静学习投入记录', () => {
   test('收藏的四道真实题目按 3 对 1 错结算 XP、连击、热力与持久目标', async ({ page, browser }, testInfo) => {
     test.setTimeout(90_000)
-    await loginAsLearner(page)
+    await createFreshLearner(browser, page)
     await ensureLearnerCourse(page)
     const fixture = await createFixture(browser, page, `practice-${Date.now()}`)
     await loadFavoriteQuestions(page, fixture.questions)
@@ -267,14 +263,20 @@ test.describe('安静学习投入记录', () => {
     await expect(capturePage.getByTestId('gamification-heatmap')).toBeVisible()
     const profileSummary = await api<GamificationSummary>(capturePage, '/gamification/summary')
     expect(profileSummary.zoneId).toBe('America/New_York')
-    expect(profileSummary.todayAnsweredCount).toBeGreaterThan(0)
+    expect(profileSummary.todayAnsweredCount).toBe(fixture.questions.length)
     const today = businessDate(profileSummary.zoneId)
     const todayHeatmap = capturePage.getByRole('button', {
       name: new RegExp(`^${today}：${profileSummary.todayAnsweredCount} 题，`),
     })
     await expect(todayHeatmap).toHaveAttribute('data-active', 'true')
     await profile.getByTestId('gamification-daily-goal').locator('input').fill('7')
+    const goalSaved = capturePage.waitForResponse(
+      (response) => response.request().method() === 'POST' && response.url().endsWith('/api/gamification/daily-goal'),
+    )
     await profile.getByRole('button', { name: '保存目标', exact: true }).click()
+    const goalResult = await goalSaved
+    expect(goalResult.status()).toBe(200)
+    expect((await goalResult.json()) as ApiEnvelope<GamificationSummary>).toMatchObject({ code: 0 })
     await capturePage.reload()
     await expect(capturePage.getByTestId('gamification-daily-goal').locator('input')).toHaveValue('7')
     await expect(capturePage.getByTestId('gamification-heatmap').locator('[data-active="true"]')).not.toHaveCount(0)
@@ -290,7 +292,7 @@ test.describe('安静学习投入记录', () => {
 
   test('错题当前范围只练习路由指定的真实题目', async ({ page, browser }) => {
     test.setTimeout(90_000)
-    await loginAsLearner(page)
+    await createFreshLearner(browser, page)
     await ensureLearnerCourse(page)
     const fixture = await createFixture(browser, page, `wrong-scope-${Date.now()}`, 2)
     const [target, other] = fixture.questions
@@ -327,7 +329,7 @@ test.describe('安静学习投入记录', () => {
 
   test('作答反馈保留真实判分信息且不渲染彩纸画布', async ({ page, browser }) => {
     test.setTimeout(90_000)
-    await loginAsLearner(page)
+    await createFreshLearner(browser, page)
     await ensureLearnerCourse(page)
     const fixture = await createFixture(browser, page, `answer-feedback-${Date.now()}`)
     await loadFavoriteQuestions(page, [fixture.questions[0]])
@@ -341,7 +343,7 @@ test.describe('安静学习投入记录', () => {
 
   test('复习提交使用服务端 correct 字段，并以真实判分展示奖励', async ({ page, browser }) => {
     test.setTimeout(90_000)
-    await loginAsLearner(page)
+    await createFreshLearner(browser, page)
     await ensureLearnerCourse(page)
     const fixture = await createFixture(browser, page, `review-${Date.now()}`)
     const question = fixture.questions[0]
@@ -367,7 +369,7 @@ test.describe('安静学习投入记录', () => {
 
   test('考试作答全程静默，交卷后的结果页展示 submissionReward', async ({ page, browser }) => {
     test.setTimeout(90_000)
-    await loginAsLearner(page)
+    await createFreshLearner(browser, page)
     await ensureLearnerCourse(page)
     const fixture = await createFixture(browser, page, `exam-${Date.now()}`)
     await page.goto('/exams')
@@ -508,7 +510,7 @@ test.describe('学习投入边界验收', () => {
 
   test('答错后在复习答对，错题列表会移除该真实题目', async ({ page, browser }) => {
     test.setTimeout(90_000)
-    await loginAsLearner(page)
+    await createFreshLearner(browser, page)
     await ensureLearnerCourse(page)
     const fixture = await createFixture(browser, page, `wrong-review-${Date.now()}`, 1)
     const question = fixture.questions[0]

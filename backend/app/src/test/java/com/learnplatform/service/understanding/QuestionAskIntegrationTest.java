@@ -10,9 +10,8 @@ import com.learnplatform.service.ai.AiTaskExecutor;
 import org.springframework.test.annotation.DirtiesContext;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.time.Duration;
-import static org.awaitility.Awaitility.await;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,9 +48,9 @@ class QuestionAskIntegrationTest extends IntegrationTestBase {
     static final AtomicReference<String> RETRY = new AtomicReference<>();
     static final AtomicInteger GENERATIONS = new AtomicInteger();
     static final AtomicReference<String> JUDGE_REQUEST = new AtomicReference<>();
-    static volatile long judgeDelay;
     static final AtomicReference<String> REQUEST = new AtomicReference<>();
     static final AtomicInteger CALLS = new AtomicInteger();
+    static final AtomicReference<UpstreamGate> GATE = new AtomicReference<>();
     static volatile int httpStatus = 200;
     static volatile long delay;
     static {
@@ -63,18 +62,27 @@ class QuestionAskIntegrationTest extends IntegrationTestBase {
                 boolean judge = body.contains("独立的题目追问安全检查器");
                 if (judge) { JUDGE_REQUEST.set(body); } else { REQUEST.set(body); }
                 int generation = judge ? GENERATIONS.get() : GENERATIONS.incrementAndGet();
+                String response = RESPONSE.get();
+                String judgment = JUDGMENT.get();
+                String retry = RETRY.get();
+                int responseStatus = httpStatus;
+                long responseDelay = delay;
+                UpstreamGate gate = GATE.get();
                 try {
-                    if (delay > 0) { Thread.sleep(delay); }
-                    if (judge && judgeDelay > 0) { Thread.sleep(judgeDelay); }
-                    String answer = JsonMapper.builderWithJackson2Defaults().build().writeValueAsString(judge ? JUDGMENT.get()
-                            : generation > 1 && RETRY.get() != null ? RETRY.get() : RESPONSE.get());
+                    if (gate != null && gate.judge() == judge) {
+                        gate.entered().countDown();
+                        gate.release().await();
+                    }
+                    if (responseDelay > 0) { Thread.sleep(responseDelay); }
+                    String answer = JsonMapper.builderWithJackson2Defaults().build().writeValueAsString(judge ? judgment
+                            : generation > 1 && retry != null ? retry : response);
                     String data = "data: {\"model\":\"deepseek-flash\",\"choices\":[{\"index\":0,\"delta\":{\"reasoning_content\":\"答案 A，不得公开\"}}]}\n\n"
                             + "data: {\"model\":\"deepseek-flash\",\"choices\":[{\"index\":0,\"delta\":{\"content\":" + answer + "},\"finish_reason\":\"stop\"}]}\n\n"
                             + "data: {\"model\":\"deepseek-flash\",\"choices\":[],\"usage\":{\"prompt_tokens\":100,\"completion_tokens\":20,\"total_tokens\":120}}\n\n"
                             + "data: [DONE]\n\n";
                     byte[] bytes = data.getBytes(StandardCharsets.UTF_8);
                     exchange.getResponseHeaders().add("Content-Type", "text/event-stream");
-                    exchange.sendResponseHeaders(httpStatus, bytes.length);
+                    exchange.sendResponseHeaders(responseStatus, bytes.length);
                     exchange.getResponseBody().write(bytes);
                 } catch (InterruptedException exception) { Thread.currentThread().interrupt(); }
                 catch (java.io.IOException ignored) { }
@@ -112,7 +120,6 @@ class QuestionAskIntegrationTest extends IntegrationTestBase {
         GENERATIONS.set(0);
         RETRY.set(null);
         JUDGMENT.set("{\"safe\":true}");
-        judgeDelay = 0;
         RESPONSE.set("先写下你使用的定义，再说明推理卡在哪一步。");
         question = db.queryForObject("SELECT question_id FROM question_understanding_content WHERE source_title='系统种子生成：合法出栈序列'", Long.class);
         db.update("INSERT INTO user(id,username,password,role,status,deleted) VALUES (?,?,'test','USER',1,0),(?,?,'test','USER',1,0)",
@@ -122,6 +129,7 @@ class QuestionAskIntegrationTest extends IntegrationTestBase {
     }
 
     @AfterEach void cleanup() {
+        releasePendingGate();
         delay = 0;
         for (String table : List.of("question_ask_record", "ai_call_log", "fsrs_review_event", "course_learning_event",
                 "question_understanding_variant_attempt", "question_understanding_attempt", "practice_record",
@@ -236,23 +244,26 @@ class QuestionAskIntegrationTest extends IntegrationTestBase {
 
     @Test @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void gracefulExecutorStopCancelsRealUpstreamAndCompletesDatabaseStateBeforeResourcesClose() throws Exception {
-        delay = 2000;
         long id = attempt("B");
         var job = prepare(id, "疑问");
         var completed = new CompletableFuture<Integer>();
         var reservation = executor.reserve();
-        reservation.onShutdown(() -> ask.cancel(job));
-        reservation.execute(() -> {
-            try { ask.execute(job, text -> fail("Cancelled work must not publish content")); completed.complete(0); }
-            catch (BusinessException exception) { completed.complete(exception.getCode()); }
-            catch (RuntimeException exception) { completed.completeExceptionally(exception); }
-        });
-        await().atMost(Duration.ofSeconds(3)).until(() -> CALLS.get() > 0);
-        executor.stop();
-        assertEquals(1014, completed.get(3, TimeUnit.SECONDS));
-        assertEquals("CANCELLED", ask.status(USER, id).records().getFirst().status());
-        assertEquals(4, ask.status(USER, id).questionRemaining());
-        assertEquals(0.0, metrics.get("ai.admission.inflight").gauge().value());
+        var gate = pauseUpstream(false);
+        try {
+            reservation.onShutdown(() -> ask.cancel(job));
+            reservation.execute(() -> {
+                try { ask.execute(job, text -> fail("Cancelled work must not publish content")); completed.complete(0); }
+                catch (BusinessException exception) { completed.complete(exception.getCode()); }
+                catch (RuntimeException exception) { completed.completeExceptionally(exception); }
+            });
+            awaitEntered(gate);
+            executor.stop();
+            release(gate);
+            assertEquals(1014, completed.get(3, TimeUnit.SECONDS));
+            assertEquals("CANCELLED", ask.status(USER, id).records().getFirst().status());
+            assertEquals(4, ask.status(USER, id).questionRemaining());
+            assertEquals(0.0, metrics.get("ai.admission.inflight").gauge().value());
+        } finally { release(gate); }
     }
 
     @Test void nullableFailureCodeStillConsumesQuestionAllowance() throws Exception {
@@ -344,12 +355,13 @@ class QuestionAskIntegrationTest extends IntegrationTestBase {
     @Test void stopsAnInFlightUpstreamAndKeepsCancelledAssistance() throws Exception {
         long id = attempt("A");
         var job = prepare(id, "先问再停止");
-        delay = 700;
+        var gate = pauseUpstream(false);
         var pool = Executors.newSingleThreadExecutor();
         try {
             var future = pool.submit(() -> ask.execute(job, text -> fail("cancelled output")));
-            awaitUpstream();
+            awaitEntered(gate);
             ask.stop(USER, id, job.requestId());
+            release(gate);
             var error = assertThrows(java.util.concurrent.ExecutionException.class,
                     () -> future.get(3, java.util.concurrent.TimeUnit.SECONDS));
             assertEquals(1014, ((BusinessException) error.getCause()).getCode());
@@ -361,7 +373,7 @@ class QuestionAskIntegrationTest extends IntegrationTestBase {
             assertEquals("AIDED", understanding.submitVariant(USER, variant,
                     json.valueToTree(Map.of("originAttemptId", id, "answer", "A"))).get("assistance"));
             assertEquals(1, count("fsrs_review_event"));
-        } finally { pool.shutdownNow(); }
+        } finally { release(gate); pool.shutdownNow(); }
     }
 
     @Test void rechecksHintReviewBeforePublishingAndPreservesFailedUsage() throws Exception {
@@ -370,18 +382,20 @@ class QuestionAskIntegrationTest extends IntegrationTestBase {
         String hint = db.queryForObject("SELECT hint_text FROM question_understanding_hint WHERE content_id=? AND hint_level=1", String.class, contentId);
         RESPONSE.set(hint);
         var job = prepare(id, "请引用提示");
-        delay = 400;
+        var gate = pauseUpstream(false);
         var pool = Executors.newSingleThreadExecutor();
         try {
             var future = pool.submit(() -> ask.execute(job, text -> fail("withdrawn hint output")));
-            awaitUpstream();
+            awaitEntered(gate);
             db.update("UPDATE question_understanding_hint SET review_status='PENDING' WHERE content_id=? AND hint_level=1", contentId);
+            release(gate);
             var error = assertThrows(java.util.concurrent.ExecutionException.class,
                     () -> future.get(3, java.util.concurrent.TimeUnit.SECONDS));
             assertEquals(1012, ((BusinessException) error.getCause()).getCode());
             assertEquals("SUCCEEDED", db.queryForObject("SELECT outcome FROM ai_call_log WHERE user_id=?", String.class, USER));
             assertEquals(120, db.queryForObject("SELECT tokens_used FROM ai_call_log WHERE user_id=?", Integer.class, USER));
         } finally {
+            release(gate);
             pool.shutdownNow();
             db.update("UPDATE question_understanding_hint SET review_status='REVIEWED' WHERE content_id=? AND hint_level=1", contentId);
         }
@@ -438,29 +452,45 @@ class QuestionAskIntegrationTest extends IntegrationTestBase {
 
     @Test void cancelsDuringPrivateJudgmentWithoutPublicOutputOrExtraQuota() throws Exception {
         long id = attempt("B");
-        judgeDelay = 700;
         var job = prepare(id, "解释概念");
+        var gate = pauseUpstream(true);
         var pool = Executors.newSingleThreadExecutor();
         try {
             JUDGE_REQUEST.set(null);
             var future = pool.submit(() -> ask.execute(job, text -> fail("private judgment must not be public")));
-            long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(2);
-            while (JUDGE_REQUEST.get() == null && System.nanoTime() < deadline) { Thread.sleep(10); }
+            awaitEntered(gate);
             assertNotNull(JUDGE_REQUEST.get());
             ask.stop(USER, id, job.requestId());
+            release(gate);
             var error = assertThrows(java.util.concurrent.ExecutionException.class,
                     () -> future.get(3, java.util.concurrent.TimeUnit.SECONDS));
             assertEquals(1014, ((BusinessException) error.getCause()).getCode());
             assertEquals(2, count("ai_call_log"));
             assertEquals(49, ask.status(USER, id).dailyRemaining());
-        } finally { pool.shutdownNow(); }
+        } finally { release(gate); pool.shutdownNow(); }
     }
 
-    private void awaitUpstream() throws InterruptedException {
-        long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(2);
-        while (CALLS.get() == 0 && System.nanoTime() < deadline) { Thread.sleep(10); }
-        assertTrue(CALLS.get() > 0, "Mock upstream should have received the request");
+    private static UpstreamGate pauseUpstream(boolean judge) {
+        var gate = new UpstreamGate(judge, new CountDownLatch(1), new CountDownLatch(1));
+        assertTrue(GATE.compareAndSet(null, gate), "Only one upstream request may be paused per test");
+        return gate;
     }
+
+    private static void awaitEntered(UpstreamGate gate) throws InterruptedException {
+        assertTrue(gate.entered().await(2, TimeUnit.SECONDS), "Mock upstream should receive the request");
+    }
+
+    private static void release(UpstreamGate gate) {
+        gate.release().countDown();
+        GATE.compareAndSet(gate, null);
+    }
+
+    private static void releasePendingGate() {
+        var gate = GATE.getAndSet(null);
+        if (gate != null) gate.release().countDown();
+    }
+
+    private record UpstreamGate(boolean judge, CountDownLatch entered, CountDownLatch release) { }
 
     @Test void withdrawalDuringGenerationRejectsLateCompletion() throws Exception {
         long id = attempt("B");

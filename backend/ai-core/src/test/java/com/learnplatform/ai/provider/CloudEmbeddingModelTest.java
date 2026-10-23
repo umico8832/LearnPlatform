@@ -41,7 +41,7 @@ class CloudEmbeddingModelTest {
             body.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             arrived.countDown();
             try {
-                release.await(3, TimeUnit.SECONDS);
+                release.await();
                 byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
                 exchange.sendResponseHeaders(status, bytes.length);
                 exchange.getResponseBody().write(bytes);

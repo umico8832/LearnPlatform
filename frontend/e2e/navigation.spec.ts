@@ -35,7 +35,7 @@ async function maybeScreenshot(page: Page, name: string, fullPage = true) {
   const directory = process.env.NAVIGATION_SHOWCASE_DIR
   if (!directory) return
   await mkdir(directory, { recursive: true })
-  await page.screenshot({ path: path.join(directory, `${name}.png`), fullPage })
+  await page.screenshot({ path: path.join(directory, `${name}.png`), fullPage, animations: 'disabled' })
 }
 
 test.beforeEach(async ({ page }) => {
@@ -234,7 +234,6 @@ test('考试离开确认保留作答，正式提交仅进入结果页', async ({
   const leaveDialog = page.getByRole('dialog', { name: '离开考试' })
   await expect(leaveDialog).toBeVisible()
   await expect(leaveDialog).toContainText(leaveMessage)
-  await page.waitForTimeout(350)
   await maybeScreenshot(page, 'navigation-exam-leave-confirm', false)
   await leaveDialog.getByRole('button', { name: '继续考试' }).click()
   await expect(page).toHaveURL(takeUrl)
@@ -245,7 +244,6 @@ test('考试离开确认保留作答，正式提交仅进入结果页', async ({
   const submitDialog = page.getByRole('dialog', { name: '提交确认' })
   await expect(submitDialog).toBeVisible()
   await expect(submitDialog).toContainText('确定提交试卷？提交后不可修改')
-  await page.waitForTimeout(350)
   await maybeScreenshot(page, 'navigation-exam-submit-confirm', false)
   await submitDialog.getByRole('button', { name: '提交试卷' }).click()
   await expect(page).toHaveURL(/\/exams\/result\/\d+$/, { timeout: 15_000 })
