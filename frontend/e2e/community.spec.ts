@@ -15,10 +15,10 @@ async function login(page: Page, admin = false) {
   if (!admin) await page.goto('/community')
 }
 async function selectSubject(page: Page, dialog: ReturnType<Page['getByRole']>) {
-  await dialog.getByRole('combobox').nth(1).click()
-  await page.getByRole('option', { name: '408 计算机学科专业基础', exact: true }).click()
-  await dialog.getByRole('combobox', { name: '科目', exact: true }).press('ArrowDown')
-  await page.getByRole('option', { name: '数据结构', exact: true }).click()
+  await dialog.getByRole('combobox', { name: '考试分类', exact: true }).selectOption({
+    label: '408 计算机学科专业基础',
+  })
+  await dialog.getByRole('combobox', { name: '科目', exact: true }).selectOption({ label: '数据结构' })
 }
 
 test('社区共建完成真实发布、回复、点赞、附件审核与题目投稿衔接', async ({ page, browser }, testInfo) => {

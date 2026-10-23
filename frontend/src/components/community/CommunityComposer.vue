@@ -1,77 +1,78 @@
 <template>
-  <el-dialog
-    :model-value="true"
-    :title="initialType === 'TOPIC' ? '发起讨论' : '贡献学习资料'"
-    width="720px"
-    :close-on-click-modal="false"
-    :before-close="close"
-  >
-    <el-alert v-if="error" :title="error" type="error" :closable="false" show-icon />
-    <el-form label-position="top" @submit.prevent="submit">
-      <div class="community-form-grid">
-        <el-form-item label="内容类型" required>
-          <el-select v-model="draft.contentType" aria-label="内容类型" :disabled="saving" @change="files = []">
-            <el-option v-for="(label, value) in communityTypes" :key="value" :label="label" :value="value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="考试分类" required>
-          <el-select v-model="examId" aria-label="考试分类" filterable @change="draft.subjectId = ''">
-            <el-option v-for="exam in exams" :key="exam.id" :label="exam.name" :value="exam.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="科目" required>
-          <el-select v-model="draft.subjectId" aria-label="科目" :disabled="!examId">
-            <el-option v-for="subject in subjects" :key="subject.id" :label="subject.name" :value="subject.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="学校分区">
-          <el-select v-model="draft.schoolId" aria-label="学校分区" clearable filterable placeholder="不限学校">
-            <el-option v-for="school in schools" :key="school.id" :label="school.name" :value="school.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="关联课程">
-          <el-select v-model="draft.courseId" aria-label="关联课程" clearable @change="loadKnowledge">
-            <el-option v-for="course in courses" :key="course.id" :label="course.name" :value="course.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="关联知识点">
-          <el-tree-select
-            v-model="draft.knowledgePointId"
-            :data="knowledge"
-            :props="{ label: 'name', children: 'children' }"
-            node-key="id"
-            check-strictly
-            clearable
-            :disabled="!draft.courseId"
-            aria-label="关联知识点"
-          />
-        </el-form-item>
+  <LtSheet v-model:open="sheetOpen" :title="initialType === 'TOPIC' ? '发起讨论' : '贡献学习资料'" :width="720">
+    <form class="composer lt" data-appearance="dark" @submit.prevent="submit">
+      <p v-if="error" class="form-error" role="alert">{{ error }}</p>
+      <div class="grid">
+        <label
+          >内容类型<select v-model="draft.contentType" :disabled="saving" @change="files = []">
+            <option v-for="(label, value) in communityTypes" :key="value" :value="value">{{ label }}</option>
+          </select></label
+        >
+        <label
+          >考试分类<select v-model="examId" :disabled="saving" @change="draft.subjectId = ''">
+            <option value="">请选择</option>
+            <option v-for="exam in exams" :key="exam.id" :value="exam.id">{{ exam.name }}</option>
+          </select></label
+        >
+        <label
+          >科目<select v-model="draft.subjectId" :disabled="saving || !examId">
+            <option value="">请选择</option>
+            <option v-for="subject in subjects" :key="subject.id" :value="subject.id">{{ subject.name }}</option>
+          </select></label
+        >
+        <label
+          >学校分区<select v-model="draft.schoolId" :disabled="saving">
+            <option value="">不限学校</option>
+            <option v-for="school in schools" :key="school.id" :value="school.id">{{ school.name }}</option>
+          </select></label
+        >
+        <label
+          >关联课程<select v-model="draft.courseId" :disabled="saving" @change="loadKnowledge">
+            <option :value="undefined">不关联课程</option>
+            <option v-for="course in courses" :key="course.id" :value="course.id">{{ course.name }}</option>
+          </select></label
+        >
+        <label
+          >关联知识点<select v-model="draft.knowledgePointId" :disabled="saving || !draft.courseId">
+            <option :value="undefined">不关联知识点</option>
+            <option v-for="point in knowledgeOptions" :key="point.id" :value="point.id">{{ point.label }}</option>
+          </select></label
+        >
       </div>
-      <el-form-item label="标题" required
-        ><el-input v-model="draft.title" maxlength="120" show-word-limit placeholder="用一句话说明你想讨论或分享的内容"
-      /></el-form-item>
-      <el-form-item label="知识点或主题"
-        ><el-input v-model="draft.conceptName" maxlength="80" placeholder="例如：栈的后进先出"
-      /></el-form-item>
-      <el-form-item label="正文" required
-        ><el-input
+      <label
+        >标题<input
+          v-model="draft.title"
+          :disabled="saving"
+          maxlength="120"
+          placeholder="用一句话说明你想讨论或分享的内容"
+      /></label>
+      <label
+        >知识点或主题<input
+          v-model="draft.conceptName"
+          :disabled="saving"
+          maxlength="80"
+          placeholder="例如：栈的后进先出"
+      /></label>
+      <label
+        >正文<textarea
           v-model="draft.body"
-          type="textarea"
-          :rows="6"
+          :disabled="saving"
           maxlength="4000"
-          show-word-limit
+          rows="6"
           placeholder="描述问题、已有思路或资料内容"
-      /></el-form-item>
-      <el-form-item v-if="draft.contentType !== 'TOPIC'" label="来源与使用许可" required>
-        <el-input
+        />
+      </label>
+      <label v-if="draft.contentType !== 'TOPIC'"
+        >来源与使用许可<textarea
           v-model="draft.sourceNote"
-          type="textarea"
-          :rows="2"
+          :disabled="saving"
           maxlength="500"
+          rows="2"
           placeholder="说明原创、出处及允许分享或使用的范围"
         />
-      </el-form-item>
-      <el-form-item v-if="draft.contentType === 'question_bank'" label="题库附件" required>
+      </label>
+      <fieldset v-if="draft.contentType === 'question_bank'">
+        <legend>题库附件</legend>
         <input
           aria-label="选择题库附件"
           type="file"
@@ -80,26 +81,33 @@
           :disabled="saving"
           @change="selectFiles"
         />
-        <p class="community-muted">最多8个文件，每个不超过30MB。支持 PDF、Word、WPS、Excel、CSV、JSON、文本和 ZIP。</p>
+        <p>最多 8 个文件，每个不超过 30MB。</p>
         <ul v-if="files.length">
-          <li v-for="(file, index) in files" :key="index">
-            {{ file.name }}
-            <el-button link type="danger" :disabled="saving" @click="files.splice(index, 1)">移除</el-button>
+          <li v-for="(file, index) in files" :key="file.name">
+            <span>{{ file.name }}</span
+            ><button type="button" :disabled="saving" @click="files.splice(index, 1)">移除</button>
           </li>
         </ul>
-      </el-form-item>
-    </el-form>
-    <template #footer
-      ><el-button :disabled="saving" @click="close">取消</el-button
-      ><el-button type="primary" :loading="saving" @click="submit">{{
-        draft.contentType === 'TOPIC' ? '发布讨论' : '提交审核'
-      }}</el-button></template
-    >
-  </el-dialog>
+      </fieldset>
+      <footer>
+        <LtButton type="button" :disabled="saving" @click="requestClose">取消</LtButton
+        ><LtButton type="submit" variant="primary" :disabled="saving">{{
+          saving ? '提交中…' : draft.contentType === 'TOPIC' ? '发布讨论' : '提交审核'
+        }}</LtButton>
+      </footer>
+    </form>
+  </LtSheet>
+  <LtSheet v-model:open="confirming" title="放弃本次编辑？" :width="420"
+    ><p class="confirm-copy">尚未提交的内容将丢失。</p>
+    <div class="confirm-actions">
+      <LtButton @click="confirming = false">继续编辑</LtButton
+      ><LtButton variant="primary" @click="discard">放弃</LtButton>
+    </div></LtSheet
+  >
 </template>
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
+import { LtButton, LtSheet } from '@/components/living'
 import {
   createCommunityPost,
   communityTypes,
@@ -113,6 +121,15 @@ import { errorMessage } from '@/utils/errors'
 import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
 const props = defineProps<{ categories: CommunityCategory[]; initialType: string }>()
 const emit = defineEmits<{ close: []; created: [id: number] }>()
+const open = ref(true)
+const confirming = ref(false)
+const sheetOpen = computed({
+  get: () => open.value,
+  set: (value: boolean) => {
+    if (value) open.value = true
+    else requestClose()
+  },
+})
 const draft = reactive<CommunityDraft>({
   title: '',
   body: '',
@@ -130,9 +147,16 @@ const error = ref('')
 const exams = computed(() => props.categories.filter((c) => c.kind === 'EXAM'))
 const subjects = computed(() => props.categories.filter((c) => c.parentId === examId.value))
 const schools = computed(() => props.categories.filter((c) => c.kind === 'SCHOOL'))
+const knowledgeOptions = computed(() => flatten(knowledge.value))
 let knowledgeRequest = 0
 let alive = true
 let requestGeneration = 0
+function flatten(nodes: KnowledgePointVO[], depth = 0): { id: number; label: string }[] {
+  return nodes.flatMap((node) => [
+    { id: node.id, label: `${'— '.repeat(depth)}${node.name}` },
+    ...flatten(node.children || [], depth + 1),
+  ])
+}
 function current(request: number, session: number) {
   return alive && request === requestGeneration && session === getAuthSessionVersion() && isAuthenticated()
 }
@@ -158,7 +182,7 @@ function selectFiles(event: Event) {
     selected.length + files.value.length > 8 ||
     selected.some(
       (f) =>
-        f.size === 0 || f.size > 30 * 1024 * 1024 || !formats.includes('.' + f.name.split('.').pop()?.toLowerCase()),
+        f.size === 0 || f.size > 30 * 1024 * 1024 || !formats.includes(`.${f.name.split('.').pop()?.toLowerCase()}`),
     )
   ) {
     error.value = '请选择最多8个受支持的非空文件，每个不超过30MB。'
@@ -168,19 +192,17 @@ function selectFiles(event: Event) {
   }
   input.value = ''
 }
-async function close() {
+function requestClose() {
   if (saving.value) return
   if (draft.title || draft.body || files.value.length) {
-    try {
-      await ElMessageBox.confirm('尚未提交的内容将丢失。', '放弃本次编辑？', {
-        confirmButtonText: '放弃',
-        cancelButtonText: '继续编辑',
-        type: 'warning',
-      })
-    } catch {
-      return
-    }
+    open.value = true
+    confirming.value = true
+    return
   }
+  emit('close')
+}
+function discard() {
+  confirming.value = false
   emit('close')
 }
 async function submit() {
@@ -210,8 +232,7 @@ async function submit() {
       files.value,
       { errorDisplay: 'inline' },
     )
-    if (!current(request, session)) return
-    emit('created', result.data)
+    if (current(request, session)) emit('created', result.data)
   } catch (e) {
     if (current(request, session)) error.value = errorMessage(e, '提交失败，内容已保留，请重试。')
   } finally {
@@ -240,3 +261,95 @@ onUnmounted(() => {
   unsubscribeAuth()
 })
 </script>
+<style scoped>
+.composer {
+  display: grid;
+  gap: var(--lt-space-4);
+}
+.composer label,
+.composer fieldset {
+  display: grid;
+  gap: var(--lt-space-2);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--lt-space-4);
+}
+input,
+select,
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--lt-space-3);
+  border: 0;
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-fill-3);
+  box-shadow: inset 0 0 0 1px var(--lt-separator);
+  color: var(--lt-label);
+  font: var(--lt-text-body)/var(--lt-leading-ui) var(--lt-font);
+}
+select {
+  height: var(--lt-control-lg);
+}
+textarea {
+  resize: vertical;
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--lt-accent);
+  outline-offset: 2px;
+}
+.form-error {
+  margin: 0;
+  padding: var(--lt-space-3);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-red-soft);
+  color: var(--lt-red-text);
+}
+fieldset {
+  padding: var(--lt-space-3);
+  border: 0;
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-fill-2);
+}
+fieldset p {
+  margin: 0;
+  color: var(--lt-label-3);
+}
+fieldset ul {
+  display: grid;
+  gap: var(--lt-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+fieldset li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--lt-space-3);
+}
+fieldset button {
+  border: 0;
+  background: none;
+  color: var(--lt-red-text);
+  font: inherit;
+}
+footer,
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--lt-space-3);
+}
+.confirm-copy {
+  margin: 0;
+  color: var(--lt-label-2);
+}
+:is(input, textarea)::placeholder {
+  color: var(--lt-label-2);
+  opacity: 1;
+}
+</style>

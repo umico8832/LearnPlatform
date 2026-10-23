@@ -5,7 +5,6 @@ import { useUserStore } from '@/stores/user'
 import CommunityView from '@/views/community/CommunityView.vue'
 import CommunityComposer from '@/components/community/CommunityComposer.vue'
 import { setToken } from '@/utils/auth'
-
 enableAutoUnmount(afterEach)
 const { categories, posts } = vi.hoisted(() => ({ categories: vi.fn(), posts: vi.fn() }))
 vi.mock('@/api/community', () => ({
@@ -15,14 +14,19 @@ vi.mock('@/api/community', () => ({
   communityStatuses: { APPROVED: '已公开' },
 }))
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }))
+vi.mock('@/api/course', () => ({ getAllCourses: vi.fn().mockResolvedValue({ data: [] }) }))
+vi.mock('@/api/knowledgePoint', () => ({ getKnowledgeTree: vi.fn() }))
 function mountView() {
   return shallowMount(CommunityView, {
     global: {
       renderStubDefaultSlot: true,
       stubs: {
-        LpPageHeader: { template: '<header><slot name="actions"/></header>' },
-        'el-button': { props: ['disabled'], template: '<button :disabled="disabled"><slot/></button>' },
-        'el-alert': { props: ['title'], template: '<div role="alert">{{ title }}<slot/></div>' },
+        RouterLink: { template: '<a><slot/></a>' },
+        LtButton: {
+          props: ['disabled', 'type'],
+          emits: ['click'],
+          template: '<button :disabled="disabled" :type="type" @click="$emit(\'click\')"><slot/></button>',
+        },
       },
     },
   })
@@ -49,11 +53,11 @@ describe('community categories recovery', () => {
     expect(
       wrapper
         .findAll('button')
-        .find((b) => b.text() === '发起讨论')!
-        .attributes('disabled'),
+        .find((b) => b.text() === '发起讨论')
+        ?.attributes('disabled'),
     ).toBeDefined()
     expect(posts).toHaveBeenCalledOnce()
-    await wrapper.get('[data-testid="categories-retry"]').trigger('click')
+    await wrapper.get('[role="alert"] button').trigger('click')
     await flushPromises()
     expect(wrapper.text()).not.toContain('分类暂时无法读取')
     expect(posts).toHaveBeenCalledOnce()
@@ -63,6 +67,20 @@ describe('community categories recovery', () => {
     mountView()
     await flushPromises()
     expect(posts).toHaveBeenCalledOnce()
+  })
+  it('clears a keyword through the explicit control and refreshes the feed', async () => {
+    const wrapper = mountView()
+    await flushPromises()
+    await wrapper.get('#community-query').setValue('栈')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '清空搜索')!
+      .trigger('click')
+    await flushPromises()
+    expect(posts).toHaveBeenCalledTimes(2)
+    expect(posts).toHaveBeenLastCalledWith(expect.not.objectContaining({ keyword: expect.anything() }), false, {
+      errorDisplay: 'inline',
+    })
   })
   it('closes the previous accounts composer when the auth session changes', async () => {
     const wrapper = mountView()
@@ -75,5 +93,33 @@ describe('community categories recovery', () => {
     setToken('other-test-session')
     await flushPromises()
     expect(wrapper.findComponent(CommunityComposer).exists()).toBe(false)
+  })
+})
+
+describe('CommunityComposer close guard', () => {
+  it('keeps the composer sheet open when the learner continues editing a dirty draft', async () => {
+    const wrapper = shallowMount(CommunityComposer, {
+      props: { initialType: 'TOPIC', categories: [] },
+      global: {
+        stubs: {
+          LtSheet: { template: '<section><slot /></section>' },
+          LtButton: { template: '<button><slot /></button>' },
+        },
+      },
+    })
+    const vm = wrapper.vm as unknown as {
+      draft: { title: string }
+      sheetOpen: boolean
+      open: boolean
+      confirming: boolean
+    }
+    vm.draft.title = '还在编辑'
+    vm.sheetOpen = false
+    await wrapper.vm.$nextTick()
+    expect(vm.open).toBe(true)
+    expect(vm.confirming).toBe(true)
+    vm.confirming = false
+    await wrapper.vm.$nextTick()
+    expect(vm.open).toBe(true)
   })
 })
