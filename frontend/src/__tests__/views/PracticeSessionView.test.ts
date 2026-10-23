@@ -246,6 +246,48 @@ describe('PracticeSessionView', () => {
     expect((radios[0].element as HTMLInputElement).checked).toBe(true)
   })
 
+  it.each([
+    { type: 'SINGLE_CHOICE', chosen: ['A'], correct: 'B', states: ['wrong', 'right', 'dim'] },
+    { type: 'MULTIPLE_CHOICE', chosen: ['A', 'B'], correct: 'B,C', states: ['wrong', 'right', 'right'] },
+    { type: 'SINGLE_CHOICE', chosen: ['B'], correct: 'B', states: ['dim', 'right', 'dim'] },
+  ])('marks the server answer and learner selection for $type ($chosen)', async ({ type, chosen, correct, states }) => {
+    const options = ['A', 'B', 'C'].map((optionLabel, index) => ({
+      id: index + 1,
+      optionLabel,
+      content: `选项 ${optionLabel}`,
+    }))
+    sessionStorage.setItem('practice_questions', JSON.stringify([{ ...questions[0], questionType: type, options }]))
+    mockSubmitAnswer.mockResolvedValueOnce({
+      code: 0,
+      data: {
+        recordId: 1,
+        questionId: 1,
+        userAnswer: chosen.join(','),
+        correct: chosen.join(',') === correct,
+        correctAnswer: correct,
+        analysis: '解析',
+        score: 0,
+      },
+    })
+    const wrapper = mount(PracticeSessionView, { global: { stubs } })
+    await flushPromises()
+    expect(wrapper.findAll('.option-item').map((row) => row.attributes('data-state'))).toEqual(['idle', 'idle', 'idle'])
+    for (const value of chosen) await wrapper.get(`input[value="${value}"]`).setValue()
+    for (const value of chosen)
+      expect((wrapper.get(`input[value="${value}"]`).element as HTMLInputElement).checked).toBe(true)
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('提交答案'))!
+      .trigger('click')
+    await flushPromises()
+    expect(mockSubmitAnswer.mock.calls[0]?.[0].userAnswer).toBe(chosen.join(','))
+    expect(wrapper.findAll('.option-item').map((row) => row.attributes('data-state'))).toEqual(states)
+    for (const value of chosen)
+      expect((wrapper.get(`input[value="${value}"]`).element as HTMLInputElement).checked).toBe(true)
+    expect(wrapper.get('fieldset').attributes('disabled')).toBeDefined()
+    wrapper.unmount()
+  })
+
   it('keeps an ungraded answer out of correct and wrong counts', async () => {
     mockSubmitAnswer.mockResolvedValueOnce({
       code: 0,
@@ -268,6 +310,7 @@ describe('PracticeSessionView', () => {
       .trigger('click')
     await flushPromises()
     expect(wrapper.get('[data-testid="practice-feedback"]').text()).toContain('等待判分')
+    expect(wrapper.findAll('.option-item').every((row) => row.attributes('data-state') === 'locked')).toBe(true)
     expect(wrapper.text()).toContain('已判分：0 对，0 错')
   })
 

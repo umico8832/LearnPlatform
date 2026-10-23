@@ -50,6 +50,34 @@ const isWrongPractice = computed(() => practiceMode.value === 'wrong_question')
 const progressPercent = computed(() =>
   questions.value.length ? ((currentIndex.value + 1) / questions.value.length) * 100 : 0,
 )
+const answerOptions = computed(() =>
+  currentQuestion.value?.questionType === 'TRUE_FALSE'
+    ? [
+        { value: 'TRUE', key: '', content: '正确' },
+        { value: 'FALSE', key: '', content: '错误' },
+      ]
+    : (currentQuestion.value?.options || []).map((option) => ({
+        value: option.optionLabel,
+        key: option.optionLabel,
+        content: option.content,
+      })),
+)
+function isSelected(value: string) {
+  return currentQuestion.value?.questionType === 'MULTIPLE_CHOICE'
+    ? multiAnswers.value.has(value)
+    : userAnswer.value === value
+}
+function optionState(value: string) {
+  if (!currentResult.value) return isSelected(value) ? 'selected' : 'idle'
+  if (currentResult.value.correct == null) return 'locked'
+  if (currentResult.value.correctAnswer?.split(',').some((answer) => answer.trim() === value)) return 'right'
+  return isSelected(value) ? 'wrong' : 'dim'
+}
+function pickOption(value: string) {
+  if (answerLocked.value) return
+  if (currentQuestion.value?.questionType === 'MULTIPLE_CHOICE') toggleMulti(value)
+  else userAnswer.value = value
+}
 const sessionSummary = computed(() => {
   const graded = correctCount.value + wrongCount.value
   return {
@@ -230,39 +258,34 @@ function leavePractice() {
         <span v-for="name in currentQuestion.knowledgePointNames" :key="name">{{ name }}</span>
       </div>
       <fieldset class="answer-area" :disabled="answerLocked">
-        <legend>作答</legend>
-        <div v-if="currentQuestion.questionType === 'SINGLE_CHOICE'" class="option-list">
+        <legend class="lt-sr-only">作答</legend>
+        <div
+          v-if="['SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'TRUE_FALSE'].includes(currentQuestion.questionType)"
+          class="option-list"
+          :data-binary="currentQuestion.questionType === 'TRUE_FALSE' || undefined"
+        >
           <label
-            v-for="option in currentQuestion.options"
-            :key="option.id"
+            v-for="option in answerOptions"
+            :key="option.value"
             class="option-item"
-            :class="{ selected: userAnswer === option.optionLabel }"
-            ><input v-model="userAnswer" type="radio" name="practice-answer" :value="option.optionLabel" /><span
-              ><b>{{ option.optionLabel }}.</b>{{ option.content }}</span
-            ></label
+            :data-state="optionState(option.value)"
           >
-        </div>
-        <div v-else-if="currentQuestion.questionType === 'MULTIPLE_CHOICE'" class="option-list">
-          <label
-            v-for="option in currentQuestion.options"
-            :key="option.id"
-            class="option-item"
-            :class="{ selected: multiAnswers.has(option.optionLabel) }"
-            ><input
-              type="checkbox"
-              :checked="multiAnswers.has(option.optionLabel)"
-              @change="toggleMulti(option.optionLabel)"
-            /><span
-              ><b>{{ option.optionLabel }}.</b>{{ option.content }}</span
-            ></label
-          >
-        </div>
-        <div v-else-if="currentQuestion.questionType === 'TRUE_FALSE'" class="option-list">
-          <label class="option-item" :class="{ selected: userAnswer === 'TRUE' }"
-            ><input v-model="userAnswer" type="radio" name="practice-answer" value="TRUE" /><span>正确</span></label
-          ><label class="option-item" :class="{ selected: userAnswer === 'FALSE' }"
-            ><input v-model="userAnswer" type="radio" name="practice-answer" value="FALSE" /><span>错误</span></label
-          >
+            <input
+              class="choice-input"
+              :type="currentQuestion.questionType === 'MULTIPLE_CHOICE' ? 'checkbox' : 'radio'"
+              name="practice-answer"
+              :value="option.value"
+              :aria-label="option.key ? `${option.key}. ${option.content}` : option.content"
+              :checked="isSelected(option.value)"
+              @change="pickOption(option.value)"
+            />
+            <span v-if="option.key" class="choice-key" aria-hidden="true">{{ option.key }}</span>
+            <MarkdownRenderer class="choice-text" :content="option.content" inline />
+            <span v-if="currentResult && optionState(option.value) === 'right'" class="choice-tag">正确答案</span>
+            <span v-else-if="currentResult && optionState(option.value) === 'wrong'" class="choice-tag"
+              >你的选择，错误</span
+            >
+          </label>
         </div>
         <textarea
           v-else
@@ -379,46 +402,113 @@ function leavePractice() {
   border: 0;
   border-top: solid var(--lt-hairline);
 }
-.answer-area legend {
-  padding: 0;
-  color: var(--lt-label-2);
-  font-size: var(--lt-text-footnote);
-}
 .option-list {
   display: grid;
-  gap: var(--lt-space-3);
+  gap: var(--lt-radius-sm);
+}
+.option-list[data-binary] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .option-item {
+  position: relative;
   display: flex;
   gap: var(--lt-space-3);
-  align-items: flex-start;
-  padding: var(--lt-space-4);
-  border: solid var(--lt-hairline);
+  align-items: center;
+  min-height: calc(var(--lt-space-8) + var(--lt-space-3));
+  padding: var(--lt-space-3) calc(var(--lt-space-3) + var(--lt-space-1) / 2);
   border-radius: var(--lt-radius-md);
+  background: var(--lt-fill-3);
+  box-shadow: inset 0 0 0 0.5px var(--lt-separator);
+  font-size: var(--lt-text-body);
+  line-height: var(--lt-leading-ui);
+  font-variant-numeric: tabular-nums;
   cursor: pointer;
+  transition:
+    background-color var(--lt-dur-fade) var(--lt-ease-fade),
+    box-shadow var(--lt-dur-fade) var(--lt-ease-fade),
+    opacity var(--lt-dur-fade) var(--lt-ease-fade);
 }
-.option-item.selected {
-  border-color: var(--lt-accent);
-  background: var(--lt-accent-soft);
+.option-list[data-binary] .option-item {
+  justify-content: center;
 }
-.option-item input {
+.choice-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+.choice-key {
+  display: grid;
   flex: none;
-  margin-top: var(--lt-space-1);
-  accent-color: var(--lt-accent-fill);
-}
-.option-item b {
-  display: inline-grid;
   place-items: center;
-  width: var(--lt-space-6);
-  height: var(--lt-space-6);
-  margin-right: var(--lt-space-2);
-  border-radius: var(--lt-radius-pill);
-  background: var(--lt-fill-2);
-  font-size: var(--lt-text-footnote);
+  width: calc(var(--lt-space-6) + var(--lt-space-1) / 2);
+  height: calc(var(--lt-space-6) + var(--lt-space-1) / 2);
+  border-radius: var(--lt-space-2);
+  background: var(--lt-surface);
+  box-shadow: 0 0 0 0.5px var(--lt-separator);
+  color: var(--lt-label-2);
+  font: 600 var(--lt-text-footnote) / 1 var(--lt-font-rounded);
+}
+.choice-text {
+  flex: 1;
+  min-width: 0;
+}
+.option-list[data-binary] .choice-text {
+  flex: none;
+}
+.choice-tag {
+  flex: none;
+  font-size: var(--lt-text-caption);
+  font-weight: 600;
+}
+.option-item[data-state='selected'] {
+  background: var(--lt-accent-soft);
+  box-shadow: inset 0 0 0 1.5px var(--lt-accent);
+}
+.option-item[data-state='selected'] .choice-key {
+  background: var(--lt-accent-fill);
+  color: var(--lt-on-accent);
+}
+.option-item:is([data-state='locked'], [data-state='wrong'], [data-state='right'], [data-state='dim']),
+.answer-area:disabled .option-item {
+  cursor: default;
+}
+.option-item[data-state='wrong'] {
+  background: var(--lt-orange-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lt-orange) 45%, transparent);
+}
+.option-item[data-state='wrong'] .choice-key {
+  background: var(--lt-orange);
+  color: var(--lt-on-tint);
+}
+.option-item[data-state='wrong'] .choice-tag {
+  color: var(--lt-orange-text);
+}
+.option-item[data-state='right'] {
+  background: var(--lt-green-soft);
+  box-shadow: inset 0 0 0 1.5px var(--lt-green);
+}
+.option-item[data-state='right'] .choice-key {
+  background: var(--lt-green);
+  color: var(--lt-on-tint);
+}
+.option-item[data-state='right'] .choice-tag {
+  color: var(--lt-green-text);
+}
+.option-item[data-state='dim'] {
+  opacity: 0.5;
 }
 .option-item:has(input:focus-visible) {
-  outline: var(--lt-space-1) solid var(--lt-accent);
-  outline-offset: var(--lt-space-1);
+  outline: 2px solid var(--lt-accent);
+  outline-offset: 2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .answer-area:not(:disabled) .option-item[data-state='idle']:hover {
+    background: var(--lt-fill-2);
+  }
 }
 .answer-area textarea {
   width: 100%;

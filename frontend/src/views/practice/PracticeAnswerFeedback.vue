@@ -26,19 +26,17 @@ const understandingOpen = ref(false)
     <p class="lt-sr-only" role="status" aria-atomic="true" data-testid="practice-feedback-status">
       {{ feedbackStatus }}
     </p>
-    <p class="eyebrow">本题反馈</p>
-    <h2>{{ title }}</h2>
+    <h2 class="verdict"><span class="verdict-dot" aria-hidden="true" />{{ title }}</h2>
     <p v-if="!graded" class="note">答案已记录，尚未判分，不计入正确率。</p>
-    <dl v-else class="answers">
-      <div>
-        <dt>你的答案</dt>
-        <dd>{{ result.userAnswer || '未填写' }}</dd>
-      </div>
-      <div v-if="result.correct === false">
-        <dt>参考答案</dt>
-        <dd>{{ result.correctAnswer || '待补充' }}</dd>
-      </div>
-    </dl>
+    <div v-else class="answers">
+      <p class="answer-chip" :data-tone="result.correct ? 'green' : 'orange'">
+        <span class="answer-label">你的答案</span><span class="answer-value">{{ result.userAnswer || '未填写' }}</span>
+      </p>
+      <p v-if="result.correct === false" class="answer-chip" data-tone="green">
+        <span class="answer-label">参考答案</span
+        ><span class="answer-value">{{ result.correctAnswer || '待补充' }}</span>
+      </p>
+    </div>
     <p v-if="wrongPractice && result.correct === true" class="resolved">这道错题已移出错题本。</p>
     <div v-if="result.analysis" class="analysis practice-answer-feedback__analysis">
       <h3>解析</h3>
@@ -61,29 +59,38 @@ const understandingOpen = ref(false)
   display: grid;
   gap: var(--lt-space-4);
   margin: 0 var(--lt-space-6);
-  padding: var(--lt-space-5);
-  border-radius: var(--lt-radius-lg);
-  background: var(--lt-fill-2);
-  box-shadow: inset var(--lt-space-1) 0 var(--lt-accent-fill);
+  padding: 0 0 var(--lt-space-5);
 }
-.feedback.correct {
-  box-shadow: inset var(--lt-space-1) 0 var(--lt-green);
-}
-.feedback.wrong {
-  box-shadow: inset var(--lt-space-1) 0 var(--lt-orange);
-}
-.eyebrow,
 .feedback h2,
 .feedback h3,
 .feedback p {
   margin: 0;
 }
-.eyebrow {
-  color: var(--lt-label-2);
-  font-size: var(--lt-text-caption);
+.verdict {
+  display: flex;
+  align-items: center;
+  gap: var(--lt-space-2);
+  font-size: var(--lt-text-body);
+  font-weight: 600;
 }
-.feedback h2 {
-  font-size: var(--lt-text-title3);
+.verdict-dot {
+  flex: none;
+  width: var(--lt-space-2);
+  height: var(--lt-space-2);
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-accent);
+}
+.correct .verdict {
+  color: var(--lt-green-text);
+}
+.correct .verdict-dot {
+  background: var(--lt-green);
+}
+.wrong .verdict {
+  color: var(--lt-orange-text);
+}
+.wrong .verdict-dot {
+  background: var(--lt-orange);
 }
 .note,
 .resolved {
@@ -91,36 +98,56 @@ const understandingOpen = ref(false)
   line-height: var(--lt-leading-reading);
 }
 .answers {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--lt-space-3);
-  margin: 0;
 }
-.answers div {
-  padding: var(--lt-space-3);
-  border-radius: var(--lt-radius-md);
-  background: var(--lt-surface);
+.answer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lt-space-2);
+  max-width: 100%;
+  padding: var(--lt-space-1) var(--lt-space-3) var(--lt-space-1) var(--lt-space-1);
+  border-radius: var(--lt-radius-pill);
+  font-size: var(--lt-text-footnote);
+  line-height: var(--lt-leading-ui);
 }
-.answers dt {
-  color: var(--lt-label-2);
-  font-size: var(--lt-text-caption);
+.answer-chip[data-tone='orange'] {
+  background: var(--lt-orange-soft);
+  color: var(--lt-orange-text);
 }
-.answers dd {
-  margin: var(--lt-space-1) 0 0;
+.answer-chip[data-tone='green'] {
+  background: var(--lt-green-soft);
+  color: var(--lt-green-text);
+}
+.answer-label {
+  flex: none;
+  padding-left: var(--lt-space-2);
+  font-weight: 600;
+}
+.answer-value {
+  min-width: var(--lt-space-5);
+  padding: var(--lt-space-1);
+  border-radius: var(--lt-radius-pill);
+  color: var(--lt-on-tint);
+  text-align: center;
   overflow-wrap: anywhere;
+  font-family: var(--lt-font-rounded);
+  font-variant-numeric: tabular-nums;
+}
+.answer-chip[data-tone='orange'] .answer-value {
+  background: var(--lt-orange);
+}
+.answer-chip[data-tone='green'] .answer-value {
+  background: var(--lt-green);
 }
 .analysis {
-  padding-top: var(--lt-space-4);
-  border-top: solid var(--lt-hairline);
+  font-size: var(--lt-text-reading);
+  line-height: var(--lt-leading-reading);
 }
 .analysis h3 {
   margin-bottom: var(--lt-space-2);
   font-size: var(--lt-text-body);
-}
-.analysis :deep(.markdown-body) {
-  color: var(--lt-label-2);
-  line-height: var(--lt-leading-reading);
-  white-space: pre-wrap;
 }
 .understand {
   color: var(--lt-label-2);
@@ -142,9 +169,6 @@ const understandingOpen = ref(false)
 @media (max-width: 640px) {
   .feedback {
     margin: 0 var(--lt-space-3);
-  }
-  .answers {
-    grid-template-columns: 1fr;
   }
 }
 </style>
