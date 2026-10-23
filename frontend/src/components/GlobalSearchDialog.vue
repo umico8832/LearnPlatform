@@ -1,18 +1,29 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+/**
+ * 全局搜索面板（⌘K 或 /）：顶部一行输入，下方按题目、课程、知识点分组列出结果；
+ * 未输入时显示搜索历史和热门搜索。原生 <dialog> 负责顶层、背景失活与 Esc。
+ */
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Clock, Close, EditPen, Notebook, Reading, Search, TrendCharts } from '@element-plus/icons-vue'
+import { BookOpen, Clock, FileText, Lightbulb, RotateCcw, Search, TrendingUp, X } from '@lucide/vue'
 import type { SearchItem } from '@/api/search'
+import { springAnimate, springs } from '@/motion'
 import { useGlobalSearchShortcuts } from './search/useGlobalSearchShortcuts'
 import { flattenSearchResults, searchResultCount, searchResultIndex } from './search/searchResultModel'
 import { splitSearchMatch } from './search/searchText'
 import { useGlobalSearchState } from './search/useGlobalSearchState'
 
+type GroupKey = 'q' | 'c' | 'kp'
+
 const router = useRouter()
 const visible = ref(false)
+const dialogRef = ref<HTMLDialogElement>()
+const panelRef = ref<HTMLElement>()
 const inputRef = ref<HTMLInputElement>()
 const resultsRef = ref<HTMLElement>()
 const activeIndex = ref(-1)
+let returnFocus: HTMLElement | null = null
+let entrance: Animation | null = null
 const {
   keyword,
   loading,
@@ -37,10 +48,51 @@ const totalCount = computed(() => searchResultCount(results.value))
 const activeOptionId = computed(() =>
   activeIndex.value >= 0 ? `global-search-option-${activeIndex.value}` : undefined,
 )
+const groups = computed(() =>
+  [
+    { key: 'q' as GroupKey, label: '题目', icon: FileText, items: results.value.questions },
+    { key: 'c' as GroupKey, label: '课程', icon: BookOpen, items: results.value.courses },
+    { key: 'kp' as GroupKey, label: '知识点', icon: Lightbulb, items: results.value.knowledgePoints },
+  ].filter((group) => group.items.length > 0),
+)
 const isMobile = useGlobalSearchShortcuts(visible, open, close)
 
-watch(visible, (nextVisible) => {
-  if (!nextVisible) closeState()
+watch(
+  visible,
+  (nextVisible) => {
+    const dialog = dialogRef.value
+    if (!dialog) return
+    if (nextVisible) {
+      if (!dialog.open) {
+        returnFocus = document.activeElement as HTMLElement | null
+        dialog.showModal()
+      }
+      entrance?.cancel()
+      entrance = panelRef.value
+        ? springAnimate(
+            panelRef.value,
+            [
+              { transform: 'translateY(-8px) scale(0.97)', opacity: 0 },
+              { transform: 'none', opacity: 1 },
+            ],
+            springs.snappy,
+          )
+        : null
+      void nextTick(() => inputRef.value?.focus())
+    } else {
+      closeState()
+      activeIndex.value = -1
+      if (dialog.open) dialog.close()
+      returnFocus?.focus({ preventScroll: true })
+      returnFocus = null
+    }
+  },
+  { flush: 'post' },
+)
+
+onBeforeUnmount(() => {
+  entrance?.cancel()
+  if (dialogRef.value?.open) dialogRef.value.close()
 })
 
 function open() {
@@ -50,15 +102,15 @@ function open() {
 
 function close() {
   visible.value = false
-  closeState()
 }
 
-function handleOpened() {
-  nextTick(() => inputRef.value?.focus())
+function onCancel(event: Event) {
+  event.preventDefault()
+  close()
 }
 
-function handleClosed() {
-  activeIndex.value = -1
+function onDialogClick(event: MouseEvent) {
+  if (event.target === dialogRef.value) close()
 }
 
 function handleInput() {
@@ -70,25 +122,19 @@ function fillKeyword(value: string) {
   keyword.value = value
   activeIndex.value = -1
   search(value)
-  nextTick(() => inputRef.value?.focus())
+  void nextTick(() => inputRef.value?.focus())
 }
 
-function flatIndex(group: 'q' | 'c' | 'kp', index: number) {
+function flatIndex(group: GroupKey, index: number) {
   return searchResultIndex(results.value, group, index)
-}
-
-function optionId(group: 'q' | 'c' | 'kp', index: number) {
-  return `global-search-option-${flatIndex(group, index)}`
 }
 
 function moveFocus(delta: number) {
   if (!totalCount.value) return
   if (activeIndex.value < 0) activeIndex.value = delta > 0 ? 0 : totalCount.value - 1
   else activeIndex.value = (activeIndex.value + delta + totalCount.value) % totalCount.value
-  nextTick(() =>
-    resultsRef.value
-      ?.querySelector<HTMLElement>('.result-item[aria-selected="true"]')
-      ?.scrollIntoView({ block: 'nearest' }),
+  void nextTick(() =>
+    resultsRef.value?.querySelector<HTMLElement>('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' }),
   )
 }
 
@@ -110,30 +156,22 @@ defineExpose({ open })
 </script>
 
 <template>
-  <el-dialog
-    v-model="visible"
-    title="全局搜索"
-    :width="isMobile ? '95%' : '600px'"
-    :top="isMobile ? '5vh' : '12vh'"
-    append-to-body
-    class="global-search-dialog"
-    aria-label="全局搜索"
-    @closed="handleClosed"
-    @opened="handleOpened"
+  <dialog
+    ref="dialogRef"
+    class="lt global-search"
+    data-appearance="dark"
+    aria-labelledby="global-search-title"
+    @cancel="onCancel"
+    @click="onDialogClick"
   >
-    <template #header="{ titleId }">
-      <div class="search-header">
-        <h2 :id="titleId">全局搜索</h2>
-        <p>搜索题目、课程或知识点</p>
-      </div>
-    </template>
-    <section class="search-container" aria-label="全局搜索内容">
-      <div class="search-input-wrapper">
-        <el-icon class="search-icon" aria-hidden="true"><Search /></el-icon>
+    <section ref="panelRef" class="panel" aria-label="全局搜索内容">
+      <h2 id="global-search-title" class="lt-sr-only">全局搜索</h2>
+      <div class="field">
+        <Search class="field-icon" aria-hidden="true" />
         <input
           ref="inputRef"
           v-model="keyword"
-          class="search-input"
+          class="input"
           type="search"
           role="combobox"
           aria-label="搜索题目、课程或知识点"
@@ -141,446 +179,445 @@ defineExpose({ open })
           :aria-expanded="hasQuery"
           :aria-activedescendant="activeOptionId"
           autocomplete="off"
+          spellcheck="false"
           placeholder="搜索题目、课程或知识点"
           @input="handleInput"
-          @keydown.escape="close"
           @keydown.down.prevent="moveFocus(1)"
           @keydown.up.prevent="moveFocus(-1)"
           @keydown.enter.prevent="selectCurrent"
         />
-        <kbd v-if="!isMobile" class="shortcut-hint">Esc</kbd>
+        <kbd v-if="!isMobile" class="key">Esc</kbd>
+        <button v-else type="button" class="icon-button" aria-label="关闭搜索" @click="close">
+          <X aria-hidden="true" />
+        </button>
       </div>
 
-      <section
+      <div
         v-if="hasQuery"
         id="global-search-results"
         ref="resultsRef"
-        class="search-results"
+        class="body"
         role="listbox"
         aria-label="搜索结果"
       >
-        <LpStatePanel v-if="loading" state="loading" loading-label="正在搜索" class="search-state" />
-        <LpStatePanel
-          v-else-if="error"
-          state="error"
-          title="搜索暂时无法完成"
-          :description="error"
-          retry-label="重试"
-          @retry="retrySearch"
-        />
-        <div v-else-if="totalCount === 0" class="search-empty" role="status">
-          <el-icon aria-hidden="true"><Search /></el-icon>
-          <span>未找到匹配结果</span>
+        <p v-if="loading" class="state" role="status">正在搜索…</p>
+        <div v-else-if="error" class="state" role="alert">
+          <p><strong>搜索暂时无法完成</strong>{{ error }}</p>
+          <button type="button" class="text-button" @click="retrySearch"><RotateCcw aria-hidden="true" />重试</button>
         </div>
+        <p v-else-if="totalCount === 0" class="state" role="status">没有找到和“{{ keyword.trim() }}”匹配的内容</p>
         <template v-else>
           <section
-            v-if="results.questions.length"
-            class="result-group"
+            v-for="group in groups"
+            :key="group.key"
+            class="group"
             role="group"
-            aria-labelledby="global-search-questions"
+            :aria-labelledby="`global-search-group-${group.key}`"
           >
-            <h3 id="global-search-questions" class="group-title">
-              <el-icon aria-hidden="true"><EditPen /></el-icon>题目 <span>{{ results.questions.length }}</span>
+            <h3 :id="`global-search-group-${group.key}`" class="group-title">
+              {{ group.label }}<span>{{ group.items.length }}</span>
             </h3>
             <button
-              v-for="(item, index) in results.questions"
-              :id="optionId('q', index)"
-              :key="`q-${item.id}`"
+              v-for="(item, index) in group.items"
+              :id="`global-search-option-${flatIndex(group.key, index)}`"
+              :key="`${group.key}-${item.id}`"
               type="button"
               role="option"
-              class="result-item"
-              :aria-selected="flatIndex('q', index) === activeIndex"
+              class="result"
+              :aria-selected="flatIndex(group.key, index) === activeIndex"
               @click="navigateTo(item)"
-              @mouseenter="activeIndex = flatIndex('q', index)"
+              @mouseenter="activeIndex = flatIndex(group.key, index)"
             >
-              <span class="item-title"
-                ><template v-for="(segment, segmentIndex) in splitMatch(item.title)" :key="segmentIndex"
-                  ><mark v-if="segment.match">{{ segment.text }}</mark
-                  ><template v-else>{{ segment.text }}</template></template
-                ></span
-              >
-              <span class="item-subtitle">{{ item.subtitle }}</span>
-            </button>
-          </section>
-          <section
-            v-if="results.courses.length"
-            class="result-group"
-            role="group"
-            aria-labelledby="global-search-courses"
-          >
-            <h3 id="global-search-courses" class="group-title">
-              <el-icon aria-hidden="true"><Reading /></el-icon>课程 <span>{{ results.courses.length }}</span>
-            </h3>
-            <button
-              v-for="(item, index) in results.courses"
-              :id="optionId('c', index)"
-              :key="`c-${item.id}`"
-              type="button"
-              role="option"
-              class="result-item"
-              :aria-selected="flatIndex('c', index) === activeIndex"
-              @click="navigateTo(item)"
-              @mouseenter="activeIndex = flatIndex('c', index)"
-            >
-              <span class="item-title"
-                ><template v-for="(segment, segmentIndex) in splitMatch(item.title)" :key="segmentIndex"
-                  ><mark v-if="segment.match">{{ segment.text }}</mark
-                  ><template v-else>{{ segment.text }}</template></template
-                ></span
-              >
-              <span class="item-subtitle">{{ item.subtitle }}</span>
-            </button>
-          </section>
-          <section
-            v-if="results.knowledgePoints.length"
-            class="result-group"
-            role="group"
-            aria-labelledby="global-search-knowledge-points"
-          >
-            <h3 id="global-search-knowledge-points" class="group-title">
-              <el-icon aria-hidden="true"><Notebook /></el-icon>知识点 <span>{{ results.knowledgePoints.length }}</span>
-            </h3>
-            <button
-              v-for="(item, index) in results.knowledgePoints"
-              :id="optionId('kp', index)"
-              :key="`kp-${item.id}`"
-              type="button"
-              role="option"
-              class="result-item"
-              :aria-selected="flatIndex('kp', index) === activeIndex"
-              @click="navigateTo(item)"
-              @mouseenter="activeIndex = flatIndex('kp', index)"
-            >
-              <span class="item-title"
-                ><template v-for="(segment, segmentIndex) in splitMatch(item.title)" :key="segmentIndex"
-                  ><mark v-if="segment.match">{{ segment.text }}</mark
-                  ><template v-else>{{ segment.text }}</template></template
-                ></span
-              >
-              <span class="item-subtitle">{{ item.subtitle }}</span>
+              <component :is="group.icon" class="result-icon" aria-hidden="true" />
+              <span class="result-text">
+                <span class="result-title"
+                  ><template v-for="(segment, segmentIndex) in splitMatch(item.title)" :key="segmentIndex"
+                    ><mark v-if="segment.match">{{ segment.text }}</mark
+                    ><template v-else>{{ segment.text }}</template></template
+                  ></span
+                >
+                <span v-if="item.subtitle" class="result-subtitle">{{ item.subtitle }}</span>
+              </span>
             </button>
           </section>
         </template>
-      </section>
+      </div>
 
-      <section v-else class="search-suggestions" aria-label="搜索建议">
-        <LpSkeleton v-if="suggestionsLoading" :rows="2" label="正在读取搜索建议" />
-        <LpStatePanel
-          v-else-if="suggestionsError"
-          state="error"
-          title="搜索建议暂时无法加载"
-          :description="suggestionsError"
-          retry-label="重新加载"
-          @retry="openState"
-        />
+      <div v-else class="body" aria-label="搜索建议" role="region">
+        <p v-if="suggestionsLoading" class="state" role="status">正在读取搜索建议…</p>
+        <div v-else-if="suggestionsError" class="state" role="alert">
+          <p><strong>搜索建议暂时无法加载</strong>{{ suggestionsError }}</p>
+          <button type="button" class="text-button" @click="openState"><RotateCcw aria-hidden="true" />重新加载</button>
+        </div>
         <template v-else-if="suggestions.history.length || suggestions.hotKeywords.length">
-          <section v-if="suggestions.history.length" class="suggestion-section">
-            <div class="section-header">
-              <h3 class="section-title">
-                <el-icon aria-hidden="true"><Clock /></el-icon>搜索历史
-              </h3>
-              <button type="button" class="section-action" :disabled="historyUpdating" @click="clearHistory">
-                清除
-              </button>
+          <section v-if="suggestions.history.length" class="group" aria-labelledby="global-search-history">
+            <div class="group-head">
+              <h3 id="global-search-history" class="group-title">搜索历史</h3>
+              <button type="button" class="text-button" :disabled="historyUpdating" @click="clearHistory">清除</button>
             </div>
             <p v-if="historyError" class="history-error" role="status">
-              {{ historyError }} <button type="button" :disabled="historyUpdating" @click="retryHistory">重试</button>
+              {{ historyError }}
+              <button type="button" class="text-button" :disabled="historyUpdating" @click="retryHistory">重试</button>
             </p>
-            <ul class="history-list">
-              <li v-for="item in suggestions.history" :key="item" class="history-item">
-                <el-icon class="history-icon" aria-hidden="true"><Clock /></el-icon>
-                <button type="button" class="history-text" @click="fillKeyword(item)">{{ item }}</button>
+            <ul class="history">
+              <li v-for="item in suggestions.history" :key="item">
+                <button type="button" class="result" @click="fillKeyword(item)">
+                  <Clock class="result-icon" aria-hidden="true" /><span class="result-title">{{ item }}</span>
+                </button>
                 <button
                   type="button"
-                  class="history-delete"
+                  class="icon-button"
                   :disabled="historyUpdating"
                   :aria-label="`删除搜索历史：${item}`"
                   @click="removeHistory(item)"
                 >
-                  <el-icon aria-hidden="true"><Close /></el-icon>
+                  <X aria-hidden="true" />
                 </button>
               </li>
             </ul>
           </section>
-          <section v-if="suggestions.hotKeywords.length" class="suggestion-section">
-            <div class="section-header">
-              <h3 class="section-title">
-                <el-icon aria-hidden="true"><TrendCharts /></el-icon>热门搜索
-              </h3>
-            </div>
-            <div class="hot-keyword-list">
+          <section v-if="suggestions.hotKeywords.length" class="group" aria-labelledby="global-search-hot">
+            <h3 id="global-search-hot" class="group-title"><TrendingUp aria-hidden="true" />热门搜索</h3>
+            <div class="hot">
               <button
                 v-for="(item, index) in suggestions.hotKeywords"
                 :key="item"
                 type="button"
-                class="hot-keyword-tag"
+                class="hot-keyword"
                 @click="fillKeyword(item)"
               >
-                <span class="hot-rank">{{ index + 1 }}</span
+                <span class="rank">{{ index + 1 }}</span
                 >{{ item }}
               </button>
             </div>
           </section>
         </template>
-        <p v-else class="search-helper">输入关键词即可搜索题目、课程或知识点。</p>
-      </section>
+        <p v-else class="state">输入关键词即可搜索题目、课程或知识点。</p>
+      </div>
     </section>
-  </el-dialog>
+  </dialog>
 </template>
 
 <style scoped>
-:global(.global-search-dialog .el-dialog__body) {
-  padding: 0;
+.global-search {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  max-width: none;
+  height: 100vh;
+  max-height: none;
+  margin: 0;
+  padding: 14vh var(--lt-space-4) var(--lt-space-4);
+  border: 0;
+  background: var(--lt-scrim);
+  color: var(--lt-label);
+  backdrop-filter: blur(8px);
 }
-:global(.global-search-dialog .el-dialog__header) {
-  padding: var(--lp-space-5) var(--lp-space-5) var(--lp-space-2);
+
+.global-search[open] {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
-.search-container {
+
+.global-search::backdrop {
+  background: transparent;
+}
+
+.panel {
   display: flex;
   flex-direction: column;
-  max-height: 60vh;
+  width: min(640px, 100%);
+  max-height: 72vh;
+  overflow: hidden;
+  border-radius: var(--lt-radius-xl);
+  background: var(--lt-surface-raised);
+  box-shadow: var(--lt-shadow-float);
+  backdrop-filter: blur(40px) saturate(180%);
 }
-.search-header {
-  padding-right: var(--lp-space-6);
-}
-.search-header h2,
-.search-header p {
-  margin: 0;
-}
-.search-header h2 {
-  color: var(--lp-text);
-  font-size: var(--lp-text-lg);
-}
-.search-header p,
-.search-helper {
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-}
-.search-header p {
-  margin-top: var(--lp-space-1);
-}
-.search-input-wrapper {
+
+.field {
   display: flex;
+  flex: none;
   align-items: center;
-  gap: var(--lp-space-2);
-  padding: var(--lp-space-3) var(--lp-space-5);
-  border-bottom: var(--lp-border-hairline);
+  gap: var(--lt-space-3);
+  padding: var(--lt-space-4) var(--lt-space-4) var(--lt-space-4) var(--lt-space-5);
+  border-bottom: 0.5px solid var(--lt-separator);
 }
-.search-icon {
-  flex-shrink: 0;
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xl);
+
+.field-icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--lt-label-3);
 }
-.search-input {
+
+.input {
   flex: 1;
   min-width: 0;
-  min-height: var(--lp-control-height);
-  padding: 0 var(--lp-space-2);
-  color: var(--lp-text);
-  font: inherit;
-  font-size: var(--lp-text-lg);
-  line-height: var(--lp-leading-snug);
-  background: transparent;
+  height: var(--lt-control-md);
+  padding: 0;
   border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--lt-label);
+  font: var(--lt-text-title3) / 1.2 var(--lt-font);
   appearance: none;
 }
-.search-input::placeholder {
-  color: var(--lp-text-muted);
+
+.input::placeholder {
+  color: var(--lt-label-3);
 }
-.search-input:focus-visible {
-  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
-  outline-offset: var(--lp-focus-offset);
+
+.input::-webkit-search-cancel-button {
+  display: none;
 }
-.shortcut-hint {
-  padding: var(--lp-space-1) var(--lp-space-2);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
-  background: var(--lp-surface-soft);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-xs);
+
+.key {
+  flex: none;
+  padding: 2px var(--lt-space-2);
+  border-radius: var(--lt-radius-sm);
+  background: var(--lt-fill-2);
+  color: var(--lt-label-3);
+  font: var(--lt-text-caption) / 1.4 var(--lt-font);
 }
-.search-results,
-.search-suggestions {
+
+.body {
   overflow-y: auto;
-  max-height: 50vh;
-  padding: var(--lp-space-2) 0;
+  overscroll-behavior: contain;
+  padding: var(--lt-space-2) var(--lt-space-2) var(--lt-space-3);
 }
-.search-state {
-  margin: var(--lp-space-2) var(--lp-space-4);
-}
-.search-empty,
-.search-helper {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-2);
-  padding: var(--lp-space-6) var(--lp-space-4);
-}
-.result-group {
-  margin-bottom: var(--lp-space-1);
-}
-.group-title,
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-2);
+
+.state {
+  display: grid;
+  justify-items: start;
+  gap: var(--lt-space-2);
   margin: 0;
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
-  font-weight: var(--lp-weight-semibold);
-  letter-spacing: var(--lp-tracking-wide);
+  padding: var(--lt-space-5) var(--lt-space-3);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
-.group-title {
-  padding: var(--lp-space-2) var(--lp-space-4) var(--lp-space-1);
+
+.state p {
+  margin: 0;
 }
-.group-title span {
-  margin-left: auto;
-  font-weight: var(--lp-weight-normal);
+
+.state strong {
+  display: block;
+  margin-bottom: var(--lt-space-1);
+  color: var(--lt-label);
+  font-size: var(--lt-text-body);
 }
-.result-item {
+
+.group + .group {
+  margin-top: var(--lt-space-2);
+}
+
+.group-head {
   display: flex;
-  flex-direction: column;
-  width: 100%;
-  padding: var(--lp-space-3) var(--lp-space-4);
-  color: var(--lp-text);
-  font: inherit;
-  text-align: left;
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-}
-.result-item:hover,
-.result-item[aria-selected='true'] {
-  background: var(--lp-primary-soft);
-}
-.result-item:focus-visible,
-.section-action:focus-visible,
-.history-text:focus-visible,
-.history-delete:focus-visible,
-.hot-keyword-tag:focus-visible {
-  outline: var(--lp-focus-width) solid var(--lp-focus-ring);
-  outline-offset: var(--lp-focus-offset);
-}
-.item-title {
-  line-height: var(--lp-leading-snug);
-  word-break: break-word;
-}
-.item-title mark {
-  padding: 0 var(--lp-space-1);
-  color: var(--lp-warning);
-  background: var(--lp-warning-soft);
-  border-radius: var(--lp-radius-xs);
-}
-.item-subtitle {
-  margin-top: var(--lp-space-1);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
-  line-height: var(--lp-leading-snug);
-}
-.suggestion-section {
-  padding: var(--lp-space-1) 0;
-}
-.section-header {
-  display: flex;
-  align-items: center;
+  align-items: last baseline;
   justify-content: space-between;
-  padding: var(--lp-space-2) var(--lp-space-4) var(--lp-space-1);
+  padding-right: var(--lt-space-2);
 }
-.section-action,
-.history-error button {
-  padding: 0;
-  color: var(--lp-primary);
-  font: inherit;
-  font-size: var(--lp-text-xs);
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-}
-.history-error {
-  margin: 0;
-  padding: var(--lp-space-1) var(--lp-space-4);
-  color: var(--lp-danger);
-  font-size: var(--lp-text-xs);
-}
-.history-list {
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-.history-item {
+
+.group-title {
   display: flex;
   align-items: center;
-  gap: var(--lp-space-3);
-  padding: var(--lp-space-2) var(--lp-space-4);
+  gap: var(--lt-space-2);
+  margin: 0;
+  padding: var(--lt-space-3) var(--lt-space-3) var(--lt-space-1);
+  color: var(--lt-label-3);
+  font-size: var(--lt-text-caption);
+  font-weight: 600;
 }
-.history-icon {
-  flex-shrink: 0;
-  color: var(--lp-ink-300);
+
+.group-title span {
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
 }
-.history-text {
+
+.group-title svg {
+  width: 14px;
+  height: 14px;
+}
+
+.result {
+  display: flex;
   flex: 1;
-  overflow: hidden;
-  padding: 0;
-  color: var(--lp-text);
-  font: inherit;
+  align-items: flex-start;
+  gap: var(--lt-space-3);
+  width: 100%;
+  min-width: 0;
+  padding: var(--lt-space-2) var(--lt-space-3);
+  border: 0;
+  border-radius: var(--lt-radius-md);
+  background: transparent;
+  color: var(--lt-label);
+  font: var(--lt-text-body) / 1.4 var(--lt-font);
   text-align: left;
+  cursor: pointer;
+}
+
+.result:hover,
+.result[aria-selected='true'] {
+  background: var(--lt-fill-2);
+}
+
+.result-icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  color: var(--lt-label-3);
+}
+
+.result[aria-selected='true'] .result-icon {
+  color: var(--lt-accent);
+}
+
+.result-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.result-title {
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.result-title mark {
+  background: none;
+  color: var(--lt-accent);
+  font-weight: 600;
+}
+
+.result-subtitle {
+  overflow: hidden;
+  color: var(--lt-label-3);
+  font-size: var(--lt-text-caption);
   text-overflow: ellipsis;
   white-space: nowrap;
-  background: transparent;
-  border: 0;
-  cursor: pointer;
 }
-.history-delete {
-  display: grid;
-  place-items: center;
-  min-width: var(--lp-control-height-small);
-  min-height: var(--lp-control-height-small);
+
+.history {
+  margin: 0;
   padding: 0;
-  color: var(--lp-text-muted);
-  background: transparent;
-  border: 0;
-  cursor: pointer;
+  list-style: none;
 }
-.history-delete:hover {
-  color: var(--lp-danger);
+
+.history li {
+  display: flex;
+  align-items: center;
+  gap: var(--lt-space-1);
 }
-.hot-keyword-list {
+
+.history .result-title {
+  display: block;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.history-error {
+  margin: 0;
+  padding: 0 var(--lt-space-3) var(--lt-space-2);
+  color: var(--lt-red-text);
+  font-size: var(--lt-text-caption);
+}
+
+.hot {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--lp-space-2);
-  padding: var(--lp-space-2) var(--lp-space-4) var(--lp-space-3);
+  gap: var(--lt-space-2);
+  padding: var(--lt-space-2) var(--lt-space-3);
 }
-.hot-keyword-tag {
+
+.hot-keyword {
   display: inline-flex;
   align-items: center;
-  gap: var(--lp-space-2);
-  padding: var(--lp-space-2) var(--lp-space-3);
-  color: var(--lp-text-secondary);
-  font: inherit;
-  font-size: var(--lp-text-sm);
-  background: var(--lp-surface-soft);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-full);
+  gap: var(--lt-space-2);
+  height: var(--lt-control-sm);
+  padding: 0 var(--lt-space-3);
+  border: 0;
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill-2);
+  color: var(--lt-label);
+  font: var(--lt-text-footnote) / 1 var(--lt-font);
   cursor: pointer;
 }
-.hot-keyword-tag:hover {
-  color: var(--lp-primary);
-  background: var(--lp-primary-soft);
+
+.hot-keyword:hover {
+  background: var(--lt-fill-hover);
 }
-.hot-rank {
-  min-width: var(--lp-space-3);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
+
+.rank {
+  color: var(--lt-label-3);
+  font-family: var(--lt-font-rounded);
   font-variant-numeric: tabular-nums;
 }
-@media (max-width: 767px) {
-  .search-results,
-  .search-suggestions {
-    max-height: 60vh;
+
+.text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lt-space-1);
+  padding: var(--lt-space-1) var(--lt-space-2);
+  border: 0;
+  border-radius: var(--lt-radius-pill);
+  background: transparent;
+  color: var(--lt-accent);
+  font: 500 var(--lt-text-footnote) / 1 var(--lt-font);
+  cursor: pointer;
+}
+
+.text-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.icon-button {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--lt-control-sm);
+  height: var(--lt-control-sm);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--lt-label-3);
+  cursor: pointer;
+}
+
+.icon-button:hover:not(:disabled) {
+  background: var(--lt-fill-2);
+  color: var(--lt-label);
+}
+
+.icon-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.text-button:disabled,
+.icon-button:disabled {
+  color: var(--lt-label-3);
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .global-search {
+    padding-top: var(--lt-space-4);
   }
-  .result-item {
-    min-height: 48px;
+
+  .panel {
+    max-height: calc(100dvh - var(--lt-space-8));
+  }
+
+  .result {
+    min-height: 44px;
   }
 }
 </style>

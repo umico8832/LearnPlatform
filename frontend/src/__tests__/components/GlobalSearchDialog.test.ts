@@ -17,10 +17,6 @@ const router = createRouter({
   history: createMemoryHistory(),
   routes: [{ path: '/questions/1', component: { template: '<div />' } }],
 })
-const dialogStub = {
-  template: '<div class="dialog-stub"><slot name="header" title-id="test-dialog-title" /><slot /></div>',
-}
-const iconStub = { template: '<i><slot /></i>' }
 
 describe('GlobalSearchDialog', () => {
   afterEach(() => {
@@ -40,7 +36,7 @@ describe('GlobalSearchDialog', () => {
       },
     })
     const wrapper = mount(GlobalSearchDialog, {
-      global: { plugins: [router], stubs: { ElDialog: dialogStub, ElIcon: iconStub } },
+      global: { plugins: [router] },
     })
     ;(wrapper.vm as unknown as { open: () => void }).open()
     const input = wrapper.get('input')
@@ -64,7 +60,7 @@ describe('GlobalSearchDialog', () => {
       data: { questions: [], courses: [], knowledgePoints: [], totalCount: 0 },
     })
     const wrapper = mount(GlobalSearchDialog, {
-      global: { plugins: [router], stubs: { ElDialog: dialogStub, ElIcon: iconStub } },
+      global: { plugins: [router] },
     })
     ;(wrapper.vm as unknown as { open: () => void }).open()
     const input = wrapper.get('input')
@@ -77,6 +73,6 @@ describe('GlobalSearchDialog', () => {
     await flushPromises()
     expect(input.attributes('aria-expanded')).toBe('true')
     expect(wrapper.get('[role="listbox"]')).toBeTruthy()
-    expect(wrapper.text()).toContain('未找到匹配结果')
+    expect(wrapper.text()).toContain('没有找到和“不存在”匹配的内容')
   })
 })

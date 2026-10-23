@@ -169,7 +169,7 @@ test('搜索错误重试、迟到响应和空结果不会混淆状态', async ({
   await page.unroute(searchApi)
 
   await input.fill('不存在的唯一导航搜索词_20261002')
-  await expect(dialog.getByText('未找到匹配结果')).toBeVisible()
+  await expect(dialog.getByText('没有找到和“不存在的唯一导航搜索词_20261002”匹配的内容')).toBeVisible()
   await expect(dialog.getByRole('option')).toHaveCount(0)
   await expect(input).toHaveAttribute('aria-expanded', 'true')
   await maybeScreenshot(page, 'navigation-search-empty')
