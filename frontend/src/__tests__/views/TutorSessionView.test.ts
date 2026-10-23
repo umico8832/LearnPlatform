@@ -112,6 +112,35 @@ describe('TutorSessionView', () => {
     })
   })
 
+  it.each([true, false])('恢复服务端检查结果时所选项标记正确性 %s，其余淡化', async (correct) => {
+    sessionStorage.setItem('lp:tutor-session:408:37', 'restored')
+    mockGetTutorSession.mockResolvedValueOnce({
+      data: {
+        sessionKey: 'restored',
+        title: '检查',
+        agentAvailable: false,
+        lesson: { summary: 'summary', steps: [] },
+        check: {
+          id: 'check',
+          prompt: 'prompt',
+          options: [
+            { id: 'first', text: '第一项' },
+            { id: 'second', text: '第二项' },
+          ],
+        },
+        checkAnswer: 'first',
+        checkResult: { correct, explanation: '服务端结果' },
+        learningContext: {},
+      },
+    })
+    const wrapper = mount(TutorSessionView, { global: { stubs } })
+    await flushPromises()
+    const rows = wrapper.findAll('.course-choice')
+    expect(rows.map((row) => row.attributes('data-state'))).toEqual([correct ? 'right' : 'wrong', 'dim'])
+    expect(rows[0].text()).toContain(correct ? '你的选择，正确' : '你的选择，错误')
+    expect(wrapper.findAll('fieldset:disabled')).toHaveLength(1)
+  })
+
   it('理解检查后允许直接进入已审查的下一教学目标', async () => {
     const wrapper = mount(TutorSessionView, { global: { stubs } })
     await flushPromises()

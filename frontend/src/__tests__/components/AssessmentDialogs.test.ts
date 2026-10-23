@@ -134,6 +134,44 @@ describe('阶段测评弹层', () => {
     ).toBeDefined()
   })
 
+  it('完成后按服务端单选和多选答案标记对错，并保持作答锁定', () => {
+    const completed = {
+      ...assessment,
+      status: 'COMPLETED' as const,
+      questions: assessment.questions.map((question) => ({
+        ...question,
+        options: [...question.options, { label: 'C', content: '未选项' }],
+        userAnswer: 'A',
+        correctAnswer: question.id === 1 ? 'B' : 'A,B',
+        correct: false,
+      })),
+    }
+    const wrapper = mount(StageAssessmentDialog, {
+      props: {
+        visible: true,
+        assessment: completed,
+        answers: { 1: ['A'], 2: ['A'] },
+        submitting: false,
+        submitError: '',
+        focusQuestionId: null,
+        reviewedKnowledgePointIds: [],
+      },
+      global: { stubs },
+    })
+    expect(wrapper.findAll('.course-choice').map((row) => row.attributes('data-state'))).toEqual([
+      'wrong',
+      'right',
+      'dim',
+      'right',
+      'right',
+      'dim',
+    ])
+    expect(wrapper.findAll('fieldset:disabled')).toHaveLength(2)
+    expect(wrapper.text()).toContain('你的选择，错误')
+    expect(wrapper.text()).toContain('你的选择，正确')
+    expect(wrapper.text()).toContain('正确答案')
+  })
+
   it('原生单选和多选更新答案，提交期间拒绝关闭', async () => {
     const wrapper = mount(StageAssessmentDialog, {
       props: {

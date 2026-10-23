@@ -141,8 +141,8 @@ test('Tutor Agent 推荐已批准变式题、恢复首次作答并读取真实�
     expect(opened.question).not.toHaveProperty('analysis')
     expect(opened.question.options.every((option) => !('isCorrect' in option))).toBe(true)
     const practice = panel.locator('.agent-practice').last()
-    const wrong = practice.getByRole('radio', { name: 'B. 可以有多个' })
-    await practice.locator('label').filter({ hasText: 'B. 可以有多个' }).click()
+    const wrong = practice.getByRole('radio', { name: '可以有多个' })
+    await practice.locator('label').filter({ hasText: '可以有多个' }).click()
     await expect(wrong).toBeChecked()
     const answerResponse = page.waitForResponse(
       (response) => response.request().method() === 'POST' && response.url().endsWith('/practice/answer'),

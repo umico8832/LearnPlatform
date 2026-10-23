@@ -8,11 +8,26 @@
       <p class="practice-content">{{ practice.question.content }}</p>
       <fieldset class="practice-options" :disabled="!!practice.result || submitting || loading || syncRequired">
         <legend class="lt-sr-only">选择变式练习答案</legend>
-        <label v-for="option in practice.question.options" :key="option.label" class="practice-option"
-          ><input v-model="answer" type="radio" name="practice-answer" :value="option.label" /><span
-            >{{ option.label }}. {{ option.content }}</span
-          ></label
+        <label
+          v-for="option in practice.question.options"
+          :key="option.label"
+          class="practice-option course-choice"
+          :data-state="optionState(option.label)"
         >
+          <input
+            class="course-choice-input"
+            v-model="answer"
+            type="radio"
+            name="practice-answer"
+            :value="option.label"
+          />
+          <span class="course-choice-key" aria-hidden="true">{{ option.label }}</span>
+          <span class="course-choice-text">{{ option.content }}</span>
+          <span v-if="practice.result && option.label === practice.result.userAnswer" class="course-choice-tag">
+            你的选择，{{ practice.result.correct ? '正确' : '错误' }}
+          </span>
+          <span v-else-if="optionState(option.label) === 'right'" class="course-choice-tag">正确答案</span>
+        </label>
       </fieldset>
       <LtButton
         data-testid="practice-submit"
@@ -42,6 +57,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import './course-choice.css'
 import { LtButton } from '@/components/living'
 import { useGamificationStore } from '@/stores/gamification'
 import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
@@ -70,6 +86,14 @@ const practice = ref<TutorAgentPracticeVO>()
 const failure = ref('')
 const headingId = computed(() => `tutor-practice-${props.runKey}-${props.sequence}`)
 let generation = 0
+
+function optionState(label: string) {
+  const result = practice.value?.result
+  if (!result) return answer.value === label ? 'selected' : 'idle'
+  if (result.correctAnswer === label) return 'right'
+  if (result.userAnswer === label) return 'wrong'
+  return 'dim'
+}
 
 function resetForContext() {
   opened.value = false
@@ -207,14 +231,6 @@ h3 {
 .practice-options {
   border: 0;
   padding: 0;
-}
-.practice-option {
-  display: flex;
-  gap: var(--lt-space-2);
-  color: var(--lt-label);
-}
-.practice-option input {
-  accent-color: var(--lt-accent);
 }
 .practice-error {
   margin: 0;

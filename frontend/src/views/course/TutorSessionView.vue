@@ -109,11 +109,19 @@
           aria-labelledby="check-heading"
           :disabled="!!result || submitting"
         >
-          <label v-for="option in session.check.options" :key="option.id" class="check-option"
-            ><input v-model="optionId" type="radio" name="tutor-check" :value="option.id" /><span>{{
-              option.text
-            }}</span></label
+          <label
+            v-for="(option, index) in session.check.options"
+            :key="option.id"
+            class="check-option course-choice"
+            :data-state="checkOptionState(option.id)"
           >
+            <input class="course-choice-input" v-model="optionId" type="radio" name="tutor-check" :value="option.id" />
+            <span class="course-choice-key" aria-hidden="true">{{ String.fromCharCode(65 + index) }}</span>
+            <span class="course-choice-text">{{ option.text }}</span>
+            <span v-if="result && optionId === option.id" class="course-choice-tag">
+              你的选择，{{ result.correct ? '正确' : '错误' }}
+            </span>
+          </label>
         </fieldset>
         <LtButton variant="primary" :disabled="!optionId || !!result || submitting" @click="submit">{{
           submitting ? '正在提交…' : '提交检查'
@@ -170,6 +178,7 @@ import { CircleCheck, CircleAlert } from '@lucide/vue'
 import { LtButton } from '@/components/living'
 import CoursePageState from './CoursePageState.vue'
 import './course-baseline.css'
+import '@/components/course/course-choice.css'
 import { useRoute, useRouter } from 'vue-router'
 import TutorArrayStackInsertion from '@/components/TutorArrayStackInsertion.vue'
 import TutorArrayStackResize from '@/components/TutorArrayStackResize.vue'
@@ -210,6 +219,11 @@ const courseId = computed(() => Number(route.params.id))
 const pointId = computed(() => Number(route.query.knowledgePointId))
 const { loading, failed, submitting, session, optionId, result, checkFailure, load, submit, dispose } =
   useTutorSessionCheck(courseId, pointId)
+function checkOptionState(id: string) {
+  if (!result.value) return optionId.value === id ? 'selected' : 'idle'
+  if (optionId.value === id) return result.value.correct ? 'right' : 'wrong'
+  return 'dim'
+}
 const courseware = computed(() =>
   session.value && isArrayStackInsertionCourseware(session.value.lesson.visualization)
     ? session.value.lesson.visualization
@@ -446,30 +460,6 @@ onBeforeUnmount(() => {
   padding: 0;
   margin: 0;
   border: 0;
-}
-.check-option {
-  display: flex;
-  align-items: baseline;
-  gap: var(--lt-space-3);
-  padding: var(--lt-space-4);
-  border-radius: var(--lt-radius-md);
-  background: var(--lt-fill-3);
-  cursor: pointer;
-  line-height: var(--lt-leading-reading);
-}
-.check-option:hover {
-  background: var(--lt-fill-2);
-}
-.check-option:has(:checked) {
-  background: var(--lt-accent-soft);
-  box-shadow: inset 0 0 0 calc(var(--lt-space-1) / 4) var(--lt-accent);
-}
-.check-option input {
-  accent-color: var(--lt-accent-fill);
-  flex: none;
-}
-.check-options:disabled .check-option {
-  cursor: default;
 }
 .check-result {
   width: 100%;

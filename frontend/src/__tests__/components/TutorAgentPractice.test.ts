@@ -88,6 +88,34 @@ describe('TutorAgentPractice', () => {
     expect(wrapper.get('[data-testid="practice-follow-up"]')).toBeTruthy()
   })
 
+  it('restores the server choice and correct answer as separate option states', async () => {
+    get.mockResolvedValueOnce({
+      data: {
+        ...practice,
+        question: {
+          ...practice.question,
+          options: [
+            { label: 'A', content: '第一项' },
+            { label: 'B', content: '第二项' },
+            { label: 'C', content: '第三项' },
+          ],
+        },
+        result: { recordId: 1, questionId: 7, userAnswer: 'A', correct: false, correctAnswer: 'B', score: 0 },
+      },
+    })
+    const wrapper = mountPractice()
+    await wrapper.get('[data-testid="practice-open"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.course-choice').map((row) => row.attributes('data-state'))).toEqual([
+      'wrong',
+      'right',
+      'dim',
+    ])
+    expect(wrapper.text()).toContain('你的选择，错误')
+    expect(wrapper.text()).toContain('正确答案')
+    expect(wrapper.get('fieldset').attributes('disabled')).toBeDefined()
+  })
+
   it('keeps loading explicit after GET fails, and retries only when clicked', async () => {
     get.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({ data: practice })
     const wrapper = mountPractice()

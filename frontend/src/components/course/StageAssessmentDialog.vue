@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, watch } from 'vue'
+import './course-choice.css'
 import { LtButton, LtSheet } from '@/components/living'
 import type { CourseStageAssessmentVO } from '@/api/course'
 
@@ -42,6 +43,14 @@ watch(
     element?.focus({ preventScroll: true })
   },
 )
+function optionState(question: CourseStageAssessmentVO['questions'][number], label: string) {
+  if (props.assessment?.status !== 'COMPLETED') {
+    return answers.value[question.id]?.includes(label) ? 'selected' : 'idle'
+  }
+  if (question.correctAnswer?.split(',').includes(label)) return 'right'
+  if (question.userAnswer?.split(',').includes(label)) return 'wrong'
+  return 'dim'
+}
 function sourceCompositionText(composition: CourseStageAssessmentVO['sourceComposition']) {
   if (!composition) return '暂无题源快照'
   return [
@@ -134,22 +143,53 @@ function sourceCompositionText(composition: CourseStageAssessmentVO['sourceCompo
             :disabled="assessment.status === 'COMPLETED' || submitting"
           >
             <legend class="lt-sr-only">第 {{ question.sortOrder }} 题，多选</legend>
-            <label v-for="option in question.options" :key="option.label" class="assessment-option"
-              ><input v-model="answers[question.id]" type="checkbox" :value="option.label" /><span
-                >{{ option.label }}. {{ option.content }}</span
-              ></label
+            <label
+              v-for="option in question.options"
+              :key="option.label"
+              class="assessment-option course-choice"
+              :data-state="optionState(question, option.label)"
             >
+              <input class="course-choice-input" v-model="answers[question.id]" type="checkbox" :value="option.label" />
+              <span class="course-choice-key" aria-hidden="true">{{ option.label }}</span>
+              <span class="course-choice-text">{{ option.content }}</span>
+              <span
+                v-if="assessment.status === 'COMPLETED' && question.userAnswer?.split(',').includes(option.label)"
+                class="course-choice-tag"
+              >
+                你的选择，{{ optionState(question, option.label) === 'right' ? '正确' : '错误' }}
+              </span>
+              <span v-else-if="optionState(question, option.label) === 'right'" class="course-choice-tag"
+                >正确答案</span
+              >
+            </label>
           </fieldset>
           <fieldset v-else class="assessment-options" :disabled="assessment.status === 'COMPLETED' || submitting">
             <legend class="lt-sr-only">第 {{ question.sortOrder }} 题，单选</legend>
-            <label v-for="option in question.options" :key="option.label" class="assessment-option"
-              ><input
+            <label
+              v-for="option in question.options"
+              :key="option.label"
+              class="assessment-option course-choice"
+              :data-state="optionState(question, option.label)"
+            >
+              <input
+                class="course-choice-input"
                 v-model="answers[question.id][0]"
                 type="radio"
                 :name="`assessment-${question.id}`"
                 :value="option.label"
-              /><span>{{ option.label }}. {{ option.content }}</span></label
-            >
+              />
+              <span class="course-choice-key" aria-hidden="true">{{ option.label }}</span>
+              <span class="course-choice-text">{{ option.content }}</span>
+              <span
+                v-if="assessment.status === 'COMPLETED' && question.userAnswer === option.label"
+                class="course-choice-tag"
+              >
+                你的选择，{{ question.correct ? '正确' : '错误' }}
+              </span>
+              <span v-else-if="optionState(question, option.label) === 'right'" class="course-choice-tag"
+                >正确答案</span
+              >
+            </label>
           </fieldset>
           <div v-if="assessment.status === 'COMPLETED'" class="assessment-result">
             <p>参考答案：{{ question.correctAnswer }}</p>
@@ -292,22 +332,6 @@ function sourceCompositionText(composition: CourseStageAssessmentVO['sourceCompo
   margin: var(--lt-space-3) 0 0;
   padding: 0;
   border: 0;
-}
-.assessment-option {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--lt-space-2);
-  color: var(--lt-label);
-  cursor: pointer;
-}
-.assessment-option input {
-  flex: none;
-  margin: 0;
-  accent-color: var(--lt-accent);
-}
-.assessment-options:disabled .assessment-option {
-  color: var(--lt-label-3);
-  cursor: not-allowed;
 }
 .assessment-result {
   display: grid;
