@@ -56,43 +56,47 @@
       </div>
       <div v-else class="paper-list">
         <article v-for="paper in papers" :key="paper.id" class="exam-card">
-          <div class="exam-card-top">
+          <div class="exam-row-content">
             <div class="exam-card-heading">
               <h2 class="exam-title">{{ paper.title }}</h2>
               <span class="tag" :data-tone="paperTypeTag(paper)">{{ paperTypeLabel(paper) }}</span>
             </div>
+
+            <p class="exam-metrics">
+              <span v-if="paper.courseName">{{ paper.courseName }} · </span>{{ paper.questionCount }} 题 ·
+              {{ paper.duration }} 分钟 · {{ paper.totalScore }} 分
+            </p>
+            <p v-if="paper.description" class="exam-desc">{{ paper.description }}</p>
+            <div v-if="isVerifiedOfficial(paper)" class="official-source">
+              <strong>{{ paper.examYear }} · {{ paper.examName }}</strong
+              ><span>来源：{{ paper.sourceReference }}</span>
+            </div>
+            <div v-else-if="paper.visibility === 'PRIVATE'" class="private-source">
+              <strong>仅你可见 · 已确认导入</strong
+              ><LtButton @click="showOriginalSource(paper.id)">查看原始资料</LtButton>
+            </div>
+          </div>
+          <div class="exam-row-controls">
             <span class="tag">可参加</span>
-          </div>
-          <p v-if="paper.description" class="exam-desc">{{ paper.description }}</p>
-          <div v-if="isVerifiedOfficial(paper)" class="official-source">
-            <strong>{{ paper.examYear }} · {{ paper.examName }}</strong
-            ><span>来源：{{ paper.sourceReference }}</span>
-          </div>
-          <div v-else-if="paper.visibility === 'PRIVATE'" class="private-source">
-            <strong>仅你可见 · 已确认导入</strong
-            ><LtButton @click="showOriginalSource(paper.id)">查看原始资料</LtButton>
-          </div>
-          <div class="exam-metrics">
-            <span v-if="paper.courseName"><BookOpen aria-hidden="true" />{{ paper.courseName }}</span
-            ><span><FileText aria-hidden="true" />{{ paper.questionCount }} 题</span
-            ><span><Clock aria-hidden="true" />{{ paper.duration }} 分钟</span><span>{{ paper.totalScore }} 分</span>
-          </div>
-          <p v-if="actionError?.paperId === paper.id" class="exam-action-error" role="alert">
-            {{ actionError.message }} <LtButton @click="retryAction(paper.id, actionError.action)">重试</LtButton>
-          </p>
-          <div class="exam-actions">
-            <LtButton
-              v-if="paper.visibility === 'PRIVATE'"
-              class="danger"
-              :disabled="isPaperBusy(paper.id)"
-              @click="deletePaper(paper)"
-              >删除试卷</LtButton
-            ><LtButton v-if="paper.courseId" :disabled="isPaperBusy(paper.id)" @click="handleStartLearning(paper.id)">{{
-              learningId === paper.id ? '正在开始…' : '学习模式'
-            }}</LtButton
-            ><LtButton variant="primary" :disabled="isPaperBusy(paper.id)" @click="handleStartExam(paper.id)">{{
-              startingId === paper.id ? '正在开始…' : '考试模式'
-            }}</LtButton>
+            <p v-if="actionError?.paperId === paper.id" class="exam-action-error" role="alert">
+              {{ actionError.message }} <LtButton @click="retryAction(paper.id, actionError.action)">重试</LtButton>
+            </p>
+            <div class="exam-actions">
+              <LtButton
+                v-if="paper.visibility === 'PRIVATE'"
+                class="danger"
+                :disabled="isPaperBusy(paper.id)"
+                @click="deletePaper(paper)"
+                >删除试卷</LtButton
+              ><LtButton
+                v-if="paper.courseId"
+                :disabled="isPaperBusy(paper.id)"
+                @click="handleStartLearning(paper.id)"
+                >{{ learningId === paper.id ? '正在开始…' : '学习模式' }}</LtButton
+              ><LtButton variant="primary" :disabled="isPaperBusy(paper.id)" @click="handleStartExam(paper.id)">{{
+                startingId === paper.id ? '正在开始…' : '考试模式'
+              }}</LtButton>
+            </div>
           </div>
         </article>
       </div>
@@ -131,7 +135,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { LtButton, LtSheet } from '@/components/living'
 import { useConfirmSheet } from '@/composables/useConfirmSheet'
 import '@/components/exam/examLibrary.css'
-import { BookOpen, FileText, Clock } from '@lucide/vue'
 import { deletePrivateExamPaper, getPublishedPapers, startExam, startExamLearningSession } from '@/api/exam'
 import { getAuthSessionVersion, isAuthenticated, onAuthSessionChange } from '@/utils/auth'
 import type { ExamPaperVO, PaperType } from '@/api/exam'

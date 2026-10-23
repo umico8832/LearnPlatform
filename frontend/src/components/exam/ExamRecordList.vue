@@ -16,7 +16,7 @@
         <dl class="record-mobile-meta">
           <div>
             <dt>得分</dt>
-            <dd :class="['score-text', getScoreClass(record)]">{{ formatScore(record) }}</dd>
+            <dd class="score-text">{{ formatScore(record) }}</dd>
           </div>
           <div>
             <dt>开始时间</dt>
@@ -114,14 +114,6 @@ const viewResult = (recordId: number) => {
 
 const continueExam = (record: ExamRecordVO) => {
   router.push({ name: 'ExamTake', params: { recordId: String(record.id) } })
-}
-
-const getScoreClass = (record: ExamRecordVO) => {
-  if (record.status !== 1 || record.score == null || !record.totalScore || record.totalScore === 0) return ''
-  const ratio = record.score / record.totalScore
-  if (ratio >= 0.8) return 'score-high'
-  if (ratio >= 0.6) return 'score-mid'
-  return 'score-low'
 }
 
 const formatScore = (record: ExamRecordVO) => {
