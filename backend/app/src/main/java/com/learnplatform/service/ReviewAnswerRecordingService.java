@@ -1,6 +1,5 @@
 package com.learnplatform.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.service.question.AutomaticGradingPolicy;
 import com.learnplatform.service.question.QuestionAccessPolicy;
@@ -12,7 +11,6 @@ import com.learnplatform.entity.PracticeRecord;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionOption;
 import com.learnplatform.mapper.PracticeRecordMapper;
-import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
 import org.springframework.stereotype.Service;
 
@@ -22,20 +20,17 @@ import java.util.stream.Collectors;
 @Service
 public class ReviewAnswerRecordingService {
 
-    private final QuestionMapper questionMapper;
     private final QuestionOptionMapper questionOptionMapper;
     private final PracticeRecordMapper practiceRecordMapper;
     private final WrongQuestionService wrongQuestionService;
     private final AnswerEvaluator answerEvaluator;
     private final CourseLearningEventService courseLearningEventService;
 
-    public ReviewAnswerRecordingService(QuestionMapper questionMapper,
-                                        QuestionOptionMapper questionOptionMapper,
+    public ReviewAnswerRecordingService(QuestionOptionMapper questionOptionMapper,
                                         PracticeRecordMapper practiceRecordMapper,
                                         WrongQuestionService wrongQuestionService,
                                         AnswerEvaluator answerEvaluator,
                                         CourseLearningEventService courseLearningEventService) {
-        this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.practiceRecordMapper = practiceRecordMapper;
         this.wrongQuestionService = wrongQuestionService;
@@ -43,22 +38,20 @@ public class ReviewAnswerRecordingService {
         this.courseLearningEventService = courseLearningEventService;
     }
 
-    public boolean evaluateAndRecord(ReviewSubmitRequest request, Long userId) {
-        return evaluateAndRecordWithReward(request, userId).correct();
+    public boolean evaluateAndRecord(ReviewSubmitRequest request, Long userId, Question question) {
+        return evaluateAndRecordWithReward(request, userId, question).correct();
     }
 
-    public ReviewAnswerOutcome evaluateAndRecordWithReward(ReviewSubmitRequest request, Long userId) {
+    public ReviewAnswerOutcome evaluateAndRecordWithReward(
+            ReviewSubmitRequest request, Long userId, Question question) {
         Long questionId = request.getQuestionId();
-        Question question = questionMapper.selectById(questionId);
         if (!QuestionAccessPolicy.canAccess(question, userId)
                 || !Integer.valueOf(1).equals(question.getStatus())) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
 
-        LambdaQueryWrapper<QuestionOption> optionQuery = new LambdaQueryWrapper<>();
-        optionQuery.eq(QuestionOption::getQuestionId, questionId)
-                .orderByAsc(QuestionOption::getSortOrder);
-        List<QuestionOption> correctOptions = questionOptionMapper.selectList(optionQuery).stream()
+        List<QuestionOption> correctOptions = questionOptionMapper
+                .selectActiveByQuestionIdForShare(questionId).stream()
                 .filter(option -> option.getIsCorrect() != null && option.getIsCorrect() == 1)
                 .collect(Collectors.toList());
         AutomaticGradingPolicy.requireBasis(question.getQuestionType(), correctOptions);

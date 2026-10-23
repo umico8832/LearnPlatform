@@ -1,5 +1,9 @@
 package com.learnplatform.service;
 
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
+
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.QuestionVO;
 import com.learnplatform.dto.PracticeResultVO;
@@ -12,6 +16,7 @@ import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.PracticeRecordMapper;
 import com.learnplatform.mapper.QuestionKnowledgePointMapper;
+import com.learnplatform.entity.QuestionKnowledgePoint;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
 import com.learnplatform.mapper.UserFavoriteQuestionMapper;
@@ -25,12 +30,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
@@ -52,11 +59,15 @@ class PracticeServiceTest {
     @Mock private SpacedRepetitionService spacedRepetitionService;
     @Mock private FsrsReviewService fsrs;
     @Mock private CourseLearningEventService courseLearningEventService;
+    @Mock private ContentReferenceLockService referenceLocks;
     private RecordingWrongQuestionService wrongQuestionService;
     private PracticeService practiceService;
 
     @BeforeEach
     void setUp() {
+        for (Class<?> type : List.of(Question.class, QuestionOption.class, QuestionKnowledgePoint.class)) {
+            TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), "PracticeServiceTest"), type);
+        }
         wrongQuestionService = new RecordingWrongQuestionService();
         PracticeQuestionQueryService questionQueryService = new PracticeQuestionQueryService(
                 questionMapper, questionOptionMapper, questionKnowledgePointMapper, courseMapper,
@@ -64,10 +75,15 @@ class PracticeServiceTest {
         PracticeHistoryService historyService = new PracticeHistoryService(
                 practiceRecordMapper, questionMapper, courseMapper);
         PracticeAnswerService answerService = new PracticeAnswerService(
-                questionMapper, questionOptionMapper, practiceRecordMapper, wrongQuestionService,
-                new AnswerEvaluator(), cacheEvictService, spacedRepetitionService,
-                courseLearningEventService);
+                questionMapper, questionOptionMapper, practiceRecordMapper, new AnswerEvaluator(),
+                cacheEvictService, new QuestionAnswerEffectsService(wrongQuestionService, spacedRepetitionService),
+                courseLearningEventService, referenceLocks);
         practiceService = new PracticeService(questionQueryService, historyService, answerService, fsrs);
+        lenient().when(referenceLocks.lockQuestions(anyList(), anyList())).thenAnswer(invocation -> {
+            Long questionId = invocation.<List<Long>>getArgument(0).getFirst();
+            Question question = questionMapper.selectById(questionId);
+            return question == null ? Map.of() : Map.of(questionId, question);
+        });
         lenient().doAnswer(invocation -> {
             ((PracticeRecord) invocation.getArgument(0)).setId(123L);
             return 1;
@@ -77,7 +93,7 @@ class PracticeServiceTest {
     @Test
     void submitCorrectAnswerSavesRecordAndRemovesWrongQuestion() {
         when(questionMapper.selectById(10L)).thenReturn(singleChoiceQuestion());
-        when(questionOptionMapper.selectList(any())).thenReturn(List.of(
+        when(questionOptionMapper.selectActiveByQuestionIdForShare(10L)).thenReturn(List.of(
                 option("A", "正确选项", 1),
                 option("B", "错误选项", 0)
         ));
@@ -107,7 +123,7 @@ class PracticeServiceTest {
     @Test
     void submitWrongAnswerSavesRecordAndAddsWrongQuestion() {
         when(questionMapper.selectById(10L)).thenReturn(singleChoiceQuestion());
-        when(questionOptionMapper.selectList(any())).thenReturn(List.of(
+        when(questionOptionMapper.selectActiveByQuestionIdForShare(10L)).thenReturn(List.of(
                 option("A", "正确选项", 1),
                 option("B", "错误选项", 0)
         ));
@@ -131,7 +147,7 @@ class PracticeServiceTest {
     @Test
     void submitAnswerPropagatesWrongQuestionFailureSoTransactionCanRollBack() {
         when(questionMapper.selectById(10L)).thenReturn(singleChoiceQuestion());
-        when(questionOptionMapper.selectList(any())).thenReturn(List.of(option("A", "正确选项", 1)));
+        when(questionOptionMapper.selectActiveByQuestionIdForShare(10L)).thenReturn(List.of(option("A", "正确选项", 1)));
         wrongQuestionService.failure = new IllegalStateException("wrong-question write failed");
 
         assertThrows(IllegalStateException.class,
@@ -175,7 +191,7 @@ class PracticeServiceTest {
         Question question = singleChoiceQuestion();
         question.setQuestionType("SHORT_ANSWER");
         when(questionMapper.selectById(10L)).thenReturn(question);
-        when(questionOptionMapper.selectList(any())).thenReturn(List.of());
+        when(questionOptionMapper.selectActiveByQuestionIdForShare(10L)).thenReturn(List.of());
 
         BusinessException exception = assertThrows(BusinessException.class,
                 () -> practiceService.submitAnswer(request(10L, "我的解答", 30), 7L));
@@ -192,7 +208,7 @@ class PracticeServiceTest {
         Question question = singleChoiceQuestion();
         question.setQuestionType("SHORT_ANSWER");
         when(questionMapper.selectById(10L)).thenReturn(question);
-        when(questionOptionMapper.selectList(any())).thenReturn(List.of(option("A", "后进先出", 1)));
+        when(questionOptionMapper.selectActiveByQuestionIdForShare(10L)).thenReturn(List.of(option("A", "后进先出", 1)));
 
         PracticeResultVO result = practiceService.submitAnswer(request(10L, "栈遵循后进先出", 30), 7L);
 

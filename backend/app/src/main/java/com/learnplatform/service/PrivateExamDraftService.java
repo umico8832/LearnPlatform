@@ -1,5 +1,9 @@
 package com.learnplatform.service;
 
+import java.util.Objects;
+
+import java.util.Collections;
+
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.ExamPaperVO;
@@ -21,13 +25,16 @@ public class PrivateExamDraftService {
     private final PrivateExamImportService importService;
     private final PrivateExamDraftDataService dataService;
     private final PrivateExamDraftAnswerService answerService;
+    private final ContentReferenceLockService referenceLocks;
 
     public PrivateExamDraftService(PrivateExamImportService importService,
                                    PrivateExamDraftDataService dataService,
-                                   PrivateExamDraftAnswerService answerService) {
+                                   PrivateExamDraftAnswerService answerService,
+                                   ContentReferenceLockService referenceLocks) {
         this.importService = importService;
         this.dataService = dataService;
         this.answerService = answerService;
+        this.referenceLocks = referenceLocks;
     }
 
     @Transactional
@@ -100,7 +107,12 @@ public class PrivateExamDraftService {
         if (!Boolean.TRUE.equals(request.getConfirmed())) {
             throw validation("必须显式确认启用试卷");
         }
+        PrivateExamImportDraft preview = dataService.ownedDraft(draftId, userId);
+        referenceLocks.lockForReference(Collections.singletonList(preview.getCourseId()), List.of());
         PrivateExamImportDraft draft = dataService.ownedDraftForUpdate(draftId, userId);
+        if (!Objects.equals(preview.getCourseId(), draft.getCourseId())) {
+            throw validation("草稿课程已变更，请重试");
+        }
         if ("CONFIRMED".equals(draft.getStatus()) && draft.getConfirmedPaperId() != null) {
             return importService.getConfirmedPaper(draft.getConfirmedPaperId(), userId);
         }

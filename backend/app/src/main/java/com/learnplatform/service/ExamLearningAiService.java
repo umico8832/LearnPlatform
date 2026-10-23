@@ -8,7 +8,6 @@ import com.learnplatform.dto.ExamLearningSessionVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.ExamLearningAiInteraction;
 import com.learnplatform.mapper.CourseMapper;
-import com.learnplatform.mapper.ExamLearningAiInteractionMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.Locale;
@@ -26,21 +25,18 @@ public class ExamLearningAiService {
     private static final Set<String> ASSISTANCE_TYPES = Set.of("EXPLANATION", "VARIANT");
 
     private final ExamPaperLearningService learningService;
-    private final ExamLearningAiInteractionMapper interactionMapper;
     private final CourseMapper courseMapper;
     private final AiService aiService;
-    private final CourseLearningEventService courseLearningEventService;
+    private final ExamLearningAiPersistenceService persistence;
 
     public ExamLearningAiService(ExamPaperLearningService learningService,
-                                 ExamLearningAiInteractionMapper interactionMapper,
                                  CourseMapper courseMapper,
                                  AiService aiService,
-                                 CourseLearningEventService courseLearningEventService) {
+                                 ExamLearningAiPersistenceService persistence) {
         this.learningService = learningService;
-        this.interactionMapper = interactionMapper;
         this.courseMapper = courseMapper;
         this.aiService = aiService;
-        this.courseLearningEventService = courseLearningEventService;
+        this.persistence = persistence;
     }
 
     public void streamAssistance(Long sessionId, Long questionId, String assistanceType,
@@ -71,7 +67,7 @@ public class ExamLearningAiService {
         interaction.setInteractionType(normalizedType);
         interaction.setStatus(PROCESSING);
         interaction.setStartTime(BusinessTime.now());
-        interactionMapper.insert(interaction);
+        persistence.start(interaction);
 
         try {
             AtomicBoolean receivedContent = new AtomicBoolean();
@@ -87,16 +83,13 @@ public class ExamLearningAiService {
             }
             interaction.setStatus(SUCCEEDED);
             interaction.setCompleteTime(BusinessTime.now());
-            interactionMapper.updateById(interaction);
-            courseLearningEventService.recordPaperLearningAiAssistance(
-                    userId, session.getCourseId(), questionId, interaction.getId(), sessionId,
-                    session.getExamPaperId(), normalizedType, latestAnswer.getAnswerId(),
-                    interaction.getCompleteTime());
+            persistence.complete(interaction, sessionId, session.getExamPaperId(),
+                    latestAnswer.getAnswerId(), normalizedType);
         } catch (RuntimeException exception) {
             interaction.setStatus(FAILED);
             interaction.setErrorMessage(truncate(exception.getMessage()));
             interaction.setCompleteTime(BusinessTime.now());
-            interactionMapper.updateById(interaction);
+            persistence.fail(interaction);
             throw exception;
         }
     }

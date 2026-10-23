@@ -1,6 +1,5 @@
 package com.learnplatform.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.service.question.AutomaticGradingPolicy;
 import com.learnplatform.common.result.ResultCode;
@@ -31,28 +30,28 @@ public class PracticeAnswerService {
     private final QuestionMapper questionMapper;
     private final QuestionOptionMapper questionOptionMapper;
     private final PracticeRecordMapper practiceRecordMapper;
-    private final WrongQuestionService wrongQuestionService;
     private final AnswerEvaluator answerEvaluator;
     private final CacheEvictService cacheEvictService;
-    private final SpacedRepetitionService spacedRepetitionService;
+    private final QuestionAnswerEffectsService effects;
     private final CourseLearningEventService courseLearningEventService;
+    private final ContentReferenceLockService referenceLocks;
 
     public PracticeAnswerService(QuestionMapper questionMapper,
                                  QuestionOptionMapper questionOptionMapper,
                                  PracticeRecordMapper practiceRecordMapper,
-                                 WrongQuestionService wrongQuestionService,
                                  AnswerEvaluator answerEvaluator,
                                  CacheEvictService cacheEvictService,
-                                 SpacedRepetitionService spacedRepetitionService,
-                                 CourseLearningEventService courseLearningEventService) {
+                                 QuestionAnswerEffectsService effects,
+                                 CourseLearningEventService courseLearningEventService,
+                                 ContentReferenceLockService referenceLocks) {
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.practiceRecordMapper = practiceRecordMapper;
-        this.wrongQuestionService = wrongQuestionService;
         this.answerEvaluator = answerEvaluator;
         this.cacheEvictService = cacheEvictService;
-        this.spacedRepetitionService = spacedRepetitionService;
+        this.effects = effects;
         this.courseLearningEventService = courseLearningEventService;
+        this.referenceLocks = referenceLocks;
     }
 
     @Transactional
@@ -63,11 +62,13 @@ public class PracticeAnswerService {
         if (!QuestionAccessPolicy.canAccess(question, userId)) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
         }
+        question = referenceLocks.lockQuestions(List.of(question.getId()), List.of()).get(question.getId());
+        if (!QuestionAccessPolicy.canAccess(question, userId)) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "题目不存在");
+        }
 
-        LambdaQueryWrapper<QuestionOption> optionWrapper = new LambdaQueryWrapper<>();
-        optionWrapper.eq(QuestionOption::getQuestionId, question.getId())
-                .orderByAsc(QuestionOption::getSortOrder);
-        List<QuestionOption> correctOptions = questionOptionMapper.selectList(optionWrapper).stream()
+        List<QuestionOption> correctOptions = questionOptionMapper
+                .selectActiveByQuestionIdForShare(question.getId()).stream()
                 .filter(option -> option.getIsCorrect() != null && option.getIsCorrect() == 1)
                 .collect(Collectors.toList());
         AutomaticGradingPolicy.requireBasis(question.getQuestionType(), correctOptions);
@@ -86,9 +87,8 @@ public class PracticeAnswerService {
                     userId, question, "PRACTICE_ANSWERED", "PRACTICE",
                     record.getId(), correct, record.getCreateTime());
         }
-        updateWrongQuestion(userId, request.getQuestionId(), userAnswer, correct);
+        effects.record(userId, request.getQuestionId(), userAnswer, correct);
         cacheEvictService.evictUserStatistics(userId);
-        addReviewPlan(userId, request.getQuestionId());
         PracticeResultVO result = buildResult(question, record, userAnswer, correctAnswer, correct);
         result.setReward(reward);
         return result;
@@ -113,18 +113,6 @@ public class PracticeAnswerService {
         record.setAnswerTime(request.getAnswerTime());
         practiceRecordMapper.insert(record);
         return record;
-    }
-
-    private void updateWrongQuestion(Long userId, Long questionId, String userAnswer, boolean correct) {
-        if (correct) {
-            wrongQuestionService.removeOnCorrect(userId, questionId);
-        } else {
-            wrongQuestionService.addWrongQuestion(userId, questionId, userAnswer);
-        }
-    }
-
-    private void addReviewPlan(Long userId, Long questionId) {
-        spacedRepetitionService.addToReviewPlan(userId, questionId);
     }
 
     private PracticeResultVO buildResult(Question question, PracticeRecord record,

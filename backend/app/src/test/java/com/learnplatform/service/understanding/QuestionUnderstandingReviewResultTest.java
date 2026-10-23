@@ -39,7 +39,8 @@ class QuestionUnderstandingReviewResultTest {
         when(mapper.review(7L, 9L, "PRACTICE", 22L)).thenReturn(summary);
         var service = new QuestionUnderstandingService(content, mapper, practice,
                 mock(CourseLearningEventService.class), mock(QuestionTutorService.class),
-                mock(QuestionUnderstandingPresentation.class), fsrs);
+                mock(QuestionUnderstandingPresentation.class), fsrs,
+                mock(com.learnplatform.service.ContentReferenceLockService.class));
         var result = service.submit(7L, 9L, request);
         assertEquals(summary, result.get("review"));
         verify(fsrs).score(7L, 9L, FsrsReviewService.Source.PRACTICE, 22L, true, null);

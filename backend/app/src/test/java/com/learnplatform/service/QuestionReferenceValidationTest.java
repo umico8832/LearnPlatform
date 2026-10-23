@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.service.content.LockedContentParents;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.QuestionCreateRequest;
 import com.learnplatform.entity.Course;
@@ -22,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -34,9 +37,10 @@ class QuestionReferenceValidationTest {
     private final KnowledgePointMapper points = mock(KnowledgePointMapper.class);
     private final QuestionKnowledgePointMapper links = mock(QuestionKnowledgePointMapper.class);
     private final CacheEvictService cacheEvictService = mock(CacheEvictService.class);
+    private final ContentReferenceLockService referenceLocks = mock(ContentReferenceLockService.class);
     private final QuestionMutationService service = new QuestionMutationService(questions,
-            options, links, courses, points, mock(ExamQuestionMapper.class),
-            mock(QuestionVersionService.class), cacheEvictService);
+            options, links, mock(ExamQuestionMapper.class), mock(QuestionVersionService.class),
+            cacheEvictService, referenceLocks);
     private QuestionCreateRequest request;
 
     @BeforeEach
@@ -47,6 +51,23 @@ class QuestionReferenceValidationTest {
         question.setQuestionType("SINGLE_CHOICE");
         question.setVisibility("PUBLIC");
         when(questions.selectById(10L)).thenReturn(question);
+        when(questions.selectActiveForUpdate(10L)).thenReturn(question);
+        when(referenceLocks.lockForReference(anyList(), nullable(List.class))).thenAnswer(invocation -> {
+            List<Long> courseIds = invocation.getArgument(0);
+            List<Long> pointIds = invocation.getArgument(1);
+            if (pointIds == null) pointIds = List.of();
+            var lockedCourses = new java.util.HashMap<Long, Course>();
+            for (Long courseId : courseIds.stream().filter(id -> id != null).distinct().toList()) {
+                Course course = courses.selectById(courseId);
+                if (course != null) lockedCourses.put(courseId, course);
+            }
+            var lockedPoints = new java.util.HashMap<Long, KnowledgePoint>();
+            for (Long pointId : pointIds.stream().filter(id -> id != null).distinct().toList()) {
+                KnowledgePoint point = points.selectById(pointId);
+                if (point != null) lockedPoints.put(pointId, point);
+            }
+            return new LockedContentParents(lockedCourses, lockedPoints);
+        });
         request = new QuestionCreateRequest();
         request.setCourseId(2L);
     }

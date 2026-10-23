@@ -43,18 +43,21 @@ class PrivateExamImportServiceTest {
     @Mock private QuestionKnowledgePointMapper questionKnowledgePointMapper;
     @Mock private KnowledgePointMapper knowledgePointMapper;
     @Mock private ExamPaperService examPaperService;
+    @Mock private ContentReferenceLockService referenceLocks;
     private PrivateExamImportService service;
 
     @BeforeEach
     void setUp() {
         MarkdownQuestionParser parser = new MarkdownQuestionParser(
-                questionMapper, optionMapper, questionKnowledgePointMapper, courseMapper, knowledgePointMapper,
-                new MarkdownQuestionContentParser());
+                courseMapper, knowledgePointMapper, new MarkdownQuestionContentParser(),
+                new QuestionImportRowWriter(questionMapper, optionMapper, questionKnowledgePointMapper, referenceLocks));
         PrivateExamImportParserService parserService = new PrivateExamImportParserService(parser);
         PrivateExamConfirmedPaperService confirmedPaperService = new PrivateExamConfirmedPaperService(
                 paperMapper, examQuestionMapper, questionMapper, optionMapper, examPaperService, parserService);
-        service = new PrivateExamImportService(courseMapper, sourceMapper, sourceStorageService, paperMapper,
-                parserService, confirmedPaperService);
+        service = new PrivateExamImportService(courseMapper, sourceMapper, paperMapper,
+                parserService, confirmedPaperService, referenceLocks,
+                new PrivateExamConfirmationPersistenceService(referenceLocks, sourceMapper,
+                        sourceStorageService, confirmedPaperService));
         Course course = new Course();
         course.setId(10L);
         when(courseMapper.selectById(10L)).thenReturn(course);

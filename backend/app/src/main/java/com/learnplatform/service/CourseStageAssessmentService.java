@@ -1,5 +1,8 @@
 package com.learnplatform.service;
 
+import java.util.Collections;
+import com.learnplatform.service.content.LockedContentParents;
+
 import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
@@ -14,7 +17,6 @@ import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.Question;
 import com.learnplatform.mapper.CourseStageAssessmentMapper;
 import com.learnplatform.mapper.CourseStageAssessmentQuestionMapper;
-import com.learnplatform.mapper.KnowledgePointMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,35 +33,37 @@ public class CourseStageAssessmentService {
 
     private final CourseStageAssessmentMapper assessmentMapper;
     private final CourseStageAssessmentQuestionMapper assessmentQuestionMapper;
-    private final KnowledgePointMapper knowledgePointMapper;
     private final AnswerEvaluator answerEvaluator;
     private final CourseStageAssessmentSnapshotService snapshotService;
     private final CourseStageAssessmentLearningFactService learningFactService;
     private final CourseStageAssessmentViewService viewService;
     private final CacheEvictService cacheEvictService;
+    private final ContentReferenceLockService referenceLocks;
 
     public CourseStageAssessmentService(
             CourseStageAssessmentMapper assessmentMapper,
             CourseStageAssessmentQuestionMapper assessmentQuestionMapper,
-            KnowledgePointMapper knowledgePointMapper,
             AnswerEvaluator answerEvaluator,
             CourseStageAssessmentSnapshotService snapshotService,
             CourseStageAssessmentLearningFactService learningFactService,
             CourseStageAssessmentViewService viewService,
-            CacheEvictService cacheEvictService) {
+            CacheEvictService cacheEvictService,
+            ContentReferenceLockService referenceLocks) {
         this.assessmentMapper = assessmentMapper;
         this.assessmentQuestionMapper = assessmentQuestionMapper;
-        this.knowledgePointMapper = knowledgePointMapper;
         this.answerEvaluator = answerEvaluator;
         this.snapshotService = snapshotService;
         this.learningFactService = learningFactService;
         this.viewService = viewService;
         this.cacheEvictService = cacheEvictService;
+        this.referenceLocks = referenceLocks;
     }
 
     @Transactional
     public CourseStageAssessmentVO start(Long userId, Long courseId,
                                          CourseStageAssessmentCreateRequest request) {
+        Long requestedPointId = request == null ? null : request.getKnowledgePointId();
+        var parents = lockAssessmentParents(courseId, requestedPointId);
         if (assessmentMapper.lockUserCourse(userId, courseId) == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "请先将课程加入个人课程库");
         }
@@ -70,8 +74,7 @@ public class CourseStageAssessmentService {
         if (requestedCount < 1 || requestedCount > 20) {
             throw validation("测评题数必须在1到20之间");
         }
-        KnowledgePoint target = reviewedCourseKnowledgePoint(courseId,
-                request == null ? null : request.getKnowledgePointId());
+        KnowledgePoint target = reviewedCourseKnowledgePoint(courseId, requestedPointId, parents);
         Long targetId = target == null ? null : target.getId();
         List<Question> questions = assessmentMapper.selectCandidateQuestions(userId, courseId,
                 targetId, requestedCount);
@@ -106,12 +109,16 @@ public class CourseStageAssessmentService {
     @Transactional
     public CourseStageAssessmentVO submit(Long assessmentId, Long userId,
                                           CourseStageAssessmentSubmitRequest request) {
+        CourseStageAssessment beforeLock = assessmentMapper.selectOwned(assessmentId, userId);
+        if (beforeLock == null) { throw new BusinessException(ResultCode.NOT_FOUND, "阶段测评不存在"); }
+        referenceLocks.lockAssessmentQuestions(assessmentId, beforeLock.getCourseId(),
+                beforeLock.getTargetKnowledgePointId());
         CourseStageAssessment assessment = assessmentMapper.selectOwnedForUpdate(assessmentId, userId);
         if (assessment == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "阶段测评不存在");
         }
-        if (COMPLETED.equals(assessment.getStatus())) { return viewService.toView(assessment); }
-        List<CourseStageAssessmentQuestion> items = assessmentQuestionMapper.selectByAssessmentId(assessmentId);
+        List<CourseStageAssessmentQuestion> items = assessmentQuestionMapper.selectCurrentByAssessmentId(assessmentId);
+        if (COMPLETED.equals(assessment.getStatus())) { return viewService.toView(assessment, items); }
         if (request == null || request.getAnswers() == null || request.getAnswers().size() != items.size()) {
             throw validation("必须提交完整测评答案");
         }
@@ -146,7 +153,7 @@ public class CourseStageAssessmentService {
         assessment.setCompleteTime(answeredTime);
         assessmentMapper.complete(assessmentId, userId, correctCount, answeredTime);
         cacheEvictService.evictUserStatistics(userId);
-        return viewService.toView(assessment);
+        return viewService.toView(assessment, items);
     }
 
     public Page<CourseStageAssessmentSummaryVO> listCompleted(
@@ -192,9 +199,22 @@ public class CourseStageAssessmentService {
         }
     }
 
-    private KnowledgePoint reviewedCourseKnowledgePoint(Long courseId, Long knowledgePointId) {
+    private LockedContentParents lockAssessmentParents(Long courseId, Long knowledgePointId) {
+        try {
+            return referenceLocks.lockForReference(Collections.singletonList(courseId),
+                    knowledgePointId == null ? List.of() : List.of(knowledgePointId));
+        } catch (BusinessException exception) {
+            if (knowledgePointId != null) {
+                throw new BusinessException(ResultCode.NOT_FOUND, "知识点不属于当前课程或尚未通过内容审查");
+            }
+            throw exception;
+        }
+    }
+
+    private KnowledgePoint reviewedCourseKnowledgePoint(Long courseId, Long knowledgePointId,
+                                                       LockedContentParents parents) {
         if (knowledgePointId == null) { return null; }
-        KnowledgePoint target = knowledgePointMapper.selectById(knowledgePointId);
+        KnowledgePoint target = parents.knowledgePoints().get(knowledgePointId);
         if (target == null || !courseId.equals(target.getCourseId())
                 || !"REVIEWED".equals(target.getContentReviewStatus())) {
             throw new BusinessException(ResultCode.NOT_FOUND, "知识点不属于当前课程或尚未通过内容审查");

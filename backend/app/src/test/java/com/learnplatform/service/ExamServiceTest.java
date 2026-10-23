@@ -58,6 +58,7 @@ class ExamServiceTest {
     @Mock private CacheEvictService cacheEvictService;
     @Mock private ExamSubmissionRewardService examSubmissionRewardService;
     @Mock private ExamAutomaticGradingGuard gradingGuard;
+    @Mock private ContentReferenceLockService referenceLocks;
     private ExamService examService;
 
     /**
@@ -79,7 +80,7 @@ class ExamServiceTest {
         ExamSessionService sessionService = new ExamSessionService(examRecordMapper, examPaperMapper,
                 viewService, FIXED_CLOCK, gradingGuard);
         ExamSubmissionService submissionService = new ExamSubmissionService(examRecordMapper, examPaperMapper,
-                answerSubmissionService, cacheEvictService, FIXED_CLOCK);
+                answerSubmissionService, cacheEvictService, FIXED_CLOCK, referenceLocks);
         examService = new ExamService(sessionService, submissionService, viewService, examSubmissionRewardService);
     }
 
@@ -156,6 +157,7 @@ class ExamServiceTest {
     @Test
     void marksExpiredExamAsTimedOut() {
         ExamRecord record = record(LocalDateTime.now(FIXED_CLOCK).minusMinutes(61));
+        when(examRecordMapper.selectById(1L)).thenReturn(record);
         when(examRecordMapper.selectByIdForUpdate(1L)).thenReturn(record);
         when(examPaperMapper.selectById(2L)).thenReturn(paper());
 
@@ -170,6 +172,7 @@ class ExamServiceTest {
     @Test
     void marksExamTimedOutExactlyAtItsServerDeadline() {
         ExamRecord record = record(LocalDateTime.now(FIXED_CLOCK).minusMinutes(60));
+        when(examRecordMapper.selectById(1L)).thenReturn(record);
         when(examRecordMapper.selectByIdForUpdate(1L)).thenReturn(record);
         when(examPaperMapper.selectById(2L)).thenReturn(paper());
 
@@ -360,7 +363,9 @@ class ExamServiceTest {
     }
 
     private void stubActiveExam() {
-        when(examRecordMapper.selectByIdForUpdate(1L)).thenReturn(record(LocalDateTime.now(FIXED_CLOCK)));
+        ExamRecord active = record(LocalDateTime.now(FIXED_CLOCK));
+        when(examRecordMapper.selectById(1L)).thenReturn(active);
+        when(examRecordMapper.selectByIdForUpdate(1L)).thenReturn(active);
         when(examPaperMapper.selectById(2L)).thenReturn(paper());
     }
 

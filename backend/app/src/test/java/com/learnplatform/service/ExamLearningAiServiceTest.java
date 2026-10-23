@@ -6,7 +6,6 @@ import com.learnplatform.dto.ExamLearningSessionVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.ExamLearningAiInteraction;
 import com.learnplatform.mapper.CourseMapper;
-import com.learnplatform.mapper.ExamLearningAiInteractionMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,16 +32,15 @@ import static org.mockito.Mockito.when;
 class ExamLearningAiServiceTest {
 
     @Mock private ExamPaperLearningService learningService;
-    @Mock private ExamLearningAiInteractionMapper interactionMapper;
     @Mock private CourseMapper courseMapper;
     @Mock private AiService aiService;
-    @Mock private CourseLearningEventService courseLearningEventService;
+    @Mock private ExamLearningAiPersistenceService persistence;
     private ExamLearningAiService service;
 
     @BeforeEach
     void setUp() {
         service = new ExamLearningAiService(
-                learningService, interactionMapper, courseMapper, aiService, courseLearningEventService);
+                learningService, courseMapper, aiService, persistence);
     }
 
     @Test
@@ -55,7 +53,7 @@ class ExamLearningAiServiceTest {
             ExamLearningAiInteraction interaction = invocation.getArgument(0);
             interaction.setId(90L);
             return 1;
-        }).when(interactionMapper).insert(any(ExamLearningAiInteraction.class));
+        }).when(persistence).start(any(ExamLearningAiInteraction.class));
         doAnswer(invocation -> {
             Consumer<String> consumer = invocation.getArgument(4);
             consumer.accept("辅导内容");
@@ -69,7 +67,7 @@ class ExamLearningAiServiceTest {
         assertEquals("辅导内容", content.toString());
         ArgumentCaptor<ExamLearningAiInteraction> interactionCaptor =
                 ArgumentCaptor.forClass(ExamLearningAiInteraction.class);
-        verify(interactionMapper).insert(interactionCaptor.capture());
+        verify(persistence).start(interactionCaptor.capture());
         ExamLearningAiInteraction interaction = interactionCaptor.getValue();
         assertEquals(7L, interaction.getUserId());
         assertEquals(20L, interaction.getCourseId());
@@ -93,8 +91,7 @@ class ExamLearningAiServiceTest {
         assertTrue(context.contains("用户最近答案：B"));
         assertTrue(context.contains("第 1 次尝试，结果：错误"));
 
-        verify(courseLearningEventService).recordPaperLearningAiAssistance(
-                7L, 20L, 10L, 90L, 30L, 2L, "EXPLANATION", 81L, interaction.getCompleteTime());
+        verify(persistence).complete(interaction, 30L, 2L, 81L, "EXPLANATION");
     }
 
     @Test
@@ -117,7 +114,7 @@ class ExamLearningAiServiceTest {
         assertTrue(context.getValue().contains("结果：未判分"));
         ArgumentCaptor<ExamLearningAiInteraction> interaction =
                 ArgumentCaptor.forClass(ExamLearningAiInteraction.class);
-        verify(interactionMapper).insert(interaction.capture());
+        verify(persistence).start(interaction.capture());
         assertNull(interaction.getValue().getAnswerCorrect());
     }
 
@@ -131,7 +128,7 @@ class ExamLearningAiServiceTest {
                 () -> service.streamAssistance(30L, 10L, "EXPLANATION", 7L, ignored -> { }));
 
         assertEquals("请先完成本题首次作答再使用 AI 辅导", exception.getMessage());
-        verify(interactionMapper, never()).insert(any(ExamLearningAiInteraction.class));
+        verify(persistence, never()).start(any(ExamLearningAiInteraction.class));
         verify(aiService, never()).generatePaperLearningAssistanceStream(any(), any(), any(), any(), any());
     }
 
@@ -142,7 +139,7 @@ class ExamLearningAiServiceTest {
             ExamLearningAiInteraction interaction = invocation.getArgument(0);
             interaction.setId(91L);
             return 1;
-        }).when(interactionMapper).insert(any(ExamLearningAiInteraction.class));
+        }).when(persistence).start(any(ExamLearningAiInteraction.class));
         doThrow(new IllegalStateException("provider unavailable"))
                 .when(aiService).generatePaperLearningAssistanceStream(
                         eq(10L), eq("VARIANT"), any(), eq(7L), any());
@@ -152,11 +149,10 @@ class ExamLearningAiServiceTest {
 
         ArgumentCaptor<ExamLearningAiInteraction> updateCaptor =
                 ArgumentCaptor.forClass(ExamLearningAiInteraction.class);
-        verify(interactionMapper).updateById(updateCaptor.capture());
+        verify(persistence).fail(updateCaptor.capture());
         assertEquals(2, updateCaptor.getValue().getStatus());
         assertEquals("provider unavailable", updateCaptor.getValue().getErrorMessage());
-        verify(courseLearningEventService, never()).recordPaperLearningAiAssistance(
-                any(), any(), any(), any(), any(), any(), any(), any(), any());
+        verify(persistence, never()).complete(any(), any(), any(), any(), any());
     }
 
     private ExamLearningSessionVO answeredSession() {

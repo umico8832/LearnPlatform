@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.service.content.LockedContentParents;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.UserCourseVO;
 import com.learnplatform.entity.Course;
@@ -16,6 +17,7 @@ import org.springframework.dao.DuplicateKeyException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,12 +28,18 @@ class CourseLibraryServiceTest {
 
     @Mock private UserCourseMapper userCourseMapper;
     @Mock private CourseMapper courseMapper;
+    @Mock private ContentReferenceLockService referenceLocks;
 
     private CourseLibraryService service;
 
     @BeforeEach
     void setUp() {
-        service = new CourseLibraryService(userCourseMapper, courseMapper);
+        service = new CourseLibraryService(userCourseMapper, courseMapper, referenceLocks);
+        org.mockito.Mockito.lenient().when(referenceLocks.lockForReference(any(), any())).thenAnswer(invocation -> {
+            Long id = ((java.util.Collection<Long>) invocation.getArgument(0)).iterator().next();
+            Course course = courseMapper.selectById(id);
+            return new LockedContentParents(Map.of(id, course), Map.of());
+        });
     }
 
     @Test

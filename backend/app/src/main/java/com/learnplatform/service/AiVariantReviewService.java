@@ -1,5 +1,9 @@
 package com.learnplatform.service;
 
+import java.util.HashSet;
+
+import java.util.Objects;
+
 import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -42,6 +46,7 @@ public class AiVariantReviewService {
     private final QuestionKnowledgePointMapper questionKnowledgePointMapper;
     private final QuestionService questionService;
     private final ObjectMapper objectMapper;
+    private final ContentReferenceLockService referenceLocks;
 
     public AiVariantReviewService(AiVariantQuestionMapper variantMapper,
                                   QuestionAiAssetMapper assetMapper,
@@ -49,7 +54,7 @@ public class AiVariantReviewService {
                                   CourseMapper courseMapper,
                                   QuestionKnowledgePointMapper questionKnowledgePointMapper,
                                   QuestionService questionService,
-                                  ObjectMapper objectMapper) {
+                                  ObjectMapper objectMapper, ContentReferenceLockService referenceLocks) {
         this.variantMapper = variantMapper;
         this.assetMapper = assetMapper;
         this.questionMapper = questionMapper;
@@ -57,6 +62,7 @@ public class AiVariantReviewService {
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
         this.questionService = questionService;
         this.objectMapper = objectMapper;
+        this.referenceLocks = referenceLocks;
     }
 
     public Page<AiVariantReviewVO> list(String reviewStatus, int pageNum, int pageSize) {
@@ -75,13 +81,32 @@ public class AiVariantReviewService {
 
     @Transactional
     public AiVariantReviewVO review(Long variantId, AiVariantReviewRequest request, Long reviewerId) {
+        AiVariantQuestion preview = variantMapper.selectById(variantId);
+        if (preview == null) { throw notFound(); }
+        QuestionAiAsset previewAsset = assetMapper.selectById(preview.getAssetId());
+        Question previewMother = previewAsset == null ? null : questionMapper.selectById(previewAsset.getQuestionId());
+        if (previewMother == null) { throw notFound(); }
+        var pointIds = questionKnowledgePointMapper.selectList(new LambdaQueryWrapper<QuestionKnowledgePoint>()
+                .eq(QuestionKnowledgePoint::getQuestionId, previewMother.getId())).stream()
+                .map(QuestionKnowledgePoint::getKnowledgePointId).toList();
+        referenceLocks.lockForReference(List.of(previewMother.getCourseId()), pointIds);
+        Question lockedMother = questionMapper.selectActiveForShare(previewMother.getId());
+        var currentPoints = questionKnowledgePointMapper.selectList(new LambdaQueryWrapper<QuestionKnowledgePoint>()
+                .eq(QuestionKnowledgePoint::getQuestionId, previewMother.getId())
+                .orderByAsc(QuestionKnowledgePoint::getKnowledgePointId).last("FOR SHARE")).stream()
+                .map(QuestionKnowledgePoint::getKnowledgePointId).toList();
+        if (lockedMother == null || !Objects.equals(previewMother.getCourseId(), lockedMother.getCourseId())
+                || !new HashSet<>(currentPoints).equals(new HashSet<>(pointIds))) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "母题关联已变更，请重试");
+        }
         AiVariantQuestion variant = variantMapper.selectForUpdate(variantId);
         if (variant == null) { throw notFound(); }
         if (!"PENDING".equals(variant.getReviewStatus())) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "该变式题已完成审查");
         }
         QuestionAiAsset asset = assetMapper.selectById(variant.getAssetId());
-        Question mother = asset == null ? null : questionMapper.selectById(asset.getQuestionId());
+        Question mother = asset == null || !Objects.equals(asset.getQuestionId(), lockedMother.getId())
+                ? null : lockedMother;
         if (mother == null || !Integer.valueOf(1).equals(mother.getStatus())
                 || !"PUBLIC".equals(mother.getVisibility())) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "母题不可用于发布 AI 生成题");

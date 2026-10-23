@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -39,27 +40,27 @@ public class ExamPaperLearningService {
     private final ExamLearningAnswerMapper learningAnswerMapper;
     private final ExamPaperLearningContextService contextService;
     private final AnswerEvaluator answerEvaluator;
-    private final WrongQuestionService wrongQuestionService;
-    private final SpacedRepetitionService spacedRepetitionService;
+    private final QuestionAnswerEffectsService effects;
     private final CacheEvictService cacheEvictService;
     private final CourseLearningEventService courseLearningEventService;
+    private final ContentReferenceLockService referenceLocks;
 
     public ExamPaperLearningService(ExamLearningSessionMapper sessionMapper,
                                     ExamLearningAnswerMapper learningAnswerMapper,
                                     ExamPaperLearningContextService contextService,
                                     AnswerEvaluator answerEvaluator,
-                                    WrongQuestionService wrongQuestionService,
-                                    SpacedRepetitionService spacedRepetitionService,
+                                    QuestionAnswerEffectsService effects,
                                     CacheEvictService cacheEvictService,
-                                    CourseLearningEventService courseLearningEventService) {
+                                    CourseLearningEventService courseLearningEventService,
+                                    ContentReferenceLockService referenceLocks) {
         this.sessionMapper = sessionMapper;
         this.learningAnswerMapper = learningAnswerMapper;
         this.contextService = contextService;
         this.answerEvaluator = answerEvaluator;
-        this.wrongQuestionService = wrongQuestionService;
-        this.spacedRepetitionService = spacedRepetitionService;
+        this.effects = effects;
         this.cacheEvictService = cacheEvictService;
         this.courseLearningEventService = courseLearningEventService;
+        this.referenceLocks = referenceLocks;
     }
 
     @Transactional
@@ -102,7 +103,8 @@ public class ExamPaperLearningService {
         return toSessionVO(session, paper, paperQuestions, answers);
     }
 
-    @Transactional
+    // Session X serializes attempt assignment; RC avoids empty-range gap locks between unrelated sessions.
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ExamLearningAnswerResultVO submitAnswer(Long sessionId, ExamLearningAnswerRequest request, Long userId) {
         if (request == null || request.getQuestionId() == null) {
             throw new BusinessException(ResultCode.VALIDATION_ERROR, "题目ID不能为空");
@@ -110,6 +112,9 @@ public class ExamPaperLearningService {
         if (request.getUserAnswer() == null || request.getUserAnswer().isBlank()) {
             throw new BusinessException(ResultCode.VALIDATION_ERROR, "答案不能为空");
         }
+        ExamLearningSession previewSession = loadOwnedSession(sessionId, userId, false);
+        ExamPaper previewPaper = contextService.loadEligiblePaper(previewSession.getExamPaperId(), userId);
+        referenceLocks.lockPaperQuestions(previewPaper.getId());
         ExamLearningSession session = loadOwnedSession(sessionId, userId, true);
         ensureActive(session);
         ExamPaper paper = contextService.loadEligiblePaper(session.getExamPaperId(), userId);
@@ -127,15 +132,13 @@ public class ExamPaperLearningService {
         boolean manualSelfReview = "SHORT_ANSWER".equals(question.getQuestionType());
         boolean correct = !manualSelfReview
                 && answerEvaluator.isCorrect(question.getQuestionType(), userAnswer, correctAnswer);
-        long previousAttempts = learningAnswerMapper.selectCount(
-                new LambdaQueryWrapper<ExamLearningAnswer>()
-                        .eq(ExamLearningAnswer::getSessionId, sessionId)
-                        .eq(ExamLearningAnswer::getQuestionId, question.getId()));
+        // The preview established an RR snapshot before waiting for the session lock; use a current read here.
+        Integer previousAttempt = learningAnswerMapper.selectLatestAttemptNoForShare(sessionId, question.getId());
 
         ExamLearningAnswer answer = new ExamLearningAnswer();
         answer.setSessionId(sessionId);
         answer.setQuestionId(question.getId());
-        answer.setAttemptNo(Math.toIntExact(previousAttempts + 1));
+        answer.setAttemptNo(previousAttempt == null ? 1 : Math.addExact(previousAttempt, 1));
         answer.setUserAnswer(userAnswer);
         answer.setIsCorrect(manualSelfReview ? null : (correct ? 1 : 0));
         answer.setScore(manualSelfReview ? null : (correct ? scoreOf(paperQuestion) : 0));
@@ -149,7 +152,7 @@ public class ExamPaperLearningService {
         if (!manualSelfReview) {
             reward = courseLearningEventService.recordQuestionAnswer(userId, question,
                     "PAPER_LEARNING_ANSWERED", "PAPER_LEARNING", answer.getId(), correct, answer.getCreateTime());
-            updateWrongQuestionAndReview(userId, question.getId(), userAnswer, correct);
+            effects.record(userId, question.getId(), userAnswer, correct);
         }
         cacheEvictService.evictUserStatistics(userId);
 
@@ -223,15 +226,6 @@ public class ExamPaperLearningService {
             }
         }
         return currentQuestionId;
-    }
-
-    private void updateWrongQuestionAndReview(Long userId, Long questionId, String userAnswer, boolean correct) {
-        if (correct) {
-            wrongQuestionService.removeOnCorrect(userId, questionId);
-        } else {
-            wrongQuestionService.addWrongQuestion(userId, questionId, userAnswer);
-        }
-        spacedRepetitionService.addToReviewPlan(userId, questionId);
     }
 
     private ExamLearningSessionVO toSessionVO(ExamLearningSession session, ExamPaper paper,

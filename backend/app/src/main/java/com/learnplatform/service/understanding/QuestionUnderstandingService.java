@@ -30,11 +30,13 @@ public class QuestionUnderstandingService {
     private final QuestionTutorService tutor;
     private final QuestionUnderstandingPresentation presentation;
     private final FsrsReviewService fsrs;
+    private final com.learnplatform.service.ContentReferenceLockService referenceLocks;
 
     public QuestionUnderstandingService(QuestionUnderstandingContent content, QuestionUnderstandingMapper mapper,
                                         PracticeAnswerService practice,
                                         CourseLearningEventService events, QuestionTutorService tutor,
-                                        QuestionUnderstandingPresentation presentation, FsrsReviewService fsrs) {
+                                        QuestionUnderstandingPresentation presentation, FsrsReviewService fsrs,
+                                        com.learnplatform.service.ContentReferenceLockService referenceLocks) {
         this.content = content;
         this.mapper = mapper;
         this.practice = practice;
@@ -42,6 +44,7 @@ public class QuestionUnderstandingService {
         this.tutor = tutor;
         this.presentation = presentation;
         this.fsrs = fsrs;
+        this.referenceLocks = referenceLocks;
     }
 
     public Map<String, Object> question(long userId, long questionId) {
@@ -147,6 +150,9 @@ public class QuestionUnderstandingService {
             throw validation("变式请求无效");
         }
         long originId = body.get("originAttemptId").longValue();
+        QuestionUnderstandingAttempt preview = ownedAttempt(userId, originId, false);
+        Ready previewReady = content.ready(userId, preview.questionId(), preview.contentId(), false);
+        referenceLocks.lockQuestions(List.of(previewReady.question().getId()), List.of());
         QuestionUnderstandingAttempt attempt = ownedAttempt(userId, originId, true);
         if (!Objects.equals(attempt.variantId(), variantId)) {
             throw unavailable();

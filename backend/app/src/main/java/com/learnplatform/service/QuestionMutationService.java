@@ -1,5 +1,8 @@
 package com.learnplatform.service;
 
+import com.learnplatform.service.content.LockedContentParents;
+import java.util.Collections;
+
 import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
@@ -10,9 +13,7 @@ import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionKnowledgePoint;
 import com.learnplatform.entity.QuestionOption;
-import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.ExamQuestionMapper;
-import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
@@ -20,41 +21,43 @@ import com.learnplatform.service.question.AutomaticGradingPolicy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Objects;
+import java.util.HashSet;
 
 @Service
 public class QuestionMutationService {
     private final QuestionMapper questionMapper;
     private final QuestionOptionMapper questionOptionMapper;
     private final QuestionKnowledgePointMapper questionKnowledgePointMapper;
-    private final CourseMapper courseMapper;
-    private final KnowledgePointMapper knowledgePointMapper;
     private final ExamQuestionMapper examQuestionMapper;
     private final QuestionVersionService questionVersionService;
     private final CacheEvictService cacheEvictService;
+    private final ContentReferenceLockService referenceLocks;
 
     public QuestionMutationService(
             QuestionMapper questionMapper,
             QuestionOptionMapper questionOptionMapper,
             QuestionKnowledgePointMapper questionKnowledgePointMapper,
-            CourseMapper courseMapper,
-            KnowledgePointMapper knowledgePointMapper,
             ExamQuestionMapper examQuestionMapper,
             QuestionVersionService questionVersionService,
-            CacheEvictService cacheEvictService) {
+            CacheEvictService cacheEvictService,
+            ContentReferenceLockService referenceLocks) {
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
-        this.courseMapper = courseMapper;
-        this.knowledgePointMapper = knowledgePointMapper;
         this.examQuestionMapper = examQuestionMapper;
         this.questionVersionService = questionVersionService;
         this.cacheEvictService = cacheEvictService;
+        this.referenceLocks = referenceLocks;
     }
 
     public Long create(QuestionCreateRequest request, Long createBy,
                        String sourceType, String sourceReference, Long originQuestionId) {
         normalizeAndValidateOptions(request.getQuestionType(), request.getOptions());
-        validateReferences(request.getCourseId(), request.getKnowledgePointIds());
+        var parents = referenceLocks.lockForReference(Collections.singletonList(request.getCourseId()),
+                request.getKnowledgePointIds());
+        validateReferences(request.getCourseId(), request.getKnowledgePointIds(), parents);
         Question question = new Question();
         question.setContent(request.getContent());
         question.setQuestionType(request.getQuestionType());
@@ -86,13 +89,40 @@ public class QuestionMutationService {
         ensureNotUsedByPublishedPaper(id);
         Long courseId = request.getCourseId() != null ? request.getCourseId() : question.getCourseId();
         List<Long> pointIds = request.getKnowledgePointIds() != null ? request.getKnowledgePointIds()
-                : questionKnowledgePointMapper.selectList(new LambdaQueryWrapper<QuestionKnowledgePoint>()
+                : questionKnowledgePointMapper
+                .selectList(new LambdaQueryWrapper<QuestionKnowledgePoint>()
                         .eq(QuestionKnowledgePoint::getQuestionId, id)).stream()
                         .map(QuestionKnowledgePoint::getKnowledgePointId).toList();
+        List<Long> oldPointIds = questionKnowledgePointMapper
+                .selectList(new LambdaQueryWrapper<QuestionKnowledgePoint>()
+                        .eq(QuestionKnowledgePoint::getQuestionId, id)).stream()
+                .map(QuestionKnowledgePoint::getKnowledgePointId).toList();
+        Long previousCourseId = question.getCourseId();
+        List<Long> allCourseIds = new ArrayList<>();
+        allCourseIds.add(question.getCourseId());
+        allCourseIds.add(courseId);
+        List<Long> allPointIds = new ArrayList<>(oldPointIds);
+        allPointIds.addAll(pointIds == null ? List.of() : pointIds);
+        var parents = referenceLocks.lockForReference(allCourseIds, allPointIds);
+        question = questionMapper.selectActiveForUpdate(id);
+        if (question == null || !"PUBLIC".equals(question.getVisibility())
+                || !Objects.equals(previousCourseId, question.getCourseId())) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "题目归属已变更，请重试");
+        }
+        List<Long> currentPoints = questionKnowledgePointMapper
+                .selectList(new LambdaQueryWrapper<QuestionKnowledgePoint>()
+                        .eq(QuestionKnowledgePoint::getQuestionId, id)
+                        .orderByAsc(QuestionKnowledgePoint::getKnowledgePointId)
+                        .last("FOR SHARE")).stream().map(QuestionKnowledgePoint::getKnowledgePointId).toList();
+        if (!new HashSet<>(currentPoints).equals(new HashSet<>(oldPointIds))) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "题目关联已变更，请重试");
+        }
+        courseId = request.getCourseId() != null ? request.getCourseId() : question.getCourseId();
+        pointIds = request.getKnowledgePointIds() != null ? request.getKnowledgePointIds() : currentPoints;
         String questionType = request.getQuestionType() != null
                 ? request.getQuestionType() : question.getQuestionType();
         normalizeAndValidateOptions(questionType, request.getOptions(), id);
-        validateReferences(courseId, pointIds);
+        validateReferences(courseId, pointIds, parents);
         String snapshotBefore = questionVersionService.buildSnapshotJson(question);
         if (request.getContent() != null) {
             question.setContent(request.getContent());
@@ -207,8 +237,9 @@ public class QuestionMutationService {
         }
     }
 
-    private void validateReferences(Long courseId, List<Long> pointIds) {
-        Course course = courseId == null ? null : courseMapper.selectById(courseId);
+    private void validateReferences(Long courseId, List<Long> pointIds,
+                                    LockedContentParents parents) {
+        Course course = courseId == null ? null : parents.courses().get(courseId);
         if (course == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "课程不存在");
         }
@@ -216,7 +247,7 @@ public class QuestionMutationService {
             return;
         }
         for (Long pointId : pointIds) {
-            KnowledgePoint point = pointId == null ? null : knowledgePointMapper.selectById(pointId);
+            KnowledgePoint point = pointId == null ? null : parents.knowledgePoints().get(pointId);
             if (point == null || !courseId.equals(point.getCourseId())) {
                 throw new BusinessException(ResultCode.VALIDATION_ERROR, "知识点不存在或不属于题目课程");
             }

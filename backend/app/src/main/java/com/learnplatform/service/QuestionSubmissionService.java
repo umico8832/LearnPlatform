@@ -1,5 +1,13 @@
 package com.learnplatform.service;
 
+import java.util.ArrayList;
+
+import java.util.Objects;
+
+import java.util.Collections;
+
+import java.util.List;
+
 import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -11,6 +19,7 @@ import com.learnplatform.dto.QuestionSubmissionVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.QuestionSubmission;
 import com.learnplatform.mapper.CourseMapper;
+import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionSubmissionMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,15 +40,21 @@ public class QuestionSubmissionService {
     private final CourseMapper courseMapper;
     private final QuestionSubmissionOptionService optionService;
     private final QuestionSubmissionViewService viewService;
+    private final KnowledgePointMapper knowledgePointMapper;
+    private final ContentReferenceLockService referenceLocks;
 
     public QuestionSubmissionService(QuestionSubmissionMapper submissionMapper,
                                      CourseMapper courseMapper,
                                      QuestionSubmissionOptionService optionService,
-                                     QuestionSubmissionViewService viewService) {
+                                     QuestionSubmissionViewService viewService,
+                                     KnowledgePointMapper knowledgePointMapper,
+                                     ContentReferenceLockService referenceLocks) {
         this.submissionMapper = submissionMapper;
         this.courseMapper = courseMapper;
         this.optionService = optionService;
         this.viewService = viewService;
+        this.knowledgePointMapper = knowledgePointMapper;
+        this.referenceLocks = referenceLocks;
     }
 
     /**
@@ -47,6 +62,8 @@ public class QuestionSubmissionService {
      */
     @Transactional
     public QuestionSubmissionVO submitQuestion(QuestionSubmissionRequest request, Long userId) {
+        referenceLocks.lockForReference(Collections.singletonList(request.getCourseId()),
+                parseKnowledgePointIds(request.getKnowledgePointIds()));
         // 校验课程存在
         Course course = courseMapper.selectById(request.getCourseId());
         if (course == null) {
@@ -70,7 +87,7 @@ public class QuestionSubmissionService {
         submission.setAnalysis(request.getAnalysis());
         submission.setOptionsJson(request.getOptionsJson());
         submission.setCorrectAnswer(request.getCorrectAnswer());
-        submission.setKnowledgePointIds(request.getKnowledgePointIds());
+        submission.setKnowledgePointIds(canonicalPointIds(request.getKnowledgePointIds()));
         submission.setTags(request.getTags());
         submission.setSource(request.getSource());
         submission.setStatus(0); // 待审核
@@ -171,12 +188,22 @@ public class QuestionSubmissionService {
     /**
      * 更新投稿的知识点关联（管理端 AI 标注应用）
      */
+    @Transactional
     public QuestionSubmissionVO updateKnowledgePointIds(Long submissionId, String knowledgePointIds) {
         QuestionSubmission submission = submissionMapper.selectById(submissionId);
         if (submission == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "投稿不存在");
         }
-        submission.setKnowledgePointIds(knowledgePointIds);
+        var parentIds = new ArrayList<>(parseKnowledgePointIds(submission.getKnowledgePointIds()));
+        parentIds.addAll(parseKnowledgePointIds(knowledgePointIds));
+        referenceLocks.lockForReference(Collections.singletonList(submission.getCourseId()), parentIds);
+        var current = submissionMapper.selectActiveForUpdate(submissionId);
+        if (current == null || !Objects.equals(current.getCourseId(), submission.getCourseId())
+                || !Objects.equals(current.getKnowledgePointIds(), submission.getKnowledgePointIds())) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "投稿关联已变更，请重试");
+        }
+        submission = current;
+        submission.setKnowledgePointIds(canonicalPointIds(knowledgePointIds));
         submissionMapper.updateById(submission);
         log.info("更新投稿 {} 知识点为: {}", submissionId, knowledgePointIds);
         return viewService.toView(submission);
@@ -185,6 +212,21 @@ public class QuestionSubmissionService {
     private boolean isValidQuestionType(String type) {
         return Arrays.asList("SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE",
                 "FILL_BLANK", "SHORT_ANSWER").contains(type);
+    }
+
+    private String canonicalPointIds(String raw) {
+        var ids = parseKnowledgePointIds(raw).stream().distinct().sorted().map(String::valueOf).toList();
+        return ids.isEmpty() ? null : String.join(",", ids);
+    }
+
+    private List<Long> parseKnowledgePointIds(String raw) {
+        if (raw == null || raw.isBlank()) { return List.of(); }
+        try {
+            return Arrays.stream(raw.split(",")).map(String::trim).filter(value -> !value.isBlank())
+                    .map(Long::valueOf).toList();
+        } catch (NumberFormatException exception) {
+            throw new BusinessException(ResultCode.VALIDATION_ERROR, "知识点格式无效");
+        }
     }
 
 }

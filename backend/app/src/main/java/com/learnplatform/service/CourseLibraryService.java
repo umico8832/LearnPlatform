@@ -24,15 +24,19 @@ public class CourseLibraryService {
 
     private final UserCourseMapper userCourseMapper;
     private final CourseMapper courseMapper;
+    private final ContentReferenceLockService referenceLocks;
 
-    public CourseLibraryService(UserCourseMapper userCourseMapper, CourseMapper courseMapper) {
+    public CourseLibraryService(UserCourseMapper userCourseMapper, CourseMapper courseMapper,
+                                ContentReferenceLockService referenceLocks) {
         this.userCourseMapper = userCourseMapper;
         this.courseMapper = courseMapper;
+        this.referenceLocks = referenceLocks;
     }
 
     @Transactional
     public UserCourseVO addCourse(Long userId, Long courseId) {
-        Course course = courseMapper.selectById(courseId);
+        Course course = referenceLocks.lockForReference(Collections.singletonList(courseId), List.of())
+                .courses().get(courseId);
         if (course == null || !Integer.valueOf(1).equals(course.getStatus())) {
             throw new BusinessException(ResultCode.NOT_FOUND, "课程不存在或未开放");
         }

@@ -1,23 +1,18 @@
 package com.learnplatform.service;
 
 import com.learnplatform.common.time.BusinessTime;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.QuestionCreateRequest;
 import com.learnplatform.dto.QuestionImportResult;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.Question;
-import com.learnplatform.entity.QuestionKnowledgePoint;
-import com.learnplatform.entity.QuestionOption;
 import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
-import com.learnplatform.mapper.QuestionKnowledgePointMapper;
-import com.learnplatform.mapper.QuestionMapper;
-import com.learnplatform.mapper.QuestionOptionMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -84,31 +79,24 @@ public class MarkdownQuestionParser {
 
     private static final Logger log = LoggerFactory.getLogger(MarkdownQuestionParser.class);
 
-    private final QuestionMapper questionMapper;
-    private final QuestionOptionMapper questionOptionMapper;
-    private final QuestionKnowledgePointMapper questionKnowledgePointMapper;
     private final CourseMapper courseMapper;
     private final KnowledgePointMapper knowledgePointMapper;
     private final MarkdownQuestionContentParser contentParser;
+    private final QuestionImportRowWriter rowWriter;
 
-    public MarkdownQuestionParser(QuestionMapper questionMapper,
-                                   QuestionOptionMapper questionOptionMapper,
-                                   QuestionKnowledgePointMapper questionKnowledgePointMapper,
-                                   CourseMapper courseMapper,
+    public MarkdownQuestionParser(CourseMapper courseMapper,
                                    KnowledgePointMapper knowledgePointMapper,
-                                   MarkdownQuestionContentParser contentParser) {
-        this.questionMapper = questionMapper;
-        this.questionOptionMapper = questionOptionMapper;
-        this.questionKnowledgePointMapper = questionKnowledgePointMapper;
+                                   MarkdownQuestionContentParser contentParser, QuestionImportRowWriter rowWriter) {
         this.courseMapper = courseMapper;
         this.knowledgePointMapper = knowledgePointMapper;
         this.contentParser = contentParser;
+        this.rowWriter = rowWriter;
     }
 
     /**
      * 从 Markdown 输入流解析并导入题目
      */
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public QuestionImportResult importFromMarkdown(InputStream inputStream, Long createBy) {
         QuestionImportResult result = new QuestionImportResult();
 
@@ -136,7 +124,6 @@ public class MarkdownQuestionParser {
         for (int i = 0; i < rawQuestions.size(); i++) {
             RawQuestion raw = rawQuestions.get(i);
             int rowNum = i + 1;
-            Long insertedQuestionId = null;
 
             try {
                 // 验证题干
@@ -188,13 +175,10 @@ public class MarkdownQuestionParser {
                 question.setReviewRounds(0);
                 question.setNextReviewTime(BusinessTime.now().plusDays(90));
                 question.setDeleted(0);
-                questionMapper.insert(question);
-                insertedQuestionId = question.getId();
 
-                // 处理选项
+                List<QuestionCreateRequest.OptionItem> optionItems = List.of();
                 if ("SINGLE_CHOICE".equals(questionType) || "MULTIPLE_CHOICE".equals(questionType)
                         || "TRUE_FALSE".equals(questionType)) {
-                    List<QuestionCreateRequest.OptionItem> optionItems;
                     if (raw.options.isEmpty() && "TRUE_FALSE".equals(questionType)) {
                         // 判断题自动生成选项
                         optionItems = new ArrayList<>();
@@ -204,39 +188,26 @@ public class MarkdownQuestionParser {
                     } else {
                         optionItems = contentParser.parseOptions(raw.options, raw.answer, questionType);
                     }
-                    for (QuestionCreateRequest.OptionItem item : optionItems) {
-                        QuestionOption option = new QuestionOption();
-                        option.setQuestionId(question.getId());
-                        option.setContent(item.getContent());
-                        option.setOptionLabel(item.getOptionLabel());
-                        option.setIsCorrect(item.getIsCorrect());
-                        option.setSortOrder(item.getSortOrder());
-                        option.setDeleted(0);
-                        questionOptionMapper.insert(option);
-                    }
                 }
 
-                // 处理知识点关联
+                List<Long> pointIds = new ArrayList<>();
                 if (raw.knowledgePoints != null && !raw.knowledgePoints.trim().isEmpty()) {
                     String[] kpNames = raw.knowledgePoints.split("[,，]");
                     for (String kpName : kpNames) {
                         String trimmedName = kpName.trim();
                         if (!trimmedName.isEmpty()) {
-                            Long kpId = kpNameToId.get(trimmedName);
+                            Long kpId = kpNameToId.get(courseId + ":" + trimmedName);
                             if (kpId != null) {
-                                QuestionKnowledgePoint qkp = new QuestionKnowledgePoint();
-                                qkp.setQuestionId(question.getId());
-                                qkp.setKnowledgePointId(kpId);
-                                questionKnowledgePointMapper.insert(qkp);
+                                pointIds.add(kpId);
                             }
                             // 知识点不存在时跳过，不阻断导入
                         }
                     }
                 }
 
+                rowWriter.write(question, optionItems, pointIds);
                 result.setSuccessCount(result.getSuccessCount() + 1);
             } catch (Exception e) {
-                cleanupFailedImport(insertedQuestionId);
                 log.error("Markdown 导入题目失败，第 {} 题: {}", rowNum, e.getMessage(), e);
                 result.addError("第 " + rowNum + " 题：导入失败 - " + e.getMessage());
                 result.setFailCount(result.getFailCount() + 1);
@@ -261,21 +232,10 @@ public class MarkdownQuestionParser {
 
     private Map<String, Long> buildKnowledgePointNameToIdMap() {
         List<KnowledgePoint> kps = knowledgePointMapper.selectList(null);
-        return kps.stream().collect(java.util.stream.Collectors.toMap(KnowledgePoint::getName,
+        return kps.stream().collect(java.util.stream.Collectors.toMap(kp -> kp.getCourseId() + ":" + kp.getName(),
                 KnowledgePoint::getId, (a, b) -> a));
     }
 
-    private void cleanupFailedImport(Long questionId) {
-        if (questionId == null) { return; }
-        LambdaQueryWrapper<QuestionOption> optionWrapper = new LambdaQueryWrapper<>();
-        optionWrapper.eq(QuestionOption::getQuestionId, questionId);
-        questionOptionMapper.delete(optionWrapper);
-
-        LambdaQueryWrapper<QuestionKnowledgePoint> kpWrapper = new LambdaQueryWrapper<>();
-        kpWrapper.eq(QuestionKnowledgePoint::getQuestionId, questionId);
-        questionKnowledgePointMapper.delete(kpWrapper);
-        questionMapper.deleteById(questionId);
-    }
 
     // ===== 内部数据结构 =====
 

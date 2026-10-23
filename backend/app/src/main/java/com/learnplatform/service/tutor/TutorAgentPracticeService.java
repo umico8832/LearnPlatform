@@ -17,6 +17,7 @@ import com.learnplatform.entity.TutorSession;
 import com.learnplatform.mapper.TutorAgentPracticeAttemptMapper;
 import com.learnplatform.mapper.TutorAgentPracticeQueryMapper;
 import com.learnplatform.service.PracticeAnswerService;
+import com.learnplatform.service.ContentReferenceLockService;
 import com.learnplatform.service.TutorSessionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -32,15 +33,17 @@ public class TutorAgentPracticeService {
     private final TutorAgentPracticeAttemptMapper attempts;
     private final PracticeAnswerService practiceAnswers;
     private final ObjectMapper json;
+    private final ContentReferenceLockService referenceLocks;
 
     public TutorAgentPracticeService(TutorSessionService sessionService, TutorAgentPracticeQueryMapper queries,
                                      TutorAgentPracticeAttemptMapper attempts, PracticeAnswerService practiceAnswers,
-                                     ObjectMapper json) {
+                                     ObjectMapper json, ContentReferenceLockService referenceLocks) {
         this.sessionService = sessionService;
         this.queries = queries;
         this.attempts = attempts;
         this.practiceAnswers = practiceAnswers;
         this.json = json;
+        this.referenceLocks = referenceLocks;
     }
 
     /** Returns one deterministic, unattempted approved variant without creating learning facts. */
@@ -77,6 +80,9 @@ public class TutorAgentPracticeService {
     public TutorAgentPracticeVO answer(Long userId, Long courseId, String sessionKey, String runKey, Integer sequence,
                                        TutorAgentPracticeAnswerRequest request) {
         TutorSession session = session(userId, courseId, sessionKey);
+        var previewMessage = requiredMessage(userId, session.getId(), runKey, sequence, false);
+        var previewQuestion = eligibleQuestion(session, previewMessage);
+        referenceLocks.lockQuestions(List.of(previewQuestion.id()), List.of(courseId));
         TutorAgentMessage message = requiredMessage(userId, session.getId(), runKey, sequence, true);
         TutorAgentPracticeQuestionRow question = eligibleQuestion(session, message);
         TutorAgentPracticeAttempt existing = attempts.selectForUpdate(message.getId());

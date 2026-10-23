@@ -14,6 +14,8 @@ import com.learnplatform.mapper.ExamQuestionMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.util.List;
 
@@ -41,6 +43,7 @@ public class PrivateExamConfirmedPaperService {
         this.parserService = parserService;
     }
 
+    @Transactional(propagation = Propagation.MANDATORY)
     public ExamPaperVO create(String title, Long courseId, Integer duration,
                               UserExamSource source,
                               List<PrivateExamImportPreviewVO.QuestionPreview> questions,

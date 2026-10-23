@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.service.content.LockedContentParents;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.ExamLearningAnswerRequest;
 import com.learnplatform.dto.ExamLearningAnswerResultVO;
@@ -53,6 +54,7 @@ class ExamPaperLearningServiceTest {
     @Mock private SpacedRepetitionService spacedRepetitionService;
     @Mock private CacheEvictService cacheEvictService;
     @Mock private CourseLearningEventService courseLearningEventService;
+    @Mock private ContentReferenceLockService referenceLocks;
     @Mock private ExamAutomaticGradingGuard gradingGuard;
     private ExamPaperLearningService service;
 
@@ -62,8 +64,11 @@ class ExamPaperLearningServiceTest {
                 examPaperMapper, examQuestionMapper, questionMapper, questionOptionMapper, userCourseMapper,
                 gradingGuard);
         service = new ExamPaperLearningService(sessionMapper, learningAnswerMapper, contextService,
-                new AnswerEvaluator(), wrongQuestionService, spacedRepetitionService,
-                cacheEvictService, courseLearningEventService);
+                new AnswerEvaluator(), new QuestionAnswerEffectsService(wrongQuestionService, spacedRepetitionService),
+                cacheEvictService, courseLearningEventService, referenceLocks);
+        lenient().when(referenceLocks.lockForReference(any(), any())).thenReturn(
+                new LockedContentParents(java.util.Map.of(), java.util.Map.of()));
+        lenient().doNothing().when(referenceLocks).lockPaperQuestions(any());
     }
 
     @Test
@@ -96,7 +101,7 @@ class ExamPaperLearningServiceTest {
         session.setUserId(7L);
         session.setExamPaperId(2L);
         session.setStatus(0);
-        when(sessionMapper.selectById(30L)).thenReturn(session);
+        lenient().when(sessionMapper.selectById(30L)).thenReturn(session);
         stubEligiblePaper();
         Question textQuestion = question();
         textQuestion.setQuestionType(type);
@@ -123,7 +128,6 @@ class ExamPaperLearningServiceTest {
     void gradesLearningAnswerAndWritesUnifiedCourseFact() {
         stubActiveSession();
         stubEligiblePaper();
-        when(learningAnswerMapper.selectCount(any())).thenReturn(0L);
         when(learningAnswerMapper.insert(any(ExamLearningAnswer.class))).thenAnswer(invocation -> {
             ExamLearningAnswer answer = invocation.getArgument(0);
             answer.setId(81L);
@@ -149,7 +153,6 @@ class ExamPaperLearningServiceTest {
     void answerPropagatesLearningFactFailureSoTransactionCanRollBack() {
         stubActiveSession();
         stubEligiblePaper();
-        when(learningAnswerMapper.selectCount(any())).thenReturn(0L);
         doThrow(new IllegalStateException("wrong-question write failed"))
                 .when(wrongQuestionService).removeOnCorrect(7L, 10L);
 
@@ -168,7 +171,6 @@ class ExamPaperLearningServiceTest {
         subjective.setAnalysis("分步参考答案");
         when(questionMapper.selectById(10L)).thenReturn(subjective);
         when(questionOptionMapper.selectList(any())).thenReturn(List.of());
-        when(learningAnswerMapper.selectCount(any())).thenReturn(0L);
 
         ExamLearningAnswerResultVO result = service.submitAnswer(30L, request(10L, "算法作答"), 7L);
 
@@ -213,7 +215,7 @@ class ExamPaperLearningServiceTest {
         ExamLearningSession session = new ExamLearningSession();
         session.setId(30L);
         session.setUserId(8L);
-        when(sessionMapper.selectById(30L)).thenReturn(session);
+        lenient().when(sessionMapper.selectById(30L)).thenReturn(session);
 
         BusinessException exception = assertThrows(BusinessException.class,
                 () -> service.getSession(30L, 7L));
@@ -228,6 +230,7 @@ class ExamPaperLearningServiceTest {
         session.setExamPaperId(2L);
         session.setStatus(0);
         session.setCurrentQuestionId(10L);
+        lenient().when(sessionMapper.selectById(30L)).thenReturn(session);
         when(sessionMapper.selectByIdForUpdate(30L)).thenReturn(session);
     }
 

@@ -6,7 +6,6 @@ import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionOption;
 import com.learnplatform.entity.QuestionSubmission;
 import com.learnplatform.mapper.CourseMapper;
-import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
@@ -34,7 +33,7 @@ class QuestionSubmissionImportServiceTest {
     @Mock private QuestionMapper questionMapper;
     @Mock private QuestionOptionMapper questionOptionMapper;
     @Mock private QuestionKnowledgePointMapper questionKnowledgePointMapper;
-    @Mock private KnowledgePointMapper knowledgePointMapper;
+    @Mock private ContentReferenceLockService referenceLocks;
     @Mock private QuestionSourceService questionSourceService;
     @Mock private UserMapper userMapper;
     @Mock private CourseMapper courseMapper;
@@ -46,7 +45,7 @@ class QuestionSubmissionImportServiceTest {
         QuestionSubmissionOptionService optionService = new QuestionSubmissionOptionService(JsonMapper.builderWithJackson2Defaults().build());
         QuestionSubmissionViewService viewService = new QuestionSubmissionViewService(userMapper, courseMapper);
         importService = new QuestionSubmissionImportService(submissionMapper, questionMapper, questionOptionMapper,
-                questionKnowledgePointMapper, knowledgePointMapper, questionSourceService, optionService, viewService);
+                questionKnowledgePointMapper, referenceLocks, questionSourceService, optionService, viewService);
     }
 
     @Test

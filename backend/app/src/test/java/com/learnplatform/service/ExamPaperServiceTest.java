@@ -38,6 +38,7 @@ class ExamPaperServiceTest {
     @Mock private CourseMapper courseMapper;
     @Mock private SubjectiveGradingPointMapper subjectiveGradingPointMapper;
     @Mock private ExamAutomaticGradingGuard gradingGuard;
+    @Mock private ContentReferenceLockService referenceLocks;
     private ExamPaperService examPaperService;
 
     @BeforeEach
@@ -47,7 +48,7 @@ class ExamPaperServiceTest {
         ExamPaperValidationService validationService = new ExamPaperValidationService(
                 examQuestionMapper, questionMapper, subjectiveGradingPointMapper, gradingGuard);
         examPaperService = new ExamPaperService(
-                examPaperMapper, examQuestionMapper, viewService, validationService);
+                examPaperMapper, examQuestionMapper, viewService, validationService, referenceLocks);
     }
 
     @Test
@@ -71,6 +72,7 @@ class ExamPaperServiceTest {
     @Test
     void rejectsUpdatingPublishedPaper() {
         ExamPaper paper = paper(1, 3);
+        when(examPaperMapper.selectById(1L)).thenReturn(paper);
         when(examPaperMapper.selectByIdForUpdate(1L)).thenReturn(paper);
 
         BusinessException exception = assertThrows(BusinessException.class,
@@ -129,6 +131,7 @@ class ExamPaperServiceTest {
         ExamPaper paper = paper(0, 0);
         ExamPaperCreateRequest request = new ExamPaperCreateRequest();
         request.setStatus(1);
+        when(examPaperMapper.selectById(1L)).thenReturn(paper);
         when(examPaperMapper.selectByIdForUpdate(1L)).thenReturn(paper);
 
         BusinessException exception = assertThrows(BusinessException.class,

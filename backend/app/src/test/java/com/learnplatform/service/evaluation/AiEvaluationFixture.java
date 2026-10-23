@@ -38,7 +38,9 @@ import com.learnplatform.service.AiService;
 import com.learnplatform.service.AiVariantQuestionService;
 import com.learnplatform.service.AnswerEvaluator;
 import com.learnplatform.service.CourseLearningEventService;
+import com.learnplatform.service.ContentReferenceLockService;
 import com.learnplatform.service.ExamLearningAiService;
+import com.learnplatform.service.ExamLearningAiPersistenceService;
 import com.learnplatform.service.ExamPaperLearningService;
 import com.learnplatform.service.QuestionAssetContextService;
 import com.learnplatform.service.QuestionLearningAssetService;
@@ -157,7 +159,8 @@ final class AiEvaluationFixture {
                 new com.learnplatform.service.AiCallReservationService(users, logMapper, config), json);
         AiInvocationService invocation = new AiInvocationService(provider, governance);
         AiVariantQuestionService variantService = new AiVariantQuestionService(json, assetMapper,
-                variantMapper, mock(AiVariantTrainingMapper.class), new AnswerEvaluator());
+                variantMapper, mock(AiVariantTrainingMapper.class), new AnswerEvaluator(), events,
+                mock(ContentReferenceLockService.class));
         assetService = new QuestionLearningAssetService(invocation, config, governance, assetMapper,
                 mock(AiAssetFeedbackMapper.class), questions,
                 new QuestionAssetContextService(questions, options, relations, knowledge, courses), variantService);
@@ -165,8 +168,10 @@ final class AiEvaluationFixture {
                 invocation);
         ExamPaperLearningService learning = mock(ExamPaperLearningService.class);
         when(learning.getSession(30L, 7L)).thenReturn(session(data));
-        paperService = new ExamLearningAiService(learning, interactionMapper, courses,
-                new AiService(assistance, null, null), events);
+        paperService = new ExamLearningAiService(learning, courses,
+                new AiService(assistance, null, null),
+                new ExamLearningAiPersistenceService(interactionMapper,
+                        mock(ContentReferenceLockService.class), events));
         var memory = mock(com.learnplatform.service.tutor.TutorMemoryService.class);
         when(memory.promptContext(7L, 20L)).thenReturn(memoryContext);
         agentRuntime = new TutorAgentRuntime(invocation, new TutorAgentToolExecutor() {

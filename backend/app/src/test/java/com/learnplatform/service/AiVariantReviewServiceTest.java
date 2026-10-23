@@ -35,20 +35,24 @@ class AiVariantReviewServiceTest {
     @Mock private CourseMapper courseMapper;
     @Mock private QuestionService questionService;
     @Mock private QuestionKnowledgePointMapper questionKnowledgePointMapper;
+    @Mock private ContentReferenceLockService referenceLocks;
     private AiVariantReviewService service;
 
     @BeforeEach
     void setUp() {
         service = new AiVariantReviewService(variantMapper, assetMapper, questionMapper,
-                courseMapper, questionKnowledgePointMapper, questionService, JsonMapper.builderWithJackson2Defaults().build());
+                courseMapper, questionKnowledgePointMapper, questionService,
+                JsonMapper.builderWithJackson2Defaults().build(), referenceLocks);
     }
 
     @Test
     void approvesValidatedVariantByPublishingFormalQuestionWithMotherReference() {
         AiVariantQuestion variant = variant();
+        when(variantMapper.selectById(12L)).thenReturn(variant);
         when(variantMapper.selectForUpdate(12L)).thenReturn(variant);
         when(assetMapper.selectById(22L)).thenReturn(asset());
         when(questionMapper.selectById(21L)).thenReturn(motherQuestion());
+        when(questionMapper.selectActiveForShare(21L)).thenReturn(motherQuestion());
         when(courseMapper.selectById(10L)).thenReturn(course());
         QuestionVO published = new QuestionVO();
         published.setId(81L);
@@ -73,11 +77,14 @@ class AiVariantReviewServiceTest {
 
     @Test
     void rejectsPrivateMotherAndNeverPublishesVariant() {
-        when(variantMapper.selectForUpdate(12L)).thenReturn(variant());
+        AiVariantQuestion variant = variant();
+        when(variantMapper.selectById(12L)).thenReturn(variant);
+        when(variantMapper.selectForUpdate(12L)).thenReturn(variant);
         when(assetMapper.selectById(22L)).thenReturn(asset());
         Question mother = motherQuestion();
         mother.setVisibility("PRIVATE");
         when(questionMapper.selectById(21L)).thenReturn(mother);
+        when(questionMapper.selectActiveForShare(21L)).thenReturn(mother);
         AiVariantReviewRequest request = new AiVariantReviewRequest();
         request.setDecision("APPROVE");
 
@@ -86,9 +93,12 @@ class AiVariantReviewServiceTest {
 
     @Test
     void requiresReviewNoteWhenRejectingVariant() {
-        when(variantMapper.selectForUpdate(12L)).thenReturn(variant());
+        AiVariantQuestion variant = variant();
+        when(variantMapper.selectById(12L)).thenReturn(variant);
+        when(variantMapper.selectForUpdate(12L)).thenReturn(variant);
         when(assetMapper.selectById(22L)).thenReturn(asset());
         when(questionMapper.selectById(21L)).thenReturn(motherQuestion());
+        when(questionMapper.selectActiveForShare(21L)).thenReturn(motherQuestion());
         AiVariantReviewRequest request = new AiVariantReviewRequest();
         request.setDecision("REJECT");
 

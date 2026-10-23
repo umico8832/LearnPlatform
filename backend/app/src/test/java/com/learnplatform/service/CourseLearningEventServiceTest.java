@@ -27,6 +27,7 @@ class CourseLearningEventServiceTest {
     @Mock private CourseLearningEventMapper courseLearningEventMapper;
 
     @Mock private CacheEvictService cacheEvictService;
+    @Mock private ContentReferenceLockService referenceLocks;
 
     private CourseLearningEventService service;
 
@@ -34,7 +35,7 @@ class CourseLearningEventServiceTest {
     void setUp() {
         service = new CourseLearningEventService(userCourseMapper, courseLearningEventMapper,
                 org.mockito.Mockito.mock(com.learnplatform.service.gamification.GamificationRewardService.class),
-                cacheEvictService);
+                cacheEvictService, referenceLocks);
     }
 
     @Test
@@ -75,7 +76,7 @@ class CourseLearningEventServiceTest {
     void projectsOnlyInsertedCourseFactsToTheRewardLedger() {
         GamificationRewardService rewards = org.mockito.Mockito.mock(GamificationRewardService.class);
         CourseLearningEventService rewardedService = new CourseLearningEventService(
-                userCourseMapper, courseLearningEventMapper, rewards, cacheEvictService);
+                userCourseMapper, courseLearningEventMapper, rewards, cacheEvictService, referenceLocks);
         Question question = new Question();
         question.setId(12L);
         question.setCourseId(8L);

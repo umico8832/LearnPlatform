@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.service.content.LockedContentParents;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.ObjectMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -48,6 +49,7 @@ class CourseStageAssessmentServiceTest {
     @Mock private QuestionMapper questionMapper;
     @Mock private QuestionOptionMapper optionMapper;
     @Mock private KnowledgePointMapper knowledgePointMapper;
+    @Mock private ContentReferenceLockService referenceLocks;
     @Mock private WrongQuestionService wrongQuestionService;
     @Mock private SpacedRepetitionService repetitionService;
     @Mock private CourseLearningEventService eventService;
@@ -68,9 +70,20 @@ class CourseStageAssessmentServiceTest {
         CourseStageAssessmentViewService viewService =
                 new CourseStageAssessmentViewService(assessmentQuestionMapper, objectMapper);
         service = new CourseStageAssessmentService(assessmentMapper, assessmentQuestionMapper,
-                knowledgePointMapper, answerEvaluator, snapshotService, learningFactService, viewService,
-                cacheEvictService);
+                answerEvaluator, snapshotService, learningFactService, viewService,
+                cacheEvictService, referenceLocks);
+        lenient().when(referenceLocks.lockForReference(any(), any())).thenAnswer(invocation -> {
+            java.util.Map<Long, KnowledgePoint> points = new java.util.LinkedHashMap<>();
+            for (Long id : (java.util.Collection<Long>) invocation.getArgument(1)) {
+                KnowledgePoint point = knowledgePointMapper.selectById(id);
+                if (point != null) points.put(id, point);
+            }
+            return new LockedContentParents(java.util.Map.of(), points);
+        });
+        lenient().doNothing().when(referenceLocks).lockAssessmentQuestions(anyLong(), anyLong(), any());
         lenient().when(knowledgePointMapper.selectByQuestionId(any())).thenReturn(List.of());
+        lenient().when(assessmentQuestionMapper.selectCurrentByAssessmentId(anyLong())).thenAnswer(
+                invocation -> assessmentQuestionMapper.selectByAssessmentId(invocation.getArgument(0)));
     }
 
     @Test
@@ -284,6 +297,7 @@ class CourseStageAssessmentServiceTest {
         assessment.setUserId(7L);
         assessment.setCourseId(10L);
         assessment.setStatus("IN_PROGRESS");
+        when(assessmentMapper.selectOwned(51L, 7L)).thenReturn(assessment);
         when(assessmentMapper.selectOwnedForUpdate(51L, 7L)).thenReturn(assessment);
         when(assessmentQuestionMapper.selectByAssessmentId(51L)).thenReturn(List.of(snapshot()));
         CourseStageAssessmentSubmitRequest request = new CourseStageAssessmentSubmitRequest();
@@ -304,6 +318,7 @@ class CourseStageAssessmentServiceTest {
         assessment.setStatus("IN_PROGRESS");
         assessment.setQuestionCount(1);
         CourseStageAssessmentQuestion item = snapshot();
+        when(assessmentMapper.selectOwned(51L, 7L)).thenReturn(assessment);
         when(assessmentMapper.selectOwnedForUpdate(51L, 7L)).thenReturn(assessment);
         when(assessmentQuestionMapper.selectByAssessmentId(51L)).thenReturn(List.of(item));
         when(questionMapper.selectById(21L)).thenReturn(question());

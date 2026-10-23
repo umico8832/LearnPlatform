@@ -91,6 +91,12 @@ public class TutorLearningContextService {
         return context;
     }
 
+    public KnowledgePoint reviewedPointByKey(Long courseId, String contentKey) {
+        return knowledgePointMapper.selectOne(new LambdaQueryWrapper<KnowledgePoint>()
+                .eq(KnowledgePoint::getCourseId, courseId).eq(KnowledgePoint::getContentKey, contentKey)
+                .eq(KnowledgePoint::getContentReviewStatus, "REVIEWED"));
+    }
+
     private int countEvents(Long userId, Long courseId, List<Long> questionIds,
                             String eventSource, boolean incorrectOnly) {
         LambdaQueryWrapper<CourseLearningEvent> query = baseEventQuery(userId, courseId, questionIds)

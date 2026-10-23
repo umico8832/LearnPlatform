@@ -42,6 +42,7 @@ class PrivateExamDraftServiceTest {
     @Mock private PrivateExamDraftQuestionMapper questionMapper;
     @Mock private AiProvider aiProvider;
     @Mock private AiCallGovernanceService callGovernanceService;
+    @Mock private ContentReferenceLockService referenceLocks;
     private PrivateExamDraftService service;
     private final ObjectMapper objectMapper = JsonMapper.builderWithJackson2Defaults().build();
 
@@ -52,7 +53,7 @@ class PrivateExamDraftServiceTest {
                 sourceMapper, sourceStorageService, draftMapper, questionMapper, objectMapper);
         PrivateExamDraftAnswerService answerService = new PrivateExamDraftAnswerService(
                 new AiInvocationService(aiProvider, callGovernanceService), callGovernanceService, dataService, objectMapper);
-        service = new PrivateExamDraftService(importService, dataService, answerService);
+        service = new PrivateExamDraftService(importService, dataService, answerService, referenceLocks);
     }
 
     @Test
@@ -163,6 +164,7 @@ class PrivateExamDraftServiceTest {
         UserExamSource source = new UserExamSource();
         source.setId(21L);
         source.setOwnerUserId(7L);
+        when(draftMapper.selectById(31L)).thenReturn(draft);
         when(draftMapper.selectOwnedForUpdate(31L, 7L)).thenReturn(draft);
         when(sourceMapper.selectById(21L)).thenReturn(source);
         when(questionMapper.selectList(any())).thenReturn(List.of(question));
@@ -184,6 +186,7 @@ class PrivateExamDraftServiceTest {
     void repeatedConfirmationReturnsAlreadyEnabledPaper() {
         PrivateExamImportDraft draft = draft(7L, "CONFIRMED");
         draft.setConfirmedPaperId(51L);
+        when(draftMapper.selectById(31L)).thenReturn(draft);
         when(draftMapper.selectOwnedForUpdate(31L, 7L)).thenReturn(draft);
         ExamPaperVO paper = new ExamPaperVO();
         paper.setId(51L);

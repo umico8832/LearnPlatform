@@ -1,5 +1,7 @@
 package com.learnplatform.service;
 
+import java.util.List;
+
 import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.dto.GamificationRewardFeedback;
@@ -26,16 +28,19 @@ public class CourseLearningEventService {
   private final CourseLearningEventMapper courseLearningEventMapper;
   private final GamificationRewardService gamificationRewardService;
   private final CacheEvictService cacheEvictService;
+  private final ContentReferenceLockService referenceLocks;
 
   @Autowired
   public CourseLearningEventService(
       UserCourseMapper userCourseMapper,
       CourseLearningEventMapper courseLearningEventMapper,
-      GamificationRewardService gamificationRewardService, CacheEvictService cacheEvictService) {
+      GamificationRewardService gamificationRewardService, CacheEvictService cacheEvictService,
+      ContentReferenceLockService referenceLocks) {
     this.userCourseMapper = userCourseMapper;
     this.courseLearningEventMapper = courseLearningEventMapper;
     this.gamificationRewardService = gamificationRewardService;
     this.cacheEvictService = cacheEvictService;
+    this.referenceLocks = referenceLocks;
   }
 
   @Transactional
@@ -53,6 +58,7 @@ public class CourseLearningEventService {
         || sourceRecordId == null) {
       return null;
     }
+    referenceLocks.lockForReference(List.of(question.getCourseId()), List.of());
     cacheEvictService.evictUserStatistics(userId, question.getCourseId());
     if (!hasCourseInLibrary(userId, question.getCourseId())) {
       return null;
@@ -89,6 +95,7 @@ public class CourseLearningEventService {
         || sessionId == null) {
       return null;
     }
+    referenceLocks.lockForReference(List.of(courseId), List.of(knowledgePointId));
     cacheEvictService.evictUserStatistics(userId, courseId);
     if (!hasCourseInLibrary(userId, courseId)) { return null; }
     CourseLearningEvent event = new CourseLearningEvent();
@@ -129,6 +136,7 @@ public class CourseLearningEventService {
         || interactionId == null) {
       return;
     }
+    referenceLocks.lockForReference(List.of(courseId), List.of());
     cacheEvictService.evictUserStatistics(userId, courseId);
     if (!hasCourseInLibrary(userId, courseId)) { return; }
     CourseLearningEvent event = new CourseLearningEvent();

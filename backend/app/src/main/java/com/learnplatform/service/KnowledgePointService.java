@@ -1,5 +1,7 @@
 package com.learnplatform.service;
 
+import java.util.Collections;
+
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
@@ -22,10 +24,13 @@ public class KnowledgePointService {
 
     private final KnowledgePointMapper knowledgePointMapper;
     private final CourseMapper courseMapper;
+    private final ContentReferenceLockService referenceLocks;
 
-    public KnowledgePointService(KnowledgePointMapper knowledgePointMapper, CourseMapper courseMapper) {
+    public KnowledgePointService(KnowledgePointMapper knowledgePointMapper, CourseMapper courseMapper,
+                                 ContentReferenceLockService referenceLocks) {
         this.knowledgePointMapper = knowledgePointMapper;
         this.courseMapper = courseMapper;
+        this.referenceLocks = referenceLocks;
     }
 
     /**
@@ -52,9 +57,11 @@ public class KnowledgePointService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public KnowledgePointVO createKnowledgePoint(Long courseId, Long parentId, String name,
                                                 String description, Integer sortOrder) {
-        requireCourse(courseId);
+        List<Long> ancestry = parentAndAncestors(parentId);
+        referenceLocks.lockForReference(Collections.singletonList(courseId), ancestry);
         validateParent(courseId, parentId, null);
         KnowledgePoint kp = new KnowledgePoint();
         kp.setCourseId(courseId);
@@ -68,10 +75,12 @@ public class KnowledgePointService {
         return KnowledgePointVO.fromEntity(kp);
     }
 
+    @Transactional
     public KnowledgePointVO updateKnowledgePoint(Long id, String name, String description, Integer sortOrder) {
         KnowledgePoint kp = knowledgePointMapper.selectById(id);
         if (kp == null) { throw new BusinessException(ResultCode.NOT_FOUND, "知识点不存在"); }
-        requireCourse(kp.getCourseId());
+        referenceLocks.lockForReference(Collections.singletonList(kp.getCourseId()),
+                parentAndAncestors(kp.getParentId()));
         validateParent(kp.getCourseId(), kp.getParentId(), kp.getId());
         if (name != null) { kp.setName(name); }
         if (description != null) { kp.setDescription(description); }
@@ -82,11 +91,8 @@ public class KnowledgePointService {
 
     @Transactional
     public void deleteKnowledgePoint(Long id) {
-        KnowledgePoint kp = knowledgePointMapper.selectById(id);
-        if (kp == null) { throw new BusinessException(ResultCode.NOT_FOUND, "知识点不存在"); }
-        if (knowledgePointMapper.countReferences(id) > 0) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR, "知识点仍被下游内容引用，无法删除");
-        }
+        referenceLocks.lockKnowledgePointForDelete(id);
+        referenceLocks.rejectKnowledgePointDeleteWithReferences(id);
         knowledgePointMapper.deleteById(id);
     }
 
@@ -117,5 +123,19 @@ public class KnowledgePointService {
             }
             cursor = ancestor.getParentId();
         }
+    }
+
+    private List<Long> parentAndAncestors(Long parentId) {
+        if (parentId == null || parentId == 0L) { return List.of(); }
+        List<Long> ids = new ArrayList<>();
+        Long cursor = parentId;
+        Set<Long> visited = new HashSet<>();
+        while (cursor != null && cursor != 0L && visited.add(cursor)) {
+            ids.add(cursor);
+            KnowledgePoint current = knowledgePointMapper.selectById(cursor);
+            if (current == null) { break; }
+            cursor = current.getParentId();
+        }
+        return ids;
     }
 }

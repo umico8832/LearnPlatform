@@ -7,6 +7,7 @@ import com.learnplatform.dto.QuestionSubmissionVO;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.QuestionSubmission;
 import com.learnplatform.mapper.CourseMapper;
+import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionSubmissionMapper;
 import com.learnplatform.mapper.UserMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +32,8 @@ class QuestionSubmissionServiceTest {
     @Mock private QuestionSubmissionMapper submissionMapper;
     @Mock private CourseMapper courseMapper;
     @Mock private UserMapper userMapper;
+    @Mock private KnowledgePointMapper knowledgePointMapper;
+    @Mock private ContentReferenceLockService referenceLocks;
 
     private QuestionSubmissionService service;
 
@@ -38,7 +41,8 @@ class QuestionSubmissionServiceTest {
     void setUp() {
         QuestionSubmissionOptionService optionService = new QuestionSubmissionOptionService(JsonMapper.builderWithJackson2Defaults().build());
         QuestionSubmissionViewService viewService = new QuestionSubmissionViewService(userMapper, courseMapper);
-        service = new QuestionSubmissionService(submissionMapper, courseMapper, optionService, viewService);
+        service = new QuestionSubmissionService(submissionMapper, courseMapper, optionService, viewService,
+                knowledgePointMapper, referenceLocks);
     }
 
     @Test

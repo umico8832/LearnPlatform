@@ -1,5 +1,11 @@
 package com.learnplatform.service;
 
+import java.util.ArrayList;
+
+import java.util.Arrays;
+
+import java.util.Collections;
+
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.QuestionSubmissionRequest;
@@ -46,10 +52,13 @@ public class CommunityService {
                     "zip");
     private final CommunityMapper mapper;
     private final QuestionSubmissionService submissions;
+    private final ContentReferenceLockService referenceLocks;
 
-    public CommunityService(CommunityMapper mapper, QuestionSubmissionService submissions) {
+    public CommunityService(CommunityMapper mapper, QuestionSubmissionService submissions,
+                            ContentReferenceLockService referenceLocks) {
         this.mapper = mapper;
         this.submissions = submissions;
+        this.referenceLocks = referenceLocks;
     }
 
     public List<Category> categories(long actor) {
@@ -76,26 +85,30 @@ public class CommunityService {
 
     @Transactional(rollbackFor = IOException.class)
     public long create(long actor, Draft draft, List<MultipartFile> files) throws IOException {
-        role(actor, true);
+        role(actor, false);
         validateDraft(draft);
         if (files.size() > 8
                 || ("question_bank".equals(draft.contentType()) && files.isEmpty())
                 || (!"question_bank".equals(draft.contentType()) && !files.isEmpty())) {
             invalid("题库投稿需要1至8个附件，其他内容不能附加文件");
         }
+        var attachments = new ArrayList<byte[]>();
         long bytes = 0;
         for (MultipartFile file : files) {
             validateFile(file);
             bytes += file.getSize();
+            attachments.add(file.getBytes());
         }
+        lockDraftReferences(draft);
+        role(actor, true);
         if (mapper.storedBytes(actor) + bytes > 240L * 1024 * 1024) {
             invalid("社区附件已达到240MB配额，请删除不再需要的投稿");
         }
         long id =
                 mapper.insertPost(
                         actor, draft, "TOPIC".equals(draft.contentType()) ? "APPROVED" : "PENDING");
-        for (MultipartFile file : files) {
-            mapper.attach(id, file.getOriginalFilename(), file.getBytes());
+        for (int index = 0; index < files.size(); index++) {
+            mapper.attach(id, files.get(index).getOriginalFilename(), attachments.get(index));
         }
         return id;
     }
@@ -207,6 +220,7 @@ public class CommunityService {
     public QuestionSubmissionVO prepareQuestion(
             long actor, long id, QuestionSubmissionRequest request, String requestKey) {
         requireAdmin(role(actor, false));
+        lockQuestionReferences(request);
         Post post = readable(actor, id, true);
         requirePublished(post);
         if (requestKey == null || !requestKey.matches("[A-Za-z0-9-]{16,64}")) {
@@ -283,6 +297,30 @@ public class CommunityService {
         if (!"TOPIC".equals(draft.contentType())
                 && (draft.sourceNote() == null || draft.sourceNote().isBlank())) {
             invalid("投稿必须说明来源与使用许可");
+        }
+    }
+
+    private void lockDraftReferences(Draft draft) {
+        if (draft.courseId() == null) { return; }
+        var parents = referenceLocks.lockForReference(List.of(draft.courseId()),
+                draft.knowledgePointId() == null ? List.of() : List.of(draft.knowledgePointId()));
+        if (!Integer.valueOf(1).equals(parents.courses().get(draft.courseId()).getStatus())) {
+            invalid("课程不可用");
+        }
+    }
+
+    private void lockQuestionReferences(QuestionSubmissionRequest request) {
+        List<Long> points;
+        try {
+            points = request.getKnowledgePointIds() == null || request.getKnowledgePointIds().isBlank()
+                    ? List.of() : Arrays.stream(request.getKnowledgePointIds().split(","))
+                    .map(String::trim).map(Long::valueOf).toList();
+        } catch (NumberFormatException exception) {
+            throw new BusinessException(ResultCode.VALIDATION_ERROR, "知识点标识无效");
+        }
+        var parents = referenceLocks.lockForReference(Collections.singletonList(request.getCourseId()), points);
+        if (!Integer.valueOf(1).equals(parents.courses().get(request.getCourseId()).getStatus())) {
+            invalid("课程不可用");
         }
     }
 

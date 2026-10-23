@@ -1,5 +1,9 @@
 package com.learnplatform.service;
 
+import java.util.Collections;
+
+import java.util.List;
+
 import com.learnplatform.common.time.BusinessTime;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -17,7 +21,6 @@ import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.TutorContent;
 import com.learnplatform.entity.TutorSession;
 import com.learnplatform.entity.UserCourse;
-import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.TutorContentMapper;
 import com.learnplatform.mapper.TutorSessionMapper;
 import com.learnplatform.mapper.UserCourseMapper;
@@ -30,32 +33,35 @@ import java.util.UUID;
 @Service
 public class TutorSessionService {
     private final UserCourseMapper userCourseMapper;
-    private final KnowledgePointMapper knowledgePointMapper;
     private final TutorContentMapper contentMapper;
     private final TutorSessionMapper sessionMapper;
     private final ObjectMapper objectMapper;
     private final CourseLearningEventService events;
     private final TutorLearningContextService learningContextService;
     private final AiConfig aiConfig;
+    private final ContentReferenceLockService referenceLocks;
 
-    public TutorSessionService(UserCourseMapper users, KnowledgePointMapper points, TutorContentMapper contents,
+    public TutorSessionService(UserCourseMapper users, TutorContentMapper contents,
                                TutorSessionMapper sessions, ObjectMapper json,
                                CourseLearningEventService learningEvents,
-                               TutorLearningContextService contextService, AiConfig config) {
+                               TutorLearningContextService contextService, AiConfig config,
+                               ContentReferenceLockService referenceLocks) {
         userCourseMapper = users;
-        knowledgePointMapper = points;
         contentMapper = contents;
         sessionMapper = sessions;
         objectMapper = json;
         events = learningEvents;
         learningContextService = contextService;
         aiConfig = config;
+        this.referenceLocks = referenceLocks;
     }
 
     @Transactional
     public TutorSessionVO start(Long userId, Long courseId, Long knowledgePointId) {
+        var parents = referenceLocks.lockForReference(Collections.singletonList(courseId),
+                Collections.singletonList(knowledgePointId));
         requireCourse(userId, courseId);
-        KnowledgePoint point = knowledgePointMapper.selectById(knowledgePointId);
+        KnowledgePoint point = parents.knowledgePoints().get(knowledgePointId);
         if (point == null || !courseId.equals(point.getCourseId())
                 || !"REVIEWED".equals(point.getContentReviewStatus())) {
             throw new BusinessException(ResultCode.NOT_FOUND, "教学目标不存在、未属于该课程或尚未审查");
@@ -83,6 +89,8 @@ public class TutorSessionService {
                 .eq(TutorSession::getSessionKey, sessionKey).eq(TutorSession::getUserId, userId)
                 .eq(TutorSession::getCourseId, courseId));
         if (session == null) { throw new BusinessException(ResultCode.NOT_FOUND, "Tutor 会话不存在"); }
+        referenceLocks.lockForReference(List.of(session.getCourseId()),
+                List.of(session.getKnowledgePointId()));
         requireCourse(userId, courseId);
         TutorContent content = contentMapper.selectById(session.getTutorContentId());
         if (content == null || !"REVIEWED".equals(content.getReviewStatus())) {
@@ -167,10 +175,7 @@ public class TutorSessionService {
             result.setGuidanceDescription(description.isBlank() ? null : description);
             String contentKey = guidance.path("contentKey").asText();
             if (!contentKey.isBlank()) {
-                KnowledgePoint target = knowledgePointMapper.selectOne(new LambdaQueryWrapper<KnowledgePoint>()
-                        .eq(KnowledgePoint::getCourseId, courseId)
-                        .eq(KnowledgePoint::getContentKey, contentKey)
-                        .eq(KnowledgePoint::getContentReviewStatus, "REVIEWED"));
+                KnowledgePoint target = learningContextService.reviewedPointByKey(courseId, contentKey);
                 if (target != null) {
                     result.setGuidanceKnowledgePointId(target.getId());
                 }

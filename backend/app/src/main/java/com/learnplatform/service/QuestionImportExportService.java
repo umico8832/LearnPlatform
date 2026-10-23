@@ -11,18 +11,15 @@ import com.learnplatform.dto.QuestionImportResult;
 import com.learnplatform.entity.Course;
 import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.Question;
-import com.learnplatform.entity.QuestionKnowledgePoint;
-import com.learnplatform.entity.QuestionOption;
 import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.KnowledgePointMapper;
-import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
-import com.learnplatform.mapper.QuestionOptionMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -41,24 +38,20 @@ public class QuestionImportExportService {
     private static final Logger log = LoggerFactory.getLogger(QuestionImportExportService.class);
 
     private final QuestionMapper questionMapper;
-    private final QuestionOptionMapper questionOptionMapper;
-    private final QuestionKnowledgePointMapper questionKnowledgePointMapper;
     private final CourseMapper courseMapper;
     private final KnowledgePointMapper knowledgePointMapper;
     private final QuestionExcelRowService rowService;
+    private final QuestionImportRowWriter rowWriter;
 
     public QuestionImportExportService(QuestionMapper questionMapper,
-                                        QuestionOptionMapper questionOptionMapper,
-                                        QuestionKnowledgePointMapper questionKnowledgePointMapper,
                                         CourseMapper courseMapper,
                                         KnowledgePointMapper knowledgePointMapper,
-                                        QuestionExcelRowService rowService) {
+                                        QuestionExcelRowService rowService, QuestionImportRowWriter rowWriter) {
         this.questionMapper = questionMapper;
-        this.questionOptionMapper = questionOptionMapper;
-        this.questionKnowledgePointMapper = questionKnowledgePointMapper;
         this.courseMapper = courseMapper;
         this.knowledgePointMapper = knowledgePointMapper;
         this.rowService = rowService;
+        this.rowWriter = rowWriter;
     }
 
     /**
@@ -145,7 +138,7 @@ public class QuestionImportExportService {
     /**
      * 从 Excel 导入题目
      */
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public QuestionImportResult importQuestions(java.io.InputStream inputStream, Long createBy) {
         QuestionImportResult result = new QuestionImportResult();
         List<QuestionExcelDTO> rows = new ArrayList<>();
@@ -172,7 +165,6 @@ public class QuestionImportExportService {
         for (int i = 0; i < rows.size(); i++) {
             QuestionExcelDTO row = rows.get(i);
             int rowNum = i + 2; // Excel 行号（第 1 行是表头）
-            Long insertedQuestionId = null;
 
             try {
                 // 验证必填字段
@@ -226,47 +218,32 @@ public class QuestionImportExportService {
                 question.setReviewRounds(0);
                 question.setNextReviewTime(BusinessTime.now().plusDays(90));
                 question.setDeleted(0);
-                questionMapper.insert(question);
-                insertedQuestionId = question.getId();
 
-                // 处理选项
+                List<QuestionCreateRequest.OptionItem> optionItems = List.of();
                 if ("SINGLE_CHOICE".equals(questionType) || "MULTIPLE_CHOICE".equals(questionType)
                         || "TRUE_FALSE".equals(questionType)) {
-                    List<QuestionCreateRequest.OptionItem> optionItems = rowService.parseOptions(row.getOptions(),
+                    optionItems = rowService.parseOptions(row.getOptions(),
                             row.getAnswer(), questionType);
-                    for (QuestionCreateRequest.OptionItem item : optionItems) {
-                        QuestionOption option = new QuestionOption();
-                        option.setQuestionId(question.getId());
-                        option.setContent(item.getContent());
-                        option.setOptionLabel(item.getOptionLabel());
-                        option.setIsCorrect(item.getIsCorrect());
-                        option.setSortOrder(item.getSortOrder());
-                        option.setDeleted(0);
-                        questionOptionMapper.insert(option);
-                    }
                 }
 
-                // 处理知识点关联
+                List<Long> pointIds = new ArrayList<>();
                 if (row.getKnowledgePoints() != null && !row.getKnowledgePoints().trim().isEmpty()) {
                     String[] kpNames = row.getKnowledgePoints().split(",");
                     for (String kpName : kpNames) {
                         String trimmedName = kpName.trim();
                         if (!trimmedName.isEmpty()) {
-                            Long kpId = kpNameToId.get(trimmedName);
+                            Long kpId = kpNameToId.get(courseId + ":" + trimmedName);
                             if (kpId != null) {
-                                QuestionKnowledgePoint qkp = new QuestionKnowledgePoint();
-                                qkp.setQuestionId(question.getId());
-                                qkp.setKnowledgePointId(kpId);
-                                questionKnowledgePointMapper.insert(qkp);
+                                pointIds.add(kpId);
                             }
                             // 知识点不存在时不阻断导入，只跳过
                         }
                     }
                 }
 
+                rowWriter.write(question, optionItems, pointIds);
                 result.setSuccessCount(result.getSuccessCount() + 1);
             } catch (Exception e) {
-                cleanupFailedImport(insertedQuestionId);
                 log.error("导入题目失败，第 {} 行: {}", rowNum, e.getMessage(), e);
                 result.addError("第 " + rowNum + " 行：导入失败 - " + e.getMessage());
                 result.setFailCount(result.getFailCount() + 1);
@@ -294,20 +271,8 @@ public class QuestionImportExportService {
 
     private Map<String, Long> buildKnowledgePointNameToIdMap() {
         List<KnowledgePoint> kps = knowledgePointMapper.selectList(null);
-        return kps.stream().collect(Collectors.toMap(KnowledgePoint::getName, KnowledgePoint::getId, (a, b) -> a));
+        return kps.stream().collect(Collectors.toMap(kp -> kp.getCourseId() + ":" + kp.getName(),
+                KnowledgePoint::getId, (a, b) -> a));
     }
 
-    private void cleanupFailedImport(Long questionId) {
-        if (questionId == null) {
-            return;
-        }
-        LambdaQueryWrapper<QuestionOption> optionWrapper = new LambdaQueryWrapper<>();
-        optionWrapper.eq(QuestionOption::getQuestionId, questionId);
-        questionOptionMapper.delete(optionWrapper);
-
-        LambdaQueryWrapper<QuestionKnowledgePoint> kpWrapper = new LambdaQueryWrapper<>();
-        kpWrapper.eq(QuestionKnowledgePoint::getQuestionId, questionId);
-        questionKnowledgePointMapper.delete(kpWrapper);
-        questionMapper.deleteById(questionId);
-    }
 }

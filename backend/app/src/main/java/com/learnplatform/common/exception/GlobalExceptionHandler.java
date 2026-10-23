@@ -5,6 +5,9 @@ import com.learnplatform.common.result.ResultCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindException;
@@ -25,6 +28,12 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(PessimisticLockingFailureException.class)
+    public ResponseEntity<R<Void>> writeConflict(PessimisticLockingFailureException exception) {
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
+                .body(R.fail(ResultCode.RATE_LIMITED, "写入冲突，请重试"));
+    }
 
     /**
      * 业务异常

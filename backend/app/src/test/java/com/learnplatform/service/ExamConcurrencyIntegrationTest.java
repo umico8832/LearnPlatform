@@ -457,8 +457,8 @@ class ExamConcurrencyIntegrationTest extends IntegrationTestBase {
         @Primary
         ExamSubmissionService timedExamSubmissions(ExamRecordMapper records, ExamPaperMapper papers,
                                                    ExamAnswerSubmissionService answers, CacheEvictService cache,
-                                                   MutableExamClock clock) {
-            return new ExamSubmissionService(records, papers, answers, cache, clock);
+                                                   MutableExamClock clock, ContentReferenceLockService referenceLocks) {
+            return new ExamSubmissionService(records, papers, answers, cache, clock, referenceLocks);
         }
     }
 }

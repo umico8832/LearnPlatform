@@ -1,8 +1,7 @@
 package com.learnplatform.service;
 
 import com.learnplatform.IntegrationTestBase;
-import com.learnplatform.mapper.CourseMapper;
-import com.learnplatform.mapper.KnowledgePointMapper;
+import com.learnplatform.common.exception.BusinessException;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +11,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag("integration")
 @SpringBootTest
@@ -23,11 +23,11 @@ class ContentReferenceIntegrityIntegrationTest extends IntegrationTestBase {
     private static final long KNOWLEDGE_POINT_ID = 971020L;
 
     @Autowired
-    private CourseMapper courseMapper;
+    private CourseService courses;
     @Autowired
     private JdbcTemplate jdbc;
     @Autowired
-    private KnowledgePointMapper knowledgePointMapper;
+    private KnowledgePointService knowledgePoints;
 
     @Test
     void referenceQueriesCoverCourseAndKnowledgePointDependencies() {
@@ -39,7 +39,10 @@ class ContentReferenceIntegrityIntegrationTest extends IntegrationTestBase {
                         + "VALUES (?, 'reference-integrity-test', 1, 'REVIEWED', '引用测试', JSON_OBJECT(), JSON_OBJECT())",
                 KNOWLEDGE_POINT_ID);
 
-        assertEquals(1L, courseMapper.countReferences(COURSE_ID));
-        assertEquals(1L, knowledgePointMapper.countReferences(KNOWLEDGE_POINT_ID));
+        assertThrows(BusinessException.class, () -> courses.deleteCourse(COURSE_ID));
+        assertThrows(BusinessException.class, () -> knowledgePoints.deleteKnowledgePoint(KNOWLEDGE_POINT_ID));
+        assertEquals(0, jdbc.queryForObject("SELECT deleted FROM course WHERE id=?", Integer.class, COURSE_ID));
+        assertEquals(0, jdbc.queryForObject("SELECT deleted FROM knowledge_point WHERE id=?", Integer.class,
+                KNOWLEDGE_POINT_ID));
     }
 }

@@ -1,13 +1,11 @@
 package com.learnplatform.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.dto.ReviewSubmitRequest;
 import com.learnplatform.entity.PracticeRecord;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionOption;
 import com.learnplatform.mapper.PracticeRecordMapper;
-import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +30,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ReviewAnswerRecordingServiceTest {
 
-    @Mock private QuestionMapper questionMapper;
     @Mock private QuestionOptionMapper questionOptionMapper;
     @Mock private PracticeRecordMapper practiceRecordMapper;
     @Mock private WrongQuestionService wrongQuestionService;
@@ -44,7 +41,6 @@ class ReviewAnswerRecordingServiceTest {
     @BeforeEach
     void setUp() {
         service = new ReviewAnswerRecordingService(
-                questionMapper,
                 questionOptionMapper,
                 practiceRecordMapper,
                 wrongQuestionService,
@@ -57,12 +53,11 @@ class ReviewAnswerRecordingServiceTest {
         ReviewSubmitRequest request = request(" A ");
         Question question = question();
         QuestionOption option = correctOption();
-        when(questionMapper.selectById(12L)).thenReturn(question);
-        when(questionOptionMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(option));
+        when(questionOptionMapper.selectActiveByQuestionIdForShare(12L)).thenReturn(List.of(option));
         when(answerEvaluator.buildCorrectAnswer(List.of(option), "SINGLE_CHOICE")).thenReturn("A");
         when(answerEvaluator.isCorrect("SINGLE_CHOICE", " A ", "A")).thenReturn(true);
 
-        assertTrue(service.evaluateAndRecord(request, 7L));
+        assertTrue(service.evaluateAndRecord(request, 7L, question));
 
         ArgumentCaptor<PracticeRecord> recordCaptor = ArgumentCaptor.forClass(PracticeRecord.class);
         verify(practiceRecordMapper).insert(recordCaptor.capture());
@@ -77,12 +72,12 @@ class ReviewAnswerRecordingServiceTest {
     void evaluateAndRecordWrongAnswerCreatesWrongQuestion() {
         ReviewSubmitRequest request = request("B");
         QuestionOption option = correctOption();
-        when(questionMapper.selectById(12L)).thenReturn(question());
-        when(questionOptionMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(option));
+        Question question = question();
+        when(questionOptionMapper.selectActiveByQuestionIdForShare(12L)).thenReturn(List.of(option));
         when(answerEvaluator.buildCorrectAnswer(List.of(option), "SINGLE_CHOICE")).thenReturn("A");
         when(answerEvaluator.isCorrect("SINGLE_CHOICE", "B", "A")).thenReturn(false);
 
-        assertFalse(service.evaluateAndRecord(request, 7L));
+        assertFalse(service.evaluateAndRecord(request, 7L, question));
 
         verify(wrongQuestionService).addWrongQuestion(7L, 12L, "B");
     }
@@ -91,22 +86,20 @@ class ReviewAnswerRecordingServiceTest {
     void evaluateAndRecordPropagatesWrongQuestionFailureToOwningTransaction() {
         ReviewSubmitRequest request = request("B");
         QuestionOption option = correctOption();
-        when(questionMapper.selectById(12L)).thenReturn(question());
-        when(questionOptionMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(option));
+        Question question = question();
+        when(questionOptionMapper.selectActiveByQuestionIdForShare(12L)).thenReturn(List.of(option));
         when(answerEvaluator.buildCorrectAnswer(List.of(option), "SINGLE_CHOICE")).thenReturn("A");
         when(answerEvaluator.isCorrect("SINGLE_CHOICE", "B", "A")).thenReturn(false);
         doThrow(new IllegalStateException("wrong-question write failed"))
                 .when(wrongQuestionService).addWrongQuestion(7L, 12L, "B");
 
-        assertThrows(IllegalStateException.class, () -> service.evaluateAndRecord(request, 7L));
+        assertThrows(IllegalStateException.class, () -> service.evaluateAndRecord(request, 7L, question));
     }
 
     @Test
     void evaluateAndRecordRejectsMissingQuestionBeforeWritingFacts() {
         ReviewSubmitRequest request = request("A");
-        when(questionMapper.selectById(12L)).thenReturn(null);
-
-        assertThrows(BusinessException.class, () -> service.evaluateAndRecord(request, 7L));
+        assertThrows(BusinessException.class, () -> service.evaluateAndRecord(request, 7L, null));
 
         verify(practiceRecordMapper, never()).insert(any(PracticeRecord.class));
         verifyNoInteractions(wrongQuestionService);
@@ -116,9 +109,7 @@ class ReviewAnswerRecordingServiceTest {
         Question question = question();
         question.setVisibility("PRIVATE");
         question.setOwnerUserId(8L);
-        when(questionMapper.selectById(12L)).thenReturn(question);
-
-        assertThrows(BusinessException.class, () -> service.evaluateAndRecord(request("A"), 7L));
+        assertThrows(BusinessException.class, () -> service.evaluateAndRecord(request("A"), 7L, question));
         verifyNoInteractions(practiceRecordMapper, wrongQuestionService, courseLearningEventService);
     }
 
@@ -126,11 +117,10 @@ class ReviewAnswerRecordingServiceTest {
     void missingGradingBasisDoesNotCreateReviewFacts() {
         Question question = question();
         question.setQuestionType("SHORT_ANSWER");
-        when(questionMapper.selectById(12L)).thenReturn(question);
-        when(questionOptionMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of());
+        when(questionOptionMapper.selectActiveByQuestionIdForShare(12L)).thenReturn(List.of());
 
         assertThrows(BusinessException.class,
-                () -> service.evaluateAndRecordWithReward(request("我的解答"), 7L));
+                () -> service.evaluateAndRecordWithReward(request("我的解答"), 7L, question));
 
         verifyNoInteractions(practiceRecordMapper, wrongQuestionService, courseLearningEventService);
     }

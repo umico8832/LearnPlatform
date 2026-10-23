@@ -1,5 +1,9 @@
 package com.learnplatform.service;
 
+import java.util.HexFormat;
+
+import java.util.Collections;
+
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.ExamPaperVO;
@@ -14,7 +18,6 @@ import com.learnplatform.mapper.CourseMapper;
 import com.learnplatform.mapper.ExamPaperMapper;
 import com.learnplatform.mapper.UserExamSourceMapper;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -24,24 +27,26 @@ import java.util.List;
 public class PrivateExamImportService {
     private final CourseMapper courseMapper;
     private final UserExamSourceMapper sourceMapper;
-    private final PrivateExamSourceStorageService sourceStorageService;
     private final ExamPaperMapper paperMapper;
     private final PrivateExamImportParserService parserService;
     private final PrivateExamConfirmedPaperService confirmedPaperService;
+    private final ContentReferenceLockService referenceLocks;
+    private final PrivateExamConfirmationPersistenceService persistence;
 
     public PrivateExamImportService(
             CourseMapper courseMapper,
             UserExamSourceMapper sourceMapper,
-            PrivateExamSourceStorageService sourceStorageService,
             ExamPaperMapper paperMapper,
             PrivateExamImportParserService parserService,
-            PrivateExamConfirmedPaperService confirmedPaperService) {
+            PrivateExamConfirmedPaperService confirmedPaperService,
+            ContentReferenceLockService referenceLocks, PrivateExamConfirmationPersistenceService persistence) {
         this.courseMapper = courseMapper;
         this.sourceMapper = sourceMapper;
-        this.sourceStorageService = sourceStorageService;
         this.paperMapper = paperMapper;
         this.parserService = parserService;
         this.confirmedPaperService = confirmedPaperService;
+        this.referenceLocks = referenceLocks;
+        this.persistence = persistence;
     }
 
     public PrivateExamImportPreviewVO preview(PrivateExamImportRequest request) {
@@ -54,18 +59,15 @@ public class PrivateExamImportService {
         return parserService.parse(request, sourceHash, false);
     }
 
-    @Transactional
     public ExamPaperVO confirm(PrivateExamImportConfirmRequest request, Long userId) {
         return confirmWithSourceHash(request, userId, sha256(request.getContent()));
     }
 
-    @Transactional
     public ExamPaperVO confirmWithSourceHash(
             PrivateExamImportConfirmRequest request, Long userId, String sourceHash) {
         return confirmWithSourceFile(request, userId, sourceHash, null, null);
     }
 
-    @Transactional
     public ExamPaperVO confirmWithSourceFile(
             PrivateExamImportConfirmRequest request, Long userId, String sourceHash,
             byte[] sourceFile, String sourceMediaType) {
@@ -74,9 +76,7 @@ public class PrivateExamImportService {
             throw new BusinessException(ResultCode.VALIDATION_ERROR, "原始资料已变化，请重新预览确认");
         }
         PrivateExamImportPreviewVO preview = parserService.parse(request, sourceHash, true);
-        UserExamSource source = saveSource(request, userId, sourceHash, sourceFile, sourceMediaType);
-        return createConfirmedPaper(preview.getTitle(), preview.getCourseId(), preview.getDuration(),
-                source, preview.getQuestions(), userId);
+        return persistence.persist(request, userId, sourceHash, sourceFile, sourceMediaType, preview);
     }
 
     public PrivateExamSourceVO getSource(Long paperId, Long userId) {
@@ -103,25 +103,12 @@ public class PrivateExamImportService {
                                      UserExamSource source,
                                      List<PrivateExamImportPreviewVO.QuestionPreview> questions,
                                      Long userId) {
+        referenceLocks.lockForReference(Collections.singletonList(courseId), List.of());
         return confirmedPaperService.create(title, courseId, duration, source, questions, userId);
     }
 
     ExamPaperVO getConfirmedPaper(Long paperId, Long userId) {
         return confirmedPaperService.get(paperId, userId);
-    }
-
-    private UserExamSource saveSource(
-            PrivateExamImportConfirmRequest request, Long userId, String sourceHash,
-            byte[] sourceFile, String sourceMediaType) {
-        UserExamSource source = new UserExamSource();
-        source.setOwnerUserId(userId);
-        source.setSourceName(request.getSourceName().trim());
-        source.setSourceFormat(request.getSourceFormat());
-        source.setContentSha256(sourceHash);
-        source.setOriginalContent(request.getContent());
-        sourceStorageService.attachFileWithinQuota(source, userId, sourceFile, sourceMediaType);
-        sourceMapper.insert(source);
-        return source;
     }
 
     private void ensureCourseExists(Long courseId) {
@@ -135,7 +122,7 @@ public class PrivateExamImportService {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256")
                     .digest(content.getBytes(StandardCharsets.UTF_8));
-            return java.util.HexFormat.of().formatHex(digest);
+            return HexFormat.of().formatHex(digest);
         } catch (Exception exception) {
             throw new IllegalStateException("无法计算内容哈希", exception);
         }

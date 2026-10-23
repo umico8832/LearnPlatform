@@ -1,5 +1,13 @@
 package com.learnplatform.service;
 
+import java.util.Objects;
+
+import java.util.Arrays;
+
+import java.util.Collections;
+
+import java.util.List;
+
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.learnplatform.common.exception.BusinessException;
@@ -30,15 +38,18 @@ public class ExamPaperService {
     private final ExamQuestionMapper examQuestionMapper;
     private final ExamPaperViewService viewService;
     private final ExamPaperValidationService validationService;
+    private final ContentReferenceLockService referenceLocks;
 
     public ExamPaperService(ExamPaperMapper examPaperMapper,
                             ExamQuestionMapper examQuestionMapper,
                             ExamPaperViewService viewService,
-                            ExamPaperValidationService validationService) {
+                            ExamPaperValidationService validationService,
+                            ContentReferenceLockService referenceLocks) {
         this.examPaperMapper = examPaperMapper;
         this.examQuestionMapper = examQuestionMapper;
         this.viewService = viewService;
         this.validationService = validationService;
+        this.referenceLocks = referenceLocks;
     }
 
     /**
@@ -93,6 +104,7 @@ public class ExamPaperService {
      */
     @Transactional
     public ExamPaperVO createExamPaper(ExamPaperCreateRequest request, Long createBy) {
+        referenceLocks.lockForReference(Collections.singletonList(request.getCourseId()), List.of());
         String paperType = ExamPaperValidationService.normalizePaperType(request.getPaperType());
         validationService.ensurePaperTypeSupported(paperType);
         validationService.ensurePublishable(request.getStatus(), request.getQuestions(), 0);
@@ -152,8 +164,15 @@ public class ExamPaperService {
      */
     @Transactional
     public ExamPaperVO updateExamPaper(Long id, ExamPaperCreateRequest request) {
+        ExamPaper beforeLock = examPaperMapper.selectById(id);
+        if (beforeLock == null) { throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在"); }
+        Long targetCourseId = request.getCourseId() == null ? beforeLock.getCourseId() : request.getCourseId();
+        referenceLocks.lockForReference(Arrays.asList(beforeLock.getCourseId(), targetCourseId), List.of());
         ExamPaper paper = examPaperMapper.selectByIdForUpdate(id);
         if (paper == null) { throw new BusinessException(ResultCode.NOT_FOUND, "试卷不存在"); }
+        if (!Objects.equals(beforeLock.getCourseId(), paper.getCourseId())) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR, "试卷归属已变更，请重试");
+        }
         validationService.ensureDraft(paper, "已发布试卷不能修改");
         String paperType = request.getPaperType() != null
                 ? ExamPaperValidationService.normalizePaperType(request.getPaperType())

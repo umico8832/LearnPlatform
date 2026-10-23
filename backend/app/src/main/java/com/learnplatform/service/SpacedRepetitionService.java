@@ -36,19 +36,22 @@ public class SpacedRepetitionService {
     private final CacheEvictService cacheEvictService;
     private final ReviewScheduleQueryService reviewScheduleQueryService;
     private final FsrsReviewService fsrs;
+    private final ContentReferenceLockService referenceLocks;
 
     public SpacedRepetitionService(QuestionReviewScheduleMapper reviewScheduleMapper,
                                     WrongQuestionMapper wrongQuestionMapper,
                                     ReviewAnswerRecordingService reviewAnswerRecordingService,
                                     CacheEvictService cacheEvictService,
                                     ReviewScheduleQueryService reviewScheduleQueryService,
-                                    FsrsReviewService fsrs) {
+                                    FsrsReviewService fsrs,
+                                    ContentReferenceLockService referenceLocks) {
         this.reviewScheduleMapper = reviewScheduleMapper;
         this.wrongQuestionMapper = wrongQuestionMapper;
         this.reviewAnswerRecordingService = reviewAnswerRecordingService;
         this.cacheEvictService = cacheEvictService;
         this.reviewScheduleQueryService = reviewScheduleQueryService;
         this.fsrs = fsrs;
+        this.referenceLocks = referenceLocks;
     }
 
     /**
@@ -115,14 +118,14 @@ public class SpacedRepetitionService {
             throw new BusinessException(ResultCode.VALIDATION_ERROR, "答案不能为空");
         }
 
-        // 查找复习计划
+        var question = referenceLocks.lockQuestions(List.of(questionId), List.of()).get(questionId);
         QuestionReviewSchedule schedule = reviewScheduleMapper.selectByUserAndQuestionForUpdate(userId, questionId);
         if (schedule == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "题目不在复习计划中");
         }
 
         com.learnplatform.dto.ReviewAnswerOutcome outcome = reviewAnswerRecordingService
-                .evaluateAndRecordWithReward(request, userId);
+                .evaluateAndRecordWithReward(request, userId, question);
         boolean isCorrect = outcome.correct();
         schedule = fsrs.score(userId, questionId, FsrsReviewService.Source.REVIEW,
                 outcome.recordId(), isCorrect, request.getSelfAssessedQuality());

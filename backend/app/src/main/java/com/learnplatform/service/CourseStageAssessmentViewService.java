@@ -31,6 +31,11 @@ public class CourseStageAssessmentViewService {
     }
 
     public CourseStageAssessmentVO toView(CourseStageAssessment assessment) {
+        return toView(assessment, assessmentQuestionMapper.selectByAssessmentId(assessment.getId()));
+    }
+
+    public CourseStageAssessmentVO toView(CourseStageAssessment assessment,
+                                         List<CourseStageAssessmentQuestion> items) {
         boolean completed = COMPLETED.equals(assessment.getStatus());
         CourseStageAssessmentVO view = new CourseStageAssessmentVO();
         view.setId(assessment.getId());
@@ -43,7 +48,6 @@ public class CourseStageAssessmentViewService {
         view.setCorrectCount(assessment.getCorrectCount());
         view.setStartTime(assessment.getStartTime());
         view.setCompleteTime(assessment.getCompleteTime());
-        List<CourseStageAssessmentQuestion> items = assessmentQuestionMapper.selectByAssessmentId(assessment.getId());
         view.setSourceComposition(CourseStageAssessmentSourceComposition.from(items));
         view.setKnowledgePointSummary(completed
                 ? CourseStageAssessmentKnowledgePointSummary.from(items, objectMapper) : null);

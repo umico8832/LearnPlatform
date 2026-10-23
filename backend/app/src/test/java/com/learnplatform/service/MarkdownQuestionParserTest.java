@@ -34,15 +34,17 @@ class MarkdownQuestionParserTest {
     private CourseMapper courseMapper;
     @Mock
     private KnowledgePointMapper knowledgePointMapper;
+    @Mock
+    private ContentReferenceLockService referenceLocks;
 
     private MarkdownQuestionParser parser;
 
     @BeforeEach
     void setUp() {
         parser = new MarkdownQuestionParser(
-                questionMapper, questionOptionMapper,
-                questionKnowledgePointMapper, courseMapper, knowledgePointMapper,
-                new MarkdownQuestionContentParser());
+                courseMapper, knowledgePointMapper, new MarkdownQuestionContentParser(),
+                new QuestionImportRowWriter(questionMapper, questionOptionMapper,
+                        questionKnowledgePointMapper, referenceLocks));
     }
 
     @Test

@@ -17,9 +17,11 @@ import java.util.stream.Collectors;
 public class CourseService {
 
     private final CourseMapper courseMapper;
+    private final ContentReferenceLockService referenceLocks;
 
-    public CourseService(CourseMapper courseMapper) {
+    public CourseService(CourseMapper courseMapper, ContentReferenceLockService referenceLocks) {
         this.courseMapper = courseMapper;
+        this.referenceLocks = referenceLocks;
     }
 
     /**
@@ -119,13 +121,8 @@ public class CourseService {
      */
     @Transactional
     public void deleteCourse(Long id) {
-        Course course = courseMapper.selectById(id);
-        if (course == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "课程不存在");
-        }
-        if (courseMapper.countReferences(id) > 0) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR, "课程仍被下游内容引用，无法删除");
-        }
+        referenceLocks.lockCourseForDelete(id);
+        referenceLocks.rejectCourseDeleteWithReferences(id);
         courseMapper.deleteById(id);
     }
 }

@@ -8,6 +8,8 @@ import org.apache.ibatis.annotations.Select;
 
 @Mapper
 public interface ExamPaperMapper extends BaseMapper<ExamPaper> {
+    @Select("SELECT * FROM exam_paper WHERE id=#{id} AND deleted=0 FOR SHARE")
+    ExamPaper selectActiveForShare(@Param("id") Long id);
 
     @Select("SELECT * FROM exam_paper WHERE id = #{id} FOR UPDATE")
     ExamPaper selectByIdForUpdate(@Param("id") Long id);

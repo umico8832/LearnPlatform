@@ -51,6 +51,7 @@ class QuestionServiceTest {
     @Mock private ExamQuestionMapper examQuestionMapper;
     @Mock private QuestionVersionService questionVersionService;
     @Mock private CacheEvictService cacheEvictService;
+    @Mock private ContentReferenceLockService referenceLocks;
 
     @Mock private QuestionUnderstandingContent understanding;
     @Mock private QuestionLearnerStateMapper learnerStates;
@@ -61,11 +62,15 @@ class QuestionServiceTest {
     void setUp() {
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), "QuestionServiceTest"),
                 Question.class);
+        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), "QuestionServiceTest"),
+                QuestionOption.class);
+        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), "QuestionServiceTest"),
+                QuestionKnowledgePoint.class);
         QuestionViewService viewService = new QuestionViewService(
                 questionOptionMapper, questionKnowledgePointMapper, courseMapper, knowledgePointMapper);
         QuestionMutationService mutationService = new QuestionMutationService(
-                questionMapper, questionOptionMapper, questionKnowledgePointMapper, courseMapper,
-                knowledgePointMapper, examQuestionMapper, questionVersionService, cacheEvictService);
+                questionMapper, questionOptionMapper, questionKnowledgePointMapper, examQuestionMapper,
+                questionVersionService, cacheEvictService, referenceLocks);
         questionService = new QuestionService(questionMapper, knowledgePointMapper, viewService, mutationService, understanding, learnerStates);
     }
 

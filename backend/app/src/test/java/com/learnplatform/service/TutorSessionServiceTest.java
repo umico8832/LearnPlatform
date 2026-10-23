@@ -1,5 +1,6 @@
 package com.learnplatform.service;
 
+import com.learnplatform.service.content.LockedContentParents;
 import tools.jackson.databind.json.JsonMapper;
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.config.AiConfig;
@@ -10,7 +11,6 @@ import com.learnplatform.dto.TutorSessionVO;
 import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.TutorContent;
 import com.learnplatform.entity.TutorSession;
-import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.TutorContentMapper;
 import com.learnplatform.mapper.TutorSessionMapper;
 import com.learnplatform.mapper.UserCourseMapper;
@@ -30,19 +30,21 @@ class TutorSessionServiceTest {
     }
 
     @Test void startsOnlyReviewedContentAndNeverReturnsCorrectOption() {
-        UserCourseMapper users = mock(UserCourseMapper.class); KnowledgePointMapper points = mock(KnowledgePointMapper.class);
+        UserCourseMapper users = mock(UserCourseMapper.class);
         TutorContentMapper contents = mock(TutorContentMapper.class); TutorSessionMapper sessions = mock(TutorSessionMapper.class);
         CourseLearningEventService events = mock(CourseLearningEventService.class);
         TutorLearningContextService contexts = mock(TutorLearningContextService.class);
-        when(users.selectCount(any())).thenReturn(1L); KnowledgePoint point = new KnowledgePoint(); point.setId(3L); point.setCourseId(10L); point.setContentReviewStatus("REVIEWED"); when(points.selectById(3L)).thenReturn(point);
+        when(users.selectCount(any())).thenReturn(1L); KnowledgePoint point = new KnowledgePoint(); point.setId(3L); point.setCourseId(10L); point.setContentReviewStatus("REVIEWED");
         TutorContent content = new TutorContent(); content.setId(8L); content.setTitle("ArrayStack"); content.setLessonJson("{\"summary\":\"x\"}"); content.setCheckJson("{\"id\":\"move-direction\",\"prompt\":\"如何搬移？\",\"options\":[{\"id\":\"RIGHT_TO_LEFT\",\"text\":\"从右向左\",\"isCorrect\":true}],\"correctOptionId\":\"RIGHT_TO_LEFT\",\"correctExplanation\":\"正确答案说明\",\"incorrectExplanation\":\"错误答案说明\"}"); when(contents.selectOne(any())).thenReturn(content);
         TutorLearningContextVO learningContext = new TutorLearningContextVO();
         learningContext.setPaperAnswerCount(3); learningContext.setUnresolvedWrongCount(2);
         when(contexts.summarize(7L, 10L, 3L)).thenReturn(learningContext);
         doAnswer(i -> { ((TutorSession) i.getArgument(0)).setId(9L); return 1; }).when(sessions).insert(any(TutorSession.class));
         AiConfig config = new AiConfig(); config.setEnabled(true); config.setToolsSupported(true);
+        ContentReferenceLockService locks = mock(ContentReferenceLockService.class);
+        when(locks.lockForReference(any(), any())).thenReturn(lockedParents(point));
         TutorSessionVO result = new TutorSessionService(
-                users, points, contents, sessions, JsonMapper.builderWithJackson2Defaults().build(), events, contexts, config).start(7L, 10L, 3L);
+                users, contents, sessions, JsonMapper.builderWithJackson2Defaults().build(), events, contexts, config, locks).start(7L, 10L, 3L);
         assertEquals("如何搬移？", result.getCheck().path("prompt").asText());
         assertTrue(result.getCheck().has("options"));
         assertEquals(2, result.getCheck().path("options").get(0).size());
@@ -59,14 +61,14 @@ class TutorSessionServiceTest {
     }
     @Test void rejectsTutorStartOutsideLibrary() {
         UserCourseMapper users = mock(UserCourseMapper.class); when(users.selectCount(any())).thenReturn(0L);
-        TutorSessionService service = new TutorSessionService(users, mock(KnowledgePointMapper.class),
+        TutorSessionService service = new TutorSessionService(users,
                 mock(TutorContentMapper.class), mock(TutorSessionMapper.class), JsonMapper.builderWithJackson2Defaults().build(),
-                mock(CourseLearningEventService.class), mock(TutorLearningContextService.class), new AiConfig());
+                mock(CourseLearningEventService.class), mock(TutorLearningContextService.class), new AiConfig(), mock(ContentReferenceLockService.class));
         assertThrows(BusinessException.class, () -> service.start(7L, 10L, 3L));
     }
 
     @Test void returnsReviewedPrerequisiteAfterIncorrectCheckAndNextTargetAfterCorrectCheck() {
-        UserCourseMapper users = mock(UserCourseMapper.class); KnowledgePointMapper points = mock(KnowledgePointMapper.class);
+        UserCourseMapper users = mock(UserCourseMapper.class);
         TutorContentMapper contents = mock(TutorContentMapper.class); TutorSessionMapper sessions = mock(TutorSessionMapper.class);
         CourseLearningEventService events = mock(CourseLearningEventService.class);
         when(users.selectCount(any())).thenReturn(1L);
@@ -79,9 +81,11 @@ class TutorSessionServiceTest {
         when(sessions.update(any(), any())).thenReturn(1);
         KnowledgePoint prerequisite = new KnowledgePoint(); prerequisite.setId(30L);
         KnowledgePoint nextTarget = new KnowledgePoint(); nextTarget.setId(35L);
-        when(points.selectOne(any())).thenReturn(prerequisite, nextTarget);
-        TutorSessionService service = new TutorSessionService(users, points, contents, sessions,
-                JsonMapper.builderWithJackson2Defaults().build(), events, mock(TutorLearningContextService.class), new AiConfig());
+        TutorLearningContextService contexts = mock(TutorLearningContextService.class);
+        when(contexts.reviewedPointByKey(10L, "ods-array-size-capacity")).thenReturn(prerequisite);
+        when(contexts.reviewedPointByKey(10L, "ods-arraystack-performance")).thenReturn(nextTarget);
+        TutorSessionService service = new TutorSessionService(users, contents, sessions,
+                JsonMapper.builderWithJackson2Defaults().build(), events, contexts, new AiConfig(), mock(ContentReferenceLockService.class));
 
         TutorCheckAnswerRequest incorrect = new TutorCheckAnswerRequest(); incorrect.setOptionId("LEFT_TO_RIGHT");
         TutorCheckResultVO incorrectResult = service.answer(7L, 10L, "session", incorrect);
@@ -99,7 +103,7 @@ class TutorSessionServiceTest {
     }
 
     @Test void usesReviewedContentFeedbackInsteadOfArrayStackInsertionSpecificText() {
-        UserCourseMapper users = mock(UserCourseMapper.class); KnowledgePointMapper points = mock(KnowledgePointMapper.class);
+        UserCourseMapper users = mock(UserCourseMapper.class);
         TutorContentMapper contents = mock(TutorContentMapper.class); TutorSessionMapper sessions = mock(TutorSessionMapper.class);
         CourseLearningEventService events = mock(CourseLearningEventService.class);
         when(users.selectCount(any())).thenReturn(1L);
@@ -110,15 +114,15 @@ class TutorSessionServiceTest {
         when(sessions.selectOne(any())).thenReturn(session);
         when(contents.selectById(8L)).thenReturn(content);
         when(sessions.update(any(), any())).thenReturn(1);
-        TutorSessionService service = new TutorSessionService(users, points, contents, sessions,
-                JsonMapper.builderWithJackson2Defaults().build(), events, mock(TutorLearningContextService.class), new AiConfig());
+        TutorSessionService service = new TutorSessionService(users, contents, sessions,
+                JsonMapper.builderWithJackson2Defaults().build(), events, mock(TutorLearningContextService.class), new AiConfig(), mock(ContentReferenceLockService.class));
 
         TutorCheckAnswerRequest answer = new TutorCheckAnswerRequest(); answer.setOptionId("LEFT_TO_RIGHT");
         assertEquals("正确：删除后从左向右搬移后缀，填补空位。", service.answer(7L, 10L, "session", answer).getExplanation());
     }
 
     @Test void restoresOnlyAnOwnedSessionWhoseContentRemainsReviewed() {
-        UserCourseMapper users = mock(UserCourseMapper.class); KnowledgePointMapper points = mock(KnowledgePointMapper.class);
+        UserCourseMapper users = mock(UserCourseMapper.class);
         TutorContentMapper contents = mock(TutorContentMapper.class); TutorSessionMapper sessions = mock(TutorSessionMapper.class);
         when(users.selectCount(any())).thenReturn(1L);
         TutorSession session = new TutorSession(); session.setUserId(7L); session.setCourseId(10L);
@@ -127,9 +131,9 @@ class TutorSessionServiceTest {
         content.setLessonJson("{\"summary\":\"x\"}"); content.setCheckJson("{\"correctOptionId\":\"A\"}");
         when(sessions.selectOne(any())).thenReturn(session);
         when(contents.selectById(8L)).thenReturn(content);
-        TutorSessionService service = new TutorSessionService(users, points, contents, sessions,
+        TutorSessionService service = new TutorSessionService(users, contents, sessions,
                 JsonMapper.builderWithJackson2Defaults().build(), mock(CourseLearningEventService.class),
-                mock(TutorLearningContextService.class), new AiConfig());
+                mock(TutorLearningContextService.class), new AiConfig(), mock(ContentReferenceLockService.class));
 
         assertFalse(service.get(7L, 10L, "session").getCheck().has("correctOptionId"));
         content.setReviewStatus("REVIEW_PENDING");
@@ -138,7 +142,6 @@ class TutorSessionServiceTest {
 
     @Test void restoresTheRecordedCheckAnswerAndServerGradedResultWithoutLeakingPrivateCheckFields() {
         UserCourseMapper users = mock(UserCourseMapper.class); when(users.selectCount(any())).thenReturn(1L);
-        KnowledgePointMapper points = mock(KnowledgePointMapper.class);
         TutorContentMapper contents = mock(TutorContentMapper.class); TutorSessionMapper sessions = mock(TutorSessionMapper.class);
         TutorSession session = new TutorSession(); session.setUserId(7L); session.setCourseId(10L);
         session.setTutorContentId(8L); session.setSessionKey("session"); session.setLearningContextJson("{}");
@@ -147,9 +150,9 @@ class TutorSessionServiceTest {
         content.setLessonJson("{}"); content.setCheckJson("{\"prompt\":\"选择 A\",\"options\":[{\"id\":\"A\",\"text\":\"A\"}],\"correctOptionId\":\"A\",\"correctExplanation\":\"正确\",\"incorrectExplanation\":\"错误\"}");
         when(sessions.selectOne(any())).thenReturn(session);
         when(contents.selectById(8L)).thenReturn(content);
-        TutorSessionService service = new TutorSessionService(users, points, contents, sessions,
+        TutorSessionService service = new TutorSessionService(users, contents, sessions,
                 JsonMapper.builderWithJackson2Defaults().build(), mock(CourseLearningEventService.class),
-                mock(TutorLearningContextService.class), new AiConfig());
+                mock(TutorLearningContextService.class), new AiConfig(), mock(ContentReferenceLockService.class));
 
         var response = JsonMapper.builderWithJackson2Defaults().build().valueToTree(service.get(7L, 10L, "session"));
         assertEquals("A", response.path("checkAnswer").asText());
@@ -165,7 +168,7 @@ class TutorSessionServiceTest {
         TutorSession session = session(); when(sessions.selectOne(any())).thenReturn(session);
         TutorContent content = reviewedContent("{\"options\":[{\"id\":\"A\"}],\"correctOptionId\":\"A\"}");
         when(contents.selectById(8L)).thenReturn(content);
-        TutorSessionService service = service(users, mock(KnowledgePointMapper.class), contents, sessions);
+        TutorSessionService service = service(users, contents, sessions);
         TutorCheckAnswerRequest request = new TutorCheckAnswerRequest(); request.setOptionId("B");
 
         assertThrows(BusinessException.class, () -> service.answer(7L, 10L, "session", request));
@@ -179,8 +182,8 @@ class TutorSessionServiceTest {
         when(sessions.selectOne(any())).thenReturn(session);
         when(contents.selectById(8L)).thenReturn(reviewedContent("{\"options\":[{\"id\":\"A\"}],\"correctOptionId\":\"A\",\"correctExplanation\":\"正确\"}"));
         CourseLearningEventService events = mock(CourseLearningEventService.class);
-        TutorSessionService service = new TutorSessionService(users, mock(KnowledgePointMapper.class), contents, sessions,
-                JsonMapper.builderWithJackson2Defaults().build(), events, mock(TutorLearningContextService.class), new AiConfig());
+        TutorSessionService service = new TutorSessionService(users, contents, sessions,
+                JsonMapper.builderWithJackson2Defaults().build(), events, mock(TutorLearningContextService.class), new AiConfig(), mock(ContentReferenceLockService.class));
         TutorCheckAnswerRequest request = new TutorCheckAnswerRequest(); request.setOptionId("A");
 
         assertTrue(service.answer(7L, 10L, "session", request).isCorrect());
@@ -191,7 +194,7 @@ class TutorSessionServiceTest {
     @Test void rejectsCrossCourseRemovedAndWithdrawnTutorSessions() {
         TutorSessionMapper sessions = mock(TutorSessionMapper.class); TutorContentMapper contents = mock(TutorContentMapper.class);
         UserCourseMapper users = mock(UserCourseMapper.class); when(users.selectCount(any())).thenReturn(1L);
-        TutorSessionService service = service(users, mock(KnowledgePointMapper.class), contents, sessions);
+        TutorSessionService service = service(users, contents, sessions);
         TutorCheckAnswerRequest request = new TutorCheckAnswerRequest(); request.setOptionId("A");
 
         assertThrows(BusinessException.class, () -> service.answer(7L, 99L, "session", request));
@@ -206,10 +209,17 @@ class TutorSessionServiceTest {
         assertThrows(BusinessException.class, () -> service.answer(7L, 10L, "session", request));
     }
 
-    private TutorSessionService service(UserCourseMapper users, KnowledgePointMapper points,
+    private TutorSessionService service(UserCourseMapper users,
                                         TutorContentMapper contents, TutorSessionMapper sessions) {
-        return new TutorSessionService(users, points, contents, sessions, JsonMapper.builderWithJackson2Defaults().build(),
-                mock(CourseLearningEventService.class), mock(TutorLearningContextService.class), new AiConfig());
+        return new TutorSessionService(users, contents, sessions, JsonMapper.builderWithJackson2Defaults().build(),
+                mock(CourseLearningEventService.class), mock(TutorLearningContextService.class), new AiConfig(), mock(ContentReferenceLockService.class));
+    }
+
+    private LockedContentParents lockedParents(KnowledgePoint point) {
+        com.learnplatform.entity.Course course = new com.learnplatform.entity.Course();
+        course.setId(10L);
+        return new LockedContentParents(java.util.Map.of(10L, course),
+                java.util.Map.of(point.getId(), point));
     }
 
     private TutorSession session() {

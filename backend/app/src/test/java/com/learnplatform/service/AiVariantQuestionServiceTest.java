@@ -8,6 +8,7 @@ import com.learnplatform.dto.AiVariantTrainingVO;
 import com.learnplatform.entity.AiVariantQuestion;
 import com.learnplatform.entity.AiVariantTraining;
 import com.learnplatform.entity.QuestionAiAsset;
+import com.learnplatform.entity.Question;
 import com.learnplatform.mapper.AiVariantQuestionMapper;
 import com.learnplatform.mapper.AiVariantTrainingMapper;
 import com.learnplatform.mapper.QuestionAiAssetMapper;
@@ -25,6 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,13 +38,23 @@ class AiVariantQuestionServiceTest {
     @Mock private QuestionAiAssetMapper questionAiAssetMapper;
     @Mock private AiVariantQuestionMapper aiVariantQuestionMapper;
     @Mock private AiVariantTrainingMapper aiVariantTrainingMapper;
+    @Mock private CourseLearningEventService courseLearningEventService;
+    @Mock private ContentReferenceLockService referenceLocks;
 
     private AiVariantQuestionService service;
 
     @BeforeEach
     void setUp() {
         service = new AiVariantQuestionService(JsonMapper.builderWithJackson2Defaults().build(), questionAiAssetMapper,
-                aiVariantQuestionMapper, aiVariantTrainingMapper, new AnswerEvaluator());
+                aiVariantQuestionMapper, aiVariantTrainingMapper, new AnswerEvaluator(),
+                courseLearningEventService, referenceLocks);
+        lenient().when(referenceLocks.lockQuestions(anyList(), anyList())).thenAnswer(invocation -> {
+            Long questionId = invocation.<java.util.List<Long>>getArgument(0).getFirst();
+            Question source = new Question();
+            source.setId(questionId);
+            source.setCourseId(8L);
+            return java.util.Map.of(questionId, source);
+        });
     }
 
     @Test

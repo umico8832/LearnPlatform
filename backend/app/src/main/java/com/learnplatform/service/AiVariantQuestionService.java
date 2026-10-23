@@ -45,15 +45,7 @@ public class AiVariantQuestionService {
     private final AiVariantTrainingMapper aiVariantTrainingMapper;
     private final AnswerEvaluator answerEvaluator;
     private final CourseLearningEventService courseLearningEventService;
-
-    public AiVariantQuestionService(ObjectMapper objectMapper,
-                                    QuestionAiAssetMapper questionAiAssetMapper,
-                                    AiVariantQuestionMapper aiVariantQuestionMapper,
-                                    AiVariantTrainingMapper aiVariantTrainingMapper,
-                                    AnswerEvaluator answerEvaluator) {
-        this(objectMapper, questionAiAssetMapper, aiVariantQuestionMapper, aiVariantTrainingMapper,
-                answerEvaluator, null);
-    }
+    private final ContentReferenceLockService referenceLocks;
 
     @Autowired
     public AiVariantQuestionService(ObjectMapper objectMapper,
@@ -61,13 +53,15 @@ public class AiVariantQuestionService {
                                     AiVariantQuestionMapper aiVariantQuestionMapper,
                                     AiVariantTrainingMapper aiVariantTrainingMapper,
                                     AnswerEvaluator answerEvaluator,
-                                    CourseLearningEventService courseLearningEventService) {
+                                    CourseLearningEventService courseLearningEventService,
+                                    ContentReferenceLockService referenceLocks) {
         this.objectMapper = objectMapper;
         this.questionAiAssetMapper = questionAiAssetMapper;
         this.aiVariantQuestionMapper = aiVariantQuestionMapper;
         this.aiVariantTrainingMapper = aiVariantTrainingMapper;
         this.answerEvaluator = answerEvaluator;
         this.courseLearningEventService = courseLearningEventService;
+        this.referenceLocks = referenceLocks;
     }
 
     /** 先校验完整 AI JSON，再在同一事务中保存公开资产与私有答案。 */
@@ -121,6 +115,7 @@ public class AiVariantQuestionService {
     /** 首次提交即完成训练；后续重复提交返回首次判分结果，不覆盖行为样本。 */
     @Transactional
     public AiVariantTrainingVO submitAnswer(Long questionId, Long userId, String rawUserAnswer) {
+        var source = referenceLocks.lockQuestions(List.of(questionId), List.of()).get(questionId);
         QuestionAiAsset asset = questionAiAssetMapper.selectOne(new LambdaQueryWrapper<QuestionAiAsset>()
                 .eq(QuestionAiAsset::getQuestionId, questionId)
                 .eq(QuestionAiAsset::getAssetType, "VARIANT"));
@@ -161,7 +156,7 @@ public class AiVariantQuestionService {
             com.learnplatform.entity.Question sourceQuestion = new com.learnplatform.entity.Question();
             sourceQuestion.setId(questionId);
             // 变式题的课程归属仍由原题决定，避免客户端传入或复制课程范围。
-            sourceQuestion.setCourseId(questionAiAssetMapper.findCourseIdByQuestionId(questionId));
+            sourceQuestion.setCourseId(source.getCourseId());
             reward = courseLearningEventService.recordQuestionAnswer(
                     userId, sourceQuestion, "AI_VARIANT_ANSWERED", "AI_TUTOR", training.getId(), correct, now);
         }

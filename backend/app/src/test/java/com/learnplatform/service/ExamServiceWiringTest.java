@@ -26,6 +26,7 @@ class ExamServiceWiringTest {
                 .withBean(QuestionOptionMapper.class, () -> mock(QuestionOptionMapper.class))
                 .withBean(ExamAutomaticGradingGuard.class, () -> mock(ExamAutomaticGradingGuard.class))
                 .withBean(ExamAnswerSubmissionService.class, () -> mock(ExamAnswerSubmissionService.class))
+                .withBean(ContentReferenceLockService.class, () -> mock(ContentReferenceLockService.class))
                 .withBean(CacheEvictService.class, () -> mock(CacheEvictService.class))
                 .withBean(AnswerEvaluator.class)
                 .withBean(ExamSubmissionRewardService.class, () -> mock(ExamSubmissionRewardService.class))

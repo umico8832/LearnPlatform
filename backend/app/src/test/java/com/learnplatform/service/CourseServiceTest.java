@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
 class CourseServiceTest {
@@ -24,7 +25,7 @@ class CourseServiceTest {
     void learnerDetailHidesDisabledCourseButAdminCanInspectIt() {
         Course disabled = course(7L, 0);
         when(courseMapper.selectById(7L)).thenReturn(disabled);
-        CourseService service = new CourseService(courseMapper);
+        CourseService service = new CourseService(courseMapper, mock(ContentReferenceLockService.class));
 
         assertThrows(BusinessException.class, () -> service.getCourseById(7L));
         assertEquals(0, service.getAdminCourseById(7L).getStatus());
@@ -32,13 +33,17 @@ class CourseServiceTest {
 
     @Test
     void deleteRejectsCourseReferencedByLearningContent() {
-        when(courseMapper.selectById(7L)).thenReturn(course(7L, 1));
-        when(courseMapper.countReferences(7L)).thenReturn(1L);
-        CourseService service = new CourseService(courseMapper);
+        ContentReferenceLockService referenceLocks = mock(ContentReferenceLockService.class);
+        org.mockito.Mockito.doThrow(new BusinessException(com.learnplatform.common.result.ResultCode.BUSINESS_ERROR,
+                "课程仍被下游内容引用，无法删除"))
+                .when(referenceLocks).rejectCourseDeleteWithReferences(7L);
+        CourseService service = new CourseService(courseMapper, referenceLocks);
 
         assertThrows(BusinessException.class, () -> service.deleteCourse(7L));
 
         verify(courseMapper, never()).deleteById(7L);
+        verify(referenceLocks).lockCourseForDelete(7L);
+        verify(referenceLocks).rejectCourseDeleteWithReferences(7L);
     }
 
     private Course course(Long id, Integer status) {

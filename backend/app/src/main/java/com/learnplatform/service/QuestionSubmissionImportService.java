@@ -1,14 +1,16 @@
 package com.learnplatform.service;
 
+import java.util.Arrays;
+
+import java.util.Collections;
+
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.common.result.ResultCode;
 import com.learnplatform.dto.QuestionSubmissionVO;
-import com.learnplatform.entity.KnowledgePoint;
 import com.learnplatform.entity.Question;
 import com.learnplatform.entity.QuestionKnowledgePoint;
 import com.learnplatform.entity.QuestionOption;
 import com.learnplatform.entity.QuestionSubmission;
-import com.learnplatform.mapper.KnowledgePointMapper;
 import com.learnplatform.mapper.QuestionKnowledgePointMapper;
 import com.learnplatform.mapper.QuestionMapper;
 import com.learnplatform.mapper.QuestionOptionMapper;
@@ -29,7 +31,7 @@ public class QuestionSubmissionImportService {
     private final QuestionMapper questionMapper;
     private final QuestionOptionMapper questionOptionMapper;
     private final QuestionKnowledgePointMapper questionKnowledgePointMapper;
-    private final KnowledgePointMapper knowledgePointMapper;
+    private final ContentReferenceLockService referenceLocks;
     private final QuestionSourceService questionSourceService;
     private final QuestionSubmissionOptionService optionService;
     private final QuestionSubmissionViewService viewService;
@@ -38,7 +40,7 @@ public class QuestionSubmissionImportService {
                                            QuestionMapper questionMapper,
                                            QuestionOptionMapper questionOptionMapper,
                                            QuestionKnowledgePointMapper questionKnowledgePointMapper,
-                                           KnowledgePointMapper knowledgePointMapper,
+                                           ContentReferenceLockService referenceLocks,
                                            QuestionSourceService questionSourceService,
                                            QuestionSubmissionOptionService optionService,
                                            QuestionSubmissionViewService viewService) {
@@ -46,7 +48,7 @@ public class QuestionSubmissionImportService {
         this.questionMapper = questionMapper;
         this.questionOptionMapper = questionOptionMapper;
         this.questionKnowledgePointMapper = questionKnowledgePointMapper;
-        this.knowledgePointMapper = knowledgePointMapper;
+        this.referenceLocks = referenceLocks;
         this.questionSourceService = questionSourceService;
         this.optionService = optionService;
         this.viewService = viewService;
@@ -61,6 +63,8 @@ public class QuestionSubmissionImportService {
         if (submission.getStatus() != 1) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR, "只有已通过的投稿才能入库");
         }
+        referenceLocks.lockForReference(Collections.singletonList(submission.getCourseId()),
+                parseKnowledgePointIds(submission.getKnowledgePointIds()));
 
         Question question = new Question();
         question.setContent(submission.getContent());
@@ -112,17 +116,25 @@ public class QuestionSubmissionImportService {
         for (String rawId : knowledgePointIds.split(",")) {
             try {
                 Long knowledgePointId = Long.parseLong(rawId.trim());
-                KnowledgePoint knowledgePoint = knowledgePointMapper.selectById(knowledgePointId);
-                if (knowledgePoint != null) {
-                    QuestionKnowledgePoint relation = new QuestionKnowledgePoint();
-                    relation.setQuestionId(questionId);
-                    relation.setKnowledgePointId(knowledgePointId);
-                    questionKnowledgePointMapper.insert(relation);
-                }
+                QuestionKnowledgePoint relation = new QuestionKnowledgePoint();
+                relation.setQuestionId(questionId);
+                relation.setKnowledgePointId(knowledgePointId);
+                questionKnowledgePointMapper.insert(relation);
             } catch (NumberFormatException exception) {
                 log.warn("知识点ID格式错误: {}", rawId);
             }
         }
+    }
+
+    private List<Long> parseKnowledgePointIds(String knowledgePointIds) {
+        if (knowledgePointIds == null || knowledgePointIds.isBlank()) { return List.of(); }
+        return Arrays.stream(knowledgePointIds.split(",")).map(String::trim)
+                .filter(value -> !value.isBlank()).map(value -> {
+                    try { return Long.valueOf(value); }
+                    catch (NumberFormatException exception) {
+                        throw new BusinessException(ResultCode.VALIDATION_ERROR, "知识点ID格式错误");
+                    }
+                }).toList();
     }
 
     private void insertOption(Long questionId, String content, String label, boolean isCorrect, int sortOrder) {
