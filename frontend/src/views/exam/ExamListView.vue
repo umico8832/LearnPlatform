@@ -62,10 +62,7 @@
               <span class="tag" :data-tone="paperTypeTag(paper)">{{ paperTypeLabel(paper) }}</span>
             </div>
 
-            <p class="exam-metrics">
-              <span v-if="paper.courseName">{{ paper.courseName }} · </span>{{ paper.questionCount }} 题 ·
-              {{ paper.duration }} 分钟 · {{ paper.totalScore }} 分
-            </p>
+            <p class="exam-metrics">{{ paperMetrics(paper) }}</p>
             <p v-if="paper.description" class="exam-desc">{{ paper.description }}</p>
             <div v-if="isVerifiedOfficial(paper)" class="official-source">
               <strong>{{ paper.examYear }} · {{ paper.examName }}</strong
@@ -73,7 +70,15 @@
             </div>
             <div v-else-if="paper.visibility === 'PRIVATE'" class="private-source">
               <strong>仅你可见 · 已确认导入</strong
-              ><LtButton @click="showOriginalSource(paper.id)">查看原始资料</LtButton>
+              ><LtButton size="sm" @click="showOriginalSource(paper.id)">查看原始资料</LtButton
+              ><LtButton
+                size="sm"
+                variant="quiet"
+                class="danger"
+                :disabled="isPaperBusy(paper.id)"
+                @click="deletePaper(paper)"
+                >删除试卷</LtButton
+              >
             </div>
           </div>
           <div class="exam-row-controls">
@@ -83,12 +88,6 @@
             </p>
             <div class="exam-actions">
               <LtButton
-                v-if="paper.visibility === 'PRIVATE'"
-                class="danger"
-                :disabled="isPaperBusy(paper.id)"
-                @click="deletePaper(paper)"
-                >删除试卷</LtButton
-              ><LtButton
                 v-if="paper.courseId"
                 :disabled="isPaperBusy(paper.id)"
                 @click="handleStartLearning(paper.id)"
@@ -395,6 +394,11 @@ const paperTypeLabel = (paper: ExamPaperVO) => {
   if (paper.paperType === 'OFFICIAL_EXAM') return '来源未核验'
   return '普通练习'
 }
+
+const paperMetrics = (paper: ExamPaperVO) =>
+  [paper.courseName, `${paper.questionCount} 题`, `${paper.duration} 分钟`, `${paper.totalScore} 分`]
+    .filter(Boolean)
+    .join(' · ')
 
 const paperTypeTag = (paper: ExamPaperVO) => {
   if (paper.visibility === 'PRIVATE') return 'info'
