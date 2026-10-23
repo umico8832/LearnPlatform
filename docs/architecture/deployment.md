@@ -55,6 +55,8 @@ Compose 通过健康条件控制后端、前端和监控依赖启动顺序。
   MySQL 与 SMTP 端口只绑定回环地址，复用完整 Docker 环境的数据卷。启动步骤见[本地开发](../getting-started/local-development.md)。
 - 本地开发、Docker 和 E2E 使用不同 Spring Profile 或 Compose 覆盖；生产环境使用 `prod`（Compose 设置 `SPRING_PROFILES_ACTIVE=docker,prod`），关闭 OpenAPI JSON 与 Swagger UI。
 - E2E 环境使用隔离端口和数据，避免污染日常开发库。
+- [并发验证工具](../../scripts/concurrency/README.md)可在隔离环境叠加第二个后端和 Nginx，两个实例共享 MySQL、Redis。
+  默认开发 Compose 仍为单后端；多实例验证属于本机容量与正确性实验，不构成线上部署或生产承载承诺。
 - 生产部署至少需要更换数据库密码、JWT Secret、Grafana 密码和可选 AI Key。
 - 不把开发演示账号和默认密码用于公开生产环境。
 

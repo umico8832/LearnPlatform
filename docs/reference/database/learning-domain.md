@@ -150,3 +150,10 @@ request_key 为规范 UUID，request_hash 保存请求摘要，response_json 保
 领取、业务写入与响应快照在同一事务提交；重复键竞争者等首次事务完成后通过当前锁定读回放，
 同键异体拒绝，事务失败时请求记录随业务回滚。不会回填、去重或删除历史作答数据。
 作答端点与客户端重试语义见[练习与复习](../api/practice-and-review.md)和[理解页](../api/question-understanding.md)。
+
+## 大题库课程列表索引
+
+公开题库按课程、有效状态及可见性筛选，再按创建时间与 ID 倒序分页。
+`(course_id,deleted,status,visibility,create_time DESC,id DESC)` 索引支持该路径的有序范围读取，
+避免在热门课程中合并单列索引后排序；它不加速任意关键词或无课程条件的全部查询。
+题目、选项与审核内容均保持原语义，增加索引会增加写入和存储成本。

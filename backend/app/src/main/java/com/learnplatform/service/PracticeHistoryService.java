@@ -62,14 +62,9 @@ public class PracticeHistoryService {
     }
 
     public Map<String, Object> getUserPracticeStats(Long userId) {
-        LambdaQueryWrapper<PracticeRecord> wrapper = new LambdaQueryWrapper<>();
-        wrapper.notInSql(PracticeRecord::getQuestionId, QuestionAccessPolicy.DRAFT_IDS_SQL);
-        wrapper.eq(PracticeRecord::getUserId, userId);
-        List<PracticeRecord> records = practiceRecordMapper.selectList(wrapper);
-        int totalAnswered = records.size();
-        int correctCount = (int) records.stream()
-                .filter(record -> record.getIsCorrect() != null && record.getIsCorrect() == 1)
-                .count();
+        PracticeRecordMapper.PracticeStats aggregate = practiceRecordMapper.aggregateVisibleStats(userId);
+        int totalAnswered = Math.toIntExact(aggregate.totalAnswered());
+        int correctCount = Math.toIntExact(aggregate.correctCount());
         int wrongCount = totalAnswered - correctCount;
         double correctRate = totalAnswered > 0
                 ? (double) correctCount / totalAnswered * 100

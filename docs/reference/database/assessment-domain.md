@@ -12,7 +12,8 @@
 | `question_understanding_variant_attempt` | V106 | 本人一次原题理解尝试对应的一次变式首次判分 | `origin_attempt_id` 唯一，保存 `user_id`、`variant_id`、`user_answer`、`is_correct`、可空 `answer_time`、服务端确定的 `assistance=UNAIDED/AIDED`、`create_time` |
 | `http_idempotency_record` | V119，V121 扩展 | 带幂等键 HTTP 写请求的首次响应快照 | `(user_id, operation, request_key)` 唯一；成功记录按纽约时区至少保留7个自然日，按 `create_time` 分批清理 |
 
-练习提交先写入 `practice_record`，再按判分结果同步 `wrong_question` 和必要的复习计划。统计必须从真实记录计算，不能由前端累计值作为事实。
+练习提交先写入 `practice_record`，再按判分结果同步 `wrong_question` 和必要的复习计划。统计必须从真实记录计算，不能由前端累计值作为事实；用户练习总数、正确数、错误数和正确率由数据库按用户聚合为一行，排除 `DRAFT` 题目，但保留题目后来不存在的历史记录。
+聚合通过 `(user_id,question_id,is_correct)` 覆盖索引避免事实行回表，不删除事实或改变判分与奖励；索引增加相应写入和存储成本。
 
 ## HTTP 幂等快照保留与清理
 

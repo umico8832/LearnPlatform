@@ -22,6 +22,11 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Set up Node.js for k6 outcome tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Run repository checks
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
