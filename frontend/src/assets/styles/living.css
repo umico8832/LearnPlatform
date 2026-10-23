@@ -220,6 +220,22 @@ html.lt body {
   outline-offset: 2px;
 }
 
+/* 程序聚焦阅读内容不画控件轮廓；按钮、链接与表单仍保留键盘焦点。 */
+.lt
+  [tabindex='-1']:not(
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    [contenteditable='true'],
+    [role='button'],
+    [role='radio'],
+    [role='tab']
+  ):focus {
+  outline: none;
+}
+
 html.lt::-webkit-scrollbar-thumb,
 .lt ::-webkit-scrollbar-thumb {
   background: var(--lt-fill);
