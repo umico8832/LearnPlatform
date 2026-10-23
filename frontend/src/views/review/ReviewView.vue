@@ -11,7 +11,7 @@ import { useReview } from './useReview'
 
 /**
  * 复习页（ADR-0011 新基线，主线版）：今天到期的题排成队列并说明为什么回来，再列出全部卡片的排期。
- * 进入方式与错题页“重做”一致；AI 复习建议、同步错题与页内自评作答留在旧复习页（`ReviewClassic`）。
+ * 进入方式与错题页“重做”一致；AI 复习建议、同步错题与页内作答留在旧复习页（`ReviewClassic`）。
  */
 defineOptions({ name: 'ReviewView' })
 useLivingTheme()
@@ -162,7 +162,7 @@ onMounted(() => review.load())
     <footer v-if="status !== 'loading'" class="tools">
       <div>
         <h2 class="tools-title">复习工具</h2>
-        <p class="tools-text">AI 复习建议、同步错题，以及在页内作答并自评难度。</p>
+        <p class="tools-text">AI 复习建议、同步错题，以及在页内直接作答。</p>
       </div>
       <LtButton @click="router.push({ name: 'ReviewClassic' })">
         打开复习工具
