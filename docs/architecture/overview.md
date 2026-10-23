@@ -3,7 +3,7 @@
 LearnPlatform 当前是前后端分离的模块化单体 Web 应用。用户学习端和管理系统拥有
 独立 HTML 入口、Router、布局和构建产物，并继续复用同一前端依赖工程、Spring Boot
 后端、账号体系和业务数据。Spring Boot 提供统一 REST/SSE API，MySQL 保存业务事实，
-Redis 提供缓存，AI Provider 通过兼容 OpenAI 的接口接入。
+Redis 提供缓存与跨实例 AI 准入租约，AI Provider 通过兼容 OpenAI 的接口接入。
 
 ## 系统上下文
 

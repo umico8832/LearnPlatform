@@ -123,6 +123,7 @@ ai:
     concurrency: ${AI_EXECUTION_CONCURRENCY:8}
     mode: ${AI_EXECUTION_MODE:platform}
     heartbeat: 5s
+    lease: ${AI_EXECUTION_LEASE:30s}
   enabled: ${AI_ENABLED:false}
   api-base-url: ${AI_API_BASE_URL:https://api.deepseek.com}
   api-key: ${AI_API_KEY:}

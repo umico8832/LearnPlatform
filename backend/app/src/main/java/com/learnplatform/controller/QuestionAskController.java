@@ -94,6 +94,14 @@ public class QuestionAskController {
                 }
             } finally { emitter.complete(); }
         });
+        reservation.onLeaseLost(() -> {
+            clearHeartbeat.run();
+            if (!ended.compareAndSet(false, true)) { return; }
+            job.cancellation().cancel();
+            try { service.cancel(job); }
+            catch (RuntimeException ignored) { /* The worker interrupt still stops local upstream I/O. */ }
+            finally { emitter.complete(); }
+        });
         try {
             send(emitter, "status", Map.of("state", "processing"));
             heartbeat.set(executor.heartbeat(() -> {

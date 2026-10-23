@@ -54,7 +54,7 @@ class QuestionAskControllerTest {
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
                 new CustomUserDetails(7L, "learner", "USER"), null, List.of()));
         executor = new AiTaskExecutor(new AiExecutionProperties(1, AiExecutionProperties.Mode.PLATFORM,
-                Duration.ofMillis(10)), new SimpleMeterRegistry());
+                Duration.ofMillis(10), Duration.ofSeconds(3)), new SimpleMeterRegistry());
         mvc = MockMvcBuilders.standaloneSetup(new QuestionAskController(service, executor))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver()).build();

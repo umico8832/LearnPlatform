@@ -2,6 +2,7 @@ package com.learnplatform.config;
 
 import com.learnplatform.common.exception.BusinessException;
 import com.learnplatform.service.ai.AiTaskExecutor;
+import com.learnplatform.service.ai.LocalAiAdmissionGate;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -16,9 +17,15 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.awaitility.Awaitility.await;
 
 class AiAsyncConfigTest {
+    @org.junit.jupiter.api.Test void admissionRedisTimeoutStaysWellInsideEveryLeaseRenewalWindow() {
+        assertEquals(Duration.ofMillis(125), AiAsyncConfig.admissionTimeout(Duration.ofSeconds(1)));
+        assertEquals(Duration.ofMillis(500), AiAsyncConfig.admissionTimeout(Duration.ofSeconds(30)));
+    }
+
     private AiTaskExecutor executor(AiExecutionProperties.Mode mode, int capacity) {
-        return new AiAsyncConfig().aiTaskExecutor(
-                new AiExecutionProperties(capacity, mode, Duration.ofMillis(10)), new SimpleMeterRegistry());
+        return new AiTaskExecutor(
+                new AiExecutionProperties(capacity, mode, Duration.ofMillis(10), Duration.ofSeconds(3)),
+                new SimpleMeterRegistry(), new LocalAiAdmissionGate(capacity));
     }
 
     @ParameterizedTest @EnumSource(AiExecutionProperties.Mode.class)

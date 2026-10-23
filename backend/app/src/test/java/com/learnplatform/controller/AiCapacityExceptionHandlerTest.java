@@ -44,7 +44,7 @@ class AiCapacityExceptionHandlerTest {
         var diagnosis = mock(LearningDiagnosisService.class);
         var exam = mock(ExamLearningAiService.class);
         try (var executor = new AiTaskExecutor(new AiExecutionProperties(1, AiExecutionProperties.Mode.PLATFORM,
-                Duration.ofSeconds(5)), new SimpleMeterRegistry()); var occupied = executor.reserve()) {
+                Duration.ofSeconds(5), Duration.ofSeconds(3)), new SimpleMeterRegistry()); var occupied = executor.reserve()) {
             org.junit.jupiter.api.Assertions.assertNotNull(occupied);
             var mvc = MockMvcBuilders.standaloneSetup(
                     new AiController(ai, mock(AiCallGovernanceService.class),
