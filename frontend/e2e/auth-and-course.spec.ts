@@ -327,10 +327,10 @@ test('部分交卷后未答题保留零分且不会进入错题与复习', async
   await page.goto('/review/classic')
   await page.getByRole('button', { name: '同步错题到复习' }).click()
   await expect(page.getByText('复习卡片', { exact: true })).toBeVisible()
-  await expect(page.locator('.stats-grid')).toContainText('1')
+  await expect(page.locator('.overview')).toContainText('1')
   await page.getByRole('button', { name: '查看全部卡片' }).click()
-  await expect(page.locator('.all-cards-card')).toContainText('Java 中用于定义类继承关系的关键字')
-  await expect(page.locator('.all-cards-card tbody tr')).toHaveCount(1)
+  await expect(page.locator('.card-list')).toContainText('Java 中用于定义类继承关系的关键字')
+  await expect(page.locator('.card-list li')).toHaveCount(1)
 })
 
 test('用户可预览确认结构化私有试卷并隔离给其他账号', async ({ page }) => {

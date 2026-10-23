@@ -156,7 +156,7 @@ export const learnerRoutes: RouteRecordRaw[] = [
         path: 'review/classic',
         name: 'ReviewClassic',
         component: () => import('@/views/practice/ReviewView.vue'),
-        meta: { title: '复习工具' },
+        meta: { title: '复习工具', living: true },
       },
       {
         path: 'profile',

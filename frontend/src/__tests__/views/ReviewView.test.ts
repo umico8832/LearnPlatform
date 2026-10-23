@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { flushPromises, mount } from '@vue/test-utils'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 
 const {
   mockGetReviewStats,
@@ -8,6 +8,7 @@ const {
   mockGetAllReviewCards,
   mockGetQuestionById,
   mockReset,
+  mockSync,
   mockConfirm,
 } = vi.hoisted(() => ({
   mockGetReviewStats: vi.fn(),
@@ -15,6 +16,7 @@ const {
   mockGetAllReviewCards: vi.fn(),
   mockGetQuestionById: vi.fn(),
   mockReset: vi.fn(),
+  mockSync: vi.fn(),
   mockConfirm: vi.fn(),
 }))
 
@@ -25,7 +27,7 @@ vi.mock('@/api/review', () => ({
   submitReview: vi.fn(),
   removeFromReviewPlan: vi.fn(),
   resetReviewProgress: (...args: unknown[]) => mockReset(...args),
-  syncWrongQuestionsToReview: vi.fn(),
+  syncWrongQuestionsToReview: (...args: unknown[]) => mockSync(...args),
   getAiReviewSuggestionStream: vi.fn(),
 }))
 
@@ -51,6 +53,8 @@ vi.mock('vue-router', () => ({
 
 import ReviewView from '@/views/practice/ReviewView.vue'
 import { removeToken, setToken } from '@/utils/auth'
+
+enableAutoUnmount(afterEach)
 
 describe('ReviewView course target', () => {
   beforeEach(() => {
@@ -151,12 +155,9 @@ describe('ReviewView course target', () => {
       },
     })
     await flushPromises()
-    const start = wrapper.findAll('button').find((button) => button.text().includes('开始复习'))!
+    const start = wrapper.get('[data-testid="review-start"]')
     expect(start.attributes('disabled')).toBeDefined()
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text().includes('查看全部卡片'))!
-      .trigger('click')
+    await wrapper.get('[data-testid="review-toggle-cards"]').trigger('click')
     await flushPromises()
     expect(wrapper.text()).toContain('待补答案的历史卡片')
     expect(wrapper.text()).toContain('待配置答案')
@@ -208,7 +209,7 @@ describe('ReviewView course target', () => {
       },
     })
     await flushPromises()
-    const start = wrapper.findAll('button').find((button) => button.text().includes('开始复习'))!
+    const start = wrapper.get('[data-testid="review-start"]')
     await start.trigger('click')
     expect(mockGetDueReviewCards).toHaveBeenCalledTimes(1)
     resolve(cards)
@@ -243,7 +244,7 @@ describe('ReviewView course target', () => {
     })
     await flushPromises()
 
-    const start = wrapper.findAll('button').find((button) => button.text().includes('开始复习'))!
+    const start = wrapper.get('[data-testid="review-start"]')
     const pending = start.trigger('click')
     setToken('review-account-b')
     resolve({
@@ -324,22 +325,40 @@ describe('ReviewView course target', () => {
       },
     })
     await flushPromises()
-    const start = wrapper.findAll('button').find((button) => button.text().includes('开始复习'))!
+    const start = wrapper.get('[data-testid="review-start"]')
     expect(start.attributes('disabled')).toBeDefined()
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text().includes('查看全部卡片'))!
-      .trigger('click')
+    await wrapper.get('[data-testid="review-toggle-cards"]').trigger('click')
     await flushPromises()
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === '重置')!
-      .trigger('click')
+    await wrapper.get('[data-testid="review-card-reset"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-testid="review-confirm-action"]').trigger('click')
     await flushPromises()
 
     expect(mockReset).toHaveBeenCalledWith(21, { errorDisplay: 'inline' })
     expect(mockGetReviewStats).toHaveBeenCalledTimes(2)
     expect(start.attributes('disabled')).toBeUndefined()
     wrapper.unmount()
+  })
+  it('does not write a late sync result into a switched account', async () => {
+    routeQuery = {}
+    let finish!: (value: unknown) => void
+    mockSync.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+    )
+    setToken('review-before-sync')
+    const wrapper = mount(ReviewView)
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '同步错题到复习')!
+      .trigger('click')
+    setToken('review-after-sync')
+    finish({ data: { syncedCount: 8 } })
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('已同步 8 道错题')
+    expect(mockGetReviewStats).toHaveBeenCalledTimes(1)
   })
 })
