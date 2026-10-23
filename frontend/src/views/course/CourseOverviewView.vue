@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="lt" data-appearance="dark">
     <CourseOverviewContent
       :overview="overview"
       :loading="loading"

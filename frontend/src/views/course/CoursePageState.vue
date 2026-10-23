@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { LtButton, LtCard } from '@/components/living'
-defineProps<{ state: 'loading' | 'error' | 'empty'; title: string; description?: string }>()
+defineProps<{ state: 'loading' | 'error' | 'empty'; title: string; description?: string; retryLabel?: string }>()
 defineEmits<{ retry: [] }>()
 </script>
 <template>
@@ -12,7 +12,8 @@ defineEmits<{ retry: [] }>()
   >
     <h2>{{ title }}</h2>
     <p v-if="description">{{ description }}</p>
-    <LtButton v-if="state === 'error'" variant="primary" @click="$emit('retry')">重试</LtButton><slot />
+    <LtButton v-if="state === 'error'" variant="primary" @click="$emit('retry')">{{ retryLabel || '重试' }}</LtButton
+    ><slot />
   </LtCard>
 </template>
 <style scoped>

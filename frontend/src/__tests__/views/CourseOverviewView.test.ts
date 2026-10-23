@@ -44,20 +44,10 @@ vi.mock('vue-router', () => ({
 import CourseOverviewView from '@/views/course/CourseOverviewView.vue'
 
 const stubs = {
-  'el-button': { template: '<button @click="$emit(\'click\')"><slot /></button>', emits: ['click'] },
-  'el-tag': { template: '<span><slot /></span>' },
-  'el-result': { template: '<section><slot /><slot name="extra" /></section>' },
-  'el-alert': { template: '<p>{{ title }}</p>', props: ['title'] },
-  'el-dialog': { template: '<section><slot /><slot name="footer" /></section>' },
-  'el-radio-group': { template: '<div><slot /></div>' },
-  'el-radio': { template: '<label><slot /></label>' },
-  'el-checkbox-group': { template: '<div><slot /></div>' },
-  'el-checkbox': { template: '<label><slot /></label>' },
-  'el-pagination': { template: '<nav />' },
-  'el-form': { template: '<form><slot /></form>' },
-  'el-form-item': { template: '<div><slot /></div>' },
-  'el-select': { template: '<select><slot /></select>' },
-  'el-option': { template: '<option>{{ label }}</option>', props: ['label'] },
+  LtSheet: {
+    template: '<section :data-sheet-title="title" :data-open="open"><slot /></section>',
+    props: ['open', 'title'],
+  },
 }
 
 function findButton(wrapper: ReturnType<typeof mount>, text: string) {
@@ -203,9 +193,12 @@ describe('CourseOverviewView', () => {
   it('从课程中枢的更多入口进入当前课程的试卷学习', async () => {
     const wrapper = mount(CourseOverviewView, { global: { stubs } })
     await flushPromises()
-    const vm = wrapper.vm as unknown as { handleMoreCommand: (command: string) => void }
-
-    vm.handleMoreCommand('papers')
+    const sheet = wrapper.get('[data-sheet-title="课程操作"]')
+    expect(sheet.attributes('data-open')).toBe('false')
+    await findButton(wrapper, '更多').trigger('click')
+    expect(sheet.attributes('data-open')).toBe('true')
+    await findButton(wrapper, '课程试卷').trigger('click')
+    expect(sheet.attributes('data-open')).toBe('false')
 
     expect(mockPush).toHaveBeenCalledWith({
       name: 'ExamList',

@@ -9,17 +9,7 @@ vi.mock('@/api/course', () => ({
 }))
 
 const stubs = {
-  'el-button': { template: '<button @click="$emit(\'click\')"><slot /></button>', emits: ['click'] },
-  'el-icon': { template: '<span><slot /></span>' },
-  'el-tooltip': {
-    props: ['content'],
-    template: '<span data-test="facts-help" :data-content="content"><slot /></span>',
-  },
-  'el-tag': { template: '<span><slot /></span>' },
-  'el-pagination': {
-    template: '<nav><button @click="$emit(\'current-change\', 2)">下一页</button></nav>',
-    emits: ['current-change'],
-  },
+  LtSheet: { template: '<section v-if="open" role="dialog"><slot /></section>', props: ['open'] },
 }
 
 const currentFact = {
@@ -45,8 +35,12 @@ describe('KnowledgePointFactsPanel', () => {
 
     expect(mockGetFacts).toHaveBeenCalledWith(408, 1, 10, { errorDisplay: 'inline' })
     expect(wrapper.text()).toContain('作答次数')
-    expect(wrapper.get('[data-test="facts-help"]').attributes('data-content')).toContain('作答与答对按次数统计')
-    expect(wrapper.get('[data-test="facts-help"]').attributes('data-content')).toContain('错题与复习按题目统计')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '查看统计口径')!
+      .trigger('click')
+    expect(wrapper.get('[role="dialog"]').text()).toContain('作答与答对按次数统计')
+    expect(wrapper.get('[role="dialog"]').text()).toContain('错题与复习按题目统计')
     expect(wrapper.text()).toContain('6')
     await wrapper
       .findAll('button')
@@ -65,7 +59,10 @@ describe('KnowledgePointFactsPanel', () => {
     expect(wrapper.emitted('open-wrong-questions')).toEqual([[31, '栈']])
     expect(wrapper.emitted('open-tutor')).toEqual([[31]])
 
-    await wrapper.find('nav button').trigger('click')
+    await wrapper
+      .findAll('nav button')
+      .find((button) => button.text() === '下一页')!
+      .trigger('click')
     expect(mockGetFacts).toHaveBeenLastCalledWith(408, 2, 10, { errorDisplay: 'inline' })
   })
 

@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { LtButton, LtSheet } from '@/components/living'
 
-/**
- * 阶段测评设置弹窗：选择课程整体或单个已审查知识点范围。
- * 行为契约与 CourseOverviewView 保持一致（E2E 依赖弹窗标题与按钮文案）。
- */
 const props = withDefaults(
   defineProps<{
     visible: boolean
@@ -20,10 +17,11 @@ const emit = defineEmits<{
   (e: 'start', knowledgePointId: number): void
 }>()
 
-/** el-dialog 使用 v-model 需要可写代理。 */
-const dialogVisible = computed({
+const sheetOpen = computed({
   get: () => props.visible,
-  set: (value: boolean) => emit('update:visible', value),
+  set: (value: boolean) => {
+    if (value || !props.starting) emit('update:visible', value)
+  },
 })
 
 const knowledgePointId = ref(0)
@@ -34,49 +32,68 @@ watch(
     if (value) knowledgePointId.value = 0
   },
 )
-
-function handleStart() {
-  emit('start', knowledgePointId.value)
-}
 </script>
 
 <template>
-  <el-dialog
-    v-model="dialogVisible"
-    title="开始阶段测评"
-    width="min(480px, 94vw)"
-    :close-on-click-modal="false"
-    :close-on-press-escape="!starting"
-    :show-close="!starting"
-  >
-    <p class="assessment-setup-intro">从课程范围中选择 5 道题；系统会保留未完成测评供你继续作答。</p>
-    <el-alert v-if="error" class="assessment-setup-error" type="error" :title="error" :closable="false" />
-    <el-form label-position="top" :disabled="starting" @submit.prevent>
-      <el-form-item label="知识点范围">
-        <el-select v-model="knowledgePointId" placeholder="选择知识点范围" class="assessment-scope-select">
-          <el-option :value="0" label="课程整体测评" />
-          <el-option v-for="item in knowledgePoints" :key="item.id" :value="item.id" :label="item.title" />
-        </el-select>
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <el-button :disabled="starting" @click="emit('update:visible', false)">取消</el-button>
-      <el-button type="primary" :loading="starting" @click="handleStart">开始测评</el-button>
-    </template>
-  </el-dialog>
+  <LtSheet v-model:open="sheetOpen" title="开始阶段测评">
+    <form class="assessment-setup" :aria-busy="starting" @submit.prevent="emit('start', knowledgePointId)">
+      <p class="assessment-setup-intro">从课程范围中选择 5 道题；系统会保留未完成测评供你继续作答。</p>
+      <p v-if="error" class="assessment-setup-error" role="alert">{{ error }}</p>
+      <label class="assessment-field">
+        <span>知识点范围</span>
+        <select v-model.number="knowledgePointId" :disabled="starting" name="knowledge-point-scope">
+          <option :value="0">课程整体测评</option>
+          <option v-for="item in knowledgePoints" :key="item.id" :value="item.id">{{ item.title }}</option>
+        </select>
+      </label>
+      <div class="assessment-actions">
+        <LtButton :disabled="starting" @click="sheetOpen = false">取消</LtButton>
+        <LtButton type="submit" variant="primary" :disabled="starting">{{
+          starting ? '正在开始…' : '开始测评'
+        }}</LtButton>
+      </div>
+    </form>
+  </LtSheet>
 </template>
 
 <style scoped>
-.assessment-scope-select {
-  width: 100%;
+.assessment-setup {
+  display: grid;
+  gap: var(--lt-space-4);
 }
-.assessment-setup-intro {
-  margin: 0 0 var(--lp-space-4);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  line-height: var(--lp-leading-body);
+.assessment-setup-intro,
+.assessment-setup-error {
+  margin: 0;
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-subhead);
+  line-height: var(--lt-leading-reading);
 }
 .assessment-setup-error {
-  margin-bottom: var(--lp-space-4);
+  padding: var(--lt-space-3);
+  border-radius: var(--lt-radius-sm);
+  background: var(--lt-red-soft);
+  color: var(--lt-red-text);
+}
+.assessment-field {
+  display: grid;
+  gap: var(--lt-space-2);
+  color: var(--lt-label);
+  font-size: var(--lt-text-footnote);
+  font-weight: 600;
+}
+.assessment-field select {
+  width: 100%;
+  min-height: var(--lt-control-lg);
+  padding: 0 var(--lt-space-3);
+  border: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill-2);
+  color: var(--lt-label);
+  font: inherit;
+}
+.assessment-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--lt-space-2);
 }
 </style>

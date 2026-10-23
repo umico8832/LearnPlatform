@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, watch } from 'vue'
+import { LtButton, LtSheet } from '@/components/living'
 import type { CourseStageAssessmentVO } from '@/api/course'
 
-/**
- * 阶段测评作答/复盘弹窗：进行中隐藏答案，完成后展示判分、题源与知识点汇总。
- * 行为契约与 CourseOverviewView 保持一致（E2E 依赖弹窗标题、.assessment-question 与按钮文案）。
- */
 const props = defineProps<{
   visible: boolean
   assessment: CourseStageAssessmentVO | null
@@ -14,9 +11,7 @@ const props = defineProps<{
   focusQuestionId: number | null
   reviewedKnowledgePointIds: number[]
 }>()
-
 const answers = defineModel<Record<number, string[]>>('answers', { required: true })
-
 const emit = defineEmits<{
   (e: 'update:visible', value: boolean): void
   (e: 'submit'): void
@@ -24,22 +19,19 @@ const emit = defineEmits<{
   (e: 'review-wrong-by-kp', point: { id: number; name: string }): void
   (e: 'open-kp-tutor', knowledgePointId: number): void
 }>()
-
-/** el-dialog 使用 v-model 需要可写代理。 */
-const dialogVisible = computed({
+const sheetOpen = computed({
   get: () => props.visible,
-  set: (value: boolean) => emit('update:visible', value),
+  set: (value: boolean) => {
+    if (value || !props.submitting) emit('update:visible', value)
+  },
 })
-
 const strategyLabel = computed(() =>
   props.assessment?.selectionStrategy === 'LEARNING_STATE_PRIORITY'
     ? '根据当前错题、到期复习和近期作答情况安排题目'
     : '学习记录不足时，按课程题序安排题目',
 )
-
 const isReviewed = (knowledgePointId: number) => props.reviewedKnowledgePointIds.includes(knowledgePointId)
 const questionElements = new Map<number, HTMLElement>()
-
 watch(
   () => props.focusQuestionId,
   async (questionId) => {
@@ -50,7 +42,6 @@ watch(
     element?.focus({ preventScroll: true })
   },
 )
-
 function sourceCompositionText(composition: CourseStageAssessmentVO['sourceComposition']) {
   if (!composition) return '暂无题源快照'
   return [
@@ -64,71 +55,47 @@ function sourceCompositionText(composition: CourseStageAssessmentVO['sourceCompo
     .join(' · ')
 }
 </script>
-
 <template>
-  <el-dialog
-    v-model="dialogVisible"
-    class="stage-assessment-dialog"
-    title="课程阶段测评"
-    width="min(780px, 94vw)"
-    :close-on-click-modal="false"
-    :close-on-press-escape="!submitting"
-    :show-close="!submitting"
-  >
-    <template v-if="assessment">
-      <el-alert
-        :title="strategyLabel"
-        :type="assessment.selectionStrategy === 'LEARNING_STATE_PRIORITY' ? 'info' : 'warning'"
-        :closable="false"
-        show-icon
-      />
+  <LtSheet v-model:open="sheetOpen" title="课程阶段测评">
+    <div v-if="assessment" class="stage-assessment" :aria-busy="submitting">
+      <p
+        class="assessment-notice"
+        :data-priority="assessment.selectionStrategy === 'LEARNING_STATE_PRIORITY' ? 'info' : 'warning'"
+      >
+        {{ strategyLabel }}
+      </p>
       <p class="assessment-source-composition">
         范围：{{ assessment.targetKnowledgePointName || '课程整体' }} · 题源构成：{{
           sourceCompositionText(assessment.sourceComposition)
         }}
       </p>
-      <el-alert
-        v-if="submitError"
-        class="assessment-submit-error"
-        type="error"
-        :title="submitError"
-        :closable="false"
-      />
+      <p v-if="submitError" class="assessment-submit-error" role="alert">{{ submitError }}</p>
       <p v-if="assessment.status === 'COMPLETED'" class="assessment-summary">
         答对 {{ assessment.correctCount }} / {{ assessment.questionCount }} 题
       </p>
-      <div
+      <section
         v-if="assessment.status === 'COMPLETED' && assessment.knowledgePointSummary?.length"
         class="assessment-kp-summary"
+        aria-labelledby="assessment-kp-summary-heading"
       >
-        <h4 class="assessment-kp-summary-heading">按知识点统计</h4>
-        <ul class="assessment-kp-summary-list">
-          <li v-for="point in assessment.knowledgePointSummary" :key="point.id" class="assessment-kp-summary-item">
-            <span>知识点：{{ point.name }}</span>
-            <span class="assessment-kp-summary-count"
+        <h3 id="assessment-kp-summary-heading">按知识点统计</h3>
+        <ul>
+          <li v-for="point in assessment.knowledgePointSummary" :key="point.id">
+            <span>知识点：{{ point.name }}</span
+            ><span class="assessment-kp-summary-count"
               >答对 {{ point.correctCount }} / {{ point.questionCount }} 题</span
-            >
-            <el-button
+            ><LtButton
               v-if="point.correctCount < point.questionCount"
-              size="small"
-              text
-              type="danger"
+              size="sm"
+              variant="plain"
               @click="emit('review-wrong-by-kp', { id: point.id, name: point.name })"
+              >复习该知识点错题</LtButton
+            ><LtButton v-if="isReviewed(point.id)" size="sm" variant="plain" @click="emit('open-kp-tutor', point.id)"
+              >进入教学</LtButton
             >
-              复习该知识点错题
-            </el-button>
-            <el-button
-              v-if="isReviewed(point.id)"
-              size="small"
-              text
-              type="primary"
-              @click="emit('open-kp-tutor', point.id)"
-            >
-              进入教学
-            </el-button>
           </li>
         </ul>
-      </div>
+      </section>
       <div class="assessment-list">
         <article
           v-for="question in assessment.questions"
@@ -137,174 +104,222 @@ function sourceCompositionText(composition: CourseStageAssessmentVO['sourceCompo
           class="assessment-question"
           tabindex="-1"
         >
-          <div class="assessment-question-header">
+          <header class="assessment-question-header">
             <strong>{{ question.sortOrder }}. {{ question.content }}</strong>
             <div class="assessment-question-tags">
-              <el-tag v-if="question.sourceType === 'AI_GENERATED'" type="warning" effect="plain">
-                AI 审查生成题<span v-if="question.originQuestionId"> · 母题 #{{ question.originQuestionId }}</span>
-              </el-tag>
-              <el-tag v-if="question.correct != null" :type="question.correct ? 'success' : 'danger'">
-                {{ question.correct ? '正确' : '错误' }}
-              </el-tag>
-              <template v-for="point in question.knowledgePoints ?? []" :key="point.id">
-                <el-button
+              <span v-if="question.sourceType === 'AI_GENERATED'" class="assessment-tag assessment-tag--warning"
+                >AI 审查生成题<span v-if="question.originQuestionId">
+                  · 母题 #{{ question.originQuestionId }}</span
+                ></span
+              ><span
+                v-if="question.correct != null"
+                class="assessment-tag"
+                :data-result="question.correct ? 'correct' : 'wrong'"
+                >{{ question.correct ? '正确' : '错误' }}</span
+              ><template v-for="point in question.knowledgePoints ?? []" :key="point.id"
+                ><LtButton
                   v-if="isReviewed(point.id)"
-                  size="small"
-                  text
-                  type="primary"
+                  size="sm"
+                  variant="plain"
                   class="kp-entry"
                   @click="emit('open-kp-tutor', point.id)"
-                >
-                  知识点：{{ point.name }}
-                </el-button>
-                <el-tag v-else size="small" effect="plain">知识点：{{ point.name }}</el-tag>
-              </template>
+                  >知识点：{{ point.name }}</LtButton
+                ><span v-else class="assessment-tag">知识点：{{ point.name }}</span></template
+              >
             </div>
-          </div>
-          <el-checkbox-group
+          </header>
+          <fieldset
             v-if="question.questionType === 'MULTIPLE_CHOICE'"
-            v-model="answers[question.id]"
-            :disabled="assessment.status === 'COMPLETED' || submitting"
             class="assessment-options"
-          >
-            <el-checkbox v-for="option in question.options" :key="option.label" :value="option.label">
-              {{ option.label }}. {{ option.content }}
-            </el-checkbox>
-          </el-checkbox-group>
-          <el-radio-group
-            v-else
-            v-model="answers[question.id][0]"
             :disabled="assessment.status === 'COMPLETED' || submitting"
-            class="assessment-options"
           >
-            <el-radio v-for="option in question.options" :key="option.label" :value="option.label">
-              {{ option.content }}
-            </el-radio>
-          </el-radio-group>
+            <legend class="lt-sr-only">第 {{ question.sortOrder }} 题，多选</legend>
+            <label v-for="option in question.options" :key="option.label" class="assessment-option"
+              ><input v-model="answers[question.id]" type="checkbox" :value="option.label" /><span
+                >{{ option.label }}. {{ option.content }}</span
+              ></label
+            >
+          </fieldset>
+          <fieldset v-else class="assessment-options" :disabled="assessment.status === 'COMPLETED' || submitting">
+            <legend class="lt-sr-only">第 {{ question.sortOrder }} 题，单选</legend>
+            <label v-for="option in question.options" :key="option.label" class="assessment-option"
+              ><input
+                v-model="answers[question.id][0]"
+                type="radio"
+                :name="`assessment-${question.id}`"
+                :value="option.label"
+              /><span>{{ option.label }}. {{ option.content }}</span></label
+            >
+          </fieldset>
           <div v-if="assessment.status === 'COMPLETED'" class="assessment-result">
             <p>参考答案：{{ question.correctAnswer }}</p>
             <p>{{ question.analysis || '暂无解析' }}</p>
-            <el-button
+            <LtButton
               v-if="question.correct === false"
-              size="small"
-              type="primary"
-              plain
+              size="sm"
+              variant="primary"
               @click="emit('review-wrong', question.questionId)"
+              >进入错题复习</LtButton
             >
-              进入错题复习
-            </el-button>
           </div>
         </article>
       </div>
-    </template>
-    <template #footer>
-      <el-button :disabled="submitting" @click="emit('update:visible', false)">关闭</el-button>
-      <el-button
-        v-if="assessment?.status === 'IN_PROGRESS'"
-        type="primary"
-        :loading="submitting"
-        @click="emit('submit')"
-        >提交测评</el-button
-      >
-    </template>
-  </el-dialog>
+      <div class="assessment-actions">
+        <LtButton
+          v-if="assessment.status === 'IN_PROGRESS'"
+          variant="primary"
+          :disabled="submitting"
+          @click="emit('submit')"
+          >{{ submitting ? '正在提交…' : '提交测评' }}</LtButton
+        >
+      </div>
+    </div>
+  </LtSheet>
 </template>
-
 <style scoped>
+.stage-assessment,
+.assessment-list {
+  display: grid;
+  gap: var(--lt-space-4);
+}
+.assessment-notice,
+.assessment-source-composition,
+.assessment-submit-error,
+.assessment-summary {
+  margin: 0;
+}
+.assessment-notice,
+.assessment-submit-error {
+  padding: var(--lt-space-3);
+  border-radius: var(--lt-radius-sm);
+}
+.assessment-notice {
+  background: var(--lt-accent-soft);
+  color: var(--lt-label);
+}
+.assessment-notice[data-priority='warning'] {
+  background: var(--lt-orange-soft);
+  color: var(--lt-orange-text);
+}
 .assessment-source-composition {
-  margin: var(--lp-space-3) 0 var(--lp-space-4);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
 .assessment-submit-error {
-  margin-bottom: var(--lp-space-3);
+  background: var(--lt-red-soft);
+  color: var(--lt-red-text);
 }
 .assessment-summary {
-  margin: var(--lp-space-4) 0 0;
-  color: var(--lp-text);
-  font-size: var(--lp-text-xl);
-  font-weight: var(--lp-weight-bold);
+  color: var(--lt-label);
+  font-size: var(--lt-text-title3);
+  font-weight: 600;
 }
-.assessment-kp-summary {
-  margin: var(--lp-space-4) 0 var(--lp-space-4);
-  padding: var(--lp-space-3) var(--lp-space-4);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
-  background: var(--lp-surface-soft);
+.assessment-kp-summary,
+.assessment-question,
+.assessment-result {
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-fill-3);
+  box-shadow: 0 0 0 calc(var(--lt-space-1) / 4) var(--lt-hairline);
 }
-.assessment-kp-summary-heading {
-  margin: 0 0 4px;
-  font-size: var(--lp-text-base);
-  color: var(--lp-text);
+.assessment-kp-summary,
+.assessment-question {
+  padding: var(--lt-space-4);
 }
-.assessment-kp-summary-list {
-  display: grid;
-  gap: var(--lp-space-1);
+.assessment-question {
+  font-size: var(--lt-text-reading);
+  line-height: var(--lt-leading-reading);
+}
+.assessment-kp-summary h3,
+.assessment-kp-summary ul,
+.assessment-result p {
   margin: 0;
+}
+.assessment-kp-summary ul {
+  display: grid;
+  gap: var(--lt-space-2);
+  margin-top: var(--lt-space-3);
   padding: 0;
   list-style: none;
 }
-.assessment-kp-summary-item {
+.assessment-kp-summary li {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--lp-space-3);
-  font-size: var(--lp-text-sm);
-  color: var(--lp-text);
+  gap: var(--lt-space-2);
+  color: var(--lt-label);
+  font-size: var(--lt-text-footnote);
 }
 .assessment-kp-summary-count {
-  color: var(--lp-text-secondary);
-}
-.assessment-list {
-  display: grid;
-  gap: var(--lp-space-4);
-  margin-top: var(--lp-space-4);
-}
-:global(.stage-assessment-dialog .el-dialog__body) {
-  max-height: min(62vh, 620px);
-  overflow-y: auto;
-}
-.assessment-question {
-  padding: var(--lp-space-4);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
-  background: var(--lp-surface-soft);
+  color: var(--lt-label-2);
 }
 .assessment-question-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--lp-space-3);
-  color: var(--lp-text);
-  line-height: var(--lp-leading-body);
+  gap: var(--lt-space-3);
+  color: var(--lt-label);
+  line-height: var(--lt-leading-reading);
 }
 .assessment-question-tags {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: var(--lp-space-1);
+  gap: var(--lt-space-1);
+}
+.assessment-tag {
+  padding: var(--lt-space-1) var(--lt-space-2);
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-caption);
+  white-space: nowrap;
+}
+.assessment-tag--warning {
+  background: var(--lt-orange-soft);
+  color: var(--lt-orange-text);
+}
+.assessment-tag[data-result='correct'] {
+  background: var(--lt-green-soft);
+  color: var(--lt-green-text);
+}
+.assessment-tag[data-result='wrong'] {
+  background: var(--lt-orange-soft);
+  color: var(--lt-orange-text);
 }
 .assessment-options {
   display: grid;
-  gap: var(--lp-space-2);
-  margin-top: var(--lp-space-3);
+  gap: var(--lt-space-2);
+  margin: var(--lt-space-3) 0 0;
+  padding: 0;
+  border: 0;
+}
+.assessment-option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lt-space-2);
+  color: var(--lt-label);
+  cursor: pointer;
+}
+.assessment-option input {
+  flex: none;
+  margin: 0;
+  accent-color: var(--lt-accent);
+}
+.assessment-options:disabled .assessment-option {
+  color: var(--lt-label-3);
+  cursor: not-allowed;
 }
 .assessment-result {
-  margin-top: var(--lp-space-3);
-  padding: var(--lp-space-3) var(--lp-space-4);
-  border-radius: var(--lp-radius-sm);
-  background: var(--lp-surface);
-  color: var(--lp-text-secondary);
+  display: grid;
+  gap: var(--lt-space-2);
+  margin-top: var(--lt-space-3);
+  padding: var(--lt-space-3);
+  color: var(--lt-label-2);
+  line-height: var(--lt-leading-reading);
 }
-.assessment-result p {
-  margin: 0;
-  line-height: var(--lp-leading-body);
-}
-.assessment-result p + p {
-  margin-top: var(--lp-space-1);
-}
-@media (max-width: 767px) {
-  .assessment-question-header {
-    flex-direction: column;
-  }
+.assessment-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--lt-space-2);
 }
 </style>

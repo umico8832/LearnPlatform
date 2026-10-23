@@ -86,10 +86,9 @@ async function deleteResponsePayload(responsePromise: Promise<Response>) {
   return (await response.json()) as { code: number; message?: string }
 }
 
-/** 课程空间 Hero 的「更多」下拉：阶段测评 / 测评历史 / 课程试卷 收纳在内。 */
 async function openCourseMore(page: Page, item: string) {
   await page.getByRole('button', { name: '更多' }).click()
-  await page.locator('.el-dropdown-menu__item').filter({ hasText: item }).click()
+  await page.getByRole('dialog', { name: '课程操作' }).getByRole('button', { name: item, exact: true }).click()
 }
 
 test('用户可通过真实登录流程访问课程库', async ({ page }) => {
@@ -618,9 +617,9 @@ test('课程空间可完成整体与知识点阶段测评并查看历史复盘',
   const assessmentQuestions = await assessmentDialog.locator('.assessment-question').all()
   expect(assessmentQuestions.length).toBeGreaterThan(0)
   for (const question of assessmentQuestions) {
-    const checkboxes = question.locator('.el-checkbox')
+    const checkboxes = question.getByRole('checkbox')
     if ((await checkboxes.count()) > 0) await checkboxes.first().click()
-    else await question.locator('.el-radio').first().click()
+    else await question.getByRole('radio').first().click()
   }
   await assessmentDialog.getByRole('button', { name: '提交测评' }).click()
   await expect(assessmentDialog).toContainText(/答对 \d+ \/ \d+ 题/)
@@ -632,16 +631,15 @@ test('课程空间可完成整体与知识点阶段测评并查看历史复盘',
   // 限定已审查知识点范围发起新一轮测评，并确认范围随会话固化展示
   await openCourseMore(page, '阶段测评')
   const scopedSetupDialog = page.getByRole('dialog', { name: '开始阶段测评' })
-  await scopedSetupDialog.locator('.el-select').click()
-  await page.getByRole('option', { name: '顺序表的插入与删除' }).click()
+  await scopedSetupDialog.getByLabel('知识点范围').selectOption({ label: '顺序表的插入与删除' })
   await scopedSetupDialog.getByRole('button', { name: '开始测评' }).click()
   await expect(assessmentDialog).toContainText('范围：顺序表的插入与删除')
   const scopedQuestions = await assessmentDialog.locator('.assessment-question').all()
   expect(scopedQuestions.length).toBeGreaterThan(0)
   for (const question of scopedQuestions) {
-    const checkboxes = question.locator('.el-checkbox')
+    const checkboxes = question.getByRole('checkbox')
     if ((await checkboxes.count()) > 0) await checkboxes.first().click()
-    else await question.locator('.el-radio').first().click()
+    else await question.getByRole('radio').first().click()
   }
   await assessmentDialog.getByRole('button', { name: '提交测评' }).click()
   await expect(assessmentDialog).toContainText(/答对 \d+ \/ \d+ 题/)
@@ -649,7 +647,7 @@ test('课程空间可完成整体与知识点阶段测评并查看历史复盘',
 
   await openCourseMore(page, '测评历史')
   const historyDialog = page.getByRole('dialog', { name: '阶段测评历史' })
-  await expect(historyDialog.locator('.el-select').first()).toBeVisible()
+  await expect(historyDialog.getByRole('combobox')).toBeVisible()
   await expect(historyDialog).toContainText(/答对 \d+ \/ \d+ 题/)
   await expect(historyDialog).toContainText('题源：')
   await historyDialog.getByRole('button', { name: '查看复盘' }).first().click()

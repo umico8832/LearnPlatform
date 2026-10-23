@@ -1,89 +1,54 @@
 <template>
-  <div class="course-overview page-container">
-    <template v-if="loading">
-      <LpSkeleton card :rows="3" />
-      <div class="overview-grid"><LpSkeleton card :rows="8" /><LpSkeleton card :rows="6" /></div>
-    </template>
-    <template v-else-if="failed || !overview">
-      <section class="state-panel">
-        <LpEmptyState title="暂时无法读取课程空间" description="请刷新重试；如果课程尚未加入课程库，请先从课程库加入。">
-          <template #actions><el-button type="primary" @click="emit('retry')">重新加载</el-button></template>
-        </LpEmptyState>
-      </section>
-    </template>
+  <div class="lt course-page course-overview" data-appearance="dark">
+    <div class="back-row">
+      <LtButton variant="quiet" @click="emit('back')"
+        ><template #icon><ChevronLeft aria-hidden="true" /></template>返回课程</LtButton
+      >
+    </div>
+    <CoursePageState v-if="loading" state="loading" title="正在读取课程空间" />
+    <CoursePageState
+      v-else-if="failed || !overview"
+      state="error"
+      title="暂时无法读取课程空间"
+      description="请刷新重试；如果课程尚未加入课程库，请先从课程库加入。"
+      retry-label="重新加载"
+      @retry="emit('retry')"
+    />
     <template v-else>
-      <div class="back-row"><el-button text :icon="ArrowLeft" @click="emit('back')">返回课程</el-button></div>
-      <section class="overview-hero">
-        <div class="hero-copy">
-          <h1 class="hero-title">{{ overview.courseName }}</h1>
-        </div>
-        <div class="hero-actions">
-          <el-button
+      <header class="course-head overview-hero">
+        <h1>{{ overview.courseName }}</h1>
+        <div class="course-actions">
+          <LtButton
             v-if="!hasRecommendedTarget"
-            type="primary"
-            size="large"
-            :icon="ArrowRight"
-            :loading="starting"
+            variant="primary"
+            :disabled="starting"
             :aria-label="primaryActionLabel"
             @click="emit('primaryAction')"
-            >{{ primaryActionLabel }}</el-button
+            >{{ starting ? '正在准备…' : primaryActionLabel }}</LtButton
           >
-          <el-button size="large" :icon="Collection" @click="emit('openContent')">查看教学目录</el-button>
-          <el-dropdown trigger="click" @command="handleMoreCommand">
-            <el-button size="large" :icon="MoreFilled"
-              >更多<el-icon class="more-caret"><ArrowDown /></el-icon
-            ></el-button>
-            <template #dropdown
-              ><el-dropdown-menu
-                ><el-dropdown-item command="papers" :icon="Document">课程试卷</el-dropdown-item
-                ><el-dropdown-item command="assessment" :icon="DataAnalysis">阶段测评</el-dropdown-item
-                ><el-dropdown-item command="history" :icon="Clock">测评历史</el-dropdown-item></el-dropdown-menu
-              ></template
-            >
-          </el-dropdown>
-          <p v-if="primaryActionError" class="hero-action-error" role="alert">{{ primaryActionError }}</p>
+          <LtButton @click="emit('openContent')">查看教学目录</LtButton
+          ><LtButton @click="moreOpen = true">更多</LtButton>
         </div>
-      </section>
-      <section v-if="overview.recommendedTargets.length" class="continue-section">
-        <div class="continue-main">
-          <LpKicker>下一步</LpKicker>
-          <h2 class="continue-title">{{ recommendedTargetTitle }}</h2>
-          <p class="continue-reason">{{ overview.recommendedTargets[0].reason }}</p>
-          <el-button type="primary" :icon="ArrowRight" @click="emit('openTarget', overview.recommendedTargets[0])">{{
-            recommendedActionLabel
-          }}</el-button>
+        <p v-if="primaryActionError" class="course-error" role="alert">{{ primaryActionError }}</p>
+      </header>
+      <LtCard v-if="overview.recommendedTargets.length" as="section" radius="xl" class="continue-section">
+        <div>
+          <p class="course-muted">下一步</p>
+          <h2>{{ recommendedTargetTitle }}</h2>
+          <p class="course-muted">{{ overview.recommendedTargets[0].reason }}</p>
         </div>
-      </section>
+        <LtButton variant="primary" @click="emit('openTarget', overview.recommendedTargets[0])">{{
+          recommendedActionLabel
+        }}</LtButton>
+      </LtCard>
       <div class="overview-grid" :class="{ 'overview-grid--single': !hasLearningActivity }">
         <div class="overview-main">
-          <section class="panel tools-panel" aria-labelledby="learning-tools-heading">
-            <LpSectionHeading heading-id="learning-tools-heading" title="学习工具" />
-            <div class="tool-list">
-              <button
-                v-for="tool in tools"
-                :key="tool.routeName"
-                type="button"
-                class="tool-row"
-                @click="emit('openTool', tool.routeName)"
-              >
-                <span class="tool-icon" aria-hidden="true"
-                  ><el-icon :size="17"><component :is="tool.icon" /></el-icon></span
-                ><span class="tool-copy"
-                  ><strong>{{ tool.title }}</strong
-                  ><small>{{ tool.desc }}</small></span
-                ><el-icon class="tool-arrow" :size="15" aria-hidden="true"><ArrowRight /></el-icon>
-              </button>
+          <LtCard as="section" radius="xl" class="panel" aria-labelledby="course-outline-heading">
+            <div class="panel-heading">
+              <h2 id="course-outline-heading">教学内容</h2>
+              <LtButton variant="quiet" @click="emit('openContent')">课程目录</LtButton>
             </div>
-          </section>
-          <section class="panel" aria-labelledby="course-outline-heading">
-            <LpSectionHeading heading-id="course-outline-heading" title="教学内容"
-              ><template #aside
-                ><el-button text type="primary" :icon="Collection" @click="emit('openContent')"
-                  >课程目录</el-button
-                ></template
-              ></LpSectionHeading
-            >
-            <p v-if="overview.tutorProgress.length" class="outline-summary">
+            <p v-if="overview.tutorProgress.length" class="course-muted">
               共 {{ overview.tutorProgress.length }} 节教学内容。
             </p>
             <div v-if="overview.tutorProgress.length" id="course-outline-list" class="outline-list">
@@ -93,64 +58,84 @@
                   <strong>{{ item.title }}</strong
                   ><small>{{ tutorStatusLabel(item.status) }}</small>
                 </div>
-                <el-button
-                  :type="item.status === 'IN_PROGRESS' ? 'primary' : 'default'"
-                  size="small"
-                  @click="emit('openTutor', item.knowledgePointId)"
-                  >{{ tutorActionLabel(item.status) }}</el-button
-                >
+                <LtButton size="sm" @click="emit('openTutor', item.knowledgePointId)">{{
+                  tutorActionLabel(item.status)
+                }}</LtButton>
               </div>
             </div>
-            <el-button
+            <LtButton
               v-if="overview.tutorProgress.length > initialOutlineCount"
-              text
-              type="primary"
+              variant="quiet"
               class="outline-toggle"
               :aria-expanded="showAllTutorProgress"
               aria-controls="course-outline-list"
               @click="showAllTutorProgress = !showAllTutorProgress"
-            >
-              {{
+              >{{
                 showAllTutorProgress ? '收起目录' : `展开其余 ${overview.tutorProgress.length - initialOutlineCount} 节`
-              }}
-            </el-button>
-            <LpEmptyState v-else compact title="暂无教学内容" description="可以从题目或试卷开始。" />
-          </section>
+              }}</LtButton
+            >
+            <div v-else-if="!overview.tutorProgress.length" class="course-muted">
+              <h3>暂无教学内容</h3>
+              <p>可以从题目或试卷开始。</p>
+            </div>
+          </LtCard>
           <KnowledgePointFactsPanel
             :course-id="courseId"
             :refresh-key="factsRefreshKey"
             @open-question-bank="emit('openTool', 'QuestionList')"
-            @open-review="
-              (knowledgePointId, knowledgePointName) =>
-                emit('openKnowledgePointReview', knowledgePointId, knowledgePointName)
-            "
-            @open-tutor="(knowledgePointId) => emit('openTutor', knowledgePointId)"
-            @open-wrong-questions="
-              (knowledgePointId, knowledgePointName) =>
-                emit('openKnowledgePointWrongQuestions', knowledgePointId, knowledgePointName)
-            "
+            @open-review="(id, name) => emit('openKnowledgePointReview', id, name)"
+            @open-tutor="(id) => emit('openTutor', id)"
+            @open-wrong-questions="(id, name) => emit('openKnowledgePointWrongQuestions', id, name)"
           />
+          <LtCard as="section" radius="xl" class="panel tools-panel" aria-labelledby="learning-tools-heading">
+            <h2 id="learning-tools-heading">学习工具</h2>
+            <div class="tool-list">
+              <button
+                v-for="tool in tools"
+                :key="tool.routeName"
+                type="button"
+                class="tool-row"
+                @click="emit('openTool', tool.routeName)"
+              >
+                <component :is="tool.icon" class="course-symbol" aria-hidden="true" /><span class="tool-copy"
+                  ><strong>{{ tool.title }}</strong
+                  ><small>{{ tool.desc }}</small></span
+                ><ArrowRight class="course-symbol" aria-hidden="true" />
+              </button>
+            </div>
+          </LtCard>
         </div>
-        <aside v-if="hasLearningActivity" class="activity-panel" aria-labelledby="activity-heading">
-          <h2 id="activity-heading" class="activity-title">学习情况</h2>
-          <div class="stats-grid">
-            <LpStat label="已作答" :value="overview.answeredCount" /><LpStat
-              label="答对"
-              :value="overview.correctCount"
-              tone="emphasis"
-            /><LpStat label="待复习" :value="overview.dueReviewCount" tone="warning" /><LpStat
-              label="未处理错题"
-              :value="overview.unresolvedWrongCount"
-              tone="danger"
-            />
-          </div>
-          <LpDivider />
+        <LtCard
+          v-if="hasLearningActivity"
+          as="aside"
+          radius="lg"
+          class="activity-panel"
+          aria-labelledby="activity-heading"
+        >
+          <h2 id="activity-heading">学习情况</h2>
+          <dl class="stats-grid">
+            <div>
+              <dt>已作答</dt>
+              <dd>{{ overview.answeredCount }}</dd>
+            </div>
+            <div>
+              <dt>答对</dt>
+              <dd>{{ overview.correctCount }}</dd>
+            </div>
+            <div>
+              <dt>待复习</dt>
+              <dd>{{ overview.dueReviewCount }}</dd>
+            </div>
+            <div>
+              <dt>未处理错题</dt>
+              <dd>{{ overview.unresolvedWrongCount }}</dd>
+            </div>
+          </dl>
           <div class="recent-block">
-            <h3 class="recent-heading">最近活动</h3>
-            <p v-if="overview.lastLearningTime" class="recent-time">
-              {{ formatDateTime(overview.lastLearningTime) }}
+            <h3>最近活动</h3>
+            <p class="course-muted">
+              {{ overview.lastLearningTime ? formatDateTime(overview.lastLearningTime) : '暂无课程内学习记录' }}
             </p>
-            <p v-else class="recent-time">暂无课程内学习记录</p>
             <div v-if="overview.latestStageAssessment" class="latest-assessment">
               <strong>最近阶段测评</strong
               ><span
@@ -161,40 +146,34 @@
               ><small v-if="overview.latestStageAssessment.knowledgePointSummary?.length"
                 >知识点：{{ knowledgePointSummaryText(overview.latestStageAssessment.knowledgePointSummary) }}</small
               ><small>{{ formatDateTime(overview.latestStageAssessment.completeTime) }}</small
-              ><el-button text @click="emit('openAssessmentDetail', overview.latestStageAssessment.id)"
-                >查看逐题复盘</el-button
+              ><LtButton variant="quiet" @click="emit('openAssessmentDetail', overview.latestStageAssessment.id)"
+                >查看逐题复盘</LtButton
               >
-              <p v-if="assessmentDetailError" class="latest-assessment-error" role="alert">
-                {{ assessmentDetailError }}
-              </p>
+              <p v-if="assessmentDetailError" class="course-error" role="alert">{{ assessmentDetailError }}</p>
             </div>
           </div>
-          <el-button text :icon="Refresh" :loading="loading" @click="emit('refresh')">刷新记录</el-button>
-        </aside>
+          <LtButton variant="quiet" @click="emit('refresh')"
+            ><template #icon><RotateCcw aria-hidden="true" /></template>刷新记录</LtButton
+          >
+        </LtCard>
       </div>
+      <LtSheet v-model:open="moreOpen" title="课程操作"
+        ><div class="more-actions">
+          <LtButton @click="handleMoreCommand('papers')">课程试卷</LtButton
+          ><LtButton @click="handleMoreCommand('assessment')">阶段测评</LtButton
+          ><LtButton @click="handleMoreCommand('history')">测评历史</LtButton>
+        </div></LtSheet
+      >
     </template>
   </div>
 </template>
-
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type { Component } from 'vue'
-import {
-  ArrowDown,
-  ArrowLeft,
-  ArrowRight,
-  Clock,
-  Collection,
-  DataAnalysis,
-  Document,
-  EditPen,
-  MoreFilled,
-  Promotion,
-  Refresh,
-  Timer,
-  Trophy,
-  WarningFilled,
-} from '@element-plus/icons-vue'
+import { ArrowRight, ChevronLeft, BookOpen, Pencil, RotateCcw, Timer, FileText, CircleAlert } from '@lucide/vue'
+import { LtButton, LtCard, LtSheet } from '@/components/living'
+import CoursePageState from '@/views/course/CoursePageState.vue'
+import '@/views/course/course-baseline.css'
 import type { CourseOverviewVO, CourseStageAssessmentKnowledgePointSummaryVO, LearningTargetVO } from '@/api/course'
 import { formatDateTime } from '@/utils/format'
 import KnowledgePointFactsPanel from './KnowledgePointFactsPanel.vue'
@@ -235,11 +214,11 @@ const emit = defineEmits<{
   refresh: []
 }>()
 const tools: CourseTool[] = [
-  { routeName: 'Practice', title: '练习', desc: '按课程范围随机练习，即时判分并复盘', icon: Promotion },
+  { routeName: 'Practice', title: '练习', desc: '按课程范围随机练习，即时判分并复盘', icon: Pencil },
   { routeName: 'Review', title: '复习', desc: '处理本课程到期的间隔复习', icon: Timer },
-  { routeName: 'WrongQuestions', title: '错题', desc: '集中处理本课程尚未掌握的题目', icon: WarningFilled },
-  { routeName: 'ExamList', title: '真题与试卷', desc: '学习模式逐题理解，考试模式检验阶段效果', icon: Trophy },
-  { routeName: 'QuestionList', title: '题目', desc: '按课程、题型和难度浏览题库', icon: EditPen },
+  { routeName: 'WrongQuestions', title: '错题', desc: '集中处理本课程尚未掌握的题目', icon: CircleAlert },
+  { routeName: 'ExamList', title: '真题与试卷', desc: '学习模式逐题理解，考试模式检验阶段效果', icon: FileText },
+  { routeName: 'QuestionList', title: '题目', desc: '按课程、题型和难度浏览题库', icon: BookOpen },
 ]
 const initialOutlineCount = 6
 const showAllTutorProgress = ref(false)
@@ -265,7 +244,9 @@ watch(
     showAllTutorProgress.value = false
   },
 )
+const moreOpen = ref(false)
 function handleMoreCommand(command: string) {
+  moreOpen.value = false
   emit('moreCommand', command)
 }
 function tutorStatusLabel(status: string) {
@@ -296,327 +277,131 @@ function knowledgePointSummaryText(summary: CourseStageAssessmentKnowledgePointS
   return summary.map((item) => `${item.name} ${item.correctCount}/${item.questionCount}`).join(' · ')
 }
 </script>
-
 <style scoped>
-.course-overview {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lp-space-6);
-}
-.back-row {
-  display: flex;
-  align-items: center;
-}
-.state-panel {
-  padding: var(--lp-space-6) 0;
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
-}
-.overview-hero {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--lp-space-6);
-  padding: var(--lp-space-6) var(--lp-space-8);
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
-}
-.hero-copy {
-  min-width: 0;
-}
-.hero-title {
-  margin-top: var(--lp-space-2);
-  font-family: var(--lp-font-display);
-  font-size: var(--lp-text-4xl);
-  font-weight: var(--lp-weight-bold);
-  line-height: var(--lp-leading-display);
-  color: var(--lp-text);
-}
-.hero-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-2);
-  flex-shrink: 0;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-.hero-action-error {
-  flex-basis: 100%;
-  margin: 0;
-  color: var(--lp-danger);
-  font-size: var(--lp-text-sm);
-  text-align: right;
-}
-.more-caret {
-  margin-left: 2px;
-}
-.continue-section {
-  display: flex;
-  align-items: stretch;
-  gap: var(--lp-space-5);
-  padding: var(--lp-space-6);
-  background: linear-gradient(120deg, var(--lp-primary-soft), var(--lp-surface) 60%);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-}
-.continue-main {
-  flex: 1.4;
-  min-width: 0;
-}
-.continue-title {
-  margin-top: var(--lp-space-2);
-  font-size: var(--lp-text-2xl);
-  font-weight: var(--lp-weight-bold);
-  color: var(--lp-text);
-}
-.continue-reason {
-  margin: var(--lp-space-1) 0 var(--lp-space-4);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-base);
-  line-height: var(--lp-leading-body);
+.overview-hero h1 {
+  margin-top: 0;
 }
 .overview-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.85fr);
-  gap: var(--lp-space-5);
-  align-items: start;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--lt-space-6);
 }
-.overview-grid--single {
-  grid-template-columns: minmax(0, 1fr);
+.overview-grid--single .overview-main {
+  flex-basis: 100%;
 }
 .overview-main {
+  flex: 2.2 1 calc(var(--lt-space-10) * 8);
   display: grid;
-  gap: var(--lp-space-5);
+  gap: var(--lt-space-6);
   min-width: 0;
 }
-.panel {
-  display: grid;
-  gap: var(--lp-space-4);
-  padding: var(--lp-space-6);
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
-}
-.tool-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--lp-space-2);
-}
-.tool-row {
+.panel-heading,
+.continue-section {
   display: flex;
   align-items: center;
-  gap: var(--lp-space-3);
-  padding: var(--lp-space-3);
-  border: 0;
-  border-radius: var(--lp-radius-md);
-  background: var(--lp-surface-soft);
-  text-align: left;
-  cursor: pointer;
-  transition:
-    background-color var(--lp-duration-fast) var(--lp-ease-out),
-    transform var(--lp-duration-fast) var(--lp-ease-out);
+  justify-content: space-between;
+  gap: var(--lt-space-5);
 }
-@media (hover: hover) and (pointer: fine) {
-  .tool-row:hover {
-    background: var(--lp-primary-soft);
-  }
-  .tool-row:hover .tool-arrow {
-    color: var(--lp-primary);
-    transform: translateX(2px);
-  }
+.panel h2,
+.activity-panel h2 {
+  margin: 0;
 }
-.tool-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  flex: 0 0 auto;
-  border-radius: var(--lp-radius-sm);
-  background: var(--lp-surface);
-  color: var(--lp-primary);
+.continue-section h2 {
+  margin: var(--lt-space-2) 0;
 }
-.tool-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-  flex: 1;
-}
-.tool-copy strong {
-  color: var(--lp-text);
-  font-size: var(--lp-text-base);
-  font-weight: var(--lp-weight-semibold);
-}
-.tool-copy small {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
-}
-.outline-summary {
-  margin: calc(-1 * var(--lp-space-2)) 0 0;
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
-}
-.outline-toggle {
-  justify-self: start;
-}
-.tool-arrow {
-  color: var(--lp-text-muted);
-  transition:
-    color var(--lp-duration-fast) var(--lp-ease-out),
-    transform var(--lp-duration-fast) var(--lp-ease-out);
-}
-.outline-list {
-  display: grid;
-  gap: var(--lp-space-1);
+.continue-section p {
+  margin: 0;
 }
 .outline-item {
   display: flex;
   align-items: center;
-  gap: var(--lp-space-3);
-  padding: var(--lp-space-3) var(--lp-space-3);
-  border-radius: var(--lp-radius-sm);
-  transition: background-color var(--lp-duration-fast) var(--lp-ease-out);
+  gap: var(--lt-space-3);
+  padding: var(--lt-space-4) 0;
 }
-@media (hover: hover) and (pointer: fine) {
-  .outline-item:hover {
-    background: var(--lp-surface-soft);
-  }
+.outline-item + .outline-item {
+  border-top: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
 }
 .outline-status {
-  width: 8px;
-  height: 8px;
-  flex: 0 0 auto;
-  border-radius: var(--lp-radius-full);
-  background: var(--lp-ink-200);
-}
-.outline-status[data-status='IN_PROGRESS'] {
-  background: var(--lp-primary);
+  width: var(--lt-space-2);
+  height: var(--lt-space-2);
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill);
 }
 .outline-status[data-status='COMPLETED'] {
-  background: var(--lp-success);
+  background: var(--lt-green);
 }
-.outline-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
+.outline-status[data-status='IN_PROGRESS'] {
+  background: var(--lt-orange);
+}
+.outline-copy,
+.tool-copy {
+  display: grid;
+  gap: var(--lt-space-1);
   flex: 1;
+  min-width: 0;
 }
-.outline-copy strong {
-  color: var(--lp-text);
-  font-size: var(--lp-text-base);
-  font-weight: var(--lp-weight-medium);
+small {
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
-.outline-copy small {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
+.tool-list {
+  display: grid;
+  margin-top: var(--lt-space-3);
+}
+.tool-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: var(--lt-space-4);
+  padding: var(--lt-space-4) 0;
+  border: 0;
+  border-radius: var(--lt-radius-sm);
+  background: transparent;
+  color: var(--lt-label);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.tool-row:hover {
+  background: var(--lt-fill-3);
 }
 .activity-panel {
-  position: sticky;
-  top: calc(var(--lp-header-height) + var(--lp-space-4));
+  flex: 1 1 calc(var(--lt-space-10) * 3.6);
+  min-width: 0;
   display: grid;
-  gap: var(--lp-space-4);
-  padding: var(--lp-space-6);
-  background: var(--lp-surface);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  box-shadow: var(--lp-shadow-xs);
-}
-.activity-title {
-  font-size: var(--lp-text-xl);
-  font-weight: var(--lp-weight-bold);
-  color: var(--lp-text);
+  gap: var(--lt-space-5);
 }
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--lp-space-2);
+  gap: var(--lt-space-5);
+  margin: 0;
+}
+.stats-grid dt {
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+}
+.stats-grid dd {
+  margin: var(--lt-space-1) 0 0;
+  font-family: var(--lt-font-rounded);
+  font-size: var(--lt-text-title2);
+  font-variant-numeric: tabular-nums;
 }
 .recent-block {
-  display: grid;
-  gap: var(--lp-space-2);
+  border-top: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
+  padding-top: var(--lt-space-4);
 }
-.recent-heading {
-  font-size: var(--lp-text-base);
-  font-weight: var(--lp-weight-semibold);
-  color: var(--lp-text);
-}
-.recent-time {
+.recent-block h3 {
   margin: 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  line-height: var(--lp-leading-body);
 }
 .latest-assessment {
   display: grid;
-  gap: 3px;
-  margin-top: var(--lp-space-2);
-  padding: var(--lp-space-3) var(--lp-space-4);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
-  background: var(--lp-surface-soft);
+  gap: var(--lt-space-2);
 }
-.latest-assessment strong {
-  color: var(--lp-text);
-  font-size: var(--lp-text-base);
-  font-weight: var(--lp-weight-semibold);
-}
-.latest-assessment span {
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-}
-.latest-assessment small {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
-  line-height: var(--lp-leading-snug);
-}
-.latest-assessment-error {
-  margin: var(--lp-space-1) 0 0;
-  color: var(--lp-danger);
-  font-size: var(--lp-text-sm);
-}
-@media (max-width: 1080px) {
-  .overview-grid {
-    grid-template-columns: 1fr;
-  }
-  .activity-panel {
-    position: static;
-  }
-}
-@media (max-width: 900px) {
-  .overview-hero {
-    align-items: stretch;
-    flex-direction: column;
-  }
-  .hero-actions {
-    justify-content: flex-start;
-  }
-  .hero-action-error {
-    text-align: left;
-  }
-}
-@media (max-width: 767px) {
-  .tool-list {
-    grid-template-columns: 1fr;
-  }
-  .overview-hero {
-    padding: var(--lp-space-5);
-  }
-  .hero-title {
-    font-size: var(--lp-text-3xl);
-  }
-  .continue-section {
-    flex-direction: column;
-  }
-  .panel,
-  .activity-panel {
-    padding: var(--lp-space-4);
-  }
+.more-actions {
+  display: grid;
+  gap: var(--lt-space-3);
+  padding-top: var(--lt-space-4);
 }
 </style>

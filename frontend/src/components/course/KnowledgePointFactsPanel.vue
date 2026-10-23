@@ -1,21 +1,25 @@
 <template>
-  <section class="panel knowledge-facts-panel" aria-labelledby="knowledge-facts-heading">
-    <LpSectionHeading heading-id="knowledge-facts-heading" title="知识点学习记录">
-      <template #aside>
-        <el-tooltip content="作答与答对按次数统计，错题与复习按题目统计；一道题可能计入多个知识点。" placement="top">
-          <el-button text circle aria-label="查看统计口径"
-            ><el-icon><InfoFilled /></el-icon
-          ></el-button>
-        </el-tooltip>
-      </template>
-    </LpSectionHeading>
+  <LtCard
+    as="section"
+    radius="xl"
+    class="lt panel knowledge-facts-panel"
+    data-appearance="dark"
+    aria-labelledby="knowledge-facts-heading"
+  >
+    <div class="facts-heading">
+      <h2 id="knowledge-facts-heading">知识点学习记录</h2>
+      <LtButton variant="quiet" @click="helpOpen = true">查看统计口径</LtButton>
+    </div>
+    <LtSheet v-model:open="helpOpen" title="统计口径"
+      ><p>作答与答对按次数统计，错题与复习按题目统计；一道题可能计入多个知识点。</p></LtSheet
+    >
 
     <div v-if="loading" class="facts-skeleton" aria-label="正在加载知识点学习事实">
-      <LpSkeleton :rows="5" />
+      <p role="status">正在加载知识点学习事实</p>
     </div>
     <div v-else-if="failed" class="facts-error" role="alert">
       <p>暂时无法读取知识点学习事实，请重试。</p>
-      <el-button type="primary" @click="loadFacts(page)">重新加载</el-button>
+      <LtButton variant="quiet" @click="loadFacts(page)">重新加载</LtButton>
     </div>
     <p v-else-if="!records.length" class="facts-empty">
       暂无知识点学习记录。完成课程内作答后，这里会显示有数据的知识点。
@@ -36,9 +40,9 @@
                 {{ fact.knowledgePointId === null ? '未关联知识点的课程记录' : '历史知识点记录' }}
               </p>
             </div>
-            <el-tag v-if="!fact.available" size="small" type="info" effect="plain">
+            <span v-if="!fact.available" class="fact-badge">
               {{ fact.knowledgePointId === null ? '未关联' : '历史记录' }}
-            </el-tag>
+            </span>
           </div>
           <dl class="fact-metrics">
             <div v-if="fact.answeredCount">
@@ -60,63 +64,54 @@
           </dl>
           <div class="fact-actions">
             <template v-if="canDeepLink(fact)">
-              <el-button
+              <LtButton
                 v-if="fact.dueReviewCount"
-                text
-                type="primary"
+                variant="quiet"
                 @click="emit('open-review', fact.knowledgePointId!, fact.knowledgePointName)"
               >
                 复习
-              </el-button>
-              <el-button
+              </LtButton>
+              <LtButton
                 v-if="fact.unresolvedWrongCount"
-                text
-                type="primary"
+                variant="quiet"
                 @click="emit('open-wrong-questions', fact.knowledgePointId!, fact.knowledgePointName)"
               >
                 错题
-              </el-button>
+              </LtButton>
             </template>
-            <el-button
+            <LtButton
               v-if="fact.tutorAvailable && fact.knowledgePointId !== null"
-              text
-              type="primary"
+              variant="quiet"
               @click="emit('open-tutor', fact.knowledgePointId)"
             >
               进入教学
-            </el-button>
-            <el-button v-if="!canDeepLink(fact)" text type="primary" @click="emit('open-question-bank')">
+            </LtButton>
+            <LtButton v-if="!canDeepLink(fact)" variant="quiet" @click="emit('open-question-bank')">
               查看课程题库
-            </el-button>
+            </LtButton>
           </div>
         </article>
       </div>
-      <el-button
+      <LtButton
         v-if="records.length > initialVisibleCount"
-        text
         class="facts-toggle"
         :aria-expanded="showAllRecords"
         @click="showAllRecords = !showAllRecords"
         >{{
           showAllRecords ? '收起记录' : `展开${total > pageSize ? '本页' : ''}全部 ${records.length} 条记录`
-        }}</el-button
+        }}</LtButton
       >
-      <el-pagination
-        v-if="total > pageSize"
-        class="facts-pagination"
-        layout="prev, pager, next"
-        :current-page="page"
-        :page-size="pageSize"
-        :total="total"
-        @current-change="loadFacts"
-      />
+      <nav v-if="total > pageSize" class="facts-pagination" aria-label="知识点学习记录翻页">
+        <LtButton :disabled="page <= 1" @click="loadFacts(page - 1)">上一页</LtButton
+        ><span>第 {{ page }} / {{ Math.ceil(total / pageSize) }} 页</span
+        ><LtButton :disabled="page >= Math.ceil(total / pageSize)" @click="loadFacts(page + 1)">下一页</LtButton>
+      </nav>
     </template>
-  </section>
+  </LtCard>
 </template>
-
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { InfoFilled } from '@element-plus/icons-vue'
+import { LtButton, LtCard, LtSheet } from '@/components/living'
 import { getCourseKnowledgePointFacts, type CourseKnowledgePointFactVO } from '@/api/course'
 import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
 
@@ -132,6 +127,7 @@ const emit = defineEmits<{
   'open-question-bank': []
 }>()
 
+const helpOpen = ref(false)
 const records = ref<CourseKnowledgePointFactVO[]>([])
 const total = ref(0)
 const page = ref(1)
@@ -221,156 +217,91 @@ onBeforeUnmount(() => {
   unsubscribeAuth()
 })
 </script>
-
 <style scoped>
 .knowledge-facts-panel {
   min-width: 0;
 }
-.facts-skeleton {
-  min-height: var(--lp-space-20);
-}
-.facts-empty {
-  margin: 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  line-height: var(--lp-leading-body);
-}
-.facts-toggle {
-  justify-self: start;
-}
-.facts-error {
+.facts-heading,
+.fact-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--lp-space-4);
-  padding: var(--lp-space-4);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
-  background: var(--lp-danger-soft);
+  gap: var(--lt-space-3);
 }
-.facts-error p {
+.facts-heading {
+  margin-bottom: var(--lt-space-4);
+}
+h2 {
   margin: 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  line-height: var(--lp-leading-body);
+  font-size: var(--lt-text-title3);
+}
+h3 {
+  margin: 0;
+  font-size: var(--lt-text-headline);
+}
+p {
+  color: var(--lt-label-2);
+  line-height: var(--lt-leading-reading);
+}
+.facts-error {
+  color: var(--lt-red-text);
 }
 .facts-list {
   display: grid;
-  gap: var(--lp-space-3);
 }
 .fact-row {
   display: grid;
-  gap: var(--lp-space-3);
-  padding: var(--lp-space-4);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
-  background: var(--lp-surface-soft);
-  transition:
-    border-color var(--lp-duration-fast) var(--lp-ease-out),
-    box-shadow var(--lp-duration-fast) var(--lp-ease-out);
+  gap: var(--lt-space-3);
+  padding: var(--lt-space-4) 0;
 }
-.fact-row[data-engaged='true'] {
-  border-color: var(--lp-primary-softer);
-  background: linear-gradient(90deg, var(--lp-primary-soft), var(--lp-surface-soft) 34%);
-}
-.fact-row[data-has-unresolved-wrong='true'] {
-  border-left: 3px solid var(--lp-warning);
-}
-@media (hover: hover) and (pointer: fine) {
-  .fact-row:hover {
-    box-shadow: var(--lp-shadow-xs);
-  }
-}
-.fact-heading,
-.fact-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-2);
-}
-.fact-heading {
-  justify-content: space-between;
-}
-.fact-heading h3 {
-  display: flex;
-  align-items: center;
-  gap: var(--lp-space-2);
-  margin: 0;
-  color: var(--lp-text);
-  font-size: var(--lp-text-lg);
-  font-weight: var(--lp-weight-semibold);
-  line-height: var(--lp-leading-snug);
-}
-.fact-activity-dot {
-  width: 8px;
-  height: 8px;
-  flex: 0 0 auto;
-  border-radius: var(--lp-radius-full);
-  background: var(--lp-ink-300);
-}
-.fact-row[data-engaged='true'] .fact-activity-dot {
-  background: var(--lp-primary);
-  box-shadow: 0 0 0 3px var(--lp-primary-soft);
+.fact-row + .fact-row {
+  border-top: calc(var(--lt-space-1) / 4) solid var(--lt-separator);
 }
 .fact-status {
-  margin: var(--lp-space-1) 0 0;
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
-  line-height: var(--lp-leading-snug);
+  margin: var(--lt-space-1) 0 0;
+  font-size: var(--lt-text-footnote);
+}
+.fact-badge {
+  padding: var(--lt-space-1) var(--lt-space-2);
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill-2);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
 .fact-metrics {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--lp-space-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lt-space-5);
   margin: 0;
 }
 .fact-metrics div {
-  display: grid;
-  gap: var(--lp-space-1);
-  min-width: 0;
-  padding: var(--lp-space-2);
-  border-radius: var(--lp-radius-sm);
-  background: var(--lp-surface);
+  display: flex;
+  align-items: baseline;
+  gap: var(--lt-space-2);
 }
 .fact-metrics dt {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
-  line-height: var(--lp-leading-snug);
+  font-size: var(--lt-text-footnote);
+  color: var(--lt-label-2);
 }
 .fact-metrics dd {
   margin: 0;
-  color: var(--lp-text);
-  font-family: var(--lp-font-mono);
-  font-size: var(--lp-text-xl);
+  font-family: var(--lt-font-rounded);
   font-variant-numeric: tabular-nums;
-  font-weight: var(--lp-weight-semibold);
-  line-height: var(--lp-leading-tight);
 }
-.fact-actions {
+.fact-actions,
+.facts-pagination {
+  display: flex;
   flex-wrap: wrap;
-}
-.fact-actions :deep(.el-button) {
-  min-height: var(--lp-space-10);
+  align-items: center;
+  gap: var(--lt-space-2);
 }
 .facts-pagination {
-  justify-content: flex-end;
+  justify-content: center;
+  margin-top: var(--lt-space-4);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
-.fact-actions :deep(.el-button:focus-visible),
-.facts-error :deep(.el-button:focus-visible) {
-  box-shadow: var(--lp-shadow-focus);
-}
-@media (max-width: 767px) {
-  .facts-error {
-    align-items: stretch;
-    flex-direction: column;
-  }
-  .facts-error :deep(.el-button) {
-    width: 100%;
-  }
-  .fact-metrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .facts-pagination {
-    justify-content: center;
-  }
+.facts-toggle {
+  margin-top: var(--lt-space-3);
 }
 </style>

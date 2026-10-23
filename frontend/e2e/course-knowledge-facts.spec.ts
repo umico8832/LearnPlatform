@@ -21,7 +21,7 @@ async function findKnowledgePoint(page: Page, id: number, firstRecords: CourseKn
       return { fact, row }
     }
     const response = factsResponse(page)
-    await panel.locator('.btn-next').click()
+    await panel.getByRole('button', { name: '下一页', exact: true }).click()
     records = (await (await response).json()).data.records
   }
   throw new Error('分页中未找到已审查知识点')
@@ -96,7 +96,7 @@ test('课程空间从首节学习并在真实理解检查后展示知识点记�
   expect(after.fact.answeredCount).toBe(1)
   expect(after.fact.correctCount).toBe(Number(answer.correct))
   await expect(after.row.getByText(String(after.fact.answeredCount), { exact: true }).first()).toBeVisible()
-  await expect(page.locator('.activity-panel .lp-stat').first().locator('.lp-stat-value')).toHaveText(
+  await expect(page.locator('.activity-panel .stats-grid > div').first().locator('dd')).toHaveText(
     String(updated.answeredCount),
   )
 
