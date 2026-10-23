@@ -52,7 +52,11 @@ describe('ReviewClassicSession', () => {
     await wrapper.get('textarea').setValue('A')
     await wrapper.get('button').trigger('click')
     await flushPromises()
-    expect(submitReview).toHaveBeenCalledWith({ questionId: 11, userAnswer: 'A' }, { errorDisplay: 'inline' })
+    expect(submitReview).toHaveBeenCalledWith(
+      { questionId: 11, userAnswer: 'A' },
+      { errorDisplay: 'inline' },
+      expect.any(String),
+    )
     expect(wrapper.text()).toContain('服务端判分：回答错误')
     expect(wrapper.text()).toContain('下次复习：2026-11-02')
     expect(wrapper.get('[role="region"][aria-label="复习作答"]')).toBeTruthy()
@@ -77,8 +81,24 @@ describe('ReviewClassicSession', () => {
     await wrapper.get('button').trigger('click')
     await flushPromises()
     expect(submitReview).toHaveBeenCalledTimes(2)
+    expect(submitReview.mock.calls[1]?.[2]).toBe(submitReview.mock.calls[0]?.[2])
   })
 
+  it('uses a new idempotency key when the answer changes after an unknown result', async () => {
+    submitReview.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({ data: { correct: true, reward: null } })
+    const wrapper = mount(ReviewClassicSession, { props: { cards: [card] } })
+    ;(wrapper.vm as { start: () => void }).start()
+    await flushPromises()
+    await wrapper.get('textarea').setValue('A')
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+    await wrapper.get('textarea').setValue('B')
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+    expect(submitReview.mock.calls[0]).toEqual([{ questionId: 11, userAnswer: 'A' }, { errorDisplay: 'inline' }, expect.any(String)])
+    expect(submitReview.mock.calls[1]).toEqual([{ questionId: 11, userAnswer: 'B' }, { errorDisplay: 'inline' }, expect.any(String)])
+    expect(submitReview.mock.calls[1]?.[2]).not.toBe(submitReview.mock.calls[0]?.[2])
+  })
   it('does not apply a late submission after the authenticated session changes', async () => {
     let resolve!: (value: unknown) => void
     submitReview.mockImplementationOnce(

@@ -68,6 +68,18 @@ M4 在错题列表每条记录增加 `misconception` 与 `nextReviewDate`。`mis
 
 ## 间隔重复
 
+### 作答请求幂等（D2）
+
+`POST /api/practice/submit` 与 `POST /api/review/submit` 都必须带 `Idempotency-Key` 请求头。
+键必须是客户端在一次明确作答动作开始时生成的 RFC 4122 UUID；客户端在未能确认响应时重试同一作答，必须复用原键，
+收到成功响应、换题或改变答案后才生成新键。
+
+幂等范围是当前认证用户与接口操作：不同用户或练习/复习两个操作可使用相同 UUID。相同范围内同键且请求体相同，
+服务端返回首次成功的完整 `data` 快照，不新增练习记录、学习事实、奖励流水或 FSRS 评分；同键但不同请求体返回 `1005`。
+并发的重复请求等待首次事务提交后读取该快照，不能读取半成品。首次事务失败或回滚不保留该键，之后可正常重试。
+
+此规则只覆盖 HTTP 重放，不改变既有复习卡行锁、FSRS `(source_type, source_id)` 唯一键和历史作答记录。
+
 M4 的排期采用 [ADR-0012](../../architecture/decisions/0012-fsrs-review-scheduling.md) 的 FSRS。现有路径和 `nextReviewDate`、`intervalDays`、`lastReviewDate`、`totalReviews` 字段保留：新评分后的日期与间隔由 FSRS 卡片产生；存量未评分卡片先显示迁移前原到期日期。`easeFactor` 对 FSRS 卡片为 `null`，仅作为存量兼容字段；`repetitions` 和 `lastQuality` 是展示投影，不作为 FSRS 计算输入。前端不得从这些旧字段推算排期。
 
 评分仅在真实、无提示的首次作答判分成功后发生：`POST /api/practice/submit` 的直接练习、题目理解原题（复用同一 `practice_record`）、`POST /api/review/submit` 的直接复习以及 `assistance=UNAIDED` 的变式。`AIDED` 变式仍保留判分与课程学习事件，但没有 FSRS 评分事件；Tutor 引导练习等无法证实独立性的入口也不评分。评分事件以实际作答记录 ID 加来源类型去重，同一事务内持久化，重试不重复推进卡片。

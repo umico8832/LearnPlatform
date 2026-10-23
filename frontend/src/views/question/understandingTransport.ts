@@ -1,3 +1,4 @@
+import { createSubmissionIntent } from '@/utils/submissionIntent'
 import {
   getUnderstandingQuestion,
   getVariant,
@@ -48,9 +49,15 @@ export interface UnderstandingTransport {
 
 export const liveTransport: UnderstandingTransport = {
   preview: false,
-  reset() {},
+  reset() { attemptIntent.reset() },
   question: (id) => getUnderstandingQuestion(id).then((r) => r.data),
-  submitAttempt: (id, answer, time) => submitAttempt(id, answer, time).then((r) => r.data),
+  submitAttempt: (id, answer, time) => {
+    const submission = attemptIntent.prepare({ questionId: id, answer, answerTime: time }, [id, answer])
+    return submitAttempt(id, submission.body.answer, submission.body.answerTime, submission.key).then((r) => {
+      attemptIntent.reset()
+      return r.data
+    })
+  },
   revealSolution: (attemptId) => revealSolution(attemptId).then((r) => r.data),
   variant: (attemptId) => getVariant(attemptId).then((r) => r.data),
   submitVariant: (variantId, attemptId, answer, time) =>
@@ -63,6 +70,7 @@ export const liveTransport: UnderstandingTransport = {
 /** A preview has no real attempt; the flow only needs some id to hang its steps on. */
 const PREVIEW_ID = 0
 const NOT_FOUND = 1004
+const attemptIntent = createSubmissionIntent<{ questionId: number; answer: string; answerTime: number }>()
 
 export function previewTransport(questionId: () => number): UnderstandingTransport {
   let progress: PreviewProgress = {}

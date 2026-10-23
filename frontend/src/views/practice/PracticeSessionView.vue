@@ -11,6 +11,7 @@ import { useGamificationStore } from '@/stores/gamification'
 import { useUserStore } from '@/stores/user'
 import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
 import { errorMessage } from '@/utils/errors'
+import { createSubmissionIntent } from '@/utils/submissionIntent'
 import { clearPracticeSession, loadPracticeSession } from '@/utils/practiceSession'
 import PracticeAnswerFeedback from './PracticeAnswerFeedback.vue'
 import PracticeSummary from './PracticeSummary.vue'
@@ -23,6 +24,7 @@ const router = useRouter(),
   gamification = useGamificationStore()
 let alive = true,
   submissionVersion = 0
+const answerIntent = createSubmissionIntent<{ questionId: number; userAnswer: string; answerTime: number }>()
 const sessionLoading = ref(true),
   sessionLoadError = ref('')
 const questions = ref<PracticeQuestionVO[]>([]),
@@ -90,6 +92,7 @@ const sessionSummary = computed(() => {
   }
 })
 function resetSession() {
+  answerIntent.reset()
   submissionVersion++
   questions.value = []
   currentResult.value = null
@@ -142,12 +145,17 @@ async function handleSubmit() {
   const questionId = currentQuestion.value.id,
     session = getAuthSessionVersion(),
     requestVersion = ++submissionVersion
+  const submission = answerIntent.prepare(
+    { questionId, userAnswer: answer(), answerTime: Math.round((Date.now() - startTime.value) / 1000) },
+    [questionId, answer()],
+  )
   submissionError.value = ''
   submitting.value = true
   try {
     const response = await submitAnswer(
-      { questionId, userAnswer: answer(), answerTime: Math.round((Date.now() - startTime.value) / 1000) },
+      submission.body,
       { errorDisplay: 'inline' },
+      submission.key,
     )
     if (
       !alive ||
@@ -161,6 +169,7 @@ async function handleSubmit() {
       return
     }
     currentResult.value = response.data
+    answerIntent.reset()
     if (response.data.correct === true) correctCount.value++
     else if (response.data.correct === false) wrongCount.value++
     else pendingCount.value++

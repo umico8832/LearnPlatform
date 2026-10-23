@@ -57,7 +57,7 @@ public class MySqlRaceSupport implements Interceptor {
         }
         String id = ((MappedStatement) invocation.getArgs()[0]).getId();
         Connection connection = ((Executor) invocation.getTarget()).getTransaction().getConnection();
-        listener.before(id, connection);
+        listener.before(id, connection, invocation.getArgs()[1]);
         Object result = invocation.proceed();
         listener.after(id, connection);
         return result;
@@ -100,6 +100,14 @@ public class MySqlRaceSupport implements Interceptor {
         }
     }
 
+    public void awaitTransactionLockWait(long connection) {
+        await().atMost(Duration.ofSeconds(15)).pollInterval(Duration.ofMillis(20)).until(() ->
+                administration.queryForObject("""
+                        SELECT COUNT(*) FROM information_schema.innodb_trx
+                        WHERE trx_mysql_thread_id=? AND trx_state='LOCK WAIT'
+                        """, Integer.class, connection) > 0);
+    }
+
     public static long connectionId(Connection connection) throws SQLException {
         try (var statement = connection.createStatement();
              var result = statement.executeQuery("SELECT CONNECTION_ID()")) {
@@ -113,6 +121,9 @@ public class MySqlRaceSupport implements Interceptor {
     }
 
     public interface StatementObserver {
+        default void before(String statement, Connection connection, Object parameters) throws Exception {
+            before(statement, connection);
+        }
         default void before(String statement, Connection connection) throws Exception { }
 
         default void after(String statement, Connection connection) throws Exception { }

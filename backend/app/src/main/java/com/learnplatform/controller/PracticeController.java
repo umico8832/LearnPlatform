@@ -9,6 +9,7 @@ import com.learnplatform.dto.QuestionVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AdaptivePracticeService;
 import com.learnplatform.service.PracticeService;
+import com.learnplatform.service.HttpIdempotencyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -16,6 +17,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,11 +35,14 @@ public class PracticeController {
 
     private final PracticeService practiceService;
     private final AdaptivePracticeService adaptivePracticeService;
+    private final HttpIdempotencyService idempotency;
 
     public PracticeController(PracticeService practiceService,
-                              AdaptivePracticeService adaptivePracticeService) {
+                              AdaptivePracticeService adaptivePracticeService,
+                              HttpIdempotencyService idempotency) {
         this.practiceService = practiceService;
         this.adaptivePracticeService = adaptivePracticeService;
+        this.idempotency = idempotency;
     }
 
     /**
@@ -64,8 +69,12 @@ public class PracticeController {
     @PostMapping("/submit")
     public R<PracticeResultVO> submitAnswer(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Valid @RequestBody PracticeSubmitRequest request) {
-        PracticeResultVO result = practiceService.submitAnswer(request, userDetails.getUserId());
+            @Valid @RequestBody PracticeSubmitRequest request,
+            @RequestHeader("Idempotency-Key") String requestKey) {
+        PracticeResultVO result = idempotency.execute(userDetails.getUserId(), "practice.submit", requestKey,
+                Map.of("questionId", request.getQuestionId(), "userAnswer", request.getUserAnswer(),
+                        "answerTime", request.getAnswerTime() == null ? "" : request.getAnswerTime()),
+                PracticeResultVO.class, () -> practiceService.submitAnswer(request, userDetails.getUserId()));
         return R.ok(result);
     }
 

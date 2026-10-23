@@ -87,10 +87,9 @@ export function addToReviewPlan(questionId: number) {
 }
 
 /** 提交复习答案 */
-export function submitReview(data: ReviewSubmitRequest, options?: ReviewRequestOptions) {
-  return options
-    ? request.post<ReviewScheduleVO>('/review/submit', data, options)
-    : request.post<ReviewScheduleVO>('/review/submit', data)
+export function submitReview(data: ReviewSubmitRequest, options?: ReviewRequestOptions, requestKey: string = crypto.randomUUID()) {
+  const config = { headers: { 'Idempotency-Key': requestKey }, ...(options || {}) }
+  return request.post<ReviewScheduleVO>('/review/submit', data, config)
 }
 
 /** 移出复习计划 */

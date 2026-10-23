@@ -6,6 +6,7 @@ import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AiAssetEngagementService;
 import com.learnplatform.service.AiCallGovernanceService;
 import com.learnplatform.service.AiService;
+import com.learnplatform.service.HttpIdempotencyService;
 import com.learnplatform.service.ExamLearningAiService;
 import com.learnplatform.service.KnowledgeGraphService;
 import com.learnplatform.service.LearningDiagnosisService;
@@ -49,7 +50,7 @@ class AiCapacityExceptionHandlerTest {
                     new AiController(ai, mock(AiCallGovernanceService.class),
                             mock(QuestionLearningAssetService.class), mock(AiAssetEngagementService.class), executor),
                     new ReviewController(mock(SpacedRepetitionService.class),
-                            mock(ReviewScheduleQueryService.class), ai, executor),
+                            mock(ReviewScheduleQueryService.class), ai, executor, mock(HttpIdempotencyService.class)),
                     new StatisticsController(mock(StatisticsService.class), mock(LearningReportService.class),
                             mock(LearningPathService.class), mock(KnowledgeGraphService.class), diagnosis, executor),
                     new ExamLearningAiController(exam, executor))

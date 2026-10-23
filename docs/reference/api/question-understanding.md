@@ -32,6 +32,12 @@ ADMIN 也须通过[管理员预览](question-tutor.md#管理员无副作用预�
 
 `options` 元素为 `{ "label": "A", "content": "..." }`，按题目选项顺序返回，不含 `isCorrect`。`position` 为 `{courseId, courseName, chapterName, knowledgePointId, knowledgePointName}`：理解内容指定一个已关联且属于题目课程的主知识点，`chapterName` 取其所属顶层知识点名称；主知识点自身位于顶层时同名。位置缺失或失效时不发布理解内容，不从多个知识点中任意取第一个。
 
+### 原题作答请求幂等（D2）
+
+`POST /api/understanding/questions/{questionId}/attempts` 必须带 `Idempotency-Key` 请求头。键是客户端为一次明确作答生成的 RFC 4122 UUID；同一作答因断网或响应丢失重试时保持原键，收到成功结果、换题或改变答案后才生成新键。
+
+幂等范围是当前认证用户与此原题作答操作。相同范围内同键且请求体相同，返回首次成功的完整 `data` 快照；不会新增 `practice_record`、理解尝试、课程学习事实、奖励流水或 FSRS 评分。同键不同请求体返回 `1005`。并发重复请求等待首个事务提交后读取结果，不能观察到未完成作答；首事务失败或回滚不会保留键，之后可以重试。不同用户和其他作答操作可复用相同 UUID。
+
 `source` 为 `{kind, title, url, verification}`，`title` 可为 `null`（例如变式的来源只标明 AI 生成）。`OFFICIAL_EXAM` 只能来自本题明确绑定的、已发布且 `sourceVerified=true` 的官方试卷题号，并留有本题逐题核验人和时间且核验结论为 `VERIFIED`；未完成逐题核对的试卷题暂按 `MANUAL/UNREVIEWED` 展示；标题优先取已审核的理解内容来源标题，缺失时由考试名、年份和展示题号组成，URL 仅取确认为 URL 的试卷来源；其他题按 `question.source_type` 区分 `AI_GENERATED` 与 `MANUAL`（投稿和导入归入后者）。AI 变式只在 `APPROVED` 后返回 `AI_GENERATED/REVIEWED`。不能仅凭题目 `source_reference` 或试卷类型声称 `VERIFIED`。
 
 原题提交在同一事务中复用练习判分、练习记录、错题同步、复习计划和课程学习事件，另建一条与 `practice_record` 一对一的理解尝试；服务层可取得标准答案，但此响应投影绝不传给客户端。错项讲解只按本次选择的选项 ID 查找。若该选项没有审核讲解，`misconception` 和 `viz` 均为 `null`。若讲解存在但无可视化，只有 `viz=null`。`misconception` 为 `{title, explanation, source: {kind, reviewStatus}}`，其中 `kind` 为 `CURATED` 或 `AI_GENERATED`，`reviewStatus` 在公开响应中恒为 `REVIEWED`。

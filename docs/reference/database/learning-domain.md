@@ -142,3 +142,11 @@ V106 建立以下结构；对外行为见[题目理解 API](../api/question-unde
 - 课程或知识点删除前必须检查下游关系。
 - 评论、收藏等用户关系按业务需要使用物理删除或逻辑状态，具体以 Mapper 与迁移为准。
 - 文档不应把 UI 上的“删除按钮”直接解释成数据库物理删除。
+
+## HTTP 写入请求幂等
+
+`http_idempotency_record` 保存客户端写入意图，`(user_id,operation,request_key)` 唯一；
+request_key 为规范 UUID，request_hash 保存请求摘要，response_json 保存首次成功 data 快照。
+领取、业务写入与响应快照在同一事务提交；重复键竞争者等首次事务完成后通过当前锁定读回放，
+同键异体拒绝，事务失败时请求记录随业务回滚。不会回填、去重或删除历史作答数据。
+作答端点与客户端重试语义见[练习与复习](../api/practice-and-review.md)和[理解页](../api/question-understanding.md)。

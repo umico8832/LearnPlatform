@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 
 import java.util.stream.Collectors;
 
@@ -58,6 +59,12 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining(", "));
         log.warn("参数绑定失败: {}", message);
         return R.fail(ResultCode.VALIDATION_ERROR, message);
+    }
+
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public R<Void> handleMissingRequestHeader(MissingRequestHeaderException e) {
+        return R.fail(ResultCode.VALIDATION_ERROR, "缺少请求头: " + e.getHeaderName());
     }
 
     /**

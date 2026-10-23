@@ -25,6 +25,7 @@ async function api<T>(page: Page, url: string, method = 'GET', data?: unknown): 
         headers: {
           Authorization: `Bearer ${localStorage.getItem('learn_platform_token')}`,
           'Content-Type': 'application/json',
+          ...(method === 'POST' ? { 'Idempotency-Key': crypto.randomUUID() } : {}),
         },
         body: data === undefined ? undefined : JSON.stringify(data),
       })

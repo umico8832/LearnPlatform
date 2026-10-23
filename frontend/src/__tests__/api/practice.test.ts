@@ -92,34 +92,34 @@ describe('Practice API', () => {
       }
       mockedRequest.post.mockResolvedValue({ code: 0, data: mockResult, message: 'success' })
 
-      const result = await submitAnswer({ questionId: 1, userAnswer: 'A', answerTime: 30 })
+      const result = await submitAnswer({ questionId: 1, userAnswer: 'A', answerTime: 30 }, undefined, 'request-key')
 
       expect(mockedRequest.post).toHaveBeenCalledWith('/practice/submit', {
         questionId: 1,
         userAnswer: 'A',
         answerTime: 30,
-      })
+      }, { headers: { 'Idempotency-Key': 'request-key' } })
       expect(result).toEqual({ code: 0, data: mockResult, message: 'success' })
     })
 
     it('支持提交失败时由页面原位呈现错误', async () => {
       mockedRequest.post.mockResolvedValue({ code: 0, data: {}, message: 'success' })
 
-      await submitAnswer({ questionId: 1, userAnswer: 'B' }, { errorDisplay: 'inline' })
+      await submitAnswer({ questionId: 1, userAnswer: 'B' }, { errorDisplay: 'inline' }, 'request-key')
 
       expect(mockedRequest.post).toHaveBeenCalledWith(
         '/practice/submit',
         { questionId: 1, userAnswer: 'B' },
-        { errorDisplay: 'inline' },
+        { headers: { 'Idempotency-Key': 'request-key' }, errorDisplay: 'inline' },
       )
     })
 
     it('应支持不传 answerTime', async () => {
       mockedRequest.post.mockResolvedValue({ code: 0, data: {}, message: 'success' })
 
-      await submitAnswer({ questionId: 1, userAnswer: 'B' })
+      await submitAnswer({ questionId: 1, userAnswer: 'B' }, undefined, 'request-key')
 
-      expect(mockedRequest.post).toHaveBeenCalledWith('/practice/submit', { questionId: 1, userAnswer: 'B' })
+      expect(mockedRequest.post).toHaveBeenCalledWith('/practice/submit', { questionId: 1, userAnswer: 'B' }, { headers: { 'Idempotency-Key': 'request-key' } })
     })
   })
 

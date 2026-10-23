@@ -99,11 +99,11 @@ export function getUnderstandingQuestion(questionId: number) {
   return request.get<unknown, ApiResponse<UnderstandingQuestion>>(`/understanding/questions/${questionId}`, inline)
 }
 
-export function submitAttempt(questionId: number, answer: string, answerTime?: number) {
+export function submitAttempt(questionId: number, answer: string, answerTime?: number, requestKey: string = crypto.randomUUID()) {
   return request.post<unknown, ApiResponse<AttemptResult>>(
     `/understanding/questions/${questionId}/attempts`,
     { answer, answerTime },
-    inline,
+    { ...inline, headers: { 'Idempotency-Key': requestKey } },
   )
 }
 

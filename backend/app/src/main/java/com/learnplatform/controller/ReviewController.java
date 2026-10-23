@@ -10,6 +10,7 @@ import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AiService;
 import com.learnplatform.service.ReviewScheduleQueryService;
 import com.learnplatform.service.SpacedRepetitionService;
+import com.learnplatform.service.HttpIdempotencyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -46,15 +48,18 @@ public class ReviewController {
     private final ReviewScheduleQueryService reviewScheduleQueryService;
     private final AiService aiService;
     private final Executor aiTaskExecutor;
+    private final HttpIdempotencyService idempotency;
 
     public ReviewController(SpacedRepetitionService spacedRepetitionService,
                             ReviewScheduleQueryService reviewScheduleQueryService,
                             AiService aiService,
-                            @Qualifier("aiTaskExecutor") Executor aiTaskExecutor) {
+                            @Qualifier("aiTaskExecutor") Executor aiTaskExecutor,
+                            HttpIdempotencyService idempotency) {
         this.spacedRepetitionService = spacedRepetitionService;
         this.reviewScheduleQueryService = reviewScheduleQueryService;
         this.aiService = aiService;
         this.aiTaskExecutor = aiTaskExecutor;
+        this.idempotency = idempotency;
     }
 
     @Operation(summary = "获取复习统计概览")
@@ -107,8 +112,14 @@ public class ReviewController {
     @PostMapping("/submit")
     public R<ReviewScheduleVO> submitReview(
             @RequestBody ReviewSubmitRequest request,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        ReviewScheduleVO vo = spacedRepetitionService.submitReview(request, userDetails.getUserId());
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestHeader("Idempotency-Key") String requestKey) {
+        ReviewScheduleVO vo = idempotency.execute(userDetails.getUserId(), "review.submit", requestKey,
+                Map.of("questionId", request.getQuestionId(), "userAnswer", request.getUserAnswer(),
+                        "answerTime", request.getAnswerTime() == null ? "" : request.getAnswerTime(),
+                        "selfAssessedQuality",
+                        request.getSelfAssessedQuality() == null ? "" : request.getSelfAssessedQuality()),
+                ReviewScheduleVO.class, () -> spacedRepetitionService.submitReview(request, userDetails.getUserId()));
         return R.ok(vo);
     }
 

@@ -2,11 +2,13 @@ package com.learnplatform.controller;
 
 import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.dto.ReviewScheduleVO;
+import com.learnplatform.dto.ReviewSubmitRequest;
 import com.learnplatform.dto.ReviewStatsVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AiService;
 import com.learnplatform.service.ReviewScheduleQueryService;
 import com.learnplatform.service.SpacedRepetitionService;
+import com.learnplatform.service.HttpIdempotencyService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,9 +26,13 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 import java.util.concurrent.Executor;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -37,6 +43,7 @@ class ReviewControllerTest {
     @Mock private ReviewScheduleQueryService reviewScheduleQueryService;
     @Mock private AiService aiService;
     @Mock private Executor aiTaskExecutor;
+    @Mock private HttpIdempotencyService idempotency;
 
     private MockMvc mockMvc;
 
@@ -48,7 +55,7 @@ class ReviewControllerTest {
     @BeforeEach
     void setUp() {
         ReviewController controller = new ReviewController(
-                spacedRepetitionService, reviewScheduleQueryService, aiService, aiTaskExecutor);
+                spacedRepetitionService, reviewScheduleQueryService, aiService, aiTaskExecutor, idempotency);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver())
@@ -118,6 +125,18 @@ class ReviewControllerTest {
                 .andExpect(jsonPath("$.data.streakDays").doesNotExist());
 
         verify(reviewScheduleQueryService).getReviewStats(7L);
+    }
+
+    @Test
+    void submitReview_requiresIdempotencyKeyBeforeCallingBusinessService() throws Exception {
+        mockMvc.perform(post("/api/review/submit")
+                        .with(mockUser(7L))
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"questionId\":21,\"userAnswer\":\"A\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(1001));
+
+        verify(spacedRepetitionService, never()).submitReview(any(ReviewSubmitRequest.class), anyLong());
     }
 
     private RequestPostProcessor mockUser(Long userId) {

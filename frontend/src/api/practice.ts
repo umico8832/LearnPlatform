@@ -93,10 +93,9 @@ export function getPracticeQuestions(
 }
 
 /** 提交答案 */
-export function submitAnswer(data: PracticeSubmitRequest, options?: PracticeRequestOptions) {
-  return options
-    ? request.post<unknown, ApiResponse<PracticeResultVO>>('/practice/submit', data, options)
-    : request.post<unknown, ApiResponse<PracticeResultVO>>('/practice/submit', data)
+export function submitAnswer(data: PracticeSubmitRequest, options?: PracticeRequestOptions, requestKey: string = crypto.randomUUID()) {
+  const config = { headers: { 'Idempotency-Key': requestKey }, ...(options || {}) }
+  return request.post<unknown, ApiResponse<PracticeResultVO>>('/practice/submit', data, config)
 }
 
 /** 获取练习记录（分页） */

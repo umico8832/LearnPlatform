@@ -78,12 +78,12 @@ describe('Review API', () => {
   it('应使用 POST 请求提交复习答案', async () => {
     mockedRequest.post.mockResolvedValue({})
 
-    await submitReview({ questionId: 9, userAnswer: 'A' })
+    await submitReview({ questionId: 9, userAnswer: 'A' }, undefined, 'request-key')
 
     expect(mockedRequest.post).toHaveBeenCalledWith('/review/submit', {
       questionId: 9,
       userAnswer: 'A',
-    })
+    }, { headers: { 'Idempotency-Key': 'request-key' } })
   })
 
   it('应使用 DELETE 请求移出复习计划', async () => {

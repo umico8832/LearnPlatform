@@ -1,8 +1,10 @@
 package com.learnplatform.controller;
 
 import tools.jackson.databind.JsonNode;
+import com.learnplatform.common.exception.GlobalExceptionHandler;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.understanding.QuestionUnderstandingService;
+import com.learnplatform.service.HttpIdempotencyService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,19 +18,23 @@ import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 class QuestionUnderstandingControllerTest {
     private QuestionUnderstandingService service;
+    private HttpIdempotencyService idempotency;
     private MockMvc mvc;
 
     @BeforeEach void setUp() {
         service = mock(QuestionUnderstandingService.class);
+        idempotency = mock(HttpIdempotencyService.class);
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
                 new CustomUserDetails(7L, "learner", "USER"), null, List.of()));
-        mvc = MockMvcBuilders.standaloneSetup(new QuestionUnderstandingController(service))
+        mvc = MockMvcBuilders.standaloneSetup(new QuestionUnderstandingController(service, idempotency))
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CustomUserDetailsArgumentResolver()).build();
     }
 
@@ -40,7 +46,10 @@ class QuestionUnderstandingControllerTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.options[0].label").value("A"))
                 .andExpect(jsonPath("$.data.correctAnswer").doesNotExist());
         when(service.submit(eq(7L), eq(9L), any(JsonNode.class))).thenReturn(Map.of("attemptId", 11, "correct", false));
+        when(idempotency.execute(eq(7L), eq("understanding.attempt"), anyString(), any(), eq(Map.class), any()))
+                .thenReturn(Map.of("attemptId", 11, "correct", false));
         mvc.perform(post("/api/understanding/questions/9/attempts").contentType(MediaType.APPLICATION_JSON)
+                .header("Idempotency-Key", "00000000-0000-4000-8000-000000000001")
                 .content("{\"answer\":\"B\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.attemptId").value(11))
                 .andExpect(jsonPath("$.data.correctAnswer").doesNotExist());
@@ -70,5 +79,14 @@ class QuestionUnderstandingControllerTest {
                 .content("{\"originAttemptId\":11,\"answer\":\"A\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.assistance").value("UNAIDED"));
         verify(service).submitVariant(eq(7L), eq(12L), any(JsonNode.class));
+    }
+
+    @Test void submitOriginalAttempt_requiresIdempotencyKeyBeforeCallingBusinessService() throws Exception {
+        mvc.perform(post("/api/understanding/questions/9/attempts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"answer\":\"B\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(1001));
+        verify(service, never()).submit(anyLong(), anyLong(), any(JsonNode.class));
     }
 }

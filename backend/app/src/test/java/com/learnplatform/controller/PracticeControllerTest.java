@@ -9,6 +9,7 @@ import com.learnplatform.dto.QuestionVO;
 import com.learnplatform.security.CustomUserDetails;
 import com.learnplatform.service.AdaptivePracticeService;
 import com.learnplatform.service.PracticeService;
+import com.learnplatform.service.HttpIdempotencyService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -47,6 +50,8 @@ class PracticeControllerTest {
 
     @Mock
     private AdaptivePracticeService adaptivePracticeService;
+    @Mock
+    private HttpIdempotencyService idempotency;
 
     @InjectMocks
     private PracticeController practiceController;
@@ -120,7 +125,7 @@ class PracticeControllerTest {
         result.setCorrect(true);
         result.setCorrectAnswer("A");
 
-        when(practiceService.submitAnswer(any(PracticeSubmitRequest.class), eq(7L)))
+        when(idempotency.execute(eq(7L), eq("practice.submit"), anyString(), any(), eq(PracticeResultVO.class), any()))
                 .thenReturn(result);
 
         PracticeSubmitRequest req = new PracticeSubmitRequest();
@@ -130,6 +135,7 @@ class PracticeControllerTest {
 
         mockMvc.perform(post("/api/practice/submit")
                         .with(mockUser(7L))
+                        .header("Idempotency-Key", "00000000-0000-4000-8000-000000000001")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
@@ -163,6 +169,18 @@ class PracticeControllerTest {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(1001));
+    }
+
+    @Test
+    void submitAnswer_requiresIdempotencyKeyBeforeCallingBusinessService() throws Exception {
+        mockMvc.perform(post("/api/practice/submit")
+                        .with(mockUser(7L))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"questionId\":1,\"userAnswer\":\"A\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(1001));
+
+        verify(practiceService, never()).submitAnswer(any(PracticeSubmitRequest.class), anyLong());
     }
 
     // ======================== 练习统计 ========================

@@ -112,6 +112,7 @@
 </template>
 
 <script setup lang="ts">
+import { createSubmissionIntent } from '@/utils/submissionIntent'
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { submitReview } from '@/api/review'
@@ -159,6 +160,7 @@ const sessionXp = ref(0)
 const sessionAchievements = ref<GamificationAchievement[]>([])
 let generation = 0
 let alive = true
+const answerIntent = createSubmissionIntent<{ questionId: number; userAnswer: string }>()
 const sessionSummary = computed(() => ({
   answeredCount: reviewedCount.value,
   pendingCount: pendingCount.value,
@@ -200,6 +202,7 @@ onUnmounted(() => {
 })
 
 function resetAnswer() {
+  answerIntent.reset()
   userAnswer.value = ''
   answerSubmitted.value = false
   lastResult.value = null
@@ -250,15 +253,14 @@ async function submitCurrentAnswer() {
   const card = currentCard.value
   const requestGeneration = generation
   const session = getAuthSessionVersion()
+  const submission = answerIntent.prepare({ questionId: card.questionId, userAnswer: userAnswer.value.trim() })
   submissionError.value = ''
   submitting.value = true
   try {
     const { data } = await submitReview(
-      {
-        questionId: card.questionId,
-        userAnswer: userAnswer.value.trim(),
-      },
+      submission.body,
       { errorDisplay: 'inline' },
+      submission.key,
     )
     if (!alive || requestGeneration !== generation || session !== getAuthSessionVersion()) return
     lastResult.value = data
@@ -271,6 +273,7 @@ async function submitCurrentAnswer() {
       }
     }
     answerSubmitted.value = true
+    answerIntent.reset()
     reviewedCount.value++
     if (lastCorrect.value !== null) {
       gradedCount.value++

@@ -7,6 +7,7 @@ import { getQuestionById, type QuestionVO } from '@/api/question'
 import { LtButton, LtCard } from '@/components/living'
 import QuestionProse from '@/views/question/QuestionProse.vue'
 import { errorMessage } from '@/utils/errors'
+import { createSubmissionIntent } from '@/utils/submissionIntent'
 import { useGamificationStore } from '@/stores/gamification'
 import { getAuthSessionVersion, onAuthSessionChange } from '@/utils/auth'
 import PracticeRewardFeedback from './PracticeRewardFeedback.vue'
@@ -41,6 +42,7 @@ const achievements = ref<GamificationAchievement[]>([])
 const gamification = useGamificationStore()
 let generation = 0
 let alive = true
+const answerIntent = createSubmissionIntent<{ questionId: number; userAnswer: string }>()
 const current = computed(() => sessionCards.value[index.value] ?? null)
 const multiple = computed<string[]>({
   get: () => (answer.value ? answer.value.split(',') : []),
@@ -85,6 +87,7 @@ async function loadQuestion() {
   }
 }
 function reset() {
+  answerIntent.reset()
   answer.value = ''
   submitted.value = false
   submitting.value = false
@@ -112,19 +115,18 @@ async function submit() {
   if (!current.value || !canSubmit.value) return
   const requestGeneration = generation
   const session = getAuthSessionVersion()
+  const submission = answerIntent.prepare({
+    questionId: current.value.questionId,
+    userAnswer: answer.value.trim(),
+  })
   submitting.value = true
   error.value = ''
   try {
-    const response = await submitReview(
-      {
-        questionId: current.value.questionId,
-        userAnswer: answer.value.trim(),
-      },
-      { errorDisplay: 'inline' },
-    )
+    const response = await submitReview(submission.body, { errorDisplay: 'inline' }, submission.key)
     if (!alive || requestGeneration !== generation || session !== getAuthSessionVersion()) return
     result.value = response.data
     submitted.value = true
+    answerIntent.reset()
     reviewedCount.value++
     if (response.data.correct === null || response.data.correct === undefined) pendingCount.value++
     else {
@@ -173,6 +175,7 @@ function finish() {
 }
 const off = onAuthSessionChange(() => {
   generation++
+  answerIntent.reset()
   reviewing.value = false
   complete.value = false
   question.value = null

@@ -117,7 +117,7 @@ describe('ReviewSessionPanel', () => {
       .trigger('click')
     await flushPromises()
 
-    expect(submitReview).toHaveBeenCalledWith({ questionId: 21, userAnswer: '答案' }, { errorDisplay: 'inline' })
+    expect(submitReview).toHaveBeenCalledWith({ questionId: 21, userAnswer: '答案' }, { errorDisplay: 'inline' }, expect.stringMatching(/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/))
     expect(wrapper.emitted('reviewed')).toHaveLength(1)
     expect(wrapper.text()).toContain('服务端判分：回答正确')
   })
@@ -150,7 +150,7 @@ describe('ReviewSessionPanel', () => {
       .trigger('click')
     await flushPromises()
 
-    expect(submitReview).toHaveBeenLastCalledWith({ questionId: 21, userAnswer: 'B' }, { errorDisplay: 'inline' })
+    expect(submitReview).toHaveBeenLastCalledWith({ questionId: 21, userAnswer: 'B' }, { errorDisplay: 'inline' }, expect.stringMatching(/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/))
   })
 
   it('renders Markdown question structure through the shared renderer', async () => {
@@ -241,6 +241,11 @@ describe('ReviewSessionPanel', () => {
     expect(wrapper.get('[role="alert"]').text()).toContain('提交失败，请重试')
     expect(wrapper.get('[role="alert"] button').text()).toBe('重试')
     expect(message.error).not.toHaveBeenCalled()
+    const firstSubmission = [...submitReview.mock.calls[0]!]
+    await wrapper.get('[role="alert"] button').trigger('click')
+    await flushPromises()
+    expect(submitReview.mock.calls[1]).toEqual(firstSubmission)
+    expect(wrapper.emitted('reviewed')).toHaveLength(1)
   })
 
   it('keeps a server grading-basis rejection beside the selected answer without completing the review', async () => {
