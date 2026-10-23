@@ -47,7 +47,7 @@ test('题目 AI 可停止后重试，资产读取失败和反馈失败均可原�
   await feedback.getByRole('button', { name: '重试', exact: true }).click()
   await expect(feedback).toContainText('已反馈：没帮助')
   await expect(feedback.getByRole('alert')).toHaveCount(0)
-  await expect(page.locator('.el-message--error')).toHaveCount(0)
+  await expect(page.locator('.toast-host .toast')).toHaveCount(0)
   await assets.scrollIntoViewIfNeeded()
   await page.screenshot({ path: testInfo.outputPath('ai-learning-recovered.png') })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)

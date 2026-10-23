@@ -1,6 +1,6 @@
 import axios from 'axios'
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
-import { ElMessage } from 'element-plus'
+import { notifyError } from './notify'
 import { getToken, removeToken } from './auth'
 import { redirectToLogin } from './authNavigation'
 import { BusinessError } from './errors'
@@ -53,10 +53,10 @@ aiService.interceptors.response.use(
     if (res.code === 1002) {
       removeToken()
       redirectToLogin()
-      ElMessage.error('登录已过期，请重新登录')
+      notifyError('登录已过期，请重新登录')
       return Promise.reject(new Error(res.message))
     }
-    if (response.config.errorDisplay !== 'inline') ElMessage.error(res.message || '请求失败')
+    if (response.config.errorDisplay !== 'inline') notifyError(res.message || '请求失败')
     return Promise.reject(new Error(res.message))
   },
   (error) => {
@@ -66,16 +66,16 @@ aiService.interceptors.response.use(
       if (status === 401) {
         removeToken()
         redirectToLogin()
-        ElMessage.error('登录已过期，请重新登录')
+        notifyError('登录已过期，请重新登录')
       } else if (status === 500) {
-        ElMessage.error('AI 服务异常，请稍后重试')
+        notifyError('AI 服务异常，请稍后重试')
       } else {
-        ElMessage.error(`请求失败: ${status}`)
+        notifyError(`请求失败: ${status}`)
       }
     } else if (error.message.includes('timeout')) {
-      ElMessage.error('AI 响应超时，请稍后重试')
+      notifyError('AI 响应超时，请稍后重试')
     } else {
-      ElMessage.error('网络异常，请检查网络连接')
+      notifyError('网络异常，请检查网络连接')
     }
     return Promise.reject(error)
   },
@@ -111,9 +111,9 @@ service.interceptors.response.use(
           if (errorResponse.code === 1002) {
             removeToken()
             redirectToLogin()
-            ElMessage.error('登录已过期，请重新登录')
+            notifyError('登录已过期，请重新登录')
           } else if (response.config.errorDisplay !== 'inline') {
-            ElMessage.error(errorResponse.message || '请求失败')
+            notifyError(errorResponse.message || '请求失败')
           }
           return Promise.reject(new Error(errorResponse.message || '请求失败'))
         })
@@ -134,12 +134,12 @@ service.interceptors.response.use(
       }
       removeToken()
       redirectToLogin()
-      ElMessage.error('登录已过期，请重新登录')
+      notifyError('登录已过期，请重新登录')
       return Promise.reject(new Error(res.message))
     }
 
     // 其他业务错误
-    if (response.config.errorDisplay !== 'inline') ElMessage.error(res.message || '请求失败')
+    if (response.config.errorDisplay !== 'inline') notifyError(res.message || '请求失败')
     return Promise.reject(new BusinessError(res.message, res.code))
   },
   (error) => {
@@ -151,24 +151,24 @@ service.interceptors.response.use(
         case 401:
           removeToken()
           redirectToLogin()
-          ElMessage.error('登录已过期，请重新登录')
+          notifyError('登录已过期，请重新登录')
           break
         case 403:
-          ElMessage.error('没有权限访问')
+          notifyError('没有权限访问')
           break
         case 404:
-          ElMessage.error('请求的资源不存在')
+          notifyError('请求的资源不存在')
           break
         case 500:
-          ElMessage.error('服务器内部错误')
+          notifyError('服务器内部错误')
           break
         default:
-          ElMessage.error(`请求失败: ${status}`)
+          notifyError(`请求失败: ${status}`)
       }
     } else if (error.message.includes('timeout')) {
-      ElMessage.error('请求超时，请稍后重试')
+      notifyError('请求超时，请稍后重试')
     } else {
-      ElMessage.error('网络异常，请检查网络连接')
+      notifyError('网络异常，请检查网络连接')
     }
     return Promise.reject(error)
   },
