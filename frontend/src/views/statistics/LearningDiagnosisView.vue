@@ -1,24 +1,24 @@
 <template>
-  <div class="learning-diagnosis">
-    <el-page-header @back="$router.back()"
-      ><template #content><span class="page-title">学习诊断</span></template></el-page-header
-    >
-
-    <LpStatePanel
-      :state="state"
-      :title="state === 'empty' ? '还没有可诊断的学习记录' : '暂时无法读取学习诊断'"
-      :description="state === 'empty' ? '完成一次练习或复习后，这里会基于真实记录整理下一步。' : loadError"
-      loading-label="正在整理学习记录"
-      retry-label="重试读取"
-      :retrying="state === 'loading'"
-      @retry="loadDiagnosis"
-    >
+  <div class="lt learning-diagnosis" data-appearance="dark">
+    <div class="diagnosis-wrap">
+      <header class="diagnosis-intro">
+        <p class="diagnosis-kicker">学习记录</p>
+        <h1 id="diagnosis-heading">下一步从最需要处理的内容开始</h1>
+        <p>诊断只汇总已判分的学习事实；待判分记录会在完成批阅后更新。</p>
+      </header>
+      <div v-if="state === 'loading'" class="diagnosis-state" aria-busy="true">
+        <span class="skeleton" /><span class="skeleton" /><span class="sr-only" role="status">正在整理学习记录</span>
+      </div>
+      <div v-else-if="state === 'empty'" class="diagnosis-state">
+        <h2>还没有可诊断的学习记录</h2>
+        <p>完成一次练习或复习后，这里会基于真实记录整理下一步。</p>
+      </div>
+      <div v-else-if="state === 'error'" class="diagnosis-state" role="alert">
+        <h2>暂时无法读取学习诊断</h2>
+        <p>{{ loadError }}</p>
+        <button class="retry" type="button" @click="loadDiagnosis"><RotateCcw aria-hidden="true" />重试读取</button>
+      </div>
       <section v-if="state === 'ready' && data" class="diagnosis-content" aria-labelledby="diagnosis-heading">
-        <header class="diagnosis-intro">
-          <p class="diagnosis-kicker">学习记录</p>
-          <h1 id="diagnosis-heading">下一步从最需要处理的内容开始</h1>
-          <p>诊断只汇总已判分的学习事实；待判分记录会在完成批阅后更新。</p>
-        </header>
         <LearningDiagnosisSummary
           :data="data"
           :ai-advice-loading="aiAdviceLoading"
@@ -42,7 +42,7 @@
           @similar-question="loadSimilarQuestions"
         />
       </section>
-    </LpStatePanel>
+    </div>
 
     <QuestionErrorAnalysisDialog
       v-model="errorAnalysisDialogVisible"
@@ -67,6 +67,7 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, ref } from 'vue'
+import { RotateCcw } from '@lucide/vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { savePracticeSession } from '@/utils/practiceSession'
@@ -82,7 +83,6 @@ import {
   type QuestionErrorAnalysis,
   type SimilarQuestions,
 } from '@/api/statistics'
-import LpStatePanel from '@/components/ui/LpStatePanel.vue'
 import LearningDiagnosisErrorPatterns from '@/components/statistics/LearningDiagnosisErrorPatterns.vue'
 import LearningDiagnosisRecommendations from '@/components/statistics/LearningDiagnosisRecommendations.vue'
 import LearningDiagnosisSummary from '@/components/statistics/LearningDiagnosisSummary.vue'
@@ -331,36 +331,79 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .learning-diagnosis {
-  padding: 0 0 var(--lp-space-6);
+  min-height: 100%;
+  padding: var(--lt-space-6) var(--lt-space-5) var(--lt-space-10);
 }
-.page-title {
-  font-size: var(--lp-text-xl);
-  font-weight: var(--lp-weight-semibold);
+.diagnosis-wrap {
+  width: 100%;
+  margin: 0 auto;
 }
 .diagnosis-content {
   display: grid;
-  gap: var(--lp-space-5);
+  gap: var(--lt-space-6);
 }
 .diagnosis-intro {
-  max-width: var(--lp-container-narrow);
-  padding: var(--lp-space-5) 0 var(--lp-space-1);
+  max-width: min(100%, calc(var(--lt-space-10) * 10));
+  padding: var(--lt-space-5) 0;
 }
 .diagnosis-kicker {
-  margin: 0 0 var(--lp-space-2);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
-  font-weight: var(--lp-weight-semibold);
+  margin: 0 0 var(--lt-space-2);
+  color: var(--lt-label-3);
+  font-size: var(--lt-text-caption);
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 .diagnosis-intro h1 {
   margin: 0;
-  color: var(--lp-text);
-  font-size: var(--lp-text-3xl);
+  color: var(--lt-label);
+  font-size: var(--lt-text-title1);
+  letter-spacing: var(--lt-tracking-title);
 }
 .diagnosis-intro p:last-child {
-  margin: var(--lp-space-2) 0 0;
-  color: var(--lp-text-secondary);
-  line-height: var(--lp-leading-relaxed);
+  margin: var(--lt-space-2) 0 0;
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-body);
+  line-height: var(--lt-leading-ui);
+}
+.diagnosis-state {
+  display: grid;
+  justify-items: start;
+  gap: var(--lt-space-3);
+  min-height: calc(var(--lt-space-10) * 2 + var(--lt-space-5) + var(--lt-space-4));
+  padding: var(--lt-space-5);
+  border-radius: var(--lt-radius-xl);
+  background: var(--lt-surface-raised);
+  box-shadow: var(--lt-shadow-card);
+}
+.diagnosis-state h2,
+.diagnosis-state p {
+  margin: 0;
+}
+.diagnosis-state p {
+  color: var(--lt-label-2);
+}
+.skeleton {
+  width: 100%;
+  height: calc(var(--lt-space-7) - var(--lt-space-2) / 4);
+  border-radius: var(--lt-radius-sm);
+  background: var(--lt-fill-2);
+}
+.retry {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lt-space-2);
+  min-height: var(--lt-control-md);
+  padding: 0 var(--lt-space-4);
+  border: 0;
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-accent-fill);
+  color: var(--lt-on-accent);
+  font: 500 var(--lt-text-footnote)/1 var(--lt-font);
+  cursor: pointer;
+}
+.retry:focus-visible {
+  outline: 2px solid var(--lt-accent);
+  outline-offset: 2px;
 }
 </style>

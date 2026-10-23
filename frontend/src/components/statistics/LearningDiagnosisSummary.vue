@@ -1,147 +1,7 @@
-<template>
-  <el-card class="advice-card" shadow="hover">
-    <template #header>
-      <div class="card-header">
-        <span>今日建议</span>
-        <el-button
-          type="primary"
-          size="small"
-          :loading="aiAdviceLoading"
-          :disabled="aiAdviceStreaming"
-          @click="emit('generate-ai-advice')"
-        >
-          获取 AI 建议
-        </el-button>
-      </div>
-    </template>
-    <div class="advice-content">
-      <p v-for="(line, index) in adviceLines" :key="index">{{ line }}</p>
-    </div>
-  </el-card>
-
-  <el-card v-if="aiAdviceContent || aiAdviceLoading || aiAdviceError" class="ai-advice-card" shadow="hover">
-    <template #header>
-      <div class="card-header">
-        <span>AI 学习建议</span>
-        <el-button v-if="aiAdviceStreaming" link size="small" @click="emit('stop-ai-advice')">停止</el-button>
-        <el-tag v-else-if="aiAdviceContent" type="info" size="small" effect="light">AI 生成</el-tag>
-      </div>
-    </template>
-    <div v-if="aiAdviceLoading && !aiAdviceContent" v-loading="true" class="ai-loading"></div>
-    <div v-else class="ai-advice-content">
-      <MarkdownRenderer :content="aiAdviceContent" />
-    </div>
-    <el-alert v-if="aiAdviceError" :title="aiAdviceError" type="error" :closable="false" class="ai-advice-error" />
-  </el-card>
-
-  <el-row :gutter="16" class="stat-row">
-    <el-col :xs="12" :sm="6">
-      <el-card shadow="hover" class="stat-card">
-        <div class="stat-value">{{ data.totalPractice }}</div>
-        <div class="stat-label">已判分作答</div>
-      </el-card>
-    </el-col>
-    <el-col :xs="12" :sm="6">
-      <el-card shadow="hover" class="stat-card">
-        <div class="stat-value">{{ data.overallCorrectRate }}%</div>
-        <div class="stat-label">作答正确率</div>
-      </el-card>
-    </el-col>
-    <el-col :xs="12" :sm="6">
-      <el-card shadow="hover" class="stat-card">
-        <div class="stat-value">{{ data.activeDaysLast30 }}天</div>
-        <div class="stat-label">近30天活跃</div>
-      </el-card>
-    </el-col>
-    <el-col :xs="12" :sm="6">
-      <el-card shadow="hover" class="stat-card">
-        <div class="stat-value">{{ data.streakDays }}天</div>
-        <div class="stat-label">连续刷题</div>
-      </el-card>
-    </el-col>
-  </el-row>
-
-  <el-card v-if="data.weakPoints.length" class="section-card" shadow="hover">
-    <template #header>
-      <div>
-        <span>下一步关注的知识点</span>
-        <p class="section-description">诊断基于平台已判分的练习记录；记录较少时仅展示事实，不判断掌握程度。</p>
-      </div>
-    </template>
-    <el-table :data="data.weakPoints" stripe>
-      <el-table-column label="知识点" min-width="160">
-        <template #default="{ row }">
-          <div>
-            <strong>{{ row.knowledgePointName }}</strong>
-            <el-tag size="small" type="info" class="course-tag">{{ row.courseName }}</el-tag>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="正确率" width="120">
-        <template #default="{ row }">
-          <el-progress
-            v-if="row.totalAttempts > 0"
-            :percentage="Math.round(row.correctRate)"
-            :color="rateColor(row.correctRate)"
-            :stroke-width="6"
-          />
-          <span v-else class="no-record">暂无记录</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="totalAttempts" label="作答次数" width="96" align="center" />
-      <el-table-column prop="wrongCount" label="累计错次" width="96" align="center" />
-      <el-table-column label="状态" width="100" align="center">
-        <template #default="{ row }">
-          <el-tag :type="statusType(row.masteryStatus)" size="small">
-            {{ statusLabel(row.masteryStatus) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="diagnosis" label="诊断" min-width="260" show-overflow-tooltip />
-    </el-table>
-  </el-card>
-
-  <el-card v-if="data.learningHabit" class="section-card" shadow="hover">
-    <template #header><span>学习节奏</span></template>
-    <el-row :gutter="24">
-      <el-col :xs="24" :sm="12">
-        <el-descriptions :column="1" :label-width="88" border>
-          <el-descriptions-item label="日均作答">{{ data.learningHabit.avgDailyPractice }} 次</el-descriptions-item>
-          <el-descriptions-item label="偏好题型">{{ data.learningHabit.preferredQuestionType }}</el-descriptions-item>
-          <el-descriptions-item label="偏好课程">{{ data.learningHabit.preferredCourse }}</el-descriptions-item>
-          <el-descriptions-item label="学习频次">
-            <div class="frequency-detail">
-              <el-tag :type="frequencyType" size="small">{{ frequencyLabel }}</el-tag>
-              <p class="frequency-description">{{ data.learningHabit.frequencyDescription }}</p>
-            </div>
-          </el-descriptions-item>
-        </el-descriptions>
-      </el-col>
-      <el-col :xs="24" :sm="12">
-        <div class="chart-container">
-          <h4>近 7 天刷题趋势</h4>
-          <div class="mini-chart">
-            <div v-for="(day, index) in data.learningHabit.weeklyTrend" :key="index" class="chart-bar-group">
-              <div class="chart-bar-wrapper">
-                <div class="chart-bar correct" :style="{ height: barHeight(day.correct) }"></div>
-                <div class="chart-bar wrong" :style="{ height: barHeight(day.wrong) }"></div>
-              </div>
-              <div class="chart-date">{{ day.date.slice(5) }}</div>
-              <div class="chart-total">{{ day.total }}</div>
-            </div>
-          </div>
-        </div>
-      </el-col>
-    </el-row>
-  </el-card>
-</template>
-
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { LearningDiagnosis } from '@/api/statistics'
-import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
-import { rateColor, statusLabel, statusType } from './diagnosisDisplay'
-
+import QuestionProse from '@/views/question/QuestionProse.vue'
 const props = defineProps<{
   data: LearningDiagnosis
   aiAdviceLoading: boolean
@@ -149,230 +9,321 @@ const props = defineProps<{
   aiAdviceContent: string
   aiAdviceError: string
 }>()
-
 const emit = defineEmits<{ 'generate-ai-advice': []; 'stop-ai-advice': [] }>()
-
 const adviceLines = computed(() =>
   props.data.dailyAdvice
     .split('\n')
     .map((line) => line.trim().replace(/^(?:📚|⚠️?|⏰|🔥|📈|💡|✅)\s*/u, ''))
     .filter(Boolean),
 )
-const maxBarValue = computed(() => {
-  const max = Math.max(...props.data.learningHabit.weeklyTrend.map((day) => day.total))
-  return max || 1
-})
-const frequencyType = computed(() => {
-  if (props.data.learningHabit.frequencyLevel === 'ACTIVE') return 'success'
-  if (props.data.learningHabit.frequencyLevel === 'MODERATE') return 'warning'
-  if (props.data.learningHabit.frequencyLevel === 'INSUFFICIENT_DATA') return 'info'
-  return 'danger'
-})
-const frequencyLabel = computed(() => {
-  if (props.data.learningHabit.frequencyLevel === 'ACTIVE') return '学习活跃'
-  if (props.data.learningHabit.frequencyLevel === 'MODERATE') return '保持练习'
-  if (props.data.learningHabit.frequencyLevel === 'INSUFFICIENT_DATA') return '记录较少'
-  return '活跃日记录'
-})
-
-function barHeight(value: number): string {
-  return `${Math.max(0, (value / maxBarValue.value) * 100)}%`
+const max = computed(() => Math.max(...props.data.learningHabit.weeklyTrend.map((day) => day.total), 1))
+function height(value: number) {
+  return `${Math.max(0, value / max.value) * 100}%`
 }
 </script>
-
+<template>
+  <section data-appearance="dark" class="lt diagnosis-summary">
+    <article class="panel">
+      <header>
+        <h2>今日建议</h2>
+        <button type="button" :disabled="aiAdviceLoading || aiAdviceStreaming" @click="emit('generate-ai-advice')">
+          {{ aiAdviceLoading ? '生成中…' : '获取 AI 建议' }}
+        </button>
+      </header>
+      <p v-for="line in adviceLines" :key="line" class="reading">{{ line }}</p>
+    </article>
+    <article v-if="aiAdviceContent || aiAdviceLoading || aiAdviceError" class="panel">
+      <header>
+        <h2>AI 学习建议</h2>
+        <button v-if="aiAdviceStreaming" type="button" @click="emit('stop-ai-advice')">停止</button
+        ><span v-else-if="aiAdviceContent" class="tag">AI 生成</span>
+      </header>
+      <p v-if="aiAdviceLoading && !aiAdviceContent" role="status" class="muted">正在生成建议…</p>
+      <QuestionProse v-else :content="aiAdviceContent" />
+      <p v-if="aiAdviceError" class="notice" role="alert">{{ aiAdviceError }}</p>
+    </article>
+    <dl class="metrics">
+      <div>
+        <dt>已判分作答</dt>
+        <dd>{{ data.totalPractice }}</dd>
+      </div>
+      <div>
+        <dt>作答正确率</dt>
+        <dd>{{ data.overallCorrectRate }}%</dd>
+      </div>
+      <div>
+        <dt>近30天活跃</dt>
+        <dd>{{ data.activeDaysLast30 }}天</dd>
+      </div>
+      <div>
+        <dt>连续刷题</dt>
+        <dd>{{ data.streakDays }}天</dd>
+      </div>
+    </dl>
+    <article v-if="data.weakPoints.length" class="panel">
+      <h2>下一步关注的知识点</h2>
+      <p class="muted">诊断基于平台已判分的练习记录；记录较少时仅展示事实，不判断掌握程度。</p>
+      <ul class="rows">
+        <li v-for="item in data.weakPoints" :key="item.knowledgePointId">
+          <div>
+            <strong>{{ item.knowledgePointName }}</strong
+            ><span class="tag" :data-type="item.totalAttempts ? 'info' : undefined">{{ item.courseName }}</span
+            ><span
+              class="tag"
+              :data-type="
+                item.masteryStatus === 'NOT_STARTED' || item.masteryStatus === 'INSUFFICIENT_DATA'
+                  ? 'info'
+                  : item.masteryStatus === 'WEAK'
+                    ? 'warning'
+                    : undefined
+              "
+              >{{
+                item.masteryStatus === 'INSUFFICIENT_DATA'
+                  ? '记录较少'
+                  : item.masteryStatus === 'NOT_STARTED'
+                    ? '未开始'
+                    : item.masteryStatus === 'WEAK'
+                      ? '薄弱'
+                      : '需复习'
+              }}</span
+            >
+            <p>{{ item.diagnosis }} · 作答次数 {{ item.totalAttempts }} · 累计错次 {{ item.wrongCount }}</p>
+          </div>
+          <div v-if="item.totalAttempts" class="progress">
+            <span :style="{ width: `${Math.round(item.correctRate)}%` }" /><small
+              >{{ Math.round(item.correctRate) }}%</small
+            >
+          </div>
+          <span v-else class="muted">暂无记录</span>
+        </li>
+      </ul>
+    </article>
+    <article class="panel">
+      <h2>学习节奏</h2>
+      <div class="habit">
+        <dl>
+          <div>
+            <dt>日均作答</dt>
+            <dd>{{ data.learningHabit.avgDailyPractice }} 次</dd>
+          </div>
+          <div>
+            <dt>偏好题型</dt>
+            <dd>{{ data.learningHabit.preferredQuestionType }}</dd>
+          </div>
+          <div>
+            <dt>偏好课程</dt>
+            <dd>{{ data.learningHabit.preferredCourse }}</dd>
+          </div>
+          <div>
+            <dt>学习频次</dt>
+            <dd class="frequency-description">{{ data.learningHabit.frequencyDescription }}</dd>
+          </div>
+        </dl>
+        <div>
+          <h3>近 7 天刷题趋势</h3>
+          <div class="chart">
+            <div v-for="day in data.learningHabit.weeklyTrend" :key="day.date">
+              <div class="bars">
+                <i :style="{ height: height(day.correct) }" /><b :style="{ height: height(day.wrong) }" />
+              </div>
+              <small>{{ day.date.slice(5) }}</small
+              ><em>{{ day.total }}</em>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+  </section>
+</template>
 <style scoped>
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.advice-card {
-  margin-top: var(--lp-space-5);
-}
-
-.advice-content {
-  font-size: var(--lp-text-md);
-  line-height: var(--lp-leading-relaxed);
-  color: var(--lp-text);
-}
-
-.advice-content p {
-  margin: 0 0 var(--lp-space-1);
-}
-
-.ai-loading {
-  height: 100px;
-}
-
-.stat-row {
-  margin-top: var(--lp-space-4);
-}
-
-.stat-card {
-  text-align: center;
-  margin-bottom: var(--lp-space-2);
-}
-
-.stat-value {
-  font-size: var(--lp-text-4xl);
-  font-weight: var(--lp-weight-bold);
-  color: var(--lp-primary);
-}
-
-.stat-label {
-  font-size: var(--lp-text-sm);
-  color: var(--lp-text-muted);
-  margin-top: var(--lp-space-1);
-}
-
-.section-card,
-.ai-advice-card {
-  margin-top: var(--lp-space-4);
-}
-
-.ai-advice-error {
-  margin-top: var(--lp-space-3);
-}
-
-.course-tag {
-  margin-left: var(--lp-space-2);
-}
-
-.section-description {
-  margin: var(--lp-space-1) 0 0;
-  font-size: var(--lp-text-sm);
-  font-weight: var(--lp-weight-normal);
-  color: var(--lp-text-muted);
-}
-
-.no-record {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
-}
-
-.frequency-detail {
+.diagnosis-summary {
   display: grid;
-  gap: var(--lp-space-1);
-  align-items: start;
+  gap: var(--lt-space-5);
 }
-
-.frequency-detail .el-tag {
-  justify-self: start;
+.panel {
+  padding: var(--lt-space-5);
+  border-radius: var(--lt-radius-xl);
+  background: var(--lt-surface-raised);
+  box-shadow: var(--lt-shadow-card);
 }
-
-.frequency-description {
-  margin: 0;
-  line-height: var(--lp-leading-body);
-  color: var(--lp-text-secondary);
-  overflow-wrap: anywhere;
-}
-
-.chart-container h4 {
-  margin: 0 0 var(--lp-space-3);
-  font-size: var(--lp-text-base);
-  color: var(--lp-text-secondary);
-}
-
-.mini-chart {
+header {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-around;
-  height: 160px;
-  padding: 0 var(--lp-space-2);
-}
-
-.chart-bar-group {
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  flex: 1;
+  justify-content: space-between;
+  gap: var(--lt-space-3);
 }
-
-.chart-bar-wrapper {
+h2,
+h3 {
+  margin: 0;
+  font-size: var(--lt-text-title3);
+}
+h3 {
+  font-size: var(--lt-text-footnote);
+}
+button {
+  min-height: var(--lt-control-sm);
+  padding: 0 var(--lt-space-3);
+  border: 0;
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-accent-fill);
+  color: var(--lt-on-accent);
+  font: 500 var(--lt-text-caption)/1 var(--lt-font);
+  cursor: pointer;
+}
+button:focus-visible {
+  outline: 2px solid var(--lt-accent);
+  outline-offset: 2px;
+}
+.reading {
+  margin: var(--lt-space-3) 0 0;
+  font-size: var(--lt-text-reading);
+  line-height: var(--lt-leading-reading);
+}
+.muted {
+  color: var(--lt-label-2);
+}
+.notice {
+  padding: var(--lt-space-3);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-orange-soft);
+  color: var(--lt-orange-text);
+}
+.tag {
+  display: inline-flex;
+  padding: calc(var(--lt-space-1) * 0.75) var(--lt-space-2);
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill-2);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-caption);
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--lt-space-3);
+  margin: 0;
+}
+.metrics div {
+  padding: var(--lt-space-4);
+  border-radius: var(--lt-radius-lg);
+  background: var(--lt-fill-2);
+}
+dt {
+  color: var(--lt-label-3);
+  font-size: var(--lt-text-caption);
+}
+dd {
+  margin: var(--lt-space-1) 0 0;
+  font-variant-numeric: tabular-nums;
+}
+.metrics dd {
+  font: 600 var(--lt-text-title2)/1 var(--lt-font-rounded);
+}
+.rows {
+  display: grid;
+  gap: var(--lt-space-3);
+  margin: var(--lt-space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.rows li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) calc(var(--lt-space-10) * 2 + var(--lt-space-5) + var(--lt-space-4));
+  gap: var(--lt-space-4);
+  align-items: center;
+  padding-top: var(--lt-space-3);
+  border-top: 1px solid var(--lt-separator);
+}
+.rows p {
+  margin: var(--lt-space-2) 0 0;
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+}
+.rows .tag {
+  margin-left: var(--lt-space-2);
+}
+.progress {
   display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 100px;
+  align-items: center;
+  gap: var(--lt-space-2);
 }
-
-.chart-bar {
-  width: 16px;
-  border-radius: var(--lp-radius-xs) var(--lp-radius-xs) 0 0;
-  transition: height var(--lp-duration-slow) var(--lp-ease-out);
+.progress:before {
+  content: '';
+  position: absolute;
 }
-
-.chart-bar.correct {
-  background: var(--lp-success);
+.progress span {
+  height: calc(var(--lt-space-2) - var(--lt-space-1) / 4);
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-accent);
+  min-width: calc(var(--lt-space-1) / 2);
 }
-
-.chart-bar.wrong {
-  background: var(--lp-danger);
+.progress {
+  background: var(--lt-fill-2);
+  border-radius: var(--lt-radius-pill);
+  overflow: hidden;
 }
-
-.chart-date {
-  font-size: var(--lp-text-xs);
-  color: var(--lp-text-muted);
-  margin-top: var(--lp-space-1);
+.progress small {
+  padding-right: var(--lt-space-2);
+  margin-left: auto;
 }
-
-.chart-total {
-  font-size: var(--lp-text-xs);
-  font-weight: var(--lp-weight-semibold);
-  color: var(--lp-text);
+.habit {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--lt-space-6);
+  margin-top: var(--lt-space-4);
 }
-
-.ai-advice-card {
-  border-left: 3px solid var(--lp-primary);
+.habit dl {
+  display: grid;
+  gap: var(--lt-space-3);
+  margin: 0;
 }
-
-.ai-advice-content {
-  font-size: var(--lp-text-base);
-  line-height: var(--lp-leading-relaxed);
-  color: var(--lp-text);
+.chart {
+  display: flex;
+  align-items: end;
+  gap: var(--lt-space-2);
+  height: calc(var(--lt-space-10) * 2 - var(--lt-space-1));
+  margin-top: var(--lt-space-3);
 }
-
-.ai-advice-content :deep(h1),
-.ai-advice-content :deep(h2),
-.ai-advice-content :deep(h3) {
-  margin-top: var(--lp-space-4);
-  margin-bottom: var(--lp-space-2);
-  color: var(--lp-text);
+.chart > div {
+  display: grid;
+  flex: 1;
+  justify-items: center;
+  gap: var(--lt-space-1);
+  height: 100%;
+  font-style: normal;
 }
-
-.ai-advice-content :deep(ul),
-.ai-advice-content :deep(ol) {
-  padding-left: var(--lp-space-5);
+.bars {
+  display: flex;
+  align-items: end;
+  gap: calc(var(--lt-space-1) / 2);
+  height: 100%;
+  width: 100%;
 }
-
-.ai-advice-content :deep(p) {
-  margin: var(--lp-space-2) 0;
+.bars i,
+.bars b {
+  flex: 1;
+  min-height: calc(var(--lt-space-1) / 2);
+  border-radius: var(--lt-radius-sm) var(--lt-radius-sm) 0 0;
 }
-
-.ai-advice-content :deep(code) {
-  background: var(--lp-surface-soft);
-  padding: var(--lp-space-1) var(--lp-space-2);
-  border-radius: var(--lp-radius-xs);
-  font-size: var(--lp-text-sm);
+.bars i {
+  background: var(--lt-green);
 }
-
-@media (max-width: 768px) {
-  .stat-value {
-    font-size: var(--lp-text-2xl);
+.bars b {
+  background: var(--lt-orange);
+}
+.chart small {
+  color: var(--lt-label-3);
+}
+.chart em {
+  font-style: normal;
+  font-size: var(--lt-text-caption);
+}
+@media (max-width: 700px) {
+  .metrics,
+  .habit {
+    grid-template-columns: 1fr 1fr;
   }
-
-  .mini-chart {
-    height: 120px;
-  }
-
-  .chart-bar-wrapper {
-    height: 70px;
-  }
-
-  .chart-bar {
-    width: 10px;
+  .rows li {
+    grid-template-columns: 1fr;
   }
 }
 </style>
-
-<style scoped></style>

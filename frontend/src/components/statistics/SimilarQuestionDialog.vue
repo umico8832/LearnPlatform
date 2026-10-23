@@ -1,79 +1,8 @@
-<template>
-  <el-dialog
-    :model-value="modelValue"
-    title="相似题推荐"
-    width="840px"
-    destroy-on-close
-    @update:model-value="emit('update:modelValue', $event)"
-  >
-    <div v-if="loading" v-loading="true" class="dialog-loading"></div>
-    <el-alert v-else-if="error" :title="error" type="error" :closable="false" show-icon>
-      <template #default><el-button link type="primary" @click="emit('retry')">重试读取</el-button></template>
-    </el-alert>
-    <template v-else-if="data">
-      <div class="similar-source"><strong>原题：</strong>{{ sourceContent }}</div>
-      <el-table :data="data.similarQuestions" stripe class="similar-table">
-        <el-table-column label="题目内容" min-width="240" show-overflow-tooltip>
-          <template #default="{ row }"
-            ><span>{{ row.questionContent }}</span></template
-          >
-        </el-table-column>
-        <el-table-column label="相似度" width="100" align="center">
-          <template #default="{ row }">
-            <div class="similarity-meter">
-              <el-progress
-                :percentage="row.similarityScore"
-                :stroke-width="8"
-                :show-text="false"
-                :color="similarityColor(row.similarityScore)"
-                aria-hidden="true"
-              />
-              <span class="similarity-value">{{ row.similarityScore }}%</span>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column label="相似原因" width="160">
-          <template #default="{ row }"
-            ><span class="similar-reason">{{ row.reason }}</span></template
-          >
-        </el-table-column>
-        <el-table-column label="题型" width="80" align="center">
-          <template #default="{ row }">{{ questionTypeLabel(row.questionType) }}</template>
-        </el-table-column>
-        <el-table-column label="难度" width="80" align="center">
-          <template #default="{ row }">
-            <el-tag v-if="row.difficulty" size="small" type="info">难度 {{ row.difficulty }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="已练过" width="80" align="center">
-          <template #default="{ row }">
-            <el-tag :type="row.alreadyAttempted ? 'success' : 'info'" size="small">
-              {{ row.alreadyAttempted ? '是' : '否' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-      </el-table>
-    </template>
-    <el-empty v-else description="暂无相似题目" />
-    <template #footer>
-      <p v-if="practiceError" class="similar-error" role="alert">{{ practiceError }}</p>
-      <el-button @click="emit('update:modelValue', false)">关闭</el-button>
-      <el-button
-        type="primary"
-        :loading="starting"
-        :disabled="starting || !data?.similarQuestions?.length"
-        @click="emit('start-practice')"
-      >
-        开始练习相似题
-      </el-button>
-    </template>
-  </el-dialog>
-</template>
-
 <script setup lang="ts">
+import LtButton from '@/components/living/LtButton.vue'
+import LtSheet from '@/components/living/LtSheet.vue'
 import type { SimilarQuestions } from '@/api/statistics'
-import { questionTypeLabel, similarityColor } from './diagnosisDisplay'
-
+import QuestionProse from '@/views/question/QuestionProse.vue'
 defineProps<{
   modelValue: boolean
   loading: boolean
@@ -83,64 +12,135 @@ defineProps<{
   starting?: boolean
   practiceError?: string
 }>()
-
-const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-  'start-practice': []
-  retry: []
-}>()
+const emit = defineEmits<{ 'update:modelValue': [value: boolean]; 'start-practice': []; retry: [] }>()
 </script>
-
+<template>
+  <LtSheet :open="modelValue" title="相似题推荐" :width="840" @update:open="emit('update:modelValue', $event)"
+    ><div v-if="loading" class="loading" aria-busy="true"><span role="status">正在读取相似题</span></div>
+    <div v-else-if="error" class="notice" role="alert">
+      <p>{{ error }}</p>
+      <LtButton @click="emit('retry')">重试读取</LtButton>
+    </div>
+    <template v-else-if="data"
+      ><div class="source"><strong>原题：</strong><QuestionProse inline :content="sourceContent" /></div>
+      <ul class="rows">
+        <li v-for="item in data.similarQuestions" :key="item.questionId">
+          <div>
+            <QuestionProse class="question" :content="item.questionContent" size="body" />
+            <span
+              >{{ item.reason }} · {{ item.questionType
+              }}<template v-if="item.difficulty"> · 难度 {{ item.difficulty }}</template></span
+            >
+          </div>
+          <div class="score">
+            <i><b :style="{ width: `${item.similarityScore}%` }" /></i><em>{{ item.similarityScore }}%</em>
+          </div>
+          <span class="tag" :data-attempted="item.alreadyAttempted">{{
+            item.alreadyAttempted ? '已练过' : '未练过'
+          }}</span>
+        </li>
+      </ul></template
+    >
+    <p v-else class="muted">暂无相似题目</p>
+    <p v-if="practiceError" class="notice" role="alert">{{ practiceError }}</p>
+    <div class="actions">
+      <LtButton @click="emit('update:modelValue', false)">关闭</LtButton
+      ><LtButton
+        variant="primary"
+        :disabled="starting || !data?.similarQuestions?.length"
+        @click="emit('start-practice')"
+        >{{ starting ? '准备中…' : '开始练习相似题' }}</LtButton
+      >
+    </div></LtSheet
+  >
+</template>
 <style scoped>
-.dialog-loading {
-  height: 200px;
+.loading {
+  min-height: calc(var(--lt-space-10) * 2 + var(--lt-space-4));
+  display: grid;
+  place-items: center;
+  color: var(--lt-label-2);
 }
-
-.similar-source {
-  padding: var(--lp-space-3);
-  background: var(--lp-surface-soft);
-  border-radius: var(--lp-radius-sm);
-  font-size: var(--lp-text-sm);
-  color: var(--lp-text-secondary);
-  line-height: var(--lp-leading-body);
+.source,
+.notice {
+  margin: 0;
+  padding: var(--lt-space-4);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-fill-2);
+  line-height: var(--lt-leading-ui);
 }
-
-.similar-table {
-  margin-top: var(--lp-space-3);
+.notice {
+  background: var(--lt-orange-soft);
+  color: var(--lt-orange-text);
 }
-
-.similarity-meter {
+.rows {
+  display: grid;
+  gap: var(--lt-space-3);
+  margin: var(--lt-space-4) 0;
+  padding: 0;
+  list-style: none;
+}
+.rows li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) calc(var(--lt-space-10) + var(--lt-space-7) + var(--lt-space-5)) auto;
+  gap: var(--lt-space-4);
+  align-items: center;
+  padding: var(--lt-space-4);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-fill-2);
+}
+.rows li > div:first-child {
+  display: grid;
+  gap: var(--lt-space-2);
+}
+.rows span,
+.muted {
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+}
+.score {
   display: flex;
   align-items: center;
-  gap: var(--lp-space-2);
+  gap: var(--lt-space-2);
 }
-
-.similarity-meter :deep(.el-progress) {
+.score i {
   flex: 1;
-  min-width: 0;
+  height: calc(var(--lt-space-2) - var(--lt-space-1) / 4);
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill-hover);
+  overflow: hidden;
 }
-
-.similarity-value {
-  min-width: 3em;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
-.similar-reason {
+.score b {
   display: block;
-  width: 100%;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  line-height: 1.6;
-  overflow-wrap: anywhere;
-  white-space: normal;
+  height: 100%;
+  background: var(--lt-accent);
 }
-
-.similar-error {
-  margin: 0 var(--lp-space-3) 0 0;
-  color: var(--lp-danger);
-  font-size: var(--lp-text-sm);
+.score em {
+  font-style: normal;
+  font-size: var(--lt-text-caption);
+}
+.tag {
+  padding: calc(var(--lt-space-1) * 0.75) var(--lt-space-2);
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill-hover);
+  white-space: nowrap;
+}
+.tag[data-attempted='true'] {
+  background: var(--lt-green-soft);
+  color: var(--lt-green-text);
+}
+.actions {
+  display: flex;
+  justify-content: end;
+  gap: var(--lt-space-3);
+  margin-top: var(--lt-space-5);
+}
+@media (max-width: 700px) {
+  .rows li {
+    grid-template-columns: 1fr;
+  }
+  .score {
+    width: calc(var(--lt-space-10) * 2 + var(--lt-space-5) + var(--lt-space-4));
+  }
 }
 </style>

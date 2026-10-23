@@ -168,7 +168,7 @@ export const learnerRoutes: RouteRecordRaw[] = [
         path: 'learning-diagnosis',
         name: 'LearningDiagnosis',
         component: () => import('@/views/statistics/LearningDiagnosisView.vue'),
-        meta: { title: '学习诊断', hidden: true },
+        meta: { title: '学习诊断', hidden: true, living: true },
       },
       {
         path: 'submit',

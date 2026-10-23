@@ -1,181 +1,197 @@
-<template>
-  <el-dialog
-    :model-value="modelValue"
-    title="单题作答记录"
-    width="750px"
-    destroy-on-close
-    @update:model-value="emit('update:modelValue', $event)"
-  >
-    <div v-if="loading" v-loading="true" class="dialog-loading"></div>
-    <el-alert v-else-if="error" :title="error" type="error" :closable="false" show-icon>
-      <template #default><el-button link type="primary" @click="emit('retry')">重试读取</el-button></template>
-    </el-alert>
-    <template v-else-if="data">
-      <div class="error-analysis-header">
-        <div class="error-analysis-question">{{ data.questionContent }}</div>
-        <div class="error-analysis-tags">
-          <el-tag size="small">{{ questionTypeLabel(data.questionType) }}</el-tag>
-          <el-tag v-if="data.difficulty" size="small" type="info">难度 {{ data.difficulty }}</el-tag>
-          <el-tag v-if="data.courseName" size="small" type="info">{{ data.courseName }}</el-tag>
-          <el-tag v-if="data.knowledgePointName" size="small" type="info">{{ data.knowledgePointName }}</el-tag>
-        </div>
-      </div>
-
-      <el-row :gutter="16" class="metrics-row">
-        <el-col :span="6"><el-statistic title="总作答" :value="data.totalAttempts" /></el-col>
-        <el-col :span="6"><el-statistic title="答对" :value="data.correctCount" /></el-col>
-        <el-col :span="6"><el-statistic title="答错" :value="data.wrongCount" /></el-col>
-        <el-col :span="6">
-          <el-statistic title="正确率">
-            <template #default>
-              <span :style="{ color: rateColor(data.correctRate), fontWeight: 700 }">{{ data.correctRate }}%</span>
-            </template>
-          </el-statistic>
-        </el-col>
-      </el-row>
-
-      <el-alert :title="data.trendDescription" :type="trendType" :closable="false" show-icon class="trend-alert" />
-
-      <div v-if="data.currentMasteryLevel !== null && data.currentMasteryLevel !== undefined" class="mastery-row">
-        <span>当前掌握程度：</span>
-        <el-tag :type="masteryLevelType(data.currentMasteryLevel)" size="small">
-          {{ masteryLevelLabel(data.currentMasteryLevel) }}
-        </el-tag>
-      </div>
-
-      <div class="error-pattern-box">
-        <h4>作答模式</h4>
-        <p>{{ data.errorPattern }}</p>
-      </div>
-
-      <div v-if="data.attempts.length" class="attempt-history">
-        <h4>作答历史（共 {{ data.attempts.length }} 次）</h4>
-        <el-timeline>
-          <el-timeline-item
-            v-for="(attempt, index) in data.attempts"
-            :key="index"
-            :type="attempt.isCorrect === 1 ? 'success' : attempt.isCorrect === 0 ? 'danger' : 'info'"
-            :timestamp="attempt.createTime ? attempt.createTime.replace('T', ' ') : ''"
-            placement="top"
-          >
-            <el-card shadow="never" body-style="padding: 10px 14px">
-              <div class="attempt-row">
-                <span>
-                  <el-tag :type="attemptStatus(attempt.isCorrect).type" size="small">
-                    {{ attemptStatus(attempt.isCorrect).label }}
-                  </el-tag>
-                  <span v-if="attempt.userAnswer" class="attempt-answer">答案：{{ attempt.userAnswer }}</span>
-                </span>
-                <span v-if="attempt.answerTime" class="attempt-time">用时 {{ attempt.answerTime }}s</span>
-              </div>
-            </el-card>
-          </el-timeline-item>
-        </el-timeline>
-      </div>
-    </template>
-    <el-empty v-else description="暂无数据" />
-    <template #footer><el-button @click="emit('update:modelValue', false)">关闭</el-button></template>
-  </el-dialog>
-</template>
-
 <script setup lang="ts">
-import { computed } from 'vue'
+import LtButton from '@/components/living/LtButton.vue'
+import LtSheet from '@/components/living/LtSheet.vue'
 import type { QuestionErrorAnalysis } from '@/api/statistics'
-import { masteryLevelLabel, masteryLevelType, questionTypeLabel, rateColor } from './diagnosisDisplay'
-
-const props = defineProps<{
-  modelValue: boolean
-  loading: boolean
-  data: QuestionErrorAnalysis | null
-  error?: string
-}>()
-
+import QuestionProse from '@/views/question/QuestionProse.vue'
+defineProps<{ modelValue: boolean; loading: boolean; data: QuestionErrorAnalysis | null; error?: string }>()
 const emit = defineEmits<{ 'update:modelValue': [value: boolean]; retry: [] }>()
-const trendType = computed(() => {
-  if (props.data?.masteryTrend === 'IMPROVING') return 'success'
-  if (props.data?.masteryTrend === 'DECLINING') return 'error'
-  return 'info'
-})
-
-function attemptStatus(isCorrect: number | null) {
-  if (isCorrect === 1) return { label: '答对', type: 'success' as const }
-  if (isCorrect === 0) return { label: '答错', type: 'danger' as const }
-  return { label: '待判分', type: 'info' as const }
-}
 </script>
-
+<template>
+  <LtSheet :open="modelValue" title="单题作答记录" :width="750" @update:open="emit('update:modelValue', $event)"
+    ><div v-if="loading" class="loading" aria-busy="true"><span role="status">正在读取作答记录</span></div>
+    <div v-else-if="error" class="notice" role="alert">
+      <p>{{ error }}</p>
+      <LtButton @click="emit('retry')">重试读取</LtButton>
+    </div>
+    <article v-else-if="data" class="detail">
+      <header>
+        <QuestionProse :content="data.questionContent" />
+        <span
+          >{{ data.questionType }}<template v-if="data.difficulty"> · 难度 {{ data.difficulty }}</template></span
+        >
+      </header>
+      <dl class="metrics">
+        <div>
+          <dt>总作答</dt>
+          <dd>{{ data.totalAttempts }}</dd>
+        </div>
+        <div>
+          <dt>答对</dt>
+          <dd class="green">{{ data.correctCount }}</dd>
+        </div>
+        <div>
+          <dt>答错</dt>
+          <dd class="orange">{{ data.wrongCount }}</dd>
+        </div>
+        <div>
+          <dt>正确率</dt>
+          <dd>{{ data.correctRate }}%</dd>
+        </div>
+      </dl>
+      <p class="trend" :data-trend="data.masteryTrend">{{ data.trendDescription }}</p>
+      <p v-if="data.currentMasteryLevel !== null" class="muted">
+        当前掌握程度：{{
+          data.currentMasteryLevel === 2 ? '已掌握' : data.currentMasteryLevel === 1 ? '部分掌握' : '未掌握'
+        }}
+      </p>
+      <section>
+        <h3>作答模式</h3>
+        <QuestionProse :content="data.errorPattern" size="body" />
+      </section>
+      <section v-if="data.attempts.length">
+        <h3>作答历史（共 {{ data.attempts.length }} 次）</h3>
+        <ol>
+          <li v-for="attempt in data.attempts" :key="attempt.recordId" class="attempt-row">
+            <i :data-correct="attempt.isCorrect" />
+            <div>
+              <strong>{{ attempt.isCorrect === 1 ? '答对' : attempt.isCorrect === 0 ? '答错' : '待判分' }}</strong
+              ><span v-if="attempt.userAnswer">答案：{{ attempt.userAnswer }}</span
+              ><time v-if="attempt.createTime">{{ attempt.createTime.replace('T', ' ') }}</time>
+            </div>
+            <em v-if="attempt.answerTime">{{ attempt.answerTime }}s</em>
+          </li>
+        </ol>
+      </section>
+    </article>
+    <p v-else class="muted">暂无数据</p>
+    <div class="actions"><LtButton @click="emit('update:modelValue', false)">关闭</LtButton></div></LtSheet
+  >
+</template>
 <style scoped>
-.dialog-loading {
-  height: 200px;
+.loading {
+  min-height: calc(var(--lt-space-10) * 2 + var(--lt-space-4));
+  display: grid;
+  place-items: center;
+  color: var(--lt-label-2);
 }
-
-.error-analysis-header {
-  padding: var(--lp-space-3);
-  background: var(--lp-surface-soft);
-  border-radius: var(--lp-radius-sm);
+.notice {
+  padding: var(--lt-space-4);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-orange-soft);
+  color: var(--lt-orange-text);
 }
-
-.error-analysis-question {
-  font-size: var(--lp-text-base);
-  line-height: var(--lp-leading-body);
-  color: var(--lp-text);
-  margin-bottom: var(--lp-space-2);
+.detail {
+  display: grid;
+  gap: var(--lt-space-5);
 }
-
-.error-analysis-tags {
-  display: flex;
-  gap: var(--lp-space-2);
-  flex-wrap: wrap;
+header {
+  padding: var(--lt-space-4);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-fill-2);
 }
-
-.metrics-row,
-.trend-alert,
-.error-pattern-box,
-.attempt-history {
-  margin-top: var(--lp-space-4);
-}
-
-.mastery-row {
-  margin-top: var(--lp-space-3);
-  font-size: var(--lp-text-sm);
-  color: var(--lp-text-secondary);
-}
-
-.error-pattern-box {
-  padding: var(--lp-space-3) var(--lp-space-4);
-  background: var(--lp-warning-soft);
-  border-radius: var(--lp-radius-sm);
-  border-left: 3px solid var(--lp-warning);
-}
-
-.error-pattern-box h4,
-.attempt-history h4 {
-  margin: 0 0 var(--lp-space-2);
-  font-size: var(--lp-text-base);
-  color: var(--lp-text);
-}
-
-.error-pattern-box p {
+header p {
   margin: 0;
-  font-size: var(--lp-text-sm);
-  line-height: var(--lp-leading-relaxed);
-  color: var(--lp-text-secondary);
+  font-size: var(--lt-text-reading);
+  line-height: var(--lt-leading-reading);
 }
-
-.attempt-row {
+header span,
+.muted {
+  display: block;
+  margin-top: var(--lt-space-2);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--lt-space-3);
+  margin: 0;
+}
+.metrics div {
+  padding: var(--lt-space-3);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-fill-2);
+}
+dt {
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-caption);
+}
+dd {
+  margin: var(--lt-space-1) 0 0;
+  font: 600 var(--lt-text-title3)/1 var(--lt-font-rounded);
+}
+.green {
+  color: var(--lt-green-text);
+}
+.orange {
+  color: var(--lt-orange-text);
+}
+.trend,
+section {
+  margin: 0;
+  padding: var(--lt-space-4);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-fill-2);
+}
+.trend[data-trend='DECLINING'] {
+  background: var(--lt-orange-soft);
+  color: var(--lt-orange-text);
+}
+h3 {
+  margin: 0 0 var(--lt-space-2);
+  font-size: var(--lt-text-footnote);
+}
+section p {
+  margin: 0;
+  line-height: var(--lt-leading-ui);
+}
+ol {
+  display: grid;
+  gap: var(--lt-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+li {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  gap: var(--lt-space-3);
+  align-items: start;
 }
-
-.attempt-answer {
-  margin-left: var(--lp-space-2);
-  font-size: var(--lp-text-sm);
-  color: var(--lp-text-secondary);
+li i {
+  width: var(--lt-space-2);
+  height: var(--lt-space-2);
+  margin-top: calc(var(--lt-space-1) + var(--lt-space-2) / 4);
+  border-radius: 50%;
+  background: var(--lt-label-2);
 }
-
-.attempt-time {
-  font-size: var(--lp-text-xs);
-  color: var(--lp-text-muted);
+li i[data-correct='1'] {
+  background: var(--lt-green);
+}
+li i[data-correct='0'] {
+  background: var(--lt-orange);
+}
+li div {
+  display: grid;
+  gap: calc(var(--lt-space-1) / 2);
+  flex: 1;
+}
+li span,
+time {
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-caption);
+}
+li em {
+  font-style: normal;
+  font-size: var(--lt-text-caption);
+}
+.actions {
+  display: flex;
+  justify-content: end;
+  margin-top: var(--lt-space-5);
+}
+@media (max-width: 700px) {
+  .metrics {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 </style>

@@ -1,137 +1,157 @@
-<template>
-  <el-card v-if="courseMasteries.length" class="section-card" shadow="hover">
-    <template #header><span>课程学习情况</span></template>
-    <el-table :data="courseMasteries" stripe>
-      <el-table-column prop="courseName" label="课程" min-width="140" />
-      <el-table-column label="正确率" width="140">
-        <template #default="{ row }">
-          <el-progress
-            v-if="row.totalAttempts > 0"
-            :percentage="Math.round(row.correctRate)"
-            :color="rateColor(row.correctRate)"
-            :stroke-width="6"
-          />
-          <span v-else class="no-record">暂无记录</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="totalAttempts" label="作答次数" width="96" align="center" />
-      <el-table-column prop="wrongCount" label="错题数" width="80" align="center" />
-      <el-table-column prop="knowledgePointCount" label="知识点总数" width="100" align="center" />
-      <el-table-column prop="weakPointCount" label="薄弱知识点" width="100" align="center">
-        <template #default="{ row }">
-          <el-tag :type="row.weakPointCount > 0 ? 'danger' : 'success'" size="small">
-            {{ row.weakPointCount }}
-          </el-tag>
-        </template>
-      </el-table-column>
-    </el-table>
-  </el-card>
-
-  <el-card class="section-card" shadow="hover">
-    <template #header>
-      <div class="card-header">
-        <span>下一步练习</span>
-        <el-button
-          v-if="recommendations.length"
-          type="primary"
-          size="small"
-          :loading="startingPractice"
-          :disabled="startingPractice"
-          @click="emit('start-recommend-practice')"
-          >开始练习</el-button
-        >
-      </div>
-    </template>
-    <el-table v-if="recommendations.length" :data="recommendations" stripe>
-      <el-table-column label="题目内容" min-width="280" show-overflow-tooltip>
-        <template #default="{ row }"
-          ><span>{{ row.questionContent }}</span></template
-        >
-      </el-table-column>
-      <el-table-column label="推荐原因" width="160">
-        <template #default="{ row }">
-          <el-tag class="recommendation-reason" :type="reasonType(row.reason)" size="small">{{
-            row.reasonDescription
-          }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="questionType" label="题型" width="80" align="center" />
-      <el-table-column label="难度" width="100" align="center">
-        <template #default="{ row }"
-          ><span v-if="row.difficulty">难度 {{ row.difficulty }}</span></template
-        >
-      </el-table-column>
-      <el-table-column prop="courseName" label="课程" width="120" />
-      <el-table-column prop="knowledgePointName" label="知识点" width="120" />
-      <el-table-column label="操作" width="100" align="center">
-        <template #default="{ row }">
-          <el-button
-            type="primary"
-            link
-            size="small"
-            @click="emit('similar-question', row.questionId, row.questionContent)"
-          >
-            找相似题
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <LpEmptyState v-else compact title="暂时没有推荐题目" description="可以从课程中选择下一步学习内容。">
-      <template #actions><RouterLink class="course-link" to="/courses">浏览课程</RouterLink></template>
-    </LpEmptyState>
-    <el-alert v-if="practiceError" :title="practiceError" type="error" :closable="false" class="practice-error" />
-  </el-card>
-</template>
-
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import type { CourseMastery, RecommendedQuestion } from '@/api/statistics'
-import LpEmptyState from '@/components/ui/LpEmptyState.vue'
-import { rateColor, reasonType } from './diagnosisDisplay'
-
 defineProps<{
   courseMasteries: CourseMastery[]
   recommendations: RecommendedQuestion[]
   startingPractice: boolean
   practiceError: string
 }>()
-
 const emit = defineEmits<{
   'start-recommend-practice': []
   'similar-question': [questionId: number, questionContent?: string]
 }>()
 </script>
-
+<template>
+  <section data-appearance="dark" class="lt recommendations">
+    <article v-if="courseMasteries.length" class="panel">
+      <h2>课程学习情况</h2>
+      <ul class="rows">
+        <li v-for="course in courseMasteries" :key="course.courseId">
+          <strong>{{ course.courseName }}</strong
+          ><span v-if="course.totalAttempts"
+            >{{ course.totalAttempts }} 次作答 · {{ course.wrongCount }} 道错题 · 正确率
+            {{ Math.round(course.correctRate) }}%</span
+          ><span v-else>暂无记录</span
+          ><em :data-weak="course.weakPointCount > 0">{{ course.weakPointCount }} 个薄弱知识点</em>
+        </li>
+      </ul>
+    </article>
+    <article class="panel">
+      <header>
+        <h2>下一步练习</h2>
+        <button
+          v-if="recommendations.length"
+          type="button"
+          :disabled="startingPractice"
+          @click="emit('start-recommend-practice')"
+        >
+          {{ startingPractice ? '准备中…' : '开始练习' }}
+        </button>
+      </header>
+      <ul v-if="recommendations.length" class="rows">
+        <li v-for="item in recommendations" :key="item.questionId">
+          <div>
+            <strong>{{ item.questionContent }}</strong
+            ><span
+              >{{ item.reasonDescription }} · {{ item.questionType
+              }}<template v-if="item.courseName"> · {{ item.courseName }}</template></span
+            >
+          </div>
+          <button type="button" @click="emit('similar-question', item.questionId, item.questionContent)">
+            找相似题
+          </button>
+        </li>
+      </ul>
+      <p v-else class="muted">暂时没有推荐题目。<RouterLink to="/courses">浏览课程</RouterLink></p>
+      <p v-if="practiceError" class="notice" role="alert">{{ practiceError }}</p>
+    </article>
+  </section>
+</template>
 <style scoped>
-.section-card {
-  margin-top: var(--lp-space-4);
+.recommendations {
+  display: grid;
+  gap: var(--lt-space-5);
 }
-
-.card-header {
+.panel {
+  padding: var(--lt-space-5);
+  border-radius: var(--lt-radius-xl);
+  background: var(--lt-surface-raised);
+  box-shadow: var(--lt-shadow-card);
+}
+header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: var(--lt-space-3);
 }
-.practice-error {
-  margin-top: var(--lp-space-3);
+h2 {
+  margin: 0;
+  font-size: var(--lt-text-title3);
 }
-
-.no-record {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
+.rows {
+  display: grid;
+  gap: var(--lt-space-3);
+  margin: var(--lt-space-4) 0 0;
+  padding: 0;
+  list-style: none;
 }
-.course-link {
-  color: var(--lp-primary);
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
+.rows li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--lt-space-4);
+  padding-top: var(--lt-space-3);
+  border-top: 1px solid var(--lt-separator);
 }
-.recommendation-reason {
-  max-width: 100%;
-  height: auto;
-  padding-block: var(--lp-space-1);
-  line-height: var(--lp-leading-body);
+.rows li div {
+  display: grid;
+  gap: var(--lt-space-1);
 }
-.recommendation-reason :deep(.el-tag__content) {
-  white-space: normal;
+span,
+.muted {
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+}
+em {
+  padding: calc(var(--lt-space-1) * 0.75) var(--lt-space-2);
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-green-soft);
+  color: var(--lt-green-text);
+  font-style: normal;
+  font-size: var(--lt-text-caption);
+}
+em[data-weak='true'] {
+  background: var(--lt-orange-soft);
+  color: var(--lt-orange-text);
+}
+button {
+  min-height: var(--lt-control-sm);
+  padding: 0 var(--lt-space-3);
+  border: 0;
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-accent-fill);
+  color: var(--lt-on-accent);
+  font: 500 var(--lt-text-caption)/1 var(--lt-font);
+  cursor: pointer;
+}
+button:disabled {
+  background: var(--lt-fill);
+  color: var(--lt-label-3);
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--lt-accent);
+  outline-offset: 2px;
+}
+.rows button {
+  background: transparent;
+  color: var(--lt-accent);
+}
+a {
+  color: var(--lt-accent);
+}
+.notice {
+  margin: var(--lt-space-3) 0 0;
+  padding: var(--lt-space-3);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-orange-soft);
+  color: var(--lt-orange-text);
+}
+@media (max-width: 700px) {
+  .rows li {
+    align-items: start;
+    flex-direction: column;
+  }
 }
 </style>
