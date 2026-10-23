@@ -131,7 +131,7 @@ frontend/admin/   # 独立管理端 HTML 入口
 - 游戏化数据决策见 [ADR-0009](decisions/0009-learning-effort-gamification.md)，视觉与交互规范见项目 `frontend-design` Skill。
 - 登录、注册、忘记密码与重置密码四页已按新基线重做：`AuthFrame` 外壳、`LtTextField` 字段，字段错误留在字段下方，服务端错误留在按钮上方，
   验证面板 `TurnstileSheet` 从触发按钮展开并交还焦点；验证码发送成功在页内提示，注册成功直接进入课程页。
-  OAuth 回调页仍用旧外壳与样式，管理端登录仍用 `TurnstileDialog`。
+  OAuth 回调页同样用 `AuthFrame`，管理端登录仍用 `TurnstileDialog`。
   `TurnstileSheet` 与 `TurnstileDialog` 共用 `useVerificationGate` 管理验证请求；第三方登录通过 `useOAuthProviders` 管理，
   Google 登录入口按后端提供方状态启用，
   未配置的提供方不显示可操作入口。
