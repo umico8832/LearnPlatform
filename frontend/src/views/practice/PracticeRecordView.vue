@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { ArrowLeft, Play, RefreshCw } from '@lucide/vue'
+import { LtButton, LtCard, LtLinkButton } from '@/components/living'
+import { useLivingTheme } from '@/composables/useLivingTheme'
 import { getPracticeRecords, type PracticeRecordVO } from '@/api/practice'
 import { usePersonalCollection } from './usePersonalCollection'
 import {
@@ -10,249 +13,339 @@ import {
   questionTypeLabel,
   recordTime,
 } from './practiceLibraryPresentation'
-
+useLivingTheme({ dark: true })
 const router = useRouter()
 const filter = reactive({ questionType: '', isCorrect: '' as '' | 0 | 1 | undefined })
-const { records, total, page, size, state, load, resetPage } = usePersonalCollection<PracticeRecordVO>(
-  (pageNum, pageSize) =>
-    getPracticeRecords(
-      {
-        pageNum,
-        pageSize,
-        questionType: filter.questionType || undefined,
-        isCorrect: typeof filter.isCorrect === 'number' ? filter.isCorrect : undefined,
-      },
-      { errorDisplay: 'inline' },
-    ),
+const collection = usePersonalCollection<PracticeRecordVO>((pageNum, pageSize) =>
+  getPracticeRecords(
+    {
+      pageNum,
+      pageSize,
+      questionType: filter.questionType || undefined,
+      isCorrect: typeof filter.isCorrect === 'number' ? filter.isCorrect : undefined,
+    },
+    { errorDisplay: 'inline' },
+  ),
 )
+const { records, total, page, size, state, loading, load, resetPage } = collection
 const filtered = computed(() => !!filter.questionType || typeof filter.isCorrect === 'number')
+const pages = computed(() => Math.max(1, Math.ceil((total.value ?? 0) / size.value)))
 const pageSummary = computed(() => {
-  const correct = records.value.filter((record) => record.isCorrect === 1).length
-  const wrong = records.value.filter((record) => record.isCorrect === 0).length
+  const correct = records.value.filter((x) => x.isCorrect === 1).length
+  const wrong = records.value.filter((x) => x.isCorrect === 0).length
   const pending = records.value.length - correct - wrong
-  const graded = correct + wrong
-  return { correct, wrong, pending, rate: graded ? `${Math.round((correct / graded) * 100)}%` : '—' }
+  return {
+    correct,
+    wrong,
+    pending,
+    rate: correct + wrong ? `${Math.round((correct / (correct + wrong)) * 100)}%` : '—',
+  }
 })
 function resetFilters() {
   filter.questionType = ''
   filter.isCorrect = ''
   void resetPage()
 }
+function changeCorrectness(event: Event) {
+  const value = (event.target as HTMLSelectElement).value
+  filter.isCorrect = value === '' ? '' : (Number(value) as 0 | 1)
+  void resetPage()
+}
+function changePage(delta: number) {
+  page.value += delta
+  void load()
+}
+function changeSize(event: Event) {
+  size.value = Number((event.target as HTMLSelectElement).value)
+  void resetPage()
+}
+function goBack() {
+  if (typeof window !== 'undefined' && typeof window.history.state?.back === 'string') router.back()
+  else void router.push('/practice')
+}
 </script>
-
 <template>
-  <div class="record-page page-container">
-    <LpPageHeader title="练习记录" description="回看每一次作答，再决定下一步练习什么。">
-      <template #actions><el-button type="primary" @click="router.push('/practice')">开始练习</el-button></template>
-    </LpPageHeader>
-
-    <section class="record-panel" aria-label="练习记录">
-      <el-form :inline="true" class="record-filters" @submit.prevent>
-        <el-form-item label="题型">
-          <el-select v-model="filter.questionType" placeholder="全部题型" clearable @change="resetPage">
-            <el-option
-              v-for="item in practiceQuestionTypes"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="结果">
-          <el-select v-model="filter.isCorrect" placeholder="全部结果" clearable @change="resetPage">
-            <el-option label="正确" :value="1" /><el-option label="需复习" :value="0" />
-          </el-select>
-        </el-form-item>
-        <el-button v-if="filtered" text @click="resetFilters">清除筛选</el-button>
-        <span class="total-count">{{
-          total === null ? (state === 'error' ? '记录数量暂不可用' : '正在读取记录') : `共 ${total} 条记录`
-        }}</span>
-      </el-form>
-
-      <div v-if="state === 'ready'" class="page-summary" aria-label="当前页作答统计">
-        <span>当前页 {{ records.length }} 条</span>
-        <span
-          >正确 {{ pageSummary.correct }} · 需复习 {{ pageSummary.wrong
-          }}<template v-if="pageSummary.pending"> · 待判分 {{ pageSummary.pending }}</template></span
-        >
-        <span
-          >已判分正确率 <strong>{{ pageSummary.rate }}</strong></span
+  <main class="record-page lt" data-appearance="dark">
+    <header class="head">
+      <LtButton class="back" variant="quiet" aria-label="返回" @click="goBack"
+        ><template #icon><ArrowLeft aria-hidden="true" /></template>返回</LtButton
+      >
+      <div class="heading-row">
+        <div>
+          <h1>练习记录</h1>
+          <p>回看每一次作答，再决定下一步练习什么。</p>
+        </div>
+        <LtLinkButton to="/practice" variant="primary"><Play aria-hidden="true" />开始练习</LtLinkButton>
+      </div>
+    </header>
+    <LtCard as="section" radius="xl" class="filters" aria-label="练习记录筛选"
+      ><label
+        >题型<select v-model="filter.questionType" @change="resetPage">
+          <option value="">全部题型</option>
+          <option v-for="item in practiceQuestionTypes" :key="item.value" :value="item.value">{{ item.label }}</option>
+        </select></label
+      ><label
+        >结果<select :value="filter.isCorrect" @change="changeCorrectness">
+          <option value="">全部结果</option>
+          <option :value="1">正确</option>
+          <option :value="0">需复习</option>
+        </select></label
+      ><LtButton v-if="filtered" size="sm" variant="quiet" @click="resetFilters">清除筛选</LtButton
+      ><span class="total">{{
+        total === null ? (state === 'error' ? '记录数量暂不可用' : '正在读取记录') : `共 ${total} 条记录`
+      }}</span></LtCard
+    >
+    <div v-if="state === 'ready'" class="summary" aria-label="当前页作答统计">
+      <span>当前页 {{ records.length }} 条</span
+      ><span
+        >正确 {{ pageSummary.correct }} · 需复习 {{ pageSummary.wrong
+        }}<template v-if="pageSummary.pending"> · 待判分 {{ pageSummary.pending }}</template></span
+      ><span
+        >已判分正确率 <strong>{{ pageSummary.rate }}</strong></span
+      >
+    </div>
+    <section aria-labelledby="records-title">
+      <div class="section-head">
+        <h2 id="records-title">作答记录</h2>
+        <LtButton :disabled="loading" @click="load"
+          ><template #icon><RefreshCw aria-hidden="true" /></template>刷新</LtButton
         >
       </div>
-      <LpStatePanel
-        :state="state"
-        :title="state === 'error' ? '练习记录暂时无法加载' : filtered ? '没有符合筛选条件的记录' : '还没有练习记录'"
-        :description="
-          state === 'error'
-            ? '请重试，已提交的作答会继续保留。'
-            : filtered
-              ? '可以清除筛选，再查看全部作答。'
-              : '完成一道题后，可以在这里回看作答。'
-        "
-        loading-label="正在加载练习记录"
-        @retry="load"
+      <LtCard v-if="state === 'loading'" radius="xl" padding="none" aria-busy="true"
+        ><div v-for="n in 3" :key="n" class="skeleton-row"><span class="skeleton wide" /><span class="skeleton" /></div>
+        <span class="sr-only">正在加载练习记录</span></LtCard
       >
-        <template #actions
-          ><el-button v-if="filtered" @click="resetFilters">查看全部记录</el-button
-          ><el-button v-else @click="router.push('/practice')">开始练习</el-button></template
-        >
-        <ol class="record-list">
+      <div v-else-if="state === 'error'" class="state">
+        <h3>练习记录暂时无法加载</h3>
+        <p>请重试，已提交的作答会继续保留。</p>
+        <LtButton variant="primary" @click="load">重试</LtButton>
+      </div>
+      <div v-else-if="state === 'empty'" class="state">
+        <h3>{{ filtered ? '没有符合筛选条件的记录' : '还没有练习记录' }}</h3>
+        <p>{{ filtered ? '可以清除筛选，再查看全部作答。' : '完成一道题后，可以在这里回看作答。' }}</p>
+        <LtButton v-if="filtered" @click="resetFilters">查看全部记录</LtButton
+        ><LtLinkButton v-else to="/practice">开始练习</LtLinkButton>
+      </div>
+      <LtCard v-else radius="xl" padding="none" class="list"
+        ><ol>
           <li v-for="item in records" :key="item.id" class="record-row">
-            <div class="record-meta">
+            <div class="meta">
               <span
                 class="answer-state"
                 :data-result="item.isCorrect === 1 ? 'correct' : item.isCorrect === 0 ? 'wrong' : 'pending'"
                 >{{ answerStatus(item.isCorrect) }}</span
-              >
-              <span>{{ item.courseName || '未关联课程' }}</span>
-              <span>{{ questionTypeLabel(item.questionType) }}</span>
-              <span>{{ difficultyLabel(item.difficulty) }}</span>
-              <time class="record-time">{{ recordTime(item.createTime) }}</time>
+              ><span>{{ item.courseName || '未关联课程' }}</span
+              ><span>{{ questionTypeLabel(item.questionType) }}</span
+              ><span>{{ difficultyLabel(item.difficulty) }}</span
+              ><time>{{ recordTime(item.createTime) }}</time>
             </div>
-            <p class="question-content">{{ item.questionContent }}</p>
-            <div class="answer-line">
-              <span class="answer-label">我的答案</span
-              ><span class="answer-content">{{ item.userAnswer || '未填写' }}</span
-              ><span class="answer-time">{{ item.answerTime == null ? '耗时未记录' : `${item.answerTime} 秒` }}</span>
+            <p>{{ item.questionContent }}</p>
+            <div class="answer">
+              <span>我的答案</span><span class="answer-copy">{{ item.userAnswer || '未填写' }}</span
+              ><span>{{ item.answerTime == null ? '耗时未记录' : `${item.answerTime} 秒` }}</span>
             </div>
           </li>
-        </ol>
-      </LpStatePanel>
-      <el-pagination
-        v-if="total && total > size"
-        v-model:current-page="page"
-        v-model:page-size="size"
-        :total="total"
-        :page-sizes="[10, 20, 50]"
-        layout="total, sizes, prev, pager, next"
-        @current-change="load"
-        @size-change="resetPage"
-      />
+        </ol></LtCard
+      >
     </section>
-  </div>
+    <nav v-if="state === 'ready' && pages > 1" class="pager" aria-label="练习记录翻页">
+      <label
+        >每页
+        <select :value="size" @change="changeSize">
+          <option :value="10">10</option>
+          <option :value="20">20</option>
+          <option :value="50">50</option>
+        </select>
+        条</label
+      ><LtButton size="sm" :disabled="page <= 1" @click="changePage(-1)">上一页</LtButton
+      ><span>第 {{ page }} / {{ pages }} 页</span
+      ><LtButton size="sm" :disabled="page >= pages" @click="changePage(1)">下一页</LtButton>
+    </nav>
+  </main>
 </template>
-
 <style scoped>
 .record-page {
-  display: grid;
-  gap: var(--lp-space-6);
+  max-width: calc(var(--lt-space-10) * 15);
+  margin: 0 auto;
+  padding: 0 var(--lt-space-7) var(--lt-space-10);
 }
-.record-panel {
-  padding: var(--lp-space-5);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  background: var(--lp-surface);
+.head {
+  padding: var(--lt-space-7) 0 var(--lt-space-6);
 }
-.record-filters {
+.back {
+  margin-left: calc(-1 * var(--lt-space-2));
+}
+.heading-row,
+.filters,
+.section-head,
+.meta,
+.answer,
+.summary,
+.pager {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: var(--lp-space-3);
-  padding-bottom: var(--lp-space-5);
+  gap: var(--lt-space-3);
 }
-.record-filters :deep(.el-form-item) {
+.heading-row,
+.section-head {
+  justify-content: space-between;
+}
+.heading-row p,
+.total,
+.summary,
+.meta,
+.answer,
+.state p {
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+}
+h1,
+h2,
+h3,
+p {
   margin: 0;
 }
-.record-filters .el-select {
-  width: 152px;
+h1 {
+  font-size: var(--lt-text-title1);
 }
-.total-count {
-  margin-left: auto;
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
+.heading-row p {
+  margin-top: var(--lt-space-2);
 }
-.page-summary {
+.filters {
+  flex-wrap: wrap;
+  margin-bottom: var(--lt-space-4);
+}
+.filters label,
+.pager label {
   display: flex;
+  align-items: center;
+  gap: var(--lt-space-2);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
+}
+select {
+  height: var(--lt-control-md);
+  border: 0;
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill-2);
+  color: var(--lt-label);
+  padding: 0 var(--lt-space-3);
+  font: inherit;
+}
+.total {
+  margin-left: auto;
+}
+.summary {
   flex-wrap: wrap;
-  gap: var(--lp-space-3) var(--lp-space-5);
-  padding: var(--lp-space-3) 0;
-  border-top: var(--lp-border-hairline);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
+  margin: 0 var(--lt-space-2) var(--lt-space-5);
 }
-.page-summary strong {
-  color: var(--lp-text);
-  font-weight: var(--lp-weight-medium);
+.summary strong {
+  color: var(--lt-label);
 }
-.record-list {
-  list-style: none;
-  padding: 0;
+.section-head {
+  margin: 0 var(--lt-space-2) var(--lt-space-3);
+}
+.section-head h2 {
+  font-size: var(--lt-text-title3);
+}
+.list {
+  overflow: hidden;
+}
+.list ol {
   margin: 0;
+  padding: 0;
+  list-style: none;
 }
 .record-row {
-  padding: var(--lp-space-5) 0;
-  border-top: var(--lp-border-hairline);
+  padding: var(--lt-space-5) var(--lt-space-6);
 }
-.record-meta {
-  display: flex;
-  align-items: center;
+.record-row + .record-row {
+  border-top: thin solid var(--lt-separator);
+}
+.meta {
   flex-wrap: wrap;
-  gap: var(--lp-space-3);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
+}
+.meta time {
+  margin-left: auto;
 }
 .answer-state {
-  padding: var(--lp-space-1) var(--lp-space-2);
-  background: var(--lp-surface-soft);
-  border-radius: var(--lp-radius-sm);
-  color: var(--lp-text-secondary);
+  padding: var(--lt-space-1) var(--lt-space-2);
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill);
+  color: var(--lt-label-2);
 }
 .answer-state[data-result='correct'] {
-  color: var(--lp-success);
-  background: var(--lp-success-soft);
+  background: var(--lt-green-soft);
+  color: var(--lt-green-text);
 }
 .answer-state[data-result='wrong'] {
-  color: var(--lp-warning);
-  background: var(--lp-warning-soft);
+  background: var(--lt-orange-soft);
+  color: var(--lt-orange-text);
 }
-.record-time {
-  margin-left: auto;
-}
-.question-content {
-  margin: var(--lp-space-3) 0;
-  line-height: var(--lp-leading-relaxed);
+.record-row > p {
+  margin: var(--lt-space-3) 0;
+  font-size: var(--lt-text-reading);
+  line-height: var(--lt-leading-reading);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.answer-line {
-  display: flex;
-  align-items: baseline;
-  gap: var(--lp-space-3);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  line-height: var(--lp-leading-body);
+.answer > span:first-child,
+.answer > span:last-child {
+  color: var(--lt-label-3);
+  flex: none;
 }
-.answer-label,
-.answer-time {
-  color: var(--lp-text-muted);
-  flex-shrink: 0;
-}
-.answer-content {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+.answer-copy {
   min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
-.answer-time {
+.answer > span:last-child {
   margin-left: auto;
 }
-.el-pagination {
-  padding-top: var(--lp-space-5);
-  justify-content: flex-end;
-  border-top: var(--lp-border-hairline);
+.pager {
+  justify-content: center;
+  margin-top: var(--lt-space-6);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
-@media (max-width: 767px) {
-  .record-time {
-    margin-left: 0;
-  }
-  .total-count {
-    width: 100%;
-    margin-left: 0;
-  }
-  .answer-line {
-    flex-wrap: wrap;
-  }
-  .answer-time {
-    width: 100%;
+.state {
+  display: grid;
+  justify-items: start;
+  gap: var(--lt-space-3);
+  padding: var(--lt-space-8) var(--lt-space-2);
+}
+.state h3 {
+  font-size: var(--lt-text-title3);
+}
+.skeleton-row {
+  display: grid;
+  gap: var(--lt-space-3);
+  padding: var(--lt-space-5) var(--lt-space-6);
+}
+.skeleton-row + .skeleton-row {
+  border-top: thin solid var(--lt-separator);
+}
+.skeleton {
+  display: block;
+  height: var(--lt-space-3);
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill-2);
+  animation: pulse var(--lt-dur-fade) var(--lt-ease-fade) infinite alternate;
+}
+.wide {
+  width: 70%;
+}
+.sr-only {
+  position: absolute;
+  width: var(--lt-space-1);
+  height: var(--lt-space-1);
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@keyframes pulse {
+  to {
+    opacity: 0.45;
   }
 }
 </style>

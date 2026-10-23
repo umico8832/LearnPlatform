@@ -3,7 +3,10 @@ import { flushPromises, mount } from '@vue/test-utils'
 
 const { getPracticeRecords, push } = vi.hoisted(() => ({ getPracticeRecords: vi.fn(), push: vi.fn() }))
 vi.mock('@/api/practice', () => ({ getPracticeRecords }))
-vi.mock('vue-router', () => ({ useRouter: () => ({ push }) }))
+vi.mock('vue-router', () => ({
+  useRouter: () => ({ push }),
+  RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
+}))
 
 import PracticeRecordView from '@/views/practice/PracticeRecordView.vue'
 
@@ -46,6 +49,29 @@ describe('PracticeRecordView', () => {
     expect(wrapper.text()).toContain('已判分正确率 50%')
     expect(wrapper.text()).toContain('待判分')
     expect(wrapper.text()).not.toContain('需复习 2')
+    wrapper.unmount()
+  })
+
+  it('sends real filters and pagination to the records API', async () => {
+    getPracticeRecords.mockResolvedValue({ code: 0, data: { records: [record(1, 1)], total: 50 } })
+    const wrapper = mount(PracticeRecordView, { global: { stubs } })
+    await flushPromises()
+    await wrapper.findAll('select')[0]!.setValue('SINGLE_CHOICE')
+    await flushPromises()
+    await wrapper.findAll('select')[1]!.setValue('0')
+    await flushPromises()
+    expect(getPracticeRecords).toHaveBeenLastCalledWith(
+      { pageNum: 1, pageSize: 10, questionType: 'SINGLE_CHOICE', isCorrect: 0 },
+      { errorDisplay: 'inline' },
+    )
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '下一页')!
+      .trigger('click')
+    await flushPromises()
+    expect(getPracticeRecords).toHaveBeenLastCalledWith(expect.objectContaining({ pageNum: 2 }), {
+      errorDisplay: 'inline',
+    })
     wrapper.unmount()
   })
 

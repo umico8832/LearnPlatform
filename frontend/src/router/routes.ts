@@ -144,7 +144,7 @@ export const learnerRoutes: RouteRecordRaw[] = [
         path: 'practice/records',
         name: 'PracticeRecords',
         component: () => import('@/views/practice/PracticeRecordView.vue'),
-        meta: { title: '练习记录' },
+        meta: { title: '练习记录', living: true },
       },
       {
         path: 'favorites',
