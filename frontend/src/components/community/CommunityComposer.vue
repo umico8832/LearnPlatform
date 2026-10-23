@@ -22,7 +22,7 @@
         >
         <label
           >学校分区<select v-model="draft.schoolId" :disabled="saving">
-            <option value="">不限学校</option>
+            <option :value="undefined">不限学校</option>
             <option v-for="school in schools" :key="school.id" :value="school.id">{{ school.name }}</option>
           </select></label
         >
@@ -292,6 +292,9 @@ textarea {
   font: var(--lt-text-body)/var(--lt-leading-ui) var(--lt-font);
 }
 select {
+  box-shadow: none;
+  border-radius: var(--lt-radius-pill);
+  background: var(--lt-fill-2);
   height: var(--lt-control-lg);
 }
 textarea {

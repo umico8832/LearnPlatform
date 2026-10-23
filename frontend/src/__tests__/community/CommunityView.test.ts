@@ -21,6 +21,7 @@ function mountView() {
     global: {
       renderStubDefaultSlot: true,
       stubs: {
+        LtPageHeader: false,
         RouterLink: { template: '<a><slot/></a>' },
         LtButton: {
           props: ['disabled', 'type'],
@@ -44,6 +45,13 @@ describe('community categories recovery', () => {
     vi.resetAllMocks()
     categories.mockResolvedValue({ data: [{ id: 1, name: '考试分类', kind: 'EXAM' }] })
     posts.mockResolvedValue({ data: { total: 0, records: [] } })
+  })
+  it('shows a named default in each community filter', async () => {
+    const wrapper = mountView()
+    await flushPromises()
+    expect(
+      wrapper.findAll('select').map((select) => (select.element as HTMLSelectElement).selectedOptions[0]?.textContent),
+    ).toEqual(['全部内容', '全部考试', '全部科目', '全部学校'])
   })
   it('keeps category failures visible while the independent feed loads and retries only categories', async () => {
     categories.mockRejectedValueOnce(new Error('分类暂时无法读取'))
@@ -107,6 +115,7 @@ describe('CommunityComposer close guard', () => {
         },
       },
     })
+    expect((wrapper.findAll('select')[3].element as HTMLSelectElement).selectedOptions[0]?.textContent).toBe('不限学校')
     const vm = wrapper.vm as unknown as {
       draft: { title: string }
       sheetOpen: boolean

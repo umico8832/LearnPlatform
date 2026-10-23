@@ -25,28 +25,28 @@
           <label class="select-field" for="community-kind"
             ><span>内容</span
             ><select id="community-kind" v-model="filters.contentType" @change="search">
-              <option value="">全部内容</option>
+              <option :value="undefined">全部内容</option>
               <option v-for="(label, type) in communityTypes" :key="type" :value="type">{{ label }}</option>
             </select></label
           >
           <label class="select-field" for="community-exam"
             ><span>考试分类</span
             ><select id="community-exam" v-model="filters.examId" @change="changeExam">
-              <option value="">全部考试</option>
+              <option :value="undefined">全部考试</option>
               <option v-for="exam in exams" :key="exam.id" :value="exam.id">{{ exam.name }}</option>
             </select></label
           >
           <label class="select-field" for="community-subject"
             ><span>科目</span
             ><select id="community-subject" v-model="filters.subjectId" @change="search">
-              <option value="">全部科目</option>
+              <option :value="undefined">全部科目</option>
               <option v-for="subject in subjects" :key="subject.id" :value="subject.id">{{ subject.name }}</option>
             </select></label
           >
           <label class="select-field" for="community-school"
             ><span>学校分区</span
             ><select id="community-school" v-model="filters.schoolId" @change="search">
-              <option value="">全部学校</option>
+              <option :value="undefined">全部学校</option>
               <option v-for="school in schools" :key="school.id" :value="school.id">{{ school.name }}</option>
             </select></label
           >
@@ -56,7 +56,7 @@
           <label v-if="filters.mine" class="select-field" for="community-status"
             ><span>审核状态</span
             ><select id="community-status" v-model="filters.status" @change="search">
-              <option value="">全部状态</option>
+              <option :value="undefined">全部状态</option>
               <option v-for="(label, status) in communityStatuses" :key="status" :value="status">{{ label }}</option>
             </select></label
           >
@@ -300,10 +300,9 @@ onUnmounted(() => {
   height: var(--lt-control-lg);
   padding: 0 var(--lt-space-3);
   border: 0;
-  border-radius: var(--lt-radius-md);
+  border-radius: var(--lt-radius-pill);
   outline: 0;
-  background: var(--lt-fill-3);
-  box-shadow: inset 0 0 0 1px var(--lt-separator);
+  background: var(--lt-fill-2);
   color: var(--lt-label);
   font: inherit;
 }
