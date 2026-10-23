@@ -1,36 +1,33 @@
 <template>
-  <div class="question-list page-container">
-    <LpPageHeader title="题库" description="选一道题开始练习，或收藏后集中练习。">
-      <template #actions><RouterLink class="collection-link" to="/favorites">查看我的收藏</RouterLink></template>
-    </LpPageHeader>
-
+  <main class="lt question-list" data-appearance="dark">
+    <header class="page-head">
+      <LtIconButton label="返回我的课程" @click="router.push('/my-courses')"
+        ><ChevronLeft aria-hidden="true"
+      /></LtIconButton>
+      <h1>题库</h1>
+      <p>选一道题开始练习，或收藏后集中练习。</p>
+      <RouterLink class="collection-link" to="/favorites">查看我的收藏</RouterLink>
+    </header>
+    <CatalogSearch />
     <section class="filter-panel" aria-label="题目筛选">
       <div class="filter-fields">
         <div class="filter-field course-filter">
           <label for="catalog-course">课程</label>
-          <el-select
+          <select
             id="catalog-course"
             v-model="filters.courseId"
-            placeholder="全部课程"
-            clearable
-            filterable
-            :loading="coursesLoading"
             :disabled="coursesLoading || !!coursesError"
             @change="handleFilterChange"
           >
-            <el-option v-for="course in courseList" :key="course.id" :label="course.name" :value="course.id" />
-          </el-select>
+            <option :value="null">{{ coursesLoading ? '正在加载课程…' : '全部课程' }}</option>
+            <option v-for="course in courseList" :key="course.id" :value="course.id">{{ course.name }}</option>
+          </select>
         </div>
         <div class="filter-field type-filter">
           <label for="catalog-type">题型</label>
-          <el-select
-            id="catalog-type"
-            v-model="filters.questionType"
-            placeholder="全部题型"
-            @change="handleFilterChange"
-          >
-            <el-option v-for="type in questionTypes" :key="type.value" :label="type.label" :value="type.value" />
-          </el-select>
+          <select id="catalog-type" v-model="filters.questionType" @change="handleFilterChange">
+            <option v-for="type in questionTypes" :key="type.value" :value="type.value">{{ type.label }}</option>
+          </select>
         </div>
         <fieldset class="difficulty-filter">
           <legend>难度</legend>
@@ -47,22 +44,22 @@
             </button>
           </div>
         </fieldset>
-        <el-button v-if="activeFilterCount" text @click="resetFilters">重置条件</el-button>
+        <LtButton v-if="activeFilterCount" variant="quiet" @click="resetFilters">重置条件</LtButton>
       </div>
       <div v-if="coursesError" class="inline-message" role="alert">
         <span>{{ coursesError }}</span
-        ><el-button text @click="loadCourses">重新加载课程</el-button>
+        ><LtButton variant="quiet" @click="loadCourses">重新加载课程</LtButton>
       </div>
       <div v-if="searchContext" class="search-context">
         <span>{{ searchContext.label }}</span>
-        <el-button text @click="clearSearchContext">清除搜索筛选</el-button>
+        <LtButton variant="quiet" @click="clearSearchContext">清除搜索筛选</LtButton>
       </div>
       <p v-if="searchQueryWarning" class="search-query-warning" role="status">{{ searchQueryWarning }}</p>
     </section>
 
     <div v-if="favoritesError" class="inline-message" role="alert">
       <span>{{ favoritesError }}重新加载后可继续收藏。</span>
-      <el-button text :loading="favoritesLoading" @click="loadFavoriteIds">重新加载收藏状态</el-button>
+      <LtButton variant="quiet" :disabled="favoritesLoading" @click="loadFavoriteIds">重新加载收藏状态</LtButton>
     </div>
     <p v-if="actionError" class="action-message is-error" role="alert">{{ actionError }}</p>
     <p v-else-if="notice" class="action-message" role="status">{{ notice }}</p>
@@ -73,20 +70,18 @@
         <span v-if="favoritesReady">已收藏 {{ favoriteSet.size }} 题</span>
         <span v-else-if="favoritesLoading">正在读取收藏状态…</span>
       </div>
-      <LpStatePanel v-if="loading" state="loading" loading-label="正在加载题目" />
-      <LpStatePanel v-else-if="loadError" state="error" :description="loadError" @retry="retryFetch" />
-      <LpStatePanel
-        v-else-if="!questions.length"
-        state="empty"
-        title="没有找到符合条件的题目"
-        description="调整课程、题型或难度后再试。"
-      >
-        <template #actions>
-          <el-button v-if="searchContext" @click="clearSearchContext">清除搜索筛选</el-button>
-          <el-button v-else @click="resetFilters">查看全部题目</el-button>
-        </template>
-      </LpStatePanel>
-      <div v-else class="question-collection">
+      <div v-if="loading" class="state" role="status" aria-busy="true">正在加载题目…</div>
+      <div v-else-if="loadError" class="state" role="alert">
+        <p>{{ loadError }}</p>
+        <LtButton @click="retryFetch">重试</LtButton>
+      </div>
+      <div v-else-if="!questions.length" class="state">
+        <h2>没有找到符合条件的题目</h2>
+        <p>调整课程、题型或难度后再试。</p>
+        <LtButton v-if="searchContext" @click="clearSearchContext">清除搜索筛选</LtButton
+        ><LtButton v-else @click="resetFilters">查看全部题目</LtButton>
+      </div>
+      <LtCard v-else radius="xl" padding="none" class="question-collection">
         <article
           v-for="(question, index) in questions"
           :key="question.id"
@@ -118,14 +113,11 @@
             <span v-for="name in question.knowledgePointNames" :key="name">{{ name }}</span>
           </div>
           <footer class="question-actions">
-            <el-button
-              type="primary"
-              text
-              :icon="ArrowRight"
-              :loading="practiceStartingId === question.id"
+            <LtButton
+              variant="quiet"
               :disabled="practiceStartingId !== null"
               @click="startQuestionPractice(question.id)"
-              >练这道题</el-button
+              >{{ practiceStartingId === question.id ? '正在准备…' : '练这道题' }}</LtButton
             >
             <div class="secondary-actions">
               <button
@@ -137,9 +129,7 @@
                 :disabled="!favoritesReady || favoritesLoading || favoritePending.has(question.id)"
                 @click="toggleFavorite(question.id)"
               >
-                <el-icon aria-hidden="true"
-                  ><StarFilled v-if="favoritesReady && favoriteSet.has(question.id)" /><Star v-else
-                /></el-icon>
+                <Star aria-hidden="true" />
                 {{
                   favoritePending.has(question.id)
                     ? '正在保存'
@@ -155,11 +145,10 @@
                 :aria-controls="`question-discussion-${question.id}`"
                 @click="toggleComment(question.id)"
               >
-                <el-icon aria-hidden="true"><ChatLineRound /></el-icon
-                >{{ expandedComments.has(question.id) ? '收起讨论' : '讨论' }}
+                <MessageCircle aria-hidden="true" />{{ expandedComments.has(question.id) ? '收起讨论' : '讨论' }}
               </button>
               <button type="button" class="quiet-action" @click="openCorrectionDialog(question)">
-                <el-icon aria-hidden="true"><Warning /></el-icon>纠错
+                <CircleAlert aria-hidden="true" />纠错
               </button>
             </div>
           </footer>
@@ -171,68 +160,84 @@
             <QuestionComment :question-id="question.id" />
           </div>
         </article>
-      </div>
-      <div v-if="!loading && !loadError && total > 0" class="pagination-wrap">
-        <el-pagination
-          v-model:current-page="pageNum"
-          v-model:page-size="pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next"
-          @current-change="fetchQuestions"
-          @size-change="handleSizeChange"
-        />
-      </div>
+      </LtCard>
+      <nav v-if="!loading && !loadError && total > 0" class="pagination-wrap" aria-label="题库翻页">
+        <label
+          >每页
+          <select v-model="pageSize" aria-label="每页题数" @change="handleSizeChange">
+            <option v-for="size in [10, 20, 50]" :key="size" :value="size">{{ size }}</option>
+          </select>
+          题</label
+        >
+        <LtButton :disabled="pageNum <= 1" @click="changePage(-1)">上一页</LtButton
+        ><span>第 {{ pageNum }} / {{ pages }} 页</span
+        ><LtButton :disabled="pageNum >= pages" @click="changePage(1)">下一页</LtButton>
+      </nav>
     </section>
 
-    <el-dialog
-      v-model="correctionDialogVisible"
-      title="提交题目纠错"
-      width="560px"
-      class="catalog-correction-dialog"
-      :show-close="!correctionSubmitting"
-      :close-on-click-modal="false"
-      :close-on-press-escape="!correctionSubmitting"
-    >
+    <LtSheet v-model:open="correctionOpen" title="提交题目纠错">
       <div v-if="correctionQuestion" class="correction-question">
         <span>{{ questionTypeLabel(correctionQuestion.questionType) }}</span>
         <p>{{ correctionQuestion.content }}</p>
       </div>
-      <el-form label-position="top" :disabled="correctionSubmitting" @submit.prevent="submitCorrection">
-        <el-form-item label="需要核对的内容">
-          <el-select v-model="correctionForm.reportType" aria-label="需要核对的内容">
-            <el-option label="题干内容" value="CONTENT" /><el-option label="答案" value="ANSWER" />
-            <el-option label="解析" value="ANALYSIS" /><el-option label="知识点关联" value="KNOWLEDGE_POINT" />
-            <el-option label="其他问题" value="OTHER" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="问题描述">
-          <el-input
+      <form class="correction-form" @submit.prevent="submitCorrection">
+        <label
+          >需要核对的内容<select
+            v-model="correctionForm.reportType"
+            aria-label="需要核对的内容"
+            :disabled="correctionSubmitting"
+          >
+            <option value="CONTENT">题干内容</option>
+            <option value="ANSWER">答案</option>
+            <option value="ANALYSIS">解析</option>
+            <option value="KNOWLEDGE_POINT">知识点关联</option>
+            <option value="OTHER">其他问题</option>
+          </select></label
+        >
+        <label
+          >问题描述<textarea
             v-model="correctionForm.description"
-            type="textarea"
-            :rows="4"
+            rows="4"
             maxlength="1000"
-            show-word-limit
             aria-label="问题描述"
             placeholder="说明疑问所在；如有依据，也可以一起提供。"
+            :disabled="correctionSubmitting"
           />
-        </el-form-item>
-      </el-form>
-      <p v-if="correctionError" class="correction-error" role="alert">{{ correctionError }}</p>
-      <template #footer>
-        <el-button :disabled="correctionSubmitting" @click="correctionDialogVisible = false">暂时关闭</el-button>
-        <el-button type="primary" :loading="correctionSubmitting" @click="submitCorrection">提交纠错</el-button>
-      </template>
-    </el-dialog>
-  </div>
+        </label>
+        <p v-if="correctionError" class="correction-error" role="alert">{{ correctionError }}</p>
+        <div class="sheet-actions">
+          <LtButton :disabled="correctionSubmitting" @click="correctionDialogVisible = false">暂时关闭</LtButton
+          ><LtButton type="submit" variant="primary" :disabled="correctionSubmitting">{{
+            correctionSubmitting ? '正在提交…' : '提交纠错'
+          }}</LtButton>
+        </div>
+      </form></LtSheet
+    >
+  </main>
 </template>
 
 <script setup lang="ts">
-import { ArrowRight, Star, StarFilled, ChatLineRound, Warning } from '@element-plus/icons-vue'
-import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
-import QuestionComment from '@/components/QuestionComment.vue'
+import { computed } from 'vue'
+import { ChevronLeft, Star, MessageCircle, CircleAlert } from '@lucide/vue'
+import { LtButton, LtCard, LtIconButton, LtSheet } from '@/components/living'
+import { useRouter } from 'vue-router'
+import MarkdownRenderer from '@/views/question/QuestionProse.vue'
+import CatalogSearch from './CatalogSearch.vue'
+import QuestionComment from './CatalogDiscussion.vue'
 import { useQuestionCatalog } from './useQuestionCatalog'
 
+const router = useRouter()
+function changePage(delta: number) {
+  pageNum.value += delta
+  void fetchQuestions()
+}
+const pages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
+const correctionOpen = computed({
+  get: () => correctionDialogVisible.value,
+  set: (value) => {
+    if (!correctionSubmitting.value) correctionDialogVisible.value = value
+  },
+})
 const {
   questions,
   loading,
@@ -285,287 +290,251 @@ const {
 
 <style scoped>
 .question-list {
+  max-width: calc(var(--lt-space-10) * 16);
+  margin: 0 auto;
+  padding: var(--lt-space-7) var(--lt-space-7) var(--lt-space-10);
   display: grid;
-  gap: var(--lp-space-5);
+  gap: var(--lt-space-5);
+}
+.page-head h1 {
+  margin: var(--lt-space-4) 0 var(--lt-space-2);
+  font-size: var(--lt-text-title1);
+}
+.page-head p {
+  color: var(--lt-label-2);
 }
 .collection-link {
-  color: var(--lp-primary);
-  font-size: var(--lp-text-sm);
-  text-underline-offset: 4px;
+  color: var(--lt-accent);
+  text-underline-offset: var(--lt-space-1);
 }
 .filter-panel {
-  padding: var(--lp-space-5);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  background: var(--lp-surface);
+  padding: var(--lt-space-5);
+  background: var(--lt-surface);
+  border-radius: var(--lt-radius-xl);
 }
 .filter-fields {
   display: flex;
   align-items: flex-end;
   flex-wrap: wrap;
-  gap: var(--lp-space-4);
+  gap: var(--lt-space-5);
 }
-.filter-field {
+.filter-field,
+.correction-form,
+.correction-form label {
   display: grid;
-  gap: var(--lp-space-2);
+  gap: var(--lt-space-2);
 }
 .filter-field label,
-.difficulty-filter legend {
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  font-weight: var(--lp-weight-medium);
+legend {
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
-.course-filter {
-  flex: 1 1 220px;
+select,
+textarea {
+  box-sizing: border-box;
+  border: var(--lt-space-1) solid transparent;
+  border-radius: var(--lt-radius-sm);
+  background: var(--lt-fill-2);
+  color: var(--lt-label);
+  padding: var(--lt-space-2) var(--lt-space-3);
+  font: inherit;
 }
-.type-filter {
-  flex: 0 1 160px;
+select option {
+  background: var(--lt-surface);
+  color: var(--lt-label);
 }
-.difficulty-filter {
+textarea {
+  width: 100%;
+  resize: vertical;
+  background: var(--lt-well);
+}
+fieldset {
   margin: 0;
   padding: 0;
   border: 0;
-  min-width: 0;
 }
-.difficulty-filter legend {
-  margin-bottom: var(--lp-space-2);
-  padding: 0;
+legend {
+  margin-bottom: var(--lt-space-2);
 }
-.difficulty-options {
+.difficulty-options,
+.secondary-actions,
+.sheet-actions {
   display: flex;
+  gap: var(--lt-space-2);
   flex-wrap: wrap;
-  gap: var(--lp-space-1);
 }
 .difficulty-chip {
-  min-height: 34px;
-  padding: var(--lp-space-2) var(--lp-space-3);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-sm);
-  background: var(--lp-surface);
-  color: var(--lp-text-secondary);
+  min-height: var(--lt-control-lg);
+  border: 0;
+  border-radius: var(--lt-radius-pill);
+  padding: var(--lt-space-2) var(--lt-space-3);
+  background: var(--lt-fill-2);
+  color: var(--lt-label-2);
   cursor: pointer;
   font: inherit;
-  font-size: var(--lp-text-sm);
-}
-.difficulty-chip span {
-  font-variant-numeric: tabular-nums;
-  margin-right: var(--lp-space-1);
 }
 .difficulty-chip[aria-pressed='true'] {
-  color: var(--lp-primary);
-  border-color: var(--lp-primary);
-  background: var(--lp-primary-soft);
+  background: var(--lt-accent-soft);
+  color: var(--lt-label);
 }
-.search-context,
-.inline-message {
+.inline-message,
+.search-context {
   display: flex;
   align-items: center;
+  gap: var(--lt-space-3);
   flex-wrap: wrap;
-  gap: var(--lp-space-3);
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-}
-.search-context {
-  margin-top: var(--lp-space-3);
-  border-top: var(--lp-border-hairline);
-  padding-top: var(--lp-space-2);
-}
-.inline-message {
-  padding: var(--lp-space-3) var(--lp-space-4);
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-md);
-  background: var(--lp-surface-subtle);
-}
-.filter-panel .inline-message {
-  margin-top: var(--lp-space-3);
+  margin-top: var(--lt-space-3);
 }
 .action-message,
 .search-query-warning {
   margin: 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
+  color: var(--lt-label-2);
 }
-.action-message.is-error,
+.is-error,
 .correction-error {
-  color: var(--lp-danger);
+  color: var(--lt-red-text);
 }
 .result-toolbar {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: var(--lp-space-3);
-  margin-bottom: var(--lp-space-3);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
+  gap: var(--lt-space-4);
+  margin-bottom: var(--lt-space-3);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
 .result-toolbar p {
   margin: 0;
 }
-.question-collection {
-  border: var(--lp-border-hairline);
-  border-radius: var(--lp-radius-lg);
-  background: var(--lp-surface);
-  overflow: clip;
-}
 .question-card {
-  padding: var(--lp-space-6);
+  padding: var(--lt-space-7);
 }
 .question-card + .question-card {
-  border-top: var(--lp-border-hairline);
+  border-top: thin solid var(--lt-separator);
 }
 .question-meta {
   display: flex;
-  align-items: baseline;
   flex-wrap: wrap;
-  gap: var(--lp-space-3);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-sm);
+  align-items: baseline;
+  gap: var(--lt-space-3);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-footnote);
 }
 .question-meta h2 {
   margin: 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  font-weight: var(--lp-weight-semibold);
-}
-.question-meta > span + span::before {
-  content: '·';
-  margin-right: var(--lp-space-3);
-  color: var(--lp-border-strong);
+  font-size: var(--lt-text-body);
 }
 .question-content {
-  margin: var(--lp-space-4) 0;
-  max-width: 86ch;
-  overflow-wrap: anywhere;
-}
-.question-content :deep(.markdown-body) {
-  font-size: var(--lp-text-base);
-  line-height: var(--lp-leading-relaxed);
+  margin: var(--lt-space-5) 0;
 }
 .question-options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--lp-space-2) var(--lp-space-5);
+  gap: var(--lt-space-3) var(--lt-space-6);
   margin: 0;
   padding: 0;
   list-style: none;
-  max-width: 90ch;
 }
 .question-options.has-long-options {
   grid-template-columns: 1fr;
 }
 .question-options li {
   display: flex;
-  gap: var(--lp-space-2);
-  padding: var(--lp-space-2) 0;
-  color: var(--lp-text-secondary);
-  font-size: var(--lp-text-sm);
-  line-height: var(--lp-leading-body);
+  gap: var(--lt-space-2);
+  color: var(--lt-label-2);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 .option-label {
-  color: var(--lp-text-muted);
-  flex: 0 0 20px;
+  font-family: var(--lt-font-rounded);
 }
 .question-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--lp-space-2);
-  margin-top: var(--lp-space-4);
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
+  gap: var(--lt-space-2);
+  margin-top: var(--lt-space-4);
+  color: var(--lt-label-2);
+  font-size: var(--lt-text-caption);
 }
 .question-tags span {
-  padding: 2px var(--lp-space-2);
-  background: var(--lp-surface-soft);
-  border-radius: var(--lp-radius-sm);
+  padding: var(--lt-space-1) var(--lt-space-2);
+  background: var(--lt-fill-2);
+  border-radius: var(--lt-radius-sm);
 }
 .question-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: var(--lp-space-3);
-  margin-top: var(--lp-space-4);
-}
-.question-actions > .el-button {
-  margin-left: calc(-1 * var(--lp-space-3));
-}
-.secondary-actions {
-  display: flex;
-  gap: var(--lp-space-4);
+  gap: var(--lt-space-3);
+  margin-top: var(--lt-space-5);
 }
 .quiet-action {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: var(--lp-space-1);
-  min-height: 36px;
-  padding: var(--lp-space-1);
+  gap: var(--lt-space-2);
+  min-height: var(--lt-control-lg);
   border: 0;
+  border-radius: var(--lt-radius-pill);
+  padding: var(--lt-space-2);
   background: transparent;
-  color: var(--lp-text-secondary);
+  color: var(--lt-label-2);
   cursor: pointer;
   font: inherit;
-  font-size: var(--lp-text-sm);
+  font-size: var(--lt-text-footnote);
 }
-.quiet-action[aria-pressed='true'],
-.quiet-action:hover:not(:disabled) {
-  color: var(--lp-primary);
+.quiet-action svg {
+  width: var(--lt-space-4);
+  height: var(--lt-space-4);
+}
+.quiet-action[aria-pressed='true'] {
+  color: var(--lt-accent);
+}
+.quiet-action:hover {
+  background: var(--lt-fill-2);
 }
 .quiet-action:disabled {
-  cursor: default;
-  opacity: 0.6;
+  color: var(--lt-label-3);
+  cursor: not-allowed;
 }
 .comment-section {
-  margin-top: var(--lp-space-4);
-  padding-top: var(--lp-space-4);
-  border-top: var(--lp-border-hairline);
+  margin-top: var(--lt-space-5);
+  padding-top: var(--lt-space-5);
+  border-top: thin solid var(--lt-separator);
 }
 .pagination-wrap {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
-  margin-top: var(--lp-space-5);
+  gap: var(--lt-space-4);
+  margin-top: var(--lt-space-5);
+  color: var(--lt-label-2);
+}
+.state {
+  padding: var(--lt-space-8);
+  border-radius: var(--lt-radius-xl);
+  background: var(--lt-surface);
+  color: var(--lt-label-2);
+}
+.state h2 {
+  color: var(--lt-label);
+  font-size: var(--lt-text-title3);
 }
 .correction-question {
-  max-height: 180px;
+  padding: var(--lt-space-3);
+  border-radius: var(--lt-radius-md);
+  background: var(--lt-well);
+  max-height: calc(var(--lt-space-10) * 3);
   overflow: auto;
-  margin-bottom: var(--lp-space-4);
-  padding: var(--lp-space-3);
-  background: var(--lp-surface-soft);
-  border-radius: var(--lp-radius-sm);
-}
-.correction-question span {
-  color: var(--lp-text-muted);
-  font-size: var(--lp-text-xs);
+  margin-bottom: var(--lt-space-5);
 }
 .correction-question p {
-  margin: var(--lp-space-2) 0 0;
-  color: var(--lp-text-secondary);
-  line-height: var(--lp-leading-body);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.correction-error {
-  margin: 0;
-  line-height: var(--lp-leading-body);
-  font-size: var(--lp-text-sm);
+.correction-form {
+  gap: var(--lt-space-5);
 }
-@media (max-width: 767px) {
-  .filter-field {
-    flex: 1 1 100%;
-  }
-  .question-card {
-    padding: var(--lp-space-4);
-  }
-  .question-options {
-    grid-template-columns: 1fr;
-  }
-  .secondary-actions {
-    gap: var(--lp-space-2);
-  }
-  .pagination-wrap {
-    justify-content: center;
-  }
+.sheet-actions {
+  justify-content: flex-end;
 }
 </style>

@@ -27,22 +27,26 @@ export interface CommentRequest {
 }
 
 /** 获取题目评论列表 */
-export function getComments(questionId: number) {
-  return request.get<unknown, ApiResponse<CommentVO[]>>(`/comments/question/${questionId}`)
+export function getComments(questionId: number, options?: { errorDisplay?: 'inline' }) {
+  return request.get<unknown, ApiResponse<CommentVO[]>>(
+    `/comments/question/${questionId}`,
+    ...(options ? [options] : []),
+  )
 }
 
 /** 发表评论 */
-export function addComment(data: CommentRequest) {
-  return request.post<unknown, ApiResponse<CommentVO>>('/comments', data)
+export function addComment(data: CommentRequest, options?: { errorDisplay?: 'inline' }) {
+  return request.post<unknown, ApiResponse<CommentVO>>('/comments', data, ...(options ? [options] : []))
 }
 
 /** 删除评论 */
-export function deleteComment(commentId: number) {
-  return request.delete<unknown, ApiResponse<void>>(`/comments/${commentId}`)
+export function deleteComment(commentId: number, options?: { errorDisplay?: 'inline' }) {
+  return request.delete<unknown, ApiResponse<void>>(`/comments/${commentId}`, ...(options ? [options] : []))
 }
 
 /** 点赞/取消点赞 */
-export function toggleLike(commentId: number) {
+export function toggleLike(commentId: number, options?: { errorDisplay?: 'inline' }) {
+  if (options) return request.post<unknown, ApiResponse<boolean>>(`/comments/${commentId}/like`, undefined, options)
   return request.post<unknown, ApiResponse<boolean>>(`/comments/${commentId}/like`)
 }
 
